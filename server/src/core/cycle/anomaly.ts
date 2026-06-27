@@ -10,11 +10,11 @@
  * frontmatter date-field detection.
  */
 
-import type { AnomalyResult } from '../types.ts';
+import type { AnomalyResult } from "../types.ts";
 
 /** One row of the densified daily-count series for a single cohort key. */
 export interface CohortDayRow {
-  cohort_kind: 'tag' | 'type';
+  cohort_kind: "tag" | "type";
   cohort_value: string;
   /** ISO date (YYYY-MM-DD). */
   day: string;
@@ -24,7 +24,7 @@ export interface CohortDayRow {
 
 /** "Today" current-window count per cohort plus the page slugs that drove it. */
 export interface CohortTodayRow {
-  cohort_kind: 'tag' | 'type';
+  cohort_kind: "tag" | "type";
   cohort_value: string;
   count: number;
   page_slugs: string[];
@@ -72,7 +72,7 @@ export function computeAnomaliesFromBuckets(
   baseline: CohortDayRow[],
   today: CohortTodayRow[],
   sigma: number,
-  limit: number = 20,
+  limit: number = 20
 ): AnomalyResult[] {
   // Group baseline samples by (cohort_kind, cohort_value).
   const baselineByCohort = new Map<string, number[]>();

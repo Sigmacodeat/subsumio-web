@@ -1,4 +1,3 @@
-
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { getConnectorByEngineService } from "@/lib/connector-coverage";
@@ -17,7 +16,7 @@ export const POST = createHandler(
     }),
   },
   async (ctx, _body, _query, req) => {
-    const { service } = await ((req as unknown as { params: Promise<{ service: string }> }).params);
+    const { service } = await (req as unknown as { params: Promise<{ service: string }> }).params;
     if (!getConnectorByEngineService(service)) {
       return apiError("invalid_service", "Unbekannter Connector-Service", 400);
     }
@@ -38,5 +37,5 @@ export const POST = createHandler(
       console.error("[connector/sync] failed:", err instanceof Error ? err.message : String(err));
       return apiError("service_unavailable", "Sync fehlgeschlagen", 503);
     }
-  },
+  }
 );

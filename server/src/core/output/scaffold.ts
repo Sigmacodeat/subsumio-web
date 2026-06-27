@@ -16,7 +16,7 @@
  * through SlugRegistry. It's trivially testable.
  */
 
-import type { ResolverResult } from '../resolvers/interface.ts';
+import type { ResolverResult } from "../resolvers/interface.ts";
 
 // ---------------------------------------------------------------------------
 // Tweet citations
@@ -42,7 +42,7 @@ export function tweetCitation(input: TweetCitationInput): string {
   assertTweetId(input.tweetId);
   const date = input.dateISO ?? isoDateToday();
   assertISODate(date);
-  const handle = input.handle.replace(/^@/, '');
+  const handle = input.handle.replace(/^@/, "");
   const url = `https://x.com/${handle}/status/${input.tweetId}`;
   return `[Source: [X/${handle}, ${date}](${url})]`;
 }
@@ -70,7 +70,7 @@ export interface EmailCitationInput {
  * format (cross-tool consistency).
  */
 export function emailCitation(input: EmailCitationInput): string {
-  assertNonEmpty(input.account, 'account');
+  assertNonEmpty(input.account, "account");
   assertMessageId(input.messageId);
   const subject = sanitizeLabel(input.subject, 80);
   const date = input.dateISO ?? isoDateToday();
@@ -95,8 +95,8 @@ export function emailCitation(input: EmailCitationInput): string {
  * what we can link to.
  */
 export function sourceCitation(
-  result: Pick<ResolverResult<unknown>, 'source' | 'fetchedAt'>,
-  opts?: { url?: string; label?: string },
+  result: Pick<ResolverResult<unknown>, "source" | "fetchedAt">,
+  opts?: { url?: string; label?: string }
 ): string {
   const date = result.fetchedAt.toISOString().slice(0, 10);
   const label = opts?.label ?? result.source;
@@ -132,7 +132,7 @@ export interface EntityLinkInput {
 export function entityLink(input: EntityLinkInput): string {
   assertSlug(input.slug);
   const display = sanitizeLabel(input.displayText, 120);
-  const prefix = input.relativePrefix ?? '';
+  const prefix = input.relativePrefix ?? "";
   return `[${display}](${prefix}${input.slug}.md)`;
 }
 
@@ -154,7 +154,7 @@ export interface TimelineLineInput {
 export function timelineLine(input: TimelineLineInput): string {
   assertISODate(input.dateISO);
   const summary = sanitizeLabel(input.summary, 500);
-  const cite = input.citation ? ` ${input.citation}` : '';
+  const cite = input.citation ? ` ${input.citation}` : "";
   return `- **${input.dateISO}** | ${summary}${cite}`;
 }
 
@@ -163,9 +163,18 @@ export function timelineLine(input: TimelineLineInput): string {
 // ---------------------------------------------------------------------------
 
 export class ScaffoldError extends Error {
-  constructor(public code: 'invalid_handle' | 'invalid_tweet_id' | 'invalid_slug' | 'invalid_message_id' | 'invalid_date' | 'empty', message: string) {
+  constructor(
+    public code:
+      | "invalid_handle"
+      | "invalid_tweet_id"
+      | "invalid_slug"
+      | "invalid_message_id"
+      | "invalid_date"
+      | "empty",
+    message: string
+  ) {
     super(message);
-    this.name = 'ScaffoldError';
+    this.name = "ScaffoldError";
   }
 }
 
@@ -176,45 +185,51 @@ export class ScaffoldError extends Error {
 // X handle: 1-15 chars, alphanumeric + underscore. Optional leading @ allowed.
 const HANDLE_RE = /^@?[A-Za-z0-9_]{1,15}$/;
 function assertHandle(h: unknown): asserts h is string {
-  if (typeof h !== 'string' || !HANDLE_RE.test(h)) {
-    throw new ScaffoldError('invalid_handle', `Invalid X handle: ${JSON.stringify(h)}`);
+  if (typeof h !== "string" || !HANDLE_RE.test(h)) {
+    throw new ScaffoldError("invalid_handle", `Invalid X handle: ${JSON.stringify(h)}`);
   }
 }
 
 // Tweet id: 1-20 digits (X snowflake ids).
 const TWEET_ID_RE = /^\d{1,20}$/;
 function assertTweetId(id: unknown): asserts id is string {
-  if (typeof id !== 'string' || !TWEET_ID_RE.test(id)) {
-    throw new ScaffoldError('invalid_tweet_id', `Invalid tweet id: ${JSON.stringify(id)}`);
+  if (typeof id !== "string" || !TWEET_ID_RE.test(id)) {
+    throw new ScaffoldError("invalid_tweet_id", `Invalid tweet id: ${JSON.stringify(id)}`);
   }
 }
 
 // Gmail message id: hex string, at least 10 chars.
 const MESSAGE_ID_RE = /^[A-Za-z0-9]{10,60}$/;
 function assertMessageId(id: unknown): asserts id is string {
-  if (typeof id !== 'string' || !MESSAGE_ID_RE.test(id)) {
-    throw new ScaffoldError('invalid_message_id', `Invalid Gmail message id: ${JSON.stringify(id)}`);
+  if (typeof id !== "string" || !MESSAGE_ID_RE.test(id)) {
+    throw new ScaffoldError(
+      "invalid_message_id",
+      `Invalid Gmail message id: ${JSON.stringify(id)}`
+    );
   }
 }
 
 // Slug: dir/name with allowed characters. Matches PageType dir conventions.
 const SLUG_RE = /^[a-z0-9][a-z0-9\-]*(\/[a-z0-9][a-z0-9\-]*)+$/;
 function assertSlug(slug: unknown): asserts slug is string {
-  if (typeof slug !== 'string' || !SLUG_RE.test(slug)) {
-    throw new ScaffoldError('invalid_slug', `Invalid slug: ${JSON.stringify(slug)}`);
+  if (typeof slug !== "string" || !SLUG_RE.test(slug)) {
+    throw new ScaffoldError("invalid_slug", `Invalid slug: ${JSON.stringify(slug)}`);
   }
 }
 
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 function assertISODate(d: unknown): asserts d is string {
-  if (typeof d !== 'string' || !ISO_DATE_RE.test(d)) {
-    throw new ScaffoldError('invalid_date', `Invalid ISO date (expect YYYY-MM-DD): ${JSON.stringify(d)}`);
+  if (typeof d !== "string" || !ISO_DATE_RE.test(d)) {
+    throw new ScaffoldError(
+      "invalid_date",
+      `Invalid ISO date (expect YYYY-MM-DD): ${JSON.stringify(d)}`
+    );
   }
 }
 
 function assertNonEmpty(s: unknown, field: string): asserts s is string {
-  if (typeof s !== 'string' || s.length === 0) {
-    throw new ScaffoldError('empty', `Required field ${field} must be a non-empty string`);
+  if (typeof s !== "string" || s.length === 0) {
+    throw new ScaffoldError("empty", `Required field ${field} must be a non-empty string`);
   }
 }
 
@@ -229,8 +244,8 @@ function isoDateToday(): string {
 /** Trim, strip newlines/brackets that would break markdown, cap length. */
 function sanitizeLabel(s: string, maxLen: number): string {
   return s
-    .replace(/[\n\r]/g, ' ')
-    .replace(/[\[\]]/g, '')
+    .replace(/[\n\r]/g, " ")
+    .replace(/[\[\]]/g, "")
     .trim()
     .slice(0, maxLen);
 }

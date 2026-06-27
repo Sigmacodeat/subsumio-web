@@ -24,10 +24,12 @@ bleibt aber eigenständig.
 ## Kernvorschriften
 
 ### Art. 1 — Zweck
+
 Dieses Gesetz regelt den Schutz der Persönlichkeit und der Grundrechte
 von Personen, über die Daten bearbeitet werden.
 
 ### Art. 2 — Geltungsbereich
+
 (1) Dieses Gesetz gilt für die Bearbeitung personenbezogener Daten
 natürlicher Personen durch:
 a. private Personen;
@@ -39,6 +41,7 @@ b. ausschliesslich persönliche und familiäre Tätigkeiten;
 c. journalistisch-künstlerische Tätigkeiten (insoweit Grundrechte Vorrang haben).
 
 ### Art. 3 — Begriffe
+
 (1) **Personenbezogene Daten** sind Angaben, die sich auf eine bestimmte
 oder bestimmbare Person beziehen.
 
@@ -48,7 +51,7 @@ Verwendung, Weitergabe, Archivierung, Löschung).
 
 (3) **Besonders schützenswerte Daten** sind:
 a. Daten über religiöse, weltanschauliche, politische oder gewerkschaftliche
-   Verhältnisse;
+Verhältnisse;
 b. Daten über die Gesundheit, die Intimsphäre oder die Rassenzugehörigkeit;
 c. Genetische Daten;
 d. Biometrische Daten, die eine Person eindeutig identifizieren;
@@ -56,6 +59,7 @@ e. Daten über Administrativ- und Strafverfolgungen;
 f. Daten über soziale Hilfsbedürftigkeit.
 
 ### Art. 4 — Grundsätze
+
 (1) Personenbezogene Daten müssen:
 a. rechtmässig bearbeitet werden;
 b. nach dem Zweck der Bearbeitung verhältnismässig sein;
@@ -65,6 +69,7 @@ d. auf dem aktuellen Stand sein.
 (2) Die Bearbeitung muss für die betroffene Person nachvollziehbar sein.
 
 ### Art. 5 — Rechtfertigungsgründe
+
 Die Bearbeitung ist rechtmässig, wenn:
 a. die betroffene Person eingewilligt hat;
 b. ein Gesetz die Bearbeitung vorsieht;
@@ -72,6 +77,7 @@ c. die Bearbeitung für die Erfüllung eines Vertrags erforderlich ist;
 d. ein überwiegendes privates oder öffentliches Interesse besteht.
 
 ### Art. 6 — Informations- und Auskunftspflicht
+
 (1) Wer Daten erhebt, muss die betroffene Person über:
 a. die verantwortliche Person;
 b. den Bearbeitungszweck;
@@ -84,6 +90,7 @@ informieren.
 informiert ist oder die Information unmöglich oder unverhältnismässig ist.
 
 ### Art. 7 — Auskunftsrecht
+
 (1) Die betroffene Person kann jederzeit Auskunft über die sie betreffenden
 Daten verlangen.
 
@@ -91,6 +98,7 @@ Daten verlangen.
 zu erteilen.
 
 ### Art. 8 — Berichtigung und Löschung
+
 (1) Die betroffene Person kann die Berichtigung unrichtiger Daten verlangen.
 
 (2) Die betroffene Person kann die Löschung ihrer Daten verlangen, wenn:
@@ -99,6 +107,7 @@ b. der Bearbeitungszweck entfallen ist;
 c. die Aufbewahrungsdauer abgelaufen ist.
 
 ### Art. 9 — Einwilligung
+
 (1) Die Einwilligung muss:
 a. freiwillig sein;
 b. informiert sein;
@@ -108,6 +117,7 @@ d. nachweisbar sein.
 (2) Die Einwilligung kann jederzeit widerrufen werden.
 
 ### Art. 10 — Datensicherheit
+
 (1) Wer Daten bearbeitet, muss angemessene technische und organisatorische
 Massnahmen treffen, um die Daten vor:
 a. unbefugter Bearbeitung;
@@ -119,6 +129,7 @@ zu schützen.
 (2) Die Massnahmen müssen dem Stand der Technik und dem Risiko angemessen sein.
 
 ### Art. 11 — Datenbearbeitung im Ausland
+
 (1) Die Bearbeitung im Ausland ist zulässig, wenn:
 a. ein angemessenes Schutzniveau im Zielland besteht;
 b. angemessene Garantien vereinbart wurden;
@@ -128,6 +139,7 @@ d. ein Gesetz die Bearbeitung vorsieht.
 (2) Der Bundesrat führt eine Liste der Länder mit angemessenem Schutzniveau.
 
 ### Art. 12 — Meldepflicht
+
 (1) Wer ein Verzeichnis der Bearbeitungstätigkeiten führt, muss dieses
 der zuständigen Behörde melden.
 
@@ -136,6 +148,7 @@ der zuständigen Behörde melden.
 Daten bearbeiten.
 
 ### Art. 13 — Datenschutzverletzung
+
 (1) Bei einer Datenschutzverletzung, die zu einem hohen Risiko für die
 betroffenen Personen führt, muss die verantwortliche Person:
 a. die betroffenen Personen informieren;

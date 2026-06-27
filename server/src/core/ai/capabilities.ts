@@ -21,8 +21,8 @@
  * decisions don't depend on it.
  */
 
-import { resolveRecipe } from './model-resolver.ts';
-import { AIConfigError } from './errors.ts';
+import { resolveRecipe } from "./model-resolver.ts";
+import { AIConfigError } from "./errors.ts";
 
 export interface ProviderCapabilities {
   /** Provider returns native function/tool calling. Required for the subagent loop. */
@@ -77,7 +77,7 @@ export function getProviderCapabilities(modelString: string): ProviderCapabiliti
   if (!chat) {
     throw new AIConfigError(
       `Provider "${recipe.id}" does not offer a chat touchpoint.`,
-      `Known providers with chat: openai, anthropic, google, openrouter, litellm-proxy, deepseek, groq, together, azure-openai, dashscope, minimax, zhipu, ollama, llama-server. Pick one for models.tier.subagent.`,
+      `Known providers with chat: openai, anthropic, google, openrouter, litellm-proxy, deepseek, groq, together, azure-openai, dashscope, minimax, zhipu, ollama, llama-server. Pick one for models.tier.subagent.`
     );
   }
 
@@ -128,21 +128,21 @@ export function getProviderCapabilities(modelString: string): ProviderCapabiliti
  * verdict (warn / info / throw) based on its surface.
  */
 export type CapabilityVerdict =
-  | 'ok'
-  | 'degraded:no_caching'
-  | 'degraded:no_parallel'
-  | 'unusable:no_tools'
-  | 'unknown';
+  | "ok"
+  | "degraded:no_caching"
+  | "degraded:no_parallel"
+  | "unusable:no_tools"
+  | "unknown";
 
 export function classifyCapabilities(modelString: string): CapabilityVerdict {
   let caps: ProviderCapabilities;
   try {
     caps = getProviderCapabilities(modelString);
   } catch {
-    return 'unknown';
+    return "unknown";
   }
-  if (!caps.supportsToolCalling) return 'unusable:no_tools';
-  if (!caps.supportsPromptCaching) return 'degraded:no_caching';
-  if (!caps.supportsParallelTools) return 'degraded:no_parallel';
-  return 'ok';
+  if (!caps.supportsToolCalling) return "unusable:no_tools";
+  if (!caps.supportsPromptCaching) return "degraded:no_caching";
+  if (!caps.supportsParallelTools) return "degraded:no_parallel";
+  return "ok";
 }

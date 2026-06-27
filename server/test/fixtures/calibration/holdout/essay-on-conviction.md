@@ -32,6 +32,7 @@ on my moat calls is essentially at parity with the market. I can keep
 trusting those.
 
 What I'm betting on next:
+
 - Vertical-AI valuations will compress within 18 months. Moderate
   conviction, ~0.6 — and I'm going to de-rate this further given the
   macro-timing pattern above.

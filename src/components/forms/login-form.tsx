@@ -41,8 +41,8 @@ export function LoginForm() {
         <div className="space-y-1.5">
           <Label htmlFor="totp">2FA-Code</Label>
           <p className="text-xs text-[color:var(--ds-text-muted)]">
-            Geben Sie den 6-stelligen Code aus Ihrer Authenticator-App ein.
-            Alternativ können Sie einen Backup-Code verwenden.
+            Geben Sie den 6-stelligen Code aus Ihrer Authenticator-App ein. Alternativ können Sie
+            einen Backup-Code verwenden.
           </p>
           <Input
             id="totp"

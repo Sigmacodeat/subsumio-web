@@ -23,9 +23,9 @@
  *   - MCP tool-def regen for full source-scoping of all ops (part of Step 2+5)
  */
 
-import { writeFileSync, unlinkSync, existsSync } from 'fs';
-import { join } from 'path';
-import type { BrainEngine } from '../core/engine.ts';
+import { writeFileSync, unlinkSync, existsSync } from "fs";
+import { join } from "path";
+import type { BrainEngine } from "../core/engine.ts";
 import {
   assessDestructiveImpact,
   checkDestructiveConfirmation,
@@ -36,23 +36,20 @@ import {
   formatImpact,
   formatSoftDelete,
   SOFT_DELETE_TTL_HOURS,
-} from '../core/destructive-guard.ts';
+} from "../core/destructive-guard.ts";
 import {
   addSource as opsAddSource,
   recloneIfMissing,
   SourceOpError,
   type SourceRow as OpsSourceRow,
-} from '../core/sources-ops.ts';
-import {
-  resolveSourceWithTier,
-  SOURCE_TIER_NAMES,
-} from '../core/source-resolver.ts';
+} from "../core/sources-ops.ts";
+import { resolveSourceWithTier, SOURCE_TIER_NAMES } from "../core/source-resolver.ts";
 import {
   loadAllSources,
   parseSourceConfig,
   isSourceFederated,
   type SourceRow as LoadedSourceRow,
-} from '../core/sources-load.ts';
+} from "../core/sources-load.ts";
 
 // ── Validation ──────────────────────────────────────────────
 
@@ -62,7 +59,7 @@ const SOURCE_ID_RE = /^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$/;
 function validateSourceId(id: string): void {
   if (!SOURCE_ID_RE.test(id)) {
     throw new Error(
-      `Invalid source id "${id}". Must be 1-32 lowercase alnum chars with optional interior hyphens (e.g. "wiki", "yc-media").`,
+      `Invalid source id "${id}". Must be 1-32 lowercase alnum chars with optional interior hyphens (e.g. "wiki", "yc-media").`
     );
   }
 }
@@ -99,7 +96,7 @@ async function fetchSource(engine: BrainEngine, id: string): Promise<SourceRow |
   const rows = await engine.executeRaw<SourceRow>(
     `SELECT id, name, local_path, last_commit, last_sync_at, config, created_at
        FROM sources WHERE id = $1`,
-    [id],
+    [id]
   );
   return rows[0] ?? null;
 }
@@ -107,7 +104,7 @@ async function fetchSource(engine: BrainEngine, id: string): Promise<SourceRow |
 async function countPages(engine: BrainEngine, sourceId: string): Promise<number> {
   const rows = await engine.executeRaw<{ n: number }>(
     `SELECT COUNT(*)::int AS n FROM pages WHERE source_id = $1`,
-    [sourceId],
+    [sourceId]
   );
   return rows[0]?.n ?? 0;
 }
@@ -118,8 +115,8 @@ async function runAdd(engine: BrainEngine, args: string[]): Promise<void> {
   const id = args[0];
   if (!id) {
     console.error(
-      'Usage: gbrain sources add <id> [--path <path> | --url <https-url>] ' +
-        '[--name <display>] [--federated|--no-federated] [--clone-dir <path>]',
+      "Usage: gbrain sources add <id> [--path <path> | --url <https-url>] " +
+        "[--name <display>] [--federated|--no-federated] [--clone-dir <path>]"
     );
     process.exit(2);
   }
@@ -132,18 +129,38 @@ async function runAdd(engine: BrainEngine, args: string[]): Promise<void> {
 
   for (let i = 1; i < args.length; i++) {
     const a = args[i];
-    if (a === '--path') { localPath = args[++i]; continue; }
-    if (a === '--url') { remoteUrl = args[++i]; continue; }
-    if (a === '--name') { displayName = args[++i]; continue; }
-    if (a === '--federated') { federated = true; continue; }
-    if (a === '--no-federated') { federated = false; continue; }
-    if (a === '--clone-dir') { cloneDir = args[++i]; continue; }
+    if (a === "--path") {
+      localPath = args[++i];
+      continue;
+    }
+    if (a === "--url") {
+      remoteUrl = args[++i];
+      continue;
+    }
+    if (a === "--name") {
+      displayName = args[++i];
+      continue;
+    }
+    if (a === "--federated") {
+      federated = true;
+      continue;
+    }
+    if (a === "--no-federated") {
+      federated = false;
+      continue;
+    }
+    if (a === "--clone-dir") {
+      cloneDir = args[++i];
+      continue;
+    }
     console.error(`Unknown flag: ${a}`);
     process.exit(2);
   }
 
   if (remoteUrl && localPath) {
-    console.error('Error: --url and --path are mutually exclusive (--url manages its own clone path).');
+    console.error(
+      "Error: --url and --path are mutually exclusive (--url manages its own clone path)."
+    );
     process.exit(2);
   }
 
@@ -160,27 +177,29 @@ async function runAdd(engine: BrainEngine, args: string[]): Promise<void> {
   });
 
   const fed = isFederated(created.config);
-  const finalRemoteUrl = (created.config as Record<string, unknown>).remote_url as string | undefined;
+  const finalRemoteUrl = (created.config as Record<string, unknown>).remote_url as
+    | string
+    | undefined;
   const tail = finalRemoteUrl
     ? ` ← cloned from ${finalRemoteUrl}`
     : created.local_path
       ? ` → ${created.local_path}`
-      : '';
+      : "";
   console.log(
-    `Created source "${id}"${displayName && displayName !== id ? ` (name: ${displayName})` : ''}${tail}`,
+    `Created source "${id}"${displayName && displayName !== id ? ` (name: ${displayName})` : ""}${tail}`
   );
   if (finalRemoteUrl) {
     console.log(`  clone path: ${created.local_path}`);
   }
   console.log(
-    `  federated: ${fed}${fed ? ' — appears in cross-source default search' : ' — only searched when explicitly named via --source'}`,
+    `  federated: ${fed}${fed ? " — appears in cross-source default search" : " — only searched when explicitly named via --source"}`
   );
 }
 
 // ── Subcommand: list ────────────────────────────────────────
 
 async function runList(engine: BrainEngine, args: string[]): Promise<void> {
-  const json = args.includes('--json');
+  const json = args.includes("--json");
 
   // v0.40 (D7): loadAllSources is the single source of truth for source enum.
   // Pass includeArchived=true to preserve the legacy `runList` behavior of
@@ -206,16 +225,18 @@ async function runList(engine: BrainEngine, args: string[]): Promise<void> {
   }
 
   // Human-readable table.
-  console.log('SOURCES');
-  console.log('───────');
+  console.log("SOURCES");
+  console.log("───────");
   for (const e of entries) {
-    const fedMark = e.federated ? 'federated' : (e as any).archived ? '⚠ archived' : 'isolated';
-    const pathStr = e.local_path ?? '(no local path)';
-    const sync = e.last_sync_at ? `last sync ${e.last_sync_at}` : 'never synced';
-    console.log(`  ${e.id.padEnd(20)}  ${fedMark.padEnd(12)}  ${String(e.page_count).padStart(6)} pages  ${sync}`);
-    if (e.local_path) console.log(`  ${' '.repeat(22)}${pathStr}`);
+    const fedMark = e.federated ? "federated" : (e as any).archived ? "⚠ archived" : "isolated";
+    const pathStr = e.local_path ?? "(no local path)";
+    const sync = e.last_sync_at ? `last sync ${e.last_sync_at}` : "never synced";
+    console.log(
+      `  ${e.id.padEnd(20)}  ${fedMark.padEnd(12)}  ${String(e.page_count).padStart(6)} pages  ${sync}`
+    );
+    if (e.local_path) console.log(`  ${" ".repeat(22)}${pathStr}`);
   }
-  if (entries.length === 0) console.log('  (no sources registered)');
+  if (entries.length === 0) console.log("  (no sources registered)");
 }
 
 // ── Subcommand: remove ──────────────────────────────────────
@@ -223,16 +244,18 @@ async function runList(engine: BrainEngine, args: string[]): Promise<void> {
 async function runRemove(engine: BrainEngine, args: string[]): Promise<void> {
   const id = args[0];
   if (!id) {
-    console.error('Usage: gbrain sources remove <id> [--yes] [--confirm-destructive] [--dry-run] [--keep-storage]');
+    console.error(
+      "Usage: gbrain sources remove <id> [--yes] [--confirm-destructive] [--dry-run] [--keep-storage]"
+    );
     process.exit(2);
   }
-  const yes = args.includes('--yes');
-  const dryRun = args.includes('--dry-run');
-  const confirmDestructive = args.includes('--confirm-destructive');
-  const _keepStorage = args.includes('--keep-storage');
+  const yes = args.includes("--yes");
+  const dryRun = args.includes("--dry-run");
+  const confirmDestructive = args.includes("--confirm-destructive");
+  const _keepStorage = args.includes("--keep-storage");
   void _keepStorage;
 
-  if (id === 'default') {
+  if (id === "default") {
     console.error('Error: cannot remove the "default" source (it backs the pre-v0.17 brain).');
     process.exit(3);
   }
@@ -249,7 +272,7 @@ async function runRemove(engine: BrainEngine, args: string[]): Promise<void> {
     console.log(formatImpact(impact));
 
     if (dryRun) {
-      console.log('(dry-run; no side effects)');
+      console.log("(dry-run; no side effects)");
       return;
     }
 
@@ -259,9 +282,12 @@ async function runRemove(engine: BrainEngine, args: string[]): Promise<void> {
       process.exit(5);
     }
   } else {
-    if (dryRun) { console.log('(dry-run; source not found)'); return; }
+    if (dryRun) {
+      console.log("(dry-run; source not found)");
+      return;
+    }
     if (!yes && !confirmDestructive) {
-      console.error('Refusing to remove without --yes or --confirm-destructive.');
+      console.error("Refusing to remove without --yes or --confirm-destructive.");
       process.exit(5);
     }
   }
@@ -292,21 +318,21 @@ async function runRemove(engine: BrainEngine, args: string[]): Promise<void> {
 // filed as a v0.41+ TODO when 3+ writable fields exist.
 
 async function runSetCrMode(engine: BrainEngine, args: string[]): Promise<void> {
-  const { isCRMode, CR_MODES } = await import('../core/types.ts');
+  const { isCRMode, CR_MODES } = await import("../core/types.ts");
   const id = args[0];
   const mode = args[1];
 
   if (!id || !mode) {
-    console.error('Usage: gbrain sources set-cr-mode <id> <none|title|per_chunk_synopsis>');
+    console.error("Usage: gbrain sources set-cr-mode <id> <none|title|per_chunk_synopsis>");
     console.error('  Pass "unset" or "default" to clear the override (NULL falls through).');
     process.exit(2);
   }
 
   // Clear path: empty / "unset" / "default" → NULL.
-  const clearing = mode === 'unset' || mode === 'default' || mode === '';
+  const clearing = mode === "unset" || mode === "default" || mode === "";
   if (!clearing && !isCRMode(mode)) {
     console.error(`Error: invalid CR mode "${mode}".`);
-    console.error(`Valid options: ${CR_MODES.join(' | ')}`);
+    console.error(`Valid options: ${CR_MODES.join(" | ")}`);
     console.error(`  Or pass "unset" / "default" to clear the override.`);
     process.exit(2);
   }
@@ -317,7 +343,7 @@ async function runSetCrMode(engine: BrainEngine, args: string[]): Promise<void> 
   // matching 0 rows was the failure mode the gap warning called out.
   const exists = await engine.executeRaw<{ id: string }>(
     `SELECT id FROM sources WHERE id = $1 LIMIT 1`,
-    [id],
+    [id]
   );
   if (exists.length === 0) {
     console.error(`Error: source "${id}" not found.`);
@@ -326,12 +352,14 @@ async function runSetCrMode(engine: BrainEngine, args: string[]): Promise<void> 
   }
 
   const newValue = clearing ? null : mode;
-  await engine.executeRaw(
-    `UPDATE sources SET contextual_retrieval_mode = $1 WHERE id = $2`,
-    [newValue, id],
-  );
+  await engine.executeRaw(`UPDATE sources SET contextual_retrieval_mode = $1 WHERE id = $2`, [
+    newValue,
+    id,
+  ]);
   if (clearing) {
-    console.log(`Cleared contextual_retrieval_mode for source "${id}" (NULL falls through to global mode).`);
+    console.log(
+      `Cleared contextual_retrieval_mode for source "${id}" (NULL falls through to global mode).`
+    );
   } else {
     console.log(`Set source "${id}" contextual_retrieval_mode = ${mode}.`);
   }
@@ -340,11 +368,11 @@ async function runSetCrMode(engine: BrainEngine, args: string[]): Promise<void> 
 async function runArchive(engine: BrainEngine, args: string[]): Promise<void> {
   const id = args[0];
   if (!id) {
-    console.error('Usage: gbrain sources archive <id>');
+    console.error("Usage: gbrain sources archive <id>");
     process.exit(2);
   }
 
-  if (id === 'default') {
+  if (id === "default") {
     console.error('Error: cannot archive the "default" source.');
     process.exit(3);
   }
@@ -369,9 +397,9 @@ async function runArchive(engine: BrainEngine, args: string[]): Promise<void> {
 
 async function runRestore(engine: BrainEngine, args: string[]): Promise<void> {
   const id = args[0];
-  const noFederate = args.includes('--no-federate');
+  const noFederate = args.includes("--no-federate");
   if (!id) {
-    console.error('Usage: gbrain sources restore <id> [--no-federate]');
+    console.error("Usage: gbrain sources restore <id> [--no-federate]");
     process.exit(2);
   }
 
@@ -381,7 +409,7 @@ async function runRestore(engine: BrainEngine, args: string[]): Promise<void> {
     process.exit(4);
   }
 
-  console.log(`Source "${id}" restored. ${noFederate ? 'Not re-federated.' : 'Re-federated.'}`);
+  console.log(`Source "${id}" restored. ${noFederate ? "Not re-federated." : "Re-federated."}`);
   console.log(`All pages, chunks, and embeddings are intact.`);
 
   // T4 (eng-review): if the source has a remote_url AND its clone dir was
@@ -394,7 +422,7 @@ async function runRestore(engine: BrainEngine, args: string[]): Promise<void> {
       console.log(`  re-cloned from remote_url (clone dir was missing).`);
     }
   } catch (e) {
-    if (e instanceof SourceOpError && e.code === 'unmanaged_path') {
+    if (e instanceof SourceOpError && e.code === "unmanaged_path") {
       // #1881: local_path is the user's own working tree, not a clone gbrain
       // created. gbrain won't re-clone over it, and `gbrain sync` will refuse it
       // too — so the generic "missing clone, try sync to recover" guidance below
@@ -415,7 +443,7 @@ async function runRestore(engine: BrainEngine, args: string[]): Promise<void> {
 
 async function runPurge(engine: BrainEngine, args: string[]): Promise<void> {
   const id = args[0];
-  const confirmDestructive = args.includes('--confirm-destructive');
+  const confirmDestructive = args.includes("--confirm-destructive");
 
   if (id) {
     // Purge a specific source (must be archived)
@@ -440,16 +468,16 @@ async function runPurge(engine: BrainEngine, args: string[]): Promise<void> {
   // No id: purge all expired archives
   const purged = await purgeExpiredSources(engine);
   if (purged.length === 0) {
-    console.log('No expired archives to purge.');
+    console.log("No expired archives to purge.");
   } else {
-    console.log(`Purged ${purged.length} expired archive(s): ${purged.join(', ')}`);
+    console.log(`Purged ${purged.length} expired archive(s): ${purged.join(", ")}`);
   }
 }
 
 // ── Subcommand: archived ────────────────────────────────────
 
 async function runListArchived(engine: BrainEngine, args: string[]): Promise<void> {
-  const json = args.includes('--json');
+  const json = args.includes("--json");
   const archived = await listArchivedSources(engine);
 
   if (json) {
@@ -458,15 +486,17 @@ async function runListArchived(engine: BrainEngine, args: string[]): Promise<voi
   }
 
   if (archived.length === 0) {
-    console.log('No archived sources.');
+    console.log("No archived sources.");
     return;
   }
 
-  console.log('ARCHIVED SOURCES (soft-deleted)');
-  console.log('───────────────────────────────');
+  console.log("ARCHIVED SOURCES (soft-deleted)");
+  console.log("───────────────────────────────");
   for (const a of archived) {
     const hours = Math.max(0, Math.round((a.expiresAt.getTime() - Date.now()) / (1000 * 60 * 60)));
-    console.log(`  ${a.id.padEnd(20)}  ${String(a.pageCount).padStart(6)} pages  expires in ${hours}h  (restore: gbrain sources restore ${a.id})`);
+    console.log(
+      `  ${a.id.padEnd(20)}  ${String(a.pageCount).padStart(6)} pages  expires in ${hours}h  (restore: gbrain sources restore ${a.id})`
+    );
   }
 }
 
@@ -476,7 +506,7 @@ async function runRename(engine: BrainEngine, args: string[]): Promise<void> {
   const id = args[0];
   const newName = args[1];
   if (!id || !newName) {
-    console.error('Usage: gbrain sources rename <id> <new-display-name>');
+    console.error("Usage: gbrain sources rename <id> <new-display-name>");
     process.exit(2);
   }
   const src = await fetchSource(engine, id);
@@ -493,7 +523,7 @@ async function runRename(engine: BrainEngine, args: string[]): Promise<void> {
 async function runDefault(engine: BrainEngine, args: string[]): Promise<void> {
   const id = args[0];
   if (!id) {
-    console.error('Usage: gbrain sources default <id>');
+    console.error("Usage: gbrain sources default <id>");
     process.exit(2);
   }
   const src = await fetchSource(engine, id);
@@ -503,7 +533,7 @@ async function runDefault(engine: BrainEngine, args: string[]): Promise<void> {
   }
   // Stored in the config table (not sources.config, because it's a brain-
   // level preference not a per-source setting).
-  await engine.setConfig('sources.default', id);
+  await engine.setConfig("sources.default", id);
   console.log(`Default source set to "${id}".`);
 }
 
@@ -512,18 +542,20 @@ async function runDefault(engine: BrainEngine, args: string[]): Promise<void> {
 function runAttach(args: string[]): void {
   const id = args[0];
   if (!id) {
-    console.error('Usage: gbrain sources attach <id>');
+    console.error("Usage: gbrain sources attach <id>");
     process.exit(2);
   }
   validateSourceId(id);
-  const dotfile = join(process.cwd(), '.gbrain-source');
-  writeFileSync(dotfile, id + '\n', 'utf8');
+  const dotfile = join(process.cwd(), ".gbrain-source");
+  writeFileSync(dotfile, id + "\n", "utf8");
   console.log(`Attached ${process.cwd()} to source "${id}" via .gbrain-source.`);
-  console.log(`Commands run from this directory (or any subdirectory) will default to this source.`);
+  console.log(
+    `Commands run from this directory (or any subdirectory) will default to this source.`
+  );
 }
 
 function runDetach(): void {
-  const dotfile = join(process.cwd(), '.gbrain-source');
+  const dotfile = join(process.cwd(), ".gbrain-source");
   if (!existsSync(dotfile)) {
     console.log(`No .gbrain-source file in ${process.cwd()}.`);
     return;
@@ -537,7 +569,7 @@ function runDetach(): void {
 async function runFederate(engine: BrainEngine, args: string[], value: boolean): Promise<void> {
   const id = args[0];
   if (!id) {
-    console.error(`Usage: gbrain sources ${value ? 'federate' : 'unfederate'} <id>`);
+    console.error(`Usage: gbrain sources ${value ? "federate" : "unfederate"} <id>`);
     process.exit(2);
   }
   const src = await fetchSource(engine, id);
@@ -547,11 +579,13 @@ async function runFederate(engine: BrainEngine, args: string[], value: boolean):
   }
   const config = parseConfig(src.config);
   config.federated = value;
-  await engine.executeRaw(
-    `UPDATE sources SET config = $1::jsonb WHERE id = $2`,
-    [JSON.stringify(config), id],
+  await engine.executeRaw(`UPDATE sources SET config = $1::jsonb WHERE id = $2`, [
+    JSON.stringify(config),
+    id,
+  ]);
+  console.log(
+    `Source "${id}" is now ${value ? "federated (appears in cross-source default search)" : "isolated (only searched when explicitly named)"}.`
   );
-  console.log(`Source "${id}" is now ${value ? 'federated (appears in cross-source default search)' : 'isolated (only searched when explicitly named)'}.`);
 
   // v0.40 D19: auto-submit embed-backfill when coverage < 100%. Federation
   // flip is a moment when the user explicitly opted into seeing this source
@@ -559,43 +593,49 @@ async function runFederate(engine: BrainEngine, args: string[], value: boolean):
   // moment they wanted visibility. Best-effort — submission failure does NOT
   // fail the flip.
   try {
-    const { isFederatedV2Enabled } = await import('../core/feature-flags.ts');
+    const { isFederatedV2Enabled } = await import("../core/feature-flags.ts");
     if (!(await isFederatedV2Enabled(engine))) return;
 
-    const { loadAllSources } = await import('../core/sources-load.ts');
-    const { computeAllSourceMetrics } = await import('../core/source-health.ts');
+    const { loadAllSources } = await import("../core/sources-load.ts");
+    const { computeAllSourceMetrics } = await import("../core/source-health.ts");
     const sources = await loadAllSources(engine, { includeArchived: false });
     const metrics = await computeAllSourceMetrics(engine, sources);
     const m = metrics.find((x) => x.source_id === id);
     if (!m || m.total_chunks === 0 || m.embed_coverage_pct >= 100) return;
 
-    const { submitEmbedBackfill } = await import('../core/embed-backfill-submit.ts');
-    const sub = await submitEmbedBackfill(engine, id, { reason: 'federation_flip' });
-    if (sub.status === 'submitted') {
+    const { submitEmbedBackfill } = await import("../core/embed-backfill-submit.ts");
+    const sub = await submitEmbedBackfill(engine, id, { reason: "federation_flip" });
+    if (sub.status === "submitted") {
       const missing = m.total_chunks - m.embedded_chunks;
       console.log(`  → embed-backfill job ${sub.jobId} queued for missing ${missing} chunks.`);
-    } else if (sub.status === 'cooldown') {
-      console.log(`  → embed-backfill skipped (cooldown). Manually trigger with: gbrain jobs submit embed-backfill --params '{"sourceId":"${id}"}'`);
-    } else if (sub.status === 'spend_capped') {
-      console.log(`  → embed-backfill skipped (24h spend cap $${sub.spendCapUsd} reached for this source).`);
+    } else if (sub.status === "cooldown") {
+      console.log(
+        `  → embed-backfill skipped (cooldown). Manually trigger with: gbrain jobs submit embed-backfill --params '{"sourceId":"${id}"}'`
+      );
+    } else if (sub.status === "spend_capped") {
+      console.log(
+        `  → embed-backfill skipped (24h spend cap $${sub.spendCapUsd} reached for this source).`
+      );
     }
   } catch (err) {
     // Federation flip already succeeded; embed-backfill is a follow-up nicety.
-    console.error(`  → embed-backfill submission failed (flip succeeded): ${err instanceof Error ? err.message : String(err)}`);
+    console.error(
+      `  → embed-backfill submission failed (flip succeeded): ${err instanceof Error ? err.message : String(err)}`
+    );
   }
 }
 
 // ── v0.40 sources status (D12) ──────────────────────────────
 async function runStatus(engine: BrainEngine, args: string[]): Promise<void> {
-  const json = args.includes('--json');
-  const { loadAllSources } = await import('../core/sources-load.ts');
-  const { computeAllSourceMetrics } = await import('../core/source-health.ts');
+  const json = args.includes("--json");
+  const { loadAllSources } = await import("../core/sources-load.ts");
+  const { computeAllSourceMetrics } = await import("../core/source-health.ts");
   const sources = await loadAllSources(engine, { includeArchived: false });
   if (sources.length === 0) {
     if (json) {
       console.log(JSON.stringify({ schema_version: 1, sources: [] }, null, 2));
     } else {
-      console.log('No sources registered. Use `gbrain sources add <id> --path <path>` first.');
+      console.log("No sources registered. Use `gbrain sources add <id> --path <path>` first.");
     }
     return;
   }
@@ -609,42 +649,50 @@ async function runStatus(engine: BrainEngine, args: string[]): Promise<void> {
   }
 
   // Human-readable table: SOURCE | LAG | EMBED | BACKFILL | FAILS | QUEUE | PAGES | LAST SYNC
-  console.log('SOURCES — health');
-  console.log('────────────────');
+  console.log("SOURCES — health");
+  console.log("────────────────");
   console.log(
-    `  ${'SOURCE'.padEnd(20)}  ${'LAG'.padEnd(8)}  ${'EMBED'.padEnd(7)}  ${'BACKFILL'.padEnd(9)}  ${'FAILS'.padEnd(6)}  ${'QUEUE'.padEnd(6)}  ${'PAGES'.padStart(8)}  LAST SYNC`,
+    `  ${"SOURCE".padEnd(20)}  ${"LAG".padEnd(8)}  ${"EMBED".padEnd(7)}  ${"BACKFILL".padEnd(9)}  ${"FAILS".padEnd(6)}  ${"QUEUE".padEnd(6)}  ${"PAGES".padStart(8)}  LAST SYNC`
   );
   for (const m of metrics) {
-    const lag = m.lag_seconds === null
-      ? 'never'
-      : formatLag(m.lag_seconds);
+    const lag = m.lag_seconds === null ? "never" : formatLag(m.lag_seconds);
     const embed = `${m.embed_coverage_pct.toFixed(0)}%`;
     // v0.41.31: embed-backfill state (active beats queued beats idle) so a
     // cron operator sees deferred embedding work after `sync --all`.
-    const backfill = m.backfill_active > 0
-      ? `active(${m.backfill_active})`
-      : m.backfill_queued > 0
-        ? `queued(${m.backfill_queued})`
-        : 'idle';
+    const backfill =
+      m.backfill_active > 0
+        ? `active(${m.backfill_active})`
+        : m.backfill_queued > 0
+          ? `queued(${m.backfill_queued})`
+          : "idle";
     const fails = String(m.failed_jobs_24h);
     const queue = String(m.queue_depth);
     const pages = m.total_pages.toLocaleString();
-    const sync = m.last_sync_at ? new Date(m.last_sync_at).toISOString().slice(0, 19).replace('T', ' ') : 'never';
-    console.log(`  ${m.source_id.padEnd(20)}  ${lag.padEnd(8)}  ${embed.padEnd(7)}  ${backfill.padEnd(9)}  ${fails.padEnd(6)}  ${queue.padEnd(6)}  ${pages.padStart(8)}  ${sync}`);
+    const sync = m.last_sync_at
+      ? new Date(m.last_sync_at).toISOString().slice(0, 19).replace("T", " ")
+      : "never";
+    console.log(
+      `  ${m.source_id.padEnd(20)}  ${lag.padEnd(8)}  ${embed.padEnd(7)}  ${backfill.padEnd(9)}  ${fails.padEnd(6)}  ${queue.padEnd(6)}  ${pages.padStart(8)}  ${sync}`
+    );
   }
-  console.log('');
+  console.log("");
   for (const m of metrics) {
     const warns: string[] = [];
-    if (!m.local_path) warns.push('no local_path');
-    if (m.lag_seconds === null) warns.push(`never synced — run \`gbrain sync --source ${m.source_id}\``);
+    if (!m.local_path) warns.push("no local_path");
+    if (m.lag_seconds === null)
+      warns.push(`never synced — run \`gbrain sync --source ${m.source_id}\``);
     if (m.embed_coverage_pct < 95 && m.total_chunks > 100) {
-      warns.push(`${(100 - m.embed_coverage_pct).toFixed(1)}% un-embedded — run \`gbrain embed --stale --source ${m.source_id}\``);
+      warns.push(
+        `${(100 - m.embed_coverage_pct).toFixed(1)}% un-embedded — run \`gbrain embed --stale --source ${m.source_id}\``
+      );
     }
     if (m.failed_jobs_24h >= 3) {
-      warns.push(`${m.failed_jobs_24h} failures in 24h — check \`gbrain jobs list --status failed\``);
+      warns.push(
+        `${m.failed_jobs_24h} failures in 24h — check \`gbrain jobs list --status failed\``
+      );
     }
     if (warns.length > 0) {
-      console.log(`  ⚠ ${m.source_id}: ${warns.join('; ')}`);
+      console.log(`  ⚠ ${m.source_id}: ${warns.join("; ")}`);
     }
   }
 }
@@ -661,13 +709,17 @@ async function runWebhook(engine: BrainEngine, args: string[]): Promise<void> {
   const sub = args[0];
   const rest = args.slice(1);
   switch (sub) {
-    case 'set':    return runWebhookSet(engine, rest);
-    case 'show':   return runWebhookShow(engine, rest);
-    case 'rotate': return runWebhookRotate(engine, rest);
-    case 'clear':  return runWebhookClear(engine, rest);
+    case "set":
+      return runWebhookSet(engine, rest);
+    case "show":
+      return runWebhookShow(engine, rest);
+    case "rotate":
+      return runWebhookRotate(engine, rest);
+    case "clear":
+      return runWebhookClear(engine, rest);
     case undefined:
-    case '--help':
-    case '-h':
+    case "--help":
+    case "-h":
       console.log(`Usage: gbrain sources webhook <subcommand> <source-id> [options]
 
 Subcommands:
@@ -685,7 +737,9 @@ Subcommands:
 async function runWebhookSet(engine: BrainEngine, args: string[]): Promise<void> {
   const id = args[0];
   if (!id) {
-    console.error('Usage: gbrain sources webhook set <id> [--secret VAL] [--github-repo owner/name]');
+    console.error(
+      "Usage: gbrain sources webhook set <id> [--secret VAL] [--github-repo owner/name]"
+    );
     process.exit(2);
   }
   const src = await fetchSource(engine, id);
@@ -693,8 +747,8 @@ async function runWebhookSet(engine: BrainEngine, args: string[]): Promise<void>
     console.error(`Source "${id}" not found.`);
     process.exit(1);
   }
-  const explicitSecret = args.find((a, i) => args[i - 1] === '--secret');
-  const githubRepo = args.find((a, i) => args[i - 1] === '--github-repo');
+  const explicitSecret = args.find((a, i) => args[i - 1] === "--secret");
+  const githubRepo = args.find((a, i) => args[i - 1] === "--github-repo");
   if (!githubRepo) {
     console.error('--github-repo owner/name is required (e.g. "Garry-s-List/zion-brain")');
     process.exit(2);
@@ -704,34 +758,36 @@ async function runWebhookSet(engine: BrainEngine, args: string[]): Promise<void>
     process.exit(2);
   }
 
-  const { randomBytes } = await import('node:crypto');
-  const secret = explicitSecret ?? randomBytes(32).toString('hex');
+  const { randomBytes } = await import("node:crypto");
+  const secret = explicitSecret ?? randomBytes(32).toString("hex");
   const cfg = parseConfig(src.config);
   cfg.webhook_secret = secret;
   cfg.github_repo = githubRepo;
-  await engine.executeRaw(
-    `UPDATE sources SET config = $1::jsonb WHERE id = $2`,
-    [JSON.stringify(cfg), id],
-  );
+  await engine.executeRaw(`UPDATE sources SET config = $1::jsonb WHERE id = $2`, [
+    JSON.stringify(cfg),
+    id,
+  ]);
 
   console.log(`Webhook configured for source "${id}":`);
   console.log(`  github_repo:    ${githubRepo}`);
   console.log(`  webhook_secret: ${secret}`);
-  console.log('');
-  console.log('--- Paste this into GitHub repo settings → Webhooks → Add webhook ---');
-  console.log('  Payload URL:  <your gbrain serve --http URL>/webhooks/github');
-  console.log('  Content type: application/json');
+  console.log("");
+  console.log("--- Paste this into GitHub repo settings → Webhooks → Add webhook ---");
+  console.log("  Payload URL:  <your gbrain serve --http URL>/webhooks/github");
+  console.log("  Content type: application/json");
   console.log(`  Secret:       ${secret}`);
-  console.log('  Events:       Just the push event');
-  console.log('  Active:       checked');
-  console.log('');
-  console.log('⚠ This secret is shown ONCE. Save it now; subsequent `gbrain sources webhook show` will NOT display it.');
+  console.log("  Events:       Just the push event");
+  console.log("  Active:       checked");
+  console.log("");
+  console.log(
+    "⚠ This secret is shown ONCE. Save it now; subsequent `gbrain sources webhook show` will NOT display it."
+  );
 }
 
 async function runWebhookShow(engine: BrainEngine, args: string[]): Promise<void> {
   const id = args[0];
   if (!id) {
-    console.error('Usage: gbrain sources webhook show <id>');
+    console.error("Usage: gbrain sources webhook show <id>");
     process.exit(2);
   }
   const src = await fetchSource(engine, id);
@@ -740,20 +796,25 @@ async function runWebhookShow(engine: BrainEngine, args: string[]): Promise<void
     process.exit(1);
   }
   const cfg = parseConfig(src.config);
-  const githubRepo = typeof cfg.github_repo === 'string' ? cfg.github_repo : '(not set)';
-  const secretSet = typeof cfg.webhook_secret === 'string' && cfg.webhook_secret.length > 0;
-  const trackedBranch = typeof cfg.tracked_branch === 'string' ? cfg.tracked_branch : '(auto-detected on next sync, default main)';
+  const githubRepo = typeof cfg.github_repo === "string" ? cfg.github_repo : "(not set)";
+  const secretSet = typeof cfg.webhook_secret === "string" && cfg.webhook_secret.length > 0;
+  const trackedBranch =
+    typeof cfg.tracked_branch === "string"
+      ? cfg.tracked_branch
+      : "(auto-detected on next sync, default main)";
 
   console.log(`Webhook configuration for source "${id}":`);
   console.log(`  github_repo:    ${githubRepo}`);
-  console.log(`  webhook_secret: ${secretSet ? '<set — use `webhook rotate` to reveal a new one>' : '(not set)'}`);
+  console.log(
+    `  webhook_secret: ${secretSet ? "<set — use `webhook rotate` to reveal a new one>" : "(not set)"}`
+  );
   console.log(`  tracked_branch: ${trackedBranch}`);
 }
 
 async function runWebhookRotate(engine: BrainEngine, args: string[]): Promise<void> {
   const id = args[0];
   if (!id) {
-    console.error('Usage: gbrain sources webhook rotate <id>');
+    console.error("Usage: gbrain sources webhook rotate <id>");
     process.exit(2);
   }
   const src = await fetchSource(engine, id);
@@ -761,24 +822,26 @@ async function runWebhookRotate(engine: BrainEngine, args: string[]): Promise<vo
     console.error(`Source "${id}" not found.`);
     process.exit(1);
   }
-  const { randomBytes } = await import('node:crypto');
-  const secret = randomBytes(32).toString('hex');
+  const { randomBytes } = await import("node:crypto");
+  const secret = randomBytes(32).toString("hex");
   const cfg = parseConfig(src.config);
   cfg.webhook_secret = secret;
-  await engine.executeRaw(
-    `UPDATE sources SET config = $1::jsonb WHERE id = $2`,
-    [JSON.stringify(cfg), id],
-  );
+  await engine.executeRaw(`UPDATE sources SET config = $1::jsonb WHERE id = $2`, [
+    JSON.stringify(cfg),
+    id,
+  ]);
   console.log(`New webhook secret for source "${id}":`);
   console.log(`  ${secret}`);
-  console.log('');
-  console.log('⚠ Update the GitHub webhook config to use this new secret. The old one is invalidated immediately.');
+  console.log("");
+  console.log(
+    "⚠ Update the GitHub webhook config to use this new secret. The old one is invalidated immediately."
+  );
 }
 
 async function runWebhookClear(engine: BrainEngine, args: string[]): Promise<void> {
   const id = args[0];
   if (!id) {
-    console.error('Usage: gbrain sources webhook clear <id>');
+    console.error("Usage: gbrain sources webhook clear <id>");
     process.exit(2);
   }
   const src = await fetchSource(engine, id);
@@ -789,10 +852,10 @@ async function runWebhookClear(engine: BrainEngine, args: string[]): Promise<voi
   const cfg = parseConfig(src.config);
   delete cfg.webhook_secret;
   delete cfg.github_repo;
-  await engine.executeRaw(
-    `UPDATE sources SET config = $1::jsonb WHERE id = $2`,
-    [JSON.stringify(cfg), id],
-  );
+  await engine.executeRaw(`UPDATE sources SET config = $1::jsonb WHERE id = $2`, [
+    JSON.stringify(cfg),
+    id,
+  ]);
   console.log(`Webhook configuration cleared for source "${id}".`);
 }
 
@@ -800,7 +863,7 @@ async function runWebhookClear(engine: BrainEngine, args: string[]): Promise<voi
 async function runTrackedBranch(engine: BrainEngine, args: string[]): Promise<void> {
   const id = args[0];
   if (!id) {
-    console.error('Usage: gbrain sources tracked-branch <id> [--set <branch>] [--detect]');
+    console.error("Usage: gbrain sources tracked-branch <id> [--set <branch>] [--detect]");
     process.exit(2);
   }
   const src = await fetchSource(engine, id);
@@ -808,16 +871,16 @@ async function runTrackedBranch(engine: BrainEngine, args: string[]): Promise<vo
     console.error(`Source "${id}" not found.`);
     process.exit(1);
   }
-  const setArg = args.find((a, i) => args[i - 1] === '--set');
-  const detect = args.includes('--detect');
+  const setArg = args.find((a, i) => args[i - 1] === "--set");
+  const detect = args.includes("--detect");
   const cfg = parseConfig(src.config);
 
   if (setArg) {
     cfg.tracked_branch = setArg;
-    await engine.executeRaw(
-      `UPDATE sources SET config = $1::jsonb WHERE id = $2`,
-      [JSON.stringify(cfg), id],
-    );
+    await engine.executeRaw(`UPDATE sources SET config = $1::jsonb WHERE id = $2`, [
+      JSON.stringify(cfg),
+      id,
+    ]);
     console.log(`Tracked branch for source "${id}" set to "${setArg}".`);
     return;
   }
@@ -827,14 +890,20 @@ async function runTrackedBranch(engine: BrainEngine, args: string[]): Promise<vo
       process.exit(1);
     }
     try {
-      const { execFileSync } = await import('node:child_process');
-      const branch = execFileSync('git', ['-C', src.local_path, 'rev-parse', '--abbrev-ref', 'HEAD'], { encoding: 'utf8' }).trim();
+      const { execFileSync } = await import("node:child_process");
+      const branch = execFileSync(
+        "git",
+        ["-C", src.local_path, "rev-parse", "--abbrev-ref", "HEAD"],
+        { encoding: "utf8" }
+      ).trim();
       cfg.tracked_branch = branch;
-      await engine.executeRaw(
-        `UPDATE sources SET config = $1::jsonb WHERE id = $2`,
-        [JSON.stringify(cfg), id],
+      await engine.executeRaw(`UPDATE sources SET config = $1::jsonb WHERE id = $2`, [
+        JSON.stringify(cfg),
+        id,
+      ]);
+      console.log(
+        `Detected branch "${branch}" for source "${id}"; persisted to config.tracked_branch.`
       );
-      console.log(`Detected branch "${branch}" for source "${id}"; persisted to config.tracked_branch.`);
     } catch (e) {
       console.error(`git rev-parse failed: ${e instanceof Error ? e.message : String(e)}`);
       process.exit(1);
@@ -843,7 +912,8 @@ async function runTrackedBranch(engine: BrainEngine, args: string[]): Promise<vo
   }
 
   // Read mode: just print
-  const tracked = typeof cfg.tracked_branch === 'string' ? cfg.tracked_branch : '(unset — defaults to main)';
+  const tracked =
+    typeof cfg.tracked_branch === "string" ? cfg.tracked_branch : "(unset — defaults to main)";
   console.log(`Source "${id}" tracked_branch: ${tracked}`);
 }
 
@@ -857,10 +927,10 @@ async function runTrackedBranch(engine: BrainEngine, args: string[]): Promise<vo
 // flag WOULD resolve to without actually running anything.
 
 async function runCurrent(engine: BrainEngine, args: string[]): Promise<void> {
-  const json = args.includes('--json');
+  const json = args.includes("--json");
   let explicit: string | null = null;
   for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--source' && i + 1 < args.length) {
+    if (args[i] === "--source" && i + 1 < args.length) {
       explicit = args[++i] || null;
     }
   }
@@ -879,17 +949,23 @@ async function runCurrent(engine: BrainEngine, args: string[]): Promise<void> {
   }
 
   if (json) {
-    console.log(JSON.stringify({
-      source_id: result.source_id,
-      tier: result.tier,
-      detail: result.detail ?? null,
-      resolver_chain: SOURCE_TIER_NAMES,
-    }, null, 2));
+    console.log(
+      JSON.stringify(
+        {
+          source_id: result.source_id,
+          tier: result.tier,
+          detail: result.detail ?? null,
+          resolver_chain: SOURCE_TIER_NAMES,
+        },
+        null,
+        2
+      )
+    );
     return;
   }
 
   console.log(`source: ${result.source_id}`);
-  console.log(`  tier: ${result.tier}${result.detail ? ` (${result.detail})` : ''}`);
+  console.log(`  tier: ${result.tier}${result.detail ? ` (${result.detail})` : ""}`);
 }
 
 /**
@@ -911,19 +987,21 @@ async function runCurrent(engine: BrainEngine, args: string[]): Promise<void> {
  * skipped at descent — same walker semantics as the actual sync path.
  */
 async function runAudit(engine: BrainEngine, args: string[]): Promise<void> {
-  const sourceId = args.find((a) => !a.startsWith('--'));
-  const json = args.includes('--json');
-  const includeWarns = args.includes('--include-warns');
+  const sourceId = args.find((a) => !a.startsWith("--"));
+  const json = args.includes("--json");
+  const includeWarns = args.includes("--include-warns");
 
   if (!sourceId) {
-    console.error('Usage: gbrain sources audit <source-id> [--json] [--include-warns]');
+    console.error("Usage: gbrain sources audit <source-id> [--json] [--include-warns]");
     process.exit(2);
   }
 
-  const { fetchSource } = await import('../core/sources-load.ts');
+  const { fetchSource } = await import("../core/sources-load.ts");
   const src = await fetchSource(engine, sourceId);
   if (!src) {
-    console.error(`Source not found: ${sourceId} (run \`gbrain sources list\` to see registered sources)`);
+    console.error(
+      `Source not found: ${sourceId} (run \`gbrain sources list\` to see registered sources)`
+    );
     process.exit(1);
   }
   if (!src.local_path) {
@@ -933,13 +1011,12 @@ async function runAudit(engine: BrainEngine, args: string[]): Promise<void> {
 
   // Lazy-load FS + walker bits so the command stays import-cheap when
   // not invoked (every subcommand pays the import cost on dispatch).
-  const { readFileSync, readdirSync, lstatSync, existsSync: _exists } =
-    await import('fs');
-  const { join: pathJoin } = await import('path');
-  const { pruneDir } = await import('../core/sync.ts');
-  const { assessContentSanity } = await import('../core/content-sanity.ts');
-  const { loadOperatorLiterals } = await import('../core/content-sanity-literals.ts');
-  const { parseMarkdown } = await import('../core/markdown.ts');
+  const { readFileSync, readdirSync, lstatSync, existsSync: _exists } = await import("fs");
+  const { join: pathJoin } = await import("path");
+  const { pruneDir } = await import("../core/sync.ts");
+  const { assessContentSanity } = await import("../core/content-sanity.ts");
+  const { loadOperatorLiterals } = await import("../core/content-sanity-literals.ts");
+  const { parseMarkdown } = await import("../core/markdown.ts");
 
   if (!_exists(src.local_path)) {
     console.error(`local_path does not exist on disk: ${src.local_path}`);
@@ -967,7 +1044,7 @@ async function runAudit(engine: BrainEngine, args: string[]): Promise<void> {
       if (stat.isDirectory()) {
         if (pruneDir(entry, dir)) continue;
         walk(full);
-      } else if (entry.endsWith('.md')) {
+      } else if (entry.endsWith(".md")) {
         files.push(full);
       }
     }
@@ -979,11 +1056,11 @@ async function runAudit(engine: BrainEngine, args: string[]): Promise<void> {
   // disposition the junk bucket is "would-quarantine" (hidden, page lands),
   // NOT "would-block". Read the configured disposition so the dry-run report
   // tells the truth about what would happen.
-  const { loadConfig: _loadCfgAudit } = await import('../core/config.ts');
+  const { loadConfig: _loadCfgAudit } = await import("../core/config.ts");
   const _csAudit = _loadCfgAudit()?.content_sanity ?? {};
-  const junkDisposition: 'quarantine' | 'reject' =
-    _csAudit.junk_disposition === 'reject' ? 'reject' : 'quarantine';
-  const junkLabel = junkDisposition === 'reject' ? 'would-reject' : 'would-quarantine';
+  const junkDisposition: "quarantine" | "reject" =
+    _csAudit.junk_disposition === "reject" ? "reject" : "quarantine";
+  const junkLabel = junkDisposition === "reject" ? "would-reject" : "would-quarantine";
   const sizes: number[] = [];
   const wouldHardBlock: Array<{ file: string; matched: string[]; bytes: number }> = [];
   const wouldSoftBlock: Array<{ file: string; bytes: number }> = [];
@@ -995,7 +1072,7 @@ async function runAudit(engine: BrainEngine, args: string[]): Promise<void> {
   // frontmatter.type and estimates per-page segment count from body
   // bytes. Estimated per-segment Sonnet cost is a rough heuristic
   // (~2000 in + 500 out tokens at $3/MTok in + $15/MTok out ≈ $0.013).
-  const FACTS_BACKFILL_ALLOWED = ['conversation', 'meeting', 'slack', 'email'];
+  const FACTS_BACKFILL_ALLOWED = ["conversation", "meeting", "slack", "email"];
   const FACTS_BACKFILL_CHARS_PER_SEGMENT = 6500; // matches SEGMENT_TEXT_CHAR_LIMIT
   const FACTS_BACKFILL_USD_PER_SEGMENT = 0.013;
   let factsBackfillPages = 0;
@@ -1004,7 +1081,7 @@ async function runAudit(engine: BrainEngine, args: string[]): Promise<void> {
   for (const file of files) {
     let content: string;
     try {
-      content = readFileSync(file, 'utf-8');
+      content = readFileSync(file, "utf-8");
     } catch {
       continue;
     }
@@ -1016,7 +1093,7 @@ async function runAudit(engine: BrainEngine, args: string[]): Promise<void> {
     }
     const sanity = assessContentSanity({
       compiled_truth: parsed.compiled_truth,
-      timeline: parsed.timeline ?? '',
+      timeline: parsed.timeline ?? "",
       title: parsed.title,
       max_markup_ratio: _csAudit.max_markup_ratio,
       prose_check_enabled: _csAudit.prose_check_enabled,
@@ -1030,11 +1107,11 @@ async function runAudit(engine: BrainEngine, args: string[]): Promise<void> {
         patternHits[name] = (patternHits[name] ?? 0) + 1;
       }
       wouldHardBlock.push({ file, matched, bytes: sanity.bytes });
-    } else if (sanity.shouldFlag && sanity.flag_reason === 'markup_heavy') {
-      wouldFlag.push({ file, reason: 'markup_heavy', bytes: sanity.bytes });
+    } else if (sanity.shouldFlag && sanity.flag_reason === "markup_heavy") {
+      wouldFlag.push({ file, reason: "markup_heavy", bytes: sanity.bytes });
     } else if (sanity.shouldSkipEmbed) {
       wouldSoftBlock.push({ file, bytes: sanity.bytes });
-    } else if (sanity.reasons.includes('oversize_warn')) {
+    } else if (sanity.reasons.includes("oversize_warn")) {
       wouldWarn.push({ file, bytes: sanity.bytes });
     }
     // Facts-backfill estimator: counts pages matching allowed types.
@@ -1044,7 +1121,7 @@ async function runAudit(engine: BrainEngine, args: string[]): Promise<void> {
       const totalBytes = sanity.bytes;
       const segmentsEstimate = Math.max(
         1,
-        Math.ceil(totalBytes / FACTS_BACKFILL_CHARS_PER_SEGMENT),
+        Math.ceil(totalBytes / FACTS_BACKFILL_CHARS_PER_SEGMENT)
       );
       factsBackfillSegments += segmentsEstimate;
     }
@@ -1063,34 +1140,42 @@ async function runAudit(engine: BrainEngine, args: string[]): Promise<void> {
     sizes.length === 0 ? 0 : sizes[Math.min(sizes.length - 1, Math.floor(q * sizes.length))];
 
   if (json) {
-    console.log(JSON.stringify({
-      schema_version: 1,
-      source_id: sourceId,
-      local_path: src.local_path,
-      total_files: files.length,
-      distribution: { p50: p(0.5), p99: p(0.99), max: sizes[sizes.length - 1] ?? 0 },
-      junk_disposition: junkDisposition,
-      // `hard_block_count` retained as the junk bucket name for JSON
-      // back-compat; `junk_disposition` tells consumers whether that's a
-      // hide (quarantine) or a throw (reject).
-      hard_block_count: wouldHardBlock.length,
-      flag_count: wouldFlag.length,
-      soft_block_count: wouldSoftBlock.length,
-      warn_count: wouldWarn.length,
-      pattern_hits: patternHits,
-      facts_backfill_estimate: factsBackfillEstimate,
-      hard_blocks: wouldHardBlock.slice(0, 20),
-      flags: wouldFlag.slice(0, 20),
-      soft_blocks: wouldSoftBlock.slice(0, 20),
-      ...(includeWarns ? { warns: wouldWarn.slice(0, 20) } : {}),
-    }, null, 2));
+    console.log(
+      JSON.stringify(
+        {
+          schema_version: 1,
+          source_id: sourceId,
+          local_path: src.local_path,
+          total_files: files.length,
+          distribution: { p50: p(0.5), p99: p(0.99), max: sizes[sizes.length - 1] ?? 0 },
+          junk_disposition: junkDisposition,
+          // `hard_block_count` retained as the junk bucket name for JSON
+          // back-compat; `junk_disposition` tells consumers whether that's a
+          // hide (quarantine) or a throw (reject).
+          hard_block_count: wouldHardBlock.length,
+          flag_count: wouldFlag.length,
+          soft_block_count: wouldSoftBlock.length,
+          warn_count: wouldWarn.length,
+          pattern_hits: patternHits,
+          facts_backfill_estimate: factsBackfillEstimate,
+          hard_blocks: wouldHardBlock.slice(0, 20),
+          flags: wouldFlag.slice(0, 20),
+          soft_blocks: wouldSoftBlock.slice(0, 20),
+          ...(includeWarns ? { warns: wouldWarn.slice(0, 20) } : {}),
+        },
+        null,
+        2
+      )
+    );
     return;
   }
 
   console.log(`Source: ${sourceId} (${src.local_path})`);
   console.log(`Files scanned: ${files.length} markdown files`);
   if (sizes.length > 0) {
-    console.log(`Size distribution: p50=${p(0.5)} bytes, p99=${p(0.99)} bytes, max=${sizes[sizes.length - 1]} bytes`);
+    console.log(
+      `Size distribution: p50=${p(0.5)} bytes, p99=${p(0.99)} bytes, max=${sizes[sizes.length - 1]} bytes`
+    );
   }
   console.log(`Junk (${junkLabel}): ${wouldHardBlock.length}`);
   console.log(`Would-flag (markup-heavy, stays searchable): ${wouldFlag.length}`);
@@ -1100,23 +1185,23 @@ async function runAudit(engine: BrainEngine, args: string[]): Promise<void> {
   }
   if (Object.keys(patternHits).length > 0) {
     const sorted = Object.entries(patternHits).sort((a, b) => b[1] - a[1]);
-    console.log(`Junk-pattern hits: ${sorted.map(([n, c]) => `${n} ×${c}`).join(', ')}`);
+    console.log(`Junk-pattern hits: ${sorted.map(([n, c]) => `${n} ×${c}`).join(", ")}`);
   }
   if (factsBackfillEstimate.pages > 0) {
     console.log(
       `Facts backfill estimate: ${factsBackfillEstimate.pages} eligible page(s), ` +
-      `~${factsBackfillEstimate.est_segments} segments, ~$${factsBackfillEstimate.est_cost_usd}. ` +
-      `Run: gbrain extract-conversation-facts --source-id ${sourceId} --max-cost-usd ${Math.max(factsBackfillEstimate.est_cost_usd, 1)}`,
+        `~${factsBackfillEstimate.est_segments} segments, ~$${factsBackfillEstimate.est_cost_usd}. ` +
+        `Run: gbrain extract-conversation-facts --source-id ${sourceId} --max-cost-usd ${Math.max(factsBackfillEstimate.est_cost_usd, 1)}`
     );
   }
   if (wouldHardBlock.length > 0) {
     console.log(`\nTop junk (${junkLabel}):`);
     for (const h of wouldHardBlock.slice(0, 10)) {
-      console.log(`  ${h.file} [${h.matched.join(', ')}] (${h.bytes}b)`);
+      console.log(`  ${h.file} [${h.matched.join(", ")}] (${h.bytes}b)`);
     }
   }
   if (wouldSoftBlock.length > 0) {
-    console.log('\nTop soft-blocks (would write but skip embedding):');
+    console.log("\nTop soft-blocks (would write but skip embedding):");
     for (const s of wouldSoftBlock.slice(0, 10)) {
       console.log(`  ${s.file} (${s.bytes}b)`);
     }
@@ -1139,35 +1224,56 @@ export async function runSources(engine: BrainEngine, args: string[]): Promise<v
   const rest = args.slice(1);
 
   switch (sub) {
-    case 'add':        return runAdd(engine, rest);
-    case 'list':       return runList(engine, rest);
-    case 'remove':     return runRemove(engine, rest);
-    case 'rename':     return runRename(engine, rest);
-    case 'default':    return runDefault(engine, rest);
-    case 'attach':     runAttach(rest); return;
-    case 'detach':     runDetach(); return;
-    case 'federate':   return runFederate(engine, rest, true);
-    case 'unfederate': return runFederate(engine, rest, false);
-    case 'archive':    return runArchive(engine, rest);
-    case 'restore':    return runRestore(engine, rest);
-    case 'purge':      return runPurge(engine, rest);
-    case 'archived':   return runListArchived(engine, rest);
-    case 'current':    return runCurrent(engine, rest);
+    case "add":
+      return runAdd(engine, rest);
+    case "list":
+      return runList(engine, rest);
+    case "remove":
+      return runRemove(engine, rest);
+    case "rename":
+      return runRename(engine, rest);
+    case "default":
+      return runDefault(engine, rest);
+    case "attach":
+      runAttach(rest);
+      return;
+    case "detach":
+      runDetach();
+      return;
+    case "federate":
+      return runFederate(engine, rest, true);
+    case "unfederate":
+      return runFederate(engine, rest, false);
+    case "archive":
+      return runArchive(engine, rest);
+    case "restore":
+      return runRestore(engine, rest);
+    case "purge":
+      return runPurge(engine, rest);
+    case "archived":
+      return runListArchived(engine, rest);
+    case "current":
+      return runCurrent(engine, rest);
     // v0.40.5.0 Federated Sync v2 (master) + v0.40.6.0 status dashboard
     // The status function lives at the line-582 declaration (master's
     // source-health.ts-backed version). My duplicate runStatus (line ~895
     // in the post-merge file, the buildSyncStatusReport-backed one) is
     // removed below since master's federation_health metrics dashboard is
     // a superset.
-    case 'status':     return runStatus(engine, rest);
-    case 'webhook':    return runWebhook(engine, rest);
-    case 'tracked-branch': return runTrackedBranch(engine, rest);
+    case "status":
+      return runStatus(engine, rest);
+    case "webhook":
+      return runWebhook(engine, rest);
+    case "tracked-branch":
+      return runTrackedBranch(engine, rest);
     // v0.40.3.0 contextual retrieval (from master)
-    case 'set-cr-mode': return runSetCrMode(engine, rest);
-    case 'audit':      return runAudit(engine, rest);
+    case "set-cr-mode":
+      return runSetCrMode(engine, rest);
+    case "audit":
+      return runAudit(engine, rest);
     case undefined:
-    case '--help':
-    case '-h':
+    case "--help":
+    case "-h":
       printHelp();
       return;
     default:

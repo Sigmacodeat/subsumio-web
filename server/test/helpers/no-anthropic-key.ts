@@ -19,14 +19,14 @@
  * before the gateway's model cache, so per-call isolation is sufficient — no
  * module-level key state survives.
  */
-import { mkdtempSync, rmSync } from 'fs';
-import { tmpdir } from 'os';
-import { join } from 'path';
+import { mkdtempSync, rmSync } from "fs";
+import { tmpdir } from "os";
+import { join } from "path";
 
 export async function withoutAnthropicKey<T>(fn: () => Promise<T>): Promise<T> {
   const origKey = process.env.ANTHROPIC_API_KEY;
   const origHome = process.env.GBRAIN_HOME;
-  const tmp = mkdtempSync(join(tmpdir(), 'gbrain-nokey-'));
+  const tmp = mkdtempSync(join(tmpdir(), "gbrain-nokey-"));
   delete process.env.ANTHROPIC_API_KEY;
   process.env.GBRAIN_HOME = tmp; // configDir() -> $GBRAIN_HOME/.gbrain (absent -> no config key)
   try {
@@ -36,6 +36,10 @@ export async function withoutAnthropicKey<T>(fn: () => Promise<T>): Promise<T> {
     else delete process.env.ANTHROPIC_API_KEY;
     if (origHome !== undefined) process.env.GBRAIN_HOME = origHome;
     else delete process.env.GBRAIN_HOME;
-    try { rmSync(tmp, { recursive: true, force: true }); } catch { /* best-effort */ }
+    try {
+      rmSync(tmp, { recursive: true, force: true });
+    } catch {
+      /* best-effort */
+    }
   }
 }

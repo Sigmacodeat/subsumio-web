@@ -42,11 +42,11 @@
 // pre-v0.38 {fact|take|bet|hunch} seed lives in `gbrain-base.yaml`.
 export type TakeKind = string;
 
-export type TakeQuality = 'correct' | 'incorrect' | 'partial' | 'unresolvable';
+export type TakeQuality = "correct" | "incorrect" | "partial" | "unresolvable";
 
 export interface ParsedTake {
   rowNum: number;
-  claim: string;        // strikethrough markers stripped; inner text only
+  claim: string; // strikethrough markers stripped; inner text only
   kind: TakeKind;
   /**
    * Who HOLDS this belief — the person asserting/endorsing it.
@@ -76,11 +76,11 @@ export interface ParsedTake {
    *   - Founder describing company → people/founder, NOT companies/slug
    */
   holder: string;
-  weight: number;       // 0..1 (raw — may be out of range; engine clamps). Prefer 0.05 increments.
-  sinceDate?: string;   // ISO 'YYYY-MM-DD' or 'YYYY-MM' (caller's choice)
+  weight: number; // 0..1 (raw — may be out of range; engine clamps). Prefer 0.05 increments.
+  sinceDate?: string; // ISO 'YYYY-MM-DD' or 'YYYY-MM' (caller's choice)
   untilDate?: string;
   source?: string;
-  active: boolean;      // false when claim was wrapped in ~~ ~~
+  active: boolean; // false when claim was wrapped in ~~ ~~
   // v0.30.0 (Slice A1) resolution fields. Optional + always undefined on
   // unresolved rows. The renderer emits the resolved/quality/evidence/value/
   // unit/by columns ONLY when at least one row on the page has resolvedQuality
@@ -88,13 +88,13 @@ export interface ParsedTake {
   // Round-trip preservation through cmdUpdate/cmdSupersede is the codex F3
   // safety net — without it, every update after a resolve silently deletes
   // the resolution data on the next render.
-  resolvedAt?: string;       // ISO timestamp 'YYYY-MM-DD' or full ISO
+  resolvedAt?: string; // ISO timestamp 'YYYY-MM-DD' or full ISO
   resolvedQuality?: TakeQuality;
   resolvedOutcome?: boolean; // back-compat boolean; derivable from quality
   resolvedEvidence?: string; // human note (alias for resolved_source)
   resolvedValue?: number;
   resolvedUnit?: string;
-  resolvedBy?: string;       // slug or 'garry'
+  resolvedBy?: string; // slug or 'garry'
 }
 
 export interface ParseResult {
@@ -103,8 +103,8 @@ export interface ParseResult {
 }
 
 // HTML-comment fence markers — verbatim per spec.
-export const TAKES_FENCE_BEGIN = '<!--- gbrain:takes:begin -->';
-export const TAKES_FENCE_END   = '<!--- gbrain:takes:end -->';
+export const TAKES_FENCE_BEGIN = "<!--- gbrain:takes:begin -->";
+export const TAKES_FENCE_END = "<!--- gbrain:takes:end -->";
 
 /**
  * Holder grammar (v0.32 — EXP-4). The contract documented on ParsedTake.holder
@@ -131,9 +131,9 @@ export const TAKES_FENCE_END   = '<!--- gbrain:takes:end -->';
  * The legacy bare-slug form is reserved for v0.33 promotion to error;
  * v0.32 emits warnings only.
  */
-import { SLUG_SEGMENT_PATTERN } from './sync.ts';
+import { SLUG_SEGMENT_PATTERN } from "./sync.ts";
 export const HOLDER_REGEX = new RegExp(
-  `^(?:world|brain|(?:people|companies)/${SLUG_SEGMENT_PATTERN.source}|${SLUG_SEGMENT_PATTERN.source})$`,
+  `^(?:world|brain|(?:people|companies)/${SLUG_SEGMENT_PATTERN.source}|${SLUG_SEGMENT_PATTERN.source})$`
 );
 
 /**
@@ -147,14 +147,26 @@ export function isValidHolder(holder: string): boolean {
   return HOLDER_REGEX.test(holder);
 }
 
-const KIND_VALUES: ReadonlySet<string> = new Set(['fact', 'take', 'bet', 'hunch']);
-const QUALITY_VALUES: ReadonlySet<string> = new Set(['correct', 'incorrect', 'partial', 'unresolvable']);
+const KIND_VALUES: ReadonlySet<string> = new Set(["fact", "take", "bet", "hunch"]);
+const QUALITY_VALUES: ReadonlySet<string> = new Set([
+  "correct",
+  "incorrect",
+  "partial",
+  "unresolvable",
+]);
 
 // v0.30.0: header tokens that mark a v0.30-shape fence. Presence of `quality`
 // (or any other resolution column) widens the parser to read 7+ extra cells
 // per row. Missing tokens → v0.28 7-column shape, parsed exactly as before.
-const RESOLUTION_HEADER_TOKENS = ['resolved', 'quality', 'evidence', 'value', 'unit', 'by'] as const;
-type ResolutionColumn = typeof RESOLUTION_HEADER_TOKENS[number];
+const RESOLUTION_HEADER_TOKENS = [
+  "resolved",
+  "quality",
+  "evidence",
+  "value",
+  "unit",
+  "by",
+] as const;
+type ResolutionColumn = (typeof RESOLUTION_HEADER_TOKENS)[number];
 
 function parseQualityCell(raw: string): TakeQuality | undefined {
   const trimmed = raw.trim().toLowerCase();
@@ -188,9 +200,10 @@ function parseFloatCell(raw: string): number | undefined {
  * `undefined` and `null` inputs return 0.5 with clamped=false (the default
  * weight when a fence row omits the column).
  */
-export function normalizeWeightForStorage(
-  raw: number | null | undefined,
-): { weight: number; clamped: boolean } {
+export function normalizeWeightForStorage(raw: number | null | undefined): {
+  weight: number;
+  clamped: boolean;
+} {
   let w = raw ?? 0.5;
   let clamped = false;
   if (!Number.isFinite(w)) {
@@ -218,7 +231,7 @@ import {
   isSeparatorRow,
   stripStrikethrough,
   escapeFenceCell as safeFenceCell,
-} from './fence-shared.ts';
+} from "./fence-shared.ts";
 
 function parseSinceCell(raw: string): { since?: string; until?: string } {
   const trimmed = raw.trim();
@@ -237,21 +250,21 @@ function parseSinceCell(raw: string): { since?: string; until?: string } {
  */
 export function parseTakesFence(body: string): ParseResult {
   const beginIdx = body.indexOf(TAKES_FENCE_BEGIN);
-  const endIdx   = body.indexOf(TAKES_FENCE_END, beginIdx + TAKES_FENCE_BEGIN.length);
+  const endIdx = body.indexOf(TAKES_FENCE_END, beginIdx + TAKES_FENCE_BEGIN.length);
   const warnings: string[] = [];
 
   if (beginIdx === -1 && endIdx === -1) return { takes: [], warnings };
   if (beginIdx === -1 || endIdx === -1) {
-    warnings.push('TAKES_FENCE_UNBALANCED: missing begin or end marker');
+    warnings.push("TAKES_FENCE_UNBALANCED: missing begin or end marker");
     return { takes: [], warnings };
   }
   if (endIdx < beginIdx) {
-    warnings.push('TAKES_FENCE_UNBALANCED: end marker before begin');
+    warnings.push("TAKES_FENCE_UNBALANCED: end marker before begin");
     return { takes: [], warnings };
   }
 
   const inner = body.slice(beginIdx + TAKES_FENCE_BEGIN.length, endIdx);
-  const lines = inner.split('\n');
+  const lines = inner.split("\n");
   const takes: ParsedTake[] = [];
   let sawHeader = false;
   // Map from resolution column name → cell index in the row. Empty when the
@@ -269,8 +282,8 @@ export function parseTakesFence(body: string): ParseResult {
     // (v0.28 7-column shape) OR with extra `| resolved | quality | evidence
     // | value | unit | by |` columns appended (v0.30 13-column shape).
     if (!sawHeader) {
-      const lower = cells.map(c => c.toLowerCase());
-      if (lower.includes('claim') && lower.includes('kind')) {
+      const lower = cells.map((c) => c.toLowerCase());
+      if (lower.includes("claim") && lower.includes("kind")) {
         sawHeader = true;
         // Detect v0.30 resolution columns. Columns are positional, but tolerate
         // any subset (forward-compat: future schemas might add more).
@@ -294,7 +307,7 @@ export function parseTakesFence(body: string): ParseResult {
       continue;
     }
 
-    const [rowNumStr, claimRaw, kindRaw, holderRaw, weightRaw, sinceRaw, sourceRaw = ''] = cells;
+    const [rowNumStr, claimRaw, kindRaw, holderRaw, weightRaw, sinceRaw, sourceRaw = ""] = cells;
     const rowNum = parseInt(rowNumStr, 10);
     if (!Number.isFinite(rowNum) || rowNum <= 0) {
       warnings.push(`TAKES_TABLE_MALFORMED: invalid row_num "${rowNumStr}"`);
@@ -308,7 +321,9 @@ export function parseTakesFence(body: string): ParseResult {
 
     const kind = kindRaw.trim().toLowerCase();
     if (!KIND_VALUES.has(kind)) {
-      warnings.push(`TAKES_TABLE_MALFORMED: unknown kind "${kindRaw}" (expected fact|take|bet|hunch)`);
+      warnings.push(
+        `TAKES_TABLE_MALFORMED: unknown kind "${kindRaw}" (expected fact|take|bet|hunch)`
+      );
       continue;
     }
 
@@ -320,7 +335,7 @@ export function parseTakesFence(body: string): ParseResult {
     const holderTrimmed = holderRaw.trim();
     if (!isValidHolder(holderTrimmed)) {
       warnings.push(
-        `TAKES_HOLDER_INVALID: "${holderTrimmed}" in row ${rowNumStr} (expected: world | brain | people/<slug> | companies/<slug>)`,
+        `TAKES_HOLDER_INVALID: "${holderTrimmed}" in row ${rowNumStr} (expected: world | brain | people/<slug> | companies/<slug>)`
       );
       // Fall through — row is still parsed and stored.
     }
@@ -341,18 +356,17 @@ export function parseTakesFence(body: string): ParseResult {
       if (idx === undefined) return undefined;
       return idx < cells.length ? cells[idx] : undefined;
     };
-    const resolvedAt        = cellAt('resolved');
-    const qualityRaw        = cellAt('quality');
-    const evidenceRaw       = cellAt('evidence');
-    const valueRaw          = cellAt('value');
-    const unitRaw           = cellAt('unit');
-    const byRaw             = cellAt('by');
-    const resolvedQuality   = qualityRaw !== undefined ? parseQualityCell(qualityRaw) : undefined;
+    const resolvedAt = cellAt("resolved");
+    const qualityRaw = cellAt("quality");
+    const evidenceRaw = cellAt("evidence");
+    const valueRaw = cellAt("value");
+    const unitRaw = cellAt("unit");
+    const byRaw = cellAt("by");
+    const resolvedQuality = qualityRaw !== undefined ? parseQualityCell(qualityRaw) : undefined;
     // Derive resolvedOutcome from quality so the parsed shape is self-consistent
     // for callers that read either field.
-    const resolvedOutcome   = resolvedQuality === 'correct'   ? true
-                            : resolvedQuality === 'incorrect' ? false
-                            :                                    undefined;
+    const resolvedOutcome =
+      resolvedQuality === "correct" ? true : resolvedQuality === "incorrect" ? false : undefined;
 
     takes.push({
       rowNum,
@@ -364,18 +378,18 @@ export function parseTakesFence(body: string): ParseResult {
       untilDate: until,
       source: sourceRaw.trim() || undefined,
       active: !struck,
-      resolvedAt:        resolvedAt        ? parseStringCell(resolvedAt)  : undefined,
+      resolvedAt: resolvedAt ? parseStringCell(resolvedAt) : undefined,
       resolvedQuality,
       resolvedOutcome,
-      resolvedEvidence:  evidenceRaw       ? parseStringCell(evidenceRaw) : undefined,
-      resolvedValue:     valueRaw          ? parseFloatCell(valueRaw)     : undefined,
-      resolvedUnit:      unitRaw           ? parseStringCell(unitRaw)     : undefined,
-      resolvedBy:        byRaw             ? parseStringCell(byRaw)       : undefined,
+      resolvedEvidence: evidenceRaw ? parseStringCell(evidenceRaw) : undefined,
+      resolvedValue: valueRaw ? parseFloatCell(valueRaw) : undefined,
+      resolvedUnit: unitRaw ? parseStringCell(unitRaw) : undefined,
+      resolvedBy: byRaw ? parseStringCell(byRaw) : undefined,
     });
   }
 
-  if (!sawHeader && takes.length === 0 && lines.some(l => l.trim().startsWith('|'))) {
-    warnings.push('TAKES_TABLE_MALFORMED: pipe-rows present but no recognizable header');
+  if (!sawHeader && takes.length === 0 && lines.some((l) => l.trim().startsWith("|"))) {
+    warnings.push("TAKES_TABLE_MALFORMED: pipe-rows present but no recognizable header");
   }
 
   return { takes, warnings };
@@ -402,18 +416,18 @@ export function parseTakesFence(body: string): ParseResult {
  * regression gate.
  */
 export function renderTakesFence(takes: ParsedTake[]): string {
-  const hasAnyResolution = takes.some(t => t.resolvedQuality !== undefined);
+  const hasAnyResolution = takes.some((t) => t.resolvedQuality !== undefined);
   const header = hasAnyResolution
     ? `| # | claim | kind | who | weight | since | source | resolved | quality | evidence | value | unit | by |`
     : `| # | claim | kind | who | weight | since | source |`;
   const separator = hasAnyResolution
     ? `|---|-------|------|-----|--------|-------|--------|----------|---------|----------|-------|------|----|`
     : `|---|-------|------|-----|--------|-------|--------|`;
-  const rows = takes.map(t => {
+  const rows = takes.map((t) => {
     const claimCell = t.active ? t.claim : `~~${t.claim}~~`;
-    const sinceCell = t.untilDate ? `${t.sinceDate ?? ''} → ${t.untilDate}` : (t.sinceDate ?? '');
+    const sinceCell = t.untilDate ? `${t.sinceDate ?? ""} → ${t.untilDate}` : (t.sinceDate ?? "");
     const w = formatWeight(t.weight);
-    const source = t.source ?? '';
+    const source = t.source ?? "";
     // Escape any pipes inside cells so the table doesn't break. The
     // escapeFenceCell primitive lives in fence-shared.ts and is re-aliased
     // as `safe` here purely to keep the row-render lines visually compact.
@@ -422,15 +436,15 @@ export function renderTakesFence(takes: ParsedTake[]): string {
     if (!hasAnyResolution) return baseCells;
     // Resolution cells. Empty string for unresolved rows keeps the table
     // visually clean; the parser treats empty cells as undefined fields.
-    const resolved   = t.resolvedAt       ? safe(t.resolvedAt)              : '';
-    const quality    = t.resolvedQuality  ?? '';
-    const evidence   = t.resolvedEvidence ? safe(t.resolvedEvidence)        : '';
-    const value      = t.resolvedValue !== undefined ? formatWeight(t.resolvedValue) : '';
-    const unit       = t.resolvedUnit     ? safe(t.resolvedUnit)            : '';
-    const by         = t.resolvedBy       ? safe(t.resolvedBy)              : '';
+    const resolved = t.resolvedAt ? safe(t.resolvedAt) : "";
+    const quality = t.resolvedQuality ?? "";
+    const evidence = t.resolvedEvidence ? safe(t.resolvedEvidence) : "";
+    const value = t.resolvedValue !== undefined ? formatWeight(t.resolvedValue) : "";
+    const unit = t.resolvedUnit ? safe(t.resolvedUnit) : "";
+    const by = t.resolvedBy ? safe(t.resolvedBy) : "";
     return `${baseCells} ${resolved} | ${quality} | ${evidence} | ${value} | ${unit} | ${by} |`;
   });
-  const inner = ['', header, separator, ...rows, ''].join('\n');
+  const inner = ["", header, separator, ...rows, ""].join("\n");
   return `${TAKES_FENCE_BEGIN}${inner}${TAKES_FENCE_END}`;
 }
 
@@ -453,14 +467,14 @@ function formatWeight(w: number): string {
  */
 export function upsertTakeRow(
   body: string,
-  newRow: Omit<ParsedTake, 'rowNum'> & { rowNum?: number },
+  newRow: Omit<ParsedTake, "rowNum"> & { rowNum?: number }
 ): { body: string; rowNum: number } {
   const { takes, warnings } = parseTakesFence(body);
   // Surface warnings to caller via an attached marker — caller decides what to do.
   // (We don't throw here so writes proceed; doctor surfaces the underlying issue.)
   void warnings;
-  const nextRowNum = newRow.rowNum
-    ?? (takes.length > 0 ? Math.max(...takes.map(t => t.rowNum)) + 1 : 1);
+  const nextRowNum =
+    newRow.rowNum ?? (takes.length > 0 ? Math.max(...takes.map((t) => t.rowNum)) + 1 : 1);
 
   const allRows: ParsedTake[] = [
     ...takes,
@@ -481,13 +495,13 @@ export function upsertTakeRow(
 
   // If fence already exists, replace it. Otherwise append a Takes section.
   const beginIdx = body.indexOf(TAKES_FENCE_BEGIN);
-  const endIdx   = body.indexOf(TAKES_FENCE_END, beginIdx + TAKES_FENCE_BEGIN.length);
+  const endIdx = body.indexOf(TAKES_FENCE_END, beginIdx + TAKES_FENCE_BEGIN.length);
   let out: string;
   if (beginIdx !== -1 && endIdx !== -1) {
     out = body.slice(0, beginIdx) + newFence + body.slice(endIdx + TAKES_FENCE_END.length);
   } else {
     // No fence yet — append a fresh Takes section at the end.
-    const sep = body.endsWith('\n') ? '\n' : '\n\n';
+    const sep = body.endsWith("\n") ? "\n" : "\n\n";
     out = `${body}${sep}## Takes\n\n${newFence}\n`;
   }
   return { body: out, rowNum: nextRowNum };
@@ -503,20 +517,18 @@ export function upsertTakeRow(
 export function supersedeRow(
   body: string,
   oldRowNum: number,
-  replacement: Omit<ParsedTake, 'rowNum' | 'active'>,
+  replacement: Omit<ParsedTake, "rowNum" | "active">
 ): { body: string; oldRowNum: number; newRowNum: number } {
   const { takes } = parseTakesFence(body);
-  const idx = takes.findIndex(t => t.rowNum === oldRowNum);
+  const idx = takes.findIndex((t) => t.rowNum === oldRowNum);
   if (idx === -1) {
     throw new Error(`supersedeRow: row #${oldRowNum} not found in takes fence`);
   }
   const oldClaim = takes[idx].claim;
-  const newRowNum = takes.length > 0 ? Math.max(...takes.map(t => t.rowNum)) + 1 : 1;
+  const newRowNum = takes.length > 0 ? Math.max(...takes.map((t) => t.rowNum)) + 1 : 1;
 
   // Mark old row inactive; append new row.
-  const updatedTakes: ParsedTake[] = takes.map((t, i) =>
-    i === idx ? { ...t, active: false } : t,
-  );
+  const updatedTakes: ParsedTake[] = takes.map((t, i) => (i === idx ? { ...t, active: false } : t));
   updatedTakes.push({
     rowNum: newRowNum,
     claim: replacement.claim,
@@ -532,9 +544,11 @@ export function supersedeRow(
 
   const newFence = renderTakesFence(updatedTakes);
   const beginIdx = body.indexOf(TAKES_FENCE_BEGIN);
-  const endIdx   = body.indexOf(TAKES_FENCE_END, beginIdx + TAKES_FENCE_BEGIN.length);
+  const endIdx = body.indexOf(TAKES_FENCE_END, beginIdx + TAKES_FENCE_BEGIN.length);
   if (beginIdx === -1 || endIdx === -1) {
-    throw new Error('supersedeRow: fence markers missing in body (unexpected — parseTakesFence found rows)');
+    throw new Error(
+      "supersedeRow: fence markers missing in body (unexpected — parseTakesFence found rows)"
+    );
   }
   const out = body.slice(0, beginIdx) + newFence + body.slice(endIdx + TAKES_FENCE_END.length);
   return { body: out, oldRowNum, newRowNum };
@@ -550,7 +564,7 @@ export function stripTakesFence(body: string): string {
   // Pages without a compiled body (e.g. metadata-only rows from a read op)
   // have nothing to strip. Guard so the privacy strip is a safe no-op rather
   // than crashing on `undefined.indexOf`.
-  if (typeof body !== 'string') return body;
+  if (typeof body !== "string") return body;
   const beginIdx = body.indexOf(TAKES_FENCE_BEGIN);
   if (beginIdx === -1) return body;
   const endIdx = body.indexOf(TAKES_FENCE_END, beginIdx + TAKES_FENCE_BEGIN.length);

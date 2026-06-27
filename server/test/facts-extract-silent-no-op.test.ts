@@ -18,29 +18,29 @@
  * `ANTHROPIC_API_KEY`); this test is the structural regression guard that
  * runs in every parallel-test shard.
  */
-import { describe, test, expect, beforeEach } from 'bun:test';
+import { describe, test, expect, beforeEach } from "bun:test";
 import {
   configureGateway,
   isAvailable,
   resetGateway,
   __setChatTransportForTests,
   getChatModel,
-} from '../src/core/ai/gateway.ts';
-import { extractFactsFromTurn } from '../src/core/facts/extract.ts';
+} from "../src/core/ai/gateway.ts";
+import { extractFactsFromTurn } from "../src/core/facts/extract.ts";
 
 beforeEach(() => {
   resetGateway();
   __setChatTransportForTests(null);
 });
 
-describe('facts extract — silent-no-op regression (v0.31.6 bug class)', () => {
+describe("facts extract — silent-no-op regression (v0.31.6 bug class)", () => {
   test('with valid model and ANTHROPIC_API_KEY present, isAvailable("chat") is true', () => {
     configureGateway({
-      chat_model: 'anthropic:claude-sonnet-4-6',
-      env: { ANTHROPIC_API_KEY: 'sk-ant-test' },
+      chat_model: "anthropic:claude-sonnet-4-6",
+      env: { ANTHROPIC_API_KEY: "sk-ant-test" },
     });
-    expect(isAvailable('chat')).toBe(true);
-    expect(getChatModel()).toBe('anthropic:claude-sonnet-4-6');
+    expect(isAvailable("chat")).toBe(true);
+    expect(getChatModel()).toBe("anthropic:claude-sonnet-4-6");
   });
 
   test('with the v0.31.6-shipped broken model id, reverse alias rescues isAvailable("chat")', () => {
@@ -52,10 +52,10 @@ describe('facts extract — silent-no-op regression (v0.31.6 bug class)', () => 
     // structural fix for the bug class — the broken ID never reaches the
     // provider as a 404 because the alias rewrites it first.
     configureGateway({
-      chat_model: 'anthropic:claude-sonnet-4-6-20250929',
-      env: { ANTHROPIC_API_KEY: 'sk-ant-test' },
+      chat_model: "anthropic:claude-sonnet-4-6-20250929",
+      env: { ANTHROPIC_API_KEY: "sk-ant-test" },
     });
-    expect(isAvailable('chat')).toBe(true);
+    expect(isAvailable("chat")).toBe(true);
   });
 
   test('with a chat model the recipe does not declare AND no config override, isAvailable("chat") is false', () => {
@@ -73,37 +73,37 @@ describe('facts extract — silent-no-op regression (v0.31.6 bug class)', () => 
     // models set so any caller-supplied id passes validation. We assert the
     // POSITIVE path: a valid configured model produces isAvailable=true.
     configureGateway({
-      chat_model: 'anthropic:claude-nonexistent-model-xyz',
-      env: { ANTHROPIC_API_KEY: 'sk-ant-test' },
+      chat_model: "anthropic:claude-nonexistent-model-xyz",
+      env: { ANTHROPIC_API_KEY: "sk-ant-test" },
     });
     // The user opted into this model via config; the gateway permits it.
     // The 404 surfaces at provider call time (via `gbrain models doctor`).
-    expect(isAvailable('chat')).toBe(true);
+    expect(isAvailable("chat")).toBe(true);
   });
 
-  test('extractFactsFromTurn returns [] gracefully when chat is unavailable (no API key)', async () => {
+  test("extractFactsFromTurn returns [] gracefully when chat is unavailable (no API key)", async () => {
     // Make chat unavailable by omitting ANTHROPIC_API_KEY.
     // This is the legitimate "graceful degradation" path — not a silent bug,
     // because the user knows they didn't configure a key.
     configureGateway({
-      chat_model: 'anthropic:claude-sonnet-4-6',
-      env: {},  // no API key
+      chat_model: "anthropic:claude-sonnet-4-6",
+      env: {}, // no API key
     });
-    expect(isAvailable('chat')).toBe(false);
+    expect(isAvailable("chat")).toBe(false);
     const facts = await extractFactsFromTurn({
-      turnText: 'Garry founded Initialized in 2010 with Alexis.',
-      source: 'test:no-op-regression',
+      turnText: "Garry founded Initialized in 2010 with Alexis.",
+      source: "test:no-op-regression",
     });
     expect(facts).toEqual([]);
   });
 
-  test('extractFactsFromTurn USES the chat transport when available — does NOT silently return []', async () => {
+  test("extractFactsFromTurn USES the chat transport when available — does NOT silently return []", async () => {
     // The smoking-gun test: when chat IS available, extract MUST actually call
     // the chat transport. If it silently returns [] without calling chat, the
     // bug class is alive again.
     configureGateway({
-      chat_model: 'anthropic:claude-sonnet-4-6',
-      env: { ANTHROPIC_API_KEY: 'sk-ant-test' },
+      chat_model: "anthropic:claude-sonnet-4-6",
+      env: { ANTHROPIC_API_KEY: "sk-ant-test" },
     });
     let chatCalled = false;
     __setChatTransportForTests(async () => {
@@ -113,18 +113,23 @@ describe('facts extract — silent-no-op regression (v0.31.6 bug class)', () => 
       // `chatCalled`, not on the facts array — we just need to prove the call
       // path is exercised.
       return {
-        text: '[]',
-        blocks: [{ type: 'text', text: '[]' }],
-        stopReason: 'end' as const,
-        usage: { input_tokens: 1, output_tokens: 1, cache_read_tokens: 0, cache_creation_tokens: 0 },
-        model: 'anthropic:claude-sonnet-4-6',
-        providerId: 'anthropic',
+        text: "[]",
+        blocks: [{ type: "text", text: "[]" }],
+        stopReason: "end" as const,
+        usage: {
+          input_tokens: 1,
+          output_tokens: 1,
+          cache_read_tokens: 0,
+          cache_creation_tokens: 0,
+        },
+        model: "anthropic:claude-sonnet-4-6",
+        providerId: "anthropic",
       };
     });
     await extractFactsFromTurn({
-      turnText: 'Garry founded Initialized in 2010 with Alexis.',
-      source: 'test:smoking-gun',
+      turnText: "Garry founded Initialized in 2010 with Alexis.",
+      source: "test:smoking-gun",
     });
-    expect(chatCalled).toBe(true);  // ← THE bug-class assertion
+    expect(chatCalled).toBe(true); // ← THE bug-class assertion
   });
 });

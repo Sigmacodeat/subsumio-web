@@ -21,19 +21,19 @@ export const SCHEMA_VERSION = 1 as const;
  * v2 (Lane A1, 2026-05): judge prompt now receives `Statement A (from: YYYY-MM-DD)`
  *   or `(date unknown)` per side. Old v1 verdicts are silently invalidated.
  */
-export const PROMPT_VERSION = '2' as const;
+export const PROMPT_VERSION = "2" as const;
 
 /** Truncation policy string baked into the cache key. */
-export const TRUNCATION_POLICY = '1500-chars-utf8-safe' as const;
+export const TRUNCATION_POLICY = "1500-chars-utf8-safe" as const;
 
-export type ContradictionKind = 'cross_slug_chunks' | 'intra_page_chunk_take';
+export type ContradictionKind = "cross_slug_chunks" | "intra_page_chunk_take";
 
 /**
  * v0.34 / Lane A2: severity gains 'info' for the new non-error-class verdicts
  * (temporal_supersession, temporal_evolution) that should surface in the
  * report without inflating the contradiction count.
  */
-export type Severity = 'info' | 'low' | 'medium' | 'high';
+export type Severity = "info" | "low" | "medium" | "high";
 
 /**
  * v0.34 / Lane A2: replaces the v1 `contradicts: boolean` shape. Six members.
@@ -46,12 +46,12 @@ export type Severity = 'info' | 'low' | 'medium' | 'high';
  * - negation_artifact     → judge misread an explicit negation in one chunk
  */
 export type Verdict =
-  | 'no_contradiction'
-  | 'contradiction'
-  | 'temporal_supersession'
-  | 'temporal_regression'
-  | 'temporal_evolution'
-  | 'negation_artifact';
+  | "no_contradiction"
+  | "contradiction"
+  | "temporal_supersession"
+  | "temporal_regression"
+  | "temporal_evolution"
+  | "negation_artifact";
 
 /**
  * Resolution kinds. v0.34 / Lane A2 added three new members covering the new
@@ -63,15 +63,15 @@ export type Verdict =
  *                             timeline-writer subcommand (deferred)
  */
 export type ResolutionKind =
-  | 'takes_supersede'
-  | 'dream_synthesize'
-  | 'takes_mark_debate'
-  | 'manual_review'
-  | 'temporal_supersede'
-  | 'flag_for_review'
-  | 'log_timeline_change';
+  | "takes_supersede"
+  | "dream_synthesize"
+  | "takes_mark_debate"
+  | "manual_review"
+  | "temporal_supersede"
+  | "flag_for_review"
+  | "log_timeline_change";
 
-export type SourceTier = 'curated' | 'bulk' | 'other';
+export type SourceTier = "curated" | "bulk" | "other";
 
 /**
  * Judge's verdict for a single pair. Either the judge ran cleanly and we have
@@ -92,7 +92,7 @@ export interface JudgeVerdict {
 }
 
 /** Error classes counted toward the run's denominator (NOT silent skips). */
-export type JudgeErrorKind = 'parse_fail' | 'refusal' | 'timeout' | 'http_5xx' | 'unknown';
+export type JudgeErrorKind = "parse_fail" | "refusal" | "timeout" | "http_5xx" | "unknown";
 
 export interface JudgeErrorRow {
   kind: JudgeErrorKind;
@@ -236,7 +236,7 @@ export interface ProbeReport {
   prompt_version: string;
   truncation_policy: string;
   top_k: number;
-  sampling: 'deterministic' | 'score-first';
+  sampling: "deterministic" | "score-first";
   queries_evaluated: number;
   /**
    * Count of queries that produced at least one `verdict === 'contradiction'`

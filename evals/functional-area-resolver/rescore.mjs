@@ -13,9 +13,9 @@
  * This is T1a from the v0.32.3.0 boil-the-ocean push.
  */
 
-import { readFileSync, existsSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { readFileSync, existsSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -25,7 +25,10 @@ function parseDispatcherLists(variantContent) {
   let m;
   while ((m = re.exec(variantContent)) !== null) {
     const dispatcher = m[1];
-    const subSkills = m[2].split(',').map(s => s.trim()).filter(s => /^[a-z][a-z0-9-]*$/.test(s));
+    const subSkills = m[2]
+      .split(",")
+      .map((s) => s.trim())
+      .filter((s) => /^[a-z][a-z0-9-]*$/.test(s));
     out.set(dispatcher, new Set([dispatcher, ...subSkills]));
   }
   return out;
@@ -50,14 +53,14 @@ function meanAndCI(values) {
 }
 
 function fmt(vals) {
-  if (vals.length === 0) return '—';
+  if (vals.length === 0) return "—";
   const { mean, ci } = meanAndCI(vals);
   return `${(mean * 100).toFixed(1)}% ± ${(ci * 100).toFixed(1)}%`;
 }
 
 const runFile = process.argv[2];
 if (!runFile) {
-  console.error('Usage: node rescore.mjs <run-file.jsonl>');
+  console.error("Usage: node rescore.mjs <run-file.jsonl>");
   process.exit(2);
 }
 
@@ -67,27 +70,33 @@ if (!existsSync(absRun)) {
   process.exit(2);
 }
 
-const lines = readFileSync(absRun, 'utf8').split('\n').filter(l => l.trim().length > 0);
-const rows = lines.map(l => JSON.parse(l));
+const lines = readFileSync(absRun, "utf8")
+  .split("\n")
+  .filter((l) => l.trim().length > 0);
+const rows = lines.map((l) => JSON.parse(l));
 
-const receipt = rows.find(r => r.kind === 'receipt');
-const runRows = rows.filter(r => r.kind === 'run');
+const receipt = rows.find((r) => r.kind === "receipt");
+const runRows = rows.filter((r) => r.kind === "run");
 
 console.error(`Re-scoring ${runRows.length} rows from ${absRun}`);
-console.error(`Receipt: model=${receipt?.model ?? '?'} fixtures_hash=${receipt?.fixtures_hash ?? '?'} ts=${receipt?.ts ?? '?'}`);
+console.error(
+  `Receipt: model=${receipt?.model ?? "?"} fixtures_hash=${receipt?.fixtures_hash ?? "?"} ts=${receipt?.ts ?? "?"}`
+);
 
 // Identify variants and load them
-const variantsUsed = [...new Set(runRows.map(r => r.variant))];
-const variantsDir = join(__dirname, 'variants');
+const variantsUsed = [...new Set(runRows.map((r) => r.variant))];
+const variantsDir = join(__dirname, "variants");
 const dispatcherLists = {};
 for (const v of variantsUsed) {
   const path = join(variantsDir, `${v}.md`);
   if (!existsSync(path)) {
-    console.error(`Warning: variant file missing for "${v}" at ${path} — lenient score will collapse to strict for this variant.`);
+    console.error(
+      `Warning: variant file missing for "${v}" at ${path} — lenient score will collapse to strict for this variant.`
+    );
     dispatcherLists[v] = new Map();
     continue;
   }
-  dispatcherLists[v] = parseDispatcherLists(readFileSync(path, 'utf8'));
+  dispatcherLists[v] = parseDispatcherLists(readFileSync(path, "utf8"));
 }
 
 const SEEDS = [1, 2, 3];
@@ -97,25 +106,36 @@ const lenientSummary = {};
 for (const v of variantsUsed) {
   strictSummary[v] = { training: [], held_out: [] };
   lenientSummary[v] = { training: [], held_out: [] };
-  for (const corpus of ['training', 'held_out']) {
+  for (const corpus of ["training", "held_out"]) {
     for (const seed of SEEDS) {
-      const subset = runRows.filter(r => r.variant === v && r.corpus === corpus && r.seed === seed);
+      const subset = runRows.filter(
+        (r) => r.variant === v && r.corpus === corpus && r.seed === seed
+      );
       if (subset.length === 0) continue;
       strictSummary[v][corpus].push(subset.reduce((a, r) => a + r.correct, 0) / subset.length);
-      const lenientHits = subset.reduce((a, r) => a + lenientScore(r.predicted, r.expected, dispatcherLists[v]), 0);
+      const lenientHits = subset.reduce(
+        (a, r) => a + lenientScore(r.predicted, r.expected, dispatcherLists[v]),
+        0
+      );
       lenientSummary[v][corpus].push(lenientHits / subset.length);
     }
   }
 }
 
 console.log(`\n=== Re-scored from ${runFile} ===\n`);
-console.log('                              | STRICT scoring                                  | LENIENT (same-area)');
-console.log('Variant                       | Held-out               | Training              | Held-out             | Training');
-console.log('------------------------------|------------------------|------------------------|----------------------|----------------------');
+console.log(
+  "                              | STRICT scoring                                  | LENIENT (same-area)"
+);
+console.log(
+  "Variant                       | Held-out               | Training              | Held-out             | Training"
+);
+console.log(
+  "------------------------------|------------------------|------------------------|----------------------|----------------------"
+);
 for (const v of variantsUsed) {
   console.log(
-    `${v.padEnd(30)}| ${fmt(strictSummary[v].held_out).padEnd(22)} | ${fmt(strictSummary[v].training).padEnd(22)} | ${fmt(lenientSummary[v].held_out).padEnd(20)} | ${fmt(lenientSummary[v].training)}`,
+    `${v.padEnd(30)}| ${fmt(strictSummary[v].held_out).padEnd(22)} | ${fmt(strictSummary[v].training).padEnd(22)} | ${fmt(lenientSummary[v].held_out).padEnd(20)} | ${fmt(lenientSummary[v].training)}`
   );
 }
-console.log('\nLENIENT counts a prediction correct if it shares a dispatcher area with expected.');
+console.log("\nLENIENT counts a prediction correct if it shares a dispatcher area with expected.");
 console.log('For variants without "(dispatcher for: ...)" clauses, LENIENT == STRICT.');

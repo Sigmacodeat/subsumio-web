@@ -41,68 +41,69 @@ mutating: true
 
 ## Supported Jurisdictions
 
-| Code | Jurisdiction | Holiday DB |
-|---|---|---|
-| `de` | Deutschland | Bundesfeiertage + Bundesland |
-| `at` | Österreich | 16 Bundesfeiertage |
-| `ch` | Schweiz | Kantonale Feiertage |
-| `eu` | EU | EU-Wide (EuGH-Verfahren) |
-| `us-federal` | US Federal | Federal holidays |
-| `us-state` | US State | State-specific |
-| `uk` | United Kingdom | Bank holidays |
+| Code         | Jurisdiction   | Holiday DB                   |
+| ------------ | -------------- | ---------------------------- |
+| `de`         | Deutschland    | Bundesfeiertage + Bundesland |
+| `at`         | Österreich     | 16 Bundesfeiertage           |
+| `ch`         | Schweiz        | Kantonale Feiertage          |
+| `eu`         | EU             | EU-Wide (EuGH-Verfahren)     |
+| `us-federal` | US Federal     | Federal holidays             |
+| `us-state`   | US State       | State-specific               |
+| `uk`         | United Kingdom | Bank holidays                |
 
 ## Deadline Templates
 
 ### Germany (DE)
 
-| Event | Days | Direction | Notes |
-|---|---|---|---|
-| Verteidigungsanzeige (§ 276 Abs. 1 S. 1 ZPO) | 2 Wochen | nach Zustellung der Klage | Notfrist, schriftliches Vorverfahren |
-| Klageerwiderung (§ 276 Abs. 1 S. 2 ZPO) | + 2 weitere Wochen | nach Ablauf der Verteidigungsanzeigefrist | Gerichtlich gesetzte Frist maßgeblich |
-| Berufung — Einlegung (§ 517 ZPO) | 1 Monat | nach Zustellung des Urteils | Notfrist; spätestens 5 Monate nach Verkündung |
-| Berufungsbegründung (§ 520 Abs. 2 ZPO) | 2 Monate | nach Zustellung des Urteils | Verlängerbar |
-| Revision — Einlegung (§ 548 ZPO) | 1 Monat | nach Zustellung des Berufungsurteils | Notfrist |
-| Revisionsbegründung (§ 551 Abs. 2 ZPO) | 2 Monate | nach Zustellung des Berufungsurteils | Verlängerbar |
-| Einspruch gg. Versäumnisurteil (§ 339 Abs. 1 ZPO) | 2 Wochen | nach Zustellung | Notfrist |
-| Einspruch gg. Vollstreckungsbescheid (§ 700 i.V.m. § 339 ZPO) | 2 Wochen | nach Zustellung | Notfrist |
-| Widerspruch gg. Mahnbescheid (§ 694 ZPO) | 2 Wochen | nach Zustellung | Hinweisfrist § 692 Abs. 1 Nr. 3 ZPO |
-| Widerspruch Verwaltungsakt (§ 70 VwGO) | 1 Monat | nach Bekanntgabe des Verwaltungsakts | Verwaltungsrecht |
-| Anfechtungsklage (§ 74 VwGO) | 1 Monat | nach Zustellung des Widerspruchsbescheids | Verwaltungsrecht |
-| Antrag auf Zulassung der Berufung (§ 124a Abs. 4 VwGO) | 1 Monat | nach Zustellung des Urteils | Verwaltungsrecht |
-| Sofortige Beschwerde (§§ 567, 569 Abs. 1 ZPO) | 2 Wochen | nach Zustellung | Notfrist |
-| Sprungrevision (§ 566 ZPO) | innerhalb der Berufungsfrist | nach Zustellung des Urteils | Zustimmung des Gegners erforderlich |
-| Wiedereinsetzung (§§ 233, 234 ZPO) | 2 Wochen | nach Wegfall des Hindernisses | 1 Monat bei Versäumung der Begründungsfrist |
-| Revision Straf — Einlegung (§ 341 StPO) | 1 Woche | nach Verkündung | Begründung: 1 Monat nach Ablauf der Einlegungsfrist (§ 345 StPO) |
-| Verjährung (§ 195 BGB) | 3 Jahre | Beginn: Schluss des Jahres (§ 199 Abs. 1 BGB) | Regelverjährung; Kenntnis erforderlich |
-| Kündigungsfrist Arbeitsvertrag (§ 622 BGB) | variabel | — | 4 Wochen bis 7 Monate |
+| Event                                                         | Days                         | Direction                                     | Notes                                                            |
+| ------------------------------------------------------------- | ---------------------------- | --------------------------------------------- | ---------------------------------------------------------------- |
+| Verteidigungsanzeige (§ 276 Abs. 1 S. 1 ZPO)                  | 2 Wochen                     | nach Zustellung der Klage                     | Notfrist, schriftliches Vorverfahren                             |
+| Klageerwiderung (§ 276 Abs. 1 S. 2 ZPO)                       | + 2 weitere Wochen           | nach Ablauf der Verteidigungsanzeigefrist     | Gerichtlich gesetzte Frist maßgeblich                            |
+| Berufung — Einlegung (§ 517 ZPO)                              | 1 Monat                      | nach Zustellung des Urteils                   | Notfrist; spätestens 5 Monate nach Verkündung                    |
+| Berufungsbegründung (§ 520 Abs. 2 ZPO)                        | 2 Monate                     | nach Zustellung des Urteils                   | Verlängerbar                                                     |
+| Revision — Einlegung (§ 548 ZPO)                              | 1 Monat                      | nach Zustellung des Berufungsurteils          | Notfrist                                                         |
+| Revisionsbegründung (§ 551 Abs. 2 ZPO)                        | 2 Monate                     | nach Zustellung des Berufungsurteils          | Verlängerbar                                                     |
+| Einspruch gg. Versäumnisurteil (§ 339 Abs. 1 ZPO)             | 2 Wochen                     | nach Zustellung                               | Notfrist                                                         |
+| Einspruch gg. Vollstreckungsbescheid (§ 700 i.V.m. § 339 ZPO) | 2 Wochen                     | nach Zustellung                               | Notfrist                                                         |
+| Widerspruch gg. Mahnbescheid (§ 694 ZPO)                      | 2 Wochen                     | nach Zustellung                               | Hinweisfrist § 692 Abs. 1 Nr. 3 ZPO                              |
+| Widerspruch Verwaltungsakt (§ 70 VwGO)                        | 1 Monat                      | nach Bekanntgabe des Verwaltungsakts          | Verwaltungsrecht                                                 |
+| Anfechtungsklage (§ 74 VwGO)                                  | 1 Monat                      | nach Zustellung des Widerspruchsbescheids     | Verwaltungsrecht                                                 |
+| Antrag auf Zulassung der Berufung (§ 124a Abs. 4 VwGO)        | 1 Monat                      | nach Zustellung des Urteils                   | Verwaltungsrecht                                                 |
+| Sofortige Beschwerde (§§ 567, 569 Abs. 1 ZPO)                 | 2 Wochen                     | nach Zustellung                               | Notfrist                                                         |
+| Sprungrevision (§ 566 ZPO)                                    | innerhalb der Berufungsfrist | nach Zustellung des Urteils                   | Zustimmung des Gegners erforderlich                              |
+| Wiedereinsetzung (§§ 233, 234 ZPO)                            | 2 Wochen                     | nach Wegfall des Hindernisses                 | 1 Monat bei Versäumung der Begründungsfrist                      |
+| Revision Straf — Einlegung (§ 341 StPO)                       | 1 Woche                      | nach Verkündung                               | Begründung: 1 Monat nach Ablauf der Einlegungsfrist (§ 345 StPO) |
+| Verjährung (§ 195 BGB)                                        | 3 Jahre                      | Beginn: Schluss des Jahres (§ 199 Abs. 1 BGB) | Regelverjährung; Kenntnis erforderlich                           |
+| Kündigungsfrist Arbeitsvertrag (§ 622 BGB)                    | variabel                     | —                                             | 4 Wochen bis 7 Monate                                            |
 
 ### Austria (AT)
 
-| Event | Days | Direction | Notes |
-|---|---|---|---|
-| Klagebeantwortung (§ 230 ZPO) | 4 Wochen | nach Zustellung der Klage | Gerichtshofverfahren |
-| Berufung (§ 464 ZPO) | 4 Wochen | nach Zustellung des Urteils | Einlegung samt Begründung |
-| Revision (§ 505 Abs. 2 ZPO) | 4 Wochen | nach Zustellung des Berufungsurteils | Ordentliche Revision an den OGH |
-| Widerspruch gg. Versäumungsurteil (§ 397a ZPO) | 14 Tage | nach Zustellung | — |
-| Bescheidbeschwerde (§ 7 Abs. 4 VwGVG) | 4 Wochen | nach Zustellung des Bescheids | An das Verwaltungsgericht |
-| Revision an den VwGH (§ 26 VwGG) | 6 Wochen | nach Zustellung des Erkenntnisses | — |
-| Beschwerde an den VfGH (Art. 144 B-VG, § 82 VfGG) | 6 Wochen | nach Zustellung der VwG-Entscheidung | — |
-| Kündigungsfrist (§ 20 AngG) | variabel | — | 6 Wochen bis 5 Monate (Arbeitgeber) |
-| Verjährung Schadenersatz (§ 1489 ABGB) | 3 Jahre | ab Kenntnis von Schaden und Schädiger | Lange Frist: 30 Jahre |
+| Event                                             | Days     | Direction                             | Notes                               |
+| ------------------------------------------------- | -------- | ------------------------------------- | ----------------------------------- |
+| Klagebeantwortung (§ 230 ZPO)                     | 4 Wochen | nach Zustellung der Klage             | Gerichtshofverfahren                |
+| Berufung (§ 464 ZPO)                              | 4 Wochen | nach Zustellung des Urteils           | Einlegung samt Begründung           |
+| Revision (§ 505 Abs. 2 ZPO)                       | 4 Wochen | nach Zustellung des Berufungsurteils  | Ordentliche Revision an den OGH     |
+| Widerspruch gg. Versäumungsurteil (§ 397a ZPO)    | 14 Tage  | nach Zustellung                       | —                                   |
+| Bescheidbeschwerde (§ 7 Abs. 4 VwGVG)             | 4 Wochen | nach Zustellung des Bescheids         | An das Verwaltungsgericht           |
+| Revision an den VwGH (§ 26 VwGG)                  | 6 Wochen | nach Zustellung des Erkenntnisses     | —                                   |
+| Beschwerde an den VfGH (Art. 144 B-VG, § 82 VfGG) | 6 Wochen | nach Zustellung der VwG-Entscheidung  | —                                   |
+| Kündigungsfrist (§ 20 AngG)                       | variabel | —                                     | 6 Wochen bis 5 Monate (Arbeitgeber) |
+| Verjährung Schadenersatz (§ 1489 ABGB)            | 3 Jahre  | ab Kenntnis von Schaden und Schädiger | Lange Frist: 30 Jahre               |
 
 ### Switzerland (CH)
 
-| Event | Days | Direction | Notes |
-|---|---|---|---|
-| Klageantwort (Art. 222 ZPO) | gerichtlich angesetzt | nach Zustellung der Klage | Frist setzt das Gericht |
-| Berufung (Art. 311 ZPO) | 30 Tage | nach Eröffnung des begründeten Entscheids | 10 Tage im summarischen Verfahren |
-| Verjährung (Art. 127 OR) | 10 Jahre | ab Fälligkeit | Regelverjährung |
+| Event                       | Days                  | Direction                                 | Notes                             |
+| --------------------------- | --------------------- | ----------------------------------------- | --------------------------------- |
+| Klageantwort (Art. 222 ZPO) | gerichtlich angesetzt | nach Zustellung der Klage                 | Frist setzt das Gericht           |
+| Berufung (Art. 311 ZPO)     | 30 Tage               | nach Eröffnung des begründeten Entscheids | 10 Tage im summarischen Verfahren |
+| Verjährung (Art. 127 OR)    | 10 Jahre              | ab Fälligkeit                             | Regelverjährung                   |
 
 ## Protocol
 
 ### Step 1 — Identify the Triggering Event
 
 Determine:
+
 - What happened? (e.g., "Zustellung der Klage", "Urteilsverkündung")
 - Date of the event
 - Jurisdiction

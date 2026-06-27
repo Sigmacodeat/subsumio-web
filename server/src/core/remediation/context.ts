@@ -6,8 +6,8 @@
 //
 // Pure read; no side effects.
 
-import type { BrainEngine } from '../engine.ts';
-import type { RecommendationContext } from '../brain-score-recommendations.ts';
+import type { BrainEngine } from "../engine.ts";
+import type { RecommendationContext } from "../brain-score-recommendations.ts";
 
 // Re-export so consumers can `import { RecommendationContext } from '../remediation'`
 // — the canonical RecommendationContext type still lives in
@@ -20,7 +20,7 @@ export type { RecommendationContext };
  * the doctor CLI surface.
  */
 export async function loadRecommendationContext(
-  engine: BrainEngine,
+  engine: BrainEngine
 ): Promise<RecommendationContext> {
   // v0.37 fix wave (Lane E.4 + CDX2-11): read schema-sizing fields from
   // gateway, not DB. The DB plane is schema-applied metadata; the file
@@ -31,18 +31,18 @@ export async function loadRecommendationContext(
   // Also extended the API-key check to recognize the ZE key alongside
   // OpenAI (was OpenAI-only). After Lane C.3, zeroentropy_api_key lives
   // in GBrainConfig + propagates to the gateway env dict.
-  const repoPath = await engine.getConfig('sync.repo_path');
+  const repoPath = await engine.getConfig("sync.repo_path");
   let embeddingModel: string | undefined;
   let embeddingDimensions: number | undefined;
   try {
-    const gw = await import('../ai/gateway.ts');
+    const gw = await import("../ai/gateway.ts");
     embeddingModel = gw.getEmbeddingModel();
     embeddingDimensions = gw.getEmbeddingDimensions();
   } catch {
     // Gateway unconfigured — fall back to DB plane as a best-effort hint
     // (preserves doctor running before any engine.connect()).
-    const dbModel = await engine.getConfig('embedding_model');
-    const dbDims = await engine.getConfig('embedding_dimensions');
+    const dbModel = await engine.getConfig("embedding_model");
+    const dbDims = await engine.getConfig("embedding_dimensions");
     embeddingModel = dbModel ?? undefined;
     embeddingDimensions = dbDims ? Number(dbDims) : undefined;
   }
@@ -52,11 +52,10 @@ export async function loadRecommendationContext(
   // their OWN required key (so a Voyage brain is judged by VOYAGE_API_KEY,
   // not by whether an OpenAI/ZE key happens to exist — the pre-fix wart).
   // fileCfg loads synchronously, so the resolveKey closure is sync.
-  const { loadConfigFileOnly } = await import('../config.ts');
+  const { loadConfigFileOnly } = await import("../config.ts");
   const fileCfg = loadConfigFileOnly();
-  const { embeddingProviderConfigured, HOSTED_EMBED_KEY_CONFIG } = await import(
-    '../brain-score-recommendations.ts'
-  );
+  const { embeddingProviderConfigured, HOSTED_EMBED_KEY_CONFIG } =
+    await import("../brain-score-recommendations.ts");
   const embeddingConfigured = embeddingProviderConfigured(embeddingModel, (envVar) => {
     const cfgField = HOSTED_EMBED_KEY_CONFIG[envVar];
     const fromCfg = cfgField ? (fileCfg as Record<string, unknown> | null)?.[cfgField] : undefined;

@@ -10,8 +10,8 @@ export {};
 // ---------------------------------------------------------------
 const OWNER = "garrytan";
 const REPO = "gbrain";
-const PER_PAGE = 100;        // GitHub API max
-const SORT = "newest";       // newest = nach Erstelldatum (API limit); client-side sort nach pushed_at
+const PER_PAGE = 100; // GitHub API max
+const SORT = "newest"; // newest = nach Erstelldatum (API limit); client-side sort nach pushed_at
 
 // Filter: nur Forks die seit diesem Datum aktiv waren
 const CUTOFF_DATE = new Date("2026-03-01"); // ca. letzte 2-3 Monate
@@ -85,8 +85,7 @@ async function fetchCommitsSinceFork(fork: any, token?: string): Promise<any[]> 
 
   // Alle Commits im Fork seit Erstellungsdatum
   const url =
-    `https://api.github.com/repos/${owner}/${repo}/commits?` +
-    `since=${createdAt}&per_page=100`;
+    `https://api.github.com/repos/${owner}/${repo}/commits?` + `since=${createdAt}&per_page=100`;
 
   const res = await fetch(url, { headers });
   if (!res.ok) {
@@ -113,7 +112,9 @@ function formatBytes(n: number): string {
 async function main() {
   const token = process.env.GITHUB_TOKEN;
   if (!token) {
-    console.log("⚠️  Kein GITHUB_TOKEN gesetzt. Rate limit: 60 req/h (nur ~60 Forks/Details möglich)");
+    console.log(
+      "⚠️  Kein GITHUB_TOKEN gesetzt. Rate limit: 60 req/h (nur ~60 Forks/Details möglich)"
+    );
     console.log("   Setze: export GITHUB_TOKEN=ghp_xxxx  (Classic oder Fine-Grained PAT)");
   } else {
     console.log("✅ GitHub Token erkannt. Rate limit: 5000 req/h");
@@ -124,15 +125,15 @@ async function main() {
   const allForks = await fetchAllForks(token);
 
   // Client-seitig nach pushed_at sortieren (neueste zuerst)
-  allForks.sort((a: any, b: any) =>
-    new Date(b.pushed_at).getTime() - new Date(a.pushed_at).getTime()
+  allForks.sort(
+    (a: any, b: any) => new Date(b.pushed_at).getTime() - new Date(a.pushed_at).getTime()
   );
 
   await Bun.write(OUT_ALL, JSON.stringify(allForks, null, 2));
   console.log(`   Gespeichert: ${OUT_ALL} (${allForks.length} Forks)`);
 
   // 3b. Nach Aktivität filtern
-  console.log(`\n=== 2. AKTIVE FORKS FILTERN (seit ${CUTOFF_DATE.toISOString().slice(0,10)}) ===`);
+  console.log(`\n=== 2. AKTIVE FORKS FILTERN (seit ${CUTOFF_DATE.toISOString().slice(0, 10)}) ===`);
   const activeForks = allForks.filter((f: any) => {
     const pushed = new Date(f.pushed_at);
     return pushed >= CUTOFF_DATE;
@@ -143,7 +144,9 @@ async function main() {
   const MAX_DETAIL_FORKS = token ? Infinity : 45;
   const forksToAnalyze = activeForks.slice(0, MAX_DETAIL_FORKS);
   if (!token && activeForks.length > MAX_DETAIL_FORKS) {
-    console.log(`   ⚠️  Rate-Limit-Schutz: Nur Top ${MAX_DETAIL_FORKS} von ${activeForks.length} aktiven Forks werden analysiert.`);
+    console.log(
+      `   ⚠️  Rate-Limit-Schutz: Nur Top ${MAX_DETAIL_FORKS} von ${activeForks.length} aktiven Forks werden analysiert.`
+    );
     console.log(`      Setze GITHUB_TOKEN um alle zu analysieren.`);
   }
 
@@ -158,9 +161,15 @@ async function main() {
     const ageDays = Math.floor((Date.now() - created.getTime()) / 86400000);
 
     console.log(`\n[${enriched.length + 1}/${activeForks.length}] ${owner}/${repo}`);
-    console.log(`   Stars: ${fork.stargazers_count} | Forks: ${fork.forks_count} | Open Issues: ${fork.open_issues_count}`);
-    console.log(`   Created: ${created.toISOString().slice(0,10)} (${ageDays}d ago) | Pushed: ${pushed.toISOString().slice(0,10)}`);
-    console.log(`   Size: ${formatBytes(fork.size * 1024)} | Default Branch: ${fork.default_branch}`);
+    console.log(
+      `   Stars: ${fork.stargazers_count} | Forks: ${fork.forks_count} | Open Issues: ${fork.open_issues_count}`
+    );
+    console.log(
+      `   Created: ${created.toISOString().slice(0, 10)} (${ageDays}d ago) | Pushed: ${pushed.toISOString().slice(0, 10)}`
+    );
+    console.log(
+      `   Size: ${formatBytes(fork.size * 1024)} | Default Branch: ${fork.default_branch}`
+    );
 
     // Commits holen
     const commits = await fetchCommitsSinceFork(fork, token);
@@ -169,7 +178,9 @@ async function main() {
       return !(msg.startsWith("merge pull request") || msg.startsWith("merge branch"));
     });
 
-    console.log(`   Commits seit Fork: ${commits.length} (davon ${nonMergeCommits.length} nicht-Merge)`);
+    console.log(
+      `   Commits seit Fork: ${commits.length} (davon ${nonMergeCommits.length} nicht-Merge)`
+    );
 
     enriched.push({
       owner,
@@ -208,7 +219,7 @@ async function main() {
     ``,
     `**Generiert:** ${new Date().toISOString()}`,
     `**Gesamt Forks:** ${allForks.length}`,
-    `**Aktive Forks (seit ${CUTOFF_DATE.toISOString().slice(0,10)}):** ${enriched.length}`,
+    `**Aktive Forks (seit ${CUTOFF_DATE.toISOString().slice(0, 10)}):** ${enriched.length}`,
     ``,
     `## Priorisierte aktive Forks (nach Push-Datum, neueste zuerst)`,
     ``,
@@ -219,14 +230,14 @@ async function main() {
       `### ${f.owner}/${f.repo}`,
       `- **URL:** ${f.html_url}`,
       `- **Stars:** ${f.stars} | **Forks:** ${f.forks} | **Open Issues:** ${f.open_issues}`,
-      `- **Created:** ${f.created_at.slice(0,10)} | **Last Push:** ${f.pushed_at.slice(0,10)}`,
+      `- **Created:** ${f.created_at.slice(0, 10)} | **Last Push:** ${f.pushed_at.slice(0, 10)}`,
       `- **Commits seit Fork:** ${f.commits_total} (davon ${f.commits_meaningful} sinnvoll)`,
       `- **Description:** ${f.description || "(keine)"}`,
       `- **Größe:** ${formatBytes(f.size_kb * 1024)}`,
       ``,
       `#### Neueste Commits:`,
       ...f.commit_messages.map(
-        (c: any) => `- \`${c.sha}\` (${c.date?.slice(0,10)}) ${c.message} — *${c.author}*`
+        (c: any) => `- \`${c.sha}\` (${c.date?.slice(0, 10)}) ${c.message} — *${c.author}*`
       ),
       ``,
       `---`,
@@ -242,8 +253,12 @@ async function main() {
   console.log(`Gesamt Forks:        ${allForks.length}`);
   console.log(`Aktive Forks:        ${activeForks.length}`);
   console.log(`Detailliert analys.: ${enriched.length}`);
-  console.log(`Mit Commits > 0:     ${enriched.filter((f: any) => f.commits_meaningful > 0).length}`);
-  console.log(`Mit Commits > 5:     ${enriched.filter((f: any) => f.commits_meaningful > 5).length}`);
+  console.log(
+    `Mit Commits > 0:     ${enriched.filter((f: any) => f.commits_meaningful > 0).length}`
+  );
+  console.log(
+    `Mit Commits > 5:     ${enriched.filter((f: any) => f.commits_meaningful > 5).length}`
+  );
   console.log(`\nTop-Kandidaten (meiste Commits):`);
   const top = [...enriched]
     .sort((a: any, b: any) => b.commits_meaningful - a.commits_meaningful)

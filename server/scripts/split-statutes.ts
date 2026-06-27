@@ -59,23 +59,34 @@ function slugifyPara(num: string): string {
  * - Insert line breaks at sentence boundaries (german and english)
  */
 function normalizeBody(text: string): string {
-  return text
-    // Strip RIS (Austria) page markers
-    .replace(/Bundesrecht konsolidiert\s+www\.ris\.bka\.gv\.at\s+Seite\s+\d+\s+von\s+\d+\s*/gi, " ")
-    // Strip gesetze-im-internet.de table-of-contents lines (short structural lines)
-    .replace(/^(Buch|Abschnitt|Titel|Untertitel|Kapitel|Teil|Unterabschnitt)\s+\d+.*$/gm, "")
-    // Collapse runs of 3+ spaces to single space
-    .replace(/ {3,}/g, " ")
-    // Insert newline after sentence end (". " followed by Uppercase or "(")
-    .replace(/\.\s+([A-ZÄÖÜ(])/g, ".\n$1")
-    // Insert newline before numbered list items "(1) ... (2)"
-    .replace(/\s+\((\d+)\)\s+/g, "\n($1) ")
-    // Clean up multiple newlines
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
+  return (
+    text
+      // Strip RIS (Austria) page markers
+      .replace(
+        /Bundesrecht konsolidiert\s+www\.ris\.bka\.gv\.at\s+Seite\s+\d+\s+von\s+\d+\s*/gi,
+        " "
+      )
+      // Strip gesetze-im-internet.de table-of-contents lines (short structural lines)
+      .replace(/^(Buch|Abschnitt|Titel|Untertitel|Kapitel|Teil|Unterabschnitt)\s+\d+.*$/gm, "")
+      // Collapse runs of 3+ spaces to single space
+      .replace(/ {3,}/g, " ")
+      // Insert newline after sentence end (". " followed by Uppercase or "(")
+      .replace(/\.\s+([A-ZÄÖÜ(])/g, ".\n$1")
+      // Insert newline before numbered list items "(1) ... (2)"
+      .replace(/\s+\((\d+)\)\s+/g, "\n($1) ")
+      // Clean up multiple newlines
+      .replace(/\n{3,}/g, "\n\n")
+      .trim()
+  );
 }
 
-function buildPageContent(fm: LawFrontmatter, abbr: string, paraNum: string, title: string, body: string): string {
+function buildPageContent(
+  fm: LawFrontmatter,
+  abbr: string,
+  paraNum: string,
+  title: string,
+  body: string
+): string {
   return [
     "---",
     `title: "${title.replace(/"/g, "'")}"`,
@@ -140,7 +151,10 @@ function splitDeLaw(filePath: string, outDir: string): { count: number; skipped:
     slugsSeen.add(slug);
 
     const title = `${abbr} § ${paraNum}${paraTitle ? ` — ${paraTitle}` : ""}`;
-    writeFileSync(join(outDir, `${slug}.md`), buildPageContent(fm, abbr, paraNum, title, normalizedBody));
+    writeFileSync(
+      join(outDir, `${slug}.md`),
+      buildPageContent(fm, abbr, paraNum, title, normalizedBody)
+    );
     written++;
   }
 
@@ -268,5 +282,7 @@ for (const j of jurisdictions) {
   }
 }
 
-console.log(`\nDone: ${total} pages (${splitCount} split §, ${wholeCount} whole, ${skippedCount} skipped stubs)`);
+console.log(
+  `\nDone: ${total} pages (${splitCount} split §, ${wholeCount} whole, ${skippedCount} skipped stubs)`
+);
 console.log(`Output: ${OUT}/`);

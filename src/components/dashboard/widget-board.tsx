@@ -83,14 +83,10 @@ function SortableWidget({
   children: React.ReactNode;
 }) {
   const { t } = useLang();
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id, disabled: !editMode });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id,
+    disabled: !editMode,
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -137,13 +133,7 @@ function SortableWidget({
   );
 }
 
-function EditModeToolbar({
-  onDone,
-  onReset,
-}: {
-  onDone: () => void;
-  onReset: () => void;
-}) {
+function EditModeToolbar({ onDone, onReset }: { onDone: () => void; onReset: () => void }) {
   const { t } = useLang();
 
   return (
@@ -190,9 +180,7 @@ function EmptyDashboard({ onReset }: { onReset: () => void }) {
         <p className="text-sm font-semibold text-[color:var(--ds-text)]">
           {t("widget.empty_title")}
         </p>
-        <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-          {t("widget.empty_desc")}
-        </p>
+        <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">{t("widget.empty_desc")}</p>
       </div>
       <button
         type="button"
@@ -316,20 +304,14 @@ export function WidgetBoard() {
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  const orderedPrefs = useMemo(
-    () => [...prefs].sort((a, b) => a.order - b.order),
-    [prefs]
-  );
+  const orderedPrefs = useMemo(() => [...prefs].sort((a, b) => a.order - b.order), [prefs]);
 
   const visiblePrefs = useMemo(
     () => orderedPrefs.filter((p) => p.visible || editMode),
     [orderedPrefs, editMode]
   );
 
-  const orderedIds = useMemo(
-    () => visiblePrefs.map((p) => p.id),
-    [visiblePrefs]
-  );
+  const orderedIds = useMemo(() => visiblePrefs.map((p) => p.id), [visiblePrefs]);
 
   const hasVisible = orderedPrefs.some((p) => p.visible);
 
@@ -370,10 +352,26 @@ export function WidgetBoard() {
           <SecondaryStats
             loading={data.loading}
             items={[
-              { label: t("cockpit.stat_cases"), value: data.activeCases.length, href: "/dashboard/cases" },
-              { label: t("cockpit.stat_inbox"), value: data.inboxItems.length, href: "/dashboard/intake" },
-              { label: t("cockpit.stat_reviews"), value: data.pendingReviews.length, href: "/dashboard/review-queue" },
-              { label: t("cockpit.stat_billing"), value: data.openInvoices.length, href: "/dashboard/invoicing" },
+              {
+                label: t("cockpit.stat_cases"),
+                value: data.activeCases.length,
+                href: "/dashboard/cases",
+              },
+              {
+                label: t("cockpit.stat_inbox"),
+                value: data.inboxItems.length,
+                href: "/dashboard/intake",
+              },
+              {
+                label: t("cockpit.stat_reviews"),
+                value: data.pendingReviews.length,
+                href: "/dashboard/review-queue",
+              },
+              {
+                label: t("cockpit.stat_billing"),
+                value: data.openInvoices.length,
+                href: "/dashboard/invoicing",
+              },
             ]}
           />
         );
@@ -412,7 +410,10 @@ export function WidgetBoard() {
       {showDegraded && (
         <div className="rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-4 py-3">
           <div className="flex items-start gap-3">
-            <AlertTriangle size={17} className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]" />
+            <AlertTriangle
+              size={17}
+              className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]"
+            />
             <div className="min-w-0">
               <p className="text-sm font-semibold text-[color:var(--ds-warning-text)]">
                 {t("cockpit.degraded_title")}
@@ -425,10 +426,7 @@ export function WidgetBoard() {
         </div>
       )}
       {editMode ? (
-        <EditModeToolbar
-          onDone={() => setEditMode(false)}
-          onReset={() => reset()}
-        />
+        <EditModeToolbar onDone={() => setEditMode(false)} onReset={() => reset()} />
       ) : (
         <div className="flex justify-end">
           <button

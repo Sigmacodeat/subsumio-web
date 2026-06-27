@@ -19,12 +19,12 @@
  *     expected to strengthen.
  */
 
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import { chat as gatewayChat } from '../ai/gateway.ts';
-import { errorFor } from '../errors.ts';
-import { atomicWrite } from './apply-edits.ts';
-import { BOOTSTRAP_PENDING_REVIEW, type RuleCheck } from './types.ts';
+import * as fs from "node:fs";
+import * as path from "node:path";
+import { chat as gatewayChat } from "../ai/gateway.ts";
+import { errorFor } from "../errors.ts";
+import { atomicWrite } from "./apply-edits.ts";
+import { BOOTSTRAP_PENDING_REVIEW, type RuleCheck } from "./types.ts";
 
 const BOOTSTRAP_SYSTEM = `You are SkillOpt's bootstrap-benchmark generator. Given a user intent that triggers a SKILL, generate 2-4 deterministic rule checks that would verify a successful execution.
 
@@ -81,33 +81,40 @@ export async function runBootstrap(opts: BootstrapOpts): Promise<BootstrapResult
   const { skillsDir, skillName, optimizerModel, force } = opts;
   const chat = opts.chatFn ?? gatewayChat;
 
-  const routingPath = path.join(skillsDir, skillName, 'routing-eval.jsonl');
+  const routingPath = path.join(skillsDir, skillName, "routing-eval.jsonl");
   if (!fs.existsSync(routingPath)) {
     throw errorFor({
-      class: 'NoRoutingEval',
-      code: 'no_routing_eval',
+      class: "NoRoutingEval",
+      code: "no_routing_eval",
       message: `Cannot bootstrap: ${routingPath} does not exist.`,
       hint: `Create a routing-eval.jsonl file first (gbrain skillify scaffold <name> generates one).`,
     });
   }
 
-  const outputPath = path.join(skillsDir, skillName, 'skillopt-benchmark.jsonl');
+  const outputPath = path.join(skillsDir, skillName, "skillopt-benchmark.jsonl");
   assertBenchmarkAbsent(outputPath, !!force);
 
   // Read the skill body for context.
-  const skillPath = path.join(skillsDir, skillName, 'SKILL.md');
+  const skillPath = path.join(skillsDir, skillName, "SKILL.md");
   const skillBody = readSkillBodyOrThrow(skillPath);
 
   // Parse routing-eval rows; skip malformed lines instead of crashing the whole
   // bootstrap on one bad line.
-  const routingRows = fs.readFileSync(routingPath, 'utf8')
-    .split('\n')
+  const routingRows = fs
+    .readFileSync(routingPath, "utf8")
+    .split("\n")
     .filter((l) => l.trim().length > 0)
     .map((l) => {
-      try { return JSON.parse(l) as { intent: string; expected_skill: string }; } catch { return null; }
+      try {
+        return JSON.parse(l) as { intent: string; expected_skill: string };
+      } catch {
+        return null;
+      }
     })
-    .filter((r): r is { intent: string; expected_skill: string } =>
-      r !== null && typeof r.intent === 'string' && typeof r.expected_skill === 'string');
+    .filter(
+      (r): r is { intent: string; expected_skill: string } =>
+        r !== null && typeof r.intent === "string" && typeof r.expected_skill === "string"
+    );
 
   const generated: string[] = [];
   let skipped = 0;
@@ -119,7 +126,7 @@ export async function runBootstrap(opts: BootstrapOpts): Promise<BootstrapResult
       const result = await chat({
         model: optimizerModel,
         system: BOOTSTRAP_SYSTEM,
-        messages: [{ role: 'user', content: userMsg }],
+        messages: [{ role: "user", content: userMsg }],
         maxTokens: 500,
         cacheSystem: true,
       });
@@ -128,11 +135,13 @@ export async function runBootstrap(opts: BootstrapOpts): Promise<BootstrapResult
         skipped += 1;
         continue;
       }
-      generated.push(JSON.stringify({
-        task_id: `bootstrap-${String(i + 1).padStart(3, '0')}`,
-        task: row.intent,
-        judge: { kind: 'rule', checks },
-      }));
+      generated.push(
+        JSON.stringify({
+          task_id: `bootstrap-${String(i + 1).padStart(3, "0")}`,
+          task: row.intent,
+          judge: { kind: "rule", checks },
+        })
+      );
     } catch (err) {
       skipped += 1;
       const msg = err instanceof Error ? err.message : String(err);
@@ -142,19 +151,23 @@ export async function runBootstrap(opts: BootstrapOpts): Promise<BootstrapResult
 
   if (generated.length === 0) {
     throw errorFor({
-      class: 'BootstrapEmpty',
-      code: 'bootstrap_empty',
+      class: "BootstrapEmpty",
+      code: "bootstrap_empty",
       message: `Bootstrap generated 0 tasks (all rows skipped or routing-eval has no matching rows for '${skillName}').`,
       hint: `Check that routing-eval.jsonl has rows where expected_skill='${skillName}' and the optimizer model is reachable.`,
     });
   }
 
-  const output = [...generated, BOOTSTRAP_PENDING_REVIEW, ''].join('\n');
+  const output = [...generated, BOOTSTRAP_PENDING_REVIEW, ""].join("\n");
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
   atomicWrite(outputPath, output);
 
-  process.stderr.write(`[skillopt] Bootstrap wrote ${generated.length} tasks to ${outputPath} (${skipped} rows skipped).\n`);
-  process.stderr.write(`[skillopt] REVIEW the file, then delete the trailing '${BOOTSTRAP_PENDING_REVIEW}' line and re-run with --bootstrap-reviewed.\n`);
+  process.stderr.write(
+    `[skillopt] Bootstrap wrote ${generated.length} tasks to ${outputPath} (${skipped} rows skipped).\n`
+  );
+  process.stderr.write(
+    `[skillopt] REVIEW the file, then delete the trailing '${BOOTSTRAP_PENDING_REVIEW}' line and re-run with --bootstrap-reviewed.\n`
+  );
 
   return { outputPath, rowsGenerated: generated.length, rowsSkipped: skipped };
 }
@@ -167,7 +180,9 @@ function parseChecksResponse(raw: string): RuleCheck[] {
     if (parsed && Array.isArray(parsed.checks)) {
       return validateChecks(parsed.checks);
     }
-  } catch { /* try fallback */ }
+  } catch {
+    /* try fallback */
+  }
   // Fallback: first {...} substring.
   const match = raw.match(/\{[\s\S]*\}/);
   if (!match) return [];
@@ -176,18 +191,32 @@ function parseChecksResponse(raw: string): RuleCheck[] {
     if (parsed && Array.isArray(parsed.checks)) {
       return validateChecks(parsed.checks);
     }
-  } catch { /* fall through */ }
+  } catch {
+    /* fall through */
+  }
   return [];
 }
 
 function validateChecks(raw: unknown[]): RuleCheck[] {
-  const VALID = new Set(['contains', 'regex', 'section_present', 'max_chars', 'min_citations', 'tool_called', 'tool_not_called']);
+  const VALID = new Set([
+    "contains",
+    "regex",
+    "section_present",
+    "max_chars",
+    "min_citations",
+    "tool_called",
+    "tool_not_called",
+  ]);
   const out: RuleCheck[] = [];
   for (const r of raw) {
-    if (!r || typeof r !== 'object') continue;
+    if (!r || typeof r !== "object") continue;
     const o = r as Record<string, unknown>;
-    if (typeof o.op === 'string' && VALID.has(o.op) && (typeof o.arg === 'string' || typeof o.arg === 'number')) {
-      out.push({ op: o.op as RuleCheck['op'], arg: o.arg });
+    if (
+      typeof o.op === "string" &&
+      VALID.has(o.op) &&
+      (typeof o.arg === "string" || typeof o.arg === "number")
+    ) {
+      out.push({ op: o.op as RuleCheck["op"], arg: o.arg });
     }
   }
   return out;
@@ -214,15 +243,17 @@ export interface BootstrapFromSkillOpts {
  * the chat call PROPAGATE — they are NOT collapsed into bootstrap_empty, so the
  * CLI surfaces the real failure instead of a misleading "0 tasks" message.
  */
-export async function runBootstrapFromSkill(opts: BootstrapFromSkillOpts): Promise<BootstrapResult> {
+export async function runBootstrapFromSkill(
+  opts: BootstrapFromSkillOpts
+): Promise<BootstrapResult> {
   const { skillsDir, skillName, optimizerModel } = opts;
   const taskCount = opts.taskCount ?? 15;
   const chat = opts.chatFn ?? gatewayChat;
 
-  const outputPath = path.join(skillsDir, skillName, 'skillopt-benchmark.jsonl');
+  const outputPath = path.join(skillsDir, skillName, "skillopt-benchmark.jsonl");
   assertBenchmarkAbsent(outputPath, !!opts.force);
 
-  const skillPath = path.join(skillsDir, skillName, 'SKILL.md');
+  const skillPath = path.join(skillsDir, skillName, "SKILL.md");
   const skillBody = readSkillBodyOrThrow(skillPath);
 
   const userMsg = `SKILL BODY:\n${skillBody.slice(0, 8000)}\n\nGenerate ${taskCount} realistic benchmark tasks as JSONL (one JSON object per line, no array, no fences). Each task needs at least 2 rule checks. Output ONLY the JSONL lines.`;
@@ -231,7 +262,7 @@ export async function runBootstrapFromSkill(opts: BootstrapFromSkillOpts): Promi
   const result = await chat({
     model: optimizerModel,
     system: BOOTSTRAP_FROM_SKILL_SYSTEM,
-    messages: [{ role: 'user', content: userMsg }],
+    messages: [{ role: "user", content: userMsg }],
     maxTokens: Math.min(8000, Math.max(4000, taskCount * 220)),
     cacheSystem: true,
   });
@@ -240,23 +271,31 @@ export async function runBootstrapFromSkill(opts: BootstrapFromSkillOpts): Promi
 
   if (generated.length === 0) {
     throw errorFor({
-      class: 'BootstrapEmpty',
-      code: 'bootstrap_empty',
+      class: "BootstrapEmpty",
+      code: "bootstrap_empty",
       message: `Bootstrap-from-skill generated 0 usable tasks for '${skillName}'.`,
       hint: `The model returned no parseable JSONL tasks with >=2 valid checks. Re-run, or verify the optimizer model is reachable.`,
     });
   }
 
-  const output = [...generated, BOOTSTRAP_PENDING_REVIEW, ''].join('\n');
+  const output = [...generated, BOOTSTRAP_PENDING_REVIEW, ""].join("\n");
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
   atomicWrite(outputPath, output);
 
-  process.stderr.write(`[skillopt] Bootstrap-from-skill wrote ${generated.length} tasks to ${outputPath} (${skipped} dropped).\n`);
+  process.stderr.write(
+    `[skillopt] Bootstrap-from-skill wrote ${generated.length} tasks to ${outputPath} (${skipped} dropped).\n`
+  );
   if (generated.length < 15) {
-    process.stderr.write(`[skillopt] WARNING: only ${generated.length} task(s) generated. The recommended --split 1:1:1 needs >=15 (D_sel >= 5); below that the optimizer refuses with d_sel_too_small. Add tasks or re-run.\n`);
+    process.stderr.write(
+      `[skillopt] WARNING: only ${generated.length} task(s) generated. The recommended --split 1:1:1 needs >=15 (D_sel >= 5); below that the optimizer refuses with d_sel_too_small. Add tasks or re-run.\n`
+    );
   }
-  process.stderr.write(`[skillopt] REVIEW + STRENGTHEN the generated rule checks (they are weak drafts), delete the trailing '${BOOTSTRAP_PENDING_REVIEW}' line, then run:\n`);
-  process.stderr.write(`[skillopt]   gbrain skillopt ${skillName} --bootstrap-reviewed --split 1:1:1\n`);
+  process.stderr.write(
+    `[skillopt] REVIEW + STRENGTHEN the generated rule checks (they are weak drafts), delete the trailing '${BOOTSTRAP_PENDING_REVIEW}' line, then run:\n`
+  );
+  process.stderr.write(
+    `[skillopt]   gbrain skillopt ${skillName} --bootstrap-reviewed --split 1:1:1\n`
+  );
 
   return { outputPath, rowsGenerated: generated.length, rowsSkipped: skipped };
 }
@@ -271,10 +310,16 @@ export async function runBootstrapFromSkill(opts: BootstrapFromSkillOpts): Promi
  * assigned contiguously over KEPT tasks (<skillName>-001..NNN) so they're unique
  * and stable for loadBenchmark's duplicate-id check.
  */
-function parseSkillBenchmarkJsonl(raw: string, skillName: string): { generated: string[]; skipped: number } {
+function parseSkillBenchmarkJsonl(
+  raw: string,
+  skillName: string
+): { generated: string[]; skipped: number } {
   const fence = raw.match(/```(?:json|jsonl)?\s*\n?([\s\S]*?)```/i);
   const body = fence ? fence[1]! : raw;
-  const lines = body.split('\n').map((l) => l.trim()).filter((l) => l.length > 0);
+  const lines = body
+    .split("\n")
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0);
 
   const generated: string[] = [];
   let skipped = 0;
@@ -286,17 +331,28 @@ function parseSkillBenchmarkJsonl(raw: string, skillName: string): { generated: 
       skipped += 1;
       continue;
     }
-    if (!parsed || typeof parsed !== 'object') { skipped += 1; continue; }
+    if (!parsed || typeof parsed !== "object") {
+      skipped += 1;
+      continue;
+    }
     const o = parsed as Record<string, unknown>;
-    const task = typeof o.task === 'string' ? o.task.trim() : '';
-    if (!task) { skipped += 1; continue; }
+    const task = typeof o.task === "string" ? o.task.trim() : "";
+    if (!task) {
+      skipped += 1;
+      continue;
+    }
     const checks = Array.isArray(o.checks) ? validateChecks(o.checks) : [];
-    if (checks.length < 2) { skipped += 1; continue; } // D6: drop the whole task
-    generated.push(JSON.stringify({
-      task_id: `${skillName}-${String(generated.length + 1).padStart(3, '0')}`,
-      task,
-      judge: { kind: 'rule', checks },
-    }));
+    if (checks.length < 2) {
+      skipped += 1;
+      continue;
+    } // D6: drop the whole task
+    generated.push(
+      JSON.stringify({
+        task_id: `${skillName}-${String(generated.length + 1).padStart(3, "0")}`,
+        task,
+        judge: { kind: "rule", checks },
+      })
+    );
   }
   return { generated, skipped };
 }
@@ -307,8 +363,8 @@ function parseSkillBenchmarkJsonl(raw: string, skillName: string): { generated: 
 function assertBenchmarkAbsent(outputPath: string, force: boolean): void {
   if (fs.existsSync(outputPath) && !force) {
     throw errorFor({
-      class: 'BenchmarkExists',
-      code: 'benchmark_exists',
+      class: "BenchmarkExists",
+      code: "benchmark_exists",
       message: `Benchmark already exists at ${outputPath}.`,
       hint: `Pass --force to overwrite, or remove the file first.`,
     });
@@ -318,11 +374,11 @@ function assertBenchmarkAbsent(outputPath: string, force: boolean): void {
 /** Read SKILL.md or throw a structured no_skill_md error. */
 function readSkillBodyOrThrow(skillPath: string): string {
   try {
-    return fs.readFileSync(skillPath, 'utf8');
+    return fs.readFileSync(skillPath, "utf8");
   } catch {
     throw errorFor({
-      class: 'NoSkill',
-      code: 'no_skill_md',
+      class: "NoSkill",
+      code: "no_skill_md",
       message: `Cannot read ${skillPath}.`,
       hint: `The skill must exist before bootstrapping its benchmark.`,
     });

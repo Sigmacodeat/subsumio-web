@@ -14,10 +14,10 @@
  *   gbrain config set dream.auto_think.questions '["What patterns ...","Who ..."]'
  */
 
-import type { BrainEngine } from '../engine.ts';
-import { runThink, persistSynthesis, type ThinkLLMClient } from '../think/index.ts';
-import { resolveModel } from '../model-config.ts';
-import { BudgetMeter } from './budget-meter.ts';
+import type { BrainEngine } from "../engine.ts";
+import { runThink, persistSynthesis, type ThinkLLMClient } from "../think/index.ts";
+import { resolveModel } from "../model-config.ts";
+import { BudgetMeter } from "./budget-meter.ts";
 
 /**
  * Local phase-result type for auto-think/drift. These phases are not yet
@@ -27,8 +27,8 @@ import { BudgetMeter } from './budget-meter.ts';
  * shape forces premature CyclePhase enum extension.
  */
 export interface DreamPhaseResult {
-  name: 'auto_think' | 'drift';
-  status: 'complete' | 'partial' | 'failed' | 'skipped';
+  name: "auto_think" | "drift";
+  status: "complete" | "partial" | "failed" | "skipped";
   detail: string;
   totals?: Record<string, number>;
   duration_ms: number;
@@ -53,76 +53,79 @@ export interface AutoThinkConfig {
 }
 
 async function loadConfig(engine: BrainEngine): Promise<AutoThinkConfig> {
-  const enabledStr = await engine.getConfig('dream.auto_think.enabled');
-  const questionsStr = await engine.getConfig('dream.auto_think.questions');
-  const maxPerStr = await engine.getConfig('dream.auto_think.max_per_cycle');
-  const budgetStr = await engine.getConfig('dream.auto_think.budget');
-  const cooldownStr = await engine.getConfig('dream.auto_think.cooldown_days');
-  const autoCommitStr = await engine.getConfig('dream.auto_think.auto_commit');
+  const enabledStr = await engine.getConfig("dream.auto_think.enabled");
+  const questionsStr = await engine.getConfig("dream.auto_think.questions");
+  const maxPerStr = await engine.getConfig("dream.auto_think.max_per_cycle");
+  const budgetStr = await engine.getConfig("dream.auto_think.budget");
+  const cooldownStr = await engine.getConfig("dream.auto_think.cooldown_days");
+  const autoCommitStr = await engine.getConfig("dream.auto_think.auto_commit");
 
   let questions: string[] = [];
   if (questionsStr) {
     try {
       const parsed = JSON.parse(questionsStr);
-      if (Array.isArray(parsed)) questions = parsed.filter(q => typeof q === 'string');
-    } catch { /* ignore */ }
+      if (Array.isArray(parsed)) questions = parsed.filter((q) => typeof q === "string");
+    } catch {
+      /* ignore */
+    }
   }
 
   return {
-    enabled: enabledStr === 'true',
+    enabled: enabledStr === "true",
     questions,
     maxPerCycle: maxPerStr ? Math.max(1, parseInt(maxPerStr, 10) || 5) : 5,
     budgetUsd: budgetStr ? Math.max(0, parseFloat(budgetStr) || 2.0) : 2.0,
     cooldownDays: cooldownStr ? Math.max(0, parseInt(cooldownStr, 10) || 30) : 30,
-    autoCommit: autoCommitStr === 'true',
+    autoCommit: autoCommitStr === "true",
   };
 }
 
 async function isCoolingDown(engine: BrainEngine, days: number): Promise<boolean> {
   if (days <= 0) return false;
-  const last = await engine.getConfig('dream.auto_think.last_completion_ts');
+  const last = await engine.getConfig("dream.auto_think.last_completion_ts");
   if (!last) return false;
   const lastMs = Date.parse(last);
   if (!Number.isFinite(lastMs)) return false;
-  return (Date.now() - lastMs) < days * 86_400_000;
+  return Date.now() - lastMs < days * 86_400_000;
 }
 
 function skipped(_reason: string, detail: string): DreamPhaseResult {
-  return { name: 'auto_think', status: 'skipped', detail, duration_ms: 0 };
+  return { name: "auto_think", status: "skipped", detail, duration_ms: 0 };
 }
 
 export async function runPhaseAutoThink(
   engine: BrainEngine,
-  opts: AutoThinkPhaseOpts,
+  opts: AutoThinkPhaseOpts
 ): Promise<DreamPhaseResult> {
   const start = Date.now();
   const config = await loadConfig(engine);
 
   if (!config.enabled) {
-    return skipped('not_configured', 'dream.auto_think.enabled is false');
+    return skipped("not_configured", "dream.auto_think.enabled is false");
   }
   if (config.questions.length === 0) {
-    return skipped('no_questions', 'dream.auto_think.questions is empty');
+    return skipped("no_questions", "dream.auto_think.questions is empty");
   }
   if (await isCoolingDown(engine, config.cooldownDays)) {
-    return skipped('cooldown_active', `auto_think cooled down (${config.cooldownDays}d cooldown)`);
+    return skipped("cooldown_active", `auto_think cooled down (${config.cooldownDays}d cooldown)`);
   }
 
   const meter = new BudgetMeter({
     budgetUsd: config.budgetUsd,
-    phase: 'auto_think',
+    phase: "auto_think",
     auditPath: opts.auditPath,
   });
 
   const modelId = await resolveModel(engine, {
-    configKey: 'models.auto_think',
-    deprecatedConfigKey: 'dream.auto_think.model',
-    tier: 'deep',
-    fallback: 'opus',
+    configKey: "models.auto_think",
+    deprecatedConfigKey: "dream.auto_think.model",
+    tier: "deep",
+    fallback: "opus",
   });
 
   const limit = Math.min(config.questions.length, config.maxPerCycle);
-  const results: Array<{ question: string; status: string; slug?: string; warnings?: string[] }> = [];
+  const results: Array<{ question: string; status: string; slug?: string; warnings?: string[] }> =
+    [];
 
   for (let i = 0; i < limit; i++) {
     const q = config.questions[i];
@@ -136,12 +139,12 @@ export async function runPhaseAutoThink(
       label: `auto_think:${q.slice(0, 40)}`,
     });
     if (!check.allowed) {
-      results.push({ question: q, status: 'budget_exhausted' });
+      results.push({ question: q, status: "budget_exhausted" });
       break;
     }
 
     if (opts.dryRun) {
-      results.push({ question: q, status: 'dry_run' });
+      results.push({ question: q, status: "dry_run" });
       continue;
     }
 
@@ -164,40 +167,44 @@ export async function runPhaseAutoThink(
       let slug: string | undefined;
       if (config.autoCommit) {
         const persisted = await persistSynthesis(engine, result);
-        slug = persisted.slug || undefined;  // '' = persist-skip signal (#1698)
+        slug = persisted.slug || undefined; // '' = persist-skip signal (#1698)
         warnings.push(...persisted.warnings);
       }
       results.push({
         question: q,
-        status: emptySynthesis ? 'partial' : 'complete',
+        status: emptySynthesis ? "partial" : "complete",
         slug,
         warnings: warnings.length ? warnings : undefined,
       });
     } catch (e) {
       results.push({
         question: q,
-        status: 'failed',
+        status: "failed",
         warnings: [(e as Error).message],
       });
     }
   }
 
   // Update cooldown timestamp ONLY when at least one synthesis completed.
-  const anyComplete = results.some(r => r.status === 'complete');
+  const anyComplete = results.some((r) => r.status === "complete");
   if (anyComplete && !opts.dryRun) {
-    await engine.setConfig('dream.auto_think.last_completion_ts', new Date().toISOString());
+    await engine.setConfig("dream.auto_think.last_completion_ts", new Date().toISOString());
   }
 
-  const detail = `${results.filter(r => r.status === 'complete').length} synthesized, ` +
-    `${results.filter(r => r.status === 'budget_exhausted').length} skipped (budget), ` +
-    `${results.filter(r => r.status === 'failed').length} failed. ` +
+  const detail =
+    `${results.filter((r) => r.status === "complete").length} synthesized, ` +
+    `${results.filter((r) => r.status === "budget_exhausted").length} skipped (budget), ` +
+    `${results.filter((r) => r.status === "failed").length} failed. ` +
     `Cumulative cost: $${meter.totalSpent.toFixed(4)} / $${config.budgetUsd.toFixed(2)}`;
 
   return {
-    name: 'auto_think',
-    status: anyComplete ? 'complete' : (results.length === 0 ? 'skipped' : 'partial'),
+    name: "auto_think",
+    status: anyComplete ? "complete" : results.length === 0 ? "skipped" : "partial",
     detail,
-    totals: { questions_run: results.length, synthesized: results.filter(r => r.status === 'complete').length },
+    totals: {
+      questions_run: results.length,
+      synthesized: results.filter((r) => r.status === "complete").length,
+    },
     duration_ms: Date.now() - start,
   };
 }

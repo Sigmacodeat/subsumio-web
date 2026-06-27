@@ -34,11 +34,11 @@ for (let i = 0; i < 50; i++) {
   const f = scored[i];
   const daysSincePush = Math.floor((Date.now() - new Date(f.pushed_at).getTime()) / 86400000);
   console.log(
-    `${String(i+1).padStart(2)}. ${f.full_name} (Score: ${f._score})\n` +
-    `    Stars: ${f.stargazers_count} | Forks: ${f.forks_count} | Issues: ${f.open_issues_count}\n` +
-    `    Size: ${f.size}KB | Pushed: ${f.pushed_at.slice(0,10)} (${daysSincePush}d ago)\n` +
-    `    Desc: ${f.description?.slice(0,80) || "-"}\n` +
-    `    Compare: https://github.com/garrytan/gbrain/compare/master...${f.owner.login}:${f.name}:master\n`
+    `${String(i + 1).padStart(2)}. ${f.full_name} (Score: ${f._score})\n` +
+      `    Stars: ${f.stargazers_count} | Forks: ${f.forks_count} | Issues: ${f.open_issues_count}\n` +
+      `    Size: ${f.size}KB | Pushed: ${f.pushed_at.slice(0, 10)} (${daysSincePush}d ago)\n` +
+      `    Desc: ${f.description?.slice(0, 80) || "-"}\n` +
+      `    Compare: https://github.com/garrytan/gbrain/compare/master...${f.owner.login}:${f.name}:master\n`
   );
 }
 
@@ -69,7 +69,11 @@ console.log(`Gesamt Forks: ${data.length}`);
 console.log(`Mit Umbenennung: ${data.filter((f: any) => f.name !== "gbrain").length}`);
 console.log(`Mit Stars > 0: ${data.filter((f: any) => f.stargazers_count > 0).length}`);
 console.log(`Mit Issues > 0: ${data.filter((f: any) => f.open_issues_count > 0).length}`);
-console.log(`Pushed < 7 Tage: ${data.filter((f: any) => {
-  const d = Math.floor((Date.now() - new Date(f.pushed_at).getTime()) / 86400000);
-  return d < 7;
-}).length}`);
+console.log(
+  `Pushed < 7 Tage: ${
+    data.filter((f: any) => {
+      const d = Math.floor((Date.now() - new Date(f.pushed_at).getTime()) / 86400000);
+      return d < 7;
+    }).length
+  }`
+);

@@ -5,8 +5,17 @@
 export const LEGAL_BOOST = "statute:1.5,deadline:2.0,judgement:1.3,norm:1.4";
 
 export const ALLOWED_TYPES = new Set([
-  "statute", "deadline", "judgement", "norm", "case", "contract",
-  "contact", "task", "note", "document", "correspondence",
+  "statute",
+  "deadline",
+  "judgement",
+  "norm",
+  "case",
+  "contract",
+  "contact",
+  "task",
+  "note",
+  "document",
+  "correspondence",
 ]);
 
 export function sanitizeTypeFilter(raw: string): string {

@@ -24,9 +24,17 @@
  *   linux-x64    → gbrain-linux-x64
  */
 
-import { chmodSync, closeSync, fsyncSync, openSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { execFileSync } from 'node:child_process';
+import {
+  chmodSync,
+  closeSync,
+  fsyncSync,
+  openSync,
+  renameSync,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs";
+import { dirname, join } from "node:path";
+import { execFileSync } from "node:child_process";
 
 export interface ReleaseAsset {
   name: string;
@@ -34,12 +42,12 @@ export interface ReleaseAsset {
 }
 
 export type BinarySelfUpdateReason =
-  | 'unsupported_platform'
-  | 'fetch_failed'
-  | 'no_asset'
-  | 'download_failed'
-  | 'smoke_failed'
-  | 'replace_failed';
+  | "unsupported_platform"
+  | "fetch_failed"
+  | "no_asset"
+  | "download_failed"
+  | "smoke_failed"
+  | "replace_failed";
 
 export interface BinarySelfUpdateResult {
   ok: boolean;
@@ -51,9 +59,12 @@ export interface BinarySelfUpdateResult {
 
 /** The release asset basename gbrain publishes for this platform/arch, or null
  * when no asset is published (degrade to notify-only). */
-export function expectedAssetName(platform: NodeJS.Platform, arch: NodeJS.Architecture): string | null {
-  if (platform === 'darwin' && arch === 'arm64') return 'gbrain-darwin-arm64';
-  if (platform === 'linux' && arch === 'x64') return 'gbrain-linux-x64';
+export function expectedAssetName(
+  platform: NodeJS.Platform,
+  arch: NodeJS.Architecture
+): string | null {
+  if (platform === "darwin" && arch === "arm64") return "gbrain-darwin-arm64";
+  if (platform === "linux" && arch === "x64") return "gbrain-linux-x64";
   return null;
 }
 
@@ -61,7 +72,7 @@ export function expectedAssetName(platform: NodeJS.Platform, arch: NodeJS.Archit
 export function resolvePlatformAsset(
   assets: ReleaseAsset[],
   platform: NodeJS.Platform = process.platform,
-  arch: NodeJS.Architecture = process.arch,
+  arch: NodeJS.Architecture = process.arch
 ): string | null {
   const name = expectedAssetName(platform, arch);
   if (!name) return null;
@@ -82,16 +93,19 @@ export interface BinarySelfUpdateDeps {
 
 async function defaultFetchRelease(): Promise<{ tag: string; assets: ReleaseAsset[] } | null> {
   try {
-    const res = await fetch('https://api.github.com/repos/garrytan/gbrain/releases/latest', {
-      headers: { 'User-Agent': 'gbrain-self-upgrade' },
+    const res = await fetch("https://api.github.com/repos/garrytan/gbrain/releases/latest", {
+      headers: { "User-Agent": "gbrain-self-upgrade" },
       signal: AbortSignal.timeout(5_000),
     });
     if (!res.ok) return null;
     const data = (await res.json()) as any;
     const assets: ReleaseAsset[] = Array.isArray(data.assets)
-      ? data.assets.map((a: any) => ({ name: String(a.name ?? ''), url: String(a.browser_download_url ?? '') }))
+      ? data.assets.map((a: any) => ({
+          name: String(a.name ?? ""),
+          url: String(a.browser_download_url ?? ""),
+        }))
       : [];
-    return { tag: String(data.tag_name ?? ''), assets };
+    return { tag: String(data.tag_name ?? ""), assets };
   } catch {
     return null;
   }
@@ -99,16 +113,16 @@ async function defaultFetchRelease(): Promise<{ tag: string; assets: ReleaseAsse
 
 async function defaultDownload(url: string, destPath: string): Promise<void> {
   const res = await fetch(url, {
-    headers: { 'User-Agent': 'gbrain-self-upgrade' },
-    redirect: 'follow',
+    headers: { "User-Agent": "gbrain-self-upgrade" },
+    redirect: "follow",
     signal: AbortSignal.timeout(120_000),
   });
   if (!res.ok) throw new Error(`download HTTP ${res.status}`);
   const buf = Buffer.from(await res.arrayBuffer());
-  if (buf.length === 0) throw new Error('downloaded asset is empty');
+  if (buf.length === 0) throw new Error("downloaded asset is empty");
   writeFileSync(destPath, buf);
   // fsync so a crash between write and rename can't leave a torn file.
-  const fd = openSync(destPath, 'r');
+  const fd = openSync(destPath, "r");
   try {
     fsyncSync(fd);
   } finally {
@@ -118,7 +132,7 @@ async function defaultDownload(url: string, destPath: string): Promise<void> {
 
 function defaultSmoke(stagedPath: string): boolean {
   try {
-    const out = execFileSync(stagedPath, ['--version'], { encoding: 'utf-8', timeout: 10_000 });
+    const out = execFileSync(stagedPath, ["--version"], { encoding: "utf-8", timeout: 10_000 });
     return /gbrain\s/i.test(out);
   } catch {
     return false;
@@ -134,7 +148,7 @@ let _tmpCounter = 0;
  */
 export async function runBinarySelfUpdate(
   targetPath: string = process.execPath,
-  deps: BinarySelfUpdateDeps = {},
+  deps: BinarySelfUpdateDeps = {}
 ): Promise<BinarySelfUpdateResult> {
   const platform = deps.platform ?? process.platform;
   const arch = deps.arch ?? process.arch;
@@ -144,17 +158,17 @@ export async function runBinarySelfUpdate(
 
   const assetName = expectedAssetName(platform, arch);
   if (!assetName) {
-    return { ok: false, reason: 'unsupported_platform' };
+    return { ok: false, reason: "unsupported_platform" };
   }
 
   const release = await fetchRelease();
   if (!release) {
-    return { ok: false, reason: 'fetch_failed', asset: assetName };
+    return { ok: false, reason: "fetch_failed", asset: assetName };
   }
 
   const url = resolvePlatformAsset(release.assets, platform, arch);
   if (!url) {
-    return { ok: false, reason: 'no_asset', asset: assetName };
+    return { ok: false, reason: "no_asset", asset: assetName };
   }
 
   // Stage in a temp sibling so the rename is same-filesystem (atomic).
@@ -163,26 +177,26 @@ export async function runBinarySelfUpdate(
     await download(url, staged);
   } catch (e) {
     safeUnlink(staged);
-    return { ok: false, reason: 'download_failed', error: errMsg(e), asset: assetName };
+    return { ok: false, reason: "download_failed", error: errMsg(e), asset: assetName };
   }
 
   try {
     chmodSync(staged, 0o755);
   } catch (e) {
     safeUnlink(staged);
-    return { ok: false, reason: 'download_failed', error: errMsg(e), asset: assetName };
+    return { ok: false, reason: "download_failed", error: errMsg(e), asset: assetName };
   }
 
   if (!smoke(staged)) {
     safeUnlink(staged);
-    return { ok: false, reason: 'smoke_failed', asset: assetName };
+    return { ok: false, reason: "smoke_failed", asset: assetName };
   }
 
   try {
     renameSync(staged, targetPath); // atomic on same fs; old binary intact if this throws
   } catch (e) {
     safeUnlink(staged);
-    return { ok: false, reason: 'replace_failed', error: errMsg(e), asset: assetName };
+    return { ok: false, reason: "replace_failed", error: errMsg(e), asset: assetName };
   }
 
   return { ok: true, asset: assetName };

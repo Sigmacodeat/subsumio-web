@@ -17,20 +17,20 @@
  * against a brain.
  */
 
-import { writeFileSync, existsSync, readFileSync } from 'fs';
-import { resolve, dirname, join } from 'path';
-import { mkdirSync } from 'fs';
-import type { BrainEngine } from '../core/engine.ts';
+import { writeFileSync, existsSync, readFileSync } from "fs";
+import { resolve, dirname, join } from "path";
+import { mkdirSync } from "fs";
+import type { BrainEngine } from "../core/engine.ts";
 import {
   loadQuestions,
   runCodeRetrievalEval,
   evaluateGate,
   DEFAULT_GATE,
   type EvalRunReport,
-} from '../eval/code-retrieval/harness.ts';
-import { BaselineStrategy, WithCodeIntelStrategy } from '../eval/code-retrieval/strategies.ts';
-import { createProgress } from '../core/progress.ts';
-import { getCliOptions, cliOptsToProgressOptions } from '../core/cli-options.ts';
+} from "../eval/code-retrieval/harness.ts";
+import { BaselineStrategy, WithCodeIntelStrategy } from "../eval/code-retrieval/strategies.ts";
+import { createProgress } from "../core/progress.ts";
+import { getCliOptions, cliOptsToProgressOptions } from "../core/cli-options.ts";
 
 interface ParsedArgs {
   help: boolean;
@@ -45,14 +45,14 @@ interface ParsedArgs {
   json: boolean;
 }
 
-const DEFAULT_QUESTIONS_PATH = 'src/eval/code-retrieval/questions.json';
+const DEFAULT_QUESTIONS_PATH = "src/eval/code-retrieval/questions.json";
 
 function parseArgs(args: string[]): ParsedArgs {
   const out: ParsedArgs = {
     help: false,
     baseline: false,
     withCodeIntel: false,
-    corpus: 'gbrain',
+    corpus: "gbrain",
     questionsPath: DEFAULT_QUESTIONS_PATH,
     k: 5,
     json: false,
@@ -60,20 +60,20 @@ function parseArgs(args: string[]): ParsedArgs {
   let i = 0;
   while (i < args.length) {
     const a = args[i];
-    if (a === '--help' || a === '-h') out.help = true;
-    else if (a === '--baseline') out.baseline = true;
-    else if (a === '--with-code-intel') out.withCodeIntel = true;
-    else if (a === '--compare') {
+    if (a === "--help" || a === "-h") out.help = true;
+    else if (a === "--baseline") out.baseline = true;
+    else if (a === "--with-code-intel") out.withCodeIntel = true;
+    else if (a === "--compare") {
       const aPath = args[++i];
       const bPath = args[++i];
-      if (!aPath || !bPath) throw new Error('--compare requires two file paths');
+      if (!aPath || !bPath) throw new Error("--compare requires two file paths");
       out.compare = { a: aPath, b: bPath };
-    } else if (a === '--corpus') out.corpus = args[++i] ?? 'gbrain';
-    else if (a === '--questions') out.questionsPath = args[++i] ?? DEFAULT_QUESTIONS_PATH;
-    else if (a === '--source') out.source = args[++i];
-    else if (a === '--k') out.k = parseInt(args[++i] ?? '5', 10);
-    else if (a === '--save') out.save = args[++i];
-    else if (a === '--json') out.json = true;
+    } else if (a === "--corpus") out.corpus = args[++i] ?? "gbrain";
+    else if (a === "--questions") out.questionsPath = args[++i] ?? DEFAULT_QUESTIONS_PATH;
+    else if (a === "--source") out.source = args[++i];
+    else if (a === "--k") out.k = parseInt(args[++i] ?? "5", 10);
+    else if (a === "--save") out.save = args[++i];
+    else if (a === "--json") out.json = true;
     i++;
   }
   return out;
@@ -139,7 +139,7 @@ export async function runEvalCodeRetrieval(engine: BrainEngine, args: string[]):
   }
 
   if (!opts.baseline && !opts.withCodeIntel) {
-    process.stderr.write('error: specify --baseline or --with-code-intel (or --compare)\n');
+    process.stderr.write("error: specify --baseline or --with-code-intel (or --compare)\n");
     printHelp();
     process.exit(2);
     return;
@@ -171,7 +171,7 @@ export async function runEvalCodeRetrieval(engine: BrainEngine, args: string[]):
   }
 
   if (opts.json) {
-    process.stdout.write(JSON.stringify(report, null, 2) + '\n');
+    process.stdout.write(JSON.stringify(report, null, 2) + "\n");
     return;
   }
 
@@ -189,14 +189,14 @@ function runCompare(opts: ParsedArgs): void {
       return;
     }
   }
-  const a: EvalRunReport = JSON.parse(readFileSync(aPath, 'utf8'));
-  const b: EvalRunReport = JSON.parse(readFileSync(bPath, 'utf8'));
+  const a: EvalRunReport = JSON.parse(readFileSync(aPath, "utf8"));
+  const b: EvalRunReport = JSON.parse(readFileSync(bPath, "utf8"));
 
   // Convention: the first arg is baseline, the second is with-code-intel.
   // If labels disagree, swap so the comparison is meaningful.
   let baseline = a;
   let withCodeIntel = b;
-  if (a.mode === 'with-code-intel' && b.mode === 'baseline') {
+  if (a.mode === "with-code-intel" && b.mode === "baseline") {
     baseline = b;
     withCodeIntel = a;
   }
@@ -216,18 +216,26 @@ function runCompare(opts: ParsedArgs): void {
           summary: gate.summary,
         },
         null,
-        2,
-      ) + '\n',
+        2
+      ) + "\n"
     );
     process.exit(gate.passed ? 0 : 1);
     return;
   }
 
   process.stdout.write(`\n${gate.summary}\n\n`);
-  process.stdout.write(`baseline:        precision@${baseline.k}=${(baseline.mean_precision_at_k * 100).toFixed(1)}%   answered=${(baseline.answered_rate * 100).toFixed(1)}%   (commit ${baseline.commit})\n`);
-  process.stdout.write(`with-code-intel: precision@${withCodeIntel.k}=${(withCodeIntel.mean_precision_at_k * 100).toFixed(1)}%   answered=${(withCodeIntel.answered_rate * 100).toFixed(1)}%   (commit ${withCodeIntel.commit})\n`);
-  process.stdout.write(`delta:           +${gate.precision_delta_pp.toFixed(1)}pp precision   top-1 stability=${(gate.top_1_stability_rate * 100).toFixed(1)}%\n`);
-  process.stdout.write(`cleared bar:     ${gate.questions_cleared_bar}/${gate.questions_total}\n\n`);
+  process.stdout.write(
+    `baseline:        precision@${baseline.k}=${(baseline.mean_precision_at_k * 100).toFixed(1)}%   answered=${(baseline.answered_rate * 100).toFixed(1)}%   (commit ${baseline.commit})\n`
+  );
+  process.stdout.write(
+    `with-code-intel: precision@${withCodeIntel.k}=${(withCodeIntel.mean_precision_at_k * 100).toFixed(1)}%   answered=${(withCodeIntel.answered_rate * 100).toFixed(1)}%   (commit ${withCodeIntel.commit})\n`
+  );
+  process.stdout.write(
+    `delta:           +${gate.precision_delta_pp.toFixed(1)}pp precision   top-1 stability=${(gate.top_1_stability_rate * 100).toFixed(1)}%\n`
+  );
+  process.stdout.write(
+    `cleared bar:     ${gate.questions_cleared_bar}/${gate.questions_total}\n\n`
+  );
 
   process.exit(gate.passed ? 0 : 1);
 }
@@ -238,15 +246,23 @@ function printSingleReport(report: EvalRunReport): void {
   process.stdout.write(`commit:      ${report.commit}\n`);
   process.stdout.write(`captured:    ${report.captured_at}\n`);
   process.stdout.write(`questions:   ${report.questions.length}\n`);
-  process.stdout.write(`precision@${report.k}: ${(report.mean_precision_at_k * 100).toFixed(1)}%\n`);
-  process.stdout.write(`answered:    ${report.questions.filter((q) => q.answered).length}/${report.questions.length} (${(report.answered_rate * 100).toFixed(1)}%)\n`);
-  process.stdout.write(`latency:     ${report.total_latency_ms}ms total, ${(report.total_latency_ms / Math.max(1, report.questions.length)).toFixed(0)}ms/q\n`);
+  process.stdout.write(
+    `precision@${report.k}: ${(report.mean_precision_at_k * 100).toFixed(1)}%\n`
+  );
+  process.stdout.write(
+    `answered:    ${report.questions.filter((q) => q.answered).length}/${report.questions.length} (${(report.answered_rate * 100).toFixed(1)}%)\n`
+  );
+  process.stdout.write(
+    `latency:     ${report.total_latency_ms}ms total, ${(report.total_latency_ms / Math.max(1, report.questions.length)).toFixed(0)}ms/q\n`
+  );
   process.stdout.write(`\nper-question:\n`);
   for (const q of report.questions) {
-    const status = q.answered ? '✓' : '✗';
-    process.stdout.write(`  ${status} ${q.id.padEnd(20)} p@${report.k}=${(q.precision_at_k * 100).toFixed(0)}% recall@${report.k}=${(q.recall_at_k * 100).toFixed(0)}% (${q.latency_ms}ms)\n`);
+    const status = q.answered ? "✓" : "✗";
+    process.stdout.write(
+      `  ${status} ${q.id.padEnd(20)} p@${report.k}=${(q.precision_at_k * 100).toFixed(0)}% recall@${report.k}=${(q.recall_at_k * 100).toFixed(0)}% (${q.latency_ms}ms)\n`
+    );
   }
-  process.stdout.write('\n');
+  process.stdout.write("\n");
 }
 
 async function resolveDefaultSource(engine: BrainEngine): Promise<string> {
@@ -254,7 +270,7 @@ async function resolveDefaultSource(engine: BrainEngine): Promise<string> {
   // Most brains have one source; this picks that one.
   const sources = await (engine as any).listSources?.();
   if (Array.isArray(sources) && sources.length > 0) {
-    return sources[0].id ?? 'default';
+    return sources[0].id ?? "default";
   }
-  return 'default';
+  return "default";
 }

@@ -31,13 +31,13 @@
  *   - try/finally ALWAYS releases the per-source lock. Aborted runs leave
  *     the next call free to claim.
  */
-import { tryAcquireDbLock } from '../../db-lock.ts';
-import { BudgetTracker, BudgetExhausted } from '../../budget/budget-tracker.ts';
-import { withBudgetTracker } from '../../ai/gateway.ts';
-import { embedStaleForSource } from '../../embed-stale.ts';
-import { currentEmbeddingSignature } from '../../embedding.ts';
-import type { BrainEngine } from '../../engine.ts';
-import type { MinionJobContext } from '../types.ts';
+import { tryAcquireDbLock } from "../../db-lock.ts";
+import { BudgetTracker, BudgetExhausted } from "../../budget/budget-tracker.ts";
+import { withBudgetTracker } from "../../ai/gateway.ts";
+import { embedStaleForSource } from "../../embed-stale.ts";
+import { currentEmbeddingSignature } from "../../embedding.ts";
+import type { BrainEngine } from "../../engine.ts";
+import type { MinionJobContext } from "../types.ts";
 
 const DEFAULT_MAX_USD_PER_JOB = 10;
 const EMBED_BACKFILL_LOCK_TTL_MIN = 60;
@@ -50,7 +50,7 @@ export interface EmbedBackfillJobData {
 }
 
 export interface EmbedBackfillResult {
-  status: 'success' | 'already_in_progress' | 'budget_exhausted' | 'aborted';
+  status: "success" | "already_in_progress" | "budget_exhausted" | "aborted";
   sourceId: string;
   embedded: number;
   chunksProcessed: number;
@@ -68,7 +68,7 @@ function embedBackfillLockId(sourceId: string): string {
 
 /** Read embed.backfill_max_usd config or default. */
 async function readMaxUsd(engine: BrainEngine): Promise<number> {
-  const raw = await engine.getConfig('embed.backfill_max_usd');
+  const raw = await engine.getConfig("embed.backfill_max_usd");
   if (raw === null || raw === undefined) return DEFAULT_MAX_USD_PER_JOB;
   const n = Number(raw);
   return Number.isFinite(n) && n > 0 ? n : DEFAULT_MAX_USD_PER_JOB;
@@ -77,22 +77,17 @@ async function readMaxUsd(engine: BrainEngine): Promise<number> {
 /** Validate + extract typed job params. Throws on malformed input. */
 function parseParams(data: Record<string, unknown>): EmbedBackfillJobData {
   const sourceId = data.sourceId;
-  if (typeof sourceId !== 'string' || sourceId.length === 0) {
-    throw new Error('embed-backfill: data.sourceId is required and must be a non-empty string');
+  if (typeof sourceId !== "string" || sourceId.length === 0) {
+    throw new Error("embed-backfill: data.sourceId is required and must be a non-empty string");
   }
   const batchSize =
-    typeof data.batchSize === 'number' && data.batchSize > 0
-      ? data.batchSize
-      : undefined;
-  const reason =
-    typeof data.reason === 'string' ? data.reason : undefined;
+    typeof data.batchSize === "number" && data.batchSize > 0 ? data.batchSize : undefined;
+  const reason = typeof data.reason === "string" ? data.reason : undefined;
   return { sourceId, batchSize, reason };
 }
 
 export function makeEmbedBackfillHandler(engine: BrainEngine) {
-  return async function embedBackfillHandler(
-    job: MinionJobContext,
-  ): Promise<EmbedBackfillResult> {
+  return async function embedBackfillHandler(job: MinionJobContext): Promise<EmbedBackfillResult> {
     const { sourceId, batchSize } = parseParams(job.data);
 
     // D2: per-source lock at handler entry. The submit-side cooldown (D19)
@@ -101,7 +96,7 @@ export function makeEmbedBackfillHandler(engine: BrainEngine) {
     const lock = await tryAcquireDbLock(engine, lockKey, EMBED_BACKFILL_LOCK_TTL_MIN);
     if (!lock) {
       return {
-        status: 'already_in_progress',
+        status: "already_in_progress",
         sourceId,
         embedded: 0,
         chunksProcessed: 0,
@@ -137,12 +132,12 @@ export function makeEmbedBackfillHandler(engine: BrainEngine) {
               spentUsd: tracker.totalSpent,
             });
           },
-        }),
+        })
       );
 
       if (result.aborted) {
         return {
-          status: 'aborted',
+          status: "aborted",
           sourceId,
           embedded: result.embedded,
           chunksProcessed: result.chunksProcessed,
@@ -151,7 +146,7 @@ export function makeEmbedBackfillHandler(engine: BrainEngine) {
         };
       }
       return {
-        status: 'success',
+        status: "success",
         sourceId,
         embedded: result.embedded,
         chunksProcessed: result.chunksProcessed,
@@ -163,7 +158,7 @@ export function makeEmbedBackfillHandler(engine: BrainEngine) {
         // Partial progress preserved: already-embedded chunks stay embedded;
         // remaining stays NULL for the next run to pick up.
         return {
-          status: 'budget_exhausted',
+          status: "budget_exhausted",
           sourceId,
           embedded: 0, // Tracker doesn't track per-chunk count
           chunksProcessed: 0,

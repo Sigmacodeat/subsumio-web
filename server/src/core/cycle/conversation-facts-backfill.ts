@@ -42,16 +42,16 @@
  * default reads from the same key (Eng-v2 A2).
  */
 
-import type { BrainEngine } from '../engine.ts';
-import { BudgetTracker, BudgetExhausted } from '../budget/budget-tracker.ts';
-import { withBudgetTracker } from '../ai/gateway.ts';
-import { listSources } from '../sources-ops.ts';
+import type { BrainEngine } from "../engine.ts";
+import { BudgetTracker, BudgetExhausted } from "../budget/budget-tracker.ts";
+import { withBudgetTracker } from "../ai/gateway.ts";
+import { listSources } from "../sources-ops.ts";
 import {
   runExtractConversationFactsCore,
   ALLOWED_TYPES,
   type AllowedType,
   type ExtractConversationFactsResult,
-} from '../../commands/extract-conversation-facts.ts';
+} from "../../commands/extract-conversation-facts.ts";
 
 /** Per-phase wrapper opts. */
 export interface ConversationFactsBackfillPhaseOpts {
@@ -61,20 +61,20 @@ export interface ConversationFactsBackfillPhaseOpts {
 
 /** Phase return shape (matches PhaseResult contract from cycle.ts). */
 export interface ConversationFactsBackfillPhaseResult {
-  phase: 'conversation_facts_backfill';
-  status: 'ok' | 'warn' | 'fail' | 'skipped';
+  phase: "conversation_facts_backfill";
+  status: "ok" | "warn" | "fail" | "skipped";
   duration_ms: number;
   summary: string;
   details: Record<string, unknown>;
 }
 
-const CFG_PREFIX = 'cycle.conversation_facts_backfill';
+const CFG_PREFIX = "cycle.conversation_facts_backfill";
 
 interface ResolvedConfig {
   enabled: boolean;
-  maxCostUsd: number;          // per source per cycle
-  maxTotalCostUsd: number;     // brain-wide per cycle
-  maxWalltimeMin: number;      // per source per cycle
+  maxCostUsd: number; // per source per cycle
+  maxTotalCostUsd: number; // brain-wide per cycle
+  maxWalltimeMin: number; // per source per cycle
   maxTotalWalltimeMin: number; // brain-wide per cycle
   types: AllowedType[];
   /**
@@ -90,20 +90,20 @@ async function loadCfg(engine: BrainEngine): Promise<ResolvedConfig> {
   const get = (k: string) => engine.getConfig(`${CFG_PREFIX}.${k}`);
   const [enabled, maxCost, maxTotalCost, maxWall, maxTotalWall, typesRaw, workersRaw] =
     await Promise.all([
-      get('enabled'),
-      get('max_cost_usd'),
-      get('max_total_cost_usd'),
-      get('max_walltime_min'),
-      get('max_total_walltime_min'),
-      get('types'),
-      get('workers'),
+      get("enabled"),
+      get("max_cost_usd"),
+      get("max_total_cost_usd"),
+      get("max_walltime_min"),
+      get("max_total_walltime_min"),
+      get("types"),
+      get("workers"),
     ]);
 
   // Truthy-string parse mirrors isFactsExtractionEnabled.
   const enabledFlag = (() => {
     if (enabled == null) return false;
     const v = enabled.trim().toLowerCase();
-    return !['false', '0', 'no', 'off', ''].includes(v);
+    return !["false", "0", "no", "off", ""].includes(v);
   })();
 
   const parseFloatOrDefault = (raw: string | null, fallback: number): number => {
@@ -118,10 +118,8 @@ async function loadCfg(engine: BrainEngine): Promise<ResolvedConfig> {
       const parsed = JSON.parse(typesRaw);
       if (Array.isArray(parsed)) {
         const filtered = parsed
-          .filter((t): t is string => typeof t === 'string')
-          .filter((t): t is AllowedType =>
-            (ALLOWED_TYPES as readonly string[]).includes(t),
-          );
+          .filter((t): t is string => typeof t === "string")
+          .filter((t): t is AllowedType => (ALLOWED_TYPES as readonly string[]).includes(t));
         if (filtered.length > 0) types = filtered;
       }
     } catch {
@@ -150,20 +148,19 @@ async function loadCfg(engine: BrainEngine): Promise<ResolvedConfig> {
 
 export async function runPhaseConversationFactsBackfill(
   engine: BrainEngine,
-  opts: ConversationFactsBackfillPhaseOpts = {},
+  opts: ConversationFactsBackfillPhaseOpts = {}
 ): Promise<ConversationFactsBackfillPhaseResult> {
   const cfg = await loadCfg(engine);
 
   if (!cfg.enabled) {
     return {
-      phase: 'conversation_facts_backfill',
-      status: 'skipped',
+      phase: "conversation_facts_backfill",
+      status: "skipped",
       duration_ms: 0,
-      summary: 'cycle.conversation_facts_backfill.enabled=false (default OFF)',
+      summary: "cycle.conversation_facts_backfill.enabled=false (default OFF)",
       details: {
-        reason: 'disabled',
-        enable_hint:
-          'gbrain config set cycle.conversation_facts_backfill.enabled true',
+        reason: "disabled",
+        enable_hint: "gbrain config set cycle.conversation_facts_backfill.enabled true",
       },
     };
   }
@@ -174,10 +171,10 @@ export async function runPhaseConversationFactsBackfill(
   const sources = await listSources(engine);
   if (sources.length === 0) {
     return {
-      phase: 'conversation_facts_backfill',
-      status: 'ok',
+      phase: "conversation_facts_backfill",
+      status: "ok",
       duration_ms: Date.now() - startedAt,
-      summary: 'no sources to process',
+      summary: "no sources to process",
       details: { sources_count: 0 },
     };
   }
@@ -187,7 +184,7 @@ export async function runPhaseConversationFactsBackfill(
   // so the core doesn't wrap (which would REPLACE).
   const brainTracker = new BudgetTracker({
     maxCostUsd: cfg.maxTotalCostUsd,
-    label: 'conversation_facts_backfill:brain-wide',
+    label: "conversation_facts_backfill:brain-wide",
   });
 
   const perSourceResults: Record<string, ExtractConversationFactsResult & { error?: string }> = {};
@@ -202,7 +199,7 @@ export async function runPhaseConversationFactsBackfill(
     // so the AsyncLocalStorage scope established here remains active.
     await withBudgetTracker(brainTracker, async () => {
       for (const src of sources) {
-        if (opts.signal?.aborted) throw new Error('aborted');
+        if (opts.signal?.aborted) throw new Error("aborted");
 
         // Brain-wide walltime check.
         if (Date.now() - startedAt > maxTotalWalltimeMs) {
@@ -211,23 +208,27 @@ export async function runPhaseConversationFactsBackfill(
         }
 
         try {
-          const result = await runExtractConversationFactsCore(engine, {
-            sourceId: src.id,
-            types: cfg.types,
-            dryRun: opts.dryRun,
-            // Pass brain-wide tracker so core skips its own auto-wrap.
-            budgetTracker: brainTracker,
-            // v0.41.15.0 (D9 cycle context): cycle config controls
-            // per-source worker count. Default 1 — opt-in concurrency
-            // for cycle paths.
-            workers: cfg.workers,
-          }, opts.signal);
+          const result = await runExtractConversationFactsCore(
+            engine,
+            {
+              sourceId: src.id,
+              types: cfg.types,
+              dryRun: opts.dryRun,
+              // Pass brain-wide tracker so core skips its own auto-wrap.
+              budgetTracker: brainTracker,
+              // v0.41.15.0 (D9 cycle context): cycle config controls
+              // per-source worker count. Default 1 — opt-in concurrency
+              // for cycle paths.
+              workers: cfg.workers,
+            },
+            opts.signal
+          );
           perSourceResults[src.id] = result;
           if (result.budget_exhausted) {
             // Brain-wide cap hit. Remaining sources skipped.
             skippedByBrainWideCap = Math.max(
               0,
-              sources.length - Object.keys(perSourceResults).length,
+              sources.length - Object.keys(perSourceResults).length
             );
             break;
           }
@@ -235,7 +236,7 @@ export async function runPhaseConversationFactsBackfill(
           if (err instanceof BudgetExhausted) {
             skippedByBrainWideCap = Math.max(
               0,
-              sources.length - Object.keys(perSourceResults).length,
+              sources.length - Object.keys(perSourceResults).length
             );
             break;
           }
@@ -261,14 +262,14 @@ export async function runPhaseConversationFactsBackfill(
   } catch (err) {
     if (err instanceof BudgetExhausted) {
       // Brain-wide cap hit during last source.
-    } else if ((err as Error).message === 'aborted' || opts.signal?.aborted) {
+    } else if ((err as Error).message === "aborted" || opts.signal?.aborted) {
       // Propagate abort.
       throw err;
     } else {
       // Unexpected error.
       return {
-        phase: 'conversation_facts_backfill',
-        status: 'fail',
+        phase: "conversation_facts_backfill",
+        status: "fail",
         duration_ms: Date.now() - startedAt,
         summary: `brain-wide loop failed: ${(err as Error).message}`,
         details: { error: (err as Error).message, perSourceResults },
@@ -293,11 +294,11 @@ export async function runPhaseConversationFactsBackfill(
   }
 
   const anyError = Object.values(perSourceResults).some((r) => r.error);
-  const status = anyError ? 'warn' : 'ok';
+  const status = anyError ? "warn" : "ok";
   const summary = `${totals.facts_inserted} facts inserted across ${totals.sources_processed}/${sources.length} sources, ~$${totalSpent.toFixed(4)} spent`;
 
   return {
-    phase: 'conversation_facts_backfill',
+    phase: "conversation_facts_backfill",
     status,
     duration_ms: Date.now() - startedAt,
     summary,

@@ -9,20 +9,20 @@
  */
 
 export type TouchpointKind =
-  | 'embedding'
-  | 'expansion'
-  | 'chat'
-  | 'chunking'
-  | 'transcription'
-  | 'enrichment'
-  | 'improve'
-  | 'reranker';
+  | "embedding"
+  | "expansion"
+  | "chat"
+  | "chunking"
+  | "transcription"
+  | "enrichment"
+  | "improve"
+  | "reranker";
 
 export type Implementation =
-  | 'native-openai'
-  | 'native-google'
-  | 'native-anthropic'
-  | 'openai-compatible';
+  | "native-openai"
+  | "native-google"
+  | "native-anthropic"
+  | "openai-compatible";
 
 export interface EmbeddingTouchpoint {
   models: string[];
@@ -117,8 +117,8 @@ export interface EmbeddingTouchpoint {
  * multimodal endpoint accepts a content array mixing text + image entries.
  */
 export type MultimodalInput =
-  | { kind: 'image_base64'; data: string; mime: string }
-  | { kind: 'text'; text: string };
+  | { kind: "image_base64"; data: string; mime: string }
+  | { kind: "text"; text: string };
 
 /**
  * v0.36 — opts for gateway.embedMultimodal().
@@ -131,7 +131,7 @@ export type MultimodalInput =
  * supported (Voyage requires one input_type per request).
  */
 export interface EmbedMultimodalOpts {
-  inputType?: 'document' | 'query';
+  inputType?: "document" | "query";
 }
 
 /**
@@ -225,7 +225,7 @@ export interface Recipe {
   /** Human-readable name for display. */
   name: string;
   /** Distinguishes native-package providers from openai-compatible endpoints. */
-  tier: 'native' | 'openai-compat';
+  tier: "native" | "openai-compat";
   /** Maps to the gateway's implementation switch. */
   implementation: Implementation;
   /** For openai-compatible tier: default base URL. May be overridden by env or wizard. */

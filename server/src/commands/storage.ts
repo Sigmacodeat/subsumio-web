@@ -1,9 +1,13 @@
-import { join } from 'path';
-import type { BrainEngine } from '../core/engine.ts';
-import { loadStorageConfig, validateStorageConfig, getStorageTier } from '../core/storage-config.ts';
-import type { StorageConfig, StorageTier } from '../core/storage-config.ts';
-import { walkBrainRepo, type DiskFileEntry } from '../core/disk-walk.ts';
-import { getDefaultSourcePath } from '../core/source-resolver.ts';
+import { join } from "path";
+import type { BrainEngine } from "../core/engine.ts";
+import {
+  loadStorageConfig,
+  validateStorageConfig,
+  getStorageTier,
+} from "../core/storage-config.ts";
+import type { StorageConfig, StorageTier } from "../core/storage-config.ts";
+import { walkBrainRepo, type DiskFileEntry } from "../core/disk-walk.ts";
+import { getDefaultSourcePath } from "../core/source-resolver.ts";
 
 /**
  * Distinct nominal types for the two tier-keyed numeric maps. Both shapes
@@ -12,8 +16,8 @@ import { getDefaultSourcePath } from '../core/source-resolver.ts';
  * make accidental swaps a compile-time error rather than a silent display
  * bug. Issue #11 of the eng review.
  */
-export type PageCountsByTier = Record<StorageTier, number> & { __brand?: 'page-counts' };
-export type DiskUsageByTier = Record<StorageTier, number> & { __brand?: 'disk-bytes' };
+export type PageCountsByTier = Record<StorageTier, number> & { __brand?: "page-counts" };
+export type DiskUsageByTier = Record<StorageTier, number> & { __brand?: "disk-bytes" };
 
 /**
  * Pure-data result of a storage-status query. No side effects, no I/O
@@ -35,12 +39,12 @@ export interface StorageStatusResult {
 
 export async function runStorage(engine: BrainEngine, args: string[]): Promise<void> {
   const subcommand = args[0];
-  if (!subcommand || subcommand === 'status') {
+  if (!subcommand || subcommand === "status") {
     await runStorageStatus(engine, args.slice(1));
     return;
   }
   console.error(`Unknown storage subcommand: ${subcommand}`);
-  console.error('Available subcommands: status');
+  console.error("Available subcommands: status");
   process.exit(1);
 }
 
@@ -50,7 +54,7 @@ async function runStorageStatus(engine: BrainEngine, args: string[]): Promise<vo
   // Resolution chain (D5, Issue #3): explicit --repo → typed accessor → null.
   // No cwd fallback. The original silent footgun is dead.
   let repoPath: string | null = null;
-  const repoIdx = args.indexOf('--repo');
+  const repoIdx = args.indexOf("--repo");
   if (repoIdx !== -1 && args[repoIdx + 1]) {
     repoPath = args[repoIdx + 1];
   } else {
@@ -59,7 +63,7 @@ async function runStorageStatus(engine: BrainEngine, args: string[]): Promise<vo
 
   const result = await getStorageStatus(engine, repoPath);
 
-  if (args.includes('--json')) {
+  if (args.includes("--json")) {
     console.log(formatStorageStatusJson(result));
     return;
   }
@@ -78,13 +82,13 @@ async function runStorageStatus(engine: BrainEngine, args: string[]): Promise<vo
 let _pgliteWarned = false;
 function warnIfPGLite(engine: BrainEngine): void {
   if (_pgliteWarned) return;
-  if (engine.kind !== 'pglite') return;
+  if (engine.kind !== "pglite") return;
   _pgliteWarned = true;
   console.warn(
     `Note: storage tiering has limited effect on PGLite — pages live in your ` +
       `local database file regardless of tier. The .gitignore management still ` +
       `keeps bulk content out of git history. To get full tiering, migrate to ` +
-      `Postgres with \`gbrain migrate --to supabase\`.`,
+      `Postgres with \`gbrain migrate --to supabase\`.`
   );
 }
 
@@ -107,7 +111,7 @@ export function __resetPGLiteWarn(): void {
  */
 export async function getStorageStatus(
   engine: BrainEngine,
-  repoPath: string | null,
+  repoPath: string | null
 ): Promise<StorageStatusResult> {
   const config = repoPath ? loadStorageConfig(repoPath) : null;
   const warnings = config ? validateStorageConfig(config) : [];
@@ -124,14 +128,14 @@ export async function getStorageStatus(
   const pages = await engine.listPages({ limit: 1_000_000 });
 
   for (const page of pages) {
-    const tier = config ? getStorageTier(page.slug, config) : 'unspecified';
+    const tier = config ? getStorageTier(page.slug, config) : "unspecified";
     pagesByTier[tier]++;
     if (!repoPath) continue;
     const entry = fileMap.get(page.slug);
     if (entry) {
       diskUsageByTier[tier] += entry.size;
-    } else if (config && tier === 'db_only') {
-      missingFiles.push({ slug: page.slug, expectedPath: join(repoPath, page.slug + '.md') });
+    } else if (config && tier === "db_only") {
+      missingFiles.push({ slug: page.slug, expectedPath: join(repoPath, page.slug + ".md") });
     }
   }
 
@@ -166,32 +170,32 @@ export function formatStorageStatusJson(result: StorageStatusResult): string {
  */
 export function formatStorageStatusHuman(result: StorageStatusResult): string {
   const lines: string[] = [];
-  lines.push('Storage Status');
-  lines.push('==============');
-  lines.push('');
+  lines.push("Storage Status");
+  lines.push("==============");
+  lines.push("");
 
   if (!result.config) {
-    lines.push('No gbrain.yml configuration found.');
+    lines.push("No gbrain.yml configuration found.");
     if (result.repoPath) lines.push(`Checked: ${result.repoPath}/gbrain.yml`);
-    lines.push('');
-    lines.push('All pages are stored in git by default.');
+    lines.push("");
+    lines.push("All pages are stored in git by default.");
     lines.push(`Total pages: ${result.totalPages}`);
-    return lines.join('\n');
+    return lines.join("\n");
   }
 
   lines.push(`Repository: ${result.repoPath}`);
   lines.push(`Total pages: ${result.totalPages}`);
-  lines.push('');
-  lines.push('Storage Tiers:');
-  lines.push('-------------');
+  lines.push("");
+  lines.push("Storage Tiers:");
+  lines.push("-------------");
   lines.push(`DB tracked:     ${result.pagesByTier.db_tracked.toLocaleString()} pages`);
   lines.push(`DB only:        ${result.pagesByTier.db_only.toLocaleString()} pages`);
   lines.push(`Unspecified:    ${result.pagesByTier.unspecified.toLocaleString()} pages`);
 
   if (result.diskUsageByTier.db_tracked > 0 || result.diskUsageByTier.db_only > 0) {
-    lines.push('');
-    lines.push('Disk Usage:');
-    lines.push('-----------');
+    lines.push("");
+    lines.push("Disk Usage:");
+    lines.push("-----------");
     if (result.diskUsageByTier.db_tracked > 0) {
       lines.push(`DB tracked:     ${formatBytes(result.diskUsageByTier.db_tracked)}`);
     }
@@ -204,42 +208,42 @@ export function formatStorageStatusHuman(result: StorageStatusResult): string {
   }
 
   if (result.missingFiles.length > 0) {
-    lines.push('');
-    lines.push('Missing Files (need restore):');
-    lines.push('-----------------------------');
+    lines.push("");
+    lines.push("Missing Files (need restore):");
+    lines.push("-----------------------------");
     for (const missing of result.missingFiles.slice(0, 10)) {
       lines.push(`  ${missing.slug}`);
     }
     if (result.missingFiles.length > 10) {
       lines.push(`  ... and ${result.missingFiles.length - 10} more`);
     }
-    lines.push('');
+    lines.push("");
     lines.push(`Use: gbrain export --restore-only --repo "${result.repoPath}"`);
   }
 
   if (result.warnings.length > 0) {
-    lines.push('');
-    lines.push('Warnings:');
-    lines.push('---------');
+    lines.push("");
+    lines.push("Warnings:");
+    lines.push("---------");
     for (const warning of result.warnings) lines.push(`  ! ${warning}`);
   }
 
-  lines.push('');
-  lines.push('Configuration:');
-  lines.push('--------------');
-  lines.push('DB tracked directories:');
+  lines.push("");
+  lines.push("Configuration:");
+  lines.push("--------------");
+  lines.push("DB tracked directories:");
   for (const dir of result.config.db_tracked) lines.push(`  - ${dir}`);
-  lines.push('');
-  lines.push('DB-only directories:');
+  lines.push("");
+  lines.push("DB-only directories:");
   for (const dir of result.config.db_only) lines.push(`  - ${dir}`);
 
-  return lines.join('\n');
+  return lines.join("\n");
 }
 
 function formatBytes(bytes: number): string {
-  if (bytes === 0) return '0 B';
+  if (bytes === 0) return "0 B";
   const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const sizes = ["B", "KB", "MB", "GB", "TB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
 }

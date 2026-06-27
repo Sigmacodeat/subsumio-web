@@ -26,24 +26,24 @@ Next query is smarter (the compounding effect)
 These are integration recipes your agent can set up for you. Run
 `gbrain integrations` to see what's available and their status.
 
-| Recipe | Category | Requires | What It Does | Setup Time |
-|--------|----------|----------|-------------|------------|
-| [ngrok-tunnel](../../recipes/ngrok-tunnel.md) | Infra | — | Fixed public URL for MCP + voice ($8/mo) | 10 min |
-| [credential-gateway](../../recipes/credential-gateway.md) | Infra | — | Gmail + Calendar access (ClawVisor or Google OAuth) | 15 min |
-| [voice-to-brain](../../recipes/twilio-voice-brain.md) | Sense | ngrok-tunnel | Phone calls create brain pages via Twilio + OpenAI Realtime | 30 min |
-| [email-to-brain](../../recipes/email-to-brain.md) | Sense | credential-gateway | Gmail messages flow into entity pages via deterministic collector | 20 min |
-| [x-to-brain](../../recipes/x-to-brain.md) | Sense | — | Twitter timeline, mentions, keyword monitoring with deletion detection | 15 min |
-| [calendar-to-brain](../../recipes/calendar-to-brain.md) | Sense | credential-gateway | Google Calendar events become searchable daily brain pages | 20 min |
-| [meeting-sync](../../recipes/meeting-sync.md) | Sense | — | Circleback meeting transcripts auto-import with attendee propagation | 15 min |
+| Recipe                                                    | Category | Requires           | What It Does                                                           | Setup Time |
+| --------------------------------------------------------- | -------- | ------------------ | ---------------------------------------------------------------------- | ---------- |
+| [ngrok-tunnel](../../recipes/ngrok-tunnel.md)             | Infra    | —                  | Fixed public URL for MCP + voice ($8/mo)                               | 10 min     |
+| [credential-gateway](../../recipes/credential-gateway.md) | Infra    | —                  | Gmail + Calendar access (ClawVisor or Google OAuth)                    | 15 min     |
+| [voice-to-brain](../../recipes/twilio-voice-brain.md)     | Sense    | ngrok-tunnel       | Phone calls create brain pages via Twilio + OpenAI Realtime            | 30 min     |
+| [email-to-brain](../../recipes/email-to-brain.md)         | Sense    | credential-gateway | Gmail messages flow into entity pages via deterministic collector      | 20 min     |
+| [x-to-brain](../../recipes/x-to-brain.md)                 | Sense    | —                  | Twitter timeline, mentions, keyword monitoring with deletion detection | 15 min     |
+| [calendar-to-brain](../../recipes/calendar-to-brain.md)   | Sense    | credential-gateway | Google Calendar events become searchable daily brain pages             | 20 min     |
+| [meeting-sync](../../recipes/meeting-sync.md)             | Sense    | —                  | Circleback meeting transcripts auto-import with attendee propagation   | 15 min     |
 
 ### Manual Integration Guides
 
 These require manual setup (no self-installing recipe yet):
 
-| Guide | What It Does |
-|-------|-------------|
-| [Credential Gateway](credential-gateway.md) | Set up ClawVisor or Hermes for Gmail, Calendar, Contacts access |
-| [Meeting & Call Webhooks](meeting-webhooks.md) | Circleback meeting transcripts + Quo/OpenPhone SMS/calls |
+| Guide                                          | What It Does                                                    |
+| ---------------------------------------------- | --------------------------------------------------------------- |
+| [Credential Gateway](credential-gateway.md)    | Set up ClawVisor or Hermes for Gmail, Calendar, Contacts access |
+| [Meeting & Call Webhooks](meeting-webhooks.md) | Circleback meeting transcripts + Quo/OpenPhone SMS/calls        |
 
 ## How to Read a Recipe
 
@@ -52,26 +52,25 @@ the recipe and walks you through setup.
 
 ```yaml
 ---
-id: voice-to-brain              # unique identifier
-name: Voice-to-Brain            # human-readable name
-version: 0.7.0                  # recipe version
-description: Phone calls...     # what it does
-category: sense                 # sense (data input) or reflex (automated response)
-requires: []                    # other recipes that must be set up first
-secrets:                        # API keys and credentials needed
+id: voice-to-brain # unique identifier
+name: Voice-to-Brain # human-readable name
+version: 0.7.0 # recipe version
+description: Phone calls... # what it does
+category: sense # sense (data input) or reflex (automated response)
+requires: [] # other recipes that must be set up first
+secrets: # API keys and credentials needed
   - name: TWILIO_ACCOUNT_SID
     description: Twilio account SID
-    where: https://console.twilio.com    # exact URL to get this key
-health_checks:                  # typed DSL to verify the integration is working
+    where: https://console.twilio.com # exact URL to get this key
+health_checks: # typed DSL to verify the integration is working
   - type: http
     url: "https://api.twilio.com/2010-04-01/Accounts/$TWILIO_ACCOUNT_SID.json"
     auth: basic
     auth_user: "$TWILIO_ACCOUNT_SID"
     auth_token: "$TWILIO_AUTH_TOKEN"
     label: "Twilio account"
-setup_time: 30 min              # estimated time to complete setup
+setup_time: 30 min # estimated time to complete setup
 ---
-
 [Setup instructions the agent follows step by step...]
 ```
 

@@ -24,7 +24,12 @@ const API_KEY_PREFIX = "sk_live_";
 export function generateApiKey(): { key: string; id: string } {
   const id = crypto.randomUUID();
   const random = crypto.getRandomValues(new Uint8Array(32));
-  const key = `${API_KEY_PREFIX}${b64url(random.buffer.slice(random.byteOffset, random.byteOffset + random.byteLength) as ArrayBuffer).replace(/_/g, "").replace(/-/g, "").slice(0, 32)}`;
+  const key = `${API_KEY_PREFIX}${b64url(
+    random.buffer.slice(random.byteOffset, random.byteOffset + random.byteLength) as ArrayBuffer
+  )
+    .replace(/_/g, "")
+    .replace(/-/g, "")
+    .slice(0, 32)}`;
   return { key, id };
 }
 

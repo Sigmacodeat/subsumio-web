@@ -19,20 +19,20 @@
  * unless --corpus points elsewhere.
  */
 
-import { readFileSync, existsSync } from 'fs';
+import { readFileSync, existsSync } from "fs";
 
 // ─────────────────────────────────────────────────────────────────
 // Types — stable contract for downstream consumers (gbrain-evals, CI)
 // ─────────────────────────────────────────────────────────────────
 
 export type CodeQuestionKind =
-  | 'callers'
-  | 'callees'
-  | 'definition'
-  | 'references'
-  | 'blast_radius'
-  | 'execution_flow'
-  | 'cluster_membership';
+  | "callers"
+  | "callees"
+  | "definition"
+  | "references"
+  | "blast_radius"
+  | "execution_flow"
+  | "cluster_membership";
 
 export interface CodeQuestion {
   id: string;
@@ -78,7 +78,7 @@ export interface QuestionResult {
 }
 
 export interface EvalRunReport {
-  mode: 'baseline' | 'with-code-intel';
+  mode: "baseline" | "with-code-intel";
   schema_version: 1;
   corpus: string;
   k: number;
@@ -172,13 +172,16 @@ export function expandExpectedToRelevantSet(expected: string[]): {
   const exactFiles = new Set<string>();
   const dirPrefixes: string[] = [];
   for (const e of expected) {
-    if (e.endsWith('/')) dirPrefixes.push(e);
+    if (e.endsWith("/")) dirPrefixes.push(e);
     else exactFiles.add(e);
   }
   return { exactFiles, dirPrefixes };
 }
 
-export function isFileRelevant(file: string, expected: ReturnType<typeof expandExpectedToRelevantSet>): boolean {
+export function isFileRelevant(
+  file: string,
+  expected: ReturnType<typeof expandExpectedToRelevantSet>
+): boolean {
   if (expected.exactFiles.has(file)) return true;
   for (const p of expected.dirPrefixes) {
     if (file.startsWith(p)) return true;
@@ -194,7 +197,7 @@ export function loadQuestions(path: string): CodeQuestionFile {
   if (!existsSync(path)) {
     throw new Error(`questions file not found: ${path}`);
   }
-  const raw = readFileSync(path, 'utf8');
+  const raw = readFileSync(path, "utf8");
   let parsed: CodeQuestionFile;
   try {
     parsed = JSON.parse(raw);
@@ -205,7 +208,7 @@ export function loadQuestions(path: string): CodeQuestionFile {
     throw new Error(`unsupported questions file version ${parsed.version} (expected 1)`);
   }
   if (!Array.isArray(parsed.questions) || parsed.questions.length === 0) {
-    throw new Error('questions file contains no questions');
+    throw new Error("questions file contains no questions");
   }
   for (const q of parsed.questions) {
     if (!q.id || !q.kind || !q.query || !Array.isArray(q.expected_files)) {
@@ -224,7 +227,7 @@ export function loadQuestions(path: string): CodeQuestionFile {
  * Pure abstraction so the runner is testable without engine dependencies.
  */
 export interface RetrievalStrategy {
-  readonly mode: 'baseline' | 'with-code-intel';
+  readonly mode: "baseline" | "with-code-intel";
   retrieve(question: CodeQuestion, k: number): Promise<{ files: string[]; latency_ms: number }>;
 }
 
@@ -241,7 +244,7 @@ export interface RunnerOpts {
 export async function runCodeRetrievalEval(
   questions: CodeQuestion[],
   strategy: RetrievalStrategy,
-  opts: RunnerOpts,
+  opts: RunnerOpts
 ): Promise<EvalRunReport> {
   const results: QuestionResult[] = [];
   const startedAt = Date.now();
@@ -284,13 +287,14 @@ export async function runCodeRetrievalEval(
   }
 
   const total_latency_ms = Date.now() - startedAt;
-  const mean_precision_at_k = results.reduce((a, r) => a + r.precision_at_k, 0) / Math.max(1, results.length);
+  const mean_precision_at_k =
+    results.reduce((a, r) => a + r.precision_at_k, 0) / Math.max(1, results.length);
   const answered_rate = results.filter((r) => r.answered).length / Math.max(1, results.length);
 
-  let commit = 'unknown';
+  let commit = "unknown";
   try {
-    const { execSync } = await import('child_process');
-    commit = execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).trim();
+    const { execSync } = await import("child_process");
+    commit = execSync("git rev-parse --short HEAD", { encoding: "utf8" }).trim();
   } catch {
     // Not in a git repo or git unavailable — leave as 'unknown'
   }
@@ -343,9 +347,10 @@ export const DEFAULT_GATE: GateOpts = {
 export function evaluateGate(
   baseline: EvalRunReport,
   with_code_intel: EvalRunReport,
-  opts: GateOpts = DEFAULT_GATE,
+  opts: GateOpts = DEFAULT_GATE
 ): GateResult {
-  const precision_delta_pp = (with_code_intel.mean_precision_at_k - baseline.mean_precision_at_k) * 100;
+  const precision_delta_pp =
+    (with_code_intel.mean_precision_at_k - baseline.mean_precision_at_k) * 100;
   const top_1_stability_rate = top1StabilityRate(baseline.questions, with_code_intel.questions);
   const questions_cleared_bar = with_code_intel.questions.filter((q) => q.answered).length;
   const questions_total = with_code_intel.questions.length;
@@ -366,16 +371,25 @@ export function evaluateGate(
   const reasons: string[] = [];
   if (!enoughCleared) {
     reasons.push(
-      `only ${questions_cleared_bar}/${questions_total} questions cleared expected_min_recall (need >=${opts.min_questions_cleared})`,
+      `only ${questions_cleared_bar}/${questions_total} questions cleared expected_min_recall (need >=${opts.min_questions_cleared})`
     );
   }
-  if (precisionPasses) reasons.push(`precision@${baseline.k} +${precision_delta_pp.toFixed(1)}pp (>=${opts.required_precision_delta_pp})`);
-  else reasons.push(`precision@${baseline.k} delta ${precision_delta_pp.toFixed(1)}pp (<${opts.required_precision_delta_pp})`);
-  if (stabilityPasses) reasons.push(`answered_rate +${((with_code_intel.answered_rate - baseline.answered_rate) * 100).toFixed(1)}pp`);
+  if (precisionPasses)
+    reasons.push(
+      `precision@${baseline.k} +${precision_delta_pp.toFixed(1)}pp (>=${opts.required_precision_delta_pp})`
+    );
+  else
+    reasons.push(
+      `precision@${baseline.k} delta ${precision_delta_pp.toFixed(1)}pp (<${opts.required_precision_delta_pp})`
+    );
+  if (stabilityPasses)
+    reasons.push(
+      `answered_rate +${((with_code_intel.answered_rate - baseline.answered_rate) * 100).toFixed(1)}pp`
+    );
 
   const summary = passed
-    ? `GATE PASS — ${reasons.join('; ')}`
-    : `GATE FAIL — ${reasons.join('; ')}`;
+    ? `GATE PASS — ${reasons.join("; ")}`
+    : `GATE FAIL — ${reasons.join("; ")}`;
 
   return {
     passed,

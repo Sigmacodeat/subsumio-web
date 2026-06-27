@@ -5,10 +5,10 @@
  * so --save and --take are honored. Reads ANTHROPIC_API_KEY from the env;
  * degrades to gather-only output with a warning if missing.
  */
-import type { BrainEngine } from '../core/engine.ts';
-import { runThink, persistSynthesis } from '../core/think/index.ts';
-import { loadConfig, isThinClient } from '../core/config.ts';
-import { callRemoteTool, unpackToolResult } from '../core/mcp-client.ts';
+import type { BrainEngine } from "../core/engine.ts";
+import { runThink, persistSynthesis } from "../core/think/index.ts";
+import { loadConfig, isThinClient } from "../core/config.ts";
+import { callRemoteTool, unpackToolResult } from "../core/mcp-client.ts";
 
 function flagValue(args: string[], name: string): string | undefined {
   const i = args.indexOf(name);
@@ -21,7 +21,7 @@ function flagPresent(args: string[], name: string): boolean {
 }
 
 export async function runThinkCli(engine: BrainEngine, args: string[]): Promise<void> {
-  if (args.length === 0 || args.includes('--help') || args.includes('-h')) {
+  if (args.length === 0 || args.includes("--help") || args.includes("-h")) {
     console.log(`Usage: gbrain think "<question>" [options]
 
 Options:
@@ -51,37 +51,48 @@ prints what would have been the input (exit 0).
   }
 
   // Strip flags from positional args
-  const flagNames = ['--anchor', '--rounds', '--model', '--since', '--until'];
+  const flagNames = ["--anchor", "--rounds", "--model", "--since", "--until"];
   const positional: string[] = [];
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
-    if (flagNames.includes(a)) { i++; continue; }
-    if (a === '--save' || a === '--take' || a === '--json' || a === '--help' || a === '-h' || a === '--with-calibration') continue;
+    if (flagNames.includes(a)) {
+      i++;
+      continue;
+    }
+    if (
+      a === "--save" ||
+      a === "--take" ||
+      a === "--json" ||
+      a === "--help" ||
+      a === "-h" ||
+      a === "--with-calibration"
+    )
+      continue;
     positional.push(a);
   }
-  const question = positional.join(' ').trim();
+  const question = positional.join(" ").trim();
   if (!question) {
     console.error('Missing question. Try: gbrain think "What do we know about acme-example?"');
     process.exit(1);
   }
 
-  const json = flagPresent(args, '--json');
-  const save = flagPresent(args, '--save');
-  const take = flagPresent(args, '--take');
-  const anchor = flagValue(args, '--anchor');
-  const roundsStr = flagValue(args, '--rounds');
+  const json = flagPresent(args, "--json");
+  const save = flagPresent(args, "--save");
+  const take = flagPresent(args, "--take");
+  const anchor = flagValue(args, "--anchor");
+  const roundsStr = flagValue(args, "--rounds");
   const rounds = roundsStr ? Math.max(1, parseInt(roundsStr, 10) || 1) : 1;
-  const model = flagValue(args, '--model');
-  const since = flagValue(args, '--since');
-  const until = flagValue(args, '--until');
+  const model = flagValue(args, "--model");
+  const since = flagValue(args, "--since");
+  const until = flagValue(args, "--until");
   // v0.36.1.0 (E1, D22) — anti-bias rewrite mode. Off by default (no
   // regression for existing think users). When on, the active calibration
   // profile gets injected per D22 placement (after retrieval, before question).
-  const withCalibration = flagPresent(args, '--with-calibration');
-  const calibrationHolder = flagValue(args, '--calibration-holder');
+  const withCalibration = flagPresent(args, "--with-calibration");
+  const calibrationHolder = flagValue(args, "--calibration-holder");
 
   if (take && !anchor) {
-    console.error('--take requires --anchor (the take row needs a target page)');
+    console.error("--take requires --anchor (the take row needs a target page)");
     process.exit(1);
   }
 
@@ -96,21 +107,38 @@ prints what would have been the input (exit 0).
   if (isThinClient(cfg)) {
     if (save || take) {
       console.error(
-        '[thin-client] --save and --take are server-gated for remote callers ' +
-        '(trust-boundary policy). Run on the host or use the MCP `think` tool ' +
-        'with the `viaSubagent` context if you need persistence.',
+        "[thin-client] --save and --take are server-gated for remote callers " +
+          "(trust-boundary policy). Run on the host or use the MCP `think` tool " +
+          "with the `viaSubagent` context if you need persistence."
       );
     }
-    const raw = await callRemoteTool(cfg!, 'think', {
-      question, anchor, rounds, model, since, until,
-      // save/take intentionally NOT forwarded — server would ignore them;
-      // we surface the intent above so users know what they lose.
-    }, { timeoutMs: 180_000 });
+    const raw = await callRemoteTool(
+      cfg!,
+      "think",
+      {
+        question,
+        anchor,
+        rounds,
+        model,
+        since,
+        until,
+        // save/take intentionally NOT forwarded — server would ignore them;
+        // we surface the intent above so users know what they lose.
+      },
+      { timeoutMs: 180_000 }
+    );
     result = unpackToolResult<any>(raw);
   } else {
     try {
       result = await runThink(engine, {
-        question, anchor, rounds, save, take, model, since, until,
+        question,
+        anchor,
+        rounds,
+        save,
+        take,
+        model,
+        since,
+        until,
         // #1698: explicit --model → hard error on an unresolvable model (no silent
         // degrade to the no-LLM stub). Omitting --model keeps the graceful default path.
         modelExplicit: !!model,
@@ -124,7 +152,7 @@ prints what would have been the input (exit 0).
       // Persist if --save (the runThink path doesn't auto-persist; CLI does it explicitly)
       if (save) {
         const persisted = await persistSynthesis(engine, result);
-        savedSlug = persisted.slug || undefined;  // '' = persist-skip signal (#10)
+        savedSlug = persisted.slug || undefined; // '' = persist-skip signal (#10)
         evidenceInserted = persisted.evidenceInserted;
         for (const w of persisted.warnings) result.warnings.push(w);
         // #1698 (F2): --save requested but no synthesis was produced (no LLM, empty,
@@ -132,8 +160,8 @@ prints what would have been the input (exit 0).
         // explicitly asked to save is itself a silent failure.
         if (!persisted.slug) {
           console.error(
-            'think: --save requested but no synthesis was produced (no LLM available ' +
-            'or empty result) — nothing saved.',
+            "think: --save requested but no synthesis was produced (no LLM available " +
+              "or empty result) — nothing saved."
           );
           process.exit(1);
         }
@@ -147,29 +175,37 @@ prints what would have been the input (exit 0).
   }
 
   if (json) {
-    console.log(JSON.stringify({
-      ...result,
-      saved_slug: savedSlug ?? null,
-      evidence_inserted: evidenceInserted,
-    }, null, 2));
+    console.log(
+      JSON.stringify(
+        {
+          ...result,
+          saved_slug: savedSlug ?? null,
+          evidence_inserted: evidenceInserted,
+        },
+        null,
+        2
+      )
+    );
     return;
   }
 
   // Human-readable output
   console.log(`# ${question}\n`);
   console.log(result.answer);
-  console.log('');
+  console.log("");
   if (result.gaps.length > 0) {
-    console.log('## Gaps');
+    console.log("## Gaps");
     for (const g of result.gaps) console.log(`- ${g}`);
-    console.log('');
+    console.log("");
   }
-  console.log('---');
-  console.log(`Model: ${result.modelUsed} | Pages: ${result.pagesGathered} | Takes: ${result.takesGathered} | Graph: ${result.graphHits} | Citations: ${result.citations.length}`);
+  console.log("---");
+  console.log(
+    `Model: ${result.modelUsed} | Pages: ${result.pagesGathered} | Takes: ${result.takesGathered} | Graph: ${result.graphHits} | Citations: ${result.citations.length}`
+  );
   if (savedSlug) {
     console.log(`Saved: ${savedSlug} (${evidenceInserted} evidence rows)`);
   }
   if (result.warnings.length > 0) {
-    console.error(`Warnings: ${result.warnings.join(', ')}`);
+    console.error(`Warnings: ${result.warnings.join(", ")}`);
   }
 }

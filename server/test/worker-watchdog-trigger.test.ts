@@ -11,9 +11,9 @@
  * + a stubbed `getRss` so the test is deterministic and hermetic.
  */
 
-import { describe, it, expect, beforeAll, afterAll } from 'bun:test';
-import { PGLiteEngine } from '../src/core/pglite-engine.ts';
-import { MinionWorker } from '../src/core/minions/worker.ts';
+import { describe, it, expect, beforeAll, afterAll } from "bun:test";
+import { PGLiteEngine } from "../src/core/pglite-engine.ts";
+import { MinionWorker } from "../src/core/minions/worker.ts";
 
 const MB = 1024 * 1024;
 
@@ -29,10 +29,10 @@ afterAll(async () => {
   await engine.disconnect();
 });
 
-describe('worker RSS watchdog (issue #1678)', () => {
-  it('crossing the cap sets rssWatchdogTriggered and drains', async () => {
+describe("worker RSS watchdog (issue #1678)", () => {
+  it("crossing the cap sets rssWatchdogTriggered and drains", async () => {
     const worker = new MinionWorker(engine, {
-      queue: 'default',
+      queue: "default",
       concurrency: 1,
       maxRssMb: 100,
       getRss: () => 500 * MB, // 5x the cap
@@ -40,7 +40,7 @@ describe('worker RSS watchdog (issue #1678)', () => {
       healthCheckInterval: 0, // no self-health timer in this test
       pollInterval: 25,
     });
-    worker.register('noop', async () => {});
+    worker.register("noop", async () => {});
 
     // start() resolves on its own: the periodic check trips the watchdog,
     // gracefulShutdown sets running=false, the loop exits.
@@ -48,13 +48,15 @@ describe('worker RSS watchdog (issue #1678)', () => {
     expect(worker.rssWatchdogTriggered).toBe(true);
   });
 
-  it('80% soft-warn fires before the kill and does not drain', async () => {
+  it("80% soft-warn fires before the kill and does not drain", async () => {
     const warns: string[] = [];
     const origWarn = console.warn;
-    console.warn = (...a: unknown[]) => { warns.push(a.join(' ')); };
+    console.warn = (...a: unknown[]) => {
+      warns.push(a.join(" "));
+    };
 
     const worker = new MinionWorker(engine, {
-      queue: 'default',
+      queue: "default",
       concurrency: 1,
       maxRssMb: 100,
       getRss: () => 85 * MB, // 85% — above soft line, below cap
@@ -62,7 +64,7 @@ describe('worker RSS watchdog (issue #1678)', () => {
       healthCheckInterval: 0,
       pollInterval: 25,
     });
-    worker.register('noop', async () => {});
+    worker.register("noop", async () => {});
 
     const runPromise = worker.start();
     // Let a couple of periodic checks fire.
@@ -71,9 +73,9 @@ describe('worker RSS watchdog (issue #1678)', () => {
     await runPromise;
     console.warn = origWarn;
 
-    const softWarn = warns.find((w) => w.includes('approaching cap'));
+    const softWarn = warns.find((w) => w.includes("approaching cap"));
     expect(softWarn).toBeDefined();
-    expect(softWarn).toContain('85%');
+    expect(softWarn).toContain("85%");
     // Soft warn must NOT have drained the worker.
     expect(worker.rssWatchdogTriggered).toBe(false);
   });

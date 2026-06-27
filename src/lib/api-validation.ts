@@ -10,13 +10,11 @@ import type { NextRequest } from "next/server";
 import { z } from "zod";
 import { apiError } from "@/lib/api-response";
 
-export type ValidationResult<T> =
-  | { ok: true; data: T }
-  | { ok: false; error: Response };
+export type ValidationResult<T> = { ok: true; data: T } | { ok: false; error: Response };
 
 export async function validateRequest<T>(
   req: NextRequest,
-  schema: z.ZodSchema<T>,
+  schema: z.ZodSchema<T>
 ): Promise<ValidationResult<T>> {
   let raw: unknown;
   try {
@@ -45,7 +43,7 @@ export async function validateRequest<T>(
 
 export function validateQuery<T>(
   searchParams: URLSearchParams,
-  schema: z.ZodSchema<T>,
+  schema: z.ZodSchema<T>
 ): ValidationResult<T> {
   const params: Record<string, string> = {};
   for (const [key, value] of searchParams.entries()) {
@@ -93,10 +91,12 @@ export const signupSchema = z.object({
   industry: z.string().max(50).optional(),
 });
 
-export const registerSchema = signupSchema.extend({
-  name: z.string().min(1).max(120),
-  referredBy: z.string().optional(),
-}).omit({ locale: true, referralCode: true });
+export const registerSchema = signupSchema
+  .extend({
+    name: z.string().min(1).max(120),
+    referredBy: z.string().optional(),
+  })
+  .omit({ locale: true, referralCode: true });
 
 export const thinkSchema = z.object({
   query: z.string().min(1).max(10000),

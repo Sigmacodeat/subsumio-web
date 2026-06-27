@@ -27,9 +27,9 @@
  *     #   - ~/Documents/writing/.private/
  */
 
-import { existsSync, readFileSync } from 'fs';
-import { homedir } from 'os';
-import { isAbsolute, join, resolve as resolvePath } from 'path';
+import { existsSync, readFileSync } from "fs";
+import { homedir } from "os";
+import { isAbsolute, join, resolve as resolvePath } from "path";
 
 export interface ArchiveCrawlerConfig {
   /** Absolute paths the agent is permitted to scan. ~ expanded; paths
@@ -44,14 +44,10 @@ export interface ArchiveCrawlerConfig {
 export class ArchiveCrawlerConfigError extends Error {
   constructor(
     message: string,
-    public code:
-      | 'missing_section'
-      | 'empty_scan_paths'
-      | 'invalid_path'
-      | 'parse_error',
+    public code: "missing_section" | "empty_scan_paths" | "invalid_path" | "parse_error"
   ) {
     super(message);
-    this.name = 'ArchiveCrawlerConfigError';
+    this.name = "ArchiveCrawlerConfigError";
   }
 }
 
@@ -60,10 +56,10 @@ interface RawArchiveCrawler {
   deny_paths?: string[];
 }
 
-const ARCHIVE_KEYS = new Set(['scan_paths', 'deny_paths']);
+const ARCHIVE_KEYS = new Set(["scan_paths", "deny_paths"]);
 
 function parseArchiveCrawlerYaml(content: string): RawArchiveCrawler | null {
-  const lines = content.split('\n').map((line) => line.replace(/\r$/, ''));
+  const lines = content.split("\n").map((line) => line.replace(/\r$/, ""));
 
   let inSection = false;
   let currentList: keyof RawArchiveCrawler | null = null;
@@ -71,15 +67,15 @@ function parseArchiveCrawlerYaml(content: string): RawArchiveCrawler | null {
   let sawSection = false;
 
   for (const line of lines) {
-    const noComment = line.replace(/\s+#.*$/, '').replace(/^#.*$/, '');
-    if (noComment.trim() === '') continue;
+    const noComment = line.replace(/\s+#.*$/, "").replace(/^#.*$/, "");
+    if (noComment.trim() === "") continue;
 
     // Top-level key (no leading whitespace).
-    if (!noComment.startsWith(' ') && !noComment.startsWith('\t')) {
-      const colon = noComment.indexOf(':');
+    if (!noComment.startsWith(" ") && !noComment.startsWith("\t")) {
+      const colon = noComment.indexOf(":");
       if (colon === -1) continue;
       const key = noComment.slice(0, colon).trim();
-      if (key === 'archive-crawler' || key === 'archive_crawler') {
+      if (key === "archive-crawler" || key === "archive_crawler") {
         // accept both spellings; canonical is hyphenated to match the skill name
         inSection = true;
         sawSection = true;
@@ -93,11 +89,14 @@ function parseArchiveCrawlerYaml(content: string): RawArchiveCrawler | null {
 
     if (!inSection) continue;
 
-    const indented = noComment.replace(/^\s+/, '');
+    const indented = noComment.replace(/^\s+/, "");
 
-    if (indented.startsWith('-')) {
+    if (indented.startsWith("-")) {
       if (!currentList) continue;
-      const value = indented.slice(1).trim().replace(/^["']|["']$/g, '');
+      const value = indented
+        .slice(1)
+        .trim()
+        .replace(/^["']|["']$/g, "");
       if (value) {
         if (!raw[currentList]) raw[currentList] = [];
         raw[currentList]!.push(value);
@@ -105,13 +104,13 @@ function parseArchiveCrawlerYaml(content: string): RawArchiveCrawler | null {
       continue;
     }
 
-    const colon = indented.indexOf(':');
+    const colon = indented.indexOf(":");
     if (colon === -1) continue;
     const key = indented.slice(0, colon).trim();
     if (ARCHIVE_KEYS.has(key)) {
       currentList = key as keyof RawArchiveCrawler;
       const remainder = indented.slice(colon + 1).trim();
-      if (remainder === '[]' && !raw[currentList]) {
+      if (remainder === "[]" && !raw[currentList]) {
         raw[currentList] = [];
       }
       continue;
@@ -128,8 +127,8 @@ function parseArchiveCrawlerYaml(content: string): RawArchiveCrawler | null {
  * relative paths alone (the validator below will reject relative).
  */
 function expandHome(p: string): string {
-  if (p === '~' || p.startsWith('~/')) {
-    return join(homedir(), p.slice(p.startsWith('~/') ? 2 : 1));
+  if (p === "~" || p.startsWith("~/")) {
+    return join(homedir(), p.slice(p.startsWith("~/") ? 2 : 1));
   }
   return p;
 }
@@ -152,52 +151,48 @@ function expandHome(p: string): string {
  *     does NOT match `/a/bc/`).
  */
 export function normalizeAndValidateArchiveCrawlerConfig(
-  raw: RawArchiveCrawler,
+  raw: RawArchiveCrawler
 ): ArchiveCrawlerConfig {
   const rawScan = raw.scan_paths ?? [];
   const rawDeny = raw.deny_paths ?? [];
 
   if (rawScan.length === 0) {
     throw new ArchiveCrawlerConfigError(
-      'archive-crawler.scan_paths is empty. The skill refuses to run without an explicit allow-list. Add at least one path under archive-crawler.scan_paths in gbrain.yml.',
-      'empty_scan_paths',
+      "archive-crawler.scan_paths is empty. The skill refuses to run without an explicit allow-list. Add at least one path under archive-crawler.scan_paths in gbrain.yml.",
+      "empty_scan_paths"
     );
   }
 
-  const scan_paths = rawScan.map((raw) =>
-    normalizeOnePath(raw, 'scan_paths'),
-  );
-  const deny_paths = rawDeny.map((raw) =>
-    normalizeOnePath(raw, 'deny_paths'),
-  );
+  const scan_paths = rawScan.map((raw) => normalizeOnePath(raw, "scan_paths"));
+  const deny_paths = rawDeny.map((raw) => normalizeOnePath(raw, "deny_paths"));
 
   return { scan_paths, deny_paths };
 }
 
-function normalizeOnePath(raw: string, field: 'scan_paths' | 'deny_paths'): string {
+function normalizeOnePath(raw: string, field: "scan_paths" | "deny_paths"): string {
   const expanded = expandHome(raw);
 
   if (!isAbsolute(expanded)) {
     throw new ArchiveCrawlerConfigError(
       `archive-crawler.${field} contains relative path "${raw}". Use an absolute path or ~/... — relative paths depend on cwd, which the agent doesn't control.`,
-      'invalid_path',
+      "invalid_path"
     );
   }
 
   // Reject path traversal AFTER normalization. resolve() collapses
   // `..` segments, but we want to detect intent — a path that LITERALLY
   // contains `..` is suspicious regardless of where it resolves.
-  if (raw.includes('..')) {
+  if (raw.includes("..")) {
     throw new ArchiveCrawlerConfigError(
       `archive-crawler.${field} contains path-traversal segment "${raw}". Path-traversal patterns are rejected even when they resolve safely; use the canonical absolute path instead.`,
-      'invalid_path',
+      "invalid_path"
     );
   }
 
   // Normalize: resolve any tail and ensure trailing slash for unambiguous
   // prefix-matching. resolve() strips trailing slash; we re-add it.
   const resolved = resolvePath(expanded);
-  return resolved.endsWith('/') ? resolved : resolved + '/';
+  return resolved.endsWith("/") ? resolved : resolved + "/";
 }
 
 /**
@@ -221,25 +216,23 @@ function normalizeOnePath(raw: string, field: 'scan_paths' | 'deny_paths'): stri
  * message to the user — the error code distinguishes "needs config"
  * from "config is broken."
  */
-export function loadArchiveCrawlerConfig(
-  repoPath?: string | null,
-): ArchiveCrawlerConfig {
+export function loadArchiveCrawlerConfig(repoPath?: string | null): ArchiveCrawlerConfig {
   if (!repoPath) {
     throw new ArchiveCrawlerConfigError(
-      'No brain repo path provided. archive-crawler requires a brain repo with gbrain.yml. Run `gbrain init` or set sync.repo_path in gbrain config.',
-      'missing_section',
+      "No brain repo path provided. archive-crawler requires a brain repo with gbrain.yml. Run `gbrain init` or set sync.repo_path in gbrain config.",
+      "missing_section"
     );
   }
 
-  const yamlPath = join(repoPath, 'gbrain.yml');
+  const yamlPath = join(repoPath, "gbrain.yml");
   if (!existsSync(yamlPath)) {
     throw new ArchiveCrawlerConfigError(
       `gbrain.yml not found at ${yamlPath}. archive-crawler refuses to run without an explicit allow-list — add an archive-crawler section to gbrain.yml first.`,
-      'missing_section',
+      "missing_section"
     );
   }
 
-  const content = readFileSync(yamlPath, 'utf-8');
+  const content = readFileSync(yamlPath, "utf-8");
 
   let raw: RawArchiveCrawler | null;
   try {
@@ -247,14 +240,14 @@ export function loadArchiveCrawlerConfig(
   } catch (e) {
     throw new ArchiveCrawlerConfigError(
       `Failed to parse archive-crawler section of ${yamlPath}: ${e instanceof Error ? e.message : String(e)}`,
-      'parse_error',
+      "parse_error"
     );
   }
 
   if (raw === null) {
     throw new ArchiveCrawlerConfigError(
       `${yamlPath} has no archive-crawler section. archive-crawler refuses to run without an explicit allow-list. Add:\n\n  archive-crawler:\n    scan_paths:\n      - ~/path/to/scan/\n\nto your gbrain.yml.`,
-      'missing_section',
+      "missing_section"
     );
   }
 
@@ -270,14 +263,11 @@ export function loadArchiveCrawlerConfig(
  * directory prefixes (with trailing slash) so `media/x/` does not match
  * `media/xerox/foo`.
  */
-export function isPathAllowed(
-  candidate: string,
-  config: ArchiveCrawlerConfig,
-): boolean {
+export function isPathAllowed(candidate: string, config: ArchiveCrawlerConfig): boolean {
   const expanded = expandHome(candidate);
   if (!isAbsolute(expanded)) return false;
   const resolved = resolvePath(expanded);
-  const prefix = resolved.endsWith('/') ? resolved : resolved + '/';
+  const prefix = resolved.endsWith("/") ? resolved : resolved + "/";
 
   // Must be inside at least one scan_path.
   const allowed = config.scan_paths.some((sp) => prefix.startsWith(sp));

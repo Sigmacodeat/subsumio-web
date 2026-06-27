@@ -3,11 +3,7 @@
 // is integration-tested by actually running it once during T4.
 
 import { describe, expect, it } from "bun:test";
-import {
-  computeWeights,
-  parseLog,
-  serializeWeights,
-} from "../../scripts/mine-shard-weights.ts";
+import { computeWeights, parseLog, serializeWeights } from "../../scripts/mine-shard-weights.ts";
 
 const SAMPLE = `test (1)\tUNKNOWN STEP\t2026-05-25T11:26:40.000000Z ##[group]test/alpha.test.ts:
 test (1)\tUNKNOWN STEP\t2026-05-25T11:26:41.000000Z (pass) some test [1.00ms]
@@ -64,8 +60,7 @@ describe("parseLog", () => {
   });
 
   it("rejects non-test-file groups (e.g. setup-bun action groups)", () => {
-    const noise =
-      "test (1)\tUNKNOWN\t2026-05-25T11:26:40.000Z ##[group]Run actions/checkout\n";
+    const noise = "test (1)\tUNKNOWN\t2026-05-25T11:26:40.000Z ##[group]Run actions/checkout\n";
     expect(parseLog(noise)).toEqual([]);
   });
 });

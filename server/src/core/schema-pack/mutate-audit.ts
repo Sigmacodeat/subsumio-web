@@ -24,27 +24,27 @@
 //
 // Best-effort writes: stderr warn on disk failure, never throws.
 
-import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { isoWeekFilename, resolveAuditDir } from '../audit-week-file.ts';
-import { isAuditVerbose } from './candidate-audit.ts';
+import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { isoWeekFilename, resolveAuditDir } from "../audit-week-file.ts";
+import { isAuditVerbose } from "./candidate-audit.ts";
 
 export type MutationOp =
-  | 'add_type'
-  | 'remove_type'
-  | 'update_type'
-  | 'add_alias'
-  | 'remove_alias'
-  | 'add_prefix'
-  | 'remove_prefix'
-  | 'add_link_type'
-  | 'remove_link_type'
-  | 'set_extractable'
-  | 'set_expert_routing';
+  | "add_type"
+  | "remove_type"
+  | "update_type"
+  | "add_alias"
+  | "remove_alias"
+  | "add_prefix"
+  | "remove_prefix"
+  | "add_link_type"
+  | "remove_link_type"
+  | "set_extractable"
+  | "set_expert_routing";
 
-export type MutationActor = 'cli' | `mcp:${string}` | 'autopilot' | 'test';
+export type MutationActor = "cli" | `mcp:${string}` | "autopilot" | "test";
 
-export type MutationOutcome = 'success' | 'failure';
+export type MutationOutcome = "success" | "failure";
 
 export interface MutationAuditRecord {
   /** ISO 8601 timestamp. */
@@ -95,21 +95,21 @@ export interface LogMutationFailureOpts extends LogMutationOpts {
 
 /** sha-256 → 8 hex chars. Matches candidate-audit.ts redaction. */
 async function sha8(value: string): Promise<string> {
-  const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value));
+  const hashBuffer = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
   return Array.from(new Uint8Array(hashBuffer))
     .slice(0, 4)
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('');
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 export function computeMutateAuditPath(now: Date = new Date()): string {
-  return join(resolveAuditDir(), isoWeekFilename('schema-mutations', now));
+  return join(resolveAuditDir(), isoWeekFilename("schema-mutations", now));
 }
 
 async function buildRecord(
   opts: LogMutationOpts,
   outcome: MutationOutcome,
-  reason: string | null,
+  reason: string | null
 ): Promise<MutationAuditRecord> {
   const verbose = isAuditVerbose();
   let typeField: string | null = null;
@@ -117,9 +117,7 @@ async function buildRecord(
     typeField = verbose ? opts.type : await sha8(opts.type);
   }
   const prefixField =
-    opts.prefix !== undefined && opts.prefix.length > 0
-      ? (opts.prefix.split('/')[0] ?? '')
-      : null;
+    opts.prefix !== undefined && opts.prefix.length > 0 ? (opts.prefix.split("/")[0] ?? "") : null;
   return {
     ts: new Date().toISOString(),
     op: opts.op,
@@ -139,7 +137,7 @@ async function buildRecord(
 function appendBestEffort(path: string, record: MutationAuditRecord): void {
   try {
     mkdirSync(dirname(path), { recursive: true });
-    appendFileSync(path, JSON.stringify(record) + '\n', 'utf-8');
+    appendFileSync(path, JSON.stringify(record) + "\n", "utf-8");
   } catch (e) {
     process.stderr.write(`[schema-mutations-audit] write failed: ${(e as Error).message}\n`);
   }
@@ -147,13 +145,13 @@ function appendBestEffort(path: string, record: MutationAuditRecord): void {
 
 /** Log a successful mutation. Best-effort; never throws. */
 export async function logMutationSuccess(opts: LogMutationOpts): Promise<void> {
-  const record = await buildRecord(opts, 'success', null);
+  const record = await buildRecord(opts, "success", null);
   appendBestEffort(computeMutateAuditPath(), record);
 }
 
 /** Log a failed mutation. Best-effort; never throws. */
 export async function logMutationFailure(opts: LogMutationFailureOpts): Promise<void> {
-  const record = await buildRecord(opts, 'failure', opts.reason);
+  const record = await buildRecord(opts, "failure", opts.reason);
   appendBestEffort(computeMutateAuditPath(), record);
 }
 
@@ -167,14 +165,14 @@ export function readRecentMutations(daysBack = 30): MutationAuditRecord[] {
   const cutoffIso = new Date(Date.now() - daysBack * 86400 * 1000).toISOString();
   const records: MutationAuditRecord[] = [];
   for (const name of readdirSync(auditDir)) {
-    if (!name.startsWith('schema-mutations-') || !name.endsWith('.jsonl')) continue;
+    if (!name.startsWith("schema-mutations-") || !name.endsWith(".jsonl")) continue;
     let content: string;
     try {
-      content = readFileSync(join(auditDir, name), 'utf-8');
+      content = readFileSync(join(auditDir, name), "utf-8");
     } catch {
       continue;
     }
-    for (const line of content.split('\n')) {
+    for (const line of content.split("\n")) {
       if (!line.trim()) continue;
       try {
         const r = JSON.parse(line) as MutationAuditRecord;
@@ -212,12 +210,12 @@ export function summarizeMutations(records: MutationAuditRecord[]): MutationSumm
   };
   for (const r of records) {
     summary.by_op[r.op] = (summary.by_op[r.op] ?? 0) + 1;
-    if (r.outcome === 'success') summary.by_outcome.success++;
+    if (r.outcome === "success") summary.by_outcome.success++;
     else summary.by_outcome.failure++;
     summary.by_pack[r.pack] = (summary.by_pack[r.pack] ?? 0) + 1;
     if (r.reason) summary.by_reason[r.reason] = (summary.by_reason[r.reason] ?? 0) + 1;
     // Bucket actor classes: cli | mcp | autopilot | test
-    const actorBucket = r.actor.startsWith('mcp:') ? 'mcp' : r.actor;
+    const actorBucket = r.actor.startsWith("mcp:") ? "mcp" : r.actor;
     summary.by_actor[actorBucket] = (summary.by_actor[actorBucket] ?? 0) + 1;
   }
   return summary;

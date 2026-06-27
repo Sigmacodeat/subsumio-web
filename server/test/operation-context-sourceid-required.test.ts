@@ -13,17 +13,17 @@
  * defend against is the type being weakened — that's a compile-time
  * concern, not a runtime concern.
  */
-import { describe, test, expect } from 'bun:test';
-import { buildOperationContext } from '../src/mcp/dispatch.ts';
-import type { OperationContext } from '../src/core/operations.ts';
-import type { BrainEngine } from '../src/core/engine.ts';
+import { describe, test, expect } from "bun:test";
+import { buildOperationContext } from "../src/mcp/dispatch.ts";
+import type { OperationContext } from "../src/core/operations.ts";
+import type { BrainEngine } from "../src/core/engine.ts";
 
-describe('OperationContext.sourceId — REQUIRED contract', () => {
-  test('omitting sourceId from an OperationContext literal is a type error', () => {
+describe("OperationContext.sourceId — REQUIRED contract", () => {
+  test("omitting sourceId from an OperationContext literal is a type error", () => {
     // @ts-expect-error — sourceId is required; this literal is missing it
     const badCtx: OperationContext = {
       engine: {} as BrainEngine,
-      config: { engine: 'pglite' } as any,
+      config: { engine: "pglite" } as any,
       logger: { info: () => {}, warn: () => {}, error: () => {} },
       dryRun: false,
       remote: false,
@@ -35,22 +35,22 @@ describe('OperationContext.sourceId — REQUIRED contract', () => {
     expect(true).toBe(true);
   });
 
-  test('passing sourceId satisfies the contract', () => {
+  test("passing sourceId satisfies the contract", () => {
     const ctx: OperationContext = {
       engine: {} as BrainEngine,
-      config: { engine: 'pglite' } as any,
+      config: { engine: "pglite" } as any,
       logger: { info: () => {}, warn: () => {}, error: () => {} },
       dryRun: false,
       remote: false,
-      sourceId: 'default',
+      sourceId: "default",
     };
-    expect(ctx.sourceId).toBe('default');
+    expect(ctx.sourceId).toBe("default");
   });
 
-  test('passing undefined for sourceId is a type error', () => {
+  test("passing undefined for sourceId is a type error", () => {
     const ctx: OperationContext = {
       engine: {} as BrainEngine,
-      config: { engine: 'pglite' } as any,
+      config: { engine: "pglite" } as any,
       logger: { info: () => {}, warn: () => {}, error: () => {} },
       dryRun: false,
       remote: false,
@@ -62,25 +62,25 @@ describe('OperationContext.sourceId — REQUIRED contract', () => {
   });
 });
 
-describe('buildOperationContext — auto-fill safety net', () => {
+describe("buildOperationContext — auto-fill safety net", () => {
   test('omitting sourceId from DispatchOpts falls back to "default"', () => {
     const engine = {} as BrainEngine;
     const ctx = buildOperationContext(engine, {}, {});
-    expect(ctx.sourceId).toBe('default');
-    expect(typeof ctx.sourceId).toBe('string');
+    expect(ctx.sourceId).toBe("default");
+    expect(typeof ctx.sourceId).toBe("string");
   });
 
-  test('explicit sourceId in DispatchOpts is preserved', () => {
+  test("explicit sourceId in DispatchOpts is preserved", () => {
     const engine = {} as BrainEngine;
-    const ctx = buildOperationContext(engine, {}, { sourceId: 'my-source' });
-    expect(ctx.sourceId).toBe('my-source');
+    const ctx = buildOperationContext(engine, {}, { sourceId: "my-source" });
+    expect(ctx.sourceId).toBe("my-source");
   });
 
-  test('explicit empty-string sourceId is preserved (not coerced to default)', () => {
+  test("explicit empty-string sourceId is preserved (not coerced to default)", () => {
     // Empty string is a valid string. The auto-fill only fires on undefined.
     const engine = {} as BrainEngine;
-    const ctx = buildOperationContext(engine, {}, { sourceId: '' });
+    const ctx = buildOperationContext(engine, {}, { sourceId: "" });
     // The ?? operator returns 'default' for null/undefined only; '' passes through.
-    expect(ctx.sourceId).toBe('');
+    expect(ctx.sourceId).toBe("");
   });
 });

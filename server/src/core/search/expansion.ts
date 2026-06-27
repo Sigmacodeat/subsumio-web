@@ -10,8 +10,8 @@
  *   - console.warn never logs the query text itself (privacy)
  */
 
-import { expand as gatewayExpand, isAvailable as gatewayIsAvailable } from '../ai/gateway.ts';
-import { countCJKAwareWords } from '../cjk.ts';
+import { expand as gatewayExpand, isAvailable as gatewayIsAvailable } from "../ai/gateway.ts";
+import { countCJKAwareWords } from "../cjk.ts";
 
 const MAX_QUERIES = 3;
 const MIN_WORDS = 3;
@@ -24,12 +24,14 @@ export function sanitizeQueryForPrompt(query: string): string {
   const original = query;
   let q = query;
   if (q.length > MAX_QUERY_CHARS) q = q.slice(0, MAX_QUERY_CHARS);
-  q = q.replace(/```[\s\S]*?```/g, ' ');
-  q = q.replace(/<\/?[a-zA-Z][^>]*>/g, ' ');
-  q = q.replace(/^(\s*(ignore|forget|disregard|override|system|assistant|human)[\s:]+)+/gi, '');
-  q = q.replace(/\s+/g, ' ').trim();
+  q = q.replace(/```[\s\S]*?```/g, " ");
+  q = q.replace(/<\/?[a-zA-Z][^>]*>/g, " ");
+  q = q.replace(/^(\s*(ignore|forget|disregard|override|system|assistant|human)[\s:]+)+/gi, "");
+  q = q.replace(/\s+/g, " ").trim();
   if (q !== original) {
-    console.warn('[gbrain] sanitizeQueryForPrompt: stripped content from user query before LLM expansion');
+    console.warn(
+      "[gbrain] sanitizeQueryForPrompt: stripped content from user query before LLM expansion"
+    );
   }
   return q;
 }
@@ -41,8 +43,8 @@ export function sanitizeExpansionOutput(alternatives: unknown[]): string[] {
   const seen = new Set<string>();
   const out: string[] = [];
   for (const raw of alternatives) {
-    if (typeof raw !== 'string') continue;
-    let s = raw.replace(/[\x00-\x1f\x7f]/g, '').trim();
+    if (typeof raw !== "string") continue;
+    let s = raw.replace(/[\x00-\x1f\x7f]/g, "").trim();
     if (s.length === 0) continue;
     if (s.length > MAX_QUERY_CHARS) s = s.slice(0, MAX_QUERY_CHARS);
     const key = s.toLowerCase();
@@ -58,7 +60,7 @@ export async function expandQuery(query: string): Promise<string[]> {
   if (countCJKAwareWords(query) < MIN_WORDS) return [query];
 
   // Skip LLM call entirely if gateway has no expansion provider configured.
-  if (!gatewayIsAvailable('expansion')) return [query];
+  if (!gatewayIsAvailable("expansion")) return [query];
 
   try {
     const sanitized = sanitizeQueryForPrompt(query);
@@ -75,10 +77,10 @@ export async function expandQuery(query: string): Promise<string[]> {
 
     // Original query + sanitized alternatives, deduped, capped at MAX_QUERIES.
     const all = [query, ...sanitizedAlts];
-    const unique = [...new Set(all.map(q => q.toLowerCase().trim()))];
-    return unique.slice(0, MAX_QUERIES).map(q =>
-      all.find(orig => orig.toLowerCase().trim() === q) || q,
-    );
+    const unique = [...new Set(all.map((q) => q.toLowerCase().trim()))];
+    return unique
+      .slice(0, MAX_QUERIES)
+      .map((q) => all.find((orig) => orig.toLowerCase().trim() === q) || q);
   } catch {
     return [query];
   }

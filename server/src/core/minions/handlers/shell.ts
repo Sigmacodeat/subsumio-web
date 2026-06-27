@@ -26,19 +26,19 @@
  * `shutdownSignal` so deploy restarts don't interrupt them mid-flight.
  */
 
-import { spawn, type ChildProcess } from 'node:child_process';
-import { StringDecoder } from 'node:string_decoder';
-import type { MinionJobContext } from '../types.ts';
-import { UnrecoverableError } from '../types.ts';
-import { deriveEnvKey, resolveInheritValue } from './shell-inherit.ts';
-import { validateShellJobParams } from './shell-validate.ts';
-import { redactSecretsInText } from './shell-redact.ts';
-import { loadConfig } from '../../config.ts';
+import { spawn, type ChildProcess } from "node:child_process";
+import { StringDecoder } from "node:string_decoder";
+import type { MinionJobContext } from "../types.ts";
+import { UnrecoverableError } from "../types.ts";
+import { deriveEnvKey, resolveInheritValue } from "./shell-inherit.ts";
+import { validateShellJobParams } from "./shell-validate.ts";
+import { redactSecretsInText } from "./shell-redact.ts";
+import { loadConfig } from "../../config.ts";
 
 /** Environment variables passed through to shell children by default. Callers
  *  that need additional keys (e.g. a specific API token for a cron) must name
  *  them explicitly in `job.data.env`. Named keys override this allowlist. */
-const SHELL_ENV_ALLOWLIST = ['PATH', 'HOME', 'USER', 'LANG', 'TZ', 'NODE_ENV'] as const;
+const SHELL_ENV_ALLOWLIST = ["PATH", "HOME", "USER", "LANG", "TZ", "NODE_ENV"] as const;
 
 /** Max bytes retained from stdout/stderr. Output exceeding these caps is
  *  truncated with a `[truncated N bytes]` marker. UTF-8-safe via StringDecoder. */
@@ -108,12 +108,12 @@ export interface ShellJobResult {
  */
 function buildChildEnv(
   override: Record<string, string> | undefined,
-  inherit: string[] | undefined,
+  inherit: string[] | undefined
 ): Record<string, string> {
   const env: Record<string, string> = {};
   for (const key of SHELL_ENV_ALLOWLIST) {
     const v = process.env[key];
-    if (typeof v === 'string') env[key] = v;
+    if (typeof v === "string") env[key] = v;
   }
   if (inherit && inherit.length > 0) {
     const cfg = loadConfig();
@@ -139,8 +139,8 @@ function buildChildEnv(
  *  so the last `maxBytes` of output is character-safe (no split multibyte chars).
  *  On truncation, the emitted string is prefixed with `[truncated N bytes]`. */
 class TailBuffer {
-  private decoder = new StringDecoder('utf8');
-  private body = '';
+  private decoder = new StringDecoder("utf8");
+  private body = "";
   private bodyBytes = 0;
   private truncatedBytes = 0;
 
@@ -150,7 +150,7 @@ class TailBuffer {
     const str = this.decoder.write(chunk);
     if (str.length === 0) return;
     this.body += str;
-    this.bodyBytes = Buffer.byteLength(this.body, 'utf8');
+    this.bodyBytes = Buffer.byteLength(this.body, "utf8");
     this.compactIfOver();
   }
 
@@ -175,11 +175,8 @@ class TailBuffer {
     let cut = this.body.length;
     for (let i = this.body.length - 1; i >= 0; i--) {
       const code = this.body.codePointAt(i);
-      const cpBytes = code === undefined ? 0
-        : code < 0x80 ? 1
-        : code < 0x800 ? 2
-        : code < 0x10000 ? 3
-        : 4;
+      const cpBytes =
+        code === undefined ? 0 : code < 0x80 ? 1 : code < 0x800 ? 2 : code < 0x10000 ? 3 : 4;
       if (tailBytes + cpBytes > targetByteSize) break;
       tailBytes += cpBytes;
       cut = i;
@@ -194,7 +191,7 @@ class TailBuffer {
     const tail = this.decoder.end();
     if (tail.length > 0) {
       this.body += tail;
-      this.bodyBytes = Buffer.byteLength(this.body, 'utf8');
+      this.bodyBytes = Buffer.byteLength(this.body, "utf8");
       this.compactIfOver();
     }
     if (this.truncatedBytes === 0) return this.body;
@@ -204,13 +201,13 @@ class TailBuffer {
 
 /** The shell handler itself. */
 export async function shellHandler(ctx: MinionJobContext): Promise<ShellJobResult> {
-  if (process.env.GBRAIN_ALLOW_SHELL_JOBS !== '1') {
+  if (process.env.GBRAIN_ALLOW_SHELL_JOBS !== "1") {
     const warning =
       `[shell] Job #${ctx.id} rejected: GBRAIN_ALLOW_SHELL_JOBS=1 not set on this worker.\n` +
-      '        Shell jobs require the env var on the worker process.';
+      "        Shell jobs require the env var on the worker process.";
     console.warn(warning);
     throw new UnrecoverableError(
-      'shell handler disabled on this worker (set GBRAIN_ALLOW_SHELL_JOBS=1 to execute shell jobs)',
+      "shell handler disabled on this worker (set GBRAIN_ALLOW_SHELL_JOBS=1 to execute shell jobs)"
     );
   }
 
@@ -245,17 +242,17 @@ export async function shellHandler(ctx: MinionJobContext): Promise<ShellJobResul
     if (params.cmd) {
       // Absolute /bin/sh — not 'sh' — so a caller-supplied env with a poisoned
       // PATH can't redirect to a different shell binary.
-      proc = spawn('/bin/sh', ['-c', params.cmd], {
+      proc = spawn("/bin/sh", ["-c", params.cmd], {
         cwd: params.cwd,
         env,
-        stdio: ['ignore', 'pipe', 'pipe'],
+        stdio: ["ignore", "pipe", "pipe"],
       });
     } else {
       const argv = params.argv!;
       proc = spawn(argv[0], argv.slice(1), {
         cwd: params.cwd,
         env,
-        stdio: ['ignore', 'pipe', 'pipe'],
+        stdio: ["ignore", "pipe", "pipe"],
       });
     }
   } catch (err) {
@@ -268,52 +265,60 @@ export async function shellHandler(ctx: MinionJobContext): Promise<ShellJobResul
   const stdoutTail = new TailBuffer(STDOUT_TAIL_MAX_BYTES);
   const stderrTail = new TailBuffer(STDERR_TAIL_MAX_BYTES);
 
-  proc.stdout?.on('data', (c: Buffer) => stdoutTail.append(c));
-  proc.stderr?.on('data', (c: Buffer) => stderrTail.append(c));
+  proc.stdout?.on("data", (c: Buffer) => stdoutTail.append(c));
+  proc.stderr?.on("data", (c: Buffer) => stderrTail.append(c));
 
   // Wire BOTH signals to the kill sequence. `ctx.signal` fires on timeout /
   // cancel / lock-loss; `ctx.shutdownSignal` fires only on worker SIGTERM/SIGINT.
   // Shell handler needs both — a deploy restart shouldn't leave children running
   // past the 30s worker cleanup race.
   let killTimer: ReturnType<typeof setTimeout> | null = null;
-  let killReason = '';
+  let killReason = "";
   const onAbort = (label: string) => () => {
     if (killTimer !== null) return; // already started
     killReason = label;
     if (!proc.killed) {
-      try { proc.kill('SIGTERM'); } catch { /* proc already exited */ }
+      try {
+        proc.kill("SIGTERM");
+      } catch {
+        /* proc already exited */
+      }
     }
     killTimer = setTimeout(() => {
       if (!proc.killed) {
-        try { proc.kill('SIGKILL'); } catch { /* already exited */ }
+        try {
+          proc.kill("SIGKILL");
+        } catch {
+          /* already exited */
+        }
       }
     }, KILL_GRACE_MS);
   };
-  const sigAbort = onAbort('signal');
-  const shutdownAbort = onAbort('shutdown');
-  ctx.signal.addEventListener('abort', sigAbort);
-  ctx.shutdownSignal.addEventListener('abort', shutdownAbort);
+  const sigAbort = onAbort("signal");
+  const shutdownAbort = onAbort("shutdown");
+  ctx.signal.addEventListener("abort", sigAbort);
+  ctx.shutdownSignal.addEventListener("abort", shutdownAbort);
 
   // Fire immediately if either already aborted before wiring
   if (ctx.signal.aborted) sigAbort();
   if (ctx.shutdownSignal.aborted) shutdownAbort();
 
   const exitCode: number = await new Promise<number>((resolve, reject) => {
-    proc.on('error', (err) => {
+    proc.on("error", (err) => {
       reject(err);
     });
-    proc.on('exit', (code, signal) => {
+    proc.on("exit", (code, signal) => {
       // Node maps signal-terminated exits to a 128+N code convention; we use
       // whichever is defined.
       if (code !== null) resolve(code);
-      else if (signal === 'SIGTERM') resolve(143);
-      else if (signal === 'SIGKILL') resolve(137);
+      else if (signal === "SIGTERM") resolve(143);
+      else if (signal === "SIGKILL") resolve(137);
       else resolve(-1);
     });
   }).finally(() => {
     if (killTimer !== null) clearTimeout(killTimer);
-    ctx.signal.removeEventListener('abort', sigAbort);
-    ctx.shutdownSignal.removeEventListener('abort', shutdownAbort);
+    ctx.signal.removeEventListener("abort", sigAbort);
+    ctx.shutdownSignal.removeEventListener("abort", shutdownAbort);
   });
 
   const duration_ms = Date.now() - startedAt;
@@ -333,17 +338,15 @@ export async function shellHandler(ctx: MinionJobContext): Promise<ShellJobResul
   // If we sent SIGTERM/SIGKILL in response to an abort, surface that as the
   // error rather than the exit code — clearer for debugging. Worker catch
   // handles retry/dead classification.
-  if (killReason === 'signal' || killReason === 'shutdown') {
+  if (killReason === "signal" || killReason === "shutdown") {
     const err = new Error(
-      `aborted: ${killReason === 'shutdown' ? 'shutdown' : (ctx.signal.reason as Error)?.message || 'signal'}`,
+      `aborted: ${killReason === "shutdown" ? "shutdown" : (ctx.signal.reason as Error)?.message || "signal"}`
     );
     throw err;
   }
 
   if (exitCode !== 0) {
-    throw new Error(
-      `exit ${exitCode}: ${stderr_tail.slice(-500)}`,
-    );
+    throw new Error(`exit ${exitCode}: ${stderr_tail.slice(-500)}`);
   }
 
   return { exit_code: exitCode, stdout_tail, stderr_tail, duration_ms, pid };

@@ -39,9 +39,12 @@ describe("Toast", () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(5000);
     });
-    await waitFor(() => {
-      expect(screen.queryByText("Success")).not.toBeInTheDocument();
-    }, { timeout: 2000 });
+    await waitFor(
+      () => {
+        expect(screen.queryByText("Success")).not.toBeInTheDocument();
+      },
+      { timeout: 2000 }
+    );
     vi.useRealTimers();
   });
 
@@ -59,9 +62,12 @@ describe("Toast", () => {
     expect(screen.getByText("Success")).toBeInTheDocument();
     const closeBtn = screen.getByRole("button", { name: /benachrichtigung schließen/i });
     fireEvent.click(closeBtn);
-    await waitFor(() => {
-      expect(screen.queryByText("Success")).not.toBeInTheDocument();
-    }, { timeout: 2000 });
+    await waitFor(
+      () => {
+        expect(screen.queryByText("Success")).not.toBeInTheDocument();
+      },
+      { timeout: 2000 }
+    );
     vi.useRealTimers();
   });
 

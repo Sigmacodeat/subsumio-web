@@ -17,8 +17,8 @@
 // Reuses the existing SemanticQueryCache.clear() method (already
 // PGLite + Postgres parity-safe) rather than reinventing the SQL.
 
-import type { BrainEngine } from '../engine.ts';
-import { SemanticQueryCache } from '../search/query-cache.ts';
+import type { BrainEngine } from "../engine.ts";
+import { SemanticQueryCache } from "../search/query-cache.ts";
 
 export interface InvalidateQueryCacheResult {
   rows_invalidated: number;
@@ -38,7 +38,7 @@ export interface InvalidateQueryCacheResult {
  */
 export async function invalidateQueryCache(
   engine: BrainEngine,
-  sourceId?: string,
+  sourceId?: string
 ): Promise<InvalidateQueryCacheResult> {
   try {
     const cache = new SemanticQueryCache(engine);

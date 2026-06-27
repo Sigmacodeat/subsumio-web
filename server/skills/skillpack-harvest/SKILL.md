@@ -27,7 +27,7 @@ writes_to:
 
 # skillpack-harvest — Editorial workflow for lifting host skills into gbrain
 
-> **Convention:** see [_brain-filing-rules.md](../_brain-filing-rules.md) for
+> **Convention:** see [\_brain-filing-rules.md](../_brain-filing-rules.md) for
 > file placement rules. This skill writes into gbrain's own tree, not the
 > brain repo's notes.
 
@@ -97,6 +97,7 @@ a list of files written. JSON mode (`--json`) returns the full
 - The user explicitly asks to "harvest" or "publish" a skill upstream
 
 Do NOT invoke when:
+
 - The skill is still in flux locally — let it stabilize first
 - The skill references private content that can't be generalized
 - The user just wants to share a one-off draft (use a gist instead)
@@ -120,6 +121,7 @@ Before running this skill, confirm:
 ### Phase 1 — Plan
 
 Ask the user:
+
 - What slug should the harvested skill have? (Slugs must be kebab-case,
   globally unique in the gbrain bundle.)
 - Which host repo is the source? (Path to repo root, not to the skill
@@ -136,6 +138,7 @@ gbrain skillpack harvest <slug> --from <host-repo-root> --dry-run
 ```
 
 The output shows:
+
 - Which files would land in gbrain's tree
 - Whether paired sources are included
 - (Implicit) The skill's frontmatter triggers — read them and check
@@ -195,6 +198,7 @@ gbrain skillpack harvest <slug> --from <host-repo-root>
 ```
 
 Default behavior:
+
 - Path-confinement + symlink rejection at file copy
 - Privacy linter runs against `~/.gbrain/harvest-private-patterns.txt`
   (plus built-in defaults: `\bWintermute\b`, email, Slack channels)
@@ -202,6 +206,7 @@ Default behavior:
 - `openclaw.plugin.json` updated to add the slug, sorted
 
 Outcomes:
+
 - `harvested` — success, manifest updated, files in gbrain's tree
 - `lint_failed` — privacy linter caught something. Go back to Phase 3,
   scrub the host file, retry.
@@ -225,6 +230,7 @@ After a successful harvest:
 ### Phase 6 — Downstream announcement (optional)
 
 If other gbrain clients should pick up the new skill:
+
 - Note it in `CHANGELOG.md` under "Skills added" for the next release
 - Tag the user / contributor in the PR if the skill came from
   someone outside the core team

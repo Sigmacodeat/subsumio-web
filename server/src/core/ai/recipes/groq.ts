@@ -1,4 +1,4 @@
-import type { Recipe } from '../types.ts';
+import type { Recipe } from "../types.ts";
 
 /**
  * Groq runs Llama and Whisper on custom inference hardware (~500 tok/s).
@@ -6,23 +6,18 @@ import type { Recipe } from '../types.ts';
  * transcription (wired in commit 7).
  */
 export const groq: Recipe = {
-  id: 'groq',
-  name: 'Groq',
-  tier: 'openai-compat',
-  implementation: 'openai-compatible',
-  base_url_default: 'https://api.groq.com/openai/v1',
+  id: "groq",
+  name: "Groq",
+  tier: "openai-compat",
+  implementation: "openai-compatible",
+  base_url_default: "https://api.groq.com/openai/v1",
   auth_env: {
-    required: ['GROQ_API_KEY'],
-    setup_url: 'https://console.groq.com/keys',
+    required: ["GROQ_API_KEY"],
+    setup_url: "https://console.groq.com/keys",
   },
   touchpoints: {
     chat: {
-      models: [
-        'llama-3.3-70b-versatile',
-        'llama-3.1-8b-instant',
-        'gpt-oss-20b',
-        'gpt-oss-120b',
-      ],
+      models: ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "gpt-oss-20b", "gpt-oss-120b"],
       supports_tools: true,
       // 8b-instant has flaky tool_call_id stability under replay; the 70b model
       // is the recommended subagent driver. We mark the recipe true and let
@@ -32,8 +27,8 @@ export const groq: Recipe = {
       max_context_tokens: 131072,
       cost_per_1m_input_usd: 0.59, // 70b versatile
       cost_per_1m_output_usd: 0.79,
-      price_last_verified: '2026-04-20',
+      price_last_verified: "2026-04-20",
     },
   },
-  setup_hint: 'Get an API key at https://console.groq.com/keys, then `export GROQ_API_KEY=...`',
+  setup_hint: "Get an API key at https://console.groq.com/keys, then `export GROQ_API_KEY=...`",
 };

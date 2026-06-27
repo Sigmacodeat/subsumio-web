@@ -5,6 +5,7 @@ description: Optimiere External Integrations (DocuSign, WhatsApp, beA, Email, Co
 # External Integrations Optimization
 
 ## Scope
+
 - `src/lib/docusign.ts` (11.4KB) — DocuSign e-Signature
 - `src/app/api/docusign/` (6 Routes) — DocuSign API
 - `src/lib/whatsapp/` (4 Module) — WhatsApp Business API
@@ -23,12 +24,14 @@ description: Optimiere External Integrations (DocuSign, WhatsApp, beA, Email, Co
 - `src/app/api/data-export/` (2 Routes) — Datenexport
 
 ## Kontext laden
+
 1. Lese das jeweilige Integrations-Modul
 2. Lese die zugehörigen API Routes
 3. Lese `src/lib/api-key-store.ts` für Credential Management
 4. Lese `src/lib/encryption.ts` für Credential Verschlüsselung
 
 ## Optimierungs-Checkliste
+
 - [ ] **Webhook Verification**: Signature-Validation für alle eingehenden Webhooks
 - [ ] **Idempotency**: Webhook-Deduplication via Event-ID
 - [ ] **Retry Logic**: Exponential Backoff für externe API Calls
@@ -41,6 +44,7 @@ description: Optimiere External Integrations (DocuSign, WhatsApp, beA, Email, Co
 - [ ] **Conflict Resolution**: Was passiert bei gleichzeitigen Edits?
 
 ## Test-Befehle
+
 ```bash
 # Integration Tests
 npx vitest run src/lib/docusign.test.ts

@@ -25,13 +25,13 @@
  * risk codex flagged in #1451 review was consistency, not throughput.
  */
 
-import { existsSync, readFileSync, readdirSync, type Dirent } from 'fs';
-import { join } from 'path';
-import { parseResolverEntries, type ResolverEntry } from './check-resolvable.ts';
-import { findAllResolverFiles } from './resolver-filenames.ts';
-import { parseSkillFrontmatter } from './skill-frontmatter.ts';
+import { existsSync, readFileSync, readdirSync, type Dirent } from "fs";
+import { join } from "path";
+import { parseResolverEntries, type ResolverEntry } from "./check-resolvable.ts";
+import { findAllResolverFiles } from "./resolver-filenames.ts";
+import { parseSkillFrontmatter } from "./skill-frontmatter.ts";
 
-export type TriggerSource = 'frontmatter' | 'resolver_md';
+export type TriggerSource = "frontmatter" | "resolver_md";
 
 export interface SkillTriggerEntry extends ResolverEntry {
   /** Which surface produced this entry. Drives action-text generation. */
@@ -39,14 +39,14 @@ export interface SkillTriggerEntry extends ResolverEntry {
 }
 
 /** Section label stamped on every frontmatter-derived entry. */
-export const FRONTMATTER_SECTION = 'Auto-registered (from skill frontmatter)';
+export const FRONTMATTER_SECTION = "Auto-registered (from skill frontmatter)";
 
 /** Skill subdirectories the loader will not scan for SKILL.md frontmatter.
  *  - `_*` and dotfiles are docs / conventions / private files.
  *  - `conventions/` is the cross-cutting rules tree (no SKILL.md).
  *  - `migrations/` is version migration files (no SKILL.md).
  */
-const FRONTMATTER_SKIP_DIRS = new Set<string>(['conventions', 'migrations']);
+const FRONTMATTER_SKIP_DIRS = new Set<string>(["conventions", "migrations"]);
 
 /** Process-scoped warn-once tracker so a malformed frontmatter doesn't
  *  spam stderr on every `gbrain doctor` invocation across a session.
@@ -86,20 +86,20 @@ function loadFrontmatterEntries(skillsDir: string): SkillTriggerEntry[] {
   for (const dirent of dirents) {
     if (!dirent.isDirectory()) continue;
     const name = dirent.name;
-    if (name.startsWith('_') || name.startsWith('.')) continue;
+    if (name.startsWith("_") || name.startsWith(".")) continue;
     if (FRONTMATTER_SKIP_DIRS.has(name)) continue;
 
-    const skillMdPath = join(skillsDir, name, 'SKILL.md');
+    const skillMdPath = join(skillsDir, name, "SKILL.md");
     if (!existsSync(skillMdPath)) continue;
 
     let content: string;
     try {
-      content = readFileSync(skillMdPath, 'utf-8');
+      content = readFileSync(skillMdPath, "utf-8");
     } catch (err) {
       if (!_warnedSkills.has(skillMdPath)) {
         _warnedSkills.add(skillMdPath);
         console.warn(
-          `[skill-trigger-index] could not read ${skillMdPath}: ${(err as Error).message}`,
+          `[skill-trigger-index] could not read ${skillMdPath}: ${(err as Error).message}`
         );
       }
       continue;
@@ -112,7 +112,7 @@ function loadFrontmatterEntries(skillsDir: string): SkillTriggerEntry[] {
       if (!_warnedSkills.has(skillMdPath)) {
         _warnedSkills.add(skillMdPath);
         console.warn(
-          `[skill-trigger-index] frontmatter parse failed for ${skillMdPath}: ${(err as Error).message}`,
+          `[skill-trigger-index] frontmatter parse failed for ${skillMdPath}: ${(err as Error).message}`
         );
       }
       continue;
@@ -129,7 +129,7 @@ function loadFrontmatterEntries(skillsDir: string): SkillTriggerEntry[] {
         skillPath,
         isGStack: false,
         section: FRONTMATTER_SECTION,
-        source: 'frontmatter',
+        source: "frontmatter",
       });
     }
   }
@@ -145,18 +145,18 @@ function loadFrontmatterEntries(skillsDir: string): SkillTriggerEntry[] {
 function loadResolverMdEntries(skillsDir: string): SkillTriggerEntry[] {
   const paths = [
     ...findAllResolverFiles(skillsDir),
-    ...findAllResolverFiles(join(skillsDir, '..')),
+    ...findAllResolverFiles(join(skillsDir, "..")),
   ];
   const out: SkillTriggerEntry[] = [];
   for (const p of paths) {
     let content: string;
     try {
-      content = readFileSync(p, 'utf-8');
+      content = readFileSync(p, "utf-8");
     } catch {
       continue;
     }
     for (const e of parseResolverEntries(content)) {
-      out.push({ ...e, source: 'resolver_md' });
+      out.push({ ...e, source: "resolver_md" });
     }
   }
   return out;
@@ -173,7 +173,7 @@ function loadResolverMdEntries(skillsDir: string): SkillTriggerEntry[] {
  */
 function mergeEntries(
   fmEntries: SkillTriggerEntry[],
-  resolverEntries: SkillTriggerEntry[],
+  resolverEntries: SkillTriggerEntry[]
 ): SkillTriggerEntry[] {
   const seen = new Set<string>();
   const out: SkillTriggerEntry[] = [];
@@ -212,14 +212,12 @@ export function loadSkillTriggerIndex(skillsDir: string): SkillTriggerEntry[] {
  * section. Pipes inside trigger strings are backslash-escaped so a
  * trigger like `"a | b"` doesn't break the row.
  */
-export function entriesToResolverContent(
-  entries: SkillTriggerEntry[],
-): string {
+export function entriesToResolverContent(entries: SkillTriggerEntry[]): string {
   const lines: string[] = [
-    '## Synthesized trigger index',
-    '',
-    '| trigger | skill |',
-    '| --- | --- |',
+    "## Synthesized trigger index",
+    "",
+    "| trigger | skill |",
+    "| --- | --- |",
   ];
   for (const e of entries) {
     const trigger = escapePipe(e.trigger);
@@ -231,11 +229,11 @@ export function entriesToResolverContent(
       lines.push(`| ${trigger} | \`${e.skillPath}\` |`);
     }
   }
-  return lines.join('\n');
+  return lines.join("\n");
 }
 
 function escapePipe(s: string): string {
-  return s.replace(/\|/g, '\\|');
+  return s.replace(/\|/g, "\\|");
 }
 
 /**
@@ -246,7 +244,7 @@ function escapePipe(s: string): string {
 export function findPrimaryResolverPath(skillsDir: string): string | null {
   const paths = [
     ...findAllResolverFiles(skillsDir),
-    ...findAllResolverFiles(join(skillsDir, '..')),
+    ...findAllResolverFiles(join(skillsDir, "..")),
   ];
   return paths[0] ?? null;
 }

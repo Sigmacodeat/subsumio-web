@@ -97,7 +97,7 @@ export const POST = createHandler(
           body: JSON.stringify({
             jurisdiction: source.jurisdiction.toLowerCase(),
             limit: 50,
-          signal: AbortSignal.timeout(30_000),
+            signal: AbortSignal.timeout(30_000),
           }),
         });
 

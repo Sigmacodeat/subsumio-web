@@ -16,13 +16,13 @@
  * read/write helpers.
  */
 
-import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'fs';
-import { dirname, join } from 'path';
+import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "fs";
+import { dirname, join } from "path";
 
-import { gbrainPath } from '../config.ts';
+import { gbrainPath } from "../config.ts";
 
 /** Schema version stamped on every state file. */
-export const SKILLPACK_STATE_SCHEMA_VERSION = 'gbrain-skillpack-state-v1' as const;
+export const SKILLPACK_STATE_SCHEMA_VERSION = "gbrain-skillpack-state-v1" as const;
 
 /** Per-pack scaffold record. */
 export interface SkillpackStateEntry {
@@ -35,13 +35,13 @@ export interface SkillpackStateEntry {
   /** Source URL or local path scaffold pulled from. */
   source: string;
   /** Source kind. */
-  source_kind: 'git' | 'tarball' | 'local';
+  source_kind: "git" | "tarball" | "local";
   /** Resolved git commit SHA when source_kind=git; null for tarball/local. */
   pinned_commit: string | null;
   /** SHA-256 of the tarball that was extracted when source_kind=tarball; null otherwise. */
   tarball_sha256: string | null;
   /** Tier the pack was on in the registry at scaffold time (informational only). */
-  tier: 'endorsed' | 'community' | 'experimental' | 'dead' | 'local';
+  tier: "endorsed" | "community" | "experimental" | "dead" | "local";
   /** ISO 8601 wall-clock timestamp of the scaffold (UTC). */
   scaffolded_at: string;
   /** Absolute path of the workspace where files were written. */
@@ -56,17 +56,17 @@ export interface SkillpackState {
 }
 
 export type SkillpackStateErrorCode =
-  | 'state_malformed_json'
-  | 'state_schema_unknown'
-  | 'state_atomic_write_failed';
+  | "state_malformed_json"
+  | "state_schema_unknown"
+  | "state_atomic_write_failed";
 
 export class SkillpackStateError extends Error {
   constructor(
     message: string,
-    public code: SkillpackStateErrorCode,
+    public code: SkillpackStateErrorCode
   ) {
     super(message);
-    this.name = 'SkillpackStateError';
+    this.name = "SkillpackStateError";
   }
 }
 
@@ -77,7 +77,7 @@ const EMPTY_STATE: SkillpackState = {
 
 /** Default state file path. Override via `opts.statePath` in calling code. */
 export function defaultStatePath(): string {
-  return gbrainPath('skillpack-state.json');
+  return gbrainPath("skillpack-state.json");
 }
 
 /**
@@ -91,18 +91,18 @@ export function loadState(opts: { statePath?: string } = {}): SkillpackState {
 
   let raw: unknown;
   try {
-    raw = JSON.parse(readFileSync(path, 'utf-8'));
+    raw = JSON.parse(readFileSync(path, "utf-8"));
   } catch (err) {
     throw new SkillpackStateError(
       `skillpack-state.json is not valid JSON (${path}): ${(err as Error).message}`,
-      'state_malformed_json',
+      "state_malformed_json"
     );
   }
 
-  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
     throw new SkillpackStateError(
       `skillpack-state.json must be a JSON object`,
-      'state_malformed_json',
+      "state_malformed_json"
     );
   }
 
@@ -110,18 +110,21 @@ export function loadState(opts: { statePath?: string } = {}): SkillpackState {
   if (obj.schema_version !== SKILLPACK_STATE_SCHEMA_VERSION) {
     throw new SkillpackStateError(
       `skillpack-state.json has unknown schema_version ${JSON.stringify(obj.schema_version)}; expected ${SKILLPACK_STATE_SCHEMA_VERSION}`,
-      'state_schema_unknown',
+      "state_schema_unknown"
     );
   }
 
   if (!Array.isArray(obj.packs)) {
     throw new SkillpackStateError(
       `skillpack-state.json.packs must be an array`,
-      'state_malformed_json',
+      "state_malformed_json"
     );
   }
 
-  return { schema_version: SKILLPACK_STATE_SCHEMA_VERSION, packs: obj.packs as SkillpackStateEntry[] };
+  return {
+    schema_version: SKILLPACK_STATE_SCHEMA_VERSION,
+    packs: obj.packs as SkillpackStateEntry[],
+  };
 }
 
 /**
@@ -132,9 +135,9 @@ export function loadState(opts: { statePath?: string } = {}): SkillpackState {
 export function saveState(state: SkillpackState, opts: { statePath?: string } = {}): void {
   const path = opts.statePath ?? defaultStatePath();
   mkdirSync(dirname(path), { recursive: true });
-  const tmp = path + '.tmp';
+  const tmp = path + ".tmp";
   try {
-    writeFileSync(tmp, JSON.stringify(state, null, 2) + '\n', { mode: 0o644 });
+    writeFileSync(tmp, JSON.stringify(state, null, 2) + "\n", { mode: 0o644 });
     renameSync(tmp, path);
   } catch (err) {
     try {
@@ -142,7 +145,7 @@ export function saveState(state: SkillpackState, opts: { statePath?: string } = 
     } catch {}
     throw new SkillpackStateError(
       `failed to atomically write skillpack-state.json to ${path}: ${(err as Error).message}`,
-      'state_atomic_write_failed',
+      "state_atomic_write_failed"
     );
   }
 }
@@ -178,7 +181,7 @@ export function removeEntry(state: SkillpackState, name: string): SkillpackState
  */
 export function isAlreadyTrusted(
   state: SkillpackState,
-  candidate: Pick<SkillpackStateEntry, 'name' | 'author' | 'pinned_commit' | 'tarball_sha256'>,
+  candidate: Pick<SkillpackStateEntry, "name" | "author" | "pinned_commit" | "tarball_sha256">
 ): boolean {
   const existing = findEntry(state, candidate.name);
   if (!existing) return false;

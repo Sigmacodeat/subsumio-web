@@ -7,6 +7,7 @@ _How v0.32.3 measures the difference between `conservative`, `balanced`, and `to
 **Measures:** retrieval quality and operational cost on fixed public datasets, under each named search mode, against the same brain content.
 
 **Does NOT measure:**
+
 - Your specific brain content (this is a benchmark, not your bill).
 - Your specific query distribution.
 - End-user satisfaction or downstream task success.
@@ -120,6 +121,7 @@ Every metric the report prints has a plain-English entry in `docs/eval/METRIC_GL
 The mode-picker prompt at `gbrain init` and the CLAUDE.md `## Search Mode` table both surface these rough cost anchors. Working through the math so they're auditable:
 
 **Variables:**
+
 - `T` = avg tokens per search-result chunk. The recursive chunker targets 300 words / chunk → ~400 tokens (English, OpenAI tiktoken approx).
 - `N` = chunks delivered per query (capped by the mode's `searchLimit`).
 - `R` = downstream model input rate. Sonnet 4.6 = \$3/M. Opus 4.7 = \$5/M. Haiku 4.5 = \$1/M.
@@ -129,27 +131,28 @@ The mode-picker prompt at `gbrain init` and the CLAUDE.md `## Search Mode` table
 
     cost_per_query = T × N × R
 
-| Mode | T (tokens) | N (chunks) | Sonnet (\$3/M) | Opus (\$5/M) | Haiku (\$1/M) |
-|---|---|---|---|---|---|
-| conservative (4K cap, 10 max) | ~400 | 10 (or fewer if budget hits) | \$0.012 | \$0.020 | \$0.004 |
-| balanced (12K cap, 25 max) | ~400 | ~25 | \$0.030 | \$0.050 | \$0.010 |
-| tokenmax (no cap, 50 max) | ~400 | ~50 | \$0.060 | \$0.100 | \$0.020 |
+| Mode                          | T (tokens) | N (chunks)                   | Sonnet (\$3/M) | Opus (\$5/M) | Haiku (\$1/M) |
+| ----------------------------- | ---------- | ---------------------------- | -------------- | ------------ | ------------- |
+| conservative (4K cap, 10 max) | ~400       | 10 (or fewer if budget hits) | \$0.012        | \$0.020      | \$0.004       |
+| balanced (12K cap, 25 max)    | ~400       | ~25                          | \$0.030        | \$0.050      | \$0.010       |
+| tokenmax (no cap, 50 max)     | ~400       | ~50                          | \$0.060        | \$0.100      | \$0.020       |
 
 **Monthly cost** (Q × per-query):
 
 | Mode @ Sonnet | 1K Q/mo | 10K Q/mo | 100K Q/mo |
-|---|---|---|---|
-| conservative | \$12 | \$120 | \$1,200 |
-| balanced | \$30 | \$300 | \$3,000 |
-| tokenmax | \$60 | \$600 | \$6,000 |
+| ------------- | ------- | -------- | --------- |
+| conservative  | \$12    | \$120    | \$1,200   |
+| balanced      | \$30    | \$300    | \$3,000   |
+| tokenmax      | \$60    | \$600    | \$6,000   |
 
-| Mode @ Opus | 1K Q/mo | 10K Q/mo | 100K Q/mo |
-|---|---|---|---|
-| conservative | \$20 | \$200 | \$2,000 |
-| balanced | \$50 | \$500 | \$5,000 |
-| tokenmax | \$100 | \$1,000 | \$10,000 |
+| Mode @ Opus  | 1K Q/mo | 10K Q/mo | 100K Q/mo |
+| ------------ | ------- | -------- | --------- |
+| conservative | \$20    | \$200    | \$2,000   |
+| balanced     | \$50    | \$500    | \$5,000   |
+| tokenmax     | \$100   | \$1,000  | \$10,000  |
 
 **gbrain's own cost** on top:
+
 - Query embedding (text-embedding-3-large @ \$0.13/M tokens): ~\$0.00001 per query. Negligible at every scale.
 - Tokenmax Haiku expansion call (\$1/M input, \$5/M output, ~500 input + 200 output per call): ~\$0.0015 per query, or \$150/mo at 100K queries. Cache hits cut this in half.
 - Per-page indexing (one-time): bounded by your import volume, not query volume. Not modeled here.
@@ -157,6 +160,7 @@ The mode-picker prompt at `gbrain init` and the CLAUDE.md `## Search Mode` table
 **Cache hit adjustment.** A warmed brain typically sees 30-50% cache hits on repeat-query traffic. Cache hits skip the downstream input cost entirely (the cached result was already in the agent's context once). So real-world costs run ~50-70% of the table above on a busy brain.
 
 **Why these numbers DRIFT from your actual bill:**
+
 - Your agent's system prompt + reasoning tokens add input that gbrain doesn't see.
 - Compaction reduces input over a long session.
 - Most agents make 1-5 searches per turn; cost-per-turn is what bills you, not cost-per-query.
@@ -172,10 +176,10 @@ queries/month (typical single-user volume), search payload only (no cache
 savings):
 
 | Mode (search tokens) | Haiku 4.5 (\$1/M) | Sonnet 4.6 (\$3/M) | Opus 4.7 (\$5/M) |
-|---|---|---|---|
-| conservative (~4K) | **\$40/mo** | \$120/mo | \$200/mo |
-| balanced (~10K) | \$100/mo | \$300/mo | \$500/mo |
-| tokenmax (~20K) | \$200/mo | \$600/mo | **\$1,000/mo** |
+| -------------------- | ----------------- | ------------------ | ---------------- |
+| conservative (~4K)   | **\$40/mo**       | \$120/mo           | \$200/mo         |
+| balanced (~10K)      | \$100/mo          | \$300/mo           | \$500/mo         |
+| tokenmax (~20K)      | \$200/mo          | \$600/mo           | **\$1,000/mo**   |
 
 Scales linearly: multiply by 10 for 100K/mo (heavy power user / multi-user
 fleet); divide by 10 for 1K/mo (light usage).
@@ -205,14 +209,14 @@ The per-query math above is honest but theoretical: it treats each search as an 
 
 **Reference shape — tokenmax in production at a single-user scale:**
 
-| Quantity | Approximate value |
-|---|---|
-| 30-day total agent spend | ~\$700/mo |
-| 30-day total tokens billed | ~800M |
-| Turns per month | ~860 (~29/day; one active agent loop) |
-| Average tokens per turn | ~900K |
-| Average cost per turn | ~\$0.85 |
-| Anthropic prompt-cache hit rate | ~88% |
+| Quantity                        | Approximate value                     |
+| ------------------------------- | ------------------------------------- |
+| 30-day total agent spend        | ~\$700/mo                             |
+| 30-day total tokens billed      | ~800M                                 |
+| Turns per month                 | ~860 (~29/day; one active agent loop) |
+| Average tokens per turn         | ~900K                                 |
+| Average cost per turn           | ~\$0.85                               |
+| Anthropic prompt-cache hit rate | ~88%                                  |
 
 A "turn" here is one agent loop iteration: read user message, plan, execute tool calls (including gbrain searches), generate response. Each turn typically includes 2-4 gbrain searches.
 
@@ -220,34 +224,35 @@ A "turn" here is one agent loop iteration: read user message, plan, execute tool
 
 The cost difference between modes is concentrated in the search-attributable fraction of per-turn cost. System prompt, tool definitions, conversation history, and reasoning tokens don't change with mode — only the chunks gbrain delivers do. Assume 3 searches per turn at the mode's `searchLimit`:
 
-| Mode | Search tokens/turn | Search cost/turn (at \$3/M effective) | Search-attributable @ 860 turns | Δ vs tokenmax |
-|---|---|---|---|---|
-| tokenmax | ~60K (3 × 20K) | ~\$0.18 | ~\$155/mo | — |
-| balanced | ~30K (3 × 10K) | ~\$0.09 | ~\$77/mo | -\$78 |
-| conservative | ~12K (3 × 4K) | ~\$0.036 | ~\$31/mo | -\$124 |
+| Mode         | Search tokens/turn | Search cost/turn (at \$3/M effective) | Search-attributable @ 860 turns | Δ vs tokenmax |
+| ------------ | ------------------ | ------------------------------------- | ------------------------------- | ------------- |
+| tokenmax     | ~60K (3 × 20K)     | ~\$0.18                               | ~\$155/mo                       | —             |
+| balanced     | ~30K (3 × 10K)     | ~\$0.09                               | ~\$77/mo                        | -\$78         |
+| conservative | ~12K (3 × 4K)      | ~\$0.036                              | ~\$31/mo                        | -\$124        |
 
 **Implied total agent spend by NATURAL PAIRING** (mode + matched
 downstream model). Per-turn cost scales with the downstream model's
 per-token rate, since the cached prefix + uncached portion + reasoning
 tokens all bill at that rate:
 
-| Pairing | Per-turn cost | Total @ 860 turns/mo |
-|---|---|---|
-| tokenmax + Opus (frontier, max quality) | ~\$0.85 | ~\$700/mo |
-| balanced + Sonnet (the sweet spot) | ~\$0.50 | ~\$430/mo |
-| conservative + Haiku (cost-sensitive) | ~\$0.20 | ~\$170/mo |
+| Pairing                                 | Per-turn cost | Total @ 860 turns/mo |
+| --------------------------------------- | ------------- | -------------------- |
+| tokenmax + Opus (frontier, max quality) | ~\$0.85       | ~\$700/mo            |
+| balanced + Sonnet (the sweet spot)      | ~\$0.50       | ~\$430/mo            |
+| conservative + Haiku (cost-sensitive)   | ~\$0.20       | ~\$170/mo            |
 
 **4x spread across natural pairings.** The model tier dominates because
 the per-token rate applies to the WHOLE per-turn payload (system + tools
-+ history + reasoning + search), not just gbrain's chunks. Mode choice
-contributes ~10-20% on top of that base.
+
+- history + reasoning + search), not just gbrain's chunks. Mode choice
+  contributes ~10-20% on top of that base.
 
 **Mismatched pairings push you off the curve:**
 
-| Pairing | Per-turn estimate | Total @ 860 turns/mo | Compared to natural |
-|---|---|---|---|
-| tokenmax + Haiku | ~\$0.20 | ~\$170/mo | Same cost as conservative+Haiku, worse quality |
-| conservative + Opus | ~\$0.75 | ~\$640/mo | 92% of tokenmax+Opus spend, conservative-shape retrieval |
+| Pairing             | Per-turn estimate | Total @ 860 turns/mo | Compared to natural                                      |
+| ------------------- | ----------------- | -------------------- | -------------------------------------------------------- |
+| tokenmax + Haiku    | ~\$0.20           | ~\$170/mo            | Same cost as conservative+Haiku, worse quality           |
+| conservative + Opus | ~\$0.75           | ~\$640/mo            | 92% of tokenmax+Opus spend, conservative-shape retrieval |
 
 The mismatch math says: a tokenmax+Haiku user pays the same as
 conservative+Haiku but gets a noisier context (Haiku can't filter signal

@@ -50,6 +50,7 @@ CREATE INDEX frontmatter_scan_state_has_issues_idx
 ```
 
 Why these columns:
+
 - `mtime_ms` + `content_hash`: incremental check picks one. mtime is faster
   (no read); content_hash is the truth (defeats touch-without-change cases).
   The incremental walker uses mtime as a fast gate and content_hash as the
@@ -73,7 +74,7 @@ const migrations = [
   // ...existing v1-v80...
   {
     version: 81,
-    name: 'frontmatter_scan_state',
+    name: "frontmatter_scan_state",
     sql: `
       CREATE TABLE IF NOT EXISTS frontmatter_scan_state (...);
       CREATE INDEX IF NOT EXISTS frontmatter_scan_state_has_issues_idx ...;
@@ -104,8 +105,9 @@ Two paths write rows:
    maintenance phases.
 
 The incremental walker handles two cases sync misses:
+
 - Files edited outside sync (user opens an editor, saves, never `git
-  commit`s).
+commit`s).
 - Sources whose `local_path` isn't a git repo (sync only sees git-touched
   files).
 
@@ -116,7 +118,7 @@ The incremental walker handles two cases sync misses:
 const rows = await engine.executeRaw<{ source_id: string; issues: number }>(
   `SELECT source_id, count(*) FILTER (WHERE jsonb_array_length(codes) > 0)::int AS issues
    FROM frontmatter_scan_state
-   GROUP BY source_id`,
+   GROUP BY source_id`
 );
 ```
 
@@ -131,7 +133,7 @@ stale data as authoritative.
 1. **First-ever scan.** A fresh upgrade has no rows in
    `frontmatter_scan_state`. Two options:
    - Lazy: doctor reports "no scan state yet; run `gbrain frontmatter scan
-     --incremental` once" (operator-driven).
+--incremental` once" (operator-driven).
    - Eager: the migration that creates the table also enqueues an autopilot
      cycle job to do the first full scan.
 
@@ -140,7 +142,7 @@ stale data as authoritative.
    cycle.ts machinery + the doctor-routed background job system).
 
 2. **Source archival / deletion.** `frontmatter_scan_state` has `ON DELETE
-   CASCADE` on `sources(id)`, so soft-delete + 72h TTL + purge already
+CASCADE` on `sources(id)`, so soft-delete + 72h TTL + purge already
    clean it up. No additional logic needed.
 
 3. **Path renames inside a source.** Sync would `DELETE` the old row by

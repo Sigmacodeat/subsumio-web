@@ -31,12 +31,12 @@
  *     grep for `actual cost:` to track real spend.
  */
 
-import type { BrainEngine } from '../engine.ts';
-import { chat as defaultChat, embedQuery, type ChatResult, type ChatOpts } from '../ai/gateway.ts';
-import { hybridSearch, hybridSearchCached } from '../search/hybrid.ts';
-import { fetchFar, type CloseRef, type FarPage } from './domain-bank.ts';
-import { StructuredAgentError } from '../errors.ts';
-import { classifyBrainstormError } from './error-classify.ts';
+import type { BrainEngine } from "../engine.ts";
+import { chat as defaultChat, embedQuery, type ChatResult, type ChatOpts } from "../ai/gateway.ts";
+import { hybridSearch, hybridSearchCached } from "../search/hybrid.ts";
+import { fetchFar, type CloseRef, type FarPage } from "./domain-bank.ts";
+import { StructuredAgentError } from "../errors.ts";
+import { classifyBrainstormError } from "./error-classify.ts";
 import {
   runJudge,
   BRAINSTORM_JUDGE_CONFIG,
@@ -45,8 +45,8 @@ import {
   type JudgeIdeaResult,
   type JudgeConfig,
   type ChatFn,
-} from './judges.ts';
-import { canonicalLookup } from '../model-pricing.ts';
+} from "./judges.ts";
+import { canonicalLookup } from "../model-pricing.ts";
 
 // ---------------------------------------------------------------------------
 // BudgetExhausted is the canonical typed error (Q2) used by every cost
@@ -56,8 +56,8 @@ import { canonicalLookup } from '../model-pricing.ts';
 // module (the only known caller is the test suite).
 // ---------------------------------------------------------------------------
 
-import { BudgetExhausted, BudgetTracker } from '../budget/budget-tracker.ts';
-import { withBudgetTracker } from '../ai/gateway.ts';
+import { BudgetExhausted, BudgetTracker } from "../budget/budget-tracker.ts";
+import { withBudgetTracker } from "../ai/gateway.ts";
 import {
   computeRunId,
   loadCheckpoint,
@@ -66,7 +66,7 @@ import {
   clearCheckpoint,
   type BrainstormCheckpoint,
   type CheckpointCross,
-} from './checkpoint.ts';
+} from "./checkpoint.ts";
 
 export { BudgetExhausted };
 
@@ -76,7 +76,7 @@ export { BudgetExhausted };
 
 export interface BrainstormProfile {
   /** Stable label — used in stderr lines, frontmatter, audit. */
-  label: 'brainstorm' | 'lsd';
+  label: "brainstorm" | "lsd";
   /** Close-set size from hybridSearch. brainstorm=4, lsd=2. */
   k_close: number;
   /** Far-set size from domain-bank. brainstorm=6, lsd=12. */
@@ -92,7 +92,7 @@ export interface BrainstormProfile {
   /** Whether to save by default. brainstorm=true (defensible output), lsd=false (ephemeral). */
   default_save: boolean;
   /** Frontmatter `mode:` value the dream-cycle hook reads (D4). */
-  frontmatter_mode: 'brainstorm' | 'lsd';
+  frontmatter_mode: "brainstorm" | "lsd";
   /** Generator system-prompt suffix — what's the vibe? */
   generator_voice: string;
   /** Optional generator-side constraint (LSD: axiomatic inversions required). */
@@ -100,7 +100,7 @@ export interface BrainstormProfile {
 }
 
 export const BRAINSTORM_PROFILE: BrainstormProfile = Object.freeze({
-  label: 'brainstorm',
+  label: "brainstorm",
   k_close: 4,
   m_far: 6,
   ideas_per_cross: 3,
@@ -108,12 +108,12 @@ export const BRAINSTORM_PROFILE: BrainstormProfile = Object.freeze({
   stale_bias: false,
   judge_config: BRAINSTORM_JUDGE_CONFIG,
   default_save: true,
-  frontmatter_mode: 'brainstorm',
-  generator_voice: 'Defensible, cite-heavy. An analyst riffing with their own notes.',
+  frontmatter_mode: "brainstorm",
+  generator_voice: "Defensible, cite-heavy. An analyst riffing with their own notes.",
 });
 
 export const LSD_PROFILE: BrainstormProfile = Object.freeze({
-  label: 'lsd',
+  label: "lsd",
   k_close: 2,
   m_far: 12,
   ideas_per_cross: 4,
@@ -121,9 +121,11 @@ export const LSD_PROFILE: BrainstormProfile = Object.freeze({
   stale_bias: true,
   judge_config: LSD_JUDGE_CONFIG,
   default_save: false,
-  frontmatter_mode: 'lsd',
-  generator_voice: 'Your brain at 3am noticing a connection between things it has no business connecting.',
-  generator_constraint: 'Every idea MUST invert at least one implicit axiom (X is good → X is the problem; everyone does Y → opposite; dominant narrative → hidden cause).',
+  frontmatter_mode: "lsd",
+  generator_voice:
+    "Your brain at 3am noticing a connection between things it has no business connecting.",
+  generator_constraint:
+    "Every idea MUST invert at least one implicit axiom (X is good → X is the problem; everyone does Y → opposite; dominant narrative → hidden cause).",
 });
 
 // ---------------------------------------------------------------------------
@@ -220,7 +222,7 @@ export interface BrainstormIdea {
 }
 
 export interface BrainstormResult {
-  profile_label: 'brainstorm' | 'lsd';
+  profile_label: "brainstorm" | "lsd";
   question: string;
   /** Question embedding model used for distance calc. */
   embedding_model: string | null;
@@ -229,7 +231,12 @@ export interface BrainstormResult {
   /** Close-set citations for the run header. */
   close_set: Array<{ slug: string; title: string | null }>;
   /** Far-set citations for the run header. */
-  far_set: Array<{ slug: string; title: string | null; distance_score: number; source: 'prefix-stratified' | 'corpus-sample' }>;
+  far_set: Array<{
+    slug: string;
+    title: string | null;
+    distance_score: number;
+    source: "prefix-stratified" | "corpus-sample";
+  }>;
   /** Calibration context applied during judging; `null` on cold-start. */
   active_bias_tags: string[] | null;
   /** D11 sparse signal — true when domain-bank couldn't fill m_far. */
@@ -290,14 +297,16 @@ export async function previewCostAndWait(opts: {
   graceMs?: number;
 }): Promise<{ aborted: boolean; estimate: number }> {
   const estimate = estimateCost(opts.profile, opts.model);
-  const isTTY = typeof process !== 'undefined' && process.stderr?.isTTY === true;
+  const isTTY = typeof process !== "undefined" && process.stderr?.isTTY === true;
   opts.stderrWrite(
     `[${opts.profile.label}] estimated cost: ${fmtUsd(estimate)} (${opts.profile.k_close}×${opts.profile.m_far} = ${opts.profile.k_close * opts.profile.m_far} crosses × ${opts.profile.ideas_per_cross} ideas + judge)\n`
   );
   if (opts.skip || !isTTY) {
     return { aborted: false, estimate };
   }
-  opts.stderrWrite(`[${opts.profile.label}] Press Ctrl-C within 10s to abort, or wait to proceed...\n`);
+  opts.stderrWrite(
+    `[${opts.profile.label}] Press Ctrl-C within 10s to abort, or wait to proceed...\n`
+  );
   const ms = opts.graceMs ?? 10_000;
   return new Promise((resolve) => {
     const t = setTimeout(() => {
@@ -311,9 +320,9 @@ export async function previewCostAndWait(opts: {
     };
     function cleanup() {
       clearTimeout(t);
-      process.off?.('SIGINT', onSigint);
+      process.off?.("SIGINT", onSigint);
     }
-    process.on?.('SIGINT', onSigint);
+    process.on?.("SIGINT", onSigint);
   });
 }
 
@@ -332,17 +341,17 @@ export async function loadCalibrationContext(
 ): Promise<{ active_bias_tags: string[]; pattern_statements: string[] } | null> {
   const sourceClause = opts.sourceId
     ? `AND source_id = '${opts.sourceId.replace(/'/g, "''")}'`
-    : '';
+    : "";
   let rows: Array<{ active_bias_tags: string[]; pattern_statements: string[] }>;
   try {
-    rows = await engine.executeRaw(
+    rows = (await engine.executeRaw(
       `SELECT active_bias_tags, pattern_statements
          FROM calibration_profiles
          WHERE holder = $1 ${sourceClause}
          ORDER BY generated_at DESC
          LIMIT 1`,
       [opts.holder]
-    ) as Array<{ active_bias_tags: string[]; pattern_statements: string[] }>;
+    )) as Array<{ active_bias_tags: string[]; pattern_statements: string[] }>;
   } catch {
     // Pre-v0.36.1 brains: calibration_profiles table doesn't exist.
     return null;
@@ -370,8 +379,8 @@ function sanitizeUnicode(s: string): string {
   // Replace lone high surrogates (D800-DBFF) not followed by a low surrogate.
   // Replace lone low surrogates (DC00-DFFF) not preceded by a high surrogate.
   return s
-    .replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/g, '�')
-    .replace(/(^|[^\uD800-\uDBFF])[\uDC00-\uDFFF]/g, '$1�');
+    .replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/g, "�")
+    .replace(/(^|[^\uD800-\uDBFF])[\uDC00-\uDFFF]/g, "$1�");
 }
 
 /** Build a single (close × far) cross-generation prompt. */
@@ -389,15 +398,15 @@ Style rules:
 - Short, assertive sentences. Zero hedging.
 - Each idea starts from a principle, not anecdote.
 - Cite BOTH the close and far slug verbatim — these are the user's own notes.
-- Never fabricate facts, figures, or quotes. Stay grounded in the cited pages.${opts.profile.generator_constraint ? `\n- ${opts.profile.generator_constraint}` : ''}`;
+- Never fabricate facts, figures, or quotes. Stay grounded in the cited pages.${opts.profile.generator_constraint ? `\n- ${opts.profile.generator_constraint}` : ""}`;
 
   // Sanitize: unicode surrogates in page content (from OCR or older imports)
   // can crash JSON encoding in the chat transport, which would void the
   // entire cross. Cheap to fix here.
   const closeContent = sanitizeUnicode(opts.close.content);
   const farContent = sanitizeUnicode(opts.far.content);
-  const closeTitle = sanitizeUnicode(opts.close.title ?? '(untitled)');
-  const farTitle = sanitizeUnicode(opts.far.title ?? '(untitled)');
+  const closeTitle = sanitizeUnicode(opts.close.title ?? "(untitled)");
+  const farTitle = sanitizeUnicode(opts.far.title ?? "(untitled)");
   const question = sanitizeUnicode(opts.question);
 
   const user = `QUESTION:
@@ -434,14 +443,23 @@ export function parseIdeaResponse(text: string): string[] {
   if (!text || text.trim().length === 0) return [];
   // Primary: split on `## Idea N` or `### Idea N` (case-insensitive).
   const headerRe = /^#{2,4}\s*(?:idea\s+)?\d+[.:\s\-]*/gim;
-  const parts = text.split(headerRe).map((p) => p.trim()).filter((p) => p.length > 0);
+  const parts = text
+    .split(headerRe)
+    .map((p) => p.trim())
+    .filter((p) => p.length > 0);
   if (parts.length >= 2) return parts; // first chunk might be a preamble or first idea; keep all non-empty.
   // Fallback: split on numbered list `1. ... 2. ... 3. ...`.
   const numberedRe = /^\s*\d+\.\s+/gm;
-  const numbered = text.split(numberedRe).map((p) => p.trim()).filter((p) => p.length > 0);
+  const numbered = text
+    .split(numberedRe)
+    .map((p) => p.trim())
+    .filter((p) => p.length > 0);
   if (numbered.length >= 2) return numbered;
   // Last resort: split on blank lines.
-  const paragraphs = text.split(/\n{2,}/).map((p) => p.trim()).filter((p) => p.length > 30);
+  const paragraphs = text
+    .split(/\n{2,}/)
+    .map((p) => p.trim())
+    .filter((p) => p.length > 30);
   return paragraphs;
 }
 
@@ -458,13 +476,15 @@ async function mapWithConcurrency<I, O>(
   let cursor = 0;
   const workers: Promise<void>[] = [];
   for (let w = 0; w < Math.min(limit, items.length); w++) {
-    workers.push((async () => {
-      while (true) {
-        const i = cursor++;
-        if (i >= items.length) break;
-        results[i] = await worker(items[i], i);
-      }
-    })());
+    workers.push(
+      (async () => {
+        while (true) {
+          const i = cursor++;
+          if (i >= items.length) break;
+          results[i] = await worker(items[i], i);
+        }
+      })()
+    );
   }
   await Promise.all(workers);
   return results;
@@ -522,7 +542,7 @@ export async function runBrainstorm(
 async function runBrainstormImpl(
   engine: BrainEngine,
   config: { embedding_model?: string; emotional_weight?: { user_holder?: string } },
-  opts: BrainstormOptions,
+  opts: BrainstormOptions
 ): Promise<BrainstormResult> {
   // v0.39.0.0 T10: install a gateway-layer BudgetTracker scope around the
   // whole run so every gateway.chat / embed call (the cross generations +
@@ -533,7 +553,7 @@ async function runBrainstormImpl(
   // SQLSTATE 57014, so the outer classifyBrainstormError lets it pass
   // through with its original shape (which the CLI formatter renders).
   const _runTracker = new BudgetTracker({
-    label: `brainstorm.${opts.profile?.label ?? 'brainstorm'}`,
+    label: `brainstorm.${opts.profile?.label ?? "brainstorm"}`,
     maxCostUsd: opts.maxCostUsd ?? 5,
   });
   return withBudgetTracker(_runTracker, () => _runBrainstormInner(engine, config, opts));
@@ -542,15 +562,19 @@ async function runBrainstormImpl(
 async function _runBrainstormInner(
   engine: BrainEngine,
   config: { embedding_model?: string; emotional_weight?: { user_holder?: string } },
-  opts: BrainstormOptions,
+  opts: BrainstormOptions
 ): Promise<BrainstormResult> {
   const profile = opts.profile ?? BRAINSTORM_PROFILE;
-  const stderr = opts.stderrWrite ?? ((s: string) => { process.stderr.write(s); });
+  const stderr =
+    opts.stderrWrite ??
+    ((s: string) => {
+      process.stderr.write(s);
+    });
   const chat = opts.chatFn ?? defaultChat;
   const embedFn = opts.embedQueryFn ?? embedQuery;
 
   // ---- Phase 0: cost preview + TTY grace ----
-  const modelStr = opts.modelOverride ?? 'anthropic:claude-sonnet-4-6';
+  const modelStr = opts.modelOverride ?? "anthropic:claude-sonnet-4-6";
   const { aborted, estimate } = await previewCostAndWait({
     profile,
     model: modelStr,
@@ -558,7 +582,7 @@ async function _runBrainstormInner(
     stderrWrite: stderr,
   });
   if (aborted) {
-    throw new Error('brainstorm: aborted before run (Ctrl-C during cost preview window)');
+    throw new Error("brainstorm: aborted before run (Ctrl-C during cost preview window)");
   }
 
   // ---- Phase 0.5: hard cost ceiling (circuit breaker) ----
@@ -572,8 +596,8 @@ async function _runBrainstormInner(
   if (estimate > maxCostUsd) {
     throw new BudgetExhausted(
       `${profile.label}: estimated cost ${fmtUsd(estimate)} exceeds --max-cost ${fmtUsd(maxCostUsd)}. ` +
-      `Lower --limit, raise --max-cost, or pass --max-far-set <n> to cap the domain bank.`,
-      { reason: 'cost', spent: estimate, cap: maxCostUsd },
+        `Lower --limit, raise --max-cost, or pass --max-far-set <n> to cap the domain bank.`,
+      { reason: "cost", spent: estimate, cap: maxCostUsd }
     );
   }
 
@@ -583,7 +607,9 @@ async function _runBrainstormInner(
     questionEmbedding = await embedFn(opts.question);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    stderr(`[${profile.label}] WARN: question embedding failed (${msg}); distance scores will be neutral.\n`);
+    stderr(
+      `[${profile.label}] WARN: question embedding failed (${msg}); distance scores will be neutral.\n`
+    );
   }
 
   // hybridSearch for close-set. Limit to profile.k_close. Source-scoped.
@@ -603,7 +629,9 @@ async function _runBrainstormInner(
     // K=0 LSD case is intentional; for brainstorm an empty close-set means
     // "no related pages" — proceed, all crosses use the question as the
     // sole anchor (no close-page context).
-    stderr(`[${profile.label}] WARN: no close-set pages matched the question; proceeding with empty anchor.\n`);
+    stderr(
+      `[${profile.label}] WARN: no close-set pages matched the question; proceeding with empty anchor.\n`
+    );
   }
   const closeSet: CloseRef[] = closeResults.map((r) => ({
     slug: r.slug,
@@ -635,7 +663,7 @@ async function _runBrainstormInner(
   }
 
   // ---- Phase 3: calibration context (cold-start fallback) ----
-  const holder = opts.holderOverride ?? config.emotional_weight?.user_holder ?? 'garry';
+  const holder = opts.holderOverride ?? config.emotional_weight?.user_holder ?? "garry";
   const calibContext = await loadCalibrationContext(engine, {
     holder,
     sourceId: opts.sourceId,
@@ -650,11 +678,14 @@ async function _runBrainstormInner(
   // them now from the engine — small cost, ~K pages, no domain-bank lookup).
   const closeFull = await Promise.all(
     closeResults.map(async (r) => {
-      const page = await engine.getPage(r.slug, opts.sourceId ? { sourceId: opts.sourceId } : undefined);
+      const page = await engine.getPage(
+        r.slug,
+        opts.sourceId ? { sourceId: opts.sourceId } : undefined
+      );
       return {
         slug: r.slug,
         title: page?.title ?? null,
-        content: page?.compiled_truth ?? '',
+        content: page?.compiled_truth ?? "",
       };
     })
   );
@@ -662,9 +693,10 @@ async function _runBrainstormInner(
   // ---- Phase 3.5: generate ideas across (close × far) crosses ----
   // When closeSet is empty, fabricate a single "anchor-less" close entry so
   // the cross still happens (LSD K=0 path).
-  const closesForCross = closeFull.length > 0
-    ? closeFull
-    : [{ slug: '(no anchor)', title: 'question only', content: opts.question }];
+  const closesForCross =
+    closeFull.length > 0
+      ? closeFull
+      : [{ slug: "(no anchor)", title: "question only", content: opts.question }];
   type Cross = {
     close: { slug: string; title: string | null; content: string };
     far: FarPage;
@@ -694,26 +726,28 @@ async function _runBrainstormInner(
     if (opts.resumeRunId !== runId) {
       throw new Error(
         `${profile.label}: --resume run_id=${opts.resumeRunId} does not match inputs (active run_id=${runId}). ` +
-          `Inputs (question, close set, far set) changed since the checkpoint. Run without --resume to start fresh.`,
+          `Inputs (question, close set, far set) changed since the checkpoint. Run without --resume to start fresh.`
       );
     }
     if (!opts.forceResume && !isCheckpointFresh(opts.resumeRunId)) {
       throw new Error(
         `${profile.label}: checkpoint ${opts.resumeRunId} is older than 7 days. ` +
-          `Pass --force-resume to override, or run without --resume to start fresh.`,
+          `Pass --force-resume to override, or run without --resume to start fresh.`
       );
     }
     prevCheckpoint = loadCheckpoint(opts.resumeRunId);
     if (!prevCheckpoint) {
       throw new Error(
         `${profile.label}: --resume ${opts.resumeRunId}: no checkpoint found or schema mismatch. ` +
-          `Run without --resume to start fresh.`,
+          `Run without --resume to start fresh.`
       );
     }
     for (const cc of prevCheckpoint.completed_crosses) {
       completedFromDisk.set(`${cc.close_slug}__${cc.far_slug}`, cc);
     }
-    stderr(`[${profile.label}] resuming run ${runId}: ${completedFromDisk.size}/${crosses.length} crosses already done\n`);
+    stderr(
+      `[${profile.label}] resuming run ${runId}: ${completedFromDisk.size}/${crosses.length} crosses already done\n`
+    );
   }
 
   // Live checkpoint state — appended to as crosses succeed/fail; flushed
@@ -760,7 +794,7 @@ async function _runBrainstormInner(
     const chatOpts: ChatOpts = {
       model: opts.modelOverride,
       system,
-      messages: [{ role: 'user', content: user }],
+      messages: [{ role: "user", content: user }],
       maxTokens: 1500,
       abortSignal: opts.abortSignal,
     };
@@ -778,13 +812,13 @@ async function _runBrainstormInner(
       if (runningUsd > maxCostUsd) {
         throw new BudgetExhausted(
           `${profile.label}: running cost ${fmtUsd(runningUsd)} exceeded --max-cost ${fmtUsd(maxCostUsd)} mid-run; aborting remaining crosses`,
-          { reason: 'cost', spent: runningUsd, cap: maxCostUsd },
+          { reason: "cost", spent: runningUsd, cap: maxCostUsd }
         );
       }
       if (opts.strictBudget === true && runningUsd > estimate * 5) {
         throw new BudgetExhausted(
           `${profile.label}: running cost ${fmtUsd(runningUsd)} exceeded 5× estimate (${fmtUsd(estimate)}) under --strict-budget`,
-          { reason: 'cost', spent: runningUsd, cap: estimate * 5 },
+          { reason: "cost", spent: runningUsd, cap: estimate * 5 }
         );
       }
       const parsed = parseIdeaResponse(result.text);
@@ -818,7 +852,9 @@ async function _runBrainstormInner(
         throw err;
       }
       const msg = err instanceof Error ? err.message : String(err);
-      stderr(`[${profile.label}] WARN: cross [${cross.close.slug}] × [${cross.far.slug}] failed: ${msg}\n`);
+      stderr(
+        `[${profile.label}] WARN: cross [${cross.close.slug}] × [${cross.far.slug}] failed: ${msg}\n`
+      );
       liveCheckpoint.failed_crosses.push({
         close_slug: cross.close.slug,
         far_slug: cross.far.slug,
@@ -833,10 +869,16 @@ async function _runBrainstormInner(
   flush();
 
   // Flatten + assign stable ids.
-  const allRawIdeas: Array<{ id: string; text: string; close_slug: string; far_slug: string; distance_score: number }> = [];
+  const allRawIdeas: Array<{
+    id: string;
+    text: string;
+    close_slug: string;
+    far_slug: string;
+    distance_score: number;
+  }> = [];
   for (const ideas of rawIdeasByCross) {
     for (const idea of ideas) {
-      const id = String(allRawIdeas.length + 1).padStart(2, '0');
+      const id = String(allRawIdeas.length + 1).padStart(2, "0");
       allRawIdeas.push({ id, ...idea });
     }
   }
@@ -876,7 +918,9 @@ async function _runBrainstormInner(
   } catch (err) {
     judgeFailed = true;
     const msg = err instanceof Error ? err.message : String(err);
-    stderr(`[${profile.label}] WARN: judge phase failed (${msg}); saving ideas unscored. Re-run with --retry-judge to score.\n`);
+    stderr(
+      `[${profile.label}] WARN: judge phase failed (${msg}); saving ideas unscored. Re-run with --retry-judge to score.\n`
+    );
   }
 
   // ---- Phase 5: assemble BrainstormResult ----
@@ -899,14 +943,16 @@ async function _runBrainstormInner(
   const totalOut = totalUsage.output_tokens + judgeUsage.output_tokens;
   const pricing = canonicalLookup(crossModel) ?? { input: 3, output: 15 };
   const actual = (totalIn / 1_000_000) * pricing.input + (totalOut / 1_000_000) * pricing.output;
-  stderr(`[${profile.label}] actual cost: ${fmtUsd(actual)} (estimated ${fmtUsd(estimate)}) — in=${totalIn} out=${totalOut} tokens\n`);
+  stderr(
+    `[${profile.label}] actual cost: ${fmtUsd(actual)} (estimated ${fmtUsd(estimate)}) — in=${totalIn} out=${totalOut} tokens\n`
+  );
 
   // TX4: surface --resume hint when any cross failed during this run.
   // The user can re-run with `--resume <run_id>` and we'll retry only
   // the missing crosses (failed_crosses + never-attempted).
   if (liveCheckpoint.failed_crosses.length > 0) {
     stderr(
-      `[${profile.label}] ${liveCheckpoint.failed_crosses.length} cross(es) failed. Resume with: gbrain ${profile.label} --resume ${runId}\n`,
+      `[${profile.label}] ${liveCheckpoint.failed_crosses.length} cross(es) failed. Resume with: gbrain ${profile.label} --resume ${runId}\n`
     );
   } else {
     // Clean completion — every cross succeeded. Clear the checkpoint so we
@@ -972,72 +1018,85 @@ export function formatBrainstormMarkdown(
 ): string {
   const onlyPassed = opts.onlyPassed ?? true;
   const includeMeta = opts.includeMeta ?? true;
-  const ideasToShow = onlyPassed
-    ? result.ideas.filter((i) => i.passes)
-    : result.ideas;
+  const ideasToShow = onlyPassed ? result.ideas.filter((i) => i.passes) : result.ideas;
 
   const lines: string[] = [];
 
   if (includeMeta) {
-    lines.push(`# ${result.profile_label === 'lsd' ? 'LSD' : 'Brainstorm'}: ${result.question}`);
-    lines.push('');
+    lines.push(`# ${result.profile_label === "lsd" ? "LSD" : "Brainstorm"}: ${result.question}`);
+    lines.push("");
     if (result.judge_failed) {
-      lines.push('> **Judge phase failed mid-run** — ideas below are unscored. Re-run with `--retry-judge` to score.');
-      lines.push('');
+      lines.push(
+        "> **Judge phase failed mid-run** — ideas below are unscored. Re-run with `--retry-judge` to score."
+      );
+      lines.push("");
     }
     if (result.short_of_target) {
       lines.push(`> _Note: domain bank was narrower than usual — see stderr warning._`);
-      lines.push('');
+      lines.push("");
     }
     if (result.active_bias_tags === null) {
       lines.push(`> _Note: calibration cold-start — ideas were judged without anti-bias context._`);
-      lines.push('');
+      lines.push("");
     }
     lines.push(`**Close set** (${result.close_set.length}):`);
     for (const c of result.close_set) {
-      lines.push(`- \`${c.slug}\`${c.title ? ` — ${c.title}` : ''}`);
+      lines.push(`- \`${c.slug}\`${c.title ? ` — ${c.title}` : ""}`);
     }
-    lines.push('');
-    lines.push(`**Far set** (${result.far_set.length}, ${result.far_set.filter((f) => f.source === 'corpus-sample').length} via corpus-sample fallback):`);
+    lines.push("");
+    lines.push(
+      `**Far set** (${result.far_set.length}, ${result.far_set.filter((f) => f.source === "corpus-sample").length} via corpus-sample fallback):`
+    );
     for (const f of result.far_set) {
-      lines.push(`- \`${f.slug}\` — distance ${f.distance_score.toFixed(2)}${f.title ? ` — ${f.title}` : ''}`);
+      lines.push(
+        `- \`${f.slug}\` — distance ${f.distance_score.toFixed(2)}${f.title ? ` — ${f.title}` : ""}`
+      );
     }
-    lines.push('');
+    lines.push("");
   }
 
-  lines.push(`## Ideas (${ideasToShow.length}${onlyPassed && result.ideas.length !== ideasToShow.length ? ` of ${result.ideas.length}` : ''})`);
-  lines.push('');
+  lines.push(
+    `## Ideas (${ideasToShow.length}${onlyPassed && result.ideas.length !== ideasToShow.length ? ` of ${result.ideas.length}` : ""})`
+  );
+  lines.push("");
   for (const idea of ideasToShow) {
     const scoreSuffix = idea.judge
       ? ` _(score ${idea.judge.weighted_score.toFixed(2)})_`
-      : (idea.judge_failed ? ` _(unscored — judge failed)_` : '');
+      : idea.judge_failed
+        ? ` _(unscored — judge failed)_`
+        : "";
     lines.push(`### Idea ${idea.id}${scoreSuffix}`);
-    lines.push('');
+    lines.push("");
     lines.push(idea.text);
-    lines.push('');
-    lines.push(`_Citation: \`${idea.close_slug}\` × \`${idea.far_slug}\` — distance ${idea.distance_score.toFixed(2)}_`);
+    lines.push("");
+    lines.push(
+      `_Citation: \`${idea.close_slug}\` × \`${idea.far_slug}\` — distance ${idea.distance_score.toFixed(2)}_`
+    );
     if (idea.judge?.note) {
       lines.push(`_Judge note: ${idea.judge.note}_`);
     }
-    lines.push('');
+    lines.push("");
   }
 
-  return lines.join('\n');
+  return lines.join("\n");
 }
 
 /** Frontmatter for a saved brainstorm/lsd page. */
-export function buildBrainstormFrontmatter(result: BrainstormResult, opts: { slug: string }): string {
+export function buildBrainstormFrontmatter(
+  result: BrainstormResult,
+  opts: { slug: string }
+): string {
   const date = new Date().toISOString().slice(0, 10);
-  const judgeFailed = result.judge_failed ? '\njudge_failed: true' : '';
-  const unscored = result.judge_failed ? '\nunscored: true' : '';
+  const judgeFailed = result.judge_failed ? "\njudge_failed: true" : "";
+  const unscored = result.judge_failed ? "\nunscored: true" : "";
   return `---
-title: "${result.profile_label === 'lsd' ? 'LSD' : 'Brainstorm'}: ${result.question.replace(/"/g, '\\"').slice(0, 100)}"
+title: "${result.profile_label === "lsd" ? "LSD" : "Brainstorm"}: ${result.question.replace(/"/g, '\\"').slice(0, 100)}"
 mode: ${result.profile_label}
 generated_at: ${new Date().toISOString()}
 date: ${date}
 question: "${result.question.replace(/"/g, '\\"').slice(0, 200)}"
-close_slugs: [${result.close_set.map((c) => `"${c.slug}"`).join(', ')}]
-far_slugs: [${result.far_set.map((f) => `"${f.slug}"`).join(', ')}]
+close_slugs: [${result.close_set.map((c) => `"${c.slug}"`).join(", ")}]
+far_slugs: [${result.far_set.map((f) => `"${f.slug}"`).join(", ")}]
 short_of_target: ${result.short_of_target}
 calibration_cold_start: ${result.active_bias_tags === null}${judgeFailed}${unscored}
 cost_usd: ${result.cost.actual_usd.toFixed(4)}
@@ -1055,7 +1114,7 @@ cost_usd: ${result.cost.actual_usd.toFixed(4)}
  * argument so it isn't duplicated in the frontmatter map.
  */
 export function buildBrainstormFrontmatterObject(
-  result: BrainstormResult,
+  result: BrainstormResult
 ): Record<string, unknown> {
   const obj: Record<string, unknown> = {
     mode: result.profile_label,

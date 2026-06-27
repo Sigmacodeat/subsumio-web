@@ -16,11 +16,11 @@
  * Atomic writes via .tmp + rename (mirrors gbrain's atomic-write convention).
  */
 
-import { createHash } from 'node:crypto';
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import { atomicWrite } from './apply-edits.ts';
-import type { EditOp } from './types.ts';
+import { createHash } from "node:crypto";
+import * as fs from "node:fs";
+import * as path from "node:path";
+import { atomicWrite } from "./apply-edits.ts";
+import type { EditOp } from "./types.ts";
 
 /** Bounded LRU cap. Older entries garbage-collect when this many accumulate. */
 export const REJECTED_BUFFER_CAP = 100;
@@ -42,7 +42,7 @@ interface RejectedFile {
 
 /** Compute the file path for a skill's rejected buffer. */
 export function rejectedFilePath(skillsDir: string, skillName: string): string {
-  return path.join(skillsDir, skillName, 'skillopt', 'rejected.json');
+  return path.join(skillsDir, skillName, "skillopt", "rejected.json");
 }
 
 /**
@@ -60,14 +60,17 @@ export function rejectedKey(skillText: string, edits: EditOp[]): string {
 function canonicalEdit(e: EditOp): unknown {
   // Stable property ordering so semantically-identical edits hash identically.
   switch (e.op) {
-    case 'add': return { op: 'add', anchor: e.anchor, content: e.content };
-    case 'replace': return { op: 'replace', target: e.target, replacement: e.replacement };
-    case 'delete': return { op: 'delete', target: e.target };
+    case "add":
+      return { op: "add", anchor: e.anchor, content: e.content };
+    case "replace":
+      return { op: "replace", target: e.target, replacement: e.replacement };
+    case "delete":
+      return { op: "delete", target: e.target };
   }
 }
 
 function sha8(s: string): string {
-  return createHash('sha256').update(s).digest('hex').slice(0, 8);
+  return createHash("sha256").update(s).digest("hex").slice(0, 8);
 }
 
 /**
@@ -79,9 +82,9 @@ export function loadRejectedBuffer(skillsDir: string, skillName: string): Reject
   const p = rejectedFilePath(skillsDir, skillName);
   if (!fs.existsSync(p)) return [];
   try {
-    const raw = fs.readFileSync(p, 'utf8');
+    const raw = fs.readFileSync(p, "utf8");
     const parsed: unknown = JSON.parse(raw);
-    if (!parsed || typeof parsed !== 'object') return [];
+    if (!parsed || typeof parsed !== "object") return [];
     const obj = parsed as Record<string, unknown>;
     if (obj.schema !== 1 || !Array.isArray(obj.entries)) return [];
     // Type-narrow without full validation — entries from our own writes
@@ -90,7 +93,9 @@ export function loadRejectedBuffer(skillsDir: string, skillName: string): Reject
     return obj.entries as RejectedEntry[];
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    process.stderr.write(`[skillopt] rejected.json unreadable for ${skillName} (${msg}); starting fresh\n`);
+    process.stderr.write(
+      `[skillopt] rejected.json unreadable for ${skillName} (${msg}); starting fresh\n`
+    );
     return [];
   }
 }
@@ -104,7 +109,7 @@ export function loadRejectedBuffer(skillsDir: string, skillName: string): Reject
 export function saveRejectedBuffer(
   skillsDir: string,
   skillName: string,
-  newEntries: RejectedEntry[],
+  newEntries: RejectedEntry[]
 ): void {
   const p = rejectedFilePath(skillsDir, skillName);
   fs.mkdirSync(path.dirname(p), { recursive: true });
@@ -122,21 +127,25 @@ export function saveRejectedBuffer(
   const bounded = merged.slice(0, REJECTED_BUFFER_CAP);
 
   const payload: RejectedFile = { schema: 1, entries: bounded };
-  atomicWrite(p, JSON.stringify(payload, null, 2) + '\n');
+  atomicWrite(p, JSON.stringify(payload, null, 2) + "\n");
 }
 
 /** Is the proposed edit set already in the rejected buffer? */
 export function isRejected(
   buffer: readonly RejectedEntry[],
   skillText: string,
-  edits: EditOp[],
+  edits: EditOp[]
 ): boolean {
   const key = rejectedKey(skillText, edits);
   return buffer.some((e) => e.key === key);
 }
 
 /** Build a fresh rejected entry from edits + reason at the current time. */
-export function makeRejectedEntry(skillText: string, edits: EditOp[], reason: string): RejectedEntry {
+export function makeRejectedEntry(
+  skillText: string,
+  edits: EditOp[],
+  reason: string
+): RejectedEntry {
   return {
     key: rejectedKey(skillText, edits),
     skill_sha8: sha8(skillText),

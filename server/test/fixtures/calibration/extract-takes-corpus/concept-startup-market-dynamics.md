@@ -10,16 +10,18 @@ tags: [concept, calibration-fixture]
 # Startup Market Dynamics
 
 ## Summary
+
 How early-stage market structure affects which startups break out and which
 plateau. Synthetic anonymized concept page modeled on real-brain shape:
 short summary, "usage" note, then a long Timeline of dated assertions with
 varying conviction language.
 
 ## Usage in your thinking
-*This page is a synthetic fixture for the v0.36.1.0 calibration corpus. Real
+
+_This page is a synthetic fixture for the v0.36.1.0 calibration corpus. Real
 concept pages on the brain side carry one assertion per timeline entry,
 typically with verb framing like "argues / endorses / mentions / believes
-/ predicts" that signals conviction strength.*
+/ predicts" that signals conviction strength._
 
 ---
 
@@ -57,5 +59,6 @@ typically with verb framing like "argues / endorses / mentions / believes
   Modest conviction.
 
 ## Bets
+
 - I think acme-example hits a meaningful ARR milestone before end of 2026.
 - I bet widget-co's pivot announcement comes within 6 months.

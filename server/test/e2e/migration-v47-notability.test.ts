@@ -19,7 +19,7 @@
  * Run: DATABASE_URL=... bun test test/e2e/migration-v47-notability.test.ts
  */
 
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
+import { describe, test, expect, beforeAll, afterAll } from "bun:test";
 import {
   hasDatabase,
   setupDB,
@@ -28,19 +28,19 @@ import {
   getEngine,
   runMigrationsUpTo,
   setConfigVersion,
-} from './helpers.ts';
-import { MIGRATIONS, LATEST_VERSION } from '../../src/core/migrate.ts';
+} from "./helpers.ts";
+import { MIGRATIONS, LATEST_VERSION } from "../../src/core/migrate.ts";
 
 const skip = !hasDatabase();
 const describeE2E = skip ? describe.skip : describe;
 
 if (skip) {
-  console.log('Skipping migration v47 E2E tests (DATABASE_URL not set)');
+  console.log("Skipping migration v47 E2E tests (DATABASE_URL not set)");
 }
 
-const v47 = MIGRATIONS.find(m => m.version === 47);
+const v47 = MIGRATIONS.find((m) => m.version === 47);
 if (!skip && !v47) {
-  throw new Error('Migration v47 not found in MIGRATIONS array. PR1 commit 2 should add it.');
+  throw new Error("Migration v47 not found in MIGRATIONS array. PR1 commit 2 should add it.");
 }
 
 /**
@@ -65,13 +65,15 @@ async function simulatePartialState(): Promise<void> {
   const conn = getConn();
   await conn.unsafe(`ALTER TABLE facts DROP CONSTRAINT IF EXISTS facts_notability_check`);
   // Add the column back (without CHECK) if it was dropped.
-  await conn.unsafe(`ALTER TABLE facts ADD COLUMN IF NOT EXISTS notability TEXT NOT NULL DEFAULT 'medium'`);
+  await conn.unsafe(
+    `ALTER TABLE facts ADD COLUMN IF NOT EXISTS notability TEXT NOT NULL DEFAULT 'medium'`
+  );
 }
 
 async function runV47(): Promise<void> {
   const engine = getEngine();
-  const m = MIGRATIONS.find(x => x.version === 47);
-  if (!m) throw new Error('Migration v47 not found');
+  const m = MIGRATIONS.find((x) => x.version === 47);
+  if (!m) throw new Error("Migration v47 not found");
   const sql = m.sqlFor?.[engine.kind] ?? m.sql;
   if (sql) {
     await engine.transaction(async (tx) => {
@@ -79,7 +81,7 @@ async function runV47(): Promise<void> {
     });
   }
   if (m.handler) await m.handler(engine);
-  await engine.setConfig('version', '47');
+  await engine.setConfig("version", "47");
 }
 
 async function readNotabilityColumnState(): Promise<{
@@ -98,7 +100,7 @@ async function readNotabilityColumnState(): Promise<{
   if (rows.length === 0) return { exists: false, notNull: false, defaultExpr: null };
   return {
     exists: true,
-    notNull: rows[0].is_nullable === 'NO',
+    notNull: rows[0].is_nullable === "NO",
     defaultExpr: rows[0].column_default,
   };
 }
@@ -113,7 +115,7 @@ async function readNamedCheckExists(): Promise<boolean> {
   return rows.length === 1;
 }
 
-describeE2E('migration v47: facts.notability ALTER', () => {
+describeE2E("migration v47: facts.notability ALTER", () => {
   beforeAll(async () => {
     await setupDB();
     // setupDB() runs db.initSchema() (SCHEMA_SQL only, no migrations).
@@ -125,20 +127,20 @@ describeE2E('migration v47: facts.notability ALTER', () => {
     await teardownDB();
   });
 
-  test('after fresh install, notability column + named CHECK both exist', async () => {
+  test("after fresh install, notability column + named CHECK both exist", async () => {
     // Sanity: setupDB + runMigrationsUpTo(LATEST) lands v45 (which has
     // notability inline) + v47 (which is a no-op when column exists).
     const colState = await readNotabilityColumnState();
     expect(colState.exists).toBe(true);
     expect(colState.notNull).toBe(true);
-    expect(colState.defaultExpr).toContain('medium');
+    expect(colState.defaultExpr).toContain("medium");
 
     // The named CHECK MUST exist after v47 ran.
     const hasNamedCheck = await readNamedCheckExists();
     expect(hasNamedCheck).toBe(true);
   });
 
-  test('old brain simulation: drop notability, run v47, column + CHECK reappear', async () => {
+  test("old brain simulation: drop notability, run v47, column + CHECK reappear", async () => {
     await simulateOldBrain();
     // Verify the simulation worked.
     const before = await readNotabilityColumnState();
@@ -154,13 +156,13 @@ describeE2E('migration v47: facts.notability ALTER', () => {
     const after = await readNotabilityColumnState();
     expect(after.exists).toBe(true);
     expect(after.notNull).toBe(true);
-    expect(after.defaultExpr).toContain('medium');
+    expect(after.defaultExpr).toContain("medium");
 
     const hasNamedCheck = await readNamedCheckExists();
     expect(hasNamedCheck).toBe(true);
   });
 
-  test('partial state: column exists, named CHECK missing → v47 adds CHECK', async () => {
+  test("partial state: column exists, named CHECK missing → v47 adds CHECK", async () => {
     await simulatePartialState();
     // Sanity: column present, named CHECK missing.
     const colState = await readNotabilityColumnState();
@@ -175,7 +177,7 @@ describeE2E('migration v47: facts.notability ALTER', () => {
     expect(checkAfter).toBe(true);
   });
 
-  test('idempotent re-run on fully-migrated brain → no error, no state change', async () => {
+  test("idempotent re-run on fully-migrated brain → no error, no state change", async () => {
     // Already fully migrated from the prior test. Run v47 again.
     const before = await readNotabilityColumnState();
     const checkBefore = await readNamedCheckExists();
@@ -190,7 +192,7 @@ describeE2E('migration v47: facts.notability ALTER', () => {
     expect(checkAfter).toBe(true);
   });
 
-  test('CHECK constraint actually rejects out-of-domain values', async () => {
+  test("CHECK constraint actually rejects out-of-domain values", async () => {
     const conn = getConn();
     // Insert with valid notability — must succeed.
     await conn.unsafe(`

@@ -26,8 +26,8 @@
  * appear in dry-fix's own argument surface.
  */
 
-import { execFileSync } from 'node:child_process';
-import { dirname } from 'node:path';
+import { execFileSync } from "node:child_process";
+import { dirname } from "node:path";
 
 // ---------------------------------------------------------------------------
 // Code-fence guard
@@ -52,7 +52,7 @@ export function isInsideCodeFence(content: string, offset: number): boolean {
 // Working-tree status (git check)
 // ---------------------------------------------------------------------------
 
-export type WorkingTreeStatus = 'clean' | 'dirty' | 'not_a_repo';
+export type WorkingTreeStatus = "clean" | "dirty" | "not_a_repo";
 
 /**
  * Check the git state of a skill file.
@@ -75,15 +75,15 @@ export type WorkingTreeStatus = 'clean' | 'dirty' | 'not_a_repo';
  */
 export function getWorkingTreeStatus(skillPath: string): WorkingTreeStatus {
   try {
-    const out = execFileSync('git', ['status', '--porcelain', '--', skillPath], {
-      encoding: 'utf-8',
-      stdio: ['ignore', 'pipe', 'ignore'],
+    const out = execFileSync("git", ["status", "--porcelain", "--", skillPath], {
+      encoding: "utf-8",
+      stdio: ["ignore", "pipe", "ignore"],
       cwd: dirname(skillPath),
     });
-    return out.trim().length > 0 ? 'dirty' : 'clean';
+    return out.trim().length > 0 ? "dirty" : "clean";
   } catch {
     // git exits 128 when not inside a repo; treat any non-zero the same.
-    return 'not_a_repo';
+    return "not_a_repo";
   }
 }
 
@@ -95,5 +95,5 @@ export function getWorkingTreeStatus(skillPath: string): WorkingTreeStatus {
  * check.
  */
 export function isWorkingTreeDirty(skillPath: string): boolean {
-  return getWorkingTreeStatus(skillPath) === 'dirty';
+  return getWorkingTreeStatus(skillPath) === "dirty";
 }

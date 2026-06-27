@@ -27,10 +27,14 @@
  *        bun run test/benchmark-graph-quality.ts --json   (machine-readable output)
  */
 
-import { PGLiteEngine } from '../src/core/pglite-engine.ts';
-import { extractPageLinks, parseTimelineEntries, inferLinkType } from '../src/core/link-extraction.ts';
-import { runExtract } from '../src/commands/extract.ts';
-import type { PageInput, PageType } from '../src/core/types.ts';
+import { PGLiteEngine } from "../src/core/pglite-engine.ts";
+import {
+  extractPageLinks,
+  parseTimelineEntries,
+  inferLinkType,
+} from "../src/core/link-extraction.ts";
+import { runExtract } from "../src/commands/extract.ts";
+import type { PageInput, PageType } from "../src/core/types.ts";
 
 // ─── Test data: 80 fictional pages ───────────────────────────────
 
@@ -47,44 +51,56 @@ function seedPages(): SeededPage[] {
   const pages: SeededPage[] = [];
 
   // 5 YC partners (investors)
-  const partners = ['alice-partner', 'bob-partner', 'carol-partner', 'dan-partner', 'eve-partner'];
+  const partners = ["alice-partner", "bob-partner", "carol-partner", "dan-partner", "eve-partner"];
   for (const slug of partners) {
     const fullSlug = `people/${slug}`;
     pages.push({
       slug: fullSlug,
       page: {
-        type: 'person', title: slug,
+        type: "person",
+        title: slug,
         compiled_truth: `${slug} is a YC partner who invested in many startups.`,
         timeline: `- **2026-01-01** | Joined YC\n- **2026-03-15** | Closed batch`,
       },
       expectedLinks: [],
       expectedTimeline: [
-        { date: '2026-01-01', summary: 'Joined YC' },
-        { date: '2026-03-15', summary: 'Closed batch' },
+        { date: "2026-01-01", summary: "Joined YC" },
+        { date: "2026-03-15", summary: "Closed batch" },
       ],
     });
   }
 
   // 10 founders (each at a company)
-  const founders = ['frank-founder', 'grace-founder', 'henry-founder', 'iris-founder', 'jack-founder',
-                    'kate-founder', 'liam-founder', 'mia-founder', 'noah-founder', 'olivia-founder'];
+  const founders = [
+    "frank-founder",
+    "grace-founder",
+    "henry-founder",
+    "iris-founder",
+    "jack-founder",
+    "kate-founder",
+    "liam-founder",
+    "mia-founder",
+    "noah-founder",
+    "olivia-founder",
+  ];
   for (let i = 0; i < founders.length; i++) {
     const slug = founders[i];
     const companySlug = `companies/startup-${i}`;
     pages.push({
       slug: `people/${slug}`,
       page: {
-        type: 'person', title: slug,
+        type: "person",
+        title: slug,
         compiled_truth: `${slug} is the CEO of [${slug}'s company](${companySlug}). They founded the company.`,
         timeline: `- **2026-02-01** | Founded company`,
       },
-      expectedLinks: [{ to: companySlug, type: 'works_at' }],
-      expectedTimeline: [{ date: '2026-02-01', summary: 'Founded company' }],
+      expectedLinks: [{ to: companySlug, type: "works_at" }],
+      expectedTimeline: [{ date: "2026-02-01", summary: "Founded company" }],
     });
   }
 
   // 5 engineers (multi-company)
-  const engineers = ['paul-eng', 'quinn-eng', 'rita-eng', 'sam-eng', 'tara-eng'];
+  const engineers = ["paul-eng", "quinn-eng", "rita-eng", "sam-eng", "tara-eng"];
   for (let i = 0; i < engineers.length; i++) {
     const slug = engineers[i];
     const c1 = `companies/startup-${i}`;
@@ -92,20 +108,27 @@ function seedPages(): SeededPage[] {
     pages.push({
       slug: `people/${slug}`,
       page: {
-        type: 'person', title: slug,
+        type: "person",
+        title: slug,
         compiled_truth: `${slug} is an engineer at [Company A](${c1}). Previously worked at [Company B](${c2}).`,
         timeline: `- **2026-04-01** | Joined ${c1}`,
       },
       expectedLinks: [
-        { to: c1, type: 'works_at' },
-        { to: c2, type: 'works_at' },
+        { to: c1, type: "works_at" },
+        { to: c2, type: "works_at" },
       ],
-      expectedTimeline: [{ date: '2026-04-01', summary: `Joined ${c1}` }],
+      expectedTimeline: [{ date: "2026-04-01", summary: `Joined ${c1}` }],
     });
   }
 
   // 5 advisors (cross-company)
-  const advisors = ['uma-advisor', 'victor-advisor', 'wendy-advisor', 'xavier-advisor', 'yara-advisor'];
+  const advisors = [
+    "uma-advisor",
+    "victor-advisor",
+    "wendy-advisor",
+    "xavier-advisor",
+    "yara-advisor",
+  ];
   for (let i = 0; i < advisors.length; i++) {
     const slug = advisors[i];
     const c1 = `companies/startup-${i}`;
@@ -113,15 +136,16 @@ function seedPages(): SeededPage[] {
     pages.push({
       slug: `people/${slug}`,
       page: {
-        type: 'person', title: slug,
+        type: "person",
+        title: slug,
         compiled_truth: `${slug} advises [Company](${c1}) and is on the board at [Company B](${c2}).`,
         timeline: `- **2026-05-01** | Joined board`,
       },
       expectedLinks: [
-        { to: c1, type: 'advises' },
-        { to: c2, type: 'advises' },
+        { to: c1, type: "advises" },
+        { to: c2, type: "advises" },
       ],
-      expectedTimeline: [{ date: '2026-05-01', summary: 'Joined board' }],
+      expectedTimeline: [{ date: "2026-05-01", summary: "Joined board" }],
     });
   }
 
@@ -131,14 +155,15 @@ function seedPages(): SeededPage[] {
     pages.push({
       slug,
       page: {
-        type: 'company', title: `Startup ${i}`,
+        type: "company",
+        title: `Startup ${i}`,
         compiled_truth: `Startup ${i} is a YC company.`,
         timeline: `- **2026-01-15** | Launched\n- **2026-03-01** | Raised seed`,
       },
       expectedLinks: [],
       expectedTimeline: [
-        { date: '2026-01-15', summary: 'Launched' },
-        { date: '2026-03-01', summary: 'Raised seed' },
+        { date: "2026-01-15", summary: "Launched" },
+        { date: "2026-03-01", summary: "Raised seed" },
       ],
     });
   }
@@ -150,12 +175,13 @@ function seedPages(): SeededPage[] {
     pages.push({
       slug,
       page: {
-        type: 'company', title: `VC ${i}`,
+        type: "company",
+        title: `VC ${i}`,
         compiled_truth: `VC ${i} invested in [first](${investments[0]}) and [second](${investments[1]}).`,
         timeline: `- **2026-02-15** | First fund close`,
       },
-      expectedLinks: investments.map(to => ({ to, type: 'invested_in' })),
-      expectedTimeline: [{ date: '2026-02-15', summary: 'First fund close' }],
+      expectedLinks: investments.map((to) => ({ to, type: "invested_in" })),
+      expectedTimeline: [{ date: "2026-02-15", summary: "First fund close" }],
     });
   }
 
@@ -165,9 +191,10 @@ function seedPages(): SeededPage[] {
     pages.push({
       slug,
       page: {
-        type: 'company', title: `Big ${i}`,
+        type: "company",
+        title: `Big ${i}`,
         compiled_truth: `Big company ${i}.`,
-        timeline: '',
+        timeline: "",
       },
       expectedLinks: [],
       expectedTimeline: [],
@@ -177,18 +204,21 @@ function seedPages(): SeededPage[] {
   // 5 batch demos (multi-attendee meetings)
   for (let i = 0; i < 5; i++) {
     const slug = `meetings/demo-day-${i}`;
-    const attendees = [`people/${partners[i % partners.length]}`,
-                       `people/${founders[i]}`,
-                       `people/${founders[(i + 1) % founders.length]}`];
+    const attendees = [
+      `people/${partners[i % partners.length]}`,
+      `people/${founders[i]}`,
+      `people/${founders[(i + 1) % founders.length]}`,
+    ];
     pages.push({
       slug,
       page: {
-        type: 'meeting', title: `Demo Day ${i}`,
-        compiled_truth: `Attendees: ${attendees.map(s => `[${s.split('/')[1]}](${s})`).join(', ')}.`,
+        type: "meeting",
+        title: `Demo Day ${i}`,
+        compiled_truth: `Attendees: ${attendees.map((s) => `[${s.split("/")[1]}](${s})`).join(", ")}.`,
         timeline: `- **2026-03-20** | Demo Day ${i} held`,
       },
-      expectedLinks: attendees.map(to => ({ to, type: 'attended' })),
-      expectedTimeline: [{ date: '2026-03-20', summary: `Demo Day ${i} held` }],
+      expectedLinks: attendees.map((to) => ({ to, type: "attended" })),
+      expectedTimeline: [{ date: "2026-03-20", summary: `Demo Day ${i} held` }],
     });
   }
 
@@ -200,15 +230,16 @@ function seedPages(): SeededPage[] {
     pages.push({
       slug,
       page: {
-        type: 'meeting', title: `1:1 #${i}`,
+        type: "meeting",
+        title: `1:1 #${i}`,
         compiled_truth: `Attendees: [${a}](${a}), [${b}](${b}).`,
         timeline: `- **2026-04-10** | 1:1 held`,
       },
       expectedLinks: [
-        { to: a, type: 'attended' },
-        { to: b, type: 'attended' },
+        { to: a, type: "attended" },
+        { to: b, type: "attended" },
       ],
-      expectedTimeline: [{ date: '2026-04-10', summary: '1:1 held' }],
+      expectedTimeline: [{ date: "2026-04-10", summary: "1:1 held" }],
     });
   }
 
@@ -220,33 +251,50 @@ function seedPages(): SeededPage[] {
     pages.push({
       slug,
       page: {
-        type: 'meeting', title: `Board ${i}`,
+        type: "meeting",
+        title: `Board ${i}`,
         compiled_truth: `Attendees: [${a}](${a}), [${b}](${b}).`,
         timeline: `- **2026-05-15** | Board meeting held`,
       },
       expectedLinks: [
-        { to: a, type: 'attended' },
-        { to: b, type: 'attended' },
+        { to: a, type: "attended" },
+        { to: b, type: "attended" },
       ],
-      expectedTimeline: [{ date: '2026-05-15', summary: 'Board meeting held' }],
+      expectedTimeline: [{ date: "2026-05-15", summary: "Board meeting held" }],
     });
   }
 
   // 15 concepts (topic pages, may reference entities)
-  const topics = ['ai', 'fintech', 'climate', 'health', 'crypto', 'biotech', 'robotics', 'edtech',
-                  'consumer', 'enterprise', 'design', 'devtools', 'gaming', 'media', 'energy'];
+  const topics = [
+    "ai",
+    "fintech",
+    "climate",
+    "health",
+    "crypto",
+    "biotech",
+    "robotics",
+    "edtech",
+    "consumer",
+    "enterprise",
+    "design",
+    "devtools",
+    "gaming",
+    "media",
+    "energy",
+  ];
   for (let i = 0; i < topics.length; i++) {
     const t = topics[i];
     const example = `companies/startup-${i % 15}`;
     pages.push({
       slug: `concepts/${t}`,
       page: {
-        type: 'concept', title: t,
+        type: "concept",
+        title: t,
         compiled_truth: `${t} is a hot space. Example: [Startup](${example}).`,
         timeline: `- **2026-01-10** | Wrote ${t} thesis`,
       },
-      expectedLinks: [{ to: example, type: 'mentions' }],
-      expectedTimeline: [{ date: '2026-01-10', summary: `Wrote ${t} thesis` }],
+      expectedLinks: [{ to: example, type: "mentions" }],
+      expectedTimeline: [{ date: "2026-01-10", summary: `Wrote ${t} thesis` }],
     });
   }
 
@@ -257,35 +305,65 @@ function seedPages(): SeededPage[] {
 
 interface RelationalQuery {
   question: string;
-  category: 'relational' | 'temporal' | 'typed' | 'combined';
+  category: "relational" | "temporal" | "typed" | "combined";
   /** The seed slug to traverse from. */
   seed: string;
   /** Expected slugs in the result set (ground truth). */
   expected: string[];
   /** Type filter for typed queries. */
   linkType?: string;
-  direction?: 'in' | 'out' | 'both';
+  direction?: "in" | "out" | "both";
   depth?: number;
 }
 
 function buildQueries(): RelationalQuery[] {
   return [
     // Category 1: Relational queries (graph traversal required)
-    { question: 'Who attended Demo Day 0?', category: 'relational', seed: 'meetings/demo-day-0',
-      expected: ['people/alice-partner', 'people/frank-founder', 'people/grace-founder'],
-      linkType: 'attended', direction: 'out', depth: 1 },
-    { question: 'Who attended Board 0?', category: 'relational', seed: 'meetings/board-0',
-      expected: ['people/uma-advisor', 'people/frank-founder'],
-      linkType: 'attended', direction: 'out', depth: 1 },
-    { question: 'What companies has uma-advisor advised?', category: 'typed',
-      seed: 'people/uma-advisor', expected: ['companies/startup-0', 'companies/startup-3'],
-      linkType: 'advises', direction: 'out', depth: 1 },
-    { question: 'Who works at startup-0?', category: 'typed', seed: 'companies/startup-0',
-      expected: ['people/frank-founder', 'people/paul-eng'],
-      linkType: 'works_at', direction: 'in', depth: 1 },
-    { question: 'Which VCs invested in startup-0?', category: 'typed', seed: 'companies/startup-0',
-      expected: ['companies/vc-0'],
-      linkType: 'invested_in', direction: 'in', depth: 1 },
+    {
+      question: "Who attended Demo Day 0?",
+      category: "relational",
+      seed: "meetings/demo-day-0",
+      expected: ["people/alice-partner", "people/frank-founder", "people/grace-founder"],
+      linkType: "attended",
+      direction: "out",
+      depth: 1,
+    },
+    {
+      question: "Who attended Board 0?",
+      category: "relational",
+      seed: "meetings/board-0",
+      expected: ["people/uma-advisor", "people/frank-founder"],
+      linkType: "attended",
+      direction: "out",
+      depth: 1,
+    },
+    {
+      question: "What companies has uma-advisor advised?",
+      category: "typed",
+      seed: "people/uma-advisor",
+      expected: ["companies/startup-0", "companies/startup-3"],
+      linkType: "advises",
+      direction: "out",
+      depth: 1,
+    },
+    {
+      question: "Who works at startup-0?",
+      category: "typed",
+      seed: "companies/startup-0",
+      expected: ["people/frank-founder", "people/paul-eng"],
+      linkType: "works_at",
+      direction: "in",
+      depth: 1,
+    },
+    {
+      question: "Which VCs invested in startup-0?",
+      category: "typed",
+      seed: "companies/startup-0",
+      expected: ["companies/vc-0"],
+      linkType: "invested_in",
+      direction: "in",
+      depth: 1,
+    },
 
     // Category 2: Temporal (handled separately as direct timeline queries; see runTemporalQueries)
 
@@ -324,33 +402,39 @@ interface MultiHopQuery {
 
 const MULTI_HOP_QUERIES: MultiHopQuery[] = [
   {
-    question: 'Who attended meetings with frank-founder?',
-    seed: 'people/frank-founder',
+    question: "Who attended meetings with frank-founder?",
+    seed: "people/frank-founder",
     // Frank attended demo-day-0 (alice, grace), oneonone-0 (alice), board-0 (uma).
-    expected: ['people/alice-partner', 'people/grace-founder', 'people/uma-advisor'],
-    linkType: 'attended',
+    expected: ["people/alice-partner", "people/grace-founder", "people/uma-advisor"],
+    linkType: "attended",
   },
   {
-    question: 'Who attended meetings with grace-founder?',
-    seed: 'people/grace-founder',
+    question: "Who attended meetings with grace-founder?",
+    seed: "people/grace-founder",
     // Grace attended demo-day-0 (alice, frank), demo-day-1 (bob, henry),
     // oneonone-1 (bob), board-1 (victor).
-    expected: ['people/alice-partner', 'people/frank-founder', 'people/bob-partner', 'people/henry-founder', 'people/victor-advisor'],
-    linkType: 'attended',
+    expected: [
+      "people/alice-partner",
+      "people/frank-founder",
+      "people/bob-partner",
+      "people/henry-founder",
+      "people/victor-advisor",
+    ],
+    linkType: "attended",
   },
   {
-    question: 'Who attended meetings with alice-partner?',
-    seed: 'people/alice-partner',
+    question: "Who attended meetings with alice-partner?",
+    seed: "people/alice-partner",
     // Alice attended demo-day-0 (frank, grace), oneonone-0 (frank).
-    expected: ['people/frank-founder', 'people/grace-founder'],
-    linkType: 'attended',
+    expected: ["people/frank-founder", "people/grace-founder"],
+    linkType: "attended",
   },
 ];
 
 interface AggregateQuery {
   question: string;
   /** Return top-N most-connected slugs of this kind. */
-  kind: 'people' | 'companies';
+  kind: "people" | "companies";
   topN: number;
   /** Ground truth: top-N slugs in any order. */
   expected: string[];
@@ -358,12 +442,17 @@ interface AggregateQuery {
 
 const AGGREGATE_QUERIES: AggregateQuery[] = [
   {
-    question: 'Top 4 most-connected people (by inbound attended links)',
-    kind: 'people',
+    question: "Top 4 most-connected people (by inbound attended links)",
+    kind: "people",
     topN: 4,
     // founders[1..4] = grace, henry, iris, jack each appear as attendees in
     // 4 meetings (current demo + previous demo + oneonone + board).
-    expected: ['people/grace-founder', 'people/henry-founder', 'people/iris-founder', 'people/jack-founder'],
+    expected: [
+      "people/grace-founder",
+      "people/henry-founder",
+      "people/iris-founder",
+      "people/jack-founder",
+    ],
   },
 ];
 
@@ -377,12 +466,18 @@ interface TypeDisagreementQuery {
 
 const TYPE_DISAGREEMENT_QUERIES: TypeDisagreementQuery[] = [
   {
-    question: 'Startups with both VC investment AND advisor coverage',
+    question: "Startups with both VC investment AND advisor coverage",
     // vc-i invests in startup-i and startup-(i+5); uma/victor/wendy/xavier/yara each advise 2.
     // startup-0..4 each have at least one investor AND at least one advisor.
-    expected: ['companies/startup-0', 'companies/startup-1', 'companies/startup-2', 'companies/startup-3', 'companies/startup-4'],
-    typeA: 'invested_in',
-    typeB: 'advises',
+    expected: [
+      "companies/startup-0",
+      "companies/startup-1",
+      "companies/startup-2",
+      "companies/startup-3",
+      "companies/startup-4",
+    ],
+    typeA: "invested_in",
+    typeB: "advises",
   },
 ];
 
@@ -416,30 +511,34 @@ interface BaselineResult {
  */
 async function measureBaselineRelational(
   seeds: SeededPage[],
-  queries: ReturnType<typeof buildQueries>,
+  queries: ReturnType<typeof buildQueries>
 ): Promise<BaselineResult> {
   // Build a content index: slug -> compiled_truth + timeline text.
   const contentBySlug = new Map<string, string>();
   for (const s of seeds) {
-    contentBySlug.set(s.slug, `${s.page.compiled_truth}\n${s.page.timeline ?? ''}`);
+    contentBySlug.set(s.slug, `${s.page.compiled_truth}\n${s.page.timeline ?? ""}`);
   }
-  const ENTITY_REF_RE = /\[[^\]]+\]\(([^)]+)\)|\b((?:people|companies|meetings|concepts)\/[a-z0-9-]+)\b/gi;
+  const ENTITY_REF_RE =
+    /\[[^\]]+\]\(([^)]+)\)|\b((?:people|companies|meetings|concepts)\/[a-z0-9-]+)\b/gi;
 
-  const perQuery: Array<{ question: string; expected: number; found: number; returned: number }> = [];
-  let totalExpected = 0, totalFound = 0;
-  let totalReturned = 0, totalValid = 0;
+  const perQuery: Array<{ question: string; expected: number; found: number; returned: number }> =
+    [];
+  let totalExpected = 0,
+    totalFound = 0;
+  let totalReturned = 0,
+    totalValid = 0;
 
   for (const q of queries) {
     const expected = new Set(q.expected);
     let returned: Set<string>;
 
-    if ((q.direction ?? 'out') === 'out') {
+    if ((q.direction ?? "out") === "out") {
       // Read seed page, extract refs from its content.
-      const content = contentBySlug.get(q.seed) ?? '';
+      const content = contentBySlug.get(q.seed) ?? "";
       returned = new Set();
       for (const match of content.matchAll(ENTITY_REF_RE)) {
-        const ref = (match[1] ?? match[2] ?? '').replace(/\.md$/, '').replace(/^\.\.\//, '');
-        if (ref && ref.includes('/')) returned.add(ref);
+        const ref = (match[1] ?? match[2] ?? "").replace(/\.md$/, "").replace(/^\.\.\//, "");
+        if (ref && ref.includes("/")) returned.add(ref);
       }
     } else {
       // Incoming: scan ALL pages for the seed slug. This is the grep fallback.
@@ -454,13 +553,21 @@ async function measureBaselineRelational(
     let foundForQuery = 0;
     for (const e of expected) {
       totalExpected++;
-      if (returned.has(e)) { totalFound++; foundForQuery++; }
+      if (returned.has(e)) {
+        totalFound++;
+        foundForQuery++;
+      }
     }
     for (const r of returned) {
       totalReturned++;
       if (expected.has(r)) totalValid++;
     }
-    perQuery.push({ question: q.question, expected: expected.size, found: foundForQuery, returned: returned.size });
+    perQuery.push({
+      question: q.question,
+      expected: expected.size,
+      found: foundForQuery,
+      returned: returned.size,
+    });
   }
 
   return {
@@ -475,7 +582,14 @@ async function measureBaselineRelational(
 interface CategoryResult {
   recall: number;
   precision: number;
-  per_query: Array<{ question: string; expected: number; a_found: number; a_returned: number; c_found: number; c_returned: number }>;
+  per_query: Array<{
+    question: string;
+    expected: number;
+    a_found: number;
+    a_returned: number;
+    c_found: number;
+    c_returned: number;
+  }>;
 }
 
 /**
@@ -491,30 +605,38 @@ interface CategoryResult {
  * - Configuration C: traversePaths(seed, depth=2, direction='both', linkType=...)
  *   returns the answer in one query. Filter out the seed itself from results.
  */
-async function measureMultiHop(
-  engine: PGLiteEngine,
-  seeds: SeededPage[],
-): Promise<CategoryResult> {
+async function measureMultiHop(engine: PGLiteEngine, seeds: SeededPage[]): Promise<CategoryResult> {
   const contentBySlug = new Map<string, string>();
-  for (const s of seeds) contentBySlug.set(s.slug, `${s.page.compiled_truth}\n${s.page.timeline ?? ''}`);
+  for (const s of seeds)
+    contentBySlug.set(s.slug, `${s.page.compiled_truth}\n${s.page.timeline ?? ""}`);
 
   const perQuery = [];
-  let totalExpected = 0, totalAFound = 0, totalCFound = 0, totalAReturned = 0, totalCReturned = 0;
-  let totalAValid = 0, totalCValid = 0;
+  let totalExpected = 0,
+    totalAFound = 0,
+    totalCFound = 0,
+    totalAReturned = 0,
+    totalCReturned = 0;
+  let totalAValid = 0,
+    totalCValid = 0;
 
   for (const q of MULTI_HOP_QUERIES) {
     // A: single-pass fallback — read seed page, extract refs, return them.
     // (Multi-hop refs aren't on the seed page, so this returns nothing useful.)
-    const seedContent = contentBySlug.get(q.seed) ?? '';
+    const seedContent = contentBySlug.get(q.seed) ?? "";
     const aReturned = new Set<string>();
-    const ENTITY_REF_RE = /\[[^\]]+\]\(([^)]+)\)|\b((?:people|companies|meetings|concepts)\/[a-z0-9-]+)\b/gi;
+    const ENTITY_REF_RE =
+      /\[[^\]]+\]\(([^)]+)\)|\b((?:people|companies|meetings|concepts)\/[a-z0-9-]+)\b/gi;
     for (const m of seedContent.matchAll(ENTITY_REF_RE)) {
-      const ref = (m[1] ?? m[2] ?? '').replace(/\.md$/, '').replace(/^\.\.\//, '');
-      if (ref && ref.includes('/') && ref !== q.seed) aReturned.add(ref);
+      const ref = (m[1] ?? m[2] ?? "").replace(/\.md$/, "").replace(/^\.\.\//, "");
+      if (ref && ref.includes("/") && ref !== q.seed) aReturned.add(ref);
     }
 
     // C: graph traversal, depth=2, both directions, filtered by link type.
-    const paths = await engine.traversePaths(q.seed, { depth: 2, direction: 'both', linkType: q.linkType });
+    const paths = await engine.traversePaths(q.seed, {
+      depth: 2,
+      direction: "both",
+      linkType: q.linkType,
+    });
     const cReturned = new Set<string>();
     for (const p of paths) {
       // Add both endpoints, skip the seed itself.
@@ -523,20 +645,48 @@ async function measureMultiHop(
     }
     // Filter to people only (the question asks about people).
     for (const r of [...cReturned]) {
-      if (!r.startsWith('people/')) cReturned.delete(r);
+      if (!r.startsWith("people/")) cReturned.delete(r);
     }
 
     const expected = new Set(q.expected);
-    let aFound = 0, cFound = 0, aValid = 0, cValid = 0;
+    let aFound = 0,
+      cFound = 0,
+      aValid = 0,
+      cValid = 0;
     for (const e of expected) {
       totalExpected++;
-      if (aReturned.has(e)) { aFound++; totalAFound++; }
-      if (cReturned.has(e)) { cFound++; totalCFound++; }
+      if (aReturned.has(e)) {
+        aFound++;
+        totalAFound++;
+      }
+      if (cReturned.has(e)) {
+        cFound++;
+        totalCFound++;
+      }
     }
-    for (const r of aReturned) { totalAReturned++; if (expected.has(r)) { aValid++; totalAValid++; } }
-    for (const r of cReturned) { totalCReturned++; if (expected.has(r)) { cValid++; totalCValid++; } }
+    for (const r of aReturned) {
+      totalAReturned++;
+      if (expected.has(r)) {
+        aValid++;
+        totalAValid++;
+      }
+    }
+    for (const r of cReturned) {
+      totalCReturned++;
+      if (expected.has(r)) {
+        cValid++;
+        totalCValid++;
+      }
+    }
 
-    perQuery.push({ question: q.question, expected: expected.size, a_found: aFound, a_returned: aReturned.size, c_found: cFound, c_returned: cReturned.size });
+    perQuery.push({
+      question: q.question,
+      expected: expected.size,
+      a_found: aFound,
+      a_returned: aReturned.size,
+      c_found: cFound,
+      c_returned: cReturned.size,
+    });
   }
 
   return {
@@ -567,22 +717,23 @@ interface AggregateResult {
  */
 async function measureAggregate(
   engine: PGLiteEngine,
-  seeds: SeededPage[],
+  seeds: SeededPage[]
 ): Promise<AggregateResult[]> {
   const contentBySlug = new Map<string, string>();
-  for (const s of seeds) contentBySlug.set(s.slug, `${s.page.compiled_truth}\n${s.page.timeline ?? ''}`);
+  for (const s of seeds)
+    contentBySlug.set(s.slug, `${s.page.compiled_truth}\n${s.page.timeline ?? ""}`);
 
   const results: AggregateResult[] = [];
   for (const q of AGGREGATE_QUERIES) {
-    const candidates = seeds.filter(s => s.slug.startsWith(`${q.kind}/`)).map(s => s.slug);
+    const candidates = seeds.filter((s) => s.slug.startsWith(`${q.kind}/`)).map((s) => s.slug);
 
     // C: structured backlink counts.
     const counts = await engine.getBacklinkCounts(candidates);
     const cTop = candidates
-      .map(s => ({ slug: s, n: counts.get(s) ?? 0 }))
+      .map((s) => ({ slug: s, n: counts.get(s) ?? 0 }))
       .sort((a, b) => b.n - a.n)
       .slice(0, q.topN)
-      .map(x => x.slug);
+      .map((x) => x.slug);
 
     // A: text-mention counts across all pages.
     const aCounts = new Map<string, number>();
@@ -591,20 +742,20 @@ async function measureAggregate(
       for (const [slug, content] of contentBySlug) {
         if (slug === c) continue;
         // Count occurrences of the candidate slug in content text.
-        const matches = content.match(new RegExp(c.replace(/[/-]/g, '\\$&'), 'g'));
+        const matches = content.match(new RegExp(c.replace(/[/-]/g, "\\$&"), "g"));
         n += matches?.length ?? 0;
       }
       aCounts.set(c, n);
     }
     const aTop = candidates
-      .map(s => ({ slug: s, n: aCounts.get(s) ?? 0 }))
+      .map((s) => ({ slug: s, n: aCounts.get(s) ?? 0 }))
       .sort((a, b) => b.n - a.n)
       .slice(0, q.topN)
-      .map(x => x.slug);
+      .map((x) => x.slug);
 
     const expectedSet = new Set(q.expected);
-    const cMatchCount = cTop.filter(s => expectedSet.has(s)).length;
-    const aMatchCount = aTop.filter(s => expectedSet.has(s)).length;
+    const cMatchCount = cTop.filter((s) => expectedSet.has(s)).length;
+    const aMatchCount = aTop.filter((s) => expectedSet.has(s)).length;
 
     results.push({
       question: q.question,
@@ -641,20 +792,23 @@ interface TypeDisagreementResult {
  */
 async function measureTypeDisagreement(
   engine: PGLiteEngine,
-  seeds: SeededPage[],
+  seeds: SeededPage[]
 ): Promise<TypeDisagreementResult[]> {
   const contentBySlug = new Map<string, string>();
-  for (const s of seeds) contentBySlug.set(s.slug, `${s.page.compiled_truth}\n${s.page.timeline ?? ''}`);
+  for (const s of seeds)
+    contentBySlug.set(s.slug, `${s.page.compiled_truth}\n${s.page.timeline ?? ""}`);
 
   const results: TypeDisagreementResult[] = [];
   for (const q of TYPE_DISAGREEMENT_QUERIES) {
     // C: structured intersection.
-    const startups = seeds.filter(s => s.slug.startsWith('companies/startup-')).map(s => s.slug);
+    const startups = seeds
+      .filter((s) => s.slug.startsWith("companies/startup-"))
+      .map((s) => s.slug);
     const cReturned: string[] = [];
     for (const s of startups) {
       const inbound = await engine.getBacklinks(s);
-      const hasA = inbound.some(b => b.link_type === q.typeA);
-      const hasB = inbound.some(b => b.link_type === q.typeB);
+      const hasA = inbound.some((b) => b.link_type === q.typeA);
+      const hasB = inbound.some((b) => b.link_type === q.typeB);
       if (hasA && hasB) cReturned.push(s);
     }
 
@@ -662,22 +816,24 @@ async function measureTypeDisagreement(
     // by looking for the slug appearing on a page that ALSO has the relevant verb nearby.
     const aReturned: string[] = [];
     for (const s of startups) {
-      let mentionedAsInvestment = false, mentionedAsAdvise = false;
+      let mentionedAsInvestment = false,
+        mentionedAsAdvise = false;
       for (const [, content] of contentBySlug) {
         // Is this page's content mentioning the slug near an investment-verb / advise-verb?
         const idx = content.indexOf(s);
         if (idx === -1) continue;
         // Take a 60-char window before the slug mention.
         const window = content.slice(Math.max(0, idx - 60), idx).toLowerCase();
-        if (q.typeA === 'invested_in' && /invest|backed|funding/.test(window)) mentionedAsInvestment = true;
-        if (q.typeB === 'advises' && /advis|board/.test(window)) mentionedAsAdvise = true;
+        if (q.typeA === "invested_in" && /invest|backed|funding/.test(window))
+          mentionedAsInvestment = true;
+        if (q.typeB === "advises" && /advis|board/.test(window)) mentionedAsAdvise = true;
       }
       if (mentionedAsInvestment && mentionedAsAdvise) aReturned.push(s);
     }
 
     const expectedSet = new Set(q.expected);
-    const cValid = cReturned.filter(s => expectedSet.has(s)).length;
-    const aValid = aReturned.filter(s => expectedSet.has(s)).length;
+    const cValid = cReturned.filter((s) => expectedSet.has(s)).length;
+    const aValid = aReturned.filter((s) => expectedSet.has(s)).length;
 
     results.push({
       question: q.question,
@@ -716,17 +872,14 @@ interface RankingResult {
  * - With boost: score *= (1 + 0.05 * log(1 + backlink_count)). Well-connected
  *   pages move up the ranking.
  */
-async function measureRanking(
-  engine: PGLiteEngine,
-  seeds: SeededPage[],
-): Promise<RankingResult> {
+async function measureRanking(engine: PGLiteEngine, seeds: SeededPage[]): Promise<RankingResult> {
   // searchKeyword joins content_chunks (a normal `gbrain import` populates
   // these). The benchmark seeded via putPage() which skips chunking, so we
   // upsert one chunk per page now to make ranking measurable.
   for (const s of seeds) {
     const text = `${s.page.title}\n${s.page.compiled_truth}`;
     await engine.upsertChunks(s.slug, [
-      { chunk_index: 0, chunk_text: text, chunk_source: 'compiled_truth' },
+      { chunk_index: 0, chunk_text: text, chunk_source: "compiled_truth" },
     ]);
   }
 
@@ -739,9 +892,19 @@ async function measureRanking(
   //   Unconnected:    liam, mia, noah, olivia — all 4 have 0 inbound links
   // Without boost both groups are tied (PG tie-breaking is unstable).
   // With boost the well-connected ones rise to the top of the cluster.
-  const query = 'company';
-  const wellConnected = ['people/grace-founder', 'people/henry-founder', 'people/iris-founder', 'people/jack-founder'];
-  const unconnected = ['people/liam-founder', 'people/mia-founder', 'people/noah-founder', 'people/olivia-founder'];
+  const query = "company";
+  const wellConnected = [
+    "people/grace-founder",
+    "people/henry-founder",
+    "people/iris-founder",
+    "people/jack-founder",
+  ];
+  const unconnected = [
+    "people/liam-founder",
+    "people/mia-founder",
+    "people/noah-founder",
+    "people/olivia-founder",
+  ];
 
   const results = await engine.searchKeyword(query, { limit: 80 });
 
@@ -749,11 +912,15 @@ async function measureRanking(
   const seenWithout = new Set<string>();
   const sortedWithout = [...results]
     .sort((a, b) => b.score - a.score)
-    .filter(r => { if (seenWithout.has(r.slug)) return false; seenWithout.add(r.slug); return true; });
+    .filter((r) => {
+      if (seenWithout.has(r.slug)) return false;
+      seenWithout.add(r.slug);
+      return true;
+    });
 
-  const allSlugs = sortedWithout.map(r => r.slug);
+  const allSlugs = sortedWithout.map((r) => r.slug);
   const counts = await engine.getBacklinkCounts(allSlugs);
-  const boosted = sortedWithout.map(r => ({
+  const boosted = sortedWithout.map((r) => ({
     ...r,
     score: r.score * (1 + 0.05 * Math.log(1 + (counts.get(r.slug) ?? 0))),
   }));
@@ -761,7 +928,7 @@ async function measureRanking(
   const sortedWith = [...boosted].sort((a, b) => b.score - a.score);
 
   const rankOf = (sorted: typeof sortedWithout, slug: string): number => {
-    const idx = sorted.findIndex(r => r.slug === slug);
+    const idx = sorted.findIndex((r) => r.slug === slug);
     return idx === -1 ? sorted.length + 1 : idx + 1;
   };
 
@@ -771,22 +938,22 @@ async function measureRanking(
     question: `Keyword search for "${query}" — average rank of well-connected vs unconnected pages, before and after backlink boost`,
     well_connected: wellConnected,
     unconnected,
-    avg_rank_well_without: avg(wellConnected.map(s => rankOf(sortedWithout, s))),
-    avg_rank_well_with: avg(wellConnected.map(s => rankOf(sortedWith, s))),
-    avg_rank_unconnected_without: avg(unconnected.map(s => rankOf(sortedWithout, s))),
-    avg_rank_unconnected_with: avg(unconnected.map(s => rankOf(sortedWith, s))),
+    avg_rank_well_without: avg(wellConnected.map((s) => rankOf(sortedWithout, s))),
+    avg_rank_well_with: avg(wellConnected.map((s) => rankOf(sortedWith, s))),
+    avg_rank_unconnected_without: avg(unconnected.map((s) => rankOf(sortedWithout, s))),
+    avg_rank_unconnected_with: avg(unconnected.map((s) => rankOf(sortedWith, s))),
   };
 }
 
 // ─── Main runner ────────────────────────────────────────────────
 
 async function main() {
-  const json = process.argv.includes('--json');
+  const json = process.argv.includes("--json");
   const log = json ? () => {} : console.log;
 
-  log('# Graph Quality Benchmark — v0.10.1');
+  log("# Graph Quality Benchmark — v0.10.1");
   log(`Generated: ${new Date().toISOString().slice(0, 19)}`);
-  log('');
+  log("");
 
   const seeds = seedPages();
   log(`## Data`);
@@ -806,8 +973,8 @@ async function main() {
   const captureLog = console.error;
   console.error = () => {}; // silence progress output during benchmark
   try {
-    await runExtract(engine, ['links', '--source', 'db']);
-    await runExtract(engine, ['timeline', '--source', 'db']);
+    await runExtract(engine, ["links", "--source", "db"]);
+    await runExtract(engine, ["timeline", "--source", "db"]);
   } finally {
     console.error = captureLog;
   }
@@ -815,7 +982,7 @@ async function main() {
   const stats = await engine.getStats();
   log(`- ${stats.link_count} links extracted`);
   log(`- ${stats.timeline_entry_count} timeline entries extracted`);
-  log('');
+  log("");
 
   // ── Compute metrics ──
 
@@ -832,14 +999,15 @@ async function main() {
   let linkHits = 0;
   for (const el of expectedLinks) {
     const links = await engine.getLinks(el.from);
-    if (links.some(l => l.to_slug === el.to && l.link_type === el.type)) linkHits++;
+    if (links.some((l) => l.to_slug === el.to && l.link_type === el.type)) linkHits++;
   }
   const link_recall = expectedLinks.length > 0 ? linkHits / expectedLinks.length : 1;
 
   // Link precision: % of extracted links that match an expected link (any type).
   // Use page-pair (ignore type) since type accuracy is measured separately.
-  const expectedPairs = new Set(expectedLinks.map(el => `${el.from}|${el.to}`));
-  let totalExtracted = 0, validExtracted = 0;
+  const expectedPairs = new Set(expectedLinks.map((el) => `${el.from}|${el.to}`));
+  let totalExtracted = 0,
+    validExtracted = 0;
   for (const s of seeds) {
     const links = await engine.getLinks(s.slug);
     for (const l of links) {
@@ -850,11 +1018,12 @@ async function main() {
   const link_precision = totalExtracted > 0 ? validExtracted / totalExtracted : 1;
 
   // Type accuracy: of correctly-paired links, how many have the right link_type?
-  let typeCorrect = 0, typeTotal = 0;
+  let typeCorrect = 0,
+    typeTotal = 0;
   const typeConfusion: Record<string, Record<string, number>> = {};
   for (const el of expectedLinks) {
     const links = await engine.getLinks(el.from);
-    const match = links.find(l => l.to_slug === el.to);
+    const match = links.find((l) => l.to_slug === el.to);
     if (match) {
       typeTotal++;
       if (match.link_type === el.type) typeCorrect++;
@@ -873,13 +1042,14 @@ async function main() {
   let tlHits = 0;
   for (const et of expectedTimeline) {
     const entries = await engine.getTimeline(et.slug);
-    if (entries.some(e => isoDate(e.date) === et.date && e.summary === et.summary)) tlHits++;
+    if (entries.some((e) => isoDate(e.date) === et.date && e.summary === et.summary)) tlHits++;
   }
   const timeline_recall = expectedTimeline.length > 0 ? tlHits / expectedTimeline.length : 1;
 
   // Timeline precision: % of extracted entries matching ground truth.
-  const expectedTlSet = new Set(expectedTimeline.map(e => `${e.slug}|${e.date}|${e.summary}`));
-  let tlTotal = 0, tlValid = 0;
+  const expectedTlSet = new Set(expectedTimeline.map((e) => `${e.slug}|${e.date}|${e.summary}`));
+  let tlTotal = 0,
+    tlValid = 0;
   for (const s of seeds) {
     const entries = await engine.getTimeline(s.slug);
     for (const e of entries) {
@@ -892,22 +1062,26 @@ async function main() {
 
   // Relational query accuracy.
   const queries = buildQueries();
-  let relExpected = 0, relFound = 0, relTotalReturned = 0, relValidReturned = 0;
+  let relExpected = 0,
+    relFound = 0,
+    relTotalReturned = 0,
+    relValidReturned = 0;
   const cPerQuery: Array<{ found: number; returned: number }> = [];
   for (const q of queries) {
     const paths = await engine.traversePaths(q.seed, {
       depth: q.depth ?? 1,
       linkType: q.linkType,
-      direction: q.direction ?? 'out',
+      direction: q.direction ?? "out",
     });
-    const returned = new Set(
-      paths.map(p => q.direction === 'in' ? p.from_slug : p.to_slug),
-    );
+    const returned = new Set(paths.map((p) => (q.direction === "in" ? p.from_slug : p.to_slug)));
     const expected = new Set(q.expected);
     let foundForQuery = 0;
     for (const e of expected) {
       relExpected++;
-      if (returned.has(e)) { relFound++; foundForQuery++; }
+      if (returned.has(e)) {
+        relFound++;
+        foundForQuery++;
+      }
     }
     for (const r of returned) {
       relTotalReturned++;
@@ -923,8 +1097,8 @@ async function main() {
   const tlCountBefore = stats.timeline_entry_count;
   console.error = () => {};
   try {
-    await runExtract(engine, ['links', '--source', 'db']);
-    await runExtract(engine, ['timeline', '--source', 'db']);
+    await runExtract(engine, ["links", "--source", "db"]);
+    await runExtract(engine, ["timeline", "--source", "db"]);
   } finally {
     console.error = captureLog;
   }
@@ -955,11 +1129,16 @@ async function main() {
   await engine.disconnect();
 
   const m: Metrics = {
-    link_recall, link_precision,
-    timeline_recall, timeline_precision,
-    type_accuracy, type_confusion: typeConfusion,
-    relational_recall, relational_precision,
-    idempotent_links, idempotent_timeline,
+    link_recall,
+    link_precision,
+    timeline_recall,
+    timeline_precision,
+    type_accuracy,
+    type_confusion: typeConfusion,
+    relational_recall,
+    relational_precision,
+    idempotent_links,
+    idempotent_timeline,
     reconciliation_correct,
     total_links_extracted: stats.link_count,
     total_timeline_entries: stats.timeline_entry_count,
@@ -969,110 +1148,155 @@ async function main() {
   // ── Output ──
 
   if (json) {
-    process.stdout.write(JSON.stringify({ ...m, baseline, multiHop, aggregates, typeDisagreement, ranking }, null, 2) + '\n');
+    process.stdout.write(
+      JSON.stringify({ ...m, baseline, multiHop, aggregates, typeDisagreement, ranking }, null, 2) +
+        "\n"
+    );
   } else {
-    log('## Metrics');
-    log('| Metric                | Value | Target | Pass |');
-    log('|-----------------------|-------|--------|------|');
+    log("## Metrics");
+    log("| Metric                | Value | Target | Pass |");
+    log("|-----------------------|-------|--------|------|");
     const pct = (v: number) => `${(v * 100).toFixed(1)}%`;
     const row = (name: string, v: number, target: number) =>
-      log(`| ${name.padEnd(21)} | ${pct(v).padEnd(5)} | >${pct(target).padEnd(5)} | ${v >= target ? '✓' : '✗'} |`);
-    row('link_recall',         link_recall,         0.90);
-    row('link_precision',      link_precision,      0.95);
-    row('timeline_recall',     timeline_recall,     0.85);
-    row('timeline_precision',  timeline_precision,  0.95);
-    row('type_accuracy',       type_accuracy,       0.80);
-    row('relational_recall',   relational_recall,   0.80);
-    row('relational_precision', relational_precision, 0.80);
-    log(`| idempotent_links      | ${idempotent_links ? 'true' : 'false'} | true   | ${idempotent_links ? '✓' : '✗'} |`);
-    log(`| idempotent_timeline   | ${idempotent_timeline ? 'true' : 'false'} | true   | ${idempotent_timeline ? '✓' : '✗'} |`);
-    log('');
-    log('## Type confusion matrix (predicted -> { actual: count })');
+      log(
+        `| ${name.padEnd(21)} | ${pct(v).padEnd(5)} | >${pct(target).padEnd(5)} | ${v >= target ? "✓" : "✗"} |`
+      );
+    row("link_recall", link_recall, 0.9);
+    row("link_precision", link_precision, 0.95);
+    row("timeline_recall", timeline_recall, 0.85);
+    row("timeline_precision", timeline_precision, 0.95);
+    row("type_accuracy", type_accuracy, 0.8);
+    row("relational_recall", relational_recall, 0.8);
+    row("relational_precision", relational_precision, 0.8);
+    log(
+      `| idempotent_links      | ${idempotent_links ? "true" : "false"} | true   | ${idempotent_links ? "✓" : "✗"} |`
+    );
+    log(
+      `| idempotent_timeline   | ${idempotent_timeline ? "true" : "false"} | true   | ${idempotent_timeline ? "✓" : "✗"} |`
+    );
+    log("");
+    log("## Type confusion matrix (predicted -> { actual: count })");
     for (const [pred, actuals] of Object.entries(typeConfusion)) {
       log(`  ${pred}:  ${JSON.stringify(actuals)}`);
     }
-    log('');
+    log("");
 
     // ── A vs C comparison ──
-    log('## Configuration A (no graph) vs C (full graph)');
-    log('Same data, same queries. A = pre-v0.10.3 brain (no extract, fallback to');
-    log('content scanning). C = full graph layer (typed traversal).');
-    log('');
-    log('| Metric                 | A: no graph | C: full graph | Delta       |');
-    log('|------------------------|-------------|----------------|-------------|');
+    log("## Configuration A (no graph) vs C (full graph)");
+    log("Same data, same queries. A = pre-v0.10.3 brain (no extract, fallback to");
+    log("content scanning). C = full graph layer (typed traversal).");
+    log("");
+    log("| Metric                 | A: no graph | C: full graph | Delta       |");
+    log("|------------------------|-------------|----------------|-------------|");
     const delta = (a: number, c: number) => {
       if (a === 0 && c > 0) return `+∞ (was 0)`;
       const d = ((c - a) / Math.max(a, 0.001)) * 100;
-      return `${d >= 0 ? '+' : ''}${d.toFixed(0)}%`;
+      return `${d >= 0 ? "+" : ""}${d.toFixed(0)}%`;
     };
-    log(`| relational_recall      | ${pct(baseline.relational_recall).padEnd(11)} | ${pct(relational_recall).padEnd(14)} | ${delta(baseline.relational_recall, relational_recall).padEnd(11)} |`);
-    log(`| relational_precision   | ${pct(baseline.relational_precision).padEnd(11)} | ${pct(relational_precision).padEnd(14)} | ${delta(baseline.relational_precision, relational_precision).padEnd(11)} |`);
-    log('');
+    log(
+      `| relational_recall      | ${pct(baseline.relational_recall).padEnd(11)} | ${pct(relational_recall).padEnd(14)} | ${delta(baseline.relational_recall, relational_recall).padEnd(11)} |`
+    );
+    log(
+      `| relational_precision   | ${pct(baseline.relational_precision).padEnd(11)} | ${pct(relational_precision).padEnd(14)} | ${delta(baseline.relational_precision, relational_precision).padEnd(11)} |`
+    );
+    log("");
 
-    log('## Per-query: A vs C');
-    log('Found = correct hits. Returned = total results (correct + noise).');
-    log('Lower returned-count at same found-count means less noise to filter.');
-    log('');
-    log('| Question                                 | Expected | A: found / returned | C: found / returned |');
-    log('|------------------------------------------|----------|---------------------|---------------------|');
+    log("## Per-query: A vs C");
+    log("Found = correct hits. Returned = total results (correct + noise).");
+    log("Lower returned-count at same found-count means less noise to filter.");
+    log("");
+    log(
+      "| Question                                 | Expected | A: found / returned | C: found / returned |"
+    );
+    log(
+      "|------------------------------------------|----------|---------------------|---------------------|"
+    );
     for (let i = 0; i < queries.length; i++) {
       const q = queries[i];
       const b = baseline.per_query[i];
       const c = cPerQuery[i];
-      log(`| ${q.question.slice(0, 40).padEnd(40)} | ${String(b.expected).padEnd(8)} | ${String(`${b.found} / ${b.returned}`).padEnd(19)} | ${String(`${c.found} / ${c.returned}`).padEnd(19)} |`);
+      log(
+        `| ${q.question.slice(0, 40).padEnd(40)} | ${String(b.expected).padEnd(8)} | ${String(`${b.found} / ${b.returned}`).padEnd(19)} | ${String(`${c.found} / ${c.returned}`).padEnd(19)} |`
+      );
     }
-    log('');
+    log("");
 
     // ── Multi-hop ──
-    log('## Multi-hop traversal (depth 2)');
-    log('Single-pass naive grep can\'t chain. C does it in one recursive CTE.');
-    log('');
-    log('| Question                                 | Expected | A: found / returned | C: found / returned |');
-    log('|------------------------------------------|----------|---------------------|---------------------|');
+    log("## Multi-hop traversal (depth 2)");
+    log("Single-pass naive grep can't chain. C does it in one recursive CTE.");
+    log("");
+    log(
+      "| Question                                 | Expected | A: found / returned | C: found / returned |"
+    );
+    log(
+      "|------------------------------------------|----------|---------------------|---------------------|"
+    );
     for (const r of multiHop.per_query) {
-      log(`| ${r.question.slice(0, 40).padEnd(40)} | ${String(r.expected).padEnd(8)} | ${String(`${r.a_found} / ${r.a_returned}`).padEnd(19)} | ${String(`${r.c_found} / ${r.c_returned}`).padEnd(19)} |`);
+      log(
+        `| ${r.question.slice(0, 40).padEnd(40)} | ${String(r.expected).padEnd(8)} | ${String(`${r.a_found} / ${r.a_returned}`).padEnd(19)} | ${String(`${r.c_found} / ${r.c_returned}`).padEnd(19)} |`
+      );
     }
-    log(`Multi-hop recall: A vs C — ${multiHop.per_query.reduce((s, r) => s + r.a_found, 0)} vs ${multiHop.per_query.reduce((s, r) => s + r.c_found, 0)} of ${multiHop.per_query.reduce((s, r) => s + r.expected, 0)} expected. C aggregate: recall ${pct(multiHop.recall)}, precision ${pct(multiHop.precision)}.`);
-    log('');
+    log(
+      `Multi-hop recall: A vs C — ${multiHop.per_query.reduce((s, r) => s + r.a_found, 0)} vs ${multiHop.per_query.reduce((s, r) => s + r.c_found, 0)} of ${multiHop.per_query.reduce((s, r) => s + r.expected, 0)} expected. C aggregate: recall ${pct(multiHop.recall)}, precision ${pct(multiHop.precision)}.`
+    );
+    log("");
 
     // ── Aggregate ──
-    log('## Aggregate queries');
+    log("## Aggregate queries");
     log('"Top N most-connected" — A counts text mentions, C counts dedupe\'d structured links.');
-    log('');
+    log("");
     for (const r of aggregates) {
       log(`**${r.question}**`);
-      log(`- Expected (any order): ${r.expected.map(s => '`' + s + '`').join(', ')}`);
-      log(`- A (text-mention count): ${r.a_top.map(s => '`' + s + '`').join(', ')} → ${r.a_correct ? '✓ matches' : '✗ wrong set'}`);
-      log(`- C (structured backlinks): ${r.c_top.map(s => '`' + s + '`').join(', ')} → ${r.c_correct ? '✓ matches' : '✗ wrong set'}`);
-      log('');
+      log(`- Expected (any order): ${r.expected.map((s) => "`" + s + "`").join(", ")}`);
+      log(
+        `- A (text-mention count): ${r.a_top.map((s) => "`" + s + "`").join(", ")} → ${r.a_correct ? "✓ matches" : "✗ wrong set"}`
+      );
+      log(
+        `- C (structured backlinks): ${r.c_top.map((s) => "`" + s + "`").join(", ")} → ${r.c_correct ? "✓ matches" : "✗ wrong set"}`
+      );
+      log("");
     }
 
     // ── Type-disagreement ──
-    log('## Type-disagreement queries (set intersection on inbound link types)');
-    log('A must scan prose for verb patterns; C does two filtered getLinks + intersect.');
-    log('');
+    log("## Type-disagreement queries (set intersection on inbound link types)");
+    log("A must scan prose for verb patterns; C does two filtered getLinks + intersect.");
+    log("");
     for (const r of typeDisagreement) {
       log(`**${r.question}**`);
-      log(`- Expected: ${r.expected.length} startups (${r.expected.map(s => s.replace('companies/', '')).join(', ')})`);
-      log(`- A: ${r.a_returned.length} returned (${r.a_returned.map(s => s.replace('companies/', '')).join(', ') || 'none'}). Recall ${pct(r.a_recall)}, precision ${pct(r.a_precision)}.`);
-      log(`- C: ${r.c_returned.length} returned (${r.c_returned.map(s => s.replace('companies/', '')).join(', ') || 'none'}). Recall ${pct(r.c_recall)}, precision ${pct(r.c_precision)}.`);
-      log('');
+      log(
+        `- Expected: ${r.expected.length} startups (${r.expected.map((s) => s.replace("companies/", "")).join(", ")})`
+      );
+      log(
+        `- A: ${r.a_returned.length} returned (${r.a_returned.map((s) => s.replace("companies/", "")).join(", ") || "none"}). Recall ${pct(r.a_recall)}, precision ${pct(r.a_precision)}.`
+      );
+      log(
+        `- C: ${r.c_returned.length} returned (${r.c_returned.map((s) => s.replace("companies/", "")).join(", ") || "none"}). Recall ${pct(r.c_recall)}, precision ${pct(r.c_precision)}.`
+      );
+      log("");
     }
 
     // ── Ranking ──
-    log('## Search ranking with backlink boost');
-    log('Keyword query that matches both well-connected and unconnected pages. Compare');
-    log('average rank (lower = better) of each group before vs after applying the backlink');
-    log('boost (`score *= 1 + 0.05 * log(1 + n)`).');
-    log('');
+    log("## Search ranking with backlink boost");
+    log("Keyword query that matches both well-connected and unconnected pages. Compare");
+    log("average rank (lower = better) of each group before vs after applying the backlink");
+    log("boost (`score *= 1 + 0.05 * log(1 + n)`).");
+    log("");
     log(`**${ranking.question}**`);
-    log('| Group                                    | Avg rank without boost | Avg rank with boost | Δ |');
-    log('|------------------------------------------|------------------------|---------------------|---|');
+    log(
+      "| Group                                    | Avg rank without boost | Avg rank with boost | Δ |"
+    );
+    log(
+      "|------------------------------------------|------------------------|---------------------|---|"
+    );
     const wDelta = ranking.avg_rank_well_without - ranking.avg_rank_well_with;
     const uDelta = ranking.avg_rank_unconnected_without - ranking.avg_rank_unconnected_with;
-    log(`| Well-connected (4 inbound links each)    | ${ranking.avg_rank_well_without.toFixed(1).padEnd(22)} | ${ranking.avg_rank_well_with.toFixed(1).padEnd(19)} | ${wDelta >= 0 ? '+' : ''}${wDelta.toFixed(1)} ${wDelta > 0 ? '↑ better' : wDelta < 0 ? '↓ worse' : ''} |`);
-    log(`| Unconnected (0 inbound links each)       | ${ranking.avg_rank_unconnected_without.toFixed(1).padEnd(22)} | ${ranking.avg_rank_unconnected_with.toFixed(1).padEnd(19)} | ${uDelta >= 0 ? '+' : ''}${uDelta.toFixed(1)} ${uDelta > 0 ? '↑ better' : uDelta < 0 ? '↓ worse' : ''} |`);
-    log('');
+    log(
+      `| Well-connected (4 inbound links each)    | ${ranking.avg_rank_well_without.toFixed(1).padEnd(22)} | ${ranking.avg_rank_well_with.toFixed(1).padEnd(19)} | ${wDelta >= 0 ? "+" : ""}${wDelta.toFixed(1)} ${wDelta > 0 ? "↑ better" : wDelta < 0 ? "↓ worse" : ""} |`
+    );
+    log(
+      `| Unconnected (0 inbound links each)       | ${ranking.avg_rank_unconnected_without.toFixed(1).padEnd(22)} | ${ranking.avg_rank_unconnected_with.toFixed(1).padEnd(19)} | ${uDelta >= 0 ? "+" : ""}${uDelta.toFixed(1)} ${uDelta > 0 ? "↑ better" : uDelta < 0 ? "↓ worse" : ""} |`
+    );
+    log("");
   }
 
   // Exit non-zero if any threshold fails (so CI catches regressions).
@@ -1085,24 +1309,28 @@ async function main() {
   if (link_recall < 0.85) failed.push(`link_recall=${link_recall.toFixed(3)} < 0.85`);
   if (link_precision < 0.95) failed.push(`link_precision=${link_precision.toFixed(3)} < 0.95`);
   if (timeline_recall < 0.85) failed.push(`timeline_recall=${timeline_recall.toFixed(3)} < 0.85`);
-  if (timeline_precision < 0.95) failed.push(`timeline_precision=${timeline_precision.toFixed(3)} < 0.95`);
-  if (type_accuracy < 0.80) failed.push(`type_accuracy=${type_accuracy.toFixed(3)} < 0.80`);
-  if (relational_recall < 0.80) failed.push(`relational_recall=${relational_recall.toFixed(3)} < 0.80`);
-  if (!idempotent_links) failed.push('idempotent_links=false');
-  if (!idempotent_timeline) failed.push('idempotent_timeline=false');
+  if (timeline_precision < 0.95)
+    failed.push(`timeline_precision=${timeline_precision.toFixed(3)} < 0.95`);
+  if (type_accuracy < 0.8) failed.push(`type_accuracy=${type_accuracy.toFixed(3)} < 0.80`);
+  if (relational_recall < 0.8)
+    failed.push(`relational_recall=${relational_recall.toFixed(3)} < 0.80`);
+  if (!idempotent_links) failed.push("idempotent_links=false");
+  if (!idempotent_timeline) failed.push("idempotent_timeline=false");
 
   if (failed.length > 0) {
     console.error(`\n⚠ Benchmark failures: ${failed.length}`);
     for (const f of failed) console.error(`  - ${f}`);
-    console.error('\nSee BENCHMARK_FAILURES comment block in test/benchmark-graph-quality.ts for fixes.');
+    console.error(
+      "\nSee BENCHMARK_FAILURES comment block in test/benchmark-graph-quality.ts for fixes."
+    );
     process.exit(1);
   } else {
-    log('\n✓ All thresholds passed.');
+    log("\n✓ All thresholds passed.");
   }
 }
 
-main().catch(e => {
-  console.error('Benchmark error:', e);
+main().catch((e) => {
+  console.error("Benchmark error:", e);
   process.exit(1);
 });
 

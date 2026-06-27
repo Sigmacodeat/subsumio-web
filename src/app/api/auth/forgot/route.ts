@@ -29,12 +29,13 @@ export const POST = createPublicHandler(
 
     const token = await signActionToken(
       { uid: user.id, purpose: "reset", bind: await bindFragment(user.passwordHash) },
-      RESET_TOKEN_TTL_SECONDS,
+      RESET_TOKEN_TTL_SECONDS
     );
     const lang = user.locale === "de" ? "de" : "en";
     const resetUrl = `${siteUrl()}${lang === "de" ? "/de" : ""}/reset?token=${encodeURIComponent(token)}`;
 
-    const subject = lang === "de" ? "Subsumio — Passwort zurücksetzen" : "Subsumio — reset your password";
+    const subject =
+      lang === "de" ? "Subsumio — Passwort zurücksetzen" : "Subsumio — reset your password";
     const text =
       lang === "de"
         ? `Hallo ${user.name},\n\njemand (hoffentlich du) hat ein neues Passwort für dieses Konto angefordert.\n\nLink (1 Stunde gültig):\n${resetUrl}\n\nWenn du das nicht warst, ignoriere diese Mail — dein Passwort bleibt unverändert.\n\n— Subsumio`

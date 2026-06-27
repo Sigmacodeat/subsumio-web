@@ -26,14 +26,14 @@
  *   relaxed per-caller.
  */
 
-import type { ChatOpts, ChatResult } from '../ai/gateway.ts';
+import type { ChatOpts, ChatResult } from "../ai/gateway.ts";
 
 /** Local ChatFn shape — kept here so payload-fitter doesn't depend on
  *  src/core/brainstorm/judges.ts (which is the canonical owner of the
  *  ChatFn alias today). */
 type ChatFn = (opts: ChatOpts) => Promise<ChatResult>;
 
-export type FitStrategy = 'batch' | 'summarize';
+export type FitStrategy = "batch" | "summarize";
 
 export interface FitOptions<T> {
   items: T[];
@@ -76,7 +76,7 @@ export interface FitResult<T> {
   /** True when success_ratio < min_success_ratio. */
   degraded: boolean;
   /** Total LLM usage rolled up across summarize calls. Undefined for batch. */
-  usage?: ChatResult['usage'];
+  usage?: ChatResult["usage"];
 }
 
 const DEFAULT_PARALLELISM = 4;
@@ -88,10 +88,10 @@ const DEFAULT_MIN_SUCCESS_RATIO = 0.75;
  * caller misuse fails loud.
  */
 export async function fit<T>(opts: FitOptions<T>): Promise<FitResult<T>> {
-  if (opts.strategy === 'batch') {
+  if (opts.strategy === "batch") {
     return fitBatch(opts);
   }
-  if (opts.strategy === 'summarize') {
+  if (opts.strategy === "summarize") {
     return fitSummarize(opts);
   }
   throw new Error(`payload-fitter: unknown strategy "${(opts as { strategy: string }).strategy}"`);
@@ -108,9 +108,10 @@ function fitBatch<T>(opts: FitOptions<T>): FitResult<T> {
   const dropped = opts.items.filter((it) => opts.estimateTokens(it) > opts.maxTokensPerCall).length;
   return {
     fitted: opts.items.slice(),
-    strategy: 'batch',
+    strategy: "batch",
     dropped,
-    success_ratio: opts.items.length === 0 ? 1.0 : (opts.items.length - dropped) / opts.items.length,
+    success_ratio:
+      opts.items.length === 0 ? 1.0 : (opts.items.length - dropped) / opts.items.length,
     degraded: false,
   };
 }
@@ -133,14 +134,14 @@ function fitBatch<T>(opts: FitOptions<T>): FitResult<T> {
 async function fitSummarize<T>(opts: FitOptions<T>): Promise<FitResult<T>> {
   if (!opts.embedFn || !opts.chatFn || !opts.itemToText || !opts.summaryToItem) {
     throw new Error(
-      `payload-fitter: strategy='summarize' requires embedFn + chatFn + itemToText + summaryToItem`,
+      `payload-fitter: strategy='summarize' requires embedFn + chatFn + itemToText + summaryToItem`
     );
   }
   const minRatio = opts.min_success_ratio ?? DEFAULT_MIN_SUCCESS_RATIO;
   const parallelism = Math.max(1, opts.parallelism ?? DEFAULT_PARALLELISM);
 
   if (opts.items.length === 0) {
-    return { fitted: [], strategy: 'summarize', dropped: 0, success_ratio: 1.0, degraded: false };
+    return { fitted: [], strategy: "summarize", dropped: 0, success_ratio: 1.0, degraded: false };
   }
 
   // 1. Embed every item. The gateway.embed call composes the active
@@ -186,7 +187,7 @@ async function fitSummarize<T>(opts: FitOptions<T>): Promise<FitResult<T>> {
 
   // 3. Parallel summarize via allSettled with bounded concurrency.
   const fitted: T[] = [];
-  const totalUsage: ChatResult['usage'] = {
+  const totalUsage: ChatResult["usage"] = {
     input_tokens: 0,
     output_tokens: 0,
     cache_read_tokens: 0,
@@ -196,20 +197,25 @@ async function fitSummarize<T>(opts: FitOptions<T>): Promise<FitResult<T>> {
   for (let i = 0; i < clusters.length; i += parallelism) {
     const wave = clusters.slice(i, i + parallelism);
     const results = await Promise.allSettled(
-      wave.map((group) => summarizeCluster(group, opts, texts)),
+      wave.map((group) => summarizeCluster(group, opts, texts))
     );
     for (let j = 0; j < results.length; j++) {
       const r = results[j];
       const group = wave[j];
-      if (r.status === 'fulfilled') {
-        fitted.push(opts.summaryToItem!(r.value.summary, group.map((idx) => opts.items[idx])));
+      if (r.status === "fulfilled") {
+        fitted.push(
+          opts.summaryToItem!(
+            r.value.summary,
+            group.map((idx) => opts.items[idx])
+          )
+        );
         totalUsage.input_tokens += r.value.usage.input_tokens;
         totalUsage.output_tokens += r.value.usage.output_tokens;
-        if (typeof r.value.usage.cache_read_tokens === 'number') {
+        if (typeof r.value.usage.cache_read_tokens === "number") {
           totalUsage.cache_read_tokens =
             (totalUsage.cache_read_tokens ?? 0) + r.value.usage.cache_read_tokens;
         }
-        if (typeof r.value.usage.cache_creation_tokens === 'number') {
+        if (typeof r.value.usage.cache_creation_tokens === "number") {
           totalUsage.cache_creation_tokens =
             (totalUsage.cache_creation_tokens ?? 0) + r.value.usage.cache_creation_tokens;
         }
@@ -224,7 +230,7 @@ async function fitSummarize<T>(opts: FitOptions<T>): Promise<FitResult<T>> {
   const degraded = success_ratio < minRatio;
   return {
     fitted,
-    strategy: 'summarize',
+    strategy: "summarize",
     dropped: failed,
     success_ratio,
     degraded,
@@ -234,20 +240,20 @@ async function fitSummarize<T>(opts: FitOptions<T>): Promise<FitResult<T>> {
 
 interface SummarizeOutcome {
   summary: string;
-  usage: ChatResult['usage'];
+  usage: ChatResult["usage"];
 }
 
 async function summarizeCluster<T>(
   group: number[],
   opts: FitOptions<T>,
-  texts: string[],
+  texts: string[]
 ): Promise<SummarizeOutcome> {
   const chat = opts.chatFn!;
-  const lines = group.map((idx) => `- ${texts[idx]}`).join('\n');
+  const lines = group.map((idx) => `- ${texts[idx]}`).join("\n");
   const prompt = `Summarize the following items in ~3 sentences capturing the load-bearing themes. Do not paraphrase verbatim.\n\n${lines}`;
   const res = await chat({
     model: opts.summarizeModel,
-    messages: [{ role: 'user', content: prompt }],
+    messages: [{ role: "user", content: prompt }],
     maxTokens: 400,
   });
   return { summary: res.text.trim(), usage: res.usage };

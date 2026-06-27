@@ -39,7 +39,12 @@ function createTestMappings(): FieldMapping[] {
   return [
     { source_field: "name", target_field: "client_name", status: "auto_mapped", required: true },
     { source_field: "email", target_field: "client_email", status: "auto_mapped", required: true },
-    { source_field: "phone", target_field: "client_phone", status: "manual_mapped", required: false },
+    {
+      source_field: "phone",
+      target_field: "client_phone",
+      status: "manual_mapped",
+      required: false,
+    },
   ];
 }
 
@@ -64,9 +69,33 @@ function createTestDryRunResult(): DryRunResult {
 function createTestCutoverReport(): CutoverReport {
   return {
     generated_at: new Date().toISOString(),
-    pre_import_stats: { total_records: 100, processed_records: 100, successful_records: 95, failed_records: 5, skipped_records: 0, error_rate: 5, success_rate: 95 },
-    post_import_stats: { total_records: 100, processed_records: 100, successful_records: 95, failed_records: 5, skipped_records: 0, error_rate: 5, success_rate: 95 },
-    delta_stats: { total_records: 5, processed_records: 5, successful_records: 5, failed_records: 0, skipped_records: 0, error_rate: 0, success_rate: 100 },
+    pre_import_stats: {
+      total_records: 100,
+      processed_records: 100,
+      successful_records: 95,
+      failed_records: 5,
+      skipped_records: 0,
+      error_rate: 5,
+      success_rate: 95,
+    },
+    post_import_stats: {
+      total_records: 100,
+      processed_records: 100,
+      successful_records: 95,
+      failed_records: 5,
+      skipped_records: 0,
+      error_rate: 5,
+      success_rate: 95,
+    },
+    delta_stats: {
+      total_records: 5,
+      processed_records: 5,
+      successful_records: 5,
+      failed_records: 0,
+      skipped_records: 0,
+      error_rate: 0,
+      success_rate: 100,
+    },
     duration_seconds: 120,
     rollback_available: true,
     summary: "Migration completed with 95% success rate",
@@ -132,7 +161,15 @@ describe("Migration Project — State Transitions", () => {
 
   it("runDeltaImport increments delta count", () => {
     const project = createTestProject();
-    const stats = { total_records: 5, processed_records: 5, successful_records: 5, failed_records: 0, skipped_records: 0, error_rate: 0, success_rate: 100 };
+    const stats = {
+      total_records: 5,
+      processed_records: 5,
+      successful_records: 5,
+      failed_records: 0,
+      skipped_records: 0,
+      error_rate: 0,
+      success_rate: 100,
+    };
     const updated = runDeltaImport(project, stats, "admin@test");
     expect(updated.delta_count).toBe(1);
     expect(updated.last_delta_import_at).toBeTruthy();

@@ -6,14 +6,8 @@
 
 import { describe, expect, test } from "bun:test";
 
-import {
-  E2E_TEST_MAP,
-} from "../scripts/e2e-test-map.ts";
-import {
-  classify,
-  matchGlob,
-  selectTests,
-} from "../scripts/select-e2e.ts";
+import { E2E_TEST_MAP } from "../scripts/e2e-test-map.ts";
+import { classify, matchGlob, selectTests } from "../scripts/select-e2e.ts";
 
 const ALL_E2E = [
   "test/e2e/cycle.test.ts",
@@ -57,12 +51,8 @@ function select(changedFiles: string[]): string[] {
 
 describe("matchGlob", () => {
   test("** matches any path segments", () => {
-    expect(matchGlob("src/core/search/**", "src/core/search/intent.ts")).toBe(
-      true
-    );
-    expect(
-      matchGlob("src/core/search/**", "src/core/search/sub/dir/file.ts")
-    ).toBe(true);
+    expect(matchGlob("src/core/search/**", "src/core/search/intent.ts")).toBe(true);
+    expect(matchGlob("src/core/search/**", "src/core/search/sub/dir/file.ts")).toBe(true);
   });
 
   test("* matches one segment, no /", () => {
@@ -86,9 +76,7 @@ describe("classify", () => {
     expect(classify([])).toBe("EMPTY");
   });
   test("only doc paths -> DOC_ONLY", () => {
-    expect(classify(["README.md", "docs/foo.md", "CHANGELOG.md"])).toBe(
-      "DOC_ONLY"
-    );
+    expect(classify(["README.md", "docs/foo.md", "CHANGELOG.md"])).toBe("DOC_ONLY");
   });
   test("any non-doc path -> SRC", () => {
     expect(classify(["README.md", "src/cli.ts"])).toBe("SRC");
@@ -104,9 +92,7 @@ describe("selectTests", () => {
   });
 
   test("case 2: doc-only -> nothing", () => {
-    expect(select(["README.md", "docs/guides/foo.md", "CHANGELOG.md"])).toEqual(
-      []
-    );
+    expect(select(["README.md", "docs/guides/foo.md", "CHANGELOG.md"])).toEqual([]);
   });
 
   test("case 3: single mapped src -> only mapped tests", () => {
@@ -118,10 +104,7 @@ describe("selectTests", () => {
   });
 
   test("case 4: multiple mapped srcs -> union, no duplicates", () => {
-    const result = select([
-      "src/core/search/intent.ts",
-      "src/core/minions/queue.ts",
-    ]);
+    const result = select(["src/core/search/intent.ts", "src/core/minions/queue.ts"]);
     expect(result).toContain("test/e2e/search-quality.test.ts");
     expect(result).toContain("test/e2e/minions-concurrency.test.ts");
     // Determinism: dedup preserved
@@ -135,9 +118,7 @@ describe("selectTests", () => {
 
   test("case 6 (Codex F4 regression): skills/ -> all", () => {
     expect(select(["skills/RESOLVER.md"])).toEqual(ALL_E2E.slice().sort());
-    expect(select(["skills/migrations/v0.22.4.md"])).toEqual(
-      ALL_E2E.slice().sort()
-    );
+    expect(select(["skills/migrations/v0.22.4.md"])).toEqual(ALL_E2E.slice().sort());
   });
 
   test("case 7 (Codex F5 regression): untracked file -> fail-closed -> all", () => {
@@ -160,17 +141,11 @@ describe("selectTests", () => {
     // - it gets added to result
     // - no other map entries match
     // - result has 1 entry, so NOT fail-closed
-    expect(select(["test/e2e/sync.test.ts"])).toEqual([
-      "test/e2e/sync.test.ts",
-    ]);
+    expect(select(["test/e2e/sync.test.ts"])).toEqual(["test/e2e/sync.test.ts"]);
   });
 
   test("case 10: mixed doc + mapped-src -> only src-relevant", () => {
-    const result = select([
-      "README.md",
-      "docs/foo.md",
-      "src/core/search/intent.ts",
-    ]);
+    const result = select(["README.md", "docs/foo.md", "src/core/search/intent.ts"]);
     expect(result).toEqual([
       "test/e2e/search-exclude.test.ts",
       "test/e2e/search-quality.test.ts",
@@ -187,15 +162,11 @@ describe("selectTests", () => {
   });
 
   test("escape-hatch: .github/workflows/** -> all", () => {
-    expect(select([".github/workflows/test.yml"])).toEqual(
-      ALL_E2E.slice().sort()
-    );
+    expect(select([".github/workflows/test.yml"])).toEqual(ALL_E2E.slice().sort());
   });
 
   test("escape-hatch: src/commands/migrations/** -> all", () => {
-    expect(select(["src/commands/migrations/v0_22_8.ts"])).toEqual(
-      ALL_E2E.slice().sort()
-    );
+    expect(select(["src/commands/migrations/v0_22_8.ts"])).toEqual(ALL_E2E.slice().sort());
   });
 
   test("escape-hatch: test/e2e/helpers.ts -> all", () => {
@@ -204,8 +175,6 @@ describe("selectTests", () => {
 
   test("escape-hatch beats narrow map: schema + search both touched", () => {
     // schema.sql is escape-hatch; should win over search narrow match.
-    expect(select(["src/schema.sql", "src/core/search/intent.ts"])).toEqual(
-      ALL_E2E.slice().sort()
-    );
+    expect(select(["src/schema.sql", "src/core/search/intent.ts"])).toEqual(ALL_E2E.slice().sort());
   });
 });

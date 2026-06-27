@@ -1,13 +1,13 @@
-import { VERSION } from '../version.ts';
-import { detectInstallMethod } from './upgrade.ts';
+import { VERSION } from "../version.ts";
+import { detectInstallMethod } from "./upgrade.ts";
 import {
   isMinorOrMajorBump,
   isValidVersionString,
   parseSemver,
   semverGt,
   semverLte,
-} from '../core/semver.ts';
-import { writeUpdateCache, type UpdateMarker } from '../core/self-upgrade.ts';
+} from "../core/semver.ts";
+import { writeUpdateCache, type UpdateMarker } from "../core/self-upgrade.ts";
 
 /** Best-effort cache write — a read-only ~/.gbrain must never make the check throw. */
 function safeWriteCache(marker: UpdateMarker): void {
@@ -25,7 +25,7 @@ export { parseSemver, isMinorOrMajorBump };
 
 interface CheckUpdateResult {
   current_version: string;
-  current_source: 'package-json';
+  current_source: "package-json";
   latest_version: string;
   update_available: boolean;
   upgrade_command: string;
@@ -37,10 +37,14 @@ interface CheckUpdateResult {
 
 function upgradeCommandForMethod(method: string): string {
   switch (method) {
-    case 'bun': return 'bun update gbrain';
-    case 'clawhub': return 'clawhub update gbrain';
-    case 'binary': return 'gbrain self-upgrade';
-    default: return 'gbrain upgrade';
+    case "bun":
+      return "bun update gbrain";
+    case "clawhub":
+      return "clawhub update gbrain";
+    case "binary":
+      return "gbrain self-upgrade";
+    default:
+      return "gbrain upgrade";
   }
 }
 
@@ -49,43 +53,53 @@ function upgradeCommandForMethod(method: string): string {
  * path and tests can reuse it. 5s timeout (was 10s) — this runs on the detached
  * refresh, never the hot path, but a tight bound keeps the refresh cheap.
  */
-export async function fetchLatestRelease(): Promise<{ tag: string; published_at: string; url: string } | null> {
+export async function fetchLatestRelease(): Promise<{
+  tag: string;
+  published_at: string;
+  url: string;
+} | null> {
   try {
-    const res = await fetch('https://api.github.com/repos/garrytan/gbrain/releases/latest', {
-      headers: { 'User-Agent': `gbrain/${VERSION}` },
+    const res = await fetch("https://api.github.com/repos/garrytan/gbrain/releases/latest", {
+      headers: { "User-Agent": `gbrain/${VERSION}` },
       signal: AbortSignal.timeout(5_000),
     });
     if (!res.ok) return null;
-    const data = await res.json() as any;
+    const data = (await res.json()) as any;
     return {
-      tag: data.tag_name || '',
-      published_at: data.published_at || '',
-      url: data.html_url || '',
+      tag: data.tag_name || "",
+      published_at: data.published_at || "",
+      url: data.html_url || "",
     };
   } catch {
     return null;
   }
 }
 
-export async function fetchChangelog(currentVersion: string, latestVersion: string): Promise<string> {
+export async function fetchChangelog(
+  currentVersion: string,
+  latestVersion: string
+): Promise<string> {
   try {
-    const res = await fetch('https://raw.githubusercontent.com/garrytan/gbrain/master/CHANGELOG.md', {
-      signal: AbortSignal.timeout(5_000),
-    });
-    if (!res.ok) return '';
+    const res = await fetch(
+      "https://raw.githubusercontent.com/garrytan/gbrain/master/CHANGELOG.md",
+      {
+        signal: AbortSignal.timeout(5_000),
+      }
+    );
+    if (!res.ok) return "";
     const text = await res.text();
     return extractChangelogBetween(text, currentVersion, latestVersion);
   } catch {
-    return '';
+    return "";
   }
 }
 
 export function extractChangelogBetween(changelog: string, from: string, to: string): string {
-  const lines = changelog.split('\n');
+  const lines = changelog.split("\n");
   const entries: string[] = [];
   let capturing = false;
   const fromParsed = parseSemver(from);
-  if (!fromParsed) return '';
+  if (!fromParsed) return "";
 
   for (const line of lines) {
     const versionMatch = line.match(/^## \[(\d+\.\d+\.\d+(?:\.\d+)?)\]/);
@@ -113,7 +127,7 @@ export function extractChangelogBetween(changelog: string, from: string, to: str
     }
   }
 
-  return entries.join('\n').trim();
+  return entries.join("\n").trim();
 }
 
 /**
@@ -127,28 +141,30 @@ export function extractChangelogBetween(changelog: string, from: string, to: str
 export async function refreshUpdateCache(): Promise<void> {
   const release = await fetchLatestRelease();
   if (!release) {
-    safeWriteCache({ kind: 'up_to_date', current: VERSION });
+    safeWriteCache({ kind: "up_to_date", current: VERSION });
     return;
   }
-  const latestVersion = release.tag.replace(/^v/, '');
+  const latestVersion = release.tag.replace(/^v/, "");
   if (!isValidVersionString(latestVersion) || !isMinorOrMajorBump(VERSION, latestVersion)) {
-    safeWriteCache({ kind: 'up_to_date', current: VERSION });
+    safeWriteCache({ kind: "up_to_date", current: VERSION });
     return;
   }
-  safeWriteCache({ kind: 'upgrade_available', current: VERSION, latest: latestVersion });
+  safeWriteCache({ kind: "upgrade_available", current: VERSION, latest: latestVersion });
 }
 
 export async function runCheckUpdate(args: string[]) {
-  if (args.includes('--help') || args.includes('-h')) {
-    console.log('Usage: gbrain check-update [--json] [--refresh-cache]\n\nCheck for new GBrain versions.\n\nOnly reports minor/major version bumps (v0.X.0), not patches.\nFails silently on network errors.\n\n--refresh-cache  Fetch + update the self-upgrade cache, print nothing (used by\n                 the CLI startup hook\'s detached refresh).');
+  if (args.includes("--help") || args.includes("-h")) {
+    console.log(
+      "Usage: gbrain check-update [--json] [--refresh-cache]\n\nCheck for new GBrain versions.\n\nOnly reports minor/major version bumps (v0.X.0), not patches.\nFails silently on network errors.\n\n--refresh-cache  Fetch + update the self-upgrade cache, print nothing (used by\n                 the CLI startup hook's detached refresh)."
+    );
     return;
   }
 
   // Detached refresh path: warm the cache for the next invocation, emit nothing.
   // Single-flight via the refresh lock so many simultaneous stale-cache
   // invocations don't stampede GitHub. If another refresh holds the lock, exit.
-  if (args.includes('--refresh-cache')) {
-    const { tryAcquireRefreshLock, releaseRefreshLock } = await import('../core/self-upgrade.ts');
+  if (args.includes("--refresh-cache")) {
+    const { tryAcquireRefreshLock, releaseRefreshLock } = await import("../core/self-upgrade.ts");
     const lock = tryAcquireRefreshLock();
     if (!lock) return; // another refresh is in flight
     try {
@@ -159,7 +175,7 @@ export async function runCheckUpdate(args: string[]) {
     return;
   }
 
-  const json = args.includes('--json');
+  const json = args.includes("--json");
   const method = detectInstallMethod();
   const upgradeCmd = upgradeCommandForMethod(method);
 
@@ -167,44 +183,53 @@ export async function runCheckUpdate(args: string[]) {
 
   if (!release) {
     // Warm the cache fail-open so the startup hook doesn't re-fetch every call.
-    safeWriteCache({ kind: 'up_to_date', current: VERSION });
+    safeWriteCache({ kind: "up_to_date", current: VERSION });
     if (json) {
-      console.log(JSON.stringify({
-        current_version: VERSION,
-        current_source: 'package-json',
-        latest_version: '',
-        update_available: false,
-        upgrade_command: upgradeCmd,
-        release_url: '',
-        changelog_diff: '',
-        published_at: '',
-        error: 'no_releases',
-      }, null, 2));
+      console.log(
+        JSON.stringify(
+          {
+            current_version: VERSION,
+            current_source: "package-json",
+            latest_version: "",
+            update_available: false,
+            upgrade_command: upgradeCmd,
+            release_url: "",
+            changelog_diff: "",
+            published_at: "",
+            error: "no_releases",
+          },
+          null,
+          2
+        )
+      );
     } else {
-      console.log(`GBrain ${VERSION} — could not check for updates (no releases found or network unavailable).`);
+      console.log(
+        `GBrain ${VERSION} — could not check for updates (no releases found or network unavailable).`
+      );
     }
     return;
   }
 
-  const latestVersion = release.tag.replace(/^v/, '');
-  const updateAvailable = isValidVersionString(latestVersion) && isMinorOrMajorBump(VERSION, latestVersion);
+  const latestVersion = release.tag.replace(/^v/, "");
+  const updateAvailable =
+    isValidVersionString(latestVersion) && isMinorOrMajorBump(VERSION, latestVersion);
 
   // Warm the self-upgrade cache so the next `gbrain <cmd>` startup hook can emit
   // the marker without a network call.
   safeWriteCache(
     updateAvailable
-      ? { kind: 'upgrade_available', current: VERSION, latest: latestVersion }
-      : { kind: 'up_to_date', current: VERSION },
+      ? { kind: "upgrade_available", current: VERSION, latest: latestVersion }
+      : { kind: "up_to_date", current: VERSION }
   );
 
-  let changelogDiff = '';
+  let changelogDiff = "";
   if (updateAvailable) {
     changelogDiff = await fetchChangelog(VERSION, latestVersion);
   }
 
   const result: CheckUpdateResult = {
     current_version: VERSION,
-    current_source: 'package-json',
+    current_source: "package-json",
     latest_version: latestVersion,
     update_available: updateAvailable,
     upgrade_command: upgradeCmd,

@@ -4,10 +4,10 @@
 // affected source so cached search results bound to old page types
 // don't survive a `sync --apply`.
 
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'bun:test';
-import { PGLiteEngine } from '../src/core/pglite-engine.ts';
-import { resetPgliteState } from './helpers/reset-pglite.ts';
-import { invalidateQueryCache } from '../src/core/schema-pack/query-cache-invalidator.ts';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "bun:test";
+import { PGLiteEngine } from "../src/core/pglite-engine.ts";
+import { resetPgliteState } from "./helpers/reset-pglite.ts";
+import { invalidateQueryCache } from "../src/core/schema-pack/query-cache-invalidator.ts";
 
 let engine: PGLiteEngine;
 
@@ -31,7 +31,7 @@ async function seedCacheRow(sourceId: string, queryText: string): Promise<void> 
   await engine.executeRaw(
     `INSERT INTO query_cache (id, query_text, source_id, knobs_hash, embedding, results, meta, ttl_seconds, created_at)
      VALUES ($1, $2, $3, 'v3:test', NULL, '[]'::jsonb, '{}'::jsonb, 3600, now())`,
-    [`${sourceId}-${queryText}-id`, queryText, sourceId],
+    [`${sourceId}-${queryText}-id`, queryText, sourceId]
   );
 }
 
@@ -43,41 +43,43 @@ async function countCacheRows(sourceId?: string): Promise<number> {
   return rows[0]?.n ?? 0;
 }
 
-describe('invalidateQueryCache', () => {
-  it('clears all rows for a given source_id', async () => {
-    await seedCacheRow('source-a', 'q1');
-    await seedCacheRow('source-a', 'q2');
-    await seedCacheRow('source-b', 'q1');
-    expect(await countCacheRows('source-a')).toBe(2);
+describe("invalidateQueryCache", () => {
+  it("clears all rows for a given source_id", async () => {
+    await seedCacheRow("source-a", "q1");
+    await seedCacheRow("source-a", "q2");
+    await seedCacheRow("source-b", "q1");
+    expect(await countCacheRows("source-a")).toBe(2);
 
-    const result = await invalidateQueryCache(engine, 'source-a');
+    const result = await invalidateQueryCache(engine, "source-a");
     expect(result.rows_invalidated).toBe(2);
-    expect(await countCacheRows('source-a')).toBe(0);
-    expect(await countCacheRows('source-b')).toBe(1);
+    expect(await countCacheRows("source-a")).toBe(0);
+    expect(await countCacheRows("source-b")).toBe(1);
   });
 
-  it('clears all rows when sourceId is omitted', async () => {
-    await seedCacheRow('source-a', 'q1');
-    await seedCacheRow('source-b', 'q2');
+  it("clears all rows when sourceId is omitted", async () => {
+    await seedCacheRow("source-a", "q1");
+    await seedCacheRow("source-b", "q2");
     const result = await invalidateQueryCache(engine);
     expect(result.rows_invalidated).toBe(2);
     expect(await countCacheRows()).toBe(0);
   });
 
-  it('is idempotent on empty cache', async () => {
-    const r1 = await invalidateQueryCache(engine, 'source-a');
-    const r2 = await invalidateQueryCache(engine, 'source-a');
+  it("is idempotent on empty cache", async () => {
+    const r1 = await invalidateQueryCache(engine, "source-a");
+    const r2 = await invalidateQueryCache(engine, "source-a");
     expect(r1.rows_invalidated).toBe(0);
     expect(r2.rows_invalidated).toBe(0);
   });
 
-  it('returns {rows_invalidated: 0} silently if engine call fails (never throws)', async () => {
+  it("returns {rows_invalidated: 0} silently if engine call fails (never throws)", async () => {
     // Build a stub engine whose executeRaw always throws.
     const broken = {
-      kind: 'pglite',
-      executeRaw: async () => { throw new Error('synthetic'); },
+      kind: "pglite",
+      executeRaw: async () => {
+        throw new Error("synthetic");
+      },
     } as unknown as PGLiteEngine;
-    const result = await invalidateQueryCache(broken, 'source-a');
+    const result = await invalidateQueryCache(broken, "source-a");
     expect(result.rows_invalidated).toBe(0);
   });
 });

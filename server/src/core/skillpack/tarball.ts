@@ -18,8 +18,8 @@
  * gzip -n for no original filename + mtime=0 in the header).
  */
 
-import { spawnSync } from 'child_process';
-import { createHash } from 'crypto';
+import { spawnSync } from "child_process";
+import { createHash } from "crypto";
 import {
   existsSync,
   mkdirSync,
@@ -29,9 +29,9 @@ import {
   rmSync,
   statSync,
   writeFileSync,
-} from 'fs';
-import { join, normalize, relative, resolve, sep } from 'path';
-import { tmpdir } from 'os';
+} from "fs";
+import { join, normalize, relative, resolve, sep } from "path";
+import { tmpdir } from "os";
 
 export interface TarballPackOptions {
   /** Absolute path to the directory whose contents become the tarball root. */
@@ -89,34 +89,34 @@ export interface TarballExtractResult {
 }
 
 export type TarballErrorCode =
-  | 'pack_source_missing'
-  | 'pack_failed'
-  | 'extract_tgz_missing'
-  | 'extract_dest_not_empty'
-  | 'extract_failed'
-  | 'extract_path_traversal'
-  | 'extract_disallowed_entry_type'
-  | 'extract_file_too_large'
-  | 'extract_total_too_large'
-  | 'extract_too_many_files'
-  | 'extract_path_too_long'
-  | 'extract_compression_bomb'
-  | 'tar_binary_not_found';
+  | "pack_source_missing"
+  | "pack_failed"
+  | "extract_tgz_missing"
+  | "extract_dest_not_empty"
+  | "extract_failed"
+  | "extract_path_traversal"
+  | "extract_disallowed_entry_type"
+  | "extract_file_too_large"
+  | "extract_total_too_large"
+  | "extract_too_many_files"
+  | "extract_path_too_long"
+  | "extract_compression_bomb"
+  | "tar_binary_not_found";
 
 export class TarballError extends Error {
   constructor(
     message: string,
     public code: TarballErrorCode,
-    public detail?: { path?: string; size?: number; limit?: number },
+    public detail?: { path?: string; size?: number; limit?: number }
   ) {
     super(message);
-    this.name = 'TarballError';
+    this.name = "TarballError";
   }
 }
 
 /** Compute SHA-256 of a file on disk (streaming would be nicer but this is small). */
 export function fileSha256(path: string): string {
-  return createHash('sha256').update(readFileSync(path)).digest('hex');
+  return createHash("sha256").update(readFileSync(path)).digest("hex");
 }
 
 /**
@@ -126,23 +126,23 @@ export function fileSha256(path: string): string {
  */
 function resolveTarBinary(preferGnu: boolean): string {
   if (preferGnu) {
-    for (const candidate of ['gtar', '/usr/local/opt/gnu-tar/libexec/gnubin/tar']) {
-      const probe = spawnSync(candidate, ['--version'], { encoding: 'utf-8' });
-      if (probe.status === 0 && probe.stdout.includes('GNU')) return candidate;
+    for (const candidate of ["gtar", "/usr/local/opt/gnu-tar/libexec/gnubin/tar"]) {
+      const probe = spawnSync(candidate, ["--version"], { encoding: "utf-8" });
+      if (probe.status === 0 && probe.stdout.includes("GNU")) return candidate;
     }
   }
   // Fall back to system tar — must validate it's GNU for the pack path.
-  const sysProbe = spawnSync('tar', ['--version'], { encoding: 'utf-8' });
+  const sysProbe = spawnSync("tar", ["--version"], { encoding: "utf-8" });
   if (sysProbe.status !== 0) {
-    throw new TarballError('tar binary not found on PATH', 'tar_binary_not_found');
+    throw new TarballError("tar binary not found on PATH", "tar_binary_not_found");
   }
-  if (preferGnu && !sysProbe.stdout.includes('GNU')) {
+  if (preferGnu && !sysProbe.stdout.includes("GNU")) {
     throw new TarballError(
-      'GNU tar required for deterministic packing (bsdtar default on macOS lacks --sort + --mtime support). Install via: brew install gnu-tar',
-      'tar_binary_not_found',
+      "GNU tar required for deterministic packing (bsdtar default on macOS lacks --sort + --mtime support). Install via: brew install gnu-tar",
+      "tar_binary_not_found"
     );
   }
-  return 'tar';
+  return "tar";
 }
 
 /**
@@ -152,12 +152,12 @@ export function packTarball(opts: TarballPackOptions): TarballPackResult {
   if (!existsSync(opts.sourceDir)) {
     throw new TarballError(
       `pack source directory does not exist: ${opts.sourceDir}`,
-      'pack_source_missing',
+      "pack_source_missing"
     );
   }
 
   const tar = resolveTarBinary(true);
-  const excludeFlags = (opts.exclude ?? []).flatMap((p) => ['--exclude', p]);
+  const excludeFlags = (opts.exclude ?? []).flatMap((p) => ["--exclude", p]);
 
   // Determinism flags:
   //   --sort=name: entries in lexicographic order
@@ -166,8 +166,8 @@ export function packTarball(opts: TarballPackOptions): TarballPackResult {
   //   --pax-option=exthdr.name=...,delete=atime,delete=ctime: strip nondeterministic pax atime/ctime
   //   GZIP=-n: gzip header without original filename + mtime
   //   TZ=UTC: align mtime serialization regardless of host TZ
-  const env = { ...process.env, GZIP: '-n', TZ: 'UTC' };
-  const sourceParent = resolve(opts.sourceDir, '..');
+  const env = { ...process.env, GZIP: "-n", TZ: "UTC" };
+  const sourceParent = resolve(opts.sourceDir, "..");
   const sourceLeaf = relative(sourceParent, opts.sourceDir);
 
   // Stage to a tempfile so a failed pack doesn't leave a partial tarball at outPath.
@@ -176,22 +176,22 @@ export function packTarball(opts: TarballPackOptions): TarballPackResult {
   const result = spawnSync(
     tar,
     [
-      '--create',
-      '--gzip',
-      '--file',
+      "--create",
+      "--gzip",
+      "--file",
       stage,
-      '--sort=name',
-      '--mtime=@0',
-      '--owner=0',
-      '--group=0',
-      '--numeric-owner',
-      '--pax-option=delete=atime,delete=ctime,exthdr.name=%d/PaxHeaders/%f',
-      '-C',
+      "--sort=name",
+      "--mtime=@0",
+      "--owner=0",
+      "--group=0",
+      "--numeric-owner",
+      "--pax-option=delete=atime,delete=ctime,exthdr.name=%d/PaxHeaders/%f",
+      "-C",
       sourceParent,
       ...excludeFlags,
       sourceLeaf,
     ],
-    { env, encoding: 'utf-8' },
+    { env, encoding: "utf-8" }
   );
 
   if (result.status !== 0) {
@@ -199,13 +199,13 @@ export function packTarball(opts: TarballPackOptions): TarballPackResult {
       rmSync(stage, { force: true });
     } catch {}
     throw new TarballError(
-      `tar pack failed (exit ${result.status}): ${result.stderr || result.stdout || '<no output>'}`,
-      'pack_failed',
+      `tar pack failed (exit ${result.status}): ${result.stderr || result.stdout || "<no output>"}`,
+      "pack_failed"
     );
   }
 
   // Move staged tarball into place atomically.
-  mkdirSync(resolve(opts.outPath, '..'), { recursive: true });
+  mkdirSync(resolve(opts.outPath, ".."), { recursive: true });
   // Use rename via fs operations rather than mv (cross-FS safe via readFile/write fallback).
   try {
     const data = readFileSync(stage);
@@ -217,7 +217,7 @@ export function packTarball(opts: TarballPackOptions): TarballPackResult {
     } catch {}
     throw new TarballError(
       `failed to move staged tarball to outPath: ${(err as Error).message}`,
-      'pack_failed',
+      "pack_failed"
     );
   }
 
@@ -225,17 +225,16 @@ export function packTarball(opts: TarballPackOptions): TarballPackResult {
   const compressedBytes = statSync(opts.outPath).size;
 
   // Count files (re-list via tar -tzf for a quick traversal).
-  const listResult = spawnSync(tar, ['--list', '--file', opts.outPath], { encoding: 'utf-8' });
+  const listResult = spawnSync(tar, ["--list", "--file", opts.outPath], { encoding: "utf-8" });
   if (listResult.status !== 0) {
     throw new TarballError(
       `tar --list failed on freshly-packed tarball: ${listResult.stderr}`,
-      'pack_failed',
+      "pack_failed"
     );
   }
   const fileCount = listResult.stdout
-    .split('\n')
-    .filter((line) => line.length > 0 && !line.endsWith('/'))
-    .length;
+    .split("\n")
+    .filter((line) => line.length > 0 && !line.endsWith("/")).length;
 
   return { outPath: opts.outPath, sha256, fileCount, compressedBytes };
 }
@@ -249,17 +248,14 @@ export function extractTarball(opts: TarballExtractOptions): TarballExtractResul
   const caps = { ...DEFAULT_EXTRACT_CAPS, ...(opts.caps ?? {}) };
 
   if (!existsSync(opts.tgzPath)) {
-    throw new TarballError(
-      `tarball not found: ${opts.tgzPath}`,
-      'extract_tgz_missing',
-    );
+    throw new TarballError(`tarball not found: ${opts.tgzPath}`, "extract_tgz_missing");
   }
   if (existsSync(opts.destDir)) {
     const entries = readdirSync(opts.destDir);
     if (entries.length > 0) {
       throw new TarballError(
         `extract destination is not empty: ${opts.destDir}`,
-        'extract_dest_not_empty',
+        "extract_dest_not_empty"
       );
     }
   } else {
@@ -278,13 +274,13 @@ export function extractTarball(opts: TarballExtractOptions): TarballExtractResul
   // Use --list --verbose for type info (the leading char encodes file type).
   const listResult = spawnSync(
     tar,
-    ['--list', '--verbose', '--file', opts.tgzPath, '--numeric-owner'],
-    { encoding: 'utf-8' },
+    ["--list", "--verbose", "--file", opts.tgzPath, "--numeric-owner"],
+    { encoding: "utf-8" }
   );
   if (listResult.status !== 0) {
     throw new TarballError(
       `tar --list failed: ${listResult.stderr || listResult.stdout}`,
-      'extract_failed',
+      "extract_failed"
     );
   }
 
@@ -292,8 +288,8 @@ export function extractTarball(opts: TarballExtractOptions): TarballExtractResul
   let fileCount = 0;
   let totalBytes = 0;
 
-  for (const rawLine of listResult.stdout.split('\n')) {
-    const line = rawLine.replace(/\r$/, '');
+  for (const rawLine of listResult.stdout.split("\n")) {
+    const line = rawLine.replace(/\r$/, "");
     if (!line.trim()) continue;
     // Format: `-rw-r--r-- 0/0 1234 2026-01-01 00:00 path/to/file`
     // Some entries may have wrapped fields; use a permissive parser.
@@ -309,64 +305,64 @@ export function extractTarball(opts: TarballExtractOptions): TarballExtractResul
     const entryPath = line.slice(pathStart);
 
     // Type allowlist: '-' regular, 'd' directory. Reject everything else.
-    if (typeChar !== '-' && typeChar !== 'd') {
+    if (typeChar !== "-" && typeChar !== "d") {
       throw new TarballError(
         `tarball contains disallowed entry type '${typeChar}' at ${entryPath} (symlinks, hardlinks, devices, FIFOs forbidden)`,
-        'extract_disallowed_entry_type',
-        { path: entryPath },
+        "extract_disallowed_entry_type",
+        { path: entryPath }
       );
     }
 
     if (entryPath.length > caps.maxPathLength) {
       throw new TarballError(
         `tarball entry path exceeds maxPathLength (${caps.maxPathLength}): ${entryPath}`,
-        'extract_path_too_long',
-        { path: entryPath, size: entryPath.length, limit: caps.maxPathLength },
+        "extract_path_too_long",
+        { path: entryPath, size: entryPath.length, limit: caps.maxPathLength }
       );
     }
 
     // Path traversal check: resolve relative to destDir, ensure result is contained.
     const normalized = normalize(entryPath);
-    if (normalized.startsWith('..' + sep) || normalized === '..' || normalized.startsWith('/')) {
+    if (normalized.startsWith(".." + sep) || normalized === ".." || normalized.startsWith("/")) {
       throw new TarballError(
         `tarball entry escapes destination: ${entryPath}`,
-        'extract_path_traversal',
-        { path: entryPath },
+        "extract_path_traversal",
+        { path: entryPath }
       );
     }
 
-    if (typeChar === '-') {
+    if (typeChar === "-") {
       fileCount += 1;
       if (fileCount > caps.maxFiles) {
         throw new TarballError(
           `tarball exceeds maxFiles cap (${caps.maxFiles})`,
-          'extract_too_many_files',
-          { limit: caps.maxFiles },
+          "extract_too_many_files",
+          { limit: caps.maxFiles }
         );
       }
       // Field at index 2 is size (for `-` entries with --numeric-owner).
       // owner/group is `0/0` at fields[1], size at fields[2].
-      const size = parseInt(fields[2] ?? '0', 10);
+      const size = parseInt(fields[2] ?? "0", 10);
       if (!Number.isFinite(size) || size < 0) {
         throw new TarballError(
           `tarball entry has invalid size: ${entryPath} (raw: ${fields[2]})`,
-          'extract_failed',
-          { path: entryPath },
+          "extract_failed",
+          { path: entryPath }
         );
       }
       if (size > caps.maxBytesPerFile) {
         throw new TarballError(
           `tarball entry ${entryPath} (${size} bytes) exceeds maxBytesPerFile cap (${caps.maxBytesPerFile})`,
-          'extract_file_too_large',
-          { path: entryPath, size, limit: caps.maxBytesPerFile },
+          "extract_file_too_large",
+          { path: entryPath, size, limit: caps.maxBytesPerFile }
         );
       }
       totalBytes += size;
       if (totalBytes > caps.maxTotalBytes) {
         throw new TarballError(
           `tarball decompressed total ${totalBytes} bytes exceeds maxTotalBytes cap (${caps.maxTotalBytes})`,
-          'extract_total_too_large',
-          { size: totalBytes, limit: caps.maxTotalBytes },
+          "extract_total_too_large",
+          { size: totalBytes, limit: caps.maxTotalBytes }
         );
       }
     }
@@ -376,8 +372,8 @@ export function extractTarball(opts: TarballExtractOptions): TarballExtractResul
   if (compressedBytes > 0 && totalBytes / compressedBytes > caps.maxCompressionRatio) {
     throw new TarballError(
       `compression ratio ${(totalBytes / compressedBytes).toFixed(1)}:1 exceeds cap (${caps.maxCompressionRatio}:1) — possible decompression bomb`,
-      'extract_compression_bomb',
-      { size: totalBytes, limit: caps.maxCompressionRatio },
+      "extract_compression_bomb",
+      { size: totalBytes, limit: caps.maxCompressionRatio }
     );
   }
 
@@ -385,13 +381,13 @@ export function extractTarball(opts: TarballExtractOptions): TarballExtractResul
   // GNU tar's --no-same-owner is implicit when not root; pass numeric-owner only.
   const extractResult = spawnSync(
     tar,
-    ['--extract', '--gzip', '--file', opts.tgzPath, '-C', opts.destDir, '--numeric-owner'],
-    { encoding: 'utf-8' },
+    ["--extract", "--gzip", "--file", opts.tgzPath, "-C", opts.destDir, "--numeric-owner"],
+    { encoding: "utf-8" }
   );
   if (extractResult.status !== 0) {
     throw new TarballError(
       `tar --extract failed: ${extractResult.stderr || extractResult.stdout}`,
-      'extract_failed',
+      "extract_failed"
     );
   }
 
@@ -400,7 +396,7 @@ export function extractTarball(opts: TarballExtractOptions): TarballExtractResul
   if (realDest !== destReal) {
     throw new TarballError(
       `destination realpath changed during extract (possible symlink attack)`,
-      'extract_path_traversal',
+      "extract_path_traversal"
     );
   }
 

@@ -12,7 +12,7 @@
  * LSD_PROFILE config object.
  */
 
-import type { BrainEngine } from '../core/engine.ts';
+import type { BrainEngine } from "../core/engine.ts";
 import {
   runBrainstorm,
   formatBrainstormMarkdown,
@@ -20,13 +20,13 @@ import {
   BRAINSTORM_PROFILE,
   LSD_PROFILE,
   type BrainstormProfile,
-} from '../core/brainstorm/orchestrator.ts';
-import { loadConfig } from '../core/config.ts';
-import { StructuredAgentError } from '../core/errors.ts';
-import { serializeMarkdown } from '../core/markdown.ts';
-import { importFromContent } from '../core/import-file.ts';
-import { writePageThrough, type WriteThroughResult } from '../core/write-through.ts';
-import { randomBytes } from 'crypto';
+} from "../core/brainstorm/orchestrator.ts";
+import { loadConfig } from "../core/config.ts";
+import { StructuredAgentError } from "../core/errors.ts";
+import { serializeMarkdown } from "../core/markdown.ts";
+import { importFromContent } from "../core/import-file.ts";
+import { writePageThrough, type WriteThroughResult } from "../core/write-through.ts";
+import { randomBytes } from "crypto";
 
 export interface BrainstormCliArgs {
   question?: string;
@@ -60,17 +60,17 @@ export function parseBrainstormArgs(args: string[]): BrainstormCliArgs {
   let i = 0;
   while (i < args.length) {
     const arg = args[i];
-    if (arg === '--help' || arg === '-h') {
+    if (arg === "--help" || arg === "-h") {
       out.help = true;
-    } else if (arg === '--json') {
+    } else if (arg === "--json") {
       out.json = true;
-    } else if (arg === '--save') {
+    } else if (arg === "--save") {
       out.save = true;
-    } else if (arg === '--no-save') {
+    } else if (arg === "--no-save") {
       out.save = false;
-    } else if (arg === '--yes' || arg === '-y') {
+    } else if (arg === "--yes" || arg === "-y") {
       out.yes = true;
-    } else if (arg === '--limit') {
+    } else if (arg === "--limit") {
       const v = args[++i];
       const n = v ? parseInt(v, 10) : NaN;
       if (!Number.isFinite(n) || n <= 0) {
@@ -78,7 +78,7 @@ export function parseBrainstormArgs(args: string[]): BrainstormCliArgs {
         return out;
       }
       out.limit = n;
-    } else if (arg === '--max-cost') {
+    } else if (arg === "--max-cost") {
       const v = args[++i];
       const n = v ? parseFloat(v) : NaN;
       if (!Number.isFinite(n) || n <= 0) {
@@ -86,7 +86,7 @@ export function parseBrainstormArgs(args: string[]): BrainstormCliArgs {
         return out;
       }
       out.maxCost = n;
-    } else if (arg === '--max-far-set') {
+    } else if (arg === "--max-far-set") {
       const v = args[++i];
       const n = v ? parseInt(v, 10) : NaN;
       if (!Number.isFinite(n) || n <= 0) {
@@ -94,16 +94,16 @@ export function parseBrainstormArgs(args: string[]): BrainstormCliArgs {
         return out;
       }
       out.maxFarSet = n;
-    } else if (arg === '--strict-budget') {
+    } else if (arg === "--strict-budget") {
       out.strictBudget = true;
-    } else if (arg === '--judge-model') {
+    } else if (arg === "--judge-model") {
       const v = args[++i];
       if (!v) {
         out.error = `--judge-model requires a model id (e.g. anthropic:claude-sonnet-4-6)`;
         return out;
       }
       out.judgeModel = v;
-    } else if (arg === '--max-ideas-per-judge-call') {
+    } else if (arg === "--max-ideas-per-judge-call") {
       const v = args[++i];
       const n = v ? parseInt(v, 10) : NaN;
       if (!Number.isFinite(n) || n <= 0) {
@@ -111,18 +111,18 @@ export function parseBrainstormArgs(args: string[]): BrainstormCliArgs {
         return out;
       }
       out.maxIdeasPerJudgeCall = n;
-    } else if (arg === '--resume') {
+    } else if (arg === "--resume") {
       const v = args[++i];
-      if (!v || v.startsWith('--')) {
+      if (!v || v.startsWith("--")) {
         out.error = `--resume requires a run_id (use --list-runs to see saved runs)`;
         return out;
       }
       out.resume = v;
-    } else if (arg === '--force-resume') {
+    } else if (arg === "--force-resume") {
       out.forceResume = true;
-    } else if (arg === '--list-runs') {
+    } else if (arg === "--list-runs") {
       out.listRuns = true;
-    } else if (arg.startsWith('--')) {
+    } else if (arg.startsWith("--")) {
       out.error = `unknown flag: ${arg}`;
       return out;
     } else {
@@ -131,7 +131,7 @@ export function parseBrainstormArgs(args: string[]): BrainstormCliArgs {
     i++;
   }
   if (positional.length > 0) {
-    out.question = positional.join(' ');
+    out.question = positional.join(" ");
   }
   return out;
 }
@@ -208,7 +208,7 @@ async function runBrainstormCli(
   engine: BrainEngine,
   args: string[],
   profile: BrainstormProfile,
-  help: string,
+  help: string
 ): Promise<void> {
   const parsed = parseBrainstormArgs(args);
   if (parsed.help) {
@@ -222,16 +222,16 @@ async function runBrainstormCli(
     return;
   }
   if (parsed.listRuns) {
-    const { listRuns } = await import('../core/brainstorm/checkpoint.ts');
+    const { listRuns } = await import("../core/brainstorm/checkpoint.ts");
     const runs = listRuns();
     if (parsed.json) {
       console.log(JSON.stringify(runs, null, 2));
     } else if (runs.length === 0) {
-      console.log('No saved brainstorm runs.');
+      console.log("No saved brainstorm runs.");
     } else {
-      console.log('Saved runs (newest first):');
-      console.log('run_id            | iso_date                  | question');
-      console.log('------------------+---------------------------+----------------');
+      console.log("Saved runs (newest first):");
+      console.log("run_id            | iso_date                  | question");
+      console.log("------------------+---------------------------+----------------");
       for (const r of runs) {
         const iso = new Date(r.mtime).toISOString();
         console.log(`${r.run_id} | ${iso} | ${r.question.slice(0, 60)}`);
@@ -248,7 +248,7 @@ async function runBrainstormCli(
 
   const config = loadConfig() ?? {};
   // Honor env-var skip for scripted environments that can't easily pass --yes.
-  const skipPreview = parsed.yes || process.env.GBRAIN_NO_BRAINSTORM_PREVIEW === '1';
+  const skipPreview = parsed.yes || process.env.GBRAIN_NO_BRAINSTORM_PREVIEW === "1";
 
   // --limit override: replace m_far on a shallow copy of the profile.
   const effectiveProfile: BrainstormProfile = parsed.limit
@@ -309,14 +309,14 @@ async function runBrainstormCli(
   const shouldSave = parsed.save ?? profile.default_save;
   if (shouldSave) {
     const slug = buildIdeaSlug(parsed.question, profile.label);
-    const title = `${profile.label === 'lsd' ? 'LSD' : 'Brainstorm'}: ${parsed.question.slice(0, 100)}`;
+    const title = `${profile.label === "lsd" ? "LSD" : "Brainstorm"}: ${parsed.question.slice(0, 100)}`;
     // Build ONE frontmatter object and render via the canonical serializer so
     // the saved file round-trips through `gbrain sync` byte-for-byte. Include
     // filtered ideas (onlyPassed:false) so a future --retry-judge has the full
     // set to re-score.
     const fmObj = buildBrainstormFrontmatterObject(result);
     const body = formatBrainstormMarkdown(result, { onlyPassed: false, includeMeta: true });
-    const content = serializeMarkdown(fmObj, body, '', { type: 'note', title, tags: [] });
+    const content = serializeMarkdown(fmObj, body, "", { type: "note", title, tags: [] });
 
     const outcome = await persistSavedIdea(engine, { slug, content, provenanceVia: profile.label });
     const msg = formatSaveOutcome(outcome, { profileLabel: profile.label, slug });
@@ -356,9 +356,9 @@ export interface SaveMessage {
  */
 export async function persistSavedIdea(
   engine: BrainEngine,
-  args: { slug: string; content: string; sourceId?: string; provenanceVia: string },
+  args: { slug: string; content: string; sourceId?: string; provenanceVia: string }
 ): Promise<SaveOutcome> {
-  const sourceId = args.sourceId ?? 'default';
+  const sourceId = args.sourceId ?? "default";
   let dbSaved = false;
   let dbError: string | undefined;
   try {
@@ -376,7 +376,7 @@ export async function persistSavedIdea(
         sourceId,
         frontmatterOverrides: { source_kind: args.provenanceVia },
       })
-    : { written: false, skipped: 'page_not_found_after_write' };
+    : { written: false, skipped: "page_not_found_after_write" };
   return { dbSaved, dbError, writeThrough };
 }
 
@@ -389,7 +389,7 @@ export async function persistSavedIdea(
  */
 export function formatSaveOutcome(
   outcome: SaveOutcome,
-  ctx: { profileLabel: string; slug: string },
+  ctx: { profileLabel: string; slug: string }
 ): SaveMessage {
   const { dbSaved, dbError, writeThrough } = outcome;
   const stderr: string[] = [];
@@ -405,14 +405,14 @@ export function formatSaveOutcome(
       exitCode: 0,
     };
   }
-  if (dbSaved && writeThrough.skipped === 'no_repo_configured') {
+  if (dbSaved && writeThrough.skipped === "no_repo_configured") {
     return {
       stdout: `\n_Saved to DB page \`${ctx.slug}\` (no \`sync.repo_path\` set — skipped file write)._`,
       stderr,
       exitCode: 0,
     };
   }
-  if (dbSaved && writeThrough.skipped === 'repo_not_found') {
+  if (dbSaved && writeThrough.skipped === "repo_not_found") {
     return {
       stdout: `\n_Saved to DB page \`${ctx.slug}\` (\`sync.repo_path\` is not a directory — skipped file write)._`,
       stderr,
@@ -429,7 +429,7 @@ export function formatSaveOutcome(
   }
   // Nothing persisted — the silent-false-success bug class. Exit nonzero.
   stderr.push(
-    `gbrain ${ctx.profileLabel}: save FAILED — neither DB page nor file was written. The idea is NOT persisted.`,
+    `gbrain ${ctx.profileLabel}: save FAILED — neither DB page nor file was written. The idea is NOT persisted.`
   );
   return { stderr, exitCode: 1 };
 }
@@ -444,18 +444,18 @@ export function formatSaveOutcome(
  */
 export function buildIdeaSlug(
   question: string,
-  label: 'brainstorm' | 'lsd',
-  nonce?: string,
+  label: "brainstorm" | "lsd",
+  nonce?: string
 ): string {
   const date = new Date().toISOString().slice(0, 10);
   const stem = question
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
     .slice(0, 60)
-    .replace(/^-+|-+$/g, '');
-  const suffix = nonce ?? randomBytes(3).toString('hex');
-  return `wiki/ideas/${date}-${label}-${stem || 'untitled'}-${suffix}`;
+    .replace(/^-+|-+$/g, "");
+  const suffix = nonce ?? randomBytes(3).toString("hex");
+  return `wiki/ideas/${date}-${label}-${stem || "untitled"}-${suffix}`;
 }
 
 /** CLI entry: `gbrain brainstorm`. */

@@ -27,14 +27,14 @@
  * objects coexist during the soak period.
  */
 
-import type { BrainEngine } from '../../core/engine.ts';
-import type { StorageBackend, StorageConfig } from '../../core/storage.ts';
+import type { BrainEngine } from "../../core/engine.ts";
+import type { StorageBackend, StorageConfig } from "../../core/storage.ts";
 
 interface LedgerRow {
   file_id: number;
   storage_path_old: string;
   storage_path_new: string;
-  status: 'pending' | 'copy_done' | 'db_updated' | 'complete' | 'failed';
+  status: "pending" | "copy_done" | "db_updated" | "complete" | "failed";
 }
 
 export interface BackfillReport {
@@ -59,7 +59,7 @@ export interface BackfillReport {
 export async function runStorageBackfill(
   engine: BrainEngine,
   storage: StorageBackend | null,
-  opts?: { dryRun?: boolean },
+  opts?: { dryRun?: boolean }
 ): Promise<BackfillReport> {
   const report: BackfillReport = {
     total: 0,
@@ -76,16 +76,16 @@ export async function runStorageBackfill(
   const rows = await engine.executeRaw<LedgerRow>(
     `SELECT file_id, storage_path_old, storage_path_new, status
        FROM file_migration_ledger
-      ORDER BY file_id`,
+      ORDER BY file_id`
   );
   report.total = rows.length;
 
   for (const row of rows) {
-    if (row.status === 'complete') {
+    if (row.status === "complete") {
       report.alreadyComplete++;
       continue;
     }
-    if (row.status === 'failed') {
+    if (row.status === "failed") {
       report.failed++;
       continue;
     }
@@ -102,7 +102,7 @@ export async function runStorageBackfill(
       let status = row.status;
 
       // pending → copy_done: COPY the bytes.
-      if (status === 'pending') {
+      if (status === "pending") {
         // If the new path is already populated (e.g. from a previous
         // partial run), the copy is redundant but idempotent on S3/
         // Supabase where upload overwrites the key.
@@ -115,38 +115,38 @@ export async function runStorageBackfill(
           `UPDATE file_migration_ledger
              SET status = 'copy_done', updated_at = now()
            WHERE file_id = $1`,
-          [row.file_id],
+          [row.file_id]
         );
-        status = 'copy_done';
+        status = "copy_done";
       }
 
       // copy_done → db_updated: flip files.storage_path to the new
       // path. Once this commits, downloads go through the new path
       // and the old object is orphaned (but still present on disk
       // for rollback within the soak window).
-      if (status === 'copy_done') {
-        await engine.executeRaw(
-          `UPDATE files SET storage_path = $1 WHERE id = $2`,
-          [row.storage_path_new, row.file_id],
-        );
+      if (status === "copy_done") {
+        await engine.executeRaw(`UPDATE files SET storage_path = $1 WHERE id = $2`, [
+          row.storage_path_new,
+          row.file_id,
+        ]);
         await engine.executeRaw(
           `UPDATE file_migration_ledger
              SET status = 'db_updated', updated_at = now()
            WHERE file_id = $1`,
-          [row.file_id],
+          [row.file_id]
         );
-        status = 'db_updated';
+        status = "db_updated";
       }
 
       // db_updated → complete: mark terminal. The old-object delete
       // happens in a separate sub-phase (future release) so operators
       // can verify the new paths before we drop the safety net.
-      if (status === 'db_updated') {
+      if (status === "db_updated") {
         await engine.executeRaw(
           `UPDATE file_migration_ledger
              SET status = 'complete', updated_at = now()
            WHERE file_id = $1`,
-          [row.file_id],
+          [row.file_id]
         );
         report.nowComplete++;
       }
@@ -161,7 +161,7 @@ export async function runStorageBackfill(
           `UPDATE file_migration_ledger
              SET status = 'failed', error = $1, updated_at = now()
            WHERE file_id = $2`,
-          [msg.slice(0, 500), row.file_id],
+          [msg.slice(0, 500), row.file_id]
         );
       } catch {
         // Best-effort: if we can't even write 'failed', report the

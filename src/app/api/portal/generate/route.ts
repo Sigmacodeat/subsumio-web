@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 import { signPortalToken } from "@/lib/portal-token";
 import { createHandler } from "@/lib/api-handler";
@@ -22,5 +21,5 @@ export const POST = createHandler(
   async (ctx, body, _query, _req) => {
     const token = await signPortalToken(body.caseSlug, undefined, ctx.brainId);
     return Response.json({ token, url: `/portal/${token}` });
-  },
+  }
 );

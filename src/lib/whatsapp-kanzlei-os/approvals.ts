@@ -40,13 +40,15 @@ export function actionTypeForWhatsAppIntent(intent: string): ActionType {
 }
 
 function safeSlugPart(input: string): string {
-  return input
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 72) || "approval";
+  return (
+    input
+      .toLowerCase()
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "")
+      .slice(0, 72) || "approval"
+  );
 }
 
 function isClientRole(role: WhatsAppIdentity["role"] | undefined): boolean {
@@ -61,7 +63,10 @@ function defaultClientFollowUp(input: WhatsAppApprovalInput): string {
   ].join("\n");
 }
 
-function buildExecutablePayload(input: WhatsAppApprovalInput, actionType: ActionType): Record<string, unknown> {
+function buildExecutablePayload(
+  input: WhatsAppApprovalInput,
+  actionType: ActionType
+): Record<string, unknown> {
   const payload: Record<string, unknown> = {
     channel: "whatsapp",
     intent: input.risk.intent,
@@ -74,7 +79,8 @@ function buildExecutablePayload(input: WhatsAppApprovalInput, actionType: Action
   if (input.targetSlug) payload.target_slug = input.targetSlug;
 
   if (actionType === "client_message_send") {
-    payload.to = input.recipientPhone ?? (isClientRole(input.sender.role) ? input.sender.phone : undefined);
+    payload.to =
+      input.recipientPhone ?? (isClientRole(input.sender.role) ? input.sender.phone : undefined);
     payload.message = defaultClientFollowUp(input);
     payload.related_intake_slug = input.targetSlug;
   }
@@ -87,7 +93,8 @@ function buildExecutablePayload(input: WhatsAppApprovalInput, actionType: Action
   }
 
   if (actionType === "case_create") {
-    payload.title = input.messageDraft ?? (input.normalizedText.slice(0, 120) || "Neue WhatsApp-Akte");
+    payload.title =
+      input.messageDraft ?? (input.normalizedText.slice(0, 120) || "Neue WhatsApp-Akte");
     payload.client_name = isClientRole(input.sender.role) ? input.sender.name : undefined;
     payload.source_intake_slug = input.targetSlug;
   }
@@ -95,7 +102,10 @@ function buildExecutablePayload(input: WhatsAppApprovalInput, actionType: Action
   return payload;
 }
 
-export function buildWhatsAppApproval(input: WhatsAppApprovalInput, at: Date = new Date()): {
+export function buildWhatsAppApproval(
+  input: WhatsAppApprovalInput,
+  at: Date = new Date()
+): {
   slug: string;
   title: string;
   content: string;

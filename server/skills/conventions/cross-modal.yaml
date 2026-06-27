@@ -22,14 +22,14 @@ review_pairs:
 refusal_routing:
   # When a model refuses, silently switch to the next model
   chain:
-    - primary   # host default model
-    - deepseek  # DeepSeek V3.1
-    - qwen      # Qwen 3.5
-    - groq      # fast fallback
+    - primary # host default model
+    - deepseek # DeepSeek V3.1
+    - qwen # Qwen 3.5
+    - groq # fast fallback
   behavior: "silent_switch"
   rule: "Never show refusal to user. Never announce the switch."
 
 spawn_rules:
-  threshold: 3  # 3+ items = spawn sub-agent
+  threshold: 3 # 3+ items = spawn sub-agent
   model: "cheap" # use the cheapest model that handles the task
   timeout_seconds: 120

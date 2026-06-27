@@ -1,9 +1,9 @@
-import type { StorageBackend, StorageConfig } from '../storage.ts';
+import type { StorageBackend, StorageConfig } from "../storage.ts";
 
 /** Size thresholds for upload method selection */
-const TUS_THRESHOLD = 100 * 1024 * 1024;   // 100 MB — use TUS resumable above this
-const TUS_CHUNK_SIZE = 6 * 1024 * 1024;     // 6 MB chunks for TUS uploads
-const SIGNED_URL_EXPIRY = 3600;             // 1 hour
+const TUS_THRESHOLD = 100 * 1024 * 1024; // 100 MB — use TUS resumable above this
+const TUS_CHUNK_SIZE = 6 * 1024 * 1024; // 6 MB chunks for TUS uploads
+const SIGNED_URL_EXPIRY = 3600; // 1 hour
 
 /**
  * Supabase Storage — uses the Supabase Storage REST API.
@@ -19,11 +19,11 @@ export class SupabaseStorage implements StorageBackend {
   private bucket: string;
 
   constructor(config: StorageConfig) {
-    this.projectUrl = config.projectUrl || '';
-    this.serviceRoleKey = config.serviceRoleKey || '';
+    this.projectUrl = config.projectUrl || "";
+    this.serviceRoleKey = config.serviceRoleKey || "";
     this.bucket = config.bucket;
     if (!this.projectUrl || !this.serviceRoleKey) {
-      throw new Error('Supabase storage requires projectUrl and serviceRoleKey in config');
+      throw new Error("Supabase storage requires projectUrl and serviceRoleKey in config");
     }
   }
 
@@ -33,8 +33,8 @@ export class SupabaseStorage implements StorageBackend {
 
   private headers(): Record<string, string> {
     return {
-      'Authorization': `Bearer ${this.serviceRoleKey}`,
-      'apikey': this.serviceRoleKey,
+      Authorization: `Bearer ${this.serviceRoleKey}`,
+      apikey: this.serviceRoleKey,
     };
   }
 
@@ -49,11 +49,11 @@ export class SupabaseStorage implements StorageBackend {
   /** Standard single-request upload for files < 100 MB */
   private async uploadStandard(path: string, data: Buffer, mime?: string): Promise<void> {
     const res = await fetch(this.url(path), {
-      method: 'POST',
+      method: "POST",
       headers: {
         ...this.headers(),
-        'Content-Type': mime || 'application/octet-stream',
-        'x-upsert': 'true',
+        "Content-Type": mime || "application/octet-stream",
+        "x-upsert": "true",
       },
       body: new Uint8Array(data.buffer, data.byteOffset, data.byteLength) as BodyInit,
     });
@@ -73,17 +73,17 @@ export class SupabaseStorage implements StorageBackend {
 
     // Step 1: Create the upload session
     const createRes = await fetch(tusUrl, {
-      method: 'POST',
+      method: "POST",
       headers: {
         ...this.headers(),
-        'Tus-Resumable': '1.0.0',
-        'Upload-Length': String(data.length),
-        'Upload-Metadata': [
+        "Tus-Resumable": "1.0.0",
+        "Upload-Length": String(data.length),
+        "Upload-Metadata": [
           `bucketName ${btoa(this.bucket)}`,
           `objectName ${btoa(path)}`,
-          `contentType ${btoa(mime || 'application/octet-stream')}`,
-        ].join(','),
-        'x-upsert': 'true',
+          `contentType ${btoa(mime || "application/octet-stream")}`,
+        ].join(","),
+        "x-upsert": "true",
       },
     });
 
@@ -92,8 +92,8 @@ export class SupabaseStorage implements StorageBackend {
       throw new Error(`TUS create failed: ${createRes.status} ${body}`);
     }
 
-    const uploadUrl = createRes.headers.get('Location');
-    if (!uploadUrl) throw new Error('TUS create did not return Location header');
+    const uploadUrl = createRes.headers.get("Location");
+    if (!uploadUrl) throw new Error("TUS create did not return Location header");
 
     // Step 2: Upload chunks
     let offset = 0;
@@ -105,11 +105,11 @@ export class SupabaseStorage implements StorageBackend {
           // On retry, check server's actual offset (TUS spec requirement)
           if (attempt > 0) {
             const headRes = await fetch(uploadUrl, {
-              method: 'HEAD',
-              headers: { ...this.headers(), 'Tus-Resumable': '1.0.0' },
+              method: "HEAD",
+              headers: { ...this.headers(), "Tus-Resumable": "1.0.0" },
             });
             if (headRes.ok) {
-              const serverOffset = headRes.headers.get('Upload-Offset');
+              const serverOffset = headRes.headers.get("Upload-Offset");
               if (serverOffset) offset = parseInt(serverOffset, 10);
             }
           }
@@ -118,13 +118,13 @@ export class SupabaseStorage implements StorageBackend {
           const chunk = data.subarray(offset, end);
 
           const patchRes = await fetch(uploadUrl, {
-            method: 'PATCH',
+            method: "PATCH",
             headers: {
               ...this.headers(),
-              'Tus-Resumable': '1.0.0',
-              'Upload-Offset': String(offset),
-              'Content-Type': 'application/offset+octet-stream',
-              'Content-Length': String(chunk.length),
+              "Tus-Resumable": "1.0.0",
+              "Upload-Offset": String(offset),
+              "Content-Type": "application/offset+octet-stream",
+              "Content-Length": String(chunk.length),
             },
             body: new Uint8Array(chunk.buffer, chunk.byteOffset, chunk.byteLength) as BodyInit,
           });
@@ -134,14 +134,14 @@ export class SupabaseStorage implements StorageBackend {
             throw new Error(`TUS PATCH failed: ${patchRes.status} ${body}`);
           }
 
-          const newOffset = patchRes.headers.get('Upload-Offset');
+          const newOffset = patchRes.headers.get("Upload-Offset");
           offset = newOffset ? parseInt(newOffset, 10) : end;
           break; // Success, move to next chunk
         } catch (err) {
           attempt++;
           if (attempt >= maxAttempts) throw err;
           // Exponential backoff: 1s, 2s, 4s
-          await new Promise(r => setTimeout(r, 1000 * Math.pow(2, attempt - 1)));
+          await new Promise((r) => setTimeout(r, 1000 * Math.pow(2, attempt - 1)));
         }
       }
     }
@@ -157,8 +157,8 @@ export class SupabaseStorage implements StorageBackend {
 
   async delete(path: string): Promise<void> {
     const res = await fetch(`${this.projectUrl}/storage/v1/object/${this.bucket}`, {
-      method: 'DELETE',
-      headers: { ...this.headers(), 'Content-Type': 'application/json' },
+      method: "DELETE",
+      headers: { ...this.headers(), "Content-Type": "application/json" },
       body: JSON.stringify({ prefixes: [path] }),
     });
     if (!res.ok && res.status !== 404) throw new Error(`Supabase delete failed: ${res.status}`);
@@ -166,7 +166,7 @@ export class SupabaseStorage implements StorageBackend {
 
   async exists(path: string): Promise<boolean> {
     const res = await fetch(this.url(path), {
-      method: 'HEAD',
+      method: "HEAD",
       headers: this.headers(),
     });
     return res.ok;
@@ -174,27 +174,27 @@ export class SupabaseStorage implements StorageBackend {
 
   async list(prefix: string): Promise<string[]> {
     const res = await fetch(`${this.projectUrl}/storage/v1/object/list/${this.bucket}`, {
-      method: 'POST',
-      headers: { ...this.headers(), 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { ...this.headers(), "Content-Type": "application/json" },
       body: JSON.stringify({ prefix, limit: 1000 }),
     });
     if (!res.ok) throw new Error(`Supabase list failed: ${res.status}`);
-    const items = await res.json() as { name: string }[];
-    return items.map(i => `${prefix}/${i.name}`);
+    const items = (await res.json()) as { name: string }[];
+    return items.map((i) => `${prefix}/${i.name}`);
   }
 
   /** Generate a signed URL with 1-hour expiry for private bucket access */
   async getSignedUrl(path: string, expiresIn: number = SIGNED_URL_EXPIRY): Promise<string> {
     const res = await fetch(`${this.projectUrl}/storage/v1/object/sign/${this.bucket}/${path}`, {
-      method: 'POST',
-      headers: { ...this.headers(), 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { ...this.headers(), "Content-Type": "application/json" },
       body: JSON.stringify({ expiresIn }),
     });
     if (!res.ok) {
       const body = await res.text();
       throw new Error(`Supabase signed URL failed: ${res.status} ${body}`);
     }
-    const result = await res.json() as { signedURL: string };
+    const result = (await res.json()) as { signedURL: string };
     return `${this.projectUrl}${result.signedURL}`;
   }
 

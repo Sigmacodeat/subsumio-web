@@ -40,10 +40,16 @@ When a file shows `locally-modified`, the operator picks one of three options:
 `<target-repo>/services/voice-agent/.gbrain-source.refresh.log` is a JSONL append-only file. Each line records:
 
 ```json
-{"ts": "2026-05-17T12:34:56Z", "src": "code/server.mjs", "state": "locally-modified", "decision": "keep-mine"}
+{
+  "ts": "2026-05-17T12:34:56Z",
+  "src": "code/server.mjs",
+  "state": "locally-modified",
+  "decision": "keep-mine"
+}
 ```
 
 The journal exists for two reasons:
+
 1. **Partial-apply recovery.** If the refresh is interrupted mid-loop (Ctrl-C, crash, machine reboot), re-running `--refresh` reads the journal and resumes where it stopped.
 2. **Audit.** Operators can grep the journal to see which files were touched and why.
 

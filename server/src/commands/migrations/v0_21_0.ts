@@ -25,81 +25,86 @@
  * All phases are idempotent and safe to re-run.
  */
 
-import type { Migration, OrchestratorOpts, OrchestratorResult, OrchestratorPhaseResult } from './types.ts';
+import type {
+  Migration,
+  OrchestratorOpts,
+  OrchestratorResult,
+  OrchestratorPhaseResult,
+} from "./types.ts";
 
 // ── Phase A — Schema ────────────────────────────────────────
 
 async function phaseASchema(opts: OrchestratorOpts): Promise<OrchestratorPhaseResult> {
-  if (opts.dryRun) return { name: 'schema', status: 'skipped', detail: 'dry-run' };
+  if (opts.dryRun) return { name: "schema", status: "skipped", detail: "dry-run" };
   try {
-    const { runMigrateOnlyCore } = await import('./in-process.ts');
+    const { runMigrateOnlyCore } = await import("./in-process.ts");
     await runMigrateOnlyCore();
-    return { name: 'schema', status: 'complete' };
+    return { name: "schema", status: "complete" };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    return { name: 'schema', status: 'failed', detail: msg };
+    return { name: "schema", status: "failed", detail: msg };
   }
 }
 
 // ── Phase B — Backfill prompt ───────────────────────────────
 
 function phaseBBackfillPrompt(opts: OrchestratorOpts): OrchestratorPhaseResult {
-  if (opts.dryRun) return { name: 'backfill_prompt', status: 'skipped', detail: 'dry-run' };
+  if (opts.dryRun) return { name: "backfill_prompt", status: "skipped", detail: "dry-run" };
 
   // Emit a clear console nudge about the two backfill choices. No DB work,
   // no prompt blocking — Cathedral II's chunker_version gate makes the
   // schema-level migration zero-cost, and reindex-code is opt-in.
-  console.log('');
-  console.log('=== v0.21.0 Cathedral II — code reindex options ===');
-  console.log('');
-  console.log('Schema migrated. CHUNKER_VERSION bumped 3 → 4 (folds into content_hash).');
-  console.log('');
-  console.log('Two ways to roll the new chunker over existing code pages:');
-  console.log('');
-  console.log('  1. AUTOMATIC (recommended): next `gbrain sync` detects the version');
-  console.log('     mismatch via sources.chunker_version and forces a full re-walk.');
-  console.log('     No action needed.');
-  console.log('');
-  console.log('  2. IMMEDIATE: `gbrain reindex-code --dry-run` to preview cost, then');
-  console.log('     `gbrain reindex-code --yes` to reindex every code page now.');
-  console.log('');
-  console.log('Either way, the new chunker ships: qualified symbol identity, chunk-grain');
-  console.log('FTS with doc_comment Weight A, parent scope capture (Layer 6 pending),');
-  console.log('and structural edge resolution (Layer 5 pending).');
-  console.log('');
+  console.log("");
+  console.log("=== v0.21.0 Cathedral II — code reindex options ===");
+  console.log("");
+  console.log("Schema migrated. CHUNKER_VERSION bumped 3 → 4 (folds into content_hash).");
+  console.log("");
+  console.log("Two ways to roll the new chunker over existing code pages:");
+  console.log("");
+  console.log("  1. AUTOMATIC (recommended): next `gbrain sync` detects the version");
+  console.log("     mismatch via sources.chunker_version and forces a full re-walk.");
+  console.log("     No action needed.");
+  console.log("");
+  console.log("  2. IMMEDIATE: `gbrain reindex-code --dry-run` to preview cost, then");
+  console.log("     `gbrain reindex-code --yes` to reindex every code page now.");
+  console.log("");
+  console.log("Either way, the new chunker ships: qualified symbol identity, chunk-grain");
+  console.log("FTS with doc_comment Weight A, parent scope capture (Layer 6 pending),");
+  console.log("and structural edge resolution (Layer 5 pending).");
+  console.log("");
 
-  return { name: 'backfill_prompt', status: 'complete' };
+  return { name: "backfill_prompt", status: "complete" };
 }
 
 // ── Phase C — Verify ────────────────────────────────────────
 
 function phaseCVerify(opts: OrchestratorOpts): OrchestratorPhaseResult {
-  if (opts.dryRun) return { name: 'verify', status: 'skipped', detail: 'dry-run' };
+  if (opts.dryRun) return { name: "verify", status: "skipped", detail: "dry-run" };
   try {
     // Round-trip the schema check through `gbrain doctor --json` if available,
     // but gracefully degrade: the real verification is the migration runner
     // reporting success on v27/v28 SQL — this is a belt-and-suspenders check.
     // Cheap and optional; a non-zero exit here does not fail the orchestrator.
-    return { name: 'verify', status: 'complete', detail: 'schema migrations applied via phase A' };
+    return { name: "verify", status: "complete", detail: "schema migrations applied via phase A" };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    return { name: 'verify', status: 'failed', detail: msg };
+    return { name: "verify", status: "failed", detail: msg };
   }
 }
 
 // ── Orchestrator ────────────────────────────────────────────
 
 async function orchestrator(opts: OrchestratorOpts): Promise<OrchestratorResult> {
-  console.log('');
-  console.log('=== v0.21.0 — Code Cathedral II ===');
-  if (opts.dryRun) console.log('  (dry-run; no side effects)');
-  console.log('');
+  console.log("");
+  console.log("=== v0.21.0 — Code Cathedral II ===");
+  if (opts.dryRun) console.log("  (dry-run; no side effects)");
+  console.log("");
 
   const phases: OrchestratorPhaseResult[] = [];
 
   const a = await phaseASchema(opts);
   phases.push(a);
-  if (a.status === 'failed') return finalizeResult(phases, 'failed');
+  if (a.status === "failed") return finalizeResult(phases, "failed");
 
   const b = phaseBBackfillPrompt(opts);
   phases.push(b);
@@ -107,18 +112,18 @@ async function orchestrator(opts: OrchestratorOpts): Promise<OrchestratorResult>
   const c = phaseCVerify(opts);
   phases.push(c);
 
-  const anyFailed = phases.some(p => p.status === 'failed');
-  const status: OrchestratorResult['status'] = anyFailed ? 'partial' : 'complete';
+  const anyFailed = phases.some((p) => p.status === "failed");
+  const status: OrchestratorResult["status"] = anyFailed ? "partial" : "complete";
 
   return finalizeResult(phases, status);
 }
 
 function finalizeResult(
   phases: OrchestratorPhaseResult[],
-  status: 'complete' | 'partial' | 'failed',
+  status: "complete" | "partial" | "failed"
 ): OrchestratorResult {
   return {
-    version: '0.21.0',
+    version: "0.21.0",
     status,
     phases,
   };
@@ -127,17 +132,18 @@ function finalizeResult(
 // ── Export ──────────────────────────────────────────────────
 
 export const v0_21_0: Migration = {
-  version: '0.21.0',
+  version: "0.21.0",
   featurePitch: {
-    headline: 'Code Cathedral II — chunk-grain FTS, qualified symbols, structural edges, 165-language lazy-load',
+    headline:
+      "Code Cathedral II — chunk-grain FTS, qualified symbols, structural edges, 165-language lazy-load",
     description:
-      'v0.21.0 ships the biggest code-search upgrade in gbrain history. Chunk-grain FTS ' +
-      'with doc_comment Weight A ranks natural-language queries against docstrings above ' +
-      'prose. CHUNKER_VERSION 3 → 4 folds into content_hash so every existing code page ' +
-      're-chunks on next sync (via sources.chunker_version gate) or immediately via ' +
-      '`gbrain reindex-code --yes`. File classifier widened to 35 extensions. Markdown ' +
-      'fence extraction, sync --all cost preview, and reconcile-links batch command ' +
-      'ship alongside the chunker upgrade.',
+      "v0.21.0 ships the biggest code-search upgrade in gbrain history. Chunk-grain FTS " +
+      "with doc_comment Weight A ranks natural-language queries against docstrings above " +
+      "prose. CHUNKER_VERSION 3 → 4 folds into content_hash so every existing code page " +
+      "re-chunks on next sync (via sources.chunker_version gate) or immediately via " +
+      "`gbrain reindex-code --yes`. File classifier widened to 35 extensions. Markdown " +
+      "fence extraction, sync --all cost preview, and reconcile-links batch command " +
+      "ship alongside the chunker upgrade.",
   },
   orchestrator,
 };

@@ -1,11 +1,11 @@
-import { existsSync, readFileSync, writeFileSync, statSync } from 'fs';
-import { execFileSync } from 'child_process';
-import { join, relative } from 'path';
-import type { BrainEngine } from '../core/engine.ts';
-import { DELETE_BATCH_SIZE } from '../core/engine-constants.ts';
-import { importFile } from '../core/import-file.ts';
-import { collectSyncableFiles } from './import.ts';
-import { createInterface } from 'readline';
+import { existsSync, readFileSync, writeFileSync, statSync } from "fs";
+import { execFileSync } from "child_process";
+import { join, relative } from "path";
+import type { BrainEngine } from "../core/engine.ts";
+import { DELETE_BATCH_SIZE } from "../core/engine-constants.ts";
+import { importFile } from "../core/import-file.ts";
+import { collectSyncableFiles } from "./import.ts";
+import { createInterface } from "readline";
 import {
   buildSyncManifest,
   isSyncable,
@@ -19,8 +19,8 @@ import {
   isSkippablePath,
   resolveAutoSkipThreshold,
   DEFAULT_SOURCE_ID,
-} from '../core/sync.ts';
-import { estimateTokens, CHUNKER_VERSION } from '../core/chunkers/code.ts';
+} from "../core/sync.ts";
+import { estimateTokens, CHUNKER_VERSION } from "../core/chunkers/code.ts";
 import {
   estimateEmbeddingCostUsd,
   getEmbeddingModelName,
@@ -28,15 +28,15 @@ import {
   currentEmbeddingSignature,
   willEmbedSynchronously,
   shouldBlockSync,
-} from '../core/embedding.ts';
-import { estimateCostFromChars } from '../core/embedding-pricing.ts';
-import { isSourceUnchangedSinceSync } from '../core/git-head.ts';
-import { SPEND_CAP_CONFIG_KEY } from '../core/embed-backfill-submit.ts';
-import { errorFor, serializeError } from '../core/errors.ts';
-import type { SyncManifest } from '../core/sync.ts';
-import { createProgress } from '../core/progress.ts';
-import { getCliOptions, cliOptsToProgressOptions } from '../core/cli-options.ts';
-import { loadConfig } from '../core/config.ts';
+} from "../core/embedding.ts";
+import { estimateCostFromChars } from "../core/embedding-pricing.ts";
+import { isSourceUnchangedSinceSync } from "../core/git-head.ts";
+import { SPEND_CAP_CONFIG_KEY } from "../core/embed-backfill-submit.ts";
+import { errorFor, serializeError } from "../core/errors.ts";
+import type { SyncManifest } from "../core/sync.ts";
+import { createProgress } from "../core/progress.ts";
+import { getCliOptions, cliOptsToProgressOptions } from "../core/cli-options.ts";
+import { loadConfig } from "../core/config.ts";
 import {
   autoConcurrency,
   shouldRunParallel,
@@ -45,25 +45,17 @@ import {
   DEFAULT_PARALLEL_SOURCES,
   resolveMaxConnections,
   clampWorkersForConnectionBudget,
-} from '../core/sync-concurrency.ts';
-import {
-  withRefreshingLock,
-  LockUnavailableError,
-  syncLockId,
-} from '../core/db-lock.ts';
-import {
-  withSourcePrefix,
-  slog,
-  serr,
-} from '../core/console-prefix.ts';
-import { loadStorageConfig } from '../core/storage-config.ts';
-import { getDefaultSourcePath } from '../core/source-resolver.ts';
+} from "../core/sync-concurrency.ts";
+import { withRefreshingLock, LockUnavailableError, syncLockId } from "../core/db-lock.ts";
+import { withSourcePrefix, slog, serr } from "../core/console-prefix.ts";
+import { loadStorageConfig } from "../core/storage-config.ts";
+import { getDefaultSourcePath } from "../core/source-resolver.ts";
 // v0.41.32.0: stamp the durable newest-COMMIT timestamp at sync time so the
 // remote staleness path reads a column instead of shelling out to git.
 // lagFromContentMs is the remote/column comparator (buildSyncStatusReport
 // backs the get_status_snapshot MCP op — must NOT shell out to git).
-import { newestCommitMs, commitTimeMs, lagFromContentMs } from '../core/source-health.ts';
-import { sortNewestFirst } from '../core/sort-newest-first.ts';
+import { newestCommitMs, commitTimeMs, lagFromContentMs } from "../core/source-health.ts";
+import { sortNewestFirst } from "../core/sort-newest-first.ts";
 import {
   loadOpCheckpoint,
   recordCompleted,
@@ -73,8 +65,8 @@ import {
   resumeFilter,
   syncFingerprint,
   type OpCheckpointKey,
-} from '../core/op-checkpoint.ts';
-import { registerCleanup } from '../core/process-cleanup.ts';
+} from "../core/op-checkpoint.ts";
+import { registerCleanup } from "../core/process-cleanup.ts";
 
 /**
  * v0.42.x (#1794) -- resumable incremental sync checkpoint.
@@ -90,12 +82,12 @@ import { registerCleanup } from '../core/process-cleanup.ts';
  * lastCommit) -- never the target or live HEAD -- so the checkpoint survives
  * every killed-and-resumed run while lastCommit..HEAD grows underneath it.
  */
-const SYNC_CKPT_OP = 'sync';
-const SYNC_TARGET_OP = 'sync-target';
+const SYNC_CKPT_OP = "sync";
+const SYNC_TARGET_OP = "sync-target";
 
 function syncCheckpointKeys(
   sourceId: string | undefined,
-  lastCommit: string,
+  lastCommit: string
 ): { paths: OpCheckpointKey; target: OpCheckpointKey } {
   const fp = syncFingerprint({ sourceId, lastCommit });
   return {
@@ -169,12 +161,12 @@ function resolveSyncYieldEvery(): number {
  * `partial` (inconsistent state). Pure so D5's contract is unit-testable
  * without driving the CLI.
  */
-export function shouldNudgeAfterSync(status: SyncResult['status']): boolean {
-  return status === 'synced' || status === 'first_sync' || status === 'up_to_date';
+export function shouldNudgeAfterSync(status: SyncResult["status"]): boolean {
+  return status === "synced" || status === "first_sync" || status === "up_to_date";
 }
 
 export interface SyncResult {
-  status: 'up_to_date' | 'synced' | 'first_sync' | 'dry_run' | 'blocked_by_failures' | 'partial';
+  status: "up_to_date" | "synced" | "first_sync" | "dry_run" | "blocked_by_failures" | "partial";
   fromCommit: string | null;
   toCommit: string;
   added: number;
@@ -201,7 +193,7 @@ export interface SyncResult {
    * cron operators can disambiguate timeout vs pull-timeout in monitoring.
    */
   filesImported?: number;
-  reason?: 'timeout' | 'pull_timeout' | 'checkpoint_unavailable';
+  reason?: "timeout" | "pull_timeout" | "checkpoint_unavailable";
   /**
    * v0.42.x (#1794): cumulative file paths durably banked to the checkpoint
    * across THIS run + prior resumed runs. Surfaced on every partial/blocked
@@ -225,7 +217,7 @@ export interface SyncResult {
  */
 function estimateSourceTreeTokens(
   localPath: string,
-  strategy: 'markdown' | 'code' | 'auto',
+  strategy: "markdown" | "code" | "auto"
 ): { tokens: number; files: number } {
   let tokens = 0;
   let files = 0;
@@ -235,7 +227,7 @@ function estimateSourceTreeTokens(
       try {
         const stat = statSync(fullPath);
         if (stat.size > 5_000_000) continue; // skip large binaries
-        const content = readFileSync(fullPath, 'utf-8');
+        const content = readFileSync(fullPath, "utf-8");
         tokens += estimateTokens(content);
         files++;
       } catch {
@@ -266,24 +258,28 @@ function estimateInlineNewTokens(
     last_commit: string | null;
     chunker_version: string | null;
   }>,
-  currentChunkerVersion: string,
+  currentChunkerVersion: string
 ): { tokens: number; changedSources: number; unchangedSources: number } {
   let tokens = 0;
   let changedSources = 0;
   let unchangedSources = 0;
   for (const src of sources) {
     if (!src.local_path) continue;
-    const cfg = (src.config || {}) as { syncEnabled?: boolean; strategy?: 'markdown' | 'code' | 'auto' };
+    const cfg = (src.config || {}) as {
+      syncEnabled?: boolean;
+      strategy?: "markdown" | "code" | "auto";
+    };
     if (cfg.syncEnabled === false) continue;
     const unchanged =
-      isSourceUnchangedSinceSync(src.local_path, src.last_commit, { requireCleanWorkingTree: true }) &&
-      src.chunker_version === currentChunkerVersion;
+      isSourceUnchangedSinceSync(src.local_path, src.last_commit, {
+        requireCleanWorkingTree: true,
+      }) && src.chunker_version === currentChunkerVersion;
     if (unchanged) {
       unchangedSources++;
       continue;
     }
     changedSources++;
-    tokens += estimateSourceTreeTokens(src.local_path, cfg.strategy ?? 'markdown').tokens;
+    tokens += estimateSourceTreeTokens(src.local_path, cfg.strategy ?? "markdown").tokens;
   }
   return { tokens, changedSources, unchangedSources };
 }
@@ -298,7 +294,7 @@ function estimateInlineNewTokens(
  */
 async function resolveCostGateFloorUsd(engine: BrainEngine): Promise<number> {
   try {
-    const raw = await engine.getConfig('sync.cost_gate_min_usd');
+    const raw = await engine.getConfig("sync.cost_gate_min_usd");
     if (raw === null || raw === undefined) return 0.5;
     const n = Number(raw);
     return Number.isFinite(n) && n >= 0 ? n : 0.5;
@@ -329,9 +325,9 @@ async function promptYesNo(question: string): Promise<boolean> {
     const rl = createInterface({ input: process.stdin, output: process.stdout });
     rl.question(question, (answer) => {
       rl.close();
-      resolve(answer.trim().toLowerCase() === 'y' || answer.trim().toLowerCase() === 'yes');
+      resolve(answer.trim().toLowerCase() === "y" || answer.trim().toLowerCase() === "yes");
     });
-    rl.on('close', () => resolve(false));
+    rl.on("close", () => resolve(false));
   });
 }
 
@@ -364,7 +360,7 @@ export interface SyncOpts {
    */
   sourceId?: string;
   /** Multi-repo: sync strategy override (markdown, code, auto). */
-  strategy?: 'markdown' | 'code' | 'auto';
+  strategy?: "markdown" | "code" | "auto";
   /**
    * Number of parallel workers for the import phase. When > 1, each worker
    * gets its own small Postgres connection pool and files are dispatched via
@@ -462,7 +458,7 @@ export interface SyncOpts {
 export async function resolveSlugByPathOrSourcePath(
   engine: BrainEngine,
   path: string,
-  sourceId?: string,
+  sourceId?: string
 ): Promise<string> {
   // v0.41.19.0 (D8): when sourceId is set, delegate to the new batch
   // resolveSlugsByPaths so single-call and batched paths share one SQL
@@ -479,7 +475,7 @@ export async function resolveSlugByPathOrSourcePath(
     } else {
       const rows = await engine.executeRaw<{ slug: string }>(
         `SELECT slug FROM pages WHERE source_path = $1 LIMIT 1`,
-        [path],
+        [path]
       );
       if (rows.length > 0 && rows[0].slug) return rows[0].slug;
     }
@@ -501,13 +497,17 @@ export async function resolveSlugByPathOrSourcePath(
  *
  * Exported for `test/sync.test.ts` invariant assertion only.
  */
-export function buildGitInvocation(repoPath: string, args: string[], configs: string[] = []): string[] {
-  const cfg = ['core.quotepath=false', ...configs].flatMap(c => ['-c', c]);
-  return [...cfg, '-C', repoPath, ...args];
+export function buildGitInvocation(
+  repoPath: string,
+  args: string[],
+  configs: string[] = []
+): string[] {
+  const cfg = ["core.quotepath=false", ...configs].flatMap((c) => ["-c", c]);
+  return [...cfg, "-C", repoPath, ...args];
 }
 
 export function buildAutoEmbedArgs(slugs: string[], sourceId?: string): string[] {
-  return sourceId ? ['--source', sourceId, '--slugs', ...slugs] : ['--slugs', ...slugs];
+  return sourceId ? ["--source", sourceId, "--slugs", ...slugs] : ["--slugs", ...slugs];
 }
 
 /**
@@ -521,8 +521,8 @@ export function buildAutoEmbedArgs(slugs: string[], sourceId?: string): string[]
  * paths tops out around 10–20 MiB in practice.
  */
 function git(repoPath: string, args: string[], configs: string[] = []): string {
-  return execFileSync('git', buildGitInvocation(repoPath, args, configs), {
-    encoding: 'utf-8',
+  return execFileSync("git", buildGitInvocation(repoPath, args, configs), {
+    encoding: "utf-8",
     timeout: 30000,
     maxBuffer: 100 * 1024 * 1024,
   }).trim();
@@ -530,10 +530,10 @@ function git(repoPath: string, args: string[], configs: string[] = []): string {
 
 function hasOriginRemote(repoPath: string): boolean {
   try {
-    execFileSync('git', buildGitInvocation(repoPath, ['remote', 'get-url', 'origin']), {
-      encoding: 'utf-8',
+    execFileSync("git", buildGitInvocation(repoPath, ["remote", "get-url", "origin"]), {
+      encoding: "utf-8",
       timeout: 30000,
-      stdio: ['ignore', 'ignore', 'ignore'],
+      stdio: ["ignore", "ignore", "ignore"],
     });
     return true;
   } catch {
@@ -543,7 +543,7 @@ function hasOriginRemote(repoPath: string): boolean {
 
 function isDetachedHead(repoPath: string): boolean {
   try {
-    git(repoPath, ['symbolic-ref', '--quiet', 'HEAD']);
+    git(repoPath, ["symbolic-ref", "--quiet", "HEAD"]);
     return false;
   } catch {
     return true;
@@ -555,10 +555,10 @@ function unique<T>(items: T[]): T[] {
 }
 
 function buildDetachedWorkingTreeManifest(repoPath: string): SyncManifest {
-  const manifest = buildSyncManifest(git(repoPath, ['diff', '--name-status', '-M', 'HEAD']));
-  const untracked = git(repoPath, ['ls-files', '--others', '--exclude-standard'])
-    .split('\n')
-    .filter(line => line.length > 0);
+  const manifest = buildSyncManifest(git(repoPath, ["diff", "--name-status", "-M", "HEAD"]));
+  const untracked = git(repoPath, ["ls-files", "--others", "--exclude-standard"])
+    .split("\n")
+    .filter((line) => line.length > 0);
 
   return {
     added: unique([...manifest.added, ...untracked]),
@@ -576,13 +576,13 @@ function buildDetachedWorkingTreeManifest(repoPath: string): SyncManifest {
 async function readSyncAnchor(
   engine: BrainEngine,
   sourceId: string | undefined,
-  which: 'repo_path' | 'last_commit',
+  which: "repo_path" | "last_commit"
 ): Promise<string | null> {
   if (sourceId) {
-    const col = which === 'repo_path' ? 'local_path' : 'last_commit';
+    const col = which === "repo_path" ? "local_path" : "last_commit";
     const rows = await engine.executeRaw<Record<string, string | null>>(
       `SELECT ${col} AS value FROM sources WHERE id = $1`,
-      [sourceId],
+      [sourceId]
     );
     return rows[0]?.value ?? null;
   }
@@ -592,7 +592,7 @@ async function readSyncAnchor(
 async function writeSyncAnchor(
   engine: BrainEngine,
   sourceId: string | undefined,
-  which: 'repo_path' | 'last_commit',
+  which: "repo_path" | "last_commit",
   value: string,
   // v0.41.32.0 (supersedes #1623): on `last_commit` advances, also stamp the
   // durable newest-COMMIT timestamp (HEAD committer time, epoch ms) in the SAME
@@ -600,31 +600,27 @@ async function writeSyncAnchor(
   // no clock-domain split (last_sync_at = DB now(); newest_content_at = the
   // git-intrinsic committer time of the HEAD we just synced). `undefined` keeps
   // the legacy 2-column write; `null` clears the column (git unavailable).
-  newestContentEpochMs?: number | null,
+  newestContentEpochMs?: number | null
 ): Promise<void> {
   if (sourceId) {
-    const col = which === 'repo_path' ? 'local_path' : 'last_commit';
+    const col = which === "repo_path" ? "local_path" : "last_commit";
     // last_sync_at bookmarked on every last_commit advance.
-    if (which === 'last_commit') {
+    if (which === "last_commit") {
       if (newestContentEpochMs !== undefined) {
-        const iso = newestContentEpochMs === null
-          ? null
-          : new Date(newestContentEpochMs).toISOString();
+        const iso =
+          newestContentEpochMs === null ? null : new Date(newestContentEpochMs).toISOString();
         await engine.executeRaw(
           `UPDATE sources SET last_commit = $1, last_sync_at = now(), newest_content_at = $3 WHERE id = $2`,
-          [value, sourceId, iso],
+          [value, sourceId, iso]
         );
       } else {
         await engine.executeRaw(
           `UPDATE sources SET last_commit = $1, last_sync_at = now() WHERE id = $2`,
-          [value, sourceId],
+          [value, sourceId]
         );
       }
     } else {
-      await engine.executeRaw(
-        `UPDATE sources SET ${col} = $1 WHERE id = $2`,
-        [value, sourceId],
-      );
+      await engine.executeRaw(`UPDATE sources SET ${col} = $1 WHERE id = $2`, [value, sourceId]);
     }
     return;
   }
@@ -649,12 +645,12 @@ async function writeSyncAnchor(
  */
 async function readChunkerVersion(
   engine: BrainEngine,
-  sourceId: string | undefined,
+  sourceId: string | undefined
 ): Promise<string | null> {
   if (!sourceId) return null;
   const rows = await engine.executeRaw<{ chunker_version: string | null }>(
     `SELECT chunker_version FROM sources WHERE id = $1`,
-    [sourceId],
+    [sourceId]
   );
   return rows[0]?.chunker_version ?? null;
 }
@@ -662,13 +658,13 @@ async function readChunkerVersion(
 async function writeChunkerVersion(
   engine: BrainEngine,
   sourceId: string | undefined,
-  version: string,
+  version: string
 ): Promise<void> {
   if (!sourceId) return;
-  await engine.executeRaw(
-    `UPDATE sources SET chunker_version = $1 WHERE id = $2`,
-    [version, sourceId],
-  );
+  await engine.executeRaw(`UPDATE sources SET chunker_version = $1 WHERE id = $2`, [
+    version,
+    sourceId,
+  ]);
 }
 
 /**
@@ -685,7 +681,7 @@ async function writeChunkerVersion(
  * Output: prints `job_id=N` to stdout for shell composition. Errors exit 1.
  */
 export async function runSyncTrigger(engine: BrainEngine, args: string[]): Promise<void> {
-  if (args.includes('--help') || args.includes('-h')) {
+  if (args.includes("--help") || args.includes("-h")) {
     console.log(`Usage: gbrain sync trigger --source <id> [--priority high|normal|low]
 
 Queue a push-triggered sync job for one source. Prints the resulting job id
@@ -705,14 +701,14 @@ See also:
     return;
   }
 
-  const sourceIdArg = args.find((a, i) => args[i - 1] === '--source') ?? null;
+  const sourceIdArg = args.find((a, i) => args[i - 1] === "--source") ?? null;
   if (!sourceIdArg) {
-    console.error('Error: --source <id> is required');
+    console.error("Error: --source <id> is required");
     console.error("Usage: gbrain sync trigger --source <id> [--priority high|normal|low]");
     process.exit(2);
   }
 
-  const priorityArg = args.find((a, i) => args[i - 1] === '--priority') ?? 'high';
+  const priorityArg = args.find((a, i) => args[i - 1] === "--priority") ?? "high";
   const priorityMap: Record<string, number> = { high: -10, normal: 0, low: 5 };
   const priority = priorityMap[priorityArg];
   if (priority === undefined) {
@@ -721,28 +717,28 @@ See also:
   }
 
   // Verify source exists before submitting
-  const { fetchSource } = await import('../core/sources-load.ts');
+  const { fetchSource } = await import("../core/sources-load.ts");
   const source = await fetchSource(engine, sourceIdArg);
   if (!source) {
     console.error(`Source "${sourceIdArg}" not found. List with: gbrain sources list`);
     process.exit(1);
   }
 
-  const { MinionQueue } = await import('../core/minions/queue.ts');
+  const { MinionQueue } = await import("../core/minions/queue.ts");
   const queue = new MinionQueue(engine);
   const job = await queue.add(
-    'sync',
+    "sync",
     {
       sourceId: sourceIdArg,
       repoPath: source.local_path,
       auto_embed_backfill: true,
-      embed_reason: 'sync_trigger',
+      embed_reason: "sync_trigger",
     },
     {
       priority,
       idempotency_key: `sync-trigger:${sourceIdArg}:${Math.floor(Date.now() / 30_000)}`,
       maxWaiting: 1,
-    },
+    }
   );
 
   console.log(`job_id=${job.id}`);
@@ -760,7 +756,7 @@ export class SyncLockBusyError extends Error {
   readonly lockKey: string;
   constructor(message: string, lockKey: string) {
     super(message);
-    this.name = 'SyncLockBusyError';
+    this.name = "SyncLockBusyError";
     this.lockKey = lockKey;
   }
 }
@@ -786,7 +782,7 @@ export async function performSync(engine: BrainEngine, opts: SyncOpts): Promise<
     return await performSyncInner(engine, opts);
   }
 
-  const lockKey = opts.lockId ?? syncLockId(opts.sourceId ?? 'default');
+  const lockKey = opts.lockId ?? syncLockId(opts.sourceId ?? "default");
 
   // v0.42.x (#1794): ALL non-skipLock syncs use the TTL-refreshing lock — the
   // bare `gbrain sync` path (no --source/--lockId) included. The pre-v0.42 code
@@ -812,10 +808,13 @@ export async function performSync(engine: BrainEngine, opts: SyncOpts): Promise<
  * the row (best-effort — the lock itself was still busy).
  */
 async function formatLockBusyMessage(engine: BrainEngine, lockKey: string): Promise<string> {
-  const { inspectLock } = await import('../core/db-lock.ts');
+  const { inspectLock } = await import("../core/db-lock.ts");
   let snap;
-  try { snap = await inspectLock(engine, lockKey); }
-  catch { snap = null; }
+  try {
+    snap = await inspectLock(engine, lockKey);
+  } catch {
+    snap = null;
+  }
 
   if (!snap) {
     return (
@@ -825,10 +824,10 @@ async function formatLockBusyMessage(engine: BrainEngine, lockKey: string): Prom
   }
 
   const ageHuman = formatAgeHuman(snap.age_ms);
-  const breakHint = lockKey.startsWith('gbrain-sync:')
-    ? `gbrain sync --break-lock --source ${lockKey.slice('gbrain-sync:'.length)}`
+  const breakHint = lockKey.startsWith("gbrain-sync:")
+    ? `gbrain sync --break-lock --source ${lockKey.slice("gbrain-sync:".length)}`
     : `gbrain sync --break-lock`;
-  const ttlNote = snap.ttl_expired ? ' [TTL expired]' : '';
+  const ttlNote = snap.ttl_expired ? " [TTL expired]" : "";
   return (
     `Another sync is in progress (lock ${lockKey} held by pid ${snap.holder_pid} on ${snap.holder_host}, ` +
     `started ${ageHuman} ago${ttlNote}).\n` +
@@ -861,22 +860,25 @@ async function runBreakLock(
   engine: BrainEngine,
   lockKey: string,
   sourceId: string,
-  opts: { force: boolean; json: boolean; maxAgeSeconds?: number },
+  opts: { force: boolean; json: boolean; maxAgeSeconds?: number }
 ): Promise<number> {
-  const { inspectLock, deleteLockRow, deleteLockRowIfStale, classifyHolderLiveness } = await import('../core/db-lock.ts');
-  const { hostname } = await import('os');
+  const { inspectLock, deleteLockRow, deleteLockRowIfStale, classifyHolderLiveness } =
+    await import("../core/db-lock.ts");
+  const { hostname } = await import("os");
   const localHost = hostname();
   let snap;
-  try { snap = await inspectLock(engine, lockKey); }
-  catch (e) {
+  try {
+    snap = await inspectLock(engine, lockKey);
+  } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    if (opts.json) console.log(JSON.stringify({ status: 'error', error: msg, lock: lockKey }));
+    if (opts.json) console.log(JSON.stringify({ status: "error", error: msg, lock: lockKey }));
     else console.error(`Failed to inspect lock ${lockKey}: ${msg}`);
     return 1;
   }
 
   if (!snap) {
-    if (opts.json) console.log(JSON.stringify({ status: 'absent', lock: lockKey, source_id: sourceId }));
+    if (opts.json)
+      console.log(JSON.stringify({ status: "absent", lock: lockKey, source_id: sourceId }));
     else console.log(`Lock ${lockKey} is not held (nothing to break).`);
     return 0;
   }
@@ -894,42 +896,70 @@ async function runBreakLock(
     // who need to clear a cross-host lock use --force-break-lock.
     if (snap.holder_host !== localHost) {
       if (opts.json) {
-        console.log(JSON.stringify({
-          status: 'refused', reason: 'cross_host', lock: lockKey, source_id: sourceId,
-          snapshot: snap, local_host: localHost,
-        }));
+        console.log(
+          JSON.stringify({
+            status: "refused",
+            reason: "cross_host",
+            lock: lockKey,
+            source_id: sourceId,
+            snapshot: snap,
+            local_host: localHost,
+          })
+        );
       } else {
-        console.error(`Lock ${lockKey} is held on a different host (${snap.holder_host}, this host is ${localHost}).`);
-        console.error('Cross-host --max-age is unsupported. Use --force-break-lock when certain the remote holder is dead.');
+        console.error(
+          `Lock ${lockKey} is held on a different host (${snap.holder_host}, this host is ${localHost}).`
+        );
+        console.error(
+          "Cross-host --max-age is unsupported. Use --force-break-lock when certain the remote holder is dead."
+        );
       }
       return 1;
     }
     const { deleted, lastRefreshedAt } = await deleteLockRowIfStale(
-      engine, lockKey, snap.holder_pid, opts.maxAgeSeconds,
+      engine,
+      lockKey,
+      snap.holder_pid,
+      opts.maxAgeSeconds
     );
     if (opts.json) {
-      console.log(JSON.stringify({
-        status: deleted ? 'broken' : 'refused',
-        reason: deleted ? 'max_age_breached' : 'within_max_age',
-        lock: lockKey,
-        source_id: sourceId,
-        snapshot: snap,
-        max_age_seconds: opts.maxAgeSeconds,
-        last_refreshed_at: lastRefreshedAt ? lastRefreshedAt.toISOString() : null,
-      }));
+      console.log(
+        JSON.stringify({
+          status: deleted ? "broken" : "refused",
+          reason: deleted ? "max_age_breached" : "within_max_age",
+          lock: lockKey,
+          source_id: sourceId,
+          snapshot: snap,
+          max_age_seconds: opts.maxAgeSeconds,
+          last_refreshed_at: lastRefreshedAt ? lastRefreshedAt.toISOString() : null,
+        })
+      );
     } else if (deleted) {
-      const ageStr = lastRefreshedAt ? formatAgeHuman(Date.now() - lastRefreshedAt.getTime()) : 'unknown';
-      console.log(`Broke lock ${lockKey} (pid ${snap.holder_pid} on ${snap.holder_host}; last refresh was ${ageStr} ago, > --max-age=${opts.maxAgeSeconds}s).`);
+      const ageStr = lastRefreshedAt
+        ? formatAgeHuman(Date.now() - lastRefreshedAt.getTime())
+        : "unknown";
+      console.log(
+        `Broke lock ${lockKey} (pid ${snap.holder_pid} on ${snap.holder_host}; last refresh was ${ageStr} ago, > --max-age=${opts.maxAgeSeconds}s).`
+      );
     } else {
       // last_refreshed_at within --max-age window OR null (pre-v98 brain).
       // Distinguish the two cases for the operator.
       if (snap.last_refreshed_at === null) {
-        console.error(`Lock ${lockKey} has NULL last_refreshed_at (pre-v98 brain or migration window).`);
-        console.error('Run `gbrain apply-migrations --yes` to land v98, OR use --force-break-lock if you know the holder is dead.');
+        console.error(
+          `Lock ${lockKey} has NULL last_refreshed_at (pre-v98 brain or migration window).`
+        );
+        console.error(
+          "Run `gbrain apply-migrations --yes` to land v98, OR use --force-break-lock if you know the holder is dead."
+        );
       } else {
-        const ageStr = snap.ms_since_last_refresh != null ? formatAgeHuman(snap.ms_since_last_refresh) : 'unknown';
-        console.error(`Refusing to break lock ${lockKey}: last refresh was ${ageStr} ago, within --max-age=${opts.maxAgeSeconds}s window.`);
-        console.error('The holder is actively refreshing — likely a healthy long-running sync.');
+        const ageStr =
+          snap.ms_since_last_refresh != null
+            ? formatAgeHuman(snap.ms_since_last_refresh)
+            : "unknown";
+        console.error(
+          `Refusing to break lock ${lockKey}: last refresh was ${ageStr} ago, within --max-age=${opts.maxAgeSeconds}s window.`
+        );
+        console.error("The holder is actively refreshing — likely a healthy long-running sync.");
       }
       return 1;
     }
@@ -940,15 +970,25 @@ async function runBreakLock(
   if (opts.force) {
     const { deleted } = await deleteLockRow(engine, lockKey, snap.holder_pid);
     if (opts.json) {
-      console.log(JSON.stringify({
-        status: deleted ? 'force_broken' : 'race_already_cleared',
-        lock: lockKey, source_id: sourceId, snapshot: snap,
-      }));
+      console.log(
+        JSON.stringify({
+          status: deleted ? "force_broken" : "race_already_cleared",
+          lock: lockKey,
+          source_id: sourceId,
+          snapshot: snap,
+        })
+      );
     } else if (deleted) {
-      console.log(`Force-broke lock ${lockKey} (was held by pid ${snap.holder_pid} on ${snap.holder_host}, age ${formatAgeHuman(snap.age_ms)}).`);
-      console.log('WARNING: the holder may still be writing. Verify with `gbrain doctor` before re-running.');
+      console.log(
+        `Force-broke lock ${lockKey} (was held by pid ${snap.holder_pid} on ${snap.holder_host}, age ${formatAgeHuman(snap.age_ms)}).`
+      );
+      console.log(
+        "WARNING: the holder may still be writing. Verify with `gbrain doctor` before re-running."
+      );
     } else {
-      console.log(`Lock ${lockKey} was already cleared by another process between our check and DELETE (race-safe).`);
+      console.log(
+        `Lock ${lockKey} was already cleared by another process between our check and DELETE (race-safe).`
+      );
     }
     return 0;
   }
@@ -956,15 +996,22 @@ async function runBreakLock(
   // Safe path: must be local host AND (TTL-expired OR (PID-dead AND age >= 60s)).
   if (snap.holder_host !== localHost) {
     if (opts.json) {
-      console.log(JSON.stringify({
-        status: 'refused',
-        reason: 'cross_host',
-        lock: lockKey, source_id: sourceId, snapshot: snap, local_host: localHost,
-      }));
+      console.log(
+        JSON.stringify({
+          status: "refused",
+          reason: "cross_host",
+          lock: lockKey,
+          source_id: sourceId,
+          snapshot: snap,
+          local_host: localHost,
+        })
+      );
     } else {
-      console.error(`Lock ${lockKey} is held on a different host (${snap.holder_host}, this host is ${localHost}).`);
-      console.error('Cross-host PID liveness is unsound. To break anyway, use --force-break-lock');
-      console.error('(only safe when you KNOW the holder is dead — verify before forcing).');
+      console.error(
+        `Lock ${lockKey} is held on a different host (${snap.holder_host}, this host is ${localHost}).`
+      );
+      console.error("Cross-host PID liveness is unsound. To break anyway, use --force-break-lock");
+      console.error("(only safe when you KNOW the holder is dead — verify before forcing).");
     }
     return 1;
   }
@@ -973,7 +1020,7 @@ async function runBreakLock(
   let reason: string;
   if (snap.ttl_expired) {
     safe = true;
-    reason = 'ttl_expired';
+    reason = "ttl_expired";
   } else {
     // PID liveness on local host, via the shared predicate (v0.42 #1780 Gap 3).
     // Same gate as tryAcquireDbLock's auto-takeover: same-host + provably-dead
@@ -981,29 +1028,41 @@ async function runBreakLock(
     // ours) — never break a live lock. host is already == localHost here (the
     // cross-host branch returned above), so classify never yields 'cross_host'.
     const liveness = classifyHolderLiveness(snap.holder_pid, snap.holder_host, snap.age_ms);
-    if (liveness === 'dead_eligible') {
+    if (liveness === "dead_eligible") {
       safe = true;
-      reason = 'pid_dead_age_60s';
-    } else if (liveness === 'too_young') {
-      reason = 'pid_dead_but_lock_too_young';
+      reason = "pid_dead_age_60s";
+    } else if (liveness === "too_young") {
+      reason = "pid_dead_but_lock_too_young";
     } else {
       // 'alive' | 'unknown' | 'cross_host' (the latter unreachable here).
-      reason = 'pid_alive';
+      reason = "pid_alive";
     }
   }
 
   if (!safe) {
     if (opts.json) {
-      console.log(JSON.stringify({
-        status: 'refused', reason, lock: lockKey, source_id: sourceId, snapshot: snap,
-      }));
+      console.log(
+        JSON.stringify({
+          status: "refused",
+          reason,
+          lock: lockKey,
+          source_id: sourceId,
+          snapshot: snap,
+        })
+      );
     } else {
-      console.error(`Refusing to break lock ${lockKey}: holder pid ${snap.holder_pid} appears alive on ${snap.holder_host} (age ${formatAgeHuman(snap.age_ms)}).`);
-      if (reason === 'pid_dead_but_lock_too_young') {
-        console.error('(PID is dead but the lock is younger than 60s — the PID may have been reused. Wait or use --force-break-lock if you are certain.)');
+      console.error(
+        `Refusing to break lock ${lockKey}: holder pid ${snap.holder_pid} appears alive on ${snap.holder_host} (age ${formatAgeHuman(snap.age_ms)}).`
+      );
+      if (reason === "pid_dead_but_lock_too_young") {
+        console.error(
+          "(PID is dead but the lock is younger than 60s — the PID may have been reused. Wait or use --force-break-lock if you are certain.)"
+        );
       } else {
-        console.error('If the holder is wedged, kill it first then re-run --break-lock,');
-        console.error('OR use --force-break-lock to clear regardless (the holder may still write afterwards).');
+        console.error("If the holder is wedged, kill it first then re-run --break-lock,");
+        console.error(
+          "OR use --force-break-lock to clear regardless (the holder may still write afterwards)."
+        );
       }
     }
     return 1;
@@ -1011,14 +1070,23 @@ async function runBreakLock(
 
   const { deleted } = await deleteLockRow(engine, lockKey, snap.holder_pid);
   if (opts.json) {
-    console.log(JSON.stringify({
-      status: deleted ? 'broken' : 'race_already_cleared',
-      reason, lock: lockKey, source_id: sourceId, snapshot: snap,
-    }));
+    console.log(
+      JSON.stringify({
+        status: deleted ? "broken" : "race_already_cleared",
+        reason,
+        lock: lockKey,
+        source_id: sourceId,
+        snapshot: snap,
+      })
+    );
   } else if (deleted) {
-    console.log(`Broke lock ${lockKey} (was held by pid ${snap.holder_pid} on ${snap.holder_host}, age ${formatAgeHuman(snap.age_ms)}; reason: ${reason}).`);
+    console.log(
+      `Broke lock ${lockKey} (was held by pid ${snap.holder_pid} on ${snap.holder_host}, age ${formatAgeHuman(snap.age_ms)}; reason: ${reason}).`
+    );
   } else {
-    console.log(`Lock ${lockKey} was already cleared by another process between our check and DELETE (race-safe).`);
+    console.log(
+      `Lock ${lockKey} was already cleared by another process between our check and DELETE (race-safe).`
+    );
   }
   return 0;
 }
@@ -1054,11 +1122,11 @@ function buildPartialResult(opts: {
   modified: number;
   deleted: number;
   renamed: number;
-  reason: 'timeout' | 'pull_timeout' | 'checkpoint_unavailable';
+  reason: "timeout" | "pull_timeout" | "checkpoint_unavailable";
   bankedFiles?: number;
 }): SyncResult {
   return {
-    status: 'partial',
+    status: "partial",
     fromCommit: opts.fromCommit,
     toCommit: opts.toCommit,
     added: opts.added,
@@ -1083,7 +1151,7 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
   // "hung with no output" into actionable diagnostic data.
   serr(`[gbrain phase] sync.resolve_repo`);
   // Resolve repo path
-  const repoPath = opts.repoPath || await readSyncAnchor(engine, opts.sourceId, 'repo_path');
+  const repoPath = opts.repoPath || (await readSyncAnchor(engine, opts.sourceId, "repo_path"));
   if (!repoPath) {
     const hint = opts.sourceId
       ? `Source "${opts.sourceId}" has no local_path. Run: gbrain sources add ${opts.sourceId} --path <path>`
@@ -1096,17 +1164,19 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
   // importFile call below. Codex perf finding #7: per-file loadActivePack adds
   // disk/YAML/hash overhead × thousands of files. Best-effort: pack load
   // failure falls through to legacy inferType (parity preserved).
-  let syncActivePack: { page_types: ReadonlyArray<{ name: string; path_prefixes: ReadonlyArray<string> }> } | undefined;
+  let syncActivePack:
+    | { page_types: ReadonlyArray<{ name: string; path_prefixes: ReadonlyArray<string> }> }
+    | undefined;
   try {
     // v0.41.37.0 #1569: --no-schema-pack escape hatch. Skip pack load entirely so
     // no user-supplied pack regex (markdown.ts subtype path_pattern) runs during
     // sync; pages fall back to legacy prefix typing.
     if (opts.noSchemaPack) {
-      serr('[sync] --no-schema-pack: skipping schema pack; pages use legacy prefix typing');
-      throw new Error('schema-pack-skipped');
+      serr("[sync] --no-schema-pack: skipping schema pack; pages use legacy prefix typing");
+      throw new Error("schema-pack-skipped");
     }
-    const { loadActivePack } = await import('../core/schema-pack/load-active.ts');
-    const { loadConfig } = await import('../core/config.ts');
+    const { loadActivePack } = await import("../core/schema-pack/load-active.ts");
+    const { loadConfig } = await import("../core/config.ts");
     const resolved = await loadActivePack({
       cfg: loadConfig(),
       remote: false, // sync is always a trusted CLI / autopilot caller
@@ -1124,19 +1194,17 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
   // url-drift or corruption with structured hints.
   if (opts.sourceId) {
     serr(`[gbrain phase] sync.validate_repo_state`);
-    const { validateRepoState } = await import('../core/git-remote.ts');
-    const { recloneIfMissing, isOwnedClone, unownedHint } = await import(
-      '../core/sources-ops.ts'
-    );
+    const { validateRepoState } = await import("../core/git-remote.ts");
+    const { recloneIfMissing, isOwnedClone, unownedHint } = await import("../core/sources-ops.ts");
     const cfgRows = await engine.executeRaw<{ local_path: string | null; config: unknown }>(
       `SELECT local_path, config FROM sources WHERE id = $1`,
-      [opts.sourceId],
+      [opts.sourceId]
     );
     const cfg =
-      typeof cfgRows[0]?.config === 'string'
+      typeof cfgRows[0]?.config === "string"
         ? (JSON.parse(cfgRows[0].config as string) as Record<string, unknown>)
         : ((cfgRows[0]?.config ?? {}) as Record<string, unknown>);
-    const remoteUrl = typeof cfg.remote_url === 'string' ? cfg.remote_url : null;
+    const remoteUrl = typeof cfg.remote_url === "string" ? cfg.remote_url : null;
     if (remoteUrl) {
       const ownSrc = {
         id: opts.sourceId,
@@ -1145,45 +1213,45 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
       };
       const state = validateRepoState(repoPath, remoteUrl);
       switch (state) {
-        case 'healthy':
+        case "healthy":
           // No per-sync warning for an unowned-but-healthy source — it would
           // spam every sync. The misconfig is surfaced by the doctor check
           // (TODO1) instead. Healthy unowned paths sync read-only and are safe.
           break;
-        case 'missing':
-        case 'no-git':
-        case 'not-a-dir':
+        case "missing":
+        case "no-git":
+        case "not-a-dir":
           // #1881: only re-clone a clone gbrain owns. An unowned local_path
           // (the user's working tree) is refused loudly, never deleted.
           if (!isOwnedClone(ownSrc)) {
             throw new Error(unownedHint(ownSrc, state));
           }
-          serr(
-            `[gbrain] auto-recovery: re-cloning "${opts.sourceId}" (clone state: ${state}).`,
-          );
+          serr(`[gbrain] auto-recovery: re-cloning "${opts.sourceId}" (clone state: ${state}).`);
           await recloneIfMissing(engine, opts.sourceId);
           break;
-        case 'corrupted':
+        case "corrupted":
           throw new Error(
             `Source "${opts.sourceId}" clone at ${repoPath} is corrupted ` +
               `(\`git remote get-url origin\` failed). Run: ` +
               `gbrain sources remove ${opts.sourceId} --confirm-destructive && ` +
-              `gbrain sources add ${opts.sourceId} --url ${remoteUrl}`,
+              `gbrain sources add ${opts.sourceId} --url ${remoteUrl}`
           );
-        case 'url-drift':
+        case "url-drift":
           throw new Error(
             `Source "${opts.sourceId}" clone at ${repoPath} has a remote ` +
               `that differs from config.remote_url=${remoteUrl}. ` +
               `Re-clone with: gbrain sources rebase-clone ${opts.sourceId} ` +
-              `(if available, else: sources remove + sources add).`,
+              `(if available, else: sources remove + sources add).`
           );
       }
     }
   }
 
   // Validate git repo
-  if (!existsSync(join(repoPath, '.git'))) {
-    throw new Error(`Not a git repository: ${repoPath}. GBrain sync requires a git-initialized repo.`);
+  if (!existsSync(join(repoPath, ".git"))) {
+    throw new Error(
+      `Not a git repository: ${repoPath}. GBrain sync requires a git-initialized repo.`
+    );
   }
 
   serr(`[gbrain phase] sync.detect_head`);
@@ -1212,7 +1280,7 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
   // order doesn't matter for correctness. Ancestry validation below still
   // happens AFTER pull (so a `git pull` that brings in missing commits
   // can restore a valid ancestor chain).
-  const lastCommit = opts.full ? null : await readSyncAnchor(engine, opts.sourceId, 'last_commit');
+  const lastCommit = opts.full ? null : await readSyncAnchor(engine, opts.sourceId, "last_commit");
 
   // v0.41.13.0 (T2): pre-pull abort check. If --timeout already fired
   // (e.g. cron invoked sync after the previous run took the full budget),
@@ -1221,12 +1289,15 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
   if (opts.signal?.aborted) {
     return buildPartialResult({
       fromCommit: lastCommit,
-      toCommit: lastCommit ?? '',
+      toCommit: lastCommit ?? "",
       filesImported: 0,
       pagesAffected: [],
       chunksCreated: 0,
-      added: 0, modified: 0, deleted: 0, renamed: 0,
-      reason: 'timeout',
+      added: 0,
+      modified: 0,
+      deleted: 0,
+      renamed: 0,
+      reason: "timeout",
     });
   }
 
@@ -1234,7 +1305,7 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
     const _t0 = Date.now();
     serr(`[gbrain phase] sync.git_pull start`);
     try {
-      const { pullRepo } = await import('../core/git-remote.ts');
+      const { pullRepo } = await import("../core/git-remote.ts");
       // v0.41.13.0 (T3 / D-V4-mech-7): if the operator set --timeout,
       // bound the pull subprocess to a fraction of the remaining budget.
       // We pass a safe default (the operator's full --timeout if set, else
@@ -1252,26 +1323,32 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
       // level error. Inspect `.cause` to distinguish a real timeout
       // (return partial reason='pull_timeout') from ordinary failure
       // (keep the existing warn-and-continue R2 invariant).
-      const cause: unknown = e instanceof Error && 'cause' in e ? (e as { cause?: unknown }).cause : undefined;
-      const causeCode = (cause && typeof cause === 'object' && 'code' in cause)
-        ? (cause as { code?: unknown }).code
-        : undefined;
-      const causeSignal = (cause && typeof cause === 'object' && 'signal' in cause)
-        ? (cause as { signal?: unknown }).signal
-        : undefined;
-      const isTimeout = causeCode === 'ETIMEDOUT' || causeSignal === 'SIGTERM';
+      const cause: unknown =
+        e instanceof Error && "cause" in e ? (e as { cause?: unknown }).cause : undefined;
+      const causeCode =
+        cause && typeof cause === "object" && "code" in cause
+          ? (cause as { code?: unknown }).code
+          : undefined;
+      const causeSignal =
+        cause && typeof cause === "object" && "signal" in cause
+          ? (cause as { signal?: unknown }).signal
+          : undefined;
+      const isTimeout = causeCode === "ETIMEDOUT" || causeSignal === "SIGTERM";
       if (isTimeout) {
         return buildPartialResult({
           fromCommit: lastCommit,
-          toCommit: lastCommit ?? '',
+          toCommit: lastCommit ?? "",
           filesImported: 0,
           pagesAffected: [],
           chunksCreated: 0,
-          added: 0, modified: 0, deleted: 0, renamed: 0,
-          reason: 'pull_timeout',
+          added: 0,
+          modified: 0,
+          deleted: 0,
+          renamed: 0,
+          reason: "pull_timeout",
         });
       }
-      if (msg.includes('non-fast-forward') || msg.includes('diverged')) {
+      if (msg.includes("non-fast-forward") || msg.includes("diverged")) {
         serr(`Warning: git pull failed (remote diverged). Syncing from local state.`);
       } else {
         serr(`Warning: git pull failed: ${msg.slice(0, 100)}`);
@@ -1282,7 +1359,7 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
   // Get current HEAD
   let headCommit: string;
   try {
-    headCommit = git(repoPath, ['rev-parse', 'HEAD']);
+    headCommit = git(repoPath, ["rev-parse", "HEAD"]);
   } catch {
     throw new Error(`No commits in repo ${repoPath}. Make at least one commit before syncing.`);
   }
@@ -1304,7 +1381,7 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
   if (lastCommit) {
     let objectPresent = true;
     try {
-      git(repoPath, ['cat-file', '-t', lastCommit]);
+      git(repoPath, ["cat-file", "-t", lastCommit]);
     } catch {
       objectPresent = false;
     }
@@ -1312,7 +1389,9 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
       // Object gc'd after a history rewrite — nothing to diff against, so fall
       // back to the authoritative full reconcile (which now also purges stale
       // pages for deleted files; see performFullSync's delete-reconcile pass).
-      serr(`Sync anchor ${lastCommit.slice(0, 8)} object missing (gc'd after history rewrite). Running full reimport.`);
+      serr(
+        `Sync anchor ${lastCommit.slice(0, 8)} object missing (gc'd after history rewrite). Running full reimport.`
+      );
       return performFullSync(engine, repoPath, headCommit, opts);
     }
 
@@ -1321,15 +1400,15 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
     // failure mode (#1970) is visible in the logs.
     let isAncestor = true;
     try {
-      git(repoPath, ['merge-base', '--is-ancestor', lastCommit, headCommit]);
+      git(repoPath, ["merge-base", "--is-ancestor", lastCommit, headCommit]);
     } catch {
       isAncestor = false;
     }
     if (!isAncestor) {
       slog(
         `[sync] last_commit ${lastCommit.slice(0, 8)} not an ancestor of HEAD ` +
-        `(history rewritten) — diffing tree-to-tree against the orphaned bookmark; ` +
-        `advancing to HEAD on completion.`,
+          `(history rewritten) — diffing tree-to-tree against the orphaned bookmark; ` +
+          `advancing to HEAD on completion.`
       );
     }
   }
@@ -1358,7 +1437,7 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
     if (storedTarget) {
       let pinReachable = false;
       try {
-        git(repoPath, ['merge-base', '--is-ancestor', storedTarget, headCommit]);
+        git(repoPath, ["merge-base", "--is-ancestor", storedTarget, headCommit]);
         pinReachable = true;
       } catch {
         pinReachable = false;
@@ -1368,12 +1447,12 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
         completedPaths = await loadOpCheckpoint(engine, ckpt.paths);
         slog(
           `[sync] resuming checkpoint: ${completedPaths.length} file(s) already done; ` +
-          `draining ${lastCommit.slice(0, 8)}..${pin.slice(0, 8)} (pinned target).`,
+            `draining ${lastCommit.slice(0, 8)}..${pin.slice(0, 8)} (pinned target).`
         );
       } else {
         slog(
           `[sync] checkpoint target ${storedTarget.slice(0, 8)} no longer reachable ` +
-          `(history rewritten); restarting against HEAD.`,
+            `(history rewritten); restarting against HEAD.`
         );
         await clearOpCheckpoint(engine, ckpt.paths);
         await clearOpCheckpoint(engine, ckpt.target);
@@ -1392,19 +1471,30 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
   const currentVersion = String(CHUNKER_VERSION);
   const versionMismatch = storedVersion !== null && storedVersion !== currentVersion;
   const versionNeverSet = storedVersion === null && opts.sourceId !== undefined;
-  const detachedWorkingTreeManifest = detachedHead ? buildDetachedWorkingTreeManifest(repoPath) : null;
-  const hasDetachedWorkingTreeChanges = detachedWorkingTreeManifest !== null &&
+  const detachedWorkingTreeManifest = detachedHead
+    ? buildDetachedWorkingTreeManifest(repoPath)
+    : null;
+  const hasDetachedWorkingTreeChanges =
+    detachedWorkingTreeManifest !== null &&
     (detachedWorkingTreeManifest.added.length > 0 ||
       detachedWorkingTreeManifest.modified.length > 0 ||
       detachedWorkingTreeManifest.deleted.length > 0 ||
       detachedWorkingTreeManifest.renamed.length > 0);
 
-  if (lastCommit === headCommit && !versionMismatch && !versionNeverSet && !hasDetachedWorkingTreeChanges) {
+  if (
+    lastCommit === headCommit &&
+    !versionMismatch &&
+    !versionNeverSet &&
+    !hasDetachedWorkingTreeChanges
+  ) {
     return {
-      status: 'up_to_date',
+      status: "up_to_date",
       fromCommit: lastCommit,
       toCommit: headCommit,
-      added: 0, modified: 0, deleted: 0, renamed: 0,
+      added: 0,
+      modified: 0,
+      deleted: 0,
+      renamed: 0,
       chunksCreated: 0,
       embedded: 0,
       pagesAffected: [],
@@ -1413,8 +1503,8 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
 
   if ((versionMismatch || versionNeverSet) && lastCommit === headCommit) {
     slog(
-      `[sync] chunker_version gate: stored=${storedVersion ?? 'unset'}, current=${currentVersion}. ` +
-      `Forcing full re-chunk pass (git HEAD unchanged but pipeline version advanced).`,
+      `[sync] chunker_version gate: stored=${storedVersion ?? "unset"}, current=${currentVersion}. ` +
+        `Forcing full re-chunk pass (git HEAD unchanged but pipeline version advanced).`
     );
     const result = await performFullSync(engine, repoPath, headCommit, opts);
     await writeChunkerVersion(engine, opts.sourceId, currentVersion);
@@ -1432,13 +1522,13 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
   // of throwing — a slow correct reconcile beats a hard error or a silent walk.
   let diffOutput: string;
   try {
-    diffOutput = git(repoPath, ['diff', '--name-status', '-M', `${lastCommit}..${pin}`]);
+    diffOutput = git(repoPath, ["diff", "--name-status", "-M", `${lastCommit}..${pin}`]);
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     serr(
       `[sync] git diff ${lastCommit.slice(0, 8)}..${pin.slice(0, 8)} failed ` +
-      `(${msg.slice(0, 80)}) — likely an oversized post-rewrite diff; ` +
-      `falling back to full reconcile.`,
+        `(${msg.slice(0, 80)}) — likely an oversized post-rewrite diff; ` +
+        `falling back to full reconcile.`
     );
     return performFullSync(engine, repoPath, headCommit, opts);
   }
@@ -1458,16 +1548,16 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
   // set. isSyncable(r.from) excludes metafiles automatically, so a rename of a
   // metafile is left untouched (matching the #1433 metafile-skip invariant).
   const renamedToUnsyncable = manifest.renamed
-    .filter(r => isSyncable(r.from, syncOpts) && !isSyncable(r.to, syncOpts))
-    .map(r => r.from);
+    .filter((r) => isSyncable(r.from, syncOpts) && !isSyncable(r.to, syncOpts))
+    .map((r) => r.from);
   const filtered: SyncManifest = {
-    added: manifest.added.filter(p => isSyncable(p, syncOpts)),
-    modified: manifest.modified.filter(p => isSyncable(p, syncOpts)),
+    added: manifest.added.filter((p) => isSyncable(p, syncOpts)),
+    modified: manifest.modified.filter((p) => isSyncable(p, syncOpts)),
     deleted: unique([
-      ...manifest.deleted.filter(p => isSyncable(p, syncOpts)),
+      ...manifest.deleted.filter((p) => isSyncable(p, syncOpts)),
       ...renamedToUnsyncable,
     ]),
-    renamed: manifest.renamed.filter(r => isSyncable(r.to, syncOpts)),
+    renamed: manifest.renamed.filter((r) => isSyncable(r.to, syncOpts)),
   };
 
   // Delete pages that became un-syncable (modified but filtered out).
@@ -1493,14 +1583,14 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
   // delete the page. That's the same pre-fix behavior — removing the
   // page requires `gbrain pages purge-deleted` or a direct MCP delete.
   // Filed as v0.42+ follow-up for a `gbrain pages remove <slug>` surface.
-  const unsyncableModified = manifest.modified.filter(p => !isSyncable(p, syncOpts));
+  const unsyncableModified = manifest.modified.filter((p) => !isSyncable(p, syncOpts));
   // v0.18.0+ multi-source: scope getPage + deletePage to opts.sourceId so
   // unsyncable cleanup in source A doesn't accidentally sweep same-slug
   // pages in sources B/C/D.
   const pageOpts = opts.sourceId ? { sourceId: opts.sourceId } : undefined;
   for (const path of unsyncableModified) {
     // v0.41.13 #1433: never delete on metafile classification.
-    if (unsyncableReason(path, syncOpts) === 'metafile') continue;
+    if (unsyncableReason(path, syncOpts) === "metafile") continue;
     const slug = await resolveSlugByPathOrSourcePath(engine, path, opts.sourceId);
     try {
       const existing = await engine.getPage(slug, pageOpts);
@@ -1508,22 +1598,28 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
         await engine.deletePage(slug, pageOpts);
         slog(`  Deleted un-syncable page: ${slug}`);
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }
 
-  const totalChanges = filtered.added.length + filtered.modified.length +
-    filtered.deleted.length + filtered.renamed.length;
+  const totalChanges =
+    filtered.added.length +
+    filtered.modified.length +
+    filtered.deleted.length +
+    filtered.renamed.length;
 
   // Dry run
   if (opts.dryRun) {
     slog(`Sync dry run: ${lastCommit.slice(0, 8)}..${headCommit.slice(0, 8)}`);
-    if (filtered.added.length) slog(`  Added: ${filtered.added.join(', ')}`);
-    if (filtered.modified.length) slog(`  Modified: ${filtered.modified.join(', ')}`);
-    if (filtered.deleted.length) slog(`  Deleted: ${filtered.deleted.join(', ')}`);
-    if (filtered.renamed.length) slog(`  Renamed: ${filtered.renamed.map(r => `${r.from} -> ${r.to}`).join(', ')}`);
+    if (filtered.added.length) slog(`  Added: ${filtered.added.join(", ")}`);
+    if (filtered.modified.length) slog(`  Modified: ${filtered.modified.join(", ")}`);
+    if (filtered.deleted.length) slog(`  Deleted: ${filtered.deleted.join(", ")}`);
+    if (filtered.renamed.length)
+      slog(`  Renamed: ${filtered.renamed.map((r) => `${r.from} -> ${r.to}`).join(", ")}`);
     if (totalChanges === 0) slog(`  No syncable changes.`);
     return {
-      status: 'dry_run',
+      status: "dry_run",
       fromCommit: lastCommit,
       toCommit: headCommit,
       added: filtered.added.length,
@@ -1541,16 +1637,19 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
     // (#1794): advance to the PINNED target, and clear any checkpoint (a resume
     // whose remaining range turned out to have no syncable changes still
     // completes cleanly here).
-    await writeSyncAnchor(engine, opts.sourceId, 'last_commit', pin, commitTimeMs(repoPath, pin));
-    await engine.setConfig('sync.last_run', new Date().toISOString());
+    await writeSyncAnchor(engine, opts.sourceId, "last_commit", pin, commitTimeMs(repoPath, pin));
+    await engine.setConfig("sync.last_run", new Date().toISOString());
     await writeChunkerVersion(engine, opts.sourceId, String(CHUNKER_VERSION));
     await clearOpCheckpoint(engine, ckpt.paths);
     await clearOpCheckpoint(engine, ckpt.target);
     return {
-      status: 'up_to_date',
+      status: "up_to_date",
       fromCommit: lastCommit,
       toCommit: pin,
-      added: 0, modified: 0, deleted: 0, renamed: 0,
+      added: 0,
+      modified: 0,
+      deleted: 0,
+      renamed: 0,
       chunksCreated: 0,
       embedded: 0,
       pagesAffected: [],
@@ -1665,15 +1764,19 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
   // `bankedFiles` is surfaced so a killed run shows banked progress instead of
   // looking like total loss. toCommit reports the PINNED target; last_commit is
   // never advanced on a partial (the next run resumes from the checkpoint).
-  const partial = async (reason: 'timeout' | 'pull_timeout'): Promise<SyncResult> => {
+  const partial = async (reason: "timeout" | "pull_timeout"): Promise<SyncResult> => {
     deregisterCheckpointCleanup();
     if (!checkpointDead) {
-      try { await flushCheckpoint(); } catch { /* best effort — we're aborting */ }
+      try {
+        await flushCheckpoint();
+      } catch {
+        /* best effort — we're aborting */
+      }
     }
     const banked = bankedFiles;
     serr(
       `[sync] banked ${banked} file(s) this run; next 'gbrain sync' resumes from ` +
-      `the checkpoint (last_commit unchanged at ${(lastCommit ?? '').slice(0, 8)}).`,
+        `the checkpoint (last_commit unchanged at ${(lastCommit ?? "").slice(0, 8)}).`
     );
     return buildPartialResult({
       fromCommit: lastCommit,
@@ -1685,7 +1788,7 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
       modified: filtered.modified.length,
       deleted: filtered.deleted.length,
       renamed: filtered.renamed.length,
-      reason: checkpointDead ? 'checkpoint_unavailable' : reason,
+      reason: checkpointDead ? "checkpoint_unavailable" : reason,
       bankedFiles,
     });
   };
@@ -1694,9 +1797,11 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
   // can't persist, the pool is dead and nothing has drained — abort with zero
   // loss; the next run retries the whole range (content_hash short-circuits).
   if (!pinPersisted) {
-    serr('[sync] checkpoint target write failed (pool unavailable) — aborting before import; nothing drained, next run retries.');
+    serr(
+      "[sync] checkpoint target write failed (pool unavailable) — aborting before import; nothing drained, next run retries."
+    );
     checkpointDead = true;
-    return await partial('timeout'); // reason → checkpoint_unavailable
+    return await partial("timeout"); // reason → checkpoint_unavailable
   }
 
   // v0.42.x (#1794): an external SIGTERM (watchdog/launcher timeout — the exact
@@ -1706,7 +1811,7 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
   // is shorter than withRetry's ~12s budget, so a retrying flush would be cut
   // off). Flushes paths ONLY — never clears the checkpoint or advances
   // last_commit, so the D4 invariant holds. Deregistered on every normal return.
-  deregisterCheckpointCleanup = registerCleanup('sync-checkpoint', async () => {
+  deregisterCheckpointCleanup = registerCleanup("sync-checkpoint", async () => {
     await appendCompletedOnce(engine, ckpt.paths, [...pendingCheckpointPaths]);
   });
 
@@ -1774,14 +1879,14 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
   // re-resolving + re-deleting tens of thousands of already-gone pages).
   const deletesToDo = resumeFilter(filtered.deleted, [...completed]);
   if (deletesToDo.length > 0) {
-    progress.start('sync.deletes', deletesToDo.length);
+    progress.start("sync.deletes", deletesToDo.length);
     if (opts.sourceId) {
       const sid = opts.sourceId;
       const deleteScopedOpts = { sourceId: sid };
       for (let i = 0; i < deletesToDo.length; i += DELETE_BATCH_SIZE) {
         if (opts.signal?.aborted) {
           progress.finish();
-          return await partial('timeout');
+          return await partial("timeout");
         }
         const batch = deletesToDo.slice(i, i + DELETE_BATCH_SIZE);
 
@@ -1796,7 +1901,7 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
           // semantics.
           pathSlugMap = new Map();
         }
-        const slugs = batch.map(p => pathSlugMap.get(p) ?? resolveSlugForPath(p));
+        const slugs = batch.map((p) => pathSlugMap.get(p) ?? resolveSlugForPath(p));
 
         // Phase B: batch delete (1 round-trip per batch).
         try {
@@ -1826,7 +1931,10 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
             }
           }
         }
-        progress.tick(batch.length, `deletes ${Math.min(i + DELETE_BATCH_SIZE, deletesToDo.length)}/${deletesToDo.length}`);
+        progress.tick(
+          batch.length,
+          `deletes ${Math.min(i + DELETE_BATCH_SIZE, deletesToDo.length)}/${deletesToDo.length}`
+        );
         await maybeYield();
       }
     } else {
@@ -1838,7 +1946,7 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
       for (const path of deletesToDo) {
         if (opts.signal?.aborted) {
           progress.finish();
-          return await partial('timeout');
+          return await partial("timeout");
         }
         const slug = await resolveSlugByPathOrSourcePath(engine, path, undefined);
         try {
@@ -1868,9 +1976,9 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
   // only the upfront slug-resolve N+1 gets batched. The try/catch around
   // updateSlug for slug-doesn't-exist preserves verbatim.
   // v0.42.x (#1794): resume-filter renames on the destination path.
-  const renamesToDo = filtered.renamed.filter(r => !completed.has(r.to));
+  const renamesToDo = filtered.renamed.filter((r) => !completed.has(r.to));
   if (renamesToDo.length > 0) {
-    progress.start('sync.renames', renamesToDo.length);
+    progress.start("sync.renames", renamesToDo.length);
     // v0.18.0+ multi-source: scope updateSlug so the rename only touches the
     // source-A row, not every same-slug row across sources (which would
     // either sweep them all OR violate (source_id, slug) UNIQUE).
@@ -1884,11 +1992,11 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
     const fromSlugByPath = new Map<string, string>();
     if (opts.sourceId) {
       const sid = opts.sourceId;
-      const fromPaths = renamesToDo.map(r => r.from);
+      const fromPaths = renamesToDo.map((r) => r.from);
       for (let i = 0; i < fromPaths.length; i += DELETE_BATCH_SIZE) {
         if (opts.signal?.aborted) {
           progress.finish();
-          return await partial('timeout');
+          return await partial("timeout");
         }
         const batch = fromPaths.slice(i, i + DELETE_BATCH_SIZE);
         let m: Map<string, string>;
@@ -1909,7 +2017,7 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
       // refactor commits with 200+ renames must respect --timeout.
       if (opts.signal?.aborted) {
         progress.finish();
-        return await partial('timeout');
+        return await partial("timeout");
       }
       const oldSlug = opts.sourceId
         ? (fromSlugByPath.get(from) ?? resolveSlugForPath(from))
@@ -1924,8 +2032,12 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
       // Reimport at new path (picks up content changes)
       const filePath = join(repoPath, to);
       if (existsSync(filePath)) {
-        const result = await importFile(engine, filePath, to, { noEmbed, sourceId: opts.sourceId, activePack: syncActivePack });
-        if (result.status === 'imported') chunksCreated += result.chunks;
+        const result = await importFile(engine, filePath, to, {
+          noEmbed,
+          sourceId: opts.sourceId,
+          activePack: syncActivePack,
+        });
+        if (result.status === "imported") chunksCreated += result.chunks;
       }
       pagesAffected.push(newSlug);
       await markCompleted(to);
@@ -1977,8 +2089,8 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
   // (parent pool only). The doctor `pool_budget` nudge covers the case where
   // the parent pool alone already exceeds the budget.
   const maxConnections = resolveMaxConnections();
-  if (maxConnections !== undefined && engine.kind !== 'pglite') {
-    const { resolvePoolSize } = await import('../core/db.ts');
+  if (maxConnections !== undefined && engine.kind !== "pglite") {
+    const { resolvePoolSize } = await import("../core/db.ts");
     const parentPool = resolvePoolSize();
     const perWorkerPool = Math.min(2, resolvePoolSize(2));
     const clampResult = clampWorkersForConnectionBudget(effectiveConcurrency, {
@@ -1989,16 +2101,20 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
     if (clampResult.clamped) {
       serr(
         `  [sync] GBRAIN_MAX_CONNECTIONS=${maxConnections}: clamped workers ` +
-        `${effectiveConcurrency} -> ${clampResult.workers} ` +
-        `(parent ${parentPool} + ${clampResult.workers}x${perWorkerPool} per-worker).`,
+          `${effectiveConcurrency} -> ${clampResult.workers} ` +
+          `(parent ${parentPool} + ${clampResult.workers}x${perWorkerPool} per-worker).`
       );
     }
     effectiveConcurrency = clampResult.workers;
   }
-  const runParallel = shouldRunParallel(effectiveConcurrency, importsToDo.length, explicitConcurrency);
+  const runParallel = shouldRunParallel(
+    effectiveConcurrency,
+    importsToDo.length,
+    explicitConcurrency
+  );
 
   if (importsToDo.length > 0) {
-    progress.start('sync.imports', importsToDo.length);
+    progress.start("sync.imports", importsToDo.length);
 
     // Core import logic shared by serial and parallel paths.
     // repoPath is validated non-null at the top of performSyncInner; narrow for TS.
@@ -2039,8 +2155,12 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
         // / addLink) target (sourceId, slug). Pre-fix the schema DEFAULT
         // 'default' was applied even for non-default sources, fabricating
         // duplicate rows that crashed bare-slug subqueries with Postgres 21000.
-        const result = await importFile(eng, filePath, path, { noEmbed, sourceId: opts.sourceId, activePack: syncActivePack });
-        if (result.status === 'imported') {
+        const result = await importFile(eng, filePath, path, {
+          noEmbed,
+          sourceId: opts.sourceId,
+          activePack: syncActivePack,
+        });
+        if (result.status === "imported") {
           chunksCreated += result.chunks;
           pagesAffected.push(result.slug);
           // issue #1939: record the file path (not slug) so the gate clears any
@@ -2052,7 +2172,7 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
           filesImported++;
           // v0.42.x (#1794): checkpoint this path so a kill banks it.
           await markCompleted(path);
-        } else if (result.status === 'skipped' && (result as any).error) {
+        } else if (result.status === "skipped" && (result as any).error) {
           failedFiles.push({ path, error: String((result as any).error) });
         } else {
           // status 'skipped' with no error == content_hash short-circuit
@@ -2076,19 +2196,19 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
       // back to serial when database_url is unset, so we never crash on a null
       // assertion if config is missing.
       const config = loadConfig();
-      if (engine.kind === 'pglite' || !config?.database_url) {
+      if (engine.kind === "pglite" || !config?.database_url) {
         for (const path of importsToDo) {
           // v0.41.13.0 (T2 / D-V3-2): per-iteration abort check. PGLite
           // serial fallback inside the parallel branch (database_url unset).
           if (opts.signal?.aborted) {
             progress.finish();
-            return await partial('timeout');
+            return await partial("timeout");
           }
           await importOnePath(engine, path);
         }
       } else {
-        const { PostgresEngine } = await import('../core/postgres-engine.ts');
-        const { resolvePoolSize } = await import('../core/db.ts');
+        const { PostgresEngine } = await import("../core/postgres-engine.ts");
+        const { resolvePoolSize } = await import("../core/db.ts");
         const workerPoolSize = Math.min(2, resolvePoolSize(2));
         const workerCount = Math.min(effectiveConcurrency, importsToDo.length);
         const databaseUrl = config.database_url;
@@ -2123,7 +2243,7 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
                 if (idx >= importsToDo.length) break;
                 await importOnePath(eng, importsToDo[idx]);
               }
-            }),
+            })
           );
         } finally {
           // A2 (v0.22.13): try/finally guarantees connection cleanup even when
@@ -2132,10 +2252,14 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
           // disconnect must not strand the others.
           await Promise.all(
             workerEngines.map((e) =>
-              e.disconnect().catch((err: unknown) =>
-                serr(`  worker disconnect failed: ${err instanceof Error ? err.message : String(err)}`),
-              ),
-            ),
+              e
+                .disconnect()
+                .catch((err: unknown) =>
+                  serr(
+                    `  worker disconnect failed: ${err instanceof Error ? err.message : String(err)}`
+                  )
+                )
+            )
           );
         }
       }
@@ -2146,7 +2270,7 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
         // primary serial site.
         if (opts.signal?.aborted) {
           progress.finish();
-          return await partial('timeout');
+          return await partial("timeout");
         }
         await importOnePath(engine, path);
       }
@@ -2161,7 +2285,7 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
     // the bookmark write below. By returning partial here, we preserve
     // the D-V3-1 invariant that abort means "never advance last_commit."
     if (opts.signal?.aborted) {
-      return await partial('timeout');
+      return await partial("timeout");
     }
   }
 
@@ -2171,7 +2295,7 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
   // short-circuits the re-import). partial() overrides the reason when
   // checkpointDead is set.
   if (checkpointDead) {
-    return await partial('timeout');
+    return await partial("timeout");
   }
 
   // v0.42.x (#1794): bank the final completed set before the gate so a block /
@@ -2197,18 +2321,18 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
   //   - pin NOT an ancestor of HEAD (history REWRITE / reset / force-push) →
   //     the tree we imported against is gone. Block; do not advance.
   try {
-    const currentHead = git(repoPath, ['rev-parse', 'HEAD']);
+    const currentHead = git(repoPath, ["rev-parse", "HEAD"]);
     if (currentHead !== pin) {
       let pinStillReachable = false;
       try {
-        git(repoPath, ['merge-base', '--is-ancestor', pin, currentHead]);
+        git(repoPath, ["merge-base", "--is-ancestor", pin, currentHead]);
         pinStillReachable = true;
       } catch {
         pinStillReachable = false;
       }
       if (!pinStillReachable) {
         failedFiles.push({
-          path: '<head>',
+          path: "<head>",
           error: `git history rewritten during sync: pinned target ${pin.slice(0, 8)} is no longer an ancestor of HEAD ${currentHead.slice(0, 8)}`,
         });
       }
@@ -2217,7 +2341,7 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
   } catch (e) {
     // rev-parse failure is itself a drift signal (worktree disappeared).
     failedFiles.push({
-      path: '<head>',
+      path: "<head>",
       error: `git HEAD verification failed: ${e instanceof Error ? e.message : String(e)}`,
     });
   }
@@ -2242,9 +2366,9 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
     // "fresh". The checkpoint rows clear here — CONVERGENCE CONTRACT: sync
     // convergence == IMPORT convergence; downstream extract/facts/embed is
     // decoupled (its own resumable stale sweeps).
-    await writeSyncAnchor(engine, opts.sourceId, 'last_commit', pin, commitTimeMs(repoPath, pin));
-    await engine.setConfig('sync.last_run', new Date().toISOString());
-    await writeSyncAnchor(engine, opts.sourceId, 'repo_path', repoPath);
+    await writeSyncAnchor(engine, opts.sourceId, "last_commit", pin, commitTimeMs(repoPath, pin));
+    await engine.setConfig("sync.last_run", new Date().toISOString());
+    await writeSyncAnchor(engine, opts.sourceId, "repo_path", repoPath);
     await writeChunkerVersion(engine, opts.sourceId, String(CHUNKER_VERSION));
     await clearOpCheckpoint(engine, ckpt.paths);
     await clearOpCheckpoint(engine, ckpt.target);
@@ -2257,7 +2381,7 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
   const resolvedPaths = [
     ...succeededPaths,
     ...filtered.deleted,
-    ...filtered.renamed.map(r => r.from),
+    ...filtered.renamed.map((r) => r.from),
   ];
 
   const gate = await applySyncFailureGate({
@@ -2274,34 +2398,34 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
     if (gate.sentinelBlocked) {
       serr(
         `\nSync blocked: repository history changed during sync (force-push / reset).\n` +
-        `${codeBreakdown}\n\n` +
-        `The pinned target is no longer an ancestor of HEAD; advancing would record ` +
-        `a commit that doesn't match the indexed tree. Re-run sync to re-pin against ` +
-        `current HEAD.`,
+          `${codeBreakdown}\n\n` +
+          `The pinned target is no longer an ancestor of HEAD; advancing would record ` +
+          `a commit that doesn't match the indexed tree. Re-run sync to re-pin against ` +
+          `current HEAD.`
       );
     } else {
-      const fileFailCount = failedFiles.filter(f => isSkippablePath(f.path)).length;
+      const fileFailCount = failedFiles.filter((f) => isSkippablePath(f.path)).length;
       serr(
         `\nSync blocked: ${fileFailCount} file(s) failed to parse:\n` +
-        `${codeBreakdown}\n\n` +
-        `Fix the frontmatter and re-run, or use 'gbrain sync --skip-failed' to ` +
-        `acknowledge and move on. A file that keeps failing auto-skips after ` +
-        `${resolveAutoSkipThreshold()} consecutive syncs.`,
+          `${codeBreakdown}\n\n` +
+          `Fix the frontmatter and re-run, or use 'gbrain sync --skip-failed' to ` +
+          `acknowledge and move on. A file that keeps failing auto-skips after ` +
+          `${resolveAutoSkipThreshold()} consecutive syncs.`
       );
     }
     // Update last_run + repo_path (progress on infra) but NOT last_commit. The
     // checkpoint is INTENTIONALLY left in place — the banked completed set lets
     // the next run skip the drained files and re-attempt only the failures.
-    await engine.setConfig('sync.last_run', new Date().toISOString());
-    await writeSyncAnchor(engine, opts.sourceId, 'repo_path', repoPath);
+    await engine.setConfig("sync.last_run", new Date().toISOString());
+    await writeSyncAnchor(engine, opts.sourceId, "repo_path", repoPath);
     // v0.42.x (#1794): surface banked progress so a blocked run doesn't read as
     // total loss (last_commit is unchanged by design; the checkpoint is banked).
     serr(
       `[sync] banked ${bankedFiles} file(s) this run; next 'gbrain sync' resumes ` +
-      `from the checkpoint (last_commit unchanged at ${(lastCommit ?? '').slice(0, 8)}).`,
+        `from the checkpoint (last_commit unchanged at ${(lastCommit ?? "").slice(0, 8)}).`
     );
     return {
-      status: 'blocked_by_failures',
+      status: "blocked_by_failures",
       fromCommit: lastCommit,
       toCommit: pin,
       added: filtered.added.length,
@@ -2323,16 +2447,17 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
   if (gate.autoSkipped.length > 0) {
     serr(
       `\n  Auto-skipped ${gate.autoSkipped.length} file(s) that failed >= ` +
-      `${resolveAutoSkipThreshold()} consecutive syncs:\n` +
-      gate.autoSkipped.map(p => `    ${p}`).join('\n') + '\n' +
-      `  Bookmark advanced; these pages are NOT indexed and remain in ` +
-      `sync-failures.jsonl. 'gbrain doctor' will warn until they're fixed.`,
+        `${resolveAutoSkipThreshold()} consecutive syncs:\n` +
+        gate.autoSkipped.map((p) => `    ${p}`).join("\n") +
+        "\n" +
+        `  Bookmark advanced; these pages are NOT indexed and remain in ` +
+        `sync-failures.jsonl. 'gbrain doctor' will warn until they're fixed.`
     );
   }
 
   // Log ingest
   await engine.logIngest({
-    source_type: 'git_sync',
+    source_type: "git_sync",
     source_ref: `${repoPath} @ ${headCommit.slice(0, 8)}`,
     pages_updated: pagesAffected,
     summary: `Sync: +${filtered.added.length} ~${filtered.modified.length} -${filtered.deleted.length} R${filtered.renamed.length}, ${chunksCreated} chunks, ${elapsed}ms`,
@@ -2357,15 +2482,21 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
   if (!opts.noExtract && totalChanges > 100 && pagesAffected.length > 0) {
     slog(
       `  Large sync: deferring link/timeline extraction. ` +
-      `Run 'gbrain extract --stale${opts.sourceId ? ` --source-id ${opts.sourceId}` : ''}' ` +
-      `(or let the autopilot cycle's extract phase sweep it).`,
+        `Run 'gbrain extract --stale${opts.sourceId ? ` --source-id ${opts.sourceId}` : ""}' ` +
+        `(or let the autopilot cycle's extract phase sweep it).`
     );
   }
   if (!opts.noExtract && totalChanges <= 100 && pagesAffected.length > 0) {
     try {
-      const { extractLinksForSlugs, extractTimelineForSlugs, stampExtracted } = await import('./extract.ts');
+      const { extractLinksForSlugs, extractTimelineForSlugs, stampExtracted } =
+        await import("./extract.ts");
       const linksCreated = await extractLinksForSlugs(engine, repoPath, pagesAffected, extractOpts);
-      const timelineCreated = await extractTimelineForSlugs(engine, repoPath, pagesAffected, extractOpts);
+      const timelineCreated = await extractTimelineForSlugs(
+        engine,
+        repoPath,
+        pagesAffected,
+        extractOpts
+      );
       if (linksCreated > 0 || timelineCreated > 0) {
         slog(`  Extracted: ${linksCreated} links, ${timelineCreated} timeline entries`);
       }
@@ -2377,9 +2508,11 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
       // Best-effort: a stamp miss just means extract --stale re-sweeps later.
       await stampExtracted(
         engine,
-        pagesAffected.map((slug) => ({ slug, source_id: opts.sourceId ?? 'default' })),
+        pagesAffected.map((slug) => ({ slug, source_id: opts.sourceId ?? "default" }))
       );
-    } catch { /* extraction is best-effort */ }
+    } catch {
+      /* extraction is best-effort */
+    }
   }
 
   // v0.31.2: facts extraction now routes through the shared
@@ -2391,8 +2524,8 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
   // PageTypes), (b) a divergent eligibility shape from put_page,
   // and (c) raw extract→insert without dedup/supersede.
   if (!opts.noExtract && pagesAffected.length > 0 && pagesAffected.length <= 50) {
-    const { runFactsBackstop } = await import('../core/facts/backstop.ts');
-    const factsSourceId = opts.sourceId ?? 'default';
+    const { runFactsBackstop } = await import("../core/facts/backstop.ts");
+    const factsSourceId = opts.sourceId ?? "default";
     for (const slug of pagesAffected) {
       try {
         // v0.40 D21: source-scoped getPage. Pre-v0.40 this called
@@ -2407,19 +2540,21 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
           {
             slug,
             type: page.type,
-            compiled_truth: page.compiled_truth ?? '',
+            compiled_truth: page.compiled_truth ?? "",
             frontmatter: page.frontmatter ?? {},
           },
           {
             engine,
             sourceId: factsSourceId,
             sessionId: `sync:${slug}`,
-            source: 'sync:import',
-            mode: 'queue',
-            notabilityFilter: 'high-only',
-          },
+            source: "sync:import",
+            mode: "queue",
+            notabilityFilter: "high-only",
+          }
         );
-      } catch { /* per-page enqueue is best-effort */ }
+      } catch {
+        /* per-page enqueue is best-effort */
+      }
     }
   }
 
@@ -2435,16 +2570,16 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
   let embedded = 0;
   if (!noEmbed && pagesAffected.length > 0 && pagesAffected.length <= 100) {
     try {
-      const { runEmbedCore } = await import('./embed.ts');
+      const { runEmbedCore } = await import("./embed.ts");
       const embedOpts = opts.sourceId
         ? { slugs: pagesAffected, sourceId: opts.sourceId }
         : { slugs: pagesAffected };
       await runEmbedCore(engine, embedOpts);
       embedded = pagesAffected.length;
     } catch (e: unknown) {
-      const { EmbeddingDimMismatchError } = await import('./embed.ts');
+      const { EmbeddingDimMismatchError } = await import("./embed.ts");
       if (e instanceof EmbeddingDimMismatchError) {
-        serr('\n' + e.recipeMessage + '\n');
+        serr("\n" + e.recipeMessage + "\n");
         serr(`Tip: pass --no-embed to sync without embedding, then`);
         serr(`run 'gbrain embed --stale' after fixing the schema.\n`);
       }
@@ -2455,7 +2590,7 @@ async function performSyncInner(engine: BrainEngine, opts: SyncOpts): Promise<Sy
   }
 
   return {
-    status: 'synced',
+    status: "synced",
     fromCommit: lastCommit,
     toCommit: headCommit,
     added: filtered.added.length,
@@ -2472,7 +2607,7 @@ async function performFullSync(
   engine: BrainEngine,
   repoPath: string,
   headCommit: string,
-  opts: SyncOpts,
+  opts: SyncOpts
 ): Promise<SyncResult> {
   // Dry-run: walk the repo, count syncable files, return without writing.
   // Fixes the silent-write-on-dry-run bug where performFullSync called
@@ -2484,14 +2619,14 @@ async function performFullSync(
   // code --dry-run` always reported zero files even when ~1500 code
   // files were waiting.
   if (opts.dryRun) {
-    const allFiles = collectSyncableFiles(repoPath, { strategy: opts.strategy ?? 'markdown' });
+    const allFiles = collectSyncableFiles(repoPath, { strategy: opts.strategy ?? "markdown" });
     slog(
-      `Full-sync dry run (strategy=${opts.strategy ?? 'markdown'}): ` +
-      `${allFiles.length} file(s) would be imported ` +
-      `from ${repoPath} @ ${headCommit.slice(0, 8)}.`,
+      `Full-sync dry run (strategy=${opts.strategy ?? "markdown"}): ` +
+        `${allFiles.length} file(s) would be imported ` +
+        `from ${repoPath} @ ${headCommit.slice(0, 8)}.`
     );
     return {
-      status: 'dry_run',
+      status: "dry_run",
       fromCommit: null,
       toCommit: headCommit,
       added: allFiles.length,
@@ -2511,17 +2646,19 @@ async function performFullSync(
   // sync and the jobs handler.
   const FULL_SYNC_LARGE_MARKER = Number.MAX_SAFE_INTEGER;
   const fullConcurrency = autoConcurrency(engine, FULL_SYNC_LARGE_MARKER, opts.concurrency);
-  slog(`Running full import of ${repoPath}${fullConcurrency > 1 ? ` (${fullConcurrency} workers)` : ''}...`);
-  const { runImport } = await import('./import.ts');
+  slog(
+    `Running full import of ${repoPath}${fullConcurrency > 1 ? ` (${fullConcurrency} workers)` : ""}...`
+  );
+  const { runImport } = await import("./import.ts");
   const importArgs = [repoPath];
-  if (opts.noEmbed) importArgs.push('--no-embed');
-  if (fullConcurrency > 1) importArgs.push('--workers', String(fullConcurrency));
+  if (opts.noEmbed) importArgs.push("--no-embed");
+  if (fullConcurrency > 1) importArgs.push("--workers", String(fullConcurrency));
   // v0.31.2: thread strategy through so code-strategy first sync
   // actually enumerates code files (closes bug 1).
   // v0.30.x: thread sourceId so performFullSync routes pages to the named
   // source (incremental path already does this).
   const _fullImportT0 = Date.now();
-  serr(`[gbrain phase] sync.fullsync.import start strategy=${opts.strategy ?? 'markdown'}`);
+  serr(`[gbrain phase] sync.fullsync.import start strategy=${opts.strategy ?? "markdown"}`);
   const result = await runImport(engine, importArgs, {
     commit: headCommit,
     strategy: opts.strategy,
@@ -2532,7 +2669,7 @@ async function performFullSync(
   });
   serr(
     `[gbrain phase] sync.fullsync.import done ${Date.now() - _fullImportT0}ms ` +
-    `imported=${result.imported} skipped=${result.skipped} errors=${result.errors}`,
+      `imported=${result.imported} skipped=${result.skipped} errors=${result.errors}`
   );
 
   // issue #1939 — gate the full-sync bookmark through the SAME shared ledger as
@@ -2542,16 +2679,24 @@ async function performFullSync(
   // now has been resolved → clear it (resets its auto-skip streak); current
   // failures still climb their attempts.
   const fullSourceId = opts.sourceId ?? DEFAULT_SOURCE_ID;
-  const fullFailureSet = new Set(result.failures.map(f => f.path));
+  const fullFailureSet = new Set(result.failures.map((f) => f.path));
   const fullSucceeded = loadSyncFailures()
-    .filter(e => e.source_id === fullSourceId && isSkippablePath(e.path) && !fullFailureSet.has(e.path))
-    .map(e => e.path);
+    .filter(
+      (e) => e.source_id === fullSourceId && isSkippablePath(e.path) && !fullFailureSet.has(e.path)
+    )
+    .map((e) => e.path);
   const advanceFull = async (): Promise<void> => {
     // Persist sync state so the next sync is incremental. Routed through
     // writeSyncAnchor so --source pins the right sources row.
-    await writeSyncAnchor(engine, opts.sourceId, 'last_commit', headCommit, newestCommitMs(repoPath));
-    await engine.setConfig('sync.last_run', new Date().toISOString());
-    await writeSyncAnchor(engine, opts.sourceId, 'repo_path', repoPath);
+    await writeSyncAnchor(
+      engine,
+      opts.sourceId,
+      "last_commit",
+      headCommit,
+      newestCommitMs(repoPath)
+    );
+    await engine.setConfig("sync.last_run", new Date().toISOString());
+    await writeSyncAnchor(engine, opts.sourceId, "repo_path", repoPath);
     await writeChunkerVersion(engine, opts.sourceId, String(CHUNKER_VERSION));
   };
 
@@ -2569,21 +2714,24 @@ async function performFullSync(
     if (fullGate.sentinelBlocked) {
       serr(`\nFull sync blocked: repository history changed during sync.\n${codeBreakdown}`);
     } else {
-      const fileFailCount = result.failures.filter(f => isSkippablePath(f.path)).length;
+      const fileFailCount = result.failures.filter((f) => isSkippablePath(f.path)).length;
       serr(
         `\nFull sync blocked: ${fileFailCount} file(s) failed:\n` +
-        `${codeBreakdown}\n\n` +
-        `Fix the YAML in those files and re-run, or use '--skip-failed'. A file ` +
-        `that keeps failing auto-skips after ${resolveAutoSkipThreshold()} consecutive syncs.`,
+          `${codeBreakdown}\n\n` +
+          `Fix the YAML in those files and re-run, or use '--skip-failed'. A file ` +
+          `that keeps failing auto-skips after ${resolveAutoSkipThreshold()} consecutive syncs.`
       );
     }
-    await engine.setConfig('sync.last_run', new Date().toISOString());
-    await writeSyncAnchor(engine, opts.sourceId, 'repo_path', repoPath);
+    await engine.setConfig("sync.last_run", new Date().toISOString());
+    await writeSyncAnchor(engine, opts.sourceId, "repo_path", repoPath);
     return {
-      status: 'blocked_by_failures',
+      status: "blocked_by_failures",
       fromCommit: null,
       toCommit: headCommit,
-      added: 0, modified: 0, deleted: 0, renamed: 0,
+      added: 0,
+      modified: 0,
+      deleted: 0,
+      renamed: 0,
       chunksCreated: result.chunksCreated,
       embedded: 0,
       pagesAffected: [],
@@ -2596,8 +2744,8 @@ async function performFullSync(
   if (fullGate.autoSkipped.length > 0) {
     serr(
       `\n  Auto-skipped ${fullGate.autoSkipped.length} file(s) that failed >= ` +
-      `${resolveAutoSkipThreshold()} consecutive syncs. These pages are NOT indexed; ` +
-      `'gbrain doctor' will warn until they're fixed.`,
+        `${resolveAutoSkipThreshold()} consecutive syncs. These pages are NOT indexed; ` +
+        `'gbrain doctor' will warn until they're fixed.`
     );
   }
 
@@ -2629,18 +2777,22 @@ async function performFullSync(
     // to the same form before membership-testing — otherwise every page looks
     // stale and the reconcile would wrongly delete live pages.
     const current = new Set(
-      collectSyncableFiles(repoPath, { strategy: opts.strategy ?? 'markdown' })
-        .map(abs => relative(repoPath, abs)),
+      collectSyncableFiles(repoPath, { strategy: opts.strategy ?? "markdown" }).map((abs) =>
+        relative(repoPath, abs)
+      )
     );
     const rows = await engine.executeRaw<{ slug: string; source_path: string | null }>(
       `SELECT slug, source_path FROM pages WHERE source_id = $1 AND source_path IS NOT NULL AND deleted_at IS NULL`,
-      [sid],
+      [sid]
     );
     const staleSlugs = rows
-      .filter(r => r.source_path != null
-        && isSyncable(r.source_path, reconcileSyncOpts)
-        && !current.has(r.source_path))
-      .map(r => r.slug);
+      .filter(
+        (r) =>
+          r.source_path != null &&
+          isSyncable(r.source_path, reconcileSyncOpts) &&
+          !current.has(r.source_path)
+      )
+      .map((r) => r.slug);
     if (staleSlugs.length > 0) {
       const deleteScopedOpts = { sourceId: sid };
       for (let i = 0; i < staleSlugs.length; i += DELETE_BATCH_SIZE) {
@@ -2652,8 +2804,12 @@ async function performFullSync(
           // Per-slug fallback on a batch blip (mirrors the incremental delete
           // loop). A stale page that won't delete is best-effort, not fatal.
           for (const slug of batch) {
-            try { await engine.deletePage(slug, deleteScopedOpts); reconciledDeletes++; }
-            catch { /* best-effort */ }
+            try {
+              await engine.deletePage(slug, deleteScopedOpts);
+              reconciledDeletes++;
+            } catch {
+              /* best-effort */
+            }
           }
         }
       }
@@ -2670,13 +2826,13 @@ async function performFullSync(
   let embedded = 0;
   if (!opts.noEmbed) {
     try {
-      const { runEmbedCore } = await import('./embed.ts');
+      const { runEmbedCore } = await import("./embed.ts");
       await runEmbedCore(engine, { stale: true });
       embedded = result.imported;
     } catch (e: unknown) {
-      const { EmbeddingDimMismatchError } = await import('./embed.ts');
+      const { EmbeddingDimMismatchError } = await import("./embed.ts");
       if (e instanceof EmbeddingDimMismatchError) {
-        serr('\n' + e.recipeMessage + '\n');
+        serr("\n" + e.recipeMessage + "\n");
         serr(`Tip: pass --no-embed to sync without embedding, then`);
         serr(`run 'gbrain embed --stale' after fixing the schema.\n`);
       }
@@ -2685,7 +2841,7 @@ async function performFullSync(
   }
 
   return {
-    status: 'first_sync',
+    status: "first_sync",
     fromCommit: null,
     toCommit: headCommit,
     added: result.imported,
@@ -2725,38 +2881,38 @@ export interface HardDeadlineResolution {
  */
 export function resolveSyncHardDeadline(
   args: string[],
-  opts: { isTty: boolean; env?: Record<string, string | undefined>; defaultNonTtySec?: number },
+  opts: { isTty: boolean; env?: Record<string, string | undefined>; defaultNonTtySec?: number }
 ): HardDeadlineResolution | null {
   const env = opts.env ?? {};
   const graceMs = HARD_DEADLINE_GRACE_SEC * 1000;
   const mk = (sec: number, reason: string): HardDeadlineResolution | null =>
     sec > 0 ? { deadlineMs: sec * 1000, graceMs, reason } : null;
 
-  if (args.includes('--no-hard-deadline')) return null;
+  if (args.includes("--no-hard-deadline")) return null;
 
-  const hardStr = args.find((a, i) => args[i - 1] === '--hard-deadline');
+  const hardStr = args.find((a, i) => args[i - 1] === "--hard-deadline");
   if (hardStr !== undefined) {
     // Throws on a bad value (cli.ts surfaces it + exits 1) — same posture as --timeout.
-    const sec = parseDurationSeconds(hardStr, '--hard-deadline');
-    return mk(sec ?? 0, 'flag:--hard-deadline');
+    const sec = parseDurationSeconds(hardStr, "--hard-deadline");
+    return mk(sec ?? 0, "flag:--hard-deadline");
   }
 
   // --timeout auto-arms a hard backstop at timeout(+grace), but ONLY single-source.
   // For --all, per-source budgets don't collapse to one wall-clock; fall through.
-  const isAll = args.includes('--all');
-  const timeoutStr = args.find((a, i) => args[i - 1] === '--timeout');
+  const isAll = args.includes("--all");
+  const timeoutStr = args.find((a, i) => args[i - 1] === "--timeout");
   if (timeoutStr !== undefined && !isAll) {
-    const sec = parseDurationSeconds(timeoutStr, '--timeout');
-    if (sec && sec > 0) return mk(sec, 'flag:--timeout');
+    const sec = parseDurationSeconds(timeoutStr, "--timeout");
+    if (sec && sec > 0) return mk(sec, "flag:--timeout");
   }
 
   const envRaw = env.GBRAIN_SYNC_MAX_RUNTIME_SECONDS;
-  if (envRaw !== undefined && envRaw !== '') {
+  if (envRaw !== undefined && envRaw !== "") {
     const n = Number(envRaw);
-    if (Number.isFinite(n)) return mk(n, 'env:GBRAIN_SYNC_MAX_RUNTIME_SECONDS'); // n<=0 disables
+    if (Number.isFinite(n)) return mk(n, "env:GBRAIN_SYNC_MAX_RUNTIME_SECONDS"); // n<=0 disables
   }
 
-  if (!opts.isTty) return mk(opts.defaultNonTtySec ?? 3600, 'default:non-tty');
+  if (!opts.isTty) return mk(opts.defaultNonTtySec ?? 3600, "default:non-tty");
 
   return null;
 }
@@ -2782,14 +2938,14 @@ export async function runSync(engine: BrainEngine, args: string[]) {
   // Routes to runSyncTrigger which queues a 'sync' minion job with
   // auto_embed_backfill=true. Falls through to the normal sync path
   // if 'trigger' isn't the first arg.
-  if (args[0] === 'trigger') {
+  if (args[0] === "trigger") {
     return runSyncTrigger(engine, args.slice(1));
   }
 
   // v0.37 fix wave (Lane D.4 + CDX2-12): print usage when `--help`/`-h` is
   // passed. Pre-fix this was unreachable because the dispatcher's generic
   // CLI-only short-circuit fired first; sync is now in CLI_ONLY_SELF_HELP.
-  if (args.includes('--help') || args.includes('-h')) {
+  if (args.includes("--help") || args.includes("-h")) {
     console.log(`Usage: gbrain sync [options]
 
 Sync the brain repo's text content into the engine, then embed.
@@ -2847,38 +3003,38 @@ See also:
     return;
   }
 
-  const repoPath = args.find((a, i) => args[i - 1] === '--repo') || undefined;
-  const watch = args.includes('--watch');
-  const intervalStr = args.find((a, i) => args[i - 1] === '--interval');
+  const repoPath = args.find((a, i) => args[i - 1] === "--repo") || undefined;
+  const watch = args.includes("--watch");
+  const intervalStr = args.find((a, i) => args[i - 1] === "--interval");
   const interval = intervalStr ? parseInt(intervalStr, 10) : 60;
-  const dryRun = args.includes('--dry-run');
-  const full = args.includes('--full');
-  const noPull = args.includes('--no-pull');
-  const noEmbed = args.includes('--no-embed');
-  const noExtract = args.includes('--no-extract'); // v0.42.7 #1696
-  const skipFailed = args.includes('--skip-failed');
-  const retryFailed = args.includes('--retry-failed');
-  const noSchemaPack = args.includes('--no-schema-pack'); // v0.41.37.0 #1569
-  const syncAll = args.includes('--all');
-  const jsonOut = args.includes('--json');
-  const yesFlag = args.includes('--yes');
+  const dryRun = args.includes("--dry-run");
+  const full = args.includes("--full");
+  const noPull = args.includes("--no-pull");
+  const noEmbed = args.includes("--no-embed");
+  const noExtract = args.includes("--no-extract"); // v0.42.7 #1696
+  const skipFailed = args.includes("--skip-failed");
+  const retryFailed = args.includes("--retry-failed");
+  const noSchemaPack = args.includes("--no-schema-pack"); // v0.41.37.0 #1569
+  const syncAll = args.includes("--all");
+  const jsonOut = args.includes("--json");
+  const yesFlag = args.includes("--yes");
   // v0.41.6.0 D3: lock-recovery flags. --break-lock (safe) verifies the
   // holder is local-host + (TTL-expired OR PID-dead+60s-old) before
   // deleting the row. --force-break-lock skips the liveness check. Both
   // are refused when combined with --all (per-source invocation required;
   // v0.40 lock keys are gbrain-sync:<sourceId>).
-  const breakLock = args.includes('--break-lock');
-  const forceBreakLock = args.includes('--force-break-lock');
+  const breakLock = args.includes("--break-lock");
+  const forceBreakLock = args.includes("--force-break-lock");
 
   // v0.41.13.0 (T4 + T16) — --max-age <s>: age-gated lock break via
   // last_refreshed_at semantic (NOT acquired_at — D-V3-4). Only valid with
   // --break-lock; mutually exclusive with --force-break-lock (--force skips
   // every guard; --max-age is one specific extra guard so the two policies
   // can't coexist).
-  const maxAgeStr = args.find((a, i) => args[i - 1] === '--max-age');
+  const maxAgeStr = args.find((a, i) => args[i - 1] === "--max-age");
   let maxAgeSeconds: number | undefined;
   try {
-    maxAgeSeconds = parseDurationSeconds(maxAgeStr, '--max-age');
+    maxAgeSeconds = parseDurationSeconds(maxAgeStr, "--max-age");
   } catch (e) {
     console.error(e instanceof Error ? e.message : String(e));
     process.exit(1);
@@ -2899,15 +3055,15 @@ See also:
   // --all is set and accept maxAgeSeconds for age-gated breaks.
   if (breakLock || forceBreakLock) {
     if (syncAll) {
-      const { listSources } = await import('../core/sources-ops.ts');
+      const { listSources } = await import("../core/sources-ops.ts");
       const sources = await listSources(engine);
       // listSources omits archived sources by default. We also require
       // local_path because the lock key is per-source; pure-DB sources
       // (no local_path) don't hold sync locks.
       const activeSources = sources.filter((s) => s.local_path);
       if (activeSources.length === 0) {
-        if (jsonOut) console.log(JSON.stringify({ status: 'no_sources' }));
-        else console.error('No active sources to break-lock against.');
+        if (jsonOut) console.log(JSON.stringify({ status: "no_sources" }));
+        else console.error("No active sources to break-lock against.");
         process.exit(0);
       }
       let worstExit = 0;
@@ -2922,8 +3078,8 @@ See also:
       }
       process.exit(worstExit);
     }
-    const sourceArg = args.find((a, i) => args[i - 1] === '--source');
-    const sourceId = sourceArg ?? 'default';
+    const sourceArg = args.find((a, i) => args[i - 1] === "--source");
+    const sourceId = sourceArg ?? "default";
     const lockKey = `gbrain-sync:${sourceId}`;
     const exit = await runBreakLock(engine, lockKey, sourceId, {
       force: forceBreakLock,
@@ -2939,17 +3095,20 @@ See also:
   // --no-embed (the canonical opt-out) or --dry-run (no provider calls
   // happen in dry-run anyway).
   if (!noEmbed && !dryRun) {
-    const { validateEmbeddingCreds, EmbeddingCredentialError } = await import('../core/embed-preflight.ts');
+    const { validateEmbeddingCreds, EmbeddingCredentialError } =
+      await import("../core/embed-preflight.ts");
     try {
       validateEmbeddingCreds();
     } catch (e) {
       if (e instanceof EmbeddingCredentialError) {
         if (jsonOut) {
-          console.log(JSON.stringify({ status: 'embedding_credentials_missing', diagnosis: e.diagnosis }));
+          console.log(
+            JSON.stringify({ status: "embedding_credentials_missing", diagnosis: e.diagnosis })
+          );
         } else {
-          console.error('');
+          console.error("");
           console.error(e.userMessage);
-          console.error('');
+          console.error("");
         }
         process.exit(1);
       }
@@ -2959,17 +3118,21 @@ See also:
   // v0.40 D4+D18: parallel `sync --all` by default; --serial opts back to v1.
   // --no-auto-embed skips the per-source embed-backfill auto-enqueue.
   // --max-sources N caps fan-out (default min(sources.length, 8)).
-  const serialFlag = args.includes('--serial');
-  const noAutoEmbed = args.includes('--no-auto-embed');
-  const maxSourcesStr = args.find((a, i) => args[i - 1] === '--max-sources');
+  const serialFlag = args.includes("--serial");
+  const noAutoEmbed = args.includes("--no-auto-embed");
+  const maxSourcesStr = args.find((a, i) => args[i - 1] === "--max-sources");
   const maxSources = maxSourcesStr ? parseInt(maxSourcesStr, 10) : undefined;
   if (maxSourcesStr && (!Number.isFinite(maxSources!) || maxSources! < 1)) {
     console.error(`Invalid --max-sources value: "${maxSourcesStr}". Must be a positive integer.`);
     process.exit(1);
   }
-  const strategyArg = args.find((a, i) => args[i - 1] === '--strategy') as SyncOpts['strategy'] | undefined;
-  const concurrencyStr = args.find((a, i) => args[i - 1] === '--concurrency' || args[i - 1] === '--workers');
-  const parallelStr = args.find((a, i) => args[i - 1] === '--parallel');
+  const strategyArg = args.find((a, i) => args[i - 1] === "--strategy") as
+    | SyncOpts["strategy"]
+    | undefined;
+  const concurrencyStr = args.find(
+    (a, i) => args[i - 1] === "--concurrency" || args[i - 1] === "--workers"
+  );
+  const parallelStr = args.find((a, i) => args[i - 1] === "--parallel");
   // v0.22.13 (PR #490 Q2): parseWorkers throws on '0', '-3', 'foo', '1.5' instead
   // of silently falling through to auto-concurrency or NaN. Loud failure beats
   // a 4-worker spawn from a typo. v0.40.3.0: same validation applies to --parallel.
@@ -2997,20 +3160,21 @@ See also:
   // --timeout 60` (no source scope) is rejected at parse time — the natural
   // single-source case requires the user to either name the source or opt
   // into the global fan-out, so the error message tells them which to add.
-  const timeoutStr = args.find((a, i) => args[i - 1] === '--timeout');
+  const timeoutStr = args.find((a, i) => args[i - 1] === "--timeout");
   let timeoutSeconds: number | undefined;
   try {
-    timeoutSeconds = parseDurationSeconds(timeoutStr, '--timeout');
+    timeoutSeconds = parseDurationSeconds(timeoutStr, "--timeout");
   } catch (e) {
     console.error(e instanceof Error ? e.message : String(e));
     process.exit(1);
   }
-  const explicitSourceArg = args.find((a, i) => args[i - 1] === '--source');
+  const explicitSourceArg = args.find((a, i) => args[i - 1] === "--source");
   if (timeoutSeconds !== undefined && !syncAll && !explicitSourceArg) {
-    console.error(`--timeout requires either --source <id> or --all to scope the per-source budget.`);
+    console.error(
+      `--timeout requires either --source <id> or --all to scope the per-source budget.`
+    );
     process.exit(1);
   }
-
 
   // --skip-failed: acknowledge pre-existing unacked failures BEFORE the sync
   // runs, not only ones the current run produces. Without this, the common
@@ -3043,13 +3207,14 @@ See also:
   // single-source brains to the right place automatically; the nudge
   // surfaces the auto-route to stderr so the user knows what happened
   // and can pass --source to override if needed.
-  const explicitSource = args.find((a, i) => args[i - 1] === '--source') || null;
-  const { resolveSourceWithTier, formatSoleNonDefaultNudge } = await import('../core/source-resolver.ts');
+  const explicitSource = args.find((a, i) => args[i - 1] === "--source") || null;
+  const { resolveSourceWithTier, formatSoleNonDefaultNudge } =
+    await import("../core/source-resolver.ts");
   const resolved = await resolveSourceWithTier(engine, explicitSource);
   const sourceId: string = resolved.source_id;
-  if (resolved.tier === 'sole_non_default') {
+  if (resolved.tier === "sole_non_default") {
     const nudge = formatSoleNonDefaultNudge(sourceId);
-    if (nudge) process.stderr.write(nudge + '\n');
+    if (nudge) process.stderr.write(nudge + "\n");
   }
 
   // v0.19.0 — `sync --all` iterates all registered sources with a
@@ -3067,17 +3232,26 @@ See also:
     // own "do work?" gate (sync.ts:1057+1075) + doctor's sync_freshness.
     // Both columns predate v0.41 (writeSyncAnchor / writeChunkerVersion); no
     // schema migration needed.
-    const sources = await engine.executeRaw<{ id: string; name: string; local_path: string | null; config: Record<string, unknown>; last_commit: string | null; chunker_version: string | null }>(
-      `SELECT id, name, local_path, config, last_commit, chunker_version FROM sources WHERE local_path IS NOT NULL`,
+    const sources = await engine.executeRaw<{
+      id: string;
+      name: string;
+      local_path: string | null;
+      config: Record<string, unknown>;
+      last_commit: string | null;
+      chunker_version: string | null;
+    }>(
+      `SELECT id, name, local_path, config, last_commit, chunker_version FROM sources WHERE local_path IS NOT NULL`
     );
     if (!sources || sources.length === 0) {
-      console.log('No sources with local_path configured. Use `gbrain sources add <id> --path <path>` first.');
+      console.log(
+        "No sources with local_path configured. Use `gbrain sources add <id> --path <path>` first."
+      );
       return;
     }
 
     // v0.41.31 — mode-aware cost gate. Resolve federated_v2 ONCE here so both
     // the gate (below) and the fan-out (further down) share it.
-    const { isFederatedV2Enabled } = await import('../core/feature-flags.ts');
+    const { isFederatedV2Enabled } = await import("../core/feature-flags.ts");
     const v2Enabled = await isFederatedV2Enabled(engine);
 
     // v0.41.31 cost gate (supersedes the v0.20.0 unconditional gate). Under
@@ -3105,7 +3279,7 @@ See also:
       const embeddingModelName = getEmbeddingModelName();
       const floorUsd = await resolveCostGateFloorUsd(engine);
 
-      if (mode === 'deferred') {
+      if (mode === "deferred") {
         // Deferred path: print an FYI, NEVER exit 2. The backfill cap is the
         // real money gate (D1/D4).
         const capUsd = await resolveBackfillCapUsd(engine);
@@ -3117,7 +3291,7 @@ See also:
           const r = await engine.executeRaw<{ n: number }>(
             `SELECT COUNT(*)::int AS n FROM minion_jobs
               WHERE name = 'embed-backfill'
-                AND status IN ('waiting','active','delayed','waiting-children')`,
+                AND status IN ('waiting','active','delayed','waiting-children')`
           );
           queuedBackfills = Number(r[0]?.n) || 0;
         } catch {
@@ -3131,15 +3305,39 @@ See also:
           `${queuedBackfills} backfill job(s) queued.`;
         if (dryRun) {
           if (jsonOut) {
-            console.log(JSON.stringify({ status: 'dry_run', mode, gate: 'dry_run', staleChars, staleCostUsd, capUsd, floorUsd, queuedBackfills, model: embeddingModelName }));
+            console.log(
+              JSON.stringify({
+                status: "dry_run",
+                mode,
+                gate: "dry_run",
+                staleChars,
+                staleCostUsd,
+                capUsd,
+                floorUsd,
+                queuedBackfills,
+                model: embeddingModelName,
+              })
+            );
           } else {
             console.log(deferredMsg);
-            console.log('--dry-run: exit without syncing.');
+            console.log("--dry-run: exit without syncing.");
           }
           return;
         }
         if (jsonOut) {
-          console.log(JSON.stringify({ status: 'deferred', mode, gate: 'deferred_notice', staleChars, staleCostUsd, capUsd, floorUsd, queuedBackfills, model: embeddingModelName }));
+          console.log(
+            JSON.stringify({
+              status: "deferred",
+              mode,
+              gate: "deferred_notice",
+              staleChars,
+              staleCostUsd,
+              capUsd,
+              floorUsd,
+              queuedBackfills,
+              model: embeddingModelName,
+            })
+          );
         } else {
           console.log(deferredMsg);
         }
@@ -3157,9 +3355,10 @@ See also:
         const inline = estimateInlineNewTokens(sources, currentChunkerVersion);
         const newCostUsd = estimateEmbeddingCostUsd(inline.tokens);
         const costUsd = newCostUsd;
-        const staleNote = staleChars > 0
-          ? ` (plus ~${staleChars.toLocaleString()} stale-backlog chars pending \`gbrain embed --stale\`)`
-          : '';
+        const staleNote =
+          staleChars > 0
+            ? ` (plus ~${staleChars.toLocaleString()} stale-backlog chars pending \`gbrain embed --stale\`)`
+            : "";
         const previewMsg =
           `sync --all preview (inline embed): ${inline.changedSources} changed source(s), ` +
           `${inline.unchangedSources} unchanged; ~${inline.tokens.toLocaleString()} new tokens, ` +
@@ -3167,10 +3366,21 @@ See also:
 
         if (dryRun) {
           if (jsonOut) {
-            console.log(JSON.stringify({ status: 'dry_run', mode, gate: 'dry_run', newTokens: inline.tokens, staleChars, costUsd, floorUsd, model: embeddingModelName }));
+            console.log(
+              JSON.stringify({
+                status: "dry_run",
+                mode,
+                gate: "dry_run",
+                newTokens: inline.tokens,
+                staleChars,
+                costUsd,
+                floorUsd,
+                model: embeddingModelName,
+              })
+            );
           } else {
             console.log(previewMsg);
-            console.log('--dry-run: exit without syncing.');
+            console.log("--dry-run: exit without syncing.");
           }
           return;
         }
@@ -3180,28 +3390,54 @@ See also:
             const isTTY = Boolean(process.stdout.isTTY) && Boolean(process.stdin.isTTY);
             if (!isTTY || jsonOut) {
               // Agent-facing path: emit structured envelope, exit 2.
-              const envelope = serializeError(errorFor({
-                class: 'ConfirmationRequired',
-                code: 'cost_preview_requires_yes',
-                message: previewMsg,
-                hint: 'Pass --yes to proceed, or --dry-run to see the preview and exit 0.',
-              }));
-              console.log(JSON.stringify({ error: envelope, mode, gate: 'confirmation_required', newTokens: inline.tokens, staleChars, costUsd, floorUsd, model: embeddingModelName }));
+              const envelope = serializeError(
+                errorFor({
+                  class: "ConfirmationRequired",
+                  code: "cost_preview_requires_yes",
+                  message: previewMsg,
+                  hint: "Pass --yes to proceed, or --dry-run to see the preview and exit 0.",
+                })
+              );
+              console.log(
+                JSON.stringify({
+                  error: envelope,
+                  mode,
+                  gate: "confirmation_required",
+                  newTokens: inline.tokens,
+                  staleChars,
+                  costUsd,
+                  floorUsd,
+                  model: embeddingModelName,
+                })
+              );
               process.exit(2);
             }
             // Interactive TTY path: prompt [y/N].
             console.log(previewMsg);
-            const answer = await promptYesNo('Proceed? [y/N] ');
+            const answer = await promptYesNo("Proceed? [y/N] ");
             if (!answer) {
-              console.log('Cancelled.');
+              console.log("Cancelled.");
               return;
             }
           } else {
             // Below floor → proceed without blocking (kills inline-cron noise).
             if (jsonOut) {
-              console.log(JSON.stringify({ status: 'below_floor', mode, gate: 'below_floor', newTokens: inline.tokens, staleChars, costUsd, floorUsd, model: embeddingModelName }));
+              console.log(
+                JSON.stringify({
+                  status: "below_floor",
+                  mode,
+                  gate: "below_floor",
+                  newTokens: inline.tokens,
+                  staleChars,
+                  costUsd,
+                  floorUsd,
+                  model: embeddingModelName,
+                })
+              );
             } else {
-              console.log(`${previewMsg} Below cost gate floor ($${floorUsd.toFixed(2)}), proceeding.`);
+              console.log(
+                `${previewMsg} Below cost gate floor ($${floorUsd.toFixed(2)}), proceeding.`
+              );
             }
           }
         }
@@ -3227,7 +3463,7 @@ See also:
     });
     const disabledCount = sources.length - activeSources.length;
     const humanSink: NodeJS.WriteStream = jsonOut ? process.stderr : process.stdout;
-    const writeHuman = (line: string) => humanSink.write(line + '\n');
+    const writeHuman = (line: string) => humanSink.write(line + "\n");
 
     if (disabledCount > 0) {
       writeHuman(`Skipping ${disabledCount} disabled source(s).`);
@@ -3235,13 +3471,15 @@ See also:
 
     if (activeSources.length === 0) {
       if (jsonOut) {
-        console.log(JSON.stringify({
-          schema_version: 1,
-          sources: [],
-          parallel: 0,
-          ok_count: 0,
-          error_count: 0,
-        }));
+        console.log(
+          JSON.stringify({
+            schema_version: 1,
+            sources: [],
+            parallel: 0,
+            ok_count: 0,
+            error_count: 0,
+          })
+        );
       }
       return;
     }
@@ -3250,7 +3488,7 @@ See also:
     type PerSourceResult = {
       sourceId: string;
       sourceName: string;
-      status: 'ok' | 'error';
+      status: "ok" | "error";
       result?: SyncResult;
       error?: string;
     };
@@ -3261,10 +3499,16 @@ See also:
     // run and can leak per-source locks; here it aborts every in-flight source so
     // each performSync returns `partial` + releases its lock cleanly.
     const allInterrupt = new AbortController();
-    const onAllSigint = () => { try { allInterrupt.abort(new Error('SIGINT')); } catch { /* */ } };
+    const onAllSigint = () => {
+      try {
+        allInterrupt.abort(new Error("SIGINT"));
+      } catch {
+        /* */
+      }
+    };
 
-    const runOne = async (src: typeof sources[number]): Promise<SyncResult> => {
-      const cfg = (src.config || {}) as { strategy?: 'markdown' | 'code' | 'auto' };
+    const runOne = async (src: (typeof sources)[number]): Promise<SyncResult> => {
+      const cfg = (src.config || {}) as { strategy?: "markdown" | "code" | "auto" };
       // D18: parallel path defers embed; auto-enqueue embed-backfill after.
       const effectiveNoEmbed = v2Enabled && !serialFlag && !noEmbed ? true : noEmbed;
       // v0.41.13.0 (T6 / D-V3-3 / D-V4-mech-6) — per-source AbortController.
@@ -3285,16 +3529,21 @@ See also:
       //     finally — even on a missed clearTimeout, the process can exit
       //     once all real work resolves.
       const controller = timeoutSeconds !== undefined ? new AbortController() : undefined;
-      const timer = timeoutSeconds !== undefined
-        ? setTimeout(() => controller!.abort(), timeoutSeconds * 1000)
-        : undefined;
+      const timer =
+        timeoutSeconds !== undefined
+          ? setTimeout(() => controller!.abort(), timeoutSeconds * 1000)
+          : undefined;
       timer?.unref?.();
       const repoOpts: SyncOpts = {
         repoPath: src.local_path!,
-        dryRun, full, noPull,
+        dryRun,
+        full,
+        noPull,
         noEmbed: effectiveNoEmbed,
         noExtract,
-        skipFailed, retryFailed, noSchemaPack,
+        skipFailed,
+        retryFailed,
+        noSchemaPack,
         sourceId: src.id,
         strategy: cfg.strategy,
         concurrency,
@@ -3319,9 +3568,9 @@ See also:
       // reconciled, so writing .gitignore entries based on it could leave
       // stale or missing entries.
       if (
-        result.status !== 'dry_run' &&
-        result.status !== 'blocked_by_failures' &&
-        result.status !== 'partial'
+        result.status !== "dry_run" &&
+        result.status !== "blocked_by_failures" &&
+        result.status !== "partial"
       ) {
         manageGitignore(src.local_path!, engine.kind);
       }
@@ -3333,39 +3582,43 @@ See also:
         v2Enabled &&
         !noAutoEmbed &&
         !dryRun &&
-        result.status !== 'dry_run' &&
-        result.status !== 'up_to_date' &&
-        result.status !== 'partial'
+        result.status !== "dry_run" &&
+        result.status !== "up_to_date" &&
+        result.status !== "partial"
       ) {
         try {
-          const { submitEmbedBackfill } = await import('../core/embed-backfill-submit.ts');
-          const sub = await submitEmbedBackfill(engine, src.id, { reason: 'sync_all' });
-          if (sub.status === 'submitted') {
+          const { submitEmbedBackfill } = await import("../core/embed-backfill-submit.ts");
+          const sub = await submitEmbedBackfill(engine, src.id, { reason: "sync_all" });
+          if (sub.status === "submitted") {
             writeHuman(`  → embed-backfill job ${sub.jobId} queued for ${src.name}`);
-          } else if (sub.status === 'cooldown') {
+          } else if (sub.status === "cooldown") {
             writeHuman(`  → embed-backfill skipped (cooldown) for ${src.name}`);
-          } else if (sub.status === 'spend_capped') {
-            writeHuman(`  → embed-backfill skipped (24h spend cap $${sub.spendCapUsd}) for ${src.name}`);
+          } else if (sub.status === "spend_capped") {
+            writeHuman(
+              `  → embed-backfill skipped (24h spend cap $${sub.spendCapUsd}) for ${src.name}`
+            );
           }
         } catch (e) {
-          process.stderr.write(`  → embed-backfill submission failed for ${src.name}: ${e instanceof Error ? e.message : String(e)}\n`);
+          process.stderr.write(
+            `  → embed-backfill submission failed for ${src.name}: ${e instanceof Error ? e.message : String(e)}\n`
+          );
         }
       }
       return result;
     };
 
     const parallelEligible =
-      v2Enabled && !serialFlag && engine.kind !== 'pglite' && activeSources.length > 1;
+      v2Enabled && !serialFlag && engine.kind !== "pglite" && activeSources.length > 1;
 
     // v0.40.6.0 (D15): refuse --skip-failed / --retry-failed when running
     // parallel. sync-failures.jsonl is brain-global; parallel acks race.
     if (parallelEligible && (skipFailed || retryFailed)) {
-      const flag = skipFailed ? '--skip-failed' : '--retry-failed';
+      const flag = skipFailed ? "--skip-failed" : "--retry-failed";
       console.error(
         `Error: ${flag} is not supported under parallel sync.\n` +
-        `       (the sync-failures log is brain-global and parallel acks race).\n` +
-        `       Re-run with --serial for the recovery flow:\n` +
-        `         gbrain sync --all --serial ${flag}`,
+          `       (the sync-failures log is brain-global and parallel acks race).\n` +
+          `       Re-run with --serial for the recovery flow:\n` +
+          `         gbrain sync --all --serial ${flag}`
       );
       process.exit(1);
     }
@@ -3377,86 +3630,90 @@ See also:
       ? Math.min(activeSources.length, maxSources ?? 8)
       : 1;
 
-    process.on('SIGINT', onAllSigint);
+    process.on("SIGINT", onAllSigint);
     try {
-    if (parallelEligible) {
-      const { pMapAllSettled } = await import('../core/parallel.ts');
-      const cap = effectiveParallel;
+      if (parallelEligible) {
+        const { pMapAllSettled } = await import("../core/parallel.ts");
+        const cap = effectiveParallel;
 
-      // v0.40.6.0 (D10): connection-budget stderr warning. Each per-file
-      // worker opens its own PostgresEngine with poolSize=2, so the real
-      // live-connection ceiling is `cap × workers × 2` per wave plus the
-      // parent pool. The original PR understated by 2× — fix the math.
-      const effectiveWorkers = concurrency ?? 4;
-      const budget = cap * effectiveWorkers * 2;
-      if (budget > 16) {
-        process.stderr.write(
-          `[sync --all] Connection budget: parallel=${cap} × workers=${effectiveWorkers} × 2 ` +
-          `(per-file pool) = ${budget} concurrent connections per fan-out wave (+ parent pool). ` +
-          `Check pgbouncer/Postgres max_connections (SELECT count(*) FROM pg_stat_activity); ` +
-          `raise the cap or lower --max-sources/--workers if you see "too many clients" errors.\n`,
+        // v0.40.6.0 (D10): connection-budget stderr warning. Each per-file
+        // worker opens its own PostgresEngine with poolSize=2, so the real
+        // live-connection ceiling is `cap × workers × 2` per wave plus the
+        // parent pool. The original PR understated by 2× — fix the math.
+        const effectiveWorkers = concurrency ?? 4;
+        const budget = cap * effectiveWorkers * 2;
+        if (budget > 16) {
+          process.stderr.write(
+            `[sync --all] Connection budget: parallel=${cap} × workers=${effectiveWorkers} × 2 ` +
+              `(per-file pool) = ${budget} concurrent connections per fan-out wave (+ parent pool). ` +
+              `Check pgbouncer/Postgres max_connections (SELECT count(*) FROM pg_stat_activity); ` +
+              `raise the cap or lower --max-sources/--workers if you see "too many clients" errors.\n`
+          );
+        }
+
+        writeHuman(
+          `\nParallel sync: ${activeSources.length} sources, ${cap} concurrent workers.\n`
         );
-      }
-
-      writeHuman(`\nParallel sync: ${activeSources.length} sources, ${cap} concurrent workers.\n`);
-      const results = await pMapAllSettled(activeSources, cap, async (src) => {
-        const r = await runOne(src);
-        return { name: src.name, result: r };
-      });
-      // Print per-source aggregate at the end. humanSink so --json stays clean.
-      writeHuman('\n--- sync --all aggregate ---');
-      for (let i = 0; i < results.length; i++) {
-        const r = results[i];
-        const src = activeSources[i];
-        if (r.status === 'fulfilled') {
-          writeHuman(`  ✓ ${src.name}: ${r.value.result.status} (added=${r.value.result.added}, modified=${r.value.result.modified}, deleted=${r.value.result.deleted})`);
-          perSourceResults.push({
-            sourceId: src.id,
-            sourceName: src.name,
-            status: 'ok',
-            result: r.value.result,
-          });
-        } else {
-          const msg = r.reason instanceof Error ? r.reason.message : String(r.reason);
-          process.stderr.write(`  ✗ ${src.name}: ${msg}\n`);
-          perSourceResults.push({
-            sourceId: src.id,
-            sourceName: src.name,
-            status: 'error',
-            error: msg,
-          });
+        const results = await pMapAllSettled(activeSources, cap, async (src) => {
+          const r = await runOne(src);
+          return { name: src.name, result: r };
+        });
+        // Print per-source aggregate at the end. humanSink so --json stays clean.
+        writeHuman("\n--- sync --all aggregate ---");
+        for (let i = 0; i < results.length; i++) {
+          const r = results[i];
+          const src = activeSources[i];
+          if (r.status === "fulfilled") {
+            writeHuman(
+              `  ✓ ${src.name}: ${r.value.result.status} (added=${r.value.result.added}, modified=${r.value.result.modified}, deleted=${r.value.result.deleted})`
+            );
+            perSourceResults.push({
+              sourceId: src.id,
+              sourceName: src.name,
+              status: "ok",
+              result: r.value.result,
+            });
+          } else {
+            const msg = r.reason instanceof Error ? r.reason.message : String(r.reason);
+            process.stderr.write(`  ✗ ${src.name}: ${msg}\n`);
+            perSourceResults.push({
+              sourceId: src.id,
+              sourceName: src.name,
+              status: "error",
+              error: msg,
+            });
+          }
+        }
+      } else {
+        for (const src of activeSources) {
+          writeHuman(`\n--- Syncing source: ${src.name} ---`);
+          try {
+            const result = await runOne(src);
+            printSyncResult(result, humanSink);
+            perSourceResults.push({
+              sourceId: src.id,
+              sourceName: src.name,
+              status: "ok",
+              result,
+            });
+          } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : String(e);
+            process.stderr.write(`Error syncing ${src.name}: ${msg}\n`);
+            perSourceResults.push({
+              sourceId: src.id,
+              sourceName: src.name,
+              status: "error",
+              error: msg,
+            });
+          }
         }
       }
-    } else {
-      for (const src of activeSources) {
-        writeHuman(`\n--- Syncing source: ${src.name} ---`);
-        try {
-          const result = await runOne(src);
-          printSyncResult(result, humanSink);
-          perSourceResults.push({
-            sourceId: src.id,
-            sourceName: src.name,
-            status: 'ok',
-            result,
-          });
-        } catch (e: unknown) {
-          const msg = e instanceof Error ? e.message : String(e);
-          process.stderr.write(`Error syncing ${src.name}: ${msg}\n`);
-          perSourceResults.push({
-            sourceId: src.id,
-            sourceName: src.name,
-            status: 'error',
-            error: msg,
-          });
-        }
-      }
-    }
     } finally {
-      process.off('SIGINT', onAllSigint);
+      process.off("SIGINT", onAllSigint);
     }
 
-    const okCount = perSourceResults.filter((r) => r.status === 'ok').length;
-    const errCount = perSourceResults.filter((r) => r.status === 'error').length;
+    const okCount = perSourceResults.filter((r) => r.status === "ok").length;
+    const errCount = perSourceResults.filter((r) => r.status === "error").length;
 
     if (jsonOut) {
       // Sort by source_id at emit time so the envelope is deterministic
@@ -3468,23 +3725,27 @@ See also:
           source_id: r.sourceId,
           name: r.sourceName,
           status: r.status,
-          ...(r.result ? {
-            sync_status: r.result.status,
-            added: r.result.added,
-            modified: r.result.modified,
-            deleted: r.result.deleted,
-            chunks_created: r.result.chunksCreated,
-            embedded: r.result.embedded,
-          } : {}),
+          ...(r.result
+            ? {
+                sync_status: r.result.status,
+                added: r.result.added,
+                modified: r.result.modified,
+                deleted: r.result.deleted,
+                chunks_created: r.result.chunksCreated,
+                embedded: r.result.embedded,
+              }
+            : {}),
           ...(r.error ? { error: r.error } : {}),
         }));
-      console.log(JSON.stringify({
-        schema_version: 1,
-        sources: sortedSources,
-        parallel: effectiveParallel,
-        ok_count: okCount,
-        error_count: errCount,
-      }));
+      console.log(
+        JSON.stringify({
+          schema_version: 1,
+          sources: sortedSources,
+          parallel: effectiveParallel,
+          ok_count: okCount,
+          error_count: errCount,
+        })
+      );
     }
 
     // v0.42.7 (#1696): brain-wide extraction-lag nudge after the --all wave.
@@ -3499,9 +3760,10 @@ See also:
   // shape as the --all runOne closure. Timer scoped to this CLI invocation;
   // try/finally clears it after performSync resolves (or throws).
   const singleSourceController = timeoutSeconds !== undefined ? new AbortController() : undefined;
-  const singleSourceTimer = timeoutSeconds !== undefined
-    ? setTimeout(() => singleSourceController!.abort(), timeoutSeconds * 1000)
-    : undefined;
+  const singleSourceTimer =
+    timeoutSeconds !== undefined
+      ? setTimeout(() => singleSourceController!.abort(), timeoutSeconds * 1000)
+      : undefined;
   singleSourceTimer?.unref?.();
   // #1633 (Part B): graceful SIGINT cancel. process-cleanup.ts owns SIGTERM
   // (lock release + exit) and the watchdog owns the hard deadline; SIGINT is
@@ -3509,10 +3771,26 @@ See also:
   // in-flight import cleanly (performSync returns `partial`, bookmark unadvanced,
   // lock released by its own finally) instead of a hard cut.
   const singleSourceInterrupt = new AbortController();
-  const onSingleSourceSigint = () => { try { singleSourceInterrupt.abort(new Error('SIGINT')); } catch { /* */ } };
+  const onSingleSourceSigint = () => {
+    try {
+      singleSourceInterrupt.abort(new Error("SIGINT"));
+    } catch {
+      /* */
+    }
+  };
   const opts: SyncOpts = {
-    repoPath, dryRun, full, noPull, noEmbed, noExtract, skipFailed, retryFailed, noSchemaPack, sourceId,
-    strategy: strategyArg, concurrency,
+    repoPath,
+    dryRun,
+    full,
+    noPull,
+    noEmbed,
+    noExtract,
+    skipFailed,
+    retryFailed,
+    noSchemaPack,
+    sourceId,
+    strategy: strategyArg,
+    concurrency,
     signal: composeAbortSignals(singleSourceInterrupt.signal, singleSourceController?.signal),
   };
 
@@ -3523,7 +3801,7 @@ See also:
   if (retryFailed) {
     const failures = unacknowledgedSyncFailures();
     if (failures.length === 0) {
-      console.log('No unacknowledged sync failures to retry.');
+      console.log("No unacknowledged sync failures to retry.");
     } else {
       console.log(`Retrying ${failures.length} previously-failed file(s)...`);
       // Don't acknowledge them yet — they must succeed to clear.
@@ -3534,12 +3812,12 @@ See also:
     // v0.41.13.0 (T6): try/finally clears the single-source timer so it
     // doesn't fire after performSync resolves OR throws.
     let result: SyncResult;
-    process.on('SIGINT', onSingleSourceSigint);
+    process.on("SIGINT", onSingleSourceSigint);
     try {
       result = await performSync(engine, opts);
     } finally {
       if (singleSourceTimer !== undefined) clearTimeout(singleSourceTimer);
-      process.off('SIGINT', onSingleSourceSigint);
+      process.off("SIGINT", onSingleSourceSigint);
     }
     printSyncResult(result);
     // v0.42.7 (#1696, D5): extraction-lag nudge after a completed single-source
@@ -3555,9 +3833,9 @@ See also:
     // repo path so the wire-up fires in the common case where the user runs
     // `gbrain sync` without passing --repo every time.
     if (
-      result.status !== 'dry_run' &&
-      result.status !== 'blocked_by_failures' &&
-      result.status !== 'partial'
+      result.status !== "dry_run" &&
+      result.status !== "blocked_by_failures" &&
+      result.status !== "partial"
     ) {
       const effectiveRepoPath = opts.repoPath ?? (await getDefaultSourcePath(engine));
       if (effectiveRepoPath) {
@@ -3575,17 +3853,19 @@ See also:
     try {
       const result = await performSync(engine, { ...opts, full: false });
       consecutiveErrors = 0;
-      if (result.status === 'synced') {
+      if (result.status === "synced") {
         const ts = new Date().toISOString().slice(11, 19);
-        console.log(`[${ts}] Synced: +${result.added} ~${result.modified} -${result.deleted} R${result.renamed}`);
+        console.log(
+          `[${ts}] Synced: +${result.added} ~${result.modified} -${result.deleted} R${result.renamed}`
+        );
       }
       // Same gate as non-watch: only manage .gitignore on successful sync.
       // v0.41.13.0 (T7 / D-V3-5): partial joins the deferred posture.
       // Same repo-resolution path so watch mode catches the implicit-resolved case.
       if (
-        result.status !== 'dry_run' &&
-        result.status !== 'blocked_by_failures' &&
-        result.status !== 'partial'
+        result.status !== "dry_run" &&
+        result.status !== "blocked_by_failures" &&
+        result.status !== "partial"
       ) {
         const effectiveRepoPath = opts.repoPath ?? (await getDefaultSourcePath(engine));
         if (effectiveRepoPath) {
@@ -3595,13 +3875,15 @@ See also:
     } catch (e: unknown) {
       consecutiveErrors++;
       const msg = e instanceof Error ? e.message : String(e);
-      console.error(`[${new Date().toISOString().slice(11, 19)}] Sync error (${consecutiveErrors}/5): ${msg}`);
+      console.error(
+        `[${new Date().toISOString().slice(11, 19)}] Sync error (${consecutiveErrors}/5): ${msg}`
+      );
       if (consecutiveErrors >= 5) {
         console.error(`5 consecutive sync failures. Stopping watch.`);
         process.exit(1);
       }
     }
-    await new Promise(r => setTimeout(r, interval * 1000));
+    await new Promise((r) => setTimeout(r, interval * 1000));
   }
 }
 
@@ -3631,16 +3913,17 @@ export function resolveParallelism(input: {
   sourceCount: number;
   explicitParallel?: number;
   workers?: number;
-  engineKind: 'pglite' | 'postgres';
+  engineKind: "pglite" | "postgres";
 }): number {
-  if (input.engineKind === 'pglite') return 1;
+  if (input.engineKind === "pglite") return 1;
   if (input.sourceCount <= 0) return 1;
   if (input.explicitParallel !== undefined) {
     return Math.max(1, Math.min(input.explicitParallel, input.sourceCount));
   }
-  const ceiling = input.workers && input.workers > 0
-    ? Math.min(input.workers, DEFAULT_PARALLEL_SOURCES)
-    : DEFAULT_PARALLEL_SOURCES;
+  const ceiling =
+    input.workers && input.workers > 0
+      ? Math.min(input.workers, DEFAULT_PARALLEL_SOURCES)
+      : DEFAULT_PARALLEL_SOURCES;
   return Math.max(1, Math.min(input.sourceCount, ceiling));
 }
 
@@ -3682,9 +3965,9 @@ export async function syncOneSource(
     noSchemaPack?: boolean;
     /** v0.42.7 #1696: propagate --no-extract into every per-source sync. */
     noExtract?: boolean;
-  },
+  }
 ): Promise<{ result: SyncResult; log: string }> {
-  const cfg = (src.config || {}) as { strategy?: 'markdown' | 'code' | 'auto' };
+  const cfg = (src.config || {}) as { strategy?: "markdown" | "code" | "auto" };
   const log = `\n--- Syncing source: ${src.name} ---\n`;
   const repoOpts: SyncOpts = {
     repoPath: src.local_path!,
@@ -3739,7 +4022,7 @@ export interface SyncStatusReportSource {
   sync_enabled: boolean;
   last_sync_at: string | null;
   staleness_hours: number | null;
-  staleness_class: 'fresh' | 'stale' | 'severe' | 'unknown';
+  staleness_class: "fresh" | "stale" | "severe" | "unknown";
   last_commit: string | null;
   pages: number;
   chunks_total: number;
@@ -3767,16 +4050,23 @@ export interface SyncStatusReport {
 
 export async function buildSyncStatusReport(
   engine: BrainEngine,
-  sources: Array<{ id: string; name: string; local_path: string | null; config: Record<string, unknown> }>,
+  sources: Array<{
+    id: string;
+    name: string;
+    local_path: string | null;
+    config: Record<string, unknown>;
+  }>
 ): Promise<SyncStatusReport> {
   // Resolve the active embedding column via the registry. Brains pointed
   // at Voyage / multimodal / any non-default column get accurate counts
   // for the column they actually use (D16 → A, Codex P2 #10).
-  const { resolveEmbeddingColumn, quoteIdentifier } = await import('../core/search/embedding-column.ts');
+  const { resolveEmbeddingColumn, quoteIdentifier } =
+    await import("../core/search/embedding-column.ts");
   // loadConfig() returns null when ~/.gbrain/config.json is missing.
   // resolveEmbeddingColumn handles missing fields via its own
   // gateway-fallback chain, so a minimal stub satisfies the call shape.
-  const cfg = loadConfig() ?? ({ engine: engine.kind } as Parameters<typeof resolveEmbeddingColumn>[1]);
+  const cfg =
+    loadConfig() ?? ({ engine: engine.kind } as Parameters<typeof resolveEmbeddingColumn>[1]);
   const resolved = resolveEmbeddingColumn(undefined, cfg);
   const embeddingColIdent = quoteIdentifier(resolved.name);
 
@@ -3797,12 +4087,13 @@ export async function buildSyncStatusReport(
 
   // Pull last_commit + last_sync_at fresh (caller may have called us
   // with stale rows). Empty source list → skip the round-trip.
-  const sourceRows = sourceIds.length === 0
-    ? []
-    : await engine.executeRaw<SourceRow>(
-        `SELECT id, last_commit, last_sync_at, newest_content_at FROM sources WHERE id = ANY($1::text[])`,
-        [sourceIds],
-      );
+  const sourceRows =
+    sourceIds.length === 0
+      ? []
+      : await engine.executeRaw<SourceRow>(
+          `SELECT id, last_commit, last_sync_at, newest_content_at FROM sources WHERE id = ANY($1::text[])`,
+          [sourceIds]
+        );
   const sourceMap = new Map<string, SourceRow>();
   for (const r of sourceRows) sourceMap.set(r.id, r);
 
@@ -3843,10 +4134,13 @@ export async function buildSyncStatusReport(
          WHERE pg.deleted_at IS NULL
          GROUP BY pg.source_id
        ) c ON c.source_id = s.source_id`,
-      [sourceIds],
+      [sourceIds]
     );
   }
-  const countMap = new Map<string, { pages: number; chunks_total: number; chunks_unembedded: number }>();
+  const countMap = new Map<
+    string,
+    { pages: number; chunks_total: number; chunks_unembedded: number }
+  >();
   for (const r of countRows) {
     countMap.set(r.source_id, {
       pages: Number(r.pages) || 0,
@@ -3865,7 +4159,10 @@ export async function buildSyncStatusReport(
     active: string | number;
     last_completed_at: string | Date | null;
   };
-  const backfillMap = new Map<string, { queued: number; active: number; last_completed_at: string | null }>();
+  const backfillMap = new Map<
+    string,
+    { queued: number; active: number; last_completed_at: string | null }
+  >();
   if (sourceIds.length > 0) {
     try {
       const backfillRows = await engine.executeRaw<BackfillRow>(
@@ -3876,7 +4173,7 @@ export async function buildSyncStatusReport(
            FROM minion_jobs
           WHERE name = 'embed-backfill' AND data->>'sourceId' = ANY($1::text[])
           GROUP BY data->>'sourceId'`,
-        [sourceIds],
+        [sourceIds]
       );
       for (const r of backfillRows) {
         if (!r.source_id) continue;
@@ -3884,7 +4181,7 @@ export async function buildSyncStatusReport(
         backfillMap.set(r.source_id, {
           queued: Number(r.queued) || 0,
           active: Number(r.active) || 0,
-          last_completed_at: last == null ? null : (last instanceof Date ? last.toISOString() : last),
+          last_completed_at: last == null ? null : last instanceof Date ? last.toISOString() : last,
         });
       }
     } catch {
@@ -3895,35 +4192,49 @@ export async function buildSyncStatusReport(
   const now = Date.now();
   const out: SyncStatusReportSource[] = sources.map((src) => {
     const cfgEntry = (src.config || {}) as { syncEnabled?: boolean };
-    const row = sourceMap.get(src.id) || { id: src.id, last_commit: null, last_sync_at: null, newest_content_at: null };
+    const row = sourceMap.get(src.id) || {
+      id: src.id,
+      last_commit: null,
+      last_sync_at: null,
+      newest_content_at: null,
+    };
     const counts = countMap.get(src.id) || { pages: 0, chunks_total: 0, chunks_unembedded: 0 };
     const lastSyncMs = row.last_sync_at
-      ? (row.last_sync_at instanceof Date ? row.last_sync_at.getTime() : Date.parse(row.last_sync_at))
+      ? row.last_sync_at instanceof Date
+        ? row.last_sync_at.getTime()
+        : Date.parse(row.last_sync_at)
       : null;
     // v0.41.32.0: commit-relative staleness from the stored column — NO git
     // subprocess (this function backs the remote get_status_snapshot MCP op,
     // so it must honor the v0.41.27.0 trust boundary). A quiet repo whose
     // newest commit predates its last sync reports 0; null column → wall-clock.
     const contentMs = row.newest_content_at
-      ? (row.newest_content_at instanceof Date ? row.newest_content_at.getTime() : Date.parse(row.newest_content_at))
+      ? row.newest_content_at instanceof Date
+        ? row.newest_content_at.getTime()
+        : Date.parse(row.newest_content_at)
       : null;
     const lagSeconds = lagFromContentMs(
       Number.isFinite(contentMs as number) ? (contentMs as number) : null,
       lastSyncMs !== null && Number.isFinite(lastSyncMs) ? lastSyncMs : null,
-      now,
+      now
     );
     const stalenessHours = lagSeconds === null ? null : lagSeconds / 3600;
-    let stalenessClass: 'fresh' | 'stale' | 'severe' | 'unknown' = 'unknown';
+    let stalenessClass: "fresh" | "stale" | "severe" | "unknown" = "unknown";
     if (stalenessHours !== null) {
-      if (stalenessHours < 24) stalenessClass = 'fresh';
-      else if (stalenessHours < 72) stalenessClass = 'stale';
-      else stalenessClass = 'severe';
+      if (stalenessHours < 24) stalenessClass = "fresh";
+      else if (stalenessHours < 72) stalenessClass = "stale";
+      else stalenessClass = "severe";
     }
-    const embeddingCoveragePct = counts.chunks_total === 0
-      ? 100
-      : Math.round(((counts.chunks_total - counts.chunks_unembedded) / counts.chunks_total) * 1000) / 10;
+    const embeddingCoveragePct =
+      counts.chunks_total === 0
+        ? 100
+        : Math.round(
+            ((counts.chunks_total - counts.chunks_unembedded) / counts.chunks_total) * 1000
+          ) / 10;
     const lastSyncIso = row.last_sync_at
-      ? (row.last_sync_at instanceof Date ? row.last_sync_at.toISOString() : row.last_sync_at)
+      ? row.last_sync_at instanceof Date
+        ? row.last_sync_at.toISOString()
+        : row.last_sync_at
       : null;
     return {
       source_id: src.id,
@@ -3972,55 +4283,56 @@ export async function buildSyncStatusReport(
  */
 export function printSyncStatusReport(
   report: SyncStatusReport,
-  sink: NodeJS.WriteStream = process.stdout,
+  sink: NodeJS.WriteStream = process.stdout
 ): void {
-  const write = (line: string) => sink.write(line + '\n');
+  const write = (line: string) => sink.write(line + "\n");
   write(`\nSync status — generated ${report.generated_at}`);
   write(`Embedding column: ${report.embedding_column}\n`);
   if (report.sources.length === 0) {
-    write('  (no sources registered)');
+    write("  (no sources registered)");
     return;
   }
-  const headers = ['SOURCE', 'STATE', 'STALENESS', 'PAGES', 'EMBEDDED', 'BACKFILL', 'LAST SYNC'];
+  const headers = ["SOURCE", "STATE", "STALENESS", "PAGES", "EMBEDDED", "BACKFILL", "LAST SYNC"];
   const rows = report.sources.map((s) => {
-    const stale = s.staleness_hours === null
-      ? 'never'
-      : `${s.staleness_hours.toFixed(1)}h`;
+    const stale = s.staleness_hours === null ? "never" : `${s.staleness_hours.toFixed(1)}h`;
     const stateBits: string[] = [];
-    if (!s.sync_enabled) stateBits.push('disabled');
+    if (!s.sync_enabled) stateBits.push("disabled");
     stateBits.push(s.staleness_class);
     // BACKFILL: active beats queued beats idle for the at-a-glance cell.
-    const backfill = s.backfill_active > 0
-      ? `active(${s.backfill_active})`
-      : s.backfill_queued > 0
-        ? `queued(${s.backfill_queued})`
-        : 'idle';
+    const backfill =
+      s.backfill_active > 0
+        ? `active(${s.backfill_active})`
+        : s.backfill_queued > 0
+          ? `queued(${s.backfill_queued})`
+          : "idle";
     return [
       s.name,
-      stateBits.join(','),
+      stateBits.join(","),
       stale,
       String(s.pages),
       `${s.embedding_coverage_pct}%`,
       backfill,
-      s.last_sync_at ?? '(never)',
+      s.last_sync_at ?? "(never)",
     ];
   });
-  const widths = headers.map((h, i) =>
-    Math.max(h.length, ...rows.map((r) => r[i].length)),
-  );
+  const widths = headers.map((h, i) => Math.max(h.length, ...rows.map((r) => r[i].length)));
   // Numeric columns (STALENESS=2, PAGES=3, EMBEDDED=4) right-pad-left so
   // digits align cleanly. Text columns (incl. BACKFILL=5) left-pad-right
   // per the existing `sources list` convention.
   const NUMERIC_COLS = new Set([2, 3, 4]);
   const fmt = (cells: string[]) =>
-    cells.map((c, i) => (NUMERIC_COLS.has(i) ? c.padStart(widths[i]) : c.padEnd(widths[i]))).join('  ');
+    cells
+      .map((c, i) => (NUMERIC_COLS.has(i) ? c.padStart(widths[i]) : c.padEnd(widths[i])))
+      .join("  ");
   write(fmt(headers));
-  write(fmt(widths.map((w) => '-'.repeat(w))));
+  write(fmt(widths.map((w) => "-".repeat(w))));
   for (const r of rows) write(fmt(r));
   write(`\nUnacknowledged sync failures (brain-wide): ${report.unacknowledged_failures}`);
-  const severe = report.sources.filter((s) => s.staleness_class === 'severe').length;
+  const severe = report.sources.filter((s) => s.staleness_class === "severe").length;
   if (severe > 0) {
-    write(`WARNING: ${severe} source(s) are SEVERELY stale (>72h). Run \`gbrain sync --all\` to refresh.`);
+    write(
+      `WARNING: ${severe} source(s) are SEVERELY stale (>72h). Run \`gbrain sync --all\` to refresh.`
+    );
   }
 }
 
@@ -4051,11 +4363,8 @@ export function __resetPGLiteTierWarn(): void {
   _pgliteTierWarned = false;
 }
 
-export function manageGitignore(
-  repoPath: string,
-  engineKind?: 'pglite' | 'postgres',
-): void {
-  if (process.env.GBRAIN_NO_GITIGNORE === '1') {
+export function manageGitignore(repoPath: string, engineKind?: "pglite" | "postgres"): void {
+  if (process.env.GBRAIN_NO_GITIGNORE === "1") {
     return;
   }
 
@@ -4070,17 +4379,17 @@ export function manageGitignore(
   // absorbed-submodule case from `git submodule absorbgitdirs`.
   // Malformed `.git` file (no `gitdir:` prefix, unreadable) → MANAGE (fail-closed
   // toward managing, preserving the pre-#889 catch{} behavior).
-  const dotGit = join(repoPath, '.git');
+  const dotGit = join(repoPath, ".git");
   if (existsSync(dotGit)) {
     try {
       if (statSync(dotGit).isFile()) {
-        const content = readFileSync(dotGit, 'utf-8');
+        const content = readFileSync(dotGit, "utf-8");
         const match = content.match(/gitdir:\s*(.+)/);
-        const gitdir = match ? match[1].trim() : '';
-        if (gitdir.includes('/modules/')) {
+        const gitdir = match ? match[1].trim() : "";
+        if (gitdir.includes("/modules/")) {
           console.warn(
             `Note: skipping .gitignore management — ${repoPath} is a git submodule. ` +
-              `Add db_only directories to your parent repo's .gitignore manually.`,
+              `Add db_only directories to your parent repo's .gitignore manually.`
           );
           return;
         }
@@ -4100,7 +4409,7 @@ export function manageGitignore(
   } catch (error) {
     // StorageConfigError (overlap) or read error — surface, don't manage.
     console.warn(
-      `Skipped .gitignore update: ${error instanceof Error ? error.message : String(error)}`,
+      `Skipped .gitignore update: ${error instanceof Error ? error.message : String(error)}`
     );
     return;
   }
@@ -4110,30 +4419,30 @@ export function manageGitignore(
 
   // D4 soft-warn: storage tiering has limited effect on PGLite, but the
   // .gitignore housekeeping still helps. Warn once per process; proceed.
-  if (engineKind === 'pglite' && !_pgliteTierWarned) {
+  if (engineKind === "pglite" && !_pgliteTierWarned) {
     _pgliteTierWarned = true;
     console.warn(
       `Note: storage tiering has limited effect on PGLite — pages live in your ` +
-        `local database file regardless of tier. Managing .gitignore anyway.`,
+        `local database file regardless of tier. Managing .gitignore anyway.`
     );
   }
 
-  const gitignorePath = join(repoPath, '.gitignore');
-  let gitignoreContent = '';
+  const gitignorePath = join(repoPath, ".gitignore");
+  let gitignoreContent = "";
 
   if (existsSync(gitignorePath)) {
     try {
-      gitignoreContent = readFileSync(gitignorePath, 'utf-8');
+      gitignoreContent = readFileSync(gitignorePath, "utf-8");
     } catch (error) {
       console.warn(
         `Could not read ${gitignorePath} (${error instanceof Error ? error.message : String(error)}) — ` +
-          `skipping .gitignore update. Add db_only directories manually.`,
+          `skipping .gitignore update. Add db_only directories manually.`
       );
       return;
     }
   }
 
-  const existingLines = new Set(gitignoreContent.split('\n').map((line) => line.trim()));
+  const existingLines = new Set(gitignoreContent.split("\n").map((line) => line.trim()));
   const linesToAdd: string[] = [];
 
   for (const dir of storageConfig.db_only) {
@@ -4144,18 +4453,18 @@ export function manageGitignore(
 
   if (linesToAdd.length === 0) return;
 
-  if (gitignoreContent && !gitignoreContent.endsWith('\n')) {
-    gitignoreContent += '\n';
+  if (gitignoreContent && !gitignoreContent.endsWith("\n")) {
+    gitignoreContent += "\n";
   }
-  gitignoreContent += '\n# Auto-managed by gbrain (db_only directories)\n';
-  gitignoreContent += linesToAdd.join('\n') + '\n';
+  gitignoreContent += "\n# Auto-managed by gbrain (db_only directories)\n";
+  gitignoreContent += linesToAdd.join("\n") + "\n";
 
   try {
     writeFileSync(gitignorePath, gitignoreContent);
   } catch (error) {
     console.warn(
       `Could not update ${gitignorePath} (${error instanceof Error ? error.message : String(error)}) — ` +
-        `please add db_only directories manually:\n  ${linesToAdd.join('\n  ')}`,
+        `please add db_only directories manually:\n  ${linesToAdd.join("\n  ")}`
     );
   }
 }
@@ -4172,27 +4481,37 @@ export function manageGitignore(
 async function maybeExtractionNudge(engine: BrainEngine, sourceId?: string): Promise<void> {
   if (process.env.GBRAIN_SYNC_NO_EXTRACT_NUDGE) return;
   try {
-    const { LINK_EXTRACTOR_VERSION_TS } = await import('../core/link-extraction.ts');
+    const { LINK_EXTRACTOR_VERSION_TS } = await import("../core/link-extraction.ts");
     // D3/C4: resolve the warn threshold + vacuous-skip floor through the SAME
     // helpers the doctor check uses (dynamic import keeps doctor.ts off sync's
     // eager-load path) so "the nudge fires iff doctor would warn" can't drift.
-    const { _resolveEnvNumber, EXTRACTION_LAG_WARN_PCT_DEFAULT, EXTRACTION_LAG_MIN_PAGES } = await import('./doctor.ts');
+    const { _resolveEnvNumber, EXTRACTION_LAG_WARN_PCT_DEFAULT, EXTRACTION_LAG_MIN_PAGES } =
+      await import("./doctor.ts");
     const totalRows = await engine.executeRaw<{ count: number }>(
       sourceId
         ? `SELECT count(*)::int AS count FROM pages WHERE deleted_at IS NULL AND source_id = $1`
         : `SELECT count(*)::int AS count FROM pages WHERE deleted_at IS NULL`,
-      sourceId ? [sourceId] : [],
+      sourceId ? [sourceId] : []
     );
     const total = Number(totalRows[0]?.count ?? 0);
     // Match doctor's predicate EXACTLY (C4): skip tiny brains only when NOT
     // source-scoped (a small explicit source IS assessed, like orphan_ratio).
     if (total < EXTRACTION_LAG_MIN_PAGES && !sourceId) return;
-    const stale = await engine.countStalePagesForExtraction({ sourceId, versionTs: LINK_EXTRACTOR_VERSION_TS });
-    const warnPct = _resolveEnvNumber('GBRAIN_EXTRACTION_LAG_WARN_PCT', EXTRACTION_LAG_WARN_PCT_DEFAULT, { unit: '%' });
+    const stale = await engine.countStalePagesForExtraction({
+      sourceId,
+      versionTs: LINK_EXTRACTOR_VERSION_TS,
+    });
+    const warnPct = _resolveEnvNumber(
+      "GBRAIN_EXTRACTION_LAG_WARN_PCT",
+      EXTRACTION_LAG_WARN_PCT_DEFAULT,
+      { unit: "%" }
+    );
     if ((stale / total) * 100 > warnPct) {
       serr(`[sync] ${stale} page(s) have un-extracted edges — run 'gbrain extract --stale'`);
     }
-  } catch { /* nudge is best-effort — never block sync on it */ }
+  } catch {
+    /* nudge is best-effort — never block sync on it */
+  }
 }
 
 /**
@@ -4204,37 +4523,47 @@ async function maybeExtractionNudge(engine: BrainEngine, sourceId?: string): Pro
  * pipes cleanly through `jq` (D4).
  */
 function printSyncResult(result: SyncResult, sink: NodeJS.WriteStream = process.stdout) {
-  const write = (line: string) => sink.write(line + '\n');
+  const write = (line: string) => sink.write(line + "\n");
   switch (result.status) {
-    case 'up_to_date':
-      write('Already up to date.');
+    case "up_to_date":
+      write("Already up to date.");
       break;
-    case 'synced':
+    case "synced":
       write(`Synced ${result.fromCommit?.slice(0, 8)}..${result.toCommit.slice(0, 8)}:`);
-      write(`  +${result.added} added, ~${result.modified} modified, -${result.deleted} deleted, R${result.renamed} renamed`);
-      write(`  ${result.chunksCreated} chunks created${result.embedded > 0 ? `, ${result.embedded} pages embedded` : ''}`);
+      write(
+        `  +${result.added} added, ~${result.modified} modified, -${result.deleted} deleted, R${result.renamed} renamed`
+      );
+      write(
+        `  ${result.chunksCreated} chunks created${result.embedded > 0 ? `, ${result.embedded} pages embedded` : ""}`
+      );
       break;
-    case 'first_sync':
+    case "first_sync":
       write(`First sync complete. Checkpoint: ${result.toCommit.slice(0, 8)}`);
-      write(`  ${result.added} file(s) imported, ${result.chunksCreated} chunks${result.embedded > 0 ? `, ${result.embedded} pages embedded` : ''}`);
+      write(
+        `  ${result.added} file(s) imported, ${result.chunksCreated} chunks${result.embedded > 0 ? `, ${result.embedded} pages embedded` : ""}`
+      );
       break;
-    case 'dry_run':
+    case "dry_run":
       break; // already printed in performSync
-    case 'blocked_by_failures':
-      write(`Sync BLOCKED at ${result.toCommit.slice(0, 8)}: ${result.failedFiles ?? 0} file(s) failed to parse.`);
+    case "blocked_by_failures":
+      write(
+        `Sync BLOCKED at ${result.toCommit.slice(0, 8)}: ${result.failedFiles ?? 0} file(s) failed to parse.`
+      );
       write(`  See ~/.gbrain/sync-failures.jsonl for details, or run 'gbrain doctor'.`);
-      write(`  Fix the files then re-run 'gbrain sync', or 'gbrain sync --skip-failed' to move on.`);
+      write(
+        `  Fix the files then re-run 'gbrain sync', or 'gbrain sync --skip-failed' to move on.`
+      );
       break;
-    case 'partial':
+    case "partial":
       // v0.41.13.0 (T7 / D-V3-5): --timeout fired before the bookmark write
       // so last_commit is UNCHANGED. The next sync re-walks the same diff
       // and content_hash short-circuits already-imported files at ~10ms each.
       // The reason field distinguishes generic timeout (mid-import) from
       // pull_timeout (subprocess wedge / SIGTERM during git pull).
       write(
-        `Sync PARTIAL at ${result.fromCommit?.slice(0, 8) ?? '<initial>'}: ` +
-        `imported ${result.filesImported ?? 0} of ${result.added + result.modified} file(s), ` +
-        `reason=${result.reason ?? 'timeout'}.`,
+        `Sync PARTIAL at ${result.fromCommit?.slice(0, 8) ?? "<initial>"}: ` +
+          `imported ${result.filesImported ?? 0} of ${result.added + result.modified} file(s), ` +
+          `reason=${result.reason ?? "timeout"}.`
       );
       write(`  Re-run 'gbrain sync' to continue (last_commit unchanged; safe to retry).`);
       break;

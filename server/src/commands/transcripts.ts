@@ -13,7 +13,7 @@
  *   gbrain transcripts recent --json
  */
 
-import type { BrainEngine } from '../core/engine.ts';
+import type { BrainEngine } from "../core/engine.ts";
 
 interface RunOpts {
   days?: number;
@@ -26,16 +26,22 @@ function parseArgs(args: string[]): RunOpts | { help: true } {
   const opts: RunOpts = {};
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
-    if (a === '--help' || a === '-h') return { help: true };
-    if (a === '--json') { opts.json = true; continue; }
-    if (a === '--full') { opts.full = true; continue; }
-    if (a === '--days') {
-      const n = parseInt(args[++i] ?? '', 10);
+    if (a === "--help" || a === "-h") return { help: true };
+    if (a === "--json") {
+      opts.json = true;
+      continue;
+    }
+    if (a === "--full") {
+      opts.full = true;
+      continue;
+    }
+    if (a === "--days") {
+      const n = parseInt(args[++i] ?? "", 10);
       if (Number.isFinite(n) && n >= 0) opts.days = n;
       continue;
     }
-    if (a === '--limit') {
-      const n = parseInt(args[++i] ?? '', 10);
+    if (a === "--limit") {
+      const n = parseInt(args[++i] ?? "", 10);
       if (Number.isFinite(n) && n > 0) opts.limit = n;
       continue;
     }
@@ -61,18 +67,18 @@ Note: dream-generated outputs (frontmatter dream_generated: true) are skipped.
 
 export async function runTranscripts(engine: BrainEngine, args: string[]): Promise<void> {
   const sub = args[0];
-  if (sub !== 'recent') {
+  if (sub !== "recent") {
     console.log(HELP);
-    if (sub && sub !== '--help' && sub !== '-h') process.exitCode = 2;
+    if (sub && sub !== "--help" && sub !== "-h") process.exitCode = 2;
     return;
   }
 
   const parsed = parseArgs(args.slice(1));
-  if ('help' in parsed) {
+  if ("help" in parsed) {
     console.log(HELP);
     return;
   }
-  const { listRecentTranscripts } = await import('../core/transcripts.ts');
+  const { listRecentTranscripts } = await import("../core/transcripts.ts");
   const rows = await listRecentTranscripts(engine, {
     days: parsed.days,
     summary: !parsed.full,
@@ -83,10 +89,10 @@ export async function runTranscripts(engine: BrainEngine, args: string[]): Promi
     return;
   }
   if (rows.length === 0) {
-    console.log('(no recent transcripts in the corpus dir)');
+    console.log("(no recent transcripts in the corpus dir)");
     return;
   }
-  rows.forEach(r => {
+  rows.forEach((r) => {
     const date = r.date ?? r.mtime.slice(0, 10);
     console.log(`\n--- ${date} | ${r.path} | ${r.length} bytes ---`);
     console.log(r.summary);

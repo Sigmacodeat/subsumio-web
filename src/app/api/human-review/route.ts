@@ -1,4 +1,3 @@
-
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { z } from "zod";
@@ -56,10 +55,10 @@ export const POST = createHandler(
       return apiError(
         "review_submit_failed",
         err instanceof Error ? err.message : "review_submit_failed",
-        500,
+        500
       );
     }
-  },
+  }
 );
 
 export const GET = createHandler(
@@ -77,8 +76,8 @@ export const GET = createHandler(
       return apiError(
         "review_load_failed",
         err instanceof Error ? err.message : "review_load_failed",
-        500,
+        500
       );
     }
-  },
+  }
 );

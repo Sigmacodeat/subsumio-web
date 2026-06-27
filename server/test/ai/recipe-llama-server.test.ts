@@ -12,71 +12,71 @@
  *  - default auth resolves to "Bearer unauthenticated" (or the API key if set)
  */
 
-import { describe, expect, test } from 'bun:test';
-import { getRecipe } from '../../src/core/ai/recipes/index.ts';
-import { defaultResolveAuth } from '../../src/core/ai/gateway.ts';
-import { withEnv } from '../helpers/with-env.ts';
+import { describe, expect, test } from "bun:test";
+import { getRecipe } from "../../src/core/ai/recipes/index.ts";
+import { defaultResolveAuth } from "../../src/core/ai/gateway.ts";
+import { withEnv } from "../helpers/with-env.ts";
 
-describe('recipe: llama-server', () => {
-  test('registered with expected shape', () => {
-    const r = getRecipe('llama-server');
+describe("recipe: llama-server", () => {
+  test("registered with expected shape", () => {
+    const r = getRecipe("llama-server");
     expect(r).toBeDefined();
-    expect(r!.id).toBe('llama-server');
-    expect(r!.tier).toBe('openai-compat');
-    expect(r!.implementation).toBe('openai-compatible');
-    expect(r!.base_url_default).toBe('http://localhost:8080/v1');
+    expect(r!.id).toBe("llama-server");
+    expect(r!.tier).toBe("openai-compat");
+    expect(r!.implementation).toBe("openai-compatible");
+    expect(r!.base_url_default).toBe("http://localhost:8080/v1");
     expect(r!.auth_env?.required ?? []).toEqual([]);
-    expect(r!.auth_env?.optional ?? []).toContain('LLAMA_SERVER_BASE_URL');
-    expect(r!.auth_env?.optional ?? []).toContain('LLAMA_SERVER_API_KEY');
+    expect(r!.auth_env?.optional ?? []).toContain("LLAMA_SERVER_BASE_URL");
+    expect(r!.auth_env?.optional ?? []).toContain("LLAMA_SERVER_API_KEY");
   });
 
-  test('embedding touchpoint declares user_provided_models', () => {
-    const r = getRecipe('llama-server')!;
+  test("embedding touchpoint declares user_provided_models", () => {
+    const r = getRecipe("llama-server")!;
     expect(r.touchpoints.embedding).toBeDefined();
     expect(r.touchpoints.embedding!.models).toEqual([]);
     expect(r.touchpoints.embedding!.user_provided_models).toBe(true);
     expect(r.touchpoints.embedding!.default_dims).toBe(0);
   });
 
-  test('declares a probe function', () => {
-    const r = getRecipe('llama-server')!;
-    expect(typeof r.probe).toBe('function');
+  test("declares a probe function", () => {
+    const r = getRecipe("llama-server")!;
+    expect(typeof r.probe).toBe("function");
   });
 
-  test('probe returns ready=false with hint when no server listening on default port', async () => {
+  test("probe returns ready=false with hint when no server listening on default port", async () => {
     // Use a guaranteed-unreachable port. withEnv ensures the prior value
     // (if any) is restored after the test, including across the
     // shared-process parallel test runner.
-    await withEnv({ LLAMA_SERVER_BASE_URL: 'http://127.0.0.1:1/v1' }, async () => {
-      const r = getRecipe('llama-server')!;
+    await withEnv({ LLAMA_SERVER_BASE_URL: "http://127.0.0.1:1/v1" }, async () => {
+      const r = getRecipe("llama-server")!;
       const result = await r.probe!();
       expect(result.ready).toBe(false);
       expect(result.hint).toBeDefined();
-      expect(result.hint!.toLowerCase()).toContain('llama-server');
+      expect(result.hint!.toLowerCase()).toContain("llama-server");
     });
   });
 
   test('default auth: no env → "Bearer unauthenticated"', () => {
-    const r = getRecipe('llama-server')!;
-    const auth = defaultResolveAuth(r, {}, 'embedding');
-    expect(auth.headerName).toBe('Authorization');
-    expect(auth.token).toBe('Bearer unauthenticated');
+    const r = getRecipe("llama-server")!;
+    const auth = defaultResolveAuth(r, {}, "embedding");
+    expect(auth.headerName).toBe("Authorization");
+    expect(auth.token).toBe("Bearer unauthenticated");
   });
 
   test('default auth: LLAMA_SERVER_API_KEY set → "Bearer <key>"', () => {
-    const r = getRecipe('llama-server')!;
-    const auth = defaultResolveAuth(r, { LLAMA_SERVER_API_KEY: 'sk-llama-fake' }, 'embedding');
-    expect(auth.headerName).toBe('Authorization');
-    expect(auth.token).toBe('Bearer sk-llama-fake');
+    const r = getRecipe("llama-server")!;
+    const auth = defaultResolveAuth(r, { LLAMA_SERVER_API_KEY: "sk-llama-fake" }, "embedding");
+    expect(auth.headerName).toBe("Authorization");
+    expect(auth.token).toBe("Bearer sk-llama-fake");
   });
 
-  test('default auth: LLAMA_SERVER_BASE_URL alone does NOT become the Bearer (URL-shaped optional)', () => {
-    const r = getRecipe('llama-server')!;
+  test("default auth: LLAMA_SERVER_BASE_URL alone does NOT become the Bearer (URL-shaped optional)", () => {
+    const r = getRecipe("llama-server")!;
     const auth = defaultResolveAuth(
       r,
-      { LLAMA_SERVER_BASE_URL: 'http://my-llama:8080/v1' },
-      'embedding',
+      { LLAMA_SERVER_BASE_URL: "http://my-llama:8080/v1" },
+      "embedding"
     );
-    expect(auth.token).toBe('Bearer unauthenticated');
+    expect(auth.token).toBe("Bearer unauthenticated");
   });
 });

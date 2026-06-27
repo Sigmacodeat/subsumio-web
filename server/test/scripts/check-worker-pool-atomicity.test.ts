@@ -13,14 +13,14 @@
  * fast loop.
  */
 
-import { describe, it, expect } from 'bun:test';
-import { spawnSync } from 'child_process';
-import { mkdtempSync, mkdirSync, writeFileSync } from 'fs';
-import { tmpdir } from 'os';
-import { join, resolve, dirname } from 'path';
+import { describe, it, expect } from "bun:test";
+import { spawnSync } from "child_process";
+import { mkdtempSync, mkdirSync, writeFileSync } from "fs";
+import { tmpdir } from "os";
+import { join, resolve, dirname } from "path";
 
-const REPO_ROOT = resolve(import.meta.dir, '..', '..');
-const GUARD_SH = resolve(REPO_ROOT, 'scripts/check-worker-pool-atomicity.sh');
+const REPO_ROOT = resolve(import.meta.dir, "..", "..");
+const GUARD_SH = resolve(REPO_ROOT, "scripts/check-worker-pool-atomicity.sh");
 
 interface FakeFile {
   /** Path relative to tmpdir. */
@@ -35,7 +35,7 @@ interface RunResult {
 }
 
 function runGuardIn(files: FakeFile[]): RunResult {
-  const dir = mkdtempSync(join(tmpdir(), 'wp-atomicity-guard-'));
+  const dir = mkdtempSync(join(tmpdir(), "wp-atomicity-guard-"));
   for (const f of files) {
     const full = join(dir, f.path);
     mkdirSync(dirname(full), { recursive: true });
@@ -44,10 +44,10 @@ function runGuardIn(files: FakeFile[]): RunResult {
   // Initialize as a git repo so `git rev-parse --show-toplevel` finds
   // the tmpdir, not the real gbrain repo. Otherwise the guard would
   // run against the real worktree.
-  spawnSync('git', ['init', '-q'], { cwd: dir });
-  const r = spawnSync('bash', [GUARD_SH], {
+  spawnSync("git", ["init", "-q"], { cwd: dir });
+  const r = spawnSync("bash", [GUARD_SH], {
     cwd: dir,
-    encoding: 'utf-8',
+    encoding: "utf-8",
     env: { ...process.env },
   });
   return { status: r.status ?? -1, stdout: r.stdout, stderr: r.stderr };
@@ -63,74 +63,74 @@ async function worker() {
 }
 `;
 
-describe('check-worker-pool-atomicity.sh', () => {
-  describe('clean state', () => {
-    it('returns 0 when worker-pool.ts is absent', () => {
+describe("check-worker-pool-atomicity.sh", () => {
+  describe("clean state", () => {
+    it("returns 0 when worker-pool.ts is absent", () => {
       const r = runGuardIn([]);
       expect(r.status).toBe(0);
-      expect(r.stdout).toContain('not present yet');
+      expect(r.stdout).toContain("not present yet");
     });
 
-    it('returns 0 on a clean helper + clean caller', () => {
+    it("returns 0 on a clean helper + clean caller", () => {
       const r = runGuardIn([
         {
-          path: 'src/core/worker-pool.ts',
+          path: "src/core/worker-pool.ts",
           contents: `// header comment\n${CLEAN_POOL}`,
         },
         {
-          path: 'src/commands/embed.ts',
+          path: "src/commands/embed.ts",
           contents: `import { runSlidingPool } from '../core/worker-pool.ts';\n`,
         },
       ]);
       expect(r.status).toBe(0);
-      expect(r.stdout).toContain('atomicity invariant intact');
+      expect(r.stdout).toContain("atomicity invariant intact");
     });
   });
 
-  describe('FAILURE MODE 1 — worker_threads alongside the helper', () => {
-    it('fires when a caller imports node:worker_threads', () => {
+  describe("FAILURE MODE 1 — worker_threads alongside the helper", () => {
+    it("fires when a caller imports node:worker_threads", () => {
       const r = runGuardIn([
         {
-          path: 'src/core/worker-pool.ts',
+          path: "src/core/worker-pool.ts",
           contents: CLEAN_POOL,
         },
         {
-          path: 'src/commands/bad.ts',
+          path: "src/commands/bad.ts",
           contents: `import { Worker } from 'node:worker_threads';\nimport { runSlidingPool } from '../core/worker-pool.ts';\n`,
         },
       ]);
       expect(r.status).toBe(1);
-      expect(r.stdout).toContain('worker_threads imported');
-      expect(r.stdout).toContain('src/commands/bad.ts');
+      expect(r.stdout).toContain("worker_threads imported");
+      expect(r.stdout).toContain("src/commands/bad.ts");
     });
 
-    it('fires when a caller imports the bare worker_threads (no node: prefix)', () => {
+    it("fires when a caller imports the bare worker_threads (no node: prefix)", () => {
       const r = runGuardIn([
         {
-          path: 'src/core/worker-pool.ts',
+          path: "src/core/worker-pool.ts",
           contents: CLEAN_POOL,
         },
         {
-          path: 'src/commands/bad.ts',
+          path: "src/commands/bad.ts",
           contents: `import { Worker } from 'worker_threads';\nimport { runSlidingPool } from '../core/worker-pool.ts';\n`,
         },
       ]);
       expect(r.status).toBe(1);
-      expect(r.stdout).toContain('worker_threads imported');
+      expect(r.stdout).toContain("worker_threads imported");
     });
 
-    it('does NOT fire when worker_threads is imported in an unrelated file', () => {
+    it("does NOT fire when worker_threads is imported in an unrelated file", () => {
       const r = runGuardIn([
         {
-          path: 'src/core/worker-pool.ts',
+          path: "src/core/worker-pool.ts",
           contents: CLEAN_POOL,
         },
         {
-          path: 'src/commands/embed.ts',
+          path: "src/commands/embed.ts",
           contents: `import { runSlidingPool } from '../core/worker-pool.ts';\n`,
         },
         {
-          path: 'src/somewhere/unrelated.ts',
+          path: "src/somewhere/unrelated.ts",
           // Imports worker_threads but NOT runSlidingPool — allowed.
           contents: `import { Worker } from 'node:worker_threads';\n`,
         },
@@ -139,11 +139,11 @@ describe('check-worker-pool-atomicity.sh', () => {
     });
   });
 
-  describe('FAILURE MODE 2 — await between read and write of nextIdx', () => {
-    it('fires on `const idx = await getNextIdx()` form', () => {
+  describe("FAILURE MODE 2 — await between read and write of nextIdx", () => {
+    it("fires on `const idx = await getNextIdx()` form", () => {
       const r = runGuardIn([
         {
-          path: 'src/core/worker-pool.ts',
+          path: "src/core/worker-pool.ts",
           contents: `
 let nextIdx = 0;
 async function getNextIdx() { return nextIdx++; }
@@ -157,13 +157,13 @@ async function worker() {
         },
       ]);
       expect(r.status).toBe(1);
-      expect(r.stdout).toContain('await near nextIdx');
+      expect(r.stdout).toContain("await near nextIdx");
     });
 
-    it('fires on `await something(); nextIdx++` interleaved form', () => {
+    it("fires on `await something(); nextIdx++` interleaved form", () => {
       const r = runGuardIn([
         {
-          path: 'src/core/worker-pool.ts',
+          path: "src/core/worker-pool.ts",
           contents: `
 let nextIdx = 0;
 async function worker() {
@@ -187,10 +187,10 @@ async function worker() {
       expect([0, 1]).toContain(r.status);
     });
 
-    it('does NOT false-fire on comments mentioning the bad pattern', () => {
+    it("does NOT false-fire on comments mentioning the bad pattern", () => {
       const r = runGuardIn([
         {
-          path: 'src/core/worker-pool.ts',
+          path: "src/core/worker-pool.ts",
           contents: `
 // FAILURE MODE: \`const idx = await getNextIdx()\` style refactor breaks atomicity.
 // Do NOT insert \`await\` between the read and write of nextIdx.
@@ -207,10 +207,10 @@ async function worker() {
       expect(r.status).toBe(0);
     });
 
-    it('does NOT false-fire on multi-line /** block comments mentioning the pattern', () => {
+    it("does NOT false-fire on multi-line /** block comments mentioning the pattern", () => {
       const r = runGuardIn([
         {
-          path: 'src/core/worker-pool.ts',
+          path: "src/core/worker-pool.ts",
           contents: `/**
  * Documentation block.
  * Wrong form: \`const idx = await getNextIdx()\`

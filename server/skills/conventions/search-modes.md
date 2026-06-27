@@ -27,15 +27,15 @@ Any agent doing search-adjacent work in a gbrain brain consults this convention:
 The 3 bundles live in `src/core/search/mode.ts` as `MODE_BUNDLES` (frozen).
 Don't redefine them per-install; that breaks the public methodology numbers.
 
-| Knob                          | `conservative` | `balanced` | `tokenmax`     |
-|-------------------------------|----------------|------------|----------------|
-| `cache.enabled`               | true           | true       | true           |
-| `cache.similarity_threshold`  | 0.92           | 0.92       | 0.92           |
-| `cache.ttl_seconds`           | 3600           | 3600       | 3600           |
-| `intentWeighting`             | true           | true       | true           |
-| `tokenBudget`                 | **4000**       | **12000**  | **off**        |
-| `expansion` (LLM multi-query) | false          | false      | **true**       |
-| `searchLimit` default         | 10             | 25         | 50             |
+| Knob                          | `conservative` | `balanced` | `tokenmax` |
+| ----------------------------- | -------------- | ---------- | ---------- |
+| `cache.enabled`               | true           | true       | true       |
+| `cache.similarity_threshold`  | 0.92           | 0.92       | 0.92       |
+| `cache.ttl_seconds`           | 3600           | 3600       | 3600       |
+| `intentWeighting`             | true           | true       | true       |
+| `tokenBudget`                 | **4000**       | **12000**  | **off**    |
+| `expansion` (LLM multi-query) | false          | false      | **true**   |
+| `searchLimit` default         | 10             | 25         | 50         |
 
 **Cache, intent weighting, and similarity threshold are constant across modes**
 — they're free wins (no API cost). Modes scale the three cost levers:

@@ -16,26 +16,22 @@
  *   - `--budget-usd` hard cap is a v0.27.x follow-up TODO.
  */
 
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
-import { join } from 'path';
-import { tmpdir } from 'os';
-import { createHash } from 'crypto';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "fs";
+import { join } from "path";
+import { tmpdir } from "os";
+import { createHash } from "crypto";
 
-import { gbrainPath, loadConfig } from '../core/config.ts';
-import { configureGateway, isAvailable } from '../core/ai/gateway.ts';
-import { runWithLimit } from '../core/worker-pool.ts';
-import { resolveCycleDefault, cycleDefaultSuffix } from '../core/eval/cycle-default.ts';
+import { gbrainPath, loadConfig } from "../core/config.ts";
+import { configureGateway, isAvailable } from "../core/ai/gateway.ts";
+import { runWithLimit } from "../core/worker-pool.ts";
+import { resolveCycleDefault, cycleDefaultSuffix } from "../core/eval/cycle-default.ts";
 import {
   DEFAULT_DIMENSIONS,
   DEFAULT_SLOTS,
   estimateCost,
   runEval,
-} from '../core/cross-modal-eval/runner.ts';
-import type {
-  ProgressEvent,
-  RunEvalResult,
-  SlotConfig,
-} from '../core/cross-modal-eval/runner.ts';
+} from "../core/cross-modal-eval/runner.ts";
+import type { ProgressEvent, RunEvalResult, SlotConfig } from "../core/cross-modal-eval/runner.ts";
 
 const HELP = `gbrain eval cross-modal — multi-model quality gate
 
@@ -136,84 +132,87 @@ function parseArgs(args: string[]): ParsedArgs {
     const arg = args[i]!;
     const next = args[i + 1];
     switch (arg) {
-      case '--help':
-      case '-h':
+      case "--help":
+      case "-h":
         out.help = true;
         break;
-      case '--task':
+      case "--task":
         if (next === undefined) break;
         out.task = next;
         i++;
         break;
-      case '--output':
+      case "--output":
         if (next === undefined) break;
         out.output = next;
         i++;
         break;
-      case '--batch':
+      case "--batch":
         if (next === undefined) break;
         out.batch = next;
         i++;
         break;
-      case '--limit':
+      case "--limit":
         if (next === undefined) break;
         out.limit = parseIntStrict(next);
         i++;
         break;
-      case '--concurrent':
+      case "--concurrent":
         if (next === undefined) break;
         out.concurrent = parseIntStrict(next);
         i++;
         break;
-      case '--max-usd':
+      case "--max-usd":
         if (next === undefined) break;
         out.maxUsd = parseFloatStrict(next);
         i++;
         break;
-      case '--yes':
+      case "--yes":
         out.yes = true;
         break;
-      case '--slug':
+      case "--slug":
         if (next === undefined) break;
         out.slug = next;
         i++;
         break;
-      case '--dimensions':
+      case "--dimensions":
         if (next === undefined) break;
-        out.dimensions = next.split(',').map(s => s.trim()).filter(Boolean);
+        out.dimensions = next
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
         i++;
         break;
-      case '--cycles':
+      case "--cycles":
         if (next === undefined) break;
         out.cycles = parseIntStrict(next);
         i++;
         break;
-      case '--slot-a-model':
+      case "--slot-a-model":
         if (next === undefined) break;
         out.slotAModel = next;
         i++;
         break;
-      case '--slot-b-model':
+      case "--slot-b-model":
         if (next === undefined) break;
         out.slotBModel = next;
         i++;
         break;
-      case '--slot-c-model':
+      case "--slot-c-model":
         if (next === undefined) break;
         out.slotCModel = next;
         i++;
         break;
-      case '--receipt-dir':
+      case "--receipt-dir":
         if (next === undefined) break;
         out.receiptDir = next;
         i++;
         break;
-      case '--max-tokens':
+      case "--max-tokens":
         if (next === undefined) break;
         out.maxTokens = parseIntStrict(next);
         i++;
         break;
-      case '--json':
+      case "--json":
         out.json = true;
         break;
     }
@@ -248,7 +247,7 @@ export { runWithLimit };
 
 function inferSlugFromOutputPath(path: string): string | undefined {
   // skills/<slug>/SKILL.md or .../skills/<slug>/...
-  const m = path.replace(/\\/g, '/').match(/(?:^|\/)skills\/([^/]+)\/SKILL\.md$/);
+  const m = path.replace(/\\/g, "/").match(/(?:^|\/)skills\/([^/]+)\/SKILL\.md$/);
   return m ? m[1] : undefined;
 }
 
@@ -301,7 +300,10 @@ export interface RunCrossModalOpts {
   runEval?: typeof runEval;
 }
 
-export async function runEvalCrossModal(args: string[], opts: RunCrossModalOpts = {}): Promise<number> {
+export async function runEvalCrossModal(
+  args: string[],
+  opts: RunCrossModalOpts = {}
+): Promise<number> {
   const parsed = parseArgs(args);
 
   if (parsed.help) {
@@ -311,7 +313,7 @@ export async function runEvalCrossModal(args: string[], opts: RunCrossModalOpts 
 
   // v0.40.1.0 Track D / T3 — --batch vs --task mutex.
   if (parsed.batch && parsed.task) {
-    process.stderr.write('Error: --batch and --task are mutually exclusive\n');
+    process.stderr.write("Error: --batch and --task are mutually exclusive\n");
     return 1;
   }
 
@@ -326,7 +328,7 @@ export async function runEvalCrossModal(args: string[], opts: RunCrossModalOpts 
     return 1;
   }
   if (!parsed.output) {
-    process.stderr.write('Error: --output <path> is required\n\n');
+    process.stderr.write("Error: --output <path> is required\n\n");
     process.stderr.write(HELP);
     return 1;
   }
@@ -336,7 +338,7 @@ export async function runEvalCrossModal(args: string[], opts: RunCrossModalOpts 
     return 1;
   }
 
-  const outputContent = readFileSync(parsed.output, 'utf-8');
+  const outputContent = readFileSync(parsed.output, "utf-8");
   if (outputContent.trim().length === 0) {
     process.stderr.write(`Error: --output file is empty: ${parsed.output}\n`);
     return 1;
@@ -348,13 +350,13 @@ export async function runEvalCrossModal(args: string[], opts: RunCrossModalOpts 
   const cycleDef = resolveCycleDefault(parsed.cycles, isTTY());
   const cycles = cycleDef.cycles;
   const dimensions = parsed.dimensions ?? DEFAULT_DIMENSIONS;
-  const receiptDir = parsed.receiptDir ?? gbrainPath('eval-receipts');
+  const receiptDir = parsed.receiptDir ?? gbrainPath("eval-receipts");
   const maxTokens = parsed.maxTokens ?? 4000;
 
   const slots: SlotConfig[] = [
-    { id: 'A', model: parsed.slotAModel ?? DEFAULT_SLOTS[0]!.model },
-    { id: 'B', model: parsed.slotBModel ?? DEFAULT_SLOTS[1]!.model },
-    { id: 'C', model: parsed.slotCModel ?? DEFAULT_SLOTS[2]!.model },
+    { id: "A", model: parsed.slotAModel ?? DEFAULT_SLOTS[0]!.model },
+    { id: "B", model: parsed.slotBModel ?? DEFAULT_SLOTS[1]!.model },
+    { id: "C", model: parsed.slotCModel ?? DEFAULT_SLOTS[2]!.model },
   ];
 
   // Configure the AI gateway. Without this, every chat() call throws
@@ -363,11 +365,11 @@ export async function runEvalCrossModal(args: string[], opts: RunCrossModalOpts 
   configureGatewayForCli();
 
   // Probe whether the gateway can serve `chat`. If not, we can't run.
-  if (!isAvailable('chat')) {
+  if (!isAvailable("chat")) {
     process.stderr.write(
-      'Error: AI gateway has no usable chat provider. ' +
-        'Configure one of OPENAI_API_KEY / ANTHROPIC_API_KEY / GOOGLE_GENERATIVE_AI_API_KEY ' +
-        'in your shell or run `gbrain config` to set keys.\n',
+      "Error: AI gateway has no usable chat provider. " +
+        "Configure one of OPENAI_API_KEY / ANTHROPIC_API_KEY / GOOGLE_GENERATIVE_AI_API_KEY " +
+        "in your shell or run `gbrain config` to set keys.\n"
     );
     return 1;
   }
@@ -376,7 +378,7 @@ export async function runEvalCrossModal(args: string[], opts: RunCrossModalOpts 
   const cost = estimateCost(slots, cycles, maxTokens);
   process.stderr.write(
     `[eval cross-modal] estimated cost: ~$${cost.perCycleUSD.toFixed(2)}/cycle, ` +
-      `~$${cost.perRunMaxUSD.toFixed(2)} max for ${cycles} cycle(s)${cycleDefaultSuffix(cycleDef)}.\n`,
+      `~$${cost.perRunMaxUSD.toFixed(2)} max for ${cycles} cycle(s)${cycleDefaultSuffix(cycleDef)}.\n`
   );
   for (const note of cost.notes) {
     process.stderr.write(`[eval cross-modal] note: ${note}\n`);
@@ -385,17 +387,17 @@ export async function runEvalCrossModal(args: string[], opts: RunCrossModalOpts 
   // Progress reporter (stderr only).
   const onProgress = (ev: ProgressEvent) => {
     switch (ev.kind) {
-      case 'cycle_start':
+      case "cycle_start":
         process.stderr.write(`[eval cross-modal] cycle ${ev.cycle}/${ev.total} starting...\n`);
         break;
-      case 'slot_done': {
-        const status = ev.ok ? 'ok' : 'failed';
+      case "slot_done": {
+        const status = ev.ok ? "ok" : "failed";
         process.stderr.write(
-          `[eval cross-modal]   slot ${ev.slotId} (${ev.modelId}) ${status} in ${ev.ms}ms\n`,
+          `[eval cross-modal]   slot ${ev.slotId} (${ev.modelId}) ${status} in ${ev.ms}ms\n`
         );
         break;
       }
-      case 'cycle_end':
+      case "cycle_end":
         process.stderr.write(`[eval cross-modal] cycle ${ev.cycle} verdict: ${ev.verdict}\n`);
         break;
     }
@@ -423,7 +425,7 @@ export async function runEvalCrossModal(args: string[], opts: RunCrossModalOpts 
 
   // Final summary to stderr (always) + JSON to stdout (when --json).
   const verdict = result.finalAggregate.verdict;
-  process.stderr.write('\n');
+  process.stderr.write("\n");
   process.stderr.write(`[eval cross-modal] ${result.finalAggregate.verdictMessage}\n`);
   process.stderr.write(`[eval cross-modal] receipt: ${result.finalReceiptPath}\n`);
 
@@ -433,7 +435,7 @@ export async function runEvalCrossModal(args: string[], opts: RunCrossModalOpts 
         {
           verdict,
           aggregate: result.finalAggregate,
-          cycles: result.cycles.map(c => ({
+          cycles: result.cycles.map((c) => ({
             cycle: c.cycle,
             receipt_path: c.receipt_path,
             verdict: c.aggregate.verdict,
@@ -442,14 +444,14 @@ export async function runEvalCrossModal(args: string[], opts: RunCrossModalOpts 
           finalReceiptPath: result.finalReceiptPath,
         },
         null,
-        2,
-      ),
+        2
+      )
     );
-    process.stdout.write('\n');
+    process.stdout.write("\n");
   }
 
-  if (verdict === 'pass') return 0;
-  if (verdict === 'inconclusive') return 2;
+  if (verdict === "pass") return 0;
+  if (verdict === "inconclusive") return 2;
   return 1;
 }
 
@@ -490,7 +492,7 @@ interface BatchReadResult {
 
 export interface BatchSummary {
   schema_version: 1;
-  kind: 'cross_modal_batch_summary';
+  kind: "cross_modal_batch_summary";
   timestamp: string;
   /** Sum of scored + upstream_error + malformed rows. Real denominator. */
   total: number;
@@ -511,14 +513,14 @@ export interface BatchSummary {
    * Counted in `total`; treated as ERROR for exit precedence.
    */
   malformed_count: number;
-  verdict: 'pass' | 'fail' | 'inconclusive' | 'error';
+  verdict: "pass" | "fail" | "inconclusive" | "error";
   est_cost_usd: number;
   slots: SlotConfig[];
   cycles_per_question: number;
   concurrent: number;
   per_question: Array<{
     question_id: string;
-    verdict: 'pass' | 'fail' | 'inconclusive' | 'error' | 'upstream_error';
+    verdict: "pass" | "fail" | "inconclusive" | "error" | "upstream_error";
     error?: string;
     final_aggregate?: unknown;
   }>;
@@ -528,14 +530,14 @@ function readBatchRows(path: string): BatchReadResult {
   if (!existsSync(path)) {
     throw new Error(`--batch file not found: ${path}`);
   }
-  const raw = readFileSync(path, 'utf8');
+  const raw = readFileSync(path, "utf8");
   const rows: BatchRow[] = [];
   const upstream_errors: UpstreamErrorRow[] = [];
   let lineNo = 0;
   let summarySkipped = 0;
   let parseErrors = 0;
   let malformed_count = 0;
-  for (const line of raw.split('\n')) {
+  for (const line of raw.split("\n")) {
     lineNo++;
     if (!line.trim()) continue;
     let obj: any;
@@ -546,9 +548,9 @@ function readBatchRows(path: string): BatchReadResult {
       process.stderr.write(`[eval cross-modal batch] skipping invalid JSON at line ${lineNo}\n`);
       continue;
     }
-    if (!obj || typeof obj !== 'object') continue;
+    if (!obj || typeof obj !== "object") continue;
     // Skip the by_type_summary tail row — metadata, not a question.
-    if (obj.kind === 'by_type_summary') {
+    if (obj.kind === "by_type_summary") {
       summarySkipped++;
       continue;
     }
@@ -556,27 +558,27 @@ function readBatchRows(path: string): BatchReadResult {
     // `gbrain eval longmemeval` carry an `error` field and an empty/missing
     // hypothesis. Treat them as upstream_error verdicts in the batch summary
     // so they count in the denominator instead of silently disappearing.
-    if (typeof obj.error === 'string' && obj.error.length > 0) {
+    if (typeof obj.error === "string" && obj.error.length > 0) {
       upstream_errors.push({
-        question_id: typeof obj.question_id === 'string' ? obj.question_id : `line-${lineNo}`,
-        question: typeof obj.question === 'string' ? obj.question : '',
-        ...(typeof obj.question_type === 'string' ? { question_type: obj.question_type } : {}),
+        question_id: typeof obj.question_id === "string" ? obj.question_id : `line-${lineNo}`,
+        question: typeof obj.question === "string" ? obj.question : "",
+        ...(typeof obj.question_type === "string" ? { question_type: obj.question_type } : {}),
         error: obj.error,
       });
       continue;
     }
-    if (typeof obj.question !== 'string' || typeof obj.hypothesis !== 'string') {
+    if (typeof obj.question !== "string" || typeof obj.hypothesis !== "string") {
       // Row missing required fields — malformed, count it. We count instead
       // of silently dropping so the batch summary can surface the loss.
       malformed_count++;
       process.stderr.write(
         `[eval cross-modal batch] skipping malformed row at line ${lineNo}: ` +
-        `missing question or hypothesis field\n`,
+          `missing question or hypothesis field\n`
       );
       continue;
     }
     rows.push({
-      question_id: typeof obj.question_id === 'string' ? obj.question_id : `line-${lineNo}`,
+      question_id: typeof obj.question_id === "string" ? obj.question_id : `line-${lineNo}`,
       question: obj.question,
       hypothesis: obj.hypothesis,
     });
@@ -587,13 +589,13 @@ function readBatchRows(path: string): BatchReadResult {
   if (upstream_errors.length > 0) {
     process.stderr.write(
       `[eval cross-modal batch] ${upstream_errors.length} upstream-error row(s) detected; ` +
-      `they will count in the batch denominator as ERROR verdicts.\n`,
+        `they will count in the batch denominator as ERROR verdicts.\n`
     );
   }
   if (malformed_count > 0) {
     process.stderr.write(
       `[eval cross-modal batch] ${malformed_count} malformed row(s) skipped. ` +
-      `Batch will FAIL — re-run upstream eval to fix.\n`,
+        `Batch will FAIL — re-run upstream eval to fix.\n`
     );
   }
   if (parseErrors > 0) {
@@ -614,9 +616,9 @@ async function runBatchMode(parsed: ParsedArgs, opts: RunCrossModalOpts): Promis
   const maxUsd = parsed.maxUsd ?? 5.0;
 
   const slots: SlotConfig[] = [
-    { id: 'A', model: parsed.slotAModel ?? DEFAULT_SLOTS[0]!.model },
-    { id: 'B', model: parsed.slotBModel ?? DEFAULT_SLOTS[1]!.model },
-    { id: 'C', model: parsed.slotCModel ?? DEFAULT_SLOTS[2]!.model },
+    { id: "A", model: parsed.slotAModel ?? DEFAULT_SLOTS[0]!.model },
+    { id: "B", model: parsed.slotBModel ?? DEFAULT_SLOTS[1]!.model },
+    { id: "C", model: parsed.slotCModel ?? DEFAULT_SLOTS[2]!.model },
   ];
 
   // v0.40.1.0 Track D (codex CDX-2): --limit must be >= 1. Passing
@@ -624,7 +626,7 @@ async function runBatchMode(parsed: ParsedArgs, opts: RunCrossModalOpts): Promis
   // total:0 — a direct CI bypass. Fail fast.
   if (limit < 1) {
     process.stderr.write(
-      `Error: --limit must be >= 1 (got ${limit}). --limit 0 would bypass the gate.\n`,
+      `Error: --limit must be >= 1 (got ${limit}). --limit 0 would bypass the gate.\n`
     );
     return 1;
   }
@@ -657,13 +659,13 @@ async function runBatchMode(parsed: ParsedArgs, opts: RunCrossModalOpts): Promis
   const estTotal = perQuestion.perRunMaxUSD * rows.length;
   process.stderr.write(
     `[eval cross-modal batch] estimated cost: ~$${estTotal.toFixed(2)} ` +
-    `for ${rows.length} questions x ${cycles} cycle(s) x 3 slots ` +
-    `(per-question ~$${perQuestion.perRunMaxUSD.toFixed(2)}, concurrent=${concurrent})\n`,
+      `for ${rows.length} questions x ${cycles} cycle(s) x 3 slots ` +
+      `(per-question ~$${perQuestion.perRunMaxUSD.toFixed(2)}, concurrent=${concurrent})\n`
   );
   if (estTotal > maxUsd && !parsed.yes) {
     process.stderr.write(
       `Error: estimated cost $${estTotal.toFixed(2)} exceeds --max-usd $${maxUsd.toFixed(2)}; ` +
-      `pass --yes to proceed or lower --limit / --cycles.\n`,
+        `pass --yes to proceed or lower --limit / --cycles.\n`
     );
     return 1;
   }
@@ -674,10 +676,10 @@ async function runBatchMode(parsed: ParsedArgs, opts: RunCrossModalOpts): Promis
   // make hermetic unit tests impossible.
   if (!opts.runEval) {
     configureGatewayForCli();
-    if (!isAvailable('chat')) {
+    if (!isAvailable("chat")) {
       process.stderr.write(
-        'Error: AI gateway has no usable chat provider. ' +
-        'Configure one of OPENAI_API_KEY / ANTHROPIC_API_KEY / GOOGLE_GENERATIVE_AI_API_KEY.\n',
+        "Error: AI gateway has no usable chat provider. " +
+          "Configure one of OPENAI_API_KEY / ANTHROPIC_API_KEY / GOOGLE_GENERATIVE_AI_API_KEY.\n"
       );
       return 1;
     }
@@ -685,7 +687,7 @@ async function runBatchMode(parsed: ParsedArgs, opts: RunCrossModalOpts): Promis
 
   // Per-question receipts land in a tempdir; we delete the tempdir at the
   // end of the batch (per D10 — keeps ~/.gbrain/eval-receipts/ clean).
-  const batchTempDir = mkdtempSync(join(tmpdir(), 'gbrain-batch-receipts-'));
+  const batchTempDir = mkdtempSync(join(tmpdir(), "gbrain-batch-receipts-"));
   const runEvalFn = opts.runEval ?? runEval;
 
   try {
@@ -693,7 +695,9 @@ async function runBatchMode(parsed: ParsedArgs, opts: RunCrossModalOpts): Promis
       items: rows,
       limit: concurrent,
       fn: async (row, idx) => {
-        process.stderr.write(`[eval cross-modal batch] ${idx + 1}/${rows.length} ${row.question_id} starting...\n`);
+        process.stderr.write(
+          `[eval cross-modal batch] ${idx + 1}/${rows.length} ${row.question_id} starting...\n`
+        );
         return await runEvalFn({
           task: row.question,
           output: row.hypothesis,
@@ -708,8 +712,11 @@ async function runBatchMode(parsed: ParsedArgs, opts: RunCrossModalOpts): Promis
     });
 
     // Aggregate verdicts.
-    let pass = 0, fail = 0, inconclusive = 0, errored = 0;
-    const perQuestionResults: BatchSummary['per_question'] = [];
+    let pass = 0,
+      fail = 0,
+      inconclusive = 0,
+      errored = 0;
+    const perQuestionResults: BatchSummary["per_question"] = [];
     for (let i = 0; i < results.length; i++) {
       const r = results[i]!;
       const qid = rows[i]!.question_id;
@@ -718,12 +725,12 @@ async function runBatchMode(parsed: ParsedArgs, opts: RunCrossModalOpts): Promis
         // Helper's error field is `unknown` (was `Error` pre-v0.41.15);
         // narrow at the use site.
         const errMsg = r.error instanceof Error ? r.error.message : String(r.error);
-        perQuestionResults.push({ question_id: qid, verdict: 'error', error: errMsg });
+        perQuestionResults.push({ question_id: qid, verdict: "error", error: errMsg });
         continue;
       }
       const v = r.value.finalAggregate.verdict;
-      if (v === 'pass') pass++;
-      else if (v === 'fail') fail++;
+      if (v === "pass") pass++;
+      else if (v === "fail") fail++;
       else inconclusive++;
       perQuestionResults.push({
         question_id: qid,
@@ -738,7 +745,7 @@ async function runBatchMode(parsed: ParsedArgs, opts: RunCrossModalOpts): Promis
     for (const ue of upstreamErrors) {
       perQuestionResults.push({
         question_id: ue.question_id,
-        verdict: 'upstream_error',
+        verdict: "upstream_error",
         error: ue.error,
       });
     }
@@ -756,18 +763,25 @@ async function runBatchMode(parsed: ParsedArgs, opts: RunCrossModalOpts): Promis
     //   else any FAIL → 1
     //   else any INCONCLUSIVE → 2
     //   else 0 (all PASS)
-    let batchVerdict: BatchSummary['verdict'];
+    let batchVerdict: BatchSummary["verdict"];
     let exitCode: number;
     if (errored > 0 || upstreamErrorCount > 0 || malformedCount > 0) {
-      batchVerdict = 'error';
+      batchVerdict = "error";
       exitCode = 2;
-    } else if (fail > 0) { batchVerdict = 'fail'; exitCode = 1; }
-    else if (inconclusive > 0) { batchVerdict = 'inconclusive'; exitCode = 2; }
-    else { batchVerdict = 'pass'; exitCode = 0; }
+    } else if (fail > 0) {
+      batchVerdict = "fail";
+      exitCode = 1;
+    } else if (inconclusive > 0) {
+      batchVerdict = "inconclusive";
+      exitCode = 2;
+    } else {
+      batchVerdict = "pass";
+      exitCode = 0;
+    }
 
     const summary: BatchSummary = {
       schema_version: 1,
-      kind: 'cross_modal_batch_summary',
+      kind: "cross_modal_batch_summary",
       timestamp: new Date().toISOString(),
       total: totalDenom,
       pass_count: pass,
@@ -785,29 +799,32 @@ async function runBatchMode(parsed: ParsedArgs, opts: RunCrossModalOpts): Promis
     };
 
     // Write summary to --output or default path.
-    const summaryPath = parsed.output ??
-      join(gbrainPath('eval-receipts'), `cross-modal-batch-${batchSha8(summary)}.json`);
+    const summaryPath =
+      parsed.output ??
+      join(gbrainPath("eval-receipts"), `cross-modal-batch-${batchSha8(summary)}.json`);
     // Ensure receipts dir exists (the inline ad-hoc default path bypasses
     // the per-cycle runEval mkdir).
     try {
-      const summaryDir = summaryPath.substring(0, summaryPath.lastIndexOf('/'));
+      const summaryDir = summaryPath.substring(0, summaryPath.lastIndexOf("/"));
       if (summaryDir && !existsSync(summaryDir)) {
         mkdirSync(summaryDir, { recursive: true });
       }
-    } catch { /* best-effort */ }
-    writeFileSync(summaryPath, JSON.stringify(summary, null, 2) + '\n', 'utf8');
+    } catch {
+      /* best-effort */
+    }
+    writeFileSync(summaryPath, JSON.stringify(summary, null, 2) + "\n", "utf8");
 
     process.stderr.write(
       `\n[eval cross-modal batch] verdict=${batchVerdict} ` +
-      `pass=${pass} fail=${fail} inconclusive=${inconclusive} ` +
-      `error=${errored} upstream_error=${upstreamErrorCount} malformed=${malformedCount} ` +
-      `(total ${totalDenom})\n`,
+        `pass=${pass} fail=${fail} inconclusive=${inconclusive} ` +
+        `error=${errored} upstream_error=${upstreamErrorCount} malformed=${malformedCount} ` +
+        `(total ${totalDenom})\n`
     );
     process.stderr.write(`[eval cross-modal batch] summary receipt: ${summaryPath}\n`);
 
     if (parsed.json) {
       process.stdout.write(JSON.stringify(summary, null, 2));
-      process.stdout.write('\n');
+      process.stdout.write("\n");
     }
 
     return exitCode;
@@ -818,15 +835,21 @@ async function runBatchMode(parsed: ParsedArgs, opts: RunCrossModalOpts): Promis
     } catch (err) {
       process.stderr.write(
         `[eval cross-modal batch] warning: tempdir cleanup failed: ` +
-        `${err instanceof Error ? err.message : String(err)}\n`,
+          `${err instanceof Error ? err.message : String(err)}\n`
       );
     }
   }
 }
 
 function batchSha8(summary: BatchSummary): string {
-  return createHash('sha256')
-    .update(JSON.stringify({ ts: summary.timestamp, n: summary.total, ids: summary.per_question.map(p => p.question_id) }))
-    .digest('hex')
+  return createHash("sha256")
+    .update(
+      JSON.stringify({
+        ts: summary.timestamp,
+        n: summary.total,
+        ids: summary.per_question.map((p) => p.question_id),
+      })
+    )
+    .digest("hex")
     .slice(0, 8);
 }

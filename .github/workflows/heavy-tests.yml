@@ -10,7 +10,7 @@ name: Heavy Tests
 
 on:
   schedule:
-    - cron: '17 8 * * *'  # 08:17 UTC daily — staggered to avoid noisy slots
+    - cron: "17 8 * * *" # 08:17 UTC daily — staggered to avoid noisy slots
   pull_request:
     # `synchronize` + `reopened` fire on subsequent pushes / reopens — without
     # them, a PR labeled `heavy-tests` would NEVER re-run heavy on later
@@ -55,8 +55,8 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
-      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6  # v2
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version: 1.3.13
       - run: bun install
@@ -81,7 +81,7 @@ jobs:
           cp tests/heavy/rss-baseline.json heavy-artifacts/ 2>/dev/null || true
       - name: Upload heavy-test artifacts
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: heavy-tests-${{ github.run_id }}-${{ github.run_attempt }}
           path: heavy-artifacts/

@@ -65,12 +65,22 @@ function WidgetCard({
   return (
     <div
       onClick={onClick}
-      onKeyDown={onClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } } : undefined}
+      onKeyDown={
+        onClick
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onClick();
+              }
+            }
+          : undefined
+      }
       role={onClick ? "button" : undefined}
       tabIndex={onClick ? 0 : undefined}
       className={cn(
         "rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 shadow-[var(--card-shadow)]",
-        onClick && "cursor-pointer transition-colors hover:bg-[color:var(--ds-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)]"
+        onClick &&
+          "cursor-pointer transition-colors hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)] focus-visible:outline-none"
       )}
     >
       <div className="mb-3 flex items-center gap-2">
@@ -153,7 +163,12 @@ export function CaseOverviewWidgets({ caseData, onTabChange }: CaseOverviewWidge
           <div className="mt-3 border-t border-[color:var(--ds-border)] pt-3">
             <p className="text-xs text-[color:var(--ds-text-muted)]">
               {activeDeadlines[0].title || t("cases.widget.unnamed_deadline" as DashboardKey)}{" "}
-              <span className={cn("font-medium", criticalDeadlines.length > 0 ? "text-red-600" : "text-[color:var(--ds-text)]")}>
+              <span
+                className={cn(
+                  "font-medium",
+                  criticalDeadlines.length > 0 ? "text-red-600" : "text-[color:var(--ds-text)]"
+                )}
+              >
                 {daysUntil(activeDeadlines[0].due_date || activeDeadlines[0].date || "") <= 0
                   ? t("cases.widget.due_today" as DashboardKey)
                   : `${t("cases.widget.due_in" as DashboardKey)} ${daysUntil(activeDeadlines[0].due_date || activeDeadlines[0].date || "")}T`}
@@ -168,19 +183,27 @@ export function CaseOverviewWidgets({ caseData, onTabChange }: CaseOverviewWidge
         <div className="space-y-2">
           {caseData.clientName && (
             <div className="flex items-center justify-between text-sm">
-              <span className="text-[color:var(--ds-text-muted)]">{t("casesnew.label_client" as DashboardKey)}</span>
+              <span className="text-[color:var(--ds-text-muted)]">
+                {t("casesnew.label_client" as DashboardKey)}
+              </span>
               <span className="font-medium text-[color:var(--ds-text)]">{caseData.clientName}</span>
             </div>
           )}
           {caseData.opponentName && (
             <div className="flex items-center justify-between text-sm">
-              <span className="text-[color:var(--ds-text-muted)]">{t("casesnew.label_opponent" as DashboardKey)}</span>
-              <span className="font-medium text-[color:var(--ds-text)]">{caseData.opponentName}</span>
+              <span className="text-[color:var(--ds-text-muted)]">
+                {t("casesnew.label_opponent" as DashboardKey)}
+              </span>
+              <span className="font-medium text-[color:var(--ds-text)]">
+                {caseData.opponentName}
+              </span>
             </div>
           )}
           {caseData.courtName && (
             <div className="flex items-center justify-between text-sm">
-              <span className="text-[color:var(--ds-text-muted)]">{t("casesnew.label_court" as DashboardKey)}</span>
+              <span className="text-[color:var(--ds-text-muted)]">
+                {t("casesnew.label_court" as DashboardKey)}
+              </span>
               <span className="font-medium text-[color:var(--ds-text)]">{caseData.courtName}</span>
             </div>
           )}
@@ -193,7 +216,11 @@ export function CaseOverviewWidgets({ caseData, onTabChange }: CaseOverviewWidge
       </WidgetCard>
 
       {/* Deadlines & Tasks */}
-      <WidgetCard icon={CalendarClock} title={t("cases.widget.deadlines" as DashboardKey)} onClick={() => onTabChange?.("deadlines_tasks")}>
+      <WidgetCard
+        icon={CalendarClock}
+        title={t("cases.widget.deadlines" as DashboardKey)}
+        onClick={() => onTabChange?.("deadlines_tasks")}
+      >
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]">
             <Clock size={18} className="text-[color:var(--ds-text-muted)]" />
@@ -222,7 +249,11 @@ export function CaseOverviewWidgets({ caseData, onTabChange }: CaseOverviewWidge
       </WidgetCard>
 
       {/* Documents */}
-      <WidgetCard icon={FileText} title={t("cases.widget.documents" as DashboardKey)} onClick={() => onTabChange?.("documents")}>
+      <WidgetCard
+        icon={FileText}
+        title={t("cases.widget.documents" as DashboardKey)}
+        onClick={() => onTabChange?.("documents")}
+      >
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]">
             <FileText size={18} className="text-[color:var(--ds-text-muted)]" />
@@ -241,14 +272,20 @@ export function CaseOverviewWidgets({ caseData, onTabChange }: CaseOverviewWidge
       </WidgetCard>
 
       {/* Billing */}
-      <WidgetCard icon={Receipt} title={t("cases.widget.billing" as DashboardKey)} onClick={() => onTabChange?.("billing")}>
+      <WidgetCard
+        icon={Receipt}
+        title={t("cases.widget.billing" as DashboardKey)}
+        onClick={() => onTabChange?.("billing")}
+      >
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]">
             <Receipt size={18} className="text-[color:var(--ds-text-muted)]" />
           </div>
           <div className="flex-1">
             <p className="text-sm font-medium text-[color:var(--ds-text)]">
-              {unbilledMinutes > 0 ? formatMinutes(unbilledMinutes) : t("cases.widget.no_time" as DashboardKey)}
+              {unbilledMinutes > 0
+                ? formatMinutes(unbilledMinutes)
+                : t("cases.widget.no_time" as DashboardKey)}
             </p>
             <p className="text-xs text-[color:var(--ds-text-muted)]">
               {unbilledExpenses > 0
@@ -260,7 +297,11 @@ export function CaseOverviewWidgets({ caseData, onTabChange }: CaseOverviewWidge
       </WidgetCard>
 
       {/* AI / Strategy */}
-      <WidgetCard icon={Scale} title={t("cases.widget.strategy" as DashboardKey)} onClick={() => onTabChange?.("strategy")}>
+      <WidgetCard
+        icon={Scale}
+        title={t("cases.widget.strategy" as DashboardKey)}
+        onClick={() => onTabChange?.("strategy")}
+      >
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-[color:var(--brand-primary)]/20 bg-[color:var(--brand-glow)]">
             <Scale size={18} className="brand-text" />

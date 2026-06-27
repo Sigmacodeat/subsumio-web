@@ -34,7 +34,7 @@ export async function bindFragment(value: string): Promise<string> {
 export async function signActionToken(
   payload: Omit<ActionTokenPayload, "exp">,
   ttlSeconds: number,
-  secret: string = getAuthSecret(),
+  secret: string = getAuthSecret()
 ): Promise<string> {
   const full: ActionTokenPayload = {
     ...payload,
@@ -49,7 +49,7 @@ export async function signActionToken(
 export async function verifyActionToken(
   token: string | undefined | null,
   expectedPurpose: TokenPurpose,
-  secret: string = getAuthSecret(),
+  secret: string = getAuthSecret()
 ): Promise<ActionTokenPayload | null> {
   if (!token) return null;
   const dot = token.lastIndexOf(".");

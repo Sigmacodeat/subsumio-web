@@ -13,28 +13,28 @@
  * land in that source (NOT 'default') AND the nudge appears on stderr.
  */
 
-import { describe, test, expect, beforeAll, afterAll, beforeEach, afterEach } from 'bun:test';
-import { mkdtempSync, writeFileSync, rmSync, mkdirSync } from 'fs';
-import { execSync } from 'child_process';
-import { tmpdir } from 'os';
-import { join } from 'path';
-import { PGLiteEngine } from '../src/core/pglite-engine.ts';
-import { runSources } from '../src/commands/sources.ts';
-import { resetPgliteState } from './helpers/reset-pglite.ts';
+import { describe, test, expect, beforeAll, afterAll, beforeEach, afterEach } from "bun:test";
+import { mkdtempSync, writeFileSync, rmSync, mkdirSync } from "fs";
+import { execSync } from "child_process";
+import { tmpdir } from "os";
+import { join } from "path";
+import { PGLiteEngine } from "../src/core/pglite-engine.ts";
+import { runSources } from "../src/commands/sources.ts";
+import { resetPgliteState } from "./helpers/reset-pglite.ts";
 
 let engine: PGLiteEngine;
 let repoPath: string;
 
 async function pageCountBySource(): Promise<Record<string, number>> {
   const rows = await engine.executeRaw<{ source_id: string; n: number }>(
-    `SELECT source_id, COUNT(*)::int AS n FROM pages GROUP BY source_id`,
+    `SELECT source_id, COUNT(*)::int AS n FROM pages GROUP BY source_id`
   );
   const out: Record<string, number> = {};
   for (const r of rows) out[r.source_id] = r.n;
   return out;
 }
 
-describe('#1434 — runSync auto-routes to sole_non_default source', () => {
+describe("#1434 — runSync auto-routes to sole_non_default source", () => {
   beforeAll(async () => {
     engine = new PGLiteEngine();
     await engine.connect({});
@@ -47,32 +47,28 @@ describe('#1434 — runSync auto-routes to sole_non_default source', () => {
 
   beforeEach(async () => {
     await resetPgliteState(engine);
-    repoPath = mkdtempSync(join(tmpdir(), 'gbrain-snd-routing-'));
-    execSync('git init', { cwd: repoPath, stdio: 'pipe' });
-    execSync('git config user.email "t@t.com"', { cwd: repoPath, stdio: 'pipe' });
-    execSync('git config user.name "T"', { cwd: repoPath, stdio: 'pipe' });
-    mkdirSync(join(repoPath, 'topics'), { recursive: true });
-    writeFileSync(join(repoPath, 'topics/foo.md'), [
-      '---',
-      'type: concept',
-      'title: Foo',
-      '---',
-      '',
-      'baseline.',
-    ].join('\n'));
-    execSync('git add -A && git commit -m initial', { cwd: repoPath, stdio: 'pipe' });
+    repoPath = mkdtempSync(join(tmpdir(), "gbrain-snd-routing-"));
+    execSync("git init", { cwd: repoPath, stdio: "pipe" });
+    execSync('git config user.email "t@t.com"', { cwd: repoPath, stdio: "pipe" });
+    execSync('git config user.name "T"', { cwd: repoPath, stdio: "pipe" });
+    mkdirSync(join(repoPath, "topics"), { recursive: true });
+    writeFileSync(
+      join(repoPath, "topics/foo.md"),
+      ["---", "type: concept", "title: Foo", "---", "", "baseline."].join("\n")
+    );
+    execSync("git add -A && git commit -m initial", { cwd: repoPath, stdio: "pipe" });
   });
 
   afterEach(() => {
     if (repoPath) rmSync(repoPath, { recursive: true, force: true });
   });
 
-  test('sole non-default source: performSync without --source routes there', async () => {
+  test("sole non-default source: performSync without --source routes there", async () => {
     // local_path is required for tier 5.5 to fire — point at the synthetic
     // git repo so resolveSourceWithTier sees one non-default source with
     // a local_path AND falls through brain_default (unset).
-    await runSources(engine, ['add', 'studiovault', '--path', repoPath, '--no-federated']);
-    const { runSync } = await import('../src/commands/sync.ts');
+    await runSources(engine, ["add", "studiovault", "--path", repoPath, "--no-federated"]);
+    const { runSync } = await import("../src/commands/sync.ts");
 
     // Capture stderr to verify the nudge fires.
     const origWrite = process.stderr.write.bind(process.stderr);
@@ -81,7 +77,12 @@ describe('#1434 — runSync auto-routes to sole_non_default source', () => {
       chunk: unknown,
       ...rest: unknown[]
     ): boolean => {
-      const s = typeof chunk === 'string' ? chunk : chunk instanceof Buffer ? chunk.toString() : String(chunk);
+      const s =
+        typeof chunk === "string"
+          ? chunk
+          : chunk instanceof Buffer
+            ? chunk.toString()
+            : String(chunk);
       captured.push(s);
       return origWrite(chunk as Parameters<typeof origWrite>[0], ...(rest as []));
     };
@@ -96,13 +97,13 @@ describe('#1434 — runSync auto-routes to sole_non_default source', () => {
       let exitCode: number | undefined;
       process.exit = ((code?: number) => {
         exitCode = code;
-        throw new Error('__exit__');
+        throw new Error("__exit__");
       }) as typeof process.exit;
 
       try {
-        await runSync(engine, ['--full', '--no-embed', '--repo', repoPath]);
+        await runSync(engine, ["--full", "--no-embed", "--repo", repoPath]);
       } catch (e) {
-        if ((e as Error).message !== '__exit__') throw e;
+        if ((e as Error).message !== "__exit__") throw e;
       } finally {
         process.exit = origExit;
       }
@@ -114,18 +115,18 @@ describe('#1434 — runSync auto-routes to sole_non_default source', () => {
 
     // IRON RULE: pages landed in studiovault, NOT in default.
     const counts = await pageCountBySource();
-    expect(counts['studiovault']).toBeGreaterThan(0);
-    expect(counts['default'] ?? 0).toBe(0);
+    expect(counts["studiovault"]).toBeGreaterThan(0);
+    expect(counts["default"] ?? 0).toBe(0);
 
     // The nudge appears on stderr.
-    const stderrText = captured.join('');
+    const stderrText = captured.join("");
     expect(stderrText).toContain("routing to source 'studiovault'");
-    expect(stderrText).toContain('sole non-default source registered');
+    expect(stderrText).toContain("sole non-default source registered");
   }, 60_000);
 
-  test('explicit --source overrides auto-routing (no nudge)', async () => {
-    await runSources(engine, ['add', 'studiovault', '--path', repoPath, '--no-federated']);
-    const { runSync } = await import('../src/commands/sync.ts');
+  test("explicit --source overrides auto-routing (no nudge)", async () => {
+    await runSources(engine, ["add", "studiovault", "--path", repoPath, "--no-federated"]);
+    const { runSync } = await import("../src/commands/sync.ts");
 
     const origWrite = process.stderr.write.bind(process.stderr);
     const captured: string[] = [];
@@ -133,18 +134,25 @@ describe('#1434 — runSync auto-routes to sole_non_default source', () => {
       chunk: unknown,
       ...rest: unknown[]
     ): boolean => {
-      const s = typeof chunk === 'string' ? chunk : chunk instanceof Buffer ? chunk.toString() : String(chunk);
+      const s =
+        typeof chunk === "string"
+          ? chunk
+          : chunk instanceof Buffer
+            ? chunk.toString()
+            : String(chunk);
       captured.push(s);
       return origWrite(chunk as Parameters<typeof origWrite>[0], ...(rest as []));
     };
 
     try {
       const origExit = process.exit;
-      process.exit = ((_code?: number) => { throw new Error('__exit__'); }) as typeof process.exit;
+      process.exit = ((_code?: number) => {
+        throw new Error("__exit__");
+      }) as typeof process.exit;
       try {
-        await runSync(engine, ['--full', '--no-embed', '--repo', repoPath, '--source', 'default']);
+        await runSync(engine, ["--full", "--no-embed", "--repo", repoPath, "--source", "default"]);
       } catch (e) {
-        if ((e as Error).message !== '__exit__') throw e;
+        if ((e as Error).message !== "__exit__") throw e;
       } finally {
         process.exit = origExit;
       }
@@ -153,21 +161,21 @@ describe('#1434 — runSync auto-routes to sole_non_default source', () => {
     }
 
     // No nudge — user picked explicitly.
-    const stderrText = captured.join('');
-    expect(stderrText).not.toContain('sole non-default source registered');
+    const stderrText = captured.join("");
+    expect(stderrText).not.toContain("sole non-default source registered");
 
     // Pages went to 'default' as requested.
     const counts = await pageCountBySource();
-    expect(counts['default']).toBeGreaterThan(0);
+    expect(counts["default"]).toBeGreaterThan(0);
   }, 60_000);
 
-  test('2+ non-default sources: no auto-route, no nudge, falls through to default', async () => {
+  test("2+ non-default sources: no auto-route, no nudge, falls through to default", async () => {
     // Both need local_path to be counted by the sole_non_default helper.
     // Pre-existing helper filters local_path IS NOT NULL.
-    const secondRepo = mkdtempSync(join(tmpdir(), 'gbrain-snd-routing-second-'));
-    await runSources(engine, ['add', 'studiovault', '--path', repoPath, '--no-federated']);
-    await runSources(engine, ['add', 'second-vault', '--path', secondRepo, '--no-federated']);
-    const { runSync } = await import('../src/commands/sync.ts');
+    const secondRepo = mkdtempSync(join(tmpdir(), "gbrain-snd-routing-second-"));
+    await runSources(engine, ["add", "studiovault", "--path", repoPath, "--no-federated"]);
+    await runSources(engine, ["add", "second-vault", "--path", secondRepo, "--no-federated"]);
+    const { runSync } = await import("../src/commands/sync.ts");
 
     const origWrite = process.stderr.write.bind(process.stderr);
     const captured: string[] = [];
@@ -175,18 +183,25 @@ describe('#1434 — runSync auto-routes to sole_non_default source', () => {
       chunk: unknown,
       ...rest: unknown[]
     ): boolean => {
-      const s = typeof chunk === 'string' ? chunk : chunk instanceof Buffer ? chunk.toString() : String(chunk);
+      const s =
+        typeof chunk === "string"
+          ? chunk
+          : chunk instanceof Buffer
+            ? chunk.toString()
+            : String(chunk);
       captured.push(s);
       return origWrite(chunk as Parameters<typeof origWrite>[0], ...(rest as []));
     };
 
     try {
       const origExit = process.exit;
-      process.exit = ((_code?: number) => { throw new Error('__exit__'); }) as typeof process.exit;
+      process.exit = ((_code?: number) => {
+        throw new Error("__exit__");
+      }) as typeof process.exit;
       try {
-        await runSync(engine, ['--full', '--no-embed', '--repo', repoPath]);
+        await runSync(engine, ["--full", "--no-embed", "--repo", repoPath]);
       } catch (e) {
-        if ((e as Error).message !== '__exit__') throw e;
+        if ((e as Error).message !== "__exit__") throw e;
       } finally {
         process.exit = origExit;
       }
@@ -194,13 +209,13 @@ describe('#1434 — runSync auto-routes to sole_non_default source', () => {
       (process.stderr as unknown as { write: typeof origWrite }).write = origWrite;
     }
 
-    const stderrText = captured.join('');
-    expect(stderrText).not.toContain('sole non-default source registered');
+    const stderrText = captured.join("");
+    expect(stderrText).not.toContain("sole non-default source registered");
 
     // Multi-source brains fall through to seed_default — same as pre-fix.
     const counts = await pageCountBySource();
-    expect(counts['default'] ?? 0).toBeGreaterThan(0);
-    expect(counts['studiovault'] ?? 0).toBe(0);
-    expect(counts['second-vault'] ?? 0).toBe(0);
+    expect(counts["default"] ?? 0).toBeGreaterThan(0);
+    expect(counts["studiovault"] ?? 0).toBe(0);
+    expect(counts["second-vault"] ?? 0).toBe(0);
   }, 60_000);
 });

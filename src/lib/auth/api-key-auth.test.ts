@@ -122,9 +122,12 @@ describe("verifyApiKey", () => {
     await verifyApiKey("Bearer sk_live_abc123");
     // Wait for fire-and-forget
     await new Promise((r) => setTimeout(r, 10));
-    expect(mockStore.update).toHaveBeenCalledWith("key-1", expect.objectContaining({
-      lastUsedAt: expect.any(String),
-    }));
+    expect(mockStore.update).toHaveBeenCalledWith(
+      "key-1",
+      expect.objectContaining({
+        lastUsedAt: expect.any(String),
+      })
+    );
   });
 
   test("returns null when owner user not found", async () => {

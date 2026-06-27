@@ -17,7 +17,7 @@
  *   (in_tokens * input_per_1m + out_tokens * output_per_1m) / 1_000_000.
  */
 
-import { canonicalLookup } from '../model-pricing.ts';
+import { canonicalLookup } from "../model-pricing.ts";
 
 export interface ModelPricing {
   /** USD per 1M input tokens. */
@@ -32,15 +32,15 @@ export interface ModelPricing {
  * is missing (a programmer error caught immediately, not at run time).
  */
 const SUPPORTED_MODELS = [
-  'openai:gpt-4o',
-  'openai:gpt-5',
-  'openai:gpt-5.5',
-  'anthropic:claude-opus-4-8',
-  'anthropic:claude-opus-4-7',
-  'anthropic:claude-sonnet-4-6',
-  'anthropic:claude-haiku-4-5',
-  'google:gemini-1.5-pro',
-  'google:gemini-2-flash',
+  "openai:gpt-4o",
+  "openai:gpt-5",
+  "openai:gpt-5.5",
+  "anthropic:claude-opus-4-8",
+  "anthropic:claude-opus-4-7",
+  "anthropic:claude-sonnet-4-6",
+  "anthropic:claude-haiku-4-5",
+  "google:gemini-1.5-pro",
+  "google:gemini-2-flash",
 ] as const;
 
 export const MODEL_PRICING: Record<string, ModelPricing> = Object.fromEntries(
@@ -49,23 +49,23 @@ export const MODEL_PRICING: Record<string, ModelPricing> = Object.fromEntries(
     if (!p) {
       throw new Error(
         `takes-quality allowlist model "${id}" is missing from CANONICAL_PRICING ` +
-        `(src/core/model-pricing.ts). Add it there.`,
+          `(src/core/model-pricing.ts). Add it there.`
       );
     }
     return [id, { input_per_1m: p.input, output_per_1m: p.output }];
-  }),
+  })
 );
 
 export class PricingNotFoundError extends Error {
   constructor(public readonly modelId: string) {
     super(
       `Model "${modelId}" has no pricing entry. Add it to CANONICAL_PRICING in ` +
-      `src/core/model-pricing.ts AND to the SUPPORTED_MODELS allowlist in ` +
-      `src/core/takes-quality-eval/pricing.ts, OR pass --budget-usd 0 to disable ` +
-      `budget enforcement (you'll still see the cost printed to stderr but the ` +
-      `runner won't abort).`,
+        `src/core/model-pricing.ts AND to the SUPPORTED_MODELS allowlist in ` +
+        `src/core/takes-quality-eval/pricing.ts, OR pass --budget-usd 0 to disable ` +
+        `budget enforcement (you'll still see the cost printed to stderr but the ` +
+        `runner won't abort).`
     );
-    this.name = 'PricingNotFoundError';
+    this.name = "PricingNotFoundError";
   }
 }
 

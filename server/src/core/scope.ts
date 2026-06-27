@@ -22,15 +22,15 @@
  * vs user-account-mgmt — neither implies the other).
  */
 
-export type Scope = 'read' | 'write' | 'admin' | 'sources_admin' | 'users_admin' | 'agent';
+export type Scope = "read" | "write" | "admin" | "sources_admin" | "users_admin" | "agent";
 
 export const ALLOWED_SCOPES: ReadonlySet<Scope> = new Set<Scope>([
-  'read',
-  'write',
-  'admin',
-  'sources_admin',
-  'users_admin',
-  'agent',
+  "read",
+  "write",
+  "admin",
+  "sources_admin",
+  "users_admin",
+  "agent",
 ]);
 
 /**
@@ -38,12 +38,12 @@ export const ALLOWED_SCOPES: ReadonlySet<Scope> = new Set<Scope>([
  * Use this when emitting `scopes_supported` over the wire.
  */
 export const ALLOWED_SCOPES_LIST: ReadonlyArray<Scope> = Object.freeze([
-  'admin',
-  'agent',
-  'read',
-  'sources_admin',
-  'users_admin',
-  'write',
+  "admin",
+  "agent",
+  "read",
+  "sources_admin",
+  "users_admin",
+  "write",
 ]);
 
 /**
@@ -57,12 +57,12 @@ export const ALLOWED_SCOPES_LIST: ReadonlyArray<Scope> = Object.freeze([
  * agent-dispatch capability on upgrade.
  */
 const IMPLIES: Record<Scope, ReadonlySet<Scope>> = {
-  admin: new Set(['admin', 'sources_admin', 'users_admin', 'write', 'read']),
-  write: new Set(['write', 'read']),
-  sources_admin: new Set(['sources_admin']),
-  users_admin: new Set(['users_admin']),
-  read: new Set(['read']),
-  agent: new Set(['agent']),
+  admin: new Set(["admin", "sources_admin", "users_admin", "write", "read"]),
+  write: new Set(["write", "read"]),
+  sources_admin: new Set(["sources_admin"]),
+  users_admin: new Set(["users_admin"]),
+  read: new Set(["read"]),
+  agent: new Set(["agent"]),
 };
 
 /**
@@ -94,11 +94,12 @@ export function isScope(s: string): s is Scope {
  * unknown scope. Used at OAuth client registration time (CLI, DCR, manual).
  */
 export class InvalidScopeError extends Error {
-  constructor(public readonly invalidScope: string, public readonly allScopes: readonly string[]) {
-    super(
-      `Unknown scope "${invalidScope}". Allowed: ${ALLOWED_SCOPES_LIST.join(', ')}.`,
-    );
-    this.name = 'InvalidScopeError';
+  constructor(
+    public readonly invalidScope: string,
+    public readonly allScopes: readonly string[]
+  ) {
+    super(`Unknown scope "${invalidScope}". Allowed: ${ALLOWED_SCOPES_LIST.join(", ")}.`);
+    this.name = "InvalidScopeError";
   }
 }
 
@@ -115,7 +116,7 @@ export function assertAllowedScopes(scopes: readonly string[]): void {
  */
 export function parseScopeString(s: string | undefined | null): string[] {
   if (!s) return [];
-  return s.split(' ').filter(Boolean);
+  return s.split(" ").filter(Boolean);
 }
 
 /**
@@ -150,44 +151,42 @@ export function parseScopeString(s: string | undefined | null): string[] {
  * identical DB rows.
  */
 export function normalizeScopesInput(raw: unknown): string {
-  if (raw == null) return 'read';
+  if (raw == null) return "read";
 
   let candidates: string[];
 
-  if (typeof raw === 'string') {
+  if (typeof raw === "string") {
     candidates = raw.split(/\s+/).filter(Boolean);
   } else if (Array.isArray(raw)) {
     for (const el of raw) {
-      if (typeof el !== 'string') {
+      if (typeof el !== "string") {
         throw new Error(
-          `scopes array must contain only strings, got ${el === null ? 'null' : typeof el}`,
+          `scopes array must contain only strings, got ${el === null ? "null" : typeof el}`
         );
       }
       if (el.length === 0) {
-        throw new Error('scopes array must not contain empty strings');
+        throw new Error("scopes array must not contain empty strings");
       }
       if (/\s/.test(el)) {
         throw new Error(
-          `scopes array element "${el}" contains whitespace. Each element must be a single scope name; use ['read', 'write'] not ['read write'].`,
+          `scopes array element "${el}" contains whitespace. Each element must be a single scope name; use ['read', 'write'] not ['read write'].`
         );
       }
     }
     candidates = raw as string[];
   } else {
-    throw new Error(
-      `scopes must be a string or array of strings, got ${typeof raw}`,
-    );
+    throw new Error(`scopes must be a string or array of strings, got ${typeof raw}`);
   }
 
   // Dedupe via Set + sort for stable output.
   const deduped = Array.from(new Set(candidates)).sort();
 
   if (deduped.length === 0) {
-    throw new Error('scopes is empty after normalization');
+    throw new Error("scopes is empty after normalization");
   }
 
   // Validate against ALLOWED_SCOPES (throws InvalidScopeError on miss).
   assertAllowedScopes(deduped);
 
-  return deduped.join(' ');
+  return deduped.join(" ");
 }

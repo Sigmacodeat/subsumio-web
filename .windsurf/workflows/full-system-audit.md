@@ -16,7 +16,9 @@ description: Vollständiger System-Audit — Code-Qualität, Gap-Analyse vs. Kon
 ## Phase 0 — Vorbereitung
 
 ### 0.1 Codebase-Struktur laden
+
 Lese und verifiziere die aktuelle Struktur:
+
 - `src/app/` — Frontend & Dashboard Pages
 - `src/app/api/` — API Routes (Anzahl notieren)
 - `src/lib/` — Business Logic Module (Anzahl notieren)
@@ -31,11 +33,13 @@ Lese und verifiziere die aktuelle Struktur:
 - `src/content/compare.ts` — Detaillierter Vergleich (UWG-safe)
 
 ### 0.2 Test-Status ermitteln
+
 ```bash
 npx tsc --noEmit 2>&1 | head -50
 npx vitest run 2>&1 | tail -20
 npm run build 2>&1 | tail -30
 ```
+
 Notiere: Wie viele TypeScript-Errors? Wie viele Test-Failures? Build erfolgreich?
 
 ---
@@ -45,6 +49,7 @@ Notiere: Wie viele TypeScript-Errors? Wie viele Test-Failures? Build erfolgreich
 ### 1.1 Frontend / Marketing (`src/app/` ohne dashboard+api, `src/components/marketing/`)
 
 **Checkliste:**
+
 - [ ] Alle Public Pages haben korrekte Metadata (title, description, OG, Twitter)
 - [ ] Structured Data (JSON-LD) auf Landing, Pricing, FAQ
 - [ ] `sitemap.ts` deckt ALLE Routen ab
@@ -58,11 +63,12 @@ Notiere: Wie viele TypeScript-Errors? Wie viele Test-Failures? Build erfolgreich
 - [ ] Accessibility: WCAG 2.1 AA, ARIA, Keyboard, Focus-States
 - [ ] Keine toten Links (interne + externe)
 
-**Score:** __/10
+**Score:** \_\_/10
 
 ### 1.2 Dashboard / Kanzlei-OS (`src/app/dashboard/`, `src/components/dashboard/`)
 
 **Checkliste:**
+
 - [ ] Alle 51 Dashboard-Seiten haben: Loading State, Empty State, Error State
 - [ ] CRUD komplett auf jeder Entität-Seite (Create, Read, Update, Delete)
 - [ ] Forms haben Zod-Validation + Inline-Errors + Submit-Loading
@@ -77,11 +83,12 @@ Notiere: Wie viele TypeScript-Errors? Wie viele Test-Failures? Build erfolgreich
 - [ ] Keine `console.log` in Production-Code
 - [ ] Keine TODO/FIXME/HACK Kommentare
 
-**Score:** __/10
+**Score:** \_\_/10
 
 ### 1.3 API Layer (`src/app/api/`, `src/lib/api.ts`, `src/middleware.ts`)
 
 **Checkliste:**
+
 - [ ] Jede Route hat Input-Validation (Zod oder manuell)
 - [ ] Jede Route prüft Auth (Session + Permission)
 - [ ] Jede POST/PUT/DELETE hat CSRF-Schutz
@@ -95,11 +102,12 @@ Notiere: Wie viele TypeScript-Errors? Wie viele Test-Failures? Build erfolgreich
 - [ ] Keine Logik in Routes — nur Validation + Delegation an `src/lib/`
 - [ ] CORS korrekt konfiguriert (falls Portal/External)
 
-**Score:** __/10
+**Score:** \_\_/10
 
 ### 1.4 Business Logic (`src/lib/`)
 
 **Checkliste:**
+
 - [ ] Kein `any` Type — alle Public APIs explizit typisiert
 - [ ] Custom Error Classes (nicht bare `Error`)
 - [ ] Zod-Schemas für alle externen Inputs
@@ -112,11 +120,12 @@ Notiere: Wie viele TypeScript-Errors? Wie viele Test-Failures? Build erfolgreich
 - [ ] GoBD: Verfahrensdokumentation, Integrität, Audit-Trail
 - [ ] DSGVO: Data Minimization, Right to Access/Delete/Export
 
-**Score:** __/10
+**Score:** \_\_/10
 
 ### 1.5 Engine / Server Core (`server/src/core/`)
 
 **Checkliste (Architektur-Invariants aus CLAUDE.md):**
+
 - [ ] Trust Boundary: `OperationContext.remote` korrekt auf allen Ops
 - [ ] Source Isolation: `sourceScopeOpts(ctx)` auf allen Read-Ops
 - [ ] JSONB: Kein `JSON.stringify` in `::jsonb` cast
@@ -130,11 +139,12 @@ Notiere: Wie viele TypeScript-Errors? Wie viele Test-Failures? Build erfolgreich
 - [ ] Query Performance: Index-Strategie, Batch-Operations
 - [ ] E2E Tests: engine-parity.test.ts grün
 
-**Score:** __/10
+**Score:** \_\_/10
 
 ### 1.6 Auth & Security (`src/lib/auth/`, `src/lib/permissions.ts`, `src/middleware.ts`)
 
 **Checkliste:**
+
 - [ ] Session: HttpOnly, Secure, SameSite Cookies
 - [ ] 2FA/TOTP: RFC 6238 konform, Backup-Codes, Recovery
 - [ ] RBAC: Role → Permissions Mapping, Resource-level Checks
@@ -148,11 +158,12 @@ Notiere: Wie viele TypeScript-Errors? Wie viele Test-Failures? Build erfolgreich
 - [ ] DSGVO: Art. 20 Data Export, Right to be Forgotten
 - [ ] EU AI Act: Art. 50 AI Output Labeling
 
-**Score:** __/10
+**Score:** \_\_/10
 
 ### 1.7 Integrations (`src/lib/docusign.ts`, `src/lib/whatsapp/`, `src/lib/email*`)
 
 **Checkliste:**
+
 - [ ] Webhook Verification: Signature-Validation
 - [ ] Idempotency: Webhook-Deduplication
 - [ ] Retry Logic: Exponential Backoff
@@ -162,11 +173,12 @@ Notiere: Wie viele TypeScript-Errors? Wie viele Test-Failures? Build erfolgreich
 - [ ] Sync Status: Progress-Indicator
 - [ ] Error Handling: User-friendly Messages
 
-**Score:** __/10
+**Score:** \_\_/10
 
 ### 1.8 Legal Domain (`src/lib/legal-*.ts`, `law-corpus/`, `server/src/core/legal/`)
 
 **Checkliste:**
+
 - [ ] Fristberechnung: ZPO § 233, BGB §§ 187-193, VwGO § 60
 - [ ] Feiertage: Bundesland-spezifisch
 - [ ] RVG: § 3, § 13, Anlage 1+2+3
@@ -176,11 +188,12 @@ Notiere: Wie viele TypeScript-Errors? Wie viele Test-Failures? Build erfolgreich
 - [ ] Groundedness: AI-Responses gegen Quellen validiert
 - [ ] law-corpus: DE/AT/CH Gesetzestexte aktuell
 
-**Score:** __/10
+**Score:** \_\_/10
 
 ### 1.9 Testing (`tests/`, `server/test/`, `*.test.ts`)
 
 **Checkliste:**
+
 - [ ] Unit Test Coverage: >80% Business Logic, >60% UI
 - [ ] Integration Tests: Jede API Route
 - [ ] E2E Tests: Critical User Flows (Login, Case, Deadline, Drafting)
@@ -191,7 +204,7 @@ Notiere: Wie viele TypeScript-Errors? Wie viele Test-Failures? Build erfolgreich
 - [ ] Test Isolation: Keine Abhängigkeiten
 - [ ] CI Integration: Tests bei jedem PR
 
-**Score:** __/10
+**Score:** \_\_/10
 
 ---
 
@@ -203,6 +216,7 @@ Vergleiche ALLE behaupteten Features aus `src/content/competitors.ts` und
 `src/content/compare.ts` mit dem **tatsächlichen Code-Stand**.
 
 **Konkurrenten:**
+
 - **Harvey AI** — Enterprise Legal AI (BigLaw, $1.200/Seat, 20+ Seats min)
 - **Legora** — AI Legal Workspace ($100M ARR, Word/Outlook Add-Ins)
 - **CoCounsel** (Thomson Reuters) — Research + Westlaw ($639/User)
@@ -214,6 +228,7 @@ Vergleiche ALLE behaupteten Features aus `src/content/competitors.ts` und
 - **Subsum.io** — AT Legal Copilot (geschlossene SaaS)
 
 **Für JEDE Zeile in der Feature-Matrix:**
+
 1. Code verifizieren — existiert die Implementierung WIRKLICH?
 2. Status setzen: ✅ voll implementiert · 🟡 teilweise · ❌ fehlt · 🔴 behauptet aber nicht da
 3. Gap-Größe: KEIN Gap · KLEIN · MITTEL · GROSS · KRITISCH
@@ -224,12 +239,13 @@ Vergleiche ALLE behaupteten Features aus `src/content/competitors.ts` und
 Für jeden Gap mit Priorität P0 oder P1:
 
 | Gap | Konkurrent hat es | Wir haben | Was fehlt genau | Aufwand | Prio |
-|---|---|---|---|---|---|
-| ... | ... | ... | ... | ... | ... |
+| --- | ----------------- | --------- | --------------- | ------- | ---- |
+| ... | ...               | ...       | ...             | ...     | ...  |
 
 ### 2.3 USP-Verifikation
 
 **Unsere behaupteten USPs (aus compare.ts):**
+
 1. ✅ Knowledge Graph + Gap-Analyse — verifizieren im Code
 2. ✅ Self-Hosting / On-Premise — verifizieren (PGLite + Postgres)
 3. ✅ EU-Datenspeicherung (DSGVO) — verifizieren
@@ -322,18 +338,18 @@ Für jeden Gap mit Priorität P0 oder P1:
 
 ### 4.1 Critical User Flows (alle durchspielen)
 
-| Flow | Status | Blockers |
-|---|---|---|
-| Signup → Onboarding → First Query | ✅/🟡/❌ | ... |
-| Login → Dashboard → Case Create → Upload → Query | ✅/🟡/❌ | ... |
-| Deadline Detection → Calendar Export | ✅/🟡/❌ | ... |
-| Contract Draft → Review → Sign (DocuSign) | ✅/🟡/❌ | ... |
-| Brain Sync → Graph → Contradictions | ✅/🟡/❌ | ... |
-| Team Invite → Role Assign → Permission Check | ✅/🟡/❌ | ... |
-| Billing → Stripe → Invoice → DATEV Export | ✅/🟡/❌ | ... |
-| Offline → Mutation Queue → Online → Sync | ✅/🟡/❌ | ... |
-| WhatsApp → Brain → Response | ✅/🟡/❌ | ... |
-| Mandanten-Portal → Document Share | ✅/🟡/❌ | ... |
+| Flow                                             | Status   | Blockers |
+| ------------------------------------------------ | -------- | -------- |
+| Signup → Onboarding → First Query                | ✅/🟡/❌ | ...      |
+| Login → Dashboard → Case Create → Upload → Query | ✅/🟡/❌ | ...      |
+| Deadline Detection → Calendar Export             | ✅/🟡/❌ | ...      |
+| Contract Draft → Review → Sign (DocuSign)        | ✅/🟡/❌ | ...      |
+| Brain Sync → Graph → Contradictions              | ✅/🟡/❌ | ...      |
+| Team Invite → Role Assign → Permission Check     | ✅/🟡/❌ | ...      |
+| Billing → Stripe → Invoice → DATEV Export        | ✅/🟡/❌ | ...      |
+| Offline → Mutation Queue → Online → Sync         | ✅/🟡/❌ | ...      |
+| WhatsApp → Brain → Response                      | ✅/🟡/❌ | ...      |
+| Mandanten-Portal → Document Share                | ✅/🟡/❌ | ...      |
 
 ### 4.2 Error-Handling-Audit
 
@@ -365,26 +381,27 @@ Für jeden Gap mit Priorität P0 oder P1:
 
 ### 5.1 Score-Card
 
-| Bereich | Score | Status | Kritische Gaps |
-|---|---|---|---|
-| Frontend / Marketing | __/10 | ... | ... |
-| Dashboard / Kanzlei-OS | __/10 | ... | ... |
-| API Layer | __/10 | ... | ... |
-| Business Logic | __/10 | ... | ... |
-| Engine / Server Core | __/10 | ... | ... |
-| Auth & Security | __/10 | ... | ... |
-| Integrations | __/10 | ... | ... |
-| Legal Domain | __/10 | ... | ... |
-| Testing | __/10 | ... | ... |
-| **Code-Qualität Gesamt** | **__/10** | ... | ... |
-| **Competitive Position** | **__/10** | ... | ... |
-| **Online-Readiness** | **__/10** | ... | ... |
-| **Robustheit** | **__/10** | ... | ... |
-| **GESAMT** | **__/10** | ... | ... |
+| Bereich                  | Score       | Status | Kritische Gaps |
+| ------------------------ | ----------- | ------ | -------------- |
+| Frontend / Marketing     | \_\_/10     | ...    | ...            |
+| Dashboard / Kanzlei-OS   | \_\_/10     | ...    | ...            |
+| API Layer                | \_\_/10     | ...    | ...            |
+| Business Logic           | \_\_/10     | ...    | ...            |
+| Engine / Server Core     | \_\_/10     | ...    | ...            |
+| Auth & Security          | \_\_/10     | ...    | ...            |
+| Integrations             | \_\_/10     | ...    | ...            |
+| Legal Domain             | \_\_/10     | ...    | ...            |
+| Testing                  | \_\_/10     | ...    | ...            |
+| **Code-Qualität Gesamt** | **\_\_/10** | ...    | ...            |
+| **Competitive Position** | **\_\_/10** | ...    | ...            |
+| **Online-Readiness**     | **\_\_/10** | ...    | ...            |
+| **Robustheit**           | **\_\_/10** | ...    | ...            |
+| **GESAMT**               | **\_\_/10** | ...    | ...            |
 
 ### 5.2 P0 Blockers (Launch-blockierend)
 
 Liste ALLE P0 Issues auf:
+
 1. ...
 2. ...
 
@@ -396,20 +413,20 @@ Liste ALLE P0 Issues auf:
 ### 5.4 Competitive Gaps (vs. Konkurrenz)
 
 | Gap | Konkurrent | Unser Status | Prio | Aktionsplan |
-|---|---|---|---|---|
-| ... | ... | ... | ... | ... |
+| --- | ---------- | ------------ | ---- | ----------- |
+| ... | ...        | ...          | ...  | ...         |
 
 ### 5.5 USP-Verifikation
 
 | USP | Code verifiziert | Status |
-|---|---|---|
-| ... | ... | ... |
+| --- | ---------------- | ------ |
+| ... | ...              | ...    |
 
 ### 5.6 Online-Readiness Checklist
 
 | Item | Status | Blocker |
-|---|---|---|
-| ... | ... | ... |
+| ---- | ------ | ------- |
+| ...  | ...    | ...     |
 
 ### 5.7 Empfohlene Reihenfolge
 

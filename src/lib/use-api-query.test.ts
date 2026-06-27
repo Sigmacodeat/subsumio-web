@@ -49,9 +49,7 @@ describe("useApiQuery", () => {
 
   it("does not fetch when enabled is false", async () => {
     const fetcher = vi.fn(async () => "data");
-    const { result } = renderHook(() =>
-      useApiQuery(fetcher, [], { enabled: false })
-    );
+    const { result } = renderHook(() => useApiQuery(fetcher, [], { enabled: false }));
 
     expect(result.current.loading).toBe(false);
     expect(fetcher).not.toHaveBeenCalled();

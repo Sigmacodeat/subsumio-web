@@ -112,7 +112,7 @@ if [ "$FAIL" -gt 0 ]; then
 fi
 exit 0
 `,
-      { mode: 0o755 },
+      { mode: 0o755 }
     );
     return dispatcher;
   }

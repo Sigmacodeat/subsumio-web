@@ -1,8 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import {
-  recordBriefingFeedback,
-  parseFeedbackFromReply,
-} from "./briefing-feedback";
+import { recordBriefingFeedback, parseFeedbackFromReply } from "./briefing-feedback";
 
 vi.mock("@/lib/audit", () => ({
   logAudit: vi.fn().mockResolvedValue(undefined),

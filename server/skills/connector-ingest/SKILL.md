@@ -42,12 +42,12 @@ search, entity extraction, and cross-linking.
 
 ## Supported Connectors
 
-| Connector | Auth | Delta Sync | Content Types |
-|-----------|------|-----------|---------------|
-| **Google Drive** | OAuth2 | Changes API (pageToken) | PDF, DOCX, Sheets, Slides, Images |
-| **Gmail** | OAuth2 | History API (historyId) | Emails, Attachments |
-| **Notion** | API Key | last_edited_time polling | Pages, Databases, Blocks |
-| **GitHub** | PAT | updated_at + ETag | Issues, PRs, Discussions, Comments |
+| Connector        | Auth    | Delta Sync               | Content Types                      |
+| ---------------- | ------- | ------------------------ | ---------------------------------- |
+| **Google Drive** | OAuth2  | Changes API (pageToken)  | PDF, DOCX, Sheets, Slides, Images  |
+| **Gmail**        | OAuth2  | History API (historyId)  | Emails, Attachments                |
+| **Notion**       | API Key | last_edited_time polling | Pages, Databases, Blocks           |
+| **GitHub**       | PAT     | updated_at + ETag        | Issues, PRs, Discussions, Comments |
 
 ## Architecture
 
@@ -66,6 +66,7 @@ search, entity extraction, and cross-linking.
 ```
 
 Each connector is a full `IngestionSource` supervised by the daemon:
+
 - **Rate limiting:** Token bucket per API (Google 1000/100s, Notion 30/10s, etc.)
 - **Retry:** Exponential backoff on API errors (3 retries, max 30s)
 - **Dedup:** 24h content-hash window (trickle mode) or slug-keyed permanent (migration mode)
@@ -253,24 +254,28 @@ gbrain connector reset google-drive
 ## Delta Sync Details
 
 ### Google Drive
+
 - **Mechanism:** `changes.list(startPageToken)` → `changes.list(pageToken)`
 - **Cursor:** `pageToken` (opaque string from Google)
 - **Granularity:** File-level (created, modified, deleted)
 - **Webhook:** Optional via Drive push notifications (requires domain verification)
 
 ### Gmail
+
 - **Mechanism:** `history.list(startHistoryId)` filtered by `messageAdded`
 - **Cursor:** `historyId` (uint64 string)
 - **Granularity:** Message-level
 - **Filtering:** By label (INBOX, SENT, custom labels)
 
 ### Notion
+
 - **Mechanism:** `search` with `sort: {timestamp: last_edited_time, direction: descending}`
 - **Cursor:** ISO timestamp of last sync
 - **Granularity:** Page-level (re-fetches all blocks for changed pages)
 - **Limitations:** No native delta API; polls every 5 minutes
 
 ### GitHub
+
 - **Mechanism:** `issues?since=YYYY-MM-DDTHH:MM:SSZ` per repo
 - **Cursor:** ISO timestamp of last sync
 - **Granularity:** Issue/PR-level with comments
@@ -280,18 +285,19 @@ gbrain connector reset google-drive
 
 The daemon routes connector events based on content_type:
 
-| Content Type | Destination | Processing |
-|--------------|-------------|------------|
-| `text/markdown` | Direct brain page | Frontmatter + body |
-| `text/html` | HTML-to-markdown → brain page | Strip tags |
-| `application/pdf` | `document-ingest` skill | OCR if needed |
-| `application/vnd.openxmlformats-officedocument.wordprocessingml.document` | `document-ingest` skill | mammoth extraction |
-| `image/*` | `media-ingest` skill | OCR, embed |
-| `application/json` | Connector-specific parser | Blocks → markdown |
+| Content Type                                                              | Destination                   | Processing         |
+| ------------------------------------------------------------------------- | ----------------------------- | ------------------ |
+| `text/markdown`                                                           | Direct brain page             | Frontmatter + body |
+| `text/html`                                                               | HTML-to-markdown → brain page | Strip tags         |
+| `application/pdf`                                                         | `document-ingest` skill       | OCR if needed      |
+| `application/vnd.openxmlformats-officedocument.wordprocessingml.document` | `document-ingest` skill       | mammoth extraction |
+| `image/*`                                                                 | `media-ingest` skill          | OCR, embed         |
+| `application/json`                                                        | Connector-specific parser     | Blocks → markdown  |
 
 ## Filing Rules
 
 Connector content is filed under:
+
 - Google Drive: `documents/google-drive/<filename>`
 - Gmail: `documents/correspondence/emails/<subject>`
 - Notion: `notes/notion/<page-title>`
@@ -315,6 +321,7 @@ gbrain autopilot       # → ConnectorDaemon starts alongside the maintenance cy
 ```
 
 The daemon:
+
 1. Reads `~/.gbrain/connectors.json` for enabled connectors
 2. Instantiates each connector (GoogleDrive, Gmail, Notion, GitHub)
 3. Registers them with the IngestionDaemon (supervision + rate-limit + dedup)
@@ -340,6 +347,7 @@ Events flow: Connector → IngestionDaemon → MinionQueue (`ingest_capture`) �
 ## Contract
 
 This skill guarantees:
+
 - Every supported connector has delta sync (no full re-scans)
 - OAuth2 token refresh is automatic
 - Rate limiting prevents API bans

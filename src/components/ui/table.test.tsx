@@ -44,9 +44,15 @@ describe("Table", () => {
           </TableRow>
         </TableHeader>
         <TableBody>
-          <TableRow><TableCell>1</TableCell></TableRow>
-          <TableRow><TableCell>2</TableCell></TableRow>
-          <TableRow><TableCell>3</TableCell></TableRow>
+          <TableRow>
+            <TableCell>1</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell>2</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell>3</TableCell>
+          </TableRow>
         </TableBody>
       </Table>
     );
@@ -59,7 +65,9 @@ describe("Table", () => {
     render(
       <Table className="custom-table">
         <TableBody>
-          <TableRow><TableCell>Test</TableCell></TableRow>
+          <TableRow>
+            <TableCell>Test</TableCell>
+          </TableRow>
         </TableBody>
       </Table>
     );

@@ -3,14 +3,14 @@
 // so onboard + MCP run_onboard call the same library without parsing argv
 // or invoking console.* / process.exit.
 
-import type { BrainEngine } from '../engine.ts';
+import type { BrainEngine } from "../engine.ts";
 import {
   computeRecommendations,
   classifyChecks,
   maxReachableScore,
-} from '../brain-score-recommendations.ts';
-import { loadRecommendationContext } from './context.ts';
-import type { RemediationPlan, RemediationPlanOpts } from './types.ts';
+} from "../brain-score-recommendations.ts";
+import { loadRecommendationContext } from "./context.ts";
+import type { RemediationPlan, RemediationPlanOpts } from "./types.ts";
 
 /**
  * Synthetic check list for classification. computeRecommendations operates
@@ -20,11 +20,11 @@ import type { RemediationPlan, RemediationPlanOpts } from './types.ts';
  * brain-score-recommendations.ts.
  */
 export const SYNTHETIC_CHECK_NAMES = [
-  'brain_score',
-  'sync_freshness',
-  'missing_embeddings',
-  'dead_links',
-  'orphan_pages',
+  "brain_score",
+  "sync_freshness",
+  "missing_embeddings",
+  "dead_links",
+  "orphan_pages",
 ] as const;
 
 /**
@@ -38,7 +38,7 @@ export const SYNTHETIC_CHECK_NAMES = [
  */
 export async function computeRemediationPlan(
   engine: BrainEngine,
-  opts: RemediationPlanOpts = {},
+  opts: RemediationPlanOpts = {}
 ): Promise<RemediationPlan> {
   const targetScore = opts.targetScore ?? 90;
 
@@ -49,18 +49,18 @@ export async function computeRemediationPlan(
   const recs = computeRecommendations(health, ctx, opts.extraRemediations ?? []);
   const syntheticChecks = SYNTHETIC_CHECK_NAMES.map((name) => ({
     name,
-    status: 'ok' as const,
+    status: "ok" as const,
   }));
   const classifications = classifyChecks(syntheticChecks, ctx);
   const ceiling = maxReachableScore(health, classifications);
 
-  const filteredRecs = recs.filter((r) => r.status === 'remediable');
+  const filteredRecs = recs.filter((r) => r.status === "remediable");
   const estTotalSeconds = filteredRecs.reduce((sum, r) => sum + r.est_seconds, 0);
   const estTotalUsd = filteredRecs.reduce((sum, r) => sum + (r.est_usd_cost ?? 0), 0);
 
   const blocked = classifications
-    .filter((c) => c.status === 'blocked')
-    .map((c) => ({ check: c.check, reason: c.reason ?? 'prerequisite missing' }));
+    .filter((c) => c.status === "blocked")
+    .map((c) => ({ check: c.check, reason: c.reason ?? "prerequisite missing" }));
 
   return {
     schema_version: 2,

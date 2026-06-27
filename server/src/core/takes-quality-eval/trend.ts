@@ -7,13 +7,13 @@
  *
  * Plain text table for stdout; JSON for programmatic consumers.
  */
-import type { BrainEngine } from '../engine.ts';
+import type { BrainEngine } from "../engine.ts";
 
 export interface TrendRow {
   id: number;
   ts: string;
   rubric_version: string;
-  verdict: 'pass' | 'fail' | 'inconclusive';
+  verdict: "pass" | "fail" | "inconclusive";
   overall_score: number;
   cost_usd: number;
   corpus_sha8: string;
@@ -29,7 +29,7 @@ export interface TrendOpts {
 export async function loadTrend(engine: BrainEngine, opts: TrendOpts = {}): Promise<TrendRow[]> {
   const limit = Math.min(opts.limit ?? 20, 200); // cap at 200 to keep stdout manageable
   const params: unknown[] = [];
-  let where = '';
+  let where = "";
   if (opts.rubricVersion) {
     params.push(opts.rubricVersion);
     where = `WHERE rubric_version = $${params.length}`;
@@ -49,13 +49,13 @@ export async function loadTrend(engine: BrainEngine, opts: TrendOpts = {}): Prom
        ${where}
        ORDER BY created_at DESC
        LIMIT $${params.length}`,
-    params,
+    params
   );
-  return rows.map(r => ({
-    id: typeof r.id === 'string' ? parseInt(r.id, 10) : r.id,
-    ts: typeof r.created_at === 'string' ? r.created_at : new Date(r.created_at).toISOString(),
+  return rows.map((r) => ({
+    id: typeof r.id === "string" ? parseInt(r.id, 10) : r.id,
+    ts: typeof r.created_at === "string" ? r.created_at : new Date(r.created_at).toISOString(),
     rubric_version: r.rubric_version,
-    verdict: r.verdict as TrendRow['verdict'],
+    verdict: r.verdict as TrendRow["verdict"],
     overall_score: Number(r.overall_score),
     cost_usd: Number(r.cost_usd),
     corpus_sha8: r.receipt_sha8_corpus,
@@ -65,11 +65,11 @@ export async function loadTrend(engine: BrainEngine, opts: TrendOpts = {}): Prom
 /** Render the trend table as plain text for stdout. */
 export function renderTrendTable(rows: TrendRow[]): string {
   if (rows.length === 0) {
-    return 'No takes-quality runs recorded yet. Run `gbrain eval takes-quality run` to get started.';
+    return "No takes-quality runs recorded yet. Run `gbrain eval takes-quality run` to get started.";
   }
-  const header = ['ts', 'rubric', 'verdict', 'overall', 'cost', 'corpus'].join('  ');
-  const sep = '─'.repeat(header.length + 8);
-  const lines = rows.map(r =>
+  const header = ["ts", "rubric", "verdict", "overall", "cost", "corpus"].join("  ");
+  const sep = "─".repeat(header.length + 8);
+  const lines = rows.map((r) =>
     [
       r.ts.slice(0, 19),
       r.rubric_version.padEnd(6),
@@ -77,7 +77,7 @@ export function renderTrendTable(rows: TrendRow[]): string {
       r.overall_score.toFixed(1).padStart(6),
       `$${r.cost_usd.toFixed(2)}`.padStart(7),
       r.corpus_sha8,
-    ].join('  '),
+    ].join("  ")
   );
-  return [header, sep, ...lines].join('\n');
+  return [header, sep, ...lines].join("\n");
 }

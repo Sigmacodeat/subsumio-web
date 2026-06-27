@@ -13,56 +13,56 @@
  * fake-minion_jobs + fake-supervisor-audit path.
  */
 
-import { describe, test, expect } from 'bun:test';
-import { parseSectionFlag, runStatus } from '../src/commands/status.ts';
+import { describe, test, expect } from "bun:test";
+import { parseSectionFlag, runStatus } from "../src/commands/status.ts";
 
-describe('parseSectionFlag', () => {
-  test('no --section flag → undefined (all sections)', () => {
+describe("parseSectionFlag", () => {
+  test("no --section flag → undefined (all sections)", () => {
     expect(parseSectionFlag([])).toBeUndefined();
-    expect(parseSectionFlag(['--json'])).toBeUndefined();
+    expect(parseSectionFlag(["--json"])).toBeUndefined();
   });
 
-  test('--section <name> form returns the set', () => {
-    const r = parseSectionFlag(['--section', 'sync']);
+  test("--section <name> form returns the set", () => {
+    const r = parseSectionFlag(["--section", "sync"]);
     expect(r).toBeInstanceOf(Set);
-    expect((r as Set<string>).has('sync')).toBe(true);
+    expect((r as Set<string>).has("sync")).toBe(true);
   });
 
-  test('--section=<name> form returns the set', () => {
-    const r = parseSectionFlag(['--section=cycle']);
+  test("--section=<name> form returns the set", () => {
+    const r = parseSectionFlag(["--section=cycle"]);
     expect(r).toBeInstanceOf(Set);
-    expect((r as Set<string>).has('cycle')).toBe(true);
+    expect((r as Set<string>).has("cycle")).toBe(true);
   });
 
-  test('unknown section returns usage_error', () => {
-    expect(parseSectionFlag(['--section', 'bogus'])).toBe('usage_error');
-    expect(parseSectionFlag(['--section=nonsense'])).toBe('usage_error');
+  test("unknown section returns usage_error", () => {
+    expect(parseSectionFlag(["--section", "bogus"])).toBe("usage_error");
+    expect(parseSectionFlag(["--section=nonsense"])).toBe("usage_error");
   });
 
-  test('every valid section is accepted', () => {
-    for (const s of ['sync', 'cycle', 'locks', 'workers', 'queue', 'autopilot']) {
-      const r = parseSectionFlag(['--section', s]);
+  test("every valid section is accepted", () => {
+    for (const s of ["sync", "cycle", "locks", "workers", "queue", "autopilot"]) {
+      const r = parseSectionFlag(["--section", s]);
       expect(r).toBeInstanceOf(Set);
       expect((r as Set<string>).has(s)).toBe(true);
     }
   });
 });
 
-describe('runStatus exit codes', () => {
-  test('--section invalid → exit 2 (usage error)', async () => {
-    let captured = '';
-    const r = await runStatus(null, ['--section', 'bogus'], {
+describe("runStatus exit codes", () => {
+  test("--section invalid → exit 2 (usage error)", async () => {
+    let captured = "";
+    const r = await runStatus(null, ["--section", "bogus"], {
       stdout: () => {},
       stderr: (s: string) => {
         captured += s;
       },
     });
     expect(r.exitCode).toBe(2);
-    expect(captured).toContain('invalid --section');
+    expect(captured).toContain("invalid --section");
   });
 
-  test('local mode with engine=null → exit 1 (snapshot failure)', async () => {
-    let captured = '';
+  test("local mode with engine=null → exit 1 (snapshot failure)", async () => {
+    let captured = "";
     const r = await runStatus(null, [], {
       stdout: () => {},
       stderr: (s: string) => {

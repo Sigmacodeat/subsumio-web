@@ -57,21 +57,26 @@ explicitly asked to save the report.
 **Health:** 🟢 Green / 🟡 Yellow / 🔴 Red
 
 ### Executive Summary
+
 [1-2 sentences]
 
 ### What Changed
+
 - [Date]: [Change description]
 - ...
 
 ### Blockers
+
 - [ ] [Blocker description] — [Impact]
 
 ### Risks
+
 | Risk | Probability | Impact | Mitigation |
-|------|-------------|--------|------------|
+| ---- | ----------- | ------ | ---------- |
 | ...  | ...         | ...    | ...        |
 
 ### Next Steps
+
 - [ ] [Action] — Owner: [name] — Due: [date]
 - ...
 ```

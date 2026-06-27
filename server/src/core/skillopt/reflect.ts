@@ -13,22 +13,29 @@
  * context so the optimizer doesn't re-propose previously-failing edits.
  */
 
-import { chat as gatewayChat } from '../ai/gateway.ts';
-import type { EditOp, ScoredRollout, Judge, RuleCheck } from './types.ts';
-import type { RejectedEntry } from './rejected-buffer.ts';
+import { chat as gatewayChat } from "../ai/gateway.ts";
+import type { EditOp, ScoredRollout, Judge, RuleCheck } from "./types.ts";
+import type { RejectedEntry } from "./rejected-buffer.ts";
 
 /**
  * Render ONE rule check as a plain-English requirement the optimizer can target.
  */
 function describeCheck(c: RuleCheck): string {
   switch (c.op) {
-    case 'contains': return `the output must contain the exact text \`${c.arg}\``;
-    case 'regex': return `the output must match the regular expression \`/${c.arg}/\``;
-    case 'section_present': return `the output must include a markdown heading titled "${c.arg}" (any heading level, case-insensitive)`;
-    case 'max_chars': return `the output must be at most ${c.arg} characters long`;
-    case 'min_citations': return `the output must include at least ${c.arg} citation(s)`;
-    case 'tool_called': return `the agent must call the \`${c.arg}\` tool at least once`;
-    case 'tool_not_called': return `the agent must NOT call the \`${c.arg}\` tool`;
+    case "contains":
+      return `the output must contain the exact text \`${c.arg}\``;
+    case "regex":
+      return `the output must match the regular expression \`/${c.arg}/\``;
+    case "section_present":
+      return `the output must include a markdown heading titled "${c.arg}" (any heading level, case-insensitive)`;
+    case "max_chars":
+      return `the output must be at most ${c.arg} characters long`;
+    case "min_citations":
+      return `the output must include at least ${c.arg} citation(s)`;
+    case "tool_called":
+      return `the agent must call the \`${c.arg}\` tool at least once`;
+    case "tool_not_called":
+      return `the agent must NOT call the \`${c.arg}\` tool`;
   }
 }
 
@@ -43,9 +50,12 @@ function describeCheck(c: RuleCheck): string {
  */
 export function describeJudge(judge: Judge): string {
   switch (judge.kind) {
-    case 'rule': return judge.checks.map((c) => `- ${describeCheck(c)}`).join('\n');
-    case 'llm': return `- the output is graded 0..1 by an LLM judge against this rubric:\n  "${judge.rubric}"`;
-    case 'qrels': return `- the agent must retrieve the expected pages (scored recall@${judge.k})`;
+    case "rule":
+      return judge.checks.map((c) => `- ${describeCheck(c)}`).join("\n");
+    case "llm":
+      return `- the output is graded 0..1 by an LLM judge against this rubric:\n  "${judge.rubric}"`;
+    case "qrels":
+      return `- the agent must retrieve the expected pages (scored recall@${judge.k})`;
   }
 }
 
@@ -59,9 +69,12 @@ export function describeJudges(tasks: ReadonlyArray<{ judge: Judge }>): string {
   const blocks: string[] = [];
   for (const t of tasks) {
     const desc = describeJudge(t.judge);
-    if (!seen.has(desc)) { seen.add(desc); blocks.push(desc); }
+    if (!seen.has(desc)) {
+      seen.add(desc);
+      blocks.push(desc);
+    }
   }
-  return blocks.join('\n');
+  return blocks.join("\n");
 }
 
 const FAILURE_REFLECT_SYSTEM = `You are SkillOpt's optimizer. You analyze AGENT FAILURE TRAJECTORIES and propose specific edits to a SKILL document so the agent does better next time.
@@ -110,7 +123,7 @@ export interface ReflectOpts {
    * Ablation (cat31 config B): 'failure-only' skips the D7 success-reflect call
    * entirely (even when successes are present). Default 'both' (paper-faithful).
    */
-  reflectMode?: 'both' | 'failure-only';
+  reflectMode?: "both" | "failure-only";
   /** Test seam — substitute for gateway.chat. */
   chatFn?: typeof gatewayChat;
   abortSignal?: AbortSignal;
@@ -137,16 +150,23 @@ export interface ReflectResult {
  * their reflect call (no point asking for edits without data).
  */
 export async function runReflect(opts: ReflectOpts): Promise<ReflectResult> {
-  const usage = { input_tokens: 0, output_tokens: 0, cache_read_tokens: 0, cache_creation_tokens: 0 };
+  const usage = {
+    input_tokens: 0,
+    output_tokens: 0,
+    cache_read_tokens: 0,
+    cache_creation_tokens: 0,
+  };
   const errors: string[] = [];
 
-  const failureEdits = opts.failures.length > 0
-    ? await callReflect('failure', opts, FAILURE_REFLECT_SYSTEM, opts.failures, usage, errors)
-    : [];
+  const failureEdits =
+    opts.failures.length > 0
+      ? await callReflect("failure", opts, FAILURE_REFLECT_SYSTEM, opts.failures, usage, errors)
+      : [];
   // Ablation: 'failure-only' skips the success-reflect call regardless of data.
-  const successEdits = opts.reflectMode !== 'failure-only' && opts.successes.length > 0
-    ? await callReflect('success', opts, SUCCESS_REFLECT_SYSTEM, opts.successes, usage, errors)
-    : [];
+  const successEdits =
+    opts.reflectMode !== "failure-only" && opts.successes.length > 0
+      ? await callReflect("success", opts, SUCCESS_REFLECT_SYSTEM, opts.successes, usage, errors)
+      : [];
 
   return { failureEdits, successEdits, usage, errors };
 }
@@ -158,7 +178,7 @@ Output ONLY the rewritten skill body as markdown — no JSON, no code fence, no 
 export interface OneShotRewriteResult {
   /** The rewritten skill body (frontmatter NOT included — caller re-attaches). */
   newBody: string;
-  usage: ReflectResult['usage'];
+  usage: ReflectResult["usage"];
   /** Set when the rewrite call errored (caller treats as "no change"). */
   error?: string;
 }
@@ -171,14 +191,24 @@ export interface OneShotRewriteResult {
  * returned body to the gate), so the comparison is apples-to-apples.
  */
 export async function runOneShotRewrite(opts: ReflectOpts): Promise<OneShotRewriteResult> {
-  const usage = { input_tokens: 0, output_tokens: 0, cache_read_tokens: 0, cache_creation_tokens: 0 };
+  const usage = {
+    input_tokens: 0,
+    output_tokens: 0,
+    cache_read_tokens: 0,
+    cache_creation_tokens: 0,
+  };
   const chat = opts.chatFn ?? gatewayChat;
-  const userMsg = buildReflectUserMessage(opts.skillBodyText, [...opts.failures, ...opts.successes], opts.rejected, opts.criteria);
+  const userMsg = buildReflectUserMessage(
+    opts.skillBodyText,
+    [...opts.failures, ...opts.successes],
+    opts.rejected,
+    opts.criteria
+  );
   try {
     const result = await chat({
       model: opts.optimizerModel,
       system: ONE_SHOT_REWRITE_SYSTEM,
-      messages: [{ role: 'user', content: userMsg }],
+      messages: [{ role: "user", content: userMsg }],
       maxTokens: 4096,
       cacheSystem: true,
       abortSignal: opts.abortSignal,
@@ -196,25 +226,30 @@ export async function runOneShotRewrite(opts: ReflectOpts): Promise<OneShotRewri
     return { newBody, usage };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    return { newBody: '', usage, error: `one_shot_rewrite_failed: ${msg}` };
+    return { newBody: "", usage, error: `one_shot_rewrite_failed: ${msg}` };
   }
 }
 
 async function callReflect(
-  mode: 'failure' | 'success',
+  mode: "failure" | "success",
   opts: ReflectOpts,
   system: string,
   scoredRollouts: ScoredRollout[],
-  cumUsage: ReflectResult['usage'],
-  errors: string[],
+  cumUsage: ReflectResult["usage"],
+  errors: string[]
 ): Promise<EditOp[]> {
   const chat = opts.chatFn ?? gatewayChat;
-  const userMsg = buildReflectUserMessage(opts.skillBodyText, scoredRollouts, opts.rejected, opts.criteria);
+  const userMsg = buildReflectUserMessage(
+    opts.skillBodyText,
+    scoredRollouts,
+    opts.rejected,
+    opts.criteria
+  );
   try {
     const result = await chat({
       model: opts.optimizerModel,
       system,
-      messages: [{ role: 'user', content: userMsg }],
+      messages: [{ role: "user", content: userMsg }],
       maxTokens: 2048,
       cacheSystem: true, // D11
       abortSignal: opts.abortSignal,
@@ -235,28 +270,34 @@ function buildReflectUserMessage(
   skillBody: string,
   rollouts: ScoredRollout[],
   rejected: readonly RejectedEntry[],
-  criteria?: string,
+  criteria?: string
 ): string {
-  const trajectoryBlocks = rollouts.map((r, i) => {
-    const tcSummary = r.trajectory.tool_calls
-      .map((tc) => `  - ${tc.name}${tc.failed ? ' [FAILED]' : ''}`)
-      .join('\n');
-    return `--- ROLLOUT ${i + 1} (score=${r.score.toFixed(2)}) ---
+  const trajectoryBlocks = rollouts
+    .map((r, i) => {
+      const tcSummary = r.trajectory.tool_calls
+        .map((tc) => `  - ${tc.name}${tc.failed ? " [FAILED]" : ""}`)
+        .join("\n");
+      return `--- ROLLOUT ${i + 1} (score=${r.score.toFixed(2)}) ---
 TASK: ${r.trajectory.task}
 TOOL CALLS:
-${tcSummary || '  (none)'}
+${tcSummary || "  (none)"}
 OUTPUT:
 ${truncate(r.trajectory.final_text, 2000)}
-${r.rationale ? `JUDGE RATIONALE: ${r.rationale}` : ''}`;
-  }).join('\n\n');
+${r.rationale ? `JUDGE RATIONALE: ${r.rationale}` : ""}`;
+    })
+    .join("\n\n");
 
-  const rejectedSummary = rejected.length > 0
-    ? `\n\n--- PREVIOUSLY REJECTED EDITS (do not re-propose) ---\n${rejected.slice(0, 20).map((r) => `- ${r.reason}: ${JSON.stringify(r.edits)}`).join('\n')}`
-    : '';
+  const rejectedSummary =
+    rejected.length > 0
+      ? `\n\n--- PREVIOUSLY REJECTED EDITS (do not re-propose) ---\n${rejected
+          .slice(0, 20)
+          .map((r) => `- ${r.reason}: ${JSON.stringify(r.edits)}`)
+          .join("\n")}`
+      : "";
 
   const criteriaBlock = criteria
     ? `\n\nSUCCESS CRITERIA (exactly how the agent's output is scored — make the agent satisfy these through genuine, high-quality content, never empty keywords):\n${criteria}`
-    : '';
+    : "";
 
   return `CURRENT SKILL BODY:
 ${truncate(skillBody, 5000)}${criteriaBlock}
@@ -295,33 +336,63 @@ function tryExtractEdits(raw: string): EditOp[] {
     const cleaned = (fenced ? fenced[1]! : raw).trim();
     // Try direct parse.
     const direct = JSON.parse(cleaned);
-    if (direct && typeof direct === 'object' && Array.isArray((direct as { edits?: unknown }).edits)) {
+    if (
+      direct &&
+      typeof direct === "object" &&
+      Array.isArray((direct as { edits?: unknown }).edits)
+    ) {
       return validateEdits((direct as { edits: unknown[] }).edits);
     }
-  } catch { /* try next strategy */ }
+  } catch {
+    /* try next strategy */
+  }
   // Fallback: extract first {...} substring.
   const match = raw.match(/\{[\s\S]*\}/);
   if (!match) return [];
   try {
     const parsed = JSON.parse(match[0]);
-    if (parsed && typeof parsed === 'object' && Array.isArray((parsed as { edits?: unknown }).edits)) {
+    if (
+      parsed &&
+      typeof parsed === "object" &&
+      Array.isArray((parsed as { edits?: unknown }).edits)
+    ) {
       return validateEdits((parsed as { edits: unknown[] }).edits);
     }
-  } catch { /* fall through */ }
+  } catch {
+    /* fall through */
+  }
   return [];
 }
 
 function validateEdits(raw: unknown[]): EditOp[] {
   const out: EditOp[] = [];
   for (const r of raw) {
-    if (!r || typeof r !== 'object') continue;
+    if (!r || typeof r !== "object") continue;
     const o = r as Record<string, unknown>;
-    if (o.op === 'add' && typeof o.anchor === 'string' && typeof o.content === 'string') {
-      out.push({ op: 'add', anchor: o.anchor, content: o.content, reason: typeof o.reason === 'string' ? o.reason : undefined });
-    } else if (o.op === 'replace' && typeof o.target === 'string' && typeof o.replacement === 'string') {
-      out.push({ op: 'replace', target: o.target, replacement: o.replacement, reason: typeof o.reason === 'string' ? o.reason : undefined });
-    } else if (o.op === 'delete' && typeof o.target === 'string') {
-      out.push({ op: 'delete', target: o.target, reason: typeof o.reason === 'string' ? o.reason : undefined });
+    if (o.op === "add" && typeof o.anchor === "string" && typeof o.content === "string") {
+      out.push({
+        op: "add",
+        anchor: o.anchor,
+        content: o.content,
+        reason: typeof o.reason === "string" ? o.reason : undefined,
+      });
+    } else if (
+      o.op === "replace" &&
+      typeof o.target === "string" &&
+      typeof o.replacement === "string"
+    ) {
+      out.push({
+        op: "replace",
+        target: o.target,
+        replacement: o.replacement,
+        reason: typeof o.reason === "string" ? o.reason : undefined,
+      });
+    } else if (o.op === "delete" && typeof o.target === "string") {
+      out.push({
+        op: "delete",
+        target: o.target,
+        reason: typeof o.reason === "string" ? o.reason : undefined,
+      });
     }
   }
   return out;

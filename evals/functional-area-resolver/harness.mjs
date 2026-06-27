@@ -12,37 +12,37 @@
  * proof-of-pattern, not a portable tool.
  */
 
-import { spawnSync, execFileSync } from 'node:child_process';
-import { dirname, resolve } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
-import { existsSync } from 'node:fs';
+import { spawnSync, execFileSync } from "node:child_process";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { existsSync } from "node:fs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const runnerPath = resolve(__dirname, 'harness-runner.ts');
-const gatewayPath = resolve(__dirname, '..', '..', 'src', 'core', 'ai', 'gateway.ts');
+const runnerPath = resolve(__dirname, "harness-runner.ts");
+const gatewayPath = resolve(__dirname, "..", "..", "src", "core", "ai", "gateway.ts");
 
 function fail(message, code = 2) {
-  process.stderr.write(message + '\n');
+  process.stderr.write(message + "\n");
   process.exit(code);
 }
 
 // Missing-binary fallback (F-E2): we need `bun` AND we need to be in
 // the gbrain repo so the runner can import the gateway.
 try {
-  execFileSync('which', ['bun'], { stdio: 'ignore' });
+  execFileSync("which", ["bun"], { stdio: "ignore" });
 } catch {
   fail(
-    'harness.mjs: `bun` is not on PATH.\n' +
-    'This harness is a gbrain-maintainer-side tool — run it from a\n' +
-    'gbrain repo checkout with `bun` installed (https://bun.sh).',
+    "harness.mjs: `bun` is not on PATH.\n" +
+      "This harness is a gbrain-maintainer-side tool — run it from a\n" +
+      "gbrain repo checkout with `bun` installed (https://bun.sh)."
   );
 }
 
 if (!existsSync(gatewayPath)) {
   fail(
     `harness.mjs: cannot find gbrain gateway at ${gatewayPath}.\n` +
-    'This harness is the gbrain-side A/B eval surface. Run it from a\n' +
-    'gbrain repo checkout, not from an installed skillpack.',
+      "This harness is the gbrain-side A/B eval surface. Run it from a\n" +
+      "gbrain repo checkout, not from an installed skillpack."
   );
 }
 
@@ -51,8 +51,8 @@ if (!existsSync(runnerPath)) {
 }
 
 const args = process.argv.slice(2);
-const result = spawnSync('bun', ['run', runnerPath, ...args], {
-  stdio: 'inherit',
+const result = spawnSync("bun", ["run", runnerPath, ...args], {
+  stdio: "inherit",
   cwd: __dirname,
 });
 

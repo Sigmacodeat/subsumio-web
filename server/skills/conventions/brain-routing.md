@@ -51,15 +51,15 @@ Do NOT switch brain when:
 `gbrain` resolves the active source via `resolveSourceId()` in
 `src/core/source-resolver.ts`. Seven tiers, highest priority first:
 
-| # | Tier | Signal |
-|---|---|---|
-| 1 | `flag` | Explicit `--source <id>` CLI flag (or `--source-id <id>` on `gbrain extract` / `gbrain import`) |
-| 2 | `env` | `GBRAIN_SOURCE` environment variable |
-| 3 | `dotfile` | `.gbrain-source` file in CWD or any ancestor directory |
-| 4 | `local_path` | A registered source whose `local_path` contains CWD (longest prefix wins) |
-| 5 | `brain_default` | Brain-level `sources.default` config key (explicit user intent) |
+| #   | Tier               | Signal                                                                                                                                                                                                                    |
+| --- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | `flag`             | Explicit `--source <id>` CLI flag (or `--source-id <id>` on `gbrain extract` / `gbrain import`)                                                                                                                           |
+| 2   | `env`              | `GBRAIN_SOURCE` environment variable                                                                                                                                                                                      |
+| 3   | `dotfile`          | `.gbrain-source` file in CWD or any ancestor directory                                                                                                                                                                    |
+| 4   | `local_path`       | A registered source whose `local_path` contains CWD (longest prefix wins)                                                                                                                                                 |
+| 5   | `brain_default`    | Brain-level `sources.default` config key (explicit user intent)                                                                                                                                                           |
 | 5.5 | `sole_non_default` | When tiers 1–5 missed AND exactly one registered source has a `local_path` AND isn't `'default'`, auto-route to it. Fires a one-time stderr nudge per CLI invocation. Suppress with `GBRAIN_NO_SOLE_NON_DEFAULT_NUDGE=1`. |
-| 6 | `seed_default` | Literal `'default'` (always exists post-migration v16) |
+| 6   | `seed_default`     | Literal `'default'` (always exists post-migration v16)                                                                                                                                                                    |
 
 **v0.41.13 tier 5.5 (`sole_non_default`):** added for single-source brains
 (typical for users with one Obsidian vault, one notes folder, one project).
@@ -153,15 +153,15 @@ with a brain prefix when relevant.
 
 ## Decision table
 
-| Situation | Brain | Source |
-|---|---|---|
-| User cd's into a team-brain checkout and asks a general question | dotfile-resolved team brain | dotfile-resolved source |
-| User asks "what did team X decide?" | `team-x` explicitly | resolver default |
-| User asks "what are we doing across all teams?" | fan out across mounts, agent-driven | resolver default |
-| User asks "add this to my gstack notes" | host | `gstack` |
-| User asks "save this meeting note for team X" | `team-x` (confirm if ambiguous) | team's meetings source |
-| User asks "write me an essay" | host (personal) | `essays` |
-| Unknown — can't classify | stay in host, ask the user | resolver default |
+| Situation                                                        | Brain                               | Source                  |
+| ---------------------------------------------------------------- | ----------------------------------- | ----------------------- |
+| User cd's into a team-brain checkout and asks a general question | dotfile-resolved team brain         | dotfile-resolved source |
+| User asks "what did team X decide?"                              | `team-x` explicitly                 | resolver default        |
+| User asks "what are we doing across all teams?"                  | fan out across mounts, agent-driven | resolver default        |
+| User asks "add this to my gstack notes"                          | host                                | `gstack`                |
+| User asks "save this meeting note for team X"                    | `team-x` (confirm if ambiguous)     | team's meetings source  |
+| User asks "write me an essay"                                    | host (personal)                     | `essays`                |
+| Unknown — can't classify                                         | stay in host, ask the user          | resolver default        |
 
 ## Anti-patterns
 

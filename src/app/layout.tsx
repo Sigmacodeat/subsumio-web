@@ -105,7 +105,8 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Subsumio — AI Legal Software for DACH Law Firms",
-    description: "AI legal software for law firms in AT, DE and CH: matters, deadlines, cited answers, DATEV export, conflict check.",
+    description:
+      "AI legal software for law firms in AT, DE and CH: matters, deadlines, cited answers, DATEV export, conflict check.",
     images: ["/og-image.png"],
   },
   icons: {

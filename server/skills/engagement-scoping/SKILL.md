@@ -36,6 +36,7 @@ mutating: true
 ## Contract
 
 This skill guarantees:
+
 1. The scope has objectives, workstreams, approach, timeline, team and risks.
 2. It reuses structure from cited prior similar projects.
 3. Assumptions and open commercial questions are explicit.
@@ -73,5 +74,6 @@ work (→ proposal-finder) or capture a finished project (→ project-retro).
 - ❌ Ignoring relevant prior engagements that should shape the approach.
 
 ## Error Handling
+
 - No similar prior work → draft from first principles and say so.
 - Outcome/budget unstated → list them as the first open questions.

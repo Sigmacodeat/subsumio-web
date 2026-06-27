@@ -1,7 +1,7 @@
-import { existsSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { isAbsolute, join, resolve as resolvePath } from 'path';
-import { RESOLVER_FILENAMES, hasResolverFile } from './resolver-filenames.ts';
+import { existsSync } from "fs";
+import { fileURLToPath } from "url";
+import { isAbsolute, join, resolve as resolvePath } from "path";
+import { RESOLVER_FILENAMES, hasResolverFile } from "./resolver-filenames.ts";
 
 /**
  * Walk up from `startDir` looking for a `skills/` directory that
@@ -15,8 +15,8 @@ import { RESOLVER_FILENAMES, hasResolverFile } from './resolver-filenames.ts';
 export function findRepoRoot(startDir: string = process.cwd()): string | null {
   let dir = startDir;
   for (let i = 0; i < 10; i++) {
-    if (hasResolverFile(join(dir, 'skills'))) return dir;
-    const parent = join(dir, '..');
+    if (hasResolverFile(join(dir, "skills"))) return dir;
+    const parent = join(dir, "..");
     if (parent === dir) break;
     dir = parent;
   }
@@ -37,15 +37,15 @@ export function findRepoRoot(startDir: string = process.cwd()): string | null {
  *                                      path; READ-ONLY callers only (v0.31.7)
  */
 export type SkillsDirSource =
-  | 'env_explicit'
-  | 'openclaw_workspace_env'
-  | 'openclaw_workspace_env_root'
-  | 'openclaw_workspace_home'
-  | 'openclaw_workspace_home_root'
-  | 'cwd_walk_up'
-  | 'repo_root'
-  | 'cwd_skills'
-  | 'install_path';
+  | "env_explicit"
+  | "openclaw_workspace_env"
+  | "openclaw_workspace_env_root"
+  | "openclaw_workspace_home"
+  | "openclaw_workspace_home_root"
+  | "cwd_walk_up"
+  | "repo_root"
+  | "cwd_skills"
+  | "install_path";
 
 export interface SkillsDirDetection {
   dir: string | null;
@@ -64,10 +64,10 @@ export interface SkillsDirDetection {
 function resolveWorkspaceSkillsDir(
   workspace: string,
   sourceSubdir: SkillsDirSource,
-  sourceRoot: SkillsDirSource,
+  sourceRoot: SkillsDirSource
 ): SkillsDirDetection | null {
   // Preferred: workspace/skills with a resolver file inside it (gbrain-native).
-  const subdir = join(workspace, 'skills');
+  const subdir = join(workspace, "skills");
   if (hasResolverFile(subdir)) {
     return { dir: subdir, source: sourceSubdir };
   }
@@ -110,7 +110,7 @@ function resolveWorkspaceSkillsDir(
  */
 export function autoDetectSkillsDir(
   startDir: string = process.cwd(),
-  env: NodeJS.ProcessEnv = process.env,
+  env: NodeJS.ProcessEnv = process.env
 ): SkillsDirDetection {
   // 0. $GBRAIN_SKILLS_DIR explicit operator override. Safe for all callers
   //    because the operator explicitly set the env var. Does NOT support the
@@ -121,7 +121,7 @@ export function autoDetectSkillsDir(
       ? env.GBRAIN_SKILLS_DIR
       : resolvePath(startDir, env.GBRAIN_SKILLS_DIR);
     if (hasResolverFile(explicit)) {
-      return { dir: explicit, source: 'env_explicit' };
+      return { dir: explicit, source: "env_explicit" };
     }
     // Fall through — invalid env override doesn't crash, lets lower tiers try.
   }
@@ -133,8 +133,8 @@ export function autoDetectSkillsDir(
       : resolvePath(startDir, env.OPENCLAW_WORKSPACE);
     const resolved = resolveWorkspaceSkillsDir(
       workspace,
-      'openclaw_workspace_env',
-      'openclaw_workspace_env_root',
+      "openclaw_workspace_env",
+      "openclaw_workspace_env_root"
     );
     if (resolved) return resolved;
   }
@@ -151,11 +151,11 @@ export function autoDetectSkillsDir(
   {
     let dir = startDir;
     for (let i = 0; i < 10; i++) {
-      const candidate = join(dir, 'skills');
+      const candidate = join(dir, "skills");
       if (existsSync(candidate)) {
-        return { dir: candidate, source: 'cwd_walk_up' };
+        return { dir: candidate, source: "cwd_walk_up" };
       }
-      const parent = join(dir, '..');
+      const parent = join(dir, "..");
       const resolvedParent = resolvePath(parent);
       const resolvedDir = resolvePath(dir);
       if (resolvedParent === resolvedDir) break;
@@ -165,11 +165,11 @@ export function autoDetectSkillsDir(
 
   // 2. ~/.openclaw/workspace as the default user-level OpenClaw deployment.
   if (env.HOME) {
-    const workspace = join(env.HOME, '.openclaw', 'workspace');
+    const workspace = join(env.HOME, ".openclaw", "workspace");
     const resolved = resolveWorkspaceSkillsDir(
       workspace,
-      'openclaw_workspace_home',
-      'openclaw_workspace_home_root',
+      "openclaw_workspace_home",
+      "openclaw_workspace_home_root"
     );
     if (resolved) return resolved;
   }
@@ -177,7 +177,7 @@ export function autoDetectSkillsDir(
   // 3. gbrain repo walk from cwd.
   const repoRoot = findRepoRoot(startDir);
   if (repoRoot && isGbrainRepoRoot(repoRoot)) {
-    return { dir: join(repoRoot, 'skills'), source: 'repo_root' };
+    return { dir: join(repoRoot, "skills"), source: "repo_root" };
   }
 
   // 4. ./skills fallback (with hasResolverFile gate). Functionally
@@ -186,19 +186,16 @@ export function autoDetectSkillsDir(
   // resolver-bearing fallback from a plain skills-dir match.
   // In practice this tier never fires after 1b — cwd_walk_up matches
   // the same path first. Kept in the type union for back-compat.
-  const cwdSkills = join(startDir, 'skills');
+  const cwdSkills = join(startDir, "skills");
   if (hasResolverFile(cwdSkills)) {
-    return { dir: cwdSkills, source: 'cwd_skills' };
+    return { dir: cwdSkills, source: "cwd_skills" };
   }
 
   return { dir: null, source: null };
 }
 
 function isGbrainRepoRoot(dir: string): boolean {
-  return (
-    existsSync(join(dir, 'src', 'cli.ts')) &&
-    hasResolverFile(join(dir, 'skills'))
-  );
+  return existsSync(join(dir, "src", "cli.ts")) && hasResolverFile(join(dir, "skills"));
 }
 
 /**
@@ -224,7 +221,7 @@ function isGbrainRepoRoot(dir: string): boolean {
  */
 export function autoDetectSkillsDirReadOnly(
   startDir: string = process.cwd(),
-  env: NodeJS.ProcessEnv = process.env,
+  env: NodeJS.ProcessEnv = process.env
 ): SkillsDirDetection {
   const primary = autoDetectSkillsDir(startDir, env);
   if (primary.dir) return primary;
@@ -237,7 +234,7 @@ export function autoDetectSkillsDirReadOnly(
     const moduleDir = fileURLToPath(import.meta.url);
     const installRoot = findRepoRoot(moduleDir);
     if (installRoot && isGbrainRepoRoot(installRoot)) {
-      return { dir: join(installRoot, 'skills'), source: 'install_path' };
+      return { dir: join(installRoot, "skills"), source: "install_path" };
     }
   } catch {
     // fileURLToPath can throw on malformed import.meta.url (rare; some
@@ -256,12 +253,12 @@ export function autoDetectSkillsDirReadOnly(
 export const AUTO_DETECT_HINT = [
   `  1. --skills-dir flag`,
   `  2. $GBRAIN_SKILLS_DIR (explicit operator override)`,
-  `  3. $OPENCLAW_WORKSPACE/{skills/,}{${RESOLVER_FILENAMES.join(',')}}`,
+  `  3. $OPENCLAW_WORKSPACE/{skills/,}{${RESOLVER_FILENAMES.join(",")}}`,
   `  4. cwd + walk-up for any skills/ directory (v0.33; for non-OpenClaw hosts)`,
-  `  5. ~/.openclaw/workspace/{skills/,}{${RESOLVER_FILENAMES.join(',')}}`,
-  `  6. repo root with skills/${RESOLVER_FILENAMES.join(' or skills/')}`,
-  `  7. ./skills/${RESOLVER_FILENAMES.join(' or ./skills/')}`,
-].join('\n');
+  `  5. ~/.openclaw/workspace/{skills/,}{${RESOLVER_FILENAMES.join(",")}}`,
+  `  6. repo root with skills/${RESOLVER_FILENAMES.join(" or skills/")}`,
+  `  7. ./skills/${RESOLVER_FILENAMES.join(" or ./skills/")}`,
+].join("\n");
 
 /**
  * Read-only auto-detect hint. Includes the install-path fallback that
@@ -271,4 +268,4 @@ export const AUTO_DETECT_HINT = [
 export const AUTO_DETECT_HINT_READ_ONLY = [
   AUTO_DETECT_HINT,
   `  7. (read-only) walk up from gbrain's install path`,
-].join('\n');
+].join("\n");

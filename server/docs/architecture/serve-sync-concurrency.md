@@ -9,7 +9,7 @@ PGLite is a single-writer embedded Postgres (WASM). A running `gbrain serve`
 directory. `gbrain sync` needs to write to that same data directory. The two
 contend for PGLite's single-writer connection / write-lock — **this is NOT the
 `gbrain-sync` advisory lock** (that's a separate, DB-row coordination lock for
-two concurrent *syncs*). Confusing the two sends you debugging the wrong surface.
+two concurrent _syncs_). Confusing the two sends you debugging the wrong surface.
 
 Symptoms of serve↔sync contention on PGLite:
 

@@ -20,7 +20,7 @@
  * and independently testable.
  */
 
-import { createGBrainContextEngine, ENGINE_ID } from './core/context-engine.ts';
+import { createGBrainContextEngine, ENGINE_ID } from "./core/context-engine.ts";
 
 /**
  * Plugin-entry shape consumed by the OpenClaw host. The host's plugin loader
@@ -50,15 +50,15 @@ interface PluginCtx {
 }
 
 const entry: PluginEntry = {
-  id: 'gbrain-context-engine',
-  name: 'GBrain Context Engine',
-  description: 'Deterministic temporal/spatial context injection on every turn',
+  id: "gbrain-context-engine",
+  name: "GBrain Context Engine",
+  description: "Deterministic temporal/spatial context injection on every turn",
 
   register(api: PluginApi) {
     api.registerContextEngine(ENGINE_ID, (ctx: PluginCtx) =>
       createGBrainContextEngine({
         workspaceDir: ctx.workspaceDir,
-      }),
+      })
     );
   },
 };

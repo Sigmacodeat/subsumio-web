@@ -17,12 +17,10 @@
  * `gbrain watch` or `gbrain daemon`), add it here.
  */
 
-const DAEMON_COMMANDS: ReadonlySet<string> = new Set(['serve']);
+const DAEMON_COMMANDS: ReadonlySet<string> = new Set(["serve"]);
 
-export function shouldForceExitAfterMain(
-  argv: string[] = process.argv.slice(2),
-): boolean {
-  const command = argv.find((arg) => !arg.startsWith('-'));
+export function shouldForceExitAfterMain(argv: string[] = process.argv.slice(2)): boolean {
+  const command = argv.find((arg) => !arg.startsWith("-"));
   if (!command) return true;
   return !DAEMON_COMMANDS.has(command);
 }

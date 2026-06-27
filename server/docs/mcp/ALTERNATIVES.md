@@ -51,15 +51,15 @@ Both run Bun natively. No bundling, no Deno, no cold start, no timeout limits.
 
 ## Comparison
 
-| | ngrok | Tailscale | Fly.io/Railway |
-|--|---|---|---|
-| Cost | $8/mo (Hobby) | Free | $5-10/mo |
-| Fixed URL | Yes (Hobby) | Yes | Yes |
-| Works when laptop is off | No | No | Yes |
-| Cold start | None | None | None |
-| Timeout limits | None | None | None |
-| All 30 operations | Yes | Yes | Yes |
-| Setup time | 5 min | 10 min | 15 min |
+|                          | ngrok         | Tailscale | Fly.io/Railway |
+| ------------------------ | ------------- | --------- | -------------- |
+| Cost                     | $8/mo (Hobby) | Free      | $5-10/mo       |
+| Fixed URL                | Yes (Hobby)   | Yes       | Yes            |
+| Works when laptop is off | No            | No        | Yes            |
+| Cold start               | None          | None      | None           |
+| Timeout limits           | None          | None      | None           |
+| All 30 operations        | Yes           | Yes       | Yes            |
+| Setup time               | 5 min         | 10 min    | 15 min         |
 
 **Note:** `gbrain serve --http` is the built-in HTTP transport (v0.22.7+). Bearer auth
 against the `access_tokens` table, default-deny CORS, two-bucket rate limit, body cap,

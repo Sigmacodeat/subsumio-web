@@ -114,7 +114,5 @@ export async function sendMail({
 
 /** Absolute base URL for links in emails. */
 export function siteUrl(): string {
-  return (
-    env("NEXT_PUBLIC_APP_URL") || env("NEXT_PUBLIC_SITE_URL") || "http://localhost:3000"
-  );
+  return env("NEXT_PUBLIC_APP_URL") || env("NEXT_PUBLIC_SITE_URL") || "http://localhost:3000";
 }

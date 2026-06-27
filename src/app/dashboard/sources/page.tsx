@@ -321,16 +321,18 @@ export default function SourcesPage() {
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
-  const { data: registryData, loading, error, refetch: loadSources } = useApiQuery<SourceRegistryResponse>(
-    async () => {
-      const params: Record<string, string> = {};
-      if (jurisdictionFilter !== "all") params.jurisdiction = jurisdictionFilter;
-      if (typeFilter !== "all") params.type = typeFilter;
-      if (statusFilter !== "all") params.status = statusFilter;
-      return api.sources.list(params);
-    },
-    [jurisdictionFilter, typeFilter, statusFilter]
-  );
+  const {
+    data: registryData,
+    loading,
+    error,
+    refetch: loadSources,
+  } = useApiQuery<SourceRegistryResponse>(async () => {
+    const params: Record<string, string> = {};
+    if (jurisdictionFilter !== "all") params.jurisdiction = jurisdictionFilter;
+    if (typeFilter !== "all") params.type = typeFilter;
+    if (statusFilter !== "all") params.status = statusFilter;
+    return api.sources.list(params);
+  }, [jurisdictionFilter, typeFilter, statusFilter]);
 
   const registry = registryData;
 

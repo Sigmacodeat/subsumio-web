@@ -9,7 +9,7 @@
  * we can't determine actual load.
  */
 
-import { loadavg, freemem, totalmem, cpus } from 'os';
+import { loadavg, freemem, totalmem, cpus } from "os";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -83,7 +83,7 @@ function getLoad(): number {
 function getMemoryUsage(): number {
   const total = totalmem();
   if (total === 0) return 0;
-  return 1 - (freemem() / total);
+  return 1 - freemem() / total;
 }
 
 /**
@@ -97,32 +97,68 @@ export function shouldProceed(config?: Partial<ThrottleConfig>): ThrottleResult 
 
   // Windows/unsupported: loadavg returns [0,0,0] — can't determine load, proceed
   if (loadavg()[0] === 0 && loadavg()[1] === 0 && loadavg()[2] === 0) {
-    return { proceed: true, delay: 0, reason: 'Load data unavailable (Windows?), proceeding', load: 0, memoryUsed: memUsed };
+    return {
+      proceed: true,
+      delay: 0,
+      reason: "Load data unavailable (Windows?), proceeding",
+      load: 0,
+      memoryUsed: memUsed,
+    };
   }
 
   // Concurrent process limit
   if (_activeProcesses >= MAX_CONCURRENT) {
-    return { proceed: false, delay: 5000, reason: `${_activeProcesses} batch processes active (max ${MAX_CONCURRENT})`, load, memoryUsed: memUsed };
+    return {
+      proceed: false,
+      delay: 5000,
+      reason: `${_activeProcesses} batch processes active (max ${MAX_CONCURRENT})`,
+      load,
+      memoryUsed: memUsed,
+    };
   }
 
   // Memory check
   if (memUsed > cfg.memoryStopPct) {
-    return { proceed: false, delay: 30000, reason: `Memory ${(memUsed * 100).toFixed(0)}% > ${(cfg.memoryStopPct * 100).toFixed(0)}% threshold`, load, memoryUsed: memUsed };
+    return {
+      proceed: false,
+      delay: 30000,
+      reason: `Memory ${(memUsed * 100).toFixed(0)}% > ${(cfg.memoryStopPct * 100).toFixed(0)}% threshold`,
+      load,
+      memoryUsed: memUsed,
+    };
   }
 
   // CPU load checks
   const activeMultiplier = isActiveHours(cfg) ? cfg.activeHoursMultiplier : 1;
 
   if (load > cfg.loadStopPct) {
-    return { proceed: false, delay: 30000 * activeMultiplier, reason: `Load ${(load * 100).toFixed(0)}% > stop threshold ${(cfg.loadStopPct * 100).toFixed(0)}%`, load, memoryUsed: memUsed };
+    return {
+      proceed: false,
+      delay: 30000 * activeMultiplier,
+      reason: `Load ${(load * 100).toFixed(0)}% > stop threshold ${(cfg.loadStopPct * 100).toFixed(0)}%`,
+      load,
+      memoryUsed: memUsed,
+    };
   }
 
   if (load > cfg.loadSlowPct) {
-    return { proceed: true, delay: 2000 * activeMultiplier, reason: `Load ${(load * 100).toFixed(0)}% > slow threshold, adding delay`, load, memoryUsed: memUsed };
+    return {
+      proceed: true,
+      delay: 2000 * activeMultiplier,
+      reason: `Load ${(load * 100).toFixed(0)}% > slow threshold, adding delay`,
+      load,
+      memoryUsed: memUsed,
+    };
   }
 
   // Normal load
-  return { proceed: true, delay: 300 * activeMultiplier, reason: 'Normal load', load, memoryUsed: memUsed };
+  return {
+    proceed: true,
+    delay: 300 * activeMultiplier,
+    reason: "Normal load",
+    load,
+    memoryUsed: memUsed,
+  };
 }
 
 /**
@@ -149,14 +185,19 @@ export async function waitForCapacity(config?: Partial<ThrottleConfig>): Promise
     backoff = Math.min(backoff * 1.5, maxBackoff);
   }
 
-  throw new Error(`Throttle timeout: system overloaded after ${cfg.maxAttempts} attempts (~${Math.round(cfg.maxAttempts * 30)}s). Load: ${(getLoad() * 100).toFixed(0)}%, Memory: ${(getMemoryUsage() * 100).toFixed(0)}%`);
+  throw new Error(
+    `Throttle timeout: system overloaded after ${cfg.maxAttempts} attempts (~${Math.round(cfg.maxAttempts * 30)}s). Load: ${(getLoad() * 100).toFixed(0)}%, Memory: ${(getMemoryUsage() * 100).toFixed(0)}%`
+  );
 }
 
 /**
  * Pre-flight check at script/command start.
  * Registers this process as active and returns false if overloaded.
  */
-export async function preflight(processName: string, config?: Partial<ThrottleConfig>): Promise<boolean> {
+export async function preflight(
+  processName: string,
+  config?: Partial<ThrottleConfig>
+): Promise<boolean> {
   const result = shouldProceed(config);
   if (!result.proceed) {
     return false;
@@ -171,7 +212,12 @@ export function complete(): void {
 }
 
 /** Get current throttle state for diagnostics. */
-export function getThrottleState(): { load: number; memoryUsed: number; activeProcesses: number; isActiveHours: boolean } {
+export function getThrottleState(): {
+  load: number;
+  memoryUsed: number;
+  activeProcesses: number;
+  isActiveHours: boolean;
+} {
   return {
     load: getLoad(),
     memoryUsed: getMemoryUsage(),
@@ -186,5 +232,5 @@ export function _resetForTest(): void {
 }
 
 function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }

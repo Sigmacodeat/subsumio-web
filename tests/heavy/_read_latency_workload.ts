@@ -39,7 +39,7 @@
  *   }
  */
 
-import { platform } from 'node:os';
+import { platform } from "node:os";
 
 interface Phase {
   p50_ms: number;
@@ -61,7 +61,7 @@ interface Result {
   delta_p99_pct: number | null;
   elapsed_ms: number;
   threshold_pct: number;
-  verdict: 'pass' | 'fail' | 'informational';
+  verdict: "pass" | "fail" | "informational";
   note?: string;
   error?: string;
 }
@@ -73,7 +73,7 @@ function percentile(sortedMs: number[], pct: number): number {
 }
 
 function generatePage(i: number, prefix: string): { slug: string; title: string; body: string } {
-  const pad = String(i).padStart(5, '0');
+  const pad = String(i).padStart(5, "0");
   const body =
     `# ${prefix} Page ${i}\n\n` +
     `Deterministic page for read-latency measurement. Body has stable text ` +
@@ -95,12 +95,12 @@ async function main(): Promise<void> {
   const t0 = Date.now();
   const plat = platform();
 
-  const BRAIN_PAGES = parseInt(process.env.BRAIN_PAGES ?? '500', 10);
-  const NUM_QUERIES = parseInt(process.env.NUM_QUERIES ?? '200', 10);
-  const NUM_WRITERS = parseInt(process.env.NUM_WRITERS ?? '4', 10);
-  const WRITES_PER_WRITER = parseInt(process.env.WRITES_PER_WRITER ?? '25', 10);
-  const STRICT = (process.env.STRICT ?? '0') === '1';
-  const THRESHOLD_PCT = parseInt(process.env.THRESHOLD_PCT ?? '50', 10);
+  const BRAIN_PAGES = parseInt(process.env.BRAIN_PAGES ?? "500", 10);
+  const NUM_QUERIES = parseInt(process.env.NUM_QUERIES ?? "200", 10);
+  const NUM_WRITERS = parseInt(process.env.NUM_WRITERS ?? "4", 10);
+  const WRITES_PER_WRITER = parseInt(process.env.WRITES_PER_WRITER ?? "25", 10);
+  const STRICT = (process.env.STRICT ?? "0") === "1";
+  const THRESHOLD_PCT = parseInt(process.env.THRESHOLD_PCT ?? "50", 10);
 
   let result: Result = {
     ok: false,
@@ -113,12 +113,12 @@ async function main(): Promise<void> {
     delta_p99_pct: null,
     elapsed_ms: 0,
     threshold_pct: THRESHOLD_PCT,
-    verdict: 'informational',
+    verdict: "informational",
   };
 
   try {
-    const { PGLiteEngine } = await import('../../src/core/pglite-engine.ts');
-    const { hybridSearch } = await import('../../src/core/search/hybrid.ts');
+    const { PGLiteEngine } = await import("../../src/core/pglite-engine.ts");
+    const { hybridSearch } = await import("../../src/core/search/hybrid.ts");
 
     const engine = new PGLiteEngine();
     await engine.connect({});
@@ -127,20 +127,32 @@ async function main(): Promise<void> {
     // Build the fixture
     process.stderr.write(`[_read_latency] inserting ${BRAIN_PAGES} fixture pages...\n`);
     for (let i = 0; i < BRAIN_PAGES; i += 1) {
-      const p = generatePage(i, 'Fixture');
+      const p = generatePage(i, "Fixture");
       await engine.putPage(p.slug, {
-        type: 'note',
+        type: "note",
         title: p.title,
         compiled_truth: p.body,
-        timeline: '',
-        frontmatter: { fixture: true, tags: ['fixture'] },
+        timeline: "",
+        frontmatter: { fixture: true, tags: ["fixture"] },
       });
     }
 
     const queries = [
-      'lorem ipsum', 'consequat', 'voluptatem', 'aspernatur', 'magna',
-      'reprehenderit', 'commodo', 'inventore', 'fixture page', 'section 1',
-      'section 2', 'page 100', 'doloremque', 'architecto', 'incididunt',
+      "lorem ipsum",
+      "consequat",
+      "voluptatem",
+      "aspernatur",
+      "magna",
+      "reprehenderit",
+      "commodo",
+      "inventore",
+      "fixture page",
+      "section 1",
+      "section 2",
+      "page 100",
+      "doloremque",
+      "architecto",
+      "incididunt",
     ];
 
     // ---- Phase A: baseline (no concurrent writes)
@@ -165,32 +177,36 @@ async function main(): Promise<void> {
     };
 
     // ---- Phase B: under load (parallel writers)
-    process.stderr.write(`[_read_latency] phase B: ${NUM_QUERIES} queries with ${NUM_WRITERS} writers...\n`);
+    process.stderr.write(
+      `[_read_latency] phase B: ${NUM_QUERIES} queries with ${NUM_WRITERS} writers...\n`
+    );
     let writesCompleted = 0;
     let writesFailed = 0;
     let writersDone = 0;
 
     const writers: Promise<void>[] = [];
     for (let w = 0; w < NUM_WRITERS; w += 1) {
-      writers.push((async () => {
-        const base = BRAIN_PAGES + w * WRITES_PER_WRITER;
-        for (let i = 0; i < WRITES_PER_WRITER; i += 1) {
-          const p = generatePage(base + i, `WriterW${w}`);
-          try {
-            await engine.putPage(p.slug, {
-              type: 'note',
-              title: p.title,
-              compiled_truth: p.body,
-              timeline: '',
-              frontmatter: { writer: w, tags: ['writer-load'] },
-            });
-            writesCompleted += 1;
-          } catch {
-            writesFailed += 1;
+      writers.push(
+        (async () => {
+          const base = BRAIN_PAGES + w * WRITES_PER_WRITER;
+          for (let i = 0; i < WRITES_PER_WRITER; i += 1) {
+            const p = generatePage(base + i, `WriterW${w}`);
+            try {
+              await engine.putPage(p.slug, {
+                type: "note",
+                title: p.title,
+                compiled_truth: p.body,
+                timeline: "",
+                frontmatter: { writer: w, tags: ["writer-load"] },
+              });
+              writesCompleted += 1;
+            } catch {
+              writesFailed += 1;
+            }
           }
-        }
-        writersDone += 1;
-      })());
+          writersDone += 1;
+        })()
+      );
     }
 
     const phaseBMs: number[] = [];
@@ -235,9 +251,9 @@ async function main(): Promise<void> {
     result.delta_p99_pct = deltaPct(result.phase_a.p99_ms, result.phase_b.p99_ms);
 
     // Page count after both phases
-    const pageRows = await engine.executeRaw('SELECT count(*)::int AS c FROM pages', []);
+    const pageRows = await engine.executeRaw("SELECT count(*)::int AS c FROM pages", []);
     result.brain_page_count =
-      pageRows && pageRows[0] && typeof (pageRows[0] as { c: number }).c === 'number'
+      pageRows && pageRows[0] && typeof (pageRows[0] as { c: number }).c === "number"
         ? (pageRows[0] as { c: number }).c
         : 0;
 
@@ -245,9 +261,9 @@ async function main(): Promise<void> {
 
     // Verdict
     if (STRICT) {
-      result.verdict = (result.delta_p99_pct ?? 0) > THRESHOLD_PCT ? 'fail' : 'pass';
+      result.verdict = (result.delta_p99_pct ?? 0) > THRESHOLD_PCT ? "fail" : "pass";
     } else {
-      result.verdict = 'informational';
+      result.verdict = "informational";
     }
 
     result.ok = true;
@@ -257,9 +273,9 @@ async function main(): Promise<void> {
     result.elapsed_ms = Date.now() - t0;
   }
 
-  process.stdout.write(JSON.stringify(result) + '\n');
+  process.stdout.write(JSON.stringify(result) + "\n");
   if (!result.ok) process.exit(1);
-  if (STRICT && result.verdict === 'fail') process.exit(1);
+  if (STRICT && result.verdict === "fail") process.exit(1);
   process.exit(0);
 }
 

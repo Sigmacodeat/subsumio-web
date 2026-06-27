@@ -11,4 +11,4 @@
  * `src/core/brainstorm/orchestrator.ts` for the profile configs.
  */
 
-export { runLsdCommand } from './brainstorm.ts';
+export { runLsdCommand } from "./brainstorm.ts";

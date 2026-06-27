@@ -17,14 +17,22 @@
  *   gbrain autopilot --status [--json]
  */
 
-import { existsSync, readFileSync, writeFileSync, mkdirSync, appendFileSync, utimesSync, unlinkSync } from 'fs';
-import { join } from 'path';
-import { execSync } from 'child_process';
-import type { BrainEngine } from '../core/engine.ts';
-import { loadPreferences } from '../core/preferences.ts';
-import { loadConfig, saveConfig, gbrainPath as gbrainHomePath } from '../core/config.ts';
-import { ChildWorkerSupervisor } from '../core/minions/child-worker-supervisor.ts';
-import { VERSION } from '../version.ts';
+import {
+  existsSync,
+  readFileSync,
+  writeFileSync,
+  mkdirSync,
+  appendFileSync,
+  utimesSync,
+  unlinkSync,
+} from "fs";
+import { join } from "path";
+import { execSync } from "child_process";
+import type { BrainEngine } from "../core/engine.ts";
+import { loadPreferences } from "../core/preferences.ts";
+import { loadConfig, saveConfig, gbrainPath as gbrainHomePath } from "../core/config.ts";
+import { ChildWorkerSupervisor } from "../core/minions/child-worker-supervisor.ts";
+import { VERSION } from "../version.ts";
 import {
   canSelfUpdate,
   decideSelfUpgrade,
@@ -32,14 +40,14 @@ import {
   readUpdateCache,
   reconcileBreadcrumb,
   resolveSelfUpgradeMode,
-} from '../core/self-upgrade.ts';
-import { logSelfUpgrade } from '../core/audit/self-upgrade-audit.ts';
-import { detectInstallMethod } from './upgrade.ts';
-import { evaluateQuietHours } from '../core/minions/quiet-hours.ts';
-import { inspectLock } from '../core/db-lock.ts';
-import { startConnectorIngestion } from '../core/ingestion/connectors/daemon-integration.ts';
-import type { IngestionDaemon } from '../core/ingestion/daemon.ts';
-import { MinionQueue } from '../core/minions/queue.ts';
+} from "../core/self-upgrade.ts";
+import { logSelfUpgrade } from "../core/audit/self-upgrade-audit.ts";
+import { detectInstallMethod } from "./upgrade.ts";
+import { evaluateQuietHours } from "../core/minions/quiet-hours.ts";
+import { inspectLock } from "../core/db-lock.ts";
+import { startConnectorIngestion } from "../core/ingestion/connectors/daemon-integration.ts";
+import type { IngestionDaemon } from "../core/ingestion/daemon.ts";
+import { MinionQueue } from "../core/minions/queue.ts";
 
 /**
  * v0.37.7.0 #1162 — classify autopilot reconnect-loop errors.
@@ -55,26 +63,32 @@ import { MinionQueue } from '../core/minions/queue.ts';
  * Exported (string-based signature) so tests drive it without needing
  * a real reconnect error.
  */
-export function classifyReconnectError(err: unknown): 'recoverable' | 'unrecoverable' {
-  const msg = (err instanceof Error ? err.message : String(err ?? '')).toLowerCase();
-  if (msg.includes('database_url') && (msg.includes('undefined') || msg.includes('missing') || msg.includes('empty') || msg.includes('not set'))) {
-    return 'unrecoverable';
+export function classifyReconnectError(err: unknown): "recoverable" | "unrecoverable" {
+  const msg = (err instanceof Error ? err.message : String(err ?? "")).toLowerCase();
+  if (
+    msg.includes("database_url") &&
+    (msg.includes("undefined") ||
+      msg.includes("missing") ||
+      msg.includes("empty") ||
+      msg.includes("not set"))
+  ) {
+    return "unrecoverable";
   }
-  if (msg.includes('invalid url') || msg.includes('malformed') || msg.includes('parse url')) {
-    return 'unrecoverable';
+  if (msg.includes("invalid url") || msg.includes("malformed") || msg.includes("parse url")) {
+    return "unrecoverable";
   }
   // Auth failures: postgres prints `role "name" does not exist` (with the
   // role name in quotes between role and does), so use a skeleton match.
-  if (msg.includes('password authentication failed') || msg.includes('authentication failed')) {
-    return 'unrecoverable';
+  if (msg.includes("password authentication failed") || msg.includes("authentication failed")) {
+    return "unrecoverable";
   }
-  if (msg.includes('role') && msg.includes('does not exist')) {
-    return 'unrecoverable';
+  if (msg.includes("role") && msg.includes("does not exist")) {
+    return "unrecoverable";
   }
-  if (msg.includes('no brain configured') || msg.includes('config not found')) {
-    return 'unrecoverable';
+  if (msg.includes("no brain configured") || msg.includes("config not found")) {
+    return "unrecoverable";
   }
-  return 'recoverable';
+  return "recoverable";
 }
 
 function parseArg(args: string[], flag: string): string | undefined {
@@ -88,10 +102,12 @@ function logError(phase: string, e: unknown) {
   const line = `[${ts}] [${phase}] ERROR: ${msg}`;
   console.error(line);
   try {
-    const logDir = join(process.env.HOME || '', '.gbrain');
+    const logDir = join(process.env.HOME || "", ".gbrain");
     mkdirSync(logDir, { recursive: true });
-    appendFileSync(join(logDir, 'autopilot.log'), line + '\n');
-  } catch { /* best-effort */ }
+    appendFileSync(join(logDir, "autopilot.log"), line + "\n");
+  } catch {
+    /* best-effort */
+  }
 }
 
 /**
@@ -111,25 +127,32 @@ function logError(phase: string, e: unknown) {
  */
 export function resolveGbrainCliPath(): string {
   try {
-    const which = execSync('which gbrain', { encoding: 'utf-8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+    const which = execSync("which gbrain", {
+      encoding: "utf-8",
+      stdio: ["ignore", "pipe", "ignore"],
+    }).trim();
     if (which) return which;
-  } catch { /* not on $PATH — fall through */ }
+  } catch {
+    /* not on $PATH — fall through */
+  }
 
-  const exec = process.execPath ?? '';
-  if (exec.endsWith('/gbrain') || exec.endsWith('\\gbrain.exe')) {
+  const exec = process.execPath ?? "";
+  if (exec.endsWith("/gbrain") || exec.endsWith("\\gbrain.exe")) {
     return exec;
   }
 
-  const arg1 = process.argv[1] ?? '';
-  if (arg1.endsWith('/gbrain') || arg1.endsWith('\\gbrain.exe')) {
+  const arg1 = process.argv[1] ?? "";
+  if (arg1.endsWith("/gbrain") || arg1.endsWith("\\gbrain.exe")) {
     return arg1;
   }
 
-  throw new Error('Could not resolve the gbrain CLI path. Install gbrain so it is on $PATH (e.g. /usr/local/bin/gbrain), or run autopilot from the compiled binary directly.');
+  throw new Error(
+    "Could not resolve the gbrain CLI path. Install gbrain so it is on $PATH (e.g. /usr/local/bin/gbrain), or run autopilot from the compiled binary directly."
+  );
 }
 
 export function shouldSpawnAutopilotWorker(args: string[]): boolean {
-  return !args.includes('--no-worker');
+  return !args.includes("--no-worker");
 }
 
 // ── Self-upgrade silent channel (v0.42; opt-in, supervisor-relaunch) ─────────
@@ -149,19 +172,21 @@ function reconcileSelfUpgradeAtBoot(): void {
     cfg.self_upgrade = state;
     saveConfig(cfg);
     logSelfUpgrade({
-      channel: 'autopilot',
-      action: 'apply',
+      channel: "autopilot",
+      action: "apply",
       current: VERSION,
-      outcome: transition === 'applied' ? 'applied' : 'failed',
+      outcome: transition === "applied" ? "applied" : "failed",
       reason:
-        transition === 'applied'
-          ? 'breadcrumb matched running version'
-          : 'crash-on-launch: attempted version != running version (recorded known-bad)',
+        transition === "applied"
+          ? "breadcrumb matched running version"
+          : "crash-on-launch: attempted version != running version (recorded known-bad)",
     });
-    if (transition === 'applied') {
+    if (transition === "applied") {
       console.log(`[autopilot] self-upgrade confirmed: now running ${VERSION}.`);
     } else {
-      console.error('[autopilot] self-upgrade did not take (running an older version); recorded known-bad.');
+      console.error(
+        "[autopilot] self-upgrade did not take (running an older version); recorded known-bad."
+      );
     }
   } catch {
     /* best-effort */
@@ -172,11 +197,11 @@ function reconcileSelfUpgradeAtBoot(): void {
  * Any ambiguity / error → NOT idle (we'd rather skip an upgrade window). */
 async function computeAutopilotIdle(engine: BrainEngine, engineType: string): Promise<boolean> {
   try {
-    const cycle = await inspectLock(engine, 'gbrain-cycle');
+    const cycle = await inspectLock(engine, "gbrain-cycle");
     if (cycle) return false; // a cycle (sync/extract/embed/...) is running
-    if (engineType === 'postgres') {
+    if (engineType === "postgres") {
       const rows = await (engine as any).executeRaw?.(
-        `SELECT count(*)::int AS n FROM minion_jobs WHERE status IN ('active','waiting')`,
+        `SELECT count(*)::int AS n FROM minion_jobs WHERE status IN ('active','waiting')`
       );
       const busy = Number((rows as Array<{ n: number }>)?.[0]?.n ?? 0);
       return busy === 0;
@@ -198,53 +223,56 @@ async function computeAutopilotIdle(engine: BrainEngine, engineType: string): Pr
 async function attemptAutopilotSelfUpgrade(
   engine: BrainEngine,
   engineType: string,
-  lockPath: string,
+  lockPath: string
 ): Promise<void> {
   try {
     const cfg = loadConfig();
     if (!cfg) return;
-    if (resolveSelfUpgradeMode(cfg) !== 'auto') return;
+    if (resolveSelfUpgradeMode(cfg) !== "auto") return;
 
     // latestVersion from the shared cache; refresh when stale (TTL throttles fetch).
     let entry = readUpdateCache();
     if (!entry || !isCacheFresh(entry, Date.now())) {
       try {
-        const { refreshUpdateCache } = await import('./check-update.ts');
+        const { refreshUpdateCache } = await import("./check-update.ts");
         await refreshUpdateCache();
         entry = readUpdateCache();
       } catch {
         /* fail-open */
       }
     }
-    if (!entry || entry.marker.kind !== 'upgrade_available' || !entry.marker.latest) return;
+    if (!entry || entry.marker.kind !== "upgrade_available" || !entry.marker.latest) return;
     const latestVersion = entry.marker.latest;
 
     const idle = await computeAutopilotIdle(engine, engineType);
     const qh = cfg.self_upgrade?.quiet_hours;
-    const tz = qh?.tz || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
-    const verdict = evaluateQuietHours({ start: qh?.start ?? 23, end: qh?.end ?? 8, tz }, new Date());
+    const tz = qh?.tz || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+    const verdict = evaluateQuietHours(
+      { start: qh?.start ?? 23, end: qh?.end ?? 8, tz },
+      new Date()
+    );
     const installMethod = detectInstallMethod();
 
     const decision = decideSelfUpgrade({
-      mode: 'auto',
-      channel: 'autopilot',
+      mode: "auto",
+      channel: "autopilot",
       currentVersion: VERSION,
       latestVersion,
       failedVersions: cfg.self_upgrade?.failed_versions ?? [],
       idle,
-      inQuietHours: verdict !== 'allow',
+      inQuietHours: verdict !== "allow",
       canSelfUpdate: canSelfUpdate(installMethod),
       throttledByInterval: false, // cache TTL is the fetch throttle
     });
 
-    if (decision.action !== 'apply') {
-      if (['unsupported_install', 'known_bad'].includes(decision.action)) {
+    if (decision.action !== "apply") {
+      if (["unsupported_install", "known_bad"].includes(decision.action)) {
         logSelfUpgrade({
-          channel: 'autopilot',
+          channel: "autopilot",
           action: decision.action,
           current: VERSION,
           latest: latestVersion,
-          outcome: 'skipped',
+          outcome: "skipped",
           reason: decision.reason,
         });
       }
@@ -254,14 +282,22 @@ async function attemptAutopilotSelfUpgrade(
     // Apply. Breadcrumb first so a crash-on-launch is attributable.
     cfg.self_upgrade = { ...(cfg.self_upgrade ?? {}), attempting_version: latestVersion };
     saveConfig(cfg);
-    logSelfUpgrade({ channel: 'autopilot', action: 'apply', current: VERSION, latest: latestVersion, reason: decision.reason });
-    console.log(`[autopilot] self-upgrade: applying ${VERSION} -> ${latestVersion} (idle, quiet hours).`);
+    logSelfUpgrade({
+      channel: "autopilot",
+      action: "apply",
+      current: VERSION,
+      latest: latestVersion,
+      reason: decision.reason,
+    });
+    console.log(
+      `[autopilot] self-upgrade: applying ${VERSION} -> ${latestVersion} (idle, quiet hours).`
+    );
 
     try {
-      execSync('gbrain upgrade --swap-only', {
-        stdio: 'inherit',
+      execSync("gbrain upgrade --swap-only", {
+        stdio: "inherit",
         timeout: 300_000,
-        env: { ...process.env, GBRAIN_SKIP_STARTUP_HOOKS: '1' },
+        env: { ...process.env, GBRAIN_SKIP_STARTUP_HOOKS: "1" },
       });
     } catch (e) {
       const fresh = loadConfig();
@@ -273,11 +309,11 @@ async function attemptAutopilotSelfUpgrade(
         saveConfig(fresh);
       }
       logSelfUpgrade({
-        channel: 'autopilot',
-        action: 'apply',
+        channel: "autopilot",
+        action: "apply",
         current: VERSION,
         latest: latestVersion,
-        outcome: 'failed',
+        outcome: "failed",
         error: e instanceof Error ? e.message : String(e),
       });
       console.error(`[autopilot] self-upgrade swap failed; staying on ${VERSION}.`);
@@ -287,14 +323,14 @@ async function attemptAutopilotSelfUpgrade(
     // Swap done + smoke-verified by `upgrade --swap-only`. Exit cleanly so the
     // supervisor relaunches the NEW binary, which reconciles the breadcrumb.
     logSelfUpgrade({
-      channel: 'autopilot',
-      action: 'apply',
+      channel: "autopilot",
+      action: "apply",
       current: VERSION,
       latest: latestVersion,
-      outcome: 'applied',
-      reason: 'swapped; exiting for supervisor relaunch',
+      outcome: "applied",
+      reason: "swapped; exiting for supervisor relaunch",
     });
-    console.log('[autopilot] self-upgrade swapped; exiting for relaunch.');
+    console.log("[autopilot] self-upgrade swapped; exiting for relaunch.");
     try {
       unlinkSync(lockPath);
     } catch {
@@ -307,40 +343,40 @@ async function attemptAutopilotSelfUpgrade(
 }
 
 export async function runAutopilot(engine: BrainEngine, args: string[]) {
-  if (args.includes('--help') || args.includes('-h')) {
+  if (args.includes("--help") || args.includes("-h")) {
     console.log(
-      'Usage: gbrain autopilot [--repo <path>] [--interval N] [--json] [--no-worker]\n' +
-      '       gbrain autopilot --install [--repo <path>]\n' +
-      '       gbrain autopilot --uninstall\n' +
-      '       gbrain autopilot --status [--json]\n\n' +
-      'Self-maintaining brain daemon. Runs the full maintenance cycle\n' +
-      '(lint + backlinks + sync + extract + embed + orphans) on an interval.\n\n' +
-      'For a one-shot cron-triggered cycle, see `gbrain dream`.',
+      "Usage: gbrain autopilot [--repo <path>] [--interval N] [--json] [--no-worker]\n" +
+        "       gbrain autopilot --install [--repo <path>]\n" +
+        "       gbrain autopilot --uninstall\n" +
+        "       gbrain autopilot --status [--json]\n\n" +
+        "Self-maintaining brain daemon. Runs the full maintenance cycle\n" +
+        "(lint + backlinks + sync + extract + embed + orphans) on an interval.\n\n" +
+        "For a one-shot cron-triggered cycle, see `gbrain dream`."
     );
     return;
   }
 
-  if (args.includes('--install')) {
+  if (args.includes("--install")) {
     await installDaemon(engine, args);
     return;
   }
-  if (args.includes('--uninstall')) {
+  if (args.includes("--uninstall")) {
     uninstallDaemon();
     return;
   }
-  if (args.includes('--status')) {
-    showStatus(args.includes('--json'));
+  if (args.includes("--status")) {
+    showStatus(args.includes("--json"));
     return;
   }
 
-  const repoPath = parseArg(args, '--repo') || await engine.getConfig('sync.repo_path');
-  const baseInterval = parseInt(parseArg(args, '--interval') || '300', 10);
-  const jsonMode = args.includes('--json');
-  const forceInline = args.includes('--inline');
+  const repoPath = parseArg(args, "--repo") || (await engine.getConfig("sync.repo_path"));
+  const baseInterval = parseInt(parseArg(args, "--interval") || "300", 10);
+  const jsonMode = args.includes("--json");
+  const forceInline = args.includes("--inline");
   const noWorker = !shouldSpawnAutopilotWorker(args);
 
   if (!repoPath) {
-    console.error('No repo path. Use --repo or run gbrain sync --repo first.');
+    console.error("No repo path. Use --repo or run gbrain sync --repo first.");
     process.exit(1);
   }
 
@@ -350,30 +386,32 @@ export async function runAutopilot(engine: BrainEngine, args: string[]) {
   // two brains sharing GBRAIN_HOME=different-paths still wrote to the
   // same global lockfile and one would silently respawn the other
   // forever.
-  const lockPath = gbrainHomePath('autopilot.lock');
+  const lockPath = gbrainHomePath("autopilot.lock");
   try {
     mkdirSync(gbrainHomePath(), { recursive: true });
     if (existsSync(lockPath)) {
-      const stat = require('fs').statSync(lockPath);
+      const stat = require("fs").statSync(lockPath);
       const ageMinutes = (Date.now() - stat.mtimeMs) / 60000;
       if (ageMinutes < 10) {
-        console.error('Another autopilot instance is running (lock file is fresh). Exiting.');
+        console.error("Another autopilot instance is running (lock file is fresh). Exiting.");
         process.exit(0);
       }
-      console.log('Stale lock file found (>10 min). Taking over.');
+      console.log("Stale lock file found (>10 min). Taking over.");
     }
     writeFileSync(lockPath, String(process.pid));
-  } catch { /* best-effort */ }
+  } catch {
+    /* best-effort */
+  }
 
   console.log(`Autopilot starting. Repo: ${repoPath}, interval: ${baseInterval}s`);
 
   // Mode resolution: Minions dispatch when the user has opted in AND the
   // worker daemon can actually run (Postgres only; PGLite's exclusive file
   // lock blocks a separate worker process).
-  const mode = loadPreferences().minion_mode ?? 'pain_triggered';
+  const mode = loadPreferences().minion_mode ?? "pain_triggered";
   const cfg = loadConfig();
-  const engineType = cfg?.engine ?? 'pglite';
-  const useMinionsDispatch = mode !== 'off' && engineType === 'postgres' && !forceInline;
+  const engineType = cfg?.engine ?? "pglite";
+  const useMinionsDispatch = mode !== "off" && engineType === "postgres" && !forceInline;
   const spawnManagedWorker = useMinionsDispatch && !noWorker;
 
   // v0.42 self-upgrade: if a prior tick swapped the binary and exited for
@@ -391,11 +429,11 @@ export async function runAutopilot(engine: BrainEngine, args: string[]) {
     // ~400×/24h respawn loop. resolveDefaultMaxRssMb clamps 0.5×min(cgroup,
     // RAM) to [4096,16384]. Bare `gbrain jobs work` resolves the same default;
     // we pass it explicitly so the spawn log + child agree.
-    const { resolveDefaultMaxRssMb } = await import('../core/minions/rss-default.ts');
+    const { resolveDefaultMaxRssMb } = await import("../core/minions/rss-default.ts");
     const autopilotMaxRssMb = resolveDefaultMaxRssMb();
     childSupervisor = new ChildWorkerSupervisor({
       cliPath,
-      args: ['jobs', 'work', '--max-rss', String(autopilotMaxRssMb)],
+      args: ["jobs", "work", "--max-rss", String(autopilotMaxRssMb)],
       // process.env clone; autopilot doesn't gate shell jobs the way the
       // standalone supervisor does (autopilot is the operator-trust path).
       env: { ...process.env },
@@ -403,40 +441,40 @@ export async function runAutopilot(engine: BrainEngine, args: string[]) {
       isStopping: () => stopping,
       onMaxCrashesExceeded: (count, max) => {
         console.error(`[autopilot] ${count}/${max} consecutive worker crashes, giving up.`);
-        void shutdown('max_crashes');
+        void shutdown("max_crashes");
       },
       onEvent: (event) => {
         // Route ChildWorkerSupervisor events to autopilot's stderr log.
         // Matches the prior console output shape so operators reading
         // existing logs see the same lines.
-        if (event.kind === 'worker_spawned') {
+        if (event.kind === "worker_spawned") {
           console.log(
-            `[autopilot] Minions worker spawned (pid: ${event.pid}, watchdog: ${autopilotMaxRssMb}MB${event.tini ? ', tini: active' : ''})`,
+            `[autopilot] Minions worker spawned (pid: ${event.pid}, watchdog: ${autopilotMaxRssMb}MB${event.tini ? ", tini: active" : ""})`
           );
-        } else if (event.kind === 'worker_spawn_failed') {
+        } else if (event.kind === "worker_spawn_failed") {
           console.error(
-            `[autopilot] worker spawn failed (${event.phase}): ${event.error}${event.errnoCode ? ` (code=${event.errnoCode})` : ''}`,
+            `[autopilot] worker spawn failed (${event.phase}): ${event.error}${event.errnoCode ? ` (code=${event.errnoCode})` : ""}`
           );
-        } else if (event.kind === 'worker_exited') {
+        } else if (event.kind === "worker_exited") {
           console.error(
-            `[autopilot] worker exited code=${event.code} signal=${event.signal} after ${event.runDurationMs}ms, crashCount=${event.crashCount}, cause=${event.likelyCause}`,
+            `[autopilot] worker exited code=${event.code} signal=${event.signal} after ${event.runDurationMs}ms, crashCount=${event.crashCount}, cause=${event.likelyCause}`
           );
-        } else if (event.kind === 'backoff') {
-          if (event.reason === 'budget_exceeded') {
+        } else if (event.kind === "backoff") {
+          if (event.reason === "budget_exceeded") {
             console.error(
-              `[autopilot] clean-restart budget exceeded; backing off ${event.ms}ms before next spawn`,
+              `[autopilot] clean-restart budget exceeded; backing off ${event.ms}ms before next spawn`
             );
-          } else if (event.reason === 'crash') {
+          } else if (event.reason === "crash") {
             console.error(
-              `[autopilot] crash backoff ${event.ms}ms (crashCount=${event.crashCount})`,
+              `[autopilot] crash backoff ${event.ms}ms (crashCount=${event.crashCount})`
             );
           }
           // reason='clean_exit' with ms:0 is the steady-state watchdog drain;
           // logging every iteration would be noisy. Keep silent (the
           // worker_exited line already covers the user-visible signal).
-        } else if (event.kind === 'health_warn') {
+        } else if (event.kind === "health_warn") {
           console.error(
-            `[autopilot] health_warn: ${event.reason} count=${event.count} window=${event.windowMs}ms`,
+            `[autopilot] health_warn: ${event.reason} count=${event.count} window=${event.windowMs}ms`
           );
         }
       },
@@ -445,12 +483,15 @@ export async function runAutopilot(engine: BrainEngine, args: string[]) {
     // the child-supervisor's isStopping accessor + drain.
     void childSupervisor.run();
   } else if (!useMinionsDispatch) {
-    const why = mode === 'off'
-      ? 'minion_mode=off'
-      : (engineType !== 'postgres' ? 'engine=pglite' : 'flag=--inline');
+    const why =
+      mode === "off"
+        ? "minion_mode=off"
+        : engineType !== "postgres"
+          ? "engine=pglite"
+          : "flag=--inline";
     console.log(`[autopilot] running steps inline (${why})`);
   } else {
-    console.log('[autopilot] --no-worker set: dispatch loop only (worker managed externally)');
+    console.log("[autopilot] --no-worker set: dispatch loop only (worker managed externally)");
   }
 
   // Async shutdown with 35s drain window for the worker child. The worker
@@ -463,23 +504,27 @@ export async function runAutopilot(engine: BrainEngine, args: string[]) {
   // v0.42+ Connector ingestion daemon.
   let connectorDaemon: IngestionDaemon | undefined;
   try {
-    const dispatch = async (event: import('../core/ingestion/types.ts').IngestionEvent) => {
+    const dispatch = async (event: import("../core/ingestion/types.ts").IngestionEvent) => {
       const queue = new MinionQueue(engine);
       const job = await queue.add(
-        'ingest_capture',
+        "ingest_capture",
         { event },
-        { idempotency_key: `ingest:${event.source_kind}:${event.content_hash}`, maxWaiting: 100 },
+        { idempotency_key: `ingest:${event.source_kind}:${event.content_hash}`, maxWaiting: 100 }
       );
-      return { kind: 'queued' as const, jobId: job.id };
+      return { kind: "queued" as const, jobId: job.id };
     };
     const logger = {
-      info: (msg: string) => { if (!jsonMode) console.log(`[connector] ${msg}`); },
+      info: (msg: string) => {
+        if (!jsonMode) console.log(`[connector] ${msg}`);
+      },
       warn: (msg: string) => console.error(`[connector] WARN: ${msg}`),
       error: (msg: string) => console.error(`[connector] ERR: ${msg}`),
     };
     connectorDaemon = await startConnectorIngestion(engine, logger as any, dispatch);
   } catch (err) {
-    console.error(`[connector] Daemon startup failed (non-blocking): ${err instanceof Error ? err.message : String(err)}`);
+    console.error(
+      `[connector] Daemon startup failed (non-blocking): ${err instanceof Error ? err.message : String(err)}`
+    );
   }
 
   // Async shutdown with 35s drain window for the worker child. The worker
@@ -494,21 +539,33 @@ export async function runAutopilot(engine: BrainEngine, args: string[]) {
     stopping = true;
     console.log(`Autopilot stopping (${sig}).`);
     if (connectorDaemon) {
-      console.log('[connector] Stopping connector daemon...');
-      try { await connectorDaemon.stop(); } catch { /* non-fatal */ }
-    }
-    if (childSupervisor) {
-      childSupervisor.killChild('SIGTERM');
-      await childSupervisor.awaitChildExit(35_000);
-      if (childSupervisor.childAlive) {
-        childSupervisor.killChild('SIGKILL');
+      console.log("[connector] Stopping connector daemon...");
+      try {
+        await connectorDaemon.stop();
+      } catch {
+        /* non-fatal */
       }
     }
-    try { unlinkSync(lockPath); } catch { /* already gone */ }
+    if (childSupervisor) {
+      childSupervisor.killChild("SIGTERM");
+      await childSupervisor.awaitChildExit(35_000);
+      if (childSupervisor.childAlive) {
+        childSupervisor.killChild("SIGKILL");
+      }
+    }
+    try {
+      unlinkSync(lockPath);
+    } catch {
+      /* already gone */
+    }
     process.exit(0);
   };
-  process.on('SIGTERM', () => { void shutdown('SIGTERM'); });
-  process.on('SIGINT',  () => { void shutdown('SIGINT'); });
+  process.on("SIGTERM", () => {
+    void shutdown("SIGTERM");
+  });
+  process.on("SIGINT", () => {
+    void shutdown("SIGINT");
+  });
 
   let consecutiveErrors = 0;
   // v0.37.7.0 #1162 — counter for consecutive reconnect failures.
@@ -517,7 +574,7 @@ export async function runAutopilot(engine: BrainEngine, args: string[]) {
   let autopilotReconnectFails = 0;
   const AUTOPILOT_MAX_RECONNECT_FAILS = Math.max(
     1,
-    Number(process.env.GBRAIN_AUTOPILOT_MAX_RECONNECT_FAILS) || 30,
+    Number(process.env.GBRAIN_AUTOPILOT_MAX_RECONNECT_FAILS) || 30
   );
   // Peer-worker liveness for --no-worker mode. The probe is a proxy, not
   // ground truth: SELECT count(*) of active jobs with a recent lock_until
@@ -543,7 +600,11 @@ export async function runAutopilot(engine: BrainEngine, args: string[]) {
 
     // Refresh the lock mtime so another cron-fired autopilot doesn't
     // declare the instance stale after 10 minutes (Codex C).
-    try { utimesSync(lockPath, new Date(), new Date()); } catch { /* best-effort */ }
+    try {
+      utimesSync(lockPath, new Date(), new Date());
+    } catch {
+      /* best-effort */
+    }
 
     // DB health check (reconnect if needed).
     //
@@ -561,7 +622,7 @@ export async function runAutopilot(engine: BrainEngine, args: string[]) {
     //     launchd's KeepAlive backoff actually backs off instead of
     //     thrashing.
     try {
-      await engine.getConfig('version');
+      await engine.getConfig("version");
       autopilotReconnectFails = 0; // reset on success
     } catch (probeErr) {
       try {
@@ -569,13 +630,13 @@ export async function runAutopilot(engine: BrainEngine, args: string[]) {
         await (engine as any).connect?.();
         autopilotReconnectFails = 0;
       } catch (e) {
-        logError('reconnect', e);
+        logError("reconnect", e);
         autopilotReconnectFails++;
         const klass = classifyReconnectError(e);
-        if (klass === 'unrecoverable') {
+        if (klass === "unrecoverable") {
           console.error(
-            `[autopilot] FATAL: unrecoverable DB error (${(e as Error).message ?? 'unknown'}). ` +
-            `Exiting so launchd ThrottleInterval can apply backoff.`,
+            `[autopilot] FATAL: unrecoverable DB error (${(e as Error).message ?? "unknown"}). ` +
+              `Exiting so launchd ThrottleInterval can apply backoff.`
           );
           stopping = true;
           process.exitCode = 1;
@@ -584,7 +645,7 @@ export async function runAutopilot(engine: BrainEngine, args: string[]) {
         if (autopilotReconnectFails >= AUTOPILOT_MAX_RECONNECT_FAILS) {
           console.error(
             `[autopilot] FATAL: ${autopilotReconnectFails} consecutive reconnect failures. ` +
-            `Last error: ${(e as Error).message ?? 'unknown'}. Exiting.`,
+              `Last error: ${(e as Error).message ?? "unknown"}. Exiting.`
           );
           stopping = true;
           process.exitCode = 1;
@@ -606,7 +667,7 @@ export async function runAutopilot(engine: BrainEngine, args: string[]) {
           `SELECT count(*)::int AS n FROM minion_jobs
              WHERE status = 'active'
                AND lock_until IS NOT NULL
-               AND lock_until > now() - interval '2 minutes'`,
+               AND lock_until > now() - interval '2 minutes'`
         );
         const liveWorkerSignal = Number((rows as Array<{ n: number }>)?.[0]?.n ?? 0);
         if (liveWorkerSignal === 0) {
@@ -617,13 +678,15 @@ export async function runAutopilot(engine: BrainEngine, args: string[]) {
             // live worker is seen again.
             console.error(
               `[autopilot] WARNING: --no-worker set and no worker has claimed a job in ~${NO_WORKER_WARN_TICKS * baseInterval}s. ` +
-              `Jobs will pile up in 'waiting' until a worker starts. ` +
-              `Probe is a proxy (lock_until refresh) and can false-positive on idle queues — see B7 for ground-truth follow-up.`,
+                `Jobs will pile up in 'waiting' until a worker starts. ` +
+                `Probe is a proxy (lock_until refresh) and can false-positive on idle queues — see B7 for ground-truth follow-up.`
             );
           }
         } else {
           if (noWorkerConsecutiveIdle >= NO_WORKER_WARN_TICKS) {
-            console.log('[autopilot] --no-worker probe: live worker signal detected; warning re-armed.');
+            console.log(
+              "[autopilot] --no-worker probe: live worker signal detected; warning re-armed."
+            );
           }
           noWorkerConsecutiveIdle = 0;
         }
@@ -631,7 +694,7 @@ export async function runAutopilot(engine: BrainEngine, args: string[]) {
         // Probe failures never block the main dispatch loop. Log once per
         // failure class; ignore repeated errors (common shape: DB reconnect
         // blip between ticks).
-        logError('no-worker-probe', e);
+        logError("no-worker-probe", e);
       }
     }
 
@@ -663,8 +726,9 @@ export async function runAutopilot(engine: BrainEngine, args: string[]) {
       // the two closes the silent-stale-source bug class on
       // poll-only deployments.
       try {
-        const { MinionQueue } = await import('../core/minions/queue.ts');
-        const { computeRecommendations, embeddingProviderConfigured, HOSTED_EMBED_KEY_CONFIG } = await import('../core/brain-score-recommendations.ts');
+        const { MinionQueue } = await import("../core/minions/queue.ts");
+        const { computeRecommendations, embeddingProviderConfigured, HOSTED_EMBED_KEY_CONFIG } =
+          await import("../core/brain-score-recommendations.ts");
         const queue = new MinionQueue(engine);
         const slotMs = Math.floor(Date.now() / (baseInterval * 1000)) * baseInterval * 1000;
         const slot = new Date(slotMs).toISOString();
@@ -676,9 +740,9 @@ export async function runAutopilot(engine: BrainEngine, args: string[]) {
         // handler (T6/T7) auto-enqueues embed-backfill on completion if
         // pages changed.
         try {
-          const { isFederatedV2Enabled } = await import('../core/feature-flags.ts');
+          const { isFederatedV2Enabled } = await import("../core/feature-flags.ts");
           if (await isFederatedV2Enabled(engine)) {
-            const { loadAllSources } = await import('../core/sources-load.ts');
+            const { loadAllSources } = await import("../core/sources-load.ts");
             const sources = await loadAllSources(engine);
             const intervalMs = baseInterval * 1000;
             const now = Date.now();
@@ -689,36 +753,43 @@ export async function runAutopilot(engine: BrainEngine, args: string[]) {
               if (ageMs < intervalMs) continue; // fresh enough
               try {
                 const job = await queue.add(
-                  'sync',
+                  "sync",
                   {
                     sourceId: src.id,
                     repoPath: src.local_path,
                     auto_embed_backfill: true,
-                    embed_reason: 'autopilot_freshness',
+                    embed_reason: "autopilot_freshness",
                   },
                   {
-                    queue: 'default',
+                    queue: "default",
                     idempotency_key: `autopilot-sync:${src.id}:${slot}`,
                     max_attempts: 2,
                     timeout_ms: timeoutMs,
                     maxWaiting: 1,
-                  },
+                  }
                 );
                 if (jsonMode) {
-                  process.stderr.write(JSON.stringify({
-                    event: 'dispatched', job_id: job.id, mode: 'freshness',
-                    source_id: src.id, age_ms: ageMs,
-                  }) + '\n');
+                  process.stderr.write(
+                    JSON.stringify({
+                      event: "dispatched",
+                      job_id: job.id,
+                      mode: "freshness",
+                      source_id: src.id,
+                      age_ms: ageMs,
+                    }) + "\n"
+                  );
                 } else {
-                  console.log(`[dispatch] job #${job.id} sync (freshness: ${src.id}; age=${Math.floor(ageMs / 60000)}min)`);
+                  console.log(
+                    `[dispatch] job #${job.id} sync (freshness: ${src.id}; age=${Math.floor(ageMs / 60000)}min)`
+                  );
                 }
               } catch (e) {
-                logError('dispatch.freshness', e);
+                logError("dispatch.freshness", e);
               }
             }
           }
         } catch (e) {
-          logError('dispatch.freshness-gate', e);
+          logError("dispatch.freshness-gate", e);
         }
 
         // ── #1685 GAP D: per-source extract_atoms auto-drain ───────────────
@@ -729,15 +800,15 @@ export async function runAutopilot(engine: BrainEngine, args: string[]) {
         // phase. Default-ON, daily-spend-capped, time-sloted key so a new slot
         // opens each UTC day (CODEX #1/#2/#3, DECISION 3C). Postgres-only —
         // PGLite has no multi-process worker to run the job.
-        if (engine.kind === 'postgres') {
+        if (engine.kind === "postgres") {
           try {
-            const enabled = (await engine.getConfig('autopilot.auto_drain.enabled')) !== 'false';
+            const enabled = (await engine.getConfig("autopilot.auto_drain.enabled")) !== "false";
             if (enabled) {
-              const { packDeclaresPhase } = await import('../core/cycle.ts');
+              const { packDeclaresPhase } = await import("../core/cycle.ts");
               // packDeclaresPhase reads the active pack (brain-wide, not
               // per-source). If the pack declares extract_atoms the routine
               // cycle already drains it for every source — nothing to do.
-              const declares = await packDeclaresPhase(engine, 'extract_atoms');
+              const declares = await packDeclaresPhase(engine, "extract_atoms");
               if (!declares) {
                 const parsePosInt = (v: string | null, d: number): number => {
                   if (v == null) return d;
@@ -749,9 +820,18 @@ export async function runAutopilot(engine: BrainEngine, args: string[]) {
                   const n = parseFloat(v);
                   return Number.isFinite(n) && n >= 0 ? n : d;
                 };
-                const threshold = parsePosInt(await engine.getConfig('autopilot.auto_drain.threshold'), 25);
-                const windowSeconds = parsePosInt(await engine.getConfig('autopilot.auto_drain.window_seconds'), 120);
-                const maxUsdPerDay = parseNonNegFloat(await engine.getConfig('autopilot.auto_drain.max_usd_per_day'), 2.0);
+                const threshold = parsePosInt(
+                  await engine.getConfig("autopilot.auto_drain.threshold"),
+                  25
+                );
+                const windowSeconds = parsePosInt(
+                  await engine.getConfig("autopilot.auto_drain.window_seconds"),
+                  120
+                );
+                const maxUsdPerDay = parseNonNegFloat(
+                  await engine.getConfig("autopilot.auto_drain.max_usd_per_day"),
+                  2.0
+                );
                 // Each drain run is BudgetTracker-capped at ~$0.30; bound the
                 // brain-wide daily count instead of a real-time spend ledger.
                 const PER_RUN_USD = 0.3;
@@ -762,7 +842,7 @@ export async function runAutopilot(engine: BrainEngine, args: string[]) {
                 try {
                   const rows = await engine.executeRaw<{ cnt: number }>(
                     `SELECT count(*)::int AS cnt FROM minion_jobs WHERE name = 'extract-atoms-drain' AND created_at >= $1::timestamptz`,
-                    [`${utcDay}T00:00:00Z`],
+                    [`${utcDay}T00:00:00Z`]
                   );
                   submittedToday = rows[0]?.cnt ?? 0;
                 } catch {
@@ -770,8 +850,9 @@ export async function runAutopilot(engine: BrainEngine, args: string[]) {
                 }
 
                 if (submittedToday < maxJobsToday) {
-                  const { loadAllSources } = await import('../core/sources-load.ts');
-                  const { countExtractAtomsBacklog } = await import('../core/cycle/extract-atoms.ts');
+                  const { loadAllSources } = await import("../core/sources-load.ts");
+                  const { countExtractAtomsBacklog } =
+                    await import("../core/cycle/extract-atoms.ts");
                   const sources = await loadAllSources(engine);
                   for (const src of sources) {
                     if (submittedToday >= maxJobsToday) break; // brain-wide daily cap (fairness)
@@ -795,38 +876,45 @@ export async function runAutopilot(engine: BrainEngine, args: string[]) {
                       // index make this pre-check race-free.
                       const dupe = await engine.executeRaw<{ one: number }>(
                         `SELECT 1 AS one FROM minion_jobs WHERE idempotency_key = $1 LIMIT 1`,
-                        [idemKey],
+                        [idemKey]
                       );
                       if (dupe.length > 0) continue; // already queued/drained for this source today
                       const job = await queue.add(
-                        'extract-atoms-drain',
+                        "extract-atoms-drain",
                         { sourceId: src.id, window: windowSeconds, repoPath: src.local_path },
                         {
-                          queue: 'default',
+                          queue: "default",
                           idempotency_key: idemKey,
                           max_attempts: 1,
                           timeout_ms: timeoutMs,
                         },
-                        { allowProtectedSubmit: true },
+                        { allowProtectedSubmit: true }
                       );
                       submittedToday++;
                       if (jsonMode) {
-                        process.stderr.write(JSON.stringify({
-                          event: 'dispatched', job_id: job.id, mode: 'auto-drain',
-                          source_id: src.id, backlog,
-                        }) + '\n');
+                        process.stderr.write(
+                          JSON.stringify({
+                            event: "dispatched",
+                            job_id: job.id,
+                            mode: "auto-drain",
+                            source_id: src.id,
+                            backlog,
+                          }) + "\n"
+                        );
                       } else {
-                        console.log(`[dispatch] job #${job.id} extract-atoms-drain (auto-drain: ${src.id}; backlog=${backlog})`);
+                        console.log(
+                          `[dispatch] job #${job.id} extract-atoms-drain (auto-drain: ${src.id}; backlog=${backlog})`
+                        );
                       }
                     } catch (e) {
-                      logError('dispatch.auto-drain', e);
+                      logError("dispatch.auto-drain", e);
                     }
                   }
                 }
               }
             }
           } catch (e) {
-            logError('dispatch.auto-drain-gate', e);
+            logError("dispatch.auto-drain-gate", e);
           }
         }
 
@@ -839,10 +927,10 @@ export async function runAutopilot(engine: BrainEngine, args: string[]) {
         // passed to embeddingProviderConfigured() can stay synchronous.
         let embeddingModel: string | undefined;
         try {
-          const gw = await import('../core/ai/gateway.ts');
+          const gw = await import("../core/ai/gateway.ts");
           embeddingModel = gw.getEmbeddingModel();
         } catch {
-          embeddingModel = (await engine.getConfig('embedding_model')) ?? undefined;
+          embeddingModel = (await engine.getConfig("embedding_model")) ?? undefined;
         }
         const embedKeyCfg: Record<string, string | null> = {};
         for (const field of Object.values(HOSTED_EMBED_KEY_CONFIG)) {
@@ -855,7 +943,9 @@ export async function runAutopilot(engine: BrainEngine, args: string[]) {
             const cfgField = HOSTED_EMBED_KEY_CONFIG[envVar];
             return !!(process.env[envVar] || (cfgField ? embedKeyCfg[cfgField] : undefined));
           }),
-          hasChatApiKey: !!(process.env.ANTHROPIC_API_KEY || await engine.getConfig('anthropic_api_key')),
+          hasChatApiKey: !!(
+            process.env.ANTHROPIC_API_KEY || (await engine.getConfig("anthropic_api_key"))
+          ),
         };
         // v0.41.18.0 (A5 + A19 + A22, T15): consult onboard recommendations
         // ALONGSIDE doctor's brain-score recommendations. Onboard's 4 new
@@ -865,15 +955,17 @@ export async function runAutopilot(engine: BrainEngine, args: string[]) {
         // to legacy doctor-only plan (no crash).
         let extraRemediations: ReturnType<typeof computeRecommendations> = [];
         try {
-          const { runAllOnboardChecks } = await import('../core/onboard/checks.ts');
+          const { runAllOnboardChecks } = await import("../core/onboard/checks.ts");
           const onboardResults = await runAllOnboardChecks(engine);
           extraRemediations = onboardResults.flatMap((r) => r.remediations);
         } catch (err) {
           process.stderr.write(
-            `[autopilot] onboard checks failed (fail-open per A19): ${err instanceof Error ? err.message : String(err)}\n`,
+            `[autopilot] onboard checks failed (fail-open per A19): ${err instanceof Error ? err.message : String(err)}\n`
           );
         }
-        const plan = computeRecommendations(health, ctx, extraRemediations).filter((r) => r.status === 'remediable');
+        const plan = computeRecommendations(health, ctx, extraRemediations).filter(
+          (r) => r.status === "remediable"
+        );
         const estTotal = plan.reduce((s, r) => s + r.est_seconds, 0);
 
         // Track time since last full cycle for the 60-min floor.
@@ -886,11 +978,14 @@ export async function runAutopilot(engine: BrainEngine, args: string[]) {
           estTotal >= 300 ||
           score < 70;
 
-        const shouldSleep = score >= 95 && plan.length === 0 && minutesSinceLastFull < FULL_CYCLE_FLOOR_MIN;
+        const shouldSleep =
+          score >= 95 && plan.length === 0 && minutesSinceLastFull < FULL_CYCLE_FLOOR_MIN;
 
         if (shouldSleep) {
           if (jsonMode) {
-            process.stderr.write(JSON.stringify({ event: 'skip_healthy', score, plan_size: 0 }) + '\n');
+            process.stderr.write(
+              JSON.stringify({ event: "skip_healthy", score, plan_size: 0 }) + "\n"
+            );
           }
         } else if (shouldFullCycle) {
           // v0.38: per-source fan-out replaces the single-job dispatch.
@@ -901,7 +996,7 @@ export async function runAutopilot(engine: BrainEngine, args: string[]) {
           // codex P1-3). Fresh-install brains with no sources rows fall
           // back to the legacy single autopilot-cycle so existing
           // behavior is preserved.
-          const { dispatchPerSource, resolveFanoutMax } = await import('./autopilot-fanout.ts');
+          const { dispatchPerSource, resolveFanoutMax } = await import("./autopilot-fanout.ts");
           const fanoutMax = await resolveFanoutMax(engine);
           const result = await dispatchPerSource(engine, queue, {
             repoPath,
@@ -914,20 +1009,22 @@ export async function runAutopilot(engine: BrainEngine, args: string[]) {
             lastFullCycleAt = Date.now();
           }
           if (jsonMode) {
-            process.stderr.write(JSON.stringify({
-              event: 'fanout_summary',
-              dispatched: result.dispatched,
-              skipped_fresh: result.skipped_fresh,
-              skipped_cap: result.skipped_cap,
-              legacy_fallback: result.legacy_fallback,
-              fanout_max: fanoutMax,
-              score,
-            }) + '\n');
+            process.stderr.write(
+              JSON.stringify({
+                event: "fanout_summary",
+                dispatched: result.dispatched,
+                skipped_fresh: result.skipped_fresh,
+                skipped_cap: result.skipped_cap,
+                legacy_fallback: result.legacy_fallback,
+                fanout_max: fanoutMax,
+                score,
+              }) + "\n"
+            );
           } else if (!result.legacy_fallback) {
             console.log(
               `[dispatch] fanout: ${result.dispatched.length} dispatched, ` +
-              `${result.skipped_fresh.length} fresh, ${result.skipped_cap.length} capped ` +
-              `(score=${score}, max=${fanoutMax})`,
+                `${result.skipped_fresh.length} fresh, ${result.skipped_cap.length} capped ` +
+                `(score=${score}, max=${fanoutMax})`
             );
           }
         } else {
@@ -939,7 +1036,7 @@ export async function runAutopilot(engine: BrainEngine, args: string[]) {
             try {
               const isProtected = !!step.protected;
               const submitOpts = {
-                queue: 'default',
+                queue: "default",
                 idempotency_key: step.idempotency_key,
                 max_attempts: 2,
                 timeout_ms: timeoutMs,
@@ -949,26 +1046,40 @@ export async function runAutopilot(engine: BrainEngine, args: string[]) {
                 step.job,
                 step.params,
                 submitOpts,
-                isProtected ? { allowProtectedSubmit: true } : undefined,
+                isProtected ? { allowProtectedSubmit: true } : undefined
               );
               if (jsonMode) {
-                process.stderr.write(JSON.stringify({ event: 'dispatched', job_id: job.id, mode: 'targeted', step: step.id, score, plan_size: plan.length }) + '\n');
+                process.stderr.write(
+                  JSON.stringify({
+                    event: "dispatched",
+                    job_id: job.id,
+                    mode: "targeted",
+                    step: step.id,
+                    score,
+                    plan_size: plan.length,
+                  }) + "\n"
+                );
               } else {
-                console.log(`[dispatch] job #${job.id} ${step.job} (targeted: ${step.id}; score=${score})`);
+                console.log(
+                  `[dispatch] job #${job.id} ${step.job} (targeted: ${step.id}; score=${score})`
+                );
               }
             } catch (e) {
-              logError('dispatch.step', e);
+              logError("dispatch.step", e);
             }
           }
         }
-      } catch (e) { logError('dispatch', e); cycleOk = false; }
+      } catch (e) {
+        logError("dispatch", e);
+        cycleOk = false;
+      }
     } else {
       // Inline fallback — delegate to runCycle so lint + backlinks +
       // orphan sweep run too (previously this path only did sync +
       // extract + embed, which didn't match the Minions-dispatch
       // path's phase set). Now both converge on the same primitive.
       try {
-        const { runCycle } = await import('../core/cycle.ts');
+        const { runCycle } = await import("../core/cycle.ts");
         const report = await runCycle(engine, {
           brainDir: repoPath,
           // Autopilot daemon path: pulls by default (matches
@@ -976,7 +1087,7 @@ export async function runAutopilot(engine: BrainEngine, args: string[]) {
           // for cron safety; that choice is scoped to dream only.
           pull: true,
           yieldBetweenPhases: async () => {
-            await new Promise(r => setImmediate(r));
+            await new Promise((r) => setImmediate(r));
           },
         });
         // Only 'failed' (every attempted phase failed) trips the autopilot
@@ -985,16 +1096,28 @@ export async function runAutopilot(engine: BrainEngine, args: string[]) {
         // condition. Treating 'partial' as failure here caused respawn
         // storms under KeepAlive=true on brains where a single phase
         // (typically `orphans`) emits a 'warn' every cycle in steady state.
-        if (report.status === 'failed') {
+        if (report.status === "failed") {
           cycleOk = false;
         }
         if (jsonMode) {
-          process.stderr.write(JSON.stringify({ event: 'cycle-inline', status: report.status, duration_ms: report.duration_ms, totals: report.totals }) + '\n');
+          process.stderr.write(
+            JSON.stringify({
+              event: "cycle-inline",
+              status: report.status,
+              duration_ms: report.duration_ms,
+              totals: report.totals,
+            }) + "\n"
+          );
         } else {
           const t = report.totals;
-          console.log(`[cycle-inline ${report.status}] lint=${t.lint_fixes} backlinks=${t.backlinks_added} synced=${t.pages_synced} extracted=${t.pages_extracted} embedded=${t.pages_embedded} orphans=${t.orphans_found}`);
+          console.log(
+            `[cycle-inline ${report.status}] lint=${t.lint_fixes} backlinks=${t.backlinks_added} synced=${t.pages_synced} extracted=${t.pages_extracted} embedded=${t.pages_embedded} orphans=${t.orphans_found}`
+          );
         }
-      } catch (e) { logError('cycle-inline', e); cycleOk = false; }
+      } catch (e) {
+        logError("cycle-inline", e);
+        cycleOk = false;
+      }
     }
 
     // 4. Health check + adaptive interval (same for both paths)
@@ -1002,26 +1125,38 @@ export async function runAutopilot(engine: BrainEngine, args: string[]) {
     try {
       const health = await engine.getHealth();
       const score = (health as any).brain_score ?? 50;
-      interval = score >= 90 ? baseInterval * 2
-               : score < 70 ? Math.max(Math.floor(baseInterval / 2), 60)
-               : baseInterval;
+      interval =
+        score >= 90
+          ? baseInterval * 2
+          : score < 70
+            ? Math.max(Math.floor(baseInterval / 2), 60)
+            : baseInterval;
 
       const elapsed = ((Date.now() - cycleStart) / 1000).toFixed(0);
       const line = `[cycle] score=${score} elapsed=${elapsed}s next=${interval}s`;
       if (jsonMode) {
-        process.stderr.write(JSON.stringify({ event: 'cycle', brain_score: score, elapsed_s: Number(elapsed), next_s: interval }) + '\n');
+        process.stderr.write(
+          JSON.stringify({
+            event: "cycle",
+            brain_score: score,
+            elapsed_s: Number(elapsed),
+            next_s: interval,
+          }) + "\n"
+        );
       } else {
         console.log(line);
       }
-    } catch (e) { logError('health', e); }
+    } catch (e) {
+      logError("health", e);
+    }
 
     if (cycleOk) {
       consecutiveErrors = 0;
     } else {
       consecutiveErrors++;
       if (consecutiveErrors >= 5) {
-        console.error('5 consecutive cycle failures. Stopping autopilot.');
-        void shutdown('cycle-failure-cap');
+        console.error("5 consecutive cycle failures. Stopping autopilot.");
+        void shutdown("cycle-failure-cap");
         break;
       }
     }
@@ -1036,46 +1171,47 @@ export async function runAutopilot(engine: BrainEngine, args: string[]) {
     try {
       const probeEnabled = cfg?.autopilot?.nightly_quality_probe?.enabled === true;
       if (probeEnabled) {
-        const { runNightlyQualityProbe } = await import('../core/cycle/nightly-quality-probe.ts');
-        const { runLongMemEvalForProbe, runCrossModalBatchForProbe } = await import('../core/cycle/nightly-probe-adapters.ts');
-        const { isAvailable } = await import('../core/ai/gateway.ts');
+        const { runNightlyQualityProbe } = await import("../core/cycle/nightly-quality-probe.ts");
+        const { runLongMemEvalForProbe, runCrossModalBatchForProbe } =
+          await import("../core/cycle/nightly-probe-adapters.ts");
+        const { isAvailable } = await import("../core/ai/gateway.ts");
         const maxUsd = Number(cfg?.autopilot?.nightly_quality_probe?.max_usd ?? 5);
         await runNightlyQualityProbe({
           isEnabled: () => true, // already gated above; phase re-checks for defense-in-depth
-          hasEmbeddingProvider: () => isAvailable('embedding'),
+          hasEmbeddingProvider: () => isAvailable("embedding"),
           resolveMaxUsd: () => maxUsd,
-          resolveRepoRoot: () => repoPath ?? gbrainHomePath('.'),
+          resolveRepoRoot: () => repoPath ?? gbrainHomePath("."),
           runLongMemEval: runLongMemEvalForProbe,
           runCrossModalBatch: runCrossModalBatchForProbe,
           now: () => new Date(),
         });
       }
     } catch (e) {
-      logError('autopilot.nightly_probe', e);
+      logError("autopilot.nightly_probe", e);
       // Intentional: do NOT bump consecutiveErrors. Probe failure is
       // informational; autopilot loop continues.
     }
 
     // Wait for next cycle
-    await new Promise(r => setTimeout(r, interval * 1000));
+    await new Promise((r) => setTimeout(r, interval * 1000));
   }
 }
 
 // --- Install/Uninstall ---
 
 function plistPath(): string {
-  return join(process.env.HOME || '', 'Library', 'LaunchAgents', 'com.gbrain.autopilot.plist');
+  return join(process.env.HOME || "", "Library", "LaunchAgents", "com.gbrain.autopilot.plist");
 }
 
 function systemdUnitPath(): string {
-  return join(process.env.HOME || '', '.config', 'systemd', 'user', 'gbrain-autopilot.service');
+  return join(process.env.HOME || "", ".config", "systemd", "user", "gbrain-autopilot.service");
 }
 
 function ephemeralStartScriptPath(): string {
-  return join(process.env.HOME || '', '.gbrain', 'start-autopilot.sh');
+  return join(process.env.HOME || "", ".gbrain", "start-autopilot.sh");
 }
 
-export type InstallTarget = 'macos' | 'linux-systemd' | 'ephemeral-container' | 'linux-cron';
+export type InstallTarget = "macos" | "linux-systemd" | "ephemeral-container" | "linux-cron";
 
 /**
  * Detect the right supervisor for this host.
@@ -1090,51 +1226,54 @@ export type InstallTarget = 'macos' | 'linux-systemd' | 'ephemeral-container' | 
  *   - linux-cron  → fallback.
  */
 export function detectInstallTarget(): InstallTarget {
-  if (process.platform === 'darwin') return 'macos';
+  if (process.platform === "darwin") return "macos";
 
   const ephemeral = !!(
-    process.env.RENDER
-    || process.env.RAILWAY_ENVIRONMENT
-    || process.env.FLY_APP_NAME
-    || existsSync('/.dockerenv')
+    process.env.RENDER ||
+    process.env.RAILWAY_ENVIRONMENT ||
+    process.env.FLY_APP_NAME ||
+    existsSync("/.dockerenv")
   );
-  if (ephemeral) return 'ephemeral-container';
+  if (ephemeral) return "ephemeral-container";
 
-  if (existsSync('/run/systemd/system')) {
+  if (existsSync("/run/systemd/system")) {
     try {
-      execSync('systemctl --user is-system-running', { stdio: 'pipe', timeout: 3000 });
-      return 'linux-systemd';
+      execSync("systemctl --user is-system-running", { stdio: "pipe", timeout: 3000 });
+      return "linux-systemd";
     } catch {
       // user bus not available → fall through to cron.
     }
   }
 
-  return 'linux-cron';
+  return "linux-cron";
 }
 
 function detectOpenClaw(): { detected: boolean; bootstrapCandidates: string[] } {
-  const home = process.env.HOME || '';
+  const home = process.env.HOME || "";
   const candidates = [
-    process.env.OPENCLAW_HOME ? join(process.env.OPENCLAW_HOME, 'hooks', 'bootstrap', 'ensure-services.sh') : '',
-    join(process.cwd(), 'hooks', 'bootstrap', 'ensure-services.sh'),
-    join(home, '.claude', 'hooks', 'bootstrap', 'ensure-services.sh'),
+    process.env.OPENCLAW_HOME
+      ? join(process.env.OPENCLAW_HOME, "hooks", "bootstrap", "ensure-services.sh")
+      : "",
+    join(process.cwd(), "hooks", "bootstrap", "ensure-services.sh"),
+    join(home, ".claude", "hooks", "bootstrap", "ensure-services.sh"),
   ].filter(Boolean) as string[];
-  const existing = candidates.filter(p => existsSync(p));
-  const signal = !!process.env.OPENCLAW_HOME
-    || existsSync(join(process.cwd(), 'openclaw.json'))
-    || existsSync(join(home, 'openclaw.json'))
-    || existing.length > 0;
+  const existing = candidates.filter((p) => existsSync(p));
+  const signal =
+    !!process.env.OPENCLAW_HOME ||
+    existsSync(join(process.cwd(), "openclaw.json")) ||
+    existsSync(join(home, "openclaw.json")) ||
+    existing.length > 0;
   return { detected: signal, bootstrapCandidates: existing };
 }
 
 function writeWrapperScript(repoPath: string): string {
-  const home = process.env.HOME || '';
-  const gbrainDir = join(home, '.gbrain');
+  const home = process.env.HOME || "";
+  const gbrainDir = join(home, ".gbrain");
   mkdirSync(gbrainDir, { recursive: true });
 
   // Wrapper sources the user's shell profile for API keys so nothing is
   // baked into plist/crontab/systemd unit files (#2).
-  const wrapperPath = join(gbrainDir, 'autopilot-run.sh');
+  const wrapperPath = join(gbrainDir, "autopilot-run.sh");
   const gbrainPath = resolveGbrainCliPath();
   const safeRepoPath = repoPath.replace(/'/g, "'\\''");
   const safeGbrainPath = gbrainPath.replace(/'/g, "'\\''");
@@ -1154,36 +1293,38 @@ exec '${safeGbrainPath}' autopilot --repo '${safeRepoPath}'
 }
 
 async function installDaemon(engine: BrainEngine, args: string[]) {
-  const repoPath = parseArg(args, '--repo') || await engine.getConfig('sync.repo_path');
+  const repoPath = parseArg(args, "--repo") || (await engine.getConfig("sync.repo_path"));
   if (!repoPath) {
-    console.error('No repo path. Use --repo or run gbrain sync --repo first.');
+    console.error("No repo path. Use --repo or run gbrain sync --repo first.");
     process.exit(1);
   }
 
-  const forcedTarget = parseArg(args, '--target') as InstallTarget | undefined;
+  const forcedTarget = parseArg(args, "--target") as InstallTarget | undefined;
   const target: InstallTarget = forcedTarget ?? detectInstallTarget();
 
-  const injectBootstrap = args.includes('--inject-bootstrap');
-  const noInject = args.includes('--no-inject');
+  const injectBootstrap = args.includes("--inject-bootstrap");
+  const noInject = args.includes("--no-inject");
 
   const wrapperPath = writeWrapperScript(repoPath);
-  const home = process.env.HOME || '';
+  const home = process.env.HOME || "";
 
   switch (target) {
-    case 'macos':
+    case "macos":
       installLaunchd(wrapperPath, home, repoPath);
       break;
-    case 'linux-systemd':
+    case "linux-systemd":
       installSystemd(wrapperPath, repoPath);
       break;
-    case 'ephemeral-container':
+    case "ephemeral-container":
       installEphemeralContainer(wrapperPath, home, repoPath, { injectBootstrap, noInject });
       break;
-    case 'linux-cron':
+    case "linux-cron":
       installCrontab(wrapperPath, home);
       break;
     default: {
-      console.error(`Unknown --target "${forcedTarget}". Allowed: macos, linux-systemd, ephemeral-container, linux-cron.`);
+      console.error(
+        `Unknown --target "${forcedTarget}". Allowed: macos, linux-systemd, ephemeral-container, linux-cron.`
+      );
       process.exit(2);
     }
   }
@@ -1222,18 +1363,18 @@ function installLaunchd(wrapperPath: string, home: string, repoPath: string) {
   const plist = generateLaunchdPlist(wrapperPath, home);
 
   try {
-    const agentsDir = join(home, 'Library', 'LaunchAgents');
+    const agentsDir = join(home, "Library", "LaunchAgents");
     mkdirSync(agentsDir, { recursive: true });
     writeFileSync(plistPath(), plist);
-    execSync(`launchctl load "${plistPath()}"`, { stdio: 'pipe' });
-    console.log('Installed launchd service: com.gbrain.autopilot');
+    execSync(`launchctl load "${plistPath()}"`, { stdio: "pipe" });
+    console.log("Installed launchd service: com.gbrain.autopilot");
     console.log(`  Repo: ${repoPath}`);
     console.log(`  Log: ~/.gbrain/autopilot.log`);
-    console.log('  Uninstall: gbrain autopilot --uninstall');
+    console.log("  Uninstall: gbrain autopilot --uninstall");
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e);
-    if (msg.includes('EACCES') || msg.includes('Permission')) {
-      console.error('Permission denied writing plist. Try: mkdir -p ~/Library/LaunchAgents');
+    if (msg.includes("EACCES") || msg.includes("Permission")) {
+      console.error("Permission denied writing plist. Try: mkdir -p ~/Library/LaunchAgents");
     } else {
       console.error(`Failed to install: ${msg}`);
     }
@@ -1283,46 +1424,46 @@ WantedBy=default.target
  * a no-op once already `Restart=always`. Best-effort; called from runPostUpgrade.
  */
 export function migrateSystemdUnitToRestartAlways(): { rewritten: boolean; reason: string } {
-  if (process.platform !== 'linux') return { rewritten: false, reason: 'not-linux' };
+  if (process.platform !== "linux") return { rewritten: false, reason: "not-linux" };
   let unitPath: string;
   try {
     unitPath = systemdUnitPath();
   } catch {
-    return { rewritten: false, reason: 'no-unit-path' };
+    return { rewritten: false, reason: "no-unit-path" };
   }
-  if (!existsSync(unitPath)) return { rewritten: false, reason: 'no-unit' };
+  if (!existsSync(unitPath)) return { rewritten: false, reason: "no-unit" };
   let content: string;
   try {
-    content = readFileSync(unitPath, 'utf8');
+    content = readFileSync(unitPath, "utf8");
   } catch {
-    return { rewritten: false, reason: 'unreadable' };
+    return { rewritten: false, reason: "unreadable" };
   }
-  if (!content.includes('Restart=on-failure')) {
-    return { rewritten: false, reason: 'already-migrated' };
+  if (!content.includes("Restart=on-failure")) {
+    return { rewritten: false, reason: "already-migrated" };
   }
   // Hard guard: must look like OUR generated unit, not a hand-edited one.
   const execMatch = content.match(/ExecStart=(\S+)/);
   const looksGenerated =
-    content.includes('Description=GBrain Autopilot') &&
-    content.includes('StandardOutput=append:%h/.gbrain/autopilot.log') &&
+    content.includes("Description=GBrain Autopilot") &&
+    content.includes("StandardOutput=append:%h/.gbrain/autopilot.log") &&
     !!execMatch;
   if (!looksGenerated) {
     process.stderr.write(
-      '[gbrain] autopilot systemd unit looks hand-edited; NOT rewriting Restart=on-failure. ' +
-        'Set Restart=always manually so self-upgrade relaunch works.\n',
+      "[gbrain] autopilot systemd unit looks hand-edited; NOT rewriting Restart=on-failure. " +
+        "Set Restart=always manually so self-upgrade relaunch works.\n"
     );
-    return { rewritten: false, reason: 'hand-edited' };
+    return { rewritten: false, reason: "hand-edited" };
   }
   try {
     writeFileSync(unitPath, generateSystemdUnit(execMatch![1]));
     try {
-      execSync('systemctl --user daemon-reload', { stdio: 'pipe', timeout: 10_000 });
+      execSync("systemctl --user daemon-reload", { stdio: "pipe", timeout: 10_000 });
     } catch {
       /* daemon-reload best-effort */
     }
-    return { rewritten: true, reason: 'rewritten' };
+    return { rewritten: true, reason: "rewritten" };
   } catch (e) {
-    return { rewritten: false, reason: e instanceof Error ? e.message : 'write-failed' };
+    return { rewritten: false, reason: e instanceof Error ? e.message : "write-failed" };
   }
 }
 
@@ -1330,17 +1471,22 @@ function installSystemd(wrapperPath: string, repoPath: string) {
   const unit = generateSystemdUnit(wrapperPath);
   try {
     const unitPath = systemdUnitPath();
-    mkdirSync(join(process.env.HOME || '', '.config', 'systemd', 'user'), { recursive: true });
+    mkdirSync(join(process.env.HOME || "", ".config", "systemd", "user"), { recursive: true });
     writeFileSync(unitPath, unit);
-    execSync('systemctl --user daemon-reload', { stdio: 'pipe', timeout: 10_000 });
-    execSync('systemctl --user enable --now gbrain-autopilot.service', { stdio: 'pipe', timeout: 15_000 });
-    console.log('Installed systemd user service: gbrain-autopilot.service');
+    execSync("systemctl --user daemon-reload", { stdio: "pipe", timeout: 10_000 });
+    execSync("systemctl --user enable --now gbrain-autopilot.service", {
+      stdio: "pipe",
+      timeout: 15_000,
+    });
+    console.log("Installed systemd user service: gbrain-autopilot.service");
     console.log(`  Repo: ${repoPath}`);
-    console.log('  Log: ~/.gbrain/autopilot.log');
-    console.log('  Uninstall: gbrain autopilot --uninstall');
+    console.log("  Log: ~/.gbrain/autopilot.log");
+    console.log("  Uninstall: gbrain autopilot --uninstall");
   } catch (e: unknown) {
     console.error(`Failed to install systemd unit: ${e instanceof Error ? e.message : e}`);
-    console.error('You may need: `loginctl enable-linger $USER` so the unit runs without a login session.');
+    console.error(
+      "You may need: `loginctl enable-linger $USER` so the unit runs without a login session."
+    );
     process.exit(1);
   }
 }
@@ -1349,7 +1495,7 @@ function installEphemeralContainer(
   wrapperPath: string,
   home: string,
   repoPath: string,
-  opts: { injectBootstrap: boolean; noInject: boolean },
+  opts: { injectBootstrap: boolean; noInject: boolean }
 ) {
   // Write a start script the agent's bootstrap can source on every container start.
   const safeWrapperPath = wrapperPath.replace(/'/g, "'\\''");
@@ -1361,28 +1507,32 @@ nohup '${safeWrapperPath}' > ~/.gbrain/autopilot.log 2>&1 &
 echo \$! > ~/.gbrain/autopilot.pid
 `;
   const scriptPath = ephemeralStartScriptPath();
-  mkdirSync(join(home, '.gbrain'), { recursive: true });
+  mkdirSync(join(home, ".gbrain"), { recursive: true });
   writeFileSync(scriptPath, script, { mode: 0o755 });
 
-  console.log('Ephemeral container detected (Render / Railway / Fly / Docker).');
+  console.log("Ephemeral container detected (Render / Railway / Fly / Docker).");
   console.log(`Repo: ${repoPath}`);
   console.log(`Start script: ${scriptPath}`);
-  console.log('');
-  console.log('Crontab is unreliable here (wiped on deploy). Add ONE LINE to your');
-  console.log('agent bootstrap to launch autopilot on every start:');
-  console.log('');
+  console.log("");
+  console.log("Crontab is unreliable here (wiped on deploy). Add ONE LINE to your");
+  console.log("agent bootstrap to launch autopilot on every start:");
+  console.log("");
   console.log(`  bash ${scriptPath}`);
-  console.log('');
+  console.log("");
 
   // OpenClaw detection + optional auto-injection into ensure-services.sh.
   const { detected, bootstrapCandidates } = detectOpenClaw();
   if (detected) {
     console.log(`OpenClaw detected. Bootstrap candidates found:`);
     for (const p of bootstrapCandidates) console.log(`  - ${p}`);
-    console.log('');
+    console.log("");
   }
 
-  const shouldInject = (injectOpts: { detected: boolean; injectBootstrap: boolean; noInject: boolean }) => {
+  const shouldInject = (injectOpts: {
+    detected: boolean;
+    injectBootstrap: boolean;
+    noInject: boolean;
+  }) => {
     if (injectOpts.noInject) return false;
     // Auto-inject by default when OpenClaw is detected + at least one
     // candidate exists. Users can explicitly opt in with --inject-bootstrap
@@ -1394,25 +1544,27 @@ echo \$! > ~/.gbrain/autopilot.pid
   if (shouldInject({ detected, injectBootstrap: opts.injectBootstrap, noInject: opts.noInject })) {
     for (const candidate of bootstrapCandidates) {
       try {
-        const existing = readFileSync(candidate, 'utf-8');
-        const marker = '# gbrain:autopilot v0.11.0';
+        const existing = readFileSync(candidate, "utf-8");
+        const marker = "# gbrain:autopilot v0.11.0";
         if (existing.includes(marker)) {
           console.log(`  [skip] ${candidate} already has the gbrain marker`);
           continue;
         }
         // Backup before edit
-        const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const stamp = new Date().toISOString().replace(/[:.]/g, "-");
         const bakPath = `${candidate}.bak.${stamp}`;
         writeFileSync(bakPath, existing);
         const snippet = `\n${marker}\nbash ${scriptPath}\n`;
         writeFileSync(candidate, existing.trimEnd() + snippet);
         console.log(`  [injected] ${candidate} (.bak at ${bakPath})`);
       } catch (e) {
-        console.error(`  [warn] failed to inject ${candidate}: ${e instanceof Error ? e.message : e}`);
+        console.error(
+          `  [warn] failed to inject ${candidate}: ${e instanceof Error ? e.message : e}`
+        );
       }
     }
   }
-  console.log('  Uninstall: gbrain autopilot --uninstall');
+  console.log("  Uninstall: gbrain autopilot --uninstall");
 }
 
 function installCrontab(wrapperPath: string, home: string) {
@@ -1420,18 +1572,22 @@ function installCrontab(wrapperPath: string, home: string) {
   const safeWrapperPath = wrapperPath.replace(/'/g, "'\\''");
   const cronLine = `*/5 * * * * '${safeWrapperPath}' >> '${home.replace(/'/g, "'\\''")}/.gbrain/autopilot.log' 2>&1`;
   try {
-    const existing = execSync('crontab -l 2>/dev/null || true', { encoding: 'utf-8' });
-    if (existing.includes('gbrain autopilot') || existing.includes('autopilot-run.sh')) {
-      console.log('Crontab entry already exists. Remove with: gbrain autopilot --uninstall');
+    const existing = execSync("crontab -l 2>/dev/null || true", { encoding: "utf-8" });
+    if (existing.includes("gbrain autopilot") || existing.includes("autopilot-run.sh")) {
+      console.log("Crontab entry already exists. Remove with: gbrain autopilot --uninstall");
       return;
     }
     // Use a temp file instead of echo pipe to avoid shell escaping issues (#1)
-    const tmpFile = join(home, '.gbrain', 'crontab.tmp');
-    writeFileSync(tmpFile, existing.trimEnd() + '\n' + cronLine + '\n');
-    execSync(`crontab '${tmpFile.replace(/'/g, "'\\''")}'`, { stdio: 'pipe' });
-    try { unlinkSync(tmpFile); } catch { /* best-effort */ }
-    console.log('Installed crontab entry for gbrain autopilot (every 5 minutes)');
-    console.log('  Uninstall: gbrain autopilot --uninstall');
+    const tmpFile = join(home, ".gbrain", "crontab.tmp");
+    writeFileSync(tmpFile, existing.trimEnd() + "\n" + cronLine + "\n");
+    execSync(`crontab '${tmpFile.replace(/'/g, "'\\''")}'`, { stdio: "pipe" });
+    try {
+      unlinkSync(tmpFile);
+    } catch {
+      /* best-effort */
+    }
+    console.log("Installed crontab entry for gbrain autopilot (every 5 minutes)");
+    console.log("  Uninstall: gbrain autopilot --uninstall");
   } catch (e: unknown) {
     console.error(`Failed to install crontab: ${e instanceof Error ? e.message : e}`);
     process.exit(1);
@@ -1439,8 +1595,8 @@ function installCrontab(wrapperPath: string, home: string) {
 }
 
 function uninstallDaemon() {
-  const home = process.env.HOME || '';
-  const wrapperPath = join(home, '.gbrain', 'autopilot-run.sh');
+  const home = process.env.HOME || "";
+  const wrapperPath = join(home, ".gbrain", "autopilot-run.sh");
 
   // Always try all four targets — the user might have run `--install` under
   // one target earlier and moved hosts (e.g. macOS laptop → Linux server).
@@ -1451,9 +1607,9 @@ function uninstallDaemon() {
   // macOS launchd
   if (existsSync(plistPath())) {
     try {
-      execSync(`launchctl unload "${plistPath()}" 2>/dev/null || true`, { stdio: 'pipe' });
+      execSync(`launchctl unload "${plistPath()}" 2>/dev/null || true`, { stdio: "pipe" });
       unlinkSync(plistPath());
-      console.log('Removed launchd service: com.gbrain.autopilot');
+      console.log("Removed launchd service: com.gbrain.autopilot");
       removed++;
     } catch (e) {
       console.error(`  [warn] launchd: ${e instanceof Error ? e.message : e}`);
@@ -1463,10 +1619,17 @@ function uninstallDaemon() {
   // Linux systemd user unit
   if (existsSync(systemdUnitPath())) {
     try {
-      execSync('systemctl --user disable --now gbrain-autopilot.service 2>/dev/null || true', { stdio: 'pipe', timeout: 10_000 });
+      execSync("systemctl --user disable --now gbrain-autopilot.service 2>/dev/null || true", {
+        stdio: "pipe",
+        timeout: 10_000,
+      });
       unlinkSync(systemdUnitPath());
-      try { execSync('systemctl --user daemon-reload', { stdio: 'pipe', timeout: 5_000 }); } catch { /* best-effort */ }
-      console.log('Removed systemd user service: gbrain-autopilot.service');
+      try {
+        execSync("systemctl --user daemon-reload", { stdio: "pipe", timeout: 5_000 });
+      } catch {
+        /* best-effort */
+      }
+      console.log("Removed systemd user service: gbrain-autopilot.service");
       removed++;
     } catch (e) {
       console.error(`  [warn] systemd: ${e instanceof Error ? e.message : e}`);
@@ -1477,7 +1640,7 @@ function uninstallDaemon() {
   if (existsSync(ephemeralStartScriptPath())) {
     try {
       unlinkSync(ephemeralStartScriptPath());
-      console.log('Removed ephemeral start script: ~/.gbrain/start-autopilot.sh');
+      console.log("Removed ephemeral start script: ~/.gbrain/start-autopilot.sh");
       removed++;
     } catch (e) {
       console.error(`  [warn] start script: ${e instanceof Error ? e.message : e}`);
@@ -1488,12 +1651,12 @@ function uninstallDaemon() {
     const { bootstrapCandidates } = detectOpenClaw();
     for (const candidate of bootstrapCandidates) {
       try {
-        const content = readFileSync(candidate, 'utf-8');
-        if (!content.includes('# gbrain:autopilot v0.11.0')) continue;
-        const lines = content.split('\n');
+        const content = readFileSync(candidate, "utf-8");
+        if (!content.includes("# gbrain:autopilot v0.11.0")) continue;
+        const lines = content.split("\n");
         const cleaned: string[] = [];
         for (let i = 0; i < lines.length; i++) {
-          if (lines[i].includes('# gbrain:autopilot v0.11.0')) {
+          if (lines[i].includes("# gbrain:autopilot v0.11.0")) {
             // Skip this marker line AND the next line (the bash start-script call).
             i++;
             continue;
@@ -1501,31 +1664,40 @@ function uninstallDaemon() {
           cleaned.push(lines[i]);
         }
         // Backup before edit
-        const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const stamp = new Date().toISOString().replace(/[:.]/g, "-");
         writeFileSync(`${candidate}.bak.${stamp}`, content);
-        writeFileSync(candidate, cleaned.join('\n'));
+        writeFileSync(candidate, cleaned.join("\n"));
         console.log(`Removed bootstrap marker from: ${candidate}`);
         removed++;
       } catch (e) {
         console.error(`  [warn] bootstrap ${candidate}: ${e instanceof Error ? e.message : e}`);
       }
     }
-  } catch { /* OpenClaw detection best-effort */ }
+  } catch {
+    /* OpenClaw detection best-effort */
+  }
 
   // Linux crontab (don't gate on platform — the user may have run `--install
   // --target linux-cron` on a different machine that now has the crontab).
   try {
-    const existing = execSync('crontab -l 2>/dev/null || true', { encoding: 'utf-8' });
-    if (existing.includes('gbrain autopilot') || existing.includes('autopilot-run.sh')) {
-      const filtered = existing.split('\n').filter(l =>
-        !l.includes('gbrain autopilot') && !l.includes('autopilot-run.sh'),
-      ).join('\n');
-      const tmpFile = join(home, '.gbrain', 'crontab.tmp');
-      mkdirSync(join(home, '.gbrain'), { recursive: true });
+    const existing = execSync("crontab -l 2>/dev/null || true", { encoding: "utf-8" });
+    if (existing.includes("gbrain autopilot") || existing.includes("autopilot-run.sh")) {
+      const filtered = existing
+        .split("\n")
+        .filter((l) => !l.includes("gbrain autopilot") && !l.includes("autopilot-run.sh"))
+        .join("\n");
+      const tmpFile = join(home, ".gbrain", "crontab.tmp");
+      mkdirSync(join(home, ".gbrain"), { recursive: true });
       writeFileSync(tmpFile, filtered);
-      execSync(`crontab '${tmpFile.replace(/'/g, "'\\''")}' 2>/dev/null || true`, { stdio: 'pipe' });
-      try { unlinkSync(tmpFile); } catch { /* best-effort */ }
-      console.log('Removed crontab entry for gbrain autopilot');
+      execSync(`crontab '${tmpFile.replace(/'/g, "'\\''")}' 2>/dev/null || true`, {
+        stdio: "pipe",
+      });
+      try {
+        unlinkSync(tmpFile);
+      } catch {
+        /* best-effort */
+      }
+      console.log("Removed crontab entry for gbrain autopilot");
       removed++;
     }
   } catch (e) {
@@ -1536,41 +1708,51 @@ function uninstallDaemon() {
   if (existsSync(wrapperPath)) {
     try {
       unlinkSync(wrapperPath);
-    } catch { /* best-effort */ }
+    } catch {
+      /* best-effort */
+    }
   }
 
   if (removed === 0) {
-    console.log('No autopilot install found on this host. Nothing to uninstall.');
+    console.log("No autopilot install found on this host. Nothing to uninstall.");
   }
 }
 
 function showStatus(json: boolean) {
-  const logFile = join(process.env.HOME || '', '.gbrain', 'autopilot.log');
-  let lastLine = '';
+  const logFile = join(process.env.HOME || "", ".gbrain", "autopilot.log");
+  let lastLine = "";
   try {
-    const content = readFileSync(logFile, 'utf-8');
-    const lines = content.trim().split('\n');
-    lastLine = lines[lines.length - 1] || '';
-  } catch { /* no log */ }
+    const content = readFileSync(logFile, "utf-8");
+    const lines = content.trim().split("\n");
+    lastLine = lines[lines.length - 1] || "";
+  } catch {
+    /* no log */
+  }
 
   let installed = false;
-  if (process.platform === 'darwin') {
+  if (process.platform === "darwin") {
     installed = existsSync(plistPath());
   } else {
     try {
-      const crontab = execSync('crontab -l 2>/dev/null || true', { encoding: 'utf-8' });
-      installed = crontab.includes('gbrain autopilot');
-    } catch { /* no crontab */ }
+      const crontab = execSync("crontab -l 2>/dev/null || true", { encoding: "utf-8" });
+      installed = crontab.includes("gbrain autopilot");
+    } catch {
+      /* no crontab */
+    }
   }
 
   if (json) {
     console.log(JSON.stringify({ installed, last_log: lastLine }));
   } else {
-    console.log(`Autopilot: ${installed ? 'installed' : 'not installed'}`);
+    console.log(`Autopilot: ${installed ? "installed" : "not installed"}`);
     if (lastLine) console.log(`Last log: ${lastLine}`);
   }
 }
 
 function escapeXml(s: string): string {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }

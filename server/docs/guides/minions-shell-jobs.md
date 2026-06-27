@@ -137,7 +137,7 @@ wrote things like:
 {
   "cmd": "gbrain stats",
   "cwd": "/data/gbrain",
-  "env": { "GBRAIN_DATABASE_URL": "postgresql://..." }
+  "env": { "GBRAIN_DATABASE_URL": "postgresql://..." },
 }
 ```
 
@@ -267,18 +267,18 @@ gbrain jobs list --status waiting --name shell
 
 ## Errors {#errors}
 
-| Error | What it means | Fix |
-|---|---|---|
-| `shell: specify exactly one of cmd or argv` | `cmd` and `argv` are mutually exclusive. Both absent is also invalid. | Choose one. `cmd` for shell-interpolated strings; `argv` for structured args. |
-| `shell: cwd is required and must be an absolute path` | `cwd` must be a string starting with `/`. | Set `cwd` in `--params` to an absolute path. |
-| `shell: argv must be an array of strings` | `argv` has a non-string entry or isn't an array. | Pass `argv: ["bin","arg1","arg2"]`. |
-| `shell: env values must all be strings` | `env` has a number/bool/object value. | Stringify: `"env":{"COUNT":"3"}` not `"env":{"COUNT":3}`. |
-| `shell: inherit must be an array of config-key names` | `inherit` wasn't an array. | Pass `"inherit": ["database_url", ...]`. |
-| `shell: inherit entries must be non-empty strings` | An element of `inherit` was empty, non-string, or null. | Use snake_case config-key names like `database_url`, `anthropic_api_key`. |
-| `shell: inherit name "<X>" must match [a-z][a-z0-9_]*` | Name failed snake_case regex (uppercase, leading digit/underscore, special char). | Use the config-key name verbatim — `database_url`, not `DATABASE_URL`. |
-| `shell: inherit requested "<X>" but worker has no <X> configured` | Worker can't resolve the requested name from `loadConfig()`. | Run `gbrain config set <X> <value>` on the worker host, OR check the config file at `~/.gbrain/config.json`. |
-| `shell: redact_secrets must be a boolean if set` | Caller passed a non-boolean for `redact_secrets`. | Pass `true` or `false` (or omit). The CLI `--redact-secrets` flag sets it automatically. |
-| `permission_denied: shell jobs cannot be submitted over MCP` | An MCP client tried to submit a shell job. By design CLI-only. | Submit from CLI or via a trusted operation handler (`ctx.remote === false`). |
-| `protected job name 'shell' requires CLI or operation-local submitter` | A caller invoked `MinionQueue.add('shell', ...)` without the `trusted` opt-in. | Pass `{ allowProtectedSubmit: true }` as the 4th arg. CLI and `submit_job` do this automatically. |
-| `aborted: timeout` / `aborted: cancel` / `aborted: shutdown` / `aborted: lock-lost` | The worker's abort signal fired mid-execution. Child got SIGTERM, 5s grace, then SIGKILL. | Expected: timeout / user cancel / deploy restart / stall. Inspect `gbrain jobs get` to see which. |
-| `exit N: <stderr_tail_500>` | Script exited non-zero. | Read `stderr_tail` in `gbrain jobs get`. |
+| Error                                                                               | What it means                                                                             | Fix                                                                                                          |
+| ----------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `shell: specify exactly one of cmd or argv`                                         | `cmd` and `argv` are mutually exclusive. Both absent is also invalid.                     | Choose one. `cmd` for shell-interpolated strings; `argv` for structured args.                                |
+| `shell: cwd is required and must be an absolute path`                               | `cwd` must be a string starting with `/`.                                                 | Set `cwd` in `--params` to an absolute path.                                                                 |
+| `shell: argv must be an array of strings`                                           | `argv` has a non-string entry or isn't an array.                                          | Pass `argv: ["bin","arg1","arg2"]`.                                                                          |
+| `shell: env values must all be strings`                                             | `env` has a number/bool/object value.                                                     | Stringify: `"env":{"COUNT":"3"}` not `"env":{"COUNT":3}`.                                                    |
+| `shell: inherit must be an array of config-key names`                               | `inherit` wasn't an array.                                                                | Pass `"inherit": ["database_url", ...]`.                                                                     |
+| `shell: inherit entries must be non-empty strings`                                  | An element of `inherit` was empty, non-string, or null.                                   | Use snake_case config-key names like `database_url`, `anthropic_api_key`.                                    |
+| `shell: inherit name "<X>" must match [a-z][a-z0-9_]*`                              | Name failed snake_case regex (uppercase, leading digit/underscore, special char).         | Use the config-key name verbatim — `database_url`, not `DATABASE_URL`.                                       |
+| `shell: inherit requested "<X>" but worker has no <X> configured`                   | Worker can't resolve the requested name from `loadConfig()`.                              | Run `gbrain config set <X> <value>` on the worker host, OR check the config file at `~/.gbrain/config.json`. |
+| `shell: redact_secrets must be a boolean if set`                                    | Caller passed a non-boolean for `redact_secrets`.                                         | Pass `true` or `false` (or omit). The CLI `--redact-secrets` flag sets it automatically.                     |
+| `permission_denied: shell jobs cannot be submitted over MCP`                        | An MCP client tried to submit a shell job. By design CLI-only.                            | Submit from CLI or via a trusted operation handler (`ctx.remote === false`).                                 |
+| `protected job name 'shell' requires CLI or operation-local submitter`              | A caller invoked `MinionQueue.add('shell', ...)` without the `trusted` opt-in.            | Pass `{ allowProtectedSubmit: true }` as the 4th arg. CLI and `submit_job` do this automatically.            |
+| `aborted: timeout` / `aborted: cancel` / `aborted: shutdown` / `aborted: lock-lost` | The worker's abort signal fired mid-execution. Child got SIGTERM, 5s grace, then SIGKILL. | Expected: timeout / user cancel / deploy restart / stall. Inspect `gbrain jobs get` to see which.            |
+| `exit N: <stderr_tail_500>`                                                         | Script exited non-zero.                                                                   | Read `stderr_tail` in `gbrain jobs get`.                                                                     |

@@ -1,4 +1,3 @@
-
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler } from "@/lib/api-handler";
 
@@ -10,17 +9,22 @@ export const GET = createHandler(
   },
   async (ctx, _body, _query, _req) => {
     try {
-      const res = await fetch(`${ENGINE_URL}/api/stats`, { headers: ctx.headers, signal: AbortSignal.timeout(10_000) });
+      const res = await fetch(`${ENGINE_URL}/api/stats`, {
+        headers: ctx.headers,
+        signal: AbortSignal.timeout(10_000),
+      });
       if (res.ok) {
         const stats = await res.json();
         return Response.json({
-          brains: [{
-            name: ctx.user.orgId ? "Team-Brain" : "Haupt-Brain",
-            slug: ctx.brainId,
-            source: "default",
-            isShared: !!ctx.user.orgId,
-            stats,
-          }],
+          brains: [
+            {
+              name: ctx.user.orgId ? "Team-Brain" : "Haupt-Brain",
+              slug: ctx.brainId,
+              source: "default",
+              isShared: !!ctx.user.orgId,
+              stats,
+            },
+          ],
         });
       }
     } catch {
@@ -28,12 +32,14 @@ export const GET = createHandler(
     }
 
     return Response.json({
-      brains: [{
-        name: ctx.user.orgId ? "Team-Brain" : "Haupt-Brain",
-        slug: ctx.brainId,
-        source: "default",
-        isShared: !!ctx.user.orgId,
-      }],
+      brains: [
+        {
+          name: ctx.user.orgId ? "Team-Brain" : "Haupt-Brain",
+          slug: ctx.brainId,
+          source: "default",
+          isShared: !!ctx.user.orgId,
+        },
+      ],
     });
-  },
+  }
 );

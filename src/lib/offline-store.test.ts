@@ -83,7 +83,7 @@ describe("IndexedDB operations (no IDB in Node — error paths)", () => {
 
   test("enqueueMutation does not throw without IDB", async () => {
     await expect(
-      enqueueMutation({ type: "createPage", payload: { slug: "test" } }),
+      enqueueMutation({ type: "createPage", payload: { slug: "test" } })
     ).resolves.toBeUndefined();
   });
 

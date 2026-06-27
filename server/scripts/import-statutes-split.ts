@@ -246,9 +246,7 @@ async function main() {
     // When --source is set explicitly, create that one. Otherwise create all
     // jurisdiction-based sources (law-at, law-de, law-ch, law-eu) since the
     // auto-derived sourceId will reference them.
-    const sourceIdsToCreate = SOURCE_ID
-      ? [SOURCE_ID]
-      : ['law-at', 'law-de', 'law-ch', 'law-eu'];
+    const sourceIdsToCreate = SOURCE_ID ? [SOURCE_ID] : ["law-at", "law-de", "law-ch", "law-eu"];
     for (const sid of sourceIdsToCreate) {
       await engine.executeRaw(
         `INSERT INTO sources (id, name) VALUES ($1, $1) ON CONFLICT (id) DO NOTHING`,
@@ -298,9 +296,9 @@ async function main() {
           noEmbed: NO_EMBED,
           sourceId: effectiveSourceId,
         });
-        if (result.status === 'imported') {
+        if (result.status === "imported") {
           okForLaw++;
-        } else if (result.status === 'skipped') {
+        } else if (result.status === "skipped") {
           skippedForLaw++;
         } else {
           totalErrors++;
@@ -312,7 +310,9 @@ async function main() {
       }
     }
     totalSections += okForLaw;
-    console.log(`  ✅ ${sf.jurisdiction}/${sf.abbr}: ${okForLaw}/${sections.length} §-pages${skippedForLaw > 0 ? ` (${skippedForLaw} skipped)` : ''}`);
+    console.log(
+      `  ✅ ${sf.jurisdiction}/${sf.abbr}: ${okForLaw}/${sections.length} §-pages${skippedForLaw > 0 ? ` (${skippedForLaw} skipped)` : ""}`
+    );
   }
 
   console.log("");

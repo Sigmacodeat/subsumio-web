@@ -23,21 +23,18 @@
  *      surfaces as a non-blocking note, not a failure.
  */
 
-import { existsSync, readFileSync, readdirSync, statSync } from 'fs';
-import { basename, dirname, join, resolve } from 'path';
-import { spawnSync } from 'child_process';
+import { existsSync, readFileSync, readdirSync, statSync } from "fs";
+import { basename, dirname, join, resolve } from "path";
+import { spawnSync } from "child_process";
 
-import { gbrainPath } from '../core/config.ts';
+import { gbrainPath } from "../core/config.ts";
 import {
   describeReceiptStatus,
   findReceiptForSkill,
   type ReceiptStatus,
-} from '../core/cross-modal-eval/receipt-name.ts';
-import { parseSkillFrontmatter } from '../core/skill-frontmatter.ts';
-import {
-  analyzeSkillBrainFirst,
-  buildBrainFirstSummaryLine,
-} from '../core/skill-brain-first.ts';
+} from "../core/cross-modal-eval/receipt-name.ts";
+import { parseSkillFrontmatter } from "../core/skill-frontmatter.ts";
+import { analyzeSkillBrainFirst, buildBrainFirstSummaryLine } from "../core/skill-brain-first.ts";
 
 interface CheckItem {
   name: string;
@@ -58,7 +55,7 @@ interface CheckResult {
 function projectRoot(): string {
   let dir = process.cwd();
   for (let i = 0; i < 20; i++) {
-    if (existsSync(join(dir, 'package.json'))) return dir;
+    if (existsSync(join(dir, "package.json"))) return dir;
     const parent = dirname(dir);
     if (parent === dir) break;
     dir = parent;
@@ -67,7 +64,7 @@ function projectRoot(): string {
 }
 
 function detectTestDir(root: string): string | null {
-  for (const candidate of ['test', '__tests__', 'tests', 'spec']) {
+  for (const candidate of ["test", "__tests__", "tests", "spec"]) {
     const p = join(root, candidate);
     if (existsSync(p)) return p;
   }
@@ -92,22 +89,22 @@ let _resolverCache: ResolverResult | null = null;
 function runCheckResolvableCached(): ResolverResult {
   if (_resolverCache) return _resolverCache;
   try {
-    const res = spawnSync('gbrain', ['check-resolvable', '--json'], {
-      encoding: 'utf-8',
+    const res = spawnSync("gbrain", ["check-resolvable", "--json"], {
+      encoding: "utf-8",
       maxBuffer: 10 * 1024 * 1024,
     });
     if (res.error || res.status === null) {
-      const reason = res.error?.message ?? 'spawn returned null status';
+      const reason = res.error?.message ?? "spawn returned null status";
       console.error(`[skillify] gbrain check-resolvable not runnable: ${reason}`);
       _resolverCache = { ok: false, detail: `check-resolvable unavailable: ${reason}` };
       return _resolverCache;
     }
     const payload = JSON.parse(res.stdout);
     if (payload.ok === true) {
-      _resolverCache = { ok: true, detail: 'all skill-tree checks pass' };
+      _resolverCache = { ok: true, detail: "all skill-tree checks pass" };
     } else {
       const count = (payload.report?.errors?.length ?? 0) + (payload.report?.warnings?.length ?? 0);
-      const err = payload.error ? ` (${payload.error})` : '';
+      const err = payload.error ? ` (${payload.error})` : "";
       _resolverCache = {
         ok: false,
         detail: `${count} issue(s)${err} — run: gbrain check-resolvable`,
@@ -126,15 +123,12 @@ function inferSkillName(scriptPath: string, skillsDir: string): string {
   const inSkills = abs.match(/skills\/([^/]+)\//);
   if (inSkills) return inSkills[1];
 
-  const base = basename(scriptPath).replace(/\.(ts|mjs|js|py)$/, '');
+  const base = basename(scriptPath).replace(/\.(ts|mjs|js|py)$/, "");
   if (existsSync(skillsDir)) {
     for (const d of readdirSync(skillsDir)) {
       if (d === base) return d;
-      const normalized = base.replace(
-        /[-_]?(scraper|monitor|check|poll|sync|ingest|core)$/,
-        '',
-      );
-      if (d === normalized || d.replace(/-/g, '') === normalized.replace(/[-_]/g, '')) {
+      const normalized = base.replace(/[-_]?(scraper|monitor|check|poll|sync|ingest|core)$/, "");
+      if (d === normalized || d.replace(/-/g, "") === normalized.replace(/[-_]/g, "")) {
         return d;
       }
     }
@@ -144,13 +138,13 @@ function inferSkillName(scriptPath: string, skillsDir: string): string {
 
 function findRelatedTests(scriptPath: string, testDir: string | null): string[] {
   if (!testDir) return [];
-  const base = basename(scriptPath).replace(/\.(ts|mjs|js|py)$/, '');
+  const base = basename(scriptPath).replace(/\.(ts|mjs|js|py)$/, "");
   const patterns = [
     `${base}.test.ts`,
     `${base}.test.mjs`,
     `${base}.test.js`,
     `test-${base}.ts`,
-    `${base.replace(/-/g, '_')}.test.ts`,
+    `${base.replace(/-/g, "_")}.test.ts`,
   ];
   const out: string[] = [];
   for (const p of patterns) {
@@ -159,12 +153,12 @@ function findRelatedTests(scriptPath: string, testDir: string | null): string[] 
   }
   for (const f of readdirSync(testDir)) {
     const normalized = f
-      .replace(/-/g, '')
-      .replace('.test.ts', '')
-      .replace('.test.mjs', '')
-      .replace('test-', '')
+      .replace(/-/g, "")
+      .replace(".test.ts", "")
+      .replace(".test.mjs", "")
+      .replace("test-", "")
       .toLowerCase();
-    const nbase = base.replace(/-/g, '').toLowerCase();
+    const nbase = base.replace(/-/g, "").toLowerCase();
     if (normalized.includes(nbase) || nbase.includes(normalized)) {
       const fp = join(testDir, f);
       if (!out.includes(fp)) out.push(fp);
@@ -175,52 +169,48 @@ function findRelatedTests(scriptPath: string, testDir: string | null): string[] 
 
 function isInResolver(skillName: string, scriptPath: string, skillsDir: string): boolean {
   const resolverPaths = [
-    join(skillsDir, 'RESOLVER.md'),
-    join(skillsDir, 'AGENTS.md'),
-    join(dirname(skillsDir), 'AGENTS.md'),
+    join(skillsDir, "RESOLVER.md"),
+    join(skillsDir, "AGENTS.md"),
+    join(dirname(skillsDir), "AGENTS.md"),
   ];
-  const present = resolverPaths.find(p => existsSync(p));
+  const present = resolverPaths.find((p) => existsSync(p));
   if (!present) return false;
-  const content = readFileSync(present, 'utf-8');
-  const base = basename(scriptPath).replace(/\.(ts|mjs|js|py)$/, '');
+  const content = readFileSync(present, "utf-8");
+  const base = basename(scriptPath).replace(/\.(ts|mjs|js|py)$/, "");
   return (
-    content.includes(`skills/${skillName}`) ||
-    content.includes(skillName) ||
-    content.includes(base)
+    content.includes(`skills/${skillName}`) || content.includes(skillName) || content.includes(base)
   );
 }
 
 function runSkillifyCheckTarget(target: string, root: string): CheckResult {
-  const skillsDir = join(root, 'skills');
+  const skillsDir = join(root, "skills");
   const testDir = detectTestDir(root);
   const abs = resolve(target);
   const skillName = inferSkillName(target, skillsDir);
-  const skillMd = join(skillsDir, skillName, 'SKILL.md');
+  const skillMd = join(skillsDir, skillName, "SKILL.md");
 
   const items: CheckItem[] = [];
 
-  items.push(check('SKILL.md exists', existsSync(skillMd), skillMd));
-  items.push(check('Code file exists', existsSync(abs), abs));
+  items.push(check("SKILL.md exists", existsSync(skillMd), skillMd));
+  items.push(check("Code file exists", existsSync(abs), abs));
 
   const unitTests = findRelatedTests(target, testDir);
   items.push(
     check(
-      'Unit tests',
+      "Unit tests",
       unitTests.length > 0,
-      unitTests[0] ?? 'no matching *.test.ts in ' + (testDir ?? '(no test dir)'),
-    ),
+      unitTests[0] ?? "no matching *.test.ts in " + (testDir ?? "(no test dir)")
+    )
   );
 
-  const e2eDir = testDir ? join(testDir, 'e2e') : null;
+  const e2eDir = testDir ? join(testDir, "e2e") : null;
   const hasE2E =
     !!e2eDir &&
     existsSync(e2eDir) &&
     readdirSync(e2eDir).some(
-      f =>
-        f.includes(skillName) ||
-        f.includes(basename(target).replace(/\.(ts|mjs|js|py)$/, '')),
+      (f) => f.includes(skillName) || f.includes(basename(target).replace(/\.(ts|mjs|js|py)$/, ""))
     );
-  items.push(checkOptional('Integration tests (E2E)', hasE2E, e2eDir ?? 'no e2e dir'));
+  items.push(checkOptional("Integration tests (E2E)", hasE2E, e2eDir ?? "no e2e dir"));
 
   let hasEvals = false;
   if (testDir) {
@@ -231,49 +221,53 @@ function runSkillifyCheckTarget(target: string, root: string): CheckResult {
       }
     }
   }
-  items.push(checkOptional('LLM evals', hasEvals));
+  items.push(checkOptional("LLM evals", hasEvals));
 
-  items.push(check('Resolver entry', isInResolver(skillName, target, skillsDir)));
+  items.push(check("Resolver entry", isInResolver(skillName, target, skillsDir)));
 
   let hasTriggerEval = false;
   if (testDir) {
-    const resolverTest = join(testDir, 'resolver.test.ts');
+    const resolverTest = join(testDir, "resolver.test.ts");
     if (existsSync(resolverTest)) {
-      const content = readFileSync(resolverTest, 'utf-8');
+      const content = readFileSync(resolverTest, "utf-8");
       hasTriggerEval = content.includes(skillName);
     }
-    const routingFixture = join(skillsDir, skillName, 'routing-eval.jsonl');
+    const routingFixture = join(skillsDir, skillName, "routing-eval.jsonl");
     if (existsSync(routingFixture)) hasTriggerEval = true;
   }
-  items.push(checkOptional('Resolver trigger eval', hasTriggerEval));
+  items.push(checkOptional("Resolver trigger eval", hasTriggerEval));
 
   const resolverResult = runCheckResolvableCached();
-  items.push(
-    checkOptional('check-resolvable gate', resolverResult.ok, resolverResult.detail),
-  );
+  items.push(checkOptional("check-resolvable gate", resolverResult.ok, resolverResult.detail));
 
-  items.push(check('E2E test (either under e2e/ or integration test)', hasE2E, 'try /qa or test/e2e/'));
+  items.push(
+    check("E2E test (either under e2e/ or integration test)", hasE2E, "try /qa or test/e2e/")
+  );
 
   let writesBrain = false;
   if (existsSync(abs)) {
     try {
-      const src = readFileSync(abs, 'utf-8');
+      const src = readFileSync(abs, "utf-8");
       writesBrain = /addPage|upsertPage|addBrainPage|putPage/.test(src);
     } catch {
       /* skip */
     }
   }
-  const brainResolver = join(root, 'brain', 'RESOLVER.md');
+  const brainResolver = join(root, "brain", "RESOLVER.md");
   const hasBrainEntry =
     writesBrain &&
     existsSync(brainResolver) &&
-    readFileSync(brainResolver, 'utf-8').includes(skillName);
+    readFileSync(brainResolver, "utf-8").includes(skillName);
   items.push(
     checkOptional(
-      'Brain filing (RESOLVER entry for brain writes)',
+      "Brain filing (RESOLVER entry for brain writes)",
       !writesBrain || hasBrainEntry,
-      writesBrain ? (hasBrainEntry ? 'entry present' : 'writes brain but no brain/RESOLVER.md entry') : 'n/a',
-    ),
+      writesBrain
+        ? hasBrainEntry
+          ? "entry present"
+          : "writes brain but no brain/RESOLVER.md entry"
+        : "n/a"
+    )
   );
 
   // Item 11: cross-modal eval (informational, T7=C). The receipt is bound
@@ -282,10 +276,10 @@ function runSkillifyCheckTarget(target: string, root: string): CheckResult {
   const crossModalReceipt = lookupCrossModalReceipt(skillMd, skillName);
   items.push(
     checkOptional(
-      'Cross-modal eval (informational)',
+      "Cross-modal eval (informational)",
       crossModalReceipt.passed,
-      crossModalReceipt.detail,
-    ),
+      crossModalReceipt.detail
+    )
   );
 
   // Item 12: brain-first compliance (v0.36.x, REQUIRED — A3 + F9 from
@@ -297,19 +291,19 @@ function runSkillifyCheckTarget(target: string, root: string): CheckResult {
   // `gbrain skillify check` with exit 1 so new skills can't be born
   // non-compliant.
   const brainFirst = checkBrainFirstCompliance(skillMd, skillName);
-  items.push(check('Brain-first compliance', brainFirst.passed, brainFirst.detail));
+  items.push(check("Brain-first compliance", brainFirst.passed, brainFirst.detail));
 
-  const passed = items.filter(i => i.passed).length;
+  const passed = items.filter((i) => i.passed).length;
   const total = items.length;
-  const missing = items.filter(i => !i.passed && i.required).map(i => i.name);
+  const missing = items.filter((i) => !i.passed && i.required).map((i) => i.name);
 
   let recommendation: string;
   if (missing.length === 0) {
-    recommendation = 'properly skilled';
+    recommendation = "properly skilled";
   } else if (missing.length <= 2) {
-    recommendation = `close — create: ${missing.join(', ')}`;
+    recommendation = `close — create: ${missing.join(", ")}`;
   } else {
-    recommendation = `needs skillify — run /skillify on ${target}; missing: ${missing.join(', ')}`;
+    recommendation = `needs skillify — run /skillify on ${target}; missing: ${missing.join(", ")}`;
   }
 
   return { path: target, skillName, items, score: passed, total, recommendation };
@@ -327,27 +321,27 @@ function runSkillifyCheckTarget(target: string, root: string): CheckResult {
  */
 function lookupCrossModalReceipt(
   skillMdPath: string,
-  skillName: string,
+  skillName: string
 ): { passed: boolean; detail: string } {
   if (!existsSync(skillMdPath)) {
-    return { passed: true, detail: 'no SKILL.md — skipping cross-modal eval check' };
+    return { passed: true, detail: "no SKILL.md — skipping cross-modal eval check" };
   }
   let status: ReceiptStatus;
   try {
-    status = findReceiptForSkill(skillMdPath, gbrainPath('eval-receipts'));
+    status = findReceiptForSkill(skillMdPath, gbrainPath("eval-receipts"));
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     return { passed: true, detail: `receipt lookup failed: ${msg}` };
   }
   switch (status.status) {
-    case 'found':
+    case "found":
       return { passed: true, detail: describeReceiptStatus(skillName, status) };
-    case 'stale':
+    case "stale":
       return {
         passed: false, // visually marked as not-yet-rerun but item is required:false
         detail: describeReceiptStatus(skillName, status),
       };
-    case 'missing':
+    case "missing":
       return {
         passed: false,
         detail: describeReceiptStatus(skillName, status),
@@ -372,14 +366,14 @@ function lookupCrossModalReceipt(
  */
 function checkBrainFirstCompliance(
   skillMdPath: string,
-  skillName: string,
+  skillName: string
 ): { passed: boolean; detail: string } {
   if (!existsSync(skillMdPath)) {
-    return { passed: true, detail: 'no SKILL.md — covered by item 1' };
+    return { passed: true, detail: "no SKILL.md — covered by item 1" };
   }
   let content: string;
   try {
-    content = readFileSync(skillMdPath, 'utf-8');
+    content = readFileSync(skillMdPath, "utf-8");
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     // Read failure is best-effort — don't double-fail; item 1 / 2 would
@@ -388,7 +382,7 @@ function checkBrainFirstCompliance(
   }
   const fm = parseSkillFrontmatter(content);
   const analysis = analyzeSkillBrainFirst(content, skillName, fm);
-  if (analysis.status === 'ok') {
+  if (analysis.status === "ok") {
     return { passed: true, detail: `${analysis.reason} (${skillName})` };
   }
   return {
@@ -402,8 +396,8 @@ function checkBrainFirstCompliance(
 function recentlyModified(root: string, days: number = 7): string[] {
   const candidates: string[] = [];
   const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
-  const roots = ['src/commands', 'src/core', 'scripts']
-    .map(r => join(root, r))
+  const roots = ["src/commands", "src/core", "scripts"]
+    .map((r) => join(root, r))
     .filter(existsSync);
   for (const r of roots) {
     try {
@@ -443,41 +437,39 @@ Exit code 0 when all REQUIRED items pass; 1 otherwise.
  * dispatcher passes args with the subcommand already stripped.
  */
 export async function runSkillifyCheckInline(args: string[]): Promise<void> {
-  const help = args.includes('--help') || args.includes('-h');
-  const json = args.includes('--json');
-  const recent = args.includes('--recent');
+  const help = args.includes("--help") || args.includes("-h");
+  const json = args.includes("--json");
+  const recent = args.includes("--recent");
   if (help || args.length === 0) {
     console.log(HELP);
     process.exit(args.length === 0 ? 1 : 0);
   }
 
   const root = projectRoot();
-  const targets = recent
-    ? recentlyModified(root, 7)
-    : args.filter(a => !a.startsWith('--'));
+  const targets = recent ? recentlyModified(root, 7) : args.filter((a) => !a.startsWith("--"));
 
   if (targets.length === 0) {
-    console.error('No targets. Pass a path or --recent.');
+    console.error("No targets. Pass a path or --recent.");
     process.exit(1);
   }
 
-  const results: CheckResult[] = targets.map(t => runSkillifyCheckTarget(t, root));
+  const results: CheckResult[] = targets.map((t) => runSkillifyCheckTarget(t, root));
   if (json) {
     console.log(JSON.stringify(results, null, 2));
   } else {
     for (const r of results) {
       console.log(`\n${r.path}  [${r.skillName}]  ${r.score}/${r.total}`);
       for (const item of r.items) {
-        const mark = item.passed ? '✓' : item.required ? '✗' : '·';
-        const tag = item.required ? '' : ' (optional)';
-        const detail = item.detail ? `  — ${item.detail}` : '';
+        const mark = item.passed ? "✓" : item.required ? "✗" : "·";
+        const tag = item.required ? "" : " (optional)";
+        const detail = item.detail ? `  — ${item.detail}` : "";
         console.log(`  ${mark} ${item.name}${tag}${detail}`);
       }
       console.log(`  → ${r.recommendation}`);
     }
   }
 
-  const anyFailed = results.some(r => r.items.some(i => !i.passed && i.required));
+  const anyFailed = results.some((r) => r.items.some((i) => !i.passed && i.required));
   process.exit(anyFailed ? 1 : 0);
 }
 

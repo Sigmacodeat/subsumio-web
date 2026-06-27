@@ -24,12 +24,12 @@
  * brain advances to LATEST_VERSION with no crash. PGLite-only.
  */
 
-import { describe, test, expect } from 'bun:test';
-import { PGLiteEngine } from '../../src/core/pglite-engine.ts';
-import { LATEST_VERSION } from '../../src/core/migrate.ts';
+import { describe, test, expect } from "bun:test";
+import { PGLiteEngine } from "../../src/core/pglite-engine.ts";
+import { LATEST_VERSION } from "../../src/core/migrate.ts";
 
-describe('v0.30.3 wave — pre-v39/v40/v41 forward-reference bootstrap (#741)', () => {
-  test('pre-v39 brain (missing modality + embedding_image) re-runs initSchema cleanly', async () => {
+describe("v0.30.3 wave — pre-v39/v40/v41 forward-reference bootstrap (#741)", () => {
+  test("pre-v39 brain (missing modality + embedding_image) re-runs initSchema cleanly", async () => {
     const engine = new PGLiteEngine();
     await engine.connect({});
     try {
@@ -55,13 +55,13 @@ describe('v0.30.3 wave — pre-v39/v40/v41 forward-reference bootstrap (#741)', 
       // Confirm the rewound columns are restored.
       const modality = await db.query(
         `SELECT column_name FROM information_schema.columns
-         WHERE table_schema='public' AND table_name='content_chunks' AND column_name='modality'`,
+         WHERE table_schema='public' AND table_name='content_chunks' AND column_name='modality'`
       );
       expect(modality.rows.length).toBeGreaterThan(0);
 
       const embeddingImage = await db.query(
         `SELECT column_name FROM information_schema.columns
-         WHERE table_schema='public' AND table_name='content_chunks' AND column_name='embedding_image'`,
+         WHERE table_schema='public' AND table_name='content_chunks' AND column_name='embedding_image'`
       );
       expect(embeddingImage.rows.length).toBeGreaterThan(0);
     } finally {
@@ -69,7 +69,7 @@ describe('v0.30.3 wave — pre-v39/v40/v41 forward-reference bootstrap (#741)', 
     }
   });
 
-  test('pre-v40 brain (missing emotional_weight + effective_date) re-runs initSchema cleanly', async () => {
+  test("pre-v40 brain (missing emotional_weight + effective_date) re-runs initSchema cleanly", async () => {
     const engine = new PGLiteEngine();
     await engine.connect({});
     try {
@@ -92,13 +92,13 @@ describe('v0.30.3 wave — pre-v39/v40/v41 forward-reference bootstrap (#741)', 
 
       const emotional = await db.query(
         `SELECT column_name FROM information_schema.columns
-         WHERE table_schema='public' AND table_name='pages' AND column_name='emotional_weight'`,
+         WHERE table_schema='public' AND table_name='pages' AND column_name='emotional_weight'`
       );
       expect(emotional.rows.length).toBeGreaterThan(0);
 
       const effective = await db.query(
         `SELECT column_name FROM information_schema.columns
-         WHERE table_schema='public' AND table_name='pages' AND column_name='effective_date'`,
+         WHERE table_schema='public' AND table_name='pages' AND column_name='effective_date'`
       );
       expect(effective.rows.length).toBeGreaterThan(0);
     } finally {
@@ -106,7 +106,7 @@ describe('v0.30.3 wave — pre-v39/v40/v41 forward-reference bootstrap (#741)', 
     }
   });
 
-  test('pre-v41 PGLite brain (missing import_filename + salience_touched_at) re-runs initSchema cleanly', async () => {
+  test("pre-v41 PGLite brain (missing import_filename + salience_touched_at) re-runs initSchema cleanly", async () => {
     const engine = new PGLiteEngine();
     await engine.connect({});
     try {
@@ -127,13 +127,13 @@ describe('v0.30.3 wave — pre-v39/v40/v41 forward-reference bootstrap (#741)', 
 
       const importFn = await db.query(
         `SELECT column_name FROM information_schema.columns
-         WHERE table_schema='public' AND table_name='pages' AND column_name='import_filename'`,
+         WHERE table_schema='public' AND table_name='pages' AND column_name='import_filename'`
       );
       expect(importFn.rows.length).toBeGreaterThan(0);
 
       const salience = await db.query(
         `SELECT column_name FROM information_schema.columns
-         WHERE table_schema='public' AND table_name='pages' AND column_name='salience_touched_at'`,
+         WHERE table_schema='public' AND table_name='pages' AND column_name='salience_touched_at'`
       );
       expect(salience.rows.length).toBeGreaterThan(0);
     } finally {
@@ -141,7 +141,7 @@ describe('v0.30.3 wave — pre-v39/v40/v41 forward-reference bootstrap (#741)', 
     }
   });
 
-  test('pre-v34 brain (compounded v0.20 + v0.26.3 + v39-v41 wedge) walks forward cleanly', async () => {
+  test("pre-v34 brain (compounded v0.20 + v0.26.3 + v39-v41 wedge) walks forward cleanly", async () => {
     // The "user stuck on v0.20-era PGLite brain hitting v0.30.0" scenario:
     // multiple bootstrap forward-reference gaps compounded. This is the
     // headline upgrade-path claim in the v0.30.3 release notes.

@@ -5,8 +5,8 @@
 export function promptLine(prompt: string): Promise<string> {
   return new Promise((resolve) => {
     process.stdout.write(prompt);
-    process.stdin.setEncoding('utf-8');
-    process.stdin.once('data', (chunk) => {
+    process.stdin.setEncoding("utf-8");
+    process.stdin.once("data", (chunk) => {
       const data = chunk.toString().trim();
       process.stdin.pause();
       resolve(data);
@@ -32,16 +32,19 @@ export function promptLine(prompt: string): Promise<string> {
  * Callers MUST handle null explicitly — it is NOT the same as an empty string
  * (which means "user pressed Enter").
  */
-export function promptLineStderr(prompt: string, opts: { timeoutMs?: number } = {}): Promise<string | null> {
+export function promptLineStderr(
+  prompt: string,
+  opts: { timeoutMs?: number } = {}
+): Promise<string | null> {
   const timeoutMs = opts.timeoutMs ?? 300_000;
   return new Promise((resolve) => {
     process.stderr.write(prompt);
-    process.stdin.setEncoding('utf-8');
+    process.stdin.setEncoding("utf-8");
     let settled = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
     const cleanup = () => {
-      process.stdin.removeListener('data', onData);
-      process.stdin.removeListener('end', onEnd);
+      process.stdin.removeListener("data", onData);
+      process.stdin.removeListener("end", onEnd);
       if (timer !== null) clearTimeout(timer);
       process.stdin.pause();
     };
@@ -65,8 +68,8 @@ export function promptLineStderr(prompt: string, opts: { timeoutMs?: number } = 
         resolve(null);
       }, timeoutMs);
     }
-    process.stdin.once('data', onData);
-    process.stdin.once('end', onEnd);
+    process.stdin.once("data", onData);
+    process.stdin.once("end", onEnd);
     process.stdin.resume();
   });
 }

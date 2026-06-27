@@ -1,10 +1,5 @@
 import { describe, test, expect, vi, afterEach } from "vitest";
-import {
-  brandForHost,
-  isExternalUrl,
-  OTHER_VERTICAL_PATHS,
-  type SiteBrand,
-} from "./brand";
+import { brandForHost, isExternalUrl, OTHER_VERTICAL_PATHS, type SiteBrand } from "./brand";
 
 // subsumioCanonical depends on module-level SUBSUMIO_SITE_URL which is
 // evaluated at import time. Use dynamic imports for env-dependent tests.

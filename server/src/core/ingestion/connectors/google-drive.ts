@@ -15,15 +15,8 @@
  *   4. Complete OAuth2 flow in browser
  */
 
-import {
-  BaseConnector,
-  type ConnectorConfig,
-  type ConnectorItem,
-} from './base.ts';
-import {
-  type IngestionEvent,
-  type IngestionContentType,
-} from '../types.ts';
+import { BaseConnector, type ConnectorConfig, type ConnectorItem } from "./base.ts";
+import { type IngestionEvent, type IngestionContentType } from "../types.ts";
 
 interface DriveFile {
   id: string;
@@ -42,7 +35,7 @@ interface DriveChange {
 
 export class GoogleDriveConnector extends BaseConnector {
   constructor(config: ConnectorConfig) {
-    super('google-drive', config);
+    super("google-drive", config);
   }
 
   getApiRateLimit(): { capacity: number; windowMs: number } {
@@ -52,16 +45,16 @@ export class GoogleDriveConnector extends BaseConnector {
 
   async refreshToken(): Promise<void> {
     const refreshToken = await this._loadState().then((s) => s?.refresh_token);
-    if (!refreshToken) throw new Error('No refresh token available');
+    if (!refreshToken) throw new Error("No refresh token available");
 
-    const res = await fetch('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    const res = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
-        grant_type: 'refresh_token',
+        grant_type: "refresh_token",
         refresh_token: refreshToken,
-        client_id: this._config.client_id ?? '',
-        client_secret: this._config.client_secret ?? '',
+        client_id: this._config.client_id ?? "",
+        client_secret: this._config.client_secret ?? "",
       }),
     });
 
@@ -72,32 +65,34 @@ export class GoogleDriveConnector extends BaseConnector {
 
   async fetchDelta(cursor?: string): Promise<{ items: ConnectorItem[]; nextCursor?: string }> {
     const token = this.getAccessToken();
-    if (!token) throw new Error('Not authenticated');
+    if (!token) throw new Error("Not authenticated");
 
     // Step 1: Get changes list.
     let pageToken = cursor;
     if (!pageToken) {
       // First sync: get the latest start page token.
-      const startRes = await fetch(
-        'https://www.googleapis.com/drive/v3/changes/startPageToken',
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
+      const startRes = await fetch("https://www.googleapis.com/drive/v3/changes/startPageToken", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (!startRes.ok) throw new Error(`startPageToken failed: ${startRes.status}`);
       const startData = await startRes.json();
       pageToken = startData.startPageToken;
     }
 
-    const changesUrl = new URL('https://www.googleapis.com/drive/v3/changes');
-    changesUrl.searchParams.set('pageToken', pageToken!);
-    changesUrl.searchParams.set('pageSize', String(this._config.batch_size ?? 100));
-    changesUrl.searchParams.set('fields', 'nextPageToken,newStartPageToken,changes(fileId,file(name,mimeType,modifiedTime,webViewLink,parents),removed)');
+    const changesUrl = new URL("https://www.googleapis.com/drive/v3/changes");
+    changesUrl.searchParams.set("pageToken", pageToken!);
+    changesUrl.searchParams.set("pageSize", String(this._config.batch_size ?? 100));
+    changesUrl.searchParams.set(
+      "fields",
+      "nextPageToken,newStartPageToken,changes(fileId,file(name,mimeType,modifiedTime,webViewLink,parents),removed)"
+    );
 
     // Apply folder filter if configured.
     const folderFilter = this._config.filters?.folder as string | undefined;
     if (folderFilter) {
-      changesUrl.searchParams.set('driveId', folderFilter);
-      changesUrl.searchParams.set('includeItemsFromAllDrives', 'true');
-      changesUrl.searchParams.set('supportsAllDrives', 'true');
+      changesUrl.searchParams.set("driveId", folderFilter);
+      changesUrl.searchParams.set("includeItemsFromAllDrives", "true");
+      changesUrl.searchParams.set("supportsAllDrives", "true");
     }
 
     const res = await fetch(changesUrl, { headers: { Authorization: `Bearer ${token}` } });
@@ -110,7 +105,7 @@ export class GoogleDriveConnector extends BaseConnector {
       if (!change.file) continue;
       // Skip Google Workspace native formats that need export.
       const file = change.file;
-      if (file.mimeType.startsWith('application/vnd.google-apps.')) {
+      if (file.mimeType.startsWith("application/vnd.google-apps.")) {
         // Convert to exportable format.
         const exportMime = this._exportMimeType(file.mimeType);
         if (!exportMime) continue;
@@ -145,32 +140,32 @@ export class GoogleDriveConnector extends BaseConnector {
   async toIngestionEvent(item: ConnectorItem): Promise<IngestionEvent> {
     // Download the file content.
     const token = this.getAccessToken();
-    if (!token) throw new Error('Not authenticated');
+    if (!token) throw new Error("Not authenticated");
 
     const contentUrl = item.content; // either export URL or media URL
     const res = await fetch(contentUrl, { headers: { Authorization: `Bearer ${token}` } });
     if (!res.ok) throw new Error(`Download failed: ${res.status}`);
 
-    const mime = item.content_type ?? 'unknown';
+    const mime = item.content_type ?? "unknown";
     let content: string;
 
-    if (mime === 'text/html' || mime === 'text/plain' || mime === 'text/markdown') {
+    if (mime === "text/html" || mime === "text/plain" || mime === "text/markdown") {
       content = await res.text();
-    } else if (mime === 'application/pdf') {
+    } else if (mime === "application/pdf") {
       // For PDFs, download binary and let the document processor handle it.
       const buf = Buffer.from(await res.arrayBuffer());
-      content = buf.toString('base64');
-    } else if (mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+      content = buf.toString("base64");
+    } else if (mime === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
       // DOCX — download binary for extract-document.ts.
       const buf = Buffer.from(await res.arrayBuffer());
-      content = buf.toString('base64');
+      content = buf.toString("base64");
     } else {
       // Binary: store as base64 or reference.
       const buf = Buffer.from(await res.arrayBuffer());
-      content = buf.toString('base64');
+      content = buf.toString("base64");
     }
 
-    const detectedType = this.detectContentType(item.title ?? '', mime) as IngestionContentType;
+    const detectedType = this.detectContentType(item.title ?? "", mime) as IngestionContentType;
 
     return {
       source_id: this.id,
@@ -191,9 +186,9 @@ export class GoogleDriveConnector extends BaseConnector {
 
   private _exportMimeType(driveMime: string): string | null {
     const map: Record<string, string> = {
-      'application/vnd.google-apps.document': 'text/plain',
-      'application/vnd.google-apps.spreadsheet': 'text/csv',
-      'application/vnd.google-apps.presentation': 'text/plain',
+      "application/vnd.google-apps.document": "text/plain",
+      "application/vnd.google-apps.spreadsheet": "text/csv",
+      "application/vnd.google-apps.presentation": "text/plain",
     };
     return map[driveMime] ?? null;
   }
@@ -213,20 +208,20 @@ export class GoogleDriveConnector extends BaseConnector {
     }
 
     const token = this.getAccessToken();
-    if (!token) throw new Error('Not authenticated');
+    if (!token) throw new Error("Not authenticated");
 
     // Generate a unique channel id for this connector instance.
     const channelId = `gbrain-drive-${this.id}-${Date.now()}`;
 
-    const res = await fetch('https://www.googleapis.com/drive/v3/changes/watch', {
-      method: 'POST',
+    const res = await fetch("https://www.googleapis.com/drive/v3/changes/watch", {
+      method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         id: channelId,
-        type: 'web_hook',
+        type: "web_hook",
         address: webhookUrl,
         payload: true,
       }),
@@ -237,7 +232,7 @@ export class GoogleDriveConnector extends BaseConnector {
       throw new Error(`Drive changes.watch failed: ${res.status} ${err}`);
     }
 
-    const data = await res.json() as { resourceId: string; expiration?: string };
+    const data = (await res.json()) as { resourceId: string; expiration?: string };
 
     // Persist channel info for verification and cleanup.
     if (this._state) {
@@ -261,11 +256,11 @@ export class GoogleDriveConnector extends BaseConnector {
     if (!token) return;
 
     try {
-      await fetch('https://www.googleapis.com/drive/v3/channels/stop', {
-        method: 'POST',
+      await fetch("https://www.googleapis.com/drive/v3/channels/stop", {
+        method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ id: channelId, resourceId }),
       });

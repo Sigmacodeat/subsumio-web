@@ -12,17 +12,17 @@
  * AND inside the spec list at the bottom. CLI dispatch reads `getRegistry()`.
  */
 
-import type { BrainEngine } from './engine.ts';
-import type { BackfillSpec } from './backfill-base.ts';
-import { computeEffectiveDate } from './effective-date.ts';
-import { computeEmotionalWeight } from './cycle/emotional-weight.ts';
+import type { BrainEngine } from "./engine.ts";
+import type { BackfillSpec } from "./backfill-base.ts";
+import { computeEffectiveDate } from "./effective-date.ts";
+import { computeEmotionalWeight } from "./cycle/emotional-weight.ts";
 
 export interface RegisteredBackfill {
   spec: BackfillSpec<Record<string, unknown>>;
   /** One-line description for `gbrain backfill list`. */
   description: string;
   /** Whether this entry is fully implemented in v0.30.1. */
-  v030_1_status: 'implemented' | 'declared-only';
+  v030_1_status: "implemented" | "declared-only";
 }
 
 const _registry = new Map<string, RegisteredBackfill>();
@@ -61,24 +61,35 @@ interface PageRow {
 
 function parseFrontmatter(raw: unknown): Record<string, unknown> {
   if (raw == null) return {};
-  if (typeof raw === 'string') {
-    try { return JSON.parse(raw) as Record<string, unknown>; }
-    catch { return {}; }
+  if (typeof raw === "string") {
+    try {
+      return JSON.parse(raw) as Record<string, unknown>;
+    } catch {
+      return {};
+    }
   }
-  if (typeof raw === 'object') return raw as Record<string, unknown>;
+  if (typeof raw === "object") return raw as Record<string, unknown>;
   return {};
 }
 
 function effectiveDateBackfill(): RegisteredBackfill {
   return {
-    description: 'Compute effective_date / effective_date_source for pages imported before v0.29.1',
-    v030_1_status: 'implemented',
+    description: "Compute effective_date / effective_date_source for pages imported before v0.29.1",
+    v030_1_status: "implemented",
     spec: {
-      name: 'effective_date',
-      table: 'pages',
-      idColumn: 'id',
-      selectColumns: ['slug', 'frontmatter', 'import_filename', 'effective_date', 'effective_date_source', 'created_at', 'updated_at'],
-      needsBackfill: 'effective_date IS NULL',
+      name: "effective_date",
+      table: "pages",
+      idColumn: "id",
+      selectColumns: [
+        "slug",
+        "frontmatter",
+        "import_filename",
+        "effective_date",
+        "effective_date_source",
+        "created_at",
+        "updated_at",
+      ],
+      needsBackfill: "effective_date IS NULL",
       compute: async (rows) => {
         const updates: Array<{ id: number; updates: Record<string, unknown> }> = [];
         for (const r of rows as unknown as PageRow[]) {
@@ -86,7 +97,7 @@ function effectiveDateBackfill(): RegisteredBackfill {
           // Strip extension off import_filename (effective-date expects basename
           // without ext). Pre-v0.29.1 rows have NULL import_filename.
           const filenameStem = r.import_filename
-            ? r.import_filename.replace(/\.[a-z0-9]+$/i, '')
+            ? r.import_filename.replace(/\.[a-z0-9]+$/i, "")
             : null;
           const result = computeEffectiveDate({
             slug: r.slug,
@@ -121,28 +132,28 @@ interface EmotionalWeightRow {
 
 function emotionalWeightBackfill(): RegisteredBackfill {
   return {
-    description: 'Recompute emotional_weight for pages with stale recompute timestamp',
-    v030_1_status: 'implemented',
+    description: "Recompute emotional_weight for pages with stale recompute timestamp",
+    v030_1_status: "implemented",
     spec: {
-      name: 'emotional_weight',
-      table: 'pages',
-      idColumn: 'id',
-      selectColumns: ['slug'],
-      needsBackfill: 'emotional_weight_recomputed_at IS NULL',
+      name: "emotional_weight",
+      table: "pages",
+      idColumn: "id",
+      selectColumns: ["slug"],
+      needsBackfill: "emotional_weight_recomputed_at IS NULL",
       // X4 / P2 corrected predicate: backlog rows are those that were never
       // recomputed (NULL) — NOT rows with weight=0 (legitimately steady).
       // Migration v44 adds the column.
       requiredIndex: {
-        name: 'idx_pages_emotional_weight_pending',
+        name: "idx_pages_emotional_weight_pending",
         sql: `CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_pages_emotional_weight_pending ON pages (id) WHERE emotional_weight_recomputed_at IS NULL`,
       },
       compute: async (rows, engine) => {
         const updates: Array<{ id: number; updates: Record<string, unknown> }> = [];
         // batchLoadEmotionalInputs is cheap and shape-aware. Fall back to
         // per-row read if the engine doesn't expose it (older brains).
-        const slugs = (rows as unknown as EmotionalWeightRow[]).map(r => r.slug);
+        const slugs = (rows as unknown as EmotionalWeightRow[]).map((r) => r.slug);
         const inputs = await engine.batchLoadEmotionalInputs(slugs).catch(() => []);
-        const inputBySlug = new Map(inputs.map(i => [i.slug, i]));
+        const inputBySlug = new Map(inputs.map((i) => [i.slug, i]));
         for (const r of rows as unknown as EmotionalWeightRow[]) {
           const input = inputBySlug.get(r.slug);
           if (!input) {
@@ -174,16 +185,16 @@ function emotionalWeightBackfill(): RegisteredBackfill {
 
 function embeddingVoyageBackfill(): RegisteredBackfill {
   return {
-    description: 'Declared-only in v0.30.1 (multi-column embedding schema lands in v0.30.2)',
-    v030_1_status: 'declared-only',
+    description: "Declared-only in v0.30.1 (multi-column embedding schema lands in v0.30.2)",
+    v030_1_status: "declared-only",
     spec: {
-      name: 'embedding_voyage',
-      table: 'content_chunks',
-      idColumn: 'id',
-      selectColumns: ['chunk_text'],
+      name: "embedding_voyage",
+      table: "content_chunks",
+      idColumn: "id",
+      selectColumns: ["chunk_text"],
       // The column doesn't exist yet; this predicate matches no rows
       // until the v0.30.2 schema migration lands.
-      needsBackfill: '1 = 0',
+      needsBackfill: "1 = 0",
       compute: async () => [],
       estimateRowsPerSecond: 100,
     },
@@ -211,13 +222,14 @@ interface ModalityBackfillRow {
  */
 function modalityBackfill(): RegisteredBackfill {
   return {
-    description: 'Flip modality to "image" on image-asset chunks where it was missed by pre-v0.27.1 ingest',
-    v030_1_status: 'implemented',
+    description:
+      'Flip modality to "image" on image-asset chunks where it was missed by pre-v0.27.1 ingest',
+    v030_1_status: "implemented",
     spec: {
-      name: 'modality',
-      table: 'content_chunks',
-      idColumn: 'id',
-      selectColumns: ['chunk_source', 'modality'],
+      name: "modality",
+      table: "content_chunks",
+      idColumn: "id",
+      selectColumns: ["chunk_source", "modality"],
       needsBackfill:
         // D22-7: belt-and-suspenders. Both predicates must hold for the row
         // to be a real image chunk that lost its modality tag.
@@ -225,7 +237,7 @@ function modalityBackfill(): RegisteredBackfill {
       compute: async (rows) => {
         const updates: Array<{ id: number; updates: Record<string, unknown> }> = [];
         for (const r of rows as unknown as ModalityBackfillRow[]) {
-          updates.push({ id: r.id, updates: { modality: 'image' } });
+          updates.push({ id: r.id, updates: { modality: "image" } });
         }
         return updates;
       },

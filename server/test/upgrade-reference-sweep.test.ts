@@ -17,19 +17,13 @@
  * process.chdir() to control what autoDetectSkillsDirReadOnly returns.
  */
 
-import { describe, expect, it, afterEach, beforeEach } from 'bun:test';
-import {
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  rmSync,
-  writeFileSync,
-} from 'fs';
-import { join } from 'path';
-import { tmpdir } from 'os';
+import { describe, expect, it, afterEach, beforeEach } from "bun:test";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "fs";
+import { join } from "path";
+import { tmpdir } from "os";
 
-import { postUpgradeReferenceSweep } from '../src/commands/upgrade.ts';
-import { withEnv } from './helpers/with-env.ts';
+import { postUpgradeReferenceSweep } from "../src/commands/upgrade.ts";
+import { withEnv } from "./helpers/with-env.ts";
 
 const created: string[] = [];
 let origCwd: string;
@@ -41,7 +35,7 @@ beforeEach(() => {
   logs = [];
   originalConsoleLog = console.log;
   console.log = (...args: unknown[]) => {
-    logs.push(args.map(a => (typeof a === 'string' ? a : JSON.stringify(a))).join(' '));
+    logs.push(args.map((a) => (typeof a === "string" ? a : JSON.stringify(a))).join(" "));
   };
 });
 
@@ -59,18 +53,18 @@ afterEach(() => {
 function scratchHostWithSkill(slug: string, opts: { drift?: boolean } = {}): string {
   // Set up a fixture host workspace with one scaffolded skill that either
   // matches gbrain's bundle (identical) or diverges (drift).
-  const ws = mkdtempSync(join(tmpdir(), 'ups-host-'));
+  const ws = mkdtempSync(join(tmpdir(), "ups-host-"));
   created.push(ws);
-  mkdirSync(join(ws, 'skills', slug), { recursive: true });
+  mkdirSync(join(ws, "skills", slug), { recursive: true });
   // The real gbrain bundle ships skills/<slug>/SKILL.md. Write a copy here.
   // For drift, write a different version.
-  const realSkill = join(process.cwd(), 'skills', slug, 'SKILL.md');
+  const realSkill = join(process.cwd(), "skills", slug, "SKILL.md");
   if (!existsSync(realSkill)) {
     throw new Error(`fixture precondition: gbrain repo must have ${realSkill}`);
   }
-  const real = require('fs').readFileSync(realSkill, 'utf-8');
-  const content = opts.drift ? real + '\n## local edit\n' : real;
-  writeFileSync(join(ws, 'skills', slug, 'SKILL.md'), content);
+  const real = require("fs").readFileSync(realSkill, "utf-8");
+  const content = opts.drift ? real + "\n## local edit\n" : real;
+  writeFileSync(join(ws, "skills", slug, "SKILL.md"), content);
   return ws;
 }
 
@@ -79,26 +73,26 @@ function scratchEmptyHost(): string {
   // Reference --all would report every bundled skill as `missing:N`. The
   // sweep should suppress these (they're noise — the host never wanted
   // them).
-  const ws = mkdtempSync(join(tmpdir(), 'ups-empty-'));
+  const ws = mkdtempSync(join(tmpdir(), "ups-empty-"));
   created.push(ws);
-  mkdirSync(join(ws, 'skills'), { recursive: true });
+  mkdirSync(join(ws, "skills"), { recursive: true });
   return ws;
 }
 
 const GBRAIN_ROOT = process.cwd(); // tests run from gbrain repo root
 
-describe('postUpgradeReferenceSweep', () => {
-  it('GBRAIN_SKIP_REFERENCE_SWEEP=1 short-circuits silently', async () => {
-    await withEnv({ GBRAIN_SKIP_REFERENCE_SWEEP: '1' }, async () => {
-      const ws = scratchHostWithSkill('book-mirror', { drift: true });
+describe("postUpgradeReferenceSweep", () => {
+  it("GBRAIN_SKIP_REFERENCE_SWEEP=1 short-circuits silently", async () => {
+    await withEnv({ GBRAIN_SKIP_REFERENCE_SWEEP: "1" }, async () => {
+      const ws = scratchHostWithSkill("book-mirror", { drift: true });
       await postUpgradeReferenceSweep({ gbrainRoot: GBRAIN_ROOT, targetWorkspace: ws });
-      expect(logs.join('\n')).toBe('');
+      expect(logs.join("\n")).toBe("");
     });
   });
 
-  it('zero drift (skills present but identical) → silent', async () => {
+  it("zero drift (skills present but identical) → silent", async () => {
     await withEnv({ GBRAIN_SKIP_REFERENCE_SWEEP: undefined }, async () => {
-      const ws = scratchHostWithSkill('book-mirror'); // no drift
+      const ws = scratchHostWithSkill("book-mirror"); // no drift
       await postUpgradeReferenceSweep({ gbrainRoot: GBRAIN_ROOT, targetWorkspace: ws });
       // book-mirror has 1 identical (SKILL.md) + 1 missing (routing-eval.jsonl)
       // — the filter requires differs > 0 OR missing > 0 AND identical+differs > 0.
@@ -109,48 +103,48 @@ describe('postUpgradeReferenceSweep', () => {
     });
   });
 
-  it('empty skills/ dir (never scaffolded) → silent (no noise)', async () => {
+  it("empty skills/ dir (never scaffolded) → silent (no noise)", async () => {
     await withEnv({ GBRAIN_SKIP_REFERENCE_SWEEP: undefined }, async () => {
       const ws = scratchEmptyHost();
       await postUpgradeReferenceSweep({ gbrainRoot: GBRAIN_ROOT, targetWorkspace: ws });
       // Every bundled skill reports missing-only — filter requires
       // identical+differs > 0, so all are suppressed. Header never prints.
-      expect(logs.join('\n')).not.toContain('Skillpack reference sweep');
+      expect(logs.join("\n")).not.toContain("Skillpack reference sweep");
     });
   });
 
-  it('drift detected → prints header + per-skill summary + footer hints', async () => {
+  it("drift detected → prints header + per-skill summary + footer hints", async () => {
     await withEnv({ GBRAIN_SKIP_REFERENCE_SWEEP: undefined }, async () => {
-      const ws = scratchHostWithSkill('book-mirror', { drift: true });
+      const ws = scratchHostWithSkill("book-mirror", { drift: true });
       await postUpgradeReferenceSweep({ gbrainRoot: GBRAIN_ROOT, targetWorkspace: ws });
-      const out = logs.join('\n');
-      expect(out).toContain('Skillpack reference sweep');
-      expect(out).toContain('book-mirror');
-      expect(out).toContain('differs:1'); // the one edited file
-      expect(out).toContain('gbrain skillpack reference <slug>');
-      expect(out).toContain('_AGENT_README.md');
-      expect(out).toContain('GBRAIN_SKIP_REFERENCE_SWEEP');
+      const out = logs.join("\n");
+      expect(out).toContain("Skillpack reference sweep");
+      expect(out).toContain("book-mirror");
+      expect(out).toContain("differs:1"); // the one edited file
+      expect(out).toContain("gbrain skillpack reference <slug>");
+      expect(out).toContain("_AGENT_README.md");
+      expect(out).toContain("GBRAIN_SKIP_REFERENCE_SWEEP");
     });
   });
 
-  it('dev-mode guard: workspace IS gbrain → silent', async () => {
+  it("dev-mode guard: workspace IS gbrain → silent", async () => {
     await withEnv({ GBRAIN_SKIP_REFERENCE_SWEEP: undefined }, async () => {
       // Pass gbrain repo as both gbrainRoot AND targetWorkspace.
       await postUpgradeReferenceSweep({
         gbrainRoot: GBRAIN_ROOT,
         targetWorkspace: GBRAIN_ROOT,
       });
-      expect(logs.join('\n')).not.toContain('Skillpack reference sweep');
+      expect(logs.join("\n")).not.toContain("Skillpack reference sweep");
     });
   });
 
-  it('errors swallowed silently — never blocks post-upgrade', async () => {
+  it("errors swallowed silently — never blocks post-upgrade", async () => {
     // Pass a bogus path. The internal runReferenceAll will throw because
     // the bundle manifest doesn't exist at that path. Sweep must catch.
     await withEnv({ GBRAIN_SKIP_REFERENCE_SWEEP: undefined }, async () => {
       await postUpgradeReferenceSweep({
-        gbrainRoot: '/dev/null/no-bundle-here',
-        targetWorkspace: '/tmp/no-such-workspace',
+        gbrainRoot: "/dev/null/no-bundle-here",
+        targetWorkspace: "/tmp/no-such-workspace",
       });
       // Must not throw. Logs may or may not have content; either is fine.
     });

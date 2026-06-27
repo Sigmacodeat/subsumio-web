@@ -9,8 +9,8 @@
  * by importing them. No drift.
  */
 
-import { classifyIntent as classifyByText, type Intent } from '../../core/think/intent.ts';
-import type { LongMemEvalQuestion } from './adapter.ts';
+import { classifyIntent as classifyByText, type Intent } from "../../core/think/intent.ts";
+import type { LongMemEvalQuestion } from "./adapter.ts";
 
 export type { Intent };
 
@@ -27,17 +27,17 @@ export type { Intent };
  *   - any unknown                 → fall through to regex classifier
  */
 function mapDatasetQuestionType(qt: string | undefined): Intent | null {
-  if (typeof qt !== 'string') return null;
+  if (typeof qt !== "string") return null;
   const lower = qt.trim().toLowerCase();
-  if (lower === 'temporal-reasoning') return 'temporal';
-  if (lower === 'knowledge-update') return 'knowledge_update';
+  if (lower === "temporal-reasoning") return "temporal";
+  if (lower === "knowledge-update") return "knowledge_update";
   if (
-    lower === 'single-session-user' ||
-    lower === 'single-session-assistant' ||
-    lower === 'multi-session' ||
-    lower === 'single-session-preference'
+    lower === "single-session-user" ||
+    lower === "single-session-assistant" ||
+    lower === "multi-session" ||
+    lower === "single-session-preference"
   ) {
-    return 'other';
+    return "other";
   }
   return null;
 }

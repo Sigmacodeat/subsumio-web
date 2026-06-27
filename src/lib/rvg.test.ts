@@ -82,7 +82,13 @@ describe("calculateRvg — RVG 2025 Stufenformel (KostBRÄG 2025)", () => {
   test("summeNetto includes all fees (verfahren + termins + einigung + auslagen)", () => {
     const result = calculateRvg(3000);
     expect(result.summeNetto).toBe(
-      Math.round((result.verfahrensgebuehr + result.terminsgebuehr + result.einigungsgebuehr + result.auslagenpauschale) * 100) / 100,
+      Math.round(
+        (result.verfahrensgebuehr +
+          result.terminsgebuehr +
+          result.einigungsgebuehr +
+          result.auslagenpauschale) *
+          100
+      ) / 100
     );
   });
 

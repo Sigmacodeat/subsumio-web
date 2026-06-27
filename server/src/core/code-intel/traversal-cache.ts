@@ -23,7 +23,7 @@
  * but disabled by default until W3 ops materialize enough load to
  * justify it; see `OPTS.useSnapshotIsolation`.
  */
-import type { BrainEngine } from '../engine.ts';
+import type { BrainEngine } from "../engine.ts";
 
 export interface CacheKey {
   symbol_qualified: string;
@@ -48,12 +48,12 @@ export interface CachedResponse<T = unknown> {
  */
 export async function getClusterGeneration(engine: BrainEngine): Promise<number> {
   try {
-    const v = await engine.getConfig('code.cluster_generation');
-    if (typeof v === 'string') {
+    const v = await engine.getConfig("code.cluster_generation");
+    if (typeof v === "string") {
       const n = parseInt(v, 10);
       return Number.isFinite(n) ? n : 0;
     }
-    if (typeof v === 'number') return v;
+    if (typeof v === "number") return v;
     return 0;
   } catch {
     return 0;
@@ -67,7 +67,7 @@ export async function getClusterGeneration(engine: BrainEngine): Promise<number>
 export async function bumpClusterGeneration(engine: BrainEngine): Promise<number> {
   const current = await getClusterGeneration(engine);
   const next = current + 1;
-  await engine.setConfig('code.cluster_generation', String(next));
+  await engine.setConfig("code.cluster_generation", String(next));
   return next;
 }
 
@@ -78,7 +78,7 @@ export async function bumpClusterGeneration(engine: BrainEngine): Promise<number
  */
 export async function getCachedTraversal<T>(
   engine: BrainEngine,
-  key: CacheKey,
+  key: CacheKey
 ): Promise<CachedResponse<T> | null> {
   try {
     const rows = await engine.executeRaw<{
@@ -91,7 +91,7 @@ export async function getCachedTraversal<T>(
         WHERE symbol_qualified = $1 AND depth = $2 AND source_id = $3
           AND cluster_generation = $4
         LIMIT 1`,
-      [key.symbol_qualified, key.depth, key.source_id, key.cluster_generation],
+      [key.symbol_qualified, key.depth, key.source_id, key.cluster_generation]
     );
     if (rows.length === 0) return null;
     const row = rows[0]!;
@@ -116,7 +116,7 @@ export async function putCachedTraversal<T>(
   key: CacheKey,
   response: T,
   maxChunkUpdatedAt: string,
-  xminMax: number,
+  xminMax: number
 ): Promise<void> {
   try {
     await engine.executeRaw(
@@ -139,7 +139,7 @@ export async function putCachedTraversal<T>(
         maxChunkUpdatedAt,
         xminMax,
         key.cluster_generation,
-      ],
+      ]
     );
   } catch (err) {
     // Cache writes are best-effort. A failure here must not break the
@@ -155,30 +155,30 @@ export async function putCachedTraversal<T>(
  */
 export async function clearTraversalCache(
   engine: BrainEngine,
-  opts: { sourceId?: string; allSources?: boolean } = {},
+  opts: { sourceId?: string; allSources?: boolean } = {}
 ): Promise<number> {
   if (!opts.sourceId && !opts.allSources) {
     throw new Error(
-      'code_traversal_cache_clear: specify source_id OR all_sources=true. ' +
-        'Without either, the operation is ambiguous (mirrors v0.26.5 destructive-guard).',
+      "code_traversal_cache_clear: specify source_id OR all_sources=true. " +
+        "Without either, the operation is ambiguous (mirrors v0.26.5 destructive-guard)."
     );
   }
   if (opts.allSources) {
     const rows = await engine.executeRaw<{ count: string }>(
       `WITH deleted AS (DELETE FROM code_traversal_cache RETURNING 1)
        SELECT COUNT(*)::text AS count FROM deleted`,
-      [],
+      []
     );
-    return parseInt(rows[0]?.count ?? '0', 10);
+    return parseInt(rows[0]?.count ?? "0", 10);
   }
   const rows = await engine.executeRaw<{ count: string }>(
     `WITH deleted AS (
        DELETE FROM code_traversal_cache WHERE source_id = $1 RETURNING 1
      )
      SELECT COUNT(*)::text AS count FROM deleted`,
-    [opts.sourceId!],
+    [opts.sourceId!]
   );
-  return parseInt(rows[0]?.count ?? '0', 10);
+  return parseInt(rows[0]?.count ?? "0", 10);
 }
 
 /**
@@ -191,8 +191,8 @@ export async function clearTraversalCache(
  */
 export async function getCachedOrCompute<T>(
   engine: BrainEngine,
-  key: Omit<CacheKey, 'cluster_generation'>,
-  compute: () => Promise<T>,
+  key: Omit<CacheKey, "cluster_generation">,
+  compute: () => Promise<T>
 ): Promise<T> {
   const cluster_generation = await getClusterGeneration(engine);
   const fullKey: CacheKey = { ...key, cluster_generation };

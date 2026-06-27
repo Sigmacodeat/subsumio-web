@@ -18,22 +18,22 @@
  * the user fixes their config before any harvest.
  */
 
-import { existsSync, readFileSync } from 'fs';
+import { existsSync, readFileSync } from "fs";
 
 export class PrivacyLintError extends Error {
   constructor(
     message: string,
-    public hits: string[],
+    public hits: string[]
   ) {
     super(message);
-    this.name = 'PrivacyLintError';
+    this.name = "PrivacyLintError";
   }
 }
 
 export class PrivacyLintConfigError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'PrivacyLintConfigError';
+    this.name = "PrivacyLintConfigError";
   }
 }
 
@@ -53,11 +53,11 @@ export const DEFAULT_PRIVATE_PATTERNS: string[] = [
 export function loadPatterns(patternsPath?: string): Array<{ regex: RegExp; source: string }> {
   const lines: string[] = [];
   if (patternsPath && existsSync(patternsPath)) {
-    const raw = readFileSync(patternsPath, 'utf-8');
-    for (const line of raw.split('\n')) {
+    const raw = readFileSync(patternsPath, "utf-8");
+    for (const line of raw.split("\n")) {
       const trimmed = line.trim();
       if (trimmed.length === 0) continue;
-      if (trimmed.startsWith('#')) continue; // line comment
+      if (trimmed.startsWith("#")) continue; // line comment
       lines.push(trimmed);
     }
   }
@@ -66,12 +66,12 @@ export function loadPatterns(patternsPath?: string): Array<{ regex: RegExp; sour
   // hit). Order otherwise doesn't matter — we report all hits.
   lines.push(...DEFAULT_PRIVATE_PATTERNS);
 
-  return lines.map(line => {
+  return lines.map((line) => {
     try {
-      return { regex: new RegExp(line, 'g'), source: line };
+      return { regex: new RegExp(line, "g"), source: line };
     } catch (err) {
       throw new PrivacyLintConfigError(
-        `Malformed regex in ${patternsPath ?? '<defaults>'}: ${line} — ${(err as Error).message}`,
+        `Malformed regex in ${patternsPath ?? "<defaults>"}: ${line} — ${(err as Error).message}`
       );
     }
   });
@@ -82,10 +82,7 @@ export function loadPatterns(patternsPath?: string): Array<{ regex: RegExp; sour
  * Throws `PrivacyLintError` (with `hits[]`) on any match. No-op when
  * patterns + files yield zero hits.
  */
-export function runPrivacyLint(
-  filePaths: string[],
-  patternsPath?: string,
-): void {
+export function runPrivacyLint(filePaths: string[], patternsPath?: string): void {
   const patterns = loadPatterns(patternsPath);
   if (patterns.length === 0) return;
 
@@ -94,11 +91,11 @@ export function runPrivacyLint(
     if (!existsSync(file)) continue;
     let content: string;
     try {
-      content = readFileSync(file, 'utf-8');
+      content = readFileSync(file, "utf-8");
     } catch {
       continue;
     }
-    const lines = content.split('\n');
+    const lines = content.split("\n");
     for (let i = 0; i < lines.length; i++) {
       for (const { regex, source } of patterns) {
         // Reset lastIndex for global regex re-use across lines.
@@ -112,8 +109,8 @@ export function runPrivacyLint(
 
   if (hits.length > 0) {
     throw new PrivacyLintError(
-      `Privacy lint found ${hits.length} match(es) in harvested content. Harvest rolled back. Edit your skill, run the editorial genericization, or add a pattern exception to ${patternsPath ?? '~/.gbrain/harvest-private-patterns.txt'}.`,
-      hits,
+      `Privacy lint found ${hits.length} match(es) in harvested content. Harvest rolled back. Edit your skill, run the editorial genericization, or add a pattern exception to ${patternsPath ?? "~/.gbrain/harvest-private-patterns.txt"}.`,
+      hits
     );
   }
 }

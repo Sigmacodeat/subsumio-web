@@ -818,7 +818,12 @@ export function aclGroupsMiddleware(engine: BrainEngine) {
       // separate document-level gate and must fail closed.
       const msg = e instanceof Error ? e.message : "acl_resolution_failed";
       console.error(`[aclGroupsMiddleware] ACL resolution failed: ${msg}`);
-      res.status(500).json({ error: "acl_resolution_failed", message: "Document access control could not be resolved." });
+      res
+        .status(500)
+        .json({
+          error: "acl_resolution_failed",
+          message: "Document access control could not be resolved.",
+        });
       return;
     }
   };

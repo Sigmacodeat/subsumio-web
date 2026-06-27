@@ -40,10 +40,10 @@
  *     stage list.
  */
 
-import { getCurrentBudgetTracker } from '../ai/gateway.ts';
-import type { BudgetTracker } from '../budget/budget-tracker.ts';
-import { logProgressiveBatchEvent } from './audit.ts';
-import { defaultStageReport } from './stage-report.ts';
+import { getCurrentBudgetTracker } from "../ai/gateway.ts";
+import type { BudgetTracker } from "../budget/budget-tracker.ts";
+import { logProgressiveBatchEvent } from "./audit.ts";
+import { defaultStageReport } from "./stage-report.ts";
 import type {
   AbortReason,
   Policy,
@@ -53,13 +53,13 @@ import type {
   StageRunner,
   StageVerdict,
   Verifier,
-} from './types.ts';
+} from "./types.ts";
 
 /** Default stage item counts. `full` is implicit (the remainder). */
 const DEFAULT_STAGES = [10, 100, 500] as const;
 
 /** Per-spec: the 4 stage labels. Length matches DEFAULT_STAGES + 'full'. */
-const STAGE_LABELS: readonly Stage[] = ['trial', 'ramp_100', 'ramp_500', 'full'];
+const STAGE_LABELS: readonly Stage[] = ["trial", "ramp_100", "ramp_500", "full"];
 
 /**
  * Generate a short operation id (8 hex chars). Used when caller
@@ -71,7 +71,7 @@ function generateOperationId(): string {
   // Math.random is fine; this is a trace id, not a security token.
   return Math.floor(Math.random() * 0xffffffff)
     .toString(16)
-    .padStart(8, '0');
+    .padStart(8, "0");
 }
 
 /**
@@ -85,7 +85,7 @@ export function parseEnvStages(raw: string | undefined): number[] | null {
   if (!raw) return null;
   const trimmed = raw.trim();
   if (trimmed.length === 0) return null;
-  const parts = trimmed.split(',').map((p) => p.trim());
+  const parts = trimmed.split(",").map((p) => p.trim());
   const nums: number[] = [];
   for (const p of parts) {
     if (!/^[1-9]\d*$/.test(p)) return null; // strict positive int
@@ -125,14 +125,14 @@ export function resolveStages(policy: Policy): number[] {
  */
 export function resolveCostCap(
   policy: Policy,
-  tracker: BudgetTracker | null,
-): { capUsd: number; source: 'policy' | 'tracker' | 'min' | 'uncapped' } | null {
+  tracker: BudgetTracker | null
+): { capUsd: number; source: "policy" | "tracker" | "min" | "uncapped" } | null {
   // Opt-out: caller takes responsibility.
   if (policy.requireBudgetSafetyNet === false) {
     if (policy.maxCostUsd !== undefined) {
-      return { capUsd: policy.maxCostUsd, source: 'policy' };
+      return { capUsd: policy.maxCostUsd, source: "policy" };
     }
-    return { capUsd: Infinity, source: 'uncapped' };
+    return { capUsd: Infinity, source: "uncapped" };
   }
 
   const policyCap = policy.maxCostUsd;
@@ -143,14 +143,14 @@ export function resolveCostCap(
     return null;
   }
   if (policyCap !== undefined && trackerCap === null) {
-    return { capUsd: policyCap, source: 'policy' };
+    return { capUsd: policyCap, source: "policy" };
   }
   if (policyCap === undefined && trackerCap !== null) {
-    return { capUsd: trackerCap, source: 'tracker' };
+    return { capUsd: trackerCap, source: "tracker" };
   }
   // Both set: the lower wins (caller can voluntarily cap tighter).
   const minCap = Math.min(policyCap!, trackerCap!);
-  return { capUsd: minCap, source: minCap === policyCap ? 'policy' : 'min' };
+  return { capUsd: minCap, source: minCap === policyCap ? "policy" : "min" };
 }
 
 /**
@@ -170,7 +170,7 @@ function trackerHeadroom(tracker: BudgetTracker): number | null {
  * GBRAIN_PROGRESSIVE_BATCH_AUTO=1 forces non-interactive.
  */
 function isInteractive(): boolean {
-  if (process.env.GBRAIN_PROGRESSIVE_BATCH_AUTO === '1') return false;
+  if (process.env.GBRAIN_PROGRESSIVE_BATCH_AUTO === "1") return false;
   return Boolean(process.stdin.isTTY && process.stderr.isTTY);
 }
 
@@ -191,17 +191,17 @@ export function awaitInteractiveAbort(ms: number): Promise<boolean> {
     const onSigint = () => {
       if (resolved) return;
       resolved = true;
-      process.off('SIGINT', onSigint);
+      process.off("SIGINT", onSigint);
       clearTimeout(timer);
       resolve(true);
     };
     const timer = setTimeout(() => {
       if (resolved) return;
       resolved = true;
-      process.off('SIGINT', onSigint);
+      process.off("SIGINT", onSigint);
       resolve(false);
     }, ms);
-    process.on('SIGINT', onSigint);
+    process.on("SIGINT", onSigint);
   });
 }
 
@@ -223,7 +223,7 @@ export function awaitInteractiveAbort(ms: number): Promise<boolean> {
  */
 export function sliceIntoStages<T>(
   items: T[],
-  stages: number[],
+  stages: number[]
 ): { trial: T[]; ramp_100: T[]; ramp_500: T[]; full: T[] } {
   const result: { trial: T[]; ramp_100: T[]; ramp_500: T[]; full: T[] } = {
     trial: [],
@@ -237,11 +237,7 @@ export function sliceIntoStages<T>(
     return result;
   }
   let cursor = 0;
-  const stageNames: ('trial' | 'ramp_100' | 'ramp_500')[] = [
-    'trial',
-    'ramp_100',
-    'ramp_500',
-  ];
+  const stageNames: ("trial" | "ramp_100" | "ramp_500")[] = ["trial", "ramp_100", "ramp_500"];
   for (let i = 0; i < stageNames.length; i++) {
     const stageCount = stages[i];
     if (stageCount === undefined) break; // policy provided fewer than 3 ramp stages
@@ -263,7 +259,7 @@ async function evaluateVerifier(
   stage: Stage,
   itemsThisStage: number,
   countsBefore: number,
-  mutationsBefore: number,
+  mutationsBefore: number
 ): Promise<{
   observed?: number;
   expected?: number | null;
@@ -279,7 +275,7 @@ async function evaluateVerifier(
   let newMutationsBefore: number | undefined;
 
   switch (verifier.kind) {
-    case 'output_count': {
+    case "output_count": {
       const after = await verifier.countAfter();
       observed = after - countsBefore;
       expected = verifier.expectedDelta(itemsThisStage);
@@ -290,13 +286,13 @@ async function evaluateVerifier(
         const lower = Math.floor(expected * 0.9);
         const upper = Math.ceil(expected * 1.1);
         if (observed < lower || observed > upper) {
-          countMismatchVerdict = 'abort_count_mismatch';
-          countMismatchReason = 'count_delta_outside_band';
+          countMismatchVerdict = "abort_count_mismatch";
+          countMismatchReason = "count_delta_outside_band";
         }
       }
       break;
     }
-    case 'idempotent_mutation': {
+    case "idempotent_mutation": {
       // Delta semantics: caller's mutatedCount() returns the CUMULATIVE
       // mutation counter; the orchestrator computes per-stage delta
       // against the prior snapshot. Mirrors output_count's
@@ -311,13 +307,13 @@ async function evaluateVerifier(
         const lower = Math.floor(expected * 0.9);
         const upper = Math.ceil(expected * 1.1);
         if (observed < lower || observed > upper) {
-          countMismatchVerdict = 'abort_mutation_mismatch';
-          countMismatchReason = 'mutation_count_outside_band';
+          countMismatchVerdict = "abort_mutation_mismatch";
+          countMismatchReason = "mutation_count_outside_band";
         }
       }
       break;
     }
-    case 'noop': {
+    case "noop": {
       // No count check; just maybe sampleQuality.
       break;
     }
@@ -326,15 +322,13 @@ async function evaluateVerifier(
   // Quality sample: only for verifiers that opt in (noop is optional).
   let qualityVerdict: { ok: boolean; reasons?: string[] } = { ok: true };
   if (
-    verifier.kind === 'output_count' ||
-    verifier.kind === 'idempotent_mutation' ||
-    (verifier.kind === 'noop' && verifier.sampleQuality !== undefined)
+    verifier.kind === "output_count" ||
+    verifier.kind === "idempotent_mutation" ||
+    (verifier.kind === "noop" && verifier.sampleQuality !== undefined)
   ) {
     try {
       qualityVerdict =
-        verifier.kind === 'noop'
-          ? await verifier.sampleQuality!()
-          : await verifier.sampleQuality();
+        verifier.kind === "noop" ? await verifier.sampleQuality!() : await verifier.sampleQuality();
     } catch (err) {
       qualityVerdict = {
         ok: false,
@@ -358,8 +352,8 @@ async function evaluateVerifier(
       observed,
       expected,
       qualityVerdict,
-      verdict: 'abort_data_quality',
-      reason: 'data_quality_sample_failed',
+      verdict: "abort_data_quality",
+      reason: "data_quality_sample_failed",
       newMutationsBefore,
     };
   }
@@ -367,7 +361,7 @@ async function evaluateVerifier(
     observed,
     expected,
     qualityVerdict,
-    verdict: 'proceed',
+    verdict: "proceed",
     newMutationsBefore,
   };
 }
@@ -389,7 +383,7 @@ export async function runProgressiveBatch<T>(
   items: T[],
   verifier: Verifier,
   policy: Policy,
-  runner: StageRunner<T>,
+  runner: StageRunner<T>
 ): Promise<ProgressiveBatchResult> {
   const operationId = policy.operationId ?? generateOperationId();
   const label = policy.label;
@@ -402,10 +396,10 @@ export async function runProgressiveBatch<T>(
   let cumulativeAttempts = 0;
 
   // Resolve env-driven disable BEFORE anything else.
-  const disabled = process.env.GBRAIN_PROGRESSIVE_BATCH_DISABLED === '1';
+  const disabled = process.env.GBRAIN_PROGRESSIVE_BATCH_DISABLED === "1";
   if (disabled) {
     process.stderr.write(
-      `[progressive-batch] DISABLED via GBRAIN_PROGRESSIVE_BATCH_DISABLED=1 — skipping ramp for label=${label}\n`,
+      `[progressive-batch] DISABLED via GBRAIN_PROGRESSIVE_BATCH_DISABLED=1 — skipping ramp for label=${label}\n`
     );
   }
 
@@ -417,12 +411,12 @@ export async function runProgressiveBatch<T>(
     const report: StageReport = {
       operationId,
       label,
-      stage: 'trial',
+      stage: "trial",
       itemsInStage: 0,
       itemsProcessedCumulative: 0,
       totalItems,
-      verdict: 'abort_cost_cap',
-      abortReason: 'no_budget_safety_net',
+      verdict: "abort_cost_cap",
+      abortReason: "no_budget_safety_net",
       errorRate: 0,
       costEstimateRunningUsd: 0,
       costProjectedFullUsd: 0,
@@ -432,12 +426,12 @@ export async function runProgressiveBatch<T>(
     logProgressiveBatchEvent({
       operation_id: operationId,
       label,
-      stage: 'trial',
+      stage: "trial",
       items_in_stage: 0,
       items_processed_cumulative: 0,
       total_items: totalItems,
-      verdict: 'abort_cost_cap',
-      abort_reason: 'no_budget_safety_net',
+      verdict: "abort_cost_cap",
+      abort_reason: "no_budget_safety_net",
       error_rate: 0,
       cost_running_usd: 0,
       cost_projected_full_usd: 0,
@@ -451,9 +445,9 @@ export async function runProgressiveBatch<T>(
       itemsProcessed: 0,
       stagesCompleted: [],
       abortedAt: {
-        stage: 'trial',
-        verdict: 'abort_cost_cap',
-        reason: 'no_budget_safety_net',
+        stage: "trial",
+        verdict: "abort_cost_cap",
+        reason: "no_budget_safety_net",
       },
       totalCostUsd: 0,
       durationMs: Date.now() - startedAt,
@@ -469,9 +463,9 @@ export async function runProgressiveBatch<T>(
   // (the orchestrator updates it after each stage's verifier call).
   let countBefore = 0;
   let mutationsBefore = 0;
-  if (verifier.kind === 'output_count') {
+  if (verifier.kind === "output_count") {
     countBefore = await verifier.countBefore();
-  } else if (verifier.kind === 'idempotent_mutation') {
+  } else if (verifier.kind === "idempotent_mutation") {
     mutationsBefore = await verifier.mutatedCount();
   }
 
@@ -480,10 +474,10 @@ export async function runProgressiveBatch<T>(
   const stages = disabled ? [] : resolveStages(policy);
   const slices = sliceIntoStages(items, stages);
   const stageSequence: { stage: Stage; slice: T[] }[] = [
-    { stage: 'trial', slice: slices.trial },
-    { stage: 'ramp_100', slice: slices.ramp_100 },
-    { stage: 'ramp_500', slice: slices.ramp_500 },
-    { stage: 'full', slice: slices.full },
+    { stage: "trial", slice: slices.trial },
+    { stage: "ramp_100", slice: slices.ramp_100 },
+    { stage: "ramp_500", slice: slices.ramp_500 },
+    { stage: "full", slice: slices.full },
   ];
 
   const stagesCompleted: Stage[] = [];
@@ -497,7 +491,7 @@ export async function runProgressiveBatch<T>(
       // Fast-pass: empty stage. Don't write an audit event for noise
       // suppression unless the stage is 'full' AND total items is 0
       // (which is a degenerate but observable case).
-      if (stage === 'full' && totalItems === 0) {
+      if (stage === "full" && totalItems === 0) {
         // Single audit row to mark the run happened with zero items.
         const r: StageReport = {
           operationId,
@@ -506,7 +500,7 @@ export async function runProgressiveBatch<T>(
           itemsInStage: 0,
           itemsProcessedCumulative: 0,
           totalItems: 0,
-          verdict: 'proceed',
+          verdict: "proceed",
           errorRate: 0,
           costEstimateRunningUsd: 0,
           costProjectedFullUsd: 0,
@@ -521,7 +515,7 @@ export async function runProgressiveBatch<T>(
           items_in_stage: 0,
           items_processed_cumulative: 0,
           total_items: 0,
-          verdict: 'proceed',
+          verdict: "proceed",
           error_rate: 0,
           cost_running_usd: 0,
           cost_projected_full_usd: 0,
@@ -547,7 +541,7 @@ export async function runProgressiveBatch<T>(
       failed = slice.length;
       stageCost = 0;
       process.stderr.write(
-        `[progressive-batch] runner threw on stage=${stage} op=${operationId.slice(0, 8)}: ${(err as Error).message}\n`,
+        `[progressive-batch] runner threw on stage=${stage} op=${operationId.slice(0, 8)}: ${(err as Error).message}\n`
       );
     }
     const stageMs = Date.now() - stageStart;
@@ -555,13 +549,11 @@ export async function runProgressiveBatch<T>(
     cumulativeFailures += failed;
     cumulativeAttempts += slice.length;
     cumulativeCost += stageCost;
-    const observedErrorRate =
-      cumulativeAttempts > 0 ? cumulativeFailures / cumulativeAttempts : 0;
+    const observedErrorRate = cumulativeAttempts > 0 ? cumulativeFailures / cumulativeAttempts : 0;
 
     // Cost projection: extrapolate from cost-per-item observed so far
     // (more honest than verifier.costPerItem after the first stage).
-    const observedCostPerItem =
-      cumulativeProcessed > 0 ? cumulativeCost / cumulativeProcessed : 0;
+    const observedCostPerItem = cumulativeProcessed > 0 ? cumulativeCost / cumulativeProcessed : 0;
     const remainingItems = totalItems - cumulativeProcessed;
     const projectedRemainingCost = observedCostPerItem * remainingItems;
     const projectedFullCost = cumulativeCost + projectedRemainingCost;
@@ -572,7 +564,7 @@ export async function runProgressiveBatch<T>(
       stage,
       slice.length,
       countBefore,
-      mutationsBefore,
+      mutationsBefore
     );
     // Advance the idempotent-mutation snapshot for the next stage.
     if (vEval.newMutationsBefore !== undefined) {
@@ -588,17 +580,17 @@ export async function runProgressiveBatch<T>(
     //   6. proceed
     let verdict: StageVerdict = vEval.verdict;
     let abortReason: AbortReason | undefined = vEval.reason;
-    if (verdict === 'proceed' && observedErrorRate > maxErrorRate) {
-      verdict = 'abort_error_rate';
-      abortReason = 'error_rate_exceeded';
+    if (verdict === "proceed" && observedErrorRate > maxErrorRate) {
+      verdict = "abort_error_rate";
+      abortReason = "error_rate_exceeded";
     }
     if (
-      verdict === 'proceed' &&
+      verdict === "proceed" &&
       effectiveCapUsd !== Infinity &&
       (cumulativeCost > effectiveCapUsd || projectedFullCost > effectiveCapUsd)
     ) {
-      verdict = 'abort_cost_cap';
-      abortReason = 'cost_projected_over_cap';
+      verdict = "abort_cost_cap";
+      abortReason = "cost_projected_over_cap";
     }
 
     const report: StageReport = {
@@ -624,9 +616,9 @@ export async function runProgressiveBatch<T>(
 
     // Emit report (caller may signal abort).
     const callerResp = await emitStageReport(policy, report);
-    if (callerResp?.abort && verdict === 'proceed') {
-      verdict = 'abort_explicit';
-      abortReason = 'caller_signaled_abort';
+    if (callerResp?.abort && verdict === "proceed") {
+      verdict = "abort_explicit";
+      abortReason = "caller_signaled_abort";
       report.verdict = verdict;
       report.abortReason = abortReason;
     }
@@ -650,7 +642,7 @@ export async function runProgressiveBatch<T>(
       quality_reasons: report.qualityReasons,
     });
 
-    if (verdict !== 'proceed') {
+    if (verdict !== "proceed") {
       return {
         operationId,
         label,
@@ -672,7 +664,7 @@ export async function runProgressiveBatch<T>(
       if (nextSlice.length > 0) {
         process.stderr.write(
           `[progressive-batch] ${stage} complete; ${nextSlice.length} items in next stage. ` +
-            `Press Ctrl-C within ${interactiveMs}ms to abort.\n`,
+            `Press Ctrl-C within ${interactiveMs}ms to abort.\n`
         );
         const aborted = await awaitInteractiveAbort(interactiveMs);
         if (aborted) {
@@ -683,8 +675,8 @@ export async function runProgressiveBatch<T>(
             itemsInStage: 0,
             itemsProcessedCumulative: cumulativeProcessed,
             totalItems,
-            verdict: 'abort_user',
-            abortReason: 'user_aborted',
+            verdict: "abort_user",
+            abortReason: "user_aborted",
             errorRate: observedErrorRate,
             costEstimateRunningUsd: cumulativeCost,
             costProjectedFullUsd: projectedFullCost,
@@ -699,8 +691,8 @@ export async function runProgressiveBatch<T>(
             items_in_stage: 0,
             items_processed_cumulative: cumulativeProcessed,
             total_items: totalItems,
-            verdict: 'abort_user',
-            abort_reason: 'user_aborted',
+            verdict: "abort_user",
+            abort_reason: "user_aborted",
             error_rate: observedErrorRate,
             cost_running_usd: cumulativeCost,
             cost_projected_full_usd: projectedFullCost,
@@ -712,7 +704,7 @@ export async function runProgressiveBatch<T>(
             totalItems,
             itemsProcessed: cumulativeProcessed,
             stagesCompleted,
-            abortedAt: { stage, verdict: 'abort_user', reason: 'user_aborted' },
+            abortedAt: { stage, verdict: "abort_user", reason: "user_aborted" },
             totalCostUsd: cumulativeCost,
             durationMs: Date.now() - startedAt,
             stageReports,
@@ -741,7 +733,7 @@ export async function runProgressiveBatch<T>(
  */
 async function emitStageReport(
   policy: Policy,
-  report: StageReport,
+  report: StageReport
 ): Promise<{ abort?: boolean; rewriteRemainingStages?: number[] } | undefined> {
   const handler = policy.onStageReport ?? ((r: StageReport) => defaultStageReport(r));
   try {
@@ -750,7 +742,7 @@ async function emitStageReport(
     return r;
   } catch (err) {
     process.stderr.write(
-      `[progressive-batch] onStageReport threw (continuing): ${(err as Error).message}\n`,
+      `[progressive-batch] onStageReport threw (continuing): ${(err as Error).message}\n`
     );
     return undefined;
   }
@@ -775,4 +767,4 @@ export type {
   StageRunner,
   StageVerdict,
   Verifier,
-} from './types.ts';
+} from "./types.ts";

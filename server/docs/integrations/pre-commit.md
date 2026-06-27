@@ -10,16 +10,16 @@ brain source's repo that runs `gbrain frontmatter validate` against staged
 The same eight validation classes the `frontmatter-guard` skill and
 `gbrain doctor`'s `frontmatter_integrity` subcheck report:
 
-| Code              | What it catches                                                     |
-|-------------------|---------------------------------------------------------------------|
-| `MISSING_OPEN`    | File doesn't start with `---`                                       |
-| `MISSING_CLOSE`   | No closing `---` before first heading                               |
-| `YAML_PARSE`      | YAML failed to parse (syntax or structure)                          |
-| `SLUG_MISMATCH`   | `slug:` in frontmatter doesn't match path-derived slug              |
-| `NULL_BYTES`      | Binary corruption (`\x00`) anywhere in the content                  |
-| `NESTED_QUOTES`   | `title: "outer "inner" outer"` shape that breaks YAML               |
-| `NON_STRING_FIELD` | `title`/`type`/`slug` is an unquoted non-string scalar (`title: 123`) |
-| `EMPTY_FRONTMATTER` | `---` ... `---` with nothing meaningful between                   |
+| Code                | What it catches                                                       |
+| ------------------- | --------------------------------------------------------------------- |
+| `MISSING_OPEN`      | File doesn't start with `---`                                         |
+| `MISSING_CLOSE`     | No closing `---` before first heading                                 |
+| `YAML_PARSE`        | YAML failed to parse (syntax or structure)                            |
+| `SLUG_MISMATCH`     | `slug:` in frontmatter doesn't match path-derived slug                |
+| `NULL_BYTES`        | Binary corruption (`\x00`) anywhere in the content                    |
+| `NESTED_QUOTES`     | `title: "outer "inner" outer"` shape that breaks YAML                 |
+| `NON_STRING_FIELD`  | `title`/`type`/`slug` is an unquoted non-string scalar (`title: 123`) |
+| `EMPTY_FRONTMATTER` | `---` ... `---` with nothing meaningful between                       |
 
 ## Install
 

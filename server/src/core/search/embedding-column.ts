@@ -62,13 +62,9 @@
  * column→provider mapping by hand. This is the canonical seam.
  */
 
-import type {
-  EmbeddingColumnConfig,
-  ResolvedColumn,
-  SearchOpts,
-} from '../types.ts';
-import type { GBrainConfig } from '../config.ts';
-import { DEFAULT_EMBEDDING_MODEL, DEFAULT_EMBEDDING_DIMENSIONS } from '../ai/defaults.ts';
+import type { EmbeddingColumnConfig, ResolvedColumn, SearchOpts } from "../types.ts";
+import type { GBrainConfig } from "../config.ts";
+import { DEFAULT_EMBEDDING_MODEL, DEFAULT_EMBEDDING_DIMENSIONS } from "../ai/defaults.ts";
 
 // ---- Constants ---------------------------------------------------------
 
@@ -76,10 +72,7 @@ import { DEFAULT_EMBEDDING_MODEL, DEFAULT_EMBEDDING_DIMENSIONS } from '../ai/def
 export const COLUMN_NAME_REGEX = /^[a-z_][a-z0-9_]*$/;
 
 /** Allowed pgvector types for this registry. Halfvec lands at v0.4.3+. */
-export const ALLOWED_COLUMN_TYPES = new Set<EmbeddingColumnConfig['type']>([
-  'vector',
-  'halfvec',
-]);
+export const ALLOWED_COLUMN_TYPES = new Set<EmbeddingColumnConfig["type"]>(["vector", "halfvec"]);
 
 /** Upper bound on declared dimensions. pgvector hard cap is 16K but
  *  practical embedding models top out around 4096; 8192 is plenty of
@@ -91,13 +84,13 @@ export const MAX_DIMENSIONS = 8192;
  * Default name used when neither caller nor config sets a column.
  * Resolution chain: opts → cfg.search_embedding_column → DEFAULT.
  */
-export const DEFAULT_COLUMN_NAME = 'embedding';
+export const DEFAULT_COLUMN_NAME = "embedding";
 
 /** Names that always exist regardless of user config. Both derive their
  *  provider from existing config keys (embedding_model and
  *  embedding_multimodal_model) so users who don't declare anything still
  *  get correct routing. */
-const BUILTIN_KEYS = ['embedding', 'embedding_image'] as const;
+const BUILTIN_KEYS = ["embedding", "embedding_image"] as const;
 type BuiltinKey = (typeof BUILTIN_KEYS)[number];
 
 // ---- Errors -----------------------------------------------------------
@@ -108,18 +101,18 @@ type BuiltinKey = (typeof BUILTIN_KEYS)[number];
  * exactly what to type next.
  */
 export class EmbeddingColumnNotRegisteredError extends Error {
-  readonly code = 'embedding_column_not_registered';
+  readonly code = "embedding_column_not_registered";
   readonly columnName: string;
   readonly validColumns: string[];
 
   constructor(columnName: string, validColumns: string[]) {
-    const valid = validColumns.length > 0 ? validColumns.join(', ') : '(none)';
+    const valid = validColumns.length > 0 ? validColumns.join(", ") : "(none)";
     super(
       `Embedding column "${columnName}" is not registered. ` +
         `Declared columns: ${valid}. ` +
-        `Add it via: gbrain config set embedding_columns '<JSON>'`,
+        `Add it via: gbrain config set embedding_columns '<JSON>'`
     );
-    this.name = 'EmbeddingColumnNotRegisteredError';
+    this.name = "EmbeddingColumnNotRegisteredError";
     this.columnName = columnName;
     this.validColumns = validColumns;
   }
@@ -131,17 +124,13 @@ export class EmbeddingColumnNotRegisteredError extends Error {
  * can render targeted hints.
  */
 export class EmbeddingColumnConfigError extends Error {
-  readonly code = 'embedding_column_config_invalid';
+  readonly code = "embedding_column_config_invalid";
   readonly columnKey: string;
-  readonly field: 'key' | 'type' | 'dimensions' | 'provider' | 'shape';
+  readonly field: "key" | "type" | "dimensions" | "provider" | "shape";
 
-  constructor(
-    columnKey: string,
-    field: EmbeddingColumnConfigError['field'],
-    detail: string,
-  ) {
+  constructor(columnKey: string, field: EmbeddingColumnConfigError["field"], detail: string) {
     super(`embedding_columns["${columnKey}"]: invalid ${field} — ${detail}`);
-    this.name = 'EmbeddingColumnConfigError';
+    this.name = "EmbeddingColumnConfigError";
     this.columnKey = columnKey;
     this.field = field;
   }
@@ -155,26 +144,22 @@ export class EmbeddingColumnConfigError extends Error {
  * earliest possible moment.
  */
 export function validateColumnKey(key: string): void {
-  if (typeof key !== 'string' || key.length === 0) {
-    throw new EmbeddingColumnConfigError(
-      String(key ?? ''),
-      'key',
-      'must be a non-empty string',
-    );
+  if (typeof key !== "string" || key.length === 0) {
+    throw new EmbeddingColumnConfigError(String(key ?? ""), "key", "must be a non-empty string");
   }
   if (!COLUMN_NAME_REGEX.test(key)) {
     throw new EmbeddingColumnConfigError(
       key,
-      'key',
-      `must match ${COLUMN_NAME_REGEX} (lowercase identifier, starts with letter or underscore, no quotes/symbols)`,
+      "key",
+      `must match ${COLUMN_NAME_REGEX} (lowercase identifier, starts with letter or underscore, no quotes/symbols)`
     );
   }
 }
 
 /** `provider:model` string check. Both halves must be non-empty. */
 function isParseableProviderModel(s: unknown): s is string {
-  if (typeof s !== 'string' || s.length === 0) return false;
-  const idx = s.indexOf(':');
+  if (typeof s !== "string" || s.length === 0) return false;
+  const idx = s.indexOf(":");
   if (idx <= 0) return false;
   if (idx === s.length - 1) return false;
   return true;
@@ -187,41 +172,37 @@ function isParseableProviderModel(s: unknown): s is string {
  */
 export function validateColumnConfig(
   key: string,
-  entry: unknown,
+  entry: unknown
 ): asserts entry is EmbeddingColumnConfig {
-  if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
-    throw new EmbeddingColumnConfigError(
-      key,
-      'shape',
-      'must be a JSON object',
-    );
+  if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+    throw new EmbeddingColumnConfigError(key, "shape", "must be a JSON object");
   }
   const e = entry as Record<string, unknown>;
 
   if (!isParseableProviderModel(e.provider)) {
     throw new EmbeddingColumnConfigError(
       key,
-      'provider',
-      'must be a non-empty "provider:model" string (e.g. "voyage:voyage-3-large")',
+      "provider",
+      'must be a non-empty "provider:model" string (e.g. "voyage:voyage-3-large")'
     );
   }
   if (
-    typeof e.dimensions !== 'number' ||
+    typeof e.dimensions !== "number" ||
     !Number.isInteger(e.dimensions) ||
     e.dimensions < 1 ||
     e.dimensions > MAX_DIMENSIONS
   ) {
     throw new EmbeddingColumnConfigError(
       key,
-      'dimensions',
-      `must be an integer in [1, ${MAX_DIMENSIONS}]`,
+      "dimensions",
+      `must be an integer in [1, ${MAX_DIMENSIONS}]`
     );
   }
-  if (typeof e.type !== 'string' || !ALLOWED_COLUMN_TYPES.has(e.type as 'vector' | 'halfvec')) {
+  if (typeof e.type !== "string" || !ALLOWED_COLUMN_TYPES.has(e.type as "vector" | "halfvec")) {
     throw new EmbeddingColumnConfigError(
       key,
-      'type',
-      `must be one of: ${[...ALLOWED_COLUMN_TYPES].join(', ')}`,
+      "type",
+      `must be one of: ${[...ALLOWED_COLUMN_TYPES].join(", ")}`
     );
   }
 }
@@ -263,9 +244,7 @@ export function buildVectorCastFragment(resolved: ResolvedColumn): {
 } {
   const col = quoteIdentifier(resolved.name);
   const castSql =
-    resolved.type === 'halfvec'
-      ? `$1::halfvec(${resolved.dimensions})`
-      : `$1::vector`;
+    resolved.type === "halfvec" ? `$1::halfvec(${resolved.dimensions})` : `$1::vector`;
   return { col, castSql };
 }
 
@@ -285,7 +264,7 @@ export function buildVectorCastFragment(resolved: ResolvedColumn): {
  * DB column shape.
  */
 export function getEmbeddingColumnRegistry(
-  cfg: GBrainConfig,
+  cfg: GBrainConfig
 ): Record<string, EmbeddingColumnConfig> {
   // Prototype-pollution safe (codex /ship #1). Plain `{}` inherits from
   // Object.prototype so `registry["constructor"]` returns
@@ -311,7 +290,7 @@ export function getEmbeddingColumnRegistry(
     // Dynamic import avoids a static cycle (gateway can transitively
     // depend on this module via search/hybrid.ts → search/embedding-column.ts).
     // require() is synchronous here because we're already on a hot path.
-    const gw = require('../ai/gateway.ts') as typeof import('../ai/gateway.ts');
+    const gw = require("../ai/gateway.ts") as typeof import("../ai/gateway.ts");
     gwModel = gw.getEmbeddingModel();
     gwDims = gw.getEmbeddingDimensions();
   } catch {
@@ -320,29 +299,31 @@ export function getEmbeddingColumnRegistry(
   }
   const embedModel = cfg.embedding_model ?? gwModel ?? DEFAULT_EMBEDDING_MODEL;
   const embedDims =
-    typeof cfg.embedding_dimensions === 'number' && cfg.embedding_dimensions > 0
+    typeof cfg.embedding_dimensions === "number" && cfg.embedding_dimensions > 0
       ? cfg.embedding_dimensions
-      : (typeof gwDims === 'number' && gwDims > 0 ? gwDims : DEFAULT_EMBEDDING_DIMENSIONS);
-  out['embedding'] = {
+      : typeof gwDims === "number" && gwDims > 0
+        ? gwDims
+        : DEFAULT_EMBEDDING_DIMENSIONS;
+  out["embedding"] = {
     provider: embedModel,
     dimensions: embedDims,
-    type: 'vector',
+    type: "vector",
   };
 
   // Builtin: 'embedding_image' — derived from multimodal config keys.
   // Hardcoded 1024d / vector because that's the committed schema shape
   // (see src/schema.sql:158). If the user runs a different multimodal
   // model they can override via the user registry.
-  const mmModel = cfg.embedding_multimodal_model ?? 'voyage:voyage-multimodal-3';
-  out['embedding_image'] = {
+  const mmModel = cfg.embedding_multimodal_model ?? "voyage:voyage-multimodal-3";
+  out["embedding_image"] = {
     provider: mmModel,
     dimensions: 1024,
-    type: 'vector',
+    type: "vector",
   };
 
   // User-declared columns. Validate every key + entry at merge time.
   const userColumns = cfg.embedding_columns;
-  if (userColumns && typeof userColumns === 'object' && !Array.isArray(userColumns)) {
+  if (userColumns && typeof userColumns === "object" && !Array.isArray(userColumns)) {
     for (const [key, value] of Object.entries(userColumns)) {
       validateColumnKey(key);
       validateColumnConfig(key, value);
@@ -370,8 +351,8 @@ export function getEmbeddingColumnRegistry(
  * to multiple engine calls without redoing the work.
  */
 export function resolveEmbeddingColumn(
-  opts: Pick<SearchOpts, 'embeddingColumn'> | undefined,
-  cfg: GBrainConfig,
+  opts: Pick<SearchOpts, "embeddingColumn"> | undefined,
+  cfg: GBrainConfig
 ): ResolvedColumn {
   // Fast path: already resolved (engine-internal). Re-validate the
   // descriptor shape before returning (codex /ship #2). SDK callers
@@ -382,32 +363,40 @@ export function resolveEmbeddingColumn(
   const candidate = opts?.embeddingColumn;
   if (
     candidate &&
-    typeof candidate === 'object' &&
+    typeof candidate === "object" &&
     !Array.isArray(candidate) &&
-    typeof (candidate as ResolvedColumn).name === 'string'
+    typeof (candidate as ResolvedColumn).name === "string"
   ) {
     const r = candidate as ResolvedColumn;
     if (!COLUMN_NAME_REGEX.test(r.name)) {
       throw new EmbeddingColumnNotRegisteredError(r.name, []);
     }
-    if (r.type !== 'vector' && r.type !== 'halfvec') {
-      throw new EmbeddingColumnConfigError(r.name, 'type', `descriptor.type must be 'vector' or 'halfvec' (got: ${String(r.type)})`);
+    if (r.type !== "vector" && r.type !== "halfvec") {
+      throw new EmbeddingColumnConfigError(
+        r.name,
+        "type",
+        `descriptor.type must be 'vector' or 'halfvec' (got: ${String(r.type)})`
+      );
     }
     if (
-      typeof r.dimensions !== 'number' ||
+      typeof r.dimensions !== "number" ||
       !Number.isInteger(r.dimensions) ||
       r.dimensions < 1 ||
       r.dimensions > MAX_DIMENSIONS
     ) {
-      throw new EmbeddingColumnConfigError(r.name, 'dimensions', `descriptor.dimensions must be an integer in [1, ${MAX_DIMENSIONS}] (got: ${String(r.dimensions)})`);
+      throw new EmbeddingColumnConfigError(
+        r.name,
+        "dimensions",
+        `descriptor.dimensions must be an integer in [1, ${MAX_DIMENSIONS}] (got: ${String(r.dimensions)})`
+      );
     }
     return r;
   }
 
   // String chain.
   const requestedName =
-    (typeof candidate === 'string' && candidate.length > 0 ? candidate : undefined) ??
-    (typeof cfg.search_embedding_column === 'string' && cfg.search_embedding_column.length > 0
+    (typeof candidate === "string" && candidate.length > 0 ? candidate : undefined) ??
+    (typeof cfg.search_embedding_column === "string" && cfg.search_embedding_column.length > 0
       ? cfg.search_embedding_column
       : undefined) ??
     DEFAULT_COLUMN_NAME;
@@ -418,7 +407,7 @@ export function resolveEmbeddingColumn(
   if (!COLUMN_NAME_REGEX.test(requestedName)) {
     throw new EmbeddingColumnNotRegisteredError(
       requestedName,
-      [], // We don't have the registry yet at this point; render later.
+      [] // We don't have the registry yet at this point; render later.
     );
   }
 
@@ -428,10 +417,7 @@ export function resolveEmbeddingColumn(
   // Object.create(null) but defense-in-depth here too — the codex /ship
   // #1 finding was specifically about resolveEmbeddingColumn's lookup.
   if (!Object.hasOwn(registry, requestedName)) {
-    throw new EmbeddingColumnNotRegisteredError(
-      requestedName,
-      Object.keys(registry).sort(),
-    );
+    throw new EmbeddingColumnNotRegisteredError(requestedName, Object.keys(registry).sort());
   }
   const entry = registry[requestedName];
 
@@ -483,13 +469,18 @@ export function isCacheSafe(resolved: ResolvedColumn, cfg: GBrainConfig): boolea
   let gwModel: string | undefined;
   let gwDims: number | undefined;
   try {
-    const gw = require('../ai/gateway.ts') as typeof import('../ai/gateway.ts');
+    const gw = require("../ai/gateway.ts") as typeof import("../ai/gateway.ts");
     gwModel = gw.getEmbeddingModel();
     gwDims = gw.getEmbeddingDimensions();
-  } catch { /* gateway unconfigured — fall through to constants */ }
-  const cfgDims = (typeof cfg.embedding_dimensions === 'number' && cfg.embedding_dimensions > 0)
-    ? cfg.embedding_dimensions
-    : (typeof gwDims === 'number' && gwDims > 0 ? gwDims : DEFAULT_EMBEDDING_DIMENSIONS);
+  } catch {
+    /* gateway unconfigured — fall through to constants */
+  }
+  const cfgDims =
+    typeof cfg.embedding_dimensions === "number" && cfg.embedding_dimensions > 0
+      ? cfg.embedding_dimensions
+      : typeof gwDims === "number" && gwDims > 0
+        ? gwDims
+        : DEFAULT_EMBEDDING_DIMENSIONS;
   if (resolved.dimensions !== cfgDims) return false;
   const cfgModel = cfg.embedding_model ?? gwModel ?? DEFAULT_EMBEDDING_MODEL;
   if (resolved.embeddingModel !== cfgModel) return false;
@@ -527,47 +518,47 @@ export function isBuiltinColumn(name: string): name is BuiltinKey {
  * care about dims should pass a real descriptor.
  */
 export function normalizeEngineColumn(
-  embeddingColumn: SearchOpts['embeddingColumn'] | undefined,
+  embeddingColumn: SearchOpts["embeddingColumn"] | undefined
 ): ResolvedColumn {
   // ResolvedColumn descriptor → use as-is.
   if (
     embeddingColumn &&
-    typeof embeddingColumn === 'object' &&
+    typeof embeddingColumn === "object" &&
     !Array.isArray(embeddingColumn) &&
-    typeof (embeddingColumn as ResolvedColumn).name === 'string'
+    typeof (embeddingColumn as ResolvedColumn).name === "string"
   ) {
     return embeddingColumn as ResolvedColumn;
   }
 
   // Default + legacy 'embedding' literal.
-  if (embeddingColumn === undefined || embeddingColumn === 'embedding') {
+  if (embeddingColumn === undefined || embeddingColumn === "embedding") {
     return {
-      name: 'embedding',
-      type: 'vector',
+      name: "embedding",
+      type: "vector",
       dimensions: 1536, // placeholder — not used by $1::vector cast
-      embeddingModel: '', // engine doesn't embed; left blank
+      embeddingModel: "", // engine doesn't embed; left blank
     };
   }
 
   // Legacy multimodal literal — committed schema shape per
   // src/schema.sql:158 (vector(1024)).
-  if (embeddingColumn === 'embedding_image') {
+  if (embeddingColumn === "embedding_image") {
     return {
-      name: 'embedding_image',
-      type: 'vector',
+      name: "embedding_image",
+      type: "vector",
       dimensions: 1024,
-      embeddingModel: '',
+      embeddingModel: "",
     };
   }
 
   // v0.36 Phase 3 unified multimodal column — populated by
   // `gbrain reindex --multimodal`. Voyage multimodal-3, vector(1024).
-  if (embeddingColumn === 'embedding_multimodal') {
+  if (embeddingColumn === "embedding_multimodal") {
     return {
-      name: 'embedding_multimodal',
-      type: 'vector',
+      name: "embedding_multimodal",
+      type: "vector",
       dimensions: 1024,
-      embeddingModel: 'voyage:voyage-multimodal-3',
+      embeddingModel: "voyage:voyage-multimodal-3",
     };
   }
 
@@ -575,8 +566,8 @@ export function normalizeEngineColumn(
   // resolver should have run at the hybrid/op boundary and produced a
   // descriptor. We throw with a paste-ready hint rather than guess.
   throw new EmbeddingColumnNotRegisteredError(String(embeddingColumn), [
-    'embedding',
-    'embedding_image',
-    '<custom name via resolveEmbeddingColumn at hybrid/op boundary>',
+    "embedding",
+    "embedding_image",
+    "<custom name via resolveEmbeddingColumn at hybrid/op boundary>",
   ]);
 }

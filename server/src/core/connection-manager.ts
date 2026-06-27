@@ -36,10 +36,10 @@
  *    GBRAIN_DIRECT_DATABASE_URL override, ddl()/bulk() share the read pool.
  */
 
-import postgres from 'postgres';
-import { resolvePrepare, resolveSessionTimeouts, resolvePoolSize, endPoolBounded } from './db.ts';
-import { redactPgUrl } from './url-redact.ts';
-import { logConnectionEvent } from './connection-audit.ts';
+import postgres from "postgres";
+import { resolvePrepare, resolveSessionTimeouts, resolvePoolSize, endPoolBounded } from "./db.ts";
+import { redactPgUrl } from "./url-redact.ts";
+import { logConnectionEvent } from "./connection-audit.ts";
 
 export type Sql = ReturnType<typeof postgres>;
 
@@ -86,7 +86,7 @@ const DDL_STMT_TIMEOUT_MS = 30 * 60 * 1000; // 30min
 const DDL_IDLE_TX_TIMEOUT_MS = 5 * 60 * 1000; // 5min
 
 /** Bulk pool default maintenance_work_mem (P1). 256MB safe on Supabase. */
-const BULK_MAINTENANCE_WORK_MEM = '256MB';
+const BULK_MAINTENANCE_WORK_MEM = "256MB";
 
 /**
  * Hostname patterns that indicate a Supabase pooler. Used for auto-detection
@@ -94,12 +94,9 @@ const BULK_MAINTENANCE_WORK_MEM = '256MB';
  * just means we open a "direct" pool against the same URL — wasteful but
  * not broken (the kill-switch is the operator's escape hatch).
  */
-const SUPABASE_POOLER_HOSTNAME_PATTERNS = [
-  /\.pooler\.supabase\.com$/i,
-  /^pooler\.supabase\.com$/i,
-];
+const SUPABASE_POOLER_HOSTNAME_PATTERNS = [/\.pooler\.supabase\.com$/i, /^pooler\.supabase\.com$/i];
 
-const SUPABASE_POOLER_PORTS = new Set(['6543']);
+const SUPABASE_POOLER_PORTS = new Set(["6543"]);
 
 /**
  * True if the URL looks like a Supabase pooler endpoint. Used for kill-switch
@@ -107,9 +104,9 @@ const SUPABASE_POOLER_PORTS = new Set(['6543']);
  */
 export function isSupabasePoolerUrl(url: string): boolean {
   try {
-    const parsed = new URL(url.replace(/^postgres(ql)?:\/\//, 'http://'));
+    const parsed = new URL(url.replace(/^postgres(ql)?:\/\//, "http://"));
     if (SUPABASE_POOLER_PORTS.has(parsed.port)) return true;
-    if (SUPABASE_POOLER_HOSTNAME_PATTERNS.some(re => re.test(parsed.hostname))) return true;
+    if (SUPABASE_POOLER_HOSTNAME_PATTERNS.some((re) => re.test(parsed.hostname))) return true;
     return false;
   } catch {
     return false;
@@ -131,14 +128,14 @@ export function isSupabasePoolerUrl(url: string): boolean {
  */
 export function deriveDirectUrl(url: string): string | null {
   try {
-    const parsed = new URL(url.replace(/^postgres(ql)?:\/\//, 'http://'));
+    const parsed = new URL(url.replace(/^postgres(ql)?:\/\//, "http://"));
     const port = parsed.port;
     const hostname = parsed.hostname;
-    const isPoolerHost = SUPABASE_POOLER_HOSTNAME_PATTERNS.some(re => re.test(hostname));
-    if (port !== '6543' && !isPoolerHost) return null;
+    const isPoolerHost = SUPABASE_POOLER_HOSTNAME_PATTERNS.some((re) => re.test(hostname));
+    if (port !== "6543" && !isPoolerHost) return null;
     // User part on Supabase pooler is typically `postgres.<project-ref>`.
     // Extract <project-ref> for the direct hostname.
-    const user = parsed.username || '';
+    const user = parsed.username || "";
     const decodedUser = decodeURIComponent(user);
     const refMatch = decodedUser.match(/^postgres\.([a-z0-9]+)$/i);
     let directHost = hostname;
@@ -149,18 +146,16 @@ export function deriveDirectUrl(url: string): string | null {
       // form is pooler-only (Supavisor uses the suffix for tenant routing).
       // Without this strip, direct auth fails with `password authentication
       // failed for user "postgres.<ref>"` even though the password is correct.
-      directUser = 'postgres';
+      directUser = "postgres";
     }
     // Compose direct URL by swapping host + port. Preserve auth, db, query.
     parsed.hostname = directHost;
-    parsed.port = '5432';
+    parsed.port = "5432";
     // Reconstruct with the original scheme.
-    const scheme = url.match(/^postgres(?:ql)?:\/\//i)?.[0] ?? 'postgres://';
-    const auth = directUser
-      ? `${directUser}${parsed.password ? `:${parsed.password}` : ''}@`
-      : '';
-    const search = parsed.search ?? '';
-    const path = parsed.pathname ?? '';
+    const scheme = url.match(/^postgres(?:ql)?:\/\//i)?.[0] ?? "postgres://";
+    const auth = directUser ? `${directUser}${parsed.password ? `:${parsed.password}` : ""}@` : "";
+    const search = parsed.search ?? "";
+    const path = parsed.pathname ?? "";
     return `${scheme}${auth}${directHost}:5432${path}${search}`;
   } catch {
     return null;
@@ -172,15 +167,17 @@ export function deriveDirectUrl(url: string): string | null {
  * when present (A2 inheritance).
  */
 export function readKillSwitchEnv(): boolean {
-  return process.env.GBRAIN_DISABLE_DIRECT_POOL === '1' ||
-    process.env.GBRAIN_DISABLE_DIRECT_POOL === 'true';
+  return (
+    process.env.GBRAIN_DISABLE_DIRECT_POOL === "1" ||
+    process.env.GBRAIN_DISABLE_DIRECT_POOL === "true"
+  );
 }
 
 /**
  * Resolve direct pool size: explicit > env > default.
  */
 export function resolveDirectPoolSize(explicit?: number): number {
-  if (typeof explicit === 'number' && explicit > 0) return explicit;
+  if (typeof explicit === "number" && explicit > 0) return explicit;
   const raw = process.env.GBRAIN_DIRECT_POOL_SIZE;
   if (raw) {
     const parsed = parseInt(raw, 10);
@@ -224,15 +221,23 @@ export class ConnectionManager {
     return this._isSupabase && !this._killSwitch && !!this._directUrl;
   }
 
-  isSupabase(): boolean { return this._isSupabase; }
-  isKillSwitchActive(): boolean { return this._killSwitch; }
-  resolveDirectUrl(): string | null { return this._directUrl; }
+  isSupabase(): boolean {
+    return this._isSupabase;
+  }
+  isKillSwitchActive(): boolean {
+    return this._killSwitch;
+  }
+  resolveDirectUrl(): string | null {
+    return this._directUrl;
+  }
 
   /**
    * Internal: peek at the read pool without forcing init. Used by parent
    * inheritance to share the same instance.
    */
-  peekReadPool(): Sql | null { return this._readPool; }
+  peekReadPool(): Sql | null {
+    return this._readPool;
+  }
 
   /**
    * Set the read pool. Used by db.ts:connect or PostgresEngine.connect when
@@ -250,7 +255,7 @@ export class ConnectionManager {
   async getReadPool(): Promise<Sql> {
     if (this._readPool) return this._readPool;
     if (this._readPoolOwnedExternally) {
-      throw new Error('connection-manager: read pool marked as externally-owned but not provided');
+      throw new Error("connection-manager: read pool marked as externally-owned but not provided");
     }
     const opts: Record<string, unknown> = {
       max: resolvePoolSize(this.opts.readPoolSize),
@@ -261,9 +266,9 @@ export class ConnectionManager {
     const timeouts = resolveSessionTimeouts();
     if (Object.keys(timeouts).length > 0) opts.connection = timeouts;
     const prepare = resolvePrepare(this.opts.url);
-    if (typeof prepare === 'boolean') opts.prepare = prepare;
+    if (typeof prepare === "boolean") opts.prepare = prepare;
     this._readPool = postgres(this.opts.url, opts);
-    logConnectionEvent({ pool: 'read', op: 'init' });
+    logConnectionEvent({ pool: "read", op: "init" });
     return this._readPool;
   }
 
@@ -274,7 +279,9 @@ export class ConnectionManager {
    */
   read(): Sql {
     if (!this._readPool) {
-      throw new Error('connection-manager: read pool not initialized; call getReadPool() first or set externally');
+      throw new Error(
+        "connection-manager: read pool not initialized; call getReadPool() first or set externally"
+      );
     }
     return this._readPool;
   }
@@ -310,26 +317,28 @@ export class ConnectionManager {
     if (this._directPool) return this._directPool;
     // A1: cache the Promise so concurrent first callers await the same init.
     if (!this._directInit) {
-      this._directInit = this.initDirectPool().then(pool => {
-        this._directPool = pool;
-        return pool;
-      }).catch(err => {
-        // Reset cache on failure so next caller can retry.
-        this._directInit = null;
-        throw err;
-      });
+      this._directInit = this.initDirectPool()
+        .then((pool) => {
+          this._directPool = pool;
+          return pool;
+        })
+        .catch((err) => {
+          // Reset cache on failure so next caller can retry.
+          this._directInit = null;
+          throw err;
+        });
     }
     const pool = await this._directInit;
     if (!pool) {
       // Defensive — initDirectPool should have thrown.
-      throw new Error('connection-manager: direct pool init returned null');
+      throw new Error("connection-manager: direct pool init returned null");
     }
     return pool;
   }
 
   private async initDirectPool(): Promise<Sql> {
     if (!this._directUrl) {
-      throw new Error('connection-manager: cannot init direct pool — no direct URL');
+      throw new Error("connection-manager: cannot init direct pool — no direct URL");
     }
     const size = resolveDirectPoolSize(this.opts.directPoolSize);
     const opts: Record<string, unknown> = {
@@ -355,16 +364,16 @@ export class ConnectionManager {
       // Probe to validate connectivity early.
       await pool`SELECT 1`;
       logConnectionEvent({
-        pool: 'ddl',
-        op: 'init',
+        pool: "ddl",
+        op: "init",
         duration_ms: Date.now() - t0,
         host: this._directUrl ? this.hostOnly(this._directUrl) : undefined,
       });
       return pool;
     } catch (err) {
       logConnectionEvent({
-        pool: 'ddl',
-        op: 'error',
+        pool: "ddl",
+        op: "error",
         duration_ms: Date.now() - t0,
         error: { message: err instanceof Error ? err.message : String(err) },
       });
@@ -383,14 +392,18 @@ export class ConnectionManager {
       const pool = await this.getReadPool();
       await pool`SELECT 1`;
       result.read = Date.now() - t0;
-    } catch { /* leave null */ }
+    } catch {
+      /* leave null */
+    }
     if (this.isDualPoolActive()) {
       try {
         const t0 = Date.now();
         const pool = await this.getDirectPool();
         await pool`SELECT 1`;
         result.direct = Date.now() - t0;
-      } catch { /* leave null */ }
+      } catch {
+        /* leave null */
+      }
     }
     return result;
   }
@@ -421,16 +434,16 @@ export class ConnectionManager {
    * Diagnostic snapshot for doctor / get_health surfaces.
    */
   describeMode(): {
-    mode: 'split' | 'single (kill-switch)' | 'single (non-supabase)' | 'single (no-direct-url)';
+    mode: "split" | "single (kill-switch)" | "single (non-supabase)" | "single (no-direct-url)";
     direct_host?: string;
     kill_switch_active: boolean;
     direct_pool_size: number;
   } {
-    let mode: 'split' | 'single (kill-switch)' | 'single (non-supabase)' | 'single (no-direct-url)';
-    if (!this._isSupabase) mode = 'single (non-supabase)';
-    else if (this._killSwitch) mode = 'single (kill-switch)';
-    else if (!this._directUrl) mode = 'single (no-direct-url)';
-    else mode = 'split';
+    let mode: "split" | "single (kill-switch)" | "single (non-supabase)" | "single (no-direct-url)";
+    if (!this._isSupabase) mode = "single (non-supabase)";
+    else if (this._killSwitch) mode = "single (kill-switch)";
+    else if (!this._directUrl) mode = "single (no-direct-url)";
+    else mode = "split";
     return {
       mode,
       direct_host: this._directUrl ? this.hostOnly(this._directUrl) : undefined,
@@ -443,8 +456,8 @@ export class ConnectionManager {
     // Redact creds first, then strip everything except host:port for doctor display.
     const redacted = redactPgUrl(url);
     try {
-      const parsed = new URL(redacted.replace(/^postgres(ql)?:\/\//, 'http://'));
-      return `${parsed.hostname}${parsed.port ? `:${parsed.port}` : ''}`;
+      const parsed = new URL(redacted.replace(/^postgres(ql)?:\/\//, "http://"));
+      return `${parsed.hostname}${parsed.port ? `:${parsed.port}` : ""}`;
     } catch {
       return redacted;
     }

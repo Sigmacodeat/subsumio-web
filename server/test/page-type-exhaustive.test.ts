@@ -21,27 +21,26 @@
 //   - That ALL_PAGE_TYPES is the only legal page-type set. It is the
 //     seed list for the built-in `gbrain-base` pack; user packs add more.
 
-import { describe, expect, test } from 'bun:test';
-import { ALL_PAGE_TYPES, assertNever } from '../src/core/types.ts';
-import { parseMarkdown, serializeMarkdown } from '../src/core/markdown.ts';
+import { describe, expect, test } from "bun:test";
+import { ALL_PAGE_TYPES, assertNever } from "../src/core/types.ts";
+import { parseMarkdown, serializeMarkdown } from "../src/core/markdown.ts";
 
-describe('ALL_PAGE_TYPES seed list (v0.38)', () => {
-  test('seed list is non-empty and well-shaped', () => {
+describe("ALL_PAGE_TYPES seed list (v0.38)", () => {
+  test("seed list is non-empty and well-shaped", () => {
     expect(ALL_PAGE_TYPES.length).toBeGreaterThan(0);
     for (const t of ALL_PAGE_TYPES) {
-      expect(typeof t).toBe('string');
+      expect(typeof t).toBe("string");
       expect(t.length).toBeGreaterThan(0);
     }
   });
 
-  test('serializeMarkdown round-trips every seed type', () => {
+  test("serializeMarkdown round-trips every seed type", () => {
     for (const type of ALL_PAGE_TYPES) {
-      const md = serializeMarkdown(
-        {},
-        `Body for ${type}`,
-        '',
-        { type, title: `Test ${type}`, tags: [] },
-      );
+      const md = serializeMarkdown({}, `Body for ${type}`, "", {
+        type,
+        title: `Test ${type}`,
+        tags: [],
+      });
       expect(md).toContain(`type: ${type}`);
       expect(md).toContain(`Body for ${type}`);
 
@@ -51,30 +50,27 @@ describe('ALL_PAGE_TYPES seed list (v0.38)', () => {
     }
   });
 
-  test('serializeMarkdown round-trips arbitrary user-defined types (v0.38)', () => {
+  test("serializeMarkdown round-trips arbitrary user-defined types (v0.38)", () => {
     // Schema packs declare custom types at runtime; the markdown serializer
     // must NOT reject types outside ALL_PAGE_TYPES. This is the test that
     // would have caught the v0.38 regression if anyone tried to re-close
     // PageType in the markdown surface.
-    const userTypes = ['paper', 'researcher', 'therapy-session', 'apple-note', 'tweet-bundle'];
+    const userTypes = ["paper", "researcher", "therapy-session", "apple-note", "tweet-bundle"];
     for (const type of userTypes) {
-      const md = serializeMarkdown(
-        {},
-        `Body for ${type}`,
-        '',
-        { type, title: `Test ${type}`, tags: [] },
-      );
+      const md = serializeMarkdown({}, `Body for ${type}`, "", {
+        type,
+        title: `Test ${type}`,
+        tags: [],
+      });
       const parsed = parseMarkdown(md, `${type}-fixture.md`);
       expect(parsed.type).toBe(type);
     }
   });
 
-  test('assertNever still throws on the unreachable branch', () => {
+  test("assertNever still throws on the unreachable branch", () => {
     // Generic helper preserved for switches over the closed PackPrimitive
     // enum (entity|media|temporal|annotation|concept) declared in
     // src/core/schema-pack/primitives.ts. Not used on PageType anymore.
-    expect(() => assertNever('not-a-real-type' as never)).toThrow(
-      /Unhandled discriminant/,
-    );
+    expect(() => assertNever("not-a-real-type" as never)).toThrow(/Unhandled discriminant/);
   });
 });

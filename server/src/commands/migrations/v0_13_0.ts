@@ -25,9 +25,14 @@
  * not one-time schema+backfill work.
  */
 
-import { execSync } from 'child_process';
-import { runGbrainSubprocess } from './in-process.ts';
-import type { Migration, OrchestratorOpts, OrchestratorResult, OrchestratorPhaseResult } from './types.ts';
+import { execSync } from "child_process";
+import { runGbrainSubprocess } from "./in-process.ts";
+import type {
+  Migration,
+  OrchestratorOpts,
+  OrchestratorResult,
+  OrchestratorPhaseResult,
+} from "./types.ts";
 // Bug 3 — ledger writes moved to the runner (apply-migrations.ts). The
 // orchestrator returns its result and the runner persists it.
 
@@ -46,38 +51,40 @@ import type { Migration, OrchestratorOpts, OrchestratorResult, OrchestratorPhase
 // it. Regression guarded by test/migrations-v0_13_0.test.ts.
 
 async function phaseASchema(opts: OrchestratorOpts): Promise<OrchestratorPhaseResult> {
-  if (opts.dryRun) return { name: 'schema', status: 'skipped', detail: 'dry-run' };
+  if (opts.dryRun) return { name: "schema", status: "skipped", detail: "dry-run" };
   try {
-    const { runMigrateOnlyCore } = await import('./in-process.ts');
+    const { runMigrateOnlyCore } = await import("./in-process.ts");
     await runMigrateOnlyCore();
-    return { name: 'schema', status: 'complete' };
+    return { name: "schema", status: "complete" };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    return { name: 'schema', status: 'failed', detail: msg };
+    return { name: "schema", status: "failed", detail: msg };
   }
 }
 
 // ── Phase B — Frontmatter edge backfill ─────────────────────
 
 function phaseBBackfill(opts: OrchestratorOpts): OrchestratorPhaseResult {
-  if (opts.dryRun) return { name: 'frontmatter_backfill', status: 'skipped', detail: 'dry-run' };
+  if (opts.dryRun) return { name: "frontmatter_backfill", status: "skipped", detail: "dry-run" };
   try {
     // `--source db` iterates pages from the engine (no local checkout required).
     // `--include-frontmatter` is the v0.13 flag that enables the canonical
     // frontmatter link extractor. Default-OFF in the CLI for back-compat;
     // the migration explicitly opts in because this is the canonical backfill.
-    runGbrainSubprocess('gbrain extract links --source db --include-frontmatter', { timeoutMs: 1_800_000 });
-    return { name: 'frontmatter_backfill', status: 'complete' };
+    runGbrainSubprocess("gbrain extract links --source db --include-frontmatter", {
+      timeoutMs: 1_800_000,
+    });
+    return { name: "frontmatter_backfill", status: "complete" };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    return { name: 'frontmatter_backfill', status: 'failed', detail: msg };
+    return { name: "frontmatter_backfill", status: "failed", detail: msg };
   }
 }
 
 // ── Phase C — Verify ────────────────────────────────────────
 
 function phaseCVerify(opts: OrchestratorOpts): OrchestratorPhaseResult {
-  if (opts.dryRun) return { name: 'verify', status: 'skipped', detail: 'dry-run' };
+  if (opts.dryRun) return { name: "verify", status: "skipped", detail: "dry-run" };
   try {
     // Query frontmatter edge count via get_stats + a secondary --json call
     // to `gbrain graph-query` as a smoke test: extract one random page and
@@ -87,75 +94,81 @@ function phaseCVerify(opts: OrchestratorOpts): OrchestratorPhaseResult {
     // docs-only brains, and brains with no entity pages legitimately
     // produce 0. Phase B's own stdout shows `Links: created N` which is
     // the authoritative signal — user sees it during upgrade.
-    const out = execSync('gbrain call get_stats', {
-      encoding: 'utf-8', timeout: 60_000, env: process.env,
+    const out = execSync("gbrain call get_stats", {
+      encoding: "utf-8",
+      timeout: 60_000,
+      env: process.env,
     });
     const parsed = JSON.parse(out) as { link_count?: number; page_count?: number };
     const linkCount = parsed.link_count ?? 0;
     const pageCount = parsed.page_count ?? 0;
     return {
-      name: 'verify',
-      status: 'complete',
+      name: "verify",
+      status: "complete",
       detail: `pages=${pageCount}, links=${linkCount} (backfill output in Phase B logs)`,
     };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    return { name: 'verify', status: 'failed', detail: msg };
+    return { name: "verify", status: "failed", detail: msg };
   }
 }
 
 // ── Orchestrator ────────────────────────────────────────────
 
 async function orchestrator(opts: OrchestratorOpts): Promise<OrchestratorResult> {
-  console.log('');
-  console.log('=== v0.13.0 — Frontmatter relationship indexing ===');
-  if (opts.dryRun) console.log('  (dry-run; no side effects)');
-  console.log('');
+  console.log("");
+  console.log("=== v0.13.0 — Frontmatter relationship indexing ===");
+  if (opts.dryRun) console.log("  (dry-run; no side effects)");
+  console.log("");
 
   const phases: OrchestratorPhaseResult[] = [];
 
   const a = await phaseASchema(opts);
   phases.push(a);
-  if (a.status === 'failed') return finalizeResult(phases, 'failed');
+  if (a.status === "failed") return finalizeResult(phases, "failed");
 
   const b = phaseBBackfill(opts);
   phases.push(b);
   // Backfill failure → partial. Schema is already applied so re-running
   // only re-tries the backfill (idempotent via ON CONFLICT DO NOTHING).
-  if (b.status === 'failed') return finalizeResult(phases, 'partial');
+  if (b.status === "failed") return finalizeResult(phases, "partial");
 
   const c = phaseCVerify(opts);
   phases.push(c);
 
   // a.status and b.status were narrowed to 'skipped' | 'complete' by early returns above.
-  const overallStatus: 'complete' | 'partial' | 'failed' =
-    c.status === 'failed' ? 'partial' : 'complete';
+  const overallStatus: "complete" | "partial" | "failed" =
+    c.status === "failed" ? "partial" : "complete";
 
   return finalizeResult(phases, overallStatus);
 }
 
-function finalizeResult(phases: OrchestratorPhaseResult[], status: 'complete' | 'partial' | 'failed'): OrchestratorResult {
+function finalizeResult(
+  phases: OrchestratorPhaseResult[],
+  status: "complete" | "partial" | "failed"
+): OrchestratorResult {
   // Ledger write lives in the runner now (Bug 3).
   return {
-    version: '0.13.0',
+    version: "0.13.0",
     status,
     phases,
   };
 }
 
 export const v0_13_0: Migration = {
-  version: '0.13.0',
+  version: "0.13.0",
   featurePitch: {
-    headline: 'Frontmatter becomes a graph — company, investors, attendees now create typed edges automatically',
+    headline:
+      "Frontmatter becomes a graph — company, investors, attendees now create typed edges automatically",
     description:
-      'v0.13 extends the knowledge graph to project typed edges from YAML frontmatter. ' +
-      'Every `company: X`, `investors: [A, B]`, `attendees: [Pedro, Garry]`, `key_people`, ' +
-      '`partner`, `lead`, and `related` field you already wrote now surfaces in ' +
-      '`gbrain graph`. Direction semantics respect subject-of-verb (Pedro → meeting, ' +
-      'not meeting → Pedro). The migration backfills every existing page in ~2-5 min ' +
-      'on a 46K-page brain. Uses pg_trgm fuzzy-match for name resolution (zero LLM ' +
-      'cost, zero API calls). Unresolvable names surface in the extract summary so you ' +
-      'see exactly where the graph has holes.',
+      "v0.13 extends the knowledge graph to project typed edges from YAML frontmatter. " +
+      "Every `company: X`, `investors: [A, B]`, `attendees: [Pedro, Garry]`, `key_people`, " +
+      "`partner`, `lead`, and `related` field you already wrote now surfaces in " +
+      "`gbrain graph`. Direction semantics respect subject-of-verb (Pedro → meeting, " +
+      "not meeting → Pedro). The migration backfills every existing page in ~2-5 min " +
+      "on a 46K-page brain. Uses pg_trgm fuzzy-match for name resolution (zero LLM " +
+      "cost, zero API calls). Unresolvable names surface in the extract summary so you " +
+      "see exactly where the graph has holes.",
   },
   orchestrator,
 };

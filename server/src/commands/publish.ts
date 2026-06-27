@@ -12,14 +12,14 @@
  *   gbrain publish <page-path> --title "Custom Title"  # override title
  */
 
-import { readFileSync, writeFileSync, mkdirSync } from 'fs';
-import { randomBytes, createCipheriv, pbkdf2Sync } from 'crypto';
-import { dirname, basename, join } from 'path';
-import { createRequire } from 'module';
+import { readFileSync, writeFileSync, mkdirSync } from "fs";
+import { randomBytes, createCipheriv, pbkdf2Sync } from "crypto";
+import { dirname, basename, join } from "path";
+import { createRequire } from "module";
 
 // Inline marked.js so published HTML is truly self-contained (no CDN dependency)
 const require = createRequire(import.meta.url);
-const MARKED_JS = readFileSync(join(dirname(require.resolve('marked')), 'marked.umd.js'), 'utf8');
+const MARKED_JS = readFileSync(join(dirname(require.resolve("marked")), "marked.umd.js"), "utf8");
 
 // ── Content stripping ──────────────────────────────────────────────
 
@@ -28,27 +28,27 @@ export function makeShareable(content: string): string {
   let clean = content;
 
   // Remove YAML frontmatter
-  clean = clean.replace(/^---[\s\S]*?---\n*/, '');
+  clean = clean.replace(/^---[\s\S]*?---\n*/, "");
 
   // Remove [Source: ...] citations (all formats)
-  clean = clean.replace(/\s*\[Source:[^\]]*\]/g, '');
+  clean = clean.replace(/\s*\[Source:[^\]]*\]/g, "");
 
   // Remove confirmation numbers
-  clean = clean.replace(/\*\*Confirmation:\*\*\s*[A-Z0-9]{6,}/gi, '**Confirmation:** on file');
-  clean = clean.replace(/Confirmation[:#]?\s*[A-Z0-9]{6,}/gi, 'Confirmation: on file');
-  clean = clean.replace(/\bconf\s*#?\s*[A-Z0-9]{6,}/gi, 'Confirmation: on file');
+  clean = clean.replace(/\*\*Confirmation:\*\*\s*[A-Z0-9]{6,}/gi, "**Confirmation:** on file");
+  clean = clean.replace(/Confirmation[:#]?\s*[A-Z0-9]{6,}/gi, "Confirmation: on file");
+  clean = clean.replace(/\bconf\s*#?\s*[A-Z0-9]{6,}/gi, "Confirmation: on file");
 
   // Remove brain cross-links but keep display text
-  clean = clean.replace(/\[([^\]]+)\]\(\.[^)]*\/[^)]+\)/g, '$1');
+  clean = clean.replace(/\[([^\]]+)\]\(\.[^)]*\/[^)]+\)/g, "$1");
 
   // Remove "See also" brain-internal lines
-  clean = clean.replace(/^-?\s*See also:.*$/gm, '');
+  clean = clean.replace(/^-?\s*See also:.*$/gm, "");
 
   // Remove Timeline section (below the --- separator near end)
-  clean = clean.replace(/\n---\n\n## Timeline[\s\S]*$/, '');
+  clean = clean.replace(/\n---\n\n## Timeline[\s\S]*$/, "");
 
   // Clean up excessive blank lines
-  clean = clean.replace(/\n{3,}/g, '\n\n');
+  clean = clean.replace(/\n{3,}/g, "\n\n");
 
   return clean.trim();
 }
@@ -57,7 +57,7 @@ export function makeShareable(content: string): string {
 
 export function extractTitle(markdown: string): string {
   const match = markdown.match(/^#\s+(.+)$/m);
-  return match ? match[1].trim() : 'Document';
+  return match ? match[1].trim() : "Document";
 }
 
 // ── Encryption ─────────────────────────────────────────────────────
@@ -71,24 +71,26 @@ export interface EncryptedContent {
 export function encryptContent(plaintext: string, password: string): EncryptedContent {
   const salt = randomBytes(16);
   const iv = randomBytes(12);
-  const key = pbkdf2Sync(password, salt, 100_000, 32, 'sha256');
-  const cipher = createCipheriv('aes-256-gcm', key, iv);
+  const key = pbkdf2Sync(password, salt, 100_000, 32, "sha256");
+  const cipher = createCipheriv("aes-256-gcm", key, iv);
 
-  let encrypted = cipher.update(plaintext, 'utf8');
+  let encrypted = cipher.update(plaintext, "utf8");
   encrypted = Buffer.concat([encrypted, cipher.final()]);
   const authTag = cipher.getAuthTag();
 
   return {
-    salt: salt.toString('base64'),
-    iv: iv.toString('base64'),
-    ciphertext: Buffer.concat([encrypted, authTag]).toString('base64'),
+    salt: salt.toString("base64"),
+    iv: iv.toString("base64"),
+    ciphertext: Buffer.concat([encrypted, authTag]).toString("base64"),
   };
 }
 
 export function generatePassword(length: number = 16): string {
-  const chars = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const chars = "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   const bytes = randomBytes(length);
-  return Array.from(bytes).map(b => chars[b % chars.length]).join('');
+  return Array.from(bytes)
+    .map((b) => chars[b % chars.length])
+    .join("");
 }
 
 // ── HTML generation ────────────────────────────────────────────────
@@ -248,7 +250,11 @@ async function unlock(pw, remember) {
 `;
 
 function escapeHtml(str: string): string {
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
 interface GenerateHtmlOptions {
@@ -258,7 +264,8 @@ interface GenerateHtmlOptions {
 }
 
 export function generateHtml({ title, markdown, encrypted }: GenerateHtmlOptions): string {
-  const passwordHtml = encrypted ? `
+  const passwordHtml = encrypted
+    ? `
     <div id="pw-overlay" class="pw-overlay">
       <div class="pw-card">
         <div class="pw-lock">&#x1F512;</div>
@@ -271,14 +278,17 @@ export function generateHtml({ title, markdown, encrypted }: GenerateHtmlOptions
         </form>
         <div id="pw-error" class="pw-error"></div>
       </div>
-    </div>` : '';
+    </div>`
+    : "";
 
-  const encryptedVars = encrypted ? `
+  const encryptedVars = encrypted
+    ? `
     <script>
       window.__SALT = ${JSON.stringify(encrypted.salt)};
       window.__IV = ${JSON.stringify(encrypted.iv)};
       window.__CT = ${JSON.stringify(encrypted.ciphertext)};
-    </script>` : '';
+    </script>`
+    : "";
 
   // Sanitize markdown rendering to prevent XSS from embedded HTML in brain pages
   const sanitizeScript = `
@@ -299,8 +309,8 @@ export function generateHtml({ title, markdown, encrypted }: GenerateHtmlOptions
 
   const contentScript = encrypted
     ? `<script>${sanitizeScript}${DECRYPT_JS.replace(
-        'document.getElementById(\'content\').innerHTML = marked.parse(result)',
-        'document.getElementById(\'content\').innerHTML = sanitizeHtml(marked.parse(result))'
+        "document.getElementById('content').innerHTML = marked.parse(result)",
+        "document.getElementById('content').innerHTML = sanitizeHtml(marked.parse(result))"
       )}<\/script>`
     : `<script>${sanitizeScript}
         const md = ${JSON.stringify(markdown)};
@@ -313,7 +323,7 @@ export function generateHtml({ title, markdown, encrypted }: GenerateHtmlOptions
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>${escapeHtml(title)}</title>
-<style>${CSS}${encrypted ? PASSWORD_CSS : ''}</style>
+<style>${CSS}${encrypted ? PASSWORD_CSS : ""}</style>
 </head>
 <body>
 ${passwordHtml}
@@ -328,26 +338,28 @@ ${contentScript}
 // ── CLI entry point ────────────────────────────────────────────────
 
 export async function runPublish(args: string[]) {
-  const inputPath = args.find(a => !a.startsWith('--'));
-  const outIdx = args.indexOf('--out');
-  const titleIdx = args.indexOf('--title');
-  const pwIdx = args.indexOf('--password');
+  const inputPath = args.find((a) => !a.startsWith("--"));
+  const outIdx = args.indexOf("--out");
+  const titleIdx = args.indexOf("--title");
+  const pwIdx = args.indexOf("--password");
 
   if (!inputPath) {
-    console.error('Usage: gbrain publish <page.md> [--password ["secret"]] [--title "Title"] [--out path]');
-    console.error('');
-    console.error('  Generates a shareable HTML page from brain markdown.');
-    console.error('  Strips private data (frontmatter, citations, timeline, brain links).');
-    console.error('  Optionally encrypts with AES-256-GCM (client-side, no server needed).');
-    console.error('');
-    console.error('  --password          Auto-generate a password');
+    console.error(
+      'Usage: gbrain publish <page.md> [--password ["secret"]] [--title "Title"] [--out path]'
+    );
+    console.error("");
+    console.error("  Generates a shareable HTML page from brain markdown.");
+    console.error("  Strips private data (frontmatter, citations, timeline, brain links).");
+    console.error("  Optionally encrypts with AES-256-GCM (client-side, no server needed).");
+    console.error("");
+    console.error("  --password          Auto-generate a password");
     console.error('  --password "secret" Use a specific password');
     console.error('  --title "Title"     Override the page title');
-    console.error('  --out path          Output file (default: <input-basename>.html)');
+    console.error("  --out path          Output file (default: <input-basename>.html)");
     process.exit(1);
   }
 
-  const raw = readFileSync(inputPath, 'utf-8');
+  const raw = readFileSync(inputPath, "utf-8");
   const cleaned = makeShareable(raw);
   const title = (titleIdx >= 0 ? args[titleIdx + 1] : null) || extractTitle(raw);
 
@@ -355,9 +367,9 @@ export async function runPublish(args: string[]) {
   let encrypted: EncryptedContent | null = null;
   if (pwIdx >= 0) {
     const nextArg = args[pwIdx + 1];
-    const password = (nextArg && !nextArg.startsWith('--')) ? nextArg : generatePassword();
+    const password = nextArg && !nextArg.startsWith("--") ? nextArg : generatePassword();
     encrypted = encryptContent(cleaned, password);
-    if (!nextArg || nextArg.startsWith('--')) {
+    if (!nextArg || nextArg.startsWith("--")) {
       console.error(`Password: ${password}`);
     }
   }
@@ -365,14 +377,14 @@ export async function runPublish(args: string[]) {
   const html = generateHtml({ title, markdown: cleaned, encrypted });
 
   // Determine output path
-  const outPath = outIdx >= 0 ? args[outIdx + 1] : basename(inputPath, '.md') + '.html';
+  const outPath = outIdx >= 0 ? args[outIdx + 1] : basename(inputPath, ".md") + ".html";
   mkdirSync(dirname(outPath), { recursive: true });
   writeFileSync(outPath, html);
 
   console.log(`Published: ${outPath}`);
   if (encrypted) {
-    console.log('  (password protected, AES-256-GCM encrypted)');
+    console.log("  (password protected, AES-256-GCM encrypted)");
   } else {
-    console.log('  (no password, content in cleartext)');
+    console.log("  (no password, content in cleartext)");
   }
 }

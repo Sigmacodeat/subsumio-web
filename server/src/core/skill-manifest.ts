@@ -25,8 +25,8 @@
  * skills by either loader.
  */
 
-import { existsSync, readFileSync, readdirSync, statSync } from 'fs';
-import { join } from 'path';
+import { existsSync, readFileSync, readdirSync, statSync } from "fs";
+import { join } from "path";
 
 export interface ManifestEntry {
   name: string;
@@ -46,7 +46,7 @@ export interface ManifestLoadResult {
  */
 function parseSkillName(skillMdPath: string): string | null {
   try {
-    const content = readFileSync(skillMdPath, 'utf-8');
+    const content = readFileSync(skillMdPath, "utf-8");
     const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
     if (!fmMatch) return null;
     const fm = fmMatch[1];
@@ -79,7 +79,7 @@ function deriveManifest(skillsDir: string): ManifestEntry[] {
     // Skip hidden dirs and convention-family sibling dirs (_conventions/,
     // conventions/, migrations/, recipes/, etc. are never "skills" in the
     // routing sense). Only entries with a direct `SKILL.md` count.
-    if (entry.startsWith('.') || entry.startsWith('_')) continue;
+    if (entry.startsWith(".") || entry.startsWith("_")) continue;
 
     const subdirAbs = join(skillsDir, entry);
     let isDir = false;
@@ -90,11 +90,11 @@ function deriveManifest(skillsDir: string): ManifestEntry[] {
     }
     if (!isDir) continue;
 
-    const skillMd = join(subdirAbs, 'SKILL.md');
+    const skillMd = join(subdirAbs, "SKILL.md");
     if (!existsSync(skillMd)) continue;
 
     const frontmatterName = parseSkillName(skillMd);
-    const name = frontmatterName && frontmatterName !== '' ? frontmatterName : entry;
+    const name = frontmatterName && frontmatterName !== "" ? frontmatterName : entry;
     out.push({ name, path: `${entry}/SKILL.md` });
   }
 
@@ -110,11 +110,11 @@ function deriveManifest(skillsDir: string): ManifestEntry[] {
  * manifest.json directly.
  */
 export function loadOrDeriveManifest(skillsDir: string): ManifestLoadResult {
-  const manifestPath = join(skillsDir, 'manifest.json');
+  const manifestPath = join(skillsDir, "manifest.json");
 
   if (existsSync(manifestPath)) {
     try {
-      const content = JSON.parse(readFileSync(manifestPath, 'utf-8'));
+      const content = JSON.parse(readFileSync(manifestPath, "utf-8"));
       // Strict shape gate: `skills` MUST be an array of `{name, path}`.
       // Anything else (missing, object-shaped, entries missing keys) is
       // treated as malformed and falls through to the derive path. This
@@ -127,10 +127,10 @@ export function loadOrDeriveManifest(skillsDir: string): ManifestLoadResult {
         // Non-empty must have valid shape on every entry.
         const valid = skills.every(
           (s: unknown): s is ManifestEntry =>
-            typeof s === 'object' &&
+            typeof s === "object" &&
             s !== null &&
-            typeof (s as ManifestEntry).name === 'string' &&
-            typeof (s as ManifestEntry).path === 'string'
+            typeof (s as ManifestEntry).name === "string" &&
+            typeof (s as ManifestEntry).path === "string"
         );
         if (valid) {
           return { skills: skills as ManifestEntry[], derived: false };

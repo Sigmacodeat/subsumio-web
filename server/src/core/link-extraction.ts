@@ -11,8 +11,8 @@
  * methods. Auto-link config is the one impure helper (reads engine.getConfig).
  */
 
-import type { BrainEngine } from './engine.ts';
-import type { PageType } from './types.ts';
+import type { BrainEngine } from "./engine.ts";
+import type { PageType } from "./types.ts";
 
 /**
  * v0.42.7 — link-extraction version stamp. Bump this ISO timestamp whenever the
@@ -27,7 +27,7 @@ import type { PageType } from './types.ts';
  * OR updated_at > links_extracted_at`. It is an ISO-8601 string (NOT a number) —
  * the column is TIMESTAMPTZ and the predicate binds it as `::timestamptz`.
  */
-export const LINK_EXTRACTOR_VERSION_TS = '2026-05-31T00:00:00Z';
+export const LINK_EXTRACTOR_VERSION_TS = "2026-05-31T00:00:00Z";
 
 // ─── Entity references ──────────────────────────────────────────
 
@@ -70,10 +70,10 @@ export interface EntityRef {
  * All edges from this path also carry `linkSource: 'wikilink-resolved'`
  * (the link-source provenance is the why; this edge type is the what).
  */
-export const WIKILINK_BASENAME_LINK_TYPE = 'wikilink_basename';
+export const WIKILINK_BASENAME_LINK_TYPE = "wikilink_basename";
 
 /** v0.17.0: how a link's target source was pinned at extraction time. */
-export type LinkResolutionType = 'qualified' | 'unqualified';
+export type LinkResolutionType = "qualified" | "unqualified";
 
 /**
  * Directory prefix whitelist. These are the top-level slug dirs the extractor
@@ -82,7 +82,8 @@ export type LinkResolutionType = 'qualified' | 'unqualified';
  *   - Our domain extensions: tech, finance, personal, openclaw (domain-organized wikis)
  *   - Our entity prefix: entities (we kept some legacy entities/projects/ pages)
  */
-const DIR_PATTERN = '(?:people|companies|meetings|concepts|deal|civic|project|projects|source|media|yc|tech|finance|personal|openclaw|entities)';
+const DIR_PATTERN =
+  "(?:people|companies|meetings|concepts|deal|civic|project|projects|source|media|yc|tech|finance|personal|openclaw|entities)";
 
 /**
  * Match `[Name](path)` markdown links pointing to entity directories.
@@ -96,7 +97,7 @@ const DIR_PATTERN = '(?:people|companies|meetings|concepts|deal|civic|project|pr
  */
 const ENTITY_REF_RE = new RegExp(
   `\\[([^\\]]+)\\]\\((?:\\.\\.\\/)*(${DIR_PATTERN}\\/[^)\\s]+?)(?:\\.md)?\\)`,
-  'g',
+  "g"
 );
 
 /**
@@ -109,7 +110,7 @@ const ENTITY_REF_RE = new RegExp(
  */
 const WIKILINK_RE = new RegExp(
   `\\[\\[(${DIR_PATTERN}\\/[^|\\]#]+?)(?:#[^|\\]]*?)?(?:\\|([^\\]]+?))?\\]\\]`,
-  'g',
+  "g"
 );
 
 /**
@@ -126,7 +127,7 @@ const WIKILINK_RE = new RegExp(
  */
 const QUALIFIED_WIKILINK_RE = new RegExp(
   `\\[\\[([a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?):(${DIR_PATTERN}\\/[^|\\]#]+?)(?:#[^|\\]]*?)?(?:\\|([^\\]]+?))?\\]\\]`,
-  'g',
+  "g"
 );
 
 /**
@@ -168,26 +169,29 @@ const MARKDOWN_LABEL_WIKILINK_RE = /\[[^\]\n]*\[\[[^\]\n]+\]\][^\]\n]*\]\([^)\n]
  * defense-in-depth — slugs inside code are not real entity references.
  */
 export function stripCodeBlocks(content: string): string {
-  let out = '';
+  let out = "";
   let i = 0;
   while (i < content.length) {
     // Fenced block: ``` (optional language) ... ```
-    if (content.startsWith('```', i)) {
-      const end = content.indexOf('```', i + 3);
-      if (end === -1) { out += ' '.repeat(content.length - i); break; }
-      out += ' '.repeat(end + 3 - i);
+    if (content.startsWith("```", i)) {
+      const end = content.indexOf("```", i + 3);
+      if (end === -1) {
+        out += " ".repeat(content.length - i);
+        break;
+      }
+      out += " ".repeat(end + 3 - i);
       i = end + 3;
       continue;
     }
     // Inline code: `...` (single backtick, no newline inside)
-    if (content[i] === '`') {
-      const end = content.indexOf('`', i + 1);
-      if (end === -1 || content.slice(i + 1, end).includes('\n')) {
+    if (content[i] === "`") {
+      const end = content.indexOf("`", i + 1);
+      if (end === -1 || content.slice(i + 1, end).includes("\n")) {
         out += content[i];
         i++;
         continue;
       }
-      out += ' '.repeat(end + 1 - i);
+      out += " ".repeat(end + 1 - i);
       i = end + 1;
       continue;
     }
@@ -218,7 +222,8 @@ export interface CodeRef {
 // The extension list is aligned with detectCodeLanguage in chunkers/code.ts.
 // Paths NOT matching these extensions are ignored because they wouldn't
 // have a code page to edge to anyway.
-const CODE_REF_REGEX = /\b((?:src|lib|app|test|tests|scripts|docs|packages|internal|cmd|examples)\/[\w\-./]+\.(?:ts|tsx|mts|cts|js|jsx|mjs|cjs|py|rb|go|rs|java|cs|cpp|cc|hpp|c|h|php|swift|kt|scala|lua|ex|exs|elm|ml|dart|zig|sol|sh|bash|css|html|vue|json|yaml|yml|toml))(?::(\d+))?\b/g;
+const CODE_REF_REGEX =
+  /\b((?:src|lib|app|test|tests|scripts|docs|packages|internal|cmd|examples)\/[\w\-./]+\.(?:ts|tsx|mts|cts|js|jsx|mjs|cjs|py|rb|go|rs|java|cs|cpp|cc|hpp|c|h|php|swift|kt|scala|lua|ex|exs|elm|ml|dart|zig|sol|sh|bash|css|html|vue|json|yaml|yml|toml))(?::(\d+))?\b/g;
 
 /**
  * Extract code-path references (e.g. 'src/core/sync.ts:42') from markdown
@@ -236,26 +241,26 @@ const CODE_REF_REGEX = /\b((?:src|lib|app|test|tests|scripts|docs|packages|inter
  */
 export function imageOfCandidates(imageSlug: string): string[] {
   const lower = imageSlug.toLowerCase();
-  const lastSlash = lower.lastIndexOf('/');
+  const lastSlash = lower.lastIndexOf("/");
   if (lastSlash < 0) return [];
   const dir = lower.slice(0, lastSlash);
   const file = lower.slice(lastSlash + 1);
   // Strip image extension from basename to get a stable identifier.
-  const base = file.replace(/\.(png|jpg|jpeg|gif|webp|heic|heif|avif)$/i, '');
+  const base = file.replace(/\.(png|jpg|jpeg|gif|webp|heic|heif|avif)$/i, "");
   if (!base) return [];
 
   const out: string[] = [];
 
   // Heuristic 1: parallel directory swap. originals/photos/X → originals/meetings/X
-  const dirParts = dir.split('/');
-  const PHOTO_DIRS = new Set(['photos', 'images', 'screenshots', 'media']);
-  const SIBLING_DIRS = ['meetings', 'notes', 'daily', 'people', 'companies', 'deals', 'projects'];
+  const dirParts = dir.split("/");
+  const PHOTO_DIRS = new Set(["photos", "images", "screenshots", "media"]);
+  const SIBLING_DIRS = ["meetings", "notes", "daily", "people", "companies", "deals", "projects"];
   for (let i = 0; i < dirParts.length; i++) {
     if (PHOTO_DIRS.has(dirParts[i])) {
       for (const sib of SIBLING_DIRS) {
         const swapped = [...dirParts];
         swapped[i] = sib;
-        out.push(`${swapped.join('/')}/${base}`);
+        out.push(`${swapped.join("/")}/${base}`);
       }
     }
   }
@@ -265,7 +270,7 @@ export function imageOfCandidates(imageSlug: string): string[] {
 
   // Deduplicate, drop the imageSlug itself if it accidentally roundtrips.
   const seen = new Set<string>();
-  return out.filter(s => {
+  return out.filter((s) => {
     if (s === lower) return false;
     if (seen.has(s)) return false;
     seen.add(s);
@@ -279,7 +284,7 @@ export function extractCodeRefs(content: string): CodeRef[] {
   let match: RegExpExecArray | null;
   // Using a fresh regex object per call to avoid lastIndex state leaking
   // across invocations.
-  const re = new RegExp(CODE_REF_REGEX.source, 'g');
+  const re = new RegExp(CODE_REF_REGEX.source, "g");
   while ((match = re.exec(content)) !== null) {
     const path = match[1]!;
     if (seen.has(path)) continue;
@@ -312,7 +317,7 @@ export function extractEntityRefs(content: string): EntityRef[] {
     const name = match[1];
     const fullPath = match[2];
     const slug = fullPath;
-    const dir = fullPath.split('/')[0];
+    const dir = fullPath.split("/")[0];
     refs.push({ name, slug, dir });
     markdownRanges.push([match.index, match.index + match[0].length]);
   }
@@ -326,10 +331,10 @@ export function extractEntityRefs(content: string): EntityRef[] {
     const sourceId = match[1];
     let slug = match[2].trim();
     if (!slug) continue;
-    if (slug.includes('://')) continue;
-    if (slug.endsWith('.md')) slug = slug.slice(0, -3);
+    if (slug.includes("://")) continue;
+    if (slug.endsWith(".md")) slug = slug.slice(0, -3);
     const displayName = (match[3] || slug).trim();
-    const dir = slug.split('/')[0];
+    const dir = slug.split("/")[0];
     refs.push({ name: displayName, slug, dir, sourceId });
     qualifiedRanges.push([match.index, match.index + match[0].length]);
   }
@@ -342,10 +347,10 @@ export function extractEntityRefs(content: string): EntityRef[] {
   while ((match = wikiPattern.exec(unmasked)) !== null) {
     let slug = match[1].trim();
     if (!slug) continue;
-    if (slug.includes('://')) continue;
-    if (slug.endsWith('.md')) slug = slug.slice(0, -3);
+    if (slug.includes("://")) continue;
+    if (slug.endsWith(".md")) slug = slug.slice(0, -3);
     const displayName = (match[2] || slug).trim();
-    const dir = slug.split('/')[0];
+    const dir = slug.split("/")[0];
     refs.push({ name: displayName, slug, dir });
     unqualifiedRanges.push([match.index, match.index + match[0].length]);
   }
@@ -361,23 +366,28 @@ export function extractEntityRefs(content: string): EntityRef[] {
   //     inside a markdown label — `[see [[acme]]](companies/acme.md)` —
   //     doesn't spawn a stray generic basename ref from inside the label.
   const labelWikilinkRanges: Array<[number, number]> = [];
-  const labelWlPattern = new RegExp(MARKDOWN_LABEL_WIKILINK_RE.source, MARKDOWN_LABEL_WIKILINK_RE.flags);
+  const labelWlPattern = new RegExp(
+    MARKDOWN_LABEL_WIKILINK_RE.source,
+    MARKDOWN_LABEL_WIKILINK_RE.flags
+  );
   while ((match = labelWlPattern.exec(stripped)) !== null) {
     labelWikilinkRanges.push([match.index, match.index + match[0].length]);
   }
-  const genericMasked = maskRanges(
-    stripped,
-    [...markdownRanges, ...qualifiedRanges, ...unqualifiedRanges, ...labelWikilinkRanges],
-  );
+  const genericMasked = maskRanges(stripped, [
+    ...markdownRanges,
+    ...qualifiedRanges,
+    ...unqualifiedRanges,
+    ...labelWikilinkRanges,
+  ]);
   const genericPattern = new RegExp(WIKILINK_GENERIC_RE.source, WIKILINK_GENERIC_RE.flags);
   while ((match = genericPattern.exec(genericMasked)) !== null) {
     let slug = match[1].trim();
     if (!slug) continue;
-    if (slug.includes('://')) continue;
-    if (slug.includes(':')) continue; // qualified-syntax token; 2a owns these
-    if (slug.endsWith('.md')) slug = slug.slice(0, -3);
+    if (slug.includes("://")) continue;
+    if (slug.includes(":")) continue; // qualified-syntax token; 2a owns these
+    if (slug.endsWith(".md")) slug = slug.slice(0, -3);
     const displayName = (match[2] || slug).trim();
-    const dir = slug.includes('/') ? slug.split('/')[0] : '';
+    const dir = slug.includes("/") ? slug.split("/")[0] : "";
     refs.push({ name: displayName, slug, dir, needsResolution: true });
   }
 
@@ -391,11 +401,11 @@ export function extractEntityRefs(content: string): EntityRef[] {
  */
 function maskRanges(content: string, ranges: Array<[number, number]>): string {
   if (ranges.length === 0) return content;
-  const chars = content.split('');
+  const chars = content.split("");
   for (const [s, e] of ranges) {
-    for (let i = s; i < e && i < chars.length; i++) chars[i] = ' ';
+    for (let i = s; i < e && i < chars.length; i++) chars[i] = " ";
   }
-  return chars.join('');
+  return chars.join("");
 }
 
 // ─── Link candidates (richer than EntityRef) ────────────────────
@@ -467,7 +477,7 @@ export async function extractPageLinks(
   frontmatter: Record<string, unknown>,
   pageType: PageType,
   resolver: SlugResolver,
-  opts: { globalBasename?: boolean; skipFrontmatter?: boolean } = {},
+  opts: { globalBasename?: boolean; skipFrontmatter?: boolean } = {}
 ): Promise<PageLinksResult> {
   const candidates: LinkCandidate[] = [];
 
@@ -481,7 +491,7 @@ export async function extractPageLinks(
     // pre-v0.40.8.2 behavior of dropping bare wikilinks outside
     // DIR_PATTERN.
     if (ref.needsResolution) {
-      if (!opts.globalBasename || typeof resolver.resolveBasenameMatches !== 'function') {
+      if (!opts.globalBasename || typeof resolver.resolveBasenameMatches !== "function") {
         continue;
       }
       // Issue #972 (codex): resolve by the wikilink TARGET (ref.slug — the
@@ -500,7 +510,7 @@ export async function extractPageLinks(
           targetSlug: matched,
           linkType: WIKILINK_BASENAME_LINK_TYPE,
           context,
-          linkSource: 'wikilink-resolved',
+          linkSource: "wikilink-resolved",
         });
       }
       continue;
@@ -515,7 +525,7 @@ export async function extractPageLinks(
       targetSlug: ref.slug,
       linkType: inferLinkType(pageType, context, content, ref.slug),
       context,
-      linkSource: 'markdown',
+      linkSource: "markdown",
     });
   }
 
@@ -523,21 +533,18 @@ export async function extractPageLinks(
   // Limited to the same entity directories ENTITY_REF_RE covers.
   // Code blocks are stripped first — slugs in code samples are not real refs.
   const strippedContent = stripCodeBlocks(content);
-  const bareRe = new RegExp(
-    `\\b(${DIR_PATTERN}\\/[a-z0-9][a-z0-9/-]*[a-z0-9])\\b`,
-    'g',
-  );
+  const bareRe = new RegExp(`\\b(${DIR_PATTERN}\\/[a-z0-9][a-z0-9/-]*[a-z0-9])\\b`, "g");
   let m: RegExpExecArray | null;
   while ((m = bareRe.exec(strippedContent)) !== null) {
     // Skip matches that are part of a markdown link (already handled above).
-    const charBefore = m.index > 0 ? strippedContent[m.index - 1] : '';
-    if (charBefore === '/' || charBefore === '(') continue;
+    const charBefore = m.index > 0 ? strippedContent[m.index - 1] : "";
+    if (charBefore === "/" || charBefore === "(") continue;
     const context = excerpt(strippedContent, m.index, 240);
     candidates.push({
       targetSlug: m[1],
       linkType: inferLinkType(pageType, context, content, m[1]),
       context,
-      linkSource: 'markdown',
+      linkSource: "markdown",
     });
   }
 
@@ -567,7 +574,7 @@ export async function extractPageLinks(
   const seen = new Set<string>();
   const result: LinkCandidate[] = [];
   for (const c of candidates) {
-    const key = `${c.fromSlug ?? ''}\u0000${c.targetSlug}\u0000${c.linkType}\u0000${c.linkSource ?? ''}`;
+    const key = `${c.fromSlug ?? ""}\u0000${c.targetSlug}\u0000${c.linkType}\u0000${c.linkSource ?? ""}`;
     if (seen.has(key)) continue;
     seen.add(key);
     result.push(c);
@@ -580,7 +587,7 @@ function excerpt(s: string, idx: number, width: number): string {
   const half = Math.floor(width / 2);
   const start = Math.max(0, idx - half);
   const end = Math.min(s.length, idx + half);
-  return s.slice(start, end).replace(/\s+/g, ' ').trim();
+  return s.slice(start, end).replace(/\s+/g, " ").trim();
 }
 
 // ─── Relationship type inference (deterministic, zero LLM) ──────
@@ -613,19 +620,22 @@ function excerpt(s: string, idx: number, width: number): string {
 //   - Possessive time: "his time at", "her time at", "their time at", "my time at".
 //   - Role noun forms: "role at", "tenure as", "stint as", "position at".
 //   - Promoted/staff-engineer forms: "promoted to (staff|senior|principal) engineer at".
-const WORKS_AT_RE = /\b(?:CEO of|CTO of|COO of|CFO of|CMO of|CRO of|VP at|VP of|VPs? Engineering|VPs? Product|works at|worked at|working at|employed by|employed at|joined as|joined the team|engineer at|engineer for|director at|director of|head of|heads up .{0,20} at|leads engineering|leads product|leads the .{0,20} (?:team|org) at|manages engineering at|manages product at|running (?:engineering|product|design) at|currently at|previously at|previously worked at|spent .* (?:years|months) at|stint at|stint as|tenure at|tenure as|role at|position at|(?:senior|staff|principal|lead|backend|frontend|full-?stack|ML|data|security) engineer at|promoted to (?:senior|staff|principal|lead) .{0,20} at|(?:his|her|their|my) time at)\b/i;
+const WORKS_AT_RE =
+  /\b(?:CEO of|CTO of|COO of|CFO of|CMO of|CRO of|VP at|VP of|VPs? Engineering|VPs? Product|works at|worked at|working at|employed by|employed at|joined as|joined the team|engineer at|engineer for|director at|director of|head of|heads up .{0,20} at|leads engineering|leads product|leads the .{0,20} (?:team|org) at|manages engineering at|manages product at|running (?:engineering|product|design) at|currently at|previously at|previously worked at|spent .* (?:years|months) at|stint at|stint as|tenure at|tenure as|role at|position at|(?:senior|staff|principal|lead|backend|frontend|full-?stack|ML|data|security) engineer at|promoted to (?:senior|staff|principal|lead) .{0,20} at|(?:his|her|their|my) time at)\b/i;
 
 // Investment context. Order patterns from most-specific to least to keep
 // regex efficient. Includes funding-round verbs ("led the seed", "led X's
 // Series A"), narrative verbs ("invests in", "investing in"), historical
 // ("early investor in", "first check"), and portfolio framing ("portfolio
 // company", "portfolio includes").
-const INVESTED_RE = /\b(?:invested in|invests in|investing in|invest in|investment in|investments in|backed by|funding from|funded by|raised from|led the (?:seed|Series|round|investment|round)|led .{0,30}(?:Series [A-Z]|seed|round|investment)|participated in (?:the )?(?:seed|Series|round)|wrote (?:a |the )?check|first check|early investor|portfolio (?:company|includes)|board seat (?:at|in|on)|term sheet for)\b/i;
+const INVESTED_RE =
+  /\b(?:invested in|invests in|investing in|invest in|investment in|investments in|backed by|funding from|funded by|raised from|led the (?:seed|Series|round|investment|round)|led .{0,30}(?:Series [A-Z]|seed|round|investment)|participated in (?:the )?(?:seed|Series|round)|wrote (?:a |the )?check|first check|early investor|portfolio (?:company|includes)|board seat (?:at|in|on)|term sheet for)\b/i;
 
 // Founded patterns. Includes the noun-form "founder of" / "founders include"
 // because that's how real prose identifies founders ("Carol Wilson is the
 // founder of Anchor"). Diagnosed via BrainBench rich-corpus misses.
-const FOUNDED_RE = /\b(?:founded|co-?founded|started the company|incorporated|founder of|founders? (?:include|are)|the founder|is a co-?founder|is one of the founders)\b/i;
+const FOUNDED_RE =
+  /\b(?:founded|co-?founded|started the company|incorporated|founder of|founders? (?:include|are)|the founder|is a co-?founder|is one of the founders)\b/i;
 
 // Advise context: must be rooted in "advisor"/"advise" (investors also sit on
 // boards). Keep "board advisor" / "advisory board" but drop generic "board
@@ -640,18 +650,21 @@ const FOUNDED_RE = /\b(?:founded|co-?founded|started the company|incorporated|fo
 //     narratives where the direct "advises" verb isn't used.
 //   - Advisor-qualified: "strategic advisor to|at", "technical advisor to|at",
 //     "security advisor to|at", "product advisor to|at", "industry advisor".
-const ADVISES_RE = /\b(?:advises|advised|advisor (?:to|at|for|of)|advisory (?:board|role|position|capacity|engagement|partnership|contract|relationship|work)|board advisor|on .{0,20} advisory board|joined .{0,20} advisory board|in an? advisory (?:capacity|role|position)|as an? (?:advisor|security advisor|technical advisor|strategic advisor|industry advisor|product advisor|board advisor|senior advisor)|(?:strategic|technical|security|product|industry|senior|board) advisor (?:to|at|for|of)|consults for|consulting role (?:at|with))\b/i;
+const ADVISES_RE =
+  /\b(?:advises|advised|advisor (?:to|at|for|of)|advisory (?:board|role|position|capacity|engagement|partnership|contract|relationship|work)|board advisor|on .{0,20} advisory board|joined .{0,20} advisory board|in an? advisory (?:capacity|role|position)|as an? (?:advisor|security advisor|technical advisor|strategic advisor|industry advisor|product advisor|board advisor|senior advisor)|(?:strategic|technical|security|product|industry|senior|board) advisor (?:to|at|for|of)|consults for|consulting role (?:at|with))\b/i;
 
 // Page-role detection: if the source page describes a partner/investor at
 // page level, that's a strong prior for outbound company refs being
 // invested_in even when per-edge context lacks explicit investment verbs.
-const PARTNER_ROLE_RE = /\b(?:partner at|partner of|venture partner|VC partner|invested early|investor at|investor in|portfolio|venture capital|early-stage investor|seed investor|fund [A-Z]|invests across|backs companies)\b/i;
+const PARTNER_ROLE_RE =
+  /\b(?:partner at|partner of|venture partner|VC partner|invested early|investor at|investor in|portfolio|venture capital|early-stage investor|seed investor|fund [A-Z]|invests across|backs companies)\b/i;
 
 // Advisor role prior: fires when the page-level description indicates the
 // person IS an advisor (not just mentions advising). Broadened in v0.10.5
 // from "full-time/professional/advises multiple" to catch any page that
 // self-identifies the subject as an advisor.
-const ADVISOR_ROLE_RE = /\b(?:full-time advisor|professional advisor|advises (?:multiple|several|various)|is an? (?:advisor|security advisor|technical advisor|strategic advisor|industry advisor|product advisor|senior advisor)|took on advisory roles|(?:her|his|their) advisory (?:work|role|engagement|portfolio)|serves as (?:an )?advisor)\b/i;
+const ADVISOR_ROLE_RE =
+  /\b(?:full-time advisor|professional advisor|advises (?:multiple|several|various)|is an? (?:advisor|security advisor|technical advisor|strategic advisor|industry advisor|product advisor|senior advisor)|took on advisory roles|(?:her|his|their) advisory (?:work|role|engagement|portfolio)|serves as (?:an )?advisor)\b/i;
 
 // Employee role prior (new in v0.10.5): fires when the page-level description
 // indicates the person IS an employee (senior/staff/lead engineer, director,
@@ -662,7 +675,8 @@ const ADVISOR_ROLE_RE = /\b(?:full-time advisor|professional advisor|advises (?:
 //
 // Scope: only fires for person-page → company-page links. Companies' own
 // pages mentioning their employees use the page-role layer differently.
-const EMPLOYEE_ROLE_RE = /\b(?:is an? (?:senior|staff|principal|lead|backend|frontend|full-?stack|ML|data|security|DevOps|platform)? ?engineer at|is an? (?:senior|staff|principal|lead)? ?(?:developer|designer|product manager|engineering manager|director|VP) (?:at|of)|holds? the (?:CTO|CEO|CFO|COO|CMO|CRO|VP) (?:role|position|seat|title) at|is the (?:CTO|CEO|CFO|COO|CMO|CRO) of|employee at|on the team at|works on .{0,30} at)\b/i;
+const EMPLOYEE_ROLE_RE =
+  /\b(?:is an? (?:senior|staff|principal|lead|backend|frontend|full-?stack|ML|data|security|DevOps|platform)? ?engineer at|is an? (?:senior|staff|principal|lead)? ?(?:developer|designer|product manager|engineering manager|director|VP) (?:at|of)|holds? the (?:CTO|CEO|CFO|COO|CMO|CRO|VP) (?:role|position|seat|title) at|is the (?:CTO|CEO|CFO|COO|CMO|CRO) of|employee at|on the team at|works on .{0,30} at)\b/i;
 
 /**
  * Infer link_type from page context. Deterministic regex heuristics, no LLM.
@@ -680,21 +694,26 @@ const EMPLOYEE_ROLE_RE = /\b(?:is an? (?:senior|staff|principal|lead|backend|fro
  * lists portfolio companies without repeating the investment verb each time
  * ("Her current board seats reflect her portfolio: [Co A], [Co B], [Co C]").
  */
-export function inferLinkType(pageType: PageType, context: string, globalContext?: string, targetSlug?: string): string {
-  if (pageType === 'media') {
-    return 'mentions';
+export function inferLinkType(
+  pageType: PageType,
+  context: string,
+  globalContext?: string,
+  targetSlug?: string
+): string {
+  if (pageType === "media") {
+    return "mentions";
   }
   // v0.27.1: image pages link to their text sibling via 'image_of' (the
   // image is OF that meeting/note). Set explicitly by the import-image
   // path-proximity helper, not by markdown extraction — but the type is
   // declared here so graph-query knows the edge name.
-  if ((pageType as string) === 'image') return 'image_of';
-  if ((pageType as string) === 'meeting') return 'attended';
+  if ((pageType as string) === "image") return "image_of";
+  if ((pageType as string) === "meeting") return "attended";
   // Per-edge verb rules.
-  if (FOUNDED_RE.test(context)) return 'founded';
-  if (INVESTED_RE.test(context)) return 'invested_in';
-  if (ADVISES_RE.test(context)) return 'advises';
-  if (WORKS_AT_RE.test(context)) return 'works_at';
+  if (FOUNDED_RE.test(context)) return "founded";
+  if (INVESTED_RE.test(context)) return "invested_in";
+  if (ADVISES_RE.test(context)) return "advises";
+  if (WORKS_AT_RE.test(context)) return "works_at";
   // Page-role prior: only fires for person -> company links. Concept pages
   // about VC topics naturally contain "venture capital" in their text, but
   // their company refs are mentions, not investments. Partner pages mentioning
@@ -704,12 +723,12 @@ export function inferLinkType(pageType: PageType, context: string, globalContext
   // also sit on boards ("board seat at portfolio company") which a naive
   // employee/advisor match would mis-classify; keep investor first so those
   // phrasings resolve correctly.
-  if (pageType === 'person' && globalContext && targetSlug?.startsWith('companies/')) {
-    if (PARTNER_ROLE_RE.test(globalContext)) return 'invested_in';
-    if (ADVISOR_ROLE_RE.test(globalContext)) return 'advises';
-    if (EMPLOYEE_ROLE_RE.test(globalContext)) return 'works_at';
+  if (pageType === "person" && globalContext && targetSlug?.startsWith("companies/")) {
+    if (PARTNER_ROLE_RE.test(globalContext)) return "invested_in";
+    if (ADVISOR_ROLE_RE.test(globalContext)) return "advises";
+    if (EMPLOYEE_ROLE_RE.test(globalContext)) return "works_at";
   }
-  return 'mentions';
+  return "mentions";
 }
 
 // ─── Frontmatter link extraction (v0.13) ────────────────────────
@@ -747,7 +766,7 @@ export interface FrontmatterFieldMapping {
   /** Edge link_type. */
   type: string;
   /** 'outgoing' = page→target. 'incoming' = target→page (subject of verb = from). */
-  direction: 'outgoing' | 'incoming';
+  direction: "outgoing" | "incoming";
   /**
    * Target directory hints for slug resolution. Single string or ordered
    * array; resolver tries each. E.g. investors → ['companies', 'funds', 'people'].
@@ -765,24 +784,79 @@ export interface FrontmatterFieldMapping {
  */
 export const FRONTMATTER_LINK_MAP: FrontmatterFieldMapping[] = [
   // Person pages → companies
-  { fields: ['company', 'companies'], pageType: 'person', type: 'works_at', direction: 'outgoing', dirHint: 'companies' },
-  { fields: ['founded'], pageType: 'person', type: 'founded', direction: 'outgoing', dirHint: 'companies' },
+  {
+    fields: ["company", "companies"],
+    pageType: "person",
+    type: "works_at",
+    direction: "outgoing",
+    dirHint: "companies",
+  },
+  {
+    fields: ["founded"],
+    pageType: "person",
+    type: "founded",
+    direction: "outgoing",
+    dirHint: "companies",
+  },
   // Company pages (incoming relationships — subject of the verb lives elsewhere)
-  { fields: ['key_people'], pageType: 'company', type: 'works_at', direction: 'incoming', dirHint: 'people' },
-  { fields: ['partner'], pageType: 'company', type: 'yc_partner', direction: 'incoming', dirHint: 'people' },
-  { fields: ['investors'], pageType: 'company', type: 'invested_in', direction: 'incoming',
-    dirHint: ['companies', 'funds', 'people'] },
+  {
+    fields: ["key_people"],
+    pageType: "company",
+    type: "works_at",
+    direction: "incoming",
+    dirHint: "people",
+  },
+  {
+    fields: ["partner"],
+    pageType: "company",
+    type: "yc_partner",
+    direction: "incoming",
+    dirHint: "people",
+  },
+  {
+    fields: ["investors"],
+    pageType: "company",
+    type: "invested_in",
+    direction: "incoming",
+    dirHint: ["companies", "funds", "people"],
+  },
   // Deal pages (all incoming — deals are the object)
-  { fields: ['investors'], pageType: 'deal', type: 'invested_in', direction: 'incoming',
-    dirHint: ['companies', 'funds', 'people'] },
-  { fields: ['lead'], pageType: 'deal', type: 'led_round', direction: 'incoming',
-    dirHint: ['companies', 'funds', 'people'] },
+  {
+    fields: ["investors"],
+    pageType: "deal",
+    type: "invested_in",
+    direction: "incoming",
+    dirHint: ["companies", "funds", "people"],
+  },
+  {
+    fields: ["lead"],
+    pageType: "deal",
+    type: "led_round",
+    direction: "incoming",
+    dirHint: ["companies", "funds", "people"],
+  },
   // Meeting pages
-  { fields: ['attendees'], pageType: 'meeting', type: 'attended', direction: 'incoming', dirHint: 'people' },
+  {
+    fields: ["attendees"],
+    pageType: "meeting",
+    type: "attended",
+    direction: "incoming",
+    dirHint: "people",
+  },
   // Any page type
-  { fields: ['sources'], type: 'discussed_in', direction: 'incoming', dirHint: ['source', 'media'] },
-  { fields: ['source'], type: 'source', direction: 'outgoing', dirHint: '' /* already slug-shaped */ },
-  { fields: ['related', 'see_also'], type: 'related_to', direction: 'outgoing', dirHint: '' },
+  {
+    fields: ["sources"],
+    type: "discussed_in",
+    direction: "incoming",
+    dirHint: ["source", "media"],
+  },
+  {
+    fields: ["source"],
+    type: "source",
+    direction: "outgoing",
+    dirHint: "" /* already slug-shaped */,
+  },
+  { fields: ["related", "see_also"], type: "related_to", direction: "outgoing", dirHint: "" },
 ];
 
 // ─── Slug resolver ──────────────────────────────────────────────
@@ -822,12 +896,16 @@ export interface SlugResolver {
  * final `/`-segment (or the whole slug when it has no `/`).
  */
 export function normalizeBasename(s: string): string {
-  return s.toLowerCase().replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-');
+  return s
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "-");
 }
 
 /** Stable order: shorter slug first (likely closer to brain root), then lexical. */
 function basenameSort(a: string, b: string): number {
-  return (a.length - b.length) || a.localeCompare(b);
+  return a.length - b.length || a.localeCompare(b);
 }
 
 /** Build a `key → slug[]` index over a slug collection. Keys: raw/lower/slugified tail. */
@@ -835,11 +913,12 @@ export function buildBasenameIndex(slugs: Iterable<string>): Map<string, string[
   const idx = new Map<string, string[]>();
   const addKey = (key: string, slug: string) => {
     const existing = idx.get(key);
-    if (existing) { if (!existing.includes(slug)) existing.push(slug); }
-    else idx.set(key, [slug]);
+    if (existing) {
+      if (!existing.includes(slug)) existing.push(slug);
+    } else idx.set(key, [slug]);
   };
   for (const slug of slugs) {
-    const tail = slug.includes('/') ? slug.slice(slug.lastIndexOf('/') + 1) : slug;
+    const tail = slug.includes("/") ? slug.slice(slug.lastIndexOf("/") + 1) : slug;
     addKey(tail, slug);
     const lower = tail.toLowerCase();
     if (lower !== tail) addKey(lower, slug);
@@ -851,10 +930,11 @@ export function buildBasenameIndex(slugs: Iterable<string>): Map<string, string[
 
 /** Look a name up in a basename index (raw → lower → slugified), stable-sorted. */
 export function queryBasenameIndex(idx: Map<string, string[]>, name: string): string[] {
-  if (!name || typeof name !== 'string') return [];
+  if (!name || typeof name !== "string") return [];
   const trimmed = name.trim();
   if (!trimmed) return [];
-  const hit = idx.get(trimmed) ?? idx.get(trimmed.toLowerCase()) ?? idx.get(normalizeBasename(trimmed));
+  const hit =
+    idx.get(trimmed) ?? idx.get(trimmed.toLowerCase()) ?? idx.get(normalizeBasename(trimmed));
   return hit ? [...hit].sort(basenameSort) : [];
 }
 
@@ -875,11 +955,16 @@ export function queryBasenameIndex(idx: Map<string, string[]>, name: string): st
  */
 export function makeResolver(
   engine: BrainEngine,
-  opts: { mode: 'batch' | 'live'; sourceId?: string } = { mode: 'live' },
+  opts: { mode: "batch" | "live"; sourceId?: string } = { mode: "live" }
 ): SlugResolver {
   const cache = new Map<string, string | null>();
 
-  const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-');
+  const norm = (s: string) =>
+    s
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, "")
+      .trim()
+      .replace(/\s+/g, "-");
 
   // Issue #972: lazy-built basename → slug[] index for global-basename
   // resolution. Built on first call to `resolveBasenameMatches`; reused
@@ -892,7 +977,7 @@ export function makeResolver(
   async function ensureBasenameIndex(): Promise<Map<string, string[]>> {
     if (basenameIndex !== null) return basenameIndex;
     const idx = new Map<string, string[]>();
-    if (typeof engine.getAllSlugs !== 'function') {
+    if (typeof engine.getAllSlugs !== "function") {
       basenameIndex = idx;
       return idx;
     }
@@ -922,14 +1007,14 @@ export function makeResolver(
     },
 
     async resolve(name: string, dirHint?: string | string[]): Promise<string | null> {
-      if (!name || typeof name !== 'string') return null;
+      if (!name || typeof name !== "string") return null;
       const trimmed = name.trim();
       if (!trimmed) return null;
 
-      const cacheKey = `${trimmed}\u0000${Array.isArray(dirHint) ? dirHint.join(',') : (dirHint || '')}`;
+      const cacheKey = `${trimmed}\u0000${Array.isArray(dirHint) ? dirHint.join(",") : dirHint || ""}`;
       if (cache.has(cacheKey)) return cache.get(cacheKey)!;
 
-      const hints = Array.isArray(dirHint) ? dirHint : (dirHint ? [dirHint] : []);
+      const hints = Array.isArray(dirHint) ? dirHint : dirHint ? [dirHint] : [];
 
       // Step 1: already a slug? (dir/name shape, lowercase, hyphenated)
       if (/^[a-z][a-z0-9-]*\/[a-z0-9][a-z0-9-]*$/.test(trimmed)) {
@@ -967,20 +1052,23 @@ export function makeResolver(
       // Step 4: live-mode ONLY — fall back to hybrid search. expand: false
       // is MANDATORY (see operations-query-hidden-haiku learning). Batch
       // mode skips this step entirely to keep migration deterministic.
-      if (opts.mode === 'live') {
+      if (opts.mode === "live") {
         try {
           const results = await engine.searchKeyword(trimmed, { limit: 3 });
           if (results.length > 0 && results[0].score >= 0.8) {
             // Filter by dir hint if provided.
-            const top = hints.length > 0
-              ? results.find(r => hints.some(h => r.slug.startsWith(`${h}/`)))
-              : results[0];
+            const top =
+              hints.length > 0
+                ? results.find((r) => hints.some((h) => r.slug.startsWith(`${h}/`)))
+                : results[0];
             if (top) {
               cache.set(cacheKey, top.slug);
               return top.slug;
             }
           }
-        } catch { /* search errors are non-fatal; fall through to null */ }
+        } catch {
+          /* search errors are non-fatal; fall through to null */
+        }
       }
 
       // Null = unresolvable. Caller records for the unresolved report.
@@ -1016,7 +1104,7 @@ export async function extractFrontmatterLinks(
   slug: string,
   pageType: PageType,
   frontmatter: Record<string, unknown>,
-  resolver: SlugResolver,
+  resolver: SlugResolver
 ): Promise<FrontmatterExtractResult> {
   const candidates: LinkCandidate[] = [];
   const unresolved: UnresolvedFrontmatterRef[] = [];
@@ -1032,22 +1120,22 @@ export async function extractFrontmatterLinks(
         // Extract the name to resolve. Strings pass through; objects use
         // the `name` / `slug` / `title` field in that preference order.
         let name: string | null = null;
-        let contextExtra = '';
-        if (typeof entry === 'string') {
+        let contextExtra = "";
+        if (typeof entry === "string") {
           name = entry;
-        } else if (entry && typeof entry === 'object') {
+        } else if (entry && typeof entry === "object") {
           const obj = entry as Record<string, unknown>;
           const n = obj.name ?? obj.slug ?? obj.title;
-          if (typeof n === 'string') {
+          if (typeof n === "string") {
             name = n;
             // Carry interesting object fields (role, title) into the context.
             const extras: string[] = [];
-            if (typeof obj.role === 'string') extras.push(obj.role);
-            if (typeof obj.title === 'string' && obj.title !== n) extras.push(obj.title);
-            if (extras.length > 0) contextExtra = ` (${extras.join(', ')})`;
+            if (typeof obj.role === "string") extras.push(obj.role);
+            if (typeof obj.title === "string" && obj.title !== n) extras.push(obj.title);
+            if (extras.length > 0) contextExtra = ` (${extras.join(", ")})`;
           }
         }
-        if (!name) continue;   // skip numbers, nulls, malformed objects
+        if (!name) continue; // skip numbers, nulls, malformed objects
 
         const resolved = await resolver.resolve(name, mapping.dirHint);
         if (!resolved) {
@@ -1056,8 +1144,8 @@ export async function extractFrontmatterLinks(
         }
 
         // Outgoing: page → resolved. Incoming: resolved → page.
-        const fromSlug = mapping.direction === 'outgoing' ? slug : resolved;
-        const toSlug   = mapping.direction === 'outgoing' ? resolved : slug;
+        const fromSlug = mapping.direction === "outgoing" ? slug : resolved;
+        const toSlug = mapping.direction === "outgoing" ? resolved : slug;
         // Context enrichment (review Finding 7): readable in backlink panels
         // and search snippets instead of bare `frontmatter.key_people`.
         const context = `frontmatter.${field}: ${name}${contextExtra}`;
@@ -1067,8 +1155,8 @@ export async function extractFrontmatterLinks(
           targetSlug: toSlug,
           linkType: mapping.type,
           context,
-          linkSource: 'frontmatter',
-          originSlug: slug,       // the page whose frontmatter created this edge
+          linkSource: "frontmatter",
+          originSlug: slug, // the page whose frontmatter created this edge
           originField: field,
         });
       }
@@ -1104,7 +1192,7 @@ const TIMELINE_LINE_RE = /^\s*-?\s*\*\*(\d{4}-\d{2}-\d{2})\*\*\s*[|\-–—]+\s*
  */
 export function parseTimelineEntries(content: string): TimelineCandidate[] {
   const result: TimelineCandidate[] = [];
-  const lines = content.split('\n');
+  const lines = content.split("\n");
 
   let i = 0;
   while (i < lines.length) {
@@ -1135,14 +1223,17 @@ export function parseTimelineEntries(content: string): TimelineCandidate[] {
       }
       if (next.trim().length === 0 && detailLines.length > 0) break;
       // Indented continuation lines are detail; flush-left non-list lines too.
-      if (/^\s+/.test(next) || (!next.startsWith('-') && !next.startsWith('*') && !next.startsWith('#'))) {
+      if (
+        /^\s+/.test(next) ||
+        (!next.startsWith("-") && !next.startsWith("*") && !next.startsWith("#"))
+      ) {
         detailLines.push(next.trim());
         j++;
         continue;
       }
       break;
     }
-    result.push({ date, summary, detail: detailLines.join(' ').trim() });
+    result.push({ date, summary, detail: detailLines.join(" ").trim() });
     i = j;
   }
   return result;
@@ -1151,7 +1242,7 @@ export function parseTimelineEntries(content: string): TimelineCandidate[] {
 /** Validate date string represents a real calendar date in ISO YYYY-MM-DD form. */
 function isValidDate(s: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
-  const [y, mo, d] = s.split('-').map(Number);
+  const [y, mo, d] = s.split("-").map(Number);
   if (mo < 1 || mo > 12) return false;
   if (d < 1 || d > 31) return false;
   // Use Date object as final check (catches 2026-02-30 etc.)
@@ -1170,10 +1261,10 @@ function isValidDate(s: string): boolean {
  * The config is stored as a string via engine.setConfig/getConfig.
  */
 export async function isAutoLinkEnabled(engine: BrainEngine): Promise<boolean> {
-  const val = await engine.getConfig('auto_link');
+  const val = await engine.getConfig("auto_link");
   if (val == null) return true;
   const normalized = val.trim().toLowerCase();
-  return !['false', '0', 'no', 'off'].includes(normalized);
+  return !["false", "0", "no", "off"].includes(normalized);
 }
 
 /**
@@ -1183,10 +1274,10 @@ export async function isAutoLinkEnabled(engine: BrainEngine): Promise<boolean> {
  * via addTimelineEntriesBatch.
  */
 export async function isAutoTimelineEnabled(engine: BrainEngine): Promise<boolean> {
-  const val = await engine.getConfig('auto_timeline');
+  const val = await engine.getConfig("auto_timeline");
   if (val == null) return true;
   const normalized = val.trim().toLowerCase();
-  return !['false', '0', 'no', 'off'].includes(normalized);
+  return !["false", "0", "no", "off"].includes(normalized);
 }
 
 /**
@@ -1209,10 +1300,10 @@ export async function isGlobalBasenameEnabled(engine: BrainEngine): Promise<bool
   const envVal = process.env.GBRAIN_LINK_RESOLUTION_GLOBAL_BASENAME;
   if (envVal != null) {
     const normalized = envVal.trim().toLowerCase();
-    return ['1', 'true', 'yes', 'on'].includes(normalized);
+    return ["1", "true", "yes", "on"].includes(normalized);
   }
-  const val = await engine.getConfig('link_resolution.global_basename');
+  const val = await engine.getConfig("link_resolution.global_basename");
   if (val == null) return false;
   const normalized = val.trim().toLowerCase();
-  return ['1', 'true', 'yes', 'on'].includes(normalized);
+  return ["1", "true", "yes", "on"].includes(normalized);
 }

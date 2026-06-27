@@ -32,6 +32,7 @@ writes_to:
 ## Contract
 
 This skill guarantees:
+
 - Meeting page created with attendees, summary, key decisions, action items
 - EVERY attendee gets a people page (created or updated)
 - EVERY company discussed gets entity propagation
@@ -49,6 +50,7 @@ the meeting page. An unlinked mention is a broken brain.
 ### Phase 1: Parse the transcript
 
 Extract from the transcript:
+
 - Attendees (names, roles if available)
 - Date, time, duration
 - Key topics discussed
@@ -66,21 +68,26 @@ Extract from the transcript:
 **Duration:** {if available}
 
 ## Summary
+
 {3-5 bullet key outcomes}
 
 ## Key Decisions
+
 {Decisions with context}
 
 ## Action Items
+
 {Tasks with owners and deadlines}
 
 ## Discussion Notes
+
 {Structured notes by topic}
 ```
 
 ### Phase 3: Attendee enrichment (MANDATORY)
 
 For EACH attendee:
+
 1. `gbrain search "{name}"` — does a people page exist?
 2. If NO → create via enrich skill (this is mandatory, not optional)
 3. If YES → update compiled truth with meeting context
@@ -96,6 +103,7 @@ for dated events (auto-link only handles links, not timeline entries).
 ### Phase 4: Entity propagation (MANDATORY)
 
 For each company, project, or concept discussed:
+
 1. Check brain for existing page
 2. Create/update as needed
 3. Add timeline entry referencing the meeting

@@ -40,15 +40,15 @@
  */
 export type GuardrailHook =
   /** Markdown/text body before chunking, embedding, and page persistence. */
-  | 'file_storage.markdown'
+  | "file_storage.markdown"
   /** Code body before code-chunking, embedding, and page persistence. */
-  | 'file_storage.code'
+  | "file_storage.code"
   /** Latest user message before LLM inference (chat). */
-  | 'ai_gateway.chat'
+  | "ai_gateway.chat"
   /** Search-expansion query before the expansion model call. */
-  | 'ai_gateway.expand'
+  | "ai_gateway.expand"
   /** Tool input before pending-persist and before tool execution. */
-  | 'ai_gateway.tool_input';
+  | "ai_gateway.tool_input";
 
 /**
  * One guardrail invocation. `content` is the raw text the boundary handles;
@@ -80,7 +80,7 @@ const providers = new Map<string, GuardrailProvider>();
  * plugin re-init doesn't double-fire. No-op safe to call before any ingest.
  */
 export function registerGuardrailProvider(provider: GuardrailProvider): void {
-  if (!provider || typeof provider.classify !== 'function' || !provider.id) return;
+  if (!provider || typeof provider.classify !== "function" || !provider.id) return;
   providers.set(provider.id, provider);
 }
 
@@ -113,7 +113,7 @@ export function hasGuardrails(): boolean {
  */
 export async function runGuardrails(input: GuardrailInput): Promise<void> {
   if (providers.size === 0) return;
-  const content = typeof input.content === 'string' ? input.content : '';
+  const content = typeof input.content === "string" ? input.content : "";
   if (!content.trim()) return;
 
   // Snapshot so a provider registering/unregistering mid-flight can't mutate
@@ -132,6 +132,6 @@ export async function runGuardrails(input: GuardrailInput): Promise<void> {
         // Provider-side logging is the provider's responsibility; GBrain does
         // not log raw content here (could itself leak the classified payload).
       }
-    }),
+    })
   );
 }

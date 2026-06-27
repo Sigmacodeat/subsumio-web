@@ -28,7 +28,9 @@ export default function ChatAnalyticsPage() {
       setStats(s);
       setLoading(false);
     });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   if (loading) {

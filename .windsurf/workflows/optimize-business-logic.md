@@ -5,6 +5,7 @@ description: Optimiere Business Logic / Lib Layer nach Agency-Level Standards
 # Business Logic / Lib Optimization
 
 ## Scope
+
 - `src/lib/` — 87 Module mit Domain-Logik
 - `src/lib/auth/` (10 Module) — Session, OAuth, 2FA/TOTP, Permissions
 - `src/lib/billing/` — Subscription & Billing Logic
@@ -17,6 +18,7 @@ description: Optimiere Business Logic / Lib Layer nach Agency-Level Standards
 - `src/lib/hooks/` — React Hooks
 
 ## Kern-Module
+
 - `src/lib/legal-deadlines.ts` (13.8KB) — Fristberechnung (ZPO, BGB, VwGO)
 - `src/lib/legal-types.ts` (6.5KB) — Type Definitions für Legal Domain
 - `src/lib/rvg.ts` (2.7KB) — RVG Kostenberechnung
@@ -40,6 +42,7 @@ description: Optimiere Business Logic / Lib Layer nach Agency-Level Standards
 - `src/lib/realtime.ts` (3.7KB) — WebSocket Realtime Layer
 
 ## Kontext laden
+
 1. Lese das jeweilige Modul das optimiert werden soll
 2. Lese `src/lib/types.ts` für gemeinsame Types
 3. Lese `src/lib/schemas/` für zugehörige Validation-Schemas
@@ -48,6 +51,7 @@ description: Optimiere Business Logic / Lib Layer nach Agency-Level Standards
 6. Lese `src/lib/store.ts` für State-Management Pattern
 
 ## Optimierungs-Checkliste
+
 - [ ] **Type Safety**: Kein `any`, explizite Types für alle Public APIs
 - [ ] **Error Handling**: Custom Error Classes, nie `throw new Error("string")` ohne code
 - [ ] **Validation**: Zod-Schemas für alle externen Inputs
@@ -60,6 +64,7 @@ description: Optimiere Business Logic / Lib Layer nach Agency-Level Standards
 - [ ] **GDPR/DSGVO**: Data Minimization, Right to be Forgotten, Export
 
 ## Test-Befehle
+
 ```bash
 # Unit Tests
 npx vitest run src/lib/*.test.ts
@@ -75,6 +80,7 @@ npx eslint src/lib/
 ```
 
 ## Agency-Level Standards
+
 - **Pure Functions**: `calculateDeadline(date, rule) → Deadline` ohne Side-Effects
 - **Error Classes**: `class LegalDeadlineError extends Error { code: string; details: {} }`
 - **Zod Schemas**: `const DeadlineInputSchema = z.object({ ... })` → inferred type

@@ -13,11 +13,11 @@
  * the PGLite half so the seed/query path is at least exercised.
  */
 
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
-import { PGLiteEngine } from '../../src/core/pglite-engine.ts';
-import type { ChunkInput, SearchResult } from '../../src/core/types.ts';
-import type { BrainEngine } from '../../src/core/engine.ts';
-import { hasDatabase, setupDB, teardownDB, getEngine } from './helpers.ts';
+import { describe, test, expect, beforeAll, afterAll } from "bun:test";
+import { PGLiteEngine } from "../../src/core/pglite-engine.ts";
+import type { ChunkInput, SearchResult } from "../../src/core/types.ts";
+import type { BrainEngine } from "../../src/core/engine.ts";
+import { hasDatabase, setupDB, teardownDB, getEngine } from "./helpers.ts";
 
 const SKIP_PG = !hasDatabase();
 const describeBoth = SKIP_PG ? describe.skip : describe;
@@ -30,7 +30,7 @@ function basisEmbedding(idx: number, dim = 1536): Float32Array {
 
 interface SeedPage {
   slug: string;
-  type: 'writing' | 'concept' | 'note' | 'person' | 'company';
+  type: "writing" | "concept" | "note" | "person" | "company";
   title: string;
   body: string;
   embeddingDim: number;
@@ -38,42 +38,42 @@ interface SeedPage {
 
 const SEED_PAGES: SeedPage[] = [
   {
-    slug: 'originals/talks/article-outline-fat-code',
-    type: 'writing',
-    title: 'Fat Code Thin Harness — Part 3',
-    body: 'fat code thin harness pattern part 3 production case studies',
+    slug: "originals/talks/article-outline-fat-code",
+    type: "writing",
+    title: "Fat Code Thin Harness — Part 3",
+    body: "fat code thin harness pattern part 3 production case studies",
     embeddingDim: 7,
   },
   {
-    slug: 'concepts/fat-code-thin-harness',
-    type: 'concept',
-    title: 'Fat Code Thin Harness',
-    body: 'reusable concept fat code thin harness architecture',
+    slug: "concepts/fat-code-thin-harness",
+    type: "concept",
+    title: "Fat Code Thin Harness",
+    body: "reusable concept fat code thin harness architecture",
     embeddingDim: 14,
   },
   {
-    slug: 'openclaw/chat/2026-04-15',
-    type: 'note',
-    title: '2026-04-15 chat',
+    slug: "openclaw/chat/2026-04-15",
+    type: "note",
+    title: "2026-04-15 chat",
     body:
-      'fat code thin harness fat code thin harness discussion went on at length, ' +
-      'fat code thin harness came up again and again, fat code thin harness fat code thin harness.',
+      "fat code thin harness fat code thin harness discussion went on at length, " +
+      "fat code thin harness came up again and again, fat code thin harness fat code thin harness.",
     embeddingDim: 8,
   },
   {
-    slug: 'openclaw/chat/2026-04-16',
-    type: 'note',
-    title: '2026-04-16 chat',
+    slug: "openclaw/chat/2026-04-16",
+    type: "note",
+    title: "2026-04-16 chat",
     body:
-      'fat code thin harness once more, fat code thin harness fat code thin harness, ' +
-      'still talking about fat code thin harness fat code thin harness.',
+      "fat code thin harness once more, fat code thin harness fat code thin harness, " +
+      "still talking about fat code thin harness fat code thin harness.",
     embeddingDim: 9,
   },
   {
-    slug: 'people/example-founder',
-    type: 'person',
-    title: 'Example Founder',
-    body: 'example founder unrelated content for distraction',
+    slug: "people/example-founder",
+    type: "person",
+    title: "Example Founder",
+    body: "example founder unrelated content for distraction",
     embeddingDim: 50,
   },
 ];
@@ -84,13 +84,13 @@ async function seedEngine(eng: BrainEngine) {
       type: p.type,
       title: p.title,
       compiled_truth: p.body,
-      timeline: '',
+      timeline: "",
     });
     const chunks: ChunkInput[] = [
       {
         chunk_index: 0,
         chunk_text: p.body,
-        chunk_source: 'compiled_truth',
+        chunk_source: "compiled_truth",
         embedding: basisEmbedding(p.embeddingDim),
         token_count: p.body.split(/\s+/).length,
       },
@@ -99,13 +99,9 @@ async function seedEngine(eng: BrainEngine) {
   }
 }
 
-const QUERIES = [
-  'fat code thin harness',
-  'fat code thin harness part 3',
-  'fat code production',
-];
+const QUERIES = ["fat code thin harness", "fat code thin harness part 3", "fat code production"];
 
-describeBoth('Engine parity — Postgres vs PGLite', () => {
+describeBoth("Engine parity — Postgres vs PGLite", () => {
   let pgEngine: BrainEngine;
   let pgliteEngine: PGLiteEngine;
 
@@ -141,7 +137,7 @@ describeBoth('Engine parity — Postgres vs PGLite', () => {
     });
   }
 
-  test('searchVector: top result matches between engines', async () => {
+  test("searchVector: top result matches between engines", async () => {
     const queryVec = basisEmbedding(7); // article direction
     const pgResults = await pgEngine.searchVector(queryVec, { limit: 5 });
     const pgliteResults = await pgliteEngine.searchVector(queryVec, { limit: 5 });
@@ -149,53 +145,57 @@ describeBoth('Engine parity — Postgres vs PGLite', () => {
     expect(pgResults[0]?.slug).toBe(pgliteResults[0]?.slug);
   });
 
-  test('hard-exclude is consistent across engines', async () => {
+  test("hard-exclude is consistent across engines", async () => {
     // Both engines should hide test/ pages by default; both should opt
     // them back in via include_slug_prefixes.
-    await pgEngine.putPage('test/parity-fixture', {
-      type: 'note',
-      title: 'parity test fixture',
-      compiled_truth: 'parity test fixture content',
-      timeline: '',
+    await pgEngine.putPage("test/parity-fixture", {
+      type: "note",
+      title: "parity test fixture",
+      compiled_truth: "parity test fixture content",
+      timeline: "",
     });
-    await pgEngine.upsertChunks('test/parity-fixture', [{
-      chunk_index: 0,
-      chunk_text: 'parity test fixture content',
-      chunk_source: 'compiled_truth',
-      embedding: basisEmbedding(20),
-      token_count: 5,
-    }] satisfies ChunkInput[]);
+    await pgEngine.upsertChunks("test/parity-fixture", [
+      {
+        chunk_index: 0,
+        chunk_text: "parity test fixture content",
+        chunk_source: "compiled_truth",
+        embedding: basisEmbedding(20),
+        token_count: 5,
+      },
+    ] satisfies ChunkInput[]);
 
-    await pgliteEngine.putPage('test/parity-fixture', {
-      type: 'note',
-      title: 'parity test fixture',
-      compiled_truth: 'parity test fixture content',
-      timeline: '',
+    await pgliteEngine.putPage("test/parity-fixture", {
+      type: "note",
+      title: "parity test fixture",
+      compiled_truth: "parity test fixture content",
+      timeline: "",
     });
-    await pgliteEngine.upsertChunks('test/parity-fixture', [{
-      chunk_index: 0,
-      chunk_text: 'parity test fixture content',
-      chunk_source: 'compiled_truth',
-      embedding: basisEmbedding(20),
-      token_count: 5,
-    }] satisfies ChunkInput[]);
+    await pgliteEngine.upsertChunks("test/parity-fixture", [
+      {
+        chunk_index: 0,
+        chunk_text: "parity test fixture content",
+        chunk_source: "compiled_truth",
+        embedding: basisEmbedding(20),
+        token_count: 5,
+      },
+    ] satisfies ChunkInput[]);
 
-    const pgDefault = await pgEngine.searchKeyword('parity test fixture');
-    const pgliteDefault = await pgliteEngine.searchKeyword('parity test fixture');
-    expect(pgDefault.map((r: SearchResult) => r.slug)).not.toContain('test/parity-fixture');
-    expect(pgliteDefault.map((r: SearchResult) => r.slug)).not.toContain('test/parity-fixture');
+    const pgDefault = await pgEngine.searchKeyword("parity test fixture");
+    const pgliteDefault = await pgliteEngine.searchKeyword("parity test fixture");
+    expect(pgDefault.map((r: SearchResult) => r.slug)).not.toContain("test/parity-fixture");
+    expect(pgliteDefault.map((r: SearchResult) => r.slug)).not.toContain("test/parity-fixture");
 
-    const pgOptIn = await pgEngine.searchKeyword('parity test fixture', {
-      include_slug_prefixes: ['test/'],
+    const pgOptIn = await pgEngine.searchKeyword("parity test fixture", {
+      include_slug_prefixes: ["test/"],
     });
-    const pgliteOptIn = await pgliteEngine.searchKeyword('parity test fixture', {
-      include_slug_prefixes: ['test/'],
+    const pgliteOptIn = await pgliteEngine.searchKeyword("parity test fixture", {
+      include_slug_prefixes: ["test/"],
     });
-    expect(pgOptIn.map((r: SearchResult) => r.slug)).toContain('test/parity-fixture');
-    expect(pgliteOptIn.map((r: SearchResult) => r.slug)).toContain('test/parity-fixture');
+    expect(pgOptIn.map((r: SearchResult) => r.slug)).toContain("test/parity-fixture");
+    expect(pgliteOptIn.map((r: SearchResult) => r.slug)).toContain("test/parity-fixture");
   });
 
-  test('detail=high produces a different ranking than default on at least one engine', async () => {
+  test("detail=high produces a different ranking than default on at least one engine", async () => {
     // Source-boost gates on `detail !== 'high'`. If the gate works on both
     // engines, the ordering for `detail=high` should differ from default in
     // any case where the swamp / curated pages have different raw scores.
@@ -209,19 +209,29 @@ describeBoth('Engine parity — Postgres vs PGLite', () => {
     // chat pages in its result set (they're not filtered by detail), and
     // the result set should not be identical to default-detail (the boost
     // must be doing _something_ visible).
-    const pgDefault = await pgEngine.searchKeyword('fat code thin harness', { limit: 5 });
-    const pgHigh = await pgEngine.searchKeyword('fat code thin harness', { detail: 'high', limit: 5 });
-    const pgliteDefault = await pgliteEngine.searchKeyword('fat code thin harness', { limit: 5 });
-    const pgliteHigh = await pgliteEngine.searchKeyword('fat code thin harness', { detail: 'high', limit: 5 });
+    const pgDefault = await pgEngine.searchKeyword("fat code thin harness", { limit: 5 });
+    const pgHigh = await pgEngine.searchKeyword("fat code thin harness", {
+      detail: "high",
+      limit: 5,
+    });
+    const pgliteDefault = await pgliteEngine.searchKeyword("fat code thin harness", { limit: 5 });
+    const pgliteHigh = await pgliteEngine.searchKeyword("fat code thin harness", {
+      detail: "high",
+      limit: 5,
+    });
 
     // Chat pages must be present in detail=high results on both engines.
-    expect(pgHigh.some((r: SearchResult) => r.slug.startsWith('openclaw/chat/'))).toBe(true);
-    expect(pgliteHigh.some((r: SearchResult) => r.slug.startsWith('openclaw/chat/'))).toBe(true);
+    expect(pgHigh.some((r: SearchResult) => r.slug.startsWith("openclaw/chat/"))).toBe(true);
+    expect(pgliteHigh.some((r: SearchResult) => r.slug.startsWith("openclaw/chat/"))).toBe(true);
 
     // The boost must be doing something — at least one engine's ordering
     // should change between default and detail=high.
-    const pgChanged = pgDefault.map((r: SearchResult) => r.slug).join(',') !== pgHigh.map((r: SearchResult) => r.slug).join(',');
-    const pgliteChanged = pgliteDefault.map((r: SearchResult) => r.slug).join(',') !== pgliteHigh.map((r: SearchResult) => r.slug).join(',');
+    const pgChanged =
+      pgDefault.map((r: SearchResult) => r.slug).join(",") !==
+      pgHigh.map((r: SearchResult) => r.slug).join(",");
+    const pgliteChanged =
+      pgliteDefault.map((r: SearchResult) => r.slug).join(",") !==
+      pgliteHigh.map((r: SearchResult) => r.slug).join(",");
     expect(pgChanged || pgliteChanged).toBe(true);
   });
 
@@ -230,16 +240,16 @@ describeBoth('Engine parity — Postgres vs PGLite', () => {
   // source_uri, ingested_via, ingested_at) on putPage AND surface them
   // on getPage. A drift here would mean `gbrain migrate --to supabase`
   // silently loses half a user's provenance audit trail.
-  test('provenance columns: putPage writes + getPage returns identical shape on both engines', async () => {
-    const slug = 'wiki/provenance-parity';
+  test("provenance columns: putPage writes + getPage returns identical shape on both engines", async () => {
+    const slug = "wiki/provenance-parity";
     const input = {
-      type: 'note' as const,
-      title: 'Provenance Parity Test',
-      compiled_truth: 'body',
-      timeline: '',
-      source_kind: 'capture-cli',
-      source_uri: 'file:///tmp/parity.md',
-      ingested_via: 'put_page',
+      type: "note" as const,
+      title: "Provenance Parity Test",
+      compiled_truth: "body",
+      timeline: "",
+      source_kind: "capture-cli",
+      source_uri: "file:///tmp/parity.md",
+      ingested_via: "put_page",
     };
     await pgEngine.putPage(slug, input);
     await pgliteEngine.putPage(slug, input);
@@ -251,81 +261,87 @@ describeBoth('Engine parity — Postgres vs PGLite', () => {
     expect(pglitePage).not.toBeNull();
 
     // All 4 provenance fields must match across engines.
-    expect(pgPage!.source_kind).toBe('capture-cli');
-    expect(pglitePage!.source_kind).toBe('capture-cli');
-    expect(pgPage!.source_uri).toBe('file:///tmp/parity.md');
-    expect(pglitePage!.source_uri).toBe('file:///tmp/parity.md');
-    expect(pgPage!.ingested_via).toBe('put_page');
-    expect(pglitePage!.ingested_via).toBe('put_page');
+    expect(pgPage!.source_kind).toBe("capture-cli");
+    expect(pglitePage!.source_kind).toBe("capture-cli");
+    expect(pgPage!.source_uri).toBe("file:///tmp/parity.md");
+    expect(pglitePage!.source_uri).toBe("file:///tmp/parity.md");
+    expect(pgPage!.ingested_via).toBe("put_page");
+    expect(pglitePage!.ingested_via).toBe("put_page");
     // ingested_at is server-stamped; both engines must populate a Date
     // (not Date drift across engines — the assertion is structural).
     expect(pgPage!.ingested_at).toBeInstanceOf(Date);
     expect(pglitePage!.ingested_at).toBeInstanceOf(Date);
   });
 
-  test('provenance COALESCE-preserve UPDATE: parity on both engines (CV12)', async () => {
+  test("provenance COALESCE-preserve UPDATE: parity on both engines (CV12)", async () => {
     // First write with provenance.
-    const slug = 'wiki/provenance-preserve-parity';
+    const slug = "wiki/provenance-preserve-parity";
     await pgEngine.putPage(slug, {
-      type: 'note',
-      title: 'V1',
-      compiled_truth: 'body v1',
-      timeline: '',
-      source_kind: 'capture-cli',
-      ingested_via: 'put_page',
+      type: "note",
+      title: "V1",
+      compiled_truth: "body v1",
+      timeline: "",
+      source_kind: "capture-cli",
+      ingested_via: "put_page",
     });
     await pgliteEngine.putPage(slug, {
-      type: 'note',
-      title: 'V1',
-      compiled_truth: 'body v1',
-      timeline: '',
-      source_kind: 'capture-cli',
-      ingested_via: 'put_page',
+      type: "note",
+      title: "V1",
+      compiled_truth: "body v1",
+      timeline: "",
+      source_kind: "capture-cli",
+      ingested_via: "put_page",
     });
 
     // Second write WITHOUT provenance — both engines must preserve
     // the first-write audit trail via COALESCE-preserve UPDATE.
     await pgEngine.putPage(slug, {
-      type: 'note',
-      title: 'V2',
-      compiled_truth: 'body v2',
-      timeline: '',
+      type: "note",
+      title: "V2",
+      compiled_truth: "body v2",
+      timeline: "",
     });
     await pgliteEngine.putPage(slug, {
-      type: 'note',
-      title: 'V2',
-      compiled_truth: 'body v2',
-      timeline: '',
+      type: "note",
+      title: "V2",
+      compiled_truth: "body v2",
+      timeline: "",
     });
 
     const pgPage = await pgEngine.getPage(slug);
     const pglitePage = await pgliteEngine.getPage(slug);
 
     // Provenance preserved on BOTH engines (CV12 first-write-wins).
-    expect(pgPage!.source_kind).toBe('capture-cli');
-    expect(pglitePage!.source_kind).toBe('capture-cli');
-    expect(pgPage!.ingested_via).toBe('put_page');
-    expect(pglitePage!.ingested_via).toBe('put_page');
+    expect(pgPage!.source_kind).toBe("capture-cli");
+    expect(pglitePage!.source_kind).toBe("capture-cli");
+    expect(pgPage!.ingested_via).toBe("put_page");
+    expect(pglitePage!.ingested_via).toBe("put_page");
     // Page title updated (proves the UPDATE actually fired).
-    expect(pgPage!.title).toBe('V2');
-    expect(pglitePage!.title).toBe('V2');
+    expect(pgPage!.title).toBe("V2");
+    expect(pglitePage!.title).toBe("V2");
   });
 
-  test('v0.41.19.0 deletePages parity: both engines return same confirmed-deleted slugs', async () => {
-    const realSlugs = ['wiki/dpp-1', 'wiki/dpp-2', 'wiki/dpp-3'];
+  test("v0.41.19.0 deletePages parity: both engines return same confirmed-deleted slugs", async () => {
+    const realSlugs = ["wiki/dpp-1", "wiki/dpp-2", "wiki/dpp-3"];
     for (const slug of realSlugs) {
       await pgEngine.putPage(slug, {
-        type: 'note', title: slug, compiled_truth: 'body', timeline: '',
+        type: "note",
+        title: slug,
+        compiled_truth: "body",
+        timeline: "",
       });
       await pgliteEngine.putPage(slug, {
-        type: 'note', title: slug, compiled_truth: 'body', timeline: '',
+        type: "note",
+        title: slug,
+        compiled_truth: "body",
+        timeline: "",
       });
     }
 
     // Mix real + ghost slugs. D6: only real ones come back.
-    const allSlugs = [...realSlugs, 'wiki/dpp-ghost-a', 'wiki/dpp-ghost-b'];
-    const pgDeleted = await pgEngine.deletePages(allSlugs, { sourceId: 'default' });
-    const pgliteDeleted = await pgliteEngine.deletePages(allSlugs, { sourceId: 'default' });
+    const allSlugs = [...realSlugs, "wiki/dpp-ghost-a", "wiki/dpp-ghost-b"];
+    const pgDeleted = await pgEngine.deletePages(allSlugs, { sourceId: "default" });
+    const pgliteDeleted = await pgliteEngine.deletePages(allSlugs, { sourceId: "default" });
 
     expect(pgDeleted.sort()).toEqual(realSlugs.sort());
     expect(pgliteDeleted.sort()).toEqual(realSlugs.sort());
@@ -339,54 +355,54 @@ describeBoth('Engine parity — Postgres vs PGLite', () => {
     }
   });
 
-  test('v114 (#1941) listLinkSources parity: same ordered provenance counts on both engines', async () => {
+  test("v114 (#1941) listLinkSources parity: same ordered provenance counts on both engines", async () => {
     const mk = async (eng: BrainEngine) => {
-      for (const s of ['lsp-a', 'lsp-b', 'lsp-c']) {
-        await eng.putPage(s, { type: 'note', title: s, compiled_truth: 'b', timeline: '' });
+      for (const s of ["lsp-a", "lsp-b", "lsp-c"]) {
+        await eng.putPage(s, { type: "note", title: s, compiled_truth: "b", timeline: "" });
       }
       // citation-graph:2, manual:1 — exercises count DESC + the kebab regex.
-      await eng.addLink('lsp-a', 'lsp-b', '', 'cites', 'citation-graph');
-      await eng.addLink('lsp-a', 'lsp-c', '', 'cites', 'citation-graph');
-      await eng.addLink('lsp-b', 'lsp-c', '', 'rel', 'manual');
+      await eng.addLink("lsp-a", "lsp-b", "", "cites", "citation-graph");
+      await eng.addLink("lsp-a", "lsp-c", "", "cites", "citation-graph");
+      await eng.addLink("lsp-b", "lsp-c", "", "rel", "manual");
     };
     await mk(pgEngine);
     await mk(pgliteEngine);
 
-    const pg = await pgEngine.listLinkSources({ sourceId: 'default' });
-    const pglite = await pgliteEngine.listLinkSources({ sourceId: 'default' });
+    const pg = await pgEngine.listLinkSources({ sourceId: "default" });
+    const pglite = await pgliteEngine.listLinkSources({ sourceId: "default" });
 
     const norm = (rows: { link_source: string | null; count: number }[]) =>
-      rows.filter(r => r.link_source === 'citation-graph' || r.link_source === 'manual');
+      rows.filter((r) => r.link_source === "citation-graph" || r.link_source === "manual");
     expect(norm(pg)).toEqual(norm(pglite));
     // citation-graph (2) must order before manual (1) on both engines.
-    const cgIdx = pg.findIndex(r => r.link_source === 'citation-graph');
-    const mIdx = pg.findIndex(r => r.link_source === 'manual');
+    const cgIdx = pg.findIndex((r) => r.link_source === "citation-graph");
+    const mIdx = pg.findIndex((r) => r.link_source === "manual");
     expect(cgIdx).toBeLessThan(mIdx);
   });
 
-  test('v0.41.19.0 resolveSlugsByPaths parity: same Map on both engines', async () => {
+  test("v0.41.19.0 resolveSlugsByPaths parity: same Map on both engines", async () => {
     const seedSql = `
       INSERT INTO pages (source_id, slug, source_path, type, title, compiled_truth, timeline, frontmatter)
         VALUES ('default', $1, $2, 'note', 't', 'b', '', '{}'::jsonb)
         ON CONFLICT (source_id, slug) DO UPDATE SET source_path = EXCLUDED.source_path
     `;
-    await pgEngine.executeRaw(seedSql, ['wiki/rsp-1', 'wiki/rsp-1.md']);
-    await pgEngine.executeRaw(seedSql, ['wiki/rsp-2', 'wiki/rsp-2.md']);
-    await pgliteEngine.executeRaw(seedSql, ['wiki/rsp-1', 'wiki/rsp-1.md']);
-    await pgliteEngine.executeRaw(seedSql, ['wiki/rsp-2', 'wiki/rsp-2.md']);
+    await pgEngine.executeRaw(seedSql, ["wiki/rsp-1", "wiki/rsp-1.md"]);
+    await pgEngine.executeRaw(seedSql, ["wiki/rsp-2", "wiki/rsp-2.md"]);
+    await pgliteEngine.executeRaw(seedSql, ["wiki/rsp-1", "wiki/rsp-1.md"]);
+    await pgliteEngine.executeRaw(seedSql, ["wiki/rsp-2", "wiki/rsp-2.md"]);
 
-    const paths = ['wiki/rsp-1.md', 'wiki/rsp-2.md', 'wiki/rsp-missing.md'];
-    const pgMap = await pgEngine.resolveSlugsByPaths(paths, { sourceId: 'default' });
-    const pgliteMap = await pgliteEngine.resolveSlugsByPaths(paths, { sourceId: 'default' });
+    const paths = ["wiki/rsp-1.md", "wiki/rsp-2.md", "wiki/rsp-missing.md"];
+    const pgMap = await pgEngine.resolveSlugsByPaths(paths, { sourceId: "default" });
+    const pgliteMap = await pgliteEngine.resolveSlugsByPaths(paths, { sourceId: "default" });
 
     expect(pgMap.size).toBe(2);
     expect(pgliteMap.size).toBe(2);
-    expect(pgMap.get('wiki/rsp-1.md')).toBe('wiki/rsp-1');
-    expect(pgliteMap.get('wiki/rsp-1.md')).toBe('wiki/rsp-1');
-    expect(pgMap.get('wiki/rsp-2.md')).toBe('wiki/rsp-2');
-    expect(pgliteMap.get('wiki/rsp-2.md')).toBe('wiki/rsp-2');
-    expect(pgMap.get('wiki/rsp-missing.md')).toBeUndefined();
-    expect(pgliteMap.get('wiki/rsp-missing.md')).toBeUndefined();
+    expect(pgMap.get("wiki/rsp-1.md")).toBe("wiki/rsp-1");
+    expect(pgliteMap.get("wiki/rsp-1.md")).toBe("wiki/rsp-1");
+    expect(pgMap.get("wiki/rsp-2.md")).toBe("wiki/rsp-2");
+    expect(pgliteMap.get("wiki/rsp-2.md")).toBe("wiki/rsp-2");
+    expect(pgMap.get("wiki/rsp-missing.md")).toBeUndefined();
+    expect(pgliteMap.get("wiki/rsp-missing.md")).toBeUndefined();
   });
 
   // v0.41.29.0 — findOrphanPages source scoping parity. Real Postgres
@@ -395,7 +411,7 @@ describeBoth('Engine parity — Postgres vs PGLite', () => {
   // PGLite logic is pinned in test/orphans-source-scope.test.ts; this asserts
   // the Postgres SQL produces the same scoped sets. Cross-source inbound
   // (src-b → src-a) must NOT make the target an orphan of src-a (A2).
-  test('v0.41.29.0 findOrphanPages source scoping parity (scalar + federated)', async () => {
+  test("v0.41.29.0 findOrphanPages source scoping parity (scalar + federated)", async () => {
     const srcSql = `INSERT INTO sources (id, name, config) VALUES ($1, $1, '{}'::jsonb) ON CONFLICT DO NOTHING`;
     const pageSql = `
       INSERT INTO pages (source_id, slug, type, title, compiled_truth, timeline, frontmatter)
@@ -403,53 +419,65 @@ describeBoth('Engine parity — Postgres vs PGLite', () => {
         ON CONFLICT (source_id, slug) DO NOTHING
     `;
     for (const eng of [pgEngine, pgliteEngine]) {
-      await eng.executeRaw(srcSql, ['orphan-src-a']);
-      await eng.executeRaw(srcSql, ['orphan-src-b']);
-      await eng.executeRaw(pageSql, ['orphan-src-a', 'people/op-orphan-a']);
-      await eng.executeRaw(pageSql, ['orphan-src-a', 'people/op-target-a']);
-      await eng.executeRaw(pageSql, ['orphan-src-b', 'people/op-linker-b']);
+      await eng.executeRaw(srcSql, ["orphan-src-a"]);
+      await eng.executeRaw(srcSql, ["orphan-src-b"]);
+      await eng.executeRaw(pageSql, ["orphan-src-a", "people/op-orphan-a"]);
+      await eng.executeRaw(pageSql, ["orphan-src-a", "people/op-target-a"]);
+      await eng.executeRaw(pageSql, ["orphan-src-b", "people/op-linker-b"]);
       // Cross-source inbound: src-b page → src-a target (A2).
       await eng.addLink(
-        'people/op-linker-b', 'people/op-target-a', '', 'mentions', 'markdown',
-        undefined, undefined, { fromSourceId: 'orphan-src-b', toSourceId: 'orphan-src-a' },
+        "people/op-linker-b",
+        "people/op-target-a",
+        "",
+        "mentions",
+        "markdown",
+        undefined,
+        undefined,
+        { fromSourceId: "orphan-src-b", toSourceId: "orphan-src-a" }
       );
     }
 
     const scoped = async (eng: BrainEngine, opts: { sourceId?: string; sourceIds?: string[] }) =>
-      (await eng.findOrphanPages(opts)).map(r => r.slug).filter(s => s.startsWith('people/op-')).sort();
+      (await eng.findOrphanPages(opts))
+        .map((r) => r.slug)
+        .filter((s) => s.startsWith("people/op-"))
+        .sort();
 
     // Scalar scope to src-a: op-orphan-a is an orphan; op-target-a is saved
     // by the cross-source inbound (A2). Parity on both engines.
-    const pgA = await scoped(pgEngine, { sourceId: 'orphan-src-a' });
-    const pgliteA = await scoped(pgliteEngine, { sourceId: 'orphan-src-a' });
-    expect(pgA).toEqual(['people/op-orphan-a']);
+    const pgA = await scoped(pgEngine, { sourceId: "orphan-src-a" });
+    const pgliteA = await scoped(pgliteEngine, { sourceId: "orphan-src-a" });
+    expect(pgA).toEqual(["people/op-orphan-a"]);
     expect(pgliteA).toEqual(pgA);
 
     // Scalar scope to src-b.
-    const pgB = await scoped(pgEngine, { sourceId: 'orphan-src-b' });
-    const pgliteB = await scoped(pgliteEngine, { sourceId: 'orphan-src-b' });
-    expect(pgB).toEqual(['people/op-linker-b']);
+    const pgB = await scoped(pgEngine, { sourceId: "orphan-src-b" });
+    const pgliteB = await scoped(pgliteEngine, { sourceId: "orphan-src-b" });
+    expect(pgB).toEqual(["people/op-linker-b"]);
     expect(pgliteB).toEqual(pgB);
 
     // Federated array scope (= ANY binding) → union.
-    const pgFed = await scoped(pgEngine, { sourceIds: ['orphan-src-a', 'orphan-src-b'] });
-    const pgliteFed = await scoped(pgliteEngine, { sourceIds: ['orphan-src-a', 'orphan-src-b'] });
-    expect(pgFed).toEqual(['people/op-linker-b', 'people/op-orphan-a']);
+    const pgFed = await scoped(pgEngine, { sourceIds: ["orphan-src-a", "orphan-src-b"] });
+    const pgliteFed = await scoped(pgliteEngine, { sourceIds: ["orphan-src-a", "orphan-src-b"] });
+    expect(pgFed).toEqual(["people/op-linker-b", "people/op-orphan-a"]);
     expect(pgliteFed).toEqual(pgFed);
   });
 
   // v0.42.7 (#1696): stale-page extraction watermark parity. Isolated under a
   // dedicated source so other tests' mutations don't perturb the counts.
-  test('stale-page extraction methods: Postgres ↔ PGLite parity', async () => {
-    const SRC = 'stale-parity';
-    const VER = '2026-05-31T00:00:00Z';
+  test("stale-page extraction methods: Postgres ↔ PGLite parity", async () => {
+    const SRC = "stale-parity";
+    const VER = "2026-05-31T00:00:00Z";
     for (const eng of [pgEngine, pgliteEngine]) {
-      await eng.executeRaw(`INSERT INTO sources (id, name, config) VALUES ($1, 'Stale Parity', '{}'::jsonb) ON CONFLICT DO NOTHING`, [SRC]);
+      await eng.executeRaw(
+        `INSERT INTO sources (id, name, config) VALUES ($1, 'Stale Parity', '{}'::jsonb) ON CONFLICT DO NOTHING`,
+        [SRC]
+      );
       await eng.executeRaw(
         `INSERT INTO pages (slug, source_id, type, title, compiled_truth, timeline, frontmatter, content_hash, created_at, updated_at)
          SELECT 'sp/' || g, $1, 'concept', 'SP' || g, 'body ' || g, '', '{}'::jsonb, 'sph' || g, now(), now()
            FROM generate_series(1, 3) g`,
-        [SRC],
+        [SRC]
       );
     }
 
@@ -458,9 +486,15 @@ describeBoth('Engine parity — Postgres vs PGLite', () => {
     expect(await pgliteEngine.countStalePagesForExtraction({ sourceId: SRC })).toBe(3);
 
     // listStalePagesForExtraction: same slugs + content columns populated.
-    const pgList = (await pgEngine.listStalePagesForExtraction({ batchSize: 10, sourceId: SRC })).map(r => r.slug).sort();
-    const plList = (await pgliteEngine.listStalePagesForExtraction({ batchSize: 10, sourceId: SRC })).map(r => r.slug).sort();
-    expect(pgList).toEqual(['sp/1', 'sp/2', 'sp/3']);
+    const pgList = (await pgEngine.listStalePagesForExtraction({ batchSize: 10, sourceId: SRC }))
+      .map((r) => r.slug)
+      .sort();
+    const plList = (
+      await pgliteEngine.listStalePagesForExtraction({ batchSize: 10, sourceId: SRC })
+    )
+      .map((r) => r.slug)
+      .sort();
+    expect(pgList).toEqual(["sp/1", "sp/2", "sp/3"]);
     expect(plList).toEqual(pgList);
     const pgRow = (await pgEngine.listStalePagesForExtraction({ batchSize: 1, sourceId: SRC }))[0];
     expect(pgRow.compiled_truth).toBeTruthy();
@@ -468,38 +502,43 @@ describeBoth('Engine parity — Postgres vs PGLite', () => {
 
     // markPagesExtractedBatch: stamp one → count drops to 2 on both.
     const stampAt = new Date().toISOString();
-    await pgEngine.markPagesExtractedBatch([{ slug: 'sp/1', source_id: SRC }], stampAt);
-    await pgliteEngine.markPagesExtractedBatch([{ slug: 'sp/1', source_id: SRC }], stampAt);
+    await pgEngine.markPagesExtractedBatch([{ slug: "sp/1", source_id: SRC }], stampAt);
+    await pgliteEngine.markPagesExtractedBatch([{ slug: "sp/1", source_id: SRC }], stampAt);
     expect(await pgEngine.countStalePagesForExtraction({ sourceId: SRC })).toBe(2);
     expect(await pgliteEngine.countStalePagesForExtraction({ sourceId: SRC })).toBe(2);
 
     // version arm: stamp sp/2 old + set updated_at old (isolate version arm) →
     // flagged only when versionTs is passed. Parity on both engines.
     for (const eng of [pgEngine, pgliteEngine]) {
-      await eng.markPagesExtractedBatch([{ slug: 'sp/2', source_id: SRC }], '2000-01-01T00:00:00Z');
-      await eng.executeRaw(`UPDATE pages SET updated_at = '2000-01-01T00:00:00Z' WHERE slug = 'sp/2' AND source_id = $1`, [SRC]);
+      await eng.markPagesExtractedBatch([{ slug: "sp/2", source_id: SRC }], "2000-01-01T00:00:00Z");
+      await eng.executeRaw(
+        `UPDATE pages SET updated_at = '2000-01-01T00:00:00Z' WHERE slug = 'sp/2' AND source_id = $1`,
+        [SRC]
+      );
     }
     // Without versionTs: sp/2 not stale (stamp == updated, not NULL). sp/3 still NULL-stale.
     expect(await pgEngine.countStalePagesForExtraction({ sourceId: SRC })).toBe(1);
     expect(await pgliteEngine.countStalePagesForExtraction({ sourceId: SRC })).toBe(1);
     // With versionTs: sp/2's old stamp (< VER) re-flags it → 2 stale.
     expect(await pgEngine.countStalePagesForExtraction({ sourceId: SRC, versionTs: VER })).toBe(2);
-    expect(await pgliteEngine.countStalePagesForExtraction({ sourceId: SRC, versionTs: VER })).toBe(2);
+    expect(await pgliteEngine.countStalePagesForExtraction({ sourceId: SRC, versionTs: VER })).toBe(
+      2
+    );
 
     // edited-since arm: stamp sp/1 in the recent past, updated_at slightly after →
     // re-flagged on both engines (updated_at > links_extracted_at).
     for (const eng of [pgEngine, pgliteEngine]) {
       await eng.executeRaw(
         `UPDATE pages SET links_extracted_at = now() - interval '2 hours', updated_at = now() - interval '1 hour' WHERE slug = 'sp/1' AND source_id = $1`,
-        [SRC],
+        [SRC]
       );
     }
     expect(await pgEngine.countStalePagesForExtraction({ sourceId: SRC })).toBe(2); // sp/1 (edited) + sp/3 (NULL)
     expect(await pgliteEngine.countStalePagesForExtraction({ sourceId: SRC })).toBe(2);
   });
 
-  test('v0.41.39 listEnrichCandidates parity (thin filter + source-aware inbound + order)', async () => {
-    const stub = 'Stub page.';
+  test("v0.41.39 listEnrichCandidates parity (thin filter + source-aware inbound + order)", async () => {
+    const stub = "Stub page.";
     const pageSql = `
       INSERT INTO pages (source_id, slug, type, title, compiled_truth, timeline, frontmatter)
         VALUES ('default', $1, $2, $3, $4, '', '{}'::jsonb)
@@ -508,68 +547,76 @@ describeBoth('Engine parity — Postgres vs PGLite', () => {
     for (const eng of [pgEngine, pgliteEngine]) {
       // Two thin people (ec-alice ← 2 inbound, ec-bob ← 1), one thin company
       // (ec-widget ← 0), one long page (must be excluded by the thin filter).
-      await eng.executeRaw(pageSql, ['ep/ec-alice', 'person', 'EC Alice', stub]);
-      await eng.executeRaw(pageSql, ['ep/ec-bob', 'person', 'EC Bob', stub]);
-      await eng.executeRaw(pageSql, ['companies/ec-widget', 'company', 'EC Widget', stub]);
-      await eng.executeRaw(pageSql, ['ep/ec-long', 'person', 'EC Long', 'x'.repeat(900)]);
+      await eng.executeRaw(pageSql, ["ep/ec-alice", "person", "EC Alice", stub]);
+      await eng.executeRaw(pageSql, ["ep/ec-bob", "person", "EC Bob", stub]);
+      await eng.executeRaw(pageSql, ["companies/ec-widget", "company", "EC Widget", stub]);
+      await eng.executeRaw(pageSql, ["ep/ec-long", "person", "EC Long", "x".repeat(900)]);
       // Linker pages + inbound links (link_source NULL → counted).
-      await eng.executeRaw(pageSql, ['ep/ec-l1', 'note', 'L1', 'links']);
-      await eng.executeRaw(pageSql, ['ep/ec-l2', 'note', 'L2', 'links']);
-      await eng.executeRaw(pageSql, ['ep/ec-l3', 'note', 'L3', 'links']);
-      await eng.addLink('ep/ec-l1', 'ep/ec-alice', 'ctx a1');
-      await eng.addLink('ep/ec-l2', 'ep/ec-alice', 'ctx a2');
-      await eng.addLink('ep/ec-l3', 'ep/ec-bob', 'ctx b1');
+      await eng.executeRaw(pageSql, ["ep/ec-l1", "note", "L1", "links"]);
+      await eng.executeRaw(pageSql, ["ep/ec-l2", "note", "L2", "links"]);
+      await eng.executeRaw(pageSql, ["ep/ec-l3", "note", "L3", "links"]);
+      await eng.addLink("ep/ec-l1", "ep/ec-alice", "ctx a1");
+      await eng.addLink("ep/ec-l2", "ep/ec-alice", "ctx a2");
+      await eng.addLink("ep/ec-l3", "ep/ec-bob", "ctx b1");
     }
 
     const run = async (eng: BrainEngine) =>
-      (await eng.listEnrichCandidates({
-        types: ['person', 'company'],
-        thinThreshold: 400,
-        order: 'inbound-links',
-        limit: 10,
-        sourceId: 'default',
-      })).filter((c) => c.slug.startsWith('ep/') || c.slug === 'companies/ec-widget');
+      (
+        await eng.listEnrichCandidates({
+          types: ["person", "company"],
+          thinThreshold: 400,
+          order: "inbound-links",
+          limit: 10,
+          sourceId: "default",
+        })
+      ).filter((c) => c.slug.startsWith("ep/") || c.slug === "companies/ec-widget");
 
     const pg = await run(pgEngine);
     const pglite = await run(pgliteEngine);
 
-    const shape = (rows: typeof pg) => rows.map((r) => `${r.slug}:${r.inbound_count}:${r.body_len}`);
+    const shape = (rows: typeof pg) =>
+      rows.map((r) => `${r.slug}:${r.inbound_count}:${r.body_len}`);
     expect(shape(pg)).toEqual(shape(pglite));
 
     // Concrete contract: long page excluded; ordering alice(2) > bob(1) > widget(0).
     const slugs = pg.map((r) => r.slug);
-    expect(slugs).not.toContain('ep/ec-long');
-    expect(slugs.indexOf('ep/ec-alice')).toBeLessThan(slugs.indexOf('ep/ec-bob'));
-    expect(slugs.indexOf('ep/ec-bob')).toBeLessThan(slugs.indexOf('companies/ec-widget'));
-    expect(pg.find((r) => r.slug === 'ep/ec-alice')!.inbound_count).toBe(2);
+    expect(slugs).not.toContain("ep/ec-long");
+    expect(slugs.indexOf("ep/ec-alice")).toBeLessThan(slugs.indexOf("ep/ec-bob"));
+    expect(slugs.indexOf("ep/ec-bob")).toBeLessThan(slugs.indexOf("companies/ec-widget"));
+    expect(pg.find((r) => r.slug === "ep/ec-alice")!.inbound_count).toBe(2);
   });
 });
 
 // ── relationalFanout parity (v0.43) ─────────────────────────────────────
 async function seedRelational(eng: BrainEngine) {
-  const pages: Array<[string, 'company' | 'person']> = [
-    ['companies/ep-widget', 'company'],
-    ['companies/ep-other', 'company'],
-    ['people/ep-inv-a', 'person'],
-    ['people/ep-inv-b', 'person'],
-    ['people/ep-emp-c', 'person'],
-    ['people/ep-mentioner', 'person'],
+  const pages: Array<[string, "company" | "person"]> = [
+    ["companies/ep-widget", "company"],
+    ["companies/ep-other", "company"],
+    ["people/ep-inv-a", "person"],
+    ["people/ep-inv-b", "person"],
+    ["people/ep-emp-c", "person"],
+    ["people/ep-mentioner", "person"],
   ];
   for (const [slug, type] of pages) {
-    await eng.putPage(slug, { type, title: slug, compiled_truth: `${slug} body`, timeline: '' });
+    await eng.putPage(slug, { type, title: slug, compiled_truth: `${slug} body`, timeline: "" });
   }
-  await eng.upsertChunks('people/ep-inv-b', [{
-    chunk_index: 0, chunk_text: 'b', chunk_source: 'compiled_truth',
-    embedding: basisEmbedding(2), token_count: 1,
-  }] satisfies ChunkInput[]);
-  await eng.addLink('people/ep-inv-a', 'companies/ep-widget', '', 'invested_in', 'manual');
-  await eng.addLink('people/ep-inv-b', 'companies/ep-widget', '', 'invested_in', 'manual');
-  await eng.addLink('people/ep-emp-c', 'companies/ep-widget', '', 'works_at', 'manual');
-  await eng.addLink('people/ep-mentioner', 'companies/ep-widget', '', 'mentions', 'mentions');
-  await eng.addLink('people/ep-inv-a', 'companies/ep-other', '', 'invested_in', 'manual');
+  await eng.upsertChunks("people/ep-inv-b", [
+    {
+      chunk_index: 0,
+      chunk_text: "b",
+      chunk_source: "compiled_truth",
+      embedding: basisEmbedding(2),
+      token_count: 1,
+    },
+  ] satisfies ChunkInput[]);
+  await eng.addLink("people/ep-inv-a", "companies/ep-widget", "", "invested_in", "manual");
+  await eng.addLink("people/ep-inv-b", "companies/ep-widget", "", "invested_in", "manual");
+  await eng.addLink("people/ep-emp-c", "companies/ep-widget", "", "works_at", "manual");
+  await eng.addLink("people/ep-mentioner", "companies/ep-widget", "", "mentions", "mentions");
+  await eng.addLink("people/ep-inv-a", "companies/ep-other", "", "invested_in", "manual");
 }
 
-describeBoth('Engine parity — relationalFanout', () => {
+describeBoth("Engine parity — relationalFanout", () => {
   let pgEngine: BrainEngine;
   let pgliteEngine: PGLiteEngine;
 
@@ -587,28 +634,33 @@ describeBoth('Engine parity — relationalFanout', () => {
     await teardownDB();
   }, 30_000);
 
-  const shape = (rows: Awaited<ReturnType<BrainEngine['relationalFanout']>>) =>
-    rows.map(r => `${r.source_id}:${r.slug}:${r.hop}:${r.edge_count}:${r.via_link_types.join(',')}:${r.path.join('>')}:${r.canonical_chunk_id ?? 'null'}`);
+  const shape = (rows: Awaited<ReturnType<BrainEngine["relationalFanout"]>>) =>
+    rows.map(
+      (r) =>
+        `${r.source_id}:${r.slug}:${r.hop}:${r.edge_count}:${r.via_link_types.join(",")}:${r.path.join(">")}:${r.canonical_chunk_id ?? "null"}`
+    );
 
-  test('typed-edge fan-out is identical across engines', async () => {
-    const opts = { direction: 'in' as const, linkTypes: ['invested_in'] };
-    const pg = await pgEngine.relationalFanout(['companies/ep-widget'], opts);
-    const pglite = await pgliteEngine.relationalFanout(['companies/ep-widget'], opts);
+  test("typed-edge fan-out is identical across engines", async () => {
+    const opts = { direction: "in" as const, linkTypes: ["invested_in"] };
+    const pg = await pgEngine.relationalFanout(["companies/ep-widget"], opts);
+    const pglite = await pgliteEngine.relationalFanout(["companies/ep-widget"], opts);
     expect(shape(pg)).toEqual(shape(pglite));
-    expect(pg.map(r => r.slug).sort()).toEqual(['people/ep-inv-a', 'people/ep-inv-b']);
+    expect(pg.map((r) => r.slug).sort()).toEqual(["people/ep-inv-a", "people/ep-inv-b"]);
   });
 
-  test('type-agnostic + mentions-exclusion identical across engines', async () => {
-    const pg = await pgEngine.relationalFanout(['companies/ep-widget'], { direction: 'in' });
-    const pglite = await pgliteEngine.relationalFanout(['companies/ep-widget'], { direction: 'in' });
+  test("type-agnostic + mentions-exclusion identical across engines", async () => {
+    const pg = await pgEngine.relationalFanout(["companies/ep-widget"], { direction: "in" });
+    const pglite = await pgliteEngine.relationalFanout(["companies/ep-widget"], {
+      direction: "in",
+    });
     expect(shape(pg)).toEqual(shape(pglite));
-    expect(pg.map(r => r.slug)).not.toContain('people/ep-mentioner');
+    expect(pg.map((r) => r.slug)).not.toContain("people/ep-mentioner");
   });
 
-  test('connects (multi-seed, both) identical across engines', async () => {
-    const seeds = ['companies/ep-widget', 'companies/ep-other'];
-    const pg = await pgEngine.relationalFanout(seeds, { direction: 'both' });
-    const pglite = await pgliteEngine.relationalFanout(seeds, { direction: 'both' });
+  test("connects (multi-seed, both) identical across engines", async () => {
+    const seeds = ["companies/ep-widget", "companies/ep-other"];
+    const pg = await pgEngine.relationalFanout(seeds, { direction: "both" });
+    const pglite = await pgliteEngine.relationalFanout(seeds, { direction: "both" });
     expect(shape(pg)).toEqual(shape(pglite));
   });
 });

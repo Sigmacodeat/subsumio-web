@@ -15,7 +15,7 @@ export interface StorageBackend {
 }
 
 export interface StorageConfig {
-  backend: 's3' | 'supabase' | 'local';
+  backend: "s3" | "supabase" | "local";
   bucket: string;
   region?: string;
   endpoint?: string;
@@ -34,17 +34,17 @@ export interface StorageConfig {
  */
 export async function createStorage(config: StorageConfig): Promise<StorageBackend> {
   switch (config.backend) {
-    case 's3': {
-      const { S3Storage } = await import('./storage/s3.ts');
+    case "s3": {
+      const { S3Storage } = await import("./storage/s3.ts");
       return new S3Storage(config);
     }
-    case 'supabase': {
-      const { SupabaseStorage } = await import('./storage/supabase.ts');
+    case "supabase": {
+      const { SupabaseStorage } = await import("./storage/supabase.ts");
       return new SupabaseStorage(config);
     }
-    case 'local': {
-      const { LocalStorage } = await import('./storage/local.ts');
-      return new LocalStorage(config.localPath || '/tmp/gbrain-storage');
+    case "local": {
+      const { LocalStorage } = await import("./storage/local.ts");
+      return new LocalStorage(config.localPath || "/tmp/gbrain-storage");
     }
     default:
       throw new Error(`Unknown storage backend: ${config.backend}`);

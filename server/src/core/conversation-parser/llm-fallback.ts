@@ -20,9 +20,9 @@
  * probe.
  */
 
-import { runLlmCall, parseLlmJson, type ChatTransport } from './llm-base.ts';
-import type { BrainEngine } from '../engine.ts';
-import type { MatchedMessage } from './types.ts';
+import { runLlmCall, parseLlmJson, type ChatTransport } from "./llm-base.ts";
+import type { BrainEngine } from "../engine.ts";
+import type { MatchedMessage } from "./types.ts";
 
 const FALLBACK_SYSTEM_PROMPT = `You parse messages out of a chat-log body. The body may be from any chat platform (iMessage, Slack, Telegram, Discord, WhatsApp, Signal, IRC, Matrix, Teams, email-thread, etc.).
 
@@ -65,9 +65,7 @@ export interface RunLlmFallbackOpts {
  * Returns parsed messages OR null on any failure (fail-open).
  * Returns `[]` when LLM explicitly signals "this isn't a chat log."
  */
-export async function runLlmFallback(
-  opts: RunLlmFallbackOpts,
-): Promise<MatchedMessage[] | null> {
+export async function runLlmFallback(opts: RunLlmFallbackOpts): Promise<MatchedMessage[] | null> {
   const lines = opts.body.split(/\r?\n/);
   const sampleN = opts.sampleLines ?? 200;
   // For fallback, send up to N non-empty lines (vs polish which gets
@@ -75,10 +73,10 @@ export async function runLlmFallback(
   const sampled = lines
     .filter((l) => l.trim().length > 0)
     .slice(0, sampleN)
-    .join('\n');
+    .join("\n");
 
   return runLlmCall<MatchedMessage[]>({
-    shape: 'fallback',
+    shape: "fallback",
     modelStr: opts.modelStr,
     content: sampled,
     system: FALLBACK_SYSTEM_PROMPT,
@@ -92,11 +90,11 @@ export async function runLlmFallback(
       const out: MatchedMessage[] = [];
       for (const item of parsed) {
         if (
-          typeof item === 'object' &&
+          typeof item === "object" &&
           item !== null &&
-          typeof (item as { speaker?: unknown }).speaker === 'string' &&
-          typeof (item as { timestamp?: unknown }).timestamp === 'string' &&
-          typeof (item as { text?: unknown }).text === 'string'
+          typeof (item as { speaker?: unknown }).speaker === "string" &&
+          typeof (item as { timestamp?: unknown }).timestamp === "string" &&
+          typeof (item as { text?: unknown }).text === "string"
         ) {
           const m = item as { speaker: string; timestamp: string; text: string };
           out.push({

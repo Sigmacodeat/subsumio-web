@@ -19,12 +19,12 @@
  * actually script against today.
  */
 
-import Anthropic from '@anthropic-ai/sdk';
-import { spawn } from 'node:child_process';
-import { performance } from 'node:perf_hooks';
+import Anthropic from "@anthropic-ai/sdk";
+import { spawn } from "node:child_process";
+import { performance } from "node:perf_hooks";
 
-export const BENCH_MODEL = 'claude-haiku-4-5';
-export const BENCH_PROMPT = 'Reply with just: OK. No other text.';
+export const BENCH_MODEL = "claude-haiku-4-5";
+export const BENCH_PROMPT = "Reply with just: OK. No other text.";
 
 export interface CallResult {
   ok: boolean;
@@ -39,29 +39,32 @@ export interface CallResult {
  */
 export async function openclawDispatch(
   prompt = BENCH_PROMPT,
-  timeoutSec = 60,
+  timeoutSec = 60
 ): Promise<CallResult> {
   const t0 = performance.now();
   return await new Promise((resolve) => {
     const proc = spawn(
-      'openclaw',
-      ['agent', '--agent', 'main', '--local', '--message', prompt, '--timeout', String(timeoutSec)],
-      { env: process.env },
+      "openclaw",
+      ["agent", "--agent", "main", "--local", "--message", prompt, "--timeout", String(timeoutSec)],
+      { env: process.env }
     );
-    let stdout = '';
-    let stderr = '';
-    proc.stdout.on('data', (d) => (stdout += d.toString()));
-    proc.stderr.on('data', (d) => (stderr += d.toString()));
-    const killer = setTimeout(() => {
-      proc.kill('SIGKILL');
-    }, (timeoutSec + 10) * 1000);
-    proc.on('close', (code) => {
+    let stdout = "";
+    let stderr = "";
+    proc.stdout.on("data", (d) => (stdout += d.toString()));
+    proc.stderr.on("data", (d) => (stderr += d.toString()));
+    const killer = setTimeout(
+      () => {
+        proc.kill("SIGKILL");
+      },
+      (timeoutSec + 10) * 1000
+    );
+    proc.on("close", (code) => {
       clearTimeout(killer);
       const wallMs = Math.round(performance.now() - t0);
       const reply = stdout
-        .split('\n')
-        .filter((l) => !l.startsWith('[agents]') && !l.startsWith('['))
-        .join('\n')
+        .split("\n")
+        .filter((l) => !l.startsWith("[agents]") && !l.startsWith("["))
+        .join("\n")
         .trim();
       if (code === 0 && reply.length > 0) {
         resolve({ ok: true, wallMs, reply });
@@ -73,7 +76,7 @@ export async function openclawDispatch(
         });
       }
     });
-    proc.on('error', (err) => {
+    proc.on("error", (err) => {
       clearTimeout(killer);
       resolve({
         ok: false,
@@ -88,22 +91,20 @@ export async function openclawDispatch(
  * Direct Anthropic SDK call — what a Minions handler does.
  * Same model, same prompt as openclawDispatch. No queue overhead.
  */
-export async function minionsHandler(
-  prompt = BENCH_PROMPT,
-): Promise<CallResult> {
+export async function minionsHandler(prompt = BENCH_PROMPT): Promise<CallResult> {
   const t0 = performance.now();
   try {
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     const resp = await client.messages.create({
       model: BENCH_MODEL,
       max_tokens: 64,
-      messages: [{ role: 'user', content: prompt }],
+      messages: [{ role: "user", content: prompt }],
     });
     const reply =
       resp.content
-        .map((c) => (c.type === 'text' ? c.text : ''))
-        .join('')
-        .trim() || '';
+        .map((c) => (c.type === "text" ? c.text : ""))
+        .join("")
+        .trim() || "";
     return {
       ok: true,
       wallMs: Math.round(performance.now() - t0),
@@ -139,10 +140,7 @@ export function statsFromResults(results: CallResult[]): BenchStats {
     const idx = Math.min(times.length - 1, Math.floor(times.length * p));
     return times[idx];
   };
-  const mean =
-    times.length === 0
-      ? 0
-      : Math.round(times.reduce((a, b) => a + b, 0) / times.length);
+  const mean = times.length === 0 ? 0 : Math.round(times.reduce((a, b) => a + b, 0) / times.length);
   return {
     n: results.length,
     successes: successes.length,

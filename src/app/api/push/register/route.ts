@@ -23,7 +23,9 @@ export const POST = createHandler(
     const { platform, deviceId } = body;
 
     if (process.env.NODE_ENV !== "production") {
-      console.debug(`[push-register] user=${ctx.user.id} platform=${platform} device=${deviceId ?? "n/a"}`);
+      console.debug(
+        `[push-register] user=${ctx.user.id} platform=${platform} device=${deviceId ?? "n/a"}`
+      );
     }
 
     return Response.json({ ok: true, registered: true });

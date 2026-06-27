@@ -9,27 +9,27 @@
  * the canonical lifecycle described in CLAUDE.md.
  */
 
-import { describe, test, expect, beforeAll, afterAll, beforeEach } from 'bun:test';
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import * as os from 'node:os';
-import { PostgresEngine } from '../../src/core/postgres-engine.ts';
-import * as db from '../../src/core/db.ts';
-import { withEnv } from '../helpers/with-env.ts';
+import { describe, test, expect, beforeAll, afterAll, beforeEach } from "bun:test";
+import * as fs from "node:fs";
+import * as path from "node:path";
+import * as os from "node:os";
+import { PostgresEngine } from "../../src/core/postgres-engine.ts";
+import * as db from "../../src/core/db.ts";
+import { withEnv } from "../helpers/with-env.ts";
 import {
   readRecentDbDisconnects,
   logDbDisconnect,
-} from '../../src/core/audit/db-disconnect-audit.ts';
+} from "../../src/core/audit/db-disconnect-audit.ts";
 
 const DATABASE_URL = process.env.DATABASE_URL;
 const skip = !DATABASE_URL;
 
 if (skip) {
   // eslint-disable-next-line no-console
-  console.log('Skipping db-singleton-shared-recovery E2E (DATABASE_URL not set)');
+  console.log("Skipping db-singleton-shared-recovery E2E (DATABASE_URL not set)");
 }
 
-describe.skipIf(skip)('v0.41.25.0 db-singleton shared-recovery regressions (#1570)', () => {
+describe.skipIf(skip)("v0.41.25.0 db-singleton shared-recovery regressions (#1570)", () => {
   let tmpAuditDir: string;
 
   beforeAll(async () => {
@@ -41,15 +41,19 @@ describe.skipIf(skip)('v0.41.25.0 db-singleton shared-recovery regressions (#157
   afterAll(async () => {
     await db.disconnect();
     if (tmpAuditDir) {
-      try { fs.rmSync(tmpAuditDir, { recursive: true, force: true }); } catch { /* ignore */ }
+      try {
+        fs.rmSync(tmpAuditDir, { recursive: true, force: true });
+      } catch {
+        /* ignore */
+      }
     }
   });
 
   beforeEach(() => {
-    tmpAuditDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gbrain-1570-e2e-'));
+    tmpAuditDir = fs.mkdtempSync(path.join(os.tmpdir(), "gbrain-1570-e2e-"));
   });
 
-  test('CASE 1: a borrower disconnect leaves the shared singleton ALIVE — no reconnect needed (#1471 ownership fix)', async () => {
+  test("CASE 1: a borrower disconnect leaves the shared singleton ALIVE — no reconnect needed (#1471 ownership fix)", async () => {
     // The dream-cycle scenario: caller A is mid-batch, caller B (a probe engine
     // that BORROWED the singleton) disconnects. Pre-#1471, B's disconnect
     // cascaded to db.disconnect() and nulled the singleton for A, so A's next
@@ -87,7 +91,7 @@ describe.skipIf(skip)('v0.41.25.0 db-singleton shared-recovery regressions (#157
     await engineA.disconnect(); // borrower no-op; singleton torn down by afterAll
   });
 
-  test('CASE 2: diagnostic audit records every mid-process disconnect call', async () => {
+  test("CASE 2: diagnostic audit records every mid-process disconnect call", async () => {
     // Per codex finding 4: instrument first. Production data tells us
     // which caller is firing the mid-process disconnect. This case pins
     // that the instrumentation is wired correctly: a disconnect call
@@ -103,14 +107,14 @@ describe.skipIf(skip)('v0.41.25.0 db-singleton shared-recovery regressions (#157
       const result = readRecentDbDisconnects(24);
       expect(result.count).toBeGreaterThanOrEqual(1);
       const last = result.events[0];
-      expect(last.engine_kind).toBe('postgres');
-      expect(['module', 'unknown']).toContain(last.connection_style);
+      expect(last.engine_kind).toBe("postgres");
+      expect(["module", "unknown"]).toContain(last.connection_style);
       expect(last.caller_stack.length).toBeGreaterThan(0);
       expect(last.pid).toBe(process.pid);
     });
   });
 
-  test('CASE 3: instance-pool disconnect leaves shared singleton ALIVE for other callers', async () => {
+  test("CASE 3: instance-pool disconnect leaves shared singleton ALIVE for other callers", async () => {
     // Codex finding 5/6: BrainEngine contract is asymmetric across engines.
     // Instance-pool engines (workerPoolSize set) should NEVER touch the
     // module singleton on disconnect. This case pins that contract —

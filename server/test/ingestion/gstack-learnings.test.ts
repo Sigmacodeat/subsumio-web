@@ -5,18 +5,21 @@
 // startup), emits on new lines, dedups via canonical-JSON content_hash,
 // skips malformed JSONL lines, renders markdown frontmatter correctly.
 
-import { describe, test, expect, beforeEach } from 'bun:test';
-import { GstackLearningsSource, type GstackLearningLine } from '../../src/core/ingestion/sources/gstack-learnings.ts';
-import type { IngestionEvent, IngestionSourceContext } from '../../src/core/ingestion/types.ts';
+import { describe, test, expect, beforeEach } from "bun:test";
+import {
+  GstackLearningsSource,
+  type GstackLearningLine,
+} from "../../src/core/ingestion/sources/gstack-learnings.ts";
+import type { IngestionEvent, IngestionSourceContext } from "../../src/core/ingestion/types.ts";
 
 function makeLine(overrides: Partial<GstackLearningLine> = {}): GstackLearningLine {
   return {
-    skill: 'investigate',
-    type: 'pitfall',
-    key: 'test-key',
-    insight: 'test insight body',
+    skill: "investigate",
+    type: "pitfall",
+    key: "test-key",
+    insight: "test insight body",
     confidence: 8,
-    source: 'observed',
+    source: "observed",
     ...overrides,
   };
 }
@@ -45,31 +48,28 @@ function makeStubCtx(): IngestionSourceContext & { emitted: IngestionEvent[] } {
   };
 }
 
-describe('v0.41 T8: GstackLearningsSource basic contract', () => {
-  test('declares mode: trickle (uses standard 24h dedup window)', () => {
+describe("v0.41 T8: GstackLearningsSource basic contract", () => {
+  test("declares mode: trickle (uses standard 24h dedup window)", () => {
     const src = new GstackLearningsSource({ paths: [], _skipWatch: true });
-    expect(src.mode).toBe('trickle');
+    expect(src.mode).toBe("trickle");
   });
 
-  test('id includes pid for uniqueness across concurrent processes', () => {
+  test("id includes pid for uniqueness across concurrent processes", () => {
     const src = new GstackLearningsSource({ paths: [], _skipWatch: true });
     expect(src.id).toMatch(/^gstack-learnings:\d+$/);
   });
 
-  test('kind is gstack-learnings', () => {
+  test("kind is gstack-learnings", () => {
     const src = new GstackLearningsSource({ paths: [], _skipWatch: true });
-    expect(src.kind).toBe('gstack-learnings');
+    expect(src.kind).toBe("gstack-learnings");
   });
 });
 
-describe('v0.41 T8: start() seeds seenLines from existing JSONL content', () => {
-  test('historical lines are NOT replayed as emits on first start', async () => {
-    const existing = [
-      makeLine({ key: 'existing-1' }),
-      makeLine({ key: 'existing-2' }),
-    ];
-    const path = '/fake/projects/repoA/learnings.jsonl';
-    const content = existing.map((l) => JSON.stringify(l)).join('\n');
+describe("v0.41 T8: start() seeds seenLines from existing JSONL content", () => {
+  test("historical lines are NOT replayed as emits on first start", async () => {
+    const existing = [makeLine({ key: "existing-1" }), makeLine({ key: "existing-2" })];
+    const path = "/fake/projects/repoA/learnings.jsonl";
+    const content = existing.map((l) => JSON.stringify(l)).join("\n");
     const fs = makeFakeFs({ [path]: content });
     const src = new GstackLearningsSource({ paths: [path], _skipWatch: true, ...fs });
     const ctx = makeStubCtx();
@@ -79,9 +79,12 @@ describe('v0.41 T8: start() seeds seenLines from existing JSONL content', () => 
     await src.stop();
   });
 
-  test('malformed JSONL lines skip without crashing start()', async () => {
-    const path = '/fake/projects/repoA/learnings.jsonl';
-    const content = JSON.stringify(makeLine({ key: 'good' })) + '\n{not-valid-json\n' + JSON.stringify(makeLine({ key: 'good-2' }));
+  test("malformed JSONL lines skip without crashing start()", async () => {
+    const path = "/fake/projects/repoA/learnings.jsonl";
+    const content =
+      JSON.stringify(makeLine({ key: "good" })) +
+      "\n{not-valid-json\n" +
+      JSON.stringify(makeLine({ key: "good-2" }));
     const fs = makeFakeFs({ [path]: content });
     const src = new GstackLearningsSource({ paths: [path], _skipWatch: true, ...fs });
     const ctx = makeStubCtx();
@@ -91,9 +94,14 @@ describe('v0.41 T8: start() seeds seenLines from existing JSONL content', () => 
     await src.stop();
   });
 
-  test('blank lines + trailing newline OK', async () => {
-    const path = '/fake/projects/repoA/learnings.jsonl';
-    const content = '\n' + JSON.stringify(makeLine({ key: 'a' })) + '\n\n' + JSON.stringify(makeLine({ key: 'b' })) + '\n';
+  test("blank lines + trailing newline OK", async () => {
+    const path = "/fake/projects/repoA/learnings.jsonl";
+    const content =
+      "\n" +
+      JSON.stringify(makeLine({ key: "a" })) +
+      "\n\n" +
+      JSON.stringify(makeLine({ key: "b" })) +
+      "\n";
     const fs = makeFakeFs({ [path]: content });
     const src = new GstackLearningsSource({ paths: [path], _skipWatch: true, ...fs });
     const ctx = makeStubCtx();
@@ -103,75 +111,75 @@ describe('v0.41 T8: start() seeds seenLines from existing JSONL content', () => 
   });
 });
 
-describe('v0.41 T8: emitLine path (production rescanFile equivalent)', () => {
-  test('emits new line not previously seen', async () => {
-    const path = '/fake/projects/repoA/learnings.jsonl';
-    const fs = makeFakeFs({ [path]: '' });
+describe("v0.41 T8: emitLine path (production rescanFile equivalent)", () => {
+  test("emits new line not previously seen", async () => {
+    const path = "/fake/projects/repoA/learnings.jsonl";
+    const fs = makeFakeFs({ [path]: "" });
     const src = new GstackLearningsSource({ paths: [path], _skipWatch: true, ...fs });
     const ctx = makeStubCtx();
     await src.start(ctx);
-    const newLine = makeLine({ key: 'fresh-insight', insight: 'just learned this' });
+    const newLine = makeLine({ key: "fresh-insight", insight: "just learned this" });
     src.emitLine(newLine, path);
     expect(ctx.emitted.length).toBe(1);
     const event = ctx.emitted[0];
-    expect(event.source_kind).toBe('gstack-learnings');
+    expect(event.source_kind).toBe("gstack-learnings");
     expect(event.source_uri).toBe(path);
-    expect(event.content_type).toBe('text/markdown');
+    expect(event.content_type).toBe("text/markdown");
     expect(event.untrusted_payload).toBe(false);
     expect(event.metadata?.learning).toEqual(newLine);
     await src.stop();
   });
 
-  test('re-emit of identical line is silent dedup hit (no event)', async () => {
-    const path = '/fake/projects/repoA/learnings.jsonl';
-    const fs = makeFakeFs({ [path]: '' });
+  test("re-emit of identical line is silent dedup hit (no event)", async () => {
+    const path = "/fake/projects/repoA/learnings.jsonl";
+    const fs = makeFakeFs({ [path]: "" });
     const src = new GstackLearningsSource({ paths: [path], _skipWatch: true, ...fs });
     const ctx = makeStubCtx();
     await src.start(ctx);
-    const line = makeLine({ key: 'dup-test' });
+    const line = makeLine({ key: "dup-test" });
     src.emitLine(line, path);
     src.emitLine(line, path);
     expect(ctx.emitted.length).toBe(1);
     await src.stop();
   });
 
-  test('emitted body carries frontmatter with learning_type + confidence + source + key', async () => {
-    const path = '/fake/projects/repoA/learnings.jsonl';
-    const fs = makeFakeFs({ [path]: '' });
+  test("emitted body carries frontmatter with learning_type + confidence + source + key", async () => {
+    const path = "/fake/projects/repoA/learnings.jsonl";
+    const fs = makeFakeFs({ [path]: "" });
     const src = new GstackLearningsSource({ paths: [path], _skipWatch: true, ...fs });
     const ctx = makeStubCtx();
     await src.start(ctx);
     const line = makeLine({
-      key: 'orbstack-port-8080',
-      insight: 'OrbStack listens on *:8080 by default, conflicts with Kumo proxy.',
-      type: 'operational',
+      key: "orbstack-port-8080",
+      insight: "OrbStack listens on *:8080 by default, conflicts with Kumo proxy.",
+      type: "operational",
       confidence: 9,
-      files: ['internal/proxy/proxy.go'],
+      files: ["internal/proxy/proxy.go"],
     });
     src.emitLine(line, path);
     const body = ctx.emitted[0].content;
     expect(body).toContain('type: "learning"');
     expect(body).toContain('learning_type: "operational"');
-    expect(body).toContain('confidence: 9');
+    expect(body).toContain("confidence: 9");
     expect(body).toContain('source: "observed"');
     expect(body).toContain('skill: "investigate"');
     expect(body).toContain('key: "orbstack-port-8080"');
     expect(body).toContain('files: ["internal/proxy/proxy.go"]');
-    expect(body).toContain('# orbstack-port-8080');
-    expect(body).toContain('OrbStack listens on *:8080');
+    expect(body).toContain("# orbstack-port-8080");
+    expect(body).toContain("OrbStack listens on *:8080");
     await src.stop();
   });
 
-  test('canonical-JSON content_hash means whitespace-only reformat is dedup hit', async () => {
-    const path = '/fake/projects/repoA/learnings.jsonl';
-    const fs = makeFakeFs({ [path]: '' });
+  test("canonical-JSON content_hash means whitespace-only reformat is dedup hit", async () => {
+    const path = "/fake/projects/repoA/learnings.jsonl";
+    const fs = makeFakeFs({ [path]: "" });
     const src = new GstackLearningsSource({ paths: [path], _skipWatch: true, ...fs });
     const ctx = makeStubCtx();
     await src.start(ctx);
     // Both lines have same field values; the hash is computed over the
     // canonical JSON.stringify output so they collide. Production gstack
     // never reformats but if a future tooling change did, dedup should still hold.
-    const lineA = makeLine({ key: 'whitespace-test' });
+    const lineA = makeLine({ key: "whitespace-test" });
     src.emitLine(lineA, path);
     src.emitLine(lineA, path); // identical
     expect(ctx.emitted.length).toBe(1);
@@ -179,30 +187,35 @@ describe('v0.41 T8: emitLine path (production rescanFile equivalent)', () => {
   });
 });
 
-describe('v0.41 T8: healthCheck()', () => {
-  test('returns warn when no JSONL files discovered', async () => {
-    const src = new GstackLearningsSource({ paths: [], _skipWatch: true, _existsSync: () => false, _readFile: () => '' });
+describe("v0.41 T8: healthCheck()", () => {
+  test("returns warn when no JSONL files discovered", async () => {
+    const src = new GstackLearningsSource({
+      paths: [],
+      _skipWatch: true,
+      _existsSync: () => false,
+      _readFile: () => "",
+    });
     const health = await src.healthCheck();
-    expect(health.status).toBe('warn');
-    expect(health.message).toContain('no gstack learnings');
+    expect(health.status).toBe("warn");
+    expect(health.message).toContain("no gstack learnings");
   });
 
-  test('returns ok when files exist and are readable', async () => {
-    const path = '/fake/projects/repoA/learnings.jsonl';
+  test("returns ok when files exist and are readable", async () => {
+    const path = "/fake/projects/repoA/learnings.jsonl";
     const fs = makeFakeFs({ [path]: JSON.stringify(makeLine()) });
     const src = new GstackLearningsSource({ paths: [path], _skipWatch: true, ...fs });
     const ctx = makeStubCtx();
     await src.start(ctx);
     const health = await src.healthCheck();
-    expect(health.status).toBe('ok');
-    expect(health.message).toContain('1 watched');
+    expect(health.status).toBe("ok");
+    expect(health.message).toContain("1 watched");
     await src.stop();
   });
 });
 
-describe('v0.41 T8: describePaths() diagnostic', () => {
-  test('reports per-file existence + size', async () => {
-    const path = '/fake/projects/repoA/learnings.jsonl';
+describe("v0.41 T8: describePaths() diagnostic", () => {
+  test("reports per-file existence + size", async () => {
+    const path = "/fake/projects/repoA/learnings.jsonl";
     const fs = makeFakeFs({ [path]: JSON.stringify(makeLine()) });
     const src = new GstackLearningsSource({ paths: [path], _skipWatch: true, ...fs });
     const desc = src.describePaths();
@@ -211,12 +224,12 @@ describe('v0.41 T8: describePaths() diagnostic', () => {
     expect(desc[0].exists).toBe(true);
   });
 
-  test('reports missing paths as exists:false', async () => {
+  test("reports missing paths as exists:false", async () => {
     const src = new GstackLearningsSource({
-      paths: ['/fake/missing/learnings.jsonl'],
+      paths: ["/fake/missing/learnings.jsonl"],
       _skipWatch: true,
       _existsSync: () => false,
-      _readFile: () => '',
+      _readFile: () => "",
     });
     const desc = src.describePaths();
     expect(desc[0].exists).toBe(false);

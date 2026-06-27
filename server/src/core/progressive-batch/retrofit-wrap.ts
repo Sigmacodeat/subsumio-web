@@ -26,7 +26,7 @@ import {
   type Policy,
   type ProgressiveBatchResult,
   type StageRunner,
-} from './orchestrator.ts';
+} from "./orchestrator.ts";
 
 export interface RetrofitWrapOpts<T> {
   /** Display label for audit JSONL + stderr stage report. */
@@ -62,11 +62,9 @@ export interface RetrofitWrapOpts<T> {
  * `result.abortedAt` and `result.stageReports` if they need to. Most
  * callers ignore the return.
  */
-export async function retrofitWrap<T>(
-  opts: RetrofitWrapOpts<T>,
-): Promise<ProgressiveBatchResult> {
+export async function retrofitWrap<T>(opts: RetrofitWrapOpts<T>): Promise<ProgressiveBatchResult> {
   const verifier: NoopVerifier = {
-    kind: 'noop',
+    kind: "noop",
     costPerItem: () => opts.costPerItem ?? 0,
   };
   const policy: Policy = {

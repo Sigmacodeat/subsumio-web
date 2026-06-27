@@ -22,7 +22,7 @@ writes_to:
 > citation rules, exact-phrasing requirements when capturing the user's
 > reactions, and back-link enforcement.
 >
-> **Convention:** see [_brain-filing-rules.md](../_brain-filing-rules.md) —
+> **Convention:** see [\_brain-filing-rules.md](../_brain-filing-rules.md) —
 > this skill is **schema-generic**: it reads the user's filing rules from
 > the rules JSON instead of hardcoding any specific era / archive layout.
 
@@ -93,15 +93,15 @@ Every archive exploration gets a manifest brain page that tracks:
 
 Before showing anything to the user, apply the gold filter:
 
-| Keep (show) | Skip (note existence, don't show) |
-|-------------|-----------------------------------|
-| Personal writing (journals, letters, reflections, essays) | System files, configs, package.json, node_modules |
-| Conversations (IM logs, email threads with substance) | Binary blobs (images / video) |
-| Ideas, theses, frameworks | Receipts, invoices, tax docs |
-| Relationship material (letters to / from people who matter) | Spam, newsletters, mailing-list bulk |
-| Creative work (poetry, stories, code with soul) | Corrupted / null files |
-| Origin stories (first versions of things that became important) | |
-| Emotional content (anger, love, grief, discovery) | |
+| Keep (show)                                                     | Skip (note existence, don't show)                 |
+| --------------------------------------------------------------- | ------------------------------------------------- |
+| Personal writing (journals, letters, reflections, essays)       | System files, configs, package.json, node_modules |
+| Conversations (IM logs, email threads with substance)           | Binary blobs (images / video)                     |
+| Ideas, theses, frameworks                                       | Receipts, invoices, tax docs                      |
+| Relationship material (letters to / from people who matter)     | Spam, newsletters, mailing-list bulk              |
+| Creative work (poetry, stories, code with soul)                 | Corrupted / null files                            |
+| Origin stories (first versions of things that became important) |                                                   |
+| Emotional content (anger, love, grief, discovery)               |                                                   |
 
 ## Protocol
 
@@ -157,7 +157,7 @@ title: "[Title or first line]"
 type: original
 source_type: "[local|dropbox|backblaze|gmail-takeout|mbox|pst]"
 source_path: "[path within the allow-listed scan_paths]"
-date: "YYYY-MM-DD"  # date from the file metadata or content
+date: "YYYY-MM-DD" # date from the file metadata or content
 people: ["person-1", "person-2"]
 tags: ["tag-1", "tag-2"]
 ---
@@ -180,6 +180,7 @@ tags: ["tag-1", "tag-2"]
 ## File-type handlers
 
 ### Plain text / HTML / Markdown
+
 Read directly. Strip HTML tags for display.
 
 ### `.mbox` (email archives)
@@ -250,6 +251,7 @@ scan_paths: ["paths from gbrain.yml"]
 # [Archive Name] — Ingestion Status
 
 ## Source
+
 - **Type:** [local|dropbox|...]
 - **Allow-listed paths:** [from gbrain.yml]
 - **Total files:** [N]
@@ -259,23 +261,27 @@ scan_paths: ["paths from gbrain.yml"]
 ## Inventory
 
 ### [Folder 1]
-| Item | Type | Size | Status | Reaction |
-|------|------|------|--------|----------|
-| file1.txt | text | 2KB | ✅ ingested | 🔥 "exact quote" |
-| file2.doc | doc | 15KB | ⏭️ skip | — |
-| file3.html | html | 4KB | ⬜ unseen | — |
+
+| Item       | Type | Size | Status      | Reaction         |
+| ---------- | ---- | ---- | ----------- | ---------------- |
+| file1.txt  | text | 2KB  | ✅ ingested | 🔥 "exact quote" |
+| file2.doc  | doc  | 15KB | ⏭️ skip     | —                |
+| file3.html | html | 4KB  | ⬜ unseen   | —                |
 
 ### [Folder 2]
+
 ...
 
 ## Priority Queue
+
 1. [Highest priority — why]
 2. [Next — why]
-...
+   ...
 
 ## Session Log
 
 ### YYYY-MM-DD — [Session topic]
+
 - Reviewed: [list]
 - Reactions: [exact quotes]
 - Ingested: [brain pages created]
@@ -302,7 +308,6 @@ scan_paths: ["paths from gbrain.yml"]
 - `skills/idea-ingest/SKILL.md` — single-link-or-article ingest with
   the same primary-subject filing rule
 - `skills/conventions/quality.md` — citations, back-links, voice
-
 
 ## Contract
 

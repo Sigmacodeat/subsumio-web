@@ -16,9 +16,9 @@
  * "Removing any of these is a breaking change going forward").
  */
 
-import { readFileSync } from 'fs';
-import { resolve } from 'path';
-import { describe, expect, test } from 'bun:test';
+import { readFileSync } from "fs";
+import { resolve } from "path";
+import { describe, expect, test } from "bun:test";
 
 interface ExpectedExport {
   /** Subpath key as it appears in package.json exports. */
@@ -33,36 +33,39 @@ interface ExpectedExport {
  * are intentional breaking changes to the public exports surface.
  */
 const EXPECTED_EXPORTS: ExpectedExport[] = [
-  { subpath: 'gbrain', canary: [] }, // root "." export; no single canary — just require import success
-  { subpath: 'gbrain/engine', canary: ['clampSearchLimit', 'MAX_SEARCH_LIMIT'] },
-  { subpath: 'gbrain/types', canary: ['GBrainError'] },
-  { subpath: 'gbrain/operations', canary: ['operations', 'OperationError'] },
-  { subpath: 'gbrain/minions', canary: [] }, // barrel module; re-exports many names
-  { subpath: 'gbrain/engine-factory', canary: [] }, // factory exports a default creator
-  { subpath: 'gbrain/pglite-engine', canary: ['PGLiteEngine'] },
-  { subpath: 'gbrain/link-extraction', canary: ['extractEntityRefs', 'extractPageLinks'] },
-  { subpath: 'gbrain/import-file', canary: ['importFromContent'] },
-  { subpath: 'gbrain/transcription', canary: [] },
-  { subpath: 'gbrain/embedding', canary: ['embed'] },
-  { subpath: 'gbrain/config', canary: ['loadConfig'] },
-  { subpath: 'gbrain/markdown', canary: ['splitBody', 'parseMarkdown', 'serializeMarkdown'] },
-  { subpath: 'gbrain/backoff', canary: [] },
-  { subpath: 'gbrain/search/hybrid', canary: ['hybridSearch', 'rrfFusion'] },
-  { subpath: 'gbrain/search/expansion', canary: ['expandQuery'] },
-  { subpath: 'gbrain/ai/gateway', canary: ['configureGateway', 'embed'] },
-  { subpath: 'gbrain/extract', canary: [] },
-  { subpath: 'gbrain/ingestion', canary: ['INGESTION_SOURCE_API_VERSION', 'validateIngestionEvent', 'computeContentHash'] },
-  { subpath: 'gbrain/ingestion/test-harness', canary: ['IngestionTestHarness', 'expectEvent'] },
+  { subpath: "gbrain", canary: [] }, // root "." export; no single canary — just require import success
+  { subpath: "gbrain/engine", canary: ["clampSearchLimit", "MAX_SEARCH_LIMIT"] },
+  { subpath: "gbrain/types", canary: ["GBrainError"] },
+  { subpath: "gbrain/operations", canary: ["operations", "OperationError"] },
+  { subpath: "gbrain/minions", canary: [] }, // barrel module; re-exports many names
+  { subpath: "gbrain/engine-factory", canary: [] }, // factory exports a default creator
+  { subpath: "gbrain/pglite-engine", canary: ["PGLiteEngine"] },
+  { subpath: "gbrain/link-extraction", canary: ["extractEntityRefs", "extractPageLinks"] },
+  { subpath: "gbrain/import-file", canary: ["importFromContent"] },
+  { subpath: "gbrain/transcription", canary: [] },
+  { subpath: "gbrain/embedding", canary: ["embed"] },
+  { subpath: "gbrain/config", canary: ["loadConfig"] },
+  { subpath: "gbrain/markdown", canary: ["splitBody", "parseMarkdown", "serializeMarkdown"] },
+  { subpath: "gbrain/backoff", canary: [] },
+  { subpath: "gbrain/search/hybrid", canary: ["hybridSearch", "rrfFusion"] },
+  { subpath: "gbrain/search/expansion", canary: ["expandQuery"] },
+  { subpath: "gbrain/ai/gateway", canary: ["configureGateway", "embed"] },
+  { subpath: "gbrain/extract", canary: [] },
+  {
+    subpath: "gbrain/ingestion",
+    canary: ["INGESTION_SOURCE_API_VERSION", "validateIngestionEvent", "computeContentHash"],
+  },
+  { subpath: "gbrain/ingestion/test-harness", canary: ["IngestionTestHarness", "expectEvent"] },
 ];
 
 function readPackageExports(): Record<string, string> {
-  const pkgPath = resolve(import.meta.dir, '..', 'package.json');
-  const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
+  const pkgPath = resolve(import.meta.dir, "..", "package.json");
+  const pkg = JSON.parse(readFileSync(pkgPath, "utf8"));
   return pkg.exports as Record<string, string>;
 }
 
-describe('public exports — package.json exports map', () => {
-  test('has the expected number of subpaths (v0.21.0 locks the surface)', () => {
+describe("public exports — package.json exports map", () => {
+  test("has the expected number of subpaths (v0.21.0 locks the surface)", () => {
     const exports = readPackageExports();
     const count = Object.keys(exports).length;
     // Adding new exports: increment this + add to EXPECTED_EXPORTS below.
@@ -71,15 +74,17 @@ describe('public exports — package.json exports map', () => {
     expect(count).toBe(20);
   });
 
-  test('EXPECTED_EXPORTS list matches the exports map exactly (no drift)', () => {
+  test("EXPECTED_EXPORTS list matches the exports map exactly (no drift)", () => {
     const exports = readPackageExports();
-    const exportedSubpaths = Object.keys(exports).map(k => (k === '.' ? 'gbrain' : `gbrain${k.slice(1)}`)).sort();
-    const expectedSubpaths = EXPECTED_EXPORTS.map(e => e.subpath).sort();
+    const exportedSubpaths = Object.keys(exports)
+      .map((k) => (k === "." ? "gbrain" : `gbrain${k.slice(1)}`))
+      .sort();
+    const expectedSubpaths = EXPECTED_EXPORTS.map((e) => e.subpath).sort();
     expect(expectedSubpaths).toEqual(exportedSubpaths);
   });
 });
 
-describe('public exports — every subpath resolves via package name', () => {
+describe("public exports — every subpath resolves via package name", () => {
   for (const entry of EXPECTED_EXPORTS) {
     test(`${entry.subpath} imports without throwing`, async () => {
       // Package-path import goes through the exports map — bypassing a
@@ -87,11 +92,11 @@ describe('public exports — every subpath resolves via package name', () => {
       // would resolve via filesystem and miss the contract.
       const mod = await import(entry.subpath);
       expect(mod).toBeDefined();
-      expect(typeof mod).toBe('object');
+      expect(typeof mod).toBe("object");
     });
 
     if (entry.canary.length > 0) {
-      test(`${entry.subpath} exports canary symbols: ${entry.canary.join(', ')}`, async () => {
+      test(`${entry.subpath} exports canary symbols: ${entry.canary.join(", ")}`, async () => {
         const mod = await import(entry.subpath);
         for (const name of entry.canary) {
           expect(mod).toHaveProperty(name);

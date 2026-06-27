@@ -19,15 +19,15 @@
  * Codex review #3 receipt naming: every run binds (corpus, prompt, models,
  * rubric) shas; rubric_version field segregates trend rows by rubric epoch.
  */
-import type { BrainEngine } from '../core/engine.ts';
-import { configureGateway } from '../core/ai/gateway.ts';
-import { loadConfig } from '../core/config.ts';
-import { runEval, DEFAULT_MODEL_PANEL } from '../core/takes-quality-eval/runner.ts';
-import { resolveCycleDefault, cycleDefaultSuffix } from '../core/eval/cycle-default.ts';
-import { writeReceipt } from '../core/takes-quality-eval/receipt-write.ts';
-import { loadReceiptFromDisk } from '../core/takes-quality-eval/replay.ts';
-import { compareReceipts } from '../core/takes-quality-eval/regress.ts';
-import { loadTrend, renderTrendTable, type TrendRow } from '../core/takes-quality-eval/trend.ts';
+import type { BrainEngine } from "../core/engine.ts";
+import { configureGateway } from "../core/ai/gateway.ts";
+import { loadConfig } from "../core/config.ts";
+import { runEval, DEFAULT_MODEL_PANEL } from "../core/takes-quality-eval/runner.ts";
+import { resolveCycleDefault, cycleDefaultSuffix } from "../core/eval/cycle-default.ts";
+import { writeReceipt } from "../core/takes-quality-eval/receipt-write.ts";
+import { loadReceiptFromDisk } from "../core/takes-quality-eval/replay.ts";
+import { compareReceipts } from "../core/takes-quality-eval/regress.ts";
+import { loadTrend, renderTrendTable, type TrendRow } from "../core/takes-quality-eval/trend.ts";
 
 const HELP = `gbrain eval takes-quality — reproducible cross-modal quality eval
 
@@ -38,7 +38,7 @@ Subcommands:
     aggregate to PASS/FAIL/INCONCLUSIVE. Default: --limit 100, --cycles 3
     (1 in non-TTY), --source db, --budget-usd null (no cap; pass 0 to
     explicitly disable budget enforcement). Default models:
-      ${DEFAULT_MODEL_PANEL.join(', ')}
+      ${DEFAULT_MODEL_PANEL.join(", ")}
     Exit codes: 0 PASS, 1 FAIL, 2 INCONCLUSIVE.
 
   replay <receipt-path> [--json]
@@ -55,21 +55,21 @@ Subcommands:
 `;
 
 export interface EvalTakesQualityArgs {
-  subcmd: 'run' | 'replay' | 'trend' | 'regress' | 'help';
+  subcmd: "run" | "replay" | "trend" | "regress" | "help";
   argv: string[];
   json: boolean;
 }
 
 export function parseSubcmd(args: string[]): EvalTakesQualityArgs {
-  if (args.length === 0 || args[0] === '--help' || args[0] === '-h') {
-    return { subcmd: 'help', argv: [], json: false };
+  if (args.length === 0 || args[0] === "--help" || args[0] === "-h") {
+    return { subcmd: "help", argv: [], json: false };
   }
-  const subcmd = args[0] as EvalTakesQualityArgs['subcmd'];
-  if (!['run', 'replay', 'trend', 'regress'].includes(subcmd)) {
-    return { subcmd: 'help', argv: [], json: false };
+  const subcmd = args[0] as EvalTakesQualityArgs["subcmd"];
+  if (!["run", "replay", "trend", "regress"].includes(subcmd)) {
+    return { subcmd: "help", argv: [], json: false };
   }
   const argv = args.slice(1);
-  const json = argv.includes('--json');
+  const json = argv.includes("--json");
   return { subcmd, argv, json };
 }
 
@@ -91,12 +91,12 @@ function hasFlag(argv: string[], name: string): boolean {
  * (codex review #10). cli.ts routes here directly without connectEngine.
  */
 export async function runReplayNoBrain(argv: string[]): Promise<number> {
-  if (argv.length === 0 || argv[0].startsWith('-')) {
-    process.stderr.write('Usage: gbrain eval takes-quality replay <receipt-path> [--json]\n');
+  if (argv.length === 0 || argv[0].startsWith("-")) {
+    process.stderr.write("Usage: gbrain eval takes-quality replay <receipt-path> [--json]\n");
     return 2;
   }
   const receiptPath = argv[0];
-  const json = argv.includes('--json');
+  const json = argv.includes("--json");
   try {
     const receipt = loadReceiptFromDisk(receiptPath);
     if (json) {
@@ -106,11 +106,11 @@ export async function runReplayNoBrain(argv: string[]): Promise<number> {
       console.log(`  ts:             ${receipt.ts}`);
       console.log(`  rubric_version: ${receipt.rubric_version}`);
       console.log(`  verdict:        ${receipt.verdict}`);
-      console.log(`  overall_score:  ${receipt.overall_score ?? 'n/a'}`);
+      console.log(`  overall_score:  ${receipt.overall_score ?? "n/a"}`);
       console.log(`  cost_usd:       $${receipt.cost_usd.toFixed(4)}`);
       console.log(`  cycles_run:     ${receipt.cycles_run}`);
-      console.log(`  successes:      [${receipt.successes_per_cycle.join(', ')}]`);
-      console.log(`  models:         ${receipt.models.join(', ')}`);
+      console.log(`  successes:      [${receipt.successes_per_cycle.join(", ")}]`);
+      console.log(`  models:         ${receipt.models.join(", ")}`);
       if (receipt.verdictMessage) console.log(`  verdict msg:    ${receipt.verdictMessage}`);
     }
     return verdictExitCode(receipt.verdict);
@@ -132,35 +132,41 @@ export async function runEvalTakesQuality(engine: BrainEngine, args: string[]): 
 
   const { subcmd, argv, json } = parseSubcmd(args);
 
-  if (subcmd === 'help') {
+  if (subcmd === "help") {
     console.log(HELP);
     return;
   }
 
-  if (subcmd === 'run') {
-    const limit = parseIntFlag(argv, '--limit', 100);
+  if (subcmd === "run") {
+    const limit = parseIntFlag(argv, "--limit", 100);
     // #1784: keep parseIntFlag for value validation; resolveCycleDefault drives
     // the banner annotation when the value is the silent non-TTY fallback.
     const cycleDef = resolveCycleDefault(undefined, process.stdout.isTTY === true);
-    const cycles = parseIntFlag(argv, '--cycles', cycleDef.cycles);
-    const cyclesSuffix = getFlag(argv, '--cycles') === undefined ? cycleDefaultSuffix(cycleDef) : '';
-    const budgetStr = getFlag(argv, '--budget-usd');
+    const cycles = parseIntFlag(argv, "--cycles", cycleDef.cycles);
+    const cyclesSuffix =
+      getFlag(argv, "--cycles") === undefined ? cycleDefaultSuffix(cycleDef) : "";
+    const budgetStr = getFlag(argv, "--budget-usd");
     const budgetUsd = budgetStr === undefined ? null : Number(budgetStr);
     if (budgetStr !== undefined && !Number.isFinite(budgetUsd)) {
       process.stderr.write(`Invalid --budget-usd value: ${budgetStr}\n`);
       process.exit(2);
     }
-    const slugPrefix = getFlag(argv, '--slug-prefix') ?? null;
-    const modelsStr = getFlag(argv, '--models');
-    const models = modelsStr ? modelsStr.split(',').map(s => s.trim()).filter(Boolean) : DEFAULT_MODEL_PANEL;
-    const source = (getFlag(argv, '--source') ?? 'db') as 'db' | 'fs';
+    const slugPrefix = getFlag(argv, "--slug-prefix") ?? null;
+    const modelsStr = getFlag(argv, "--models");
+    const models = modelsStr
+      ? modelsStr
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : DEFAULT_MODEL_PANEL;
+    const source = (getFlag(argv, "--source") ?? "db") as "db" | "fs";
 
     if (!json) {
       process.stderr.write(
         `[eval takes-quality] sampling ${limit} take(s) from ${source}; ` +
-        `panel: ${models.join(', ')}; cycles: ${cycles}${cyclesSuffix}` +
-        (budgetUsd === null ? '' : `; budget: $${budgetUsd.toFixed(2)}`) +
-        '\n',
+          `panel: ${models.join(", ")}; cycles: ${cycles}${cyclesSuffix}` +
+          (budgetUsd === null ? "" : `; budget: $${budgetUsd.toFixed(2)}`) +
+          "\n"
       );
     }
 
@@ -174,14 +180,16 @@ export async function runEvalTakesQuality(engine: BrainEngine, args: string[]): 
     try {
       await writeReceipt(engine, result.receipt);
     } catch (e) {
-      process.stderr.write(`receipt-write to DB failed: ${e instanceof Error ? e.message : String(e)}\n`);
+      process.stderr.write(
+        `receipt-write to DB failed: ${e instanceof Error ? e.message : String(e)}\n`
+      );
       process.exit(1);
     }
     if (json) {
       console.log(JSON.stringify(result.receipt, null, 2));
     } else {
       console.log(`\nverdict: ${result.receipt.verdict}`);
-      console.log(`overall: ${result.receipt.overall_score ?? 'n/a'}/10`);
+      console.log(`overall: ${result.receipt.overall_score ?? "n/a"}/10`);
       console.log(`cost:    $${result.receipt.cost_usd.toFixed(4)}`);
       if (result.receipt.verdictMessage) console.log(`note:    ${result.receipt.verdictMessage}`);
       if (result.budgetAborted) console.log(`(budget cap aborted run)`);
@@ -189,9 +197,9 @@ export async function runEvalTakesQuality(engine: BrainEngine, args: string[]): 
     process.exit(verdictExitCode(result.receipt.verdict));
   }
 
-  if (subcmd === 'trend') {
-    const limit = parseIntFlag(argv, '--limit', 20);
-    const rubricVersion = getFlag(argv, '--rubric-version') ?? undefined;
+  if (subcmd === "trend") {
+    const limit = parseIntFlag(argv, "--limit", 20);
+    const rubricVersion = getFlag(argv, "--rubric-version") ?? undefined;
     const rows: TrendRow[] = await loadTrend(engine, { limit, rubricVersion });
     if (json) {
       console.log(JSON.stringify({ schema_version: 1, rows }, null, 2));
@@ -201,26 +209,29 @@ export async function runEvalTakesQuality(engine: BrainEngine, args: string[]): 
     return;
   }
 
-  if (subcmd === 'regress') {
-    const againstPath = getFlag(argv, '--against');
+  if (subcmd === "regress") {
+    const againstPath = getFlag(argv, "--against");
     if (!againstPath) {
-      process.stderr.write('regress: --against <receipt-path> is required\n');
+      process.stderr.write("regress: --against <receipt-path> is required\n");
       process.exit(2);
     }
-    const threshold = Number(getFlag(argv, '--threshold') ?? '0.5');
+    const threshold = Number(getFlag(argv, "--threshold") ?? "0.5");
     if (!Number.isFinite(threshold)) {
-      process.stderr.write(`Invalid --threshold: ${getFlag(argv, '--threshold')}\n`);
+      process.stderr.write(`Invalid --threshold: ${getFlag(argv, "--threshold")}\n`);
       process.exit(2);
     }
-    const limit = parseIntFlag(argv, '--limit', 100);
+    const limit = parseIntFlag(argv, "--limit", 100);
     // #1784: same annotation treatment as the run subcommand.
     const cycleDef = resolveCycleDefault(undefined, process.stdout.isTTY === true);
-    const cycles = parseIntFlag(argv, '--cycles', cycleDef.cycles);
-    const cyclesSuffix = getFlag(argv, '--cycles') === undefined ? cycleDefaultSuffix(cycleDef) : '';
+    const cycles = parseIntFlag(argv, "--cycles", cycleDef.cycles);
+    const cyclesSuffix =
+      getFlag(argv, "--cycles") === undefined ? cycleDefaultSuffix(cycleDef) : "";
 
     const prior = loadReceiptFromDisk(againstPath);
     if (!json) {
-      process.stderr.write(`[eval takes-quality regress] running fresh eval (cycles: ${cycles}${cyclesSuffix}) to compare against ${againstPath}\n`);
+      process.stderr.write(
+        `[eval takes-quality regress] running fresh eval (cycles: ${cycles}${cyclesSuffix}) to compare against ${againstPath}\n`
+      );
     }
     const result = await runEval(engine, {
       limit,
@@ -237,11 +248,13 @@ export async function runEvalTakesQuality(engine: BrainEngine, args: string[]): 
     }
     const delta = compareReceipts(result.receipt, prior, { threshold });
     if (json) {
-      console.log(JSON.stringify({ schema_version: 1, current: result.receipt, prior, delta }, null, 2));
+      console.log(
+        JSON.stringify({ schema_version: 1, current: result.receipt, prior, delta }, null, 2)
+      );
     } else {
       console.log(`\n${delta.summary}`);
       if (delta.inputs_differ) {
-        console.log('  inputs differ:');
+        console.log("  inputs differ:");
         for (const d of delta.input_diffs ?? []) console.log(`    - ${d}`);
       }
     }
@@ -260,8 +273,8 @@ function parseIntFlag(argv: string[], name: string, def: number): number {
   return n;
 }
 
-function verdictExitCode(verdict: 'pass' | 'fail' | 'inconclusive'): number {
-  if (verdict === 'pass') return 0;
-  if (verdict === 'fail') return 1;
+function verdictExitCode(verdict: "pass" | "fail" | "inconclusive"): number {
+  if (verdict === "pass") return 0;
+  if (verdict === "fail") return 1;
   return 2;
 }

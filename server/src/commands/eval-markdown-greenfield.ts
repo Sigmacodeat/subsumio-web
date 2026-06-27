@@ -15,26 +15,26 @@ export interface EvalMarkdownGreenfieldResult {
   schema_version: 1;
   ok: boolean;
   reason: string;
-  status: 'not_yet_implemented' | 'pass' | 'fail';
+  status: "not_yet_implemented" | "pass" | "fail";
   details: Record<string, unknown>;
 }
 
 export async function runEvalMarkdownGreenfield(
-  opts: EvalMarkdownGreenfieldOpts = {},
+  opts: EvalMarkdownGreenfieldOpts = {}
 ): Promise<EvalMarkdownGreenfieldResult> {
   return {
     schema_version: 1,
     ok: true,
-    reason: 'v0.41 ships the command surface; full pass-rate gate lands v0.41.1',
-    status: 'not_yet_implemented',
+    reason: "v0.41 ships the command surface; full pass-rate gate lands v0.41.1",
+    status: "not_yet_implemented",
     details: {
       pass_rate_floor: opts.passRateFloor ?? null,
       repo_path: opts.repoPath ?? null,
       v0_41_1_followup:
-        'Run markdown-greenfield --dry-run; parse the per-row validation audit at ' +
-        '~/.gbrain/audit/markdown-greenfield-failures-YYYY-Www.jsonl; compute ' +
-        'pass_rate = (total - failures) / total; compare to --pass-rate-floor; exit ' +
-        '1 when below floor.',
+        "Run markdown-greenfield --dry-run; parse the per-row validation audit at " +
+        "~/.gbrain/audit/markdown-greenfield-failures-YYYY-Www.jsonl; compute " +
+        "pass_rate = (total - failures) / total; compare to --pass-rate-floor; exit " +
+        "1 when below floor.",
     },
   };
 }

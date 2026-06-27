@@ -15,8 +15,8 @@
  * match, x_handle match) is PR 2.5+.
  */
 
-import type { BrainEngine } from '../engine.ts';
-import type { PageType } from '../types.ts';
+import type { BrainEngine } from "../engine.ts";
+import type { PageType } from "../types.ts";
 
 export interface CreateSlugInput {
   /**
@@ -33,7 +33,7 @@ export interface CreateSlugInput {
    *   - 'append-numeric' (default): alice-smith → alice-smith-2
    *   - 'throw': raise SlugCollision so caller handles it explicitly
    */
-  onCollision?: 'append-numeric' | 'throw';
+  onCollision?: "append-numeric" | "throw";
   /**
    * Max disambiguator suffix before giving up. Default 50 (alice-smith-50
    * would be absurd). Caller should surface a human-readable error above
@@ -54,16 +54,16 @@ export interface CreatedSlug {
 // Errors
 // ---------------------------------------------------------------------------
 
-export type SlugRegistryErrorCode = 'collision' | 'disambiguator_exhausted' | 'invalid_slug';
+export type SlugRegistryErrorCode = "collision" | "disambiguator_exhausted" | "invalid_slug";
 
 export class SlugRegistryError extends Error {
   constructor(
     public code: SlugRegistryErrorCode,
     message: string,
-    public slug?: string,
+    public slug?: string
   ) {
     super(message);
-    this.name = 'SlugRegistryError';
+    this.name = "SlugRegistryError";
   }
 }
 
@@ -82,10 +82,19 @@ export class SlugRegistry {
    * BrainWriter to avoid racey reads.
    */
   async create(input: CreateSlugInput): Promise<CreatedSlug> {
-    const { desiredSlug, displayName, onCollision = 'append-numeric', maxDisambiguator = 50 } = input;
+    const {
+      desiredSlug,
+      displayName,
+      onCollision = "append-numeric",
+      maxDisambiguator = 50,
+    } = input;
 
     if (!SLUG_RE.test(desiredSlug)) {
-      throw new SlugRegistryError('invalid_slug', `Invalid slug: ${desiredSlug} (expect dir/name form)`, desiredSlug);
+      throw new SlugRegistryError(
+        "invalid_slug",
+        `Invalid slug: ${desiredSlug} (expect dir/name form)`,
+        desiredSlug
+      );
     }
 
     // Fast path: desired is free
@@ -95,11 +104,11 @@ export class SlugRegistry {
     }
 
     // Collision
-    if (onCollision === 'throw') {
+    if (onCollision === "throw") {
       throw new SlugRegistryError(
-        'collision',
+        "collision",
         `Slug already exists: ${desiredSlug} (for "${displayName}")`,
-        desiredSlug,
+        desiredSlug
       );
     }
 
@@ -113,9 +122,9 @@ export class SlugRegistry {
     }
 
     throw new SlugRegistryError(
-      'disambiguator_exhausted',
+      "disambiguator_exhausted",
       `Exhausted disambiguator for ${desiredSlug} after ${maxDisambiguator} attempts. Likely indicates runaway duplicate creation.`,
-      desiredSlug,
+      desiredSlug
     );
   }
 

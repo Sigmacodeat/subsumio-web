@@ -124,8 +124,15 @@ describe("canTransition", () => {
 
   it("error → any is invalid (terminal)", () => {
     const allStatuses: ExtractionStatus[] = [
-      "uploaded", "processing", "text_layer", "ocr_needed",
-      "ocr_processing", "ocr_complete", "ocr_failed", "ready", "error",
+      "uploaded",
+      "processing",
+      "text_layer",
+      "ocr_needed",
+      "ocr_processing",
+      "ocr_complete",
+      "ocr_failed",
+      "ready",
+      "error",
     ];
     for (const target of allStatuses) {
       expect(canTransition("error", target)).toBe(false);
@@ -142,7 +149,7 @@ describe("transition", () => {
 
   it("throws for invalid transition", () => {
     expect(() => transition("uploaded", "ready")).toThrow(
-      "Invalid extraction status transition: uploaded → ready",
+      "Invalid extraction status transition: uploaded → ready"
     );
   });
 
@@ -233,7 +240,12 @@ describe("inferInitialExtractionStatus", () => {
   });
 
   it("DOCX → processing", () => {
-    expect(inferInitialExtractionStatus("contract.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document")).toBe("processing");
+    expect(
+      inferInitialExtractionStatus(
+        "contract.docx",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      )
+    ).toBe("processing");
   });
 
   it("TXT → processing", () => {
@@ -245,7 +257,12 @@ describe("inferInitialExtractionStatus", () => {
   });
 
   it("XLSX → processing", () => {
-    expect(inferInitialExtractionStatus("data.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")).toBe("processing");
+    expect(
+      inferInitialExtractionStatus(
+        "data.xlsx",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      )
+    ).toBe("processing");
   });
 
   it("RTF → processing", () => {

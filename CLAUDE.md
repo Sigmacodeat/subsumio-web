@@ -90,7 +90,6 @@ Per-file detail is in `docs/architecture/KEY_FILES.md`.
   (drift guard asserts each view equals canonical). Embeddings price separately in
   `embedding-pricing.ts` (different unit).
 
-
 ## Reference map (load on demand)
 
 CLAUDE.md is the always-loaded orientation + dispatcher. Detailed reference loads
@@ -98,20 +97,20 @@ on demand — read the linked doc before working in that area. (Same two-layer
 pattern gbrain ships for its own skills: thin router in `skills/RESOLVER.md`, fat
 detail on demand.)
 
-| When you're working on... | Read first |
-|---|---|
-| any file in `src/` (what it does + its invariants) | `docs/architecture/KEY_FILES.md` — find the file's entry |
-| search / ranking / hybrid / retrieval | `docs/architecture/RETRIEVAL.md` + the `search/*` entries in `KEY_FILES.md` |
-| search modes / cost knobs | `docs/guides/search-modes.md` |
-| schema packs / page types / extraction | `docs/architecture/schema-packs.md`, `type-taxonomy.md`, `lens-packs.md` |
-| thin-client / remote MCP / cross-modal | `docs/architecture/thin-client.md` |
-| the CLI surface (commands + flags) | `gbrain --help` / `gbrain --tools-json`, plus the relevant `KEY_FILES.md` entry |
-| running or writing tests | `docs/TESTING.md` |
-| bulk-command progress wiring | `docs/progress-events.md` |
-| eval methodology / metrics | `docs/eval/` |
-| brains vs sources / topology | `docs/architecture/brains-and-sources.md`, `topologies.md` |
-| skill routing | `skills/RESOLVER.md` |
-| shipping a release / CHANGELOG / PR conventions | `docs/RELEASING.md` (ship IRON RULES stay inline below) |
+| When you're working on...                          | Read first                                                                      |
+| -------------------------------------------------- | ------------------------------------------------------------------------------- |
+| any file in `src/` (what it does + its invariants) | `docs/architecture/KEY_FILES.md` — find the file's entry                        |
+| search / ranking / hybrid / retrieval              | `docs/architecture/RETRIEVAL.md` + the `search/*` entries in `KEY_FILES.md`     |
+| search modes / cost knobs                          | `docs/guides/search-modes.md`                                                   |
+| schema packs / page types / extraction             | `docs/architecture/schema-packs.md`, `type-taxonomy.md`, `lens-packs.md`        |
+| thin-client / remote MCP / cross-modal             | `docs/architecture/thin-client.md`                                              |
+| the CLI surface (commands + flags)                 | `gbrain --help` / `gbrain --tools-json`, plus the relevant `KEY_FILES.md` entry |
+| running or writing tests                           | `docs/TESTING.md`                                                               |
+| bulk-command progress wiring                       | `docs/progress-events.md`                                                       |
+| eval methodology / metrics                         | `docs/eval/`                                                                    |
+| brains vs sources / topology                       | `docs/architecture/brains-and-sources.md`, `topologies.md`                      |
+| skill routing                                      | `skills/RESOLVER.md`                                                            |
+| shipping a release / CHANGELOG / PR conventions    | `docs/RELEASING.md` (ship IRON RULES stay inline below)                         |
 
 The per-file index (`## Key files`), the thin-client routing seam, and the testing
 discipline used to live inline here. They moved to the docs above so this file
@@ -147,27 +146,27 @@ GBrain ships three named search modes that bundle the search-lite knobs from
 PR #897 into a single config key. Pick one at install time; the rest of the
 project resolves through `src/core/search/mode.ts`.
 
-| Knob                          | `conservative` | `balanced` | `tokenmax`     |
-|-------------------------------|----------------|------------|----------------|
-| `cache.enabled`               | true           | true       | true           |
-| `cache.similarity_threshold`  | 0.92           | 0.92       | 0.92           |
-| `cache.ttl_seconds`           | 3600           | 3600       | 3600           |
-| `intentWeighting`             | true           | true       | true           |
-| `tokenBudget`                 | **4000**       | **12000**  | **off**        |
-| `expansion` (LLM multi-query) | false          | false      | **true**       |
-| `relationalRetrieval`         | false          | **true**   | **true**       |
-| `searchLimit` default         | 10             | 25         | 50             |
+| Knob                          | `conservative` | `balanced` | `tokenmax` |
+| ----------------------------- | -------------- | ---------- | ---------- |
+| `cache.enabled`               | true           | true       | true       |
+| `cache.similarity_threshold`  | 0.92           | 0.92       | 0.92       |
+| `cache.ttl_seconds`           | 3600           | 3600       | 3600       |
+| `intentWeighting`             | true           | true       | true       |
+| `tokenBudget`                 | **4000**       | **12000**  | **off**    |
+| `expansion` (LLM multi-query) | false          | false      | **true**   |
+| `relationalRetrieval`         | false          | **true**   | **true**   |
+| `searchLimit` default         | 10             | 25         | 50         |
 
 **Cost anchors (downstream agent input cost — gbrain itself is rounding error).**
 The corner-to-corner spread is 25x once you pair mode with downstream model.
 Chunks ~400 tokens avg. Per-query cost @ 10K queries/month (typical
 single-user volume), full search payload, no cache savings:
 
-| Mode \ Downstream | Haiku 4.5 (\$1/M) | Sonnet 4.6 (\$3/M) | Opus 4.7 (\$5/M) |
-|---|---|---|---|
-| conservative (~4K) | **\$40/mo** | \$120/mo | \$200/mo |
-| balanced (~10K) | \$100/mo | \$300/mo | \$500/mo |
-| tokenmax (~20K) | \$200/mo | \$600/mo | **\$1,000/mo** |
+| Mode \ Downstream  | Haiku 4.5 (\$1/M) | Sonnet 4.6 (\$3/M) | Opus 4.7 (\$5/M) |
+| ------------------ | ----------------- | ------------------ | ---------------- |
+| conservative (~4K) | **\$40/mo**       | \$120/mo           | \$200/mo         |
+| balanced (~10K)    | \$100/mo          | \$300/mo           | \$500/mo         |
+| tokenmax (~20K)    | \$200/mo          | \$600/mo           | **\$1,000/mo**   |
 
 Scales linearly: multiply by 10 for 100K/mo (heavy power user / multi-user
 fleet); divide by 10 for 1K/mo (light usage). Natural pairings span ~4x.
@@ -319,6 +318,7 @@ at `src/core/progress.ts`. Agents get heartbeats within 1 second of every
 iteration regardless of how slow the underlying work is.
 
 Rules:
+
 - Progress always writes to **stderr**. Stdout stays clean for data output
   (`--json` payloads, final summaries, JSON action events from `extract`).
 - Non-TTY default: plain one-line-per-event human text. JSON requires the
@@ -363,6 +363,7 @@ bun test 2>&1 | tail -10
 
 The pipe form silently breaks /ship Step T1 (test failure ownership triage) and
 the test verification gate (Step 16) because:
+
 - `$?` after a pipe is the LAST command's exit code (`tail` → 0), not bun's
 - bun prints failure details before the summary line, so `tail -N` drops them
 - Step T1 needs the full failure list to classify in-branch vs pre-existing
@@ -386,13 +387,13 @@ per-source lock heartbeats through the direct pool and refuses to steal a live,
 recently-refreshed holder. Five env knobs tune it (all env-only, incident-time escape
 hatches — no config-dashboard surface by design):
 
-| Env var | Default | What it does |
-|---|---|---|
-| `GBRAIN_SYNC_CHECKPOINT_EVERY` | 1000 | Flush the checkpoint every N drained files. |
-| `GBRAIN_SYNC_CHECKPOINT_SECONDS` | 10 | Also flush every N seconds (whichever comes first) — bounds worst-case loss regardless of throughput. Flush also fires after the first file. |
-| `GBRAIN_SYNC_MAX_CHECKPOINT_FAILURES` | 3 | Consecutive failed flushes (each already retried ~12s) before the run aborts with `reason: 'checkpoint_unavailable'` instead of importing work it can never bank. |
-| `GBRAIN_SYNC_YIELD_EVERY` | 64 | Yield the event loop (`setTimeout(0)`, NOT `setImmediate` — Bun starves the timers phase under a tight setImmediate loop) every N files so the lock-refresh `setInterval` heartbeat fires mid-import. |
-| `GBRAIN_LOCK_STEAL_GRACE_SECONDS` | derived (~600 at 30min TTL) | A holder that refreshed within this window is NOT stolen even if its TTL lapsed (starved-but-alive). Dead holders stop refreshing, age past the grace, and become stealable; TTL stays the backstop. |
+| Env var                               | Default                     | What it does                                                                                                                                                                                          |
+| ------------------------------------- | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GBRAIN_SYNC_CHECKPOINT_EVERY`        | 1000                        | Flush the checkpoint every N drained files.                                                                                                                                                           |
+| `GBRAIN_SYNC_CHECKPOINT_SECONDS`      | 10                          | Also flush every N seconds (whichever comes first) — bounds worst-case loss regardless of throughput. Flush also fires after the first file.                                                          |
+| `GBRAIN_SYNC_MAX_CHECKPOINT_FAILURES` | 3                           | Consecutive failed flushes (each already retried ~12s) before the run aborts with `reason: 'checkpoint_unavailable'` instead of importing work it can never bank.                                     |
+| `GBRAIN_SYNC_YIELD_EVERY`             | 64                          | Yield the event loop (`setTimeout(0)`, NOT `setImmediate` — Bun starves the timers phase under a tight setImmediate loop) every N files so the lock-refresh `setInterval` heartbeat fires mid-import. |
+| `GBRAIN_LOCK_STEAL_GRACE_SECONDS`     | derived (~600 at 30min TTL) | A holder that refreshed within this window is NOT stolen even if its TTL lapsed (starved-but-alive). Dead holders stop refreshing, age past the grace, and become stealable; TTL stays the backstop.  |
 
 ## Build
 
@@ -418,13 +419,13 @@ four numeric segments are required first. Historical 3-segment versions
 
 **Required (every release must update all five):**
 
-| File | What lives there | Format |
-|---|---|---|
-| `VERSION` | The single source of truth. Read first by `/ship`, the binary, and CI version-gate. | Bare 4-segment string `MAJOR.MINOR.PATCH.MICRO` (e.g. `0.31.4.1`), no leading `v`. |
-| `package.json` | Bun/npm package version. `gbrain --version` reads it via the compiled binary's bundled package metadata. CI version-gate cross-checks this against `VERSION` and fails if they drift. | `"version": "0.31.4.1"` |
-| `CHANGELOG.md` | Top entry header `## [0.31.4.1] - YYYY-MM-DD` plus the "To take advantage of v0.31.4.1" block. | Standard Keep-a-Changelog header. |
-| `TODOS.md` | Any TODO entries that mention "follow-up from vX.Y.Z.W" use the version of the release that filed them. Update only when filing NEW follow-up TODOs. | Inline `vX.Y.Z.W` references in TODO bodies. |
-| `CLAUDE.md` | The Key Files section's per-file annotations carry `vX.Y.Z.W (#NNN)` tags noting which release introduced a behavior. Update whenever a wave's annotations get folded in. | Inline `vX.Y.Z.W (#NNN, contributed by @user)` references. |
+| File           | What lives there                                                                                                                                                                      | Format                                                                             |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `VERSION`      | The single source of truth. Read first by `/ship`, the binary, and CI version-gate.                                                                                                   | Bare 4-segment string `MAJOR.MINOR.PATCH.MICRO` (e.g. `0.31.4.1`), no leading `v`. |
+| `package.json` | Bun/npm package version. `gbrain --version` reads it via the compiled binary's bundled package metadata. CI version-gate cross-checks this against `VERSION` and fails if they drift. | `"version": "0.31.4.1"`                                                            |
+| `CHANGELOG.md` | Top entry header `## [0.31.4.1] - YYYY-MM-DD` plus the "To take advantage of v0.31.4.1" block.                                                                                        | Standard Keep-a-Changelog header.                                                  |
+| `TODOS.md`     | Any TODO entries that mention "follow-up from vX.Y.Z.W" use the version of the release that filed them. Update only when filing NEW follow-up TODOs.                                  | Inline `vX.Y.Z.W` references in TODO bodies.                                       |
+| `CLAUDE.md`    | The Key Files section's per-file annotations carry `vX.Y.Z.W (#NNN)` tags noting which release introduced a behavior. Update whenever a wave's annotations get folded in.             | Inline `vX.Y.Z.W (#NNN, contributed by @user)` references.                         |
 
 **Auto-derived (no manual edit; refreshed by their own commands):**
 
@@ -436,7 +437,7 @@ four numeric segments are required first. Historical 3-segment versions
   against fresh generator output by `test/build-llms.test.ts`, which runs in
   CI shard 1. If you edited CLAUDE.md and didn't regenerate, CI will fail.
   This has bitten the wave 3 times — every CLAUDE.md edit gets a `bun run
-  build:llms` chaser, no exceptions. (The `verify` gate doesn't run this
+build:llms` chaser, no exceptions. (The `verify` gate doesn't run this
   test; only the full unit suite does. So `bun run typecheck` clean is NOT
   enough to know you can push after a CLAUDE.md edit.)
 
@@ -583,7 +584,6 @@ The /ship workflow's Step 1 should be augmented to run the mismatch
 check; until that lands upstream, ALWAYS run the check above before
 `/ship` invokes its first push or PR-create step.
 
-
 ## Releasing
 
 Before any ship, read **[docs/RELEASING.md](docs/RELEASING.md)** in full. It carries the
@@ -609,6 +609,7 @@ it gets skipped for ANY reason (timeout, error, oversight), you MUST run it manu
 before considering the ship complete.
 
 Files that MUST be checked on every ship:
+
 - README.md — does it reflect new features, commands, or setup steps?
 - CLAUDE.md — does it reflect new files, test files, or architecture changes?
 - CHANGELOG.md — does it cover every commit?
@@ -616,7 +617,6 @@ Files that MUST be checked on every ship:
 - docs/ — do any guides need updating?
 
 A ship without updated docs is an incomplete ship. Period.
-
 
 ## Privacy rule: scrub real names from public docs
 
@@ -633,6 +633,7 @@ names a specific agent fork like `Wintermute`, that real name gets indexed by
 search engines, surfaced in cross-references, and distributed with every release.
 
 **Name mapping** to use in examples:
+
 - Agent forks → `your agent fork`, `a downstream agent`, or `agent-fork`
 - Example person → `alice-example`, `charlie-example`, or `a-founder`
 - Example company → `acme-example`, `widget-co`, or `a-company`
@@ -643,6 +644,7 @@ search engines, surfaced in cross-references, and distributed with every release
 
 **Specific rule: never say `Wintermute` in any CHANGELOG, README, doc, PR, or
 commit message.** When the temptation is to illustrate with the real fork name:
+
 - Reader-facing copy → `your OpenClaw` (covers Wintermute, Hermes, AlphaClaw,
   and any other downstream OpenClaw deployment in one term the reader already
   recognizes).
@@ -676,11 +678,13 @@ and bodies, commit messages, GitHub issue titles and comments, release pages,
 tweets, blog posts.
 
 **Don't write:**
+
 - "10 tables were publicly readable by the anon key for months, including X, Y, Z"
 - "X and Y are the most sensitive ones"
 - "N tables exposed. Fix: enable RLS on these specific tables: ..."
 
 **Do write:**
+
 - "Security hardening pass. Fresh installs secure by default. Existing brains
   brought to the same bar automatically on upgrade."
 - "If `gbrain doctor` still flags anything after upgrade, the message names each
@@ -697,6 +701,7 @@ walk away knowing "gbrain at version X has table Y readable by anon key until
 they patch," the note is too specific. Rewrite until that's no longer possible.
 
 **What IS fine in public artifacts:**
+
 - The mechanism of the fix ("the check now scans every public table instead of
   a hardcoded allowlist").
 - User-facing operator ergonomics (the escape-hatch SQL template, the upgrade
@@ -706,6 +711,7 @@ they patch," the note is too specific. Rewrite until that's no longer possible.
   quantification.
 
 **What stays in private artifacts (plan files, private memories, internal docs):**
+
 - Specific table names, record counts, exposure duration.
 - Which records stand out as highest-risk.
 - Detailed before/after tables in the "numbers that matter" format.
@@ -717,7 +723,6 @@ into the CHANGELOG or PR body.
 Applies retroactively: if you see a prior CHANGELOG entry naming attack-surface
 specifics, scrub it as a small cleanup commit, the same way a stale Wintermute
 reference gets swept.
-
 
 ## PR title format — version FIRST (IRON RULE)
 
@@ -740,7 +745,6 @@ This applies to `gh pr create` and every `gh pr edit --title`. When `/ship`
 (or any flow) sets a PR title, the version is the first token. Same rule for the
 final commit subject that carries the version bump.
 
-
 ## Skill routing
 
 When the user's request matches an available skill, ALWAYS invoke it using the Skill
@@ -756,6 +760,7 @@ everything including the commits. If the branch name contains a version (e.g.
 `v0.5-live-sync`), /ship should use that version for the bump.
 
 Key routing rules:
+
 - Product ideas, "is this worth building", brainstorming → invoke office-hours
 - Bugs, errors, "why is this broken", 500 errors → invoke investigate
 - Ship, deploy, push, create PR, "commit and ship", "push and ship" → invoke ship

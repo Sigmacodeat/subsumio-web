@@ -8,12 +8,13 @@ gbrain has two epistemological storage layers that serve different purposes.
 The epistemological layer. WHO believes WHAT, with confidence weight and time.
 
 - **Source:** Extracted from brain pages (markdown) by LLM analysis
-- **Scope:** Multi-holder — captures beliefs from *any* speaker, not just the brain owner
+- **Scope:** Multi-holder — captures beliefs from _any_ speaker, not just the brain owner
 - **Kinds:** `take` (opinion), `fact` (verifiable), `bet` (prediction), `hunch` (intuition)
 - **Lifecycle:** Cold storage, retrospective. Updated when pages change or re-extraction runs.
 - **Scale:** 100K+ rows across thousands of holders in a mature brain
 
 **Example takes:**
+
 - `holder=people/garry-tan kind=bet` "AI will replace 50% of coding by 2030" (w=0.75)
 - `holder=people/jared-friedman kind=take` "Momo has strong retention" (w=0.80)
 - `holder=world kind=fact` "Clipboard raised $100M Series C" (w=1.0)
@@ -32,6 +33,7 @@ Personal knowledge from the brain owner's conversations. Real-time capture.
 - **Bridge:** Dream cycle `consolidate` phase promotes hot facts → cold takes nightly
 
 **Example facts:**
+
 - `kind=event` "I have a meeting with Brian tomorrow"
 - `kind=preference` "I don't drink coffee"
 - `kind=commitment` "We decided on nesting custody"
@@ -59,6 +61,7 @@ hot facts → [dream consolidate] → cold takes
 ```
 
 Facts flow in ONE direction. The consolidate phase:
+
 1. Groups related facts by entity
 2. Deduplicates against existing takes
 3. Promotes durable facts to takes with proper holder/weight
@@ -67,6 +70,7 @@ Facts flow in ONE direction. The consolidate phase:
 ## Production Extraction Data (2026-05-10)
 
 First full takes extraction run on a ~100K-page brain:
+
 - **Model:** Azure GPT-5.5 (ties Opus quality at 1/8th cost — $0.033 vs $0.260/page)
 - **Result:** 100,720 takes from 28,256 on-disk pages, $361.49, 83 errors (0.3%)
 - **Breakdown:** 70,960 takes / 24,342 facts / 2,875 bets / 2,649 hunches
@@ -75,13 +79,13 @@ First full takes extraction run on a ~100K-page brain:
 
 ### Eval Dimensions
 
-| Dimension | Score | Notes |
-|-----------|-------|-------|
-| Accuracy | 7.5 | Claims faithfully represent sources |
-| Attribution | 6.5 | Holder/subject confusion was #1 issue |
-| Weight calibration | 7.0 | Good range usage, some false precision |
-| Kind classification | 6.5 | Occasional fact/take misclassification |
-| Signal density | 6.5 | Some trivial extractions pass through |
+| Dimension           | Score | Notes                                  |
+| ------------------- | ----- | -------------------------------------- |
+| Accuracy            | 7.5   | Claims faithfully represent sources    |
+| Attribution         | 6.5   | Holder/subject confusion was #1 issue  |
+| Weight calibration  | 7.0   | Good range usage, some false precision |
+| Kind classification | 6.5   | Occasional fact/take misclassification |
+| Signal density      | 6.5   | Some trivial extractions pass through  |
 
 ### Key Learnings for Extraction Prompts
 

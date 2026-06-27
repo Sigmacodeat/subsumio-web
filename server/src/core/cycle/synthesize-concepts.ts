@@ -18,12 +18,12 @@
 //      For T3/T4: deterministic stub narrative.
 //   5. Write concept-typed pages.
 
-import type { BrainEngine } from '../engine.ts';
-import type { PhaseResult } from '../cycle.ts';
-import type { ProgressReporter } from '../progress.ts';
-import { writeReceipt } from '../extract/receipt-writer.ts';
-import { upsertExtractRollup } from '../extract/rollup-writer.ts';
-import { chat as gatewayChat } from '../ai/gateway.ts';
+import type { BrainEngine } from "../engine.ts";
+import type { PhaseResult } from "../cycle.ts";
+import type { ProgressReporter } from "../progress.ts";
+import { writeReceipt } from "../extract/receipt-writer.ts";
+import { upsertExtractRollup } from "../extract/rollup-writer.ts";
+import { chat as gatewayChat } from "../ai/gateway.ts";
 
 const DEFAULT_BUDGET_USD = 1.5;
 const TIER_T1_MIN = 10;
@@ -51,7 +51,7 @@ interface AtomGroup {
   conceptSlug: string;
   atomTitles: string[];
   atomBodies: string[];
-  tier: 'T1' | 'T2' | 'T3' | 'T4';
+  tier: "T1" | "T2" | "T3" | "T4";
 }
 
 const SYNTH_PROMPT = `You write a 1-paragraph executive summary of a concept
@@ -63,7 +63,7 @@ the atoms collectively SAY about the concept; don't enumerate the atoms.`;
 
 export async function runPhaseSynthesizeConcepts(
   engine: BrainEngine,
-  opts: SynthesizeConceptsOpts = {},
+  opts: SynthesizeConceptsOpts = {}
 ): Promise<PhaseResult> {
   const chat = opts._chat ?? gatewayChat;
 
@@ -81,7 +81,7 @@ export async function runPhaseSynthesizeConcepts(
            FROM pages
           WHERE type = 'atom'
             AND deleted_at IS NULL
-            AND (frontmatter->>'imported_from') IS NULL`,
+            AND (frontmatter->>'imported_from') IS NULL`
       );
       atoms = rows
         .filter((r) => Array.isArray(r.frontmatter?.concepts) && r.frontmatter.concepts.length > 0)
@@ -98,11 +98,11 @@ export async function runPhaseSynthesizeConcepts(
 
   if (atoms.length === 0) {
     return {
-      phase: 'synthesize_concepts',
-      status: 'skipped',
+      phase: "synthesize_concepts",
+      status: "skipped",
       duration_ms: 0,
-      summary: 'synthesize_concepts: no atoms with concept refs',
-      details: { reason: 'no_atoms' },
+      summary: "synthesize_concepts: no atoms with concept refs",
+      details: { reason: "no_atoms" },
     };
   }
 
@@ -122,8 +122,8 @@ export async function runPhaseSynthesizeConcepts(
   for (const [conceptSlug, data] of groups) {
     const count = data.titles.length;
     if (count < TIER_T3_MIN) continue;
-    const tier: AtomGroup['tier'] =
-      count >= TIER_T1_MIN ? 'T1' : count >= TIER_T2_MIN ? 'T2' : 'T3';
+    const tier: AtomGroup["tier"] =
+      count >= TIER_T1_MIN ? "T1" : count >= TIER_T2_MIN ? "T2" : "T3";
     atomGroups.push({
       conceptSlug,
       atomTitles: data.titles,
@@ -134,11 +134,11 @@ export async function runPhaseSynthesizeConcepts(
 
   if (atomGroups.length === 0) {
     return {
-      phase: 'synthesize_concepts',
-      status: 'skipped',
+      phase: "synthesize_concepts",
+      status: "skipped",
       duration_ms: 0,
       summary: `synthesize_concepts: no concept groups with ≥${TIER_T3_MIN} atoms`,
-      details: { reason: 'no_groups_above_threshold', atoms_seen: atoms.length },
+      details: { reason: "no_groups_above_threshold", atoms_seen: atoms.length },
     };
   }
 
@@ -172,7 +172,7 @@ export async function runPhaseSynthesizeConcepts(
   for (const group of atomGroups) {
     tierCounts[group.tier]++;
     let narrative: string;
-    if (group.tier === 'T1' || group.tier === 'T2') {
+    if (group.tier === "T1" || group.tier === "T2") {
       if (estimatedSpendUsd >= budgetCap) {
         narrative = deterministicNarrative(group);
       } else {
@@ -181,15 +181,18 @@ export async function runPhaseSynthesizeConcepts(
             system: SYNTH_PROMPT,
             messages: [
               {
-                role: 'user',
+                role: "user",
                 content:
                   `Concept slug: ${group.conceptSlug}\n` +
                   `${group.atomTitles.length} atoms reference this concept.\n\n` +
-                  `Sample atom titles:\n${group.atomTitles.slice(0, 10).map((t) => `  - ${t}`).join('\n')}\n\n` +
+                  `Sample atom titles:\n${group.atomTitles
+                    .slice(0, 10)
+                    .map((t) => `  - ${t}`)
+                    .join("\n")}\n\n` +
                   `Sample atom bodies:\n${group.atomBodies
                     .slice(0, 5)
                     .map((b, i) => `${i + 1}. ${b.slice(0, 500)}`)
-                    .join('\n\n')}`,
+                    .join("\n\n")}`,
               },
             ],
             maxTokens: 500,
@@ -215,20 +218,20 @@ export async function runPhaseSynthesizeConcepts(
     }
 
     if (!opts.dryRun) {
-      const title = group.conceptSlug.split('/').pop() ?? group.conceptSlug;
+      const title = group.conceptSlug.split("/").pop() ?? group.conceptSlug;
       await engine.putPage(`concepts/${title}`, {
-        title: title.replace(/-/g, ' '),
-        type: 'concept',
+        title: title.replace(/-/g, " "),
+        type: "concept",
         compiled_truth: narrative,
         frontmatter: {
-          type: 'concept',
+          type: "concept",
           tier: group.tier,
           mention_count: group.atomTitles.length,
           composite_score: group.atomTitles.length,
           synthesized_at: new Date().toISOString(),
-          synthesized_by: 'synthesize_concepts-v0.41',
+          synthesized_by: "synthesize_concepts-v0.41",
         },
-        timeline: '',
+        timeline: "",
       });
     }
     conceptsWritten++;
@@ -249,10 +252,10 @@ export async function runPhaseSynthesizeConcepts(
     const runId = `concepts-${Date.now().toString(36)}`;
     try {
       await writeReceipt(engine, {
-        kind: 'concepts',
-        source_id: 'default',
+        kind: "concepts",
+        source_id: "default",
         run_id: runId,
-        round: 'single',
+        round: "single",
         extracted_at: new Date().toISOString(),
         total_rows: conceptsWritten,
         cost_usd: estimatedSpendUsd,
@@ -267,8 +270,8 @@ export async function runPhaseSynthesizeConcepts(
   }
   if (!opts.dryRun) {
     await upsertExtractRollup(engine, {
-      kind: 'concepts',
-      source_id: 'default',
+      kind: "concepts",
+      source_id: "default",
       cost_delta: estimatedSpendUsd,
       round_completed_delta: failures.length === 0 ? 1 : 0,
       halt_delta: failures.length > 0 ? 1 : 0,
@@ -276,13 +279,13 @@ export async function runPhaseSynthesizeConcepts(
   }
 
   return {
-    phase: 'synthesize_concepts',
-    status: failures.length > 0 ? 'warn' : 'ok',
+    phase: "synthesize_concepts",
+    status: failures.length > 0 ? "warn" : "ok",
     duration_ms: 0,
     summary:
       `synthesize_concepts: ${conceptsWritten} concepts ` +
       `(T1=${tierCounts.T1} T2=${tierCounts.T2} T3=${tierCounts.T3})` +
-      (failures.length > 0 ? ` (${failures.length} LLM-failed → template fallback)` : ''),
+      (failures.length > 0 ? ` (${failures.length} LLM-failed → template fallback)` : ""),
     details: {
       concepts_written: conceptsWritten,
       tier_counts: tierCounts,
@@ -305,10 +308,10 @@ function deterministicNarrative(group: AtomGroup): string {
   const tier = group.tier;
   const count = group.atomTitles.length;
   return (
-    `${tier} concept. ${count} atom${count === 1 ? '' : 's'} reference this. ` +
+    `${tier} concept. ${count} atom${count === 1 ? "" : "s"} reference this. ` +
     `Top mentions:\n${group.atomTitles
       .slice(0, 5)
       .map((t) => `  - ${t}`)
-      .join('\n')}`
+      .join("\n")}`
   );
 }

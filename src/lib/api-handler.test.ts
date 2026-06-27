@@ -46,8 +46,7 @@ vi.mock("./prompt-sanitizer", () => ({
 
 vi.mock("./citation-gate", () => ({
   createCitationGateStream: vi.fn((body: unknown) => body),
-  groundJsonResponse: vi.fn(() => ({}),
-  ),
+  groundJsonResponse: vi.fn(() => ({})),
   emptyGroundingMetadata: vi.fn(() => ({})),
 }));
 
@@ -82,7 +81,7 @@ import { validateCsrf } from "./csrf";
 function makeMockRequest(
   method: string = "POST",
   body?: unknown,
-  opts?: { csrfCookie?: string; csrfHeader?: string },
+  opts?: { csrfCookie?: string; csrfHeader?: string }
 ): NextRequest {
   const headers = new Headers();
   if (opts?.csrfHeader) headers.set("x-csrf-token", opts.csrfHeader);
@@ -138,12 +137,11 @@ beforeEach(() => {
 describe("createHandler Guard-Chain", () => {
   it("1. Unauthenticated request → 401", async () => {
     vi.mocked(requireEngineContext).mockResolvedValueOnce(
-      Response.json({ error: "unauthorized" }, { status: 401 }),
+      Response.json({ error: "unauthorized" }, { status: 401 })
     );
 
-    const handler = createHandler(
-      { action: "brain.write" },
-      async () => Response.json({ ok: true }),
+    const handler = createHandler({ action: "brain.write" }, async () =>
+      Response.json({ ok: true })
     );
 
     const req = makeMockRequest("POST", { foo: "bar" });
@@ -156,12 +154,14 @@ describe("createHandler Guard-Chain", () => {
 
   it("2. Authenticated but forbidden → 403", async () => {
     vi.mocked(requireEngineContext).mockResolvedValueOnce(
-      Response.json({ error: "forbidden", message: "Action 'brain.write' not permitted" }, { status: 403 }),
+      Response.json(
+        { error: "forbidden", message: "Action 'brain.write' not permitted" },
+        { status: 403 }
+      )
     );
 
-    const handler = createHandler(
-      { action: "brain.write" },
-      async () => Response.json({ ok: true }),
+    const handler = createHandler({ action: "brain.write" }, async () =>
+      Response.json({ ok: true })
     );
 
     const req = makeMockRequest("POST", { foo: "bar" });
@@ -175,9 +175,8 @@ describe("createHandler Guard-Chain", () => {
   it("3. CSRF token missing → 403", async () => {
     vi.mocked(requireEngineContext).mockResolvedValueOnce(mockCtx() as any);
 
-    const handler = createHandler(
-      { action: "brain.write" },
-      async () => Response.json({ ok: true }),
+    const handler = createHandler({ action: "brain.write" }, async () =>
+      Response.json({ ok: true })
     );
 
     // POST without CSRF cookie or header
@@ -192,16 +191,19 @@ describe("createHandler Guard-Chain", () => {
   it("4. CSRF token mismatch → 403", async () => {
     vi.mocked(requireEngineContext).mockResolvedValueOnce(mockCtx() as any);
 
-    const handler = createHandler(
-      { action: "brain.write" },
-      async () => Response.json({ ok: true }),
+    const handler = createHandler({ action: "brain.write" }, async () =>
+      Response.json({ ok: true })
     );
 
     // POST with CSRF cookie but wrong header
-    const req = makeMockRequest("POST", { foo: "bar" }, {
-      csrfCookie: "token_a",
-      csrfHeader: "token_b",
-    });
+    const req = makeMockRequest(
+      "POST",
+      { foo: "bar" },
+      {
+        csrfCookie: "token_a",
+        csrfHeader: "token_b",
+      }
+    );
     const res = await handler(req);
 
     expect(res.status).toBe(403);
@@ -213,16 +215,19 @@ describe("createHandler Guard-Chain", () => {
     vi.mocked(requireEngineContext).mockResolvedValueOnce(mockCtx() as any);
 
     const schema = z.object({ plan: z.enum(["pro", "team"]) });
-    const handler = createHandler(
-      { action: "billing.write", body: schema },
-      async () => Response.json({ ok: true }),
+    const handler = createHandler({ action: "billing.write", body: schema }, async () =>
+      Response.json({ ok: true })
     );
 
     // Valid CSRF but invalid body
-    const req = makeMockRequest("POST", { plan: "enterprise" }, {
-      csrfCookie: "tok",
-      csrfHeader: "tok",
-    });
+    const req = makeMockRequest(
+      "POST",
+      { plan: "enterprise" },
+      {
+        csrfCookie: "tok",
+        csrfHeader: "tok",
+      }
+    );
     const res = await handler(req);
 
     expect(res.status).toBe(400);
@@ -244,13 +249,17 @@ describe("createHandler Guard-Chain", () => {
           details: { plan: "pro" },
         }),
       },
-      async (_ctx, body) => Response.json({ ok: true, plan: body.plan }),
+      async (_ctx, body) => Response.json({ ok: true, plan: body.plan })
     );
 
-    const req = makeMockRequest("POST", { plan: "pro" }, {
-      csrfCookie: "tok",
-      csrfHeader: "tok",
-    });
+    const req = makeMockRequest(
+      "POST",
+      { plan: "pro" },
+      {
+        csrfCookie: "tok",
+        csrfHeader: "tok",
+      }
+    );
     const res = await handler(req);
 
     expect(res.status).toBe(200);
@@ -264,20 +273,21 @@ describe("createHandler Guard-Chain", () => {
   it("7. Handler throws AppError → structured error response", async () => {
     vi.mocked(requireEngineContext).mockResolvedValueOnce(mockCtx() as any);
 
-    const handler = createHandler(
-      { action: "brain.write" },
-      async () => {
-        throw new AppError("Something went wrong", {
-          code: "custom_error",
-          statusCode: 422,
-        });
-      },
-    );
-
-    const req = makeMockRequest("POST", { foo: "bar" }, {
-      csrfCookie: "tok",
-      csrfHeader: "tok",
+    const handler = createHandler({ action: "brain.write" }, async () => {
+      throw new AppError("Something went wrong", {
+        code: "custom_error",
+        statusCode: 422,
+      });
     });
+
+    const req = makeMockRequest(
+      "POST",
+      { foo: "bar" },
+      {
+        csrfCookie: "tok",
+        csrfHeader: "tok",
+      }
+    );
     const res = await handler(req);
 
     expect(res.status).toBe(422);
@@ -289,17 +299,18 @@ describe("createHandler Guard-Chain", () => {
   it("8. Handler throws generic Error → 500 internal_error", async () => {
     vi.mocked(requireEngineContext).mockResolvedValueOnce(mockCtx() as any);
 
-    const handler = createHandler(
-      { action: "brain.write" },
-      async () => {
-        throw new Error("boom");
-      },
-    );
-
-    const req = makeMockRequest("POST", { foo: "bar" }, {
-      csrfCookie: "tok",
-      csrfHeader: "tok",
+    const handler = createHandler({ action: "brain.write" }, async () => {
+      throw new Error("boom");
     });
+
+    const req = makeMockRequest(
+      "POST",
+      { foo: "bar" },
+      {
+        csrfCookie: "tok",
+        csrfHeader: "tok",
+      }
+    );
     const res = await handler(req);
 
     expect(res.status).toBe(500);
@@ -312,7 +323,7 @@ describe("createHandler Guard-Chain", () => {
 
     const handler = createHandler(
       { action: "brain.write", body: z.object({ foo: z.string() }) },
-      async () => Response.json({ ok: true }),
+      async () => Response.json({ ok: true })
     );
 
     // Create request with invalid JSON body
@@ -338,7 +349,7 @@ describe("createHandler Guard-Chain", () => {
     const querySchema = z.object({ page: z.string().optional() });
     const handler = createHandler(
       { action: "brain.read", query: querySchema },
-      async (_ctx, _body, query) => Response.json({ page: query?.page ?? "1" }),
+      async (_ctx, _body, query) => Response.json({ page: query?.page ?? "1" })
     );
 
     const req = new NextRequestImpl("http://localhost:3000/api/test?page=5", {
@@ -362,13 +373,17 @@ describe("createHandler Guard-Chain", () => {
           entityType: "test",
         }),
       },
-      async () => Response.json({ error: "something" }, { status: 400 }),
+      async () => Response.json({ error: "something" }, { status: 400 })
     );
 
-    const req = makeMockRequest("POST", {}, {
-      csrfCookie: "tok",
-      csrfHeader: "tok",
-    });
+    const req = makeMockRequest(
+      "POST",
+      {},
+      {
+        csrfCookie: "tok",
+        csrfHeader: "tok",
+      }
+    );
     const res = await handler(req);
 
     expect(res.status).toBe(400);
@@ -380,9 +395,7 @@ describe("createHandler Guard-Chain", () => {
 
 describe("createCronHandler", () => {
   it("1. Valid cron auth → 200", async () => {
-    const handler = createCronHandler(async () =>
-      Response.json({ ok: true, ran: true }),
-    );
+    const handler = createCronHandler(async () => Response.json({ ok: true, ran: true }));
 
     const headers = new Headers();
     headers.set("authorization", "Bearer test-cron-secret");
@@ -398,9 +411,7 @@ describe("createCronHandler", () => {
   });
 
   it("2. Missing cron auth → 401", async () => {
-    const handler = createCronHandler(async () =>
-      Response.json({ ok: true }),
-    );
+    const handler = createCronHandler(async () => Response.json({ ok: true }));
 
     const req = new NextRequestImpl("http://localhost:3000/api/cron/test", {
       method: "GET",
@@ -413,9 +424,7 @@ describe("createCronHandler", () => {
   });
 
   it("3. Wrong cron secret → 401", async () => {
-    const handler = createCronHandler(async () =>
-      Response.json({ ok: true }),
-    );
+    const handler = createCronHandler(async () => Response.json({ ok: true }));
 
     const headers = new Headers();
     headers.set("authorization", "Bearer wrong-secret");
@@ -471,7 +480,7 @@ describe("createHandler allowInternal", () => {
   it("1. Internal secret bypasses auth → 200", async () => {
     // requireEngineContext should NOT be called when internal secret is valid
     vi.mocked(requireEngineContext).mockResolvedValueOnce(
-      Response.json({ error: "should_not_reach_here" }, { status: 500 }),
+      Response.json({ error: "should_not_reach_here" }, { status: 500 })
     );
 
     const handler = createHandler(
@@ -480,7 +489,7 @@ describe("createHandler allowInternal", () => {
         allowInternal: true,
         body: z.object({ text: z.string() }),
       },
-      async (ctx, body) => Response.json({ ok: true, brainId: ctx.brainId, text: body.text }),
+      async (ctx, body) => Response.json({ ok: true, brainId: ctx.brainId, text: body.text })
     );
 
     const headers = new Headers();
@@ -509,13 +518,17 @@ describe("createHandler allowInternal", () => {
         action: "legal.document_review" as any,
         allowInternal: true,
       },
-      async () => Response.json({ ok: true }),
+      async () => Response.json({ ok: true })
     );
 
-    const req = makeMockRequest("POST", {}, {
-      csrfCookie: "tok",
-      csrfHeader: "tok",
-    });
+    const req = makeMockRequest(
+      "POST",
+      {},
+      {
+        csrfCookie: "tok",
+        csrfHeader: "tok",
+      }
+    );
     // Add wrong internal secret — should fall through to normal auth
     req.headers.set("x-internal-secret", "wrong-secret");
     const res = await handler(req);
@@ -533,13 +546,17 @@ describe("createHandler allowInternal", () => {
         action: "legal.document_review" as any,
         allowInternal: true,
       },
-      async () => Response.json({ ok: true }),
+      async () => Response.json({ ok: true })
     );
 
-    const req = makeMockRequest("POST", {}, {
-      csrfCookie: "tok",
-      csrfHeader: "tok",
-    });
+    const req = makeMockRequest(
+      "POST",
+      {},
+      {
+        csrfCookie: "tok",
+        csrfHeader: "tok",
+      }
+    );
     const res = await handler(req);
 
     expect(res.status).toBe(200);
@@ -553,7 +570,7 @@ describe("createHandler allowInternal", () => {
         allowInternal: true,
         body: z.object({ text: z.string() }),
       },
-      async (ctx) => Response.json({ ok: true, brainId: ctx.brainId }),
+      async (ctx) => Response.json({ ok: true, brainId: ctx.brainId })
     );
 
     // POST with internal secret but NO CSRF cookie/header
@@ -581,7 +598,7 @@ describe("createHandler allowInternal", () => {
         allowInternal: true,
         body: z.object({ text: z.string() }),
       },
-      async (ctx) => Response.json({ ok: true, headers: ctx.headers }),
+      async (ctx) => Response.json({ ok: true, headers: ctx.headers })
     );
 
     const headers = new Headers();

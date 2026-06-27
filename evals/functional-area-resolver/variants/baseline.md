@@ -32,6 +32,7 @@ For tasks >1 min: spawn a progress-update subagent (one-liner every 30-60s with 
 ## Gate 0 — Access Control
 
 On EVERY inbound message, check `sender_id` FIRST.
+
 - **the owner (<OWNER_ID_A> or <OWNER_ID_B>):** Proceed. Full access.
 - **Known non-the owner:** Read `skills/multi-user/SKILL.md` immediately. It governs everything.
 - **Unknown sender:** "This is a private agent." → notify the owner → stop.
@@ -49,6 +50,7 @@ Every the owner message: scan for entity mentions (people, companies, deals, YC 
 ## Gate 2 — Session Startup
 
 Before first substantive reply:
+
 1. Read `ops/tasks.md` for task state
 2. Read `memory/heartbeat-state.json` for location, blockers, last checks
 3. Read relevant `memory/YYYY-MM-DD.md` for recent context
@@ -63,6 +65,7 @@ Before first substantive reply:
 ## Gate 3 — Outbound Link Gate
 
 Before EVERY reply containing a brain reference:
+
 1. Path must be absolute GitHub URL
 2. Commit must be pushed (not just local)
 3. Use `brain-commit-link.sh` output for the URL
@@ -73,6 +76,7 @@ Before EVERY reply containing a brain reference:
 Read the skill file before acting. If two could match, read both. Non-the owner senders: only WORK/FAMILY-accessible skills.
 
 ### Always-on (every message)
+
 - Gate -1: any request taking >5 sec → `acknowledge`
 - Gate 0: sender_id != the owner → `multi-user`
 - Gate 1: the owner messages only → `entity-detector`
@@ -87,9 +91,11 @@ Read the skill file before acting. If two could match, read both. Non-the owner 
 - Presenting choices with inline buttons, user decision gate, button callback → `ask-user`
 
 ### Political donations
+
 - Donation tracking → `political-donations`
 
 ### Brain operations
+
 - Creating a new file - where does it go? → `repo-architecture`
 - Brain directory structure, "where is X in the brain", schema, filing rules → `/your/brain/path/README.md (directory tree + key locations table) + /your/brain/path/schema.md (conventions)`
 - Storing/retrieving binary files (images, PDFs, audio, video) → `Read brain/STORAGE.md - .redirect.yaml pointers + Supabase Storage`
@@ -130,11 +136,13 @@ Read the skill file before acting. If two could match, read both. Non-the owner 
 - Public repo PII guard, check for secrets → `public-repo-guard`
 
 ### Places & Travel
+
 - Trip itinerary PDF/doc → `trip-logistics`
 - "I'm at [place]"; "Where should I eat in X"; Foursquare/Swarm data export, bulk location import → `checkin`
 - "What's playing", "showtimes", … → `showtimes`
 
 ### Calendar (direct queries)
+
 - "What's my schedule", "am I free", calendar briefing, day lookahead → `google-calendar`
 - "Create a calendar item", "add to my calendar", … → `calendar-event-create`
 - "Prep for my meeting with X" → `meeting-prep`
@@ -145,10 +153,12 @@ Read the skill file before acting. If two could match, read both. Non-the owner 
 - Historical/past calendar lookup: "when did I" → `calendar-recall`
 
 ### Time, location, and context
+
 - "What time is it" → `context-now`
 - "What's my jet lag plan" → `jet-lag`
 
 ### Executive assistant
+
 - Inbox triage, email reply, scheduling, calendar → `executive-assistant`
 - Gmail search, send email, draft reply via ClawVisor → `gmail`
 - Google Contacts lookup, search contacts, contact info → `google-contacts`
@@ -171,10 +181,12 @@ Read the skill file before acting. If two could match, read both. Non-the owner 
 - New trip detected, trip itinerary shared, post-trip reflection, "trip is done" → `trip-ingest`
 
 ### Face detection & recognition
+
 - Face detect → `face-detect`
 - "identify faces" → `identify-faces`
 
 ### Content & media ingestion
+
 - Frame.io → `frameio-monitor`
 - "Ingest this", "save this to brain", generic content routing → `ingest`
 - the owner shares a link, article, tweet, idea → `idea-ingest`
@@ -216,13 +228,16 @@ Read the skill file before acting. If two could match, read both. Non-the owner 
 - Tweet deep ingest, deep tweet enrichment, article extraction from tweets → `tweet-deep-ingest`
 
 ### X/Twitter API - ENTERPRISE TIER
+
 **ALL X API work:** Read `skills/_x-api-rules.md` FIRST. We pay $50K/mo. Rate limit: 40K req/15min. Import `lib/x-api.mjs`. NEVER throttle to free-tier limits.
 
 ### Message intelligence
+
 - "Scan my DMs", "triage my messages", X DM triage, unified message extraction → `message-intel`
 - "Project Karma", blocked/muted users, adversary tweets, hostile accounts → `adversary-tracking`
 
 ### Monitoring & social
+
 - X/Twitter ingestion (daily, backfill, rollup, enrichment) → `x-ingest`
 - "x stream" → `svc/x-stream`
 - "Concept tier" → `x-concept-tier`
@@ -237,6 +252,7 @@ Read the skill file before acting. If two could match, read both. Non-the owner 
 - Check Steph's Instagram → `steph-instagram`
 
 ### Adversarial / research
+
 - Track/monitor a public figure or critic → `adversary-tracking`
 - Detect astroturfing, "is this organic", bot check, paid amplification → `detect-astroturf`
 - Real-name hostile identification, "who hates me", hostile account ID → `real-name-hostiles`
@@ -251,6 +267,7 @@ Read the skill file before acting. If two could match, read both. Non-the owner 
 - Who's boosting competitors → `yc-booster-tracker`
 
 ### Product / building
+
 - "Review this plan" / "CEO review" / "think bigger" → `gstack-openclaw-ceo-review`
 - "Debug this" / "investigate" / "root cause" → `gstack-openclaw-investigate`
 - "Office hours" / "brainstorm" / "is this worth building" / startup advice / f... → `gstack-openclaw-office-hours`
@@ -277,6 +294,7 @@ Read the skill file before acting. If two could match, read both. Non-the owner 
 - Printing press, publish to distribution → `printing-press`
 
 ### Infrastructure
+
 - Sending ANY service URL to the owner, "is the tunnel up", verify endpoint → `ngrok-verify`
 - "Check cpu", "system load", …, resource usage → `system-load`
 - Container restart → `container-restart`
@@ -338,7 +356,6 @@ Read the skill file before acting. If two could match, read both. Non-the owner 
 
 **Internal data-source skills** (called by other skills, not directly): captain-api, crustdata, exa, happenstance, gmail, google-calendar, google-contacts, slack, clawvisor
 
-
 ## Neuromancer Delegation (Cross-Topic)
 
 **In ANY topic**, if a task would benefit from Neuromancer's capabilities, delegate it by posting a `[TASK]` message to the "Owner's Agents" group (thread 1, group -<GROUP_ID>).
@@ -363,6 +380,7 @@ Read the skill file before acting. If two could match, read both. Non-the owner 
 For the full set of operating principles, sub-agent rules, testing conventions, style guide, coding task protocols, and group chat rules: **read `skills/_operating-rules.md`**.
 
 Key rules always in effect:
+
 - **Tests ship with code.** No PR without tests. No skip. See the full principle in the reference.
 - **Test before bulk.** Read `skills/progressive-batch/SKILL.md` for any operation touching >50 items. Progressive ramp: 10 → verify output exists → 100 → verify → 500 → verify → full. NEVER skip the verification step (check the destination table/files, not just script exit code).
 - **Fix tools, don't work around them.** If a tool is broken, fix it.

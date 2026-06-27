@@ -24,6 +24,7 @@ mutating: true
 ## Contract
 
 This skill guarantees:
+
 - Every brain page is scanned against the eight canonical frontmatter validation classes
 - Mechanical errors (nested quotes, missing closing `---`, null bytes, slug mismatch) are auto-repairable on demand with `.bak` backups
 - Validation logic is shared with `gbrain doctor`'s `frontmatter_integrity` subcheck — single source of truth
@@ -32,6 +33,7 @@ This skill guarantees:
 ## Why This Exists
 
 Brain pages pile up over months. Agents write them with malformed frontmatter:
+
 - Missing closing `---` (entity detector bugs)
 - Unstructured YAML in meeting pages (ingestion bugs)
 - Slug mismatches (path renames not propagated)
@@ -42,16 +44,16 @@ Without a guard, these accumulate silently until `gbrain sync` chokes or search 
 
 ## Validation classes
 
-| Code | Meaning | Auto-fixable? |
-|------|---------|---------------|
-| `MISSING_OPEN` | File doesn't start with `---` | No (needs human) |
-| `MISSING_CLOSE` | No closing `---` before first heading | Yes |
-| `YAML_PARSE` | YAML failed to parse | Sometimes (depends on cause) |
-| `SLUG_MISMATCH` | Frontmatter `slug:` differs from path-derived slug | Yes (removes the field) |
-| `NULL_BYTES` | Binary corruption (`\x00`) | Yes |
-| `NESTED_QUOTES` | `title: "outer "inner" outer"` shape | Yes |
-| `NON_STRING_FIELD` | `title`/`type`/`slug` is an unquoted non-string scalar (e.g. `title: 123`, `slug: 2024-06-01`) | No (quote the value) |
-| `EMPTY_FRONTMATTER` | Open + close present but nothing between | No (needs human) |
+| Code                | Meaning                                                                                        | Auto-fixable?                |
+| ------------------- | ---------------------------------------------------------------------------------------------- | ---------------------------- |
+| `MISSING_OPEN`      | File doesn't start with `---`                                                                  | No (needs human)             |
+| `MISSING_CLOSE`     | No closing `---` before first heading                                                          | Yes                          |
+| `YAML_PARSE`        | YAML failed to parse                                                                           | Sometimes (depends on cause) |
+| `SLUG_MISMATCH`     | Frontmatter `slug:` differs from path-derived slug                                             | Yes (removes the field)      |
+| `NULL_BYTES`        | Binary corruption (`\x00`)                                                                     | Yes                          |
+| `NESTED_QUOTES`     | `title: "outer "inner" outer"` shape                                                           | Yes                          |
+| `NON_STRING_FIELD`  | `title`/`type`/`slug` is an unquoted non-string scalar (e.g. `title: 123`, `slug: 2024-06-01`) | No (quote the value)         |
+| `EMPTY_FRONTMATTER` | Open + close present but nothing between                                                       | No (needs human)             |
 
 ## Phases
 
@@ -64,6 +66,7 @@ gbrain frontmatter audit --json
 ```
 
 Reports:
+
 - Per-source counts grouped by error code
 - Sample of up to 20 affected pages per source
 - Total count
@@ -106,6 +109,7 @@ The hook runs `gbrain frontmatter validate` against staged `.md`/`.mdx` files. B
 ## Trigger words
 
 When the user says any of these, route here:
+
 - "validate frontmatter"
 - "check frontmatter"
 - "fix frontmatter"

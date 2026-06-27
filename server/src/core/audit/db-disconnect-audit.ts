@@ -41,23 +41,23 @@
  * `GBRAIN_AUDIT_DIR` via the shared `resolveAuditDir()` helper).
  */
 
-import { createAuditWriter } from './audit-writer.ts';
+import { createAuditWriter } from "./audit-writer.ts";
 
 export interface DbDisconnectAuditEvent {
   ts: string;
-  engine_kind: 'postgres' | 'pglite' | 'unknown';
-  connection_style: 'module' | 'instance' | 'unknown';
+  engine_kind: "postgres" | "pglite" | "unknown";
+  connection_style: "module" | "instance" | "unknown";
   caller_stack: string;
   command: string;
   pid: number;
 }
 
-const FEATURE_NAME = 'db-disconnect';
+const FEATURE_NAME = "db-disconnect";
 
 const writer = createAuditWriter<DbDisconnectAuditEvent>({
   featureName: FEATURE_NAME,
-  errorLabel: 'db-disconnect-audit',
-  errorTrailer: '; continuing',
+  errorLabel: "db-disconnect-audit",
+  errorTrailer: "; continuing",
 });
 
 /**
@@ -70,17 +70,17 @@ const writer = createAuditWriter<DbDisconnectAuditEvent>({
  * Exported for unit tests to pin the stack-truncation contract.
  */
 export function captureCallerStack(skipFrames = 2, maxFrames = 20): string {
-  const raw = new Error().stack ?? '';
+  const raw = new Error().stack ?? "";
   // Bun's stack format: first line is "Error", then "    at fn (file:line:col)"
   // for each frame. Split, drop the "Error" line + `skipFrames` of our own
   // helper frames, keep up to `maxFrames` after that.
-  const lines = raw.split('\n');
+  const lines = raw.split("\n");
   // Find the first frame line (starts with whitespace + "at "). The
   // "Error" header is line 0; helper frames start at line 1.
   const frameStart = lines.findIndex((l) => /^\s+at\s/.test(l));
   if (frameStart < 0) return raw.slice(0, 4000); // fallback: hard byte cap
   const callerFrames = lines.slice(frameStart + skipFrames, frameStart + skipFrames + maxFrames);
-  return callerFrames.join('\n');
+  return callerFrames.join("\n");
 }
 
 /**
@@ -88,13 +88,13 @@ export function captureCallerStack(skipFrames = 2, maxFrames = 20): string {
  * but never throws. The caller's disconnect path continues regardless.
  */
 export function logDbDisconnect(
-  engineKind: DbDisconnectAuditEvent['engine_kind'],
-  connectionStyle: DbDisconnectAuditEvent['connection_style'],
+  engineKind: DbDisconnectAuditEvent["engine_kind"],
+  connectionStyle: DbDisconnectAuditEvent["connection_style"]
 ): void {
   // argv[2] is typically the gbrain subcommand (e.g. 'dream', 'capture').
   // argv[0] is bun, argv[1] is the script path; the meaningful identity
   // is argv[2]. Defensive fallback to 'unknown' for embedded callers.
-  const command = process.argv[2] ?? 'unknown';
+  const command = process.argv[2] ?? "unknown";
   writer.log({
     engine_kind: engineKind,
     connection_style: connectionStyle,
@@ -126,7 +126,7 @@ export interface ReadDbDisconnectResult {
 
 export function readRecentDbDisconnects(
   hours = 24,
-  now: Date = new Date(),
+  now: Date = new Date()
 ): ReadDbDisconnectResult {
   // The shared writer uses `days`; convert hours → fractional days.
   const days = hours / 24;

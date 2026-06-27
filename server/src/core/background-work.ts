@@ -72,7 +72,9 @@ export function registerBackgroundWorkDrainer(d: BackgroundWorkDrainer): void {
  */
 export function __registerDrainerForTest(d: BackgroundWorkDrainer): () => void {
   drainers.set(d.name, d);
-  return () => { drainers.delete(d.name); };
+  return () => {
+    drainers.delete(d.name);
+  };
 }
 
 /** Test seam — snapshot of registered drainer names (sorted), for assertions. */
@@ -90,10 +92,12 @@ export function __listDrainerNamesForTest(): string[] {
  * Best-effort and non-throwing: one sink's failure never blocks the others or
  * the subsequent disconnect.
  */
-export async function drainAllBackgroundWorkForCliExit(opts?: { timeoutMs?: number }): Promise<void> {
+export async function drainAllBackgroundWorkForCliExit(opts?: {
+  timeoutMs?: number;
+}): Promise<void> {
   const timeoutMs = opts?.timeoutMs ?? 2000;
   const ordered = [...drainers.values()].sort(
-    (a, b) => a.order - b.order || a.name.localeCompare(b.name),
+    (a, b) => a.order - b.order || a.name.localeCompare(b.name)
   );
   for (const d of ordered) {
     try {

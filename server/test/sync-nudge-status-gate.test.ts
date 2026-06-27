@@ -10,31 +10,31 @@
  * Pure predicate test — no PGLite, no env mutation, no module stubbing (R1-R4 compliant).
  */
 
-import { describe, test, expect } from 'bun:test';
-import { shouldNudgeAfterSync } from '../src/commands/sync.ts';
+import { describe, test, expect } from "bun:test";
+import { shouldNudgeAfterSync } from "../src/commands/sync.ts";
 
-describe('shouldNudgeAfterSync (D5 status gate)', () => {
-  test('fires on first_sync — the biggest-backlog initial-import case', () => {
-    expect(shouldNudgeAfterSync('first_sync')).toBe(true);
+describe("shouldNudgeAfterSync (D5 status gate)", () => {
+  test("fires on first_sync — the biggest-backlog initial-import case", () => {
+    expect(shouldNudgeAfterSync("first_sync")).toBe(true);
   });
 
-  test('fires on synced (incremental)', () => {
-    expect(shouldNudgeAfterSync('synced')).toBe(true);
+  test("fires on synced (incremental)", () => {
+    expect(shouldNudgeAfterSync("synced")).toBe(true);
   });
 
-  test('fires on up_to_date (no-op sync over a pre-existing backlog)', () => {
-    expect(shouldNudgeAfterSync('up_to_date')).toBe(true);
+  test("fires on up_to_date (no-op sync over a pre-existing backlog)", () => {
+    expect(shouldNudgeAfterSync("up_to_date")).toBe(true);
   });
 
-  test('does NOT fire on dry_run (preview, no real sync)', () => {
-    expect(shouldNudgeAfterSync('dry_run')).toBe(false);
+  test("does NOT fire on dry_run (preview, no real sync)", () => {
+    expect(shouldNudgeAfterSync("dry_run")).toBe(false);
   });
 
-  test('does NOT fire on blocked_by_failures (inconsistent state)', () => {
-    expect(shouldNudgeAfterSync('blocked_by_failures')).toBe(false);
+  test("does NOT fire on blocked_by_failures (inconsistent state)", () => {
+    expect(shouldNudgeAfterSync("blocked_by_failures")).toBe(false);
   });
 
-  test('does NOT fire on partial (inconsistent state)', () => {
-    expect(shouldNudgeAfterSync('partial')).toBe(false);
+  test("does NOT fire on partial (inconsistent state)", () => {
+    expect(shouldNudgeAfterSync("partial")).toBe(false);
   });
 });

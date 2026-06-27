@@ -15,20 +15,19 @@
  * the migration shouldn't touch.
  */
 
-import { existsSync, readFileSync, writeFileSync } from 'fs';
-import { join } from 'path';
+import { existsSync, readFileSync, writeFileSync } from "fs";
+import { join } from "path";
 
-import { findResolverFile } from '../resolver-filenames.ts';
-import { parseMarkdown } from '../markdown.ts';
+import { findResolverFile } from "../resolver-filenames.ts";
+import { parseMarkdown } from "../markdown.ts";
 
-const MANAGED_BEGIN = '<!-- gbrain:skillpack:begin -->';
-const MANAGED_END = '<!-- gbrain:skillpack:end -->';
+const MANAGED_BEGIN = "<!-- gbrain:skillpack:begin -->";
+const MANAGED_END = "<!-- gbrain:skillpack:end -->";
 // Row shape that migrate-fence leaves behind:
 //   | "trigger phrase" | `skills/<slug>/SKILL.md` |
 // Anchored to the start of a line so we don't accidentally strip
 // rows the user typed differently.
-const LEGACY_ROW_RE =
-  /^\| ".*" \| `skills\/([^/`]+)\/SKILL\.md` \|\s*$/;
+const LEGACY_ROW_RE = /^\| ".*" \| `skills\/([^/`]+)\/SKILL\.md` \|\s*$/;
 
 export interface ScrubLegacyOptions {
   targetWorkspace: string;
@@ -46,13 +45,13 @@ export interface ScrubLegacyResult {
 
 export function runScrubLegacy(opts: ScrubLegacyOptions): ScrubLegacyResult {
   const dryRun = opts.dryRun ?? false;
-  const skillsDir = join(opts.targetWorkspace, 'skills');
+  const skillsDir = join(opts.targetWorkspace, "skills");
   const resolverFile = findResolverFile(skillsDir) ?? findResolverFile(opts.targetWorkspace);
   if (!resolverFile) {
     return { resolverFile: null, removed: [], preserved: [], dryRun };
   }
 
-  const content = readFileSync(resolverFile, 'utf-8');
+  const content = readFileSync(resolverFile, "utf-8");
 
   // Determine "outside any current fence" ranges. After migrate-fence,
   // the markers should be gone — but defensively skip rows still
@@ -65,7 +64,7 @@ export function runScrubLegacy(opts: ScrubLegacyOptions): ScrubLegacyResult {
       ? { start: beginIdx, end: endIdx + MANAGED_END.length }
       : null;
 
-  const lines = content.split('\n');
+  const lines = content.split("\n");
   const removed: string[] = [];
   const preserved: string[] = [];
   const outLines: string[] = [];
@@ -101,18 +100,18 @@ export function runScrubLegacy(opts: ScrubLegacyOptions): ScrubLegacyResult {
   }
 
   if (!dryRun && removed.length > 0) {
-    writeFileSync(resolverFile, outLines.join('\n'));
+    writeFileSync(resolverFile, outLines.join("\n"));
   }
 
   return { resolverFile, removed, preserved, dryRun };
 }
 
 function skillHasFrontmatterTriggers(workspace: string, slug: string): boolean {
-  const skillMd = join(workspace, 'skills', slug, 'SKILL.md');
+  const skillMd = join(workspace, "skills", slug, "SKILL.md");
   if (!existsSync(skillMd)) return false;
   let raw: string;
   try {
-    raw = readFileSync(skillMd, 'utf-8');
+    raw = readFileSync(skillMd, "utf-8");
   } catch {
     return false;
   }

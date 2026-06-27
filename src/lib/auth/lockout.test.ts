@@ -272,7 +272,7 @@ describe("Account Lockout", () => {
       const concurrentEmail = `concurrent-${Date.now()}@example.com`;
 
       const results = await Promise.all(
-        Array.from({ length: 5 }, () => recordFailedLogin(concurrentEmail)),
+        Array.from({ length: 5 }, () => recordFailedLogin(concurrentEmail))
       );
 
       const lockedResults = results.filter((r) => r.locked);
@@ -287,9 +287,7 @@ describe("Account Lockout", () => {
     test("10 concurrent attempts all result in locked state", async () => {
       const email = `burst-${Date.now()}@example.com`;
 
-      await Promise.all(
-        Array.from({ length: 10 }, () => recordFailedLogin(email)),
-      );
+      await Promise.all(Array.from({ length: 10 }, () => recordFailedLogin(email)));
 
       const status = await isAccountLocked(email);
       expect(status.locked).toBe(true);

@@ -21,7 +21,7 @@
  * candidates match.
  */
 
-import type { BrainEngine } from '../engine.ts';
+import type { BrainEngine } from "../engine.ts";
 
 /**
  * Canonicalize a free-form entity reference to a page slug.
@@ -41,7 +41,7 @@ import type { BrainEngine } from '../engine.ts';
 export async function resolveEntitySlug(
   engine: BrainEngine,
   source_id: string,
-  raw: string,
+  raw: string
 ): Promise<string | null> {
   if (!raw) return null;
   const trimmed = raw.trim();
@@ -82,7 +82,7 @@ export async function resolveEntitySlug(
  * this gate only fires for short first-name-shaped tokens.
  */
 function isBareName(raw: string): boolean {
-  if (raw.includes('/')) return false;
+  if (raw.includes("/")) return false;
   // One-token input. Whitespace-tokenize: "Alice" → 1, "Alice Example" → 2.
   const tokens = raw.trim().split(/\s+/).filter(Boolean);
   if (tokens.length !== 1) return false;
@@ -90,11 +90,11 @@ function isBareName(raw: string): boolean {
   if (!slug) return false;
   // Reject hyphenated multi-token slugs like "alice-example" — those
   // should hit the exact-slug or fuzzy path, not prefix expansion.
-  if (slug.includes('-')) return false;
+  if (slug.includes("-")) return false;
   return true;
 }
 
-const PREFIX_EXPANSION_DIRS = ['people', 'companies'] as const;
+const PREFIX_EXPANSION_DIRS = ["people", "companies"] as const;
 
 /**
  * v0.40.2.0 — resolution-source-tagged variant for trajectory routing.
@@ -109,7 +109,7 @@ const PREFIX_EXPANSION_DIRS = ['people', 'companies'] as const;
  * The original `resolveEntitySlug` keeps its existing contract (returns
  * just the slug) for all pre-v0.40 call sites — no caller-side churn.
  */
-export type ResolutionSource = 'exact_page' | 'fuzzy_match' | 'fallback_slugify';
+export type ResolutionSource = "exact_page" | "fuzzy_match" | "fallback_slugify";
 
 export interface ResolveResult {
   slug: string;
@@ -119,7 +119,7 @@ export interface ResolveResult {
 export async function resolveEntitySlugWithSource(
   engine: BrainEngine,
   source_id: string,
-  raw: string,
+  raw: string
 ): Promise<ResolveResult | null> {
   if (!raw) return null;
   const trimmed = raw.trim();
@@ -128,18 +128,18 @@ export async function resolveEntitySlugWithSource(
   // Mirror resolveEntitySlug's resolution chain but tag each branch.
   if (looksLikeSlug(trimmed)) {
     const exact = await tryExactSlug(engine, source_id, trimmed);
-    if (exact) return { slug: exact, source: 'exact_page' };
+    if (exact) return { slug: exact, source: "exact_page" };
   }
 
   const fuzzy = await tryFuzzyMatch(engine, source_id, trimmed);
-  if (fuzzy) return { slug: fuzzy, source: 'fuzzy_match' };
+  if (fuzzy) return { slug: fuzzy, source: "fuzzy_match" };
 
   if (isBareName(trimmed)) {
     const expanded = await tryPrefixExpansion(engine, source_id, slugify(trimmed));
-    if (expanded) return { slug: expanded, source: 'fuzzy_match' };
+    if (expanded) return { slug: expanded, source: "fuzzy_match" };
   }
 
-  return { slug: slugify(trimmed), source: 'fallback_slugify' };
+  return { slug: slugify(trimmed), source: "fallback_slugify" };
 }
 
 /**
@@ -163,7 +163,7 @@ export async function resolveEntitySlugWithSource(
 export async function resolvePhantomCanonical(
   engine: BrainEngine,
   source_id: string,
-  phantomSlug: string,
+  phantomSlug: string
 ): Promise<string | null> {
   if (!phantomSlug) return null;
   const trimmed = phantomSlug.trim();
@@ -172,10 +172,10 @@ export async function resolvePhantomCanonical(
   // because phantom slugs ARE the lowercased bare name a fuzzy / prefix
   // lookup would naturally target.
   const fuzzy = await tryFuzzyMatch(engine, source_id, trimmed);
-  if (fuzzy && fuzzy !== phantomSlug && fuzzy.includes('/')) return fuzzy;
+  if (fuzzy && fuzzy !== phantomSlug && fuzzy.includes("/")) return fuzzy;
 
   const expanded = await tryPrefixExpansion(engine, source_id, slugify(trimmed));
-  if (expanded && expanded !== phantomSlug && expanded.includes('/')) return expanded;
+  if (expanded && expanded !== phantomSlug && expanded.includes("/")) return expanded;
 
   return null;
 }
@@ -198,7 +198,7 @@ export async function resolvePhantomCanonical(
 export async function findPrefixCandidates(
   engine: BrainEngine,
   source_id: string,
-  token: string,
+  token: string
 ): Promise<Array<{ slug: string; connection_count: number }>> {
   if (!token) return [];
   // Build LIKE pattern set for each configured directory:
@@ -228,7 +228,7 @@ export async function findPrefixCandidates(
          AND p.slug LIKE ANY($2::text[])
        ORDER BY connection_count DESC, p.slug ASC
        LIMIT 10`,
-      [source_id, patterns],
+      [source_id, patterns]
     );
     return rows;
   } catch {
@@ -251,7 +251,7 @@ export async function findPrefixCandidates(
 async function tryPrefixExpansion(
   engine: BrainEngine,
   source_id: string,
-  token: string,
+  token: string
 ): Promise<string | null> {
   for (const dir of PREFIX_EXPANSION_DIRS) {
     const pattern = `${dir}/${token}-%`;
@@ -288,7 +288,7 @@ async function tryPrefixExpansion(
            AND p.slug LIKE $2
          ORDER BY connection_count DESC, p.slug ASC
          LIMIT 5`,
-        [source_id, pattern],
+        [source_id, pattern]
       );
       if (rows.length === 0) continue;
       // Single unambiguous match: return it.
@@ -317,12 +317,12 @@ function looksLikeSlug(s: string): boolean {
 async function tryExactSlug(
   engine: BrainEngine,
   source_id: string,
-  candidate: string,
+  candidate: string
 ): Promise<string | null> {
   try {
     const rows = await engine.executeRaw<{ slug: string }>(
       `SELECT slug FROM pages WHERE source_id = $1 AND slug = $2 AND deleted_at IS NULL LIMIT 1`,
-      [source_id, candidate],
+      [source_id, candidate]
     );
     if (rows.length > 0) return rows[0].slug;
   } catch {
@@ -334,7 +334,7 @@ async function tryExactSlug(
 async function tryFuzzyMatch(
   engine: BrainEngine,
   source_id: string,
-  raw: string,
+  raw: string
 ): Promise<string | null> {
   const lc = raw.toLowerCase();
   const fragment = slugify(raw);
@@ -357,7 +357,7 @@ async function tryFuzzyMatch(
          )
        ORDER BY score DESC, slug ASC
        LIMIT 3`,
-      [source_id, lc, fragment],
+      [source_id, lc, fragment]
     );
     if (rows.length > 0 && rows[0].score >= 0.4) return rows[0].slug;
   } catch {
@@ -374,14 +374,16 @@ async function tryFuzzyMatch(
  * Exported for tests + callers who want the same fallback shape independently.
  */
 export function slugify(raw: string): string {
-  return raw
-    .toLowerCase()
-    .normalize('NFKD')
-    // NFKD decomposes accents into combining marks (U+0300..U+036F);
-    // strip them before replacing the rest with hyphens so "è" → "e",
-    // not "e" + "-".
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-+|-+$/g, '');
+  return (
+    raw
+      .toLowerCase()
+      .normalize("NFKD")
+      // NFKD decomposes accents into combining marks (U+0300..U+036F);
+      // strip them before replacing the rest with hyphens so "è" → "e",
+      // not "e" + "-".
+      .replace(/[̀-ͯ]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-+|-+$/g, "")
+  );
 }

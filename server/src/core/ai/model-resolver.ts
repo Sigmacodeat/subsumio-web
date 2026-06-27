@@ -2,9 +2,17 @@
  * Parse and validate `provider:model` strings against the recipe registry.
  */
 
-import type { ParsedModelId, Recipe, TouchpointKind, ChatTouchpoint, EmbeddingTouchpoint, ExpansionTouchpoint, RerankerTouchpoint } from './types.ts';
-import { getRecipe, RECIPES } from './recipes/index.ts';
-import { AIConfigError } from './errors.ts';
+import type {
+  ParsedModelId,
+  Recipe,
+  TouchpointKind,
+  ChatTouchpoint,
+  EmbeddingTouchpoint,
+  ExpansionTouchpoint,
+  RerankerTouchpoint,
+} from "./types.ts";
+import { getRecipe, RECIPES } from "./recipes/index.ts";
+import { AIConfigError } from "./errors.ts";
 
 /**
  * Split "openai:text-embedding-3-large" or "openai/text-embedding-3-large"
@@ -23,23 +31,23 @@ import { AIConfigError } from './errors.ts';
  * doesn't tell us which provider to route through.
  */
 export function parseModelId(id: string): ParsedModelId {
-  if (!id || typeof id !== 'string') {
+  if (!id || typeof id !== "string") {
     throw new AIConfigError(
       `Invalid model id: ${JSON.stringify(id)}`,
-      'Expected format: provider:model (e.g. openai:text-embedding-3-large)',
+      "Expected format: provider:model (e.g. openai:text-embedding-3-large)"
     );
   }
   // Colon wins over slash (OpenRouter nested-id semantic).
-  const colon = id.indexOf(':');
+  const colon = id.indexOf(":");
   let sepIdx: number;
   if (colon !== -1) {
     sepIdx = colon;
   } else {
-    const slash = id.indexOf('/');
+    const slash = id.indexOf("/");
     if (slash === -1) {
       throw new AIConfigError(
         `Model id "${id}" is missing a provider prefix.`,
-        'Use format provider:model (preferred) or provider/model, e.g. openai:text-embedding-3-large',
+        "Use format provider:model (preferred) or provider/model, e.g. openai:text-embedding-3-large"
       );
     }
     sepIdx = slash;
@@ -49,7 +57,7 @@ export function parseModelId(id: string): ParsedModelId {
   if (!providerId || !modelId) {
     throw new AIConfigError(
       `Model id "${id}" has empty provider or model.`,
-      'Use format provider:model, e.g. openai:text-embedding-3-large',
+      "Use format provider:model, e.g. openai:text-embedding-3-large"
     );
   }
   return { providerId, modelId };
@@ -66,7 +74,7 @@ export function resolveRecipe(modelId: string): { parsed: ParsedModelId; recipe:
   if (!recipe) {
     throw new AIConfigError(
       `Unknown provider: "${parsed.providerId}"`,
-      `Known providers: ${[...knownProviderIds()].join(', ')}. Add a new recipe at src/core/ai/recipes/.`,
+      `Known providers: ${[...knownProviderIds()].join(", ")}. Add a new recipe at src/core/ai/recipes/.`
     );
   }
   // Apply alias if the modelId matches an alias key. Canonical wins.
@@ -77,10 +85,18 @@ export function resolveRecipe(modelId: string): { parsed: ParsedModelId; recipe:
   return { parsed, recipe };
 }
 
-type KnownTouchpointKey = 'embedding' | 'expansion' | 'chat' | 'reranker';
+type KnownTouchpointKey = "embedding" | "expansion" | "chat" | "reranker";
 
-function getTouchpoint(recipe: Recipe, touchpoint: TouchpointKind): EmbeddingTouchpoint | ExpansionTouchpoint | ChatTouchpoint | RerankerTouchpoint | undefined {
-  if (touchpoint === 'embedding' || touchpoint === 'expansion' || touchpoint === 'chat' || touchpoint === 'reranker') {
+function getTouchpoint(
+  recipe: Recipe,
+  touchpoint: TouchpointKind
+): EmbeddingTouchpoint | ExpansionTouchpoint | ChatTouchpoint | RerankerTouchpoint | undefined {
+  if (
+    touchpoint === "embedding" ||
+    touchpoint === "expansion" ||
+    touchpoint === "chat" ||
+    touchpoint === "reranker"
+  ) {
     return recipe.touchpoints[touchpoint as KnownTouchpointKey];
   }
   return undefined;
@@ -109,23 +125,23 @@ export function assertTouchpoint(
   recipe: Recipe,
   touchpoint: TouchpointKind,
   modelId: string,
-  extendedModels?: ReadonlySet<string>,
+  extendedModels?: ReadonlySet<string>
 ): void {
   const tp = getTouchpoint(recipe, touchpoint);
   if (!tp) {
     throw new AIConfigError(
       `Provider "${recipe.id}" does not support touchpoint "${touchpoint}".`,
-      touchpoint === 'embedding' && recipe.id === 'anthropic'
-        ? 'Anthropic has no embedding model. Use openai or google for embeddings.'
-        : touchpoint === 'chat' && (recipe.id === 'voyage' || recipe.id === 'ollama')
+      touchpoint === "embedding" && recipe.id === "anthropic"
+        ? "Anthropic has no embedding model. Use openai or google for embeddings."
+        : touchpoint === "chat" && (recipe.id === "voyage" || recipe.id === "ollama")
           ? `${recipe.name} is configured here only for embeddings. Use openai/anthropic/google/deepseek/groq/together for chat.`
-          : undefined,
+          : undefined
     );
   }
   const supportedModels = tp.models ?? [];
   if (supportedModels.length > 0 && !supportedModels.includes(modelId)) {
     // Non-fatal: providers like ollama/litellm accept arbitrary model ids. We only warn for native providers.
-    if (recipe.tier === 'native') {
+    if (recipe.tier === "native") {
       // v0.31.12 recipe-models merge: if the user opted into this model via
       // config (cfg.chat_model, models.default, models.tier.*), skip the
       // throw. The model goes to the provider; provider 404s surface as
@@ -135,7 +151,7 @@ export function assertTouchpoint(
       }
       throw new AIConfigError(
         `Model "${modelId}" is not listed for ${recipe.name} ${touchpoint}.`,
-        `Known models: ${supportedModels.join(', ')}. Use one of these or add it to the recipe (or add an alias).`,
+        `Known models: ${supportedModels.join(", ")}. Use one of these or add it to the recipe (or add an alias).`
       );
     }
   }

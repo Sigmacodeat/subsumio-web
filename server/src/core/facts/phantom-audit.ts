@@ -24,15 +24,15 @@
  * future doctor check binds to.
  */
 
-import { createAuditWriter, computeIsoWeekFilename } from '../audit/audit-writer.ts';
+import { createAuditWriter, computeIsoWeekFilename } from "../audit/audit-writer.ts";
 
 export type PhantomOutcome =
-  | 'redirected'
-  | 'ambiguous'
-  | 'drift'
-  | 'no_canonical'
-  | 'not_phantom_has_residue'
-  | 'pass_skipped_lock_busy';
+  | "redirected"
+  | "ambiguous"
+  | "drift"
+  | "no_canonical"
+  | "not_phantom_has_residue"
+  | "pass_skipped_lock_busy";
 
 export interface PhantomAuditEvent {
   ts: string;
@@ -47,14 +47,14 @@ export interface PhantomAuditEvent {
 
 /** ISO-week-rotated filename: `phantoms-YYYY-Www.jsonl`. */
 export function computePhantomAuditFilename(now: Date = new Date()): string {
-  return computeIsoWeekFilename('phantoms', now);
+  return computeIsoWeekFilename("phantoms", now);
 }
 
 const writer = createAuditWriter<PhantomAuditEvent>({
-  featureName: 'phantoms',
-  errorLabel: 'gbrain',
-  errorMessagePrefix: 'phantom audit ',
-  errorTrailer: '; cycle continues',
+  featureName: "phantoms",
+  errorLabel: "gbrain",
+  errorMessagePrefix: "phantom audit ",
+  errorTrailer: "; cycle continues",
 });
 
 /**
@@ -63,14 +63,14 @@ const writer = createAuditWriter<PhantomAuditEvent>({
  * `ts` is stamped at call time (caller-provided overrides honored). Write
  * failure is logged to stderr; the caller's cycle continues either way.
  */
-export function logPhantomEvent(event: Omit<PhantomAuditEvent, 'ts'> & { ts?: string }): void {
+export function logPhantomEvent(event: Omit<PhantomAuditEvent, "ts"> & { ts?: string }): void {
   // Strip optional undefined fields to preserve the pre-v0.40.4 wire shape
   // (the old impl used a spread-with-conditional to omit absent fields,
   // not surface them as `field: undefined`). JSON.stringify already drops
   // explicit undefined, so this matters only for in-memory shape — which
   // doctor + tests do depend on. Pass through verbatim; downstream
   // JSON.stringify handles the undefined-strip.
-  const cleaned: Omit<PhantomAuditEvent, 'ts'> & { ts?: string } = {
+  const cleaned: Omit<PhantomAuditEvent, "ts"> & { ts?: string } = {
     outcome: event.outcome,
     source_id: event.source_id,
     ...(event.phantom_slug !== undefined ? { phantom_slug: event.phantom_slug } : {}),

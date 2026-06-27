@@ -9,32 +9,32 @@
  * ThinkLLMClient so the full pipeline runs without any API key.
  */
 
-import { readFileSync, existsSync, openSync, writeSync, closeSync, writeFileSync } from 'fs';
-import Anthropic from '@anthropic-ai/sdk';
-import { withBenchmarkBrain, resetTables } from '../eval/longmemeval/harness.ts';
-import { haystackToPages, type LongMemEvalQuestion } from '../eval/longmemeval/adapter.ts';
-import { renderChatBlock, type ChatSessionForPrompt } from '../eval/longmemeval/sanitize.ts';
-import { importFromContent } from '../core/import-file.ts';
-import { hybridSearch } from '../core/search/hybrid.ts';
-import { expandQuery } from '../core/search/expansion.ts';
-import { resolveModel } from '../core/model-config.ts';
-import type { ThinkLLMClient } from '../core/think/index.ts';
-import { createProgress } from '../core/progress.ts';
-import { getCliOptions, cliOptsToProgressOptions } from '../core/cli-options.ts';
-import type { PGLiteEngine } from '../core/pglite-engine.ts';
-import type { SearchResult } from '../core/types.ts';
+import { readFileSync, existsSync, openSync, writeSync, closeSync, writeFileSync } from "fs";
+import Anthropic from "@anthropic-ai/sdk";
+import { withBenchmarkBrain, resetTables } from "../eval/longmemeval/harness.ts";
+import { haystackToPages, type LongMemEvalQuestion } from "../eval/longmemeval/adapter.ts";
+import { renderChatBlock, type ChatSessionForPrompt } from "../eval/longmemeval/sanitize.ts";
+import { importFromContent } from "../core/import-file.ts";
+import { hybridSearch } from "../core/search/hybrid.ts";
+import { expandQuery } from "../core/search/expansion.ts";
+import { resolveModel } from "../core/model-config.ts";
+import type { ThinkLLMClient } from "../core/think/index.ts";
+import { createProgress } from "../core/progress.ts";
+import { getCliOptions, cliOptsToProgressOptions } from "../core/cli-options.ts";
+import type { PGLiteEngine } from "../core/pglite-engine.ts";
+import type { SearchResult } from "../core/types.ts";
 // v0.40.2.0 — trajectory routing imports.
-import { classifyIntent, type Intent } from '../eval/longmemeval/intent.ts';
+import { classifyIntent, type Intent } from "../eval/longmemeval/intent.ts";
 import {
   extractAndInsertClaims,
   makeAliasMap,
   resetExtractorState,
   getCacheStats,
   type AliasMap,
-} from '../eval/longmemeval/extract.ts';
-import { extractCandidateEntities } from '../core/think/entity-extract.ts';
-import { resolveEntitySlugWithSource, type ResolutionSource } from '../core/entities/resolve.ts';
-import { formatTrajectoryBlock } from '../core/trajectory-format.ts';
+} from "../eval/longmemeval/extract.ts";
+import { extractCandidateEntities } from "../core/think/entity-extract.ts";
+import { resolveEntitySlugWithSource, type ResolutionSource } from "../core/entities/resolve.ts";
+import { formatTrajectoryBlock } from "../core/trajectory-format.ts";
 
 /**
  * v0.40.2.0 — methodology disclosure marker. Stamped on the top-level
@@ -45,9 +45,9 @@ import { formatTrajectoryBlock } from '../core/trajectory-format.ts';
  * comparable to LongMemEval's published baselines without this
  * disclosure.
  */
-const TRAJECTORY_METHODOLOGY_NOTE = 'extractor=haiku-preprocess-full-haystack-v1';
+const TRAJECTORY_METHODOLOGY_NOTE = "extractor=haiku-preprocess-full-haystack-v1";
 
-const HUGGINGFACE_URL = 'https://huggingface.co/datasets/xiaowu0162/longmemeval';
+const HUGGINGFACE_URL = "https://huggingface.co/datasets/xiaowu0162/longmemeval";
 
 interface ParsedArgs {
   help: boolean;
@@ -60,7 +60,7 @@ interface ParsedArgs {
   topK: number;
   outputPath?: string;
   /** v0.32.3 — search-lite mode to evaluate under. Resolves through resolveSearchMode. */
-  mode?: 'conservative' | 'balanced' | 'tokenmax';
+  mode?: "conservative" | "balanced" | "tokenmax";
   /**
    * v0.35.1.0 — path to a previous run's hypothesis JSONL. Question IDs
    * already present in the file are skipped on this run; the run resumes
@@ -102,18 +102,51 @@ function parseArgs(args: string[]): ParsedArgs {
   };
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
-    if (a === '--help' || a === '-h') { out.help = true; continue; }
-    if (a === '--retrieval-only') { out.retrievalOnly = true; continue; }
-    if (a === '--keyword-only') { out.keywordOnly = true; continue; }
-    if (a === '--expansion') { out.expansion = true; continue; }
-    if (a === '--no-trajectory') { out.noTrajectory = true; continue; }
-    if (a === '--limit') { out.limit = Number(args[++i]); continue; }
-    if (a === '--model') { out.model = args[++i]; continue; }
-    if (a === '--top-k') { out.topK = Number(args[++i]); continue; }
-    if (a === '--output') { out.outputPath = args[++i]; continue; }
-    if (a === '--resume-from') { out.resumeFromPath = args[++i]; continue; }
-    if (a === '--by-type') { out.byType = true; continue; }
-    if (a === '--by-type-floor') {
+    if (a === "--help" || a === "-h") {
+      out.help = true;
+      continue;
+    }
+    if (a === "--retrieval-only") {
+      out.retrievalOnly = true;
+      continue;
+    }
+    if (a === "--keyword-only") {
+      out.keywordOnly = true;
+      continue;
+    }
+    if (a === "--expansion") {
+      out.expansion = true;
+      continue;
+    }
+    if (a === "--no-trajectory") {
+      out.noTrajectory = true;
+      continue;
+    }
+    if (a === "--limit") {
+      out.limit = Number(args[++i]);
+      continue;
+    }
+    if (a === "--model") {
+      out.model = args[++i];
+      continue;
+    }
+    if (a === "--top-k") {
+      out.topK = Number(args[++i]);
+      continue;
+    }
+    if (a === "--output") {
+      out.outputPath = args[++i];
+      continue;
+    }
+    if (a === "--resume-from") {
+      out.resumeFromPath = args[++i];
+      continue;
+    }
+    if (a === "--by-type") {
+      out.byType = true;
+      continue;
+    }
+    if (a === "--by-type-floor") {
       const v = Number(args[++i]);
       if (!Number.isFinite(v) || v < 0 || v > 1) {
         throw new Error(`--by-type-floor must be a number in [0, 1] (got: ${args[i]})`);
@@ -122,16 +155,19 @@ function parseArgs(args: string[]): ParsedArgs {
       out.byType = true; // --by-type-floor implies --by-type
       continue;
     }
-    if (a === '--mode') {
+    if (a === "--mode") {
       const v = args[++i];
-      if (v === 'conservative' || v === 'balanced' || v === 'tokenmax') {
+      if (v === "conservative" || v === "balanced" || v === "tokenmax") {
         out.mode = v;
       } else {
         throw new Error(`--mode must be one of conservative|balanced|tokenmax (got: ${v})`);
       }
       continue;
     }
-    if (!a.startsWith('-') && !out.datasetPath) { out.datasetPath = a; continue; }
+    if (!a.startsWith("-") && !out.datasetPath) {
+      out.datasetPath = a;
+      continue;
+    }
   }
   return out;
 }
@@ -139,41 +175,41 @@ function parseArgs(args: string[]): ParsedArgs {
 function printHelp(): void {
   process.stderr.write(
     `gbrain eval longmemeval <dataset.jsonl> [options]\n\n` +
-    `Run the LongMemEval benchmark against gbrain's hybrid retrieval. Spins up an\n` +
-    `in-memory PGLite per benchmark run; the user's brain is never opened.\n\n` +
-    `Arguments:\n` +
-    `  <dataset.jsonl>           LongMemEval dataset file (one question per line).\n` +
-    `                            Download from ${HUGGINGFACE_URL}\n\n` +
-    `Options:\n` +
-    `  --limit N                 Run only the first N questions.\n` +
-    `  --model M                 Override answer-generation model (default: resolveModel).\n` +
-    `  --retrieval-only          Skip LLM answer generation; emit retrieved sessions instead.\n` +
-    `  --keyword-only            Skip vector embedding; pure keyword retrieval.\n` +
-    `  --expansion               Enable multi-query expansion (off by default for benchmarks).\n` +
-    `                            Costs one Haiku call per question; non-deterministic.\n` +
-    `  --top-k K                 Retrieve K sessions per question (default: 8).\n` +
-    `  --mode M                  v0.32.3 — search-lite mode: conservative|balanced|tokenmax.\n` +
-    `                            Mode resolves through src/core/search/mode.ts so the search\n` +
-    `                            behavior matches what production gets under that mode.\n` +
-    `                            --mode tokenmax implies --expansion unless overridden.\n` +
-    `  --output FILE             Write JSONL to FILE instead of stdout.\n` +
-    `  --resume-from FILE        Skip question_ids already present in FILE; resume the\n` +
-    `                            remaining questions. Typically the same path as --output\n` +
-    `                            so the run continues writing in append mode. Recovery for\n` +
-    `                            mid-run aborts (rate-limit, cost-cap, OS interrupt).\n` +
-    `  --no-trajectory           v0.40.2.0 — opt out of trajectory routing for an A/B run.\n` +
-    `                            Skips the Haiku claim extractor AND the per-question intent\n` +
-    `                            routing. Use this to baseline against the default-on path\n` +
-    `                            with paired-bootstrap CI across 3 seeds.\n` +
-    `  --by-type                 v0.40.1.0 — emit a final JSON line with per-question-type\n` +
-    `                            R@k breakdown. Shape: {schema_version,kind:"by_type_summary",\n` +
-    `                            recall_by_type:{...},aggregate:{...}}. Resume-safe: a prior\n` +
-    `                            summary at the tail is REPLACED, not appended.\n` +
-    `  --by-type-floor F         v0.40.1.0 — exit non-zero if any question_type rate < F\n` +
-    `                            (range [0, 1]). Implies --by-type. Default: no gate.\n` +
-    `  -h, --help                Show this help.\n\n` +
-    `Note: a full 500-question run takes ~20-60 minutes depending on flags. Use\n` +
-    `--limit during development.\n`,
+      `Run the LongMemEval benchmark against gbrain's hybrid retrieval. Spins up an\n` +
+      `in-memory PGLite per benchmark run; the user's brain is never opened.\n\n` +
+      `Arguments:\n` +
+      `  <dataset.jsonl>           LongMemEval dataset file (one question per line).\n` +
+      `                            Download from ${HUGGINGFACE_URL}\n\n` +
+      `Options:\n` +
+      `  --limit N                 Run only the first N questions.\n` +
+      `  --model M                 Override answer-generation model (default: resolveModel).\n` +
+      `  --retrieval-only          Skip LLM answer generation; emit retrieved sessions instead.\n` +
+      `  --keyword-only            Skip vector embedding; pure keyword retrieval.\n` +
+      `  --expansion               Enable multi-query expansion (off by default for benchmarks).\n` +
+      `                            Costs one Haiku call per question; non-deterministic.\n` +
+      `  --top-k K                 Retrieve K sessions per question (default: 8).\n` +
+      `  --mode M                  v0.32.3 — search-lite mode: conservative|balanced|tokenmax.\n` +
+      `                            Mode resolves through src/core/search/mode.ts so the search\n` +
+      `                            behavior matches what production gets under that mode.\n` +
+      `                            --mode tokenmax implies --expansion unless overridden.\n` +
+      `  --output FILE             Write JSONL to FILE instead of stdout.\n` +
+      `  --resume-from FILE        Skip question_ids already present in FILE; resume the\n` +
+      `                            remaining questions. Typically the same path as --output\n` +
+      `                            so the run continues writing in append mode. Recovery for\n` +
+      `                            mid-run aborts (rate-limit, cost-cap, OS interrupt).\n` +
+      `  --no-trajectory           v0.40.2.0 — opt out of trajectory routing for an A/B run.\n` +
+      `                            Skips the Haiku claim extractor AND the per-question intent\n` +
+      `                            routing. Use this to baseline against the default-on path\n` +
+      `                            with paired-bootstrap CI across 3 seeds.\n` +
+      `  --by-type                 v0.40.1.0 — emit a final JSON line with per-question-type\n` +
+      `                            R@k breakdown. Shape: {schema_version,kind:"by_type_summary",\n` +
+      `                            recall_by_type:{...},aggregate:{...}}. Resume-safe: a prior\n` +
+      `                            summary at the tail is REPLACED, not appended.\n` +
+      `  --by-type-floor F         v0.40.1.0 — exit non-zero if any question_type rate < F\n` +
+      `                            (range [0, 1]). Implies --by-type. Default: no gate.\n` +
+      `  -h, --help                Show this help.\n\n` +
+      `Note: a full 500-question run takes ~20-60 minutes depending on flags. Use\n` +
+      `--limit during development.\n`
   );
 }
 
@@ -187,23 +223,27 @@ function makeEmitter(outputPath?: string, append: boolean = false): JsonlEmitter
     return {
       emit(obj) {
         const json = JSON.stringify(obj);
-        if (json.includes('\r')) throw new Error('CRLF in JSONL emit (corrupt input)');
-        process.stdout.write(Buffer.from(json + '\n', 'utf8'));
+        if (json.includes("\r")) throw new Error("CRLF in JSONL emit (corrupt input)");
+        process.stdout.write(Buffer.from(json + "\n", "utf8"));
       },
-      close() { /* stdout stays open */ },
+      close() {
+        /* stdout stays open */
+      },
     };
   }
   // v0.35.1.0: append mode used by --resume-from when output path overlaps the
   // resume file. Truncating ('w') would erase the already-answered questions
   // we just loaded into resumeSet.
-  const fd = openSync(outputPath, append ? 'a' : 'w');
+  const fd = openSync(outputPath, append ? "a" : "w");
   return {
     emit(obj) {
       const json = JSON.stringify(obj);
-      if (json.includes('\r')) throw new Error('CRLF in JSONL emit (corrupt input)');
-      writeSync(fd, Buffer.from(json + '\n', 'utf8'));
+      if (json.includes("\r")) throw new Error("CRLF in JSONL emit (corrupt input)");
+      writeSync(fd, Buffer.from(json + "\n", "utf8"));
     },
-    close() { closeSync(fd); },
+    close() {
+      closeSync(fd);
+    },
   };
 }
 
@@ -221,9 +261,9 @@ function makeEmitter(outputPath?: string, append: boolean = false): JsonlEmitter
 export function loadResumeSet(resumePath: string): Set<string> {
   const done = new Set<string>();
   if (!existsSync(resumePath)) return done;
-  const raw = readFileSync(resumePath, 'utf8');
+  const raw = readFileSync(resumePath, "utf8");
   let lineNo = 0;
-  for (const line of raw.split('\n')) {
+  for (const line of raw.split("\n")) {
     lineNo++;
     if (!line.trim()) continue;
     let row: { question_id?: string; hypothesis?: string; error?: string };
@@ -235,9 +275,9 @@ export function loadResumeSet(resumePath: string): Set<string> {
       process.stderr.write(`[longmemeval] resume: skipping corrupt line ${lineNo}\n`);
       continue;
     }
-    if (typeof row.question_id !== 'string') continue;
+    if (typeof row.question_id !== "string") continue;
     // Skip rows that recorded an error with no hypothesis — retry these.
-    if (row.error && (!row.hypothesis || row.hypothesis === '')) continue;
+    if (row.error && (!row.hypothesis || row.hypothesis === "")) continue;
     done.add(row.question_id);
   }
   return done;
@@ -245,16 +285,13 @@ export function loadResumeSet(resumePath: string): Set<string> {
 
 function loadDataset(datasetPath: string): LongMemEvalQuestion[] {
   if (!existsSync(datasetPath)) {
-    throw new Error(
-      `dataset not found: ${datasetPath}\n` +
-      `Download from ${HUGGINGFACE_URL}`,
-    );
+    throw new Error(`dataset not found: ${datasetPath}\n` + `Download from ${HUGGINGFACE_URL}`);
   }
-  const raw = readFileSync(datasetPath, 'utf8');
+  const raw = readFileSync(datasetPath, "utf8");
   const out: LongMemEvalQuestion[] = [];
   // Try JSONL first; if it parses as a single JSON array, accept that too.
   const trimmed = raw.trimStart();
-  if (trimmed.startsWith('[')) {
+  if (trimmed.startsWith("[")) {
     const arr = JSON.parse(raw);
     if (!Array.isArray(arr)) {
       throw new Error(`dataset ${datasetPath} parsed as JSON but is not an array`);
@@ -262,7 +299,7 @@ function loadDataset(datasetPath: string): LongMemEvalQuestion[] {
     return arr as LongMemEvalQuestion[];
   }
   let lineNo = 0;
-  for (const line of raw.split('\n')) {
+  for (const line of raw.split("\n")) {
     lineNo++;
     if (!line.trim()) continue;
     try {
@@ -283,14 +320,14 @@ function renderRetrievedAsHypothesis(results: SearchResult[]): string {
     const sid = sessionIdFromSlug(r.slug);
     lines.push(`session_id: ${sid}`);
     lines.push(r.chunk_text);
-    lines.push('');
+    lines.push("");
   }
-  return lines.join('\n').trim();
+  return lines.join("\n").trim();
 }
 
 function sessionIdFromSlug(slug: string): string {
   // slug is `chat/<session_id>` per adapter.ts.
-  const idx = slug.indexOf('/');
+  const idx = slug.indexOf("/");
   return idx >= 0 ? slug.slice(idx + 1) : slug;
 }
 
@@ -313,7 +350,7 @@ async function generateAnswer(
   results: SearchResult[],
   pages: { slug: string; content: string; date?: string }[],
   model: string,
-  trajectoryBlock: string = '',
+  trajectoryBlock: string = ""
 ): Promise<string> {
   // Build a slug -> {body, date} lookup so we can render the retrieved chunks
   // with their session_id and date for the prompt.
@@ -345,22 +382,20 @@ async function generateAnswer(
   // v0.40.2.0 — splice the trajectory block BEFORE the retrieved
   // sessions when present. Empty block (no entity match / no points)
   // → no "Known trajectory:" header, no cue to the model.
-  const trajectorySection = trajectoryBlock.length > 0
-    ? `Known trajectory:\n${trajectoryBlock}\n\n`
-    : '';
-  const userText =
-    `Question:\n${question}\n\n${trajectorySection}Retrieved sessions:\n${rendered}`;
+  const trajectorySection =
+    trajectoryBlock.length > 0 ? `Known trajectory:\n${trajectoryBlock}\n\n` : "";
+  const userText = `Question:\n${question}\n\n${trajectorySection}Retrieved sessions:\n${rendered}`;
 
   const response = await client.create({
     model,
     max_tokens: 512,
     system: systemText,
-    messages: [{ role: 'user', content: userText }],
+    messages: [{ role: "user", content: userText }],
   });
   for (const block of response.content) {
-    if (block.type === 'text') return block.text.trim();
+    if (block.type === "text") return block.text.trim();
   }
-  return '';
+  return "";
 }
 
 export interface RunOpts {
@@ -396,7 +431,10 @@ export interface RunOpts {
 
 export async function runEvalLongMemEval(args: string[], runOpts: RunOpts = {}): Promise<void> {
   const opts = parseArgs(args);
-  if (opts.help) { printHelp(); return; }
+  if (opts.help) {
+    printHelp();
+    return;
+  }
   if (!opts.datasetPath) {
     process.stderr.write(`Error: <dataset.jsonl> is required.\n\n`);
     printHelp();
@@ -427,13 +465,17 @@ export async function runEvalLongMemEval(args: string[], runOpts: RunOpts = {}):
   if (opts.resumeFromPath) {
     const done = loadResumeSet(opts.resumeFromPath);
     const before = questions.length;
-    questions = questions.filter(q => !done.has(q.question_id));
-    process.stderr.write(`[longmemeval] resume: ${done.size} already done; ${questions.length}/${before} remaining\n`);
+    questions = questions.filter((q) => !done.has(q.question_id));
+    process.stderr.write(
+      `[longmemeval] resume: ${done.size} already done; ${questions.length}/${before} remaining\n`
+    );
     if (opts.outputPath && opts.resumeFromPath === opts.outputPath) {
       appendOutput = true;
     }
     if (questions.length === 0) {
-      process.stderr.write(`[longmemeval] resume: nothing to do (all questions already answered).\n`);
+      process.stderr.write(
+        `[longmemeval] resume: nothing to do (all questions already answered).\n`
+      );
       // v0.40.1.0 Track D (codex CDX-3): even a no-op resume must run the
       // --by-type summary emission + --by-type-floor enforcement against
       // the existing file's rows. Skipping these steps would let a prior
@@ -452,7 +494,9 @@ export async function runEvalLongMemEval(args: string[], runOpts: RunOpts = {}):
             }
           }
           if (breaches.length > 0) {
-            process.stderr.write(`[longmemeval] FAIL --by-type-floor=${floor}: ${breaches.join(', ')}\n`);
+            process.stderr.write(
+              `[longmemeval] FAIL --by-type-floor=${floor}: ${breaches.join(", ")}\n`
+            );
             process.exit(1);
           }
         }
@@ -463,9 +507,9 @@ export async function runEvalLongMemEval(args: string[], runOpts: RunOpts = {}):
 
   const model = await resolveModel(null, {
     cliFlag: opts.model,
-    configKey: 'models.eval.longmemeval',
-    envVar: 'GBRAIN_MODEL',
-    fallback: 'sonnet',
+    configKey: "models.eval.longmemeval",
+    envVar: "GBRAIN_MODEL",
+    fallback: "sonnet",
   });
 
   // Wrap Anthropic SDK so its `.messages.create` shape matches ThinkLLMClient.
@@ -482,21 +526,25 @@ export async function runEvalLongMemEval(args: string[], runOpts: RunOpts = {}):
   const extractorModel = trajectoryEnabled
     ? await resolveModel(null, {
         cliFlag: runOpts.extractorModel,
-        tier: 'utility',
-        fallback: 'haiku',
+        tier: "utility",
+        fallback: "haiku",
       })
-    : '';
+    : "";
 
-  process.stderr.write(`[longmemeval] estimated 20-60 minutes for ${questions.length} questions; use --limit N for shorter runs\n`);
+  process.stderr.write(
+    `[longmemeval] estimated 20-60 minutes for ${questions.length} questions; use --limit N for shorter runs\n`
+  );
   process.stderr.write(`[longmemeval] connecting in-memory brain...\n`);
-  process.stderr.write(`[longmemeval] starting (questions: ${questions.length}, model: ${model}, expansion: ${opts.expansion ? 'on' : 'off'}${opts.mode ? `, mode: ${opts.mode}` : ''}, trajectory: ${trajectoryEnabled ? 'on' : 'off'}${trajectoryEnabled ? `, extractor: ${extractorModel}` : ''})\n`);
+  process.stderr.write(
+    `[longmemeval] starting (questions: ${questions.length}, model: ${model}, expansion: ${opts.expansion ? "on" : "off"}${opts.mode ? `, mode: ${opts.mode}` : ""}, trajectory: ${trajectoryEnabled ? "on" : "off"}${trajectoryEnabled ? `, extractor: ${extractorModel}` : ""})\n`
+  );
   if (trajectoryEnabled) {
     resetExtractorState();
   }
 
   const emitter = makeEmitter(opts.outputPath, appendOutput);
   const progress = createProgress(cliOptsToProgressOptions(getCliOptions()));
-  progress.start('eval.longmemeval', questions.length);
+  progress.start("eval.longmemeval", questions.length);
 
   // Per-type accuracy counters (computed only when ground truth is reachable).
   const recallByType: Record<string, { hit: number; total: number }> = {};
@@ -521,7 +569,7 @@ export async function runEvalLongMemEval(args: string[], runOpts: RunOpts = {}):
     // resetTables preserves `config` between questions, so this fires once
     // for the run. hybridSearch resolves it through the standard chain.
     if (opts.mode) {
-      await engine.setConfig('search.mode', opts.mode);
+      await engine.setConfig("search.mode", opts.mode);
     }
     for (const q of questions) {
       const qStart = Date.now();
@@ -543,14 +591,14 @@ export async function runEvalLongMemEval(args: string[], runOpts: RunOpts = {}):
           question_id: q.question_id,
           question: q.question,
           question_type: q.question_type,
-          hypothesis: '',
+          hypothesis: "",
           error: String(err?.message ?? err),
         });
         progress.tick(1, `${q.question_id} (error)`);
       }
       // Per-question latency surfaced in stderr at debug level only — keeps
       // CI logs grep-able without spamming a 500-question run.
-      if (process.env.GBRAIN_LME_DEBUG === '1') {
+      if (process.env.GBRAIN_LME_DEBUG === "1") {
         process.stderr.write(`[longmemeval] ${q.question_id} ${Date.now() - qStart}ms\n`);
       }
     }
@@ -570,7 +618,9 @@ export async function runEvalLongMemEval(args: string[], runOpts: RunOpts = {}):
 
   // Summary to stderr.
   const elapsed = Math.round((Date.now() - runStart) / 1000);
-  process.stderr.write(`\n[longmemeval] done. ${questions.length} questions in ${elapsed}s. ${errorCount} errors.\n`);
+  process.stderr.write(
+    `\n[longmemeval] done. ${questions.length} questions in ${elapsed}s. ${errorCount} errors.\n`
+  );
   if (Object.keys(recallByType).length > 0) {
     process.stderr.write(`[longmemeval] retrieval recall by question_type:\n`);
     for (const [t, v] of Object.entries(recallByType).sort()) {
@@ -584,7 +634,9 @@ export async function runEvalLongMemEval(args: string[], runOpts: RunOpts = {}):
     const cache = getCacheStats();
     const total = cache.hits + cache.misses;
     const pct = total === 0 ? 0 : (cache.hits / total) * 100;
-    process.stderr.write(`[longmemeval] extractor.cache_hits: ${cache.hits} / ${total} sessions (${pct.toFixed(1)}%, cached_bodies=${cache.size})\n`);
+    process.stderr.write(
+      `[longmemeval] extractor.cache_hits: ${cache.hits} / ${total} sessions (${pct.toFixed(1)}%, cached_bodies=${cache.size})\n`
+    );
     process.stderr.write(`[longmemeval] methodology_note: ${TRAJECTORY_METHODOLOGY_NOTE}\n`);
   }
 
@@ -600,10 +652,13 @@ export async function runEvalLongMemEval(args: string[], runOpts: RunOpts = {}):
       const floor = opts.byTypeFloor;
       const breaches: string[] = [];
       for (const [t, v] of Object.entries(summary.recall_by_type)) {
-        if (v.rate < floor) breaches.push(`${t}: ${(v.rate * 100).toFixed(1)}% < ${(floor * 100).toFixed(1)}%`);
+        if (v.rate < floor)
+          breaches.push(`${t}: ${(v.rate * 100).toFixed(1)}% < ${(floor * 100).toFixed(1)}%`);
       }
       if (breaches.length > 0) {
-        process.stderr.write(`[longmemeval] FAIL --by-type-floor=${floor}: ${breaches.join(', ')}\n`);
+        process.stderr.write(
+          `[longmemeval] FAIL --by-type-floor=${floor}: ${breaches.join(", ")}\n`
+        );
         process.exit(1);
       }
     }
@@ -624,7 +679,7 @@ async function runOneQuestion(
   client: ThinkLLMClient,
   emitter: JsonlEmitter,
   recallByType: Record<string, { hit: number; total: number }>,
-  traj: TrajectoryRunOpts,
+  traj: TrajectoryRunOpts
 ): Promise<void> {
   await resetTables(engine);
   const adapterPages = haystackToPages(q);
@@ -652,7 +707,7 @@ async function runOneQuestion(
         sessionSlug: p.slug,
         sessionId: sessionIdFromSlug(p.slug),
         sessionBody: p.content,
-        sourceId: 'default',
+        sourceId: "default",
         aliasMap,
       });
     }
@@ -672,25 +727,26 @@ async function runOneQuestion(
   // Recall: did any retrieved session match ground-truth answer_session_ids?
   if (q.answer_session_ids && q.answer_session_ids.length > 0) {
     const gt = new Set(q.answer_session_ids);
-    const hit = retrievedSessionIds.some(s => gt.has(s));
-    const bucket = recallByType[q.question_type] ?? (recallByType[q.question_type] = { hit: 0, total: 0 });
+    const hit = retrievedSessionIds.some((s) => gt.has(s));
+    const bucket =
+      recallByType[q.question_type] ?? (recallByType[q.question_type] = { hit: 0, total: 0 });
     bucket.total++;
     if (hit) bucket.hit++;
   }
 
   // v0.40.2.0 — trajectory routing for temporal / knowledge_update
   // intents. Skips for 'other' or when --no-trajectory.
-  let trajectoryBlock = '';
+  let trajectoryBlock = "";
   let trajectoryPoints = 0;
   let entityResolved: string | null = null;
   let resolutionSource: ResolutionSource | null = null;
-  const intent: Intent = traj.trajectoryEnabled ? classifyIntent(q) : 'other';
-  if (traj.trajectoryEnabled && intent !== 'other') {
+  const intent: Intent = traj.trajectoryEnabled ? classifyIntent(q) : "other";
+  if (traj.trajectoryEnabled && intent !== "other") {
     try {
-      const retrievedSlugs = results.map(r => r.slug);
+      const retrievedSlugs = results.map((r) => r.slug);
       const candidates = extractCandidateEntities(q.question, retrievedSlugs);
       for (const cand of candidates) {
-        const resolved = await resolveEntitySlugWithSource(engine, 'default', cand.raw);
+        const resolved = await resolveEntitySlugWithSource(engine, "default", cand.raw);
         if (!resolved) continue;
         // NOTE: unlike the think production path, the longmemeval harness
         // does NOT skip fallback_slugify results. The extractor (Commit 3)
@@ -705,12 +761,12 @@ async function runOneQuestion(
         const points = await Promise.race([
           engine.findTrajectory({
             entitySlug: resolved.slug,
-            sourceId: 'default',
+            sourceId: "default",
             remote: false,
-            kind: 'all',
+            kind: "all",
             limit: 100,
           }),
-          new Promise<import('../core/engine.ts').TrajectoryPoint[]>(resolve => {
+          new Promise<import("../core/engine.ts").TrajectoryPoint[]>((resolve) => {
             setTimeout(() => resolve([]), 5000);
           }),
         ]);
@@ -721,7 +777,7 @@ async function runOneQuestion(
         trajectoryPoints = fmt.emittedPoints;
         entityResolved = resolved.slug;
         resolutionSource = resolved.source;
-        break;  // first candidate with a non-empty trajectory wins
+        break; // first candidate with a non-empty trajectory wins
       }
     } catch {
       // Defensive: trajectory routing is best-effort. Any error degrades
@@ -739,7 +795,7 @@ async function runOneQuestion(
   let recallHit: boolean | undefined;
   if (q.answer_session_ids && q.answer_session_ids.length > 0) {
     const gt = new Set(q.answer_session_ids);
-    recallHit = retrievedSessionIds.some(s => gt.has(s));
+    recallHit = retrievedSessionIds.some((s) => gt.has(s));
   }
 
   emitter.emit({
@@ -759,13 +815,15 @@ async function runOneQuestion(
     ...(opts.mode ? { mode: opts.mode } : {}),
     // v0.40.2.0 — trajectory routing fields. methodology_note stamped
     // at top level so downstream readers see the preprocessing step.
-    ...(traj.trajectoryEnabled ? {
-      intent,
-      trajectory_points: trajectoryPoints,
-      entity_resolved: entityResolved,
-      resolution_source: resolutionSource,
-      methodology_note: TRAJECTORY_METHODOLOGY_NOTE,
-    } : {}),
+    ...(traj.trajectoryEnabled
+      ? {
+          intent,
+          trajectory_points: trajectoryPoints,
+          entity_resolved: entityResolved,
+          resolution_source: resolutionSource,
+          methodology_note: TRAJECTORY_METHODOLOGY_NOTE,
+        }
+      : {}),
   });
 }
 
@@ -781,11 +839,11 @@ async function runOneQuestion(
  */
 export function seedRecallByTypeFromFile(
   outputPath: string,
-  bucket: Record<string, { hit: number; total: number }>,
+  bucket: Record<string, { hit: number; total: number }>
 ): void {
   if (!existsSync(outputPath)) return;
-  const raw = readFileSync(outputPath, 'utf8');
-  for (const line of raw.split('\n')) {
+  const raw = readFileSync(outputPath, "utf8");
+  for (const line of raw.split("\n")) {
     if (!line.trim()) continue;
     let row: any;
     try {
@@ -793,10 +851,10 @@ export function seedRecallByTypeFromFile(
     } catch {
       continue;
     }
-    if (!row || typeof row !== 'object') continue;
-    if (row.kind === 'by_type_summary') continue;
-    if (typeof row.question_type !== 'string') continue;
-    if (typeof row.recall_hit !== 'boolean') continue;
+    if (!row || typeof row !== "object") continue;
+    if (row.kind === "by_type_summary") continue;
+    if (typeof row.question_type !== "string") continue;
+    if (typeof row.recall_hit !== "boolean") continue;
     const b = bucket[row.question_type] ?? (bucket[row.question_type] = { hit: 0, total: 0 });
     b.total++;
     if (row.recall_hit) b.hit++;
@@ -813,13 +871,13 @@ export function seedRecallByTypeFromFile(
  */
 export interface ByTypeSummary {
   schema_version: 1;
-  kind: 'by_type_summary';
+  kind: "by_type_summary";
   recall_by_type: Record<string, { hit: number; total: number; rate: number }>;
   aggregate: { hit: number; total: number; rate: number | null };
 }
 
 export function buildByTypeSummary(
-  recallByType: Record<string, { hit: number; total: number }>,
+  recallByType: Record<string, { hit: number; total: number }>
 ): ByTypeSummary {
   const sortedKeys = Object.keys(recallByType).sort();
   const recall: Record<string, { hit: number; total: number; rate: number }> = {};
@@ -834,7 +892,7 @@ export function buildByTypeSummary(
   }
   return {
     schema_version: 1,
-    kind: 'by_type_summary',
+    kind: "by_type_summary",
     recall_by_type: recall,
     aggregate: {
       hit: aggHit,
@@ -857,24 +915,24 @@ export function buildByTypeSummary(
  */
 export function emitByTypeSummary(outputPath: string | undefined, summary: ByTypeSummary): void {
   const json = JSON.stringify(summary);
-  if (json.includes('\r')) throw new Error('CRLF in by_type_summary emit (corrupt input)');
+  if (json.includes("\r")) throw new Error("CRLF in by_type_summary emit (corrupt input)");
   if (!outputPath) {
-    process.stdout.write(Buffer.from(json + '\n', 'utf8'));
+    process.stdout.write(Buffer.from(json + "\n", "utf8"));
     return;
   }
   // Read existing file (if present), strip any prior by_type_summary lines,
   // then append the new summary. Sync I/O is OK — output files for this
   // command are <1MB even on full 500-question runs.
-  let existing = '';
+  let existing = "";
   if (existsSync(outputPath)) {
-    existing = readFileSync(outputPath, 'utf8');
+    existing = readFileSync(outputPath, "utf8");
   }
   const kept: string[] = [];
-  for (const line of existing.split('\n')) {
+  for (const line of existing.split("\n")) {
     if (!line.trim()) continue;
     try {
       const row = JSON.parse(line);
-      if (row && typeof row === 'object' && (row as any).kind === 'by_type_summary') {
+      if (row && typeof row === "object" && (row as any).kind === "by_type_summary") {
         continue; // drop prior summary
       }
     } catch {
@@ -883,5 +941,5 @@ export function emitByTypeSummary(outputPath: string | undefined, summary: ByTyp
     kept.push(line);
   }
   kept.push(json);
-  writeFileSync(outputPath, kept.join('\n') + '\n', 'utf8');
+  writeFileSync(outputPath, kept.join("\n") + "\n", "utf8");
 }

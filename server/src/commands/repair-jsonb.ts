@@ -28,11 +28,11 @@
  * with a string parameter, not interpolation) so they were never affected.
  */
 
-import { loadConfig, toEngineConfig } from '../core/config.ts';
-import type { EngineConfig } from '../core/types.ts';
-import * as db from '../core/db.ts';
-import { createProgress, startHeartbeat } from '../core/progress.ts';
-import { getCliOptions, cliOptsToProgressOptions } from '../core/cli-options.ts';
+import { loadConfig, toEngineConfig } from "../core/config.ts";
+import type { EngineConfig } from "../core/types.ts";
+import * as db from "../core/db.ts";
+import { createProgress, startHeartbeat } from "../core/progress.ts";
+import { getCliOptions, cliOptsToProgressOptions } from "../core/cli-options.ts";
 
 interface RepairTarget {
   table: string;
@@ -42,11 +42,11 @@ interface RepairTarget {
 }
 
 const TARGETS: RepairTarget[] = [
-  { table: 'pages',          column: 'frontmatter',    keyCol: 'slug' },
-  { table: 'raw_data',       column: 'data',           keyCol: 'source' },
-  { table: 'ingest_log',     column: 'pages_updated',  keyCol: 'source_ref' },
-  { table: 'files',          column: 'metadata',       keyCol: 'storage_path' },
-  { table: 'page_versions',  column: 'frontmatter',    keyCol: 'snapshot_at' },
+  { table: "pages", column: "frontmatter", keyCol: "slug" },
+  { table: "raw_data", column: "data", keyCol: "source" },
+  { table: "ingest_log", column: "pages_updated", keyCol: "source_ref" },
+  { table: "files", column: "metadata", keyCol: "storage_path" },
+  { table: "page_versions", column: "frontmatter", keyCol: "snapshot_at" },
 ];
 
 export interface RepairResult {
@@ -77,11 +77,11 @@ export async function repairJsonb(opts: RepairOpts = { dryRun: false }): Promise
   if (!engineCfg) {
     const config = loadConfig();
     if (!config) {
-      throw new Error('No brain configured. Run: gbrain init');
+      throw new Error("No brain configured. Run: gbrain init");
     }
     engineCfg = toEngineConfig(config);
   }
-  const engineKind = engineCfg.engine || 'postgres';
+  const engineKind = engineCfg.engine || "postgres";
 
   const result: RepairResult = {
     engine: engineKind,
@@ -89,7 +89,7 @@ export async function repairJsonb(opts: RepairOpts = { dryRun: false }): Promise
     total_repaired: 0,
   };
 
-  if (engineKind === 'pglite') {
+  if (engineKind === "pglite") {
     for (const t of TARGETS) {
       result.per_target.push({ table: t.table, column: t.column, rows_repaired: 0 });
     }
@@ -103,7 +103,7 @@ export async function repairJsonb(opts: RepairOpts = { dryRun: false }): Promise
   // migrations/v0_12_2.ts parses via JSON.parse — stray progress lines on
   // stdout would break the orchestrator (per Codex review #12).
   const progress = createProgress(cliOptsToProgressOptions(getCliOptions()));
-  progress.start('repair_jsonb.run', TARGETS.length);
+  progress.start("repair_jsonb.run", TARGETS.length);
 
   for (const t of TARGETS) {
     const phase = `repair_jsonb.${t.table}.${t.column}`;
@@ -115,7 +115,7 @@ export async function repairJsonb(opts: RepairOpts = { dryRun: false }): Promise
     try {
       if (opts.dryRun) {
         const rows = await sql.unsafe(
-          `SELECT count(*)::int AS n FROM ${t.table} WHERE jsonb_typeof(${t.column}) = 'string'`,
+          `SELECT count(*)::int AS n FROM ${t.table} WHERE jsonb_typeof(${t.column}) = 'string'`
         );
         repaired = (rows[0] as unknown as { n: number }).n;
       } else {
@@ -123,7 +123,7 @@ export async function repairJsonb(opts: RepairOpts = { dryRun: false }): Promise
           `UPDATE ${t.table}
            SET ${t.column} = (${t.column} #>> '{}')::jsonb
            WHERE jsonb_typeof(${t.column}) = 'string'
-           RETURNING 1`,
+           RETURNING 1`
         );
         repaired = rows.length;
       }
@@ -141,29 +141,31 @@ export async function repairJsonb(opts: RepairOpts = { dryRun: false }): Promise
 }
 
 export async function runRepairJsonbCli(args: string[]): Promise<void> {
-  const dryRun = args.includes('--dry-run');
-  const jsonMode = args.includes('--json');
+  const dryRun = args.includes("--dry-run");
+  const jsonMode = args.includes("--json");
 
   const result = await repairJsonb({ dryRun });
 
   if (jsonMode) {
-    console.log(JSON.stringify({ status: 'ok', dry_run: dryRun, ...result }));
+    console.log(JSON.stringify({ status: "ok", dry_run: dryRun, ...result }));
     return;
   }
 
-  if (result.engine === 'pglite') {
-    console.log('Engine: pglite — JSONB double-encode bug never affected this path. No-op.');
+  if (result.engine === "pglite") {
+    console.log("Engine: pglite — JSONB double-encode bug never affected this path. No-op.");
     return;
   }
 
-  console.log(`${dryRun ? '[dry-run] ' : ''}Engine: postgres`);
-  console.log(`${dryRun ? '[dry-run] ' : ''}JSONB repair across ${TARGETS.length} columns:`);
+  console.log(`${dryRun ? "[dry-run] " : ""}Engine: postgres`);
+  console.log(`${dryRun ? "[dry-run] " : ""}JSONB repair across ${TARGETS.length} columns:`);
   for (const t of result.per_target) {
-    const verb = dryRun ? 'would repair' : 'repaired';
+    const verb = dryRun ? "would repair" : "repaired";
     console.log(`  ${t.table}.${t.column}: ${verb} ${t.rows_repaired} rows`);
   }
-  console.log(`${dryRun ? '[dry-run] ' : ''}Total ${dryRun ? 'to repair' : 'repaired'}: ${result.total_repaired} rows`);
+  console.log(
+    `${dryRun ? "[dry-run] " : ""}Total ${dryRun ? "to repair" : "repaired"}: ${result.total_repaired} rows`
+  );
   if (!dryRun && result.total_repaired === 0) {
-    console.log('Nothing to repair (already-valid JSONB or fresh install).');
+    console.log("Nothing to repair (already-valid JSONB or fresh install).");
   }
 }

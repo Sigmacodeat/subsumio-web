@@ -47,6 +47,7 @@ then **Connection String** > **Transaction pooler**, and copy the string.
 ## Why Supabase
 
 Supabase gives you managed Postgres + pgvector (vector search built in) for $25/mo:
+
 - 8GB database + 100GB storage on Pro tier
 - No server to manage, automatic backups, dashboard for debugging
 - pgvector pre-installed, just works
@@ -78,19 +79,20 @@ version:
 Ask the user this BEFORE running `gbrain init`:
 
 > "Three deployment shapes:
->  1. **Single brain (default)** — one machine, one DB, one agent. Pick this if
+>
+> 1.  **Single brain (default)** — one machine, one DB, one agent. Pick this if
 >     unsure.
->  2. **Cross-machine thin client** — your brain lives on another machine
+> 2.  **Cross-machine thin client** — your brain lives on another machine
 >     (e.g. brain-host) running `gbrain serve --http`, and this install just
 >     calls it over MCP. No local DB on this machine.
->  3. **Per-worktree code + shared remote artifacts** — Conductor users with
+> 3.  **Per-worktree code + shared remote artifacts** — Conductor users with
 >     multiple worktrees indexing the same code repo. Each worktree owns its
 >     own code engine; artifacts live on a shared remote brain. For code
 >     engines, configure Voyage's code-tuned model:
 >     `gbrain init --pglite --embedding-model voyage:voyage-code-3 --embedding-dimensions 1024`
 >     (full guidance in `docs/architecture/topologies.md` Topology 3).
 >
->  Which fits?"
+> Which fits?"
 
 ### If the user picks 1 (single brain) — proceed to Phase A
 
@@ -105,16 +107,19 @@ Continue with the existing `gbrain init --supabase` / `--pglite` setup below.
 
 2. **Get OAuth credentials from the host operator.** Ask the user to run
    on the host:
+
    ```bash
    gbrain auth register-client <name> \
      --grant-types client_credentials \
      --scopes read,write,admin
    ```
+
    The `admin` scope is required because `gbrain remote ping` and
    `gbrain remote doctor` (Tier B convenience commands) call MCP ops with
    `admin` scope. `read,write` alone breaks ping/doctor.
 
 3. **Run thin-client init on this machine:**
+
    ```bash
    gbrain init --mcp-only \
      --issuer-url https://<host>:<port> \
@@ -122,6 +127,7 @@ Continue with the existing `gbrain init --supabase` / `--pglite` setup below.
      --oauth-client-id <id> \
      --oauth-client-secret <secret>
    ```
+
    Or set `GBRAIN_REMOTE_CLIENT_SECRET` env var instead of the flag (preferred
    for headless / scripted setup). Pre-flight runs three smoke probes; any
    failure surfaces an actionable error.
@@ -215,20 +221,25 @@ echo "=== Discovery Complete ==="
 
 2. **Import the best candidate.** For large imports (>1000 files), use nohup to
    survive session timeouts:
+
    ```bash
    nohup gbrain import <dir> --no-embed --workers 4 > /tmp/gbrain-import.log 2>&1 &
    ```
+
    Then check progress: `tail -1 /tmp/gbrain-import.log`
 
    For smaller imports, run directly:
+
    ```bash
    gbrain import <dir> --no-embed
    ```
 
 3. **Prove search works.** Pick a semantic query based on what you imported:
+
    ```bash
    gbrain search "<topic from the imported data>"
    ```
+
    This is the magical moment: the user sees search finding things grep couldn't.
 
 4. **Start embeddings.** Refresh stale embeddings (runs in background). Keyword
@@ -253,10 +264,12 @@ echo "=== Discovery Complete ==="
 
 6. **Offer file migration.** If the repo has binary files (.raw/ directories with
    images, PDFs, audio):
+
    > "You have N binary files (X GB) in your brain repo. Want to move them to cloud
    > storage? Your git repo will drop from X GB to Y MB. All links keep working."
 
    If the user agrees, configure storage and run migration:
+
    ```bash
    # Configure storage backend (Supabase Storage recommended)
    gbrain config set storage.backend supabase
@@ -318,12 +331,12 @@ This replaces grep-based knowledge lookups with structured gbrain queries.
 
 ### BEFORE (grep) vs AFTER (gbrain)
 
-| Task | Before (grep) | After (gbrain) |
-|------|---------------|-----------------|
-| Find a person | `grep -r "Pedro" brain/` | `gbrain search "Pedro"` |
+| Task               | Before (grep)                                  | After (gbrain)                                 |
+| ------------------ | ---------------------------------------------- | ---------------------------------------------- |
+| Find a person      | `grep -r "Pedro" brain/`                       | `gbrain search "Pedro"`                        |
 | Understand a topic | `grep -rl "deal" brain/ \| head -5 && cat ...` | `gbrain query "what's the status of the deal"` |
-| Read a known page | `cat brain/people/pedro.md` | `gbrain get people/pedro` |
-| Find connections | `grep -rl "Brex" brain/ \| xargs grep "Pedro"` | `gbrain query "Pedro Brex relationship"` |
+| Read a known page  | `cat brain/people/pedro.md`                    | `gbrain get people/pedro`                      |
+| Find connections   | `grep -rl "Brex" brain/ \| xargs grep "Pedro"` | `gbrain query "Pedro Brex relationship"`       |
 
 ### Lookup sequence (MANDATORY for every entity question)
 
@@ -348,10 +361,10 @@ Embeddings can be refreshed later in batch (`gbrain embed --stale`).
 
 ### gbrain vs memory_search
 
-| Layer | What it stores | When to use |
-|-------|---------------|-------------|
-| **gbrain** | World knowledge: people, companies, deals, meetings, concepts, media | "Who is Pedro?", "What happened at the board meeting?" |
-| **memory_search** | Agent operational state: preferences, decisions, session context | "How does the user like formatting?", "What did we decide about X?" |
+| Layer             | What it stores                                                       | When to use                                                         |
+| ----------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| **gbrain**        | World knowledge: people, companies, deals, meetings, concepts, media | "Who is Pedro?", "What happened at the board meeting?"              |
+| **memory_search** | Agent operational state: preferences, decisions, session context     | "How does the user like formatting?", "What did we decide about X?" |
 
 Both should be checked. gbrain for facts about the world. memory_search for how
 the agent should behave.
@@ -392,7 +405,7 @@ Inject the key patterns into the agent's system context or AGENTS.md:
 1. **Brain-agent loop** (Section 2): read before responding, write after learning
 2. **Entity detection** (Section 3): spawn on every message, capture people/companies/ideas
 3. **Source attribution** (Section 7): every fact needs `[Source: ...]`
-> **Convention:** See `skills/conventions/quality.md` for Iron Law back-linking.
+   > **Convention:** See `skills/conventions/quality.md` for Iron Law back-linking.
 
 Tell the user: "The production agent guide is at docs/GBRAIN_SKILLPACK.md. It covers
 the brain-agent loop, entity detection, enrichment, meeting ingestion, and cron
@@ -409,14 +422,14 @@ If any check fails, the doctor output tells you exactly what's wrong and how to 
 **If any gbrain command fails, run `gbrain doctor --json` first.** Report the full
 output. It checks connection, pgvector, RLS, schema version, and embeddings.
 
-| What You See | Why | Fix |
-|---|---|---|
-| Connection refused | Supabase project paused, IPv6, or wrong URL | Use Transaction pooler (port 6543), or supabase.com/dashboard > Restore |
-| Password authentication failed | Wrong password | Project Settings > Database > Reset password |
-| pgvector not available | Extension not enabled | Run `CREATE EXTENSION vector;` in SQL Editor |
-| OpenAI key invalid | Expired or wrong key | platform.openai.com/api-keys > Create new |
-| No pages found | Query before import | Import files into gbrain first |
-| RLS not enabled | Security gap | Run `gbrain init` again (auto-enables RLS) |
+| What You See                   | Why                                         | Fix                                                                     |
+| ------------------------------ | ------------------------------------------- | ----------------------------------------------------------------------- |
+| Connection refused             | Supabase project paused, IPv6, or wrong URL | Use Transaction pooler (port 6543), or supabase.com/dashboard > Restore |
+| Password authentication failed | Wrong password                              | Project Settings > Database > Reset password                            |
+| pgvector not available         | Extension not enabled                       | Run `CREATE EXTENSION vector;` in SQL Editor                            |
+| OpenAI key invalid             | Expired or wrong key                        | platform.openai.com/api-keys > Create new                               |
+| No pages found                 | Query before import                         | Import files into gbrain first                                          |
+| RLS not enabled                | Security gap                                | Run `gbrain init` again (auto-enables RLS)                              |
 
 ## Phase G: Auto-Update Check (if not already configured)
 
@@ -428,6 +441,7 @@ used the manual install path or an older version of the OpenClaw/Hermes paste), 
 > You'll always be asked before anything is installed."
 
 If they agree:
+
 1. Test: `gbrain check-update --json`
 2. Register daily cron (see GBRAIN_SKILLPACK.md Section 17)
 
@@ -464,8 +478,8 @@ Read `docs/GBRAIN_SKILLPACK.md` Section 18 for the full reference. Key points:
    - Push a test change and confirm it appears in `gbrain search`.
 
 4. **Chain sync + embed.** Always run both: `gbrain sync --repo <path> && gbrain
-   embed --stale`. For small syncs, embeddings are generated inline. The `embed
-   --stale` is a safety net for any stale chunks.
+embed --stale`. For small syncs, embeddings are generated inline. The `embed
+--stale` is a safety net for any stale chunks.
 
 Tell the user: "Live sync is configured. The brain will stay current automatically.
 I'll verify it's working in the next phase."
@@ -514,9 +528,11 @@ just print a reference — actually run the cold-start skill.
 
 If the user says no or wants to stop:
 → Record in `~/.gbrain/cold-start-state.json`:
+
 ```json
-{"deferred": true, "deferred_at": "ISO-timestamp", "phases_completed": []}
+{ "deferred": true, "deferred_at": "ISO-timestamp", "phases_completed": [] }
 ```
+
 → Tell them: "You can run cold-start anytime by asking me to 'fill my brain'
 or 'cold start'."
 
@@ -524,6 +540,7 @@ or 'cold start'."
 
 After presenting the recommended directories (Phase C/E) and the user selects which
 ones to create, write `~/.gbrain/update-state.json` recording:
+
 - `schema_version_applied`: current gbrain version
 - `skillpack_version_applied`: current gbrain version
 - `schema_choices.adopted`: directories the user created

@@ -96,7 +96,11 @@
     {
       "kind": "original",
       "directory": "originals/",
-      "examples": ["the user's own theses", "frameworks the user generated", "novel observations the user expressed"],
+      "examples": [
+        "the user's own theses",
+        "frameworks the user generated",
+        "novel observations the user expressed"
+      ],
       "description": "Pages where the user is the primary author of the idea — original thinking, not summarizations of someone else's work. voice-note-ingest, archive-crawler, signal-detector route content here when the user is the originator."
     },
     {
@@ -138,7 +142,10 @@
     {
       "kind": "conversation",
       "directory": "conversations/",
-      "examples": ["conversations/chatgpt/{thread-slug}.md", "conversations/claude/{thread-slug}.md"],
+      "examples": [
+        "conversations/chatgpt/{thread-slug}.md",
+        "conversations/claude/{thread-slug}.md"
+      ],
       "description": "Imported chat exports (ChatGPT, Claude, etc.) where the conversation itself is the artifact. Cross-link concepts and people from the conversation; the conversation page is the source-of-truth for the dialog. Distinct from voice-notes/ (which holds raw voice capture)."
     },
     {
@@ -156,13 +163,19 @@
     {
       "kind": "eu_court_decision",
       "directory": "legal/eu-judgements/",
-      "examples": ["legal/eu-judgements/2023-eugh-c-123.md", "legal/eu-judgements/2024-eug-t-456.md"],
+      "examples": [
+        "legal/eu-judgements/2023-eugh-c-123.md",
+        "legal/eu-judgements/2024-eug-t-456.md"
+      ],
       "description": "EU Court of Justice and General Court decisions from EUR-Lex/Curia. Frontmatter includes court, date, ecli, case_number, procedure_type, parties."
     },
     {
       "kind": "legal_document",
       "directory": "legal/analyses/",
-      "examples": ["legal/analyses/subsumption-haftung-2024-06.md", "legal/analyses/strategie-musterfall-2024.md"],
+      "examples": [
+        "legal/analyses/subsumption-haftung-2024-06.md",
+        "legal/analyses/strategie-musterfall-2024.md"
+      ],
       "description": "AI-generated legal analyses, subsumptions, strategy memos, and case assessments. Requires attorney-review flag in frontmatter."
     },
     {
@@ -174,7 +187,12 @@
     {
       "kind": "document",
       "directory": "documents/",
-      "examples": ["documents/contracts/", "documents/invoices/", "documents/legal/court-filings/", "documents/correspondence/emails/"],
+      "examples": [
+        "documents/contracts/",
+        "documents/invoices/",
+        "documents/legal/court-filings/",
+        "documents/correspondence/emails/"
+      ],
       "description": "Ingested documents (PDF, DOCX, EML, XLSX, CSV) with extracted text, OCR, and auto-classification. Sub-directories by document type: contracts/, invoices/, legal/, correspondence/, medical/, tax/, reports/, uncategorized/."
     }
   ],

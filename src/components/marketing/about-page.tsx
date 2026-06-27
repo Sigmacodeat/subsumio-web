@@ -6,7 +6,13 @@ import { ArrowRight, Shield, Brain, Globe, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { p, type Lang } from "@/content/site";
 import { Section, SectionHeading } from "./chrome";
-import { GlowCard, AnimatedCounter, ClipReveal, MagneticButton, GradientMesh } from "./motion-system";
+import {
+  GlowCard,
+  AnimatedCounter,
+  ClipReveal,
+  MagneticButton,
+  GradientMesh,
+} from "./motion-system";
 
 const CONTENT = {
   en: {
@@ -113,9 +119,7 @@ export default function AboutPage({ lang }: { lang: Lang }) {
             {c.badge}
           </motion.span>
           <ClipReveal delay={0.1} duration={0.7} direction="up">
-            <h1
-              className="text-[clamp(2.5rem,10vw,3.75rem)] leading-[1.07] font-black tracking-tight [color:var(--mk-text)] md:text-5xl lg:text-6xl"
-            >
+            <h1 className="text-[clamp(2.5rem,10vw,3.75rem)] leading-[1.07] font-black tracking-tight [color:var(--mk-text)] md:text-5xl lg:text-6xl">
               {c.h1a}
               <br />
               <span className="brand-text">{c.h1b}</span>
@@ -196,7 +200,12 @@ export default function AboutPage({ lang }: { lang: Lang }) {
                 >
                   <div className="brand-text text-3xl font-black md:text-4xl">
                     {isNumeric ? (
-                      <AnimatedCounter to={num} prefix={prefix} suffix={suffix} decimals={s.value.includes(".") ? 1 : 0} />
+                      <AnimatedCounter
+                        to={num}
+                        prefix={prefix}
+                        suffix={suffix}
+                        decimals={s.value.includes(".") ? 1 : 0}
+                      />
                     ) : (
                       s.value
                     )}

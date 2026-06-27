@@ -104,6 +104,7 @@ constants at the top. The function signatures must remain stable.
 ## Signal-extraction policy
 
 For Mars (emotional):
+
 - Pull recent emotionally-loaded lines from the most recent ≤ 2 memory
   files. Use a generic emotion-word filter (feel, heart, lonely, joy,
   grief, anger, fear, hope, ache, miss, alive, numb, etc.) — NOT
@@ -115,6 +116,7 @@ For Mars (emotional):
   concepts across the last 3 memory files).
 
 For Venus (logistical):
+
 - Active task count + top 3 highest-priority titles.
 - Calendar events for today (if `calendar/today.md` exists).
 - Unread message count (if a `messages/inbox.md` or similar exists).
@@ -129,8 +131,7 @@ const REDACT_RE = {
   email: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g,
   phone: /(?:\+?\d{1,3}[\s.-]?)?(?:\(\d{3}\)|\d{3})[\s.-]?\d{3}[\s.-]?\d{4}/g,
 };
-ctx = ctx.replace(REDACT_RE.email, '[email]')
-         .replace(REDACT_RE.phone, '[phone]');
+ctx = ctx.replace(REDACT_RE.email, "[email]").replace(REDACT_RE.phone, "[phone]");
 ```
 
 Mars and Venus are configured to never read PII aloud anyway, but

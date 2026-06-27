@@ -30,8 +30,8 @@
  * Tested in test/relational-intent.test.ts.
  */
 
-export type RelationalKind = 'who_rel' | 'who_at' | 'connects' | 'intro';
-export type RelationDirection = 'in' | 'out' | 'both';
+export type RelationalKind = "who_rel" | "who_at" | "connects" | "intro";
+export type RelationDirection = "in" | "out" | "both";
 
 export interface RelationalQuery {
   /** Which archetype matched. */
@@ -67,27 +67,47 @@ export interface RelationVocab {
  * `validateVocab` enforces this for pack-supplied verbs.
  */
 export const KNOWN_LINK_TYPES: ReadonlySet<string> = new Set([
-  'founded',
-  'invested_in',
-  'advises',
-  'works_at',
-  'attended',
-  'yc_partner',
-  'led_round',
-  'mentions',
-  'image_of',
-  'discussed_in',
-  'source',
-  'related_to',
-  'wikilink_basename',
+  "founded",
+  "invested_in",
+  "advises",
+  "works_at",
+  "attended",
+  "yc_partner",
+  "led_round",
+  "mentions",
+  "image_of",
+  "discussed_in",
+  "source",
+  "related_to",
+  "wikilink_basename",
 ]);
 
 // Seeds that are pronouns / generic nouns, not entities. If a pattern's seed
 // cleans down to one of these, the parse is rejected (precision-first).
 const STOPWORD_SEEDS: ReadonlySet<string> = new Set([
-  'it', 'that', 'this', 'them', 'these', 'those', 'here', 'there',
-  'everyone', 'anyone', 'someone', 'anybody', 'somebody', 'people',
-  'things', 'us', 'me', 'him', 'her', 'you', 'who', 'what', 'which',
+  "it",
+  "that",
+  "this",
+  "them",
+  "these",
+  "those",
+  "here",
+  "there",
+  "everyone",
+  "anyone",
+  "someone",
+  "anybody",
+  "somebody",
+  "people",
+  "things",
+  "us",
+  "me",
+  "him",
+  "her",
+  "you",
+  "who",
+  "what",
+  "which",
 ]);
 
 interface CompiledPattern {
@@ -101,16 +121,20 @@ interface CompiledPattern {
 
 // Bounded seed capture: 1–80 chars, lazy, so the trailing anchor decides the
 // boundary without catastrophic backtracking.
-const SEED = '(.{1,80}?)';
+const SEED = "(.{1,80}?)";
 
 // ── who_rel verb bank: "who <verb> <seed>" → traverse INTO the seed ──
 // Each entry is explicit (linkTypes inline) so there is no second lookup.
 const WHO_REL_VERBS: Array<{ verb: string; linkTypes: string[]; direction: RelationDirection }> = [
-  { verb: 'invested in|invests in|funded|backed|backs|led the round in|led the seed in|led the series [a-z] in', linkTypes: ['invested_in', 'led_round'], direction: 'in' },
-  { verb: 'founded|co-?founded|started', linkTypes: ['founded'], direction: 'in' },
-  { verb: 'advises|advised', linkTypes: ['advises'], direction: 'in' },
-  { verb: 'works at|worked at|works for', linkTypes: ['works_at'], direction: 'in' },
-  { verb: 'attended', linkTypes: ['attended'], direction: 'in' },
+  {
+    verb: "invested in|invests in|funded|backed|backs|led the round in|led the seed in|led the series [a-z] in",
+    linkTypes: ["invested_in", "led_round"],
+    direction: "in",
+  },
+  { verb: "founded|co-?founded|started", linkTypes: ["founded"], direction: "in" },
+  { verb: "advises|advised", linkTypes: ["advises"], direction: "in" },
+  { verb: "works at|worked at|works for", linkTypes: ["works_at"], direction: "in" },
+  { verb: "attended", linkTypes: ["attended"], direction: "in" },
 ];
 
 function buildPatterns(vocab?: RelationVocab): CompiledPattern[] {
@@ -120,41 +144,56 @@ function buildPatterns(vocab?: RelationVocab): CompiledPattern[] {
   patterns.push({
     re: new RegExp(
       `\\b(?:what|which)\\s+(?:companies?|people|things|entities|deals?)?\\s*(?:connects?|links?|ties? together|is (?:the )?(?:connection|link|relationship) between)\\s+${SEED}\\s+(?:and|&)\\s+${SEED}\\s*\\??$`,
-      'i',
+      "i"
     ),
-    kind: 'connects', linkTypes: null, direction: 'both', seedGroups: 2,
+    kind: "connects",
+    linkTypes: null,
+    direction: "both",
+    seedGroups: 2,
   });
   patterns.push({
     re: new RegExp(
       `\\bhow\\s+(?:are|is|do|does)\\s+${SEED}\\s+(?:and|&)\\s+${SEED}\\s+(?:connected|related|linked|associated)\\b`,
-      'i',
+      "i"
     ),
-    kind: 'connects', linkTypes: null, direction: 'both', seedGroups: 2,
+    kind: "connects",
+    linkTypes: null,
+    direction: "both",
+    seedGroups: 2,
   });
 
   // intro — type-agnostic walk around the named person (no `introduced` edge).
   patterns.push({
     re: new RegExp(
       `\\bwho\\s+(?:introduced|connected|referred)\\s+(?:me|us|him|her|them)\\s+to\\s+${SEED}\\s*\\??$`,
-      'i',
+      "i"
     ),
-    kind: 'intro', linkTypes: null, direction: 'both', seedGroups: 1,
+    kind: "intro",
+    linkTypes: null,
+    direction: "both",
+    seedGroups: 1,
   });
 
   // who_at — entity in the middle: "who at acme works on payments".
   patterns.push({
     re: new RegExp(
       `\\bwho\\s+(?:at|from|in)\\s+${SEED}\\s+(?:works? on|works?|leads?|runs?|builds?|owns?|handles?|manages?)\\b`,
-      'i',
+      "i"
     ),
-    kind: 'who_at', linkTypes: ['works_at'], direction: 'in', seedGroups: 1,
+    kind: "who_at",
+    linkTypes: ["works_at"],
+    direction: "in",
+    seedGroups: 1,
   });
 
   // who_rel — "who <verb> <seed>".
   for (const v of WHO_REL_VERBS) {
     patterns.push({
-      re: new RegExp(`\\bwho\\s+(?:${v.verb})\\s+${SEED}\\s*\\??$`, 'i'),
-      kind: 'who_rel', linkTypes: v.linkTypes, direction: v.direction, seedGroups: 1,
+      re: new RegExp(`\\bwho\\s+(?:${v.verb})\\s+${SEED}\\s*\\??$`, "i"),
+      kind: "who_rel",
+      linkTypes: v.linkTypes,
+      direction: v.direction,
+      seedGroups: 1,
     });
   }
 
@@ -162,20 +201,29 @@ function buildPatterns(vocab?: RelationVocab): CompiledPattern[] {
   patterns.push({
     re: new RegExp(
       `\\bwhat\\s+(?:companies?|startups?|deals?)?\\s*(?:has|have|did|does)?\\s*${SEED}\\s+(?:invest(?:ed)? in)\\b`,
-      'i',
+      "i"
     ),
-    kind: 'who_rel', linkTypes: ['invested_in', 'led_round'], direction: 'out', seedGroups: 1,
+    kind: "who_rel",
+    linkTypes: ["invested_in", "led_round"],
+    direction: "out",
+    seedGroups: 1,
   });
   patterns.push({
-    re: new RegExp(`\\bwhere\\s+(?:does|did|has)\\s+${SEED}\\s+work\\b`, 'i'),
-    kind: 'who_rel', linkTypes: ['works_at'], direction: 'out', seedGroups: 1,
+    re: new RegExp(`\\bwhere\\s+(?:does|did|has)\\s+${SEED}\\s+work\\b`, "i"),
+    kind: "who_rel",
+    linkTypes: ["works_at"],
+    direction: "out",
+    seedGroups: 1,
   });
 
   // schema-pack extensions: "who <verb> <seed>" for each extra verb.
   for (const v of vocab?.extraVerbs ?? []) {
     patterns.push({
-      re: new RegExp(`\\bwho\\s+(?:${v.verb})\\s+${SEED}\\s*\\??$`, 'i'),
-      kind: 'who_rel', linkTypes: v.linkTypes, direction: v.direction, seedGroups: 1,
+      re: new RegExp(`\\bwho\\s+(?:${v.verb})\\s+${SEED}\\s*\\??$`, "i"),
+      kind: "who_rel",
+      linkTypes: v.linkTypes,
+      direction: v.direction,
+      seedGroups: 1,
     });
   }
 
@@ -186,9 +234,9 @@ function buildPatterns(vocab?: RelationVocab): CompiledPattern[] {
 function cleanSeed(raw: string): string {
   return raw
     .trim()
-    .replace(/\?+$/, '')
-    .replace(/^["'`]|["'`]$/g, '')
-    .replace(/^(?:the|a|an)\s+/i, '')
+    .replace(/\?+$/, "")
+    .replace(/^["'`]|["'`]$/g, "")
+    .replace(/^(?:the|a|an)\s+/i, "")
     .trim();
 }
 
@@ -208,7 +256,7 @@ export function validateVocab(vocab: RelationVocab): void {
     for (const lt of v.linkTypes) {
       if (!KNOWN_LINK_TYPES.has(lt)) {
         throw new Error(
-          `relational vocab: unknown link_type "${lt}" for verb /${v.verb}/ — must be one of ${[...KNOWN_LINK_TYPES].join(', ')}`,
+          `relational vocab: unknown link_type "${lt}" for verb /${v.verb}/ — must be one of ${[...KNOWN_LINK_TYPES].join(", ")}`
         );
       }
     }
@@ -228,15 +276,27 @@ export function parseRelationalQuery(query: string, vocab?: RelationVocab): Rela
     if (!m) continue;
 
     if (p.seedGroups === 2) {
-      const a = cleanSeed(m[1] ?? '');
-      const b = cleanSeed(m[2] ?? '');
+      const a = cleanSeed(m[1] ?? "");
+      const b = cleanSeed(m[2] ?? "");
       if (!validSeed(a) || !validSeed(b)) continue;
-      return { kind: p.kind, seeds: [a, b], linkTypes: p.linkTypes, direction: p.direction, relationPhrase: m[0].trim() };
+      return {
+        kind: p.kind,
+        seeds: [a, b],
+        linkTypes: p.linkTypes,
+        direction: p.direction,
+        relationPhrase: m[0].trim(),
+      };
     }
 
-    const seed = cleanSeed(m[1] ?? '');
+    const seed = cleanSeed(m[1] ?? "");
     if (!validSeed(seed)) continue;
-    return { kind: p.kind, seeds: [seed], linkTypes: p.linkTypes, direction: p.direction, relationPhrase: m[0].trim() };
+    return {
+      kind: p.kind,
+      seeds: [seed],
+      linkTypes: p.linkTypes,
+      direction: p.direction,
+      relationPhrase: m[0].trim(),
+    };
   }
 
   return null;

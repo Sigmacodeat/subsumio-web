@@ -30,11 +30,11 @@
  * version of gbrain understands.
  */
 
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import matter from 'gray-matter';
+import * as fs from "node:fs";
+import * as path from "node:path";
+import matter from "gray-matter";
 
-export const SUPPORTED_PLUGIN_VERSION = 'gbrain-plugin-v1';
+export const SUPPORTED_PLUGIN_VERSION = "gbrain-plugin-v1";
 
 export interface PluginManifest {
   name: string;
@@ -79,8 +79,11 @@ export interface LoadOpts {
 
 /** Public entry point: load every plugin directory from GBRAIN_PLUGIN_PATH. */
 export function loadPluginsFromEnv(opts: LoadOpts = {}): PluginLoadResult {
-  const raw = opts.envPath ?? process.env.GBRAIN_PLUGIN_PATH ?? '';
-  const paths = raw.split(':').map(s => s.trim()).filter(Boolean);
+  const raw = opts.envPath ?? process.env.GBRAIN_PLUGIN_PATH ?? "";
+  const paths = raw
+    .split(":")
+    .map((s) => s.trim())
+    .filter(Boolean);
   const result: PluginLoadResult = { plugins: [], warnings: [] };
 
   // Left-wins collision tracking.
@@ -88,7 +91,10 @@ export function loadPluginsFromEnv(opts: LoadOpts = {}): PluginLoadResult {
 
   for (const p of paths) {
     const rejection = rejectIfNotAbsolute(p);
-    if (rejection) { result.warnings.push(rejection); continue; }
+    if (rejection) {
+      result.warnings.push(rejection);
+      continue;
+    }
     if (!fs.existsSync(p)) {
       result.warnings.push(`[plugin-loader] path does not exist, skipping: ${p}`);
       continue;
@@ -100,7 +106,7 @@ export function loadPluginsFromEnv(opts: LoadOpts = {}): PluginLoadResult {
 
     try {
       const loaded = loadSinglePlugin(p, opts);
-      if ('error' in loaded) {
+      if ("error" in loaded) {
         result.warnings.push(`[plugin-loader] rejected ${p}: ${loaded.error}`);
         continue;
       }
@@ -111,7 +117,7 @@ export function loadPluginsFromEnv(opts: LoadOpts = {}): PluginLoadResult {
         if (prior) {
           result.warnings.push(
             `[plugin-loader] collision: subagent '${sa.name}' from '${loaded.manifest.name}' at ${p} ` +
-            `shadowed by earlier '${prior.pluginName}' at ${prior.pathLeft} (first wins)`,
+              `shadowed by earlier '${prior.pluginName}' at ${prior.pathLeft} (first wins)`
           );
           continue;
         }
@@ -133,7 +139,7 @@ function rejectIfNotAbsolute(p: string): string | null {
   if (/^[a-z][a-z0-9+.-]*:\/\//i.test(p)) {
     return `[plugin-loader] remote URL rejected: ${p}`;
   }
-  if (p.startsWith('~')) {
+  if (p.startsWith("~")) {
     return `[plugin-loader] ~-prefixed path rejected (expand explicitly): ${p}`;
   }
   if (!path.isAbsolute(p)) {
@@ -154,22 +160,22 @@ export interface LoadedPlugin {
  */
 export function loadSinglePlugin(
   rootDir: string,
-  opts: LoadOpts = {},
+  opts: LoadOpts = {}
 ): LoadedPlugin | { error: string } {
-  const manifestPath = path.join(rootDir, 'gbrain.plugin.json');
+  const manifestPath = path.join(rootDir, "gbrain.plugin.json");
   if (!fs.existsSync(manifestPath)) {
-    return { error: 'missing gbrain.plugin.json' };
+    return { error: "missing gbrain.plugin.json" };
   }
 
   let manifest: PluginManifest;
   try {
-    const raw = fs.readFileSync(manifestPath, 'utf8');
+    const raw = fs.readFileSync(manifestPath, "utf8");
     manifest = JSON.parse(raw) as PluginManifest;
   } catch (e) {
     return { error: `invalid manifest JSON: ${e instanceof Error ? e.message : String(e)}` };
   }
 
-  if (typeof manifest.name !== 'string' || manifest.name.length === 0) {
+  if (typeof manifest.name !== "string" || manifest.name.length === 0) {
     return { error: 'manifest missing required "name" field' };
   }
   if (manifest.plugin_version !== SUPPORTED_PLUGIN_VERSION) {
@@ -178,7 +184,7 @@ export function loadSinglePlugin(
     };
   }
 
-  const subagentsDirRel = manifest.subagents ?? 'subagents';
+  const subagentsDirRel = manifest.subagents ?? "subagents";
   const subagentsDir = path.resolve(rootDir, subagentsDirRel);
   // Prevent `../` escape via the manifest's `subagents` field.
   if (!subagentsDir.startsWith(rootDir + path.sep) && subagentsDir !== rootDir) {
@@ -188,25 +194,26 @@ export function loadSinglePlugin(
   const subagents: SubagentDefinition[] = [];
   if (fs.existsSync(subagentsDir) && fs.statSync(subagentsDir).isDirectory()) {
     for (const entry of fs.readdirSync(subagentsDir)) {
-      if (!entry.endsWith('.md')) continue;
+      if (!entry.endsWith(".md")) continue;
       const sourcePath = path.join(subagentsDir, entry);
       try {
-        const raw = fs.readFileSync(sourcePath, 'utf8');
+        const raw = fs.readFileSync(sourcePath, "utf8");
         const parsed = matter(raw);
         const frontmatter = (parsed.data ?? {}) as Record<string, unknown>;
-        const body = parsed.content ?? '';
-        const name = typeof frontmatter.name === 'string'
-          ? frontmatter.name
-          : entry.replace(/\.md$/, '');
+        const body = parsed.content ?? "";
+        const name =
+          typeof frontmatter.name === "string" ? frontmatter.name : entry.replace(/\.md$/, "");
         const allowed = Array.isArray(frontmatter.allowed_tools)
-          ? (frontmatter.allowed_tools as unknown[]).filter(x => typeof x === 'string') as string[]
+          ? ((frontmatter.allowed_tools as unknown[]).filter(
+              (x) => typeof x === "string"
+            ) as string[])
           : undefined;
 
         if (allowed && opts.validAgentToolNames) {
-          const missing = allowed.filter(t => !opts.validAgentToolNames!.has(t));
+          const missing = allowed.filter((t) => !opts.validAgentToolNames!.has(t));
           if (missing.length > 0) {
             return {
-              error: `subagent '${name}' allowed_tools references unknown tools: ${missing.join(', ')}`,
+              error: `subagent '${name}' allowed_tools references unknown tools: ${missing.join(", ")}`,
             };
           }
         }
@@ -220,7 +227,9 @@ export function loadSinglePlugin(
           allowed_tools: allowed,
         });
       } catch (e) {
-        return { error: `could not parse ${sourcePath}: ${e instanceof Error ? e.message : String(e)}` };
+        return {
+          error: `could not parse ${sourcePath}: ${e instanceof Error ? e.message : String(e)}`,
+        };
       }
     }
   }

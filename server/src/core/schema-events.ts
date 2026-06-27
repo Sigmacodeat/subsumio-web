@@ -12,14 +12,14 @@
 // Privacy: records ONLY verb names + timestamps + outcome. No pack
 // content, no slug names, no user data.
 
-import { appendFileSync, existsSync, mkdirSync, readFileSync, readdirSync } from 'node:fs';
-import { join } from 'node:path';
-import { resolveAuditDir } from './minions/handlers/shell-audit.ts';
+import { appendFileSync, existsSync, mkdirSync, readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
+import { resolveAuditDir } from "./minions/handlers/shell-audit.ts";
 
 export interface SchemaEventRecord {
   ts: string;
   verb: string;
-  outcome: 'success' | 'error' | 'unknown';
+  outcome: "success" | "error" | "unknown";
   /** Optional flag — e.g. --json was passed. No values, just flag names. */
   flags?: string[];
 }
@@ -29,20 +29,20 @@ export function computeIsoWeekName(date: Date = new Date()): string {
   const dayNum = tmp.getUTCDay() || 7;
   tmp.setUTCDate(tmp.getUTCDate() + 4 - dayNum);
   const yearStart = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 1));
-  const weekNo = Math.ceil((((tmp.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
-  return `${tmp.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+  const weekNo = Math.ceil(((tmp.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+  return `${tmp.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
 }
 
 export function computeSchemaEventPath(date: Date = new Date()): string {
   return join(resolveAuditDir(), `schema-events-${computeIsoWeekName(date)}.jsonl`);
 }
 
-export function logSchemaEvent(record: Omit<SchemaEventRecord, 'ts'>): void {
+export function logSchemaEvent(record: Omit<SchemaEventRecord, "ts">): void {
   try {
     const path = computeSchemaEventPath();
     mkdirSync(resolveAuditDir(), { recursive: true });
     const line: SchemaEventRecord = { ts: new Date().toISOString(), ...record };
-    appendFileSync(path, JSON.stringify(line) + '\n');
+    appendFileSync(path, JSON.stringify(line) + "\n");
   } catch (e) {
     console.error(`[schema-events] audit write failed: ${(e as Error).message}`);
   }
@@ -60,14 +60,14 @@ export function readRecentSchemaEvents(days: number): SchemaEventRecord[] {
   const cutoffMs = Date.now() - days * 86400_000;
   let files: string[] = [];
   try {
-    files = readdirSync(dir).filter((f) => f.startsWith('schema-events-') && f.endsWith('.jsonl'));
+    files = readdirSync(dir).filter((f) => f.startsWith("schema-events-") && f.endsWith(".jsonl"));
   } catch {
     return out;
   }
   for (const f of files) {
     try {
-      const content = readFileSync(join(dir, f), 'utf-8');
-      for (const line of content.split('\n')) {
+      const content = readFileSync(join(dir, f), "utf-8");
+      for (const line of content.split("\n")) {
         if (!line.trim()) continue;
         try {
           const rec = JSON.parse(line) as SchemaEventRecord;

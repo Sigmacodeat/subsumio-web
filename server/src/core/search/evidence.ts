@@ -26,16 +26,16 @@
  *   unknown  — weak signal; the agent should look closer before deciding
  */
 
-import type { SearchResult } from '../types.ts';
+import type { SearchResult } from "../types.ts";
 
 export type Evidence =
-  | 'alias_hit'
-  | 'exact_title_match'
-  | 'high_vector_match'
-  | 'keyword_exact'
-  | 'weak_semantic';
+  | "alias_hit"
+  | "exact_title_match"
+  | "high_vector_match"
+  | "keyword_exact"
+  | "weak_semantic";
 
-export type CreateSafety = 'exists' | 'probable' | 'unknown';
+export type CreateSafety = "exists" | "probable" | "unknown";
 
 /** base_score (pre-boost) at/above this is a confident vector/keyword match. */
 export const HIGH_MATCH_FLOOR = 0.85;
@@ -43,24 +43,24 @@ export const HIGH_MATCH_FLOOR = 0.85;
 export const SOLID_MATCH_FLOOR = 0.6;
 
 export function classifyEvidence(r: SearchResult): Evidence {
-  if (r.alias_hit) return 'alias_hit';
-  if (r.title_match_boost && r.title_match_boost > 1.0) return 'exact_title_match';
-  const base = typeof r.base_score === 'number' ? r.base_score : r.score;
-  if (Number.isFinite(base) && base >= HIGH_MATCH_FLOOR) return 'high_vector_match';
-  if (Number.isFinite(base) && base >= SOLID_MATCH_FLOOR) return 'keyword_exact';
-  return 'weak_semantic';
+  if (r.alias_hit) return "alias_hit";
+  if (r.title_match_boost && r.title_match_boost > 1.0) return "exact_title_match";
+  const base = typeof r.base_score === "number" ? r.base_score : r.score;
+  if (Number.isFinite(base) && base >= HIGH_MATCH_FLOOR) return "high_vector_match";
+  if (Number.isFinite(base) && base >= SOLID_MATCH_FLOOR) return "keyword_exact";
+  return "weak_semantic";
 }
 
 export function createSafetyFor(evidence: Evidence): CreateSafety {
   switch (evidence) {
-    case 'alias_hit':
-    case 'exact_title_match':
-    case 'high_vector_match':
-      return 'exists';
-    case 'keyword_exact':
-      return 'probable';
-    case 'weak_semantic':
-      return 'unknown';
+    case "alias_hit":
+    case "exact_title_match":
+    case "high_vector_match":
+      return "exists";
+    case "keyword_exact":
+      return "probable";
+    case "weak_semantic":
+      return "unknown";
   }
 }
 

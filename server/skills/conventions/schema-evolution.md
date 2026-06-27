@@ -34,6 +34,7 @@ tag.
 ### Concrete examples
 
 **One-off (don't add to pack):**
+
 > "I have 3 pages under `2026-projects/skunkworks-spec/`. Should I add
 > a `skunkworks` type?"
 
@@ -42,14 +43,16 @@ the nearest existing match (`concept` or `note`) and use a frontmatter
 `project:` tag. If the cluster grows to 20+, revisit.
 
 **20-100 pages — alias OR narrow prefix:**
+
 > "I have 50 pages under `people/researchers/` that overlap with my
 > `person` type. Should I add a `researcher` type?"
 
 Two valid options:
+
 1. **Alias on `person`** — `add-alias person researcher`. Closure
    queries for `researcher` will surface `person` rows too.
 2. **New type sharing the `entity` primitive** — `add-type researcher
-   --primitive entity --prefix people/researchers/`. Distinct type, can
+--primitive entity --prefix people/researchers/`. Distinct type, can
    be marked `--extractable` or `--expert` independently.
 
 Pick alias when researchers are people first, researchers second
@@ -58,10 +61,12 @@ Pick new type when researcher-specific behavior diverges (different
 extractable rules, different link verbs, different rubric).
 
 **100+ pages — first-class type:**
+
 > "I have 4000 pages under `meetings/`. I want them typed as `meeting`,
 > not the legacy default `note`."
 
 Add the type:
+
 ```
 gbrain schema add-type meeting \
   --primitive temporal \
@@ -78,7 +83,7 @@ imports under `meetings/` infer `meeting` type via the pack.
 - **Don't add a type for a directory you imported once for triage.**
   Pack types are permanent decisions; one-time imports are not.
 - **Don't add a type just to silence `dead_prefixes` in `schema stats`.**
-  A dead prefix is a *signal* that the prefix is mis-declared or the
+  A dead prefix is a _signal_ that the prefix is mis-declared or the
   corpus moved. Remove the prefix or migrate the content, don't add an
   empty type.
 - **Don't promote a candidate from `schema suggest` without verifying
@@ -94,6 +99,7 @@ imports under `meetings/` infer `meeting` type via the pack.
 ## When to remove a type
 
 Removing a type is RARE. Only do it when:
+
 1. The type was added in error (typo, premature abstraction).
 2. The corpus the type was meant for has been migrated to a different
    type.
@@ -137,6 +143,7 @@ appear last. Subtype_field is restricted to ALLOWED_SUBTYPE_FIELDS
 codex D9 — third-party packs cannot inject `title` / `slug` / `type`.
 
 When NOT to upgrade:
+
 - Custom types not covered by the successor's mapping_rules → fork the
   successor first (`gbrain schema fork gbrain-base-v2 my-pack`), edit
   rules, then target your fork.

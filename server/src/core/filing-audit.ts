@@ -22,9 +22,9 @@
  * declarations); that is tracked as follow-up work, not in this scope.
  */
 
-import { existsSync, readFileSync, readdirSync, statSync } from 'fs';
-import { join } from 'path';
-import { parseSkillFrontmatter } from './skill-frontmatter.ts';
+import { existsSync, readFileSync, readdirSync, statSync } from "fs";
+import { join } from "path";
+import { parseSkillFrontmatter } from "./skill-frontmatter.ts";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -51,8 +51,8 @@ export interface FilingRulesDoc {
 }
 
 export interface FilingIssue {
-  type: 'filing_missing_writes_to' | 'filing_unknown_directory';
-  severity: 'warning';
+  type: "filing_missing_writes_to" | "filing_unknown_directory";
+  severity: "warning";
   skill: string;
   directory?: string;
   message: string;
@@ -77,12 +77,12 @@ export interface FilingReport {
  * degrading.
  */
 export function loadFilingRules(skillsDir: string): FilingRulesDoc | null {
-  const path = join(skillsDir, '_brain-filing-rules.json');
+  const path = join(skillsDir, "_brain-filing-rules.json");
   if (!existsSync(path)) return null;
-  const content = readFileSync(path, 'utf-8');
+  const content = readFileSync(path, "utf-8");
   const parsed = JSON.parse(content);
-  if (!parsed || typeof parsed !== 'object') {
-    throw new Error('_brain-filing-rules.json: top-level must be an object');
+  if (!parsed || typeof parsed !== "object") {
+    throw new Error("_brain-filing-rules.json: top-level must be an object");
   }
   if (!Array.isArray(parsed.rules)) {
     throw new Error('_brain-filing-rules.json: "rules" must be an array');
@@ -105,8 +105,8 @@ export function allowedDirectories(rules: FilingRulesDoc): Set<string> {
 function normalizeDir(dir: string): string {
   // Accept `people`, `people/`, `/people`, `/people/` — normalize to
   // `people/` so comparisons are consistent.
-  const trimmed = dir.trim().replace(/^\/+/, '').replace(/\/+$/, '');
-  return trimmed.length > 0 ? `${trimmed}/` : '';
+  const trimmed = dir.trim().replace(/^\/+/, "").replace(/\/+$/, "");
+  return trimmed.length > 0 ? `${trimmed}/` : "";
 }
 
 // ---------------------------------------------------------------------------
@@ -137,7 +137,7 @@ export interface SkillFrontmatter {
 function parseFrontmatter(skillMdPath: string): SkillFrontmatter | null {
   let content: string;
   try {
-    content = readFileSync(skillMdPath, 'utf-8');
+    content = readFileSync(skillMdPath, "utf-8");
   } catch {
     return null;
   }
@@ -192,14 +192,14 @@ export function runFilingAudit(skillsDir: string): FilingReport {
   }
 
   for (const entry of entries) {
-    if (entry.startsWith('.') || entry.startsWith('_')) continue;
+    if (entry.startsWith(".") || entry.startsWith("_")) continue;
     const dir = join(skillsDir, entry);
     try {
       if (!statSync(dir).isDirectory()) continue;
     } catch {
       continue;
     }
-    const skillMd = join(dir, 'SKILL.md');
+    const skillMd = join(dir, "SKILL.md");
     if (!existsSync(skillMd)) continue;
     totalScanned++;
 
@@ -212,8 +212,8 @@ export function runFilingAudit(skillsDir: string): FilingReport {
 
     if (!fm.writes_to || fm.writes_to.length === 0) {
       issues.push({
-        type: 'filing_missing_writes_to',
-        severity: 'warning',
+        type: "filing_missing_writes_to",
+        severity: "warning",
         skill: skillName,
         message: `Skill '${skillName}' has writes_pages: true but no writes_to: list`,
         action: `Add a writes_to: [dir, ...] list to skills/${entry}/SKILL.md frontmatter (see skills/_brain-filing-rules.json for valid directories)`,
@@ -225,8 +225,8 @@ export function runFilingAudit(skillsDir: string): FilingReport {
       const normalized = normalizeDir(rawDir);
       if (!allowed.has(normalized)) {
         issues.push({
-          type: 'filing_unknown_directory',
-          severity: 'warning',
+          type: "filing_unknown_directory",
+          severity: "warning",
           skill: skillName,
           directory: rawDir,
           message: `Skill '${skillName}' declares writes_to: '${rawDir}' which is not listed in _brain-filing-rules.json`,

@@ -11,10 +11,10 @@
  * passes there, production wins by a wider margin.
  */
 
-import { afterAll, beforeAll, beforeEach, expect, test } from 'bun:test';
-import { PGLiteEngine } from '../src/core/pglite-engine.ts';
-import { resetPgliteState } from './helpers/reset-pglite.ts';
-import { DELETE_BATCH_SIZE } from '../src/core/engine-constants.ts';
+import { afterAll, beforeAll, beforeEach, expect, test } from "bun:test";
+import { PGLiteEngine } from "../src/core/pglite-engine.ts";
+import { resetPgliteState } from "./helpers/reset-pglite.ts";
+import { DELETE_BATCH_SIZE } from "../src/core/engine-constants.ts";
 
 let engine: PGLiteEngine;
 
@@ -32,7 +32,7 @@ beforeEach(async () => {
   await resetPgliteState(engine);
 });
 
-test('10K-page batched delete completes in <5s on PGLite', async () => {
+test("10K-page batched delete completes in <5s on PGLite", async () => {
   const N = 10_000;
 
   // Seed N pages via bulk INSERT (single statement to keep setup fast).
@@ -45,17 +45,19 @@ test('10K-page batched delete completes in <5s on PGLite', async () => {
     for (let i = start; i < end; i++) {
       const slug = `perf/page-${i}`;
       params.push(slug);
-      values.push(`('default', $${params.length}, 'note', $${params.length}, 'body', '', '{}'::jsonb)`);
+      values.push(
+        `('default', $${params.length}, 'note', $${params.length}, 'body', '', '{}'::jsonb)`
+      );
     }
     await engine.executeRaw(
-      `INSERT INTO pages (source_id, slug, type, title, compiled_truth, timeline, frontmatter) VALUES ${values.join(',')}`,
-      params,
+      `INSERT INTO pages (source_id, slug, type, title, compiled_truth, timeline, frontmatter) VALUES ${values.join(",")}`,
+      params
     );
   }
 
   // Confirm seed.
   const countRows = await engine.executeRaw<{ c: number }>(
-    `SELECT COUNT(*)::int AS c FROM pages WHERE slug LIKE 'perf/page-%'`,
+    `SELECT COUNT(*)::int AS c FROM pages WHERE slug LIKE 'perf/page-%'`
   );
   expect(Number(countRows[0].c)).toBe(N);
 
@@ -65,7 +67,7 @@ test('10K-page batched delete completes in <5s on PGLite', async () => {
   let totalDeleted = 0;
   for (let i = 0; i < allSlugs.length; i += DELETE_BATCH_SIZE) {
     const batch = allSlugs.slice(i, i + DELETE_BATCH_SIZE);
-    const deleted = await engine.deletePages(batch, { sourceId: 'default' });
+    const deleted = await engine.deletePages(batch, { sourceId: "default" });
     totalDeleted += deleted.length;
   }
   const elapsed = Date.now() - start;

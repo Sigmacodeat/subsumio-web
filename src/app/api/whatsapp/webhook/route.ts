@@ -41,7 +41,10 @@ export const GET = createPublicHandler(
     searchParams.set("hub.verify_token", verifyToken);
     const result = verifyWebhookChallenge(searchParams);
     if (!result.ok) return Response.json({ error: result.error }, { status: result.status });
-    return new Response(result.challenge, { status: 200, headers: { "Content-Type": "text/plain" } });
+    return new Response(result.challenge, {
+      status: 200,
+      headers: { "Content-Type": "text/plain" },
+    });
   }
 );
 
@@ -192,7 +195,7 @@ async function listPendingApprovals(
 ): Promise<Array<{ action_slug: string; action_type: ActionType }>> {
   const res = await fetch(`${ENGINE_URL}/api/pages?type=agent_action&limit=100`, {
     headers: engineHeadersForBrain(brainId),
-  signal: AbortSignal.timeout(15_000),
+    signal: AbortSignal.timeout(15_000),
   });
   if (!res.ok) return [];
   const data = await res.json().catch(() => ({}));
@@ -246,7 +249,10 @@ function executionDepsForBrain(brainId: string) {
   return {
     brainId,
     getPage: async (slug: string): Promise<BrainPage> => {
-      const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(slug)}`, { headers, signal: AbortSignal.timeout(10_000) });
+      const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(slug)}`, {
+        headers,
+        signal: AbortSignal.timeout(10_000),
+      });
       if (!res.ok) throw new Error(`approval_page_not_found:${res.status}`);
       return (await res.json()) as BrainPage;
     },
@@ -278,7 +284,7 @@ function executionDepsForBrain(brainId: string) {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...headers },
         body: JSON.stringify({ ...patch, merge: true }),
-      signal: AbortSignal.timeout(15_000),
+        signal: AbortSignal.timeout(15_000),
       });
       if (!res.ok) throw new Error(`approval_effect_update_failed:${res.status}`);
       return { slug, success: true };

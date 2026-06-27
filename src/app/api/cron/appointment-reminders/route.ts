@@ -12,7 +12,10 @@ async function updateAppointmentReminderSent(brainId: string, slug: string): Pro
   const headers = engineHeadersForBrain(brainId);
   const encodedSlug = slug.split("/").map(encodeURIComponent).join("/");
   try {
-    const getRes = await fetch(`${ENGINE_URL}/api/pages/${encodedSlug}`, { headers, signal: AbortSignal.timeout(10_000) });
+    const getRes = await fetch(`${ENGINE_URL}/api/pages/${encodedSlug}`, {
+      headers,
+      signal: AbortSignal.timeout(10_000),
+    });
     if (!getRes.ok) return;
     const page = (await getRes.json()) as { frontmatter?: { version?: number } };
     const currentVersion = page.frontmatter?.version ?? 0;

@@ -11,14 +11,14 @@
  *
  * Best-effort: a write failure does NOT change the CycleReport status.
  */
-import { describe, test, expect, beforeAll, afterAll, beforeEach } from 'bun:test';
-import { PGLiteEngine } from '../src/core/pglite-engine.ts';
-import { resetPgliteState } from './helpers/reset-pglite.ts';
-import { withEnv } from './helpers/with-env.ts';
-import { runCycle } from '../src/core/cycle.ts';
-import { mkdtempSync, rmSync } from 'fs';
-import { tmpdir } from 'os';
-import { join } from 'path';
+import { describe, test, expect, beforeAll, afterAll, beforeEach } from "bun:test";
+import { PGLiteEngine } from "../src/core/pglite-engine.ts";
+import { resetPgliteState } from "./helpers/reset-pglite.ts";
+import { withEnv } from "./helpers/with-env.ts";
+import { runCycle } from "../src/core/cycle.ts";
+import { mkdtempSync, rmSync } from "fs";
+import { tmpdir } from "os";
+import { join } from "path";
 
 let engine: PGLiteEngine;
 let brainDir: string;
@@ -44,8 +44,8 @@ afterAll(async () => {
 
 beforeEach(async () => {
   await resetPgliteState(engine);
-  brainDir = mkdtempSync(join(tmpdir(), 'gbrain-cycle-lfca-'));
-  gbrainHome = mkdtempSync(join(tmpdir(), 'gbrain-cycle-lfca-home-'));
+  brainDir = mkdtempSync(join(tmpdir(), "gbrain-cycle-lfca-"));
+  gbrainHome = mkdtempSync(join(tmpdir(), "gbrain-cycle-lfca-home-"));
 });
 
 async function seedSource(id: string): Promise<void> {
@@ -53,36 +53,36 @@ async function seedSource(id: string): Promise<void> {
     `INSERT INTO sources (id, name, local_path, config, archived, created_at)
      VALUES ($1, $2, $3, '{}'::jsonb, false, NOW())
      ON CONFLICT (id) DO UPDATE SET local_path = EXCLUDED.local_path`,
-    [id, id, brainDir],
+    [id, id, brainDir]
   );
 }
 
 async function readLastFullCycleAt(sourceId: string): Promise<string | null> {
   const sources = await engine.listAllSources();
-  const s = sources.find(x => x.id === sourceId);
+  const s = sources.find((x) => x.id === sourceId);
   if (!s) return null;
   const raw = s.config?.last_full_cycle_at;
-  return typeof raw === 'string' ? raw : null;
+  return typeof raw === "string" ? raw : null;
 }
 
-describe('runCycle last_full_cycle_at exit hook', () => {
-  test('per-source cycle with status=ok writes timestamp', async () => {
+describe("runCycle last_full_cycle_at exit hook", () => {
+  test("per-source cycle with status=ok writes timestamp", async () => {
     await withEnv({ GBRAIN_HOME: gbrainHome }, async () => {
-      await seedSource('alpha');
-      const before = await readLastFullCycleAt('alpha');
+      await seedSource("alpha");
+      const before = await readLastFullCycleAt("alpha");
       expect(before).toBeNull();
 
       // Run a minimal cycle: just lint (filesystem, no DB writes, always returns 'ok')
       const t0 = Date.now();
       const report = await runCycle(engine, {
         brainDir,
-        sourceId: 'alpha',
-        phases: ['lint'],
+        sourceId: "alpha",
+        phases: ["lint"],
       });
       // lint on an empty dir returns ok+clean+0 fixes
-      expect(['ok', 'clean']).toContain(report.status);
+      expect(["ok", "clean"]).toContain(report.status);
 
-      const after = await readLastFullCycleAt('alpha');
+      const after = await readLastFullCycleAt("alpha");
       expect(after).not.toBeNull();
       const writtenMs = new Date(after!).getTime();
       expect(writtenMs).toBeGreaterThanOrEqual(t0);
@@ -90,68 +90,68 @@ describe('runCycle last_full_cycle_at exit hook', () => {
     });
   });
 
-  test('legacy caller (no sourceId) does NOT write any source timestamp', async () => {
+  test("legacy caller (no sourceId) does NOT write any source timestamp", async () => {
     await withEnv({ GBRAIN_HOME: gbrainHome }, async () => {
-      await seedSource('default-like');
+      await seedSource("default-like");
       // No sourceId passed; should remain untouched.
       await runCycle(engine, {
         brainDir,
-        phases: ['lint'],
+        phases: ["lint"],
       });
       // No per-source write happens; default source's config stays empty.
-      const after = await readLastFullCycleAt('default-like');
+      const after = await readLastFullCycleAt("default-like");
       expect(after).toBeNull();
     });
   });
 
-  test('dryRun=true skips the write', async () => {
+  test("dryRun=true skips the write", async () => {
     await withEnv({ GBRAIN_HOME: gbrainHome }, async () => {
-      await seedSource('beta');
+      await seedSource("beta");
       await runCycle(engine, {
         brainDir,
-        sourceId: 'beta',
-        phases: ['lint'],
+        sourceId: "beta",
+        phases: ["lint"],
         dryRun: true,
       });
-      const after = await readLastFullCycleAt('beta');
+      const after = await readLastFullCycleAt("beta");
       expect(after).toBeNull();
     });
   });
 
-  test('cycle that returns skipped (lock held) does NOT mark timestamp', async () => {
+  test("cycle that returns skipped (lock held) does NOT mark timestamp", async () => {
     await withEnv({ GBRAIN_HOME: gbrainHome }, async () => {
-      await seedSource('gamma');
+      await seedSource("gamma");
       // Inject a live lock row directly so the cycle returns 'skipped'.
       // This simulates "another cycle is already running for gamma."
-      const lockId = 'gbrain-cycle:gamma';
+      const lockId = "gbrain-cycle:gamma";
       const pid = process.pid;
       await engine.executeRaw(
         `INSERT INTO gbrain_cycle_locks (id, holder_pid, holder_host, acquired_at, ttl_expires_at)
          VALUES ($1, $2, 'test', NOW(), NOW() + INTERVAL '30 minutes')`,
-        [lockId, pid + 99999],
+        [lockId, pid + 99999]
       );
       const report = await runCycle(engine, {
         brainDir,
-        sourceId: 'gamma',
-        phases: ['lint', 'sync'], // sync triggers lock acquisition
+        sourceId: "gamma",
+        phases: ["lint", "sync"], // sync triggers lock acquisition
       });
-      expect(report.status).toBe('skipped');
-      expect(report.reason).toBe('cycle_already_running');
-      const after = await readLastFullCycleAt('gamma');
+      expect(report.status).toBe("skipped");
+      expect(report.reason).toBe("cycle_already_running");
+      const after = await readLastFullCycleAt("gamma");
       expect(after).toBeNull();
     });
   });
 
-  test('two consecutive per-source cycles update the timestamp on each run', async () => {
+  test("two consecutive per-source cycles update the timestamp on each run", async () => {
     await withEnv({ GBRAIN_HOME: gbrainHome }, async () => {
-      await seedSource('delta');
-      await runCycle(engine, { brainDir, sourceId: 'delta', phases: ['lint'] });
-      const first = await readLastFullCycleAt('delta');
+      await seedSource("delta");
+      await runCycle(engine, { brainDir, sourceId: "delta", phases: ["lint"] });
+      const first = await readLastFullCycleAt("delta");
       expect(first).not.toBeNull();
       // Wait 10ms so the timestamp can advance
-      await new Promise(r => setTimeout(r, 10));
-      await runCycle(engine, { brainDir, sourceId: 'delta', phases: ['lint'] });
-      const second = await readLastFullCycleAt('delta');
+      await new Promise((r) => setTimeout(r, 10));
+      await runCycle(engine, { brainDir, sourceId: "delta", phases: ["lint"] });
+      const second = await readLastFullCycleAt("delta");
       expect(second).not.toBeNull();
       expect(new Date(second!).getTime()).toBeGreaterThan(new Date(first!).getTime());
     });

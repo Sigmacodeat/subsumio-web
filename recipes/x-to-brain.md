@@ -36,6 +36,7 @@ and make judgment calls: who is important, what entities are mentioned, what
 narratives are forming.
 
 **Why sequential execution matters:**
+
 - Step 1 validates the API key. Without it, nothing connects to X.
 - Step 2 sets up the collector. Without it, you have no data.
 - Step 3 runs the first collection. Without data, you can't enrich.
@@ -70,23 +71,27 @@ Agent reads collected data
 ## Opinionated Defaults
 
 **Three collection streams:**
+
 1. **Own timeline** — your tweets, for your own archive and engagement tracking
 2. **Mentions** — who is talking about you, for relationship tracking
 3. **Keyword searches** — topics you care about, for signal detection
 
 **Deletion detection:**
+
 - Compare tweet IDs from previous run vs current
 - If an ID is missing AND the tweet is < 7 days old, call GET /tweets/{id}
 - 404 = confirmed deleted. Save the original tweet + deletion timestamp.
 - Alert on deletions from accounts you track.
 
 **Engagement velocity:**
+
 - Snapshot likes/retweets/replies for tracked tweets
 - Alert if likes doubled AND previous count >= 50
 - Alert if likes gained > 100 absolute since last check
 - Only write snapshot if metrics actually changed (idempotent)
 
 **Rate limit awareness:**
+
 - Basic tier: 1500 req/15min for timeline, 450 for mentions, 60 for search
 - Collector tracks rate limits in state.json
 - Back off automatically when approaching limits
@@ -116,6 +121,7 @@ Note: Free tier gives read-only access with low limits. Basic tier ($200/mo)
 gives search/recent endpoint and higher limits. Pro tier gets full archive search."
 
 Validate immediately:
+
 ```bash
 curl -sf -H "Authorization: Bearer $X_BEARER_TOKEN" \
   "https://api.x.com/2/users/me" \
@@ -143,6 +149,7 @@ Save it — the collector needs the numeric ID, not the handle.
 ### Step 3: Configure the Collector
 
 Create the collector directory:
+
 ```bash
 mkdir -p x-collector/data/{tweets/{own,mentions,searches},deletions,engagement}
 cd x-collector
@@ -160,6 +167,7 @@ The collector script needs these capabilities:
 5. **Atomic writes** — write to .tmp file, then rename (prevents corrupt data on crash)
 
 Configure keyword searches based on what the user cares about:
+
 ```json
 {
   "searches": [
@@ -195,6 +203,7 @@ This is YOUR job (the agent). Read the collected tweets:
 ### Step 6: Set Up Cron
 
 The collector should run every 30 minutes:
+
 ```bash
 */30 * * * * cd /path/to/x-collector && node x-collector.mjs collect >> /tmp/x-collector.log 2>&1
 ```
@@ -219,6 +228,7 @@ real-time monitoring.
 screenshots, charts, memes with text overlay, quote screenshots.
 
 **Fix:** Run OCR on tweet images via a vision model (Claude Sonnet or equivalent):
+
 - For every tweet with images, extract full text content via vision API
 - Store OCR output alongside the tweet data
 - Include extracted text in entity detection and brain page updates
@@ -236,6 +246,7 @@ that's too slow.
 near-real-time monitoring. Catches outbound tweets within seconds.
 
 **Setup:**
+
 1. Add filter rules: `POST /2/tweets/search/stream/rules` with your tracking terms
 2. Open persistent connection: `GET /2/tweets/search/stream`
 3. Process tweets as they arrive (no polling delay)
@@ -251,6 +262,7 @@ near-real-time monitoring. Catches outbound tweets within seconds.
 tweet gets equal weight.
 
 **Fix:** Rate tweets on a 6-dimension rubric:
+
 1. **Reach** -- follower count, engagement rate
 2. **Relevance** -- connection to your interests/work
 3. **Sentiment** -- positive/negative/neutral toward you
@@ -267,6 +279,7 @@ that hits 500 in an hour is a different signal than one that stays at 50.
 hours later.
 
 **Fix:** 60-second monitoring window after every outbound tweet:
+
 - Check engagement velocity (likes, replies, quotes)
 - Flag unusual reply-to-like ratios (high reply ratios signal controversy)
 - Flag if quote-tweet ratio > retweet ratio (commentary, not sharing)
@@ -275,6 +288,7 @@ hours later.
 ### X-to-Brain Pipeline (NEW)
 
 Every tweet interaction can automatically create/update brain pages:
+
 - Mentioned person has a brain page? Append to their timeline
 - New person mentioned? Check notability gate, create page if notable
 - Article URL in tweet? Fetch and ingest via article workflow
@@ -289,6 +303,7 @@ Follow `skills/_brain-filing-rules.md` for filing decisions.
 and timeouts.
 
 **Fix:** Stagger all collection schedules so max 1 runs per minute:
+
 ```
 # Good: staggered
 */30 * * * * x-collector       # :00, :30
@@ -399,6 +414,7 @@ hits the limit, own timeline and searches can still run.
 ### Stdout Contract
 
 The collector prints structured lines the cron agent can parse:
+
 ```
 RUN_START:{timestamp}
 OWN_TWEETS:{total} ({new} new)
@@ -422,28 +438,31 @@ RUN_COMPLETE:{timestamp}:tweets_stored={N}:deletions={N}:velocity_alerts={N}
 
 ## Cost Estimate
 
-| Component | Monthly Cost |
-|-----------|-------------|
-| X API Free tier | $0 (read-only, low limits) |
+| Component        | Monthly Cost                     |
+| ---------------- | -------------------------------- |
+| X API Free tier  | $0 (read-only, low limits)       |
 | X API Basic tier | $200/mo (search + higher limits) |
-| X API Pro tier | $5,000/mo (full archive) |
-| **Recommended** | **$0 (free) or $200 (basic)** |
+| X API Pro tier   | $5,000/mo (full archive)         |
+| **Recommended**  | **$0 (free) or $200 (basic)**    |
 
 Free tier works for personal monitoring. Basic tier needed for keyword search.
 
 ## Troubleshooting
 
 **API returns 403:**
+
 - Check your app has the right access level (Read or Read+Write)
 - Free tier apps can only use basic endpoints
 - Some endpoints require Basic or Pro tier
 
 **Rate limited (429):**
+
 - The collector respects rate limits automatically
 - If hitting limits frequently, increase the cron interval to 60 minutes
 - Check `data/state.json` for rate limit tracking
 
 **No tweets collected:**
+
 - Verify the user ID is correct (numeric, not handle)
 - Check the Bearer Token is valid (Step 1 validation)
 - Some accounts may have protected tweets (requires OAuth 2.0 user context)

@@ -34,16 +34,16 @@
  * Run: bun test test/e2e/v0_28_5-fix-wave.test.ts
  */
 
-import { describe, test, expect } from 'bun:test';
-import { PGLiteEngine } from '../../src/core/pglite-engine.ts';
-import { LATEST_VERSION } from '../../src/core/migrate.ts';
+import { describe, test, expect } from "bun:test";
+import { PGLiteEngine } from "../../src/core/pglite-engine.ts";
+import { LATEST_VERSION } from "../../src/core/migrate.ts";
 import {
   readContentChunksEmbeddingDim,
   embeddingMismatchMessage,
-} from '../../src/core/embedding-dim-check.ts';
+} from "../../src/core/embedding-dim-check.ts";
 
-describe('v0.28.5 cluster A — PGLite upgrade wedge regression', () => {
-  test('pre-v0.20 brain (missing v0.20+v0.26.3+v0.27 columns) re-runs initSchema cleanly', async () => {
+describe("v0.28.5 cluster A — PGLite upgrade wedge regression", () => {
+  test("pre-v0.20 brain (missing v0.20+v0.26.3+v0.27 columns) re-runs initSchema cleanly", async () => {
     const engine = new PGLiteEngine();
     await engine.connect({});
     try {
@@ -85,7 +85,7 @@ describe('v0.28.5 cluster A — PGLite upgrade wedge regression', () => {
 
       // Confirm we landed at LATEST.
       const versionRow = await engine.executeRaw<{ value: string }>(
-        `SELECT value FROM config WHERE key = 'version'`,
+        `SELECT value FROM config WHERE key = 'version'`
       );
       expect(versionRow[0]?.value).toBe(String(LATEST_VERSION));
 
@@ -98,7 +98,7 @@ describe('v0.28.5 cluster A — PGLite upgrade wedge regression', () => {
            WHERE table_schema = 'public'
              AND table_name = 'subagent_messages'
              AND column_name = 'provider_id'
-         ) AS exists`,
+         ) AS exists`
       );
       expect(providerCol[0]?.exists).toBe(true);
 
@@ -109,7 +109,7 @@ describe('v0.28.5 cluster A — PGLite upgrade wedge regression', () => {
            WHERE table_schema = 'public'
              AND table_name = 'content_chunks'
              AND column_name = 'search_vector'
-         ) AS exists`,
+         ) AS exists`
       );
       expect(searchVectorCol[0]?.exists).toBe(true);
 
@@ -119,7 +119,7 @@ describe('v0.28.5 cluster A — PGLite upgrade wedge regression', () => {
            WHERE table_schema = 'public'
              AND table_name = 'mcp_request_log'
              AND column_name = 'agent_name'
-         ) AS exists`,
+         ) AS exists`
       );
       expect(agentNameCol[0]?.exists).toBe(true);
     } finally {
@@ -127,8 +127,8 @@ describe('v0.28.5 cluster A — PGLite upgrade wedge regression', () => {
     }
   }, 60000);
 
-  test('hasPendingMigrations correctly reports state across the upgrade lifecycle', async () => {
-    const { hasPendingMigrations } = await import('../../src/core/migrate.ts');
+  test("hasPendingMigrations correctly reports state across the upgrade lifecycle", async () => {
+    const { hasPendingMigrations } = await import("../../src/core/migrate.ts");
     const engine = new PGLiteEngine();
     await engine.connect({});
     try {
@@ -140,7 +140,7 @@ describe('v0.28.5 cluster A — PGLite upgrade wedge regression', () => {
       expect(await hasPendingMigrations(engine)).toBe(false);
 
       // Rewind version → true again.
-      await engine.setConfig('version', '13');
+      await engine.setConfig("version", "13");
       expect(await hasPendingMigrations(engine)).toBe(true);
 
       // Re-apply → false. Closes the loop.
@@ -152,14 +152,14 @@ describe('v0.28.5 cluster A — PGLite upgrade wedge regression', () => {
   }, 60000);
 });
 
-describe('v0.28.5 cluster B — embedding dim corruption regression', () => {
-  test('fresh init at non-default dims templates the column correctly', async () => {
+describe("v0.28.5 cluster B — embedding dim corruption regression", () => {
+  test("fresh init at non-default dims templates the column correctly", async () => {
     // The wedge: v0.27 silently created vector(1536) regardless of the
     // --embedding-dimensions flag. v0.28.5 (#641) plumbs the dim through
     // `getPGLiteSchema(dims)` so the column is templated correctly.
-    const { configureGateway } = await import('../../src/core/ai/gateway.ts');
+    const { configureGateway } = await import("../../src/core/ai/gateway.ts");
     configureGateway({
-      embedding_model: 'openai:text-embedding-3-small',
+      embedding_model: "openai:text-embedding-3-small",
       embedding_dimensions: 768,
       env: { ...process.env },
     });
@@ -178,13 +178,13 @@ describe('v0.28.5 cluster B — embedding dim corruption regression', () => {
     }
   }, 60000);
 
-  test('large-dim init (>2000) templates the column without HNSW (Voyage 4 Large case)', async () => {
+  test("large-dim init (>2000) templates the column without HNSW (Voyage 4 Large case)", async () => {
     // Codex finding #8: dims > 2000 cannot be HNSW-indexed in pgvector.
     // The schema templating path must skip the HNSW CREATE INDEX while
     // still creating the underlying `vector(N)` column.
-    const { configureGateway } = await import('../../src/core/ai/gateway.ts');
+    const { configureGateway } = await import("../../src/core/ai/gateway.ts");
     configureGateway({
-      embedding_model: 'voyage:voyage-4-large',
+      embedding_model: "voyage:voyage-4-large",
       embedding_dimensions: 2048,
       env: { ...process.env },
     });
@@ -206,7 +206,7 @@ describe('v0.28.5 cluster B — embedding dim corruption regression', () => {
            WHERE schemaname = 'public'
              AND tablename = 'content_chunks'
              AND indexname = 'idx_chunks_embedding'
-         ) AS exists`,
+         ) AS exists`
       );
       expect(idx[0]?.exists).toBe(false);
     } finally {
@@ -216,8 +216,8 @@ describe('v0.28.5 cluster B — embedding dim corruption regression', () => {
   }, 60000);
 });
 
-describe('v0.28.5 A4 — existing-brain dim mismatch loud failure', () => {
-  test('readContentChunksEmbeddingDim correctly identifies a brain at 1536 + mismatch message inlines all four steps', async () => {
+describe("v0.28.5 A4 — existing-brain dim mismatch loud failure", () => {
+  test("readContentChunksEmbeddingDim correctly identifies a brain at 1536 + mismatch message inlines all four steps", async () => {
     const engine = new PGLiteEngine();
     await engine.connect({});
     try {
@@ -225,12 +225,12 @@ describe('v0.28.5 A4 — existing-brain dim mismatch loud failure', () => {
       // to 1536 so the test still exercises the "existing brain at 1536d"
       // path it was designed for. This mirrors how a real v0.18-vintage brain
       // would look post-upgrade.
-      const { configureGateway, resetGateway } = await import('../../src/core/ai/gateway.ts');
+      const { configureGateway, resetGateway } = await import("../../src/core/ai/gateway.ts");
       resetGateway();
       configureGateway({
-        embedding_model: 'openai:text-embedding-3-large',
+        embedding_model: "openai:text-embedding-3-large",
         embedding_dimensions: 1536,
-        env: { OPENAI_API_KEY: 'sk-fake' },
+        env: { OPENAI_API_KEY: "sk-fake" },
       });
       await engine.initSchema();
       const existing = await readContentChunksEmbeddingDim(engine);
@@ -245,39 +245,41 @@ describe('v0.28.5 A4 — existing-brain dim mismatch loud failure', () => {
       const msg = embeddingMismatchMessage({
         currentDims: existing.dims!,
         requestedDims: 768,
-        requestedModel: 'ollama:nomic-embed-text',
-        source: 'init',
-        engineKind: 'pglite',
+        requestedModel: "ollama:nomic-embed-text",
+        source: "init",
+        engineKind: "pglite",
       });
 
       // PGLite branch: wipe-and-reinit recipe (no ALTER COLUMN — that fails
       // on PGLite's WASM pgvector). Asserts the recipe references the
       // correct dim and model and points at `gbrain init --pglite`.
-      expect(msg).toContain('vector(1536)');
-      expect(msg).toContain('vector(768)');
-      expect(msg).toContain('gbrain init --pglite --embedding-model ollama:nomic-embed-text --embedding-dimensions 768');
-      expect(msg).toContain('PGLite cannot ALTER vector column types');
-      expect(msg).toContain('docs/embedding-migrations.md');
-      expect(msg).toContain('gbrain embed --stale');
+      expect(msg).toContain("vector(1536)");
+      expect(msg).toContain("vector(768)");
+      expect(msg).toContain(
+        "gbrain init --pglite --embedding-model ollama:nomic-embed-text --embedding-dimensions 768"
+      );
+      expect(msg).toContain("PGLite cannot ALTER vector column types");
+      expect(msg).toContain("docs/embedding-migrations.md");
+      expect(msg).toContain("gbrain embed --stale");
     } finally {
       await engine.disconnect();
     }
   }, 60000);
 
-  test('mismatch message for dims > 2000 explicitly skips the HNSW reindex (codex finding #8)', () => {
+  test("mismatch message for dims > 2000 explicitly skips the HNSW reindex (codex finding #8)", () => {
     // The exact case the user pasting a recipe would otherwise crash on:
     // CREATE INDEX HNSW on a 2048-d vector column is rejected by pgvector.
     // Postgres branch: HNSW reindex must be skipped for dims > 2000 (pgvector cap).
     const msg = embeddingMismatchMessage({
       currentDims: 1536,
       requestedDims: 2048,
-      requestedModel: 'voyage:voyage-4-large',
-      source: 'doctor',
-      engineKind: 'postgres',
+      requestedModel: "voyage:voyage-4-large",
+      source: "doctor",
+      engineKind: "postgres",
     });
 
-    expect(msg).toContain('vector(2048)');
-    expect(msg).toContain('Skip reindex');
+    expect(msg).toContain("vector(2048)");
+    expect(msg).toContain("Skip reindex");
     expect(msg).toContain("exceeds pgvector's HNSW cap");
     // The HNSW CREATE INDEX line must NOT appear in the 2048-d recipe —
     // a user pasting it would crash trying to recreate the index.

@@ -64,7 +64,10 @@ async function submitAndWait(
   while (Date.now() < deadline) {
     await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
 
-    const statusRes = await fetch(`${ENGINE_URL}/api/agents/${jobId}`, { headers, signal: AbortSignal.timeout(10_000) });
+    const statusRes = await fetch(`${ENGINE_URL}/api/agents/${jobId}`, {
+      headers,
+      signal: AbortSignal.timeout(10_000),
+    });
     if (!statusRes.ok) continue;
 
     const job = await statusRes.json();
@@ -180,9 +183,7 @@ export const GET = createCronHandler(async (_req: NextRequest): Promise<Response
               brainId,
               scope: "daily_briefing",
               freeform: `✨ Subsumio Rundown ist bereit!\n\nIhr tägliches Kanzlei-Briefing wurde generiert.\n\n👉 https://subsum.io/dashboard/reports`,
-              template: templateName
-                ? { name: templateName, language: { code: "de" } }
-                : undefined,
+              template: templateName ? { name: templateName, language: { code: "de" } } : undefined,
             });
             if (waResult.sent) whatsapped++;
           } catch {

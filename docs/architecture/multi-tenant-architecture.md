@@ -3,7 +3,7 @@
 **Status:** Accepted  
 **Date:** 2026-06-20  
 **Decision Owner:** Architecture Team  
-**Supersedes:** None  
+**Supersedes:** None
 
 ## Kontext
 
@@ -53,14 +53,14 @@ Org A (brain-alpha)     Org B (brain-beta)
 
 ## Isolationsebenen
 
-| Ebene | Mechanismus | Durchsetzung |
-|-------|-------------|--------------|
-| **Org** | `org_id` in `TenantScope` | `isSameOrg()` + `TenantGuard.assertOrg()` |
-| **Brain** | `brain_id` in `TenantScope` | `isSameBrain()` + `TenantGuard.assertBrain()` |
-| **Source** | `source` in `TenantScope` (optional) | `TenantGuard.assertSource()` |
-| **Matter** | `case_slug` Prefix-Filter | `TenantGuard.assertMatter()` |
-| **User** | `allowed_users` in `MatterPermissionSummary` | `TenantGuard.assertUser()` |
-| **Ethical Wall** | `blocked_users` in `MatterPermissionSummary` | `TenantGuard.assertEthicalWall()` |
+| Ebene            | Mechanismus                                  | Durchsetzung                                  |
+| ---------------- | -------------------------------------------- | --------------------------------------------- |
+| **Org**          | `org_id` in `TenantScope`                    | `isSameOrg()` + `TenantGuard.assertOrg()`     |
+| **Brain**        | `brain_id` in `TenantScope`                  | `isSameBrain()` + `TenantGuard.assertBrain()` |
+| **Source**       | `source` in `TenantScope` (optional)         | `TenantGuard.assertSource()`                  |
+| **Matter**       | `case_slug` Prefix-Filter                    | `TenantGuard.assertMatter()`                  |
+| **User**         | `allowed_users` in `MatterPermissionSummary` | `TenantGuard.assertUser()`                    |
+| **Ethical Wall** | `blocked_users` in `MatterPermissionSummary` | `TenantGuard.assertEthicalWall()`             |
 
 ## Durchsetzungspunkte
 
@@ -88,11 +88,11 @@ in Retrieval-Ergebnissen auftauchen.
 
 ## Risiken & Mitigations
 
-| Risiko | Mitigation |
-|--------|------------|
-| Engine-Bug ignoriert `x-subsumio-source` | App-Ebene filtert zusätzlich (`filterResultsByTenant`) |
-| Cross-Brain-Flag wird missbraucht | `cross_brain` nur mit `isSameOrg()` Check |
-| Neue API-Route ohne Tenant-Guard | Code-Review + `createHandler` setzt `ctx.brainId` |
+| Risiko                                         | Mitigation                                                    |
+| ---------------------------------------------- | ------------------------------------------------------------- |
+| Engine-Bug ignoriert `x-subsumio-source`       | App-Ebene filtert zusätzlich (`filterResultsByTenant`)        |
+| Cross-Brain-Flag wird missbraucht              | `cross_brain` nur mit `isSameOrg()` Check                     |
+| Neue API-Route ohne Tenant-Guard               | Code-Review + `createHandler` setzt `ctx.brainId`             |
 | Ethical-Wall-Bypass über direkten Page-Zugriff | `assertMatter()` + `assertEthicalWall()` vor jedem Page-Fetch |
 
 ## Konsequenzen

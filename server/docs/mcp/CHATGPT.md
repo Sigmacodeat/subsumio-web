@@ -37,12 +37,9 @@ Register from the `/admin` dashboard:
 Host-repo wrappers can register programmatically:
 
 ```ts
-await oauthProvider.registerClientManual(
-  'chatgpt',
-  ['authorization_code'],
-  'read write',
-  ['https://chat.openai.com/connector_platform_oauth_redirect'],
-);
+await oauthProvider.registerClientManual("chatgpt", ["authorization_code"], "read write", [
+  "https://chat.openai.com/connector_platform_oauth_redirect",
+]);
 ```
 
 ### 3. Expose the server publicly

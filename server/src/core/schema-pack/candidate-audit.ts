@@ -21,9 +21,9 @@
 // Best-effort writes: stderr warn on disk failure, NEVER throws. The
 // brain stays usable even when audit is unwritable.
 
-import { appendFileSync, mkdirSync, existsSync, readFileSync, readdirSync } from 'node:fs';
-import { join } from 'node:path';
-import { resolveAuditDir } from '../minions/handlers/shell-audit.ts';
+import { appendFileSync, mkdirSync, existsSync, readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
+import { resolveAuditDir } from "../minions/handlers/shell-audit.ts";
 
 /**
  * Candidate audit record. The fields below are the entire surface
@@ -57,7 +57,7 @@ export interface LogCandidateOpts {
 }
 
 export function isAuditVerbose(): boolean {
-  return process.env.GBRAIN_SCHEMA_AUDIT_VERBOSE === '1';
+  return process.env.GBRAIN_SCHEMA_AUDIT_VERBOSE === "1";
 }
 
 export function computeIsoWeekName(date: Date = new Date()): string {
@@ -66,8 +66,8 @@ export function computeIsoWeekName(date: Date = new Date()): string {
   const dayNum = tmp.getUTCDay() || 7;
   tmp.setUTCDate(tmp.getUTCDate() + 4 - dayNum);
   const yearStart = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 1));
-  const weekNo = Math.ceil((((tmp.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
-  return `${tmp.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+  const weekNo = Math.ceil(((tmp.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+  return `${tmp.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
 }
 
 export function computeCandidateAuditPath(date: Date = new Date()): string {
@@ -76,11 +76,11 @@ export function computeCandidateAuditPath(date: Date = new Date()): string {
 }
 
 async function sha8(value: string): Promise<string> {
-  const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value));
+  const hashBuffer = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
   return Array.from(new Uint8Array(hashBuffer))
     .slice(0, 4)
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('');
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 /**
@@ -91,7 +91,7 @@ async function sha8(value: string): Promise<string> {
 export async function logCandidate(opts: LogCandidateOpts): Promise<void> {
   const verbose = isAuditVerbose();
   const typeField = verbose ? opts.type : await sha8(opts.type);
-  const slugPrefix = opts.slug.split('/')[0] ?? '';
+  const slugPrefix = opts.slug.split("/")[0] ?? "";
   const record: CandidateAuditRecord = {
     ts: new Date().toISOString(),
     type_or_hash: typeField,
@@ -103,8 +103,8 @@ export async function logCandidate(opts: LogCandidateOpts): Promise<void> {
   };
   const path = computeCandidateAuditPath();
   try {
-    mkdirSync(join(path, '..'), { recursive: true });
-    appendFileSync(path, JSON.stringify(record) + '\n', 'utf-8');
+    mkdirSync(join(path, ".."), { recursive: true });
+    appendFileSync(path, JSON.stringify(record) + "\n", "utf-8");
   } catch (e) {
     process.stderr.write(`[schema-candidates-audit] write failed: ${(e as Error).message}\n`);
   }
@@ -122,10 +122,10 @@ export function readRecentCandidates(daysBack = 30): CandidateAuditRecord[] {
   const cutoffIso = new Date(cutoffMs).toISOString();
   const records: CandidateAuditRecord[] = [];
   for (const name of readdirSync(auditDir)) {
-    if (!name.startsWith('schema-candidates-') || !name.endsWith('.jsonl')) continue;
+    if (!name.startsWith("schema-candidates-") || !name.endsWith(".jsonl")) continue;
     try {
-      const content = readFileSync(join(auditDir, name), 'utf-8');
-      for (const line of content.split('\n')) {
+      const content = readFileSync(join(auditDir, name), "utf-8");
+      for (const line of content.split("\n")) {
         if (!line.trim()) continue;
         try {
           const r = JSON.parse(line) as CandidateAuditRecord;

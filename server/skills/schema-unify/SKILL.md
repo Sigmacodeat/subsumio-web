@@ -76,6 +76,7 @@ gbrain onboard --check --explain
 ```
 
 This invokes the `unify-types` handler in dry-run mode and prints:
+
 - How many pages would retype per cluster (tweets, articles, companies, etc.)
 - How many concept-redirect pages would become alias rows
 - How many edge-shaped pages would convert to real links
@@ -100,6 +101,7 @@ gbrain jobs follow <job_id>
 ```
 
 On a 186K-page brain expect ~10 minutes. The handler runs:
+
 1. Preflight (validate target pack has `mapping_rules:`)
 2. Stats snapshot (pre-state for celebration summary)
 3. Acquire `gbrain-unify` db-lock (60min TTL)
@@ -120,6 +122,7 @@ gbrain schema stats
 ```
 
 Expected:
+
 - `pack_upgrade_available` → `ok` (active pack is now v2)
 - `type_proliferation` → `ok` (≤16 distinct typed values)
 - `dangling_aliases` → `ok` (slug_aliases all point at active canonicals)
@@ -186,22 +189,26 @@ Worried about a specific cluster's mapping?
 ## Contract
 
 Inputs:
+
 - A brain on `gbrain-base` (or any pack with `migration_from: gbrain-base-v2`).
 - Write access to submit a PROTECTED Minion handler (`--allow-protected`).
 - ~10 min wallclock on a 186K-page brain.
 
 Outputs:
+
 - Pages retyped to canonical types with `frontmatter.legacy_type` preserved (per-page rollback signal).
 - `slug_aliases` rows for concept-redirect pages (alias table IS the resolver — no link rewrite).
 - Real `links` rows for edge-shaped pages (`atom-partner-link`, `symlink`, etc.).
 - Active pack flipped to `gbrain-base-v2` atomically at end of successful run.
 
 Side effects:
+
 - Source pages soft-deleted with 72h restore TTL (`gbrain pages restore <slug>`).
 - One-time cache invalidation on KNOBS_HASH_VERSION bump (5→6); self-healing in `cache.ttl_seconds`.
 - Query-time `--type X` alias-expands via `expandTypeFilter` (D14 back-compat).
 
 Failure modes:
+
 - Concurrent submission rejected by the `gbrain-unify` db-lock; second call exits gracefully.
 - Catch-all retype excludes `page_to_link` + `page_to_alias` source types (caught in E2E pre-merge).
 - Phase failures abort the run before `active_pack_flipped`; partial state restorable via op_checkpoint resume.
@@ -209,6 +216,7 @@ Failure modes:
 ## Anti-Patterns
 
 DON'T:
+
 - Submit `unify-types` directly via the MCP `submit_job` op without `--allow-protected`. PROTECTED handlers require trusted local callers; remote MCP rejection is the intentional trust boundary.
 - Edit `mapping_rules` in `gbrain-base-v2.yaml` to skip clusters you don't trust. Fork the pack instead (`gbrain schema fork`) so the source-of-truth migration stays consistent across brains.
 - Run `unify-types` from inside an autopilot tick. The check is `manual_only` per D17 — autopilot deliberately never auto-fires it because pack upgrades are one-time consenting taxonomy decisions.
@@ -218,6 +226,7 @@ DON'T:
 ## Output Format
 
 Per phase, the handler emits to stderr:
+
 ```
 [unify-types] phase=retype-explicit applied=N skipped=M  cost=USD  ttl=Ns
 [unify-types] phase=retype-catch-all applied=N
@@ -228,6 +237,7 @@ Per phase, the handler emits to stderr:
 ```
 
 Final celebration summary to stderr:
+
 ```
 ═══════════════════════════════════════════════════════════
   gbrain-base-v2 migration complete

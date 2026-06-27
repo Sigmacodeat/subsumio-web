@@ -70,7 +70,7 @@ same claim can re-use the verified analysis.
 
 academic-verify is a thin orchestrator. The actual web search is done
 by [perplexity-research](../perplexity-research/SKILL.md). academic-verify's
-job is the *workflow*: scoping the claim precisely, sending it through
+job is the _workflow_: scoping the claim precisely, sending it through
 perplexity-research with citation-mode, then formatting the response
 into a verdict-shaped brain page.
 
@@ -131,13 +131,13 @@ brain_context_slugs: ["pages cited as context"]
 
 ## Trace
 
-| Step | Finding | Source |
-|------|---------|--------|
-| Original publication | [Title, authors, year, DOI] | [URL] |
-| Methodology | [1-line summary; flag obvious limits] | [URL] |
-| Raw data | [Public repo / proprietary / available-on-request] | [URL] |
-| Independent replication | [Replication studies and their results] | [URL] |
-| Critical citations | [Papers that critique this work] | [URL] |
+| Step                    | Finding                                            | Source |
+| ----------------------- | -------------------------------------------------- | ------ |
+| Original publication    | [Title, authors, year, DOI]                        | [URL]  |
+| Methodology             | [1-line summary; flag obvious limits]              | [URL]  |
+| Raw data                | [Public repo / proprietary / available-on-request] | [URL]  |
+| Independent replication | [Replication studies and their results]            | [URL]  |
+| Critical citations      | [Papers that critique this work]                   | [URL]  |
 
 ## Verdict
 
@@ -158,14 +158,14 @@ brain_context_slugs: ["pages cited as context"]
 
 ## Useful databases (the agent uses these via perplexity-research)
 
-| Database | What it has | URL pattern |
-|----------|-------------|-------------|
+| Database         | What it has                                      | URL pattern                 |
+| ---------------- | ------------------------------------------------ | --------------------------- |
 | Retraction Watch | Retractions, corrections, expressions of concern | retractionwatch.com/?s=NAME |
-| PubPeer | Anonymous post-publication peer review | pubpeer.com/search?q=NAME |
-| OSF | Pre-registrations, open data, open materials | osf.io/search/?q=QUERY |
-| Semantic Scholar | Citation analysis, paper metadata | api.semanticscholar.org |
-| OpenAlex | Open citation data, institutional affiliations | api.openalex.org |
-| Many Labs | Replication results for social psychology | osf.io/wx7ck/ |
+| PubPeer          | Anonymous post-publication peer review           | pubpeer.com/search?q=NAME   |
+| OSF              | Pre-registrations, open data, open materials     | osf.io/search/?q=QUERY      |
+| Semantic Scholar | Citation analysis, paper metadata                | api.semanticscholar.org     |
+| OpenAlex         | Open citation data, institutional affiliations   | api.openalex.org            |
+| Many Labs        | Replication results for social psychology        | osf.io/wx7ck/               |
 
 ## Standards (the rigor bar)
 
@@ -207,7 +207,6 @@ doesn't, the trace speaks for itself.
 - `skills/citation-fixer/SKILL.md` — fixes citation FORMATTING; this
   skill checks whether the cited claim is true
 - `skills/conventions/quality.md` — citation + back-link rules
-
 
 ## Contract
 

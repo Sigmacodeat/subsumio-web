@@ -23,7 +23,7 @@ This means:
   Postgres eats itself, if PGLite's WASM lock wedges — you don't need
   a backup. You wipe the DB, re-import from your brain repo, and the
   derived state regenerates. v0.32.3 ships `gbrain rebuild
-  --confirm-destructive` as the documented one-liner.
+--confirm-destructive` as the documented one-liner.
 - **Multi-machine sync is git.** Your brain is a repo. Push from one
   machine, pull from another, and the second machine's DB rebuilds on
   its next sync. No "back up the database" step.
@@ -48,15 +48,15 @@ the markdown — wipe the table and `gbrain extract` rebuilds it
 identically. The CI gate keeps direct DB writes from drifting away
 from the markdown contract.
 
-| Category | How it's stored in markdown | Derived DB table | Reconciler |
-|---|---|---|---|
-| **Takes** (incl. hunches, bets) | `## Takes` fenced table between `<!--- gbrain:takes:begin -->` / `:end -->` markers | `takes` | `extract takes` |
-| **Facts** | `## Facts` fenced table between `<!--- gbrain:facts:begin -->` / `:end -->` markers | `facts` | `extract_facts` cycle phase |
-| **Links** | Inline `[text](slug)` / `[[slug]]` in markdown body + frontmatter `direction: incoming` | `links` | `extract links` |
-| **Timeline** | `## Timeline` section after `<!-- timeline -->` sentinel | `timeline_entries` | `extract timeline` |
-| **Tags** | Frontmatter `tags:` YAML array | `tags` | `importFromFile` (reconciles per-page on import) |
-| **emotional_weight** | Recomputed from takes + tags | `pages.emotional_weight` (signal column) | `recompute_emotional_weight` cycle phase |
-| **synthesis_evidence** | FK into `takes` rows (`slug#N`) inside synthesis pages | `synthesis_evidence` | `extract takes` (transitively) |
+| Category                        | How it's stored in markdown                                                             | Derived DB table                         | Reconciler                                       |
+| ------------------------------- | --------------------------------------------------------------------------------------- | ---------------------------------------- | ------------------------------------------------ |
+| **Takes** (incl. hunches, bets) | `## Takes` fenced table between `<!--- gbrain:takes:begin -->` / `:end -->` markers     | `takes`                                  | `extract takes`                                  |
+| **Facts**                       | `## Facts` fenced table between `<!--- gbrain:facts:begin -->` / `:end -->` markers     | `facts`                                  | `extract_facts` cycle phase                      |
+| **Links**                       | Inline `[text](slug)` / `[[slug]]` in markdown body + frontmatter `direction: incoming` | `links`                                  | `extract links`                                  |
+| **Timeline**                    | `## Timeline` section after `<!-- timeline -->` sentinel                                | `timeline_entries`                       | `extract timeline`                               |
+| **Tags**                        | Frontmatter `tags:` YAML array                                                          | `tags`                                   | `importFromFile` (reconciles per-page on import) |
+| **emotional_weight**            | Recomputed from takes + tags                                                            | `pages.emotional_weight` (signal column) | `recompute_emotional_weight` cycle phase         |
+| **synthesis_evidence**          | FK into `takes` rows (`slug#N`) inside synthesis pages                                  | `synthesis_evidence`                     | `extract takes` (transitively)                   |
 
 ### Derived from FS but not user-authored
 
@@ -64,11 +64,11 @@ These hold derived state that's automatically reconstructible from the
 markdown but not directly authored as markdown by the user. The
 chunker + embedder rebuild these on import.
 
-| Table | Source | Notes |
-|---|---|---|
-| `pages` | The markdown file as a whole | One row per file; `compiled_truth` + `frontmatter` come from parse |
-| `content_chunks` | `pages.compiled_truth` after chunker strip | Re-chunked on content_hash change; embedded via configured model |
-| `page_versions` | Each `pages` UPDATE | Audit history; rebuildable in principle but not in practice |
+| Table            | Source                                     | Notes                                                              |
+| ---------------- | ------------------------------------------ | ------------------------------------------------------------------ |
+| `pages`          | The markdown file as a whole               | One row per file; `compiled_truth` + `frontmatter` come from parse |
+| `content_chunks` | `pages.compiled_truth` after chunker strip | Re-chunked on content_hash change; embedded via configured model   |
+| `page_versions`  | Each `pages` UPDATE                        | Audit history; rebuildable in principle but not in practice        |
 
 ### DB-only by design (named exceptions)
 
@@ -76,17 +76,17 @@ These hold runtime / infrastructure state that's intentionally not in
 the repo. The architectural rule still holds — these aren't
 "user knowledge" — but they're DB-only by design.
 
-| Category | Why it's OK to be DB-only |
-|---|---|
-| `raw_data` | Webhook/transcript sidecars; not user-authored knowledge. |
+| Category                                                                  | Why it's OK to be DB-only                                 |
+| ------------------------------------------------------------------------- | --------------------------------------------------------- |
+| `raw_data`                                                                | Webhook/transcript sidecars; not user-authored knowledge. |
 | `subagent_messages` / `subagent_tool_executions` / `subagent_rate_leases` | Runtime job state. Replay-only, not persistent knowledge. |
-| `oauth_clients` / `oauth_tokens` / `access_tokens` | Credentials. Not in source control by definition. |
-| `mcp_request_log` | Audit trail. Volatile by design. |
-| `minion_jobs` / `minion_inbox` / `minion_attachments` | Job queue. Restarts re-enqueue or drop. |
-| `eval_candidates` / `eval_capture_failures` | Contributor-mode dev loop; opt-in capture. |
-| `dream_verdicts` | Cheap verdict cache. Rebuildable by re-running Haiku. |
-| `gbrain_cycle_locks` / migration ledger | Infrastructure. |
-| `config` (some keys) | Site-local routing config (e.g. `sync.repo_path`). |
+| `oauth_clients` / `oauth_tokens` / `access_tokens`                        | Credentials. Not in source control by definition.         |
+| `mcp_request_log`                                                         | Audit trail. Volatile by design.                          |
+| `minion_jobs` / `minion_inbox` / `minion_attachments`                     | Job queue. Restarts re-enqueue or drop.                   |
+| `eval_candidates` / `eval_capture_failures`                               | Contributor-mode dev loop; opt-in capture.                |
+| `dream_verdicts`                                                          | Cheap verdict cache. Rebuildable by re-running Haiku.     |
+| `gbrain_cycle_locks` / migration ledger                                   | Infrastructure.                                           |
+| `config` (some keys)                                                      | Site-local routing config (e.g. `sync.repo_path`).        |
 
 A new derived table that holds user-knowledge MUST land FS-first.
 If you're tempted to add one as "DB-only for now," the structural
@@ -168,7 +168,7 @@ exercises this exact flow on every CI run.
 When you add a new user-knowledge category:
 
 1. **Define the markdown shape.** Fence (`<!--- gbrain:NAME:begin
-   --> ... :end -->` table) or frontmatter field.
+--> ... :end -->` table) or frontmatter field.
 2. **Build a parser** that produces structured data from markdown.
    See `src/core/fence-shared.ts` for the shared primitives.
 3. **Build a writer** that round-trips: parse + edit + render produces

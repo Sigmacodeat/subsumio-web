@@ -1,8 +1,8 @@
-import { VERSION } from '../version.ts';
-import { isMinorOrMajorBump, isValidVersionString } from '../core/semver.ts';
-import { fetchChangelog, fetchLatestRelease } from './check-update.ts';
-import { detectInstallMethod, runUpgrade } from './upgrade.ts';
-import { writeUpdateCache } from '../core/self-upgrade.ts';
+import { VERSION } from "../version.ts";
+import { isMinorOrMajorBump, isValidVersionString } from "../core/semver.ts";
+import { fetchChangelog, fetchLatestRelease } from "./check-update.ts";
+import { detectInstallMethod, runUpgrade } from "./upgrade.ts";
+import { writeUpdateCache } from "../core/self-upgrade.ts";
 
 /**
  * `gbrain self-upgrade [--check-only] [--force] [--json]`
@@ -18,25 +18,25 @@ import { writeUpdateCache } from '../core/self-upgrade.ts';
  *   --json        Machine-readable output for the check.
  */
 export async function runSelfUpgrade(args: string[]): Promise<void> {
-  if (args.includes('--help') || args.includes('-h')) {
+  if (args.includes("--help") || args.includes("-h")) {
     console.log(
-      'Usage: gbrain self-upgrade [--check-only] [--force] [--json]\n\n' +
-        'Check for and apply gbrain updates. The shared entry point used by the\n' +
-        'CLI startup marker, the gbrain-upgrade agent skill, and the autopilot\n' +
-        'silent channel.\n\n' +
-        '  --check-only  Report whether an upgrade is available; do not apply.\n' +
-        '  --force       Apply even when not behind.\n' +
-        '  --json        Machine-readable output (with --check-only).',
+      "Usage: gbrain self-upgrade [--check-only] [--force] [--json]\n\n" +
+        "Check for and apply gbrain updates. The shared entry point used by the\n" +
+        "CLI startup marker, the gbrain-upgrade agent skill, and the autopilot\n" +
+        "silent channel.\n\n" +
+        "  --check-only  Report whether an upgrade is available; do not apply.\n" +
+        "  --force       Apply even when not behind.\n" +
+        "  --json        Machine-readable output (with --check-only)."
     );
     return;
   }
 
-  const checkOnly = args.includes('--check-only');
-  const force = args.includes('--force');
-  const json = args.includes('--json');
+  const checkOnly = args.includes("--check-only");
+  const force = args.includes("--force");
+  const json = args.includes("--json");
 
   const release = await fetchLatestRelease();
-  const latest = release ? release.tag.replace(/^v/, '') : null;
+  const latest = release ? release.tag.replace(/^v/, "") : null;
   const behind = !!latest && isValidVersionString(latest) && isMinorOrMajorBump(VERSION, latest);
 
   // Warm the cache so the next invocation's startup hook can emit without a fetch.
@@ -44,8 +44,8 @@ export async function runSelfUpgrade(args: string[]): Promise<void> {
     if (latest && isValidVersionString(latest)) {
       writeUpdateCache(
         behind
-          ? { kind: 'upgrade_available', current: VERSION, latest }
-          : { kind: 'up_to_date', current: VERSION },
+          ? { kind: "upgrade_available", current: VERSION, latest }
+          : { kind: "up_to_date", current: VERSION }
       );
     }
   } catch {
@@ -56,7 +56,7 @@ export async function runSelfUpgrade(args: string[]): Promise<void> {
     // Tell the operator WHAT they'd get: fetch the changelog only when actually
     // behind (so an up-to-date check stays a single release fetch). The agent
     // skill surfaces these "what's new" bullets in the notify prompt.
-    let changelogDiff = '';
+    let changelogDiff = "";
     if (behind && latest) {
       try {
         changelogDiff = await fetchChangelog(VERSION, latest);
@@ -69,20 +69,20 @@ export async function runSelfUpgrade(args: string[]): Promise<void> {
         JSON.stringify(
           {
             current_version: VERSION,
-            latest_version: latest ?? '',
+            latest_version: latest ?? "",
             update_available: behind,
             install_method: detectInstallMethod(),
-            release_url: release?.url ?? '',
+            release_url: release?.url ?? "",
             changelog_diff: changelogDiff,
           },
           null,
-          2,
-        ),
+          2
+        )
       );
     } else if (behind) {
       console.log(`Update available: ${VERSION} -> ${latest}. Run: gbrain self-upgrade`);
       if (changelogDiff) {
-        console.log('\nWhat changed:\n');
+        console.log("\nWhat changed:\n");
         console.log(changelogDiff);
       }
       if (release?.url) console.log(`\nRelease: ${release.url}`);

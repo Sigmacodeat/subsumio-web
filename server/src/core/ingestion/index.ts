@@ -22,7 +22,7 @@ export type {
   IngestionSource,
   IngestionSourceContext,
   IngestionSourceHealth,
-} from './types.ts';
+} from "./types.ts";
 
 export {
   INGESTION_CONTENT_TYPES,
@@ -30,4 +30,4 @@ export {
   IngestionEventError,
   computeContentHash,
   validateIngestionEvent,
-} from './types.ts';
+} from "./types.ts";

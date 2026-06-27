@@ -35,41 +35,56 @@
  * config; it never writes config.
  */
 
-import { existsSync, mkdirSync, appendFileSync } from 'fs';
-import { join } from 'path';
+import { existsSync, mkdirSync, appendFileSync } from "fs";
+import { join } from "path";
 
-import type { Migration, OrchestratorOpts, OrchestratorResult, OrchestratorPhaseResult } from './types.ts';
-import { loadConfig, toEngineConfig, gbrainPath } from '../../core/config.ts';
-import { createEngine } from '../../core/engine-factory.ts';
-import type { BrainEngine } from '../../core/engine.ts';
+import type {
+  Migration,
+  OrchestratorOpts,
+  OrchestratorResult,
+  OrchestratorPhaseResult,
+} from "./types.ts";
+import { loadConfig, toEngineConfig, gbrainPath } from "../../core/config.ts";
+import { createEngine } from "../../core/engine-factory.ts";
+import type { BrainEngine } from "../../core/engine.ts";
 // Bug 3 — ledger writes moved to the runner (apply-migrations.ts).
 
 // Lazy: GBRAIN_HOME may be set after module load.
-const getRollbackDir = () => gbrainPath('migrations');
-const getRollbackFile = () => join(getRollbackDir(), 'v0_13_1-rollback.jsonl');
+const getRollbackDir = () => gbrainPath("migrations");
+const getRollbackFile = () => join(getRollbackDir(), "v0_13_1-rollback.jsonl");
 
 // ---------------------------------------------------------------------------
 // Phase A — connect (no config write)
 // ---------------------------------------------------------------------------
 
-async function phaseAConnect(opts: OrchestratorOpts): Promise<{ result: OrchestratorPhaseResult; engine: BrainEngine | null }> {
+async function phaseAConnect(
+  opts: OrchestratorOpts
+): Promise<{ result: OrchestratorPhaseResult; engine: BrainEngine | null }> {
   if (opts.dryRun) {
-    return { result: { name: 'connect', status: 'skipped', detail: 'dry-run' }, engine: null };
+    return { result: { name: "connect", status: "skipped", detail: "dry-run" }, engine: null };
   }
   try {
     const config = loadConfig();
     if (!config) {
       return {
-        result: { name: 'connect', status: 'skipped', detail: 'no brain configured (run gbrain init first)' },
+        result: {
+          name: "connect",
+          status: "skipped",
+          detail: "no brain configured (run gbrain init first)",
+        },
         engine: null,
       };
     }
     const engine = await createEngine(toEngineConfig(config));
     await engine.connect(toEngineConfig(config));
-    return { result: { name: 'connect', status: 'complete' }, engine };
+    return { result: { name: "connect", status: "complete" }, engine };
   } catch (e) {
     return {
-      result: { name: 'connect', status: 'failed', detail: e instanceof Error ? e.message : String(e) },
+      result: {
+        name: "connect",
+        status: "failed",
+        detail: e instanceof Error ? e.message : String(e),
+      },
       engine: null,
     };
   }
@@ -115,19 +130,23 @@ interface GrandfatherResult {
 // loadConfig flow is exercised separately). Internal helper otherwise.
 export async function phaseCGrandfather(
   engine: BrainEngine,
-  opts: OrchestratorOpts,
+  opts: OrchestratorOpts
 ): Promise<{ result: OrchestratorPhaseResult; detail: GrandfatherResult }> {
   const gf: GrandfatherResult = { touched: 0, skipped: 0, failed: 0, failures: [] };
 
   try {
     if (opts.dryRun) {
       const rows = await engine.executeRaw<{ count: string | number }>(
-        `SELECT COUNT(*) AS count FROM pages WHERE ${GRANDFATHER_WHERE}`,
+        `SELECT COUNT(*) AS count FROM pages WHERE ${GRANDFATHER_WHERE}`
       );
       const c = rows[0]?.count ?? 0;
-      gf.touched = typeof c === 'string' ? parseInt(c, 10) : Number(c);
+      gf.touched = typeof c === "string" ? parseInt(c, 10) : Number(c);
       return {
-        result: { name: 'grandfather', status: 'complete', detail: `would touch ${gf.touched} (dry-run)` },
+        result: {
+          name: "grandfather",
+          status: "complete",
+          detail: `would touch ${gf.touched} (dry-run)`,
+        },
         detail: gf,
       };
     }
@@ -138,9 +157,9 @@ export async function phaseCGrandfather(
     // blobs in memory). The snapshot isn't invalidated by our writes because
     // each UPDATE flips the rows out of the GRANDFATHER_WHERE predicate.
     const idRows = await engine.executeRaw<{ id: number }>(
-      `SELECT id FROM pages WHERE ${GRANDFATHER_WHERE} ORDER BY id`,
+      `SELECT id FROM pages WHERE ${GRANDFATHER_WHERE} ORDER BY id`
     );
-    const ids = idRows.map(r => Number(r.id));
+    const ids = idRows.map((r) => Number(r.id));
 
     for (let i = 0; i < ids.length; i += CHUNK_SIZE) {
       const chunk = ids.slice(i, i + CHUNK_SIZE);
@@ -149,17 +168,17 @@ export async function phaseCGrandfather(
         // one appendFileSync per chunk. Carries source_id so rollback is
         // unambiguous across same-slug-different-source pages.
         const snap = await engine.executeRaw<{
-          id: number; slug: string; source_id: string | null; frontmatter: Record<string, unknown> | null;
-        }>(
-          'SELECT id, slug, source_id, frontmatter FROM pages WHERE id = ANY($1::int[])',
-          [chunk],
-        );
+          id: number;
+          slug: string;
+          source_id: string | null;
+          frontmatter: Record<string, unknown> | null;
+        }>("SELECT id, slug, source_id, frontmatter FROM pages WHERE id = ANY($1::int[])", [chunk]);
         appendRollbackBatch(snap);
 
         await engine.executeRaw(
           `UPDATE pages SET frontmatter = jsonb_set(COALESCE(frontmatter, '{}'::jsonb), '{validate}', 'false'::jsonb) ` +
-          'WHERE id = ANY($1::int[])',
-          [chunk],
+            "WHERE id = ANY($1::int[])",
+          [chunk]
         );
         gf.touched += chunk.length;
       } catch (e) {
@@ -173,10 +192,10 @@ export async function phaseCGrandfather(
     gf.failures.push(`grandfather: ${e instanceof Error ? e.message : String(e)}`.slice(0, 120));
   }
 
-  const status: OrchestratorPhaseResult['status'] = gf.failed > 0 ? 'failed' : 'complete';
+  const status: OrchestratorPhaseResult["status"] = gf.failed > 0 ? "failed" : "complete";
   const detailStr = `touched=${gf.touched} skipped=${gf.skipped} failed=${gf.failed}`;
   return {
-    result: { name: 'grandfather', status, detail: detailStr },
+    result: { name: "grandfather", status, detail: detailStr },
     detail: gf,
   };
 }
@@ -185,26 +204,29 @@ export async function phaseCGrandfather(
 // Phase D — verify
 // ---------------------------------------------------------------------------
 
-async function phaseDVerify(engine: BrainEngine, expectedTouched: number): Promise<OrchestratorPhaseResult> {
+async function phaseDVerify(
+  engine: BrainEngine,
+  expectedTouched: number
+): Promise<OrchestratorPhaseResult> {
   if (expectedTouched === 0) {
-    return { name: 'verify', status: 'complete', detail: 'nothing to verify' };
+    return { name: "verify", status: "complete", detail: "nothing to verify" };
   }
   try {
     // Count pages whose frontmatter has `validate` = false via raw SQL.
     const rows = await engine.executeRaw<{ count: string | number }>(
-      "SELECT COUNT(*) AS count FROM pages WHERE (frontmatter->>'validate')::text = 'false'",
+      "SELECT COUNT(*) AS count FROM pages WHERE (frontmatter->>'validate')::text = 'false'"
     );
     const count = rows[0]?.count ?? 0;
-    const n = typeof count === 'string' ? parseInt(count, 10) : Number(count);
+    const n = typeof count === "string" ? parseInt(count, 10) : Number(count);
     return {
-      name: 'verify',
-      status: n >= expectedTouched ? 'complete' : 'failed',
+      name: "verify",
+      status: n >= expectedTouched ? "complete" : "failed",
       detail: `pages with validate=false: ${n} (expected >= ${expectedTouched})`,
     };
   } catch (e) {
     return {
-      name: 'verify',
-      status: 'failed',
+      name: "verify",
+      status: "failed",
       detail: e instanceof Error ? e.message : String(e),
     };
   }
@@ -220,10 +242,10 @@ async function orchestrator(opts: OrchestratorOpts): Promise<OrchestratorResult>
 
   const { result: connectRes, engine } = await phaseAConnect(opts);
   phases.push(connectRes);
-  if (connectRes.status !== 'complete' || !engine) {
+  if (connectRes.status !== "complete" || !engine) {
     return {
-      version: '0.13.1',
-      status: connectRes.status === 'skipped' ? 'partial' : 'failed',
+      version: "0.13.1",
+      status: connectRes.status === "skipped" ? "partial" : "failed",
       phases,
     };
   }
@@ -241,19 +263,21 @@ async function orchestrator(opts: OrchestratorOpts): Promise<OrchestratorResult>
       phases.push(verifyRes);
     }
 
-    const anyFailed = phases.some(p => p.status === 'failed');
-    const status: OrchestratorResult['status'] = anyFailed ? 'partial' : 'complete';
+    const anyFailed = phases.some((p) => p.status === "failed");
+    const status: OrchestratorResult["status"] = anyFailed ? "partial" : "complete";
 
     // Bug 3 — ledger write lives in the runner now.
 
     return {
-      version: '0.13.1',
+      version: "0.13.1",
       status,
       phases,
       files_rewritten: filesRewritten,
     };
   } finally {
-    try { await engine.disconnect(); } catch {}
+    try {
+      await engine.disconnect();
+    } catch {}
   }
 }
 
@@ -270,19 +294,29 @@ function ensureRollbackDir(): void {
 // memory. Each line carries id + slug + source_id so a rollback is unambiguous
 // across same-slug-different-source pages (pages.slug is not globally unique).
 function appendRollbackBatch(
-  rows: ReadonlyArray<{ id: number; slug: string; source_id: string | null; frontmatter: Record<string, unknown> | null }>,
+  rows: ReadonlyArray<{
+    id: number;
+    slug: string;
+    source_id: string | null;
+    frontmatter: Record<string, unknown> | null;
+  }>
 ): void {
   if (rows.length === 0) return;
   const ts = new Date().toISOString();
-  const lines = rows.map(r => JSON.stringify({
-    migration: 'v0.13.0',
-    timestamp: ts,
-    id: r.id,
-    slug: r.slug,
-    source_id: r.source_id ?? 'default',
-    pre_frontmatter: r.frontmatter ?? {},
-  })).join('\n') + '\n';
-  appendFileSync(getRollbackFile(), lines, 'utf-8');
+  const lines =
+    rows
+      .map((r) =>
+        JSON.stringify({
+          migration: "v0.13.0",
+          timestamp: ts,
+          id: r.id,
+          slug: r.slug,
+          source_id: r.source_id ?? "default",
+          pre_frontmatter: r.frontmatter ?? {},
+        })
+      )
+      .join("\n") + "\n";
+  appendFileSync(getRollbackFile(), lines, "utf-8");
 }
 
 // ---------------------------------------------------------------------------
@@ -290,15 +324,15 @@ function appendRollbackBatch(
 // ---------------------------------------------------------------------------
 
 export const v0_13_1: Migration = {
-  version: '0.13.1',
+  version: "0.13.1",
   featurePitch: {
-    headline: 'BrainWriter integrity + grandfather protection for existing pages.',
+    headline: "BrainWriter integrity + grandfather protection for existing pages.",
     description:
-      'Adds `validate: false` to existing pages so the new Knowledge Runtime ' +
-      'validators (citation / link / back-link / triple-HR) don’t reject legacy ' +
-      'content. Pages keep passing writes through unchanged; `gbrain integrity ' +
-      '--auto` clears the flag per-page once citations are repaired. Rollback ' +
-      'log at ~/.gbrain/migrations/v0_13_1-rollback.jsonl.',
+      "Adds `validate: false` to existing pages so the new Knowledge Runtime " +
+      "validators (citation / link / back-link / triple-HR) don’t reject legacy " +
+      "content. Pages keep passing writes through unchanged; `gbrain integrity " +
+      "--auto` clears the flag per-page once citations are repaired. Rollback " +
+      "log at ~/.gbrain/migrations/v0_13_1-rollback.jsonl.",
   },
   orchestrator,
 };

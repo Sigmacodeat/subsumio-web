@@ -10,8 +10,14 @@
 
 import { motion } from "framer-motion";
 import {
-  Scale, Landmark, FileText, Gavel, Stamp, CalendarClock,
-  Brain, Network,
+  Scale,
+  Landmark,
+  FileText,
+  Gavel,
+  Stamp,
+  CalendarClock,
+  Brain,
+  Network,
   type LucideIcon,
 } from "lucide-react";
 
@@ -22,10 +28,22 @@ const MOTIF: Record<string, LucideIcon[]> = {
 
 // Node positions (% of the container) — a loose, asymmetric constellation.
 const POS = [
-  { x: 16, y: 24 }, { x: 39, y: 64 }, { x: 55, y: 20 },
-  { x: 73, y: 56 }, { x: 88, y: 30 }, { x: 30, y: 84 },
+  { x: 16, y: 24 },
+  { x: 39, y: 64 },
+  { x: 55, y: 20 },
+  { x: 73, y: 56 },
+  { x: 88, y: 30 },
+  { x: 30, y: 84 },
 ];
-const EDGES: [number, number][] = [[0, 2], [2, 4], [2, 3], [3, 1], [1, 5], [0, 1], [3, 5]];
+const EDGES: [number, number][] = [
+  [0, 2],
+  [2, 4],
+  [2, 3],
+  [3, 1],
+  [1, 5],
+  [0, 1],
+  [3, 5],
+];
 
 export default function IndustryHeroMotif({
   industry,
@@ -39,11 +57,18 @@ export default function IndustryHeroMotif({
   return (
     <div className={`pointer-events-none select-none ${className}`} aria-hidden>
       {/* edges */}
-      <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 w-full h-full">
+      <svg
+        viewBox="0 0 100 100"
+        preserveAspectRatio="none"
+        className="absolute inset-0 h-full w-full"
+      >
         {EDGES.map(([a, b], i) => (
           <motion.line
             key={i}
-            x1={POS[a].x} y1={POS[a].y} x2={POS[b].x} y2={POS[b].y}
+            x1={POS[a].x}
+            y1={POS[a].y}
+            x2={POS[b].x}
+            y2={POS[b].y}
             stroke="var(--brand-primary, #7c3aed)"
             strokeWidth={1}
             vectorEffect="non-scaling-stroke"
@@ -70,10 +95,16 @@ export default function IndustryHeroMotif({
           >
             <motion.div
               animate={{ y: [0, i % 2 ? 7 : -7, 0] }}
-              transition={{ duration: 4.5 + i * 0.4, repeat: Infinity, ease: "easeInOut", delay: i * 0.3 }}
+              transition={{
+                duration: 4.5 + i * 0.4,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: i * 0.3,
+              }}
               className="flex items-center justify-center rounded-2xl border"
               style={{
-                width: 52, height: 52,
+                width: 52,
+                height: 52,
                 color: "var(--brand-secondary, #a78bfa)",
                 borderColor: "color-mix(in srgb, var(--brand-primary, #7c3aed) 30%, transparent)",
                 background: "color-mix(in srgb, var(--brand-primary, #7c3aed) 8%, transparent)",

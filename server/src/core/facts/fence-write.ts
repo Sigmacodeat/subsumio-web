@@ -33,15 +33,22 @@
  * sees the constraint.
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync, renameSync, appendFileSync } from 'node:fs';
-import { join, dirname } from 'node:path';
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  writeFileSync,
+  renameSync,
+  appendFileSync,
+} from "node:fs";
+import { join, dirname } from "node:path";
 
-import type { BrainEngine, NewFact, FactVisibility } from '../engine.ts';
-import { withPageLock } from '../page-lock.ts';
-import { gbrainPath } from '../config.ts';
-import { upsertFactRow, parseFactsFence } from '../facts-fence.ts';
-import { extractFactsFromFenceText } from './extract-from-fence.ts';
-import { logStubGuardEvent } from './stub-guard-audit.ts';
+import type { BrainEngine, NewFact, FactVisibility } from "../engine.ts";
+import { withPageLock } from "../page-lock.ts";
+import { gbrainPath } from "../config.ts";
+import { upsertFactRow, parseFactsFence } from "../facts-fence.ts";
+import { extractFactsFromFenceText } from "./extract-from-fence.ts";
+import { logStubGuardEvent } from "./stub-guard-audit.ts";
 
 /** Resolved source binding for the entity page. */
 export interface FenceTarget {
@@ -56,8 +63,8 @@ export interface FenceTarget {
 /** Input fact prepared by runPipelineWithBody (post-dedup). */
 export interface FenceInputFact {
   fact: string;
-  kind: NewFact['kind'];
-  notability: NewFact['notability'];
+  kind: NewFact["kind"];
+  notability: NewFact["notability"];
   source: string;
   context?: string | null;
   visibility: FactVisibility;
@@ -89,9 +96,14 @@ export interface FenceWriteResult {
   stubGuardBlocked?: true;
 }
 
-const FAILURE_LOG_PATH = (): string => gbrainPath('facts.write_failures.jsonl');
+const FAILURE_LOG_PATH = (): string => gbrainPath("facts.write_failures.jsonl");
 
-function recordWriteFailure(slug: string, sourceId: string, warnings: string[], filePath: string): void {
+function recordWriteFailure(
+  slug: string,
+  sourceId: string,
+  warnings: string[],
+  filePath: string
+): void {
   // Best-effort JSONL append — never throws back into the caller. The
   // log is the operator-visibility surface; `gbrain doctor` reads it
   // to surface facts.write_failures.
@@ -105,10 +117,12 @@ function recordWriteFailure(slug: string, sourceId: string, warnings: string[], 
       file_path: filePath,
       warnings,
     });
-    appendFileSync(FAILURE_LOG_PATH(), `${line}\n`, 'utf-8');
+    appendFileSync(FAILURE_LOG_PATH(), `${line}\n`, "utf-8");
   } catch (err) {
     // eslint-disable-next-line no-console
-    console.warn(`[facts.write_failures] couldn't append: ${err instanceof Error ? err.message : String(err)}`);
+    console.warn(
+      `[facts.write_failures] couldn't append: ${err instanceof Error ? err.message : String(err)}`
+    );
   }
 }
 
@@ -120,17 +134,19 @@ function recordWriteFailure(slug: string, sourceId: string, warnings: string[], 
  * 'concept' which is the most permissive PageType.
  */
 function stubEntityPage(slug: string): string {
-  const prefix = slug.split('/')[0];
+  const prefix = slug.split("/")[0];
   const type =
-    prefix === 'people'    ? 'person' :
-    prefix === 'companies' ? 'company' :
-    prefix === 'deals'     ? 'deal' :
-    prefix === 'topics'    ? 'concept' :
-    /* fallback */           'concept';
-  const tail = slug.split('/').slice(1).join('/');
-  const title = tail
-    .replace(/[-_/]+/g, ' ')
-    .replace(/\b\w/g, c => c.toUpperCase()) || slug;
+    prefix === "people"
+      ? "person"
+      : prefix === "companies"
+        ? "company"
+        : prefix === "deals"
+          ? "deal"
+          : prefix === "topics"
+            ? "concept"
+            : /* fallback */ "concept";
+  const tail = slug.split("/").slice(1).join("/");
+  const title = tail.replace(/[-_/]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) || slug;
   return `---\ntype: ${type}\ntitle: ${title}\nslug: ${slug}\n---\n\n# ${title}\n`;
 }
 
@@ -157,7 +173,7 @@ function stubEntityPage(slug: string): string {
 export async function writeFactsToFence(
   engine: BrainEngine,
   target: FenceTarget,
-  facts: FenceInputFact[],
+  facts: FenceInputFact[]
 ): Promise<FenceWriteResult> {
   if (target.localPath === null) {
     return { inserted: 0, ids: [], legacyFallback: true };
@@ -175,7 +191,7 @@ export async function writeFactsToFence(
       // 1. Read existing body or stub-create.
       let body: string;
       if (existsSync(filePath)) {
-        body = readFileSync(filePath, 'utf-8');
+        body = readFileSync(filePath, "utf-8");
       } else {
         // Stub-creation guard. Phantom entity pages at the brain root were
         // being spawned when resolveEntitySlug fell through to a bare
@@ -194,7 +210,7 @@ export async function writeFactsToFence(
         // in resolveEntitySlug is sufficient and this guard can be removed.
         // The audit log under `~/.gbrain/audit/stub-guard-YYYY-Www.jsonl`
         // is the operator visibility surface for that retirement decision.
-        if (!target.slug.includes('/')) {
+        if (!target.slug.includes("/")) {
           logStubGuardEvent({
             slug: target.slug,
             source_id: target.sourceId,
@@ -202,7 +218,7 @@ export async function writeFactsToFence(
           });
           // eslint-disable-next-line no-console
           console.warn(
-            `[facts] refusing to stub-create unprefixed entity page slug=${target.slug} — routing to legacy DB-only path. Provide a directory prefix (people/, companies/, etc.) to opt into fence writes.`,
+            `[facts] refusing to stub-create unprefixed entity page slug=${target.slug} — routing to legacy DB-only path. Provide a directory prefix (people/, companies/, etc.) to opt into fence writes.`
           );
           return { inserted: 0, ids: [], stubGuardBlocked: true };
         }
@@ -217,27 +233,27 @@ export async function writeFactsToFence(
       for (const f of facts) {
         const validFromStr = (f.validFrom ?? new Date()).toISOString().slice(0, 10);
         const { body: updated, rowNum } = upsertFactRow(body, {
-          claim:       f.fact,
-          kind:        (f.kind ?? 'fact') as 'fact' | 'event' | 'preference' | 'commitment' | 'belief',
-          confidence:  f.confidence ?? 1.0,
-          visibility:  f.visibility,
-          notability:  f.notability ?? 'medium',
-          validFrom:   validFromStr,
-          validUntil:  undefined,
-          source:      f.source,
-          context:     f.context ?? undefined,
+          claim: f.fact,
+          kind: (f.kind ?? "fact") as "fact" | "event" | "preference" | "commitment" | "belief",
+          confidence: f.confidence ?? 1.0,
+          visibility: f.visibility,
+          notability: f.notability ?? "medium",
+          validFrom: validFromStr,
+          validUntil: undefined,
+          source: f.source,
+          context: f.context ?? undefined,
         });
         body = updated;
         assignedRowNums.push(rowNum);
       }
 
       // 3. Atomic write: .tmp first, then parse-validate, then rename.
-      writeFileSync(tmpPath, body, 'utf-8');
+      writeFileSync(tmpPath, body, "utf-8");
 
       // 4. Parse-before-rename: re-read the .tmp content and verify the
       //    fence is well-formed. Anything malformed → leave .tmp in
       //    place as quarantine, write JSONL, do NOT insert to DB.
-      const tmpBody = readFileSync(tmpPath, 'utf-8');
+      const tmpBody = readFileSync(tmpPath, "utf-8");
       const parsed = parseFactsFence(tmpBody);
       if (parsed.warnings.length > 0) {
         recordWriteFailure(target.slug, target.sourceId, parsed.warnings, filePath);
@@ -255,7 +271,7 @@ export async function writeFactsToFence(
       //    re-parsed facts to that subset.
       const allExtracted = extractFactsFromFenceText(parsed.facts, target.slug, target.sourceId);
       const newRowSet = new Set(assignedRowNums);
-      const toInsert = allExtracted.filter(r => newRowSet.has(r.row_num));
+      const toInsert = allExtracted.filter((r) => newRowSet.has(r.row_num));
 
       // Carry per-input embedding + sessionId across — the fence
       // parser doesn't reconstruct embeddings (they're not in the
@@ -264,14 +280,14 @@ export async function writeFactsToFence(
       // index.
       const enriched = toInsert.map((row, i) => ({
         ...row,
-        embedding:      facts[i].embedding,
+        embedding: facts[i].embedding,
         source_session: facts[i].sessionId,
       }));
 
       const result = await engine.insertFacts(enriched, { source_id: target.sourceId }); // gbrain-allow-direct-insert: writeFactsToFence is the markdown-first reconcile path; runs only after the atomic fence write commits
       return { inserted: result.inserted, ids: result.ids };
     },
-    { timeoutMs: 5_000 },
+    { timeoutMs: 5_000 }
   );
 }
 
@@ -287,11 +303,11 @@ export async function writeFactsToFence(
  */
 export async function lookupSourceLocalPath(
   engine: BrainEngine,
-  sourceId: string,
+  sourceId: string
 ): Promise<string | null> {
   const rows = await engine.executeRaw<{ local_path: string | null }>(
     `SELECT local_path FROM sources WHERE id = $1 LIMIT 1`,
-    [sourceId],
+    [sourceId]
   );
   if (rows.length === 0) return null;
   return rows[0].local_path;

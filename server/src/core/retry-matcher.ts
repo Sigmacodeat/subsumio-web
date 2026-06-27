@@ -53,20 +53,20 @@ interface PgError {
 }
 
 function getCode(err: unknown): string | undefined {
-  if (err && typeof err === 'object') {
+  if (err && typeof err === "object") {
     const code = (err as PgError).code;
-    if (typeof code === 'string') return code;
+    if (typeof code === "string") return code;
   }
   return undefined;
 }
 
 function getMessage(err: unknown): string {
   if (err instanceof Error) return err.message;
-  if (err && typeof err === 'object') {
+  if (err && typeof err === "object") {
     const msg = (err as PgError).message;
-    if (typeof msg === 'string') return msg;
+    if (typeof msg === "string") return msg;
   }
-  return String(err ?? '');
+  return String(err ?? "");
 }
 
 /**
@@ -74,7 +74,7 @@ function getMessage(err: unknown): string {
  * Postgres signals this when a statement exceeds `statement_timeout`.
  */
 export function isStatementTimeoutError(err: unknown): boolean {
-  if (getCode(err) === '57014') return true;
+  if (getCode(err) === "57014") return true;
   const msg = getMessage(err);
   return /statement_timeout|canceling statement due to statement timeout/i.test(msg);
 }
@@ -84,7 +84,7 @@ export function isStatementTimeoutError(err: unknown): boolean {
  * Postgres signals this when `lock_timeout` or `NOWAIT` would block.
  */
 export function isLockTimeoutError(err: unknown): boolean {
-  if (getCode(err) === '55P03') return true;
+  if (getCode(err) === "55P03") return true;
   const msg = getMessage(err);
   return /lock_not_available|could not obtain lock/i.test(msg);
 }
@@ -111,22 +111,19 @@ export function isRetryableConnError(err: unknown): boolean {
   if (code && /^08/.test(code)) return true;
   // v0.42.5.0 (issue #1678): postgres.js's library-level connection-ended
   // code. Not an 08xxx SQLSTATE, so the /^08/ test above misses it.
-  if (code === 'CONNECTION_ENDED') return true;
+  if (code === "CONNECTION_ENDED") return true;
   // v0.42.x (#1794): SQLSTATE 53300 too_many_connections — pool/pooler
   // exhaustion. Starts with 53 not 08, so the /^08/ test above misses it.
   // Transient: the spike clears as in-flight queries release connections.
-  if (code === '53300') return true;
+  if (code === "53300") return true;
   // v0.41.2.1: typed-shape match for gbrain's own GBrainError
   // (problem === 'No database connection'). Avoids brittle string match
   // when the error wrapper is gbrain-internal.
-  if (
-    err && typeof err === 'object' &&
-    (err as PgError).problem === 'No database connection'
-  ) {
+  if (err && typeof err === "object" && (err as PgError).problem === "No database connection") {
     return true;
   }
   const msg = getMessage(err);
-  return CONN_PATTERNS.some(p => p.test(msg));
+  return CONN_PATTERNS.some((p) => p.test(msg));
 }
 
 /**
@@ -139,7 +136,7 @@ export function isRetryableConnError(err: unknown): boolean {
  */
 export function isConnectionEndedError(err: unknown): boolean {
   const code = getCode(err);
-  if (code === 'CONNECTION_ENDED') return true;
+  if (code === "CONNECTION_ENDED") return true;
   const msg = getMessage(err);
   return /CONNECTION_ENDED/i.test(msg);
 }

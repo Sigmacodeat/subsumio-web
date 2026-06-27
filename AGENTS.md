@@ -69,7 +69,7 @@ writing or reviewing an operation, consult `src/core/operations.ts` for the cont
   `GBRAIN_CONTRIBUTOR_MODE=1`, then `gbrain eval export --since 7d > base.ndjson`
   and `gbrain eval replay --against base.ndjson`. For public benchmark
   coverage (LongMemEval, ground-truth scoring), `gbrain eval longmemeval
-  <dataset.jsonl>` (v0.28.8) runs against an isolated in-memory PGLite
+<dataset.jsonl>` (v0.28.8) runs against an isolated in-memory PGLite
   per question — your `~/.gbrain` is never opened. Full guide:
   [`docs/eval-bench.md`](./docs/eval-bench.md).
 - **Drive the brain to a target health score (v0.36.4.0):** the one-command

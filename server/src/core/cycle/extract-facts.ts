@@ -31,18 +31,18 @@
  * while legacy rows linger in the DB.
  */
 
-import type { BrainEngine } from '../engine.ts';
-import { writeReceipt } from '../extract/receipt-writer.ts';
-import { upsertExtractRollup } from '../extract/rollup-writer.ts';
-import { parseFactsFence } from '../facts-fence.ts';
-import { extractFactsFromFenceText } from '../facts/extract-from-fence.ts';
+import type { BrainEngine } from "../engine.ts";
+import { writeReceipt } from "../extract/receipt-writer.ts";
+import { upsertExtractRollup } from "../extract/rollup-writer.ts";
+import { parseFactsFence } from "../facts-fence.ts";
+import { extractFactsFromFenceText } from "../facts/extract-from-fence.ts";
 import {
   runPhantomRedirectPass,
   emptyPhantomPassResult,
   type PhantomPassResult,
-} from './phantom-redirect.ts';
-import { embed, isAvailable } from '../ai/gateway.ts';
-import { isAborted } from '../abort-check.ts';
+} from "./phantom-redirect.ts";
+import { embed, isAvailable } from "../ai/gateway.ts";
+import { isAborted } from "../abort-check.ts";
 
 export interface ExtractFactsOpts {
   /** Subset of slugs to reconcile. undefined = walk every page in the brain. */
@@ -93,9 +93,9 @@ export interface ExtractFactsResult {
  */
 export async function runExtractFacts(
   engine: BrainEngine,
-  opts: ExtractFactsOpts = {},
+  opts: ExtractFactsOpts = {}
 ): Promise<ExtractFactsResult> {
-  const sourceId = opts.sourceId ?? 'default';
+  const sourceId = opts.sourceId ?? "default";
   const result: ExtractFactsResult = {
     pagesScanned: 0,
     pagesWithFacts: 0,
@@ -118,16 +118,16 @@ export async function runExtractFacts(
   // reconciliation pass. The v0_32_2 orchestrator must complete
   // first.
   const legacy = await engine.executeRaw<{ n: string }>(
-    `SELECT COUNT(*) AS n FROM facts WHERE row_num IS NULL AND entity_slug IS NOT NULL`,
+    `SELECT COUNT(*) AS n FROM facts WHERE row_num IS NULL AND entity_slug IS NOT NULL`
   );
-  const legacyCount = parseInt(legacy[0]?.n ?? '0', 10);
+  const legacyCount = parseInt(legacy[0]?.n ?? "0", 10);
   result.legacyRowsPending = legacyCount;
   if (legacyCount > 0) {
     result.guardTriggered = true;
     result.warnings.push(
       `extract_facts: ${legacyCount} legacy v0.31 fact rows pending fence backfill. ` +
-      `Run \`gbrain apply-migrations --yes\` to complete v0_32_2 before this phase ` +
-      `can safely reconcile fence → DB.`,
+        `Run \`gbrain apply-migrations --yes\` to complete v0_32_2 before this phase ` +
+        `can safely reconcile fence → DB.`
     );
     return result;
   }
@@ -149,7 +149,7 @@ export async function runExtractFacts(
         opts.brainDir,
         sourceId,
         opts.dryRun ?? false,
-        opts.signal,
+        opts.signal
       );
     } catch (e) {
       // The pass owns its own per-phantom try/catch; reaching this catch
@@ -210,12 +210,10 @@ export async function runExtractFacts(
       continue;
     }
 
-    const body = page.compiled_truth ?? '';
+    const body = page.compiled_truth ?? "";
     const parsed = parseFactsFence(body);
     if (parsed.warnings.length > 0) {
-      result.warnings.push(
-        ...parsed.warnings.map(w => `${slug}: ${w}`),
-      );
+      result.warnings.push(...parsed.warnings.map((w) => `${slug}: ${w}`));
     }
 
     if (parsed.facts.length > 0) result.pagesWithFacts += 1;
@@ -236,7 +234,9 @@ export async function runExtractFacts(
     // trajectory query against the page returns import dates instead of
     // claim dates.
     const pageEffectiveDate = page.effective_date ? new Date(page.effective_date) : null;
-    const extracted = extractFactsFromFenceText(parsed.facts, slug, sourceId, { pageEffectiveDate });
+    const extracted = extractFactsFromFenceText(parsed.facts, slug, sourceId, {
+      pageEffectiveDate,
+    });
 
     // v0.35.4 (D-CDX-3) — batch-embed before insert. Without this,
     // cycle-inserted facts land with `embedding = NULL`, which breaks
@@ -245,9 +245,9 @@ export async function runExtractFacts(
     // unavailable (no API key configured), facts still insert with
     // NULL embeddings — drift_score gracefully returns null and
     // clustering falls back to recency.
-    if (isAvailable('embedding') && extracted.length > 0) {
+    if (isAvailable("embedding") && extracted.length > 0) {
       try {
-        const texts = extracted.map(e => e.fact);
+        const texts = extracted.map((e) => e.fact);
         // #1972: forward the abort signal so a cancelled cycle's in-flight
         // batch embed (a network call) is itself abortable, not just the loop.
         const embeddings = await embed(texts, { abortSignal: opts.signal });
@@ -261,7 +261,7 @@ export async function runExtractFacts(
         // Embedding failure is non-fatal — facts still get inserted, just
         // without embeddings. Cycle phase status stays 'ok'.
         result.warnings.push(
-          `${slug}: extract_facts batch embed failed: ${err instanceof Error ? err.message : String(err)}`,
+          `${slug}: extract_facts batch embed failed: ${err instanceof Error ? err.message : String(err)}`
         );
       }
     }
@@ -277,10 +277,10 @@ export async function runExtractFacts(
     const runId = `efacts-${Date.now().toString(36)}-${sourceId.slice(0, 4)}`;
     try {
       await writeReceipt(engine, {
-        kind: 'facts.fence',
+        kind: "facts.fence",
         source_id: sourceId,
         run_id: runId,
-        round: 'single',
+        round: "single",
         extracted_at: new Date().toISOString(),
         total_rows: result.factsInserted,
         cost_usd: 0,
@@ -294,7 +294,7 @@ export async function runExtractFacts(
   }
   if (!opts.dryRun) {
     await upsertExtractRollup(engine, {
-      kind: 'facts.fence',
+      kind: "facts.fence",
       source_id: sourceId,
       cost_delta: 0,
       round_completed_delta: result.guardTriggered ? 0 : 1,

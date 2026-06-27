@@ -13,14 +13,14 @@
  *   gbrain eval trajectory companies/acme-example --json
  */
 
-import type { BrainEngine } from '../core/engine.ts';
-import { loadConfig, isThinClient } from '../core/config.ts';
-import { callRemoteTool, unpackToolResult } from '../core/mcp-client.ts';
+import type { BrainEngine } from "../core/engine.ts";
+import { loadConfig, isThinClient } from "../core/config.ts";
+import { callRemoteTool, unpackToolResult } from "../core/mcp-client.ts";
 import {
   computeTrajectoryStats,
   TRAJECTORY_SCHEMA_VERSION,
   type TrajectoryRegression,
-} from '../core/trajectory.ts';
+} from "../core/trajectory.ts";
 
 interface RunOpts {
   entitySlug: string;
@@ -75,36 +75,48 @@ function parseArgs(args: string[]): RunOpts | { help: true } | { error: string }
   const positional: string[] = [];
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
-    if (a === '--help' || a === '-h') return { help: true };
-    if (a === '--json') { opts.json = true; continue; }
-    if (a === '--metric') { opts.metric = args[++i]; continue; }
-    if (a === '--since')  { opts.since  = args[++i]; continue; }
-    if (a === '--until')  { opts.until  = args[++i]; continue; }
-    if (a === '--limit')  {
-      const n = parseInt(args[++i] ?? '', 10);
+    if (a === "--help" || a === "-h") return { help: true };
+    if (a === "--json") {
+      opts.json = true;
+      continue;
+    }
+    if (a === "--metric") {
+      opts.metric = args[++i];
+      continue;
+    }
+    if (a === "--since") {
+      opts.since = args[++i];
+      continue;
+    }
+    if (a === "--until") {
+      opts.until = args[++i];
+      continue;
+    }
+    if (a === "--limit") {
+      const n = parseInt(args[++i] ?? "", 10);
       if (Number.isFinite(n) && n > 0) opts.limit = n;
       continue;
     }
-    if (a.startsWith('-')) {
+    if (a.startsWith("-")) {
       return { error: `Unknown flag: ${a}` };
     }
     positional.push(a);
   }
   if (positional.length !== 1) {
-    return { error: 'Exactly one entity-slug positional argument is required.' };
+    return { error: "Exactly one entity-slug positional argument is required." };
   }
   return { ...(opts as RunOpts), entitySlug: positional[0] };
 }
 
 export async function runEvalTrajectory(engine: BrainEngine, args: string[]): Promise<void> {
   const parsed = parseArgs(args);
-  if ('help' in parsed) {
+  if ("help" in parsed) {
     console.log(HELP);
     return;
   }
-  if ('error' in parsed) {
+  if ("error" in parsed) {
     console.error(parsed.error);
-    console.error('');
+    console.error("");
     console.error(HELP);
     process.exit(1);
   }
@@ -116,14 +128,19 @@ export async function runEvalTrajectory(engine: BrainEngine, args: string[]): Pr
     // v0.40.2.0: kind:'metric' clarity flag; server gracefully ignores
     // on pre-v0.40 backends because the op handler treats unknown values
     // as undefined.
-    const raw = await callRemoteTool(cfg!, 'find_trajectory', {
-      entity_slug: parsed.entitySlug,
-      kind: 'metric',
-      metric: parsed.metric,
-      since: parsed.since,
-      until: parsed.until,
-      limit: parsed.limit,
-    }, { timeoutMs: 30_000 });
+    const raw = await callRemoteTool(
+      cfg!,
+      "find_trajectory",
+      {
+        entity_slug: parsed.entitySlug,
+        kind: "metric",
+        metric: parsed.metric,
+        since: parsed.since,
+        until: parsed.until,
+        limit: parsed.limit,
+      },
+      { timeoutMs: 30_000 }
+    );
     result = unpackToolResult<WireTrajectoryResult>(raw);
   } else {
     // Local: call engine.findTrajectory directly, then compute derived
@@ -134,7 +151,7 @@ export async function runEvalTrajectory(engine: BrainEngine, args: string[]): Pr
     // surfaces intent at the call site).
     const points = await engine.findTrajectory({
       entitySlug: parsed.entitySlug,
-      kind: 'metric',
+      kind: "metric",
       metric: parsed.metric,
       since: parsed.since,
       until: parsed.until,
@@ -142,7 +159,7 @@ export async function runEvalTrajectory(engine: BrainEngine, args: string[]): Pr
     });
     const { regressions, drift_score } = computeTrajectoryStats(points);
     result = {
-      points: points.map(p => ({
+      points: points.map((p) => ({
         fact_id: p.fact_id,
         valid_from: p.valid_from.toISOString().slice(0, 10),
         metric: p.metric,
@@ -169,12 +186,12 @@ export async function runEvalTrajectory(engine: BrainEngine, args: string[]): Pr
   console.log(`Entity: ${parsed.entitySlug}`);
   if (parsed.metric) console.log(`Metric: ${parsed.metric}`);
   if (parsed.since || parsed.until) {
-    console.log(`Window: ${parsed.since ?? '(unbounded)'} → ${parsed.until ?? '(now)'}`);
+    console.log(`Window: ${parsed.since ?? "(unbounded)"} → ${parsed.until ?? "(now)"}`);
   }
-  console.log('');
+  console.log("");
 
   if (result.points.length === 0) {
-    console.log('(no typed claims for this entity in the window)');
+    console.log("(no typed claims for this entity in the window)");
     return;
   }
 
@@ -185,13 +202,14 @@ export async function runEvalTrajectory(engine: BrainEngine, args: string[]): Pr
   }
 
   for (const p of result.points) {
-    const metricCell = p.metric ?? '-';
-    const valueCell = p.value === null ? '-' : formatValue(p.value, p.unit);
-    const sourceCell = p.source_session ?? p.source_markdown_slug ?? '';
+    const metricCell = p.metric ?? "-";
+    const valueCell = p.value === null ? "-" : formatValue(p.value, p.unit);
+    const sourceCell = p.source_session ?? p.source_markdown_slug ?? "";
     let line = `  ${p.valid_from}  ${pad(metricCell, 14)} ${pad(valueCell, 12)} (${sourceCell})`;
-    const reg = p.metric && p.value !== null
-      ? regBy.get(`${p.metric}|${p.valid_from}|${p.value}`)
-      : undefined;
+    const reg =
+      p.metric && p.value !== null
+        ? regBy.get(`${p.metric}|${p.valid_from}|${p.value}`)
+        : undefined;
     if (reg) {
       const pct = Math.abs(reg.delta_pct * 100).toFixed(1);
       line += ` [REGRESSION ↓${pct}%]`;
@@ -199,16 +217,19 @@ export async function runEvalTrajectory(engine: BrainEngine, args: string[]): Pr
     console.log(line);
   }
 
-  console.log('');
+  console.log("");
   if (result.drift_score === null) {
-    console.log('Drift score: (insufficient embedded points; need 3+)');
+    console.log("Drift score: (insufficient embedded points; need 3+)");
   } else {
     const score = result.drift_score;
     const tier =
-      score < 0.15 ? 'stable narrative' :
-      score < 0.35 ? 'mild drift' :
-      score < 0.6  ? 'moderate drift' :
-                     'narrative changing fast';
+      score < 0.15
+        ? "stable narrative"
+        : score < 0.35
+          ? "mild drift"
+          : score < 0.6
+            ? "moderate drift"
+            : "narrative changing fast";
     console.log(`Drift score: ${score.toFixed(2)} (${tier})`);
   }
   if (result.regressions.length > 0) {
@@ -217,15 +238,15 @@ export async function runEvalTrajectory(engine: BrainEngine, args: string[]): Pr
 }
 
 function pad(s: string, n: number): string {
-  return s.length >= n ? s : s + ' '.repeat(n - s.length);
+  return s.length >= n ? s : s + " ".repeat(n - s.length);
 }
 
 function formatValue(v: number, unit: string | null): string {
   // Currency-style display for USD; plain for everything else. Keeps the
   // output readable without locale assumptions.
-  if (unit === 'USD') {
+  if (unit === "USD") {
     if (Math.abs(v) >= 1_000_000) return `$${(v / 1_000_000).toFixed(1)}M`;
-    if (Math.abs(v) >= 1_000)     return `$${(v / 1_000).toFixed(0)}K`;
+    if (Math.abs(v) >= 1_000) return `$${(v / 1_000).toFixed(0)}K`;
     return `$${v.toFixed(0)}`;
   }
   return String(v);

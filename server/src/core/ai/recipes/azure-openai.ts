@@ -1,7 +1,7 @@
-import type { Recipe } from '../types.ts';
-import { AIConfigError } from '../errors.ts';
+import type { Recipe } from "../types.ts";
+import { AIConfigError } from "../errors.ts";
 
-const DEFAULT_API_VERSION = '2024-10-21'; // stable Azure OpenAI version as of 2026-05
+const DEFAULT_API_VERSION = "2024-10-21"; // stable Azure OpenAI version as of 2026-05
 
 /**
  * Azure OpenAI. The first recipe in v0.32 to exercise both seams:
@@ -23,33 +23,24 @@ const DEFAULT_API_VERSION = '2024-10-21'; // stable Azure OpenAI version as of 2
  * Reference: https://learn.microsoft.com/en-us/azure/ai-services/openai/
  */
 export const azureOpenAI: Recipe = {
-  id: 'azure-openai',
-  name: 'Azure OpenAI',
-  tier: 'openai-compat',
-  implementation: 'openai-compatible',
+  id: "azure-openai",
+  name: "Azure OpenAI",
+  tier: "openai-compat",
+  implementation: "openai-compatible",
   // base_url_default omitted: Azure URLs are env-templated only.
   auth_env: {
-    required: [
-      'AZURE_OPENAI_API_KEY',
-      'AZURE_OPENAI_ENDPOINT',
-      'AZURE_OPENAI_DEPLOYMENT',
-    ],
-    optional: ['AZURE_OPENAI_API_VERSION'],
-    setup_url:
-      'https://learn.microsoft.com/en-us/azure/ai-services/openai/quickstart',
+    required: ["AZURE_OPENAI_API_KEY", "AZURE_OPENAI_ENDPOINT", "AZURE_OPENAI_DEPLOYMENT"],
+    optional: ["AZURE_OPENAI_API_VERSION"],
+    setup_url: "https://learn.microsoft.com/en-us/azure/ai-services/openai/quickstart",
   },
   touchpoints: {
     embedding: {
-      models: [
-        'text-embedding-3-large',
-        'text-embedding-3-small',
-        'text-embedding-ada-002',
-      ],
+      models: ["text-embedding-3-large", "text-embedding-3-small", "text-embedding-ada-002"],
       default_dims: 1536,
       // Matryoshka via text-embedding-3-*; ada-002 is fixed at 1536.
       dims_options: [256, 512, 768, 1024, 1536, 3072],
       cost_per_1m_tokens_usd: 0.13,
-      price_last_verified: '2026-05-10',
+      price_last_verified: "2026-05-10",
       max_batch_tokens: 8192,
     },
   },
@@ -58,27 +49,27 @@ export const azureOpenAI: Recipe = {
     if (!key) {
       throw new AIConfigError(
         `Azure OpenAI requires AZURE_OPENAI_API_KEY.`,
-        'Get a key from your Azure portal: https://learn.microsoft.com/en-us/azure/ai-services/openai/quickstart',
+        "Get a key from your Azure portal: https://learn.microsoft.com/en-us/azure/ai-services/openai/quickstart"
       );
     }
     // Azure uses `api-key:` (no Bearer); the unified seam routes this
     // through `headers` instead of the SDK's apiKey field to avoid any
     // double-auth Authorization header sneaking in.
-    return { headerName: 'api-key', token: key };
+    return { headerName: "api-key", token: key };
   },
   resolveOpenAICompatConfig(env) {
-    const endpoint = env.AZURE_OPENAI_ENDPOINT?.replace(/\/+$/, '');
+    const endpoint = env.AZURE_OPENAI_ENDPOINT?.replace(/\/+$/, "");
     const deployment = env.AZURE_OPENAI_DEPLOYMENT;
     if (!endpoint) {
       throw new AIConfigError(
         `Azure OpenAI requires AZURE_OPENAI_ENDPOINT.`,
-        'Find your endpoint at portal.azure.com → Azure OpenAI resource → Keys and Endpoint.',
+        "Find your endpoint at portal.azure.com → Azure OpenAI resource → Keys and Endpoint."
       );
     }
     if (!deployment) {
       throw new AIConfigError(
         `Azure OpenAI requires AZURE_OPENAI_DEPLOYMENT.`,
-        'Each Azure OpenAI deployment has its own URL path. Set AZURE_OPENAI_DEPLOYMENT to the deployment name from your Azure portal.',
+        "Each Azure OpenAI deployment has its own URL path. Set AZURE_OPENAI_DEPLOYMENT to the deployment name from your Azure portal."
       );
     }
     const apiVersion = env.AZURE_OPENAI_API_VERSION ?? DEFAULT_API_VERSION;
@@ -89,17 +80,17 @@ export const azureOpenAI: Recipe = {
     // method that wrappers don't need (the AI SDK never calls it).
     const wrappedFetch = (async (input: any, init: any) => {
       const url =
-        typeof input === 'string'
+        typeof input === "string"
           ? input
           : input instanceof URL
-          ? input.toString()
-          : (input as Request).url;
-      const sep = url.includes('?') ? '&' : '?';
-      const finalUrl = url.includes('api-version=')
+            ? input.toString()
+            : (input as Request).url;
+      const sep = url.includes("?") ? "&" : "?";
+      const finalUrl = url.includes("api-version=")
         ? url
         : `${url}${sep}api-version=${encodeURIComponent(apiVersion)}`;
       const finalInput =
-        typeof input === 'string' || input instanceof URL
+        typeof input === "string" || input instanceof URL
           ? finalUrl
           : new Request(finalUrl, input as Request);
       return fetch(finalInput, init);
@@ -107,5 +98,5 @@ export const azureOpenAI: Recipe = {
     return { baseURL, fetch: wrappedFetch };
   },
   setup_hint:
-    'Azure portal → Azure OpenAI resource. Set AZURE_OPENAI_API_KEY, AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_DEPLOYMENT. Optionally AZURE_OPENAI_API_VERSION (default 2024-10-21).',
+    "Azure portal → Azure OpenAI resource. Set AZURE_OPENAI_API_KEY, AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_DEPLOYMENT. Optionally AZURE_OPENAI_API_VERSION (default 2024-10-21).",
 };

@@ -23,12 +23,12 @@ Vector search alone underdelivers on real personal-knowledge queries. This doc e
 
 BrainBench (corpus + harness in the sibling [gbrain-evals](https://github.com/garrytan/gbrain-evals) repo) measures retrieval P@5, R@5, MRR, nDCG@5 on a 240-page Opus-generated rich-prose corpus.
 
-| Strategy | P@5 | R@5 | Notes |
-|---|---|---|---|
-| ripgrep BM25 only | ~18 | ~75 | Lexical-only baseline |
-| vector-only RAG | ~18 | ~80 | Standard RAG implementation |
-| gbrain graph-disabled (hybrid + RRF, no graph traversal) | ~18 | ~85 | Hybrid alone |
-| **gbrain default (full stack)** | **49.1** | **97.9** | Graph + extract-quality lift |
+| Strategy                                                 | P@5      | R@5      | Notes                        |
+| -------------------------------------------------------- | -------- | -------- | ---------------------------- |
+| ripgrep BM25 only                                        | ~18      | ~75      | Lexical-only baseline        |
+| vector-only RAG                                          | ~18      | ~80      | Standard RAG implementation  |
+| gbrain graph-disabled (hybrid + RRF, no graph traversal) | ~18      | ~85      | Hybrid alone                 |
+| **gbrain default (full stack)**                          | **49.1** | **97.9** | Graph + extract-quality lift |
 
 **+31 P@5 points** from the graph + extract quality work. The graph isn't a marginal feature; it's the load-bearing wall.
 
@@ -62,7 +62,7 @@ The boost map is configurable via `GBRAIN_SOURCE_BOOST` env var or per-call `Sea
 
 ## Named-thing retrieval (per-page pool + title + alias + evidence)
 
-A brain organized around *chosen names* (Mingtang, Hall of Light) needs more than
+A brain organized around _chosen names_ (Mingtang, Hall of Light) needs more than
 embedding proximity. Four layers, added after the incident in
 [`RETRIEVAL_MAXPOOL_INCIDENT.md`](./RETRIEVAL_MAXPOOL_INCIDENT.md):
 
@@ -83,7 +83,7 @@ embedding proximity. Four layers, added after the incident in
   existing pages with `gbrain reindex --aliases`.
 - **Evidence contract** — every result carries `evidence`
   (`alias_hit | exact_title_match | high_vector_match | keyword_exact |
-  weak_semantic`) and `create_safety` (`exists | probable | unknown`). An agent
+weak_semantic`) and `create_safety` (`exists | probable | unknown`). An agent
   deciding "is this page already here, safe to NOT write a duplicate?" keys off
   `create_safety`, not a raw blended score.
 

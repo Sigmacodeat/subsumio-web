@@ -80,6 +80,7 @@ Before generating any briefing, load context from gbrain systematically.
 ### Before a meeting
 
 For every attendee on the calendar invite:
+
 - `gbrain search "<attendee name>"` -- find their brain page
 - `gbrain get <slug>` -- load compiled truth, recent timeline, relationship context
 - If no page exists, note the gap ("No brain page for Sarah Chen -- consider enrichment")
@@ -87,6 +88,7 @@ For every attendee on the calendar invite:
 ### Before an email reply
 
 Before drafting or triaging any email:
+
 - `gbrain search "<sender name>"` -- load sender context
 - Read their compiled truth to understand who they are, what they care about, and
   your relationship history. This turns a cold reply into an informed one.
@@ -94,6 +96,7 @@ Before drafting or triaging any email:
 ### Daily briefing queries
 
 Run these queries to populate the briefing sections:
+
 - `gbrain query "active deals status"` -- deal pipeline snapshot
 - `gbrain query "meetings this week"` -- recent meeting pages with insights
 - `gbrain query "pending commitments follow-ups"` -- open threads and action items
@@ -132,6 +135,7 @@ mentioned must have a back-link from their page. See `skills/_brain-filing-rules
 ## Citation in Briefings
 
 When presenting facts from brain pages, include inline citations:
+
 - "Jane is CTO of Acme [Source: people/jane-doe, updated 2026-04-01]"
 - This lets the user trace any claim back to the brain page and assess freshness
 

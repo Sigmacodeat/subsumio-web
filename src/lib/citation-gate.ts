@@ -59,9 +59,7 @@ export interface GroundingMetadata {
  * Extracts statute references, verifies them against the law corpus,
  * and returns structured grounding metadata.
  */
-export async function groundAnswerCitations(
-  answerText: string
-): Promise<GroundingMetadata> {
+export async function groundAnswerCitations(answerText: string): Promise<GroundingMetadata> {
   const rawCitations = extractStatuteCitations(answerText);
   const grounded = await groundCitations(rawCitations);
   const verified = grounded.filter((c) => c.verified).length;
@@ -131,9 +129,7 @@ const ARRAY_ITEM_TEXT_FIELDS = [
  * citations. Scans known top-level string fields and known array-of-object
  * fields, collecting text for grounding.
  */
-export function extractTextFromJsonResponse(
-  obj: Record<string, unknown>
-): string[] {
+export function extractTextFromJsonResponse(obj: Record<string, unknown>): string[] {
   const parts: string[] = [];
 
   for (const field of JSON_TEXT_FIELDS) {
@@ -165,9 +161,7 @@ export function extractTextFromJsonResponse(
  * law corpus, and returns grounding metadata suitable for injection as
  * `_grounding` on the response.
  */
-export async function groundJsonResponse(
-  obj: Record<string, unknown>
-): Promise<GroundingMetadata> {
+export async function groundJsonResponse(obj: Record<string, unknown>): Promise<GroundingMetadata> {
   const textParts = extractTextFromJsonResponse(obj);
   if (textParts.length === 0) {
     return {

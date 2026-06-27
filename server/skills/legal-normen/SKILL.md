@@ -39,6 +39,7 @@ mutating: false
 ### Step 1 — Identify the Legal Question
 
 Determine:
+
 - Subject matter
 - Jurisdiction
 - Time period (for temporal applicability)
@@ -46,11 +47,13 @@ Determine:
 ### Step 2 — Search the Brain
 
 Search for relevant norms in the brain:
+
 ```
 gbrain search "<legal-question>" --type statute
 ```
 
 Also check law-corpus:
+
 ```
 gbrain search "<keyword>" law-corpus/<jurisdiction>
 ```
@@ -58,6 +61,7 @@ gbrain search "<keyword>" law-corpus/<jurisdiction>
 ### Step 3 — Find Relevant Provisions
 
 Extract:
+
 - Applicable statute
 - Relevant sections/paragraphs
 - Temporal scope
@@ -66,6 +70,7 @@ Extract:
 ### Step 4 — Interpret in Context
 
 Apply standard interpretation methods:
+
 1. **Grammatical** — literal meaning of the text
 2. **Systematic** — position within the legal system
 3. **Teleological** — purpose and intent
@@ -74,6 +79,7 @@ Apply standard interpretation methods:
 ### Step 5 — Cross-Reference Case Law
 
 Search for relevant court decisions:
+
 ```
 gbrain search "<provision>" --type court_decision
 ```

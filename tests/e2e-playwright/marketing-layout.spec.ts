@@ -60,9 +60,7 @@ test.describe("Marketing Layout Consistency", () => {
         await page.waitForLoadState("networkidle");
         const h1 = page.locator("h1").first();
         await expect(h1).toBeVisible({ timeout: 10_000 });
-        const fontSize = await h1.evaluate(
-          (el) => parseFloat(getComputedStyle(el).fontSize)
-        );
+        const fontSize = await h1.evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
         expect(fontSize).toBeGreaterThanOrEqual(20);
       });
     }
@@ -76,11 +74,11 @@ test.describe("Marketing Layout Consistency", () => {
       for (const section of sections) {
         const visible = await section.isVisible();
         if (!visible) continue;
-        const paddingLeft = await section.evaluate(
-          (el) => parseFloat(getComputedStyle(el).paddingLeft)
+        const paddingLeft = await section.evaluate((el) =>
+          parseFloat(getComputedStyle(el).paddingLeft)
         );
-        const paddingRight = await section.evaluate(
-          (el) => parseFloat(getComputedStyle(el).paddingRight)
+        const paddingRight = await section.evaluate((el) =>
+          parseFloat(getComputedStyle(el).paddingRight)
         );
         // Skip wrapper sections with no padding (inner elements carry padding)
         if (paddingLeft === 0 && paddingRight === 0) continue;
@@ -101,8 +99,8 @@ test.describe("Marketing Layout Consistency", () => {
         await page.waitForLoadState("networkidle");
         const firstSection = page.locator("section").first();
         if (await firstSection.isVisible()) {
-          const paddingLeft = await firstSection.evaluate(
-            (el) => parseFloat(getComputedStyle(el).paddingLeft)
+          const paddingLeft = await firstSection.evaluate((el) =>
+            parseFloat(getComputedStyle(el).paddingLeft)
           );
           expect(paddingLeft).toBeGreaterThanOrEqual(12);
           expect(paddingLeft).toBeLessThanOrEqual(24);

@@ -11,11 +11,8 @@ export const GET = createHandler(
     cacheMaxAge: 60,
   },
   async (ctx) => {
-    const quality = await buildBrainQualitySummary(
-      ENGINE_URL,
-      engineHeadersForBrain(ctx.brainId),
-    );
+    const quality = await buildBrainQualitySummary(ENGINE_URL, engineHeadersForBrain(ctx.brainId));
 
     return Response.json(quality);
-  },
+  }
 );

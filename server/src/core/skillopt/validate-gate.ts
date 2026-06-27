@@ -20,14 +20,14 @@
  * which is cached (D11), so the effective cost ~1.3x not 3x.
  */
 
-import { runWithLimit, isMustAbortError } from '../worker-pool.ts';
-import { runRollout, type RolloutOpts } from './rollout.ts';
-import { scoreTrajectory } from './score.ts';
-import type { BenchmarkTask, GateInput, GateResult, ScoredRollout } from './types.ts';
-import { VALIDATION_EPSILON, VALIDATION_RUNS_PER_TASK } from './types.ts';
-import type { BrainEngine } from '../engine.ts';
+import { runWithLimit, isMustAbortError } from "../worker-pool.ts";
+import { runRollout, type RolloutOpts } from "./rollout.ts";
+import { scoreTrajectory } from "./score.ts";
+import type { BenchmarkTask, GateInput, GateResult, ScoredRollout } from "./types.ts";
+import { VALIDATION_EPSILON, VALIDATION_RUNS_PER_TASK } from "./types.ts";
+import type { BrainEngine } from "../engine.ts";
 
-export interface ValidateGateOpts extends Omit<GateInput, 'selSet'> {
+export interface ValidateGateOpts extends Omit<GateInput, "selSet"> {
   selSet: BenchmarkTask[];
   engine: BrainEngine;
   targetModel: string;
@@ -110,20 +110,23 @@ export async function runValidationGate(opts: ValidateGateOpts): Promise<GateRes
     if (s && s.ok) return { task_id: s.value.task_id, median: s.value.median, runs: s.value.runs };
     return { task_id: opts.selSet[idx]!.task_id, median: 0, runs: [] };
   });
-  const scoredRollouts: ScoredRollout[] = settled.flatMap((s) => (s && s.ok) ? s.value.rollouts : []);
-  const selScore = perTaskMedians.length === 0
-    ? 0
-    : perTaskMedians.reduce((acc, r) => acc + r.median, 0) / perTaskMedians.length;
+  const scoredRollouts: ScoredRollout[] = settled.flatMap((s) =>
+    s && s.ok ? s.value.rollouts : []
+  );
+  const selScore =
+    perTaskMedians.length === 0
+      ? 0
+      : perTaskMedians.reduce((acc, r) => acc + r.median, 0) / perTaskMedians.length;
 
   // D12 accept rule: strict > best + epsilon. Ties/sub-epsilon-gains are
   // rejected (paper-faithful — protects against noise-as-improvement).
   const threshold = opts.bestScore + VALIDATION_EPSILON;
   const accepted = selScore > threshold;
 
-  let reason: GateResult['reason'];
+  let reason: GateResult["reason"];
   if (!accepted) {
-    if (selScore <= opts.bestScore) reason = 'below_baseline';
-    else reason = 'no_margin';
+    if (selScore <= opts.bestScore) reason = "below_baseline";
+    else reason = "no_margin";
   }
   return { accepted, perTaskMedians, selScore, scoredRollouts, ...(reason ? { reason } : {}) };
 }
@@ -170,7 +173,5 @@ export function median(values: readonly number[]): number {
   if (values.length === 0) return 0;
   const sorted = [...values].sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
-  return sorted.length % 2 === 1
-    ? sorted[mid]!
-    : (sorted[mid - 1]! + sorted[mid]!) / 2;
+  return sorted.length % 2 === 1 ? sorted[mid]! : (sorted[mid - 1]! + sorted[mid]!) / 2;
 }

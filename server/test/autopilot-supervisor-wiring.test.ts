@@ -23,31 +23,31 @@
  * pointer at autopilot.ts.
  */
 
-import { describe, expect, it } from 'bun:test';
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import { describe, expect, it } from "bun:test";
+import { readFileSync } from "fs";
+import { join } from "path";
 
 const AUTOPILOT_SRC = readFileSync(
-  join(import.meta.dir, '..', 'src', 'commands', 'autopilot.ts'),
-  'utf8',
+  join(import.meta.dir, "..", "src", "commands", "autopilot.ts"),
+  "utf8"
 );
 
-describe('autopilot.ts ↔ ChildWorkerSupervisor wiring', () => {
-  it('imports ChildWorkerSupervisor from the shared core', () => {
+describe("autopilot.ts ↔ ChildWorkerSupervisor wiring", () => {
+  it("imports ChildWorkerSupervisor from the shared core", () => {
     expect(AUTOPILOT_SRC).toContain(
-      "import { ChildWorkerSupervisor } from '../core/minions/child-worker-supervisor.ts';",
+      "import { ChildWorkerSupervisor } from '../core/minions/child-worker-supervisor.ts';"
     );
   });
 
-  it('does not retain the legacy inline spawn loop (`startWorker` + child.on)', () => {
+  it("does not retain the legacy inline spawn loop (`startWorker` + child.on)", () => {
     // The old code at autopilot.ts:165-197 defined `startWorker` and called
     // `child.on('exit', ...)` directly. The refactor must drop those names.
-    expect(AUTOPILOT_SRC).not.toContain('const startWorker');
+    expect(AUTOPILOT_SRC).not.toContain("const startWorker");
     expect(AUTOPILOT_SRC).not.toContain("child.on('exit'");
     // Also drop the parallel crash-tracking state that lived in autopilot.
-    expect(AUTOPILOT_SRC).not.toContain('let crashCount');
-    expect(AUTOPILOT_SRC).not.toContain('let lastWorkerStartTime');
-    expect(AUTOPILOT_SRC).not.toContain('STABLE_RUN_RESET_MS');
+    expect(AUTOPILOT_SRC).not.toContain("let crashCount");
+    expect(AUTOPILOT_SRC).not.toContain("let lastWorkerStartTime");
+    expect(AUTOPILOT_SRC).not.toContain("STABLE_RUN_RESET_MS");
   });
 
   it("spawns the worker with an auto-sized --max-rss (issue #1678)", () => {
@@ -68,7 +68,7 @@ describe('autopilot.ts ↔ ChildWorkerSupervisor wiring', () => {
     expect(AUTOPILOT_SRC).toMatch(/maxCrashes:\s*5\b/);
   });
 
-  it('routes onMaxCrashesExceeded to autopilot.shutdown (not process.exit directly)', () => {
+  it("routes onMaxCrashesExceeded to autopilot.shutdown (not process.exit directly)", () => {
     // Pre-refactor: autopilot.ts called process.exit(1) directly when the
     // crash counter tripped, bypassing its own dispatch-loop cleanup and
     // lockfile removal. Post-refactor: the callback routes through
@@ -76,12 +76,12 @@ describe('autopilot.ts ↔ ChildWorkerSupervisor wiring', () => {
     expect(AUTOPILOT_SRC).toMatch(/onMaxCrashesExceeded:[\s\S]{0,300}shutdown\('max_crashes'\)/);
   });
 
-  it('shutdown drains via supervisor.killChild + awaitChildExit (not workerProc.kill)', () => {
+  it("shutdown drains via supervisor.killChild + awaitChildExit (not workerProc.kill)", () => {
     // The legacy shutdown reached into `workerProc` directly. Post-refactor
     // those calls go through the supervisor's typed surface, which lets the
     // class encapsulate the kill/drain sequence.
     expect(AUTOPILOT_SRC).toContain("childSupervisor.killChild('SIGTERM')");
-    expect(AUTOPILOT_SRC).toContain('childSupervisor.awaitChildExit(35_000)');
-    expect(AUTOPILOT_SRC).not.toContain('workerProc');
+    expect(AUTOPILOT_SRC).toContain("childSupervisor.awaitChildExit(35_000)");
+    expect(AUTOPILOT_SRC).not.toContain("workerProc");
   });
 });

@@ -32,15 +32,15 @@
  * decision function exhaustively).
  */
 
-import { writeFileSync, mkdirSync, existsSync } from 'fs';
-import { join } from 'path';
-import { PostgresEngine } from '../src/core/postgres-engine.ts';
-import { PGLiteEngine } from '../src/core/pglite-engine.ts';
-import { loadConfig } from '../src/core/config.ts';
-import type { BrainEngine } from '../src/core/engine.ts';
+import { writeFileSync, mkdirSync, existsSync } from "fs";
+import { join } from "path";
+import { PostgresEngine } from "../src/core/postgres-engine.ts";
+import { PGLiteEngine } from "../src/core/pglite-engine.ts";
+import { loadConfig } from "../src/core/config.ts";
+import type { BrainEngine } from "../src/core/engine.ts";
 
 interface ArmStats {
-  arm: 'fixed' | 'adaptive';
+  arm: "fixed" | "adaptive";
   jobs_submitted: number;
   jobs_completed: number;
   jobs_dead: number;
@@ -70,13 +70,13 @@ interface ABReceipt {
 
 function parseArgs(argv: string[]) {
   const args = {
-    dryRun: argv.includes('--dry-run'),
+    dryRun: argv.includes("--dry-run"),
     jobs: 500,
     budgetUsd: 8,
   };
   for (const arg of argv) {
-    if (arg.startsWith('--jobs=')) args.jobs = parseInt(arg.split('=')[1] ?? '500', 10);
-    if (arg.startsWith('--budget-usd=')) args.budgetUsd = parseFloat(arg.split('=')[1] ?? '8');
+    if (arg.startsWith("--jobs=")) args.jobs = parseInt(arg.split("=")[1] ?? "500", 10);
+    if (arg.startsWith("--budget-usd=")) args.budgetUsd = parseFloat(arg.split("=")[1] ?? "8");
   }
   return args;
 }
@@ -90,9 +90,11 @@ async function openEngine(): Promise<BrainEngine> {
   }
   // Fallback: PGLite ephemeral. Real A/B runs should use Postgres so the
   // lease-cap controller's elected-mutator pattern is exercised cross-process.
-  process.stderr.write('[e5-ab] WARN: using PGLite ephemeral (no DATABASE_URL); cross-worker tests will not run\n');
+  process.stderr.write(
+    "[e5-ab] WARN: using PGLite ephemeral (no DATABASE_URL); cross-worker tests will not run\n"
+  );
   const engine = new PGLiteEngine();
-  await engine.connect({ database_url: '' });
+  await engine.connect({ database_url: "" });
   await engine.initSchema();
   return engine;
 }
@@ -113,13 +115,13 @@ function syntheticPrompt(index: number): string {
   const z = Math.sqrt(-2 * Math.log(Math.max(u1, 1e-9))) * Math.cos(2 * Math.PI * u2);
   const tokens = Math.exp(mu + sigma * z);
   const chars = Math.max(40, Math.min(64000, Math.floor(tokens * 4)));
-  return `Synthetic A/B test prompt #${index}. Body: ` + 'X'.repeat(chars - 40);
+  return `Synthetic A/B test prompt #${index}. Body: ` + "X".repeat(chars - 40);
 }
 
 async function runArm(
   engine: BrainEngine,
-  arm: 'fixed' | 'adaptive',
-  opts: { jobs: number; budgetUsd: number; dryRun: boolean },
+  arm: "fixed" | "adaptive",
+  opts: { jobs: number; budgetUsd: number; dryRun: boolean }
 ): Promise<ArmStats> {
   const start = Date.now();
   const lease_cap_history: number[] = [];
@@ -133,16 +135,18 @@ async function runArm(
   process.stderr.write(`[e5-ab] === arm=${arm} starting ===\n`);
 
   // Configure the cap policy for this arm.
-  if (arm === 'fixed') {
-    await engine.setConfig('minions.auto_lease_cap', 'false');
-    await engine.setConfig('minions.lease_cap_current', '8');
+  if (arm === "fixed") {
+    await engine.setConfig("minions.auto_lease_cap", "false");
+    await engine.setConfig("minions.lease_cap_current", "8");
   } else {
-    await engine.setConfig('minions.auto_lease_cap', 'true');
-    await engine.setConfig('minions.lease_cap_current', '8');
+    await engine.setConfig("minions.auto_lease_cap", "true");
+    await engine.setConfig("minions.lease_cap_current", "8");
   }
 
   if (opts.dryRun) {
-    process.stderr.write(`[e5-ab] --dry-run: skipping real submission. Would submit ${opts.jobs} jobs.\n`);
+    process.stderr.write(
+      `[e5-ab] --dry-run: skipping real submission. Would submit ${opts.jobs} jobs.\n`
+    );
     return {
       arm,
       jobs_submitted: opts.jobs,
@@ -161,7 +165,9 @@ async function runArm(
   // tick loop) lands in the follow-up wave when the controller has been
   // exercised manually first. Receipt fixture is committed as a baseline
   // shape for future runs to diff against.
-  process.stderr.write(`[e5-ab] arm=${arm}: real-run implementation deferred to v0.41.1 follow-up.\n`);
+  process.stderr.write(
+    `[e5-ab] arm=${arm}: real-run implementation deferred to v0.41.1 follow-up.\n`
+  );
   process.stderr.write(`[e5-ab] See CHANGELOG.md "v0.41.0.0 → v0.41.1.0 follow-up" for details.\n`);
 
   return {
@@ -177,15 +183,17 @@ async function runArm(
   };
 }
 
-function computeVerdict(fixed: ArmStats, adaptive: ArmStats): ABReceipt['verdict'] {
+function computeVerdict(fixed: ArmStats, adaptive: ArmStats): ABReceipt["verdict"] {
   // Throughput ratio: completed_jobs / wall_clock_ms. Higher is better.
   const tputFixed = fixed.wall_clock_ms > 0 ? fixed.jobs_completed / fixed.wall_clock_ms : 0;
-  const tputAdaptive = adaptive.wall_clock_ms > 0 ? adaptive.jobs_completed / adaptive.wall_clock_ms : 0;
+  const tputAdaptive =
+    adaptive.wall_clock_ms > 0 ? adaptive.jobs_completed / adaptive.wall_clock_ms : 0;
   const throughputAdvantage = tputFixed > 0 ? ((tputAdaptive - tputFixed) / tputFixed) * 100 : 0;
 
   // Cost efficiency ratio: completed_jobs / dollars. Higher is better.
   const effFixed = fixed.total_cost_usd > 0 ? fixed.jobs_completed / fixed.total_cost_usd : 0;
-  const effAdaptive = adaptive.total_cost_usd > 0 ? adaptive.jobs_completed / adaptive.total_cost_usd : 0;
+  const effAdaptive =
+    adaptive.total_cost_usd > 0 ? adaptive.jobs_completed / adaptive.total_cost_usd : 0;
   const costEfficiencyDelta = effFixed > 0 ? ((effAdaptive - effFixed) / effFixed) * 100 : 0;
 
   // PR gate: adaptive must beat fixed by ≥5% on throughput AND match
@@ -197,8 +205,8 @@ function computeVerdict(fixed: ArmStats, adaptive: ArmStats): ABReceipt['verdict
     cost_efficiency_delta_pct: Math.round(costEfficiencyDelta * 100) / 100,
     pr_gate_pass,
     note: pr_gate_pass
-      ? 'controller beats fixed-cap; safe to default ON'
-      : 'controller does NOT meet PR gate; defaults stay OFF',
+      ? "controller beats fixed-cap; safe to default ON"
+      : "controller does NOT meet PR gate; defaults stay OFF",
   };
 }
 
@@ -208,8 +216,8 @@ async function main() {
 
   const engine = await openEngine();
   try {
-    const fixed = await runArm(engine, 'fixed', opts);
-    const adaptive = await runArm(engine, 'adaptive', opts);
+    const fixed = await runArm(engine, "fixed", opts);
+    const adaptive = await runArm(engine, "adaptive", opts);
     const verdict = computeVerdict(fixed, adaptive);
 
     const receipt: ABReceipt = {
@@ -224,11 +232,11 @@ async function main() {
       verdict,
     };
 
-    const fixtureDir = join(process.cwd(), 'test/fixtures/e5-lease-cap-ab');
+    const fixtureDir = join(process.cwd(), "test/fixtures/e5-lease-cap-ab");
     if (!existsSync(fixtureDir)) mkdirSync(fixtureDir, { recursive: true });
     const receiptPath = join(
       fixtureDir,
-      `${new Date().toISOString().replace(/[:.]/g, '-')}${opts.dryRun ? '-dry-run' : ''}.json`,
+      `${new Date().toISOString().replace(/[:.]/g, "-")}${opts.dryRun ? "-dry-run" : ""}.json`
     );
     writeFileSync(receiptPath, JSON.stringify(receipt, null, 2));
     process.stderr.write(`[e5-ab] receipt written: ${receiptPath}\n`);
@@ -240,7 +248,7 @@ async function main() {
 }
 
 if (import.meta.main) {
-  main().catch(err => {
+  main().catch((err) => {
     process.stderr.write(`[e5-ab] FATAL: ${err instanceof Error ? err.message : String(err)}\n`);
     process.exit(2);
   });

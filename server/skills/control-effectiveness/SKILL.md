@@ -37,6 +37,7 @@ mutating: true
 ## Contract
 
 This skill guarantees:
+
 1. The control is assessed on BOTH design and operating effectiveness.
 2. It is mapped to the obligation/framework it is meant to satisfy (cited).
 3. The rating (effective / partial / ineffective) states its evidence basis.
@@ -86,5 +87,6 @@ Was sie tut · deckt Pflicht: [GDPR/GwG/AI Act/ISO …] (Quelle) · Owner
 - ❌ Omitting remediation for a partial/ineffective rating.
 
 ## Error Handling
+
 - No operating evidence available → rate design only and flag the evidence gap explicitly.
 - Control-to-obligation mapping unclear → ask; an unmapped control can't be rated for effectiveness.

@@ -13,11 +13,11 @@
 // Undefined/missing `remote` defaults to REMOTE (fail-closed per v0.26.9
 // F7b — anything not strictly false is treated as untrusted).
 
-import type { OperationContext } from '../operations.ts';
-import { loadActivePack, type LoadActivePackInput } from './load-active.ts';
-import { sourceScopeOpts } from '../operations.ts';
-import type { ResolvedPack } from './registry.ts';
-import { loadConfig } from '../config.ts';
+import type { OperationContext } from "../operations.ts";
+import { loadActivePack, type LoadActivePackInput } from "./load-active.ts";
+import { sourceScopeOpts } from "../operations.ts";
+import type { ResolvedPack } from "./registry.ts";
+import { loadConfig } from "../config.ts";
 
 /**
  * Thrown when a remote caller (ctx.remote !== false) passes the
@@ -25,10 +25,10 @@ import { loadConfig } from '../config.ts';
  * operations.ts dispatch path with the standard error envelope.
  */
 export class SchemaPackTrustGateError extends Error {
-  readonly code: 'permission_denied' = 'permission_denied';
+  readonly code: "permission_denied" = "permission_denied";
   constructor(message: string) {
     super(message);
-    this.name = 'SchemaPackTrustGateError';
+    this.name = "SchemaPackTrustGateError";
   }
 }
 
@@ -42,24 +42,24 @@ export class SchemaPackTrustGateError extends Error {
  */
 export function validateSchemaPackTrustGate(
   ctx: OperationContext,
-  schemaPackParam: unknown,
+  schemaPackParam: unknown
 ): string | undefined {
   if (schemaPackParam === undefined || schemaPackParam === null) {
     return undefined;
   }
-  if (typeof schemaPackParam !== 'string') {
+  if (typeof schemaPackParam !== "string") {
     throw new SchemaPackTrustGateError(
-      `schema_pack must be a string; got ${typeof schemaPackParam}`,
+      `schema_pack must be a string; got ${typeof schemaPackParam}`
     );
   }
   // Fail-closed: anything that isn't strictly remote=false is treated
   // as remote per the v0.26.9 F7b hardening posture.
   if (ctx.remote !== false) {
     throw new SchemaPackTrustGateError(
-      'per-call schema_pack opt is rejected for remote/MCP callers. ' +
-      'Pass via gbrain.yml `schema:` section, ~/.gbrain/config.json `schema_pack`, ' +
-      'GBRAIN_SCHEMA_PACK env var, or `gbrain config set schema_pack <name>`. ' +
-      'CLI callers (ctx.remote === false) can pass per-call.',
+      "per-call schema_pack opt is rejected for remote/MCP callers. " +
+        "Pass via gbrain.yml `schema:` section, ~/.gbrain/config.json `schema_pack`, " +
+        "GBRAIN_SCHEMA_PACK env var, or `gbrain config set schema_pack <name>`. " +
+        "CLI callers (ctx.remote === false) can pass per-call."
     );
   }
   return schemaPackParam;
@@ -77,7 +77,7 @@ export function validateSchemaPackTrustGate(
  */
 export async function loadActivePackForOp(
   ctx: OperationContext,
-  params: { schema_pack?: unknown },
+  params: { schema_pack?: unknown }
 ): Promise<ResolvedPack> {
   const perCall = validateSchemaPackTrustGate(ctx, params.schema_pack);
   const scope = sourceScopeOpts(ctx);
@@ -96,7 +96,7 @@ export async function loadActivePackForOp(
       // source. If they all agree, use the first; if they diverge, fail
       // closed with a permission_denied to surface the drift instead of
       // arbitrary pack selection.
-      const { resolveActivePackName } = await import('./registry.ts');
+      const { resolveActivePackName } = await import("./registry.ts");
       const cfg = loadConfig();
       const packNames = new Set<string>();
       for (const sid of scope.sourceIds) {
@@ -110,9 +110,9 @@ export async function loadActivePackForOp(
       }
       if (packNames.size > 1) {
         throw new SchemaPackTrustGateError(
-          `Federated read across ${scope.sourceIds.length} sources resolves to ${packNames.size} distinct packs (${[...packNames].join(', ')}). ` +
-          `Per-source closure across mounts ships in v0.40+. Until then, ` +
-          `register an OAuth client scoped to a single source OR have the sources agree on one pack.`,
+          `Federated read across ${scope.sourceIds.length} sources resolves to ${packNames.size} distinct packs (${[...packNames].join(", ")}). ` +
+            `Per-source closure across mounts ships in v0.40+. Until then, ` +
+            `register an OAuth client scoped to a single source OR have the sources agree on one pack.`
         );
       }
       sourceId = scope.sourceIds[0];

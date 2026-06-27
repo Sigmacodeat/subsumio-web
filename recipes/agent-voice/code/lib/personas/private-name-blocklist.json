@@ -1,19 +1,9 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "Privacy blocklist contract for agent-voice. The shipped file lists ONLY structural categories. Specific names live in the $AGENT_VOICE_PII_BLOCKLIST environment variable (pipe-separated) at scan time. This separation keeps gbrain's shipped surface free of personal/private names while still letting CI enforce a project-specific blocklist via secrets.",
-  "shapeRegex": [
-    "email",
-    "phone",
-    "ssn",
-    "jwt",
-    "bearer_token",
-    "credit_card"
-  ],
+  "shapeRegex": ["email", "phone", "ssn", "jwt", "bearer_token", "credit_card"],
   "shapeRegexSource": "src/core/eval-capture-scrub.ts",
-  "pathPatterns": [
-    "/data/\\.openclaw/",
-    "/private/[a-z0-9_-]+/workspace/"
-  ],
+  "pathPatterns": ["/data/\\.openclaw/", "/private/[a-z0-9_-]+/workspace/"],
   "operatorBlocklistEnv": "AGENT_VOICE_PII_BLOCKLIST",
   "operatorBlocklistHint": "Set AGENT_VOICE_PII_BLOCKLIST as a pipe-separated list (e.g. 'agent_codename|family_name_1|family_name_2') in your shell rc or GitHub Action secret. Never commit a populated value to a public repo.",
   "scanScope": [

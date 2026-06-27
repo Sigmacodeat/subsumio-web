@@ -23,6 +23,7 @@ mutating: false
 ## Contract
 
 This skill guarantees:
+
 - Every new page is filed by primary subject (not format, not source)
 - The decision protocol is followed for ambiguous cases
 - Common misfiling patterns are caught

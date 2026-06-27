@@ -20,10 +20,10 @@
  *     for pre-v0.35.4 facts that arrived without one).
  */
 
-import type { TrajectoryPoint } from './engine.ts';
+import type { TrajectoryPoint } from "./engine.ts";
 
 /** Default regression threshold (10% drop). Locked decision D-ENG-2. */
-export const DEFAULT_REGRESSION_THRESHOLD = 0.10;
+export const DEFAULT_REGRESSION_THRESHOLD = 0.1;
 
 /** Schema version for the trajectory + scorecard JSON contract. Additive-only across releases. */
 export const TRAJECTORY_SCHEMA_VERSION = 1;
@@ -31,10 +31,10 @@ export const TRAJECTORY_SCHEMA_VERSION = 1;
 export interface TrajectoryRegression {
   metric: string;
   from_value: number;
-  from_date: string;   // YYYY-MM-DD
+  from_date: string; // YYYY-MM-DD
   to_value: number;
   to_date: string;
-  delta_pct: number;   // negative for a drop; range typically [-1, 0)
+  delta_pct: number; // negative for a drop; range typically [-1, 0)
 }
 
 export interface TrajectoryStats {
@@ -90,7 +90,7 @@ function cosineSim(a: Float32Array, b: Float32Array): number {
  */
 export function detectRegressions(
   points: TrajectoryPoint[],
-  threshold: number = DEFAULT_REGRESSION_THRESHOLD,
+  threshold: number = DEFAULT_REGRESSION_THRESHOLD
 ): TrajectoryRegression[] {
   const out: TrajectoryRegression[] = [];
   // Group by metric so each metric's regression detection is independent.
@@ -138,7 +138,7 @@ export function detectRegressions(
  * statistic is meaningless on tiny samples.
  */
 export function computeDriftScore(points: TrajectoryPoint[]): number | null {
-  const withEmb = points.filter(p => p.embedding !== null && p.embedding.length > 0);
+  const withEmb = points.filter((p) => p.embedding !== null && p.embedding.length > 0);
   if (withEmb.length < 3) return null;
   let sumCos = 0;
   let pairs = 0;
@@ -160,7 +160,7 @@ export function computeDriftScore(points: TrajectoryPoint[]): number | null {
  */
 export function computeTrajectoryStats(
   points: TrajectoryPoint[],
-  opts: { threshold?: number } = {},
+  opts: { threshold?: number } = {}
 ): TrajectoryStats {
   const threshold = opts.threshold ?? resolveRegressionThreshold();
   return {

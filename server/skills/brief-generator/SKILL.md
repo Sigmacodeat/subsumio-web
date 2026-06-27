@@ -58,6 +58,7 @@ gbrain query "Fakten und Ansprüche im Fall [case-name]"
 ```
 
 Required information:
+
 - **Gericht**: Welches Gericht / welche Behörde?
 - **Verfahrensart**: Zivilklage / Verwaltungsklage / Strafanzeige / Einspruch
 - **Parteien**: Kläger/Antragsteller, Beklagter/Antragsgegner (inkl. Anschriften)
@@ -68,22 +69,22 @@ Required information:
 
 ### Step 2 — Select Template
 
-| Schriftsatz | Anlass | Frist (DE) |
-|---|---|---|
-| Klageschrift | Neue Klage | Keine (Verjährung beachten) |
-| Klageerwiderung | Auf Klage reagieren | Vom Gericht gesetzt (meist 2–4 Wo) |
-| Berufungsbegründung | Berufung | § 520 ZPO: 2 Monate ab Zustellung |
-| Revisionsbegründung | Revision | § 548 ZPO: 5 Monate ab Urteilszustellung |
-| Einstweilige Verfügung | Dringend | Sofort (Glaubhaftmachung erforderlich) |
-| Einspruch (Mahnbescheid) | Gegen Mahnbescheid | § 694 ZPO: 2 Wochen |
-| Widerspruch (Verwaltung) | Gegen Bescheid | § 70 VwGO: 1 Monat |
+| Schriftsatz              | Anlass              | Frist (DE)                               |
+| ------------------------ | ------------------- | ---------------------------------------- |
+| Klageschrift             | Neue Klage          | Keine (Verjährung beachten)              |
+| Klageerwiderung          | Auf Klage reagieren | Vom Gericht gesetzt (meist 2–4 Wo)       |
+| Berufungsbegründung      | Berufung            | § 520 ZPO: 2 Monate ab Zustellung        |
+| Revisionsbegründung      | Revision            | § 548 ZPO: 5 Monate ab Urteilszustellung |
+| Einstweilige Verfügung   | Dringend            | Sofort (Glaubhaftmachung erforderlich)   |
+| Einspruch (Mahnbescheid) | Gegen Mahnbescheid  | § 694 ZPO: 2 Wochen                      |
+| Widerspruch (Verwaltung) | Gegen Bescheid      | § 70 VwGO: 1 Monat                       |
 
 ### Step 3 — Generate Draft
 
 ```markdown
 [ENTWURF — NUR ZUR INTERNEN VERWENDUNG — NICHT EINREICHEN OHNE ANWALTLICHE PRÜFUNG]
 
-[Anwalt/Kanzlei]                    [Ort], den [Datum]
+[Anwalt/Kanzlei] [Ort], den [Datum]
 [Adresse]
 [Telefon / Fax / E-Mail]
 Az.: [Aktenzeichen intern]
@@ -127,7 +128,7 @@ Hilfsweise: [Hilfsantrag falls erforderlich]
 
 1. [Tatsache 1]
 2. [Tatsache 2]
-...
+   ...
 
 ---
 
@@ -165,6 +166,7 @@ Zu Ziff. 1: [Beweis — Zeuge / Urkunde / Sachverständiger]
 Zu Ziff. 2: ...
 
 Anlagen:
+
 - Anlage K 1: [Bezeichnung]
 - Anlage K 2: [Bezeichnung]
 
@@ -173,6 +175,7 @@ Anlagen:
 [Unterschrift Anwalt]
 
 ---
+
 ⚠️ ENTWURF — Erstellt von KI-System, erfordert anwaltliche Überprüfung vor Einreichung.
 Frist prüfen: [Deadline] | Schriftsatz-Typ: [Typ] | Erstellt: [Datum]
 ```

@@ -21,7 +21,7 @@ export class AppError extends Error {
 
   constructor(
     message: string,
-    opts: { code: string; details?: ErrorDetails; statusCode?: number; cause?: Error },
+    opts: { code: string; details?: ErrorDetails; statusCode?: number; cause?: Error }
   ) {
     super(message, opts.cause ? { cause: opts.cause } : undefined);
     this.name = this.constructor.name;
@@ -112,7 +112,12 @@ export function isAppError(err: unknown): err is AppError {
 }
 
 /** Safe error → JSON for API responses. */
-export function errorResponse(err: unknown): { error: string; code: string; message: string; details?: ErrorDetails } {
+export function errorResponse(err: unknown): {
+  error: string;
+  code: string;
+  message: string;
+  details?: ErrorDetails;
+} {
   if (isAppError(err)) {
     return {
       error: err.name,

@@ -53,8 +53,8 @@
  * so audit JSONL has a stable identifier even for un-named entries.
  */
 
-import { existsSync, readFileSync } from 'fs';
-import type { OperatorLiteral } from './content-sanity.ts';
+import { existsSync, readFileSync } from "fs";
+import type { OperatorLiteral } from "./content-sanity.ts";
 
 /** Path to the operator literals file. Honors `GBRAIN_HOME` via
  *  `gbrainPath`. Resolved at load time so test fixtures can set
@@ -63,29 +63,29 @@ import type { OperatorLiteral } from './content-sanity.ts';
 function resolveLiteralsPath(): string {
   // Lazy-import to avoid loading config.ts surface for the pure
   // assessor's consumers that only need built-ins.
-  const { gbrainPath } = require('./config.ts');
-  return gbrainPath('junk-substrings.txt');
+  const { gbrainPath } = require("./config.ts");
+  return gbrainPath("junk-substrings.txt");
 }
 
 interface ParsedDirective {
   name?: string;
-  applies_to?: 'body' | 'title' | 'both';
+  applies_to?: "body" | "title" | "both";
 }
 
 /** Parse one comment line for known directives. Unknown directives
  *  are ignored (operator file is soft input). Returns empty object
  *  on no match. */
 function parseDirectiveLine(line: string): ParsedDirective {
-  const stripped = line.replace(/^#\s*/, '').trim();
+  const stripped = line.replace(/^#\s*/, "").trim();
   // Match `key=value` shape. Allow multiple per line eventually if
   // someone asks; for now one per line is the documented format.
   const m = stripped.match(/^([a-z_]+)\s*=\s*(.+)$/i);
   if (!m) return {};
   const key = m[1].toLowerCase();
   const value = m[2].trim();
-  if (key === 'name') return { name: value };
-  if (key === 'applies_to') {
-    if (value === 'body' || value === 'title' || value === 'both') {
+  if (key === "name") return { name: value };
+  if (key === "applies_to") {
+    if (value === "body" || value === "title" || value === "both") {
       return { applies_to: value };
     }
   }
@@ -105,7 +105,7 @@ export function loadOperatorLiterals(path?: string): OperatorLiteral[] {
   if (!existsSync(resolved)) return [];
   let raw: string;
   try {
-    raw = readFileSync(resolved, 'utf-8');
+    raw = readFileSync(resolved, "utf-8");
   } catch {
     // Permission denied, transient FS error — treat as missing.
     return [];
@@ -119,7 +119,7 @@ export function parseLiteralsContent(raw: string): OperatorLiteral[] {
   let pending: ParsedDirective = {};
   let unnamedIndex = 0;
 
-  for (const line of raw.split('\n')) {
+  for (const line of raw.split("\n")) {
     const trimmed = line.trim();
     if (trimmed.length === 0) {
       // Blank line: directive scope resets so an empty line between
@@ -128,7 +128,7 @@ export function parseLiteralsContent(raw: string): OperatorLiteral[] {
       pending = {};
       continue;
     }
-    if (trimmed.startsWith('#')) {
+    if (trimmed.startsWith("#")) {
       // Merge directives so a `# name=...` then `# applies_to=...`
       // pair both bind to the next literal.
       const parsed = parseDirectiveLine(trimmed);
@@ -140,7 +140,7 @@ export function parseLiteralsContent(raw: string): OperatorLiteral[] {
     literals.push({
       name,
       substring: trimmed,
-      applies_to: pending.applies_to ?? 'both',
+      applies_to: pending.applies_to ?? "both",
     });
     // Consume the pending directives so they don't bind to a
     // subsequent literal unless re-declared.

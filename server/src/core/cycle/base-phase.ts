@@ -30,11 +30,11 @@
  * by default.
  */
 
-import { BudgetMeter, type SubmitEstimate, type BudgetCheckResult } from './budget-meter.ts';
-import { sourceScopeOpts, type OperationContext } from '../operations.ts';
-import type { BrainEngine } from '../engine.ts';
-import type { CyclePhase, PhaseResult, PhaseStatus, PhaseError } from '../cycle.ts';
-import type { ProgressReporter } from '../progress.ts';
+import { BudgetMeter, type SubmitEstimate, type BudgetCheckResult } from "./budget-meter.ts";
+import { sourceScopeOpts, type OperationContext } from "../operations.ts";
+import type { BrainEngine } from "../engine.ts";
+import type { CyclePhase, PhaseResult, PhaseStatus, PhaseError } from "../cycle.ts";
+import type { ProgressReporter } from "../progress.ts";
 
 /**
  * Source-scoped read options threaded through every engine call inside a
@@ -76,7 +76,7 @@ export abstract class BaseCyclePhase {
     engine: BrainEngine,
     scope: ScopedReadOpts,
     ctx: OperationContext,
-    opts: BasePhaseOpts,
+    opts: BasePhaseOpts
   ): Promise<{
     summary: string;
     details: Record<string, unknown>;
@@ -89,7 +89,7 @@ export abstract class BaseCyclePhase {
    * violation maps to `PROPOSAL_CONFLICT`, etc. Default: 'UNKNOWN'.
    */
   protected mapErrorCode(_err: unknown): string {
-    return 'UNKNOWN';
+    return "UNKNOWN";
   }
 
   /**
@@ -97,7 +97,7 @@ export abstract class BaseCyclePhase {
    * subclass can flag 'LLMError', 'DatabaseConnection' etc.
    */
   protected mapErrorClass(_err: unknown): string {
-    return 'InternalError';
+    return "InternalError";
   }
 
   /**
@@ -140,10 +140,10 @@ export abstract class BaseCyclePhase {
    * value passed via opts.budgetUsd. Otherwise: config[budgetUsdKey] → default.
    */
   private resolveBudgetUsd(ctx: OperationContext, opts: BasePhaseOpts): number {
-    if (typeof opts.budgetUsd === 'number') return opts.budgetUsd;
+    if (typeof opts.budgetUsd === "number") return opts.budgetUsd;
     const raw = (ctx.config as unknown as Record<string, unknown>)[this.budgetUsdKey];
-    if (typeof raw === 'number' && Number.isFinite(raw) && raw >= 0) return raw;
-    if (typeof raw === 'string') {
+    if (typeof raw === "number" && Number.isFinite(raw) && raw >= 0) return raw;
+    if (typeof raw === "string") {
       const parsed = Number.parseFloat(raw);
       if (Number.isFinite(parsed) && parsed >= 0) return parsed;
     }
@@ -173,7 +173,7 @@ export abstract class BaseCyclePhase {
       const out = await this.process(ctx.engine, scope, ctx, opts);
       return {
         phase: this.name,
-        status: out.status ?? 'ok',
+        status: out.status ?? "ok",
         duration_ms: Date.now() - t0,
         summary: out.summary,
         details: out.details,
@@ -189,7 +189,7 @@ export abstract class BaseCyclePhase {
       };
       return {
         phase: this.name,
-        status: 'fail',
+        status: "fail",
         duration_ms: Date.now() - t0,
         summary: `${this.name} failed: ${message}`,
         details: { error_code: code },

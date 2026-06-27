@@ -12,29 +12,37 @@
  * a second; the 5s budget is generous for slow CI.
  */
 
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
-import { PGLiteEngine } from '../../src/core/pglite-engine.ts';
-import { runPhaseRecomputeEmotionalWeight } from '../../src/core/cycle/recompute-emotional-weight.ts';
+import { describe, test, expect, beforeAll, afterAll } from "bun:test";
+import { PGLiteEngine } from "../../src/core/pglite-engine.ts";
+import { runPhaseRecomputeEmotionalWeight } from "../../src/core/cycle/recompute-emotional-weight.ts";
 
 let engine: PGLiteEngine;
 
 const TAG_POOL = [
-  'wedding', 'family', 'work', 'product', 'hardware',
-  'meeting', 'idea', 'concept', 'people', 'health',
+  "wedding",
+  "family",
+  "work",
+  "product",
+  "hardware",
+  "meeting",
+  "idea",
+  "concept",
+  "people",
+  "health",
 ];
 
 beforeAll(async () => {
   engine = new PGLiteEngine();
-  await engine.connect({ engine: 'pglite' } as never);
+  await engine.connect({ engine: "pglite" } as never);
   await engine.initSchema();
 
   // Seed 1000 pages, each with 1-3 tags from the pool.
   for (let i = 0; i < 1000; i++) {
     const slug = `notes/perf-${i}`;
     await engine.putPage(slug, {
-      type: 'note',
+      type: "note",
       title: `Page ${i}`,
-      compiled_truth: 'body',
+      compiled_truth: "body",
     });
     const tagCount = 1 + (i % 3);
     for (let t = 0; t < tagCount; t++) {
@@ -47,13 +55,13 @@ afterAll(async () => {
   if (engine) await engine.disconnect();
 });
 
-describe('v0.29 — recompute_emotional_weight perf on a 1000-page fixture', () => {
-  test('full-mode backfill completes in under 5 seconds', async () => {
+describe("v0.29 — recompute_emotional_weight perf on a 1000-page fixture", () => {
+  test("full-mode backfill completes in under 5 seconds", async () => {
     const start = Date.now();
     const result = await runPhaseRecomputeEmotionalWeight(engine, {});
     const elapsedMs = Date.now() - start;
 
-    expect(result.status).toBe('ok');
+    expect(result.status).toBe("ok");
     expect(result.pages_recomputed).toBeGreaterThanOrEqual(1000);
     expect(elapsedMs).toBeLessThan(5_000);
   }, 30_000);

@@ -16,13 +16,19 @@
  * caller (orchestrator) feeds the trajectory to the judge for scoring.
  */
 
-import { chat as gatewayChat, toolLoop, type ChatMessage, type ChatToolDef, type ToolHandler } from '../ai/gateway.ts';
-import { BRAIN_TOOL_ALLOWLIST } from '../minions/tools/brain-allowlist.ts';
-import { paramDefToSchema } from '../../mcp/tool-defs.ts';
-import { operations, type OperationContext } from '../operations.ts';
-import { loadConfig } from '../config.ts';
-import type { BrainEngine } from '../engine.ts';
-import type { BenchmarkTask, Trajectory } from './types.ts';
+import {
+  chat as gatewayChat,
+  toolLoop,
+  type ChatMessage,
+  type ChatToolDef,
+  type ToolHandler,
+} from "../ai/gateway.ts";
+import { BRAIN_TOOL_ALLOWLIST } from "../minions/tools/brain-allowlist.ts";
+import { paramDefToSchema } from "../../mcp/tool-defs.ts";
+import { operations, type OperationContext } from "../operations.ts";
+import { loadConfig } from "../config.ts";
+import type { BrainEngine } from "../engine.ts";
+import type { BenchmarkTask, Trajectory } from "./types.ts";
 
 /**
  * D13: which tools SkillOpt rollouts are allowed to call.
@@ -32,7 +38,7 @@ import type { BenchmarkTask, Trajectory } from './types.ts';
  * mustn't be silently widened; the rollout test pins zero-write invariant.
  */
 export const READ_ONLY_BRAIN_TOOLS: ReadonlySet<string> = new Set(
-  [...BRAIN_TOOL_ALLOWLIST].filter((name) => name !== 'put_page'),
+  [...BRAIN_TOOL_ALLOWLIST].filter((name) => name !== "put_page")
 );
 
 export interface RolloutOpts {
@@ -71,7 +77,7 @@ export async function runRollout(opts: RolloutOpts): Promise<Trajectory> {
   const ctx = buildOpContext(engine);
   let defs, handlers;
   if (opts.writeCapture) {
-    const { buildWriteCaptureRegistry } = await import('./write-capture.ts');
+    const { buildWriteCaptureRegistry } = await import("./write-capture.ts");
     const registry = buildWriteCaptureRegistry(engine);
     defs = registry.defs;
     handlers = registry.handlers;
@@ -84,7 +90,7 @@ export async function runRollout(opts: RolloutOpts): Promise<Trajectory> {
   // The skill text becomes the system prompt (D11: cacheSystem=true so the
   // candidate skill is cached across all rollouts in a single batch).
   const system = skillText;
-  const initialMessages: ChatMessage[] = [{ role: 'user', content: task.task }];
+  const initialMessages: ChatMessage[] = [{ role: "user", content: task.task }];
 
   const toolLoopImpl = opts.toolLoopFn ?? toolLoop;
 
@@ -92,7 +98,7 @@ export async function runRollout(opts: RolloutOpts): Promise<Trajectory> {
   // ordering: onToolCallStart -> handler.execute -> onToolCallComplete|Failed.
   // We capture outputs in a Map keyed by gbrainToolUseId so we can stitch
   // them into the trajectory's tool_calls array (preserving call order).
-  const toolCalls: Trajectory['tool_calls'] = [];
+  const toolCalls: Trajectory["tool_calls"] = [];
   const callsById = new Map<string, number>(); // gbrainToolUseId -> index in toolCalls
   let nextOrdinal = 0;
 
@@ -105,7 +111,14 @@ export async function runRollout(opts: RolloutOpts): Promise<Trajectory> {
     maxTurns: opts.maxTurns ?? 20,
     cacheSystem: true, // D11: candidate skill is stable for a step's batch.
     abortSignal: opts.abortSignal,
-    onToolCallStart: async (_turnIdx, _messageIdx, _ordinal, toolName, input, providerToolCallId) => {
+    onToolCallStart: async (
+      _turnIdx,
+      _messageIdx,
+      _ordinal,
+      toolName,
+      input,
+      providerToolCallId
+    ) => {
       const gbrainToolUseId = `skillopt-${nextOrdinal++}-${providerToolCallId}`;
       const idx = toolCalls.length;
       callsById.set(gbrainToolUseId, idx);
@@ -128,15 +141,15 @@ export async function runRollout(opts: RolloutOpts): Promise<Trajectory> {
   });
 
   // Final assistant text: concatenate text blocks from the last assistant message.
-  const lastAssistant = [...result.messages].reverse().find((m) => m.role === 'assistant');
-  let finalText = '';
-  if (lastAssistant && typeof lastAssistant.content === 'string') {
+  const lastAssistant = [...result.messages].reverse().find((m) => m.role === "assistant");
+  let finalText = "";
+  if (lastAssistant && typeof lastAssistant.content === "string") {
     finalText = lastAssistant.content;
   } else if (lastAssistant && Array.isArray(lastAssistant.content)) {
     finalText = lastAssistant.content
-      .filter((b) => b.type === 'text')
-      .map((b) => ('text' in b ? b.text : ''))
-      .join('\n')
+      .filter((b) => b.type === "text")
+      .map((b) => ("text" in b ? b.text : ""))
+      .join("\n")
       .trim();
   }
 
@@ -168,7 +181,7 @@ function buildOpContext(engine: BrainEngine): OperationContext {
     // v0.34 D4: sourceId is required on OperationContext. SkillOpt rollouts
     // operate on the default source — the agent under test reads the brain
     // it would normally read.
-    sourceId: 'default',
+    sourceId: "default",
   };
 }
 
@@ -205,7 +218,7 @@ function buildReadOnlyToolRegistry(ctx: OperationContext): ToolRegistry {
 }
 
 function stripBrainPrefix(toolName: string): string {
-  return toolName.startsWith('brain_') ? toolName.slice('brain_'.length) : toolName;
+  return toolName.startsWith("brain_") ? toolName.slice("brain_".length) : toolName;
 }
 
 /**
@@ -217,9 +230,9 @@ function stripBrainPrefix(toolName: string): string {
  */
 function paramsToSchema(params: Record<string, unknown>): Record<string, unknown> {
   return {
-    type: 'object' as const,
+    type: "object" as const,
     properties: Object.fromEntries(
-      Object.entries(params).map(([k, v]) => [k, paramDefToSchema(v as never)]),
+      Object.entries(params).map(([k, v]) => [k, paramDefToSchema(v as never)])
     ),
     required: Object.entries(params)
       .filter(([, v]) => (v as { required?: boolean }).required === true)

@@ -15,22 +15,29 @@
  * falls back to the documented 24h default.
  */
 
-import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync, unlinkSync } from 'node:fs';
-import { dirname } from 'node:path';
-import { randomBytes } from 'node:crypto';
-import { gbrainPath } from './config.ts';
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  renameSync,
+  writeFileSync,
+  unlinkSync,
+} from "node:fs";
+import { dirname } from "node:path";
+import { randomBytes } from "node:crypto";
+import { gbrainPath } from "./config.ts";
 
-export type CursorVariant = 'briefing' | 'watch';
+export type CursorVariant = "briefing" | "watch";
 
 interface CursorRecord {
   schema_version: 1;
   last_run_iso: string;
 }
 
-const CURSOR_DIR_SEGMENT = 'recall-cursors';
+const CURSOR_DIR_SEGMENT = "recall-cursors";
 
 function cursorPath(sourceId: string, variant: CursorVariant): string {
-  const basename = variant === 'watch' ? `${sourceId}.watch.json` : `${sourceId}.json`;
+  const basename = variant === "watch" ? `${sourceId}.watch.json` : `${sourceId}.json`;
   return gbrainPath(CURSOR_DIR_SEGMENT, basename);
 }
 
@@ -42,12 +49,12 @@ function cursorPath(sourceId: string, variant: CursorVariant): string {
  * Each null-return path emits a stderr warn (except missing-file, which is
  * the normal first-run case).
  */
-export function readCursor(sourceId: string, variant: CursorVariant = 'briefing'): Date | null {
+export function readCursor(sourceId: string, variant: CursorVariant = "briefing"): Date | null {
   const path = cursorPath(sourceId, variant);
   if (!existsSync(path)) return null;
   let raw: string;
   try {
-    raw = readFileSync(path, 'utf8');
+    raw = readFileSync(path, "utf8");
   } catch (e) {
     process.stderr.write(`[recall] cursor unreadable at ${path}: ${(e as Error).message}\n`);
     return null;
@@ -56,21 +63,29 @@ export function readCursor(sourceId: string, variant: CursorVariant = 'briefing'
   try {
     rec = JSON.parse(raw) as CursorRecord;
   } catch {
-    process.stderr.write(`[recall] cursor JSON corrupt at ${path}; falling back to default window\n`);
+    process.stderr.write(
+      `[recall] cursor JSON corrupt at ${path}; falling back to default window\n`
+    );
     return null;
   }
-  if (rec.schema_version !== 1 || typeof rec.last_run_iso !== 'string') {
-    process.stderr.write(`[recall] cursor shape unexpected at ${path}; falling back to default window\n`);
+  if (rec.schema_version !== 1 || typeof rec.last_run_iso !== "string") {
+    process.stderr.write(
+      `[recall] cursor shape unexpected at ${path}; falling back to default window\n`
+    );
     return null;
   }
   const ms = Date.parse(rec.last_run_iso);
   if (!Number.isFinite(ms)) {
-    process.stderr.write(`[recall] cursor timestamp unparseable at ${path}; falling back to default window\n`);
+    process.stderr.write(
+      `[recall] cursor timestamp unparseable at ${path}; falling back to default window\n`
+    );
     return null;
   }
   const now = Date.now();
   if (ms > now + 60_000) {
-    process.stderr.write(`[recall] cursor timestamp is in the future at ${path}; falling back to default window\n`);
+    process.stderr.write(
+      `[recall] cursor timestamp is in the future at ${path}; falling back to default window\n`
+    );
     return null;
   }
   return new Date(ms);
@@ -85,7 +100,7 @@ export function readCursor(sourceId: string, variant: CursorVariant = 'briefing'
  * Failure is non-fatal: stderr warn and return. The cursor advance is a
  * best-effort durability hint, not a correctness invariant.
  */
-export function writeCursor(sourceId: string, t: Date, variant: CursorVariant = 'briefing'): void {
+export function writeCursor(sourceId: string, t: Date, variant: CursorVariant = "briefing"): void {
   const path = cursorPath(sourceId, variant);
   const dir = dirname(path);
   try {
@@ -95,10 +110,10 @@ export function writeCursor(sourceId: string, t: Date, variant: CursorVariant = 
     return;
   }
   const rec: CursorRecord = { schema_version: 1, last_run_iso: t.toISOString() };
-  const suffix = `${process.pid}.${randomBytes(6).toString('hex')}`;
+  const suffix = `${process.pid}.${randomBytes(6).toString("hex")}`;
   const tmp = `${path}.tmp.${suffix}`;
   try {
-    writeFileSync(tmp, JSON.stringify(rec) + '\n', { mode: 0o600 });
+    writeFileSync(tmp, JSON.stringify(rec) + "\n", { mode: 0o600 });
   } catch (e) {
     process.stderr.write(`[recall] cursor write failed at ${tmp}: ${(e as Error).message}\n`);
     return;
@@ -108,7 +123,11 @@ export function writeCursor(sourceId: string, t: Date, variant: CursorVariant = 
   } catch (e) {
     process.stderr.write(`[recall] cursor rename failed at ${path}: ${(e as Error).message}\n`);
     // Best-effort cleanup of the orphaned tmp file.
-    try { unlinkSync(tmp); } catch { /* ignore */ }
+    try {
+      unlinkSync(tmp);
+    } catch {
+      /* ignore */
+    }
   }
 }
 
@@ -116,6 +135,6 @@ export function writeCursor(sourceId: string, t: Date, variant: CursorVariant = 
  * Test-only export. Returns the full cursor path for a (source, variant).
  * Exposed so tests can poke at the file directly to seed corrupt / stale states.
  */
-export function _cursorPathForTests(sourceId: string, variant: CursorVariant = 'briefing'): string {
+export function _cursorPathForTests(sourceId: string, variant: CursorVariant = "briefing"): string {
   return cursorPath(sourceId, variant);
 }

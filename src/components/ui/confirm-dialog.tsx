@@ -59,7 +59,12 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
   return (
     <ConfirmContext.Provider value={{ confirm }}>
       {children}
-      <Dialog open={open} onOpenChange={(v) => { if (!v) handleCancel(); }}>
+      <Dialog
+        open={open}
+        onOpenChange={(v) => {
+          if (!v) handleCancel();
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{options?.title ?? "Bestätigen"}</DialogTitle>

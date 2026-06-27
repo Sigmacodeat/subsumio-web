@@ -27,18 +27,18 @@
  *   gbrain connector remove google-drive # Disconnect
  */
 
-export { BaseConnector } from './base.ts';
-export { ConnectorManager, SUPPORTED_CONNECTORS } from './manager.ts';
-export { GoogleDriveConnector } from './google-drive.ts';
-export { GmailConnector } from './gmail.ts';
-export { NotionConnector } from './notion.ts';
-export { GitHubConnector } from './github.ts';
-export { SlackConnector } from './slack.ts';
-export { CalendarConnector } from './calendar.ts';
-export { DropboxConnector } from './dropbox.ts';
-export { AsanaConnector } from './asana.ts';
-export { JiraConnector } from './jira.ts';
-export { LegalJudgementsConnector } from './legal-judgements.ts';
-export { BeaImportConnector } from './bea-import.ts';
+export { BaseConnector } from "./base.ts";
+export { ConnectorManager, SUPPORTED_CONNECTORS } from "./manager.ts";
+export { GoogleDriveConnector } from "./google-drive.ts";
+export { GmailConnector } from "./gmail.ts";
+export { NotionConnector } from "./notion.ts";
+export { GitHubConnector } from "./github.ts";
+export { SlackConnector } from "./slack.ts";
+export { CalendarConnector } from "./calendar.ts";
+export { DropboxConnector } from "./dropbox.ts";
+export { AsanaConnector } from "./asana.ts";
+export { JiraConnector } from "./jira.ts";
+export { LegalJudgementsConnector } from "./legal-judgements.ts";
+export { BeaImportConnector } from "./bea-import.ts";
 
-export type { ConnectorState, ConnectorConfig, SyncCursor } from './base.ts';
+export type { ConnectorState, ConnectorConfig, SyncCursor } from "./base.ts";

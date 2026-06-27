@@ -625,9 +625,7 @@ export default function DeadlinesPage() {
               <Select
                 value={calcTemplate.key}
                 onValueChange={(v) =>
-                  setCalcTemplate(
-                    DEADLINE_RULES.find((r) => r.key === v) || DEADLINE_RULES[0]
-                  )
+                  setCalcTemplate(DEADLINE_RULES.find((r) => r.key === v) || DEADLINE_RULES[0])
                 }
               >
                 <SelectTrigger id="calc-template">

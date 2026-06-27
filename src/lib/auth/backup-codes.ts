@@ -45,10 +45,7 @@ export async function hashBackupCodes(codes: string[]): Promise<string[]> {
  * Returns the index of the matching code (so it can be consumed), or -1 if no match.
  * Normalizes input (trims, uppercases) before comparison.
  */
-export async function verifyBackupCode(
-  input: string,
-  storedHashes: string[],
-): Promise<number> {
+export async function verifyBackupCode(input: string, storedHashes: string[]): Promise<number> {
   const hash = await hashBackupCode(input);
   return storedHashes.indexOf(hash);
 }

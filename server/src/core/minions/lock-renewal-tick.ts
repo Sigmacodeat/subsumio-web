@@ -92,7 +92,7 @@ export function _resetKnobWarningsForTests(): void {
  */
 export function resolveLockRenewalKnobs(
   env: Record<string, string | undefined>,
-  lockDurationMs: number,
+  lockDurationMs: number
 ): LockRenewalKnobs {
   const defaultMaxFailures = 3;
   const defaultCallTimeout = Math.max(1, Math.floor(lockDurationMs / 3));
@@ -102,23 +102,23 @@ export function resolveLockRenewalKnobs(
     maxFailuresForAudit: parsePositiveInt(
       env.GBRAIN_LOCK_RENEWAL_MAX_FAILURES,
       defaultMaxFailures,
-      'GBRAIN_LOCK_RENEWAL_MAX_FAILURES',
+      "GBRAIN_LOCK_RENEWAL_MAX_FAILURES"
     ),
     callTimeoutMs: parsePositiveInt(
       env.GBRAIN_LOCK_RENEWAL_CALL_TIMEOUT_MS,
       defaultCallTimeout,
-      'GBRAIN_LOCK_RENEWAL_CALL_TIMEOUT_MS',
+      "GBRAIN_LOCK_RENEWAL_CALL_TIMEOUT_MS"
     ),
     safetyMarginMs: parsePositiveInt(
       env.GBRAIN_LOCK_RENEWAL_SAFETY_MARGIN_MS,
       defaultSafetyMargin,
-      'GBRAIN_LOCK_RENEWAL_SAFETY_MARGIN_MS',
+      "GBRAIN_LOCK_RENEWAL_SAFETY_MARGIN_MS"
     ),
   };
 }
 
 function parsePositiveInt(raw: string | undefined, fallback: number, name: string): number {
-  if (raw === undefined || raw === '') return fallback;
+  if (raw === undefined || raw === "") return fallback;
   // Reject obvious non-integers (`abc`, `1.5`, `1e9`) by requiring the
   // string to be all digits. `Number.parseInt` is too lenient — it
   // accepts `1.5` as `1` and `abc` as NaN.
@@ -136,7 +136,7 @@ function warnAndFallback(name: string, raw: string, fallback: number): number {
   if (!_warnedKnobs.has(name)) {
     _warnedKnobs.add(name);
     process.stderr.write(
-      `[lock-renewal] env ${name}=${JSON.stringify(raw)} is not a positive integer; falling back to default ${fallback}\n`,
+      `[lock-renewal] env ${name}=${JSON.stringify(raw)} is not a positive integer; falling back to default ${fallback}\n`
     );
   }
   return fallback;
@@ -211,10 +211,10 @@ export interface LockRenewalState {
 }
 
 export type TickResult =
-  | { kind: 'ok' }
-  | { kind: 'cancelled' }
-  | { kind: 'lock_lost' }
-  | { kind: 'should_abort'; reason: 'lock-renewal-failed' };
+  | { kind: "ok" }
+  | { kind: "cancelled" }
+  | { kind: "lock_lost" }
+  | { kind: "should_abort"; reason: "lock-renewal-failed" };
 
 /**
  * Execute one renewal tick. Returns a tagged result the worker switches
@@ -223,9 +223,9 @@ export type TickResult =
  */
 export async function runLockRenewalTick(
   deps: LockRenewalDeps,
-  state: LockRenewalState,
+  state: LockRenewalState
 ): Promise<TickResult> {
-  if (state.cancelled()) return { kind: 'cancelled' };
+  if (state.cancelled()) return { kind: "cancelled" };
 
   let renewed: boolean;
   try {
@@ -238,20 +238,24 @@ export async function runLockRenewalTick(
       }),
     ]);
   } catch (err) {
-    if (state.cancelled()) return { kind: 'cancelled' };
+    if (state.cancelled()) return { kind: "cancelled" };
     state.consecutiveFailures += 1;
     // Defense-in-depth (codex C4): audit must never escape this catch.
     try {
       deps.audit.logFailure(state.jobId, state.jobName, state.consecutiveFailures, err);
-    } catch { /* audit best-effort */ }
+    } catch {
+      /* audit best-effort */
+    }
 
     const sinceLastSuccess = deps.now() - state.lastSuccessfulRenewalAt;
     const deadline = state.lockDurationMs - state.knobs.safetyMarginMs;
     if (sinceLastSuccess >= deadline) {
       try {
         deps.audit.logGaveUp(state.jobId, state.jobName, state.consecutiveFailures, err);
-      } catch { /* audit best-effort */ }
-      return { kind: 'should_abort', reason: 'lock-renewal-failed' };
+      } catch {
+        /* audit best-effort */
+      }
+      return { kind: "should_abort", reason: "lock-renewal-failed" };
     }
 
     // issue #1678 (Codex #2): not yet at the deadline, so we'll retry on the
@@ -271,36 +275,36 @@ export async function runLockRenewalTick(
           new Promise<never>((_, reject) => {
             deps.setTimeout(
               () => reject(new Error(`reconnect timed out after ${state.knobs.callTimeoutMs}ms`)),
-              state.knobs.callTimeoutMs,
+              state.knobs.callTimeoutMs
             );
           }),
         ]);
-      } catch { /* reconnect best-effort; next tick retries against a fresh attempt */ }
-      if (state.cancelled()) return { kind: 'cancelled' };
+      } catch {
+        /* reconnect best-effort; next tick retries against a fresh attempt */
+      }
+      if (state.cancelled()) return { kind: "cancelled" };
     }
 
-    return { kind: 'ok' }; // counter incremented; not yet at deadline
+    return { kind: "ok" }; // counter incremented; not yet at deadline
   }
 
-  if (state.cancelled()) return { kind: 'cancelled' };
+  if (state.cancelled()) return { kind: "cancelled" };
   if (!renewed) {
     // Token-fence failure: another worker reclaimed the row, or pauseJob
     // cleared the token. NOT an infrastructure fault — no audit event
     // (audit channel is for infrastructure faults only). The worker
     // observes `lock_lost` and stderr-warns + aborts.
-    return { kind: 'lock_lost' };
+    return { kind: "lock_lost" };
   }
 
   if (state.consecutiveFailures > 0) {
     try {
-      deps.audit.logSuccessAfterFailure(
-        state.jobId,
-        state.jobName,
-        state.consecutiveFailures,
-      );
-    } catch { /* audit best-effort */ }
+      deps.audit.logSuccessAfterFailure(state.jobId, state.jobName, state.consecutiveFailures);
+    } catch {
+      /* audit best-effort */
+    }
     state.consecutiveFailures = 0;
   }
   state.lastSuccessfulRenewalAt = deps.now();
-  return { kind: 'ok' };
+  return { kind: "ok" };
 }

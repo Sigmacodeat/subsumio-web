@@ -87,7 +87,7 @@ function makeResult(
   slug: string,
   title: string,
   score: number,
-  overrides: Partial<RetrievalExplanation> = {},
+  overrides: Partial<RetrievalExplanation> = {}
 ): ExplainedSearchResult {
   const explanation: RetrievalExplanation = {
     slug,

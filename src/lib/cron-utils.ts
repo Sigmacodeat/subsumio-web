@@ -18,12 +18,19 @@ export interface EnginePage {
 /**
  * Fetch pages from the engine by type. Returns [] on any error.
  */
-export async function fetchPages(brainId: string, type: string, limit: number): Promise<EnginePage[]> {
+export async function fetchPages(
+  brainId: string,
+  type: string,
+  limit: number
+): Promise<EnginePage[]> {
   try {
-    const res = await fetch(`${ENGINE_URL}/api/pages?type=${encodeURIComponent(type)}&limit=${limit}`, {
-      headers: engineHeadersForBrain(brainId),
-      signal: AbortSignal.timeout(15_000),
-    });
+    const res = await fetch(
+      `${ENGINE_URL}/api/pages?type=${encodeURIComponent(type)}&limit=${limit}`,
+      {
+        headers: engineHeadersForBrain(brainId),
+        signal: AbortSignal.timeout(15_000),
+      }
+    );
     if (!res.ok) return [];
     const data = (await res.json()) as unknown;
     return Array.isArray(data) ? (data as EnginePage[]) : [];
@@ -97,7 +104,7 @@ export function createDailyDedup(tableName: string) {
     const { rowCount } = await pool.query(
       `INSERT INTO ${tableName} (brain_id, day) VALUES ($1, $2)
        ON CONFLICT (brain_id, day) DO NOTHING`,
-      [brainId, day],
+      [brainId, day]
     );
     return rowCount === 0;
   };

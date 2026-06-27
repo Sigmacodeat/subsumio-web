@@ -15,7 +15,7 @@
  * from gateway.ts.
  */
 
-import { loadConfig } from '../config.ts';
+import { loadConfig } from "../config.ts";
 
 export function hasAnthropicKey(): boolean {
   if (process.env.ANTHROPIC_API_KEY) return true;

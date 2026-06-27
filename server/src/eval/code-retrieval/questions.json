@@ -17,7 +17,11 @@
       "kind": "callers",
       "query": "what calls hybridSearch",
       "symbol": "hybridSearch",
-      "expected_files": ["src/core/operations.ts", "src/core/eval-capture.ts", "src/core/search/eval.ts"],
+      "expected_files": [
+        "src/core/operations.ts",
+        "src/core/eval-capture.ts",
+        "src/core/search/eval.ts"
+      ],
       "expected_min_recall": 0.5
     },
     {
@@ -25,7 +29,11 @@
       "kind": "callers",
       "query": "what calls runCycle",
       "symbol": "runCycle",
-      "expected_files": ["src/commands/dream.ts", "src/commands/autopilot.ts", "src/commands/jobs.ts"],
+      "expected_files": [
+        "src/commands/dream.ts",
+        "src/commands/autopilot.ts",
+        "src/commands/jobs.ts"
+      ],
       "expected_min_recall": 0.6
     },
     {
@@ -41,7 +49,11 @@
       "kind": "callers",
       "query": "what calls embed",
       "symbol": "embed",
-      "expected_files": ["src/commands/embed.ts", "src/core/import-file.ts", "src/core/search/eval.ts"],
+      "expected_files": [
+        "src/commands/embed.ts",
+        "src/core/import-file.ts",
+        "src/core/search/eval.ts"
+      ],
       "expected_min_recall": 0.4
     },
     {
@@ -65,7 +77,12 @@
       "kind": "callees",
       "query": "what does runCycle call",
       "symbol": "runCycle",
-      "expected_files": ["src/core/cycle.ts", "src/commands/sync.ts", "src/commands/embed.ts", "src/commands/extract.ts"],
+      "expected_files": [
+        "src/core/cycle.ts",
+        "src/commands/sync.ts",
+        "src/commands/embed.ts",
+        "src/commands/extract.ts"
+      ],
       "expected_min_recall": 0.5
     },
     {
@@ -130,7 +147,11 @@
       "kind": "references",
       "query": "where is getStats used",
       "symbol": "getStats",
-      "expected_files": ["src/core/postgres-engine.ts", "src/core/pglite-engine.ts", "src/commands/serve-http.ts"],
+      "expected_files": [
+        "src/core/postgres-engine.ts",
+        "src/core/pglite-engine.ts",
+        "src/commands/serve-http.ts"
+      ],
       "expected_min_recall": 0.5
     },
     {
@@ -138,7 +159,12 @@
       "kind": "blast_radius",
       "query": "what breaks if I change the signature of performSync",
       "symbol": "performSync",
-      "expected_files": ["src/commands/sync.ts", "src/core/cycle.ts", "src/commands/jobs.ts", "src/commands/autopilot.ts"],
+      "expected_files": [
+        "src/commands/sync.ts",
+        "src/core/cycle.ts",
+        "src/commands/jobs.ts",
+        "src/commands/autopilot.ts"
+      ],
       "expected_min_recall": 0.5
     },
     {
@@ -146,7 +172,11 @@
       "kind": "blast_radius",
       "query": "what breaks if I change OperationContext.sourceId",
       "symbol": "OperationContext.sourceId",
-      "expected_files": ["src/core/operations.ts", "src/mcp/dispatch.ts", "src/core/search/two-pass.ts"],
+      "expected_files": [
+        "src/core/operations.ts",
+        "src/mcp/dispatch.ts",
+        "src/core/search/two-pass.ts"
+      ],
       "expected_min_recall": 0.4
     },
     {
@@ -154,7 +184,12 @@
       "kind": "blast_radius",
       "query": "what breaks if I rename minion_jobs.max_stalled column",
       "symbol": "max_stalled",
-      "expected_files": ["src/core/minions/queue.ts", "src/core/minions/types.ts", "src/core/migrate.ts", "src/core/pglite-schema.ts"],
+      "expected_files": [
+        "src/core/minions/queue.ts",
+        "src/core/minions/types.ts",
+        "src/core/migrate.ts",
+        "src/core/pglite-schema.ts"
+      ],
       "expected_min_recall": 0.5
     },
     {
@@ -170,7 +205,12 @@
       "kind": "execution_flow",
       "query": "how does gbrain sync flow from cli to database write",
       "symbol": "performSync",
-      "expected_files": ["src/commands/sync.ts", "src/core/sync.ts", "src/core/import-file.ts", "src/core/postgres-engine.ts"],
+      "expected_files": [
+        "src/commands/sync.ts",
+        "src/core/sync.ts",
+        "src/core/import-file.ts",
+        "src/core/postgres-engine.ts"
+      ],
       "expected_min_recall": 0.5
     },
     {
@@ -187,7 +227,12 @@
       "kind": "cluster_membership",
       "query": "which functions cluster with hybridSearch",
       "symbol": "hybridSearch",
-      "expected_files": ["src/core/search/hybrid.ts", "src/core/search/expansion.ts", "src/core/search/intent.ts", "src/core/search/sql-ranking.ts"],
+      "expected_files": [
+        "src/core/search/hybrid.ts",
+        "src/core/search/expansion.ts",
+        "src/core/search/intent.ts",
+        "src/core/search/sql-ranking.ts"
+      ],
       "expected_min_recall": 0.5,
       "note": "Post-v0.34 expectation — clusters are new in v0.34"
     },
@@ -196,7 +241,12 @@
       "kind": "cluster_membership",
       "query": "which functions cluster with runCycle",
       "symbol": "runCycle",
-      "expected_files": ["src/core/cycle.ts", "src/core/cycle/synthesize.ts", "src/core/cycle/patterns.ts", "src/core/cycle/emotional-weight.ts"],
+      "expected_files": [
+        "src/core/cycle.ts",
+        "src/core/cycle/synthesize.ts",
+        "src/core/cycle/patterns.ts",
+        "src/core/cycle/emotional-weight.ts"
+      ],
       "expected_min_recall": 0.5,
       "note": "Post-v0.34 expectation"
     },
@@ -213,7 +263,13 @@
       "kind": "callers",
       "query": "what calls sqlQueryForEngine",
       "symbol": "sqlQueryForEngine",
-      "expected_files": ["src/commands/auth.ts", "src/commands/serve-http.ts", "src/core/oauth-provider.ts", "src/commands/files.ts", "src/mcp/http-transport.ts"],
+      "expected_files": [
+        "src/commands/auth.ts",
+        "src/commands/serve-http.ts",
+        "src/core/oauth-provider.ts",
+        "src/commands/files.ts",
+        "src/mcp/http-transport.ts"
+      ],
       "expected_min_recall": 0.5
     },
     {
@@ -229,7 +285,11 @@
       "kind": "callers",
       "query": "what calls extractEntityRefs",
       "symbol": "extractEntityRefs",
-      "expected_files": ["src/core/link-extraction.ts", "src/commands/extract.ts", "src/commands/backlinks.ts"],
+      "expected_files": [
+        "src/core/link-extraction.ts",
+        "src/commands/extract.ts",
+        "src/commands/backlinks.ts"
+      ],
       "expected_min_recall": 0.5
     },
     {

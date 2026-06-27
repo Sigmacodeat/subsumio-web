@@ -34,16 +34,16 @@
  * `logEvalCaptureFailure(reason)` with the right reason tag.
  */
 
-import type { BrainEngine } from './engine.ts';
+import type { BrainEngine } from "./engine.ts";
 import type {
   EvalCandidateInput,
   EvalCaptureFailureReason,
   HybridSearchMeta,
   SearchResult,
-} from './types.ts';
-import type { GBrainConfig } from './config.ts';
-import { scrubPii } from './eval-capture-scrub.ts';
-import { registerBackgroundWorkDrainer } from './background-work.ts';
+} from "./types.ts";
+import type { GBrainConfig } from "./config.ts";
+import { scrubPii } from "./eval-capture-scrub.ts";
+import { registerBackgroundWorkDrainer } from "./background-work.ts";
 
 // HybridSearchMeta is canonical in src/core/types.ts and exported via the
 // public `gbrain/types` subpath. Surfaced from hybridSearch via the
@@ -53,7 +53,7 @@ export type { HybridSearchMeta };
 /** Context needed to build a capture row. Bundled so op handlers don't thread 8 args. */
 export interface CaptureContext {
   /** 'query' or 'search'; captured only for these two ops. */
-  tool_name: 'query' | 'search';
+  tool_name: "query" | "search";
   /** Pre-scrub query text. scrubPii runs INSIDE buildEvalCandidateInput when scrub_pii !== false. */
   query: string;
   /** Result set from the op handler. */
@@ -67,7 +67,7 @@ export interface CaptureContext {
   /** The `expand` flag as requested by the caller (query-only; null for search). */
   expand_enabled: boolean | null;
   /** The `detail` flag as requested (query-only). */
-  detail: 'low' | 'medium' | 'high' | null;
+  detail: "low" | "medium" | "high" | null;
   /** OperationContext.jobId if present. */
   job_id: number | null;
   /** OperationContext.subagentId if present. */
@@ -85,7 +85,7 @@ export interface CaptureContext {
  */
 export function buildEvalCandidateInput(
   ctx: CaptureContext,
-  opts: { scrub_pii?: boolean } = {},
+  opts: { scrub_pii?: boolean } = {}
 ): EvalCandidateInput {
   const shouldScrub = opts.scrub_pii !== false;
   const query = shouldScrub ? scrubPii(ctx.query) : ctx.query;
@@ -132,18 +132,18 @@ export function buildEvalCandidateInput(
  * surface `.code`), fall back to 'other'.
  */
 export function classifyCaptureFailure(err: unknown): EvalCaptureFailureReason {
-  if (err && typeof err === 'object') {
+  if (err && typeof err === "object") {
     const code = (err as { code?: string }).code;
-    if (code === '23514') return 'check_violation'; // CHECK constraint violation
-    if (code === '42501') return 'rls_reject';      // insufficient_privilege
-    if (code === '42P01') return 'db_down';          // undefined_table (pre-v25)
-    if (code === '53300' || code === '08006' || code === '08003') return 'db_down';
+    if (code === "23514") return "check_violation"; // CHECK constraint violation
+    if (code === "42501") return "rls_reject"; // insufficient_privilege
+    if (code === "42P01") return "db_down"; // undefined_table (pre-v25)
+    if (code === "53300" || code === "08006" || code === "08003") return "db_down";
     const name = (err as { name?: string }).name;
-    if (name === 'RegExpMatchError' || name === 'SyntaxError') {
-      return 'scrubber_exception';
+    if (name === "RegExpMatchError" || name === "SyntaxError") {
+      return "scrubber_exception";
     }
   }
-  return 'other';
+  return "other";
 }
 
 /**
@@ -157,7 +157,7 @@ export function classifyCaptureFailure(err: unknown): EvalCaptureFailureReason {
 export async function captureEvalCandidate(
   engine: BrainEngine,
   ctx: CaptureContext,
-  opts: { scrub_pii?: boolean } = {},
+  opts: { scrub_pii?: boolean } = {}
 ): Promise<void> {
   // v0.42.20.0 — track the fire-and-forget promise so the background-work
   // registry can drain it before CLI disconnect. Callers still `void` this; the
@@ -172,7 +172,7 @@ export async function captureEvalCandidate(
 async function doCaptureEvalCandidate(
   engine: BrainEngine,
   ctx: CaptureContext,
-  opts: { scrub_pii?: boolean } = {},
+  opts: { scrub_pii?: boolean } = {}
 ): Promise<void> {
   try {
     const input = buildEvalCandidateInput(ctx, opts);
@@ -185,7 +185,7 @@ async function doCaptureEvalCandidate(
       // Failure-of-failure: last-resort stderr. Doctor can't see this
       // row, but we've exhausted the persistent path.
       // eslint-disable-next-line no-console
-      console.warn('[eval-capture] secondary failure logging also failed:', failureErr);
+      console.warn("[eval-capture] secondary failure logging also failed:", failureErr);
     }
   }
 }
@@ -197,20 +197,24 @@ const pendingEvalCaptures = new Set<Promise<unknown>>();
 
 function trackEvalCapture(promise: Promise<unknown>): void {
   pendingEvalCaptures.add(promise);
-  promise.finally(() => pendingEvalCaptures.delete(promise)).catch(() => { /* swallow */ });
+  promise
+    .finally(() => pendingEvalCaptures.delete(promise))
+    .catch(() => {
+      /* swallow */
+    });
 }
 
 export async function awaitPendingEvalCaptures(timeoutMs = 5_000): Promise<{ unfinished: number }> {
   if (pendingEvalCaptures.size === 0) return { unfinished: 0 };
   const snapshot = [...pendingEvalCaptures];
   let timer: ReturnType<typeof setTimeout> | undefined;
-  const timeout = new Promise<'timeout'>((resolve) => {
-    timer = setTimeout(() => resolve('timeout'), timeoutMs);
+  const timeout = new Promise<"timeout">((resolve) => {
+    timer = setTimeout(() => resolve("timeout"), timeoutMs);
   });
-  const drain = Promise.allSettled(snapshot).then(() => 'drained' as const);
+  const drain = Promise.allSettled(snapshot).then(() => "drained" as const);
   const outcome = await Promise.race([drain, timeout]);
   if (timer) clearTimeout(timer);
-  if (outcome === 'timeout') {
+  if (outcome === "timeout") {
     const unfinished = pendingEvalCaptures.size;
     for (const pr of snapshot) pendingEvalCaptures.delete(pr);
     return { unfinished };
@@ -224,7 +228,7 @@ export function _resetPendingEvalCapturesForTests(): void {
 }
 
 registerBackgroundWorkDrainer({
-  name: 'eval-capture',
+  name: "eval-capture",
   order: 3,
   drain: (ms) => awaitPendingEvalCaptures(ms),
 });
@@ -251,7 +255,7 @@ registerBackgroundWorkDrainer({
 export function isEvalCaptureEnabled(config: GBrainConfig | null | undefined): boolean {
   if (config?.eval?.capture === true) return true;
   if (config?.eval?.capture === false) return false;
-  return process.env.GBRAIN_CONTRIBUTOR_MODE === '1';
+  return process.env.GBRAIN_CONTRIBUTOR_MODE === "1";
 }
 
 /**

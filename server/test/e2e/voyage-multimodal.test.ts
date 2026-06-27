@@ -6,8 +6,8 @@
 // not the network call) — this hits Voyage for real and asserts a
 // 1024-dim vector comes back with sane shape.
 
-import { describe, expect, test, beforeAll, afterEach } from 'bun:test';
-import { configureGateway, embedMultimodal, resetGateway } from '../../src/core/ai/gateway.ts';
+import { describe, expect, test, beforeAll, afterEach } from "bun:test";
+import { configureGateway, embedMultimodal, resetGateway } from "../../src/core/ai/gateway.ts";
 
 const HAS_KEY = !!process.env.VOYAGE_API_KEY;
 
@@ -15,21 +15,22 @@ afterEach(() => {
   resetGateway();
 });
 
-describe.if(HAS_KEY)('voyage-multimodal-3 (real API, gated VOYAGE_API_KEY)', () => {
+describe.if(HAS_KEY)("voyage-multimodal-3 (real API, gated VOYAGE_API_KEY)", () => {
   beforeAll(() => {
     configureGateway({
-      embedding_model: 'voyage:voyage-multimodal-3',
+      embedding_model: "voyage:voyage-multimodal-3",
       embedding_dimensions: 1024,
       env: { VOYAGE_API_KEY: process.env.VOYAGE_API_KEY! },
     });
   });
 
-  test('embeds the tiny PNG fixture into a 1024-dim vector', async () => {
+  test("embeds the tiny PNG fixture into a 1024-dim vector", async () => {
     // Canonical 1×1 transparent PNG inlined as base64 (Voyage rejects AVIF
     // even though its docs imply broad support; PNG/JPEG/WebP are the actually
     // accepted set). No filesystem dependency keeps this test self-contained.
-    const data = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNgAAIAAAUAAarVyFEAAAAASUVORK5CYII=';
-    const out = await embedMultimodal([{ kind: 'image_base64', data, mime: 'image/png' }]);
+    const data =
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNgAAIAAAUAAarVyFEAAAAASUVORK5CYII=";
+    const out = await embedMultimodal([{ kind: "image_base64", data, mime: "image/png" }]);
     expect(out.length).toBe(1);
     expect(out[0]).toBeInstanceOf(Float32Array);
     expect(out[0].length).toBe(1024);
@@ -40,5 +41,5 @@ describe.if(HAS_KEY)('voyage-multimodal-3 (real API, gated VOYAGE_API_KEY)', () 
 });
 
 if (!HAS_KEY) {
-  test.skip('voyage-multimodal-3 E2E skipped (VOYAGE_API_KEY unset)', () => {});
+  test.skip("voyage-multimodal-3 E2E skipped (VOYAGE_API_KEY unset)", () => {});
 }

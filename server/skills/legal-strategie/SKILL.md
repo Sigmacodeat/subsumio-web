@@ -43,11 +43,13 @@ mutating: false
 ### Step 1 — Gather Case Context
 
 Search the brain for the case:
+
 ```
 gbrain search "<case-title>" --type legal-case
 ```
 
 Extract from the case page:
+
 - Facts (Sachverhalt)
 - Claims (Ansprüche)
 - Defenses (Einwände)
@@ -59,6 +61,7 @@ Extract from the case page:
 ### Step 2 — Analyze the Position
 
 Strength assessment:
+
 - **Strong position**: Clear facts, favorable precedent, strong evidence
 - **Moderate position**: Mixed facts, some precedent, partial evidence
 - **Weak position**: Unfavorable facts, unfavorable precedent, weak evidence
@@ -68,26 +71,29 @@ Strength assessment:
 Present 2-3 options with pros/cons:
 
 **Option A: Full Litigation**
+
 - Pros: Maximum recovery, precedent value
 - Cons: Cost, time, uncertainty
 - Best when: Strong position, high value
 
 **Option B: Settlement Negotiation**
+
 - Pros: Certainty, cost savings, speed
 - Cons: Lower recovery, no precedent
 - Best when: Moderate position, cost-sensitive
 
 **Option C: Alternative Dispute Resolution**
+
 - Pros: Confidentiality, creative solutions
 - Cons: Non-binding (mediation), limited appeal
 - Best when: Ongoing relationship, complex issues
 
 ### Step 4 — Risk Assessment
 
-| Risk | Probability | Impact | Mitigation |
-|---|---|---|---|
-| [Risk 1] | High/Med/Low | High/Med/Low | [Action] |
-| [Risk 2] | High/Med/Low | High/Med/Low | [Action] |
+| Risk     | Probability  | Impact       | Mitigation |
+| -------- | ------------ | ------------ | ---------- |
+| [Risk 1] | High/Med/Low | High/Med/Low | [Action]   |
+| [Risk 2] | High/Med/Low | High/Med/Low | [Action]   |
 
 ### Step 5 — Recommended Next Steps
 

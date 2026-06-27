@@ -51,10 +51,10 @@
 //     (`<name>@<version>+<sha8>`); the composite cache key lives only
 //     inside the registry.
 
-import { statSync } from 'node:fs';
-import type { SchemaPackManifest } from './manifest-v1.ts';
-import { computeManifestSha8, packIdentity } from './manifest-v1.ts';
-import { computeAliasClosureHash, buildAliasGraph, type AliasGraph } from './closure.ts';
+import { statSync } from "node:fs";
+import type { SchemaPackManifest } from "./manifest-v1.ts";
+import { computeManifestSha8, packIdentity } from "./manifest-v1.ts";
+import { computeAliasClosureHash, buildAliasGraph, type AliasGraph } from "./closure.ts";
 
 export const EXTENDS_DEPTH_WARN = 4 as const;
 export const EXTENDS_DEPTH_HARD_CAP = 8 as const;
@@ -64,8 +64,10 @@ export class ExtendsChainTooDeepError extends Error {
   readonly depth: number;
   readonly chain: string[];
   constructor(depth: number, chain: string[]) {
-    super(`pack extends chain depth ${depth} exceeds hard cap ${EXTENDS_DEPTH_HARD_CAP}: ${chain.join(' → ')}`);
-    this.name = 'ExtendsChainTooDeepError';
+    super(
+      `pack extends chain depth ${depth} exceeds hard cap ${EXTENDS_DEPTH_HARD_CAP}: ${chain.join(" → ")}`
+    );
+    this.name = "ExtendsChainTooDeepError";
     this.depth = depth;
     this.chain = chain;
   }
@@ -75,14 +77,14 @@ export class UnknownPackError extends Error {
   readonly name_: string;
   constructor(name_: string) {
     super(`unknown schema pack: ${name_}`);
-    this.name = 'UnknownPackError';
+    this.name = "UnknownPackError";
     this.name_ = name_;
   }
 }
 
 export interface ResolvedPack {
   manifest: SchemaPackManifest;
-  identity: string;        // `<name>@<version>+<sha8>` (child only — wire-stable)
+  identity: string; // `<name>@<version>+<sha8>` (child only — wire-stable)
   manifest_sha8: string;
   alias_closure_hash: string;
   alias_graph: AliasGraph;
@@ -101,21 +103,28 @@ export interface ResolutionInput {
 
 export interface ResolutionResult {
   pack_name: string;
-  source: 'per-call' | 'env' | 'per-source-db' | 'db-config' | 'gbrain-yml' | 'home-config' | 'default';
+  source:
+    | "per-call"
+    | "env"
+    | "per-source-db"
+    | "db-config"
+    | "gbrain-yml"
+    | "home-config"
+    | "default";
 }
 
 export function resolveActivePackName(input: ResolutionInput): ResolutionResult {
   if (input.perCall && input.remote === false) {
-    return { pack_name: input.perCall, source: 'per-call' };
+    return { pack_name: input.perCall, source: "per-call" };
   }
-  if (input.envVar) return { pack_name: input.envVar, source: 'env' };
+  if (input.envVar) return { pack_name: input.envVar, source: "env" };
   if (input.sourceId && input.perSourceDb?.has(input.sourceId)) {
-    return { pack_name: input.perSourceDb.get(input.sourceId)!, source: 'per-source-db' };
+    return { pack_name: input.perSourceDb.get(input.sourceId)!, source: "per-source-db" };
   }
-  if (input.dbConfig) return { pack_name: input.dbConfig, source: 'db-config' };
-  if (input.gbrainYml) return { pack_name: input.gbrainYml, source: 'gbrain-yml' };
-  if (input.homeConfig) return { pack_name: input.homeConfig, source: 'home-config' };
-  return { pack_name: 'gbrain-base', source: 'default' };
+  if (input.dbConfig) return { pack_name: input.dbConfig, source: "db-config" };
+  if (input.gbrainYml) return { pack_name: input.gbrainYml, source: "gbrain-yml" };
+  if (input.homeConfig) return { pack_name: input.homeConfig, source: "home-config" };
+  return { pack_name: "gbrain-base", source: "default" };
 }
 
 /**
@@ -240,7 +249,7 @@ export async function resolvePack(
   opts: {
     onDepthWarn?: (depth: number, chain: string[]) => void;
     loadByPath?: (name: string) => string | null;
-  } = {},
+  } = {}
 ): Promise<ResolvedPack> {
   const sha8 = await computeManifestSha8(manifest);
   const id = packIdentity(manifest, sha8);

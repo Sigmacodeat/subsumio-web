@@ -14,8 +14,16 @@
  * CopyError BEFORE the filesystem is touched. Either every safe item
  * gets a chance to copy, or nothing does.
  */
-import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, realpathSync, writeFileSync } from 'fs';
-import { dirname, join, relative } from 'path';
+import {
+  existsSync,
+  lstatSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  realpathSync,
+  writeFileSync,
+} from "fs";
+import { dirname, join, relative } from "path";
 
 export interface CopyItem {
   /** Absolute source path. */
@@ -35,7 +43,7 @@ export interface CopyArtifactsOpts {
   dryRun?: boolean;
 }
 
-export type CopyOutcome = 'wrote_new' | 'skipped_existing';
+export type CopyOutcome = "wrote_new" | "skipped_existing";
 
 export interface CopyFileResult {
   source: string;
@@ -55,11 +63,11 @@ export interface CopyResult {
 export class CopyError extends Error {
   constructor(
     message: string,
-    public code: 'symlink_rejected' | 'path_traversal' | 'source_missing',
-    public offendingPath?: string,
+    public code: "symlink_rejected" | "path_traversal" | "source_missing",
+    public offendingPath?: string
   ) {
     super(message);
-    this.name = 'CopyError';
+    this.name = "CopyError";
   }
 }
 
@@ -123,8 +131,8 @@ export function copyArtifacts(items: CopyItem[], opts: CopyArtifactsOpts = {}): 
     if (!existsSync(opts.confineRealpath)) {
       throw new CopyError(
         `confineRealpath does not exist: ${opts.confineRealpath}`,
-        'source_missing',
-        opts.confineRealpath,
+        "source_missing",
+        opts.confineRealpath
       );
     }
     confineRoot = realpathSync(opts.confineRealpath);
@@ -135,8 +143,8 @@ export function copyArtifacts(items: CopyItem[], opts: CopyArtifactsOpts = {}): 
     if (!existsSync(item.source)) {
       throw new CopyError(
         `Source path does not exist: ${item.source}`,
-        'source_missing',
-        item.source,
+        "source_missing",
+        item.source
       );
     }
     if (opts.rejectSymlinks) {
@@ -144,8 +152,8 @@ export function copyArtifacts(items: CopyItem[], opts: CopyArtifactsOpts = {}): 
       if (stat.isSymbolicLink()) {
         throw new CopyError(
           `${item.source}: symlink rejected (security). Copy the real file into the skill dir before retrying.`,
-          'symlink_rejected',
-          item.source,
+          "symlink_rejected",
+          item.source
         );
       }
     }
@@ -153,12 +161,12 @@ export function copyArtifacts(items: CopyItem[], opts: CopyArtifactsOpts = {}): 
       const real = realpathSync(item.source);
       // realpathSync returns paths without trailing slash; add path
       // separator to the prefix check so /a/b doesn't match /a/bb.
-      const prefix = confineRoot.endsWith('/') ? confineRoot : confineRoot + '/';
+      const prefix = confineRoot.endsWith("/") ? confineRoot : confineRoot + "/";
       if (real !== confineRoot && !real.startsWith(prefix)) {
         throw new CopyError(
           `${item.source}: path traversal rejected. Source canonicalizes outside the confinement root (${confineRoot}).`,
-          'path_traversal',
-          item.source,
+          "path_traversal",
+          item.source
         );
       }
     }
@@ -168,7 +176,7 @@ export function copyArtifacts(items: CopyItem[], opts: CopyArtifactsOpts = {}): 
   const files: CopyFileResult[] = [];
   for (const item of items) {
     if (existsSync(item.target)) {
-      files.push({ source: item.source, target: item.target, outcome: 'skipped_existing' });
+      files.push({ source: item.source, target: item.target, outcome: "skipped_existing" });
       continue;
     }
     if (!dryRun) {
@@ -176,15 +184,15 @@ export function copyArtifacts(items: CopyItem[], opts: CopyArtifactsOpts = {}): 
       mkdirSync(dirname(item.target), { recursive: true });
       writeFileSync(item.target, content);
     }
-    files.push({ source: item.source, target: item.target, outcome: 'wrote_new' });
+    files.push({ source: item.source, target: item.target, outcome: "wrote_new" });
   }
 
   return {
     dryRun,
     files,
     summary: {
-      wroteNew: files.filter(f => f.outcome === 'wrote_new').length,
-      skippedExisting: files.filter(f => f.outcome === 'skipped_existing').length,
+      wroteNew: files.filter((f) => f.outcome === "wrote_new").length,
+      skippedExisting: files.filter((f) => f.outcome === "skipped_existing").length,
     },
   };
 }

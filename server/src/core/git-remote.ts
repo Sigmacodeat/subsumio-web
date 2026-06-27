@@ -14,10 +14,10 @@
  * reachable only via Tailscale, set GBRAIN_ALLOW_PRIVATE_REMOTES=1; loud
  * stderr warning at use site is the operator's signal.
  */
-import { execFileSync } from 'child_process';
-import { lstatSync, existsSync, readdirSync } from 'fs';
-import { join } from 'path';
-import { isInternalUrl } from './url-safety.ts';
+import { execFileSync } from "child_process";
+import { lstatSync, existsSync, readdirSync } from "fs";
+import { join } from "path";
+import { isInternalUrl } from "./url-safety.ts";
 
 /**
  * Git CLI accepts two flag positions:
@@ -42,30 +42,34 @@ import { isInternalUrl } from './url-safety.ts';
  * - protocol.ext.allow=never: no external helpers (`git-remote-foo`)
  */
 export const GIT_SSRF_FLAGS = [
-  '-c', 'http.followRedirects=false',
-  '-c', 'protocol.file.allow=never',
-  '-c', 'protocol.ext.allow=never',
+  "-c",
+  "http.followRedirects=false",
+  "-c",
+  "protocol.file.allow=never",
+  "-c",
+  "protocol.ext.allow=never",
 ] as const;
 
 /**
  * Subcommand-level flags. Spread AFTER the subcommand verb (clone/pull).
  * - --no-recurse-submodules: .gitmodules cannot become a second fetch surface
  */
-export const GIT_SSRF_SUBCOMMAND_FLAGS = [
-  '--no-recurse-submodules',
-] as const;
+export const GIT_SSRF_SUBCOMMAND_FLAGS = ["--no-recurse-submodules"] as const;
 
 export type RemoteUrlErrorCode =
-  | 'invalid_url'
-  | 'unsupported_scheme'
-  | 'embedded_credentials'
-  | 'path_traversal'
-  | 'internal_target';
+  | "invalid_url"
+  | "unsupported_scheme"
+  | "embedded_credentials"
+  | "path_traversal"
+  | "internal_target";
 
 export class RemoteUrlError extends Error {
-  constructor(public code: RemoteUrlErrorCode, message: string) {
+  constructor(
+    public code: RemoteUrlErrorCode,
+    message: string
+  ) {
     super(message);
-    this.name = 'RemoteUrlError';
+    this.name = "RemoteUrlError";
   }
 }
 
@@ -83,40 +87,40 @@ export interface ParsedRemoteUrl {
  * Needed for self-hosted git over Tailscale (CGNAT 100.64/10) and similar.
  */
 export function parseRemoteUrl(s: string): ParsedRemoteUrl {
-  if (!s || typeof s !== 'string') {
-    throw new RemoteUrlError('invalid_url', 'URL is empty or not a string');
+  if (!s || typeof s !== "string") {
+    throw new RemoteUrlError("invalid_url", "URL is empty or not a string");
   }
   let url: URL;
   try {
     url = new URL(s);
   } catch {
-    throw new RemoteUrlError('invalid_url', `URL malformed: ${s}`);
+    throw new RemoteUrlError("invalid_url", `URL malformed: ${s}`);
   }
-  if (url.protocol !== 'https:') {
+  if (url.protocol !== "https:") {
     throw new RemoteUrlError(
-      'unsupported_scheme',
-      `URL scheme not supported (https:// only): ${url.protocol}`,
+      "unsupported_scheme",
+      `URL scheme not supported (https:// only): ${url.protocol}`
     );
   }
   if (url.username || url.password) {
     throw new RemoteUrlError(
-      'embedded_credentials',
-      'URL must not contain embedded credentials (https://user:pass@host)',
+      "embedded_credentials",
+      "URL must not contain embedded credentials (https://user:pass@host)"
     );
   }
-  if (s.includes('..')) {
-    throw new RemoteUrlError('path_traversal', 'URL must not contain path-traversal (..)');
+  if (s.includes("..")) {
+    throw new RemoteUrlError("path_traversal", "URL must not contain path-traversal (..)");
   }
   if (isInternalUrl(s)) {
-    if (process.env.GBRAIN_ALLOW_PRIVATE_REMOTES === '1') {
+    if (process.env.GBRAIN_ALLOW_PRIVATE_REMOTES === "1") {
       console.error(
-        `[gbrain] WARN: GBRAIN_ALLOW_PRIVATE_REMOTES=1, accepting internal/private URL: ${url.hostname}`,
+        `[gbrain] WARN: GBRAIN_ALLOW_PRIVATE_REMOTES=1, accepting internal/private URL: ${url.hostname}`
       );
     } else {
       throw new RemoteUrlError(
-        'internal_target',
+        "internal_target",
         `URL targets internal/private network: ${url.hostname} ` +
-          `(set GBRAIN_ALLOW_PRIVATE_REMOTES=1 for self-hosted git over Tailscale or similar)`,
+          `(set GBRAIN_ALLOW_PRIVATE_REMOTES=1 for self-hosted git over Tailscale or similar)`
       );
     }
   }
@@ -131,22 +135,22 @@ export interface CloneOpts {
 
 export class GitOperationError extends Error {
   constructor(
-    public op: 'clone' | 'pull' | 'remote_get_url',
+    public op: "clone" | "pull" | "remote_get_url",
     message: string,
-    public cause?: unknown,
+    public cause?: unknown
   ) {
     super(message);
-    this.name = 'GitOperationError';
+    this.name = "GitOperationError";
   }
 }
 
 const GIT_ENV = {
   // Confine to the gbrain SSRF model — no credential helpers, no SSH askpass,
   // no GUI prompts. Inherit PATH so git itself is findable.
-  GIT_TERMINAL_PROMPT: '0',
-  GCM_INTERACTIVE: 'never',
-  GIT_ASKPASS: '/bin/false',
-  SSH_ASKPASS: '/bin/false',
+  GIT_TERMINAL_PROMPT: "0",
+  GCM_INTERACTIVE: "never",
+  GIT_ASKPASS: "/bin/false",
+  SSH_ASKPASS: "/bin/false",
 } as const;
 
 /**
@@ -162,68 +166,65 @@ export function cloneRepo(url: string, destDir: string, opts: CloneOpts = {}): v
       entries = readdirSync(destDir);
     } catch (e) {
       throw new GitOperationError(
-        'clone',
+        "clone",
         `Cannot inspect destination ${destDir}: ${(e as Error).message}`,
-        e,
+        e
       );
     }
     if (entries.length > 0) {
       throw new GitOperationError(
-        'clone',
-        `Destination ${destDir} exists and is not empty; refusing to clone`,
+        "clone",
+        `Destination ${destDir} exists and is not empty; refusing to clone`
       );
     }
   }
 
-  const args: string[] = [...GIT_SSRF_FLAGS, 'clone', ...GIT_SSRF_SUBCOMMAND_FLAGS];
+  const args: string[] = [...GIT_SSRF_FLAGS, "clone", ...GIT_SSRF_SUBCOMMAND_FLAGS];
   if (opts.depth !== 0) {
     args.push(`--depth=${opts.depth ?? 1}`);
   }
   if (opts.branch) {
-    args.push('--branch', opts.branch);
+    args.push("--branch", opts.branch);
   }
   args.push(url, destDir);
 
   try {
-    execFileSync('git', args, {
-      stdio: ['ignore', 'pipe', 'pipe'],
+    execFileSync("git", args, {
+      stdio: ["ignore", "pipe", "pipe"],
       timeout: opts.timeoutMs ?? 600_000,
       env: { ...process.env, ...GIT_ENV },
     });
   } catch (e) {
-    throw new GitOperationError(
-      'clone',
-      `git clone failed for ${url}: ${(e as Error).message}`,
-      e,
-    );
+    throw new GitOperationError("clone", `git clone failed for ${url}: ${(e as Error).message}`, e);
   }
 }
 
 /** Pull a repo with --ff-only and the same SSRF-defensive flags as cloneRepo. */
 export function pullRepo(repoPath: string, opts: { timeoutMs?: number } = {}): void {
-  const args: string[] = ['-C', repoPath, ...GIT_SSRF_FLAGS, 'pull', ...GIT_SSRF_SUBCOMMAND_FLAGS, '--ff-only'];
+  const args: string[] = [
+    "-C",
+    repoPath,
+    ...GIT_SSRF_FLAGS,
+    "pull",
+    ...GIT_SSRF_SUBCOMMAND_FLAGS,
+    "--ff-only",
+  ];
   try {
-    execFileSync('git', args, {
-      stdio: ['ignore', 'pipe', 'pipe'],
+    execFileSync("git", args, {
+      stdio: ["ignore", "pipe", "pipe"],
       timeout: opts.timeoutMs ?? 300_000,
       env: { ...process.env, ...GIT_ENV },
     });
   } catch (e) {
     throw new GitOperationError(
-      'pull',
+      "pull",
       `git pull failed in ${repoPath}: ${(e as Error).message}`,
-      e,
+      e
     );
   }
 }
 
-export type RepoState =
-  | 'healthy'
-  | 'missing'
-  | 'not-a-dir'
-  | 'no-git'
-  | 'url-drift'
-  | 'corrupted';
+export type RepoState = "healthy" | "missing" | "not-a-dir" | "no-git" | "url-drift" | "corrupted";
 
 /**
  * Classify the on-disk state of a clone. Used by performSync to decide
@@ -231,34 +232,31 @@ export type RepoState =
  * refuse with corruption error (corrupted), or refuse with rebase-clone
  * hint (url-drift).
  */
-export function validateRepoState(
-  repoPath: string,
-  expectedRemoteUrl?: string,
-): RepoState {
+export function validateRepoState(repoPath: string, expectedRemoteUrl?: string): RepoState {
   let stat;
   try {
     stat = lstatSync(repoPath);
   } catch (e: any) {
-    if (e?.code === 'ENOENT') return 'missing';
-    return 'not-a-dir';
+    if (e?.code === "ENOENT") return "missing";
+    return "not-a-dir";
   }
-  if (!stat.isDirectory()) return 'not-a-dir';
-  if (!existsSync(join(repoPath, '.git'))) return 'no-git';
+  if (!stat.isDirectory()) return "not-a-dir";
+  if (!existsSync(join(repoPath, ".git"))) return "no-git";
 
   let remoteUrl: string;
   try {
-    const out = execFileSync('git', ['-C', repoPath, 'remote', 'get-url', 'origin'], {
-      stdio: ['ignore', 'pipe', 'pipe'],
+    const out = execFileSync("git", ["-C", repoPath, "remote", "get-url", "origin"], {
+      stdio: ["ignore", "pipe", "pipe"],
       timeout: 10_000,
       env: { ...process.env, ...GIT_ENV },
     });
     remoteUrl = out.toString().trim();
   } catch {
-    return 'corrupted';
+    return "corrupted";
   }
 
   if (expectedRemoteUrl !== undefined && remoteUrl !== expectedRemoteUrl) {
-    return 'url-drift';
+    return "url-drift";
   }
-  return 'healthy';
+  return "healthy";
 }

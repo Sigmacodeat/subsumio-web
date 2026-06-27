@@ -25,20 +25,20 @@
  * doctor integration. Pure orchestration — no filesystem, no CLI parsing.
  */
 
-import type { BrainEngine } from '../engine.ts';
-import { hybridSearch } from '../search/hybrid.ts';
-import type { SearchResult } from '../types.ts';
-import { buildCalibration } from './calibration.ts';
-import { JudgeCache } from './cache.ts';
-import { CostTracker, estimateUpperBoundCost } from './cost-tracker.ts';
-import { buildSourceTierBreakdown, classifySlugTier } from './cross-source.ts';
-import { shouldSkipForDateMismatch } from './date-filter.ts';
-import { withBudgetTracker } from '../ai/gateway.ts';
-import { BudgetTracker, BudgetExhausted } from '../budget/budget-tracker.ts';
-import { judgeContradiction, type JudgeInput, type JudgeOutput } from './judge.ts';
-import { JudgeErrorCollector } from './judge-errors.ts';
-import { buildHotPages } from './severity-classify.ts';
-import { pairToFinding } from './auto-supersession.ts';
+import type { BrainEngine } from "../engine.ts";
+import { hybridSearch } from "../search/hybrid.ts";
+import type { SearchResult } from "../types.ts";
+import { buildCalibration } from "./calibration.ts";
+import { JudgeCache } from "./cache.ts";
+import { CostTracker, estimateUpperBoundCost } from "./cost-tracker.ts";
+import { buildSourceTierBreakdown, classifySlugTier } from "./cross-source.ts";
+import { shouldSkipForDateMismatch } from "./date-filter.ts";
+import { withBudgetTracker } from "../ai/gateway.ts";
+import { BudgetTracker, BudgetExhausted } from "../budget/budget-tracker.ts";
+import { judgeContradiction, type JudgeInput, type JudgeOutput } from "./judge.ts";
+import { JudgeErrorCollector } from "./judge-errors.ts";
+import { buildHotPages } from "./severity-classify.ts";
+import { pairToFinding } from "./auto-supersession.ts";
 import {
   PROMPT_VERSION,
   SCHEMA_VERSION,
@@ -50,10 +50,10 @@ import {
   type ProbeReport,
   type Verdict,
   type VerdictBreakdown,
-} from './types.ts';
+} from "./types.ts";
 
 const DEFAULT_TOP_K = 5;
-const DEFAULT_JUDGE_MODEL = 'anthropic:claude-haiku-4-5';
+const DEFAULT_JUDGE_MODEL = "anthropic:claude-haiku-4-5";
 const DEFAULT_MAX_PAIR_CHARS = 1500;
 
 /** Caller-supplied judge function signature; defaults to judgeContradiction. */
@@ -65,7 +65,7 @@ export interface RunnerOpts {
   judgeModel?: string;
   topK?: number;
   /** Pair-sampling policy (A3). 'deterministic' uses combined_score DESC. */
-  sampling?: 'deterministic' | 'score-first';
+  sampling?: "deterministic" | "score-first";
   /** USD cap for the run. Soft ceiling enforced pre-flight + mid-run. */
   budgetUsd?: number;
   /** True iff user passed --yes; allows over-budget pre-flight to proceed. */
@@ -76,7 +76,11 @@ export interface RunnerOpts {
   noCache?: boolean;
   /** Test hooks: override the judge and the search functions. */
   judgeFn?: JudgeFn;
-  searchFn?: (engine: BrainEngine, query: string, opts: { limit: number }) => Promise<SearchResult[]>;
+  searchFn?: (
+    engine: BrainEngine,
+    query: string,
+    opts: { limit: number }
+  ) => Promise<SearchResult[]>;
   abortSignal?: AbortSignal;
 }
 
@@ -92,9 +96,14 @@ export interface RunnerResult {
 
 /** Custom error class for pre-flight budget refusal. */
 export class PreFlightBudgetError extends Error {
-  constructor(public readonly estimatedUsd: number, public readonly capUsd: number) {
-    super(`Estimated cost $${estimatedUsd.toFixed(4)} exceeds --budget-usd cap $${capUsd.toFixed(2)}; pass --yes to override.`);
-    this.name = 'PreFlightBudgetError';
+  constructor(
+    public readonly estimatedUsd: number,
+    public readonly capUsd: number
+  ) {
+    super(
+      `Estimated cost $${estimatedUsd.toFixed(4)} exceeds --budget-usd cap $${capUsd.toFixed(2)}; pass --yes to override.`
+    );
+    this.name = "PreFlightBudgetError";
   }
 }
 
@@ -133,7 +142,7 @@ function takeToMember(
   take: { id: number; page_slug: string; claim: string; holder: string },
   source_tier: ReturnType<typeof classifySlugTier>,
   effective_date: string | null,
-  effective_date_source: string | null,
+  effective_date_source: string | null
 ): PairMember {
   return {
     slug: take.page_slug,
@@ -152,12 +161,13 @@ function generateCrossSlugPairs(results: SearchResult[]): ContradictionPair[] {
   const out: ContradictionPair[] = [];
   for (let i = 0; i < results.length; i++) {
     for (let j = i + 1; j < results.length; j++) {
-      if (results[i].slug === results[j].slug) continue;  // skip same-slug
+      if (results[i].slug === results[j].slug) continue; // skip same-slug
       const a = searchResultToMember(results[i]);
       const b = searchResultToMember(results[j]);
       out.push({
-        kind: 'cross_slug_chunks',
-        a, b,
+        kind: "cross_slug_chunks",
+        a,
+        b,
         combined_score: (results[i].score ?? 0) + (results[j].score ?? 0),
       });
     }
@@ -168,7 +178,7 @@ function generateCrossSlugPairs(results: SearchResult[]): ContradictionPair[] {
 /** Build intra-page pairs: for each result page, pair its chunks with the page's takes. */
 async function generateIntraPagePairs(
   engine: BrainEngine,
-  results: SearchResult[],
+  results: SearchResult[]
 ): Promise<ContradictionPair[]> {
   if (results.length === 0) return [];
   // Unique page_ids only.
@@ -184,10 +194,10 @@ async function generateIntraPagePairs(
         t,
         chunkMember.source_tier,
         chunkMember.effective_date,
-        chunkMember.effective_date_source,
+        chunkMember.effective_date_source
       );
       out.push({
-        kind: 'intra_page_chunk_take',
+        kind: "intra_page_chunk_take",
         a: chunkMember,
         b: takeMember,
         // Take has no retrieval score; weight 1.0 so intra-page pairs surface
@@ -210,9 +220,9 @@ async function generateIntraPagePairs(
  */
 function sortPairs(
   pairs: ContradictionPair[],
-  sampling: 'deterministic' | 'score-first',
+  sampling: "deterministic" | "score-first"
 ): ContradictionPair[] {
-  void sampling;  // unused param flag for forward compatibility
+  void sampling; // unused param flag for forward compatibility
   return [...pairs].sort((x, y) => {
     if (y.combined_score !== x.combined_score) return y.combined_score - x.combined_score;
     if (x.a.slug !== y.a.slug) return x.a.slug < y.a.slug ? -1 : 1;
@@ -239,7 +249,7 @@ export async function runContradictionProbe(opts: RunnerOpts): Promise<RunnerRes
     // Set the cap only when callers passed --budget-usd explicitly; this
     // keeps the existing soft-ceiling semantics from CostTracker as the
     // primary enforcement and uses the new tracker for telemetry only.
-    label: 'eval.suspected-contradictions',
+    label: "eval.suspected-contradictions",
   });
   try {
     return await withBudgetTracker(_runnerTracker, () => _runContradictionProbeInner(opts));
@@ -258,17 +268,20 @@ async function _runContradictionProbeInner(opts: RunnerOpts): Promise<RunnerResu
   const startedAt = Date.now();
   const judgeModel = opts.judgeModel ?? DEFAULT_JUDGE_MODEL;
   const topK = Math.max(1, opts.topK ?? DEFAULT_TOP_K);
-  const sampling = opts.sampling ?? 'deterministic';
+  const sampling = opts.sampling ?? "deterministic";
   const budgetUsd = opts.budgetUsd ?? 5.0;
   const maxPairChars = opts.maxPairChars ?? DEFAULT_MAX_PAIR_CHARS;
   const judgeFn = opts.judgeFn ?? judgeContradiction;
   const searchFn =
-    opts.searchFn ??
-    ((engine, query, o) => hybridSearch(engine, query, { limit: o.limit }));
+    opts.searchFn ?? ((engine, query, o) => hybridSearch(engine, query, { limit: o.limit }));
 
   const errs = new JudgeErrorCollector();
   const tracker = new CostTracker({ capUsd: budgetUsd });
-  const cache = new JudgeCache({ engine: opts.engine, modelId: judgeModel, disabled: !!opts.noCache });
+  const cache = new JudgeCache({
+    engine: opts.engine,
+    modelId: judgeModel,
+    disabled: !!opts.noCache,
+  });
 
   // Pre-flight: pair count = queries × min(topK*(topK-1)/2 + topK, 50).
   // Conservative upper bound; the actual count depends on takes per page.
@@ -297,7 +310,9 @@ async function _runContradictionProbeInner(opts: RunnerOpts): Promise<RunnerResu
     temporal_evolution: 0,
     negation_artifact: 0,
   };
-  const tallyVerdict = (v: Verdict) => { verdictBreakdown[v]++; };
+  const tallyVerdict = (v: Verdict) => {
+    verdictBreakdown[v]++;
+  };
 
   for (const query of opts.queries) {
     if (opts.abortSignal?.aborted) break;
@@ -364,7 +379,7 @@ async function _runContradictionProbeInner(opts: RunnerOpts): Promise<RunnerResu
         // v0.34 / Lane A2: emit findings for every non-no_contradiction verdict.
         // Without this, the new verdicts (temporal_supersession etc.) would
         // disappear from the report and the whole wave is invisible to users.
-        if (cached.verdict !== 'no_contradiction') {
+        if (cached.verdict !== "no_contradiction") {
           findings.push(pairToFinding(pair, cached));
         }
         continue;
@@ -396,7 +411,7 @@ async function _runContradictionProbeInner(opts: RunnerOpts): Promise<RunnerResu
         judged++;
         tallyVerdict(out.verdict.verdict);
         // v0.34 / Lane A2: same emit predicate as the cache-hit branch.
-        if (out.verdict.verdict !== 'no_contradiction') {
+        if (out.verdict.verdict !== "no_contradiction") {
           findings.push(pairToFinding(pair, out.verdict));
         }
       } catch (err) {
@@ -409,7 +424,7 @@ async function _runContradictionProbeInner(opts: RunnerOpts): Promise<RunnerResu
     // headline metric). The broad count surfaces the wave's new value:
     // "of N queries, M had at least one temporal signal."
     if (findings.length > 0) queriesWithAnyFinding++;
-    if (findings.some((f) => f.verdict === 'contradiction')) queriesWithContradiction++;
+    if (findings.some((f) => f.verdict === "contradiction")) queriesWithContradiction++;
     perQuery.push({
       query,
       result_count: results.length,
@@ -431,7 +446,10 @@ async function _runContradictionProbeInner(opts: RunnerOpts): Promise<RunnerResu
   });
   const breakdown = buildSourceTierBreakdown(allPairs);
   const hotPages = buildHotPages(allFindings);
-  const runId = new Date(startedAt).toISOString().replace(/[:.]/g, '-').replace(/-(?=\d{3}Z$)/, '.');
+  const runId = new Date(startedAt)
+    .toISOString()
+    .replace(/[:.]/g, "-")
+    .replace(/-(?=\d{3}Z$)/, ".");
   const durationMs = Date.now() - startedAt;
 
   const report: ProbeReport = {

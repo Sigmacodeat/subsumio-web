@@ -11,7 +11,14 @@ import { p, type Lang } from "@/content/site";
 import { SECURITY } from "@/content/security";
 import { SectionHeading } from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
-import { Reveal, StaggerContainer, StaggerItem, GlowCard, ClipReveal, MagneticButton } from "./motion-system";
+import {
+  Reveal,
+  StaggerContainer,
+  StaggerItem,
+  GlowCard,
+  ClipReveal,
+  MagneticButton,
+} from "./motion-system";
 
 const PILLAR_ICONS: Record<string, LucideIcon> = { Shield, Layers, Lock, Eye };
 
@@ -56,7 +63,9 @@ export default function SecurityPage({ lang }: { lang: Lang }) {
               >
                 <GlowCard className="h-full rounded-2xl border [border-color:var(--mk-border)] p-7 [background:var(--mk-surface)]">
                   <Icon size={22} className="brand-text mb-4" />
-                  <h2 className="mb-2 text-base font-bold [color:var(--mk-text)]">{pillar.title}</h2>
+                  <h2 className="mb-2 text-base font-bold [color:var(--mk-text)]">
+                    {pillar.title}
+                  </h2>
                   <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">
                     {pillar.desc}
                   </p>

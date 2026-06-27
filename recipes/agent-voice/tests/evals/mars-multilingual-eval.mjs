@@ -7,17 +7,19 @@
  * language AND stays in character.
  */
 
-import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { MARS } from '../../code/lib/personas/mars.mjs';
-import { runFixtureSet, loadFixturesJsonl, parseEvalCliArgs } from './judge.mjs';
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { MARS } from "../../code/lib/personas/mars.mjs";
+import { runFixtureSet, loadFixturesJsonl, parseEvalCliArgs } from "./judge.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const args = parseEvalCliArgs(process.argv.slice(2));
-const outDir = resolve(__dirname, args.baseline ? 'baseline-runs' : 'baseline-runs/dev');
+const outDir = resolve(__dirname, args.baseline ? "baseline-runs" : "baseline-runs/dev");
 
-const fixtures = loadFixturesJsonl(resolve(__dirname, 'fixtures/mars-multilingual.jsonl'));
-console.error(`[mars-multilingual-eval] running ${fixtures.length} fixtures (limit=${args.limit || 'none'})`);
+const fixtures = loadFixturesJsonl(resolve(__dirname, "fixtures/mars-multilingual.jsonl"));
+console.error(
+  `[mars-multilingual-eval] running ${fixtures.length} fixtures (limit=${args.limit || "none"})`
+);
 
 const run = await runFixtureSet({
   fixtures,
@@ -25,8 +27,8 @@ const run = await runFixtureSet({
   personaModel: args.model,
   outDir,
   limit: args.limit,
-  label: 'mars-multilingual',
+  label: "mars-multilingual",
 });
 
 console.log(JSON.stringify(run.summary, null, 2));
-process.exit(run.summary.overall_verdict === 'pass' ? 0 : 1);
+process.exit(run.summary.overall_verdict === "pass" ? 0 : 1);

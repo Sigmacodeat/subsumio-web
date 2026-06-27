@@ -41,19 +41,19 @@
  *   - H. gold-standard regression → behavioral E2E (sibling file)
  */
 
-import { describe, test, expect } from 'bun:test';
-import * as fs from 'fs';
-import * as path from 'path';
-import { INFRASTRUCTURE_ABORT_REASONS } from '../src/core/minions/worker.ts';
+import { describe, test, expect } from "bun:test";
+import * as fs from "fs";
+import * as path from "path";
+import { INFRASTRUCTURE_ABORT_REASONS } from "../src/core/minions/worker.ts";
 
-const REPO_ROOT = path.resolve(import.meta.dir, '..');
-const WORKER_PATH = path.join(REPO_ROOT, 'src/core/minions/worker.ts');
+const REPO_ROOT = path.resolve(import.meta.dir, "..");
+const WORKER_PATH = path.join(REPO_ROOT, "src/core/minions/worker.ts");
 
 // Read once at module load — failure to find the file is a strong signal
 // the test file was moved without updating the path.
 let workerSource: string;
 try {
-  workerSource = fs.readFileSync(WORKER_PATH, 'utf8');
+  workerSource = fs.readFileSync(WORKER_PATH, "utf8");
 } catch (err) {
   throw new Error(`Cannot read ${WORKER_PATH}: ${(err as Error).message}`);
 }
@@ -67,7 +67,7 @@ function extractFunctionBody(source: string, signatureMarker: string): string {
     throw new Error(`Marker not found: ${signatureMarker}`);
   }
   // Find the opening brace of the function body.
-  const braceIdx = source.indexOf('{', startIdx);
+  const braceIdx = source.indexOf("{", startIdx);
   if (braceIdx === -1) {
     throw new Error(`No opening brace after marker: ${signatureMarker}`);
   }
@@ -76,8 +76,8 @@ function extractFunctionBody(source: string, signatureMarker: string): string {
   let i = braceIdx + 1;
   while (i < source.length && depth > 0) {
     const ch = source[i];
-    if (ch === '{') depth++;
-    else if (ch === '}') depth--;
+    if (ch === "{") depth++;
+    else if (ch === "}") depth--;
     i++;
     if (depth === 0) break;
   }
@@ -88,17 +88,17 @@ function extractFunctionBody(source: string, signatureMarker: string): string {
 // D — INFRASTRUCTURE_ABORT_REASONS export contract (also covered in pure tests)
 // =============================================================================
 
-describe('D: INFRASTRUCTURE_ABORT_REASONS export contract', () => {
-  test('exported Set contains exactly lock-renewal-failed + lock-lost', () => {
+describe("D: INFRASTRUCTURE_ABORT_REASONS export contract", () => {
+  test("exported Set contains exactly lock-renewal-failed + lock-lost", () => {
     // Named-constant regression: any change to this set is a deliberate
     // two-line edit (the constant + this test).
     expect(INFRASTRUCTURE_ABORT_REASONS).toBeInstanceOf(Set);
     expect(INFRASTRUCTURE_ABORT_REASONS.size).toBe(2);
-    expect(INFRASTRUCTURE_ABORT_REASONS.has('lock-renewal-failed')).toBe(true);
-    expect(INFRASTRUCTURE_ABORT_REASONS.has('lock-lost')).toBe(true);
+    expect(INFRASTRUCTURE_ABORT_REASONS.has("lock-renewal-failed")).toBe(true);
+    expect(INFRASTRUCTURE_ABORT_REASONS.has("lock-lost")).toBe(true);
   });
 
-  test('source exports the constant (so executeJob.catch can import it)', () => {
+  test("source exports the constant (so executeJob.catch can import it)", () => {
     // Without the `export const` shape, executeJob's infrastructure-
     // abort guard can't reach the set; the import would fail at compile
     // time but pinning the export site here documents the contract.
@@ -110,24 +110,24 @@ describe('D: INFRASTRUCTURE_ABORT_REASONS export contract', () => {
 // A — launchJob wires runLockRenewalTick
 // =============================================================================
 
-describe('A: launchJob wires the pure tick function', () => {
+describe("A: launchJob wires the pure tick function", () => {
   let launchJobBody: string;
-  test('extracts launchJob function body for further assertions', () => {
-    launchJobBody = extractFunctionBody(workerSource, 'private launchJob(');
+  test("extracts launchJob function body for further assertions", () => {
+    launchJobBody = extractFunctionBody(workerSource, "private launchJob(");
     expect(launchJobBody.length).toBeGreaterThan(0);
   });
 
-  test('launchJob calls runLockRenewalTick (the extracted pure function)', () => {
+  test("launchJob calls runLockRenewalTick (the extracted pure function)", () => {
     expect(launchJobBody).toMatch(/runLockRenewalTick\s*\(/);
   });
 
-  test('launchJob constructs the LockRenewalState via the documented helper', () => {
+  test("launchJob constructs the LockRenewalState via the documented helper", () => {
     // resolveLockRenewalKnobs reads the env knobs (D2). If it disappears
     // from launchJob, operators can't tune via env vars.
     expect(launchJobBody).toMatch(/resolveLockRenewalKnobs\s*\(/);
   });
 
-  test('launchJob uses the lockRenewalAudit sink (not a fake / inline)', () => {
+  test("launchJob uses the lockRenewalAudit sink (not a fake / inline)", () => {
     expect(launchJobBody).toMatch(/lockRenewalAudit/);
   });
 });
@@ -136,26 +136,26 @@ describe('A: launchJob wires the pure tick function', () => {
 // G — tickInFlight re-entrancy guard at the worker layer
 // =============================================================================
 
-describe('G: tickInFlight re-entrancy guard', () => {
-  test('launchJob declares the tickInFlight flag', () => {
-    const launchJobBody = extractFunctionBody(workerSource, 'private launchJob(');
+describe("G: tickInFlight re-entrancy guard", () => {
+  test("launchJob declares the tickInFlight flag", () => {
+    const launchJobBody = extractFunctionBody(workerSource, "private launchJob(");
     expect(launchJobBody).toMatch(/let\s+tickInFlight\s*=\s*false/);
   });
 
-  test('the setInterval callback checks tickInFlight and bails on re-entry', () => {
-    const launchJobBody = extractFunctionBody(workerSource, 'private launchJob(');
+  test("the setInterval callback checks tickInFlight and bails on re-entry", () => {
+    const launchJobBody = extractFunctionBody(workerSource, "private launchJob(");
     // The pattern is `if (tickInFlight) return;` — minor whitespace
     // variation tolerated.
     expect(launchJobBody).toMatch(/if\s*\(\s*tickInFlight\s*\)\s*return/);
   });
 
-  test('the setInterval callback sets tickInFlight=true before scheduling work', () => {
-    const launchJobBody = extractFunctionBody(workerSource, 'private launchJob(');
+  test("the setInterval callback sets tickInFlight=true before scheduling work", () => {
+    const launchJobBody = extractFunctionBody(workerSource, "private launchJob(");
     expect(launchJobBody).toMatch(/tickInFlight\s*=\s*true/);
   });
 
-  test('the post-tick finally clears tickInFlight back to false', () => {
-    const launchJobBody = extractFunctionBody(workerSource, 'private launchJob(');
+  test("the post-tick finally clears tickInFlight back to false", () => {
+    const launchJobBody = extractFunctionBody(workerSource, "private launchJob(");
     expect(launchJobBody).toMatch(/tickInFlight\s*=\s*false/);
   });
 });
@@ -165,26 +165,26 @@ describe('G: tickInFlight re-entrancy guard', () => {
 //         logExecuteJobRejected end-to-end via the catch
 // =============================================================================
 
-describe('C + F: .catch() on stored executeJob promise + logExecuteJobRejected', () => {
-  test('the stored executeJob promise has a .catch() handler', () => {
-    const launchJobBody = extractFunctionBody(workerSource, 'private launchJob(');
+describe("C + F: .catch() on stored executeJob promise + logExecuteJobRejected", () => {
+  test("the stored executeJob promise has a .catch() handler", () => {
+    const launchJobBody = extractFunctionBody(workerSource, "private launchJob(");
     // The pattern is `.executeJob(...).finally(...).catch(...)` — the
     // catch closes the SECOND unhandledRejection vector codex caught.
     // Match any `.catch(` after `.finally(` within launchJob's body.
-    const finallyIdx = launchJobBody.indexOf('.finally(');
+    const finallyIdx = launchJobBody.indexOf(".finally(");
     expect(finallyIdx).toBeGreaterThan(-1);
     // Search for .catch( after the .finally(
     const tail = launchJobBody.slice(finallyIdx);
     expect(tail).toMatch(/\.catch\s*\(/);
   });
 
-  test('the .catch() handler calls lockRenewalAudit.logExecuteJobRejected', () => {
-    const launchJobBody = extractFunctionBody(workerSource, 'private launchJob(');
+  test("the .catch() handler calls lockRenewalAudit.logExecuteJobRejected", () => {
+    const launchJobBody = extractFunctionBody(workerSource, "private launchJob(");
     expect(launchJobBody).toMatch(/logExecuteJobRejected\s*\(/);
   });
 
-  test('the .catch() handler also logs to stderr (operator visibility)', () => {
-    const launchJobBody = extractFunctionBody(workerSource, 'private launchJob(');
+  test("the .catch() handler also logs to stderr (operator visibility)", () => {
+    const launchJobBody = extractFunctionBody(workerSource, "private launchJob(");
     // The implementation uses console.error for the human-visible trail.
     // Pin the call so a future refactor that drops it leaves the operator
     // with audit JSONL only (which is harder to grep live during an
@@ -197,25 +197,25 @@ describe('C + F: .catch() on stored executeJob promise + logExecuteJobRejected',
 // E — Universal grace-evict listener fires on any abort reason
 // =============================================================================
 
-describe('E: universal grace-evict listener (D8b)', () => {
-  test('launchJob registers an abort.signal.addEventListener for grace-evict', () => {
-    const launchJobBody = extractFunctionBody(workerSource, 'private launchJob(');
+describe("E: universal grace-evict listener (D8b)", () => {
+  test("launchJob registers an abort.signal.addEventListener for grace-evict", () => {
+    const launchJobBody = extractFunctionBody(workerSource, "private launchJob(");
     // The pre-v0.41.26.1 form lived inside `if (job.timeout_ms != null)`.
     // Now it's at launchJob top level and listens to the abort signal
     // directly. Pin the listener registration.
     expect(launchJobBody).toMatch(/abort\.signal\.addEventListener\s*\(\s*['"]abort['"]/);
   });
 
-  test('the grace-evict path consults INFRASTRUCTURE_ABORT_REASONS before failJob', () => {
-    const launchJobBody = extractFunctionBody(workerSource, 'private launchJob(');
+  test("the grace-evict path consults INFRASTRUCTURE_ABORT_REASONS before failJob", () => {
+    const launchJobBody = extractFunctionBody(workerSource, "private launchJob(");
     // The infrastructure-reason guard ensures lock-renewal aborts don't
     // burn job attempts even if the handler is still wedged at the 30s
     // force-evict deadline.
     expect(launchJobBody).toMatch(/INFRASTRUCTURE_ABORT_REASONS/);
   });
 
-  test('the 30s grace timer fires for any abort, not just timeout_ms', () => {
-    const launchJobBody = extractFunctionBody(workerSource, 'private launchJob(');
+  test("the 30s grace timer fires for any abort, not just timeout_ms", () => {
+    const launchJobBody = extractFunctionBody(workerSource, "private launchJob(");
     // The 30_000 literal must appear OUTSIDE the `if (job.timeout_ms != null)`
     // branch. Check the addEventListener block contains the 30_000 literal.
     // Find the addEventListener and look in its function body.
@@ -231,9 +231,9 @@ describe('E: universal grace-evict listener (D8b)', () => {
 // B — executeJob skips failJob on infrastructure aborts
 // =============================================================================
 
-describe('B: executeJob skip-failJob on infrastructure abort (D8a)', () => {
-  test('executeJob detects the infrastructure abort reason and returns early', () => {
-    const executeJobBody = extractFunctionBody(workerSource, 'private async executeJob(');
+describe("B: executeJob skip-failJob on infrastructure abort (D8a)", () => {
+  test("executeJob detects the infrastructure abort reason and returns early", () => {
+    const executeJobBody = extractFunctionBody(workerSource, "private async executeJob(");
     // The skip-failJob branch checks abort.signal.reason against
     // INFRASTRUCTURE_ABORT_REASONS and returns BEFORE the failJob call
     // path. Pin both the constant reference AND the early-return shape.
@@ -242,14 +242,14 @@ describe('B: executeJob skip-failJob on infrastructure abort (D8a)', () => {
     // check there must be a `return;` to skip the rest of catch.
     // Pin the structural shape by locating the check + finding `return;`
     // within ~500 chars after.
-    const idx = executeJobBody.indexOf('INFRASTRUCTURE_ABORT_REASONS.has');
+    const idx = executeJobBody.indexOf("INFRASTRUCTURE_ABORT_REASONS.has");
     expect(idx).toBeGreaterThan(-1);
     const window = executeJobBody.slice(idx, idx + 500);
     expect(window).toMatch(/return\s*;/);
   });
 
-  test('executeJob still calls failJob for non-infrastructure errors', () => {
-    const executeJobBody = extractFunctionBody(workerSource, 'private async executeJob(');
+  test("executeJob still calls failJob for non-infrastructure errors", () => {
+    const executeJobBody = extractFunctionBody(workerSource, "private async executeJob(");
     // Regression guard for the negative side: a future refactor that
     // accidentally removes failJob entirely would make handler defects
     // silently disappear. Pin that failJob remains in the catch path.

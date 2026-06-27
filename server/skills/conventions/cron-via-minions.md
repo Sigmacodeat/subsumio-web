@@ -54,10 +54,10 @@ on cron), the host platform ships the handler as code.
 See `docs/guides/plugin-handlers.md` for the plugin contract. In short:
 
 ```ts
-import { MinionQueue, MinionWorker } from 'gbrain/minions';
+import { MinionQueue, MinionWorker } from "gbrain/minions";
 
-const worker = new MinionWorker(engine, { queue: 'default' });
-worker.register('ea-inbox-sweep', async (ctx) => {
+const worker = new MinionWorker(engine, { queue: "default" });
+worker.register("ea-inbox-sweep", async (ctx) => {
   // Host-specific agent turn. Call whatever LLM + tools the host has.
   // ctx.data contains the cron slot payload; return a result object.
 });
@@ -79,7 +79,7 @@ GBrain v0.12.0 ships `gbrain cron`: a scheduler loop inside
 `gbrain jobs work` that owns cron expressions natively — no more
 handing off to host schedulers. Until v0.12.0 lands, the host
 scheduler keeps firing on schedule; v0.11.1 only replaces the execution
-layer (what the cron trigger *does*), not the scheduling layer.
+layer (what the cron trigger _does_), not the scheduling layer.
 
 ## Related
 

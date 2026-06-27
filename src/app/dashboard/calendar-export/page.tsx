@@ -86,7 +86,10 @@ export default function CalendarExportPage() {
 
   async function loadEvents() {
     try {
-      const batch = await api.brain.batchListPages(["legal_deadline", "legal_case", "appointment"], 200);
+      const batch = await api.brain.batchListPages(
+        ["legal_deadline", "legal_case", "appointment"],
+        200
+      );
       const pages = batch["legal_deadline"] ?? [];
       const casePages = batch["legal_case"] ?? [];
       const appointmentPages = batch["appointment"] ?? [];

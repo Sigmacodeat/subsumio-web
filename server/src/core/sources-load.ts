@@ -16,7 +16,7 @@
  * implementations even though both run identical SQL through `executeRaw`.
  * A shared helper hits the bar at lower cost.
  */
-import type { BrainEngine } from './engine.ts';
+import type { BrainEngine } from "./engine.ts";
 
 export interface SourceRow {
   id: string;
@@ -47,10 +47,14 @@ export interface LoadAllSourcesOpts {
 
 /** Parse `sources.config` to a plain object regardless of driver shape. */
 export function parseSourceConfig(config: unknown): Record<string, unknown> {
-  if (typeof config === 'string') {
-    try { return JSON.parse(config) as Record<string, unknown>; } catch { return {}; }
+  if (typeof config === "string") {
+    try {
+      return JSON.parse(config) as Record<string, unknown>;
+    } catch {
+      return {};
+    }
   }
-  if (typeof config === 'object' && config !== null) return config as Record<string, unknown>;
+  if (typeof config === "object" && config !== null) return config as Record<string, unknown>;
   return {};
 }
 
@@ -69,7 +73,7 @@ export function isSourceFederated(config: unknown): boolean {
  */
 export async function loadAllSources(
   engine: BrainEngine,
-  opts: LoadAllSourcesOpts = {},
+  opts: LoadAllSourcesOpts = {}
 ): Promise<SourceRow[]> {
   // Defensive on legacy brains pre-v0.26.5 that lack the archived column.
   let rows: SourceRow[];
@@ -77,7 +81,7 @@ export async function loadAllSources(
     rows = await engine.executeRaw<SourceRow>(
       `SELECT id, name, local_path, last_commit, last_sync_at, config, created_at, archived, newest_content_at
          FROM sources
-       ORDER BY (id = 'default') DESC, id`,
+       ORDER BY (id = 'default') DESC, id`
     );
   } catch (err) {
     // Forward-reference safety: pre-v0.26.5 brains lack `archived`; pre-v109
@@ -87,7 +91,7 @@ export async function loadAllSources(
       rows = await engine.executeRaw<SourceRow>(
         `SELECT id, name, local_path, last_commit, last_sync_at, config, created_at
            FROM sources
-         ORDER BY (id = 'default') DESC, id`,
+         ORDER BY (id = 'default') DESC, id`
       );
     } else {
       throw err;
@@ -105,15 +109,12 @@ export async function loadAllSources(
 }
 
 /** Single-row fetch — kept here so callers don't grow yet-another SELECT. */
-export async function fetchSource(
-  engine: BrainEngine,
-  id: string,
-): Promise<SourceRow | null> {
+export async function fetchSource(engine: BrainEngine, id: string): Promise<SourceRow | null> {
   try {
     const rows = await engine.executeRaw<SourceRow>(
       `SELECT id, name, local_path, last_commit, last_sync_at, config, created_at, archived, newest_content_at
          FROM sources WHERE id = $1`,
-      [id],
+      [id]
     );
     return rows[0] ?? null;
   } catch (err) {
@@ -121,7 +122,7 @@ export async function fetchSource(
       const rows = await engine.executeRaw<SourceRow>(
         `SELECT id, name, local_path, last_commit, last_sync_at, config, created_at
            FROM sources WHERE id = $1`,
-        [id],
+        [id]
       );
       return rows[0] ?? null;
     }
@@ -131,8 +132,8 @@ export async function fetchSource(
 
 /** Driver-tolerant 42703 detector. Mirrors src/core/utils.ts pattern. */
 function isUndefinedColumnError(err: unknown): boolean {
-  if (!err || typeof err !== 'object') return false;
+  if (!err || typeof err !== "object") return false;
   const e = err as { code?: string; message?: string };
-  if (e.code === '42703') return true;
-  return typeof e.message === 'string' && /column .* does not exist/i.test(e.message);
+  if (e.code === "42703") return true;
+  return typeof e.message === "string" && /column .* does not exist/i.test(e.message);
 }

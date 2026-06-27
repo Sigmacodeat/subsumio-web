@@ -231,7 +231,9 @@ export default function LitigationAnalyticsPage() {
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // ── Filtered set ──────────────────────────────────────────────────

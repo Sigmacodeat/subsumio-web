@@ -19,12 +19,12 @@ Intake → Drafting → Review → Approval → Signature → Obligation Trackin
 
 ## 2.1 Vorhandene Komponenten
 
-| Komponente | Pfad | Status |
-|------------|------|--------|
-| Intake Form | `/dashboard/intake` | ✅ vorhanden |
-| Mandatsanlage | `/api/legal/intake` | ✅ vorhanden |
+| Komponente            | Pfad                        | Status       |
+| --------------------- | --------------------------- | ------------ |
+| Intake Form           | `/dashboard/intake`         | ✅ vorhanden |
+| Mandatsanlage         | `/api/legal/intake`         | ✅ vorhanden |
 | Contract Quick Create | `ContractQuickCreateDialog` | ✅ vorhanden |
-| Matter Context | `matter-context.ts` | ✅ vorhanden |
+| Matter Context        | `matter-context.ts`         | ✅ vorhanden |
 
 ## 2.2 Flow
 
@@ -39,13 +39,13 @@ Intake → Drafting → Review → Approval → Signature → Obligation Trackin
 
 ## 3.1 Vorhandene Komponenten
 
-| Komponente | Pfad | Status |
-|------------|------|--------|
-| Drafting Page | `/dashboard/drafting` | ✅ vorhanden |
-| Contract Draft API | `/api/legal/contract-draft` | ✅ vorhanden |
-| Templates | `TEMPLATES` Array (Klage, Mahnung, etc.) | ✅ vorhanden |
-| AI Drafting | `legal.contract_draft` Engine Action | ✅ vorhanden |
-| Docx Export | `docx-export.ts` | ✅ vorhanden |
+| Komponente         | Pfad                                     | Status       |
+| ------------------ | ---------------------------------------- | ------------ |
+| Drafting Page      | `/dashboard/drafting`                    | ✅ vorhanden |
+| Contract Draft API | `/api/legal/contract-draft`              | ✅ vorhanden |
+| Templates          | `TEMPLATES` Array (Klage, Mahnung, etc.) | ✅ vorhanden |
+| AI Drafting        | `legal.contract_draft` Engine Action     | ✅ vorhanden |
+| Docx Export        | `docx-export.ts`                         | ✅ vorhanden |
 
 ## 3.2 Flow
 
@@ -61,6 +61,7 @@ Intake → Drafting → Review → Approval → Signature → Obligation Trackin
 **Endpoint:** `POST /api/legal/contract-draft`
 
 **Schema:**
+
 ```typescript
 {
   type: string;           // Vertragstyp
@@ -83,14 +84,14 @@ Intake → Drafting → Review → Approval → Signature → Obligation Trackin
 
 ## 4.1 Vorhandene Komponenten
 
-| Komponente | Pfad | Status |
-|------------|------|--------|
-| Contracts Dashboard | `/dashboard/contracts` | ✅ vorhanden |
+| Komponente           | Pfad                          | Status       |
+| -------------------- | ----------------------------- | ------------ |
+| Contracts Dashboard  | `/dashboard/contracts`        | ✅ vorhanden |
 | Contract Redline API | `/api/legal/contract-redline` | ✅ vorhanden |
-| Redline Viewer | `ContractRedlineViewer` | ✅ vorhanden |
-| Clause Annotation | `clause-annotation.ts` | ✅ vorhanden |
-| Risk Analysis | `risk_level` in ContractItem | ✅ vorhanden |
-| Tabular Review | `TabularReviewResponse` | ✅ vorhanden |
+| Redline Viewer       | `ContractRedlineViewer`       | ✅ vorhanden |
+| Clause Annotation    | `clause-annotation.ts`        | ✅ vorhanden |
+| Risk Analysis        | `risk_level` in ContractItem  | ✅ vorhanden |
+| Tabular Review       | `TabularReviewResponse`       | ✅ vorhanden |
 
 ## 4.2 Flow
 
@@ -109,12 +110,24 @@ Intake → Drafting → Review → Approval → Signature → Obligation Trackin
 **Engine Action:** `legal.contract_redline` (streaming, citation-gated)
 
 **Clause Annotation Types:**
+
 ```typescript
 type ClauseCategory =
-  | "nda" | "employment" | "service" | "sale" | "lease"
-  | "partnership" | "licensing" | "settlement" | "liability"
-  | "payment" | "termination" | "ip" | "data_protection"
-  | "warranty" | "general";
+  | "nda"
+  | "employment"
+  | "service"
+  | "sale"
+  | "lease"
+  | "partnership"
+  | "licensing"
+  | "settlement"
+  | "liability"
+  | "payment"
+  | "termination"
+  | "ip"
+  | "data_protection"
+  | "warranty"
+  | "general";
 
 type ClauseRiskLevel = "low" | "medium" | "high" | "critical";
 type ClauseReviewStatus = "pending" | "approved" | "rejected";
@@ -126,12 +139,12 @@ type ClauseReviewStatus = "pending" | "approved" | "rejected";
 
 ## 5.1 Vorhandene Komponenten
 
-| Komponente | Pfad | Status |
-|------------|------|--------|
-| Approval Execution | `approval-execution.ts` | ✅ vorhanden |
+| Komponente           | Pfad                     | Status       |
+| -------------------- | ------------------------ | ------------ | ---------- | --------- | ------------ |
+| Approval Execution   | `approval-execution.ts`  | ✅ vorhanden |
 | Approval Frontmatter | `agentActionFrontmatter` | ✅ vorhanden |
-| Approval Rückkanal | `approval.ts` | ✅ vorhanden |
-| Status Management | `status: "draft" | "reviewed" | "approved" | "signed"` | ✅ vorhanden |
+| Approval Rückkanal   | `approval.ts`            | ✅ vorhanden |
+| Status Management    | `status: "draft"         | "reviewed"   | "approved" | "signed"` | ✅ vorhanden |
 
 ## 5.2 Flow
 
@@ -152,16 +165,16 @@ draft → reviewed → approved → signed
 
 ## 6.1 Vorhandene Komponenten
 
-| Komponente | Pfad | Status |
-|------------|------|--------|
-| Signature Page | `/dashboard/signature` | ✅ vorhanden |
-| DocuSign Auth | `/api/docusign/auth` | ✅ vorhanden |
-| DocuSign Callback | `/api/docusign/callback` | ✅ vorhanden |
-| DocuSign Webhook | `/api/docusign/webhook` | ✅ vorhanden |
-| DocuSign Status | `/api/docusign/status` | ✅ vorhanden |
-| DocuSign Envelopes | `/api/docusign/envelopes` | ✅ vorhanden |
+| Komponente          | Pfad                       | Status       |
+| ------------------- | -------------------------- | ------------ |
+| Signature Page      | `/dashboard/signature`     | ✅ vorhanden |
+| DocuSign Auth       | `/api/docusign/auth`       | ✅ vorhanden |
+| DocuSign Callback   | `/api/docusign/callback`   | ✅ vorhanden |
+| DocuSign Webhook    | `/api/docusign/webhook`    | ✅ vorhanden |
+| DocuSign Status     | `/api/docusign/status`     | ✅ vorhanden |
+| DocuSign Envelopes  | `/api/docusign/envelopes`  | ✅ vorhanden |
 | DocuSign Disconnect | `/api/docusign/disconnect` | ✅ vorhanden |
-| Signature Flow Test | `signature-flow.spec.ts` | ✅ vorhanden |
+| Signature Flow Test | `signature-flow.spec.ts`   | ✅ vorhanden |
 
 ## 6.2 Flow
 
@@ -192,15 +205,15 @@ draft → reviewed → approved → signed
 
 ## 7.1 Vorhandene Komponenten
 
-| Komponente | Pfad | Status |
-|------------|------|--------|
-| Obligation Entry Type | `ObligationEntry` in `types.ts` | ✅ vorhanden |
-| Obligation Extraction | `ObligationExtractionResult` in `types.ts` | ✅ vorhanden |
-| Renewal Dates | `renewal_dates` in `ObligationExtractionResult` | ✅ vorhanden |
-| Payment Terms | `payment_terms` in `ObligationExtractionResult` | ✅ vorhanden |
-| Notice Periods | `notice_periods` in `ObligationExtractionResult` | ✅ vorhanden |
-| Deadline Detection | `ai-deadline-detect.ts` | ✅ vorhanden |
-| Fristen Cron | `/api/cron/deadlines` | ✅ vorhanden |
+| Komponente            | Pfad                                             | Status       |
+| --------------------- | ------------------------------------------------ | ------------ |
+| Obligation Entry Type | `ObligationEntry` in `types.ts`                  | ✅ vorhanden |
+| Obligation Extraction | `ObligationExtractionResult` in `types.ts`       | ✅ vorhanden |
+| Renewal Dates         | `renewal_dates` in `ObligationExtractionResult`  | ✅ vorhanden |
+| Payment Terms         | `payment_terms` in `ObligationExtractionResult`  | ✅ vorhanden |
+| Notice Periods        | `notice_periods` in `ObligationExtractionResult` | ✅ vorhanden |
+| Deadline Detection    | `ai-deadline-detect.ts`                          | ✅ vorhanden |
+| Fristen Cron          | `/api/cron/deadlines`                            | ✅ vorhanden |
 
 ## 7.2 Flow
 
@@ -241,12 +254,12 @@ interface ObligationExtractionResult {
 
 ## 8.1 Vorhandene Komponenten
 
-| Komponente | Pfad | Status |
-|------------|------|--------|
-| Deadline Detection | `ai-deadline-detect.ts` | ✅ vorhanden |
-| Fristen Cron | `/api/cron/deadlines` | ✅ vorhanden |
-| Fristen Dashboard | `/dashboard/deadlines` | ✅ vorhanden |
-| Legal Deadlines | `legal-deadlines.ts` | ✅ vorhanden |
+| Komponente         | Pfad                         | Status       |
+| ------------------ | ---------------------------- | ------------ |
+| Deadline Detection | `ai-deadline-detect.ts`      | ✅ vorhanden |
+| Fristen Cron       | `/api/cron/deadlines`        | ✅ vorhanden |
+| Fristen Dashboard  | `/dashboard/deadlines`       | ✅ vorhanden |
+| Legal Deadlines    | `legal-deadlines.ts`         | ✅ vorhanden |
 | WhatsApp Reminders | `whatsapp/daily-briefing.ts` | ✅ vorhanden |
 
 ## 8.2 Flow
@@ -306,15 +319,15 @@ interface ObligationExtractionResult {
 
 ## 9.2 Status
 
-| Phase | Komponenten | Status | E2E Test |
-|-------|-------------|--------|----------|
-| Intake | Intake Form, Contract Quick Create | ✅ vorhanden | ⚠️ nicht getestet |
-| Drafting | Drafting Page, Contract Draft API, Templates | ✅ vorhanden | ⚠️ nicht getestet |
-| Review | Contracts Dashboard, Redline, Clause Annotation | ✅ vorhanden | ⚠️ nicht getestet |
-| Approval | Approval Execution, Status Management | ✅ vorhanden | ⚠️ nicht getestet |
-| Signature | DocuSign Integration, Webhook | ✅ vorhanden | ✅ getestet |
-| Obligation Tracking | Obligation Extraction, Deadline Detection | ✅ vorhanden | ⚠️ nicht getestet |
-| Renewal/Deadline | Fristen Cron, WhatsApp Reminders | ✅ vorhanden | ⚠️ nicht getestet |
+| Phase               | Komponenten                                     | Status       | E2E Test          |
+| ------------------- | ----------------------------------------------- | ------------ | ----------------- |
+| Intake              | Intake Form, Contract Quick Create              | ✅ vorhanden | ⚠️ nicht getestet |
+| Drafting            | Drafting Page, Contract Draft API, Templates    | ✅ vorhanden | ⚠️ nicht getestet |
+| Review              | Contracts Dashboard, Redline, Clause Annotation | ✅ vorhanden | ⚠️ nicht getestet |
+| Approval            | Approval Execution, Status Management           | ✅ vorhanden | ⚠️ nicht getestet |
+| Signature           | DocuSign Integration, Webhook                   | ✅ vorhanden | ✅ getestet       |
+| Obligation Tracking | Obligation Extraction, Deadline Detection       | ✅ vorhanden | ⚠️ nicht getestet |
+| Renewal/Deadline    | Fristen Cron, WhatsApp Reminders                | ✅ vorhanden | ⚠️ nicht getestet |
 
 ---
 
@@ -322,14 +335,14 @@ interface ObligationExtractionResult {
 
 ## 10.1 Fehlende E2E Tests
 
-| Gap | Priorität | Aufwand |
-|-----|-----------|---------|
-| Intake → Drafting E2E Test | P1 | Mittel |
-| Drafting → Review E2E Test | P1 | Mittel |
-| Review → Approval E2E Test | P1 | Mittel |
-| Approval → Signature E2E Test | P1 | Mittel |
-| Signature → Obligation E2E Test | P1 | Mittel |
-| Obligation → Renewal E2E Test | P1 | Mittel |
+| Gap                             | Priorität | Aufwand |
+| ------------------------------- | --------- | ------- |
+| Intake → Drafting E2E Test      | P1        | Mittel  |
+| Drafting → Review E2E Test      | P1        | Mittel  |
+| Review → Approval E2E Test      | P1        | Mittel  |
+| Approval → Signature E2E Test   | P1        | Mittel  |
+| Signature → Obligation E2E Test | P1        | Mittel  |
+| Obligation → Renewal E2E Test   | P1        | Mittel  |
 
 ## 10.2 Empfehlungen
 
@@ -345,6 +358,7 @@ interface ObligationExtractionResult {
 **Status:** ✅ **CLM Flow ist technisch vollständig implementiert**
 
 Alle Komponenten für den vollständigen CLM-Flow sind vorhanden:
+
 - Intake ✅
 - Drafting ✅
 - Review ✅

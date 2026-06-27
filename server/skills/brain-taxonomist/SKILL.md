@@ -30,6 +30,7 @@ mutating: false
 ## Contract
 
 This skill guarantees:
+
 - Every new page is filed at the path determined by the ACTIVE schema pack — never against a hardcoded directory table baked into this skill.
 - The decision is reproducible: invoking brain-taxonomist twice on the same content produces the same recommended path.
 - Ambiguous cases surface to the user via `skills/ask-user/` rather than silently picking a default.
@@ -40,6 +41,7 @@ This skill guarantees:
 
 `brain-taxonomist` has NO hardcoded directory table. Every decision is
 driven by `gbrain schema show --json`. This means:
+
 - A user who runs `gbrain schema use gbrain-recommended` gets the full
   recommended directory set (deal, meeting, concept, project, source,
   daily, personal, civic, original, place, trip, conversation, writing,
@@ -60,6 +62,7 @@ Run the taxonomist check before writing to the brain in these cases:
 3. **Uncertain filing** — when the primary subject is ambiguous
 
 You do NOT need to consult for:
+
 - Updating an existing page in place (same path)
 - Appending to a Timeline section
 - Meeting entity propagation to existing pages
@@ -69,6 +72,7 @@ You do NOT need to consult for:
 ### Step 1: Identify primary subject type
 
 Walk these questions in order:
+
 1. Is the primary subject a NAMED PERSON? → person-typed directory
 2. Is the primary subject a NAMED ORGANIZATION? → company-typed directory
 3. Is it about a TIME-BOUNDED EVENT (meeting, deal, trip)? → temporal-typed directory
@@ -140,6 +144,7 @@ Advisory: a single recommendation block plus a one-line reasoning trail.
 ```markdown
 **File at:** `<directory>/<slug>.md`
 **Reasoning:**
+
 - Primary subject: <person|company|concept|...>
 - Matched page_type: <name> (primitive: <entity|temporal|concept|media|annotation>)
 - Active pack: <pack-name> v<version>
@@ -186,6 +191,7 @@ When the active pack has NO matching type, signal to EIIRP Phase 3
 ## Changelog
 
 ### v1.0.0 — gbrain v0.39.0.0
+
 - Initial port from upstream OpenClaw. Genericized — no references to
   private fork names per CLAUDE.md privacy rules.
 - Hardcoded directory table REMOVED. Every decision now reads the active

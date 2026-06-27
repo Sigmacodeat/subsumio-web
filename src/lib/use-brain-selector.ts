@@ -34,12 +34,22 @@ export function useBrainSelector() {
             setActiveBrain(list[0]);
           }
         } else {
-          const fallback: BrainInfo = { name: "Standard", slug: "default", source: "default", engine: "pglite" };
+          const fallback: BrainInfo = {
+            name: "Standard",
+            slug: "default",
+            source: "default",
+            engine: "pglite",
+          };
           setBrains([fallback]);
           setActiveBrain(fallback);
         }
       } catch {
-        const fallback: BrainInfo = { name: "Standard", slug: "default", source: "default", engine: "pglite" };
+        const fallback: BrainInfo = {
+          name: "Standard",
+          slug: "default",
+          source: "default",
+          engine: "pglite",
+        };
         setBrains([fallback]);
         setActiveBrain(fallback);
       } finally {
@@ -49,11 +59,14 @@ export function useBrainSelector() {
     load();
   }, []);
 
-  const selectBrain = useCallback((brain: BrainInfo) => {
-    setActiveBrain(brain);
-    localStorage.setItem(ACTIVE_BRAIN_KEY, brain.slug);
-    router.refresh();
-  }, [router]);
+  const selectBrain = useCallback(
+    (brain: BrainInfo) => {
+      setActiveBrain(brain);
+      localStorage.setItem(ACTIVE_BRAIN_KEY, brain.slug);
+      router.refresh();
+    },
+    [router]
+  );
 
   return { brains, activeBrain, selectBrain, loading };
 }

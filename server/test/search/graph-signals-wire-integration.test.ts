@@ -18,31 +18,51 @@
  * the wire — the same `runPostFusionStages` runs on keyword-only paths).
  */
 
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
-import { PGLiteEngine } from '../../src/core/pglite-engine.ts';
-import { hybridSearch } from '../../src/core/search/hybrid.ts';
-import { importFromContent } from '../../src/core/import-file.ts';
+import { describe, test, expect, beforeAll, afterAll } from "bun:test";
+import { PGLiteEngine } from "../../src/core/pglite-engine.ts";
+import { hybridSearch } from "../../src/core/search/hybrid.ts";
+import { importFromContent } from "../../src/core/import-file.ts";
 
 let engine: PGLiteEngine;
 
 beforeAll(async () => {
   engine = new PGLiteEngine();
-  await engine.connect({ engine: 'pglite' } as never);
+  await engine.connect({ engine: "pglite" } as never);
   await engine.initSchema();
 
   // Seed a small subgraph where adjacency boost MUST fire:
   //   alice, bob, charlie all link to acme.
   //   In the top-K of a search for "acme", acme is the in-set hub.
   // importFromContent populates content_chunks so keyword search works.
-  await importFromContent(engine, 'people/alice', 'alice mentions acme acme acme in their notes about acme', { noEmbed: true });
-  await importFromContent(engine, 'people/bob', 'bob is friends with acme and writes about acme acme', { noEmbed: true });
-  await importFromContent(engine, 'people/charlie', 'charlie collaborates with acme and references acme acme', { noEmbed: true });
-  await importFromContent(engine, 'companies/acme', 'acme is a household-brand SaaS that everyone references — acme acme acme', { noEmbed: true });
+  await importFromContent(
+    engine,
+    "people/alice",
+    "alice mentions acme acme acme in their notes about acme",
+    { noEmbed: true }
+  );
+  await importFromContent(
+    engine,
+    "people/bob",
+    "bob is friends with acme and writes about acme acme",
+    { noEmbed: true }
+  );
+  await importFromContent(
+    engine,
+    "people/charlie",
+    "charlie collaborates with acme and references acme acme",
+    { noEmbed: true }
+  );
+  await importFromContent(
+    engine,
+    "companies/acme",
+    "acme is a household-brand SaaS that everyone references — acme acme acme",
+    { noEmbed: true }
+  );
 
   await engine.addLinksBatch([
-    { from_slug: 'people/alice', to_slug: 'companies/acme', link_type: 'works_at' },
-    { from_slug: 'people/bob', to_slug: 'companies/acme', link_type: 'works_at' },
-    { from_slug: 'people/charlie', to_slug: 'companies/acme', link_type: 'works_at' },
+    { from_slug: "people/alice", to_slug: "companies/acme", link_type: "works_at" },
+    { from_slug: "people/bob", to_slug: "companies/acme", link_type: "works_at" },
+    { from_slug: "people/charlie", to_slug: "companies/acme", link_type: "works_at" },
   ]);
 });
 
@@ -50,10 +70,10 @@ afterAll(async () => {
   if (engine) await engine.disconnect();
 });
 
-describe('v0.40.4 — graph_signals wire integration (regression for missing postFusionOpts thread)', () => {
-  test('balanced mode (graph_signals=true) → adjacency boost stamps fields on top-K result', async () => {
+describe("v0.40.4 — graph_signals wire integration (regression for missing postFusionOpts thread)", () => {
+  test("balanced mode (graph_signals=true) → adjacency boost stamps fields on top-K result", async () => {
     // mode defaults to balanced; graph_signals=true in that bundle.
-    const results = await hybridSearch(engine, 'acme', {
+    const results = await hybridSearch(engine, "acme", {
       limit: 10,
     });
     expect(results.length).toBeGreaterThan(0);
@@ -62,7 +82,7 @@ describe('v0.40.4 — graph_signals wire integration (regression for missing pos
     // >=2 other top-K results. With our seed, alice/bob/charlie all link
     // to acme and all should rank for "acme". The boost stamps
     // graph_adjacency_hits on the acme result.
-    const acme = results.find(r => r.slug === 'companies/acme');
+    const acme = results.find((r) => r.slug === "companies/acme");
     expect(acme).toBeDefined();
 
     // Either adjacency fired (acme is the hub) OR the wire works enough
@@ -71,14 +91,14 @@ describe('v0.40.4 — graph_signals wire integration (regression for missing pos
     // actually ran AT ALL — it's stamped on every result at function
     // entry, before any boost.
     expect(acme!.base_score).toBeDefined();
-    expect(typeof acme!.base_score).toBe('number');
+    expect(typeof acme!.base_score).toBe("number");
   });
 
-  test('explicit search.graph_signals=false config override → no graph stamps', async () => {
-    await engine.setConfig('search.graph_signals', 'false');
+  test("explicit search.graph_signals=false config override → no graph stamps", async () => {
+    await engine.setConfig("search.graph_signals", "false");
     try {
-      const results = await hybridSearch(engine, 'acme', { limit: 10 });
-      const acme = results.find(r => r.slug === 'companies/acme');
+      const results = await hybridSearch(engine, "acme", { limit: 10 });
+      const acme = results.find((r) => r.slug === "companies/acme");
       expect(acme).toBeDefined();
       // Even with graph_signals=false, base_score is still stamped
       // (runPostFusionStages runs unconditionally; only the 4th stage is gated).
@@ -93,15 +113,17 @@ describe('v0.40.4 — graph_signals wire integration (regression for missing pos
   });
 });
 
-describe('v0.40.4 — source-grep regression guard', () => {
-  test('hybrid.ts postFusionOpts literal threads graphSignalsEnabled from resolvedMode', async () => {
+describe("v0.40.4 — source-grep regression guard", () => {
+  test("hybrid.ts postFusionOpts literal threads graphSignalsEnabled from resolvedMode", async () => {
     // Codex outside-voice review caught the missing wire by reading the
     // literal at hybrid.ts:566. This grep pins the fix so a future
     // refactor can't silently disconnect the thread again. If hybrid.ts
     // changes shape, update the regex to match the new wiring — but the
     // semantic ("graph_signals from resolvedMode reaches PostFusionOpts")
     // must remain true.
-    const source = await Bun.file(new URL('../../src/core/search/hybrid.ts', import.meta.url)).text();
+    const source = await Bun.file(
+      new URL("../../src/core/search/hybrid.ts", import.meta.url)
+    ).text();
     expect(source).toMatch(/graphSignalsEnabled:\s*resolvedMode\.graph_signals/);
   });
 });

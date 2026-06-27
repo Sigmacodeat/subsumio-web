@@ -50,6 +50,7 @@ Every output row carries two scores:
   collapses to STRICT.
 
 Both matter:
+
 - STRICT measures "does the LLM return the exact slug?"
 - LENIENT measures "does the LLM land in the right area, even if it picks a
   more-specific sub-skill?" This reflects production agent behavior — landing
@@ -66,8 +67,9 @@ Both matter:
 ### Receipt format
 
 Each run writes one JSONL with:
+
 - Header row: `{kind:'receipt', model, prompt_template_hash, fixtures_hash,
-  fixtures_held_out_hash, harness_sha, ts, cmd_args}` — binds the run to a
+fixtures_held_out_hash, harness_sha, ts, cmd_args}` — binds the run to a
   specific harness version and inputs so re-runs are auditable.
 - One row per (fixture × variant × seed): full row schema in `harness-runner.ts`.
 
@@ -78,19 +80,19 @@ re-baseline.
 
 Training corpus (n=20, 3 seeds, LENIENT scoring):
 
-| Variant | Opus 4.7 | Sonnet 4.6 | Haiku 4.5 | Size |
-|---|---|---|---|---|
-| baseline | 81.7% ± 7.2% | 86.7% ± 7.2% | 73.3% ± 7.2% | 25KB |
-| **functional-areas** | **98.3% ± 7.2%** | **100% ± 0%** | **88.3% ± 7.2%** | **13KB** |
-| resolver-of-resolvers | 63.3% ± 14.3% | 41.7% ± 7.2% | 65.0% ± 12.4% | 10KB |
+| Variant               | Opus 4.7         | Sonnet 4.6    | Haiku 4.5        | Size     |
+| --------------------- | ---------------- | ------------- | ---------------- | -------- |
+| baseline              | 81.7% ± 7.2%     | 86.7% ± 7.2%  | 73.3% ± 7.2%     | 25KB     |
+| **functional-areas**  | **98.3% ± 7.2%** | **100% ± 0%** | **88.3% ± 7.2%** | **13KB** |
+| resolver-of-resolvers | 63.3% ± 14.3%    | 41.7% ± 7.2%  | 65.0% ± 12.4%    | 10KB     |
 
 Held-out corpus (n=5, 3 seeds, LENIENT scoring):
 
-| Variant | Opus 4.7 | Sonnet 4.6 | Haiku 4.5 |
-|---|---|---|---|
-| baseline | 100% ± 0% | 100% ± 0% | 100% ± 0% |
-| **functional-areas** | **100% ± 0%** | **100% ± 0%** | **100% ± 0%** |
-| resolver-of-resolvers | 100% ± 0% | **73.3% ± 28.7%** | 100% ± 0% |
+| Variant               | Opus 4.7      | Sonnet 4.6        | Haiku 4.5     |
+| --------------------- | ------------- | ----------------- | ------------- |
+| baseline              | 100% ± 0%     | 100% ± 0%         | 100% ± 0%     |
+| **functional-areas**  | **100% ± 0%** | **100% ± 0%**     | **100% ± 0%** |
+| resolver-of-resolvers | 100% ± 0%     | **73.3% ± 28.7%** | 100% ± 0%     |
 
 Strict numbers and the per-fixture failure traces are in the receipts.
 
@@ -128,7 +130,7 @@ The harness uses a dispatcher-aware prompt (see
 `harness-runner.ts:PROMPT_TEMPLATE`) that explicitly tells the LLM:
 
 > Some entries are functional-area dispatchers shaped like:
->   "**Area name**: triggers... → `dispatcher-skill` (dispatcher for: subskill-a, subskill-b, ...)"
+> "**Area name**: triggers... → `dispatcher-skill` (dispatcher for: subskill-a, subskill-b, ...)"
 > When the user's intent matches an area, RETURN THE MOST-SPECIFIC SUB-SKILL
 > from that area's "dispatcher for" list, not the dispatcher itself.
 

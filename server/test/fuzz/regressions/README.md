@@ -9,11 +9,11 @@ locked in place even if the fuzz target list changes.
 
 ```ts
 // test/fuzz/regressions/validatePageSlug-<short-hash>.test.ts
-import { test, expect } from 'bun:test';
-import { validatePageSlug } from '../../../src/core/operations.ts';
+import { test, expect } from "bun:test";
+import { validatePageSlug } from "../../../src/core/operations.ts";
 
-test('regression: validatePageSlug rejected this in <date>', () => {
-  expect(() => validatePageSlug('<the failing input>')).toThrow(/expected error/);
+test("regression: validatePageSlug rejected this in <date>", () => {
+  expect(() => validatePageSlug("<the failing input>")).toThrow(/expected error/);
 });
 ```
 

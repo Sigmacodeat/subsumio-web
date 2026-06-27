@@ -15,15 +15,15 @@
  * top-level module mocks (R2 — `mock.module` calls leak across files in
  * the shard process); no process.env mutations.
  */
-import { describe, test, expect, beforeAll, afterAll, beforeEach } from 'bun:test';
-import { PGLiteEngine } from '../src/core/pglite-engine.ts';
-import { resetPgliteState } from './helpers/reset-pglite.ts';
+import { describe, test, expect, beforeAll, afterAll, beforeEach } from "bun:test";
+import { PGLiteEngine } from "../src/core/pglite-engine.ts";
+import { resetPgliteState } from "./helpers/reset-pglite.ts";
 import {
   tryAcquireDbLock,
   inspectLock,
   deleteLockRow,
   deleteLockRowIfStale,
-} from '../src/core/db-lock.ts';
+} from "../src/core/db-lock.ts";
 
 let engine: PGLiteEngine;
 
@@ -41,7 +41,7 @@ beforeEach(async () => {
   await resetPgliteState(engine);
   // Also clear gbrain_cycle_locks since resetPgliteState focuses on user data
   // and the lock table is per-test state we want fresh.
-  await engine.executeRaw('DELETE FROM gbrain_cycle_locks', []);
+  await engine.executeRaw("DELETE FROM gbrain_cycle_locks", []);
 });
 
 // Helper: read raw row for assertions against the new column shape.
@@ -55,16 +55,16 @@ async function readLockRow(lockId: string) {
   }>(
     `SELECT id, holder_pid, acquired_at, ttl_expires_at, last_refreshed_at
        FROM gbrain_cycle_locks WHERE id = $1`,
-    [lockId],
+    [lockId]
   );
   return rows[0] ?? null;
 }
 
-describe('tryAcquireDbLock writes last_refreshed_at (v0.41.13.0 T5)', () => {
-  test('fresh INSERT sets last_refreshed_at to a non-null timestamp', async () => {
-    const handle = await tryAcquireDbLock(engine, 'test:fresh-acquire', 30);
+describe("tryAcquireDbLock writes last_refreshed_at (v0.41.13.0 T5)", () => {
+  test("fresh INSERT sets last_refreshed_at to a non-null timestamp", async () => {
+    const handle = await tryAcquireDbLock(engine, "test:fresh-acquire", 30);
     expect(handle).not.toBeNull();
-    const row = await readLockRow('test:fresh-acquire');
+    const row = await readLockRow("test:fresh-acquire");
     expect(row).not.toBeNull();
     expect(row!.last_refreshed_at).not.toBeNull();
     // The acquired_at and last_refreshed_at are set in the same INSERT
@@ -75,23 +75,23 @@ describe('tryAcquireDbLock writes last_refreshed_at (v0.41.13.0 T5)', () => {
     await handle!.release();
   });
 
-  test('takeover (TTL-expired) refreshes last_refreshed_at too', async () => {
+  test("takeover (TTL-expired) refreshes last_refreshed_at too", async () => {
     // Insert a stale lock row directly with TTL already expired AND an OLD
     // last_refreshed_at so we can verify the takeover bumps it.
     const oldTs = new Date(Date.now() - 60 * 60 * 1000).toISOString(); // 1h ago
     await engine.executeRaw(
       `INSERT INTO gbrain_cycle_locks (id, holder_pid, holder_host, acquired_at, ttl_expires_at, last_refreshed_at)
        VALUES ($1, $2, $3, $4, $5, $4)`,
-      ['test:takeover', 99999, 'fake-host', oldTs, oldTs],
+      ["test:takeover", 99999, "fake-host", oldTs, oldTs]
     );
-    const before = await readLockRow('test:takeover');
+    const before = await readLockRow("test:takeover");
     // PGLite returns timestamps as Date objects; normalize via .toISOString().
     expect(new Date(before!.last_refreshed_at!).toISOString()).toBe(oldTs);
 
-    const handle = await tryAcquireDbLock(engine, 'test:takeover', 30);
+    const handle = await tryAcquireDbLock(engine, "test:takeover", 30);
     expect(handle).not.toBeNull();
 
-    const after = await readLockRow('test:takeover');
+    const after = await readLockRow("test:takeover");
     expect(new Date(after!.last_refreshed_at!).toISOString()).not.toBe(oldTs);
     // After takeover, last_refreshed_at should be recent.
     const refMs = new Date(after!.last_refreshed_at!).getTime();
@@ -99,31 +99,31 @@ describe('tryAcquireDbLock writes last_refreshed_at (v0.41.13.0 T5)', () => {
     await handle!.release();
   });
 
-  test('refresh() bumps both ttl_expires_at AND last_refreshed_at', async () => {
-    const handle = await tryAcquireDbLock(engine, 'test:refresh', 30);
+  test("refresh() bumps both ttl_expires_at AND last_refreshed_at", async () => {
+    const handle = await tryAcquireDbLock(engine, "test:refresh", 30);
     expect(handle).not.toBeNull();
-    const before = await readLockRow('test:refresh');
+    const before = await readLockRow("test:refresh");
 
     // Sleep just a hair so the timestamp changes are observable.
-    await new Promise(r => setTimeout(r, 50));
+    await new Promise((r) => setTimeout(r, 50));
     await handle!.refresh();
 
-    const after = await readLockRow('test:refresh');
+    const after = await readLockRow("test:refresh");
     expect(new Date(after!.ttl_expires_at).getTime()).toBeGreaterThan(
-      new Date(before!.ttl_expires_at).getTime(),
+      new Date(before!.ttl_expires_at).getTime()
     );
     expect(new Date(after!.last_refreshed_at!).getTime()).toBeGreaterThan(
-      new Date(before!.last_refreshed_at!).getTime(),
+      new Date(before!.last_refreshed_at!).getTime()
     );
     await handle!.release();
   });
 });
 
-describe('inspectLock surfaces last_refreshed_at (v0.41.13.0 T5)', () => {
-  test('returns last_refreshed_at + ms_since_last_refresh on a live lock', async () => {
-    const handle = await tryAcquireDbLock(engine, 'test:inspect', 30);
+describe("inspectLock surfaces last_refreshed_at (v0.41.13.0 T5)", () => {
+  test("returns last_refreshed_at + ms_since_last_refresh on a live lock", async () => {
+    const handle = await tryAcquireDbLock(engine, "test:inspect", 30);
     expect(handle).not.toBeNull();
-    const snap = await inspectLock(engine, 'test:inspect');
+    const snap = await inspectLock(engine, "test:inspect");
     expect(snap).not.toBeNull();
     expect(snap!.last_refreshed_at).toBeInstanceOf(Date);
     expect(snap!.ms_since_last_refresh).not.toBeNull();
@@ -132,117 +132,122 @@ describe('inspectLock surfaces last_refreshed_at (v0.41.13.0 T5)', () => {
     await handle!.release();
   });
 
-  test('returns null for last_refreshed_at when the row has NULL (pre-v98 fallback)', async () => {
+  test("returns null for last_refreshed_at when the row has NULL (pre-v98 fallback)", async () => {
     await engine.executeRaw(
       `INSERT INTO gbrain_cycle_locks (id, holder_pid, holder_host, acquired_at, ttl_expires_at, last_refreshed_at)
        VALUES ('test:null-ref', 12345, 'h', NOW(), NOW() + INTERVAL '30 minutes', NULL)`,
-      [],
+      []
     );
-    const snap = await inspectLock(engine, 'test:null-ref');
+    const snap = await inspectLock(engine, "test:null-ref");
     expect(snap).not.toBeNull();
     expect(snap!.last_refreshed_at).toBeNull();
     expect(snap!.ms_since_last_refresh).toBeNull();
   });
 
-  test('returns null for absent lock', async () => {
-    const snap = await inspectLock(engine, 'test:does-not-exist');
+  test("returns null for absent lock", async () => {
+    const snap = await inspectLock(engine, "test:does-not-exist");
     expect(snap).toBeNull();
   });
 });
 
-describe('deleteLockRowIfStale (v0.41.13.0 T4 + D-V4-mech-4/5)', () => {
-  test('refuses to break a fresh lock (no rows deleted)', async () => {
-    const handle = await tryAcquireDbLock(engine, 'test:fresh', 30);
+describe("deleteLockRowIfStale (v0.41.13.0 T4 + D-V4-mech-4/5)", () => {
+  test("refuses to break a fresh lock (no rows deleted)", async () => {
+    const handle = await tryAcquireDbLock(engine, "test:fresh", 30);
     expect(handle).not.toBeNull();
-    const snap = await inspectLock(engine, 'test:fresh');
+    const snap = await inspectLock(engine, "test:fresh");
 
     // max-age 1800s (30 min); lock is fresh → refuse.
-    const result = await deleteLockRowIfStale(engine, 'test:fresh', snap!.holder_pid, 1800);
+    const result = await deleteLockRowIfStale(engine, "test:fresh", snap!.holder_pid, 1800);
     expect(result.deleted).toBe(false);
     expect(result.lastRefreshedAt).toBeNull();
 
     // Row still present after the no-op delete.
-    const after = await readLockRow('test:fresh');
+    const after = await readLockRow("test:fresh");
     expect(after).not.toBeNull();
     await handle!.release();
   });
 
-  test('breaks a stale lock (last_refreshed_at older than max-age)', async () => {
+  test("breaks a stale lock (last_refreshed_at older than max-age)", async () => {
     // Insert a row with last_refreshed_at 1 hour ago.
     const oldTs = new Date(Date.now() - 60 * 60 * 1000).toISOString();
     await engine.executeRaw(
       `INSERT INTO gbrain_cycle_locks (id, holder_pid, holder_host, acquired_at, ttl_expires_at, last_refreshed_at)
        VALUES ('test:stale', 54321, 'h', NOW(), NOW() + INTERVAL '30 minutes', $1)`,
-      [oldTs],
+      [oldTs]
     );
     // max-age 1800s (30 min); lock has not refreshed in 1h → break.
-    const result = await deleteLockRowIfStale(engine, 'test:stale', 54321, 1800);
+    const result = await deleteLockRowIfStale(engine, "test:stale", 54321, 1800);
     expect(result.deleted).toBe(true);
     expect(result.lastRefreshedAt).toBeInstanceOf(Date);
-    expect(Math.abs(result.lastRefreshedAt!.getTime() - new Date(oldTs).getTime()))
-      .toBeLessThan(1000);
+    expect(Math.abs(result.lastRefreshedAt!.getTime() - new Date(oldTs).getTime())).toBeLessThan(
+      1000
+    );
     // Row gone.
-    expect(await readLockRow('test:stale')).toBeNull();
+    expect(await readLockRow("test:stale")).toBeNull();
   });
 
-  test('refuses on holder_pid mismatch (PID-safe)', async () => {
+  test("refuses on holder_pid mismatch (PID-safe)", async () => {
     const oldTs = new Date(Date.now() - 60 * 60 * 1000).toISOString();
     await engine.executeRaw(
       `INSERT INTO gbrain_cycle_locks (id, holder_pid, holder_host, acquired_at, ttl_expires_at, last_refreshed_at)
        VALUES ('test:wrong-pid', 11111, 'h', NOW(), NOW() + INTERVAL '30 minutes', $1)`,
-      [oldTs],
+      [oldTs]
     );
     // Even though the lock IS stale, mismatched pid → refuse.
-    const result = await deleteLockRowIfStale(engine, 'test:wrong-pid', 22222, 1800);
+    const result = await deleteLockRowIfStale(engine, "test:wrong-pid", 22222, 1800);
     expect(result.deleted).toBe(false);
     // Row still present.
-    expect(await readLockRow('test:wrong-pid')).not.toBeNull();
+    expect(await readLockRow("test:wrong-pid")).not.toBeNull();
   });
 
-  test('refuses when last_refreshed_at IS NULL (pre-v98 row)', async () => {
+  test("refuses when last_refreshed_at IS NULL (pre-v98 row)", async () => {
     // A row with NULL last_refreshed_at is conservatively kept alive — the
     // operator should run apply-migrations or use --force-break-lock.
     await engine.executeRaw(
       `INSERT INTO gbrain_cycle_locks (id, holder_pid, holder_host, acquired_at, ttl_expires_at, last_refreshed_at)
        VALUES ('test:null-ref-stale', 33333, 'h', NOW() - INTERVAL '2 hours', NOW() + INTERVAL '30 minutes', NULL)`,
-      [],
+      []
     );
-    const result = await deleteLockRowIfStale(engine, 'test:null-ref-stale', 33333, 1800);
+    const result = await deleteLockRowIfStale(engine, "test:null-ref-stale", 33333, 1800);
     expect(result.deleted).toBe(false);
-    expect(await readLockRow('test:null-ref-stale')).not.toBeNull();
+    expect(await readLockRow("test:null-ref-stale")).not.toBeNull();
   });
 
-  test('refuses on absent row', async () => {
-    const result = await deleteLockRowIfStale(engine, 'test:nonexistent', 12345, 1800);
+  test("refuses on absent row", async () => {
+    const result = await deleteLockRowIfStale(engine, "test:nonexistent", 12345, 1800);
     expect(result.deleted).toBe(false);
     expect(result.lastRefreshedAt).toBeNull();
   });
 });
 
-describe('R1 regression: existing deleteLockRow byte-stable', () => {
-  test('safe deleteLockRow still works with the new column present', async () => {
-    const handle = await tryAcquireDbLock(engine, 'test:r1', 30);
+describe("R1 regression: existing deleteLockRow byte-stable", () => {
+  test("safe deleteLockRow still works with the new column present", async () => {
+    const handle = await tryAcquireDbLock(engine, "test:r1", 30);
     expect(handle).not.toBeNull();
-    const snap = await inspectLock(engine, 'test:r1');
+    const snap = await inspectLock(engine, "test:r1");
     // Pre-v98 deleteLockRow shape (no maxAge, just id + pid).
-    const result = await deleteLockRow(engine, 'test:r1', snap!.holder_pid);
+    const result = await deleteLockRow(engine, "test:r1", snap!.holder_pid);
     expect(result.deleted).toBe(true);
-    expect(await readLockRow('test:r1')).toBeNull();
+    expect(await readLockRow("test:r1")).toBeNull();
   });
 });
 
-describe('R6 regression: schema bootstrap includes last_refreshed_at column', () => {
-  test('CREATE TABLE shape (from pglite-schema.ts snapshot) has the column', async () => {
+describe("R6 regression: schema bootstrap includes last_refreshed_at column", () => {
+  test("CREATE TABLE shape (from pglite-schema.ts snapshot) has the column", async () => {
     // information_schema.columns is the canonical introspection. If the
     // column is missing, the SELECT returns 0 rows.
-    const rows = await engine.executeRaw<{ column_name: string; data_type: string; is_nullable: string }>(
+    const rows = await engine.executeRaw<{
+      column_name: string;
+      data_type: string;
+      is_nullable: string;
+    }>(
       `SELECT column_name, data_type, is_nullable
          FROM information_schema.columns
         WHERE table_name = 'gbrain_cycle_locks' AND column_name = 'last_refreshed_at'`,
-      [],
+      []
     );
     expect(rows).toHaveLength(1);
     expect(rows[0].data_type).toMatch(/timestamp/i);
-    expect(rows[0].is_nullable).toBe('YES');
+    expect(rows[0].is_nullable).toBe("YES");
   });
 });

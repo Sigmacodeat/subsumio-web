@@ -13,26 +13,23 @@
  * Dry-run mode returns proposed edits without writing to disk.
  */
 
-import { readFileSync, writeFileSync, existsSync } from 'fs';
-import { join } from 'path';
+import { readFileSync, writeFileSync, existsSync } from "fs";
+import { join } from "path";
 import {
   CROSS_CUTTING_PATTERNS,
   DRY_PROXIMITY_LINES,
   extractDelegationTargets,
   type CrossCuttingPattern,
-} from './check-resolvable.ts';
-import { loadOrDeriveManifest } from './skill-manifest.ts';
+} from "./check-resolvable.ts";
+import { loadOrDeriveManifest } from "./skill-manifest.ts";
 import {
   getWorkingTreeStatus as _getWorkingTreeStatus,
   isInsideCodeFence as _isInsideCodeFence,
   isWorkingTreeDirty as _isWorkingTreeDirty,
   type WorkingTreeStatus as _WorkingTreeStatus,
-} from './skill-fix-gates.ts';
-import { parseSkillFrontmatter } from './skill-frontmatter.ts';
-import {
-  analyzeSkillBrainFirst,
-  CONVENTION_CALLOUT_RE,
-} from './skill-brain-first.ts';
+} from "./skill-fix-gates.ts";
+import { parseSkillFrontmatter } from "./skill-frontmatter.ts";
+import { analyzeSkillBrainFirst, CONVENTION_CALLOUT_RE } from "./skill-brain-first.ts";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -42,32 +39,32 @@ export interface AutoFixOptions {
   dryRun?: boolean;
 }
 
-export type FixStatus = 'applied' | 'proposed' | 'skipped' | 'error';
+export type FixStatus = "applied" | "proposed" | "skipped" | "error";
 
 export type SkipReason =
-  | 'working_tree_dirty'
-  | 'no_git_backup'
-  | 'inside_code_fence'
-  | 'already_delegated'
-  | 'ambiguous_multiple_matches'
-  | 'block_is_callout'
-  | 'file_missing'
-  | 'read_error'
-  | 'write_error';
+  | "working_tree_dirty"
+  | "no_git_backup"
+  | "inside_code_fence"
+  | "already_delegated"
+  | "ambiguous_multiple_matches"
+  | "block_is_callout"
+  | "file_missing"
+  | "read_error"
+  | "write_error";
 
 export interface FixOutcome {
   skill: string;
-  skillPath: string;   // absolute
+  skillPath: string; // absolute
   patternLabel: string;
   status: FixStatus;
   reason?: SkipReason | string;
-  before?: string;     // snippet (the expanded block)
-  after?: string;      // replacement line
+  before?: string; // snippet (the expanded block)
+  after?: string; // replacement line
 }
 
 export interface AutoFixReport {
-  fixed: FixOutcome[];     // applied writes (or proposals in dryRun)
-  skipped: FixOutcome[];   // skips and errors
+  fixed: FixOutcome[]; // applied writes (or proposals in dryRun)
+  skipped: FixOutcome[]; // skips and errors
 }
 
 // ---------------------------------------------------------------------------
@@ -114,13 +111,14 @@ export interface MissingRulePattern {
  */
 export const MISSING_RULE_PATTERNS: MissingRulePattern[] = [
   {
-    label: 'brain-first compliance',
+    label: "brain-first compliance",
     detect: (content, skillName) => {
       const fm = parseSkillFrontmatter(content);
-      return analyzeSkillBrainFirst(content, skillName, fm).status === 'warn';
+      return analyzeSkillBrainFirst(content, skillName, fm).status === "warn";
     },
     idempotentCheck: (content) => CONVENTION_CALLOUT_RE.test(content),
-    callout: '> **Convention:** see [conventions/brain-first.md](../conventions/brain-first.md) for the lookup chain (search → query → get_page → external).',
+    callout:
+      "> **Convention:** see [conventions/brain-first.md](../conventions/brain-first.md) for the lookup chain (search → query → get_page → external).",
   },
 ];
 
@@ -128,25 +126,25 @@ export const MISSING_RULE_PATTERNS: MissingRulePattern[] = [
 // Block-expansion strategy map
 // ---------------------------------------------------------------------------
 
-export type BlockShape = 'bullet' | 'blockquote' | 'paragraph';
+export type BlockShape = "bullet" | "blockquote" | "paragraph";
 
 export interface Block {
-  startLine: number;   // 0-indexed inclusive
-  endLine: number;     // 0-indexed inclusive
+  startLine: number; // 0-indexed inclusive
+  endLine: number; // 0-indexed inclusive
 }
 
 /** Detect which block shape the line at `lineIdx` belongs to. */
 export function detectBlockShape(lines: string[], lineIdx: number): BlockShape {
-  const line = lines[lineIdx] ?? '';
-  if (/^(\s*)(?:[-*]\s|\d+\.\s)/.test(line)) return 'bullet';
-  if (/^>\s/.test(line)) return 'blockquote';
-  return 'paragraph';
+  const line = lines[lineIdx] ?? "";
+  if (/^(\s*)(?:[-*]\s|\d+\.\s)/.test(line)) return "bullet";
+  if (/^>\s/.test(line)) return "blockquote";
+  return "paragraph";
 }
 
 /** Expand a bullet item: start at the bullet line, end at the next sibling
  *  or shallower bullet (sub-bullets included). */
 export function expandBullet(lines: string[], lineIdx: number): Block | null {
-  const line = lines[lineIdx] ?? '';
+  const line = lines[lineIdx] ?? "";
   const indentMatch = line.match(/^(\s*)(?:[-*]\s|\d+\.\s)/);
   if (!indentMatch) return null;
   const baseIndent = indentMatch[1].length;
@@ -159,7 +157,7 @@ export function expandBullet(lines: string[], lineIdx: number): Block | null {
     const prevIsBullet = /^(\s*)(?:[-*]\s|\d+\.\s)/.test(prev);
     const prevIndent = prev.match(/^(\s*)/)?.[1].length ?? 0;
     if (prevIsBullet && prevIndent <= baseIndent) break;
-    if (prev.trim() === '') break;
+    if (prev.trim() === "") break;
     start--;
   }
 
@@ -168,7 +166,7 @@ export function expandBullet(lines: string[], lineIdx: number): Block | null {
   let end = lineIdx;
   for (let i = lineIdx + 1; i < lines.length; i++) {
     const l = lines[i];
-    if (l.trim() === '') break;
+    if (l.trim() === "") break;
     const isBullet = /^(\s*)(?:[-*]\s|\d+\.\s)/.test(l);
     const indent = l.match(/^(\s*)/)?.[1].length ?? 0;
     if (isBullet && indent <= baseIndent) break;
@@ -181,13 +179,13 @@ export function expandBullet(lines: string[], lineIdx: number): Block | null {
  *  itself a `> **Convention:**` or `> **Filing rule:**` callout (don't
  *  rewrite a reference into a reference). */
 export function expandBlockquote(lines: string[], lineIdx: number): Block | null {
-  if (!/^>\s/.test(lines[lineIdx] ?? '')) return null;
+  if (!/^>\s/.test(lines[lineIdx] ?? "")) return null;
   let start = lineIdx;
   while (start > 0 && /^>\s/.test(lines[start - 1])) start--;
   let end = lineIdx;
   while (end + 1 < lines.length && /^>\s/.test(lines[end + 1])) end++;
 
-  const firstLine = lines[start] ?? '';
+  const firstLine = lines[start] ?? "";
   if (/\*\*(?:Convention|Filing rule):\*\*/.test(firstLine)) {
     return null; // this IS a delegation callout already
   }
@@ -197,9 +195,9 @@ export function expandBlockquote(lines: string[], lineIdx: number): Block | null
 /** Expand a paragraph: previous blank line → next blank line. */
 export function expandParagraph(lines: string[], lineIdx: number): Block | null {
   let start = lineIdx;
-  while (start > 0 && lines[start - 1].trim() !== '') start--;
+  while (start > 0 && lines[start - 1].trim() !== "") start--;
   let end = lineIdx;
-  while (end + 1 < lines.length && lines[end + 1].trim() !== '') end++;
+  while (end + 1 < lines.length && lines[end + 1].trim() !== "") end++;
   return { startLine: start, endLine: end };
 }
 
@@ -242,10 +240,7 @@ export type WorkingTreeStatus = _WorkingTreeStatus;
  * @param skillsDir — path to the `skills/` directory
  * @param opts.dryRun — if true, do not write; return proposed edits
  */
-export function autoFixDryViolations(
-  skillsDir: string,
-  opts: AutoFixOptions = {}
-): AutoFixReport {
+export function autoFixDryViolations(skillsDir: string, opts: AutoFixOptions = {}): AutoFixReport {
   const fixed: FixOutcome[] = [];
   const skipped: FixOutcome[] = [];
   const { skills: manifest } = loadOrDeriveManifest(skillsDir);
@@ -260,14 +255,14 @@ export function autoFixDryViolations(
 
     let content: string;
     try {
-      content = readFileSync(skillPath, 'utf-8');
+      content = readFileSync(skillPath, "utf-8");
     } catch (e: any) {
       skipped.push({
         skill: skill.name,
         skillPath,
-        patternLabel: '(all)',
-        status: 'error',
-        reason: 'read_error',
+        patternLabel: "(all)",
+        status: "error",
+        reason: "read_error",
       });
       continue;
     }
@@ -280,11 +275,11 @@ export function autoFixDryViolations(
     for (const cut of CROSS_CUTTING_PATTERNS) {
       const outcome = attemptFix(skill.name, skillPath, content, delegations, cut, opts);
       if (!outcome) continue;
-      if (outcome.status === 'applied' || outcome.status === 'proposed') {
+      if (outcome.status === "applied" || outcome.status === "proposed") {
         fixed.push(outcome);
-        if (outcome.status === 'applied') {
+        if (outcome.status === "applied") {
           try {
-            content = readFileSync(skillPath, 'utf-8');
+            content = readFileSync(skillPath, "utf-8");
             delegations = extractDelegationTargets(content);
           } catch {
             break;
@@ -304,11 +299,11 @@ export function autoFixDryViolations(
     for (const mrp of MISSING_RULE_PATTERNS) {
       const outcome = attemptInsertFix(skill.name, skillPath, content, mrp, opts);
       if (!outcome) continue;
-      if (outcome.status === 'applied' || outcome.status === 'proposed') {
+      if (outcome.status === "applied" || outcome.status === "proposed") {
         fixed.push(outcome);
-        if (outcome.status === 'applied') {
+        if (outcome.status === "applied") {
           try {
-            content = readFileSync(skillPath, 'utf-8');
+            content = readFileSync(skillPath, "utf-8");
           } catch {
             break;
           }
@@ -342,13 +337,13 @@ export function autoFixDryViolations(
  * Exported for unit tests.
  */
 export function findInsertionLine(content: string): number {
-  const lines = content.split('\n');
+  const lines = content.split("\n");
   let cursor = 0;
 
   // Step 1: Skip leading frontmatter fence if present.
-  if (lines[0] === '---') {
+  if (lines[0] === "---") {
     for (let i = 1; i < lines.length; i++) {
-      if (lines[i] === '---') {
+      if (lines[i] === "---") {
         cursor = i + 1;
         break;
       }
@@ -356,24 +351,24 @@ export function findInsertionLine(content: string): number {
   }
 
   // Step 2: Skip blank lines after frontmatter.
-  while (cursor < lines.length && lines[cursor].trim() === '') cursor++;
+  while (cursor < lines.length && lines[cursor].trim() === "") cursor++;
 
   // Step 3: If there's a leading H1, advance past it.
   if (cursor < lines.length && /^#\s+/.test(lines[cursor])) {
     cursor++;
     // Step 4: Skip blank lines + the leading paragraph following the H1.
-    while (cursor < lines.length && lines[cursor].trim() === '') cursor++;
+    while (cursor < lines.length && lines[cursor].trim() === "") cursor++;
     // Paragraph: contiguous non-blank, non-heading, non-fence lines.
     while (
       cursor < lines.length &&
-      lines[cursor].trim() !== '' &&
+      lines[cursor].trim() !== "" &&
       !/^##+\s+/.test(lines[cursor]) &&
       !/^---\s*$/.test(lines[cursor])
     ) {
       cursor++;
     }
     // Skip the trailing blank lines after the leading paragraph.
-    while (cursor < lines.length && lines[cursor].trim() === '') cursor++;
+    while (cursor < lines.length && lines[cursor].trim() === "") cursor++;
   }
 
   // Step 5: Cursor is now at first H2 OR end of file. Either way, insert here.
@@ -417,52 +412,52 @@ function attemptInsertFix(
   // insertion gate so a future detector that misses callout cases doesn't
   // produce double-inserts.
   if (mrp.idempotentCheck(content)) {
-    return { ...base, status: 'skipped', reason: 'already_delegated' };
+    return { ...base, status: "skipped", reason: "already_delegated" };
   }
 
   // Safety gates (shared with REPLACE path).
   const treeStatus = getWorkingTreeStatus(skillPath);
-  if (treeStatus === 'dirty') {
-    return { ...base, status: 'skipped', reason: 'working_tree_dirty' };
+  if (treeStatus === "dirty") {
+    return { ...base, status: "skipped", reason: "working_tree_dirty" };
   }
-  if (treeStatus === 'not_a_repo') {
-    return { ...base, status: 'skipped', reason: 'no_git_backup' };
+  if (treeStatus === "not_a_repo") {
+    return { ...base, status: "skipped", reason: "no_git_backup" };
   }
 
   // Compute insertion site.
   const insertAt = findInsertionLine(content);
-  const lines = content.split('\n');
+  const lines = content.split("\n");
 
   // Build the new file content: splice [callout, ''] at insertAt.
   // The blank line after the callout keeps the surrounding block
   // structure readable.
   const before = lines.slice(0, insertAt);
   const after = lines.slice(insertAt);
-  const inserted = [...before, mrp.callout, '', ...after];
-  let next = inserted.join('\n');
-  if (content.endsWith('\n') && !next.endsWith('\n')) {
-    next += '\n';
+  const inserted = [...before, mrp.callout, "", ...after];
+  let next = inserted.join("\n");
+  if (content.endsWith("\n") && !next.endsWith("\n")) {
+    next += "\n";
   }
 
   if (opts.dryRun) {
     return {
       ...base,
-      status: 'proposed',
-      before: '(no prior block — inserting new callout)',
+      status: "proposed",
+      before: "(no prior block — inserting new callout)",
       after: mrp.callout,
     };
   }
 
   try {
-    writeFileSync(skillPath, next, 'utf-8');
+    writeFileSync(skillPath, next, "utf-8");
   } catch {
-    return { ...base, status: 'error', reason: 'write_error' };
+    return { ...base, status: "error", reason: "write_error" };
   }
 
   return {
     ...base,
-    status: 'applied',
-    before: '(no prior block — inserted new callout)',
+    status: "applied",
+    before: "(no prior block — inserted new callout)",
     after: mrp.callout,
   };
 }
@@ -484,51 +479,52 @@ function attemptFix(
   // Find ALL matches first (for multi-match detection).
   const globalRe = new RegExp(
     cut.pattern.source,
-    cut.pattern.flags.includes('g') ? cut.pattern.flags : cut.pattern.flags + 'g'
+    cut.pattern.flags.includes("g") ? cut.pattern.flags : cut.pattern.flags + "g"
   );
   const matches = [...content.matchAll(globalRe)];
   if (matches.length === 0) return null;
 
   if (matches.length > 1) {
-    return { ...base, status: 'skipped', reason: 'ambiguous_multiple_matches' };
+    return { ...base, status: "skipped", reason: "ambiguous_multiple_matches" };
   }
 
   const m = matches[0];
   const offset = m.index ?? 0;
 
   if (isInsideCodeFence(content, offset)) {
-    return { ...base, status: 'skipped', reason: 'inside_code_fence' };
+    return { ...base, status: "skipped", reason: "inside_code_fence" };
   }
 
   // Compute match line (1-indexed) to evaluate idempotency.
   // Use the same proximity window as the detector (DRY_PROXIMITY_LINES)
   // so the fixer can't re-fire on blocks the detector already suppresses.
-  const matchLine = content.slice(0, offset).split('\n').length;
+  const matchLine = content.slice(0, offset).split("\n").length;
   const alreadyDelegated = delegations.some(
-    d => cut.conventions.includes(d.convention) && Math.abs(d.line - matchLine) <= DRY_PROXIMITY_LINES
+    (d) =>
+      cut.conventions.includes(d.convention) && Math.abs(d.line - matchLine) <= DRY_PROXIMITY_LINES
   );
   if (alreadyDelegated) {
-    return { ...base, status: 'skipped', reason: 'already_delegated' };
+    return { ...base, status: "skipped", reason: "already_delegated" };
   }
 
   const treeStatus = getWorkingTreeStatus(skillPath);
-  if (treeStatus === 'dirty') {
-    return { ...base, status: 'skipped', reason: 'working_tree_dirty' };
+  if (treeStatus === "dirty") {
+    return { ...base, status: "skipped", reason: "working_tree_dirty" };
   }
-  if (treeStatus === 'not_a_repo') {
+  if (treeStatus === "not_a_repo") {
     // File isn't tracked by git — writing would destroy the user's only
     // copy with no rollback path. Refuse.
-    return { ...base, status: 'skipped', reason: 'no_git_backup' };
+    return { ...base, status: "skipped", reason: "no_git_backup" };
   }
 
   // Expand to block boundary.
-  const lines = content.split('\n');
+  const lines = content.split("\n");
   const lineIdx = matchLine - 1; // 0-indexed
   const shape = detectBlockShape(lines, lineIdx);
   const expander = expanders[shape];
   const block = expander(lines, lineIdx);
   if (!block) {
-    return { ...base, status: 'skipped', reason: 'block_is_callout' };
+    return { ...base, status: "skipped", reason: "block_is_callout" };
   }
 
   // Build replacement line.
@@ -536,9 +532,9 @@ function attemptFix(
   const replacement = `> **Convention:** See \`skills/${canonical}\` for ${cut.label}.`;
 
   // Splice: replace lines[startLine..endLine] with [replacement].
-  const before = lines.slice(0, block.startLine).join('\n');
-  const originalBlock = lines.slice(block.startLine, block.endLine + 1).join('\n');
-  const after = lines.slice(block.endLine + 1).join('\n');
+  const before = lines.slice(0, block.startLine).join("\n");
+  const originalBlock = lines.slice(block.startLine, block.endLine + 1).join("\n");
+  const after = lines.slice(block.endLine + 1).join("\n");
 
   // Preserve structure: one newline between sections, preserve the file's
   // trailing newline if the original had one (POSIX convention).
@@ -546,29 +542,29 @@ function attemptFix(
   if (before.length > 0) parts.push(before);
   parts.push(replacement);
   if (after.length > 0) parts.push(after);
-  let next = parts.join('\n');
-  if (content.endsWith('\n') && !next.endsWith('\n')) {
-    next += '\n';
+  let next = parts.join("\n");
+  if (content.endsWith("\n") && !next.endsWith("\n")) {
+    next += "\n";
   }
 
   if (opts.dryRun) {
     return {
       ...base,
-      status: 'proposed',
+      status: "proposed",
       before: originalBlock,
       after: replacement,
     };
   }
 
   try {
-    writeFileSync(skillPath, next, 'utf-8');
+    writeFileSync(skillPath, next, "utf-8");
   } catch {
-    return { ...base, status: 'error', reason: 'write_error' };
+    return { ...base, status: "error", reason: "write_error" };
   }
 
   return {
     ...base,
-    status: 'applied',
+    status: "applied",
     before: originalBlock,
     after: replacement,
   };

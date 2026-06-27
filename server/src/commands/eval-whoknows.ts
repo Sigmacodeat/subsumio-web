@@ -31,11 +31,11 @@
  *   gbrain eval whoknows test/fixtures/whoknows-eval.jsonl --skip-replay
  */
 
-import { readFileSync, existsSync } from 'fs';
-import type { BrainEngine } from '../core/engine.ts';
-import { findExperts, type WhoknowsResult } from './whoknows.ts';
-import { loadConfig, isThinClient } from '../core/config.ts';
-import { callRemoteTool, unpackToolResult } from '../core/mcp-client.ts';
+import { readFileSync, existsSync } from "fs";
+import type { BrainEngine } from "../core/engine.ts";
+import { findExperts, type WhoknowsResult } from "./whoknows.ts";
+import { loadConfig, isThinClient } from "../core/config.ts";
+import { callRemoteTool, unpackToolResult } from "../core/mcp-client.ts";
 
 export const HIT_RATE_THRESHOLD = 0.8;
 export const REGRESSION_THRESHOLD = 0.4;
@@ -71,7 +71,7 @@ export interface RegressionRowResult {
 }
 
 export interface RegressionReport {
-  status: 'passed' | 'failed' | 'skipped';
+  status: "passed" | "failed" | "skipped";
   reason?: string; // populated when skipped
   total: number;
   mean_jaccard: number;
@@ -101,24 +101,24 @@ function parseArgs(args: string[]): CliOpts {
   const positional: string[] = [];
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
-    if (a === '--help' || a === '-h') {
+    if (a === "--help" || a === "-h") {
       opts.help = true;
       continue;
     }
-    if (a === '--json') {
+    if (a === "--json") {
       opts.json = true;
       continue;
     }
-    if (a === '--skip-replay') {
+    if (a === "--skip-replay") {
       opts.skipReplay = true;
       continue;
     }
-    if (a === '--limit') {
-      const n = parseInt(args[++i] ?? '', 10);
+    if (a === "--limit") {
+      const n = parseInt(args[++i] ?? "", 10);
       if (Number.isFinite(n) && n > 0) opts.limit = n;
       continue;
     }
-    if (a && !a.startsWith('--')) positional.push(a);
+    if (a && !a.startsWith("--")) positional.push(a);
   }
   if (positional[0]) opts.fixturePath = positional[0];
   return opts;
@@ -145,11 +145,11 @@ export function readFixture(path: string): FixtureRow[] {
   if (!existsSync(path)) {
     throw new Error(`fixture not found: ${path}`);
   }
-  const raw = readFileSync(path, 'utf-8');
+  const raw = readFileSync(path, "utf-8");
   const rows: FixtureRow[] = [];
-  for (const line of raw.split('\n')) {
+  for (const line of raw.split("\n")) {
     const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith('//') || trimmed.startsWith('#')) continue;
+    if (!trimmed || trimmed.startsWith("//") || trimmed.startsWith("#")) continue;
     let obj: unknown;
     try {
       obj = JSON.parse(trimmed);
@@ -158,22 +158,24 @@ export function readFixture(path: string): FixtureRow[] {
     }
     if (
       obj &&
-      typeof obj === 'object' &&
-      typeof (obj as Record<string, unknown>).query === 'string' &&
+      typeof obj === "object" &&
+      typeof (obj as Record<string, unknown>).query === "string" &&
       Array.isArray((obj as Record<string, unknown>).expected_top_3_slugs)
     ) {
       const o = obj as Record<string, unknown>;
       const expected = (o.expected_top_3_slugs as unknown[]).filter(
-        (s): s is string => typeof s === 'string',
+        (s): s is string => typeof s === "string"
       );
       const row: FixtureRow = {
         query: o.query as string,
         expected_top_3_slugs: expected,
       };
-      if (typeof o.notes === 'string') row.notes = o.notes;
+      if (typeof o.notes === "string") row.notes = o.notes;
       rows.push(row);
     } else {
-      throw new Error(`fixture row missing required fields (query, expected_top_3_slugs): ${trimmed.slice(0, 80)}`);
+      throw new Error(
+        `fixture row missing required fields (query, expected_top_3_slugs): ${trimmed.slice(0, 80)}`
+      );
     }
   }
   return rows;
@@ -212,7 +214,7 @@ export type WhoknowsFn = (topic: string, limit: number) => Promise<WhoknowsResul
 async function runQualityGate(
   whoknows: WhoknowsFn,
   fixture: FixtureRow[],
-  limit: number,
+  limit: number
 ): Promise<QualityReport> {
   const rows: QualityRowResult[] = [];
   for (const row of fixture) {
@@ -259,13 +261,13 @@ async function loadReplayRows(engine: BrainEngine): Promise<ReplayRow[]> {
            AND query IS NOT NULL
            AND query <> ''
          ORDER BY id DESC
-         LIMIT 200`,
+         LIMIT 200`
     );
     return rows.map((r) => ({
       query: String(r.query),
       retrieved_slugs: Array.isArray(r.retrieved_slugs)
         ? r.retrieved_slugs
-        : typeof r.retrieved_slugs === 'string'
+        : typeof r.retrieved_slugs === "string"
           ? safeJsonArray(r.retrieved_slugs)
           : [],
     }));
@@ -279,7 +281,7 @@ async function loadReplayRows(engine: BrainEngine): Promise<ReplayRow[]> {
 function safeJsonArray(s: string): string[] {
   try {
     const v = JSON.parse(s);
-    return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
+    return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
   } catch {
     return [];
   }
@@ -288,12 +290,12 @@ function safeJsonArray(s: string): string[] {
 async function runRegressionGate(
   engine: BrainEngine,
   whoknows: WhoknowsFn,
-  limit: number,
+  limit: number
 ): Promise<RegressionReport> {
   const captured = await loadReplayRows(engine);
   if (captured.length < MIN_REPLAY_ROWS) {
     return {
-      status: 'skipped',
+      status: "skipped",
       reason: `only ${captured.length} replay-eligible eval_candidates rows (< ${MIN_REPLAY_ROWS} threshold); GBRAIN_CONTRIBUTOR_MODE may have been off`,
       total: captured.length,
       mean_jaccard: 0,
@@ -314,7 +316,7 @@ async function runRegressionGate(
   }
   const mean_jaccard = rows.reduce((s, x) => s + x.jaccard, 0) / Math.max(1, rows.length);
   return {
-    status: mean_jaccard >= REGRESSION_THRESHOLD ? 'passed' : 'failed',
+    status: mean_jaccard >= REGRESSION_THRESHOLD ? "passed" : "failed",
     total: rows.length,
     mean_jaccard,
     threshold: REGRESSION_THRESHOLD,
@@ -324,7 +326,7 @@ async function runRegressionGate(
 
 export async function runEvalWhoknows(
   engine: BrainEngine | null,
-  args: string[],
+  args: string[]
 ): Promise<0 | 1 | 2> {
   const opts = parseArgs(args);
   if (opts.help) {
@@ -332,7 +334,7 @@ export async function runEvalWhoknows(
     return 0;
   }
   if (!opts.fixturePath) {
-    console.error('gbrain eval whoknows: fixture path required');
+    console.error("gbrain eval whoknows: fixture path required");
     console.error(HELP);
     return 2;
   }
@@ -345,7 +347,7 @@ export async function runEvalWhoknows(
     return 2;
   }
   if (fixture.length === 0) {
-    console.error('gbrain eval whoknows: fixture file is empty');
+    console.error("gbrain eval whoknows: fixture file is empty");
     return 2;
   }
 
@@ -356,16 +358,18 @@ export async function runEvalWhoknows(
   const cfg = loadConfig();
   const thinClient = isThinClient(cfg);
   if (!thinClient && !engine) {
-    console.error('gbrain eval whoknows: local engine required (not thin-client and no engine connected)');
+    console.error(
+      "gbrain eval whoknows: local engine required (not thin-client and no engine connected)"
+    );
     return 2;
   }
   const whoknows: WhoknowsFn = thinClient
     ? async (topic, limit) => {
         const raw = await callRemoteTool(
           cfg!,
-          'find_experts',
+          "find_experts",
           { topic, limit },
-          { timeoutMs: 30_000 },
+          { timeoutMs: 30_000 }
         );
         return unpackToolResult<WhoknowsResult[]>(raw);
       }
@@ -378,8 +382,8 @@ export async function runEvalWhoknows(
   let regression: RegressionReport;
   if (opts.skipReplay) {
     regression = {
-      status: 'skipped',
-      reason: '--skip-replay flag',
+      status: "skipped",
+      reason: "--skip-replay flag",
       total: 0,
       mean_jaccard: 0,
       threshold: REGRESSION_THRESHOLD,
@@ -387,8 +391,8 @@ export async function runEvalWhoknows(
     };
   } else if (thinClient || !engine) {
     regression = {
-      status: 'skipped',
-      reason: 'thin-client mode: no local DB access to eval_candidates table',
+      status: "skipped",
+      reason: "thin-client mode: no local DB access to eval_candidates table",
       total: 0,
       mean_jaccard: 0,
       threshold: REGRESSION_THRESHOLD,
@@ -398,7 +402,7 @@ export async function runEvalWhoknows(
     regression = await runRegressionGate(engine, whoknows, opts.limit);
   }
 
-  const regressionPassed = regression.status !== 'failed';
+  const regressionPassed = regression.status !== "failed";
   const overall = quality.passed && regressionPassed;
 
   const report: EvalWhoknowsReport = {
@@ -420,32 +424,36 @@ export async function runEvalWhoknows(
 
 function renderHumanReport(r: EvalWhoknowsReport): void {
   console.log(`whoknows eval @ ${r.fixture_path}`);
-  console.log('─'.repeat(60));
-  console.log('');
-  console.log('LAYER 1 — quality gate (hand-labeled fixture)');
+  console.log("─".repeat(60));
+  console.log("");
+  console.log("LAYER 1 — quality gate (hand-labeled fixture)");
   console.log(`  total: ${r.quality.total}`);
   console.log(`  hits:  ${r.quality.hits}`);
-  console.log(`  rate:  ${(r.quality.hit_rate * 100).toFixed(1)}%  (threshold ${(r.quality.threshold * 100).toFixed(0)}%)`);
-  console.log(`  ${r.quality.passed ? 'PASS' : 'FAIL'}`);
+  console.log(
+    `  rate:  ${(r.quality.hit_rate * 100).toFixed(1)}%  (threshold ${(r.quality.threshold * 100).toFixed(0)}%)`
+  );
+  console.log(`  ${r.quality.passed ? "PASS" : "FAIL"}`);
   if (!r.quality.passed) {
-    console.log('');
-    console.log('  Misses:');
+    console.log("");
+    console.log("  Misses:");
     for (const row of r.quality.rows) {
       if (row.hit) continue;
       console.log(`    "${row.query}"`);
-      console.log(`      expected: ${row.expected.join(', ')}`);
-      console.log(`      got:      ${row.actual_top_3.join(', ') || '(no results)'}`);
+      console.log(`      expected: ${row.expected.join(", ")}`);
+      console.log(`      got:      ${row.actual_top_3.join(", ") || "(no results)"}`);
     }
   }
-  console.log('');
-  console.log('LAYER 2 — regression gate (eval_candidates replay)');
-  if (r.regression.status === 'skipped') {
+  console.log("");
+  console.log("LAYER 2 — regression gate (eval_candidates replay)");
+  if (r.regression.status === "skipped") {
     console.log(`  SKIPPED — ${r.regression.reason}`);
   } else {
     console.log(`  total:  ${r.regression.total}`);
-    console.log(`  Jaccard mean: ${r.regression.mean_jaccard.toFixed(3)}  (threshold ${r.regression.threshold.toFixed(2)})`);
-    console.log(`  ${r.regression.status === 'passed' ? 'PASS' : 'FAIL'}`);
+    console.log(
+      `  Jaccard mean: ${r.regression.mean_jaccard.toFixed(3)}  (threshold ${r.regression.threshold.toFixed(2)})`
+    );
+    console.log(`  ${r.regression.status === "passed" ? "PASS" : "FAIL"}`);
   }
-  console.log('');
-  console.log(`VERDICT: ${r.overall_passed ? 'PASS' : 'FAIL'}`);
+  console.log("");
+  console.log(`VERDICT: ${r.overall_passed ? "PASS" : "FAIL"}`);
 }

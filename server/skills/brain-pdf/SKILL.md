@@ -169,7 +169,6 @@ is the artifact.
 - `skills/publish/SKILL.md` — share brain pages as password-protected
   HTML (different rendering target).
 
-
 ## Contract
 
 This skill guarantees:

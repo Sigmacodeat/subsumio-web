@@ -22,14 +22,14 @@
  * slug lookup in addLink.
  */
 
-import type { BrainEngine } from '../core/engine.ts';
-import { extractCodeRefs } from '../core/link-extraction.ts';
-import { slugifyCodePath } from '../core/sync.ts';
-import { createProgress } from '../core/progress.ts';
-import { getCliOptions, cliOptsToProgressOptions } from '../core/cli-options.ts';
+import type { BrainEngine } from "../core/engine.ts";
+import { extractCodeRefs } from "../core/link-extraction.ts";
+import { slugifyCodePath } from "../core/sync.ts";
+import { createProgress } from "../core/progress.ts";
+import { getCliOptions, cliOptsToProgressOptions } from "../core/cli-options.ts";
 
 export interface ReconcileLinksResult {
-  status: 'ok' | 'auto_link_disabled';
+  status: "ok" | "auto_link_disabled";
   markdownPagesScanned: number;
   codeRefsFound: number;
   edgesAttempted: number;
@@ -55,15 +55,15 @@ export interface ReconcileLinksOpts {
  */
 export async function runReconcileLinks(
   engine: BrainEngine,
-  opts: ReconcileLinksOpts = {},
+  opts: ReconcileLinksOpts = {}
 ): Promise<ReconcileLinksResult> {
   // Respect auto_link config (same gate put_page uses). A user that
   // explicitly turned off auto-link doesn't want reconcile-links
   // writing edges back either.
-  const autoLinkCfg = await engine.getConfig('auto_link');
-  if (autoLinkCfg === 'false') {
+  const autoLinkCfg = await engine.getConfig("auto_link");
+  if (autoLinkCfg === "false") {
     return {
-      status: 'auto_link_disabled',
+      status: "auto_link_disabled",
       markdownPagesScanned: 0,
       codeRefsFound: 0,
       edgesAttempted: 0,
@@ -76,11 +76,13 @@ export async function runReconcileLinks(
   // Walk all markdown slugs. listPages(markdown-only filter) isn't exposed,
   // so filter at call time via page_kind. Not using getAllSlugs because we
   // also need compiled_truth + timeline for extractCodeRefs.
-  const mdSlugs = (await engine.executeRaw<{ slug: string }>(
-    `SELECT slug FROM pages WHERE page_kind = 'markdown' ORDER BY slug`,
-  )).map(r => r.slug);
+  const mdSlugs = (
+    await engine.executeRaw<{ slug: string }>(
+      `SELECT slug FROM pages WHERE page_kind = 'markdown' ORDER BY slug`
+    )
+  ).map((r) => r.slug);
 
-  progress.start('reconcile_links.scan', mdSlugs.length);
+  progress.start("reconcile_links.scan", mdSlugs.length);
 
   let codeRefsFound = 0;
   let edgesAttempted = 0;
@@ -103,7 +105,7 @@ export async function runReconcileLinks(
       progress.tick(1, mdSlug);
       continue;
     }
-    const haystack = (page.compiled_truth || '') + '\n' + (page.timeline || '');
+    const haystack = (page.compiled_truth || "") + "\n" + (page.timeline || "");
     const refs = extractCodeRefs(haystack);
     if (refs.length === 0) {
       progress.tick(1, mdSlug);
@@ -125,8 +127,26 @@ export async function runReconcileLinks(
         // if codeSlug isn't a page yet (benign — counted below). Source-
         // qualified per opts.sourceId; same-source assumption mirrors the
         // import-file.ts:303 doc↔impl auto-link.
-        await engine.addLink(mdSlug, codeSlug, ctx, 'documents', 'markdown', mdSlug, 'compiled_truth', linkOpts); // gbrain-allow-direct-insert: gbrain reconcile-links command — code-graph reconciliation from markdown references
-        await engine.addLink(codeSlug, mdSlug, ref.path, 'documented_by', 'markdown', mdSlug, 'compiled_truth', linkOpts); // gbrain-allow-direct-insert: gbrain reconcile-links command — reverse documented_by edge
+        await engine.addLink(
+          mdSlug,
+          codeSlug,
+          ctx,
+          "documents",
+          "markdown",
+          mdSlug,
+          "compiled_truth",
+          linkOpts
+        ); // gbrain-allow-direct-insert: gbrain reconcile-links command — code-graph reconciliation from markdown references
+        await engine.addLink(
+          codeSlug,
+          mdSlug,
+          ref.path,
+          "documented_by",
+          "markdown",
+          mdSlug,
+          "compiled_truth",
+          linkOpts
+        ); // gbrain-allow-direct-insert: gbrain reconcile-links command — reverse documented_by edge
       } catch (e: unknown) {
         // Per-link errors don't abort the batch. Track them for the summary.
         const msg = e instanceof Error ? e.message : String(e);
@@ -144,7 +164,7 @@ export async function runReconcileLinks(
   progress.finish();
 
   return {
-    status: 'ok',
+    status: "ok",
     markdownPagesScanned: mdSlugs.length,
     codeRefsFound,
     edgesAttempted,
@@ -157,8 +177,8 @@ export async function runReconcileLinks(
  * --dry-run reports counts without writing. --json emits machine output.
  */
 export async function runReconcileLinksCli(engine: BrainEngine, args: string[]): Promise<void> {
-  const dryRun = args.includes('--dry-run');
-  const jsonOut = args.includes('--json');
+  const dryRun = args.includes("--dry-run");
+  const jsonOut = args.includes("--json");
 
   const result = await runReconcileLinks(engine, { dryRun });
 
@@ -167,21 +187,21 @@ export async function runReconcileLinksCli(engine: BrainEngine, args: string[]):
     return;
   }
 
-  if (result.status === 'auto_link_disabled') {
+  if (result.status === "auto_link_disabled") {
     console.log(
-      '[reconcile-links] auto_link is disabled in config; skipping. ' +
-      'Set `gbrain config set auto_link true` to re-enable.',
+      "[reconcile-links] auto_link is disabled in config; skipping. " +
+        "Set `gbrain config set auto_link true` to re-enable."
     );
     return;
   }
 
-  const header = dryRun ? 'reconcile-links (dry run)' : 'reconcile-links';
+  const header = dryRun ? "reconcile-links (dry run)" : "reconcile-links";
   console.log(
     `${header}: scanned ${result.markdownPagesScanned} markdown pages, ` +
-    `found ${result.codeRefsFound} code refs, ` +
-    `attempted ${result.edgesAttempted} edges` +
-    (result.edgesTargetsMissing > 0
-      ? ` (${result.edgesTargetsMissing} targets missing code page)`
-      : ''),
+      `found ${result.codeRefsFound} code refs, ` +
+      `attempted ${result.edgesAttempted} edges` +
+      (result.edgesTargetsMissing > 0
+        ? ` (${result.edgesTargetsMissing} targets missing code page)`
+        : "")
   );
 }

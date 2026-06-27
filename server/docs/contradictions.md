@@ -8,7 +8,7 @@ how to interpret the headline number, and when to act.
 
 ## Why this exists
 
-gbrain handles contradictions for *curated* pages via compiled-truth-plus-
+gbrain handles contradictions for _curated_ pages via compiled-truth-plus-
 timeline and source-boost: when `companies/acme.md` says MRR is $2M and a
 chat transcript from 2024 says MRR was $50K, the curated page outranks the
 chat. `takes.active` filtering hides explicitly-superseded takes. Recency
@@ -73,11 +73,11 @@ change)" decision is vibes. The probe produces evidence.
 
 The judge assigns severity per finding:
 
-| Level | Rubric | Example |
-|---|---|---|
-| `low` | naming/format differences | "Alice Smith" vs "A. Smith" |
+| Level    | Rubric                           | Example                              |
+| -------- | -------------------------------- | ------------------------------------ |
+| `low`    | naming/format differences        | "Alice Smith" vs "A. Smith"          |
 | `medium` | factual values that may be stale | revenue figure, headcount, valuation |
-| `high` | identity / structural claims | founder/CEO/CFO role, company status |
+| `high`   | identity / structural claims     | founder/CEO/CFO role, company status |
 
 Doctor sorts findings by severity DESC. The MCP op accepts a severity filter
 so agents can fetch just the high-priority items.
@@ -98,11 +98,11 @@ too wide to act on.
 
 Decision criteria for the bigger swing (chunk-level `revises` field):
 
-| Wilson CI lower bound | What it says | Action |
-|---|---|---|
-| < 5% | Source-boost + recency-decay + curated pages handle the load | Stop here; this is the right scope |
-| 5–15% | Real but bounded | Operator decides whether the cost justifies the swing |
-| > 15% | Real and substantial | Plan the bigger swing in v0.34+ |
+| Wilson CI lower bound | What it says                                                 | Action                                                |
+| --------------------- | ------------------------------------------------------------ | ----------------------------------------------------- |
+| < 5%                  | Source-boost + recency-decay + curated pages handle the load | Stop here; this is the right scope                    |
+| 5–15%                 | Real but bounded                                             | Operator decides whether the cost justifies the swing |
+| > 15%                 | Real and substantial                                         | Plan the bigger swing in v0.34+                       |
 
 ## When to act on findings
 
@@ -147,16 +147,16 @@ pay near-zero on re-runs (until you bump PROMPT_VERSION).
 - Plan: `~/.claude/plans/system-instruction-you-are-working-hashed-dewdrop.md`
 - CHANGELOG: `## [0.32.6]` entry covers the whole release.
 - Cost discipline: `docs/eval-bench.md` for the recommended nightly cadence
-  + trend-tracking workflow.
+  - trend-tracking workflow.
 - **Temporal axis follow-on (v0.35.3.1 + v0.35.7):** v0.35.3.1 added a
   six-member verdict enum (`no_contradiction | contradiction |
-  temporal_supersession | temporal_regression | temporal_evolution |
-  negation_artifact`) and threaded `pages.effective_date` into the judge
+temporal_supersession | temporal_regression | temporal_evolution |
+negation_artifact`) and threaded `pages.effective_date` into the judge
   prompt so the probe stops crying wolf on legitimate change-over-time.
   v0.35.7 lands the trajectory substrate the probe pointed at:
   `gbrain eval trajectory <entity>` shows the chronological typed-claim
   history with regressions flagged inline; `gbrain founder scorecard
-  <entity>` rolls up four signals (accuracy, consistency, growth
+<entity>` rolls up four signals (accuracy, consistency, growth
   direction, red flags) into a stable JSON contract. MCP op
   `find_trajectory` (read scope, visibility-filtered for remote callers)
   exposes the same data to agents. The probe's `temporal_supersession`

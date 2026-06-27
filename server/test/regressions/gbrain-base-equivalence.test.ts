@@ -13,37 +13,40 @@
 // constant change, or the constant change is unintentional and gbrain-base
 // is the canonical reference.
 
-import { describe, expect, test } from 'bun:test';
-import { ALL_PAGE_TYPES } from '../../src/core/types.ts';
-import { loadPackFromFile } from '../../src/core/schema-pack/loader.ts';
-import { join } from 'node:path';
+import { describe, expect, test } from "bun:test";
+import { ALL_PAGE_TYPES } from "../../src/core/types.ts";
+import { loadPackFromFile } from "../../src/core/schema-pack/loader.ts";
+import { join } from "node:path";
 
-const BASE_PATH = join(import.meta.dir, '../../src/core/schema-pack/base/gbrain-base.yaml');
+const BASE_PATH = join(import.meta.dir, "../../src/core/schema-pack/base/gbrain-base.yaml");
 
-describe('gbrain-base v0.38 parity gate', () => {
-  test('every ALL_PAGE_TYPES seed appears in gbrain-base page_types', () => {
+describe("gbrain-base v0.38 parity gate", () => {
+  test("every ALL_PAGE_TYPES seed appears in gbrain-base page_types", () => {
     const pack = loadPackFromFile(BASE_PATH);
-    const yamlTypes = new Set(pack.page_types.map(pt => pt.name));
+    const yamlTypes = new Set(pack.page_types.map((pt) => pt.name));
     for (const seed of ALL_PAGE_TYPES) {
       expect(yamlTypes.has(seed)).toBe(true);
     }
   });
 
-  test('takes_kinds matches pre-v0.38 closed enum {fact,take,bet,hunch}', () => {
+  test("takes_kinds matches pre-v0.38 closed enum {fact,take,bet,hunch}", () => {
     const pack = loadPackFromFile(BASE_PATH);
-    expect(pack.takes_kinds.sort()).toEqual(['bet', 'fact', 'hunch', 'take']);
+    expect(pack.takes_kinds.sort()).toEqual(["bet", "fact", "hunch", "take"]);
   });
 
-  test('person + company are the only expert_routing default types', () => {
+  test("person + company are the only expert_routing default types", () => {
     // Pre-v0.38 whoknows / find_experts hardcoded ['person', 'company'].
     // gbrain-base must reproduce this default; user packs opt in others
     // via `expert_routing: true`.
     const pack = loadPackFromFile(BASE_PATH);
-    const experts = pack.page_types.filter(pt => pt.expert_routing).map(pt => pt.name).sort();
-    expect(experts).toEqual(['company', 'person']);
+    const experts = pack.page_types
+      .filter((pt) => pt.expert_routing)
+      .map((pt) => pt.name)
+      .sort();
+    expect(experts).toEqual(["company", "person"]);
   });
 
-  test('inferType path-prefix mapping reproduces pre-v0.38 behavior', () => {
+  test("inferType path-prefix mapping reproduces pre-v0.38 behavior", () => {
     // Spot-check the high-traffic path mappings against expectations.
     // If this drifts, either the inferType source changed (update YAML)
     // or the YAML drifted (revert).
@@ -54,44 +57,44 @@ describe('gbrain-base v0.38 parity gate', () => {
         byPrefix.set(prefix, pt.name);
       }
     }
-    expect(byPrefix.get('people/')).toBe('person');
-    expect(byPrefix.get('companies/')).toBe('company');
-    expect(byPrefix.get('deals/')).toBe('deal');
-    expect(byPrefix.get('meetings/')).toBe('meeting');
-    expect(byPrefix.get('writing/')).toBe('writing');
-    expect(byPrefix.get('wiki/analysis/')).toBe('analysis');
-    expect(byPrefix.get('media/')).toBe('media');
+    expect(byPrefix.get("people/")).toBe("person");
+    expect(byPrefix.get("companies/")).toBe("company");
+    expect(byPrefix.get("deals/")).toBe("deal");
+    expect(byPrefix.get("meetings/")).toBe("meeting");
+    expect(byPrefix.get("writing/")).toBe("writing");
+    expect(byPrefix.get("wiki/analysis/")).toBe("analysis");
+    expect(byPrefix.get("media/")).toBe("media");
   });
 
-  test('FRONTMATTER_LINK_MAP reproduces critical entries', () => {
+  test("FRONTMATTER_LINK_MAP reproduces critical entries", () => {
     const pack = loadPackFromFile(BASE_PATH);
     const find = (page_type: string, field: string) =>
-      pack.frontmatter_links.find(fl => fl.page_type === page_type && fl.fields.includes(field));
-    expect(find('person', 'company')?.link_type).toBe('works_at');
-    expect(find('person', 'founded')?.link_type).toBe('founded');
-    expect(find('company', 'key_people')?.link_type).toBe('works_at');
-    expect(find('company', 'investors')?.link_type).toBe('invested_in');
-    expect(find('deal', 'investors')?.link_type).toBe('invested_in');
-    expect(find('meeting', 'attendees')?.link_type).toBe('attended');
+      pack.frontmatter_links.find((fl) => fl.page_type === page_type && fl.fields.includes(field));
+    expect(find("person", "company")?.link_type).toBe("works_at");
+    expect(find("person", "founded")?.link_type).toBe("founded");
+    expect(find("company", "key_people")?.link_type).toBe("works_at");
+    expect(find("company", "investors")?.link_type).toBe("invested_in");
+    expect(find("deal", "investors")?.link_type).toBe("invested_in");
+    expect(find("meeting", "attendees")?.link_type).toBe("attended");
   });
 
-  test('inferLinkType verb regexes reproduce known semantics', () => {
+  test("inferLinkType verb regexes reproduce known semantics", () => {
     const pack = loadPackFromFile(BASE_PATH);
-    const verbs = new Map(pack.link_types.map(lt => [lt.name, lt]));
+    const verbs = new Map(pack.link_types.map((lt) => [lt.name, lt]));
     // attended fires on meeting pages
-    expect(verbs.get('attended')?.inference?.page_type).toBe('meeting');
+    expect(verbs.get("attended")?.inference?.page_type).toBe("meeting");
     // image_of fires on image pages
-    expect(verbs.get('image_of')?.inference?.page_type).toBe('image');
+    expect(verbs.get("image_of")?.inference?.page_type).toBe("image");
     // verb regex patterns present
-    expect(verbs.get('founded')?.inference?.regex).toContain('founded');
-    expect(verbs.get('invested_in')?.inference?.regex).toContain('invested');
-    expect(verbs.get('advises')?.inference?.regex).toContain('advis');
-    expect(verbs.get('works_at')?.inference?.regex).toContain('works');
+    expect(verbs.get("founded")?.inference?.regex).toContain("founded");
+    expect(verbs.get("invested_in")?.inference?.regex).toContain("invested");
+    expect(verbs.get("advises")?.inference?.regex).toContain("advis");
+    expect(verbs.get("works_at")?.inference?.regex).toContain("works");
     // mentions is the fallback (declared but no inference rule)
-    expect(verbs.has('mentions')).toBe(true);
+    expect(verbs.has("mentions")).toBe(true);
   });
 
-  test('alias graph is EMPTY by default (E8 codex F8)', () => {
+  test("alias graph is EMPTY by default (E8 codex F8)", () => {
     // gbrain-base ships with NO alias edges so existing search behavior
     // is unchanged. Users opt into aliases via review-candidates or by
     // editing their own pack manifest.
@@ -101,12 +104,12 @@ describe('gbrain-base v0.38 parity gate', () => {
     }
   });
 
-  test('codegen --check passes in process', () => {
+  test("codegen --check passes in process", () => {
     // Spawning the script in a subprocess would be slow; assert the
     // validation logic against the in-process loader instead. If the
     // standalone script breaks, this test still catches the data drift.
     const pack = loadPackFromFile(BASE_PATH);
-    expect(pack.name).toBe('gbrain-base');
+    expect(pack.name).toBe("gbrain-base");
     expect(pack.version).toMatch(/^\d+\.\d+\.\d+$/);
     expect(pack.extends).toBeNull();
   });

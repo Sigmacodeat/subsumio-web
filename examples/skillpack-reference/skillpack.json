@@ -7,23 +7,13 @@
   "license": "MIT",
   "homepage": "https://github.com/garrytan/gbrain/tree/master/examples/skillpack-reference",
   "gbrain_min_version": "0.36.0",
-  "skills": [
-    "skills/reference-pack"
-  ],
+  "skills": ["skills/reference-pack"],
   "runbooks": {
     "bootstrap": "runbooks/bootstrap.md"
   },
   "changelog": "CHANGELOG.md",
-  "unit_tests": [
-    "test/**/*.test.ts"
-  ],
-  "e2e_tests": [
-    "e2e/**/*.test.ts"
-  ],
-  "llm_evals": [
-    "evals/*.judge.json"
-  ],
-  "routing_evals": [
-    "skills/reference-pack/routing-eval.jsonl"
-  ]
+  "unit_tests": ["test/**/*.test.ts"],
+  "e2e_tests": ["e2e/**/*.test.ts"],
+  "llm_evals": ["evals/*.judge.json"],
+  "routing_evals": ["skills/reference-pack/routing-eval.jsonl"]
 }

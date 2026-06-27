@@ -20,14 +20,14 @@
  * output or stable JSON for agent consumption.
  */
 
-import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'fs';
-import { join, dirname } from 'path';
+import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "fs";
+import { join, dirname } from "path";
 
-import { loadSkillpackManifest } from './manifest-v1.ts';
-import { walkRubric, type RubricScore } from './rubric.ts';
-import { logSkillpackEvent } from './audit.ts';
+import { loadSkillpackManifest } from "./manifest-v1.ts";
+import { walkRubric, type RubricScore } from "./rubric.ts";
+import { logSkillpackEvent } from "./audit.ts";
 
-export type DoctorMode = 'quick' | 'full';
+export type DoctorMode = "quick" | "full";
 
 export interface DoctorOptions {
   packRoot: string;
@@ -38,19 +38,19 @@ export interface DoctorOptions {
 }
 
 export interface DoctorResult {
-  schema_version: 'skillpack-doctor-v1';
+  schema_version: "skillpack-doctor-v1";
   pack_name: string;
   pack_version: string;
   pack_root: string;
   mode: DoctorMode;
   score: number;
   max_score: number;
-  tier_eligibility: 'endorsed' | 'community' | 'experimental' | 'blocked';
+  tier_eligibility: "endorsed" | "community" | "experimental" | "blocked";
   promotion_blockers: string[];
   dimensions: Array<{
     id: number;
     name: string;
-    category: 'core' | 'badge';
+    category: "core" | "badge";
     description: string;
     score: number;
     passed: boolean;
@@ -71,26 +71,26 @@ export async function runDoctor(opts: DoctorOptions): Promise<DoctorResult> {
     manifest = loadSkillpackManifest(opts.packRoot);
   } catch (err) {
     return {
-      schema_version: 'skillpack-doctor-v1',
-      pack_name: 'unknown',
-      pack_version: 'unknown',
+      schema_version: "skillpack-doctor-v1",
+      pack_name: "unknown",
+      pack_version: "unknown",
       pack_root: opts.packRoot,
       mode: opts.mode,
       score: 0,
       max_score: 10,
-      tier_eligibility: 'blocked',
-      promotion_blockers: ['manifest_valid'],
+      tier_eligibility: "blocked",
+      promotion_blockers: ["manifest_valid"],
       dimensions: [
         {
           id: 1,
-          name: 'manifest_valid',
-          category: 'core',
-          description: 'skillpack.json passes the v1 schema validator',
+          name: "manifest_valid",
+          category: "core",
+          description: "skillpack.json passes the v1 schema validator",
           score: 0,
           passed: false,
           detail: (err as Error).message,
           fix_hint:
-            'Run `gbrain skillpack init <name>` to regenerate a valid stub manifest, or fix the field listed above.',
+            "Run `gbrain skillpack init <name>` to regenerate a valid stub manifest, or fix the field listed above.",
           auto_fixable: false,
         },
       ],
@@ -111,10 +111,10 @@ export async function runDoctor(opts: DoctorOptions): Promise<DoctorResult> {
 
   // Log the run for the gbrain doctor activity surface.
   logSkillpackEvent({
-    event: 'doctor_run',
+    event: "doctor_run",
     pack: manifest.name,
     version: manifest.version,
-    outcome: score.tier_eligibility === 'blocked' ? 'error' : 'ok',
+    outcome: score.tier_eligibility === "blocked" ? "error" : "ok",
     meta: { mode: opts.mode, score: score.total, tier: score.tier_eligibility },
   });
 
@@ -125,10 +125,10 @@ function buildResult(
   opts: DoctorOptions,
   manifest: ReturnType<typeof loadSkillpackManifest>,
   score: RubricScore,
-  fixesApplied: string[],
+  fixesApplied: string[]
 ): DoctorResult {
   return {
-    schema_version: 'skillpack-doctor-v1',
+    schema_version: "skillpack-doctor-v1",
     pack_name: manifest.name,
     pack_version: manifest.version,
     pack_root: opts.packRoot,
@@ -150,8 +150,8 @@ function buildResult(
     })),
     fixes_applied: fixesApplied,
     full_mode_hint:
-      opts.mode === 'full'
-        ? '--full mode runs the publish-gate test + LLM-judge + routing-eval suites in a sandbox. Implementation lands in a follow-up wave; for now use `gbrain skillpack test <pack-dir>` once W4 ships.'
+      opts.mode === "full"
+        ? "--full mode runs the publish-gate test + LLM-judge + routing-eval suites in a sandbox. Implementation lands in a follow-up wave; for now use `gbrain skillpack test <pack-dir>` once W4 ships."
         : null,
   };
 }
@@ -165,10 +165,10 @@ async function applyAutoFixes(
   packRoot: string,
   manifest: ReturnType<typeof loadSkillpackManifest>,
   score: RubricScore,
-  autoYes: boolean,
+  autoYes: boolean
 ): Promise<string[]> {
   const fixes: string[] = [];
-  const manifestPath = join(packRoot, 'skillpack.json');
+  const manifestPath = join(packRoot, "skillpack.json");
   const manifestMtime = existsSync(manifestPath) ? statSync(manifestPath).mtimeMs : Date.now();
 
   // Plan first; ask for confirm before any write.
@@ -179,12 +179,12 @@ async function applyAutoFixes(
     if (!dim.auto_fixable) continue;
 
     switch (dim.name) {
-      case 'routing_evals_present': {
+      case "routing_evals_present": {
         for (const skillPath of manifest.skills) {
-          const evalFile = join(packRoot, skillPath, 'routing-eval.jsonl');
+          const evalFile = join(packRoot, skillPath, "routing-eval.jsonl");
           if (existsSync(evalFile)) continue;
           // Build a 5-intent stub the publisher edits.
-          const slug = skillPath.replace(/^skills\//, '');
+          const slug = skillPath.replace(/^skills\//, "");
           const stub = Array.from({ length: 5 }).map((_, i) => ({
             intent: `example intent ${i + 1} for ${slug}`,
             expected_skill: slug,
@@ -192,31 +192,31 @@ async function applyAutoFixes(
           plan.push({
             name: dim.name,
             path: evalFile,
-            content: stub.map((s) => JSON.stringify(s)).join('\n') + '\n',
+            content: stub.map((s) => JSON.stringify(s)).join("\n") + "\n",
           });
         }
         break;
       }
-      case 'changelog_present_and_current': {
-        const path = join(packRoot, manifest.changelog ?? 'CHANGELOG.md');
+      case "changelog_present_and_current": {
+        const path = join(packRoot, manifest.changelog ?? "CHANGELOG.md");
         const date = new Date().toISOString().slice(0, 10);
-        let content = '';
+        let content = "";
         if (existsSync(path)) {
-          content = readFileSync(path, 'utf-8');
+          content = readFileSync(path, "utf-8");
           const stat = statSync(path);
           if (stat.mtimeMs > manifestMtime) {
             // Hand-edited; skip.
             continue;
           }
         } else {
-          content = '# Changelog\n\nAll notable changes documented here.\n\n';
+          content = "# Changelog\n\nAll notable changes documented here.\n\n";
         }
         const newEntry = `## [${manifest.version}] - ${date}\n\n- (describe changes)\n\n`;
         plan.push({ name: dim.name, path, content: newEntry + content });
         break;
       }
-      case 'unit_tests_present': {
-        const target = join(packRoot, 'test/example.test.ts');
+      case "unit_tests_present": {
+        const target = join(packRoot, "test/example.test.ts");
         if (!existsSync(target)) {
           const stub = [
             "import { describe, test, expect } from 'bun:test';",
@@ -227,13 +227,13 @@ async function applyAutoFixes(
             "  });",
             "});",
             "",
-          ].join('\n');
+          ].join("\n");
           plan.push({ name: dim.name, path: target, content: stub });
         }
         break;
       }
-      case 'e2e_tests_present': {
-        const target = join(packRoot, 'e2e/example.e2e.test.ts');
+      case "e2e_tests_present": {
+        const target = join(packRoot, "e2e/example.e2e.test.ts");
         if (!existsSync(target)) {
           const stub = [
             "import { describe, test, expect } from 'bun:test';",
@@ -244,46 +244,53 @@ async function applyAutoFixes(
             "  });",
             "});",
             "",
-          ].join('\n');
+          ].join("\n");
           plan.push({ name: dim.name, path: target, content: stub });
         }
         break;
       }
-      case 'llm_eval_present': {
-        const target = join(packRoot, 'evals/example.judge.json');
+      case "llm_eval_present": {
+        const target = join(packRoot, "evals/example.judge.json");
         if (!existsSync(target)) {
           const stub = {
-            task: 'Describe what good output for this skill looks like.',
+            task: "Describe what good output for this skill looks like.",
             output:
               "{{output-from-skill}}  -- the doctor stub. Replace with real example output your skill produces.",
             cases: [
-              { name: 'happy path', criteria: 'output satisfies the task' },
-              { name: 'edge case', criteria: 'output handles a corner input gracefully' },
-              { name: 'failure mode', criteria: 'output refuses gracefully when input is ambiguous' },
+              { name: "happy path", criteria: "output satisfies the task" },
+              { name: "edge case", criteria: "output handles a corner input gracefully" },
+              {
+                name: "failure mode",
+                criteria: "output refuses gracefully when input is ambiguous",
+              },
             ],
           };
-          plan.push({ name: dim.name, path: target, content: JSON.stringify(stub, null, 2) + '\n' });
+          plan.push({
+            name: dim.name,
+            path: target,
+            content: JSON.stringify(stub, null, 2) + "\n",
+          });
         }
         break;
       }
-      case 'bootstrap_runbook_present': {
-        const path = join(packRoot, manifest.runbooks?.bootstrap ?? 'runbooks/bootstrap.md');
+      case "bootstrap_runbook_present": {
+        const path = join(packRoot, manifest.runbooks?.bootstrap ?? "runbooks/bootstrap.md");
         if (!existsSync(path)) {
           const stub = [
-            '# Bootstrap',
-            '',
+            "# Bootstrap",
+            "",
             '1. show user: "<pack-name> is installed. Try one of the trigger phrases listed in skills/."',
-            '2. (edit me) agent: gbrain put_page wiki/_bootstrap-stub --frontmatter type=stub',
-            '',
-            '<!-- v0.36 contract: gbrain displays this post-scaffold but DOES NOT auto-execute. -->',
-            '',
-          ].join('\n');
+            "2. (edit me) agent: gbrain put_page wiki/_bootstrap-stub --frontmatter type=stub",
+            "",
+            "<!-- v0.36 contract: gbrain displays this post-scaffold but DOES NOT auto-execute. -->",
+            "",
+          ].join("\n");
           plan.push({ name: dim.name, path, content: stub });
         }
         break;
       }
-      case 'license_present': {
-        const target = join(packRoot, 'LICENSE');
+      case "license_present": {
+        const target = join(packRoot, "LICENSE");
         if (!existsSync(target)) {
           const stub = `${manifest.license} License — replace with full license text matching the SPDX id declared in skillpack.json.\n`;
           plan.push({ name: dim.name, path: target, content: stub });
@@ -315,49 +322,49 @@ async function applyAutoFixes(
 /** Render the doctor result as human-readable text. */
 export function formatDoctorResult(result: DoctorResult): string {
   const tierBadge =
-    result.tier_eligibility === 'endorsed'
-      ? '★'
-      : result.tier_eligibility === 'community'
-        ? '·'
-        : result.tier_eligibility === 'experimental'
-          ? '?'
-          : '✗';
+    result.tier_eligibility === "endorsed"
+      ? "★"
+      : result.tier_eligibility === "community"
+        ? "·"
+        : result.tier_eligibility === "experimental"
+          ? "?"
+          : "✗";
   const lines: string[] = [];
   lines.push(
-    `${tierBadge} ${result.pack_name}@${result.pack_version}  ${result.score}/${result.max_score}  [${result.tier_eligibility}]`,
+    `${tierBadge} ${result.pack_name}@${result.pack_version}  ${result.score}/${result.max_score}  [${result.tier_eligibility}]`
   );
   lines.push(`Pack root: ${result.pack_root}`);
   lines.push(`Mode:      ${result.mode}`);
-  lines.push('');
-  lines.push('Core (must all pass to publish):');
-  for (const d of result.dimensions.filter((dd) => dd.category === 'core')) {
+  lines.push("");
+  lines.push("Core (must all pass to publish):");
+  for (const d of result.dimensions.filter((dd) => dd.category === "core")) {
     lines.push(
-      `  ${d.passed ? '✓' : '✗'} ${d.id}. ${d.name}` + (d.passed ? '' : `  — ${d.detail}`),
+      `  ${d.passed ? "✓" : "✗"} ${d.id}. ${d.name}` + (d.passed ? "" : `  — ${d.detail}`)
     );
     if (!d.passed && d.fix_hint) lines.push(`    fix: ${d.fix_hint}`);
   }
-  lines.push('');
-  lines.push('Quality badges (earn for tier eligibility):');
-  for (const d of result.dimensions.filter((dd) => dd.category === 'badge')) {
+  lines.push("");
+  lines.push("Quality badges (earn for tier eligibility):");
+  for (const d of result.dimensions.filter((dd) => dd.category === "badge")) {
     lines.push(
-      `  ${d.passed ? '✓' : '✗'} ${d.id}. ${d.name}` +
-        (d.passed ? '' : `  — ${d.detail}`) +
-        (d.auto_fixable && !d.passed ? '  [auto-fixable]' : ''),
+      `  ${d.passed ? "✓" : "✗"} ${d.id}. ${d.name}` +
+        (d.passed ? "" : `  — ${d.detail}`) +
+        (d.auto_fixable && !d.passed ? "  [auto-fixable]" : "")
     );
     if (!d.passed && d.fix_hint) lines.push(`    fix: ${d.fix_hint}`);
   }
   if (result.promotion_blockers.length > 0) {
-    lines.push('');
-    lines.push(`To reach the next tier, address: ${result.promotion_blockers.join(', ')}`);
+    lines.push("");
+    lines.push(`To reach the next tier, address: ${result.promotion_blockers.join(", ")}`);
   }
   if (result.fixes_applied.length > 0) {
-    lines.push('');
+    lines.push("");
     lines.push(`Auto-fixes applied (${result.fixes_applied.length}):`);
     for (const f of result.fixes_applied) lines.push(`  + ${f}`);
   }
   if (result.full_mode_hint) {
-    lines.push('');
+    lines.push("");
     lines.push(`Note: ${result.full_mode_hint}`);
   }
-  return lines.join('\n');
+  return lines.join("\n");
 }

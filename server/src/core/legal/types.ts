@@ -5,14 +5,7 @@
 
 export type LegalEntityType = "lawyer" | "firm" | "court" | "opponent" | "client";
 
-export type CaseStatus =
-  | "open"
-  | "pending"
-  | "settled"
-  | "won"
-  | "lost"
-  | "appealed"
-  | "dormant";
+export type CaseStatus = "open" | "pending" | "settled" | "won" | "lost" | "appealed" | "dormant";
 
 export type EvidenceType =
   | "document"

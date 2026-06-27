@@ -5,6 +5,7 @@ description: Optimiere Legal Domain Engine (Fristen, RVG, Recherche, Drafting, C
 # Legal Domain Engine Optimization
 
 ## Scope
+
 - `src/lib/legal-deadlines.ts` (13.8KB) — Fristberechnung (ZPO § 233, BGB, VwGO)
 - `src/lib/legal-types.ts` (6.5KB) — Legal Type Definitions
 - `src/lib/ai-deadline-detect.ts` (7.2KB) — AI Fristerkennung aus Dokumenten
@@ -27,6 +28,7 @@ description: Optimiere Legal Domain Engine (Fristen, RVG, Recherche, Drafting, C
 - `server/src/core/legal/` (13 Module) — Server-side Legal Engine
 
 ## Kontext laden
+
 1. Lese `src/lib/legal-deadlines.ts` für Fristberechnung-Logik
 2. Lese `src/lib/legal-types.ts` für Type Definitions
 3. Lese `src/lib/rvg.ts` für RVG Kostenberechnung
@@ -37,6 +39,7 @@ description: Optimiere Legal Domain Engine (Fristen, RVG, Recherche, Drafting, C
 8. Lese `src/lib/rag-eval.ts` für RAG Evaluation
 
 ## Optimierungs-Checkliste
+
 - [ ] **Fristberechnung**: ZPO § 233 (Notfristen), BGB §§ 187-193, VwGO § 60
 - [ ] **Feiertage**: Bundesland-spezifische Feiertagskalender
 - [ ] **Fristarten**: Notfrist, Einspruchsfrist, Berufungsfrist, Wiedereinsetzungsfrist
@@ -49,6 +52,7 @@ description: Optimiere Legal Domain Engine (Fristen, RVG, Recherche, Drafting, C
 - [ ] **RAG Eval**: Precision@k, Recall@k, nDCG@k, Citation Accuracy
 
 ## Test-Befehle
+
 ```bash
 # Legal Logic Tests
 npx vitest run src/lib/legal-deadlines.test.ts
@@ -62,6 +66,7 @@ npx vitest run src/lib/ai-deadline-detect.test.ts
 ```
 
 ## Gesetzestexte (law-corpus/)
+
 - **AT** (Österreich): ABGB, AHG, AktG, BAO, BGB (österreichische Version), etc. (18 Dateien)
 - **CH** (Schweiz): OR, StGB, ZGB (3 Dateien)
 - **DE** (Deutschland): AO, BGB, EstG, etc. (10+ Dateien)

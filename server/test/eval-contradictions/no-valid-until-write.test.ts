@@ -19,9 +19,9 @@
  *        amend the allow-list AND document the deliberate design change.
  */
 
-import { test, expect, describe } from 'bun:test';
-import { readdirSync, readFileSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { test, expect, describe } from "bun:test";
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { join } from "node:path";
 
 // Allow-listed files that legitimately write `valid_until`. Adding a new
 // file here means you've thought carefully about the
@@ -32,8 +32,8 @@ import { join } from 'node:path';
 //   - facts/forget.ts (v0.32.2 — user-initiated `gbrain forget`; user is
 //     the supersession authority, not the probe)
 const VALID_UNTIL_WRITE_ALLOWLIST: ReadonlySet<string> = new Set([
-  'src/core/cycle/phases/consolidate.ts',
-  'src/core/facts/forget.ts',
+  "src/core/cycle/phases/consolidate.ts",
+  "src/core/facts/forget.ts",
 ]);
 
 function walkTs(dir: string, acc: string[] = []): string[] {
@@ -42,9 +42,9 @@ function walkTs(dir: string, acc: string[] = []): string[] {
     const st = statSync(full);
     if (st.isDirectory()) {
       // Skip generated / vendored / test directories.
-      if (name === 'node_modules' || name === '.git' || name === 'dist') continue;
+      if (name === "node_modules" || name === ".git" || name === "dist") continue;
       walkTs(full, acc);
-    } else if (name.endsWith('.ts') && !name.endsWith('.test.ts')) {
+    } else if (name.endsWith(".ts") && !name.endsWith(".test.ts")) {
       acc.push(full);
     }
   }
@@ -69,8 +69,8 @@ function walkTs(dir: string, acc: string[] = []): string[] {
  */
 function findValidUntilWrites(source: string): string[] {
   // Quick-fail: no mention of valid_until at all.
-  if (!source.includes('valid_until')) return [];
-  const lines = source.split('\n');
+  if (!source.includes("valid_until")) return [];
+  const lines = source.split("\n");
   const hits: string[] = [];
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
@@ -80,7 +80,7 @@ function findValidUntilWrites(source: string): string[] {
     // multi-line UPDATEs (look at the next 4 lines after `UPDATE facts`
     // for `valid_until`).
     if (/\bUPDATE\s+facts\b/i.test(line)) {
-      const window = lines.slice(i, i + 5).join('\n');
+      const window = lines.slice(i, i + 5).join("\n");
       if (/\bSET\b[\s\S]*\bvalid_until\b/i.test(window)) {
         hits.push(`${i + 1}: ${line.trim()}`);
       }
@@ -89,41 +89,41 @@ function findValidUntilWrites(source: string): string[] {
   return hits;
 }
 
-describe('R1 — contradiction probe never writes valid_until', () => {
-  test('no file under src/core/eval-contradictions/ writes facts.valid_until', () => {
-    const dir = 'src/core/eval-contradictions';
+describe("R1 — contradiction probe never writes valid_until", () => {
+  test("no file under src/core/eval-contradictions/ writes facts.valid_until", () => {
+    const dir = "src/core/eval-contradictions";
     const files = walkTs(dir);
     expect(files.length).toBeGreaterThan(0);
     for (const f of files) {
-      const src = readFileSync(f, 'utf-8');
+      const src = readFileSync(f, "utf-8");
       const hits = findValidUntilWrites(src);
-      expect(hits, `${f} contains valid_until write: ${hits.join(' | ')}`).toEqual([]);
+      expect(hits, `${f} contains valid_until write: ${hits.join(" | ")}`).toEqual([]);
     }
   });
 
-  test('no src/commands/eval-suspected-contradictions* file writes facts.valid_until', () => {
-    const dir = 'src/commands';
+  test("no src/commands/eval-suspected-contradictions* file writes facts.valid_until", () => {
+    const dir = "src/commands";
     const files = readdirSync(dir)
-      .filter(n => n.startsWith('eval-suspected-contradictions') && n.endsWith('.ts'))
-      .map(n => join(dir, n));
+      .filter((n) => n.startsWith("eval-suspected-contradictions") && n.endsWith(".ts"))
+      .map((n) => join(dir, n));
     expect(files.length).toBeGreaterThanOrEqual(1);
     for (const f of files) {
-      const src = readFileSync(f, 'utf-8');
+      const src = readFileSync(f, "utf-8");
       const hits = findValidUntilWrites(src);
-      expect(hits, `${f} contains valid_until write: ${hits.join(' | ')}`).toEqual([]);
+      expect(hits, `${f} contains valid_until write: ${hits.join(" | ")}`).toEqual([]);
     }
   });
 });
 
-describe('R8 — only the consolidate phase + engine insert layer may write valid_until', () => {
-  test('every src/ TypeScript file that writes valid_until is on the allow-list', () => {
-    const files = walkTs('src');
+describe("R8 — only the consolidate phase + engine insert layer may write valid_until", () => {
+  test("every src/ TypeScript file that writes valid_until is on the allow-list", () => {
+    const files = walkTs("src");
     const offenders: Array<{ file: string; hits: string[] }> = [];
 
     for (const f of files) {
       // Normalize path separator for cross-platform matching of the
       // allow-list keys.
-      const relForCheck = f.replace(/\\/g, '/');
+      const relForCheck = f.replace(/\\/g, "/");
       if (VALID_UNTIL_WRITE_ALLOWLIST.has(relForCheck)) continue;
 
       // Engine implementation files (postgres-engine.ts, pglite-engine.ts)
@@ -133,7 +133,7 @@ describe('R8 — only the consolidate phase + engine insert layer may write vali
       // The R8 guard is about UPDATE; INSERT carrying valid_until as a
       // column value is not the failure mode auto-supersession.ts:4 cares
       // about.
-      const src = readFileSync(f, 'utf-8');
+      const src = readFileSync(f, "utf-8");
       const hits = findValidUntilWrites(src);
       if (hits.length > 0) offenders.push({ file: relForCheck, hits });
     }
@@ -141,18 +141,18 @@ describe('R8 — only the consolidate phase + engine insert layer may write vali
     expect(
       offenders,
       `Unexpected valid_until UPDATE sites:\n` +
-      offenders.map(o => `  ${o.file}:\n    ${o.hits.join('\n    ')}`).join('\n') +
-      `\n\nIf you added a deliberate write, append the path to ` +
-      `VALID_UNTIL_WRITE_ALLOWLIST in this test AND review the ` +
-      `\`auto-supersession.ts:4\` invariant first.`,
+        offenders.map((o) => `  ${o.file}:\n    ${o.hits.join("\n    ")}`).join("\n") +
+        `\n\nIf you added a deliberate write, append the path to ` +
+        `VALID_UNTIL_WRITE_ALLOWLIST in this test AND review the ` +
+        `\`auto-supersession.ts:4\` invariant first.`
     ).toEqual([]);
   });
 
-  test('VALID_UNTIL_WRITE_ALLOWLIST is non-empty (consolidate is on it)', () => {
+  test("VALID_UNTIL_WRITE_ALLOWLIST is non-empty (consolidate is on it)", () => {
     // Self-check: if the test file ever ships with an empty allow-list,
     // the R8 guard collapses to "no code writes valid_until anywhere" and
     // becomes a tautology. Keep the consolidate phase on the list as the
     // explicit positive control.
-    expect(VALID_UNTIL_WRITE_ALLOWLIST.has('src/core/cycle/phases/consolidate.ts')).toBe(true);
+    expect(VALID_UNTIL_WRITE_ALLOWLIST.has("src/core/cycle/phases/consolidate.ts")).toBe(true);
   });
 });

@@ -23,25 +23,25 @@
  *                                       skip malformed + warn
  */
 
-import { appendFileSync, existsSync, readdirSync, readFileSync, mkdirSync, statSync } from 'fs';
-import { dirname, join } from 'path';
-import { homedir } from 'os';
-import { gbrainPath } from './config.ts';
-import { VERSION } from '../version.ts';
+import { appendFileSync, existsSync, readdirSync, readFileSync, mkdirSync, statSync } from "fs";
+import { dirname, join } from "path";
+import { homedir } from "os";
+import { gbrainPath } from "./config.ts";
+import { VERSION } from "../version.ts";
 
 // ---------------------------------------------------------------------------
 // Schema
 // ---------------------------------------------------------------------------
 
-export type FrictionKind = 'friction' | 'delight' | 'phase-marker' | 'interrupted';
-export type FrictionSeverity = 'confused' | 'error' | 'blocker' | 'nit';
-export type FrictionSource = 'claw' | 'harness';
-export type PhaseMarker = 'start' | 'end';
+export type FrictionKind = "friction" | "delight" | "phase-marker" | "interrupted";
+export type FrictionSeverity = "confused" | "error" | "blocker" | "nit";
+export type FrictionSource = "claw" | "harness";
+export type PhaseMarker = "start" | "end";
 
 /** One JSONL entry. Flat extension of StructuredAgentError per D20. */
 export interface FrictionEntry {
-  schema_version: '1';
-  ts: string;                      // ISO 8601
+  schema_version: "1";
+  ts: string; // ISO 8601
   run_id: string;
   phase: string;
   kind: FrictionKind;
@@ -86,7 +86,7 @@ export interface FrictionLogInput {
 
 /** Resolve the directory all friction JSONL files live under. */
 export function frictionDir(): string {
-  return gbrainPath('friction');
+  return gbrainPath("friction");
 }
 
 /** Resolve the JSONL file path for a given run-id. */
@@ -97,7 +97,7 @@ export function frictionFile(runId: string): string {
 /** Resolve the active run-id, falling back to 'standalone' (D19). */
 export function activeRunId(): string {
   const env = process.env.GBRAIN_FRICTION_RUN_ID?.trim();
-  return env && env.length > 0 ? env : 'standalone';
+  return env && env.length > 0 ? env : "standalone";
 }
 
 /** Sanitize: only [a-zA-Z0-9._-]; reject anything else to keep filenames sane. */
@@ -123,13 +123,13 @@ export function logFriction(input: FrictionLogInput): void {
 
   const message = truncate(input.message, MAX_MESSAGE_CHARS);
   const entry: FrictionEntry = {
-    schema_version: '1',
+    schema_version: "1",
     ts: new Date().toISOString(),
     run_id: runId,
     phase: input.phase,
-    kind: input.kind ?? 'friction',
+    kind: input.kind ?? "friction",
     message,
-    source: input.source ?? 'claw',
+    source: input.source ?? "claw",
     cwd: process.cwd(),
     gbrain_version: VERSION,
   };
@@ -142,13 +142,13 @@ export function logFriction(input: FrictionLogInput): void {
   if (input.transcriptOffset !== undefined) entry.transcript_offset = input.transcriptOffset;
   if (input.marker) entry.marker = input.marker;
 
-  const line = JSON.stringify(entry) + '\n';
-  appendFileSync(frictionFile(runId), line, 'utf-8');
+  const line = JSON.stringify(entry) + "\n";
+  appendFileSync(frictionFile(runId), line, "utf-8");
 }
 
 function truncate(s: string, max: number): string {
   if (s.length <= max) return s;
-  return s.slice(0, max - 14) + '…[truncated]';
+  return s.slice(0, max - 14) + "…[truncated]";
 }
 
 // ---------------------------------------------------------------------------
@@ -167,15 +167,20 @@ export function readFriction(runId: string): ReadResult {
   if (!existsSync(path)) {
     throw new Error(`run-id "${runId}" not found at ${path}`);
   }
-  const raw = readFileSync(path, 'utf-8');
+  const raw = readFileSync(path, "utf-8");
   const entries: FrictionEntry[] = [];
   let malformed = 0;
-  for (const line of raw.split('\n')) {
+  for (const line of raw.split("\n")) {
     if (!line.trim()) continue;
     try {
       const parsed = JSON.parse(line);
       // Light shape check: must have ts + kind + phase + message
-      if (typeof parsed.ts === 'string' && typeof parsed.kind === 'string' && typeof parsed.phase === 'string' && typeof parsed.message === 'string') {
+      if (
+        typeof parsed.ts === "string" &&
+        typeof parsed.kind === "string" &&
+        typeof parsed.phase === "string" &&
+        typeof parsed.message === "string"
+      ) {
         entries.push(parsed as FrictionEntry);
       } else {
         malformed++;
@@ -192,7 +197,12 @@ export interface RunSummary {
   runId: string;
   path: string;
   mtime: Date;
-  counts: { friction: number; delight: number; interrupted: boolean; bySeverity: Record<string, number> };
+  counts: {
+    friction: number;
+    delight: number;
+    interrupted: boolean;
+    bySeverity: Record<string, number>;
+  };
 }
 
 export function listRuns(): RunSummary[] {
@@ -200,8 +210,8 @@ export function listRuns(): RunSummary[] {
   if (!existsSync(dir)) return [];
   const out: RunSummary[] = [];
   for (const file of readdirSync(dir)) {
-    if (!file.endsWith('.jsonl')) continue;
-    const runId = file.slice(0, -'.jsonl'.length);
+    if (!file.endsWith(".jsonl")) continue;
+    const runId = file.slice(0, -".jsonl".length);
     const path = join(dir, file);
     const stat = statSync(path);
     let read: ReadResult;
@@ -210,11 +220,16 @@ export function listRuns(): RunSummary[] {
     } catch {
       continue;
     }
-    const counts = { friction: 0, delight: 0, interrupted: false, bySeverity: {} as Record<string, number> };
+    const counts = {
+      friction: 0,
+      delight: 0,
+      interrupted: false,
+      bySeverity: {} as Record<string, number>,
+    };
     for (const e of read.entries) {
-      if (e.kind === 'friction') counts.friction++;
-      if (e.kind === 'delight') counts.delight++;
-      if (e.kind === 'interrupted') counts.interrupted = true;
+      if (e.kind === "friction") counts.friction++;
+      if (e.kind === "delight") counts.delight++;
+      if (e.kind === "interrupted") counts.interrupted = true;
       if (e.severity) counts.bySeverity[e.severity] = (counts.bySeverity[e.severity] ?? 0) + 1;
     }
     out.push({ runId, path, mtime: stat.mtime, counts });
@@ -228,7 +243,7 @@ export function listRuns(): RunSummary[] {
 // ---------------------------------------------------------------------------
 
 export interface RenderOpts {
-  format?: 'md' | 'json';
+  format?: "md" | "json";
   redact?: boolean;
   /** When true, transcript_offset values are resolved against this transcript file. */
   transcriptPath?: string;
@@ -237,43 +252,45 @@ export interface RenderOpts {
 /** Render entries grouped by severity then phase. Returns the rendered string. */
 export function renderReport(runId: string, opts: RenderOpts = {}): string {
   const { entries, malformed } = readFriction(runId);
-  const format = opts.format ?? 'md';
-  const redact = opts.redact ?? (format === 'md');
+  const format = opts.format ?? "md";
+  const redact = opts.redact ?? format === "md";
 
-  const transformed = entries.map(e => redact ? redactEntry(e) : e);
+  const transformed = entries.map((e) => (redact ? redactEntry(e) : e));
 
-  if (format === 'json') {
+  if (format === "json") {
     return JSON.stringify({ run_id: runId, malformed, entries: transformed }, null, 2);
   }
 
   // Markdown grouping: severity (blocker > error > confused > nit > none) → phase
-  const sevOrder: (FrictionSeverity | 'none')[] = ['blocker', 'error', 'confused', 'nit', 'none'];
+  const sevOrder: (FrictionSeverity | "none")[] = ["blocker", "error", "confused", "nit", "none"];
   const bySev = new Map<string, FrictionEntry[]>();
   for (const e of transformed) {
-    if (e.kind !== 'friction' && e.kind !== 'delight') continue;
-    const k = e.severity ?? 'none';
+    if (e.kind !== "friction" && e.kind !== "delight") continue;
+    const k = e.severity ?? "none";
     if (!bySev.has(k)) bySev.set(k, []);
     bySev.get(k)!.push(e);
   }
 
   const lines: string[] = [];
   lines.push(`# Friction report — \`${runId}\``);
-  lines.push('');
-  const totalFriction = entries.filter(e => e.kind === 'friction').length;
-  const totalDelight = entries.filter(e => e.kind === 'delight').length;
-  lines.push(`**${totalFriction} friction · ${totalDelight} delight**${malformed > 0 ? ` · ${malformed} malformed line(s) skipped` : ''}`);
-  lines.push('');
+  lines.push("");
+  const totalFriction = entries.filter((e) => e.kind === "friction").length;
+  const totalDelight = entries.filter((e) => e.kind === "delight").length;
+  lines.push(
+    `**${totalFriction} friction · ${totalDelight} delight**${malformed > 0 ? ` · ${malformed} malformed line(s) skipped` : ""}`
+  );
+  lines.push("");
 
-  if (entries.some(e => e.kind === 'interrupted')) {
-    lines.push('> ⚠ **Run was interrupted.** Some phases may not have completed.');
-    lines.push('');
+  if (entries.some((e) => e.kind === "interrupted")) {
+    lines.push("> ⚠ **Run was interrupted.** Some phases may not have completed.");
+    lines.push("");
   }
 
   for (const sev of sevOrder) {
     const bucket = bySev.get(sev);
     if (!bucket || bucket.length === 0) continue;
-    lines.push(`## ${sev === 'none' ? '(no severity)' : sev}`);
-    lines.push('');
+    lines.push(`## ${sev === "none" ? "(no severity)" : sev}`);
+    lines.push("");
     // Group by phase within severity
     const byPhase = new Map<string, FrictionEntry[]>();
     for (const e of bucket) {
@@ -282,9 +299,9 @@ export function renderReport(runId: string, opts: RenderOpts = {}): string {
     }
     for (const [phase, phaseEntries] of byPhase) {
       lines.push(`### \`${phase}\``);
-      lines.push('');
+      lines.push("");
       for (const e of phaseEntries) {
-        lines.push(`- ${e.kind === 'delight' ? '✨' : '·'} ${e.message}`);
+        lines.push(`- ${e.kind === "delight" ? "✨" : "·"} ${e.message}`);
         if (e.hint) lines.push(`  - hint: ${e.hint}`);
         if (e.code) lines.push(`  - code: \`${e.code}\``);
         if (e.docs_url) lines.push(`  - docs: ${e.docs_url}`);
@@ -293,34 +310,34 @@ export function renderReport(runId: string, opts: RenderOpts = {}): string {
           if (snippet) lines.push(`  - transcript: \`${snippet}\``);
         }
       }
-      lines.push('');
+      lines.push("");
     }
   }
-  return lines.join('\n');
+  return lines.join("\n");
 }
 
 /** Render a friction + delight summary as two columns. */
-export function renderSummary(runId: string, opts: { format?: 'md' | 'json' } = {}): string {
+export function renderSummary(runId: string, opts: { format?: "md" | "json" } = {}): string {
   const { entries } = readFriction(runId);
-  const friction = entries.filter(e => e.kind === 'friction');
-  const delight = entries.filter(e => e.kind === 'delight');
+  const friction = entries.filter((e) => e.kind === "friction");
+  const delight = entries.filter((e) => e.kind === "delight");
 
-  if (opts.format === 'json') {
+  if (opts.format === "json") {
     return JSON.stringify({ run_id: runId, friction, delight }, null, 2);
   }
 
   const lines: string[] = [];
   lines.push(`# ${runId}`);
-  lines.push('');
+  lines.push("");
   const max = Math.max(friction.length, delight.length);
   lines.push(`| friction (${friction.length}) | delight (${delight.length}) |`);
-  lines.push('|---|---|');
+  lines.push("|---|---|");
   for (let i = 0; i < max; i++) {
-    const l = friction[i] ? friction[i].message.replace(/\|/g, '\\|') : '';
-    const r = delight[i] ? delight[i].message.replace(/\|/g, '\\|') : '';
+    const l = friction[i] ? friction[i].message.replace(/\|/g, "\\|") : "";
+    const r = delight[i] ? delight[i].message.replace(/\|/g, "\\|") : "";
     lines.push(`| ${l} | ${r} |`);
   }
-  return lines.join('\n');
+  return lines.join("\n");
 }
 
 // ---------------------------------------------------------------------------
@@ -334,15 +351,15 @@ export function redactEntry(entry: FrictionEntry): FrictionEntry {
   const transform = (s: string | undefined): string | undefined => {
     if (!s) return s;
     let out = s;
-    if (cwd && cwd.length > 1) out = out.split(cwd).join('<CWD>');
-    if (home && home.length > 1) out = out.split(home).join('<HOME>');
+    if (cwd && cwd.length > 1) out = out.split(cwd).join("<CWD>");
+    if (home && home.length > 1) out = out.split(home).join("<HOME>");
     return out;
   };
   return {
     ...entry,
     message: transform(entry.message) ?? entry.message,
     hint: transform(entry.hint),
-    cwd: '<CWD>',
+    cwd: "<CWD>",
   };
 }
 
@@ -353,20 +370,22 @@ export function redactEntry(entry: FrictionEntry): FrictionEntry {
 function readTranscriptAt(path: string, offset: number): string | null {
   try {
     if (!existsSync(path)) return null;
-    const raw = readFileSync(path, 'utf-8');
+    const raw = readFileSync(path, "utf-8");
     if (offset < 0 || offset >= raw.length) return null;
     // Find the line that contains this offset. Transcript is JSONL.
-    const lineStart = raw.lastIndexOf('\n', offset) + 1;
-    const lineEnd = raw.indexOf('\n', offset);
+    const lineStart = raw.lastIndexOf("\n", offset) + 1;
+    const lineEnd = raw.indexOf("\n", offset);
     const line = raw.slice(lineStart, lineEnd === -1 ? undefined : lineEnd);
     try {
       const parsed = JSON.parse(line);
-      if (parsed && typeof parsed.bytes_b64 === 'string') {
-        const text = Buffer.from(parsed.bytes_b64, 'base64').toString('utf-8');
+      if (parsed && typeof parsed.bytes_b64 === "string") {
+        const text = Buffer.from(parsed.bytes_b64, "base64").toString("utf-8");
         // Truncate snippet for readability
-        return text.replace(/\n/g, '\\n').slice(0, 200);
+        return text.replace(/\n/g, "\\n").slice(0, 200);
       }
-    } catch { /* fall through */ }
+    } catch {
+      /* fall through */
+    }
     return line.slice(0, 200);
   } catch {
     return null;

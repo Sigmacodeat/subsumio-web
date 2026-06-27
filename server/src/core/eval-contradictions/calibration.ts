@@ -13,7 +13,7 @@
  * bound rather than treat it as actionable.
  */
 
-import type { Calibration, WilsonCI } from './types.ts';
+import type { Calibration, WilsonCI } from "./types.ts";
 
 /** 95% confidence z-score. */
 const Z_95 = 1.959963984540054;

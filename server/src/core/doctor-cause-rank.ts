@@ -27,25 +27,25 @@ import {
   SKILL_CHECK_NAMES,
   OPS_CHECK_NAMES,
   META_CHECK_NAMES,
-} from './doctor-categories.ts';
+} from "./doctor-categories.ts";
 
 /** Minimal structural shape of a doctor Check that ranking needs. */
 export interface RankableCheck {
   name: string;
-  status: 'ok' | 'warn' | 'fail';
+  status: "ok" | "warn" | "fail";
   message: string;
   details?: Record<string, unknown>;
 }
 
 export interface RankedIssue {
   name: string;
-  status: 'warn' | 'fail';
+  status: "warn" | "fail";
   /**
    * Coarse sort bucket. `root` = a designated root-cause check; `symptom` =
    * everything else (NOT a proof that it's a downstream effect — just "not on
    * the root-cause list"). The precise causal claim lives in `downstream_of`.
    */
-  tier: 'root' | 'symptom';
+  tier: "root" | "symptom";
   /**
    * Set ONLY for a known causal edge whose root is also failing. Absent
    * otherwise — we never invent causality from co-occurrence.
@@ -60,11 +60,11 @@ export interface RankedIssue {
  * operator reads the cause first. Membership is ORDERING ONLY (CODEX #9).
  */
 export const ROOT_CAUSE_CHECKS: ReadonlySet<string> = new Set([
-  'worker_oom_loop',
-  'pool_reap_health',
-  'connection',
-  'sync_freshness',
-  'schema_version',
+  "worker_oom_loop",
+  "pool_reap_health",
+  "connection",
+  "sync_freshness",
+  "schema_version",
 ]);
 
 /**
@@ -72,10 +72,10 @@ export const ROOT_CAUSE_CHECKS: ReadonlySet<string> = new Set([
  * roots. Ordering only — not a causal claim.
  */
 export const SYMPTOM_CHECKS: ReadonlySet<string> = new Set([
-  'queue_health',
-  'batch_retry_health',
-  'supervisor',
-  'stale_locks',
+  "queue_health",
+  "batch_retry_health",
+  "supervisor",
+  "stale_locks",
 ]);
 
 /**
@@ -90,12 +90,12 @@ export const SYMPTOM_CHECKS: ReadonlySet<string> = new Set([
  *     worker_oom_loop's supervised half counts.
  */
 const DOWNSTREAM_EDGES: Readonly<Record<string, string>> = {
-  queue_health: 'worker_oom_loop',
-  supervisor: 'worker_oom_loop',
+  queue_health: "worker_oom_loop",
+  supervisor: "worker_oom_loop",
 };
 
-function tierOf(name: string): 'root' | 'symptom' {
-  return ROOT_CAUSE_CHECKS.has(name) ? 'root' : 'symptom';
+function tierOf(name: string): "root" | "symptom" {
+  return ROOT_CAUSE_CHECKS.has(name) ? "root" : "symptom";
 }
 
 /**
@@ -103,31 +103,30 @@ function tierOf(name: string): 'root' | 'symptom' {
  * (deterministic). Returns the full ranked list; the renderer caps to top-N.
  */
 export function rankIssues(checks: RankableCheck[]): RankedIssue[] {
-  const failing = checks.filter((c) => c.status !== 'ok');
+  const failing = checks.filter((c) => c.status !== "ok");
   const failingNames = new Set(failing.map((c) => c.name));
 
   const issues: RankedIssue[] = failing.map((c) => {
     const root = DOWNSTREAM_EDGES[c.name];
     const downstream_of = root && failingNames.has(root) ? root : undefined;
     const hint = c.details?.fix_hint;
-    const fix =
-      typeof hint === 'string' && hint.trim().length > 0 ? hint : c.message;
+    const fix = typeof hint === "string" && hint.trim().length > 0 ? hint : c.message;
     return {
       name: c.name,
-      status: c.status as 'warn' | 'fail',
+      status: c.status as "warn" | "fail",
       tier: tierOf(c.name),
       ...(downstream_of ? { downstream_of } : {}),
       fix,
     };
   });
 
-  const statusRank = (s: string): number => (s === 'fail' ? 0 : 1);
-  const tierRank = (t: string): number => (t === 'root' ? 0 : 1);
+  const statusRank = (s: string): number => (s === "fail" ? 0 : 1);
+  const tierRank = (t: string): number => (t === "root" ? 0 : 1);
   issues.sort(
     (a, b) =>
       statusRank(a.status) - statusRank(b.status) ||
       tierRank(a.tier) - tierRank(b.tier) ||
-      a.name.localeCompare(b.name),
+      a.name.localeCompare(b.name)
   );
   return issues;
 }

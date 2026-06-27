@@ -1,7 +1,15 @@
 // @vitest-environment node
 
 import { describe, test, expect } from "vitest";
-import { signActionToken, verifyActionToken, bindFragment, RESET_TOKEN_TTL_SECONDS, VERIFY_TOKEN_TTL_SECONDS, INVITE_TOKEN_TTL_SECONDS, CHALLENGE_TOKEN_TTL_SECONDS } from "./tokens";
+import {
+  signActionToken,
+  verifyActionToken,
+  bindFragment,
+  RESET_TOKEN_TTL_SECONDS,
+  VERIFY_TOKEN_TTL_SECONDS,
+  INVITE_TOKEN_TTL_SECONDS,
+  CHALLENGE_TOKEN_TTL_SECONDS,
+} from "./tokens";
 
 const TEST_SECRET = "test-auth-secret-for-tokens-1234567890";
 
@@ -30,7 +38,7 @@ describe("Action Token Sign + Verify Roundtrip", () => {
     const token = await signActionToken(
       { uid: "user-1", purpose: "reset", bind },
       3600,
-      TEST_SECRET,
+      TEST_SECRET
     );
     const payload = await verifyActionToken(token, "reset", TEST_SECRET);
     expect(payload).not.toBeNull();
@@ -44,7 +52,7 @@ describe("Action Token Sign + Verify Roundtrip", () => {
     const token = await signActionToken(
       { uid: "user-2", purpose: "verify", bind },
       48 * 3600,
-      TEST_SECRET,
+      TEST_SECRET
     );
     const payload = await verifyActionToken(token, "verify", TEST_SECRET);
     expect(payload).not.toBeNull();
@@ -57,7 +65,7 @@ describe("Action Token Sign + Verify Roundtrip", () => {
     const token = await signActionToken(
       { uid: "user-3", purpose: "invite", bind },
       7 * 24 * 3600,
-      TEST_SECRET,
+      TEST_SECRET
     );
     const payload = await verifyActionToken(token, "invite", TEST_SECRET);
     expect(payload).not.toBeNull();
@@ -69,7 +77,7 @@ describe("Action Token Sign + Verify Roundtrip", () => {
     const token = await signActionToken(
       { uid: "user-4", purpose: "2fa_challenge", bind },
       300,
-      TEST_SECRET,
+      TEST_SECRET
     );
     const payload = await verifyActionToken(token, "2fa_challenge", TEST_SECRET);
     expect(payload).not.toBeNull();
@@ -83,7 +91,7 @@ describe("Action Token Purpose Isolation", () => {
     const token = await signActionToken(
       { uid: "user-1", purpose: "reset", bind },
       3600,
-      TEST_SECRET,
+      TEST_SECRET
     );
     const payload = await verifyActionToken(token, "verify", TEST_SECRET);
     expect(payload).toBeNull();
@@ -94,7 +102,7 @@ describe("Action Token Purpose Isolation", () => {
     const token = await signActionToken(
       { uid: "user-1", purpose: "verify", bind },
       3600,
-      TEST_SECRET,
+      TEST_SECRET
     );
     const payload = await verifyActionToken(token, "reset", TEST_SECRET);
     expect(payload).toBeNull();
@@ -105,7 +113,7 @@ describe("Action Token Purpose Isolation", () => {
     const token = await signActionToken(
       { uid: "user-1", purpose: "invite", bind },
       3600,
-      TEST_SECRET,
+      TEST_SECRET
     );
     const payload = await verifyActionToken(token, "2fa_challenge", TEST_SECRET);
     expect(payload).toBeNull();
@@ -118,7 +126,7 @@ describe("Action Token Expiry", () => {
     const token = await signActionToken(
       { uid: "user-1", purpose: "reset", bind },
       -1, // already expired
-      TEST_SECRET,
+      TEST_SECRET
     );
     const payload = await verifyActionToken(token, "reset", TEST_SECRET);
     expect(payload).toBeNull();
@@ -126,11 +134,7 @@ describe("Action Token Expiry", () => {
 
   test("token with 1-second TTL is valid immediately but expires after", async () => {
     const bind = await bindFragment("test");
-    const token = await signActionToken(
-      { uid: "user-1", purpose: "reset", bind },
-      1,
-      TEST_SECRET,
-    );
+    const token = await signActionToken({ uid: "user-1", purpose: "reset", bind }, 1, TEST_SECRET);
     // Should be valid immediately
     const payload1 = await verifyActionToken(token, "reset", TEST_SECRET);
     expect(payload1).not.toBeNull();
@@ -150,7 +154,7 @@ describe("Action Token Security", () => {
     const token = await signActionToken(
       { uid: "user-1", purpose: "reset", bind },
       3600,
-      "secret-a",
+      "secret-a"
     );
     const payload = await verifyActionToken(token, "reset", "secret-b");
     expect(payload).toBeNull();
@@ -171,7 +175,7 @@ describe("Action Token Security", () => {
     const token = await signActionToken(
       { uid: "user-1", purpose: "reset", bind },
       3600,
-      TEST_SECRET,
+      TEST_SECRET
     );
     // Tamper with the last 5 chars of the signature
     const tampered = token.slice(0, -5) + "xxxxx";
@@ -186,7 +190,7 @@ describe("Action Token Security", () => {
     const token = await signActionToken(
       { uid: "user-1", purpose: "reset", bind },
       3600,
-      TEST_SECRET,
+      TEST_SECRET
     );
     const payload = await verifyActionToken(token, "reset", TEST_SECRET);
     expect(payload).not.toBeNull();

@@ -20,8 +20,8 @@
  * the main graph-mutating cluster so they see fresh state.
  */
 
-import type { BrainEngine } from '../engine.ts';
-import type { PhaseResult, PhaseStatus } from '../cycle.ts';
+import type { BrainEngine } from "../engine.ts";
+import type { PhaseResult, PhaseStatus } from "../cycle.ts";
 
 export interface LegalPhaseOpts {
   dryRun?: boolean;
@@ -33,7 +33,7 @@ export interface LegalPhaseOpts {
 
 export async function runPhaseLegalStatuteCurrency(
   engine: BrainEngine,
-  opts: LegalPhaseOpts,
+  opts: LegalPhaseOpts
 ): Promise<PhaseResult> {
   try {
     // Query all statute sections grouped by jurisdiction + abbreviation
@@ -46,27 +46,30 @@ export async function runPhaseLegalStatuteCurrency(
        FROM pages
        WHERE slug LIKE 'legal/statutes/%'
          AND deleted_at IS NULL
-         ${opts.sourceId ? `AND source_id = $1` : ''}
+         ${opts.sourceId ? `AND source_id = $1` : ""}
        ORDER BY slug
        LIMIT 5000`,
-      opts.sourceId ? [opts.sourceId] : [],
+      opts.sourceId ? [opts.sourceId] : []
     );
 
-    const byStatute = new Map<string, {
-      jurisdiction: string;
-      abbreviation: string;
-      version_date: string | null;
-      section_count: number;
-      newest_update: string;
-    }>();
+    const byStatute = new Map<
+      string,
+      {
+        jurisdiction: string;
+        abbreviation: string;
+        version_date: string | null;
+        section_count: number;
+        newest_update: string;
+      }
+    >();
 
     for (const row of rows) {
-      const parts = row.slug.split('/');
-      const jur = parts[2] ?? 'unknown';
-      const abbr = parts[3] ?? 'unknown';
+      const parts = row.slug.split("/");
+      const jur = parts[2] ?? "unknown";
+      const abbr = parts[3] ?? "unknown";
       const key = `${jur}/${abbr}`;
       const fm = row.frontmatter ?? {};
-      const versionDate = typeof fm.version_date === 'string' ? fm.version_date : null;
+      const versionDate = typeof fm.version_date === "string" ? fm.version_date : null;
 
       const existing = byStatute.get(key);
       if (existing) {
@@ -87,25 +90,36 @@ export async function runPhaseLegalStatuteCurrency(
     }
 
     const statutes = Array.from(byStatute.values());
-    const withoutVersion = statutes.filter(s => !s.version_date);
+    const withoutVersion = statutes.filter((s) => !s.version_date);
 
     // Live comparison: check first 10 statutes per jurisdiction against external sources
-    const outdatedFromLive: Array<{ statute_id: string; brain_version: string | null; live_version: string | null; source: string }> = [];
+    const outdatedFromLive: Array<{
+      statute_id: string;
+      brain_version: string | null;
+      live_version: string | null;
+      source: string;
+    }> = [];
     try {
-      const { fetchLiveStatuteVersion } = await import('../../lib/statute-live-source.ts');
+      const { fetchLiveStatuteVersion } = await import("../../lib/statute-live-source.ts");
       const byJur = new Map<string, string[]>();
       for (const [key, s] of byStatute) {
         const jur = s.jurisdiction;
-        if (!['at', 'de', 'ch'].includes(jur)) continue;
+        if (!["at", "de", "ch"].includes(jur)) continue;
         if (!byJur.has(jur)) byJur.set(jur, []);
         byJur.get(jur)!.push(s.abbreviation.toLowerCase());
       }
       for (const [jur, abbrs] of byJur) {
         for (const abbr of abbrs.slice(0, 10)) {
-          const live = await fetchLiveStatuteVersion(jur as 'at' | 'de' | 'ch', abbr);
+          const live = await fetchLiveStatuteVersion(jur as "at" | "de" | "ch", abbr);
           if (live?.version_date) {
-            const brainStatute = statutes.find(s => s.jurisdiction === jur && s.abbreviation.toLowerCase() === abbr);
-            if (brainStatute && brainStatute.version_date && brainStatute.version_date < live.version_date) {
+            const brainStatute = statutes.find(
+              (s) => s.jurisdiction === jur && s.abbreviation.toLowerCase() === abbr
+            );
+            if (
+              brainStatute &&
+              brainStatute.version_date &&
+              brainStatute.version_date < live.version_date
+            ) {
               outdatedFromLive.push({
                 statute_id: `${jur}/${brainStatute.abbreviation}`,
                 brain_version: brainStatute.version_date,
@@ -120,38 +134,46 @@ export async function runPhaseLegalStatuteCurrency(
       // Live comparison failed — skip silently
     }
 
-    const status: PhaseStatus = withoutVersion.length > 0 || outdatedFromLive.length > 0 ? 'warn' : 'ok';
+    const status: PhaseStatus =
+      withoutVersion.length > 0 || outdatedFromLive.length > 0 ? "warn" : "ok";
 
     return {
-      phase: 'legal_statute_currency',
+      phase: "legal_statute_currency",
       status,
       duration_ms: 0,
-      summary: `${statutes.length} statute(s) across ${new Set(statutes.map(s => s.jurisdiction)).size} jurisdiction(s)` +
-        (withoutVersion.length > 0 ? `; ${withoutVersion.length} without version_date` : '') +
-        (outdatedFromLive.length > 0 ? `; ${outdatedFromLive.length} outdated vs live source` : ''),
+      summary:
+        `${statutes.length} statute(s) across ${new Set(statutes.map((s) => s.jurisdiction)).size} jurisdiction(s)` +
+        (withoutVersion.length > 0 ? `; ${withoutVersion.length} without version_date` : "") +
+        (outdatedFromLive.length > 0 ? `; ${outdatedFromLive.length} outdated vs live source` : ""),
       details: {
         total_statutes: statutes.length,
         total_sections: rows.length,
-        jurisdictions: Array.from(new Set(statutes.map(s => s.jurisdiction))),
-        statutes_without_version_date: withoutVersion.map(s => `${s.jurisdiction}/${s.abbreviation}`),
+        jurisdictions: Array.from(new Set(statutes.map((s) => s.jurisdiction))),
+        statutes_without_version_date: withoutVersion.map(
+          (s) => `${s.jurisdiction}/${s.abbreviation}`
+        ),
         outdated_from_live: outdatedFromLive,
-        statutes: statutes.map(s => ({
+        statutes: statutes.map((s) => ({
           statute_id: `${s.jurisdiction}/${s.abbreviation}`,
           version_date: s.version_date,
           section_count: s.section_count,
           newest_update: s.newest_update,
-          status: s.version_date ? 'current' : 'unknown',
+          status: s.version_date ? "current" : "unknown",
         })),
       },
     };
   } catch (e) {
     return {
-      phase: 'legal_statute_currency',
-      status: 'fail',
+      phase: "legal_statute_currency",
+      status: "fail",
       duration_ms: 0,
-      summary: 'legal_statute_currency phase failed',
+      summary: "legal_statute_currency phase failed",
       details: {},
-      error: { class: 'InternalError', code: 'UNKNOWN', message: e instanceof Error ? e.message : String(e) },
+      error: {
+        class: "InternalError",
+        code: "UNKNOWN",
+        message: e instanceof Error ? e.message : String(e),
+      },
     };
   }
 }
@@ -160,10 +182,10 @@ export async function runPhaseLegalStatuteCurrency(
 
 export async function runPhaseLegalDeadlineMonitor(
   engine: BrainEngine,
-  opts: LegalPhaseOpts,
+  opts: LegalPhaseOpts
 ): Promise<PhaseResult> {
   try {
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date().toISOString().split("T")[0];
 
     const rows = await engine.executeRaw<{
       slug: string;
@@ -175,15 +197,15 @@ export async function runPhaseLegalDeadlineMonitor(
        FROM pages
        WHERE type = 'legal_deadline'
          AND deleted_at IS NULL
-         ${opts.sourceId ? `AND source_id = $1` : ''}
+         ${opts.sourceId ? `AND source_id = $1` : ""}
        ORDER BY slug
        LIMIT 2000`,
-      opts.sourceId ? [opts.sourceId] : [],
+      opts.sourceId ? [opts.sourceId] : []
     );
 
     let overdue = 0;
     let critical = 0; // ≤3 days
-    let warning = 0;  // ≤7 days
+    let warning = 0; // ≤7 days
     let pending = 0;
     let done = 0;
 
@@ -191,10 +213,10 @@ export async function runPhaseLegalDeadlineMonitor(
 
     for (const row of rows) {
       const fm = row.frontmatter ?? {};
-      const dueDate = typeof fm.due_date === 'string' ? fm.due_date : null;
-      const status = typeof fm.status === 'string' ? fm.status : 'pending';
+      const dueDate = typeof fm.due_date === "string" ? fm.due_date : null;
+      const status = typeof fm.status === "string" ? fm.status : "pending";
 
-      if (status === 'done') {
+      if (status === "done") {
         done++;
         continue;
       }
@@ -214,27 +236,32 @@ export async function runPhaseLegalDeadlineMonitor(
       let deadlineStatus: string;
       if (days < 0) {
         overdue++;
-        deadlineStatus = 'overdue';
+        deadlineStatus = "overdue";
       } else if (days <= 3) {
         critical++;
-        deadlineStatus = 'critical';
+        deadlineStatus = "critical";
       } else if (days <= 7) {
         warning++;
-        deadlineStatus = 'warning';
+        deadlineStatus = "warning";
       } else {
         pending++;
-        deadlineStatus = 'pending';
+        deadlineStatus = "pending";
       }
 
       if (days <= 7) {
-        flagged.push({ slug: row.slug, title: row.title, due_date: dueDate, status: deadlineStatus });
+        flagged.push({
+          slug: row.slug,
+          title: row.title,
+          due_date: dueDate,
+          status: deadlineStatus,
+        });
       }
     }
 
-    const phaseStatus: PhaseStatus = overdue > 0 ? 'warn' : critical > 0 ? 'warn' : 'ok';
+    const phaseStatus: PhaseStatus = overdue > 0 ? "warn" : critical > 0 ? "warn" : "ok";
 
     return {
-      phase: 'legal_deadline_monitor',
+      phase: "legal_deadline_monitor",
       status: phaseStatus,
       duration_ms: 0,
       summary: `${rows.length} deadline(s): ${overdue} overdue, ${critical} critical (≤3d), ${warning} warning (≤7d), ${pending} pending, ${done} done`,
@@ -251,12 +278,16 @@ export async function runPhaseLegalDeadlineMonitor(
     };
   } catch (e) {
     return {
-      phase: 'legal_deadline_monitor',
-      status: 'fail',
+      phase: "legal_deadline_monitor",
+      status: "fail",
       duration_ms: 0,
-      summary: 'legal_deadline_monitor phase failed',
+      summary: "legal_deadline_monitor phase failed",
       details: {},
-      error: { class: 'InternalError', code: 'UNKNOWN', message: e instanceof Error ? e.message : String(e) },
+      error: {
+        class: "InternalError",
+        code: "UNKNOWN",
+        message: e instanceof Error ? e.message : String(e),
+      },
     };
   }
 }
@@ -265,7 +296,7 @@ export async function runPhaseLegalDeadlineMonitor(
 
 export async function runPhaseLegalCaseProgression(
   engine: BrainEngine,
-  opts: LegalPhaseOpts,
+  opts: LegalPhaseOpts
 ): Promise<PhaseResult> {
   try {
     // Query legal_case pages and their current status
@@ -278,10 +309,10 @@ export async function runPhaseLegalCaseProgression(
        FROM pages
        WHERE type = 'legal_case'
          AND deleted_at IS NULL
-         ${opts.sourceId ? `AND source_id = $1` : ''}
+         ${opts.sourceId ? `AND source_id = $1` : ""}
        ORDER BY updated_at DESC
        LIMIT 2000`,
-      opts.sourceId ? [opts.sourceId] : [],
+      opts.sourceId ? [opts.sourceId] : []
     );
 
     const byStatus = new Map<string, number>();
@@ -292,7 +323,7 @@ export async function runPhaseLegalCaseProgression(
 
     for (const row of rows) {
       const fm = row.frontmatter ?? {};
-      const status = typeof fm.status === 'string' ? fm.status : 'unknown';
+      const status = typeof fm.status === "string" ? fm.status : "unknown";
       byStatus.set(status, (byStatus.get(status) ?? 0) + 1);
 
       if (row.updated_at > cutoff) {
@@ -300,11 +331,14 @@ export async function runPhaseLegalCaseProgression(
       }
     }
 
-    const statusBreakdown = Array.from(byStatus.entries()).map(([status, count]) => ({ status, count }));
+    const statusBreakdown = Array.from(byStatus.entries()).map(([status, count]) => ({
+      status,
+      count,
+    }));
 
     return {
-      phase: 'legal_case_progression',
-      status: 'ok',
+      phase: "legal_case_progression",
+      status: "ok",
       duration_ms: 0,
       summary: `${rows.length} case(s); ${recentChanges.length} updated in last 24h`,
       details: {
@@ -315,12 +349,16 @@ export async function runPhaseLegalCaseProgression(
     };
   } catch (e) {
     return {
-      phase: 'legal_case_progression',
-      status: 'fail',
+      phase: "legal_case_progression",
+      status: "fail",
       duration_ms: 0,
-      summary: 'legal_case_progression phase failed',
+      summary: "legal_case_progression phase failed",
       details: {},
-      error: { class: 'InternalError', code: 'UNKNOWN', message: e instanceof Error ? e.message : String(e) },
+      error: {
+        class: "InternalError",
+        code: "UNKNOWN",
+        message: e instanceof Error ? e.message : String(e),
+      },
     };
   }
 }
@@ -329,20 +367,20 @@ export async function runPhaseLegalCaseProgression(
 
 export async function runPhaseLegalPrecedentLinkage(
   engine: BrainEngine,
-  opts: LegalPhaseOpts,
+  opts: LegalPhaseOpts
 ): Promise<PhaseResult> {
   try {
     if (opts.dryRun) {
       return {
-        phase: 'legal_precedent_linkage',
-        status: 'skipped',
+        phase: "legal_precedent_linkage",
+        status: "skipped",
         duration_ms: 0,
-        summary: 'dry-run: legal_precedent_linkage skipped (no dry-run mode)',
-        details: { dryRun: true, reason: 'no_dry_run_support' },
+        summary: "dry-run: legal_precedent_linkage skipped (no dry-run mode)",
+        details: { dryRun: true, reason: "no_dry_run_support" },
       };
     }
 
-    const sourceFilter = opts.sourceId ? `AND source_id = $1` : '';
+    const sourceFilter = opts.sourceId ? `AND source_id = $1` : "";
     const sourceParams = opts.sourceId ? [opts.sourceId] : [];
 
     // Find legal_case pages with frontmatter for entity linking
@@ -357,7 +395,7 @@ export async function runPhaseLegalPrecedentLinkage(
          ${sourceFilter}
        ORDER BY slug
        LIMIT 500`,
-      sourceParams,
+      sourceParams
     );
 
     // Find statute sections for linking
@@ -367,7 +405,7 @@ export async function runPhaseLegalPrecedentLinkage(
          AND deleted_at IS NULL
          ${sourceFilter}
        LIMIT 5000`,
-      sourceParams,
+      sourceParams
     );
 
     // Find legal_entity pages for entity→case linking
@@ -377,11 +415,11 @@ export async function runPhaseLegalPrecedentLinkage(
          AND deleted_at IS NULL
          ${sourceFilter}
        LIMIT 5000`,
-      sourceParams,
+      sourceParams
     );
 
-    const statuteSlugs = new Set(statutes.map(s => s.slug));
-    const entitySlugs = new Set(entities.map(e => e.slug));
+    const statuteSlugs = new Set(statutes.map((s) => s.slug));
+    const entitySlugs = new Set(entities.map((e) => e.slug));
     let linksCreated = 0;
     let casesProcessed = 0;
     let statuteLinks = 0;
@@ -405,7 +443,7 @@ export async function runPhaseLegalPrecedentLinkage(
         const sectionNum = match[1] ?? match[2];
         const abbr = match[3].toLowerCase();
 
-        for (const jur of ['de', 'at', 'ch']) {
+        for (const jur of ["de", "at", "ch"]) {
           const candidateSlug = `legal/statutes/${jur}/${abbr}/§-${sectionNum}`;
           if (statuteSlugs.has(candidateSlug)) {
             try {
@@ -413,11 +451,11 @@ export async function runPhaseLegalPrecedentLinkage(
                 caseRow.slug,
                 candidateSlug,
                 ref,
-                'case_to_statute',
-                'legal-dream',
+                "case_to_statute",
+                "legal-dream",
                 undefined,
                 undefined,
-                linkOpts,
+                linkOpts
               );
               linksCreated++;
               statuteLinks++;
@@ -431,21 +469,22 @@ export async function runPhaseLegalPrecedentLinkage(
 
       // ── 2. Case → Opponent typed edges (case_to_opponent) ──
       // Link from case to opponent entity if frontmatter has opponent_id
-      const opponentId = typeof fm.opponent_id === 'string' ? fm.opponent_id : undefined;
-      const opponentSlug = typeof fm.opponent_slug === 'string' ? fm.opponent_slug : undefined;
-      const opponentTarget = opponentSlug ?? (opponentId ? `legal/entities/${opponentId}` : undefined);
+      const opponentId = typeof fm.opponent_id === "string" ? fm.opponent_id : undefined;
+      const opponentSlug = typeof fm.opponent_slug === "string" ? fm.opponent_slug : undefined;
+      const opponentTarget =
+        opponentSlug ?? (opponentId ? `legal/entities/${opponentId}` : undefined);
 
       if (opponentTarget && entitySlugs.has(opponentTarget)) {
         try {
           await engine.addLink(
             caseRow.slug,
             opponentTarget,
-            'opponent',
-            'case_to_opponent',
-            'legal-dream',
+            "opponent",
+            "case_to_opponent",
+            "legal-dream",
             undefined,
             undefined,
-            linkOpts,
+            linkOpts
           );
           linksCreated++;
           opponentLinks++;
@@ -457,14 +496,15 @@ export async function runPhaseLegalPrecedentLinkage(
       // ── 3. Entity → Case typed edges (entity_to_case) ──
       // Link lawyer, court, client entities to this case
       const entityFields = [
-        { field: 'lawyer_id', slugField: 'lawyer_slug', role: 'lawyer' },
-        { field: 'court_id', slugField: 'court_slug', role: 'court' },
-        { field: 'client_id', slugField: 'client_slug', role: 'client' },
+        { field: "lawyer_id", slugField: "lawyer_slug", role: "lawyer" },
+        { field: "court_id", slugField: "court_slug", role: "court" },
+        { field: "client_id", slugField: "client_slug", role: "client" },
       ];
 
       for (const ef of entityFields) {
-        const entityId = typeof fm[ef.field] === 'string' ? fm[ef.field] as string : undefined;
-        const entitySlug = typeof fm[ef.slugField] === 'string' ? fm[ef.slugField] as string : undefined;
+        const entityId = typeof fm[ef.field] === "string" ? (fm[ef.field] as string) : undefined;
+        const entitySlug =
+          typeof fm[ef.slugField] === "string" ? (fm[ef.slugField] as string) : undefined;
         const target = entitySlug ?? (entityId ? `legal/entities/${entityId}` : undefined);
 
         if (target && entitySlugs.has(target)) {
@@ -473,11 +513,11 @@ export async function runPhaseLegalPrecedentLinkage(
               target,
               caseRow.slug,
               ef.role,
-              'entity_to_case',
-              'legal-dream',
+              "entity_to_case",
+              "legal-dream",
               undefined,
               undefined,
-              linkOpts,
+              linkOpts
             );
             linksCreated++;
             entityLinks++;
@@ -489,12 +529,13 @@ export async function runPhaseLegalPrecedentLinkage(
 
       // ── 4. Case → Case precedent edges (legal_precedent) ──
       // Extract references to other cases (e.g., "Az. XII ZR 123/21", "Rechtssache 123 C")
-      const caseRefPattern = /(?:Az\.?\s*|Rechtssache\s+|Rs\.\s*)([A-Z0-9]+\s*[A-Z]+\s*\d+\/\d+|[\w-]+)/g;
+      const caseRefPattern =
+        /(?:Az\.?\s*|Rechtssache\s+|Rs\.\s*)([A-Z0-9]+\s*[A-Z]+\s*\d+\/\d+|[\w-]+)/g;
       const caseRefs = caseRow.body.match(caseRefPattern) ?? [];
 
       for (const caseRef of caseRefs) {
         // Try to find a matching case slug by searching titles
-        const cleanRef = caseRef.replace(/^(?:Az\.?\s*|Rechtssache\s+|Rs\.\s+)/, '').trim();
+        const cleanRef = caseRef.replace(/^(?:Az\.?\s*|Rechtssache\s+|Rs\.\s+)/, "").trim();
         if (cleanRef.length < 5) continue;
 
         // Look for cases whose slug or title contains this reference
@@ -506,7 +547,9 @@ export async function runPhaseLegalPrecedentLinkage(
              AND slug != $2
              ${sourceFilter}
              LIMIT 5`,
-          opts.sourceId ? [`%${cleanRef}%`, caseRow.slug, opts.sourceId] : [`%${cleanRef}%`, caseRow.slug],
+          opts.sourceId
+            ? [`%${cleanRef}%`, caseRow.slug, opts.sourceId]
+            : [`%${cleanRef}%`, caseRow.slug]
         );
 
         for (const matchCase of matchingCases) {
@@ -515,11 +558,11 @@ export async function runPhaseLegalPrecedentLinkage(
               caseRow.slug,
               matchCase.slug,
               caseRef,
-              'legal_precedent',
-              'legal-dream',
+              "legal_precedent",
+              "legal-dream",
               undefined,
               undefined,
-              linkOpts,
+              linkOpts
             );
             linksCreated++;
           } catch {
@@ -530,8 +573,8 @@ export async function runPhaseLegalPrecedentLinkage(
     }
 
     return {
-      phase: 'legal_precedent_linkage',
-      status: 'ok',
+      phase: "legal_precedent_linkage",
+      status: "ok",
       duration_ms: 0,
       summary: `${linksCreated} legal link(s) created across ${casesProcessed} case(s) — statute: ${statuteLinks}, opponent: ${opponentLinks}, entity: ${entityLinks}`,
       details: {
@@ -546,12 +589,16 @@ export async function runPhaseLegalPrecedentLinkage(
     };
   } catch (e) {
     return {
-      phase: 'legal_precedent_linkage',
-      status: 'fail',
+      phase: "legal_precedent_linkage",
+      status: "fail",
       duration_ms: 0,
-      summary: 'legal_precedent_linkage phase failed',
+      summary: "legal_precedent_linkage phase failed",
       details: {},
-      error: { class: 'InternalError', code: 'UNKNOWN', message: e instanceof Error ? e.message : String(e) },
+      error: {
+        class: "InternalError",
+        code: "UNKNOWN",
+        message: e instanceof Error ? e.message : String(e),
+      },
     };
   }
 }

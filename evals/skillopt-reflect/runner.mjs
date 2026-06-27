@@ -9,8 +9,8 @@
 //     --optimizer-model anthropic:claude-opus-4-7 \
 //     --output evals/skillopt-reflect/receipts/$(date +%Y%m%d).json
 
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { dirname, join } from "node:path";
 
 const args = process.argv.slice(2);
 function flag(name, def) {
@@ -18,16 +18,16 @@ function flag(name, def) {
   return i >= 0 ? args[i + 1] : def;
 }
 
-const optimizerModel = flag('--optimizer-model', 'anthropic:claude-opus-4-7');
-const fixturesPath = flag('--fixtures', join(import.meta.dirname, 'fixtures.jsonl'));
-const outputPath = flag('--output');
+const optimizerModel = flag("--optimizer-model", "anthropic:claude-opus-4-7");
+const fixturesPath = flag("--fixtures", join(import.meta.dirname, "fixtures.jsonl"));
+const outputPath = flag("--output");
 
-const fixtures = readFileSync(fixturesPath, 'utf8')
-  .split('\n')
+const fixtures = readFileSync(fixturesPath, "utf8")
+  .split("\n")
   .filter((l) => l.trim().length > 0)
   .map((l) => JSON.parse(l));
 
-const { runReflect } = await import('../../src/core/skillopt/reflect.ts');
+const { runReflect } = await import("../../src/core/skillopt/reflect.ts");
 
 const perFixture = [];
 let totalWins = 0;
@@ -39,10 +39,19 @@ for (const fx of fixtures) {
       task_id: r.task,
       task: r.task,
       final_text: r.final_text,
-      tool_calls: (r.tool_calls ?? []).map((tc) => ({ name: tc.name, input: {}, failed: !!tc.failed })),
-      usage: { input_tokens: 100, output_tokens: 50, cache_read_tokens: 0, cache_creation_tokens: 0 },
+      tool_calls: (r.tool_calls ?? []).map((tc) => ({
+        name: tc.name,
+        input: {},
+        failed: !!tc.failed,
+      })),
+      usage: {
+        input_tokens: 100,
+        output_tokens: 50,
+        cache_read_tokens: 0,
+        cache_creation_tokens: 0,
+      },
       turns: 1,
-      stop_reason: 'end',
+      stop_reason: "end",
       duration_ms: 100,
     },
     score: r.score,
@@ -81,7 +90,7 @@ for (const fx of fixtures) {
 }
 
 const aggregateHitRate = totalExpected > 0 ? totalWins / totalExpected : 0;
-const verdict = aggregateHitRate >= 0.7 ? 'pass' : 'fail';
+const verdict = aggregateHitRate >= 0.7 ? "pass" : "fail";
 
 const receipt = {
   schema_version: 1,
@@ -102,10 +111,10 @@ if (outputPath) {
   writeFileSync(outputPath, out);
   process.stderr.write(`Wrote receipt to ${outputPath}\n`);
 } else {
-  process.stdout.write(out + '\n');
+  process.stdout.write(out + "\n");
 }
 
-process.exit(verdict === 'pass' ? 0 : 1);
+process.exit(verdict === "pass" ? 0 : 1);
 
 function editShapeMatches(proposed, expected) {
   if (proposed.op !== expected.op) return false;

@@ -223,7 +223,13 @@ describe("invoiceContentString — Edge Cases & Tampering", () => {
       ...sampleInvoice,
       client: "Müller & Söhne GmbH — Köln €",
       items: [
-        { date: "2026-06-01", description: "Beratung zum Urheberrecht § 97", hours: 1, rate: 250, amount: 250 },
+        {
+          date: "2026-06-01",
+          description: "Beratung zum Urheberrecht § 97",
+          hours: 1,
+          rate: 250,
+          amount: 250,
+        },
       ],
     };
     const s = invoiceContentString(inv);
@@ -272,7 +278,10 @@ describe("invoiceContentString — Edge Cases & Tampering", () => {
     const tampered = await sha256Hex(
       invoiceContentString({
         ...sampleInvoice,
-        expenses: [...(sampleInvoice.expenses ?? []), { date: "2026-06-04", description: "Kopien", amount: 5 }],
+        expenses: [
+          ...(sampleInvoice.expenses ?? []),
+          { date: "2026-06-04", description: "Kopien", amount: 5 },
+        ],
       })
     );
     expect(tampered).not.toBe(issued);
@@ -280,17 +289,13 @@ describe("invoiceContentString — Edge Cases & Tampering", () => {
 
   test("Tampering: entfernte Auslage → Hash weicht ab", async () => {
     const issued = await sha256Hex(invoiceContentString(sampleInvoice));
-    const tampered = await sha256Hex(
-      invoiceContentString({ ...sampleInvoice, expenses: [] })
-    );
+    const tampered = await sha256Hex(invoiceContentString({ ...sampleInvoice, expenses: [] }));
     expect(tampered).not.toBe(issued);
   });
 
   test("Tampering: geänderte Steuern → Hash weicht ab", async () => {
     const issued = await sha256Hex(invoiceContentString(sampleInvoice));
-    const tampered = await sha256Hex(
-      invoiceContentString({ ...sampleInvoice, tax: 191 })
-    );
+    const tampered = await sha256Hex(invoiceContentString({ ...sampleInvoice, tax: 191 }));
     expect(tampered).not.toBe(issued);
   });
 });
@@ -353,7 +358,9 @@ describe("Round-Trip: Ausstellung → Speichern → Verifikation", () => {
       subtotal: 0,
       tax: 0,
       total: 0,
-      items: [{ date: "2026-06-20", description: "Pro Bono Beratung", hours: 0, rate: 0, amount: 0 }],
+      items: [
+        { date: "2026-06-20", description: "Pro Bono Beratung", hours: 0, rate: 0, amount: 0 },
+      ],
     };
     const h1 = await sha256Hex(invoiceContentString(inv));
     const h2 = await sha256Hex(invoiceContentString(inv));

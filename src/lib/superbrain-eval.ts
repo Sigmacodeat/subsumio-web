@@ -64,11 +64,14 @@ export interface SuperbrainEvalSummary {
   avg_entity_resolution_precision: number;
   avg_freshness_accuracy: number;
   avg_source_leakage_rate: number;
-  byCategory: Record<string, {
-    total: number;
-    passed: number;
-    pass_rate: number;
-  }>;
+  byCategory: Record<
+    string,
+    {
+      total: number;
+      passed: number;
+      pass_rate: number;
+    }
+  >;
   results: SuperbrainEvalResult[];
   timestamp: string;
 }
@@ -132,7 +135,8 @@ export const SUPERBRAIN_EVAL_FIXTURES: SuperbrainEvalFixture[] = [
   {
     id: "gaps-unreviewed-document",
     case_slug: "cases/unreviewed-test",
-    description: "Dokumente mit unknown OCR Status sollten als unreviewed_document Gap erkannt werden",
+    description:
+      "Dokumente mit unknown OCR Status sollten als unreviewed_document Gap erkannt werden",
     expected_gaps: ["unreviewed_document"],
     expected_coverage_min: 0,
     expected_parties_min: 0,
@@ -155,7 +159,8 @@ export const SUPERBRAIN_EVAL_FIXTURES: SuperbrainEvalFixture[] = [
   {
     id: "temporal-contradiction",
     case_slug: "cases/contradiction-test",
-    description: "Widersprüchliche claims/defenses sollten als contradictory_facts Gap erkannt werden",
+    description:
+      "Widersprüchliche claims/defenses sollten als contradictory_facts Gap erkannt werden",
     expected_gaps: ["contradictory_facts"],
     expected_coverage_min: 0,
     expected_parties_min: 0,
@@ -189,7 +194,8 @@ export const SUPERBRAIN_EVAL_FIXTURES: SuperbrainEvalFixture[] = [
   {
     id: "entity-resolution-precision",
     case_slug: "cases/entity-resolution-test",
-    description: "Entity Resolution Precision: Korrekt aufgelöste Entitäten (Mandant, Gegner, Gericht)",
+    description:
+      "Entity Resolution Precision: Korrekt aufgelöste Entitäten (Mandant, Gegner, Gericht)",
     expected_gaps: [],
     expected_coverage_min: 0,
     expected_parties_min: 0,
@@ -213,7 +219,8 @@ export const SUPERBRAIN_EVAL_FIXTURES: SuperbrainEvalFixture[] = [
   {
     id: "source-leakage-rate-zero",
     case_slug: "cases/leakage-test",
-    description: "Source Leakage Rate = 0: Keine unautorisierten Quellen sollten in Ergebnissen auftauchen",
+    description:
+      "Source Leakage Rate = 0: Keine unautorisierten Quellen sollten in Ergebnissen auftauchen",
     expected_gaps: [],
     expected_coverage_min: 0,
     expected_parties_min: 0,
@@ -231,7 +238,12 @@ export interface MatterContextForEval {
   documents: { slug?: string; name: string; ocr_status?: string }[];
   coverage: {
     completeness_score: number;
-    sources: { source_id: string; source_type: string; connected: boolean; index_fresh?: boolean }[];
+    sources: {
+      source_id: string;
+      source_type: string;
+      connected: boolean;
+      index_fresh?: boolean;
+    }[];
   };
   gaps: { type: string; severity: string; title: string }[];
   engine_reachable: boolean;
@@ -253,7 +265,7 @@ export interface MatterContextForEval {
 
 export async function runSuperbrainEval(
   contextFetcher: (caseSlug: string) => Promise<MatterContextForEval | null>,
-  fixtures: SuperbrainEvalFixture[] = SUPERBRAIN_EVAL_FIXTURES,
+  fixtures: SuperbrainEvalFixture[] = SUPERBRAIN_EVAL_FIXTURES
 ): Promise<SuperbrainEvalSummary> {
   const results: SuperbrainEvalResult[] = [];
 
@@ -353,7 +365,7 @@ export async function runSuperbrainEval(
         recallAtK = computeRecallAtK(
           ctx.retrieval_results.relevant_slugs,
           ctx.retrieval_results.returned_slugs,
-          fixture.expected_recall_at_k.k,
+          fixture.expected_recall_at_k.k
         );
         const recallOk = recallAtK >= fixture.expected_recall_at_k.min_score;
         checks.push({
@@ -366,7 +378,9 @@ export async function runSuperbrainEval(
 
       // ── P0-BRAIN-004: Entity Resolution Precision ──
       if (fixture.expected_entity_resolution_precision !== undefined && ctx.entity_resolutions) {
-        entityResolutionPrecision = computeEntityResolutionPrecision(ctx.entity_resolutions.resolved);
+        entityResolutionPrecision = computeEntityResolutionPrecision(
+          ctx.entity_resolutions.resolved
+        );
         const erOk = entityResolutionPrecision >= fixture.expected_entity_resolution_precision;
         checks.push({
           name: "entity_resolution_precision",
@@ -468,27 +482,28 @@ export async function runSuperbrainEval(
 
   const passed = results.filter((r) => r.passed).length;
   const total = results.length;
-  const avgCoverage = total > 0
-    ? results.reduce((sum, r) => sum + r.coverage_score, 0) / total
-    : 0;
-  const avgGapAccuracy = total > 0
-    ? results.reduce((sum, r) => sum + r.gap_accuracy, 0) / total
-    : 0;
+  const avgCoverage = total > 0 ? results.reduce((sum, r) => sum + r.coverage_score, 0) / total : 0;
+  const avgGapAccuracy =
+    total > 0 ? results.reduce((sum, r) => sum + r.gap_accuracy, 0) / total : 0;
   const recallResults = results.filter((r) => r.recall_at_k !== null);
-  const avgRecall = recallResults.length > 0
-    ? recallResults.reduce((sum, r) => sum + (r.recall_at_k ?? 0), 0) / recallResults.length
-    : 0;
+  const avgRecall =
+    recallResults.length > 0
+      ? recallResults.reduce((sum, r) => sum + (r.recall_at_k ?? 0), 0) / recallResults.length
+      : 0;
   const erResults = results.filter((r) => r.entity_resolution_precision !== null);
-  const avgER = erResults.length > 0
-    ? erResults.reduce((sum, r) => sum + (r.entity_resolution_precision ?? 0), 0) / erResults.length
-    : 0;
+  const avgER =
+    erResults.length > 0
+      ? erResults.reduce((sum, r) => sum + (r.entity_resolution_precision ?? 0), 0) /
+        erResults.length
+      : 0;
   const freshnessResults = results.filter((r) => r.freshness_accuracy !== null);
-  const avgFreshness = freshnessResults.length > 0
-    ? freshnessResults.reduce((sum, r) => sum + (r.freshness_accuracy ?? 0), 0) / freshnessResults.length
-    : 0;
-  const avgLeakage = total > 0
-    ? results.reduce((sum, r) => sum + r.source_leakage_rate, 0) / total
-    : 0;
+  const avgFreshness =
+    freshnessResults.length > 0
+      ? freshnessResults.reduce((sum, r) => sum + (r.freshness_accuracy ?? 0), 0) /
+        freshnessResults.length
+      : 0;
+  const avgLeakage =
+    total > 0 ? results.reduce((sum, r) => sum + r.source_leakage_rate, 0) / total : 0;
 
   const byCategory: SuperbrainEvalSummary["byCategory"] = {};
   for (const cat of ["coverage", "gaps", "permissions", "temporal", "explainability"]) {
@@ -525,7 +540,7 @@ export async function runSuperbrainEval(
 export function computeRecallAtK(
   relevantSlugs: string[],
   returnedSlugs: string[],
-  k: number,
+  k: number
 ): number {
   if (relevantSlugs.length === 0) return 1;
   const topK = new Set(returnedSlugs.slice(0, k));
@@ -535,7 +550,7 @@ export function computeRecallAtK(
 
 /** Entity Resolution Precision: fraction of correctly resolved entities. */
 export function computeEntityResolutionPrecision(
-  resolved: { slug: string; canonical: string; correct: boolean }[],
+  resolved: { slug: string; canonical: string; correct: boolean }[]
 ): number {
   if (resolved.length === 0) return 1;
   return resolved.filter((r) => r.correct).length / resolved.length;
@@ -543,7 +558,7 @@ export function computeEntityResolutionPrecision(
 
 /** Freshness Accuracy: fraction of sources with correct freshness status. */
 export function computeFreshnessAccuracy(
-  sources: { source_id: string; expected_fresh: boolean; actual_fresh: boolean }[],
+  sources: { source_id: string; expected_fresh: boolean; actual_fresh: boolean }[]
 ): number {
   if (sources.length === 0) return 1;
   return sources.filter((s) => s.expected_fresh === s.actual_fresh).length / sources.length;

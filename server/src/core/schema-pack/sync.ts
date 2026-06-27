@@ -16,9 +16,9 @@
 //
 // PGLite + Postgres parity via `executeRaw`.
 
-import type { BrainEngine } from '../engine.ts';
-import { loadActivePackBestEffort } from './best-effort.ts';
-import type { OperationContext } from '../operations.ts';
+import type { BrainEngine } from "../engine.ts";
+import { loadActivePackBestEffort } from "./best-effort.ts";
+import type { OperationContext } from "../operations.ts";
 
 export interface SyncOpts {
   /** Apply UPDATE statements. Default false (dry-run). */
@@ -66,7 +66,7 @@ export interface SyncResult {
 async function probePrefix(
   engine: BrainEngine,
   prefix: string,
-  sourceId: string | undefined,
+  sourceId: string | undefined
 ): Promise<{ count: number; sample: string[] }> {
   let where = `WHERE deleted_at IS NULL AND (type IS NULL OR type = '') AND source_path LIKE $1`;
   const params: unknown[] = [`${prefix}%`];
@@ -77,13 +77,13 @@ async function probePrefix(
   try {
     const cntRows = await engine.executeRaw<{ cnt: string }>(
       `SELECT COUNT(*)::text AS cnt FROM pages ${where}`,
-      params,
+      params
     );
-    const count = parseInt(cntRows[0]?.cnt ?? '0', 10) || 0;
+    const count = parseInt(cntRows[0]?.cnt ?? "0", 10) || 0;
     if (count === 0) return { count: 0, sample: [] };
     const sampleRows = await engine.executeRaw<{ slug: string }>(
       `SELECT slug FROM pages ${where} ORDER BY slug LIMIT 10`,
-      params,
+      params
     );
     return { count, sample: sampleRows.map((r) => r.slug) };
   } catch {
@@ -105,10 +105,10 @@ async function applyTypeAssignment(
   prefix: string,
   sourceId: string | undefined,
   batchSize: number,
-  onProgress?: (appliedSoFar: number) => void,
+  onProgress?: (appliedSoFar: number) => void
 ): Promise<number> {
   let totalApplied = 0;
-  let sourceWhere = '';
+  let sourceWhere = "";
   // Param indices for the subquery: 1=type (used in the outer UPDATE),
   // 2=prefix, 3=batchSize, 4=sourceId (when scoped).
   const sourceParams: unknown[] = [];
@@ -133,9 +133,9 @@ async function applyTypeAssignment(
            RETURNING 1
          )
          SELECT COUNT(*)::text AS updated FROM upd`,
-        [type, `${prefix}%`, batchSize, ...sourceParams],
+        [type, `${prefix}%`, batchSize, ...sourceParams]
       );
-      const batchCount = parseInt(rows[0]?.updated ?? '0', 10) || 0;
+      const batchCount = parseInt(rows[0]?.updated ?? "0", 10) || 0;
       if (batchCount === 0) break;
       totalApplied += batchCount;
       onProgress?.(totalApplied);
@@ -143,7 +143,9 @@ async function applyTypeAssignment(
       if (batchCount < batchSize) break;
     } catch (e) {
       // Surface the error — sync failures are real and should fail loud.
-      throw new Error(`schema sync failed at prefix '${prefix}' → type '${type}': ${(e as Error).message}`);
+      throw new Error(
+        `schema sync failed at prefix '${prefix}' → type '${type}': ${(e as Error).message}`
+      );
     }
   }
   return totalApplied;
@@ -156,13 +158,10 @@ async function applyTypeAssignment(
  * count + a 10-slug sample (the agent's drilldown signal). With
  * apply=true: chunked UPDATE per prefix.
  */
-export async function runSyncCore(
-  ctx: OperationContext,
-  opts: SyncOpts = {},
-): Promise<SyncResult> {
+export async function runSyncCore(ctx: OperationContext, opts: SyncOpts = {}): Promise<SyncResult> {
   const apply = opts.apply ?? false;
   const batchSize = Math.max(1, Math.min(10000, opts.batchSize ?? 1000));
-  const sourceId = opts.sourceId;  // codex C5: write-side scoping
+  const sourceId = opts.sourceId; // codex C5: write-side scoping
 
   const pack = await loadActivePackBestEffort(ctx);
   if (!pack) {
@@ -184,13 +183,8 @@ export async function runSyncCore(
       const dead_prefix = probe.count === 0;
       let applied = 0;
       if (apply && probe.count > 0) {
-        applied = await applyTypeAssignment(
-          ctx.engine,
-          t.name,
-          prefix,
-          sourceId,
-          batchSize,
-          (n) => opts.onProgress?.({ type: t.name, prefix, appliedSoFar: n }),
+        applied = await applyTypeAssignment(ctx.engine, t.name, prefix, sourceId, batchSize, (n) =>
+          opts.onProgress?.({ type: t.name, prefix, appliedSoFar: n })
         );
       }
       per_prefix.push({

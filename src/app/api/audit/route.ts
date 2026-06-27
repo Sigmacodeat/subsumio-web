@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler } from "@/lib/api-handler";
@@ -10,7 +9,10 @@ const auditQuerySchema = z.object({
   entityType: z.string().optional(),
   from: z.string().optional(),
   to: z.string().optional(),
-  limit: z.string().transform((v) => Math.min(parseInt(v, 10) || 100, 500)).default("100"),
+  limit: z
+    .string()
+    .transform((v) => Math.min(parseInt(v, 10) || 100, 500))
+    .default("100"),
 });
 
 export const GET = createHandler(
@@ -23,7 +25,7 @@ export const GET = createHandler(
     try {
       const res = await fetch(`${ENGINE_URL}/api/pages?type=audit_log&limit=${query.limit}`, {
         headers: ctx.headers,
-      signal: AbortSignal.timeout(10_000),
+        signal: AbortSignal.timeout(10_000),
       });
 
       if (!res.ok) {
@@ -39,9 +41,10 @@ export const GET = createHandler(
 
       const entries = pages.map((p) => {
         const fm = p.frontmatter || {};
-        const details = fm.details && typeof fm.details === "object"
-          ? (fm.details as Record<string, unknown>)
-          : undefined;
+        const details =
+          fm.details && typeof fm.details === "object"
+            ? (fm.details as Record<string, unknown>)
+            : undefined;
         return {
           id: p.slug,
           action: String(fm.action || ""),
@@ -65,5 +68,5 @@ export const GET = createHandler(
       console.error("[audit] failed:", err instanceof Error ? err.message : String(err));
       return Response.json({ entries: [], total: 0 });
     }
-  },
+  }
 );

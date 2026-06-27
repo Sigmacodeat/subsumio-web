@@ -13,24 +13,34 @@
  */
 
 import {
-  logFriction, readFriction, listRuns, renderReport, renderSummary,
-  activeRunId, frictionFile,
-  type FrictionKind, type FrictionSeverity,
-} from '../core/friction.ts';
+  logFriction,
+  readFriction,
+  listRuns,
+  renderReport,
+  renderSummary,
+  activeRunId,
+  frictionFile,
+  type FrictionKind,
+  type FrictionSeverity,
+} from "../core/friction.ts";
 
-const VALID_KINDS = new Set<FrictionKind>(['friction', 'delight', 'phase-marker', 'interrupted']);
-const VALID_SEVERITIES = new Set<FrictionSeverity>(['confused', 'error', 'blocker', 'nit']);
+const VALID_KINDS = new Set<FrictionKind>(["friction", "delight", "phase-marker", "interrupted"]);
+const VALID_SEVERITIES = new Set<FrictionSeverity>(["confused", "error", "blocker", "nit"]);
 
 export function runFriction(args: string[]): number {
   const [sub, ...rest] = args;
   switch (sub) {
-    case 'log':     return cmdLog(rest);
-    case 'render':  return cmdRender(rest);
-    case 'list':    return cmdList(rest);
-    case 'summary': return cmdSummary(rest);
+    case "log":
+      return cmdLog(rest);
+    case "render":
+      return cmdRender(rest);
+    case "list":
+      return cmdList(rest);
+    case "summary":
+      return cmdSummary(rest);
     case undefined:
-    case '--help':
-    case '-h':
+    case "--help":
+    case "-h":
       printHelp();
       return 0;
     default:
@@ -46,21 +56,25 @@ export function runFriction(args: string[]): number {
 
 function cmdLog(args: string[]): number {
   const flags = parseFlags(args);
-  const phase = flags.string('--phase');
-  const message = flags.string('--message');
+  const phase = flags.string("--phase");
+  const message = flags.string("--message");
   if (!phase || !message) {
-    console.error('usage: gbrain friction log --phase <name> --message <text> [--severity ...] [--hint ...] [--kind ...] [--run-id ...]');
+    console.error(
+      "usage: gbrain friction log --phase <name> --message <text> [--severity ...] [--hint ...] [--kind ...] [--run-id ...]"
+    );
     return 2;
   }
-  const kind = (flags.string('--kind') ?? 'friction') as FrictionKind;
+  const kind = (flags.string("--kind") ?? "friction") as FrictionKind;
   if (!VALID_KINDS.has(kind)) {
-    console.error(`invalid --kind ${kind}; must be one of: ${[...VALID_KINDS].join(', ')}`);
+    console.error(`invalid --kind ${kind}; must be one of: ${[...VALID_KINDS].join(", ")}`);
     return 2;
   }
-  const severityRaw = flags.string('--severity');
+  const severityRaw = flags.string("--severity");
   const severity = severityRaw as FrictionSeverity | undefined;
   if (severity && !VALID_SEVERITIES.has(severity)) {
-    console.error(`invalid --severity ${severity}; must be one of: ${[...VALID_SEVERITIES].join(', ')}`);
+    console.error(
+      `invalid --severity ${severity}; must be one of: ${[...VALID_SEVERITIES].join(", ")}`
+    );
     return 2;
   }
   try {
@@ -69,10 +83,10 @@ function cmdLog(args: string[]): number {
       message,
       kind,
       severity,
-      hint: flags.string('--hint'),
-      runId: flags.string('--run-id'),
-      agent: flags.string('--agent'),
-      source: 'claw',
+      hint: flags.string("--hint"),
+      runId: flags.string("--run-id"),
+      agent: flags.string("--agent"),
+      source: "claw",
     });
   } catch (e) {
     console.error(`friction log failed: ${e instanceof Error ? e.message : String(e)}`);
@@ -87,20 +101,20 @@ function cmdLog(args: string[]): number {
 
 function cmdRender(args: string[]): number {
   const flags = parseFlags(args);
-  const runId = flags.string('--run-id') ?? activeRunId();
-  const json = flags.bool('--json');
-  const format = json ? 'json' : 'md';
-  const transcripts = flags.bool('--transcripts');
-  const noRedact = flags.bool('--no-redact');
+  const runId = flags.string("--run-id") ?? activeRunId();
+  const json = flags.bool("--json");
+  const format = json ? "json" : "md";
+  const transcripts = flags.bool("--transcripts");
+  const noRedact = flags.bool("--no-redact");
   // --redact is the default for md output; --no-redact disables.
-  const redact = noRedact ? false : (format === 'md');
+  const redact = noRedact ? false : format === "md";
   try {
     const out = renderReport(runId, {
       format,
       redact,
-      transcriptPath: transcripts ? flags.string('--transcript-path') ?? undefined : undefined,
+      transcriptPath: transcripts ? (flags.string("--transcript-path") ?? undefined) : undefined,
     });
-    process.stdout.write(out + '\n');
+    process.stdout.write(out + "\n");
     return 0;
   } catch (e) {
     console.error(`friction render failed: ${e instanceof Error ? e.message : String(e)}`);
@@ -114,20 +128,24 @@ function cmdRender(args: string[]): number {
 
 function cmdList(args: string[]): number {
   const flags = parseFlags(args);
-  const json = flags.bool('--json');
+  const json = flags.bool("--json");
   const runs = listRuns();
   if (json) {
     console.log(JSON.stringify(runs, null, 2));
     return 0;
   }
   if (runs.length === 0) {
-    console.log('no runs yet');
+    console.log("no runs yet");
     return 0;
   }
   for (const r of runs) {
-    const interrupted = r.counts.interrupted ? ' (interrupted)' : '';
-    const sev = Object.entries(r.counts.bySeverity).map(([k, v]) => `${k}=${v}`).join(' ');
-    console.log(`${r.runId}${interrupted}  friction=${r.counts.friction}  delight=${r.counts.delight}  ${sev}`);
+    const interrupted = r.counts.interrupted ? " (interrupted)" : "";
+    const sev = Object.entries(r.counts.bySeverity)
+      .map(([k, v]) => `${k}=${v}`)
+      .join(" ");
+    console.log(
+      `${r.runId}${interrupted}  friction=${r.counts.friction}  delight=${r.counts.delight}  ${sev}`
+    );
   }
   return 0;
 }
@@ -138,11 +156,11 @@ function cmdList(args: string[]): number {
 
 function cmdSummary(args: string[]): number {
   const flags = parseFlags(args);
-  const runId = flags.string('--run-id') ?? activeRunId();
-  const json = flags.bool('--json');
+  const runId = flags.string("--run-id") ?? activeRunId();
+  const json = flags.bool("--json");
   try {
-    const out = renderSummary(runId, { format: json ? 'json' : 'md' });
-    process.stdout.write(out + '\n');
+    const out = renderSummary(runId, { format: json ? "json" : "md" });
+    process.stdout.write(out + "\n");
     return 0;
   } catch (e) {
     console.error(`friction summary failed: ${e instanceof Error ? e.message : String(e)}`);

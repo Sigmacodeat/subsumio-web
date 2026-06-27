@@ -15,7 +15,7 @@
  * any module mocking.
  */
 
-import { execFileSync } from 'child_process';
+import { execFileSync } from "child_process";
 
 /**
  * Resolve the tini binary path, or return an empty string when not on PATH.
@@ -27,13 +27,13 @@ export function detectTini(): string {
     // inherit the current process env by default (Bun snapshots env at
     // startup). Without this, runtime mutations to PATH (including in
     // tests) are invisible to `which`.
-    return execFileSync('which', ['tini'], {
-      encoding: 'utf8',
+    return execFileSync("which", ["tini"], {
+      encoding: "utf8",
       timeout: 2000,
       env: process.env,
     }).trim();
   } catch {
-    return '';
+    return "";
   }
 }
 
@@ -48,9 +48,7 @@ export function detectTini(): string {
 export function buildSpawnInvocation(
   tiniPath: string,
   cliPath: string,
-  args: string[],
+  args: string[]
 ): { cmd: string; args: string[] } {
-  return tiniPath
-    ? { cmd: tiniPath, args: ['--', cliPath, ...args] }
-    : { cmd: cliPath, args };
+  return tiniPath ? { cmd: tiniPath, args: ["--", cliPath, ...args] } : { cmd: cliPath, args };
 }

@@ -33,9 +33,9 @@ export function isAborted(signal?: AbortSignal | null): boolean {
 
 /** Error thrown by {@link throwIfAborted}; `name === 'AbortError'`. */
 export class AbortError extends Error {
-  constructor(message = 'aborted') {
+  constructor(message = "aborted") {
     super(message);
-    this.name = 'AbortError';
+    this.name = "AbortError";
   }
 }
 
@@ -47,9 +47,7 @@ export class AbortError extends Error {
 export function throwIfAborted(signal?: AbortSignal | null, label?: string): void {
   if (!signal?.aborted) return;
   const reason =
-    signal.reason instanceof Error
-      ? signal.reason.message
-      : String(signal.reason ?? 'aborted');
+    signal.reason instanceof Error ? signal.reason.message : String(signal.reason ?? "aborted");
   throw new AbortError(label ? `${label}: ${reason}` : reason);
 }
 
@@ -60,12 +58,9 @@ export function throwIfAborted(signal?: AbortSignal | null, label?: string): voi
  * that never pass one pay nothing. Uses the platform `AbortSignal.any` (Node
  * 20+/Bun) and falls back to a manual relay if it's somehow unavailable.
  */
-export function anySignal(
-  internal: AbortSignal,
-  external?: AbortSignal | null,
-): AbortSignal {
+export function anySignal(internal: AbortSignal, external?: AbortSignal | null): AbortSignal {
   if (!external) return internal;
-  if (typeof (AbortSignal as { any?: unknown }).any === 'function') {
+  if (typeof (AbortSignal as { any?: unknown }).any === "function") {
     return (AbortSignal as unknown as { any(s: AbortSignal[]): AbortSignal }).any([
       internal,
       external,
@@ -75,8 +70,8 @@ export function anySignal(
   const ac = new AbortController();
   const relay = (s: AbortSignal) => ac.abort(s.reason);
   if (internal.aborted) relay(internal);
-  else internal.addEventListener('abort', () => relay(internal), { once: true });
+  else internal.addEventListener("abort", () => relay(internal), { once: true });
   if (external.aborted) relay(external);
-  else external.addEventListener('abort', () => relay(external), { once: true });
+  else external.addEventListener("abort", () => relay(external), { once: true });
   return ac.signal;
 }

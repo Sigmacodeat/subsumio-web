@@ -5,6 +5,7 @@ description: Optimiere Test-Strategie und Coverage nach Agency-Level Standards
 # Testing Strategy Optimization
 
 ## Scope
+
 - `tests/e2e/` — E2E Smoke Tests (MJS)
 - `tests/e2e-playwright/` — Playwright E2E Tests (a11y, accessibility, auth-flow)
 - `tests/heavy/` — Heavy Tests (Fixtures, RSS Measurement, Build Scripts)
@@ -15,6 +16,7 @@ description: Optimiere Test-Strategie und Coverage nach Agency-Level Standards
 - `playwright.config.ts` — Playwright Configuration
 
 ## Test-Tiers
+
 1. **Unit Tests** (Vitest) — `*.test.ts` neben Source — Pure Logic, Mocked Dependencies
 2. **Integration Tests** (Vitest) — API Routes mit Mocked Engine
 3. **E2E Tests** (Playwright) — Full Browser Flow, Real API
@@ -22,6 +24,7 @@ description: Optimiere Test-Strategie und Coverage nach Agency-Level Standards
 5. **Server E2E** — Real Postgres + pgvector Container
 
 ## Kontext laden
+
 1. Lese `vitest.config.ts` für Vitest Setup
 2. Lese `playwright.config.ts` für Playwright Setup
 3. Lese `server/docs/TESTING.md` für Server Test-Strategie
@@ -29,6 +32,7 @@ description: Optimiere Test-Strategie und Coverage nach Agency-Level Standards
 5. Lese `tests/heavy/README.md` für Heavy Test Setup
 
 ## Optimierungs-Checkliste
+
 - [ ] **Coverage**: >80% für Business Logic, >60% für UI
 - [ ] **Unit Tests**: Jede Public Function hat Tests (Happy + Error + Edge Case)
 - [ ] **Integration Tests**: Jede API Route hat mindestens einen Test
@@ -42,6 +46,7 @@ description: Optimiere Test-Strategie und Coverage nach Agency-Level Standards
 - [ ] **CI Integration**: Tests laufen bei jedem PR
 
 ## Test-Befehle
+
 ```bash
 # Frontend Unit Tests
 npx vitest run
@@ -72,6 +77,7 @@ npx vitest run --coverage
 ```
 
 ## Agency-Level Standards
+
 - **AAA Pattern**: Arrange → Act → Assert
 - **Test Names**: `describe('Module') → it('should do X when Y')`
 - **Factories**: `makeCase()`, `makeDeadline()`, `makeUser()` für Test-Data

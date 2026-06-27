@@ -15,11 +15,11 @@
  * graceful no-op → put_page succeeds regardless of sibling pollution.
  */
 
-import { describe, test, expect, beforeAll, afterAll, beforeEach } from 'bun:test';
-import { PGLiteEngine } from '../src/core/pglite-engine.ts';
-import { dispatchToolCall } from '../src/mcp/dispatch.ts';
-import { extractFactsFromTurn } from '../src/core/facts/extract.ts';
-import { resetGateway } from '../src/core/ai/gateway.ts';
+import { describe, test, expect, beforeAll, afterAll, beforeEach } from "bun:test";
+import { PGLiteEngine } from "../src/core/pglite-engine.ts";
+import { dispatchToolCall } from "../src/mcp/dispatch.ts";
+import { extractFactsFromTurn } from "../src/core/facts/extract.ts";
+import { resetGateway } from "../src/core/ai/gateway.ts";
 
 let engine: PGLiteEngine;
 
@@ -40,20 +40,20 @@ afterAll(async () => {
   await engine.disconnect();
 }, 60_000);
 
-describe('anti-loop dream_generated marker', () => {
-  test('extractFactsFromTurn skips when isDreamGenerated:true', async () => {
+describe("anti-loop dream_generated marker", () => {
+  test("extractFactsFromTurn skips when isDreamGenerated:true", async () => {
     const r = await extractFactsFromTurn({
-      turnText: 'This would normally produce facts about Sam.',
-      source: 'test',
+      turnText: "This would normally produce facts about Sam.",
+      source: "test",
       isDreamGenerated: true,
     });
     expect(r).toEqual([]);
   });
 
-  test('extractFactsFromTurn does NOT skip on isDreamGenerated:false', async () => {
+  test("extractFactsFromTurn does NOT skip on isDreamGenerated:false", async () => {
     const r = await extractFactsFromTurn({
-      turnText: '',
-      source: 'test',
+      turnText: "",
+      source: "test",
       isDreamGenerated: false,
     });
     // Empty turn returns [] for a different reason (no content). Just
@@ -62,33 +62,47 @@ describe('anti-loop dream_generated marker', () => {
     expect(r).toEqual([]);
   });
 
-  test('put_page backstop skips on dream_generated:true', async () => {
-    const result = await dispatchToolCall(engine, 'put_page', {
-      slug: 'note/anti-loop-dream',
-      content: `---\ntype: note\ntitle: Dream\ndream_generated: true\n---\n${'real-looking content. '.repeat(20)}`,
-    }, { remote: false, sourceId: 'default' });
+  test("put_page backstop skips on dream_generated:true", async () => {
+    const result = await dispatchToolCall(
+      engine,
+      "put_page",
+      {
+        slug: "note/anti-loop-dream",
+        content: `---\ntype: note\ntitle: Dream\ndream_generated: true\n---\n${"real-looking content. ".repeat(20)}`,
+      },
+      { remote: false, sourceId: "default" }
+    );
     const payload = JSON.parse(result.content[0].text);
     // Diagnostic: if facts_backstop is missing, the handler likely threw
     // and dispatchToolCall wrapped the error as `{error: 'internal_error'}`.
     // Surface the full payload so CI logs reveal the actual failure mode.
     if (!payload.facts_backstop) {
-      throw new Error(`put_page returned no facts_backstop. Full payload: ${JSON.stringify(payload, null, 2)}. isError=${(result as { isError?: boolean }).isError}`);
+      throw new Error(
+        `put_page returned no facts_backstop. Full payload: ${JSON.stringify(payload, null, 2)}. isError=${(result as { isError?: boolean }).isError}`
+      );
     }
-    expect(payload.facts_backstop).toEqual({ skipped: 'dream_generated' });
+    expect(payload.facts_backstop).toEqual({ skipped: "dream_generated" });
   });
 
-  test('put_page backstop does NOT skip on dream_generated:false / absent', async () => {
-    const result = await dispatchToolCall(engine, 'put_page', {
-      slug: 'note/anti-loop-real',
-      content: `---\ntype: note\ntitle: Real\n---\n${'real-looking content with claims. '.repeat(15)}`,
-    }, { remote: false, sourceId: 'default' });
+  test("put_page backstop does NOT skip on dream_generated:false / absent", async () => {
+    const result = await dispatchToolCall(
+      engine,
+      "put_page",
+      {
+        slug: "note/anti-loop-real",
+        content: `---\ntype: note\ntitle: Real\n---\n${"real-looking content with claims. ".repeat(15)}`,
+      },
+      { remote: false, sourceId: "default" }
+    );
     const payload = JSON.parse(result.content[0].text);
     if (!payload.facts_backstop) {
-      throw new Error(`put_page returned no facts_backstop. Full payload: ${JSON.stringify(payload, null, 2)}. isError=${(result as { isError?: boolean }).isError}`);
+      throw new Error(
+        `put_page returned no facts_backstop. Full payload: ${JSON.stringify(payload, null, 2)}. isError=${(result as { isError?: boolean }).isError}`
+      );
     }
     expect(payload.facts_backstop).toBeDefined();
-    if ('skipped' in payload.facts_backstop) {
-      expect(payload.facts_backstop.skipped).not.toBe('dream_generated');
+    if ("skipped" in payload.facts_backstop) {
+      expect(payload.facts_backstop.skipped).not.toBe("dream_generated");
     }
   });
 });

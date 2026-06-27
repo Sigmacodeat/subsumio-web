@@ -22,7 +22,7 @@
 // to use the hardcoded ELIGIBLE_TYPES list — which gbrain-base also
 // declares, so behavior is preserved.
 
-import type { SchemaPackManifest, ExtractableSpec } from './manifest-v1.ts';
+import type { SchemaPackManifest, ExtractableSpec } from "./manifest-v1.ts";
 
 /**
  * v0.42 widening: `extractable` may be `true | false | ExtractableSpec`.
@@ -31,7 +31,7 @@ import type { SchemaPackManifest, ExtractableSpec } from './manifest-v1.ts';
  * Pure predicate; reusable across all read sites.
  */
 function isExtractable(extractable: boolean | ExtractableSpec): boolean {
-  if (typeof extractable === 'boolean') return extractable;
+  if (typeof extractable === "boolean") return extractable;
   // Struct shape implies extractable = true (pack author wouldn't declare
   // prompt_template + fixtures + eval_dimensions for a non-extractable type).
   return true;
@@ -44,12 +44,10 @@ function isExtractable(extractable: boolean | ExtractableSpec): boolean {
  * on every put_page.
  */
 export function extractableTypesFromPack(
-  pack: Pick<SchemaPackManifest, 'page_types'>,
+  pack: Pick<SchemaPackManifest, "page_types">
 ): Set<string> {
   return new Set(
-    pack.page_types
-      .filter(pt => isExtractable(pt.extractable))
-      .map(pt => pt.name),
+    pack.page_types.filter((pt) => isExtractable(pt.extractable)).map((pt) => pt.name)
   );
 }
 
@@ -59,10 +57,10 @@ export function extractableTypesFromPack(
  * only has a manifest, not a precomputed Set.
  */
 export function isExtractableType(
-  pack: Pick<SchemaPackManifest, 'page_types'>,
-  type: string,
+  pack: Pick<SchemaPackManifest, "page_types">,
+  type: string
 ): boolean {
-  return pack.page_types.some(pt => pt.name === type && isExtractable(pt.extractable));
+  return pack.page_types.some((pt) => pt.name === type && isExtractable(pt.extractable));
 }
 
 /**
@@ -76,12 +74,12 @@ export function isExtractableType(
  * and `gbrain schema scaffold-extractable`.
  */
 export function extractableSpecsFromPack(
-  pack: Pick<SchemaPackManifest, 'page_types'>,
+  pack: Pick<SchemaPackManifest, "page_types">
 ): Map<string, ExtractableSpec> {
   const out = new Map<string, ExtractableSpec>();
   for (const pt of pack.page_types) {
     if (!isExtractable(pt.extractable)) continue;
-    if (typeof pt.extractable === 'boolean') {
+    if (typeof pt.extractable === "boolean") {
       // boolean true → empty default spec (back-compat)
       out.set(pt.name, { eval_dimensions: [] });
     } else {
@@ -96,12 +94,12 @@ export function extractableSpecsFromPack(
  * extractable. Convenience for read sites that only have one type name.
  */
 export function getExtractableSpec(
-  pack: Pick<SchemaPackManifest, 'page_types'>,
-  type: string,
+  pack: Pick<SchemaPackManifest, "page_types">,
+  type: string
 ): ExtractableSpec | null {
-  const pt = pack.page_types.find(p => p.name === type);
+  const pt = pack.page_types.find((p) => p.name === type);
   if (!pt || !isExtractable(pt.extractable)) return null;
-  if (typeof pt.extractable === 'boolean') return { eval_dimensions: [] };
+  if (typeof pt.extractable === "boolean") return { eval_dimensions: [] };
   return pt.extractable;
 }
 
@@ -114,15 +112,15 @@ export function getExtractableSpec(
  * @throws Error with paste-ready message if verifier_path is set
  */
 export function refuseVerifierPathInV042(
-  spec: Pick<ExtractableSpec, 'verifier_path'>,
-  typeName: string,
+  spec: Pick<ExtractableSpec, "verifier_path">,
+  typeName: string
 ): void {
   if (spec.verifier_path) {
     throw new Error(
       `pack-shipped verifier code is not supported in v0.42 (type: ${typeName}, ` +
-      `verifier_path: ${spec.verifier_path}). v0.43+ trust review is the gate ` +
-      `for loading pack-shipped verifier scripts. Remove verifier_path from your ` +
-      `pack manifest OR wait for v0.43 to land.`
+        `verifier_path: ${spec.verifier_path}). v0.43+ trust review is the gate ` +
+        `for loading pack-shipped verifier scripts. Remove verifier_path from your ` +
+        `pack manifest OR wait for v0.43 to land.`
     );
   }
 }

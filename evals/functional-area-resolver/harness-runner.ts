@@ -19,36 +19,36 @@
  * legitimate from this location because the eval is gbrain-repo-only.
  */
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { createHash } from 'node:crypto';
-import { execSync } from 'node:child_process';
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { createHash } from "node:crypto";
+import { execSync } from "node:child_process";
 
-import { configureGateway, chat } from '../../src/core/ai/gateway.ts';
-import { loadConfig } from '../../src/core/config.ts';
-import { ANTHROPIC_PRICING } from '../../src/core/anthropic-pricing.ts';
+import { configureGateway, chat } from "../../src/core/ai/gateway.ts";
+import { loadConfig } from "../../src/core/config.ts";
+import { ANTHROPIC_PRICING } from "../../src/core/anthropic-pricing.ts";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const REPO_ROOT = resolve(__dirname, '..', '..');
+const REPO_ROOT = resolve(__dirname, "..", "..");
 
 // Default model — pinned so the canonical baseline-runs/<date>-opus-4-7.jsonl
 // stays reproducible. Override with --model for cross-model eval (T3a).
-export const MODEL_ID = 'anthropic:claude-opus-4-7';
+export const MODEL_ID = "anthropic:claude-opus-4-7";
 
 export const MODEL_ALIASES: Record<string, string> = {
-  opus:   'anthropic:claude-opus-4-7',
-  sonnet: 'anthropic:claude-sonnet-4-6',
-  haiku:  'anthropic:claude-haiku-4-5-20251001',
+  opus: "anthropic:claude-opus-4-7",
+  sonnet: "anthropic:claude-sonnet-4-6",
+  haiku: "anthropic:claude-haiku-4-5-20251001",
 };
 
 export function resolveModel(spec: string): { full: string; bare: string } {
   const full = MODEL_ALIASES[spec] ?? spec;
-  const bare = full.startsWith('anthropic:') ? full.slice('anthropic:'.length) : full;
+  const bare = full.startsWith("anthropic:") ? full.slice("anthropic:".length) : full;
   return { full, bare };
 }
 
-const VARIANT_NAMES = ['baseline', 'functional-areas', 'resolver-of-resolvers'] as const;
+const VARIANT_NAMES = ["baseline", "functional-areas", "resolver-of-resolvers"] as const;
 type VariantName = (typeof VARIANT_NAMES)[number];
 
 const SEEDS = [1, 2, 3] as const;
@@ -59,9 +59,9 @@ export interface Fixture {
 }
 
 export interface RunRow {
-  kind: 'run';
+  kind: "run";
   fixture_id: number;
-  corpus: 'training' | 'held_out';
+  corpus: "training" | "held_out";
   variant: VariantName;
   seed: number;
   predicted: string;
@@ -78,7 +78,7 @@ export interface RunRow {
 }
 
 export interface ReceiptRow {
-  kind: 'receipt';
+  kind: "receipt";
   model: string;
   prompt_template_hash: string;
   fixtures_hash: string;
@@ -111,18 +111,18 @@ SKILL SLUG:`;
 
 export function parseFixtures(rawJsonl: string): Fixture[] {
   const out: Fixture[] = [];
-  const lines = rawJsonl.split('\n');
+  const lines = rawJsonl.split("\n");
   for (const line of lines) {
     const trimmed = line.trim();
     if (trimmed.length === 0) continue;
-    if (trimmed.startsWith('//')) continue;
+    if (trimmed.startsWith("//")) continue;
     let obj: any;
     try {
       obj = JSON.parse(trimmed);
     } catch (err) {
       throw new Error(`Bad fixture JSON: ${trimmed.slice(0, 80)} — ${(err as Error).message}`);
     }
-    if (typeof obj.intent !== 'string' || typeof obj.expected_skill !== 'string') {
+    if (typeof obj.intent !== "string" || typeof obj.expected_skill !== "string") {
       throw new Error(`Fixture missing required fields: ${trimmed.slice(0, 80)}`);
     }
     out.push({ intent: obj.intent, expected_skill: obj.expected_skill });
@@ -131,11 +131,14 @@ export function parseFixtures(rawJsonl: string): Fixture[] {
 }
 
 export function loadVariant(path: string): string {
-  return readFileSync(path, 'utf8');
+  return readFileSync(path, "utf8");
 }
 
 export function buildPrompt(variantContent: string, intent: string): string {
-  return PROMPT_TEMPLATE.replace('<<<RESOLVER_CONTENT>>>', variantContent).replace('<<<INTENT>>>', intent);
+  return PROMPT_TEMPLATE.replace("<<<RESOLVER_CONTENT>>>", variantContent).replace(
+    "<<<INTENT>>>",
+    intent
+  );
 }
 
 export function parseModelResponse(raw: string): string {
@@ -144,20 +147,27 @@ export function parseModelResponse(raw: string): string {
   // and take the first line that looks like a slug.
   let s = raw.trim();
   // Strip ```...``` fences
-  s = s.replace(/^```[a-zA-Z]*\n?/, '').replace(/\n?```\s*$/, '').trim();
+  s = s
+    .replace(/^```[a-zA-Z]*\n?/, "")
+    .replace(/\n?```\s*$/, "")
+    .trim();
   // If the response is JSON like {"skill": "foo"}, extract.
-  if (s.startsWith('{')) {
+  if (s.startsWith("{")) {
     try {
       const obj = JSON.parse(s);
-      if (typeof obj.skill === 'string') return obj.skill.trim().toLowerCase();
-      if (typeof obj.skill_slug === 'string') return obj.skill_slug.trim().toLowerCase();
-      if (typeof obj.expected_skill === 'string') return obj.expected_skill.trim().toLowerCase();
+      if (typeof obj.skill === "string") return obj.skill.trim().toLowerCase();
+      if (typeof obj.skill_slug === "string") return obj.skill_slug.trim().toLowerCase();
+      if (typeof obj.expected_skill === "string") return obj.expected_skill.trim().toLowerCase();
     } catch {}
   }
   // Strip surrounding quotes and backticks
-  s = s.replace(/^[`"']|[`"']$/g, '').trim();
+  s = s.replace(/^[`"']|[`"']$/g, "").trim();
   // Take first non-empty line
-  const firstLine = s.split(/\r?\n/).map(l => l.trim()).find(l => l.length > 0) ?? '';
+  const firstLine =
+    s
+      .split(/\r?\n/)
+      .map((l) => l.trim())
+      .find((l) => l.length > 0) ?? "";
   // If it starts with a prose preamble, look for a slug-shaped token
   const slugMatch = firstLine.match(/[a-z][a-z0-9-]+/i);
   return (slugMatch ? slugMatch[0] : firstLine).toLowerCase();
@@ -193,7 +203,10 @@ export function parseDispatcherLists(variantContent: string): Map<string, Set<st
   let m: RegExpExecArray | null;
   while ((m = re.exec(variantContent)) !== null) {
     const dispatcher = m[1];
-    const subSkills = m[2].split(',').map(s => s.trim()).filter(s => /^[a-z][a-z0-9-]*$/.test(s));
+    const subSkills = m[2]
+      .split(",")
+      .map((s) => s.trim())
+      .filter((s) => /^[a-z][a-z0-9-]*$/.test(s));
     const set = new Set<string>([dispatcher, ...subSkills]);
     out.set(dispatcher, set);
   }
@@ -212,7 +225,7 @@ export function parseDispatcherLists(variantContent: string): Map<string, Set<st
 export function scoreFixtureLenient(
   predicted: string,
   expected: string,
-  dispatcherLists: Map<string, Set<string>>,
+  dispatcherLists: Map<string, Set<string>>
 ): 0 | 1 {
   if (predicted === expected) return 1;
   for (const set of dispatcherLists.values()) {
@@ -224,7 +237,11 @@ export function scoreFixtureLenient(
 /** Capture the harness git sha so receipts can detect stale numbers. */
 export function getHarnessSha(): string | null {
   try {
-    const sha = execSync('git rev-parse HEAD', { cwd: __dirname, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+    const sha = execSync("git rev-parse HEAD", {
+      cwd: __dirname,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    }).trim();
     return sha.length === 40 ? sha : null;
   } catch {
     return null;
@@ -248,9 +265,9 @@ export function meanAndCI95(values: number[]): { mean: number; halfWidthCI: numb
 
 export function estimateCost(
   numCalls: number,
-  modelBare: string = 'claude-opus-4-7',
+  modelBare: string = "claude-opus-4-7",
   inputTokensPerCall = 1000,
-  outputTokensPerCall = 50,
+  outputTokensPerCall = 50
 ): number {
   const pricing = ANTHROPIC_PRICING[modelBare];
   if (!pricing) return 0;
@@ -260,14 +277,14 @@ export function estimateCost(
 }
 
 export function hashContent(content: string): string {
-  return createHash('sha256').update(content).digest('hex').slice(0, 16);
+  return createHash("sha256").update(content).digest("hex").slice(0, 16);
 }
 
 export function writeJsonl(rows: (RunRow | ReceiptRow)[], outputPath: string): void {
   const dir = dirname(outputPath);
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
-  const lines = rows.map(r => JSON.stringify(r)).join('\n') + '\n';
-  writeFileSync(outputPath, lines, 'utf8');
+  const lines = rows.map((r) => JSON.stringify(r)).join("\n") + "\n";
+  writeFileSync(outputPath, lines, "utf8");
 }
 
 export interface ParsedArgs {
@@ -286,37 +303,46 @@ export interface ParsedArgs {
 
 export function parseArgs(argv: string[]): ParsedArgs {
   const out: ParsedArgs = {
-    limit: null, parallel: 1, output: null, help: false, yes: false,
-    model: MODEL_ID, variantsDir: 'variants', variantFiles: null,
+    limit: null,
+    parallel: 1,
+    output: null,
+    help: false,
+    yes: false,
+    model: MODEL_ID,
+    variantsDir: "variants",
+    variantFiles: null,
   };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
-    if (a === '--help' || a === '-h') out.help = true;
-    else if (a === '--yes' || a === '-y') out.yes = true;
-    else if (a === '--limit') {
+    if (a === "--help" || a === "-h") out.help = true;
+    else if (a === "--yes" || a === "-y") out.yes = true;
+    else if (a === "--limit") {
       const v = parseInt(argv[++i], 10);
       if (!Number.isFinite(v) || v < 1) throw new Error(`--limit must be a positive integer`);
       out.limit = v;
-    } else if (a === '--parallel') {
+    } else if (a === "--parallel") {
       const v = parseInt(argv[++i], 10);
       if (!Number.isFinite(v) || v < 1) throw new Error(`--parallel must be a positive integer`);
       out.parallel = v;
-    } else if (a === '--output') {
+    } else if (a === "--output") {
       out.output = argv[++i];
-    } else if (a === '--model') {
+    } else if (a === "--model") {
       const v = argv[++i];
       if (!v) throw new Error(`--model requires a value (alias or provider:model)`);
       out.model = v;
-    } else if (a === '--variants-dir') {
+    } else if (a === "--variants-dir") {
       const v = argv[++i];
       if (!v) throw new Error(`--variants-dir requires a path`);
       out.variantsDir = v;
-    } else if (a === '--variants') {
+    } else if (a === "--variants") {
       // Comma-separated list of variant file basenames (without .md). Used by sweep.
       const v = argv[++i];
       if (!v) throw new Error(`--variants requires a comma-separated list`);
-      out.variantFiles = v.split(',').map(s => s.trim()).filter(Boolean);
-    } else if (a.startsWith('--')) {
+      out.variantFiles = v
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+    } else if (a.startsWith("--")) {
       throw new Error(`Unknown flag: ${a}`);
     }
   }
@@ -327,11 +353,14 @@ export function parseArgs(argv: string[]): ParsedArgs {
 // Gateway wrapper (mockable via __setChatTransportForTests)
 // ---------------------------------------------------------------------------
 
-async function callModel(prompt: string, modelFull: string): Promise<{ text: string; input_tokens: number; output_tokens: number; latency_ms: number }> {
+async function callModel(
+  prompt: string,
+  modelFull: string
+): Promise<{ text: string; input_tokens: number; output_tokens: number; latency_ms: number }> {
   const t0 = Date.now();
   const result = await chat({
     model: modelFull,
-    messages: [{ role: 'user', content: prompt }],
+    messages: [{ role: "user", content: prompt }],
     maxTokens: 64,
   });
   return {
@@ -374,19 +403,25 @@ and 'correct_lenient' (predicted and expected are in the same dispatcher area).
 Summary reports both.
 `;
 
-async function maybePromptCost(numCalls: number, modelFull: string, autoConfirm: boolean): Promise<boolean> {
+async function maybePromptCost(
+  numCalls: number,
+  modelFull: string,
+  autoConfirm: boolean
+): Promise<boolean> {
   const { bare } = resolveModel(modelFull);
   const cost = estimateCost(numCalls, bare);
-  process.stderr.write(`Estimated cost: ~$${cost.toFixed(2)} for ${numCalls} LLM calls via ${modelFull}.\n`);
+  process.stderr.write(
+    `Estimated cost: ~$${cost.toFixed(2)} for ${numCalls} LLM calls via ${modelFull}.\n`
+  );
   if (autoConfirm) return true;
   if (!process.stdin.isTTY) {
-    process.stderr.write('Non-TTY context; pass --yes to confirm.\n');
+    process.stderr.write("Non-TTY context; pass --yes to confirm.\n");
     return false;
   }
-  process.stderr.write('Press Enter to continue or Ctrl-C to abort. ');
-  return await new Promise(resolve => {
-    process.stdin.once('data', () => resolve(true));
-    process.stdin.once('end', () => resolve(false));
+  process.stderr.write("Press Enter to continue or Ctrl-C to abort. ");
+  return await new Promise((resolve) => {
+    process.stdin.once("data", () => resolve(true));
+    process.stdin.once("end", () => resolve(false));
   });
 }
 
@@ -424,33 +459,36 @@ export async function main(argv: string[]): Promise<number> {
   // Unknown providers fall through to the gateway, which will raise a clear
   // recipe-specific error if any required env var is missing.
   const REQUIRED_ENV_BY_PROVIDER: Record<string, string> = {
-    anthropic: 'ANTHROPIC_API_KEY',
-    openai: 'OPENAI_API_KEY',
-    google: 'GOOGLE_GENERATIVE_AI_API_KEY',
-    groq: 'GROQ_API_KEY',
-    voyage: 'VOYAGE_API_KEY',
-    together: 'TOGETHER_API_KEY',
-    deepseek: 'DEEPSEEK_API_KEY',
-    minimax: 'MINIMAX_API_KEY',
-    dashscope: 'DASHSCOPE_API_KEY',
-    zhipu: 'ZHIPUAI_API_KEY',
+    anthropic: "ANTHROPIC_API_KEY",
+    openai: "OPENAI_API_KEY",
+    google: "GOOGLE_GENERATIVE_AI_API_KEY",
+    groq: "GROQ_API_KEY",
+    voyage: "VOYAGE_API_KEY",
+    together: "TOGETHER_API_KEY",
+    deepseek: "DEEPSEEK_API_KEY",
+    minimax: "MINIMAX_API_KEY",
+    dashscope: "DASHSCOPE_API_KEY",
+    zhipu: "ZHIPUAI_API_KEY",
   };
-  const providerId = modelFull.includes(':') ? modelFull.split(':', 1)[0] : 'anthropic';
+  const providerId = modelFull.includes(":") ? modelFull.split(":", 1)[0] : "anthropic";
   const requiredEnv = REQUIRED_ENV_BY_PROVIDER[providerId];
   if (requiredEnv && !process.env[requiredEnv]) {
-    process.stderr.write(`Error: ${requiredEnv} is not set. The harness needs it to reach ${modelFull}.\n`);
+    process.stderr.write(
+      `Error: ${requiredEnv} is not set. The harness needs it to reach ${modelFull}.\n`
+    );
     return 2;
   }
 
   // Load fixtures + variants.
   const evalsDir = __dirname;
-  const fixturesTraining = parseFixtures(readFileSync(join(evalsDir, 'fixtures.jsonl'), 'utf8'));
-  const fixturesHeldOut = parseFixtures(readFileSync(join(evalsDir, 'fixtures-held-out.jsonl'), 'utf8'));
+  const fixturesTraining = parseFixtures(readFileSync(join(evalsDir, "fixtures.jsonl"), "utf8"));
+  const fixturesHeldOut = parseFixtures(
+    readFileSync(join(evalsDir, "fixtures-held-out.jsonl"), "utf8")
+  );
 
   // Dynamic variants: --variants overrides the default 3, --variants-dir overrides location.
   const variantsAbsDir = resolve(evalsDir, args.variantsDir);
-  const variantBasenames = args.variantFiles
-    ?? (VARIANT_NAMES as readonly string[]).map(n => n);
+  const variantBasenames = args.variantFiles ?? (VARIANT_NAMES as readonly string[]).map((n) => n);
   const variants: Record<string, string> = {};
   const dispatcherListsByVariant: Record<string, Map<string, Set<string>>> = {};
   for (const name of variantBasenames) {
@@ -460,14 +498,22 @@ export async function main(argv: string[]): Promise<number> {
   }
 
   // Build the (fixture × variant × seed) tuple list.
-  type Tuple = { fixture: Fixture; corpus: 'training' | 'held_out'; fixture_id: number; variant: string; seed: number };
+  type Tuple = {
+    fixture: Fixture;
+    corpus: "training" | "held_out";
+    fixture_id: number;
+    variant: string;
+    seed: number;
+  };
   const tuples: Tuple[] = [];
   for (const variant of variantBasenames) {
     fixturesTraining.forEach((f, i) => {
-      for (const seed of SEEDS) tuples.push({ fixture: f, corpus: 'training', fixture_id: i, variant, seed });
+      for (const seed of SEEDS)
+        tuples.push({ fixture: f, corpus: "training", fixture_id: i, variant, seed });
     });
     fixturesHeldOut.forEach((f, i) => {
-      for (const seed of SEEDS) tuples.push({ fixture: f, corpus: 'held_out', fixture_id: i, variant, seed });
+      for (const seed of SEEDS)
+        tuples.push({ fixture: f, corpus: "held_out", fixture_id: i, variant, seed });
     });
   }
   const totalCalls = args.limit ? Math.min(args.limit, tuples.length) : tuples.length;
@@ -477,19 +523,21 @@ export async function main(argv: string[]): Promise<number> {
   if (totalCalls >= 20) {
     const proceed = await maybePromptCost(totalCalls, modelFull, args.yes);
     if (!proceed) {
-      process.stderr.write('Aborted.\n');
+      process.stderr.write("Aborted.\n");
       return 1;
     }
   }
 
   // Compute receipt header.
-  const fixturesHash = hashContent(readFileSync(join(evalsDir, 'fixtures.jsonl'), 'utf8'));
-  const fixturesHeldOutHash = hashContent(readFileSync(join(evalsDir, 'fixtures-held-out.jsonl'), 'utf8'));
+  const fixturesHash = hashContent(readFileSync(join(evalsDir, "fixtures.jsonl"), "utf8"));
+  const fixturesHeldOutHash = hashContent(
+    readFileSync(join(evalsDir, "fixtures-held-out.jsonl"), "utf8")
+  );
   const promptTemplateHash = hashContent(PROMPT_TEMPLATE);
   const harnessSha = getHarnessSha();
   const tsStart = new Date().toISOString();
   const receipt: ReceiptRow = {
-    kind: 'receipt',
+    kind: "receipt",
     model: modelFull,
     prompt_template_hash: promptTemplateHash,
     fixtures_hash: fixturesHash,
@@ -500,7 +548,7 @@ export async function main(argv: string[]): Promise<number> {
   };
 
   // Output path.
-  const outputPath = args.output ?? join(evalsDir, `run-${tsStart.replace(/[:.]/g, '-')}.jsonl`);
+  const outputPath = args.output ?? join(evalsDir, `run-${tsStart.replace(/[:.]/g, "-")}.jsonl`);
   process.stderr.write(`Writing receipt + ${totalCalls} runs to ${outputPath}\n`);
 
   const rows: (RunRow | ReceiptRow)[] = [receipt];
@@ -515,10 +563,10 @@ export async function main(argv: string[]): Promise<number> {
     const correct_lenient = scoreFixtureLenient(
       predicted,
       t.fixture.expected_skill,
-      dispatcherListsByVariant[t.variant] ?? new Map(),
+      dispatcherListsByVariant[t.variant] ?? new Map()
     );
     const row: RunRow = {
-      kind: 'run',
+      kind: "run",
       fixture_id: t.fixture_id,
       corpus: t.corpus,
       variant: t.variant as VariantName,
@@ -552,48 +600,64 @@ export async function main(argv: string[]): Promise<number> {
 
   // Compute per-variant accuracy. Both strict + lenient. Held-out is the
   // headline; training is reported separately.
-  const runRows = rows.filter((r): r is RunRow => r.kind === 'run');
-  type CorpusKey = 'training' | 'held_out';
+  const runRows = rows.filter((r): r is RunRow => r.kind === "run");
+  type CorpusKey = "training" | "held_out";
   type Acc = { training: number[]; held_out: number[] };
   const strictSummary: Record<string, Acc> = {};
   const lenientSummary: Record<string, Acc> = {};
   for (const variant of variantBasenames) {
     strictSummary[variant] = { training: [], held_out: [] };
     lenientSummary[variant] = { training: [], held_out: [] };
-    for (const corpus of ['training', 'held_out'] as const) {
+    for (const corpus of ["training", "held_out"] as const) {
       for (const seed of SEEDS) {
-        const subset = runRows.filter(r => r.variant === variant && r.corpus === corpus && r.seed === seed);
+        const subset = runRows.filter(
+          (r) => r.variant === variant && r.corpus === corpus && r.seed === seed
+        );
         if (subset.length === 0) continue;
-        strictSummary[variant][corpus].push(subset.reduce((a, r) => a + r.correct, 0) / subset.length);
-        lenientSummary[variant][corpus].push(subset.reduce((a, r) => a + r.correct_lenient, 0) / subset.length);
+        strictSummary[variant][corpus].push(
+          subset.reduce((a, r) => a + r.correct, 0) / subset.length
+        );
+        lenientSummary[variant][corpus].push(
+          subset.reduce((a, r) => a + r.correct_lenient, 0) / subset.length
+        );
       }
     }
   }
 
   // Print summary.
   const fmt = (vals: number[]) => {
-    if (vals.length === 0) return '—';
+    if (vals.length === 0) return "—";
     const { mean, halfWidthCI } = meanAndCI95(vals);
     return `${(mean * 100).toFixed(1)}% ± ${(halfWidthCI * 100).toFixed(1)}%`;
   };
 
   process.stderr.write(`\n=== A/B Eval Summary (model: ${modelFull}) ===\n`);
-  process.stderr.write('                              | STRICT scoring                                  | LENIENT (same-area)\n');
-  process.stderr.write('Variant                       | Held-out               | Training              | Held-out             | Training\n');
-  process.stderr.write('------------------------------|------------------------|------------------------|----------------------|----------------------\n');
+  process.stderr.write(
+    "                              | STRICT scoring                                  | LENIENT (same-area)\n"
+  );
+  process.stderr.write(
+    "Variant                       | Held-out               | Training              | Held-out             | Training\n"
+  );
+  process.stderr.write(
+    "------------------------------|------------------------|------------------------|----------------------|----------------------\n"
+  );
   for (const variant of variantBasenames) {
     process.stderr.write(
-      `${variant.padEnd(30)}| ${fmt(strictSummary[variant].held_out).padEnd(22)} | ${fmt(strictSummary[variant].training).padEnd(22)} | ${fmt(lenientSummary[variant].held_out).padEnd(20)} | ${fmt(lenientSummary[variant].training)}\n`,
+      `${variant.padEnd(30)}| ${fmt(strictSummary[variant].held_out).padEnd(22)} | ${fmt(strictSummary[variant].training).padEnd(22)} | ${fmt(lenientSummary[variant].held_out).padEnd(20)} | ${fmt(lenientSummary[variant].training)}\n`
     );
   }
-  process.stderr.write('\nLENIENT counts a prediction as correct if it shares a dispatcher area with the expected target.\n');
-  process.stderr.write('For variants without "(dispatcher for: ...)" clauses (baseline, resolver-of-resolvers), LENIENT == STRICT.\n');
-  process.stderr.write('\nReceipt + runs written to: ' + outputPath + '\n');
+  process.stderr.write(
+    "\nLENIENT counts a prediction as correct if it shares a dispatcher area with the expected target.\n"
+  );
+  process.stderr.write(
+    'For variants without "(dispatcher for: ...)" clauses (baseline, resolver-of-resolvers), LENIENT == STRICT.\n'
+  );
+  process.stderr.write("\nReceipt + runs written to: " + outputPath + "\n");
 
   return 0;
 }
 
 // Bun entrypoint: run main when invoked as a script.
 if (import.meta.main) {
-  main(process.argv.slice(2)).then(code => process.exit(code));
+  main(process.argv.slice(2)).then((code) => process.exit(code));
 }

@@ -15,16 +15,16 @@
 // bun --compile embeds the bytes into the binary itself. Otherwise a compiled
 // binary running away from the repo would fail to find the fixtures.
 
-import heicFixture from '../test/fixtures/images/tiny.heic' with { type: 'file' };
-import avifFixture from '../test/fixtures/images/tiny.avif' with { type: 'file' };
+import heicFixture from "../test/fixtures/images/tiny.heic" with { type: "file" };
+import avifFixture from "../test/fixtures/images/tiny.avif" with { type: "file" };
 // @jsquash/avif loads its WASM relative to its own JS file, which fails inside
 // a bun --compile VFS. Pre-compile the module via `init()` with the embedded
 // bytes — `with { type: 'file' }` works correctly inside compiled binaries.
-import avifWasmPath from '@jsquash/avif/codec/dec/avif_dec.wasm' with { type: 'file' };
-import { readFileSync } from 'node:fs';
+import avifWasmPath from "@jsquash/avif/codec/dec/avif_dec.wasm" with { type: "file" };
+import { readFileSync } from "node:fs";
 
-import heicDecode from 'heic-decode';
-import avifDecode, { init as initAvif } from '@jsquash/avif/decode.js';
+import heicDecode from "heic-decode";
+import avifDecode, { init as initAvif } from "@jsquash/avif/decode.js";
 
 interface DecodeResult {
   ok: boolean;
@@ -39,7 +39,7 @@ async function decodeHeic(): Promise<DecodeResult> {
     const buf = readFileSync(heicFixture);
     const result = await heicDecode({ buffer: buf });
     if (!result || !result.data || result.data.byteLength === 0) {
-      return { ok: false, error: 'heic-decode returned empty pixel buffer' };
+      return { ok: false, error: "heic-decode returned empty pixel buffer" };
     }
     return {
       ok: true,
@@ -60,7 +60,7 @@ async function decodeAvif(): Promise<DecodeResult> {
     const buf = readFileSync(avifFixture);
     const result = await avifDecode(new Uint8Array(buf) as unknown as ArrayBuffer);
     if (!result || !result.data || result.data.byteLength === 0) {
-      return { ok: false, error: 'avif decode returned empty pixel buffer' };
+      return { ok: false, error: "avif decode returned empty pixel buffer" };
     }
     return {
       ok: true,

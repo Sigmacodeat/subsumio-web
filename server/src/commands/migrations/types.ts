@@ -25,7 +25,7 @@ export interface OrchestratorOpts {
   /** Non-interactive: skip prompts, use defaults with explicit print. */
   yes: boolean;
   /** Explicit minion_mode override (bypasses the Phase C prompt). */
-  mode?: 'always' | 'pain_triggered' | 'off';
+  mode?: "always" | "pain_triggered" | "off";
   /** Dry-run: print intended actions, take no side effects. */
   dryRun: boolean;
   /** Include $PWD in host-file walk (default: $HOME/.claude + $HOME/.openclaw). */
@@ -36,13 +36,13 @@ export interface OrchestratorOpts {
 
 export interface OrchestratorPhaseResult {
   name: string;
-  status: 'complete' | 'skipped' | 'failed';
+  status: "complete" | "skipped" | "failed";
   detail?: string;
 }
 
 export interface OrchestratorResult {
   version: string;
-  status: 'complete' | 'partial' | 'failed';
+  status: "complete" | "partial" | "failed";
   phases: OrchestratorPhaseResult[];
   files_rewritten?: number;
   autopilot_installed?: boolean;

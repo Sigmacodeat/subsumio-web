@@ -182,13 +182,27 @@ describe("listComments", () => {
       {
         slug: "comment/cases-1/1",
         content: "Comment 1",
-        frontmatter: { parent_slug: "cases/1", parent_type: "case", author_id: "u1", author_name: "Max", created_at: "2024-01-01T10:00:00Z", thread_id: "t1" },
+        frontmatter: {
+          parent_slug: "cases/1",
+          parent_type: "case",
+          author_id: "u1",
+          author_name: "Max",
+          created_at: "2024-01-01T10:00:00Z",
+          thread_id: "t1",
+        },
         created_at: "2024-01-01T10:00:00Z",
       },
       {
         slug: "comment/cases-2/2",
         content: "Comment 2",
-        frontmatter: { parent_slug: "cases/2", parent_type: "case", author_id: "u2", author_name: "Anna", created_at: "2024-01-01T11:00:00Z", thread_id: "t2" },
+        frontmatter: {
+          parent_slug: "cases/2",
+          parent_type: "case",
+          author_id: "u2",
+          author_name: "Anna",
+          created_at: "2024-01-01T11:00:00Z",
+          thread_id: "t2",
+        },
         created_at: "2024-01-01T11:00:00Z",
       },
     ]);
@@ -224,13 +238,21 @@ describe("listComments", () => {
       {
         slug: "c2",
         content: "Later",
-        frontmatter: { parent_slug: "cases/1", created_at: "2024-06-01T10:00:00Z", thread_id: "t2" },
+        frontmatter: {
+          parent_slug: "cases/1",
+          created_at: "2024-06-01T10:00:00Z",
+          thread_id: "t2",
+        },
         created_at: "2024-06-01T10:00:00Z",
       },
       {
         slug: "c1",
         content: "Earlier",
-        frontmatter: { parent_slug: "cases/1", created_at: "2024-01-01T10:00:00Z", thread_id: "t1" },
+        frontmatter: {
+          parent_slug: "cases/1",
+          created_at: "2024-01-01T10:00:00Z",
+          thread_id: "t1",
+        },
         created_at: "2024-01-01T10:00:00Z",
       },
     ]);
@@ -247,7 +269,11 @@ describe("deleteComment", () => {
 
   test("returns success:false when comment not found", async () => {
     mockGetPage.mockResolvedValueOnce(null);
-    const result = await deleteComment({ commentId: "nonexistent", authorId: "u1", userRole: "lawyer" });
+    const result = await deleteComment({
+      commentId: "nonexistent",
+      authorId: "u1",
+      userRole: "lawyer",
+    });
     expect(result.success).toBe(false);
   });
 
@@ -256,7 +282,11 @@ describe("deleteComment", () => {
       slug: "comment/1",
       frontmatter: { author_id: "u1" },
     });
-    const result = await deleteComment({ commentId: "comment/1", authorId: "u2", userRole: "lawyer" });
+    const result = await deleteComment({
+      commentId: "comment/1",
+      authorId: "u2",
+      userRole: "lawyer",
+    });
     expect(result.success).toBe(false);
   });
 
@@ -265,7 +295,11 @@ describe("deleteComment", () => {
       slug: "comment/1",
       frontmatter: { author_id: "u1" },
     });
-    const result = await deleteComment({ commentId: "comment/1", authorId: "u1", userRole: "lawyer" });
+    const result = await deleteComment({
+      commentId: "comment/1",
+      authorId: "u1",
+      userRole: "lawyer",
+    });
     expect(result.success).toBe(true);
     expect(mockUpdatePage).toHaveBeenCalledOnce();
   });
@@ -275,7 +309,11 @@ describe("deleteComment", () => {
       slug: "comment/1",
       frontmatter: { author_id: "u1" },
     });
-    const result = await deleteComment({ commentId: "comment/1", authorId: "u2", userRole: "admin" });
+    const result = await deleteComment({
+      commentId: "comment/1",
+      authorId: "u2",
+      userRole: "admin",
+    });
     expect(result.success).toBe(true);
     expect(mockUpdatePage).toHaveBeenCalledOnce();
   });

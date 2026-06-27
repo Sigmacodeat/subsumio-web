@@ -4,7 +4,7 @@
  * coarse risk level, red flags and recommendations. Each finding references
  * the document(s) it came from via `page_refs`.
  */
-import type { BrainEngine } from '../engine.ts';
+import type { BrainEngine } from "../engine.ts";
 import {
   type LegalLLM,
   type RiskLevel,
@@ -15,9 +15,9 @@ import {
   jurisdictionLabel,
   loadPageText,
   tryParseJSON,
-} from './llm-util.ts';
+} from "./llm-util.ts";
 
-export type DDStatus = 'ok' | 'attention' | 'missing' | 'unknown';
+export type DDStatus = "ok" | "attention" | "missing" | "unknown";
 
 export interface DDFinding {
   item: string;
@@ -40,10 +40,10 @@ export interface DueDiligenceResult {
 export interface DueDiligenceOpts {
   case_slug?: string;
   document_slugs?: string[];
-  category?: 'm_and_a' | 'real_estate' | 'financing' | 'general';
-  jurisdiction?: 'at' | 'de' | 'ch';
+  category?: "m_and_a" | "real_estate" | "financing" | "general";
+  jurisdiction?: "at" | "de" | "ch";
   checklist?: string[];
-  language?: 'de' | 'en';
+  language?: "de" | "en";
   sourceId?: string;
   sourceIds?: string[];
   llm?: LegalLLM;
@@ -53,32 +53,32 @@ export interface DueDiligenceOpts {
 /** Default checklists per DD category (DACH-typical). Overridable via opts.checklist. */
 const DEFAULT_CHECKLISTS: Record<string, string[]> = {
   m_and_a: [
-    'Gesellschaftsrechtliche Struktur und Anteilsverhältnisse',
-    'Wesentliche Verträge und Change-of-Control-Klauseln',
-    'Arbeitsrechtliche Verpflichtungen',
-    'Anhängige oder drohende Rechtsstreitigkeiten',
-    'Gewerbliche Schutzrechte (IP)',
-    'Steuerliche Risiken',
-    'Datenschutz / DSGVO-Konformität',
+    "Gesellschaftsrechtliche Struktur und Anteilsverhältnisse",
+    "Wesentliche Verträge und Change-of-Control-Klauseln",
+    "Arbeitsrechtliche Verpflichtungen",
+    "Anhängige oder drohende Rechtsstreitigkeiten",
+    "Gewerbliche Schutzrechte (IP)",
+    "Steuerliche Risiken",
+    "Datenschutz / DSGVO-Konformität",
   ],
   real_estate: [
-    'Eigentumsverhältnisse und Grundbuchstand',
-    'Lasten und Beschränkungen (Hypotheken, Dienstbarkeiten)',
-    'Baurechtliche Genehmigungen',
-    'Mietverträge und Bestandsverhältnisse',
-    'Altlasten / Umweltrisiken',
+    "Eigentumsverhältnisse und Grundbuchstand",
+    "Lasten und Beschränkungen (Hypotheken, Dienstbarkeiten)",
+    "Baurechtliche Genehmigungen",
+    "Mietverträge und Bestandsverhältnisse",
+    "Altlasten / Umweltrisiken",
   ],
   financing: [
-    'Bestehende Finanzierungen und Sicherheiten',
-    'Covenants und Kündigungsrechte',
-    'Bürgschaften und Garantien',
-    'Rangverhältnisse der Sicherheiten',
+    "Bestehende Finanzierungen und Sicherheiten",
+    "Covenants und Kündigungsrechte",
+    "Bürgschaften und Garantien",
+    "Rangverhältnisse der Sicherheiten",
   ],
   general: [
-    'Vertragliche Hauptpflichten und Risiken',
-    'Fristen und Kündigungsrechte',
-    'Haftungs- und Gewährleistungsregelungen',
-    'Compliance und regulatorische Anforderungen',
+    "Vertragliche Hauptpflichten und Risiken",
+    "Fristen und Kündigungsrechte",
+    "Haftungs- und Gewährleistungsregelungen",
+    "Compliance und regulatorische Anforderungen",
   ],
 };
 
@@ -86,14 +86,14 @@ function buildSystem(
   category: string,
   jurisdiction: string,
   checklist: string[],
-  language: 'de' | 'en',
+  language: "de" | "en"
 ): string {
-  const langHint = language === 'en' ? 'Antworte auf Englisch.' : 'Antworte auf Deutsch.';
+  const langHint = language === "en" ? "Antworte auf Englisch." : "Antworte auf Deutsch.";
   return `Du bist ein Due-Diligence-Assistent für Kanzleien (Recht: ${jurisdictionLabel(jurisdiction)}, Kategorie: ${category}).
 Prüfe die bereitgestellten Dokumente gegen die Checkliste. Stütze jede Aussage auf die Dokumente;
 erfinde keine Befunde. Wenn etwas fehlt, markiere status "missing". ${langHint}
 Checkliste:
-${checklist.map((c, i) => `${i + 1}. ${c}`).join('\n')}
+${checklist.map((c, i) => `${i + 1}. ${c}`).join("\n")}
 
 Gib NUR ein JSON-Objekt zurück:
 {
@@ -114,22 +114,27 @@ Gib NUR ein JSON-Objekt zurück:
 Dies ersetzt keine anwaltliche Prüfung.`;
 }
 
-const VALID_STATUS = new Set<DDStatus>(['ok', 'attention', 'missing', 'unknown']);
+const VALID_STATUS = new Set<DDStatus>(["ok", "attention", "missing", "unknown"]);
 
 function parseFindings(v: unknown, knownSlugs: Set<string>): DDFinding[] {
   if (!Array.isArray(v)) return [];
   const out: DDFinding[] = [];
   for (const raw of v) {
-    if (typeof raw !== 'object' || raw === null) continue;
+    if (typeof raw !== "object" || raw === null) continue;
     const o = raw as Record<string, unknown>;
-    if (typeof o.item !== 'string') continue;
+    if (typeof o.item !== "string") continue;
     // Keep only page_refs that correspond to documents we actually supplied.
-    const refs = asStringArray(o.page_refs).filter((s) => knownSlugs.size === 0 || knownSlugs.has(s));
+    const refs = asStringArray(o.page_refs).filter(
+      (s) => knownSlugs.size === 0 || knownSlugs.has(s)
+    );
     out.push({
       item: o.item,
-      status: typeof o.status === 'string' && VALID_STATUS.has(o.status as DDStatus) ? (o.status as DDStatus) : 'unknown',
-      details: typeof o.details === 'string' ? o.details : '',
-      severity: asRiskLevel(o.severity, 'medium'),
+      status:
+        typeof o.status === "string" && VALID_STATUS.has(o.status as DDStatus)
+          ? (o.status as DDStatus)
+          : "unknown",
+      details: typeof o.details === "string" ? o.details : "",
+      severity: asRiskLevel(o.severity, "medium"),
       page_refs: refs,
     });
   }
@@ -138,20 +143,20 @@ function parseFindings(v: unknown, knownSlugs: Set<string>): DDFinding[] {
 
 export async function runDueDiligence(
   engine: BrainEngine,
-  opts: DueDiligenceOpts,
+  opts: DueDiligenceOpts
 ): Promise<DueDiligenceResult> {
   const warnings: string[] = [];
-  const category = opts.category ?? 'general';
-  const jurisdiction = opts.jurisdiction ?? 'de';
-  const language = opts.language ?? 'de';
+  const category = opts.category ?? "general";
+  const jurisdiction = opts.jurisdiction ?? "de";
+  const language = opts.language ?? "de";
   const checklist =
     opts.checklist && opts.checklist.length > 0
       ? opts.checklist.slice(0, 100)
       : (DEFAULT_CHECKLISTS[category] ?? DEFAULT_CHECKLISTS.general);
 
   const empty: DueDiligenceResult = {
-    summary: '',
-    risk_level: 'low',
+    summary: "",
+    risk_level: "low",
     findings: [],
     red_flags: [],
     recommendations: [],
@@ -183,17 +188,17 @@ export async function runDueDiligence(
   }
 
   if (docs.length === 0) {
-    warnings.push('NO_DOCUMENTS_RESOLVED');
+    warnings.push("NO_DOCUMENTS_RESOLVED");
     return empty;
   }
 
   const llm = opts.llm ?? (await defaultLegalLLM());
   if (!llm) {
-    warnings.push('NO_LLM_AVAILABLE');
+    warnings.push("NO_LLM_AVAILABLE");
     return empty;
   }
 
-  const user = docs.map((d) => `<dokument slug="${d.slug}">\n${d.text}\n</dokument>`).join('\n\n');
+  const user = docs.map((d) => `<dokument slug="${d.slug}">\n${d.text}\n</dokument>`).join("\n\n");
 
   let raw: string;
   try {
@@ -203,19 +208,19 @@ export async function runDueDiligence(
       maxTokens: 6000,
     });
   } catch (e) {
-    warnings.push(`LLM_CALL_FAILED: ${e instanceof Error ? e.message : 'unknown'}`);
+    warnings.push(`LLM_CALL_FAILED: ${e instanceof Error ? e.message : "unknown"}`);
     return empty;
   }
 
   const parsed = tryParseJSON(raw);
   if (!parsed) {
-    warnings.push('LLM_OUTPUT_NOT_JSON');
+    warnings.push("LLM_OUTPUT_NOT_JSON");
     return empty;
   }
 
   return {
-    summary: typeof parsed.summary === 'string' ? parsed.summary : '',
-    risk_level: asRiskLevel(parsed.risk_level, 'medium'),
+    summary: typeof parsed.summary === "string" ? parsed.summary : "",
+    risk_level: asRiskLevel(parsed.risk_level, "medium"),
     findings: parseFindings(parsed.findings, knownSlugs),
     red_flags: asStringArray(parsed.red_flags),
     recommendations: asStringArray(parsed.recommendations),

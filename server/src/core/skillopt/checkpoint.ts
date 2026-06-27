@@ -19,9 +19,9 @@
  * cycle's purge phase (T6 wiring).
  */
 
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import { atomicWrite } from './apply-edits.ts';
+import * as fs from "node:fs";
+import * as path from "node:path";
+import { atomicWrite } from "./apply-edits.ts";
 
 const CHECKPOINT_SCHEMA = 1;
 
@@ -37,7 +37,7 @@ export interface RunCheckpoint {
   epochs: number;
   batch_size: number;
   lr: number;
-  lr_schedule: 'cosine' | 'linear' | 'constant';
+  lr_schedule: "cosine" | "linear" | "constant";
   /** Highest sel-score achieved so far across the run. */
   best_sel_score: number;
   /** The skill text that produced best_sel_score. */
@@ -51,14 +51,18 @@ export interface RunCheckpoint {
 }
 
 export function checkpointPath(skillsDir: string, skillName: string, runId: string): string {
-  return path.join(skillsDir, skillName, 'skillopt', `checkpoint-${runId}.json`);
+  return path.join(skillsDir, skillName, "skillopt", `checkpoint-${runId}.json`);
 }
 
-export function loadCheckpoint(skillsDir: string, skillName: string, runId: string): RunCheckpoint | null {
+export function loadCheckpoint(
+  skillsDir: string,
+  skillName: string,
+  runId: string
+): RunCheckpoint | null {
   const p = checkpointPath(skillsDir, skillName, runId);
   if (!fs.existsSync(p)) return null;
   try {
-    const raw = fs.readFileSync(p, 'utf8');
+    const raw = fs.readFileSync(p, "utf8");
     const parsed = JSON.parse(raw) as RunCheckpoint;
     if (parsed.schema !== CHECKPOINT_SCHEMA) return null;
     return parsed;
@@ -73,12 +77,16 @@ export function saveCheckpoint(skillsDir: string, skillName: string, cp: RunChec
   const p = checkpointPath(skillsDir, skillName, cp.run_id);
   fs.mkdirSync(path.dirname(p), { recursive: true });
   const payload = { ...cp, last_updated_at: new Date().toISOString() };
-  atomicWrite(p, JSON.stringify(payload, null, 2) + '\n');
+  atomicWrite(p, JSON.stringify(payload, null, 2) + "\n");
 }
 
 export function deleteCheckpoint(skillsDir: string, skillName: string, runId: string): void {
   const p = checkpointPath(skillsDir, skillName, runId);
-  try { fs.unlinkSync(p); } catch { /* ignore */ }
+  try {
+    fs.unlinkSync(p);
+  } catch {
+    /* ignore */
+  }
 }
 
 /**
@@ -90,10 +98,10 @@ export function gcStaleCheckpoints(skillsDir: string, maxAgeDays: number = 7): n
   const cutoffMs = Date.now() - maxAgeDays * 86400 * 1000;
   let removed = 0;
   for (const skillName of safeReaddir(skillsDir)) {
-    const dir = path.join(skillsDir, skillName, 'skillopt');
+    const dir = path.join(skillsDir, skillName, "skillopt");
     if (!fs.existsSync(dir)) continue;
     for (const entry of safeReaddir(dir)) {
-      if (!entry.startsWith('checkpoint-') || !entry.endsWith('.json')) continue;
+      if (!entry.startsWith("checkpoint-") || !entry.endsWith(".json")) continue;
       const p = path.join(dir, entry);
       try {
         const stat = fs.statSync(p);
@@ -101,7 +109,9 @@ export function gcStaleCheckpoints(skillsDir: string, maxAgeDays: number = 7): n
           fs.unlinkSync(p);
           removed += 1;
         }
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
   }
   return removed;

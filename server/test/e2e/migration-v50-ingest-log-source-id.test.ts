@@ -16,7 +16,7 @@
  * Run: DATABASE_URL=... bun test test/e2e/migration-v50-ingest-log-source-id.test.ts
  */
 
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
+import { describe, test, expect, beforeAll, afterAll } from "bun:test";
 import {
   hasDatabase,
   setupDB,
@@ -25,19 +25,21 @@ import {
   getEngine,
   runMigrationsUpTo,
   setConfigVersion,
-} from './helpers.ts';
-import { MIGRATIONS, LATEST_VERSION } from '../../src/core/migrate.ts';
+} from "./helpers.ts";
+import { MIGRATIONS, LATEST_VERSION } from "../../src/core/migrate.ts";
 
 const skip = !hasDatabase();
 const describeE2E = skip ? describe.skip : describe;
 
 if (skip) {
-  console.log('Skipping migration v50 E2E tests (DATABASE_URL not set)');
+  console.log("Skipping migration v50 E2E tests (DATABASE_URL not set)");
 }
 
-const v50 = MIGRATIONS.find(m => m.version === 50);
+const v50 = MIGRATIONS.find((m) => m.version === 50);
 if (!skip && !v50) {
-  throw new Error('Migration v50 not found in MIGRATIONS array. PR1 commit 11 (renumbered v47→v50 after master merge) should add it.');
+  throw new Error(
+    "Migration v50 not found in MIGRATIONS array. PR1 commit 11 (renumbered v47→v50 after master merge) should add it."
+  );
 }
 
 async function dropSourceIdColumn(): Promise<void> {
@@ -48,8 +50,8 @@ async function dropSourceIdColumn(): Promise<void> {
 
 async function runV50(): Promise<void> {
   const engine = getEngine();
-  const m = MIGRATIONS.find(x => x.version === 50);
-  if (!m) throw new Error('Migration v50 not found');
+  const m = MIGRATIONS.find((x) => x.version === 50);
+  if (!m) throw new Error("Migration v50 not found");
   const sql = m.sqlFor?.[engine.kind] ?? m.sql;
   if (sql) {
     await engine.transaction(async (tx) => {
@@ -57,7 +59,7 @@ async function runV50(): Promise<void> {
     });
   }
   if (m.handler) await m.handler(engine);
-  await engine.setConfig('version', '50');
+  await engine.setConfig("version", "50");
 }
 
 async function readSourceIdColumnExists(): Promise<boolean> {
@@ -82,7 +84,7 @@ async function readIndexExists(): Promise<boolean> {
   return rows.length === 1;
 }
 
-describeE2E('migration v50: ingest_log.source_id ALTER', () => {
+describeE2E("migration v50: ingest_log.source_id ALTER", () => {
   beforeAll(async () => {
     await setupDB();
     await runMigrationsUpTo(getEngine(), LATEST_VERSION);
@@ -92,12 +94,12 @@ describeE2E('migration v50: ingest_log.source_id ALTER', () => {
     await teardownDB();
   });
 
-  test('after fresh install, source_id column + index both exist', async () => {
+  test("after fresh install, source_id column + index both exist", async () => {
     expect(await readSourceIdColumnExists()).toBe(true);
     expect(await readIndexExists()).toBe(true);
   });
 
-  test('old brain simulation: drop column, run v50, column reappears with NOT NULL DEFAULT', async () => {
+  test("old brain simulation: drop column, run v50, column reappears with NOT NULL DEFAULT", async () => {
     await dropSourceIdColumn();
     expect(await readSourceIdColumnExists()).toBe(false);
 
@@ -118,16 +120,16 @@ describeE2E('migration v50: ingest_log.source_id ALTER', () => {
       SELECT source_id FROM ingest_log WHERE source_type = '__v50_test__'
     `;
     expect(rows.length).toBe(1);
-    expect(rows[0].source_id).toBe('default');
+    expect(rows[0].source_id).toBe("default");
     await conn.unsafe(`DELETE FROM ingest_log WHERE source_type = '__v50_test__'`);
   });
 
-  test('idempotent re-run on fully-migrated brain → no error, no state change', async () => {
+  test("idempotent re-run on fully-migrated brain → no error, no state change", async () => {
     const beforeCol = await readSourceIdColumnExists();
     const beforeIdx = await readIndexExists();
 
     await runV50();
-    await runV50();  // run twice for paranoia
+    await runV50(); // run twice for paranoia
 
     expect(await readSourceIdColumnExists()).toBe(beforeCol);
     expect(await readIndexExists()).toBe(beforeIdx);

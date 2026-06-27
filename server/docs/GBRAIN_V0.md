@@ -64,15 +64,15 @@ There's already a production-grade RAG system (Ruby on Rails, Postgres + pgvecto
 
 ### v0 stack
 
-| Layer | Choice | Why |
-|-------|--------|-----|
-| Database | Postgres + pgvector | Proven RAG patterns, production-tested. World-class hybrid search. |
-| Hosting | Supabase Pro ($25/mo) | Zero-ops. Managed Postgres, pgvector, connection pooling. 8GB storage. |
-| Runtime | Bun + TypeScript | Consistent with GStack ecosystem. Fast. Compiles to single binary. |
-| Embeddings | OpenAI text-embedding-3-large | 1536 dims (reduced from 3072 via dimensions API). ~$0.13/1M tokens. |
-| LLM (chunking/expansion) | Claude Haiku | Cheapest model for topic boundary detection and query expansion. |
-| Background jobs | Trigger.dev | Serverless. Embed backfill, stale detection, orphan audit, tag consistency. |
-| Distribution | npm package + compiled binary + MCP server | Library for OpenClaw, CLI for humans, MCP for agents. |
+| Layer                    | Choice                                     | Why                                                                         |
+| ------------------------ | ------------------------------------------ | --------------------------------------------------------------------------- |
+| Database                 | Postgres + pgvector                        | Proven RAG patterns, production-tested. World-class hybrid search.          |
+| Hosting                  | Supabase Pro ($25/mo)                      | Zero-ops. Managed Postgres, pgvector, connection pooling. 8GB storage.      |
+| Runtime                  | Bun + TypeScript                           | Consistent with GStack ecosystem. Fast. Compiles to single binary.          |
+| Embeddings               | OpenAI text-embedding-3-large              | 1536 dims (reduced from 3072 via dimensions API). ~$0.13/1M tokens.         |
+| LLM (chunking/expansion) | Claude Haiku                               | Cheapest model for topic boundary detection and query expansion.            |
+| Background jobs          | Trigger.dev                                | Serverless. Embed backfill, stale detection, orphan audit, tag consistency. |
+| Distribution             | npm package + compiled binary + MCP server | Library for OpenClaw, CLI for humans, MCP for agents.                       |
 
 ### What we chose and why
 
@@ -123,6 +123,7 @@ There's already a production-grade RAG system (Ruby on Rails, Postgres + pgvecto
 ```
 
 package.json exports:
+
 - Library: `src/core/index.ts` (BrainEngine interface, PostgresEngine, types)
 - CLI binary: `src/cli.ts`
 
@@ -152,6 +153,7 @@ clawhub install gbrain
 ```
 
 Behind the scenes, `clawhub install gbrain`:
+
 1. Installs the `gbrain` npm package
 2. Ships SKILL.md files (ingest, query, maintain, enrich, briefing, migrate)
 3. Registers brain tools with the orchestrator
@@ -329,6 +331,7 @@ CLI and MCP expose identical operations. Drift tests assert identical results fo
 ```
 
 Indexes:
+
 - `pages.slug`: UNIQUE constraint (implicit B-tree)
 - `pages.type`: B-tree
 - `pages.search_vector`: GIN (full-text search)
@@ -400,11 +403,11 @@ Query: "when should you ignore conventional wisdom?"
 
 ## Chunking strategies
 
-| Strategy | Input | Algorithm | When to use |
-|----------|-------|-----------|-------------|
-| Recursive | Any text | 5-level delimiter hierarchy (paragraphs > lines > sentences > clauses > whitespace). 300-word chunks, 50-word overlap. | Timeline (predictable format), bulk import |
-| Semantic | Quality text | Embed each sentence, Savitzky-Golay filter for topic boundaries, cosine similarity minima. Falls back to recursive. | Compiled truth (intelligence assessments) |
-| LLM-guided | High-value text | Pre-split to 128-word candidates, Claude Haiku finds topic shifts in sliding windows. 3 retries per window. | Explicitly requested via `--chunker llm` |
+| Strategy   | Input           | Algorithm                                                                                                              | When to use                                |
+| ---------- | --------------- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| Recursive  | Any text        | 5-level delimiter hierarchy (paragraphs > lines > sentences > clauses > whitespace). 300-word chunks, 50-word overlap. | Timeline (predictable format), bulk import |
+| Semantic   | Quality text    | Embed each sentence, Savitzky-Golay filter for topic boundaries, cosine similarity minima. Falls back to recursive.    | Compiled truth (intelligence assessments)  |
+| LLM-guided | High-value text | Pre-split to 128-word candidates, Claude Haiku finds topic shifts in sliding windows. 3 retries per window.            | Explicitly requested via `--chunker llm`   |
 
 Dispatch: compiled_truth gets semantic chunker. Timeline gets recursive chunker. Override with `--chunker` flag or `chunk_strategy` in frontmatter.
 
@@ -412,14 +415,14 @@ Dispatch: compiled_truth gets semantic chunker. Timeline gets recursive chunker.
 
 Each skill is a markdown file that AI agents (Claude Code, OpenClaw) read and follow. The skill contains the workflow, heuristics, and quality rules. No skill logic is in the binary.
 
-| Skill | What it does |
-|-------|-------------|
-| `skills/ingest/SKILL.md` | Ingest meetings, docs, articles. Update compiled truth, append timeline, create links. |
-| `skills/query/SKILL.md` | 3-layer search (FTS + vector + structured). Synthesize answer with citations. |
-| `skills/maintain/SKILL.md` | Find contradictions, stale info, orphans, dead links, tag inconsistency. |
-| `skills/enrich/SKILL.md` | Enrich from external APIs (Crustdata, Happenstance, Exa). Store raw data, distill to compiled truth. |
-| `skills/briefing/SKILL.md` | Daily briefing: meetings with context, active deals, open threads. |
-| `skills/migrate/SKILL.md` | Universal migration from Obsidian, Notion, Logseq, plain markdown, CSV, JSON, Roam. |
+| Skill                      | What it does                                                                                         |
+| -------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `skills/ingest/SKILL.md`   | Ingest meetings, docs, articles. Update compiled truth, append timeline, create links.               |
+| `skills/query/SKILL.md`    | 3-layer search (FTS + vector + structured). Synthesize answer with citations.                        |
+| `skills/maintain/SKILL.md` | Find contradictions, stale info, orphans, dead links, tag inconsistency.                             |
+| `skills/enrich/SKILL.md`   | Enrich from external APIs (Crustdata, Happenstance, Exa). Store raw data, distill to compiled truth. |
+| `skills/briefing/SKILL.md` | Daily briefing: meetings with context, active deals, open threads.                                   |
+| `skills/migrate/SKILL.md`  | Universal migration from Obsidian, Notion, Logseq, plain markdown, CSV, JSON, Roam.                  |
 
 ## CEO scope expansions (accepted for v0)
 
@@ -436,6 +439,7 @@ Each skill is a markdown file that AI agents (Claude Code, OpenClaw) read and fo
 ## Security model (v0)
 
 Single-user, local-only:
+
 - Supabase service role key in `~/.gbrain/config.json` (0600 permissions)
 - MCP stdio transport is inherently local (client spawns `gbrain serve` as subprocess)
 - No multi-user, no RLS, no OAuth in v0
@@ -445,11 +449,11 @@ Single-user, local-only:
 
 `gbrain upgrade` detects the installation method and updates accordingly:
 
-| Path | How |
-|------|-----|
-| npm | `bun update gbrain` (or npm equivalent) |
+| Path            | How                                                                   |
+| --------------- | --------------------------------------------------------------------- |
+| npm             | `bun update gbrain` (or npm equivalent)                               |
 | Compiled binary | Download new binary to temp dir, atomic rename swap, exec new process |
-| ClawHub | `clawhub update gbrain` |
+| ClawHub         | `clawhub update gbrain`                                               |
 
 Version check: compare local version against latest GitHub release tag.
 
@@ -457,27 +461,27 @@ Version check: compare local version against latest GitHub release tag.
 
 ### Storage (~750MB for 7,471 pages)
 
-| Component | Size |
-|-----------|------|
-| Page text (compiled_truth + timeline) | ~150MB |
-| JSONB frontmatter | ~20MB |
-| tsvector + GIN indexes | ~50MB |
-| Content chunks (~22K, text) | ~80MB |
-| Embeddings (22K x 1536 floats x 4 bytes) | ~134MB |
-| HNSW index overhead (~2x embeddings) | ~270MB |
-| Links, tags, timeline, raw_data, versions | ~50MB |
-| **Total** | **~750MB** |
+| Component                                 | Size       |
+| ----------------------------------------- | ---------- |
+| Page text (compiled_truth + timeline)     | ~150MB     |
+| JSONB frontmatter                         | ~20MB      |
+| tsvector + GIN indexes                    | ~50MB      |
+| Content chunks (~22K, text)               | ~80MB      |
+| Embeddings (22K x 1536 floats x 4 bytes)  | ~134MB     |
+| HNSW index overhead (~2x embeddings)      | ~270MB     |
+| Links, tags, timeline, raw_data, versions | ~50MB      |
+| **Total**                                 | **~750MB** |
 
 Supabase free tier (500MB) won't fit. Supabase Pro ($25/mo, 8GB) is the starting point.
 
 ### Embedding cost (~$4-5 for initial import)
 
-| Step | Cost |
-|------|------|
-| Semantic chunker sentence embeddings (~374K sentences) | ~$1 |
-| Chunk embeddings (~22K chunks) | ~$0.30 |
-| Query expansion (per query, ~3 embeds) | negligible |
-| **Total initial import** | **~$4-5** |
+| Step                                                   | Cost       |
+| ------------------------------------------------------ | ---------- |
+| Semantic chunker sentence embeddings (~374K sentences) | ~$1        |
+| Chunk embeddings (~22K chunks)                         | ~$0.30     |
+| Query expansion (per query, ~3 embeds)                 | negligible |
+| **Total initial import**                               | **~$4-5**  |
 
 Budget alternative: `gbrain import --chunker recursive` skips sentence-level embeddings, then `gbrain embed --rechunk --chunker semantic` upgrades later.
 
@@ -533,6 +537,7 @@ See `docs/ENGINES.md` for the pluggable engine architecture and future backend p
 All operations go through `BrainEngine`. The engine interface is the contract. Postgres-specific features (tsvector, pgvector HNSW, pg_trgm, recursive CTEs) are implementation details inside `PostgresEngine`. The interface exposes capabilities, not SQL.
 
 This means:
+
 - A SQLite engine can implement `searchKeyword` using FTS5 instead of tsvector
 - A SQLite engine can implement `searchVector` using sqlite-vss instead of pgvector
 - A future DuckDB engine could implement analytics-heavy workloads
@@ -542,10 +547,10 @@ See [`ENGINES.md`](ENGINES.md) for the full interface spec. (The original SQLite
 
 ## Review history
 
-| Review | Runs | Status | Key findings |
-|--------|------|--------|-------------|
-| /office-hours | 1 | APPROVED | Builder mode. Full port approach chosen. |
-| /plan-ceo-review | 1 | CLEAR | 11 proposals, 10 accepted, 1 deferred. SCOPE EXPANSION mode. |
-| /codex review | 1 | issues_found | 24 points challenged, 3 accepted (fuzzy slug, revert spec, tsvector). |
-| /plan-eng-review | 2 | CLEAR | 3 issues (upgrade paths, import guardrails, init wizard), 0 critical gaps. |
-| /plan-devex-review | 1 | CLEAR | DX score 5/10 to 7/10. TTHW 25min to 90s. Champion tier. |
+| Review             | Runs | Status       | Key findings                                                               |
+| ------------------ | ---- | ------------ | -------------------------------------------------------------------------- |
+| /office-hours      | 1    | APPROVED     | Builder mode. Full port approach chosen.                                   |
+| /plan-ceo-review   | 1    | CLEAR        | 11 proposals, 10 accepted, 1 deferred. SCOPE EXPANSION mode.               |
+| /codex review      | 1    | issues_found | 24 points challenged, 3 accepted (fuzzy slug, revert spec, tsvector).      |
+| /plan-eng-review   | 2    | CLEAR        | 3 issues (upgrade paths, import guardrails, init wizard), 0 critical gaps. |
+| /plan-devex-review | 1    | CLEAR        | DX score 5/10 to 7/10. TTHW 25min to 90s. Champion tier.                   |

@@ -18,17 +18,17 @@
  */
 
 export type AnonEntityType =
-  | 'person'
-  | 'organization'
-  | 'iban'
-  | 'bic'
-  | 'email'
-  | 'phone'
-  | 'aktenzeichen'
-  | 'tax_id'
-  | 'address'
-  | 'ip'
-  | 'credit_card';
+  | "person"
+  | "organization"
+  | "iban"
+  | "bic"
+  | "email"
+  | "phone"
+  | "aktenzeichen"
+  | "tax_id"
+  | "address"
+  | "ip"
+  | "credit_card";
 
 export interface AnonReplacement {
   type: AnonEntityType;
@@ -46,17 +46,17 @@ export interface AnonymizeResult {
 }
 
 const TYPE_LABEL: Record<AnonEntityType, string> = {
-  person: 'PERSON',
-  organization: 'UNTERNEHMEN',
-  iban: 'IBAN',
-  bic: 'BIC',
-  email: 'E-MAIL',
-  phone: 'TELEFON',
-  aktenzeichen: 'AKTENZEICHEN',
-  tax_id: 'STEUER-ID',
-  address: 'ADRESSE',
-  ip: 'IP',
-  credit_card: 'KARTENNUMMER',
+  person: "PERSON",
+  organization: "UNTERNEHMEN",
+  iban: "IBAN",
+  bic: "BIC",
+  email: "E-MAIL",
+  phone: "TELEFON",
+  aktenzeichen: "AKTENZEICHEN",
+  tax_id: "STEUER-ID",
+  address: "ADRESSE",
+  ip: "IP",
+  credit_card: "KARTENNUMMER",
 };
 
 // ── Regex-Muster (DACH-Kontext) ──────────────────────────────
@@ -64,37 +64,43 @@ const TYPE_LABEL: Record<AnonEntityType, string> = {
 // eine IBAN nicht teilweise als Telefonnummer erfasst wird.
 const PATTERNS: { type: AnonEntityType; re: RegExp }[] = [
   // IBAN: DE + generisch. Optional gruppiert mit Leerzeichen.
-  { type: 'iban', re: /\b[A-Z]{2}\d{2}(?:[ ]?[A-Z0-9]{4}){2,7}(?:[ ]?[A-Z0-9]{1,4})?\b/g },
+  { type: "iban", re: /\b[A-Z]{2}\d{2}(?:[ ]?[A-Z0-9]{4}){2,7}(?:[ ]?[A-Z0-9]{1,4})?\b/g },
   // Kreditkarte (13–16 Ziffern, optional in 4er-Gruppen)
-  { type: 'credit_card', re: /\b(?:\d[ -]?){13,16}\b/g },
-  { type: 'email', re: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g },
+  { type: "credit_card", re: /\b(?:\d[ -]?){13,16}\b/g },
+  { type: "email", re: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g },
   // USt-IdNr (DE/AT) + deutsche Steuernummer
-  { type: 'tax_id', re: /\b(?:DE\d{9}|ATU\d{8}|\d{2,3}\/\d{3}\/\d{5})\b/g },
+  { type: "tax_id", re: /\b(?:DE\d{9}|ATU\d{8}|\d{2,3}\/\d{3}\/\d{5})\b/g },
   // Aktenzeichen: z. B. "4 O 123/26", "1 BvR 1234/20", "VIII ZR 1/23", "AN 13b D 24.1173"
-  { type: 'aktenzeichen', re: /\b(?:[IVXLC]{1,5}|\d{1,3})[ ][A-Za-zÄÖÜ]{1,5}[ ]?\d{0,3}[ ]?\d{1,5}[/.]\d{1,4}\b/g },
+  {
+    type: "aktenzeichen",
+    re: /\b(?:[IVXLC]{1,5}|\d{1,3})[ ][A-Za-zÄÖÜ]{1,5}[ ]?\d{0,3}[ ]?\d{1,5}[/.]\d{1,4}\b/g,
+  },
   // BIC bewusst NICHT auto-erkannt: ein nacktes 8–11-Großbuchstaben-Muster
   // träfe jedes ALLCAPS-Wort (und gesetzte Platzhalter) falsch-positiv.
   // IPv4
-  { type: 'ip', re: /\b(?:\d{1,3}\.){3}\d{1,3}\b/g },
+  { type: "ip", re: /\b(?:\d{1,3}\.){3}\d{1,3}\b/g },
   // Telefon (DE/AT/intl., +, Klammern, Bindestriche, Leerzeichen)
-  { type: 'phone', re: /(?:(?:\+|00)\d{1,3}[ -]?)?(?:\(0?\d{2,5}\)|0?\d{2,5})[ /-]?\d{3,9}(?:[ -]?\d{2,6})?/g },
+  {
+    type: "phone",
+    re: /(?:(?:\+|00)\d{1,3}[ -]?)?(?:\(0?\d{2,5}\)|0?\d{2,5})[ /-]?\d{3,9}(?:[ -]?\d{2,6})?/g,
+  },
   // PLZ + Ort (5-stellige PLZ gefolgt von einem Ortsnamen)
-  { type: 'address', re: /\b\d{5}\s+[A-ZÄÖÜ][a-zäöüß]+(?:[ -][A-ZÄÖÜ][a-zäöüß]+)?\b/g },
+  { type: "address", re: /\b\d{5}\s+[A-ZÄÖÜ][a-zäöüß]+(?:[ -][A-ZÄÖÜ][a-zäöüß]+)?\b/g },
 ];
 
 /** Minimale Plausibilität, um Falsch-Positive (z. B. lange Ziffernfolgen) zu dämpfen. */
 function looksValid(type: AnonEntityType, value: string): boolean {
   const v = value.trim();
-  if (type === 'credit_card') {
-    const digits = v.replace(/\D/g, '');
+  if (type === "credit_card") {
+    const digits = v.replace(/\D/g, "");
     return digits.length >= 13 && digits.length <= 16;
   }
-  if (type === 'phone') {
-    const digits = v.replace(/\D/g, '');
+  if (type === "phone") {
+    const digits = v.replace(/\D/g, "");
     return digits.length >= 6 && digits.length <= 15;
   }
-  if (type === 'iban') {
-    return v.replace(/\s/g, '').length >= 15;
+  if (type === "iban") {
+    return v.replace(/\s/g, "").length >= 15;
   }
   return true;
 }
@@ -106,11 +112,11 @@ class PlaceholderRegistry {
   readonly replacements: AnonReplacement[] = [];
 
   assign(type: AnonEntityType, original: string): string {
-    const key = `${type}:${original.toLowerCase().replace(/\s+/g, ' ').trim()}`;
+    const key = `${type}:${original.toLowerCase().replace(/\s+/g, " ").trim()}`;
     const existing = this.byValue.get(key);
     if (existing) return existing;
     // Für singuläre Typen (E-Mail, IBAN, …) ohne Nummerierung lesbarer:
-    const numbered = type === 'person' || type === 'organization' || type === 'address';
+    const numbered = type === "person" || type === "organization" || type === "address";
     const n = (this.counters.get(type) ?? 0) + 1;
     this.counters.set(type, n);
     const placeholder = numbered ? `[${TYPE_LABEL[type]} ${n}]` : `[${TYPE_LABEL[type]}]`;
@@ -120,7 +126,10 @@ class PlaceholderRegistry {
   }
 }
 
-export interface NameEntity { text: string; type: 'person' | 'organization'; }
+export interface NameEntity {
+  text: string;
+  type: "person" | "organization";
+}
 
 /** Optionaler LLM-Detektor für Namen. Liefert [] wenn kein Provider verfügbar. */
 export type NameDetector = (text: string) => Promise<NameEntity[]>;
@@ -136,15 +145,20 @@ export interface AnonymizeOpts {
  * Anonymisiert `text`. Regex-Schicht läuft immer; Namens-Schicht nur, wenn
  * `detectNames` übergeben wird und Treffer liefert.
  */
-export async function anonymizeText(text: string, opts: AnonymizeOpts = {}): Promise<AnonymizeResult> {
-  const enabled = new Set<AnonEntityType>(opts.types ?? (Object.keys(TYPE_LABEL) as AnonEntityType[]));
+export async function anonymizeText(
+  text: string,
+  opts: AnonymizeOpts = {}
+): Promise<AnonymizeResult> {
+  const enabled = new Set<AnonEntityType>(
+    opts.types ?? (Object.keys(TYPE_LABEL) as AnonEntityType[])
+  );
   const registry = new PlaceholderRegistry();
   let out = text;
   let llmUsed = false;
 
   // 1. Namens-Schicht zuerst (längste, kontextabhängige Treffer), damit
   //    Regex-Muster nicht in bereits gesetzte Platzhalter hineinschneiden.
-  if (opts.detectNames && (enabled.has('person') || enabled.has('organization'))) {
+  if (opts.detectNames && (enabled.has("person") || enabled.has("organization"))) {
     try {
       const names = await opts.detectNames(text);
       llmUsed = names.length > 0;
@@ -183,7 +197,7 @@ export async function anonymizeText(text: string, opts: AnonymizeOpts = {}): Pro
   }
 
   // Sentinels zurücksetzen.
-  out = out.replace(/(\d+)/g, (_m, i) => sentinels[Number(i)] ?? '');
+  out = out.replace(/(\d+)/g, (_m, i) => sentinels[Number(i)] ?? "");
 
   const stats: Record<string, number> = {};
   for (const r of registry.replacements) {

@@ -10,34 +10,33 @@
  * It says explicitly that errors are counted, not hidden.
  */
 
-import type { JudgeErrorKind, JudgeErrorRow, JudgeErrorsCounts } from './types.ts';
+import type { JudgeErrorKind, JudgeErrorRow, JudgeErrorsCounts } from "./types.ts";
 
-const ERROR_NOTE =
-  'errors counted toward denominator; do not silently disappear from the report';
+const ERROR_NOTE = "errors counted toward denominator; do not silently disappear from the report";
 
 /** Classify a thrown error into one of the typed kinds. Conservative; defaults to 'unknown'. */
 export function classifyError(err: unknown): JudgeErrorKind {
-  if (!err || typeof err !== 'object') return 'unknown';
-  const msg = (err as Error).message?.toLowerCase?.() ?? '';
-  if (msg.includes('parse') || msg.includes('json') || msg.includes('repair')) {
-    return 'parse_fail';
+  if (!err || typeof err !== "object") return "unknown";
+  const msg = (err as Error).message?.toLowerCase?.() ?? "";
+  if (msg.includes("parse") || msg.includes("json") || msg.includes("repair")) {
+    return "parse_fail";
   }
-  if (msg.includes('refus') || msg.includes("can't help") || msg.includes('cannot help')) {
-    return 'refusal';
+  if (msg.includes("refus") || msg.includes("can't help") || msg.includes("cannot help")) {
+    return "refusal";
   }
-  if (msg.includes('timeout') || msg.includes('timed out') || msg.includes('aborted')) {
-    return 'timeout';
+  if (msg.includes("timeout") || msg.includes("timed out") || msg.includes("aborted")) {
+    return "timeout";
   }
   if (
-    msg.includes('500') ||
-    msg.includes('502') ||
-    msg.includes('503') ||
-    msg.includes('504') ||
-    msg.includes('overload')
+    msg.includes("500") ||
+    msg.includes("502") ||
+    msg.includes("503") ||
+    msg.includes("504") ||
+    msg.includes("overload")
   ) {
-    return 'http_5xx';
+    return "http_5xx";
   }
-  return 'unknown';
+  return "unknown";
 }
 
 /** Mutable collector. Calling code pushes rows; finalize() returns the counts block. */

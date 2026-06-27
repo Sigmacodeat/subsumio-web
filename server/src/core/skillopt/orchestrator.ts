@@ -77,29 +77,49 @@
  * └────────────────────────────────────────────────────────────────────────┘
  */
 
-import { randomUUID } from 'node:crypto';
-import * as fs from 'node:fs';
-import { BudgetTracker } from '../budget/budget-tracker.ts';
-import { withBudgetTracker } from '../ai/gateway.ts';
-import { errorFor } from '../errors.ts';
-import { applyEditBatch, getWorkingTreeStatusForFile, splitFrontmatter } from './apply-edits.ts';
-import { logEvent, sha8 } from './audit.ts';
-import { loadBenchmark, splitBench, parseSplit } from './benchmark.ts';
-import { getBundledSkillContext, shouldMutateSkillFile, assertBundledMutationHeldOut } from './bundled-skill-gate.ts';
-import { loadCheckpoint, saveCheckpoint, deleteCheckpoint, type RunCheckpoint } from './checkpoint.ts';
-import { loadHeldOut, runHeldOutGate } from './held-out.ts';
-import { withSkilloptLock } from './lock.ts';
-import { resolveLrSchedule } from './lr-schedule.ts';
-import { preflight, formatPreflightReport } from './preflight.ts';
-import { isRejected, loadRejectedBuffer, makeRejectedEntry, saveRejectedBuffer } from './rejected-buffer.ts';
-import { runReflect, runOneShotRewrite, describeJudges } from './reflect.ts';
-import { acceptCandidate, bestPath, revertAllPending, skillPath, writeProposed } from './version-store.ts';
-import { runValidationGate, scoreSkillOnTasks } from './validate-gate.ts';
-import { ROLLOUT_SUCCESS_THRESHOLD } from './types.ts';
-import type { SkillOptOpts, EditOp, RunReceipt, BenchmarkTask } from './types.ts';
+import { randomUUID } from "node:crypto";
+import * as fs from "node:fs";
+import { BudgetTracker } from "../budget/budget-tracker.ts";
+import { withBudgetTracker } from "../ai/gateway.ts";
+import { errorFor } from "../errors.ts";
+import { applyEditBatch, getWorkingTreeStatusForFile, splitFrontmatter } from "./apply-edits.ts";
+import { logEvent, sha8 } from "./audit.ts";
+import { loadBenchmark, splitBench, parseSplit } from "./benchmark.ts";
+import {
+  getBundledSkillContext,
+  shouldMutateSkillFile,
+  assertBundledMutationHeldOut,
+} from "./bundled-skill-gate.ts";
+import {
+  loadCheckpoint,
+  saveCheckpoint,
+  deleteCheckpoint,
+  type RunCheckpoint,
+} from "./checkpoint.ts";
+import { loadHeldOut, runHeldOutGate } from "./held-out.ts";
+import { withSkilloptLock } from "./lock.ts";
+import { resolveLrSchedule } from "./lr-schedule.ts";
+import { preflight, formatPreflightReport } from "./preflight.ts";
+import {
+  isRejected,
+  loadRejectedBuffer,
+  makeRejectedEntry,
+  saveRejectedBuffer,
+} from "./rejected-buffer.ts";
+import { runReflect, runOneShotRewrite, describeJudges } from "./reflect.ts";
+import {
+  acceptCandidate,
+  bestPath,
+  revertAllPending,
+  skillPath,
+  writeProposed,
+} from "./version-store.ts";
+import { runValidationGate, scoreSkillOnTasks } from "./validate-gate.ts";
+import { ROLLOUT_SUCCESS_THRESHOLD } from "./types.ts";
+import type { SkillOptOpts, EditOp, RunReceipt, BenchmarkTask } from "./types.ts";
 
 export interface RunSkillOptResult {
-  outcome: 'accepted' | 'no_improvement' | 'aborted' | 'errored';
+  outcome: "accepted" | "no_improvement" | "aborted" | "errored";
   receipt: RunReceipt;
   /** Final SKILL.md text (committed or proposed). */
   finalText: string;
@@ -116,8 +136,8 @@ export async function runSkillOpt(opts: SkillOptOpts): Promise<RunSkillOptResult
   const skillFile = skillPath(skillsDir, skillName);
   if (!fs.existsSync(skillFile)) {
     throw errorFor({
-      class: 'NoSkill',
-      code: 'no_skill_md',
+      class: "NoSkill",
+      code: "no_skill_md",
       message: `Cannot find SKILL.md for '${skillName}' at ${skillFile}.`,
       hint: `Create the skill first via 'gbrain skillify scaffold ${skillName}'.`,
     });
@@ -126,10 +146,10 @@ export async function runSkillOpt(opts: SkillOptOpts): Promise<RunSkillOptResult
   // Working-tree gate.
   if (!opts.force) {
     const status = getWorkingTreeStatusForFile(skillFile);
-    if (status === 'dirty') {
+    if (status === "dirty") {
       throw errorFor({
-        class: 'DirtyTree',
-        code: 'dirty_tree',
+        class: "DirtyTree",
+        code: "dirty_tree",
         message: `${skillFile} has uncommitted changes.`,
         hint: `Commit or stash changes before running skillopt, or pass --force to override.`,
       });
@@ -171,9 +191,9 @@ export async function runSkillOpt(opts: SkillOptOpts): Promise<RunSkillOptResult
     const overlap = heldOutTasks.filter((t) => benchIds.has(t.task_id)).map((t) => t.task_id);
     if (overlap.length > 0) {
       throw errorFor({
-        class: 'HeldOutOverlap',
-        code: 'held_out_overlaps_benchmark',
-        message: `Held-out set shares ${overlap.length} task_id(s) with the benchmark (e.g. ${overlap.slice(0, 3).join(', ')}). The held-out set must be independent.`,
+        class: "HeldOutOverlap",
+        code: "held_out_overlaps_benchmark",
+        message: `Held-out set shares ${overlap.length} task_id(s) with the benchmark (e.g. ${overlap.slice(0, 3).join(", ")}). The held-out set must be independent.`,
         hint: `Use disjoint task_ids in the held-out file — an overlapping held-out can't catch benchmark overfitting.`,
       });
     }
@@ -194,18 +214,25 @@ export async function runSkillOpt(opts: SkillOptOpts): Promise<RunSkillOptResult
     interactive: process.stderr.isTTY === true,
   });
   if (opts.json !== true) {
-    process.stderr.write(formatPreflightReport(preflightResult.estimate, {
-      epochs: opts.epochs, batchSize: opts.batchSize,
-      trainSize: split.train.length, selSize: split.sel.length, testSize: split.test.length,
-      optimizerModel: opts.optimizerModel, targetModel: opts.targetModel, judgeModel: opts.judgeModel,
-      maxCostUsd: opts.maxCostUsd,
-    }) + '\n');
+    process.stderr.write(
+      formatPreflightReport(preflightResult.estimate, {
+        epochs: opts.epochs,
+        batchSize: opts.batchSize,
+        trainSize: split.train.length,
+        selSize: split.sel.length,
+        testSize: split.test.length,
+        optimizerModel: opts.optimizerModel,
+        targetModel: opts.targetModel,
+        judgeModel: opts.judgeModel,
+        maxCostUsd: opts.maxCostUsd,
+      }) + "\n"
+    );
   }
   if (!preflightResult.proceed) {
     throw errorFor({
-      class: 'CostCapExceeded',
-      code: 'cost_cap_exceeded',
-      message: preflightResult.abort_reason ?? 'preflight refused to proceed',
+      class: "CostCapExceeded",
+      code: "cost_cap_exceeded",
+      message: preflightResult.abort_reason ?? "preflight refused to proceed",
       hint: `Raise --max-cost-usd or reduce knobs.`,
     });
   }
@@ -215,7 +242,7 @@ export async function runSkillOpt(opts: SkillOptOpts): Promise<RunSkillOptResult
     const receipt: RunReceipt = {
       run_id: opts.resumeRunId ?? randomUUID(),
       skill: skillName,
-      skill_sha8: sha8(fs.readFileSync(skillFile, 'utf8')),
+      skill_sha8: sha8(fs.readFileSync(skillFile, "utf8")),
       benchmark_sha8: bench.benchmark_sha8,
       optimizer_model: opts.optimizerModel,
       target_model: opts.targetModel,
@@ -226,9 +253,14 @@ export async function runSkillOpt(opts: SkillOptOpts): Promise<RunSkillOptResult
       lr_schedule: opts.lrSchedule,
       max_cost_usd: opts.maxCostUsd,
       started_at: new Date().toISOString(),
-      outcome: 'aborted',
+      outcome: "aborted",
     };
-    return { outcome: 'aborted', receipt, finalText: fs.readFileSync(skillFile, 'utf8'), mutatedSkillFile: false };
+    return {
+      outcome: "aborted",
+      receipt,
+      finalText: fs.readFileSync(skillFile, "utf8"),
+      mutatedSkillFile: false,
+    };
   }
 
   // ── Acquire per-skill lock (D14) ────────────────────────────────────────
@@ -243,7 +275,7 @@ async function runOptimizationLoop(
   split: ReturnType<typeof splitBench>,
   bundledCtx: ReturnType<typeof getBundledSkillContext>,
   mutateDecision: ReturnType<typeof shouldMutateSkillFile>,
-  heldOutTasks: BenchmarkTask[],
+  heldOutTasks: BenchmarkTask[]
 ): Promise<RunSkillOptResult> {
   const { skillName, skillsDir } = opts;
   const skillFile = skillPath(skillsDir, skillName);
@@ -261,7 +293,7 @@ async function runOptimizationLoop(
   revertAllPending(skillsDir, skillName);
 
   // Load baseline skill text.
-  const baselineText = fs.readFileSync(skillFile, 'utf8');
+  const baselineText = fs.readFileSync(skillFile, "utf8");
   const baselineSha8 = sha8(baselineText);
 
   // Resume or init checkpoint.
@@ -294,7 +326,7 @@ async function runOptimizationLoop(
 
   // Initial audit row.
   logEvent({
-    kind: 'run_start',
+    kind: "run_start",
     run_id: runId,
     skill: skillName,
     skill_sha8: baselineSha8,
@@ -307,9 +339,9 @@ async function runOptimizationLoop(
     lr: opts.lr,
     lr_schedule: opts.lrSchedule,
     max_cost_usd: opts.maxCostUsd,
-    reflect_mode: opts.reflectMode ?? 'both',
+    reflect_mode: opts.reflectMode ?? "both",
     validation_gate_disabled: opts.disableValidationGate === true,
-    optimizer_mode: opts.optimizerMode ?? 'reflect',
+    optimizer_mode: opts.optimizerMode ?? "reflect",
     held_out_size: heldOutTasks.length,
   } as never);
 
@@ -324,7 +356,7 @@ async function runOptimizationLoop(
   const totalSteps = opts.epochs * Math.max(1, Math.floor(split.train.length / opts.batchSize));
 
   // Run the loop inside withBudgetTracker so every nested gateway call composes.
-  let outcome: 'accepted' | 'no_improvement' | 'aborted' | 'errored' = 'no_improvement';
+  let outcome: "accepted" | "no_improvement" | "aborted" | "errored" = "no_improvement";
   let finalText = checkpoint.best_skill_text;
   let totalStepsRun = 0;
   // Hoisted for the receipt (computed inside the budget-tracker closure).
@@ -361,7 +393,7 @@ async function runOptimizationLoop(
       // D_sel for signal, rewrite the body once, score the result, promote it.
       // Sets last_completed_epoch = epochs so the epoch loop below no-ops, then
       // falls through to the shared final-test + receipt path.
-      if (opts.optimizerMode === 'one-shot-rewrite') {
+      if (opts.optimizerMode === "one-shot-rewrite") {
         const { body: baselineBody, bodyStart } = splitFrontmatter(baselineText);
         const fmBlock = baselineText.slice(0, bodyStart);
         const fwd = await runValidationGate({
@@ -409,14 +441,20 @@ async function runOptimizationLoop(
             totalStepsRun = 1;
             if (mutateDecision.mutate) {
               acceptCandidate({
-                skillsDir, skillName, runId, epoch: 1, step: 1,
+                skillsDir,
+                skillName,
+                runId,
+                epoch: 1,
+                step: 1,
                 edits: [], // whole-body rewrite — no granular edits to record
-                candidateText: candidate, selScore: score, delta: score - baselineSelScore,
+                candidateText: candidate,
+                selScore: score,
+                delta: score - baselineSelScore,
               });
             } else {
               writeProposed(skillsDir, skillName, candidate);
             }
-            outcome = 'accepted';
+            outcome = "accepted";
             finalText = candidate;
           }
         }
@@ -427,11 +465,12 @@ async function runOptimizationLoop(
       // Epoch loop.
       for (let epoch = checkpoint!.last_completed_epoch + 1; epoch <= opts.epochs; epoch++) {
         const stepsPerEpoch = Math.max(1, Math.floor(split.train.length / opts.batchSize));
-        const startStep = epoch === checkpoint!.last_completed_epoch + 1 ? checkpoint!.last_completed_step + 1 : 1;
+        const startStep =
+          epoch === checkpoint!.last_completed_epoch + 1 ? checkpoint!.last_completed_step + 1 : 1;
         const epochStartBest = checkpoint!.best_sel_score;
 
         for (let step = startStep; step <= stepsPerEpoch; step++) {
-          if (Date.now() > deadline) throw new Error('skillopt_runtime_exceeded');
+          if (Date.now() > deadline) throw new Error("skillopt_runtime_exceeded");
           totalStepsRun += 1;
           const globalStep = (epoch - 1) * stepsPerEpoch + step;
           const lrBudget = scheduleFn(opts.lr, globalStep, totalSteps);
@@ -456,8 +495,12 @@ async function runOptimizationLoop(
           // Partition into successes vs failures (>= 0.5 threshold). Reflect
           // gets the actual scored trajectories so failure-mode + success-mode
           // analysis can ground in real agent behavior (D7).
-          const successes = forwardGate.scoredRollouts.filter((r) => r.score >= ROLLOUT_SUCCESS_THRESHOLD);
-          const failures = forwardGate.scoredRollouts.filter((r) => r.score < ROLLOUT_SUCCESS_THRESHOLD);
+          const successes = forwardGate.scoredRollouts.filter(
+            (r) => r.score >= ROLLOUT_SUCCESS_THRESHOLD
+          );
+          const failures = forwardGate.scoredRollouts.filter(
+            (r) => r.score < ROLLOUT_SUCCESS_THRESHOLD
+          );
 
           // BACKWARD PASS: D7 two reflect calls (failures + successes).
           const rejected = loadRejectedBuffer(skillsDir, skillName);
@@ -475,18 +518,20 @@ async function runOptimizationLoop(
           // Merge + rank + LR-clip.
           const allEdits: EditOp[] = [...reflectResult.failureEdits, ...reflectResult.successEdits];
           // Drop edits already in rejected buffer.
-          const fresh = allEdits.filter((e) => !isRejected(rejected, checkpoint!.best_skill_text, [e]));
+          const fresh = allEdits.filter(
+            (e) => !isRejected(rejected, checkpoint!.best_skill_text, [e])
+          );
           // Apply under LR budget.
           const applied = applyEditBatch(checkpoint!.best_skill_text, fresh, lrBudget);
 
-          if (applied.results.every((r) => r.outcome === 'rejected')) {
+          if (applied.results.every((r) => r.outcome === "rejected")) {
             // Nothing applied; record rejected entries + skip gate.
             const newRejections = fresh.map((e) =>
-              makeRejectedEntry(checkpoint!.best_skill_text, [e], 'apply_failed'),
+              makeRejectedEntry(checkpoint!.best_skill_text, [e], "apply_failed")
             );
             saveRejectedBuffer(skillsDir, skillName, newRejections);
             logEvent({
-              kind: 'step',
+              kind: "step",
               run_id: runId,
               skill: skillName,
               epoch,
@@ -497,7 +542,7 @@ async function runOptimizationLoop(
               edits_attempted: fresh.length,
               edits_applied: 0,
               delta: 0,
-              reason: 'no_edits_applied',
+              reason: "no_edits_applied",
               cumulative_cost_usd: tracker.snapshot().cumulativeCostUsd,
             } as never);
             continue;
@@ -536,11 +581,11 @@ async function runOptimizationLoop(
               });
               if (!ho.passed) {
                 const newRejections = fresh.map((e) =>
-                  makeRejectedEntry(checkpoint!.best_skill_text, [e], 'held_out_regression'),
+                  makeRejectedEntry(checkpoint!.best_skill_text, [e], "held_out_regression")
                 );
                 saveRejectedBuffer(skillsDir, skillName, newRejections);
                 logEvent({
-                  kind: 'step',
+                  kind: "step",
                   run_id: runId,
                   skill: skillName,
                   epoch,
@@ -549,9 +594,9 @@ async function runOptimizationLoop(
                   sel_score_runs: gate.perTaskMedians.map((t) => t.median),
                   accepted: false,
                   edits_attempted: fresh.length,
-                  edits_applied: applied.results.filter((r) => r.outcome === 'applied').length,
+                  edits_applied: applied.results.filter((r) => r.outcome === "applied").length,
                   delta: gate.selScore - checkpoint!.best_sel_score,
-                  reason: 'held_out_regression',
+                  reason: "held_out_regression",
                   held_out_baseline: ho.baselineScore,
                   held_out_candidate: ho.candidateScore,
                   cumulative_cost_usd: tracker.snapshot().cumulativeCostUsd,
@@ -586,7 +631,7 @@ async function runOptimizationLoop(
             saveCheckpoint(skillsDir, skillName, checkpoint!);
 
             logEvent({
-              kind: 'step',
+              kind: "step",
               run_id: runId,
               skill: skillName,
               epoch,
@@ -595,20 +640,24 @@ async function runOptimizationLoop(
               sel_score_runs: gate.perTaskMedians.map((t) => t.median),
               accepted: true,
               edits_attempted: fresh.length,
-              edits_applied: applied.results.filter((r) => r.outcome === 'applied').length,
+              edits_applied: applied.results.filter((r) => r.outcome === "applied").length,
               delta,
               cumulative_cost_usd: tracker.snapshot().cumulativeCostUsd,
             } as never);
-            outcome = 'accepted';
+            outcome = "accepted";
             finalText = applied.newText;
           } else {
             // REJECT: push to rejected-buffer.
             const newRejections = fresh.map((e) =>
-              makeRejectedEntry(checkpoint!.best_skill_text, [e], `validation_gate_${gate.reason ?? 'rejected'}`),
+              makeRejectedEntry(
+                checkpoint!.best_skill_text,
+                [e],
+                `validation_gate_${gate.reason ?? "rejected"}`
+              )
             );
             saveRejectedBuffer(skillsDir, skillName, newRejections);
             logEvent({
-              kind: 'step',
+              kind: "step",
               run_id: runId,
               skill: skillName,
               epoch,
@@ -617,9 +666,9 @@ async function runOptimizationLoop(
               sel_score_runs: gate.perTaskMedians.map((t) => t.median),
               accepted: false,
               edits_attempted: fresh.length,
-              edits_applied: applied.results.filter((r) => r.outcome === 'applied').length,
+              edits_applied: applied.results.filter((r) => r.outcome === "applied").length,
               delta: gate.selScore - checkpoint!.best_sel_score,
-              reason: gate.reason ?? 'rejected',
+              reason: gate.reason ?? "rejected",
               cumulative_cost_usd: tracker.snapshot().cumulativeCostUsd,
             } as never);
           }
@@ -628,7 +677,7 @@ async function runOptimizationLoop(
         // D6 SLOW UPDATE: if no improvement this epoch, propose one meta-edit.
         if (checkpoint!.best_sel_score === epochStartBest) {
           logEvent({
-            kind: 'slow_update',
+            kind: "slow_update",
             run_id: runId,
             skill: skillName,
             epoch,
@@ -665,31 +714,31 @@ async function runOptimizationLoop(
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    if (msg.includes('BudgetExhausted') || msg.includes('budget_exhausted')) {
-      outcome = 'aborted';
+    if (msg.includes("BudgetExhausted") || msg.includes("budget_exhausted")) {
+      outcome = "aborted";
       logEvent({
-        kind: 'abort',
+        kind: "abort",
         run_id: runId,
         skill: skillName,
-        reason: 'budget_exhausted',
+        reason: "budget_exhausted",
         detail: msg,
       } as never);
-    } else if (msg.includes('skillopt_runtime_exceeded')) {
-      outcome = 'aborted';
+    } else if (msg.includes("skillopt_runtime_exceeded")) {
+      outcome = "aborted";
       logEvent({
-        kind: 'abort',
+        kind: "abort",
         run_id: runId,
         skill: skillName,
-        reason: 'runtime_exceeded',
+        reason: "runtime_exceeded",
         detail: `exceeded --max-runtime-min ${opts.maxRuntimeMin}`,
       } as never);
     } else {
-      outcome = 'errored';
+      outcome = "errored";
       logEvent({
-        kind: 'abort',
+        kind: "abort",
         run_id: runId,
         skill: skillName,
-        reason: 'sigint',
+        reason: "sigint",
         detail: msg,
       } as never);
     }
@@ -700,13 +749,13 @@ async function runOptimizationLoop(
   let proposedPath: string | undefined;
   // Widen back to the full union — TS narrowed `outcome` inside the try/catch
   // to the catch's assignment values only (it can't prove the async callback ran).
-  const finalOutcome = outcome as 'accepted' | 'no_improvement' | 'aborted' | 'errored';
-  if (!mutateDecision.mutate && finalOutcome === 'accepted') {
+  const finalOutcome = outcome as "accepted" | "no_improvement" | "aborted" | "errored";
+  if (!mutateDecision.mutate && finalOutcome === "accepted") {
     // best.md was written by writeProposed() in the accept branch (no-mutate
     // path); it doubles as proposed.md for human review. SKILL.md untouched.
     proposedPath = bestPath(skillsDir, skillName);
   } else if (mutateDecision.mutate) {
-    mutatedSkillFile = finalOutcome === 'accepted';
+    mutatedSkillFile = finalOutcome === "accepted";
   }
 
   // Final receipt.
@@ -740,7 +789,7 @@ async function runOptimizationLoop(
   };
 
   logEvent({
-    kind: 'run_end',
+    kind: "run_end",
     run_id: runId,
     skill: skillName,
     outcome,
@@ -751,7 +800,7 @@ async function runOptimizationLoop(
   } as never);
 
   // Clean checkpoint on success (resume not needed).
-  if (finalOutcome === 'accepted' || finalOutcome === 'no_improvement') {
+  if (finalOutcome === "accepted" || finalOutcome === "no_improvement") {
     deleteCheckpoint(skillsDir, skillName, runId);
   }
 

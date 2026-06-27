@@ -18,6 +18,7 @@ gbrain doctor --json
 ```
 
 **Expected:** All checks return `"ok"`:
+
 - `connection`: connected, N pages
 - `pgvector`: extension installed
 - `rls`: enabled on all tables
@@ -92,6 +93,7 @@ less than half the file count, sync is silently skipping pages.
 connection on an IPv4-only host. GBrain uses the Transaction pooler (port 6543)
 for reads, but routes migrations, DDL, and sync transactions to a derived direct
 connection (`db.<ref>.supabase.co:5432`), which is IPv6-only.
+
 - On an IPv4-only host, reads work but sync transactions fail and silently skip
   pages.
 - Fix: set `GBRAIN_DIRECT_DATABASE_URL` to the **Session pooler** string (port
@@ -139,6 +141,7 @@ gbrain search "<text from the correction>"
 **Expected:** The search returns the **corrected** text, not the old version.
 
 **If it returns old text:** Sync failed silently. Check:
+
 - Is the sync cron registered and running?
 - Is `gbrain sync --watch` still alive (if using watch mode)?
 - Run `gbrain config get sync.last_run` to see when sync last ran.

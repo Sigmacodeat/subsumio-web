@@ -1,9 +1,11 @@
 # The Originals Folder
 
 ## Goal
+
 Capture the user's original thinking with their exact phrasing, deep cross-links, and full provenance -- so intellectual capital compounds instead of evaporating.
 
 ## What the User Gets
+
 Without this: the user generates a brilliant framework in conversation and it vanishes when the session ends. Six months later, they vaguely remember the idea but can't find it, can't recall the exact phrasing, and can't trace what influenced it. With this: every original observation, thesis, framework, and hot take is captured verbatim in `brain/originals/`, cross-linked to the people, companies, and media that shaped it, and searchable forever.
 
 ## Implementation
@@ -84,4 +86,5 @@ on user_message(message):
 5. Run `gbrain search "ambition debt"`. Confirm the originals page appears in search results and is discoverable.
 
 ---
-*Part of the [GBrain Skillpack](../GBRAIN_SKILLPACK.md).*
+
+_Part of the [GBrain Skillpack](../GBRAIN_SKILLPACK.md)._

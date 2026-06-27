@@ -25,14 +25,16 @@ interface BrainQualityPanelProps {
 
 export function BrainQualityPanel({ className }: BrainQualityPanelProps) {
   const { lang } = useLang();
-  const { data: summary, loading, error, refetch } = useApiQuery<BrainQualitySummary>(
-    async () => {
-      const res = await csrfFetch("/api/brain-quality", { method: "GET" });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return (await res.json()) as BrainQualitySummary;
-    },
-    []
-  );
+  const {
+    data: summary,
+    loading,
+    error,
+    refetch,
+  } = useApiQuery<BrainQualitySummary>(async () => {
+    const res = await csrfFetch("/api/brain-quality", { method: "GET" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return (await res.json()) as BrainQualitySummary;
+  }, []);
 
   const score = summary ? Math.round(summary.coverage_score * 100) : 0;
   const scoreColor =

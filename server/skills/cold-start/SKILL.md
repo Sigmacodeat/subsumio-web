@@ -71,16 +71,16 @@ sources to get you from zero to useful in one session.
 
 Data sources ranked by **information density × ease of import**:
 
-| Priority | Source | Why | Time | Pages Created |
-|----------|--------|-----|------|---------------|
-| 1 | Existing markdown/Obsidian | Highest density — it's already structured | 5 min | 100s-1000s |
-| 2 | Google Contacts | Seeds the people/ directory — names, emails, companies | 10 min | 50-500 |
-| 3 | Google Calendar (90 days) | Meeting history with attendee context | 15 min | 30-90 |
-| 4 | Gmail (recent threads) | Relationship context, active threads, org chart signals | 20 min | 50-200 |
-| 5 | Conversations (ChatGPT/Claude exports) | Your thinking, questions, mental models | 15 min | 10-100 |
-| 6 | X/Twitter archive | Your public positions, takes, engagement patterns | 20 min | 30-365 |
-| 7 | File archives (Dropbox/Drive/local) | Historical documents, old writing, photos | 30+ min | varies |
-| 8 | Meeting transcripts (Circleback/etc.) | Deep relationship context from recorded calls | 20 min | 10-50 |
+| Priority | Source                                 | Why                                                     | Time    | Pages Created |
+| -------- | -------------------------------------- | ------------------------------------------------------- | ------- | ------------- |
+| 1        | Existing markdown/Obsidian             | Highest density — it's already structured               | 5 min   | 100s-1000s    |
+| 2        | Google Contacts                        | Seeds the people/ directory — names, emails, companies  | 10 min  | 50-500        |
+| 3        | Google Calendar (90 days)              | Meeting history with attendee context                   | 15 min  | 30-90         |
+| 4        | Gmail (recent threads)                 | Relationship context, active threads, org chart signals | 20 min  | 50-200        |
+| 5        | Conversations (ChatGPT/Claude exports) | Your thinking, questions, mental models                 | 15 min  | 10-100        |
+| 6        | X/Twitter archive                      | Your public positions, takes, engagement patterns       | 20 min  | 30-365        |
+| 7        | File archives (Dropbox/Drive/local)    | Historical documents, old writing, photos               | 30+ min | varies        |
+| 8        | Meeting transcripts (Circleback/etc.)  | Deep relationship context from recorded calls           | 20 min  | 10-50         |
 
 ## Phase 0: ClawVisor Setup (Required for API Access)
 
@@ -94,6 +94,7 @@ agent and your APIs. The agent never sees your credentials — ClawVisor injects
 them at request time, enforces policies, and logs everything.
 
 **What ClawVisor gives you:**
+
 - **Credential vaulting** — agent sees shadow tokens, never real secrets
 - **Task-scoped authorization** — each workflow declares exactly what it needs
 - **Audit trail** — every API call logged with metadata (who, what, when)
@@ -103,6 +104,7 @@ them at request time, enforces policies, and logs everything.
 - **Revocation** — disable the agent's access in one click, no token rotation needed
 
 **Setup (15 min):**
+
 1. Sign up at [app.clawvisor.com](https://app.clawvisor.com)
 2. Create an agent in the dashboard, copy the agent token
 3. Set environment variables:
@@ -136,6 +138,7 @@ Gmail) and proceed with offline-only imports:
 - **Phase 8** (meeting transcripts) — works from exported transcripts
 
 Tell the user:
+
 > "No problem. We'll skip the Google imports for now and work with file-based
 > sources. You can set up ClawVisor anytime to unlock Contacts, Calendar, and
 > Gmail imports safely."
@@ -186,6 +189,7 @@ gbrain search "<topic from the imported data>"
 - Start embeddings: `gbrain embed --stale` (runs in background)
 
 > **Track progress:**
+>
 > ```bash
 > echo '{"phase_1_complete": true, "pages_imported": N}' > ~/.gbrain/cold-start-state.json
 > ```
@@ -201,9 +205,9 @@ who John is.
 
 ```javascript
 // Fetch all contacts
-const contacts = await clawvisor('google.contacts', 'list_contacts', {
+const contacts = await clawvisor("google.contacts", "list_contacts", {
   limit: 1000,
-  fields: 'names,emailAddresses,phoneNumbers,organizations,biographies'
+  fields: "names,emailAddresses,phoneNumbers,organizations,biographies",
 });
 ```
 
@@ -217,6 +221,7 @@ curl -s -H "Authorization: Bearer $GOOGLE_TOKEN" \
 ### Processing rules
 
 For each contact:
+
 1. **Filter out noise** — skip contacts with no name, no email, or that are clearly
    automated (noreply@, no-reply@, support@, notifications@)
 2. **Check brain first** — `gbrain search "name"` to avoid duplicates
@@ -230,6 +235,7 @@ For each contact:
 ### Quality gate
 
 After importing 5 contacts, pause and show the user a sample page. Ask:
+
 > "Here's what a contact page looks like. Want me to continue with the rest, or
 > adjust the format first?"
 
@@ -243,13 +249,13 @@ relationship map.
 
 ```javascript
 // Via ClawVisor — query ALL calendar accounts
-const accounts = ['primary@gmail.com', 'work@company.com'];
+const accounts = ["primary@gmail.com", "work@company.com"];
 for (const account of accounts) {
-  const events = await clawvisor(`google.calendar:${account}`, 'list_events', {
+  const events = await clawvisor(`google.calendar:${account}`, "list_events", {
     timeMin: new Date(Date.now() - 90 * 86400000).toISOString(),
     timeMax: new Date().toISOString(),
     singleEvents: true,
-    orderBy: 'startTime'
+    orderBy: "startTime",
   });
 }
 ```
@@ -257,6 +263,7 @@ for (const account of accounts) {
 ### Brain structure
 
 Follow the three-tier calendar architecture:
+
 ```
 brain/daily/calendar/
 ├── calendar-log.md              ← compiled truth (patterns, key people)
@@ -268,6 +275,7 @@ brain/daily/calendar/
 ### Entity enrichment
 
 For each event with attendees:
+
 1. Look up each attendee in the brain (they should exist from Phase 2)
 2. Add a timeline entry to their page: met at [event title] on [date]
 3. If an attendee has no brain page and appears in 3+ events, create one
@@ -290,6 +298,7 @@ Don't import every email. Import the **signal**:
 ### Processing
 
 For each email thread:
+
 1. **Entity detection** — extract people, companies mentioned
 2. **Update people pages** — add communication context to timeline
 3. **Create meeting pages** — if the email is a meeting summary or follow-up
@@ -298,12 +307,14 @@ For each email thread:
 ### Filtering rules
 
 **Auto-skip (never import):**
+
 - noreply@, no-reply@, notifications@, support@, mailer-daemon@
 - Unsubscribe-heavy senders (marketing)
 - GitHub/Jira/Linear notification emails
 - Calendar invites (already captured in Phase 3)
 
 **Always import:**
+
 - Direct emails from people in the brain
 - Starred/flagged emails
 - Emails the user sent (their words are highest-value signal)
@@ -323,6 +334,7 @@ preserved in dialog form.
 ### Processing
 
 For each conversation:
+
 1. **Assess significance** (1-5 scale):
    - 1 = Pure utility (how-tos, quick lookups) → skip or minimal page
    - 2 = Minor context → 1-paragraph note
@@ -375,6 +387,7 @@ brain/media/x/{handle}/
 less structured but potentially very high value (old journals, letters, early writing).
 
 Delegate to the `archive-crawler` skill. It handles:
+
 - Crawling directory structures
 - Filtering for high-value content (user's own writing, not installers)
 - Text extraction from PDFs, images (OCR), documents
@@ -382,12 +395,15 @@ Delegate to the `archive-crawler` skill. It handles:
 
 > **Safety gate:** Archive crawling can be slow and create many pages. Always start
 > with a scan-only pass:
+>
 > ```bash
 > gbrain archive-crawler --scan-only --path /path/to/archive
 > ```
+>
 > Show the user the manifest before proceeding with full ingestion.
 
 **Supported sources:**
+
 - Local directories (Dropbox sync folder, Google Drive, old hard drives)
 - Cloud storage (Backblaze B2, S3) via mounted paths
 - Email archives (PST, mbox, EML, Google Takeout)
@@ -400,6 +416,7 @@ recording service (Circleback, Otter, Fireflies, Read.ai), import recent
 transcripts.
 
 Delegate to `meeting-ingestion` skill. Key rules:
+
 - Always pull the **complete transcript**, not just the AI summary
 - Entity propagation is MANDATORY — every attendee gets a timeline update
 - A meeting is NOT fully ingested until all entity pages are updated
@@ -409,12 +426,14 @@ Delegate to `meeting-ingestion` skill. Key rules:
 After completing available phases:
 
 1. **Verify brain health:**
+
    ```bash
    gbrain doctor --json
    gbrain stats
    ```
 
 2. **Test retrieval:**
+
    ```bash
    gbrain query "who do I meet with most often?"
    gbrain query "what am I working on?"
@@ -428,6 +447,7 @@ After completing available phases:
    - Brain repo: `gbrain sync --repo <path>` every 5-30 minutes
 
 4. **Track state:**
+
    ```json
    // ~/.gbrain/cold-start-state.json
    {
@@ -444,6 +464,7 @@ After completing available phases:
 5. **Tell the user what to do next:**
    > "Your brain has N pages across people, calendar, email, and conversations.
    > Live sync is configured for [sources]. From here:
+   >
    > - The **signal-detector** captures entities from every conversation
    > - The **briefing** skill can compile daily context
    > - The **executive-assistant** pattern handles email triage

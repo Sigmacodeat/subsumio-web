@@ -107,10 +107,14 @@ export function howToLd(steps: readonly { title: string; desc: string }[], lang:
   return {
     "@context": "https://schema.org",
     "@type": "HowTo",
-    name: lang === "de" ? "So funktioniert Subsumio: vom Dokument zur belegten Antwort" : "How Subsumio works: from document to cited answer",
-    description: lang === "de"
-      ? "Vier Schritte von der Frage zur belegten KI-Antwort mit Fundstellen."
-      : "Four steps from question to cited AI answer with page-level citations.",
+    name:
+      lang === "de"
+        ? "So funktioniert Subsumio: vom Dokument zur belegten Antwort"
+        : "How Subsumio works: from document to cited answer",
+    description:
+      lang === "de"
+        ? "Vier Schritte von der Frage zur belegten KI-Antwort mit Fundstellen."
+        : "Four steps from question to cited AI answer with page-level citations.",
     step: steps.map((step, i) => ({
       "@type": "HowToStep",
       position: i + 1,

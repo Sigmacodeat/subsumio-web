@@ -19,9 +19,9 @@
  * in absolute dollars but the contract matters.
  */
 
-import type { CostBreakdown } from './types.ts';
-import { splitProviderModelId } from '../model-id.ts';
-import { ANTHROPIC_PRICING } from '../anthropic-pricing.ts';
+import type { CostBreakdown } from "./types.ts";
+import { splitProviderModelId } from "../model-id.ts";
+import { ANTHROPIC_PRICING } from "../anthropic-pricing.ts";
 
 /**
  * Chat prices come from the canonical table via the bare-keyed
@@ -40,7 +40,7 @@ const DEFAULT_PER_CALL_INPUT_TOKENS = 500;
 const DEFAULT_PER_CALL_OUTPUT_TOKENS = 80;
 
 const ESTIMATE_NOTE =
-  'approximate; provider accounting is post-call. --budget-usd is a soft ceiling — mid-run stop on cumulative > cap.';
+  "approximate; provider accounting is post-call. --budget-usd is a soft ceiling — mid-run stop on cumulative > cap.";
 
 function pricingFor(modelId: string): { input: number; output: number } {
   // v0.41.21.0: route through splitProviderModelId so slash-prefixed ids
@@ -57,7 +57,7 @@ function pricingFor(modelId: string): { input: number; output: number } {
     const tailHit = ANTHROPIC_PRICING[tail];
     if (tailHit) return tailHit;
   }
-  return ANTHROPIC_PRICING['claude-haiku-4-5'];
+  return ANTHROPIC_PRICING["claude-haiku-4-5"];
 }
 
 /**
@@ -76,7 +76,8 @@ export function estimateUpperBoundCost(opts: {
   const inTok = opts.perCallInputTokens ?? DEFAULT_PER_CALL_INPUT_TOKENS;
   const outTok = opts.perCallOutputTokens ?? DEFAULT_PER_CALL_OUTPUT_TOKENS;
   const judgeCost =
-    opts.pairCount * ((inTok / 1_000_000) * judgePricing.input + (outTok / 1_000_000) * judgePricing.output);
+    opts.pairCount *
+    ((inTok / 1_000_000) * judgePricing.input + (outTok / 1_000_000) * judgePricing.output);
   // Conservative embedding cost: assume ~50 tokens per query.
   const embedCost = opts.queryCount * (50 / 1_000_000) * OPENAI_EMBEDDING_PRICE_PER_MTOK;
   return judgeCost + embedCost;
@@ -102,10 +103,18 @@ export class CostTracker {
     this.embeddingUsd += (tokens / 1_000_000) * OPENAI_EMBEDDING_PRICE_PER_MTOK;
   }
 
-  judge(): number { return this.judgeUsd; }
-  embedding(): number { return this.embeddingUsd; }
-  total(): number { return this.judgeUsd + this.embeddingUsd; }
-  capUsd(): number { return this.cap; }
+  judge(): number {
+    return this.judgeUsd;
+  }
+  embedding(): number {
+    return this.embeddingUsd;
+  }
+  total(): number {
+    return this.judgeUsd + this.embeddingUsd;
+  }
+  capUsd(): number {
+    return this.cap;
+  }
 
   /** Returns true iff cumulative spend exceeds the configured cap. */
   exceededCap(): boolean {

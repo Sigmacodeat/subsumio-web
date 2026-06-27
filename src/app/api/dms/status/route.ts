@@ -1,4 +1,3 @@
-
 import { getConnector, isAnyDMSConfigured } from "@/lib/dms";
 import { createHandler } from "@/lib/api-handler";
 
@@ -22,5 +21,5 @@ export const GET = createHandler(
       provider: connector?.name ?? "unknown",
       ready: connector?.isConfigured() ?? false,
     });
-  },
+  }
 );

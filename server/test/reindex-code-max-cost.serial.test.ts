@@ -13,22 +13,18 @@
  * tests in the same shard would race.
  */
 
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
-import { PGLiteEngine } from '../src/core/pglite-engine.ts';
-import { runReindexCode } from '../src/commands/reindex-code.ts';
-import {
-  configureGateway,
-  resetGateway,
-  getCurrentBudgetTracker,
-} from '../src/core/ai/gateway.ts';
+import { describe, test, expect, beforeAll, afterAll } from "bun:test";
+import { PGLiteEngine } from "../src/core/pglite-engine.ts";
+import { runReindexCode } from "../src/commands/reindex-code.ts";
+import { configureGateway, resetGateway, getCurrentBudgetTracker } from "../src/core/ai/gateway.ts";
 
 let engine: PGLiteEngine;
 
 beforeAll(async () => {
   configureGateway({
-    embedding_model: 'openai:text-embedding-3-large',
+    embedding_model: "openai:text-embedding-3-large",
     embedding_dimensions: 1536,
-    env: { OPENAI_API_KEY: 'sk-test' },
+    env: { OPENAI_API_KEY: "sk-test" },
   });
   engine = new PGLiteEngine();
   await engine.connect({});
@@ -40,18 +36,18 @@ afterAll(async () => {
   resetGateway();
 });
 
-describe('reindex-code --max-cost (F3)', () => {
-  test('dry-run path accepts maxCostUsd without throwing', async () => {
+describe("reindex-code --max-cost (F3)", () => {
+  test("dry-run path accepts maxCostUsd without throwing", async () => {
     const result = await runReindexCode(engine, {
       dryRun: true,
       noEmbed: true,
       maxCostUsd: 5,
     });
-    expect(result.status).toBe('dry_run');
+    expect(result.status).toBe("dry_run");
     expect(result.codePages).toBe(0); // empty brain
   });
 
-  test('empty-brain non-dry path with maxCostUsd returns ok without throwing', async () => {
+  test("empty-brain non-dry path with maxCostUsd returns ok without throwing", async () => {
     // No code pages exist → estimateReindexCost returns 0 → we hit the
     // early-return at totalPages===0 BEFORE the body wrap. This pins that
     // the early-return path isn't broken by the maxCostUsd plumbing.
@@ -60,12 +56,12 @@ describe('reindex-code --max-cost (F3)', () => {
       noEmbed: true,
       maxCostUsd: 5,
     });
-    expect(result.status).toBe('ok');
+    expect(result.status).toBe("ok");
     expect(result.reindexed).toBe(0);
     expect(result.failed).toBe(0);
   });
 
-  test('no tracker installed when maxCostUsd is unset (legacy path)', async () => {
+  test("no tracker installed when maxCostUsd is unset (legacy path)", async () => {
     // Outside any withBudgetTracker scope, getCurrentBudgetTracker() must
     // return null both before AND after the call. This pins that the body
     // wrap is conditional on the cap being set — agent callers who don't

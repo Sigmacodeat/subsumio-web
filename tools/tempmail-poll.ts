@@ -14,7 +14,11 @@ import path from "node:path";
 const CREDS = path.join(process.cwd(), ".data", "tempmail.json");
 const API = "https://api.mail.tm";
 
-interface Creds { address: string; password: string; token: string }
+interface Creds {
+  address: string;
+  password: string;
+  token: string;
+}
 
 async function loadCreds(): Promise<Creds> {
   const raw = await fs.readFile(CREDS, "utf8");
@@ -38,7 +42,14 @@ async function listMessages(token: string) {
     headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
   });
   if (res.status === 401) return null; // token expired
-  const j = (await res.json()) as { "hydra:member"?: Array<{ id: string; from?: { address?: string }; subject?: string; createdAt?: string }> };
+  const j = (await res.json()) as {
+    "hydra:member"?: Array<{
+      id: string;
+      from?: { address?: string };
+      subject?: string;
+      createdAt?: string;
+    }>;
+  };
   return j["hydra:member"] ?? [];
 }
 
@@ -46,7 +57,12 @@ async function getMessage(token: string, id: string) {
   const res = await fetch(`${API}/messages/${id}`, {
     headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
   });
-  return (await res.json()) as { subject?: string; from?: { address?: string }; text?: string; html?: string[] };
+  return (await res.json()) as {
+    subject?: string;
+    from?: { address?: string };
+    text?: string;
+    html?: string[];
+  };
 }
 
 function extractLinks(text: string): string[] {
@@ -69,7 +85,8 @@ async function main() {
     }
     if (msgs.length > seen) {
       console.log(`\n── ${msgs.length} Nachricht(en) ──`);
-      for (const m of msgs) console.log(`• ${m.from?.address ?? "?"} — ${m.subject ?? "(kein Betreff)"}`);
+      for (const m of msgs)
+        console.log(`• ${m.from?.address ?? "?"} — ${m.subject ?? "(kein Betreff)"}`);
       const newest = msgs[0];
       const full = await getMessage(creds.token, newest.id);
       const body = full.text || (full.html ?? []).join("\n").replace(/<[^>]+>/g, " ");

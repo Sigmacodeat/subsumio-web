@@ -49,7 +49,9 @@ export function calculateRvg(streitwert: number): RvgResult {
   const terminsgebuehr = round2(basis * 1.2);
   const einigungsgebuehr = round2(basis * 1.0);
   const auslagenpauschale = 20;
-  const summeNetto = round2(verfahrensgebuehr + terminsgebuehr + einigungsgebuehr + auslagenpauschale);
+  const summeNetto = round2(
+    verfahrensgebuehr + terminsgebuehr + einigungsgebuehr + auslagenpauschale
+  );
   const mwst = round2(summeNetto * 0.19);
   const summeBrutto = round2(summeNetto + mwst);
 

@@ -15,6 +15,7 @@ Mandanten können über einen sicheren Link Dokumente hochladen, die automatisch
 # 2. Kern-Userflows
 
 ## 2.1 Kanzlei erstellt Shared Space
+
 1. Kanzlei navigiert zu `/dashboard/shared-spaces`
 2. Klick auf "Neuer Shared Space"
 3. Name, Beschreibung, Gültigkeitsdauer eingeben
@@ -23,6 +24,7 @@ Mandanten können über einen sicheren Link Dokumente hochladen, die automatisch
 6. Link wird an Mandanten gesendet
 
 ## 2.2 Mandant lädt Dokumente hoch
+
 1. Mandant öffnet Link
 2. Authentifizierung via Email-Link oder Portal-Token
 3. Drag & Drop oder Datei-Auswahl
@@ -30,6 +32,7 @@ Mandanten können über einen sicheren Link Dokumente hochladen, die automatisch
 5. Dokumente erscheinen im Shared Space
 
 ## 2.3 WhatsApp → Shared Space
+
 1. Mandant sendet Dokument via WhatsApp
 2. System erkennt Dokument
 3. System speichert Dokument in Shared Space
@@ -37,6 +40,7 @@ Mandanten können über einen sicheren Link Dokumente hochladen, die automatisch
 5. Dokument ist in Mandantenakte sichtbar
 
 ## 2.4 Client Portal → Shared Space
+
 1. Mandant loggt sich in Client Portal ein
 2. Navigiert zu "Dokumente"
 3. Sieht Shared Space Dokumente
@@ -48,6 +52,7 @@ Mandanten können über einen sicheren Link Dokumente hochladen, die automatisch
 # 3. UI-Elemente & Interaktionen
 
 ## 3.1 Shared Spaces Dashboard
+
 - Liste aller Shared Spaces
 - Status (aktiv, abgelaufen, archiviert)
 - Teilnehmer-Anzahl
@@ -57,6 +62,7 @@ Mandanten können über einen sicheren Link Dokumente hochladen, die automatisch
 - Actions: Link kopieren, bearbeiten, archivieren, löschen
 
 ## 3.2 Shared Space Detail
+
 - Name, Beschreibung
 - Teilnehmer-Liste
 - Dokumenten-Liste mit Thumbnails
@@ -66,6 +72,7 @@ Mandanten können über einen sicheren Link Dokumente hochladen, die automatisch
 - Bulk-Actions (herunterladen, löschen)
 
 ## 3.3 Mandanten-Upload-Page
+
 - Minimalistisches Design
 - Upload-Zone prominent
 - Drag & Drop Support
@@ -74,6 +81,7 @@ Mandanten können über einen sicheren Link Dokumente hochladen, die automatisch
 - "Weitere Dokumente hochladen" Button
 
 ## 3.4 WhatsApp Integration
+
 - Automatische Erkennung von Dokumenten
 - Benachrichtigung an Kanzlei
 - Zuordnung zu Shared Space (optional)
@@ -95,7 +103,7 @@ interface SharedSpace {
   created_by: string; // User ID
   created_at: string;
   expires_at?: string;
-  status: 'active' | 'expired' | 'archived';
+  status: "active" | "expired" | "archived";
   access_token: string; // Secure token for link
   settings: {
     allow_upload: boolean;
@@ -115,7 +123,7 @@ interface SharedSpaceParticipant {
   shared_space_id: string;
   user_id?: string; // Optional for external participants
   email?: string; // For external participants
-  role: 'owner' | 'editor' | 'viewer';
+  role: "owner" | "editor" | "viewer";
   invited_by: string;
   invited_at: string;
   accepted_at?: string;
@@ -159,23 +167,27 @@ interface WhatsAppDocumentMapping {
 # 5. Architektur-Entscheidungen
 
 ## 5.1 Storage
+
 - **Primary:** Hetzner S3-compatible Storage (B2)
 - **Backup:** Second region (optional)
 - **Encryption:** AES-256-GCM at rest
 - **Access:** Signed URLs with expiration
 
 ## 5.2 Security
+
 - **Access Tokens:** UUID with expiration
 - **Rate Limiting:** Per IP and per space
 - **File Validation:** Type checking, size limits, virus scan (optional)
 - **Audit Logging:** All uploads, downloads, accesses
 
 ## 5.3 Multi-Tenancy
+
 - **Row-Level Security:** Postgres RLS for shared_spaces
 - **Organization Isolation:** Spaces scoped to org
 - **Participant Isolation:** Participants can only access their spaces
 
 ## 5.4 WhatsApp Integration
+
 - **Webhook:** WhatsApp Business API Webhook
 - **Document Detection:** Media type detection
 - **Auto-Mapping:** Rules-based mapping to spaces
@@ -188,64 +200,79 @@ interface WhatsAppDocumentMapping {
 ## 6.1 Shared Spaces CRUD
 
 ### GET /api/shared-spaces
+
 - List all shared spaces for organization
 - Query params: status, search, page, limit
 
 ### POST /api/shared-spaces
+
 - Create new shared space
 - Body: name, description, expires_at, settings
 
 ### GET /api/shared-spaces/:id
+
 - Get shared space details
 
 ### PATCH /api/shared-spaces/:id
+
 - Update shared space
 - Body: name, description, expires_at, settings
 
 ### DELETE /api/shared-spaces/:id
+
 - Archive or delete shared space
 
 ## 6.2 Participants
 
 ### GET /api/shared-spaces/:id/participants
+
 - List participants
 
 ### POST /api/shared-spaces/:id/participants
+
 - Invite participant
 - Body: email, role
 
 ### DELETE /api/shared-spaces/:id/participants/:participant_id
+
 - Remove participant
 
 ## 6.3 Documents
 
 ### GET /api/shared-spaces/:id/documents
+
 - List documents
 - Query params: type, date, search, page, limit
 
 ### POST /api/shared-spaces/:id/documents
+
 - Upload document
 - Body: multipart/form-data
 - Returns: document_id, storage_path
 
 ### GET /api/shared-spaces/:id/documents/:document_id
+
 - Get document details
 
 ### DELETE /api/shared-spaces/:id/documents/:document_id
+
 - Delete document
 
 ### GET /api/shared-spaces/:id/documents/:document_id/download
+
 - Download document
 - Returns: signed URL or stream
 
 ## 6.4 Public Access (Mandanten)
 
 ### GET /s/:token
+
 - Public shared space page
 - Validates token
 - Shows upload interface
 
 ### POST /s/:token/upload
+
 - Upload document (public)
 - Validates token
 - Requires auth if settings.require_auth
@@ -253,11 +280,13 @@ interface WhatsAppDocumentMapping {
 ## 6.5 WhatsApp Integration
 
 ### POST /api/whatsapp/document-to-space
+
 - Map WhatsApp document to shared space
 - Body: whatsapp_message_id, shared_space_id
 - Returns: mapping_id
 
 ### GET /api/whatsapp/documents
+
 - List WhatsApp documents
 - Query params: unmapped_only, date_range
 
@@ -266,26 +295,32 @@ interface WhatsAppDocumentMapping {
 # 7. Edge-Cases & Fehlerszenarien
 
 ## 7.1 Token Expiration
+
 - **Scenario:** Mandant öffnet abgelaufenen Link
 - **Handling:** Zeige "Link abgelaufen" mit Option, neuen Link anzufordern
 
 ## 7.2 File Size Exceeded
+
 - **Scenario:** Mandant lädt zu große Datei hoch
 - **Handling:** Zeige Fehler mit Max-Größe, biete Komprimierung an
 
 ## 7.3 Invalid File Type
+
 - **Scenario:** Mandant lädt nicht erlaubten Dateityp hoch
 - **Handling:** Zeige Fehler mit erlaubten Typen
 
 ## 7.4 WhatsApp Document Mapping
+
 - **Scenario:** WhatsApp Dokument kann keinem Space zugeordnet werden
 - **Handling:** Speicher in "Unmapped" Queue, biete manuelle Zuordnung an
 
 ## 7.5 Storage Failure
+
 - **Scenario:** Upload schlägt fehl
 - **Handling:** Zeige Fehler, biete Retry an, logge Incident
 
 ## 7.6 Participant Access
+
 - **Scenario:** Teilnehmer versucht auf Space zuzugreifen, ohne Berechtigung
 - **Handling:** 403 Forbidden, logge Versuch
 
@@ -310,41 +345,49 @@ interface WhatsAppDocumentMapping {
 # 9. Arbeitspakete
 
 ## Paket 1: Datenmodell & Database Schema
+
 - Ziel: Shared Spaces Entities in Postgres
 - Abhängigkeiten: Keine
 - Aufwand: 2 Tage
 
 ## Paket 2: Shared Spaces API
+
 - Ziel: CRUD API für Spaces, Participants, Documents
 - Abhängigkeiten: Paket 1
 - Aufwand: 3 Tage
 
 ## Paket 3: Shared Spaces UI
+
 - Ziel: Dashboard und Detail-Page
 - Abhängigkeiten: Paket 2
 - Aufwand: 3 Tage
 
 ## Paket 4: Mandanten-Upload-Page
+
 - Ziel: Public Upload-Page mit Token-Validation
 - Abhängigkeiten: Paket 2
 - Aufwand: 2 Tage
 
 ## Paket 5: WhatsApp Integration
+
 - Ziel: Auto-Mapping von WhatsApp-Dokumenten
 - Abhängigkeiten: Paket 2, Paket 4
 - Aufwand: 2 Tage
 
 ## Paket 6: Client Portal Integration
+
 - Ziel: Shared Spaces in Client Portal
 - Abhängigkeiten: Paket 2, Paket 3
 - Aufwand: 2 Tage
 
 ## Paket 7: Security & Audit
+
 - Ziel: RLS, Token Validation, Rate Limiting, Audit Logging
 - Abhängigkeiten: Paket 2
 - Aufwand: 2 Tage
 
 ## Paket 8: Testing & Documentation
+
 - Ziel: E2E Tests, Performance Tests, Security Tests, Docs
 - Abhängigkeiten: Alle Pakete
 - Aufwand: 2 Tage

@@ -11,8 +11,8 @@
 //     --judge-model anthropic:claude-sonnet-4-6 \
 //     --output evals/skillopt-judge/receipts/$(date +%Y%m%d).json
 
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { dirname, join } from "node:path";
 
 const args = process.argv.slice(2);
 function flag(name, def) {
@@ -20,16 +20,16 @@ function flag(name, def) {
   return i >= 0 ? args[i + 1] : def;
 }
 
-const judgeModel = flag('--judge-model', 'anthropic:claude-sonnet-4-6');
-const fixturesPath = flag('--fixtures', join(import.meta.dirname, 'fixtures.jsonl'));
-const outputPath = flag('--output');
+const judgeModel = flag("--judge-model", "anthropic:claude-sonnet-4-6");
+const fixturesPath = flag("--fixtures", join(import.meta.dirname, "fixtures.jsonl"));
+const outputPath = flag("--output");
 
-const fixtures = readFileSync(fixturesPath, 'utf8')
-  .split('\n')
+const fixtures = readFileSync(fixturesPath, "utf8")
+  .split("\n")
   .filter((l) => l.trim().length > 0)
   .map((l) => JSON.parse(l));
 
-const { scoreTrajectory } = await import('../../src/core/skillopt/score.ts');
+const { scoreTrajectory } = await import("../../src/core/skillopt/score.ts");
 
 const perFixture = [];
 let totalAbsError = 0;
@@ -38,15 +38,19 @@ let parseFailures = 0;
 for (const fx of fixtures) {
   const trajectory = {
     task_id: fx.id,
-    task: 'judge-eval',
+    task: "judge-eval",
     final_text: fx.final_text,
     tool_calls: [],
     usage: { input_tokens: 0, output_tokens: 0, cache_read_tokens: 0, cache_creation_tokens: 0 },
     turns: 1,
-    stop_reason: 'end',
+    stop_reason: "end",
     duration_ms: 0,
   };
-  const result = await scoreTrajectory(trajectory, { kind: 'llm', rubric: fx.rubric }, { judgeModel });
+  const result = await scoreTrajectory(
+    trajectory,
+    { kind: "llm", rubric: fx.rubric },
+    { judgeModel }
+  );
   const absErr = Math.abs(result.score - fx.gold_score);
   totalAbsError += absErr;
   if (result.judge_error) parseFailures += 1;
@@ -61,7 +65,7 @@ for (const fx of fixtures) {
 }
 
 const mae = fixtures.length > 0 ? totalAbsError / fixtures.length : 0;
-const verdict = mae <= 0.15 ? 'pass' : 'fail';
+const verdict = mae <= 0.15 ? "pass" : "fail";
 
 const receipt = {
   schema_version: 1,
@@ -81,7 +85,7 @@ if (outputPath) {
   writeFileSync(outputPath, out);
   process.stderr.write(`Wrote receipt to ${outputPath}\n`);
 } else {
-  process.stdout.write(out + '\n');
+  process.stdout.write(out + "\n");
 }
 
-process.exit(verdict === 'pass' ? 0 : 1);
+process.exit(verdict === "pass" ? 0 : 1);

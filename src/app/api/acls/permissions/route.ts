@@ -22,7 +22,7 @@ export const GET = createHandler(
       }
       const res = await fetch(`${ENGINE_URL}/api/acls/permissions/${encodeURIComponent(slug)}`, {
         headers: ctx.headers,
-      signal: AbortSignal.timeout(10_000),
+        signal: AbortSignal.timeout(10_000),
       });
       if (!res.ok) {
         return apiError("acl_fetch_failed", `Engine returned ${res.status}`, res.status);
@@ -59,7 +59,7 @@ export const POST = createHandler(
           slug: body.slug,
           group_id: body.group_id,
           permission: body.permission,
-        signal: AbortSignal.timeout(15_000),
+          signal: AbortSignal.timeout(15_000),
         }),
       });
       if (!res.ok) {

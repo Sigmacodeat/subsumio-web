@@ -40,10 +40,10 @@
  * `not_built` while results came from soft-deleted code pages).
  */
 
-import type { BrainEngine } from './engine.ts';
-import { EDGE_EXTRACTOR_VERSION_TS } from './chunkers/symbol-resolver.ts';
+import type { BrainEngine } from "./engine.ts";
+import { EDGE_EXTRACTOR_VERSION_TS } from "./chunkers/symbol-resolver.ts";
 
-export type CodeGraphStatus = 'not_built' | 'indexing' | 'ready' | 'unknown';
+export type CodeGraphStatus = "not_built" | "indexing" | "ready" | "unknown";
 
 export interface CodeGraphReadiness {
   /** Coarse machine-readable state. */
@@ -67,9 +67,12 @@ function effectiveSourceId(scope: ReadinessScope): string | undefined {
 }
 
 /** EXISTS probe: does any code chunk exist in scope? Matches the def/refs result query. */
-async function codeChunksExist(engine: BrainEngine, sourceId: string | undefined): Promise<boolean> {
+async function codeChunksExist(
+  engine: BrainEngine,
+  sourceId: string | undefined
+): Promise<boolean> {
   const params: unknown[] = [];
-  let scopeClause = '';
+  let scopeClause = "";
   if (sourceId) {
     params.push(sourceId);
     scopeClause = `AND p.source_id = $${params.length}`;
@@ -80,15 +83,18 @@ async function codeChunksExist(engine: BrainEngine, sourceId: string | undefined
          JOIN pages p ON p.id = cc.page_id
         WHERE p.page_kind = 'code' ${scopeClause}
      ) AS e`,
-    params,
+    params
   );
   return Boolean(rows[0]?.e);
 }
 
 /** EXISTS probe: does any code chunk have unresolved/stale edges (resolver predicate)? */
-async function pendingEdgeChunksExist(engine: BrainEngine, sourceId: string | undefined): Promise<boolean> {
+async function pendingEdgeChunksExist(
+  engine: BrainEngine,
+  sourceId: string | undefined
+): Promise<boolean> {
   const params: unknown[] = [EDGE_EXTRACTOR_VERSION_TS];
-  let scopeClause = '';
+  let scopeClause = "";
   if (sourceId) {
     params.push(sourceId);
     scopeClause = `AND p.source_id = $${params.length}`;
@@ -102,7 +108,7 @@ async function pendingEdgeChunksExist(engine: BrainEngine, sourceId: string | un
                OR cc.edges_backfilled_at < $1::timestamptz)
           ${scopeClause}
      ) AS e`,
-    params,
+    params
   );
   return Boolean(rows[0]?.e);
 }
@@ -116,41 +122,41 @@ async function pendingEdgeChunksExist(engine: BrainEngine, sourceId: string | un
  */
 export async function resolveCodeReadiness(
   engine: BrainEngine,
-  opts: { kind: 'symbol' | 'edge'; count: number } & ReadinessScope,
+  opts: { kind: "symbol" | "edge"; count: number } & ReadinessScope
 ): Promise<CodeGraphReadiness> {
   if (opts.count > 0) {
-    return { status: 'ready', ready: true, has_code: true, pending_edges: false };
+    return { status: "ready", ready: true, has_code: true, pending_edges: false };
   }
   const sourceId = effectiveSourceId(opts);
   try {
     const hasCode = await codeChunksExist(engine, sourceId);
     if (!hasCode) {
-      return { status: 'not_built', ready: false, has_code: false, pending_edges: false };
+      return { status: "not_built", ready: false, has_code: false, pending_edges: false };
     }
-    if (opts.kind === 'symbol') {
+    if (opts.kind === "symbol") {
       // Symbol metadata is set at chunk time; code chunks exist ⇒ genuinely none.
-      return { status: 'ready', ready: true, has_code: true, pending_edges: false };
+      return { status: "ready", ready: true, has_code: true, pending_edges: false };
     }
     const pending = await pendingEdgeChunksExist(engine, sourceId);
     return pending
-      ? { status: 'indexing', ready: false, has_code: true, pending_edges: true }
-      : { status: 'ready', ready: true, has_code: true, pending_edges: false };
+      ? { status: "indexing", ready: false, has_code: true, pending_edges: true }
+      : { status: "ready", ready: true, has_code: true, pending_edges: false };
   } catch {
     // Supplementary signal: never fail the command on a readiness DB error.
-    return { status: 'unknown', ready: false, has_code: false, pending_edges: false };
+    return { status: "unknown", ready: false, has_code: false, pending_edges: false };
   }
 }
 
 /** Human-facing one-liner for non-TTY-less output, or null when ready. */
 export function readinessHint(r: CodeGraphReadiness): string | null {
   switch (r.status) {
-    case 'not_built':
-      return 'Symbol graph not built (no code indexed in scope). Run `gbrain sync` to index code.';
-    case 'indexing':
-      return 'Symbol graph still building (edges pending resolution). Re-run after the next `gbrain dream` cycle / autopilot tick.';
-    case 'unknown':
-      return 'Readiness check unavailable (DB error). Treat the empty result as best-effort.';
-    case 'ready':
+    case "not_built":
+      return "Symbol graph not built (no code indexed in scope). Run `gbrain sync` to index code.";
+    case "indexing":
+      return "Symbol graph still building (edges pending resolution). Re-run after the next `gbrain dream` cycle / autopilot tick.";
+    case "unknown":
+      return "Readiness check unavailable (DB error). Treat the empty result as best-effort.";
+    case "ready":
       return null;
   }
 }

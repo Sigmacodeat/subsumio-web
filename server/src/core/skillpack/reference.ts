@@ -13,17 +13,13 @@
  * local edits are intentional; do not blindly overwrite."
  */
 
-import { existsSync, readFileSync, statSync, writeFileSync } from 'fs';
-import { join } from 'path';
+import { existsSync, readFileSync, statSync, writeFileSync } from "fs";
+import { join } from "path";
 
-import {
-  enumerateScaffoldEntries,
-  loadBundleManifest,
-  bundledSkillSlugs,
-} from './bundle.ts';
-import type { ScaffoldEntry } from './bundle.ts';
-import { unifiedDiff } from './diff-text.ts';
-import { applyHunks, parseUnifiedDiff } from './apply-hunks.ts';
+import { enumerateScaffoldEntries, loadBundleManifest, bundledSkillSlugs } from "./bundle.ts";
+import type { ScaffoldEntry } from "./bundle.ts";
+import { unifiedDiff } from "./diff-text.ts";
+import { applyHunks, parseUnifiedDiff } from "./apply-hunks.ts";
 
 export interface ReferenceOptions {
   /** Absolute path to gbrain repo root (source-of-truth bundle). */
@@ -34,7 +30,7 @@ export interface ReferenceOptions {
   skillSlug: string | null;
 }
 
-export type ReferenceStatus = 'identical' | 'differs' | 'missing';
+export type ReferenceStatus = "identical" | "differs" | "missing";
 
 export interface ReferenceFileResult {
   source: string;
@@ -77,7 +73,7 @@ const FRAMING_TEMPLATE = (refPath: string): string =>
  */
 export function runReference(opts: ReferenceOptions): ReferenceResult {
   if (opts.skillSlug === null) {
-    throw new Error('runReference requires a slug; use runReferenceAll() for --all');
+    throw new Error("runReference requires a slug; use runReferenceAll() for --all");
   }
   const manifest = loadBundleManifest(opts.gbrainRoot);
   const entries = enumerateScaffoldEntries({
@@ -86,15 +82,15 @@ export function runReference(opts: ReferenceOptions): ReferenceResult {
     manifest,
   });
 
-  const files = entries.map(e => diffOne(opts.targetWorkspace, e));
+  const files = entries.map((e) => diffOne(opts.targetWorkspace, e));
   const framing = FRAMING_TEMPLATE(`${opts.gbrainRoot}/skills/${opts.skillSlug}/`);
   return {
     framing,
     files,
     summary: {
-      identical: files.filter(f => f.status === 'identical').length,
-      differs: files.filter(f => f.status === 'differs').length,
-      missing: files.filter(f => f.status === 'missing').length,
+      identical: files.filter((f) => f.status === "identical").length,
+      differs: files.filter((f) => f.status === "differs").length,
+      missing: files.filter((f) => f.status === "missing").length,
     },
   };
 }
@@ -104,22 +100,22 @@ export function runReference(opts: ReferenceOptions): ReferenceResult {
  * Used by `gbrain skillpack reference --all` for the upgrade sweep
  * workflow.
  */
-export function runReferenceAll(opts: Omit<ReferenceOptions, 'skillSlug'>): ReferenceAllResult {
+export function runReferenceAll(opts: Omit<ReferenceOptions, "skillSlug">): ReferenceAllResult {
   const manifest = loadBundleManifest(opts.gbrainRoot);
   const slugs = bundledSkillSlugs(manifest);
-  const skills = slugs.map(slug => {
+  const skills = slugs.map((slug) => {
     const entries = enumerateScaffoldEntries({
       gbrainRoot: opts.gbrainRoot,
       skillSlug: slug,
       manifest,
     });
-    const files = entries.map(e => diffOne(opts.targetWorkspace, e));
+    const files = entries.map((e) => diffOne(opts.targetWorkspace, e));
     return {
       slug,
       summary: {
-        identical: files.filter(f => f.status === 'identical').length,
-        differs: files.filter(f => f.status === 'differs').length,
-        missing: files.filter(f => f.status === 'missing').length,
+        identical: files.filter((f) => f.status === "identical").length,
+        differs: files.filter((f) => f.status === "differs").length,
+        missing: files.filter((f) => f.status === "missing").length,
       },
     };
   });
@@ -141,7 +137,7 @@ export interface ReferenceApplyOptions extends ReferenceOptions {
 export interface ReferenceApplyFileResult {
   source: string;
   target: string;
-  status: 'identical' | 'missing' | 'applied_clean' | 'partial' | 'binary_skip';
+  status: "identical" | "missing" | "applied_clean" | "partial" | "binary_skip";
   /** Hunks applied to the target. 0 when identical / missing / binary. */
   hunksApplied: number;
   /** Hunks that conflicted and were left alone. */
@@ -190,7 +186,7 @@ export interface ReferenceApplyResult {
 export function runReferenceApply(opts: ReferenceApplyOptions): ReferenceApplyResult {
   if (opts.skillSlug === null) {
     throw new Error(
-      'runReferenceApply requires a slug; --all+--apply-clean-hunks is intentionally not supported (apply one skill at a time)',
+      "runReferenceApply requires a slug; --all+--apply-clean-hunks is intentionally not supported (apply one skill at a time)"
     );
   }
   const manifest = loadBundleManifest(opts.gbrainRoot);
@@ -210,11 +206,11 @@ export function runReferenceApply(opts: ReferenceApplyOptions): ReferenceApplyRe
     dryRun: opts.dryRun ?? false,
     files,
     summary: {
-      filesApplied: files.filter(f => f.status === 'applied_clean').length,
-      filesPartial: files.filter(f => f.status === 'partial').length,
-      filesIdentical: files.filter(f => f.status === 'identical').length,
-      filesMissing: files.filter(f => f.status === 'missing').length,
-      filesBinarySkipped: files.filter(f => f.status === 'binary_skip').length,
+      filesApplied: files.filter((f) => f.status === "applied_clean").length,
+      filesPartial: files.filter((f) => f.status === "partial").length,
+      filesIdentical: files.filter((f) => f.status === "identical").length,
+      filesMissing: files.filter((f) => f.status === "missing").length,
+      filesBinarySkipped: files.filter((f) => f.status === "binary_skip").length,
       totalHunksApplied: files.reduce((s, f) => s + f.hunksApplied, 0),
       totalHunksConflicted: files.reduce((s, f) => s + f.hunksConflicted, 0),
     },
@@ -224,7 +220,7 @@ export function runReferenceApply(opts: ReferenceApplyOptions): ReferenceApplyRe
 function applyOne(
   targetWorkspace: string,
   entry: ScaffoldEntry,
-  dryRun: boolean,
+  dryRun: boolean
 ): ReferenceApplyFileResult {
   const target = join(targetWorkspace, entry.relWorkspaceTarget);
   const base = {
@@ -238,32 +234,32 @@ function applyOne(
   };
 
   if (!existsSync(target)) {
-    return { ...base, status: 'missing' };
+    return { ...base, status: "missing" };
   }
   const aBuf = readFileSync(entry.source);
   const bBuf = readFileSync(target);
   if (aBuf.equals(bBuf)) {
-    return { ...base, status: 'identical' };
+    return { ...base, status: "identical" };
   }
   if (aBuf.includes(0) || bBuf.includes(0)) {
-    return { ...base, status: 'binary_skip' };
+    return { ...base, status: "binary_skip" };
   }
 
-  const diff = unifiedDiff(aBuf.toString('utf-8'), bBuf.toString('utf-8'));
+  const diff = unifiedDiff(aBuf.toString("utf-8"), bBuf.toString("utf-8"));
   // The diff above is target→source (b→a). We need source→target for
   // apply: gbrain (a) is what we want to bring into the target. So
   // recompute with the operands swapped.
-  const diffApply = unifiedDiff(bBuf.toString('utf-8'), aBuf.toString('utf-8'));
+  const diffApply = unifiedDiff(bBuf.toString("utf-8"), aBuf.toString("utf-8"));
   const parsed = parseUnifiedDiff(diffApply);
-  const result = applyHunks(bBuf.toString('utf-8'), parsed);
+  const result = applyHunks(bBuf.toString("utf-8"), parsed);
 
   // Conflict locations: report by zero-based hunk index + line range.
   for (let i = 0; i < result.outcomes.length; i++) {
     const o = result.outcomes[i];
-    if (o.status === 'applied') continue;
+    if (o.status === "applied") continue;
     const h = parsed.hunks[i];
     base.conflicts.push(
-      `${target}:${h.oldStart},${h.oldCount}: Manual merge needed (${o.status}).`,
+      `${target}:${h.oldStart},${h.oldCount}: Manual merge needed (${o.status}).`
     );
   }
 
@@ -274,10 +270,8 @@ function applyOne(
     writeFileSync(target, result.text);
   }
 
-  const status: ReferenceApplyFileResult['status'] =
-    result.applied > 0 && result.conflicted === 0
-      ? 'applied_clean'
-      : 'partial';
+  const status: ReferenceApplyFileResult["status"] =
+    result.applied > 0 && result.conflicted === 0 ? "applied_clean" : "partial";
   return { ...base, status };
 }
 
@@ -286,25 +280,25 @@ function diffOne(targetWorkspace: string, entry: ScaffoldEntry): ReferenceFileRe
   const sourceBytes = statSync(entry.source).size;
   let targetBytes = 0;
   let status: ReferenceStatus;
-  let diffText = '';
+  let diffText = "";
 
   if (!existsSync(target)) {
-    status = 'missing';
+    status = "missing";
   } else {
     const aBuf = readFileSync(entry.source);
     const bBuf = readFileSync(target);
     targetBytes = bBuf.length;
     if (aBuf.equals(bBuf)) {
-      status = 'identical';
+      status = "identical";
     } else {
-      status = 'differs';
+      status = "differs";
       // Best-effort textual diff. Binary files fall through to a stub
       // (binary detection: any NUL byte in either buffer).
       const isBinary = aBuf.includes(0) || bBuf.includes(0);
       if (isBinary) {
         diffText = `Binary files differ (a: ${sourceBytes}B, b: ${targetBytes}B). Use a binary-aware tool to inspect.\n`;
       } else {
-        diffText = unifiedDiff(aBuf.toString('utf-8'), bBuf.toString('utf-8'), {
+        diffText = unifiedDiff(aBuf.toString("utf-8"), bBuf.toString("utf-8"), {
           oldPath: `a/${entry.relWorkspaceTarget}`,
           newPath: `b/${entry.relWorkspaceTarget}`,
         });

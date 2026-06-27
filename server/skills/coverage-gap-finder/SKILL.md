@@ -36,6 +36,7 @@ mutating: false
 ## Contract
 
 This skill guarantees:
+
 1. Active cover is read from the client's policies in the brain (cited).
 2. Gaps are derived from a stated change/risk situation, not guessed generically.
 3. Each gap states the exposure it leaves open and a suggested cover line.
@@ -79,5 +80,6 @@ change. Do NOT use to adjudicate a claim (→ claims-assist).
 - ❌ Presenting the analysis as a completed, binding needs assessment.
 
 ## Error Handling
+
 - No client policies in brain → state that the inventory is incomplete before flagging gaps.
 - Change/situation unknown → ask for it; a gap analysis without context is noise.

@@ -7,7 +7,7 @@
  * appear verbatim in the document; ungrounded findings are dropped so the
  * brain can't fabricate an answer the document doesn't support.
  */
-import type { BrainEngine } from '../engine.ts';
+import type { BrainEngine } from "../engine.ts";
 import {
   type LegalLLM,
   type RiskLevel,
@@ -19,7 +19,7 @@ import {
   normalizeForMatch,
   resolveDocumentText,
   tryParseJSON,
-} from './llm-util.ts';
+} from "./llm-util.ts";
 
 export interface ReviewFinding {
   question: string;
@@ -41,7 +41,7 @@ export interface DocumentReviewOpts {
   slug?: string;
   text?: string;
   questions?: string[];
-  focus?: 'clauses' | 'risks' | 'compliance' | 'general';
+  focus?: "clauses" | "risks" | "compliance" | "general";
   jurisdiction?: string;
   sourceId?: string;
   sourceIds?: string[];
@@ -51,13 +51,13 @@ export interface DocumentReviewOpts {
 
 function buildSystem(focus: string, jurisdiction: string): string {
   const focusHint =
-    focus === 'clauses'
-      ? 'Konzentriere dich auf einzelne Klauseln und ihre Wirkung.'
-      : focus === 'risks'
-        ? 'Konzentriere dich auf rechtliche Risiken und Nachteile.'
-        : focus === 'compliance'
-          ? 'Konzentriere dich auf Compliance- und Regelkonformität.'
-          : 'Allgemeine juristische Prüfung.';
+    focus === "clauses"
+      ? "Konzentriere dich auf einzelne Klauseln und ihre Wirkung."
+      : focus === "risks"
+        ? "Konzentriere dich auf rechtliche Risiken und Nachteile."
+        : focus === "compliance"
+          ? "Konzentriere dich auf Compliance- und Regelkonformität."
+          : "Allgemeine juristische Prüfung.";
   return `Du bist ein juristischer Prüf-Assistent für Kanzleien (Recht: ${jurisdictionLabel(jurisdiction)}).
 ${focusHint}
 Beantworte die gestellten Prüffragen AUSSCHLIESSLICH auf Basis des Dokuments.
@@ -83,28 +83,28 @@ function parseFindings(v: unknown): ReviewFinding[] {
   if (!Array.isArray(v)) return [];
   const out: ReviewFinding[] = [];
   for (const raw of v) {
-    if (typeof raw !== 'object' || raw === null) continue;
+    if (typeof raw !== "object" || raw === null) continue;
     const o = raw as Record<string, unknown>;
-    if (typeof o.question !== 'string' || typeof o.answer !== 'string') continue;
+    if (typeof o.question !== "string" || typeof o.answer !== "string") continue;
     out.push({
       question: o.question,
       answer: o.answer,
       citations: asStringArray(o.citations),
-      risk_level: asRiskLevel(o.risk_level, 'low'),
+      risk_level: asRiskLevel(o.risk_level, "low"),
     });
   }
   return out;
 }
 
-const RISK_ORDER: RiskLevel[] = ['low', 'medium', 'high', 'critical'];
+const RISK_ORDER: RiskLevel[] = ["low", "medium", "high", "critical"];
 
 export async function reviewDocument(
   engine: BrainEngine,
-  opts: DocumentReviewOpts,
+  opts: DocumentReviewOpts
 ): Promise<DocumentReview> {
   const warnings: string[] = [];
-  const jurisdiction = opts.jurisdiction ?? 'all';
-  const focus = opts.focus ?? 'general';
+  const jurisdiction = opts.jurisdiction ?? "all";
+  const focus = opts.focus ?? "general";
   const questions = (opts.questions ?? []).slice(0, 20);
 
   const resolved = await resolveDocumentText(engine, {
@@ -116,14 +116,14 @@ export async function reviewDocument(
   if (resolved.notFound) throw new Error(`document-review: page not found: ${resolved.sourceSlug}`);
 
   const empty: DocumentReview = {
-    summary: '',
+    summary: "",
     findings: [],
-    overall_risk: 'low',
+    overall_risk: "low",
     attorney_review_required: true,
     warnings,
   };
   if (!resolved.text.trim()) {
-    warnings.push('NO_DOCUMENT_TEXT');
+    warnings.push("NO_DOCUMENT_TEXT");
     return empty;
   }
 
@@ -132,30 +132,30 @@ export async function reviewDocument(
 
   const llm = opts.llm ?? (await defaultLegalLLM());
   if (!llm) {
-    warnings.push('NO_LLM_AVAILABLE');
+    warnings.push("NO_LLM_AVAILABLE");
     return empty;
   }
 
   const defaultQuestions = [
-    'Welche wesentlichen Pflichten und Rechte ergeben sich aus dem Dokument?',
-    'Welche Fristen oder Termine sind enthalten?',
-    'Welche rechtlichen Risiken bestehen?',
+    "Welche wesentlichen Pflichten und Rechte ergeben sich aus dem Dokument?",
+    "Welche Fristen oder Termine sind enthalten?",
+    "Welche rechtlichen Risiken bestehen?",
   ];
   const effectiveQuestions = questions.length > 0 ? questions : defaultQuestions;
 
-  const user = `Prüffragen:\n${effectiveQuestions.map((q, i) => `${i + 1}. ${q}`).join('\n')}\n\n<dokument>\n${clipped}\n</dokument>`;
+  const user = `Prüffragen:\n${effectiveQuestions.map((q, i) => `${i + 1}. ${q}`).join("\n")}\n\n<dokument>\n${clipped}\n</dokument>`;
 
   let raw: string;
   try {
     raw = await llm({ system: buildSystem(focus, jurisdiction), user, maxTokens: 4000 });
   } catch (e) {
-    warnings.push(`LLM_CALL_FAILED: ${e instanceof Error ? e.message : 'unknown'}`);
+    warnings.push(`LLM_CALL_FAILED: ${e instanceof Error ? e.message : "unknown"}`);
     return empty;
   }
 
   const parsed = tryParseJSON(raw);
   if (!parsed) {
-    warnings.push('LLM_OUTPUT_NOT_JSON');
+    warnings.push("LLM_OUTPUT_NOT_JSON");
     return empty;
   }
 
@@ -175,10 +175,10 @@ export async function reviewDocument(
   }
   if (droppedCitations > 0) warnings.push(`DROPPED_${droppedCitations}_UNGROUNDED_CITATIONS`);
 
-  const overallFromModel = asRiskLevel(parsed.overall_risk, 'low');
+  const overallFromModel = asRiskLevel(parsed.overall_risk, "low");
   const overallFromFindings = findings.reduce<RiskLevel>(
     (max, f) => (RISK_ORDER.indexOf(f.risk_level) > RISK_ORDER.indexOf(max) ? f.risk_level : max),
-    'low',
+    "low"
   );
   const overall_risk =
     RISK_ORDER.indexOf(overallFromModel) >= RISK_ORDER.indexOf(overallFromFindings)
@@ -186,7 +186,7 @@ export async function reviewDocument(
       : overallFromFindings;
 
   return {
-    summary: typeof parsed.summary === 'string' ? parsed.summary : '',
+    summary: typeof parsed.summary === "string" ? parsed.summary : "",
     findings,
     overall_risk,
     attorney_review_required: true,

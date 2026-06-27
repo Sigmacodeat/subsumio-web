@@ -17,7 +17,10 @@ export function useOfflineSync<T>({ key, fetcher, enabled = true }: UseOfflineSy
   const hasFetched = useRef(false);
 
   const refresh = useCallback(async () => {
-    if (!enabled) { setLoading(false); return; }
+    if (!enabled) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -43,7 +46,10 @@ export function useOfflineSync<T>({ key, fetcher, enabled = true }: UseOfflineSy
     hasFetched.current = true;
     void refresh();
 
-    const onOnline = () => { setIsOffline(false); void refresh(); };
+    const onOnline = () => {
+      setIsOffline(false);
+      void refresh();
+    };
     const onOffline = () => setIsOffline(true);
     window.addEventListener("online", onOnline);
     window.addEventListener("offline", onOffline);
@@ -65,7 +71,10 @@ export function useNetworkStatus() {
     setOnline(isOnline());
     window.addEventListener("online", on);
     window.addEventListener("offline", off);
-    return () => { window.removeEventListener("online", on); window.removeEventListener("offline", off); };
+    return () => {
+      window.removeEventListener("online", on);
+      window.removeEventListener("offline", off);
+    };
   }, []);
   return online;
 }

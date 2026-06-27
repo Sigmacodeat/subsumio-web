@@ -11,13 +11,13 @@
  *   pathToSlug()  →  convert file paths to page slugs
  */
 
-import { CJK_SLUG_CHARS } from './cjk.ts';
-import { isDocumentFilePath as isDocumentFilePathFromExtractor } from './extract-document.ts';
+import { CJK_SLUG_CHARS } from "./cjk.ts";
+import { isDocumentFilePath as isDocumentFilePathFromExtractor } from "./extract-document.ts";
 // v0.37.7.0 #1169 submodule-detection helpers. Bottom-of-file already
 // aliases existsSync as `_existsSync` for other purposes; the top-of-file
 // import keeps the pruneDir helper's deps near its callsite.
-import { existsSync, statSync } from 'fs';
-import { join as pathJoin } from 'path';
+import { existsSync, statSync } from "fs";
+import { join as pathJoin } from "path";
 
 export interface SyncManifest {
   added: string[];
@@ -27,12 +27,12 @@ export interface SyncManifest {
 }
 
 export interface RawManifestEntry {
-  action: 'A' | 'M' | 'D' | 'R';
+  action: "A" | "M" | "D" | "R";
   path: string;
   oldPath?: string;
 }
 
-export type SyncStrategy = 'markdown' | 'code' | 'auto';
+export type SyncStrategy = "markdown" | "code" | "auto";
 
 interface SyncableOptions {
   strategy?: SyncStrategy;
@@ -52,46 +52,67 @@ interface SyncableOptions {
 // structurally reference it. Derived from the chunker's language map at
 // module load, not hardcoded.
 const CODE_EXTENSIONS = new Set<string>([
-  '.ts', '.tsx', '.mts', '.cts',
-  '.js', '.jsx', '.mjs', '.cjs',
-  '.py',
-  '.rb',
-  '.go',
-  '.rs',
-  '.java',
-  '.cs',
-  '.cpp', '.cc', '.cxx', '.hpp', '.hxx', '.hh',
-  '.c', '.h',
-  '.php',
-  '.swift',
-  '.kt', '.kts',
-  '.scala', '.sc',
-  '.lua',
-  '.ex', '.exs',
-  '.elm',
-  '.ml', '.mli',
-  '.dart',
-  '.zig',
-  '.sol',
-  '.sh', '.bash',
-  '.css',
-  '.html', '.htm',
-  '.vue',
-  '.json',
-  '.yaml', '.yml',
-  '.toml',
+  ".ts",
+  ".tsx",
+  ".mts",
+  ".cts",
+  ".js",
+  ".jsx",
+  ".mjs",
+  ".cjs",
+  ".py",
+  ".rb",
+  ".go",
+  ".rs",
+  ".java",
+  ".cs",
+  ".cpp",
+  ".cc",
+  ".cxx",
+  ".hpp",
+  ".hxx",
+  ".hh",
+  ".c",
+  ".h",
+  ".php",
+  ".swift",
+  ".kt",
+  ".kts",
+  ".scala",
+  ".sc",
+  ".lua",
+  ".ex",
+  ".exs",
+  ".elm",
+  ".ml",
+  ".mli",
+  ".dart",
+  ".zig",
+  ".sol",
+  ".sh",
+  ".bash",
+  ".css",
+  ".html",
+  ".htm",
+  ".vue",
+  ".json",
+  ".yaml",
+  ".yml",
+  ".toml",
   // v0.36.x #878: Terraform / HCL. Closes the silent-data-loss bug where
   // Terraform repos were invisible to `gbrain sync --strategy code`.
   // detectCodeLanguage() returns null for these so they chunk via the
   // recursive chunker (no tree-sitter grammar), which is the correct
   // fallback — same path as toml / yaml without language-specific AST.
-  '.tf', '.tfvars', '.hcl',
+  ".tf",
+  ".tfvars",
+  ".hcl",
   // v0.41 D2 wave (#1173): SQL via tree-sitter-sql. DerekStride grammar
   // chunks DDL (CREATE TABLE/FUNCTION/VIEW/INDEX) and DML (SELECT/INSERT/
   // UPDATE/DELETE) as one chunk per statement. DDL chunks carry
   // symbol_name + symbol_type populated for code-def; DML chunks emit
   // unnamed so they don't pollute symbol search.
-  '.sql',
+  ".sql",
 ]);
 
 /**
@@ -111,25 +132,25 @@ export function buildSyncManifest(gitDiffOutput: string): SyncManifest {
     renamed: [],
   };
 
-  const lines = gitDiffOutput.split('\n');
+  const lines = gitDiffOutput.split("\n");
 
   for (const line of lines) {
     const trimmed = line.trim();
     if (!trimmed) continue;
 
-    const parts = trimmed.split('\t');
+    const parts = trimmed.split("\t");
     if (parts.length < 2) continue;
 
     const action = parts[0];
     const path = parts[parts.length === 3 ? 2 : 1]; // For renames, new path is 3rd column
 
-    if (action === 'A') {
+    if (action === "A") {
       manifest.added.push(path);
-    } else if (action === 'M') {
+    } else if (action === "M") {
       manifest.modified.push(path);
-    } else if (action === 'D') {
+    } else if (action === "D") {
       manifest.deleted.push(parts[1]);
-    } else if (action.startsWith('R')) {
+    } else if (action.startsWith("R")) {
       // Rename: R100\told-path\tnew-path
       const oldPath = parts[1];
       const newPath = parts[2];
@@ -160,23 +181,23 @@ export function isCodeFilePath(path: string): boolean {
 export function isImageFilePath(path: string): boolean {
   const lower = path.toLowerCase();
   return (
-    lower.endsWith('.png') ||
-    lower.endsWith('.jpg') ||
-    lower.endsWith('.jpeg') ||
-    lower.endsWith('.gif') ||
-    lower.endsWith('.webp') ||
-    lower.endsWith('.heic') ||
-    lower.endsWith('.heif') ||
-    lower.endsWith('.avif')
+    lower.endsWith(".png") ||
+    lower.endsWith(".jpg") ||
+    lower.endsWith(".jpeg") ||
+    lower.endsWith(".gif") ||
+    lower.endsWith(".webp") ||
+    lower.endsWith(".heic") ||
+    lower.endsWith(".heif") ||
+    lower.endsWith(".avif")
   );
 }
 
 export function isMarkdownFilePath(path: string): boolean {
-  return path.endsWith('.md') || path.endsWith('.mdx');
+  return path.endsWith(".md") || path.endsWith(".mdx");
 }
 
 function isMultimodalEnabled(): boolean {
-  return process.env.GBRAIN_EMBEDDING_MULTIMODAL === 'true';
+  return process.env.GBRAIN_EMBEDDING_MULTIMODAL === "true";
 }
 
 /**
@@ -187,12 +208,12 @@ function isMultimodalEnabled(): boolean {
  * intent), see commands/import.ts.
  */
 export function isDocumentIngestEnabled(): boolean {
-  return process.env.GBRAIN_INGEST_DOCUMENTS === 'true';
+  return process.env.GBRAIN_INGEST_DOCUMENTS === "true";
 }
 
 function isAllowedByStrategy(path: string, strategy: SyncStrategy): boolean {
-  if (strategy === 'markdown') return isMarkdownFilePath(path);
-  if (strategy === 'code') return isCodeFilePath(path);
+  if (strategy === "markdown") return isMarkdownFilePath(path);
+  if (strategy === "code") return isCodeFilePath(path);
   // 'auto' / default: markdown + code, plus images when multimodal is on,
   // plus document formats when document ingest is on.
   return (
@@ -204,38 +225,44 @@ function isAllowedByStrategy(path: string, strategy: SyncStrategy): boolean {
 }
 
 function globToRegex(pattern: string): RegExp {
-  let regex = '^';
+  let regex = "^";
   for (let i = 0; i < pattern.length; i++) {
     const ch = pattern[i];
-    if (ch === '*') {
+    if (ch === "*") {
       const next = pattern[i + 1];
-      if (next === '*') {
+      if (next === "*") {
         // `**/` matches zero or more path segments (including zero, so `src/**/*.ts`
         // matches `src/foo.ts` as well as `src/a/b/foo.ts`). Collapse `**/` →
         // `(?:.*/)?`. A bare `**` not followed by `/` matches any chars.
-        if (pattern[i + 2] === '/') {
-          regex += '(?:.*/)?';
+        if (pattern[i + 2] === "/") {
+          regex += "(?:.*/)?";
           i += 2;
         } else {
-          regex += '.*';
+          regex += ".*";
           i++;
         }
       } else {
-        regex += '[^/]*';
+        regex += "[^/]*";
       }
       continue;
     }
-    if (ch === '?') { regex += '[^/]'; continue; }
-    if ('\\.[]{}()+-^$|'.includes(ch)) { regex += `\\${ch}`; continue; }
+    if (ch === "?") {
+      regex += "[^/]";
+      continue;
+    }
+    if ("\\.[]{}()+-^$|".includes(ch)) {
+      regex += `\\${ch}`;
+      continue;
+    }
     regex += ch;
   }
-  regex += '$';
+  regex += "$";
   return new RegExp(regex);
 }
 
 function matchesAnyGlob(path: string, patterns?: string[]): boolean {
   if (!patterns || patterns.length === 0) return false;
-  const normalized = path.replace(/\\/g, '/');
+  const normalized = path.replace(/\\/g, "/");
   return patterns.some((pattern) => globToRegex(pattern).test(normalized));
 }
 
@@ -253,11 +280,7 @@ function matchesAnyGlob(path: string, patterns?: string[]): boolean {
  * isSyncable below doesn't catch it; explicit entry here closes the
  * latent walker bug (#923, #202).
  */
-const PRUNE_DIR_NAMES = new Set<string>([
-  'node_modules',
-  '.raw',
-  'ops',
-]);
+const PRUNE_DIR_NAMES = new Set<string>(["node_modules", ".raw", "ops"]);
 
 /**
  * Should this directory be descended into? Returns `false` for vendor / hidden /
@@ -277,19 +300,19 @@ const PRUNE_DIR_NAMES = new Set<string>([
  */
 export function pruneDir(name: string, parentDir?: string): boolean {
   if (!name) return true;
-  if (name.startsWith('.')) return false;
+  if (name.startsWith(".")) return false;
   if (PRUNE_DIR_NAMES.has(name)) return false;
   // `.raw` is the literal directory name; `*.raw` is the gbrain sidecar
   // convention (e.g. `people/pedro.raw/` holds raw source for pedro.md).
   // Both forms should be skipped at descent time.
-  if (name.endsWith('.raw')) return false;
+  if (name.endsWith(".raw")) return false;
   // Submodule detection: a git submodule directory contains `.git` as
   // a FILE (a "gitfile" pointing into the parent's .git/modules/...),
   // not a directory. Best-effort: if we can't stat (e.g. cross-platform
   // permission edge), fall through and treat as a normal dir.
   if (parentDir) {
     try {
-      const gitPath = pathJoin(parentDir, name, '.git');
+      const gitPath = pathJoin(parentDir, name, ".git");
       if (existsSync(gitPath) && statSync(gitPath).isFile()) {
         return false;
       }
@@ -313,11 +336,11 @@ export function pruneDir(name: string, parentDir?: string): boolean {
  * preserves those rows.
  */
 export type SyncableReason =
-  | 'metafile'
-  | 'strategy'
-  | 'pruned-dir'
-  | 'include-glob-miss'
-  | 'exclude-glob-hit';
+  | "metafile"
+  | "strategy"
+  | "pruned-dir"
+  | "include-glob-miss"
+  | "exclude-glob-hit";
 
 /**
  * Canonical metafile basenames the markdown sync strategy intentionally
@@ -328,7 +351,7 @@ export type SyncableReason =
  * READMEs — not typed brain pages — by convention. A user who genuinely
  * wants to index one of these basenames as a page should rename it.
  */
-export const SYNC_SKIP_FILES = ['schema.md', 'index.md', 'log.md', 'README.md'] as const;
+export const SYNC_SKIP_FILES = ["schema.md", "index.md", "log.md", "README.md"] as const;
 
 /**
  * Internal classifier. Returns null when the path IS syncable, or a tagged
@@ -340,22 +363,24 @@ export const SYNC_SKIP_FILES = ['schema.md', 'index.md', 'log.md', 'README.md'] 
  * TypeScript enforces consistency at the compiler level.
  */
 function classifySync(path: string, opts: SyncableOptions = {}): SyncableReason | null {
-  const strategy = opts.strategy || 'markdown';
+  const strategy = opts.strategy || "markdown";
 
-  if (!isAllowedByStrategy(path, strategy)) return 'strategy';
+  if (!isAllowedByStrategy(path, strategy)) return "strategy";
 
   // Skip every path segment that pruneDir would block walkers from descending
   // into. Catches hidden dirs (`.git`, `.obsidian`), `.raw/` sidecars,
   // `node_modules/` (latent bug fix), and `ops/` at any depth.
-  const segments = path.split('/');
-  if (segments.some(p => !pruneDir(p))) return 'pruned-dir';
+  const segments = path.split("/");
+  if (segments.some((p) => !pruneDir(p))) return "pruned-dir";
 
   // Skip meta files that aren't pages
-  const basename = segments[segments.length - 1] || '';
-  if ((SYNC_SKIP_FILES as readonly string[]).includes(basename)) return 'metafile';
+  const basename = segments[segments.length - 1] || "";
+  if ((SYNC_SKIP_FILES as readonly string[]).includes(basename)) return "metafile";
 
-  if (opts.include && opts.include.length > 0 && !matchesAnyGlob(path, opts.include)) return 'include-glob-miss';
-  if (opts.exclude && opts.exclude.length > 0 && matchesAnyGlob(path, opts.exclude)) return 'exclude-glob-hit';
+  if (opts.include && opts.include.length > 0 && !matchesAnyGlob(path, opts.include))
+    return "include-glob-miss";
+  if (opts.exclude && opts.exclude.length > 0 && matchesAnyGlob(path, opts.exclude))
+    return "exclude-glob-hit";
 
   return null;
 }
@@ -401,18 +426,18 @@ export const SLUG_SEGMENT_PATTERN = new RegExp(`[a-z0-9._\\-${CJK_SLUG_CHARS}]+`
  * NFC re-normalize after the NFD-strip-accents pass so Hangul Jamo recomposes back
  * into precomposed syllables that fall inside the whitelist.
  */
-const SLUGIFY_KEEP_RE = new RegExp(`[^a-z0-9.\\s_\\-${CJK_SLUG_CHARS}]`, 'g');
+const SLUGIFY_KEEP_RE = new RegExp(`[^a-z0-9.\\s_\\-${CJK_SLUG_CHARS}]`, "g");
 
 export function slugifySegment(segment: string): string {
   return segment
-    .normalize('NFD')                     // Decompose accented chars
-    .replace(/[\u0300-\u036f]/g, '')      // Strip accent marks
-    .normalize('NFC')                     // Recompose Hangul Jamo back to Syllables (v0.32.7)
+    .normalize("NFD") // Decompose accented chars
+    .replace(/[\u0300-\u036f]/g, "") // Strip accent marks
+    .normalize("NFC") // Recompose Hangul Jamo back to Syllables (v0.32.7)
     .toLowerCase()
-    .replace(SLUGIFY_KEEP_RE, '')         // Keep alnum, dots, spaces, _-, and CJK (v0.32.7)
-    .replace(/[\s]+/g, '-')              // Spaces → hyphens
-    .replace(/-+/g, '-')                 // Collapse multiple hyphens
-    .replace(/^-|-$/g, '');              // Strip leading/trailing hyphens
+    .replace(SLUGIFY_KEEP_RE, "") // Keep alnum, dots, spaces, _-, and CJK (v0.32.7)
+    .replace(/[\s]+/g, "-") // Spaces → hyphens
+    .replace(/-+/g, "-") // Collapse multiple hyphens
+    .replace(/^-|-$/g, ""); // Strip leading/trailing hyphens
 }
 
 /**
@@ -424,10 +449,10 @@ export function slugifySegment(segment: string): string {
  *   notes/v1.0.0.md → notes/v1.0.0
  */
 export function slugifyPath(filePath: string): string {
-  let path = filePath.replace(/\.mdx?$/i, '');
-  path = path.replace(/\\/g, '/');
-  path = path.replace(/^\.?\//, '');
-  return path.split('/').map(slugifySegment).filter(Boolean).join('/');
+  let path = filePath.replace(/\.mdx?$/i, "");
+  path = path.replace(/\\/g, "/");
+  path = path.replace(/^\.?\//, "");
+  return path.split("/").map(slugifySegment).filter(Boolean).join("/");
 }
 
 /**
@@ -435,13 +460,13 @@ export function slugifyPath(filePath: string): string {
  * e.g. 'src/core/chunkers/code.ts' → 'src-core-chunkers-code-ts'
  */
 export function slugifyCodePath(filePath: string): string {
-  let path = filePath.replace(/\\/g, '/');
-  path = path.replace(/^\.?\//, '');
+  let path = filePath.replace(/\\/g, "/");
+  path = path.replace(/^\.?\//, "");
   return path
-    .split('/')
-    .map(segment => slugifySegment(segment.replace(/\./g, '-')))
+    .split("/")
+    .map((segment) => slugifySegment(segment.replace(/\./g, "-")))
     .filter(Boolean)
-    .join('-');
+    .join("-");
 }
 
 /**
@@ -450,10 +475,10 @@ export function slugifyCodePath(filePath: string): string {
 export function pathToSlug(
   filePath: string,
   repoPrefix?: string,
-  options: { pageKind?: 'markdown' | 'code' } = {},
+  options: { pageKind?: "markdown" | "code" } = {}
 ): string {
-  const pageKind = options.pageKind || 'markdown';
-  let slug = pageKind === 'code' ? slugifyCodePath(filePath) : slugifyPath(filePath);
+  const pageKind = options.pageKind || "markdown";
+  let slug = pageKind === "code" ? slugifyCodePath(filePath) : slugifyPath(filePath);
   if (repoPrefix) slug = `${repoPrefix}/${slug}`;
   return slug.toLowerCase();
 }
@@ -477,7 +502,7 @@ export function pathToSlug(
  * flow through without touching the sync code path.
  */
 export function resolveSlugForPath(filePath: string, repoPrefix?: string): string {
-  const pageKind = isCodeFilePath(filePath) ? 'code' : 'markdown';
+  const pageKind = isCodeFilePath(filePath) ? "code" : "markdown";
   return pathToSlug(filePath, repoPrefix, { pageKind });
 }
 
@@ -511,7 +536,7 @@ export {
   DEFAULT_SOURCE_ID,
   SENTINEL_PREFIX,
   DEFAULT_AUTOSKIP_AFTER,
-} from './sync-failure-ledger.ts';
+} from "./sync-failure-ledger.ts";
 export type {
   SyncFailure,
   SyncFailureState,
@@ -520,4 +545,4 @@ export type {
   SeverityResult,
   SyncGateInput,
   SyncGateOutcome,
-} from './sync-failure-ledger.ts';
+} from "./sync-failure-ledger.ts";

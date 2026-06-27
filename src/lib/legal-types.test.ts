@@ -253,7 +253,12 @@ describe("DeadlineEntry type contract", () => {
   });
 
   test("review_status union type accepts all 4 values", () => {
-    const statuses: DeadlineEntry["review_status"][] = ["unreviewed", "reviewed", "approved", "rejected"];
+    const statuses: DeadlineEntry["review_status"][] = [
+      "unreviewed",
+      "reviewed",
+      "approved",
+      "rejected",
+    ];
     for (const s of statuses) {
       const d: DeadlineEntry = { review_status: s };
       expect(d.review_status).toBe(s);
@@ -320,7 +325,12 @@ describe("TimeEntry type contract", () => {
 
 describe("ExpenseEntry type contract", () => {
   test("minimal entry", () => {
-    const e: ExpenseEntry = { id: "e1", description: "Gerichtsgebühr", date: "2026-01-01", amount: 300 };
+    const e: ExpenseEntry = {
+      id: "e1",
+      description: "Gerichtsgebühr",
+      date: "2026-01-01",
+      amount: 300,
+    };
     expect(e.amount).toBe(300);
   });
 
@@ -329,7 +339,7 @@ describe("ExpenseEntry type contract", () => {
       id: "e1",
       description: "Reisekosten",
       date: "2026-01-15",
-      amount: 45.50,
+      amount: 45.5,
       vat_rate: 20,
       billable: true,
       billed: true,
@@ -343,7 +353,12 @@ describe("ExpenseEntry type contract", () => {
 
 describe("TaskEntry type contract", () => {
   test("minimal entry", () => {
-    const t: TaskEntry = { id: "t1", text: "Klage einreichen", done: false, createdAt: "2026-01-01" };
+    const t: TaskEntry = {
+      id: "t1",
+      text: "Klage einreichen",
+      done: false,
+      createdAt: "2026-01-01",
+    };
     expect(t.done).toBe(false);
   });
 
@@ -424,7 +439,13 @@ describe("AuditLogEntry type contract", () => {
 
   test("all action types are valid", () => {
     const actions: AuditLogEntry["action"][] = [
-      "created", "updated", "deleted", "status_changed", "time_added", "deadline_added", "reminder_sent",
+      "created",
+      "updated",
+      "deleted",
+      "status_changed",
+      "time_added",
+      "deadline_added",
+      "reminder_sent",
     ];
     for (const action of actions) {
       const a: AuditLogEntry = { id: "a1", at: "2026-01-01", action };
@@ -462,7 +483,12 @@ describe("InvoiceFrontmatter type contract", () => {
   });
 
   test("handles invoice_type union", () => {
-    const types: InvoiceFrontmatter["invoice_type"][] = ["standard", "teilrechnung", "sammelrechnung", "gutschrift"];
+    const types: InvoiceFrontmatter["invoice_type"][] = [
+      "standard",
+      "teilrechnung",
+      "sammelrechnung",
+      "gutschrift",
+    ];
     for (const t of types) {
       const inv: InvoiceFrontmatter = { invoice_type: t };
       expect(inv.invoice_type).toBe(t);

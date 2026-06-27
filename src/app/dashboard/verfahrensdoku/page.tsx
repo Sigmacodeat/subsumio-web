@@ -190,7 +190,9 @@ export default function VerfahrensdokuPage() {
         }
       })
       .catch(() => {});
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -261,11 +263,7 @@ export default function VerfahrensdokuPage() {
           className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm leading-relaxed text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
         />
       ) : (
-        <Input
-          type="text"
-          {...dokuForm.register(name)}
-          placeholder={placeholder}
-        />
+        <Input type="text" {...dokuForm.register(name)} placeholder={placeholder} />
       )}
       {dokuForm.formState.errors[name] && (
         <p className="mt-1 text-xs text-red-600">{dokuForm.formState.errors[name]?.message}</p>

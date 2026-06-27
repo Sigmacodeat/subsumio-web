@@ -1,9 +1,11 @@
 # Content and Media Ingestion
 
 ## Goal
+
 YouTube videos, social media, PDFs, and documents become searchable brain pages with the agent's own analysis and full cross-references to every entity mentioned.
 
 ## What the User Gets
+
 Without this: media links are bookmarks that decay -- you remember watching a video but can't find what was said, who said it, or why it mattered. With this: every piece of media is a permanent brain page with the agent's analysis layered on top, every mentioned entity gets a back-link, and the full content is searchable forever.
 
 ## Implementation
@@ -133,4 +135,5 @@ on user_shares_media(url_or_file):
 5. Run `gbrain search "{topic_from_video}"`. Confirm the media page appears in search results (verifies the content is indexed and searchable).
 
 ---
-*Part of the [GBrain Skillpack](../GBRAIN_SKILLPACK.md).*
+
+_Part of the [GBrain Skillpack](../GBRAIN_SKILLPACK.md)._

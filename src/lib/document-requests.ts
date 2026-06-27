@@ -3,7 +3,12 @@ import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import { signPortalToken } from "@/lib/portal-token";
 import type { BrainPage } from "@/lib/types";
 
-export type DocumentRequestStatus = "draft" | "sent" | "partially_fulfilled" | "fulfilled" | "expired";
+export type DocumentRequestStatus =
+  | "draft"
+  | "sent"
+  | "partially_fulfilled"
+  | "fulfilled"
+  | "expired";
 
 export interface DocumentRequestItem {
   key: string;
@@ -41,13 +46,15 @@ export interface DocumentRequestInput {
 }
 
 function safeSlugPart(input: string): string {
-  return input
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 72) || "document-request";
+  return (
+    input
+      .toLowerCase()
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "")
+      .slice(0, 72) || "document-request"
+  );
 }
 
 function normalizeItem(item: string | Partial<DocumentRequestItem>): DocumentRequestItem {
@@ -103,8 +110,11 @@ export async function buildDocumentRequest(
     portalUrl = `/portal/${token}`;
   }
 
-  const itemList = items.map((item) => `- ${item.label}${item.required ? " (erforderlich)" : ""}`).join("\n");
-  const messageDraft = input.messageDraft ?? `Bitte laden Sie folgende Unterlagen hoch:\n${itemList}`;
+  const itemList = items
+    .map((item) => `- ${item.label}${item.required ? " (erforderlich)" : ""}`)
+    .join("\n");
+  const messageDraft =
+    input.messageDraft ?? `Bitte laden Sie folgende Unterlagen hoch:\n${itemList}`;
 
   return {
     slug,
@@ -157,7 +167,14 @@ export async function writeDocumentRequest(
   return { slug: request.slug };
 }
 
-export function documentRequestFromPage(page: BrainPage): { slug: string; title: string; frontmatter: DocumentRequestFrontmatter; content?: string } | null {
+export function documentRequestFromPage(
+  page: BrainPage
+): {
+  slug: string;
+  title: string;
+  frontmatter: DocumentRequestFrontmatter;
+  content?: string;
+} | null {
   const fm = page.frontmatter as Partial<DocumentRequestFrontmatter> | undefined;
   if (fm?.type !== "document_request") return null;
   return {

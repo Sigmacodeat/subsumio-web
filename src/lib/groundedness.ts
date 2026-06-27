@@ -28,7 +28,7 @@ export interface Groundedness {
  */
 export function assessGroundedness(
   citations: { slug: string }[] | undefined,
-  gaps: string[] | undefined,
+  gaps: string[] | undefined
 ): Groundedness {
   const citationCount = citations?.length ?? 0;
   const gapCount = gaps?.length ?? 0;

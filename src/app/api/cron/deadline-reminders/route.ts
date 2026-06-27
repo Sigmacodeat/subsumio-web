@@ -31,7 +31,7 @@ async function listCasePages(brainId: string): Promise<BrainPage[]> {
     // bea filing). This cron was silently scanning an empty/wrong page set.
     const res = await fetch(`${ENGINE_URL}/api/pages?type=legal_case&limit=1000`, {
       headers: engineHeadersForBrain(brainId),
-    signal: AbortSignal.timeout(30_000),
+      signal: AbortSignal.timeout(30_000),
     });
     if (!res.ok) return [];
     const data = await res.json();
@@ -56,7 +56,7 @@ async function updatePageDeadlines(
       // GET current version
       const getRes = await fetch(`${ENGINE_URL}/api/pages/${encodedSlug}`, {
         headers,
-      signal: AbortSignal.timeout(30_000),
+        signal: AbortSignal.timeout(30_000),
       });
       if (!getRes.ok) return;
       const page = (await getRes.json()) as { frontmatter?: { version?: number } };
@@ -70,7 +70,7 @@ async function updatePageDeadlines(
           ...headers,
         },
         body: JSON.stringify({ frontmatter: fm, merge: true }),
-      signal: AbortSignal.timeout(30_000),
+        signal: AbortSignal.timeout(30_000),
       });
       if (patchRes.status === 409 && attempt < 2) {
         // Version conflict — retry with fresh version

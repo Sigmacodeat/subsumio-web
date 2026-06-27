@@ -378,7 +378,8 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
   de: {
     "law-firms": {
       slug: "law-firms",
-      metaTitle: "Subsumio für Kanzleien — KI-Kanzleisoftware mit belegten Antworten & Fristenkontrolle",
+      metaTitle:
+        "Subsumio für Kanzleien — KI-Kanzleisoftware mit belegten Antworten & Fristenkontrolle",
       metaDesc:
         "Gemeinsames Kanzlei-Brain, automatische Fristenkontrolle, KI-Analysen mit Zitaten, Kollisionsprüfung und WhatsApp-Copilot — DSGVO-konform, EU-gehostet oder self-hosted.",
       badge: "Für etablierte Kanzleien",
@@ -544,7 +545,8 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
         },
       ],
       ctaTitle: "Deine Praxis. Dein Brain.",
-      ctaSub: "Drei Minuten bis zur ersten belegten Antwort. Keine Kreditkarte, kein Server, keine IT.",
+      ctaSub:
+        "Drei Minuten bis zur ersten belegten Antwort. Keine Kreditkarte, kein Server, keine IT.",
       ctaButton: "Demo anfragen",
     },
     "in-house": {
@@ -628,7 +630,8 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
     },
     "mid-sized": {
       slug: "mid-sized",
-      metaTitle: "Subsumio für Mittelständische Kanzleien — schlanke Teams, überproportionale Wirkung",
+      metaTitle:
+        "Subsumio für Mittelständische Kanzleien — schlanke Teams, überproportionale Wirkung",
       metaDesc:
         "KI-Kanzleisoftware für mittelständische Kanzleien: gemeinsames Brain, Fristenautomatisierung, WhatsApp-Copilot, Kollisionsprüfung. EU-gehostet oder self-hosted.",
       badge: "Für mittelständische Kanzleien",

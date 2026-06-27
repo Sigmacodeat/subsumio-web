@@ -56,13 +56,17 @@ describe("detectDeadlines — legal deadlines with templates", () => {
 
   test("detects Berufung", () => {
     const results = detectDeadlines("Die Berufungsfrist muss gewahrt werden.");
-    const legal = results.find((r) => r.type === "legal_deadline" && r.suggestedTemplate === "zpo-berufung");
+    const legal = results.find(
+      (r) => r.type === "legal_deadline" && r.suggestedTemplate === "zpo-berufung"
+    );
     expect(legal).toBeDefined();
   });
 
   test("detects Verjährung", () => {
     const results = detectDeadlines("Die Verjährungsfrist beträgt 3 Jahre.");
-    const legal = results.find((r) => r.type === "legal_deadline" && r.suggestedTemplate === "abgb-verjaehrung");
+    const legal = results.find(
+      (r) => r.type === "legal_deadline" && r.suggestedTemplate === "abgb-verjaehrung"
+    );
     expect(legal).toBeDefined();
   });
 });
@@ -415,4 +419,3 @@ describe("detectDeadlines — matchedRule field", () => {
     expect(hearing!.matchedRule).toBe("court_date");
   });
 });
-

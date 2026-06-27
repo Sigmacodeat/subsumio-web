@@ -14,11 +14,11 @@
  *     did_you_mean?: [{ symbol_qualified, score }],
  *     candidates?: [{ symbol_qualified, lang, file, lines }] }
  */
-import type { BrainEngine } from '../engine.ts';
-import type { CodeEdgeResult } from '../types.ts';
-import { classifySink, type SinkKind } from './sinks/index.ts';
+import type { BrainEngine } from "../engine.ts";
+import type { CodeEdgeResult } from "../types.ts";
+import { classifySink, type SinkKind } from "./sinks/index.ts";
 
-export type WalkDirection = 'callers' | 'callees';
+export type WalkDirection = "callers" | "callees";
 
 export interface WalkOpts {
   /** Direction: callers (blast) or callees (flow). */
@@ -50,18 +50,21 @@ export interface DepthGroup {
 
 export type WalkResult =
   | {
-      result: 'ok';
+      result: "ok";
       depth_groups: DepthGroup[];
       cycles_detected: boolean;
-      truncation: 'none' | 'max_nodes' | 'depth_cap' | 'both';
-      freshness: 'fresh' | 'partial';
+      truncation: "none" | "max_nodes" | "depth_cap" | "both";
+      freshness: "fresh" | "partial";
       terminal_nodes?: { symbol: string; sink_kind: SinkKind }[];
     }
-  | { result: 'not_found'; did_you_mean: { symbol_qualified: string; score: number }[] }
-  | { result: 'ambiguous'; candidates: { symbol_qualified: string; lang?: string; file?: string; lines?: string }[] }
-  | { result: 'unsupported_language'; supported: readonly string[] };
+  | { result: "not_found"; did_you_mean: { symbol_qualified: string; score: number }[] }
+  | {
+      result: "ambiguous";
+      candidates: { symbol_qualified: string; lang?: string; file?: string; lines?: string }[];
+    }
+  | { result: "unsupported_language"; supported: readonly string[] };
 
-const SUPPORTED_LANGS = ['typescript', 'tsx', 'javascript', 'python'] as const;
+const SUPPORTED_LANGS = ["typescript", "tsx", "javascript", "python"] as const;
 
 function clampConfidence(depth: number): number {
   const c = 1.0 / (1 + 0.3 * depth);
@@ -77,7 +80,7 @@ function clampConfidence(depth: number): number {
 async function disambiguateSymbol(
   engine: BrainEngine,
   bare: string,
-  sourceId: string,
+  sourceId: string
 ): Promise<{ matches: string[]; suggestions: { symbol_qualified: string; score: number }[] }> {
   try {
     // Exact-match candidates first: anything with symbol_name = bare
@@ -89,7 +92,7 @@ async function disambiguateSymbol(
           AND symbol_name_qualified IS NOT NULL
           AND (symbol_name = $2 OR symbol_name_qualified = $2)
         LIMIT 25`,
-      [sourceId, bare],
+      [sourceId, bare]
     );
     const matches = exact.map((r) => r.symbol_name_qualified);
     if (matches.length > 0) return { matches, suggestions: [] };
@@ -104,7 +107,7 @@ async function disambiguateSymbol(
           AND symbol_name_qualified IS NOT NULL
           AND symbol_name_qualified ILIKE $2
         LIMIT 5`,
-      [sourceId, `%${bare}%`],
+      [sourceId, `%${bare}%`]
     );
     return {
       matches: [],
@@ -125,7 +128,7 @@ async function disambiguateSymbol(
 async function detectSymbolLanguage(
   engine: BrainEngine,
   qualified: string,
-  sourceId: string,
+  sourceId: string
 ): Promise<string | null> {
   try {
     const rows = await engine.executeRaw<{ language: string | null }>(
@@ -135,7 +138,7 @@ async function detectSymbolLanguage(
         WHERE pages.source_id = $1
           AND content_chunks.symbol_name_qualified = $2
         LIMIT 1`,
-      [sourceId, qualified],
+      [sourceId, qualified]
     );
     return rows[0]?.language ?? null;
   } catch {
@@ -149,19 +152,19 @@ async function detectSymbolLanguage(
 export async function runRecursiveWalk(
   engine: BrainEngine,
   symbol: string,
-  opts: WalkOpts,
+  opts: WalkOpts
 ): Promise<WalkResult> {
-  const depthCap = opts.depth ?? (opts.direction === 'callers' ? 5 : 8);
+  const depthCap = opts.depth ?? (opts.direction === "callers" ? 5 : 8);
   const maxNodes = opts.maxNodes ?? 200;
 
   // Step 1: disambiguate bare name (skip when --exact).
   let qualifiedStart = symbol;
-  if (!opts.exact && !symbol.includes('::')) {
+  if (!opts.exact && !symbol.includes("::")) {
     const { matches, suggestions } = await disambiguateSymbol(engine, symbol, opts.sourceId);
-    if (matches.length === 0) return { result: 'not_found', did_you_mean: suggestions };
+    if (matches.length === 0) return { result: "not_found", did_you_mean: suggestions };
     if (matches.length > 1) {
       return {
-        result: 'ambiguous',
+        result: "ambiguous",
         candidates: matches.map((m) => ({ symbol_qualified: m })),
       };
     }
@@ -171,16 +174,16 @@ export async function runRecursiveWalk(
   // Step 2: language gate (per D18 honest scope).
   const lang = await detectSymbolLanguage(engine, qualifiedStart, opts.sourceId);
   if (lang && !SUPPORTED_LANGS.includes(lang as (typeof SUPPORTED_LANGS)[number])) {
-    return { result: 'unsupported_language', supported: SUPPORTED_LANGS };
+    return { result: "unsupported_language", supported: SUPPORTED_LANGS };
   }
 
   // Step 3: BFS walk.
   const visited = new Set<string>([qualifiedStart]);
   const depthGroups: DepthGroup[] = [];
   let cyclesDetected = false;
-  let truncation: 'none' | 'max_nodes' | 'depth_cap' | 'both' = 'none';
+  let truncation: "none" | "max_nodes" | "depth_cap" | "both" = "none";
   let totalNodes = 0;
-  let freshness: 'fresh' | 'partial' = 'fresh';
+  let freshness: "fresh" | "partial" = "fresh";
   const terminalNodes: { symbol: string; sink_kind: SinkKind }[] = [];
 
   let frontier = [qualifiedStart];
@@ -192,7 +195,7 @@ export async function runRecursiveWalk(
       let edges: CodeEdgeResult[];
       try {
         edges =
-          opts.direction === 'callers'
+          opts.direction === "callers"
             ? await engine.getCallersOf(sym, { sourceId: opts.sourceId, limit: maxNodes })
             : await engine.getCalleesOf(sym, { sourceId: opts.sourceId, limit: maxNodes });
       } catch {
@@ -203,24 +206,23 @@ export async function runRecursiveWalk(
       // → partial. v0.34 W3b's getCachedOrCompute will gate this further.
 
       for (const e of edges) {
-        const next =
-          opts.direction === 'callers' ? e.from_symbol_qualified : e.to_symbol_qualified;
+        const next = opts.direction === "callers" ? e.from_symbol_qualified : e.to_symbol_qualified;
         if (!next || next === sym) continue;
         if (visited.has(next)) {
           cyclesDetected = true;
           continue;
         }
         if (totalNodes >= maxNodes) {
-          truncation = truncation === 'depth_cap' ? 'both' : 'max_nodes';
+          truncation = truncation === "depth_cap" ? "both" : "max_nodes";
           break;
         }
         visited.add(next);
         totalNodes += 1;
         const node: WalkNode = { symbol: next, chunk_id: e.from_chunk_id };
         // Tag sinks for callees direction.
-        if (opts.direction === 'callees' && lang) {
+        if (opts.direction === "callees" && lang) {
           const kind = classifySink(next, lang);
-          if (kind !== 'unknown') {
+          if (kind !== "unknown") {
             node.sink_kind = kind;
             terminalNodes.push({ symbol: next, sink_kind: kind });
           }
@@ -228,7 +230,7 @@ export async function runRecursiveWalk(
         nodesThisDepth.push(node);
         nextFrontier.push(next);
       }
-      if (truncation === 'max_nodes' || truncation === 'both') break;
+      if (truncation === "max_nodes" || truncation === "both") break;
     }
 
     if (nodesThisDepth.length > 0) {
@@ -240,21 +242,21 @@ export async function runRecursiveWalk(
     }
     if (nextFrontier.length === 0) break;
     if (d === depthCap && nextFrontier.length > 0) {
-      truncation = truncation === 'max_nodes' ? 'both' : 'depth_cap';
+      truncation = truncation === "max_nodes" ? "both" : "depth_cap";
     }
-    if (truncation === 'max_nodes' || truncation === 'both') break;
+    if (truncation === "max_nodes" || truncation === "both") break;
     frontier = nextFrontier;
   }
 
   const result: WalkResult = {
-    result: 'ok',
+    result: "ok",
     depth_groups: depthGroups,
     cycles_detected: cyclesDetected,
     truncation,
     freshness,
   };
-  if (opts.direction === 'callees' && terminalNodes.length > 0) {
-    (result as Extract<WalkResult, { result: 'ok' }>).terminal_nodes = terminalNodes;
+  if (opts.direction === "callees" && terminalNodes.length > 0) {
+    (result as Extract<WalkResult, { result: "ok" }>).terminal_nodes = terminalNodes;
   }
   return result;
 }

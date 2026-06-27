@@ -48,6 +48,7 @@ Replace N rows per area with **one entry per functional area**. Each entry
 lists all sub-skills it can dispatch to in a `(dispatcher for: ...)` clause.
 
 ### Before (270 rows, 25KB)
+
 ```
 - Creating/enriching a person or company page -> `enrich`
 - Fix broken citations in brain pages -> `citation-fixer`
@@ -60,6 +61,7 @@ lists all sub-skills it can dispatch to in a `(dispatcher for: ...)` clause.
 ```
 
 ### After (13 rows, 13KB)
+
 ```
 - **Brain & knowledge**: create/enrich/search/export brain pages, filing,
   citations, publishing, book analysis, strategic reading, concept synthesis,
@@ -71,6 +73,7 @@ lists all sub-skills it can dispatch to in a `(dispatcher for: ...)` clause.
 ## Why It Works
 
 The LLM doesn't need one row per sub-skill. It needs:
+
 1. **Area recognition** — "this is about brain pages" -> Brain & Knowledge
 2. **Sub-skill visibility** — the `(dispatcher for: ...)` list shows what's available
 3. **The skill file itself** — once the LLM reads `brain-ops/SKILL.md`, it has full routing detail
@@ -95,19 +98,19 @@ dispatcher area as expected). Both matter:
 
 ### Training corpus (n=20, 3 seeds × 3 variants × 3 models, LENIENT)
 
-| Variant | Opus 4.7 | Sonnet 4.6 | Haiku 4.5 | Size |
-|---|---|---|---|---|
-| baseline (270 bullet rows) | 81.7% ± 7.2% | 86.7% ± 7.2% | 73.3% ± 7.2% | 25KB |
-| **functional-areas** (this pattern) | **98.3% ± 7.2%** | **100% ± 0%** | **88.3% ± 7.2%** | **13KB** |
-| resolver-of-resolvers (no dispatcher clause) | 63.3% ± 14.3% | 41.7% ± 7.2% | 65.0% ± 12.4% | 10KB |
+| Variant                                      | Opus 4.7         | Sonnet 4.6    | Haiku 4.5        | Size     |
+| -------------------------------------------- | ---------------- | ------------- | ---------------- | -------- |
+| baseline (270 bullet rows)                   | 81.7% ± 7.2%     | 86.7% ± 7.2%  | 73.3% ± 7.2%     | 25KB     |
+| **functional-areas** (this pattern)          | **98.3% ± 7.2%** | **100% ± 0%** | **88.3% ± 7.2%** | **13KB** |
+| resolver-of-resolvers (no dispatcher clause) | 63.3% ± 14.3%    | 41.7% ± 7.2%  | 65.0% ± 12.4%    | 10KB     |
 
 ### Held-out blind corpus (n=5, 3 seeds, LENIENT)
 
-| Variant | Opus 4.7 | Sonnet 4.6 | Haiku 4.5 |
-|---|---|---|---|
-| baseline | 100% ± 0% | 100% ± 0% | 100% ± 0% |
-| **functional-areas** | **100% ± 0%** | **100% ± 0%** | **100% ± 0%** |
-| resolver-of-resolvers | 100% ± 0% | **73.3% ± 28.7%** | 100% ± 0% |
+| Variant               | Opus 4.7      | Sonnet 4.6        | Haiku 4.5     |
+| --------------------- | ------------- | ----------------- | ------------- |
+| baseline              | 100% ± 0%     | 100% ± 0%         | 100% ± 0%     |
+| **functional-areas**  | **100% ± 0%** | **100% ± 0%**     | **100% ± 0%** |
+| resolver-of-resolvers | 100% ± 0%     | **73.3% ± 28.7%** | 100% ± 0%     |
 
 ### What the data shows
 
@@ -181,6 +184,7 @@ routing accuracy — is the open contribution. See
 ### Step 1: Preconditions
 
 Refuse to compress if either gate fails:
+
 - Source routing file is under 12KB (compression overhead exceeds benefit).
 - `git status` shows uncommitted changes to the routing file (the
   compressor's edit would entangle with whatever the user was doing).
@@ -227,6 +231,7 @@ Each area entry follows this template:
 ```
 
 Rules:
+
 - Trigger phrases should be broad enough to catch intent ("brain pages, enrich,
   search, filing, citations, book analysis")
 - Sub-skill list should be comprehensive — this is how the LLM knows what's available
@@ -283,6 +288,7 @@ to your skills.
 
 If the lenient (same-area) score on your variant drops below 95%, revert the
 compression and tune. Common causes:
+
 - A sub-skill was omitted from the `(dispatcher for: ...)` list.
 - Trigger phrases for an area are too narrow (LLM can't recognize intent).
 - Areas were collapsed too aggressively (too few areas — see Anti-Patterns).
@@ -290,6 +296,7 @@ compression and tune. Common causes:
   earlier versions only matched Unicode. Pin gbrain to v0.32.3.0+.
 
 Common false negatives on the harness eval (NOT bugs in your compression):
+
 - The gbrain-bundled fixtures target skill names like `enrich`, `query`,
   `gmail`, `executive-assistant`. If your routing file doesn't expose
   those skills at all, expect strict-scoring failures on those fixtures.
@@ -314,7 +321,7 @@ The full behavior contract is documented in the body sections above; this sectio
 
 ## Output Format
 
-The compressed routing file follows the area-entry template documented in Step 4 ("Build the area entry format"). Each entry: `- **{Area Name}**: {trigger phrases} -> \`{dispatcher-skill}\` (dispatcher for: {sub-skill list})`. The dispatcher arrow may be either ASCII `->` (default in this template) or Unicode `→` (used in some production deployments); the gbrain harness accepts both.
+The compressed routing file follows the area-entry template documented in Step 4 ("Build the area entry format"). Each entry: `- **{Area Name}**: {trigger phrases} -> \`{dispatcher-skill}\` (dispatcher for: {sub-skill list})`. The dispatcher arrow may be either ASCII `->`(default in this template) or Unicode`→` (used in some production deployments); the gbrain harness accepts both.
 
 ## Anti-Patterns
 
@@ -334,12 +341,14 @@ The compressed routing file follows the area-entry template documented in Step 4
 ## Maintenance
 
 When adding a new skill:
+
 1. Identify its functional area.
 2. Add the skill name to that area's `(dispatcher for: ...)` list.
 3. Update the area's skill file with routing detail.
 4. Run the routing eval (Step 6) to verify.
 
 When adding a new functional area:
+
 1. Create the dispatcher skill with internal routing.
 2. Add the area entry to the routing file.
 3. Run the routing eval (Step 6) to verify.
@@ -347,6 +356,7 @@ When adding a new functional area:
 ## Changelog
 
 ### v1.0.0 — 2026-05-11
+
 - Initial version. Pattern shipped in gbrain v0.32.3.0 with a held-out A/B
   eval (see `evals/functional-area-resolver/`).
 - Skill renamed from `compress-agents-md` to `functional-area-resolver`

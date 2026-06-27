@@ -27,10 +27,10 @@ export interface QuietHoursConfig {
   /** IANA timezone, e.g. "America/Los_Angeles". */
   tz: string;
   /** 'skip' drops the event; 'defer' re-queues for later. Default: 'defer'. */
-  policy?: 'skip' | 'defer';
+  policy?: "skip" | "defer";
 }
 
-export type QuietHoursVerdict = 'allow' | 'skip' | 'defer';
+export type QuietHoursVerdict = "allow" | "skip" | "defer";
 
 // ---------------------------------------------------------------------------
 // Main API
@@ -47,20 +47,21 @@ export type QuietHoursVerdict = 'allow' | 'skip' | 'defer';
  */
 export function evaluateQuietHours(
   cfg: QuietHoursConfig | null | undefined,
-  now: Date = new Date(),
+  now: Date = new Date()
 ): QuietHoursVerdict {
-  if (!cfg) return 'allow';
-  if (!isValidConfig(cfg)) return 'allow';
+  if (!cfg) return "allow";
+  if (!isValidConfig(cfg)) return "allow";
 
   const hour = localHour(now, cfg.tz);
-  if (hour === null) return 'allow'; // unknown tz → fail-open; safer than hard-blocking every job
+  if (hour === null) return "allow"; // unknown tz → fail-open; safer than hard-blocking every job
 
-  const inWindow = cfg.start <= cfg.end
-    ? hour >= cfg.start && hour < cfg.end
-    : hour >= cfg.start || hour < cfg.end; // wrap-around
+  const inWindow =
+    cfg.start <= cfg.end
+      ? hour >= cfg.start && hour < cfg.end
+      : hour >= cfg.start || hour < cfg.end; // wrap-around
 
-  if (!inWindow) return 'allow';
-  return cfg.policy === 'skip' ? 'skip' : 'defer';
+  if (!inWindow) return "allow";
+  return cfg.policy === "skip" ? "skip" : "defer";
 }
 
 // ---------------------------------------------------------------------------
@@ -71,19 +72,19 @@ function isValidConfig(cfg: QuietHoursConfig): boolean {
   if (!Number.isInteger(cfg.start) || cfg.start < 0 || cfg.start > 23) return false;
   if (!Number.isInteger(cfg.end) || cfg.end < 0 || cfg.end > 23) return false;
   if (cfg.start === cfg.end) return false; // zero-width window is ambiguous
-  if (typeof cfg.tz !== 'string' || cfg.tz.length === 0) return false;
+  if (typeof cfg.tz !== "string" || cfg.tz.length === 0) return false;
   return true;
 }
 
 /** Return the hour (0-23) of `when` in the given IANA timezone, or null. */
 export function localHour(when: Date, tz: string): number | null {
   try {
-    const parts = new Intl.DateTimeFormat('en-US', {
+    const parts = new Intl.DateTimeFormat("en-US", {
       timeZone: tz,
       hour12: false,
-      hour: 'numeric',
+      hour: "numeric",
     }).formatToParts(when);
-    const hh = parts.find(p => p.type === 'hour')?.value ?? '';
+    const hh = parts.find((p) => p.type === "hour")?.value ?? "";
     // en-US hour12:false yields '24' for midnight in some Node/Bun versions
     const n = parseInt(hh, 10);
     if (!Number.isFinite(n)) return null;

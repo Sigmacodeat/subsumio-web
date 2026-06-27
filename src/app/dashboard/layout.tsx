@@ -11,19 +11,27 @@ import { DashboardGuide } from "@/components/dashboard/dashboard-guide";
 import dynamic from "next/dynamic";
 
 const CaseQuickCreateDialog = dynamic(() =>
-  import("@/components/legal/CaseQuickCreateDialog").then((m) => m.CaseQuickCreateDialog));
+  import("@/components/legal/CaseQuickCreateDialog").then((m) => m.CaseQuickCreateDialog)
+);
 const DeadlineQuickCreateDialog = dynamic(() =>
-  import("@/components/legal/DeadlineQuickCreateDialog").then((m) => m.DeadlineQuickCreateDialog));
+  import("@/components/legal/DeadlineQuickCreateDialog").then((m) => m.DeadlineQuickCreateDialog)
+);
 const InvoiceQuickCreateDialog = dynamic(() =>
-  import("@/components/legal/InvoiceQuickCreateDialog").then((m) => m.InvoiceQuickCreateDialog));
+  import("@/components/legal/InvoiceQuickCreateDialog").then((m) => m.InvoiceQuickCreateDialog)
+);
 const SignatureQuickCreateDialog = dynamic(() =>
-  import("@/components/legal/SignatureQuickCreateDialog").then((m) => m.SignatureQuickCreateDialog));
+  import("@/components/legal/SignatureQuickCreateDialog").then((m) => m.SignatureQuickCreateDialog)
+);
 const ClauseQuickCreateDialog = dynamic(() =>
-  import("@/components/legal/ClauseQuickCreateDialog").then((m) => m.ClauseQuickCreateDialog));
+  import("@/components/legal/ClauseQuickCreateDialog").then((m) => m.ClauseQuickCreateDialog)
+);
 const ContractQuickCreateDialog = dynamic(() =>
-  import("@/components/legal/ContractQuickCreateDialog").then((m) => m.ContractQuickCreateDialog));
-const CopilotSidebar = dynamic(() =>
-  import("@/components/chat/copilot-sidebar").then((m) => m.CopilotSidebar), { ssr: false });
+  import("@/components/legal/ContractQuickCreateDialog").then((m) => m.ContractQuickCreateDialog)
+);
+const CopilotSidebar = dynamic(
+  () => import("@/components/chat/copilot-sidebar").then((m) => m.CopilotSidebar),
+  { ssr: false }
+);
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { Topbar, type Theme } from "@/components/dashboard/topbar";
 import { MobileTabBar } from "@/components/dashboard/mobile-tab-bar";
@@ -317,10 +325,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <DashboardGuide open={guideOpen} onClose={() => setGuideOpen(false)} />
       <CopilotSidebar open={copilotOpen} onToggle={() => setCopilotOpen((v) => !v)} />
 
-      <CaseQuickCreateDialog
-        open={globalQuickCreateOpen}
-        onOpenChange={setGlobalQuickCreateOpen}
-      />
+      <CaseQuickCreateDialog open={globalQuickCreateOpen} onOpenChange={setGlobalQuickCreateOpen} />
 
       <DeadlineQuickCreateDialog
         open={globalDeadlineCreateOpen}

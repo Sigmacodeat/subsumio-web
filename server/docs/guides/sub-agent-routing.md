@@ -17,14 +17,14 @@ quality. Total cost drops 70-80%.
 
 ### Routing Table
 
-| Task Type | Recommended Model | Why |
-|-----------|------------------|-----|
-| Main session / complex instructions | Opus-class (default) | Best reasoning and instruction following |
-| Research / synthesis / analysis | DeepSeek V3 or equivalent | 25-40x cheaper, strong on exploratory work |
-| Structured output / long context | Large context model (Qwen, Gemini) | 200K+ context, reliable JSON output |
-| Fast lightweight sub-agents | Fast inference model (Groq) | 500 tok/s, cheap, good for quick tasks |
-| Deep reasoning (use sparingly) | Reasoning model (DeepSeek-R1, o3) | Best for hard problems, expensive |
-| Entity detection (signal detector) | Sonnet-class | Fast, cheap, sufficient quality for detection |
+| Task Type                           | Recommended Model                  | Why                                           |
+| ----------------------------------- | ---------------------------------- | --------------------------------------------- |
+| Main session / complex instructions | Opus-class (default)               | Best reasoning and instruction following      |
+| Research / synthesis / analysis     | DeepSeek V3 or equivalent          | 25-40x cheaper, strong on exploratory work    |
+| Structured output / long context    | Large context model (Qwen, Gemini) | 200K+ context, reliable JSON output           |
+| Fast lightweight sub-agents         | Fast inference model (Groq)        | 500 tok/s, cheap, good for quick tasks        |
+| Deep reasoning (use sparingly)      | Reasoning model (DeepSeek-R1, o3)  | Best for hard problems, expensive             |
+| Entity detection (signal detector)  | Sonnet-class                       | Fast, cheap, sufficient quality for detection |
 
 ### The Signal Detector Pattern
 
@@ -70,13 +70,13 @@ the work.
 
 ### When to Spawn Sub-Agents
 
-| Situation | Spawn? | Model |
-|-----------|--------|-------|
-| Every inbound message | YES (mandatory) | Sonnet |
-| Research request | YES | DeepSeek for execution |
-| Quick lookup / fact check | YES | Fast model (Groq) |
-| Complex analysis | NO -- handle in main session | Opus |
-| Writing / editing | NO -- handle in main session | Opus |
+| Situation                 | Spawn?                       | Model                  |
+| ------------------------- | ---------------------------- | ---------------------- |
+| Every inbound message     | YES (mandatory)              | Sonnet                 |
+| Research request          | YES                          | DeepSeek for execution |
+| Quick lookup / fact check | YES                          | Fast model (Groq)      |
+| Complex analysis          | NO -- handle in main session | Opus                   |
+| Writing / editing         | NO -- handle in main session | Opus                   |
 
 ### Cost Optimization
 
@@ -119,4 +119,4 @@ which are 10-40x cheaper than the main session model.
 
 ---
 
-*Part of the [GBrain Skillpack](../GBRAIN_SKILLPACK.md).*
+_Part of the [GBrain Skillpack](../GBRAIN_SKILLPACK.md)._

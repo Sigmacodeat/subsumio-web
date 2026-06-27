@@ -20,10 +20,10 @@
  *    BEFORE returning the choice so the user sees the implication.
  */
 
-import { listRecipes } from '../core/ai/recipes/index.ts';
-import { envReady, formatRecipeTable } from './providers.ts';
-import { readLineSafe } from './init.ts';
-import type { Recipe } from '../core/ai/types.ts';
+import { listRecipes } from "../core/ai/recipes/index.ts";
+import { envReady, formatRecipeTable } from "./providers.ts";
+import { readLineSafe } from "./init.ts";
+import type { Recipe } from "../core/ai/types.ts";
 
 export interface PickedProvider {
   recipeId: string;
@@ -39,7 +39,7 @@ export interface PickedProvider {
 
 export interface PickProviderOpts {
   /** Touchpoint the picker is selecting for. Embedding is the primary use case. */
-  touchpoint: 'embedding' | 'expansion' | 'chat';
+  touchpoint: "embedding" | "expansion" | "chat";
   /** Process env to probe. Defaults to process.env (injected for tests). */
   env?: NodeJS.ProcessEnv;
   /** TTY override for tests. Defaults to process.stdin.isTTY. */
@@ -60,11 +60,11 @@ export interface PickProviderOpts {
  */
 export function printSubagentAnthropicCaveat(write: (s: string) => void): void {
   write(
-    '\n' +
-    'Note: subagent features (gbrain dream, gbrain agent run, gbrain autopilot)\n' +
-    '      require ANTHROPIC_API_KEY regardless of which chat model you pick.\n' +
-    '      Chat alone (gbrain think, gbrain query expansion) works without it.\n' +
-    '      Set ANTHROPIC_API_KEY before running those commands.\n\n',
+    "\n" +
+      "Note: subagent features (gbrain dream, gbrain agent run, gbrain autopilot)\n" +
+      "      require ANTHROPIC_API_KEY regardless of which chat model you pick.\n" +
+      "      Chat alone (gbrain think, gbrain query expansion) works without it.\n" +
+      "      Set ANTHROPIC_API_KEY before running those commands.\n\n"
   );
 }
 
@@ -75,14 +75,14 @@ export function printSubagentAnthropicCaveat(write: (s: string) => void): void {
  */
 function readyRecipesForTouchpoint(
   recipes: Recipe[],
-  touchpoint: 'embedding' | 'expansion' | 'chat',
-  env: NodeJS.ProcessEnv,
+  touchpoint: "embedding" | "expansion" | "chat",
+  env: NodeJS.ProcessEnv
 ): Recipe[] {
-  return recipes.filter(r => {
+  return recipes.filter((r) => {
     const tp = r.touchpoints[touchpoint];
     if (!tp) return false;
     // Embedding + chat must have at least one model; expansion just needs to exist.
-    if (touchpoint === 'embedding' || touchpoint === 'chat') {
+    if (touchpoint === "embedding" || touchpoint === "chat") {
       if (!Array.isArray(tp.models) || tp.models.length === 0) return false;
     }
     return envReady(r, env);
@@ -111,32 +111,32 @@ export async function pickProvider(opts: PickProviderOpts): Promise<PickedProvid
 
   if (ready.length === 0) {
     writeStderr(`\nNo ${opts.touchpoint}-capable providers are env-ready.\n`);
-    writeStderr('Set one of the env vars below and re-run init:\n\n');
-    writeStderr(formatRecipeTable(all, env) + '\n\n');
+    writeStderr("Set one of the env vars below and re-run init:\n\n");
+    writeStderr(formatRecipeTable(all, env) + "\n\n");
     return null;
   }
 
   writeStderr(`\nPick a ${opts.touchpoint} provider (env-ready providers shown):\n\n`);
-  writeStderr(formatRecipeTable(ready, env) + '\n\n');
+  writeStderr(formatRecipeTable(ready, env) + "\n\n");
 
   // Build numbered options
   const lines = ready.map((r, i) => {
     const tp = r.touchpoints[opts.touchpoint];
     let label = `  ${i + 1}) ${r.id}`;
-    if (opts.touchpoint === 'embedding' && tp && 'default_dims' in tp) {
+    if (opts.touchpoint === "embedding" && tp && "default_dims" in tp) {
       label += `  (${tp.default_dims}d)`;
     }
-    if (tp && 'models' in tp && Array.isArray(tp.models) && tp.models.length > 0) {
+    if (tp && "models" in tp && Array.isArray(tp.models) && tp.models.length > 0) {
       label += `  ${tp.models[0]}`;
     }
     return label;
   });
-  writeStderr(lines.join('\n') + '\n\n');
+  writeStderr(lines.join("\n") + "\n\n");
 
   const answer = await readLineSafe(
     `Choice [1-${ready.length}, default 1]: `,
-    '1',
-    /* timeoutMs */ 60_000,
+    "1",
+    /* timeoutMs */ 60_000
   );
 
   const choice = parseInt(answer.trim(), 10);
@@ -150,9 +150,8 @@ export async function pickProvider(opts: PickProviderOpts): Promise<PickedProvid
   if (!tp) return null;
 
   // Pick first model in the recipe's list (callers can override via flag).
-  const modelId = ('models' in tp && Array.isArray(tp.models) && tp.models.length > 0)
-    ? tp.models[0]
-    : '';
+  const modelId =
+    "models" in tp && Array.isArray(tp.models) && tp.models.length > 0 ? tp.models[0] : "";
   if (!modelId) {
     writeStderr(`\nRecipe "${picked.id}" declares no models for ${opts.touchpoint}. Aborting.\n`);
     return null;
@@ -160,15 +159,15 @@ export async function pickProvider(opts: PickProviderOpts): Promise<PickedProvid
 
   // D7: surface the subagent-Anthropic caveat when picking a non-Anthropic
   // chat-capable recipe without ANTHROPIC_API_KEY set.
-  const isChatTouchpoint = opts.touchpoint === 'chat';
-  const isAnthropic = picked.id === 'anthropic';
+  const isChatTouchpoint = opts.touchpoint === "chat";
+  const isAnthropic = picked.id === "anthropic";
   const anthropicKeySet = !!env.ANTHROPIC_API_KEY;
   if (isChatTouchpoint && !isAnthropic && !anthropicKeySet) {
     printSubagentAnthropicCaveat(writeStderr);
   }
 
   const dim =
-    opts.touchpoint === 'embedding' && 'default_dims' in tp
+    opts.touchpoint === "embedding" && "default_dims" in tp
       ? (tp as { default_dims: number }).default_dims
       : 0;
 

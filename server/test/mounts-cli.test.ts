@@ -1,15 +1,15 @@
-import { describe, test, expect, afterEach, beforeEach } from 'bun:test';
-import { mkdtempSync, rmSync, mkdirSync, writeFileSync, existsSync } from 'fs';
-import { join } from 'path';
-import { tmpdir, homedir } from 'os';
-import { __testing } from '../src/commands/mounts.ts';
+import { describe, test, expect, afterEach, beforeEach } from "bun:test";
+import { mkdtempSync, rmSync, mkdirSync, writeFileSync, existsSync } from "fs";
+import { join } from "path";
+import { tmpdir, homedir } from "os";
+import { __testing } from "../src/commands/mounts.ts";
 
 const { parseAddArgs, redactUrl, readMountsFile, writeMountsFile } = __testing;
 
 const toCleanup: string[] = [];
 let tempHome: string | null = null;
 
-function mktmp(prefix = 'mounts-cli-'): string {
+function mktmp(prefix = "mounts-cli-"): string {
   const dir = mkdtempSync(join(tmpdir(), prefix));
   toCleanup.push(dir);
   return dir;
@@ -20,12 +20,12 @@ function mktmp(prefix = 'mounts-cli-'): string {
  * touch the user's real ~/.gbrain/mounts.json.
  */
 function withFakeHome<T>(fn: (mountsPath: string) => T): T {
-  const home = mktmp('fake-home-');
+  const home = mktmp("fake-home-");
   const prev = process.env.HOME;
   process.env.HOME = home;
   try {
-    mkdirSync(join(home, '.gbrain'), { recursive: true });
-    const mountsPath = join(home, '.gbrain', 'mounts.json');
+    mkdirSync(join(home, ".gbrain"), { recursive: true });
+    const mountsPath = join(home, ".gbrain", "mounts.json");
     return fn(mountsPath);
   } finally {
     if (prev !== undefined) process.env.HOME = prev;
@@ -37,170 +37,198 @@ afterEach(() => {
   while (toCleanup.length > 0) {
     const p = toCleanup.pop();
     if (!p) continue;
-    try { rmSync(p, { recursive: true, force: true }); } catch { /* best effort */ }
+    try {
+      rmSync(p, { recursive: true, force: true });
+    } catch {
+      /* best effort */
+    }
   }
 });
 
-describe('parseAddArgs', () => {
-  test('minimal pglite add', () => {
+describe("parseAddArgs", () => {
+  test("minimal pglite add", () => {
     const parsed = parseAddArgs([
-      'yc-media',
-      '--path', '/tmp/yc-media',
-      '--engine', 'pglite',
-      '--db-path', '/tmp/yc-media/.pg',
+      "yc-media",
+      "--path",
+      "/tmp/yc-media",
+      "--engine",
+      "pglite",
+      "--db-path",
+      "/tmp/yc-media/.pg",
     ]);
-    expect(parsed.id).toBe('yc-media');
-    expect(parsed.engine).toBe('pglite');
-    expect(parsed.database_path).toBe('/tmp/yc-media/.pg');
-    expect(parsed.path.startsWith('/')).toBe(true);
+    expect(parsed.id).toBe("yc-media");
+    expect(parsed.engine).toBe("pglite");
+    expect(parsed.database_path).toBe("/tmp/yc-media/.pg");
+    expect(parsed.path.startsWith("/")).toBe(true);
   });
 
-  test('minimal postgres add', () => {
+  test("minimal postgres add", () => {
     const parsed = parseAddArgs([
-      'yc-politics',
-      '--path', '/tmp/luther',
-      '--engine', 'postgres',
-      '--db-url', 'postgresql://localhost/l',
+      "yc-politics",
+      "--path",
+      "/tmp/luther",
+      "--engine",
+      "postgres",
+      "--db-url",
+      "postgresql://localhost/l",
     ]);
-    expect(parsed.engine).toBe('postgres');
-    expect(parsed.database_url).toBe('postgresql://localhost/l');
+    expect(parsed.engine).toBe("postgres");
+    expect(parsed.database_url).toBe("postgresql://localhost/l");
   });
 
-  test('infers engine from --db-url (postgres)', () => {
-    const parsed = parseAddArgs([
-      'a', '--path', '/tmp/a', '--db-url', 'postgresql://x/y',
-    ]);
-    expect(parsed.engine).toBe('postgres');
+  test("infers engine from --db-url (postgres)", () => {
+    const parsed = parseAddArgs(["a", "--path", "/tmp/a", "--db-url", "postgresql://x/y"]);
+    expect(parsed.engine).toBe("postgres");
   });
 
-  test('infers engine from --db-path (pglite)', () => {
-    const parsed = parseAddArgs([
-      'b', '--path', '/tmp/b', '--db-path', '/tmp/b/.pg',
-    ]);
-    expect(parsed.engine).toBe('pglite');
+  test("infers engine from --db-path (pglite)", () => {
+    const parsed = parseAddArgs(["b", "--path", "/tmp/b", "--db-path", "/tmp/b/.pg"]);
+    expect(parsed.engine).toBe("pglite");
   });
 
-  test('accepts --alias', () => {
+  test("accepts --alias", () => {
     const parsed = parseAddArgs([
-      'yc-media', '--path', '/tmp/x', '--db-path', '/tmp/x/.pg', '--alias', 'ycm',
+      "yc-media",
+      "--path",
+      "/tmp/x",
+      "--db-path",
+      "/tmp/x/.pg",
+      "--alias",
+      "ycm",
     ]);
-    expect(parsed.alias).toBe('ycm');
+    expect(parsed.alias).toBe("ycm");
   });
 
-  test('rejects missing id', () => {
+  test("rejects missing id", () => {
     expect(() => parseAddArgs([])).toThrow(/Missing mount id/);
   });
 
-  test('rejects missing path', () => {
-    expect(() => parseAddArgs(['m', '--db-path', '/tmp/x/.pg'])).toThrow(/Missing --path/);
+  test("rejects missing path", () => {
+    expect(() => parseAddArgs(["m", "--db-path", "/tmp/x/.pg"])).toThrow(/Missing --path/);
   });
 
-  test('rejects invalid engine', () => {
-    expect(() => parseAddArgs([
-      'x', '--path', '/tmp/x', '--engine', 'sqlite',
-    ])).toThrow(/Invalid engine/);
+  test("rejects invalid engine", () => {
+    expect(() => parseAddArgs(["x", "--path", "/tmp/x", "--engine", "sqlite"])).toThrow(
+      /Invalid engine/
+    );
   });
 
-  test('rejects unknown flag', () => {
-    expect(() => parseAddArgs([
-      'x', '--path', '/tmp/x', '--db-path', '/tmp/x/.pg', '--nonsense',
-    ])).toThrow(/Unknown flag/);
+  test("rejects unknown flag", () => {
+    expect(() =>
+      parseAddArgs(["x", "--path", "/tmp/x", "--db-path", "/tmp/x/.pg", "--nonsense"])
+    ).toThrow(/Unknown flag/);
   });
 
-  test('rejects no engine + no db flags (cannot infer)', () => {
-    expect(() => parseAddArgs(['x', '--path', '/tmp/x'])).toThrow(/Missing --engine/);
+  test("rejects no engine + no db flags (cannot infer)", () => {
+    expect(() => parseAddArgs(["x", "--path", "/tmp/x"])).toThrow(/Missing --engine/);
   });
 
-  test('rejects postgres without --db-url', () => {
-    expect(() => parseAddArgs([
-      'x', '--path', '/tmp/x', '--engine', 'postgres',
-    ])).toThrow(/postgres mount requires --db-url/);
+  test("rejects postgres without --db-url", () => {
+    expect(() => parseAddArgs(["x", "--path", "/tmp/x", "--engine", "postgres"])).toThrow(
+      /postgres mount requires --db-url/
+    );
   });
 
-  test('rejects flag-value missing', () => {
-    expect(() => parseAddArgs([
-      'x', '--path',
-    ])).toThrow(/Missing value for --path/);
+  test("rejects flag-value missing", () => {
+    expect(() => parseAddArgs(["x", "--path"])).toThrow(/Missing value for --path/);
   });
 
-  test('rejects invalid alias', () => {
-    expect(() => parseAddArgs([
-      'x', '--path', '/tmp/x', '--db-path', '/tmp/x/.pg', '--alias', 'UPPER',
-    ])).toThrow();
+  test("rejects invalid alias", () => {
+    expect(() =>
+      parseAddArgs(["x", "--path", "/tmp/x", "--db-path", "/tmp/x/.pg", "--alias", "UPPER"])
+    ).toThrow();
   });
 });
 
-describe('redactUrl', () => {
-  test('strips password from postgres://', () => {
-    const red = redactUrl('postgresql://user:supersecret@db.example.com/brain');
-    expect(red).not.toContain('supersecret');
-    expect(red).toContain('***');
-    expect(red).toContain('db.example.com');
+describe("redactUrl", () => {
+  test("strips password from postgres://", () => {
+    const red = redactUrl("postgresql://user:supersecret@db.example.com/brain");
+    expect(red).not.toContain("supersecret");
+    expect(red).toContain("***");
+    expect(red).toContain("db.example.com");
   });
 
-  test('password-less URLs do not grow ***', () => {
-    const url = 'postgresql://user@db.example.com/brain';
+  test("password-less URLs do not grow ***", () => {
+    const url = "postgresql://user@db.example.com/brain";
     const red = redactUrl(url);
-    expect(red).not.toContain('***');
-    expect(red).toContain('user@db.example.com');
-    expect(red).toContain('/brain');
+    expect(red).not.toContain("***");
+    expect(red).toContain("user@db.example.com");
+    expect(red).toContain("/brain");
   });
 
-  test('leaves opaque file:// urls alone', () => {
-    const url = 'file:///home/user/brain/.pglite';
+  test("leaves opaque file:// urls alone", () => {
+    const url = "file:///home/user/brain/.pglite";
     expect(redactUrl(url)).toBe(url);
   });
 
-  test('leaves non-URL strings alone', () => {
-    const opaque = '/not/a/url';
+  test("leaves non-URL strings alone", () => {
+    const opaque = "/not/a/url";
     expect(redactUrl(opaque)).toBe(opaque);
   });
 });
 
-describe('readMountsFile / writeMountsFile', () => {
-  test('empty file returns empty mounts list', () => {
+describe("readMountsFile / writeMountsFile", () => {
+  test("empty file returns empty mounts list", () => {
     const dir = mktmp();
-    const path = join(dir, 'mounts.json');
+    const path = join(dir, "mounts.json");
     const file = readMountsFile(path);
     expect(file.version).toBe(1);
     expect(file.mounts).toHaveLength(0);
   });
 
-  test('round-trip: write then read', () => {
+  test("round-trip: write then read", () => {
     const dir = mktmp();
-    const path = join(dir, 'mounts.json');
-    writeMountsFile({
-      version: 1,
-      mounts: [{
-        id: 'yc-media', path: '/tmp/yc', engine: 'pglite', database_path: '/tmp/yc/.pg', enabled: true,
-      }],
-    }, path);
+    const path = join(dir, "mounts.json");
+    writeMountsFile(
+      {
+        version: 1,
+        mounts: [
+          {
+            id: "yc-media",
+            path: "/tmp/yc",
+            engine: "pglite",
+            database_path: "/tmp/yc/.pg",
+            enabled: true,
+          },
+        ],
+      },
+      path
+    );
     const file = readMountsFile(path);
     expect(file.mounts).toHaveLength(1);
-    expect(file.mounts[0].id).toBe('yc-media');
+    expect(file.mounts[0].id).toBe("yc-media");
   });
 
-  test('write is atomic: no partial file visible mid-write', () => {
+  test("write is atomic: no partial file visible mid-write", () => {
     const dir = mktmp();
-    const path = join(dir, 'mounts.json');
-    writeMountsFile({
-      version: 1,
-      mounts: [{
-        id: 'a', path: '/tmp/a', engine: 'pglite', database_path: '/tmp/a/.pg', enabled: true,
-      }],
-    }, path);
+    const path = join(dir, "mounts.json");
+    writeMountsFile(
+      {
+        version: 1,
+        mounts: [
+          {
+            id: "a",
+            path: "/tmp/a",
+            engine: "pglite",
+            database_path: "/tmp/a/.pg",
+            enabled: true,
+          },
+        ],
+      },
+      path
+    );
     expect(existsSync(path)).toBe(true);
     // .tmp should be gone after atomic rename.
-    expect(existsSync(path + '.tmp')).toBe(false);
+    expect(existsSync(path + ".tmp")).toBe(false);
   });
 });
 
-describe('runMounts — end-to-end add/list/remove', () => {
+describe("runMounts — end-to-end add/list/remove", () => {
   // These rely on HOME redirection to isolate from the real ~/.gbrain/.
   // We don't import runMounts directly to avoid stdout spam in test output;
   // parseAddArgs + readMountsFile + writeMountsFile is enough seam coverage.
 
-  test('add → list → remove roundtrip via seams', () => {
+  test("add → list → remove roundtrip via seams", () => {
     withFakeHome((mountsPath) => {
       // Manually simulate the subcommand sequence using the same seams
       // runMounts uses internally.
@@ -209,10 +237,13 @@ describe('runMounts — end-to-end add/list/remove', () => {
 
       // Simulate add
       const parsed = parseAddArgs([
-        'yc-media',
-        '--path', mountsPath, // use the temp path so existsSync(path) passes
-        '--engine', 'pglite',
-        '--db-path', '/tmp/yc-media/.pg',
+        "yc-media",
+        "--path",
+        mountsPath, // use the temp path so existsSync(path) passes
+        "--engine",
+        "pglite",
+        "--db-path",
+        "/tmp/yc-media/.pg",
       ]);
       file.mounts.push({
         id: parsed.id,
@@ -226,10 +257,10 @@ describe('runMounts — end-to-end add/list/remove', () => {
       // List
       file = readMountsFile(mountsPath);
       expect(file.mounts).toHaveLength(1);
-      expect(file.mounts[0].id).toBe('yc-media');
+      expect(file.mounts[0].id).toBe("yc-media");
 
       // Remove
-      file.mounts = file.mounts.filter(m => m.id !== 'yc-media');
+      file.mounts = file.mounts.filter((m) => m.id !== "yc-media");
       writeMountsFile(file, mountsPath);
 
       // Confirm empty
@@ -244,15 +275,18 @@ describe('runMounts — end-to-end add/list/remove', () => {
 // switch table is exercised end-to-end, then read back the mounts.json
 // to assert the flag was persisted.
 
-describe('v0.40.3.0 — mount flag verbs', () => {
+describe("v0.40.3.0 — mount flag verbs", () => {
   // Import runMounts lazily so the env-mutating withFakeHome wrapper has
   // time to redirect HOME before the module reads it.
   async function seedMount(mountsPath: string, id: string): Promise<void> {
     const parsed = parseAddArgs([
       id,
-      '--path', mountsPath,
-      '--engine', 'pglite',
-      '--db-path', `/tmp/${id}/.pg`,
+      "--path",
+      mountsPath,
+      "--engine",
+      "pglite",
+      "--db-path",
+      `/tmp/${id}/.pg`,
     ]);
     const file = readMountsFile(mountsPath);
     file.mounts.push({
@@ -265,72 +299,70 @@ describe('v0.40.3.0 — mount flag verbs', () => {
     writeMountsFile(file, mountsPath);
   }
 
-  test('enable → disable → enable cycle persists', async () => {
-    const { runMounts } = await import('../src/commands/mounts.ts');
+  test("enable → disable → enable cycle persists", async () => {
+    const { runMounts } = await import("../src/commands/mounts.ts");
     await withFakeHomeAsync(async (mountsPath) => {
-      await seedMount(mountsPath, 'm1');
+      await seedMount(mountsPath, "m1");
 
-      await runMounts(['disable', 'm1']);
+      await runMounts(["disable", "m1"]);
       let file = readMountsFile(mountsPath);
       expect(file.mounts[0].enabled).toBe(false);
 
-      await runMounts(['enable', 'm1']);
+      await runMounts(["enable", "m1"]);
       file = readMountsFile(mountsPath);
       expect(file.mounts[0].enabled).toBe(true);
     });
   });
 
-  test('trust-frontmatter → untrust-frontmatter cycle preserves other fields', async () => {
-    const { runMounts } = await import('../src/commands/mounts.ts');
+  test("trust-frontmatter → untrust-frontmatter cycle preserves other fields", async () => {
+    const { runMounts } = await import("../src/commands/mounts.ts");
     await withFakeHomeAsync(async (mountsPath) => {
-      await seedMount(mountsPath, 'm-trust');
+      await seedMount(mountsPath, "m-trust");
 
-      await runMounts(['trust-frontmatter', 'm-trust']);
+      await runMounts(["trust-frontmatter", "m-trust"]);
       let file = readMountsFile(mountsPath);
       expect(file.mounts[0].trust_frontmatter_overrides).toBe(true);
       // Preserve other fields:
-      expect(file.mounts[0].engine).toBe('pglite');
-      expect(file.mounts[0].database_path).toBe('/tmp/m-trust/.pg');
+      expect(file.mounts[0].engine).toBe("pglite");
+      expect(file.mounts[0].database_path).toBe("/tmp/m-trust/.pg");
 
-      await runMounts(['untrust-frontmatter', 'm-trust']);
+      await runMounts(["untrust-frontmatter", "m-trust"]);
       file = readMountsFile(mountsPath);
       expect(file.mounts[0].trust_frontmatter_overrides).toBe(false);
 
       // Re-trust restores. Trip → untrust → trust → untrust cycle.
-      await runMounts(['trust-frontmatter', 'm-trust']);
+      await runMounts(["trust-frontmatter", "m-trust"]);
       file = readMountsFile(mountsPath);
       expect(file.mounts[0].trust_frontmatter_overrides).toBe(true);
     });
   });
 
-  test('missing mount id → loud rejection with list-hint', async () => {
-    const { runMounts } = await import('../src/commands/mounts.ts');
+  test("missing mount id → loud rejection with list-hint", async () => {
+    const { runMounts } = await import("../src/commands/mounts.ts");
     await withFakeHomeAsync(async (mountsPath) => {
-      await seedMount(mountsPath, 'real-mount');
+      await seedMount(mountsPath, "real-mount");
       // Use a typo
-      await expect(runMounts(['trust-frontmatter', 'typo-mount'])).rejects.toThrow(
-        /typo-mount/,
-      );
+      await expect(runMounts(["trust-frontmatter", "typo-mount"])).rejects.toThrow(/typo-mount/);
     });
   });
 
   test('host brain rejection: cannot trust-frontmatter "host"', async () => {
-    const { runMounts } = await import('../src/commands/mounts.ts');
+    const { runMounts } = await import("../src/commands/mounts.ts");
     await withFakeHomeAsync(async (mountsPath) => {
-      await seedMount(mountsPath, 'm-host-test');
-      await expect(runMounts(['trust-frontmatter', 'host'])).rejects.toThrow(
-        /Cannot trust-frontmatter host brain/,
+      await seedMount(mountsPath, "m-host-test");
+      await expect(runMounts(["trust-frontmatter", "host"])).rejects.toThrow(
+        /Cannot trust-frontmatter host brain/
       );
     });
   });
 
-  test('enable on already-enabled mount: no-op (idempotent)', async () => {
-    const { runMounts } = await import('../src/commands/mounts.ts');
+  test("enable on already-enabled mount: no-op (idempotent)", async () => {
+    const { runMounts } = await import("../src/commands/mounts.ts");
     await withFakeHomeAsync(async (mountsPath) => {
-      await seedMount(mountsPath, 'm-idem');
+      await seedMount(mountsPath, "m-idem");
       // Mount starts enabled=true. Calling enable again should be a no-op
       // (no file churn, message indicates already-enabled).
-      await runMounts(['enable', 'm-idem']);
+      await runMounts(["enable", "m-idem"]);
       const file = readMountsFile(mountsPath);
       expect(file.mounts[0].enabled).toBe(true);
     });
@@ -345,12 +377,12 @@ describe('v0.40.3.0 — mount flag verbs', () => {
  * runMounts's internal getMountsPath() call.
  */
 async function withFakeHomeAsync<T>(fn: (mountsPath: string) => Promise<T>): Promise<T> {
-  const home = mktmp('fake-home-');
+  const home = mktmp("fake-home-");
   const prev = process.env.HOME;
   const prevMounts = process.env.GBRAIN_MOUNTS_PATH;
   process.env.HOME = home;
-  mkdirSync(join(home, '.gbrain'), { recursive: true });
-  const mountsPath = join(home, '.gbrain', 'mounts.json');
+  mkdirSync(join(home, ".gbrain"), { recursive: true });
+  const mountsPath = join(home, ".gbrain", "mounts.json");
   process.env.GBRAIN_MOUNTS_PATH = mountsPath;
   try {
     return await fn(mountsPath);

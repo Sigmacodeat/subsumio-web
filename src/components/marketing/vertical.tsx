@@ -106,19 +106,19 @@ export default function VerticalPage({
             </div>
             {product ? (
               <ClipReveal delay={0.1} duration={0.7} direction="up">
-              <h1 className="mb-6 text-4xl leading-[1.08] font-black tracking-tight [color:var(--mk-text)] md:text-6xl">
-                {product.name}
-                <br />
-                <span className="gradient-text glow-text">{product.claim}</span>
-              </h1>
+                <h1 className="mb-6 text-4xl leading-[1.08] font-black tracking-tight [color:var(--mk-text)] md:text-6xl">
+                  {product.name}
+                  <br />
+                  <span className="gradient-text glow-text">{product.claim}</span>
+                </h1>
               </ClipReveal>
             ) : (
               <ClipReveal delay={0.1} duration={0.7} direction="up">
-              <h1 className="mb-6 text-4xl leading-[1.08] font-black tracking-tight [color:var(--mk-text)] md:text-6xl">
-                {t.h1a}
-                <br />
-                <span className="gradient-text glow-text">{t.h1b}</span>
-              </h1>
+                <h1 className="mb-6 text-4xl leading-[1.08] font-black tracking-tight [color:var(--mk-text)] md:text-6xl">
+                  {t.h1a}
+                  <br />
+                  <span className="gradient-text glow-text">{t.h1b}</span>
+                </h1>
               </ClipReveal>
             )}
             <p className="mx-auto mb-12 max-w-2xl text-lg leading-relaxed [color:var(--mk-text-muted)] md:text-xl">
@@ -173,8 +173,7 @@ export default function VerticalPage({
             href={sub("/whatsapp")}
             className="brand-text mt-8 inline-flex items-center gap-1.5 text-sm font-semibold transition-all hover:gap-2.5"
           >
-            {UI_STRINGS[lang].whatsappDetail}{" "}
-            <ArrowRight size={15} />
+            {UI_STRINGS[lang].whatsappDetail} <ArrowRight size={15} />
           </Link>
         </WhatsAppSpotlight>
       )}
@@ -259,8 +258,7 @@ export default function VerticalPage({
             <div className="mt-10 text-center">
               <Link href={p(lang, "/subsumio")}>
                 <Button size="lg" variant="secondary">
-                  {UI_STRINGS[lang].seeAllCapabilities}{" "}
-                  <ArrowRight size={16} />
+                  {UI_STRINGS[lang].seeAllCapabilities} <ArrowRight size={16} />
                 </Button>
               </Link>
             </div>
@@ -335,8 +333,7 @@ export default function VerticalPage({
             href={p(lang, "/security")}
             className="brand-text inline-flex items-center gap-1.5 text-sm font-semibold transition-all hover:gap-2.5"
           >
-            {UI_STRINGS[lang].securityDetail}{" "}
-            <ArrowRight size={15} />
+            {UI_STRINGS[lang].securityDetail} <ArrowRight size={15} />
           </Link>
         </div>
       )}
@@ -355,7 +352,10 @@ export default function VerticalPage({
       </Section>
 
       {/* CTA — dark spotlight close */}
-      <Section tone="dark" className="relative overflow-hidden px-4 py-28 text-center sm:px-6 lg:px-8">
+      <Section
+        tone="dark"
+        className="relative overflow-hidden px-4 py-28 text-center sm:px-6 lg:px-8"
+      >
         <GradientMesh className="opacity-40" />
         <div className="mx-auto max-w-3xl">
           <SubsumioMark size={56} className="mx-auto mb-7" />

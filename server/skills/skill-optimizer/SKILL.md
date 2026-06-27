@@ -22,6 +22,7 @@ Based on SkillOpt (arXiv 2605.23904, Microsoft Research, May 2026).
 ## When to invoke this skill
 
 The user wants to:
+
 - Improve an existing skill's execution quality against a benchmark
 - Bootstrap a benchmark file for a new skill
 - Re-tune a skill after switching target models
@@ -29,7 +30,7 @@ The user wants to:
 ## Iron Law
 
 - **Validation gating is MANDATORY.** Every candidate must clear median-of-3
-  + epsilon=0.05 margin against the sel-set before SKILL.md gets rewritten.
+  - epsilon=0.05 margin against the sel-set before SKILL.md gets rewritten.
 - **Frontmatter mutation is FORBIDDEN.** The optimizer only edits the body.
   Routing surface (`triggers:`, `brain_first:`) stays invariant.
 - **Bundled skills require explicit opt-in AND an independent held-out set.**
@@ -105,6 +106,7 @@ SKILL.md directly:
    `--dry-run` first to preview cost.
 
 Benchmark line shape (what the generator writes, one per line):
+
 ```
 {"task_id":"x-001","task":"<user prompt>","judge":{"kind":"rule","checks":[{"op":"max_chars","arg":1800},{"op":"contains","arg":"agenda"}]}}
 ```
@@ -124,16 +126,16 @@ attach >=2 rule checks each, save to `skills/X/skillopt-benchmark.jsonl`, run wi
 
 ## Decision tree
 
-| Situation | Action |
-|---|---|
-| Skill has no benchmark | `gbrain skillopt foo --bootstrap-from-skill` → review + strengthen the judges → delete sentinel → `gbrain skillopt foo --bootstrap-reviewed --split 1:1:1` (see section above) |
+| Situation                                                  | Action                                                                                                                                                                              |
+| ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Skill has no benchmark                                     | `gbrain skillopt foo --bootstrap-from-skill` → review + strengthen the judges → delete sentinel → `gbrain skillopt foo --bootstrap-reviewed --split 1:1:1` (see section above)      |
 | Skill has a `routing-eval.jsonl` and you want a head start | `gbrain skillopt foo --bootstrap-from-routing` → review the generated tasks → `--bootstrap-reviewed` (routing tasks test dispatch; tighten them into quality tasks before trusting) |
-| Iterating on an existing skill | `gbrain skillopt foo --benchmark skills/foo/skillopt-benchmark.jsonl` |
-| Costly run, want preview | Add `--dry-run` |
-| Bundled skill (skills/ in gbrain repo) | Default writes proposed.md; to commit in place add `--allow-mutate-bundled` AND `--held-out <path>` (>=5 benchmark-disjoint tasks) — else it hard-refuses |
-| Want to review changes before applying | Add `--no-mutate` (writes proposed.md, no held-out needed) |
-| Guard against benchmark overfitting | Add `--held-out <path>` — a candidate that beats the benchmark but regresses on the held-out set is refused |
-| Mid-run crash | `gbrain skillopt foo --resume <run-id>` |
+| Iterating on an existing skill                             | `gbrain skillopt foo --benchmark skills/foo/skillopt-benchmark.jsonl`                                                                                                               |
+| Costly run, want preview                                   | Add `--dry-run`                                                                                                                                                                     |
+| Bundled skill (skills/ in gbrain repo)                     | Default writes proposed.md; to commit in place add `--allow-mutate-bundled` AND `--held-out <path>` (>=5 benchmark-disjoint tasks) — else it hard-refuses                           |
+| Want to review changes before applying                     | Add `--no-mutate` (writes proposed.md, no held-out needed)                                                                                                                          |
+| Guard against benchmark overfitting                        | Add `--held-out <path>` — a candidate that beats the benchmark but regresses on the held-out set is refused                                                                         |
+| Mid-run crash                                              | `gbrain skillopt foo --resume <run-id>`                                                                                                                                             |
 
 ## Output Format
 
@@ -167,6 +169,7 @@ When invoked, this skill produces:
 ## Contract
 
 `runSkillOpt(opts)` returns:
+
 ```
 {
   outcome: 'accepted' | 'no_improvement' | 'aborted' | 'errored',

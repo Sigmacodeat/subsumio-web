@@ -14,18 +14,22 @@ const CLAMAV_TIMEOUT_MS = 10_000;
 
 // Magic bytes for executable formats that should never appear in a legal document
 const EXECUTABLE_SIGNATURES: { offset: number; bytes: number[]; label: string }[] = [
-  { offset: 0, bytes: [0x4d, 0x5a], label: "PE/EXE" },           // Windows PE
-  { offset: 0, bytes: [0x7f, 0x45, 0x4c, 0x46], label: "ELF" },  // Linux ELF
+  { offset: 0, bytes: [0x4d, 0x5a], label: "PE/EXE" }, // Windows PE
+  { offset: 0, bytes: [0x7f, 0x45, 0x4c, 0x46], label: "ELF" }, // Linux ELF
   { offset: 0, bytes: [0xcf, 0xfa, 0xed, 0xfe], label: "Mach-O" }, // macOS Mach-O 64
   { offset: 0, bytes: [0xca, 0xfe, 0xba, 0xbe], label: "Java class" },
-  { offset: 0, bytes: [0x50, 0x4b, 0x03, 0x04, 0x14, 0x00, 0x06, 0x06], label: "ZIP with executable" },
+  {
+    offset: 0,
+    bytes: [0x50, 0x4b, 0x03, 0x04, 0x14, 0x00, 0x06, 0x06],
+    label: "ZIP with executable",
+  },
 ];
 
 // Expected magic bytes per MIME type
 const MIME_SIGNATURES: Record<string, { offset: number; bytes: number[] }[]> = {
   "application/pdf": [{ offset: 0, bytes: [0x25, 0x50, 0x44, 0x46] }], // %PDF
-  "image/png": [{ offset: 0, bytes: [0x89, 0x50, 0x4e, 0x47] }],       // PNG
-  "image/jpeg": [{ offset: 0, bytes: [0xff, 0xd8, 0xff] }],            // JPEG
+  "image/png": [{ offset: 0, bytes: [0x89, 0x50, 0x4e, 0x47] }], // PNG
+  "image/jpeg": [{ offset: 0, bytes: [0xff, 0xd8, 0xff] }], // JPEG
   "image/tiff": [
     { offset: 0, bytes: [0x49, 0x49, 0x2a, 0x00] }, // TIFF little-endian
     { offset: 0, bytes: [0x4d, 0x4d, 0x00, 0x2a] }, // TIFF big-endian
@@ -43,10 +47,7 @@ export type ScanResult =
  * Scan a file buffer for known malware signatures and MIME-type mismatches.
  * Optionally delegates to ClamAV daemon if CLAMAV_HOST is configured.
  */
-export async function scanFile(
-  buffer: ArrayBuffer,
-  declaredMime: string,
-): Promise<ScanResult> {
+export async function scanFile(buffer: ArrayBuffer, declaredMime: string): Promise<ScanResult> {
   const bytes = new Uint8Array(buffer);
 
   // Layer 1: Check for embedded executables

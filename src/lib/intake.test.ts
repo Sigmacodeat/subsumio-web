@@ -33,7 +33,9 @@ describe("intake requests", () => {
   });
 
   it("writes intake requests as mergeable brain pages", async () => {
-    const fetchImpl = vi.fn(async () => new Response(JSON.stringify({ ok: true }), { status: 200 }));
+    const fetchImpl = vi.fn(
+      async () => new Response(JSON.stringify({ ok: true }), { status: 200 })
+    );
     const intake = buildIntakeRequest({ source: "manual", summary: "Neue Anfrage" });
 
     await writeIntakeRequest("brain-1", intake, fetchImpl as unknown as typeof fetch);
@@ -53,6 +55,8 @@ describe("intake requests", () => {
     } as BrainPage;
 
     expect(intakeFromPage(page)?.frontmatter.type).toBe("intake_request");
-    expect(intakeFromPage({ ...page, frontmatter: { type: "legal_case" } } as BrainPage)).toBeNull();
+    expect(
+      intakeFromPage({ ...page, frontmatter: { type: "legal_case" } } as BrainPage)
+    ).toBeNull();
   });
 });

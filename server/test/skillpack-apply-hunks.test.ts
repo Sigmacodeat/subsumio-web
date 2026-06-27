@@ -9,21 +9,21 @@
  *   - parse_error: malformed hunk header throws
  */
 
-import { describe, expect, it } from 'bun:test';
+import { describe, expect, it } from "bun:test";
 
-import { unifiedDiff } from '../src/core/skillpack/diff-text.ts';
+import { unifiedDiff } from "../src/core/skillpack/diff-text.ts";
 import {
   ApplyHunksError,
   applyHunks,
   parseUnifiedDiff,
-} from '../src/core/skillpack/apply-hunks.ts';
+} from "../src/core/skillpack/apply-hunks.ts";
 
-describe('parseUnifiedDiff', () => {
-  it('returns empty hunks for empty input', () => {
-    expect(parseUnifiedDiff('').hunks).toEqual([]);
+describe("parseUnifiedDiff", () => {
+  it("returns empty hunks for empty input", () => {
+    expect(parseUnifiedDiff("").hunks).toEqual([]);
   });
 
-  it('parses a single well-formed hunk', () => {
+  it("parses a single well-formed hunk", () => {
     const text = `--- a/file
 +++ b/file
 @@ -1,3 +1,4 @@
@@ -41,7 +41,7 @@ describe('parseUnifiedDiff', () => {
     expect(parsed.hunks[0].newCount).toBe(4);
   });
 
-  it('parses a no-newline marker', () => {
+  it("parses a no-newline marker", () => {
     const text = `@@ -1,1 +1,1 @@
 -old
 +new
@@ -51,12 +51,12 @@ describe('parseUnifiedDiff', () => {
     expect(parsed.hunks[0].newNoNewlineAtEnd).toBe(true);
   });
 
-  it('throws on malformed hunk header', () => {
+  it("throws on malformed hunk header", () => {
     const text = `@@ malformed header @@\n-x\n+y\n`;
     expect(() => parseUnifiedDiff(text)).toThrow(ApplyHunksError);
   });
 
-  it('parses multi-hunk diffs', () => {
+  it("parses multi-hunk diffs", () => {
     const text = `@@ -1,3 +1,3 @@
  first
 -changed-a
@@ -73,9 +73,9 @@ describe('parseUnifiedDiff', () => {
   });
 });
 
-describe('applyHunks — happy path', () => {
-  it('applies a clean hunk when context matches exactly', () => {
-    const target = 'line A\nline B\nline C\nline D\n';
+describe("applyHunks — happy path", () => {
+  it("applies a clean hunk when context matches exactly", () => {
+    const target = "line A\nline B\nline C\nline D\n";
     const diff = parseUnifiedDiff(`@@ -1,4 +1,5 @@
  line A
 -line B
@@ -87,11 +87,11 @@ describe('applyHunks — happy path', () => {
     const result = applyHunks(target, diff);
     expect(result.applied).toBe(1);
     expect(result.conflicted).toBe(0);
-    expect(result.text).toBe('line A\nline B updated\nline B-extra\nline C\nline D\n');
+    expect(result.text).toBe("line A\nline B updated\nline B-extra\nline C\nline D\n");
   });
 
-  it('applies multi-hunk diffs in order', () => {
-    const target = 'a\nb\nc\nd\ne\nf\ng\nh\ni\nj\nk\nl\n';
+  it("applies multi-hunk diffs in order", () => {
+    const target = "a\nb\nc\nd\ne\nf\ng\nh\ni\nj\nk\nl\n";
     const diff = parseUnifiedDiff(`@@ -1,3 +1,3 @@
  a
 -b
@@ -105,13 +105,13 @@ describe('applyHunks — happy path', () => {
 `);
     const result = applyHunks(target, diff);
     expect(result.applied).toBe(2);
-    expect(result.text).toBe('a\nB\nc\nd\ne\nf\ng\nh\ni\nJ\nk\nl\n');
+    expect(result.text).toBe("a\nB\nc\nd\ne\nf\ng\nh\ni\nJ\nk\nl\n");
   });
 });
 
-describe('applyHunks — conflict detection', () => {
-  it('conflict_missing: pre-change block not found in target', () => {
-    const target = 'completely different content\nthat does not match\n';
+describe("applyHunks — conflict detection", () => {
+  it("conflict_missing: pre-change block not found in target", () => {
+    const target = "completely different content\nthat does not match\n";
     const diff = parseUnifiedDiff(`@@ -1,3 +1,3 @@
  line A
 -line B
@@ -121,12 +121,12 @@ describe('applyHunks — conflict detection', () => {
     const result = applyHunks(target, diff);
     expect(result.applied).toBe(0);
     expect(result.conflicted).toBe(1);
-    expect(result.outcomes[0].status).toBe('conflict_missing');
+    expect(result.outcomes[0].status).toBe("conflict_missing");
     expect(result.text).toBe(target); // unchanged
   });
 
-  it('conflict_ambiguous: pre-change block appears more than once', () => {
-    const target = 'pattern X\nbody\npattern X\nbody\n';
+  it("conflict_ambiguous: pre-change block appears more than once", () => {
+    const target = "pattern X\nbody\npattern X\nbody\n";
     const diff = parseUnifiedDiff(`@@ -1,2 +1,2 @@
  pattern X
 -body
@@ -135,11 +135,11 @@ describe('applyHunks — conflict detection', () => {
     const result = applyHunks(target, diff);
     expect(result.applied).toBe(0);
     expect(result.conflicted).toBe(1);
-    expect(result.outcomes[0].status).toBe('conflict_ambiguous');
+    expect(result.outcomes[0].status).toBe("conflict_ambiguous");
   });
 
-  it('mixed: clean hunk applies even when sibling hunk conflicts', () => {
-    const target = 'line A\nline B\nline C\n';
+  it("mixed: clean hunk applies even when sibling hunk conflicts", () => {
+    const target = "line A\nline B\nline C\n";
     const diff = parseUnifiedDiff(`@@ -1,3 +1,3 @@
  line A
 -line B
@@ -153,14 +153,14 @@ describe('applyHunks — conflict detection', () => {
     const result = applyHunks(target, diff);
     expect(result.applied).toBe(1);
     expect(result.conflicted).toBe(1);
-    expect(result.text).toBe('line A\nline B updated\nline C\n');
+    expect(result.text).toBe("line A\nline B updated\nline C\n");
   });
 });
 
-describe('round-trip: unifiedDiff produces output parseUnifiedDiff + applyHunks consume', () => {
-  it('full round-trip yields the new file when applied to the old file', () => {
-    const oldText = 'one\ntwo\nthree\nfour\nfive\n';
-    const newText = 'one\nTWO updated\nthree\nfour\nFIVE updated\n';
+describe("round-trip: unifiedDiff produces output parseUnifiedDiff + applyHunks consume", () => {
+  it("full round-trip yields the new file when applied to the old file", () => {
+    const oldText = "one\ntwo\nthree\nfour\nfive\n";
+    const newText = "one\nTWO updated\nthree\nfour\nFIVE updated\n";
 
     const diff = unifiedDiff(oldText, newText);
     const parsed = parseUnifiedDiff(diff);
@@ -170,39 +170,38 @@ describe('round-trip: unifiedDiff produces output parseUnifiedDiff + applyHunks 
     expect(result.conflicted).toBe(0);
   });
 
-  it('round-trip works with multi-line additions/deletions', () => {
-    const oldText = Array.from({ length: 10 }, (_, i) => `line${i + 1}`).join('\n') + '\n';
-    const newText = oldText.replace('line5', 'line5\nINSERTED\nALSO INSERTED');
+  it("round-trip works with multi-line additions/deletions", () => {
+    const oldText = Array.from({ length: 10 }, (_, i) => `line${i + 1}`).join("\n") + "\n";
+    const newText = oldText.replace("line5", "line5\nINSERTED\nALSO INSERTED");
 
     const diff = unifiedDiff(oldText, newText);
     const result = applyHunks(oldText, parseUnifiedDiff(diff));
     expect(result.text).toBe(newText);
   });
 
-  it('user-edited file: identical diff applies clean to unrelated section', () => {
+  it("user-edited file: identical diff applies clean to unrelated section", () => {
     // gbrain bundle and user file both have lines 1-20. Bundle changed
     // line 5; user changed line 15. Distance is > 2*context, so the
     // hunk's post-context never reaches the user's edit. Apply succeeds.
-    const gbrainOld =
-      Array.from({ length: 20 }, (_, i) => `line${i + 1}`).join('\n') + '\n';
-    const gbrainNew = gbrainOld.replace('line5\n', 'line5 GBRAIN\n');
-    const userFile = gbrainOld.replace('line15\n', 'line15 USER\n');
+    const gbrainOld = Array.from({ length: 20 }, (_, i) => `line${i + 1}`).join("\n") + "\n";
+    const gbrainNew = gbrainOld.replace("line5\n", "line5 GBRAIN\n");
+    const userFile = gbrainOld.replace("line15\n", "line15 USER\n");
 
     const diff = unifiedDiff(gbrainOld, gbrainNew);
     const result = applyHunks(userFile, parseUnifiedDiff(diff));
 
     expect(result.applied).toBe(1);
-    expect(result.text).toContain('line5 GBRAIN');
-    expect(result.text).toContain('line15 USER');
+    expect(result.text).toContain("line5 GBRAIN");
+    expect(result.text).toContain("line15 USER");
   });
 });
 
-describe('applyHunks — trailing-newline edge cases', () => {
-  it('apply-clean adds newline when diff has no `\\` marker (strict patch semantic)', () => {
+describe("applyHunks — trailing-newline edge cases", () => {
+  it("apply-clean adds newline when diff has no `\\` marker (strict patch semantic)", () => {
     // Target lacks trailing newline; diff doesn't carry a `\ No newline`
     // marker, so the diff implies the file ends with one. Apply normalizes
     // to the diff's view of the file. Standard `patch(1)` semantic.
-    const target = 'a\nb\nc'; // no final newline
+    const target = "a\nb\nc"; // no final newline
     const diff = parseUnifiedDiff(`@@ -1,3 +1,3 @@
  a
 -b
@@ -210,11 +209,11 @@ describe('applyHunks — trailing-newline edge cases', () => {
  c
 `);
     const result = applyHunks(target, diff);
-    expect(result.text).toBe('a\nB\nc\n');
+    expect(result.text).toBe("a\nB\nc\n");
   });
 
-  it('apply-clean preserves no-newline when diff carries the marker', () => {
-    const target = 'a\nb\nc'; // no final newline
+  it("apply-clean preserves no-newline when diff carries the marker", () => {
+    const target = "a\nb\nc"; // no final newline
     const diff = parseUnifiedDiff(`@@ -1,3 +1,3 @@
  a
 -b
@@ -223,13 +222,13 @@ describe('applyHunks — trailing-newline edge cases', () => {
 \\ No newline at end of file
 `);
     const result = applyHunks(target, diff);
-    expect(result.text).toBe('a\nB\nc');
+    expect(result.text).toBe("a\nB\nc");
   });
 });
 
-describe('applyHunks — pure additions and edge cases', () => {
-  it('identical files: empty diff is a no-op', () => {
-    const text = 'identical\n';
+describe("applyHunks — pure additions and edge cases", () => {
+  it("identical files: empty diff is a no-op", () => {
+    const text = "identical\n";
     const diff = parseUnifiedDiff(unifiedDiff(text, text));
     const result = applyHunks(text, diff);
     expect(result.text).toBe(text);

@@ -14,33 +14,32 @@
  *   gbrain graph-query people/bob --depth 1
  */
 
-import type { BrainEngine } from '../core/engine.ts';
-import type { GraphPath } from '../core/types.ts';
-import { loadConfig, isThinClient } from '../core/config.ts';
-import { callRemoteTool, unpackToolResult } from '../core/mcp-client.ts';
+import type { BrainEngine } from "../core/engine.ts";
+import type { GraphPath } from "../core/types.ts";
+import { loadConfig, isThinClient } from "../core/config.ts";
+import { callRemoteTool, unpackToolResult } from "../core/mcp-client.ts";
 
 interface Args {
   slug?: string;
   linkType?: string;
   depth: number;
-  direction: 'in' | 'out' | 'both';
+  direction: "in" | "out" | "both";
   showHelp: boolean;
   includeForeign: boolean;
 }
 
 function parseArgs(args: string[]): Args {
-  const out: Args = { depth: 5, direction: 'out', showHelp: false, includeForeign: false };
+  const out: Args = { depth: 5, direction: "out", showHelp: false, includeForeign: false };
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
-    if (a === '--type' && i + 1 < args.length) out.linkType = args[++i];
-    else if (a === '--depth' && i + 1 < args.length) out.depth = Number(args[++i]);
-    else if (a === '--direction' && i + 1 < args.length) {
+    if (a === "--type" && i + 1 < args.length) out.linkType = args[++i];
+    else if (a === "--depth" && i + 1 < args.length) out.depth = Number(args[++i]);
+    else if (a === "--direction" && i + 1 < args.length) {
       const d = args[++i];
-      if (d === 'in' || d === 'out' || d === 'both') out.direction = d;
-    }
-    else if (a === '--include-foreign') out.includeForeign = true;
-    else if (a === '--help' || a === '-h') out.showHelp = true;
-    else if (!a.startsWith('-') && !out.slug) out.slug = a;
+      if (d === "in" || d === "out" || d === "both") out.direction = d;
+    } else if (a === "--include-foreign") out.includeForeign = true;
+    else if (a === "--help" || a === "-h") out.showHelp = true;
+    else if (!a.startsWith("-") && !out.slug) out.slug = a;
   }
   return out;
 }
@@ -86,13 +85,14 @@ Examples:
 async function countForeignEdges(
   engine: BrainEngine,
   rootSlug: string,
-  direction: 'in' | 'out' | 'both',
+  direction: "in" | "out" | "both"
 ): Promise<number> {
   // For 'out': from_page is root, count where from.source_id != to.source_id.
   // For 'in': to_page is root, count where to.source_id != from.source_id.
   // For 'both': either endpoint can be the root; union the two cases.
-  const sql = direction === 'in'
-    ? `SELECT COUNT(*)::text AS n
+  const sql =
+    direction === "in"
+      ? `SELECT COUNT(*)::text AS n
          FROM links l
          JOIN pages fp ON l.from_page_id = fp.id
          JOIN pages tp ON l.to_page_id = tp.id
@@ -100,8 +100,8 @@ async function countForeignEdges(
           AND fp.source_id IS NOT NULL
           AND tp.source_id IS NOT NULL
           AND fp.source_id <> tp.source_id`
-    : direction === 'both'
-    ? `SELECT COUNT(*)::text AS n
+      : direction === "both"
+        ? `SELECT COUNT(*)::text AS n
          FROM links l
          JOIN pages fp ON l.from_page_id = fp.id
          JOIN pages tp ON l.to_page_id = tp.id
@@ -109,7 +109,7 @@ async function countForeignEdges(
           AND fp.source_id IS NOT NULL
           AND tp.source_id IS NOT NULL
           AND fp.source_id <> tp.source_id`
-    : `SELECT COUNT(*)::text AS n
+        : `SELECT COUNT(*)::text AS n
          FROM links l
          JOIN pages fp ON l.from_page_id = fp.id
          JOIN pages tp ON l.to_page_id = tp.id
@@ -141,12 +141,17 @@ export async function runGraphQuery(engine: BrainEngine, argv: string[]) {
   let paths: GraphPath[];
   const cfg = loadConfig();
   if (isThinClient(cfg)) {
-    const raw = await callRemoteTool(cfg!, 'traverse_graph', {
-      slug: args.slug,
-      depth: args.depth,
-      link_type: args.linkType,
-      direction: args.direction,
-    }, { timeoutMs: 30_000 });
+    const raw = await callRemoteTool(
+      cfg!,
+      "traverse_graph",
+      {
+        slug: args.slug,
+        depth: args.depth,
+        link_type: args.linkType,
+        direction: args.direction,
+      },
+      { timeoutMs: 30_000 }
+    );
     paths = unpackToolResult<GraphPath[]>(raw);
   } else {
     paths = await engine.traversePaths(args.slug, {
@@ -157,14 +162,16 @@ export async function runGraphQuery(engine: BrainEngine, argv: string[]) {
   }
 
   if (paths.length === 0) {
-    console.log(`No edges found from ${args.slug}${args.linkType ? ` (--type ${args.linkType})` : ''}.`);
+    console.log(
+      `No edges found from ${args.slug}${args.linkType ? ` (--type ${args.linkType})` : ""}.`
+    );
     // Still report foreign edges so the user knows they exist in other
     // sources even when the scoped traversal returned nothing.
     if (!args.includeForeign && !isThinClient(cfg)) {
       const foreign = await countForeignEdges(engine, args.slug, args.direction);
       if (foreign > 0) {
         console.error(
-          `(${foreign} edge${foreign === 1 ? '' : 's'} to foreign-source pages hidden; pass --include-foreign to include them)`,
+          `(${foreign} edge${foreign === 1 ? "" : "s"} to foreign-source pages hidden; pass --include-foreign to include them)`
         );
       }
     }
@@ -182,20 +189,20 @@ export async function runGraphQuery(engine: BrainEngine, argv: string[]) {
     const foreign = await countForeignEdges(engine, args.slug, args.direction);
     if (foreign > 0) {
       console.error(
-        `\n(${foreign} edge${foreign === 1 ? '' : 's'} to foreign-source pages hidden; pass --include-foreign to include them)`,
+        `\n(${foreign} edge${foreign === 1 ? "" : "s"} to foreign-source pages hidden; pass --include-foreign to include them)`
       );
     }
   }
 }
 
 /** Render the GraphPath[] as an indented tree rooted at the given slug. */
-function printTree(rootSlug: string, paths: GraphPath[], direction: 'in' | 'out' | 'both') {
+function printTree(rootSlug: string, paths: GraphPath[], direction: "in" | "out" | "both") {
   // Build adjacency: for direction='out' the root is a from_slug; for 'in' the
   // root is a to_slug; for 'both' the root could be either.
   // Group by parent (from_slug for 'out', to_slug for 'in').
   const byParent = new Map<string, GraphPath[]>();
   for (const p of paths) {
-    const parent = direction === 'in' ? p.to_slug : p.from_slug;
+    const parent = direction === "in" ? p.to_slug : p.from_slug;
     const list = byParent.get(parent) ?? [];
     list.push(p);
     byParent.set(parent, list);
@@ -207,10 +214,12 @@ function printTree(rootSlug: string, paths: GraphPath[], direction: 'in' | 'out'
     const children = byParent.get(parent) ?? [];
     children.sort((a, b) => a.depth - b.depth || a.to_slug.localeCompare(b.to_slug));
     for (const c of children) {
-      const next = direction === 'in' ? c.from_slug : c.to_slug;
-      const arrow = direction === 'in' ? '<-' : '--';
-      const tail = direction === 'in' ? '--' : '->';
-      console.log(`${'  '.repeat(indent + 1)}${arrow}${c.link_type}${tail} ${next} (depth ${c.depth})`);
+      const next = direction === "in" ? c.from_slug : c.to_slug;
+      const arrow = direction === "in" ? "<-" : "--";
+      const tail = direction === "in" ? "--" : "->";
+      console.log(
+        `${"  ".repeat(indent + 1)}${arrow}${c.link_type}${tail} ${next} (depth ${c.depth})`
+      );
       walk(next, indent + 1, seen);
     }
   }

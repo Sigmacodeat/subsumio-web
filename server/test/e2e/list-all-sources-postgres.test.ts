@@ -11,9 +11,9 @@
  * happened — codex finding #861 / #876 hit this exact bug class on
  * a different field), this test catches it.
  */
-import { describe, test, expect, beforeAll, afterAll, beforeEach } from 'bun:test';
-import { setupDB, teardownDB, hasDatabase } from './helpers.ts';
-import { PostgresEngine } from '../../src/core/postgres-engine.ts';
+import { describe, test, expect, beforeAll, afterAll, beforeEach } from "bun:test";
+import { setupDB, teardownDB, hasDatabase } from "./helpers.ts";
+import { PostgresEngine } from "../../src/core/postgres-engine.ts";
 
 const skip = !hasDatabase();
 const describeIfDB = skip ? describe.skip : describe;
@@ -38,7 +38,7 @@ beforeEach(async () => {
 
 async function seedSource(
   id: string,
-  opts: { local_path?: string | null; archived?: boolean; config?: Record<string, unknown> } = {},
+  opts: { local_path?: string | null; archived?: boolean; config?: Record<string, unknown> } = {}
 ): Promise<void> {
   const localPath = opts.local_path === undefined ? `/tmp/${id}` : opts.local_path;
   const archived = opts.archived === true;
@@ -59,95 +59,95 @@ async function seedSource(
   `;
 }
 
-describeIfDB('Postgres parity — listAllSources', () => {
-  test('returns rows including default + seeded', async () => {
-    await seedSource('alpha');
+describeIfDB("Postgres parity — listAllSources", () => {
+  test("returns rows including default + seeded", async () => {
+    await seedSource("alpha");
     const all = await engine.listAllSources();
-    expect(all.some(s => s.id === 'default')).toBe(true);
-    expect(all.some(s => s.id === 'alpha')).toBe(true);
+    expect(all.some((s) => s.id === "default")).toBe(true);
+    expect(all.some((s) => s.id === "alpha")).toBe(true);
   });
 
-  test('filters archived by default', async () => {
-    await seedSource('alive');
-    await seedSource('dead', { archived: true });
+  test("filters archived by default", async () => {
+    await seedSource("alive");
+    await seedSource("dead", { archived: true });
     const all = await engine.listAllSources();
-    expect(all.some(s => s.id === 'alive')).toBe(true);
-    expect(all.some(s => s.id === 'dead')).toBe(false);
+    expect(all.some((s) => s.id === "alive")).toBe(true);
+    expect(all.some((s) => s.id === "dead")).toBe(false);
   });
 
-  test('includeArchived: true returns archived rows', async () => {
-    await seedSource('alive');
-    await seedSource('dead', { archived: true });
+  test("includeArchived: true returns archived rows", async () => {
+    await seedSource("alive");
+    await seedSource("dead", { archived: true });
     const all = await engine.listAllSources({ includeArchived: true });
-    expect(all.some(s => s.id === 'dead')).toBe(true);
+    expect(all.some((s) => s.id === "dead")).toBe(true);
   });
 
-  test('localPathOnly filters NULL local_path (codex P1-4)', async () => {
-    await seedSource('with-path');
-    await seedSource('db-only', { local_path: null });
+  test("localPathOnly filters NULL local_path (codex P1-4)", async () => {
+    await seedSource("with-path");
+    await seedSource("db-only", { local_path: null });
     const all = await engine.listAllSources({ localPathOnly: true });
-    expect(all.some(s => s.id === 'with-path')).toBe(true);
-    expect(all.some(s => s.id === 'db-only')).toBe(false);
+    expect(all.some((s) => s.id === "with-path")).toBe(true);
+    expect(all.some((s) => s.id === "db-only")).toBe(false);
   });
 
-  test('config JSONB parses to object (autopilot reads last_full_cycle_at)', async () => {
-    await seedSource('fred', {
-      config: { last_full_cycle_at: '2026-05-22T08:00:00.000Z', remote_url: 'https://x' },
+  test("config JSONB parses to object (autopilot reads last_full_cycle_at)", async () => {
+    await seedSource("fred", {
+      config: { last_full_cycle_at: "2026-05-22T08:00:00.000Z", remote_url: "https://x" },
     });
     const all = await engine.listAllSources();
-    const fred = all.find(s => s.id === 'fred')!;
-    expect(fred.config.last_full_cycle_at).toBe('2026-05-22T08:00:00.000Z');
-    expect(fred.config.remote_url).toBe('https://x');
+    const fred = all.find((s) => s.id === "fred")!;
+    expect(fred.config.last_full_cycle_at).toBe("2026-05-22T08:00:00.000Z");
+    expect(fred.config.remote_url).toBe("https://x");
   });
 
-  test('default source sorts first', async () => {
-    await seedSource('zebra');
-    await seedSource('alpha');
+  test("default source sorts first", async () => {
+    await seedSource("zebra");
+    await seedSource("alpha");
     const all = await engine.listAllSources();
-    expect(all[0].id).toBe('default');
+    expect(all[0].id).toBe("default");
   });
 });
 
-describeIfDB('Postgres parity — updateSourceConfig', () => {
-  test('returns false for unknown source', async () => {
-    const updated = await engine.updateSourceConfig('no-such-source', { x: 1 });
+describeIfDB("Postgres parity — updateSourceConfig", () => {
+  test("returns false for unknown source", async () => {
+    const updated = await engine.updateSourceConfig("no-such-source", { x: 1 });
     expect(updated).toBe(false);
   });
 
-  test('returns true and merges patch into JSONB', async () => {
-    await seedSource('alpha', { config: { keep: 'me' } });
-    const updated = await engine.updateSourceConfig('alpha', {
-      last_full_cycle_at: '2026-05-22T09:00:00.000Z',
+  test("returns true and merges patch into JSONB", async () => {
+    await seedSource("alpha", { config: { keep: "me" } });
+    const updated = await engine.updateSourceConfig("alpha", {
+      last_full_cycle_at: "2026-05-22T09:00:00.000Z",
     });
     expect(updated).toBe(true);
     const all = await engine.listAllSources();
-    const a = all.find(s => s.id === 'alpha')!;
-    expect(a.config.keep).toBe('me');
-    expect(a.config.last_full_cycle_at).toBe('2026-05-22T09:00:00.000Z');
+    const a = all.find((s) => s.id === "alpha")!;
+    expect(a.config.keep).toBe("me");
+    expect(a.config.last_full_cycle_at).toBe("2026-05-22T09:00:00.000Z");
   });
 
-  test('same-key overwrites (||  semantics)', async () => {
-    await seedSource('beta', { config: { last_full_cycle_at: '2026-01-01T00:00:00.000Z' } });
-    await engine.updateSourceConfig('beta', { last_full_cycle_at: '2026-05-22T10:00:00.000Z' });
+  test("same-key overwrites (||  semantics)", async () => {
+    await seedSource("beta", { config: { last_full_cycle_at: "2026-01-01T00:00:00.000Z" } });
+    await engine.updateSourceConfig("beta", { last_full_cycle_at: "2026-05-22T10:00:00.000Z" });
     const all = await engine.listAllSources();
-    expect(all.find(s => s.id === 'beta')!.config.last_full_cycle_at).toBe(
-      '2026-05-22T10:00:00.000Z',
+    expect(all.find((s) => s.id === "beta")!.config.last_full_cycle_at).toBe(
+      "2026-05-22T10:00:00.000Z"
     );
   });
 
-  test('repeat write is idempotent', async () => {
-    await seedSource('charlie');
-    await engine.updateSourceConfig('charlie', { last_full_cycle_at: '2026-05-22T11:00:00.000Z' });
-    await engine.updateSourceConfig('charlie', { last_full_cycle_at: '2026-05-22T11:00:00.000Z' });
+  test("repeat write is idempotent", async () => {
+    await seedSource("charlie");
+    await engine.updateSourceConfig("charlie", { last_full_cycle_at: "2026-05-22T11:00:00.000Z" });
+    await engine.updateSourceConfig("charlie", { last_full_cycle_at: "2026-05-22T11:00:00.000Z" });
     const all = await engine.listAllSources();
-    expect(all.find(s => s.id === 'charlie')!.config.last_full_cycle_at).toBe(
-      '2026-05-22T11:00:00.000Z',
+    expect(all.find((s) => s.id === "charlie")!.config.last_full_cycle_at).toBe(
+      "2026-05-22T11:00:00.000Z"
     );
   });
 
-  test('round-trip stores real JSONB object, NOT a JSON-encoded string (jsonb_typeof regression)', async () => {
-    await seedSource('delta');
-    await engine.updateSourceConfig('delta', { last_full_cycle_at: '2026-05-22T12:00:00.000Z' });
+  test("round-trip stores real JSONB object, NOT a JSON-encoded string (jsonb_typeof regression)", async () => {
+    await seedSource("delta");
+    await engine.updateSourceConfig("delta", { last_full_cycle_at: "2026-05-22T12:00:00.000Z" });
     // Regression for the postgres.js v3 double-encode bug class
     // (feedback_postgres_jsonb_double_encode). If sql.json's serialization
     // produces a string-shaped JSONB column, jsonb_typeof returns 'string'
@@ -155,9 +155,9 @@ describeIfDB('Postgres parity — updateSourceConfig', () => {
     // object). The expected typeof is 'object'.
     const rows = await engine.executeRaw<{ typeof: string; value: string | null }>(
       `SELECT jsonb_typeof(config) AS typeof, config->>'last_full_cycle_at' AS value
-         FROM sources WHERE id = 'delta'`,
+         FROM sources WHERE id = 'delta'`
     );
-    expect(rows[0]?.typeof).toBe('object');
-    expect(rows[0]?.value).toBe('2026-05-22T12:00:00.000Z');
+    expect(rows[0]?.typeof).toBe("object");
+    expect(rows[0]?.value).toBe("2026-05-22T12:00:00.000Z");
   });
 });

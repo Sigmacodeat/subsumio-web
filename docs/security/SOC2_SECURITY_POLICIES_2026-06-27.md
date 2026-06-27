@@ -15,6 +15,7 @@ This policy establishes the framework for Subsumio's information security progra
 ## 1.2 Scope
 
 This policy applies to:
+
 - All Subsumio employees, contractors, and third parties with access to Subsumio systems
 - All Subsumio systems, applications, data, and infrastructure
 - All customer data processed by Subsumio
@@ -22,6 +23,7 @@ This policy applies to:
 ## 1.3 Policy Statement
 
 Subsumio is committed to:
+
 - Protecting customer data from unauthorized access, use, disclosure, alteration, or destruction
 - Maintaining the security and integrity of all systems and data
 - Ensuring business continuity and availability of services
@@ -279,12 +281,12 @@ To ensure the continuity of critical business operations in the event of a disru
 
 ## 6.5 RTO and RPO
 
-| System | RTO | RPO |
-|--------|-----|-----|
-| Web Application | 4 hours | 1 hour |
-| Database | 2 hours | 15 minutes |
-| Engine API | 4 hours | 1 hour |
-| Authentication | 2 hours | 15 minutes |
+| System          | RTO     | RPO        |
+| --------------- | ------- | ---------- |
+| Web Application | 4 hours | 1 hour     |
+| Database        | 2 hours | 15 minutes |
+| Engine API      | 4 hours | 1 hour     |
+| Authentication  | 2 hours | 15 minutes |
 
 ---
 

@@ -38,7 +38,8 @@ export const ARCHITECTURE_OPTIONS: Record<ArchitectureOption, ArchitectureOption
   direct_send: {
     option: "direct_send",
     title: "Direkter Versand (beA-Client)",
-    description: "Direkte Integration des beA-Protokolls in die Subsumio-Backend-Infrastruktur mit eigenem Zertifikat und VPN-Tunnel.",
+    description:
+      "Direkte Integration des beA-Protokolls in die Subsumio-Backend-Infrastruktur mit eigenem Zertifikat und VPN-Tunnel.",
     pros: [
       "Volle Kontrolle über Sendeprozess",
       "Keine Abhängigkeit von Drittanbietern",
@@ -61,7 +62,8 @@ export const ARCHITECTURE_OPTIONS: Record<ArchitectureOption, ArchitectureOption
   partner_adapter: {
     option: "partner_adapter",
     title: "Partneradapter (Middleware)",
-    description: "Integration über zertifizierten Middleware-Anbieter (z.B. Xjustiz, e-Government-Portal) der das beA-Protokoll kapselt.",
+    description:
+      "Integration über zertifizierten Middleware-Anbieter (z.B. Xjustiz, e-Government-Portal) der das beA-Protokoll kapselt.",
     pros: [
       "Schnellste Time-to-Market",
       "Kein eigenes beA-Zertifikat nötig",
@@ -85,7 +87,8 @@ export const ARCHITECTURE_OPTIONS: Record<ArchitectureOption, ArchitectureOption
   validated_export: {
     option: "validated_export",
     title: "Validierter Export (PDF/XML-Package)",
-    description: "Generierung eines validierten Filing-Packages (PDF/A + XML-Metadaten) zum manuellen Upload im beA-Portal.",
+    description:
+      "Generierung eines validierten Filing-Packages (PDF/A + XML-Metadaten) zum manuellen Upload im beA-Portal.",
     pros: [
       "Geringste Komplexität",
       "Keine Zertifikate oder VPN nötig",
@@ -150,14 +153,14 @@ export const ARCHITECTURE_DECISION: ArchitectureDecision = {
 // ── P1-EFILE-002: Filing Package Data Model ───────────────────────────
 
 export type FilingStatus =
-  | "draft"           // In Erstellung
+  | "draft" // In Erstellung
   | "pending_approval" // Wartet auf Freigabe
-  | "approved"        // Freigegeben
-  | "sending"         // Wird gesendet
-  | "sent"            // Erfolgreich gesendet
-  | "failed"          // Senden fehlgeschlagen
-  | "retrying"        // Retry läuft
-  | "cancelled";      // Abgebrochen
+  | "approved" // Freigegeben
+  | "sending" // Wird gesendet
+  | "sent" // Erfolgreich gesendet
+  | "failed" // Senden fehlgeschlagen
+  | "retrying" // Retry läuft
+  | "cancelled"; // Abgebrochen
 
 export type FilingPriority = "normal" | "urgent" | "fristgebunden";
 
@@ -311,7 +314,7 @@ export function addAuditEntry(
   action: string,
   details?: string,
   previousStatus?: FilingStatus,
-  newStatus?: FilingStatus,
+  newStatus?: FilingStatus
 ): FilingPackage {
   return {
     ...pkg,
@@ -331,7 +334,14 @@ export function addAuditEntry(
 }
 
 export function submitForApproval(pkg: FilingPackage, actor: string): FilingPackage {
-  const updated = addAuditEntry(pkg, actor, "submit_for_approval", undefined, pkg.status, "pending_approval");
+  const updated = addAuditEntry(
+    pkg,
+    actor,
+    "submit_for_approval",
+    undefined,
+    pkg.status,
+    "pending_approval"
+  );
   return { ...updated, status: "pending_approval" };
 }
 
@@ -346,7 +356,14 @@ export function approveFiling(pkg: FilingPackage, actor: string): FilingPackage 
 }
 
 export function sendFiling(pkg: FilingPackage, middlewareReference: string): FilingPackage {
-  const updated = addAuditEntry(pkg, "system", "send", `middleware_ref: ${middlewareReference}`, pkg.status, "sending");
+  const updated = addAuditEntry(
+    pkg,
+    "system",
+    "send",
+    `middleware_ref: ${middlewareReference}`,
+    pkg.status,
+    "sending"
+  );
   return {
     ...updated,
     status: "sending",
@@ -363,7 +380,7 @@ export function confirmReceipt(pkg: FilingPackage, receipt: FilingReceipt): Fili
     "receipt",
     `code: ${receipt.confirmation_code}, success: ${receipt.is_success}`,
     pkg.status,
-    newStatus,
+    newStatus
   );
   return {
     ...updated,
@@ -374,7 +391,14 @@ export function confirmReceipt(pkg: FilingPackage, receipt: FilingReceipt): Fili
 
 export function retryFiling(pkg: FilingPackage): FilingPackage | null {
   if (pkg.retry_count >= pkg.max_retries) return null;
-  const updated = addAuditEntry(pkg, "system", "retry", `attempt ${pkg.retry_count + 1}`, pkg.status, "retrying");
+  const updated = addAuditEntry(
+    pkg,
+    "system",
+    "retry",
+    `attempt ${pkg.retry_count + 1}`,
+    pkg.status,
+    "retrying"
+  );
   return {
     ...updated,
     status: "retrying",

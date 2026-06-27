@@ -19,7 +19,12 @@ export type Jurisdiction = "at" | "de" | "ch" | "all" | "eu";
 export type MonitorFrequency = "daily" | "weekly" | "monthly";
 export type MonitorStatus = "active" | "paused";
 export type MonitorSource = "case-law" | "legislation" | "regulations" | "case-scanner";
-export type ChangeType = "new_judgement" | "new_regulation" | "amendment" | "repeal" | "case_update";
+export type ChangeType =
+  | "new_judgement"
+  | "new_regulation"
+  | "amendment"
+  | "repeal"
+  | "case_update";
 export type Severity = "high" | "medium" | "low";
 
 export interface RegulatoryMonitor {
@@ -97,11 +102,21 @@ export function frontmatterToMonitor(page: BrainPage): RegulatoryMonitor | null 
     monitor_id: id,
     topic: String(fm.topic ?? page.title ?? ""),
     description: fm.description ? String(fm.description) : undefined,
-    jurisdiction: (["at", "de", "ch", "all", "eu"].includes(String(fm.jurisdiction)) ? String(fm.jurisdiction) : "all") as Jurisdiction,
-    frequency: (["daily", "weekly", "monthly"].includes(String(fm.frequency)) ? String(fm.frequency) : "daily") as MonitorFrequency,
-    sources: Array.isArray(fm.sources) ? fm.sources.filter((s): s is MonitorSource => ["case-law", "legislation", "regulations", "case-scanner"].includes(String(s))) : ["case-law"],
+    jurisdiction: (["at", "de", "ch", "all", "eu"].includes(String(fm.jurisdiction))
+      ? String(fm.jurisdiction)
+      : "all") as Jurisdiction,
+    frequency: (["daily", "weekly", "monthly"].includes(String(fm.frequency))
+      ? String(fm.frequency)
+      : "daily") as MonitorFrequency,
+    sources: Array.isArray(fm.sources)
+      ? fm.sources.filter((s): s is MonitorSource =>
+          ["case-law", "legislation", "regulations", "case-scanner"].includes(String(s))
+        )
+      : ["case-law"],
     keywords: Array.isArray(fm.keywords) ? fm.keywords.map(String).filter(Boolean) : [],
-    status: (["active", "paused"].includes(String(fm.status)) ? String(fm.status) : "active") as MonitorStatus,
+    status: (["active", "paused"].includes(String(fm.status))
+      ? String(fm.status)
+      : "active") as MonitorStatus,
     email_notifications: fm.email_notifications !== false,
     notify_emails: Array.isArray(fm.notify_emails) ? fm.notify_emails.map(String) : undefined,
     severity_filter: fm.severity_filter as Severity | undefined,
@@ -143,8 +158,18 @@ export function frontmatterToAlert(page: BrainPage): RegulatoryAlert | null {
   return {
     monitor_id: String(fm.monitor_id ?? ""),
     monitor_topic: String(fm.monitor_topic ?? ""),
-    change_type: (["new_judgement", "new_regulation", "amendment", "repeal", "case_update"].includes(String(fm.change_type)) ? String(fm.change_type) : "new_judgement") as ChangeType,
-    severity: (["high", "medium", "low"].includes(String(fm.severity)) ? String(fm.severity) : "medium") as Severity,
+    change_type: ([
+      "new_judgement",
+      "new_regulation",
+      "amendment",
+      "repeal",
+      "case_update",
+    ].includes(String(fm.change_type))
+      ? String(fm.change_type)
+      : "new_judgement") as ChangeType,
+    severity: (["high", "medium", "low"].includes(String(fm.severity))
+      ? String(fm.severity)
+      : "medium") as Severity,
     source: String(fm.source ?? ""),
     date: String(fm.date ?? ""),
     title: String(fm.title ?? page.title ?? ""),
@@ -211,7 +236,8 @@ export function inferSeverity(hit: {
   keywords?: string[];
   snippet?: string;
 }): Severity {
-  const text = `${hit.legalArea ?? ""} ${hit.keywords?.join(" ") ?? ""} ${hit.snippet ?? ""}`.toLowerCase();
+  const text =
+    `${hit.legalArea ?? ""} ${hit.keywords?.join(" ") ?? ""} ${hit.snippet ?? ""}`.toLowerCase();
   if (/(grundgesetz|verfassung|bverfg|eugh|eu-?verordnung|dsgvo|gdpr)/.test(text)) return "high";
   if (/(bgh|bfh|bverwg|bsg|bag|olg|ovg|\bsg\b|lag)/.test(text)) return "medium";
   return "low";
@@ -232,7 +258,10 @@ export function inferChangeType(hit: { type?: string; snippet?: string }): Chang
 export function generateMonitorId(topic: string): string {
   const slug = topic
     .toLowerCase()
-    .replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss")
+    .replace(/ä/g, "ae")
+    .replace(/ö/g, "oe")
+    .replace(/ü/g, "ue")
+    .replace(/ß/g, "ss")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 40);
@@ -258,8 +287,8 @@ export const FREQUENCY_LABELS: Record<MonitorFrequency, string> = {
 
 export const SOURCE_LABELS: Record<MonitorSource, string> = {
   "case-law": "Rechtsprechung",
-  "legislation": "Gesetzgebung",
-  "regulations": "Verordnungen",
+  legislation: "Gesetzgebung",
+  regulations: "Verordnungen",
   "case-scanner": "Akten-Scanner",
 };
 

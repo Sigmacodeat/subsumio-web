@@ -25,13 +25,13 @@
 // callers continue to hardcode person/company/deal — which gbrain-base
 // also declares, so behavior is preserved.
 
-import type { SchemaPackManifest } from './manifest-v1.ts';
+import type { SchemaPackManifest } from "./manifest-v1.ts";
 
 /** Set of types the active pack marks enrichable. */
 export function enrichableTypesFromPack(
-  pack: Pick<SchemaPackManifest, 'enrichable_types'>,
+  pack: Pick<SchemaPackManifest, "enrichable_types">
 ): Set<string> {
-  return new Set(pack.enrichable_types.map(e => e.type));
+  return new Set(pack.enrichable_types.map((e) => e.type));
 }
 
 /**
@@ -43,9 +43,9 @@ export function enrichableTypesFromPack(
  * structure into YAML.
  */
 export function rubricNameForType(
-  pack: Pick<SchemaPackManifest, 'enrichable_types'>,
-  type: string,
+  pack: Pick<SchemaPackManifest, "enrichable_types">,
+  type: string
 ): string | null {
-  const entry = pack.enrichable_types.find(e => e.type === type);
+  const entry = pack.enrichable_types.find((e) => e.type === type);
   return entry?.rubric ?? null;
 }

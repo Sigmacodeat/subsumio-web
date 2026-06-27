@@ -1,5 +1,5 @@
-import { existsSync, readFileSync, writeFileSync, renameSync, unlinkSync } from 'fs';
-import { relative, isAbsolute } from 'path';
+import { existsSync, readFileSync, writeFileSync, renameSync, unlinkSync } from "fs";
+import { relative, isAbsolute } from "path";
 
 /**
  * Path-based import checkpoint.
@@ -36,7 +36,7 @@ export interface ImportCheckpoint {
   timestamp: string;
 }
 
-const OLD_FORMAT_LOG = 'Older checkpoint format detected — re-walking (cheap via content_hash)';
+const OLD_FORMAT_LOG = "Older checkpoint format detected — re-walking (cheap via content_hash)";
 
 /**
  * Load a checkpoint and verify it's compatible with the current run.
@@ -54,27 +54,27 @@ export function loadCheckpoint(path: string, currentDir: string): ImportCheckpoi
 
   let parsed: unknown;
   try {
-    parsed = JSON.parse(readFileSync(path, 'utf-8'));
+    parsed = JSON.parse(readFileSync(path, "utf-8"));
   } catch {
     return null;
   }
 
-  if (!parsed || typeof parsed !== 'object') return null;
+  if (!parsed || typeof parsed !== "object") return null;
   const obj = parsed as Record<string, unknown>;
 
   // Pre-v0.33.2 positional format: had `processedIndex`, no `completedPaths`.
   // Detect via the absence of the new field — discard and surface why.
   if (!Array.isArray(obj.completedPaths)) {
-    if (typeof obj.processedIndex === 'number') {
+    if (typeof obj.processedIndex === "number") {
       console.error(OLD_FORMAT_LOG);
     }
     return null;
   }
 
-  if (typeof obj.dir !== 'string') return null;
+  if (typeof obj.dir !== "string") return null;
   if (obj.dir !== currentDir) return null;
-  if (typeof obj.timestamp !== 'string') return null;
-  if (!obj.completedPaths.every((p): p is string => typeof p === 'string')) return null;
+  if (typeof obj.timestamp !== "string") return null;
+  if (!obj.completedPaths.every((p): p is string => typeof p === "string")) return null;
 
   return {
     dir: obj.dir,
@@ -118,11 +118,7 @@ export function saveCheckpoint(path: string, cp: ImportCheckpoint): void {
  *
  * Pure function — no fs access. Test surface for the resume semantics.
  */
-export function resumeFilter(
-  allFiles: string[],
-  dir: string,
-  completed: Set<string>,
-): string[] {
+export function resumeFilter(allFiles: string[], dir: string, completed: Set<string>): string[] {
   if (completed.size === 0) return allFiles;
   return allFiles.filter((p) => {
     const rel = isAbsolute(p) ? relative(dir, p) : p;

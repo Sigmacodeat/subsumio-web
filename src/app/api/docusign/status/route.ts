@@ -1,4 +1,3 @@
-
 import { getStore } from "@/lib/auth/store";
 import { isConfigured } from "@/lib/docusign";
 import { createHandler } from "@/lib/api-handler";
@@ -17,9 +16,10 @@ export const GET = createHandler(
 
     const user = await getStore().getById(ctx.user.id);
     const connected = Boolean(user?.docusignAccessToken && user?.docusignTokenExpiresAt);
-    const expired = connected && user?.docusignTokenExpiresAt
-      ? new Date(user.docusignTokenExpiresAt) < new Date()
-      : false;
+    const expired =
+      connected && user?.docusignTokenExpiresAt
+        ? new Date(user.docusignTokenExpiresAt) < new Date()
+        : false;
 
     return Response.json({
       configured: true,
@@ -27,5 +27,5 @@ export const GET = createHandler(
       expired,
       expiresAt: user?.docusignTokenExpiresAt ?? null,
     });
-  },
+  }
 );

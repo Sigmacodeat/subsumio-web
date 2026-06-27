@@ -9,8 +9,8 @@
  *   4. BrainHealth type now carries dead_links.
  */
 
-import { describe, test, expect, beforeAll, afterAll, beforeEach } from 'bun:test';
-import { PGLiteEngine } from '../src/core/pglite-engine.ts';
+import { describe, test, expect, beforeAll, afterAll, beforeEach } from "bun:test";
+import { PGLiteEngine } from "../src/core/pglite-engine.ts";
 
 let engine: PGLiteEngine;
 
@@ -25,13 +25,22 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  for (const t of ['links', 'content_chunks', 'timeline_entries', 'raw_data', 'tags', 'page_versions', 'ingest_log', 'pages']) {
+  for (const t of [
+    "links",
+    "content_chunks",
+    "timeline_entries",
+    "raw_data",
+    "tags",
+    "page_versions",
+    "ingest_log",
+    "pages",
+  ]) {
     await (engine as any).db.exec(`DELETE FROM ${t}`);
   }
 });
 
-describe('Bug 11 — brain_score breakdown sums to total', () => {
-  test('empty brain returns full score (vacuous truth) with all breakdown fields present', async () => {
+describe("Bug 11 — brain_score breakdown sums to total", () => {
+  test("empty brain returns full score (vacuous truth) with all breakdown fields present", async () => {
     // v0.37.10.0: empty brain = no coverage problems = full marks. Pre-fix
     // this returned 0/100, which surprised users running `gbrain doctor`
     // immediately after `gbrain init --pglite`. Each component returns its
@@ -48,10 +57,15 @@ describe('Bug 11 — brain_score breakdown sums to total', () => {
     expect(h.dead_links).toBe(0);
   });
 
-  test('breakdown fields always sum to brain_score', async () => {
+  test("breakdown fields always sum to brain_score", async () => {
     // Seed a small graph — some pages, some links, some embeds.
-    for (const slug of ['a', 'b', 'c']) {
-      await engine.putPage(slug, { type: 'note', title: slug, compiled_truth: `content of ${slug}`, frontmatter: {} });
+    for (const slug of ["a", "b", "c"]) {
+      await engine.putPage(slug, {
+        type: "note",
+        title: slug,
+        compiled_truth: `content of ${slug}`,
+        frontmatter: {},
+      });
     }
     const h = await engine.getHealth();
     const sum =
@@ -63,7 +77,7 @@ describe('Bug 11 — brain_score breakdown sums to total', () => {
     expect(sum).toBe(h.brain_score);
   });
 
-  test('brain_score caps at 100', async () => {
+  test("brain_score caps at 100", async () => {
     const h = await engine.getHealth();
     expect(h.brain_score).toBeGreaterThanOrEqual(0);
     expect(h.brain_score).toBeLessThanOrEqual(100);
@@ -71,21 +85,43 @@ describe('Bug 11 — brain_score breakdown sums to total', () => {
 });
 
 describe('Bug 11 — orphan_pages is "no inbound links"', () => {
-  test('a page with outbound-only links is NOT an orphan', async () => {
+  test("a page with outbound-only links is NOT an orphan", async () => {
     // Hub page: links out to three others, but nothing links back to it.
     // Previous (buggy) behavior: hub counted as orphan because it had no
     // inbound links (correct) AND the old query also required no outbound.
-    await engine.putPage('hub', { type: 'note', title: 'Hub', compiled_truth: 'index', frontmatter: {} });
-    await engine.putPage('leaf1', { type: 'note', title: 'L1', compiled_truth: 'x', frontmatter: {} });
-    await engine.putPage('leaf2', { type: 'note', title: 'L2', compiled_truth: 'y', frontmatter: {} });
-    await engine.putPage('leaf3', { type: 'note', title: 'L3', compiled_truth: 'z', frontmatter: {} });
+    await engine.putPage("hub", {
+      type: "note",
+      title: "Hub",
+      compiled_truth: "index",
+      frontmatter: {},
+    });
+    await engine.putPage("leaf1", {
+      type: "note",
+      title: "L1",
+      compiled_truth: "x",
+      frontmatter: {},
+    });
+    await engine.putPage("leaf2", {
+      type: "note",
+      title: "L2",
+      compiled_truth: "y",
+      frontmatter: {},
+    });
+    await engine.putPage("leaf3", {
+      type: "note",
+      title: "L3",
+      compiled_truth: "z",
+      frontmatter: {},
+    });
 
-    const hubId = (await (engine as any).db.query(`SELECT id FROM pages WHERE slug='hub'`)).rows[0].id;
-    for (const target of ['leaf1', 'leaf2', 'leaf3']) {
-      const tid = (await (engine as any).db.query(`SELECT id FROM pages WHERE slug=$1`, [target])).rows[0].id;
+    const hubId = (await (engine as any).db.query(`SELECT id FROM pages WHERE slug='hub'`)).rows[0]
+      .id;
+    for (const target of ["leaf1", "leaf2", "leaf3"]) {
+      const tid = (await (engine as any).db.query(`SELECT id FROM pages WHERE slug=$1`, [target]))
+        .rows[0].id;
       await (engine as any).db.query(
         `INSERT INTO links (from_page_id, to_page_id, link_type) VALUES ($1, $2, 'mentions')`,
-        [hubId, tid],
+        [hubId, tid]
       );
     }
 
@@ -96,20 +132,37 @@ describe('Bug 11 — orphan_pages is "no inbound links"', () => {
     expect(h.orphan_pages).toBe(0);
   });
 
-  test('a page with no links at all IS an orphan', async () => {
-    await engine.putPage('loner', { type: 'note', title: 'Loner', compiled_truth: 'alone', frontmatter: {} });
+  test("a page with no links at all IS an orphan", async () => {
+    await engine.putPage("loner", {
+      type: "note",
+      title: "Loner",
+      compiled_truth: "alone",
+      frontmatter: {},
+    });
     const h = await engine.getHealth();
     expect(h.orphan_pages).toBe(1);
   });
 
-  test('a page with inbound links only is NOT an orphan', async () => {
-    await engine.putPage('sink', { type: 'note', title: 'Sink', compiled_truth: 'target', frontmatter: {} });
-    await engine.putPage('source', { type: 'note', title: 'Source', compiled_truth: 'origin', frontmatter: {} });
-    const sinkId = (await (engine as any).db.query(`SELECT id FROM pages WHERE slug='sink'`)).rows[0].id;
-    const srcId = (await (engine as any).db.query(`SELECT id FROM pages WHERE slug='source'`)).rows[0].id;
+  test("a page with inbound links only is NOT an orphan", async () => {
+    await engine.putPage("sink", {
+      type: "note",
+      title: "Sink",
+      compiled_truth: "target",
+      frontmatter: {},
+    });
+    await engine.putPage("source", {
+      type: "note",
+      title: "Source",
+      compiled_truth: "origin",
+      frontmatter: {},
+    });
+    const sinkId = (await (engine as any).db.query(`SELECT id FROM pages WHERE slug='sink'`))
+      .rows[0].id;
+    const srcId = (await (engine as any).db.query(`SELECT id FROM pages WHERE slug='source'`))
+      .rows[0].id;
     await (engine as any).db.query(
       `INSERT INTO links (from_page_id, to_page_id, link_type) VALUES ($1, $2, 'mentions')`,
-      [srcId, sinkId],
+      [srcId, sinkId]
     );
 
     const h = await engine.getHealth();
@@ -119,27 +172,27 @@ describe('Bug 11 — orphan_pages is "no inbound links"', () => {
   });
 });
 
-describe('Bug 11 — doctor renders brain_score breakdown', () => {
-  test('doctor source contains brain_score breakdown rendering', async () => {
-    const source = await Bun.file(new URL('../src/commands/doctor.ts', import.meta.url)).text();
-    expect(source).toContain('brain_score');
-    expect(source).toContain('embed_coverage_score');
-    expect(source).toContain('link_density_score');
-    expect(source).toContain('no_orphans_score');
-    expect(source).toContain('no_dead_links_score');
+describe("Bug 11 — doctor renders brain_score breakdown", () => {
+  test("doctor source contains brain_score breakdown rendering", async () => {
+    const source = await Bun.file(new URL("../src/commands/doctor.ts", import.meta.url)).text();
+    expect(source).toContain("brain_score");
+    expect(source).toContain("embed_coverage_score");
+    expect(source).toContain("link_density_score");
+    expect(source).toContain("no_orphans_score");
+    expect(source).toContain("no_dead_links_score");
   });
 });
 
-describe('Bug 11 — BrainHealth type shape', () => {
-  test('type includes dead_links + breakdown scores', async () => {
-    const typesSource = await Bun.file(new URL('../src/core/types.ts', import.meta.url)).text();
-    expect(typesSource).toContain('dead_links: number');
-    expect(typesSource).toContain('embed_coverage_score: number');
-    expect(typesSource).toContain('link_density_score: number');
-    expect(typesSource).toContain('timeline_coverage_score: number');
-    expect(typesSource).toContain('no_orphans_score: number');
-    expect(typesSource).toContain('no_dead_links_score: number');
+describe("Bug 11 — BrainHealth type shape", () => {
+  test("type includes dead_links + breakdown scores", async () => {
+    const typesSource = await Bun.file(new URL("../src/core/types.ts", import.meta.url)).text();
+    expect(typesSource).toContain("dead_links: number");
+    expect(typesSource).toContain("embed_coverage_score: number");
+    expect(typesSource).toContain("link_density_score: number");
+    expect(typesSource).toContain("timeline_coverage_score: number");
+    expect(typesSource).toContain("no_orphans_score: number");
+    expect(typesSource).toContain("no_dead_links_score: number");
     // The stale "(0-10)" comment must be corrected to 0-100.
-    expect(typesSource).toContain('0-100');
+    expect(typesSource).toContain("0-100");
   });
 });

@@ -46,10 +46,7 @@ export interface CycleResolution {
  *   undefined+TTY → {3, false}               (interactive default; visible live)
  *   undefined+!TTY→ {1, true}                (cost-safe default; ANNOTATE)
  */
-export function resolveCycleDefault(
-  explicit: number | undefined,
-  isTty: boolean,
-): CycleResolution {
+export function resolveCycleDefault(explicit: number | undefined, isTty: boolean): CycleResolution {
   if (explicit !== undefined) return { cycles: explicit, usedNonTtyDefault: false };
   if (isTty) return { cycles: DEFAULT_CYCLES_TTY, usedNonTtyDefault: false };
   return { cycles: DEFAULT_CYCLES_NONTTY, usedNonTtyDefault: true };
@@ -61,5 +58,5 @@ export function resolveCycleDefault(
  * common (TTY or explicit) cases get no extra text.
  */
 export function cycleDefaultSuffix(r: CycleResolution): string {
-  return r.usedNonTtyDefault ? ' (non-interactive default; --cycles N for more)' : '';
+  return r.usedNonTtyDefault ? " (non-interactive default; --cycles N for more)" : "";
 }

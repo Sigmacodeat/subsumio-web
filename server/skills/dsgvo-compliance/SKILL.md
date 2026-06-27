@@ -44,6 +44,7 @@ mutating: false
 ### Step 1 — Map the Processing Activity
 
 Identify:
+
 - **Controller** (Verantwortlicher)
 - **Processor** (Auftragsverarbeiter)
 - **Purpose** (Zweck)
@@ -55,6 +56,7 @@ Identify:
 ### Step 2 — Check Legal Basis
 
 Valid bases under Art. 6(1):
+
 - (a) Consent
 - (b) Contract necessity
 - (c) Legal obligation

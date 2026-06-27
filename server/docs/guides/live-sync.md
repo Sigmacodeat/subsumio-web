@@ -57,6 +57,7 @@ gbrain sync --repo /data/brain && gbrain embed --stale
 ```
 
 **OpenClaw:**
+
 ```
 Name: gbrain-auto-sync
 Schedule: */15 * * * *
@@ -67,6 +68,7 @@ Prompt: "Run: gbrain sync --repo /data/brain && gbrain embed --stale
 ```
 
 **Hermes:**
+
 ```
 /cron add "*/15 * * * *" "Run gbrain sync --repo /data/brain &&
   gbrain embed --stale. Log the result." --name "gbrain-auto-sync"
@@ -94,6 +96,7 @@ Triggers sync on push events for instant sync (<5s).
 ### What Gets Synced
 
 Sync only indexes "syncable" markdown files. These are excluded by design:
+
 - Hidden paths (`.git/`, `.raw/`, etc.)
 - The `ops/` directory
 - Meta files: `README.md`, `index.md`, `schema.md`, `log.md`
@@ -122,7 +125,7 @@ hashes match. If both a cron and `--watch` fire simultaneously, no conflict.
 
 4. **A single un-parseable file can't wedge all indexing.** When a file fails
    to import (malformed YAML frontmatter, an unquoted colon, etc.), sync holds
-   the bookmark and tells you exactly which file broke — a *fresh* failure
+   the bookmark and tells you exactly which file broke — a _fresh_ failure
    fails closed so nothing is silently dropped. But a file that fails the same
    way `GBRAIN_SYNC_AUTOSKIP_AFTER` consecutive syncs (default 3, set `0` to
    disable) is auto-skipped so the rest of the brain keeps indexing past it.
@@ -150,4 +153,4 @@ hashes match. If both a cron and `--watch` fire simultaneously, no conflict.
 
 ---
 
-*Part of the [GBrain Skillpack](../GBRAIN_SKILLPACK.md).*
+_Part of the [GBrain Skillpack](../GBRAIN_SKILLPACK.md)._

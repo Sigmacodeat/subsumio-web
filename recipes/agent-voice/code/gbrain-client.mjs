@@ -22,34 +22,34 @@
  * + source if set (see the gbrain docs/architecture/brains-and-sources.md).
  */
 
-import { spawn } from 'node:child_process';
+import { spawn } from "node:child_process";
 
-const GBRAIN_BIN = process.env.GBRAIN_BIN || 'gbrain';
+const GBRAIN_BIN = process.env.GBRAIN_BIN || "gbrain";
 
 let _child;
 let _nextId = 1;
 const _pending = new Map();
 let _initialized = false;
-let _buffer = '';
+let _buffer = "";
 
 function ensureChild() {
   if (_child && !_child.killed) return _child;
 
-  const args = ['serve'];
-  if (process.env.GBRAIN_BRAIN_ID) args.push('--brain', process.env.GBRAIN_BRAIN_ID);
-  if (process.env.GBRAIN_SOURCE) args.push('--source', process.env.GBRAIN_SOURCE);
+  const args = ["serve"];
+  if (process.env.GBRAIN_BRAIN_ID) args.push("--brain", process.env.GBRAIN_BRAIN_ID);
+  if (process.env.GBRAIN_SOURCE) args.push("--source", process.env.GBRAIN_SOURCE);
 
   _child = spawn(GBRAIN_BIN, args, {
-    stdio: ['pipe', 'pipe', 'pipe'],
-    env: { ...process.env, MCP_STDIO: '1' },
+    stdio: ["pipe", "pipe", "pipe"],
+    env: { ...process.env, MCP_STDIO: "1" },
   });
 
-  _child.stdout.setEncoding('utf8');
-  _child.stdout.on('data', (chunk) => {
+  _child.stdout.setEncoding("utf8");
+  _child.stdout.on("data", (chunk) => {
     _buffer += chunk;
     // JSON-RPC over stdio: messages separated by newlines.
     let nlIdx;
-    while ((nlIdx = _buffer.indexOf('\n')) !== -1) {
+    while ((nlIdx = _buffer.indexOf("\n")) !== -1) {
       const line = _buffer.slice(0, nlIdx).trim();
       _buffer = _buffer.slice(nlIdx + 1);
       if (!line) continue;
@@ -59,7 +59,7 @@ function ensureChild() {
           const { resolve, reject } = _pending.get(msg.id);
           _pending.delete(msg.id);
           if (msg.error) {
-            reject(new Error(msg.error.message || 'gbrain MCP error'));
+            reject(new Error(msg.error.message || "gbrain MCP error"));
           } else {
             resolve(msg.result);
           }
@@ -72,13 +72,13 @@ function ensureChild() {
     }
   });
 
-  _child.stderr.setEncoding('utf8');
-  _child.stderr.on('data', (chunk) => {
+  _child.stderr.setEncoding("utf8");
+  _child.stderr.on("data", (chunk) => {
     // Surface gbrain stderr to our stderr for debugging. Don't crash on it.
     process.stderr.write(`[gbrain] ${chunk}`);
   });
 
-  _child.on('exit', (code, signal) => {
+  _child.on("exit", (code, signal) => {
     const reason = signal ? `signal ${signal}` : `code ${code}`;
     for (const [, p] of _pending) {
       p.reject(new Error(`gbrain child exited (${reason}) with ${_pending.size} pending`));
@@ -96,7 +96,7 @@ function rpc(method, params) {
   const child = ensureChild();
   return new Promise((resolve, reject) => {
     _pending.set(id, { resolve, reject });
-    const msg = JSON.stringify({ jsonrpc: '2.0', id, method, params }) + '\n';
+    const msg = JSON.stringify({ jsonrpc: "2.0", id, method, params }) + "\n";
     try {
       child.stdin.write(msg);
     } catch (err) {
@@ -108,10 +108,10 @@ function rpc(method, params) {
 
 async function initIfNeeded() {
   if (_initialized) return;
-  await rpc('initialize', {
-    protocolVersion: '2024-11-05',
+  await rpc("initialize", {
+    protocolVersion: "2024-11-05",
     capabilities: {},
-    clientInfo: { name: 'agent-voice', version: '0.1.0' },
+    clientInfo: { name: "agent-voice", version: "0.1.0" },
   });
   _initialized = true;
 }
@@ -126,9 +126,9 @@ export async function callGbrainOp(opName, params) {
   await initIfNeeded();
   // gbrain exposes operations as MCP "tools." The standard call is
   // tools/call with {name, arguments}.
-  const result = await rpc('tools/call', { name: opName, arguments: params || {} });
+  const result = await rpc("tools/call", { name: opName, arguments: params || {} });
   // gbrain returns {content: [{type:'text', text:'...JSON...'}]}; parse if needed.
-  if (result?.content?.[0]?.type === 'text') {
+  if (result?.content?.[0]?.type === "text") {
     const text = result.content[0].text;
     try {
       return JSON.parse(text);
@@ -163,7 +163,7 @@ async function dispatchRpc(method, params) {
 // Override the helper used by callGbrainOp.
 export async function _testableCallGbrainOp(opName, params) {
   if (_testRpc) {
-    return _testRpc('tools/call', { name: opName, arguments: params || {} });
+    return _testRpc("tools/call", { name: opName, arguments: params || {} });
   }
   return callGbrainOp(opName, params);
 }
@@ -178,5 +178,5 @@ export function shutdown() {
   }
   _pending.clear();
   _initialized = false;
-  _buffer = '';
+  _buffer = "";
 }

@@ -25,14 +25,14 @@
  * Serial test: shares engine state across cases, mutates module-level engine.
  */
 
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
-import { PGLiteEngine } from '../src/core/pglite-engine.ts';
-import { dispatchToolCall } from '../src/mcp/dispatch.ts';
-import { TAKES_FENCE_BEGIN, TAKES_FENCE_END } from '../src/core/takes-fence.ts';
+import { describe, test, expect, beforeAll, afterAll } from "bun:test";
+import { PGLiteEngine } from "../src/core/pglite-engine.ts";
+import { dispatchToolCall } from "../src/mcp/dispatch.ts";
+import { TAKES_FENCE_BEGIN, TAKES_FENCE_END } from "../src/core/takes-fence.ts";
 
 let engine: PGLiteEngine;
 
-const PAGE_SLUG = 'people/alice-c4';
+const PAGE_SLUG = "people/alice-c4";
 
 const PAGE_BODY_WITH_FENCE = `# Alice (C4 fixture)
 
@@ -58,8 +58,8 @@ beforeAll(async () => {
   await engine.connect({});
   await engine.initSchema();
   await engine.putPage(PAGE_SLUG, {
-    title: 'Alice (C4 fixture)',
-    type: 'person',
+    title: "Alice (C4 fixture)",
+    type: "person",
     compiled_truth: PAGE_BODY_WITH_FENCE,
   });
 });
@@ -73,80 +73,105 @@ function parseResult(result: { content: Array<{ text: string }>; isError?: boole
   return JSON.parse(result.content[0].text);
 }
 
-describe('C4: get_page takes-fence redaction (#728)', () => {
-  test('local CLI caller (no allow-list) sees full fence', async () => {
-    const result = await dispatchToolCall(engine, 'get_page', { slug: PAGE_SLUG }, {
-      remote: false,
-    });
+describe("C4: get_page takes-fence redaction (#728)", () => {
+  test("local CLI caller (no allow-list) sees full fence", async () => {
+    const result = await dispatchToolCall(
+      engine,
+      "get_page",
+      { slug: PAGE_SLUG },
+      {
+        remote: false,
+      }
+    );
     const page = parseResult(result) as { compiled_truth: string };
     expect(page.compiled_truth).toContain(TAKES_FENCE_BEGIN);
     expect(page.compiled_truth).toContain(TAKES_FENCE_END);
-    expect(page.compiled_truth).toContain('Seemed burned out');
+    expect(page.compiled_truth).toContain("Seemed burned out");
   });
 
   test('MCP caller with narrow allow-list (["world"]) sees fence STRIPPED', async () => {
-    const result = await dispatchToolCall(engine, 'get_page', { slug: PAGE_SLUG }, {
-      remote: true,
-      takesHoldersAllowList: ['world'],
-    });
+    const result = await dispatchToolCall(
+      engine,
+      "get_page",
+      { slug: PAGE_SLUG },
+      {
+        remote: true,
+        takesHoldersAllowList: ["world"],
+      }
+    );
     const page = parseResult(result) as { compiled_truth: string };
     expect(page.compiled_truth).not.toContain(TAKES_FENCE_BEGIN);
     expect(page.compiled_truth).not.toContain(TAKES_FENCE_END);
-    expect(page.compiled_truth).not.toContain('Seemed burned out');
+    expect(page.compiled_truth).not.toContain("Seemed burned out");
     // Public summary survives — only the fence is removed.
-    expect(page.compiled_truth).toContain('Public-facing summary');
-    expect(page.compiled_truth).toContain('Other content below the fence');
+    expect(page.compiled_truth).toContain("Public-facing summary");
+    expect(page.compiled_truth).toContain("Other content below the fence");
   });
 
-  test('MCP caller with permissive allow-list (everything) STILL strips fence (presence = identity)', async () => {
+  test("MCP caller with permissive allow-list (everything) STILL strips fence (presence = identity)", async () => {
     // Critical invariant: the ALLOW-LIST PRESENCE flags the caller as
     // MCP-bound. The contents of the allow-list don't loosen the redaction —
     // even ['world','garry','brain'] still strips, because takes_list /
     // takes_search are the typed surfaces for take inspection. get_page is
     // not an authorized take-reading channel.
-    const result = await dispatchToolCall(engine, 'get_page', { slug: PAGE_SLUG }, {
-      remote: true,
-      takesHoldersAllowList: ['world', 'garry', 'brain'],
-    });
+    const result = await dispatchToolCall(
+      engine,
+      "get_page",
+      { slug: PAGE_SLUG },
+      {
+        remote: true,
+        takesHoldersAllowList: ["world", "garry", "brain"],
+      }
+    );
     const page = parseResult(result) as { compiled_truth: string };
     expect(page.compiled_truth).not.toContain(TAKES_FENCE_BEGIN);
-    expect(page.compiled_truth).not.toContain('Seemed burned out');
+    expect(page.compiled_truth).not.toContain("Seemed burned out");
   });
 });
 
-describe('C4: get_versions takes-fence redaction (#728)', () => {
+describe("C4: get_versions takes-fence redaction (#728)", () => {
   // Seed page_versions directly via SQL so the test doesn't depend on the
   // putPage versioning policy. The contract under test is the redaction
   // pass at read-time, not the write-side version-creation policy.
-  test('MCP caller (allow-list set) sees fence STRIPPED when versions exist', async () => {
+  test("MCP caller (allow-list set) sees fence STRIPPED when versions exist", async () => {
     const db = (engine as any).db;
     const pageRow = await db.query(`SELECT id FROM pages WHERE slug = $1`, [PAGE_SLUG]);
     const pageId = pageRow.rows[0].id;
     await db.query(
       `INSERT INTO page_versions (page_id, compiled_truth, frontmatter)
        VALUES ($1, $2, '{}'::jsonb)`,
-      [pageId, PAGE_BODY_WITH_FENCE],
+      [pageId, PAGE_BODY_WITH_FENCE]
     );
 
-    const result = await dispatchToolCall(engine, 'get_versions', { slug: PAGE_SLUG }, {
-      remote: true,
-      takesHoldersAllowList: ['world'],
-    });
+    const result = await dispatchToolCall(
+      engine,
+      "get_versions",
+      { slug: PAGE_SLUG },
+      {
+        remote: true,
+        takesHoldersAllowList: ["world"],
+      }
+    );
     const versions = parseResult(result) as Array<{ compiled_truth: string }>;
     expect(versions.length).toBeGreaterThan(0);
     for (const v of versions) {
       expect(v.compiled_truth).not.toContain(TAKES_FENCE_BEGIN);
-      expect(v.compiled_truth).not.toContain('Seemed burned out');
+      expect(v.compiled_truth).not.toContain("Seemed burned out");
     }
   });
 
-  test('local CLI caller (no allow-list) sees full fence on every version', async () => {
-    const result = await dispatchToolCall(engine, 'get_versions', { slug: PAGE_SLUG }, {
-      remote: false,
-    });
+  test("local CLI caller (no allow-list) sees full fence on every version", async () => {
+    const result = await dispatchToolCall(
+      engine,
+      "get_versions",
+      { slug: PAGE_SLUG },
+      {
+        remote: false,
+      }
+    );
     const versions = parseResult(result) as Array<{ compiled_truth: string }>;
     expect(versions.length).toBeGreaterThan(0);
     expect(versions[0].compiled_truth).toContain(TAKES_FENCE_BEGIN);
-    expect(versions[0].compiled_truth).toContain('Seemed burned out');
+    expect(versions[0].compiled_truth).toContain("Seemed burned out");
   });
 });

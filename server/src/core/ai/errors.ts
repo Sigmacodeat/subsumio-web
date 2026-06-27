@@ -12,9 +12,12 @@
  */
 
 export class AIServiceError extends Error {
-  constructor(message: string, public readonly cause?: unknown) {
+  constructor(
+    message: string,
+    public readonly cause?: unknown
+  ) {
     super(message);
-    this.name = 'AIServiceError';
+    this.name = "AIServiceError";
   }
 }
 
@@ -22,17 +25,17 @@ export class AIConfigError extends AIServiceError {
   constructor(
     message: string,
     public readonly fix?: string,
-    cause?: unknown,
+    cause?: unknown
   ) {
     super(message, cause);
-    this.name = 'AIConfigError';
+    this.name = "AIConfigError";
   }
 }
 
 export class AITransientError extends AIServiceError {
   constructor(message: string, cause?: unknown) {
     super(message, cause);
-    this.name = 'AITransientError';
+    this.name = "AITransientError";
   }
 }
 
@@ -46,23 +49,23 @@ export function normalizeAIError(err: unknown, context?: string): AIServiceError
 
   const anyErr = err as { name?: string; status?: number; statusCode?: number; message?: string };
   const status = anyErr?.status ?? anyErr?.statusCode;
-  const name = anyErr?.name ?? '';
+  const name = anyErr?.name ?? "";
   const msg = anyErr?.message ?? String(err);
-  const ctxPrefix = context ? `[${context}] ` : '';
+  const ctxPrefix = context ? `[${context}] ` : "";
 
   // 4xx (except 429) = config-level, non-retryable
-  if (typeof status === 'number' && status >= 400 && status < 500 && status !== 429) {
+  if (typeof status === "number" && status >= 400 && status < 500 && status !== 429) {
     return new AIConfigError(
       `${ctxPrefix}${msg}`,
       status === 401 || status === 403
-        ? 'Check your API key is valid and has access to this model.'
-        : 'Check your model id + provider options match the provider API.',
-      err,
+        ? "Check your API key is valid and has access to this model."
+        : "Check your model id + provider options match the provider API.",
+      err
     );
   }
 
   // AI SDK named errors
-  if (name === 'LoadAPIKeyError' || name === 'InvalidArgumentError') {
+  if (name === "LoadAPIKeyError" || name === "InvalidArgumentError") {
     return new AIConfigError(`${ctxPrefix}${msg}`, undefined, err);
   }
 

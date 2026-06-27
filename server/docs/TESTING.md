@@ -7,15 +7,15 @@ only.
 
 Seven test command tiers, each with a clear scope:
 
-| Command | What it runs | Wallclock | When to use |
-|---|---|---|---|
-| `bun run test` | Parallel unit-test fast loop. 8-shard fan-out via `scripts/run-unit-parallel.sh`, then a serial pass over `*.serial.test.ts`. Excludes `*.slow.test.ts` and `test/e2e/*`. No pre-checks, no typecheck. | ~85s on a Mac dev box (3650+ tests) | Inner edit loop. Default. |
-| `bun run verify` | CI's authoritative pre-test gate set: `check:privacy && check:jsonb && check:progress && check:wasm && bun run typecheck`. The 4 checks `.github/workflows/test.yml` runs on shard 1 + typecheck. Single source of truth — CI literally calls `bun run verify`. | ~12s (wasm-compile dominates) | Before pushing; before `/ship`. |
-| `bun run test:full` | `verify && bun run test && bun run test:slow && [smart e2e]`. The local equivalent of "everything CI runs." Smart e2e: runs e2e only when `DATABASE_URL` is set; else loud skip notice to stderr. | ~3-5min depending on slow + e2e | Pre-merge sanity, before opening a PR. |
-| `bun run test:slow` | Just the `*.slow.test.ts` set (intentional cold-path correctness checks). | seconds-to-minutes | When touching slow-path code. |
-| `bun run test:serial` | Just the `*.serial.test.ts` set (cross-file-contention quarantine; runs at `--max-concurrency=1`). | ~1s per quarantined file | Debugging a specific quarantined file. |
-| `bun run test:e2e` | Real Postgres E2E. Requires Docker + `DATABASE_URL`. Sequential. | ~5-10min | Pre-ship; nightly. |
-| `bun run check:all` | All 7 historical pre-checks (privacy + jsonb + progress + no-legacy-getconnection + trailing-newline + wasm + exports-count). Superset of `verify`. | ~10s | Local-only sweep. The 4 not in `verify` are nice-to-haves. |
+| Command               | What it runs                                                                                                                                                                                                                                                    | Wallclock                           | When to use                                                |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- | ---------------------------------------------------------- |
+| `bun run test`        | Parallel unit-test fast loop. 8-shard fan-out via `scripts/run-unit-parallel.sh`, then a serial pass over `*.serial.test.ts`. Excludes `*.slow.test.ts` and `test/e2e/*`. No pre-checks, no typecheck.                                                          | ~85s on a Mac dev box (3650+ tests) | Inner edit loop. Default.                                  |
+| `bun run verify`      | CI's authoritative pre-test gate set: `check:privacy && check:jsonb && check:progress && check:wasm && bun run typecheck`. The 4 checks `.github/workflows/test.yml` runs on shard 1 + typecheck. Single source of truth — CI literally calls `bun run verify`. | ~12s (wasm-compile dominates)       | Before pushing; before `/ship`.                            |
+| `bun run test:full`   | `verify && bun run test && bun run test:slow && [smart e2e]`. The local equivalent of "everything CI runs." Smart e2e: runs e2e only when `DATABASE_URL` is set; else loud skip notice to stderr.                                                               | ~3-5min depending on slow + e2e     | Pre-merge sanity, before opening a PR.                     |
+| `bun run test:slow`   | Just the `*.slow.test.ts` set (intentional cold-path correctness checks).                                                                                                                                                                                       | seconds-to-minutes                  | When touching slow-path code.                              |
+| `bun run test:serial` | Just the `*.serial.test.ts` set (cross-file-contention quarantine; runs at `--max-concurrency=1`).                                                                                                                                                              | ~1s per quarantined file            | Debugging a specific quarantined file.                     |
+| `bun run test:e2e`    | Real Postgres E2E. Requires Docker + `DATABASE_URL`. Sequential.                                                                                                                                                                                                | ~5-10min                            | Pre-ship; nightly.                                         |
+| `bun run check:all`   | All 7 historical pre-checks (privacy + jsonb + progress + no-legacy-getconnection + trailing-newline + wasm + exports-count). Superset of `verify`.                                                                                                             | ~10s                                | Local-only sweep. The 4 not in `verify` are nice-to-haves. |
 
 ### CI vs local: intentionally divergent file sets
 
@@ -41,19 +41,19 @@ If a shard wedges (per-shard `GBRAIN_TEST_SHARD_TIMEOUT` cap, default 600s), the
 - `*.slow.test.ts` → run via `bun run test:slow` only (intentional cold-path tests; would dominate the fast loop's wallclock).
 - `*.serial.test.ts` → run via `bun run test:serial` after the parallel pass completes; uses `--max-concurrency=1`. Quarantine for tests that share file-wide state and race when run alongside other files in the same `bun test` process. Currently: `test/brain-registry.serial.test.ts`, `test/reconcile-links.serial.test.ts`, `test/core/cycle.serial.test.ts`, `test/embed.serial.test.ts` (the latter two use `mock.module(...)` which leaks across files in the shard process). **Do not put the parallelism back on a serial file unless you've fixed the contention root cause** (it just re-introduces the flake).
 - `test/e2e/*.test.ts` → real-Postgres E2E. Skipped when `DATABASE_URL` is unset.
-- `tests/heavy/*.sh` → ops-shape shell scripts. Cost minutes per run; NOT in default `bun test`. Run via `bun run test:heavy` or scheduled nightly via `.github/workflows/heavy-tests.yml`. Examples: pg_upgrade matrix (boot legacy brain → walk to head), RSS budget gate (measure peak worker RSS vs committed baseline), read-latency-under-sync (p50/p95/p99 under concurrent writer load), sync lock regression (N concurrent syncs assert 1 winner + N-1 lock-busy + zero leaked `gbrain_cycle_locks` rows). See `tests/heavy/README.md` for when to add a script here vs `*.slow.test.ts`. Files prefixed with `_` (e.g. `tests/heavy/_build_legacy_fixtures.sh`) are helpers/libs invoked by sibling tests — the runner skips them.
+- `tests/heavy/*.sh` → ops-shape shell scripts. Cost minutes per run; NOT in default `bun test`. Run via `bun run test:heavy` or scheduled nightly via `.github/workflows/heavy-tests.yml`. Examples: pg*upgrade matrix (boot legacy brain → walk to head), RSS budget gate (measure peak worker RSS vs committed baseline), read-latency-under-sync (p50/p95/p99 under concurrent writer load), sync lock regression (N concurrent syncs assert 1 winner + N-1 lock-busy + zero leaked `gbrain_cycle_locks` rows). See `tests/heavy/README.md` for when to add a script here vs `*.slow.test.ts`. Files prefixed with `*`(e.g.`tests/heavy/\_build_legacy_fixtures.sh`) are helpers/libs invoked by sibling tests — the runner skips them.
 - `test/fuzz/*.test.ts` → property-based fuzz harness. Pure-validator targets in `pure-validators.test.ts` are guarded by `scripts/check-fuzz-purity.sh` (in `bun run verify`), which `bun build --target=bun` bundles each target and greps the resulting bundle for banned transitive imports (`node:fs`, `node:child_process`, engine modules). Anything that fails the guard moves to `mixed-validators.test.ts` (still property-tested, but no purity guarantee) or `filesystem-validators.test.ts` (fs-backed, uses temp dirs). Fuzz tests run in the default `bun test` loop because they're fast (~3s for ~12 properties × 1000 runs each).
 
 ### Test-isolation lint and helpers
 
 The cross-file flake class is enforced statically by `scripts/check-test-isolation.sh`, wired into `bun run verify` and `bun run check:all`. Rules (non-serial unit files only; `*.serial.test.ts` and `test/e2e/*` are skipped):
 
-| Rule | What it bans | Fix |
-|---|---|---|
+| Rule   | What it bans                                                                                                                          | Fix                                                                                   |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
 | **R1** | `process.env.X = ...`, bracket assignment, `delete process.env.X`, `Object.assign(process.env, ...)`, `Reflect.set(process.env, ...)` | Use `withEnv()` from `test/helpers/with-env.ts`, OR rename file to `*.serial.test.ts` |
-| **R2** | `mock.module(...)` anywhere in the file | Rename file to `*.serial.test.ts` (no DI on production code for testability) |
-| **R3** | `new PGLiteEngine(` outside ~50 lines after a `beforeAll(` line | Use the canonical block (below) inside `beforeAll(` |
-| **R4** | Files creating `new PGLiteEngine(` without `engine.disconnect(` inside an `afterAll(` block | Add `afterAll(() => engine.disconnect())` |
+| **R2** | `mock.module(...)` anywhere in the file                                                                                               | Rename file to `*.serial.test.ts` (no DI on production code for testability)          |
+| **R3** | `new PGLiteEngine(` outside ~50 lines after a `beforeAll(` line                                                                       | Use the canonical block (below) inside `beforeAll(`                                   |
+| **R4** | Files creating `new PGLiteEngine(` without `engine.disconnect(` inside an `afterAll(` block                                           | Add `afterAll(() => engine.disconnect())`                                             |
 
 Files that violated these rules at the isolation-lint baseline are listed in `scripts/check-test-isolation.allowlist`. **The allow-list MUST shrink over time** — never add new entries.
 
@@ -62,8 +62,8 @@ Files that violated these rules at the isolation-lint baseline are listed in `sc
 Every test file that needs a PGLite engine should use this exact pattern:
 
 ```ts
-import { PGLiteEngine } from '../src/core/pglite-engine.ts';
-import { resetPgliteState } from './helpers/reset-pglite.ts';
+import { PGLiteEngine } from "../src/core/pglite-engine.ts";
+import { resetPgliteState } from "./helpers/reset-pglite.ts";
 
 let engine: PGLiteEngine;
 
@@ -87,11 +87,11 @@ Why this exact shape: `beforeAll` creates a single engine per file (PGLite WASM 
 #### `withEnv` pattern (R1 fix)
 
 ```ts
-import { withEnv } from './helpers/with-env.ts';
+import { withEnv } from "./helpers/with-env.ts";
 
-test('reads OPENAI_API_KEY', async () => {
-  await withEnv({ OPENAI_API_KEY: 'sk-test' }, async () => {
-    expect(loadConfig().openai_key).toBe('sk-test');
+test("reads OPENAI_API_KEY", async () => {
+  await withEnv({ OPENAI_API_KEY: "sk-test" }, async () => {
+    expect(loadConfig().openai_key).toBe("sk-test");
   });
 });
 
@@ -99,7 +99,7 @@ test('reads OPENAI_API_KEY', async () => {
 await withEnv({ GBRAIN_HOME: undefined }, fn);
 
 // Multiple keys:
-await withEnv({ A: '1', B: '2', C: undefined }, fn);
+await withEnv({ A: "1", B: "2", C: undefined }, fn);
 ```
 
 `withEnv` saves the prior value of every key it touches and restores via try/finally — including when the callback throws. **It is cross-test safe but NOT intra-file concurrent-safe.** `process.env` is process-global; two `test.concurrent()` calls in the same file both touching the same key will race. Files using `withEnv` stay outside the `test.concurrent()` codemod's eligibility filter.
@@ -107,6 +107,7 @@ await withEnv({ A: '1', B: '2', C: undefined }, fn);
 #### When to quarantine instead of fix
 
 Rename to `*.serial.test.ts` when:
+
 - The file uses `mock.module(...)` (R2 — there's no clean fix without changing production code).
 - The file is genuinely env-coupled (e.g. `gbrain-home-isolation.test.ts`, `claw-test-cli.test.ts`) — module-load env readers + ESM caching defeat dynamic-import-after-env tricks.
 - The file's tests intentionally share state across `it()` boundaries.
@@ -247,6 +248,7 @@ skip silently. Do NOT skip Tier 2 tests just because they require API keys — l
 the keys and run them.
 
 When asked to "run all E2E tests" or "run tests", that means ALL tiers:
+
 - Tier 1: `bun run test:e2e` (mechanical, sync, upgrade — no API keys needed)
 - Tier 2: `test/e2e/skills.test.ts` (requires OpenAI + Anthropic + openclaw CLI)
 - Always spin up the test DB, source zshrc, run everything, tear down.

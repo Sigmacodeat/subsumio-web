@@ -23,6 +23,7 @@ mutating: true
 ## Contract
 
 This skill guarantees:
+
 - Tasks stored as a brain page (`ops/tasks.md`) with structured format
 - Task lifecycle: add → in-progress → complete | defer
 - Priority levels: P0 (urgent), P1 (today), P2 (this week), P3 (backlog)
@@ -46,18 +47,23 @@ This skill guarantees:
 # Tasks
 
 ## P0 — Urgent
+
 - [ ] {task description} (due: {date})
 
 ## P1 — Today
+
 - [ ] {task description}
 
 ## P2 — This Week
+
 - [ ] {task description}
 
 ## P3 — Backlog
+
 - [ ] {task description}
 
 ## Completed
+
 - [x] {task} (completed: {date})
 ```
 

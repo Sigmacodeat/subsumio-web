@@ -28,14 +28,7 @@
 
 import { afterAll, beforeAll, describe, expect, it } from "bun:test";
 import { execFileSync, spawnSync } from "node:child_process";
-import {
-  cpSync,
-  mkdirSync,
-  mkdtempSync,
-  rmSync,
-  symlinkSync,
-  writeFileSync,
-} from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
@@ -102,7 +95,7 @@ const BASELINE_FILES: Record<string, string> = {
   "CHANGELOG.md": "# Changelog\n\n## [1.0.0]\n",
   "TODOS.md": "- [ ] thing\n",
   "README.md": "# Project\n",
-  "LICENSE": "MIT\n",
+  LICENSE: "MIT\n",
   "CLAUDE.md": "# CLAUDE.md\n\nproject instructions\n",
   "AGENTS.md": "# AGENTS.md\n\nopenclaw entry\n",
   "package.json": '{"name":"test","version":"0.0.0"}\n',
@@ -192,11 +185,7 @@ describe("ci-cache-hash.sh — CRITICAL false-pass guards (must invalidate)", ()
   it("test/foo.test.ts edit MUST change hash", () => {
     withSandbox((sb) => {
       const before = hash(sb);
-      modify(
-        sb,
-        "test/foo.test.ts",
-        "import {test} from 'bun:test';\ntest('y', () => {});\n",
-      );
+      modify(sb, "test/foo.test.ts", "import {test} from 'bun:test';\ntest('y', () => {});\n");
       const after = hash(sb);
       expect(after).not.toBe(before);
     });
@@ -305,10 +294,7 @@ describe("ci-cache-hash.sh — SAFE deny-list invariants (must NOT invalidate)",
 });
 
 describe("ci-cache-hash.sh — edge cases", () => {
-  function withSandbox(
-    files: Record<string, string>,
-    test: (sb: Sandbox) => void,
-  ) {
+  function withSandbox(files: Record<string, string>, test: (sb: Sandbox) => void) {
     const sb = makeSandbox(files);
     try {
       test(sb);

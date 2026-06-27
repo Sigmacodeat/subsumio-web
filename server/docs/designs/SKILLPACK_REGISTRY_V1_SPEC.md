@@ -6,14 +6,14 @@
 > publish + registry + doctor + rubric + tarball + TOFU + sandbox + CI workflow
 > split + anti-typosquat — but the **verbs and integration points change**:
 >
-> | Old spec verb | v0.36-aligned verb | What changes |
-> |---|---|---|
-> | `gbrain skillpack install <name>` | `gbrain skillpack scaffold <source>` | One-time additive copy, no managed block, refuses to overwrite. |
-> | `gbrain skillpack uninstall <name>` | (gone) | User owns files; deletes via `rm` or git. |
-> | Auto-walk runbook | Display `bootstrap.md` post-scaffold | Already aligned with codex T1 (per-step approval) — becomes a printed checklist, not an executor. |
-> | Multi-source resolver receipt | Per-scaffold state in `~/.gbrain/skillpack-state.json` | Codex G1 was the right call; v0.36 retired the resolver-block anyway. |
-> | Auto-rename collision | Refuses-to-overwrite (v0.36's contract) | Codex was right; v0.36 already enforces it. |
-> | Update path | `gbrain skillpack reference <name> [--apply-clean-hunks]` | Diff-lens with optional auto-merge of clean hunks. |
+> | Old spec verb                       | v0.36-aligned verb                                        | What changes                                                                                      |
+> | ----------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+> | `gbrain skillpack install <name>`   | `gbrain skillpack scaffold <source>`                      | One-time additive copy, no managed block, refuses to overwrite.                                   |
+> | `gbrain skillpack uninstall <name>` | (gone)                                                    | User owns files; deletes via `rm` or git.                                                         |
+> | Auto-walk runbook                   | Display `bootstrap.md` post-scaffold                      | Already aligned with codex T1 (per-step approval) — becomes a printed checklist, not an executor. |
+> | Multi-source resolver receipt       | Per-scaffold state in `~/.gbrain/skillpack-state.json`    | Codex G1 was the right call; v0.36 retired the resolver-block anyway.                             |
+> | Auto-rename collision               | Refuses-to-overwrite (v0.36's contract)                   | Codex was right; v0.36 already enforces it.                                                       |
+> | Update path                         | `gbrain skillpack reference <name> [--apply-clean-hunks]` | Diff-lens with optional auto-merge of clean hunks.                                                |
 >
 > What stays verbatim: registry at `garrytan/gbrain-skillpack-registry`, rubric,
 > doctor, anatomy doc, tarball determinism, TOFU + SHA pinning, endorsement
@@ -260,6 +260,7 @@ gbrain skillpack endorse <name> [--tier endorsed|community|experimental]
 ```
 
 Run from a clone of `garrytan/gbrain-skillpack-registry`. Steps:
+
 1. Read + validate current `endorsements.json` against the schema.
 2. Confirm `<name>` exists in `registry.json`.
 3. Update or insert the entry with the new tier.
@@ -285,7 +286,7 @@ No contributor hand-runs git. The skill drives:
    - Dependency declaration check — every external resource referenced
      in SKILL.md must be in a declared `external_resources:` array
    - Trial install: extract pack into a tempdir, run `gbrain skillpack
-     install <tempdir>` against an ephemeral PGLite-backed gbrain (mirrors
+install <tempdir>` against an ephemeral PGLite-backed gbrain (mirrors
      the `test/e2e/longmemeval` ephemeral-PGLite pattern at
      `src/eval/longmemeval/harness.ts`), assert `gbrain check-resolvable`
      stays clean and the skill rows appear in the managed block.
@@ -318,10 +319,10 @@ No contributor hand-runs git. The skill drives:
      in the validation log includes the file path, the assertion, and
      a paste-ready re-run command (`bun test <file>` or
      `gbrain routing-eval skills/<name>/routing-eval.jsonl`).
-3. **Tarball + hash**:
+4. **Tarball + hash**:
    - `gbrain skillpack pack --out skillpack-<name>-<version>.tgz`
    - SHA-256 recorded for registry pin
-4. **Registry PR** (Printing Press pattern verbatim):
+5. **Registry PR** (Printing Press pattern verbatim):
    - Fork `garrytan/gbrain-skillpack-registry` if not already forked
    - Branch `add-<name>-<version>`
    - Append catalog entry to `registry.json` with tier=`community`,
@@ -416,7 +417,7 @@ package artifacts.
   gateway** in the publish-gate sandbox so no real API spend; the
   publisher's machine runs real-gateway evals before submitting.
 - `routing_evals[]` — `routing-eval.jsonl` files with `{intent,
-  expected_skill, ambiguous_with?}` rows. Structural matching against
+expected_skill, ambiguous_with?}` rows. Structural matching against
   the skill's `triggers:` frontmatter. The single highest-leverage eval
   type for an agent-routed skillpack: proves user phrases actually fire
   the right skill.
@@ -451,7 +452,7 @@ defaults to per-step approval**.
 
 - `gbrain skillpack install <name>` ALWAYS drops files + updates the
   resolver block. That part is content-only; the trust gates (TOFU
-  + content-hash + endorsement tier) already cover it.
+  - content-hash + endorsement tier) already cover it.
 - After file-drop, if `runbooks/install.md` exists, the install
   command **prints each step + waits for explicit y/N** on a TTY.
   Three step kinds (`agent:`, `show user:`, `ask user:`) all surface
@@ -459,7 +460,7 @@ defaults to per-step approval**.
 - `--runbook-apply-all` flag bypasses the per-step prompt for CI /
   unattended agent use. Loud stderr line on first use:
   `[skillpack] applying runbook unattended; this skillpack is community
-  tier — confirm trust by inspecting <pack-dir>/runbooks/install.md`.
+tier — confirm trust by inspecting <pack-dir>/runbooks/install.md`.
 - `--runbook-skip` lands the files without executing any runbook step
   (the publisher gets file-drop only; everything else is the user's
   decision).
@@ -471,7 +472,7 @@ This is the npm postinstall lesson learned the hard way:
 auto-execute on install is how supply-chain attacks happen.
 Per-step + dry-run + endorsement is how trust gets earned.
 
-### Agent runbook format (runbooks/install.md, uninstall.md, upgrade-*.md)
+### Agent runbook format (runbooks/install.md, uninstall.md, upgrade-\*.md)
 
 Mirrors gbrain's own `skills/migrations/v0.21.0.md` pattern — markdown
 that an agent reads top-to-bottom and executes step-by-step.
@@ -487,7 +488,7 @@ skillpack_version: 0.1.0
 # Install runbook: hackathon-evaluation v0.1.0
 
 1. **agent:** `gbrain put_page wiki/_skillpack-hackathon-evaluation
-   --frontmatter type=skillpack-config`
+--frontmatter type=skillpack-config`
    - Why: bootstraps the config page this skillpack reads from.
 2. **show user:** "Hackathon evaluation is installed. Try: 'Judge this
    submission against the YC rubric.'"
@@ -526,42 +527,45 @@ and docs stay in sync. Same pattern as gstack's
 export const SKILLPACK_RUBRIC_V1: RubricDimension[] = [
   {
     id: 1,
-    name: 'manifest_valid',
-    description: 'skillpack.json passes the v1 schema',
+    name: "manifest_valid",
+    description: "skillpack.json passes the v1 schema",
     check: async (pack) => validateManifest(pack),
-    fix_hint: 'Run: gbrain skillpack init <name> to regenerate a valid stub',
+    fix_hint: "Run: gbrain skillpack init <name> to regenerate a valid stub",
     weight: 1,
   },
   {
     id: 2,
-    name: 'skills_have_skill_md',
-    description: 'Every listed skill has SKILL.md with valid frontmatter (name, description, triggers, mutating, writes_pages)',
+    name: "skills_have_skill_md",
+    description:
+      "Every listed skill has SKILL.md with valid frontmatter (name, description, triggers, mutating, writes_pages)",
     check: async (pack) => allSkillsHaveValidSkillMd(pack),
-    fix_hint: 'Run: gbrain skillify scaffold <skill-name>',
+    fix_hint: "Run: gbrain skillify scaffold <skill-name>",
     weight: 1,
   },
   {
     id: 3,
-    name: 'routing_evals_present',
-    description: 'Every skill has routing-eval.jsonl with >= 5 intents',
+    name: "routing_evals_present",
+    description: "Every skill has routing-eval.jsonl with >= 5 intents",
     check: async (pack) => allSkillsHaveRoutingEvals(pack, 5),
-    fix_hint: 'gbrain skillify scaffold drops 5 example intents per skill',
+    fix_hint: "gbrain skillify scaffold drops 5 example intents per skill",
     weight: 1,
   },
   {
     id: 4,
-    name: 'routing_evals_clean',
-    description: 'gbrain routing-eval passes structurally for every routing-eval.jsonl',
+    name: "routing_evals_clean",
+    description: "gbrain routing-eval passes structurally for every routing-eval.jsonl",
     check: async (pack) => runRoutingEvalStructural(pack),
-    fix_hint: 'Add the missing trigger phrase to the skill\'s `triggers:` frontmatter, or move the intent to the correct skill',
+    fix_hint:
+      "Add the missing trigger phrase to the skill's `triggers:` frontmatter, or move the intent to the correct skill",
     weight: 1,
   },
   {
     id: 5,
-    name: 'check_resolvable_clean',
-    description: 'gbrain check-resolvable passes for this pack\'s resolver entries (MECE, no DRY violations, all triggers reach skills). Runs against a PACK-LOCAL fixture, not the ambient workspace.',
+    name: "check_resolvable_clean",
+    description:
+      "gbrain check-resolvable passes for this pack's resolver entries (MECE, no DRY violations, all triggers reach skills). Runs against a PACK-LOCAL fixture, not the ambient workspace.",
     check: async (pack) => runCheckResolvableIsolated(pack),
-    fix_hint: 'Add a resolver row for the missing skill, or remove the orphan trigger',
+    fix_hint: "Add a resolver row for the missing skill, or remove the orphan trigger",
     weight: 1,
   },
   // Note (codex outside-voice gap): the existing `check-resolvable`
@@ -576,42 +580,44 @@ export const SKILLPACK_RUBRIC_V1: RubricDimension[] = [
   // `src/core/skillpack/check-resolvable-isolated.ts`.
   {
     id: 6,
-    name: 'unit_tests_present',
-    description: 'Every skill has at least one unit test that imports it (test/**/*.test.ts)',
+    name: "unit_tests_present",
+    description: "Every skill has at least one unit test that imports it (test/**/*.test.ts)",
     check: async (pack) => everySkillHasUnitTest(pack),
-    fix_hint: 'gbrain skillify scaffold drops a passing example.test.ts you can extend',
+    fix_hint: "gbrain skillify scaffold drops a passing example.test.ts you can extend",
     weight: 1,
   },
   {
     id: 7,
-    name: 'llm_eval_present',
-    description: 'At least one LLM-judge eval at evals/*.judge.json with >= 3 cases',
+    name: "llm_eval_present",
+    description: "At least one LLM-judge eval at evals/*.judge.json with >= 3 cases",
     check: async (pack) => hasLlmJudgeEval(pack, 3),
-    fix_hint: 'gbrain skillify scaffold-eval <skill-name>',
+    fix_hint: "gbrain skillify scaffold-eval <skill-name>",
     weight: 1,
   },
   {
     id: 8,
-    name: 'install_runbook_present',
-    description: 'runbooks/install.md exists, parses, and has at least one step',
-    check: async (pack) => parseRunbook(pack, 'install'),
-    fix_hint: 'gbrain skillpack init regenerates the stub; edit to taste',
+    name: "install_runbook_present",
+    description: "runbooks/install.md exists, parses, and has at least one step",
+    check: async (pack) => parseRunbook(pack, "install"),
+    fix_hint: "gbrain skillpack init regenerates the stub; edit to taste",
     weight: 1,
   },
   {
     id: 9,
-    name: 'uninstall_runbook_present',
-    description: 'runbooks/uninstall.md exists, parses, and has at least one step',
-    check: async (pack) => parseRunbook(pack, 'uninstall'),
-    fix_hint: 'gbrain skillpack init regenerates the stub',
+    name: "uninstall_runbook_present",
+    description: "runbooks/uninstall.md exists, parses, and has at least one step",
+    check: async (pack) => parseRunbook(pack, "uninstall"),
+    fix_hint: "gbrain skillpack init regenerates the stub",
     weight: 1,
   },
   {
     id: 10,
-    name: 'changelog_present_and_current',
-    description: 'CHANGELOG.md present, contains a `## [<current-version>]` entry, follows Keep-a-Changelog shape',
+    name: "changelog_present_and_current",
+    description:
+      "CHANGELOG.md present, contains a `## [<current-version>]` entry, follows Keep-a-Changelog shape",
     check: async (pack) => changelogReferencesVersion(pack),
-    fix_hint: 'Add a `## [<version>] - <YYYY-MM-DD>` entry. Use gbrain skillpack doctor --fix to auto-generate from VERSION + git log.',
+    fix_hint:
+      "Add a `## [<version>] - <YYYY-MM-DD>` entry. Use gbrain skillpack doctor --fix to auto-generate from VERSION + git log.",
     weight: 1,
   },
 ];
@@ -640,10 +646,10 @@ gbrain skillpack doctor <pack-dir|tgz> [--quick|--full] [--fix] [--json]
   trial install, the security gates. ~minutes. The right command
   before invoking the publish skill.
 - `--fix`: auto-scaffold missing pieces. Calls `gbrain skillify
-  scaffold` for missing skills, drops runbook stubs from templates,
+scaffold` for missing skills, drops runbook stubs from templates,
   generates a CHANGELOG entry from VERSION + git log. **Destructive on
   the file tree**: prints `"this will create the following N files,
-  proceed? [y/N]"` confirm prompt; non-TTY requires explicit `--yes`.
+proceed? [y/N]"` confirm prompt; non-TTY requires explicit `--yes`.
   Refuses to overwrite any file whose mtime is newer than the
   manifest's modified-at (heuristic for "user hand-edited this").
 - `--json`: stable JSON envelope for agent consumption.
@@ -660,10 +666,14 @@ JSON output (the agent contract):
   "max_score": 10,
   "tier_eligibility": "community-with-fixes",
   "dimensions": [
-    {"id": 1, "name": "manifest_valid", "score": 1, "fix_hint": null},
-    {"id": 7, "name": "llm_eval_present", "score": 0,
-     "fix_hint": "gbrain skillify scaffold-eval <skill-name>",
-     "auto_fixable": true}
+    { "id": 1, "name": "manifest_valid", "score": 1, "fix_hint": null },
+    {
+      "id": 7,
+      "name": "llm_eval_present",
+      "score": 0,
+      "fix_hint": "gbrain skillify scaffold-eval <skill-name>",
+      "auto_fixable": true
+    }
   ],
   "next_action": "Run: gbrain skillpack doctor --fix to scaffold the 3 missing pieces, then re-run."
 }
@@ -673,7 +683,7 @@ JSON output (the agent contract):
 `skills/_brain-filing-rules.md`):**
 
 - After every meaningful edit during pack development: `gbrain
-  skillpack doctor --quick --json`. Target a 10/10 before ever invoking
+skillpack doctor --quick --json`. Target a 10/10 before ever invoking
   `pack --dry-run`.
 - Before publishing: `gbrain skillpack doctor --full` to catch what the
   structural pass can't.
@@ -688,11 +698,11 @@ badges** (5 dimensions, earn-them-for-tier-eligibility). A pack with
 0 badges still publishes as `experimental`; it just shows visible
 "no-badges" flags in the registry so consumers can decide.
 
-| Tier            | Required core (must pass) | Badges (must earn) |
-|-----------------|---------------------------|--------------------|
-| `experimental`  | 1, 2, 3, 5, 10            | 0                  |
-| `community`     | 1, 2, 3, 5, 10            | + at least 3 of {4, 6, 7, 8, 9} |
-| `endorsed`      | 1, 2, 3, 5, 10            | + ALL of {4, 6, 7, 8, 9} |
+| Tier           | Required core (must pass) | Badges (must earn)              |
+| -------------- | ------------------------- | ------------------------------- |
+| `experimental` | 1, 2, 3, 5, 10            | 0                               |
+| `community`    | 1, 2, 3, 5, 10            | + at least 3 of {4, 6, 7, 8, 9} |
+| `endorsed`     | 1, 2, 3, 5, 10            | + ALL of {4, 6, 7, 8, 9}        |
 
 Required core (5 dimensions): manifest_valid, skills_have_skill_md,
 routing_evals_present (>=5 intents per skill), check_resolvable_clean,
@@ -783,7 +793,7 @@ collision adds friction without adding safety. Auto-resolve instead:
   ships a slug already claimed by a different installed source, the
   installer appends `-2` (then `-3`, etc.) to the incoming slug and
   proceeds. Loud stderr line: `[skillpack] renamed
-  judge-submission → judge-submission-2 (collides with hackathon-judging)`.
+judge-submission → judge-submission-2 (collides with hackathon-judging)`.
 - **Suffix is durable, not cosmetic.** The renamed slug goes into the
   source's per-source `cumulative-slugs` receipt AND a sibling
   `rename-map="judge-submission:judge-submission-2,..."` attribute on the
@@ -831,7 +841,7 @@ owned state**.
   from the rendered rows) fails loud at install-time and refuses
   further mutations until reconciled by `gbrain skillpack reconcile`.
 - Schema: `skillpack-state.json` has `schema_version:
-  "gbrain-skillpack-state-v1"` for forward-compat; mirrors the
+"gbrain-skillpack-state-v1"` for forward-compat; mirrors the
   installer.ts cumulative-slugs receipt evolution story.
 
 ### Resolver-block: one block per source
@@ -843,11 +853,15 @@ whole block on every install. Cumulative-slugs receipt is per-source:
 ```markdown
 <!-- gbrain:skillpack:begin -->
 <!-- gbrain:skillpack:source name="gbrain" version="0.36.0.0" cumulative-slugs="ingest,query,..." -->
+
 | ingest | ... |
-| query  | ... |
+| query | ... |
+
 <!-- gbrain:skillpack:source name="hackathon-evaluation" version="0.1.0" cumulative-slugs="judge-submission-2,score-rubric" pinned-commit="abc1234" rename-map="judge-submission:judge-submission-2" tofu-sha256="deadbeef..." -->
+
 | judge-submission-2 | Judge a hackathon submission against the YC rubric. |
-| score-rubric       | ... |
+| score-rubric | ... |
+
 <!-- gbrain:skillpack:end -->
 ```
 
@@ -885,6 +899,7 @@ gbrain skillpack pack [--out <path>]         # NEW: validate + emit .tgz tarball
 ```
 
 `<source>` accepts:
+
 - `garrytan/repo` → `https://github.com/garrytan/repo.git`
 - `https://github.com/.../...git` → verbatim, SSRF-checked
 - `./path/to/pack.tgz` → tarball; extract to cache, install from tree
@@ -934,7 +949,7 @@ gbrain skillpack pack [--out <path>]         # NEW: validate + emit .tgz tarball
   twice on different days → same SHA).
 - `src/core/skillpack/collision-resolver.ts` — pure function
   `resolveSlugCollisions(incoming: string[], existing: Set<string>): {
-  finalSlugs: string[], renameMap: Record<string,string> }`. Bounded
+finalSlugs: string[], renameMap: Record<string,string> }`. Bounded
   walk to `-99`. Pinned by unit tests.
 - `src/core/skillpack/multi-source-receipt.ts` — parse + serialize the
   per-source resolver-block sub-headers. Pure functions; pinned by tests.
@@ -948,9 +963,9 @@ gbrain skillpack pack [--out <path>]         # NEW: validate + emit .tgz tarball
   **Offline-safe**: on fetch failure (network down, GitHub 5xx, DNS
   miss), falls back to the on-disk cache and emits a single stderr
   line per process: `[skillpack] registry fetch failed, using cache
-  from <fetched_at> (N hours old)`. If cache is >7 days old, the
+from <fetched_at> (N hours old)`. If cache is >7 days old, the
   warning escalates to `cache is stale, run 'gbrain skillpack registry
-  --refresh' when back online`. Hard-fail only when there is no cache
+--refresh' when back online`. Hard-fail only when there is no cache
   at all (first-run + offline). `--no-cache` flag forces network and
   fails loud on miss. The cache file's `fetched_at` is wall-clock
   time; clock skew is non-issue because we never compare cached
@@ -966,7 +981,7 @@ gbrain skillpack pack [--out <path>]         # NEW: validate + emit .tgz tarball
     spinup. Falls back to `unshare --net + --mount` when bwrap is
     missing but the kernel allows unprivileged user namespaces (covers
     stock Debian/Ubuntu/Arch). Falls back to `docker run --rm
-    --network=none --volume <tempdir>:/work --workdir /work` for
+--network=none --volume <tempdir>:/work --workdir /work` for
     RHEL/Rocky/CentOS where unprivileged userns is disabled by
     sysctl. Pure-tree: no minimal Linux image without bwrap AND without
     docker — fails loud with a paste-ready apt/yum install hint.
@@ -1011,7 +1026,7 @@ gbrain skillpack pack [--out <path>]         # NEW: validate + emit .tgz tarball
 - `src/core/skillpack/sandbox-probe.ts` — pre-flight: detects which
   sandbox backend is available, in order. Emits a structured
   `SandboxBackend = 'bwrap' | 'unshare' | 'sandbox-exec' | 'docker' |
-  'none'` discriminator. Backend choice persists per-process (avoid
+'none'` discriminator. Backend choice persists per-process (avoid
   re-probing on every trial). `gbrain doctor` surfaces the chosen
   backend as info.
 - `src/core/skillpack/security-gates.ts` — static-analysis pipeline.
@@ -1025,13 +1040,13 @@ gbrain skillpack pack [--out <path>]         # NEW: validate + emit .tgz tarball
   AND tarball emitter. Single command, `--dry-run` skips the tarball.
 - `src/commands/skillpack-info.ts` + `skillpack-update.ts`.
 - `src/commands/skillpack-search.ts` — `gbrain skillpack search <query>
-  [--tier ...] [--json]` reads the registry, ranks by tier then tag
+[--tier ...] [--json]` reads the registry, ranks by tier then tag
   match, prints a table.
 - `src/commands/skillpack-registry.ts` — `gbrain skillpack registry
-  [--url X] [--refresh]` show/set the configured registry URL,
+[--url X] [--refresh]` show/set the configured registry URL,
   optionally force a fresh fetch.
 - `src/commands/skillpack-endorse.ts` — `gbrain skillpack endorse <name>
-  [--tier endorsed|community|experimental] [--push] [--dry-run]`. Runs
+[--tier endorsed|community|experimental] [--push] [--dry-run]`. Runs
   in a clone of the registry repo; validates `<name>` against
   `registry.json`; reads, updates, schema-validates, and writes
   `endorsements.json` with stable key ordering; stages + commits with a
@@ -1072,14 +1087,14 @@ gbrain skillpack pack [--out <path>]         # NEW: validate + emit .tgz tarball
 - `src/core/skillpack/rubric.ts` — declarative `SKILLPACK_RUBRIC_V1`
   array of `RubricDimension` (see schema above). Pure-data + check
   functions that take a parsed pack and return `{ passed: boolean,
-  detail: string }`. Single source of truth for doctor + anatomy doc +
+detail: string }`. Single source of truth for doctor + anatomy doc +
   tests.
 - `src/core/skillpack/doctor.ts` — `runDoctor(pack, opts:
-  {mode: 'quick' | 'full', fix: boolean, autoYes: boolean}):
-  Promise<DoctorResult>`. Walks the rubric, dispatches each check,
+{mode: 'quick' | 'full', fix: boolean, autoYes: boolean}):
+Promise<DoctorResult>`. Walks the rubric, dispatches each check,
   computes score + tier eligibility, emits paste-ready fixes. `--fix`
   path dispatches per-dimension auto-scaffold (calls `gbrain skillify
-  scaffold` for missing skills, writes runbook stubs from a template
+scaffold` for missing skills, writes runbook stubs from a template
   baked into the bundle, generates CHANGELOG entries from VERSION +
   `git log --since=<last-version-tag>`). Refuses to overwrite files
   whose mtime is newer than `skillpack.json`'s mtime (heuristic for
@@ -1109,23 +1124,23 @@ gbrain skillpack pack [--out <path>]         # NEW: validate + emit .tgz tarball
   upgrade-template), CHANGELOG, README, LICENSE. The reference
   pack is the integration-test fixture for the doctor + the
   publish-gate full-suite E2E test, AND it's what `gbrain skillpack
-  doctor --quick` is regression-tested against.
+doctor --quick` is regression-tested against.
 - `docs/skillpack-anatomy.md` — one-page agent + human reference.
   Contains: (a) tree diagram of the cathedral scaffold, (b) auto-
   generated rubric table from `rubric.ts`, (c) paste-ready commands
   for every step from `init` → `doctor --quick` → `doctor --fix` →
   `pack --dry-run` → `publish`. Auto-generated header + manual prose
-  + auto-generated rubric body; a marker block guards the generated
-  section.
+  - auto-generated rubric body; a marker block guards the generated
+    section.
 - `src/core/skillpack/audit.ts` — JSONL audit at
   `~/.gbrain/audit/skillpack-YYYY-Www.jsonl` (ISO-week rotated, mirrors
   `src/core/audit-slug-fallback.ts` + `src/core/rerank-audit.ts`).
   `logSkillpackEvent({event, source_kind, name, version,
-  pinned_commit, tier_when_installed, outcome, error?})` called by
+pinned_commit, tier_when_installed, outcome, error?})` called by
   install / uninstall / update / search-resolve paths. Best-effort —
   never throws, logs stderr warning on write failure.
   `readRecentSkillpackEvents(days)` is the readback path for `gbrain
-  doctor`'s new `skillpack_activity` check (info-level: "installed N
+doctor`'s new `skillpack_activity` check (info-level: "installed N
   packs in the last 7 days, all from endorsed tier" or "installed 2
   community-tier packs in the last 24h — review at <audit-path>").
 - `skills/gbrain-skillpack-publish/SKILL.md` — the publish-gate skill
@@ -1170,7 +1185,7 @@ gbrain skillpack pack [--out <path>]         # NEW: validate + emit .tgz tarball
   static-only PR validation from any dangerous execution:
   - `.github/workflows/validate-pr.yml` runs on **`pull_request`**
     (NOT `pull_request_target`). Permissions: `contents: read,
-    pull-requests: read` only. NO GitHub token write scopes, NO LFS
+pull-requests: read` only. NO GitHub token write scopes, NO LFS
     write, NO repo PAT. Does: manifest schema check, file-type
     allowlist scan, slug uniqueness vs `registry.json`, dependency
     declaration check. Pure static. Cannot exfiltrate anything because
@@ -1284,7 +1299,7 @@ gbrain skillpack pack [--out <path>]         # NEW: validate + emit .tgz tarball
 - `src/commands/skillpack.ts` — extend `install` to dispatch on source
   shape (bundled vs `owner/repo` vs URL vs local path).
 - `src/core/skillpack/installer.ts` — thread a `source: {name, version,
-  pinnedCommit?}` discriminator through `applyInstall` / `applyUninstall`.
+pinnedCommit?}` discriminator through `applyInstall` / `applyUninstall`.
   Read + write per-source managed sub-blocks.
 - `src/core/skillpack/bundle.ts` — accept either today's
   `openclaw.plugin.json` shape OR the new `skillpack.json`, normalize
@@ -1338,7 +1353,7 @@ End-to-end:
     publish-gate spins up does NOT touch `~/.gbrain`. Tear-down is
     clean — no file artifacts, no DB connections left behind.
 13. **Runbook execution end-to-end**: `gbrain skillpack install
-    hackathon-evaluation` lands the pack AND walks
+hackathon-evaluation` lands the pack AND walks
     `runbooks/install.md` step-by-step. Each `agent:` step runs;
     each `show user:` step prints; each `ask user:` step blocks on
     TTY confirm or honors `--yes`. Failed agent step halts the walk
@@ -1399,7 +1414,7 @@ earlier ones from shipping value:
 2. **W2: Registry catalog** — `garrytan/gbrain-skillpack-registry`
    created, `registry.json` schema + endorsements.json, registry-client
    with stale-cache fallback, `gbrain skillpack search` + `install
-   <short-name>` + `info`. Initial catalog seeded with bundled gbrain
+<short-name>` + `info`. Initial catalog seeded with bundled gbrain
    skills + hackathon-evaluation + maybe one community pack.
 3. **W3: Publish-gate skill** — `/gbrain-skillpack-publish` skill,
    security-gates module, sandbox-probe, subprocess-isolated trial
@@ -1432,15 +1447,16 @@ W4-W6 are quality layers on a working system.
 
 ## GSTACK REVIEW REPORT
 
-| Review | Trigger | Why | Runs | Status | Findings |
-|--------|---------|-----|------|--------|----------|
-| CEO Review | `/plan-ceo-review` | Scope & strategy | 1 | CLEAR (PLAN) | 6 proposals, 6 accepted, 0 deferred; EXPANSION mode |
-| Eng Review | `/plan-eng-review` | Architecture & tests (required) | 1 | CLEAR (PLAN) | 3 arch + 1 quality + 4 test-gap findings; 5 decisions locked |
-| DX Review | `/plan-devex-review` | Developer experience gaps | 2 | CLEAR (PLAN) | 8 decisions across 2 rounds: artifact cathedral + rubric/doctor/anatomy + 10/10 bundled invariant |
-| Codex Review | `/codex` plan-consult | Independent 2nd opinion | 1 | ISSUES_FOUND → INCORPORATED | 20 findings; 8 surfaced as tensions/gaps; 6 adopted (T1 + T4 + G1-G4); 2 cathedral defenses held (T2 scope, T3 10/10 invariant); 3 trailing correctness fixes folded in |
-| Design Review | `/plan-design-review` | UI/UX gaps | 0 | — | no UI scope (CLI + skill markdown only) |
+| Review        | Trigger               | Why                             | Runs | Status                      | Findings                                                                                                                                                                |
+| ------------- | --------------------- | ------------------------------- | ---- | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| CEO Review    | `/plan-ceo-review`    | Scope & strategy                | 1    | CLEAR (PLAN)                | 6 proposals, 6 accepted, 0 deferred; EXPANSION mode                                                                                                                     |
+| Eng Review    | `/plan-eng-review`    | Architecture & tests (required) | 1    | CLEAR (PLAN)                | 3 arch + 1 quality + 4 test-gap findings; 5 decisions locked                                                                                                            |
+| DX Review     | `/plan-devex-review`  | Developer experience gaps       | 2    | CLEAR (PLAN)                | 8 decisions across 2 rounds: artifact cathedral + rubric/doctor/anatomy + 10/10 bundled invariant                                                                       |
+| Codex Review  | `/codex` plan-consult | Independent 2nd opinion         | 1    | ISSUES_FOUND → INCORPORATED | 20 findings; 8 surfaced as tensions/gaps; 6 adopted (T1 + T4 + G1-G4); 2 cathedral defenses held (T2 scope, T3 10/10 invariant); 3 trailing correctness fixes folded in |
+| Design Review | `/plan-design-review` | UI/UX gaps                      | 0    | —                           | no UI scope (CLI + skill markdown only)                                                                                                                                 |
 
 **Eng-review decisions locked this run:**
+
 1. **Linux sandbox chain**: `bwrap → unshare --net → docker`. bwrap preferred (most portable, ~100ms); unshare covers stock kernels; docker as heavyweight fallback for RHEL/Rocky/CentOS where unprivileged userns is disabled.
 2. **macOS sandbox**: `sandbox-exec → docker`. Apple's built-in `sandbox-exec` is the primary path (~50ms, no Docker dep); Docker is the rare fallback. macOS publishers without Docker can still publish.
 3. **Bundle install atomicity**: per-pack independent (option γ). Failures inside a bundle leave earlier successful packs installed, skip later packs, print a summary with retry hint.
@@ -1448,6 +1464,7 @@ W4-W6 are quality layers on a working system.
 5. **Endorsement workflow**: `gbrain skillpack endorse <name> [--tier ...] [--push]` CLI command with schema validation; hand-editing remains valid.
 
 **Eng-review findings (resolved by the 5 decisions above):**
+
 - A1: Linux sandbox fallback chain underspecified → locked (#1).
 - A2: Docker-on-macOS as a contributor cliff → locked (#2, sandbox-exec preferred).
 - A3: Registry source-repo-deleted doom path → locked (#4, tarball mirror).
@@ -1455,6 +1472,7 @@ W4-W6 are quality layers on a working system.
 - E1: Endorsement workflow unspecified → locked (#5).
 
 **Test coverage:** 31/35 paths planned (~89%) before this review. Four gaps added to the plan as required tests before implementation:
+
 - T-GAP-1: `gh` not-installed / not-authed branches in the publish skill.
 - T-GAP-2: sandbox network-block assertion (fetch + https.request both rejected) across every backend the host can spin up.
 - T-GAP-3: starter-pack bundle mid-failure (5-pack fixture, pack-3 fails) → per-pack-independent contract verified.
@@ -1463,6 +1481,7 @@ W4-W6 are quality layers on a working system.
 **Failure modes:** 0 critical gaps. Every new codepath is tested, rescued, AND user-visible. The collision-rename rollback path was the only silent-failure candidate; T-GAP-4 closes it.
 
 **Worktree parallelization:** 6 lanes mapped via the W1–W6 sequencing in the plan.
+
 - Lane A (W1: single-pack install): manifest, tarball, collision-resolver, multi-source-receipt, install paths. Sequential; shared `src/core/skillpack/` namespace.
 - Lane B (W2: registry catalog): registry-client, registry-schema, search/info commands. Can run parallel to A after manifest schema lands.
 - Lane C (W3: publish gate): publish skill, security gates, sandbox + sandbox-probe + macOS profile. Parallel to A+B but depends on tarball from A.
@@ -1474,32 +1493,29 @@ Conflict flag: Lane A and Lane C both touch the in-tree skillpack module dir. Re
 
 **DX-review decisions locked across two rounds:**
 
-*Round 1 — artifact scope:*
+_Round 1 — artifact scope:_
+
 1. **Artifact scope: full cathedral.** `skillpack.json` declares `skills[]`, `unit_tests[]`, `e2e_tests[]`, `llm_evals[]`, `routing_evals[]`, `runbooks{install, uninstall, upgrades}`, `changelog`. The differentiation moat — nobody else ships AI evals + agent runbooks as first-class package artifacts.
 2. **Publish gate runs everything in the sandbox.** Unit + E2E (when DB available) + LLM-judge (stubbed gateway, zero cost) + routing-evals. Coverage score drives tier eligibility: `endorsed` requires routing + runbooks + >=95% pass; `community` requires routing + install + >=80%; `experimental` accepts structural-only.
 3. **Runbook format: agent-readable markdown** with three step kinds (`agent:`, `show user:`, `ask user:`). Separate `install.md`, `uninstall.md`, `upgrade-<from>-to-<to>.md` per version. Mirrors gbrain's own `skills/migrations/v0.21.0.md` pattern.
 4. **`gbrain skillpack init` scaffolds the cathedral by default.** Full tree (skills, tests, e2e, evals, runbooks, CHANGELOG, README, LICENSE) lands out of the box; `gbrain skillpack pack --dry-run` passes immediately. `--minimal` flag for power users opting out.
 
-*Round 2 — rubric + doctor + reference + invariant:*
-5. **Layered doctor:** `gbrain skillpack doctor --quick` (~5s structural sweep, walks the rubric, no sandbox/LLM/DB) for rapid iteration; `--full` (runs the full publish-gate suite) for ship-readiness. Two-tool design; agent picks the mode per workflow phase. The user noted: agents do the operating, so the cognitive cost of two flags is irrelevant as long as the docs teach the agent when to use which.
-6. **Rubric as declarative spec:** `src/core/skillpack/rubric.ts` exports `SKILLPACK_RUBRIC_V1` — 10 binary dimensions (manifest valid / SKILL.md complete / routing-evals present + clean / check-resolvable clean / unit test present / LLM-judge eval present / install + uninstall runbooks / CHANGELOG current). Single source of truth: doctor walks it, anatomy doc is auto-generated from it, tests pin each dimension.
-7. **`doctor --fix` auto-scaffold:** Calls `gbrain skillify scaffold` for missing skills, drops runbook stubs, generates CHANGELOG entries from VERSION + git log. Confirm prompt on TTY; `--yes` skips; refuses to overwrite files whose mtime is newer than `skillpack.json`'s.
-8. **Reference pack + anatomy doc + 10/10 invariant for EVERY bundled gbrain skillpack:** ship `examples/skillpack-reference/` (real working 10/10 pack) AND `docs/skillpack-anatomy.md` (one-page reference, auto-generated rubric section from `rubric.ts`). NEW INVARIANT (the user's strongest line): every gbrain-shipped skillpack must score 10/10 on `--quick`. `scripts/check-bundled-skillpacks-rubric.sh` is wired into `bun run verify` + CI. Bringing today's `openclaw.plugin.json` set to 10/10 is wave W4.5 — blocking on W3 (doctor) but required before v1.0 ship. Credibility-poison if gbrain ships skillpacks below the bar gbrain demands of third parties.
+_Round 2 — rubric + doctor + reference + invariant:_ 5. **Layered doctor:** `gbrain skillpack doctor --quick` (~5s structural sweep, walks the rubric, no sandbox/LLM/DB) for rapid iteration; `--full` (runs the full publish-gate suite) for ship-readiness. Two-tool design; agent picks the mode per workflow phase. The user noted: agents do the operating, so the cognitive cost of two flags is irrelevant as long as the docs teach the agent when to use which. 6. **Rubric as declarative spec:** `src/core/skillpack/rubric.ts` exports `SKILLPACK_RUBRIC_V1` — 10 binary dimensions (manifest valid / SKILL.md complete / routing-evals present + clean / check-resolvable clean / unit test present / LLM-judge eval present / install + uninstall runbooks / CHANGELOG current). Single source of truth: doctor walks it, anatomy doc is auto-generated from it, tests pin each dimension. 7. **`doctor --fix` auto-scaffold:** Calls `gbrain skillify scaffold` for missing skills, drops runbook stubs, generates CHANGELOG entries from VERSION + git log. Confirm prompt on TTY; `--yes` skips; refuses to overwrite files whose mtime is newer than `skillpack.json`'s. 8. **Reference pack + anatomy doc + 10/10 invariant for EVERY bundled gbrain skillpack:** ship `examples/skillpack-reference/` (real working 10/10 pack) AND `docs/skillpack-anatomy.md` (one-page reference, auto-generated rubric section from `rubric.ts`). NEW INVARIANT (the user's strongest line): every gbrain-shipped skillpack must score 10/10 on `--quick`. `scripts/check-bundled-skillpacks-rubric.sh` is wired into `bun run verify` + CI. Bringing today's `openclaw.plugin.json` set to 10/10 is wave W4.5 — blocking on W3 (doctor) but required before v1.0 ship. Credibility-poison if gbrain ships skillpacks below the bar gbrain demands of third parties.
 
 **DX scorecard (after both DX rounds):**
 
-| Dimension          | Before | Round 1 | Round 2 | Notes |
-|--------------------|--------|---------|---------|-------|
-| Getting Started    | 4/10   | 9/10    | **10/10** | scaffold + `doctor --quick` round-trip in <10s; reference pack as ground truth |
-| API/CLI/SDK        | 6/10   | 9/10    | **10/10** | `init / doctor / pack / test / publish / endorse / install / search` complete surface |
-| Error Messages     | 5/10   | 8/10    | **9/10** | doctor emits paste-ready fix per failed dimension; auto-fixable flag for agents |
-| Documentation      | 5/10   | 8/10    | **10/10** | `docs/skillpack-anatomy.md` is one-page + auto-generated rubric + reference pack as example |
-| Upgrade Path       | 2/10   | 9/10    | **9/10** | runbook-walker handles multi-hop |
-| Dev Environment    | 6/10   | 9/10    | **10/10** | `doctor --quick` (~5s) + `--fix` autoscaffold + `--full` (publish-gate) |
-| Community          | 3/10   | 8/10    | **9/10** | registry + tarball mirror + endorsement workflow + reference pack to fork |
-| DX Measurement     | 2/10   | 7/10    | **9/10** | doctor JSON envelope is stable; per-dimension scoring trend across publishes |
-| **TTHW**           | n/a    | <5min   | **<3min** | `init` → edit → `doctor --quick` → 10/10 |
-| **Overall DX**     | 4/10   | 8.5/10  | **9.5/10** | Rubric-as-source-of-truth + `every bundled pack is 10/10` invariant is the kill move |
+| Dimension       | Before | Round 1 | Round 2    | Notes                                                                                       |
+| --------------- | ------ | ------- | ---------- | ------------------------------------------------------------------------------------------- |
+| Getting Started | 4/10   | 9/10    | **10/10**  | scaffold + `doctor --quick` round-trip in <10s; reference pack as ground truth              |
+| API/CLI/SDK     | 6/10   | 9/10    | **10/10**  | `init / doctor / pack / test / publish / endorse / install / search` complete surface       |
+| Error Messages  | 5/10   | 8/10    | **9/10**   | doctor emits paste-ready fix per failed dimension; auto-fixable flag for agents             |
+| Documentation   | 5/10   | 8/10    | **10/10**  | `docs/skillpack-anatomy.md` is one-page + auto-generated rubric + reference pack as example |
+| Upgrade Path    | 2/10   | 9/10    | **9/10**   | runbook-walker handles multi-hop                                                            |
+| Dev Environment | 6/10   | 9/10    | **10/10**  | `doctor --quick` (~5s) + `--fix` autoscaffold + `--full` (publish-gate)                     |
+| Community       | 3/10   | 8/10    | **9/10**   | registry + tarball mirror + endorsement workflow + reference pack to fork                   |
+| DX Measurement  | 2/10   | 7/10    | **9/10**   | doctor JSON envelope is stable; per-dimension scoring trend across publishes                |
+| **TTHW**        | n/a    | <5min   | **<3min**  | `init` → edit → `doctor --quick` → 10/10                                                    |
+| **Overall DX**  | 4/10   | 8.5/10  | **9.5/10** | Rubric-as-source-of-truth + `every bundled pack is 10/10` invariant is the kill move        |
 
 **Magical moment** (locked from DX 0D): `gbrain skillpack install <name>` lands the pack AND walks `runbooks/install.md` AND the agent immediately knows what triggers fire, what tools the skill exposes, and how to upgrade later. Zero "where are the docs?" moment.
 
@@ -1508,24 +1524,28 @@ Conflict flag: Lane A and Lane C both touch the in-tree skillpack module dir. Re
 **Lake Score:** 25/27 — every cathedral-leaning recommendation accepted across CEO + Eng + DX (both rounds) + 8 codex outside-voice questions. The 2 holds are deliberate: T2 (kept cathedral scope vs codex's minimal v1) and T3 (kept the 10/10 bundled invariant vs codex's defer-to-v1.1). Both defenses were on locked product-strategy decisions; the cathedral moat is the thing.
 
 **CODEX (outside voice) — 20 findings, 8 surfaced for decision:**
+
 - T1 (RUNBOOK TRUST) — adopted: per-step approval replaces auto-walk; `--runbook-apply-all` for CI; `--runbook-skip` for file-drop-only. NPM-postinstall lesson applied.
 - T2 (SCOPE) — held: cathedral is the moat; minimal v1 forfeits curation+evals+runbooks differentiation; without those gbrain skillpacks are just another agentskills.io mirror.
 - T3 (10/10 BUNDLED) — held: shipping gbrain's own packs below the bar gbrain demands is credibility-poison; W4.5 retrofit costs ~3d with --fix autoscaffold, slips v1 by a week.
 - T4 (GAMEABLE CATHEDRAL) — adopted: rubric splits into required core (5 dimensions: manifest + SKILL.md + routing-evals + check-resolvable + CHANGELOG) and quality badges (5: routing-evals-clean + unit tests + LLM-judge + install + uninstall runbook). Endorsed needs all badges; community needs 3/5; experimental needs core only. Plus stubbed-eval detection in publish-gate content scan.
 - G1 (TRUST STORE) — adopted: `~/.gbrain/skillpack-state.json` machine-owned (TOFU pins, hashes, rename maps); resolver markdown stays render-only (rows + cumulative-slugs). Mismatch fails loud.
-- G2 (ENV SCRUB) — adopted: clean env (only PATH/LANG/TZ), HOME override to empty `<tempdir>/sandbox-home`, explicit denylist (`*_API_KEY` / `*_TOKEN` / `*_SECRET` / SSH_AUTH_SOCK / GIT_* / NPM_TOKEN / BUN_INSTALL_TOKEN). Read-only mounts + masked `/proc` where bwrap supports it.
+- G2 (ENV SCRUB) — adopted: clean env (only PATH/LANG/TZ), HOME override to empty `<tempdir>/sandbox-home`, explicit denylist (`*_API_KEY` / `*_TOKEN` / `*_SECRET` / SSH*AUTH_SOCK / GIT*\* / NPM_TOKEN / BUN_INSTALL_TOKEN). Read-only mounts + masked `/proc` where bwrap supports it.
 - G3 (CI SUPPLY CHAIN) — adopted: three-workflow split. validate-pr.yml is static-only on `pull_request` (no privileged tokens, no LFS write). post-merge-validate.yml runs the heavy suite inside the registry's own sandbox after merge. mirror-tarball.yml commits the tarball with a least-privilege deploy key scoped to `tarballs/`.
 - G4 (NAMESPACE / TYPOSQUAT) — adopted: first-install identity confirm prompt showing author/source/commit/SHA/tier; subsequent same-author-same-pin installs skip. Registry rejects new endorsed-tier names within Damerau-Levenshtein edit-distance 2 of any existing endorsed pack.
 
 **Trailing correctness fixes (no decision needed, codex gaps clearly worth taking):**
+
 - Tarball determinism: sorted entries, fixed mtimes, gzip mtime=0, no symlinks/hardlinks/devices/FIFOs, extract caps (5000 files / 100MB total / 1MB per file / 255-char paths / 100:1 ratio).
 - check-resolvable pack-local isolation: doctor + publish-gate wrap `check-resolvable` in a tempdir fixture containing ONLY the pack's RESOLVER.md + skills/, so verdict is pack-local not workspace-global.
 - Versioning beyond `gbrain_min_version`: manifest also carries `runbook_schema_version` + `eval_schema_version`; installer rejects newer-than-supported with paste-ready upgrade hint.
 
 **CROSS-MODEL TENSION (held cathedral over codex):**
+
 - T2 scope and T3 bundled-invariant are product-strategy decisions where codex's argument (ship simpler v1 faster) lost to the user's argument (the differentiation IS the cathedral; shipping below your own bar is credibility-poison). Codex was right on every supply-chain finding; the disagreement on scope is taste, not correctness. Documented here so future maintainers see the trade.
 
 **Recommended next reviews:**
+
 1. **/codex consult** as an outside voice on the locked-in plan; the artifact-as-software-package framing deserves an independent challenge.
 2. **/devex-review** after implementation lands — the boomerang. Plan says TTHW < 5min; reality check post-ship.
 

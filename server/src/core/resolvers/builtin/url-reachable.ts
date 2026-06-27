@@ -19,19 +19,10 @@
  *   Abort token threads through both.
  */
 
-import { promises as dns } from 'dns';
-import {
-  isInternalUrl,
-  hostnameToOctets,
-  isPrivateIpv4,
-} from '../../../commands/integrations.ts';
-import type {
-  Resolver,
-  ResolverContext,
-  ResolverRequest,
-  ResolverResult,
-} from '../interface.ts';
-import { ResolverError } from '../interface.ts';
+import { promises as dns } from "dns";
+import { isInternalUrl, hostnameToOctets, isPrivateIpv4 } from "../../../commands/integrations.ts";
+import type { Resolver, ResolverContext, ResolverRequest, ResolverResult } from "../interface.ts";
+import { ResolverError } from "../interface.ts";
 
 export interface UrlReachableInput {
   url: string;
@@ -50,24 +41,24 @@ const DEFAULT_TIMEOUT_MS = 10_000;
 const MAX_REDIRECTS = 5;
 
 export const urlReachableResolver: Resolver<UrlReachableInput, UrlReachableOutput> = {
-  id: 'url_reachable',
-  cost: 'free',
-  backend: 'head-check',
-  description: 'HEAD-check a URL, follow redirects, detect dead links. SSRF-protected.',
+  id: "url_reachable",
+  cost: "free",
+  backend: "head-check",
+  description: "HEAD-check a URL, follow redirects, detect dead links. SSRF-protected.",
   inputSchema: {
-    type: 'object',
-    properties: { url: { type: 'string', format: 'uri' } },
-    required: ['url'],
+    type: "object",
+    properties: { url: { type: "string", format: "uri" } },
+    required: ["url"],
   },
   outputSchema: {
-    type: 'object',
+    type: "object",
     properties: {
-      reachable: { type: 'boolean' },
-      status: { type: 'number' },
-      finalUrl: { type: 'string' },
-      reason: { type: 'string' },
+      reachable: { type: "boolean" },
+      status: { type: "number" },
+      finalUrl: { type: "string" },
+      reason: { type: "string" },
     },
-    required: ['reachable'],
+    required: ["reachable"],
   },
 
   async available(_ctx: ResolverContext): Promise<boolean> {
@@ -75,13 +66,19 @@ export const urlReachableResolver: Resolver<UrlReachableInput, UrlReachableOutpu
     return true;
   },
 
-  async resolve(req: ResolverRequest<UrlReachableInput>): Promise<ResolverResult<UrlReachableOutput>> {
+  async resolve(
+    req: ResolverRequest<UrlReachableInput>
+  ): Promise<ResolverResult<UrlReachableOutput>> {
     const { url } = req.input;
     const timeoutMs = req.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     const signal = req.context.signal;
 
-    if (typeof url !== 'string' || url.length === 0) {
-      throw new ResolverError('schema', 'url_reachable: url must be a non-empty string', 'url_reachable');
+    if (typeof url !== "string" || url.length === 0) {
+      throw new ResolverError(
+        "schema",
+        "url_reachable: url must be a non-empty string",
+        "url_reachable"
+      );
     }
 
     // SSRF gate — refuse to probe internal/private/metadata endpoints (by hostname string).
@@ -89,10 +86,10 @@ export const urlReachableResolver: Resolver<UrlReachableInput, UrlReachableOutpu
       return {
         value: {
           reachable: false,
-          reason: 'blocked: internal/private/metadata hostname or non-http(s) scheme',
+          reason: "blocked: internal/private/metadata hostname or non-http(s) scheme",
         },
         confidence: 1,
-        source: 'head-check',
+        source: "head-check",
         fetchedAt: new Date(),
       };
     }
@@ -112,14 +109,14 @@ export const urlReachableResolver: Resolver<UrlReachableInput, UrlReachableOutpu
           reason: rebindCheck,
         },
         confidence: 1,
-        source: 'head-check',
+        source: "head-check",
         fetchedAt: new Date(),
       };
     }
 
     let currentUrl = url;
     let status: number | undefined;
-    let usedMethod: 'HEAD' | 'GET' = 'HEAD';
+    let usedMethod: "HEAD" | "GET" = "HEAD";
 
     for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
       const combinedSignal = composeSignals(signal, timeoutMs);
@@ -127,12 +124,17 @@ export const urlReachableResolver: Resolver<UrlReachableInput, UrlReachableOutpu
       try {
         resp = await fetch(currentUrl, {
           method: usedMethod,
-          redirect: 'manual',
+          redirect: "manual",
           signal: combinedSignal,
         });
       } catch (err: unknown) {
         if (isAbortError(err)) {
-          throw new ResolverError('aborted', `url_reachable aborted (${currentUrl})`, 'url_reachable', err);
+          throw new ResolverError(
+            "aborted",
+            `url_reachable aborted (${currentUrl})`,
+            "url_reachable",
+            err
+          );
         }
         // fetch threw (DNS, connection refused, timeout). Not reachable, no status.
         return {
@@ -141,7 +143,7 @@ export const urlReachableResolver: Resolver<UrlReachableInput, UrlReachableOutpu
             reason: `fetch error: ${errMessage(err).slice(0, 200)}`,
           },
           confidence: 1,
-          source: 'head-check',
+          source: "head-check",
           fetchedAt: new Date(),
         };
       }
@@ -149,24 +151,24 @@ export const urlReachableResolver: Resolver<UrlReachableInput, UrlReachableOutpu
       status = resp.status;
 
       // Some servers reject HEAD with 405 / 501. Retry once as GET (same hop).
-      if (usedMethod === 'HEAD' && (status === 405 || status === 501)) {
-        usedMethod = 'GET';
+      if (usedMethod === "HEAD" && (status === 405 || status === 501)) {
+        usedMethod = "GET";
         continue;
       }
 
       // Redirect handling
       if (status >= 300 && status < 400) {
-        const location = resp.headers.get('location');
+        const location = resp.headers.get("location");
         if (!location) {
           return {
             value: {
               reachable: false,
               status,
               finalUrl: currentUrl !== url ? currentUrl : undefined,
-              reason: 'redirect without Location header',
+              reason: "redirect without Location header",
             },
             confidence: 1,
-            source: 'head-check',
+            source: "head-check",
             fetchedAt: new Date(),
           };
         }
@@ -181,7 +183,7 @@ export const urlReachableResolver: Resolver<UrlReachableInput, UrlReachableOutpu
               reason: `redirect to blocked hostname: ${nextUrl}`,
             },
             confidence: 1,
-            source: 'head-check',
+            source: "head-check",
             fetchedAt: new Date(),
           };
         }
@@ -196,12 +198,12 @@ export const urlReachableResolver: Resolver<UrlReachableInput, UrlReachableOutpu
               reason: `redirect blocked by DNS check: ${rebindOnRedirect}`,
             },
             confidence: 1,
-            source: 'head-check',
+            source: "head-check",
             fetchedAt: new Date(),
           };
         }
         currentUrl = nextUrl;
-        usedMethod = 'HEAD'; // reset to HEAD for the new hop
+        usedMethod = "HEAD"; // reset to HEAD for the new hop
         continue;
       }
 
@@ -217,7 +219,7 @@ export const urlReachableResolver: Resolver<UrlReachableInput, UrlReachableOutpu
           reason: reachable ? undefined : `HTTP ${status}`,
         },
         confidence: 1,
-        source: 'head-check',
+        source: "head-check",
         fetchedAt: new Date(),
       };
     }
@@ -231,7 +233,7 @@ export const urlReachableResolver: Resolver<UrlReachableInput, UrlReachableOutpu
         reason: `exceeded ${MAX_REDIRECTS} redirects`,
       },
       confidence: 1,
-      source: 'head-check',
+      source: "head-check",
       fetchedAt: new Date(),
     };
   },
@@ -262,13 +264,17 @@ function errMessage(err: unknown): string {
  */
 export async function checkDnsRebinding(urlStr: string): Promise<string | null> {
   let parsed: URL;
-  try { parsed = new URL(urlStr); } catch { return null; }
+  try {
+    parsed = new URL(urlStr);
+  } catch {
+    return null;
+  }
   let host = parsed.hostname.toLowerCase();
-  if (host.startsWith('[') && host.endsWith(']')) host = host.slice(1, -1);
+  if (host.startsWith("[") && host.endsWith("]")) host = host.slice(1, -1);
 
   // IP literal? isInternalUrl already rejected private ones; skip DNS.
   if (hostnameToOctets(host)) return null;
-  if (host.includes(':')) return null; // IPv6 literal
+  if (host.includes(":")) return null; // IPv6 literal
 
   let addrs: { address: string; family: number }[];
   try {
@@ -280,21 +286,26 @@ export async function checkDnsRebinding(urlStr: string): Promise<string | null> 
 
   for (const a of addrs) {
     if (a.family === 4) {
-      const octets = a.address.split('.').map(s => parseInt(s, 10));
-      if (octets.length === 4 && octets.every(o => Number.isFinite(o)) && isPrivateIpv4(octets)) {
+      const octets = a.address.split(".").map((s) => parseInt(s, 10));
+      if (octets.length === 4 && octets.every((o) => Number.isFinite(o)) && isPrivateIpv4(octets)) {
         return `DNS resolution of ${host} yielded private IPv4 ${a.address} (rebinding defense)`;
       }
     } else if (a.family === 6) {
       // Minimal v6 private-range checks: loopback, link-local, unique-local, IPv4-mapped.
       const v6 = a.address.toLowerCase();
-      if (v6 === '::1' || v6 === '::' ) return `DNS resolution of ${host} yielded IPv6 loopback ${v6}`;
-      if (v6.startsWith('fe80:') || v6.startsWith('fc') || v6.startsWith('fd')) {
+      if (v6 === "::1" || v6 === "::")
+        return `DNS resolution of ${host} yielded IPv6 loopback ${v6}`;
+      if (v6.startsWith("fe80:") || v6.startsWith("fc") || v6.startsWith("fd")) {
         return `DNS resolution of ${host} yielded private/link-local IPv6 ${v6}`;
       }
-      if (v6.startsWith('::ffff:')) {
+      if (v6.startsWith("::ffff:")) {
         const tail = v6.slice(7);
-        const octets = tail.split('.').map(s => parseInt(s, 10));
-        if (octets.length === 4 && octets.every(o => Number.isFinite(o)) && isPrivateIpv4(octets)) {
+        const octets = tail.split(".").map((s) => parseInt(s, 10));
+        if (
+          octets.length === 4 &&
+          octets.every((o) => Number.isFinite(o)) &&
+          isPrivateIpv4(octets)
+        ) {
           return `DNS resolution of ${host} yielded IPv4-mapped private IPv6 ${v6}`;
         }
       }
@@ -304,8 +315,12 @@ export async function checkDnsRebinding(urlStr: string): Promise<string | null> 
 }
 
 function isAbortError(err: unknown): boolean {
-  return !!err && typeof err === 'object' &&
-    'name' in err && (err as { name: string }).name === 'AbortError';
+  return (
+    !!err &&
+    typeof err === "object" &&
+    "name" in err &&
+    (err as { name: string }).name === "AbortError"
+  );
 }
 
 /**
@@ -318,15 +333,20 @@ function composeSignals(outer: AbortSignal | undefined, timeoutMs: number): Abor
   const timeoutSignal = AbortSignal.timeout(timeoutMs);
   if (!outer) return timeoutSignal;
   // Bun supports AbortSignal.any since 1.0.26
-  if (typeof (AbortSignal as { any?: (signals: AbortSignal[]) => AbortSignal }).any === 'function') {
-    return (AbortSignal as unknown as { any: (signals: AbortSignal[]) => AbortSignal }).any([outer, timeoutSignal]);
+  if (
+    typeof (AbortSignal as { any?: (signals: AbortSignal[]) => AbortSignal }).any === "function"
+  ) {
+    return (AbortSignal as unknown as { any: (signals: AbortSignal[]) => AbortSignal }).any([
+      outer,
+      timeoutSignal,
+    ]);
   }
   // Fallback: manual propagation
   const controller = new AbortController();
   const onAbort = () => controller.abort();
   if (outer.aborted) controller.abort();
-  else outer.addEventListener('abort', onAbort, { once: true });
+  else outer.addEventListener("abort", onAbort, { once: true });
   if (timeoutSignal.aborted) controller.abort();
-  else timeoutSignal.addEventListener('abort', onAbort, { once: true });
+  else timeoutSignal.addEventListener("abort", onAbort, { once: true });
   return controller.signal;
 }

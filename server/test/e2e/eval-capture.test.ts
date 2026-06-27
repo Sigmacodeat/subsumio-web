@@ -12,9 +12,9 @@
  * per CLAUDE.md E2E lifecycle.
  */
 
-import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'bun:test';
-import { PostgresEngine } from '../../src/core/postgres-engine.ts';
-import type { EvalCandidateInput } from '../../src/core/types.ts';
+import { afterAll, beforeAll, beforeEach, describe, expect, test } from "bun:test";
+import { PostgresEngine } from "../../src/core/postgres-engine.ts";
+import type { EvalCandidateInput } from "../../src/core/types.ts";
 
 const DATABASE_URL = process.env.DATABASE_URL;
 
@@ -22,7 +22,7 @@ let engine: PostgresEngine | null = null;
 
 beforeAll(async () => {
   if (!DATABASE_URL) {
-    console.log('[e2e/eval-capture] DATABASE_URL not set — skipping.');
+    console.log("[e2e/eval-capture] DATABASE_URL not set — skipping.");
     return;
   }
   engine = new PostgresEngine();
@@ -36,20 +36,20 @@ afterAll(async () => {
 
 beforeEach(async () => {
   if (!engine) return;
-  await engine.executeRaw('DELETE FROM eval_candidates');
-  await engine.executeRaw('DELETE FROM eval_capture_failures');
+  await engine.executeRaw("DELETE FROM eval_candidates");
+  await engine.executeRaw("DELETE FROM eval_capture_failures");
 });
 
 function baseInput(overrides: Partial<EvalCandidateInput> = {}): EvalCandidateInput {
   return {
-    tool_name: 'query',
-    query: 'alice',
-    retrieved_slugs: ['people/alice-example'],
+    tool_name: "query",
+    query: "alice",
+    retrieved_slugs: ["people/alice-example"],
     retrieved_chunk_ids: [1],
-    source_ids: ['default'],
+    source_ids: ["default"],
     expand_enabled: true,
     detail: null,
-    detail_resolved: 'medium',
+    detail_resolved: "medium",
     vector_enabled: true,
     expansion_applied: false,
     latency_ms: 100,
@@ -60,12 +60,12 @@ function baseInput(overrides: Partial<EvalCandidateInput> = {}): EvalCandidateIn
   };
 }
 
-describe('CHECK constraint — 50KB query length cap', () => {
+describe("CHECK constraint — 50KB query length cap", () => {
   test.if(DATABASE_URL !== undefined)(
-    'oversized query rejected with Postgres error code 23514',
+    "oversized query rejected with Postgres error code 23514",
     async () => {
       if (!engine) return;
-      const big = 'x'.repeat(51_201);
+      const big = "x".repeat(51_201);
       let caught: unknown = null;
       try {
         await engine.logEvalCandidate(baseInput({ query: big }));
@@ -74,22 +74,19 @@ describe('CHECK constraint — 50KB query length cap', () => {
       }
       expect(caught).not.toBeNull();
       // postgres.js surfaces SQLSTATE on the error object as `code`.
-      expect((caught as { code?: string }).code).toBe('23514');
-    },
+      expect((caught as { code?: string }).code).toBe("23514");
+    }
   );
 
-  test.if(DATABASE_URL !== undefined)(
-    'query exactly at 50KB succeeds',
-    async () => {
-      if (!engine) return;
-      const atCap = 'x'.repeat(51_200);
-      const id = await engine.logEvalCandidate(baseInput({ query: atCap }));
-      expect(id).toBeGreaterThan(0);
-    },
-  );
+  test.if(DATABASE_URL !== undefined)("query exactly at 50KB succeeds", async () => {
+    if (!engine) return;
+    const atCap = "x".repeat(51_200);
+    const id = await engine.logEvalCandidate(baseInput({ query: atCap }));
+    expect(id).toBeGreaterThan(0);
+  });
 });
 
-describe('RLS policy — requires BYPASSRLS to INSERT', () => {
+describe("RLS policy — requires BYPASSRLS to INSERT", () => {
   // Note: running this test REQUIRES the E2E test role to be postgres
   // (or another BYPASSRLS role) since schema.sql + migration v25 enable
   // RLS only on BYPASSRLS-capable roles. We verify the policy is
@@ -97,34 +94,28 @@ describe('RLS policy — requires BYPASSRLS to INSERT', () => {
   // "deny from non-BYPASSRLS role" positive test would require setting
   // up a second role, which is beyond this test's scope — but
   // structurally we assert the ALTER TABLE ran.
-  test.if(DATABASE_URL !== undefined)(
-    'eval_candidates has RLS enabled',
-    async () => {
-      if (!engine) return;
-      const rows = await engine.executeRaw<{ relrowsecurity: boolean }>(
-        `SELECT relrowsecurity FROM pg_class WHERE relname = 'eval_candidates'`,
-      );
-      expect(rows).toHaveLength(1);
-      expect(rows[0]!.relrowsecurity).toBe(true);
-    },
-  );
+  test.if(DATABASE_URL !== undefined)("eval_candidates has RLS enabled", async () => {
+    if (!engine) return;
+    const rows = await engine.executeRaw<{ relrowsecurity: boolean }>(
+      `SELECT relrowsecurity FROM pg_class WHERE relname = 'eval_candidates'`
+    );
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.relrowsecurity).toBe(true);
+  });
 
-  test.if(DATABASE_URL !== undefined)(
-    'eval_capture_failures has RLS enabled',
-    async () => {
-      if (!engine) return;
-      const rows = await engine.executeRaw<{ relrowsecurity: boolean }>(
-        `SELECT relrowsecurity FROM pg_class WHERE relname = 'eval_capture_failures'`,
-      );
-      expect(rows).toHaveLength(1);
-      expect(rows[0]!.relrowsecurity).toBe(true);
-    },
-  );
+  test.if(DATABASE_URL !== undefined)("eval_capture_failures has RLS enabled", async () => {
+    if (!engine) return;
+    const rows = await engine.executeRaw<{ relrowsecurity: boolean }>(
+      `SELECT relrowsecurity FROM pg_class WHERE relname = 'eval_capture_failures'`
+    );
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.relrowsecurity).toBe(true);
+  });
 });
 
-describe('concurrent pool pressure — 50 parallel INSERTs', () => {
+describe("concurrent pool pressure — 50 parallel INSERTs", () => {
   test.if(DATABASE_URL !== undefined)(
-    '50 concurrent logEvalCandidate calls all land without deadlock',
+    "50 concurrent logEvalCandidate calls all land without deadlock",
     async () => {
       if (!engine) return;
       const n = 50;
@@ -139,6 +130,6 @@ describe('concurrent pool pressure — 50 parallel INSERTs', () => {
       const rows = await engine.listEvalCandidates({ limit: n * 2 });
       expect(rows).toHaveLength(n);
     },
-    30_000,
+    30_000
   );
 });

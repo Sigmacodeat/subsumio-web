@@ -27,13 +27,10 @@
  *   - No inline-`cmd: "X=value ..."` scan. Same reasoning.
  */
 
-import * as path from 'node:path';
-import { UnrecoverableError } from '../types.ts';
-import {
-  INHERIT_NAME_RE,
-  resolveInheritValue,
-} from './shell-inherit.ts';
-import { loadConfig, type GBrainConfig } from '../../config.ts';
+import * as path from "node:path";
+import { UnrecoverableError } from "../types.ts";
+import { INHERIT_NAME_RE, resolveInheritValue } from "./shell-inherit.ts";
+import { loadConfig, type GBrainConfig } from "../../config.ts";
 
 /** Validated, narrowed shell-job params. */
 export interface ValidatedShellJobParams {
@@ -64,49 +61,49 @@ export interface ValidateShellJobOpts {
  */
 export function validateShellJobParams(
   data: Record<string, unknown>,
-  opts: ValidateShellJobOpts = {},
+  opts: ValidateShellJobOpts = {}
 ): ValidatedShellJobParams {
-  const hasCmd = typeof data.cmd === 'string' && (data.cmd as string).length > 0;
+  const hasCmd = typeof data.cmd === "string" && (data.cmd as string).length > 0;
   const hasArgv = Array.isArray(data.argv) && (data.argv as unknown[]).length > 0;
 
   if (hasCmd && hasArgv) {
     throw new UnrecoverableError(
-      'shell: specify exactly one of cmd or argv (see: docs/guides/minions-shell-jobs.md#errors)',
+      "shell: specify exactly one of cmd or argv (see: docs/guides/minions-shell-jobs.md#errors)"
     );
   }
   if (!hasCmd && !hasArgv) {
     throw new UnrecoverableError(
-      'shell: specify exactly one of cmd or argv (see: docs/guides/minions-shell-jobs.md#errors)',
+      "shell: specify exactly one of cmd or argv (see: docs/guides/minions-shell-jobs.md#errors)"
     );
   }
   if (hasArgv) {
-    const argvOk = (data.argv as unknown[]).every((a) => typeof a === 'string');
+    const argvOk = (data.argv as unknown[]).every((a) => typeof a === "string");
     if (!argvOk) {
       throw new UnrecoverableError(
-        'shell: argv must be an array of strings (see: docs/guides/minions-shell-jobs.md#errors)',
+        "shell: argv must be an array of strings (see: docs/guides/minions-shell-jobs.md#errors)"
       );
     }
   }
-  if (typeof data.cwd !== 'string' || (data.cwd as string).length === 0) {
+  if (typeof data.cwd !== "string" || (data.cwd as string).length === 0) {
     throw new UnrecoverableError(
-      'shell: cwd is required and must be an absolute path (see: docs/guides/minions-shell-jobs.md#errors)',
+      "shell: cwd is required and must be an absolute path (see: docs/guides/minions-shell-jobs.md#errors)"
     );
   }
   if (!path.isAbsolute(data.cwd as string)) {
     throw new UnrecoverableError(
-      'shell: cwd is required and must be an absolute path (see: docs/guides/minions-shell-jobs.md#errors)',
+      "shell: cwd is required and must be an absolute path (see: docs/guides/minions-shell-jobs.md#errors)"
     );
   }
   if (data.env !== undefined) {
-    if (typeof data.env !== 'object' || data.env === null || Array.isArray(data.env)) {
+    if (typeof data.env !== "object" || data.env === null || Array.isArray(data.env)) {
       throw new UnrecoverableError(
-        'shell: env must be an object of string values (see: docs/guides/minions-shell-jobs.md#errors)',
+        "shell: env must be an object of string values (see: docs/guides/minions-shell-jobs.md#errors)"
       );
     }
     for (const v of Object.values(data.env as Record<string, unknown>)) {
-      if (typeof v !== 'string') {
+      if (typeof v !== "string") {
         throw new UnrecoverableError(
-          'shell: env values must all be strings (see: docs/guides/minions-shell-jobs.md#errors)',
+          "shell: env values must all be strings (see: docs/guides/minions-shell-jobs.md#errors)"
         );
       }
     }
@@ -122,22 +119,22 @@ export function validateShellJobParams(
   if (data.inherit !== undefined) {
     if (!Array.isArray(data.inherit)) {
       throw new UnrecoverableError(
-        'shell: inherit must be an array of config-key names ' +
-        '(see: docs/guides/minions-shell-jobs.md#secrets)',
+        "shell: inherit must be an array of config-key names " +
+          "(see: docs/guides/minions-shell-jobs.md#secrets)"
       );
     }
     const items = data.inherit as unknown[];
     for (const item of items) {
-      if (typeof item !== 'string' || item.length === 0) {
+      if (typeof item !== "string" || item.length === 0) {
         throw new UnrecoverableError(
-          'shell: inherit entries must be non-empty strings ' +
-          '(see: docs/guides/minions-shell-jobs.md#secrets)',
+          "shell: inherit entries must be non-empty strings " +
+            "(see: docs/guides/minions-shell-jobs.md#secrets)"
         );
       }
       if (!INHERIT_NAME_RE.test(item)) {
         throw new UnrecoverableError(
           `shell: inherit name "${item}" must match [a-z][a-z0-9_]* ` +
-          '(snake_case config-key shape; see: docs/guides/minions-shell-jobs.md#secrets)',
+            "(snake_case config-key shape; see: docs/guides/minions-shell-jobs.md#secrets)"
         );
       }
     }
@@ -155,18 +152,18 @@ export function validateShellJobParams(
       if (value === undefined) {
         throw new UnrecoverableError(
           `shell: inherit requested "${name}" but worker has no ${name} configured. ` +
-          `Fix: \`gbrain config set ${name} <value>\` or set the value in the worker's config file. ` +
-          '(see: docs/guides/minions-shell-jobs.md#secrets)',
+            `Fix: \`gbrain config set ${name} <value>\` or set the value in the worker's config file. ` +
+            "(see: docs/guides/minions-shell-jobs.md#secrets)"
         );
       }
     }
   }
 
   // ---- `redact_secrets` shape check ----
-  if (data.redact_secrets !== undefined && typeof data.redact_secrets !== 'boolean') {
+  if (data.redact_secrets !== undefined && typeof data.redact_secrets !== "boolean") {
     throw new UnrecoverableError(
-      'shell: redact_secrets must be a boolean if set ' +
-      '(see: docs/guides/minions-shell-jobs.md#secrets)',
+      "shell: redact_secrets must be a boolean if set " +
+        "(see: docs/guides/minions-shell-jobs.md#secrets)"
     );
   }
 

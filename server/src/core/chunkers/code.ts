@@ -18,8 +18,8 @@
  * at runtime.
  */
 
-import { chunkText as recursiveChunk } from './recursive.ts';
-import { buildQualifiedName } from './qualified-names.ts';
+import { chunkText as recursiveChunk } from "./recursive.ts";
+import { buildQualifiedName } from "./qualified-names.ts";
 
 // Embed the tree-sitter runtime + per-language grammars as files.
 // `with { type: 'file' }` returns a path (string) at runtime. Bun bundles
@@ -27,73 +27,73 @@ import { buildQualifiedName } from './qualified-names.ts';
 // In dev, the path resolves to the source-tree file; the compiled binary
 // uses a bundler-synthesized path.
 // @ts-ignore — type: 'file' import attribute is valid Bun syntax, not in lib.d.ts
-import TREE_SITTER_WASM from '../../assets/wasm/tree-sitter.wasm' with { type: 'file' };
+import TREE_SITTER_WASM from "../../assets/wasm/tree-sitter.wasm" with { type: "file" };
 // 36 grammars total. Every grammar ships in the compiled binary — Bun's
 // --compile bundles each referenced asset. Layer 5 extends the 6 baseline
 // languages to all 36 tree-sitter-wasms ship.
 // @ts-ignore
-import G_BASH from '../../assets/wasm/grammars/tree-sitter-bash.wasm' with { type: 'file' };
+import G_BASH from "../../assets/wasm/grammars/tree-sitter-bash.wasm" with { type: "file" };
 // @ts-ignore
-import G_C from '../../assets/wasm/grammars/tree-sitter-c.wasm' with { type: 'file' };
+import G_C from "../../assets/wasm/grammars/tree-sitter-c.wasm" with { type: "file" };
 // @ts-ignore
-import G_CSHARP from '../../assets/wasm/grammars/tree-sitter-c_sharp.wasm' with { type: 'file' };
+import G_CSHARP from "../../assets/wasm/grammars/tree-sitter-c_sharp.wasm" with { type: "file" };
 // @ts-ignore
-import G_CPP from '../../assets/wasm/grammars/tree-sitter-cpp.wasm' with { type: 'file' };
+import G_CPP from "../../assets/wasm/grammars/tree-sitter-cpp.wasm" with { type: "file" };
 // @ts-ignore
-import G_CSS from '../../assets/wasm/grammars/tree-sitter-css.wasm' with { type: 'file' };
+import G_CSS from "../../assets/wasm/grammars/tree-sitter-css.wasm" with { type: "file" };
 // @ts-ignore
-import G_DART from '../../assets/wasm/grammars/tree-sitter-dart.wasm' with { type: 'file' };
+import G_DART from "../../assets/wasm/grammars/tree-sitter-dart.wasm" with { type: "file" };
 // @ts-ignore
-import G_ELIXIR from '../../assets/wasm/grammars/tree-sitter-elixir.wasm' with { type: 'file' };
+import G_ELIXIR from "../../assets/wasm/grammars/tree-sitter-elixir.wasm" with { type: "file" };
 // @ts-ignore
-import G_ELM from '../../assets/wasm/grammars/tree-sitter-elm.wasm' with { type: 'file' };
+import G_ELM from "../../assets/wasm/grammars/tree-sitter-elm.wasm" with { type: "file" };
 // @ts-ignore
-import G_GO from '../../assets/wasm/grammars/tree-sitter-go.wasm' with { type: 'file' };
+import G_GO from "../../assets/wasm/grammars/tree-sitter-go.wasm" with { type: "file" };
 // @ts-ignore
-import G_HTML from '../../assets/wasm/grammars/tree-sitter-html.wasm' with { type: 'file' };
+import G_HTML from "../../assets/wasm/grammars/tree-sitter-html.wasm" with { type: "file" };
 // @ts-ignore
-import G_JAVA from '../../assets/wasm/grammars/tree-sitter-java.wasm' with { type: 'file' };
+import G_JAVA from "../../assets/wasm/grammars/tree-sitter-java.wasm" with { type: "file" };
 // @ts-ignore
-import G_JAVASCRIPT from '../../assets/wasm/grammars/tree-sitter-javascript.wasm' with { type: 'file' };
+import G_JAVASCRIPT from "../../assets/wasm/grammars/tree-sitter-javascript.wasm" with { type: "file" };
 // @ts-ignore
-import G_JSON from '../../assets/wasm/grammars/tree-sitter-json.wasm' with { type: 'file' };
+import G_JSON from "../../assets/wasm/grammars/tree-sitter-json.wasm" with { type: "file" };
 // @ts-ignore
-import G_KOTLIN from '../../assets/wasm/grammars/tree-sitter-kotlin.wasm' with { type: 'file' };
+import G_KOTLIN from "../../assets/wasm/grammars/tree-sitter-kotlin.wasm" with { type: "file" };
 // @ts-ignore
-import G_LUA from '../../assets/wasm/grammars/tree-sitter-lua.wasm' with { type: 'file' };
+import G_LUA from "../../assets/wasm/grammars/tree-sitter-lua.wasm" with { type: "file" };
 // @ts-ignore
-import G_OCAML from '../../assets/wasm/grammars/tree-sitter-ocaml.wasm' with { type: 'file' };
+import G_OCAML from "../../assets/wasm/grammars/tree-sitter-ocaml.wasm" with { type: "file" };
 // @ts-ignore
-import G_PHP from '../../assets/wasm/grammars/tree-sitter-php.wasm' with { type: 'file' };
+import G_PHP from "../../assets/wasm/grammars/tree-sitter-php.wasm" with { type: "file" };
 // @ts-ignore
-import G_PYTHON from '../../assets/wasm/grammars/tree-sitter-python.wasm' with { type: 'file' };
+import G_PYTHON from "../../assets/wasm/grammars/tree-sitter-python.wasm" with { type: "file" };
 // @ts-ignore
-import G_RUBY from '../../assets/wasm/grammars/tree-sitter-ruby.wasm' with { type: 'file' };
+import G_RUBY from "../../assets/wasm/grammars/tree-sitter-ruby.wasm" with { type: "file" };
 // @ts-ignore
-import G_RUST from '../../assets/wasm/grammars/tree-sitter-rust.wasm' with { type: 'file' };
+import G_RUST from "../../assets/wasm/grammars/tree-sitter-rust.wasm" with { type: "file" };
 // @ts-ignore
-import G_SCALA from '../../assets/wasm/grammars/tree-sitter-scala.wasm' with { type: 'file' };
+import G_SCALA from "../../assets/wasm/grammars/tree-sitter-scala.wasm" with { type: "file" };
 // @ts-ignore
-import G_SOLIDITY from '../../assets/wasm/grammars/tree-sitter-solidity.wasm' with { type: 'file' };
+import G_SOLIDITY from "../../assets/wasm/grammars/tree-sitter-solidity.wasm" with { type: "file" };
 // @ts-ignore — DerekStride/tree-sitter-sql @ c2e1e08db1ea20dc23bdb8d228a81a8756e9c450,
 // built with tree-sitter-cli@v0.26.3 --abi 14 (matches web-tree-sitter 0.22.6).
 // 11 MB; substantially larger than peers because the grammar covers
 // PostgreSQL + MySQL + SQLite + T-SQL basics. See CHANGELOG for size notes.
-import G_SQL from '../../assets/wasm/grammars/tree-sitter-sql.wasm' with { type: 'file' };
+import G_SQL from "../../assets/wasm/grammars/tree-sitter-sql.wasm" with { type: "file" };
 // @ts-ignore
-import G_SWIFT from '../../assets/wasm/grammars/tree-sitter-swift.wasm' with { type: 'file' };
+import G_SWIFT from "../../assets/wasm/grammars/tree-sitter-swift.wasm" with { type: "file" };
 // @ts-ignore
-import G_TOML from '../../assets/wasm/grammars/tree-sitter-toml.wasm' with { type: 'file' };
+import G_TOML from "../../assets/wasm/grammars/tree-sitter-toml.wasm" with { type: "file" };
 // @ts-ignore
-import G_TSX from '../../assets/wasm/grammars/tree-sitter-tsx.wasm' with { type: 'file' };
+import G_TSX from "../../assets/wasm/grammars/tree-sitter-tsx.wasm" with { type: "file" };
 // @ts-ignore
-import G_TYPESCRIPT from '../../assets/wasm/grammars/tree-sitter-typescript.wasm' with { type: 'file' };
+import G_TYPESCRIPT from "../../assets/wasm/grammars/tree-sitter-typescript.wasm" with { type: "file" };
 // @ts-ignore
-import G_VUE from '../../assets/wasm/grammars/tree-sitter-vue.wasm' with { type: 'file' };
+import G_VUE from "../../assets/wasm/grammars/tree-sitter-vue.wasm" with { type: "file" };
 // @ts-ignore
-import G_YAML from '../../assets/wasm/grammars/tree-sitter-yaml.wasm' with { type: 'file' };
+import G_YAML from "../../assets/wasm/grammars/tree-sitter-yaml.wasm" with { type: "file" };
 // @ts-ignore
-import G_ZIG from '../../assets/wasm/grammars/tree-sitter-zig.wasm' with { type: 'file' };
+import G_ZIG from "../../assets/wasm/grammars/tree-sitter-zig.wasm" with { type: "file" };
 
 // Bumped whenever chunker output shape changes (new tokenizer, merge-threshold,
 // language set, etc.) so importCodeFile's content_hash re-chunks existing pages
@@ -114,20 +114,46 @@ import G_ZIG from '../../assets/wasm/grammars/tree-sitter-zig.wasm' with { type:
 export const CHUNKER_VERSION = 4;
 
 // Lazy-loaded tree-sitter module (v0.22.x API: Parser is default export)
-let Parser: typeof import('web-tree-sitter') | null = null;
+let Parser: typeof import("web-tree-sitter") | null = null;
 
-async function getParser(): Promise<typeof import('web-tree-sitter')> {
+async function getParser(): Promise<typeof import("web-tree-sitter")> {
   if (!Parser) {
-    Parser = (await import('web-tree-sitter')).default || await import('web-tree-sitter');
+    Parser = (await import("web-tree-sitter")).default || (await import("web-tree-sitter"));
   }
   return Parser;
 }
 
 export type SupportedCodeLanguage =
-  | 'typescript' | 'tsx' | 'javascript' | 'python' | 'ruby' | 'go'
-  | 'rust' | 'java' | 'c_sharp' | 'cpp' | 'c' | 'php' | 'swift' | 'kotlin'
-  | 'scala' | 'lua' | 'elixir' | 'elm' | 'ocaml' | 'dart' | 'zig' | 'solidity'
-  | 'bash' | 'css' | 'html' | 'vue' | 'json' | 'yaml' | 'toml' | 'sql';
+  | "typescript"
+  | "tsx"
+  | "javascript"
+  | "python"
+  | "ruby"
+  | "go"
+  | "rust"
+  | "java"
+  | "c_sharp"
+  | "cpp"
+  | "c"
+  | "php"
+  | "swift"
+  | "kotlin"
+  | "scala"
+  | "lua"
+  | "elixir"
+  | "elm"
+  | "ocaml"
+  | "dart"
+  | "zig"
+  | "solidity"
+  | "bash"
+  | "css"
+  | "html"
+  | "vue"
+  | "json"
+  | "yaml"
+  | "toml"
+  | "sql";
 
 export interface CodeChunkMetadata {
   symbolName: string | null;
@@ -202,36 +228,36 @@ export interface LanguageEntry {
 }
 
 const LANGUAGE_MANIFEST: Record<SupportedCodeLanguage, LanguageEntry> = {
-  typescript: { displayName: 'TypeScript', embeddedPath: G_TYPESCRIPT },
-  tsx:        { displayName: 'TSX',        embeddedPath: G_TSX },
-  javascript: { displayName: 'JavaScript', embeddedPath: G_JAVASCRIPT },
-  python:     { displayName: 'Python',     embeddedPath: G_PYTHON },
-  ruby:       { displayName: 'Ruby',       embeddedPath: G_RUBY },
-  go:         { displayName: 'Go',         embeddedPath: G_GO },
-  rust:       { displayName: 'Rust',       embeddedPath: G_RUST },
-  java:       { displayName: 'Java',       embeddedPath: G_JAVA },
-  c_sharp:    { displayName: 'C#',         embeddedPath: G_CSHARP },
-  cpp:        { displayName: 'C++',        embeddedPath: G_CPP },
-  c:          { displayName: 'C',          embeddedPath: G_C },
-  php:        { displayName: 'PHP',        embeddedPath: G_PHP },
-  swift:      { displayName: 'Swift',      embeddedPath: G_SWIFT },
-  kotlin:     { displayName: 'Kotlin',     embeddedPath: G_KOTLIN },
-  scala:      { displayName: 'Scala',      embeddedPath: G_SCALA },
-  lua:        { displayName: 'Lua',        embeddedPath: G_LUA },
-  elixir:     { displayName: 'Elixir',     embeddedPath: G_ELIXIR },
-  elm:        { displayName: 'Elm',        embeddedPath: G_ELM },
-  ocaml:      { displayName: 'OCaml',      embeddedPath: G_OCAML },
-  dart:       { displayName: 'Dart',       embeddedPath: G_DART },
-  zig:        { displayName: 'Zig',        embeddedPath: G_ZIG },
-  solidity:   { displayName: 'Solidity',   embeddedPath: G_SOLIDITY },
-  bash:       { displayName: 'Bash',       embeddedPath: G_BASH },
-  css:        { displayName: 'CSS',        embeddedPath: G_CSS },
-  html:       { displayName: 'HTML',       embeddedPath: G_HTML },
-  vue:        { displayName: 'Vue',        embeddedPath: G_VUE },
-  json:       { displayName: 'JSON',       embeddedPath: G_JSON },
-  yaml:       { displayName: 'YAML',       embeddedPath: G_YAML },
-  toml:       { displayName: 'TOML',       embeddedPath: G_TOML },
-  sql:        { displayName: 'SQL',        embeddedPath: G_SQL },
+  typescript: { displayName: "TypeScript", embeddedPath: G_TYPESCRIPT },
+  tsx: { displayName: "TSX", embeddedPath: G_TSX },
+  javascript: { displayName: "JavaScript", embeddedPath: G_JAVASCRIPT },
+  python: { displayName: "Python", embeddedPath: G_PYTHON },
+  ruby: { displayName: "Ruby", embeddedPath: G_RUBY },
+  go: { displayName: "Go", embeddedPath: G_GO },
+  rust: { displayName: "Rust", embeddedPath: G_RUST },
+  java: { displayName: "Java", embeddedPath: G_JAVA },
+  c_sharp: { displayName: "C#", embeddedPath: G_CSHARP },
+  cpp: { displayName: "C++", embeddedPath: G_CPP },
+  c: { displayName: "C", embeddedPath: G_C },
+  php: { displayName: "PHP", embeddedPath: G_PHP },
+  swift: { displayName: "Swift", embeddedPath: G_SWIFT },
+  kotlin: { displayName: "Kotlin", embeddedPath: G_KOTLIN },
+  scala: { displayName: "Scala", embeddedPath: G_SCALA },
+  lua: { displayName: "Lua", embeddedPath: G_LUA },
+  elixir: { displayName: "Elixir", embeddedPath: G_ELIXIR },
+  elm: { displayName: "Elm", embeddedPath: G_ELM },
+  ocaml: { displayName: "OCaml", embeddedPath: G_OCAML },
+  dart: { displayName: "Dart", embeddedPath: G_DART },
+  zig: { displayName: "Zig", embeddedPath: G_ZIG },
+  solidity: { displayName: "Solidity", embeddedPath: G_SOLIDITY },
+  bash: { displayName: "Bash", embeddedPath: G_BASH },
+  css: { displayName: "CSS", embeddedPath: G_CSS },
+  html: { displayName: "HTML", embeddedPath: G_HTML },
+  vue: { displayName: "Vue", embeddedPath: G_VUE },
+  json: { displayName: "JSON", embeddedPath: G_JSON },
+  yaml: { displayName: "YAML", embeddedPath: G_YAML },
+  toml: { displayName: "TOML", embeddedPath: G_TOML },
+  sql: { displayName: "SQL", embeddedPath: G_SQL },
 };
 
 /**
@@ -257,10 +283,7 @@ export function unregisterLanguage(lang: string): void {
 }
 
 export function listRegisteredLanguages(): string[] {
-  return [
-    ...Object.keys(LANGUAGE_MANIFEST),
-    ...Array.from(dynamicLanguages.keys()),
-  ];
+  return [...Object.keys(LANGUAGE_MANIFEST), ...Array.from(dynamicLanguages.keys())];
 }
 
 function getLanguageEntry(language: string): LanguageEntry | undefined {
@@ -273,76 +296,146 @@ function getLanguageEntry(language: string): LanguageEntry | undefined {
 // when the grammar loads but no semantic nodes match — correct behavior.
 const TOP_LEVEL_TYPES: Partial<Record<SupportedCodeLanguage, Set<string>>> = {
   typescript: new Set([
-    'function_declaration', 'class_declaration', 'abstract_class_declaration',
-    'interface_declaration', 'type_alias_declaration', 'enum_declaration',
-    'lexical_declaration', 'variable_declaration', 'export_statement',
+    "function_declaration",
+    "class_declaration",
+    "abstract_class_declaration",
+    "interface_declaration",
+    "type_alias_declaration",
+    "enum_declaration",
+    "lexical_declaration",
+    "variable_declaration",
+    "export_statement",
   ]),
   tsx: new Set([
-    'function_declaration', 'class_declaration', 'interface_declaration',
-    'type_alias_declaration', 'enum_declaration', 'lexical_declaration',
-    'variable_declaration', 'export_statement',
+    "function_declaration",
+    "class_declaration",
+    "interface_declaration",
+    "type_alias_declaration",
+    "enum_declaration",
+    "lexical_declaration",
+    "variable_declaration",
+    "export_statement",
   ]),
   javascript: new Set([
-    'function_declaration', 'class_declaration', 'lexical_declaration',
-    'variable_declaration', 'export_statement',
+    "function_declaration",
+    "class_declaration",
+    "lexical_declaration",
+    "variable_declaration",
+    "export_statement",
   ]),
   python: new Set([
-    'function_definition', 'class_definition',
-    'import_statement', 'import_from_statement', 'assignment',
+    "function_definition",
+    "class_definition",
+    "import_statement",
+    "import_from_statement",
+    "assignment",
   ]),
-  ruby: new Set(['class', 'module', 'method', 'singleton_method', 'assignment']),
+  ruby: new Set(["class", "module", "method", "singleton_method", "assignment"]),
   go: new Set([
-    'function_declaration', 'method_declaration', 'type_declaration',
-    'const_declaration', 'var_declaration', 'import_declaration',
+    "function_declaration",
+    "method_declaration",
+    "type_declaration",
+    "const_declaration",
+    "var_declaration",
+    "import_declaration",
   ]),
   rust: new Set([
-    'function_item', 'impl_item', 'struct_item', 'enum_item', 'trait_item',
-    'mod_item', 'type_item', 'const_item', 'static_item', 'use_declaration',
+    "function_item",
+    "impl_item",
+    "struct_item",
+    "enum_item",
+    "trait_item",
+    "mod_item",
+    "type_item",
+    "const_item",
+    "static_item",
+    "use_declaration",
   ]),
   java: new Set([
-    'method_declaration', 'class_declaration', 'interface_declaration',
-    'enum_declaration', 'record_declaration', 'import_declaration',
-    'package_declaration',
+    "method_declaration",
+    "class_declaration",
+    "interface_declaration",
+    "enum_declaration",
+    "record_declaration",
+    "import_declaration",
+    "package_declaration",
   ]),
   c_sharp: new Set([
-    'method_declaration', 'class_declaration', 'interface_declaration',
-    'struct_declaration', 'enum_declaration', 'namespace_declaration',
-    'using_directive', 'property_declaration',
+    "method_declaration",
+    "class_declaration",
+    "interface_declaration",
+    "struct_declaration",
+    "enum_declaration",
+    "namespace_declaration",
+    "using_directive",
+    "property_declaration",
   ]),
   cpp: new Set([
-    'function_definition', 'class_specifier', 'struct_specifier',
-    'namespace_definition', 'declaration', 'template_declaration',
+    "function_definition",
+    "class_specifier",
+    "struct_specifier",
+    "namespace_definition",
+    "declaration",
+    "template_declaration",
   ]),
-  c: new Set(['function_definition', 'struct_specifier', 'declaration', 'preproc_def', 'preproc_include']),
+  c: new Set([
+    "function_definition",
+    "struct_specifier",
+    "declaration",
+    "preproc_def",
+    "preproc_include",
+  ]),
   php: new Set([
-    'function_definition', 'class_declaration', 'interface_declaration',
-    'method_declaration', 'trait_declaration',
+    "function_definition",
+    "class_declaration",
+    "interface_declaration",
+    "method_declaration",
+    "trait_declaration",
   ]),
   swift: new Set([
-    'function_declaration', 'class_declaration', 'struct_declaration',
-    'protocol_declaration', 'enum_declaration', 'import_declaration',
+    "function_declaration",
+    "class_declaration",
+    "struct_declaration",
+    "protocol_declaration",
+    "enum_declaration",
+    "import_declaration",
   ]),
-  kotlin: new Set(['function_declaration', 'class_declaration', 'property_declaration', 'object_declaration']),
-  scala: new Set(['function_definition', 'class_definition', 'object_definition', 'trait_definition']),
-  lua: new Set(['function_declaration', 'function_definition', 'local_declaration']),
-  elixir: new Set(['call']),
-  bash: new Set(['function_definition', 'variable_assignment']),
-  solidity: new Set(['contract_declaration', 'function_definition', 'modifier_definition', 'event_definition']),
+  kotlin: new Set([
+    "function_declaration",
+    "class_declaration",
+    "property_declaration",
+    "object_declaration",
+  ]),
+  scala: new Set([
+    "function_definition",
+    "class_definition",
+    "object_definition",
+    "trait_definition",
+  ]),
+  lua: new Set(["function_declaration", "function_definition", "local_declaration"]),
+  elixir: new Set(["call"]),
+  bash: new Set(["function_definition", "variable_assignment"]),
+  solidity: new Set([
+    "contract_declaration",
+    "function_definition",
+    "modifier_definition",
+    "event_definition",
+  ]),
   // SQL (DerekStride): every top-level node is `statement`, wrapping a single
   // child whose type is the actual kind (create_table, create_function, etc).
   // Catch-all `statement` here; extractSymbolName dives into the inner child
   // to extract the schema target name (Step 0 inspection 2026-05-24 found
   // all 9 fixtures produced `program > statement > <kind>` shape).
-  sql: new Set(['statement']),
+  sql: new Set(["statement"]),
 };
 
 const BODY_NODE_TYPES = new Set([
-  'statement_block',
-  'block',
-  'class_body',
-  'module_body',
-  'body_statement',
-  'body',
+  "statement_block",
+  "block",
+  "class_body",
+  "module_body",
+  "body_statement",
+  "body",
 ]);
 
 /**
@@ -364,32 +457,36 @@ interface NestedEmitConfig {
 }
 const NESTED_EMIT_CONFIG: Partial<Record<SupportedCodeLanguage, NestedEmitConfig>> = {
   typescript: {
-    parentTypes: new Set(['class_declaration', 'abstract_class_declaration', 'interface_declaration']),
-    childTypes: new Set(['method_definition', 'method_signature', 'public_field_definition']),
+    parentTypes: new Set([
+      "class_declaration",
+      "abstract_class_declaration",
+      "interface_declaration",
+    ]),
+    childTypes: new Set(["method_definition", "method_signature", "public_field_definition"]),
   },
   tsx: {
-    parentTypes: new Set(['class_declaration', 'interface_declaration']),
-    childTypes: new Set(['method_definition', 'method_signature', 'public_field_definition']),
+    parentTypes: new Set(["class_declaration", "interface_declaration"]),
+    childTypes: new Set(["method_definition", "method_signature", "public_field_definition"]),
   },
   javascript: {
-    parentTypes: new Set(['class_declaration']),
-    childTypes: new Set(['method_definition', 'field_definition']),
+    parentTypes: new Set(["class_declaration"]),
+    childTypes: new Set(["method_definition", "field_definition"]),
   },
   python: {
-    parentTypes: new Set(['class_definition']),
-    childTypes: new Set(['function_definition']),
+    parentTypes: new Set(["class_definition"]),
+    childTypes: new Set(["function_definition"]),
   },
   ruby: {
-    parentTypes: new Set(['class', 'module']),
-    childTypes: new Set(['method', 'singleton_method']),
+    parentTypes: new Set(["class", "module"]),
+    childTypes: new Set(["method", "singleton_method"]),
   },
   rust: {
-    parentTypes: new Set(['impl_item', 'trait_item']),
-    childTypes: new Set(['function_item']),
+    parentTypes: new Set(["impl_item", "trait_item"]),
+    childTypes: new Set(["function_item"]),
   },
   java: {
-    parentTypes: new Set(['class_declaration', 'interface_declaration', 'record_declaration']),
-    childTypes: new Set(['method_declaration', 'constructor_declaration']),
+    parentTypes: new Set(["class_declaration", "interface_declaration", "record_declaration"]),
+    childTypes: new Set(["method_declaration", "constructor_declaration"]),
   },
 };
 
@@ -419,39 +516,57 @@ export function setLanguageFallback(fn: LanguageFallback | null): void {
   languageFallback = fn;
 }
 
-export function detectCodeLanguage(filePath: string, content?: string): SupportedCodeLanguage | null {
+export function detectCodeLanguage(
+  filePath: string,
+  content?: string
+): SupportedCodeLanguage | null {
   const lower = filePath.toLowerCase();
   // TSX + JSX take precedence over their base language.
-  if (lower.endsWith('.tsx')) return 'tsx';
-  if (lower.endsWith('.ts') || lower.endsWith('.mts') || lower.endsWith('.cts')) return 'typescript';
-  if (lower.endsWith('.js') || lower.endsWith('.jsx') || lower.endsWith('.mjs') || lower.endsWith('.cjs')) return 'javascript';
-  if (lower.endsWith('.py')) return 'python';
-  if (lower.endsWith('.rb')) return 'ruby';
-  if (lower.endsWith('.go')) return 'go';
-  if (lower.endsWith('.rs')) return 'rust';
-  if (lower.endsWith('.java')) return 'java';
-  if (lower.endsWith('.cs')) return 'c_sharp';
-  if (lower.endsWith('.cpp') || lower.endsWith('.cc') || lower.endsWith('.cxx') || lower.endsWith('.hpp') || lower.endsWith('.hxx') || lower.endsWith('.hh')) return 'cpp';
-  if (lower.endsWith('.c') || lower.endsWith('.h')) return 'c';
-  if (lower.endsWith('.php')) return 'php';
-  if (lower.endsWith('.swift')) return 'swift';
-  if (lower.endsWith('.kt') || lower.endsWith('.kts')) return 'kotlin';
-  if (lower.endsWith('.scala') || lower.endsWith('.sc')) return 'scala';
-  if (lower.endsWith('.lua')) return 'lua';
-  if (lower.endsWith('.ex') || lower.endsWith('.exs')) return 'elixir';
-  if (lower.endsWith('.elm')) return 'elm';
-  if (lower.endsWith('.ml') || lower.endsWith('.mli')) return 'ocaml';
-  if (lower.endsWith('.dart')) return 'dart';
-  if (lower.endsWith('.zig')) return 'zig';
-  if (lower.endsWith('.sol')) return 'solidity';
-  if (lower.endsWith('.sh') || lower.endsWith('.bash')) return 'bash';
-  if (lower.endsWith('.css')) return 'css';
-  if (lower.endsWith('.html') || lower.endsWith('.htm')) return 'html';
-  if (lower.endsWith('.vue')) return 'vue';
-  if (lower.endsWith('.json')) return 'json';
-  if (lower.endsWith('.yaml') || lower.endsWith('.yml')) return 'yaml';
-  if (lower.endsWith('.toml')) return 'toml';
-  if (lower.endsWith('.sql')) return 'sql';
+  if (lower.endsWith(".tsx")) return "tsx";
+  if (lower.endsWith(".ts") || lower.endsWith(".mts") || lower.endsWith(".cts"))
+    return "typescript";
+  if (
+    lower.endsWith(".js") ||
+    lower.endsWith(".jsx") ||
+    lower.endsWith(".mjs") ||
+    lower.endsWith(".cjs")
+  )
+    return "javascript";
+  if (lower.endsWith(".py")) return "python";
+  if (lower.endsWith(".rb")) return "ruby";
+  if (lower.endsWith(".go")) return "go";
+  if (lower.endsWith(".rs")) return "rust";
+  if (lower.endsWith(".java")) return "java";
+  if (lower.endsWith(".cs")) return "c_sharp";
+  if (
+    lower.endsWith(".cpp") ||
+    lower.endsWith(".cc") ||
+    lower.endsWith(".cxx") ||
+    lower.endsWith(".hpp") ||
+    lower.endsWith(".hxx") ||
+    lower.endsWith(".hh")
+  )
+    return "cpp";
+  if (lower.endsWith(".c") || lower.endsWith(".h")) return "c";
+  if (lower.endsWith(".php")) return "php";
+  if (lower.endsWith(".swift")) return "swift";
+  if (lower.endsWith(".kt") || lower.endsWith(".kts")) return "kotlin";
+  if (lower.endsWith(".scala") || lower.endsWith(".sc")) return "scala";
+  if (lower.endsWith(".lua")) return "lua";
+  if (lower.endsWith(".ex") || lower.endsWith(".exs")) return "elixir";
+  if (lower.endsWith(".elm")) return "elm";
+  if (lower.endsWith(".ml") || lower.endsWith(".mli")) return "ocaml";
+  if (lower.endsWith(".dart")) return "dart";
+  if (lower.endsWith(".zig")) return "zig";
+  if (lower.endsWith(".sol")) return "solidity";
+  if (lower.endsWith(".sh") || lower.endsWith(".bash")) return "bash";
+  if (lower.endsWith(".css")) return "css";
+  if (lower.endsWith(".html") || lower.endsWith(".htm")) return "html";
+  if (lower.endsWith(".vue")) return "vue";
+  if (lower.endsWith(".json")) return "json";
+  if (lower.endsWith(".yaml") || lower.endsWith(".yml")) return "yaml";
+  if (lower.endsWith(".toml")) return "toml";
+  if (lower.endsWith(".sql")) return "sql";
   // v0.20.0 Cathedral II Layer 1a fallback hook. Layer 9 (B2 Magika) wires
   // this in to detect extensionless files (Dockerfile, Makefile, shell
   // shebangs). try/catch because the fallback may itself fail on first-run
@@ -470,7 +585,7 @@ export function detectCodeLanguage(filePath: string, content?: string): Supporte
 export async function chunkCodeText(
   source: string,
   filePath: string,
-  opts: CodeChunkOptions = {},
+  opts: CodeChunkOptions = {}
 ): Promise<CodeChunk[]> {
   const result = await chunkCodeTextFull(source, filePath, opts);
   return result.chunks;
@@ -485,7 +600,7 @@ export async function chunkCodeText(
 export interface ChunkAndEdgeResult {
   chunks: CodeChunk[];
   /** Raw call edges — byte-offset resolution + chunk mapping happens in import-file.ts. */
-  edges: import('./edge-extractor.ts').ExtractedEdge[];
+  edges: import("./edge-extractor.ts").ExtractedEdge[];
 }
 
 /**
@@ -500,7 +615,7 @@ export class ChunkerTimeoutError extends Error {
   readonly timeoutMs: number;
   constructor(filePath: string, timeoutMs: number) {
     super(`Tree-sitter parse timeout on ${filePath} after ${timeoutMs}ms`);
-    this.name = 'ChunkerTimeoutError';
+    this.name = "ChunkerTimeoutError";
     this.filePath = filePath;
     this.timeoutMs = timeoutMs;
   }
@@ -530,14 +645,14 @@ export function parseWithTimeout(
   parser: ParserLike,
   source: string,
   timeoutMs: number,
-  filePath: string,
+  filePath: string
 ): unknown {
-  if (typeof parser.setTimeoutMicros !== 'function') {
+  if (typeof parser.setTimeoutMicros !== "function") {
     // Fail loud at the seam if a future web-tree-sitter upgrade drops
     // the API — better than silently regressing to no-timeout behavior.
     throw new Error(
       `web-tree-sitter Parser is missing setTimeoutMicros (required for chunker timeout). ` +
-      `Pin in package.json may be too new (deprecated 0.25.0+) or too old.`,
+        `Pin in package.json may be too new (deprecated 0.25.0+) or too old.`
     );
   }
   parser.setTimeoutMicros(timeoutMs * 1000);
@@ -562,11 +677,11 @@ function resolveChunkerTimeoutMs(): number {
 export async function chunkCodeTextFull(
   source: string,
   filePath: string,
-  opts: CodeChunkOptions = {},
+  opts: CodeChunkOptions = {}
 ): Promise<ChunkAndEdgeResult> {
   const language = detectCodeLanguage(filePath);
   if (!language) {
-    return { chunks: fallbackChunks(source, filePath, 'javascript', opts), edges: [] };
+    return { chunks: fallbackChunks(source, filePath, "javascript", opts), edges: [] };
   }
 
   if (!source.trim()) return { chunks: [], edges: [] };
@@ -594,7 +709,7 @@ export async function chunkCodeTextFull(
       if (e instanceof ChunkerTimeoutError) {
         console.warn(
           `[gbrain chunker] timeout parsing ${filePath} after ${timeoutMs}ms; ` +
-          `falling back to recursive chunks`,
+            `falling back to recursive chunks`
         );
         return { chunks: fallbackChunks(source, filePath, language, opts), edges: [] };
       }
@@ -639,10 +754,11 @@ export async function chunkCodeTextFull(
       // For SQL `statement` wrappers, the meaningful type lives on the inner
       // child. extractSymbolName already dives in for the name; mirror that
       // here so chunk headers say "table users" not "statement users".
-      const typeNode = (nestableNode ?? node);
-      const symbolType = (typeNode.type === 'statement' && typeNode.namedChildCount === 1)
-        ? normalizeSymbolType(typeNode.namedChild(0).type)
-        : normalizeSymbolType(typeNode.type);
+      const typeNode = nestableNode ?? node;
+      const symbolType =
+        typeNode.type === "statement" && typeNode.namedChildCount === 1
+          ? normalizeSymbolType(typeNode.namedChild(0).type)
+          : normalizeSymbolType(typeNode.type);
 
       if (nestableNode && symbolName && nestedConfig) {
         const before = chunks.length;
@@ -651,38 +767,57 @@ export async function chunkCodeTextFull(
       }
 
       if (estimateTokens(nodeText) <= largeThreshold) {
-        chunks.push(buildChunk({
-          body: nodeText, filePath, language, symbolName, symbolType,
-          startLine: node.startPosition.row + 1,
-          endLine: node.endPosition.row + 1,
-          index: chunks.length,
-          parentSymbolPath: [],
-        }));
+        chunks.push(
+          buildChunk({
+            body: nodeText,
+            filePath,
+            language,
+            symbolName,
+            symbolType,
+            startLine: node.startPosition.row + 1,
+            endLine: node.endPosition.row + 1,
+            index: chunks.length,
+            parentSymbolPath: [],
+          })
+        );
         continue;
       }
 
       // Split very large nodes at nested block boundaries
       const subRanges = splitLargeNode(node, source, chunkTarget);
       if (subRanges.length === 0) {
-        chunks.push(buildChunk({
-          body: nodeText, filePath, language, symbolName, symbolType,
-          startLine: node.startPosition.row + 1,
-          endLine: node.endPosition.row + 1,
-          index: chunks.length,
-          parentSymbolPath: [],
-        }));
+        chunks.push(
+          buildChunk({
+            body: nodeText,
+            filePath,
+            language,
+            symbolName,
+            symbolType,
+            startLine: node.startPosition.row + 1,
+            endLine: node.endPosition.row + 1,
+            index: chunks.length,
+            parentSymbolPath: [],
+          })
+        );
         continue;
       }
 
       for (const range of subRanges) {
         const body = source.slice(range.startIndex, range.endIndex).trim();
         if (!body) continue;
-        chunks.push(buildChunk({
-          body, filePath, language, symbolName, symbolType,
-          startLine: range.startLine, endLine: range.endLine,
-          index: chunks.length,
-          parentSymbolPath: [],
-        }));
+        chunks.push(
+          buildChunk({
+            body,
+            filePath,
+            language,
+            symbolName,
+            symbolType,
+            startLine: range.startLine,
+            endLine: range.endLine,
+            index: chunks.length,
+            parentSymbolPath: [],
+          })
+        );
       }
     }
 
@@ -690,13 +825,13 @@ export async function chunkCodeTextFull(
     // tree before we delete it. The extractor is iterative (no recursion);
     // cost is ~O(n) on node count so adding this pass does not regress
     // chunker throughput measurably.
-    let rawEdges: import('./edge-extractor.ts').ExtractedEdge[] = [];
+    let rawEdges: import("./edge-extractor.ts").ExtractedEdge[] = [];
     try {
       // v0.34 W2: switched to extractAllEdges so imports + references edges
       // get emitted alongside calls. JS/TS/TSX + Python emit imports;
       // TS only emits references. Other langs still get bare-token calls
       // (v0.20 baseline).
-      const { extractAllEdges } = await import('./edge-extractor.ts');
+      const { extractAllEdges } = await import("./edge-extractor.ts");
       rawEdges = extractAllEdges(tree, language);
     } catch {
       // Edge extraction is best-effort — failure here must not break
@@ -717,8 +852,16 @@ export async function chunkCodeTextFull(
     // exception still reaps parser+tree WASM objects. Pre-fix, the
     // catch block returned without delete() — a guaranteed leak
     // whenever a code file failed to parse.
-    try { tree?.delete?.(); } catch { /* ignore double-delete */ }
-    try { parser?.delete?.(); } catch { /* ignore double-delete */ }
+    try {
+      tree?.delete?.();
+    } catch {
+      /* ignore double-delete */
+    }
+    try {
+      parser?.delete?.();
+    } catch {
+      /* ignore double-delete */
+    }
   }
 }
 
@@ -752,7 +895,7 @@ function mergeSmallSiblings(chunks: CodeChunk[], chunkTarget: number): CodeChunk
   // anonymous "merged" chunk. Skip applies both to the parent scope
   // header (empty parent path, but holds the class declaration) and to
   // nested leaves (non-empty parent path).
-  const hasScopedChunks = chunks.some(c => (c.metadata.parentSymbolPath ?? []).length > 0);
+  const hasScopedChunks = chunks.some((c) => (c.metadata.parentSymbolPath ?? []).length > 0);
   const merged: CodeChunk[] = [];
   let i = 0;
   while (i < chunks.length) {
@@ -796,15 +939,15 @@ function buildMergedChunk(group: CodeChunk[], index: number): CodeChunk {
   const last = group[group.length - 1]!;
   // Strip each chunk's structured header line when merging so the combined
   // body reads like the original source. Header is always "[Lang] path:N-M symbol".
-  const bodies = group.map((c) => c.text.replace(/^\[[^\]]+\] [^\n]+\n\n/, ''));
-  const mergedBody = bodies.join('\n\n');
+  const bodies = group.map((c) => c.text.replace(/^\[[^\]]+\] [^\n]+\n\n/, ""));
+  const mergedBody = bodies.join("\n\n");
   const header = `[${displayLang(first.metadata.language)}] ${first.metadata.filePath}:${first.metadata.startLine}-${last.metadata.endLine} merged (${group.length} siblings)`;
   return {
     index,
     text: `${header}\n\n${mergedBody}`,
     metadata: {
       symbolName: null,
-      symbolType: 'merged',
+      symbolType: "merged",
       filePath: first.metadata.filePath,
       language: first.metadata.language,
       startLine: first.metadata.startLine,
@@ -820,17 +963,21 @@ function fallbackChunks(
   source: string,
   filePath: string,
   language: SupportedCodeLanguage,
-  opts: CodeChunkOptions,
+  opts: CodeChunkOptions
 ): CodeChunk[] {
   const size = opts.fallbackChunkSizeWords ?? 300;
   const overlap = opts.fallbackOverlapWords ?? 50;
   return recursiveChunk(source, { chunkSize: size, chunkOverlap: overlap }).map((chunk, index) =>
     buildChunk({
-      body: chunk.text, filePath, language,
-      symbolName: null, symbolType: 'module',
-      startLine: 1, endLine: countLines(chunk.text),
+      body: chunk.text,
+      filePath,
+      language,
+      symbolName: null,
+      symbolType: "module",
+      startLine: 1,
+      endLine: countLines(chunk.text),
       index,
-    }),
+    })
   );
 }
 
@@ -847,9 +994,10 @@ function buildChunk(input: {
   parentSymbolPath?: string[];
 }): CodeChunk {
   const symbol = input.symbolName ? `${input.symbolType} ${input.symbolName}` : input.symbolType;
-  const parentPath = input.parentSymbolPath && input.parentSymbolPath.length > 0
-    ? ` (in ${input.parentSymbolPath.join('.')})`
-    : '';
+  const parentPath =
+    input.parentSymbolPath && input.parentSymbolPath.length > 0
+      ? ` (in ${input.parentSymbolPath.join(".")})`
+      : "";
   const header = `[${displayLang(input.language)}] ${input.filePath}:${input.startLine}-${input.endLine} ${symbol}${parentPath}`;
   // v0.20.0 Cathedral II Layer 5 (A1): fold the qualified name into
   // metadata so edge extraction has a stable identity key.
@@ -900,9 +1048,12 @@ function findNestableParent(node: any, config: NestedEmitConfig | undefined): an
  * through body-style wrappers (class_body, module_body, etc.) which are
  * grammar-level container nodes, not symbols themselves.
  */
-function collectImmediateNestedChildren(node: any, config: NestedEmitConfig): {
+function collectImmediateNestedChildren(
+  node: any,
+  config: NestedEmitConfig
+): {
   parents: any[]; // children that are themselves parentTypes (recurse)
-  leaves: any[];  // children that are childTypes (methods)
+  leaves: any[]; // children that are childTypes (methods)
 } {
   const parents: any[] = [];
   const leaves: any[] = [];
@@ -910,7 +1061,7 @@ function collectImmediateNestedChildren(node: any, config: NestedEmitConfig): {
     for (const child of n.namedChildren) {
       if (config.parentTypes.has(child.type)) parents.push(child);
       else if (config.childTypes.has(child.type)) leaves.push(child);
-      if (BODY_NODE_TYPES.has(child.type) || child.type.endsWith('_body')) {
+      if (BODY_NODE_TYPES.has(child.type) || child.type.endsWith("_body")) {
         scan(child);
       }
     }
@@ -936,7 +1087,7 @@ function emitNestedScoped(
   filePath: string,
   language: SupportedCodeLanguage,
   config: NestedEmitConfig,
-  chunks: CodeChunk[],
+  chunks: CodeChunk[]
 ): void {
   const name = extractSymbolName(node);
   if (!name) return;
@@ -945,17 +1096,22 @@ function emitNestedScoped(
 
   // Parent scope-header chunk: declaration + member digest.
   const digestNames = [
-    ...parents.map(p => extractSymbolName(p)).filter((n): n is string => Boolean(n)),
-    ...leaves.map(l => extractSymbolName(l)).filter((n): n is string => Boolean(n)),
+    ...parents.map((p) => extractSymbolName(p)).filter((n): n is string => Boolean(n)),
+    ...leaves.map((l) => extractSymbolName(l)).filter((n): n is string => Boolean(n)),
   ];
-  chunks.push(buildChunk({
-    body: buildScopeHeaderBody(node, source, digestNames),
-    filePath, language, symbolName: name, symbolType,
-    startLine: node.startPosition.row + 1,
-    endLine: node.endPosition.row + 1,
-    index: chunks.length,
-    parentSymbolPath: [...parentPath],
-  }));
+  chunks.push(
+    buildChunk({
+      body: buildScopeHeaderBody(node, source, digestNames),
+      filePath,
+      language,
+      symbolName: name,
+      symbolType,
+      startLine: node.startPosition.row + 1,
+      endLine: node.endPosition.row + 1,
+      index: chunks.length,
+      parentSymbolPath: [...parentPath],
+    })
+  );
 
   const newParentPath = [...parentPath, name];
 
@@ -970,14 +1126,19 @@ function emitNestedScoped(
     const leafType = normalizeSymbolType(leaf.type);
     const leafText = source.slice(leaf.startIndex, leaf.endIndex).trim();
     if (!leafText) continue;
-    chunks.push(buildChunk({
-      body: leafText, filePath, language,
-      symbolName: leafName, symbolType: leafType,
-      startLine: leaf.startPosition.row + 1,
-      endLine: leaf.endPosition.row + 1,
-      index: chunks.length,
-      parentSymbolPath: newParentPath,
-    }));
+    chunks.push(
+      buildChunk({
+        body: leafText,
+        filePath,
+        language,
+        symbolName: leafName,
+        symbolType: leafType,
+        startLine: leaf.startPosition.row + 1,
+        endLine: leaf.endPosition.row + 1,
+        index: chunks.length,
+        parentSymbolPath: newParentPath,
+      })
+    );
   }
 }
 
@@ -989,10 +1150,10 @@ function emitNestedScoped(
  */
 function buildScopeHeaderBody(node: any, source: string, memberNames: string[]): string {
   const full = source.slice(node.startIndex, node.endIndex);
-  const firstLineBreak = full.indexOf('\n');
+  const firstLineBreak = full.indexOf("\n");
   const declaration = firstLineBreak > 0 ? full.slice(0, firstLineBreak) : full.slice(0, 120);
   if (memberNames.length === 0) return declaration;
-  return `${declaration}\n\n// Members: ${memberNames.slice(0, 20).join(', ')}`;
+  return `${declaration}\n\n// Members: ${memberNames.slice(0, 20).join(", ")}`;
 }
 
 interface SplitRange {
@@ -1004,7 +1165,7 @@ interface SplitRange {
 
 function splitLargeNode(node: any, source: string, chunkTarget: number): SplitRange[] {
   const body =
-    node.childForFieldName('body') ||
+    node.childForFieldName("body") ||
     node.namedChildren.find((c: any) => BODY_NODE_TYPES.has(c.type)) ||
     null;
 
@@ -1025,7 +1186,12 @@ function splitLargeNode(node: any, source: string, chunkTarget: number): SplitRa
     const childTokens = estimateTokens(source.slice(child.startIndex, child.endIndex));
 
     if (curTokens + childTokens > Math.ceil(chunkTarget * 1.5)) {
-      ranges.push({ startIndex: curStart, endIndex: curEnd, startLine: curStartLine, endLine: curEndLine });
+      ranges.push({
+        startIndex: curStart,
+        endIndex: curEnd,
+        startLine: curStartLine,
+        endLine: curEndLine,
+      });
       curStart = child.startIndex;
       curStartLine = child.startPosition.row + 1;
       curEnd = child.endIndex;
@@ -1037,7 +1203,12 @@ function splitLargeNode(node: any, source: string, chunkTarget: number): SplitRa
       curTokens += childTokens;
     }
   }
-  ranges.push({ startIndex: curStart, endIndex: curEnd, startLine: curStartLine, endLine: curEndLine });
+  ranges.push({
+    startIndex: curStart,
+    endIndex: curEnd,
+    startLine: curStartLine,
+    endLine: curEndLine,
+  });
   return ranges;
 }
 
@@ -1048,22 +1219,22 @@ function extractSymbolName(node: any): string | null {
   // return null so their chunks emit unnamed — code-def is a DDL signal.
   // The `statement` wrapper is unique to SQL among gbrain's 37 grammars
   // (Step 0 inspection 2026-05-24); checking by node.type is safe.
-  if (node.type === 'statement' && node.namedChildCount === 1) {
+  if (node.type === "statement" && node.namedChildCount === 1) {
     const sqlName = extractSqlSymbolName(node.namedChild(0));
     if (sqlName !== undefined) return sqlName;
   }
 
-  const directName = node.childForFieldName('name');
+  const directName = node.childForFieldName("name");
   if (directName?.text?.trim()) return sanitize(directName.text);
 
-  const declaration = node.childForFieldName('declaration');
+  const declaration = node.childForFieldName("declaration");
   if (declaration) {
     const nested = extractSymbolName(declaration);
     if (nested) return nested;
   }
 
   for (const child of node.namedChildren) {
-    if (child.type.endsWith('identifier') || child.type === 'constant') {
+    if (child.type.endsWith("identifier") || child.type === "constant") {
       const v = sanitize(child.text);
       if (v) return v;
     }
@@ -1085,17 +1256,29 @@ function extractSqlSymbolName(inner: any): string | null | undefined {
   // DDL: extract identifier name. Tried `name` field first (most common shape),
   // then any `object_reference` / `identifier` child.
   const DDL_KINDS = new Set([
-    'create_table', 'create_view', 'create_index', 'create_function',
-    'create_procedure', 'create_type', 'create_schema', 'create_database',
-    'create_trigger', 'alter_table', 'alter_view',
+    "create_table",
+    "create_view",
+    "create_index",
+    "create_function",
+    "create_procedure",
+    "create_type",
+    "create_schema",
+    "create_database",
+    "create_trigger",
+    "alter_table",
+    "alter_view",
   ]);
   if (DDL_KINDS.has(t)) {
-    const nameField = inner.childForFieldName?.('name');
+    const nameField = inner.childForFieldName?.("name");
     if (nameField?.text?.trim()) return sanitize(nameField.text);
     // Fallback: first identifier-like named child.
     for (let i = 0; i < (inner.namedChildCount || 0); i++) {
       const c = inner.namedChild(i);
-      if (c.type === 'object_reference' || c.type === 'identifier' || c.type.endsWith('_identifier')) {
+      if (
+        c.type === "object_reference" ||
+        c.type === "identifier" ||
+        c.type.endsWith("_identifier")
+      ) {
         const v = sanitize(c.text);
         if (v) return v;
       }
@@ -1103,34 +1286,44 @@ function extractSqlSymbolName(inner: any): string | null | undefined {
     return null;
   }
   // DML: explicitly null (chunk emits unnamed; code-def doesn't fire).
-  if (t === 'select' || t === 'insert' || t === 'update' || t === 'delete' ||
-      t === 'merge' || t === 'with') {
+  if (
+    t === "select" ||
+    t === "insert" ||
+    t === "update" ||
+    t === "delete" ||
+    t === "merge" ||
+    t === "with"
+  ) {
     return null;
   }
   return undefined;
 }
 
 function normalizeSymbolType(type: string): string {
-  if (type.includes('function') || type === 'method' || type === 'singleton_method') return 'function';
-  if (type.includes('class')) return 'class';
-  if (type.includes('interface')) return 'interface';
-  if (type.includes('type_alias')) return 'type';
-  if (type.includes('enum')) return 'enum';
-  if (type.includes('module')) return 'module';
-  if (type.includes('import')) return 'import';
-  if (type === 'create_table' || type === 'alter_table') return 'table';
-  if (type === 'create_view' || type === 'alter_view') return 'view';
-  if (type === 'create_index') return 'index';
-  if (type === 'create_procedure') return 'procedure';
-  if (type === 'create_type') return 'type';
-  if (type === 'create_schema') return 'schema';
-  if (type === 'create_database') return 'database';
-  if (type === 'create_trigger') return 'trigger';
-  return type.replace(/_/g, ' ');
+  if (type.includes("function") || type === "method" || type === "singleton_method")
+    return "function";
+  if (type.includes("class")) return "class";
+  if (type.includes("interface")) return "interface";
+  if (type.includes("type_alias")) return "type";
+  if (type.includes("enum")) return "enum";
+  if (type.includes("module")) return "module";
+  if (type.includes("import")) return "import";
+  if (type === "create_table" || type === "alter_table") return "table";
+  if (type === "create_view" || type === "alter_view") return "view";
+  if (type === "create_index") return "index";
+  if (type === "create_procedure") return "procedure";
+  if (type === "create_type") return "type";
+  if (type === "create_schema") return "schema";
+  if (type === "create_database") return "database";
+  if (type === "create_trigger") return "trigger";
+  return type.replace(/_/g, " ");
 }
 
 function sanitize(name: string): string {
-  return name.replace(/[\n\r\t]+/g, ' ').replace(/\s+/g, ' ').trim();
+  return name
+    .replace(/[\n\r\t]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 // v0.19.0 (Layer 5): accurate token count via @dqbd/tiktoken cl100k_base,
@@ -1150,8 +1343,8 @@ export function estimateTokens(text: string): number {
   if (!tiktokenInitialized) {
     try {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const m = require('@dqbd/tiktoken');
-      tiktokenEncoder = m.get_encoding('cl100k_base');
+      const m = require("@dqbd/tiktoken");
+      tiktokenEncoder = m.get_encoding("cl100k_base");
     } catch {
       tiktokenEncoder = null;
     }
@@ -1173,7 +1366,7 @@ function displayLang(lang: SupportedCodeLanguage): string {
 }
 
 function countLines(text: string): number {
-  return text ? text.split('\n').length : 0;
+  return text ? text.split("\n").length : 0;
 }
 
 // ---------- Tree-sitter init ----------

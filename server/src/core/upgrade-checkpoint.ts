@@ -13,12 +13,12 @@
  * mismatched-brain state, the upgrade pipeline silently runs the full path.
  */
 
-import { existsSync, readFileSync, writeFileSync, unlinkSync, mkdirSync } from 'node:fs';
-import { dirname } from 'node:path';
-import { createHash } from 'node:crypto';
-import { gbrainPath, loadConfig } from './config.ts';
+import { existsSync, readFileSync, writeFileSync, unlinkSync, mkdirSync } from "node:fs";
+import { dirname } from "node:path";
+import { createHash } from "node:crypto";
+import { gbrainPath, loadConfig } from "./config.ts";
 
-export type UpgradeStep = 'pull' | 'install' | 'schema' | 'features' | 'backfills' | 'verify';
+export type UpgradeStep = "pull" | "install" | "schema" | "features" | "backfills" | "verify";
 
 export interface UpgradeCheckpoint {
   /** Stable hash of the brain's database_url. Detects multi-brain mismatch (X2). */
@@ -37,8 +37,8 @@ export interface UpgradeCheckpoint {
   failed_step_error?: { message: string; code?: string };
 }
 
-const CHECKPOINT_FILENAME = 'upgrade-checkpoint.json';
-const ALL_STEPS: UpgradeStep[] = ['pull', 'install', 'schema', 'features', 'backfills', 'verify'];
+const CHECKPOINT_FILENAME = "upgrade-checkpoint.json";
+const ALL_STEPS: UpgradeStep[] = ["pull", "install", "schema", "features", "backfills", "verify"];
 
 function checkpointPath(): string {
   return gbrainPath(CHECKPOINT_FILENAME);
@@ -56,11 +56,14 @@ export function computeBrainId(databaseUrl?: string | null): string {
     // when present, else 'pglite-default'.
     const cfg = loadConfig();
     const path = cfg?.database_path;
-    return createHash('sha256').update(`pglite:${path ?? 'default'}`).digest('hex').slice(0, 16);
+    return createHash("sha256")
+      .update(`pglite:${path ?? "default"}`)
+      .digest("hex")
+      .slice(0, 16);
   }
   // Strip userinfo so the hash is stable across credential rotations.
-  const stripped = databaseUrl.replace(/\/\/[^@]*@/, '//');
-  return createHash('sha256').update(stripped).digest('hex').slice(0, 16);
+  const stripped = databaseUrl.replace(/\/\/[^@]*@/, "//");
+  return createHash("sha256").update(stripped).digest("hex").slice(0, 16);
 }
 
 /**
@@ -70,10 +73,10 @@ export function loadCheckpoint(): UpgradeCheckpoint | null {
   const path = checkpointPath();
   if (!existsSync(path)) return null;
   try {
-    const raw = readFileSync(path, 'utf-8');
+    const raw = readFileSync(path, "utf-8");
     const parsed = JSON.parse(raw) as UpgradeCheckpoint;
     // Defensive: must have brain_id + completed_steps shape.
-    if (typeof parsed.brain_id !== 'string') return null;
+    if (typeof parsed.brain_id !== "string") return null;
     if (!Array.isArray(parsed.completed_steps)) return null;
     return parsed;
   } catch {
@@ -85,7 +88,7 @@ export function writeCheckpoint(state: UpgradeCheckpoint): void {
   const path = checkpointPath();
   try {
     mkdirSync(dirname(path), { recursive: true });
-    writeFileSync(path, JSON.stringify(state, null, 2), 'utf-8');
+    writeFileSync(path, JSON.stringify(state, null, 2), "utf-8");
   } catch (err) {
     process.stderr.write(`[upgrade-checkpoint] write failed: ${(err as Error).message}\n`);
   }
@@ -103,7 +106,7 @@ export function clearCheckpoint(): void {
 export interface CheckpointValidation {
   valid: boolean;
   /** Reason for invalidation. */
-  reason?: 'no_checkpoint' | 'brain_mismatch' | 'malformed' | 'all_complete';
+  reason?: "no_checkpoint" | "brain_mismatch" | "malformed" | "all_complete";
   /** Step to resume at (next un-completed step). */
   resumeAt?: UpgradeStep;
   /** The loaded checkpoint when valid + has unfinished work. */
@@ -119,14 +122,14 @@ export interface CheckpointValidation {
  */
 export function validateCheckpoint(currentBrainId: string): CheckpointValidation {
   const checkpoint = loadCheckpoint();
-  if (!checkpoint) return { valid: false, reason: 'no_checkpoint' };
+  if (!checkpoint) return { valid: false, reason: "no_checkpoint" };
   if (checkpoint.brain_id !== currentBrainId) {
-    return { valid: false, reason: 'brain_mismatch', checkpoint };
+    return { valid: false, reason: "brain_mismatch", checkpoint };
   }
   // Find the first step NOT in completed_steps.
-  const nextStep = ALL_STEPS.find(s => !checkpoint.completed_steps.includes(s));
+  const nextStep = ALL_STEPS.find((s) => !checkpoint.completed_steps.includes(s));
   if (!nextStep) {
-    return { valid: false, reason: 'all_complete', checkpoint };
+    return { valid: false, reason: "all_complete", checkpoint };
   }
   return { valid: true, resumeAt: nextStep, checkpoint };
 }
@@ -134,7 +137,10 @@ export function validateCheckpoint(currentBrainId: string): CheckpointValidation
 /**
  * Mark a step complete in-place. Caller writes back via writeCheckpoint().
  */
-export function markStepComplete(checkpoint: UpgradeCheckpoint, step: UpgradeStep): UpgradeCheckpoint {
+export function markStepComplete(
+  checkpoint: UpgradeCheckpoint,
+  step: UpgradeStep
+): UpgradeCheckpoint {
   if (!checkpoint.completed_steps.includes(step)) {
     checkpoint.completed_steps.push(step);
   }
@@ -147,7 +153,7 @@ export function markStepComplete(checkpoint: UpgradeCheckpoint, step: UpgradeSte
 export function markStepFailed(
   checkpoint: UpgradeCheckpoint,
   step: UpgradeStep,
-  err: Error,
+  err: Error
 ): UpgradeCheckpoint {
   checkpoint.failed_step = step;
   checkpoint.failed_step_error = {

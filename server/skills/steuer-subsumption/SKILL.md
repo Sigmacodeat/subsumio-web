@@ -44,6 +44,7 @@ mutating: true
 ## Contract
 
 This skill guarantees:
+
 1. Every applicable tax norm is cited with § number and statute acronym (EStG, UStG, KStG, AO, …).
 2. The subsumption follows Gutachtenstil (issue → norm → subsumption → result).
 3. Controlling BFH/BFG/EuGH decisions are cited where found in the brain.
@@ -60,23 +61,28 @@ existing tax notice (→ tax-ruling-lookup).
 ## Protocol
 
 ### Step 1 — Extract the Fact Pattern
+
 - **Taxpayer**: natural person / partnership (Mitunternehmerschaft) / corporation (KapG)?
 - **Transaction**: what happened, when, for how much, with whom?
 - **Tax(es) in scope**: income (ESt/KSt), trade (GewSt), VAT (USt), transfer (GrESt), inheritance/gift (ErbSt/SchenkSt)?
 - **Jurisdiction & period**: DE / AT, assessment year (Veranlagungszeitraum).
 
 ### Step 2 — Norm Search
+
 ```
 gbrain search "<key facts> § Tatbestand" --mode balanced --source tax-corpus
 gbrain search "<key facts> BFH Urteil" --source tax-corpus
 ```
+
 Retrieve the exact § text and any BFH/BFG leading decision from the brain.
 
 ### Step 3 — Subsumption (Gutachtenstil)
+
 For each candidate norm: list its Tatbestandsmerkmale, map each to the fact, mark
 erfüllt / nicht erfüllt, then state the Steuerfolge with the computation path.
 
 ### Step 4 — File in Brain
+
 ```
 gbrain put_page \
   --slug "tax/analyses/subsumption-[slug]-[date]" \
@@ -86,11 +92,11 @@ gbrain put_page \
 
 ## Jurisdiction Quick Reference
 
-| Jurisdiction | Income | Corporate | VAT | Trade | Transfer / Inheritance | Procedure |
-|---|---|---|---|---|---|---|
-| DE | EStG | KStG | UStG | GewStG | GrEStG, ErbStG | AO, FGO |
-| AT | EStG | KStG | UStG | — (KommSt) | GrEStG, ErbSt aufgehoben | BAO |
-| EU | — | — | MwStSystRL | — | — | EuGH |
+| Jurisdiction | Income | Corporate | VAT        | Trade      | Transfer / Inheritance   | Procedure |
+| ------------ | ------ | --------- | ---------- | ---------- | ------------------------ | --------- |
+| DE           | EStG   | KStG      | UStG       | GewStG     | GrEStG, ErbStG           | AO, FGO   |
+| AT           | EStG   | KStG      | UStG       | — (KommSt) | GrEStG, ErbSt aufgehoben | BAO       |
+| EU           | —      | —         | MwStSystRL | —          | —                        | EuGH      |
 
 ## Output Format
 
@@ -133,6 +139,7 @@ Erstellt: [Datum] | Skill: steuer-subsumption v1.0.0
 - ❌ Omitting the AI / advisor-review notice.
 
 ## Error Handling
+
 - No relevant norm in brain → say so explicitly, recommend advisor consultation.
 - Incomplete facts → list exactly what is missing before subsuming.
 - Multiple norms apply → subsume under each separately.

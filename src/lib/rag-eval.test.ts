@@ -7,10 +7,7 @@ import {
   type EvalQuery,
   type EvalSummary,
 } from "./rag-eval";
-import {
-  evaluateReleaseGate,
-  DEFAULT_THRESHOLDS,
-} from "./release-gate";
+import { evaluateReleaseGate, DEFAULT_THRESHOLDS } from "./release-gate";
 import {
   computeCitationQuality,
   computeDeadlineQuality,
@@ -226,8 +223,20 @@ describe("runEval", () => {
     const fixtures: EvalQuery[] = [
       { id: "t1", query: "q", expectedSlugs: ["a"], category: "statute" },
     ];
-    const retriever = async (_q: string) =>
-      ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l"];
+    const retriever = async (_q: string) => [
+      "a",
+      "b",
+      "c",
+      "d",
+      "e",
+      "f",
+      "g",
+      "h",
+      "i",
+      "j",
+      "k",
+      "l",
+    ];
     const summary = await runEval(retriever, fixtures);
     expect(summary.results[0].retrievedSlugs).toHaveLength(10);
   });
@@ -429,8 +438,22 @@ describe("computeCitationQuality", () => {
 
 describe("computeDeadlineQuality", () => {
   const detected: DetectedDeadline[] = [
-    { type: "appeal", date: "2024-07-01", description: "Berufung", confidence: "high", sourceSnippet: "", matchedRule: "r1" },
-    { type: "payment", daysFromNow: 14, description: "Zahlung", confidence: "medium", sourceSnippet: "", matchedRule: "r2" },
+    {
+      type: "appeal",
+      date: "2024-07-01",
+      description: "Berufung",
+      confidence: "high",
+      sourceSnippet: "",
+      matchedRule: "r1",
+    },
+    {
+      type: "payment",
+      daysFromNow: 14,
+      description: "Zahlung",
+      confidence: "medium",
+      sourceSnippet: "",
+      matchedRule: "r2",
+    },
   ];
   const expected: ExpectedDeadline[] = [
     { type: "appeal", date: "2024-07-01" },
@@ -446,7 +469,17 @@ describe("computeDeadlineQuality", () => {
   });
 
   it("computes false positives", () => {
-    const extraDetected = [...detected, { type: "hearing", date: "2024-08-01", description: "Termin", confidence: "low", sourceSnippet: "", matchedRule: "r3" }];
+    const extraDetected = [
+      ...detected,
+      {
+        type: "hearing",
+        date: "2024-08-01",
+        description: "Termin",
+        confidence: "low",
+        sourceSnippet: "",
+        matchedRule: "r3",
+      },
+    ];
     const result = computeDeadlineQuality(extraDetected, expected);
     expect(result.false_positives).toBe(1);
     expect(result.precision).toBeCloseTo(2 / 3, 5);
@@ -501,9 +534,19 @@ describe("computeContractIssueQuality", () => {
 describe("computeQualityReport", () => {
   it("computes overall score with all components", () => {
     const report = computeQualityReport({
-      answerText: "Nach § 433 BGB muss der Verkäufer die Sache übergeben. Die Frist ist bis 30.06.2024.",
+      answerText:
+        "Nach § 433 BGB muss der Verkäufer die Sache übergeben. Die Frist ist bis 30.06.2024.",
       grounding: makeGrounding({ citations_verified: 5, citations_unverified: 1 }),
-      detectedDeadlines: [{ type: "absolute", date: "2024-06-30", description: "Frist", confidence: "high", sourceSnippet: "", matchedRule: "r1" }],
+      detectedDeadlines: [
+        {
+          type: "absolute",
+          date: "2024-06-30",
+          description: "Frist",
+          confidence: "high",
+          sourceSnippet: "",
+          matchedRule: "r1",
+        },
+      ],
       expectedDeadlines: [{ type: "absolute", date: "2024-06-30" }],
       detectedContractIssues: [{ clause_type: "liability", risk_level: "high" }],
       expectedContractIssues: [{ clause_type: "liability", risk_level: "high" }],
@@ -559,14 +602,18 @@ describe("evaluateReleaseGate", () => {
     const summary = makeSummary({ overallPrecision: 0.3 });
     const result = evaluateReleaseGate(summary, null, null);
     expect(result.status).toBe("fail");
-    expect(result.checks.some((c) => c.name === "precision_absolute" && c.status === "fail")).toBe(true);
+    expect(result.checks.some((c) => c.name === "precision_absolute" && c.status === "fail")).toBe(
+      true
+    );
   });
 
   it("fails when recall is below threshold", () => {
     const summary = makeSummary({ overallRecall: 0.2 });
     const result = evaluateReleaseGate(summary, null, null);
     expect(result.status).toBe("fail");
-    expect(result.checks.some((c) => c.name === "recall_absolute" && c.status === "fail")).toBe(true);
+    expect(result.checks.some((c) => c.name === "recall_absolute" && c.status === "fail")).toBe(
+      true
+    );
   });
 
   it("warns when MRR is below threshold", () => {
@@ -580,7 +627,9 @@ describe("evaluateReleaseGate", () => {
     const current = makeSummary({ overallPrecision: 0.6 });
     const result = evaluateReleaseGate(current, null, baseline);
     expect(result.status).toBe("fail");
-    expect(result.checks.some((c) => c.name === "precision_regression" && c.status === "fail")).toBe(true);
+    expect(
+      result.checks.some((c) => c.name === "precision_regression" && c.status === "fail")
+    ).toBe(true);
   });
 
   it("fails on recall regression vs baseline", () => {
@@ -588,7 +637,9 @@ describe("evaluateReleaseGate", () => {
     const current = makeSummary({ overallRecall: 0.5 });
     const result = evaluateReleaseGate(current, null, baseline);
     expect(result.status).toBe("fail");
-    expect(result.checks.some((c) => c.name === "recall_regression" && c.status === "fail")).toBe(true);
+    expect(result.checks.some((c) => c.name === "recall_regression" && c.status === "fail")).toBe(
+      true
+    );
   });
 
   it("no regression checks when baseline is null", () => {
@@ -600,7 +651,9 @@ describe("evaluateReleaseGate", () => {
     const summary = makeSummary({ overallPrecision: 0.45 });
     const customThresholds = { ...DEFAULT_THRESHOLDS, min_precision: 0.4 };
     const result = evaluateReleaseGate(summary, null, null, customThresholds);
-    expect(result.checks.some((c) => c.name === "precision_absolute" && c.status === "pass")).toBe(true);
+    expect(result.checks.some((c) => c.name === "precision_absolute" && c.status === "pass")).toBe(
+      true
+    );
   });
 
   it("includes summary message", () => {

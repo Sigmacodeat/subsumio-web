@@ -16,20 +16,29 @@
  * for the full design rationale (D1–D23 decisions).
  */
 
-import { spawn } from 'child_process';
-import { mkdtempSync, writeFileSync, mkdirSync, rmSync, existsSync } from 'fs';
-import { join } from 'path';
-import { tmpdir } from 'os';
-import { randomBytes } from 'crypto';
-import { logFriction, frictionDir } from '../core/friction.ts';
-import { loadScenario, listScenarios, readBrief, type ScenarioConfig } from '../core/claw-test/scenarios.ts';
-import { parseProgressEvents, verifyExpectedPhases } from '../core/claw-test/progress-tail.ts';
-import { resolveAgentRunner, listRegisteredAgents, registerAgentRunner } from '../core/claw-test/agent-runner.ts';
-import { OpenClawRunner } from '../core/claw-test/runners/openclaw.ts';
-import { createTranscriptSink } from '../core/claw-test/transcript-capture.ts';
+import { spawn } from "child_process";
+import { mkdtempSync, writeFileSync, mkdirSync, rmSync, existsSync } from "fs";
+import { join } from "path";
+import { tmpdir } from "os";
+import { randomBytes } from "crypto";
+import { logFriction, frictionDir } from "../core/friction.ts";
+import {
+  loadScenario,
+  listScenarios,
+  readBrief,
+  type ScenarioConfig,
+} from "../core/claw-test/scenarios.ts";
+import { parseProgressEvents, verifyExpectedPhases } from "../core/claw-test/progress-tail.ts";
+import {
+  resolveAgentRunner,
+  listRegisteredAgents,
+  registerAgentRunner,
+} from "../core/claw-test/agent-runner.ts";
+import { OpenClawRunner } from "../core/claw-test/runners/openclaw.ts";
+import { createTranscriptSink } from "../core/claw-test/transcript-capture.ts";
 
 // Ensure built-in runners are registered.
-registerAgentRunner('openclaw', () => new OpenClawRunner());
+registerAgentRunner("openclaw", () => new OpenClawRunner());
 
 interface HarnessOpts {
   scenario: string;
@@ -72,14 +81,14 @@ export async function runClawTest(args: string[]): Promise<number> {
   } catch (e) {
     console.error(`scenario load failed: ${e instanceof Error ? e.message : String(e)}`);
     const available = listScenarios();
-    if (available.length) console.error(`available scenarios: ${available.join(', ')}`);
+    if (available.length) console.error(`available scenarios: ${available.join(", ")}`);
     return 2;
   }
 
   const runId = newRunId(opts.agent);
   const runRoot = mkdtempSync(join(tmpdir(), `claw-test-${runId}-`));
   const gbrainHome = runRoot; // configDir() appends '.gbrain' itself
-  const transcriptPath = join(runRoot, 'transcript.jsonl');
+  const transcriptPath = join(runRoot, "transcript.jsonl");
   console.log(`run-id: ${runId}`);
   console.log(`tempdir: ${runRoot}`);
 
@@ -90,16 +99,18 @@ export async function runClawTest(args: string[]): Promise<number> {
     try {
       logFriction({
         runId,
-        phase: 'harness',
-        message: 'run interrupted by signal',
-        kind: 'interrupted',
-        source: 'harness',
+        phase: "harness",
+        message: "run interrupted by signal",
+        kind: "interrupted",
+        source: "harness",
         agent: opts.agent,
       });
-    } catch { /* best effort */ }
+    } catch {
+      /* best effort */
+    }
   };
-  process.once('SIGINT', onSignal);
-  process.once('SIGTERM', onSignal);
+  process.once("SIGINT", onSignal);
+  process.once("SIGTERM", onSignal);
 
   let exitCode = 0;
   try {
@@ -109,18 +120,22 @@ export async function runClawTest(args: string[]): Promise<number> {
       exitCode = await runScripted(opts, scenario, { runId, runRoot, gbrainHome });
     }
   } finally {
-    process.off('SIGINT', onSignal);
-    process.off('SIGTERM', onSignal);
+    process.off("SIGINT", onSignal);
+    process.off("SIGTERM", onSignal);
     if (!opts.keepTempdir && !interrupted) {
-      try { rmSync(runRoot, { recursive: true, force: true }); } catch { /* best effort */ }
+      try {
+        rmSync(runRoot, { recursive: true, force: true });
+      } catch {
+        /* best effort */
+      }
     } else {
       console.log(`tempdir kept at: ${runRoot}`);
     }
   }
 
   // Always render at the end so the operator can immediately see the report.
-  console.log('---');
-  console.log(`friction log:    ${join(frictionDir(), runId + '.jsonl')}`);
+  console.log("---");
+  console.log(`friction log:    ${join(frictionDir(), runId + ".jsonl")}`);
   console.log(`render report:   gbrain friction render --run-id ${runId}`);
 
   if (interrupted) return 130;
@@ -146,19 +161,22 @@ export async function runClawTest(args: string[]): Promise<number> {
  * Strip these on entry so the child env carries no Postgres-pointing
  * variable. PGLite-only by design.
  */
-const POSTGRES_POLLUTION_ENV_VARS = ['DATABASE_URL', 'GBRAIN_DATABASE_URL'];
+const POSTGRES_POLLUTION_ENV_VARS = ["DATABASE_URL", "GBRAIN_DATABASE_URL"];
 
 async function runScripted(
   opts: HarnessOpts,
   scenario: ScenarioConfig,
-  ctx: { runId: string; runRoot: string; gbrainHome: string },
+  ctx: { runId: string; runRoot: string; gbrainHome: string }
 ): Promise<number> {
   // Filter out Postgres-pointing env vars before forwarding to children.
   // The harness is PGLite-only by design; an inherited DATABASE_URL
   // would force loadConfig() to flip the engine to 'postgres' at the
   // next phase boundary and break the hermetic-tempdir contract.
   const parentEnv = process.env as Record<string, string | undefined>;
-  const childEnv: Record<string, string> = { GBRAIN_HOME: ctx.gbrainHome, GBRAIN_FRICTION_RUN_ID: ctx.runId };
+  const childEnv: Record<string, string> = {
+    GBRAIN_HOME: ctx.gbrainHome,
+    GBRAIN_FRICTION_RUN_ID: ctx.runId,
+  };
   for (const [k, v] of Object.entries(parentEnv)) {
     if (v === undefined) continue;
     if (POSTGRES_POLLUTION_ENV_VARS.includes(k)) continue;
@@ -174,7 +192,7 @@ async function runScripted(
   // claw-test runs without API keys (v0.37.10.0+ requires an embedding
   // provider OR the deferral flag); this harness exercises CLI ergonomics,
   // not embedding pipelines.
-  phases.push({ name: 'install_brain', argv: ['init', '--pglite', '--no-embedding'] });
+  phases.push({ name: "install_brain", argv: ["init", "--pglite", "--no-embedding"] });
 
   // Phase 3: import (only when scenario has a brain dir)
   // Capture brainDir for downstream phases that need an explicit --dir
@@ -183,30 +201,33 @@ async function runScripted(
   let brainDir: string | undefined;
   if (scenario.brainRelative) {
     brainDir = join(scenario.dir, scenario.brainRelative);
-    phases.push({ name: 'import', argv: ['import', brainDir, '--no-embed', '--progress-json'] });
+    phases.push({ name: "import", argv: ["import", brainDir, "--no-embed", "--progress-json"] });
   }
 
   // Phase 4: query (best-effort sanity)
-  phases.push({ name: 'query', argv: ['query', 'the'] });
+  phases.push({ name: "query", argv: ["query", "the"] });
 
   // Phase 5: extract (positional argument is required: 'all' covers links + timeline).
   // Pass --dir explicitly because the install_brain phase doesn't register
   // a fs source; without --dir, post-#688 extract refuses with "No brain
   // directory configured." When the scenario has no brain dir, skip.
   if (brainDir) {
-    phases.push({ name: 'extract', argv: ['extract', 'all', '--source', 'fs', '--dir', brainDir, '--progress-json'] });
+    phases.push({
+      name: "extract",
+      argv: ["extract", "all", "--source", "fs", "--dir", brainDir, "--progress-json"],
+    });
   }
 
   // Phase 6: verify
-  phases.push({ name: 'verify', argv: ['doctor', '--json', '--progress-json'] });
+  phases.push({ name: "verify", argv: ["doctor", "--json", "--progress-json"] });
 
   // Pre-phase: upgrade scenario seeds the database
-  if (scenario.kind === 'upgrade' && scenario.seedRelative) {
-    const seedSql = join(scenario.dir, scenario.seedRelative, 'dump.sql');
+  if (scenario.kind === "upgrade" && scenario.seedRelative) {
+    const seedSql = join(scenario.dir, scenario.seedRelative, "dump.sql");
     if (existsSync(seedSql)) {
-      const dbPath = join(ctx.gbrainHome, '.gbrain', 'brain.pglite');
-      mkdirSync(join(ctx.gbrainHome, '.gbrain'), { recursive: true });
-      const { seedPgliteFromFile } = await import('../core/claw-test/seed-pglite.ts');
+      const dbPath = join(ctx.gbrainHome, ".gbrain", "brain.pglite");
+      mkdirSync(join(ctx.gbrainHome, ".gbrain"), { recursive: true });
+      const { seedPgliteFromFile } = await import("../core/claw-test/seed-pglite.ts");
       try {
         await seedPgliteFromFile({ dbPath, sqlPath: seedSql });
         console.log(`[seed] replayed ${seedSql} → ${dbPath}`);
@@ -214,10 +235,10 @@ async function runScripted(
         const msg = e instanceof Error ? e.message : String(e);
         logFriction({
           runId: ctx.runId,
-          phase: 'seed',
+          phase: "seed",
           message: `seed replay failed: ${msg}`,
-          severity: 'blocker',
-          source: 'harness',
+          severity: "blocker",
+          source: "harness",
           agent: opts.agent,
         });
         return 1;
@@ -228,7 +249,12 @@ async function runScripted(
   const allStderr: string[] = [];
   const outcomes: PhaseOutcome[] = [];
   for (const phase of phases) {
-    const outcome = await invokeGbrain(opts.gbrainBin ?? 'gbrain', phase.argv, ctx.runRoot, childEnv);
+    const outcome = await invokeGbrain(
+      opts.gbrainBin ?? "gbrain",
+      phase.argv,
+      ctx.runRoot,
+      childEnv
+    );
     outcome.phase = phase.name;
     outcomes.push(outcome);
     allStderr.push(outcome.stderrTail);
@@ -236,10 +262,10 @@ async function runScripted(
       logFriction({
         runId: ctx.runId,
         phase: phase.name,
-        message: `command failed (exit ${outcome.exitCode}): gbrain ${phase.argv.join(' ')}`,
-        severity: 'error',
+        message: `command failed (exit ${outcome.exitCode}): gbrain ${phase.argv.join(" ")}`,
+        severity: "error",
         hint: outcome.stderrTail.trim().slice(0, 500),
-        source: 'harness',
+        source: "harness",
         agent: opts.agent,
       });
       return 1;
@@ -248,9 +274,9 @@ async function runScripted(
         runId: ctx.runId,
         phase: phase.name,
         message: `phase complete in ${outcome.durationMs}ms`,
-        kind: 'phase-marker',
-        marker: 'end',
-        source: 'harness',
+        kind: "phase-marker",
+        marker: "end",
+        source: "harness",
         agent: opts.agent,
       });
     }
@@ -265,9 +291,9 @@ async function runScripted(
         runId: ctx.runId,
         phase: phaseName,
         message: `expected progress event for "${phaseName}" never fired`,
-        severity: 'blocker',
-        hint: 'either the command did not run or it did not emit progress events; check phase log above',
-        source: 'harness',
+        severity: "blocker",
+        hint: "either the command did not run or it did not emit progress events; check phase log above",
+        source: "harness",
         agent: opts.agent,
       });
     }
@@ -284,7 +310,7 @@ async function runScripted(
 async function runLive(
   opts: HarnessOpts,
   scenario: ScenarioConfig,
-  ctx: { runId: string; runRoot: string; gbrainHome: string; transcriptPath: string },
+  ctx: { runId: string; runRoot: string; gbrainHome: string; transcriptPath: string }
 ): Promise<number> {
   let runner;
   try {
@@ -296,14 +322,14 @@ async function runLive(
 
   const detected = await runner.detect();
   if (!detected.available) {
-    console.error(`agent "${opts.agent}" not available: ${detected.reason ?? 'unknown'}`);
+    console.error(`agent "${opts.agent}" not available: ${detected.reason ?? "unknown"}`);
     logFriction({
       runId: ctx.runId,
-      phase: 'agent_detect',
-      message: `agent ${opts.agent} not available: ${detected.reason ?? 'unknown'}`,
-      severity: 'blocker',
-      hint: opts.agent === 'openclaw' ? 'install openclaw or set OPENCLAW_BIN' : undefined,
-      source: 'harness',
+      phase: "agent_detect",
+      message: `agent ${opts.agent} not available: ${detected.reason ?? "unknown"}`,
+      severity: "blocker",
+      hint: opts.agent === "openclaw" ? "install openclaw or set OPENCLAW_BIN" : undefined,
+      source: "harness",
       agent: opts.agent,
     });
     return 2;
@@ -332,10 +358,10 @@ async function runLive(
   if (result.exitCode !== 0) {
     logFriction({
       runId: ctx.runId,
-      phase: 'agent_invoke',
+      phase: "agent_invoke",
       message: `agent exited with code ${result.exitCode} after ${result.durationMs}ms`,
-      severity: 'error',
-      source: 'harness',
+      severity: "error",
+      source: "harness",
       agent: opts.agent,
     });
     return result.exitCode;
@@ -351,34 +377,35 @@ function invokeGbrain(
   bin: string,
   argv: string[],
   cwd: string,
-  env: Record<string, string>,
+  env: Record<string, string>
 ): Promise<PhaseOutcome> {
   return new Promise((resolve) => {
     const start = Date.now();
-    const child = spawn(bin, argv, { cwd, env, stdio: ['ignore', 'pipe', 'pipe'], shell: false });
+    const child = spawn(bin, argv, { cwd, env, stdio: ["ignore", "pipe", "pipe"], shell: false });
     const stdout: Buffer[] = [];
     const stderr: Buffer[] = [];
-    child.stdout?.on('data', (b: Buffer) => stdout.push(b));
-    child.stderr?.on('data', (b: Buffer) => stderr.push(b));
-    child.on('error', (err) => {
-      const stderrJoined = Buffer.concat(stderr).toString('utf-8') + '\nspawn error: ' + err.message;
+    child.stdout?.on("data", (b: Buffer) => stdout.push(b));
+    child.stderr?.on("data", (b: Buffer) => stderr.push(b));
+    child.on("error", (err) => {
+      const stderrJoined =
+        Buffer.concat(stderr).toString("utf-8") + "\nspawn error: " + err.message;
       resolve({
-        phase: '',
+        phase: "",
         exitCode: 127,
         durationMs: Date.now() - start,
         stderrEvents: 0,
-        stdoutTail: tailOf(Buffer.concat(stdout).toString('utf-8')),
+        stdoutTail: tailOf(Buffer.concat(stdout).toString("utf-8")),
         stderrTail: tailOf(stderrJoined),
       });
     });
-    child.on('close', (code) => {
-      const stderrText = Buffer.concat(stderr).toString('utf-8');
+    child.on("close", (code) => {
+      const stderrText = Buffer.concat(stderr).toString("utf-8");
       resolve({
-        phase: '',
-        exitCode: typeof code === 'number' ? code : 1,
+        phase: "",
+        exitCode: typeof code === "number" ? code : 1,
         durationMs: Date.now() - start,
         stderrEvents: parseProgressEvents(stderrText).length,
-        stdoutTail: tailOf(Buffer.concat(stdout).toString('utf-8')),
+        stdoutTail: tailOf(Buffer.concat(stdout).toString("utf-8")),
         stderrTail: stderrText,
       });
     });
@@ -396,45 +423,50 @@ function tailOf(s: string): string {
 
 function parseArgs(args: string[]): HarnessOpts {
   const out: HarnessOpts = {
-    scenario: 'fresh-install',
+    scenario: "fresh-install",
     live: false,
-    agent: 'openclaw',
+    agent: "openclaw",
     keepTempdir: false,
     listAgents: false,
-    help: args.includes('--help') || args.includes('-h'),
+    help: args.includes("--help") || args.includes("-h"),
     gbrainBin: process.env.GBRAIN_BIN_OVERRIDE || process.execPath,
   };
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
-    if (a === '--live') out.live = true;
-    else if (a === '--keep-tempdir') out.keepTempdir = true;
-    else if (a === '--list-agents') out.listAgents = true;
-    else if (a === '--scenario') out.scenario = args[++i] ?? out.scenario;
-    else if (a === '--agent') out.agent = args[++i] ?? out.agent;
+    if (a === "--live") out.live = true;
+    else if (a === "--keep-tempdir") out.keepTempdir = true;
+    else if (a === "--list-agents") out.listAgents = true;
+    else if (a === "--scenario") out.scenario = args[++i] ?? out.scenario;
+    else if (a === "--agent") out.agent = args[++i] ?? out.agent;
   }
   return out;
 }
 
 function newRunId(agent: string): string {
   const now = new Date();
-  const ts = now.toISOString().replace(/[-:]/g, '').replace(/\..*/, '').replace('T', '-');
-  const suf = randomBytes(4).toString('hex');
+  const ts = now.toISOString().replace(/[-:]/g, "").replace(/\..*/, "").replace("T", "-");
+  const suf = randomBytes(4).toString("hex");
   return `claw-test-${ts}-${agent}-${suf}`;
 }
 
 function cmdListAgents(): number {
   const names = listRegisteredAgents();
   if (!names.length) {
-    console.log('no agents registered');
+    console.log("no agents registered");
     return 0;
   }
   for (const name of names) {
     try {
       const runner = resolveAgentRunner(name);
-      runner.detect().then((d) => {
-        const status = d.available ? `available at ${d.binPath}` : `unavailable: ${d.reason}`;
-        console.log(`${name}: ${status}`);
-      }).catch(() => { /* best effort */ });
+      runner
+        .detect()
+        .then((d) => {
+          const status = d.available ? `available at ${d.binPath}` : `unavailable: ${d.reason}`;
+          console.log(`${name}: ${status}`);
+        })
+        .catch(() => {
+          /* best effort */
+        });
     } catch {
       console.log(`${name}: (factory error)`);
     }

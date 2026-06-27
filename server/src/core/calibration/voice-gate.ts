@@ -25,15 +25,15 @@
  * call wrapped in opts-resolution.
  */
 
-import { chat as gatewayChat } from '../ai/gateway.ts';
-import type { VoiceGateMode } from './templates.ts';
+import { chat as gatewayChat } from "../ai/gateway.ts";
+import type { VoiceGateMode } from "./templates.ts";
 
 /**
  * Verdict the Haiku judge returns for a candidate string. Pass-through
  * 'conversational'; reject with a short reason for 'academic'.
  */
 export interface VoiceGateJudgeVerdict {
-  verdict: 'conversational' | 'academic';
+  verdict: "conversational" | "academic";
   reason: string;
 }
 
@@ -154,12 +154,13 @@ export async function defaultJudge(input: {
   mode: VoiceGateMode;
   rubric: string;
 }): Promise<VoiceGateJudgeVerdict> {
-  const prompt = HAIKU_GATE_PROMPT
-    .replace('{RUBRIC}', input.rubric)
-    .replace('{CANDIDATE}', input.candidate);
+  const prompt = HAIKU_GATE_PROMPT.replace("{RUBRIC}", input.rubric).replace(
+    "{CANDIDATE}",
+    input.candidate
+  );
   const result = await gatewayChat({
-    messages: [{ role: 'user', content: prompt }],
-    model: 'claude-haiku-4-5',
+    messages: [{ role: "user", content: prompt }],
+    model: "claude-haiku-4-5",
     maxTokens: 100,
   });
   return parseJudgeOutput(result.text);
@@ -173,25 +174,25 @@ export async function defaultJudge(input: {
  */
 export function parseJudgeOutput(raw: string): VoiceGateJudgeVerdict {
   if (!raw || raw.trim().length === 0) {
-    return { verdict: 'academic', reason: 'empty_judge_output' };
+    return { verdict: "academic", reason: "empty_judge_output" };
   }
   let text = raw.trim();
   const fenced = text.match(/^```(?:json)?\s*\n?([\s\S]*?)\n?```$/);
-  if (fenced) text = (fenced[1] ?? '').trim();
-  const firstObj = text.indexOf('{');
-  if (firstObj === -1) return { verdict: 'academic', reason: 'parse_failed' };
+  if (fenced) text = (fenced[1] ?? "").trim();
+  const firstObj = text.indexOf("{");
+  if (firstObj === -1) return { verdict: "academic", reason: "parse_failed" };
   let parsed: unknown;
   try {
     parsed = JSON.parse(text.slice(firstObj));
   } catch {
-    return { verdict: 'academic', reason: 'parse_failed' };
+    return { verdict: "academic", reason: "parse_failed" };
   }
-  if (typeof parsed !== 'object' || parsed === null) {
-    return { verdict: 'academic', reason: 'parse_failed' };
+  if (typeof parsed !== "object" || parsed === null) {
+    return { verdict: "academic", reason: "parse_failed" };
   }
   const r = parsed as Record<string, unknown>;
-  const verdict = r.verdict === 'conversational' ? 'conversational' : 'academic';
-  const reason = typeof r.reason === 'string' ? r.reason.slice(0, 80) : 'no_reason';
+  const verdict = r.verdict === "conversational" ? "conversational" : "academic";
+  const reason = typeof r.reason === "string" ? r.reason.slice(0, 80) : "no_reason";
   return { verdict, reason };
 }
 
@@ -212,15 +213,15 @@ export async function gateVoice<S>(opts: VoiceGateOpts<S>): Promise<VoiceGateRes
     } catch (err) {
       // Generator threw — treat as a failed attempt but continue. If both
       // attempts throw we fall through to the template (D11 fallback).
-      lastReason = err instanceof Error ? err.message : 'generator_threw';
+      lastReason = err instanceof Error ? err.message : "generator_threw";
       continue;
     }
     if (!candidate || candidate.trim().length === 0) {
-      lastReason = 'empty_generation';
+      lastReason = "empty_generation";
       continue;
     }
     const verdict = await judge({ candidate, mode: opts.mode, rubric });
-    if (verdict.verdict === 'conversational') {
+    if (verdict.verdict === "conversational") {
       return { text: candidate, passed: true, attempts: attempt, lastReason: verdict.reason };
     }
     lastReason = verdict.reason;

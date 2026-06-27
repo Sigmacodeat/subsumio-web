@@ -20,7 +20,7 @@ export const DELETE = createHandler(
       const res = await fetch(`${ENGINE_URL}/api/acls/groups/${encodeURIComponent(groupId)}`, {
         method: "DELETE",
         headers: ctx.headers,
-      signal: AbortSignal.timeout(10_000),
+        signal: AbortSignal.timeout(10_000),
       });
       if (!res.ok) {
         return apiError("acl_delete_failed", `Engine returned ${res.status}`, res.status);

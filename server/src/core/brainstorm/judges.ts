@@ -22,10 +22,15 @@
  * `chatFn` injection point.
  */
 
-import { chat as defaultChat, getChatModel, type ChatResult, type ChatOpts } from '../ai/gateway.ts';
-import { splitProviderModelId } from '../model-id.ts';
+import {
+  chat as defaultChat,
+  getChatModel,
+  type ChatResult,
+  type ChatOpts,
+} from "../ai/gateway.ts";
+import { splitProviderModelId } from "../model-id.ts";
 
-export const PROMPT_VERSION = 'brainstorm-judge-v1';
+export const PROMPT_VERSION = "brainstorm-judge-v1";
 
 // ---------------------------------------------------------------------------
 // v0.41.20.0 — maxTokens scaling constants
@@ -61,15 +66,15 @@ export const MAX_OUTPUT_TOKENS_CEIL = 32_000;
  * (with a readable error) instead of the provider's opaque HTTP 400.
  */
 export const ANTHROPIC_OUTPUT_CAPS: Record<string, number> = {
-  'claude-opus-4-7': 32_000,
-  'claude-sonnet-4-6': 64_000,
-  'claude-haiku-4-5': 64_000,
-  'claude-haiku-4-5-20251001': 64_000,
+  "claude-opus-4-7": 32_000,
+  "claude-sonnet-4-6": 64_000,
+  "claude-haiku-4-5": 64_000,
+  "claude-haiku-4-5-20251001": 64_000,
   // Legacy 3.5 generation caps at 8,192 — much smaller. Without these
   // entries, a `--judge-model anthropic:claude-3-5-haiku-20241022` with
   // 96 ideas would request 14,900 tokens > 8K cap → HTTP 400.
-  'claude-3-5-sonnet-20241022': 8_192,
-  'claude-3-5-haiku-20241022': 8_192,
+  "claude-3-5-sonnet-20241022": 8_192,
+  "claude-3-5-haiku-20241022": 8_192,
 };
 
 /**
@@ -151,13 +156,13 @@ export interface JudgeResult {
   pass_count: number;
   /** Provider:model that answered (for cost accounting / debugging). */
   model: string;
-  usage: ChatResult['usage'];
+  usage: ChatResult["usage"];
 }
 
 /** Brainstorm vs LSD config delta. */
 export interface JudgeConfig {
   /** Stable label — flows into the cache key and the run report. */
-  label: 'brainstorm' | 'lsd';
+  label: "brainstorm" | "lsd";
   /** Axis weights — must sum to 1.0 (validated at module load). */
   weights: JudgeAxisScores;
   /** Threshold on the weighted average; ideas below this are filtered. */
@@ -181,12 +186,12 @@ export interface JudgeConfig {
  * carry inherent constraint, so we don't need the extra stringency).
  */
 export const BRAINSTORM_JUDGE_CONFIG: JudgeConfig = Object.freeze({
-  label: 'brainstorm',
+  label: "brainstorm",
   weights: {
     originality: 0.25,
-    resistance: 0.20,
-    thesis_density: 0.20,
-    concrete_grounding: 0.20,
+    resistance: 0.2,
+    thesis_density: 0.2,
+    concrete_grounding: 0.2,
     cognitive_load: 0.15,
   },
   threshold: 4.0,
@@ -201,19 +206,19 @@ export const BRAINSTORM_JUDGE_CONFIG: JudgeConfig = Object.freeze({
  *   - threshold relaxed to 3.5 so weird-but-defensible ideas survive.
  */
 export const LSD_JUDGE_CONFIG: JudgeConfig = Object.freeze({
-  label: 'lsd',
+  label: "lsd",
   weights: {
     // The "productive dissonance" axis dominates the average.
-    originality: 0.20,
+    originality: 0.2,
     resistance: 0.05,
     thesis_density: 0.15,
-    concrete_grounding: 0.10,
-    cognitive_load: 0.50,
+    concrete_grounding: 0.1,
+    cognitive_load: 0.5,
   },
   threshold: 3.5,
   rejectIfResistanceAbove: 4.5,
   extraInstructions:
-    'Every kept idea MUST invert at least one implicit axiom (X is good → X is the problem; everyone does Y → the opposite; dominant narrative says Z → the hidden cause).',
+    "Every kept idea MUST invert at least one implicit axiom (X is good → X is the problem; everyone does Y → the opposite; dominant narrative says Z → the hidden cause).",
 });
 
 // ---------------------------------------------------------------------------
@@ -250,13 +255,16 @@ function buildJudgePrompt(config: JudgeConfig, ideas: JudgeIdea[]): string {
       (idea) =>
         `## Idea ${idea.id}\n(close=${idea.close_slug} × far=${idea.far_slug})\n${idea.text}`
     )
-    .join('\n\n');
+    .join("\n\n");
 
-  const inversionRule = config.rejectIfResistanceAbove !== undefined
-    ? `\n\n## LSD INVERSION RULE\nAny idea with resistance > ${config.rejectIfResistanceAbove.toFixed(1)} is REJECTED regardless of weighted score — these are the ideas the user would surface without LSD. "Too obvious" is the failure mode here.`
-    : '';
+  const inversionRule =
+    config.rejectIfResistanceAbove !== undefined
+      ? `\n\n## LSD INVERSION RULE\nAny idea with resistance > ${config.rejectIfResistanceAbove.toFixed(1)} is REJECTED regardless of weighted score — these are the ideas the user would surface without LSD. "Too obvious" is the failure mode here.`
+      : "";
 
-  const extras = config.extraInstructions ? `\n\n## ADDITIONAL CONSTRAINT\n${config.extraInstructions}` : '';
+  const extras = config.extraInstructions
+    ? `\n\n## ADDITIONAL CONSTRAINT\n${config.extraInstructions}`
+    : "";
 
   return `You are a structural evaluator filtering brainstorm ideas. Score each idea on the underlying potential, not the current wording.
 
@@ -320,7 +328,7 @@ Respond with ONLY the JSON block, nothing before or after.`;
 // ---------------------------------------------------------------------------
 
 export function parseJudgeJSON(text: string): unknown {
-  if (!text) throw new Error('parseJudgeJSON: empty response');
+  if (!text) throw new Error("parseJudgeJSON: empty response");
   try {
     return JSON.parse(text);
   } catch {
@@ -337,7 +345,7 @@ export function parseJudgeJSON(text: string): unknown {
   // Common-repairs pass.
   const cleaned = text
     .replace(FENCE_RE, (_, inner) => inner)
-    .replace(/,(\s*[}\]])/g, '$1')
+    .replace(/,(\s*[}\]])/g, "$1")
     .trim();
   const braceMatch = cleaned.match(/\{[\s\S]*\}/);
   if (braceMatch) {
@@ -347,7 +355,7 @@ export function parseJudgeJSON(text: string): unknown {
       // fall through
     }
   }
-  throw new Error('parseJudgeJSON: no strategy produced valid JSON');
+  throw new Error("parseJudgeJSON: no strategy produced valid JSON");
 }
 
 // ---------------------------------------------------------------------------
@@ -355,24 +363,27 @@ export function parseJudgeJSON(text: string): unknown {
 // ---------------------------------------------------------------------------
 
 function isAxisScoreInRange(n: unknown): n is number {
-  return typeof n === 'number' && Number.isFinite(n) && n >= 1 && n <= 5;
+  return typeof n === "number" && Number.isFinite(n) && n >= 1 && n <= 5;
 }
 
-function validateIdeaShape(raw: unknown): { id: string; scores: JudgeAxisScores; note: string } | null {
-  if (typeof raw !== 'object' || raw === null) return null;
+function validateIdeaShape(
+  raw: unknown
+): { id: string; scores: JudgeAxisScores; note: string } | null {
+  if (typeof raw !== "object" || raw === null) return null;
   const r = raw as Record<string, unknown>;
-  if (typeof r.id !== 'string') return null;
-  const note = typeof r.note === 'string' ? r.note : '';
+  if (typeof r.id !== "string") return null;
+  const note = typeof r.note === "string" ? r.note : "";
   const s = r.scores;
-  if (typeof s !== 'object' || s === null) return null;
+  if (typeof s !== "object" || s === null) return null;
   const sr = s as Record<string, unknown>;
   if (
-    !isAxisScoreInRange(sr.originality)
-    || !isAxisScoreInRange(sr.resistance)
-    || !isAxisScoreInRange(sr.thesis_density)
-    || !isAxisScoreInRange(sr.concrete_grounding)
-    || !isAxisScoreInRange(sr.cognitive_load)
-  ) return null;
+    !isAxisScoreInRange(sr.originality) ||
+    !isAxisScoreInRange(sr.resistance) ||
+    !isAxisScoreInRange(sr.thesis_density) ||
+    !isAxisScoreInRange(sr.concrete_grounding) ||
+    !isAxisScoreInRange(sr.cognitive_load)
+  )
+    return null;
   return {
     id: r.id,
     scores: {
@@ -392,11 +403,11 @@ function validateIdeaShape(raw: unknown): { id: string; scores: JudgeAxisScores;
 
 export function weightedScore(scores: JudgeAxisScores, weights: JudgeAxisScores): number {
   return (
-    scores.originality * weights.originality
-    + scores.resistance * weights.resistance
-    + scores.thesis_density * weights.thesis_density
-    + scores.concrete_grounding * weights.concrete_grounding
-    + scores.cognitive_load * weights.cognitive_load
+    scores.originality * weights.originality +
+    scores.resistance * weights.resistance +
+    scores.thesis_density * weights.thesis_density +
+    scores.concrete_grounding * weights.concrete_grounding +
+    scores.cognitive_load * weights.cognitive_load
   );
 }
 
@@ -404,8 +415,8 @@ export function weightedScore(scores: JudgeAxisScores, weights: JudgeAxisScores)
 export function ideaPasses(idea: JudgeIdeaResult, config: JudgeConfig): boolean {
   if (idea.weighted_score < config.threshold) return false;
   if (
-    config.rejectIfResistanceAbove !== undefined
-    && idea.scores.resistance > config.rejectIfResistanceAbove
+    config.rejectIfResistanceAbove !== undefined &&
+    idea.scores.resistance > config.rejectIfResistanceAbove
   ) {
     return false;
   }
@@ -459,10 +470,19 @@ export async function runJudge(
   if (ideas.length === 0) {
     // Empty input is a no-op success; callers can short-circuit too but
     // returning a well-formed empty result is more ergonomic.
-    return { ideas: [], pass_count: 0, model: 'noop', usage: { input_tokens: 0, output_tokens: 0, cache_read_tokens: 0, cache_creation_tokens: 0 } };
+    return {
+      ideas: [],
+      pass_count: 0,
+      model: "noop",
+      usage: { input_tokens: 0, output_tokens: 0, cache_read_tokens: 0, cache_creation_tokens: 0 },
+    };
   }
   const chunkSize = Math.max(1, options.maxIdeasPerCall ?? DEFAULT_JUDGE_CHUNK_SIZE);
-  const stderr = options.stderrWrite ?? ((s: string) => { process.stderr.write(s); });
+  const stderr =
+    options.stderrWrite ??
+    ((s: string) => {
+      process.stderr.write(s);
+    });
 
   // Split ideas into chunks. For small idea sets (<= chunkSize) this is a
   // single chunk and behaves identically to the pre-fix single-call path.
@@ -471,12 +491,14 @@ export async function runJudge(
     chunks.push(ideas.slice(i, i + chunkSize));
   }
   if (chunks.length > 1) {
-    stderr(`[${config.label}-judge] chunking ${ideas.length} ideas into ${chunks.length} batches of ≤${chunkSize}\n`);
+    stderr(
+      `[${config.label}-judge] chunking ${ideas.length} ideas into ${chunks.length} batches of ≤${chunkSize}\n`
+    );
   }
 
   const allIdeaResults: JudgeIdeaResult[] = [];
-  let lastModel = 'noop';
-  const totalUsage: ChatResult['usage'] = {
+  let lastModel = "noop";
+  const totalUsage: ChatResult["usage"] = {
     input_tokens: 0,
     output_tokens: 0,
     cache_read_tokens: 0,
@@ -489,11 +511,13 @@ export async function runJudge(
     lastModel = chunkResult.model;
     totalUsage.input_tokens += chunkResult.usage.input_tokens;
     totalUsage.output_tokens += chunkResult.usage.output_tokens;
-    if (typeof chunkResult.usage.cache_read_tokens === 'number') {
-      totalUsage.cache_read_tokens = (totalUsage.cache_read_tokens ?? 0) + chunkResult.usage.cache_read_tokens;
+    if (typeof chunkResult.usage.cache_read_tokens === "number") {
+      totalUsage.cache_read_tokens =
+        (totalUsage.cache_read_tokens ?? 0) + chunkResult.usage.cache_read_tokens;
     }
-    if (typeof chunkResult.usage.cache_creation_tokens === 'number') {
-      totalUsage.cache_creation_tokens = (totalUsage.cache_creation_tokens ?? 0) + chunkResult.usage.cache_creation_tokens;
+    if (typeof chunkResult.usage.cache_creation_tokens === "number") {
+      totalUsage.cache_creation_tokens =
+        (totalUsage.cache_creation_tokens ?? 0) + chunkResult.usage.cache_creation_tokens;
     }
   }
 
@@ -517,14 +541,15 @@ async function runJudgeChunk(
   // Anti-bias context (D4 + codex #8): inject the user's known biases so
   // the judge penalizes ideas that play to them. Cold-start (empty array)
   // falls through with no anti-bias context — orchestrator stderr-warns.
-  const system = (options.activeBiasTags && options.activeBiasTags.length > 0)
-    ? `You are scoring ideas for a user with the following known biases: ${options.activeBiasTags.join(', ')}. Penalize the originality axis when an idea closely matches a known bias pattern.`
-    : undefined;
+  const system =
+    options.activeBiasTags && options.activeBiasTags.length > 0
+      ? `You are scoring ideas for a user with the following known biases: ${options.activeBiasTags.join(", ")}. Penalize the originality axis when an idea closely matches a known bias pattern.`
+      : undefined;
 
   const result = await chat({
     model: options.modelOverride,
     system,
-    messages: [{ role: 'user', content: prompt }],
+    messages: [{ role: "user", content: prompt }],
     // Judge runs cold (T=0.1) for consistency; the gateway's temperature
     // knob isn't on ChatOpts (it's set per-provider in instantiateChat),
     // so we rely on the default. If we ever need temperature control here
@@ -538,8 +563,14 @@ async function runJudgeChunk(
   });
 
   const parsed = parseJudgeJSON(result.text);
-  if (typeof parsed !== 'object' || parsed === null || !Array.isArray((parsed as { ideas?: unknown }).ideas)) {
-    throw new Error(`runJudge: response missing 'ideas' array. Got: ${JSON.stringify(parsed).slice(0, 200)}`);
+  if (
+    typeof parsed !== "object" ||
+    parsed === null ||
+    !Array.isArray((parsed as { ideas?: unknown }).ideas)
+  ) {
+    throw new Error(
+      `runJudge: response missing 'ideas' array. Got: ${JSON.stringify(parsed).slice(0, 200)}`
+    );
   }
   const rawIdeas = (parsed as { ideas: unknown[] }).ideas;
 

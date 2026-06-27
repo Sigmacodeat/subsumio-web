@@ -26,7 +26,7 @@ mutating: true
 > the canonical citation format every fix should match.
 >
 > **Output rule:** all links MUST be deterministic (built from API data,
-> not composed by LLM). See [_output-rules.md](../_output-rules.md).
+> not composed by LLM). See [\_output-rules.md](../_output-rules.md).
 
 ## Contract
 
@@ -201,7 +201,6 @@ If running as a recurring batch, track state in a small JSON file under
   "pages_remaining": 1424
 }
 ```
-
 
 ## Output Format
 

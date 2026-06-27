@@ -16,27 +16,20 @@
  * itself doesn't write the receipt — that's `runEval()`'s caller's job
  * (the CLI wires receipt-write after the runner returns).
  */
-import type { BrainEngine } from '../engine.ts';
-import { chat } from '../ai/gateway.ts';
-import { parseModelJSON } from '../eval-shared/json-repair.ts';
-import { aggregate, type SlotResult, type AggregateResult } from './aggregate.ts';
-import {
-  RUBRIC_VERSION,
-  rubricSha8,
-  renderJudgePrompt,
-} from './rubric.ts';
-import {
-  corpusSha8,
-  modelSetSha8,
-} from './receipt-name.ts';
-import type { TakesQualityReceipt } from './receipt.ts';
-import { estimateCost, getPricing, PricingNotFoundError } from './pricing.ts';
-import { DEFAULT_CYCLES_NONTTY } from '../eval/cycle-default.ts';
+import type { BrainEngine } from "../engine.ts";
+import { chat } from "../ai/gateway.ts";
+import { parseModelJSON } from "../eval-shared/json-repair.ts";
+import { aggregate, type SlotResult, type AggregateResult } from "./aggregate.ts";
+import { RUBRIC_VERSION, rubricSha8, renderJudgePrompt } from "./rubric.ts";
+import { corpusSha8, modelSetSha8 } from "./receipt-name.ts";
+import type { TakesQualityReceipt } from "./receipt.ts";
+import { estimateCost, getPricing, PricingNotFoundError } from "./pricing.ts";
+import { DEFAULT_CYCLES_NONTTY } from "../eval/cycle-default.ts";
 
 export const DEFAULT_MODEL_PANEL = [
-  'openai:gpt-4o',
-  'anthropic:claude-opus-4-7',
-  'google:gemini-1.5-pro',
+  "openai:gpt-4o",
+  "anthropic:claude-opus-4-7",
+  "google:gemini-1.5-pro",
 ] as const;
 
 export interface RunOpts {
@@ -47,7 +40,7 @@ export interface RunOpts {
   /** Budget cap in USD; runner aborts before next call would exceed. null = no cap. */
   budgetUsd?: number | null;
   /** 'db' samples from takes table; 'fs' walks markdown (not yet wired). */
-  source?: 'db' | 'fs';
+  source?: "db" | "fs";
   /** Filter to slugs starting with this prefix (DB source). */
   slugPrefix?: string | null;
   /** Cycles to run per panel. Default 3 in TTY, 1 in non-TTY. */
@@ -72,12 +65,12 @@ export interface RunResult {
  */
 async function sampleTakesAsText(
   engine: BrainEngine,
-  opts: { limit: number; slugPrefix: string | null },
+  opts: { limit: number; slugPrefix: string | null }
 ): Promise<{ takesText: string; nTakes: number }> {
   const params: any[] = [opts.limit];
-  let where = '';
+  let where = "";
   if (opts.slugPrefix) {
-    params.push(opts.slugPrefix + '%');
+    params.push(opts.slugPrefix + "%");
     where = `JOIN pages p ON p.id = t.page_id WHERE p.slug LIKE $${params.length}`;
   }
   const rows = await engine.executeRaw<{
@@ -90,32 +83,33 @@ async function sampleTakesAsText(
     page_slug: string | null;
   }>(
     `SELECT t.claim, t.kind, t.holder, t.weight, t.since_date, t.source,
-            ${opts.slugPrefix ? 'p.slug' : 'NULL'} AS page_slug
-       FROM takes t ${where || 'JOIN pages p ON p.id = t.page_id'}
-       ${where ? '' : ''}
+            ${opts.slugPrefix ? "p.slug" : "NULL"} AS page_slug
+       FROM takes t ${where || "JOIN pages p ON p.id = t.page_id"}
+       ${where ? "" : ""}
        ORDER BY random()
        LIMIT $1`,
-    params,
+    params
   );
-  const lines = rows.map(r => {
-    const since = r.since_date ?? '—';
-    const src = r.source ?? '—';
-    const slug = r.page_slug ? ` [page=${r.page_slug}]` : '';
+  const lines = rows.map((r) => {
+    const since = r.since_date ?? "—";
+    const src = r.source ?? "—";
+    const slug = r.page_slug ? ` [page=${r.page_slug}]` : "";
     return `- ${r.kind} | holder=${r.holder} | weight=${r.weight} | since=${since} | src=${src}${slug}\n  ${r.claim}`;
   });
-  return { takesText: lines.join('\n'), nTakes: rows.length };
+  return { takesText: lines.join("\n"), nTakes: rows.length };
 }
 
 async function callOneModel(
   modelId: string,
   systemPrompt: string,
-  abortSignal?: AbortSignal,
+  abortSignal?: AbortSignal
 ): Promise<SlotResult & { _usage?: { input_tokens: number; output_tokens: number } }> {
   try {
     const result = await chat({
       model: modelId,
-      system: 'You are an evaluation judge. Return strict JSON in the requested shape. Do not include markdown fences in your final response.',
-      messages: [{ role: 'user', content: systemPrompt }],
+      system:
+        "You are an evaluation judge. Return strict JSON in the requested shape. Do not include markdown fences in your final response.",
+      messages: [{ role: "user", content: systemPrompt }],
       maxTokens: 2000,
       abortSignal,
     });
@@ -125,14 +119,20 @@ async function callOneModel(
         ok: true,
         modelId,
         parsed,
-        _usage: { input_tokens: result.usage.input_tokens, output_tokens: result.usage.output_tokens },
+        _usage: {
+          input_tokens: result.usage.input_tokens,
+          output_tokens: result.usage.output_tokens,
+        },
       } as SlotResult & { _usage: { input_tokens: number; output_tokens: number } };
     } catch (parseErr) {
       return {
         ok: false,
         modelId,
         error: `parse_failed: ${parseErr instanceof Error ? parseErr.message : String(parseErr)}`,
-        _usage: { input_tokens: result.usage.input_tokens, output_tokens: result.usage.output_tokens },
+        _usage: {
+          input_tokens: result.usage.input_tokens,
+          output_tokens: result.usage.output_tokens,
+        },
       } as SlotResult & { _usage: { input_tokens: number; output_tokens: number } };
     }
   } catch (err) {
@@ -152,10 +152,10 @@ export async function runEval(engine: BrainEngine, opts: RunOpts = {}): Promise<
   const cycles = opts.cycles ?? DEFAULT_CYCLES_NONTTY;
   const models = opts.models ?? DEFAULT_MODEL_PANEL;
   const budgetUsd = opts.budgetUsd ?? null;
-  const source = opts.source ?? 'db';
+  const source = opts.source ?? "db";
 
-  if (source === 'fs') {
-    throw new Error('fs source not yet wired in v0.32; use --source db');
+  if (source === "fs") {
+    throw new Error("fs source not yet wired in v0.32; use --source db");
   }
 
   // Pre-flight pricing check (codex review #4 fail-closed): every requested
@@ -163,7 +163,9 @@ export async function runEval(engine: BrainEngine, opts: RunOpts = {}): Promise<
   // budget enforcement is meaningless.
   if (budgetUsd !== null) {
     for (const m of models) {
-      try { getPricing(m); } catch (e) {
+      try {
+        getPricing(m);
+      } catch (e) {
         if (e instanceof PricingNotFoundError) throw e;
         throw e;
       }
@@ -171,9 +173,14 @@ export async function runEval(engine: BrainEngine, opts: RunOpts = {}): Promise<
   }
 
   // Sample the corpus.
-  const { takesText, nTakes } = await sampleTakesAsText(engine, { limit, slugPrefix: opts.slugPrefix ?? null });
+  const { takesText, nTakes } = await sampleTakesAsText(engine, {
+    limit,
+    slugPrefix: opts.slugPrefix ?? null,
+  });
   if (nTakes === 0) {
-    throw new Error('no takes to evaluate (empty corpus). Run `gbrain extract takes` first or check --slug-prefix.');
+    throw new Error(
+      "no takes to evaluate (empty corpus). Run `gbrain extract takes` first or check --slug-prefix."
+    );
   }
 
   const corpus_sha8 = corpusSha8(takesText);
@@ -189,7 +196,7 @@ export async function runEval(engine: BrainEngine, opts: RunOpts = {}): Promise<
 
   for (let cycle = 0; cycle < cycles; cycle++) {
     if (opts.abortSignal?.aborted) {
-      process.stderr.write('[eval takes-quality] aborted by signal\n');
+      process.stderr.write("[eval takes-quality] aborted by signal\n");
       break;
     }
 
@@ -200,12 +207,16 @@ export async function runEval(engine: BrainEngine, opts: RunOpts = {}): Promise<
     if (budgetUsd !== null) {
       let projected = 0;
       for (const m of models) {
-        try { projected += estimateCost(m, 5000, 2000); } catch { /* unreachable: pre-flight checked */ }
+        try {
+          projected += estimateCost(m, 5000, 2000);
+        } catch {
+          /* unreachable: pre-flight checked */
+        }
       }
       if (cumulativeCost + projected > budgetUsd) {
         process.stderr.write(
           `[eval takes-quality] budget cap hit: cumulative=$${cumulativeCost.toFixed(2)} ` +
-          `projected_next=$${projected.toFixed(2)} cap=$${budgetUsd.toFixed(2)}; aborting before cycle ${cycle + 1}\n`,
+            `projected_next=$${projected.toFixed(2)} cap=$${budgetUsd.toFixed(2)}; aborting before cycle ${cycle + 1}\n`
         );
         budgetAborted = true;
         break;
@@ -213,17 +224,22 @@ export async function runEval(engine: BrainEngine, opts: RunOpts = {}): Promise<
     }
 
     const settled = await Promise.allSettled(
-      models.map(m => callOneModel(m, prompt, opts.abortSignal)),
+      models.map((m) => callOneModel(m, prompt, opts.abortSignal))
     );
     const slots: SlotResult[] = [];
     for (let i = 0; i < settled.length; i++) {
       const s = settled[i];
       const m = models[i];
-      if (s.status === 'fulfilled') {
-        const r = s.value as SlotResult & { _usage?: { input_tokens: number; output_tokens: number } };
+      if (s.status === "fulfilled") {
+        const r = s.value as SlotResult & {
+          _usage?: { input_tokens: number; output_tokens: number };
+        };
         if (r._usage) {
-          try { cumulativeCost += estimateCost(m, r._usage.input_tokens, r._usage.output_tokens); }
-          catch { /* unknown model + no budget cap → skip cost addition */ }
+          try {
+            cumulativeCost += estimateCost(m, r._usage.input_tokens, r._usage.output_tokens);
+          } catch {
+            /* unknown model + no budget cap → skip cost addition */
+          }
         }
         slots.push(r);
       } else {
@@ -233,20 +249,20 @@ export async function runEval(engine: BrainEngine, opts: RunOpts = {}): Promise<
     const agg = aggregate({ slots });
     lastAggregate = agg;
     successes_per_cycle.push(agg.successes);
-    if (agg.verdict === 'pass' || agg.verdict === 'inconclusive') break;
+    if (agg.verdict === "pass" || agg.verdict === "inconclusive") break;
   }
 
   if (!lastAggregate) {
     // Budget aborted before any cycle ran.
     lastAggregate = {
-      verdict: 'inconclusive',
+      verdict: "inconclusive",
       successes: 0,
       failures: 0,
       dimensions: {},
       overall: undefined,
       topImprovements: [],
       errors: [],
-      verdictMessage: 'INCONCLUSIVE: budget cap exceeded before any cycle completed.',
+      verdictMessage: "INCONCLUSIVE: budget cap exceeded before any cycle completed.",
     };
   }
 

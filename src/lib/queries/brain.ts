@@ -1,7 +1,14 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { BrainStats, BrainPage, SearchResult, GraphNode, GraphLink, RecentQuery } from "@/lib/types";
+import type {
+  BrainStats,
+  BrainPage,
+  SearchResult,
+  GraphNode,
+  GraphLink,
+  RecentQuery,
+} from "@/lib/types";
 import { api } from "@/lib/api";
 
 // ── Queries ──
@@ -69,11 +76,7 @@ export interface CockpitData {
   pages: Record<string, BrainPage[]>;
 }
 
-export function useCockpitData(opts?: {
-  types?: string;
-  recentLimit?: number;
-  enabled?: boolean;
-}) {
+export function useCockpitData(opts?: { types?: string; recentLimit?: number; enabled?: boolean }) {
   return useQuery<CockpitData>({
     queryKey: ["brain", "cockpit", opts],
     queryFn: () => api.brain.cockpit(opts),

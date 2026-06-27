@@ -10,11 +10,11 @@
  * the walker touches (symbol_name, symbol_name_qualified, language,
  * page_id) are populated.
  */
-import { describe, test, expect, beforeAll, afterAll, beforeEach } from 'bun:test';
-import { PGLiteEngine } from '../../src/core/pglite-engine.ts';
-import { resetPgliteState } from '../helpers/reset-pglite.ts';
-import { runRecursiveWalk } from '../../src/core/code-intel/recursive-walk.ts';
-import { classifySink } from '../../src/core/code-intel/sinks/index.ts';
+import { describe, test, expect, beforeAll, afterAll, beforeEach } from "bun:test";
+import { PGLiteEngine } from "../../src/core/pglite-engine.ts";
+import { resetPgliteState } from "../helpers/reset-pglite.ts";
+import { runRecursiveWalk } from "../../src/core/code-intel/recursive-walk.ts";
+import { classifySink } from "../../src/core/code-intel/sinks/index.ts";
 
 let engine: PGLiteEngine;
 
@@ -46,7 +46,7 @@ async function seedGraph(): Promise<void> {
      VALUES ('code/main', 'default', 'code', 'code', 'main', 'h1'),
             ('code/foo', 'default', 'code', 'code', 'foo', 'h2'),
             ('code/baz', 'default', 'code', 'code', 'baz', 'h3')`,
-    [],
+    []
   );
   await engine.executeRaw(
     `INSERT INTO content_chunks (page_id, chunk_index, chunk_text, symbol_name, symbol_name_qualified, language)
@@ -58,7 +58,7 @@ async function seedGraph(): Promise<void> {
      UNION ALL
      SELECT id, 0, 'stub', 'baz', 'src/baz.ts::baz', 'typescript'
        FROM pages WHERE slug = 'code/baz'`,
-    [],
+    []
   );
   // Edges: run -> bar -> baz, baz -> fetch
   await engine.executeRaw(
@@ -71,90 +71,92 @@ async function seedGraph(): Promise<void> {
      UNION ALL
      SELECT cc.id, 'src/baz.ts::baz', 'fetch', 'calls', 'default'
        FROM content_chunks cc JOIN pages p ON p.id = cc.page_id WHERE p.slug = 'code/baz'`,
-    [],
+    []
   );
 }
 
-describe('W3: sinks classifier', () => {
-  test('fetch is http_call (TS)', () => {
-    expect(classifySink('fetch', 'typescript')).toBe('http_call');
+describe("W3: sinks classifier", () => {
+  test("fetch is http_call (TS)", () => {
+    expect(classifySink("fetch", "typescript")).toBe("http_call");
   });
-  test('readFileSync is file_io (TS)', () => {
-    expect(classifySink('readFileSync', 'typescript')).toBe('file_io');
+  test("readFileSync is file_io (TS)", () => {
+    expect(classifySink("readFileSync", "typescript")).toBe("file_io");
   });
-  test('db.query glob matches db_call', () => {
-    expect(classifySink('db.query', 'typescript')).toBe('db_call');
+  test("db.query glob matches db_call", () => {
+    expect(classifySink("db.query", "typescript")).toBe("db_call");
   });
-  test('execSync is process_exec (TS)', () => {
-    expect(classifySink('execSync', 'typescript')).toBe('process_exec');
+  test("execSync is process_exec (TS)", () => {
+    expect(classifySink("execSync", "typescript")).toBe("process_exec");
   });
-  test('subprocess.run is process_exec (Python)', () => {
-    expect(classifySink('subprocess.run', 'python')).toBe('process_exec');
+  test("subprocess.run is process_exec (Python)", () => {
+    expect(classifySink("subprocess.run", "python")).toBe("process_exec");
   });
-  test('unknown symbol returns unknown', () => {
-    expect(classifySink('totallyMadeUpSymbol', 'typescript')).toBe('unknown');
+  test("unknown symbol returns unknown", () => {
+    expect(classifySink("totallyMadeUpSymbol", "typescript")).toBe("unknown");
   });
-  test('unsupported language returns unknown', () => {
-    expect(classifySink('fetch', 'ruby')).toBe('unknown');
+  test("unsupported language returns unknown", () => {
+    expect(classifySink("fetch", "ruby")).toBe("unknown");
   });
 });
 
-describe('W3: code_blast (callers walk)', () => {
-  test('not_found returns did_you_mean', async () => {
-    const r = await runRecursiveWalk(engine, 'totallyMadeUp', {
-      direction: 'callers',
-      sourceId: 'default',
+describe("W3: code_blast (callers walk)", () => {
+  test("not_found returns did_you_mean", async () => {
+    const r = await runRecursiveWalk(engine, "totallyMadeUp", {
+      direction: "callers",
+      sourceId: "default",
     });
-    expect(r.result).toBe('not_found');
+    expect(r.result).toBe("not_found");
   });
 
-  test('happy path: walks caller chain depth-grouped', async () => {
+  test("happy path: walks caller chain depth-grouped", async () => {
     await seedGraph();
-    const r = await runRecursiveWalk(engine, 'baz', {
-      direction: 'callers',
-      sourceId: 'default',
+    const r = await runRecursiveWalk(engine, "baz", {
+      direction: "callers",
+      sourceId: "default",
       depth: 5,
     });
-    expect(r.result).toBe('ok');
-    if (r.result === 'ok') {
+    expect(r.result).toBe("ok");
+    if (r.result === "ok") {
       // depth 1 should contain bar (which calls baz)
       const d1 = r.depth_groups.find((g) => g.depth === 1);
       expect(d1).toBeDefined();
-      expect(d1?.nodes.some((n) => n.symbol === 'src/foo.ts::bar')).toBe(true);
+      expect(d1?.nodes.some((n) => n.symbol === "src/foo.ts::bar")).toBe(true);
       // confidence at depth 1 ~ 1/(1+0.3) = 0.769
       expect(d1?.confidence ?? 0).toBeGreaterThan(0.7);
       expect(d1?.confidence ?? 0).toBeLessThan(0.8);
     }
   });
 
-  test('truncation: depth_cap fires when walk exceeds depth', async () => {
+  test("truncation: depth_cap fires when walk exceeds depth", async () => {
     await seedGraph();
-    const r = await runRecursiveWalk(engine, 'baz', {
-      direction: 'callers',
-      sourceId: 'default',
+    const r = await runRecursiveWalk(engine, "baz", {
+      direction: "callers",
+      sourceId: "default",
       depth: 1, // tight depth cap; we have a 2-hop chain
     });
-    expect(r.result).toBe('ok');
-    if (r.result === 'ok') {
+    expect(r.result).toBe("ok");
+    if (r.result === "ok") {
       // With depth=1, "run" (which is 2 hops from baz) shouldn't appear
       const allSyms = r.depth_groups.flatMap((g) => g.nodes.map((n) => n.symbol));
-      expect(allSyms.includes('src/main.ts::run')).toBe(false);
+      expect(allSyms.includes("src/main.ts::run")).toBe(false);
     }
   });
 });
 
-describe('W3: code_flow (callees walk + sink tagging)', () => {
-  test('tags fetch as http_call sink at terminal node', async () => {
+describe("W3: code_flow (callees walk + sink tagging)", () => {
+  test("tags fetch as http_call sink at terminal node", async () => {
     await seedGraph();
-    const r = await runRecursiveWalk(engine, 'run', {
-      direction: 'callees',
-      sourceId: 'default',
+    const r = await runRecursiveWalk(engine, "run", {
+      direction: "callees",
+      sourceId: "default",
       depth: 5,
     });
-    expect(r.result).toBe('ok');
-    if (r.result === 'ok') {
+    expect(r.result).toBe("ok");
+    if (r.result === "ok") {
       // terminal_nodes should include fetch tagged as http_call
-      expect(r.terminal_nodes?.some((n) => n.symbol === 'fetch' && n.sink_kind === 'http_call')).toBe(true);
+      expect(
+        r.terminal_nodes?.some((n) => n.symbol === "fetch" && n.sink_kind === "http_call")
+      ).toBe(true);
     }
   });
 });

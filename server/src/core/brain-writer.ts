@@ -16,18 +16,22 @@
  * beside source files so bulk repair never litters the user's workspace.
  */
 
-import { createHash } from 'crypto';
-import { existsSync, readFileSync, readdirSync, copyFileSync, writeFileSync, mkdirSync, lstatSync } from 'fs';
-import { join, relative, resolve, dirname, basename, isAbsolute } from 'path';
-import type { BrainEngine } from './engine.ts';
-import type { ProgressReporter } from './progress.ts';
-import { gbrainPath } from './config.ts';
+import { createHash } from "crypto";
 import {
-  parseMarkdown,
-  type ParseValidationCode,
-  type ParseValidationError,
-} from './markdown.ts';
-import { isSyncable, pruneDir, slugifyPath } from './sync.ts';
+  existsSync,
+  readFileSync,
+  readdirSync,
+  copyFileSync,
+  writeFileSync,
+  mkdirSync,
+  lstatSync,
+} from "fs";
+import { join, relative, resolve, dirname, basename, isAbsolute } from "path";
+import type { BrainEngine } from "./engine.ts";
+import type { ProgressReporter } from "./progress.ts";
+import { gbrainPath } from "./config.ts";
+import { parseMarkdown, type ParseValidationCode, type ParseValidationError } from "./markdown.ts";
+import { isSyncable, pruneDir, slugifyPath } from "./sync.ts";
 
 export type { ParseValidationCode };
 
@@ -47,7 +51,7 @@ export interface PerSourceReport {
    * 'scanned' = full walk completed.
    * 'partial' = deadline/abort fired mid-walk; counts reflect prefix only.
    * 'skipped' = source was never visited (outer loop broke before reaching it). */
-  status: 'scanned' | 'partial' | 'skipped';
+  status: "scanned" | "partial" | "skipped";
   /** Count of .md files actually parsed (numerator for "scanned ~N of M" doctor message).
    * Distinct from `total` (which counts ERRORS) and `ignoredMissingOpen`. */
   files_scanned: number;
@@ -79,7 +83,7 @@ const SAMPLE_PER_SOURCE = 20;
 // ---------------------------------------------------------------------------
 
 export function makeFrontmatterBackupRunId(date = new Date()): string {
-  return date.toISOString().replace(/[:.]/g, '-');
+  return date.toISOString().replace(/[:.]/g, "-");
 }
 
 export interface FrontmatterBackupOpts {
@@ -89,20 +93,23 @@ export interface FrontmatterBackupOpts {
 }
 
 function sourceKey(sourcePath: string): string {
-  return createHash('sha256').update(resolve(sourcePath)).digest('hex').slice(0, 12);
+  return createHash("sha256").update(resolve(sourcePath)).digest("hex").slice(0, 12);
 }
 
 export function defaultFrontmatterBackupRoot(runId = makeFrontmatterBackupRunId()): string {
-  return gbrainPath('backups', 'frontmatter', runId);
+  return gbrainPath("backups", "frontmatter", runId);
 }
 
-export function createFrontmatterBackup(filePath: string, opts: FrontmatterBackupOpts = {}): string {
+export function createFrontmatterBackup(
+  filePath: string,
+  opts: FrontmatterBackupOpts = {}
+): string {
   const resolvedFile = resolve(filePath);
   const resolvedSource = resolve(opts.sourcePath ?? dirname(resolvedFile));
   const rel = relative(resolvedSource, resolvedFile);
-  const safeRel = rel && !rel.startsWith('..') && !isAbsolute(rel) ? rel : basename(resolvedFile);
+  const safeRel = rel && !rel.startsWith("..") && !isAbsolute(rel) ? rel : basename(resolvedFile);
   const root = opts.backupRoot ?? defaultFrontmatterBackupRoot(opts.runId);
-  const backupPath = join(root, sourceKey(resolvedSource), safeRel + '.bak');
+  const backupPath = join(root, sourceKey(resolvedSource), safeRel + ".bak");
   mkdirSync(dirname(backupPath), { recursive: true });
   copyFileSync(resolvedFile, backupPath);
   return backupPath;
@@ -126,44 +133,48 @@ export function createFrontmatterBackup(filePath: string, opts: FrontmatterBacku
  */
 export function autoFixFrontmatter(
   content: string,
-  opts?: { filePath?: string },
+  opts?: { filePath?: string }
 ): { content: string; fixes: AuditFix[] } {
   const fixes: AuditFix[] = [];
   let working = content;
 
   // 1. NULL_BYTES — strip them. Cheap, byte-level. Run first so subsequent
   //    line-based passes don't trip on stray nulls.
-  if (working.indexOf('\x00') >= 0) {
-    working = working.replace(/\x00/g, '');
-    fixes.push({ code: 'NULL_BYTES', description: 'Stripped null bytes' });
+  if (working.indexOf("\x00") >= 0) {
+    working = working.replace(/\x00/g, "");
+    fixes.push({ code: "NULL_BYTES", description: "Stripped null bytes" });
   }
 
   // 2. MISSING_CLOSE — if there's an opener but no closer before a heading,
   //    insert `---` immediately before the heading. Walk lines once.
   {
-    const lines = working.split('\n');
+    const lines = working.split("\n");
     let firstNonEmpty = -1;
     for (let i = 0; i < lines.length; i++) {
-      if (lines[i].trim().length > 0) { firstNonEmpty = i; break; }
+      if (lines[i].trim().length > 0) {
+        firstNonEmpty = i;
+        break;
+      }
     }
-    if (firstNonEmpty >= 0 && lines[firstNonEmpty].trim() === '---') {
+    if (firstNonEmpty >= 0 && lines[firstNonEmpty].trim() === "---") {
       let closeIdx = -1;
       let headingIdx = -1;
       for (let i = firstNonEmpty + 1; i < lines.length; i++) {
         const t = lines[i].trim();
-        if (t === '---') { closeIdx = i; break; }
-        if (/^#{1,6}\s/.test(t)) { headingIdx = i; break; }
+        if (t === "---") {
+          closeIdx = i;
+          break;
+        }
+        if (/^#{1,6}\s/.test(t)) {
+          headingIdx = i;
+          break;
+        }
       }
       if (closeIdx === -1 && headingIdx >= 0) {
-        const fixed = [
-          ...lines.slice(0, headingIdx),
-          '---',
-          '',
-          ...lines.slice(headingIdx),
-        ];
-        working = fixed.join('\n');
+        const fixed = [...lines.slice(0, headingIdx), "---", "", ...lines.slice(headingIdx)];
+        working = fixed.join("\n");
         fixes.push({
-          code: 'MISSING_CLOSE',
+          code: "MISSING_CLOSE",
           description: `Inserted closing --- before heading at line ${headingIdx + 1}`,
         });
       }
@@ -184,15 +195,21 @@ export function autoFixFrontmatter(
   //     `tags` / `aliases` — extending to arbitrary keys would rewrite typed
   //     arrays (e.g. `scores: ["1", "2"]` would lose numeric intent).
   {
-    const lines = working.split('\n');
+    const lines = working.split("\n");
     let firstNonEmpty = -1;
     for (let i = 0; i < lines.length; i++) {
-      if (lines[i].trim().length > 0) { firstNonEmpty = i; break; }
+      if (lines[i].trim().length > 0) {
+        firstNonEmpty = i;
+        break;
+      }
     }
-    if (firstNonEmpty >= 0 && lines[firstNonEmpty].trim() === '---') {
+    if (firstNonEmpty >= 0 && lines[firstNonEmpty].trim() === "---") {
       let closeIdx = lines.length;
       for (let i = firstNonEmpty + 1; i < lines.length; i++) {
-        if (lines[i].trim() === '---') { closeIdx = i; break; }
+        if (lines[i].trim() === "---") {
+          closeIdx = i;
+          break;
+        }
       }
       let fixedAny = false;
       for (let i = firstNonEmpty + 1; i < closeIdx; i++) {
@@ -202,15 +219,15 @@ export function autoFixFrontmatter(
         const [, prefix, inner] = arrMatch;
         // Quote-aware comma split — items may contain commas inside quotes.
         const items: string[] = [];
-        let current = '';
+        let current = "";
         let inQuote = false;
         for (let j = 0; j < inner.length; j++) {
           const ch = inner[j];
-          if (ch === '"' && (j === 0 || inner[j - 1] !== '\\')) {
+          if (ch === '"' && (j === 0 || inner[j - 1] !== "\\")) {
             inQuote = !inQuote;
-          } else if (ch === ',' && !inQuote) {
+          } else if (ch === "," && !inQuote) {
             items.push(current.trim());
-            current = '';
+            current = "";
           } else {
             current += ch;
           }
@@ -220,19 +237,19 @@ export function autoFixFrontmatter(
         // Re-quote: single quotes by default, double-quote fallback when the
         // item contains an apostrophe (YAML's single-quoted form would need
         // `''` escaping which the validator accepts but reads poorly).
-        const reQuoted = items.map(v => {
-          const clean = v.replace(/^"|"$/g, '').trim();
+        const reQuoted = items.map((v) => {
+          const clean = v.replace(/^"|"$/g, "").trim();
           if (!clean) return "''";
           return clean.includes("'") ? `"${clean}"` : `'${clean}'`;
         });
-        lines[i] = `${prefix}[${reQuoted.join(', ')}]`;
+        lines[i] = `${prefix}[${reQuoted.join(", ")}]`;
         fixedAny = true;
       }
       if (fixedAny) {
-        working = lines.join('\n');
+        working = lines.join("\n");
         fixes.push({
-          code: 'NESTED_QUOTES',
-          description: 'Normalized JSON-style double-quoted tag/alias arrays to single-quoted YAML',
+          code: "NESTED_QUOTES",
+          description: "Normalized JSON-style double-quoted tag/alias arrays to single-quoted YAML",
         });
         nestedQuotesFixed = true;
       }
@@ -243,15 +260,21 @@ export function autoFixFrontmatter(
   //    double-quotes by switching the outer wrapper to single quotes and
   //    leaving inner quotes alone.
   {
-    const lines = working.split('\n');
+    const lines = working.split("\n");
     let firstNonEmpty = -1;
     for (let i = 0; i < lines.length; i++) {
-      if (lines[i].trim().length > 0) { firstNonEmpty = i; break; }
+      if (lines[i].trim().length > 0) {
+        firstNonEmpty = i;
+        break;
+      }
     }
-    if (firstNonEmpty >= 0 && lines[firstNonEmpty].trim() === '---') {
+    if (firstNonEmpty >= 0 && lines[firstNonEmpty].trim() === "---") {
       let closeIdx = lines.length;
       for (let i = firstNonEmpty + 1; i < lines.length; i++) {
-        if (lines[i].trim() === '---') { closeIdx = i; break; }
+        if (lines[i].trim() === "---") {
+          closeIdx = i;
+          break;
+        }
       }
       let fixedAny = false;
       for (let i = firstNonEmpty + 1; i < closeIdx; i++) {
@@ -260,7 +283,7 @@ export function autoFixFrontmatter(
         const [, prefix, inner, trailing] = m;
         let count = 0;
         for (let j = 0; j < inner.length; j++) {
-          if (inner[j] === '"' && (j === 0 || inner[j - 1] !== '\\')) count++;
+          if (inner[j] === '"' && (j === 0 || inner[j - 1] !== "\\")) count++;
         }
         // Total " on the line includes the two outer quotes the regex
         // captured, plus whatever's in inner. We need 3+ to trigger.
@@ -269,16 +292,19 @@ export function autoFixFrontmatter(
           // parse failure. Rewrite to 'single-quoted'. YAML escapes `'` inside
           // a single-quoted string by doubling it.
           const escapedInner = inner.replace(/'/g, "''");
-          lines[i] = `${prefix}'${escapedInner}'${trailing ? ' ' + trailing : ''}`.replace(/\s+$/, '');
+          lines[i] = `${prefix}'${escapedInner}'${trailing ? " " + trailing : ""}`.replace(
+            /\s+$/,
+            ""
+          );
           fixedAny = true;
         }
       }
       if (fixedAny) {
-        working = lines.join('\n');
+        working = lines.join("\n");
         if (!nestedQuotesFixed) {
           fixes.push({
-            code: 'NESTED_QUOTES',
-            description: 'Rewrote nested double-quoted YAML values to single-quoted',
+            code: "NESTED_QUOTES",
+            description: "Rewrote nested double-quoted YAML values to single-quoted",
           });
           nestedQuotesFixed = true;
         }
@@ -295,10 +321,10 @@ export function autoFixFrontmatter(
     // the slug field is present and mismatched.
     const re = /^slug:\s*(.+?)\s*$/m;
     const m = working.match(re);
-    if (m && m[1].replace(/^["']|["']$/g, '') !== expectedSlug) {
-      working = working.replace(re, '').replace(/\n{3,}/g, '\n\n');
+    if (m && m[1].replace(/^["']|["']$/g, "") !== expectedSlug) {
+      working = working.replace(re, "").replace(/\n{3,}/g, "\n\n");
       fixes.push({
-        code: 'SLUG_MISMATCH',
+        code: "SLUG_MISMATCH",
         description: `Removed mismatched slug field (was "${m[1]}", expected "${expectedSlug}")`,
       });
     }
@@ -316,7 +342,7 @@ export class BrainWriterError extends Error {
   hint?: string;
   constructor(code: string, message: string, hint?: string) {
     super(message);
-    this.name = 'BrainWriterError';
+    this.name = "BrainWriterError";
     this.code = code;
     this.hint = hint;
   }
@@ -331,15 +357,15 @@ export class BrainWriterError extends Error {
 export function writeBrainPage(
   filePath: string,
   content: string,
-  opts: { sourcePath: string; autoFix?: boolean; backupRoot?: string; backupRunId?: string },
+  opts: { sourcePath: string; autoFix?: boolean; backupRoot?: string; backupRunId?: string }
 ): { fixes: AuditFix[]; backupPath?: string } {
   const resolvedSource = resolve(opts.sourcePath);
   const resolvedTarget = resolve(filePath);
-  if (resolvedTarget !== resolvedSource && !resolvedTarget.startsWith(resolvedSource + '/')) {
+  if (resolvedTarget !== resolvedSource && !resolvedTarget.startsWith(resolvedSource + "/")) {
     throw new BrainWriterError(
-      'PATH_OUTSIDE_SOURCE',
+      "PATH_OUTSIDE_SOURCE",
       `writeBrainPage: ${filePath} is not under ${opts.sourcePath}`,
-      'Pass --source <id> matching the source the file lives in.',
+      "Pass --source <id> matching the source the file lives in."
     );
   }
 
@@ -361,7 +387,7 @@ export function writeBrainPage(
   } else {
     mkdirSync(dirname(filePath), { recursive: true });
   }
-  writeFileSync(filePath, toWrite, 'utf8');
+  writeFileSync(filePath, toWrite, "utf8");
   return { fixes, backupPath };
 }
 
@@ -410,7 +436,7 @@ export interface ScanOpts {
 
 export async function scanBrainSources(
   engine: BrainEngine,
-  opts: ScanOpts = {},
+  opts: ScanOpts = {}
 ): Promise<AuditReport> {
   const sources = await listSources(engine, opts.sourceId);
   const totals: Partial<Record<ParseValidationCode, number>> = {};
@@ -432,7 +458,7 @@ export async function scanBrainSources(
         errors_by_code: {},
         sample: [],
         ignoredMissingOpen: 0,
-        status: 'skipped',
+        status: "skipped",
         files_scanned: 0,
       });
     }
@@ -468,7 +494,7 @@ export async function scanBrainSources(
         errors_by_code: {},
         sample: [],
         ignoredMissingOpen: 0,
-        status: 'scanned',
+        status: "scanned",
         files_scanned: 0,
       });
       continue;
@@ -507,7 +533,7 @@ export async function scanBrainSources(
             // https://github.com/garrytan/gbrain/actions/runs/77611667786
             dbPageCount = await Promise.race([
               opts.dbPageCountForSource(src.id),
-              new Promise<null>(resolve => setTimeout(() => resolve(null), remainingMs + 1)),
+              new Promise<null>((resolve) => setTimeout(() => resolve(null), remainingMs + 1)),
             ]);
           }
         } else {
@@ -544,12 +570,14 @@ export async function scanBrainSources(
       const k = code as ParseValidationCode;
       totals[k] = (totals[k] ?? 0) + (n as number);
     }
-    if (report.status === 'partial' && abortedAtSource === null) {
+    if (report.status === "partial" && abortedAtSource === null) {
       abortedAtSource = src.id;
     }
   }
 
-  const hasPartialOrSkipped = perSource.some(r => r.status === 'partial' || r.status === 'skipped');
+  const hasPartialOrSkipped = perSource.some(
+    (r) => r.status === "partial" || r.status === "skipped"
+  );
 
   return {
     // Partial scans can never be 'ok' even when the scanned prefix is clean
@@ -566,66 +594,66 @@ export async function scanBrainSources(
   };
 }
 
-function scanOneSource(
-  sourceId: string,
-  sourcePath: string,
-  opts: ScanOpts,
-): PerSourceReport {
+function scanOneSource(sourceId: string, sourcePath: string, opts: ScanOpts): PerSourceReport {
   const errorsByCode: Partial<Record<ParseValidationCode, number>> = {};
-  const sample: PerSourceReport['sample'] = [];
+  const sample: PerSourceReport["sample"] = [];
   const rootResolved = resolve(sourcePath);
   let scanned = 0;
   let total = 0;
   let ignoredMissingOpen = 0;
   let interrupted = false;
 
-  walkDir(rootResolved, (absPath) => {
-    // Per-file deadline + abort gate. Deadline is the load-bearing
-    // wall-clock bound (sync I/O blocks the event loop so timer-based
-    // AbortSignal.timeout can't fire mid-walk — codex C1).
-    if (opts.deadline && Date.now() > opts.deadline) {
-      interrupted = true;
-      return false;
-    }
-    if (opts.signal?.aborted) {
-      interrupted = true;
-      return false;
-    }
-    // visitDir is consulted from walkDir directly (passed below). The
-    // per-file visit closure doesn't need it.
-    const relPath = relative(rootResolved, absPath);
-    if (!isSyncable(relPath, { strategy: 'markdown' })) return true;
-    scanned++;
-    let content: string;
-    try {
-      content = readFileSync(absPath, 'utf8');
-    } catch {
-      return true; // skip unreadable
-    }
-    const expectedSlug = slugifyPath(relPath);
-    const parsed = parseMarkdown(content, relPath, { validate: true, expectedSlug });
-    const errs = (parsed.errors ?? []).filter((e) => {
-      if (e.code !== 'MISSING_OPEN') return true;
-      if (opts.strictMissingOpen) return true;
-      ignoredMissingOpen++;
-      return false;
-    });
-    if (errs.length > 0) {
-      total += errs.length;
-      const codes: ParseValidationCode[] = [];
-      for (const e of errs) {
-        errorsByCode[e.code] = (errorsByCode[e.code] ?? 0) + 1;
-        codes.push(e.code);
+  walkDir(
+    rootResolved,
+    (absPath) => {
+      // Per-file deadline + abort gate. Deadline is the load-bearing
+      // wall-clock bound (sync I/O blocks the event loop so timer-based
+      // AbortSignal.timeout can't fire mid-walk — codex C1).
+      if (opts.deadline && Date.now() > opts.deadline) {
+        interrupted = true;
+        return false;
       }
-      if (sample.length < SAMPLE_PER_SOURCE) {
-        sample.push({ path: relPath, codes });
+      if (opts.signal?.aborted) {
+        interrupted = true;
+        return false;
       }
-    }
-    if (opts.onProgress && scanned % 50 === 0) {
-      opts.onProgress.tick(50);
-    }
-    return true;
-  }, opts.visitDir);
+      // visitDir is consulted from walkDir directly (passed below). The
+      // per-file visit closure doesn't need it.
+      const relPath = relative(rootResolved, absPath);
+      if (!isSyncable(relPath, { strategy: "markdown" })) return true;
+      scanned++;
+      let content: string;
+      try {
+        content = readFileSync(absPath, "utf8");
+      } catch {
+        return true; // skip unreadable
+      }
+      const expectedSlug = slugifyPath(relPath);
+      const parsed = parseMarkdown(content, relPath, { validate: true, expectedSlug });
+      const errs = (parsed.errors ?? []).filter((e) => {
+        if (e.code !== "MISSING_OPEN") return true;
+        if (opts.strictMissingOpen) return true;
+        ignoredMissingOpen++;
+        return false;
+      });
+      if (errs.length > 0) {
+        total += errs.length;
+        const codes: ParseValidationCode[] = [];
+        for (const e of errs) {
+          errorsByCode[e.code] = (errorsByCode[e.code] ?? 0) + 1;
+          codes.push(e.code);
+        }
+        if (sample.length < SAMPLE_PER_SOURCE) {
+          sample.push({ path: relPath, codes });
+        }
+      }
+      if (opts.onProgress && scanned % 50 === 0) {
+        opts.onProgress.tick(50);
+      }
+      return true;
+    },
+    opts.visitDir
+  );
 
   if (opts.onProgress) {
     opts.onProgress.heartbeat(`scanned ${scanned} pages in ${sourceId}`);
@@ -638,7 +666,7 @@ function scanOneSource(
     errors_by_code: errorsByCode,
     sample,
     ignoredMissingOpen,
-    status: interrupted ? 'partial' : 'scanned',
+    status: interrupted ? "partial" : "scanned",
     files_scanned: scanned,
   };
 }
@@ -676,7 +704,7 @@ function scanOneSource(
 export function walkDir(
   root: string,
   visit: (absPath: string) => boolean | void,
-  visitDir?: (dirPath: string) => void,
+  visitDir?: (dirPath: string) => void
 ): void {
   const stack: string[] = [root];
   const visited = new Set<string>();
@@ -718,11 +746,11 @@ async function listSources(engine: BrainEngine, sourceId?: string): Promise<Sour
   if (sourceId) {
     const rows = await engine.executeRaw<SourceRow>(
       `SELECT id, local_path FROM sources WHERE id = $1`,
-      [sourceId],
+      [sourceId]
     );
     return rows;
   }
   return engine.executeRaw<SourceRow>(
-    `SELECT id, local_path FROM sources WHERE local_path IS NOT NULL ORDER BY id`,
+    `SELECT id, local_path FROM sources WHERE local_path IS NOT NULL ORDER BY id`
   );
 }

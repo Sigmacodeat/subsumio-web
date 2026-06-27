@@ -20,7 +20,7 @@
  *   - No output-side scrub — if your script prints the value, it persists in
  *     `result.stdout_tail`. Script author's responsibility.
  */
-import type { GBrainConfig } from '../../config.ts';
+import type { GBrainConfig } from "../../config.ts";
 
 /**
  * Snake-case config-key shape. Pinned by regex to:
@@ -38,7 +38,7 @@ export const INHERIT_NAME_RE = /^[a-z][a-z0-9_]*$/;
  * because plain `DATABASE_URL` is ambiguous (every Postgres app uses it).
  */
 const ENV_KEY_OVERRIDES: Readonly<Record<string, string>> = Object.freeze({
-  database_url: 'GBRAIN_DATABASE_URL',
+  database_url: "GBRAIN_DATABASE_URL",
 });
 
 /**
@@ -57,13 +57,10 @@ export function deriveEnvKey(name: string): string {
  * when the field is unset, non-string, or empty. Uses `Object.hasOwn` to
  * defeat prototype-pollution lookups (`__proto__`, `constructor`, etc.).
  */
-export function resolveInheritValue(
-  cfg: GBrainConfig | null,
-  name: string,
-): string | undefined {
-  if (cfg === null || typeof cfg !== 'object') return undefined;
+export function resolveInheritValue(cfg: GBrainConfig | null, name: string): string | undefined {
+  if (cfg === null || typeof cfg !== "object") return undefined;
   if (!Object.hasOwn(cfg, name)) return undefined;
   const value = (cfg as unknown as Record<string, unknown>)[name];
-  if (typeof value !== 'string' || value.length === 0) return undefined;
+  if (typeof value !== "string" || value.length === 0) return undefined;
   return value;
 }

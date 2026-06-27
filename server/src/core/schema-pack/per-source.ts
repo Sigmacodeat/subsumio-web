@@ -15,8 +15,8 @@
 // into the cache key (codex F11). Pack change in one source invalidates
 // cache rows touching that source but not others.
 
-import type { SchemaPackManifest } from './manifest-v1.ts';
-import { buildAliasGraph, expandClosure } from './closure.ts';
+import type { SchemaPackManifest } from "./manifest-v1.ts";
+import { buildAliasGraph, expandClosure } from "./closure.ts";
 
 /**
  * Per-source pack binding. Built by the resolver before SQL generation;
@@ -36,7 +36,7 @@ export interface SourceClosureBinding {
  */
 export function buildPerSourceBindings(
   queryType: string,
-  sourcePacks: ReadonlyMap<string, SchemaPackManifest>,
+  sourcePacks: ReadonlyMap<string, SchemaPackManifest>
 ): SourceClosureBinding[] {
   const bindings: SourceClosureBinding[] = [];
   for (const [source_id, manifest] of sourcePacks) {
@@ -87,12 +87,14 @@ export function buildSourceClosureCte(bindings: SourceClosureBinding[]): {
     // Quote each type into a literal array — safer than parameter binding
     // for SELECT-UNION because the array literal lives inside the SELECT.
     // Each type is escaped via standard PostgreSQL single-quote doubling.
-    const typesLiteral = b.types.map(escapeSqlLiteral).join(',');
-    branches.push(`SELECT $${sourceParamIdx}::text AS source_id, unnest(ARRAY[${typesLiteral}]::text[]) AS type`);
+    const typesLiteral = b.types.map(escapeSqlLiteral).join(",");
+    branches.push(
+      `SELECT $${sourceParamIdx}::text AS source_id, unnest(ARRAY[${typesLiteral}]::text[]) AS type`
+    );
   }
   if (branches.length === 0) return null;
   return {
-    cte: branches.join('\n  UNION ALL\n  '),
+    cte: branches.join("\n  UNION ALL\n  "),
     params,
   };
 }

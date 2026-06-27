@@ -12,12 +12,12 @@
  * project's `skills/`) are NOT bundled — they can be mutated freely.
  */
 
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import { autoDetectSkillsDirReadOnly } from '../repo-root.ts';
-import { errorFor } from '../errors.ts';
-import { MIN_HELD_OUT_SIZE } from './held-out.ts';
-import type { BundledSkillContext } from './types.ts';
+import * as fs from "node:fs";
+import * as path from "node:path";
+import { autoDetectSkillsDirReadOnly } from "../repo-root.ts";
+import { errorFor } from "../errors.ts";
+import { MIN_HELD_OUT_SIZE } from "./held-out.ts";
+import type { BundledSkillContext } from "./types.ts";
 
 /**
  * Build the bundled-skill context for a (skillsDir, skillName) pair.
@@ -29,7 +29,7 @@ import type { BundledSkillContext } from './types.ts';
  *  3. Otherwise, the skill is user-owned and freely mutable.
  */
 export function getBundledSkillContext(skillsDir: string, skillName: string): BundledSkillContext {
-  const skillPath = path.join(skillsDir, skillName, 'SKILL.md');
+  const skillPath = path.join(skillsDir, skillName, "SKILL.md");
   // Detect bundled by checking whether autoDetectSkillsDirReadOnly would
   // have routed here via the install-path fallback. The simpler heuristic:
   // if the resolved skillsDir is under the gbrain install tree (somewhere
@@ -37,8 +37,10 @@ export function getBundledSkillContext(skillsDir: string, skillName: string): Bu
   // it's bundled. Use the read-only detector to find the canonical install
   // skillsDir and compare.
   const detected = autoDetectSkillsDirReadOnly(process.cwd());
-  const isBundled = detected.source === 'install_path' && detected.dir !== null
-    && resolvesToSame(detected.dir, skillsDir);
+  const isBundled =
+    detected.source === "install_path" &&
+    detected.dir !== null &&
+    resolvesToSame(detected.dir, skillsDir);
   return { skillName, skillsDir, skillPath, isBundled };
 }
 
@@ -61,13 +63,13 @@ function resolvesToSame(a: string, b: string): boolean {
  */
 export function shouldMutateSkillFile(
   ctx: BundledSkillContext,
-  flags: { noMutate: boolean; allowMutateBundled: boolean },
+  flags: { noMutate: boolean; allowMutateBundled: boolean }
 ): { mutate: boolean; reason?: string } {
   if (flags.noMutate) {
-    return { mutate: false, reason: 'user_passed_no_mutate' };
+    return { mutate: false, reason: "user_passed_no_mutate" };
   }
   if (ctx.isBundled && !flags.allowMutateBundled) {
-    return { mutate: false, reason: 'bundled_skill_requires_allow_flag' };
+    return { mutate: false, reason: "bundled_skill_requires_allow_flag" };
   }
   return { mutate: true };
 }
@@ -91,8 +93,8 @@ export function assertBundledMutationHeldOut(input: {
 }): void {
   if (input.willMutate && input.isBundled && input.heldOutCount < MIN_HELD_OUT_SIZE) {
     throw errorFor({
-      class: 'HeldOutRequired',
-      code: 'held_out_required_for_bundled',
+      class: "HeldOutRequired",
+      code: "held_out_required_for_bundled",
       message: `Mutating bundled skill '${input.skillName}' in place requires a non-empty held-out set (>= ${MIN_HELD_OUT_SIZE} rows); got ${input.heldOutCount}.`,
       hint: `add --held-out <path> (>= ${MIN_HELD_OUT_SIZE} rows), or drop --allow-mutate-bundled to get proposed.md for review.`,
     });

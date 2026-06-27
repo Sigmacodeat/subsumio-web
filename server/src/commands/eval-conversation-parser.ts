@@ -17,14 +17,14 @@
  *   }
  */
 
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync } from "node:fs";
 import {
   parseFixtureJsonl,
   scoreFixture,
   aggregateScores,
   type ConversationFixture,
   type EvalReport,
-} from '../core/conversation-parser/eval.ts';
+} from "../core/conversation-parser/eval.ts";
 
 interface CliArgs {
   fixtures?: string;
@@ -43,21 +43,21 @@ function parseArgs(args: string[]): CliArgs {
   };
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
-    if (a === '--fixtures') {
+    if (a === "--fixtures") {
       out.fixtures = args[++i];
-    } else if (a.startsWith('--fixtures=')) {
-      out.fixtures = a.slice('--fixtures='.length);
-    } else if (a === '--min-recall') {
+    } else if (a.startsWith("--fixtures=")) {
+      out.fixtures = a.slice("--fixtures=".length);
+    } else if (a === "--min-recall") {
       out.minRecall = Number(args[++i]);
-    } else if (a.startsWith('--min-recall=')) {
-      out.minRecall = Number(a.slice('--min-recall='.length));
-    } else if (a === '--no-llm') {
+    } else if (a.startsWith("--min-recall=")) {
+      out.minRecall = Number(a.slice("--min-recall=".length));
+    } else if (a === "--no-llm") {
       out.noLlm = true;
-    } else if (a === '--json') {
+    } else if (a === "--json") {
       out.json = true;
-    } else if (a === '--help' || a === '-h') {
+    } else if (a === "--help" || a === "-h") {
       out.help = true;
-    } else if (!out.fixtures && !a.startsWith('--')) {
+    } else if (!out.fixtures && !a.startsWith("--")) {
       // Positional fixture path (e.g. `gbrain eval conversation-parser path.jsonl`).
       out.fixtures = a;
     }
@@ -99,52 +99,46 @@ Fixture line shape (one JSON object per line):
 /**
  * Returns the exit code. CLI dispatcher process.exit's on the return.
  */
-export async function runEvalConversationParser(
-  args: string[],
-): Promise<number> {
+export async function runEvalConversationParser(args: string[]): Promise<number> {
   const cli = parseArgs(args);
   if (cli.help) {
     printHelp();
     return 0;
   }
   if (!cli.fixtures) {
-    process.stderr.write(
-      '[eval conversation-parser] USAGE: missing fixture path. See --help.\n',
-    );
+    process.stderr.write("[eval conversation-parser] USAGE: missing fixture path. See --help.\n");
     return 2;
   }
   if (!existsSync(cli.fixtures)) {
     process.stderr.write(
-      `[eval conversation-parser] USAGE: fixture file not found: ${cli.fixtures}\n`,
+      `[eval conversation-parser] USAGE: fixture file not found: ${cli.fixtures}\n`
     );
     return 2;
   }
 
   let fixtures: ConversationFixture[];
   try {
-    const content = readFileSync(cli.fixtures, 'utf8');
+    const content = readFileSync(cli.fixtures, "utf8");
     fixtures = parseFixtureJsonl(content);
   } catch (err) {
-    process.stderr.write(
-      `[eval conversation-parser] USAGE: ${(err as Error).message}\n`,
-    );
+    process.stderr.write(`[eval conversation-parser] USAGE: ${(err as Error).message}\n`);
     return 2;
   }
 
   if (fixtures.length === 0) {
     process.stderr.write(
-      '[eval conversation-parser] USAGE: fixture file has zero parseable lines.\n',
+      "[eval conversation-parser] USAGE: fixture file has zero parseable lines.\n"
     );
     return 2;
   }
 
   const scores = fixtures.map((f) =>
-    scoreFixture(f, { minRecall: cli.minRecall, noLlm: cli.noLlm }),
+    scoreFixture(f, { minRecall: cli.minRecall, noLlm: cli.noLlm })
   );
   const report: EvalReport = aggregateScores(scores);
 
   if (cli.json) {
-    process.stdout.write(JSON.stringify(report) + '\n');
+    process.stdout.write(JSON.stringify(report) + "\n");
   } else {
     formatHumanReport(report);
   }
@@ -154,23 +148,23 @@ export async function runEvalConversationParser(
 
 function formatHumanReport(report: EvalReport): void {
   process.stdout.write(
-    `[eval conversation-parser] ${report.passed}/${report.total_fixtures} fixtures passed\n`,
+    `[eval conversation-parser] ${report.passed}/${report.total_fixtures} fixtures passed\n`
   );
   process.stdout.write(
     `[eval conversation-parser] recall_mean=${report.recall_mean.toFixed(3)} ` +
-      `participants_recall_mean=${report.participants_recall_mean.toFixed(3)}\n`,
+      `participants_recall_mean=${report.participants_recall_mean.toFixed(3)}\n`
   );
   process.stdout.write(
     `[eval conversation-parser] pattern_coverage: ${Object.entries(report.pattern_coverage)
       .map(([k, v]) => `${k}=${v}`)
-      .join(', ')}\n`,
+      .join(", ")}\n`
   );
   if (report.failed > 0) {
-    process.stdout.write('\nFAILED FIXTURES:\n');
+    process.stdout.write("\nFAILED FIXTURES:\n");
     for (const s of report.fixtures) {
       if (s.passed) continue;
       process.stdout.write(
-        `  - ${s.fixture_id} (expected=${s.expected_pattern}, got=${s.matched_pattern_id ?? 'no_match'})\n`,
+        `  - ${s.fixture_id} (expected=${s.expected_pattern}, got=${s.matched_pattern_id ?? "no_match"})\n`
       );
       for (const r of s.reasons) {
         process.stdout.write(`      • ${r}\n`);

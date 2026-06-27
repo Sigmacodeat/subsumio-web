@@ -48,30 +48,28 @@
  *
  * Identifier-quoted defensively against pathological table names.
  */
-import type { PGLiteEngine } from '../../src/core/pglite-engine.ts';
+import type { PGLiteEngine } from "../../src/core/pglite-engine.ts";
 
 // v0.41.21.0: `page_generation_clock` is single-row infrastructure (like
 // schema_version) and must survive resetPgliteState. The row is seeded at
 // initSchema time by PGLITE_SCHEMA_SQL; TRUNCATEing the table breaks
 // page_generation_counter.test.ts AND any test that reads the clock value
 // after a reset. Production never truncates the clock table.
-const PRESERVE_TABLES = new Set(['schema_version', 'page_generation_clock']);
+const PRESERVE_TABLES = new Set(["schema_version", "page_generation_clock"]);
 
 export async function resetPgliteState(engine: PGLiteEngine): Promise<void> {
   const rows = await engine.executeRaw<{ tablename: string }>(
-    `SELECT tablename FROM pg_tables WHERE schemaname='public'`,
+    `SELECT tablename FROM pg_tables WHERE schemaname='public'`
   );
-  const targets = rows
-    .map(r => r.tablename)
-    .filter(name => !PRESERVE_TABLES.has(name));
+  const targets = rows.map((r) => r.tablename).filter((name) => !PRESERVE_TABLES.has(name));
   if (targets.length === 0) return;
-  const quoted = targets.map(t => `"${t.replace(/"/g, '""')}"`).join(', ');
+  const quoted = targets.map((t) => `"${t.replace(/"/g, '""')}"`).join(", ");
   await engine.executeRaw(`TRUNCATE ${quoted} RESTART IDENTITY CASCADE`);
   // Re-seed the default source row that initSchema() inserts. Mirrors the
   // INSERT in src/core/pglite-schema.ts so the FK target survives reset.
   await engine.executeRaw(
     `INSERT INTO sources (id, name, config)
        VALUES ('default', 'default', '{"federated": true}'::jsonb)
-       ON CONFLICT (id) DO NOTHING`,
+       ON CONFLICT (id) DO NOTHING`
   );
 }

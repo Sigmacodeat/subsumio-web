@@ -188,7 +188,9 @@ export function ContractQuickCreateDialog({
                   id="quick-contract-parties"
                   value={parties}
                   onChange={(e) => setParties(e.target.value)}
-                  placeholder={lang === "en" ? "e.g. Buyer A — Seller B" : "z.B. Käufer A — Verkäufer B"}
+                  placeholder={
+                    lang === "en" ? "e.g. Buyer A — Seller B" : "z.B. Käufer A — Verkäufer B"
+                  }
                 />
               </div>
             </div>
@@ -222,7 +224,9 @@ export function ContractQuickCreateDialog({
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 rows={8}
-                placeholder={lang === "en" ? "Insert contract text…" : "Vertragstext hier einfügen…"}
+                placeholder={
+                  lang === "en" ? "Insert contract text…" : "Vertragstext hier einfügen…"
+                }
                 className="w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 font-mono text-sm leading-relaxed text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
               />
             </div>

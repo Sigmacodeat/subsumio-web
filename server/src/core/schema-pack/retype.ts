@@ -24,20 +24,20 @@
 //
 // PGLite + Postgres parity via `executeRaw`.
 
-import type { BrainEngine } from '../engine.ts';
-import type { OperationContext } from '../operations.ts';
-import { loadActivePackBestEffort } from './best-effort.ts';
-import { ALLOWED_SUBTYPE_FIELDS, type AllowedSubtypeField } from './manifest-v1.ts';
+import type { BrainEngine } from "../engine.ts";
+import type { OperationContext } from "../operations.ts";
+import { loadActivePackBestEffort } from "./best-effort.ts";
+import { ALLOWED_SUBTYPE_FIELDS, type AllowedSubtypeField } from "./manifest-v1.ts";
 
 /** Sentinel: `from_type: '*unknown*'` matches every page whose type isn't
  *  declared in the pack's page_types AND isn't the target of any prior
  *  explicit retype rule (D12 catch-all). */
-export const UNKNOWN_TYPE_SENTINEL = '*unknown*' as const;
+export const UNKNOWN_TYPE_SENTINEL = "*unknown*" as const;
 
 /** Sentinel: `subtype: '*original_type*'` substitutes the page's actual
  *  pre-retype type as the subtype value. Only meaningful inside the
  *  catch-all retype rule. */
-export const ORIGINAL_TYPE_SENTINEL = '*original_type*' as const;
+export const ORIGINAL_TYPE_SENTINEL = "*original_type*" as const;
 
 export interface RetypeRule {
   from_type: string;
@@ -61,11 +61,7 @@ export interface RetypeOpts {
   /** Per-batch row cap. Default 1000. */
   batchSize?: number;
   /** Progress callback fired per batch. */
-  onProgress?: (info: {
-    rule_index: number;
-    appliedSoFar: number;
-    ruleTotal: number;
-  }) => void;
+  onProgress?: (info: { rule_index: number; appliedSoFar: number; ruleTotal: number }) => void;
 }
 
 export interface PerRuleResult {
@@ -100,8 +96,8 @@ function assertSubtypeFieldAllowed(field: string): asserts field is AllowedSubty
   if (!ALLOWED_SUBTYPE_FIELDS.includes(field as AllowedSubtypeField)) {
     throw new Error(
       `[runRetypeCore] subtype_field '${field}' not in ALLOWED_SUBTYPE_FIELDS ` +
-      `(${ALLOWED_SUBTYPE_FIELDS.join(', ')}). Third-party packs cannot inject ` +
-      `arbitrary frontmatter keys via mapping_rules.`,
+        `(${ALLOWED_SUBTYPE_FIELDS.join(", ")}). Third-party packs cannot inject ` +
+        `arbitrary frontmatter keys via mapping_rules.`
     );
   }
 }
@@ -114,14 +110,16 @@ async function probeRule(
   engine: BrainEngine,
   fromType: string,
   pathFilter: string | undefined,
-  sourceId: string | undefined,
+  sourceId: string | undefined
 ): Promise<{ count: number; sample: string[] }> {
   // The catch-all sentinel uses a special "not in pack types" probe; for now
   // the runRetypeCore catch-all path is handled by the caller as a separate
   // codepath (pack-aware), and probeRule operates on literal from_type only.
   if (fromType === UNKNOWN_TYPE_SENTINEL) {
     // Caller should handle catch-all separately; refuse here to surface bugs.
-    throw new Error(`[runRetypeCore] catch-all sentinel '${UNKNOWN_TYPE_SENTINEL}' must be handled by the caller via runCatchAllRetype`);
+    throw new Error(
+      `[runRetypeCore] catch-all sentinel '${UNKNOWN_TYPE_SENTINEL}' must be handled by the caller via runCatchAllRetype`
+    );
   }
   let where = `WHERE deleted_at IS NULL AND type = $1`;
   const params: unknown[] = [fromType];
@@ -135,13 +133,13 @@ async function probeRule(
   }
   const cntRows = await engine.executeRaw<{ cnt: string }>(
     `SELECT COUNT(*)::text AS cnt FROM pages ${where}`,
-    params,
+    params
   );
-  const count = parseInt(cntRows[0]?.cnt ?? '0', 10) || 0;
+  const count = parseInt(cntRows[0]?.cnt ?? "0", 10) || 0;
   if (count === 0) return { count: 0, sample: [] };
   const sampleRows = await engine.executeRaw<{ slug: string }>(
     `SELECT slug FROM pages ${where} ORDER BY slug LIMIT 10`,
-    params,
+    params
   );
   return { count, sample: sampleRows.map((r) => r.slug) };
 }
@@ -157,15 +155,15 @@ async function applyRetypeRule(
   batchSize: number,
   ruleIndex: number,
   ruleTotal: number,
-  onProgress?: RetypeOpts['onProgress'],
+  onProgress?: RetypeOpts["onProgress"]
 ): Promise<number> {
-  const subtypeField = (rule.subtype_field ?? 'subtype') as AllowedSubtypeField;
+  const subtypeField = (rule.subtype_field ?? "subtype") as AllowedSubtypeField;
   assertSubtypeFieldAllowed(subtypeField);
   const subtype = rule.subtype;
   // Always write legacy_type per D8 (unless the rule's subtype_field IS
   // legacy_type, in which case the subtype value supplies legacy_type
   // directly and we don't double-write).
-  const writeLegacyType = subtypeField !== 'legacy_type';
+  const writeLegacyType = subtypeField !== "legacy_type";
 
   let totalApplied = 0;
   for (let i = 0; i < 10000; i++) {
@@ -202,9 +200,8 @@ async function applyRetypeRule(
       subtypePlaceholder = `$${winParams.length + 2}`;
     }
     if (writeLegacyType) {
-      legacyTypePlaceholder = subtype !== undefined
-        ? `$${winParams.length + 3}`
-        : `$${winParams.length + 2}`;
+      legacyTypePlaceholder =
+        subtype !== undefined ? `$${winParams.length + 3}` : `$${winParams.length + 2}`;
     }
 
     // subtype_field name is interpolated as a SQL string literal (validated
@@ -219,7 +216,7 @@ async function applyRetypeRule(
     const sqlText = `
       WITH win AS (
         SELECT id FROM pages
-        WHERE ${winWhereParts.join(' AND ')}
+        WHERE ${winWhereParts.join(" AND ")}
         LIMIT ${limitPlaceholder}
       ),
       upd AS (
@@ -234,14 +231,14 @@ async function applyRetypeRule(
     `;
     try {
       const rows = await engine.executeRaw<{ updated: string }>(sqlText, allParams);
-      const batchCount = parseInt(rows[0]?.updated ?? '0', 10) || 0;
+      const batchCount = parseInt(rows[0]?.updated ?? "0", 10) || 0;
       if (batchCount === 0) break;
       totalApplied += batchCount;
       onProgress?.({ rule_index: ruleIndex, appliedSoFar: totalApplied, ruleTotal });
       if (batchCount < batchSize) break;
     } catch (e) {
       throw new Error(
-        `retype rule[${ruleIndex}] ${rule.from_type}→${rule.to_type} failed: ${(e as Error).message}`,
+        `retype rule[${ruleIndex}] ${rule.from_type}→${rule.to_type} failed: ${(e as Error).message}`
       );
     }
   }
@@ -256,7 +253,7 @@ async function applyRetypeRule(
 function buildFrontmatterExpr(
   subtype: string | undefined,
   subtypeField: AllowedSubtypeField,
-  writeLegacyType: boolean,
+  writeLegacyType: boolean
 ): (refs: {
   toPlaceholder: string;
   subtypePlaceholder: string | undefined;
@@ -289,7 +286,7 @@ function buildFrontmatterExpr(
  */
 export async function runRetypeCore(
   ctx: OperationContext,
-  opts: RetypeOpts,
+  opts: RetypeOpts
 ): Promise<RetypeResult> {
   const apply = opts.apply === true;
   const batchSize = Math.max(1, Math.min(10000, opts.batchSize ?? 1000));
@@ -307,13 +304,15 @@ export async function runRetypeCore(
       // Caller (unify-types handler) handles catch-all separately by
       // expanding to one rule per actual unknown type before invoking
       // runRetypeCore. The sentinel should not reach here.
-      throw new Error(`[runRetypeCore] catch-all sentinel must be expanded by caller before invocation (rule index ${i})`);
+      throw new Error(
+        `[runRetypeCore] catch-all sentinel must be expanded by caller before invocation (rule index ${i})`
+      );
     }
     const { count: would_apply, sample: sample_slugs } = await probeRule(
       ctx.engine,
       rule.from_type,
       rule.path_filter,
-      sourceId,
+      sourceId
     );
     let applied = 0;
     if (apply && would_apply > 0) {
@@ -324,7 +323,7 @@ export async function runRetypeCore(
         batchSize,
         i,
         would_apply,
-        opts.onProgress,
+        opts.onProgress
       );
     }
     per_rule.push({

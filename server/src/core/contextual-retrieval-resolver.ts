@@ -21,7 +21,7 @@
  * Pure — no engine calls, no env reads, no filesystem. Mockable in tests.
  */
 
-import { CR_MODES, isCRMode, type CRMode } from './types.ts';
+import { CR_MODES, isCRMode, type CRMode } from "./types.ts";
 
 export interface ResolveContextualRetrievalModeArgs {
   /** Parsed page frontmatter (may contain `contextual_retrieval` key). */
@@ -46,13 +46,13 @@ export interface ResolveContextualRetrievalModeArgs {
  * The host source id. Always trusted for frontmatter overrides regardless
  * of `trust_frontmatter_overrides` column value (which is for mounts).
  */
-const HOST_SOURCE_ID = 'default';
+const HOST_SOURCE_ID = "default";
 
 export interface ResolveContextualRetrievalModeResult {
   /** The effective mode after override resolution. */
   mode: CRMode;
   /** Which source supplied the winning value (for attribution / doctor). */
-  source: 'kill_switch' | 'page_frontmatter' | 'source_row' | 'global_mode';
+  source: "kill_switch" | "page_frontmatter" | "source_row" | "global_mode";
   /**
    * When the page frontmatter contained an unknown / invalid value, this
    * carries the raw string so the caller can write a SyncFailure entry
@@ -69,19 +69,18 @@ export interface ResolveContextualRetrievalModeResult {
 }
 
 export function resolveContextualRetrievalMode(
-  args: ResolveContextualRetrievalModeArgs,
+  args: ResolveContextualRetrievalModeArgs
 ): ResolveContextualRetrievalModeResult {
   // Kill switch shortcircuits everything (D18). Wrapped vectors in DB stay
   // valid; queries just stop seeing the lift, new embeds stop wrapping.
   if (args.killSwitchDisabled) {
-    return { mode: 'none', source: 'kill_switch' };
+    return { mode: "none", source: "kill_switch" };
   }
 
-  const rawFrontmatterValue = args.pageFrontmatter['contextual_retrieval'];
+  const rawFrontmatterValue = args.pageFrontmatter["contextual_retrieval"];
   const hasFrontmatterKey = rawFrontmatterValue !== undefined;
   const isTrustedSource =
-    args.source.id === HOST_SOURCE_ID ||
-    args.source.trust_frontmatter_overrides === true;
+    args.source.id === HOST_SOURCE_ID || args.source.trust_frontmatter_overrides === true;
 
   // Page frontmatter wins when present + trusted + valid.
   if (hasFrontmatterKey) {
@@ -97,7 +96,7 @@ export function resolveContextualRetrievalMode(
       };
     }
     if (isCRMode(rawFrontmatterValue)) {
-      return { mode: rawFrontmatterValue, source: 'page_frontmatter' };
+      return { mode: rawFrontmatterValue, source: "page_frontmatter" };
     }
     // Unknown / invalid value (typo). Fall through to source/global per
     // D13 warn-and-default, surface raw string for SyncFailure entry.
@@ -113,14 +112,14 @@ export function resolveContextualRetrievalMode(
 }
 
 function pickFromSourceOrGlobal(
-  args: Pick<ResolveContextualRetrievalModeArgs, 'source' | 'globalMode'>,
-): { mode: CRMode; source: 'source_row' | 'global_mode' } {
+  args: Pick<ResolveContextualRetrievalModeArgs, "source" | "globalMode">
+): { mode: CRMode; source: "source_row" | "global_mode" } {
   // Source-row override. NULL or missing column falls through to global.
   const sourceMode = args.source.contextual_retrieval_mode;
-  if (typeof sourceMode === 'string' && isCRMode(sourceMode)) {
-    return { mode: sourceMode, source: 'source_row' };
+  if (typeof sourceMode === "string" && isCRMode(sourceMode)) {
+    return { mode: sourceMode, source: "source_row" };
   }
-  return { mode: args.globalMode, source: 'global_mode' };
+  return { mode: args.globalMode, source: "global_mode" };
 }
 
 /**
@@ -137,7 +136,7 @@ function pickFromSourceOrGlobal(
  */
 export function crModeDistinct(
   actual: CRMode | string | null | undefined,
-  expected: CRMode | string | null | undefined,
+  expected: CRMode | string | null | undefined
 ): boolean {
   if (actual == null && expected == null) return false;
   if (actual == null || expected == null) return true;

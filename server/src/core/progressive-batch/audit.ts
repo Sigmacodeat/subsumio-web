@@ -16,12 +16,8 @@
  * every other audit-writer consumer's posture.
  */
 
-import { createAuditWriter } from '../audit/audit-writer.ts';
-import type {
-  AbortReason,
-  Stage,
-  StageVerdict,
-} from './types.ts';
+import { createAuditWriter } from "../audit/audit-writer.ts";
+import type { AbortReason, Stage, StageVerdict } from "./types.ts";
 
 /**
  * One event per stage. Schema_version stamped so future renames stay
@@ -48,20 +44,20 @@ export interface ProgressiveBatchAuditEvent {
 }
 
 const writer = createAuditWriter<ProgressiveBatchAuditEvent>({
-  featureName: 'progressive-batch',
-  errorLabel: 'progressive-batch-audit',
-  errorTrailer: '; run continues',
+  featureName: "progressive-batch",
+  errorLabel: "progressive-batch-audit",
+  errorTrailer: "; run continues",
 });
 
 export function logProgressiveBatchEvent(
-  event: Omit<ProgressiveBatchAuditEvent, 'ts' | 'schema_version'>,
+  event: Omit<ProgressiveBatchAuditEvent, "ts" | "schema_version">
 ): void {
   writer.log({ ...event, schema_version: 1 });
 }
 
 export function readRecentProgressiveBatchEvents(
   days = 7,
-  now?: Date,
+  now?: Date
 ): ProgressiveBatchAuditEvent[] {
   return writer.readRecent(days, now);
 }

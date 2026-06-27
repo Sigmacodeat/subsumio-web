@@ -33,6 +33,7 @@ execution** until they respond. This is the canonical way to gate on user input
 in any GBrain-powered agent.
 
 This is NOT a traditional async/await. In an LLM agent, "gating" means:
+
 1. Present the choices (buttons or numbered options)
 2. Explicitly stop the current turn (do not proceed)
 3. The user's response triggers the next turn
@@ -112,12 +113,14 @@ clarify(
 ## How To Gate (CRITICAL)
 
 After presenting choices, **you MUST stop your turn.** Do not:
+
 - ❌ Continue with "while you decide, I'll start on..."
 - ❌ Pick a default and proceed
 - ❌ Send follow-up messages before the user responds
 - ❌ Make assumptions about which option they'll pick
 
 Instead:
+
 - ✅ End your message with a brief note that you're waiting
 - ✅ Stop. Full stop. No more tool calls.
 
@@ -133,6 +136,7 @@ When the user responds:
 ### Handling text responses
 
 Users sometimes type instead of clicking. Handle gracefully:
+
 - "the first one" / "A" / "1" → map to first option
 - "merge" → fuzzy match against option labels/values
 - "actually, none of those" → present alternatives or ask what they want
@@ -143,6 +147,7 @@ Users sometimes type instead of clicking. Handle gracefully:
 ### Question line emoji prefix
 
 Signal the decision type:
+
 - 🔀 Routing/filing decisions
 - ⚠️ Destructive/risky operations
 - 🎯 Priority/triage decisions
@@ -157,6 +162,7 @@ Signal the decision type:
 ### Button/option labels
 
 Format: `Action verb — brief qualifier`
+
 - ✅ "Merge — combine with existing page"
 - ✅ "Create new — separate meeting page"
 - ❌ "Option 1"
@@ -165,6 +171,7 @@ Format: `Action verb — brief qualifier`
 ## Examples
 
 ### Cold-start phase gate
+
 ```
 📋 **Phase 2: Google Contacts**
 
@@ -178,6 +185,7 @@ This creates a brain page for each real contact (~200 pages).
 ```
 
 ### Filing decision
+
 ```
 🔀 **Where should this go?**
 
@@ -191,6 +199,7 @@ people/jane-smith.md and there's a deal page at deals/acme-corp.md.
 ```
 
 ### Destructive operation
+
 ```
 ⚠️ **About to delete 847 stale cache files (2.3 GB)**
 
@@ -206,6 +215,7 @@ but that takes ~4 hours.
 ## Integration With Other Skills
 
 This pattern is used by:
+
 - **cold-start** — phase gates for each import source
 - **ingest** — routing decisions for ambiguous content
 - **enrich** — merge vs create decisions for entity pages

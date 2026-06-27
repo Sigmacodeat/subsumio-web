@@ -17,10 +17,10 @@
  * output stream.
  */
 
-import { existsSync, readFileSync } from 'fs';
-import { join } from 'path';
+import { existsSync, readFileSync } from "fs";
+import { join } from "path";
 
-import type { SkillpackManifest } from './manifest-v1.ts';
+import type { SkillpackManifest } from "./manifest-v1.ts";
 
 export interface BootstrapDisplayInput {
   /** Absolute path to the scaffolded skillpack root (pack cache or local). */
@@ -67,15 +67,15 @@ nothing above has been executed.
 export function buildBootstrapDisplay(input: BootstrapDisplayInput): BootstrapDisplayResult {
   const relPath = input.manifest.runbooks?.bootstrap;
   if (!relPath) {
-    return { shown: false, text: '', bootstrapPath: null };
+    return { shown: false, text: "", bootstrapPath: null };
   }
   const absPath = join(input.packRoot, relPath);
   if (!existsSync(absPath)) {
-    return { shown: false, text: '', bootstrapPath: absPath };
+    return { shown: false, text: "", bootstrapPath: absPath };
   }
-  const content = readFileSync(absPath, 'utf-8').trim();
+  const content = readFileSync(absPath, "utf-8").trim();
   if (content.length === 0) {
-    return { shown: false, text: '', bootstrapPath: absPath };
+    return { shown: false, text: "", bootstrapPath: absPath };
   }
 
   const text = `${FRAME_HEADER}\n${content}\n\n${FRAME_FOOTER}`;

@@ -18,7 +18,7 @@ export const Default: Story = {
 
 export const WithInput: Story = {
   render: () => (
-    <div className="flex flex-col gap-2 w-64">
+    <div className="flex w-64 flex-col gap-2">
       <Label htmlFor="email">E-Mail-Adresse</Label>
       <Input id="email" type="email" placeholder="name@kanzlei.de" />
     </div>

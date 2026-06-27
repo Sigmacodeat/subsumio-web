@@ -5,6 +5,7 @@ description: Optimiere GBrain Engine / Server Core nach Agency-Level Standards
 # Engine / Server Core Optimization
 
 ## Scope
+
 - `server/src/core/` — 596 Module (Engine, Search, AI, Embedding, etc.)
 - `server/src/cli.ts` (2271 Zeilen) — CLI Entry Point
 - `server/src/mcp/` — MCP Server (Model Context Protocol)
@@ -24,6 +25,7 @@ description: Optimiere GBrain Engine / Server Core nach Agency-Level Standards
 - `server/src/schema.sql` — Database Schema (72KB)
 
 ## Kern-Komponenten
+
 - `server/src/core/engine.ts` (97.6KB) — BrainEngine Interface & Base Implementation
 - `server/src/core/postgres-engine.ts` (266.9KB) — Postgres + pgvector Engine
 - `server/src/core/pglite-engine.ts` (245.5KB) — PGLite (WASM Postgres) Engine
@@ -39,6 +41,7 @@ description: Optimiere GBrain Engine / Server Core nach Agency-Level Standards
 - `server/src/core/cycle.ts` (102KB) — Brain Cycle (Synthesize, Patterns, Consolidate)
 
 ## Kontext laden
+
 1. Lese `CLAUDE.md` für Architecture Invariants & Cross-Cutting Rules
 2. Lese `server/docs/architecture/KEY_FILES.md` für Per-File Details
 3. Lese `server/docs/architecture/RETRIEVAL.md` für Search/Retrieval
@@ -48,6 +51,7 @@ description: Optimiere GBrain Engine / Server Core nach Agency-Level Standards
 7. Lese `server/src/core/operations.ts` für Operation Contracts
 
 ## Architektur-Invariants (MUSS eingehalten werden)
+
 - **Trust Boundary**: `OperationContext.remote` — `false` = trusted CLI, `true` = untrusted MCP
 - **Source Isolation**: Jede Read-Op via `sourceScopeOpts(ctx)` — keine Cross-Source Leaks
 - **JSONB**: Nie `JSON.stringify` in `::jsonb` cast — raw objects an `engine.executeRaw`
@@ -58,6 +62,7 @@ description: Optimiere GBrain Engine / Server Core nach Agency-Level Standards
 - **Pricing**: Eine kanonische Tabelle in `model-pricing.ts` — keine Duplikate
 
 ## Optimierungs-Checkliste
+
 - [ ] **Contract-First**: Neue Operation in `operations.ts` → CLI + MCP automatisch
 - [ ] **Engine Parity**: Neue Methode in BOTH postgres-engine.ts AND pglite-engine.ts
 - [ ] **Migration**: Schema-Änderung als Eintrag in `MIGRATIONS` Array
@@ -70,6 +75,7 @@ description: Optimiere GBrain Engine / Server Core nach Agency-Level Standards
 - [ ] **Schema Bootstrap**: Neue Columns/Indexe in Bootstrap Probe Set
 
 ## Test-Befehle
+
 ```bash
 # Unit Tests (DATABASE_URL unset)
 cd server && bun test
@@ -94,6 +100,7 @@ cd server && bun test test/model-pricing.test.ts
 ```
 
 ## Agency-Level Standards
+
 - **Operation Contract**: `{ name, description, params, returns, scope, localOnly? }`
 - **Handler Pattern**: `async function handle(ctx: OperationContext, params: P): Promise<R>`
 - **Error Hierarchy**: `EngineError → { QueryError, SchemaError, ConfigError, ... }`

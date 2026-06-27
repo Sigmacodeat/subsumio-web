@@ -34,8 +34,7 @@ export function useScimStatus() {
 export function useScimSync() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () =>
-      csrfFetch("/api/scim/sync", { method: "POST" }).then((r) => r.json()),
+    mutationFn: () => csrfFetch("/api/scim/sync", { method: "POST" }).then((r) => r.json()),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["scim", "status"] });
     },

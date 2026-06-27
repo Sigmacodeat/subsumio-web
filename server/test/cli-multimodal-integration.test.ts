@@ -8,16 +8,16 @@
 //
 // PGLite-only: in-memory engine, no DATABASE_URL needed.
 
-import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'bun:test';
-import { PGLiteEngine } from '../src/core/pglite-engine.ts';
-import { loadConfigWithEngine, type GBrainConfig } from '../src/core/config.ts';
+import { afterAll, beforeAll, beforeEach, describe, expect, test } from "bun:test";
+import { PGLiteEngine } from "../src/core/pglite-engine.ts";
+import { loadConfigWithEngine, type GBrainConfig } from "../src/core/config.ts";
 import {
   configureGateway,
   getEmbeddingModel,
   getMultimodalModel,
   resetGateway,
-} from '../src/core/ai/gateway.ts';
-import type { AIGatewayConfig } from '../src/core/ai/types.ts';
+} from "../src/core/ai/gateway.ts";
+import type { AIGatewayConfig } from "../src/core/ai/types.ts";
 
 // Mirror the cli.ts buildGatewayConfig helper exactly. Keeping a copy here
 // (instead of exporting from cli.ts) is intentional: the test asserts the
@@ -54,16 +54,16 @@ beforeEach(async () => {
   // Clear any prior config rows so tests are independent. setConfig with
   // empty string is treated as undefined by loadConfigWithEngine (per
   // dbStr semantics), so this is safe to call between tests.
-  await engine.setConfig('embedding_multimodal_model', '');
+  await engine.setConfig("embedding_multimodal_model", "");
 });
 
-describe('cli connectEngine — embedding_multimodal_model DB→gateway plumbing', () => {
-  test('DB-set multimodal_model flows to gateway via merge + reconfigure', async () => {
-    await engine.setConfig('embedding_multimodal_model', 'voyage:voyage-multimodal-3');
+describe("cli connectEngine — embedding_multimodal_model DB→gateway plumbing", () => {
+  test("DB-set multimodal_model flows to gateway via merge + reconfigure", async () => {
+    await engine.setConfig("embedding_multimodal_model", "voyage:voyage-multimodal-3");
 
     const baseConfig: GBrainConfig = {
-      engine: 'pglite',
-      embedding_model: 'openai:text-embedding-3-large',
+      engine: "pglite",
+      embedding_model: "openai:text-embedding-3-large",
       embedding_dimensions: 1536,
     };
 
@@ -78,47 +78,47 @@ describe('cli connectEngine — embedding_multimodal_model DB→gateway plumbing
 
     // Primary embedding_model stays put (file/env wins); multimodal_model
     // arrived via DB.
-    expect(getEmbeddingModel()).toBe('openai:text-embedding-3-large');
-    expect(getMultimodalModel()).toBe('voyage:voyage-multimodal-3');
+    expect(getEmbeddingModel()).toBe("openai:text-embedding-3-large");
+    expect(getMultimodalModel()).toBe("voyage:voyage-multimodal-3");
   });
 
-  test('file value wins over DB value (env > file > DB precedence at gateway level)', async () => {
-    await engine.setConfig('embedding_multimodal_model', 'voyage:voyage-3-large');
+  test("file value wins over DB value (env > file > DB precedence at gateway level)", async () => {
+    await engine.setConfig("embedding_multimodal_model", "voyage:voyage-3-large");
 
     const baseConfig: GBrainConfig = {
-      engine: 'pglite',
-      embedding_model: 'openai:text-embedding-3-large',
+      engine: "pglite",
+      embedding_model: "openai:text-embedding-3-large",
       embedding_dimensions: 1536,
-      embedding_multimodal_model: 'voyage:voyage-multimodal-3', // file plane
+      embedding_multimodal_model: "voyage:voyage-multimodal-3", // file plane
     };
 
     const merged = await loadConfigWithEngine(engine, baseConfig);
     configureGateway(buildGatewayConfig(merged!));
 
-    expect(getMultimodalModel()).toBe('voyage:voyage-multimodal-3');
+    expect(getMultimodalModel()).toBe("voyage:voyage-multimodal-3");
   });
 
-  test('un-gated re-config: merged DB has no multimodal_model → gateway still gets re-configured', async () => {
+  test("un-gated re-config: merged DB has no multimodal_model → gateway still gets re-configured", async () => {
     // Codex F5 was about whether the un-gated re-config weakens an
     // intentional contract. This test pins the actual behavior (D6 = B):
     // re-config always fires when merge succeeds, even when no DB key
     // changed. Schema-sizing fields stay stable because loadConfigWithEngine
     // respects file/env first.
     const baseConfig: GBrainConfig = {
-      engine: 'pglite',
-      embedding_model: 'openai:text-embedding-3-large',
+      engine: "pglite",
+      embedding_model: "openai:text-embedding-3-large",
       embedding_dimensions: 1536,
     };
 
     configureGateway(buildGatewayConfig(baseConfig));
-    expect(getEmbeddingModel()).toBe('openai:text-embedding-3-large');
+    expect(getEmbeddingModel()).toBe("openai:text-embedding-3-large");
 
     const merged = await loadConfigWithEngine(engine, baseConfig);
     configureGateway(buildGatewayConfig(merged!));
 
     // Primary model unchanged (DB had no override); the re-config is a
     // semantic no-op for these fields.
-    expect(getEmbeddingModel()).toBe('openai:text-embedding-3-large');
+    expect(getEmbeddingModel()).toBe("openai:text-embedding-3-large");
     expect(getMultimodalModel()).toBeUndefined();
   });
 });

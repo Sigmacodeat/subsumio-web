@@ -15,16 +15,16 @@
  * __setEmbedTransportForTests). No API keys; embedding + reranker stubbed.
  */
 
-import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
-import { PGLiteEngine } from '../../src/core/pglite-engine.ts';
-import { hybridSearch } from '../../src/core/search/hybrid.ts';
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import { PGLiteEngine } from "../../src/core/pglite-engine.ts";
+import { hybridSearch } from "../../src/core/search/hybrid.ts";
 import {
   configureGateway,
   resetGateway,
   __setEmbedTransportForTests,
-} from '../../src/core/ai/gateway.ts';
-import type { PageInput, SearchOpts } from '../../src/core/types.ts';
-import type { RerankInput, RerankResult } from '../../src/core/ai/gateway.ts';
+} from "../../src/core/ai/gateway.ts";
+import type { PageInput, SearchOpts } from "../../src/core/types.ts";
+import type { RerankInput, RerankResult } from "../../src/core/ai/gateway.ts";
 
 let engine: PGLiteEngine;
 
@@ -38,27 +38,50 @@ beforeAll(async () => {
 
   // Seed 5 pages sharing a keyword so the candidate pool is 5 deep.
   const pages: Array<[string, PageInput, string]> = [
-    ['notes/a', { type: 'note', title: 'A', compiled_truth: 'alpha keyword one' }, 'alpha keyword one chunk'],
-    ['notes/b', { type: 'note', title: 'B', compiled_truth: 'alpha keyword two' }, 'alpha keyword two chunk'],
-    ['notes/c', { type: 'note', title: 'C', compiled_truth: 'alpha keyword three' }, 'alpha keyword three chunk'],
-    ['notes/d', { type: 'note', title: 'D', compiled_truth: 'alpha keyword four' }, 'alpha keyword four chunk'],
-    ['notes/e', { type: 'note', title: 'E', compiled_truth: 'alpha keyword five' }, 'alpha keyword five chunk'],
+    [
+      "notes/a",
+      { type: "note", title: "A", compiled_truth: "alpha keyword one" },
+      "alpha keyword one chunk",
+    ],
+    [
+      "notes/b",
+      { type: "note", title: "B", compiled_truth: "alpha keyword two" },
+      "alpha keyword two chunk",
+    ],
+    [
+      "notes/c",
+      { type: "note", title: "C", compiled_truth: "alpha keyword three" },
+      "alpha keyword three chunk",
+    ],
+    [
+      "notes/d",
+      { type: "note", title: "D", compiled_truth: "alpha keyword four" },
+      "alpha keyword four chunk",
+    ],
+    [
+      "notes/e",
+      { type: "note", title: "E", compiled_truth: "alpha keyword five" },
+      "alpha keyword five chunk",
+    ],
   ];
   for (const [slug, page, chunkText] of pages) {
     await engine.putPage(slug, page);
     await engine.upsertChunks(slug, [
-      { chunk_index: 0, chunk_text: chunkText, chunk_source: 'compiled_truth' },
+      { chunk_index: 0, chunk_text: chunkText, chunk_source: "compiled_truth" },
     ]);
   }
 
   configureGateway({
-    embedding_model: 'openai:text-embedding-3-large',
+    embedding_model: "openai:text-embedding-3-large",
     embedding_dimensions: DIMS,
-    env: { OPENAI_API_KEY: 'sk-test' },
+    env: { OPENAI_API_KEY: "sk-test" },
   });
-  __setEmbedTransportForTests(async (args: any) => ({
-    embeddings: args.values.map(() => FAKE_EMB),
-  }) as any);
+  __setEmbedTransportForTests(
+    async (args: any) =>
+      ({
+        embeddings: args.values.map(() => FAKE_EMB),
+      }) as any
+  );
 });
 
 afterAll(async () => {
@@ -75,7 +98,7 @@ function rerankerWithScores(scores: number[]) {
 
 // balanced mode (the default) has autocut ON. We pass opts.reranker to stub
 // the cross-encoder; resolvedMode.autocut stays true (no search.mode config).
-function rerankerOpts(scores: number[]): SearchOpts['reranker'] {
+function rerankerOpts(scores: number[]): SearchOpts["reranker"] {
   return {
     enabled: true,
     topNIn: 30,
@@ -84,9 +107,9 @@ function rerankerOpts(scores: number[]): SearchOpts['reranker'] {
   };
 }
 
-describe('autocut — fires on a real cliff', () => {
-  test('cliff after rank 2 → result set trimmed to 2', async () => {
-    const out = await hybridSearch(engine, 'alpha keyword', {
+describe("autocut — fires on a real cliff", () => {
+  test("cliff after rank 2 → result set trimmed to 2", async () => {
+    const out = await hybridSearch(engine, "alpha keyword", {
       limit: 10,
       reranker: rerankerOpts([0.95, 0.9, 0.2, 0.15, 0.1]),
     });
@@ -94,8 +117,8 @@ describe('autocut — fires on a real cliff', () => {
     expect(out.map((r) => r.rerank_score)).toEqual([0.95, 0.9]);
   });
 
-  test('cliff after rank 1 → single obvious answer', async () => {
-    const out = await hybridSearch(engine, 'alpha keyword', {
+  test("cliff after rank 1 → single obvious answer", async () => {
+    const out = await hybridSearch(engine, "alpha keyword", {
       limit: 10,
       reranker: rerankerOpts([0.98, 0.12, 0.1, 0.08, 0.05]),
     });
@@ -103,10 +126,10 @@ describe('autocut — fires on a real cliff', () => {
   });
 });
 
-describe('autocut — declines on a flat curve', () => {
-  test('flat rerank scores → full set returned (no trim)', async () => {
-    const baseline = await hybridSearch(engine, 'alpha keyword', { limit: 10 });
-    const out = await hybridSearch(engine, 'alpha keyword', {
+describe("autocut — declines on a flat curve", () => {
+  test("flat rerank scores → full set returned (no trim)", async () => {
+    const baseline = await hybridSearch(engine, "alpha keyword", { limit: 10 });
+    const out = await hybridSearch(engine, "alpha keyword", {
       limit: 10,
       reranker: rerankerOpts([0.9, 0.88, 0.86, 0.84, 0.82]),
     });
@@ -115,27 +138,32 @@ describe('autocut — declines on a flat curve', () => {
   });
 });
 
-describe('autocut — no-op without a reranker (the load-bearing gate)', () => {
-  test('reranker disabled → no trim even though autocut is on for the mode', async () => {
-    const baseline = await hybridSearch(engine, 'alpha keyword', { limit: 10 });
-    const out = await hybridSearch(engine, 'alpha keyword', {
+describe("autocut — no-op without a reranker (the load-bearing gate)", () => {
+  test("reranker disabled → no trim even though autocut is on for the mode", async () => {
+    const baseline = await hybridSearch(engine, "alpha keyword", { limit: 10 });
+    const out = await hybridSearch(engine, "alpha keyword", {
       limit: 10,
-      reranker: { enabled: false, topNIn: 30, topNOut: null, rerankerFn: rerankerWithScores([0.95, 0.1]) },
+      reranker: {
+        enabled: false,
+        topNIn: 30,
+        topNOut: null,
+        rerankerFn: rerankerWithScores([0.95, 0.1]),
+      },
     });
     // No rerank scores were stamped → autocut sees <2 finite scores → no-op.
     expect(out.length).toBe(baseline.length);
   });
 
-  test('reranker fails open (throws) → no trim (fail-open + autocut no-op)', async () => {
-    const baseline = await hybridSearch(engine, 'alpha keyword', { limit: 10 });
-    const out = await hybridSearch(engine, 'alpha keyword', {
+  test("reranker fails open (throws) → no trim (fail-open + autocut no-op)", async () => {
+    const baseline = await hybridSearch(engine, "alpha keyword", { limit: 10 });
+    const out = await hybridSearch(engine, "alpha keyword", {
       limit: 10,
       reranker: {
         enabled: true,
         topNIn: 30,
         topNOut: null,
         rerankerFn: async () => {
-          throw new Error('upstream down');
+          throw new Error("upstream down");
         },
       },
     });
@@ -143,10 +171,10 @@ describe('autocut — no-op without a reranker (the load-bearing gate)', () => {
   });
 });
 
-describe('autocut — ceiling override', () => {
-  test('per-call autocut:false forces full top-K even with a cliff', async () => {
-    const baseline = await hybridSearch(engine, 'alpha keyword', { limit: 10 });
-    const out = await hybridSearch(engine, 'alpha keyword', {
+describe("autocut — ceiling override", () => {
+  test("per-call autocut:false forces full top-K even with a cliff", async () => {
+    const baseline = await hybridSearch(engine, "alpha keyword", { limit: 10 });
+    const out = await hybridSearch(engine, "alpha keyword", {
       limit: 10,
       autocut: false,
       reranker: rerankerOpts([0.95, 0.9, 0.2, 0.15, 0.1]),
@@ -156,9 +184,9 @@ describe('autocut — ceiling override', () => {
   });
 });
 
-describe('autocut — composes with adaptive-return (never-empty holds)', () => {
-  test('adaptive-return + autocut both on → non-empty, bounded', async () => {
-    const out = await hybridSearch(engine, 'alpha keyword', {
+describe("autocut — composes with adaptive-return (never-empty holds)", () => {
+  test("adaptive-return + autocut both on → non-empty, bounded", async () => {
+    const out = await hybridSearch(engine, "alpha keyword", {
       limit: 10,
       adaptiveReturn: true,
       reranker: rerankerOpts([0.95, 0.9, 0.2, 0.15, 0.1]),

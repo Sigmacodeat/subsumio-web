@@ -20,7 +20,7 @@
  *    matter_scope, connector_coverage, and resolve_entity to MCP clients.
  */
 
-import type { BrainEngine } from './engine.ts';
+import type { BrainEngine } from "./engine.ts";
 
 // ── Temporal Memory ───────────────────────────────────────────────────
 
@@ -40,7 +40,7 @@ export async function markSuperseded(
   engine: BrainEngine,
   oldSlug: string,
   newSlug: string,
-  sourceId?: string,
+  sourceId?: string
 ): Promise<void> {
   // Update old page: add superseded_by
   try {
@@ -49,10 +49,14 @@ export async function markSuperseded(
       const fm = (oldPage.frontmatter ?? {}) as Record<string, unknown>;
       fm.superseded_by = newSlug;
       fm.superseded_at = new Date().toISOString();
-      await engine.putPage(oldSlug, {
-        ...oldPage,
-        frontmatter: fm,
-      }, { sourceId });
+      await engine.putPage(
+        oldSlug,
+        {
+          ...oldPage,
+          frontmatter: fm,
+        },
+        { sourceId }
+      );
     }
   } catch {
     // Non-fatal: best-effort temporal tracking
@@ -63,14 +67,18 @@ export async function markSuperseded(
     const newPage = await engine.getPage(newSlug, { sourceId });
     if (newPage) {
       const fm = (newPage.frontmatter ?? {}) as Record<string, unknown>;
-      const existing = Array.isArray(fm.supersedes) ? fm.supersedes as string[] : [];
+      const existing = Array.isArray(fm.supersedes) ? (fm.supersedes as string[]) : [];
       if (!existing.includes(oldSlug)) {
         fm.supersedes = [...existing, oldSlug];
       }
-      await engine.putPage(newSlug, {
-        ...newPage,
-        frontmatter: fm,
-      }, { sourceId });
+      await engine.putPage(
+        newSlug,
+        {
+          ...newPage,
+          frontmatter: fm,
+        },
+        { sourceId }
+      );
     }
   } catch {
     // Non-fatal
@@ -85,14 +93,17 @@ export async function markContradiction(
   engine: BrainEngine,
   slugA: string,
   slugB: string,
-  sourceId?: string,
+  sourceId?: string
 ): Promise<void> {
-  for (const [a, b] of [[slugA, slugB], [slugB, slugA]] as const) {
+  for (const [a, b] of [
+    [slugA, slugB],
+    [slugB, slugA],
+  ] as const) {
     try {
       const page = await engine.getPage(a, { sourceId });
       if (!page) continue;
       const fm = (page.frontmatter ?? {}) as Record<string, unknown>;
-      const existing = Array.isArray(fm.contradicts) ? fm.contradicts as string[] : [];
+      const existing = Array.isArray(fm.contradicts) ? (fm.contradicts as string[]) : [];
       if (!existing.includes(b)) {
         fm.contradicts = [...existing, b];
       }
@@ -110,7 +121,7 @@ export async function markContradiction(
 export async function getTemporalRelations(
   engine: BrainEngine,
   slug: string,
-  sourceId?: string,
+  sourceId?: string
 ): Promise<TemporalRelation> {
   try {
     const page = await engine.getPage(slug, { sourceId });
@@ -120,9 +131,9 @@ export async function getTemporalRelations(
     const fm = (page.frontmatter ?? {}) as Record<string, unknown>;
     return {
       slug,
-      superseded_by: typeof fm.superseded_by === 'string' ? fm.superseded_by : null,
-      superseded_at: typeof fm.superseded_at === 'string' ? fm.superseded_at : null,
-      contradicts: Array.isArray(fm.contradicts) ? fm.contradicts as string[] : [],
+      superseded_by: typeof fm.superseded_by === "string" ? fm.superseded_by : null,
+      superseded_at: typeof fm.superseded_at === "string" ? fm.superseded_at : null,
+      contradicts: Array.isArray(fm.contradicts) ? (fm.contradicts as string[]) : [],
     };
   } catch {
     return { slug, superseded_by: null, contradicts: [], superseded_at: null };
@@ -134,18 +145,18 @@ export async function getTemporalRelations(
  * Pages with `superseded_by` in frontmatter are excluded.
  */
 export function filterSuperseded<T extends { frontmatter?: Record<string, unknown> }>(
-  results: T[],
+  results: T[]
 ): T[] {
-  return results.filter(r => {
+  return results.filter((r) => {
     const fm = r.frontmatter;
-    if (!fm || typeof fm.superseded_by !== 'string') return true;
+    if (!fm || typeof fm.superseded_by !== "string") return true;
     return !fm.superseded_by;
   });
 }
 
 // ── Connector Coverage Matrix ─────────────────────────────────────────
 
-export type ConnectorType = 'dms' | 'email' | 'whatsapp' | 'portal' | 'upload' | 'bea' | 'manual';
+export type ConnectorType = "dms" | "email" | "whatsapp" | "portal" | "upload" | "bea" | "manual";
 
 export interface ConnectorCoverageEntry {
   case_slug: string;
@@ -161,7 +172,7 @@ export interface ConnectorCoverageEntry {
 export async function getConnectorCoverage(
   engine: BrainEngine,
   caseSlug: string,
-  sourceId?: string,
+  sourceId?: string
 ): Promise<ConnectorCoverageEntry[]> {
   try {
     const rows = await engine.executeRaw<{
@@ -178,23 +189,23 @@ export async function getConnectorCoverage(
          AND ($2::text IS NULL OR source_id = $2::text)
        GROUP BY frontmatter->>'source_connector'
        ORDER BY count DESC`,
-      [caseSlug, sourceId ?? null],
+      [caseSlug, sourceId ?? null]
     );
 
     const connectorMap: Record<string, ConnectorType> = {
-      dms: 'dms',
-      email: 'email',
-      whatsapp: 'whatsapp',
-      portal: 'portal',
-      upload: 'upload',
-      bea: 'bea',
-      manual: 'manual',
+      dms: "dms",
+      email: "email",
+      whatsapp: "whatsapp",
+      portal: "portal",
+      upload: "upload",
+      bea: "bea",
+      manual: "manual",
     };
 
-    return rows.map(r => {
+    return rows.map((r) => {
       const connector = r.source_connector
-        ? (connectorMap[r.source_connector] ?? 'manual')
-        : 'manual';
+        ? (connectorMap[r.source_connector] ?? "manual")
+        : "manual";
       return {
         case_slug: caseSlug,
         connector,
@@ -213,7 +224,7 @@ export async function getConnectorCoverage(
 export async function getConnectorCoverageMatrix(
   engine: BrainEngine,
   caseSlugs: string[],
-  sourceId?: string,
+  sourceId?: string
 ): Promise<Record<string, ConnectorCoverageEntry[]>> {
   const result: Record<string, ConnectorCoverageEntry[]> = {};
   for (const slug of caseSlugs) {
@@ -238,7 +249,7 @@ export interface EntityResolutionResult {
 export async function resolveEntity(
   engine: BrainEngine,
   mention: string,
-  sourceId?: string,
+  sourceId?: string
 ): Promise<EntityResolutionResult> {
   if (!mention.trim()) {
     return { mention, resolved_slug: null, confidence: 0, entity_type: null };
@@ -248,7 +259,7 @@ export async function resolveEntity(
     // Search for person/organization pages matching the mention
     const results = await engine.searchKeyword(mention, {
       limit: 5,
-      types: ['person', 'organization'],
+      types: ["person", "organization"],
       sourceId,
     });
 
@@ -258,7 +269,7 @@ export async function resolveEntity(
 
     const top = results[0]!;
     // Confidence based on whether the title closely matches the mention
-    const title = top.title ?? '';
+    const title = top.title ?? "";
     const confidence = title.toLowerCase().includes(mention.toLowerCase()) ? 0.9 : 0.5;
 
     return {
@@ -278,7 +289,7 @@ export async function resolveEntity(
 export async function resolveEntities(
   engine: BrainEngine,
   mentions: string[],
-  sourceId?: string,
+  sourceId?: string
 ): Promise<EntityResolutionResult[]> {
   const results: EntityResolutionResult[] = [];
   for (const mention of mentions) {

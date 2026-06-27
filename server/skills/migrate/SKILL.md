@@ -28,15 +28,15 @@ Universal migration from any wiki, note tool, or brain system into GBrain.
 
 ## Supported Sources
 
-| Source | Format | Strategy |
-|--------|--------|----------|
-| Obsidian | Markdown + `[[wikilinks]]` | Direct import, convert wikilinks to gbrain links |
-| Notion | Exported markdown or CSV | Parse Notion's export structure |
-| Logseq | Markdown with `((block refs))` | Convert block refs to page links |
-| Plain markdown | Any .md directory | Import directory into gbrain directly |
-| CSV | Tabular data | Map columns to frontmatter fields |
-| JSON | Structured data | Map keys to page fields |
-| Roam | JSON export | Convert block structure to pages |
+| Source         | Format                         | Strategy                                         |
+| -------------- | ------------------------------ | ------------------------------------------------ |
+| Obsidian       | Markdown + `[[wikilinks]]`     | Direct import, convert wikilinks to gbrain links |
+| Notion         | Exported markdown or CSV       | Parse Notion's export structure                  |
+| Logseq         | Markdown with `((block refs))` | Convert block refs to page links                 |
+| Plain markdown | Any .md directory              | Import directory into gbrain directly            |
+| CSV            | Tabular data                   | Map columns to frontmatter fields                |
+| JSON           | Structured data                | Map keys to page fields                          |
+| Roam           | JSON export                    | Convert block structure to pages                 |
 
 ## Phases
 
@@ -63,6 +63,7 @@ Universal migration from any wiki, note tool, or brain system into GBrain.
    inferred automatically for wikilinks.
 
 Obsidian-specific:
+
 - Tags (`#tag`) become gbrain tags
 - Frontmatter properties map to gbrain frontmatter
 - Attachments (images, PDFs) are noted but handled separately via file storage
@@ -78,6 +79,7 @@ Obsidian-specific:
 ## CSV Migration
 
 For tabular data (e.g., CRM exports, contact lists):
+
 1. For each row in the CSV, create a page with column values as frontmatter
 2. Use a designated column as the slug (e.g., name)
 3. Use another column as compiled_truth (e.g., notes)
@@ -86,6 +88,7 @@ For tabular data (e.g., CRM exports, contact lists):
 ## Verification
 
 After any migration:
+
 1. Check gbrain statistics to verify page count matches source
 2. Check gbrain health for orphans and missing embeddings
 3. Export pages from gbrain for round-trip verification

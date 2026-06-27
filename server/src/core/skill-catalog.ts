@@ -36,24 +36,21 @@
  * apply. One server host = one skills dir = one catalog for all callers.
  */
 
-import { existsSync, readFileSync, realpathSync, statSync } from 'fs';
-import { basename, join, relative, resolve } from 'path';
+import { existsSync, readFileSync, realpathSync, statSync } from "fs";
+import { basename, join, relative, resolve } from "path";
 import {
   autoDetectSkillsDir,
   autoDetectSkillsDirReadOnly,
   AUTO_DETECT_HINT,
   AUTO_DETECT_HINT_READ_ONLY,
   type SkillsDirSource,
-} from './repo-root.ts';
-import { loadOrDeriveManifest, type ManifestEntry } from './skill-manifest.ts';
-import { loadSkillTriggerIndex, FRONTMATTER_SECTION } from './skill-trigger-index.ts';
-import { parseSkillFrontmatter } from './skill-frontmatter.ts';
-import { hasScope } from './scope.ts';
-import { operations, OperationError, type Operation, type OperationContext } from './operations.ts';
-import {
-  SKILL_CATALOG_INSTRUCTIONS,
-  SKILL_CLIENT_GUIDANCE,
-} from './operations-descriptions.ts';
+} from "./repo-root.ts";
+import { loadOrDeriveManifest, type ManifestEntry } from "./skill-manifest.ts";
+import { loadSkillTriggerIndex, FRONTMATTER_SECTION } from "./skill-trigger-index.ts";
+import { parseSkillFrontmatter } from "./skill-frontmatter.ts";
+import { hasScope } from "./scope.ts";
+import { operations, OperationError, type Operation, type OperationContext } from "./operations.ts";
+import { SKILL_CATALOG_INSTRUCTIONS, SKILL_CLIENT_GUIDANCE } from "./operations-descriptions.ts";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -75,7 +72,7 @@ export const MAX_SKILL_MD_BYTES = (() => {
 const MAX_SKILL_NAME_LEN = 128;
 
 /** Where auto-detect found the dir, plus the explicit-config variant. */
-export type ResolvedSkillsDirSource = SkillsDirSource | 'config';
+export type ResolvedSkillsDirSource = SkillsDirSource | "config";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -104,7 +101,7 @@ export interface ListSkillsResult {
     summary: string;
     how_to_use: string[];
     available_brain_tools: string[];
-    fetch_op: 'get_skill';
+    fetch_op: "get_skill";
   };
 }
 
@@ -144,11 +141,11 @@ export interface GetSkillResult {
 export async function readMcpPublishSkills(ctx: OperationContext): Promise<boolean> {
   let dbVal: string | null = null;
   try {
-    dbVal = await ctx.engine.getConfig('mcp.publish_skills');
+    dbVal = await ctx.engine.getConfig("mcp.publish_skills");
   } catch {
     // Engine without a config table / transient error → fall back to file plane.
   }
-  if (dbVal != null) return dbVal === 'true';
+  if (dbVal != null) return dbVal === "true";
   return ctx.config?.mcp?.publish_skills === true;
 }
 
@@ -159,7 +156,7 @@ export async function readMcpPublishSkills(ctx: OperationContext): Promise<boole
 export async function readMcpSkillsDir(ctx: OperationContext): Promise<string | undefined> {
   let dbVal: string | null = null;
   try {
-    dbVal = await ctx.engine.getConfig('mcp.skills_dir');
+    dbVal = await ctx.engine.getConfig("mcp.skills_dir");
   } catch {
     // ignore — fall through to file plane
   }
@@ -180,7 +177,7 @@ export async function readMcpSkillsDir(ctx: OperationContext): Promise<string | 
  */
 export function resolveSkillsDir(
   ctx: OperationContext,
-  skillsDirOverride?: string,
+  skillsDirOverride?: string
 ): {
   dir: string;
   source: ResolvedSkillsDirSource;
@@ -188,22 +185,21 @@ export function resolveSkillsDir(
   if (skillsDirOverride && skillsDirOverride.trim().length > 0) {
     if (!existsSync(skillsDirOverride)) {
       throw new OperationError(
-        'storage_error',
+        "storage_error",
         `Configured mcp.skills_dir does not exist: ${skillsDirOverride}`,
-        'Fix it with `gbrain config set mcp.skills_dir <path>` or unset it to autodetect.',
+        "Fix it with `gbrain config set mcp.skills_dir <path>` or unset it to autodetect."
       );
     }
-    return { dir: skillsDirOverride, source: 'config' };
+    return { dir: skillsDirOverride, source: "config" };
   }
 
-  const det =
-    ctx.remote === false ? autoDetectSkillsDirReadOnly() : autoDetectSkillsDir();
+  const det = ctx.remote === false ? autoDetectSkillsDirReadOnly() : autoDetectSkillsDir();
   if (!det.dir || !det.source) {
     const hint = ctx.remote === false ? AUTO_DETECT_HINT_READ_ONLY : AUTO_DETECT_HINT;
     throw new OperationError(
-      'storage_error',
-      'No skills directory found on the server host.',
-      `Set it explicitly: \`gbrain config set mcp.skills_dir <path>\` (or $GBRAIN_SKILLS_DIR). Search order:\n${hint}`,
+      "storage_error",
+      "No skills directory found on the server host.",
+      `Set it explicitly: \`gbrain config set mcp.skills_dir <path>\` (or $GBRAIN_SKILLS_DIR). Search order:\n${hint}`
     );
   }
   return { dir: det.dir, source: det.source };
@@ -215,16 +211,19 @@ export function resolveSkillsDir(
 
 /** Validate the client-supplied skill name BEFORE any filesystem access. */
 function assertSkillNameShape(name: unknown): asserts name is string {
-  if (typeof name !== 'string' || name.length === 0) {
-    throw new OperationError('invalid_params', 'skill name must be a non-empty string');
+  if (typeof name !== "string" || name.length === 0) {
+    throw new OperationError("invalid_params", "skill name must be a non-empty string");
   }
   if (name.length > MAX_SKILL_NAME_LEN) {
-    throw new OperationError('invalid_params', `skill name exceeds ${MAX_SKILL_NAME_LEN} characters`);
+    throw new OperationError(
+      "invalid_params",
+      `skill name exceeds ${MAX_SKILL_NAME_LEN} characters`
+    );
   }
   // No path separators, no traversal, no null byte. The name is a manifest
   // LOOKUP KEY — it must never look like a path component.
   if (/[/\\]|\.\.| /.test(name)) {
-    throw new OperationError('invalid_params', `Invalid skill name: ${name}`);
+    throw new OperationError("invalid_params", `Invalid skill name: ${name}`);
   }
 }
 
@@ -237,12 +236,12 @@ function assertSkillNameShape(name: unknown): asserts name is string {
 export function resolveSkillMdPath(skillsDir: string, name: string): string {
   assertSkillNameShape(name);
   const { skills } = loadOrDeriveManifest(skillsDir);
-  const entry = skills.find(s => s.name === name);
+  const entry = skills.find((s) => s.name === name);
   if (!entry) {
     throw new OperationError(
-      'page_not_found',
+      "page_not_found",
       `Skill not found: ${name}`,
-      'Call list_skills to see available skills.',
+      "Call list_skills to see available skills."
     );
   }
   return confineManifestPath(skillsDir, entry);
@@ -260,28 +259,28 @@ export function confineManifestPath(skillsDir: string, entry: ManifestEntry): st
   try {
     realRoot = realpathSync(skillsDir);
   } catch {
-    throw new OperationError('storage_error', `Cannot resolve skills dir: ${skillsDir}`);
+    throw new OperationError("storage_error", `Cannot resolve skills dir: ${skillsDir}`);
   }
   const candidate = join(realRoot, entry.path);
   try {
     realCandidate = realpathSync(candidate);
   } catch {
-    throw new OperationError('page_not_found', `Skill file not found: ${entry.name}`);
+    throw new OperationError("page_not_found", `Skill file not found: ${entry.name}`);
   }
   const rel = relative(realRoot, realCandidate);
-  if (rel.startsWith('..') || resolve(realRoot, rel) !== realCandidate) {
-    throw new OperationError('invalid_params', `Skill path escapes skills dir: ${entry.name}`);
+  if (rel.startsWith("..") || resolve(realRoot, rel) !== realCandidate) {
+    throw new OperationError("invalid_params", `Skill path escapes skills dir: ${entry.name}`);
   }
   let st;
   try {
     st = statSync(realCandidate);
   } catch {
-    throw new OperationError('page_not_found', `Skill file not found: ${entry.name}`);
+    throw new OperationError("page_not_found", `Skill file not found: ${entry.name}`);
   }
-  if (!st.isFile() || basename(realCandidate) !== 'SKILL.md') {
+  if (!st.isFile() || basename(realCandidate) !== "SKILL.md") {
     throw new OperationError(
-      'invalid_params',
-      `Skill target is not a SKILL.md regular file: ${entry.name}`,
+      "invalid_params",
+      `Skill target is not a SKILL.md regular file: ${entry.name}`
     );
   }
   return realCandidate;
@@ -295,7 +294,7 @@ export function confineManifestPath(skillsDir: string, entry: ManifestEntry): st
 function opCallableByCaller(op: Operation, ctx: OperationContext): boolean {
   if (ctx.remote === false) return true; // local CLI — OS is the trust boundary
   if (op.localOnly) return false; // not reachable over a remote transport
-  return hasScope(ctx.auth?.scopes ?? [], op.scope ?? 'read');
+  return hasScope(ctx.auth?.scopes ?? [], op.scope ?? "read");
 }
 
 /**
@@ -305,12 +304,12 @@ function opCallableByCaller(op: Operation, ctx: OperationContext): boolean {
  */
 export function crossReferenceTools(
   declared: string[],
-  ctx: OperationContext,
+  ctx: OperationContext
 ): { usable_tools: string[]; unavailable_tools: string[] } {
   const usable: string[] = [];
   const unavailable: string[] = [];
   for (const tool of declared) {
-    const op = operations.find(o => o.name === tool);
+    const op = operations.find((o) => o.name === tool);
     if (op && opCallableByCaller(op, ctx)) usable.push(tool);
     else unavailable.push(tool);
   }
@@ -319,7 +318,10 @@ export function crossReferenceTools(
 
 /** Every server tool this caller can call — the envelope's "what you can use". */
 function availableBrainTools(ctx: OperationContext): string[] {
-  return operations.filter(op => opCallableByCaller(op, ctx)).map(op => op.name).sort();
+  return operations
+    .filter((op) => opCallableByCaller(op, ctx))
+    .map((op) => op.name)
+    .sort();
 }
 
 // ---------------------------------------------------------------------------
@@ -337,7 +339,7 @@ function availableBrainTools(ctx: OperationContext): string[] {
  * showed a literal "|" in the catalog instead of their text.
  */
 function parseDescriptionField(raw: string): string | undefined {
-  const lines = raw.split('\n');
+  const lines = raw.split("\n");
   for (let i = 0; i < lines.length; i++) {
     const m = lines[i].match(/^description:[ \t]*(.*)$/);
     if (!m) continue;
@@ -349,22 +351,25 @@ function parseDescriptionField(raw: string): string | undefined {
       let baseIndent: number | null = null;
       for (let j = i + 1; j < lines.length; j++) {
         const line = lines[j];
-        if (line.trim().length === 0) { block.push(''); continue; }
+        if (line.trim().length === 0) {
+          block.push("");
+          continue;
+        }
         const indent = line.length - line.trimStart().length;
         if (baseIndent === null) {
-          if (indent === 0) break;   // no indented continuation
+          if (indent === 0) break; // no indented continuation
           baseIndent = indent;
         }
-        if (indent < baseIndent) break;  // dedent ends the block
+        if (indent < baseIndent) break; // dedent ends the block
         block.push(line.slice(baseIndent));
       }
       // Catalog descriptions are one line; collapse literal/folded whitespace.
-      const folded = block.join(' ').replace(/\s+/g, ' ').trim();
+      const folded = block.join(" ").replace(/\s+/g, " ").trim();
       return folded.length > 0 ? folded : undefined;
     }
 
     // Inline scalar: strip a matching pair of surrounding quotes.
-    const unq = inline.replace(/^(['"])([\s\S]*)\1$/, '$2').trim();
+    const unq = inline.replace(/^(['"])([\s\S]*)\1$/, "$2").trim();
     return unq.length > 0 ? unq : undefined;
   }
   return undefined;
@@ -378,14 +383,14 @@ function stripFrontmatterFence(content: string): string {
 
 /** First non-empty, non-heading prose line of the body (description fallback). */
 function firstProseLine(body: string): string {
-  for (const line of body.split('\n')) {
+  for (const line of body.split("\n")) {
     const t = line.trim();
     if (t.length === 0) continue;
-    if (t.startsWith('#')) continue;
-    if (t.startsWith('<!--')) continue;
-    return t.replace(/^[*_>`-]+\s*/, '').trim();
+    if (t.startsWith("#")) continue;
+    if (t.startsWith("<!--")) continue;
+    return t.replace(/^[*_>`-]+\s*/, "").trim();
   }
-  return '';
+  return "";
 }
 
 /** description = frontmatter `description:` or first prose line, else ''. */
@@ -427,7 +432,7 @@ function buildTriggerMap(skillsDir: string): Map<string, TriggerInfo> {
 
 /** First path segment of a manifest entry path (the skill dir name). */
 function dirNameOf(entry: ManifestEntry): string {
-  return entry.path.split('/')[0] ?? entry.name;
+  return entry.path.split("/")[0] ?? entry.name;
 }
 
 /**
@@ -438,7 +443,7 @@ export function buildSkillCatalog(
   ctx: OperationContext,
   skillsDir: string,
   source: ResolvedSkillsDirSource,
-  opts: { section?: string } = {},
+  opts: { section?: string } = {}
 ): ListSkillsResult {
   const { skills: manifest } = loadOrDeriveManifest(skillsDir);
   const triggerMap = buildTriggerMap(skillsDir);
@@ -454,18 +459,16 @@ export function buildSkillCatalog(
     }
     let content: string;
     try {
-      content = readFileSync(path, 'utf-8');
+      content = readFileSync(path, "utf-8");
     } catch {
       continue;
     }
     const parsed = parseSkillFrontmatter(content);
-    const raw = parsed?.raw ?? '';
+    const raw = parsed?.raw ?? "";
     const body = stripFrontmatterFence(content);
     const dir = dirNameOf(entry);
     const trig = triggerMap.get(dir);
-    const triggers = trig
-      ? Array.from(trig.triggers)
-      : parsed?.triggers ?? [];
+    const triggers = trig ? Array.from(trig.triggers) : (parsed?.triggers ?? []);
     const section = trig?.section ?? FRONTMATTER_SECTION;
 
     if (sectionFilter && section !== sectionFilter) continue;
@@ -496,7 +499,7 @@ export function buildSkillCatalog(
       summary: SKILL_CATALOG_INSTRUCTIONS.summary,
       how_to_use: [...SKILL_CATALOG_INSTRUCTIONS.how_to_use],
       available_brain_tools: availableBrainTools(ctx),
-      fetch_op: 'get_skill',
+      fetch_op: "get_skill",
     },
   };
 }
@@ -505,25 +508,25 @@ export function buildSkillCatalog(
 export function getSkillDetail(
   ctx: OperationContext,
   skillsDir: string,
-  name: string,
+  name: string
 ): GetSkillResult {
   const path = resolveSkillMdPath(skillsDir, name);
 
   const size = statSync(path).size;
   if (size > MAX_SKILL_MD_BYTES) {
     throw new OperationError(
-      'payload_too_large',
+      "payload_too_large",
       `Skill ${name} is ${size} bytes (cap ${MAX_SKILL_MD_BYTES}).`,
-      'Raise GBRAIN_MAX_SKILL_MD_BYTES if this is a legitimately large skill.',
+      "Raise GBRAIN_MAX_SKILL_MD_BYTES if this is a legitimately large skill."
     );
   }
-  const content = readFileSync(path, 'utf-8');
-  if (Buffer.byteLength(content, 'utf8') > MAX_SKILL_MD_BYTES) {
-    throw new OperationError('payload_too_large', `Skill ${name} exceeds the size cap.`);
+  const content = readFileSync(path, "utf-8");
+  if (Buffer.byteLength(content, "utf8") > MAX_SKILL_MD_BYTES) {
+    throw new OperationError("payload_too_large", `Skill ${name} exceeds the size cap.`);
   }
 
   const parsed = parseSkillFrontmatter(content);
-  const raw = parsed?.raw ?? '';
+  const raw = parsed?.raw ?? "";
   const body = stripFrontmatterFence(content);
   const tools = parsed?.tools ?? [];
   const { usable_tools, unavailable_tools } = crossReferenceTools(tools, ctx);
@@ -568,8 +571,8 @@ export function assertPublishEnabled(ctx: OperationContext, publishSkills: boole
   if (ctx.remote === false) return;
   if (publishSkills) return;
   throw new OperationError(
-    'permission_denied',
-    'Skill publishing is disabled by the brain owner.',
-    'The owner can enable it with `gbrain config set mcp.publish_skills true`.',
+    "permission_denied",
+    "Skill publishing is disabled by the brain owner.",
+    "The owner can enable it with `gbrain config set mcp.publish_skills true`."
   );
 }

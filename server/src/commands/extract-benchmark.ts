@@ -32,13 +32,13 @@
  * facts.prose, the LLM dispatch fills in here without API change.
  */
 
-import { existsSync, readFileSync, realpathSync, lstatSync } from 'node:fs';
-import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
+import { existsSync, readFileSync, realpathSync, lstatSync } from "node:fs";
+import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 
-import type { BrainEngine } from '../core/engine.ts';
-import { loadActivePackBestEffort } from '../core/schema-pack/best-effort.ts';
-import { getExtractableSpec } from '../core/schema-pack/extractable.ts';
-import { locateMutablePackFile } from '../core/schema-pack/mutate.ts';
+import type { BrainEngine } from "../core/engine.ts";
+import { loadActivePackBestEffort } from "../core/schema-pack/best-effort.ts";
+import { getExtractableSpec } from "../core/schema-pack/extractable.ts";
+import { locateMutablePackFile } from "../core/schema-pack/mutate.ts";
 
 export interface BenchmarkFixture {
   fixture_id: string;
@@ -69,7 +69,7 @@ export interface BenchmarkResult {
    *   - 'stub-reported' when this is the v0.42 shape-only report
    *   - 'pass' / 'fail' once Wave E wires the LLM dispatch
    */
-  status: 'stub-reported' | 'pass' | 'fail';
+  status: "stub-reported" | "pass" | "fail";
 }
 
 /**
@@ -89,42 +89,39 @@ export interface BenchmarkResult {
  * Exported so the v0.42 Wave C test surface can exercise the validator
  * directly without going through the full benchmark dispatch.
  */
-export function validateFixturePath(
-  packRoot: string,
-  fixtureCorpusRelative: string,
-): string {
-  if (fixtureCorpusRelative.includes('\0')) {
+export function validateFixturePath(packRoot: string, fixtureCorpusRelative: string): string {
+  if (fixtureCorpusRelative.includes("\0")) {
     throw new Error(
       `pack fixture_corpus path contains a null byte: ${JSON.stringify(fixtureCorpusRelative)}. ` +
-      `Pack manifests must declare relative paths within the pack root.`,
+        `Pack manifests must declare relative paths within the pack root.`
     );
   }
   if (isAbsolute(fixtureCorpusRelative)) {
     throw new Error(
       `pack fixture_corpus must be a RELATIVE path within the pack root. ` +
-      `Got: ${fixtureCorpusRelative}. ` +
-      `Edit the pack manifest's extractable.fixture_corpus to e.g. ` +
-      `fixtures/extract/<type>.jsonl.`,
+        `Got: ${fixtureCorpusRelative}. ` +
+        `Edit the pack manifest's extractable.fixture_corpus to e.g. ` +
+        `fixtures/extract/<type>.jsonl.`
     );
   }
   // Reject any `..` segment up front (defense in depth before resolve()).
   const segments = fixtureCorpusRelative.split(/[/\\]/);
-  if (segments.some(s => s === '..')) {
+  if (segments.some((s) => s === "..")) {
     throw new Error(
       `pack fixture_corpus path contains a '..' segment: ${fixtureCorpusRelative}. ` +
-      `Pack manifests must declare paths that stay within the pack root.`,
+        `Pack manifests must declare paths that stay within the pack root.`
     );
   }
   const absolute = resolve(packRoot, fixtureCorpusRelative);
   // Resolve() collapses .., but we already rejected those above. Confirm
   // the resolved path is within packRoot.
   const rel = relative(packRoot, absolute);
-  if (rel.startsWith('..') || isAbsolute(rel)) {
+  if (rel.startsWith("..") || isAbsolute(rel)) {
     throw new Error(
       `pack fixture_corpus path resolves OUTSIDE the pack root. ` +
-      `Pack root: ${packRoot}. Resolved: ${absolute}. ` +
-      `This usually means a '..' segment or an absolute path slipped past ` +
-      `validation — please report.`,
+        `Pack root: ${packRoot}. Resolved: ${absolute}. ` +
+        `This usually means a '..' segment or an absolute path slipped past ` +
+        `validation — please report.`
     );
   }
   // Symlink rejection — only if the file actually exists.
@@ -134,7 +131,7 @@ export function validateFixturePath(
       if (stat.isSymbolicLink()) {
         throw new Error(
           `pack fixture_corpus is a symbolic link, which is not allowed: ${absolute}. ` +
-          `Replace with a regular file or move the target into the pack root.`,
+            `Replace with a regular file or move the target into the pack root.`
         );
       }
       // Also verify realpath stays within pack root (defense against
@@ -142,15 +139,15 @@ export function validateFixturePath(
       const real = realpathSync(absolute);
       const realRoot = realpathSync(packRoot);
       const realRel = relative(realRoot, real);
-      if (realRel.startsWith('..') || isAbsolute(realRel)) {
+      if (realRel.startsWith("..") || isAbsolute(realRel)) {
         throw new Error(
           `pack fixture_corpus realpath resolves outside the pack root ` +
-          `(an intermediate symlink may be redirecting). ` +
-          `Real path: ${real}.`,
+            `(an intermediate symlink may be redirecting). ` +
+            `Real path: ${real}.`
         );
       }
     } catch (err) {
-      if (err instanceof Error && err.message.startsWith('pack fixture_corpus')) throw err;
+      if (err instanceof Error && err.message.startsWith("pack fixture_corpus")) throw err;
       // realpathSync may throw EACCES / EPERM; surface those raw.
       throw err;
     }
@@ -165,7 +162,7 @@ export function validateFixturePath(
  */
 export function parseBenchmarkFixtures(jsonl: string): BenchmarkFixture[] {
   const out: BenchmarkFixture[] = [];
-  const lines = jsonl.split('\n');
+  const lines = jsonl.split("\n");
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]!.trim();
     if (!line) continue;
@@ -173,30 +170,28 @@ export function parseBenchmarkFixtures(jsonl: string): BenchmarkFixture[] {
     try {
       parsed = JSON.parse(line);
     } catch (err) {
-      throw new Error(
-        `fixture corpus parse failed at line ${i + 1}: ${(err as Error).message}`,
-      );
+      throw new Error(`fixture corpus parse failed at line ${i + 1}: ${(err as Error).message}`);
     }
-    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-      throw new Error(
-        `fixture corpus line ${i + 1} is not a JSON object`,
-      );
+    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+      throw new Error(`fixture corpus line ${i + 1} is not a JSON object`);
     }
     const obj = parsed as Record<string, unknown>;
-    if (typeof obj.fixture_id !== 'string') {
+    if (typeof obj.fixture_id !== "string") {
       throw new Error(`fixture corpus line ${i + 1}: missing required field 'fixture_id'`);
     }
-    if (typeof obj.page_body !== 'string') {
+    if (typeof obj.page_body !== "string") {
       throw new Error(`fixture corpus line ${i + 1}: missing required field 'page_body'`);
     }
     if (!Array.isArray(obj.expected_claims)) {
-      throw new Error(`fixture corpus line ${i + 1}: missing required field 'expected_claims' (must be array)`);
+      throw new Error(
+        `fixture corpus line ${i + 1}: missing required field 'expected_claims' (must be array)`
+      );
     }
     out.push({
       fixture_id: obj.fixture_id,
       page_body: obj.page_body,
       expected_claims: obj.expected_claims as Array<Record<string, unknown>>,
-      notes: typeof obj.notes === 'string' ? obj.notes : undefined,
+      notes: typeof obj.notes === "string" ? obj.notes : undefined,
     });
   }
   return out;
@@ -205,18 +200,15 @@ export function parseBenchmarkFixtures(jsonl: string): BenchmarkFixture[] {
 /**
  * CLI entry: `gbrain extract benchmark`.
  */
-export async function runExtractBenchmark(
-  engine: BrainEngine,
-  args: string[],
-): Promise<void> {
-  const json = args.includes('--json');
-  const packIdx = args.indexOf('--pack');
-  const kindIdx = args.indexOf('--kind');
+export async function runExtractBenchmark(engine: BrainEngine, args: string[]): Promise<void> {
+  const json = args.includes("--json");
+  const packIdx = args.indexOf("--pack");
+  const kindIdx = args.indexOf("--kind");
   const packName = packIdx >= 0 && packIdx + 1 < args.length ? args[packIdx + 1] : undefined;
   const kindName = kindIdx >= 0 && kindIdx + 1 < args.length ? args[kindIdx + 1] : undefined;
 
   if (!packName || !kindName) {
-    console.error('Usage: gbrain extract benchmark --pack <pack> --kind <type> [--json]');
+    console.error("Usage: gbrain extract benchmark --pack <pack> --kind <type> [--json]");
     process.exit(2);
   }
 
@@ -260,7 +252,7 @@ export async function runExtractBenchmark(
     }
   } else {
     // Convention: fixtures/extract/<kind>.jsonl
-    const conventional = join('fixtures', 'extract', `${kindName}.jsonl`);
+    const conventional = join("fixtures", "extract", `${kindName}.jsonl`);
     try {
       fixturePath = validateFixturePath(packRoot, conventional);
     } catch (err) {
@@ -272,15 +264,15 @@ export async function runExtractBenchmark(
   if (!existsSync(fixturePath)) {
     console.error(
       `Fixture corpus not found: ${fixturePath}\n\n` +
-      `Run this to generate stub fixtures (5 placeholder cases):\n` +
-      `  gbrain schema scaffold-extractable ${kindName} --pack ${packName}`,
+        `Run this to generate stub fixtures (5 placeholder cases):\n` +
+        `  gbrain schema scaffold-extractable ${kindName} --pack ${packName}`
     );
     process.exit(2);
   }
 
   let fixtures: BenchmarkFixture[];
   try {
-    fixtures = parseBenchmarkFixtures(readFileSync(fixturePath, 'utf-8'));
+    fixtures = parseBenchmarkFixtures(readFileSync(fixturePath, "utf-8"));
   } catch (err) {
     console.error(`Fixture parse failed: ${(err as Error).message}`);
     process.exit(2);
@@ -297,15 +289,15 @@ export async function runExtractBenchmark(
     total_fixtures: fixtures.length,
     fixtures_pass: 0,
     fixtures_fail: 0,
-    per_fixture: fixtures.map(f => ({
+    per_fixture: fixtures.map((f) => ({
       fixture_id: f.fixture_id,
       expected_count: f.expected_claims.length,
       actual_count: 0,
       notes: f.notes,
-      note_v042: 'shape report only; LLM dispatch deferred to v0.43+ (per plan Wave E)',
+      note_v042: "shape report only; LLM dispatch deferred to v0.43+ (per plan Wave E)",
     })),
     min_recall: minRecall,
-    status: 'stub-reported',
+    status: "stub-reported",
   };
 
   if (json) {
@@ -317,12 +309,12 @@ export async function runExtractBenchmark(
   console.log(`Fixture corpus: ${fixturePath}`);
   console.log(`Total fixtures: ${fixtures.length}`);
   console.log(`Min recall floor: ${minRecall}`);
-  console.log('');
+  console.log("");
   for (const f of fixtures) {
-    const notes = f.notes ? ` — ${f.notes}` : '';
+    const notes = f.notes ? ` — ${f.notes}` : "";
     console.log(`  ${f.fixture_id}: ${f.expected_claims.length} expected claim(s)${notes}`);
   }
-  console.log('');
-  console.log('Status: stub-reported (v0.42 reports fixture shape only).');
-  console.log('Wave E will wire the actual LLM dispatch for facts.prose-style kinds.');
+  console.log("");
+  console.log("Status: stub-reported (v0.42 reports fixture shape only).");
+  console.log("Wave E will wire the actual LLM dispatch for facts.prose-style kinds.");
 }

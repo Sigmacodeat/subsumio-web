@@ -36,6 +36,7 @@ Answer questions using the brain's knowledge with 3-layer search and synthesis.
 ## Contract
 
 This skill guarantees:
+
 - Every answer is grounded in brain content (no hallucination)
 - Every claim has a citation tracing back to a specific page slug
 - Gaps are flagged explicitly ("the brain doesn't have information on X")
@@ -67,6 +68,7 @@ This skill guarantees:
 ## Output Format
 
 Answers should include:
+
 - Direct response to the question
 - Citations: "According to [Source: people/jane-doe, compiled truth]..."
 - Gap flags: "The brain doesn't have information on X"
@@ -108,6 +110,7 @@ pick one.
 ## Citation in Answers
 
 When referencing brain pages in your answer, propagate inline citations:
+
 - Cite the page: "According to [Source: people/jane-doe, compiled truth]..."
 - When brain pages have inline `[Source: ...]` citations, propagate them so
   the user can trace facts to their origin
@@ -126,6 +129,7 @@ of full-text search:
 - `--depth N` controls multi-hop traversal (default 5)
 
 Examples:
+
 - "Who works at Acme?" → `gbrain graph-query companies/acme --type works_at --direction in`
 - "Who attended Demo Day W26?" → `gbrain graph-query meetings/demo-day-w26 --type attended --direction out`
 - "What companies has Emily advised?" → `gbrain graph-query people/emily --type advises --direction out`
@@ -138,6 +142,7 @@ connected entities surface higher.
 ## Search Quality Awareness
 
 If search results seem off (wrong results, missing known pages, irrelevant hits):
+
 - Run `gbrain doctor --json` to check index health
 - Check embedding coverage -- partial embeddings degrade hybrid search
 - Compare keyword search (`gbrain search`) vs hybrid search (`gbrain query`)

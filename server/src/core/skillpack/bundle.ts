@@ -7,10 +7,10 @@
  * `openclaw.plugin.json` at the gbrain repo root.
  */
 
-import { existsSync, readFileSync, statSync, readdirSync } from 'fs';
-import { join, dirname, isAbsolute, resolve } from 'path';
+import { existsSync, readFileSync, statSync, readdirSync } from "fs";
+import { join, dirname, isAbsolute, resolve } from "path";
 
-import { parseMarkdown } from '../markdown.ts';
+import { parseMarkdown } from "../markdown.ts";
 
 export interface BundleManifest {
   name: string;
@@ -25,13 +25,13 @@ export class BundleError extends Error {
   constructor(
     message: string,
     public code:
-      | 'manifest_not_found'
-      | 'manifest_malformed'
-      | 'skill_not_found'
-      | 'gbrain_root_not_found',
+      | "manifest_not_found"
+      | "manifest_malformed"
+      | "skill_not_found"
+      | "gbrain_root_not_found"
   ) {
     super(message);
-    this.name = 'BundleError';
+    this.name = "BundleError";
   }
 }
 
@@ -42,10 +42,7 @@ export class BundleError extends Error {
 export function findGbrainRoot(start: string = process.cwd()): string | null {
   let dir = resolve(start);
   for (let i = 0; i < 10; i++) {
-    if (
-      existsSync(join(dir, 'openclaw.plugin.json')) &&
-      existsSync(join(dir, 'src', 'cli.ts'))
-    ) {
+    if (existsSync(join(dir, "openclaw.plugin.json")) && existsSync(join(dir, "src", "cli.ts"))) {
       return dir;
     }
     const parent = dirname(dir);
@@ -60,20 +57,20 @@ export function findGbrainRoot(start: string = process.cwd()): string | null {
  * Throws BundleError on missing file or malformed JSON.
  */
 export function loadBundleManifest(gbrainRoot: string): BundleManifest {
-  const manifestPath = join(gbrainRoot, 'openclaw.plugin.json');
+  const manifestPath = join(gbrainRoot, "openclaw.plugin.json");
   if (!existsSync(manifestPath)) {
     throw new BundleError(
       `openclaw.plugin.json not found at ${manifestPath}`,
-      'manifest_not_found',
+      "manifest_not_found"
     );
   }
   let content: string;
   try {
-    content = readFileSync(manifestPath, 'utf-8');
+    content = readFileSync(manifestPath, "utf-8");
   } catch (err) {
     throw new BundleError(
       `Failed to read ${manifestPath}: ${(err as Error).message}`,
-      'manifest_malformed',
+      "manifest_malformed"
     );
   }
   let parsed: unknown;
@@ -82,27 +79,24 @@ export function loadBundleManifest(gbrainRoot: string): BundleManifest {
   } catch (err) {
     throw new BundleError(
       `openclaw.plugin.json is not valid JSON: ${(err as Error).message}`,
-      'manifest_malformed',
+      "manifest_malformed"
     );
   }
-  if (!parsed || typeof parsed !== 'object') {
+  if (!parsed || typeof parsed !== "object") {
     throw new BundleError(
-      'openclaw.plugin.json: top-level must be an object',
-      'manifest_malformed',
+      "openclaw.plugin.json: top-level must be an object",
+      "manifest_malformed"
     );
   }
   const m = parsed as Partial<BundleManifest>;
-  if (typeof m.name !== 'string' || typeof m.version !== 'string') {
+  if (typeof m.name !== "string" || typeof m.version !== "string") {
     throw new BundleError(
-      'openclaw.plugin.json: name and version must be strings',
-      'manifest_malformed',
+      "openclaw.plugin.json: name and version must be strings",
+      "manifest_malformed"
     );
   }
   if (!Array.isArray(m.skills)) {
-    throw new BundleError(
-      'openclaw.plugin.json: "skills" must be an array',
-      'manifest_malformed',
-    );
+    throw new BundleError('openclaw.plugin.json: "skills" must be an array', "manifest_malformed");
   }
   if (!Array.isArray(m.shared_deps)) {
     // Tolerate older manifests; default to empty.
@@ -168,13 +162,13 @@ export function enumerateBundle(opts: EnumerateOptions): BundleEntry[] {
   const entries: BundleEntry[] = [];
 
   const skillsToIncludePaths = skillSlug
-    ? manifest.skills.filter(p => pathSlug(p) === skillSlug)
+    ? manifest.skills.filter((p) => pathSlug(p) === skillSlug)
     : manifest.skills;
 
   if (skillSlug && skillsToIncludePaths.length === 0) {
     throw new BundleError(
       `Skill '${skillSlug}' is not listed in openclaw.plugin.json#skills`,
-      'skill_not_found',
+      "skill_not_found"
     );
   }
 
@@ -183,10 +177,10 @@ export function enumerateBundle(opts: EnumerateOptions): BundleEntry[] {
     if (!existsSync(abs)) {
       throw new BundleError(
         `Bundle lists '${rel}' but the path does not exist in ${gbrainRoot}`,
-        'skill_not_found',
+        "skill_not_found"
       );
     }
-    const prefix = rel.replace(/^skills\//, '');
+    const prefix = rel.replace(/^skills\//, "");
     walkFiles(abs, prefix, entries, false);
   }
 
@@ -196,7 +190,7 @@ export function enumerateBundle(opts: EnumerateOptions): BundleEntry[] {
   for (const dep of manifest.shared_deps) {
     const abs = join(gbrainRoot, dep);
     if (!existsSync(abs)) continue; // missing shared dep is a warning, not fatal
-    const prefix = dep.replace(/^skills\//, '');
+    const prefix = dep.replace(/^skills\//, "");
     let stat;
     try {
       stat = statSync(abs);
@@ -235,48 +229,36 @@ export function enumerateBundle(opts: EnumerateOptions): BundleEntry[] {
  * `v0.36.0.0`, a bare version like `0.36.0.0` (will retry with `v` prefix),
  * a commit SHA, or a branch name.
  */
-export function changedSlugsSinceVersion(
-  gbrainRoot: string,
-  version: string,
-): string[] | null {
+export function changedSlugsSinceVersion(gbrainRoot: string, version: string): string[] | null {
   // Synchronously execute git via Bun.spawnSync to avoid the async overhead
   // and keep this callable from CLI dispatch without awaiting.
-  const { spawnSync } = require('child_process') as typeof import('child_process');
+  const { spawnSync } = require("child_process") as typeof import("child_process");
 
   // Probe git availability + repo state. `.git` may be a directory OR a file
   // (worktrees). Either is fine for `git log`.
-  if (!existsSync(join(gbrainRoot, '.git'))) return null;
+  if (!existsSync(join(gbrainRoot, ".git"))) return null;
 
   // Try the literal version first, then with a `v` prefix.
   const candidates: string[] = [version];
-  if (!version.startsWith('v')) candidates.push(`v${version}`);
+  if (!version.startsWith("v")) candidates.push(`v${version}`);
 
   for (const ref of candidates) {
     const probe = spawnSync(
-      'git',
-      ['-C', gbrainRoot, 'rev-parse', '--verify', '--quiet', `${ref}^{commit}`],
-      { encoding: 'utf-8' },
+      "git",
+      ["-C", gbrainRoot, "rev-parse", "--verify", "--quiet", `${ref}^{commit}`],
+      { encoding: "utf-8" }
     );
     if (probe.status !== 0) continue;
 
     const log = spawnSync(
-      'git',
-      [
-        '-C',
-        gbrainRoot,
-        'log',
-        '--name-only',
-        '--format=',
-        `${ref}..HEAD`,
-        '--',
-        'skills/',
-      ],
-      { encoding: 'utf-8' },
+      "git",
+      ["-C", gbrainRoot, "log", "--name-only", "--format=", `${ref}..HEAD`, "--", "skills/"],
+      { encoding: "utf-8" }
     );
     if (log.status !== 0) return null;
 
     const slugs = new Set<string>();
-    for (const line of (log.stdout ?? '').split('\n')) {
+    for (const line of (log.stdout ?? "").split("\n")) {
       const trimmed = line.trim();
       if (!trimmed) continue;
       const m = /^skills\/([^/]+)\//.exec(trimmed);
@@ -290,8 +272,8 @@ export function changedSlugsSinceVersion(
 }
 
 export function pathSlug(relPath: string): string {
-  const trimmed = relPath.replace(/\/+$/, '');
-  const parts = trimmed.split('/');
+  const trimmed = relPath.replace(/\/+$/, "");
+  const parts = trimmed.split("/");
   return parts[parts.length - 1];
 }
 
@@ -340,7 +322,7 @@ export interface SkillSources {
  */
 export function loadSkillSources(gbrainRoot: string, skillRel: string): SkillSources {
   const slug = pathSlug(skillRel);
-  const skillMd = join(gbrainRoot, skillRel, 'SKILL.md');
+  const skillMd = join(gbrainRoot, skillRel, "SKILL.md");
   if (!existsSync(skillMd)) {
     // Some bundled "skills" are markdown-only without a SKILL.md (rare,
     // e.g. shared-conventions directories). Treat as no sources.
@@ -348,11 +330,11 @@ export function loadSkillSources(gbrainRoot: string, skillRel: string): SkillSou
   }
   let content: string;
   try {
-    content = readFileSync(skillMd, 'utf-8');
+    content = readFileSync(skillMd, "utf-8");
   } catch (err) {
     throw new BundleError(
       `Failed to read ${skillMd}: ${(err as Error).message}`,
-      'manifest_malformed',
+      "manifest_malformed"
     );
   }
   let parsed;
@@ -361,7 +343,7 @@ export function loadSkillSources(gbrainRoot: string, skillRel: string): SkillSou
   } catch (err) {
     throw new BundleError(
       `${skillMd}: frontmatter parse error — ${(err as Error).message}`,
-      'manifest_malformed',
+      "manifest_malformed"
     );
   }
   const raw = parsed.frontmatter.sources;
@@ -371,40 +353,40 @@ export function loadSkillSources(gbrainRoot: string, skillRel: string): SkillSou
   if (!Array.isArray(raw)) {
     throw new BundleError(
       `${skillMd}: frontmatter \`sources:\` must be an array of strings`,
-      'manifest_malformed',
+      "manifest_malformed"
     );
   }
   const sources: string[] = [];
   for (const entry of raw) {
-    if (typeof entry !== 'string') {
+    if (typeof entry !== "string") {
       throw new BundleError(
         `${skillMd}: every entry in frontmatter \`sources:\` must be a string`,
-        'manifest_malformed',
+        "manifest_malformed"
       );
     }
     if (entry.length === 0) {
       throw new BundleError(
         `${skillMd}: empty string in frontmatter \`sources:\``,
-        'manifest_malformed',
+        "manifest_malformed"
       );
     }
     if (isAbsolute(entry)) {
       throw new BundleError(
         `${skillMd}: frontmatter \`sources:\` entry "${entry}" must be relative to the repo root, not absolute`,
-        'manifest_malformed',
+        "manifest_malformed"
       );
     }
-    if (entry.includes('..')) {
+    if (entry.includes("..")) {
       throw new BundleError(
         `${skillMd}: frontmatter \`sources:\` entry "${entry}" contains \`..\` traversal — refusing for safety`,
-        'manifest_malformed',
+        "manifest_malformed"
       );
     }
     const abs = join(gbrainRoot, entry);
     if (!existsSync(abs)) {
       throw new BundleError(
         `${skillMd}: frontmatter \`sources:\` declares "${entry}" but the file is missing from ${gbrainRoot}`,
-        'manifest_malformed',
+        "manifest_malformed"
       );
     }
     sources.push(entry);
@@ -444,13 +426,13 @@ export function enumerateScaffoldEntries(opts: EnumerateOptions): ScaffoldEntry[
   const entries: ScaffoldEntry[] = [];
 
   const skillsToIncludePaths = skillSlug
-    ? manifest.skills.filter(p => pathSlug(p) === skillSlug)
+    ? manifest.skills.filter((p) => pathSlug(p) === skillSlug)
     : manifest.skills;
 
   if (skillSlug && skillsToIncludePaths.length === 0) {
     throw new BundleError(
       `Skill '${skillSlug}' is not listed in openclaw.plugin.json#skills`,
-      'skill_not_found',
+      "skill_not_found"
     );
   }
 
@@ -461,7 +443,7 @@ export function enumerateScaffoldEntries(opts: EnumerateOptions): ScaffoldEntry[
     if (!existsSync(abs)) {
       throw new BundleError(
         `Bundle lists '${rel}' but the path does not exist in ${gbrainRoot}`,
-        'skill_not_found',
+        "skill_not_found"
       );
     }
     walkScaffoldFiles(abs, rel, entries, false, false);
@@ -511,7 +493,7 @@ function walkScaffoldFiles(
   workspaceRelPrefix: string,
   out: ScaffoldEntry[],
   sharedDep: boolean,
-  pairedSource: boolean,
+  pairedSource: boolean
 ): void {
   let entries: string[];
   try {

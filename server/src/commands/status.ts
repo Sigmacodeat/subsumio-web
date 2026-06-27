@@ -35,22 +35,19 @@
  * section-build failure that didn't break the whole snapshot).
  */
 
-import type { BrainEngine } from '../core/engine.ts';
-import { existsSync, readFileSync } from 'node:fs';
-import { gbrainPath, loadConfig, isThinClient } from '../core/config.ts';
-import { callRemoteTool, unpackToolResult } from '../core/mcp-client.ts';
-import {
-  buildSyncStatusReport,
-  type SyncStatusReport,
-} from './sync.ts';
+import type { BrainEngine } from "../core/engine.ts";
+import { existsSync, readFileSync } from "node:fs";
+import { gbrainPath, loadConfig, isThinClient } from "../core/config.ts";
+import { callRemoteTool, unpackToolResult } from "../core/mcp-client.ts";
+import { buildSyncStatusReport, type SyncStatusReport } from "./sync.ts";
 import {
   readSupervisorEvents,
   summarizeCrashes,
-} from '../core/minions/handlers/supervisor-audit.ts';
+} from "../core/minions/handlers/supervisor-audit.ts";
 
 const SCHEMA_VERSION = 1 as const;
 
-const VALID_SECTIONS = ['sync', 'cycle', 'locks', 'workers', 'queue', 'autopilot'] as const;
+const VALID_SECTIONS = ["sync", "cycle", "locks", "workers", "queue", "autopilot"] as const;
 type Section = (typeof VALID_SECTIONS)[number];
 
 // ---------------------------------------------------------------------------
@@ -105,7 +102,7 @@ export interface AutopilotStatus {
 export interface StatusReport {
   schema_version: typeof SCHEMA_VERSION;
   generated_at: string;
-  mode: 'local' | 'thin-client';
+  mode: "local" | "thin-client";
   sync?: SyncStatusReport;
   cycle?: CycleSnapshot;
   locks?: LockRow[] | { local_only_remote: true };
@@ -136,7 +133,11 @@ export async function buildCycleSnapshot(engine: BrainEngine): Promise<CycleSnap
     name: string;
     status: string;
     started_at: string | Date | null;
-    result: { partial?: unknown; status?: unknown; report?: { totals?: Record<string, unknown> } } | null;
+    result: {
+      partial?: unknown;
+      status?: unknown;
+      report?: { totals?: Record<string, unknown> };
+    } | null;
   };
 
   const isoOrNull = (v: string | Date | null): string | null => {
@@ -144,7 +145,10 @@ export async function buildCycleSnapshot(engine: BrainEngine): Promise<CycleSnap
     return v instanceof Date ? v.toISOString() : new Date(v).toISOString();
   };
 
-  const durationMs = (started: string | Date | null, finished: string | Date | null): number | null => {
+  const durationMs = (
+    started: string | Date | null,
+    finished: string | Date | null
+  ): number | null => {
     if (!started || !finished) return null;
     const s = started instanceof Date ? started.getTime() : new Date(started).getTime();
     const f = finished instanceof Date ? finished.getTime() : new Date(finished).getTime();
@@ -170,7 +174,7 @@ export async function buildCycleSnapshot(engine: BrainEngine): Promise<CycleSnap
          FROM minion_jobs
         WHERE name = 'autopilot-cycle' AND status = 'completed'
         ORDER BY finished_at DESC NULLS LAST
-        LIMIT 1`,
+        LIMIT 1`
     );
     fullRow = fullRows[0];
   } catch {
@@ -182,7 +186,7 @@ export async function buildCycleSnapshot(engine: BrainEngine): Promise<CycleSnap
          FROM minion_jobs
         WHERE name LIKE 'autopilot-%' AND status = 'completed'
         ORDER BY finished_at DESC NULLS LAST
-        LIMIT 1`,
+        LIMIT 1`
     );
     targetedRow = targetedRows[0];
   } catch {
@@ -210,7 +214,7 @@ async function buildLocks(engine: BrainEngine): Promise<LockRow[]> {
       `SELECT id, holder_pid, holder_host, acquired_at, ttl_expires_at
          FROM gbrain_cycle_locks
         WHERE ttl_expires_at > NOW()
-        ORDER BY acquired_at`,
+        ORDER BY acquired_at`
     );
     return rows.map((r) => ({
       id: r.id,
@@ -231,10 +235,10 @@ async function buildQueueCounts(engine: BrainEngine): Promise<QueueCounts> {
     // Live counts, NO time window (codex MAJOR-6). Old stuck waiting/active
     // jobs are the failure mode `gbrain status` should surface, not hide.
     const rows = await engine.executeRaw<Row>(
-      `SELECT status, COUNT(*)::text AS count FROM minion_jobs GROUP BY status`,
+      `SELECT status, COUNT(*)::text AS count FROM minion_jobs GROUP BY status`
     );
     for (const r of rows) {
-      const n = typeof r.count === 'string' ? parseInt(r.count, 10) : r.count;
+      const n = typeof r.count === "string" ? parseInt(r.count, 10) : r.count;
       if (r.status in counts) (counts as unknown as Record<string, number>)[r.status] = n;
     }
   } catch {
@@ -254,7 +258,7 @@ function buildWorkerSummary(): WorkerSummary {
     if (events.length > 0) {
       last_event_ts = events[events.length - 1].ts;
     }
-    const exitEvents = events.filter((e) => e.event === 'worker_exited');
+    const exitEvents = events.filter((e) => e.event === "worker_exited");
     const summary = summarizeCrashes(exitEvents);
     crashes_24h = summary.total;
     clean_exits_24h = summary.clean_exits;
@@ -266,13 +270,13 @@ function buildWorkerSummary(): WorkerSummary {
 }
 
 function buildAutopilotStatus(): AutopilotStatus {
-  const lockPath = gbrainPath('autopilot.lock');
+  const lockPath = gbrainPath("autopilot.lock");
   const lockfile_present = existsSync(lockPath);
   let pid: number | null = null;
   let running = false;
   if (lockfile_present) {
     try {
-      const raw = readFileSync(lockPath, 'utf-8').trim();
+      const raw = readFileSync(lockPath, "utf-8").trim();
       const parsed = parseInt(raw, 10);
       if (Number.isFinite(parsed) && parsed > 0) {
         pid = parsed;
@@ -284,7 +288,7 @@ function buildAutopilotStatus(): AutopilotStatus {
           running = true;
         } catch (err) {
           const code = (err as NodeJS.ErrnoException).code;
-          running = code === 'EPERM';
+          running = code === "EPERM";
         }
       }
     } catch {
@@ -307,19 +311,16 @@ interface BuildOpts {
   sections?: Set<Section>;
 }
 
-async function buildLocalReport(
-  engine: BrainEngine,
-  opts: BuildOpts,
-): Promise<StatusReport> {
+async function buildLocalReport(engine: BrainEngine, opts: BuildOpts): Promise<StatusReport> {
   const want = (s: Section) => !opts.sections || opts.sections.has(s);
   const warnings: string[] = [];
   const report: StatusReport = {
     schema_version: SCHEMA_VERSION,
     generated_at: new Date().toISOString(),
-    mode: 'local',
+    mode: "local",
   };
 
-  if (want('sync')) {
+  if (want("sync")) {
     try {
       const sources = await engine.executeRaw<{
         id: string;
@@ -329,29 +330,34 @@ async function buildLocalReport(
       }>(`SELECT id, name, local_path, config FROM sources ORDER BY id`);
       report.sync = await buildSyncStatusReport(
         engine,
-        sources.map((s) => ({ id: s.id, name: s.name, local_path: s.local_path, config: s.config ?? {} })),
+        sources.map((s) => ({
+          id: s.id,
+          name: s.name,
+          local_path: s.local_path,
+          config: s.config ?? {},
+        }))
       );
     } catch (err) {
       warnings.push(`sync section failed: ${(err as Error).message}`);
     }
   }
-  if (want('cycle')) {
+  if (want("cycle")) {
     try {
       report.cycle = await buildCycleSnapshot(engine);
     } catch (err) {
       warnings.push(`cycle section failed: ${(err as Error).message}`);
     }
   }
-  if (want('locks')) {
+  if (want("locks")) {
     report.locks = await buildLocks(engine);
   }
-  if (want('workers')) {
+  if (want("workers")) {
     report.workers = buildWorkerSummary();
   }
-  if (want('queue')) {
+  if (want("queue")) {
     report.queue = await buildQueueCounts(engine);
   }
-  if (want('autopilot')) {
+  if (want("autopilot")) {
     report.autopilot = buildAutopilotStatus();
   }
   if (warnings.length > 0) report.warnings = warnings;
@@ -360,34 +366,34 @@ async function buildLocalReport(
 
 async function buildThinClientReport(
   cfg: ReturnType<typeof loadConfig>,
-  opts: BuildOpts,
+  opts: BuildOpts
 ): Promise<StatusReport> {
   const want = (s: Section) => !opts.sections || opts.sections.has(s);
   const warnings: string[] = [];
   const report: StatusReport = {
     schema_version: SCHEMA_VERSION,
     generated_at: new Date().toISOString(),
-    mode: 'thin-client',
+    mode: "thin-client",
   };
 
-  if (want('sync') || want('cycle')) {
+  if (want("sync") || want("cycle")) {
     try {
-      const raw = await callRemoteTool(cfg!, 'get_status_snapshot', {});
+      const raw = await callRemoteTool(cfg!, "get_status_snapshot", {});
       const payload = unpackToolResult<{
         schema_version: number;
         sync: SyncStatusReport;
         cycle: CycleSnapshot;
       }>(raw);
-      if (want('sync')) report.sync = payload.sync;
-      if (want('cycle')) report.cycle = payload.cycle;
+      if (want("sync")) report.sync = payload.sync;
+      if (want("cycle")) report.cycle = payload.cycle;
     } catch (err) {
       warnings.push(`remote snapshot failed: ${(err as Error).message}`);
     }
   }
-  if (want('locks')) report.locks = { local_only_remote: true };
-  if (want('workers')) report.workers = { local_only_remote: true };
-  if (want('queue')) report.queue = { local_only_remote: true };
-  if (want('autopilot')) report.autopilot = { local_only_remote: true };
+  if (want("locks")) report.locks = { local_only_remote: true };
+  if (want("workers")) report.workers = { local_only_remote: true };
+  if (want("queue")) report.queue = { local_only_remote: true };
+  if (want("autopilot")) report.autopilot = { local_only_remote: true };
   if (warnings.length > 0) report.warnings = warnings;
   return report;
 }
@@ -398,123 +404,126 @@ async function buildThinClientReport(
 
 function renderHuman(report: StatusReport): string {
   const lines: string[] = [];
-  lines.push('');
-  lines.push('GBrain Status');
-  lines.push('=============');
+  lines.push("");
+  lines.push("GBrain Status");
+  lines.push("=============");
   lines.push(`Mode: ${report.mode}  ·  ${report.generated_at}`);
-  lines.push('');
+  lines.push("");
 
   // Sync
   if (report.sync) {
-    lines.push('Sync:');
+    lines.push("Sync:");
     if (report.sync.sources.length === 0) {
-      lines.push('  (no sources registered)');
+      lines.push("  (no sources registered)");
     } else {
       for (const s of report.sync.sources) {
-        const last = s.last_sync_at ?? 'never';
-        const stale = s.staleness_class === 'fresh' ? 'OK' : s.staleness_class.toUpperCase();
+        const last = s.last_sync_at ?? "never";
+        const stale = s.staleness_class === "fresh" ? "OK" : s.staleness_class.toUpperCase();
         lines.push(
           `  [${stale}] ${s.source_id.padEnd(20)} ${last}  pages=${s.pages}  ` +
-            `embed=${s.embedding_coverage_pct.toFixed(0)}%`,
+            `embed=${s.embedding_coverage_pct.toFixed(0)}%`
         );
       }
       if (report.sync.unacknowledged_failures > 0) {
         lines.push(`  ${report.sync.unacknowledged_failures} unacknowledged sync failure(s)`);
       }
     }
-    lines.push('');
+    lines.push("");
   }
 
   // Cycle
   if (report.cycle) {
-    lines.push('Cycle:');
+    lines.push("Cycle:");
     const fmt = (row: CycleRow | null, label: string) => {
       if (!row) return `  ${label}: never run`;
-      const dur = row.duration_ms != null ? ` (${(row.duration_ms / 1000).toFixed(1)}s)` : '';
-      const totalsStr = row.totals && Object.keys(row.totals).length > 0
-        ? `  totals=${JSON.stringify(row.totals)}`
-        : '';
+      const dur = row.duration_ms != null ? ` (${(row.duration_ms / 1000).toFixed(1)}s)` : "";
+      const totalsStr =
+        row.totals && Object.keys(row.totals).length > 0
+          ? `  totals=${JSON.stringify(row.totals)}`
+          : "";
       return `  ${label}: ${row.finished_at}${dur}${totalsStr}`;
     };
-    lines.push(fmt(report.cycle.last_full, 'Last full cycle'));
-    lines.push(fmt(report.cycle.last_targeted, 'Last targeted run'));
-    lines.push('');
+    lines.push(fmt(report.cycle.last_full, "Last full cycle"));
+    lines.push(fmt(report.cycle.last_targeted, "Last targeted run"));
+    lines.push("");
   }
 
   // Locks
   if (report.locks) {
-    lines.push('Locks:');
-    if ('local_only_remote' in report.locks) {
-      lines.push('  local-only — N/A on remote brain');
+    lines.push("Locks:");
+    if ("local_only_remote" in report.locks) {
+      lines.push("  local-only — N/A on remote brain");
     } else if (report.locks.length === 0) {
-      lines.push('  (none active)');
+      lines.push("  (none active)");
     } else {
       for (const l of report.locks) {
         lines.push(
-          `  ${l.id.padEnd(28)} pid=${l.holder_pid ?? '?'}  expires=${l.ttl_expires_at ?? '?'}`,
+          `  ${l.id.padEnd(28)} pid=${l.holder_pid ?? "?"}  expires=${l.ttl_expires_at ?? "?"}`
         );
       }
     }
-    lines.push('');
+    lines.push("");
   }
 
   // Workers
   if (report.workers) {
-    lines.push('Workers (last 24h):');
-    if ('local_only_remote' in report.workers) {
-      lines.push('  local-only — N/A on remote brain');
+    lines.push("Workers (last 24h):");
+    if ("local_only_remote" in report.workers) {
+      lines.push("  local-only — N/A on remote brain");
     } else {
       const w = report.workers;
       lines.push(`  crashes=${w.crashes_24h}  clean_exits=${w.clean_exits_24h}`);
       const causes = Object.entries(w.by_cause).filter(([, n]) => n > 0);
       if (causes.length > 0) {
-        lines.push(`  by_cause: ${causes.map(([k, v]) => `${k}=${v}`).join(', ')}`);
+        lines.push(`  by_cause: ${causes.map(([k, v]) => `${k}=${v}`).join(", ")}`);
       }
       if (w.last_event_ts) lines.push(`  last event: ${w.last_event_ts}`);
     }
-    lines.push('');
+    lines.push("");
   }
 
   // Queue
   if (report.queue) {
-    lines.push('Queue (live):');
-    if ('local_only_remote' in report.queue) {
-      lines.push('  local-only — N/A on remote brain');
+    lines.push("Queue (live):");
+    if ("local_only_remote" in report.queue) {
+      lines.push("  local-only — N/A on remote brain");
     } else {
       const q = report.queue;
       lines.push(
-        `  active=${q.active}  waiting=${q.waiting}  failed=${q.failed}  dead=${q.dead}  completed=${q.completed}`,
+        `  active=${q.active}  waiting=${q.waiting}  failed=${q.failed}  dead=${q.dead}  completed=${q.completed}`
       );
     }
-    lines.push('');
+    lines.push("");
   }
 
   // Autopilot
   if (report.autopilot) {
-    lines.push('Autopilot:');
-    if ('local_only_remote' in report.autopilot) {
-      lines.push('  local-only — N/A on remote brain');
+    lines.push("Autopilot:");
+    if ("local_only_remote" in report.autopilot) {
+      lines.push("  local-only — N/A on remote brain");
     } else {
       const a = report.autopilot;
       if (a.running) {
         lines.push(`  running (PID ${a.pid})`);
       } else if (a.lockfile_present) {
-        lines.push(`  stale lockfile (PID ${a.pid ?? '?'} not alive). Run \`gbrain autopilot --install\` to restart.`);
+        lines.push(
+          `  stale lockfile (PID ${a.pid ?? "?"} not alive). Run \`gbrain autopilot --install\` to restart.`
+        );
       } else {
-        lines.push('  not running. Install with `gbrain autopilot --install`.');
+        lines.push("  not running. Install with `gbrain autopilot --install`.");
       }
     }
-    lines.push('');
+    lines.push("");
   }
 
   // Warnings
   if (report.warnings && report.warnings.length > 0) {
-    lines.push('Warnings:');
+    lines.push("Warnings:");
     for (const w of report.warnings) lines.push(`  ! ${w}`);
-    lines.push('');
+    lines.push("");
   }
 
-  return lines.join('\n');
+  return lines.join("\n");
 }
 
 // ---------------------------------------------------------------------------
@@ -528,21 +537,21 @@ function renderHuman(report: StatusReport): string {
  *   - Set<Section> → only these sections
  *   - 'usage_error' → bad section name (caller exits 2)
  */
-export function parseSectionFlag(args: string[]): Set<Section> | undefined | 'usage_error' {
+export function parseSectionFlag(args: string[]): Set<Section> | undefined | "usage_error" {
   let raw: string | undefined;
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
-    if (a === '--section' && i + 1 < args.length) {
+    if (a === "--section" && i + 1 < args.length) {
       raw = args[i + 1];
       break;
     }
-    if (a.startsWith('--section=')) {
-      raw = a.slice('--section='.length);
+    if (a.startsWith("--section=")) {
+      raw = a.slice("--section=".length);
       break;
     }
   }
   if (raw == null) return undefined;
-  if (!VALID_SECTIONS.includes(raw as Section)) return 'usage_error';
+  if (!VALID_SECTIONS.includes(raw as Section)) return "usage_error";
   return new Set<Section>([raw as Section]);
 }
 
@@ -560,20 +569,18 @@ export interface RunStatusResult {
 export async function runStatus(
   engine: BrainEngine | null,
   args: string[],
-  opts: { stdout?: (s: string) => void; stderr?: (s: string) => void } = {},
+  opts: { stdout?: (s: string) => void; stderr?: (s: string) => void } = {}
 ): Promise<RunStatusResult> {
   const stdout = opts.stdout ?? ((s: string) => process.stdout.write(s));
   const stderr = opts.stderr ?? ((s: string) => process.stderr.write(s));
 
   const sectionFlag = parseSectionFlag(args);
-  if (sectionFlag === 'usage_error') {
-    stderr(
-      `gbrain status: invalid --section. Valid: ${VALID_SECTIONS.join('|')}\n`,
-    );
+  if (sectionFlag === "usage_error") {
+    stderr(`gbrain status: invalid --section. Valid: ${VALID_SECTIONS.join("|")}\n`);
     return { exitCode: 2 };
   }
   const sections = sectionFlag;
-  const json = args.includes('--json');
+  const json = args.includes("--json");
 
   const cfg = loadConfig();
   const useThinClient = cfg ? isThinClient(cfg) : false;
@@ -584,7 +591,9 @@ export async function runStatus(
       report = await buildThinClientReport(cfg, { sections });
     } else {
       if (!engine) {
-        stderr('gbrain status: no engine connected (DB unreachable?). Run `gbrain doctor` to diagnose.\n');
+        stderr(
+          "gbrain status: no engine connected (DB unreachable?). Run `gbrain doctor` to diagnose.\n"
+        );
         return { exitCode: 1 };
       }
       report = await buildLocalReport(engine, { sections });
@@ -595,7 +604,7 @@ export async function runStatus(
   }
 
   if (json) {
-    stdout(JSON.stringify(report) + '\n');
+    stdout(JSON.stringify(report) + "\n");
   } else {
     stdout(renderHuman(report));
   }

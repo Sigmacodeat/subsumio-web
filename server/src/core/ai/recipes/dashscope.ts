@@ -1,4 +1,4 @@
-import type { Recipe } from '../types.ts';
+import type { Recipe } from "../types.ts";
 
 /**
  * Alibaba DashScope (灵积). OpenAI-compatible /embeddings endpoint at
@@ -13,18 +13,18 @@ import type { Recipe } from '../types.ts';
  * default; users override per the recipe convention.
  */
 export const dashscope: Recipe = {
-  id: 'dashscope',
-  name: 'Alibaba DashScope (灵积)',
-  tier: 'openai-compat',
-  implementation: 'openai-compatible',
-  base_url_default: 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1',
+  id: "dashscope",
+  name: "Alibaba DashScope (灵积)",
+  tier: "openai-compat",
+  implementation: "openai-compatible",
+  base_url_default: "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
   auth_env: {
-    required: ['DASHSCOPE_API_KEY'],
-    setup_url: 'https://help.aliyun.com/zh/model-studio/getting-started/',
+    required: ["DASHSCOPE_API_KEY"],
+    setup_url: "https://help.aliyun.com/zh/model-studio/getting-started/",
   },
   touchpoints: {
     embedding: {
-      models: ['text-embedding-v3', 'text-embedding-v2'],
+      models: ["text-embedding-v3", "text-embedding-v2"],
       default_dims: 1024,
       dims_options: [64, 128, 256, 512, 768, 1024],
       // Alibaba doesn't publish a hard batch-token cap for the OpenAI-compat
@@ -38,5 +38,5 @@ export const dashscope: Recipe = {
     },
   },
   setup_hint:
-    'Get an API key at https://help.aliyun.com/zh/model-studio/getting-started/, then `export DASHSCOPE_API_KEY=...`',
+    "Get an API key at https://help.aliyun.com/zh/model-studio/getting-started/, then `export DASHSCOPE_API_KEY=...`",
 };

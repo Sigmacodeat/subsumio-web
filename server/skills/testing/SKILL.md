@@ -105,12 +105,12 @@ Issues:
 
 ### Test tiers
 
-| Tier | What it runs | Wall time | Gates |
-|------|--------------|-----------|-------|
-| **Unit** | `bun test` (deterministic, zero external calls) | <2s | Every commit |
-| **Evals** | LLM-judge or quality evals | ~60s | Daily |
-| **Integration** | E2E tests against real Postgres | ~5m | Pre-ship + nightly |
-| **System health** | Disk / memory / CPU / service liveness | <10s | Daily |
+| Tier              | What it runs                                    | Wall time | Gates              |
+| ----------------- | ----------------------------------------------- | --------- | ------------------ |
+| **Unit**          | `bun test` (deterministic, zero external calls) | <2s       | Every commit       |
+| **Evals**         | LLM-judge or quality evals                      | ~60s      | Daily              |
+| **Integration**   | E2E tests against real Postgres                 | ~5m       | Pre-ship + nightly |
+| **System health** | Disk / memory / CPU / service liveness          | <10s      | Daily              |
 
 ### Daily run protocol
 
@@ -159,13 +159,13 @@ For each failing test:
 
 #### 5. Classify each failure
 
-| Classification | Marker | Action |
-|---------------|--------|--------|
-| **REGRESSION** — code changed, test broke | 🔴 | Flag with the commit that broke it |
-| **STALE** — test expects old behavior; code is correct | 🟡 | Fix the test, not the code |
-| **FLAKE** — API timeout, service down, LLM variance | ⚠️ | Note, don't alarm; retry once |
-| **NEW** — test was just added and isn't passing yet | 🟢 | Check if intentional |
-| **INFRA** — container restart wiped state | 🛠 | Run bootstrap, retest |
+| Classification                                         | Marker | Action                             |
+| ------------------------------------------------------ | ------ | ---------------------------------- |
+| **REGRESSION** — code changed, test broke              | 🔴     | Flag with the commit that broke it |
+| **STALE** — test expects old behavior; code is correct | 🟡     | Fix the test, not the code         |
+| **FLAKE** — API timeout, service down, LLM variance    | ⚠️     | Note, don't alarm; retry once      |
+| **NEW** — test was just added and isn't passing yet    | 🟢     | Check if intentional               |
+| **INFRA** — container restart wiped state              | 🛠     | Run bootstrap, retest              |
 
 #### 6. Report format
 
@@ -217,9 +217,7 @@ Track results in `~/.gbrain/test-state.json` for trend tracking:
   "unit": { "passed": 1262, "failed": 31, "skipped": 8 },
   "evals": { "passed": 17, "failed": 0 },
   "system": { "doctor": "ok", "gbrain": "0.25.1" },
-  "failureHistory": [
-    { "test": "<name>", "since": "2026-04-14", "classification": "stale" }
-  ]
+  "failureHistory": [{ "test": "<name>", "since": "2026-04-14", "classification": "stale" }]
 }
 ```
 
@@ -238,7 +236,6 @@ This enables:
 - ❌ Auto-un-skipping a test without understanding why it was skipped
 - ❌ Auto-"fixing" a security test failure
 - ❌ Reporting "all clear" without actually running system health checks
-
 
 ## Contract
 

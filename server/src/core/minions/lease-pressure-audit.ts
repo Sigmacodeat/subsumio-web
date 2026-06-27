@@ -23,7 +23,7 @@
  * preferable to failing the bypass path that prevents dead-letter.
  */
 
-import type { BrainEngine } from '../engine.ts';
+import type { BrainEngine } from "../engine.ts";
 
 export interface LeasePressureRecord {
   /** Job that bounced (FK target; SET NULL on prune so audit survives). */
@@ -54,7 +54,7 @@ export interface LeasePressureRecord {
  */
 export async function logLeasePressure(
   engine: BrainEngine,
-  record: LeasePressureRecord,
+  record: LeasePressureRecord
 ): Promise<void> {
   try {
     await engine.executeRaw(
@@ -72,12 +72,12 @@ export async function logLeasePressure(
         record.model ?? null,
         record.provider ?? null,
         record.root_owner_id ?? null,
-      ],
+      ]
     );
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     process.stderr.write(
-      `[lease-pressure-audit] WARN: write failed for job ${record.job_id}: ${msg}\n`,
+      `[lease-pressure-audit] WARN: write failed for job ${record.job_id}: ${msg}\n`
     );
   }
 }
@@ -91,7 +91,7 @@ export async function logLeasePressure(
 export async function readRecentLeasePressure(
   engine: BrainEngine,
   windowMs: number,
-  opts: { limit?: number } = {},
+  opts: { limit?: number } = {}
 ): Promise<Array<LeasePressureRecord & { id: number; bounced_at: string }>> {
   const limit = opts.limit ?? 1000;
   const rows = await engine.executeRaw<{
@@ -113,9 +113,9 @@ export async function readRecentLeasePressure(
        WHERE bounced_at > now() - ($1::double precision * interval '1 millisecond')
        ORDER BY bounced_at DESC
        LIMIT $2`,
-    [windowMs, limit],
+    [windowMs, limit]
   );
-  return rows.map(r => ({
+  return rows.map((r) => ({
     id: r.id,
     job_id: r.job_id ?? 0, // job_id is SET NULL after prune; surface as 0 for callers that don't care
     lease_key: r.lease_key,
@@ -136,13 +136,13 @@ export async function readRecentLeasePressure(
  */
 export async function countRecentLeasePressure(
   engine: BrainEngine,
-  windowMs: number,
+  windowMs: number
 ): Promise<number> {
   const rows = await engine.executeRaw<{ count: string }>(
     `SELECT count(*)::text AS count
        FROM minion_lease_pressure_log
        WHERE bounced_at > now() - ($1::double precision * interval '1 millisecond')`,
-    [windowMs],
+    [windowMs]
   );
-  return parseInt(rows[0]?.count ?? '0', 10);
+  return parseInt(rows[0]?.count ?? "0", 10);
 }

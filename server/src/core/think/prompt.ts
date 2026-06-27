@@ -79,41 +79,69 @@ The "row_num" field is required for take citations and MUST be null for page-onl
 export function buildThinkSystemPrompt(opts: ThinkSystemPromptOpts = {}): string {
   const lines = [THINK_SYSTEM_PROMPT_BASE];
   if (opts.anchor) {
-    lines.push(`\nAnchor entity for this question: ${opts.anchor}. Center your synthesis on this entity. The <graph> block, if present, holds its subgraph.`);
+    lines.push(
+      `\nAnchor entity for this question: ${opts.anchor}. Center your synthesis on this entity. The <graph> block, if present, holds its subgraph.`
+    );
   }
   if (opts.since || opts.until) {
-    const since = opts.since ?? '(unspecified)';
-    const until = opts.until ?? '(present)';
-    lines.push(`\nTime window for this question: ${since} → ${until}. Prefer takes/pages with since_date or timeline entries inside this window.`);
+    const since = opts.since ?? "(unspecified)";
+    const until = opts.until ?? "(present)";
+    lines.push(
+      `\nTime window for this question: ${since} → ${until}. Prefer takes/pages with since_date or timeline entries inside this window.`
+    );
   }
-  if (opts.intent === 'temporal') {
-    lines.push(`\nThis is a temporal question. Order key claims chronologically when it helps the reader.`);
+  if (opts.intent === "temporal") {
+    lines.push(
+      `\nThis is a temporal question. Order key claims chronologically when it helps the reader.`
+    );
   }
   if (opts.willSave) {
-    lines.push(`\nThis synthesis will be persisted as a brain page. Aim for completeness — cover Answer, Conflicts, and Gaps thoroughly.`);
+    lines.push(
+      `\nThis synthesis will be persisted as a brain page. Aim for completeness — cover Answer, Conflicts, and Gaps thoroughly.`
+    );
   }
   if (opts.withCalibration) {
     lines.push(
-      `\nCalibration-aware mode (v0.36.1.0): the user's calibration profile is included as <calibration> below the retrieval blocks. Apply it to the QUESTION FRAMING, not the evidence:`,
+      `\nCalibration-aware mode (v0.36.1.0): the user's calibration profile is included as <calibration> below the retrieval blocks. Apply it to the QUESTION FRAMING, not the evidence:`
     );
-    lines.push(`- Name both the user's PRIOR (default reasoning) AND the COUNTER-PRIOR from their hedged-domain self.`);
-    lines.push(`- Reference active bias tags by name when relevant ("this fits the over-confident-geography pattern").`);
-    lines.push(`- Do NOT silently substitute the debiased answer. ALWAYS surface both priors transparently.`);
-    lines.push(`- Track-record sentences belong in a "Calibration" section in the answer body, between Conflicts and Gaps.`);
+    lines.push(
+      `- Name both the user's PRIOR (default reasoning) AND the COUNTER-PRIOR from their hedged-domain self.`
+    );
+    lines.push(
+      `- Reference active bias tags by name when relevant ("this fits the over-confident-geography pattern").`
+    );
+    lines.push(
+      `- Do NOT silently substitute the debiased answer. ALWAYS surface both priors transparently.`
+    );
+    lines.push(
+      `- Track-record sentences belong in a "Calibration" section in the answer body, between Conflicts and Gaps.`
+    );
   }
   if (opts.legalMode) {
+    lines.push(`\nLEGAL MODE ACTIVE — Additional rules for legal synthesis:`);
     lines.push(
-      `\nLEGAL MODE ACTIVE — Additional rules for legal synthesis:`,
+      `- Cite statutes with version date when known: "§ 823 BGB (Fassung vom 2024-01-01)". If the version date is unknown, note: "Fassungsdatum nicht verifiziert".`
     );
-    lines.push(`- Cite statutes with version date when known: "§ 823 BGB (Fassung vom 2024-01-01)". If the version date is unknown, note: "Fassungsdatum nicht verifiziert".`);
-    lines.push(`- When citing case law, include court and date: "BGH, Urteil vom 2024-03-15, Az. XII ZR 123/21".`);
-    lines.push(`- Flag jurisdiction-specific rules: "Hinweis: Dies gilt im deutschen Recht; in Österreich vgl. § 1311 ABGB."`);
-    lines.push(`- Mark every legal conclusion as assistive: "Diese Einschätzung ersetzt keine anwaltliche Prüfung."`);
-    lines.push(`- If a statute citation's currency cannot be verified, note it explicitly in the Gaps section.`);
-    lines.push(`- Never provide definitive legal advice. You are a research tool, not an attorney.`);
-    lines.push(`- Treat all retrieved case data as confidential — never disclose client names or case details beyond what is in the cited brain pages.`);
+    lines.push(
+      `- When citing case law, include court and date: "BGH, Urteil vom 2024-03-15, Az. XII ZR 123/21".`
+    );
+    lines.push(
+      `- Flag jurisdiction-specific rules: "Hinweis: Dies gilt im deutschen Recht; in Österreich vgl. § 1311 ABGB."`
+    );
+    lines.push(
+      `- Mark every legal conclusion as assistive: "Diese Einschätzung ersetzt keine anwaltliche Prüfung."`
+    );
+    lines.push(
+      `- If a statute citation's currency cannot be verified, note it explicitly in the Gaps section.`
+    );
+    lines.push(
+      `- Never provide definitive legal advice. You are a research tool, not an attorney.`
+    );
+    lines.push(
+      `- Treat all retrieved case data as confidential — never disclose client names or case details beyond what is in the cited brain pages.`
+    );
   }
-  return lines.join('\n');
+  return lines.join("\n");
 }
 
 /**
@@ -132,7 +160,7 @@ export interface ThinkCalibrationBlockOpts {
 export function buildCalibrationBlock(opts: ThinkCalibrationBlockOpts): string {
   const lines: string[] = [];
   lines.push(`<calibration holder="${opts.holder}">`);
-  if (typeof opts.brier === 'number') {
+  if (typeof opts.brier === "number") {
     lines.push(`  Track record: Brier ${opts.brier.toFixed(3)} (lower is better).`);
   }
   if (opts.patternStatements.length > 0) {
@@ -142,10 +170,10 @@ export function buildCalibrationBlock(opts: ThinkCalibrationBlockOpts): string {
     }
   }
   if (opts.activeBiasTags.length > 0) {
-    lines.push(`  Active bias tags: ${opts.activeBiasTags.join(', ')}`);
+    lines.push(`  Active bias tags: ${opts.activeBiasTags.join(", ")}`);
   }
   lines.push(`</calibration>`);
-  return lines.join('\n');
+  return lines.join("\n");
 }
 
 /**
@@ -186,60 +214,60 @@ export function buildThinkUserMessage(opts: {
   trajectoryBlock?: string;
 }): string {
   const parts: string[] = [];
-  const hasTrajectory = typeof opts.trajectoryBlock === 'string' && opts.trajectoryBlock.length > 0;
+  const hasTrajectory = typeof opts.trajectoryBlock === "string" && opts.trajectoryBlock.length > 0;
 
   if (opts.calibration) {
     // Calibration path: retrieval → calibration → trajectory → question → instruction.
-    parts.push('<pages>');
-    parts.push(opts.pagesBlock || '(no page hits)');
-    parts.push('</pages>');
-    parts.push('');
-    parts.push('<takes>');
-    parts.push(opts.takesBlock || '(no take hits)');
-    parts.push('</takes>');
+    parts.push("<pages>");
+    parts.push(opts.pagesBlock || "(no page hits)");
+    parts.push("</pages>");
+    parts.push("");
+    parts.push("<takes>");
+    parts.push(opts.takesBlock || "(no take hits)");
+    parts.push("</takes>");
     if (opts.graphBlock) {
-      parts.push('');
-      parts.push('<graph>');
+      parts.push("");
+      parts.push("<graph>");
       parts.push(opts.graphBlock);
-      parts.push('</graph>');
+      parts.push("</graph>");
     }
-    parts.push('');
+    parts.push("");
     parts.push(buildCalibrationBlock(opts.calibration));
     if (hasTrajectory) {
-      parts.push('');
-      parts.push('Known trajectory:');
+      parts.push("");
+      parts.push("Known trajectory:");
       parts.push(opts.trajectoryBlock as string);
     }
-    parts.push('');
+    parts.push("");
     parts.push(`Question: ${opts.question}`);
-    parts.push('');
-    parts.push('Respond with a single JSON object matching the schema. No prose outside JSON.');
-    return parts.join('\n');
+    parts.push("");
+    parts.push("Respond with a single JSON object matching the schema. No prose outside JSON.");
+    return parts.join("\n");
   }
 
   // Default path (v0.28-vintage with v0.40.2.0 trajectory slot between
   // retrieval and the output instruction).
   parts.push(`Question: ${opts.question}`);
-  parts.push('');
-  parts.push('<pages>');
-  parts.push(opts.pagesBlock || '(no page hits)');
-  parts.push('</pages>');
-  parts.push('');
-  parts.push('<takes>');
-  parts.push(opts.takesBlock || '(no take hits)');
-  parts.push('</takes>');
+  parts.push("");
+  parts.push("<pages>");
+  parts.push(opts.pagesBlock || "(no page hits)");
+  parts.push("</pages>");
+  parts.push("");
+  parts.push("<takes>");
+  parts.push(opts.takesBlock || "(no take hits)");
+  parts.push("</takes>");
   if (opts.graphBlock) {
-    parts.push('');
-    parts.push('<graph>');
+    parts.push("");
+    parts.push("<graph>");
     parts.push(opts.graphBlock);
-    parts.push('</graph>');
+    parts.push("</graph>");
   }
   if (hasTrajectory) {
-    parts.push('');
-    parts.push('Known trajectory:');
+    parts.push("");
+    parts.push("Known trajectory:");
     parts.push(opts.trajectoryBlock as string);
   }
-  parts.push('');
-  parts.push('Respond with a single JSON object matching the schema. No prose outside JSON.');
-  return parts.join('\n');
+  parts.push("");
+  parts.push("Respond with a single JSON object matching the schema. No prose outside JSON.");
+  return parts.join("\n");
 }

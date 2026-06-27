@@ -28,6 +28,7 @@ is_quiet(local_hour):
 ```
 
 **Before sending any notification:**
+
 1. Determine user's current timezone (from config or heartbeat state)
 2. Convert current UTC time to local time
 3. If quiet hours: hold the message, don't send
@@ -75,6 +76,7 @@ the agent's operational state:
 ```
 
 **Update the timezone when:**
+
 - Calendar shows the user flying somewhere (check for airline/hotel events)
 - User mentions being in a different city
 - User's active hours shift (they're responding at 3 AM PT = they're probably traveling)
@@ -101,6 +103,7 @@ exit 0  # ok to send
 ```
 
 **In cron job scripts:**
+
 ```bash
 # Check quiet hours first
 if ! bash scripts/quiet-hours-gate.sh; then
@@ -162,4 +165,4 @@ Set `enabled: false` to disable quiet hours entirely (e.g., for 24/7 monitoring)
 
 ---
 
-*Part of the [GBrain Skillpack](../GBRAIN_SKILLPACK.md).*
+_Part of the [GBrain Skillpack](../GBRAIN_SKILLPACK.md)._

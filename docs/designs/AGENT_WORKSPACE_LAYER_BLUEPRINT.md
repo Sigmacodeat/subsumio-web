@@ -61,36 +61,38 @@ SigmaWorkspace ist der Cloud-Ausführungslayer für Subsumio-Agenten. Er ermögl
 ### 3.1 Navigation
 
 **Dashboard Sidebar erweitern:**
+
 - Neuer Nav-Item: `Agents` (Icon: `Bot` oder `Cpu` aus lucide-react)
 - Badge auf Icon zeigt Anzahl aktiver Agenten
 - Dream Cycle wird in Agenten-Bereich integriert (ist ja auch ein Agent)
 
 **Topbar erweitern:**
+
 - Globaler "Neuer Agent"-Button (schneller Start)
 - Benachrichtigungs-Bell zeigt Agent-Events (fertig, fehlgeschlagen, Nachricht)
 
 ### 3.2 Agent-Listenseite (`/dashboard/agents`)
 
-| Element | Interaktion |
-|---|---|
-| **Status-Filter** (Tabs: Alle / Aktiv / Pausiert / Fertig / Fehler) | Klick filtert Liste |
-| **Agent-Card** (pro Agent) | Klick öffnet Detail |
+| Element                                                                          | Interaktion                                     |
+| -------------------------------------------------------------------------------- | ----------------------------------------------- |
+| **Status-Filter** (Tabs: Alle / Aktiv / Pausiert / Fertig / Fehler)              | Klick filtert Liste                             |
+| **Agent-Card** (pro Agent)                                                       | Klick öffnet Detail                             |
 | Card-Inhalt: Name, Status-Badge, Fortschrittsbalken, Startzeit, ETA, Token-Count | Hover zeigt Quick-Actions (Pause, Stop, Replay) |
-| **Template-Galerie** (oben oder Sidebar) | Klick startet neuen Agent |
-| **Bulk-Actions** (Checkbox + Dropdown) | Multi-Select: Stop alle, Replay alle |
-| **Live-Socket-Indikator** | Grüner Punkt = Echtzeit-Updates aktiv |
+| **Template-Galerie** (oben oder Sidebar)                                         | Klick startet neuen Agent                       |
+| **Bulk-Actions** (Checkbox + Dropdown)                                           | Multi-Select: Stop alle, Replay alle            |
+| **Live-Socket-Indikator**                                                        | Grüner Punkt = Echtzeit-Updates aktiv           |
 
 ### 3.3 Agent-Detail-Seite (`/dashboard/agents/[id]`)
 
-| Element | Interaktion |
-|---|---|
-| **Status-Header** mit großem Status-Badge, Pause/Resume/Stop-Buttons | Klick triggert Aktion via API |
-| **Progress-Panel** (Step X/Y, aktuelle Aktion, Tokens In/Out, Kosten) | Auto-updated via SSE/WebSocket |
-| **Transcript-Stream** (Chronologischer Log: LLM-Turns, Tool-Calls, Ergebnisse) | Scroll, Klick auf Tool-Call expandiert Details |
-| **Inbox-Panel** (Nachrichten an/vom Agenten) | Input-Feld + Senden; Read-Receipts |
-| **Ergebnis-Panel** (nur bei Status=fertig) | Markdown-Render, Export, in Brain speichern |
-| **Einstellungen-Accordion** (Model, Max Iterations, Ressource-Limit) | Edit, Save |
-| **Mobile-Optimierung** | Alles vertikal stapelbar, Bottom-Nav für Actions |
+| Element                                                                        | Interaktion                                      |
+| ------------------------------------------------------------------------------ | ------------------------------------------------ |
+| **Status-Header** mit großem Status-Badge, Pause/Resume/Stop-Buttons           | Klick triggert Aktion via API                    |
+| **Progress-Panel** (Step X/Y, aktuelle Aktion, Tokens In/Out, Kosten)          | Auto-updated via SSE/WebSocket                   |
+| **Transcript-Stream** (Chronologischer Log: LLM-Turns, Tool-Calls, Ergebnisse) | Scroll, Klick auf Tool-Call expandiert Details   |
+| **Inbox-Panel** (Nachrichten an/vom Agenten)                                   | Input-Feld + Senden; Read-Receipts               |
+| **Ergebnis-Panel** (nur bei Status=fertig)                                     | Markdown-Render, Export, in Brain speichern      |
+| **Einstellungen-Accordion** (Model, Max Iterations, Ressource-Limit)           | Edit, Save                                       |
+| **Mobile-Optimierung**                                                         | Alles vertikal stapelbar, Bottom-Nav für Actions |
 
 ### 3.4 Interaktionen: Keyboard, Focus, Drag/Drop
 
@@ -205,23 +207,25 @@ CREATE TABLE agent_templates (
 
 ### 5.1 Execution-Model: "Remote-First, Local-Fallback"
 
-| Komponente | Wo läuft es? | Warum |
-|---|---|---|
-| Agent-Queue + State | GBrain-DB (Postgres/PGLite) | Single source of truth, bereits vorhanden |
-| Agent-Handler (LLM-Loop) | Cloud-Worker (separater Service) | Skalierbar, unabhängig vom User-Gerät |
-| Dashboard-UI | Next.js App (Render/Vercel/self-host) | Schon vorhanden |
-| Workspace-Isolation | Docker-Container pro User/Org | Security, Compliance, Tool-Isolation |
-| Realtime-Updates | SSE (Server-Sent Events) + Fallback-Polling | Einfacher als WebSocket, funktioniert über HTTP/2 |
+| Komponente               | Wo läuft es?                                | Warum                                             |
+| ------------------------ | ------------------------------------------- | ------------------------------------------------- |
+| Agent-Queue + State      | GBrain-DB (Postgres/PGLite)                 | Single source of truth, bereits vorhanden         |
+| Agent-Handler (LLM-Loop) | Cloud-Worker (separater Service)            | Skalierbar, unabhängig vom User-Gerät             |
+| Dashboard-UI             | Next.js App (Render/Vercel/self-host)       | Schon vorhanden                                   |
+| Workspace-Isolation      | Docker-Container pro User/Org               | Security, Compliance, Tool-Isolation              |
+| Realtime-Updates         | SSE (Server-Sent Events) + Fallback-Polling | Einfacher als WebSocket, funktioniert über HTTP/2 |
 
 ### 5.2 Warum kein GBrain-eigener LLM-Loop?
 
-> *"GBrain is orchestration, not execution."* — `@/Users/msc/Subsumio/server/docs/designs/MINIONS_AGENT_ORCHESTRATION.md:301`
+> _"GBrain is orchestration, not execution."_ — `@/Users/msc/Subsumio/server/docs/designs/MINIONS_AGENT_ORCHESTRATION.md:301`
 
 Wir bleiben diesem Prinzip treu:
+
 - **GBrain-Repo**: Queue, State, Inbox, Token-Tracking, Transcripts, Dashboard-UI
 - **Execution-Worker**: Ein separater, leichtgewichtiger Service (Node.js/Bun), der die GBrain-API abfragt, den LLM-Loop ausführt, und Ergebnisse zurückschreibt
 
 Das ist strategisch klug:
+
 - Execution-Worker kann in jeder Cloud laufen (Fly.io, Railway, Render, AWS)
 - User können self-hosten (Compliance)
 - GBrain bleibt "Memory-First", wird nicht zu einem monolithischen Monster
@@ -249,16 +253,16 @@ State-Persistence: Writes back to GBrain DB via REST API
 
 ## 6. Edge-Cases & Fehlerszenarien
 
-| Szenario | Verhalten |
-|---|---|
-| **User startet Agent, geht offline** | Agent läuft im Cloud-Worker weiter. Bei Fertigstellung: Push-Notification + Email-Fallback. |
-| **Agent hängt sich auf (Endlosschleife)** | Max-Iterations-Hardlimit. Governor killt nach Token-Budget. User bekommt "Agent timed out" mit Partial-Result. |
-| **Cloud-Worker crasht mid-run** | Job-Status bleibt 'active' mit abgelaufenem Lock. Next Worker erkennt Stalled-Job via Lock-Timeout, resumed von letztem Checkpoint (Progress-JSONB). |
-| **User sendet Inbox-Nachricht an fertigen Agent** | System-Reply: "Dieser Agent ist beendet. Möchtest du einen Replay starten?" |
-| **Zwei Geräte gleichzeitig (Desktop + Mobile)** | SSE-Stream ist idempotent. Beide Clients sehen dieselben Events. Write-Ops (Pause) sind atomar via DB. |
-| **Agent braucht Tool, das nicht verfügbar ist** | Graceful degrade: Agent bekommt Fehlermeldung als Tool-Result, entscheidet selbst (Retry/Skip/Abort). |
-| **Token-Budget erschöpft** | Governor pausiert Agent. Inbox-Nachricht an User: "Budget erschöpft. Erhöhen oder abbrechen?" |
-| **PGLite-User will Cloud-Agenten** | Fallback: Agent läuft lokal im Browser-Worker (Web Worker) mitPolling. Limitiert, aber funktional. |
+| Szenario                                          | Verhalten                                                                                                                                            |
+| ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **User startet Agent, geht offline**              | Agent läuft im Cloud-Worker weiter. Bei Fertigstellung: Push-Notification + Email-Fallback.                                                          |
+| **Agent hängt sich auf (Endlosschleife)**         | Max-Iterations-Hardlimit. Governor killt nach Token-Budget. User bekommt "Agent timed out" mit Partial-Result.                                       |
+| **Cloud-Worker crasht mid-run**                   | Job-Status bleibt 'active' mit abgelaufenem Lock. Next Worker erkennt Stalled-Job via Lock-Timeout, resumed von letztem Checkpoint (Progress-JSONB). |
+| **User sendet Inbox-Nachricht an fertigen Agent** | System-Reply: "Dieser Agent ist beendet. Möchtest du einen Replay starten?"                                                                          |
+| **Zwei Geräte gleichzeitig (Desktop + Mobile)**   | SSE-Stream ist idempotent. Beide Clients sehen dieselben Events. Write-Ops (Pause) sind atomar via DB.                                               |
+| **Agent braucht Tool, das nicht verfügbar ist**   | Graceful degrade: Agent bekommt Fehlermeldung als Tool-Result, entscheidet selbst (Retry/Skip/Abort).                                                |
+| **Token-Budget erschöpft**                        | Governor pausiert Agent. Inbox-Nachricht an User: "Budget erschöpft. Erhöhen oder abbrechen?"                                                        |
+| **PGLite-User will Cloud-Agenten**                | Fallback: Agent läuft lokal im Browser-Worker (Web Worker) mitPolling. Limitiert, aber funktional.                                                   |
 
 ---
 
@@ -299,14 +303,14 @@ State-Persistence: Writes back to GBrain DB via REST API
 
 ## Appendix: Anbindung an bestehende GBrain-Features
 
-| GBrain-Feature | Wiederverwendung im Workspace |
-|---|---|
-| Minions Queue | Agent-Jobs erweitern/wrapen `minion_jobs` |
-| MCP Server | Agent-Handler ruft Tools via GBrain-MCP |
+| GBrain-Feature     | Wiederverwendung im Workspace                  |
+| ------------------ | ---------------------------------------------- |
+| Minions Queue      | Agent-Jobs erweitern/wrapen `minion_jobs`      |
+| MCP Server         | Agent-Handler ruft Tools via GBrain-MCP        |
 | Credential Gateway | Workspace-Credentials via `credential-gateway` |
-| Brain-Schema | Agent-Runs als `type: agent_run` speichern |
-| Search/Think | Agent nutzt `gbrain think` für Recherche |
-| Graph | Agent-Ergebnisse verlinken via Typed Edges |
-| Dream Cycle | Langlaufende Enrichment-Jobs sind Agenten |
-| OAuth/Auth | Bestehendes Session-System |
-| Admin Dashboard | Erweitern um Agent-Übersicht |
+| Brain-Schema       | Agent-Runs als `type: agent_run` speichern     |
+| Search/Think       | Agent nutzt `gbrain think` für Recherche       |
+| Graph              | Agent-Ergebnisse verlinken via Typed Edges     |
+| Dream Cycle        | Langlaufende Enrichment-Jobs sind Agenten      |
+| OAuth/Auth         | Bestehendes Session-System                     |
+| Admin Dashboard    | Erweitern um Agent-Übersicht                   |

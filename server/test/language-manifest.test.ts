@@ -16,76 +16,101 @@
  *     tree-sitter-wasms (~136 more langs) without touching chunker core.
  */
 
-import { describe, test, expect, afterEach } from 'bun:test';
+import { describe, test, expect, afterEach } from "bun:test";
 import {
   registerLanguage,
   unregisterLanguage,
   listRegisteredLanguages,
   chunkCodeText,
   type LanguageEntry,
-} from '../src/core/chunkers/code.ts';
+} from "../src/core/chunkers/code.ts";
 
-describe('Layer 4 — LANGUAGE_MANIFEST covers all 29 embedded grammars', () => {
-  test('listRegisteredLanguages includes the 29 v0.19.0 languages', () => {
+describe("Layer 4 — LANGUAGE_MANIFEST covers all 29 embedded grammars", () => {
+  test("listRegisteredLanguages includes the 29 v0.19.0 languages", () => {
     const langs = listRegisteredLanguages();
     const core = [
-      'typescript', 'tsx', 'javascript', 'python', 'ruby', 'go',
-      'rust', 'java', 'c_sharp', 'cpp', 'c', 'php', 'swift', 'kotlin',
-      'scala', 'lua', 'elixir', 'elm', 'ocaml', 'dart', 'zig', 'solidity',
-      'bash', 'css', 'html', 'vue', 'json', 'yaml', 'toml',
+      "typescript",
+      "tsx",
+      "javascript",
+      "python",
+      "ruby",
+      "go",
+      "rust",
+      "java",
+      "c_sharp",
+      "cpp",
+      "c",
+      "php",
+      "swift",
+      "kotlin",
+      "scala",
+      "lua",
+      "elixir",
+      "elm",
+      "ocaml",
+      "dart",
+      "zig",
+      "solidity",
+      "bash",
+      "css",
+      "html",
+      "vue",
+      "json",
+      "yaml",
+      "toml",
     ];
     for (const lang of core) {
       expect(langs).toContain(lang);
     }
   });
 
-  test('registered languages list is at least 29 (the v0.19.0 core)', () => {
+  test("registered languages list is at least 29 (the v0.19.0 core)", () => {
     const langs = listRegisteredLanguages();
     expect(langs.length).toBeGreaterThanOrEqual(29);
   });
 });
 
-describe('Layer 4 — registerLanguage hook (forward-compat for B2/v0.20.x)', () => {
+describe("Layer 4 — registerLanguage hook (forward-compat for B2/v0.20.x)", () => {
   afterEach(() => {
-    unregisterLanguage('fortran-fake');
-    unregisterLanguage('typescript'); // in case a test overrode
+    unregisterLanguage("fortran-fake");
+    unregisterLanguage("typescript"); // in case a test overrode
   });
 
-  test('registerLanguage adds a language with a lazy loader', () => {
+  test("registerLanguage adds a language with a lazy loader", () => {
     let loaderCalls = 0;
     const entry: LanguageEntry = {
-      displayName: 'Fortran (fake)',
+      displayName: "Fortran (fake)",
       lazyLoader: async () => {
         loaderCalls++;
         return new Uint8Array([0, 1, 2, 3]);
       },
     };
-    registerLanguage('fortran-fake', entry);
-    expect(listRegisteredLanguages()).toContain('fortran-fake');
+    registerLanguage("fortran-fake", entry);
+    expect(listRegisteredLanguages()).toContain("fortran-fake");
     expect(loaderCalls).toBe(0);
   });
 
-  test('dynamic registrations win over core manifest on conflict', () => {
+  test("dynamic registrations win over core manifest on conflict", () => {
     const override: LanguageEntry = {
-      displayName: 'TypeScript (override)',
-      embeddedPath: 'fake-path-never-loaded',
+      displayName: "TypeScript (override)",
+      embeddedPath: "fake-path-never-loaded",
     };
-    registerLanguage('typescript', override);
+    registerLanguage("typescript", override);
     const langs = listRegisteredLanguages();
-    expect(langs).toContain('typescript');
+    expect(langs).toContain("typescript");
   });
 
-  test('unregisterLanguage removes a dynamic entry', () => {
-    const entry: LanguageEntry = { displayName: 'Fortran (fake)' };
-    registerLanguage('fortran-fake', entry);
-    expect(listRegisteredLanguages()).toContain('fortran-fake');
-    unregisterLanguage('fortran-fake');
-    expect(listRegisteredLanguages()).not.toContain('fortran-fake');
+  test("unregisterLanguage removes a dynamic entry", () => {
+    const entry: LanguageEntry = { displayName: "Fortran (fake)" };
+    registerLanguage("fortran-fake", entry);
+    expect(listRegisteredLanguages()).toContain("fortran-fake");
+    unregisterLanguage("fortran-fake");
+    expect(listRegisteredLanguages()).not.toContain("fortran-fake");
   });
 });
 
-describe('Layer 4 — existing chunker still loads core grammars', () => {
-  test('chunkCodeText with TypeScript source produces semantic chunks', async () => {
+describe("Layer 4 — existing chunker still loads core grammars", () => {
+  test("chunkCodeText with TypeScript source produces semantic chunks", async () => {
     const source = `
       export function alpha(x: number): number {
         return x + 1;
@@ -95,15 +120,15 @@ describe('Layer 4 — existing chunker still loads core grammars', () => {
         return y.toUpperCase();
       }
     `;
-    const chunks = await chunkCodeText(source, 'src/foo.ts');
+    const chunks = await chunkCodeText(source, "src/foo.ts");
     expect(chunks.length).toBeGreaterThan(0);
-    const tsChunks = chunks.filter(c => c.metadata.language === 'typescript');
+    const tsChunks = chunks.filter((c) => c.metadata.language === "typescript");
     expect(tsChunks.length).toBeGreaterThan(0);
   });
 
-  test('chunk header uses manifest displayName, not bare lang key', async () => {
+  test("chunk header uses manifest displayName, not bare lang key", async () => {
     const source = `def foo():\n    return 42\n`;
-    const chunks = await chunkCodeText(source, 'src/foo.py');
+    const chunks = await chunkCodeText(source, "src/foo.py");
     expect(chunks.length).toBeGreaterThan(0);
     expect(chunks[0]!.text).toMatch(/^\[Python\]/);
   });
@@ -116,7 +141,7 @@ describe('Layer 4 — existing chunker still loads core grammars', () => {
         end
       end
     `;
-    const chunks = await chunkCodeText(source, 'src/foo.rb');
+    const chunks = await chunkCodeText(source, "src/foo.rb");
     expect(chunks.length).toBeGreaterThan(0);
     expect(chunks[0]!.text).toMatch(/^\[Ruby\]/);
   });

@@ -35,20 +35,15 @@
  * for a halted-then-resumed run stays coherent.
  */
 
-import type { BrainEngine } from '../engine.ts';
-import type { Page } from '../types.ts';
+import type { BrainEngine } from "../engine.ts";
+import type { Page } from "../types.ts";
 
 /**
  * Round identifier. Matches the progressive-batch primitive's Stage
  * union from src/core/progressive-batch/types.ts:42, plus 'single' for
  * extractors that don't ramp (deterministic / one-shot).
  */
-export type ExtractReceiptRound =
-  | 'trial'
-  | 'ramp_100'
-  | 'ramp_500'
-  | 'full'
-  | 'single';
+export type ExtractReceiptRound = "trial" | "ramp_100" | "ramp_500" | "full" | "single";
 
 /**
  * Input to writeReceipt. Optional fields are recorded in frontmatter
@@ -121,31 +116,30 @@ export function receiptSlug(input: ExtractReceiptInput): string {
 function buildReceiptBody(input: ExtractReceiptInput): string {
   const lines: string[] = [];
   lines.push(`# ${input.kind} — round ${input.round}`);
-  lines.push('');
+  lines.push("");
   if (input.summary) {
     lines.push(input.summary);
-    lines.push('');
+    lines.push("");
   }
   lines.push(`Source: \`${input.source_id}\``);
   lines.push(`Run: \`${input.run_id}\``);
   lines.push(`Round: \`${input.round}\``);
   lines.push(`Extracted at: ${input.extracted_at}`);
-  lines.push('');
+  lines.push("");
   lines.push(`Rows extracted: **${input.total_rows}**`);
-  if (typeof input.cost_usd === 'number' && input.cost_usd > 0) {
+  if (typeof input.cost_usd === "number" && input.cost_usd > 0) {
     lines.push(`Cost: $${input.cost_usd.toFixed(4)}`);
   }
   if (input.model_id) {
     lines.push(`Model: \`${input.model_id}\``);
   }
-  if (typeof input.eval_pass === 'boolean') {
-    const verdict = input.eval_pass ? 'PASS' : 'FAIL';
-    const score = typeof input.eval_score === 'number'
-      ? ` (score ${input.eval_score.toFixed(2)})`
-      : '';
+  if (typeof input.eval_pass === "boolean") {
+    const verdict = input.eval_pass ? "PASS" : "FAIL";
+    const score =
+      typeof input.eval_score === "number" ? ` (score ${input.eval_score.toFixed(2)})` : "";
     lines.push(`Eval gate: **${verdict}**${score}`);
   }
-  return lines.join('\n') + '\n';
+  return lines.join("\n") + "\n";
 }
 
 /**
@@ -155,7 +149,7 @@ function buildReceiptBody(input: ExtractReceiptInput): string {
  */
 function buildReceiptFrontmatter(input: ExtractReceiptInput): Record<string, unknown> {
   const fm: Record<string, unknown> = {
-    type: 'extract_receipt',
+    type: "extract_receipt",
     dream_generated: true,
     kind: input.kind,
     source_id: input.source_id,
@@ -166,8 +160,8 @@ function buildReceiptFrontmatter(input: ExtractReceiptInput): Record<string, unk
     cost_usd: input.cost_usd,
   };
   if (input.model_id) fm.model_id = input.model_id;
-  if (typeof input.eval_pass === 'boolean') fm.eval_pass = input.eval_pass;
-  if (typeof input.eval_score === 'number') fm.eval_score = input.eval_score;
+  if (typeof input.eval_pass === "boolean") fm.eval_pass = input.eval_pass;
+  if (typeof input.eval_score === "number") fm.eval_score = input.eval_score;
   return fm;
 }
 
@@ -186,7 +180,7 @@ function buildReceiptFrontmatter(input: ExtractReceiptInput): Record<string, unk
  */
 export async function writeReceipt(
   engine: BrainEngine,
-  input: ExtractReceiptInput,
+  input: ExtractReceiptInput
 ): Promise<{ slug: string; page: Page }> {
   const slug = receiptSlug(input);
   const title = `${input.kind} — ${input.round} — ${input.source_id}`;
@@ -196,12 +190,12 @@ export async function writeReceipt(
   const page = await engine.putPage(
     slug,
     {
-      type: 'extract_receipt',
+      type: "extract_receipt",
       title,
       compiled_truth,
       frontmatter,
     },
-    { sourceId: input.source_id },
+    { sourceId: input.source_id }
   );
 
   return { slug, page };

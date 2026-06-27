@@ -26,11 +26,11 @@ host cron required — every agent kind (Claude Code, Codex, OpenClaw, Hermes, t
 construction. The behavior is governed by one file-plane config key,
 `self_upgrade.mode`:
 
-| Mode | Behavior | Who it's for |
-|------|----------|--------------|
-| `notify` (default) | Emit the marker + a 4-option prompt; never apply without confirmation. | Interactive installs / anyone with a human in the loop. |
-| `auto` (opt-in) | Apply silently, but ONLY during quiet hours, ONLY when the brain is idle, doctor-gated, and never re-trying a known-bad version. | Headless / always-on installs (autopilot daemon, the `gbrain serve` host). |
-| `off` | Never check. | Air-gapped / pinned installs. |
+| Mode               | Behavior                                                                                                                         | Who it's for                                                               |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| `notify` (default) | Emit the marker + a 4-option prompt; never apply without confirmation.                                                           | Interactive installs / anyone with a human in the loop.                    |
+| `auto` (opt-in)    | Apply silently, but ONLY during quiet hours, ONLY when the brain is idle, doctor-gated, and never re-trying a known-bad version. | Headless / always-on installs (autopilot daemon, the `gbrain serve` host). |
+| `off`              | Never check.                                                                                                                     | Air-gapped / pinned installs.                                              |
 
 Enable hands-off upgrades on an always-on install with one line:
 
@@ -86,13 +86,13 @@ what they can DO now that they couldn't before, not what files changed.
 
 ### Handling Responses
 
-| User says | Action |
-|-----------|--------|
-| yes / y / sure / ok / do it / upgrade | Run the full upgrade flow (below) |
-| not now / later / skip / snooze | Acknowledge, check again next cycle |
-| weekly | Store preference, switch cron to weekly |
-| daily | Store preference, switch cron back to daily |
-| stop / unsubscribe / no more | Disable the cron. Tell user how to resume |
+| User says                             | Action                                      |
+| ------------------------------------- | ------------------------------------------- |
+| yes / y / sure / ok / do it / upgrade | Run the full upgrade flow (below)           |
+| not now / later / skip / snooze       | Acknowledge, check again next cycle         |
+| weekly                                | Store preference, switch cron to weekly     |
+| daily                                 | Store preference, switch cron back to daily |
+| stop / unsubscribe / no more          | Disable the cron. Tell user how to resume   |
 
 **In `notify` mode (the default), never auto-upgrade — always wait for explicit
 confirmation.** The `auto` mode (opt-in, see "Self-upgrade modes" above) is the
@@ -214,4 +214,4 @@ copy. Set up a weekly cron to check automatically.
 
 ---
 
-*Part of the [GBrain Skillpack](../GBRAIN_SKILLPACK.md).*
+_Part of the [GBrain Skillpack](../GBRAIN_SKILLPACK.md)._

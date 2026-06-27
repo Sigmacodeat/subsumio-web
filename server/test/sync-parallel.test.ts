@@ -14,37 +14,33 @@
  * the T1 + CODEX-3 contracts. A separate Postgres E2E covers worker-engine
  * construction directly.
  */
-import { describe, expect, test, beforeEach, afterEach } from 'bun:test';
-import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'fs';
-import { join } from 'path';
-import { tmpdir } from 'os';
-import { execSync } from 'child_process';
-import { PGLiteEngine } from '../src/core/pglite-engine.ts';
+import { describe, expect, test, beforeEach, afterEach } from "bun:test";
+import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from "fs";
+import { join } from "path";
+import { tmpdir } from "os";
+import { execSync } from "child_process";
+import { PGLiteEngine } from "../src/core/pglite-engine.ts";
 
 function git(repo: string, ...args: string[]): string {
-  return execSync(`git ${args.join(' ')}`, { cwd: repo, encoding: 'utf-8' }).trim();
+  return execSync(`git ${args.join(" ")}`, { cwd: repo, encoding: "utf-8" }).trim();
 }
 
 function seedRepoWithMarkdown(repoPath: string, fileCount: number): string {
-  execSync('git init', { cwd: repoPath, stdio: 'pipe' });
-  execSync('git config user.email "test@test.com"', { cwd: repoPath, stdio: 'pipe' });
-  execSync('git config user.name "Test"', { cwd: repoPath, stdio: 'pipe' });
-  mkdirSync(join(repoPath, 'people'), { recursive: true });
+  execSync("git init", { cwd: repoPath, stdio: "pipe" });
+  execSync('git config user.email "test@test.com"', { cwd: repoPath, stdio: "pipe" });
+  execSync('git config user.name "Test"', { cwd: repoPath, stdio: "pipe" });
+  mkdirSync(join(repoPath, "people"), { recursive: true });
   for (let i = 0; i < fileCount; i++) {
-    writeFileSync(join(repoPath, `people/p${i}.md`), [
-      '---',
-      'type: person',
-      `title: Person ${i}`,
-      '---',
-      '',
-      `This is person ${i}.`,
-    ].join('\n'));
+    writeFileSync(
+      join(repoPath, `people/p${i}.md`),
+      ["---", "type: person", `title: Person ${i}`, "---", "", `This is person ${i}.`].join("\n")
+    );
   }
-  execSync('git add -A && git commit -m "initial"', { cwd: repoPath, stdio: 'pipe' });
-  return git(repoPath, 'rev-parse', 'HEAD');
+  execSync('git add -A && git commit -m "initial"', { cwd: repoPath, stdio: "pipe" });
+  return git(repoPath, "rev-parse", "HEAD");
 }
 
-describe('sync-parallel: PGLite + concurrency=4 (T4)', () => {
+describe("sync-parallel: PGLite + concurrency=4 (T4)", () => {
   let engine: PGLiteEngine;
   let repoPath: string;
 
@@ -52,7 +48,7 @@ describe('sync-parallel: PGLite + concurrency=4 (T4)', () => {
     engine = new PGLiteEngine();
     await engine.connect({});
     await engine.initSchema();
-    repoPath = mkdtempSync(join(tmpdir(), 'gbrain-sync-par-'));
+    repoPath = mkdtempSync(join(tmpdir(), "gbrain-sync-par-"));
   });
 
   afterEach(async () => {
@@ -60,9 +56,9 @@ describe('sync-parallel: PGLite + concurrency=4 (T4)', () => {
     if (repoPath) rmSync(repoPath, { recursive: true, force: true });
   });
 
-  test('PGLite + concurrency=4 + 60 files: imports all without crashing', async () => {
+  test("PGLite + concurrency=4 + 60 files: imports all without crashing", async () => {
     seedRepoWithMarkdown(repoPath, 60);
-    const { performSync } = await import('../src/commands/sync.ts');
+    const { performSync } = await import("../src/commands/sync.ts");
     const result = await performSync(engine, {
       repoPath,
       noPull: true,
@@ -70,28 +66,28 @@ describe('sync-parallel: PGLite + concurrency=4 (T4)', () => {
       concurrency: 4,
     });
     // First sync routes through performFullSync, returning 'first_sync'.
-    expect(result.status).toBe('first_sync');
+    expect(result.status).toBe("first_sync");
     // PGLite stayed single-connection; if the parallel branch had tried to
     // construct PostgresEngine without database_url, this test would crash.
   });
 
-  test('PGLite + explicit concurrency=4 + 30 files (below floor): still safe', async () => {
+  test("PGLite + explicit concurrency=4 + 30 files (below floor): still safe", async () => {
     // Q1 path: explicit opt-in beats the >50 floor. PGLite forces serial
     // anyway (engine.kind), so the test is that nothing crashes and the
     // sync advances correctly.
     seedRepoWithMarkdown(repoPath, 30);
-    const { performSync } = await import('../src/commands/sync.ts');
+    const { performSync } = await import("../src/commands/sync.ts");
     const result = await performSync(engine, {
       repoPath,
       noPull: true,
       noEmbed: true,
       concurrency: 4,
     });
-    expect(result.status).toBe('first_sync');
+    expect(result.status).toBe("first_sync");
   });
 });
 
-describe('sync-parallel: bookmark gate under concurrency request (T1)', () => {
+describe("sync-parallel: bookmark gate under concurrency request (T1)", () => {
   let engine: PGLiteEngine;
   let repoPath: string;
 
@@ -99,7 +95,7 @@ describe('sync-parallel: bookmark gate under concurrency request (T1)', () => {
     engine = new PGLiteEngine();
     await engine.connect({});
     await engine.initSchema();
-    repoPath = mkdtempSync(join(tmpdir(), 'gbrain-sync-gate-'));
+    repoPath = mkdtempSync(join(tmpdir(), "gbrain-sync-gate-"));
   });
 
   afterEach(async () => {
@@ -107,62 +103,70 @@ describe('sync-parallel: bookmark gate under concurrency request (T1)', () => {
     if (repoPath) rmSync(repoPath, { recursive: true, force: true });
   });
 
-  test('clean parallel sync advances last_commit', async () => {
+  test("clean parallel sync advances last_commit", async () => {
     const initialHead = seedRepoWithMarkdown(repoPath, 5);
-    const { performSync } = await import('../src/commands/sync.ts');
+    const { performSync } = await import("../src/commands/sync.ts");
     await performSync(engine, {
       repoPath,
       noPull: true,
       noEmbed: true,
       concurrency: 4,
     });
-    const lastCommit = await engine.getConfig('sync.last_commit');
+    const lastCommit = await engine.getConfig("sync.last_commit");
     expect(lastCommit).toBe(initialHead);
   });
 
-  test('failure-injection blocks last_commit advance', async () => {
+  test("failure-injection blocks last_commit advance", async () => {
     // First sync: clean state.
     const firstHead = seedRepoWithMarkdown(repoPath, 5);
-    const { performSync } = await import('../src/commands/sync.ts');
+    const { performSync } = await import("../src/commands/sync.ts");
     await performSync(engine, {
-      repoPath, noPull: true, noEmbed: true,
+      repoPath,
+      noPull: true,
+      noEmbed: true,
     });
-    const lastAfterFirst = await engine.getConfig('sync.last_commit');
+    const lastAfterFirst = await engine.getConfig("sync.last_commit");
     expect(lastAfterFirst).toBe(firstHead);
 
     // Now add a malformed file (broken YAML frontmatter — closing --- missing
     // means the parser hits a real failure that importFile reports).
-    writeFileSync(join(repoPath, 'people/broken.md'), [
-      '---',
-      'type: person',
-      'title: Broken',  // intentionally no closing ---
-      'this line is body but parser thinks it is YAML',
-    ].join('\n'));
-    execSync('git add -A && git commit -m "add broken"', { cwd: repoPath, stdio: 'pipe' });
-    const secondHead = git(repoPath, 'rev-parse', 'HEAD');
+    writeFileSync(
+      join(repoPath, "people/broken.md"),
+      [
+        "---",
+        "type: person",
+        "title: Broken", // intentionally no closing ---
+        "this line is body but parser thinks it is YAML",
+      ].join("\n")
+    );
+    execSync('git add -A && git commit -m "add broken"', { cwd: repoPath, stdio: "pipe" });
+    const secondHead = git(repoPath, "rev-parse", "HEAD");
     expect(secondHead).not.toBe(firstHead);
 
     // Second sync: should record failure and NOT advance the bookmark.
     const result = await performSync(engine, {
-      repoPath, noPull: true, noEmbed: true, concurrency: 4,
+      repoPath,
+      noPull: true,
+      noEmbed: true,
+      concurrency: 4,
     });
 
     // Only fail the test when the parser actually rejected the broken file.
     // Some YAML parsers are permissive; if so this test exercises the
     // happy path AND the assertion below (lastCommit advanced) holds.
-    if (result.status === 'blocked_by_failures') {
-      const lastAfterBroken = await engine.getConfig('sync.last_commit');
+    if (result.status === "blocked_by_failures") {
+      const lastAfterBroken = await engine.getConfig("sync.last_commit");
       expect(lastAfterBroken).toBe(firstHead); // unchanged — gate held
       expect(result.failedFiles ?? 0).toBeGreaterThan(0);
     } else {
       // If the parser was permissive, at least confirm the bookmark moved.
-      const lastAfterBroken = await engine.getConfig('sync.last_commit');
+      const lastAfterBroken = await engine.getConfig("sync.last_commit");
       expect(lastAfterBroken).toBe(secondHead);
     }
   });
 });
 
-describe('sync-parallel: head-drift gate (CODEX-3)', () => {
+describe("sync-parallel: head-drift gate (CODEX-3)", () => {
   let engine: PGLiteEngine;
   let repoPath: string;
 
@@ -170,7 +174,7 @@ describe('sync-parallel: head-drift gate (CODEX-3)', () => {
     engine = new PGLiteEngine();
     await engine.connect({});
     await engine.initSchema();
-    repoPath = mkdtempSync(join(tmpdir(), 'gbrain-sync-drift-'));
+    repoPath = mkdtempSync(join(tmpdir(), "gbrain-sync-drift-"));
   });
 
   afterEach(async () => {
@@ -178,29 +182,32 @@ describe('sync-parallel: head-drift gate (CODEX-3)', () => {
     if (repoPath) rmSync(repoPath, { recursive: true, force: true });
   });
 
-  test('static-HEAD sync advances last_commit (control)', async () => {
+  test("static-HEAD sync advances last_commit (control)", async () => {
     const head = seedRepoWithMarkdown(repoPath, 3);
-    const { performSync } = await import('../src/commands/sync.ts');
+    const { performSync } = await import("../src/commands/sync.ts");
     await performSync(engine, { repoPath, noPull: true, noEmbed: true });
-    expect(await engine.getConfig('sync.last_commit')).toBe(head);
+    expect(await engine.getConfig("sync.last_commit")).toBe(head);
   });
 
-  test('vanished-mid-sync added file is skipped, not a failure (v0.42.x #1794)', async () => {
+  test("vanished-mid-sync added file is skipped, not a failure (v0.42.x #1794)", async () => {
     // First sync: clean state for incremental.
     seedRepoWithMarkdown(repoPath, 3);
-    const { performSync } = await import('../src/commands/sync.ts');
+    const { performSync } = await import("../src/commands/sync.ts");
     await performSync(engine, { repoPath, noPull: true, noEmbed: true });
 
     // Add a file, commit, then delete the file from disk WITHOUT amending the
     // commit — diff says it exists at HEAD, but the file is gone.
-    writeFileSync(join(repoPath, 'people/will-vanish.md'), [
-      '---', 'type: person', 'title: Vanish', '---', '', 'body',
-    ].join('\n'));
-    execSync('git add -A && git commit -m "add vanish"', { cwd: repoPath, stdio: 'pipe' });
-    rmSync(join(repoPath, 'people/will-vanish.md'));
+    writeFileSync(
+      join(repoPath, "people/will-vanish.md"),
+      ["---", "type: person", "title: Vanish", "---", "", "body"].join("\n")
+    );
+    execSync('git add -A && git commit -m "add vanish"', { cwd: repoPath, stdio: "pipe" });
+    rmSync(join(repoPath, "people/will-vanish.md"));
 
     const result = await performSync(engine, {
-      repoPath, noPull: true, noEmbed: true,
+      repoPath,
+      noPull: true,
+      noEmbed: true,
     });
     // v0.42.x (#1794, Codex #3) SUPERSEDES the v0.22.13 CODEX-3 behavior: under
     // the pinned-target resumable sync, importFile reads the live working tree,
@@ -210,13 +217,13 @@ describe('sync-parallel: head-drift gate (CODEX-3)', () => {
     // history REWRITE is caught by the separate pin-reachability gate. The
     // vanished file is never created; the next sync's pin..HEAD diff shows it
     // deleted.
-    expect(result.status).toBe('synced');
+    expect(result.status).toBe("synced");
     expect(result.failedFiles ?? 0).toBe(0);
-    expect(await engine.getPage('people/will-vanish')).toBeNull();
+    expect(await engine.getPage("people/will-vanish")).toBeNull();
   });
 });
 
-describe('sync-parallel: writer lock prevents reentrance (CODEX-2)', () => {
+describe("sync-parallel: writer lock prevents reentrance (CODEX-2)", () => {
   let engine: PGLiteEngine;
   let repoPath: string;
 
@@ -224,7 +231,7 @@ describe('sync-parallel: writer lock prevents reentrance (CODEX-2)', () => {
     engine = new PGLiteEngine();
     await engine.connect({});
     await engine.initSchema();
-    repoPath = mkdtempSync(join(tmpdir(), 'gbrain-sync-lock-'));
+    repoPath = mkdtempSync(join(tmpdir(), "gbrain-sync-lock-"));
   });
 
   afterEach(async () => {
@@ -232,9 +239,9 @@ describe('sync-parallel: writer lock prevents reentrance (CODEX-2)', () => {
     if (repoPath) rmSync(repoPath, { recursive: true, force: true });
   });
 
-  test('two parallel performSync calls in same process: second waits or fails fast', async () => {
+  test("two parallel performSync calls in same process: second waits or fails fast", async () => {
     seedRepoWithMarkdown(repoPath, 5);
-    const { performSync } = await import('../src/commands/sync.ts');
+    const { performSync } = await import("../src/commands/sync.ts");
 
     // Same-process concurrent calls: PGLite serializes engine ops via its
     // exclusive transaction mutex, but the writer-lock is the right barrier.

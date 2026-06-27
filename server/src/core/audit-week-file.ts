@@ -17,7 +17,7 @@
  *   - Year-boundary correctness is pinned by `test/core/audit-week-file.test.ts`.
  */
 
-import { gbrainPath } from './config.ts';
+import { gbrainPath } from "./config.ts";
 
 /**
  * Compute the ISO-8601 week number (1..53) and corresponding ISO week-year
@@ -34,7 +34,8 @@ export function isoWeek(d: Date): { year: number; week: number } {
   const firstThursday = new Date(Date.UTC(isoYear, 0, 4));
   const firstDayNum = (firstThursday.getUTCDay() + 6) % 7;
   firstThursday.setUTCDate(firstThursday.getUTCDate() - firstDayNum + 3);
-  const week = 1 + Math.round((tgt.getTime() - firstThursday.getTime()) / (7 * 24 * 60 * 60 * 1000));
+  const week =
+    1 + Math.round((tgt.getTime() - firstThursday.getTime()) / (7 * 24 * 60 * 60 * 1000));
   return { year: isoYear, week };
 }
 
@@ -44,7 +45,7 @@ export function isoWeek(d: Date): { year: number; week: number } {
  */
 export function isoWeekFilename(prefix: string, now: Date = new Date()): string {
   const { year, week } = isoWeek(now);
-  return `${prefix}-${year}-W${String(week).padStart(2, '0')}.jsonl`;
+  return `${prefix}-${year}-W${String(week).padStart(2, "0")}.jsonl`;
 }
 
 /**
@@ -55,5 +56,5 @@ export function isoWeekFilename(prefix: string, now: Date = new Date()): string 
 export function resolveAuditDir(): string {
   const override = process.env.GBRAIN_AUDIT_DIR;
   if (override && override.length > 0) return override;
-  return gbrainPath('audit');
+  return gbrainPath("audit");
 }

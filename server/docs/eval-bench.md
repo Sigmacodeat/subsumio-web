@@ -82,10 +82,10 @@ to `source_id='default'`):
   "query_id": "q2",
   "query": "anything",
   "relevant": [
-    {"source_id": "host", "slug": "people/alice"},
-    {"source_id": "team-a", "slug": "people/alice"}
+    { "source_id": "host", "slug": "people/alice" },
+    { "source_id": "team-a", "slug": "people/alice" }
   ],
-  "expected_top1": {"source_id": "host", "slug": "people/alice"}
+  "expected_top1": { "source_id": "host", "slug": "people/alice" }
 }
 ```
 
@@ -179,11 +179,11 @@ Top 5 regression(s):
 
 Three numbers tell you whether the change is safe to land:
 
-| Metric | What it means | Healthy range |
-|---|---|---|
-| **Mean Jaccard@k** | Average overlap between captured retrieved slugs and current run's slugs. 1.0 = identical sets. | ≥0.85 for "neutral" changes. <0.7 means major retrieval shift. |
-| **Top-1 stability** | Fraction of queries whose #1 result didn't change. | ≥85% for tuning passes. <70% means top-of-funnel broke. |
-| **Mean latency Δ** | Current minus captured. Positive = slower now. | Within ±50ms of captured. >2× anywhere = regression alarm. |
+| Metric              | What it means                                                                                   | Healthy range                                                  |
+| ------------------- | ----------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| **Mean Jaccard@k**  | Average overlap between captured retrieved slugs and current run's slugs. 1.0 = identical sets. | ≥0.85 for "neutral" changes. <0.7 means major retrieval shift. |
+| **Top-1 stability** | Fraction of queries whose #1 result didn't change.                                              | ≥85% for tuning passes. <70% means top-of-funnel broke.        |
+| **Mean latency Δ**  | Current minus captured. Positive = slower now.                                                  | Within ±50ms of captured. >2× anywhere = regression alarm.     |
 
 ## What it actually does
 
@@ -321,7 +321,7 @@ unset GBRAIN_CONTRIBUTOR_MODE             # easy: just unset the env var
 Or force off regardless of the env var via `~/.gbrain/config.json`:
 
 ```json
-{"eval": {"capture": false}}
+{ "eval": { "capture": false } }
 ```
 
 Existing `eval_candidates` rows stay until you `gbrain eval prune
@@ -329,13 +329,13 @@ Existing `eval_candidates` rows stay until you `gbrain eval prune
 
 ## Failure modes
 
-| What you see | What it means |
-|---|---|
-| `Mean Jaccard@k: 0.4`, top regressions all in one source dir | Source boost or hard-exclude regression on that prefix |
-| `Top-1 stability: 30%`, mean Jaccard still high | RRF tuning shifted the rank order without changing the set — re-tune `rrfK` |
-| `Mean latency Δ: +500ms`, jaccard high | Vector path got slower; check embedding API or HNSW probes |
-| `rows_errored > 0` | One or more queries threw. Inspect first 3 in human output, or `--json` to see all `error_message` fields |
-| Many `skipped: empty query` | Capture ran on rows where someone passed empty `query` — check why those were captured |
+| What you see                                                 | What it means                                                                                             |
+| ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| `Mean Jaccard@k: 0.4`, top regressions all in one source dir | Source boost or hard-exclude regression on that prefix                                                    |
+| `Top-1 stability: 30%`, mean Jaccard still high              | RRF tuning shifted the rank order without changing the set — re-tune `rrfK`                               |
+| `Mean latency Δ: +500ms`, jaccard high                       | Vector path got slower; check embedding API or HNSW probes                                                |
+| `rows_errored > 0`                                           | One or more queries threw. Inspect first 3 in human output, or `--json` to see all `error_message` fields |
+| Many `skipped: empty query`                                  | Capture ran on rows where someone passed empty `query` — check why those were captured                    |
 
 ## Public benchmarks: LongMemEval (v0.28.8)
 
@@ -381,15 +381,15 @@ python evaluate_qa.py /tmp/hypothesis.jsonl
 
 ### Flags
 
-| Flag | Default | Purpose |
-|---|---|---|
-| `--limit N` | run all | Cap question count (iterate fast) |
-| `--retrieval-only` | off | Emit retrieved chunks; no LLM answer-gen |
-| `--keyword-only` | off | Disable vector path (debug retrieval issues) |
-| `--expansion` | **off** | Multi-query expansion. Off by default for determinism (no per-query Haiku call). Pass to opt in. |
-| `--top-k K` | 10 | Retrieval depth |
-| `--model M` | resolved | Default resolves through `resolveModel()` 6-tier chain (`models.eval.longmemeval` config key) |
-| `--output FILE` | stdout | Write hypothesis JSONL to file instead of stdout |
+| Flag               | Default  | Purpose                                                                                          |
+| ------------------ | -------- | ------------------------------------------------------------------------------------------------ |
+| `--limit N`        | run all  | Cap question count (iterate fast)                                                                |
+| `--retrieval-only` | off      | Emit retrieved chunks; no LLM answer-gen                                                         |
+| `--keyword-only`   | off      | Disable vector path (debug retrieval issues)                                                     |
+| `--expansion`      | **off**  | Multi-query expansion. Off by default for determinism (no per-query Haiku call). Pass to opt in. |
+| `--top-k K`        | 10       | Retrieval depth                                                                                  |
+| `--model M`        | resolved | Default resolves through `resolveModel()` 6-tier chain (`models.eval.longmemeval` config key)    |
+| `--output FILE`    | stdout   | Write hypothesis JSONL to file instead of stdout                                                 |
 
 ### Numbers
 
@@ -451,9 +451,12 @@ surfaces it in machine-readable form. Two additive changes:
 2. New `--by-type` flag emits a final aggregate line keyed by `question_type`:
 
 ```json
-{"schema_version": 1, "kind": "by_type_summary",
- "recall_by_type": {"single-session-user": {"hit": 18, "total": 19, "rate": 0.947}},
- "aggregate": {"hit": 110, "total": 120, "rate": 0.917}}
+{
+  "schema_version": 1,
+  "kind": "by_type_summary",
+  "recall_by_type": { "single-session-user": { "hit": 18, "total": 19, "rate": 0.947 } },
+  "aggregate": { "hit": 110, "total": 120, "rate": 0.917 }
+}
 ```
 
 **Resume-safe.** When `--resume-from` is the same path as `--output`, the
@@ -487,6 +490,7 @@ the `v0.41+: contributor-mode CI capture` TODO in `TODOS.md` for the deferred
 real-query version).
 
 How it works:
+
 - Hand-curated qrels fixture at `test/fixtures/eval-baselines/qrels-search.json`
   with PLACEHOLDER names only (no real people / companies per CLAUDE.md privacy
   rule).
@@ -546,6 +550,7 @@ echo "exit=$?"  # 0=all-pass, 1=any-fail, 2=any-error-or-inconclusive
 ```
 
 **Key behaviors:**
+
 - Default `--cycles 1` in batch mode (single-task default is 3 in TTY) to bound
   cost. Pass `--cycles 3` to match single-task strictness.
 - `--concurrent 3` runs up to 3 questions in parallel x 3 model slots each =
@@ -563,8 +568,9 @@ echo "exit=$?"  # 0=all-pass, 1=any-fail, 2=any-error-or-inconclusive
 ### Nightly cross-modal quality probe (opt-in, autopilot)
 
 `src/core/cycle/nightly-quality-probe.ts` ships a phase that runs the longmemeval
-+ cross-modal pipeline once per 24h. **Disabled by default** to avoid surprise
-API spend. Enable per-host:
+
+- cross-modal pipeline once per 24h. **Disabled by default** to avoid surprise
+  API spend. Enable per-host:
 
 ```bash
 gbrain config set autopilot.nightly_quality_probe.enabled true
@@ -581,6 +587,7 @@ bun test test/nightly-quality-probe.test.ts
 ```
 
 Observability:
+
 - `~/.gbrain/audit/quality-probe-YYYY-Www.jsonl` — one event per run with
   outcome (pass / fail / inconclusive / error / budget_exceeded /
   rate_limited / no_embedding_key), pass/fail/inconclusive/error counts,

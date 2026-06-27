@@ -8,10 +8,10 @@
  * silently drift the MCP-facing tool schema.
  */
 
-import { describe, test, expect } from 'bun:test';
-import { operations } from '../src/core/operations.ts';
-import { buildToolDefs, paramDefToSchema } from '../src/mcp/tool-defs.ts';
-import type { ParamDef } from '../src/core/operations.ts';
+import { describe, test, expect } from "bun:test";
+import { operations } from "../src/core/operations.ts";
+import { buildToolDefs, paramDefToSchema } from "../src/mcp/tool-defs.ts";
+import type { ParamDef } from "../src/core/operations.ts";
 
 // Reference shape — mirrors the canonical `paramDefToSchema` helper from
 // src/mcp/tool-defs.ts. Drift between the helper and this reference fails
@@ -28,7 +28,7 @@ import type { ParamDef } from '../src/core/operations.ts';
 // every existing operation, but new ops that add a default get it on the
 // wire automatically.
 type ParamDefLike = {
-  type: 'string' | 'number' | 'boolean' | 'object' | 'array';
+  type: "string" | "number" | "boolean" | "object" | "array";
   description?: string;
   enum?: string[];
   default?: unknown;
@@ -36,7 +36,7 @@ type ParamDefLike = {
 };
 function referenceParamDefToSchema(p: ParamDefLike): Record<string, unknown> {
   return {
-    type: p.type === 'array' ? 'array' : p.type,
+    type: p.type === "array" ? "array" : p.type,
     ...(p.description ? { description: p.description } : {}),
     ...(p.enum ? { enum: p.enum } : {}),
     ...(p.default !== undefined ? { default: p.default } : {}),
@@ -44,13 +44,13 @@ function referenceParamDefToSchema(p: ParamDefLike): Record<string, unknown> {
   };
 }
 function legacyInlineMap(ops: typeof operations) {
-  return ops.map(op => ({
+  return ops.map((op) => ({
     name: op.name,
     description: op.description,
     inputSchema: {
-      type: 'object' as const,
+      type: "object" as const,
       properties: Object.fromEntries(
-        Object.entries(op.params).map(([k, v]) => [k, referenceParamDefToSchema(v)]),
+        Object.entries(op.params).map(([k, v]) => [k, referenceParamDefToSchema(v)])
       ),
       required: Object.entries(op.params)
         .filter(([, v]) => v.required)
@@ -59,32 +59,32 @@ function legacyInlineMap(ops: typeof operations) {
   }));
 }
 
-describe('buildToolDefs', () => {
-  test('output equals pre-extraction inline mapping byte-for-byte', () => {
+describe("buildToolDefs", () => {
+  test("output equals pre-extraction inline mapping byte-for-byte", () => {
     const extracted = buildToolDefs(operations);
     const inline = legacyInlineMap(operations);
     expect(JSON.stringify(extracted)).toBe(JSON.stringify(inline));
   });
 
-  test('preserves operation count', () => {
+  test("preserves operation count", () => {
     expect(buildToolDefs(operations).length).toBe(operations.length);
   });
 
-  test('accepts an arbitrary Operation subset (for subagent tool registry)', () => {
+  test("accepts an arbitrary Operation subset (for subagent tool registry)", () => {
     const subset = operations.slice(0, 3);
     const defs = buildToolDefs(subset);
     expect(defs.length).toBe(3);
-    expect(defs.map(d => d.name)).toEqual(subset.map(o => o.name));
+    expect(defs.map((d) => d.name)).toEqual(subset.map((o) => o.name));
   });
 
-  test('empty input returns empty array', () => {
+  test("empty input returns empty array", () => {
     expect(buildToolDefs([])).toEqual([]);
   });
 
-  test('every def has object inputSchema with properties + required array', () => {
+  test("every def has object inputSchema with properties + required array", () => {
     for (const def of buildToolDefs(operations)) {
-      expect(def.inputSchema.type).toBe('object');
-      expect(typeof def.inputSchema.properties).toBe('object');
+      expect(def.inputSchema.type).toBe("object");
+      expect(typeof def.inputSchema.properties).toBe("object");
       expect(Array.isArray(def.inputSchema.required)).toBe(true);
     }
   });
@@ -112,30 +112,30 @@ interface SchemaNode {
 
 function findArrayWithoutItems(node: SchemaNode, path: string[]): string[] {
   const violations: string[] = [];
-  if (node && typeof node === 'object') {
-    if (node.type === 'array') {
-      if (!node.items || typeof node.items !== 'object') {
-        violations.push(`${path.join('.') || '<root>'} (array missing items)`);
-      } else if (!('type' in node.items)) {
-        violations.push(`${path.join('.') || '<root>'}.items (items missing type)`);
+  if (node && typeof node === "object") {
+    if (node.type === "array") {
+      if (!node.items || typeof node.items !== "object") {
+        violations.push(`${path.join(".") || "<root>"} (array missing items)`);
+      } else if (!("type" in node.items)) {
+        violations.push(`${path.join(".") || "<root>"}.items (items missing type)`);
       } else {
-        violations.push(...findArrayWithoutItems(node.items, [...path, 'items']));
+        violations.push(...findArrayWithoutItems(node.items, [...path, "items"]));
       }
     }
-    if (node.properties && typeof node.properties === 'object') {
+    if (node.properties && typeof node.properties === "object") {
       for (const [k, child] of Object.entries(node.properties)) {
         violations.push(...findArrayWithoutItems(child as SchemaNode, [...path, k]));
       }
     }
-    if (node.items && typeof node.items === 'object' && node.type !== 'array') {
-      violations.push(...findArrayWithoutItems(node.items, [...path, 'items']));
+    if (node.items && typeof node.items === "object" && node.type !== "array") {
+      violations.push(...findArrayWithoutItems(node.items, [...path, "items"]));
     }
   }
   return violations;
 }
 
-describe('paramDefToSchema structural guard', () => {
-  test('every operation inputSchema array has items.type set (no bare arrays)', () => {
+describe("paramDefToSchema structural guard", () => {
+  test("every operation inputSchema array has items.type set (no bare arrays)", () => {
     const allViolations: string[] = [];
     for (const def of buildToolDefs(operations)) {
       const v = findArrayWithoutItems(def.inputSchema as SchemaNode, [def.name]);
@@ -144,43 +144,43 @@ describe('paramDefToSchema structural guard', () => {
     expect(allViolations).toEqual([]);
   });
 
-  test('extract_facts.entity_hints declares items.type as string', () => {
-    const def = buildToolDefs(operations).find(d => d.name === 'extract_facts');
+  test("extract_facts.entity_hints declares items.type as string", () => {
+    const def = buildToolDefs(operations).find((d) => d.name === "extract_facts");
     expect(def).toBeDefined();
     const eh = (def!.inputSchema.properties as Record<string, SchemaNode>).entity_hints;
-    expect(eh.type).toBe('array');
+    expect(eh.type).toBe("array");
     expect(eh.items).toBeDefined();
-    expect((eh.items as SchemaNode).type).toBe('string');
+    expect((eh.items as SchemaNode).type).toBe("string");
   });
 
-  test('paramDefToSchema recursively propagates nested items.items.type', () => {
+  test("paramDefToSchema recursively propagates nested items.items.type", () => {
     // Synthetic ParamDef: array-of-arrays-of-strings. No current op uses
     // this shape, so this test pins the contract for future ops and proves
     // the helper recurses (closes the v0.32 nested-drop bug class).
     const nested: ParamDef = {
-      type: 'array',
+      type: "array",
       items: {
-        type: 'array',
-        items: { type: 'string' },
+        type: "array",
+        items: { type: "string" },
       },
     };
     const schema = paramDefToSchema(nested) as SchemaNode;
-    expect(schema.type).toBe('array');
-    expect((schema.items as SchemaNode).type).toBe('array');
-    expect(((schema.items as SchemaNode).items as SchemaNode).type).toBe('string');
+    expect(schema.type).toBe("array");
+    expect((schema.items as SchemaNode).type).toBe("array");
+    expect(((schema.items as SchemaNode).items as SchemaNode).type).toBe("string");
   });
 
-  test('paramDefToSchema preserves description on nested items', () => {
+  test("paramDefToSchema preserves description on nested items", () => {
     const p: ParamDef = {
-      type: 'array',
-      description: 'outer',
+      type: "array",
+      description: "outer",
       items: {
-        type: 'string',
-        description: 'inner',
+        type: "string",
+        description: "inner",
       },
     };
     const schema = paramDefToSchema(p) as SchemaNode;
-    expect(schema.description).toBe('outer');
-    expect((schema.items as SchemaNode).description).toBe('inner');
+    expect(schema.description).toBe("outer");
+    expect((schema.items as SchemaNode).description).toBe("inner");
   });
 });

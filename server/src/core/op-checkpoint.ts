@@ -1,6 +1,6 @@
-import { createHash } from 'crypto';
-import type { BrainEngine } from './engine.ts';
-import { withRetry, BULK_RETRY_OPTS, RetryAbortError } from './retry.ts';
+import { createHash } from "crypto";
+import type { BrainEngine } from "./engine.ts";
+import { withRetry, BULK_RETRY_OPTS, RetryAbortError } from "./retry.ts";
 
 /** Max paths per append-INSERT round-trip; bounds the param-array size. */
 const APPEND_CHUNK = 1000;
@@ -36,14 +36,17 @@ async function durableWrite(
   engine: BrainEngine,
   key: OpCheckpointKey,
   label: string,
-  fn: () => Promise<unknown>,
+  fn: () => Promise<unknown>
 ): Promise<boolean> {
   try {
     await withRetry(fn, BULK_RETRY_OPTS);
     return true;
   } catch (e) {
     if (e instanceof RetryAbortError) throw e;
-    console.error(`[op-checkpoint] ${label} failed (${key.op}, ${key.fingerprint}):`, (e as Error).message);
+    console.error(
+      `[op-checkpoint] ${label} failed (${key.op}, ${key.fingerprint}):`,
+      (e as Error).message
+    );
     return false;
   }
 }
@@ -113,7 +116,7 @@ export interface OpCheckpointKey {
  */
 export async function loadOpCheckpoint(
   engine: BrainEngine,
-  key: OpCheckpointKey,
+  key: OpCheckpointKey
 ): Promise<string[]> {
   try {
     // v0.42.x (#1794): union the new append-only child rows (op_checkpoint_paths)
@@ -128,15 +131,18 @@ export async function loadOpCheckpoint(
        UNION ALL
        SELECT jsonb_array_elements_text(completed_keys) AS ckey FROM op_checkpoints
          WHERE op = $1 AND fingerprint = $2`,
-      [key.op, key.fingerprint],
+      [key.op, key.fingerprint]
     );
     const set = new Set<string>();
     for (const r of rows) {
-      if (typeof r.ckey === 'string') set.add(r.ckey);
+      if (typeof r.ckey === "string") set.add(r.ckey);
     }
     return [...set];
   } catch (e) {
-    console.error(`[op-checkpoint] load failed (${key.op}, ${key.fingerprint}):`, (e as Error).message);
+    console.error(
+      `[op-checkpoint] load failed (${key.op}, ${key.fingerprint}):`,
+      (e as Error).message
+    );
     return [];
   }
 }
@@ -152,7 +158,7 @@ export async function loadOpCheckpoint(
 export async function recordCompleted(
   engine: BrainEngine,
   key: OpCheckpointKey,
-  keys: string[],
+  keys: string[]
 ): Promise<boolean> {
   // REPLACE semantics (kept deliberately — #1794 V3). Callers like
   // extract-conversation-facts serialize a MUTABLE map through here and rely on
@@ -162,15 +168,16 @@ export async function recordCompleted(
   // cast yields a proper array; NOT the double-encode trap, which is the template
   // form). Sync uses `appendCompleted` (below) instead, never this.
   const sorted = [...keys].sort();
-  return durableWrite(engine, key, 'write', () =>
+  return durableWrite(engine, key, "write", () =>
     engine.executeRawDirect(
       `INSERT INTO op_checkpoints (op, fingerprint, completed_keys, updated_at)
        VALUES ($1, $2, $3::jsonb, now())
        ON CONFLICT (op, fingerprint) DO UPDATE
          SET completed_keys = EXCLUDED.completed_keys,
              updated_at     = now()`,
-      [key.op, key.fingerprint, JSON.stringify(sorted)],
-    ));
+      [key.op, key.fingerprint, JSON.stringify(sorted)]
+    )
+  );
 }
 
 /**
@@ -187,13 +194,14 @@ export async function recordCompleted(
 export async function appendCompleted(
   engine: BrainEngine,
   key: OpCheckpointKey,
-  deltaKeys: string[],
+  deltaKeys: string[]
 ): Promise<boolean> {
   if (deltaKeys.length === 0) return true;
   for (let i = 0; i < deltaKeys.length; i += APPEND_CHUNK) {
     const chunk = deltaKeys.slice(i, i + APPEND_CHUNK);
-    const ok = await durableWrite(engine, key, 'append', () =>
-      engine.executeRawDirect(APPEND_PATHS_SQL, [key.op, key.fingerprint, chunk]));
+    const ok = await durableWrite(engine, key, "append", () =>
+      engine.executeRawDirect(APPEND_PATHS_SQL, [key.op, key.fingerprint, chunk])
+    );
     if (!ok) return false;
   }
   return true;
@@ -210,14 +218,17 @@ export async function appendCompleted(
 export async function appendCompletedOnce(
   engine: BrainEngine,
   key: OpCheckpointKey,
-  deltaKeys: string[],
+  deltaKeys: string[]
 ): Promise<boolean> {
   if (deltaKeys.length === 0) return true;
   try {
     await engine.executeRawDirect(APPEND_PATHS_SQL, [key.op, key.fingerprint, deltaKeys]);
     return true;
   } catch (e) {
-    console.error(`[op-checkpoint] sigterm-append failed (${key.op}, ${key.fingerprint}):`, (e as Error).message);
+    console.error(
+      `[op-checkpoint] sigterm-append failed (${key.op}, ${key.fingerprint}):`,
+      (e as Error).message
+    );
     return false;
   }
 }
@@ -229,25 +240,24 @@ export async function appendCompletedOnce(
  * Cycle's `purge` phase ALSO sweeps stale rows on a 7-day TTL, so callers
  * that crash without reaching this won't leak forever.
  */
-export async function clearOpCheckpoint(
-  engine: BrainEngine,
-  key: OpCheckpointKey,
-): Promise<void> {
+export async function clearOpCheckpoint(engine: BrainEngine, key: OpCheckpointKey): Promise<void> {
   // Delete the parent (FK ON DELETE CASCADE drops the child rows), then a
   // belt-and-suspenders child delete for any rows whose parent was somehow
   // absent. Both routed through the direct pool + retry so a clean-exit clear
   // survives pool exhaustion (a swallowed clear would make the next run skip
   // already-cleared files).
-  await durableWrite(engine, key, 'clear', () =>
-    engine.executeRawDirect(
-      `DELETE FROM op_checkpoints WHERE op = $1 AND fingerprint = $2`,
-      [key.op, key.fingerprint],
-    ));
-  await durableWrite(engine, key, 'clear-children', () =>
-    engine.executeRawDirect(
-      `DELETE FROM op_checkpoint_paths WHERE op = $1 AND fingerprint = $2`,
-      [key.op, key.fingerprint],
-    ));
+  await durableWrite(engine, key, "clear", () =>
+    engine.executeRawDirect(`DELETE FROM op_checkpoints WHERE op = $1 AND fingerprint = $2`, [
+      key.op,
+      key.fingerprint,
+    ])
+  );
+  await durableWrite(engine, key, "clear-children", () =>
+    engine.executeRawDirect(`DELETE FROM op_checkpoint_paths WHERE op = $1 AND fingerprint = $2`, [
+      key.op,
+      key.fingerprint,
+    ])
+  );
 }
 
 /**
@@ -280,14 +290,14 @@ export function resumeFilter(all: string[], completed: string[]): string[] {
  * object literals doesn't flip the fingerprint.
  */
 export function fingerprint(params: Record<string, unknown>): string {
-  return createHash('sha256').update(canonicalJson(params)).digest('hex').slice(0, 8);
+  return createHash("sha256").update(canonicalJson(params)).digest("hex").slice(0, 8);
 }
 
 function canonicalJson(value: unknown): string {
-  if (value === null || typeof value !== 'object') return JSON.stringify(value);
-  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
+  if (value === null || typeof value !== "object") return JSON.stringify(value);
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
   const keys = Object.keys(value as Record<string, unknown>).sort();
-  return `{${keys.map((k) => `${JSON.stringify(k)}:${canonicalJson((value as Record<string, unknown>)[k])}`).join(',')}}`;
+  return `{${keys.map((k) => `${JSON.stringify(k)}:${canonicalJson((value as Record<string, unknown>)[k])}`).join(",")}}`;
 }
 
 /**
@@ -313,7 +323,7 @@ export function embedFingerprint(p: {
     stale: p.stale ?? false,
     all: p.all ?? false,
     slug: p.slug ?? null,
-    source: p.source ?? 'default',
+    source: p.source ?? "default",
     embedding_model: p.embedding_model,
     embedding_dimensions: p.embedding_dimensions,
   });
@@ -326,13 +336,13 @@ export function embedFingerprint(p: {
  * skip the un-walked files (codex #11).
  */
 export function extractFingerprint(p: {
-  mode: 'links' | 'timeline' | 'all';
+  mode: "links" | "timeline" | "all";
   source?: string;
   dir?: string;
 }): string {
   return fingerprint({
     mode: p.mode,
-    source: p.source ?? 'default',
+    source: p.source ?? "default",
     dir: p.dir ?? null,
   });
 }
@@ -370,7 +380,7 @@ export function lintFingerprint(p: { dir: string; fix?: boolean }): string {
  * Fingerprint for `backlinks`. `check` vs `fix` modes; same files, different
  * side effects.
  */
-export function backlinksFingerprint(p: { dir: string; action: 'check' | 'fix' }): string {
+export function backlinksFingerprint(p: { dir: string; action: "check" | "fix" }): string {
   return fingerprint({ dir: p.dir, action: p.action });
 }
 
@@ -378,10 +388,7 @@ export function backlinksFingerprint(p: { dir: string; action: 'check' | 'fix' }
  * Fingerprint for `integrity`. Mode + confidence threshold both shape the
  * per-page processing decision.
  */
-export function integrityFingerprint(p: {
-  mode: 'check' | 'auto';
-  confidence?: number;
-}): string {
+export function integrityFingerprint(p: { mode: "check" | "auto"; confidence?: number }): string {
   return fingerprint({
     mode: p.mode,
     confidence: p.confidence ?? 0.85,
@@ -392,15 +399,11 @@ export function integrityFingerprint(p: {
  * Fingerprint for `import`. Source dir + per-import options uniquely
  * identify the run. Used by the import-checkpoint shim.
  */
-export function importFingerprint(p: {
-  dir: string;
-  noEmbed?: boolean;
-  source?: string;
-}): string {
+export function importFingerprint(p: { dir: string; noEmbed?: boolean; source?: string }): string {
   return fingerprint({
     dir: p.dir,
     noEmbed: p.noEmbed ?? false,
-    source: p.source ?? 'default',
+    source: p.source ?? "default",
   });
 }
 
@@ -423,8 +426,8 @@ export function mentionsFingerprint(p: {
   gazetteerHash: string;
 }): string {
   return fingerprint({
-    mode: 'by_mention',
-    source: p.source ?? 'default',
+    mode: "by_mention",
+    source: p.source ?? "default",
     type: p.type ?? null,
     since: p.since ?? null,
     gazetteer: p.gazetteerHash,
@@ -446,8 +449,8 @@ export function mentionsFingerprint(p: {
  */
 export function syncFingerprint(p: { sourceId?: string; lastCommit: string }): string {
   return fingerprint({
-    mode: 'sync',
-    source: p.sourceId ?? 'default',
+    mode: "sync",
+    source: p.sourceId ?? "default",
     lastCommit: p.lastCommit,
   });
 }
@@ -457,10 +460,7 @@ export function syncFingerprint(p: { sourceId?: string; lastCommit: string }): s
  * deliberately generous — any reasonable long-running op finishes inside
  * that window, and the row is cheap (few KB).
  */
-export async function purgeStaleCheckpoints(
-  engine: BrainEngine,
-  ttlDays = 7,
-): Promise<number> {
+export async function purgeStaleCheckpoints(engine: BrainEngine, ttlDays = 7): Promise<number> {
   try {
     // Delete stale parents; the op_checkpoint_paths FK (ON DELETE CASCADE)
     // drops their child rows automatically. The FK also guarantees no child
@@ -472,11 +472,11 @@ export async function purgeStaleCheckpoints(
          RETURNING 1
        )
        SELECT count(*)::text AS count FROM deleted`,
-      [String(ttlDays)],
+      [String(ttlDays)]
     );
     return Number(rows[0]?.count ?? 0);
   } catch (e) {
-    console.error('[op-checkpoint] purge failed:', (e as Error).message);
+    console.error("[op-checkpoint] purge failed:", (e as Error).message);
     return 0;
   }
 }

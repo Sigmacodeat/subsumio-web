@@ -21,11 +21,11 @@
  * only does "row exists + repo is a real dir → render + atomic write".
  */
 
-import { existsSync, statSync, mkdirSync, writeFileSync, renameSync, unlinkSync } from 'fs';
-import { dirname } from 'path';
-import { randomBytes } from 'crypto';
-import type { BrainEngine } from './engine.ts';
-import { serializePageToMarkdown, resolvePageFilePath } from './markdown.ts';
+import { existsSync, statSync, mkdirSync, writeFileSync, renameSync, unlinkSync } from "fs";
+import { dirname } from "path";
+import { randomBytes } from "crypto";
+import type { BrainEngine } from "./engine.ts";
+import { serializePageToMarkdown, resolvePageFilePath } from "./markdown.ts";
 
 /** Minimal logger surface — structurally compatible with operations.ts `Logger`. */
 export interface WriteThroughLogger {
@@ -44,7 +44,11 @@ export interface WriteThroughResult {
    *   - file_recently_modified: v0.43.0 — on-disk mtime < 60s, skipping to avoid
    *     clobbering an active editing session.
    */
-  skipped?: 'no_repo_configured' | 'repo_not_found' | 'page_not_found_after_write' | 'file_recently_modified';
+  skipped?:
+    | "no_repo_configured"
+    | "repo_not_found"
+    | "page_not_found_after_write"
+    | "file_recently_modified";
   /** Set when the render/write/rename itself threw (EACCES, ENOTDIR, disk full). */
   error?: string;
 }
@@ -65,21 +69,21 @@ export interface WritePageThroughOpts {
 export async function writePageThrough(
   engine: BrainEngine,
   slug: string,
-  opts: WritePageThroughOpts = {},
+  opts: WritePageThroughOpts = {}
 ): Promise<WriteThroughResult> {
-  const sourceId = opts.sourceId ?? 'default';
+  const sourceId = opts.sourceId ?? "default";
   try {
-    const repoPath = await engine.getConfig('sync.repo_path');
+    const repoPath = await engine.getConfig("sync.repo_path");
     if (!repoPath) {
-      return { written: false, skipped: 'no_repo_configured' };
+      return { written: false, skipped: "no_repo_configured" };
     }
     if (!existsSync(repoPath) || !statSync(repoPath).isDirectory()) {
-      return { written: false, skipped: 'repo_not_found' };
+      return { written: false, skipped: "repo_not_found" };
     }
 
     const writtenPage = await engine.getPage(slug, { sourceId });
     if (!writtenPage) {
-      return { written: false, skipped: 'page_not_found_after_write' };
+      return { written: false, skipped: "page_not_found_after_write" };
     }
 
     const tags = await engine.getTags(slug, { sourceId });
@@ -96,7 +100,7 @@ export async function writePageThrough(
       const mtime = statSync(filePath).mtime;
       const ageMs = Date.now() - mtime.getTime();
       if (ageMs < 60_000) {
-        return { written: false, skipped: 'file_recently_modified' };
+        return { written: false, skipped: "file_recently_modified" };
       }
     }
 
@@ -106,9 +110,9 @@ export async function writePageThrough(
     // so two concurrent saves to the same target can't clobber each other's
     // temp file. Clean up the temp on any failure so we never leak a stray
     // `.tmp` next to the real file.
-    const tmpPath = `${filePath}.tmp.${process.pid}.${randomBytes(4).toString('hex')}`;
+    const tmpPath = `${filePath}.tmp.${process.pid}.${randomBytes(4).toString("hex")}`;
     try {
-      writeFileSync(tmpPath, md, 'utf8');
+      writeFileSync(tmpPath, md, "utf8");
       renameSync(tmpPath, filePath);
     } catch (writeErr) {
       try {

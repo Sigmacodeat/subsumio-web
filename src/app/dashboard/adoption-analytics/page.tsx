@@ -127,14 +127,18 @@ export default function AdoptionAnalyticsPage() {
   const { t: _t } = useLang();
   const [daysBack, setDaysBack] = useState(30);
 
-  const { data, loading, error, refetch: load } = useApiQuery<AdoptionAnalytics>(
-    async () => {
-      const res = await fetch(`/api/analytics/adoption?daysBack=${daysBack}`, { signal: AbortSignal.timeout(30_000) });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return (await res.json()) as AdoptionAnalytics;
-    },
-    [daysBack]
-  );
+  const {
+    data,
+    loading,
+    error,
+    refetch: load,
+  } = useApiQuery<AdoptionAnalytics>(async () => {
+    const res = await fetch(`/api/analytics/adoption?daysBack=${daysBack}`, {
+      signal: AbortSignal.timeout(30_000),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return (await res.json()) as AdoptionAnalytics;
+  }, [daysBack]);
 
   const maxRequests =
     data && data.usage_trends.length > 0

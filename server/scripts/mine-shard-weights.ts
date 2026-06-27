@@ -67,7 +67,7 @@ function parseArgs(argv: string[]): Args {
       out.out = resolve(argv[++i] ?? "");
     } else if (a === "--help" || a === "-h") {
       console.log(
-        "usage: bun run scripts/mine-shard-weights.ts (--run <ID> | --from-file <PATH> | <stdin>) [--out <PATH>]",
+        "usage: bun run scripts/mine-shard-weights.ts (--run <ID> | --from-file <PATH> | <stdin>) [--out <PATH>]"
       );
       process.exit(0);
     } else {
@@ -88,9 +88,7 @@ async function readSource(args: Args): Promise<string> {
       maxBuffer: 256 * 1024 * 1024, // CI logs can be 50-80MB
     });
     if (r.status !== 0) {
-      throw new Error(
-        `gh run view ${args.runId} --log failed (exit ${r.status}): ${r.stderr}`,
-      );
+      throw new Error(`gh run view ${args.runId} --log failed (exit ${r.status}): ${r.stderr}`);
     }
     return r.stdout;
   }
@@ -129,7 +127,8 @@ export function parseLog(raw: string): TimingEvent[] {
   const events: TimingEvent[] = [];
   const lines = raw.split("\n");
   // Match: <job>TAB<step>TAB<iso-ts> ##[group]<path>:
-  const re = /^([^\t]+)\t[^\t]*\t(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+Z)\s+##\[group\](test\/[^\s:]+\.test\.ts):?\s*$/;
+  const re =
+    /^([^\t]+)\t[^\t]*\t(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+Z)\s+##\[group\](test\/[^\s:]+\.test\.ts):?\s*$/;
   for (const line of lines) {
     const m = re.exec(line);
     if (!m) continue;
@@ -193,7 +192,7 @@ export function computeWeights(events: TimingEvent[]): Map<string, number> {
  */
 export function serializeWeights(weights: Map<string, number>): string {
   const sorted = Array.from(weights.entries()).sort((a, b) =>
-    a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0,
+    a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0
   );
   const obj: Record<string, number> = {};
   for (const [k, v] of sorted) obj[k] = v;
@@ -202,9 +201,7 @@ export function serializeWeights(weights: Map<string, number>): string {
 
 async function main(): Promise<number> {
   const args = parseArgs(process.argv.slice(2));
-  console.error(
-    `[mine-shard-weights] source=${args.runId ?? args.fromFile ?? "<stdin>"}`,
-  );
+  console.error(`[mine-shard-weights] source=${args.runId ?? args.fromFile ?? "<stdin>"}`);
   let raw: string;
   try {
     raw = await readSource(args);
@@ -216,7 +213,7 @@ async function main(): Promise<number> {
   console.error(`[mine-shard-weights] parsed ${events.length} file-start events`);
   if (events.length === 0) {
     console.error(
-      "error: no ##[group]test/*.test.ts: events found in input. Was this a CI test run log?",
+      "error: no ##[group]test/*.test.ts: events found in input. Was this a CI test run log?"
     );
     return 3;
   }
@@ -233,11 +230,9 @@ async function main(): Promise<number> {
   const max = values[values.length - 1]!;
   const median = values[Math.floor(values.length / 2)]!;
   const total = values.reduce((a, b) => a + b, 0);
+  console.error(`[mine-shard-weights] wrote ${weights.size} weights to ${args.out}`);
   console.error(
-    `[mine-shard-weights] wrote ${weights.size} weights to ${args.out}`,
-  );
-  console.error(
-    `[mine-shard-weights] stats: min=${min}ms median=${median}ms max=${max}ms total=${(total / 1000).toFixed(1)}s`,
+    `[mine-shard-weights] stats: min=${min}ms median=${median}ms max=${max}ms total=${(total / 1000).toFixed(1)}s`
   );
   return 0;
 }

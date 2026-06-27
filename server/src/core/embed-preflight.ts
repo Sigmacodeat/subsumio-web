@@ -17,7 +17,7 @@
  * `embedding-dim-check.ts`; this preflight runs AFTER that check fires.
  */
 
-import { diagnoseEmbedding, type EmbeddingDiagnosis } from './ai/gateway.ts';
+import { diagnoseEmbedding, type EmbeddingDiagnosis } from "./ai/gateway.ts";
 
 /**
  * Tagged error thrown by validateEmbeddingCreds. CLI catch sites format
@@ -32,7 +32,7 @@ export class EmbeddingCredentialError extends Error {
 
   constructor(diagnosis: EmbeddingDiagnosis, userMessage: string) {
     super(userMessage);
-    this.name = 'EmbeddingCredentialError';
+    this.name = "EmbeddingCredentialError";
     this.diagnosis = diagnosis;
     this.userMessage = userMessage;
   }
@@ -56,69 +56,71 @@ export function validateEmbeddingCreds(): void {
  * Exported for tests and for the doctor JSON output.
  */
 export function formatEmbeddingCredsError(d: EmbeddingDiagnosis): string {
-  if (d.ok) return '';
+  if (d.ok) return "";
 
   switch (d.reason) {
-    case 'no_gateway_config':
+    case "no_gateway_config":
       return [
-        'Embedding gateway is not configured.',
-        'This is usually a startup-order bug. Re-run with --no-embed to import',
-        'without embedding, then file an issue at https://github.com/garrytan/gbrain/issues',
-      ].join('\n');
+        "Embedding gateway is not configured.",
+        "This is usually a startup-order bug. Re-run with --no-embed to import",
+        "without embedding, then file an issue at https://github.com/garrytan/gbrain/issues",
+      ].join("\n");
 
-    case 'no_model_configured':
+    case "no_model_configured":
       return [
-        'No embedding model is configured for this brain.',
-        '',
-        '  Set one: gbrain config set embedding_model openai:text-embedding-3-small',
-        '  Or skip embedding now: re-run with --no-embed',
-      ].join('\n');
+        "No embedding model is configured for this brain.",
+        "",
+        "  Set one: gbrain config set embedding_model openai:text-embedding-3-small",
+        "  Or skip embedding now: re-run with --no-embed",
+      ].join("\n");
 
-    case 'unknown_provider':
+    case "unknown_provider":
       return [
         `Embedding model "${d.model}" uses an unknown provider "${d.provider}".`,
-        '',
+        "",
         `  ${d.message}`,
-        '',
-        '  Pick a known provider: gbrain config set embedding_model openai:text-embedding-3-small',
-      ].join('\n');
+        "",
+        "  Pick a known provider: gbrain config set embedding_model openai:text-embedding-3-small",
+      ].join("\n");
 
-    case 'no_touchpoint':
+    case "no_touchpoint":
       return [
         `Provider "${d.provider}" does not offer an embedding touchpoint.`,
-        '',
-        '  Switch providers: gbrain config set embedding_model openai:text-embedding-3-small',
-        '  Or run with --no-embed to import-only and embed later.',
-      ].join('\n');
+        "",
+        "  Switch providers: gbrain config set embedding_model openai:text-embedding-3-small",
+        "  Or run with --no-embed to import-only and embed later.",
+      ].join("\n");
 
-    case 'user_provided_model_unset':
+    case "user_provided_model_unset":
       return [
         `Provider "${d.provider}" requires a specific model name to be configured.`,
-        '',
+        "",
         `  Set one: gbrain config set embedding_model ${d.provider}:<model-name>`,
-        '  Or run with --no-embed to import-only and embed later.',
-      ].join('\n');
+        "  Or run with --no-embed to import-only and embed later.",
+      ].join("\n");
 
-    case 'missing_env': {
-      const envs = d.missingEnvVars.join(', ');
+    case "missing_env": {
+      const envs = d.missingEnvVars.join(", ");
       const primaryEnv = d.missingEnvVars[0];
       const lines = [
         `Embedding model "${d.model}" requires ${envs}.`,
-        '',
+        "",
         `Set it in your shell, or:`,
         `  • Re-run with --no-embed to import-only and embed later once the key is set.`,
       ];
       // Only offer a provider-switch hint when the current provider isn't openai
       // (otherwise we'd be suggesting they switch to the thing they already have).
-      if (d.provider !== 'openai') {
-        lines.push(`  • Switch providers: gbrain config set embedding_model openai:text-embedding-3-small`);
+      if (d.provider !== "openai") {
+        lines.push(
+          `  • Switch providers: gbrain config set embedding_model openai:text-embedding-3-small`
+        );
       } else {
         lines.push(`  • Switch providers: gbrain config set embedding_model voyage:voyage-3-large`);
       }
-      lines.push('');
+      lines.push("");
       lines.push(`Example shell setup:`);
       lines.push(`  export ${primaryEnv}=...`);
-      return lines.join('\n');
+      return lines.join("\n");
     }
   }
 }

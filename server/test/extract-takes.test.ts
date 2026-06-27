@@ -1,7 +1,7 @@
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
-import { PGLiteEngine } from '../src/core/pglite-engine.ts';
-import { extractTakesFromDb } from '../src/core/cycle/extract-takes.ts';
-import { TAKES_FENCE_BEGIN, TAKES_FENCE_END } from '../src/core/takes-fence.ts';
+import { describe, test, expect, beforeAll, afterAll } from "bun:test";
+import { PGLiteEngine } from "../src/core/pglite-engine.ts";
+import { extractTakesFromDb } from "../src/core/cycle/extract-takes.ts";
+import { TAKES_FENCE_BEGIN, TAKES_FENCE_END } from "../src/core/takes-fence.ts";
 
 let engine: PGLiteEngine;
 let alicePageId: number;
@@ -24,7 +24,7 @@ ${TAKES_FENCE_END}
 Other content.
 `;
 
-const BOB_BODY_NO_FENCE = '# Bob\n\nNo takes here.\n';
+const BOB_BODY_NO_FENCE = "# Bob\n\nNo takes here.\n";
 
 const CHARLIE_BODY_MALFORMED = `## Takes
 
@@ -40,14 +40,20 @@ beforeAll(async () => {
   engine = new PGLiteEngine();
   await engine.connect({});
   await engine.initSchema();
-  const alice = await engine.putPage('people/alice-example', {
-    title: 'Alice', type: 'person', compiled_truth: ALICE_BODY,
+  const alice = await engine.putPage("people/alice-example", {
+    title: "Alice",
+    type: "person",
+    compiled_truth: ALICE_BODY,
   });
-  await engine.putPage('people/bob-example', {
-    title: 'Bob', type: 'person', compiled_truth: BOB_BODY_NO_FENCE,
+  await engine.putPage("people/bob-example", {
+    title: "Bob",
+    type: "person",
+    compiled_truth: BOB_BODY_NO_FENCE,
   });
-  await engine.putPage('people/charlie-example', {
-    title: 'Charlie', type: 'person', compiled_truth: CHARLIE_BODY_MALFORMED,
+  await engine.putPage("people/charlie-example", {
+    title: "Charlie",
+    type: "person",
+    compiled_truth: CHARLIE_BODY_MALFORMED,
   });
   alicePageId = alice.id;
 });
@@ -56,18 +62,18 @@ afterAll(async () => {
   await engine.disconnect();
 });
 
-describe('extractTakesFromDb', () => {
-  test('full walk: parses fenced pages and skips non-fenced', async () => {
+describe("extractTakesFromDb", () => {
+  test("full walk: parses fenced pages and skips non-fenced", async () => {
     const result = await extractTakesFromDb(engine);
     expect(result.pagesScanned).toBe(3);
     expect(result.pagesWithTakes).toBe(2); // alice + charlie
     // alice has 3, charlie has 1 valid → 4 upserted
     expect(result.takesUpserted).toBe(4);
     // charlie has 1 malformed warning
-    expect(result.warnings.some(w => w.includes('non-numeric weight'))).toBe(true);
+    expect(result.warnings.some((w) => w.includes("non-numeric weight"))).toBe(true);
   });
 
-  test('takes table actually populated', async () => {
+  test("takes table actually populated", async () => {
     const aliceTakes = await engine.listTakes({ page_id: alicePageId });
     expect(aliceTakes).toHaveLength(2); // active=true filter, row 3 is struck
     const allTakes = await engine.listTakes({ page_id: alicePageId, active: false });
@@ -76,16 +82,16 @@ describe('extractTakesFromDb', () => {
     expect(allTakes[0].active).toBe(false);
   });
 
-  test('incremental: slugs filter restricts to specified pages', async () => {
+  test("incremental: slugs filter restricts to specified pages", async () => {
     // Re-extract only alice (no-op since data already matches)
-    const result = await extractTakesFromDb(engine, { slugs: ['people/alice-example'] });
+    const result = await extractTakesFromDb(engine, { slugs: ["people/alice-example"] });
     expect(result.pagesScanned).toBe(1);
   });
 
-  test('dry-run: counts but does not delete or rewrite', async () => {
+  test("dry-run: counts but does not delete or rewrite", async () => {
     const before = await engine.listTakes({ page_id: alicePageId });
     const result = await extractTakesFromDb(engine, {
-      slugs: ['people/alice-example'],
+      slugs: ["people/alice-example"],
       dryRun: true,
     });
     expect(result.takesUpserted).toBe(3); // 3 takes parsed (would-be upserts)
@@ -93,25 +99,32 @@ describe('extractTakesFromDb', () => {
     expect(after.length).toBe(before.length);
   });
 
-  test('rebuild=true deletes existing rows before re-insert', async () => {
+  test("rebuild=true deletes existing rows before re-insert", async () => {
     // Insert a one-off ad-hoc take to verify it gets cleared
     await engine.addTakesBatch([
-      { page_id: alicePageId, row_num: 99, claim: 'Ad-hoc test', kind: 'fact', holder: 'world', weight: 1.0 },
+      {
+        page_id: alicePageId,
+        row_num: 99,
+        claim: "Ad-hoc test",
+        kind: "fact",
+        holder: "world",
+        weight: 1.0,
+      },
     ]);
     const before = await engine.listTakes({ page_id: alicePageId });
-    expect(before.some(t => t.row_num === 99)).toBe(true);
+    expect(before.some((t) => t.row_num === 99)).toBe(true);
 
     const result = await extractTakesFromDb(engine, {
-      slugs: ['people/alice-example'],
+      slugs: ["people/alice-example"],
       rebuild: true,
     });
     expect(result.takesUpserted).toBe(3);
 
     const after = await engine.listTakes({ page_id: alicePageId, active: false });
-    expect(after.some(t => t.row_num === 99)).toBe(false);
+    expect(after.some((t) => t.row_num === 99)).toBe(false);
     // Original 3 takes restored.
     const all = await engine.listTakes({ page_id: alicePageId, active: false });
-    const allRowNums = all.map(t => t.row_num).sort();
+    const allRowNums = all.map((t) => t.row_num).sort();
     expect(allRowNums).toContain(3);
   });
 });

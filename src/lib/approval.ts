@@ -12,9 +12,9 @@
 
 export type ActionType =
   | "document_finalize" // KI-Schriftsatz freigeben / versandfertig
-  | "deadline_create"   // Frist notieren
-  | "booking_create"    // Buchung / DATEV
-  | "message_send"      // beA- / E-Mail-Versand vorbereiten
+  | "deadline_create" // Frist notieren
+  | "booking_create" // Buchung / DATEV
+  | "message_send" // beA- / E-Mail-Versand vorbereiten
   | "case_create"
   | "case_close"
   | "invoice_create"

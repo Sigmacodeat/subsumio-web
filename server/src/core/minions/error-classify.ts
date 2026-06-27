@@ -29,19 +29,19 @@
  */
 
 export type ErrorCluster =
-  | 'prompt_too_long'      // Anthropic 400 "prompt is too long"
-  | 'tool_schema_mismatch' // model called tool with invalid arg shape
-  | 'tool_crash'           // tool.execute threw an Error (real bug)
-  | 'tool_unavailable'     // tool not in registry for this subagent
-  | 'tool_permission'      // tool refused (e.g. put_page slug not allowed)
-  | 'malformed_json'       // model output failed JSON parse where required
-  | 'auth'                 // 401 / API key invalid
-  | 'rate_limit'           // 429 from upstream
-  | 'rate_lease_full'      // gbrain's internal RateLeaseUnavailableError
-  | 'timeout'              // local timeout / abort
-  | 'http_5xx'             // upstream 5xx
-  | 'context_canceled'     // worker abort signal fired
-  | 'unknown';
+  | "prompt_too_long" // Anthropic 400 "prompt is too long"
+  | "tool_schema_mismatch" // model called tool with invalid arg shape
+  | "tool_crash" // tool.execute threw an Error (real bug)
+  | "tool_unavailable" // tool not in registry for this subagent
+  | "tool_permission" // tool refused (e.g. put_page slug not allowed)
+  | "malformed_json" // model output failed JSON parse where required
+  | "auth" // 401 / API key invalid
+  | "rate_limit" // 429 from upstream
+  | "rate_lease_full" // gbrain's internal RateLeaseUnavailableError
+  | "timeout" // local timeout / abort
+  | "http_5xx" // upstream 5xx
+  | "context_canceled" // worker abort signal fired
+  | "unknown";
 
 /**
  * Self-fix RECOVERABLE_CLUSTERS — narrowed per codex pass-2 #4.
@@ -49,9 +49,9 @@ export type ErrorCluster =
  * through normal dead-letter so real bugs stay visible.
  */
 export const RECOVERABLE_CLUSTERS = new Set<ErrorCluster>([
-  'prompt_too_long',
-  'tool_schema_mismatch',
-  'malformed_json',
+  "prompt_too_long",
+  "tool_schema_mismatch",
+  "malformed_json",
 ]);
 
 /**
@@ -61,62 +61,85 @@ export const RECOVERABLE_CLUSTERS = new Set<ErrorCluster>([
  * the classifier set needs widening.
  */
 export function classifyJobError(lastError: string | null | undefined): ErrorCluster {
-  if (!lastError) return 'unknown';
+  if (!lastError) return "unknown";
   const msg = lastError.toLowerCase();
 
   // gbrain-internal errors first (most specific).
-  if (/rate lease ".*" full/i.test(lastError)) return 'rate_lease_full';
+  if (/rate lease ".*" full/i.test(lastError)) return "rate_lease_full";
 
   // Anthropic 400 prompt too long.
   if (/prompt is too long/i.test(lastError) || /context.*length/i.test(lastError)) {
-    return 'prompt_too_long';
+    return "prompt_too_long";
   }
 
   // Tool error sub-types. Order matters: more-specific patterns first.
   if (/tool ".*" is not (in the registry|available)/i.test(lastError)) {
-    return 'tool_unavailable';
+    return "tool_unavailable";
   }
   if (/tool ".*" (permission|forbidden|denied|not allowed)/i.test(lastError)) {
-    return 'tool_permission';
+    return "tool_permission";
   }
-  if (/(invalid|malformed|missing) (input|argument|param|schema|field)/i.test(lastError) ||
-      /tool_use validation/i.test(lastError) ||
-      /required.*missing/i.test(lastError)) {
-    return 'tool_schema_mismatch';
+  if (
+    /(invalid|malformed|missing) (input|argument|param|schema|field)/i.test(lastError) ||
+    /tool_use validation/i.test(lastError) ||
+    /required.*missing/i.test(lastError)
+  ) {
+    return "tool_schema_mismatch";
   }
-  if (/tool ".*" (failed|crashed|threw)/i.test(lastError) ||
-      /tool.execute.*error/i.test(lastError)) {
-    return 'tool_crash';
+  if (
+    /tool ".*" (failed|crashed|threw)/i.test(lastError) ||
+    /tool.execute.*error/i.test(lastError)
+  ) {
+    return "tool_crash";
   }
 
   // JSON shape errors.
-  if (/(parse|invalid|malformed).*json/i.test(lastError) ||
-      /expected json/i.test(lastError) ||
-      /unexpected token.*in json/i.test(lastError)) {
-    return 'malformed_json';
+  if (
+    /(parse|invalid|malformed).*json/i.test(lastError) ||
+    /expected json/i.test(lastError) ||
+    /unexpected token.*in json/i.test(lastError)
+  ) {
+    return "malformed_json";
   }
 
   // HTTP / upstream errors.
-  if (msg.includes('401') || msg.includes('unauthorized') || /api[- _]?key.*invalid/i.test(lastError)) {
-    return 'auth';
+  if (
+    msg.includes("401") ||
+    msg.includes("unauthorized") ||
+    /api[- _]?key.*invalid/i.test(lastError)
+  ) {
+    return "auth";
   }
-  if (msg.includes('429') || /rate[- _]?limit/i.test(lastError) || /too many requests/i.test(lastError)) {
-    return 'rate_limit';
+  if (
+    msg.includes("429") ||
+    /rate[- _]?limit/i.test(lastError) ||
+    /too many requests/i.test(lastError)
+  ) {
+    return "rate_limit";
   }
-  if (/\b50[0-9]\b/.test(msg) || msg.includes('bad gateway') || msg.includes('service unavailable') ||
-      msg.includes('gateway timeout') || msg.includes('overloaded')) {
-    return 'http_5xx';
+  if (
+    /\b50[0-9]\b/.test(msg) ||
+    msg.includes("bad gateway") ||
+    msg.includes("service unavailable") ||
+    msg.includes("gateway timeout") ||
+    msg.includes("overloaded")
+  ) {
+    return "http_5xx";
   }
 
   // Local / control-plane signals.
-  if (msg.includes('timeout') || msg.includes('timed out') || msg.includes('aborted: timeout')) {
-    return 'timeout';
+  if (msg.includes("timeout") || msg.includes("timed out") || msg.includes("aborted: timeout")) {
+    return "timeout";
   }
-  if (msg.includes('aborted: cancel') || msg.includes('signal aborted') || msg.includes('context canceled')) {
-    return 'context_canceled';
+  if (
+    msg.includes("aborted: cancel") ||
+    msg.includes("signal aborted") ||
+    msg.includes("context canceled")
+  ) {
+    return "context_canceled";
   }
 
-  return 'unknown';
+  return "unknown";
 }
 
 /**
@@ -126,7 +149,7 @@ export function classifyJobError(lastError: string | null | undefined): ErrorClu
  * classifier.
  */
 export function clusterErrors(
-  errors: Array<{ id: number; last_error: string | null }>,
+  errors: Array<{ id: number; last_error: string | null }>
 ): Array<{ cluster: ErrorCluster; count: number; sample_ids: number[] }> {
   const map = new Map<ErrorCluster, { count: number; sample_ids: number[] }>();
   for (const e of errors) {
@@ -139,5 +162,5 @@ export function clusterErrors(
   }
   return Array.from(map.entries())
     .map(([cluster, { count, sample_ids }]) => ({ cluster, count, sample_ids }))
-    .sort((a, b) => (b.count - a.count) || a.cluster.localeCompare(b.cluster));
+    .sort((a, b) => b.count - a.count || a.cluster.localeCompare(b.cluster));
 }

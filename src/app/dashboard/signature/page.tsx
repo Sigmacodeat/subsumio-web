@@ -224,19 +224,21 @@ export default function SignaturePage() {
           setNotice(t("signature.quick_created"));
           (async () => {
             const sigPages = await api.brain.listPages({ type: "signature_request", limit: 100 });
-            setRequests(sigPages.map((p) => {
-              const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
-              return {
-                id: p.slug,
-                documentName: String(fm.document_name ?? p.title),
-                recipientName: String(fm.recipient_name ?? "—"),
-                recipientEmail: String(fm.recipient_email ?? "—"),
-                status: String(fm.status ?? "draft") as SignatureRequest["status"],
-                sentAt: fm.sent_at ? String(fm.sent_at) : undefined,
-                signedAt: fm.signed_at ? String(fm.signed_at) : undefined,
-                expiresAt: String(fm.expires_at ?? p.created_at),
-              };
-            }));
+            setRequests(
+              sigPages.map((p) => {
+                const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
+                return {
+                  id: p.slug,
+                  documentName: String(fm.document_name ?? p.title),
+                  recipientName: String(fm.recipient_name ?? "—"),
+                  recipientEmail: String(fm.recipient_email ?? "—"),
+                  status: String(fm.status ?? "draft") as SignatureRequest["status"],
+                  sentAt: fm.sent_at ? String(fm.sent_at) : undefined,
+                  signedAt: fm.signed_at ? String(fm.signed_at) : undefined,
+                  expiresAt: String(fm.expires_at ?? p.created_at),
+                };
+              })
+            );
           })();
         }}
       />

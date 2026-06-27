@@ -42,39 +42,44 @@ mutating: false
 ## DATEV Format (ASCII-CSV)
 
 ### Header Fields
+
 ```
 USt-ID-Nr;Datum;Belegnr;Buchungstext;Betrag;Kostenstelle;Mandant;Zeit
 ```
 
 ### Time Entry Row
+
 ```
 DE123456789;31.03.2026;2026-001;Rechtsberatung Vertragsbruch;500,00;1200;Muster GmbH;2,5
 ```
 
 ### Billing Types (Kostenstellen)
-| Code | Description |
-|---|---|
-| 1100 | Beratung (Consulting) |
+
+| Code | Description                    |
+| ---- | ------------------------------ |
+| 1100 | Beratung (Consulting)          |
 | 1200 | Prozessvertretung (Litigation) |
-| 1300 | Vertragsrecht (Contract) |
-| 1400 | Arbeitsrecht (Employment) |
-| 1500 | Datenschutz (Privacy) |
-| 1600 | M&A / Corporate |
-| 1700 | Steuerrecht (Tax) |
-| 1800 | Compliance |
-| 1900 | Sonstiges (Other) |
+| 1300 | Vertragsrecht (Contract)       |
+| 1400 | Arbeitsrecht (Employment)      |
+| 1500 | Datenschutz (Privacy)          |
+| 1600 | M&A / Corporate                |
+| 1700 | Steuerrecht (Tax)              |
+| 1800 | Compliance                     |
+| 1900 | Sonstiges (Other)              |
 
 ## Protocol
 
 ### Step 1 — Gather Time Entries
 
 Search for time entries in the brain:
+
 ```
 gbrain search "time tracking" --type legal-case
 gbrain list_pages --type legal-case
 ```
 
 Extract from case frontmatter:
+
 - `time_entries`: Array of {date, description, minutes, rate}
 - `case_number`: For Belegnr
 - `client_name`: For Mandant
@@ -95,6 +100,7 @@ legal_area → Kostenstelle:
 ### Step 3 — Compute Amounts
 
 Per entry:
+
 ```
 Hours = minutes / 60
 Amount = hours × hourly_rate
@@ -117,7 +123,7 @@ DE123456789;31.03.2026;2026-001;Klagenführung;750,00;1200;Muster GmbH;3,75
 
 ## Output Format
 
-```
+````
 ## DATEV-Export — [Period]
 
 ### Zusammenfassung
@@ -128,17 +134,20 @@ DE123456789;31.03.2026;2026-001;Klagenführung;750,00;1200;Muster GmbH;3,75
 ### CSV-Export
 ```csv
 [CSV content]
-```
+````
 
 ### Import-Anweisung
+
 1. Speichern als .csv mit BOM
 2. In DATEV Unternehmen Online importieren
 3. Buchungskonten zuordnen
 4. Prüfprotokoll erstellen
 
 ---
+
 ⚠️ Dies ist ein technischer Export. Die steuerliche Korrektheit muss
 vom Steuerberater verifiziert werden.
+
 ```
 
 ## Anti-patterns
@@ -159,3 +168,4 @@ vom Steuerberater verifiziert werden.
 - ❌ Emitting a CSV/ASCII shape that DATEV rejects (wrong delimiter, encoding, or header).
 - ❌ Dropping or guessing USt-IdNr / Kostenstelle instead of flagging them as missing.
 - ❌ Implying the export was booked — it only produces files for import.
+```

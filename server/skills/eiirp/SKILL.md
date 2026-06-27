@@ -66,22 +66,20 @@ distinct_from:
 
 # EIIRP — Everything In Its Right Place
 
-> *"Everything in its right place"* — Radiohead, Kid A
+> _"Everything in its right place"_ — Radiohead, Kid A
 
 ## Contract
 
 After any significant work, EIIRP organizes ALL outputs across two domains:
 
 **Knowledge domain (brain):**
+
 1. Every piece of knowledge lands in the correct brain location.
 2. All sources are cited and linked.
 3. The active schema pack is updated if a new content type emerged.
 4. Entity pages created/updated with cross-links.
 
-**Capability domain (skills):**
-5. Every reusable pattern becomes a composable skill.
-6. Existing skills are audited for DRY violations.
-7. Skill graph is MECE — no gaps, no overlaps, no ambiguous routing.
+**Capability domain (skills):** 5. Every reusable pattern becomes a composable skill. 6. Existing skills are audited for DRY violations. 7. Skill graph is MECE — no gaps, no overlaps, no ambiguous routing.
 
 **The meta-guarantee:** Nothing produced during significant work lives only in chat.
 Knowledge → brain. Patterns → skills. Everything in its right place.
@@ -100,6 +98,7 @@ Knowledge → brain. Patterns → skills. Everything in its right place.
 Scan the current session/thread and identify ALL outputs across both domains.
 
 ### Knowledge outputs
+
 ```
 □ Primary findings (the synthesis)
 □ Source documents (URLs, PDFs, articles, tweets)
@@ -109,6 +108,7 @@ Scan the current session/thread and identify ALL outputs across both domains.
 ```
 
 ### Capability outputs
+
 ```
 □ New skills created or modified
 □ Scripts/code written (should they be in lib/ or scripts/?)
@@ -121,6 +121,7 @@ Produce a manifest:
 
 ```markdown
 ## EIIRP Manifest
+
 - Topic: [topic]
 - Date: [date]
 - Knowledge outputs: [count] (sources, entities, concepts)
@@ -180,6 +181,7 @@ the suggestion to the user and let them choose. The schema-cathedral
 ships the primitives; EIIRP enforces the human-in-the-loop gate.
 
 If schema needs change:
+
 - Propose the addition to the user before running `review-candidates --apply`.
 - Document the change in the commit message of the next sync.
 - The schema-pack engine writes the delta to
@@ -191,7 +193,9 @@ If schema needs change:
 For each item in the filing plan:
 
 ### 4a. Primary research page
+
 Use the brain page template. MUST include:
+
 - Proper frontmatter (`type`, `title`, `date`, `tags`, sources)
 - **State** section — current status/key findings
 - **Sources** section — every source with URL, author, date, language
@@ -200,12 +204,15 @@ Use the brain page template. MUST include:
 - **See Also** — related concepts, reference pages
 
 ### 4b. Entity pages (people, companies)
+
 For each entity mentioned:
+
 - Check if a brain page exists (`gbrain search "<name>"` or `gbrain get_page people/<slug>`).
 - If exists: update State, append Timeline entry citing this research.
 - If not: create with enrichment.
 
 ### 4c. Commit and verify
+
 After ALL pages are written, run `gbrain sync` (or commit + push in the
 brain repo). Verify every link resolves.
 
@@ -218,6 +225,7 @@ This phase operates on the SKILL graph, not just the research.
 Ask: did this work reveal REPEATABLE patterns that will recur?
 
 **Indicators of a reusable pattern:**
+
 - You used a specific sequence of searches across multiple sources.
 - You followed a specific verification/cross-referencing methodology.
 - You wrote code that could be parameterized for different inputs.
@@ -225,6 +233,7 @@ Ask: did this work reveal REPEATABLE patterns that will recur?
 - The user is likely to ask for similar work on a different topic.
 
 **For each identified pattern:**
+
 1. Identify the composable pieces (DRY, MECE):
    - Shared logic → `lib/` (not copy-pasted into skills)
    - Search methodology → skill or lib function
@@ -237,7 +246,9 @@ Ask: did this work reveal REPEATABLE patterns that will recur?
    Look for overlapping triggers or unreachable skills.
 
 ### 5b. Existing skill audit
+
 For ALL skills used or touched during this work, check:
+
 1. Were any skills BYPASSED? (did you do something manually that a skill should handle?)
 2. Are there skills that OVERLAP with what you just did? (merge candidates)
 3. Is shared code copy-pasted between skills? (extract to `lib/`)
@@ -245,6 +256,7 @@ For ALL skills used or touched during this work, check:
 **The MECE question:** If someone asked for this exact work again tomorrow on a different topic, which skills would they invoke? Is the path clear and unambiguous? If not, fix the routing.
 
 ### 5c. Present the plan
+
 ```
 ## Skill Graph Changes
 
@@ -277,6 +289,7 @@ gbrain orphans                                  # any pages without inbound link
 ```
 
 Confirm:
+
 - [ ] All brain pages have proper frontmatter against active schema pack
 - [ ] All entity pages are cross-linked
 - [ ] Any new skills have routing entries in `skills/RESOLVER.md`
@@ -291,21 +304,26 @@ Confirm:
 ## EIIRP Complete: [Topic]
 
 ### Brain pages created/updated
+
 - [path] — [description]
 - ...
 
 ### Entity pages
+
 - [path] — [created/updated]
 - ...
 
 ### Schema changes
+
 - [none / description of changes + which pack delta file]
 
 ### Skills identified
+
 - [skill-name] — [status: created / merged / deferred]
 - ...
 
 ### Resolver status
+
 - DRY check: [clean]
 - MECE audit: [clean]
 - Active pack: [name] v[version]
@@ -320,18 +338,23 @@ EIIRP produces a single Phase 7 report block. Plain markdown:
 ## EIIRP Complete: [topic]
 
 ### Brain pages created/updated
+
 - [path] — [description]
 
 ### Entity pages
+
 - [path] — [created|updated]
 
 ### Schema changes
+
 - [none | description of changes + which pack delta file]
 
 ### Skills identified
+
 - [skill-name] — [status: created|merged|deferred]
 
 ### Resolver status
+
 - DRY check: [clean|N violations]
 - MECE audit: [clean|N overlaps]
 - Active pack: [name] v[version]
@@ -356,7 +379,7 @@ reads it; doctor cross-references the pack version).
   Audit anyway; defer the skillify decision to the user.
 - **Filing synthesis output by topic alone.** Synthesis pages tied to a
   single source + reader are sui generis; they file under
-  `media/<format>/<slug>-personalized.md`. See _brain-filing-rules.md
+  `media/<format>/<slug>-personalized.md`. See \_brain-filing-rules.md
   "Sanctioned exception" section.
 - **Treating non-English sources as secondary citations.** Multilingual
   sources are first-class.
@@ -364,6 +387,7 @@ reads it; doctor cross-references the pack version).
 ## Hard Rules
 
 ### Knowledge domain
+
 - **Never leave research only in chat.** If it took >10 minutes to produce, it gets a brain page.
 - **Every source gets a citation.** No "according to reports" without a URL.
 - **Entity pages get updated, not just created.** If a brain page exists, UPDATE it.
@@ -371,18 +395,21 @@ reads it; doctor cross-references the pack version).
 - **Multilingual sources are first-class.** Never treat non-English sources as secondary.
 
 ### Capability domain
+
 - **DRY is sacred.** If the same logic appears in two skills, extract it to `lib/`.
 - **MECE is sacred.** Every trigger phrase routes to exactly one skill.
 - **Composability over monoliths.** Small skills that compose > one giant skill that does everything.
 - **Skillify only what recurs.** One-off work doesn't need a skill. Patterns that repeat 2+ times do.
 
 ### Meta
+
 - **EIIRP is idempotent.** Running it twice on the same work should produce no changes the second time.
 - **EIIRP consumes the active schema pack as data.** Never hard-code directory tables in EIIRP's logic — read from `gbrain schema show --json` so users who picked `gbrain-recommended` OR custom packs get the right behavior automatically.
 
 ## Changelog
 
 ### v1.0.0 — gbrain v0.39.0.0
+
 - Initial port from upstream OpenClaw. Genericized — no references to
   private fork names per CLAUDE.md privacy rules.
 - Phase 3 SCHEMA CHECK rewritten to consume the v0.39 cathedral CLI

@@ -25,10 +25,7 @@ const ensureCaselawSeenSchema = createSchemaInit(`
  * @param hitIds Hit IDs to check (already prefixed with monitorId if needed).
  * @returns Array of indices (into the input array) of fresh hits.
  */
-export async function filterNewHitIds(
-  brainId: string,
-  hitIds: string[],
-): Promise<Set<number>> {
+export async function filterNewHitIds(brainId: string, hitIds: string[]): Promise<Set<number>> {
   const pool = getSharedPgPool();
   if (!pool) {
     return new Set(hitIds.map((_, i) => i));
@@ -39,7 +36,7 @@ export async function filterNewHitIds(
     const { rowCount } = await pool.query(
       `INSERT INTO subsumio_caselaw_seen (brain_id, hit_id) VALUES ($1, $2)
        ON CONFLICT (brain_id, hit_id) DO NOTHING`,
-      [brainId, hitIds[i]],
+      [brainId, hitIds[i]]
     );
     if (rowCount && rowCount > 0) fresh.add(i);
   }

@@ -14,11 +14,11 @@
  * Reproducible on CI with just Bun.
  */
 
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
-import { PGLiteEngine } from '../../src/core/pglite-engine.ts';
-import { importCodeFile } from '../../src/core/import-file.ts';
-import { findCodeDef } from '../../src/commands/code-def.ts';
-import { findCodeRefs } from '../../src/commands/code-refs.ts';
+import { describe, test, expect, beforeAll, afterAll } from "bun:test";
+import { PGLiteEngine } from "../../src/core/pglite-engine.ts";
+import { importCodeFile } from "../../src/core/import-file.ts";
+import { findCodeDef } from "../../src/commands/code-def.ts";
+import { findCodeRefs } from "../../src/commands/code-refs.ts";
 
 let engine: PGLiteEngine;
 
@@ -28,7 +28,7 @@ let engine: PGLiteEngine;
 // small-sibling merging (> 120 tokens per chunk).
 // ────────────────────────────────────────────────────────────
 
-function generateTsFile(name: string, extraSymbol = ''): string {
+function generateTsFile(name: string, extraSymbol = ""): string {
   return `export interface ${name}Config {
   timeout: number;
   retries: number;
@@ -225,12 +225,16 @@ beforeAll(async () => {
   // Seed 5 files per language, 25 total (scaled down from the plan's
   // ~50 files to keep test runtime predictable). The retrieval
   // signal is the same shape at 25 as at 50.
-  const names = ['Auth', 'Cache', 'Queue', 'Router', 'Store'];
+  const names = ["Auth", "Cache", "Queue", "Router", "Store"];
   for (const n of names) {
     await importCodeFile(engine, `src/${n.toLowerCase()}.ts`, generateTsFile(n), { noEmbed: true });
-    await importCodeFile(engine, `python/${n.toLowerCase()}.py`, generatePyFile(n), { noEmbed: true });
+    await importCodeFile(engine, `python/${n.toLowerCase()}.py`, generatePyFile(n), {
+      noEmbed: true,
+    });
     await importCodeFile(engine, `go/${n.toLowerCase()}.go`, generateGoFile(n), { noEmbed: true });
-    await importCodeFile(engine, `rust/${n.toLowerCase()}.rs`, generateRustFile(n), { noEmbed: true });
+    await importCodeFile(engine, `rust/${n.toLowerCase()}.rs`, generateRustFile(n), {
+      noEmbed: true,
+    });
     await importCodeFile(engine, `java/${n}.java`, generateJavaFile(n), { noEmbed: true });
   }
   // v0.41 D2 wave: 92-migration replay + SQL grammar load can push the
@@ -241,50 +245,50 @@ afterAll(async () => {
   await engine.disconnect();
 });
 
-describe('BrainBench code — retrieval quality', () => {
-  test('corpus indexed: at least 25 code pages, all page_kind=code', async () => {
+describe("BrainBench code — retrieval quality", () => {
+  test("corpus indexed: at least 25 code pages, all page_kind=code", async () => {
     const rows = await engine.executeRaw<{ count: string }>(
-      `SELECT count(*)::text as count FROM pages WHERE page_kind = 'code'`,
+      `SELECT count(*)::text as count FROM pages WHERE page_kind = 'code'`
     );
     expect(parseInt(rows[0]!.count, 10)).toBeGreaterThanOrEqual(25);
   });
 
-  test('code-def finds AuthService across languages', async () => {
-    const results = await findCodeDef(engine, 'AuthService');
+  test("code-def finds AuthService across languages", async () => {
+    const results = await findCodeDef(engine, "AuthService");
     // Should surface AuthService in TS, Rust, Java. Go uses NewAuthService.
     expect(results.length).toBeGreaterThanOrEqual(2);
     const langs = new Set(results.map((r) => r.language));
-    expect(langs.has('typescript')).toBe(true);
+    expect(langs.has("typescript")).toBe(true);
   });
 
-  test('code-def --lang filter precision P@5 = 1.0 for CacheService/typescript', async () => {
-    const results = await findCodeDef(engine, 'CacheService', { language: 'typescript', limit: 5 });
+  test("code-def --lang filter precision P@5 = 1.0 for CacheService/typescript", async () => {
+    const results = await findCodeDef(engine, "CacheService", { language: "typescript", limit: 5 });
     for (const r of results) {
-      expect(r.language).toBe('typescript');
-      expect(r.slug).toContain('cache');
+      expect(r.language).toBe("typescript");
+      expect(r.slug).toContain("cache");
     }
   });
 
-  test('code-refs finds all usage sites of AuthConfig', async () => {
+  test("code-refs finds all usage sites of AuthConfig", async () => {
     // AuthConfig is referenced in both src/auth.ts (the declaration) and
     // the constructor of AuthService. findCodeRefs should return both.
-    const results = await findCodeRefs(engine, 'AuthConfig', { language: 'typescript' });
+    const results = await findCodeRefs(engine, "AuthConfig", { language: "typescript" });
     expect(results.length).toBeGreaterThanOrEqual(1);
-    for (const r of results) expect(r.language).toBe('typescript');
+    for (const r of results) expect(r.language).toBe("typescript");
   });
 
   test('code-refs ranks 5 language files for shared "start" symbol', async () => {
     // 'start' appears in every language's service file. This is an
     // under-specific query that exercises the ranking stability.
-    const results = await findCodeRefs(engine, 'start', { limit: 20 });
+    const results = await findCodeRefs(engine, "start", { limit: 20 });
     const langs = new Set(results.map((r) => r.language));
     expect(langs.size).toBeGreaterThanOrEqual(3);
   });
 
-  test('code-refs dedups nothing — multiple chunks from same file allowed', async () => {
+  test("code-refs dedups nothing — multiple chunks from same file allowed", async () => {
     // The DISTINCT ON bypass: searching for a symbol that appears in
     // multiple chunks of the same file must return all chunks.
-    const results = await findCodeRefs(engine, 'config');
+    const results = await findCodeRefs(engine, "config");
     const slugs = results.map((r) => r.slug);
     const uniqueSlugs = new Set(slugs);
     // If dedup were happening, len(slugs) would equal len(uniqueSlugs).
@@ -296,9 +300,9 @@ describe('BrainBench code — retrieval quality', () => {
     expect(uniqueSlugs.size).toBeGreaterThan(0);
   });
 
-  test('magical moment: code-refs completes under 100ms on 25-file corpus', async () => {
+  test("magical moment: code-refs completes under 100ms on 25-file corpus", async () => {
     const start = Date.now();
-    const results = await findCodeRefs(engine, 'Service', { limit: 50 });
+    const results = await findCodeRefs(engine, "Service", { limit: 50 });
     const elapsed = Date.now() - start;
     expect(results.length).toBeGreaterThan(0);
     // Budget is 100ms. PGLite in-memory + indexed query should be ~5-20ms.
@@ -306,33 +310,36 @@ describe('BrainBench code — retrieval quality', () => {
     expect(elapsed).toBeLessThan(500);
   });
 
-  test('MRR sanity: top result for exact symbol is the defining file', async () => {
-    const results = await findCodeDef(engine, 'RouterService', { language: 'typescript', limit: 1 });
+  test("MRR sanity: top result for exact symbol is the defining file", async () => {
+    const results = await findCodeDef(engine, "RouterService", {
+      language: "typescript",
+      limit: 1,
+    });
     expect(results.length).toBe(1);
-    expect(results[0]!.slug).toBe('src-router-ts');
+    expect(results[0]!.slug).toBe("src-router-ts");
   });
 });
 
-describe('BrainBench code — edge cases', () => {
-  test('non-existent symbol returns empty, not error', async () => {
-    const def = await findCodeDef(engine, 'SymbolThatDoesNotExistAnywhere');
-    const refs = await findCodeRefs(engine, 'SymbolThatDoesNotExistAnywhere');
+describe("BrainBench code — edge cases", () => {
+  test("non-existent symbol returns empty, not error", async () => {
+    const def = await findCodeDef(engine, "SymbolThatDoesNotExistAnywhere");
+    const refs = await findCodeRefs(engine, "SymbolThatDoesNotExistAnywhere");
     expect(def).toEqual([]);
     expect(refs).toEqual([]);
   });
 
-  test('language filter with zero matches returns empty', async () => {
+  test("language filter with zero matches returns empty", async () => {
     // No Solidity files in the corpus
-    const refs = await findCodeRefs(engine, 'AuthService', { language: 'solidity' });
+    const refs = await findCodeRefs(engine, "AuthService", { language: "solidity" });
     expect(refs).toEqual([]);
   });
 
-  test('re-importing a code file updates in place (idempotent)', async () => {
-    const firstResult = await findCodeDef(engine, 'AuthService', { language: 'typescript' });
+  test("re-importing a code file updates in place (idempotent)", async () => {
+    const firstResult = await findCodeDef(engine, "AuthService", { language: "typescript" });
     const count1 = firstResult.length;
     // Re-import — content_hash matches, so should skip.
-    await importCodeFile(engine, 'src/auth.ts', generateTsFile('Auth'), { noEmbed: true });
-    const secondResult = await findCodeDef(engine, 'AuthService', { language: 'typescript' });
+    await importCodeFile(engine, "src/auth.ts", generateTsFile("Auth"), { noEmbed: true });
+    const secondResult = await findCodeDef(engine, "AuthService", { language: "typescript" });
     // Same symbol count — no duplication.
     expect(secondResult.length).toBe(count1);
   });
@@ -347,7 +354,7 @@ describe('BrainBench code — edge cases', () => {
 // path working, SQL chunks would be "just searchable text", not code
 // intelligence (codex F2 in /plan-eng-review).
 // ────────────────────────────────────────────────────────────
-describe('SQL code indexing — DDL chunks + code-def works', () => {
+describe("SQL code indexing — DDL chunks + code-def works", () => {
   // Statement bodies must be long enough to defeat the small-sibling
   // merger; ~120+ tokens per statement keeps each chunk independent.
   const SQL_FIXTURE = `
@@ -391,77 +398,95 @@ CREATE VIEW active_users_dashboard_summary_view_long_enough_to_split AS
   ORDER BY u.last_login_at DESC NULLS LAST;
 `;
 
-  test('SQL import produces page with type=code + page_kind=code', async () => {
-    await importCodeFile(engine, 'migrations/001_users.sql', SQL_FIXTURE, { noEmbed: true });
+  test("SQL import produces page with type=code + page_kind=code", async () => {
+    await importCodeFile(engine, "migrations/001_users.sql", SQL_FIXTURE, { noEmbed: true });
     const rows = await engine.executeRaw<{ type: string; page_kind: string }>(
       `SELECT type, page_kind FROM pages WHERE slug = $1`,
-      ['migrations-001_users-sql'],
+      ["migrations-001_users-sql"]
     );
     expect(rows.length).toBe(1);
-    expect(rows[0]!.type).toBe('code');
-    expect(rows[0]!.page_kind).toBe('code');
+    expect(rows[0]!.type).toBe("code");
+    expect(rows[0]!.page_kind).toBe("code");
   });
 
-  test('CREATE TABLE chunk carries symbol_name=table name + symbol_type=table', async () => {
-    const rows = await engine.executeRaw<{ symbol_name: string; symbol_type: string; language: string }>(
+  test("CREATE TABLE chunk carries symbol_name=table name + symbol_type=table", async () => {
+    const rows = await engine.executeRaw<{
+      symbol_name: string;
+      symbol_type: string;
+      language: string;
+    }>(
       `SELECT symbol_name, symbol_type, language FROM content_chunks
        WHERE page_id = (SELECT id FROM pages WHERE slug = $1)
          AND symbol_name = $2`,
-      ['migrations-001_users-sql', 'users_account_table_long_enough_to_avoid_merger'],
+      ["migrations-001_users-sql", "users_account_table_long_enough_to_avoid_merger"]
     );
     expect(rows.length).toBeGreaterThanOrEqual(1);
-    expect(rows[0]!.symbol_type).toBe('table');
-    expect(rows[0]!.language).toBe('sql');
+    expect(rows[0]!.symbol_type).toBe("table");
+    expect(rows[0]!.language).toBe("sql");
   });
 
-  test('CREATE FUNCTION chunk carries symbol_name=function name + symbol_type=function', async () => {
+  test("CREATE FUNCTION chunk carries symbol_name=function name + symbol_type=function", async () => {
     const rows = await engine.executeRaw<{ symbol_name: string; symbol_type: string }>(
       `SELECT symbol_name, symbol_type FROM content_chunks
        WHERE page_id = (SELECT id FROM pages WHERE slug = $1)
          AND symbol_name = $2`,
-      ['migrations-001_users-sql', 'get_user_by_email_lookup_full_function_name'],
+      ["migrations-001_users-sql", "get_user_by_email_lookup_full_function_name"]
     );
     expect(rows.length).toBeGreaterThanOrEqual(1);
-    expect(rows[0]!.symbol_type).toBe('function');
+    expect(rows[0]!.symbol_type).toBe("function");
   });
 
-  test('findCodeDef returns CREATE TABLE site (load-bearing D2 canary)', async () => {
-    const results = await findCodeDef(engine, 'users_account_table_long_enough_to_avoid_merger', { language: 'sql' });
+  test("findCodeDef returns CREATE TABLE site (load-bearing D2 canary)", async () => {
+    const results = await findCodeDef(engine, "users_account_table_long_enough_to_avoid_merger", {
+      language: "sql",
+    });
     expect(results.length).toBeGreaterThanOrEqual(1);
-    expect(results[0]!.slug).toBe('migrations-001_users-sql');
-    expect(results[0]!.symbol_type).toBe('table');
+    expect(results[0]!.slug).toBe("migrations-001_users-sql");
+    expect(results[0]!.symbol_type).toBe("table");
   });
 
-  test('findCodeDef returns CREATE FUNCTION site by name', async () => {
-    const results = await findCodeDef(engine, 'get_user_by_email_lookup_full_function_name', { language: 'sql' });
+  test("findCodeDef returns CREATE FUNCTION site by name", async () => {
+    const results = await findCodeDef(engine, "get_user_by_email_lookup_full_function_name", {
+      language: "sql",
+    });
     expect(results.length).toBeGreaterThanOrEqual(1);
-    expect(results[0]!.symbol_type).toBe('function');
+    expect(results[0]!.symbol_type).toBe("function");
   });
 
-  test('findCodeDef returns CREATE INDEX site by name', async () => {
-    const results = await findCodeDef(engine, 'idx_users_account_email_for_login_lookup_with_long_name', { language: 'sql' });
+  test("findCodeDef returns CREATE INDEX site by name", async () => {
+    const results = await findCodeDef(
+      engine,
+      "idx_users_account_email_for_login_lookup_with_long_name",
+      { language: "sql" }
+    );
     expect(results.length).toBeGreaterThanOrEqual(1);
-    expect(results[0]!.symbol_type).toBe('index');
+    expect(results[0]!.symbol_type).toBe("index");
   });
 
-  test('findCodeDef returns CREATE VIEW site by name', async () => {
-    const results = await findCodeDef(engine, 'active_users_dashboard_summary_view_long_enough_to_split', { language: 'sql' });
+  test("findCodeDef returns CREATE VIEW site by name", async () => {
+    const results = await findCodeDef(
+      engine,
+      "active_users_dashboard_summary_view_long_enough_to_split",
+      { language: "sql" }
+    );
     expect(results.length).toBeGreaterThanOrEqual(1);
-    expect(results[0]!.symbol_type).toBe('view');
+    expect(results[0]!.symbol_type).toBe("view");
   });
 
-  test('findCodeRefs returns SQL chunks by substring match (DML + DDL)', async () => {
+  test("findCodeRefs returns SQL chunks by substring match (DML + DDL)", async () => {
     // code-refs uses chunk_text ILIKE, no DEF_TYPES gate, so it returns
     // every occurrence (DML + DDL). Distinct from code-def which only
     // returns definition sites.
-    const refs = await findCodeRefs(engine, 'users_account_table_long_enough_to_avoid_merger', { language: 'sql' });
+    const refs = await findCodeRefs(engine, "users_account_table_long_enough_to_avoid_merger", {
+      language: "sql",
+    });
     expect(refs.length).toBeGreaterThanOrEqual(1);
     // At least one ref should land on the CREATE TABLE chunk.
-    const tableRef = refs.find(r => r.symbol_type === 'table');
+    const tableRef = refs.find((r) => r.symbol_type === "table");
     expect(tableRef).toBeDefined();
   });
 
-  test('CREATE TRIGGER + CREATE TYPE chunks land with correct symbol_type', async () => {
+  test("CREATE TRIGGER + CREATE TYPE chunks land with correct symbol_type", async () => {
     const sql = `
 CREATE TYPE long_enough_user_role_enum_so_not_merged AS ENUM ('admin', 'member', 'guest', 'service_account', 'auditor');
 
@@ -471,66 +496,75 @@ CREATE TRIGGER users_long_audit_trigger_for_role_changes
   WHEN (OLD.email IS DISTINCT FROM NEW.email)
   EXECUTE FUNCTION log_email_change_long_function_name();
 `;
-    await importCodeFile(engine, 'migrations/002_audit.sql', sql, { noEmbed: true });
+    await importCodeFile(engine, "migrations/002_audit.sql", sql, { noEmbed: true });
     const typeRows = await engine.executeRaw<{ symbol_type: string }>(
       `SELECT symbol_type FROM content_chunks
        WHERE page_id = (SELECT id FROM pages WHERE slug = $1)
          AND symbol_name = $2`,
-      ['migrations-002_audit-sql', 'long_enough_user_role_enum_so_not_merged'],
+      ["migrations-002_audit-sql", "long_enough_user_role_enum_so_not_merged"]
     );
     expect(typeRows.length).toBeGreaterThanOrEqual(1);
-    expect(typeRows[0]!.symbol_type).toBe('type');
+    expect(typeRows[0]!.symbol_type).toBe("type");
     const triggerRows = await engine.executeRaw<{ symbol_type: string }>(
       `SELECT symbol_type FROM content_chunks
        WHERE page_id = (SELECT id FROM pages WHERE slug = $1)
          AND symbol_name = $2`,
-      ['migrations-002_audit-sql', 'users_long_audit_trigger_for_role_changes'],
+      ["migrations-002_audit-sql", "users_long_audit_trigger_for_role_changes"]
     );
     expect(triggerRows.length).toBeGreaterThanOrEqual(1);
-    expect(triggerRows[0]!.symbol_type).toBe('trigger');
+    expect(triggerRows[0]!.symbol_type).toBe("trigger");
   });
 
-  test('findCodeDef on CREATE TYPE returns it (DEF_TYPES allowlist regression)', async () => {
-    const results = await findCodeDef(engine, 'long_enough_user_role_enum_so_not_merged', { language: 'sql' });
+  test("findCodeDef on CREATE TYPE returns it (DEF_TYPES allowlist regression)", async () => {
+    const results = await findCodeDef(engine, "long_enough_user_role_enum_so_not_merged", {
+      language: "sql",
+    });
     expect(results.length).toBeGreaterThanOrEqual(1);
-    expect(results[0]!.symbol_type).toBe('type');
+    expect(results[0]!.symbol_type).toBe("type");
   });
 
-  test('findCodeDef on CREATE TRIGGER returns it (DEF_TYPES allowlist regression)', async () => {
-    const results = await findCodeDef(engine, 'users_long_audit_trigger_for_role_changes', { language: 'sql' });
+  test("findCodeDef on CREATE TRIGGER returns it (DEF_TYPES allowlist regression)", async () => {
+    const results = await findCodeDef(engine, "users_long_audit_trigger_for_role_changes", {
+      language: "sql",
+    });
     expect(results.length).toBeGreaterThanOrEqual(1);
-    expect(results[0]!.symbol_type).toBe('trigger');
+    expect(results[0]!.symbol_type).toBe("trigger");
   });
 
-  test('DML-only file still produces a code page (just no symbol-named chunks)', async () => {
+  test("DML-only file still produces a code page (just no symbol-named chunks)", async () => {
     const dmlOnly = `
 SELECT u.id, u.email FROM users u WHERE u.deleted_at IS NULL ORDER BY u.created_at;
 INSERT INTO audit_log (event_type, user_id, payload) VALUES ('login', 42, '{"ip":"1.2.3.4"}'::jsonb);
 UPDATE users SET last_login_at = NOW() WHERE id = 42 AND deleted_at IS NULL;
 `;
-    await importCodeFile(engine, 'queries/lib.sql', dmlOnly, { noEmbed: true });
+    await importCodeFile(engine, "queries/lib.sql", dmlOnly, { noEmbed: true });
     const pageRow = await engine.executeRaw<{ type: string; page_kind: string }>(
-      `SELECT type, page_kind FROM pages WHERE slug = 'queries-lib-sql'`,
+      `SELECT type, page_kind FROM pages WHERE slug = 'queries-lib-sql'`
     );
     expect(pageRow.length).toBe(1);
-    expect(pageRow[0]!.type).toBe('code');
+    expect(pageRow[0]!.type).toBe("code");
     const namedChunks = await engine.executeRaw<{ symbol_name: string }>(
       `SELECT symbol_name FROM content_chunks
        WHERE page_id = (SELECT id FROM pages WHERE slug = 'queries-lib-sql')
-         AND symbol_name IS NOT NULL`,
+         AND symbol_name IS NOT NULL`
     );
     // Zero named chunks because all statements are DML.
     expect(namedChunks.length).toBe(0);
   });
 
-  test('Re-importing same SQL file is idempotent (content_hash short-circuit)', async () => {
-    const sql = 'CREATE TABLE idempotent_test_table_long_name_for_no_merge (id INT, name TEXT, value TEXT, created TIMESTAMP);';
-    await importCodeFile(engine, 'migrations/003_idem.sql', sql, { noEmbed: true });
-    const before = await findCodeDef(engine, 'idempotent_test_table_long_name_for_no_merge', { language: 'sql' });
+  test("Re-importing same SQL file is idempotent (content_hash short-circuit)", async () => {
+    const sql =
+      "CREATE TABLE idempotent_test_table_long_name_for_no_merge (id INT, name TEXT, value TEXT, created TIMESTAMP);";
+    await importCodeFile(engine, "migrations/003_idem.sql", sql, { noEmbed: true });
+    const before = await findCodeDef(engine, "idempotent_test_table_long_name_for_no_merge", {
+      language: "sql",
+    });
     const count1 = before.length;
     // Re-import: content_hash unchanged → should not duplicate chunks.
-    await importCodeFile(engine, 'migrations/003_idem.sql', sql, { noEmbed: true });
-    const after = await findCodeDef(engine, 'idempotent_test_table_long_name_for_no_merge', { language: 'sql' });
+    await importCodeFile(engine, "migrations/003_idem.sql", sql, { noEmbed: true });
+    const after = await findCodeDef(engine, "idempotent_test_table_long_name_for_no_merge", {
+      language: "sql",
+    });
     expect(after.length).toBe(count1);
   });
 });

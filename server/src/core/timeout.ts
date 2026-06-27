@@ -37,7 +37,7 @@ export class OperationTimeoutError extends Error {
 
   constructor(label: string, ms: number) {
     super(`Operation "${label}" timed out after ${ms}ms`);
-    this.name = 'OperationTimeoutError';
+    this.name = "OperationTimeoutError";
     this.label = label;
     this.ms = ms;
   }
@@ -68,7 +68,7 @@ export function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promis
     // Don't keep the event loop alive just for the timeout — if the wrapped
     // promise settles first, we clear; if nothing else is running, the
     // process can exit cleanly without waiting on this timer.
-    if (typeof (timer as { unref?: () => void }).unref === 'function') {
+    if (typeof (timer as { unref?: () => void }).unref === "function") {
       (timer as { unref: () => void }).unref();
     }
   });

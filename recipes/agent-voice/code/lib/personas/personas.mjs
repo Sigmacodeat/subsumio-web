@@ -20,14 +20,14 @@
  * via a local override file.
  */
 
-import { MARS } from './mars.mjs';
-import { VENUS } from './venus.mjs';
+import { MARS } from "./mars.mjs";
+import { VENUS } from "./venus.mjs";
 
 // ── Shared preamble (tools, rules, time) ─────────────────
 export function buildSharedContext(opts = {}) {
-  const { authenticated = false, identity = '', dateTime = '', topicName = '' } = opts;
+  const { authenticated = false, identity = "", dateTime = "", topicName = "" } = opts;
 
-  let ctx = '';
+  let ctx = "";
   if (dateTime) ctx += `CURRENT DATE/TIME: ${dateTime}\n\n`;
   if (authenticated && identity) {
     ctx += `The caller is verified as ${identity}. All allow-listed tools are available.\n\n`;

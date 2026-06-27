@@ -1,10 +1,10 @@
-import type { Operation, ParamDef } from '../core/operations.ts';
+import type { Operation, ParamDef } from "../core/operations.ts";
 
 export interface McpToolDef {
   name: string;
   description: string;
   inputSchema: {
-    type: 'object';
+    type: "object";
     properties: Record<string, unknown>;
     required: string[];
   };
@@ -29,7 +29,7 @@ export interface McpToolDef {
  */
 export function paramDefToSchema(p: ParamDef): Record<string, unknown> {
   return {
-    type: p.type === 'array' ? 'array' : p.type,
+    type: p.type === "array" ? "array" : p.type,
     ...(p.description ? { description: p.description } : {}),
     ...(p.enum ? { enum: p.enum } : {}),
     ...(p.default !== undefined ? { default: p.default } : {}),
@@ -38,13 +38,13 @@ export function paramDefToSchema(p: ParamDef): Record<string, unknown> {
 }
 
 export function buildToolDefs(ops: Operation[]): McpToolDef[] {
-  return ops.map(op => ({
+  return ops.map((op) => ({
     name: op.name,
     description: op.description,
     inputSchema: {
-      type: 'object' as const,
+      type: "object" as const,
       properties: Object.fromEntries(
-        Object.entries(op.params).map(([k, v]) => [k, paramDefToSchema(v)]),
+        Object.entries(op.params).map(([k, v]) => [k, paramDefToSchema(v)])
       ),
       required: Object.entries(op.params)
         .filter(([, v]) => v.required)

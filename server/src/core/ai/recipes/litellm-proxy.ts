@@ -1,4 +1,4 @@
-import type { Recipe } from '../types.ts';
+import type { Recipe } from "../types.ts";
 
 /**
  * LiteLLM proxy template. Users run LiteLLM in front of any provider
@@ -9,15 +9,15 @@ import type { Recipe } from '../types.ts';
  * See docs/guides/litellm-proxy.md for the setup recipe.
  */
 export const litellmProxy: Recipe = {
-  id: 'litellm',
-  name: 'LiteLLM Proxy (universal)',
-  tier: 'openai-compat',
-  implementation: 'openai-compatible',
-  base_url_default: 'http://localhost:4000', // LiteLLM default
+  id: "litellm",
+  name: "LiteLLM Proxy (universal)",
+  tier: "openai-compat",
+  implementation: "openai-compatible",
+  base_url_default: "http://localhost:4000", // LiteLLM default
   auth_env: {
     required: [], // LITELLM_API_KEY is optional (users may run proxy unauthenticated locally)
-    optional: ['LITELLM_BASE_URL', 'LITELLM_API_KEY'],
-    setup_url: 'https://docs.litellm.ai/docs/proxy/quick_start',
+    optional: ["LITELLM_BASE_URL", "LITELLM_API_KEY"],
+    setup_url: "https://docs.litellm.ai/docs/proxy/quick_start",
   },
   touchpoints: {
     embedding: {
@@ -26,7 +26,7 @@ export const litellmProxy: Recipe = {
       user_provided_models: true, // v0.32 D8=A wire-through for the litellm hardcode
       default_dims: 0, // user must declare --embedding-dimensions explicitly
       cost_per_1m_tokens_usd: undefined,
-      price_last_verified: '2026-04-20',
+      price_last_verified: "2026-04-20",
       // LiteLLM's batch capacity is determined by the backend it proxies;
       // no static cap to declare here. v0.32 (#779).
       no_batch_cap: true,
@@ -41,5 +41,6 @@ export const litellmProxy: Recipe = {
       supports_multimodal: true,
     },
   },
-  setup_hint: 'Run LiteLLM (https://docs.litellm.ai) in front of any provider; set LITELLM_BASE_URL + pass --embedding-model litellm:<model> and --embedding-dimensions <N>.',
+  setup_hint:
+    "Run LiteLLM (https://docs.litellm.ai) in front of any provider; set LITELLM_BASE_URL + pass --embedding-model litellm:<model> and --embedding-dimensions <N>.",
 };

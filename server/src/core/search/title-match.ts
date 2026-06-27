@@ -23,8 +23,27 @@ const MIN_CONTENT_TOKENS = 2;
 // Small, deliberately conservative English stopword set. CJK has no whitespace
 // stopword notion here; CJK queries fall through to the exact-match path.
 const STOPWORDS = new Set([
-  'the', 'a', 'an', 'of', 'and', 'or', 'to', 'in', 'on', 'for', 'with',
-  'at', 'by', 'from', 'as', 'is', 'it', 'this', 'that', 'my', 'your',
+  "the",
+  "a",
+  "an",
+  "of",
+  "and",
+  "or",
+  "to",
+  "in",
+  "on",
+  "for",
+  "with",
+  "at",
+  "by",
+  "from",
+  "as",
+  "is",
+  "it",
+  "this",
+  "that",
+  "my",
+  "your",
 ]);
 
 /**
@@ -37,14 +56,14 @@ export function tokenizeTitle(s: string): string[] {
   if (!s) return [];
   return s
     .toLowerCase()
-    .normalize('NFKC')
+    .normalize("NFKC")
     .split(/[^\p{L}\p{N}]+/u)
     .filter(Boolean);
 }
 
 /** Content tokens = tokens that aren't stopwords. */
 function contentTokens(tokens: string[]): string[] {
-  return tokens.filter(t => !STOPWORDS.has(t));
+  return tokens.filter((t) => !STOPWORDS.has(t));
 }
 
 /** True iff `needle` appears as a contiguous token run inside `haystack`. */
@@ -53,7 +72,10 @@ function containsTokenRun(haystack: string[], needle: string[]): boolean {
   for (let i = 0; i + needle.length <= haystack.length; i++) {
     let ok = true;
     for (let j = 0; j < needle.length; j++) {
-      if (haystack[i + j] !== needle[j]) { ok = false; break; }
+      if (haystack[i + j] !== needle[j]) {
+        ok = false;
+        break;
+      }
     }
     if (ok) return true;
   }
@@ -90,4 +112,10 @@ export function isTitlePhraseMatch(query: string, title: string): boolean {
 }
 
 // Exported for unit tests.
-export const __test__ = { tokenizeTitle, contentTokens, containsTokenRun, STOPWORDS, MIN_CONTENT_TOKENS };
+export const __test__ = {
+  tokenizeTitle,
+  contentTokens,
+  containsTokenRun,
+  STOPWORDS,
+  MIN_CONTENT_TOKENS,
+};

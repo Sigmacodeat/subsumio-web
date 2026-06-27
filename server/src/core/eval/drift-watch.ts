@@ -11,8 +11,8 @@
  * so coverage grows deliberately.
  */
 
-import { execSync } from 'child_process';
-import { existsSync } from 'fs';
+import { execSync } from "child_process";
+import { existsSync } from "fs";
 
 /**
  * Glob-ish patterns watched for retrieval drift. Each pattern is matched
@@ -23,23 +23,26 @@ import { existsSync } from 'fs';
  */
 export const RETRIEVAL_WATCH_PATTERNS: ReadonlyArray<string> = Object.freeze([
   // Search pipeline core
-  'src/core/search/',
+  "src/core/search/",
   // Embedding shape (changing dim or chunker shape moves every result)
-  'src/core/embedding.ts',
+  "src/core/embedding.ts",
   // Chunkers (recursive + semantic + LLM-guided) — chunk granularity is retrieval
-  'src/core/chunkers/',
+  "src/core/chunkers/",
   // AI recipes that drive expansion / embedding choices
-  'src/core/ai/recipes/anthropic.ts',
-  'src/core/ai/recipes/openai.ts',
+  "src/core/ai/recipes/anthropic.ts",
+  "src/core/ai/recipes/openai.ts",
   // The query op itself
-  'src/core/operations.ts',
+  "src/core/operations.ts",
 ]);
 
 /** Path equality / prefix matcher for the curated list. */
-export function matchesWatchPattern(path: string, patterns: ReadonlyArray<string> = RETRIEVAL_WATCH_PATTERNS): boolean {
+export function matchesWatchPattern(
+  path: string,
+  patterns: ReadonlyArray<string> = RETRIEVAL_WATCH_PATTERNS
+): boolean {
   for (const p of patterns) {
     // Trailing-slash pattern = directory prefix
-    if (p.endsWith('/')) {
+    if (p.endsWith("/")) {
       if (path.startsWith(p)) return true;
     } else {
       // Bare-file pattern = exact equality
@@ -60,19 +63,17 @@ export function matchesWatchPattern(path: string, patterns: ReadonlyArray<string
 export function filesDriftedSince(repoRoot: string, commitSha?: string): string[] {
   if (!existsSync(repoRoot)) return [];
   try {
-    const range = commitSha ? `${commitSha}..HEAD` : 'HEAD';
-    const args = commitSha
-      ? ['diff', '--name-only', range]
-      : ['diff', '--name-only', 'HEAD'];
-    const out = execSync(`git ${args.join(' ')}`, {
+    const range = commitSha ? `${commitSha}..HEAD` : "HEAD";
+    const args = commitSha ? ["diff", "--name-only", range] : ["diff", "--name-only", "HEAD"];
+    const out = execSync(`git ${args.join(" ")}`, {
       cwd: repoRoot,
-      encoding: 'utf-8',
-      stdio: ['pipe', 'pipe', 'pipe'],
+      encoding: "utf-8",
+      stdio: ["pipe", "pipe", "pipe"],
       timeout: 5000,
     });
     return out
-      .split('\n')
-      .map(s => s.trim())
+      .split("\n")
+      .map((s) => s.trim())
       .filter((s): s is string => s.length > 0);
   } catch {
     return [];
@@ -86,7 +87,7 @@ export function filesDriftedSince(repoRoot: string, commitSha?: string): string[
 export function watchedFilesDrifted(
   repoRoot: string,
   commitSha?: string,
-  patterns: ReadonlyArray<string> = RETRIEVAL_WATCH_PATTERNS,
+  patterns: ReadonlyArray<string> = RETRIEVAL_WATCH_PATTERNS
 ): string[] {
   return filesDriftedSince(repoRoot, commitSha).filter((p) => matchesWatchPattern(p, patterns));
 }

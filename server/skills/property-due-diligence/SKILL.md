@@ -38,6 +38,7 @@ mutating: true
 ## Contract
 
 This skill guarantees:
+
 1. A document checklist is produced for the transaction type (purchase/sale).
 2. Red flags are cited to the document/passage they come from in the brain.
 3. Deal deadlines (exclusivity, LOI, closing) are surfaced and flagged.
@@ -84,5 +85,6 @@ Typ (Kauf/Verkauf) · Parteien · Zieltermine
 - ❌ Missing the closing/exclusivity deadlines.
 
 ## Error Handling
+
 - Documents missing in brain → mark the checklist items as "not provided", don't assume clean.
 - Deal type unclear → ask; buy-side and sell-side diligence differ.

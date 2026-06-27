@@ -40,16 +40,16 @@
  *     while typing", VS Code's auto-save).
  */
 
-import { watch, type FSWatcher, type ChokidarOptions } from 'chokidar';
-import { stat, readFile } from 'node:fs/promises';
-import { resolve, relative, basename, dirname, sep } from 'node:path';
+import { watch, type FSWatcher, type ChokidarOptions } from "chokidar";
+import { stat, readFile } from "node:fs/promises";
+import { resolve, relative, basename, dirname, sep } from "node:path";
 import {
   computeContentHash,
   type IngestionEvent,
   type IngestionSource,
   type IngestionSourceContext,
-} from '../types.ts';
-import { pruneDir } from '../../sync.ts';
+} from "../types.ts";
+import { pruneDir } from "../../sync.ts";
 
 export interface FileWatcherSourceOpts {
   /** Source instance id. Defaults to 'file-watcher'. Use distinct ids when
@@ -67,7 +67,7 @@ export interface FileWatcherSourceOpts {
   _watchFactory?: (paths: string, opts: ChokidarOptions) => FSWatcher;
 }
 
-const DEFAULT_INCLUDE_EXTENSIONS = ['.md', '.markdown'];
+const DEFAULT_INCLUDE_EXTENSIONS = [".md", ".markdown"];
 
 /** State per watched path: pending debounce timer + buffered event source. */
 interface PendingEntry {
@@ -75,17 +75,17 @@ interface PendingEntry {
   /** The last seen chokidar event for this path — drives the IngestionEvent
    *  we eventually emit (add vs change handled identically; unlink is
    *  separate; the daemon's dedup catches replays). */
-  eventName: 'add' | 'change';
+  eventName: "add" | "change";
 }
 
 export function createFileWatcherSource(opts: FileWatcherSourceOpts): IngestionSource {
-  if (!opts.brainDir || typeof opts.brainDir !== 'string') {
-    throw new Error('FileWatcherSource: brainDir is required (typically sync.repo_path)');
+  if (!opts.brainDir || typeof opts.brainDir !== "string") {
+    throw new Error("FileWatcherSource: brainDir is required (typically sync.repo_path)");
   }
-  const id = opts.id ?? 'file-watcher';
-  const kind = 'file-watcher';
+  const id = opts.id ?? "file-watcher";
+  const kind = "file-watcher";
   const includeExtensions = (opts.includeExtensions ?? DEFAULT_INCLUDE_EXTENSIONS).map((e) =>
-    e.startsWith('.') ? e.toLowerCase() : `.${e.toLowerCase()}`,
+    e.startsWith(".") ? e.toLowerCase() : `.${e.toLowerCase()}`
   );
   const debounceMs = opts.debounceMs ?? 1000;
   const awaitStabilityMs = opts.awaitStabilityMs ?? 1000;
@@ -128,7 +128,7 @@ export function createFileWatcherSource(opts: FileWatcherSourceOpts): IngestionS
     // Read the file at flush time so we capture the post-debounce content.
     // Read failures (file deleted between debounce-fire and read) become
     // silent skips — chokidar will fire 'unlink' separately.
-    readFile(absPath, 'utf8').then(
+    readFile(absPath, "utf8").then(
       (content) => {
         const nowIso = new Date().toISOString();
         const ev: IngestionEvent = {
@@ -136,32 +136,36 @@ export function createFileWatcherSource(opts: FileWatcherSourceOpts): IngestionS
           source_kind: kind,
           source_uri: absPath,
           received_at: nowIso,
-          content_type: 'text/markdown',
+          content_type: "text/markdown",
           content,
           content_hash: computeContentHash(content),
           metadata: {
             event: entry.eventName,
-            extension: includeExtensions.find((e) => absPath.toLowerCase().endsWith(e)) ?? '',
+            extension: includeExtensions.find((e) => absPath.toLowerCase().endsWith(e)) ?? "",
           },
         };
         ctx.emit(ev);
       },
       (err: unknown) => {
         ctx.logger.warn(
-          `file-watcher: failed to read ${absPath}: ${err instanceof Error ? err.message : String(err)}`,
+          `file-watcher: failed to read ${absPath}: ${err instanceof Error ? err.message : String(err)}`
         );
-      },
+      }
     );
   }
 
-  function scheduleFlush(absPath: string, eventName: 'add' | 'change', ctx: IngestionSourceContext): void {
+  function scheduleFlush(
+    absPath: string,
+    eventName: "add" | "change",
+    ctx: IngestionSourceContext
+  ): void {
     const existing = pending.get(absPath);
     if (existing) {
       clearTimeout(existing.timer);
     }
     const timer = setTimeout(() => flushPending(absPath, ctx), debounceMs);
     // Don't keep the process alive solely because of a pending flush.
-    if (typeof (timer as { unref?: () => void }).unref === 'function') {
+    if (typeof (timer as { unref?: () => void }).unref === "function") {
       (timer as { unref?: () => void }).unref!();
     }
     pending.set(absPath, { timer, eventName });
@@ -174,7 +178,7 @@ export function createFileWatcherSource(opts: FileWatcherSourceOpts): IngestionS
       const stats = await stat(brainDirAbs).catch(() => null);
       if (!stats || !stats.isDirectory()) {
         throw new Error(
-          `file-watcher: brainDir does not exist or is not a directory: ${brainDirAbs}`,
+          `file-watcher: brainDir does not exist or is not a directory: ${brainDirAbs}`
         );
       }
 
@@ -202,28 +206,28 @@ export function createFileWatcherSource(opts: FileWatcherSourceOpts): IngestionS
       // Error events are not fatal — log and continue. chokidar surfaces
       // platform issues (EBUSY on Windows, EACCES on locked files, ENOSPC
       // when inotify limit is exhausted on Linux) via this channel.
-      w.on('error', (err: unknown) => {
+      w.on("error", (err: unknown) => {
         const msg = err instanceof Error ? err.message : String(err);
         ctx.logger.warn(`file-watcher: chokidar error: ${msg}`);
         // Surface inotify exhaustion in particular — it's the most common
         // operational footgun on Linux at scale. Doctor's inotify probe
         // catches the static case; this is the runtime detection.
-        if (msg.includes('ENOSPC')) {
+        if (msg.includes("ENOSPC")) {
           ctx.logger.error(
             `file-watcher: inotify watch limit exceeded. Raise the kernel limit: ` +
               `sudo sysctl fs.inotify.max_user_watches=524288 ` +
-              `(persist by adding to /etc/sysctl.conf)`,
+              `(persist by adding to /etc/sysctl.conf)`
           );
         }
       });
 
-      w.on('add', (path: string) => {
+      w.on("add", (path: string) => {
         if (!isIncludedFile(path)) return;
-        scheduleFlush(path, 'add', ctx);
+        scheduleFlush(path, "add", ctx);
       });
-      w.on('change', (path: string) => {
+      w.on("change", (path: string) => {
         if (!isIncludedFile(path)) return;
-        scheduleFlush(path, 'change', ctx);
+        scheduleFlush(path, "change", ctx);
       });
       // Unlink events: we don't emit IngestionEvents for deletions in v1.
       // The reconcile-on-sync path handles tombstones via the broader sync
@@ -231,7 +235,7 @@ export function createFileWatcherSource(opts: FileWatcherSourceOpts): IngestionS
       // is for additive ingestion.
 
       // Cooperate with daemon shutdown.
-      ctx.abortSignal.addEventListener('abort', () => {
+      ctx.abortSignal.addEventListener("abort", () => {
         // Stop processing pending flushes — they may never settle if the
         // daemon is shutting down.
         for (const entry of pending.values()) {
@@ -244,13 +248,13 @@ export function createFileWatcherSource(opts: FileWatcherSourceOpts): IngestionS
       // start() at that point so the daemon supervisor knows we're live.
       await new Promise<void>((resolveReady, rejectReady) => {
         let settled = false;
-        w.once('ready', () => {
+        w.once("ready", () => {
           if (settled) return;
           settled = true;
           ctx.logger.info(`file-watcher: ready, watching ${brainDirAbs}`);
           resolveReady();
         });
-        w.once('error', (err: unknown) => {
+        w.once("error", (err: unknown) => {
           if (settled) return;
           settled = true;
           rejectReady(err instanceof Error ? err : new Error(String(err)));
@@ -261,9 +265,11 @@ export function createFileWatcherSource(opts: FileWatcherSourceOpts): IngestionS
         const safetyTimer = setTimeout(() => {
           if (settled) return;
           settled = true;
-          rejectReady(new Error(`file-watcher: chokidar did not emit 'ready' within 60s for ${brainDirAbs}`));
+          rejectReady(
+            new Error(`file-watcher: chokidar did not emit 'ready' within 60s for ${brainDirAbs}`)
+          );
         }, 60_000);
-        if (typeof (safetyTimer as { unref?: () => void }).unref === 'function') {
+        if (typeof (safetyTimer as { unref?: () => void }).unref === "function") {
           (safetyTimer as { unref?: () => void }).unref!();
         }
       });
@@ -287,7 +293,7 @@ export function createFileWatcherSource(opts: FileWatcherSourceOpts): IngestionS
 
     async healthCheck() {
       if (!watcher) {
-        return { status: 'fail', message: 'watcher not initialized' };
+        return { status: "fail", message: "watcher not initialized" };
       }
       // chokidar exposes getWatched() which returns the directories under
       // watch. An empty map means inotify is exhausted or the brain dir
@@ -295,9 +301,9 @@ export function createFileWatcherSource(opts: FileWatcherSourceOpts): IngestionS
       const watched = watcher.getWatched();
       const totalDirs = Object.keys(watched).length;
       if (totalDirs === 0) {
-        return { status: 'warn', message: 'no directories under watch' };
+        return { status: "warn", message: "no directories under watch" };
       }
-      return { status: 'ok' };
+      return { status: "ok" };
     },
   };
 }

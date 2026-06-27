@@ -19,11 +19,11 @@
 //   - canonical_unreachable: resolver couldn't extract canonical from body
 //   - parse_failed: page body failed markdown parse
 
-import type { BrainEngine } from '../engine.ts';
-import type { OperationContext } from '../operations.ts';
-import { parseMarkdown } from '../markdown.ts';
-import { loadActivePackBestEffort } from './best-effort.ts';
-import type { PackResolverSpec } from './manifest-v1.ts';
+import type { BrainEngine } from "../engine.ts";
+import type { OperationContext } from "../operations.ts";
+import { parseMarkdown } from "../markdown.ts";
+import { loadActivePackBestEffort } from "./best-effort.ts";
+import type { PackResolverSpec } from "./manifest-v1.ts";
 
 export interface PageToAliasRule {
   from_type: string;
@@ -53,11 +53,7 @@ export interface PerPageToAliasResult {
   soft_deleted: number;
   unresolved: Array<{
     slug: string;
-    reason:
-      | 'canonical_missing'
-      | 'self_reference'
-      | 'canonical_unreachable'
-      | 'parse_failed';
+    reason: "canonical_missing" | "self_reference" | "canonical_unreachable" | "parse_failed";
   }>;
 }
 
@@ -77,24 +73,24 @@ export interface PageToAliasResult {
  */
 function resolveValue(
   spec: PackResolverSpec,
-  page: { slug: string; compiled_truth: string; frontmatter: Record<string, unknown> },
+  page: { slug: string; compiled_truth: string; frontmatter: Record<string, unknown> }
 ): string | undefined {
-  if (spec === 'slug') return page.slug;
-  if (spec === 'body_excerpt') {
-    const body = page.compiled_truth ?? '';
+  if (spec === "slug") return page.slug;
+  if (spec === "body_excerpt") {
+    const body = page.compiled_truth ?? "";
     return body.slice(0, 240);
   }
-  if (spec === 'frontmatter') return undefined;
-  if (spec === 'body_first_link') {
+  if (spec === "frontmatter") return undefined;
+  if (spec === "body_first_link") {
     const wiki = page.compiled_truth.match(/\[\[([^\]\|]+)/);
     if (wiki?.[1]) return wiki[1].trim();
     const md = page.compiled_truth.match(/\[[^\]]+\]\(([^)]+)\)/);
     if (md?.[1]) return md[1].trim();
     return undefined;
   }
-  if (typeof spec === 'object' && spec !== null && 'frontmatter_field' in spec) {
+  if (typeof spec === "object" && spec !== null && "frontmatter_field" in spec) {
     const val = page.frontmatter[spec.frontmatter_field];
-    if (typeof val === 'string') return val.trim();
+    if (typeof val === "string") return val.trim();
     return undefined;
   }
   return undefined;
@@ -106,11 +102,11 @@ function resolveValue(
 async function canonicalExists(
   engine: BrainEngine,
   slug: string,
-  sourceId: string,
+  sourceId: string
 ): Promise<boolean> {
   const rows = await engine.executeRaw<{ id: number }>(
     `SELECT id FROM pages WHERE slug = $1 AND source_id = $2 AND deleted_at IS NULL LIMIT 1`,
-    [slug, sourceId],
+    [slug, sourceId]
   );
   return rows.length > 0;
 }
@@ -124,14 +120,14 @@ async function insertAliasRow(
   sourceId: string,
   aliasSlug: string,
   canonicalSlug: string,
-  notes: string | undefined,
+  notes: string | undefined
 ): Promise<boolean> {
   const rows = await engine.executeRaw<{ id: number }>(
     `INSERT INTO slug_aliases (source_id, alias_slug, canonical_slug, notes)
      VALUES ($1, $2, $3, $4)
      ON CONFLICT (source_id, alias_slug) DO NOTHING
      RETURNING id`,
-    [sourceId, aliasSlug, canonicalSlug, notes ?? null],
+    [sourceId, aliasSlug, canonicalSlug, notes ?? null]
   );
   return rows.length > 0;
 }
@@ -146,11 +142,11 @@ async function insertAliasRow(
  */
 export async function runPageToAliasCore(
   ctx: OperationContext,
-  opts: PageToAliasOpts,
+  opts: PageToAliasOpts
 ): Promise<PageToAliasResult> {
   const apply = opts.apply === true;
   const limit = Math.max(1, Math.min(50000, opts.perRuleLimit ?? 10000));
-  const effectiveSourceId = opts.sourceId ?? 'default';
+  const effectiveSourceId = opts.sourceId ?? "default";
   const pack = await loadActivePackBestEffort(ctx);
 
   const per_rule: PerPageToAliasResult[] = [];
@@ -166,55 +162,55 @@ export async function runPageToAliasCore(
       frontmatter: Record<string, unknown> | string | null;
     }>(
       `SELECT slug, compiled_truth, frontmatter FROM pages ${where} ORDER BY slug LIMIT ${limit}`,
-      [rule.from_type, effectiveSourceId],
+      [rule.from_type, effectiveSourceId]
     );
     const would_alias = rows.length;
     const sample_slugs = rows.slice(0, 10).map((r) => r.slug);
-    const unresolved: PerPageToAliasResult['unresolved'] = [];
+    const unresolved: PerPageToAliasResult["unresolved"] = [];
     let aliased = 0;
     let soft_deleted = 0;
 
     if (apply && would_alias > 0) {
       for (const r of rows) {
         let fm: Record<string, unknown> = {};
-        if (r.frontmatter && typeof r.frontmatter === 'object') {
+        if (r.frontmatter && typeof r.frontmatter === "object") {
           fm = r.frontmatter as Record<string, unknown>;
-        } else if (typeof r.frontmatter === 'string') {
+        } else if (typeof r.frontmatter === "string") {
           try {
             fm = JSON.parse(r.frontmatter);
           } catch {
             try {
-              const parsed = parseMarkdown(`---\n${r.frontmatter}\n---\n${r.compiled_truth ?? ''}`);
+              const parsed = parseMarkdown(`---\n${r.frontmatter}\n---\n${r.compiled_truth ?? ""}`);
               fm = parsed.frontmatter;
             } catch {
-              unresolved.push({ slug: r.slug, reason: 'parse_failed' });
+              unresolved.push({ slug: r.slug, reason: "parse_failed" });
               continue;
             }
           }
         }
         const pageView = {
           slug: r.slug,
-          compiled_truth: r.compiled_truth ?? '',
+          compiled_truth: r.compiled_truth ?? "",
           frontmatter: fm,
         };
         const aliasSlug = resolveValue(rule.alias_slug_from, pageView);
         const canonicalSlug = resolveValue(rule.canonical_from, pageView);
         if (!aliasSlug) {
-          unresolved.push({ slug: r.slug, reason: 'canonical_unreachable' });
+          unresolved.push({ slug: r.slug, reason: "canonical_unreachable" });
           continue;
         }
         if (!canonicalSlug) {
-          unresolved.push({ slug: r.slug, reason: 'canonical_unreachable' });
+          unresolved.push({ slug: r.slug, reason: "canonical_unreachable" });
           continue;
         }
         if (aliasSlug === canonicalSlug) {
-          unresolved.push({ slug: r.slug, reason: 'self_reference' });
+          unresolved.push({ slug: r.slug, reason: "self_reference" });
           continue;
         }
         // Verify canonical exists in pages.
         const exists = await canonicalExists(ctx.engine, canonicalSlug, effectiveSourceId);
         if (!exists) {
-          unresolved.push({ slug: r.slug, reason: 'canonical_missing' });
+          unresolved.push({ slug: r.slug, reason: "canonical_missing" });
           continue;
         }
         const notes = rule.notes_from ? resolveValue(rule.notes_from, pageView) : undefined;

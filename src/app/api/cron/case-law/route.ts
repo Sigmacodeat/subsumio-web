@@ -32,7 +32,7 @@ async function readWatchlist(brainId: string): Promise<WatchTerm[]> {
   try {
     const res = await fetch(`${ENGINE_URL}/api/pages/${WATCHLIST_SLUG}`, {
       headers: engineHeadersForBrain(brainId),
-    signal: AbortSignal.timeout(30_000),
+      signal: AbortSignal.timeout(30_000),
     });
     if (!res.ok) return [];
     const page = (await res.json()) as { frontmatter?: Record<string, unknown> };

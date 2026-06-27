@@ -13,19 +13,19 @@
  * burning the brain operator's Voyage account.
  */
 
-import type { BrainEngine } from './engine.ts';
-import { sqlQueryForEngine } from './sql-query.ts';
+import type { BrainEngine } from "./engine.ts";
+import { sqlQueryForEngine } from "./sql-query.ts";
 
 /** Per-call Voyage multimodal-3 spend estimate (per image), in cents. */
 export const VOYAGE_MULTIMODAL_3_PER_IMAGE_CENTS = 0.12;
 
 export class BudgetExceededError extends Error {
-  readonly code = 'BUDGET_EXCEEDED' as const;
+  readonly code = "BUDGET_EXCEEDED" as const;
   readonly spentCents: number;
   readonly capCents: number;
   constructor(message: string, spentCents: number, capCents: number) {
     super(message);
-    this.name = 'BudgetExceededError';
+    this.name = "BudgetExceededError";
     this.spentCents = spentCents;
     this.capCents = capCents;
   }
@@ -35,10 +35,7 @@ export class BudgetExceededError extends Error {
  * Sum today's recorded spend for a client. Returns 0 if the row count
  * is zero (new client) OR if the table doesn't exist (pre-v0.36 brain).
  */
-export async function getTodaySpendCents(
-  engine: BrainEngine,
-  clientId: string,
-): Promise<number> {
+export async function getTodaySpendCents(engine: BrainEngine, clientId: string): Promise<number> {
   try {
     const sql = sqlQueryForEngine(engine);
     const rows = await sql`
@@ -47,7 +44,7 @@ export async function getTodaySpendCents(
       WHERE client_id = ${clientId}
         AND created_at >= ${todayStartIso()}
     `;
-    const total = parseFloat(String(rows[0]?.total ?? '0'));
+    const total = parseFloat(String(rows[0]?.total ?? "0"));
     return Number.isFinite(total) ? total : 0;
   } catch {
     // Table doesn't exist (pre-v0.36 brain) or DB hiccup — fail-open to 0.
@@ -69,7 +66,7 @@ export async function getTodaySpendCents(
 export async function checkBudget(
   engine: BrainEngine,
   clientId: string,
-  dailyBudgetCents: number,
+  dailyBudgetCents: number
 ): Promise<void> {
   if (!clientId) return; // local CLI callers (no client_id) bypass the gate
   if (dailyBudgetCents <= 0) return; // 0 = "no cap" sentinel
@@ -77,9 +74,9 @@ export async function checkBudget(
   if (spent >= dailyBudgetCents) {
     throw new BudgetExceededError(
       `Daily Voyage spend cap reached: $${(spent / 100).toFixed(2)} >= $${(dailyBudgetCents / 100).toFixed(2)}. ` +
-      `Reset at midnight UTC.`,
+        `Reset at midnight UTC.`,
       spent,
-      dailyBudgetCents,
+      dailyBudgetCents
     );
   }
 }
@@ -100,7 +97,7 @@ export async function recordSpend(
     spendCents: number;
     provider?: string;
     model?: string;
-  },
+  }
 ): Promise<void> {
   try {
     const sql = sqlQueryForEngine(engine);

@@ -35,9 +35,7 @@ describe("normalizeStatuteCode", () => {
 
 describe("CORPUS_META", () => {
   it("contains entries for AT, DE, and CH jurisdictions", () => {
-    const jurisdictions = new Set(
-      Object.values(CORPUS_META).map((m) => m.jurisdiction)
-    );
+    const jurisdictions = new Set(Object.values(CORPUS_META).map((m) => m.jurisdiction));
     expect(jurisdictions.has("at")).toBe(true);
     expect(jurisdictions.has("de")).toBe(true);
     expect(jurisdictions.has("ch")).toBe(true);
@@ -170,9 +168,7 @@ describe("groundCitations", () => {
   it("truncates source_text to 600 chars", async () => {
     const longText = "A".repeat(1000);
     vi.mocked(fs.readFile).mockResolvedValueOnce(longText);
-    const result = await groundCitations([
-      { code: "BGB", paragraph: "1", context: "" },
-    ]);
+    const result = await groundCitations([{ code: "BGB", paragraph: "1", context: "" }]);
     expect(result[0].source_text).toHaveLength(600);
   });
 });

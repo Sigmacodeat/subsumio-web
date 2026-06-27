@@ -17,10 +17,10 @@
  * the same shape for outbound provider concurrency caps).
  */
 
-import { randomUUIDv7 } from 'bun';
-import type { BrainEngine } from '../engine.ts';
-import { sqlQueryForEngine } from '../sql-query.ts';
-import { BudgetExceededError } from '../spend-log.ts';
+import { randomUUIDv7 } from "bun";
+import type { BrainEngine } from "../engine.ts";
+import { sqlQueryForEngine } from "../sql-query.ts";
+import { BudgetExceededError } from "../spend-log.ts";
 
 /** Reservation TTL — 10 minutes. Long enough for any normal subagent call;
  *  short enough that crashed workers don't strand capacity for long. */
@@ -66,10 +66,7 @@ export interface Reservation {
  * Lock auto-releases at transaction end (xact-scoped). The whole operation
  * is single round-trip (one transaction).
  */
-export async function reserve(
-  engine: BrainEngine,
-  opts: ReserveOpts,
-): Promise<Reservation> {
+export async function reserve(engine: BrainEngine, opts: ReserveOpts): Promise<Reservation> {
   const sql = sqlQueryForEngine(engine);
   const reservationId = randomUUIDv7();
   const lockKey = clientLockKey(opts.clientId);
@@ -108,16 +105,16 @@ export async function reserve(
            AND created_at >= ${todayStart}
       ), '0') AS pending_text
   `;
-  const committedCents = parseFloat(String(rows[0]?.committed_text ?? '0'));
-  const pendingCents = parseFloat(String(rows[0]?.pending_text ?? '0'));
+  const committedCents = parseFloat(String(rows[0]?.committed_text ?? "0"));
+  const pendingCents = parseFloat(String(rows[0]?.pending_text ?? "0"));
   const totalProjected = committedCents + pendingCents + opts.estimatedCents;
   if (totalProjected > opts.capCents) {
     throw new BudgetExceededError(
       `budget exceeded for client ${opts.clientId}: ` +
-      `committed=${committedCents.toFixed(2)}¢, pending=${pendingCents.toFixed(2)}¢, ` +
-      `estimated=${opts.estimatedCents.toFixed(2)}¢, cap=${opts.capCents.toFixed(2)}¢`,
+        `committed=${committedCents.toFixed(2)}¢, pending=${pendingCents.toFixed(2)}¢, ` +
+        `estimated=${opts.estimatedCents.toFixed(2)}¢, cap=${opts.capCents.toFixed(2)}¢`,
       Math.round(committedCents + pendingCents),
-      Math.round(opts.capCents),
+      Math.round(opts.capCents)
     );
   }
 
@@ -146,7 +143,7 @@ export async function settle(
   engine: BrainEngine,
   reservationId: string,
   actualCents: number,
-  operation: string = 'subagent_loop',
+  operation: string = "subagent_loop"
 ): Promise<void> {
   const sql = sqlQueryForEngine(engine);
   // Single UPDATE with WHERE status='pending' to ensure idempotent settles.
@@ -196,7 +193,7 @@ export async function sweepExpiredReservations(engine: BrainEngine): Promise<num
  *  `null` when no cap is set (legacy clients pre-v83). */
 export async function getClientDailyCapCents(
   engine: BrainEngine,
-  clientId: string,
+  clientId: string
 ): Promise<number | null> {
   try {
     const sql = sqlQueryForEngine(engine);

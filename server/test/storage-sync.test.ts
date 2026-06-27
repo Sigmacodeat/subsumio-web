@@ -9,12 +9,21 @@
  * config — no-op" path.
  */
 
-import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync, readFileSync, existsSync, chmodSync, symlinkSync } from 'fs';
-import { join } from 'path';
-import { tmpdir } from 'os';
-import { manageGitignore } from '../src/commands/sync.ts';
-import { __resetMissingStorageWarning } from '../src/core/storage-config.ts';
+import { describe, test, expect, beforeEach, afterEach } from "bun:test";
+import {
+  mkdtempSync,
+  mkdirSync,
+  rmSync,
+  writeFileSync,
+  readFileSync,
+  existsSync,
+  chmodSync,
+  symlinkSync,
+} from "fs";
+import { join } from "path";
+import { tmpdir } from "os";
+import { manageGitignore } from "../src/commands/sync.ts";
+import { __resetMissingStorageWarning } from "../src/core/storage-config.ts";
 
 let tmp: string;
 let warnings: string[];
@@ -22,12 +31,12 @@ let originalWarn: typeof console.warn;
 let originalEnv: string | undefined;
 
 beforeEach(() => {
-  tmp = mkdtempSync(join(tmpdir(), 'gbrain-mgi-test-'));
+  tmp = mkdtempSync(join(tmpdir(), "gbrain-mgi-test-"));
   __resetMissingStorageWarning();
   warnings = [];
   originalWarn = console.warn;
   console.warn = (...args: unknown[]) => {
-    warnings.push(args.map(String).join(' '));
+    warnings.push(args.map(String).join(" "));
   };
   originalEnv = process.env.GBRAIN_NO_GITIGNORE;
   delete process.env.GBRAIN_NO_GITIGNORE;
@@ -48,96 +57,96 @@ afterEach(() => {
 
 function writeStorageConfig(): void {
   writeFileSync(
-    join(tmp, 'gbrain.yml'),
+    join(tmp, "gbrain.yml"),
     `storage:
   db_tracked:
     - people/
   db_only:
     - media/x/
     - media/articles/
-`,
+`
   );
 }
 
-describe('manageGitignore', () => {
-  test('no-op when gbrain.yml is absent', () => {
+describe("manageGitignore", () => {
+  test("no-op when gbrain.yml is absent", () => {
     manageGitignore(tmp);
-    expect(existsSync(join(tmp, '.gitignore'))).toBe(false);
+    expect(existsSync(join(tmp, ".gitignore"))).toBe(false);
     expect(warnings).toEqual([]);
   });
 
-  test('no-op when storage config has empty db_only', () => {
+  test("no-op when storage config has empty db_only", () => {
     writeFileSync(
-      join(tmp, 'gbrain.yml'),
+      join(tmp, "gbrain.yml"),
       `storage:
   db_tracked:
     - people/
   db_only: []
-`,
+`
     );
     manageGitignore(tmp);
-    expect(existsSync(join(tmp, '.gitignore'))).toBe(false);
+    expect(existsSync(join(tmp, ".gitignore"))).toBe(false);
   });
 
-  test('appends db_only directories to .gitignore — happy path', () => {
+  test("appends db_only directories to .gitignore — happy path", () => {
     writeStorageConfig();
     manageGitignore(tmp);
-    const content = readFileSync(join(tmp, '.gitignore'), 'utf-8');
-    expect(content).toContain('# Auto-managed by gbrain');
-    expect(content).toContain('media/x/');
-    expect(content).toContain('media/articles/');
+    const content = readFileSync(join(tmp, ".gitignore"), "utf-8");
+    expect(content).toContain("# Auto-managed by gbrain");
+    expect(content).toContain("media/x/");
+    expect(content).toContain("media/articles/");
   });
 
-  test('idempotent — running twice does NOT duplicate entries', () => {
+  test("idempotent — running twice does NOT duplicate entries", () => {
     writeStorageConfig();
     manageGitignore(tmp);
     manageGitignore(tmp);
-    const content = readFileSync(join(tmp, '.gitignore'), 'utf-8');
+    const content = readFileSync(join(tmp, ".gitignore"), "utf-8");
     const xCount = (content.match(/^media\/x\/$/gm) || []).length;
     const articlesCount = (content.match(/^media\/articles\/$/gm) || []).length;
     expect(xCount).toBe(1);
     expect(articlesCount).toBe(1);
   });
 
-  test('preserves user-written .gitignore entries', () => {
+  test("preserves user-written .gitignore entries", () => {
     writeStorageConfig();
-    writeFileSync(join(tmp, '.gitignore'), '# my own rules\n*.swp\nnode_modules/\n');
+    writeFileSync(join(tmp, ".gitignore"), "# my own rules\n*.swp\nnode_modules/\n");
     manageGitignore(tmp);
-    const content = readFileSync(join(tmp, '.gitignore'), 'utf-8');
-    expect(content).toContain('# my own rules');
-    expect(content).toContain('*.swp');
-    expect(content).toContain('node_modules/');
-    expect(content).toContain('media/x/');
+    const content = readFileSync(join(tmp, ".gitignore"), "utf-8");
+    expect(content).toContain("# my own rules");
+    expect(content).toContain("*.swp");
+    expect(content).toContain("node_modules/");
+    expect(content).toContain("media/x/");
   });
 
-  test('GBRAIN_NO_GITIGNORE=1 skips entirely', () => {
+  test("GBRAIN_NO_GITIGNORE=1 skips entirely", () => {
     writeStorageConfig();
-    process.env.GBRAIN_NO_GITIGNORE = '1';
+    process.env.GBRAIN_NO_GITIGNORE = "1";
     manageGitignore(tmp);
-    expect(existsSync(join(tmp, '.gitignore'))).toBe(false);
+    expect(existsSync(join(tmp, ".gitignore"))).toBe(false);
   });
 
-  test('skips with actionable warning when repo is a git submodule', () => {
+  test("skips with actionable warning when repo is a git submodule", () => {
     writeStorageConfig();
     // Submodule: .git is a file containing `gitdir: ...` instead of a directory.
-    writeFileSync(join(tmp, '.git'), 'gitdir: ../.git/modules/sub\n');
+    writeFileSync(join(tmp, ".git"), "gitdir: ../.git/modules/sub\n");
     manageGitignore(tmp);
-    expect(existsSync(join(tmp, '.gitignore'))).toBe(false);
+    expect(existsSync(join(tmp, ".gitignore"))).toBe(false);
     expect(warnings.some((w) => /submodule/.test(w))).toBe(true);
   });
 
-  test('proceeds when .git is a directory (regular repo)', () => {
+  test("proceeds when .git is a directory (regular repo)", () => {
     writeStorageConfig();
-    mkdirSync(join(tmp, '.git'));
+    mkdirSync(join(tmp, ".git"));
     manageGitignore(tmp);
-    expect(existsSync(join(tmp, '.gitignore'))).toBe(true);
+    expect(existsSync(join(tmp, ".gitignore"))).toBe(true);
     expect(warnings.filter((w) => /submodule/.test(w))).toEqual([]);
   });
 
-  test('warns and skips when .gitignore write fails (read-only filesystem simulation)', () => {
+  test("warns and skips when .gitignore write fails (read-only filesystem simulation)", () => {
     writeStorageConfig();
     // Create a .gitignore as a directory — write to that path will fail with EISDIR.
-    mkdirSync(join(tmp, '.gitignore'));
+    mkdirSync(join(tmp, ".gitignore"));
     manageGitignore(tmp);
     expect(warnings.some((w) => /Could not (read|update)/.test(w))).toBe(true);
   });
@@ -146,45 +155,45 @@ describe('manageGitignore', () => {
   // Worktree vs submodule discrimination (closes #889)
   // ────────────────────────────────────────────────────────────────
 
-  test('REGRESSION: submodule with relative gitdir/modules/ → skip (D49 contract)', () => {
+  test("REGRESSION: submodule with relative gitdir/modules/ → skip (D49 contract)", () => {
     writeStorageConfig();
-    writeFileSync(join(tmp, '.git'), 'gitdir: ../.git/modules/sub\n');
+    writeFileSync(join(tmp, ".git"), "gitdir: ../.git/modules/sub\n");
     manageGitignore(tmp);
-    expect(existsSync(join(tmp, '.gitignore'))).toBe(false);
+    expect(existsSync(join(tmp, ".gitignore"))).toBe(false);
     expect(warnings.some((w) => /submodule/.test(w))).toBe(true);
   });
 
-  test('absorbed submodule with absolute gitdir/modules/ → skip (closes edge case)', () => {
+  test("absorbed submodule with absolute gitdir/modules/ → skip (closes edge case)", () => {
     writeStorageConfig();
     // After `git submodule absorbgitdirs`, the gitdir path becomes absolute.
-    writeFileSync(join(tmp, '.git'), 'gitdir: /home/user/parent/.git/modules/sub\n');
+    writeFileSync(join(tmp, ".git"), "gitdir: /home/user/parent/.git/modules/sub\n");
     manageGitignore(tmp);
-    expect(existsSync(join(tmp, '.gitignore'))).toBe(false);
+    expect(existsSync(join(tmp, ".gitignore"))).toBe(false);
     expect(warnings.some((w) => /submodule/.test(w))).toBe(true);
   });
 
-  test('CRITICAL: worktree with absolute gitdir/worktrees/ → MANAGE (closes #889)', () => {
+  test("CRITICAL: worktree with absolute gitdir/worktrees/ → MANAGE (closes #889)", () => {
     writeStorageConfig();
-    writeFileSync(join(tmp, '.git'), 'gitdir: /home/user/repo/.git/worktrees/feature-branch\n');
+    writeFileSync(join(tmp, ".git"), "gitdir: /home/user/repo/.git/worktrees/feature-branch\n");
     manageGitignore(tmp);
-    expect(existsSync(join(tmp, '.gitignore'))).toBe(true);
+    expect(existsSync(join(tmp, ".gitignore"))).toBe(true);
     expect(warnings.filter((w) => /submodule/.test(w))).toEqual([]);
   });
 
-  test('worktree with relative gitdir/worktrees/ → MANAGE', () => {
+  test("worktree with relative gitdir/worktrees/ → MANAGE", () => {
     writeStorageConfig();
-    writeFileSync(join(tmp, '.git'), 'gitdir: ../.git/worktrees/feature-branch\n');
+    writeFileSync(join(tmp, ".git"), "gitdir: ../.git/worktrees/feature-branch\n");
     manageGitignore(tmp);
-    expect(existsSync(join(tmp, '.gitignore'))).toBe(true);
+    expect(existsSync(join(tmp, ".gitignore"))).toBe(true);
     expect(warnings.filter((w) => /submodule/.test(w))).toEqual([]);
   });
 
-  test('malformed .git file (no gitdir: prefix) → MANAGE (preserves catch behavior)', () => {
+  test("malformed .git file (no gitdir: prefix) → MANAGE (preserves catch behavior)", () => {
     writeStorageConfig();
-    writeFileSync(join(tmp, '.git'), 'garbage content\n');
+    writeFileSync(join(tmp, ".git"), "garbage content\n");
     manageGitignore(tmp);
     // No gitdir prefix → not a submodule → MANAGE.
-    expect(existsSync(join(tmp, '.gitignore'))).toBe(true);
+    expect(existsSync(join(tmp, ".gitignore"))).toBe(true);
     expect(warnings.filter((w) => /submodule/.test(w))).toEqual([]);
   });
 });

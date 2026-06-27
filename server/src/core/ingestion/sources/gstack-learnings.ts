@@ -48,27 +48,34 @@
  * the canonical source of truth and stays there forever.
  */
 
-import { readFileSync, existsSync, statSync, readdirSync, watch as fsWatch } from 'node:fs';
-import type { FSWatcher } from 'node:fs';
-import { join } from 'node:path';
-import { homedir } from 'node:os';
-import { computeContentHash } from '../types.ts';
+import { readFileSync, existsSync, statSync, readdirSync, watch as fsWatch } from "node:fs";
+import type { FSWatcher } from "node:fs";
+import { join } from "node:path";
+import { homedir } from "node:os";
+import { computeContentHash } from "../types.ts";
 import type {
   IngestionSource,
   IngestionSourceContext,
   IngestionEvent,
   IngestionSourceMode,
   IngestionSourceHealth,
-} from '../types.ts';
+} from "../types.ts";
 
 /** Shape of one JSONL line per `~/.claude/skills/gstack/bin/gstack-learnings-log`. */
 export interface GstackLearningLine {
   skill: string;
-  type: 'pattern' | 'pitfall' | 'preference' | 'architecture' | 'tool' | 'operational' | 'investigation';
+  type:
+    | "pattern"
+    | "pitfall"
+    | "preference"
+    | "architecture"
+    | "tool"
+    | "operational"
+    | "investigation";
   key: string;
   insight: string;
   confidence: number;
-  source: 'observed' | 'user-stated' | 'inferred' | 'cross-model';
+  source: "observed" | "user-stated" | "inferred" | "cross-model";
   files?: string[];
   ts?: string;
   branch?: string;
@@ -90,14 +97,14 @@ export interface GstackLearningsSourceOpts {
 
 export class GstackLearningsSource implements IngestionSource {
   readonly id: string;
-  readonly kind = 'gstack-learnings';
+  readonly kind = "gstack-learnings";
   // trickle mode — line-level content_hash dedup via the daemon's 24h window
-  readonly mode: IngestionSourceMode = 'trickle';
+  readonly mode: IngestionSourceMode = "trickle";
 
   private readonly paths: string[];
   private readonly watchers: FSWatcher[] = [];
   private readonly seenLines = new Set<string>();
-  private readonly opts: Required<Omit<GstackLearningsSourceOpts, 'paths' | 'crossProject'>> & {
+  private readonly opts: Required<Omit<GstackLearningsSourceOpts, "paths" | "crossProject">> & {
     paths: string[];
     crossProject: boolean;
   };
@@ -108,7 +115,7 @@ export class GstackLearningsSource implements IngestionSource {
     this.opts = {
       paths: opts.paths ?? [],
       crossProject: opts.crossProject ?? true,
-      _readFile: opts._readFile ?? ((p) => readFileSync(p, 'utf-8')),
+      _readFile: opts._readFile ?? ((p) => readFileSync(p, "utf-8")),
       _existsSync: opts._existsSync ?? existsSync,
       _skipWatch: opts._skipWatch ?? false,
     };
@@ -125,17 +132,17 @@ export class GstackLearningsSource implements IngestionSource {
       // git repo root would require a child process; for v0.41 minimal
       // viable, fall back to the cwd basename.
       const cwd = process.cwd();
-      const projectName = cwd.split('/').pop() ?? 'unknown';
-      const single = join(homedir(), '.gstack', 'projects', projectName, 'learnings.jsonl');
+      const projectName = cwd.split("/").pop() ?? "unknown";
+      const single = join(homedir(), ".gstack", "projects", projectName, "learnings.jsonl");
       return this.opts._existsSync(single) ? [single] : [];
     }
-    const projectsRoot = join(homedir(), '.gstack', 'projects');
+    const projectsRoot = join(homedir(), ".gstack", "projects");
     if (!this.opts._existsSync(projectsRoot)) return [];
     try {
       const entries = readdirSync(projectsRoot, { withFileTypes: true });
       return entries
         .filter((e) => e.isDirectory())
-        .map((e) => join(projectsRoot, e.name, 'learnings.jsonl'))
+        .map((e) => join(projectsRoot, e.name, "learnings.jsonl"))
         .filter((p) => this.opts._existsSync(p));
     } catch {
       return [];
@@ -150,7 +157,7 @@ export class GstackLearningsSource implements IngestionSource {
     for (const path of this.paths) {
       try {
         const content = this.opts._readFile(path);
-        for (const line of content.split('\n')) {
+        for (const line of content.split("\n")) {
           const trimmed = line.trim();
           if (trimmed.length === 0) continue;
           // Hash the canonical-JSON shape, not the raw line, so reformatting
@@ -165,7 +172,7 @@ export class GstackLearningsSource implements IngestionSource {
         }
       } catch (err) {
         ctx.logger.warn(
-          `[gstack-learnings] failed to seed seen-lines from ${path}: ${err instanceof Error ? err.message : String(err)}`,
+          `[gstack-learnings] failed to seed seen-lines from ${path}: ${err instanceof Error ? err.message : String(err)}`
         );
       }
     }
@@ -177,10 +184,10 @@ export class GstackLearningsSource implements IngestionSource {
         if (!this.opts._existsSync(path)) continue;
         try {
           const watcher = fsWatch(path, (eventType) => {
-            if (eventType === 'change') {
+            if (eventType === "change") {
               this.rescanFile(path).catch((err) => {
                 ctx.logger.warn(
-                  `[gstack-learnings] rescan failed for ${path}: ${err instanceof Error ? err.message : String(err)}`,
+                  `[gstack-learnings] rescan failed for ${path}: ${err instanceof Error ? err.message : String(err)}`
                 );
               });
             }
@@ -188,7 +195,7 @@ export class GstackLearningsSource implements IngestionSource {
           this.watchers.push(watcher);
         } catch (err) {
           ctx.logger.warn(
-            `[gstack-learnings] failed to watch ${path}: ${err instanceof Error ? err.message : String(err)}`,
+            `[gstack-learnings] failed to watch ${path}: ${err instanceof Error ? err.message : String(err)}`
           );
         }
       }
@@ -210,19 +217,28 @@ export class GstackLearningsSource implements IngestionSource {
   async healthCheck(): Promise<IngestionSourceHealth> {
     const allExist = this.paths.every((p) => this.opts._existsSync(p));
     if (this.paths.length === 0) {
-      return { status: 'warn', message: 'no gstack learnings files discovered (is gstack installed?)' };
+      return {
+        status: "warn",
+        message: "no gstack learnings files discovered (is gstack installed?)",
+      };
     }
     if (!allExist) {
-      return { status: 'warn', message: 'one or more watched learnings.jsonl files have disappeared' };
+      return {
+        status: "warn",
+        message: "one or more watched learnings.jsonl files have disappeared",
+      };
     }
-    return { status: 'ok', message: `${this.paths.length} watched, ${this.seenLines.size} lines seen` };
+    return {
+      status: "ok",
+      message: `${this.paths.length} watched, ${this.seenLines.size} lines seen`,
+    };
   }
 
   /** Test seam: directly emit a parsed JSONL line. Production code path
    *  goes through rescanFile via fs.watch. */
   emitLine(line: GstackLearningLine, sourceUri: string): void {
     if (!this.ctx) {
-      throw new Error('GstackLearningsSource.emitLine: source not started');
+      throw new Error("GstackLearningsSource.emitLine: source not started");
     }
     const event = this.buildEvent(line, sourceUri);
     if (event === null) return; // dedup hit
@@ -243,11 +259,11 @@ export class GstackLearningsSource implements IngestionSource {
       content = this.opts._readFile(path);
     } catch (err) {
       this.ctx.logger.warn(
-        `[gstack-learnings] read failed for ${path}: ${err instanceof Error ? err.message : String(err)}`,
+        `[gstack-learnings] read failed for ${path}: ${err instanceof Error ? err.message : String(err)}`
       );
       return;
     }
-    for (const rawLine of content.split('\n')) {
+    for (const rawLine of content.split("\n")) {
       const trimmed = rawLine.trim();
       if (trimmed.length === 0) continue;
       let parsed: GstackLearningLine;
@@ -282,7 +298,7 @@ export class GstackLearningsSource implements IngestionSource {
       source_kind: this.kind,
       source_uri: sourceUri,
       received_at: new Date().toISOString(),
-      content_type: 'text/markdown',
+      content_type: "text/markdown",
       content: body,
       content_hash: computeContentHash(body),
       untrusted_payload: false, // local file, user's own gstack output
@@ -297,7 +313,7 @@ export class GstackLearningsSource implements IngestionSource {
    *  without re-parsing the metadata block. */
   private renderMarkdown(line: GstackLearningLine): string {
     const fm: Record<string, unknown> = {
-      type: 'learning',
+      type: "learning",
       learning_type: line.type,
       confidence: line.confidence,
       source: line.source,
@@ -309,11 +325,11 @@ export class GstackLearningsSource implements IngestionSource {
     if (line.ts !== undefined) fm.ts = line.ts;
     const fmLines = Object.entries(fm).map(([k, v]) => {
       if (Array.isArray(v)) {
-        return `${k}: [${v.map((x) => JSON.stringify(x)).join(', ')}]`;
+        return `${k}: [${v.map((x) => JSON.stringify(x)).join(", ")}]`;
       }
       return `${k}: ${JSON.stringify(v)}`;
     });
-    return `---\n${fmLines.join('\n')}\n---\n\n# ${line.key}\n\n${line.insight}\n`;
+    return `---\n${fmLines.join("\n")}\n---\n\n# ${line.key}\n\n${line.insight}\n`;
   }
 
   /** Diagnostic: number of lines seen since start. */

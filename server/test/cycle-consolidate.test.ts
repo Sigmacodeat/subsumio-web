@@ -8,10 +8,10 @@
  *   - dryRun honored
  */
 
-import { describe, test, expect, beforeAll, afterAll, beforeEach } from 'bun:test';
-import { PGLiteEngine } from '../src/core/pglite-engine.ts';
-import { configureGateway } from '../src/core/ai/gateway.ts';
-import { runPhaseConsolidate } from '../src/core/cycle/phases/consolidate.ts';
+import { describe, test, expect, beforeAll, afterAll, beforeEach } from "bun:test";
+import { PGLiteEngine } from "../src/core/pglite-engine.ts";
+import { configureGateway } from "../src/core/ai/gateway.ts";
+import { runPhaseConsolidate } from "../src/core/cycle/phases/consolidate.ts";
 
 let engine: PGLiteEngine;
 
@@ -28,7 +28,7 @@ beforeAll(async () => {
   // Re-pinning here makes the schema deterministic regardless of shard
   // neighbors (surfaced when #1972's new test files reshuffled the shards).
   configureGateway({
-    embedding_model: 'openai:text-embedding-3-large',
+    embedding_model: "openai:text-embedding-3-large",
     embedding_dimensions: 1536,
     env: { ...process.env },
   });
@@ -50,29 +50,29 @@ const recentDate = () => new Date(Date.now() - 60 * 1000).toISOString();
 function unitVec(): string {
   const a = new Float32Array(1536);
   a[0] = 1.0;
-  return '[' + Array.from(a).join(',') + ']';
+  return "[" + Array.from(a).join(",") + "]";
 }
 
 async function seedPage(slug: string): Promise<number> {
   await engine.executeRaw(
     `INSERT INTO pages (slug, type, title) VALUES ($1, 'concept', 'Test') ON CONFLICT DO NOTHING`,
-    [slug],
+    [slug]
   );
   const r = await engine.executeRaw<{ id: number }>(
     `SELECT id FROM pages WHERE slug = $1 AND source_id = 'default'`,
-    [slug],
+    [slug]
   );
   return r[0].id;
 }
 
-describe('runPhaseConsolidate', () => {
-  test('below threshold (count < 3) → skipped', async () => {
-    await seedPage('cons-skip-count');
+describe("runPhaseConsolidate", () => {
+  test("below threshold (count < 3) → skipped", async () => {
+    await seedPage("cons-skip-count");
     for (let i = 0; i < 2; i++) {
       await engine.executeRaw(
         `INSERT INTO facts (source_id, entity_slug, fact, kind, source, valid_from, embedding, embedded_at)
          VALUES ('default', 'cons-skip-count', $1, 'fact', 'test', $2::timestamptz, $3::vector, $2::timestamptz)`,
-        [`fact ${i}`, oldDate(), unitVec()],
+        [`fact ${i}`, oldDate(), unitVec()]
       );
     }
     const r = await runPhaseConsolidate(engine, {});
@@ -80,13 +80,13 @@ describe('runPhaseConsolidate', () => {
     expect(r.details.takes_written).toBe(0);
   });
 
-  test('all facts too recent → bucket processed but skipped, 0 work', async () => {
-    await seedPage('cons-skip-age');
+  test("all facts too recent → bucket processed but skipped, 0 work", async () => {
+    await seedPage("cons-skip-age");
     for (let i = 0; i < 4; i++) {
       await engine.executeRaw(
         `INSERT INTO facts (source_id, entity_slug, fact, kind, source, valid_from, embedding, embedded_at)
          VALUES ('default', 'cons-skip-age', $1, 'fact', 'test', $2::timestamptz, $3::vector, $2::timestamptz)`,
-        [`fact ${i}`, recentDate(), unitVec()],
+        [`fact ${i}`, recentDate(), unitVec()]
       );
     }
     const r = await runPhaseConsolidate(engine, {});
@@ -94,14 +94,14 @@ describe('runPhaseConsolidate', () => {
     expect(r.details.buckets_skipped).toBeGreaterThanOrEqual(1);
   });
 
-  test('happy path: 4 same-vector facts on a page → 1 take, all consolidated', async () => {
-    const pageId = await seedPage('people/alice-example');
+  test("happy path: 4 same-vector facts on a page → 1 take, all consolidated", async () => {
+    const pageId = await seedPage("people/alice-example");
     expect(pageId).toBeGreaterThan(0);
     for (let i = 0; i < 4; i++) {
       await engine.executeRaw(
         `INSERT INTO facts (source_id, entity_slug, fact, kind, source, valid_from, confidence, embedding, embedded_at)
          VALUES ('default', 'people/alice-example', $1, 'fact', 'test', $2::timestamptz, 0.9, $3::vector, $2::timestamptz)`,
-        [`alice fact ${i}`, oldDate(), unitVec()],
+        [`alice fact ${i}`, oldDate(), unitVec()]
       );
     }
     const r = await runPhaseConsolidate(engine, {});
@@ -109,19 +109,24 @@ describe('runPhaseConsolidate', () => {
     expect(r.details.takes_written).toBe(1);
 
     // Take row created on the right page.
-    const takes = await engine.executeRaw<{ page_id: number; kind: string; weight: number; holder: string }>(
-      `SELECT page_id, kind, weight, holder FROM takes`,
-    );
+    const takes = await engine.executeRaw<{
+      page_id: number;
+      kind: string;
+      weight: number;
+      holder: string;
+    }>(`SELECT page_id, kind, weight, holder FROM takes`);
     expect(takes.length).toBe(1);
     expect(takes[0].page_id).toBe(pageId);
-    expect(takes[0].kind).toBe('fact');
-    expect(takes[0].holder).toBe('self');
+    expect(takes[0].kind).toBe("fact");
+    expect(takes[0].holder).toBe("self");
     expect(takes[0].weight).toBeCloseTo(0.9, 2);
 
     // Facts marked consolidated, NEVER deleted.
-    const facts = await engine.executeRaw<{ id: number; consolidated_at: Date | null; consolidated_into: number | null }>(
-      `SELECT id, consolidated_at, consolidated_into FROM facts ORDER BY id`,
-    );
+    const facts = await engine.executeRaw<{
+      id: number;
+      consolidated_at: Date | null;
+      consolidated_into: number | null;
+    }>(`SELECT id, consolidated_at, consolidated_into FROM facts ORDER BY id`);
     expect(facts.length).toBe(4);
     for (const f of facts) {
       expect(f.consolidated_at).not.toBeNull();
@@ -129,13 +134,13 @@ describe('runPhaseConsolidate', () => {
     }
   });
 
-  test('dryRun honored: counters tick but no rows written', async () => {
-    await seedPage('cons-dryrun');
+  test("dryRun honored: counters tick but no rows written", async () => {
+    await seedPage("cons-dryrun");
     for (let i = 0; i < 3; i++) {
       await engine.executeRaw(
         `INSERT INTO facts (source_id, entity_slug, fact, kind, source, valid_from, embedding, embedded_at)
          VALUES ('default', 'cons-dryrun', $1, 'fact', 'test', $2::timestamptz, $3::vector, $2::timestamptz)`,
-        [`dryrun fact ${i}`, oldDate(), unitVec()],
+        [`dryrun fact ${i}`, oldDate(), unitVec()]
       );
     }
     const r = await runPhaseConsolidate(engine, { dryRun: true });
@@ -145,20 +150,20 @@ describe('runPhaseConsolidate', () => {
     const takes = await engine.executeRaw<{ id: number }>(`SELECT id FROM takes`);
     expect(takes.length).toBe(0);
     const facts = await engine.executeRaw<{ id: number; consolidated_at: Date | null }>(
-      `SELECT id, consolidated_at FROM facts ORDER BY id`,
+      `SELECT id, consolidated_at FROM facts ORDER BY id`
     );
     for (const f of facts) {
       expect(f.consolidated_at).toBeNull();
     }
   });
 
-  test('skips bucket when no matching page exists in source', async () => {
+  test("skips bucket when no matching page exists in source", async () => {
     // Don't seed a page — entity_slug 'no-page' won't resolve.
     for (let i = 0; i < 4; i++) {
       await engine.executeRaw(
         `INSERT INTO facts (source_id, entity_slug, fact, kind, source, valid_from, embedding, embedded_at)
          VALUES ('default', 'no-page', $1, 'fact', 'test', $2::timestamptz, $3::vector, $2::timestamptz)`,
-        [`orphan fact ${i}`, oldDate(), unitVec()],
+        [`orphan fact ${i}`, oldDate(), unitVec()]
       );
     }
     const r = await runPhaseConsolidate(engine, {});

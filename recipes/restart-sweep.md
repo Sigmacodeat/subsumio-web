@@ -40,6 +40,7 @@ when a session was active just before a restart but silent afterward.
 to execute on behalf of the user. Follow these steps precisely.
 
 **Stop points (MUST pause and verify before continuing):**
+
 - After Step 1: prerequisites pass? If not, fix before proceeding.
 - After Step 4: dry run produces sensible output? If not, debug before
   wiring cron.
@@ -53,7 +54,7 @@ means, and what to try. Never say "something went wrong."
 
 1. Reads `/tmp/bootstrap-services.log` (or `$OPENCLAW_BOOTSTRAP_LOG`)
    to find when the gateway last restarted. Falls back to `now() - 30
-   minutes` if the log isn't readable.
+minutes` if the log isn't readable.
 2. Runs `openclaw sessions --json` to enumerate all live sessions.
 3. Filters to Telegram group sessions matching `$OPENCLAW_TELEGRAM_GROUP`.
 4. Flags sessions with `abortedLastRun: true` (strong signal of a
@@ -135,6 +136,7 @@ The script is self-contained — no npm install needed, just Node 18+
 or Bun.
 
 <!-- restart-sweep:script -->
+
 ```javascript
 #!/usr/bin/env node
 
@@ -150,350 +152,366 @@ or Bun.
  * wire it to a 5-minute cron.
  */
 
-import fs from 'node:fs';
-import fsp from 'node:fs/promises';
-import path from 'node:path';
-import os from 'node:os';
-import { exec, execFile } from 'node:child_process';
-import { promisify } from 'node:util';
+import fs from "node:fs";
+import fsp from "node:fs/promises";
+import path from "node:path";
+import os from "node:os";
+import { exec, execFile } from "node:child_process";
+import { promisify } from "node:util";
 
 const execP = promisify(exec);
 
 // Module-level constants (no env reads here — env is read at construct time)
-const RESTART_THRESHOLD_MINUTES = 30;  // Fallback restart-time window when bootstrap log is missing
-const COOLDOWN_HOURS = 6;              // Re-alert suppression per sessionKey
-const STALE_DAYS = 30;                 // Prune alerted.json entries older than this
+const RESTART_THRESHOLD_MINUTES = 30; // Fallback restart-time window when bootstrap log is missing
+const COOLDOWN_HOURS = 6; // Re-alert suppression per sessionKey
+const STALE_DAYS = 30; // Prune alerted.json entries older than this
 const PRE_RESTART_WINDOW_MS = 5 * 60 * 1000;
 const POST_RESTART_WINDOW_MS = 10 * 60 * 1000;
 
 class MessageSweepDetector {
-    /**
-     * @param {{ execFile?: typeof execFile, runOpenclawSessions?: () => Promise<any[]> }} [deps]
-     *   Optional dependency injection for tests. Production: leave undefined.
-     */
-    constructor(deps = {}) {
-        // Constructor-time env reads (C2): tests can mutate process.env per construction
-        const ownerEnv = process.env.OPENCLAW_OWNER_IDS ?? '';
-        this.OWNER_IDS = ownerEnv.split(',').map(s => s.trim()).filter(Boolean);
-        this.TELEGRAM_GROUP_ID = process.env.OPENCLAW_TELEGRAM_GROUP ?? '';
-        this.ALERT_TOPIC = process.env.OPENCLAW_ALERT_TOPIC ?? '';
-        this.AGGRESSIVE = process.env.OPENCLAW_RESTART_SWEEP_AGGRESSIVE === '1';
+  /**
+   * @param {{ execFile?: typeof execFile, runOpenclawSessions?: () => Promise<any[]> }} [deps]
+   *   Optional dependency injection for tests. Production: leave undefined.
+   */
+  constructor(deps = {}) {
+    // Constructor-time env reads (C2): tests can mutate process.env per construction
+    const ownerEnv = process.env.OPENCLAW_OWNER_IDS ?? "";
+    this.OWNER_IDS = ownerEnv
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    this.TELEGRAM_GROUP_ID = process.env.OPENCLAW_TELEGRAM_GROUP ?? "";
+    this.ALERT_TOPIC = process.env.OPENCLAW_ALERT_TOPIC ?? "";
+    this.AGGRESSIVE = process.env.OPENCLAW_RESTART_SWEEP_AGGRESSIVE === "1";
 
-        const gbrainHome = process.env.GBRAIN_HOME ?? path.join(os.homedir(), '.gbrain');
-        this.STATE_DIR = path.join(gbrainHome, 'integrations', 'restart-sweep');
-        this.LOG_PATH = path.join(this.STATE_DIR, 'sweep.log.jsonl');
-        this.ALERTED_PATH = path.join(this.STATE_DIR, 'alerted.json');
-        this.BOOTSTRAP_LOG = process.env.OPENCLAW_BOOTSTRAP_LOG ?? '/tmp/bootstrap-services.log';
+    const gbrainHome = process.env.GBRAIN_HOME ?? path.join(os.homedir(), ".gbrain");
+    this.STATE_DIR = path.join(gbrainHome, "integrations", "restart-sweep");
+    this.LOG_PATH = path.join(this.STATE_DIR, "sweep.log.jsonl");
+    this.ALERTED_PATH = path.join(this.STATE_DIR, "alerted.json");
+    this.BOOTSTRAP_LOG = process.env.OPENCLAW_BOOTSTRAP_LOG ?? "/tmp/bootstrap-services.log";
 
-        // DI hooks (default to real implementations)
-        this._execFile = deps.execFile ?? execFile;
-        this._runOpenclawSessions = deps.runOpenclawSessions ?? null;
+    // DI hooks (default to real implementations)
+    this._execFile = deps.execFile ?? execFile;
+    this._runOpenclawSessions = deps.runOpenclawSessions ?? null;
 
-        this.sessions = null;
-        this.restartTime = null;
-        this.alertMode = this.determineAlertMode();
-        this.alerted = new Map();  // populated in run() / loadAlerted()
+    this.sessions = null;
+    this.restartTime = null;
+    this.alertMode = this.determineAlertMode();
+    this.alerted = new Map(); // populated in run() / loadAlerted()
+  }
+
+  determineAlertMode() {
+    if (this.TELEGRAM_GROUP_ID && this.ALERT_TOPIC) return "telegram";
+    if (this.TELEGRAM_GROUP_ID) return "telegram_stdout";
+    return "stdout";
+  }
+
+  async run() {
+    try {
+      console.log("🔍 Starting restart message sweep detection...");
+
+      if (this.OWNER_IDS.length === 0) {
+        console.warn("⚠️  No OPENCLAW_OWNER_IDS configured. Set this environment variable.");
+      }
+      if (!this.TELEGRAM_GROUP_ID) {
+        console.warn("⚠️  No OPENCLAW_TELEGRAM_GROUP configured. Alerts will only go to stdout.");
+      }
+
+      fs.mkdirSync(this.STATE_DIR, { recursive: true });
+      this.alerted = await this.loadAlerted();
+
+      this.restartTime = await this.getLastRestartTime();
+      console.log(`📅 Last restart detected at: ${new Date(this.restartTime).toISOString()}`);
+
+      this.sessions = await this.getSessionState();
+      console.log(`📊 Found ${this.sessions.length} total sessions`);
+
+      const telegramSessions = this.filterTelegramSessions(this.sessions);
+      console.log(`📱 Found ${telegramSessions.length} Telegram sessions`);
+
+      const droppedMessages = await this.detectDroppedMessages(telegramSessions);
+      const newDrops = droppedMessages.filter((m) => !this.isInCooldown(m.sessionKey));
+      const suppressedCount = droppedMessages.length - newDrops.length;
+
+      if (newDrops.length > 0) {
+        const tail = suppressedCount > 0 ? ` (${suppressedCount} suppressed by cooldown)` : "";
+        console.log(`⚠️  Found ${newDrops.length} potentially dropped message(s)${tail}`);
+        await this.recordAndAlert(newDrops);
+      } else if (suppressedCount > 0) {
+        console.log(`✅ All ${suppressedCount} candidate(s) suppressed by cooldown`);
+      } else {
+        console.log("✅ No dropped messages detected");
+      }
+
+      await this.logResults(droppedMessages);
+    } catch (error) {
+      console.error("❌ Error in message sweep:", error);
+      await this.logError(error);
     }
+  }
 
-    determineAlertMode() {
-        if (this.TELEGRAM_GROUP_ID && this.ALERT_TOPIC) return 'telegram';
-        if (this.TELEGRAM_GROUP_ID) return 'telegram_stdout';
-        return 'stdout';
-    }
-
-    async run() {
-        try {
-            console.log('🔍 Starting restart message sweep detection...');
-
-            if (this.OWNER_IDS.length === 0) {
-                console.warn('⚠️  No OPENCLAW_OWNER_IDS configured. Set this environment variable.');
-            }
-            if (!this.TELEGRAM_GROUP_ID) {
-                console.warn('⚠️  No OPENCLAW_TELEGRAM_GROUP configured. Alerts will only go to stdout.');
-            }
-
-            fs.mkdirSync(this.STATE_DIR, { recursive: true });
-            this.alerted = await this.loadAlerted();
-
-            this.restartTime = await this.getLastRestartTime();
-            console.log(`📅 Last restart detected at: ${new Date(this.restartTime).toISOString()}`);
-
-            this.sessions = await this.getSessionState();
-            console.log(`📊 Found ${this.sessions.length} total sessions`);
-
-            const telegramSessions = this.filterTelegramSessions(this.sessions);
-            console.log(`📱 Found ${telegramSessions.length} Telegram sessions`);
-
-            const droppedMessages = await this.detectDroppedMessages(telegramSessions);
-            const newDrops = droppedMessages.filter(m => !this.isInCooldown(m.sessionKey));
-            const suppressedCount = droppedMessages.length - newDrops.length;
-
-            if (newDrops.length > 0) {
-                const tail = suppressedCount > 0 ? ` (${suppressedCount} suppressed by cooldown)` : '';
-                console.log(`⚠️  Found ${newDrops.length} potentially dropped message(s)${tail}`);
-                await this.recordAndAlert(newDrops);
-            } else if (suppressedCount > 0) {
-                console.log(`✅ All ${suppressedCount} candidate(s) suppressed by cooldown`);
-            } else {
-                console.log('✅ No dropped messages detected');
-            }
-
-            await this.logResults(droppedMessages);
-
-        } catch (error) {
-            console.error('❌ Error in message sweep:', error);
-            await this.logError(error);
+  async getLastRestartTime() {
+    try {
+      const logContent = await fsp.readFile(this.BOOTSTRAP_LOG, "utf8");
+      const gatewayLines = logContent
+        .split("\n")
+        .filter(
+          (line) => line.includes("Gateway token synced") || line.includes("✅ OpenClaw gateway")
+        )
+        .reverse();
+      if (gatewayLines.length > 0) {
+        const match = gatewayLines[0].match(/^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})/);
+        if (match) {
+          return new Date(match[1] + " UTC").getTime();
         }
+      }
+      return Date.now() - RESTART_THRESHOLD_MINUTES * 60 * 1000;
+    } catch (error) {
+      console.warn("⚠️  Could not determine restart time from logs, using fallback");
+      return Date.now() - RESTART_THRESHOLD_MINUTES * 60 * 1000;
     }
+  }
 
-    async getLastRestartTime() {
-        try {
-            const logContent = await fsp.readFile(this.BOOTSTRAP_LOG, 'utf8');
-            const gatewayLines = logContent.split('\n')
-                .filter(line => line.includes('Gateway token synced') || line.includes('✅ OpenClaw gateway'))
-                .reverse();
-            if (gatewayLines.length > 0) {
-                const match = gatewayLines[0].match(/^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})/);
-                if (match) {
-                    return new Date(match[1] + ' UTC').getTime();
-                }
-            }
-            return Date.now() - (RESTART_THRESHOLD_MINUTES * 60 * 1000);
-        } catch (error) {
-            console.warn('⚠️  Could not determine restart time from logs, using fallback');
-            return Date.now() - (RESTART_THRESHOLD_MINUTES * 60 * 1000);
-        }
+  async getSessionState() {
+    if (this._runOpenclawSessions) {
+      return await this._runOpenclawSessions();
     }
-
-    async getSessionState() {
-        if (this._runOpenclawSessions) {
-            return await this._runOpenclawSessions();
-        }
-        try {
-            const { stdout } = await execP('openclaw sessions --json');
-            const sessionData = JSON.parse(stdout);
-            return sessionData.sessions || [];
-        } catch (error) {
-            console.error('❌ Failed to get session state:', error);
-            throw error;
-        }
+    try {
+      const { stdout } = await execP("openclaw sessions --json");
+      const sessionData = JSON.parse(stdout);
+      return sessionData.sessions || [];
+    } catch (error) {
+      console.error("❌ Failed to get session state:", error);
+      throw error;
     }
+  }
 
-    filterTelegramSessions(sessions) {
-        if (!this.TELEGRAM_GROUP_ID) return [];
-        return sessions.filter(session => {
-            return session.key &&
-                   session.key.includes('telegram:group:' + this.TELEGRAM_GROUP_ID) &&
-                   session.kind === 'group';
-        });
-    }
+  filterTelegramSessions(sessions) {
+    if (!this.TELEGRAM_GROUP_ID) return [];
+    return sessions.filter((session) => {
+      return (
+        session.key &&
+        session.key.includes("telegram:group:" + this.TELEGRAM_GROUP_ID) &&
+        session.kind === "group"
+      );
+    });
+  }
 
-    async detectDroppedMessages(telegramSessions) {
-        const droppedMessages = [];
-        const recentRestartWindow = this.restartTime - PRE_RESTART_WINDOW_MS;
-        const afterRestartWindow = this.restartTime + POST_RESTART_WINDOW_MS;
+  async detectDroppedMessages(telegramSessions) {
+    const droppedMessages = [];
+    const recentRestartWindow = this.restartTime - PRE_RESTART_WINDOW_MS;
+    const afterRestartWindow = this.restartTime + POST_RESTART_WINDOW_MS;
 
-        for (const session of telegramSessions) {
-            try {
-                const sessionUpdated = session.updatedAt;
+    for (const session of telegramSessions) {
+      try {
+        const sessionUpdated = session.updatedAt;
 
-                // Primary: aborted last run is the strong signal
-                if (session.abortedLastRun) {
-                    const topic = this._extractTopic(session.key);
-                    droppedMessages.push({
-                        sessionKey: session.key,
-                        topic,
-                        lastUpdate: new Date(sessionUpdated).toISOString(),
-                        sessionId: session.sessionId,
-                        abortedLastRun: true,
-                        reason: 'Session aborted on last run',
-                    });
-                    continue;
-                }
-
-                // Secondary: timing-based gap detection — opt-in only (false-positive prone)
-                if (!this.AGGRESSIVE) continue;
-
-                if (sessionUpdated >= recentRestartWindow &&
-                    sessionUpdated < this.restartTime &&
-                    Date.now() > afterRestartWindow) {
-                    const topic = this._extractTopic(session.key);
-                    droppedMessages.push({
-                        sessionKey: session.key,
-                        topic,
-                        lastUpdate: new Date(sessionUpdated).toISOString(),
-                        timeSinceUpdate: Math.floor((Date.now() - sessionUpdated) / 1000 / 60),
-                        sessionId: session.sessionId,
-                        suspiciousGap: true,
-                        reason: 'Active before restart, silent after',
-                    });
-                }
-            } catch (error) {
-                console.warn(`⚠️  Error analyzing session ${session.key}:`, error);
-            }
-        }
-        return droppedMessages;
-    }
-
-    _extractTopic(sessionKey) {
-        const m = sessionKey?.match(/:topic:(\d+)/);
-        return m ? m[1] : 'unknown';
-    }
-
-    /**
-     * Cooldown layer (C1): suppresses re-alerts on the same sessionKey
-     * for COOLDOWN_HOURS, regardless of whether the synthesized
-     * restartTime matches. Cooldown wins when the bootstrap log is
-     * missing and restartTime is unstable.
-     */
-    isInCooldown(sessionKey) {
-        const entry = this.alerted.get(sessionKey);
-        if (!entry || !entry.lastAlertedAt) return false;
-        const ageMs = Date.now() - new Date(entry.lastAlertedAt).getTime();
-        return ageMs < COOLDOWN_HOURS * 60 * 60 * 1000;
-    }
-
-    async loadAlerted() {
-        try {
-            const content = await fsp.readFile(this.ALERTED_PATH, 'utf8');
-            const parsed = JSON.parse(content);
-            const map = new Map();
-            const cutoffMs = Date.now() - STALE_DAYS * 24 * 60 * 60 * 1000;
-            for (const [key, entry] of Object.entries(parsed || {})) {
-                if (entry && entry.lastAlertedAt) {
-                    const ts = new Date(entry.lastAlertedAt).getTime();
-                    if (Number.isFinite(ts) && ts >= cutoffMs) {
-                        map.set(key, entry);
-                    }
-                }
-            }
-            return map;
-        } catch (err) {
-            if (err && err.code === 'ENOENT') return new Map();
-            console.warn(`⚠️  Failed to load ${this.ALERTED_PATH}: ${err && err.message}; starting with empty state`);
-            return new Map();
-        }
-    }
-
-    async saveAlerted() {
-        const obj = Object.fromEntries(this.alerted);
-        const json = JSON.stringify(obj, null, 2);
-        const tmp = this.ALERTED_PATH + '.tmp';
-        // Atomic on POSIX: write tmp, then rename. Note: this prevents
-        // file corruption only — concurrent cron runs can still both
-        // read old state, both decide to alert, both rename. Given
-        // 5-min cadence and 2-5s runtime, overlap is rare and a
-        // duplicate alert is preferable to a missed one.
-        await fsp.writeFile(tmp, json);
-        await fsp.rename(tmp, this.ALERTED_PATH);
-    }
-
-    async recordAndAlert(droppedMessages) {
-        let alertSent = false;
-        try {
-            await this.alertOnDroppedMessages(droppedMessages);
-            alertSent = true;
-        } catch (err) {
-            console.error('❌ Failed to send alert (will retry next cycle):', err && err.message);
-        }
-        if (!alertSent) return;
-
-        const nowIso = new Date().toISOString();
-        const restartIso = new Date(this.restartTime).toISOString();
-        for (const msg of droppedMessages) {
-            this.alerted.set(msg.sessionKey, {
-                lastAlertedAt: nowIso,
-                restartTime: restartIso,
-            });
-        }
-        try {
-            await this.saveAlerted();
-        } catch (err) {
-            console.warn('⚠️  Failed to save alerted state:', err && err.message);
-        }
-    }
-
-    async alertOnDroppedMessages(droppedMessages) {
-        let alertText = `⚠️ Found ${droppedMessages.length} unprocessed message(s) after restart:\n\n`;
-        for (const msg of droppedMessages.slice(0, 10)) {
-            alertText += `• Topic ${msg.topic}: ${msg.reason} (last update: ${msg.lastUpdate})\n`;
-            if (msg.timeSinceUpdate) {
-                alertText += `  ${msg.timeSinceUpdate} minutes ago\n`;
-            }
-        }
-        if (droppedMessages.length > 10) {
-            alertText += `\n... and ${droppedMessages.length - 10} more`;
+        // Primary: aborted last run is the strong signal
+        if (session.abortedLastRun) {
+          const topic = this._extractTopic(session.key);
+          droppedMessages.push({
+            sessionKey: session.key,
+            topic,
+            lastUpdate: new Date(sessionUpdated).toISOString(),
+            sessionId: session.sessionId,
+            abortedLastRun: true,
+            reason: "Session aborted on last run",
+          });
+          continue;
         }
 
-        switch (this.alertMode) {
-            case 'telegram':
-                await this.sendTelegramAlert(alertText);
-                break;
-            case 'telegram_stdout':
-                console.log('📢 Would send Telegram alert, but no topic configured:');
-                console.log(alertText);
-                break;
-            default:
-                console.log('📢 Alert:');
-                console.log(alertText);
+        // Secondary: timing-based gap detection — opt-in only (false-positive prone)
+        if (!this.AGGRESSIVE) continue;
+
+        if (
+          sessionUpdated >= recentRestartWindow &&
+          sessionUpdated < this.restartTime &&
+          Date.now() > afterRestartWindow
+        ) {
+          const topic = this._extractTopic(session.key);
+          droppedMessages.push({
+            sessionKey: session.key,
+            topic,
+            lastUpdate: new Date(sessionUpdated).toISOString(),
+            timeSinceUpdate: Math.floor((Date.now() - sessionUpdated) / 1000 / 60),
+            sessionId: session.sessionId,
+            suspiciousGap: true,
+            reason: "Active before restart, silent after",
+          });
         }
+      } catch (error) {
+        console.warn(`⚠️  Error analyzing session ${session.key}:`, error);
+      }
+    }
+    return droppedMessages;
+  }
+
+  _extractTopic(sessionKey) {
+    const m = sessionKey?.match(/:topic:(\d+)/);
+    return m ? m[1] : "unknown";
+  }
+
+  /**
+   * Cooldown layer (C1): suppresses re-alerts on the same sessionKey
+   * for COOLDOWN_HOURS, regardless of whether the synthesized
+   * restartTime matches. Cooldown wins when the bootstrap log is
+   * missing and restartTime is unstable.
+   */
+  isInCooldown(sessionKey) {
+    const entry = this.alerted.get(sessionKey);
+    if (!entry || !entry.lastAlertedAt) return false;
+    const ageMs = Date.now() - new Date(entry.lastAlertedAt).getTime();
+    return ageMs < COOLDOWN_HOURS * 60 * 60 * 1000;
+  }
+
+  async loadAlerted() {
+    try {
+      const content = await fsp.readFile(this.ALERTED_PATH, "utf8");
+      const parsed = JSON.parse(content);
+      const map = new Map();
+      const cutoffMs = Date.now() - STALE_DAYS * 24 * 60 * 60 * 1000;
+      for (const [key, entry] of Object.entries(parsed || {})) {
+        if (entry && entry.lastAlertedAt) {
+          const ts = new Date(entry.lastAlertedAt).getTime();
+          if (Number.isFinite(ts) && ts >= cutoffMs) {
+            map.set(key, entry);
+          }
+        }
+      }
+      return map;
+    } catch (err) {
+      if (err && err.code === "ENOENT") return new Map();
+      console.warn(
+        `⚠️  Failed to load ${this.ALERTED_PATH}: ${err && err.message}; starting with empty state`
+      );
+      return new Map();
+    }
+  }
+
+  async saveAlerted() {
+    const obj = Object.fromEntries(this.alerted);
+    const json = JSON.stringify(obj, null, 2);
+    const tmp = this.ALERTED_PATH + ".tmp";
+    // Atomic on POSIX: write tmp, then rename. Note: this prevents
+    // file corruption only — concurrent cron runs can still both
+    // read old state, both decide to alert, both rename. Given
+    // 5-min cadence and 2-5s runtime, overlap is rare and a
+    // duplicate alert is preferable to a missed one.
+    await fsp.writeFile(tmp, json);
+    await fsp.rename(tmp, this.ALERTED_PATH);
+  }
+
+  async recordAndAlert(droppedMessages) {
+    let alertSent = false;
+    try {
+      await this.alertOnDroppedMessages(droppedMessages);
+      alertSent = true;
+    } catch (err) {
+      console.error("❌ Failed to send alert (will retry next cycle):", err && err.message);
+    }
+    if (!alertSent) return;
+
+    const nowIso = new Date().toISOString();
+    const restartIso = new Date(this.restartTime).toISOString();
+    for (const msg of droppedMessages) {
+      this.alerted.set(msg.sessionKey, {
+        lastAlertedAt: nowIso,
+        restartTime: restartIso,
+      });
+    }
+    try {
+      await this.saveAlerted();
+    } catch (err) {
+      console.warn("⚠️  Failed to save alerted state:", err && err.message);
+    }
+  }
+
+  async alertOnDroppedMessages(droppedMessages) {
+    let alertText = `⚠️ Found ${droppedMessages.length} unprocessed message(s) after restart:\n\n`;
+    for (const msg of droppedMessages.slice(0, 10)) {
+      alertText += `• Topic ${msg.topic}: ${msg.reason} (last update: ${msg.lastUpdate})\n`;
+      if (msg.timeSinceUpdate) {
+        alertText += `  ${msg.timeSinceUpdate} minutes ago\n`;
+      }
+    }
+    if (droppedMessages.length > 10) {
+      alertText += `\n... and ${droppedMessages.length - 10} more`;
     }
 
-    async sendTelegramAlert(alertText) {
-        // execFile (not exec): argv array, no shell interpretation,
-        // shell metachars in env vars cannot inject commands.
-        const argv = [
-            'message', 'send',
-            '--channel', 'telegram',
-            '--target', this.TELEGRAM_GROUP_ID,
-            '--thread-id', this.ALERT_TOPIC,
-            '--message', alertText,
-        ];
-        await new Promise((resolve, reject) => {
-            this._execFile('openclaw', argv, (err, _stdout, stderr) => {
-                if (err) {
-                    err.stderr = stderr;
-                    reject(err);
-                } else {
-                    resolve();
-                }
-            });
-        });
-        console.log('📢 Alert sent to Telegram');
+    switch (this.alertMode) {
+      case "telegram":
+        await this.sendTelegramAlert(alertText);
+        break;
+      case "telegram_stdout":
+        console.log("📢 Would send Telegram alert, but no topic configured:");
+        console.log(alertText);
+        break;
+      default:
+        console.log("📢 Alert:");
+        console.log(alertText);
     }
+  }
 
-    async logResults(droppedMessages) {
-        const logEntry = {
-            timestamp: new Date().toISOString(),
-            restartTime: new Date(this.restartTime).toISOString(),
-            droppedMessageCount: droppedMessages.length,
-            droppedMessages,
-        };
-        try {
-            await fsp.appendFile(this.LOG_PATH, JSON.stringify(logEntry) + '\n');
-        } catch (error) {
-            console.warn('⚠️  Failed to write log file:', error && error.message);
+  async sendTelegramAlert(alertText) {
+    // execFile (not exec): argv array, no shell interpretation,
+    // shell metachars in env vars cannot inject commands.
+    const argv = [
+      "message",
+      "send",
+      "--channel",
+      "telegram",
+      "--target",
+      this.TELEGRAM_GROUP_ID,
+      "--thread-id",
+      this.ALERT_TOPIC,
+      "--message",
+      alertText,
+    ];
+    await new Promise((resolve, reject) => {
+      this._execFile("openclaw", argv, (err, _stdout, stderr) => {
+        if (err) {
+          err.stderr = stderr;
+          reject(err);
+        } else {
+          resolve();
         }
-    }
+      });
+    });
+    console.log("📢 Alert sent to Telegram");
+  }
 
-    async logError(error) {
-        const errorEntry = {
-            timestamp: new Date().toISOString(),
-            error: error && error.message,
-            stack: error && error.stack,
-        };
-        try {
-            await fsp.appendFile(this.LOG_PATH, 'ERROR: ' + JSON.stringify(errorEntry) + '\n');
-        } catch (logError) {
-            console.error('Failed to log error:', logError && logError.message);
-        }
+  async logResults(droppedMessages) {
+    const logEntry = {
+      timestamp: new Date().toISOString(),
+      restartTime: new Date(this.restartTime).toISOString(),
+      droppedMessageCount: droppedMessages.length,
+      droppedMessages,
+    };
+    try {
+      await fsp.appendFile(this.LOG_PATH, JSON.stringify(logEntry) + "\n");
+    } catch (error) {
+      console.warn("⚠️  Failed to write log file:", error && error.message);
     }
+  }
+
+  async logError(error) {
+    const errorEntry = {
+      timestamp: new Date().toISOString(),
+      error: error && error.message,
+      stack: error && error.stack,
+    };
+    try {
+      await fsp.appendFile(this.LOG_PATH, "ERROR: " + JSON.stringify(errorEntry) + "\n");
+    } catch (logError) {
+      console.error("Failed to log error:", logError && logError.message);
+    }
+  }
 }
 
 // Run if executed directly
 if (import.meta.url === `file://${process.argv[1]}`) {
-    const detector = new MessageSweepDetector();
-    detector.run().catch(console.error);
+  const detector = new MessageSweepDetector();
+  detector.run().catch(console.error);
 }
 
 export default MessageSweepDetector;
@@ -599,7 +617,7 @@ sessionKey is missing or `lastAlertedAt` is recent, the cooldown should
 suppress. If it's not suppressing:
 
 - The state file may not be writable. Check `ls -ld
-  ~/.gbrain/integrations/restart-sweep/`.
+~/.gbrain/integrations/restart-sweep/`.
 - `GBRAIN_HOME` may be set to a different path under cron than under
   your shell. Check the wrapper script's env loading.
 - The script's `STATE_DIR` resolution prints in stderr if mkdir fails.
@@ -613,7 +631,7 @@ stderr when `openclaw message send` returns non-zero. Common causes:
 - `openclaw` not on cron's PATH (use absolute path in the wrapper)
 - Telegram bot token expired or rate-limited
 - Wrong group/topic ID (try `openclaw message send --channel telegram
-  --target $OPENCLAW_TELEGRAM_GROUP --message test` manually)
+--target $OPENCLAW_TELEGRAM_GROUP --message test` manually)
 
 When the send fails, state is NOT updated, so next cycle retries.
 

@@ -25,11 +25,11 @@
  * reads the file and finds the line that contains that offset.
  */
 
-import { createWriteStream, type WriteStream } from 'fs';
-import { spawn, type ChildProcess } from 'child_process';
-import { dirname } from 'path';
-import { mkdirSync, existsSync } from 'fs';
-import type { TranscriptEvent, TranscriptSink } from './agent-runner.ts';
+import { createWriteStream, type WriteStream } from "fs";
+import { spawn, type ChildProcess } from "child_process";
+import { dirname } from "path";
+import { mkdirSync, existsSync } from "fs";
+import type { TranscriptEvent, TranscriptSink } from "./agent-runner.ts";
 
 // ---------------------------------------------------------------------------
 // Sink
@@ -38,15 +38,15 @@ import type { TranscriptEvent, TranscriptSink } from './agent-runner.ts';
 export function createTranscriptSink(path: string): TranscriptSink {
   const dir = dirname(path);
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
-  const stream: WriteStream = createWriteStream(path, { flags: 'a' });
+  const stream: WriteStream = createWriteStream(path, { flags: "a" });
 
   let bytesWritten = 0;
   let drainPromise: Promise<void> | null = null;
 
   function awaitDrain(): Promise<void> {
     if (drainPromise) return drainPromise;
-    drainPromise = new Promise<void>(resolve => {
-      stream.once('drain', () => {
+    drainPromise = new Promise<void>((resolve) => {
+      stream.once("drain", () => {
         drainPromise = null;
         resolve();
       });
@@ -56,15 +56,16 @@ export function createTranscriptSink(path: string): TranscriptSink {
 
   return {
     write(event: TranscriptEvent) {
-      const line = JSON.stringify({
-        schema_version: '1',
-        ts: event.ts,
-        channel: event.channel,
-        byte_offset: bytesWritten,
-        bytes_b64: event.bytes.toString('base64'),
-      }) + '\n';
-      bytesWritten += Buffer.byteLength(line, 'utf-8');
-      const ok = stream.write(line, 'utf-8');
+      const line =
+        JSON.stringify({
+          schema_version: "1",
+          ts: event.ts,
+          channel: event.channel,
+          byte_offset: bytesWritten,
+          bytes_b64: event.bytes.toString("base64"),
+        }) + "\n";
+      bytesWritten += Buffer.byteLength(line, "utf-8");
+      const ok = stream.write(line, "utf-8");
       // If the kernel buffer is full, write() returns false. We don't await
       // here (callers don't expect that), but next callers wait on drain
       // before writing further. Bun's WritableStream is small; the drain
@@ -78,7 +79,7 @@ export function createTranscriptSink(path: string): TranscriptSink {
 
     async close(): Promise<void> {
       await new Promise<void>((resolve, reject) => {
-        stream.end((err?: Error | null) => err ? reject(err) : resolve());
+        stream.end((err?: Error | null) => (err ? reject(err) : resolve()));
       });
     },
   };
@@ -106,7 +107,11 @@ export interface SpawnResult {
 
 const SIGTERM_GRACE_MS = 5_000;
 
-export async function spawnWithCapture(bin: string, args: string[], opts: SpawnOpts): Promise<SpawnResult> {
+export async function spawnWithCapture(
+  bin: string,
+  args: string[],
+  opts: SpawnOpts
+): Promise<SpawnResult> {
   const start = Date.now();
   return new Promise((resolve, reject) => {
     let child: ChildProcess;
@@ -114,7 +119,7 @@ export async function spawnWithCapture(bin: string, args: string[], opts: SpawnO
       child = spawn(bin, args, {
         cwd: opts.cwd,
         env: opts.env,
-        stdio: ['pipe', 'pipe', 'pipe'],
+        stdio: ["pipe", "pipe", "pipe"],
         shell: false,
       });
     } catch (e) {
@@ -126,44 +131,52 @@ export async function spawnWithCapture(bin: string, args: string[], opts: SpawnO
     let killTimer: ReturnType<typeof setTimeout> | null = null;
     const wallClockTimer = setTimeout(() => {
       timedOut = true;
-      try { child.kill('SIGTERM'); } catch { /* already gone */ }
+      try {
+        child.kill("SIGTERM");
+      } catch {
+        /* already gone */
+      }
       killTimer = setTimeout(() => {
-        try { child.kill('SIGKILL'); } catch { /* already gone */ }
+        try {
+          child.kill("SIGKILL");
+        } catch {
+          /* already gone */
+        }
       }, SIGTERM_GRACE_MS);
     }, opts.timeoutMs);
 
-    child.stdout?.on('data', (chunk: Buffer) => {
-      opts.transcriptSink.write({ ts: Date.now(), channel: 'stdout', bytes: chunk });
+    child.stdout?.on("data", (chunk: Buffer) => {
+      opts.transcriptSink.write({ ts: Date.now(), channel: "stdout", bytes: chunk });
     });
-    child.stderr?.on('data', (chunk: Buffer) => {
-      opts.transcriptSink.write({ ts: Date.now(), channel: 'stderr', bytes: chunk });
+    child.stderr?.on("data", (chunk: Buffer) => {
+      opts.transcriptSink.write({ ts: Date.now(), channel: "stderr", bytes: chunk });
     });
 
     if (opts.stdinPayload !== undefined && child.stdin) {
       try {
         opts.transcriptSink.write({
           ts: Date.now(),
-          channel: 'stdin',
-          bytes: Buffer.from(opts.stdinPayload, 'utf-8'),
+          channel: "stdin",
+          bytes: Buffer.from(opts.stdinPayload, "utf-8"),
         });
-        child.stdin.end(opts.stdinPayload, 'utf-8');
+        child.stdin.end(opts.stdinPayload, "utf-8");
       } catch (e) {
         reject(e);
         return;
       }
     }
 
-    child.on('error', (err) => {
+    child.on("error", (err) => {
       clearTimeout(wallClockTimer);
       if (killTimer) clearTimeout(killTimer);
       reject(err);
     });
 
-    child.on('close', (code) => {
+    child.on("close", (code) => {
       clearTimeout(wallClockTimer);
       if (killTimer) clearTimeout(killTimer);
       resolve({
-        exitCode: typeof code === 'number' ? code : (timedOut ? 124 : 1),
+        exitCode: typeof code === "number" ? code : timedOut ? 124 : 1,
         durationMs: Date.now() - start,
         timedOut,
       });

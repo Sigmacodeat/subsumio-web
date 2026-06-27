@@ -21,17 +21,17 @@
  * actually reaches existing markdown pages.
  */
 
-import type { BrainEngine } from '../core/engine.ts';
-import { MARKDOWN_CHUNKER_VERSION } from '../core/chunkers/recursive.ts';
-import { importFromContent, importFromFile } from '../core/import-file.ts';
-import { serializeMarkdown } from '../core/markdown.ts';
-import { createProgress } from '../core/progress.ts';
-import { getCliOptions, cliOptsToProgressOptions } from '../core/cli-options.ts';
-import { existsSync } from 'fs';
-import { resolve } from 'path';
+import type { BrainEngine } from "../core/engine.ts";
+import { MARKDOWN_CHUNKER_VERSION } from "../core/chunkers/recursive.ts";
+import { importFromContent, importFromFile } from "../core/import-file.ts";
+import { serializeMarkdown } from "../core/markdown.ts";
+import { createProgress } from "../core/progress.ts";
+import { getCliOptions, cliOptsToProgressOptions } from "../core/cli-options.ts";
+import { existsSync } from "fs";
+import { resolve } from "path";
 // v0.41.15.0 (T10, D9): per-batch parallel workers.
-import { runSlidingPool } from '../core/worker-pool.ts';
-import { resolveWorkersWithClamp } from '../core/sync-concurrency.ts';
+import { runSlidingPool } from "../core/worker-pool.ts";
+import { resolveWorkersWithClamp } from "../core/sync-concurrency.ts";
 
 interface ReindexOpts {
   /** Cap total pages reindexed. Useful for triage runs on huge brains. */
@@ -70,18 +70,18 @@ function parseArgs(args: string[]): ReindexOpts {
   const out: ReindexOpts = {};
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
-    if (a === '--markdown') continue; // routing flag, no value
-    if (a === '--dry-run') out.dryRun = true;
-    else if (a === '--json') out.json = true;
-    else if (a === '--no-embed') out.noEmbed = true;
-    else if (a === '--limit') {
-      const v = parseInt(args[++i] ?? '', 10);
+    if (a === "--markdown") continue; // routing flag, no value
+    if (a === "--dry-run") out.dryRun = true;
+    else if (a === "--json") out.json = true;
+    else if (a === "--no-embed") out.noEmbed = true;
+    else if (a === "--limit") {
+      const v = parseInt(args[++i] ?? "", 10);
       if (Number.isFinite(v) && v > 0) out.limit = v;
-    } else if (a === '--repo') {
+    } else if (a === "--repo") {
       out.repoPath = args[++i];
-    } else if (a === '--workers' || a === '--concurrency') {
+    } else if (a === "--workers" || a === "--concurrency") {
       // v0.41.15.0 (T10, D9): per-batch parallel workers.
-      const v = parseInt(args[++i] ?? '', 10);
+      const v = parseInt(args[++i] ?? "", 10);
       if (Number.isFinite(v) && v >= 1) out.workers = v;
     }
   }
@@ -116,7 +116,7 @@ async function countPending(engine: BrainEngine): Promise<number> {
       WHERE page_kind = 'markdown'
         AND (chunker_version < $1 OR contextual_retrieval_mode IS NULL)
         AND deleted_at IS NULL`,
-    [MARKDOWN_CHUNKER_VERSION],
+    [MARKDOWN_CHUNKER_VERSION]
   );
   return Number(rows[0]?.count ?? 0);
 }
@@ -126,7 +126,12 @@ async function countPending(engine: BrainEngine): Promise<number> {
  * partial completion pick up where they left off without re-doing pages
  * whose chunker_version was already bumped.
  */
-async function readBatch(engine: BrainEngine, batchSize: number): Promise<Array<{ slug: string; source_path: string | null; compiled_truth: string; source_id: string }>> {
+async function readBatch(
+  engine: BrainEngine,
+  batchSize: number
+): Promise<
+  Array<{ slug: string; source_path: string | null; compiled_truth: string; source_id: string }>
+> {
   return engine.executeRaw(
     `SELECT slug, source_path, compiled_truth, source_id
        FROM pages
@@ -135,7 +140,7 @@ async function readBatch(engine: BrainEngine, batchSize: number): Promise<Array<
         AND deleted_at IS NULL
       ORDER BY id ASC
       LIMIT $2`,
-    [MARKDOWN_CHUNKER_VERSION, batchSize],
+    [MARKDOWN_CHUNKER_VERSION, batchSize]
   );
 }
 
@@ -144,41 +149,92 @@ export async function runReindex(engine: BrainEngine, args: string[]): Promise<R
 
   // Require `--markdown` explicitly. Future modes (e.g. --code) get their
   // own routing here.
-  if (!args.includes('--markdown')) {
+  if (!args.includes("--markdown")) {
     if (opts.json) {
-      process.stdout.write(JSON.stringify({ error: 'gbrain reindex requires a target flag, e.g. --markdown' }) + '\n');
+      process.stdout.write(
+        JSON.stringify({ error: "gbrain reindex requires a target flag, e.g. --markdown" }) + "\n"
+      );
     } else {
-      process.stderr.write('Usage: gbrain reindex --markdown [--limit N] [--dry-run] [--json] [--repo PATH]\n');
+      process.stderr.write(
+        "Usage: gbrain reindex --markdown [--limit N] [--dry-run] [--json] [--repo PATH]\n"
+      );
     }
     process.exitCode = 2;
-    return { pending: 0, reindexed: 0, skipped: 0, failed: 0, dryRun: !!opts.dryRun, chunkerVersion: MARKDOWN_CHUNKER_VERSION };
+    return {
+      pending: 0,
+      reindexed: 0,
+      skipped: 0,
+      failed: 0,
+      dryRun: !!opts.dryRun,
+      chunkerVersion: MARKDOWN_CHUNKER_VERSION,
+    };
   }
 
   const pending = await countPending(engine);
 
   if (opts.json && pending === 0) {
-    process.stdout.write(JSON.stringify({ pending: 0, reindexed: 0, skipped: 0, failed: 0, chunker_version: MARKDOWN_CHUNKER_VERSION }) + '\n');
-    return { pending: 0, reindexed: 0, skipped: 0, failed: 0, dryRun: !!opts.dryRun, chunkerVersion: MARKDOWN_CHUNKER_VERSION };
+    process.stdout.write(
+      JSON.stringify({
+        pending: 0,
+        reindexed: 0,
+        skipped: 0,
+        failed: 0,
+        chunker_version: MARKDOWN_CHUNKER_VERSION,
+      }) + "\n"
+    );
+    return {
+      pending: 0,
+      reindexed: 0,
+      skipped: 0,
+      failed: 0,
+      dryRun: !!opts.dryRun,
+      chunkerVersion: MARKDOWN_CHUNKER_VERSION,
+    };
   }
 
   if (pending === 0) {
-    process.stderr.write(`[reindex] All markdown pages already at chunker_version ${MARKDOWN_CHUNKER_VERSION}. Nothing to do.\n`);
-    return { pending: 0, reindexed: 0, skipped: 0, failed: 0, dryRun: !!opts.dryRun, chunkerVersion: MARKDOWN_CHUNKER_VERSION };
+    process.stderr.write(
+      `[reindex] All markdown pages already at chunker_version ${MARKDOWN_CHUNKER_VERSION}. Nothing to do.\n`
+    );
+    return {
+      pending: 0,
+      reindexed: 0,
+      skipped: 0,
+      failed: 0,
+      dryRun: !!opts.dryRun,
+      chunkerVersion: MARKDOWN_CHUNKER_VERSION,
+    };
   }
 
-  const target = typeof opts.limit === 'number' ? Math.min(opts.limit, pending) : pending;
+  const target = typeof opts.limit === "number" ? Math.min(opts.limit, pending) : pending;
 
   if (opts.dryRun) {
     if (opts.json) {
-      process.stdout.write(JSON.stringify({ pending, would_reindex: target, dry_run: true, chunker_version: MARKDOWN_CHUNKER_VERSION }) + '\n');
+      process.stdout.write(
+        JSON.stringify({
+          pending,
+          would_reindex: target,
+          dry_run: true,
+          chunker_version: MARKDOWN_CHUNKER_VERSION,
+        }) + "\n"
+      );
     } else {
-      process.stderr.write(`[reindex] DRY-RUN: would re-chunk ${target} of ${pending} pending markdown pages.\n`);
+      process.stderr.write(
+        `[reindex] DRY-RUN: would re-chunk ${target} of ${pending} pending markdown pages.\n`
+      );
     }
-    return { pending, reindexed: 0, skipped: 0, failed: 0, dryRun: true, chunkerVersion: MARKDOWN_CHUNKER_VERSION };
+    return {
+      pending,
+      reindexed: 0,
+      skipped: 0,
+      failed: 0,
+      dryRun: true,
+      chunkerVersion: MARKDOWN_CHUNKER_VERSION,
+    };
   }
 
   const reporter = createProgress(cliOptsToProgressOptions(getCliOptions()));
-  reporter.start('reindex.markdown', target);
+  reporter.start("reindex.markdown", target);
 
   let reindexed = 0;
   let skipped = 0;
@@ -195,12 +251,7 @@ export async function runReindex(engine: BrainEngine, args: string[]): Promise<R
     // v0.41.15.0 (T10, D9): per-batch sliding pool. Counters are JS-
     // single-thread atomic so reindexed++ / failed++ are race-free
     // across workers.
-    const writersResolved = resolveWorkersWithClamp(
-      engine,
-      opts.workers,
-      'reindex',
-      batch.length,
-    );
+    const writersResolved = resolveWorkersWithClamp(engine, opts.workers, "reindex", batch.length);
     await runSlidingPool({
       items: batch,
       workers: writersResolved.workers,
@@ -230,13 +281,16 @@ export async function runReindex(engine: BrainEngine, args: string[]): Promise<R
           // timeline (codex catch). The round-trip preserves everything while
           // still re-chunking + bumping chunker_version.
           const page = await engine.getPage(row.slug, { sourceId: row.source_id });
-          if (!page) { skipped++; return; }
+          if (!page) {
+            skipped++;
+            return;
+          }
           const tags = await engine.getTags(row.slug, { sourceId: row.source_id });
           const fullMarkdown = serializeMarkdown(
             page.frontmatter ?? {},
             page.compiled_truth ?? row.compiled_truth,
-            page.timeline ?? '',
-            { type: page.type, title: page.title, tags },
+            page.timeline ?? "",
+            { type: page.type, title: page.title, tags }
           );
           await importFromContent(engine, row.slug, fullMarkdown, {
             sourceId: row.source_id,
@@ -265,12 +319,19 @@ export async function runReindex(engine: BrainEngine, args: string[]): Promise<R
   };
 
   if (opts.json) {
-    process.stdout.write(JSON.stringify({
-      pending, reindexed, skipped, failed,
-      chunker_version: MARKDOWN_CHUNKER_VERSION,
-    }) + '\n');
+    process.stdout.write(
+      JSON.stringify({
+        pending,
+        reindexed,
+        skipped,
+        failed,
+        chunker_version: MARKDOWN_CHUNKER_VERSION,
+      }) + "\n"
+    );
   } else {
-    process.stderr.write(`[reindex] Done. reindexed=${reindexed} failed=${failed} pending=${Math.max(0, pending - reindexed - failed)}\n`);
+    process.stderr.write(
+      `[reindex] Done. reindexed=${reindexed} failed=${failed} pending=${Math.max(0, pending - reindexed - failed)}\n`
+    );
   }
 
   return result;

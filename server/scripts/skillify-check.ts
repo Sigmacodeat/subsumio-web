@@ -8,6 +8,6 @@
  * to work. New code should prefer `gbrain skillify check ...`.
  */
 
-import { runSkillifyCheckInline } from '../src/commands/skillify-check.ts';
+import { runSkillifyCheckInline } from "../src/commands/skillify-check.ts";
 
 await runSkillifyCheckInline(process.argv.slice(2));

@@ -53,6 +53,7 @@ mutating: true
 ### Step 1 — Collect Entity Data
 
 Required:
+
 - **Name** (full legal name, incl. aliases / maiden names)
 - **Entity type**: Natürliche Person / Juristische Person / Personengesellschaft
 - **Jurisdiction**: where incorporated/resident
@@ -61,6 +62,7 @@ Required:
 - **Beneficial owners** (for companies: UBO ≥ 25% per § 19 GwG)
 
 Optional (increases accuracy):
+
 - Passport / ID number
 - Tax ID (Steuer-ID, UID-Nummer, USt-IdNr.)
 - Known associates
@@ -77,15 +79,15 @@ gbrain search "[company] Beneficial Owner Struktur" --mode balanced
 
 Score each factor:
 
-| Factor | Weight | Indicators |
-|--------|--------|------------|
-| Sanctions list hit | CRITICAL | OFAC SDN, EU Art. 6(2) AMLD, UN Security Council |
-| PEP status | HIGH | Government official, senior executive, family member |
-| High-risk country | HIGH | FATF grey/black list, EU high-risk third countries |
-| Complex ownership | MEDIUM | >3 layers, offshore UBO, nominee structures |
-| Adverse media | MEDIUM | Financial crime, fraud, corruption allegations |
-| Cash-intensive business | MEDIUM | Casinos, car dealerships, real estate |
-| Unusual transaction patterns | HIGH | Structuring, round amounts, no economic purpose |
+| Factor                       | Weight   | Indicators                                           |
+| ---------------------------- | -------- | ---------------------------------------------------- |
+| Sanctions list hit           | CRITICAL | OFAC SDN, EU Art. 6(2) AMLD, UN Security Council     |
+| PEP status                   | HIGH     | Government official, senior executive, family member |
+| High-risk country            | HIGH     | FATF grey/black list, EU high-risk third countries   |
+| Complex ownership            | MEDIUM   | >3 layers, offshore UBO, nominee structures          |
+| Adverse media                | MEDIUM   | Financial crime, fraud, corruption allegations       |
+| Cash-intensive business      | MEDIUM   | Casinos, car dealerships, real estate                |
+| Unusual transaction patterns | HIGH     | Structuring, round amounts, no economic purpose      |
 
 ### Step 4 — Output Report
 
@@ -107,6 +109,7 @@ Score each factor:
 ---
 
 ### Sanctions Check
+
 - OFAC SDN: ✅ No match / 🚫 MATCH — [Details]
 - EU Consolidated List: ✅ No match / 🚫 MATCH
 - UN Security Council: ✅ No match / 🚫 MATCH
@@ -114,19 +117,23 @@ Score each factor:
 - National lists (BaFin, FMA): ✅ No match / 🚫 MATCH
 
 ### PEP Assessment
+
 - PEP Status: ✅ Not a PEP / ⚠️ PEP — [Category, Country, Function]
 - Family/Close Associates: ✅ None identified / ⚠️ [Details]
 
 ### Country Risk
+
 - Jurisdiction: [Country] — [FATF status: Compliant / Grey List / Black List]
 - Business countries: [List]
 
 ### Beneficial Ownership (Juristische Personen)
+
 - UBO identified: ✅ / ⚠️ Not fully identified
 - UBO 1: [Name, %, nationality]
 - Complex structure: ✅ No / ⚠️ Yes — [Details]
 
 ### Adverse Media
+
 - Financial crime: ✅ None / ⚠️ [Source, date, allegation]
 - Regulatory sanctions: ✅ None / ⚠️ [Details]
 
@@ -135,16 +142,19 @@ Score each factor:
 ### Required Due Diligence Steps
 
 #### Simplified CDD (§ 14 GwG) — only if Low risk:
+
 - [ ] Identity document verification
 - [ ] Business relationship purpose
 
 #### Standard CDD (§ 10 GwG):
+
 - [ ] Identity document + verification
 - [ ] UBO identification (§ 11 GwG)
 - [ ] Purpose of business relationship
 - [ ] Ongoing monitoring
 
 #### Enhanced CDD (§ 15 GwG) — required for High/PEP:
+
 - [ ] Senior management approval
 - [ ] Source of funds verification
 - [ ] Source of wealth verification
@@ -152,12 +162,14 @@ Score each factor:
 - [ ] Annual review
 
 #### Prohibited — DO NOT ONBOARD:
+
 - [ ] Report suspicious activity (§ 43 GwG, § 16 FM-GwG)
 - [ ] Do not tip off (§ 47 GwG)
 
 ---
 
 ### Audit Trail
+
 - Screening ID: [UUID]
 - Next review due: [Date — 12 months]
 - Screened against: Brain corpus [date indexed]
@@ -180,6 +192,7 @@ gbrain add_timeline_entry \
 ## Prohibited Activities (GwG § 43)
 
 If a sanctions hit is confirmed OR the risk is PROHIBITED:
+
 1. **Do NOT complete the transaction** (§ 46 GwG)
 2. **File Suspicious Activity Report (SAR)** with FIU within 3 business days (§ 43 GwG)
 3. **Do NOT inform the customer** (§ 47 GwG Tipping-off prohibition)

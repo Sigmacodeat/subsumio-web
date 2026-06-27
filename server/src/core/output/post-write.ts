@@ -17,21 +17,21 @@
  * (grandfather opt-out from PR 2 migration).
  */
 
-import { appendFileSync, existsSync, mkdirSync } from 'fs';
-import { dirname } from 'path';
-import { gbrainPath } from '../config.ts';
+import { appendFileSync, existsSync, mkdirSync } from "fs";
+import { dirname } from "path";
+import { gbrainPath } from "../config.ts";
 
-import type { BrainEngine } from '../engine.ts';
+import type { BrainEngine } from "../engine.ts";
 import {
   citationValidator,
   linkValidator,
   backLinkValidator,
   tripleHrValidator,
-} from './validators/index.ts';
-import type { ValidationFinding, PageValidator } from './writer.ts';
+} from "./validators/index.ts";
+import type { ValidationFinding, PageValidator } from "./writer.ts";
 
-const getLintLogFile = () => gbrainPath('validator-lint.jsonl');
-const LINT_CONFIG_KEY = 'writer.lint_on_put_page';
+const getLintLogFile = () => gbrainPath("validator-lint.jsonl");
+const LINT_CONFIG_KEY = "writer.lint_on_put_page";
 
 export interface PostWriteLintOpts {
   /** Override config lookup; used by tests. If true, always run. */
@@ -57,7 +57,7 @@ export async function isLintOnPutPageEnabled(engine: BrainEngine): Promise<boole
     const v = await engine.getConfig(LINT_CONFIG_KEY);
     if (v === null || v === undefined) return false;
     const lc = v.toLowerCase();
-    return lc === 'true' || lc === '1' || lc === 'yes' || lc === 'on';
+    return lc === "true" || lc === "1" || lc === "yes" || lc === "on";
   } catch {
     return false;
   }
@@ -73,23 +73,28 @@ export async function isLintOnPutPageEnabled(engine: BrainEngine): Promise<boole
 export async function runPostWriteLint(
   engine: BrainEngine,
   slug: string,
-  opts: PostWriteLintOpts = {},
+  opts: PostWriteLintOpts = {}
 ): Promise<PostWriteLintResult> {
-  const enabled = opts.force ?? await isLintOnPutPageEnabled(engine);
+  const enabled = opts.force ?? (await isLintOnPutPageEnabled(engine));
   if (!enabled) {
-    return { ran: false, slug, findings: [], skippedReason: 'flag_disabled' };
+    return { ran: false, slug, findings: [], skippedReason: "flag_disabled" };
   }
 
   const page = await engine.getPage(slug);
   if (!page) {
-    return { ran: false, slug, findings: [], skippedReason: 'page_not_found' };
+    return { ran: false, slug, findings: [], skippedReason: "page_not_found" };
   }
 
   if (page.frontmatter?.validate === false) {
-    return { ran: false, slug, findings: [], skippedReason: 'validate_false_frontmatter' };
+    return { ran: false, slug, findings: [], skippedReason: "validate_false_frontmatter" };
   }
 
-  const validators: PageValidator[] = [citationValidator, linkValidator, backLinkValidator, tripleHrValidator];
+  const validators: PageValidator[] = [
+    citationValidator,
+    linkValidator,
+    backLinkValidator,
+    tripleHrValidator,
+  ];
   const ctx = {
     slug,
     type: page.type,
@@ -127,27 +132,35 @@ function writeLocalLintLog(slug: string, findings: ValidationFinding[]): void {
     const lintLogFile = getLintLogFile();
     const dir = dirname(lintLogFile);
     if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
-    const line = JSON.stringify({
-      ts: new Date().toISOString(),
-      slug,
-      error_count: findings.filter(f => f.severity === 'error').length,
-      warning_count: findings.filter(f => f.severity === 'warning').length,
-      findings: findings.slice(0, 20), // cap to prevent runaway log size
-    }) + '\n';
-    appendFileSync(lintLogFile, line, 'utf-8');
+    const line =
+      JSON.stringify({
+        ts: new Date().toISOString(),
+        slug,
+        error_count: findings.filter((f) => f.severity === "error").length,
+        warning_count: findings.filter((f) => f.severity === "warning").length,
+        findings: findings.slice(0, 20), // cap to prevent runaway log size
+      }) + "\n";
+    appendFileSync(lintLogFile, line, "utf-8");
   } catch {
     // Non-fatal; logging failure shouldn't break the main flow.
   }
 }
 
-async function writeIngestLog(engine: BrainEngine, slug: string, findings: ValidationFinding[]): Promise<void> {
+async function writeIngestLog(
+  engine: BrainEngine,
+  slug: string,
+  findings: ValidationFinding[]
+): Promise<void> {
   try {
-    const errorCount = findings.filter(f => f.severity === 'error').length;
-    const warningCount = findings.filter(f => f.severity === 'warning').length;
-    const summary = `post-write lint: ${errorCount} error, ${warningCount} warning` +
-      (errorCount > 0 ? ` (top: ${findings.find(f => f.severity === 'error')!.message.slice(0, 80)})` : '');
+    const errorCount = findings.filter((f) => f.severity === "error").length;
+    const warningCount = findings.filter((f) => f.severity === "warning").length;
+    const summary =
+      `post-write lint: ${errorCount} error, ${warningCount} warning` +
+      (errorCount > 0
+        ? ` (top: ${findings.find((f) => f.severity === "error")!.message.slice(0, 80)})`
+        : "");
     await engine.logIngest({
-      source_type: 'writer_lint',
+      source_type: "writer_lint",
       source_ref: slug,
       pages_updated: [slug],
       summary,

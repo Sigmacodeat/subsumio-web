@@ -22,7 +22,9 @@ export function getPortalSecret(): string {
   const secret = process.env.PORTAL_TOKEN_SECRET;
   if (secret) return secret;
   if (process.env.NODE_ENV === "production") {
-    throw new AuthError("PORTAL_TOKEN_SECRET must be set in production.", { code: "PORTAL_TOKEN_SECRET_MISSING" });
+    throw new AuthError("PORTAL_TOKEN_SECRET must be set in production.", {
+      code: "PORTAL_TOKEN_SECRET_MISSING",
+    });
   }
   // Dev fallback: ableiten aus dem Auth-Secret, aber NICHT identisch
   return "portal-dev-" + (process.env.AUTH_SECRET || "subsumio-dev-secret-change-me").slice(0, 32);
@@ -31,7 +33,7 @@ export function getPortalSecret(): string {
 export async function signPortalToken(
   caseSlug: string,
   ttlSeconds: number = 30 * 24 * 3600, // 30 Tage
-  brainId?: string,
+  brainId?: string
 ): Promise<string> {
   const payload: PortalTokenPayload = {
     case_slug: caseSlug,
@@ -60,7 +62,7 @@ function tokenHash(token: string): string {
 }
 
 export async function verifyPortalToken(
-  token: string | undefined | null,
+  token: string | undefined | null
 ): Promise<PortalTokenPayload | null> {
   if (!token) return null;
   if (token !== token.trim()) return null;
@@ -75,7 +77,7 @@ export async function verifyPortalToken(
       await ensurePortalSchema();
       const { rows } = await pool.query(
         "SELECT 1 FROM subsumio_portal_revocations WHERE token_hash = $1",
-        [hash],
+        [hash]
       );
       if (rows.length > 0) {
         REVOKED.add(hash);
@@ -116,10 +118,12 @@ export async function revokePortalToken(token: string): Promise<void> {
     await ensurePortalSchema();
     await pool.query(
       "INSERT INTO subsumio_portal_revocations (token_hash) VALUES ($1) ON CONFLICT DO NOTHING",
-      [hash],
+      [hash]
     );
   } catch (err) {
-    console.error(`[portal-token] revocation persist failed: ${err instanceof Error ? err.message : String(err)}`);
+    console.error(
+      `[portal-token] revocation persist failed: ${err instanceof Error ? err.message : String(err)}`
+    );
   }
 }
 
@@ -133,7 +137,7 @@ export async function isPortalTokenRevoked(token: string): Promise<boolean> {
       await ensurePortalSchema();
       const { rows } = await pool.query(
         "SELECT 1 FROM subsumio_portal_revocations WHERE token_hash = $1",
-        [hash],
+        [hash]
       );
       if (rows.length > 0) {
         REVOKED.add(hash);

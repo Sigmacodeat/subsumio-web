@@ -45,11 +45,11 @@ import type {
   IngestionSource,
   IngestionSourceContext,
   IngestionSourceHealth,
-} from './types.ts';
-import { validateIngestionEvent } from './types.ts';
-import { DedupWindow } from './dedup.ts';
-import type { Logger } from '../operations.ts';
-import type { BrainEngine } from '../engine.ts';
+} from "./types.ts";
+import { validateIngestionEvent } from "./types.ts";
+import { DedupWindow } from "./dedup.ts";
+import type { Logger } from "../operations.ts";
+import type { BrainEngine } from "../engine.ts";
 
 interface RateLimitConfig {
   /** Events allowed per window. */
@@ -84,12 +84,10 @@ const DEFAULT_SUPERVISION: SupervisionConfig = {
 /** Outcome the dispatcher returns. Lets the daemon distinguish queue
  *  retryable failures from genuine drops (e.g. invalid payload). */
 export type DispatchOutcome =
-  | { kind: 'queued'; jobId?: number }
-  | { kind: 'failed'; error: string };
+  | { kind: "queued"; jobId?: number }
+  | { kind: "failed"; error: string };
 
-export type IngestionDispatcher = (
-  event: IngestionEvent,
-) => Promise<DispatchOutcome>;
+export type IngestionDispatcher = (event: IngestionEvent) => Promise<DispatchOutcome>;
 
 export interface IngestionDaemonOpts {
   /** Engine handle exposed to sources via ctx.engine. Sources should only
@@ -120,12 +118,12 @@ export interface DaemonHealth {
   /** Overall daemon status: `ok` if every source is `ok`, `warn` if any
    *  source is `warn` (but daemon is still functional), `fail` if any
    *  source has exceeded maxCrashes and is offline. */
-  status: 'ok' | 'warn' | 'fail';
+  status: "ok" | "warn" | "fail";
   /** Per-source breakdown. */
   sources: Array<{
     id: string;
     kind: string;
-    status: 'ok' | 'warn' | 'fail';
+    status: "ok" | "warn" | "fail";
     message?: string;
     crashCount: number;
     eventCount: number;
@@ -190,7 +188,7 @@ export class IngestionDaemon {
     if (this._running) {
       throw new Error(
         `IngestionDaemon.register: cannot register source '${registration.source.id}' ` +
-          `after daemon has started; call register before start()`,
+          `after daemon has started; call register before start()`
       );
     }
     const id = registration.source.id;
@@ -218,16 +216,14 @@ export class IngestionDaemon {
    */
   async start(): Promise<void> {
     if (this._running) {
-      throw new Error('IngestionDaemon.start: already running');
+      throw new Error("IngestionDaemon.start: already running");
     }
     this._running = true;
     this._stopping = false;
 
     // Fire each source's supervisor in parallel. Each returns when the
     // source is either running or exhausted.
-    const startPromises = Array.from(this.sources.keys()).map((id) =>
-      this.superviseSource(id),
-    );
+    const startPromises = Array.from(this.sources.keys()).map((id) => this.superviseSource(id));
 
     // The supervisor returns once start() resolves (source is "running")
     // OR once maxCrashes is hit. We wait for the initial start round to
@@ -252,11 +248,11 @@ export class IngestionDaemon {
           await raceWithTimeout(
             state.registration.source.stop(),
             graceMs,
-            `source '${id}' did not stop within ${graceMs}ms`,
+            `source '${id}' did not stop within ${graceMs}ms`
           );
         } catch (err) {
           this.opts.logger.warn(
-            `[ingestion] source '${id}' stop failed: ${err instanceof Error ? err.message : String(err)}`,
+            `[ingestion] source '${id}' stop failed: ${err instanceof Error ? err.message : String(err)}`
           );
         }
       })();
@@ -270,35 +266,35 @@ export class IngestionDaemon {
 
   /** Aggregate health report for `gbrain doctor ingestion_health`. */
   async healthCheck(): Promise<DaemonHealth> {
-    const perSource: DaemonHealth['sources'] = [];
-    let aggregateStatus: 'ok' | 'warn' | 'fail' = 'ok';
+    const perSource: DaemonHealth["sources"] = [];
+    let aggregateStatus: "ok" | "warn" | "fail" = "ok";
 
     for (const [id, state] of this.sources) {
-      let status: 'ok' | 'warn' | 'fail';
+      let status: "ok" | "warn" | "fail";
       let message: string | undefined;
 
       if (state.exhausted) {
-        status = 'fail';
-        message = state.lastError ?? 'source exceeded maxCrashes';
+        status = "fail";
+        message = state.lastError ?? "source exceeded maxCrashes";
       } else if (state.crashCount > 0) {
-        status = 'warn';
-        message = `${state.crashCount} crash(es) since last stable run${state.lastError ? `: ${state.lastError}` : ''}`;
+        status = "warn";
+        message = `${state.crashCount} crash(es) since last stable run${state.lastError ? `: ${state.lastError}` : ""}`;
       } else if (state.started && state.registration.source.healthCheck) {
         try {
           const result = await raceWithTimeout(
             state.registration.source.healthCheck(),
             5_000,
-            `source '${id}' healthCheck() timed out`,
+            `source '${id}' healthCheck() timed out`
           );
           status = result.status;
           message = result.message;
         } catch (err) {
-          status = 'warn';
+          status = "warn";
           message = err instanceof Error ? err.message : String(err);
         }
       } else {
-        status = state.started ? 'ok' : 'warn';
-        if (!state.started) message = 'not started yet';
+        status = state.started ? "ok" : "warn";
+        if (!state.started) message = "not started yet";
       }
 
       perSource.push({
@@ -312,7 +308,7 @@ export class IngestionDaemon {
       });
 
       // Worst-case wins.
-      if (status === 'fail' || (status === 'warn' && aggregateStatus === 'ok')) {
+      if (status === "fail" || (status === "warn" && aggregateStatus === "ok")) {
         aggregateStatus = status;
       }
     }
@@ -361,14 +357,14 @@ export class IngestionDaemon {
         }
 
         this.opts.logger.warn(
-          `[ingestion] source '${id}' start failed (crash ${state.crashCount}/${this.supervision.maxCrashes}): ${errMsg}`,
+          `[ingestion] source '${id}' start failed (crash ${state.crashCount}/${this.supervision.maxCrashes}): ${errMsg}`
         );
 
         if (state.crashCount >= this.supervision.maxCrashes) {
           state.exhausted = true;
           this.opts.logger.error(
             `[ingestion] source '${id}' exhausted maxCrashes=${this.supervision.maxCrashes}; ` +
-              `giving up. Last error: ${errMsg}`,
+              `giving up. Last error: ${errMsg}`
           );
           return;
         }
@@ -376,7 +372,7 @@ export class IngestionDaemon {
         // Exponential backoff: 1s, 2s, 4s, ... capped at maxBackoffMs.
         const backoff = Math.min(
           this.supervision.initialBackoffMs * 2 ** (state.crashCount - 1),
-          this.supervision.maxBackoffMs,
+          this.supervision.maxBackoffMs
         );
         await this.sleep(backoff);
       }
@@ -395,11 +391,13 @@ export class IngestionDaemon {
         // Schedule via microtask so the source's emit() returns synchronously
         // (publishers expect emit to be fire-and-forget). Errors in the
         // pipeline log but don't propagate back to the source.
-        Promise.resolve().then(() => daemon.handleEmit(state, event)).catch((err) => {
-          daemon.opts.logger.error(
-            `[ingestion] source '${sourceId}' dispatch error: ${err instanceof Error ? err.message : String(err)}`,
-          );
-        });
+        Promise.resolve()
+          .then(() => daemon.handleEmit(state, event))
+          .catch((err) => {
+            daemon.opts.logger.error(
+              `[ingestion] source '${sourceId}' dispatch error: ${err instanceof Error ? err.message : String(err)}`
+            );
+          });
       },
       engine: daemon.opts.engine,
       logger: daemon.wrapLogger(sourceId),
@@ -423,14 +421,18 @@ export class IngestionDaemon {
     const validationErr = validateIngestionEvent(event);
     if (validationErr) {
       this.opts.logger.warn(
-        `[ingestion] source '${sourceId}' emitted invalid event: ${validationErr.message}`,
+        `[ingestion] source '${sourceId}' emitted invalid event: ${validationErr.message}`
       );
       return;
     }
 
     // Defense in depth: validated event but kind mismatch means the source
     // is lying about its identity. Trust source.kind over event.source_kind.
-    const effectiveEvent: IngestionEvent = { ...event, source_kind: sourceKind, source_id: sourceId };
+    const effectiveEvent: IngestionEvent = {
+      ...event,
+      source_kind: sourceKind,
+      source_id: sourceId,
+    };
 
     // 2. Dedup — TRICKLE MODE ONLY (v0.41 T2). Migration-mode sources own
     // their own permanent slug-keyed idempotency (via op_checkpoint); the
@@ -438,8 +440,8 @@ export class IngestionDaemon {
     // happen days apart and content_hash collisions across the import
     // window are expected. Default-undefined source.mode treats as
     // 'trickle' for v0.38 back-compat.
-    const sourceMode = state.registration.source.mode ?? 'trickle';
-    if (sourceMode === 'trickle') {
+    const sourceMode = state.registration.source.mode ?? "trickle";
+    if (sourceMode === "trickle") {
       const isNew = this.dedup.mark(sourceKind, effectiveEvent.content_hash);
       if (!isNew) {
         // Silent dedup hit. dedup.hits counter already incremented.
@@ -458,7 +460,7 @@ export class IngestionDaemon {
       state.rateLimitHits++;
       this.opts.logger.warn(
         `[ingestion] source '${sourceId}' rate limit hit ` +
-          `(${this.rateLimit.capacity} events / ${this.rateLimit.windowMs}ms); dropping event`,
+          `(${this.rateLimit.capacity} events / ${this.rateLimit.windowMs}ms); dropping event`
       );
       return;
     }
@@ -468,14 +470,12 @@ export class IngestionDaemon {
     // 4. Dispatch.
     try {
       const outcome = await this.opts.dispatch(effectiveEvent);
-      if (outcome.kind === 'failed') {
-        this.opts.logger.warn(
-          `[ingestion] source '${sourceId}' dispatch failed: ${outcome.error}`,
-        );
+      if (outcome.kind === "failed") {
+        this.opts.logger.warn(`[ingestion] source '${sourceId}' dispatch failed: ${outcome.error}`);
       }
     } catch (err) {
       this.opts.logger.error(
-        `[ingestion] source '${sourceId}' dispatcher threw: ${err instanceof Error ? err.message : String(err)}`,
+        `[ingestion] source '${sourceId}' dispatcher threw: ${err instanceof Error ? err.message : String(err)}`
       );
     }
   }
@@ -484,9 +484,15 @@ export class IngestionDaemon {
   private wrapLogger(sourceId: string): Logger {
     const baseLogger = this.opts.logger;
     return {
-      info(msg: string) { baseLogger.info(`[ingestion:${sourceId}] ${msg}`); },
-      warn(msg: string) { baseLogger.warn(`[ingestion:${sourceId}] ${msg}`); },
-      error(msg: string) { baseLogger.error(`[ingestion:${sourceId}] ${msg}`); },
+      info(msg: string) {
+        baseLogger.info(`[ingestion:${sourceId}] ${msg}`);
+      },
+      warn(msg: string) {
+        baseLogger.warn(`[ingestion:${sourceId}] ${msg}`);
+      },
+      error(msg: string) {
+        baseLogger.error(`[ingestion:${sourceId}] ${msg}`);
+      },
     };
   }
 
@@ -529,7 +535,7 @@ function raceWithTimeout<T>(p: Promise<T>, ms: number, timeoutMsg: string): Prom
         settled = true;
         clearTimeout(t);
         reject(err);
-      },
+      }
     );
   });
 }

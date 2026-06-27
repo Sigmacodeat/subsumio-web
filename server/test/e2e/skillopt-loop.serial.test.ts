@@ -23,26 +23,22 @@
  * transport) and the orchestrator walks multi-epoch shared disk state.
  */
 
-import { describe, expect, test, beforeAll, afterAll, beforeEach, afterEach } from 'bun:test';
-import * as fs from 'node:fs';
-import * as os from 'node:os';
-import * as path from 'node:path';
-import { PGLiteEngine } from '../../src/core/pglite-engine.ts';
-import { resetPgliteState } from '../helpers/reset-pglite.ts';
-import { withEnv } from '../helpers/with-env.ts';
+import { describe, expect, test, beforeAll, afterAll, beforeEach, afterEach } from "bun:test";
+import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
+import { PGLiteEngine } from "../../src/core/pglite-engine.ts";
+import { resetPgliteState } from "../helpers/reset-pglite.ts";
+import { withEnv } from "../helpers/with-env.ts";
 import {
   __setChatTransportForTests,
   type ChatOpts,
   type ChatResult,
-} from '../../src/core/ai/gateway.ts';
-import { runSkillOpt } from '../../src/core/skillopt/orchestrator.ts';
-import {
-  bestPath,
-  loadHistory,
-  skillPath,
-} from '../../src/core/skillopt/version-store.ts';
-import { loadRejectedBuffer } from '../../src/core/skillopt/rejected-buffer.ts';
-import type { EditOp } from '../../src/core/skillopt/types.ts';
+} from "../../src/core/ai/gateway.ts";
+import { runSkillOpt } from "../../src/core/skillopt/orchestrator.ts";
+import { bestPath, loadHistory, skillPath } from "../../src/core/skillopt/version-store.ts";
+import { loadRejectedBuffer } from "../../src/core/skillopt/rejected-buffer.ts";
+import type { EditOp } from "../../src/core/skillopt/types.ts";
 
 let engine: PGLiteEngine;
 
@@ -70,7 +66,7 @@ afterEach(() => {
 
 // ─── Fixture helpers ────────────────────────────────────────────────────────
 
-const SKILL = 'e2e-loop-skill';
+const SKILL = "e2e-loop-skill";
 
 /** A skill with only `## People`. Half the benchmark fails at baseline. */
 const SKILL_PEOPLE_ONLY = `---
@@ -119,12 +115,12 @@ Cite sources.
  * floor).
  */
 const SAMPLE_BENCHMARK = Array.from({ length: 50 }, (_, i) => {
-  const n = String(i + 1).padStart(3, '0');
-  const op = i % 2 === 0 ? 'People' : 'Citations';
+  const n = String(i + 1).padStart(3, "0");
+  const op = i % 2 === 0 ? "People" : "Citations";
   return {
     task_id: `e2e-${n}`,
     task: `Process task ${i + 1}`,
-    judge: { kind: 'rule' as const, checks: [{ op: 'contains' as const, arg: op }] },
+    judge: { kind: "rule" as const, checks: [{ op: "contains" as const, arg: op }] },
   };
 });
 
@@ -136,50 +132,54 @@ interface Fixture {
 
 /** 50 tasks all checking `contains: Citations` — baseline People-only fails them all. */
 const CITATIONS_BENCHMARK = Array.from({ length: 50 }, (_, i) => {
-  const n = String(i + 1).padStart(3, '0');
+  const n = String(i + 1).padStart(3, "0");
   return {
     task_id: `cit-${n}`,
     task: `Process task ${i + 1}`,
-    judge: { kind: 'rule' as const, checks: [{ op: 'contains' as const, arg: 'Citations' }] },
+    judge: { kind: "rule" as const, checks: [{ op: "contains" as const, arg: "Citations" }] },
   };
 });
 
 /** Held-out set checking `contains: People` — baseline passes, a People-dropping candidate fails. */
 const PEOPLE_HELDOUT = Array.from({ length: 6 }, (_, i) => {
-  const n = String(i + 1).padStart(3, '0');
+  const n = String(i + 1).padStart(3, "0");
   return {
     task_id: `ho-${n}`,
     task: `Held-out task ${i + 1}`,
-    judge: { kind: 'rule' as const, checks: [{ op: 'contains' as const, arg: 'People' }] },
+    judge: { kind: "rule" as const, checks: [{ op: "contains" as const, arg: "People" }] },
   };
 });
 
 function setupFixture(
   skillBody: string = SKILL_PEOPLE_ONLY,
-  benchmark: ReadonlyArray<{ task_id: string; task: string; judge: unknown }> = SAMPLE_BENCHMARK,
+  benchmark: ReadonlyArray<{ task_id: string; task: string; judge: unknown }> = SAMPLE_BENCHMARK
 ): Fixture {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'skillopt-loop-e2e-'));
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "skillopt-loop-e2e-"));
   const skillDir = path.join(tmp, SKILL);
   fs.mkdirSync(skillDir, { recursive: true });
-  fs.writeFileSync(path.join(skillDir, 'SKILL.md'), skillBody);
-  const benchmarkPath = path.join(skillDir, 'skillopt-benchmark.jsonl');
-  fs.writeFileSync(
-    benchmarkPath,
-    benchmark.map((t) => JSON.stringify(t)).join('\n') + '\n',
-  );
+  fs.writeFileSync(path.join(skillDir, "SKILL.md"), skillBody);
+  const benchmarkPath = path.join(skillDir, "skillopt-benchmark.jsonl");
+  fs.writeFileSync(benchmarkPath, benchmark.map((t) => JSON.stringify(t)).join("\n") + "\n");
   return {
     skillsDir: tmp,
     benchmarkPath,
     cleanup: () => {
-      try { fs.rmSync(tmp, { recursive: true, force: true }); } catch { /* ignore */ }
+      try {
+        fs.rmSync(tmp, { recursive: true, force: true });
+      } catch {
+        /* ignore */
+      }
     },
   };
 }
 
 /** Write a held-out JSONL into the fixture's skill dir; return its path. */
-function writeHeldOut(fixture: Fixture, tasks: ReadonlyArray<{ task_id: string; task: string; judge: unknown }>): string {
-  const p = path.join(fixture.skillsDir, SKILL, 'held-out.jsonl');
-  fs.writeFileSync(p, tasks.map((t) => JSON.stringify(t)).join('\n') + '\n');
+function writeHeldOut(
+  fixture: Fixture,
+  tasks: ReadonlyArray<{ task_id: string; task: string; judge: unknown }>
+): string {
+  const p = path.join(fixture.skillsDir, SKILL, "held-out.jsonl");
+  fs.writeFileSync(p, tasks.map((t) => JSON.stringify(t)).join("\n") + "\n");
   return p;
 }
 
@@ -215,28 +215,28 @@ interface StubOpts {
 // No trailing period: matches the FAILURE/SUCCESS reflect systems ("...optimizer.")
 // AND the one-shot system ("...optimizer in ONE-SHOT REWRITE mode.").
 const REFLECT_OPTIMIZER_PREFIX = "You are SkillOpt's optimizer";
-const FAILURE_REFLECT_MARKER = 'FAILURE TRAJECTORIES';
-const ONE_SHOT_MARKER = 'ONE-SHOT REWRITE';
+const FAILURE_REFLECT_MARKER = "FAILURE TRAJECTORIES";
+const ONE_SHOT_MARKER = "ONE-SHOT REWRITE";
 
 function defaultTargetText(skillText: string): string {
   // Faithful agent: read the skill's body, emit sections that exist there.
   // Rule-check `contains: 'People'` passes when the section header is present
   // in the rollout's final_text (since the header literal contains 'People').
   const parts: string[] = [];
-  if (skillText.includes('## People')) parts.push('## People\nAlice attended the meeting.');
-  if (skillText.includes('## Citations')) parts.push('## Citations\nSource: example.com');
-  return parts.join('\n\n') || 'No structured output produced.';
+  if (skillText.includes("## People")) parts.push("## People\nAlice attended the meeting.");
+  if (skillText.includes("## Citations")) parts.push("## Citations\nSource: example.com");
+  return parts.join("\n\n") || "No structured output produced.";
 }
 
 function makeChatResult(
   text: string,
   model: string,
-  usage: { input: number; output: number } = { input: 100, output: 20 },
+  usage: { input: number; output: number } = { input: 100, output: 20 }
 ): ChatResult {
   return {
     text,
-    blocks: [{ type: 'text', text }],
-    stopReason: 'end',
+    blocks: [{ type: "text", text }],
+    stopReason: "end",
     usage: {
       input_tokens: usage.input,
       output_tokens: usage.output,
@@ -244,22 +244,22 @@ function makeChatResult(
       cache_creation_tokens: 0,
     },
     model,
-    providerId: 'anthropic',
+    providerId: "anthropic",
   };
 }
 
 function installStub(opts: StubOpts): void {
   const usage = opts.perCallUsage ?? { input: 100, output: 20 };
   __setChatTransportForTests(async (chatOpts: ChatOpts): Promise<ChatResult> => {
-    const sys = chatOpts.system ?? '';
+    const sys = chatOpts.system ?? "";
     const isOptimizerCall = sys.startsWith(REFLECT_OPTIMIZER_PREFIX);
 
     if (isOptimizerCall) {
-      const model = chatOpts.model ?? 'anthropic:claude-opus-4-7';
+      const model = chatOpts.model ?? "anthropic:claude-opus-4-7";
       // ONE-SHOT REWRITE mode returns a raw body, not edits JSON.
       if (sys.includes(ONE_SHOT_MARKER)) {
         if (opts.stats) opts.stats.oneShotCalls += 1;
-        return makeChatResult(opts.oneShotBody ?? '', model, usage);
+        return makeChatResult(opts.oneShotBody ?? "", model, usage);
       }
       if (opts.optimizerRaw !== undefined) {
         return makeChatResult(opts.optimizerRaw, model, usage);
@@ -272,7 +272,7 @@ function installStub(opts: StubOpts): void {
     }
 
     // Target-agent rollout.
-    const model = chatOpts.model ?? 'anthropic:claude-sonnet-4-6';
+    const model = chatOpts.model ?? "anthropic:claude-sonnet-4-6";
     const fn = opts.targetText ?? defaultTargetText;
     return makeChatResult(fn(sys), model, usage);
   });
@@ -290,8 +290,8 @@ interface RunOptsOverride {
   batchSize?: number;
   noMutate?: boolean;
   heldOutPath?: string;
-  optimizerMode?: 'reflect' | 'one-shot-rewrite';
-  reflectMode?: 'both' | 'failure-only';
+  optimizerMode?: "reflect" | "one-shot-rewrite";
+  reflectMode?: "both" | "failure-only";
   disableValidationGate?: boolean;
   maxRuntimeMin?: number;
 }
@@ -305,12 +305,12 @@ async function runOnce(fixture: Fixture, over: RunOptsOverride = {}) {
     epochs: over.epochs ?? 1,
     batchSize: over.batchSize ?? 2,
     lr: 4,
-    lrSchedule: 'constant',
+    lrSchedule: "constant",
     split: [4, 1, 5],
-    optimizerModel: 'anthropic:claude-opus-4-7',
-    targetModel: 'anthropic:claude-sonnet-4-6',
-    judgeModel: 'anthropic:claude-sonnet-4-6',
-    mode: 'patch',
+    optimizerModel: "anthropic:claude-opus-4-7",
+    targetModel: "anthropic:claude-sonnet-4-6",
+    judgeModel: "anthropic:claude-sonnet-4-6",
+    mode: "patch",
     dryRun: false,
     noMutate: over.noMutate ?? false,
     allowMutateBundled: true,
@@ -328,8 +328,8 @@ async function runOnce(fixture: Fixture, over: RunOptsOverride = {}) {
 
 // ─── Cases ──────────────────────────────────────────────────────────────────
 
-describe('skillopt full-loop E2E (happy path + broken cases)', () => {
-  test('happy path: optimizer proposes a real edit, gate accepts, SKILL.md mutated', async () => {
+describe("skillopt full-loop E2E (happy path + broken cases)", () => {
+  test("happy path: optimizer proposes a real edit, gate accepts, SKILL.md mutated", async () => {
     const fixture = setupFixture(SKILL_PEOPLE_ONLY);
     try {
       // Optimizer (FAILURE mode) proposes adding a ## Citations section right
@@ -338,10 +338,10 @@ describe('skillopt full-loop E2E (happy path + broken cases)', () => {
       // delta = 0.5 ≫ epsilon=0.05 → ACCEPT.
       installStub({
         failureEdit: {
-          op: 'add',
-          anchor: 'People',
-          content: '## Citations\nCite the source for every claim.',
-          reason: 'agent failed Citations tasks because no Citations section exists',
+          op: "add",
+          anchor: "People",
+          content: "## Citations\nCite the source for every claim.",
+          reason: "agent failed Citations tasks because no Citations section exists",
         },
         successEdit: null, // success-mode reflect produces no edits
       });
@@ -350,23 +350,23 @@ describe('skillopt full-loop E2E (happy path + broken cases)', () => {
           const result = await runOnce(fixture);
 
           // Outcome contract: accepted + mutated.
-          expect(result.outcome).toBe('accepted');
+          expect(result.outcome).toBe("accepted");
           expect(result.mutatedSkillFile).toBe(true);
 
           // SKILL.md on disk now has BOTH sections.
-          const finalSkill = fs.readFileSync(skillPath(fixture.skillsDir, SKILL), 'utf8');
-          expect(finalSkill).toContain('## People');
-          expect(finalSkill).toContain('## Citations');
+          const finalSkill = fs.readFileSync(skillPath(fixture.skillsDir, SKILL), "utf8");
+          expect(finalSkill).toContain("## People");
+          expect(finalSkill).toContain("## Citations");
           // Frontmatter preserved (D5: edits never touch frontmatter).
-          expect(finalSkill).toContain('name: e2e-loop-skill');
-          expect(finalSkill).toContain('brain_first: exempt');
+          expect(finalSkill).toContain("name: e2e-loop-skill");
+          expect(finalSkill).toContain("brain_first: exempt");
 
           // best.md mirrors the on-disk SKILL.md content.
-          expect(fs.readFileSync(bestPath(fixture.skillsDir, SKILL), 'utf8')).toBe(finalSkill);
+          expect(fs.readFileSync(bestPath(fixture.skillsDir, SKILL), "utf8")).toBe(finalSkill);
 
           // History has exactly one committed row with the right shape.
           const history = loadHistory(fixture.skillsDir, SKILL);
-          const committed = history.filter((r) => r.status === 'committed');
+          const committed = history.filter((r) => r.status === "committed");
           expect(committed).toHaveLength(1);
           expect(committed[0]!.version_n).toBe(1);
           expect(committed[0]!.delta).toBeGreaterThan(0.05); // > epsilon
@@ -374,11 +374,11 @@ describe('skillopt full-loop E2E (happy path + broken cases)', () => {
 
           // The committed row records the actual edit applied (not just an empty proposal).
           expect(committed[0]!.edits).toHaveLength(1);
-          expect(committed[0]!.edits[0]).toMatchObject({ op: 'add', anchor: 'People' });
+          expect(committed[0]!.edits[0]).toMatchObject({ op: "add", anchor: "People" });
 
           // Receipt sel_score reflects the accepted candidate's score.
           expect(result.receipt.best_sel_score).toBeGreaterThan(0.9);
-          expect(result.receipt.outcome).toBe('accepted');
+          expect(result.receipt.outcome).toBe("accepted");
           expect(result.receipt.epochs_completed).toBe(1);
         });
       } finally {
@@ -389,7 +389,7 @@ describe('skillopt full-loop E2E (happy path + broken cases)', () => {
     }
   });
 
-  test('broken: below-baseline regression edit (gate rejects, SKILL.md unchanged)', async () => {
+  test("broken: below-baseline regression edit (gate rejects, SKILL.md unchanged)", async () => {
     // Start with a skill that already scores 1.0. The optimizer (in SUCCESS
     // mode — failures=[] since baseline is perfect) proposes a destructive
     // edit that removes the ## People section. The candidate's sel score
@@ -400,9 +400,9 @@ describe('skillopt full-loop E2E (happy path + broken cases)', () => {
       installStub({
         failureEdit: null,
         successEdit: {
-          op: 'delete',
-          target: '## People\nList people mentioned.\n',
-          reason: 'mistakenly thinks the People section is redundant',
+          op: "delete",
+          target: "## People\nList people mentioned.\n",
+          reason: "mistakenly thinks the People section is redundant",
         },
       });
       try {
@@ -410,27 +410,33 @@ describe('skillopt full-loop E2E (happy path + broken cases)', () => {
           const result = await runOnce(fixture);
 
           // Outcome contract: no acceptance + no mutation.
-          expect(result.outcome).toBe('no_improvement');
+          expect(result.outcome).toBe("no_improvement");
           expect(result.mutatedSkillFile).toBe(false);
 
           // SKILL.md on disk is byte-identical to baseline.
-          expect(fs.readFileSync(skillPath(fixture.skillsDir, SKILL), 'utf8'))
-            .toBe(SKILL_BOTH_SECTIONS);
+          expect(fs.readFileSync(skillPath(fixture.skillsDir, SKILL), "utf8")).toBe(
+            SKILL_BOTH_SECTIONS
+          );
 
           // History is empty (no committed rows; rejected edits don't enter history).
           const history = loadHistory(fixture.skillsDir, SKILL);
-          expect(history.filter((r) => r.status === 'committed')).toHaveLength(0);
+          expect(history.filter((r) => r.status === "committed")).toHaveLength(0);
 
           // The destructive edit landed in the rejected-edits buffer for
           // anti-bias context on future runs (the optimizer learns).
           const rejected = loadRejectedBuffer(fixture.skillsDir, SKILL);
           expect(rejected.length).toBeGreaterThan(0);
-          expect(rejected.some((e) => e.reason.startsWith('validation_gate'))).toBe(true);
+          expect(rejected.some((e) => e.reason.startsWith("validation_gate"))).toBe(true);
           // The recorded edit shape matches the destructive proposal so the
           // optimizer's anti-bias prompt sees the actual edit, not a stub.
-          expect(rejected.some((e) =>
-            e.edits.some((edit) => edit.op === 'delete' && (edit as { target: string }).target.includes('## People')),
-          )).toBe(true);
+          expect(
+            rejected.some((e) =>
+              e.edits.some(
+                (edit) =>
+                  edit.op === "delete" && (edit as { target: string }).target.includes("## People")
+              )
+            )
+          ).toBe(true);
         });
       } finally {
         uninstallStub();
@@ -440,7 +446,7 @@ describe('skillopt full-loop E2E (happy path + broken cases)', () => {
     }
   });
 
-  test('broken: malformed reflect JSON (no edits parsed, no acceptance)', async () => {
+  test("broken: malformed reflect JSON (no edits parsed, no acceptance)", async () => {
     // The optimizer returns syntactically broken JSON. The reflect module's
     // forgiving parser yields zero valid edits; applyEditBatch sees an empty
     // batch; the orchestrator hits the "no_edits_applied" branch; the sel
@@ -457,12 +463,14 @@ describe('skillopt full-loop E2E (happy path + broken cases)', () => {
         await withEnv({ GBRAIN_AUDIT_DIR: fixture.skillsDir }, async () => {
           const result = await runOnce(fixture);
 
-          expect(result.outcome).toBe('no_improvement');
+          expect(result.outcome).toBe("no_improvement");
           expect(result.mutatedSkillFile).toBe(false);
-          expect(fs.readFileSync(skillPath(fixture.skillsDir, SKILL), 'utf8'))
-            .toBe(SKILL_PEOPLE_ONLY);
-          expect(loadHistory(fixture.skillsDir, SKILL).filter((r) => r.status === 'committed'))
-            .toHaveLength(0);
+          expect(fs.readFileSync(skillPath(fixture.skillsDir, SKILL), "utf8")).toBe(
+            SKILL_PEOPLE_ONLY
+          );
+          expect(
+            loadHistory(fixture.skillsDir, SKILL).filter((r) => r.status === "committed")
+          ).toHaveLength(0);
         });
       } finally {
         uninstallStub();
@@ -472,7 +480,7 @@ describe('skillopt full-loop E2E (happy path + broken cases)', () => {
     }
   });
 
-  test('broken: anchor-not-found edit (apply rejects, sel gate skipped)', async () => {
+  test("broken: anchor-not-found edit (apply rejects, sel gate skipped)", async () => {
     // The optimizer proposes a structurally valid edit pointing at a heading
     // that doesn't exist in the skill. applyEditBatch returns all-rejected;
     // the orchestrator's all-rejected branch fires (logs no_edits_applied,
@@ -483,26 +491,27 @@ describe('skillopt full-loop E2E (happy path + broken cases)', () => {
     try {
       installStub({
         failureEdit: {
-          op: 'add',
-          anchor: 'NonExistentHeading',
-          content: 'Some content',
-          reason: 'optimizer hallucinated a heading',
+          op: "add",
+          anchor: "NonExistentHeading",
+          content: "Some content",
+          reason: "optimizer hallucinated a heading",
         },
       });
       try {
         await withEnv({ GBRAIN_AUDIT_DIR: fixture.skillsDir }, async () => {
           const result = await runOnce(fixture);
 
-          expect(result.outcome).toBe('no_improvement');
+          expect(result.outcome).toBe("no_improvement");
           expect(result.mutatedSkillFile).toBe(false);
-          expect(fs.readFileSync(skillPath(fixture.skillsDir, SKILL), 'utf8'))
-            .toBe(SKILL_PEOPLE_ONLY);
+          expect(fs.readFileSync(skillPath(fixture.skillsDir, SKILL), "utf8")).toBe(
+            SKILL_PEOPLE_ONLY
+          );
 
           // Rejected-buffer should carry an apply_failed entry (the failed
           // anchor lookup is recorded so the optimizer doesn't re-propose).
           const rejected = loadRejectedBuffer(fixture.skillsDir, SKILL);
           expect(rejected.length).toBeGreaterThan(0);
-          expect(rejected.some((e) => e.reason === 'apply_failed')).toBe(true);
+          expect(rejected.some((e) => e.reason === "apply_failed")).toBe(true);
         });
       } finally {
         uninstallStub();
@@ -512,7 +521,7 @@ describe('skillopt full-loop E2E (happy path + broken cases)', () => {
     }
   });
 
-  test('broken: budget exhausted mid-run (aborts cleanly, no half-committed state)', async () => {
+  test("broken: budget exhausted mid-run (aborts cleanly, no half-committed state)", async () => {
     // Cap is just under the preflight estimate so the run starts (preflight
     // refusal would prevent us from observing BudgetExhausted mid-loop), then
     // trips on the cumulative spend during the loop. Outcome=aborted is the
@@ -523,10 +532,10 @@ describe('skillopt full-loop E2E (happy path + broken cases)', () => {
     try {
       installStub({
         failureEdit: {
-          op: 'add',
-          anchor: 'People',
-          content: '## Citations\nCite.',
-          reason: 'mid-budget edit',
+          op: "add",
+          anchor: "People",
+          content: "## Citations\nCite.",
+          reason: "mid-budget edit",
         },
         // Drive per-call cost up so the cumulative spend trips the cap fast.
         perCallUsage: { input: 50_000, output: 5_000 },
@@ -548,27 +557,29 @@ describe('skillopt full-loop E2E (happy path + broken cases)', () => {
             // "no mutation happened" — assert that directly via filesystem.
             const msg = err instanceof Error ? err.message : String(err);
             expect(msg).toMatch(/cost|budget/i);
-            expect(fs.readFileSync(skillPath(fixture.skillsDir, SKILL), 'utf8'))
-              .toBe(SKILL_PEOPLE_ONLY);
+            expect(fs.readFileSync(skillPath(fixture.skillsDir, SKILL), "utf8")).toBe(
+              SKILL_PEOPLE_ONLY
+            );
             return;
           }
 
           // Reaching the loop: budget exhausted is the expected outcome. Other
           // non-acceptance outcomes (no_improvement, errored) are also fine
           // — the load-bearing assertion is no half-committed state.
-          expect(['aborted', 'no_improvement', 'errored']).toContain(result.outcome);
+          expect(["aborted", "no_improvement", "errored"]).toContain(result.outcome);
 
           // No PENDING rows: the v0.42 D8 two-phase commit insists every
           // pending row is either committed or reverted; an abort path that
           // leaves a pending row would corrupt resume.
           const history = loadHistory(fixture.skillsDir, SKILL);
-          expect(history.filter((r) => r.status === 'pending')).toHaveLength(0);
+          expect(history.filter((r) => r.status === "pending")).toHaveLength(0);
 
           // If outcome is aborted, MUST NOT mutate.
-          if (result.outcome === 'aborted') {
+          if (result.outcome === "aborted") {
             expect(result.mutatedSkillFile).toBe(false);
-            expect(fs.readFileSync(skillPath(fixture.skillsDir, SKILL), 'utf8'))
-              .toBe(SKILL_PEOPLE_ONLY);
+            expect(fs.readFileSync(skillPath(fixture.skillsDir, SKILL), "utf8")).toBe(
+              SKILL_PEOPLE_ONLY
+            );
           }
         });
       } finally {
@@ -579,7 +590,7 @@ describe('skillopt full-loop E2E (happy path + broken cases)', () => {
     }
   });
 
-  test('converged skill: re-running on perfect baseline yields no_improvement (no double-commit)', async () => {
+  test("converged skill: re-running on perfect baseline yields no_improvement (no double-commit)", async () => {
     // Start from an already-perfect skill (baseline score = 1.0). The forward
     // gate finds zero failures. The reflect failure-mode path is never
     // invoked (failures=[]); only success-mode runs. The success-mode stub
@@ -597,17 +608,19 @@ describe('skillopt full-loop E2E (happy path + broken cases)', () => {
         await withEnv({ GBRAIN_AUDIT_DIR: fixture.skillsDir }, async () => {
           const result = await runOnce(fixture);
 
-          expect(result.outcome).toBe('no_improvement');
+          expect(result.outcome).toBe("no_improvement");
           expect(result.mutatedSkillFile).toBe(false);
-          expect(fs.readFileSync(skillPath(fixture.skillsDir, SKILL), 'utf8'))
-            .toBe(SKILL_BOTH_SECTIONS);
+          expect(fs.readFileSync(skillPath(fixture.skillsDir, SKILL), "utf8")).toBe(
+            SKILL_BOTH_SECTIONS
+          );
 
           // Receipt baseline IS the best score (no improvement to report).
           expect(result.receipt.best_sel_score).toBeGreaterThan(0.9);
 
           // History is empty.
-          expect(loadHistory(fixture.skillsDir, SKILL).filter((r) => r.status === 'committed'))
-            .toHaveLength(0);
+          expect(
+            loadHistory(fixture.skillsDir, SKILL).filter((r) => r.status === "committed")
+          ).toHaveLength(0);
         });
       } finally {
         uninstallStub();
@@ -617,7 +630,7 @@ describe('skillopt full-loop E2E (happy path + broken cases)', () => {
     }
   });
 
-  test('idempotent re-run: accept once, run again, second run sees new baseline + does not re-mutate', async () => {
+  test("idempotent re-run: accept once, run again, second run sees new baseline + does not re-mutate", async () => {
     // The cathedral test: drive the loop twice in sequence on the same
     // fixture. Run 1 accepts the add-Citations edit (skill improves from
     // People-only to both sections). Run 2 starts from the now-improved
@@ -632,10 +645,10 @@ describe('skillopt full-loop E2E (happy path + broken cases)', () => {
       // sees no failures → failure-reflect never fires → no edits proposed.
       const stubConfig = {
         failureEdit: {
-          op: 'add' as const,
-          anchor: 'People',
-          content: '## Citations\nCite the source.',
-          reason: 'baseline missing Citations section',
+          op: "add" as const,
+          anchor: "People",
+          content: "## Citations\nCite the source.",
+          reason: "baseline missing Citations section",
         },
         successEdit: null,
       };
@@ -645,16 +658,16 @@ describe('skillopt full-loop E2E (happy path + broken cases)', () => {
       try {
         await withEnv({ GBRAIN_AUDIT_DIR: fixture.skillsDir }, async () => {
           const result1 = await runOnce(fixture);
-          expect(result1.outcome).toBe('accepted');
+          expect(result1.outcome).toBe("accepted");
           expect(result1.mutatedSkillFile).toBe(true);
         });
       } finally {
         uninstallStub();
       }
 
-      const afterRun1 = fs.readFileSync(skillPath(fixture.skillsDir, SKILL), 'utf8');
+      const afterRun1 = fs.readFileSync(skillPath(fixture.skillsDir, SKILL), "utf8");
       const historyAfterRun1 = loadHistory(fixture.skillsDir, SKILL);
-      expect(historyAfterRun1.filter((r) => r.status === 'committed')).toHaveLength(1);
+      expect(historyAfterRun1.filter((r) => r.status === "committed")).toHaveLength(1);
 
       // Run 2: same stub, but loop should observe the improved baseline and
       // converge without further mutation.
@@ -662,7 +675,7 @@ describe('skillopt full-loop E2E (happy path + broken cases)', () => {
       try {
         await withEnv({ GBRAIN_AUDIT_DIR: fixture.skillsDir }, async () => {
           const result2 = await runOnce(fixture);
-          expect(result2.outcome).toBe('no_improvement');
+          expect(result2.outcome).toBe("no_improvement");
           expect(result2.mutatedSkillFile).toBe(false);
         });
       } finally {
@@ -670,13 +683,13 @@ describe('skillopt full-loop E2E (happy path + broken cases)', () => {
       }
 
       // SKILL.md byte-identical to its state after run 1.
-      expect(fs.readFileSync(skillPath(fixture.skillsDir, SKILL), 'utf8')).toBe(afterRun1);
+      expect(fs.readFileSync(skillPath(fixture.skillsDir, SKILL), "utf8")).toBe(afterRun1);
 
       // History still has exactly one committed row (no double-commit).
       const historyAfterRun2 = loadHistory(fixture.skillsDir, SKILL);
-      expect(historyAfterRun2.filter((r) => r.status === 'committed')).toHaveLength(1);
+      expect(historyAfterRun2.filter((r) => r.status === "committed")).toHaveLength(1);
       // version_n unchanged at 1.
-      expect(historyAfterRun2.filter((r) => r.status === 'committed')[0]!.version_n).toBe(1);
+      expect(historyAfterRun2.filter((r) => r.status === "committed")[0]!.version_n).toBe(1);
     } finally {
       fixture.cleanup();
     }
@@ -685,8 +698,8 @@ describe('skillopt full-loop E2E (happy path + broken cases)', () => {
 
 // ─── T3: held-out gate + ablation opts + no-DB-pollution ─────────────────────
 
-describe('skillopt T3 — F11 held-out gate, ablation opts, no-DB-pollution', () => {
-  test('F11 held-out BLOCKS: candidate passes D_sel but regresses held-out → no commit', async () => {
+describe("skillopt T3 — F11 held-out gate, ablation opts, no-DB-pollution", () => {
+  test("F11 held-out BLOCKS: candidate passes D_sel but regresses held-out → no commit", async () => {
     // baseline People-only fails the Citations benchmark; the failure edit
     // REPLACES People with Citations → candidate passes D_sel (Citations) but
     // tanks the held-out (People) → held-out gate refuses the commit.
@@ -695,10 +708,10 @@ describe('skillopt T3 — F11 held-out gate, ablation opts, no-DB-pollution', ()
     try {
       installStub({
         failureEdit: {
-          op: 'replace',
-          target: '## People\nList people mentioned.',
-          replacement: '## Citations\nCite the source.',
-          reason: 'swap People for Citations to pass the benchmark',
+          op: "replace",
+          target: "## People\nList people mentioned.",
+          replacement: "## Citations\nCite the source.",
+          reason: "swap People for Citations to pass the benchmark",
         },
         successEdit: null,
       });
@@ -706,92 +719,123 @@ describe('skillopt T3 — F11 held-out gate, ablation opts, no-DB-pollution', ()
         await withEnv({ GBRAIN_AUDIT_DIR: fixture.skillsDir }, async () => {
           const result = await runOnce(fixture, { heldOutPath });
           // Held-out gate blocked the promotion.
-          expect(result.outcome).toBe('no_improvement');
+          expect(result.outcome).toBe("no_improvement");
           // SKILL.md unchanged: still People-only, never swapped to Citations.
-          const skill = fs.readFileSync(skillPath(fixture.skillsDir, SKILL), 'utf8');
-          expect(skill).toContain('## People');
-          expect(skill).not.toContain('## Citations');
+          const skill = fs.readFileSync(skillPath(fixture.skillsDir, SKILL), "utf8");
+          expect(skill).toContain("## People");
+          expect(skill).not.toContain("## Citations");
           // No committed history row.
-          expect(loadHistory(fixture.skillsDir, SKILL).filter((r) => r.status === 'committed')).toHaveLength(0);
+          expect(
+            loadHistory(fixture.skillsDir, SKILL).filter((r) => r.status === "committed")
+          ).toHaveLength(0);
         });
-      } finally { uninstallStub(); }
-    } finally { fixture.cleanup(); }
+      } finally {
+        uninstallStub();
+      }
+    } finally {
+      fixture.cleanup();
+    }
   });
 
-  test('F11 held-out ALLOWS: candidate improves D_sel AND holds held-out → commit', async () => {
+  test("F11 held-out ALLOWS: candidate improves D_sel AND holds held-out → commit", async () => {
     // ADD Citations (keep People): passes D_sel (Citations) and keeps held-out
     // (People) at baseline → held-out gate allows → commit.
     const fixture = setupFixture(SKILL_PEOPLE_ONLY, CITATIONS_BENCHMARK);
     const heldOutPath = writeHeldOut(fixture, PEOPLE_HELDOUT);
     try {
       installStub({
-        failureEdit: { op: 'add', anchor: 'People', content: '## Citations\nCite the source.', reason: 'add Citations' },
+        failureEdit: {
+          op: "add",
+          anchor: "People",
+          content: "## Citations\nCite the source.",
+          reason: "add Citations",
+        },
         successEdit: null,
       });
       try {
         await withEnv({ GBRAIN_AUDIT_DIR: fixture.skillsDir }, async () => {
           const result = await runOnce(fixture, { heldOutPath });
-          expect(result.outcome).toBe('accepted');
-          const skill = fs.readFileSync(skillPath(fixture.skillsDir, SKILL), 'utf8');
-          expect(skill).toContain('## People');
-          expect(skill).toContain('## Citations');
-          expect(loadHistory(fixture.skillsDir, SKILL).filter((r) => r.status === 'committed')).toHaveLength(1);
+          expect(result.outcome).toBe("accepted");
+          const skill = fs.readFileSync(skillPath(fixture.skillsDir, SKILL), "utf8");
+          expect(skill).toContain("## People");
+          expect(skill).toContain("## Citations");
+          expect(
+            loadHistory(fixture.skillsDir, SKILL).filter((r) => r.status === "committed")
+          ).toHaveLength(1);
         });
-      } finally { uninstallStub(); }
-    } finally { fixture.cleanup(); }
+      } finally {
+        uninstallStub();
+      }
+    } finally {
+      fixture.cleanup();
+    }
   });
 
-  test('--no-mutate writes proposed.md (best.md), leaves SKILL.md untouched', async () => {
+  test("--no-mutate writes proposed.md (best.md), leaves SKILL.md untouched", async () => {
     const fixture = setupFixture(SKILL_PEOPLE_ONLY, CITATIONS_BENCHMARK);
     try {
       installStub({
-        failureEdit: { op: 'add', anchor: 'People', content: '## Citations\nCite the source.', reason: 'add Citations' },
+        failureEdit: {
+          op: "add",
+          anchor: "People",
+          content: "## Citations\nCite the source.",
+          reason: "add Citations",
+        },
         successEdit: null,
       });
       try {
         await withEnv({ GBRAIN_AUDIT_DIR: fixture.skillsDir }, async () => {
           const result = await runOnce(fixture, { noMutate: true });
-          expect(result.outcome).toBe('accepted');
+          expect(result.outcome).toBe("accepted");
           expect(result.mutatedSkillFile).toBe(false);
           expect(result.proposedPath).toBeDefined();
           // proposed.md (best.md) exists and carries the improvement.
           expect(fs.existsSync(result.proposedPath!)).toBe(true);
-          expect(fs.readFileSync(result.proposedPath!, 'utf8')).toContain('## Citations');
+          expect(fs.readFileSync(result.proposedPath!, "utf8")).toContain("## Citations");
           // SKILL.md on disk is UNCHANGED (still People-only).
-          const skill = fs.readFileSync(skillPath(fixture.skillsDir, SKILL), 'utf8');
-          expect(skill).not.toContain('## Citations');
+          const skill = fs.readFileSync(skillPath(fixture.skillsDir, SKILL), "utf8");
+          expect(skill).not.toContain("## Citations");
         });
-      } finally { uninstallStub(); }
-    } finally { fixture.cleanup(); }
+      } finally {
+        uninstallStub();
+      }
+    } finally {
+      fixture.cleanup();
+    }
   });
 
-  test('optimizerMode one-shot-rewrite: single rewrite, no epoch loop, receipt records mode', async () => {
+  test("optimizerMode one-shot-rewrite: single rewrite, no epoch loop, receipt records mode", async () => {
     const fixture = setupFixture(SKILL_PEOPLE_ONLY, CITATIONS_BENCHMARK);
     const stats = { successReflectCalls: 0, oneShotCalls: 0 };
     try {
       installStub({
         stats,
         // Body-only rewrite (frontmatter re-attached by the orchestrator).
-        oneShotBody: '# E2E Loop Test Skill\n\nProduce a structured output.\n\n## People\nList people.\n\n## Citations\nCite the source.\n',
+        oneShotBody:
+          "# E2E Loop Test Skill\n\nProduce a structured output.\n\n## People\nList people.\n\n## Citations\nCite the source.\n",
       });
       try {
         await withEnv({ GBRAIN_AUDIT_DIR: fixture.skillsDir }, async () => {
-          const result = await runOnce(fixture, { optimizerMode: 'one-shot-rewrite' });
-          expect(result.outcome).toBe('accepted');
-          expect(result.receipt.optimizer_mode).toBe('one-shot-rewrite');
+          const result = await runOnce(fixture, { optimizerMode: "one-shot-rewrite" });
+          expect(result.outcome).toBe("accepted");
+          expect(result.receipt.optimizer_mode).toBe("one-shot-rewrite");
           // Exactly ONE optimizer rewrite call — no epoch loop.
           expect(stats.oneShotCalls).toBe(1);
           expect(result.receipt.total_steps).toBe(1);
-          const skill = fs.readFileSync(skillPath(fixture.skillsDir, SKILL), 'utf8');
-          expect(skill).toContain('## Citations');
+          const skill = fs.readFileSync(skillPath(fixture.skillsDir, SKILL), "utf8");
+          expect(skill).toContain("## Citations");
           // Frontmatter preserved (D5).
-          expect(skill).toContain('name: e2e-loop-skill');
+          expect(skill).toContain("name: e2e-loop-skill");
         });
-      } finally { uninstallStub(); }
-    } finally { fixture.cleanup(); }
+      } finally {
+        uninstallStub();
+      }
+    } finally {
+      fixture.cleanup();
+    }
   });
 
-  test('reflectMode failure-only SKIPS the success reflect call; default fires it', async () => {
+  test("reflectMode failure-only SKIPS the success reflect call; default fires it", async () => {
     // Mixed benchmark → baseline has both successes (People tasks) and failures
     // (Citations tasks), so default mode WOULD fire the success reflect.
     const failOnly = { successReflectCalls: 0, oneShotCalls: 0 };
@@ -799,38 +843,61 @@ describe('skillopt T3 — F11 held-out gate, ablation opts, no-DB-pollution', ()
     try {
       installStub({
         stats: failOnly,
-        failureEdit: { op: 'add', anchor: 'People', content: '## Citations\nCite.', reason: 'add' },
-        successEdit: { op: 'add', anchor: 'People', content: '<!-- success note -->', reason: 'note' },
+        failureEdit: { op: "add", anchor: "People", content: "## Citations\nCite.", reason: "add" },
+        successEdit: {
+          op: "add",
+          anchor: "People",
+          content: "<!-- success note -->",
+          reason: "note",
+        },
       });
       try {
         await withEnv({ GBRAIN_AUDIT_DIR: fixtureA.skillsDir }, async () => {
-          await runOnce(fixtureA, { reflectMode: 'failure-only' });
+          await runOnce(fixtureA, { reflectMode: "failure-only" });
           expect(failOnly.successReflectCalls).toBe(0);
         });
-      } finally { uninstallStub(); }
-    } finally { fixtureA.cleanup(); }
+      } finally {
+        uninstallStub();
+      }
+    } finally {
+      fixtureA.cleanup();
+    }
 
     const both = { successReflectCalls: 0, oneShotCalls: 0 };
     const fixtureB = setupFixture(SKILL_PEOPLE_ONLY, SAMPLE_BENCHMARK);
     try {
       installStub({
         stats: both,
-        failureEdit: { op: 'add', anchor: 'People', content: '## Citations\nCite.', reason: 'add' },
-        successEdit: { op: 'add', anchor: 'People', content: '<!-- success note -->', reason: 'note' },
+        failureEdit: { op: "add", anchor: "People", content: "## Citations\nCite.", reason: "add" },
+        successEdit: {
+          op: "add",
+          anchor: "People",
+          content: "<!-- success note -->",
+          reason: "note",
+        },
       });
       try {
         await withEnv({ GBRAIN_AUDIT_DIR: fixtureB.skillsDir }, async () => {
           await runOnce(fixtureB);
           expect(both.successReflectCalls).toBeGreaterThan(0);
         });
-      } finally { uninstallStub(); }
-    } finally { fixtureB.cleanup(); }
+      } finally {
+        uninstallStub();
+      }
+    } finally {
+      fixtureB.cleanup();
+    }
   });
 
-  test('disableValidationGate greedy-accepts a no-improvement edit the gate would reject', async () => {
+  test("disableValidationGate greedy-accepts a no-improvement edit the gate would reject", async () => {
     // BOTH_SECTIONS already scores 1.0; a benign success edit yields delta 0,
     // which the D12 gate rejects — unless disableValidationGate greedy-accepts.
-    const benignEdit = { op: 'add' as const, anchor: 'Citations', content: 'Extra note.', reason: 'benign' };
+    const benignEdit = {
+      op: "add" as const,
+      anchor: "Citations",
+      content: "Extra note.",
+      reason: "benign",
+    };
 
     const fixtureGated = setupFixture(SKILL_BOTH_SECTIONS, SAMPLE_BENCHMARK);
     try {
@@ -838,10 +905,14 @@ describe('skillopt T3 — F11 held-out gate, ablation opts, no-DB-pollution', ()
       try {
         await withEnv({ GBRAIN_AUDIT_DIR: fixtureGated.skillsDir }, async () => {
           const result = await runOnce(fixtureGated);
-          expect(result.outcome).toBe('no_improvement'); // gate rejected
+          expect(result.outcome).toBe("no_improvement"); // gate rejected
         });
-      } finally { uninstallStub(); }
-    } finally { fixtureGated.cleanup(); }
+      } finally {
+        uninstallStub();
+      }
+    } finally {
+      fixtureGated.cleanup();
+    }
 
     const fixtureGreedy = setupFixture(SKILL_BOTH_SECTIONS, SAMPLE_BENCHMARK);
     try {
@@ -849,46 +920,64 @@ describe('skillopt T3 — F11 held-out gate, ablation opts, no-DB-pollution', ()
       try {
         await withEnv({ GBRAIN_AUDIT_DIR: fixtureGreedy.skillsDir }, async () => {
           const result = await runOnce(fixtureGreedy, { disableValidationGate: true });
-          expect(result.outcome).toBe('accepted'); // greedy
+          expect(result.outcome).toBe("accepted"); // greedy
           expect(result.receipt.validation_gate_disabled).toBe(true);
         });
-      } finally { uninstallStub(); }
-    } finally { fixtureGreedy.cleanup(); }
+      } finally {
+        uninstallStub();
+      }
+    } finally {
+      fixtureGreedy.cleanup();
+    }
   });
 
-  test('D2 no-DB-pollution: subagent_messages count unchanged across a full run', async () => {
+  test("D2 no-DB-pollution: subagent_messages count unchanged across a full run", async () => {
     const fixture = setupFixture(SKILL_PEOPLE_ONLY, CITATIONS_BENCHMARK);
     const countMessages = async (): Promise<number> => {
-      const r = await engine.executeRaw('SELECT COUNT(*) AS c FROM subagent_messages', []);
+      const r = await engine.executeRaw("SELECT COUNT(*) AS c FROM subagent_messages", []);
       const rows = Array.isArray(r) ? r : ((r as { rows?: unknown[] }).rows ?? []);
       return Number((rows[0] as { c?: number | string })?.c ?? 0);
     };
     try {
       const before = await countMessages();
       installStub({
-        failureEdit: { op: 'add', anchor: 'People', content: '## Citations\nCite the source.', reason: 'add' },
+        failureEdit: {
+          op: "add",
+          anchor: "People",
+          content: "## Citations\nCite the source.",
+          reason: "add",
+        },
         successEdit: null,
       });
       try {
         await withEnv({ GBRAIN_AUDIT_DIR: fixture.skillsDir }, async () => {
           await runOnce(fixture);
         });
-      } finally { uninstallStub(); }
+      } finally {
+        uninstallStub();
+      }
       const after = await countMessages();
       // Rollouts use gateway.toolLoop with no-op persistence (D2) → zero rows written.
       expect(after).toBe(before);
-    } finally { fixture.cleanup(); }
+    } finally {
+      fixture.cleanup();
+    }
   });
 });
 
 // ─── T3 (review follow-ups): maxRuntimeMin abort + receipt honesty ───────────
 
-describe('skillopt T3 — runtime deadline + receipt score honesty', () => {
-  test('maxRuntimeMin deadline aborts cleanly with no commit', async () => {
+describe("skillopt T3 — runtime deadline + receipt score honesty", () => {
+  test("maxRuntimeMin deadline aborts cleanly with no commit", async () => {
     const fixture = setupFixture(SKILL_PEOPLE_ONLY, CITATIONS_BENCHMARK);
     try {
       installStub({
-        failureEdit: { op: 'add', anchor: 'People', content: '## Citations\nCite the source.', reason: 'add' },
+        failureEdit: {
+          op: "add",
+          anchor: "People",
+          content: "## Citations\nCite the source.",
+          reason: "add",
+        },
         successEdit: null,
       });
       try {
@@ -896,17 +985,23 @@ describe('skillopt T3 — runtime deadline + receipt score honesty', () => {
           // maxRuntimeMin:0 → deadline == run start; the first step's deadline
           // check fires after the baseline eval has already elapsed → abort.
           const result = await runOnce(fixture, { maxRuntimeMin: 0 });
-          expect(result.outcome).toBe('aborted');
+          expect(result.outcome).toBe("aborted");
           // No commit: SKILL.md unchanged, no committed history row.
-          const skill = fs.readFileSync(skillPath(fixture.skillsDir, SKILL), 'utf8');
-          expect(skill).not.toContain('## Citations');
-          expect(loadHistory(fixture.skillsDir, SKILL).filter((r) => r.status === 'committed')).toHaveLength(0);
+          const skill = fs.readFileSync(skillPath(fixture.skillsDir, SKILL), "utf8");
+          expect(skill).not.toContain("## Citations");
+          expect(
+            loadHistory(fixture.skillsDir, SKILL).filter((r) => r.status === "committed")
+          ).toHaveLength(0);
         });
-      } finally { uninstallStub(); }
-    } finally { fixture.cleanup(); }
+      } finally {
+        uninstallStub();
+      }
+    } finally {
+      fixture.cleanup();
+    }
   });
 
-  test('receipt records the REAL baseline_sel_score + final-test scores (regression: was hardcoded 0)', async () => {
+  test("receipt records the REAL baseline_sel_score + final-test scores (regression: was hardcoded 0)", async () => {
     // BOTH_SECTIONS already scores ~1.0 on the alternating benchmark, so a real
     // baseline read is ~1.0 — a hardcoded-0 receipt would fail this immediately.
     const fixture = setupFixture(SKILL_BOTH_SECTIONS, SAMPLE_BENCHMARK);
@@ -918,31 +1013,41 @@ describe('skillopt T3 — runtime deadline + receipt score honesty', () => {
           // Real baseline, not the old hardcoded 0.
           expect(r.baseline_sel_score).toBeGreaterThan(0.9);
           // Final-test eval populated both test scores (D_test non-empty under 4:1:5).
-          expect(typeof r.test_score).toBe('number');
-          expect(typeof r.baseline_test_score).toBe('number');
+          expect(typeof r.test_score).toBe("number");
+          expect(typeof r.baseline_test_score).toBe("number");
           expect(r.baseline_test_score!).toBeGreaterThan(0.9);
         });
-      } finally { uninstallStub(); }
-    } finally { fixture.cleanup(); }
+      } finally {
+        uninstallStub();
+      }
+    } finally {
+      fixture.cleanup();
+    }
   });
 });
 
-describe('skillopt T3 — held-out independence guard', () => {
-  test('held-out sharing task_ids with the benchmark is rejected (gaming defense)', async () => {
+describe("skillopt T3 — held-out independence guard", () => {
+  test("held-out sharing task_ids with the benchmark is rejected (gaming defense)", async () => {
     const fixture = setupFixture(SKILL_PEOPLE_ONLY, CITATIONS_BENCHMARK);
     // Held-out file reuses benchmark task_ids (cit-001..006) → must be rejected
     // before any optimization, since an overlapping held-out can't catch overfit.
     const heldOutPath = writeHeldOut(fixture, CITATIONS_BENCHMARK.slice(0, 6));
     try {
       installStub({
-        failureEdit: { op: 'add', anchor: 'People', content: '## Citations\nCite.', reason: 'add' },
+        failureEdit: { op: "add", anchor: "People", content: "## Citations\nCite.", reason: "add" },
         successEdit: null,
       });
       try {
         await withEnv({ GBRAIN_AUDIT_DIR: fixture.skillsDir }, async () => {
-          await expect(runOnce(fixture, { heldOutPath })).rejects.toThrow(/independent|shares .* task_id/i);
+          await expect(runOnce(fixture, { heldOutPath })).rejects.toThrow(
+            /independent|shares .* task_id/i
+          );
         });
-      } finally { uninstallStub(); }
-    } finally { fixture.cleanup(); }
+      } finally {
+        uninstallStub();
+      }
+    } finally {
+      fixture.cleanup();
+    }
   });
 });

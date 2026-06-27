@@ -58,9 +58,14 @@ describe("can (RBAC matrix)", () => {
   test("admin can do everything", () => {
     const user = mockUser("admin");
     const actions: RouteAction[] = [
-      "brain.read", "brain.write", "brain.delete",
-      "admin.*", "settings.write", "team.role_change",
-      "billing.write", "connector.write",
+      "brain.read",
+      "brain.write",
+      "brain.delete",
+      "admin.*",
+      "settings.write",
+      "team.role_change",
+      "billing.write",
+      "connector.write",
     ];
     for (const action of actions) {
       expect(can(user, action)).toBe(true);

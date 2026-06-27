@@ -8,9 +8,19 @@
  * Also houses ~/.gbrain/migrations/completed.jsonl append helper.
  */
 
-import { readFileSync, writeFileSync, renameSync, chmodSync, mkdtempSync, rmSync, existsSync, mkdirSync, appendFileSync } from 'fs';
-import { join } from 'path';
-import { homedir } from 'os';
+import {
+  readFileSync,
+  writeFileSync,
+  renameSync,
+  chmodSync,
+  mkdtempSync,
+  rmSync,
+  existsSync,
+  mkdirSync,
+  appendFileSync,
+} from "fs";
+import { join } from "path";
+import { homedir } from "os";
 
 function home(): string {
   // `os.homedir()` in Bun caches its initial value and ignores later
@@ -42,10 +52,10 @@ function gbrainDir(): string {
     const trimmed = override.trim();
     if (trimmed) return trimmed;
   }
-  return join(home(), '.gbrain');
+  return join(home(), ".gbrain");
 }
 
-export type MinionMode = 'always' | 'pain_triggered' | 'off';
+export type MinionMode = "always" | "pain_triggered" | "off";
 
 export interface Preferences {
   minion_mode?: MinionMode;
@@ -67,7 +77,7 @@ export interface CompletedMigrationEntry {
    *   Clears a wedge without faking success; the next upgrade treats the
    *   version as fresh again.
    */
-  status: 'complete' | 'partial' | 'retry';
+  status: "complete" | "partial" | "retry";
   mode?: MinionMode;
   files_rewritten?: number;
   autopilot_installed?: boolean;
@@ -77,21 +87,29 @@ export interface CompletedMigrationEntry {
   [key: string]: unknown;
 }
 
-const VALID_MODES: ReadonlyArray<MinionMode> = ['always', 'pain_triggered', 'off'];
+const VALID_MODES: ReadonlyArray<MinionMode> = ["always", "pain_triggered", "off"];
 
 // Route preferences + migration ledger paths through gbrainDir() so they
 // honor GBRAIN_HOME for hermetic test isolation. Pre-v0.30.3 these used
 // `$HOME/.gbrain` directly, which leaked the developer's local migration
 // ledger into E2E tests and CI runs even when GBRAIN_HOME was set.
-function prefsDir(): string { return gbrainDir(); }
-function prefsPath(): string { return join(prefsDir(), 'preferences.json'); }
-function migrationsDir(): string { return join(gbrainDir(), 'migrations'); }
-function completedJsonlPath(): string { return join(migrationsDir(), 'completed.jsonl'); }
+function prefsDir(): string {
+  return gbrainDir();
+}
+function prefsPath(): string {
+  return join(prefsDir(), "preferences.json");
+}
+function migrationsDir(): string {
+  return join(gbrainDir(), "migrations");
+}
+function completedJsonlPath(): string {
+  return join(migrationsDir(), "completed.jsonl");
+}
 
 /** Validate that a value is a recognized minion mode. Throws with the allowed list. */
 export function validateMinionMode(value: unknown): asserts value is MinionMode {
-  if (typeof value !== 'string' || !VALID_MODES.includes(value as MinionMode)) {
-    throw new Error(`Invalid minion_mode "${String(value)}". Allowed: ${VALID_MODES.join(', ')}.`);
+  if (typeof value !== "string" || !VALID_MODES.includes(value as MinionMode)) {
+    throw new Error(`Invalid minion_mode "${String(value)}". Allowed: ${VALID_MODES.join(", ")}.`);
   }
 }
 
@@ -104,7 +122,7 @@ export function validateMinionMode(value: unknown): asserts value is MinionMode 
 export function loadPreferences(): Preferences {
   const path = prefsPath();
   if (!existsSync(path)) return {};
-  const raw = readFileSync(path, 'utf-8');
+  const raw = readFileSync(path, "utf-8");
   const parsed = JSON.parse(raw) as Preferences;
   return parsed;
 }
@@ -121,16 +139,28 @@ export function savePreferences(prefs: Preferences): void {
 
   // Write via a tempfile on the same filesystem, then rename. Avoids the
   // "reader sees a half-written file" window that write-in-place has.
-  const tmpDirForWrite = mkdtempSync(join(dir, '.prefs-tmp-'));
-  const tmpPath = join(tmpDirForWrite, 'preferences.json');
+  const tmpDirForWrite = mkdtempSync(join(dir, ".prefs-tmp-"));
+  const tmpPath = join(tmpDirForWrite, "preferences.json");
   try {
-    writeFileSync(tmpPath, JSON.stringify(prefs, null, 2) + '\n', { mode: 0o600 });
-    try { chmodSync(tmpPath, 0o600); } catch { /* chmod may fail on some platforms */ }
+    writeFileSync(tmpPath, JSON.stringify(prefs, null, 2) + "\n", { mode: 0o600 });
+    try {
+      chmodSync(tmpPath, 0o600);
+    } catch {
+      /* chmod may fail on some platforms */
+    }
     renameSync(tmpPath, prefsPath());
   } finally {
-    try { rmSync(tmpDirForWrite, { recursive: true, force: true }); } catch { /* best-effort */ }
+    try {
+      rmSync(tmpDirForWrite, { recursive: true, force: true });
+    } catch {
+      /* best-effort */
+    }
   }
-  try { chmodSync(prefsPath(), 0o600); } catch { /* best-effort */ }
+  try {
+    chmodSync(prefsPath(), 0o600);
+  } catch {
+    /* best-effort */
+  }
 }
 
 /**
@@ -141,19 +171,21 @@ export function savePreferences(prefs: Preferences): void {
  * Writes `ts` as the current ISO timestamp if not provided.
  */
 export function appendCompletedMigration(entry: CompletedMigrationEntry): void {
-  if (!entry.version) throw new Error('appendCompletedMigration: version required');
-  if (entry.status !== 'complete' && entry.status !== 'partial' && entry.status !== 'retry') {
-    throw new Error(`appendCompletedMigration: status must be 'complete', 'partial', or 'retry', got "${entry.status}"`);
+  if (!entry.version) throw new Error("appendCompletedMigration: version required");
+  if (entry.status !== "complete" && entry.status !== "partial" && entry.status !== "retry") {
+    throw new Error(
+      `appendCompletedMigration: status must be 'complete', 'partial', or 'retry', got "${entry.status}"`
+    );
   }
   // Bug 3 — idempotency guard. If the most recent existing entry for this
   // version is already 'complete' and we're about to write another
   // 'complete', skip. This protects against accidental double-writes
   // during the Bug 3 runner-owned-ledger transition (old orchestrator
   // code paths and new runner path shouldn't both write).
-  if (entry.status === 'complete') {
+  if (entry.status === "complete") {
     const existing = loadCompletedMigrations();
-    const prior = existing.filter(e => e.version === entry.version);
-    if (prior.length > 0 && prior[prior.length - 1].status === 'complete') {
+    const prior = existing.filter((e) => e.version === entry.version);
+    if (prior.length > 0 && prior[prior.length - 1].status === "complete") {
       return; // no-op — already terminal
     }
   }
@@ -163,22 +195,24 @@ export function appendCompletedMigration(entry: CompletedMigrationEntry): void {
   };
   const dir = migrationsDir();
   mkdirSync(dir, { recursive: true });
-  appendFileSync(completedJsonlPath(), JSON.stringify(full) + '\n');
+  appendFileSync(completedJsonlPath(), JSON.stringify(full) + "\n");
 }
 
 /** Read the completed.jsonl file, skipping malformed lines with a warning to stderr. */
 export function loadCompletedMigrations(): CompletedMigrationEntry[] {
   const path = completedJsonlPath();
   if (!existsSync(path)) return [];
-  const raw = readFileSync(path, 'utf-8');
+  const raw = readFileSync(path, "utf-8");
   const out: CompletedMigrationEntry[] = [];
-  for (const line of raw.split('\n')) {
+  for (const line of raw.split("\n")) {
     const trimmed = line.trim();
     if (!trimmed) continue;
     try {
       out.push(JSON.parse(trimmed) as CompletedMigrationEntry);
     } catch (err) {
-      console.warn(`[preferences] skipping malformed completed.jsonl line: ${trimmed.slice(0, 120)}`);
+      console.warn(
+        `[preferences] skipping malformed completed.jsonl line: ${trimmed.slice(0, 120)}`
+      );
     }
   }
   return out;

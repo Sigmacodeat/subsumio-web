@@ -29,14 +29,14 @@ import type {
   JudgeVerdict,
   ResolutionKind,
   Verdict,
-} from './types.ts';
+} from "./types.ts";
 
 export interface ResolutionProposal {
   resolution_kind: ResolutionKind;
   resolution_command: string;
 }
 
-const CURATED_ENTITY_PREFIXES = ['companies/', 'people/', 'deals/', 'projects/'];
+const CURATED_ENTITY_PREFIXES = ["companies/", "people/", "deals/", "projects/"];
 
 function isCuratedEntitySlug(slug: string): boolean {
   return CURATED_ENTITY_PREFIXES.some((p) => slug.toLowerCase().startsWith(p));
@@ -58,76 +58,75 @@ function isCuratedEntitySlug(slug: string): boolean {
 export function classifyResolution(
   pair: ContradictionPair,
   judgeHint: ResolutionKind | null,
-  verdict: Verdict = 'contradiction',
+  verdict: Verdict = "contradiction"
 ): ResolutionKind {
   // Verdict-driven routing for the new (non-contradiction) verdicts. The
   // judge hint can still override when it specifies something compatible
   // with the new verdict's scope.
-  if (verdict === 'temporal_supersession') {
-    return judgeHint === 'flag_for_review' || judgeHint === 'log_timeline_change'
+  if (verdict === "temporal_supersession") {
+    return judgeHint === "flag_for_review" || judgeHint === "log_timeline_change"
       ? judgeHint
-      : 'temporal_supersede';
+      : "temporal_supersede";
   }
-  if (verdict === 'temporal_regression') {
+  if (verdict === "temporal_regression") {
     // Always flag — no auto-mutation, just surface to the user. A future
     // founder-scorecard surface (Phase 4) consumes the flagged set.
-    return 'flag_for_review';
+    return "flag_for_review";
   }
-  if (verdict === 'temporal_evolution') {
-    return judgeHint === 'flag_for_review' ? 'flag_for_review' : 'log_timeline_change';
+  if (verdict === "temporal_evolution") {
+    return judgeHint === "flag_for_review" ? "flag_for_review" : "log_timeline_change";
   }
-  if (verdict === 'negation_artifact') {
+  if (verdict === "negation_artifact") {
     // Informational — the data is correct; the judge misread a negation.
     // Operator action is to wait for the next prompt_version bump.
-    return 'flag_for_review';
+    return "flag_for_review";
   }
   // verdict === 'contradiction' (or no_contradiction, which shouldn't reach
   // this fn — runner filters before calling pairToFinding) falls through to
   // the v1 mapping below.
-  if (pair.kind === 'intra_page_chunk_take') {
-    if (pair.b.take_id !== null) return 'takes_supersede';
-    if (pair.a.take_id !== null) return 'takes_supersede';
-    return 'manual_review';
+  if (pair.kind === "intra_page_chunk_take") {
+    if (pair.b.take_id !== null) return "takes_supersede";
+    if (pair.a.take_id !== null) return "takes_supersede";
+    return "manual_review";
   }
-  if (judgeHint === 'dream_synthesize' || judgeHint === 'takes_mark_debate') {
+  if (judgeHint === "dream_synthesize" || judgeHint === "takes_mark_debate") {
     return judgeHint;
   }
-  if (judgeHint === 'takes_supersede' || judgeHint === 'manual_review') {
+  if (judgeHint === "takes_supersede" || judgeHint === "manual_review") {
     return judgeHint;
   }
   if (isCuratedEntitySlug(pair.a.slug) || isCuratedEntitySlug(pair.b.slug)) {
-    return 'dream_synthesize';
+    return "dream_synthesize";
   }
-  return 'manual_review';
+  return "manual_review";
 }
 
 /**
  * Render the paste-ready CLI command for the chosen resolution. Operator
  * runs this verbatim; the command may itself prompt for confirmation.
  */
-export function renderResolutionCommand(
-  pair: ContradictionPair,
-  kind: ResolutionKind,
-): string {
+export function renderResolutionCommand(pair: ContradictionPair, kind: ResolutionKind): string {
   switch (kind) {
-    case 'takes_supersede': {
+    case "takes_supersede": {
       // Prefer the slug of the take side (intra_page) or the curated side.
-      const takeSide = pair.b.take_id !== null ? pair.b : (pair.a.take_id !== null ? pair.a : pair.a);
-      const takeId = takeSide.take_id ?? '<row>';
+      const takeSide = pair.b.take_id !== null ? pair.b : pair.a.take_id !== null ? pair.a : pair.a;
+      const takeId = takeSide.take_id ?? "<row>";
       return `gbrain takes supersede ${takeSide.slug} --row ${takeId}`;
     }
-    case 'dream_synthesize': {
+    case "dream_synthesize": {
       const curatedSide = isCuratedEntitySlug(pair.a.slug)
         ? pair.a
-        : (isCuratedEntitySlug(pair.b.slug) ? pair.b : pair.a);
+        : isCuratedEntitySlug(pair.b.slug)
+          ? pair.b
+          : pair.a;
       return `gbrain dream --phase synthesize --slug ${curatedSide.slug}`;
     }
-    case 'takes_mark_debate': {
-      const takeSide = pair.b.take_id !== null ? pair.b : (pair.a.take_id !== null ? pair.a : pair.a);
-      const takeId = takeSide.take_id ?? '<row>';
+    case "takes_mark_debate": {
+      const takeSide = pair.b.take_id !== null ? pair.b : pair.a.take_id !== null ? pair.a : pair.a;
+      const takeId = takeSide.take_id ?? "<row>";
       return `gbrain takes mark-debate ${takeSide.slug} --row ${takeId}`;
     }
-    case 'temporal_supersede': {
+    case "temporal_supersede": {
       // v0.34 / Lane A2: pick the newer-dated side as the survivor; render a
       // supersede command on the older-dated side. If both sides have takes
       // we prefer the take that's NOT on the newer page. Falls back to a
@@ -145,20 +144,20 @@ export function renderResolutionCommand(
       }
       return `# temporal_supersession: ${pair.a.slug} vs ${pair.b.slug} (date order unclear)`;
     }
-    case 'log_timeline_change': {
+    case "log_timeline_change": {
       // v0.34 / Lane A2: timeline-writer subcommand is deferred (see plan
       // TODOs). Render a hint pointing at the future command shape so the
       // operator can paste a follow-up note manually for now.
-      const aDate = pair.a.effective_date ?? '<date-a>';
-      const bDate = pair.b.effective_date ?? '<date-b>';
+      const aDate = pair.a.effective_date ?? "<date-a>";
+      const bDate = pair.b.effective_date ?? "<date-b>";
       return `# temporal_evolution: ${pair.a.slug} (${aDate}) → ${pair.b.slug} (${bDate}); record in timeline when the gbrain timeline writer lands`;
     }
-    case 'flag_for_review': {
+    case "flag_for_review": {
       // v0.34 / Lane A2: informational; covers temporal_regression and
       // negation_artifact. The flag itself surfaces in trends; no command.
       return `# flag_for_review: ${pair.a.slug} vs ${pair.b.slug}`;
     }
-    case 'manual_review':
+    case "manual_review":
     default:
       return `# manual review: ${pair.a.slug} vs ${pair.b.slug}`;
   }
@@ -168,7 +167,7 @@ export function renderResolutionCommand(
 export function proposeResolution(
   pair: ContradictionPair,
   judgeHint: ResolutionKind | null,
-  verdict: Verdict = 'contradiction',
+  verdict: Verdict = "contradiction"
 ): ResolutionProposal {
   const kind = classifyResolution(pair, judgeHint, verdict);
   return {
@@ -187,7 +186,7 @@ export function proposeResolution(
  */
 export function pairToFinding(
   pair: ContradictionPair,
-  verdict: JudgeVerdict,
+  verdict: JudgeVerdict
 ): ContradictionFinding {
   const prop = proposeResolution(pair, verdict.resolution_kind, verdict.verdict);
   return {

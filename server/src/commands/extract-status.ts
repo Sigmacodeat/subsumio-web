@@ -18,7 +18,7 @@
  *                       aggregate; receipt pages do via slug)
  */
 
-import type { BrainEngine } from '../core/engine.ts';
+import type { BrainEngine } from "../core/engine.ts";
 
 export interface ExtractStatusRow {
   kind: string;
@@ -55,9 +55,9 @@ export function buildStatusReport(
     round_completed_count: number | string | null;
     last_updated_at: Date | string | null;
   }>,
-  filters: { source_id?: string; kind?: string },
+  filters: { source_id?: string; kind?: string }
 ): ExtractStatusReport {
-  const rows: ExtractStatusRow[] = rollupRows.map(r => {
+  const rows: ExtractStatusRow[] = rollupRows.map((r) => {
     const halts = Number(r.halt_count) || 0;
     const completed = Number(r.round_completed_count) || 0;
     const total = halts + completed;
@@ -70,9 +70,7 @@ export function buildStatusReport(
       halt_count: halts,
       round_completed_count: completed,
       halt_rate: total > 0 ? halts / total : 0,
-      last_updated_at: r.last_updated_at
-        ? new Date(r.last_updated_at).toISOString()
-        : null,
+      last_updated_at: r.last_updated_at ? new Date(r.last_updated_at).toISOString() : null,
     };
   });
 
@@ -93,65 +91,63 @@ export function buildStatusReport(
 export function formatStatusTable(report: ExtractStatusReport, verbose: boolean): string {
   if (report.rows.length === 0) {
     const filterDesc =
-      (report.filters.source_id ? ` source=${report.filters.source_id}` : '') +
-      (report.filters.kind ? ` kind=${report.filters.kind}` : '');
+      (report.filters.source_id ? ` source=${report.filters.source_id}` : "") +
+      (report.filters.kind ? ` kind=${report.filters.kind}` : "");
     return `No extract events in last 7 days${filterDesc}.`;
   }
 
   const shown = verbose ? report.rows : report.rows.slice(0, 5);
 
   // Column widths
-  const KIND = Math.max(4, ...shown.map(r => r.kind.length));
-  const SOURCE = Math.max(6, ...shown.map(r => r.source_id.length));
+  const KIND = Math.max(4, ...shown.map((r) => r.kind.length));
+  const SOURCE = Math.max(6, ...shown.map((r) => r.source_id.length));
 
   const lines: string[] = [];
   lines.push(
-    `${'KIND'.padEnd(KIND)}  ` +
-    `${'SOURCE'.padEnd(SOURCE)}  ` +
-    `${'COST_7D_USD'.padStart(11)}  ` +
-    `${'COMPLETED'.padStart(9)}  ` +
-    `${'HALTS'.padStart(5)}  ` +
-    `${'HALT_RATE'.padStart(9)}  ` +
-    `${'EVAL_PASS'.padStart(9)}  ` +
-    `${'EVAL_FAIL'.padStart(9)}  ` +
-    `LAST_RUN`,
+    `${"KIND".padEnd(KIND)}  ` +
+      `${"SOURCE".padEnd(SOURCE)}  ` +
+      `${"COST_7D_USD".padStart(11)}  ` +
+      `${"COMPLETED".padStart(9)}  ` +
+      `${"HALTS".padStart(5)}  ` +
+      `${"HALT_RATE".padStart(9)}  ` +
+      `${"EVAL_PASS".padStart(9)}  ` +
+      `${"EVAL_FAIL".padStart(9)}  ` +
+      `LAST_RUN`
   );
   for (const r of shown) {
-    const last = r.last_updated_at ? r.last_updated_at.slice(0, 19) + 'Z' : '—';
+    const last = r.last_updated_at ? r.last_updated_at.slice(0, 19) + "Z" : "—";
     lines.push(
       `${r.kind.padEnd(KIND)}  ` +
-      `${r.source_id.padEnd(SOURCE)}  ` +
-      `${('$' + r.cost_7d_usd.toFixed(4)).padStart(11)}  ` +
-      `${String(r.round_completed_count).padStart(9)}  ` +
-      `${String(r.halt_count).padStart(5)}  ` +
-      `${(r.halt_rate * 100).toFixed(1).padStart(8) + '%'}  ` +
-      `${String(r.eval_pass_count).padStart(9)}  ` +
-      `${String(r.eval_fail_count).padStart(9)}  ` +
-      `${last}`,
+        `${r.source_id.padEnd(SOURCE)}  ` +
+        `${("$" + r.cost_7d_usd.toFixed(4)).padStart(11)}  ` +
+        `${String(r.round_completed_count).padStart(9)}  ` +
+        `${String(r.halt_count).padStart(5)}  ` +
+        `${(r.halt_rate * 100).toFixed(1).padStart(8) + "%"}  ` +
+        `${String(r.eval_pass_count).padStart(9)}  ` +
+        `${String(r.eval_fail_count).padStart(9)}  ` +
+        `${last}`
     );
   }
   if (!verbose && report.rows.length > 5) {
-    lines.push('');
+    lines.push("");
     lines.push(`... +${report.rows.length - 5} more rows (pass --verbose for all)`);
   }
-  return lines.join('\n');
+  return lines.join("\n");
 }
 
 /**
  * CLI entry: `gbrain extract status`.
  */
-export async function runExtractStatus(
-  engine: BrainEngine,
-  args: string[],
-): Promise<void> {
-  const json = args.includes('--json');
-  const verbose = args.includes('--verbose');
-  const sourceIdIdx = args.indexOf('--source-id');
-  const kindIdx = args.indexOf('--kind');
-  const sourceId = sourceIdIdx >= 0 && sourceIdIdx + 1 < args.length ? args[sourceIdIdx + 1] : undefined;
+export async function runExtractStatus(engine: BrainEngine, args: string[]): Promise<void> {
+  const json = args.includes("--json");
+  const verbose = args.includes("--verbose");
+  const sourceIdIdx = args.indexOf("--source-id");
+  const kindIdx = args.indexOf("--kind");
+  const sourceId =
+    sourceIdIdx >= 0 && sourceIdIdx + 1 < args.length ? args[sourceIdIdx + 1] : undefined;
   const kind = kindIdx >= 0 && kindIdx + 1 < args.length ? args[kindIdx + 1] : undefined;
 
-  const conds: string[] = ['day >= CURRENT_DATE - 7'];
+  const conds: string[] = ["day >= CURRENT_DATE - 7"];
   const params: unknown[] = [];
   let pIdx = 1;
   if (sourceId) {
@@ -187,23 +183,29 @@ export async function runExtractStatus(
          SUM(round_completed_count) AS round_completed_count,
          MAX(updated_at) AS last_updated_at
        FROM extract_rollup_7d
-       WHERE ${conds.join(' AND ')}
+       WHERE ${conds.join(" AND ")}
        GROUP BY kind, source_id`,
-      params,
+      params
     );
   } catch (err) {
     const msg = (err as Error).message || String(err);
     if (/extract_rollup_7d.*does not exist|no such table/i.test(msg)) {
       if (json) {
-        console.log(JSON.stringify({
-          schema_version: 1,
-          rows: [],
-          filters: { source_id: sourceId, kind },
-          note: 'extract_rollup_7d not yet present (pre-v0.42 brain or fresh init)',
-        }, null, 2));
+        console.log(
+          JSON.stringify(
+            {
+              schema_version: 1,
+              rows: [],
+              filters: { source_id: sourceId, kind },
+              note: "extract_rollup_7d not yet present (pre-v0.42 brain or fresh init)",
+            },
+            null,
+            2
+          )
+        );
       } else {
-        console.log('No extract_rollup_7d table found (pre-v0.42 brain or fresh init).');
-        console.log('Run: gbrain apply-migrations --yes');
+        console.log("No extract_rollup_7d table found (pre-v0.42 brain or fresh init).");
+        console.log("Run: gbrain apply-migrations --yes");
       }
       return;
     }

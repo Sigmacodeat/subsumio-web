@@ -14,12 +14,8 @@
  *   3. Run: gbrain connector add notion --api-key XXX
  */
 
-import {
-  BaseConnector,
-  type ConnectorConfig,
-  type ConnectorItem,
-} from './base.ts';
-import { type IngestionEvent, type IngestionContentType } from '../types.ts';
+import { BaseConnector, type ConnectorConfig, type ConnectorItem } from "./base.ts";
+import { type IngestionEvent, type IngestionContentType } from "../types.ts";
 
 interface NotionPage {
   id: string;
@@ -37,7 +33,7 @@ interface NotionBlock {
 
 export class NotionConnector extends BaseConnector {
   constructor(config: ConnectorConfig) {
-    super('notion', config);
+    super("notion", config);
   }
 
   getApiRateLimit(): { capacity: number; windowMs: number } {
@@ -52,23 +48,23 @@ export class NotionConnector extends BaseConnector {
 
   async fetchDelta(cursor?: string): Promise<{ items: ConnectorItem[]; nextCursor?: string }> {
     const apiKey = this.getAccessToken();
-    if (!apiKey) throw new Error('Not authenticated');
+    if (!apiKey) throw new Error("Not authenticated");
 
     const lastEditedAfter = cursor ?? new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
     // Search for recently updated pages.
-    const searchUrl = new URL('https://api.notion.com/v1/search');
+    const searchUrl = new URL("https://api.notion.com/v1/search");
     const res = await fetch(searchUrl, {
-      method: 'POST',
+      method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
-        'Notion-Version': '2022-06-28',
-        'Content-Type': 'application/json',
+        "Notion-Version": "2022-06-28",
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        query: '',
-        filter: { value: 'page', property: 'object' },
-        sort: { direction: 'descending', timestamp: 'last_edited_time' },
+        query: "",
+        filter: { value: "page", property: "object" },
+        sort: { direction: "descending", timestamp: "last_edited_time" },
         page_size: 100,
       }),
     });
@@ -83,21 +79,22 @@ export class NotionConnector extends BaseConnector {
 
       // Fetch block children for page content.
       const blocksRes = await fetch(`https://api.notion.com/v1/blocks/${page.id}/children`, {
-        headers: { Authorization: `Bearer ${apiKey}`, 'Notion-Version': '2022-06-28' },
+        headers: { Authorization: `Bearer ${apiKey}`, "Notion-Version": "2022-06-28" },
       });
       const blocksData = blocksRes.ok ? await blocksRes.json() : { results: [] };
       const blocks = (blocksData.results ?? []) as NotionBlock[];
 
-      const title = (page.properties?.title as any)?.title?.[0]?.plain_text ??
+      const title =
+        (page.properties?.title as any)?.title?.[0]?.plain_text ??
         (page.properties?.Name as any)?.title?.[0]?.plain_text ??
-        'Untitled';
+        "Untitled";
 
       items.push({
         id: page.id,
         title,
         modified_at: page.last_edited_time,
         content: JSON.stringify(blocks),
-        content_type: 'application/json',
+        content_type: "application/json",
         url: page.url,
         metadata: {
           notion_page_id: page.id,
@@ -118,7 +115,7 @@ export class NotionConnector extends BaseConnector {
     const markdown = this._blocksToMarkdown(blocks);
 
     const meta = item.metadata ?? {};
-    const title = item.title ?? 'Untitled';
+    const title = item.title ?? "Untitled";
 
     const frontmatter = [
       `---`,
@@ -128,14 +125,14 @@ export class NotionConnector extends BaseConnector {
       `notion_page_id: ${meta.notion_page_id ?? item.id}`,
       `---`,
       ``,
-    ].join('\n');
+    ].join("\n");
 
     return {
       source_id: this.id,
       source_kind: this.kind,
       source_uri: item.url ?? `notion://${item.id}`,
       received_at: new Date().toISOString(),
-      content_type: 'text/markdown' as IngestionContentType,
+      content_type: "text/markdown" as IngestionContentType,
       content: frontmatter + markdown,
       content_hash: this.hashContent(frontmatter + markdown),
       metadata: {
@@ -150,47 +147,55 @@ export class NotionConnector extends BaseConnector {
     const lines: string[] = [];
     for (const block of blocks) {
       switch (block.type) {
-        case 'paragraph': {
+        case "paragraph": {
           const text = this._richTextToString((block.paragraph as any)?.rich_text ?? []);
           if (text) lines.push(text);
           break;
         }
-        case 'heading_1':
+        case "heading_1":
           lines.push(`# ${this._richTextToString((block.heading_1 as any)?.rich_text ?? [])}`);
           break;
-        case 'heading_2':
+        case "heading_2":
           lines.push(`## ${this._richTextToString((block.heading_2 as any)?.rich_text ?? [])}`);
           break;
-        case 'heading_3':
+        case "heading_3":
           lines.push(`### ${this._richTextToString((block.heading_3 as any)?.rich_text ?? [])}`);
           break;
-        case 'bulleted_list_item':
-          lines.push(`- ${this._richTextToString((block.bulleted_list_item as any)?.rich_text ?? [])}`);
+        case "bulleted_list_item":
+          lines.push(
+            `- ${this._richTextToString((block.bulleted_list_item as any)?.rich_text ?? [])}`
+          );
           break;
-        case 'numbered_list_item':
-          lines.push(`1. ${this._richTextToString((block.numbered_list_item as any)?.rich_text ?? [])}`);
+        case "numbered_list_item":
+          lines.push(
+            `1. ${this._richTextToString((block.numbered_list_item as any)?.rich_text ?? [])}`
+          );
           break;
-        case 'to_do':
-          const checked = (block.to_do as any)?.checked ? 'x' : ' ';
-          lines.push(`- [${checked}] ${this._richTextToString((block.to_do as any)?.rich_text ?? [])}`);
+        case "to_do":
+          const checked = (block.to_do as any)?.checked ? "x" : " ";
+          lines.push(
+            `- [${checked}] ${this._richTextToString((block.to_do as any)?.rich_text ?? [])}`
+          );
           break;
-        case 'code':
-          const lang = (block.code as any)?.language ?? '';
+        case "code":
+          const lang = (block.code as any)?.language ?? "";
           const codeText = this._richTextToString((block.code as any)?.rich_text ?? []);
           lines.push(`\`\`\`${lang}\n${codeText}\n\`\`\``);
           break;
-        case 'quote':
+        case "quote":
           lines.push(`> ${this._richTextToString((block.quote as any)?.rich_text ?? [])}`);
           break;
-        case 'divider':
-          lines.push('---');
+        case "divider":
+          lines.push("---");
           break;
       }
     }
-    return lines.join('\n\n');
+    return lines.join("\n\n");
   }
 
-  private _richTextToString(richText: Array<{ plain_text?: string; text?: { content: string } }>): string {
-    return richText.map((t) => t.plain_text ?? t.text?.content ?? '').join('');
+  private _richTextToString(
+    richText: Array<{ plain_text?: string; text?: { content: string } }>
+  ): string {
+    return richText.map((t) => t.plain_text ?? t.text?.content ?? "").join("");
   }
 }

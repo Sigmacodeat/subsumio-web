@@ -26,30 +26,35 @@ Alle Bereiche ──→ Testing
 ## Phase 1 — Interface-Verifikation
 
 ### 1.1 Frontend ↔ API Layer
+
 - [ ] Alle API-Calls aus Frontend nutzen korrekte Endpoints
 - [ ] Response-Format matcht Frontend-Typen (keine `any` Casts)
 - [ ] Error-Handling: API-Error → Frontend-Toast/Error-State
 - [ ] Loading-States: Frontend zeigt Spinner während API-Call
 
 ### 1.2 Dashboard ↔ API Layer
+
 - [ ] Alle Dashboard-Seiten nutzen `src/lib/api.ts` (keine direkten fetch-Calls)
 - [ ] Mutation Queue (`use-mutation.ts`) wird für alle POST/PUT/DELETE genutzt
 - [ ] Brain-Selector State korrekt bei API-Calls (richtiger Brain)
 - [ ] Offline-Store queuet API-Calls korrekt
 
 ### 1.3 API Layer ↔ Business Logic
+
 - [ ] API Routes rufen Business Logic aus `src/lib/` auf (keine Logik in Routes)
 - [ ] Zod-Validation in API Route → typed params an Business Logic
 - [ ] Business Logic wirft strukturierte Errors → API Route mapt zu HTTP-Status
 - [ ] Audit-Logging wird von API Layer getriggert (nicht von Business Logic)
 
 ### 1.4 Business Logic ↔ Engine
+
 - [ ] `engine-proxy.ts` nutzt korrekte Engine-Endpoints
 - [ ] Engine-Errors werden zu User-friendly Messages übersetzt
 - [ ] Streaming (SSE) von Engine → API → Dashboard korrekt weitergeleitet
 - [ ] Source-Isolation: Business Logic respektiert `sourceScopeOpts`
 
 ### 1.5 Auth/Security ↔ Alle Bereiche
+
 - [ ] Middleware prüft Auth für JEDEN API-Route
 - [ ] Permission-Check in API Layer vor Business Logic-Aufruf
 - [ ] CSRF-Token bei allen POST/PUT/DELETE aus Dashboard
@@ -58,19 +63,23 @@ Alle Bereiche ──→ Testing
 ## Phase 2 — Datenfluss-Tests
 
 ### 2.1 Happy Path (je Bereich-Paar)
+
 Teste den vollständigen Flow:
+
 ```
 Frontend/Dashboard → API Route → Business Logic → Engine → DB
                 ← Response ←              ← Result ←
 ```
 
 ### 2.2 Error Propagation
+
 - [ ] Engine-Error → Business Logic → API Route → Frontend Toast
 - [ ] Validation-Error → API Route 400 → Frontend Inline-Error
 - [ ] Auth-Error → API Route 401/403 → Frontend Login/Permission-Page
 - [ ] Network-Error → Frontend Offline-Store → Auto-Retry bei Online
 
 ### 2.3 Realtime & Offline
+
 - [ ] WebSocket-Update von Engine → Dashboard ohne Page-Reload
 - [ ] Offline: Mutation wird gequeueed → Online: Mutation wird gesendet
 - [ ] Conflict: Zwei Clients editieren gleiches Objekt → Conflict-Resolution
@@ -107,6 +116,7 @@ WENN Checks rot:
 ```
 
 ## Test-Befehle
+
 ```bash
 # Full System Build
 npm run build

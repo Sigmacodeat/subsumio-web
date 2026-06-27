@@ -185,7 +185,11 @@ describe("propagateToAiPrompt", () => {
   it("inherits highest privilege from multiple matters", () => {
     const matters = [
       makeMatterLabel({ case_slug: "c1", privilege: "none", confidentiality: "internal" }),
-      makeMatterLabel({ case_slug: "c2", privilege: "attorney_client", confidentiality: "confidential" }),
+      makeMatterLabel({
+        case_slug: "c2",
+        privilege: "attorney_client",
+        confidentiality: "confidential",
+      }),
     ];
     const label = propagateToAiPrompt(matters, true, "prompt-1", "user-1");
     expect(label.privilege).toBe("attorney_client");
@@ -194,10 +198,7 @@ describe("propagateToAiPrompt", () => {
   });
 
   it("uses first matter's case_slug", () => {
-    const matters = [
-      makeMatterLabel({ case_slug: "c1" }),
-      makeMatterLabel({ case_slug: "c2" }),
-    ];
+    const matters = [makeMatterLabel({ case_slug: "c1" }), makeMatterLabel({ case_slug: "c2" })];
     const label = propagateToAiPrompt(matters, true, "prompt-1", "user-1");
     expect(label.case_slug).toBe("c1");
   });
@@ -216,7 +217,11 @@ describe("propagateToExport", () => {
   it("inherits highest privilege from matters", () => {
     const matters = [
       makeMatterLabel({ case_slug: "c1", privilege: "work_product", confidentiality: "internal" }),
-      makeMatterLabel({ case_slug: "c2", privilege: "attorney_client", confidentiality: "restricted" }),
+      makeMatterLabel({
+        case_slug: "c2",
+        privilege: "attorney_client",
+        confidentiality: "restricted",
+      }),
     ];
     const label = propagateToExport(matters, "exp-1", "pdf", "client@example.com");
     expect(label.privilege).toBe("attorney_client");
@@ -282,7 +287,11 @@ describe("inferPrivilegeFromPermissions", () => {
 
 describe("shouldRedactForExport", () => {
   it("redacts attorney_client for opponent", () => {
-    const label = propagateToExport([makeMatterLabel({ privilege: "attorney_client" })], "exp-1", "pdf");
+    const label = propagateToExport(
+      [makeMatterLabel({ privilege: "attorney_client" })],
+      "exp-1",
+      "pdf"
+    );
     const result = shouldRedactForExport(label, "opponent");
     expect(result.redacted).toBe(true);
     expect(result.fields_redacted).toContain("internal_notes");
@@ -291,46 +300,74 @@ describe("shouldRedactForExport", () => {
   });
 
   it("does not redact attorney_client for client", () => {
-    const label = propagateToExport([makeMatterLabel({ privilege: "attorney_client" })], "exp-1", "pdf");
+    const label = propagateToExport(
+      [makeMatterLabel({ privilege: "attorney_client" })],
+      "exp-1",
+      "pdf"
+    );
     const result = shouldRedactForExport(label, "client");
     expect(result.redacted).toBe(false);
   });
 
   it("redacts work_product for opponent", () => {
-    const label = propagateToExport([makeMatterLabel({ privilege: "work_product" })], "exp-1", "pdf");
+    const label = propagateToExport(
+      [makeMatterLabel({ privilege: "work_product" })],
+      "exp-1",
+      "pdf"
+    );
     const result = shouldRedactForExport(label, "opponent");
     expect(result.redacted).toBe(true);
     expect(result.fields_redacted).toContain("work_product_notes");
   });
 
   it("redacts work_product for court", () => {
-    const label = propagateToExport([makeMatterLabel({ privilege: "work_product" })], "exp-1", "pdf");
+    const label = propagateToExport(
+      [makeMatterLabel({ privilege: "work_product" })],
+      "exp-1",
+      "pdf"
+    );
     const result = shouldRedactForExport(label, "court");
     expect(result.redacted).toBe(true);
   });
 
   it("redacts restricted for external", () => {
-    const label = propagateToExport([makeMatterLabel({ confidentiality: "restricted" })], "exp-1", "pdf");
+    const label = propagateToExport(
+      [makeMatterLabel({ confidentiality: "restricted" })],
+      "exp-1",
+      "pdf"
+    );
     const result = shouldRedactForExport(label, "external");
     expect(result.redacted).toBe(true);
     expect(result.fields_redacted).toContain("all_matter_data");
   });
 
   it("redacts confidential for opponent", () => {
-    const label = propagateToExport([makeMatterLabel({ confidentiality: "confidential", privilege: "none" })], "exp-1", "pdf");
+    const label = propagateToExport(
+      [makeMatterLabel({ confidentiality: "confidential", privilege: "none" })],
+      "exp-1",
+      "pdf"
+    );
     const result = shouldRedactForExport(label, "opponent");
     expect(result.redacted).toBe(true);
     expect(result.fields_redacted).toContain("confidential_sections");
   });
 
   it("does not redact public for anyone", () => {
-    const label = propagateToExport([makeMatterLabel({ confidentiality: "public", privilege: "none" })], "exp-1", "pdf");
+    const label = propagateToExport(
+      [makeMatterLabel({ confidentiality: "public", privilege: "none" })],
+      "exp-1",
+      "pdf"
+    );
     const result = shouldRedactForExport(label, "opponent");
     expect(result.redacted).toBe(false);
   });
 
   it("does not redact internal for court", () => {
-    const label = propagateToExport([makeMatterLabel({ confidentiality: "internal", privilege: "none" })], "exp-1", "pdf");
+    const label = propagateToExport(
+      [makeMatterLabel({ confidentiality: "internal", privilege: "none" })],
+      "exp-1",
+      "pdf"
+    );
     const result = shouldRedactForExport(label, "court");
     expect(result.redacted).toBe(false);
   });

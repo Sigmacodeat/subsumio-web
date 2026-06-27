@@ -11,16 +11,16 @@
  *   bun run scripts/auto-embed-pending.ts --dry-run
  */
 
-import { parseArgs } from 'util';
-import { PGLiteEngine } from '../src/core/pglite-engine.ts';
-import { embedBatch, currentEmbeddingSignature } from '../src/core/embedding.ts';
+import { parseArgs } from "util";
+import { PGLiteEngine } from "../src/core/pglite-engine.ts";
+import { embedBatch, currentEmbeddingSignature } from "../src/core/embedding.ts";
 
 const { values } = parseArgs({
   args: Bun.argv.slice(2),
   options: {
-    'batch-size': { type: 'string', default: '50' },
-    'dry-run': { type: 'boolean', default: false },
-    help: { type: 'boolean', default: false },
+    "batch-size": { type: "string", default: "50" },
+    "dry-run": { type: "boolean", default: false },
+    help: { type: "boolean", default: false },
   },
   allowPositionals: false,
 });
@@ -40,8 +40,8 @@ Options:
   process.exit(0);
 }
 
-const BATCH_SIZE = parseInt(String(values['batch-size']), 10) || 50;
-const DRY_RUN = values['dry-run'] as boolean;
+const BATCH_SIZE = parseInt(String(values["batch-size"]), 10) || 50;
+const DRY_RUN = values["dry-run"] as boolean;
 
 interface PendingChunk {
   id: string;
@@ -49,18 +49,22 @@ interface PendingChunk {
 }
 
 async function main() {
-  console.log('═══════════════════════════════════════════════════════════');
-  console.log('  Subsumio — Auto-Embed Pipeline');
-  console.log('═══════════════════════════════════════════════════════════');
+  console.log("═══════════════════════════════════════════════════════════");
+  console.log("  Subsumio — Auto-Embed Pipeline");
+  console.log("═══════════════════════════════════════════════════════════");
   console.log(`Batch-Größe: ${BATCH_SIZE}`);
-  console.log(`Dry-Run: ${DRY_RUN ? 'JA' : 'Nein'}`);
-  console.log('');
+  console.log(`Dry-Run: ${DRY_RUN ? "JA" : "Nein"}`);
+  console.log("");
 
   const engine = new PGLiteEngine();
-  await engine.connect({ database_url: '' });
+  await engine.connect({ database_url: "" });
   await engine.initSchema();
 
-  const db = (engine as unknown as { db: { query: (sql: string, params?: unknown[]) => Promise<{ rows: unknown[] }> } }).db;
+  const db = (
+    engine as unknown as {
+      db: { query: (sql: string, params?: unknown[]) => Promise<{ rows: unknown[] }> };
+    }
+  ).db;
 
   // Count pending
   const { rows: countRows } = await db.query(`
@@ -70,7 +74,7 @@ async function main() {
   console.log(`Pending chunks ohne Embedding: ${pendingCount}`);
 
   if (pendingCount === 0) {
-    console.log('Alles ist bereits embedded. Nichts zu tun.');
+    console.log("Alles ist bereits embedded. Nichts zu tun.");
     return;
   }
 
@@ -90,10 +94,12 @@ async function main() {
     const chunks = rows as PendingChunk[];
     if (chunks.length === 0) break;
 
-    console.log(`Embedding Batch ${Math.floor(processed / BATCH_SIZE) + 1} (${chunks.length} chunks)...`);
+    console.log(
+      `Embedding Batch ${Math.floor(processed / BATCH_SIZE) + 1} (${chunks.length} chunks)...`
+    );
 
     try {
-      const texts = chunks.map(c => c.text);
+      const texts = chunks.map((c) => c.text);
       const embeddings = await embedBatch(texts);
       const sig = await currentEmbeddingSignature();
 
@@ -112,12 +118,12 @@ async function main() {
     }
   }
 
-  console.log('');
+  console.log("");
   console.log(`Fertig: ${processed} embedded, ${errors} Fehler.`);
-  console.log('');
+  console.log("");
 }
 
 main().catch((err) => {
-  console.error('FATAL:', err);
+  console.error("FATAL:", err);
   process.exit(1);
 });

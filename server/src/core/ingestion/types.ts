@@ -30,8 +30,8 @@
  *     paste-ready upgrade hint when the daemon loads against contract v2.
  */
 
-import type { BrainEngine } from '../engine.ts';
-import type { Logger } from '../operations.ts';
+import type { BrainEngine } from "../engine.ts";
+import type { Logger } from "../operations.ts";
 
 /**
  * Contract version stamped on every gbrain.plugin.json that ships an
@@ -40,7 +40,7 @@ import type { Logger } from '../operations.ts';
  * skillpack-load module so existing packs continue to work across a
  * deprecation window.
  */
-export const INGESTION_SOURCE_API_VERSION = 'gbrain-ingestion-source-v1';
+export const INGESTION_SOURCE_API_VERSION = "gbrain-ingestion-source-v1";
 
 /**
  * Canonical taxonomy of content types the daemon recognizes. The router
@@ -53,18 +53,18 @@ export const INGESTION_SOURCE_API_VERSION = 'gbrain-ingestion-source-v1';
  * provenance fidelity.
  */
 export const INGESTION_CONTENT_TYPES = [
-  'text/markdown',
-  'text/plain',
-  'text/html',
-  'application/pdf',
-  'application/json',
-  'image/*',
-  'audio/*',
-  'video/*',
-  'unknown',
+  "text/markdown",
+  "text/plain",
+  "text/html",
+  "application/pdf",
+  "application/json",
+  "image/*",
+  "audio/*",
+  "video/*",
+  "unknown",
 ] as const;
 
-export type IngestionContentType = typeof INGESTION_CONTENT_TYPES[number];
+export type IngestionContentType = (typeof INGESTION_CONTENT_TYPES)[number];
 
 /**
  * Stable event the daemon receives from every source. Carries enough
@@ -114,7 +114,7 @@ export interface IngestionEvent {
  * it surface as `ok` from the daemon side (no signal == healthy assumption).
  */
 export interface IngestionSourceHealth {
-  status: 'ok' | 'warn' | 'fail';
+  status: "ok" | "warn" | "fail";
   message?: string;
 }
 
@@ -160,7 +160,7 @@ export interface IngestionSourceHealth {
  * Migration-mode sources are one-shot bulk importers. Trickle-mode sources
  * are file-watcher / inbox-folder / webhook (the v0.38 default shape).
  */
-export type IngestionSourceMode = 'trickle' | 'migration';
+export type IngestionSourceMode = "trickle" | "migration";
 
 export interface IngestionSource {
   /** Unique source instance id. Two file-watcher sources pointing at
@@ -237,10 +237,10 @@ export class IngestionEventError extends Error {
   constructor(
     public readonly field: string,
     public readonly reason: string,
-    public readonly event: Partial<IngestionEvent>,
+    public readonly event: Partial<IngestionEvent>
   ) {
     super(`IngestionEvent.${field}: ${reason}`);
-    this.name = 'IngestionEventError';
+    this.name = "IngestionEventError";
   }
 }
 
@@ -254,34 +254,42 @@ export class IngestionEventError extends Error {
  * tolerant of bad hashes — a bad hash just means dedup misses, not corruption.
  */
 export function validateIngestionEvent(event: unknown): IngestionEventError | null {
-  if (event === null || typeof event !== 'object') {
-    return new IngestionEventError('root', 'must be an object', {});
+  if (event === null || typeof event !== "object") {
+    return new IngestionEventError("root", "must be an object", {});
   }
   const e = event as Record<string, unknown>;
 
   // Required strings.
   for (const field of [
-    'source_id',
-    'source_kind',
-    'source_uri',
-    'received_at',
-    'content',
-    'content_hash',
+    "source_id",
+    "source_kind",
+    "source_uri",
+    "received_at",
+    "content",
+    "content_hash",
   ] as const) {
-    if (typeof e[field] !== 'string' || (e[field] as string).length === 0) {
-      return new IngestionEventError(field, 'must be a non-empty string', e as Partial<IngestionEvent>);
+    if (typeof e[field] !== "string" || (e[field] as string).length === 0) {
+      return new IngestionEventError(
+        field,
+        "must be a non-empty string",
+        e as Partial<IngestionEvent>
+      );
     }
   }
 
   // Content type from the closed taxonomy.
-  if (typeof e.content_type !== 'string') {
-    return new IngestionEventError('content_type', 'must be a string', e as Partial<IngestionEvent>);
+  if (typeof e.content_type !== "string") {
+    return new IngestionEventError(
+      "content_type",
+      "must be a string",
+      e as Partial<IngestionEvent>
+    );
   }
   if (!INGESTION_CONTENT_TYPES.includes(e.content_type as IngestionContentType)) {
     return new IngestionEventError(
-      'content_type',
-      `must be one of ${INGESTION_CONTENT_TYPES.join(', ')}; got '${e.content_type}'`,
-      e as Partial<IngestionEvent>,
+      "content_type",
+      `must be one of ${INGESTION_CONTENT_TYPES.join(", ")}; got '${e.content_type}'`,
+      e as Partial<IngestionEvent>
     );
   }
 
@@ -290,9 +298,9 @@ export function validateIngestionEvent(event: unknown): IngestionEventError | nu
   const parsed = Date.parse(e.received_at as string);
   if (!Number.isFinite(parsed)) {
     return new IngestionEventError(
-      'received_at',
+      "received_at",
       `must be an ISO 8601 timestamp; got '${e.received_at}'`,
-      e as Partial<IngestionEvent>,
+      e as Partial<IngestionEvent>
     );
   }
 
@@ -302,28 +310,28 @@ export function validateIngestionEvent(event: unknown): IngestionEventError | nu
   const hash = e.content_hash as string;
   if (!/^[0-9a-f]{64}$/i.test(hash)) {
     return new IngestionEventError(
-      'content_hash',
+      "content_hash",
       `must be 64 lowercase hex characters (SHA-256); got '${hash.slice(0, 16)}...'`,
-      e as Partial<IngestionEvent>,
+      e as Partial<IngestionEvent>
     );
   }
 
   // untrusted_payload is optional but must be boolean if present.
-  if (e.untrusted_payload !== undefined && typeof e.untrusted_payload !== 'boolean') {
+  if (e.untrusted_payload !== undefined && typeof e.untrusted_payload !== "boolean") {
     return new IngestionEventError(
-      'untrusted_payload',
+      "untrusted_payload",
       `must be boolean when present; got ${typeof e.untrusted_payload}`,
-      e as Partial<IngestionEvent>,
+      e as Partial<IngestionEvent>
     );
   }
 
   // metadata is optional but must be a plain object if present.
   if (e.metadata !== undefined) {
-    if (e.metadata === null || typeof e.metadata !== 'object' || Array.isArray(e.metadata)) {
+    if (e.metadata === null || typeof e.metadata !== "object" || Array.isArray(e.metadata)) {
       return new IngestionEventError(
-        'metadata',
-        'must be a plain object when present',
-        e as Partial<IngestionEvent>,
+        "metadata",
+        "must be a plain object when present",
+        e as Partial<IngestionEvent>
       );
     }
   }
@@ -339,7 +347,7 @@ export function validateIngestionEvent(event: unknown): IngestionEventError | nu
 export function computeContentHash(content: string): string {
   // Bun's built-in crypto returns hex directly. We don't import Node's
   // 'node:crypto' because the conditional types diverge in the Bun runtime.
-  const hasher = new Bun.CryptoHasher('sha256');
+  const hasher = new Bun.CryptoHasher("sha256");
   hasher.update(content);
-  return hasher.digest('hex');
+  return hasher.digest("hex");
 }

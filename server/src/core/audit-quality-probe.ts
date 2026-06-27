@@ -10,18 +10,18 @@
  * surface FAIL / ERROR / BUDGET_EXCEEDED runs from the last 7 days.
  */
 
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import { resolveAuditDir } from './minions/handlers/shell-audit.ts';
+import * as fs from "node:fs";
+import * as path from "node:path";
+import { resolveAuditDir } from "./minions/handlers/shell-audit.ts";
 
 export type QualityProbeOutcome =
-  | 'pass'
-  | 'fail'
-  | 'inconclusive'
-  | 'error'
-  | 'budget_exceeded'
-  | 'rate_limited'
-  | 'no_embedding_key';
+  | "pass"
+  | "fail"
+  | "inconclusive"
+  | "error"
+  | "budget_exceeded"
+  | "rate_limited"
+  | "no_embedding_key";
 
 export interface QualityProbeAuditEvent {
   ts: string;
@@ -51,7 +51,7 @@ export function computeQualityProbeAuditFilename(now: Date = new Date()): string
   const firstThursdayDayNum = (firstThursday.getUTCDay() + 6) % 7;
   firstThursday.setUTCDate(firstThursday.getUTCDate() - firstThursdayDayNum + 3);
   const weekNum = Math.round((d.getTime() - firstThursday.getTime()) / (7 * 86400000)) + 1;
-  const ww = String(weekNum).padStart(2, '0');
+  const ww = String(weekNum).padStart(2, "0");
   return `quality-probe-${isoYear}-W${ww}.jsonl`;
 }
 
@@ -59,7 +59,9 @@ export function computeQualityProbeAuditFilename(now: Date = new Date()): string
  * Append one quality-probe event. Best-effort: write failure logs to stderr
  * but the probe phase continues.
  */
-export function logQualityProbeEvent(event: Omit<QualityProbeAuditEvent, 'ts'> & { ts?: string }): void {
+export function logQualityProbeEvent(
+  event: Omit<QualityProbeAuditEvent, "ts"> & { ts?: string }
+): void {
   const stamped: QualityProbeAuditEvent = {
     ts: event.ts ?? new Date().toISOString(),
     outcome: event.outcome,
@@ -76,7 +78,7 @@ export function logQualityProbeEvent(event: Omit<QualityProbeAuditEvent, 'ts'> &
   const file = path.join(dir, computeQualityProbeAuditFilename());
   try {
     fs.mkdirSync(dir, { recursive: true });
-    fs.appendFileSync(file, JSON.stringify(stamped) + '\n', { encoding: 'utf8' });
+    fs.appendFileSync(file, JSON.stringify(stamped) + "\n", { encoding: "utf8" });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     process.stderr.write(`[gbrain] quality-probe audit write failed (${msg}); probe continues\n`);
@@ -90,7 +92,7 @@ export function logQualityProbeEvent(event: Omit<QualityProbeAuditEvent, 'ts'> &
  */
 export function readRecentQualityProbeEvents(
   days = 7,
-  now: Date = new Date(),
+  now: Date = new Date()
 ): QualityProbeAuditEvent[] {
   const dir = resolveAuditDir();
   const cutoff = now.getTime() - days * 86400000;
@@ -103,11 +105,11 @@ export function readRecentQualityProbeEvents(
     const file = path.join(dir, filename);
     let content: string;
     try {
-      content = fs.readFileSync(file, 'utf8');
+      content = fs.readFileSync(file, "utf8");
     } catch {
       continue;
     }
-    for (const line of content.split('\n')) {
+    for (const line of content.split("\n")) {
       if (line.length === 0) continue;
       try {
         const ev = JSON.parse(line) as QualityProbeAuditEvent;

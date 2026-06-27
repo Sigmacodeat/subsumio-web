@@ -9,7 +9,6 @@ import { useApiKeys, useCreateApiKey, useDeleteApiKey, type ApiKey } from "@/lib
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
 
-
 export default function ApiKeysPage() {
   const { t, lang } = useLang();
   const keysQuery = useApiKeys();

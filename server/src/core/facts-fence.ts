@@ -46,45 +46,49 @@ import {
   stripStrikethrough,
   parseStringCell,
   escapeFenceCell,
-} from './fence-shared.ts';
+} from "./fence-shared.ts";
 
 // HTML-comment fence markers — verbatim per spec. Same shape as the takes
 // fence markers so anyone who's seen one immediately recognizes the other.
-export const FACTS_FENCE_BEGIN = '<!--- gbrain:facts:begin -->';
-export const FACTS_FENCE_END   = '<!--- gbrain:facts:end -->';
+export const FACTS_FENCE_BEGIN = "<!--- gbrain:facts:begin -->";
+export const FACTS_FENCE_END = "<!--- gbrain:facts:end -->";
 
 // Mirror src/core/engine.ts FactKind. Re-declared (not imported) because
 // the fence parser has zero engine dependencies — it must run in pure-
 // markdown contexts (the chunker strip, the CI invariant check) where
 // importing engine.ts pulls a large DB-shaped transitive graph.
-export type FactKind = 'event' | 'preference' | 'commitment' | 'belief' | 'fact';
+export type FactKind = "event" | "preference" | "commitment" | "belief" | "fact";
 
 // Mirror src/core/engine.ts FactVisibility ('private' | 'world'). Binary
 // gate per the existing takes D21 contract — drives the chunker strip
 // (Layer A) and the get_page response strip (Layer B).
-export type FactVisibility = 'private' | 'world';
+export type FactVisibility = "private" | "world";
 
-export type FactNotability = 'high' | 'medium' | 'low';
+export type FactNotability = "high" | "medium" | "low";
 
 const KIND_VALUES: ReadonlySet<string> = new Set([
-  'event', 'preference', 'commitment', 'belief', 'fact',
+  "event",
+  "preference",
+  "commitment",
+  "belief",
+  "fact",
 ]);
-const VISIBILITY_VALUES: ReadonlySet<string> = new Set(['private', 'world']);
-const NOTABILITY_VALUES: ReadonlySet<string> = new Set(['high', 'medium', 'low']);
+const VISIBILITY_VALUES: ReadonlySet<string> = new Set(["private", "world"]);
+const NOTABILITY_VALUES: ReadonlySet<string> = new Set(["high", "medium", "low"]);
 
 /** Parsed shape of a single fence row. */
 export interface ParsedFact {
   rowNum: number;
-  claim: string;          // strikethrough markers stripped on parse
+  claim: string; // strikethrough markers stripped on parse
   kind: FactKind;
-  confidence: number;     // 0..1 (clamp/normalize happens in the engine layer)
+  confidence: number; // 0..1 (clamp/normalize happens in the engine layer)
   visibility: FactVisibility;
   notability: FactNotability;
-  validFrom?: string;     // ISO date 'YYYY-MM-DD' (or empty)
+  validFrom?: string; // ISO date 'YYYY-MM-DD' (or empty)
   validUntil?: string;
   source?: string;
   context?: string;
-  active: boolean;        // false when claim was wrapped in `~~ ~~`
+  active: boolean; // false when claim was wrapped in `~~ ~~`
   /**
    * v0.32.2 strikethrough semantics. Both are mutually exclusive with `active=true`.
    *   - `supersededBy` set: the row was superseded by another fence row;
@@ -140,7 +144,7 @@ function parseConfidenceCell(raw: string): number | undefined {
 function parseNumericCell(raw: string): number | undefined {
   const trimmed = raw.trim();
   if (!trimmed) return undefined;
-  const stripped = trimmed.replace(/,/g, '');
+  const stripped = trimmed.replace(/,/g, "");
   const n = parseFloat(stripped);
   return Number.isFinite(n) ? n : undefined;
 }
@@ -169,21 +173,21 @@ function parseForgottenFromContext(context: string | undefined): boolean {
  */
 export function parseFactsFence(body: string): FactsFenceParseResult {
   const beginIdx = body.indexOf(FACTS_FENCE_BEGIN);
-  const endIdx   = body.indexOf(FACTS_FENCE_END, beginIdx + FACTS_FENCE_BEGIN.length);
+  const endIdx = body.indexOf(FACTS_FENCE_END, beginIdx + FACTS_FENCE_BEGIN.length);
   const warnings: string[] = [];
 
   if (beginIdx === -1 && endIdx === -1) return { facts: [], warnings };
   if (beginIdx === -1 || endIdx === -1) {
-    warnings.push('FACTS_FENCE_UNBALANCED: missing begin or end marker');
+    warnings.push("FACTS_FENCE_UNBALANCED: missing begin or end marker");
     return { facts: [], warnings };
   }
   if (endIdx < beginIdx) {
-    warnings.push('FACTS_FENCE_UNBALANCED: end marker before begin');
+    warnings.push("FACTS_FENCE_UNBALANCED: end marker before begin");
     return { facts: [], warnings };
   }
 
   const inner = body.slice(beginIdx + FACTS_FENCE_BEGIN.length, endIdx);
-  const lines = inner.split('\n');
+  const lines = inner.split("\n");
   const facts: ParsedFact[] = [];
   let sawHeader = false;
   const seenRowNums = new Set<number>();
@@ -196,8 +200,8 @@ export function parseFactsFence(body: string): FactsFenceParseResult {
 
     // Header row: cells include 'claim' and 'kind' (case-insensitive).
     if (!sawHeader) {
-      const lower = cells.map(c => c.toLowerCase());
-      if (lower.includes('claim') && lower.includes('kind')) {
+      const lower = cells.map((c) => c.toLowerCase());
+      if (lower.includes("claim") && lower.includes("kind")) {
         sawHeader = true;
         continue;
       }
@@ -220,15 +224,20 @@ export function parseFactsFence(body: string): FactsFenceParseResult {
     }
 
     const [
-      rowNumStr, claimRaw, kindRaw, confidenceRaw,
-      visibilityRaw, notabilityRaw,
-      validFromRaw, validUntilRaw,
+      rowNumStr,
+      claimRaw,
+      kindRaw,
+      confidenceRaw,
+      visibilityRaw,
+      notabilityRaw,
+      validFromRaw,
+      validUntilRaw,
       sourceRaw,
-      contextRaw = '',
-      claimMetricRaw = '',
-      claimValueRaw = '',
-      claimUnitRaw = '',
-      claimPeriodRaw = '',
+      contextRaw = "",
+      claimMetricRaw = "",
+      claimValueRaw = "",
+      claimUnitRaw = "",
+      claimPeriodRaw = "",
     ] = cells;
 
     const rowNum = parseInt(rowNumStr, 10);
@@ -244,32 +253,40 @@ export function parseFactsFence(body: string): FactsFenceParseResult {
 
     const kind = kindRaw.trim().toLowerCase();
     if (!KIND_VALUES.has(kind)) {
-      warnings.push(`FACTS_TABLE_MALFORMED: unknown kind "${kindRaw}" (expected event|preference|commitment|belief|fact)`);
+      warnings.push(
+        `FACTS_TABLE_MALFORMED: unknown kind "${kindRaw}" (expected event|preference|commitment|belief|fact)`
+      );
       continue;
     }
 
     const visibility = visibilityRaw.trim().toLowerCase();
     if (!VISIBILITY_VALUES.has(visibility)) {
-      warnings.push(`FACTS_TABLE_MALFORMED: unknown visibility "${visibilityRaw}" (expected private|world)`);
+      warnings.push(
+        `FACTS_TABLE_MALFORMED: unknown visibility "${visibilityRaw}" (expected private|world)`
+      );
       continue;
     }
 
     const notability = notabilityRaw.trim().toLowerCase();
     if (!NOTABILITY_VALUES.has(notability)) {
-      warnings.push(`FACTS_TABLE_MALFORMED: unknown notability "${notabilityRaw}" (expected high|medium|low)`);
+      warnings.push(
+        `FACTS_TABLE_MALFORMED: unknown notability "${notabilityRaw}" (expected high|medium|low)`
+      );
       continue;
     }
 
     const confidence = parseConfidenceCell(confidenceRaw);
     if (confidence === undefined) {
-      warnings.push(`FACTS_TABLE_MALFORMED: non-numeric confidence "${confidenceRaw}" in row ${rowNumStr}`);
+      warnings.push(
+        `FACTS_TABLE_MALFORMED: non-numeric confidence "${confidenceRaw}" in row ${rowNumStr}`
+      );
       continue;
     }
 
     const { text: claimText, struck } = stripStrikethrough(claimRaw);
     const context = parseStringCell(contextRaw);
     const supersededBy = parseSupersededByFromContext(context);
-    const forgotten    = parseForgottenFromContext(context);
+    const forgotten = parseForgottenFromContext(context);
 
     facts.push({
       rowNum,
@@ -278,23 +295,23 @@ export function parseFactsFence(body: string): FactsFenceParseResult {
       confidence,
       visibility: visibility as FactVisibility,
       notability: notability as FactNotability,
-      validFrom:  parseStringCell(validFromRaw),
+      validFrom: parseStringCell(validFromRaw),
       validUntil: parseStringCell(validUntilRaw),
-      source:     parseStringCell(sourceRaw),
+      source: parseStringCell(sourceRaw),
       context,
       active: !struck,
       supersededBy,
       forgotten: struck ? forgotten : false,
       // v0.35.4 — typed-claim fields, all optional.
       claimMetric: parseStringCell(claimMetricRaw),
-      claimValue:  parseNumericCell(claimValueRaw),
-      claimUnit:   parseStringCell(claimUnitRaw),
+      claimValue: parseNumericCell(claimValueRaw),
+      claimUnit: parseStringCell(claimUnitRaw),
       claimPeriod: parseStringCell(claimPeriodRaw),
     });
   }
 
-  if (!sawHeader && facts.length === 0 && lines.some(l => l.trim().startsWith('|'))) {
-    warnings.push('FACTS_TABLE_MALFORMED: pipe-rows present but no recognizable header');
+  if (!sawHeader && facts.length === 0 && lines.some((l) => l.trim().startsWith("|"))) {
+    warnings.push("FACTS_TABLE_MALFORMED: pipe-rows present but no recognizable header");
   }
 
   return { facts, warnings };
@@ -321,11 +338,12 @@ export function renderFactsTable(facts: ParsedFact[]): string {
   // typed-claim field. Otherwise stay at the 10-cell legacy shape so
   // existing fences don't get widened on unrelated rewrites (no churn diff
   // noise).
-  const anyTyped = facts.some(f =>
-    f.claimMetric !== undefined ||
-    f.claimValue  !== undefined ||
-    f.claimUnit   !== undefined ||
-    f.claimPeriod !== undefined,
+  const anyTyped = facts.some(
+    (f) =>
+      f.claimMetric !== undefined ||
+      f.claimValue !== undefined ||
+      f.claimUnit !== undefined ||
+      f.claimPeriod !== undefined
   );
   const header = anyTyped
     ? `| # | claim | kind | confidence | visibility | notability | valid_from | valid_until | source | context | claim_metric | claim_value | claim_unit | claim_period |`
@@ -333,14 +351,14 @@ export function renderFactsTable(facts: ParsedFact[]): string {
   const separator = anyTyped
     ? `|---|-------|------|------------|------------|------------|------------|-------------|--------|---------|--------------|-------------|------------|--------------|`
     : `|---|-------|------|------------|------------|------------|------------|-------------|--------|---------|`;
-  const rows = facts.map(f => {
+  const rows = facts.map((f) => {
     const claimCell = f.active ? f.claim : `~~${f.claim}~~`;
-    const base = `| ${f.rowNum} | ${escapeFenceCell(claimCell)} | ${f.kind} | ${formatConfidence(f.confidence)} | ${f.visibility} | ${f.notability} | ${escapeFenceCell(f.validFrom ?? '')} | ${escapeFenceCell(f.validUntil ?? '')} | ${escapeFenceCell(f.source ?? '')} | ${escapeFenceCell(f.context ?? '')} |`;
+    const base = `| ${f.rowNum} | ${escapeFenceCell(claimCell)} | ${f.kind} | ${formatConfidence(f.confidence)} | ${f.visibility} | ${f.notability} | ${escapeFenceCell(f.validFrom ?? "")} | ${escapeFenceCell(f.validUntil ?? "")} | ${escapeFenceCell(f.source ?? "")} | ${escapeFenceCell(f.context ?? "")} |`;
     if (!anyTyped) return base;
-    const valueCell = f.claimValue === undefined ? '' : String(f.claimValue);
-    return `${base} ${escapeFenceCell(f.claimMetric ?? '')} | ${escapeFenceCell(valueCell)} | ${escapeFenceCell(f.claimUnit ?? '')} | ${escapeFenceCell(f.claimPeriod ?? '')} |`;
+    const valueCell = f.claimValue === undefined ? "" : String(f.claimValue);
+    return `${base} ${escapeFenceCell(f.claimMetric ?? "")} | ${escapeFenceCell(valueCell)} | ${escapeFenceCell(f.claimUnit ?? "")} | ${escapeFenceCell(f.claimPeriod ?? "")} |`;
   });
-  const inner = ['', header, separator, ...rows, ''].join('\n');
+  const inner = ["", header, separator, ...rows, ""].join("\n");
   return `${FACTS_FENCE_BEGIN}${inner}${FACTS_FENCE_END}`;
 }
 
@@ -355,14 +373,14 @@ export function renderFactsTable(facts: ParsedFact[]): string {
  */
 export function upsertFactRow(
   body: string,
-  newRow: Omit<ParsedFact, 'rowNum' | 'active' | 'supersededBy' | 'forgotten'> & {
+  newRow: Omit<ParsedFact, "rowNum" | "active" | "supersededBy" | "forgotten"> & {
     rowNum?: number;
     active?: boolean;
-  },
+  }
 ): { body: string; rowNum: number } {
   const { facts } = parseFactsFence(body);
-  const nextRowNum = newRow.rowNum
-    ?? (facts.length > 0 ? Math.max(...facts.map(f => f.rowNum)) + 1 : 1);
+  const nextRowNum =
+    newRow.rowNum ?? (facts.length > 0 ? Math.max(...facts.map((f) => f.rowNum)) + 1 : 1);
 
   const allRows: ParsedFact[] = [
     ...facts,
@@ -382,8 +400,8 @@ export function upsertFactRow(
       // stays at the 10-cell shape so unrelated edits don't widen the
       // fence.
       claimMetric: newRow.claimMetric,
-      claimValue:  newRow.claimValue,
-      claimUnit:   newRow.claimUnit,
+      claimValue: newRow.claimValue,
+      claimUnit: newRow.claimUnit,
       claimPeriod: newRow.claimPeriod,
     },
   ];
@@ -391,12 +409,12 @@ export function upsertFactRow(
   const newFence = renderFactsTable(allRows);
 
   const beginIdx = body.indexOf(FACTS_FENCE_BEGIN);
-  const endIdx   = body.indexOf(FACTS_FENCE_END, beginIdx + FACTS_FENCE_BEGIN.length);
+  const endIdx = body.indexOf(FACTS_FENCE_END, beginIdx + FACTS_FENCE_BEGIN.length);
   let out: string;
   if (beginIdx !== -1 && endIdx !== -1) {
     out = body.slice(0, beginIdx) + newFence + body.slice(endIdx + FACTS_FENCE_END.length);
   } else {
-    const sep = body.endsWith('\n') ? '\n' : '\n\n';
+    const sep = body.endsWith("\n") ? "\n" : "\n\n";
     out = `${body}${sep}## Facts\n\n${newFence}\n`;
   }
   return { body: out, rowNum: nextRowNum };
@@ -446,7 +464,7 @@ export interface StripFactsFenceOpts {
 export function stripFactsFence(body: string, opts: StripFactsFenceOpts = {}): string {
   // Pages without a compiled body have nothing to strip. Guard so the privacy
   // strip is a safe no-op rather than crashing on `undefined.indexOf`.
-  if (typeof body !== 'string') return body;
+  if (typeof body !== "string") return body;
   const beginIdx = body.indexOf(FACTS_FENCE_BEGIN);
   if (beginIdx === -1) return body;
   const endIdx = body.indexOf(FACTS_FENCE_END, beginIdx + FACTS_FENCE_BEGIN.length);
@@ -463,7 +481,7 @@ export function stripFactsFence(body: string, opts: StripFactsFenceOpts = {}): s
   // strip rather than leak.
   const { facts } = parseFactsFence(body);
   const keep = new Set(opts.keepVisibility);
-  const kept = facts.filter(f => keep.has(f.visibility));
+  const kept = facts.filter((f) => keep.has(f.visibility));
   const replacement = renderFactsTable(kept);
   return body.slice(0, beginIdx) + replacement + body.slice(endIdx + FACTS_FENCE_END.length);
 }

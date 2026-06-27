@@ -18,8 +18,8 @@
  * (codex round-2 #2).
  */
 
-import { createHash } from 'node:crypto';
-import type { EvalCandidateInput } from '../types.ts';
+import { createHash } from "node:crypto";
+import type { EvalCandidateInput } from "../types.ts";
 
 /** Stable on-disk format version. Bump when adding new required fields. */
 export const BASELINE_FILE_SCHEMA_VERSION = 1 as const;
@@ -27,7 +27,7 @@ export const BASELINE_FILE_SCHEMA_VERSION = 1 as const;
 /** Default thresholds when neither baseline metadata nor CLI flags set them. */
 export const DEFAULT_THRESHOLDS: BaselineThresholds = {
   jaccard: 0.85,
-  top1: 0.80,
+  top1: 0.8,
   latency_multiplier: 2.0,
 };
 
@@ -39,7 +39,7 @@ export interface BaselineThresholds {
 
 export interface BaselineMetadata {
   schema_version: typeof BASELINE_FILE_SCHEMA_VERSION;
-  _kind: 'baseline_metadata';
+  _kind: "baseline_metadata";
   label: string;
   published_at: string; // ISO 8601
   source_hash: string; // sha256 of sorted row hashes
@@ -64,24 +64,27 @@ export interface BaselineFile {
  * so that "  Hello   World  " and "hello world" hash to the same value.
  */
 export function normalizeQueryForHash(query: string): string {
-  return query.toLowerCase().replace(/\s+/g, ' ').trim();
+  return query.toLowerCase().replace(/\s+/g, " ").trim();
 }
 
 /** 16-hex-char sha256 prefix of the normalized query. Stable across runs. */
 export function computeQueryHash(query: string): string {
-  return createHash('sha256').update(normalizeQueryForHash(query)).digest('hex').slice(0, 16);
+  return createHash("sha256").update(normalizeQueryForHash(query)).digest("hex").slice(0, 16);
 }
 
 /** sha256 of the sorted concatenation of every row's query_hash. */
 export function computeSourceHash(rows: BaselineRow[]): string {
-  const hashes = rows.map(r => r.query_hash).sort();
-  return createHash('sha256').update(hashes.join('\n')).digest('hex');
+  const hashes = rows.map((r) => r.query_hash).sort();
+  return createHash("sha256").update(hashes.join("\n")).digest("hex");
 }
 
 export class BaselineParseError extends Error {
-  constructor(message: string, public readonly lineNumber?: number) {
+  constructor(
+    message: string,
+    public readonly lineNumber?: number
+  ) {
     super(message);
-    this.name = 'BaselineParseError';
+    this.name = "BaselineParseError";
   }
 }
 
@@ -92,7 +95,7 @@ export class BaselineParseError extends Error {
  * Throws `BaselineParseError` with paste-ready line + message on any failure.
  */
 export function parseBaselineFile(content: string): BaselineFile {
-  const lines = content.split('\n');
+  const lines = content.split("\n");
   let metadata: BaselineMetadata | null = null;
   const rows: BaselineRow[] = [];
 
@@ -106,66 +109,75 @@ export function parseBaselineFile(content: string): BaselineFile {
     } catch (err) {
       throw new BaselineParseError(
         `Malformed JSON on line ${i + 1}: ${err instanceof Error ? err.message : String(err)}`,
-        i + 1,
+        i + 1
       );
     }
 
-    if (typeof parsed !== 'object' || parsed === null) {
+    if (typeof parsed !== "object" || parsed === null) {
       throw new BaselineParseError(`Line ${i + 1} is not a JSON object`, i + 1);
     }
 
     if (metadata === null) {
       // First non-empty line MUST be metadata.
       const meta = parsed as Partial<BaselineMetadata>;
-      if (meta._kind !== 'baseline_metadata') {
+      if (meta._kind !== "baseline_metadata") {
         throw new BaselineParseError(
           `First line must have "_kind": "baseline_metadata" (got ${JSON.stringify(meta._kind)})`,
-          i + 1,
+          i + 1
         );
       }
       if (meta.schema_version !== BASELINE_FILE_SCHEMA_VERSION) {
         throw new BaselineParseError(
           `Unsupported schema_version ${meta.schema_version} (this gbrain build expects ${BASELINE_FILE_SCHEMA_VERSION})`,
-          i + 1,
+          i + 1
         );
       }
       if (
-        typeof meta.label !== 'string' ||
-        typeof meta.published_at !== 'string' ||
-        typeof meta.source_hash !== 'string' ||
-        typeof meta.row_count !== 'number' ||
-        typeof meta.baseline_mean_latency_ms !== 'number' ||
+        typeof meta.label !== "string" ||
+        typeof meta.published_at !== "string" ||
+        typeof meta.source_hash !== "string" ||
+        typeof meta.row_count !== "number" ||
+        typeof meta.baseline_mean_latency_ms !== "number" ||
         !meta.thresholds ||
-        typeof meta.thresholds.jaccard !== 'number' ||
-        typeof meta.thresholds.top1 !== 'number' ||
-        typeof meta.thresholds.latency_multiplier !== 'number'
+        typeof meta.thresholds.jaccard !== "number" ||
+        typeof meta.thresholds.top1 !== "number" ||
+        typeof meta.thresholds.latency_multiplier !== "number"
       ) {
         throw new BaselineParseError(
           `Metadata header missing required fields (label/published_at/source_hash/row_count/baseline_mean_latency_ms/thresholds)`,
-          i + 1,
+          i + 1
         );
       }
       metadata = meta as BaselineMetadata;
     } else {
       const row = parsed as Partial<BaselineRow>;
-      if (typeof row.tool_name !== 'string' || (row.tool_name !== 'query' && row.tool_name !== 'search')) {
+      if (
+        typeof row.tool_name !== "string" ||
+        (row.tool_name !== "query" && row.tool_name !== "search")
+      ) {
         throw new BaselineParseError(`Row on line ${i + 1} missing or invalid tool_name`, i + 1);
       }
-      if (typeof row.query !== 'string') {
+      if (typeof row.query !== "string") {
         throw new BaselineParseError(`Row on line ${i + 1} missing query`, i + 1);
       }
-      if (typeof row.query_hash !== 'string') {
-        throw new BaselineParseError(`Row on line ${i + 1} missing query_hash (was it written by gbrain bench publish?)`, i + 1);
+      if (typeof row.query_hash !== "string") {
+        throw new BaselineParseError(
+          `Row on line ${i + 1} missing query_hash (was it written by gbrain bench publish?)`,
+          i + 1
+        );
       }
       if (!Array.isArray(row.retrieved_slugs) || !Array.isArray(row.source_ids)) {
-        throw new BaselineParseError(`Row on line ${i + 1} missing retrieved_slugs or source_ids`, i + 1);
+        throw new BaselineParseError(
+          `Row on line ${i + 1} missing retrieved_slugs or source_ids`,
+          i + 1
+        );
       }
       rows.push(row as BaselineRow);
     }
   }
 
   if (metadata === null) {
-    throw new BaselineParseError('Empty file or no metadata header found');
+    throw new BaselineParseError("Empty file or no metadata header found");
   }
   return { metadata, rows };
 }
@@ -187,7 +199,7 @@ export function serializeBaselineFile(file: BaselineFile): string {
   });
   const lines = [
     JSON.stringify(file.metadata),
-    ...sortedRows.map(r => JSON.stringify({ schema_version: 1, ...r })),
+    ...sortedRows.map((r) => JSON.stringify({ schema_version: 1, ...r })),
   ];
-  return lines.join('\n') + '\n';
+  return lines.join("\n") + "\n";
 }

@@ -17,7 +17,7 @@
  * worker.ts/supervisor.ts free of process.exit.
  */
 
-import { setPriority as osSetPriority, getPriority as osGetPriority } from 'os';
+import { setPriority as osSetPriority, getPriority as osGetPriority } from "os";
 
 /** Lowest (highest-priority) and highest (nicest) POSIX nice values. */
 export const NICE_MIN = -20;
@@ -49,10 +49,14 @@ export function parseNiceValue(raw: string): number {
   const s = raw.trim();
   const n = parseInt(s, 10);
   if (!Number.isFinite(n) || String(n) !== s) {
-    throw new Error(`--nice must be an integer in [${NICE_MIN}, ${NICE_MAX}], got: ${JSON.stringify(raw)}`);
+    throw new Error(
+      `--nice must be an integer in [${NICE_MIN}, ${NICE_MAX}], got: ${JSON.stringify(raw)}`
+    );
   }
   if (n < NICE_MIN || n > NICE_MAX) {
-    throw new Error(`--nice must be in [${NICE_MIN}, ${NICE_MAX}] (-20 = highest priority, 19 = nicest), got: ${n}`);
+    throw new Error(
+      `--nice must be in [${NICE_MIN}, ${NICE_MAX}] (-20 = highest priority, 19 = nicest), got: ${n}`
+    );
   }
   return n;
 }
@@ -68,7 +72,7 @@ export function parseNiceValue(raw: string): number {
 export function applyNiceness(
   nice: number,
   setPriority: (pid: number, priority: number) => void = osSetPriority,
-  getPriority: (pid: number) => number = osGetPriority,
+  getPriority: (pid: number) => number = osGetPriority
 ): ApplyNicenessResult {
   let applied = false;
   let error: string | undefined;
@@ -98,7 +102,7 @@ export function applyNiceness(
  */
 export function getEffectiveNiceness(
   pid: number,
-  getPriority: (pid: number) => number = osGetPriority,
+  getPriority: (pid: number) => number = osGetPriority
 ): number | null {
   try {
     return getPriority(pid);

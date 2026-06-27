@@ -12,21 +12,21 @@
  * insufficient against a wedged provider), and that a shared/elapsed deadline
  * makes a second embed fail FAST (worst case ~one timeout, not two).
  */
-import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
+import { describe, test, expect, beforeEach, afterEach } from "bun:test";
 import {
   configureGateway,
   resetGateway,
   __setEmbedTransportForTests,
-} from '../../src/core/ai/gateway.ts';
-import { embedQueryBounded, makeQueryEmbedDeadline } from '../../src/core/search/hybrid.ts';
+} from "../../src/core/ai/gateway.ts";
+import { embedQueryBounded, makeQueryEmbedDeadline } from "../../src/core/search/hybrid.ts";
 
-describe('embedQueryBounded — query-embed deadline', () => {
+describe("embedQueryBounded — query-embed deadline", () => {
   beforeEach(() => {
     resetGateway();
     configureGateway({
-      embedding_model: 'voyage:voyage-4-large',
+      embedding_model: "voyage:voyage-4-large",
       embedding_dimensions: 1024,
-      env: { VOYAGE_API_KEY: 'voyage-fake' },
+      env: { VOYAGE_API_KEY: "voyage-fake" },
     });
   });
   afterEach(() => {
@@ -34,18 +34,23 @@ describe('embedQueryBounded — query-embed deadline', () => {
     resetGateway();
   });
 
-  test('rejects within the budget when the transport hangs (ignores abort)', async () => {
+  test("rejects within the budget when the transport hangs (ignores abort)", async () => {
     // Transport never resolves AND ignores the abort signal — only the
     // Promise.race deadline can save us.
-    __setEmbedTransportForTests(() => new Promise(() => { /* hang forever */ }));
+    __setEmbedTransportForTests(
+      () =>
+        new Promise(() => {
+          /* hang forever */
+        })
+    );
     const dl = makeQueryEmbedDeadline(200);
     const start = Date.now();
     let threw = false;
     try {
-      await embedQueryBounded('locker code', undefined, dl);
+      await embedQueryBounded("locker code", undefined, dl);
     } catch (e) {
       threw = true;
-      expect(String((e as Error).message)).toContain('deadline');
+      expect(String((e as Error).message)).toContain("deadline");
     }
     const elapsed = Date.now() - start;
     expect(threw).toBe(true);
@@ -54,14 +59,19 @@ describe('embedQueryBounded — query-embed deadline', () => {
     expect(elapsed).toBeLessThan(3000);
   });
 
-  test('an already-elapsed shared deadline is floored, not fresh-6s (codex floor)', async () => {
-    __setEmbedTransportForTests(() => new Promise(() => { /* hang forever */ }));
+  test("an already-elapsed shared deadline is floored, not fresh-6s (codex floor)", async () => {
+    __setEmbedTransportForTests(
+      () =>
+        new Promise(() => {
+          /* hang forever */
+        })
+    );
     // Simulate the inner embed reusing a deadline the cache-lookup already spent.
     const dl = { signal: AbortSignal.timeout(1), deadlineAt: Date.now() - 5 };
     const start = Date.now();
     let threw = false;
     try {
-      await embedQueryBounded('q', undefined, dl);
+      await embedQueryBounded("q", undefined, dl);
     } catch {
       threw = true;
     }
@@ -74,11 +84,11 @@ describe('embedQueryBounded — query-embed deadline', () => {
     expect(elapsed).toBeLessThan(3500);
   });
 
-  test('resolves with the embedding when the transport returns in time', async () => {
+  test("resolves with the embedding when the transport returns in time", async () => {
     const vec = Array.from({ length: 1024 }, () => 0.1);
     __setEmbedTransportForTests(async () => ({ embeddings: [vec], usage: { tokens: 1 } }) as any);
     const dl = makeQueryEmbedDeadline(2000);
-    const out = await embedQueryBounded('q', undefined, dl);
+    const out = await embedQueryBounded("q", undefined, dl);
     expect(out).toBeInstanceOf(Float32Array);
     expect(out.length).toBe(1024);
   });

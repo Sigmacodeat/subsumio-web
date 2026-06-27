@@ -77,7 +77,7 @@ function parseFrontmatter(text: string): Record<string, string> {
 async function withRetry<T>(
   fn: () => Promise<T>,
   label: string,
-  retries = MAX_RETRIES,
+  retries = MAX_RETRIES
 ): Promise<T> {
   let lastErr: unknown;
   for (let attempt = 0; attempt <= retries; attempt++) {
@@ -113,8 +113,7 @@ async function importPage(filePath: string): Promise<ImportResult> {
 
   // Build a deterministic, URL-safe slug using forward slashes (not path.join!)
   const slug =
-    fm.slug ||
-    `law/${jur}/${abbr.toLowerCase()}/${para.replace(/[^a-z0-9]/gi, "").toLowerCase()}`;
+    fm.slug || `law/${jur}/${abbr.toLowerCase()}/${para.replace(/[^a-z0-9]/gi, "").toLowerCase()}`;
 
   const title = fm.title || `${abbr} ${para}`.trim();
 
@@ -206,7 +205,7 @@ async function ensureSource(sourceId: string): Promise<void> {
 async function runWithConcurrency<T>(
   items: T[],
   fn: (item: T) => Promise<void>,
-  limit: number,
+  limit: number
 ): Promise<void> {
   let idx = 0;
   async function worker() {
@@ -249,9 +248,7 @@ async function main() {
   }
 
   // Ensure sources exist
-  const sources = SOURCE === "law-all"
-    ? ["law-de", "law-at", "law-ch", "law-all"]
-    : [SOURCE];
+  const sources = SOURCE === "law-all" ? ["law-de", "law-at", "law-ch", "law-all"] : [SOURCE];
   for (const s of sources) {
     await ensureSource(s);
   }
@@ -284,25 +281,27 @@ async function main() {
   const failures: { slug: string; error: string }[] = [];
   let processed = 0;
 
-  await runWithConcurrency(files, async (filePath) => {
-    const result = await importPage(filePath);
-    processed++;
+  await runWithConcurrency(
+    files,
+    async (filePath) => {
+      const result = await importPage(filePath);
+      processed++;
 
-    if (result.ok) {
-      if (result.existing) existing++;
-      else ok++;
-    } else {
-      fail++;
-      failures.push({ slug: result.slug, error: result.error || "unknown" });
-    }
+      if (result.ok) {
+        if (result.existing) existing++;
+        else ok++;
+      } else {
+        fail++;
+        failures.push({ slug: result.slug, error: result.error || "unknown" });
+      }
 
-    // Progress every 200 pages
-    if (processed % 200 === 0) {
-      console.log(
-        `  [${processed}/${files.length}] ok=${ok} existing=${existing} fail=${fail}`,
-      );
-    }
-  }, CONCURRENCY);
+      // Progress every 200 pages
+      if (processed % 200 === 0) {
+        console.log(`  [${processed}/${files.length}] ok=${ok} existing=${existing} fail=${fail}`);
+      }
+    },
+    CONCURRENCY
+  );
 
   // Final report
   console.log(`\n${"─".repeat(60)}`);

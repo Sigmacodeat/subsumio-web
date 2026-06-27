@@ -38,9 +38,9 @@
  *     drive the cross-brain shape without needing a real multi-brain setup.
  */
 
-import type { CalibrationProfileRow } from '../../commands/calibration.ts';
-import type { BrainEngine } from '../engine.ts';
-import { getLatestProfile } from '../../commands/calibration.ts';
+import type { CalibrationProfileRow } from "../../commands/calibration.ts";
+import type { BrainEngine } from "../engine.ts";
+import { getLatestProfile } from "../../commands/calibration.ts";
 
 /**
  * Cross-brain query options. Tests drive these directly; production paths
@@ -83,7 +83,7 @@ export interface CrossBrainProfileResult extends CalibrationProfileRow {
  */
 export async function queryAcrossBrains(
   localEngine: BrainEngine,
-  opts: CrossBrainQueryOpts,
+  opts: CrossBrainQueryOpts
 ): Promise<CrossBrainProfileResult | null> {
   // Rule 1: LOCAL-FIRST.
   const localProfile = await getLatestProfile(localEngine, {
@@ -163,7 +163,7 @@ export function canReadMountsForCtx(ctx: {
  */
 export function attributionSuffix(result: CrossBrainProfileResult): string {
   if (!result.from_mount) {
-    return ''; // local — no suffix needed (assume local is default)
+    return ""; // local — no suffix needed (assume local is default)
   }
   return ` (from mounted brain: ${result.source_brain_id})`;
 }

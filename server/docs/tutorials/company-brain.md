@@ -406,9 +406,9 @@ Now they configure their AI client. For Claude Desktop, the teammate adds an MCP
   "mcpServers": {
     "company-brain": {
       "command": "gbrain",
-      "args": ["serve"]
-    }
-  }
+      "args": ["serve"],
+    },
+  },
 }
 ```
 

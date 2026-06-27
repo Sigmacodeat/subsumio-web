@@ -38,23 +38,23 @@
  * via the engine).
  */
 
-import type { BrainEngine } from '../core/engine.ts';
-import { MinionQueue } from '../core/minions/queue.ts';
-import { clusterErrors, type ErrorCluster } from '../core/minions/error-classify.ts';
-import { countRecentLeasePressure } from '../core/minions/lease-pressure-audit.ts';
+import type { BrainEngine } from "../core/engine.ts";
+import { MinionQueue } from "../core/minions/queue.ts";
+import { clusterErrors, type ErrorCluster } from "../core/minions/error-classify.ts";
+import { countRecentLeasePressure } from "../core/minions/lease-pressure-audit.ts";
 
 const ANSI = {
-  clear: '\x1b[2J',
-  cursorHome: '\x1b[H',
-  cursorHide: '\x1b[?25l',
-  cursorShow: '\x1b[?25h',
-  eraseDown: '\x1b[0J',
-  bold: '\x1b[1m',
-  reset: '\x1b[0m',
-  dim: '\x1b[2m',
-  green: '\x1b[32m',
-  yellow: '\x1b[33m',
-  red: '\x1b[31m',
+  clear: "\x1b[2J",
+  cursorHome: "\x1b[H",
+  cursorHide: "\x1b[?25l",
+  cursorShow: "\x1b[?25h",
+  eraseDown: "\x1b[0J",
+  bold: "\x1b[1m",
+  reset: "\x1b[0m",
+  dim: "\x1b[2m",
+  green: "\x1b[32m",
+  yellow: "\x1b[33m",
+  red: "\x1b[31m",
 };
 
 export interface WatchSnapshot {
@@ -75,33 +75,44 @@ export interface WatchSnapshot {
 /** Pure renderer — takes a snapshot, returns the text to write. Exported for tests. */
 export function renderSnapshot(s: WatchSnapshot, opts: { useAnsi?: boolean } = {}): string {
   const a = opts.useAnsi !== false;
-  const c = (color: string) => (a ? color : '');
+  const c = (color: string) => (a ? color : "");
   const lines: string[] = [];
-  lines.push(`${c(ANSI.bold)}gbrain jobs watch${c(ANSI.reset)}    ${c(ANSI.dim)}q to quit | ${new Date(s.ts_ms).toLocaleTimeString()}${c(ANSI.reset)}`);
-  lines.push('');
+  lines.push(
+    `${c(ANSI.bold)}gbrain jobs watch${c(ANSI.reset)}    ${c(ANSI.dim)}q to quit | ${new Date(s.ts_ms).toLocaleTimeString()}${c(ANSI.reset)}`
+  );
+  lines.push("");
 
   // Queue health panel.
-  lines.push(`${c(ANSI.bold)}Queue${c(ANSI.reset)}    waiting=${s.queue_health.waiting}  active=${s.queue_health.active}  stalled=${s.queue_health.stalled}`);
-  lines.push('');
+  lines.push(
+    `${c(ANSI.bold)}Queue${c(ANSI.reset)}    waiting=${s.queue_health.waiting}  active=${s.queue_health.active}  stalled=${s.queue_health.stalled}`
+  );
+  lines.push("");
 
   // Per-type breakdown.
   if (s.by_type.length > 0) {
     lines.push(`${c(ANSI.bold)}By type (24h)${c(ANSI.reset)}`);
-    lines.push(`  ${'name'.padEnd(20)} ${'total'.padStart(6)} ${'done'.padStart(6)} ${'fail'.padStart(6)} ${'dead'.padStart(6)}`);
+    lines.push(
+      `  ${"name".padEnd(20)} ${"total".padStart(6)} ${"done".padStart(6)} ${"fail".padStart(6)} ${"dead".padStart(6)}`
+    );
     for (const t of s.by_type.slice(0, 6)) {
       lines.push(
-        `  ${t.name.padEnd(20)} ${String(t.total).padStart(6)} ${String(t.completed).padStart(6)} ${String(t.failed).padStart(6)} ${String(t.dead).padStart(6)}`,
+        `  ${t.name.padEnd(20)} ${String(t.total).padStart(6)} ${String(t.completed).padStart(6)} ${String(t.failed).padStart(6)} ${String(t.dead).padStart(6)}`
       );
     }
-    lines.push('');
+    lines.push("");
   }
 
   // Lease pressure panel — color-coded by severity.
-  const lpColor = s.lease_pressure_1h === 0
-    ? c(ANSI.green)
-    : s.lease_pressure_1h >= 100 ? c(ANSI.red) : c(ANSI.yellow);
-  lines.push(`${c(ANSI.bold)}Lease pressure (1h)${c(ANSI.reset)}  ${lpColor}${s.lease_pressure_1h} bounce${s.lease_pressure_1h === 1 ? '' : 's'}${c(ANSI.reset)}`);
-  lines.push('');
+  const lpColor =
+    s.lease_pressure_1h === 0
+      ? c(ANSI.green)
+      : s.lease_pressure_1h >= 100
+        ? c(ANSI.red)
+        : c(ANSI.yellow);
+  lines.push(
+    `${c(ANSI.bold)}Lease pressure (1h)${c(ANSI.reset)}  ${lpColor}${s.lease_pressure_1h} bounce${s.lease_pressure_1h === 1 ? "" : "s"}${c(ANSI.reset)}`
+  );
+  lines.push("");
 
   // Top errors clustered.
   if (s.top_errors.length > 0) {
@@ -109,7 +120,7 @@ export function renderSnapshot(s: WatchSnapshot, opts: { useAnsi?: boolean } = {
     for (const e of s.top_errors.slice(0, 5)) {
       lines.push(`  ${String(e.count).padStart(4)} × ${e.cluster}`);
     }
-    lines.push('');
+    lines.push("");
   }
 
   // Budget panel.
@@ -120,10 +131,10 @@ export function renderSnapshot(s: WatchSnapshot, opts: { useAnsi?: boolean } = {
       const spent = `$${(b.total_spent_cents / 100).toFixed(2)}`;
       lines.push(`  owner=${b.owner_id}  spent=${spent}  remaining=${remaining}`);
     }
-    lines.push('');
+    lines.push("");
   }
 
-  return lines.join('\n');
+  return lines.join("\n");
 }
 
 /** Read a single snapshot of dashboard state from the engine. */
@@ -145,15 +156,21 @@ export async function readSnapshot(engine: BrainEngine): Promise<WatchSnapshot> 
     const errRows = await engine.executeRaw<{ id: number; last_error: string | null }>(
       `SELECT id, error_text AS last_error FROM minion_jobs
         WHERE status IN ('dead', 'failed')
-          AND updated_at > now() - interval '24 hours'`,
+          AND updated_at > now() - interval '24 hours'`
     );
-    top_errors = clusterErrors(errRows).slice(0, 5).map(c => ({ cluster: c.cluster, count: c.count }));
+    top_errors = clusterErrors(errRows)
+      .slice(0, 5)
+      .map((c) => ({ cluster: c.cluster, count: c.count }));
   } catch {
     /* DB unavailable */
   }
 
   // Budget owners with non-zero cents. Best-effort.
-  let budget_owners: Array<{ owner_id: number; remaining_cents: number; total_spent_cents: number }> = [];
+  let budget_owners: Array<{
+    owner_id: number;
+    remaining_cents: number;
+    total_spent_cents: number;
+  }> = [];
   try {
     const ownerRows = await engine.executeRaw<{
       owner_id: number;
@@ -170,9 +187,9 @@ export async function readSnapshot(engine: BrainEngine): Promise<WatchSnapshot> 
          AND mj.budget_owner_job_id = mj.id
          AND mj.status NOT IN ('completed', 'failed', 'dead', 'cancelled')
        ORDER BY mj.id DESC
-       LIMIT 5`,
+       LIMIT 5`
     );
-    budget_owners = ownerRows.map(r => ({
+    budget_owners = ownerRows.map((r) => ({
       owner_id: r.owner_id,
       remaining_cents: r.remaining_cents ?? 0,
       total_spent_cents: r.total_spent_cents ?? 0,
@@ -183,7 +200,7 @@ export async function readSnapshot(engine: BrainEngine): Promise<WatchSnapshot> 
 
   return {
     ts_ms: Date.now(),
-    by_type: stats.by_type.map(t => ({
+    by_type: stats.by_type.map((t) => ({
       name: t.name,
       total: t.total,
       completed: t.completed,
@@ -229,7 +246,7 @@ export interface WatchMode {
  * caller passes `--follow` explicitly. Matches the file-header matrix.
  */
 export function resolveWatchMode(opts: WatchOptions, isTTY: boolean): WatchMode {
-  const json = opts.json === true;             // FORMAT: explicit only — never from isTTY.
+  const json = opts.json === true; // FORMAT: explicit only — never from isTTY.
   const follow = opts.follow ?? (isTTY && !json);
   const useAnsiDashboard = isTTY && !json && follow;
   return { json, follow, useAnsiDashboard };
@@ -251,7 +268,7 @@ export async function runWatch(engine: BrainEngine, opts: WatchOptions = {}): Pr
 
   if (useAnsiDashboard) {
     process.stdout.write(ANSI.cursorHide + ANSI.clear + ANSI.cursorHome);
-    process.on('SIGINT', () => {
+    process.on("SIGINT", () => {
       process.stdout.write(ANSI.cursorShow + ANSI.clear + ANSI.cursorHome);
       stop();
       process.exit(0);
@@ -260,8 +277,8 @@ export async function runWatch(engine: BrainEngine, opts: WatchOptions = {}): Pr
     if (process.stdin.isTTY && process.stdin.setRawMode) {
       process.stdin.setRawMode(true);
       process.stdin.resume();
-      process.stdin.on('data', (data: Buffer) => {
-        if (data.toString() === 'q' || data[0] === 3) {
+      process.stdin.on("data", (data: Buffer) => {
+        if (data.toString() === "q" || data[0] === 3) {
           process.stdout.write(ANSI.cursorShow + ANSI.clear + ANSI.cursorHome);
           stop();
           process.exit(0);
@@ -273,16 +290,16 @@ export async function runWatch(engine: BrainEngine, opts: WatchOptions = {}): Pr
   do {
     const snap = await readSnapshot(engine);
     if (json) {
-      process.stdout.write(JSON.stringify({ event: 'jobs.watch.snapshot', ...snap }) + '\n');
+      process.stdout.write(JSON.stringify({ event: "jobs.watch.snapshot", ...snap }) + "\n");
     } else if (useAnsiDashboard) {
       // Live dashboard: clear + cursor-home + colored render.
       process.stdout.write(ANSI.cursorHome + ANSI.eraseDown);
       process.stdout.write(renderSnapshot(snap, { useAnsi: true }));
     } else {
       // Non-TTY (or --follow without a terminal): plain human snapshot, no ANSI.
-      process.stdout.write(renderSnapshot(snap, { useAnsi: false }) + '\n');
+      process.stdout.write(renderSnapshot(snap, { useAnsi: false }) + "\n");
     }
-    if (!follow) break;            // one-shot: render once, exit.
-    await new Promise(r => setTimeout(r, refreshMs));
+    if (!follow) break; // one-shot: render once, exit.
+    await new Promise((r) => setTimeout(r, refreshMs));
   } while (!stopped);
 }

@@ -34,7 +34,7 @@ export const GET = createHandler(
     try {
       const res = await fetch(`${ENGINE_URL}/api/pages?type=clause_annotation&limit=500`, {
         headers: engineHeadersForBrain(ctx.brainId),
-      signal: AbortSignal.timeout(10_000),
+        signal: AbortSignal.timeout(10_000),
       });
 
       let annotations: ClauseAnnotation[] = [];
@@ -184,7 +184,7 @@ export const PATCH = createHandler(
       const path = body.slug.split("/").map(encodeURIComponent).join("/");
       const res = await fetch(`${ENGINE_URL}/api/pages/${path}`, {
         headers: engineHeadersForBrain(ctx.brainId),
-      signal: AbortSignal.timeout(10_000),
+        signal: AbortSignal.timeout(10_000),
       });
 
       if (!res.ok) {

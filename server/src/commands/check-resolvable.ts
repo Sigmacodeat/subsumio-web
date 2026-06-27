@@ -15,15 +15,19 @@
  * via the `deferred` field in --json output.
  */
 
-import { resolve as resolvePath, isAbsolute } from 'path';
+import { resolve as resolvePath, isAbsolute } from "path";
 import {
   checkResolvable,
   autoFixDryViolations,
   type ResolvableReport,
   type ResolvableIssue,
   type AutoFixReport,
-} from '../core/check-resolvable.ts';
-import { autoDetectSkillsDirReadOnly, AUTO_DETECT_HINT_READ_ONLY, type SkillsDirSource } from '../core/repo-root.ts';
+} from "../core/check-resolvable.ts";
+import {
+  autoDetectSkillsDirReadOnly,
+  AUTO_DETECT_HINT_READ_ONLY,
+  type SkillsDirSource,
+} from "../core/repo-root.ts";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -41,11 +45,11 @@ export interface Envelope {
   report: ResolvableReport | null;
   autoFix: AutoFixReport | null;
   deferred: DeferredCheck[];
-  error: 'no_skills_dir' | null;
+  error: "no_skills_dir" | null;
   message: string | null;
 }
 
-type SkillsDirResolutionSource = 'explicit' | SkillsDirSource | null;
+type SkillsDirResolutionSource = "explicit" | SkillsDirSource | null;
 
 export interface Flags {
   help: boolean;
@@ -108,17 +112,17 @@ export function parseFlags(argv: string[]): Flags {
   };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
-    if (a === '--help' || a === '-h') flags.help = true;
-    else if (a === '--json') flags.json = true;
-    else if (a === '--fix') flags.fix = true;
-    else if (a === '--dry-run') flags.dryRun = true;
-    else if (a === '--verbose') flags.verbose = true;
-    else if (a === '--strict') flags.strict = true;
-    else if (a === '--skills-dir') {
+    if (a === "--help" || a === "-h") flags.help = true;
+    else if (a === "--json") flags.json = true;
+    else if (a === "--fix") flags.fix = true;
+    else if (a === "--dry-run") flags.dryRun = true;
+    else if (a === "--verbose") flags.verbose = true;
+    else if (a === "--strict") flags.strict = true;
+    else if (a === "--skills-dir") {
       flags.skillsDir = argv[i + 1] ?? null;
       i++;
-    } else if (a?.startsWith('--skills-dir=')) {
-      flags.skillsDir = a.slice('--skills-dir='.length) || null;
+    } else if (a?.startsWith("--skills-dir=")) {
+      flags.skillsDir = a.slice("--skills-dir=".length) || null;
     }
     // unknown flags silently ignored
   }
@@ -131,7 +135,7 @@ export function parseFlags(argv: string[]): Flags {
 
 export function resolveSkillsDir(flags: Flags): {
   dir: string | null;
-  error: Envelope['error'];
+  error: Envelope["error"];
   message: string | null;
   source: SkillsDirResolutionSource;
 } {
@@ -139,33 +143,33 @@ export function resolveSkillsDir(flags: Flags): {
     const dir = isAbsolute(flags.skillsDir)
       ? flags.skillsDir
       : resolvePath(process.cwd(), flags.skillsDir);
-    return { dir, error: null, message: null, source: 'explicit' };
+    return { dir, error: null, message: null, source: "explicit" };
   }
 
   const detected = autoDetectSkillsDirReadOnly();
   if (!detected.dir) {
     return {
       dir: null,
-      error: 'no_skills_dir',
+      error: "no_skills_dir",
       message:
-        'Could not auto-detect skills/ with a RESOLVER.md or AGENTS.md.\n' +
-        'Priority order:\n' +
+        "Could not auto-detect skills/ with a RESOLVER.md or AGENTS.md.\n" +
+        "Priority order:\n" +
         AUTO_DETECT_HINT_READ_ONLY +
-        '\nFix: export GBRAIN_SKILLS_DIR=<path>, OPENCLAW_WORKSPACE=<path>, or pass --skills-dir <path>.',
+        "\nFix: export GBRAIN_SKILLS_DIR=<path>, OPENCLAW_WORKSPACE=<path>, or pass --skills-dir <path>.",
       source: null,
     };
   }
 
   const sourceLabel = {
-    env_explicit: '$GBRAIN_SKILLS_DIR (explicit operator override)',
-    repo_root: 'repo root skills/',
-    openclaw_workspace_env: '$OPENCLAW_WORKSPACE/skills',
-    openclaw_workspace_env_root: '$OPENCLAW_WORKSPACE (AGENTS.md at workspace root)',
-    openclaw_workspace_home: '~/.openclaw/workspace/skills',
-    openclaw_workspace_home_root: '~/.openclaw/workspace (AGENTS.md at workspace root)',
-    cwd_walk_up: 'skills/ found by walking up from cwd (v0.33)',
-    cwd_skills: './skills',
-    install_path: 'gbrain install path (read-only fallback)',
+    env_explicit: "$GBRAIN_SKILLS_DIR (explicit operator override)",
+    repo_root: "repo root skills/",
+    openclaw_workspace_env: "$OPENCLAW_WORKSPACE/skills",
+    openclaw_workspace_env_root: "$OPENCLAW_WORKSPACE (AGENTS.md at workspace root)",
+    openclaw_workspace_home: "~/.openclaw/workspace/skills",
+    openclaw_workspace_home_root: "~/.openclaw/workspace (AGENTS.md at workspace root)",
+    cwd_walk_up: "skills/ found by walking up from cwd (v0.33)",
+    cwd_skills: "./skills",
+    install_path: "gbrain install path (read-only fallback)",
   }[detected.source!]!;
 
   return {
@@ -181,7 +185,7 @@ export function resolveSkillsDir(flags: Flags): {
 // ---------------------------------------------------------------------------
 
 function renderHuman(env: Envelope, flags: Flags): void {
-  if (env.error === 'no_skills_dir') {
+  if (env.error === "no_skills_dir") {
     console.error(env.message);
     return;
   }
@@ -196,24 +200,24 @@ function renderHuman(env: Envelope, flags: Flags): void {
   } else {
     const status =
       report.errors.length > 0
-        ? 'FAIL'
+        ? "FAIL"
         : flags.strict
-          ? 'FAIL (strict: warnings promoted)'
-          : 'WARN';
+          ? "FAIL (strict: warnings promoted)"
+          : "WARN";
     const total = report.errors.length + report.warnings.length;
     console.log(
-      `resolver_health: ${status} — ${total} issue(s): ${report.errors.length} error(s), ${report.warnings.length} warning(s)`,
+      `resolver_health: ${status} — ${total} issue(s): ${report.errors.length} error(s), ${report.warnings.length} warning(s)`
     );
     for (const iss of [...report.errors, ...report.warnings]) {
       console.log(formatIssueLine(iss));
     }
     if (report.errors.length === 0 && report.warnings.length > 0 && !flags.strict) {
-      console.log('\n(warnings are advisory; run with --strict to fail CI on warnings.)');
+      console.log("\n(warnings are advisory; run with --strict to fail CI on warnings.)");
     }
   }
 
   if (flags.verbose) {
-    const urls = DEFERRED.map(d => `${d.name} (${d.issue})`).join(', ');
+    const urls = DEFERRED.map((d) => `${d.name} (${d.issue})`).join(", ");
     console.log(`Deferred: ${urls}`);
   }
 }
@@ -225,23 +229,23 @@ function formatIssueLine(iss: ResolvableIssue): string {
 }
 
 function printAutoFixHuman(autoFix: AutoFixReport, dryRun: boolean): void {
-  const verb = dryRun ? 'PROPOSED' : 'APPLIED';
+  const verb = dryRun ? "PROPOSED" : "APPLIED";
   for (const outcome of autoFix.fixed) {
     console.log(`[${verb}] ${outcome.skillPath} (${outcome.patternLabel})`);
   }
   const n = autoFix.fixed.length;
   const s = autoFix.skipped.length;
   if (n === 0 && s === 0) {
-    console.log('check-resolvable --fix: no DRY violations to repair.');
+    console.log("check-resolvable --fix: no DRY violations to repair.");
     return;
   }
-  const label = dryRun ? 'fixes proposed' : 'fixes applied';
-  console.log(`${n} ${label}${s > 0 ? `, ${s} skipped:` : '.'}`);
+  const label = dryRun ? "fixes proposed" : "fixes applied";
+  console.log(`${n} ${label}${s > 0 ? `, ${s} skipped:` : "."}`);
   for (const sk of autoFix.skipped) {
-    const hint = sk.reason === 'working_tree_dirty' ? ' (run `git stash` first)' : '';
+    const hint = sk.reason === "working_tree_dirty" ? " (run `git stash` first)" : "";
     console.log(`  - ${sk.skillPath}: ${sk.reason}${hint}`);
   }
-  if (dryRun && n > 0) console.log('Run without --dry-run to apply.\n');
+  if (dryRun && n > 0) console.log("Run without --dry-run to apply.\n");
 }
 
 // ---------------------------------------------------------------------------
@@ -258,7 +262,7 @@ export async function runCheckResolvable(args: string[]): Promise<void> {
 
   const { dir, error, message, source } = resolveSkillsDir(flags);
 
-  if (error === 'no_skills_dir') {
+  if (error === "no_skills_dir") {
     const env: Envelope = {
       ok: false,
       skillsDir: null,
@@ -277,7 +281,7 @@ export async function runCheckResolvable(args: string[]): Promise<void> {
   }
 
   const skillsDir = dir!;
-  if (!flags.json && source !== 'explicit' && message) {
+  if (!flags.json && source !== "explicit" && message) {
     console.log(message);
   }
 
@@ -289,12 +293,12 @@ export async function runCheckResolvable(args: string[]): Promise<void> {
     // the cwd tree would resolve to the bundled gbrain repo via the
     // read-only install-path fallback and silently mutate it. Codex caught
     // this leak in the v0.31.7 ship review (D6 lock).
-    if (source === 'install_path') {
+    if (source === "install_path") {
       process.stderr.write(
-        'gbrain check-resolvable --fix refused: skills dir resolved via install-path fallback (read-only).\n' +
-        'The --fix flag writes to SKILL.md files; running it against the bundled install\n' +
-        'tree would silently mutate gbrain itself. Set $GBRAIN_SKILLS_DIR, $OPENCLAW_WORKSPACE,\n' +
-        'or pass --skills-dir <path> to point at the workspace you actually want to fix.\n',
+        "gbrain check-resolvable --fix refused: skills dir resolved via install-path fallback (read-only).\n" +
+          "The --fix flag writes to SKILL.md files; running it against the bundled install\n" +
+          "tree would silently mutate gbrain itself. Set $GBRAIN_SKILLS_DIR, $OPENCLAW_WORKSPACE,\n" +
+          "or pass --skills-dir <path> to point at the workspace you actually want to fix.\n"
       );
       process.exit(1);
     }

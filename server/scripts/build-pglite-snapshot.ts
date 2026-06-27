@@ -44,7 +44,9 @@ async function main() {
   delete process.env.GBRAIN_PGLITE_SNAPSHOT;
 
   await engine.connect({});
-  console.log(`[build-pglite-snapshot] running initSchema (forward bootstrap + ${MIGRATIONS.length} migrations)...`);
+  console.log(
+    `[build-pglite-snapshot] running initSchema (forward bootstrap + ${MIGRATIONS.length} migrations)...`
+  );
   const t0 = Date.now();
   await engine.initSchema();
   console.log(`[build-pglite-snapshot] initSchema completed in ${Date.now() - t0}ms`);

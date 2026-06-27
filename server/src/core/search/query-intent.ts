@@ -24,10 +24,10 @@
  * Pure module. No DB, no LLM, no async. Tested in test/query-intent.test.ts.
  */
 
-export type QueryIntent = 'entity' | 'temporal' | 'event' | 'general';
+export type QueryIntent = "entity" | "temporal" | "event" | "general";
 
-export type SalienceMode = 'off' | 'on' | 'strong';
-export type RecencyMode = 'off' | 'on' | 'strong';
+export type SalienceMode = "off" | "on" | "strong";
+export type RecencyMode = "off" | "on" | "strong";
 
 /**
  * v0.36 cross-modal wave: modality axis (D6).
@@ -41,12 +41,12 @@ export type RecencyMode = 'off' | 'on' | 'strong';
  * Parallel axis to intent/detail/salience/recency. Returned by
  * classifyQuery from one regex pass over the query.
  */
-export type ModalityMode = 'text' | 'image' | 'both';
+export type ModalityMode = "text" | "image" | "both";
 
 export interface QuerySuggestions {
   intent: QueryIntent;
   /** v0.29.0 detail mapping. entity→low, temporal/event→high, general→undefined. */
-  suggestedDetail: 'low' | 'medium' | 'high' | undefined;
+  suggestedDetail: "low" | "medium" | "high" | undefined;
   /** v0.29.1 — emotional_weight + take_count boost. */
   suggestedSalience: SalienceMode;
   /** v0.29.1 — per-prefix age-decay boost. */
@@ -145,7 +145,7 @@ const RECENCY_ON_PATTERNS = [
   /\bmeeting\s+(prep|with|for|notes?|brief)\b/i,
   /\bbefore\s+(my|the|our)\s+(meeting|call|sync|chat)\b/i,
   /\bprep(are)?\s+(for|me)\b/i,
-  /\bcatch(es|ing)?\b[\s\w]{0,15}\bup\b/i,  // "catch up", "catch me up", "catching X up"
+  /\bcatch(es|ing)?\b[\s\w]{0,15}\bup\b/i, // "catch up", "catch me up", "catching X up"
   /\bremind\s+me\s+(what|about|of)\b/i,
   /\b(update|status|progress)\s+(on|with|from)\b/i,
 ];
@@ -258,30 +258,30 @@ export function classifyQuery(query: string): QuerySuggestions {
   // Recency axis
   let suggestedRecency: RecencyMode;
   if (hasCanonical && !hasTemporalBound) {
-    suggestedRecency = 'off';
+    suggestedRecency = "off";
   } else if (hasStrongRecency) {
-    suggestedRecency = 'strong';
+    suggestedRecency = "strong";
   } else if (hasRecencyOn) {
-    suggestedRecency = 'on';
+    suggestedRecency = "on";
   } else {
-    suggestedRecency = 'off';
+    suggestedRecency = "off";
   }
 
   // Salience axis (orthogonal)
   let suggestedSalience: SalienceMode;
   if (hasCanonical && !hasTemporalBound) {
-    suggestedSalience = 'off';
+    suggestedSalience = "off";
   } else if (hasSalienceOn) {
-    suggestedSalience = 'on';
+    suggestedSalience = "on";
   } else {
-    suggestedSalience = 'off';
+    suggestedSalience = "off";
   }
 
   // v0.36 cross-modal — modality axis. Independent of intent/detail/salience/recency.
   // Conservative default 'text'; only flips to 'image' on explicit cross-modal regex match.
   // 'both' is reserved for explicit per-call opts (LLM-intent escalation in Commit 4
   // can also produce 'both' via tie-break).
-  const suggestedModality: ModalityMode = matches(CROSS_MODAL_PATTERNS, query) ? 'image' : 'text';
+  const suggestedModality: ModalityMode = matches(CROSS_MODAL_PATTERNS, query) ? "image" : "text";
 
   return { intent, suggestedDetail, suggestedSalience, suggestedRecency, suggestedModality };
 }
@@ -319,24 +319,28 @@ export function isAmbiguousModalityQuery(query: string): boolean {
 
 /** v0.29.0 intent type. Preserved verbatim for back-compat. */
 export function classifyQueryIntent(query: string): QueryIntent {
-  if (matches(FULL_CONTEXT_PATTERNS, query)) return 'temporal';
-  if (matches(TEMPORAL_PATTERNS, query)) return 'temporal';
-  if (matches(EVENT_PATTERNS, query)) return 'event';
-  if (matches(ENTITY_PATTERNS, query)) return 'entity';
-  return 'general';
+  if (matches(FULL_CONTEXT_PATTERNS, query)) return "temporal";
+  if (matches(TEMPORAL_PATTERNS, query)) return "temporal";
+  if (matches(EVENT_PATTERNS, query)) return "event";
+  if (matches(ENTITY_PATTERNS, query)) return "entity";
+  return "general";
 }
 
 /** v0.29.0 mapping. */
-export function intentToDetail(intent: QueryIntent): 'low' | 'medium' | 'high' | undefined {
+export function intentToDetail(intent: QueryIntent): "low" | "medium" | "high" | undefined {
   switch (intent) {
-    case 'entity': return 'low';
-    case 'temporal': return 'high';
-    case 'event': return 'high';
-    case 'general': return undefined;
+    case "entity":
+      return "low";
+    case "temporal":
+      return "high";
+    case "event":
+      return "high";
+    case "general":
+      return undefined;
   }
 }
 
 /** v0.29.0 helper. Routes through classifyQuery internally. */
-export function autoDetectDetail(query: string): 'low' | 'medium' | 'high' | undefined {
+export function autoDetectDetail(query: string): "low" | "medium" | "high" | undefined {
   return classifyQuery(query).suggestedDetail;
 }

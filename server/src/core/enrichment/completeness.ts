@@ -11,7 +11,7 @@
  * per rubric (checked at module load).
  */
 
-import type { Page, PageType } from '../types.ts';
+import type { Page, PageType } from "../types.ts";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -24,7 +24,7 @@ export interface CompletenessDimension {
 }
 
 export interface Rubric {
-  entityType: PageType | 'default';
+  entityType: PageType | "default";
   dimensions: CompletenessDimension[];
 }
 
@@ -33,7 +33,7 @@ export interface CompletenessScore {
   entityType: string;
   score: number;
   dimensionScores: Record<string, number>;
-  rubric: PageType | 'default';
+  rubric: PageType | "default";
 }
 
 // ---------------------------------------------------------------------------
@@ -41,14 +41,14 @@ export interface CompletenessScore {
 // ---------------------------------------------------------------------------
 
 function hasTimelineEntries(page: Page): number {
-  const tl = (page.timeline ?? '').trim();
+  const tl = (page.timeline ?? "").trim();
   if (tl.length === 0) return 0;
   const bulletCount = (tl.match(/^\s*-\s/gm) ?? []).length;
   return bulletCount > 0 ? 1 : 0.5;
 }
 
 function hasCitations(page: Page): number {
-  const body = page.compiled_truth ?? '';
+  const body = page.compiled_truth ?? "";
   const count = (body.match(/\[Source:[^\]]*\]/g) ?? []).length;
   const urlLinkCount = (body.match(/\]\(https?:\/\/[^)]+\)/g) ?? []).length;
   const total = count + urlLinkCount;
@@ -58,7 +58,7 @@ function hasCitations(page: Page): number {
 }
 
 function hasSourceUrls(page: Page): number {
-  const body = page.compiled_truth ?? '';
+  const body = page.compiled_truth ?? "";
   const urls = (body.match(/https?:\/\/[^\s)\]]+/g) ?? []).length;
   if (urls === 0) return 0;
   if (urls >= 2) return 1;
@@ -69,8 +69,8 @@ function hasFrontmatterField(page: Page, keys: string[]): number {
   const fm = page.frontmatter ?? {};
   for (const k of keys) {
     const v = fm[k];
-    if (typeof v === 'string' && v.trim().length > 0) return 1;
-    if (typeof v === 'number' && Number.isFinite(v)) return 1;
+    if (typeof v === "string" && v.trim().length > 0) return 1;
+    if (typeof v === "number" && Number.isFinite(v)) return 1;
     if (Array.isArray(v) && v.length > 0) return 1;
   }
   return 0;
@@ -81,7 +81,7 @@ function hasBacklinkHint(page: Page): number {
   // to have inbound references. Real backlink count requires an engine call
   // (we stay pure here). If the rubric needs engine-backed signal, a later
   // variant of scorer can inject backlinkCount.
-  const body = page.compiled_truth ?? '';
+  const body = page.compiled_truth ?? "";
   const wikiLinks = (body.match(/\[[^\]]+\]\([^)]*\.md\)/g) ?? []).length;
   if (wikiLinks === 0) return 0;
   if (wikiLinks >= 3) return 1;
@@ -91,7 +91,7 @@ function hasBacklinkHint(page: Page): number {
 function recencyScore(page: Page): number {
   // Prefer frontmatter.last_verified → page.updated_at → 0.
   const fm = page.frontmatter ?? {};
-  const verified = typeof fm.last_verified === 'string' ? parseDate(fm.last_verified) : null;
+  const verified = typeof fm.last_verified === "string" ? parseDate(fm.last_verified) : null;
   const updated = page.updated_at instanceof Date ? page.updated_at : null;
   const reference = verified ?? updated;
   if (!reference) return 0;
@@ -103,9 +103,12 @@ function recencyScore(page: Page): number {
 }
 
 function nonRedundancy(page: Page): number {
-  const body = page.compiled_truth ?? '';
+  const body = page.compiled_truth ?? "";
   if (body.length < 200) return 0.5;
-  const lines = body.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  const lines = body
+    .split("\n")
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0);
   if (lines.length === 0) return 0;
   const unique = new Set(lines);
   return unique.size / lines.length;
@@ -113,11 +116,11 @@ function nonRedundancy(page: Page): number {
 
 function hasTitle(page: Page): number {
   // Coerce (issue #1939): a malformed YAML date/number title could be non-string.
-  return String(page.title ?? '').trim().length > 0 ? 1 : 0;
+  return String(page.title ?? "").trim().length > 0 ? 1 : 0;
 }
 
 function hasBody(page: Page): number {
-  return (page.compiled_truth ?? '').trim().length > 0 ? 1 : 0;
+  return (page.compiled_truth ?? "").trim().length > 0 ? 1 : 0;
 }
 
 function parseDate(s: string): Date | null {
@@ -130,104 +133,161 @@ function parseDate(s: string): Date | null {
 // ---------------------------------------------------------------------------
 
 export const personRubric: Rubric = {
-  entityType: 'person',
+  entityType: "person",
   dimensions: [
-    { name: 'has_role_and_company', weight: 0.20, check: p => hasFrontmatterField(p, ['role', 'title', 'company']) },
-    { name: 'has_source_urls', weight: 0.20, check: hasSourceUrls },
-    { name: 'has_timeline_entries', weight: 0.15, check: hasTimelineEntries },
-    { name: 'has_citations', weight: 0.15, check: hasCitations },
-    { name: 'has_backlinks', weight: 0.10, check: hasBacklinkHint },
-    { name: 'recency_score', weight: 0.10, check: recencyScore },
-    { name: 'non_redundancy', weight: 0.10, check: nonRedundancy },
+    {
+      name: "has_role_and_company",
+      weight: 0.2,
+      check: (p) => hasFrontmatterField(p, ["role", "title", "company"]),
+    },
+    { name: "has_source_urls", weight: 0.2, check: hasSourceUrls },
+    { name: "has_timeline_entries", weight: 0.15, check: hasTimelineEntries },
+    { name: "has_citations", weight: 0.15, check: hasCitations },
+    { name: "has_backlinks", weight: 0.1, check: hasBacklinkHint },
+    { name: "recency_score", weight: 0.1, check: recencyScore },
+    { name: "non_redundancy", weight: 0.1, check: nonRedundancy },
   ],
 };
 
 export const companyRubric: Rubric = {
-  entityType: 'company',
+  entityType: "company",
   dimensions: [
-    { name: 'has_description', weight: 0.20, check: hasBody },
-    { name: 'has_founders', weight: 0.15, check: p => hasFrontmatterField(p, ['founders', 'founder', 'ceo']) },
-    { name: 'has_funding', weight: 0.15, check: p => hasFrontmatterField(p, ['funding', 'raised', 'round', 'investors']) },
-    { name: 'has_source_urls', weight: 0.15, check: hasSourceUrls },
-    { name: 'has_citations', weight: 0.15, check: hasCitations },
-    { name: 'has_employees_or_investors', weight: 0.10, check: hasBacklinkHint },
-    { name: 'recency_score', weight: 0.10, check: recencyScore },
+    { name: "has_description", weight: 0.2, check: hasBody },
+    {
+      name: "has_founders",
+      weight: 0.15,
+      check: (p) => hasFrontmatterField(p, ["founders", "founder", "ceo"]),
+    },
+    {
+      name: "has_funding",
+      weight: 0.15,
+      check: (p) => hasFrontmatterField(p, ["funding", "raised", "round", "investors"]),
+    },
+    { name: "has_source_urls", weight: 0.15, check: hasSourceUrls },
+    { name: "has_citations", weight: 0.15, check: hasCitations },
+    { name: "has_employees_or_investors", weight: 0.1, check: hasBacklinkHint },
+    { name: "recency_score", weight: 0.1, check: recencyScore },
   ],
 };
 
 export const projectRubric: Rubric = {
-  entityType: 'project',
+  entityType: "project",
   dimensions: [
-    { name: 'has_description', weight: 0.25, check: hasBody },
-    { name: 'has_owners', weight: 0.20, check: p => hasFrontmatterField(p, ['owner', 'owners', 'lead']) },
-    { name: 'has_timeline_entries', weight: 0.15, check: hasTimelineEntries },
-    { name: 'has_citations', weight: 0.15, check: hasCitations },
-    { name: 'has_status', weight: 0.15, check: p => hasFrontmatterField(p, ['status', 'state', 'phase']) },
-    { name: 'recency_score', weight: 0.10, check: recencyScore },
+    { name: "has_description", weight: 0.25, check: hasBody },
+    {
+      name: "has_owners",
+      weight: 0.2,
+      check: (p) => hasFrontmatterField(p, ["owner", "owners", "lead"]),
+    },
+    { name: "has_timeline_entries", weight: 0.15, check: hasTimelineEntries },
+    { name: "has_citations", weight: 0.15, check: hasCitations },
+    {
+      name: "has_status",
+      weight: 0.15,
+      check: (p) => hasFrontmatterField(p, ["status", "state", "phase"]),
+    },
+    { name: "recency_score", weight: 0.1, check: recencyScore },
   ],
 };
 
 export const dealRubric: Rubric = {
-  entityType: 'deal',
+  entityType: "deal",
   dimensions: [
-    { name: 'has_company', weight: 0.25, check: p => hasFrontmatterField(p, ['company', 'target']) },
-    { name: 'has_terms', weight: 0.25, check: p => hasFrontmatterField(p, ['terms', 'amount', 'valuation', 'round']) },
-    { name: 'has_date', weight: 0.15, check: p => hasFrontmatterField(p, ['date', 'closed', 'announced']) },
-    { name: 'has_source_urls', weight: 0.15, check: hasSourceUrls },
-    { name: 'has_citations', weight: 0.20, check: hasCitations },
+    {
+      name: "has_company",
+      weight: 0.25,
+      check: (p) => hasFrontmatterField(p, ["company", "target"]),
+    },
+    {
+      name: "has_terms",
+      weight: 0.25,
+      check: (p) => hasFrontmatterField(p, ["terms", "amount", "valuation", "round"]),
+    },
+    {
+      name: "has_date",
+      weight: 0.15,
+      check: (p) => hasFrontmatterField(p, ["date", "closed", "announced"]),
+    },
+    { name: "has_source_urls", weight: 0.15, check: hasSourceUrls },
+    { name: "has_citations", weight: 0.2, check: hasCitations },
   ],
 };
 
 export const conceptRubric: Rubric = {
-  entityType: 'concept',
+  entityType: "concept",
   dimensions: [
-    { name: 'has_definition', weight: 0.35, check: hasBody },
-    { name: 'has_citations', weight: 0.30, check: hasCitations },
-    { name: 'has_examples', weight: 0.20, check: p => countListItems(p.compiled_truth) >= 2 ? 1 : countListItems(p.compiled_truth) / 2 },
-    { name: 'has_related', weight: 0.15, check: hasBacklinkHint },
+    { name: "has_definition", weight: 0.35, check: hasBody },
+    { name: "has_citations", weight: 0.3, check: hasCitations },
+    {
+      name: "has_examples",
+      weight: 0.2,
+      check: (p) =>
+        countListItems(p.compiled_truth) >= 2 ? 1 : countListItems(p.compiled_truth) / 2,
+    },
+    { name: "has_related", weight: 0.15, check: hasBacklinkHint },
   ],
 };
 
 export const sourceRubric: Rubric = {
-  entityType: 'source',
+  entityType: "source",
   dimensions: [
-    { name: 'has_url', weight: 0.35, check: p => hasFrontmatterField(p, ['url', 'link', 'source_url']) },
-    { name: 'has_author', weight: 0.20, check: p => hasFrontmatterField(p, ['author', 'authors', 'by']) },
-    { name: 'has_date', weight: 0.20, check: p => hasFrontmatterField(p, ['date', 'published', 'year']) },
-    { name: 'has_summary', weight: 0.25, check: hasBody },
+    {
+      name: "has_url",
+      weight: 0.35,
+      check: (p) => hasFrontmatterField(p, ["url", "link", "source_url"]),
+    },
+    {
+      name: "has_author",
+      weight: 0.2,
+      check: (p) => hasFrontmatterField(p, ["author", "authors", "by"]),
+    },
+    {
+      name: "has_date",
+      weight: 0.2,
+      check: (p) => hasFrontmatterField(p, ["date", "published", "year"]),
+    },
+    { name: "has_summary", weight: 0.25, check: hasBody },
   ],
 };
 
 export const mediaRubric: Rubric = {
-  entityType: 'media',
+  entityType: "media",
   dimensions: [
-    { name: 'has_type', weight: 0.20, check: p => hasFrontmatterField(p, ['media_type', 'type', 'format']) },
-    { name: 'has_url', weight: 0.25, check: p => hasFrontmatterField(p, ['url', 'link']) },
-    { name: 'has_title', weight: 0.20, check: hasTitle },
-    { name: 'has_date', weight: 0.15, check: p => hasFrontmatterField(p, ['date', 'published', 'recorded']) },
-    { name: 'has_transcript_or_summary', weight: 0.20, check: hasBody },
+    {
+      name: "has_type",
+      weight: 0.2,
+      check: (p) => hasFrontmatterField(p, ["media_type", "type", "format"]),
+    },
+    { name: "has_url", weight: 0.25, check: (p) => hasFrontmatterField(p, ["url", "link"]) },
+    { name: "has_title", weight: 0.2, check: hasTitle },
+    {
+      name: "has_date",
+      weight: 0.15,
+      check: (p) => hasFrontmatterField(p, ["date", "published", "recorded"]),
+    },
+    { name: "has_transcript_or_summary", weight: 0.2, check: hasBody },
   ],
 };
 
 export const defaultRubric: Rubric = {
-  entityType: 'default',
+  entityType: "default",
   dimensions: [
-    { name: 'has_title', weight: 0.30, check: hasTitle },
-    { name: 'has_content', weight: 0.30, check: hasBody },
-    { name: 'has_source_urls', weight: 0.20, check: hasSourceUrls },
-    { name: 'has_citations', weight: 0.20, check: hasCitations },
+    { name: "has_title", weight: 0.3, check: hasTitle },
+    { name: "has_content", weight: 0.3, check: hasBody },
+    { name: "has_source_urls", weight: 0.2, check: hasSourceUrls },
+    { name: "has_citations", weight: 0.2, check: hasCitations },
   ],
 };
 
-const RUBRICS_BY_TYPE = new Map<PageType | 'default', Rubric>([
-  ['person', personRubric],
-  ['company', companyRubric],
-  ['project', projectRubric],
-  ['deal', dealRubric],
-  ['concept', conceptRubric],
-  ['source', sourceRubric],
-  ['media', mediaRubric],
-  ['default', defaultRubric],
+const RUBRICS_BY_TYPE = new Map<PageType | "default", Rubric>([
+  ["person", personRubric],
+  ["company", companyRubric],
+  ["project", projectRubric],
+  ["deal", dealRubric],
+  ["concept", conceptRubric],
+  ["source", sourceRubric],
+  ["media", mediaRubric],
+  ["default", defaultRubric],
 ]);
 
 // Validate rubric weights at module load (catches copy-paste bugs).

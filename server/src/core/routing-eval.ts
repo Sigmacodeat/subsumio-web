@@ -25,9 +25,9 @@
  * Layer A into a tautology (trigger ⊂ trigger). Fixtures must paraphrase.
  */
 
-import { existsSync, readFileSync, readdirSync, statSync } from 'fs';
-import { join } from 'path';
-import { parseResolverEntries } from './check-resolvable.ts';
+import { existsSync, readFileSync, readdirSync, statSync } from "fs";
+import { join } from "path";
+import { parseResolverEntries } from "./check-resolvable.ts";
 
 // ---------------------------------------------------------------------------
 // Fixture types
@@ -65,10 +65,10 @@ export interface RoutingReport {
 }
 
 export type RoutingOutcome =
-  | 'pass'
-  | 'missed' // expected_skill was not in match set
-  | 'ambiguous' // matched expected AND others not listed in ambiguous_with
-  | 'false_positive'; // negative case (expected null) matched something
+  | "pass"
+  | "missed" // expected_skill was not in match set
+  | "ambiguous" // matched expected AND others not listed in ambiguous_with
+  | "false_positive"; // negative case (expected null) matched something
 
 export interface RoutingCaseResult {
   fixture: RoutingFixture;
@@ -96,8 +96,11 @@ export interface RoutingCaseResult {
  * variants that agents emit in practice.
  */
 export function normalizeText(s: string): string {
-  if (!s) return '';
-  return s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  if (!s) return "";
+  return s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
 }
 
 /**
@@ -112,11 +115,9 @@ export function normalizeText(s: string): string {
  * All returned phrases are normalized via `normalizeText`.
  */
 export function extractTriggerPhrases(cellText: string): string[] {
-  const quoted = [...cellText.matchAll(/"([^"]+)"/g)].map(m => m[1]);
+  const quoted = [...cellText.matchAll(/"([^"]+)"/g)].map((m) => m[1]);
   const source = quoted.length > 0 ? quoted : [cellText];
-  return source
-    .map(normalizeText)
-    .filter(s => s.length >= 3); // drop empty or trivially-short phrases
+  return source.map(normalizeText).filter((s) => s.length >= 3); // drop empty or trivially-short phrases
 }
 
 // ---------------------------------------------------------------------------
@@ -161,11 +162,11 @@ export interface StructuralMatchResult {
 
 /** Always-on skills routinely co-fire; a match that includes them
  *  alongside a specific target skill is NOT ambiguous. */
-const ALWAYS_ON_SKILLS = new Set(['signal-detector', 'brain-ops', 'ingest']);
+const ALWAYS_ON_SKILLS = new Set(["signal-detector", "brain-ops", "ingest"]);
 
 export function structuralRouteMatch(
   intent: string,
-  index: SkillTriggerIndex,
+  index: SkillTriggerIndex
 ): StructuralMatchResult {
   const normalizedIntent = normalizeText(intent);
   const matched: string[] = [];
@@ -178,7 +179,7 @@ export function structuralRouteMatch(
       }
     }
   }
-  const specific = matched.filter(s => !ALWAYS_ON_SKILLS.has(s));
+  const specific = matched.filter((s) => !ALWAYS_ON_SKILLS.has(s));
   return { matched, ambiguous: specific.length > 1 };
 }
 
@@ -188,7 +189,7 @@ export function structuralRouteMatch(
 
 export interface FixtureLintIssue {
   fixture: RoutingFixture;
-  reason: 'intent_copies_trigger' | 'unknown_expected_skill' | 'invalid_shape';
+  reason: "intent_copies_trigger" | "unknown_expected_skill" | "invalid_shape";
   detail: string;
 }
 
@@ -207,23 +208,23 @@ export interface FixtureLintIssue {
  */
 export function lintRoutingFixtures(
   fixtures: RoutingFixture[],
-  index: SkillTriggerIndex,
+  index: SkillTriggerIndex
 ): FixtureLintIssue[] {
   const issues: FixtureLintIssue[] = [];
   for (const f of fixtures) {
-    if (typeof f.intent !== 'string' || f.intent.trim().length === 0) {
+    if (typeof f.intent !== "string" || f.intent.trim().length === 0) {
       issues.push({
         fixture: f,
-        reason: 'invalid_shape',
-        detail: 'intent must be a non-empty string',
+        reason: "invalid_shape",
+        detail: "intent must be a non-empty string",
       });
       continue;
     }
-    if (f.expected_skill !== null && typeof f.expected_skill !== 'string') {
+    if (f.expected_skill !== null && typeof f.expected_skill !== "string") {
       issues.push({
         fixture: f,
-        reason: 'invalid_shape',
-        detail: 'expected_skill must be a string or null',
+        reason: "invalid_shape",
+        detail: "expected_skill must be a string or null",
       });
       continue;
     }
@@ -232,7 +233,7 @@ export function lintRoutingFixtures(
     if (!index.skillPhrases.has(f.expected_skill)) {
       issues.push({
         fixture: f,
-        reason: 'unknown_expected_skill',
+        reason: "unknown_expected_skill",
         detail: `expected_skill '${f.expected_skill}' is not in the resolver`,
       });
       continue;
@@ -243,7 +244,7 @@ export function lintRoutingFixtures(
       if (phrase.length > 0 && normalizedIntent === phrase) {
         issues.push({
           fixture: f,
-          reason: 'intent_copies_trigger',
+          reason: "intent_copies_trigger",
           detail: `intent is verbatim-identical to trigger phrase '${phrase}'`,
         });
         break;
@@ -267,7 +268,7 @@ export interface LoadResult {
 
 export function loadRoutingFixtures(skillsDir: string): LoadResult {
   const fixtures: RoutingFixture[] = [];
-  const malformed: LoadResult['malformed'] = [];
+  const malformed: LoadResult["malformed"] = [];
   if (!existsSync(skillsDir)) return { fixtures, malformed };
   let entries: string[];
   try {
@@ -276,31 +277,36 @@ export function loadRoutingFixtures(skillsDir: string): LoadResult {
     return { fixtures, malformed };
   }
   for (const entry of entries) {
-    if (entry.startsWith('.') || entry.startsWith('_')) continue;
+    if (entry.startsWith(".") || entry.startsWith("_")) continue;
     const dir = join(skillsDir, entry);
     try {
       if (!statSync(dir).isDirectory()) continue;
     } catch {
       continue;
     }
-    const fixturePath = join(dir, 'routing-eval.jsonl');
+    const fixturePath = join(dir, "routing-eval.jsonl");
     if (!existsSync(fixturePath)) continue;
 
     let content: string;
     try {
-      content = readFileSync(fixturePath, 'utf-8');
+      content = readFileSync(fixturePath, "utf-8");
     } catch {
       continue;
     }
-    const lines = content.split('\n');
+    const lines = content.split("\n");
     for (let i = 0; i < lines.length; i++) {
       const raw = lines[i].trim();
       if (!raw) continue;
-      if (raw.startsWith('//') || raw.startsWith('#')) continue;
+      if (raw.startsWith("//") || raw.startsWith("#")) continue;
       try {
         const obj = JSON.parse(raw) as RoutingFixture;
-        if (typeof obj.intent !== 'string') {
-          malformed.push({ file: fixturePath, line: i + 1, raw, error: `missing required field 'intent' (found keys: ${Object.keys(obj).join(', ')})` });
+        if (typeof obj.intent !== "string") {
+          malformed.push({
+            file: fixturePath,
+            line: i + 1,
+            raw,
+            error: `missing required field 'intent' (found keys: ${Object.keys(obj).join(", ")})`,
+          });
           continue;
         }
         fixtures.push({ ...obj, source: fixturePath });
@@ -329,7 +335,7 @@ export interface RunRoutingEvalOptions {
 export function runRoutingEval(
   resolverContent: string,
   fixtures: RoutingFixture[],
-  _opts: RunRoutingEvalOptions = {},
+  _opts: RunRoutingEvalOptions = {}
 ): RoutingReport {
   const index = indexResolverTriggers(resolverContent);
   const details: RoutingCaseResult[] = [];
@@ -345,22 +351,20 @@ export function runRoutingEval(
 
     if (fixture.expected_skill === null) {
       // Negative case: nothing specific should match.
-      const specific = result.matched.filter(s => !ALWAYS_ON_SKILLS.has(s));
+      const specific = result.matched.filter((s) => !ALWAYS_ON_SKILLS.has(s));
       if (specific.length === 0) {
-        outcome = 'pass';
+        outcome = "pass";
         passed++;
       } else {
-        outcome = 'false_positive';
+        outcome = "false_positive";
         falsePositives++;
-        note = `negative case unexpectedly matched: ${specific.join(', ')}`;
+        note = `negative case unexpectedly matched: ${specific.join(", ")}`;
       }
     } else if (!result.matched.includes(fixture.expected_skill)) {
-      outcome = 'missed';
+      outcome = "missed";
       missed++;
       note =
-        result.matched.length > 0
-          ? `matched instead: ${result.matched.join(', ')}`
-          : 'no matches';
+        result.matched.length > 0 ? `matched instead: ${result.matched.join(", ")}` : "no matches";
     } else {
       // expected_skill matched; check for ambiguity beyond the allow-list.
       const allowed = new Set([
@@ -368,14 +372,14 @@ export function runRoutingEval(
         ...ALWAYS_ON_SKILLS,
         fixture.expected_skill,
       ]);
-      const unexpected = result.matched.filter(s => !allowed.has(s));
+      const unexpected = result.matched.filter((s) => !allowed.has(s));
       if (unexpected.length === 0) {
-        outcome = 'pass';
+        outcome = "pass";
         passed++;
       } else {
-        outcome = 'ambiguous';
+        outcome = "ambiguous";
         ambiguous++;
-        note = `also matched: ${unexpected.join(', ')}`;
+        note = `also matched: ${unexpected.join(", ")}`;
       }
     }
     details.push({ fixture, outcome, matchedSkills: result.matched, note });

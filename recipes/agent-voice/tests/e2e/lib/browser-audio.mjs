@@ -25,7 +25,7 @@
  *   // }
  */
 
-import puppeteer from 'puppeteer';
+import puppeteer from "puppeteer";
 
 const DEFAULT_TIMEOUT_MS = 60000;
 
@@ -45,14 +45,14 @@ export async function runBrowserRoundtrip(opts) {
   const {
     serverUrl,
     audioFixturePath,
-    persona = 'venus',
+    persona = "venus",
     timeoutMs = DEFAULT_TIMEOUT_MS,
     headless = true,
     captureBlob = true,
   } = opts;
 
-  if (!serverUrl) throw new Error('serverUrl required');
-  if (!audioFixturePath) throw new Error('audioFixturePath required');
+  if (!serverUrl) throw new Error("serverUrl required");
+  if (!audioFixturePath) throw new Error("audioFixturePath required");
 
   const t0 = Date.now();
   const timings = { setupMs: 0, audioSendMs: 0, audioPlayMs: 0, totalMs: 0 };
@@ -61,52 +61,50 @@ export async function runBrowserRoundtrip(opts) {
   let browser;
   try {
     browser = await puppeteer.launch({
-      headless: headless ? 'new' : false,
+      headless: headless ? "new" : false,
       args: [
-        '--use-fake-ui-for-media-stream',
-        '--use-fake-device-for-media-stream',
+        "--use-fake-ui-for-media-stream",
+        "--use-fake-device-for-media-stream",
         `--use-file-for-fake-audio-capture=${audioFixturePath}`,
-        '--autoplay-policy=no-user-gesture-required',
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-web-security',
-        '--disable-background-timer-throttling',
-        '--disable-features=VizDisplayCompositor',
+        "--autoplay-policy=no-user-gesture-required",
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-web-security",
+        "--disable-background-timer-throttling",
+        "--disable-features=VizDisplayCompositor",
       ],
     });
 
     const page = await browser.newPage();
     await page.setViewport({ width: 1280, height: 800 });
 
-    page.on('console', (msg) => {
+    page.on("console", (msg) => {
       consoleLog.push({ type: msg.type(), text: msg.text(), at: Date.now() - t0 });
     });
-    page.on('pageerror', (err) => {
-      consoleLog.push({ type: 'pageerror', text: err.message, at: Date.now() - t0 });
+    page.on("pageerror", (err) => {
+      consoleLog.push({ type: "pageerror", text: err.message, at: Date.now() - t0 });
     });
 
     const url = `${serverUrl}/call?test=1&persona=${encodeURIComponent(persona)}`;
-    await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
+    await page.goto(url, { waitUntil: "networkidle2", timeout: 30000 });
 
     // Click Connect.
-    await page.waitForSelector('.call-btn', { timeout: 10000 });
-    await page.click('.call-btn');
+    await page.waitForSelector(".call-btn", { timeout: 10000 });
+    await page.click(".call-btn");
 
     // Phase 1: setupDone (SDP exchange complete; call active).
     const setupT0 = Date.now();
-    await page.waitForFunction(
-      () => window._gbrainTest && window._gbrainTest.setupDone === true,
-      { timeout: 25000 },
-    );
+    await page.waitForFunction(() => window._gbrainTest && window._gbrainTest.setupDone === true, {
+      timeout: 25000,
+    });
     timings.setupMs = Date.now() - setupT0;
 
     // Phase 2: audioSendCount > 0 (mic → WebRTC → server pipe alive).
     const sendT0 = Date.now();
-    await page.waitForFunction(
-      () => window._gbrainTest && window._gbrainTest.audioSendCount > 0,
-      { timeout: 25000 },
-    );
+    await page.waitForFunction(() => window._gbrainTest && window._gbrainTest.audioSendCount > 0, {
+      timeout: 25000,
+    });
     timings.audioSendMs = Date.now() - sendT0;
 
     // Phase 3: audioPlayCount > 0 (server → WebRTC → speaker pipe alive).
@@ -115,7 +113,7 @@ export async function runBrowserRoundtrip(opts) {
     try {
       await page.waitForFunction(
         () => window._gbrainTest && window._gbrainTest.audioPlayCount > 0,
-        { timeout: Math.max(5000, timeoutMs - (Date.now() - t0)) },
+        { timeout: Math.max(5000, timeoutMs - (Date.now() - t0)) }
       );
       playReached = true;
     } catch {
@@ -148,12 +146,12 @@ export async function runBrowserRoundtrip(opts) {
         if (!blob) return null;
         const arrayBuffer = await blob.arrayBuffer();
         const bytes = new Uint8Array(arrayBuffer);
-        let binary = '';
+        let binary = "";
         for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
         return btoa(binary);
       });
       if (blobBase64) {
-        responseBlob = Buffer.from(blobBase64, 'base64');
+        responseBlob = Buffer.from(blobBase64, "base64");
       }
     }
 
@@ -183,7 +181,11 @@ export async function runBrowserRoundtrip(opts) {
     };
   } finally {
     if (browser) {
-      try { await browser.close(); } catch { /* ignore */ }
+      try {
+        await browser.close();
+      } catch {
+        /* ignore */
+      }
     }
   }
 }
@@ -195,11 +197,15 @@ export async function runBrowserRoundtrip(opts) {
  */
 export function decodeWav(buffer) {
   // Minimal WAV parser — assumes 16-bit PCM mono.
-  if (buffer.length < 44) throw new Error('WAV too small');
-  const dataStart = buffer.indexOf('data');
-  if (dataStart < 0) throw new Error('no data chunk');
+  if (buffer.length < 44) throw new Error("WAV too small");
+  const dataStart = buffer.indexOf("data");
+  if (dataStart < 0) throw new Error("no data chunk");
   const pcmStart = dataStart + 8; // skip 'data' + uint32 size
-  const pcm = new Int16Array(buffer.buffer, buffer.byteOffset + pcmStart, (buffer.length - pcmStart) / 2);
+  const pcm = new Int16Array(
+    buffer.buffer,
+    buffer.byteOffset + pcmStart,
+    (buffer.length - pcmStart) / 2
+  );
   return pcm;
 }
 

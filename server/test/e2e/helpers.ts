@@ -7,21 +7,21 @@
  *   afterAll(async () => { await teardownDB(); });
  */
 
-import { readFileSync, existsSync, readdirSync, statSync } from 'fs';
-import { join, resolve, relative, dirname, basename, extname } from 'path';
-import { PostgresEngine } from '../../src/core/postgres-engine.ts';
-import * as db from '../../src/core/db.ts';
-import { importFromContent } from '../../src/core/import-file.ts';
-import { parseMarkdown } from '../../src/core/markdown.ts';
+import { readFileSync, existsSync, readdirSync, statSync } from "fs";
+import { join, resolve, relative, dirname, basename, extname } from "path";
+import { PostgresEngine } from "../../src/core/postgres-engine.ts";
+import * as db from "../../src/core/db.ts";
+import { importFromContent } from "../../src/core/import-file.ts";
+import { parseMarkdown } from "../../src/core/markdown.ts";
 
 // Load .env.testing if present
-const envPath = resolve(import.meta.dir, '../../.env.testing');
+const envPath = resolve(import.meta.dir, "../../.env.testing");
 if (existsSync(envPath)) {
-  const lines = readFileSync(envPath, 'utf-8').split('\n');
+  const lines = readFileSync(envPath, "utf-8").split("\n");
   for (const line of lines) {
     const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith('#')) continue;
-    const eq = trimmed.indexOf('=');
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const eq = trimmed.indexOf("=");
     if (eq === -1) continue;
     const key = trimmed.slice(0, eq);
     const val = trimmed.slice(eq + 1);
@@ -30,30 +30,30 @@ if (existsSync(envPath)) {
 }
 
 const DATABASE_URL = process.env.DATABASE_URL;
-const FIXTURES_DIR = resolve(import.meta.dir, 'fixtures');
+const FIXTURES_DIR = resolve(import.meta.dir, "fixtures");
 
 let engine: PostgresEngine | null = null;
 
 const ALL_TABLES = [
   // v0.31: facts must come BEFORE pages too (FK to sources, but tests
   // seed via direct SQL so the row stays referenced until truncated).
-  'facts',
+  "facts",
   // v0.28: takes + synthesis_evidence MUST come BEFORE pages because they FK pages.id
-  'synthesis_evidence',
-  'takes',
-  'content_chunks',
-  'links',
-  'tags',
-  'raw_data',
-  'timeline_entries',
-  'page_versions',
-  'ingest_log',
-  'files',
-  'pages',       // last because of foreign keys
-  'config',
-  'minion_attachments',
-  'minion_inbox',
-  'minion_jobs',
+  "synthesis_evidence",
+  "takes",
+  "content_chunks",
+  "links",
+  "tags",
+  "raw_data",
+  "timeline_entries",
+  "page_versions",
+  "ingest_log",
+  "files",
+  "pages", // last because of foreign keys
+  "config",
+  "minion_attachments",
+  "minion_inbox",
+  "minion_jobs",
 ];
 
 /**
@@ -69,7 +69,9 @@ export function hasDatabase(): boolean {
  */
 export async function setupDB(): Promise<PostgresEngine> {
   if (!DATABASE_URL) {
-    throw new Error('DATABASE_URL not set. Copy .env.testing.example to .env.testing and configure it.');
+    throw new Error(
+      "DATABASE_URL not set. Copy .env.testing.example to .env.testing and configure it."
+    );
   }
 
   // Disconnect any prior connection (clean slate)
@@ -88,7 +90,7 @@ export async function setupDB(): Promise<PostgresEngine> {
       await conn.unsafe(`TRUNCATE ${table} CASCADE`);
     } catch (e: unknown) {
       const code = (e as { code?: string })?.code;
-      if (code !== '42P01') throw e; // 42P01 = undefined_table; ignore those
+      if (code !== "42P01") throw e; // 42P01 = undefined_table; ignore those
     }
   }
 
@@ -123,7 +125,7 @@ export async function teardownDB(): Promise<void> {
  * Get the current engine instance.
  */
 export function getEngine(): PostgresEngine {
-  if (!engine) throw new Error('setupDB() must be called first');
+  if (!engine) throw new Error("setupDB() must be called first");
   return engine;
 }
 
@@ -145,7 +147,7 @@ export async function importFixtures() {
   const files = findMarkdownFiles(FIXTURES_DIR);
   for (const filePath of files) {
     const relPath = relative(FIXTURES_DIR, filePath);
-    const content = readFileSync(filePath, 'utf-8');
+    const content = readFileSync(filePath, "utf-8");
     const parsed = parseMarkdown(content, relPath);
     const result = await importFromContent(e, parsed.slug, content, { noEmbed: true });
     results.push(result);
@@ -160,7 +162,7 @@ export async function importFixtures() {
 export async function importFixture(relativePath: string) {
   const e = getEngine();
   const filePath = join(FIXTURES_DIR, relativePath);
-  const content = readFileSync(filePath, 'utf-8');
+  const content = readFileSync(filePath, "utf-8");
   const parsed = parseMarkdown(content, relativePath);
   return importFromContent(e, parsed.slug, content, { noEmbed: true });
 }
@@ -175,7 +177,7 @@ function findMarkdownFiles(dir: string): string[] {
     const stat = statSync(full);
     if (stat.isDirectory()) {
       results.push(...findMarkdownFiles(full));
-    } else if (extname(entry) === '.md') {
+    } else if (extname(entry) === ".md") {
       results.push(full);
     }
   }
@@ -211,7 +213,7 @@ export async function dumpDBState(): Promise<string> {
     `Tags: ${tagCount[0]?.n ?? 0}`,
     `=== END DUMP ===`,
   ];
-  return lines.join('\n');
+  return lines.join("\n");
 }
 
 /**
@@ -249,15 +251,15 @@ export const FIXTURES_PATH = FIXTURES_DIR;
  */
 export async function runMigrationsUpTo(
   engine: PostgresEngine,
-  targetVersion: number,
+  targetVersion: number
 ): Promise<void> {
-  const { MIGRATIONS } = await import('../../src/core/migrate.ts');
+  const { MIGRATIONS } = await import("../../src/core/migrate.ts");
   const sorted = [...MIGRATIONS].sort((a, b) => a.version - b.version);
 
-  const currentStr = await engine.getConfig('version');
-  const current = parseInt(currentStr || '1', 10);
+  const currentStr = await engine.getConfig("version");
+  const current = parseInt(currentStr || "1", 10);
 
-  const pending = sorted.filter(m => m.version > current && m.version <= targetVersion);
+  const pending = sorted.filter((m) => m.version > current && m.version <= targetVersion);
 
   for (const m of pending) {
     const sql = m.sqlFor?.[engine.kind] ?? m.sql;
@@ -272,7 +274,7 @@ export async function runMigrationsUpTo(
     if (m.handler) {
       await m.handler(engine);
     }
-    await engine.setConfig('version', String(m.version));
+    await engine.setConfig("version", String(m.version));
   }
 }
 
@@ -284,8 +286,11 @@ export async function runMigrationsUpTo(
  */
 export async function setConfigVersion(version: number): Promise<void> {
   const conn = db.getConnection();
-  await conn.unsafe(`
+  await conn.unsafe(
+    `
     INSERT INTO config (key, value) VALUES ('version', $1)
     ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
-  `, [String(version)]);
+  `,
+    [String(version)]
+  );
 }

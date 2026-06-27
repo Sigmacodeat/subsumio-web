@@ -26,12 +26,9 @@
  *   3 PID file unwritable (permission / path error)
  */
 
-import { detectTini } from './spawn-helpers.ts';
-import { resolveDefaultMaxRssMb } from './rss-default.ts';
-import {
-  ChildWorkerSupervisor,
-  type ChildSupervisorEvent,
-} from './child-worker-supervisor.ts';
+import { detectTini } from "./spawn-helpers.ts";
+import { resolveDefaultMaxRssMb } from "./rss-default.ts";
+import { ChildWorkerSupervisor, type ChildSupervisorEvent } from "./child-worker-supervisor.ts";
 import {
   closeSync,
   existsSync,
@@ -40,23 +37,23 @@ import {
   readFileSync,
   unlinkSync,
   writeSync,
-} from 'fs';
-import { dirname } from 'path';
-import type { BrainEngine } from '../engine.ts';
-import { tryAcquireDbLock, type DbLockHandle } from '../db-lock.ts';
-import { currentBrainId } from './worker-registry.ts';
+} from "fs";
+import { dirname } from "path";
+import type { BrainEngine } from "../engine.ts";
+import { tryAcquireDbLock, type DbLockHandle } from "../db-lock.ts";
+import { currentBrainId } from "./worker-registry.ts";
 
 export type SupervisorEvent =
-  | 'started'
-  | 'worker_spawned'
-  | 'worker_exited'
-  | 'worker_spawn_failed'
-  | 'backoff'
-  | 'health_warn'
-  | 'health_error'
-  | 'max_crashes_exceeded'
-  | 'shutting_down'
-  | 'stopped';
+  | "started"
+  | "worker_spawned"
+  | "worker_exited"
+  | "worker_spawn_failed"
+  | "backoff"
+  | "health_warn"
+  | "health_error"
+  | "max_crashes_exceeded"
+  | "shutting_down"
+  | "stopped";
 
 export interface SupervisorEmission {
   event: SupervisorEvent;
@@ -131,21 +128,25 @@ export interface SupervisorOpts {
 export const DEFAULT_PID_FILE: string = (() => {
   const envOverride = process.env.GBRAIN_SUPERVISOR_PID_FILE;
   if (envOverride && envOverride.length > 0) return envOverride;
-  const home = process.env.HOME ?? '/tmp';
+  const home = process.env.HOME ?? "/tmp";
   // #1849: key the default pidfile on the brain id so two DIFFERENT brains
   // under one HOME don't share `supervisor.pid` and falsely block each other's
   // pidfile guard. Derived from config (no DB connect), so it's safe to
   // resolve at module load — `status`/`stop` need a cheap path before the
   // engine connects. The queue-scoped DB lock (supervisorLockId) is the real
   // singleton authority; this just removes the common-case footgun.
-  let brainId = 'default';
-  try { brainId = currentBrainId(); } catch { /* fallback 'default' */ }
+  let brainId = "default";
+  try {
+    brainId = currentBrainId();
+  } catch {
+    /* fallback 'default' */
+  }
   return `${home}/.gbrain/supervisor-${brainId}.pid`;
 })();
 
-const DEFAULTS: Omit<SupervisorOpts, 'cliPath'> = {
+const DEFAULTS: Omit<SupervisorOpts, "cliPath"> = {
   concurrency: 2,
-  queue: 'default',
+  queue: "default",
   pidFile: DEFAULT_PID_FILE,
   maxCrashes: 10,
   healthInterval: 60_000,
@@ -171,18 +172,14 @@ const DEFAULTS: Omit<SupervisorOpts, 'cliPath'> = {
  * niceness also inherits to the worker's own children automatically.
  */
 export function buildWorkerArgs(
-  opts: Pick<SupervisorOpts, 'concurrency' | 'queue' | 'maxRssMb' | 'nice_requested'>,
+  opts: Pick<SupervisorOpts, "concurrency" | "queue" | "maxRssMb" | "nice_requested">
 ): string[] {
-  const args = [
-    'jobs', 'work',
-    '--concurrency', String(opts.concurrency),
-    '--queue', opts.queue,
-  ];
+  const args = ["jobs", "work", "--concurrency", String(opts.concurrency), "--queue", opts.queue];
   if (opts.maxRssMb > 0) {
-    args.push('--max-rss', String(opts.maxRssMb));
+    args.push("--max-rss", String(opts.maxRssMb));
   }
   if (opts.nice_requested !== undefined) {
-    args.push('--nice', String(opts.nice_requested));
+    args.push("--nice", String(opts.nice_requested));
   }
   return args;
 }
@@ -231,7 +228,7 @@ export interface WedgeSignals {
 export async function queryWedgeSignals(
   engine: BrainEngine,
   queue: string,
-  handlerNames: string[],
+  handlerNames: string[]
 ): Promise<WedgeSignals> {
   const rows = await engine.executeRaw<{
     stalled: string;
@@ -253,17 +250,21 @@ export async function queryWedgeSignals(
                                AND name = ANY($2::text[]))::text AS last_completed_claimable
      FROM minion_jobs
      WHERE queue = $1`,
-    [queue, handlerNames],
+    [queue, handlerNames]
   );
   const row = rows[0] ?? {
-    stalled: '0', active_healthy: '0', waiting: '0',
-    waiting_claimable: '0', last_completed: null, last_completed_claimable: null,
+    stalled: "0",
+    active_healthy: "0",
+    waiting: "0",
+    waiting_claimable: "0",
+    last_completed: null,
+    last_completed_claimable: null,
   };
   return {
-    stalled: parseInt(row.stalled ?? '0', 10),
-    activeHealthy: parseInt(row.active_healthy ?? '0', 10),
-    waiting: parseInt(row.waiting ?? '0', 10),
-    waitingClaimable: parseInt(row.waiting_claimable ?? '0', 10),
+    stalled: parseInt(row.stalled ?? "0", 10),
+    activeHealthy: parseInt(row.active_healthy ?? "0", 10),
+    waiting: parseInt(row.waiting ?? "0", 10),
+    waitingClaimable: parseInt(row.waiting_claimable ?? "0", 10),
     lastCompleted: row.last_completed ? new Date(row.last_completed) : null,
     lastCompletedClaimable: row.last_completed_claimable
       ? new Date(row.last_completed_claimable)
@@ -330,13 +331,13 @@ export function classifySupervisorSingleton(args: {
   lockHolderPid: number | null;
   localHost: string;
   localPid: number | null;
-}): 'no_lock' | 'single' | 'mismatch' {
+}): "no_lock" | "single" | "mismatch" {
   if (!args.lockLive || args.lockHolderHost === null || args.lockHolderPid === null) {
-    return 'no_lock';
+    return "no_lock";
   }
-  if (args.localPid === null) return 'mismatch';
+  if (args.localPid === null) return "mismatch";
   const matches = args.lockHolderHost === args.localHost && args.lockHolderPid === args.localPid;
-  return matches ? 'single' : 'mismatch';
+  return matches ? "single" : "mismatch";
 }
 
 export class MinionSupervisor {
@@ -416,7 +417,7 @@ export class MinionSupervisor {
    * will include `tini: true` in their payload.
    */
   get isTiniDetected(): boolean {
-    return this.tiniPath !== '';
+    return this.tiniPath !== "";
   }
 
   /**
@@ -426,7 +427,7 @@ export class MinionSupervisor {
    * + wedge state and drive a single health check directly.
    */
   _setChildSupervisorForTests(
-    cs: Pick<ChildWorkerSupervisor, 'childAlive' | 'inBackoff' | 'restartCurrentChild'>,
+    cs: Pick<ChildWorkerSupervisor, "childAlive" | "inBackoff" | "restartCurrentChild">
   ): void {
     this.childSupervisor = cs as unknown as ChildWorkerSupervisor;
   }
@@ -464,17 +465,22 @@ export class MinionSupervisor {
     if (this.opts.json) {
       // stderr is the event channel; stdout stays clean for data (e.g., --detach payload).
       try {
-        process.stderr.write(JSON.stringify(emission) + '\n');
-      } catch { /* best effort */ }
+        process.stderr.write(JSON.stringify(emission) + "\n");
+      } catch {
+        /* best effort */
+      }
     } else {
       const ts = emission.ts.slice(11, 19);
       const detail = Object.entries(fields)
-        .filter(([k]) => k !== 'event' && k !== 'ts')
-        .map(([k, v]) => `${k}=${typeof v === 'string' ? v : JSON.stringify(v)}`)
-        .join(' ');
-      const isWarn = event === 'health_warn' || event === 'health_error' ||
-                     event === 'worker_spawn_failed' || event === 'max_crashes_exceeded';
-      const line = `[supervisor ${ts}] ${event}${detail ? ' ' + detail : ''}`;
+        .filter(([k]) => k !== "event" && k !== "ts")
+        .map(([k, v]) => `${k}=${typeof v === "string" ? v : JSON.stringify(v)}`)
+        .join(" ");
+      const isWarn =
+        event === "health_warn" ||
+        event === "health_error" ||
+        event === "worker_spawn_failed" ||
+        event === "max_crashes_exceeded";
+      const line = `[supervisor ${ts}] ${event}${detail ? " " + detail : ""}`;
       if (isWarn) {
         console.warn(line);
       } else {
@@ -484,7 +490,11 @@ export class MinionSupervisor {
 
     // Audit sink (Lane C plumbs this).
     if (this.opts.onEvent) {
-      try { this.opts.onEvent(emission); } catch { /* best effort */ }
+      try {
+        this.opts.onEvent(emission);
+      } catch {
+        /* best effort */
+      }
     }
   }
 
@@ -492,11 +502,11 @@ export class MinionSupervisor {
   async start(): Promise<void> {
     // 1. PID file lock (atomic via O_CREAT|O_EXCL).
     const lockResult = this.acquirePidLock();
-    if (lockResult === 'held') {
+    if (lockResult === "held") {
       // Another supervisor owns the lock — exit code 2.
       process.exit(ExitCodes.LOCK_HELD);
     }
-    if (lockResult === 'unwritable') {
+    if (lockResult === "unwritable") {
       // PID path isn't writable — exit code 3 with helpful hint.
       process.exit(ExitCodes.PID_UNWRITABLE);
     }
@@ -511,48 +521,62 @@ export class MinionSupervisor {
     this.exitListener = () => {
       try {
         if (existsSync(this.opts.pidFile)) {
-          const contents = readFileSync(this.opts.pidFile, 'utf8').trim().split('\n')[0];
+          const contents = readFileSync(this.opts.pidFile, "utf8").trim().split("\n")[0];
           if (contents === String(process.pid)) {
             unlinkSync(this.opts.pidFile);
           }
         }
-      } catch { /* best effort */ }
+      } catch {
+        /* best effort */
+      }
     };
-    process.on('exit', this.exitListener);
+    process.on("exit", this.exitListener);
 
     // 1b. #1849: queue-scoped DB singleton lock — the REAL authority. A second
     // supervisor with a different $HOME / --pid-file passes the pidfile check
     // above but loses here, so it can't run a conflicting --max-rss worker on
     // the same (db, queue). Keyed on the queue alone; the database half of the
     // mutex is physical (the lock row lives in this DB).
-    this.dbLock = await tryAcquireDbLock(this.engine, this.supervisorLockId(), SUPERVISOR_LOCK_TTL_MIN);
+    this.dbLock = await tryAcquireDbLock(
+      this.engine,
+      this.supervisorLockId(),
+      SUPERVISOR_LOCK_TTL_MIN
+    );
     if (!this.dbLock) {
       console.error(
         `Supervisor already running for queue '${this.opts.queue}' on this database ` +
-        `(another supervisor holds the queue lock, regardless of pidfile path). Exiting.`,
+          `(another supervisor holds the queue lock, regardless of pidfile path). Exiting.`
       );
       // The exit listener installed above removes the pidfile we just created.
       process.exit(ExitCodes.LOCK_HELD);
     }
     // Refresh the lock on its own timer (independent of healthInterval, which
     // can be 0/disabled) so the TTL never lapses while we're alive.
-    this.lockRefreshTimer = setInterval(() => { void this.refreshDbLock(); }, SUPERVISOR_LOCK_REFRESH_MS);
+    this.lockRefreshTimer = setInterval(() => {
+      void this.refreshDbLock();
+    }, SUPERVISOR_LOCK_REFRESH_MS);
 
     // 3. Signal handlers (tracked refs; removed on shutdown for test lifecycle hygiene).
-    this.sigtermListener = () => { void this.shutdown('SIGTERM', ExitCodes.CLEAN); };
-    this.sigintListener = () => { void this.shutdown('SIGINT', ExitCodes.CLEAN); };
-    process.on('SIGTERM', this.sigtermListener);
-    process.on('SIGINT', this.sigintListener);
+    this.sigtermListener = () => {
+      void this.shutdown("SIGTERM", ExitCodes.CLEAN);
+    };
+    this.sigintListener = () => {
+      void this.shutdown("SIGINT", ExitCodes.CLEAN);
+    };
+    process.on("SIGTERM", this.sigtermListener);
+    process.on("SIGINT", this.sigintListener);
 
     // 4. Health monitoring. Skip when healthInterval=0 — that's the explicit
-     // "disable" contract documented on `--health-interval 0`. setInterval(0)
-     // would be a tight DB-hammering loop, not the no-op users expect.
+    // "disable" contract documented on `--health-interval 0`. setInterval(0)
+    // would be a tight DB-hammering loop, not the no-op users expect.
     if (this.opts.healthInterval > 0) {
-      this.healthTimer = setInterval(() => { void this.healthCheck(); }, this.opts.healthInterval);
+      this.healthTimer = setInterval(() => {
+        void this.healthCheck();
+      }, this.opts.healthInterval);
     }
 
     // 5. Announce start.
-    this.emit('started', {
+    this.emit("started", {
       supervisor_pid: process.pid,
       pid_file: this.opts.pidFile,
       concurrency: this.opts.concurrency,
@@ -563,8 +587,12 @@ export class MinionSupervisor {
       max_rss_mb: this.opts.maxRssMb,
       // Niceness (issue #1815): record requested + effective so doctor/status can
       // surface a failed renice even for a detached supervisor whose stderr is gone.
-      ...(this.opts.nice_requested !== undefined ? { nice_requested: this.opts.nice_requested } : {}),
-      ...(this.opts.nice_effective !== undefined ? { nice_effective: this.opts.nice_effective } : {}),
+      ...(this.opts.nice_requested !== undefined
+        ? { nice_requested: this.opts.nice_requested }
+        : {}),
+      ...(this.opts.nice_effective !== undefined
+        ? { nice_effective: this.opts.nice_effective }
+        : {}),
       ...(this.opts.nice_error ? { nice_error: this.opts.nice_error } : {}),
     });
 
@@ -589,8 +617,8 @@ export class MinionSupervisor {
   private async deriveHandlerNames(): Promise<void> {
     try {
       const [{ MinionWorker }, { registerBuiltinHandlers }] = await Promise.all([
-        import('./worker.ts'),
-        import('../../commands/jobs.ts'),
+        import("./worker.ts"),
+        import("../../commands/jobs.ts"),
       ]);
       const probe = new MinionWorker(this.engine, {
         queue: this.opts.queue,
@@ -603,8 +631,8 @@ export class MinionSupervisor {
       this.handlerNames = [...probe.registeredNames];
     } catch (e) {
       this.handlerNames = [];
-      this.emit('health_warn', {
-        reason: 'wedge_watchdog_inert',
+      this.emit("health_warn", {
+        reason: "wedge_watchdog_inert",
         error: e instanceof Error ? e.message : String(e),
         queue: this.opts.queue,
       });
@@ -616,7 +644,7 @@ export class MinionSupervisor {
     if (this.stopping) return;
     this.stopping = true;
 
-    this.emit('shutting_down', { reason, exit_code: exitCode });
+    this.emit("shutting_down", { reason, exit_code: exitCode });
 
     if (this.healthTimer) {
       clearInterval(this.healthTimer);
@@ -633,15 +661,19 @@ export class MinionSupervisor {
     if (this.dbLock) {
       const lock = this.dbLock;
       this.dbLock = null;
-      try { await lock.release(); } catch { /* best-effort; TTL fallback covers it */ }
+      try {
+        await lock.release();
+      } catch {
+        /* best-effort; TTL fallback covers it */
+      }
     }
 
     if (this.childSupervisor) {
-      this.childSupervisor.killChild('SIGTERM');
+      this.childSupervisor.killChild("SIGTERM");
       await this.childSupervisor.awaitChildExit(35_000);
       // If the child is still up after the 35s drain window, escalate.
       if (this.childSupervisor.childAlive) {
-        this.childSupervisor.killChild('SIGKILL');
+        this.childSupervisor.killChild("SIGKILL");
       }
     }
 
@@ -649,15 +681,15 @@ export class MinionSupervisor {
     // the same process don't accumulate listeners. `process.on('exit', ...)`
     // is kept registered — it needs to fire synchronously on the final exit.
     if (this.sigtermListener) {
-      process.removeListener('SIGTERM', this.sigtermListener);
+      process.removeListener("SIGTERM", this.sigtermListener);
       this.sigtermListener = null;
     }
     if (this.sigintListener) {
-      process.removeListener('SIGINT', this.sigintListener);
+      process.removeListener("SIGINT", this.sigintListener);
       this.sigintListener = null;
     }
 
-    this.emit('stopped', { reason, exit_code: exitCode });
+    this.emit("stopped", { reason, exit_code: exitCode });
     process.exit(exitCode);
   }
 
@@ -690,18 +722,18 @@ export class MinionSupervisor {
       this.lockRefreshFailures = 0;
     } catch (e) {
       this.lockRefreshFailures++;
-      this.emit('health_warn', {
-        reason: 'supervisor_lock_refresh_failed',
+      this.emit("health_warn", {
+        reason: "supervisor_lock_refresh_failed",
         consecutive_failures: this.lockRefreshFailures,
         error: e instanceof Error ? e.message : String(e),
         queue: this.opts.queue,
       });
       if (this.lockRefreshFailures >= SUPERVISOR_LOCK_REFRESH_MAX_FAILURES) {
-        this.emit('health_error', {
-          reason: 'supervisor_lock_lost',
+        this.emit("health_error", {
+          reason: "supervisor_lock_lost",
           queue: this.opts.queue,
         });
-        await this.shutdown('supervisor_lock_lost', ExitCodes.LOCK_LOST);
+        await this.shutdown("supervisor_lock_lost", ExitCodes.LOCK_LOST);
       }
     }
   }
@@ -714,75 +746,81 @@ export class MinionSupervisor {
    *   'held'       — another live supervisor owns the lock (exit code 2).
    *   'unwritable' — can't write to the PID path (permission / missing parent, exit code 3).
    */
-  private acquirePidLock(): 'acquired' | 'held' | 'unwritable' {
+  private acquirePidLock(): "acquired" | "held" | "unwritable" {
     // Ensure parent directory exists. Idempotent; creates ~/.gbrain on fresh installs.
     try {
       mkdirSync(dirname(this.opts.pidFile), { recursive: true });
     } catch (err: unknown) {
       const code = (err as NodeJS.ErrnoException)?.code;
-      if (code !== 'EEXIST') {
+      if (code !== "EEXIST") {
         console.error(
           `Cannot create PID file directory ${dirname(this.opts.pidFile)}: ${
             err instanceof Error ? err.message : String(err)
           }. Set GBRAIN_SUPERVISOR_PID_FILE or pass --pid-file to a writable location.`
         );
-        return 'unwritable';
+        return "unwritable";
       }
     }
 
     return this.tryAtomicCreate();
   }
 
-  private tryAtomicCreate(): 'acquired' | 'held' | 'unwritable' {
+  private tryAtomicCreate(): "acquired" | "held" | "unwritable" {
     try {
       // O_CREAT | O_EXCL | O_WRONLY — fails with EEXIST if the file exists.
-      const fd = openSync(this.opts.pidFile, 'wx');
+      const fd = openSync(this.opts.pidFile, "wx");
       try {
         writeSync(fd, String(process.pid));
       } finally {
         closeSync(fd);
       }
       this.lockAcquired = true;
-      return 'acquired';
+      return "acquired";
     } catch (err: unknown) {
       const code = (err as NodeJS.ErrnoException)?.code;
-      if (code === 'EEXIST') {
+      if (code === "EEXIST") {
         // File exists — check if the owner is alive.
         let existingPid = -1;
         try {
-          const contents = readFileSync(this.opts.pidFile, 'utf8').trim().split('\n')[0];
+          const contents = readFileSync(this.opts.pidFile, "utf8").trim().split("\n")[0];
           existingPid = parseInt(contents, 10);
-        } catch { /* corrupt file */ }
+        } catch {
+          /* corrupt file */
+        }
 
         if (!isNaN(existingPid) && existingPid > 0 && isProcessAlive(existingPid)) {
           console.error(`Supervisor already running (PID: ${existingPid}). Exiting.`);
-          return 'held';
+          return "held";
         }
 
         // Stale PID file — unlink and retry atomic create once.
-        try { unlinkSync(this.opts.pidFile); } catch { /* race with another stale-cleaner; retry will EEXIST again */ }
         try {
-          const fd = openSync(this.opts.pidFile, 'wx');
+          unlinkSync(this.opts.pidFile);
+        } catch {
+          /* race with another stale-cleaner; retry will EEXIST again */
+        }
+        try {
+          const fd = openSync(this.opts.pidFile, "wx");
           try {
             writeSync(fd, String(process.pid));
           } finally {
             closeSync(fd);
           }
           this.lockAcquired = true;
-          return 'acquired';
+          return "acquired";
         } catch (retryErr) {
           const retryCode = (retryErr as NodeJS.ErrnoException)?.code;
-          if (retryCode === 'EEXIST') {
+          if (retryCode === "EEXIST") {
             // Someone else won the race. Treat as held.
             console.error(`Another supervisor took the PID lock during stale cleanup. Exiting.`);
-            return 'held';
+            return "held";
           }
           console.error(
             `Cannot write PID file ${this.opts.pidFile}: ${
               retryErr instanceof Error ? retryErr.message : String(retryErr)
             }`
           );
-          return 'unwritable';
+          return "unwritable";
         }
       }
 
@@ -791,7 +829,7 @@ export class MinionSupervisor {
           err instanceof Error ? err.message : String(err)
         }. Set GBRAIN_SUPERVISOR_PID_FILE or pass --pid-file to a writable location.`
       );
-      return 'unwritable';
+      return "unwritable";
     }
   }
 
@@ -809,7 +847,7 @@ export class MinionSupervisor {
     // inherit only when caller opts in, otherwise strip from the clone.
     const env: Record<string, string | undefined> = { ...process.env };
     if (this.opts.allowShellJobs) {
-      env.GBRAIN_ALLOW_SHELL_JOBS = '1';
+      env.GBRAIN_ALLOW_SHELL_JOBS = "1";
     } else {
       delete env.GBRAIN_ALLOW_SHELL_JOBS;
     }
@@ -818,7 +856,7 @@ export class MinionSupervisor {
     // (it's the only "is MY pool dead" signal; the supervisor watches a
     // different connection). This env var only makes the worker skip its STALL
     // detection — the supervisor's progress watchdog owns forward-progress.
-    env.GBRAIN_SUPERVISED = '1';
+    env.GBRAIN_SUPERVISED = "1";
 
     this.childSupervisor = new ChildWorkerSupervisor({
       cliPath: this.opts.cliPath,
@@ -828,11 +866,11 @@ export class MinionSupervisor {
       _backoffFloorMs: this.opts._backoffFloorMs,
       isStopping: () => this.stopping,
       onMaxCrashesExceeded: (count, max) => {
-        this.emit('max_crashes_exceeded', {
+        this.emit("max_crashes_exceeded", {
           crash_count: count,
           max_crashes: max,
         });
-        void this.shutdown('max_crashes', ExitCodes.MAX_CRASHES);
+        void this.shutdown("max_crashes", ExitCodes.MAX_CRASHES);
       },
       onEvent: (event) => this.relayChildEvent(event),
     });
@@ -849,13 +887,13 @@ export class MinionSupervisor {
    */
   private relayChildEvent(event: ChildSupervisorEvent): void {
     switch (event.kind) {
-      case 'worker_spawned':
+      case "worker_spawned":
         // issue #1801: anchor the startup grace + reset the wedge counter so a
         // fresh child is judged on its own forward progress, not the prior
         // (possibly wedged) one's stale DB state.
         this.childStartedAt = Date.now();
         this.consecutiveWedgedChecks = 0;
-        this.emit('worker_spawned', {
+        this.emit("worker_spawned", {
           pid: event.pid >= 0 ? event.pid : undefined,
           cli_path: this.opts.cliPath,
           ...(event.tini ? { tini: true } : {}),
@@ -863,8 +901,8 @@ export class MinionSupervisor {
         });
         return;
 
-      case 'worker_spawn_failed':
-        this.emit('worker_spawn_failed', {
+      case "worker_spawn_failed":
+        this.emit("worker_spawn_failed", {
           cli_path: this.opts.cliPath,
           error: event.error,
           phase: event.phase,
@@ -872,11 +910,9 @@ export class MinionSupervisor {
         });
         return;
 
-      case 'worker_exited': {
-        const exitReason = event.signal
-          ? `signal ${event.signal}`
-          : `code ${event.code ?? 'null'}`;
-        this.emit('worker_exited', {
+      case "worker_exited": {
+        const exitReason = event.signal ? `signal ${event.signal}` : `code ${event.code ?? "null"}`;
+        this.emit("worker_exited", {
           code: event.code,
           signal: event.signal,
           reason: exitReason,
@@ -888,16 +924,16 @@ export class MinionSupervisor {
         return;
       }
 
-      case 'backoff':
-        this.emit('backoff', {
+      case "backoff":
+        this.emit("backoff", {
           ms: event.ms,
           crash_count: event.crashCount,
           reason: event.reason,
         });
         return;
 
-      case 'health_warn':
-        this.emit('health_warn', {
+      case "health_warn":
+        this.emit("health_warn", {
           reason: event.reason,
           count: event.count,
           window_ms: event.windowMs,
@@ -906,7 +942,7 @@ export class MinionSupervisor {
           // with; name it in the OOM-loop alert so the operator's fix
           // ("raise --max-rss") is one glance away. Peak RSS stays in the
           // worker's own stderr line (the supervisor never sees it).
-          ...(event.reason === 'rss_watchdog_loop' ? { max_rss_mb: this.opts.maxRssMb } : {}),
+          ...(event.reason === "rss_watchdog_loop" ? { max_rss_mb: this.opts.maxRssMb } : {}),
         });
         return;
     }
@@ -947,16 +983,16 @@ export class MinionSupervisor {
 
       // F2 (per-threshold warns) — each is a distinct health_warn with reason.
       if (stalledCount > 10) {
-        this.emit('health_warn', {
-          reason: 'stalled_jobs',
+        this.emit("health_warn", {
+          reason: "stalled_jobs",
           count: stalledCount,
           queue: this.opts.queue,
         });
       }
 
       if (waitingCount > 0 && minutesSinceCompletion !== null && minutesSinceCompletion > 30) {
-        this.emit('health_warn', {
-          reason: 'no_recent_completions',
+        this.emit("health_warn", {
+          reason: "no_recent_completions",
           waiting_count: waitingCount,
           minutes_since_completion: minutesSinceCompletion,
           queue: this.opts.queue,
@@ -969,8 +1005,8 @@ export class MinionSupervisor {
       const workerAlive = cs !== null && cs.childAlive;
       const inBackoff = cs !== null && cs.inBackoff;
       if (!workerAlive && !this.stopping && !inBackoff) {
-        this.emit('health_warn', {
-          reason: 'worker_not_alive',
+        this.emit("health_warn", {
+          reason: "worker_not_alive",
           queue: this.opts.queue,
         });
       }
@@ -1017,24 +1053,27 @@ export class MinionSupervisor {
 
       if (this.consecutiveHealthFailures >= 3) {
         // DB connection is likely dead. Emit a degraded warning.
-        this.emit('health_warn', {
-          reason: 'db_connection_degraded',
+        this.emit("health_warn", {
+          reason: "db_connection_degraded",
           consecutive_failures: this.consecutiveHealthFailures,
           error: errMsg,
           queue: this.opts.queue,
         });
         // Attempt to reconnect the engine if it supports it
         try {
-          if ('reconnect' in this.engine && typeof (this.engine as Record<string, unknown>).reconnect === 'function') {
+          if (
+            "reconnect" in this.engine &&
+            typeof (this.engine as Record<string, unknown>).reconnect === "function"
+          ) {
             await (this.engine as unknown as { reconnect(): Promise<void> }).reconnect();
             this.consecutiveHealthFailures = 0;
-            this.emit('health_warn', {
-              reason: 'db_reconnected',
+            this.emit("health_warn", {
+              reason: "db_reconnected",
               queue: this.opts.queue,
             });
           }
         } catch (reconnErr) {
-          this.emit('health_error', {
+          this.emit("health_error", {
             error: `reconnect failed: ${reconnErr instanceof Error ? reconnErr.message : String(reconnErr)}`,
             reconnect_failed: true,
             queue: this.opts.queue,
@@ -1042,7 +1081,7 @@ export class MinionSupervisor {
         }
       } else {
         // Non-fatal single failure
-        this.emit('health_error', {
+        this.emit("health_error", {
           error: errMsg,
           queue: this.opts.queue,
         });
@@ -1067,14 +1106,14 @@ export class MinionSupervisor {
    */
   private async escalateWedgedWorker(
     waitingClaimable: number,
-    minutesSinceCompletion: number | null,
+    minutesSinceCompletion: number | null
   ): Promise<void> {
     const cs = this.childSupervisor;
     if (!cs) return;
 
     const now = Date.now();
     this.wedgeRestartTimestamps = this.wedgeRestartTimestamps.filter(
-      (t) => t > now - this.opts.wedgeRestartLoopWindowMs,
+      (t) => t > now - this.opts.wedgeRestartLoopWindowMs
     );
     // `>=` so the budget is a real ceiling (the Nth restart is the last allowed,
     // not the N+1th) — issue #1801 Codex #13.
@@ -1087,8 +1126,8 @@ export class MinionSupervisor {
       // again (window drained below budget).
       if (!this.wedgeLoopAlerted) {
         this.wedgeLoopAlerted = true;
-        this.emit('health_warn', {
-          reason: 'wedge_restart_loop',
+        this.emit("health_warn", {
+          reason: "wedge_restart_loop",
           count: this.wedgeRestartTimestamps.length,
           window_ms: this.opts.wedgeRestartLoopWindowMs,
           waiting_claimable: waitingClaimable,
@@ -1103,8 +1142,8 @@ export class MinionSupervisor {
     this.wedgeRestartTimestamps.push(now);
     this.consecutiveWedgedChecks = 0;
     this.escalationInFlight = true;
-    this.emit('health_warn', {
-      reason: 'restarting_wedged_worker',
+    this.emit("health_warn", {
+      reason: "restarting_wedged_worker",
       waiting_claimable: waitingClaimable,
       minutes_since_completion: minutesSinceCompletion,
       consecutive_wedged_checks: this.opts.wedgeRestartChecks,

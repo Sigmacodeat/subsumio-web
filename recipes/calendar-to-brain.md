@@ -75,11 +75,13 @@ Agent reads daily files
 ## Opinionated Defaults
 
 **Multiple calendar accounts:**
+
 - Work calendar (company domain)
 - Personal calendar (gmail.com)
 - Previous company calendars (if still accessible)
 
 **Daily file format:**
+
 ```markdown
 # 2026-04-10 (Thursday)
 
@@ -94,9 +96,10 @@ Cancelled events are skipped. Attendee names extracted (no email addresses in ou
 Calendar label in parentheses. Location with 📍 emoji.
 
 **Historical backfill:** Sync years of calendar data, not just recent. Common ranges:
+
 - Work: 2020-present
 - Personal: 2014-present
-This builds the full relationship graph from day one.
+  This builds the full relationship graph from day one.
 
 ## Prerequisites
 
@@ -124,6 +127,7 @@ OAuth tokens yourself. Good if you don't want another dependency."
 
 Tell the user:
 "I need your ClawVisor URL and agent token.
+
 1. Go to https://clawvisor.com
 2. Create an agent (or use existing)
 3. Activate the **Google Calendar** service
@@ -134,6 +138,7 @@ Tell the user:
 5. Copy the gateway URL and agent token"
 
 Validate:
+
 ```bash
 curl -sf "$CLAWVISOR_URL/health" && echo "PASS: ClawVisor reachable" || echo "FAIL"
 ```
@@ -159,11 +164,10 @@ Tell the user:
 5. Click **'Create'**. You'll see the Client ID and Client Secret.
 6. Copy both and paste them to me.
 
-Also enable the Calendar API:
-7. Go to https://console.cloud.google.com/apis/library/calendar-json.googleapis.com
-8. Click **'Enable'**"
+Also enable the Calendar API: 7. Go to https://console.cloud.google.com/apis/library/calendar-json.googleapis.com 8. Click **'Enable'**"
 
 Validate the credentials are set:
+
 ```bash
 [ -n "$GOOGLE_CLIENT_ID" ] && [ -n "$GOOGLE_CLIENT_SECRET" ] \
   && echo "PASS: Google OAuth credentials set" \
@@ -171,6 +175,7 @@ Validate the credentials are set:
 ```
 
 Then run the OAuth flow to get an access token:
+
 ```bash
 # The sync script should handle the OAuth flow:
 # 1. Open browser to Google auth URL with calendar.readonly scope
@@ -185,11 +190,13 @@ Then run the OAuth flow to get an access token:
 ### Step 2: Identify Calendar Accounts
 
 Ask the user: "Which Google Calendar accounts should I sync? Common setup:
+
 - Work email (e.g., you@company.com)
 - Personal email (e.g., you@gmail.com)
 - Any previous company emails with calendar history"
 
 For each account, note:
+
 - Email address
 - Start year (how far back to sync)
 - Label (Work, Personal, etc.)
@@ -197,6 +204,7 @@ For each account, note:
 ### Step 3: Set Up the Calendar Sync Script
 
 Create the sync directory:
+
 ```bash
 mkdir -p calendar-sync
 cd calendar-sync
@@ -228,6 +236,7 @@ Tell the user: "Syncing calendar history from [start year]. This creates one
 markdown file per day. For 4 years of data, expect ~1,400 daily files."
 
 Verify:
+
 ```bash
 ls brain/daily/calendar/2026/ | head -10
 ```
@@ -242,6 +251,7 @@ gbrain embed --stale
 ```
 
 Verify:
+
 ```bash
 gbrain search "meeting" --limit 3
 ```
@@ -262,12 +272,14 @@ This is YOUR job (the agent). For each person who appears in calendar events:
 ### Step 7: Set Up Weekly Sync
 
 The calendar should sync weekly to stay current:
+
 ```bash
 # Cron: every Sunday at 10 AM
 0 10 * * 0 cd /path/to/calendar-sync && node calendar-sync.mjs --start $(date -v-7d +%Y-%m-%d) --end $(date +%Y-%m-%d)
 ```
 
 After sync, import new data:
+
 ```bash
 gbrain sync --no-pull --no-embed && gbrain embed --stale
 ```
@@ -380,25 +392,28 @@ format_time(iso_str):
 
 ## Cost Estimate
 
-| Component | Monthly Cost |
-|-----------|-------------|
-| ClawVisor (free tier) | $0 |
-| Google Calendar API | $0 (within free quota) |
-| **Total** | **$0** |
+| Component             | Monthly Cost           |
+| --------------------- | ---------------------- |
+| ClawVisor (free tier) | $0                     |
+| Google Calendar API   | $0 (within free quota) |
+| **Total**             | **$0**                 |
 
 ## Troubleshooting
 
 **No events returned:**
+
 - Check the calendar account email is correct
 - Check ClawVisor has Google Calendar service activated
 - Check the standing task purpose is expansive enough
 - Some calendars may be empty for the requested date range
 
 **Attendee names missing:**
+
 - Google Calendar sometimes returns email addresses instead of display names
 - The sync script should extract the display name from the attendee object
 - If no display name, use the email prefix (before @)
 
 **Duplicate events:**
+
 - The sync script should be idempotent (same date range = same output)
 - If running multiple times, existing daily files are overwritten (not appended)

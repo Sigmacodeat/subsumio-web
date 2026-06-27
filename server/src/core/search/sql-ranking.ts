@@ -17,7 +17,7 @@
  * inline as bare literals.
  */
 
-import { quarantineFilterFragment } from '../quarantine.ts';
+import { quarantineFilterFragment } from "../quarantine.ts";
 
 /**
  * Escape `%`, `_`, and `\` so a string can be used as a LIKE prefix literal.
@@ -28,7 +28,7 @@ import { quarantineFilterFragment } from '../quarantine.ts';
  * the backslash this inserts is treated as the escape char, not a literal.
  */
 export function escapeLikePattern(s: string): string {
-  return s.replace(/[%_\\]/g, '\\$&');
+  return s.replace(/[%_\\]/g, "\\$&");
 }
 
 /** Escape a SQL string literal: replace single-quote with two single-quotes. */
@@ -62,23 +62,26 @@ function buildLikePrefixLiteral(prefix: string): string {
 export function buildSourceFactorCase(
   slugColumn: string,
   boostMap: Record<string, number>,
-  detail: 'low' | 'medium' | 'high' | undefined,
+  detail: "low" | "medium" | "high" | undefined
 ): string {
   // Loose-string guard: agents passing `"HIGH"` or `"high "` over MCP/JSON
   // should still hit the temporal-bypass path. TypeScript narrows `detail`
   // for typed callers; this guard catches the untyped boundary.
-  const normalized = typeof detail === 'string' ? detail.trim().toLowerCase() : detail;
-  if (normalized === 'high') return '1.0';
+  const normalized = typeof detail === "string" ? detail.trim().toLowerCase() : detail;
+  if (normalized === "high") return "1.0";
 
   const entries = Object.entries(boostMap)
     .filter(([prefix, factor]) => prefix.length > 0 && Number.isFinite(factor) && factor >= 0)
     .sort((a, b) => b[0].length - a[0].length); // longest-prefix-match wins
 
-  if (entries.length === 0) return '1.0';
+  if (entries.length === 0) return "1.0";
 
-  const whens = entries.map(([prefix, factor]) =>
-    `WHEN ${slugColumn} LIKE ${buildLikePrefixLiteral(prefix)} THEN ${factor}`
-  ).join(' ');
+  const whens = entries
+    .map(
+      ([prefix, factor]) =>
+        `WHEN ${slugColumn} LIKE ${buildLikePrefixLiteral(prefix)} THEN ${factor}`
+    )
+    .join(" ");
 
   return `(CASE ${whens} ELSE 1.0 END)`;
 }
@@ -101,12 +104,12 @@ export function buildSourceFactorCase(
  * @returns raw SQL fragment (with leading space) or empty string
  */
 export function buildHardExcludeClause(slugColumn: string, prefixes: string[]): string {
-  if (!prefixes.length) return '';
+  if (!prefixes.length) return "";
   const likes = prefixes
-    .filter(p => p.length > 0)
-    .map(p => `${slugColumn} LIKE ${buildLikePrefixLiteral(p)}`)
-    .join(' OR ');
-  if (!likes) return '';
+    .filter((p) => p.length > 0)
+    .map((p) => `${slugColumn} LIKE ${buildLikePrefixLiteral(p)}`)
+    .join(" OR ");
+  if (!likes) return "";
   return `AND NOT (${likes})`;
 }
 
@@ -219,10 +222,10 @@ export function buildBestPerPagePoolCte(candidateCte: string): string {
  * for the 'fixed' branch — caller-supplied strings NEVER flow into raw SQL,
  * preventing the injection vector codex pass-1 #5 flagged.
  */
-export type NowExpr = { kind: 'now' } | { kind: 'fixed'; isoUtc: string };
+export type NowExpr = { kind: "now" } | { kind: "fixed"; isoUtc: string };
 
 function nowExprToSql(now: NowExpr): string {
-  if (now.kind === 'now') return 'NOW()';
+  if (now.kind === "now") return "NOW()";
   return `'${escapeSqlLiteral(now.isoUtc)}'::timestamptz`;
 }
 
@@ -249,12 +252,12 @@ function nowExprToSql(now: NowExpr): string {
 export function buildRecencyComponentSql(opts: {
   slugColumn: string;
   dateExpr: string;
-  decayMap: import('./recency-decay.ts').RecencyDecayMap;
-  fallback: import('./recency-decay.ts').RecencyDecayConfig;
+  decayMap: import("./recency-decay.ts").RecencyDecayMap;
+  fallback: import("./recency-decay.ts").RecencyDecayConfig;
   now?: NowExpr;
 }): string {
   const { slugColumn, dateExpr, decayMap, fallback } = opts;
-  const now = opts.now ?? { kind: 'now' };
+  const now = opts.now ?? { kind: "now" };
   const nowSql = nowExprToSql(now);
   const daysOldSql = `EXTRACT(EPOCH FROM (${nowSql} - ${dateExpr})) / 86400.0`;
 
@@ -270,14 +273,14 @@ export function buildRecencyComponentSql(opts: {
       const h = cfg.halflifeDays;
       const c = cfg.coefficient;
       branches.push(
-        `WHEN ${slugColumn} LIKE ${literal} THEN ${c} * ${h}.0 / (${h}.0 + ${daysOldSql})`,
+        `WHEN ${slugColumn} LIKE ${literal} THEN ${c} * ${h}.0 / (${h}.0 + ${daysOldSql})`
       );
     }
   }
 
   let elseSql: string;
   if (fallback.halflifeDays === 0 || fallback.coefficient === 0) {
-    elseSql = '0';
+    elseSql = "0";
   } else {
     const h = fallback.halflifeDays;
     const c = fallback.coefficient;
@@ -285,7 +288,7 @@ export function buildRecencyComponentSql(opts: {
   }
 
   if (branches.length === 0) return `(${elseSql})`;
-  return `(CASE ${branches.join(' ')} ELSE ${elseSql} END)`;
+  return `(CASE ${branches.join(" ")} ELSE ${elseSql} END)`;
 }
 
 // Exported for unit tests

@@ -99,7 +99,7 @@ export default function ClientPortalPage() {
       setCases(loaded);
 
       // Load shared spaces
-      const spacesRes = await fetch("/api/shared-spaces");
+      const spacesRes = await fetch("/api/shared-spaces", { signal: AbortSignal.timeout(15_000) });
       if (spacesRes.ok) {
         const spacesData = await spacesRes.json();
         setSharedSpaces(spacesData.data || []);
@@ -195,9 +195,7 @@ export default function ClientPortalPage() {
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <Share2 size={16} className="text-[color:var(--ds-text-muted)]" />
-            <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
-              Shared Spaces
-            </h3>
+            <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">Shared Spaces</h3>
           </div>
           {sharedSpaces.map((space) => (
             <div
@@ -210,9 +208,7 @@ export default function ClientPortalPage() {
                     {space.name}
                   </h4>
                   {space.description && (
-                    <p className="text-xs text-[color:var(--ds-text-muted)]">
-                      {space.description}
-                    </p>
+                    <p className="text-xs text-[color:var(--ds-text-muted)]">{space.description}</p>
                   )}
                 </div>
                 <Badge
@@ -234,7 +230,9 @@ export default function ClientPortalPage() {
                 {space.expires_at && (
                   <span className="flex items-center gap-1">
                     <CalendarClock size={10} />
-                    {new Date(space.expires_at).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")}
+                    {new Date(space.expires_at).toLocaleDateString(
+                      lang === "en" ? "en-GB" : "de-DE"
+                    )}
                   </span>
                 )}
               </div>

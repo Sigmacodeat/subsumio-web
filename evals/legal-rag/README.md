@@ -6,13 +6,13 @@ Benchmark für Legal-RAG-Qualität in Subsumio.
 
 Dieser Eval misst, wie gut Subsumio's Brain (Knowledge Graph + Hybrid RAG + Agent Workspace) **legal-spezifische Fragen** beantwortet:
 
-| Dimension | Was gemessen wird |
-|---|---|
-| **statute_citation_precision** | §-Zitate korrekt identifiziert? |
-| **case_reference_recall** | Akten-Verweise gefunden? |
-| **deadline_extraction_accuracy** | Fristen korrekt extrahiert? |
-| **judgement_retrieval** | Rechtsprechung gefunden? |
-| **risk_detection** | Risiken identifiziert? |
+| Dimension                        | Was gemessen wird               |
+| -------------------------------- | ------------------------------- |
+| **statute_citation_precision**   | §-Zitate korrekt identifiziert? |
+| **case_reference_recall**        | Akten-Verweise gefunden?        |
+| **deadline_extraction_accuracy** | Fristen korrekt extrahiert?     |
+| **judgement_retrieval**          | Rechtsprechung gefunden?        |
+| **risk_detection**               | Risiken identifiziert?          |
 
 ## Methodik
 
@@ -25,6 +25,7 @@ Dieser Eval misst, wie gut Subsumio's Brain (Knowledge Graph + Hybrid RAG + Agen
 - **hard**: Rechtsprechung + aktuelle Entwicklungen (EuGH, BAG)
 
 Jede Fixture hat:
+
 - `expected_statutes` — erwartete §-Zitate
 - `expected_cases` — erwartete Akten-Slugs
 - `expected_deadlines` — erwartete Fristen
@@ -51,17 +52,26 @@ node evals/legal-rag/runner.mjs --model claude-opus-4 --brain acme-law
 
 ## Erwartete Scores (Baseline)
 
-| Dimension | Baseline (Haiku) | Ziel (Opus) |
-|---|---|---|
-| statute_citation_precision | 70% | 90% |
-| case_reference_recall | 60% | 85% |
-| deadline_extraction_accuracy | 65% | 90% |
-| judgement_retrieval | 40% | 75% |
-| risk_detection | 55% | 80% |
-| **MACRO AVERAGE** | **58%** | **84%** |
+| Dimension                    | Baseline (Haiku) | Ziel (Opus) |
+| ---------------------------- | ---------------- | ----------- |
+| statute_citation_precision   | 70%              | 90%         |
+| case_reference_recall        | 60%              | 85%         |
+| deadline_extraction_accuracy | 65%              | 90%         |
+| judgement_retrieval          | 40%              | 75%         |
+| risk_detection               | 55%              | 80%         |
+| **MACRO AVERAGE**            | **58%**          | **84%**     |
 
 ## Adding Fixtures
 
 ```jsonl
-{"question": "...", "expected_statutes": ["..."], "dimensions": ["..."], "difficulty": "easy"}
+{
+  "question": "...",
+  "expected_statutes": [
+    "..."
+  ],
+  "dimensions": [
+    "..."
+  ],
+  "difficulty": "easy"
+}
 ```

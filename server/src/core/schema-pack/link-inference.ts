@@ -38,8 +38,8 @@
 // them deliberately; legacy fall-through covers the gbrain-base
 // universe.
 
-import type { SchemaPackManifest } from './manifest-v1.ts';
-import { PageRegexBudget, runRegexBounded } from './redos-guard.ts';
+import type { SchemaPackManifest } from "./manifest-v1.ts";
+import { PageRegexBudget, runRegexBounded } from "./redos-guard.ts";
 
 /**
  * Try to resolve a link verb from the active pack's declared
@@ -53,10 +53,10 @@ import { PageRegexBudget, runRegexBounded } from './redos-guard.ts';
  * point of letting users override.
  */
 export function inferLinkTypeFromPack(
-  pack: Pick<SchemaPackManifest, 'link_types'>,
+  pack: Pick<SchemaPackManifest, "link_types">,
   pageType: string,
   context: string,
-  budget?: PageRegexBudget,
+  budget?: PageRegexBudget
 ): string | null {
   // Pass 1: page-type-bound verbs (e.g. meeting → attended). These
   // are deterministic; no regex needed.
@@ -106,9 +106,9 @@ export function inferLinkTypeFromPack(
  * (first match wins).
  */
 export function frontmatterLinkTypeFromPack(
-  pack: Pick<SchemaPackManifest, 'frontmatter_links'>,
+  pack: Pick<SchemaPackManifest, "frontmatter_links">,
   pageType: string | undefined,
-  fieldName: string,
+  fieldName: string
 ): string | null {
   for (const fl of pack.frontmatter_links) {
     if (fl.page_type !== undefined && fl.page_type !== pageType) continue;

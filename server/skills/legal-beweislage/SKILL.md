@@ -41,6 +41,7 @@ mutating: false
 ### Step 1 — Load Case Evidence
 
 Search the brain for the case and extract the `evidence` frontmatter array:
+
 ```
 gbrain search "<case>" --type legal-case
 ```
@@ -48,6 +49,7 @@ gbrain search "<case>" --type legal-case
 ### Step 2 — Categorize Evidence
 
 Group by type:
+
 - **Documentary**: Contracts, emails, invoices, reports
 - **Testimonial**: Witness statements, expert opinions
 - **Physical**: Objects, photos, videos
@@ -56,12 +58,12 @@ Group by type:
 
 ### Step 3 — Evaluate Each Item
 
-| Criterion | Weight |
-|---|---|
-| Relevance | High |
-| Authenticity | High |
-| Admissibility | High |
-| Corroboration | Medium |
+| Criterion        | Weight              |
+| ---------------- | ------------------- |
+| Relevance        | High                |
+| Authenticity     | High                |
+| Admissibility    | High                |
+| Corroboration    | Medium              |
 | Chain of custody | High (for physical) |
 
 Score each item 0-1 and flag gaps.
@@ -69,6 +71,7 @@ Score each item 0-1 and flag gaps.
 ### Step 4 — Identify Gaps
 
 Common gaps:
+
 - Missing documentary evidence (no written contract)
 - Witness unavailable (moved, died, hostile)
 - Chain of custody broken

@@ -124,7 +124,7 @@ describe("buildWorkflowFrontmatter", () => {
         template_id: "nonexistent",
         prompt: "Test",
         started_by: "user@test.com",
-      }),
+      })
     ).toThrow("Unknown workflow template");
   });
 
@@ -229,9 +229,21 @@ describe("getActiveStep", () => {
 describe("getPendingApprovals", () => {
   it("returns running steps with agent_action_slug", () => {
     const steps: WorkflowStep[] = [
-      { id: "s1", label: "A", action_type: "document_finalize", status: "running", agent_action_slug: "actions/123" },
+      {
+        id: "s1",
+        label: "A",
+        action_type: "document_finalize",
+        status: "running",
+        agent_action_slug: "actions/123",
+      },
       { id: "s2", label: "B", action_type: "document_finalize", status: "running" },
-      { id: "s3", label: "C", action_type: "document_finalize", status: "pending", agent_action_slug: "actions/456" },
+      {
+        id: "s3",
+        label: "C",
+        action_type: "document_finalize",
+        status: "pending",
+        agent_action_slug: "actions/456",
+      },
     ];
     const pending = getPendingApprovals(steps);
     expect(pending.length).toBe(1);
@@ -408,22 +420,54 @@ describe("filterWorkflows", () => {
     {
       slug: "w1",
       title: "Running",
-      frontmatter: { type: "workflow", template_id: "t", status: "running", prompt: "", steps: [], started_at: "2024-01-01", started_by: "u" },
+      frontmatter: {
+        type: "workflow",
+        template_id: "t",
+        status: "running",
+        prompt: "",
+        steps: [],
+        started_at: "2024-01-01",
+        started_by: "u",
+      },
     },
     {
       slug: "w2",
       title: "Completed",
-      frontmatter: { type: "workflow", template_id: "t", status: "completed", prompt: "", steps: [], started_at: "2024-01-02", started_by: "u" },
+      frontmatter: {
+        type: "workflow",
+        template_id: "t",
+        status: "completed",
+        prompt: "",
+        steps: [],
+        started_at: "2024-01-02",
+        started_by: "u",
+      },
     },
     {
       slug: "w3",
       title: "Failed",
-      frontmatter: { type: "workflow", template_id: "t", status: "failed", prompt: "", steps: [], started_at: "2024-01-03", started_by: "u" },
+      frontmatter: {
+        type: "workflow",
+        template_id: "t",
+        status: "failed",
+        prompt: "",
+        steps: [],
+        started_at: "2024-01-03",
+        started_by: "u",
+      },
     },
     {
       slug: "w4",
       title: "Paused",
-      frontmatter: { type: "workflow", template_id: "t", status: "paused", prompt: "", steps: [], started_at: "2024-01-04", started_by: "u" },
+      frontmatter: {
+        type: "workflow",
+        template_id: "t",
+        status: "paused",
+        prompt: "",
+        steps: [],
+        started_at: "2024-01-04",
+        started_by: "u",
+      },
     },
   ];
 
@@ -451,9 +495,45 @@ describe("filterWorkflows", () => {
 
 describe("sortWorkflowsByStartedAt", () => {
   const instances: WorkflowInstance[] = [
-    { slug: "w1", title: "A", frontmatter: { type: "workflow", template_id: "t", status: "running", prompt: "", steps: [], started_at: "2024-01-01", started_by: "u" } },
-    { slug: "w2", title: "B", frontmatter: { type: "workflow", template_id: "t", status: "running", prompt: "", steps: [], started_at: "2024-03-01", started_by: "u" } },
-    { slug: "w3", title: "C", frontmatter: { type: "workflow", template_id: "t", status: "running", prompt: "", steps: [], started_at: "2024-02-01", started_by: "u" } },
+    {
+      slug: "w1",
+      title: "A",
+      frontmatter: {
+        type: "workflow",
+        template_id: "t",
+        status: "running",
+        prompt: "",
+        steps: [],
+        started_at: "2024-01-01",
+        started_by: "u",
+      },
+    },
+    {
+      slug: "w2",
+      title: "B",
+      frontmatter: {
+        type: "workflow",
+        template_id: "t",
+        status: "running",
+        prompt: "",
+        steps: [],
+        started_at: "2024-03-01",
+        started_by: "u",
+      },
+    },
+    {
+      slug: "w3",
+      title: "C",
+      frontmatter: {
+        type: "workflow",
+        template_id: "t",
+        status: "running",
+        prompt: "",
+        steps: [],
+        started_at: "2024-02-01",
+        started_by: "u",
+      },
+    },
   ];
 
   it("sorts descending by default", () => {
@@ -551,15 +631,30 @@ describe("isTerminalStepStatus", () => {
 
 describe("canAdvanceStep", () => {
   it("allows pending → running", () => {
-    const step: WorkflowStep = { id: "s1", label: "A", action_type: "document_finalize", status: "pending" };
+    const step: WorkflowStep = {
+      id: "s1",
+      label: "A",
+      action_type: "document_finalize",
+      status: "pending",
+    };
     expect(canAdvanceStep(step, "running")).toBe(true);
   });
   it("blocks approved → running (terminal)", () => {
-    const step: WorkflowStep = { id: "s1", label: "A", action_type: "document_finalize", status: "approved" };
+    const step: WorkflowStep = {
+      id: "s1",
+      label: "A",
+      action_type: "document_finalize",
+      status: "approved",
+    };
     expect(canAdvanceStep(step, "running")).toBe(false);
   });
   it("blocks same status", () => {
-    const step: WorkflowStep = { id: "s1", label: "A", action_type: "document_finalize", status: "running" };
+    const step: WorkflowStep = {
+      id: "s1",
+      label: "A",
+      action_type: "document_finalize",
+      status: "running",
+    };
     expect(canAdvanceStep(step, "running")).toBe(false);
   });
 });

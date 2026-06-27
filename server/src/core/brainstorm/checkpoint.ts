@@ -30,10 +30,10 @@ import {
   unlinkSync,
   existsSync,
   statSync,
-} from 'node:fs';
-import { join } from 'node:path';
-import { createHash } from 'node:crypto';
-import { gbrainPath } from '../config.ts';
+} from "node:fs";
+import { join } from "node:path";
+import { createHash } from "node:crypto";
+import { gbrainPath } from "../config.ts";
 
 export interface CheckpointIdea {
   text: string;
@@ -69,7 +69,7 @@ const CURRENT_SCHEMA: 2 = 2;
 const STALE_MS = 7 * 24 * 60 * 60 * 1000;
 
 function checkpointDir(): string {
-  return gbrainPath('brainstorm');
+  return gbrainPath("brainstorm");
 }
 
 function pathForRunId(runId: string): string {
@@ -85,7 +85,7 @@ export function computeRunId(
   question: string,
   profileLabel: string,
   closeSlugs: string[],
-  farSlugs: string[],
+  farSlugs: string[]
 ): string {
   const sortedClose = [...closeSlugs].sort();
   const sortedFar = [...farSlugs].sort();
@@ -94,19 +94,19 @@ export function computeRunId(
     profileLabel,
     JSON.stringify(sortedClose),
     JSON.stringify(sortedFar),
-  ].join('');
-  return createHash('sha256').update(payload).digest('hex').slice(0, 16);
+  ].join("");
+  return createHash("sha256").update(payload).digest("hex").slice(0, 16);
 }
 
 export function loadCheckpoint(runId: string): BrainstormCheckpoint | null {
   const path = pathForRunId(runId);
   if (!existsSync(path)) return null;
   try {
-    const raw = readFileSync(path, 'utf-8');
+    const raw = readFileSync(path, "utf-8");
     const parsed = JSON.parse(raw) as BrainstormCheckpoint;
     if (parsed.schema_version !== CURRENT_SCHEMA) {
       process.stderr.write(
-        `[brainstorm] checkpoint ${runId} has schema_version ${parsed.schema_version} (expected ${CURRENT_SCHEMA}); ignoring (fresh start).\n`,
+        `[brainstorm] checkpoint ${runId} has schema_version ${parsed.schema_version} (expected ${CURRENT_SCHEMA}); ignoring (fresh start).\n`
       );
       return null;
     }
@@ -134,10 +134,10 @@ export function listRuns(): Array<{ run_id: string; question: string; mtime: num
   const dir = checkpointDir();
   if (!existsSync(dir)) return [];
   try {
-    const files = readdirSync(dir).filter((f) => f.endsWith('.json'));
+    const files = readdirSync(dir).filter((f) => f.endsWith(".json"));
     const out: Array<{ run_id: string; question: string; mtime: number }> = [];
     for (const f of files) {
-      const runId = f.replace(/\.json$/, '');
+      const runId = f.replace(/\.json$/, "");
       const cp = loadCheckpoint(runId);
       if (!cp) continue;
       try {
@@ -166,7 +166,7 @@ export function gcStaleCheckpoints(maxAgeDays = 7): number {
   let removed = 0;
   try {
     for (const f of readdirSync(dir)) {
-      if (!f.endsWith('.json')) continue;
+      if (!f.endsWith(".json")) continue;
       const path = join(dir, f);
       try {
         const m = statSync(path).mtimeMs;

@@ -61,12 +61,25 @@ export const GET = createHandler(
           include_external: query.include_external === "true",
           language: query.language,
         };
-        const results = whoKnows(orgProfiles, whoKnowsQuery, ctx.user.orgId || "", viewerIsLawyer, viewerIsManagement, policy);
+        const results = whoKnows(
+          orgProfiles,
+          whoKnowsQuery,
+          ctx.user.orgId || "",
+          viewerIsLawyer,
+          viewerIsManagement,
+          policy
+        );
         return apiSuccess({ results, total: results.length });
       }
 
       case "summary": {
-        const summary = getLayerSummary(orgProfiles, ctx.user.orgId || "", viewerIsLawyer, viewerIsManagement, policy);
+        const summary = getLayerSummary(
+          orgProfiles,
+          ctx.user.orgId || "",
+          viewerIsLawyer,
+          viewerIsManagement,
+          policy
+        );
         return apiSuccess(summary);
       }
 
@@ -78,7 +91,15 @@ export const GET = createHandler(
         if (!profile) {
           return apiError("not_found", "Profile not found", 404);
         }
-        if (!isProfileVisible(profile, ctx.user.orgId || "", viewerIsLawyer, viewerIsManagement, policy)) {
+        if (
+          !isProfileVisible(
+            profile,
+            ctx.user.orgId || "",
+            viewerIsLawyer,
+            viewerIsManagement,
+            policy
+          )
+        ) {
           return apiError("forbidden", "Profile not visible", 403);
         }
         return apiSuccess(sanitizeProfile(profile, policy));
@@ -87,10 +108,12 @@ export const GET = createHandler(
       case "list":
       default: {
         const visible = orgProfiles
-          .filter((p) => isProfileVisible(p, ctx.user.orgId || "", viewerIsLawyer, viewerIsManagement, policy))
+          .filter((p) =>
+            isProfileVisible(p, ctx.user.orgId || "", viewerIsLawyer, viewerIsManagement, policy)
+          )
           .map((p) => sanitizeProfile(p, policy));
         return apiSuccess({ profiles: visible, total: visible.length });
       }
     }
-  },
+  }
 );

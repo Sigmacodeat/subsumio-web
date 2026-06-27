@@ -23,8 +23,8 @@
  * shape regression guard.
  */
 
-import { describe, it, expect, beforeAll, afterAll } from 'bun:test';
-import { PGLiteEngine } from '../src/core/pglite-engine.ts';
+import { describe, it, expect, beforeAll, afterAll } from "bun:test";
+import { PGLiteEngine } from "../src/core/pglite-engine.ts";
 
 let engine: PGLiteEngine;
 
@@ -47,13 +47,17 @@ beforeAll(async () => {
   const db = (engine as any).db;
 
   // Insert 3 target pages (people/alice-*).
-  for (const slug of ['people/alice-example', 'people/alice-research', 'people/alice-engineer']) {
-    await engine.putPage(slug, {
-      type: 'person',
-      title: slug.split('/').pop()!,
-      compiled_truth: `# ${slug}`,
-      frontmatter: { type: 'person', title: slug, slug },
-    }, { sourceId: 'default' });
+  for (const slug of ["people/alice-example", "people/alice-research", "people/alice-engineer"]) {
+    await engine.putPage(
+      slug,
+      {
+        type: "person",
+        title: slug.split("/").pop()!,
+        compiled_truth: `# ${slug}`,
+        frontmatter: { type: "person", title: slug, slug },
+      },
+      { sourceId: "default" }
+    );
   }
 
   // Bulk-insert filler pages. Use a single executeRaw with generate_series
@@ -68,13 +72,18 @@ beforeAll(async () => {
             'default',
             NOW(),
             NOW()
-     FROM generate_series(1, ${PAGES}) gs`,
+     FROM generate_series(1, ${PAGES}) gs`
   );
 
   // Capture id range for link + chunk inserts.
-  const fillerIds = await db.query(`SELECT id FROM pages WHERE slug LIKE 'filler/%' LIMIT ${PAGES}`);
+  const fillerIds = await db.query(
+    `SELECT id FROM pages WHERE slug LIKE 'filler/%' LIMIT ${PAGES}`
+  );
   const aliceIds = await db.query(`SELECT id FROM pages WHERE slug LIKE 'people/alice-%'`);
-  const allIds = [...fillerIds.rows.map((r: { id: string }) => r.id), ...aliceIds.rows.map((r: { id: string }) => r.id)];
+  const allIds = [
+    ...fillerIds.rows.map((r: { id: string }) => r.id),
+    ...aliceIds.rows.map((r: { id: string }) => r.id),
+  ];
 
   // Spread LINKS across filler pages (filler→filler). The OLD shape will
   // aggregate ALL of these on every prefix-expansion call; the NEW shape
@@ -97,9 +106,9 @@ beforeAll(async () => {
     // Test seeding doesn't care if a few inserts are skipped; the order of
     // magnitude is what matters for the perf comparison.
     await db.query(
-      `INSERT INTO links (from_page_id, to_page_id, link_type) VALUES ${tuples.join(',')}
+      `INSERT INTO links (from_page_id, to_page_id, link_type) VALUES ${tuples.join(",")}
        ON CONFLICT DO NOTHING`,
-      params,
+      params
     );
   }
 
@@ -121,8 +130,8 @@ beforeAll(async () => {
       params.push(pid, idx, `chunk ${i + j}`);
     }
     await db.query(
-      `INSERT INTO content_chunks (page_id, chunk_index, chunk_text) VALUES ${tuples.join(',')}`,
-      params,
+      `INSERT INTO content_chunks (page_id, chunk_index, chunk_text) VALUES ${tuples.join(",")}`,
+      params
     );
   }
 }, 60_000);
@@ -174,14 +183,14 @@ const NEW_SQL = `
 
 async function timeQuery(sql: string): Promise<number> {
   const start = performance.now();
-  const rows = await engine.executeRaw<{ slug: string; connection_count: number }>(
-    sql,
-    ['default', 'people/alice-%'],
-  );
+  const rows = await engine.executeRaw<{ slug: string; connection_count: number }>(sql, [
+    "default",
+    "people/alice-%",
+  ]);
   const elapsed = performance.now() - start;
   // Sanity: both shapes must return the same result set so the timing is
   // comparing apples to apples.
-  if (rows.length === 0) throw new Error('Query returned no rows — fixture seeding broke');
+  if (rows.length === 0) throw new Error("Query returned no rows — fixture seeding broke");
   return elapsed;
 }
 
@@ -191,8 +200,8 @@ function median(xs: number[]): number {
   return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
 }
 
-describe('tryPrefixExpansion perf regression — NEW shape >= 5x faster than OLD', () => {
-  it('correlated subqueries beat derived-table aggregation by 5x or more', async () => {
+describe("tryPrefixExpansion perf regression — NEW shape >= 5x faster than OLD", () => {
+  it("correlated subqueries beat derived-table aggregation by 5x or more", async () => {
     // Warm both shapes once so the planner caches its plan, then measure.
     await timeQuery(OLD_SQL);
     await timeQuery(NEW_SQL);
@@ -210,8 +219,8 @@ describe('tryPrefixExpansion perf regression — NEW shape >= 5x faster than OLD
     // numbers, not just pass/fail.
     process.stderr.write(
       `[entity-resolve-perf] fixture=${PAGES}p+${LINKS}l+${CHUNKS}c ` +
-      `old_median=${oldMedian.toFixed(2)}ms new_median=${newMedian.toFixed(2)}ms ` +
-      `speedup=${speedup.toFixed(2)}x\n`,
+        `old_median=${oldMedian.toFixed(2)}ms new_median=${newMedian.toFixed(2)}ms ` +
+        `speedup=${speedup.toFixed(2)}x\n`
     );
 
     expect(speedup).toBeGreaterThanOrEqual(5);

@@ -13,8 +13,8 @@
  * profile → contradictions output is byte-identical to v0.32.6).
  */
 
-import type { ContradictionFinding } from './types.ts';
-import type { CalibrationProfileRow } from '../../commands/calibration.ts';
+import type { ContradictionFinding } from "./types.ts";
+import type { CalibrationProfileRow } from "../../commands/calibration.ts";
 
 /**
  * The bias-tag context the runner can splice into the output. Keep this
@@ -44,7 +44,7 @@ export interface CalibrationJoinTag {
  */
 export function tagFindingWithCalibration(
   finding: ContradictionFinding,
-  profile: CalibrationProfileRow | null,
+  profile: CalibrationProfileRow | null
 ): CalibrationJoinTag | null {
   if (!profile || profile.active_bias_tags.length === 0) return null;
   const hint = computeDomainHint(finding).toLowerCase();
@@ -71,29 +71,40 @@ export function computeDomainHint(finding: ContradictionFinding): string {
   for (const member of [finding.a, finding.b]) {
     const slug = member.slug.toLowerCase();
     // Pull the kebab-cased segment most likely to match a bias-tag domain.
-    if (slug.startsWith('wiki/companies/') || slug.startsWith('companies/')) candidates.push('hiring', 'market-timing');
-    if (slug.startsWith('wiki/people/') || slug.startsWith('people/')) candidates.push('founder-behavior', 'hiring');
-    if (slug.startsWith('wiki/deals/') || slug.startsWith('deals/')) candidates.push('market-timing');
-    if (slug.startsWith('wiki/macro') || slug.includes('/macro/') || slug.includes('macro-')) candidates.push('macro');
-    if (slug.startsWith('wiki/geography') || slug.includes('/geography/') || slug.includes('geography-')) candidates.push('geography');
-    if (slug.startsWith('wiki/tactics') || slug.includes('/tactics/') || slug.includes('tactics-')) candidates.push('tactics');
-    if (slug.startsWith('wiki/ai/') || slug.includes('/ai-') || slug.includes('-ai-')) candidates.push('ai');
+    if (slug.startsWith("wiki/companies/") || slug.startsWith("companies/"))
+      candidates.push("hiring", "market-timing");
+    if (slug.startsWith("wiki/people/") || slug.startsWith("people/"))
+      candidates.push("founder-behavior", "hiring");
+    if (slug.startsWith("wiki/deals/") || slug.startsWith("deals/"))
+      candidates.push("market-timing");
+    if (slug.startsWith("wiki/macro") || slug.includes("/macro/") || slug.includes("macro-"))
+      candidates.push("macro");
+    if (
+      slug.startsWith("wiki/geography") ||
+      slug.includes("/geography/") ||
+      slug.includes("geography-")
+    )
+      candidates.push("geography");
+    if (slug.startsWith("wiki/tactics") || slug.includes("/tactics/") || slug.includes("tactics-"))
+      candidates.push("tactics");
+    if (slug.startsWith("wiki/ai/") || slug.includes("/ai-") || slug.includes("-ai-"))
+      candidates.push("ai");
   }
   // Holder hint: 'world' takes vs 'people/...' takes give different bias surfaces.
   for (const member of [finding.a, finding.b]) {
-    if (member.holder && member.holder.startsWith('people/')) candidates.push('founder-behavior');
+    if (member.holder && member.holder.startsWith("people/")) candidates.push("founder-behavior");
   }
   // Return the first candidate (most specific match shown first).
-  return candidates[0] ?? '';
+  return candidates[0] ?? "";
 }
 
 /** One-line operator-facing string. */
 export function buildBiasContextString(
   tag: string,
   finding: ContradictionFinding,
-  profile: CalibrationProfileRow,
+  profile: CalibrationProfileRow
 ): string {
-  const brierStr = profile.brier !== null ? ` (Brier ${profile.brier.toFixed(2)})` : '';
+  const brierStr = profile.brier !== null ? ` (Brier ${profile.brier.toFixed(2)})` : "";
   return (
     `This contradiction fits your active bias pattern "${tag}"${brierStr}. ` +
     `Verdict: ${finding.verdict}; severity: ${finding.severity}. ` +

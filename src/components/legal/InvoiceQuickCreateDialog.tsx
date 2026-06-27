@@ -220,8 +220,12 @@ export function InvoiceQuickCreateDialog({
         if (!cancelled) setLoadingCases(false);
       }
     })();
-    loadKanzleiSettings().then((s) => !cancelled && setKanzlei(s)).catch(() => {});
-    return () => { cancelled = true; };
+    loadKanzleiSettings()
+      .then((s) => !cancelled && setKanzlei(s))
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
   }, [open]);
 
   const selectedCase = cases.find((c) => c.slug === selectedCaseSlug);
@@ -303,7 +307,9 @@ export function InvoiceQuickCreateDialog({
         clientAddress,
         caseNumber: c.caseNumber,
         date: new Date().toISOString().split("T")[0],
-        dueDate: new Date(Date.now() + paymentDays * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+        dueDate: new Date(Date.now() + paymentDays * 24 * 60 * 60 * 1000)
+          .toISOString()
+          .split("T")[0],
         items,
         expenses,
         status: "draft",
@@ -551,18 +557,30 @@ export function InvoiceQuickCreateDialog({
                 {rvgResult && (
                   <div className="space-y-1.5 text-xs">
                     <div className="flex justify-between">
-                      <span className="text-[color:var(--ds-text-muted)]">{t("inv.rvg_basis" as DashboardKey)} (1,0)</span>
-                      <span className="text-[color:var(--ds-text)]">{rvgResult.basisGebuehr.toFixed(2)} €</span>
+                      <span className="text-[color:var(--ds-text-muted)]">
+                        {t("inv.rvg_basis" as DashboardKey)} (1,0)
+                      </span>
+                      <span className="text-[color:var(--ds-text)]">
+                        {rvgResult.basisGebuehr.toFixed(2)} €
+                      </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-[color:var(--ds-text-muted)]">{t("inv.rvg_verfahren" as DashboardKey)} (1,3)</span>
-                      <span className="text-[color:var(--ds-text)]">{rvgResult.verfahrensgebuehr.toFixed(2)} €</span>
+                      <span className="text-[color:var(--ds-text-muted)]">
+                        {t("inv.rvg_verfahren" as DashboardKey)} (1,3)
+                      </span>
+                      <span className="text-[color:var(--ds-text)]">
+                        {rvgResult.verfahrensgebuehr.toFixed(2)} €
+                      </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-[color:var(--ds-text-muted)]">{t("inv.rvg_termins" as DashboardKey)} (1,2)</span>
-                      <span className="text-[color:var(--ds-text)]">{rvgResult.terminsgebuehr.toFixed(2)} €</span>
+                      <span className="text-[color:var(--ds-text-muted)]">
+                        {t("inv.rvg_termins" as DashboardKey)} (1,2)
+                      </span>
+                      <span className="text-[color:var(--ds-text)]">
+                        {rvgResult.terminsgebuehr.toFixed(2)} €
+                      </span>
                     </div>
-                    <div className="flex justify-between font-semibold text-emerald-600 border-t border-[color:var(--ds-border)] pt-1.5">
+                    <div className="flex justify-between border-t border-[color:var(--ds-border)] pt-1.5 font-semibold text-emerald-600">
                       <span>{t("inv.rvg_brutto" as DashboardKey)}</span>
                       <span>{rvgResult.summeBrutto.toFixed(2)} €</span>
                     </div>
@@ -588,7 +606,11 @@ export function InvoiceQuickCreateDialog({
                 disabled={submitting || !canSubmit}
                 className="gap-2 bg-emerald-600 text-white hover:bg-emerald-500"
               >
-                {submitting ? <Loader2 size={16} className="animate-spin" /> : <FileText size={16} />}
+                {submitting ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <FileText size={16} />
+                )}
                 {t("inv.create" as DashboardKey)}
               </Button>
             </div>

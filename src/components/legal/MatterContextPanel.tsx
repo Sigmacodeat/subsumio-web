@@ -59,7 +59,12 @@ export function MatterContextPanel({
   const [open, setOpen] = useState(defaultOpen);
   const { panelTransition } = useDashboardMotion();
 
-  const { data: bundle, loading, error, refetch: loadContext } = useApiQuery<MatterContextBundle>(
+  const {
+    data: bundle,
+    loading,
+    error,
+    refetch: loadContext,
+  } = useApiQuery<MatterContextBundle>(
     async () => {
       const res = await csrfFetch(`/api/matter-context/${encodeURIComponent(caseSlug)}`, {
         method: "GET",

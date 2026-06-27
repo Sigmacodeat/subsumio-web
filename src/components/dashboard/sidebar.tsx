@@ -714,7 +714,11 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                       size={collapsed ? 18 : 15}
                       className="shrink-0 transition-[color,opacity] duration-150"
                       strokeWidth={active && collapsed ? 2.25 : 1.75}
-                      style={{ color: active ? `var(${colorVar})` : `color-mix(in srgb, var(${colorVar}) 55%, var(--ds-text-muted))` }}
+                      style={{
+                        color: active
+                          ? `var(${colorVar})`
+                          : `color-mix(in srgb, var(${colorVar}) 55%, var(--ds-text-muted))`,
+                      }}
                     />
                     <span
                       className={cn(
@@ -777,7 +781,11 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                               size={18}
                               className="shrink-0 transition-[color] duration-150"
                               strokeWidth={active ? 2.25 : 1.75}
-                              style={{ color: active ? `var(${catVar})` : `color-mix(in srgb, var(${catVar}) 55%, var(--ds-text-muted))` }}
+                              style={{
+                                color: active
+                                  ? `var(${catVar})`
+                                  : `color-mix(in srgb, var(${catVar}) 55%, var(--ds-text-muted))`,
+                              }}
                             />
                           </Link>
                         );
@@ -823,11 +831,16 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                         <SectionIcon
                           size={15}
                           className="shrink-0 transition-[color] duration-150 group-hover:[color:var(--ds-text)]"
-                          style={{ color: sectionActive || isOpen ? `var(${catVar})` : `color-mix(in srgb, var(${catVar}) 55%, var(--ds-text-muted))` }}
+                          style={{
+                            color:
+                              sectionActive || isOpen
+                                ? `var(${catVar})`
+                                : `color-mix(in srgb, var(${catVar}) 55%, var(--ds-text-muted))`,
+                          }}
                         />
                         <span
                           className={cn(
-                            "min-w-0 flex-1 truncate text-[11px] font-semibold uppercase tracking-wider",
+                            "min-w-0 flex-1 truncate text-[11px] font-semibold tracking-wider uppercase",
                             sectionActive || isOpen
                               ? "text-[color:var(--ds-text)]"
                               : "text-[color:var(--ds-text-subtle)]"
@@ -879,7 +892,13 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                                     className="flex w-full cursor-not-allowed items-center gap-3 rounded-lg px-3 py-1.5 text-[13px] font-medium text-[color:var(--ds-text-subtle)] select-none"
                                     aria-disabled="true"
                                   >
-                                    <Icon size={15} className="shrink-0 opacity-50" style={{ color: `color-mix(in srgb, var(${itemCatVar}) 45%, var(--ds-text-subtle))` }} />
+                                    <Icon
+                                      size={15}
+                                      className="shrink-0 opacity-50"
+                                      style={{
+                                        color: `color-mix(in srgb, var(${itemCatVar}) 45%, var(--ds-text-subtle))`,
+                                      }}
+                                    />
                                     <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
                                       <span className="truncate">{t(item.labelKey)}</span>
                                       <span className="rounded border border-[color:var(--ds-border-strong)] px-1 py-0.5 text-xs font-semibold tracking-wide uppercase">
@@ -908,7 +927,11 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                                   <Icon
                                     size={15}
                                     className="shrink-0 transition-[color] duration-150"
-                                    style={{ color: active ? `var(${itemCatVar})` : `color-mix(in srgb, var(${itemCatVar}) 55%, var(--ds-text-muted))` }}
+                                    style={{
+                                      color: active
+                                        ? `var(${itemCatVar})`
+                                        : `color-mix(in srgb, var(${itemCatVar}) 55%, var(--ds-text-muted))`,
+                                    }}
                                   />
                                   <span className="min-w-0 flex-1 truncate">
                                     {highlightMatch(t(item.labelKey), searchQuery)}

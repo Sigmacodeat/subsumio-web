@@ -74,14 +74,13 @@ const trendColor: Record<string, string> = {
 export default function AdoptionAnalyticsPage() {
   const [daysBack, setDaysBack] = useState(30);
 
-  const { data, loading, error, refetch } = useApiQuery<AdoptionAnalytics>(
-    async () => {
-      const res = await fetch(`/api/analytics/adoption?daysBack=${daysBack}`, { signal: AbortSignal.timeout(30_000) });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return (await res.json()) as AdoptionAnalytics;
-    },
-    [daysBack]
-  );
+  const { data, loading, error, refetch } = useApiQuery<AdoptionAnalytics>(async () => {
+    const res = await fetch(`/api/analytics/adoption?daysBack=${daysBack}`, {
+      signal: AbortSignal.timeout(30_000),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return (await res.json()) as AdoptionAnalytics;
+  }, [daysBack]);
 
   if (loading) {
     return (

@@ -101,7 +101,8 @@ export const DOWNLOAD: Record<Lang, DownloadContent> = {
       },
     ],
     ctaTitle: "Install now. Use it in your next hearing.",
-    ctaSub: "Set up in under five minutes. First cited answer the same day — on whatever device is in your hand.",
+    ctaSub:
+      "Set up in under five minutes. First cited answer the same day — on whatever device is in your hand.",
     ctaButton: "Request a demo",
   },
   de: {

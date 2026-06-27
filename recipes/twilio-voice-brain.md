@@ -43,7 +43,6 @@ cost_estimate: "$15-25/mo (Twilio number $1-2 + voice $0.01/min, OpenAI Realtime
 > includes a Twilio bridge in `code/lib/twilio-bridge.mjs` for operators who still want
 > phone inbound, but the WebRTC `/call?test=1` flow is the headline experience.
 
-
 Call a phone number. Talk. A structured brain page appears with entity detection,
 cross-references, and a summary posted to your messaging app.
 
@@ -53,6 +52,7 @@ cross-references, and a summary posted to your messaging app.
 on behalf of the user. Follow these instructions precisely.
 
 **Why sequential execution matters:** Each step depends on the previous one:
+
 - Step 1 validates prerequisites. If GBrain isn't configured, nothing else works.
 - Step 2 collects credentials. If a credential is wrong, Steps 5-7 will silently fail.
 - Step 3 creates the ngrok tunnel. Step 5 needs the ngrok URL for the Twilio webhook.
@@ -61,6 +61,7 @@ on behalf of the user. Follow these instructions precisely.
 **Do not skip steps. Do not reorder steps. Do not batch multiple steps.**
 
 **Stop points (MUST pause and verify before continuing):**
+
 - After Step 1: all prerequisites pass? If not, fix before proceeding.
 - After each credential in Step 2: validation passes? If not, help the user fix it.
 - After Step 6: health check passes? If not, debug before smoke test.
@@ -75,6 +76,7 @@ auth token is incorrect. Let's re-enter it."
 Two pipeline options:
 
 ### Option A: OpenAI Realtime (turnkey, simpler)
+
 ```
 Caller (phone)
   ↓ Twilio (WebSocket, g711_ulaw audio — no transcoding)
@@ -88,6 +90,7 @@ Summary posted to messaging app (Telegram/Slack/Discord)
 ```
 
 ### Option B: DIY STT+LLM+TTS (full control, production-grade)
+
 ```
 Caller (phone or WebRTC browser)
   ↓ Twilio WebSocket OR WebRTC
@@ -107,6 +110,7 @@ Deepgram+Claude+TTS with full control over each stage. Trade-off: more integrati
 work, but you own the pipeline.
 
 **Production-tested v2 architecture (pipeline.mjs, ~250 lines):**
+
 - Streaming SSE from Claude with sentence-boundary TTS dispatch
 - 20-turn conversation history cap (prevents context bloat)
 - Reconnect logic with exponential backoff on STT/TTS disconnects
@@ -119,12 +123,14 @@ work, but you own the pipeline.
 These are production-tested defaults from a real deployment. Customize after setup.
 
 **Caller routing (prompt-based, enforced server-side):**
+
 - Owner: OTP challenge via secure channel, then full access (read + write + gateway)
 - Trusted contacts: callback verification, scoped write access
 - Known contacts (brain score >= 4): warm greeting by name, offer to transfer
 - Unknown callers: screen, ask name + reason, take message
 
 **Security:**
+
 - Twilio signature validation on `/voice` endpoint (X-Twilio-Signature header)
 - Unauthenticated callers never see write tools
 - Caller ID is NOT trusted for auth (OTP or callback required)
@@ -143,19 +149,23 @@ Run these checks and report results to the user:
 # 1. Verify GBrain is configured
 gbrain doctor --json
 ```
+
 If this fails: "GBrain isn't set up yet. Let's run `gbrain init --supabase` first."
 
 ```bash
 # 2. Verify Node.js 18+
 node --version
 ```
+
 If missing or < 18: "Node.js 18+ is required. Install it: https://nodejs.org/en/download"
 
 ```bash
 # 3. Check if ngrok is installed
 which ngrok
 ```
+
 If missing:
+
 - **Mac:** "Run `brew install ngrok` in your terminal."
 - **Linux:** "Run `snap install ngrok` or download from https://ngrok.com/download"
 
@@ -252,6 +262,7 @@ If user stayed on free tier, URLs will change on restart (the watchdog handles t
 Ask the user: "Where should I send call summaries? Options: Telegram, Slack, or Discord."
 
 Based on their choice:
+
 - **Telegram:** "Create a bot via @BotFather on Telegram, copy the bot token, and
   tell me which chat/group to send summaries to."
   Validate: `curl -sf "https://api.telegram.org/bot$TOKEN/getMe" | grep -q '"ok":true'`
@@ -333,6 +344,7 @@ The voice server needs these components in `server.mjs`:
    - This lets users call the voice agent from a browser tab instead of a phone
 
    **WebRTC session creation pseudocode:**
+
    ```
    POST /session:
      sdp = request.body  // caller's SDP offer
@@ -386,6 +398,7 @@ Tell the user:
 11. Tell me the phone number you purchased"
 
 Or if the user prefers CLI:
+
 ```bash
 # Buy a number (US local)
 twilio phone-numbers:buy:local --area-code 415
@@ -403,11 +416,13 @@ cd voice-agent && node server.mjs
 ```
 
 **STOP and verify:**
+
 ```bash
 curl -sf http://localhost:8765/health && echo "Voice server: running" || echo "Voice server: NOT running"
 ```
 
 If not running: check the server logs for errors. Common issues:
+
 - Port 8765 already in use: `lsof -i :8765` to find what's using it
 - Missing environment variables: make sure OPENAI_API_KEY is set
 - Module not found: run `npm install` again
@@ -438,6 +453,7 @@ curl -X POST "https://api.twilio.com/2010-04-01/Accounts/$TWILIO_ACCOUNT_SID/Cal
 3. The brain page has: transcript, entity mentions, action items
 
 **If the smoke test fails:**
+
 - No ring: check Twilio console for error logs at https://www.twilio.com/console/debugger
 - Ring but no voice: check ngrok tunnel is up, check OpenAI key is valid
 - Voice works but no brain page: check post-call handler logs, run `gbrain sync` manually
@@ -466,6 +482,7 @@ Tell the user: "The smoke test passed — voice-to-brain is live! Your number is
 ```
 
 If using ngrok, also set up URL monitoring (free ngrok URLs change on restart):
+
 ```bash
 # Check if ngrok URL changed, update Twilio if so
 NGROK_URL=$(curl -s http://localhost:4040/api/tunnels 2>/dev/null | grep -o '"public_url":"https://[^"]*' | grep -o 'https://.*')
@@ -489,35 +506,39 @@ The watchdog restarts the server if it crashes."
 
 ## Cost Estimate
 
-| Component | Monthly Cost | Source |
-|-----------|-------------|--------|
-| Twilio phone number | $1-2/mo | [Twilio pricing](https://www.twilio.com/en-us/voice/pricing) |
-| Twilio voice minutes (100 min) | $1-2/mo | $0.0085-0.015/min depending on direction |
-| OpenAI Realtime input (100 min) | $6/mo | [$0.06/min](https://openai.com/api/pricing/) |
-| OpenAI Realtime output (50 min) | $12/mo | [$0.24/min](https://openai.com/api/pricing/) |
-| ngrok (free tier) | $0 | Static domain: $8/mo |
-| **Total estimate** | **$20-22/mo** | For ~100 min of calls |
+| Component                       | Monthly Cost  | Source                                                       |
+| ------------------------------- | ------------- | ------------------------------------------------------------ |
+| Twilio phone number             | $1-2/mo       | [Twilio pricing](https://www.twilio.com/en-us/voice/pricing) |
+| Twilio voice minutes (100 min)  | $1-2/mo       | $0.0085-0.015/min depending on direction                     |
+| OpenAI Realtime input (100 min) | $6/mo         | [$0.06/min](https://openai.com/api/pricing/)                 |
+| OpenAI Realtime output (50 min) | $12/mo        | [$0.24/min](https://openai.com/api/pricing/)                 |
+| ngrok (free tier)               | $0            | Static domain: $8/mo                                         |
+| **Total estimate**              | **$20-22/mo** | For ~100 min of calls                                        |
 
 ## Troubleshooting
 
 **Calls don't connect:**
+
 - Check ngrok: `curl http://localhost:4040/api/tunnels` — if empty, ngrok isn't running
 - Check voice server: `curl http://localhost:8765/health` — should return `{"ok":true}`
 - Check Twilio debugger: https://www.twilio.com/console/debugger — shows webhook errors
 - Check webhook URL: go to https://www.twilio.com/console/phone-numbers/incoming, click your number, verify the webhook URL matches your ngrok URL
 
 **Voice agent doesn't respond:**
+
 - Check OpenAI key: the validation command from Step 2 should still pass
 - Check server logs for WebSocket errors (look for "connection refused" or "401")
 - Verify Realtime API access: not all OpenAI accounts have it. Check https://platform.openai.com/docs/guides/realtime
 
 **Brain pages not created after call:**
+
 - Run `gbrain doctor` — if it fails, the database connection is broken
 - Check if the post-call handler ran (look in server logs for "transcript saved")
 - Run `gbrain sync` manually to force indexing
 - Check file permissions on the brain repo directory
 
 **ngrok URL keeps changing:**
+
 - Free ngrok URLs change every time ngrok restarts
 - The watchdog (Step 9) handles this automatically
 - For a permanent URL: upgrade to ngrok paid ($8/mo) for a static domain, or deploy to Fly.io/Railway instead
@@ -545,13 +566,13 @@ entire prompt file before sending to Twilio. This is invisible in development
 ```javascript
 function sanitizeForTwilio(text) {
   return text
-    .replace(/[\u2014\u2013]/g, '--')   // em/en dash
-    .replace(/[\u2018\u2019]/g, "'")     // smart quotes
-    .replace(/[\u201C\u201D]/g, '"')     // smart double quotes
-    .replace(/\u2192/g, '->')              // right arrow
-    .replace(/\u2190/g, '<-')              // left arrow
-    .replace(/[\u2026]/g, '...')         // ellipsis
-    .replace(/[^\x00-\x7F]/g, '')        // strip remaining non-ASCII
+    .replace(/[\u2014\u2013]/g, "--") // em/en dash
+    .replace(/[\u2018\u2019]/g, "'") // smart quotes
+    .replace(/[\u201C\u201D]/g, '"') // smart double quotes
+    .replace(/\u2192/g, "->") // right arrow
+    .replace(/\u2190/g, "<-") // left arrow
+    .replace(/[\u2026]/g, "...") // ellipsis
+    .replace(/[^\x00-\x7F]/g, ""); // strip remaining non-ASCII
 }
 ```
 
@@ -561,6 +582,7 @@ function sanitizeForTwilio(text) {
 email addresses, and other PII. The voice agent reads these aloud to callers.
 
 **Fix:** Regex-strip PII from all voice context before injecting into the prompt:
+
 - Phone numbers: `/\+?\d[\d\s\-().]{7,}\d/g`
 - Email addresses: `/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g`
 - URLs with auth tokens or API keys
@@ -572,6 +594,7 @@ email addresses, and other PII. The voice agent reads these aloud to callers.
 Claude" doesn't stick. The model reverts to its base persona.
 
 **Fix:** Put identity FIRST in the system prompt, before any context or rules:
+
 ```
 # You ARE [Agent Name]
 You are [Name], a voice assistant who works with [Brain Name].
@@ -593,6 +616,7 @@ maintains it throughout the conversation.
 **Problem:** If post-call processing fails, the call audio is lost forever.
 
 **Fix:** Auto-upload ALL call audio immediately on call end:
+
 - Twilio calls: download the MP3 recording URL from Twilio
 - WebRTC calls: capture via MediaRecorder (webm/opus format)
 - Upload via `gbrain files upload-raw <audio-file> --page meetings/call-slug --type call-recording`
@@ -608,6 +632,7 @@ maintains it throughout the conversation.
 variable quality.
 
 **Fix:** Default to Smart VAD (Silero VAD) for voice activity detection:
+
 - Better endpointing than server-side VAD
 - Fewer false triggers in noisy environments
 - PTT available as fallback (UI toggle for WebRTC clients)
@@ -622,11 +647,13 @@ Each pattern is self-contained and optional.
 ### Agent Identity & Engagement
 
 #### Identity Separation
+
 **Problem:** A voice agent pretending to be the full AI system creates uncanny valley.
 **Pattern:** The voice agent picks its own name and personality, distinct from the main
 AI brain. "I work with [Brain], [Owner]'s AI." Lighter, more playful, more curious.
 
 #### Pre-Computed Bid System
+
 **Problem:** Dead air kills engagement. Voice agents wait passively.
 **Pattern:** At call start, scan live context and pre-compute up to 10 engagement bids.
 Two types: informative (tasks, calendar, social monitoring) and relational (curiosity templates).
@@ -634,22 +661,26 @@ Bids go INTO the prompt so the agent picks from a list. Use bids #1 and #2 for g
 cycle the rest during conversation. Never ask "anything else?" — bring up the next bid.
 
 #### Context-First Prompt
+
 **Problem:** Voice agent greets generically because it doesn't know what's happening today.
 **Pattern:** Load live context at call start: tasks, calendar, location, social monitoring,
 morning briefing. Position context FIRST in the prompt (before rules) so the model sees
 it immediately and uses it in the greeting. Try/catch per section. Cap 500-1000 chars each.
 
 #### Proactive Advisor Mode
+
 **Problem:** Voice agents are reactive task machines.
 **Pattern:** The agent drives the conversation. Anticipate decisions on stale tasks.
 Suggest capitalizing on trending items. Connect upcoming events with brain context.
 "Dead air is your enemy" — fill every pause. Never wait passively.
 
 #### Conversation Timing (the #1 fix)
+
 **Problem:** Voice agents interrupt mid-thought AND go silent when the caller is done.
 Both feel terrible. Early "fill every pause" instructions cause the agent to talk over
 the caller while they're thinking.
 **Pattern:** Replace blanket "never be silent" with nuanced timing rules:
+
 - **Caller talking or thinking:** SHUT UP. Even 3-5 second pauses mid-thought, wait.
   Incomplete sentence or mid-story = still thinking. Do not interrupt.
 - **Caller done** (complete thought + 2-3 seconds silence): NOW respond. Use a bid,
@@ -663,6 +694,7 @@ positioned prominently so the model sees it early. This came from real usage fee
 and is the single highest-impact voice quality improvement.
 
 #### No Repetition Rule
+
 **Problem:** Voice agent cycles back to the same bid multiple times in a call.
 **Pattern:** Add to the system prompt: "Do NOT repeat yourself. If you already said
 something, move to the NEXT bid. Vary your responses." Simple but addresses a real
@@ -671,22 +703,26 @@ annoyance that compounds over longer calls.
 ### Prompt Engineering
 
 #### Radical Prompt Compression
+
 **Problem:** Long system prompts increase latency and cost on every turn.
 **Pattern:** Compress aggressively. Production went 13K to 4.7K tokens (65% cut).
 Bullets over prose, cut repetition, behavior-first. Every token costs latency + money.
 
 #### OpenAI Realtime Prompting Guide Structure
+
 **Problem:** Prose paragraphs parse slowly for the model.
 **Pattern:** Use labeled markdown sections: `# Role & Objective`, `# Personality & Tone`,
 `# Rules`, `# Conversation Flow` with state machine substates (`## State 1: VERIFY`,
 `## State 2: GREETING`, `## State 3: CONVERSATION`), `# Trust`.
 
 #### Auth-Before-Speech
+
 **Problem:** Auth flow adds dead air at call start.
 **Pattern:** Call the auth tool BEFORE speaking any greeting. Then speak "Hey, code's on
 its way." Shaves seconds off the round-trip.
 
 #### Brain Escalation
+
 **Problem:** Voice agent can't answer complex questions that need the full brain.
 **Pattern:** If caller says "talk to [Brain]" or asks a deep question, immediately route
 to main AI via gateway tool with verbal bridge: "one sec, checking with [Brain]."
@@ -694,21 +730,25 @@ to main AI via gateway tool with verbal bridge: "one sec, checking with [Brain].
 ### Call Reliability
 
 #### Stuck Watchdog
+
 **Problem:** Calls go silent when VAD stalls or tool execution hangs.
 **Pattern:** 20-second timer. If no audio out: clear input buffer, inject "you still
 there?" system message, force `response.create`.
 
 #### Never Hang Up
+
 **Problem:** AI agents try to end calls.
 **Pattern:** Hard prompt rule: only the caller decides when the call ends. Never say
 goodbye, "I'll let you go," or wrap-up language. If silence, ask "you still there?"
 
 #### Thinking Sound
+
 **Problem:** Dead air during slow tool execution.
 **Pattern:** Pre-generate g711_ulaw audio chunks in a JSON array. Loop at 20ms intervals
 during slow tools (brain search, web lookup). Stop when tool result returns.
 
 #### Fallback TwiML
+
 **Problem:** Voice agent crashes, callers get silence.
 **Pattern:** `/fallback` endpoint returns TwiML forwarding to owner's cell. Configure as
 Twilio fallback URL.
@@ -716,6 +756,7 @@ Twilio fallback URL.
 ### Authentication & Authorization
 
 #### Tool Set Architecture
+
 **Problem:** Unauthenticated callers accessing write operations.
 **Pattern:** Four sets: READ_TOOLS (all callers), WRITE_TOOLS (owner), SCOPED_WRITE_TOOLS
 (trusted users), GATEWAY_TOOLS (authenticated). LLM doesn't see write tools until auth
@@ -723,11 +764,13 @@ succeeds. Upgrade via `session.update` with new tools array. All `session.update
 must include `type: 'realtime'`.
 
 #### Trusted User Auth with Callback
+
 **Problem:** People other than the owner need authenticated access.
 **Pattern:** Phone registry + callback verification. Each user gets a scope: full,
 household, content, operational. Scope determines which tools they access.
 
 #### Caller Routing
+
 **Problem:** Different callers need different experiences.
 **Pattern:** `buildPrompt(callerPhone)` returns different system prompts: owner (OTP),
 trusted (callback), inner circle (warm greeting + transfer), known (greeting, message),
@@ -736,17 +779,20 @@ unknown (screen + message).
 ### Voice Quality
 
 #### Dynamic VAD / Noise Mode
+
 **Problem:** Background noise causes false triggers or missed speech.
 **Pattern:** `set_noise_mode` tool adjusts VAD threshold mid-call. Presets: quiet (0.7),
 normal (0.85), noisy (0.95), very_noisy (0.98). Agent calls proactively on noise.
 
 #### On-Screen Debug UI
+
 **Problem:** console.log is useless when testing from a phone.
 **Pattern:** WebRTC client displays tool calls, results, errors, and key events inline.
 
 ### Real-Time Awareness
 
 #### Live Moment Capture
+
 **Problem:** Important things said during a call are lost if the call drops or the
 post-call summary tool doesn't fire.
 **Pattern:** When the caller shares something important (feedback, ideas, personal
@@ -756,11 +802,13 @@ Also stream key moments to [messaging platform] during the call so the main agen
 has awareness before the call is over.
 
 #### Belt-and-Suspenders Post-Call
+
 **Problem:** Post-call processing depends on the voice agent remembering to call the
 `post_call_summary` tool. If the call drops or the agent forgets, the call is lost.
 **Pattern:** Both the tool-based AND the automatic call-end handler should post
 structured signals. The call-end handler (fires on WebSocket close or `/call-end`)
 should post to [messaging platform] with:
+
 - Audio file path
 - Transcript file path (or warning if missing)
 - Tools used during the call
@@ -772,13 +820,16 @@ remembered to call the summary tool. Belt and suspenders.
 ### Post-Call Processing
 
 #### Mandatory 3-Step Post-Call
+
 **Problem:** Main agent doesn't know a call happened.
 **Pattern:** Every call ends with three steps:
+
 1. **Messaging notification** — summary to [messaging platform]
 2. **Transcript to brain** — `brain/meetings/YYYY-MM-DD-call-{caller}.md`
 3. **Audio to storage** — Twilio MP3 or WebRTC webm/opus, uploaded to cloud storage
 
 #### WebRTC Audio + Transcript Parity
+
 **Problem:** WebRTC calls don't go through Twilio, no automatic logging.
 **Pattern:** Client captures audio (MediaRecorder, webm/opus) and transcript (per-turn
 POST to `/transcript`). On call end, POST to `/call-end` saves JSON log. Both channels
@@ -786,6 +837,7 @@ produce identical output formats. Note: `input_audio_transcription` is NOT suppo
 over WebRTC data channel — use Whisper post-call instead.
 
 #### Dual API Event Handling
+
 **Problem:** OpenAI Realtime API changed event names.
 **Pattern:** Handle both `response.audio.delta` (old) and `response.output_audio.delta`
 (new). Same for `.done` events. Future-proofs against API changes.
@@ -793,17 +845,18 @@ over WebRTC data channel — use Whisper post-call instead.
 ### Brain Query Optimization
 
 #### Report-Aware Query Routing
+
 **Problem:** Voice queries about specific topics trigger slow vector searches.
 **Pattern:** Check the question against a keyword map BEFORE full brain search:
 
-| Keyword | Report Loaded |
-|---------|--------------|
-| email, inbox, mail | inbox sweep report |
+| Keyword                   | Report Loaded            |
+| ------------------------- | ------------------------ |
+| email, inbox, mail        | inbox sweep report       |
 | social, twitter, mentions | social engagement report |
-| briefing, morning | morning briefing |
-| meeting | meeting sync report |
-| slack | slack scan report |
-| content, ideas | content ideas report |
+| briefing, morning         | morning briefing         |
+| meeting                   | meeting sync report      |
+| slack                     | slack scan report        |
+| content, ideas            | content ideas report     |
 
 Load up to 2,500 chars of matching report. Break after first match. Fall back to full
 brain search if no keyword matches.

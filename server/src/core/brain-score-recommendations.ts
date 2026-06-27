@@ -1,9 +1,9 @@
-import { createHash } from 'crypto';
-import type { BrainHealth } from './types.ts';
-import { canonicalLookup } from './model-pricing.ts';
-import { lookupEmbeddingPrice, estimateCostFromChars } from './embedding-pricing.ts';
-import { getRecipe } from './ai/recipes/index.ts';
-import { parseModelId } from './ai/model-resolver.ts';
+import { createHash } from "crypto";
+import type { BrainHealth } from "./types.ts";
+import { canonicalLookup } from "./model-pricing.ts";
+import { lookupEmbeddingPrice, estimateCostFromChars } from "./embedding-pricing.ts";
+import { getRecipe } from "./ai/recipes/index.ts";
+import { parseModelId } from "./ai/model-resolver.ts";
 
 /**
  * v0.40.x: env-var name → file/DB config field, for hosted embedding providers
@@ -24,8 +24,8 @@ import { parseModelId } from './ai/model-resolver.ts';
  * voyage-config-mapping work), re-add the matching entry here in the same change.
  */
 export const HOSTED_EMBED_KEY_CONFIG: Record<string, string> = {
-  OPENAI_API_KEY: 'openai_api_key',
-  ZEROENTROPY_API_KEY: 'zeroentropy_api_key',
+  OPENAI_API_KEY: "openai_api_key",
+  ZEROENTROPY_API_KEY: "zeroentropy_api_key",
 };
 
 /**
@@ -49,7 +49,7 @@ export const HOSTED_EMBED_KEY_CONFIG: Record<string, string> = {
  */
 export function embeddingProviderConfigured(
   embeddingModel: string | undefined,
-  resolveKey: (envVar: string) => boolean,
+  resolveKey: (envVar: string) => boolean
 ): boolean {
   if (!embeddingModel) return false;
   let providerId: string;
@@ -69,7 +69,7 @@ export function embeddingProviderConfigured(
  *  cycle: doctor → recommendations → doctor). */
 export interface Check {
   name: string;
-  status: 'ok' | 'warn' | 'fail';
+  status: "ok" | "warn" | "fail";
 }
 
 /**
@@ -116,12 +116,12 @@ export {
   makeRemediationStep,
   idempotencyKey as makeRemediationIdempotencyKey,
   canonicalJson,
-} from './remediation-step.ts';
+} from "./remediation-step.ts";
 import type {
   RemediationStep,
   RemediationStatus,
   RemediationSeverity,
-} from './remediation-step.ts';
+} from "./remediation-step.ts";
 // Internal alias so the existing implementation below keeps compiling
 // without a sed pass. New code should reference RemediationStep directly.
 type Remediation = RemediationStep;
@@ -186,10 +186,10 @@ export interface CheckClassification {
 export function computeRecommendations(
   health: BrainHealth,
   ctx: RecommendationContext,
-  extraRemediations: Remediation[] = [],
+  extraRemediations: Remediation[] = []
 ): Remediation[] {
   const out: Remediation[] = [];
-  const source = ctx.sourceId ?? 'default';
+  const source = ctx.sourceId ?? "default";
 
   // ---------------------------------------------------------------------
   // sync.repo — fires when sync hasn't run recently OR pages are stale
@@ -197,16 +197,16 @@ export function computeRecommendations(
   if (ctx.repoPath && health.stale_pages > 0) {
     const params = { repoPath: ctx.repoPath, sourceId: ctx.sourceId, noEmbed: true };
     out.push({
-      id: 'sync.repo',
-      job: 'sync',
+      id: "sync.repo",
+      job: "sync",
       params,
-      idempotency_key: idemKey(source, 'sync', params),
-      severity: health.stale_pages > 50 ? 'high' : 'medium',
+      idempotency_key: idemKey(source, "sync", params),
+      severity: health.stale_pages > 50 ? "high" : "medium",
       est_seconds: Math.min(600, 30 + health.stale_pages * 0.5),
-      est_usd_cost: 0,  // sync is fs+DB only
+      est_usd_cost: 0, // sync is fs+DB only
       depends_on: [],
-      rationale: `${health.stale_pages} stale page${health.stale_pages === 1 ? '' : 's'} on disk`,
-      status: 'remediable',
+      rationale: `${health.stale_pages} stale page${health.stale_pages === 1 ? "" : "s"} on disk`,
+      status: "remediable",
     });
   }
 
@@ -215,31 +215,31 @@ export function computeRecommendations(
   // ---------------------------------------------------------------------
   if (health.missing_embeddings > 0 && ctx.embeddingProviderConfigured !== false) {
     const params = { stale: true, sourceId: ctx.sourceId };
-    const embedModel = ctx.embeddingModel ?? 'openai:text-embedding-3-large';
+    const embedModel = ctx.embeddingModel ?? "openai:text-embedding-3-large";
     const embedDims = ctx.embeddingDimensions ?? 3072;
     // Rough char estimate per chunk ~ 1.5k chars (chunker target).
     const estChars = health.missing_embeddings * 1500;
     let est_usd_cost = 0;
     try {
       const priceLookup = lookupEmbeddingPrice(embedModel);
-      if (priceLookup.kind === 'known') {
+      if (priceLookup.kind === "known") {
         est_usd_cost = estimateCostFromChars(estChars, priceLookup.pricePerMTok);
       }
     } catch {
       /* unknown model — leave at 0, surface as warning elsewhere */
     }
     out.push({
-      id: 'embed.stale',
-      job: 'embed',
+      id: "embed.stale",
+      job: "embed",
       params,
-      idempotency_key: idemKey(source, 'embed', { ...params, embedModel, embedDims }),
-      severity: 'critical',
+      idempotency_key: idemKey(source, "embed", { ...params, embedModel, embedDims }),
+      severity: "critical",
       est_seconds: Math.min(3600, 5 + health.missing_embeddings * 0.05),
       est_usd_cost,
       // sync should run first so embed sees fresh pages.
-      depends_on: ctx.repoPath && health.stale_pages > 0 ? ['sync.repo'] : [],
-      rationale: `${health.missing_embeddings} chunk${health.missing_embeddings === 1 ? '' : 's'} invisible to vector search`,
-      status: 'remediable',
+      depends_on: ctx.repoPath && health.stale_pages > 0 ? ["sync.repo"] : [],
+      rationale: `${health.missing_embeddings} chunk${health.missing_embeddings === 1 ? "" : "s"} invisible to vector search`,
+      status: "remediable",
     });
   }
 
@@ -247,18 +247,18 @@ export function computeRecommendations(
   // backlinks.fix — dead links (refs to non-existent slugs)
   // ---------------------------------------------------------------------
   if (health.dead_links > 0 && ctx.repoPath) {
-    const params = { action: 'fix', dir: ctx.repoPath };
+    const params = { action: "fix", dir: ctx.repoPath };
     out.push({
-      id: 'backlinks.fix',
-      job: 'backlinks',
+      id: "backlinks.fix",
+      job: "backlinks",
       params,
-      idempotency_key: idemKey(source, 'backlinks', params),
-      severity: 'high',
+      idempotency_key: idemKey(source, "backlinks", params),
+      severity: "high",
       est_seconds: Math.min(300, 10 + health.dead_links * 0.5),
       est_usd_cost: 0,
       depends_on: [],
-      rationale: `${health.dead_links} dead link${health.dead_links === 1 ? '' : 's'}`,
-      status: 'remediable',
+      rationale: `${health.dead_links} dead link${health.dead_links === 1 ? "" : "s"}`,
+      status: "remediable",
     });
   }
 
@@ -268,18 +268,18 @@ export function computeRecommendations(
   // and noExtract:true after T5 lands → extract job is the materializer).
   // ---------------------------------------------------------------------
   if (ctx.repoPath && health.stale_pages > 0) {
-    const params = { mode: 'all', dir: ctx.repoPath };
+    const params = { mode: "all", dir: ctx.repoPath };
     out.push({
-      id: 'extract.all',
-      job: 'extract',
+      id: "extract.all",
+      job: "extract",
       params,
-      idempotency_key: idemKey(source, 'extract', params),
-      severity: 'medium',
+      idempotency_key: idemKey(source, "extract", params),
+      severity: "medium",
       est_seconds: Math.min(600, 30 + health.page_count * 0.01),
       est_usd_cost: 0,
-      depends_on: ['sync.repo'],
-      rationale: 'Materialize link + timeline edges from fresh pages',
-      status: 'remediable',
+      depends_on: ["sync.repo"],
+      rationale: "Materialize link + timeline edges from fresh pages",
+      status: "remediable",
     });
   }
 
@@ -296,7 +296,10 @@ export function computeRecommendations(
   // Sort: severity (critical first), then est_seconds ascending so quick
   // wins come first within a severity tier.
   const sevRank: Record<RemediationSeverity, number> = {
-    critical: 0, high: 1, medium: 2, low: 3,
+    critical: 0,
+    high: 1,
+    medium: 2,
+    low: 3,
   };
   out.sort((a, b) => {
     const sd = sevRank[a.severity] - sevRank[b.severity];
@@ -316,10 +319,7 @@ export function computeRecommendations(
  * the recommendation generator doesn't know about is treated as needing
  * operator judgment, not autonomous remediation).
  */
-export function classifyChecks(
-  checks: Check[],
-  ctx: RecommendationContext,
-): CheckClassification[] {
+export function classifyChecks(checks: Check[], ctx: RecommendationContext): CheckClassification[] {
   return checks.map((c) => classifyOne(c, ctx));
 }
 
@@ -328,37 +328,45 @@ function classifyOne(check: Check, ctx: RecommendationContext): CheckClassificat
   // generator above handles `remediable`; this maps the rest.
   switch (check.name) {
     // --- remediable paths (matched by recommendation generator) ---
-    case 'brain_score':
-    case 'sync_freshness':
+    case "brain_score":
+    case "sync_freshness":
       if (!ctx.repoPath) {
-        return { check: check.name, status: 'blocked', reason: 'no repo configured (set sync.repo_path)' };
+        return {
+          check: check.name,
+          status: "blocked",
+          reason: "no repo configured (set sync.repo_path)",
+        };
       }
-      return { check: check.name, status: 'remediable' };
-    case 'missing_embeddings':
+      return { check: check.name, status: "remediable" };
+    case "missing_embeddings":
       if (ctx.embeddingProviderConfigured === false) {
-        return { check: check.name, status: 'blocked', reason: 'embedding provider not configured' };
+        return {
+          check: check.name,
+          status: "blocked",
+          reason: "embedding provider not configured",
+        };
       }
-      return { check: check.name, status: 'remediable' };
-    case 'dead_links':
+      return { check: check.name, status: "remediable" };
+    case "dead_links":
       if (!ctx.repoPath) {
-        return { check: check.name, status: 'blocked', reason: 'no repo configured' };
+        return { check: check.name, status: "blocked", reason: "no repo configured" };
       }
-      return { check: check.name, status: 'remediable' };
+      return { check: check.name, status: "remediable" };
 
     // --- human_only paths ---
-    case 'orphan_pages':        // archive is product judgment, not maintenance
-    case 'multi_source_drift':
-    case 'eval_drift':
-    case 'slug_fallback_audit':
-    case 'whoknows_health':
-    case 'rls_event_trigger':   // operator must intervene
-    case 'reranker_health':
-      return { check: check.name, status: 'human_only', reason: 'no autonomous remediation' };
+    case "orphan_pages": // archive is product judgment, not maintenance
+    case "multi_source_drift":
+    case "eval_drift":
+    case "slug_fallback_audit":
+    case "whoknows_health":
+    case "rls_event_trigger": // operator must intervene
+    case "reranker_health":
+      return { check: check.name, status: "human_only", reason: "no autonomous remediation" };
 
     default:
       // Unknown checks: conservative default. Surfaces as informational
       // rather than blocking the loop.
-      return { check: check.name, status: 'human_only', reason: 'unmapped check' };
+      return { check: check.name, status: "human_only", reason: "unmapped check" };
   }
 }
 
@@ -377,7 +385,7 @@ function classifyOne(check: Check, ctx: RecommendationContext): CheckClassificat
  */
 export function maxReachableScore(
   health: BrainHealth,
-  classifications: CheckClassification[],
+  classifications: CheckClassification[]
 ): number {
   const classMap = new Map(classifications.map((c) => [c.check, c.status]));
 
@@ -385,16 +393,16 @@ export function maxReachableScore(
   // Conservative: if the mapped check is NOT remediable, the component
   // stays at its current value (can't be lifted by autonomous action).
   let ceiling = 0;
-  ceiling += pickMax(health.embed_coverage_score, 35, classMap.get('missing_embeddings'));
-  ceiling += pickMax(health.link_density_score, 25, classMap.get('dead_links'));
-  ceiling += pickMax(health.timeline_coverage_score, 15, undefined);  // no current autofix
-  ceiling += pickMax(health.no_orphans_score, 15, classMap.get('orphan_pages'));
-  ceiling += pickMax(health.no_dead_links_score, 10, classMap.get('dead_links'));
+  ceiling += pickMax(health.embed_coverage_score, 35, classMap.get("missing_embeddings"));
+  ceiling += pickMax(health.link_density_score, 25, classMap.get("dead_links"));
+  ceiling += pickMax(health.timeline_coverage_score, 15, undefined); // no current autofix
+  ceiling += pickMax(health.no_orphans_score, 15, classMap.get("orphan_pages"));
+  ceiling += pickMax(health.no_dead_links_score, 10, classMap.get("dead_links"));
   return Math.min(100, Math.round(ceiling));
 }
 
 function pickMax(current: number, max: number, status: RemediationStatus | undefined): number {
-  if (status === 'remediable') return max;
+  if (status === "remediable") return max;
   return current;
 }
 
@@ -409,14 +417,14 @@ function idemKey(source: string, job: string, params: Record<string, unknown>): 
 }
 
 function sha8(s: string): string {
-  return createHash('sha256').update(s).digest('hex').slice(0, 8);
+  return createHash("sha256").update(s).digest("hex").slice(0, 8);
 }
 
 function canonicalJson(value: unknown): string {
-  if (value === null || typeof value !== 'object') return JSON.stringify(value);
-  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
+  if (value === null || typeof value !== "object") return JSON.stringify(value);
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
   const keys = Object.keys(value as Record<string, unknown>).sort();
-  return `{${keys.map((k) => `${JSON.stringify(k)}:${canonicalJson((value as Record<string, unknown>)[k])}`).join(',')}}`;
+  return `{${keys.map((k) => `${JSON.stringify(k)}:${canonicalJson((value as Record<string, unknown>)[k])}`).join(",")}}`;
 }
 
 /**
@@ -431,11 +439,12 @@ export function estimateAnthropicCost(
   modelId: string,
   estCallsPerInvocation: number,
   estInputTokensPerCall = 5_000,
-  estOutputTokensPerCall = 1_000,
+  estOutputTokensPerCall = 1_000
 ): number {
   const pricing = canonicalLookup(modelId);
   if (!pricing) return 0;
-  const inputCost = (estInputTokensPerCall * estCallsPerInvocation / 1_000_000) * pricing.input;
-  const outputCost = (estOutputTokensPerCall * estCallsPerInvocation / 1_000_000) * pricing.output;
+  const inputCost = ((estInputTokensPerCall * estCallsPerInvocation) / 1_000_000) * pricing.input;
+  const outputCost =
+    ((estOutputTokensPerCall * estCallsPerInvocation) / 1_000_000) * pricing.output;
   return Number((inputCost + outputCost).toFixed(2));
 }

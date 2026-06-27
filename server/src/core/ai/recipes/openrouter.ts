@@ -1,4 +1,4 @@
-import type { Recipe } from '../types.ts';
+import type { Recipe } from "../types.ts";
 
 /**
  * OpenRouter — single-key fan-out to OpenAI, Anthropic, Google, DeepSeek, and
@@ -38,39 +38,39 @@ import type { Recipe } from '../types.ts';
  * change tracked in TODOS.md.
  */
 export const openrouter: Recipe = {
-  id: 'openrouter',
-  name: 'OpenRouter',
-  tier: 'openai-compat',
-  implementation: 'openai-compatible',
-  base_url_default: 'https://openrouter.ai/api/v1',
+  id: "openrouter",
+  name: "OpenRouter",
+  tier: "openai-compat",
+  implementation: "openai-compatible",
+  base_url_default: "https://openrouter.ai/api/v1",
   auth_env: {
-    required: ['OPENROUTER_API_KEY'],
-    optional: ['OPENROUTER_BASE_URL', 'OPENROUTER_REFERER', 'OPENROUTER_TITLE'],
-    setup_url: 'https://openrouter.ai/settings/keys',
+    required: ["OPENROUTER_API_KEY"],
+    optional: ["OPENROUTER_BASE_URL", "OPENROUTER_REFERER", "OPENROUTER_TITLE"],
+    setup_url: "https://openrouter.ai/settings/keys",
   },
   resolveDefaultHeaders(env) {
-    const referer = env.OPENROUTER_REFERER ?? 'https://gbrain.ai';
-    const title = env.OPENROUTER_TITLE ?? 'gbrain';
+    const referer = env.OPENROUTER_REFERER ?? "https://gbrain.ai";
+    const title = env.OPENROUTER_TITLE ?? "gbrain";
     return {
       // Required by OR for app-attribution. Without HTTP-Referer no leaderboard
       // entry is ever created (per https://openrouter.ai/docs/app-attribution).
-      'HTTP-Referer': referer,
+      "HTTP-Referer": referer,
       // Current preferred name per OR docs (2026).
-      'X-OpenRouter-Title': title,
+      "X-OpenRouter-Title": title,
       // Back-compat alias documented as still-supported.
-      'X-Title': title,
+      "X-Title": title,
     };
   },
   touchpoints: {
     embedding: {
-      models: ['openai/text-embedding-3-small'],
+      models: ["openai/text-embedding-3-small"],
       default_dims: 1536,
       // text-embedding-3-small was trained at MRL breakpoints 512/1024/1536
       // (Weaviate analysis); 768 is a practical intermediate. Users opt into
       // a smaller dim via `gbrain config set embedding_dimensions <N>`.
       dims_options: [512, 768, 1024, 1536],
       cost_per_1m_tokens_usd: 0.02,
-      price_last_verified: '2026-05-20',
+      price_last_verified: "2026-05-20",
       // OpenAI's published per-request aggregate is ~300K tokens for embeddings
       // (per-input cap is 8192). This is the AGGREGATE budget the gateway uses
       // to pre-split batches, NOT per-input. Per-input is enforced upstream.
@@ -81,14 +81,14 @@ export const openrouter: Recipe = {
       // openai-compat tier does NOT enforce this list at runtime — users can
       // pass any model ID OR routes. Refresh quarterly; see TODOS.md.
       models: [
-        'openai/gpt-5.2',
-        'openai/gpt-5.2-chat',
-        'openai/gpt-5.5',
-        'anthropic/claude-haiku-4.5',
-        'anthropic/claude-sonnet-4.6',
-        'anthropic/claude-opus-4.7',
-        'google/gemini-3-flash-preview',
-        'deepseek/deepseek-chat',
+        "openai/gpt-5.2",
+        "openai/gpt-5.2-chat",
+        "openai/gpt-5.5",
+        "anthropic/claude-haiku-4.5",
+        "anthropic/claude-sonnet-4.6",
+        "anthropic/claude-opus-4.7",
+        "google/gemini-3-flash-preview",
+        "deepseek/deepseek-chat",
       ],
       supports_tools: true,
       // Informational only — real gate is isAnthropicProvider() upstream.
@@ -97,9 +97,9 @@ export const openrouter: Recipe = {
       // No max_context_tokens: catalog spans 128K to 1M+; a single recipe-wide
       // value is either unsafe for smaller models or wasteful for larger ones.
       // Let upstream errors surface per-model.
-      price_last_verified: '2026-05-20',
+      price_last_verified: "2026-05-20",
     },
   },
   setup_hint:
-    'Get an API key at https://openrouter.ai/settings/keys, then `export OPENROUTER_API_KEY=...` and use `openrouter:<provider>/<model>`. Optional overrides: OPENROUTER_BASE_URL (proxy), OPENROUTER_REFERER (attribution URL), OPENROUTER_TITLE (attribution name).',
+    "Get an API key at https://openrouter.ai/settings/keys, then `export OPENROUTER_API_KEY=...` and use `openrouter:<provider>/<model>`. Optional overrides: OPENROUTER_BASE_URL (proxy), OPENROUTER_REFERER (attribution URL), OPENROUTER_TITLE (attribution name).",
 };

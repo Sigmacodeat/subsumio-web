@@ -23,13 +23,13 @@
  * No DATABASE_URL needed; PGLite is the engine. Serial because it binds
  * a TCP port and reads/writes a tmpdir.
  */
-import { describe, test, expect } from 'bun:test';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'fs';
-import { join } from 'path';
-import { tmpdir } from 'os';
-import type { Subprocess } from 'bun';
+import { describe, test, expect } from "bun:test";
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "fs";
+import { join } from "path";
+import { tmpdir } from "os";
+import type { Subprocess } from "bun";
 
-const REPO = new URL('..', import.meta.url).pathname.replace(/\/$/, '');
+const REPO = new URL("..", import.meta.url).pathname.replace(/\/$/, "");
 
 interface ServeProc {
   proc: Subprocess;
@@ -45,21 +45,21 @@ function pickPort(): number {
 }
 
 async function spawnServer(): Promise<ServeProc> {
-  const home = mkdtempSync(join(tmpdir(), 'gbrain-admin-embed-'));
-  mkdirSync(join(home, '.gbrain'), { recursive: true });
+  const home = mkdtempSync(join(tmpdir(), "gbrain-admin-embed-"));
+  mkdirSync(join(home, ".gbrain"), { recursive: true });
   writeFileSync(
-    join(home, '.gbrain', 'config.json'),
+    join(home, ".gbrain", "config.json"),
     JSON.stringify({
-      engine: 'pglite',
-      database_path: join(home, '.gbrain', 'brain.pglite'),
+      engine: "pglite",
+      database_path: join(home, ".gbrain", "brain.pglite"),
       embedding_dimensions: 1536,
-    }) + '\n',
+    }) + "\n"
   );
 
   // Pin the bootstrap token via env so the test doesn't have to scrape it
   // out of the startup banner (and the banner stays predictable across
   // future formatting tweaks).
-  const bootstrapToken = 'test-bootstrap-token-aaaaaaaaaaaaaaaaaa'; // 41 chars
+  const bootstrapToken = "test-bootstrap-token-aaaaaaaaaaaaaaaaaa"; // 41 chars
   const port = pickPort();
 
   // CRITICAL: cwd is the tmpdir, NOT the repo. This forces serve-http to
@@ -68,15 +68,15 @@ async function spawnServer(): Promise<ServeProc> {
   // bundled assets via Bun's `with { type: 'file' }` import resolution.
   const proc = Bun.spawn(
     [
-      'bun',
-      'run',
+      "bun",
+      "run",
       `${REPO}/src/cli.ts`,
-      'serve',
-      '--http',
-      '--port',
+      "serve",
+      "--http",
+      "--port",
       String(port),
-      '--bind',
-      '127.0.0.1',
+      "--bind",
+      "127.0.0.1",
     ],
     {
       cwd: home,
@@ -86,12 +86,12 @@ async function spawnServer(): Promise<ServeProc> {
         GBRAIN_HOME: home,
         GBRAIN_ADMIN_BOOTSTRAP_TOKEN: bootstrapToken,
         // Don't let test-process inherit any auth keys it doesn't need.
-        OPENAI_API_KEY: '',
-        ANTHROPIC_API_KEY: '',
+        OPENAI_API_KEY: "",
+        ANTHROPIC_API_KEY: "",
       },
-      stdout: 'pipe',
-      stderr: 'pipe',
-    },
+      stdout: "pipe",
+      stderr: "pipe",
+    }
   );
 
   // Wait for readiness by polling /health. Bun's readable streams don't
@@ -108,35 +108,46 @@ async function spawnServer(): Promise<ServeProc> {
         ready = true;
         break;
       }
-    } catch { /* not ready yet */ }
-    await new Promise(r => setTimeout(r, 250));
+    } catch {
+      /* not ready yet */
+    }
+    await new Promise((r) => setTimeout(r, 250));
   }
 
   const cleanup = async () => {
-    try { proc.kill('SIGTERM'); } catch { /* already exited */ }
+    try {
+      proc.kill("SIGTERM");
+    } catch {
+      /* already exited */
+    }
     // Give it 2s to exit cleanly, then SIGKILL.
-    await Promise.race([
-      proc.exited,
-      new Promise(r => setTimeout(r, 2000)),
-    ]);
-    try { proc.kill('SIGKILL'); } catch { /* already gone */ }
-    try { rmSync(home, { recursive: true, force: true }); } catch { /* best effort */ }
+    await Promise.race([proc.exited, new Promise((r) => setTimeout(r, 2000))]);
+    try {
+      proc.kill("SIGKILL");
+    } catch {
+      /* already gone */
+    }
+    try {
+      rmSync(home, { recursive: true, force: true });
+    } catch {
+      /* best effort */
+    }
   };
 
   if (!ready) {
     // Capture some diagnostics for the failure message before tearing down.
-    const stderrText = await new Response(proc.stderr).text().catch(() => '');
+    const stderrText = await new Response(proc.stderr).text().catch(() => "");
     await cleanup();
     throw new Error(
-      `serve --http never became ready on port ${port} after 30s. stderr: ${stderrText.slice(0, 2000)}`,
+      `serve --http never became ready on port ${port} after 30s. stderr: ${stderrText.slice(0, 2000)}`
     );
   }
 
   return { proc, port, home, bootstrapToken, cleanup };
 }
 
-describe('admin embed E2E — /admin served from embedded manifest (v0.36.1.x #1090)', () => {
-  test('GET /admin/ returns 200 with the React SPA shell HTML', async () => {
+describe("admin embed E2E — /admin served from embedded manifest (v0.36.1.x #1090)", () => {
+  test("GET /admin/ returns 200 with the React SPA shell HTML", async () => {
     const s = await spawnServer();
     try {
       const res = await fetch(`http://127.0.0.1:${s.port}/admin/`, {
@@ -147,17 +158,17 @@ describe('admin embed E2E — /admin served from embedded manifest (v0.36.1.x #1
       // The actual admin/dist/index.html declares <title>GBrain Admin</title>
       // and mounts the SPA on <div id="root">. Both must be present, otherwise
       // we're not serving the embedded asset.
-      expect(html).toContain('GBrain Admin');
+      expect(html).toContain("GBrain Admin");
       expect(html).toContain('<div id="root">');
       // Content-Type is text/html, not application/octet-stream (which would
       // mean the mime lookup in ADMIN_ASSETS regressed).
-      expect(res.headers.get('content-type') ?? '').toMatch(/text\/html/);
+      expect(res.headers.get("content-type") ?? "").toMatch(/text\/html/);
     } finally {
       await s.cleanup();
     }
   }, 90_000);
 
-  test('GET /admin/index.html (explicit path) also returns the SPA HTML', async () => {
+  test("GET /admin/index.html (explicit path) also returns the SPA HTML", async () => {
     const s = await spawnServer();
     try {
       const res = await fetch(`http://127.0.0.1:${s.port}/admin/index.html`, {
@@ -165,13 +176,13 @@ describe('admin embed E2E — /admin served from embedded manifest (v0.36.1.x #1
       });
       expect(res.status).toBe(200);
       const html = await res.text();
-      expect(html).toContain('GBrain Admin');
+      expect(html).toContain("GBrain Admin");
     } finally {
       await s.cleanup();
     }
   }, 90_000);
 
-  test('GET /admin/agents (SPA-routed deep link) falls back to index.html', async () => {
+  test("GET /admin/agents (SPA-routed deep link) falls back to index.html", async () => {
     const s = await spawnServer();
     try {
       const res = await fetch(`http://127.0.0.1:${s.port}/admin/agents`, {
@@ -181,14 +192,14 @@ describe('admin embed E2E — /admin served from embedded manifest (v0.36.1.x #1
       const html = await res.text();
       // SPA fallback: any unmatched /admin/* path serves index.html so
       // client-side routing takes over.
-      expect(html).toContain('GBrain Admin');
+      expect(html).toContain("GBrain Admin");
       expect(html).toContain('<div id="root">');
     } finally {
       await s.cleanup();
     }
   }, 90_000);
 
-  test('GET /admin/api/stats (API route) is NOT swallowed by the SPA fallback — returns auth challenge', async () => {
+  test("GET /admin/api/stats (API route) is NOT swallowed by the SPA fallback — returns auth challenge", async () => {
     const s = await spawnServer();
     try {
       const res = await fetch(`http://127.0.0.1:${s.port}/admin/api/stats`, {
@@ -198,7 +209,7 @@ describe('admin embed E2E — /admin served from embedded manifest (v0.36.1.x #1
       // The regression we guard against: SPA fallback grabbing /admin/api/*
       // would silently return HTML to a JSON client and break the dashboard.
       expect(res.status).not.toBe(200);
-      const body = await res.text().catch(() => '');
+      const body = await res.text().catch(() => "");
       expect(body).not.toContain('<div id="root">');
     } finally {
       await s.cleanup();

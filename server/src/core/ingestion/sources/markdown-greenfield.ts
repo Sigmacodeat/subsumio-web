@@ -43,18 +43,25 @@
  * ideas/. Defaults to ~/git/brain when omitted.
  */
 
-import { readFileSync, readdirSync, existsSync, statSync, appendFileSync, mkdirSync } from 'node:fs';
-import { join, relative, dirname } from 'node:path';
-import { homedir } from 'node:os';
-import matter from 'gray-matter';
-import { computeContentHash } from '../types.ts';
+import {
+  readFileSync,
+  readdirSync,
+  existsSync,
+  statSync,
+  appendFileSync,
+  mkdirSync,
+} from "node:fs";
+import { join, relative, dirname } from "node:path";
+import { homedir } from "node:os";
+import matter from "gray-matter";
+import { computeContentHash } from "../types.ts";
 import type {
   IngestionSource,
   IngestionSourceContext,
   IngestionEvent,
   IngestionSourceMode,
   IngestionSourceHealth,
-} from '../types.ts';
+} from "../types.ts";
 
 export interface MarkdownGreenfieldOpts {
   /** Brain repo root (default: ~/git/brain). */
@@ -91,10 +98,12 @@ export interface MarkdownGreenfieldStats {
 
 export class MarkdownGreenfieldSource implements IngestionSource {
   readonly id: string;
-  readonly kind = 'markdown-greenfield';
-  readonly mode: IngestionSourceMode = 'migration';
+  readonly kind = "markdown-greenfield";
+  readonly mode: IngestionSourceMode = "migration";
 
-  private readonly opts: Required<Omit<MarkdownGreenfieldOpts, 'repoPath' | 'auditDir' | 'limit'>> & {
+  private readonly opts: Required<
+    Omit<MarkdownGreenfieldOpts, "repoPath" | "auditDir" | "limit">
+  > & {
     repoPath: string;
     auditDir: string;
     limit: number | undefined;
@@ -110,35 +119,35 @@ export class MarkdownGreenfieldSource implements IngestionSource {
   constructor(opts: MarkdownGreenfieldOpts = {}) {
     this.id = `markdown-greenfield:${process.pid}`;
     this.opts = {
-      repoPath: opts.repoPath ?? join(homedir(), 'git', 'brain'),
+      repoPath: opts.repoPath ?? join(homedir(), "git", "brain"),
       dryRun: opts.dryRun ?? false,
       limit: opts.limit,
-      auditDir: opts.auditDir ?? join(homedir(), '.gbrain', 'audit'),
-      _readFile: opts._readFile ?? ((p) => readFileSync(p, 'utf-8')),
+      auditDir: opts.auditDir ?? join(homedir(), ".gbrain", "audit"),
+      _readFile: opts._readFile ?? ((p) => readFileSync(p, "utf-8")),
       _existsSync: opts._existsSync ?? existsSync,
       _readdirSync: opts._readdirSync ?? ((p) => readdirSync(p)),
       _statSync: opts._statSync ?? ((p) => statSync(p)),
-      _appendFileSync: opts._appendFileSync ?? ((p, c) => {
-        try {
-          mkdirSync(dirname(p), { recursive: true });
-        } catch {
-          // Directory likely exists; ignore.
-        }
-        appendFileSync(p, c);
-      }),
+      _appendFileSync:
+        opts._appendFileSync ??
+        ((p, c) => {
+          try {
+            mkdirSync(dirname(p), { recursive: true });
+          } catch {
+            // Directory likely exists; ignore.
+          }
+          appendFileSync(p, c);
+        }),
     };
   }
 
   async start(ctx: IngestionSourceContext): Promise<void> {
     this.ctx = ctx;
     if (!this.opts._existsSync(this.opts.repoPath)) {
-      throw new Error(
-        `MarkdownGreenfieldSource: repo path does not exist: ${this.opts.repoPath}`,
-      );
+      throw new Error(`MarkdownGreenfieldSource: repo path does not exist: ${this.opts.repoPath}`);
     }
     const walk = this.walkFiles();
     ctx.logger.info(
-      `[markdown-greenfield] discovered ${walk.files.length} files under ${this.opts.repoPath}`,
+      `[markdown-greenfield] discovered ${walk.files.length} files under ${this.opts.repoPath}`
     );
 
     let processed = 0;
@@ -169,7 +178,7 @@ export class MarkdownGreenfieldSource implements IngestionSource {
     ctx.logger.info(
       `[markdown-greenfield] done: ${this._stats.emitted} emitted, ` +
         `${this._stats.skipped_invalid} invalid, ${this._stats.skipped_no_type} no-type, ` +
-        `${this._stats.total_walked} total`,
+        `${this._stats.total_walked} total`
     );
   }
 
@@ -181,14 +190,14 @@ export class MarkdownGreenfieldSource implements IngestionSource {
     const total = this._stats.emitted + this._stats.skipped_invalid + this._stats.skipped_no_type;
     if (this._stats.skipped_invalid > 0) {
       return {
-        status: 'warn',
+        status: "warn",
         message: `${this._stats.skipped_invalid}/${total} files failed validation; check audit log`,
       };
     }
     if (total === 0 && !this.ctx) {
-      return { status: 'warn', message: 'not yet started' };
+      return { status: "warn", message: "not yet started" };
     }
-    return { status: 'ok', message: `${this._stats.emitted}/${total} emitted cleanly` };
+    return { status: "ok", message: `${this._stats.emitted}/${total} emitted cleanly` };
   }
 
   /** Diagnostic: import counters since start. */
@@ -205,7 +214,7 @@ export class MarkdownGreenfieldSource implements IngestionSource {
   private walkFiles(): WalkResult {
     const out: string[] = [];
     let scanned = 0;
-    for (const subdir of ['atoms', 'concepts', 'ideas']) {
+    for (const subdir of ["atoms", "concepts", "ideas"]) {
       const base = join(this.opts.repoPath, subdir);
       if (!this.opts._existsSync(base)) continue;
       this.walkRecursive(base, out, () => scanned++);
@@ -232,7 +241,7 @@ export class MarkdownGreenfieldSource implements IngestionSource {
       }
       if (stat.isDirectory()) {
         this.walkRecursive(full, out, onScan);
-      } else if (stat.isFile() && entry.endsWith('.md')) {
+      } else if (stat.isFile() && entry.endsWith(".md")) {
         out.push(full);
       }
     }
@@ -251,7 +260,7 @@ export class MarkdownGreenfieldSource implements IngestionSource {
     const fm = parsed.data as Record<string, unknown>;
     const body = parsed.content;
 
-    if (!fm || typeof fm.type !== 'string' || fm.type.length === 0) {
+    if (!fm || typeof fm.type !== "string" || fm.type.length === 0) {
       // No frontmatter `type:` field — skip with no-type marker.
       return null;
     }
@@ -262,7 +271,7 @@ export class MarkdownGreenfieldSource implements IngestionSource {
     // put_page handler can reconstruct fidelity.
     const importedFm = {
       ...fm,
-      imported_from: 'markdown-greenfield',
+      imported_from: "markdown-greenfield",
       imported_at: new Date().toISOString(),
     };
 
@@ -274,7 +283,7 @@ export class MarkdownGreenfieldSource implements IngestionSource {
       source_kind: this.kind,
       source_uri: `file://${path}`,
       received_at: new Date().toISOString(),
-      content_type: 'text/markdown',
+      content_type: "text/markdown",
       content: newBody,
       content_hash: computeContentHash(newBody),
       // local file, user's own your OpenClaw brain — trusted payload
@@ -284,8 +293,8 @@ export class MarkdownGreenfieldSource implements IngestionSource {
         page_type: fm.type as string,
         original_path: relative(this.opts.repoPath, path),
         original_frontmatter: fm,
-        importer: 'markdown-greenfield',
-        importer_version: '0.41.0',
+        importer: "markdown-greenfield",
+        importer_version: "0.41.0",
       },
     };
   }
@@ -297,7 +306,7 @@ export class MarkdownGreenfieldSource implements IngestionSource {
    */
   private deriveSlugFromPath(path: string): string {
     const rel = relative(this.opts.repoPath, path);
-    return rel.replace(/\.md$/, '');
+    return rel.replace(/\.md$/, "");
   }
 
   private appendFailureAudit(path: string, errMsg: string): void {
@@ -307,15 +316,15 @@ export class MarkdownGreenfieldSource implements IngestionSource {
       ts: new Date().toISOString(),
       path,
       error: errMsg,
-      importer: 'markdown-greenfield',
+      importer: "markdown-greenfield",
     });
     try {
-      this.opts._appendFileSync(auditPath, line + '\n');
+      this.opts._appendFileSync(auditPath, line + "\n");
     } catch (err) {
       // Audit write failure is non-fatal; log to ctx if available.
       if (this.ctx) {
         this.ctx.logger.warn(
-          `[markdown-greenfield] audit write failed: ${err instanceof Error ? err.message : String(err)}`,
+          `[markdown-greenfield] audit write failed: ${err instanceof Error ? err.message : String(err)}`
         );
       }
     }
@@ -328,6 +337,6 @@ export class MarkdownGreenfieldSource implements IngestionSource {
     target.setUTCDate(target.getUTCDate() + 4 - dayNum);
     const yearStart = new Date(Date.UTC(target.getUTCFullYear(), 0, 1));
     const weekNo = Math.ceil(((+target - +yearStart) / 86400000 + 1) / 7);
-    return `${target.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+    return `${target.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
   }
 }

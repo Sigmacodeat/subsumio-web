@@ -79,17 +79,18 @@ claims: ["Schadensersatz", "Auskunft"]
 # Amtshaftung Polizei
 
 ## Facts (anonymized)
+
 [ENT-01] was stopped by [ENT-02] on [DATE-01]...
 ```
 
 ## Skills
 
-| Trigger | Skill |
-|---------|-------|
-| "legal brain", "create a case", "analyze opponent" | `skills/legal-brain/SKILL.md` |
-| "project status", "Statusbericht" | `skills/pm-status/SKILL.md` |
-| "create a project task", "Fallaufgabe" | `skills/pm-task/SKILL.md` |
-| "onboard project", "Projekt anlegen" | `skills/project-onboard/SKILL.md` |
+| Trigger                                            | Skill                             |
+| -------------------------------------------------- | --------------------------------- |
+| "legal brain", "create a case", "analyze opponent" | `skills/legal-brain/SKILL.md`     |
+| "project status", "Statusbericht"                  | `skills/pm-status/SKILL.md`       |
+| "create a project task", "Fallaufgabe"             | `skills/pm-task/SKILL.md`         |
+| "onboard project", "Projekt anlegen"               | `skills/project-onboard/SKILL.md` |
 
 ## Chaining
 

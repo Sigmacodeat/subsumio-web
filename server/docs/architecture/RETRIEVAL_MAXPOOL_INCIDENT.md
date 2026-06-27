@@ -17,7 +17,7 @@ recognized as the existing page, and the agent wrote a **duplicate stub** on top
 of a fully-developed concept doc. Garry caught it: "It's in the brain. It's the
 Hall of Light. Why did you forget?"
 
-The page is *about* a Greek amphitheater — the phrase is in its title and first
+The page is _about_ a Greek amphitheater — the phrase is in its title and first
 sentence. A healthy index returns it at the top. It didn't.
 
 ## 2. The disease (the RFC got this right)
@@ -38,23 +38,23 @@ These were checked in code during the fix; several change the remedy:
    `search.mode` config key, which is why all three "modes" returned identical
    results (the flag was silently dropped; `thorough` isn't a real mode).
 3. **`hybridSearch` already max-pooled per page at the dedup layer.** So the
-   per-page max-pool fix's real win is *candidate-set page recall* (the vector
+   per-page max-pool fix's real win is _candidate-set page recall_ (the vector
    side returned N chunks that could collapse to fewer pages), and it is
    necessary-but-not-sufficient: if a page's title chunk scores below a body
    chunk on a 2-word query, or falls outside the candidate pool, pooling alone
    doesn't rescue it.
 4. **Frontmatter `aliases:` was dead to search** — stored in `pages.frontmatter`
-   JSONB, never consulted. `slug_aliases` is a *slug→slug* wikilink redirect, a
+   JSONB, never consulted. `slug_aliases` is a _slug→slug_ wikilink redirect, a
    different concept.
 
 ## 4. The fix that shipped (four layers + a contract)
 
-| Layer | Fixes | Where |
-|---|---|---|
-| **Per-page max-pool** (T1) | a page scored by its weakest chunk; vector page-recall | `searchVector` both engines, shared `buildBestPerPagePoolCte` |
-| **Title-phrase boost** (T2) | query is a phrase in the title but matched a body chunk | `applyTitleBoost` (reads `page.title`), `title_boost` mode knob |
-| **Alias hop** (T3) | true synonyms with zero surface overlap ("Hall of Light" → Mingtang) | `page_aliases` table, `applyAliasHop`, ingest projection + `reindex --aliases` backfill |
-| **Evidence contract** (T4) | the agent keyed "don't duplicate" off a fuzzy score | `evidence` + `create_safety` on every result; the agent keys off `create_safety='exists'`, not a threshold |
+| Layer                       | Fixes                                                                | Where                                                                                                      |
+| --------------------------- | -------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| **Per-page max-pool** (T1)  | a page scored by its weakest chunk; vector page-recall               | `searchVector` both engines, shared `buildBestPerPagePoolCte`                                              |
+| **Title-phrase boost** (T2) | query is a phrase in the title but matched a body chunk              | `applyTitleBoost` (reads `page.title`), `title_boost` mode knob                                            |
+| **Alias hop** (T3)          | true synonyms with zero surface overlap ("Hall of Light" → Mingtang) | `page_aliases` table, `applyAliasHop`, ingest projection + `reindex --aliases` backfill                    |
+| **Evidence contract** (T4)  | the agent keyed "don't duplicate" off a fuzzy score                  | `evidence` + `create_safety` on every result; the agent keys off `create_safety='exists'`, not a threshold |
 
 Plus: `gbrain search "<text>"` is now cheap-hybrid (the obvious verb gives the
 good path); `modes/stats/tune` stay subcommands; `--mode` works per-call for
@@ -93,5 +93,5 @@ aliases:
 A benchmark that scores 97.9 R@5 while production returns a flagship page at 0.64
 means the benchmark and the shipped path diverged. NamedThingBench runs the same
 families through the real pipeline on every PR, and the evidence contract means
-the agent's duplicate-or-not decision is grounded in *why* a page matched, not a
+the agent's duplicate-or-not decision is grounded in _why_ a page matched, not a
 number that was never a calibrated probability.

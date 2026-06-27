@@ -63,7 +63,7 @@
  * surfaces immediately, not at first retry.
  */
 
-import { isRetryableConnError } from './retry-matcher.ts';
+import { isRetryableConnError } from "./retry-matcher.ts";
 
 export { isRetryableConnError };
 
@@ -74,37 +74,37 @@ export { isRetryableConnError };
  */
 export const BATCH_AUDIT_SITES = [
   // Engine-method defaults (used when caller doesn't supply auditSite).
-  'addLinksBatch',
-  'addTimelineEntriesBatch',
-  'addTakesBatch',
-  'upsertChunks',
+  "addLinksBatch",
+  "addTimelineEntriesBatch",
+  "addTakesBatch",
+  "upsertChunks",
   // extract.ts per-site labels.
-  'extract.links_inc',
-  'extract.timeline_inc',
-  'extract.links_fs',
-  'extract.timeline_fs',
-  'extract.links_db',
-  'extract.timeline_db',
-  'extract.by_mention',
+  "extract.links_inc",
+  "extract.timeline_inc",
+  "extract.links_fs",
+  "extract.timeline_fs",
+  "extract.links_db",
+  "extract.timeline_db",
+  "extract.by_mention",
   // v0.42.7 (#1696): extract --stale incremental sweep.
-  'extract.stale',
+  "extract.stale",
   // operations.ts MCP put_page auto-link path.
-  'mcp.put_page.autolink',
+  "mcp.put_page.autolink",
   // sync.ts/reindex.ts orchestrator labels.
-  'sync.import_file',
-  'reindex.markdown',
-  'reindex.multimodal',
+  "sync.import_file",
+  "reindex.markdown",
+  "reindex.multimodal",
   // backfill-base.ts outer connection-retry layer.
-  'backfill.outer',
+  "backfill.outer",
   // queue.ts Minion hot-path lock recovery (issue #1678): promoteDelayed
   // self-heal on a reaped pooler socket. claim/renewLock deliberately do NOT
   // route here (Codex #1/#2) — the poll loop and renewal-tick recover those.
-  'minion-lock',
+  "minion-lock",
 ] as const;
 
 export type BatchAuditSite = (typeof BATCH_AUDIT_SITES)[number];
 
-export type JitterMode = 'none' | 'full' | 'decorrelated';
+export type JitterMode = "none" | "full" | "decorrelated";
 
 export interface WithRetryOpts {
   /** Maximum retry attempts (default 1 = single retry, v0.41.2.1 back-compat). */
@@ -156,11 +156,13 @@ export interface WithRetryOpts {
  * Total worst-case wait: ~1s + ~3s + ~8s ≈ 12s. Covers the 5-10s Supavisor
  * circuit-breaker recovery window with headroom.
  */
-export const BULK_RETRY_OPTS: Required<Pick<WithRetryOpts, 'maxRetries' | 'delayMs' | 'delayMaxMs' | 'jitter'>> = {
+export const BULK_RETRY_OPTS: Required<
+  Pick<WithRetryOpts, "maxRetries" | "delayMs" | "delayMaxMs" | "jitter">
+> = {
   maxRetries: 3,
   delayMs: 1000,
   delayMaxMs: 10_000,
-  jitter: 'decorrelated',
+  jitter: "decorrelated",
 };
 
 /**
@@ -168,10 +170,10 @@ export const BULK_RETRY_OPTS: Required<Pick<WithRetryOpts, 'maxRetries' | 'delay
  * callers can distinguish "user/system aborted" from "retries exhausted".
  */
 export class RetryAbortError extends Error {
-  readonly tag = 'RETRY_ABORTED' as const;
-  constructor(message = 'Retry aborted via signal') {
+  readonly tag = "RETRY_ABORTED" as const;
+  constructor(message = "Retry aborted via signal") {
     super(message);
-    this.name = 'RetryAbortError';
+    this.name = "RetryAbortError";
   }
 }
 
@@ -184,14 +186,14 @@ export function abortableSleep(ms: number, signal?: AbortSignal): Promise<void> 
   if (signal?.aborted) return Promise.reject(new RetryAbortError());
   return new Promise<void>((resolve, reject) => {
     const timer = setTimeout(() => {
-      signal?.removeEventListener('abort', onAbort);
+      signal?.removeEventListener("abort", onAbort);
       resolve();
     }, ms);
     const onAbort = () => {
       clearTimeout(timer);
       reject(new RetryAbortError());
     };
-    signal?.addEventListener('abort', onAbort, { once: true });
+    signal?.addEventListener("abort", onAbort, { once: true });
   });
 }
 
@@ -209,9 +211,9 @@ export function computeNextDelay(
   base: number,
   maxDelay: number,
   jitter: JitterMode,
-  rng: () => number = Math.random,
+  rng: () => number = Math.random
 ): number {
-  if (jitter === 'decorrelated') {
+  if (jitter === "decorrelated") {
     // AWS-style: nextDelay = uniform(base, prevDelay * 3), capped at maxDelay.
     // On the very first retry (prevDelay === 0), fall back to `base` as the
     // floor so we don't degenerate to uniform(base, 0) which would always
@@ -226,7 +228,7 @@ export function computeNextDelay(
     return Math.min(capped, Math.max(lo, Math.floor(lo + rng() * (capped - lo + 1))));
   }
   const exponential = Math.min(base * Math.pow(2, attempt), maxDelay);
-  if (jitter === 'full') {
+  if (jitter === "full") {
     return Math.floor(rng() * exponential);
   }
   return exponential;
@@ -243,14 +245,11 @@ export function computeNextDelay(
  *   classification but BEFORE the sleep. Fail-loud — a reconnect throw
  *   propagates as the new error.
  */
-export async function withRetry<T>(
-  fn: () => Promise<T>,
-  opts: WithRetryOpts = {},
-): Promise<T> {
+export async function withRetry<T>(fn: () => Promise<T>, opts: WithRetryOpts = {}): Promise<T> {
   const maxRetries = opts.maxRetries ?? 1;
   const baseDelay = opts.delayMs ?? 500;
   const maxDelay = opts.delayMaxMs ?? 8_000;
-  const jitter: JitterMode = opts.jitter ?? 'none';
+  const jitter: JitterMode = opts.jitter ?? "none";
   const signal = opts.signal;
 
   let lastErr: unknown;
@@ -297,42 +296,40 @@ export async function withRetry<T>(
  * Throws GBrainError with paste-ready fix on bad input. Never silently
  * falls back to defaults — bad config should fail loud.
  */
-export function resolveBulkRetryOpts(
-  env: NodeJS.ProcessEnv = process.env,
-): typeof BULK_RETRY_OPTS {
+export function resolveBulkRetryOpts(env: NodeJS.ProcessEnv = process.env): typeof BULK_RETRY_OPTS {
   const out = { ...BULK_RETRY_OPTS };
 
   const maxRetries = env.GBRAIN_BULK_MAX_RETRIES;
-  if (maxRetries !== undefined && maxRetries !== '') {
+  if (maxRetries !== undefined && maxRetries !== "") {
     const n = Number(maxRetries);
     if (!Number.isInteger(n) || n < 0) {
       throw new Error(
         `GBRAIN_BULK_MAX_RETRIES must be an integer >= 0 (got "${maxRetries}"). ` +
-        `Fix: export GBRAIN_BULK_MAX_RETRIES=3   # or 0 to disable retries`,
+          `Fix: export GBRAIN_BULK_MAX_RETRIES=3   # or 0 to disable retries`
       );
     }
     out.maxRetries = n;
   }
 
   const baseMs = env.GBRAIN_BULK_RETRY_BASE_MS;
-  if (baseMs !== undefined && baseMs !== '') {
+  if (baseMs !== undefined && baseMs !== "") {
     const n = Number(baseMs);
     if (!Number.isInteger(n) || n <= 0) {
       throw new Error(
         `GBRAIN_BULK_RETRY_BASE_MS must be an integer > 0 (got "${baseMs}"). ` +
-        `Fix: export GBRAIN_BULK_RETRY_BASE_MS=1000`,
+          `Fix: export GBRAIN_BULK_RETRY_BASE_MS=1000`
       );
     }
     out.delayMs = n;
   }
 
   const maxMs = env.GBRAIN_BULK_RETRY_MAX_MS;
-  if (maxMs !== undefined && maxMs !== '') {
+  if (maxMs !== undefined && maxMs !== "") {
     const n = Number(maxMs);
     if (!Number.isInteger(n) || n < out.delayMs) {
       throw new Error(
         `GBRAIN_BULK_RETRY_MAX_MS must be an integer >= GBRAIN_BULK_RETRY_BASE_MS=${out.delayMs} ` +
-        `(got "${maxMs}"). Fix: export GBRAIN_BULK_RETRY_MAX_MS=10000`,
+          `(got "${maxMs}"). Fix: export GBRAIN_BULK_RETRY_MAX_MS=10000`
       );
     }
     out.delayMaxMs = n;

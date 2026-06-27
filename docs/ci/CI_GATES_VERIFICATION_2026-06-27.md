@@ -14,18 +14,18 @@ Die CI Pipeline ist in `.github/workflows/ci.yml` definiert und wird auf `push` 
 
 # 2. CI Jobs Overview
 
-| Job | Zweck | Status |
-|-----|-------|--------|
-| lint | ESLint Code Quality Check | ✅ |
-| format-check | Prettier Format Check | ✅ |
-| build | Next.js Build Verification | ✅ |
-| typecheck | TypeScript Type Check | ✅ |
-| test | Unit Tests (Vitest) | ✅ |
-| check-resolvable | Skill Tree (Reachability/MECE/DRY) | ✅ |
-| e2e | Playwright E2E Tests | ✅ |
-| server-verify | Server Engine Verify | ✅ |
-| release-gate-eval | AI Quality Release Gate | ✅ |
-| production-gate | Production Gate (all checks must pass) | ✅ |
+| Job               | Zweck                                  | Status |
+| ----------------- | -------------------------------------- | ------ |
+| lint              | ESLint Code Quality Check              | ✅     |
+| format-check      | Prettier Format Check                  | ✅     |
+| build             | Next.js Build Verification             | ✅     |
+| typecheck         | TypeScript Type Check                  | ✅     |
+| test              | Unit Tests (Vitest)                    | ✅     |
+| check-resolvable  | Skill Tree (Reachability/MECE/DRY)     | ✅     |
+| e2e               | Playwright E2E Tests                   | ✅     |
+| server-verify     | Server Engine Verify                   | ✅     |
+| release-gate-eval | AI Quality Release Gate                | ✅     |
+| production-gate   | Production Gate (all checks must pass) | ✅     |
 
 **Gesamt:** 10 Jobs, alle korrekt konfiguriert
 
@@ -38,6 +38,7 @@ Die CI Pipeline ist in `.github/workflows/ci.yml` definiert und wird auf `push` 
 **Zweck:** ESLint Code Quality Check
 
 **Konfiguration:**
+
 ```yaml
 lint:
   runs-on: ubuntu-latest
@@ -57,6 +58,7 @@ lint:
 **Zweck:** Prettier Format Check
 
 **Konfiguration:**
+
 ```yaml
 format-check:
   name: Format Check
@@ -77,6 +79,7 @@ format-check:
 **Zweck:** Next.js Build Verification
 
 **Konfiguration:**
+
 ```yaml
 build:
   name: Build Verification
@@ -99,6 +102,7 @@ build:
 **Zweck:** TypeScript Type Check
 
 **Konfiguration:**
+
 ```yaml
 typecheck:
   runs-on: ubuntu-latest
@@ -118,6 +122,7 @@ typecheck:
 **Zweck:** Unit Tests (Vitest)
 
 **Konfiguration:**
+
 ```yaml
 test:
   runs-on: ubuntu-latest
@@ -137,6 +142,7 @@ test:
 **Zweck:** Skill Tree (Reachability/MECE/DRY)
 
 **Konfiguration:**
+
 ```yaml
 check-resolvable:
   name: Skill Tree (Reachability/MECE/DRY)
@@ -161,6 +167,7 @@ check-resolvable:
 **Zweck:** Playwright E2E Tests
 
 **Konfiguration:**
+
 ```yaml
 e2e:
   runs-on: ubuntu-latest
@@ -189,6 +196,7 @@ e2e:
 **Zweck:** Server Engine Verify
 
 **Konfiguration:**
+
 ```yaml
 server-verify:
   name: Server Engine Verify
@@ -213,6 +221,7 @@ server-verify:
 **Zweck:** AI Quality Release Gate
 
 **Konfiguration:**
+
 ```yaml
 release-gate-eval:
   name: AI Quality Release Gate
@@ -237,6 +246,7 @@ release-gate-eval:
 **Zweck:** Production Gate (all checks must pass)
 
 **Konfiguration:**
+
 ```yaml
 production-gate:
   name: Production Gate (all checks must pass)
@@ -304,6 +314,7 @@ Wenn einer dieser Jobs nicht "success" ist, schlägt das Production Gate fehl.
 ## 4.2 Gate Strength
 
 **Stärken:**
+
 - ✅ Alle kritischen Checks sind erforderlich
 - ✅ E2E Tests sind Teil des Gates
 - ✅ Server Verify ist Teil des Gates
@@ -311,6 +322,7 @@ Wenn einer dieser Jobs nicht "success" ist, schlägt das Production Gate fehl.
 - ✅ `if: always()` stellt sicher, dass alle Jobs geprüft werden
 
 **Schwächen:**
+
 - ⚠️ Kein expliziter Security Scan (SAST/DAST)
 - ⚠️ Kein Dependency Scan (Snyk, Dependabot)
 - ⚠️ Kein Performance Test
@@ -340,11 +352,13 @@ Der `release-gate-eval` Job führt einen Smoke Eval aus:
 ## 5.2 Release Gate Strength
 
 **Stärken:**
+
 - ✅ Echte PGLite Datenbank
 - ✅ Keine API-Kosten
 - ✅ Smoke Eval für kritische Funktionen
 
 **Schwächen:**
+
 - ⚠️ Kein vollständiger AI Quality Test
 - ⚠️ Kein Halluzinations-Test
 - ⚠️ Kein Citation-Gate Test
@@ -370,18 +384,18 @@ Der `release-gate-eval` Job führt einen Smoke Eval aus:
 
 ## 6.2 Production Gate Score
 
-| Kategorie | Score | Status |
-|-----------|-------|--------|
-| Code Quality | 100% | ✅ |
-| Build | 100% | ✅ |
-| Type Safety | 100% | ✅ |
-| Unit Tests | 100% | ✅ |
-| E2E Tests | 100% | ✅ |
-| Server Verify | 100% | ✅ |
-| AI Quality | 100% | ✅ |
-| Security | 0% | ⚠️ |
-| Performance | 0% | ⚠️ |
-| Dependencies | 0% | ⚠️ |
+| Kategorie     | Score | Status |
+| ------------- | ----- | ------ |
+| Code Quality  | 100%  | ✅     |
+| Build         | 100%  | ✅     |
+| Type Safety   | 100%  | ✅     |
+| Unit Tests    | 100%  | ✅     |
+| E2E Tests     | 100%  | ✅     |
+| Server Verify | 100%  | ✅     |
+| AI Quality    | 100%  | ✅     |
+| Security      | 0%    | ⚠️     |
+| Performance   | 0%    | ⚠️     |
+| Dependencies  | 0%    | ⚠️     |
 
 **Gesamtscore:** ✅ **77%** – Production Gate ist sicher, aber Security/Performance/Dependency Scans fehlen
 

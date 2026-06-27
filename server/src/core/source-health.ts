@@ -21,10 +21,10 @@
  *      `newest_content_at` column instead — NO git subprocess on a DB-supplied
  *      local_path (preserves the v0.41.27.0 trust boundary).
  */
-import { execFileSync } from 'child_process';
-import type { BrainEngine } from './engine.ts';
-import { parseSourceConfig, type SourceRow } from './sources-load.ts';
-import { isSourceUnchangedSinceSync } from './git-head.ts';
+import { execFileSync } from "child_process";
+import type { BrainEngine } from "./engine.ts";
+import { parseSourceConfig, type SourceRow } from "./sources-load.ts";
+import { isSourceUnchangedSinceSync } from "./git-head.ts";
 
 export interface SourceMetrics {
   source_id: string;
@@ -51,7 +51,7 @@ export interface SourceMetrics {
   webhook_configured: boolean;
 }
 
-export type PriorityLabel = 'high' | 'normal' | 'low';
+export type PriorityLabel = "high" | "normal" | "low";
 
 /** Numeric priority used by MinionQueue.add({ priority }). Lower = sooner. */
 const PRIORITY_VALUE: Record<PriorityLabel, number> = {
@@ -60,7 +60,7 @@ const PRIORITY_VALUE: Record<PriorityLabel, number> = {
   low: 5,
 };
 
-const KNOWN_PRIORITY: Set<string> = new Set(['high', 'normal', 'low']);
+const KNOWN_PRIORITY: Set<string> = new Set(["high", "normal", "low"]);
 
 /** Stderr-warn-once memo so a tight autopilot loop doesn't spam. */
 const _warnedSources = new Set<string>();
@@ -78,14 +78,11 @@ export function _resetPriorityWarningsForTest(): void {
  * process stderr warning naming the bad value + the fix command. Missing
  * key is silent ('normal' is the default).
  */
-export function resolvePriorityLabel(
-  sourceId: string,
-  config: unknown,
-): PriorityLabel {
+export function resolvePriorityLabel(sourceId: string, config: unknown): PriorityLabel {
   const parsed = parseSourceConfig(config);
   const raw = parsed.priority;
-  if (raw === undefined || raw === null) return 'normal';
-  if (typeof raw === 'string' && KNOWN_PRIORITY.has(raw)) {
+  if (raw === undefined || raw === null) return "normal";
+  if (typeof raw === "string" && KNOWN_PRIORITY.has(raw)) {
     return raw as PriorityLabel;
   }
   // Warn once per source per process.
@@ -93,10 +90,10 @@ export function resolvePriorityLabel(
     _warnedSources.add(sourceId);
     process.stderr.write(
       `[gbrain] source "${sourceId}": invalid config.priority value ${JSON.stringify(raw)}; ` +
-      `falling back to 'normal'. Fix: gbrain sources config set ${sourceId} priority normal\n`,
+        `falling back to 'normal'. Fix: gbrain sources config set ${sourceId} priority normal\n`
     );
   }
-  return 'normal';
+  return "normal";
 }
 
 /** Numeric priority for queue.add. */
@@ -120,10 +117,10 @@ export function resolvePriority(sourceId: string, config: unknown): number {
 export function newestCommitMs(localPath: string | null): number | null {
   if (!localPath) return null;
   try {
-    const out = execFileSync('git', ['-C', localPath, 'log', '-1', '--format=%ct'], {
-      encoding: 'utf8',
+    const out = execFileSync("git", ["-C", localPath, "log", "-1", "--format=%ct"], {
+      encoding: "utf8",
       timeout: 10_000,
-      stdio: ['ignore', 'pipe', 'ignore'],
+      stdio: ["ignore", "pipe", "ignore"],
     }).trim();
     if (!out) return null;
     const ms = Number(out) * 1000;
@@ -148,16 +145,16 @@ export function newestCommitMs(localPath: string | null): number | null {
 export function commitTimeMs(localPath: string | null, sha: string | null): number | null {
   if (!localPath || !sha) return null;
   try {
-    const out = execFileSync('git', ['-C', localPath, 'show', '-s', '--format=%ct', sha], {
-      encoding: 'utf8',
+    const out = execFileSync("git", ["-C", localPath, "show", "-s", "--format=%ct", sha], {
+      encoding: "utf8",
       timeout: 10_000,
-      stdio: ['ignore', 'pipe', 'ignore'],
+      stdio: ["ignore", "pipe", "ignore"],
     }).trim();
     if (!out) return null;
     // `git show -s --format=%ct <sha>` prints only the committer epoch for the
     // resolved commit; take the first line in case the sha resolves to an
     // annotated-tag-ish ref that prints extra lines.
-    const first = out.split('\n')[0]?.trim();
+    const first = out.split("\n")[0]?.trim();
     const ms = Number(first) * 1000;
     return Number.isFinite(ms) ? ms : null;
   } catch {
@@ -182,7 +179,7 @@ export function commitTimeMs(localPath: string | null, sha: string | null): numb
 export function lagFromContentMs(
   contentMs: number | null,
   lastSyncMs: number | null,
-  nowMs: number,
+  nowMs: number
 ): number | null {
   if (lastSyncMs === null || !Number.isFinite(lastSyncMs)) return null;
   const wallClockSeconds = Math.floor((nowMs - lastSyncMs) / 1000);
@@ -208,7 +205,7 @@ export function lagFromContentMs(
 export async function computeAllSourceMetrics(
   engine: BrainEngine,
   sources: SourceRow[],
-  opts?: { probeContent?: boolean },
+  opts?: { probeContent?: boolean }
 ): Promise<SourceMetrics[]> {
   if (sources.length === 0) return [];
 
@@ -225,11 +222,17 @@ export async function computeAllSourceMetrics(
     const cfg = parseSourceConfig(src.config);
     const pages = pageCounts.get(src.id) ?? 0;
     const chunkStats = chunkCounts.get(src.id) ?? { total: 0, embedded: 0 };
-    const jobStats = jobCounts.get(src.id) ?? { failed_24h: 0, queue_depth: 0, backfill_active: 0, backfill_queued: 0 };
+    const jobStats = jobCounts.get(src.id) ?? {
+      failed_24h: 0,
+      queue_depth: 0,
+      backfill_active: 0,
+      backfill_queued: 0,
+    };
 
-    const embedCoverage = chunkStats.total === 0
-      ? 100
-      : Math.round((chunkStats.embedded / chunkStats.total) * 1000) / 10;
+    const embedCoverage =
+      chunkStats.total === 0
+        ? 100
+        : Math.round((chunkStats.embedded / chunkStats.total) * 1000) / 10;
 
     const lastMs = src.last_sync_at ? new Date(src.last_sync_at).getTime() : null;
     // v0.41.32.0: commit-relative lag.
@@ -244,13 +247,11 @@ export async function computeAllSourceMetrics(
       lagSeconds = null;
     } else if (probeContent) {
       const caughtUp = isSourceUnchangedSinceSync(src.local_path, src.last_commit, {
-        requireCleanWorkingTree: 'ignore-untracked',
+        requireCleanWorkingTree: "ignore-untracked",
       });
       lagSeconds = caughtUp ? 0 : Math.max(0, Math.floor((now - lastMs) / 1000));
     } else {
-      const contentMs = src.newest_content_at
-        ? new Date(src.newest_content_at).getTime()
-        : null;
+      const contentMs = src.newest_content_at ? new Date(src.newest_content_at).getTime() : null;
       lagSeconds = lagFromContentMs(contentMs, lastMs, now);
     }
 
@@ -269,9 +270,9 @@ export async function computeAllSourceMetrics(
       queue_depth: jobStats.queue_depth,
       backfill_active: jobStats.backfill_active,
       backfill_queued: jobStats.backfill_queued,
-      tracked_branch: typeof cfg.tracked_branch === 'string' ? cfg.tracked_branch : null,
+      tracked_branch: typeof cfg.tracked_branch === "string" ? cfg.tracked_branch : null,
       priority_label: resolvePriorityLabel(src.id, src.config),
-      webhook_configured: typeof cfg.webhook_secret === 'string' && cfg.webhook_secret.length > 0,
+      webhook_configured: typeof cfg.webhook_secret === "string" && cfg.webhook_secret.length > 0,
     };
   });
 }
@@ -281,14 +282,16 @@ async function pageCountsBySource(engine: BrainEngine): Promise<Map<string, numb
     `SELECT source_id, COUNT(*)::int AS n
        FROM pages
       WHERE deleted_at IS NULL
-      GROUP BY source_id`,
+      GROUP BY source_id`
   );
   const m = new Map<string, number>();
   for (const r of rows) m.set(r.source_id, Number(r.n));
   return m;
 }
 
-async function chunkCountsBySource(engine: BrainEngine): Promise<Map<string, { total: number; embedded: number }>> {
+async function chunkCountsBySource(
+  engine: BrainEngine
+): Promise<Map<string, { total: number; embedded: number }>> {
   const rows = await engine.executeRaw<{ source_id: string; total: number; embedded: number }>(
     `SELECT p.source_id,
             COUNT(*)::int AS total,
@@ -296,19 +299,31 @@ async function chunkCountsBySource(engine: BrainEngine): Promise<Map<string, { t
        FROM content_chunks c
        JOIN pages p ON p.id = c.page_id
       WHERE p.deleted_at IS NULL
-      GROUP BY p.source_id`,
+      GROUP BY p.source_id`
   );
   const m = new Map<string, { total: number; embedded: number }>();
-  for (const r of rows) m.set(r.source_id, { total: Number(r.total), embedded: Number(r.embedded) });
+  for (const r of rows)
+    m.set(r.source_id, { total: Number(r.total), embedded: Number(r.embedded) });
   return m;
 }
 
-type JobStats = { failed_24h: number; queue_depth: number; backfill_active: number; backfill_queued: number };
+type JobStats = {
+  failed_24h: number;
+  queue_depth: number;
+  backfill_active: number;
+  backfill_queued: number;
+};
 
 async function jobCountsBySource(engine: BrainEngine): Promise<Map<string, JobStats>> {
   // Pre-v0.11 brains don't have minion_jobs; return empty map.
   try {
-    const rows = await engine.executeRaw<{ source_id: string; failed_24h: number; queue_depth: number; backfill_active: number; backfill_queued: number }>(
+    const rows = await engine.executeRaw<{
+      source_id: string;
+      failed_24h: number;
+      queue_depth: number;
+      backfill_active: number;
+      backfill_queued: number;
+    }>(
       `SELECT data->>'sourceId' AS source_id,
               COUNT(*) FILTER (WHERE status IN ('failed','dead') AND created_at > NOW() - INTERVAL '24 hours')::int AS failed_24h,
               COUNT(*) FILTER (WHERE status IN ('waiting','active','delayed'))::int AS queue_depth,
@@ -317,7 +332,7 @@ async function jobCountsBySource(engine: BrainEngine): Promise<Map<string, JobSt
          FROM minion_jobs
         WHERE name IN ('sync','embed-backfill')
           AND data->>'sourceId' IS NOT NULL
-        GROUP BY data->>'sourceId'`,
+        GROUP BY data->>'sourceId'`
     );
     const m = new Map<string, JobStats>();
     for (const r of rows) {

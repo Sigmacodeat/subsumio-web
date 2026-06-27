@@ -407,7 +407,8 @@ export const PRICING: Record<
         name: "Community",
         price: "€0",
         period: "forever",
-        blurb: "For solo lawyers exploring AI-assisted case work. Free forever, no credit card required.",
+        blurb:
+          "For solo lawyers exploring AI-assisted case work. Free forever, no credit card required.",
         features: [
           "Self-hosted — your server, your keys",
           "100 AI queries/mo included",
@@ -448,7 +449,8 @@ export const PRICING: Record<
         priceMonthly: "€1,613",
         period: "/seat/mo",
         periodMonthly: "/seat/mo",
-        blurb: "One shared brain, every lawyer's matters indexed together. From 5 seats. Annual billing saves 20%.",
+        blurb:
+          "One shared brain, every lawyer's matters indexed together. From 5 seats. Annual billing saves 20%.",
         features: [
           "Everything in Pro",
           "Shared institutional memory",
@@ -468,7 +470,8 @@ export const PRICING: Record<
         name: "Enterprise",
         price: "from €1,890",
         period: "/seat/mo",
-        blurb: "Compliance-grade for regulated firms. From 20 seats, on your infrastructure or EU cloud.",
+        blurb:
+          "Compliance-grade for regulated firms. From 20 seats, on your infrastructure or EU cloud.",
         features: [
           "15,000 AI queries/seat/mo (Fair Use beyond)",
           "5,000 WhatsApp messages/seat/mo",
@@ -496,7 +499,8 @@ export const PRICING: Record<
         name: "Community",
         price: "0 €",
         period: "für immer",
-        blurb: "Für Einzelanwälte, die KI-gestützte Aktenarbeit erkunden. Kostenlos für immer, keine Kreditkarte nötig.",
+        blurb:
+          "Für Einzelanwälte, die KI-gestützte Aktenarbeit erkunden. Kostenlos für immer, keine Kreditkarte nötig.",
         features: [
           "Self-hosted — dein Server, deine Keys",
           "100 KI-Anfragen/Mon. inklusive",
@@ -671,7 +675,8 @@ export const LANDING = {
       { value: "0", label: "client-data leaks, by design" },
       { value: "14", label: "days full trial — no credit card" },
     ],
-    statsNote: "Not a chat wrapper — engine-class retrieval where every AI answer cites its exact source.",
+    statsNote:
+      "Not a chat wrapper — engine-class retrieval where every AI answer cites its exact source.",
     featuresTitle: "Built for law firms. Not adapted for them.",
     featuresSub:
       "From deadline control per ZPO/BGB/ABGB to contradiction detection in pleadings — every answer cited, every deadline tracked, no hallucinations.",
@@ -815,7 +820,8 @@ export const LANDING = {
       { value: "0", label: "bekannte Mandantendaten-Leaks" },
       { value: "14", label: "Tage volle Testversion — keine Kreditkarte" },
     ],
-    statsNote: "Kein Chat-Wrapper. Engine-Klasse Retrieval — jede KI-Antwort nennt die exakte Fundstelle.",
+    statsNote:
+      "Kein Chat-Wrapper. Engine-Klasse Retrieval — jede KI-Antwort nennt die exakte Fundstelle.",
     featuresTitle: "Für Kanzleien gebaut. Nicht nachträglich angepasst.",
     featuresSub:
       "Von Fristenkontrolle nach ZPO/BGB/ABGB bis Widerspruchserkennung in Schriftsätzen — jede Antwort mit Fundstellen, jede Frist überwacht, keine Halluzination.",
@@ -1138,10 +1144,7 @@ export const UI_STRINGS: Record<Lang, Record<string, string>> = {
 // Used by pricing-page.tsx. Moved here for single-source-of-truth.
 // ---------------------------------------------------------------------------
 
-export const VALUE_PROPS: Record<
-  Lang,
-  { title: string; desc: string }[]
-> = {
+export const VALUE_PROPS: Record<Lang, { title: string; desc: string }[]> = {
   en: [
     {
       title: "No hidden costs",

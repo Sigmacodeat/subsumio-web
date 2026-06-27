@@ -41,6 +41,7 @@ mutating: false
 ### Step 1 — Determine Jurisdiction and Dispute Value
 
 Ask the user if not provided:
+
 - Jurisdiction: Germany (RVG) or Austria (RATG)?
 - Dispute value (Streitwert): The monetary value in dispute
 - Case type: Litigation, settlement, or both?
@@ -52,18 +53,19 @@ Ask the user if not provided:
 Use the statutory fee table (VV RVG Anlage 1):
 
 | Streitwert bis | Gebühr (1,0) |
-|---|---|
-| 500 € | 49 € |
-| 1.000 € | 88 € |
-| 1.500 € | 127 € |
-| 2.000 € | 166 € |
-| 3.000 € | 215 € |
-| 5.000 € | 313 € |
-| 10.000 € | 558 € |
-| 25.000 € | 833 € |
-| 50.000 € | 1.158 € |
+| -------------- | ------------ |
+| 500 €          | 49 €         |
+| 1.000 €        | 88 €         |
+| 1.500 €        | 127 €        |
+| 2.000 €        | 166 €        |
+| 3.000 €        | 215 €        |
+| 5.000 €        | 313 €        |
+| 10.000 €       | 558 €        |
+| 25.000 €       | 833 €        |
+| 50.000 €       | 1.158 €      |
 
 Multipliers:
+
 - Verfahrensgebühr: 1,3
 - Terminsgebühr: 1,2
 - Einigungsgebühr: 1,5
@@ -74,16 +76,16 @@ Multipliers:
 
 Use the statutory fee table (RATG Anlage):
 
-| Streitwert bis | Gebühr |
-|---|---|
-| 364 € | 36,40 € |
-| 728 € | 72,80 € |
-| 1.456 € | 109,20 € |
-| 3.639 € | 181,95 € |
-| 7.278 € | 254,73 € |
-| 14.557 € | 363,90 € |
-| 36.392 € | 509,49 € |
-| 72.784 € | 654,99 € |
+| Streitwert bis | Gebühr   |
+| -------------- | -------- |
+| 364 €          | 36,40 €  |
+| 728 €          | 72,80 €  |
+| 1.456 €        | 109,20 € |
+| 3.639 €        | 181,95 € |
+| 7.278 €        | 254,73 € |
+| 14.557 €       | 363,90 € |
+| 36.392 €       | 509,49 € |
+| 72.784 €       | 654,99 € |
 
 MwSt: 20%
 

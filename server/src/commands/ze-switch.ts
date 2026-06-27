@@ -18,7 +18,7 @@
  *                                           Scripted undo path (also pays for re-embed)
  */
 
-import type { BrainEngine } from '../core/engine.ts';
+import type { BrainEngine } from "../core/engine.ts";
 import {
   planRetrievalUpgrade,
   applyRetrievalUpgrade,
@@ -26,11 +26,8 @@ import {
   undoRetrievalUpgrade,
   formatEnvOverrideWarning,
   type ApplyResult,
-} from '../core/retrieval-upgrade-planner.ts';
-import {
-  runRetrievalUpgradePrompt,
-  runUndoPrompt,
-} from '../core/retrieval-upgrade-prompt.ts';
+} from "../core/retrieval-upgrade-planner.ts";
+import { runRetrievalUpgradePrompt, runUndoPrompt } from "../core/retrieval-upgrade-prompt.ts";
 
 interface Flags {
   dryRun: boolean;
@@ -46,17 +43,17 @@ interface Flags {
 
 function parseFlags(args: string[]): Flags {
   return {
-    dryRun: args.includes('--dry-run'),
-    json: args.includes('--json'),
-    nonInteractive: args.includes('--non-interactive') || args.includes('--yes'),
-    resume: args.includes('--resume'),
-    force: args.includes('--force'),
-    undo: args.includes('--undo'),
-    confirmReembed: args.includes('--confirm-reembed'),
-    ignoreMissingKey: args.includes('--ignore-missing-key'),
+    dryRun: args.includes("--dry-run"),
+    json: args.includes("--json"),
+    nonInteractive: args.includes("--non-interactive") || args.includes("--yes"),
+    resume: args.includes("--resume"),
+    force: args.includes("--force"),
+    undo: args.includes("--undo"),
+    confirmReembed: args.includes("--confirm-reembed"),
+    ignoreMissingKey: args.includes("--ignore-missing-key"),
     // v0.41.2.1: escape hatch for power users running parallel experiments
     // with GBRAIN_EMBEDDING_MODEL set. Loud stderr line when used.
-    ignoreEnvOverride: args.includes('--ignore-env-override'),
+    ignoreEnvOverride: args.includes("--ignore-env-override"),
   };
 }
 
@@ -86,7 +83,7 @@ Flags:
  * stays in the JSON envelope; the box is for human readers.
  */
 function renderApplyResult(result: ApplyResult, json: boolean): void {
-  if (result.status === 'refused' && result.reason === 'env_override') {
+  if (result.status === "refused" && result.reason === "env_override") {
     if (json) {
       console.log(JSON.stringify(result, null, 2));
     } else {
@@ -103,7 +100,7 @@ function renderApplyResult(result: ApplyResult, json: boolean): void {
 }
 
 export async function runZeSwitch(args: string[], engine: BrainEngine): Promise<void> {
-  if (args.includes('--help') || args.includes('-h')) {
+  if (args.includes("--help") || args.includes("-h")) {
     printHelp();
     process.exit(0);
   }
@@ -115,12 +112,14 @@ export async function runZeSwitch(args: string[], engine: BrainEngine): Promise<
     if (flags.dryRun) {
       const plan = await planRetrievalUpgrade(engine);
       if (flags.json) {
-        console.log(JSON.stringify({ status: 'planned', plan }, null, 2));
+        console.log(JSON.stringify({ status: "planned", plan }, null, 2));
       } else {
         console.log(`Current model: ${plan.current_embedding_model} (${plan.current_dim}d)`);
-        console.log(`Target model:  ${plan.target_embedding_model ?? '(no change)'}`);
-        console.log(`Target dim:    ${plan.target_dim ?? '(no change)'}`);
-        console.log(`Pages pending: chunker=${plan.pages_pending_chunker}, dim=${plan.pages_pending_dim}`);
+        console.log(`Target model:  ${plan.target_embedding_model ?? "(no change)"}`);
+        console.log(`Target dim:    ${plan.target_dim ?? "(no change)"}`);
+        console.log(
+          `Pages pending: chunker=${plan.pages_pending_chunker}, dim=${plan.pages_pending_dim}`
+        );
         console.log(`Est cost:      $${plan.est_cost_usd.toFixed(2)}`);
         console.log(`Est minutes:   ${plan.est_minutes}`);
         console.log(`Schema change: ~${plan.est_schema_change_seconds}s`);
@@ -132,14 +131,16 @@ export async function runZeSwitch(args: string[], engine: BrainEngine): Promise<
     // --resume: complete a half-applied switch.
     if (flags.resume) {
       if (flags.ignoreEnvOverride) {
-        console.error('[ze-switch] WARNING: --ignore-env-override is set; env vars will silently override the switch at runtime.');
+        console.error(
+          "[ze-switch] WARNING: --ignore-env-override is set; env vars will silently override the switch at runtime."
+        );
       }
       const result = await resumeRetrievalUpgrade(engine, {
         ignoreEnvOverride: flags.ignoreEnvOverride,
       });
       // v0.41.2.1: route through the env-override-aware renderer so
       // refused-status emits the ASCII warning box + exits non-zero.
-      if (result.status === 'refused' && result.reason === 'env_override') {
+      if (result.status === "refused" && result.reason === "env_override") {
         renderApplyResult(result, flags.json); // exits non-zero
       }
       if (flags.json) {
@@ -147,14 +148,18 @@ export async function runZeSwitch(args: string[], engine: BrainEngine): Promise<
       } else {
         console.log(`Resume status: ${result.status}`);
       }
-      process.exit(result.status === 'applied' || result.status === 'skipped_already_applied' ? 0 : 1);
+      process.exit(
+        result.status === "applied" || result.status === "skipped_already_applied" ? 0 : 1
+      );
     }
 
     // --undo: reverse switch.
     if (flags.undo) {
       if (flags.nonInteractive) {
         if (!flags.confirmReembed) {
-          console.error('--undo --non-interactive requires --confirm-reembed (undo re-embeds at the prior width — costs real money).');
+          console.error(
+            "--undo --non-interactive requires --confirm-reembed (undo re-embeds at the prior width — costs real money)."
+          );
           process.exit(1);
         }
         const result = await undoRetrievalUpgrade(engine);
@@ -163,34 +168,38 @@ export async function runZeSwitch(args: string[], engine: BrainEngine): Promise<
         } else {
           console.log(`Undo status: ${result.status}`);
         }
-        process.exit(result.status === 'undone' ? 0 : 1);
+        process.exit(result.status === "undone" ? 0 : 1);
       }
       // Interactive undo: shows cost-warning prompt.
       const result = await runUndoPrompt(engine);
       if (flags.json) {
         console.log(JSON.stringify(result, null, 2));
       }
-      process.exit(result.status === 'undone' ? 0 : 1);
+      process.exit(result.status === "undone" ? 0 : 1);
     }
 
     // --non-interactive: apply without prompting.
     if (flags.nonInteractive) {
       if (!process.env.ZEROENTROPY_API_KEY && !flags.ignoreMissingKey) {
-        const config = await engine.getConfig('zeroentropy_api_key');
+        const config = await engine.getConfig("zeroentropy_api_key");
         if (!config) {
-          console.error('ZEROENTROPY_API_KEY not set. Pass --ignore-missing-key to switch anyway (embeddings will fail until you set a key).');
+          console.error(
+            "ZEROENTROPY_API_KEY not set. Pass --ignore-missing-key to switch anyway (embeddings will fail until you set a key)."
+          );
           process.exit(1);
         }
       }
       if (flags.ignoreEnvOverride) {
-        console.error('[ze-switch] WARNING: --ignore-env-override is set; env vars will silently override the switch at runtime.');
+        console.error(
+          "[ze-switch] WARNING: --ignore-env-override is set; env vars will silently override the switch at runtime."
+        );
       }
       const plan = await planRetrievalUpgrade(engine);
       const result = await applyRetrievalUpgrade(engine, plan, {
         ignoreEnvOverride: flags.ignoreEnvOverride,
       });
       // v0.41.2.1: render env-override refusal with ASCII box + exit non-zero.
-      if (result.status === 'refused' && result.reason === 'env_override') {
+      if (result.status === "refused" && result.reason === "env_override") {
         renderApplyResult(result, flags.json); // exits non-zero
       }
       if (flags.json) {
@@ -199,9 +208,11 @@ export async function runZeSwitch(args: string[], engine: BrainEngine): Promise<
         console.log(`Switch status: ${result.status}`);
       }
       process.exit(
-        result.status === 'applied' || result.status === 'skipped_already_applied' || result.status === 'skipped_no_work'
+        result.status === "applied" ||
+          result.status === "skipped_already_applied" ||
+          result.status === "skipped_no_work"
           ? 0
-          : 1,
+          : 1
       );
     }
 
@@ -210,7 +221,15 @@ export async function runZeSwitch(args: string[], engine: BrainEngine): Promise<
     if (flags.json) {
       console.log(JSON.stringify(result, null, 2));
     }
-    process.exit(result.status === 'applied' || result.status === 'declined_this_run' || result.status === 'declined_forever' || result.status === 'non_tty_skip' || result.status === 'not_offered' ? 0 : 1);
+    process.exit(
+      result.status === "applied" ||
+        result.status === "declined_this_run" ||
+        result.status === "declined_forever" ||
+        result.status === "non_tty_skip" ||
+        result.status === "not_offered"
+        ? 0
+        : 1
+    );
   } finally {
     // Engine lifecycle is owned by the dispatcher.
   }

@@ -16,9 +16,7 @@ import { useEffect, useRef } from "react";
  * The hook adds a `beforeunload` event listener that triggers the browser's
  * native "Are you sure you want to leave?" dialog when the form is dirty.
  */
-export function useUnsavedChanges(
-  isDirty: boolean | React.MutableRefObject<boolean>,
-): void {
+export function useUnsavedChanges(isDirty: boolean | React.MutableRefObject<boolean>): void {
   const dirtyRef = useRef(false);
 
   // Sync the ref to the current value on every render

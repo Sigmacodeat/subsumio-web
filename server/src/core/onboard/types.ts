@@ -4,7 +4,7 @@
 // the same RemediationStep objects as "onboarding opportunities" with
 // extra prompt-text + apply-policy metadata.
 
-import type { RemediationStep } from '../remediation-step.ts';
+import type { RemediationStep } from "../remediation-step.ts";
 
 /**
  * One onboard recommendation. Layered on RemediationStep with extras
@@ -21,7 +21,7 @@ export interface OnboardRecommendation extends RemediationStep {
    *   'manual_only'     — never runs unattended; CLI prompts user
    * Default 'prompt_required' when omitted.
    */
-  apply_policy?: 'auto_apply' | 'prompt_required' | 'manual_only';
+  apply_policy?: "auto_apply" | "prompt_required" | "manual_only";
   /** Human-readable nudge text. Default falls back to RemediationStep.rationale. */
   prompt_text?: string;
   /**
@@ -60,7 +60,7 @@ export interface OnboardOpts {
   /** Target brain_score (default 90). Forwarded to computeRemediationPlan. */
   targetScore?: number;
   /** Output mode. */
-  mode?: 'check' | 'auto' | 'history';
+  mode?: "check" | "auto" | "history";
   /** Cap on autopilot spend. Required for --auto runs (CLI enforces). */
   maxUsd?: number;
   /** Caller-supplied OAuth client_id (MCP path); threads via job.data. */

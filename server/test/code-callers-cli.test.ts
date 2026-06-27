@@ -9,16 +9,16 @@
  * End-to-end engine round-trip lives in test/code-edges.test.ts.
  */
 
-import { describe, test, expect } from 'bun:test';
+import { describe, test, expect } from "bun:test";
 
-describe('Layer 10 C4/C5 — commands export runCodeCallers / runCodeCallees', () => {
-  test('code-callers module exports runCodeCallers', async () => {
-    const mod = await import('../src/commands/code-callers.ts');
-    expect(typeof mod.runCodeCallers).toBe('function');
+describe("Layer 10 C4/C5 — commands export runCodeCallers / runCodeCallees", () => {
+  test("code-callers module exports runCodeCallers", async () => {
+    const mod = await import("../src/commands/code-callers.ts");
+    expect(typeof mod.runCodeCallers).toBe("function");
   });
 
-  test('code-callees module exports runCodeCallees', async () => {
-    const mod = await import('../src/commands/code-callees.ts');
-    expect(typeof mod.runCodeCallees).toBe('function');
+  test("code-callees module exports runCodeCallees", async () => {
+    const mod = await import("../src/commands/code-callees.ts");
+    expect(typeof mod.runCodeCallees).toBe("function");
   });
 });

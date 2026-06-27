@@ -26,23 +26,23 @@
  *   - Daily token budget cap (cooldown bounds spend at v1 scale).
  */
 
-import type Anthropic from '@anthropic-ai/sdk';
-import { readFileSync, existsSync, writeFileSync, mkdirSync } from 'node:fs';
-import { chat as gatewayChat, validateModelId, type ChatResult } from '../ai/gateway.ts';
-import { AIConfigError } from '../ai/errors.ts';
-import { normalizeModelId } from '../model-id.ts';
-import { hasAnthropicKey } from '../ai/anthropic-key.ts';
-import { join, dirname, isAbsolute, resolve } from 'node:path';
-import type { BrainEngine } from '../engine.ts';
-import type { PhaseResult, PhaseError } from '../cycle.ts';
-import { MinionQueue } from '../minions/queue.ts';
-import { waitForCompletion, TimeoutError } from '../minions/wait-for-completion.ts';
-import type { MinionJobInput, SubagentHandlerData } from '../minions/types.ts';
-import { discoverTranscripts, type DiscoveredTranscript } from './transcript-discovery.ts';
-import { serializeMarkdown, serializePageToMarkdown } from '../markdown.ts';
-import type { Page, PageType } from '../types.ts';
-import { validateSourceId } from '../utils.ts';
-import { safeSplitIndex } from '../text-safe.ts';
+import type Anthropic from "@anthropic-ai/sdk";
+import { readFileSync, existsSync, writeFileSync, mkdirSync } from "node:fs";
+import { chat as gatewayChat, validateModelId, type ChatResult } from "../ai/gateway.ts";
+import { AIConfigError } from "../ai/errors.ts";
+import { normalizeModelId } from "../model-id.ts";
+import { hasAnthropicKey } from "../ai/anthropic-key.ts";
+import { join, dirname, isAbsolute, resolve } from "node:path";
+import type { BrainEngine } from "../engine.ts";
+import type { PhaseResult, PhaseError } from "../cycle.ts";
+import { MinionQueue } from "../minions/queue.ts";
+import { waitForCompletion, TimeoutError } from "../minions/wait-for-completion.ts";
+import type { MinionJobInput, SubagentHandlerData } from "../minions/types.ts";
+import { discoverTranscripts, type DiscoveredTranscript } from "./transcript-discovery.ts";
+import { serializeMarkdown, serializePageToMarkdown } from "../markdown.ts";
+import type { Page, PageType } from "../types.ts";
+import { validateSourceId } from "../utils.ts";
+import { safeSplitIndex } from "../text-safe.ts";
 
 // Slug regex from validatePageSlug — kept in sync.
 // Used for the orchestrator-written summary index slug.
@@ -58,11 +58,11 @@ const SUMMARY_SLUG_RE = /^[a-z0-9][a-z0-9\-]*(\/[a-z0-9][a-z0-9\-]*)*$/;
  * resolver returns for known Anthropic aliases.
  */
 const MODEL_CONTEXT_TOKENS: Record<string, number> = {
-  'claude-opus-4-7': 1_000_000,
-  'claude-opus-4-6': 1_000_000,
-  'claude-sonnet-4-6': 200_000,
-  'claude-sonnet-4-5': 200_000,
-  'claude-haiku-4-5-20251001': 200_000,
+  "claude-opus-4-7": 1_000_000,
+  "claude-opus-4-6": 1_000_000,
+  "claude-sonnet-4-6": 200_000,
+  "claude-sonnet-4-5": 200_000,
+  "claude-haiku-4-5-20251001": 200_000,
 };
 
 /** Token-to-char ratio. 3.5 matches PR #748; conservative for English text. */
@@ -89,10 +89,7 @@ const UNKNOWN_MODEL_BUDGET_TOKENS = 180_000;
  * accumulation is out of scope for v0.30.2 (terminal-error classification
  * catches turn-N blowups; per-turn budget guard is a v0.31+ follow-up).
  */
-function computeChunkCharBudget(
-  model: string,
-  configMaxPromptTokens: number | null,
-): number {
+function computeChunkCharBudget(model: string, configMaxPromptTokens: number | null): number {
   if (configMaxPromptTokens !== null) {
     return Math.floor(configMaxPromptTokens * CHARS_PER_TOKEN);
   }
@@ -110,8 +107,8 @@ function warnUnknownModelOnce(model: string): void {
   _unknownModelWarned.add(model);
   process.stderr.write(
     `[dream] model "${model}" is not in MODEL_CONTEXT_TOKENS; ` +
-    `using ${UNKNOWN_MODEL_BUDGET_TOKENS}-token fallback budget. ` +
-    `Set dream.synthesize.max_prompt_tokens to override.\n`,
+      `using ${UNKNOWN_MODEL_BUDGET_TOKENS}-token fallback budget. ` +
+      `Set dream.synthesize.max_prompt_tokens to override.\n`
   );
 }
 
@@ -142,7 +139,7 @@ function warnUnknownModelOnce(model: string): void {
 export function splitTranscriptByBudget(
   content: string,
   contentHash: string,
-  maxChars: number,
+  maxChars: number
 ): string[] {
   if (maxChars <= 0) {
     throw new Error(`splitTranscriptByBudget: maxChars must be > 0, got ${maxChars}`);
@@ -175,13 +172,13 @@ function parseHashOffset(contentHash: string): number {
 function findBoundary(text: string, maxChars: number, searchStart: number): number {
   const window = text.slice(searchStart, maxChars);
   // Tier 1: "\n## Topic:" — last occurrence inside the search window.
-  const topicIdx = window.lastIndexOf('\n## Topic:');
+  const topicIdx = window.lastIndexOf("\n## Topic:");
   if (topicIdx >= 0) return searchStart + topicIdx;
   // Tier 2: "\n---\n" markdown HR.
-  const hrIdx = window.lastIndexOf('\n---\n');
+  const hrIdx = window.lastIndexOf("\n---\n");
   if (hrIdx >= 0) return searchStart + hrIdx;
   // Tier 3: any newline.
-  const nlIdx = window.lastIndexOf('\n');
+  const nlIdx = window.lastIndexOf("\n");
   if (nlIdx >= 0) return searchStart + nlIdx;
   // No boundary fits; hard-split at maxChars (deterministic).
   // v0.42.0.0: route through safeSplitIndex so a hard-split that lands
@@ -246,7 +243,7 @@ export interface SynthesizePhaseOpts {
 
 export async function runPhaseSynthesize(
   engine: BrainEngine,
-  opts: SynthesizePhaseOpts,
+  opts: SynthesizePhaseOpts
 ): Promise<PhaseResult> {
   const start = Date.now();
   // Normalize brainDir to an absolute path BEFORE any reverse-write. Without
@@ -259,9 +256,14 @@ export async function runPhaseSynthesize(
   // chain. Throw on empty (silent cwd-resolution is worse than a loud
   // failure); resolve if relative (`.` / `./brain` / `../sibling` all valid
   // inputs but must canonicalize before the write).
-  if (!opts.brainDir || opts.brainDir.trim() === '') {
-    return failed(makeError('InternalError', 'BRAINDIR_EMPTY',
-      'opts.brainDir is empty; refusing to run synthesize. Pass an absolute path.'));
+  if (!opts.brainDir || opts.brainDir.trim() === "") {
+    return failed(
+      makeError(
+        "InternalError",
+        "BRAINDIR_EMPTY",
+        "opts.brainDir is empty; refusing to run synthesize. Pass an absolute path."
+      )
+    );
   }
   if (!isAbsolute(opts.brainDir)) {
     opts.brainDir = resolve(opts.brainDir);
@@ -271,12 +273,10 @@ export async function runPhaseSynthesize(
 
     // Allow ad-hoc --input to run even when config is disabled.
     if (!opts.inputFile && !config.corpusDir) {
-      return skipped('not_configured',
-        'dream.synthesize.session_corpus_dir is unset');
+      return skipped("not_configured", "dream.synthesize.session_corpus_dir is unset");
     }
     if (!opts.inputFile && !config.enabled) {
-      return skipped('not_configured',
-        'dream.synthesize.enabled is explicitly false');
+      return skipped("not_configured", "dream.synthesize.enabled is explicitly false");
     }
 
     // Cooldown check (skipped for explicit --input / --date / --from / --to runs).
@@ -284,15 +284,17 @@ export async function runPhaseSynthesize(
     if (!explicitTarget) {
       const cooldown = await checkCooldown(engine, config.cooldownHours);
       if (cooldown.active) {
-        return skipped('cooldown_active',
-          `synthesize cooled down until ${cooldown.expires_at} (${config.cooldownHours}h cooldown)`);
+        return skipped(
+          "cooldown_active",
+          `synthesize cooled down until ${cooldown.expires_at} (${config.cooldownHours}h cooldown)`
+        );
       }
     }
 
     if (opts.bypassDreamGuard) {
       process.stderr.write(
-        '[dream] WARNING: --unsafe-bypass-dream-guard set; self-consumption guard disabled. ' +
-        'Re-ingestion of dream output will incur Sonnet costs forever.\n',
+        "[dream] WARNING: --unsafe-bypass-dream-guard set; self-consumption guard disabled. " +
+          "Re-ingestion of dream output will incur Sonnet costs forever.\n"
       );
     }
 
@@ -304,7 +306,12 @@ export async function runPhaseSynthesize(
 
     // Discover.
     const transcripts = opts.inputFile
-      ? loadAdHocTranscript(opts.inputFile, config.minChars, config.excludePatterns, opts.bypassDreamGuard)
+      ? loadAdHocTranscript(
+          opts.inputFile,
+          config.minChars,
+          config.excludePatterns,
+          opts.bypassDreamGuard
+        )
       : discoverTranscripts({
           corpusDir: config.corpusDir!,
           meetingTranscriptsDir: config.meetingTranscriptsDir ?? undefined,
@@ -317,12 +324,17 @@ export async function runPhaseSynthesize(
         });
 
     if (transcripts.length === 0) {
-      return ok('no transcripts to process', { transcripts_processed: 0, pages_written: 0 });
+      return ok("no transcripts to process", { transcripts_processed: 0, pages_written: 0 });
     }
 
     // Significance verdicts (cached in dream_verdicts; Haiku on miss).
     const worthProcessing: DiscoveredTranscript[] = [];
-    const verdicts: Array<{ filePath: string; worth: boolean; reasons: string[]; cached: boolean }> = [];
+    const verdicts: Array<{
+      filePath: string;
+      worth: boolean;
+      reasons: string[];
+      cached: boolean;
+    }> = [];
     // Provider-aware judge client routes through gateway.chat, so any
     // configured provider works (Anthropic, DeepSeek, OpenRouter, Voyage,
     // Ollama, llama-server, etc.). Returns null when the resolved verdict
@@ -332,7 +344,12 @@ export async function runPhaseSynthesize(
     for (const t of transcripts) {
       const cached = await engine.getDreamVerdict(t.filePath, t.contentHash);
       if (cached) {
-        verdicts.push({ filePath: t.filePath, worth: cached.worth_processing, reasons: cached.reasons, cached: true });
+        verdicts.push({
+          filePath: t.filePath,
+          worth: cached.worth_processing,
+          reasons: cached.reasons,
+          cached: true,
+        });
         if (cached.worth_processing) worthProcessing.push(t);
         continue;
       }
@@ -350,7 +367,12 @@ export async function runPhaseSynthesize(
       try {
         const verdict = await judgeSignificance(judge, t, config.verdictModel);
         await engine.putDreamVerdict(t.filePath, t.contentHash, verdict);
-        verdicts.push({ filePath: t.filePath, worth: verdict.worth_processing, reasons: verdict.reasons, cached: false });
+        verdicts.push({
+          filePath: t.filePath,
+          worth: verdict.worth_processing,
+          reasons: verdict.reasons,
+          cached: false,
+        });
         if (verdict.worth_processing) worthProcessing.push(t);
       } catch (e) {
         // AIConfigError at chat time = provider auth/config went bad mid-run
@@ -374,20 +396,23 @@ export async function runPhaseSynthesize(
     // but no Sonnet synthesis. Codex finding #8: --dry-run does NOT mean
     // "zero LLM calls"; it means "skip Sonnet."
     if (opts.dryRun) {
-      return ok(`dry-run: ${worthProcessing.length} of ${transcripts.length} transcripts would synthesize`, {
-        transcripts_discovered: transcripts.length,
-        transcripts_processed: 0,
-        pages_written: 0,
-        verdicts,
-        dryRun: true,
-      });
+      return ok(
+        `dry-run: ${worthProcessing.length} of ${transcripts.length} transcripts would synthesize`,
+        {
+          transcripts_discovered: transcripts.length,
+          transcripts_processed: 0,
+          pages_written: 0,
+          verdicts,
+          dryRun: true,
+        }
+      );
     }
 
     if (worthProcessing.length === 0) {
       // Even with verdicts, the cooldown timestamp is updated only on a
       // real successful run — not on "nothing worth processing." Lets a
       // re-run pick up if a new transcript lands later.
-      return ok('all transcripts skipped by significance filter', {
+      return ok("all transcripts skipped by significance filter", {
         transcripts_discovered: transcripts.length,
         transcripts_processed: 0,
         pages_written: 0,
@@ -399,8 +424,13 @@ export async function runPhaseSynthesize(
     // per chunk for transcripts that exceed the model's per-prompt budget).
     const allowedSlugPrefixes = await loadAllowedSlugPrefixes();
     if (allowedSlugPrefixes.length === 0) {
-      return failed(makeError('InternalError', 'NO_ALLOWLIST',
-        'skills/_brain-filing-rules.json missing dream_synthesize_paths.globs'));
+      return failed(
+        makeError(
+          "InternalError",
+          "NO_ALLOWLIST",
+          "skills/_brain-filing-rules.json missing dream_synthesize_paths.globs"
+        )
+      );
     }
 
     const queue = new MinionQueue(engine);
@@ -424,7 +454,7 @@ export async function runPhaseSynthesize(
       if (await hasLegacySingleChunkCompletion(engine, t.filePath, hash16)) {
         skipReports.push({
           filePath: t.filePath,
-          reason: 'already_synthesized_legacy_single_chunk',
+          reason: "already_synthesized_legacy_single_chunk",
         });
         continue;
       }
@@ -437,8 +467,8 @@ export async function runPhaseSynthesize(
       if (chunks.length > config.maxChunksPerTranscript) {
         process.stderr.write(
           `[dream] transcript ${t.basename} produced ${chunks.length} chunks at ` +
-          `${maxCharsPerChunk}-char budget (cap=${config.maxChunksPerTranscript}); skipping. ` +
-          `Increase dream.synthesize.max_chunks_per_transcript or use a larger-context model.\n`,
+            `${maxCharsPerChunk}-char budget (cap=${config.maxChunksPerTranscript}); skipping. ` +
+            `Increase dream.synthesize.max_chunks_per_transcript or use a larger-context model.\n`
         );
         skipReports.push({
           filePath: t.filePath,
@@ -453,9 +483,9 @@ export async function runPhaseSynthesize(
       // TIER_DEFAULTS / DEFAULT_ALIASES carry a bare value; ensure the
       // anthropic: prefix is present for known claude-* ids before passing
       // to the queue. Non-anthropic providers must already declare a colon.
-      const subagentModel = config.model.includes(':')
+      const subagentModel = config.model.includes(":")
         ? config.model
-        : config.model.toLowerCase().startsWith('claude-')
+        : config.model.toLowerCase().startsWith("claude-")
           ? `anthropic:${config.model}`
           : config.model;
       for (let i = 0; i < chunks.length; i++) {
@@ -476,15 +506,15 @@ export async function runPhaseSynthesize(
           : `dream:synth:${t.filePath}:${hash16}`;
         const submitOpts: Partial<MinionJobInput> = {
           max_stalled: 3,
-          on_child_fail: 'continue',
+          on_child_fail: "continue",
           idempotency_key,
           timeout_ms: 30 * 60 * 1000, // 30 min per chunk
         };
         const child = await queue.add(
-          'subagent',
+          "subagent",
           childData as unknown as Record<string, unknown>,
           submitOpts,
-          { allowProtectedSubmit: true },
+          { allowProtectedSubmit: true }
         );
         childIds.push(child.id);
         if (isChunked) {
@@ -505,14 +535,18 @@ export async function runPhaseSynthesize(
         childOutcomes.push({ jobId, status: job.status });
       } catch (e) {
         if (e instanceof TimeoutError) {
-          childOutcomes.push({ jobId, status: 'timeout' });
+          childOutcomes.push({ jobId, status: "timeout" });
         } else {
           throw e;
         }
       }
       // After each child terminal, give the cycle lock + worker job lock a chance.
       if (opts.yieldDuringPhase) {
-        try { await opts.yieldDuringPhase(); } catch { /* best-effort */ }
+        try {
+          await opts.yieldDuringPhase();
+        } catch {
+          /* best-effort */
+        }
       }
     }
 
@@ -533,13 +567,20 @@ export async function runPhaseSynthesize(
     const summaryDate = opts.date ?? today();
     const summarySlug = `dream-cycle-summaries/${summaryDate}`;
     // Back-compat: writeSummaryPage takes string[] for display; map refs back to slugs.
-    const writtenSlugs = writtenRefs.map(r => r.slug);
+    const writtenSlugs = writtenRefs.map((r) => r.slug);
     if (SUMMARY_SLUG_RE.test(summarySlug)) {
-      await writeSummaryPage(engine, opts.brainDir, summarySlug, summaryDate, writtenSlugs, childOutcomes);
+      await writeSummaryPage(
+        engine,
+        opts.brainDir,
+        summarySlug,
+        summaryDate,
+        writtenSlugs,
+        childOutcomes
+      );
     }
 
     // Write completion timestamp ON SUCCESS only.
-    await engine.setConfig('dream.synthesize.last_completion_ts', new Date().toISOString());
+    await engine.setConfig("dream.synthesize.last_completion_ts", new Date().toISOString());
 
     const ms = Date.now() - start;
     const submittedTranscripts = worthProcessing.length - skipReports.length;
@@ -563,8 +604,13 @@ export async function runPhaseSynthesize(
       verdicts,
     });
   } catch (e) {
-    return failed(makeError('InternalError', 'SYNTH_PHASE_FAIL',
-      e instanceof Error ? (e.message || 'synthesize phase threw') : String(e)));
+    return failed(
+      makeError(
+        "InternalError",
+        "SYNTH_PHASE_FAIL",
+        e instanceof Error ? e.message || "synthesize phase threw" : String(e)
+      )
+    );
   }
 }
 
@@ -596,38 +642,40 @@ interface SynthConfig {
 }
 
 async function loadSynthConfig(engine: BrainEngine): Promise<SynthConfig> {
-  const enabledRaw = await engine.getConfig('dream.synthesize.enabled');
-  const corpusDir = await engine.getConfig('dream.synthesize.session_corpus_dir');
+  const enabledRaw = await engine.getConfig("dream.synthesize.enabled");
+  const corpusDir = await engine.getConfig("dream.synthesize.session_corpus_dir");
   // v2: enabled defaults to true when corpus dir is configured, false otherwise.
   // Explicit enabled=false still wins for pausing synthesis without removing corpus config.
-  const enabled = enabledRaw === 'false' ? false : (enabledRaw === 'true' || !!corpusDir);
-  const meetingTranscriptsDir = await engine.getConfig('dream.synthesize.meeting_transcripts_dir');
-  const minCharsStr = await engine.getConfig('dream.synthesize.min_chars');
-  const excludeStr = await engine.getConfig('dream.synthesize.exclude_patterns');
+  const enabled = enabledRaw === "false" ? false : enabledRaw === "true" || !!corpusDir;
+  const meetingTranscriptsDir = await engine.getConfig("dream.synthesize.meeting_transcripts_dir");
+  const minCharsStr = await engine.getConfig("dream.synthesize.min_chars");
+  const excludeStr = await engine.getConfig("dream.synthesize.exclude_patterns");
   // v0.28: resolveModel() unifies CLI flag > new key > deprecated key > models.default > env > fallback
-  const { resolveModel } = await import('../model-config.ts');
+  const { resolveModel } = await import("../model-config.ts");
   const model = await resolveModel(engine, {
-    configKey: 'models.dream.synthesize',
-    deprecatedConfigKey: 'dream.synthesize.model',
-    tier: 'reasoning',
-    fallback: 'sonnet',
+    configKey: "models.dream.synthesize",
+    deprecatedConfigKey: "dream.synthesize.model",
+    tier: "reasoning",
+    fallback: "sonnet",
   });
   const verdictModel = await resolveModel(engine, {
-    configKey: 'models.dream.synthesize_verdict',
-    deprecatedConfigKey: 'dream.synthesize.verdict_model',
-    tier: 'utility',
-    fallback: 'haiku',
+    configKey: "models.dream.synthesize_verdict",
+    deprecatedConfigKey: "dream.synthesize.verdict_model",
+    tier: "utility",
+    fallback: "haiku",
   });
-  const cooldownHoursStr = await engine.getConfig('dream.synthesize.cooldown_hours');
-  const maxPromptTokensStr = await engine.getConfig('dream.synthesize.max_prompt_tokens');
-  const maxChunksStr = await engine.getConfig('dream.synthesize.max_chunks_per_transcript');
+  const cooldownHoursStr = await engine.getConfig("dream.synthesize.cooldown_hours");
+  const maxPromptTokensStr = await engine.getConfig("dream.synthesize.max_prompt_tokens");
+  const maxChunksStr = await engine.getConfig("dream.synthesize.max_chunks_per_transcript");
 
-  let excludePatterns: string[] = ['medical', 'therapy'];
+  let excludePatterns: string[] = ["medical", "therapy"];
   if (excludeStr) {
     try {
       const parsed = JSON.parse(excludeStr);
-      if (Array.isArray(parsed)) excludePatterns = parsed.filter(p => typeof p === 'string');
-    } catch { /* keep default */ }
+      if (Array.isArray(parsed)) excludePatterns = parsed.filter((p) => typeof p === "string");
+    } catch {
+      /* keep default */
+    }
   }
 
   // D1: max_prompt_tokens floored at MIN_PROMPT_TOKENS; null → use model lookup.
@@ -663,10 +711,10 @@ async function loadSynthConfig(engine: BrainEngine): Promise<SynthConfig> {
 
 async function checkCooldown(
   engine: BrainEngine,
-  hours: number,
+  hours: number
 ): Promise<{ active: boolean; expires_at?: string }> {
   if (hours <= 0) return { active: false };
-  const last = await engine.getConfig('dream.synthesize.last_completion_ts');
+  const last = await engine.getConfig("dream.synthesize.last_completion_ts");
   if (!last) return { active: false };
   const lastMs = Date.parse(last);
   if (Number.isNaN(lastMs)) return { active: false };
@@ -681,19 +729,21 @@ async function loadAllowedSlugPrefixes(): Promise<string[]> {
   // Search a few known locations relative to the binary / repo. The first
   // hit wins; if none found, return [].
   const candidates = [
-    join(process.cwd(), 'skills', '_brain-filing-rules.json'),
-    join(__dirname, '..', '..', '..', 'skills', '_brain-filing-rules.json'),
+    join(process.cwd(), "skills", "_brain-filing-rules.json"),
+    join(__dirname, "..", "..", "..", "skills", "_brain-filing-rules.json"),
   ];
   for (const path of candidates) {
     if (!existsSync(path)) continue;
     try {
-      const raw = readFileSync(path, 'utf8');
+      const raw = readFileSync(path, "utf8");
       const parsed = JSON.parse(raw) as { dream_synthesize_paths?: { globs?: unknown } };
       const globs = parsed?.dream_synthesize_paths?.globs;
-      if (Array.isArray(globs) && globs.every(g => typeof g === 'string')) {
+      if (Array.isArray(globs) && globs.every((g) => typeof g === "string")) {
         return globs as string[];
       }
-    } catch { /* try next */ }
+    } catch {
+      /* try next */
+    }
   }
   return [];
 }
@@ -748,7 +798,7 @@ export function makeJudgeClient(verdictModel: string): JudgeClient | null {
   // Anthropic key probe (legacy behavior preserved verbatim). Other providers' key
   // checks happen lazily at chat call time and surface as AIConfigError, which the
   // verdict loop catches per-transcript.
-  if (v.parsed.providerId === 'anthropic' && !hasAnthropicKey()) return null;
+  if (v.parsed.providerId === "anthropic" && !hasAnthropicKey()) return null;
 
   return {
     create: async (params): Promise<Anthropic.Message> => {
@@ -759,19 +809,21 @@ export function makeJudgeClient(verdictModel: string): JudgeClient | null {
       // empty strings. If a future caller wires tool-use or image content
       // through this client, extend the mapping instead of relying on the
       // current silent drop. Same pattern as think/index.ts:607-615.
-      const messages = params.messages.map(m => ({
+      const messages = params.messages.map((m) => ({
         role: m.role,
-        content: typeof m.content === 'string'
-          ? m.content
-          : (Array.isArray(m.content)
-              ? m.content.map(b => ('text' in b ? b.text : '')).join('')
-              : ''),
+        content:
+          typeof m.content === "string"
+            ? m.content
+            : Array.isArray(m.content)
+              ? m.content.map((b) => ("text" in b ? b.text : "")).join("")
+              : "",
       }));
-      const system = typeof params.system === 'string'
-        ? params.system
-        : (Array.isArray(params.system)
-            ? params.system.map(b => ('text' in b ? b.text : '')).join('')
-            : undefined);
+      const system =
+        typeof params.system === "string"
+          ? params.system
+          : Array.isArray(params.system)
+            ? params.system.map((b) => ("text" in b ? b.text : "")).join("")
+            : undefined;
 
       const result: ChatResult = await gatewayChat({
         model: modelStr,
@@ -784,12 +836,12 @@ export function makeJudgeClient(verdictModel: string): JudgeClient | null {
       // reads `.content[0].type === 'text'` and `.content[0].text`; other
       // fields are best-effort for downstream telemetry parity.
       return {
-        id: '',
-        type: 'message',
-        role: 'assistant',
+        id: "",
+        type: "message",
+        role: "assistant",
         model: modelStr,
-        content: [{ type: 'text', text: result.text }],
-        stop_reason: 'end_turn',
+        content: [{ type: "text", text: result.text }],
+        stop_reason: "end_turn",
         stop_sequence: null,
         usage: {
           input_tokens: result.usage.input_tokens,
@@ -808,7 +860,7 @@ interface VerdictResult {
 export async function judgeSignificance(
   client: JudgeClient,
   t: DiscoveredTranscript,
-  verdictModel = 'claude-haiku-4-5-20251001',
+  verdictModel = "claude-haiku-4-5-20251001"
 ): Promise<VerdictResult> {
   // Truncate the transcript at 8K chars for cost control. Haiku's verdict
   // doesn't need the full body; the opening + closing sections are usually
@@ -829,7 +881,7 @@ export async function judgeSignificance(
   if (t.content.length > 8000) {
     const headEnd = safeSplitIndex(t.content, 4000);
     const tailStart = safeSplitIndex(t.content, t.content.length - 4000);
-    trimmed = t.content.slice(0, headEnd) + '\n[...truncated...]\n' + t.content.slice(tailStart);
+    trimmed = t.content.slice(0, headEnd) + "\n[...truncated...]\n" + t.content.slice(tailStart);
   } else {
     trimmed = t.content;
   }
@@ -855,11 +907,11 @@ Two reasons max, one phrase each.`;
     model: verdictModel,
     max_tokens: 200,
     system: sys,
-    messages: [{ role: 'user', content: `Transcript ${t.basename}:\n\n${trimmed}` }],
+    messages: [{ role: "user", content: `Transcript ${t.basename}:\n\n${trimmed}` }],
   });
 
   for (const block of msg.content) {
-    if (block.type === 'text') {
+    if (block.type === "text") {
       const text = block.text.trim();
       const m = /\{[\s\S]*\}/.exec(text);
       if (!m) continue;
@@ -867,14 +919,16 @@ Two reasons max, one phrase each.`;
         const parsed = JSON.parse(m[0]) as { worth_processing?: unknown; reasons?: unknown };
         const worth = parsed.worth_processing === true;
         const reasons = Array.isArray(parsed.reasons)
-          ? parsed.reasons.filter((r): r is string => typeof r === 'string').slice(0, 4)
+          ? parsed.reasons.filter((r): r is string => typeof r === "string").slice(0, 4)
           : [];
         return { worth_processing: worth, reasons };
-      } catch { /* fall through */ }
+      } catch {
+        /* fall through */
+      }
     }
   }
   // Couldn't parse — default to NOT processing (cheap fallback).
-  return { worth_processing: false, reasons: ['judge response unparseable'] };
+  return { worth_processing: false, reasons: ["judge response unparseable"] };
 }
 
 // ── Subagent prompt ──────────────────────────────────────────────────
@@ -895,41 +949,46 @@ Two reasons max, one phrase each.`;
 async function loadPriorContradictionsBlock(engine: BrainEngine): Promise<string> {
   try {
     const rows = await engine.loadContradictionsTrend(30);
-    if (!rows || rows.length === 0) return '';
+    if (!rows || rows.length === 0) return "";
     const latest = rows[0];
     const report = latest.report_json as Record<string, unknown> | null;
-    const perQuery = (report?.per_query as Array<{
-      contradictions: Array<{
-        severity: 'low' | 'medium' | 'high';
-        axis: string;
-        a: { slug: string };
-        b: { slug: string };
-      }>;
-    }> | undefined) ?? [];
+    const perQuery =
+      (report?.per_query as
+        | Array<{
+            contradictions: Array<{
+              severity: "low" | "medium" | "high";
+              axis: string;
+              a: { slug: string };
+              b: { slug: string };
+            }>;
+          }>
+        | undefined) ?? [];
     const findings: Array<{ severity: string; axis: string; a: string; b: string }> = [];
     for (const q of perQuery) {
       for (const c of q.contradictions) {
         findings.push({ severity: c.severity, axis: c.axis, a: c.a.slug, b: c.b.slug });
       }
     }
-    if (findings.length === 0) return '';
+    if (findings.length === 0) return "";
     // Sort by severity DESC (high first); take top 5 to keep prompt bounded.
     const rank: Record<string, number> = { high: 3, medium: 2, low: 1 };
     findings.sort((x, y) => (rank[y.severity] ?? 0) - (rank[x.severity] ?? 0));
     const top = findings.slice(0, 5);
-    const lines = top.map((f) => `  - [${f.severity}] ${f.a} vs ${f.b}${f.axis ? ' — ' + f.axis : ''}`);
+    const lines = top.map(
+      (f) => `  - [${f.severity}] ${f.a} vs ${f.b}${f.axis ? " — " + f.axis : ""}`
+    );
     return [
-      '',
-      'PRIOR DETECTED CONTRADICTIONS (latest probe run, severity DESC, top 5):',
+      "",
+      "PRIOR DETECTED CONTRADICTIONS (latest probe run, severity DESC, top 5):",
       ...lines,
-      '',
-      'If your synthesis writes to any of these slugs, reconcile the contradiction',
-      'in the compiled_truth instead of recreating it. Either update to the newer/',
-      'correct value, mark the older claim as historical, or note the conflict',
-      'explicitly. Ignore findings irrelevant to what this transcript covers.',
-    ].join('\n');
+      "",
+      "If your synthesis writes to any of these slugs, reconcile the contradiction",
+      "in the compiled_truth instead of recreating it. Either update to the newer/",
+      "correct value, mark the older claim as historical, or note the conflict",
+      "explicitly. Ignore findings irrelevant to what this transcript covers.",
+    ].join("\n");
   } catch {
-    return '';
+    return "";
   }
 }
 
@@ -938,7 +997,7 @@ function buildSynthesisPrompt(
   chunkText: string,
   chunkIdx: number,
   chunkTotal: number,
-  priorContradictionsBlock = '',
+  priorContradictionsBlock = ""
 ): string {
   const dateHint = t.inferredDate ?? today();
   const baseSlugSegment = sanitizeForSlug(t.basename) || `session-${dateHint}`;
@@ -948,7 +1007,7 @@ function buildSynthesisPrompt(
     : t.contentHash.slice(0, 6);
   const chunkBanner = isChunked
     ? `\n- This is CHUNK ${chunkIdx + 1} of ${chunkTotal} from the same transcript. Different chunks process different sections; do not assume continuity with other chunks.`
-    : '';
+    : "";
   const transcriptHeader = isChunked
     ? `${t.filePath} (chunk ${chunkIdx + 1}/${chunkTotal})`
     : t.filePath;
@@ -987,8 +1046,8 @@ When done, briefly list the slugs you wrote in your final message so the orchest
 function sanitizeForSlug(s: string): string {
   return s
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
     .slice(0, 60);
 }
 
@@ -1010,7 +1069,7 @@ function sanitizeForSlug(s: string): string {
 async function collectChildPutPageSlugs(
   engine: BrainEngine,
   childIds: number[],
-  chunkInfo: Map<number, { idx: number; hash6: string }>,
+  chunkInfo: Map<number, { idx: number; hash6: string }>
 ): Promise<Array<{ slug: string; source_id: string }>> {
   if (childIds.length === 0) return [];
   // Raw fetch — NO SELECT DISTINCT. Preserves per-child slug duplicates so
@@ -1031,15 +1090,17 @@ async function collectChildPutPageSlugs(
       WHERE job_id = ANY($1::int[])
         AND tool_name = 'brain_put_page'
         AND status = 'complete'`,
-    [childIds],
+    [childIds]
   );
   const rewritten = new Set<string>();
   for (const r of rows) {
-    if (typeof r.slug !== 'string' || r.slug.length === 0) continue;
+    if (typeof r.slug !== "string" || r.slug.length === 0) continue;
     const ci = chunkInfo.get(r.job_id);
     rewritten.add(ci ? rewriteChunkedSlug(r.slug, ci.hash6, ci.idx) : r.slug);
   }
-  return Array.from(rewritten).sort().map(slug => ({ slug, source_id: 'default' }));
+  return Array.from(rewritten)
+    .sort()
+    .map((slug) => ({ slug, source_id: "default" }));
 }
 
 /**
@@ -1054,7 +1115,7 @@ async function collectChildPutPageSlugs(
 async function hasLegacySingleChunkCompletion(
   engine: BrainEngine,
   filePath: string,
-  hash16: string,
+  hash16: string
 ): Promise<boolean> {
   const legacyKey = `dream:synth:${filePath}:${hash16}`;
   const rows = await engine.executeRaw<{ status: string }>(
@@ -1063,7 +1124,7 @@ async function hasLegacySingleChunkCompletion(
       WHERE idempotency_key = $1
         AND status = 'completed'
       LIMIT 1`,
-    [legacyKey],
+    [legacyKey]
   );
   return rows.length > 0;
 }
@@ -1073,7 +1134,7 @@ async function hasLegacySingleChunkCompletion(
 async function reverseWriteRefs(
   engine: BrainEngine,
   brainDir: string,
-  refs: Array<{ slug: string; source_id: string }>,
+  refs: Array<{ slug: string; source_id: string }>
 ): Promise<number> {
   let count = 0;
   for (const { slug, source_id } of refs) {
@@ -1087,11 +1148,12 @@ async function reverseWriteRefs(
       // v0.32.8 F6: non-default sources land at brainDir/.sources/<id>/<slug>.md
       // so same-slug-different-source pages don't collide. Default-source
       // pages stay at brainDir/<slug>.md so single-source brains see no change.
-      const filePath = source_id === 'default'
-        ? join(brainDir, `${slug}.md`)
-        : join(brainDir, '.sources', source_id, `${slug}.md`);
+      const filePath =
+        source_id === "default"
+          ? join(brainDir, `${slug}.md`)
+          : join(brainDir, ".sources", source_id, `${slug}.md`);
       mkdirSync(dirname(filePath), { recursive: true });
-      writeFileSync(filePath, md, 'utf8');
+      writeFileSync(filePath, md, "utf8");
       count++;
     } catch (e) {
       // Per-slug failures are non-fatal — phase continues.
@@ -1133,35 +1195,35 @@ async function writeSummaryPage(
   summarySlug: string,
   summaryDate: string,
   writtenSlugs: string[],
-  childOutcomes: Array<{ jobId: number; status: string }>,
+  childOutcomes: Array<{ jobId: number; status: string }>
 ): Promise<void> {
-  const completed = childOutcomes.filter(c => c.status === 'completed').length;
+  const completed = childOutcomes.filter((c) => c.status === "completed").length;
   const failed = childOutcomes.length - completed;
 
   const lines: string[] = [];
   lines.push(`# Dream cycle ${summaryDate}`);
-  lines.push('');
+  lines.push("");
   lines.push(`**Children:** ${completed} completed, ${failed} failed/timeout.`);
   lines.push(`**Pages written:** ${writtenSlugs.length}.`);
-  lines.push('');
+  lines.push("");
   if (writtenSlugs.length > 0) {
-    lines.push('## Pages');
-    lines.push('');
+    lines.push("## Pages");
+    lines.push("");
     for (const s of writtenSlugs) {
       lines.push(`- [[${s}]]`);
     }
-    lines.push('');
+    lines.push("");
   }
 
-  const body = lines.join('\n');
+  const body = lines.join("\n");
   // Stamp the dream-output identity marker into the summary's frontmatter.
   // parseMarkdown below round-trips it into the DB-stored frontmatter, so the
   // marker survives any later reverse-render of the summary page.
   const fullMarkdown = serializeMarkdown(
     { dream_generated: true, dream_cycle_date: summaryDate } as Record<string, unknown>,
     body,
-    '',
-    { type: 'note' as string, title: `Dream cycle ${summaryDate}`, tags: ['dream-cycle'] },
+    "",
+    { type: "note" as string, title: `Dream cycle ${summaryDate}`, tags: ["dream-cycle"] }
   );
 
   // Direct engine.putPage — orchestrator write, no subagent context, no
@@ -1169,7 +1231,7 @@ async function writeSummaryPage(
   // pre-validated against SUMMARY_SLUG_RE in the caller.
   // Importing put_page via operations.ts would re-run namespace logic
   // unnecessarily; we go straight to the engine.
-  const { parseMarkdown } = await import('../markdown.ts');
+  const { parseMarkdown } = await import("../markdown.ts");
   const parsed = parseMarkdown(fullMarkdown);
   await engine.putPage(summarySlug, {
     type: parsed.type,
@@ -1183,7 +1245,7 @@ async function writeSummaryPage(
   try {
     const filePath = join(brainDir, `${summarySlug}.md`);
     mkdirSync(dirname(filePath), { recursive: true });
-    writeFileSync(filePath, fullMarkdown, 'utf8');
+    writeFileSync(filePath, fullMarkdown, "utf8");
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     process.stderr.write(`[dream] summary file-write failed: ${msg}\n`);
@@ -1196,9 +1258,10 @@ function loadAdHocTranscript(
   filePath: string,
   minChars: number,
   excludePatterns: string[],
-  bypassGuard?: boolean,
+  bypassGuard?: boolean
 ): DiscoveredTranscript[] {
-  const { readSingleTranscript } = require('./transcript-discovery.ts') as typeof import('./transcript-discovery.ts');
+  const { readSingleTranscript } =
+    require("./transcript-discovery.ts") as typeof import("./transcript-discovery.ts");
   const t = readSingleTranscript(filePath, { minChars, excludePatterns, bypassGuard });
   return t ? [t] : [];
 }
@@ -1208,13 +1271,13 @@ function today(): string {
 }
 
 function ok(summary: string, details: Record<string, unknown> = {}): PhaseResult {
-  return { phase: 'synthesize', status: 'ok', duration_ms: 0, summary, details };
+  return { phase: "synthesize", status: "ok", duration_ms: 0, summary, details };
 }
 
 function skipped(reason: string, summary: string): PhaseResult {
   return {
-    phase: 'synthesize',
-    status: 'skipped',
+    phase: "synthesize",
+    status: "skipped",
     duration_ms: 0,
     summary,
     details: { reason },
@@ -1223,10 +1286,10 @@ function skipped(reason: string, summary: string): PhaseResult {
 
 function failed(error: PhaseError): PhaseResult {
   return {
-    phase: 'synthesize',
-    status: 'fail',
+    phase: "synthesize",
+    status: "fail",
     duration_ms: 0,
-    summary: 'synthesize phase failed',
+    summary: "synthesize phase failed",
     details: {},
     error,
   };

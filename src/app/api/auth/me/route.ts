@@ -18,7 +18,7 @@ export const GET = createHandler(
   async (ctx) => {
     const referrals = await getStore().countReferrals(ctx.user.referralCode);
     return Response.json({ user: toPublic(ctx.user), referrals });
-  },
+  }
 );
 
 export const PATCH = createHandler(
@@ -41,5 +41,5 @@ export const PATCH = createHandler(
     if (!updated) return Response.json({ error: "user_not_found" }, { status: 404 });
 
     return Response.json({ user: toPublic(updated) });
-  },
+  }
 );

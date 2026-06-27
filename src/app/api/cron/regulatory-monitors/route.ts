@@ -46,7 +46,7 @@ async function fetchMonitorPages(brainId: string): Promise<BrainPage[]> {
   try {
     const res = await fetch(`${ENGINE_URL}/api/pages?type=regulatory_monitor&limit=200`, {
       headers: engineHeadersForBrain(brainId),
-    signal: AbortSignal.timeout(30_000),
+      signal: AbortSignal.timeout(30_000),
     });
     if (!res.ok) return [];
     const data = (await res.json()) as unknown;
@@ -61,7 +61,7 @@ async function fetchLegacyWatchlist(brainId: string): Promise<BrainPage | null> 
   try {
     const res = await fetch(`${ENGINE_URL}/api/pages/monitoring/case-law-watchlist`, {
       headers: engineHeadersForBrain(brainId),
-    signal: AbortSignal.timeout(30_000),
+      signal: AbortSignal.timeout(30_000),
     });
     if (!res.ok) return null;
     return (await res.json()) as BrainPage;

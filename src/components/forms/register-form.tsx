@@ -6,7 +6,13 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 import { useRegister } from "@/lib/queries/auth";
 
 const schema = z.object({
@@ -44,7 +50,12 @@ export function RegisterForm() {
 
       <div className="space-y-1.5">
         <Label htmlFor="password">Passwort</Label>
-        <Input id="password" type="password" {...register("password")} placeholder="Mindestens 8 Zeichen" />
+        <Input
+          id="password"
+          type="password"
+          {...register("password")}
+          placeholder="Mindestens 8 Zeichen"
+        />
         {errors.password && <p className="text-xs text-red-400">{errors.password.message}</p>}
       </div>
 

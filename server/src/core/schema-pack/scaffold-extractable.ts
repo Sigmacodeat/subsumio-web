@@ -30,16 +30,12 @@
  * relative paths, so it's compliant by construction.
  */
 
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 
-import type { MutateResult } from './mutate.ts';
-import {
-  locateMutablePackFile,
-  updateTypeOnPack,
-  SchemaPackMutationError,
-} from './mutate.ts';
-import type { ExtractableSpec } from './manifest-v1.ts';
+import type { MutateResult } from "./mutate.ts";
+import { locateMutablePackFile, updateTypeOnPack, SchemaPackMutationError } from "./mutate.ts";
+import type { ExtractableSpec } from "./manifest-v1.ts";
 
 export interface ScaffoldExtractableOpts {
   /** Pack name (must be a writable pack — bundled packs are guarded). */
@@ -148,71 +144,67 @@ export function buildFixtureCorpus(typeName: string): string {
   const fixtures = [
     {
       fixture_id: `${typeName}-001-single-claim`,
-      page_body:
-        'alice-example founded widget-co-example in 2020.',
+      page_body: "alice-example founded widget-co-example in 2020.",
       expected_claims: [
         {
-          claim: 'alice-example founded widget-co-example',
-          since_date: '2020-01-01',
+          claim: "alice-example founded widget-co-example",
+          since_date: "2020-01-01",
           confidence: 1.0,
         },
       ],
-      notes: 'Baseline: one explicit factual claim.',
+      notes: "Baseline: one explicit factual claim.",
     },
     {
       fixture_id: `${typeName}-002-no-claim`,
-      page_body:
-        'This page is mostly placeholder text and contains no extractable claims.',
+      page_body: "This page is mostly placeholder text and contains no extractable claims.",
       expected_claims: [],
-      notes: 'Negative case: extractor should return [].',
+      notes: "Negative case: extractor should return [].",
     },
     {
       fixture_id: `${typeName}-003-multi-claim`,
       page_body:
-        'widget-co-example raised a $5M seed in 2021 and grew to 12 employees by mid-2022.',
+        "widget-co-example raised a $5M seed in 2021 and grew to 12 employees by mid-2022.",
       expected_claims: [
         {
-          claim: 'widget-co-example raised a $5M seed',
-          since_date: '2021-01-01',
+          claim: "widget-co-example raised a $5M seed",
+          since_date: "2021-01-01",
           confidence: 1.0,
         },
         {
-          claim: 'widget-co-example grew to 12 employees',
-          since_date: '2022-06-01',
+          claim: "widget-co-example grew to 12 employees",
+          since_date: "2022-06-01",
           confidence: 0.9,
         },
       ],
-      notes: 'Two claims in one sentence.',
+      notes: "Two claims in one sentence.",
     },
     {
       fixture_id: `${typeName}-004-ambiguous`,
-      page_body:
-        'fund-a may have led the seed round, though sources are inconsistent.',
+      page_body: "fund-a may have led the seed round, though sources are inconsistent.",
       expected_claims: [
         {
-          claim: 'fund-a may have led the seed round',
-          since_date: '2021-01-01',
+          claim: "fund-a may have led the seed round",
+          since_date: "2021-01-01",
           confidence: 0.6,
         },
       ],
-      notes: 'Confidence drops on hedged language.',
+      notes: "Confidence drops on hedged language.",
     },
     {
       fixture_id: `${typeName}-005-implicit-date`,
-      page_body:
-        'charlie-example was the second employee at acme-example.',
+      page_body: "charlie-example was the second employee at acme-example.",
       expected_claims: [
         {
-          claim: 'charlie-example was the second employee at acme-example',
+          claim: "charlie-example was the second employee at acme-example",
           since_date: null,
           confidence: 1.0,
         },
       ],
-      notes: 'No date in body — extractor falls back to page effective_date or null.',
+      notes: "No date in body — extractor falls back to page effective_date or null.",
     },
   ];
 
-  return fixtures.map((f) => JSON.stringify(f)).join('\n') + '\n';
+  return fixtures.map((f) => JSON.stringify(f)).join("\n") + "\n";
 }
 
 /**
@@ -226,7 +218,7 @@ export function buildExtractableSpec(opts: {
   return {
     prompt_template: `prompts/extract/${opts.typeName}.md`,
     fixture_corpus: `fixtures/extract/${opts.typeName}.jsonl`,
-    eval_dimensions: opts.evalDimensions ?? ['faithfulness', 'completeness'],
+    eval_dimensions: opts.evalDimensions ?? ["faithfulness", "completeness"],
   };
 }
 
@@ -242,7 +234,7 @@ export function buildExtractableSpec(opts: {
  * with a paste-ready remediation hint.
  */
 export async function scaffoldExtractable(
-  opts: ScaffoldExtractableOpts,
+  opts: ScaffoldExtractableOpts
 ): Promise<ScaffoldExtractableResult> {
   // Resolves the pack-root dir + asserts the pack is writable (bundled
   // packs throw PACK_READONLY).
@@ -251,8 +243,8 @@ export async function scaffoldExtractable(
 
   // Build paths first so we can report them in the result even when the
   // YAML mutation runs first.
-  const promptPath = join(packRoot, 'prompts', 'extract', `${opts.typeName}.md`);
-  const fixturePath = join(packRoot, 'fixtures', 'extract', `${opts.typeName}.jsonl`);
+  const promptPath = join(packRoot, "prompts", "extract", `${opts.typeName}.md`);
+  const fixturePath = join(packRoot, "fixtures", "extract", `${opts.typeName}.jsonl`);
 
   // YAML mutation first — failing here means nothing else changes.
   // updateTypeOnPack's patch shape accepts the struct directly.

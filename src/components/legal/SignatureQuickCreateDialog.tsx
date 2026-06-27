@@ -63,12 +63,9 @@ export function SignatureQuickCreateDialog({
     if (!open) resetForm();
   }, [open, resetForm]);
 
-  const { data: drafts } = useDialogFetch<BrainPage[]>(
-    open,
-    async () => {
-      return await api.brain.listPages({ type: "legal_document", limit: 100 });
-    },
-  );
+  const { data: drafts } = useDialogFetch<BrainPage[]>(open, async () => {
+    return await api.brain.listPages({ type: "legal_document", limit: 100 });
+  });
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -103,16 +100,20 @@ export function SignatureQuickCreateDialog({
       onOpenChange(false);
       if (onCreated) onCreated();
     } catch (err) {
-      const msg = err instanceof Error
-        ? `${t("signature.error_save" as DashboardKey)}: ${err.message}`
-        : t("signature.error_save" as DashboardKey);
+      const msg =
+        err instanceof Error
+          ? `${t("signature.error_save" as DashboardKey)}: ${err.message}`
+          : t("signature.error_save" as DashboardKey);
       addToast({ type: "error", title: msg });
     } finally {
       setSaving(false);
     }
   }
 
-  const canSubmit = !!sigForm.watch("documentName") && !!sigForm.watch("recipientName") && !!sigForm.watch("recipientEmail");
+  const canSubmit =
+    !!sigForm.watch("documentName") &&
+    !!sigForm.watch("recipientName") &&
+    !!sigForm.watch("recipientEmail");
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -164,11 +165,15 @@ export function SignatureQuickCreateDialog({
               <Input
                 id="quick-sig-doc"
                 {...sigForm.register("documentName")}
-                placeholder={lang === "en" ? "e.g. Mandate agreement GmbH" : "z.B. Mandatsvereinbarung GmbH"}
+                placeholder={
+                  lang === "en" ? "e.g. Mandate agreement GmbH" : "z.B. Mandatsvereinbarung GmbH"
+                }
                 autoFocus
               />
               {sigForm.formState.errors.documentName && (
-                <p className="text-xs text-red-600">{sigForm.formState.errors.documentName.message}</p>
+                <p className="text-xs text-red-600">
+                  {sigForm.formState.errors.documentName.message}
+                </p>
               )}
             </div>
 
@@ -195,7 +200,9 @@ export function SignatureQuickCreateDialog({
                   placeholder="max@example.com"
                 />
                 {sigForm.formState.errors.recipientEmail && (
-                  <p className="text-xs text-red-600">{sigForm.formState.errors.recipientEmail.message}</p>
+                  <p className="text-xs text-red-600">
+                    {sigForm.formState.errors.recipientEmail.message}
+                  </p>
                 )}
               </div>
             </div>
@@ -205,13 +212,11 @@ export function SignatureQuickCreateDialog({
               <Label htmlFor="quick-sig-expires" className="text-xs">
                 {t("signature.quick_expires" as DashboardKey)}
               </Label>
-              <Input
-                id="quick-sig-expires"
-                type="number"
-                {...sigForm.register("expiresDays")}
-              />
+              <Input id="quick-sig-expires" type="number" {...sigForm.register("expiresDays")} />
               {sigForm.formState.errors.expiresDays && (
-                <p className="text-xs text-red-600">{sigForm.formState.errors.expiresDays.message}</p>
+                <p className="text-xs text-red-600">
+                  {sigForm.formState.errors.expiresDays.message}
+                </p>
               )}
             </div>
           </div>

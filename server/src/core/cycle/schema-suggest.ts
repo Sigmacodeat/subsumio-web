@@ -10,9 +10,9 @@
 // `~/.gbrain/audit/schema-candidates-YYYY-Www.jsonl` (T15 audit).
 // Reviewed via `gbrain schema review-candidates`.
 
-import type { BrainEngine } from '../engine.ts';
-import { runSuggest } from '../schema-pack/suggest.ts';
-import { logSchemaEvent } from '../schema-events.ts';
+import type { BrainEngine } from "../engine.ts";
+import { runSuggest } from "../schema-pack/suggest.ts";
+import { logSchemaEvent } from "../schema-events.ts";
 
 export interface SchemaSuggestPhaseOpts {
   sourceId?: string;
@@ -28,9 +28,9 @@ export interface SchemaSuggestPhaseResult {
 
 export async function runSchemaSuggestPhase(
   engine: BrainEngine,
-  opts: SchemaSuggestPhaseOpts = {},
+  opts: SchemaSuggestPhaseOpts = {}
 ): Promise<SchemaSuggestPhaseResult> {
-  const sourceId = opts.sourceId ?? 'default';
+  const sourceId = opts.sourceId ?? "default";
 
   // Dry-run still calls runSuggest but logs only — no audit append.
   if (opts.dryRun) {
@@ -39,15 +39,15 @@ export async function runSchemaSuggestPhase(
       suggestions_emitted: result.suggestions.length,
       source_id: sourceId,
       skipped: false,
-      reason: 'dry-run',
+      reason: "dry-run",
     };
   }
 
   try {
     const result = await runSuggest(engine, { sourceId });
     logSchemaEvent({
-      verb: 'cycle:schema-suggest',
-      outcome: 'success',
+      verb: "cycle:schema-suggest",
+      outcome: "success",
       flags: [`source=${sourceId}`, `count=${result.suggestions.length}`],
     });
     return {
@@ -57,8 +57,8 @@ export async function runSchemaSuggestPhase(
     };
   } catch (e) {
     logSchemaEvent({
-      verb: 'cycle:schema-suggest',
-      outcome: 'error',
+      verb: "cycle:schema-suggest",
+      outcome: "error",
       flags: [`source=${sourceId}`, `err=${(e as Error).message.slice(0, 80)}`],
     });
     return {

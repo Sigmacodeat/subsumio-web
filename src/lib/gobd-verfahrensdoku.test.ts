@@ -146,7 +146,7 @@ describe("buildVerfahrensdoku — Edge Cases", () => {
     expect(doc).toContain("_[bitte ergänzen / vom Berater prüfen lassen]_");
   });
 
-  test("Sonderzeichen in Kanzleinamen (&, <, >, \")", () => {
+  test('Sonderzeichen in Kanzleinamen (&, <, >, ")', () => {
     const doc = buildVerfahrensdoku({
       ...sampleInput,
       kanzleiName: 'Müller & Söhne <Rechtsanwälte> "GmbH"',

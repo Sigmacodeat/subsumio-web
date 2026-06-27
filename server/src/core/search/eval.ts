@@ -9,10 +9,10 @@
  * runEval() depends on BrainEngine + embed and is tested via E2E.
  */
 
-import type { BrainEngine } from '../engine.ts';
-import { embed } from '../embedding.ts';
-import { hybridSearch } from './hybrid.ts';
-import type { HybridSearchOpts } from './hybrid.ts';
+import type { BrainEngine } from "../engine.ts";
+import { embed } from "../embedding.ts";
+import { hybridSearch } from "./hybrid.ts";
+import type { HybridSearchOpts } from "./hybrid.ts";
 
 // ─────────────────────────────────────────────────────────────────
 // Ground truth types
@@ -43,7 +43,7 @@ export interface EvalQrelFile {
 export interface EvalConfig {
   /** Human-readable label for this configuration (shown in A/B output). */
   name?: string;
-  strategy?: 'keyword' | 'vector' | 'hybrid';
+  strategy?: "keyword" | "vector" | "hybrid";
   /** Override RRF K constant (default: 60). */
   rrf_k?: number;
   /** Enable multi-query expansion (hybrid only, default: false for eval stability). */
@@ -93,7 +93,7 @@ export interface EvalReport {
 export function precisionAtK(hits: string[], relevant: Set<string>, k: number): number {
   if (k <= 0 || hits.length === 0 || relevant.size === 0) return 0;
   const topK = hits.slice(0, k);
-  const relevantHits = topK.filter(h => relevant.has(h)).length;
+  const relevantHits = topK.filter((h) => relevant.has(h)).length;
   return relevantHits / k;
 }
 
@@ -103,7 +103,7 @@ export function precisionAtK(hits: string[], relevant: Set<string>, k: number): 
 export function recallAtK(hits: string[], relevant: Set<string>, k: number): number {
   if (k <= 0 || hits.length === 0 || relevant.size === 0) return 0;
   const topK = hits.slice(0, k);
-  const relevantHits = topK.filter(h => relevant.has(h)).length;
+  const relevantHits = topK.filter((h) => relevant.has(h)).length;
   return relevantHits / relevant.size;
 }
 
@@ -140,7 +140,7 @@ export function ndcgAtK(hits: string[], grades: Map<string, number>, k: number):
 
   // Ideal DCG: sort all graded docs by grade desc, take top-k
   const idealGrades = Array.from(grades.values())
-    .filter(g => g > 0)
+    .filter((g) => g > 0)
     .sort((a, b) => b - a)
     .slice(0, k);
 
@@ -174,9 +174,9 @@ export async function runEval(
   qrels: EvalQrel[],
   config: EvalConfig,
   k = 5,
-  options: RunEvalOptions = {},
+  options: RunEvalOptions = {}
 ): Promise<EvalReport> {
-  const strategy = config.strategy ?? 'hybrid';
+  const strategy = config.strategy ?? "hybrid";
   const limit = config.limit ?? Math.max(k * 2, 10);
 
   const queryResults: QueryResult[] = [];
@@ -204,10 +204,10 @@ export async function runEval(
     config,
     k,
     queries: queryResults,
-    mean_precision: mean(queryResults.map(r => r.precision_at_k)),
-    mean_recall: mean(queryResults.map(r => r.recall_at_k)),
-    mean_mrr: mean(queryResults.map(r => r.mrr)),
-    mean_ndcg: mean(queryResults.map(r => r.ndcg_at_k)),
+    mean_precision: mean(queryResults.map((r) => r.precision_at_k)),
+    mean_recall: mean(queryResults.map((r) => r.recall_at_k)),
+    mean_mrr: mean(queryResults.map((r) => r.mrr)),
+    mean_ndcg: mean(queryResults.map((r) => r.ndcg_at_k)),
   };
 }
 
@@ -218,9 +218,9 @@ export async function runEval(
 async function runQuery(
   engine: BrainEngine,
   query: string,
-  strategy: 'keyword' | 'vector' | 'hybrid',
+  strategy: "keyword" | "vector" | "hybrid",
   config: EvalConfig,
-  limit: number,
+  limit: number
 ): Promise<string[]> {
   const dedupOpts = {
     cosineThreshold: config.dedup_cosine_threshold,
@@ -228,15 +228,15 @@ async function runQuery(
     maxPerPage: config.dedup_max_per_page,
   };
 
-  if (strategy === 'keyword') {
+  if (strategy === "keyword") {
     const results = await engine.searchKeyword(query, { limit });
-    return results.map(r => r.slug);
+    return results.map((r) => r.slug);
   }
 
-  if (strategy === 'vector') {
+  if (strategy === "vector") {
     const embedding = await embed(query);
     const results = await engine.searchVector(embedding, { limit });
-    return results.map(r => r.slug);
+    return results.map((r) => r.slug);
   }
 
   // hybrid
@@ -247,7 +247,7 @@ async function runQuery(
     dedupOpts,
   };
   const results = await hybridSearch(engine, query, hybridOpts);
-  return results.map(r => r.slug);
+  return results.map((r) => r.slug);
 }
 
 /**
@@ -258,7 +258,7 @@ function buildGradesMap(qrel: EvalQrel): Map<string, number> {
   if (qrel.grades && Object.keys(qrel.grades).length > 0) {
     return new Map(Object.entries(qrel.grades));
   }
-  return new Map(qrel.relevant.map(slug => [slug, 1]));
+  return new Map(qrel.relevant.map((slug) => [slug, 1]));
 }
 
 function mean(values: number[]): number {
@@ -274,12 +274,12 @@ export function parseQrels(input: string): EvalQrel[] {
   let raw: string;
 
   // Inline JSON starts with '[' or '{'
-  if (input.trimStart().startsWith('[') || input.trimStart().startsWith('{')) {
+  if (input.trimStart().startsWith("[") || input.trimStart().startsWith("{")) {
     raw = input;
   } else {
     // Treat as file path
-    const { readFileSync } = require('fs');
-    raw = readFileSync(input, 'utf-8');
+    const { readFileSync } = require("fs");
+    raw = readFileSync(input, "utf-8");
   }
 
   const parsed = JSON.parse(raw);
@@ -288,5 +288,5 @@ export function parseQrels(input: string): EvalQrel[] {
   if (Array.isArray(parsed)) return parsed as EvalQrel[];
   if (parsed.queries && Array.isArray(parsed.queries)) return parsed.queries as EvalQrel[];
 
-  throw new Error('Invalid qrels format. Expected array or { version, queries } object.');
+  throw new Error("Invalid qrels format. Expected array or { version, queries } object.");
 }

@@ -46,9 +46,9 @@
  * remote deploys.
  */
 
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import { gbrainPath } from '../config.ts';
+import * as fs from "node:fs";
+import * as path from "node:path";
+import { gbrainPath } from "../config.ts";
 
 /**
  * Resolve the audit dir. Honors `GBRAIN_AUDIT_DIR` for container /
@@ -61,7 +61,7 @@ import { gbrainPath } from '../config.ts';
 export function resolveAuditDir(): string {
   const override = process.env.GBRAIN_AUDIT_DIR;
   if (override && override.trim().length > 0) return override;
-  return gbrainPath('audit');
+  return gbrainPath("audit");
 }
 
 /**
@@ -86,7 +86,7 @@ export function computeIsoWeekFilename(prefix: string, now: Date = new Date()): 
   const firstThursdayDayNum = (firstThursday.getUTCDay() + 6) % 7;
   firstThursday.setUTCDate(firstThursday.getUTCDate() - firstThursdayDayNum + 3);
   const weekNum = Math.round((d.getTime() - firstThursday.getTime()) / (7 * 86400000)) + 1;
-  const ww = String(weekNum).padStart(2, '0');
+  const ww = String(weekNum).padStart(2, "0");
   return `${prefix}-${isoYear}-W${ww}.jsonl`;
 }
 
@@ -137,7 +137,7 @@ export interface AuditWriter<T extends { ts: string }> {
    * the event upstream and want stable timestamps for batching); when
    * omitted, the writer stamps `new Date().toISOString()` at log time.
    */
-  log(event: Omit<T, 'ts'> & { ts?: string }): void;
+  log(event: Omit<T, "ts"> & { ts?: string }): void;
   /**
    * Read back events from current + previous ISO week, filtered by
    * `days` window (default 7). Missing files / corrupt rows skipped
@@ -171,19 +171,17 @@ export interface AuditWriter<T extends { ts: string }> {
  *   const recent = writer.readRecent(7);
  *   ```
  */
-export function createAuditWriter<T extends { ts: string }>(
-  opts: AuditWriterOpts,
-): AuditWriter<T> {
+export function createAuditWriter<T extends { ts: string }>(opts: AuditWriterOpts): AuditWriter<T> {
   const { featureName } = opts;
   const errorLabel = opts.errorLabel ?? featureName;
-  const errorMessagePrefix = opts.errorMessagePrefix ?? '';
-  const errorTrailer = opts.errorTrailer ?? '';
+  const errorMessagePrefix = opts.errorMessagePrefix ?? "";
+  const errorTrailer = opts.errorTrailer ?? "";
 
   function computeFilename(now: Date = new Date()): string {
     return computeIsoWeekFilename(featureName, now);
   }
 
-  function log(event: Omit<T, 'ts'> & { ts?: string }): void {
+  function log(event: Omit<T, "ts"> & { ts?: string }): void {
     const ts = event.ts ?? new Date().toISOString();
     // The event shape is opaque to the writer; we serialize the merged
     // payload verbatim. Callers control field ordering by destructuring
@@ -203,10 +201,12 @@ export function createAuditWriter<T extends { ts: string }>(
     const file = path.join(dir, computeFilename(fileDate));
     try {
       fs.mkdirSync(dir, { recursive: true });
-      fs.appendFileSync(file, JSON.stringify(row) + '\n', { encoding: 'utf8' });
+      fs.appendFileSync(file, JSON.stringify(row) + "\n", { encoding: "utf8" });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      process.stderr.write(`[${errorLabel}] ${errorMessagePrefix}write failed (${msg})${errorTrailer}\n`);
+      process.stderr.write(
+        `[${errorLabel}] ${errorMessagePrefix}write failed (${msg})${errorTrailer}\n`
+      );
     }
   }
 
@@ -227,11 +227,11 @@ export function createAuditWriter<T extends { ts: string }>(
       const file = path.join(dir, filename);
       let content: string;
       try {
-        content = fs.readFileSync(file, 'utf8');
+        content = fs.readFileSync(file, "utf8");
       } catch {
         continue;
       }
-      for (const line of content.split('\n')) {
+      for (const line of content.split("\n")) {
         if (line.length === 0) continue;
         try {
           const ev = JSON.parse(line) as T;

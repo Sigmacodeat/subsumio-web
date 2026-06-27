@@ -28,30 +28,26 @@ export interface ApiSuccessBody<T> {
 export function apiBadRequest(
   code: string,
   message: string,
-  details?: Record<string, unknown>,
+  details?: Record<string, unknown>
 ): Response {
   return apiError(code, message, 400, details);
 }
 
 /** 401 Unauthorized */
-export function apiUnauthorized(
-  message = "Authentication required",
-): Response {
+export function apiUnauthorized(message = "Authentication required"): Response {
   return apiError("unauthorized", message, 401);
 }
 
 /** 403 Forbidden */
 export function apiForbidden(
   message = "Insufficient permissions",
-  details?: Record<string, unknown>,
+  details?: Record<string, unknown>
 ): Response {
   return apiError("forbidden", message, 403, details);
 }
 
 /** 404 Not Found */
-export function apiNotFound(
-  resource = "Resource",
-): Response {
+export function apiNotFound(resource = "Resource"): Response {
   return apiError("not_found", `${resource} not found`, 404);
 }
 
@@ -59,7 +55,7 @@ export function apiNotFound(
 export function apiConflict(
   code: string,
   message: string,
-  details?: Record<string, unknown>,
+  details?: Record<string, unknown>
 ): Response {
   return apiError(code, message, 409, details);
 }
@@ -68,7 +64,7 @@ export function apiConflict(
 export function apiUnprocessable(
   code: string,
   message: string,
-  details?: Record<string, unknown>,
+  details?: Record<string, unknown>
 ): Response {
   return apiError(code, message, 422, details);
 }
@@ -87,14 +83,12 @@ export function apiRateLimited(retryAfterSeconds: number): Response {
         "Content-Type": "application/json",
         "Retry-After": String(retryAfterSeconds),
       },
-    },
+    }
   );
 }
 
 /** 503 Service Unavailable */
-export function apiUnavailable(
-  message = "Service temporarily unavailable",
-): Response {
+export function apiUnavailable(message = "Service temporarily unavailable"): Response {
   return apiError("service_unavailable", message, 503);
 }
 
@@ -106,7 +100,7 @@ export function apiError(
   code: string,
   message: string,
   status: number,
-  details?: Record<string, unknown>,
+  details?: Record<string, unknown>
 ): Response {
   const body: ApiErrorBody = { error: message, code };
   if (details) body.details = details;
@@ -117,11 +111,7 @@ export function apiError(
  * Standard success response.
  * Always returns { data, meta? } with HTTP 200.
  */
-export function apiSuccess<T>(
-  data: T,
-  meta?: ApiSuccessBody<T>["meta"],
-  status = 200,
-): Response {
+export function apiSuccess<T>(data: T, meta?: ApiSuccessBody<T>["meta"], status = 200): Response {
   const body: ApiSuccessBody<T> = { data };
   if (meta) body.meta = meta;
   return Response.json(body, { status });
@@ -133,7 +123,7 @@ export function apiSuccess<T>(
  */
 export function apiPaginated<T>(
   data: T[],
-  opts: { page: number; limit: number; total: number },
+  opts: { page: number; limit: number; total: number }
 ): Response {
   return apiSuccess(data, {
     page: opts.page,
@@ -151,14 +141,14 @@ export function apiStream(
   opts?: {
     contentType?: string;
     aiGenerated?: boolean;
-  },
+  }
 ): Response {
   return new Response(body, {
     status: 200,
     headers: {
       "Content-Type": opts?.contentType ?? "text/event-stream",
       "Cache-Control": "no-cache",
-      "Connection": "keep-alive",
+      Connection: "keep-alive",
       "X-Accel-Buffering": "no",
       // EU AI Act Art. 50: machine-readable marker
       ...(opts?.aiGenerated ? { "X-AI-Generated": "true" } : {}),
@@ -176,7 +166,7 @@ export function apiCached<T>(
     maxAgeSeconds?: number;
     swrSeconds?: number;
     tag?: string;
-  },
+  }
 ): Response {
   const maxAge = opts.maxAgeSeconds ?? 60;
   const swr = opts.swrSeconds ?? 600;
@@ -186,7 +176,7 @@ export function apiCached<T>(
     status: 200,
     headers: {
       "Cache-Control": `public, max-age=${maxAge}, stale-while-revalidate=${swr}`,
-      "ETag": etag,
+      ETag: etag,
     },
   });
 }

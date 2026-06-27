@@ -24,15 +24,15 @@
  *     v86 round-trip test in `test/migrate.test.ts`.
  */
 
-import { describe, test, expect, beforeAll, afterAll, beforeEach } from 'bun:test';
-import { PGLiteEngine } from '../../src/core/pglite-engine.ts';
-import { runThink, type ThinkLLMClient } from '../../src/core/think/index.ts';
+import { describe, test, expect, beforeAll, afterAll, beforeEach } from "bun:test";
+import { PGLiteEngine } from "../../src/core/pglite-engine.ts";
+import { runThink, type ThinkLLMClient } from "../../src/core/think/index.ts";
 
 let engine: PGLiteEngine;
 
 beforeAll(async () => {
   engine = new PGLiteEngine();
-  await engine.connect({ database_url: '' });
+  await engine.connect({ database_url: "" });
   await engine.initSchema();
 }, 60_000);
 
@@ -43,7 +43,9 @@ afterAll(async () => {
 beforeEach(async () => {
   // Clean slate per test — TRUNCATE everything content-bearing while
   // preserving infrastructure tables (sources, config).
-  await engine.executeRaw('TRUNCATE facts, takes, links, content_chunks, pages RESTART IDENTITY CASCADE');
+  await engine.executeRaw(
+    "TRUNCATE facts, takes, links, content_chunks, pages RESTART IDENTITY CASCADE"
+  );
 });
 
 /** Capture-only LLM client — returns a stubbed JSON-parseable answer. */
@@ -56,15 +58,15 @@ function captureClient(): {
     create: async (params) => {
       const userMsg = params.messages[0]?.content;
       captured.push({
-        system: typeof params.system === 'string' ? params.system : '',
-        user: typeof userMsg === 'string' ? userMsg : JSON.stringify(userMsg),
+        system: typeof params.system === "string" ? params.system : "",
+        user: typeof userMsg === "string" ? userMsg : JSON.stringify(userMsg),
       });
       return {
-        id: 'stub',
-        type: 'message',
-        role: 'assistant',
-        model: 'stub',
-        stop_reason: 'end_turn',
+        id: "stub",
+        type: "message",
+        role: "assistant",
+        model: "stub",
+        stop_reason: "end_turn",
         stop_sequence: null,
         usage: {
           input_tokens: 1,
@@ -76,9 +78,9 @@ function captureClient(): {
         },
         content: [
           {
-            type: 'text',
+            type: "text",
             text: JSON.stringify({
-              answer: 'stubbed e2e answer',
+              answer: "stubbed e2e answer",
               citations: [],
               gaps: [],
             }),
@@ -92,15 +94,15 @@ function captureClient(): {
 
 async function seedFounder(): Promise<void> {
   // Seed a realistic founder entity with mixed metric + event facts.
-  await engine.putPage('people/marco-example', {
-    title: 'Marco Example',
-    type: 'person',
-    compiled_truth: 'Marco is the founder of acme-example.',
+  await engine.putPage("people/marco-example", {
+    title: "Marco Example",
+    type: "person",
+    compiled_truth: "Marco is the founder of acme-example.",
   });
-  await engine.putPage('companies/acme-example', {
-    title: 'Acme Example',
-    type: 'company',
-    compiled_truth: 'Acme is a B2B SaaS company.',
+  await engine.putPage("companies/acme-example", {
+    title: "Acme Example",
+    type: "company",
+    compiled_truth: "Acme is a B2B SaaS company.",
   });
 
   // 3 metric rows (mrr trajectory) + 2 event rows on Marco.
@@ -134,108 +136,108 @@ async function seedFounder(): Promise<void> {
   `);
 }
 
-describe('e2e/think-trajectory: temporal intent end-to-end', () => {
-  test('full pipeline lands a <trajectory> block in the answer-gen prompt', async () => {
+describe("e2e/think-trajectory: temporal intent end-to-end", () => {
+  test("full pipeline lands a <trajectory> block in the answer-gen prompt", async () => {
     await seedFounder();
     const { client, captured } = captureClient();
 
     const result = await runThink(engine, {
-      question: 'When did Marco last switch jobs?',
+      question: "When did Marco last switch jobs?",
       client,
     });
 
     // Pipeline ran through to LLM call.
     expect(captured.length).toBe(1);
-    expect(result.answer).toBe('stubbed e2e answer');
+    expect(result.answer).toBe("stubbed e2e answer");
 
     const userMsg = captured[0].user;
     // Trajectory block lands in the prompt.
-    expect(userMsg).toContain('Known trajectory:');
+    expect(userMsg).toContain("Known trajectory:");
     expect(userMsg).toContain('<trajectory entity="people/marco-example"');
     // Marco has both metric (role) and event (meeting) rows; both groups render.
     expect(userMsg).toContain('metric="role"');
     expect(userMsg).toContain('event_type="meeting"');
     // The pipeline records the points it injected.
-    expect(result.warnings.some(w => w.startsWith('TRAJECTORY_INJECTED_'))).toBe(true);
+    expect(result.warnings.some((w) => w.startsWith("TRAJECTORY_INJECTED_"))).toBe(true);
   });
 
-  test('knowledge_update intent annotates value-change rows with (superseded prior)', async () => {
+  test("knowledge_update intent annotates value-change rows with (superseded prior)", async () => {
     await seedFounder();
     const { client, captured } = captureClient();
 
     await runThink(engine, {
-      question: 'What is the current role for marco?',
+      question: "What is the current role for marco?",
       client,
     });
 
     const userMsg = captured[0].user;
     // KU intent → supersession annotation fires on the 2nd and 3rd role rows.
-    expect(userMsg).toContain('(superseded prior)');
+    expect(userMsg).toContain("(superseded prior)");
     // The first role row (engineer) has no prior, so no annotation there.
     expect(userMsg).toMatch(/as of 2026-01-01: 1 .* engineer at acme(?!.*superseded)/);
   });
 });
 
-describe('e2e/think-trajectory: other intent short-circuits', () => {
-  test('non-temporal question produces no trajectory block', async () => {
+describe("e2e/think-trajectory: other intent short-circuits", () => {
+  test("non-temporal question produces no trajectory block", async () => {
     await seedFounder();
     const { client, captured } = captureClient();
 
     await runThink(engine, {
-      question: 'Summarize the company',
+      question: "Summarize the company",
       client,
     });
 
-    expect(captured[0].user).not.toContain('Known trajectory:');
-    expect(captured[0].user).not.toContain('<trajectory');
+    expect(captured[0].user).not.toContain("Known trajectory:");
+    expect(captured[0].user).not.toContain("<trajectory");
   });
 });
 
-describe('e2e/think-trajectory: kill switch via think.trajectory_enabled', () => {
-  test('config flag set to false bypasses the entire trajectory path', async () => {
+describe("e2e/think-trajectory: kill switch via think.trajectory_enabled", () => {
+  test("config flag set to false bypasses the entire trajectory path", async () => {
     await seedFounder();
     await engine.executeRaw(
       `INSERT INTO config (key, value) VALUES ('think.trajectory_enabled', 'false')
-       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`
     );
 
     const { client, captured } = captureClient();
     await runThink(engine, {
-      question: 'When did Marco last switch jobs?',
+      question: "When did Marco last switch jobs?",
       client,
     });
 
-    expect(captured[0].user).not.toContain('Known trajectory:');
+    expect(captured[0].user).not.toContain("Known trajectory:");
 
     // Cleanup so other tests in this describe don't inherit the flag.
     await engine.executeRaw(`DELETE FROM config WHERE key = 'think.trajectory_enabled'`);
   });
 });
 
-describe('e2e/think-trajectory: empty brain (no facts) graceful no-op', () => {
-  test('temporal question with no facts → no trajectory block (no crash)', async () => {
+describe("e2e/think-trajectory: empty brain (no facts) graceful no-op", () => {
+  test("temporal question with no facts → no trajectory block (no crash)", async () => {
     // No seedFounder(); brain is empty of facts.
     const { client, captured } = captureClient();
 
     const result = await runThink(engine, {
-      question: 'When did Marco last switch jobs?',
+      question: "When did Marco last switch jobs?",
       client,
     });
 
     // No block emitted, but the call succeeds and returns the stub answer.
-    expect(captured[0].user).not.toContain('Known trajectory:');
-    expect(result.answer).toBe('stubbed e2e answer');
+    expect(captured[0].user).not.toContain("Known trajectory:");
+    expect(result.answer).toBe("stubbed e2e answer");
   });
 });
 
-describe('e2e/think-trajectory: multi-entity ordering deterministic', () => {
-  test('multiple entity candidates → blocks sorted by entity slug (alphabetical)', async () => {
+describe("e2e/think-trajectory: multi-entity ordering deterministic", () => {
+  test("multiple entity candidates → blocks sorted by entity slug (alphabetical)", async () => {
     await seedFounder();
     const { client, captured } = captureClient();
 
     // Question references both Marco and Acme — both have facts.
     await runThink(engine, {
-      question: 'when did marco at acme last change roles',
+      question: "when did marco at acme last change roles",
       client,
     });
 
@@ -246,19 +248,19 @@ describe('e2e/think-trajectory: multi-entity ordering deterministic', () => {
     // The multi-entity order across blocks is governed by the
     // candidate-extraction order, which is itself deterministic.
     // Pin: if both render, the question has at least one trajectory block.
-    if (userMsg.includes('Known trajectory:')) {
+    if (userMsg.includes("Known trajectory:")) {
       const trajCount = (userMsg.match(/<trajectory entity/g) ?? []).length;
       expect(trajCount).toBeGreaterThanOrEqual(1);
     }
   });
 });
 
-describe('e2e/think-trajectory: prompt sanitization end-to-end', () => {
-  test('adversarial </trajectory> in a seeded fact text is escaped before the LLM sees it', async () => {
-    await engine.putPage('people/eve-example', {
-      title: 'Eve Example',
-      type: 'person',
-      compiled_truth: 'Eve.',
+describe("e2e/think-trajectory: prompt sanitization end-to-end", () => {
+  test("adversarial </trajectory> in a seeded fact text is escaped before the LLM sees it", async () => {
+    await engine.putPage("people/eve-example", {
+      title: "Eve Example",
+      type: "person",
+      compiled_truth: "Eve.",
     });
     await engine.executeRaw(`
       INSERT INTO facts (
@@ -273,14 +275,14 @@ describe('e2e/think-trajectory: prompt sanitization end-to-end', () => {
 
     const { client, captured } = captureClient();
     await runThink(engine, {
-      question: 'When did I meet eve?',
+      question: "When did I meet eve?",
       client,
     });
 
     const userMsg = captured[0].user;
-    if (userMsg.includes('Known trajectory:')) {
+    if (userMsg.includes("Known trajectory:")) {
       // Adversarial </trajectory> in the fact text is escaped.
-      expect(userMsg).toContain('&lt;/trajectory&gt;');
+      expect(userMsg).toContain("&lt;/trajectory&gt;");
       // The wrapping </trajectory> from the formatter is still present
       // (that's expected — it's our own tag). Count live closes: equal
       // to the number of trajectory blocks emitted.
@@ -289,7 +291,7 @@ describe('e2e/think-trajectory: prompt sanitization end-to-end', () => {
       expect(liveCloses).toBe(blocks);
       // The <system> injection is also escaped (close-take pattern via
       // the open-system entry).
-      expect(userMsg).toContain('&lt;system&gt;');
+      expect(userMsg).toContain("&lt;system&gt;");
     }
   });
 });

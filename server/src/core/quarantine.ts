@@ -36,7 +36,7 @@
 // ---------------------------------------------------------------------------
 
 /** Frontmatter key for the HIDE marker. Stable contract. */
-export const QUARANTINE_KEY = 'quarantine';
+export const QUARANTINE_KEY = "quarantine";
 
 /** SQL fragment that excludes quarantined pages from search, parameterized on
  *  the page-table alias. Single source of truth — `buildVisibilityClause`
@@ -51,11 +51,11 @@ export function quarantineFilterFragment(pageAlias: string): string {
 /** The `p`-aliased instance — the common case (all 6 search call sites alias
  *  pages as `p`). Kept as a constant for parity with `EMBED_SKIP_FILTER_FRAGMENT`
  *  and for any future stale/orphan-chunk query that needs it. */
-export const QUARANTINE_FILTER_FRAGMENT = quarantineFilterFragment('p');
+export const QUARANTINE_FILTER_FRAGMENT = quarantineFilterFragment("p");
 
 export interface QuarantineMarker {
   /** Why the page was quarantined. The high-confidence junk reasons. */
-  reason: 'junk_pattern' | 'literal_substring';
+  reason: "junk_pattern" | "literal_substring";
   /** Human-readable detail (which pattern/literal names fired). */
   detail: string;
   /** ISO 8601 timestamp at assessment time. */
@@ -67,9 +67,9 @@ export interface QuarantineMarker {
 /** Build the canonical quarantine marker. Spread onto frontmatter before
  *  write: `frontmatter[QUARANTINE_KEY] = buildQuarantineMarker(...)`. */
 export function buildQuarantineMarker(
-  reason: QuarantineMarker['reason'],
+  reason: QuarantineMarker["reason"],
   detail: string,
-  extra: { bytes?: number; now?: Date } = {},
+  extra: { bytes?: number; now?: Date } = {}
 ): QuarantineMarker {
   return {
     reason,
@@ -90,7 +90,7 @@ export function isQuarantined(frontmatter: Record<string, unknown> | null | unde
 
 /** JS-side filter: returns a new array with quarantined pages excluded. */
 export function filterOutQuarantined<T extends { frontmatter?: Record<string, unknown> | null }>(
-  pages: ReadonlyArray<T>,
+  pages: ReadonlyArray<T>
 ): T[] {
   return pages.filter((p) => !isQuarantined(p.frontmatter ?? null));
 }
@@ -100,11 +100,11 @@ export function filterOutQuarantined<T extends { frontmatter?: Record<string, un
 // ---------------------------------------------------------------------------
 
 /** Frontmatter key for the WARN marker. Stable contract. */
-export const CONTENT_FLAG_KEY = 'content_flag';
+export const CONTENT_FLAG_KEY = "content_flag";
 
 export interface ContentFlagMarker {
   /** Which fuzzy/oversize tier fired. */
-  reason: 'markup_heavy' | 'oversized';
+  reason: "markup_heavy" | "oversized";
   /** Human-readable detail surfaced to the agent on retrieval. */
   detail: string;
   /** ISO 8601 timestamp at assessment time. */
@@ -119,9 +119,9 @@ export interface ContentFlagMarker {
  *  SQL filter fragment for content_flag — flagged pages stay searchable; the
  *  marker is READ INTO search/get_page output, never used to exclude. */
 export function buildContentFlagMarker(
-  reason: ContentFlagMarker['reason'],
+  reason: ContentFlagMarker["reason"],
   detail: string,
-  extra: { markup_ratio?: number; bytes?: number; now?: Date } = {},
+  extra: { markup_ratio?: number; bytes?: number; now?: Date } = {}
 ): ContentFlagMarker {
   return {
     reason,
@@ -136,15 +136,15 @@ export function buildContentFlagMarker(
  *  validated loosely — a `reason` string is the minimum contract. Used by
  *  the search projection + get_page to populate the agent-warning channel. */
 export function getContentFlag(
-  frontmatter: Record<string, unknown> | null | undefined,
+  frontmatter: Record<string, unknown> | null | undefined
 ): { reason: string; detail: string } | null {
   if (!frontmatter) return null;
   const value = frontmatter[CONTENT_FLAG_KEY];
-  if (!value || typeof value !== 'object') return null;
+  if (!value || typeof value !== "object") return null;
   const obj = value as Record<string, unknown>;
-  const reason = typeof obj.reason === 'string' ? obj.reason : null;
+  const reason = typeof obj.reason === "string" ? obj.reason : null;
   if (!reason) return null;
-  return { reason, detail: typeof obj.detail === 'string' ? obj.detail : '' };
+  return { reason, detail: typeof obj.detail === "string" ? obj.detail : "" };
 }
 
 /** True when the frontmatter carries a content-flag marker. */

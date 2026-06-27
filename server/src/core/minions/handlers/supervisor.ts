@@ -28,11 +28,11 @@
  *                                  source-scoped bleibt
  */
 
-import type { MinionJobContext } from '../types.ts';
-import type { BrainEngine } from '../../engine.ts';
-import { MinionQueue } from '../queue.ts';
-import { resolveSpecialist } from '../specialist-defs.ts';
-import { parseMarkdown } from '../../markdown.ts';
+import type { MinionJobContext } from "../types.ts";
+import type { BrainEngine } from "../../engine.ts";
+import { MinionQueue } from "../queue.ts";
+import { resolveSpecialist } from "../specialist-defs.ts";
+import { parseMarkdown } from "../../markdown.ts";
 
 export interface SupervisorHandlerData {
   prompt: string;
@@ -114,14 +114,13 @@ export function makeSupervisorHandler(opts: { engine: BrainEngine }) {
 
   return async function supervisorHandler(ctx: MinionJobContext): Promise<SupervisorResult> {
     const data = (ctx.data ?? {}) as unknown as SupervisorHandlerData;
-    if (!data.prompt || typeof data.prompt !== 'string') {
-      throw new Error('supervisor job data.prompt is required (string)');
+    if (!data.prompt || typeof data.prompt !== "string") {
+      throw new Error("supervisor job data.prompt is required (string)");
     }
 
     const queue = new MinionQueue(engine);
-    const sourceStamp = typeof data._source_id === 'string' && data._source_id
-      ? data._source_id
-      : undefined;
+    const sourceStamp =
+      typeof data._source_id === "string" && data._source_id ? data._source_id : undefined;
 
     // ── v0.43: Case Context Auto-Load ───────────────────────
     let caseContext: CaseContext | null = null;
@@ -140,7 +139,7 @@ export function makeSupervisorHandler(opts: { engine: BrainEngine }) {
       // Operator hat Specialists explizit vorgegeben — sequentielle Kette,
       // jeder Schritt sieht das Ergebnis des vorherigen.
       plan = {
-        reasoning: 'Operator-specified specialist sequence',
+        reasoning: "Operator-specified specialist sequence",
         steps: data.force_specialists.map((name, idx) => ({
           specialist: name,
           prompt: enrichedPrompt,
@@ -160,7 +159,11 @@ export function makeSupervisorHandler(opts: { engine: BrainEngine }) {
     }
 
     const totalSteps = plan.steps.length + 2;
-    await ctx.updateProgress({ step: 1, total: totalSteps, message: 'Plan created — launching specialists' });
+    await ctx.updateProgress({
+      step: 1,
+      total: totalSteps,
+      message: "Plan created — launching specialists",
+    });
 
     // ── Schritt 2+3: Wellen ausführen ───────────────────────
     // buildExecutionWaves gruppiert Schritte so, dass jeder Schritt erst
@@ -188,14 +191,14 @@ export function makeSupervisorHandler(opts: { engine: BrainEngine }) {
         if (sourceStamp) childData._source_id = sourceStamp;
 
         const child = await queue.add(
-          'subagent',
+          "subagent",
           childData,
           {
             parent_job_id: ctx.id,
-            on_child_fail: 'continue', // mixed outcomes allowed
+            on_child_fail: "continue", // mixed outcomes allowed
             max_stalled: 3,
           },
-          { allowProtectedSubmit: true },
+          { allowProtectedSubmit: true }
         );
         waveChildIds.push(child.id);
         childIdToStep.set(child.id, stepIdx);
@@ -205,7 +208,7 @@ export function makeSupervisorHandler(opts: { engine: BrainEngine }) {
       await ctx.updateProgress({
         step: 1 + launched,
         total: totalSteps,
-        message: `Wave running: ${wave.map(i => plan.steps[i]!.specialist).join(', ')}`,
+        message: `Wave running: ${wave.map((i) => plan.steps[i]!.specialist).join(", ")}`,
       });
 
       const waveResults = await collector.waitFor(waveChildIds, 30 * 60 * 1000);
@@ -213,35 +216,44 @@ export function makeSupervisorHandler(opts: { engine: BrainEngine }) {
         const stepIdx = childIdToStep.get(childId)!;
         const specialist = plan.steps[stepIdx]!.specialist;
         const found = waveResults.get(childId);
-        stepResults.set(stepIdx, found
-          ? { ...found, specialist }
-          : {
-            child_id: childId,
-            specialist,
-            outcome: 'failed',
-            result: null,
-            error: 'Timed out waiting for child completion',
-          });
+        stepResults.set(
+          stepIdx,
+          found
+            ? { ...found, specialist }
+            : {
+                child_id: childId,
+                specialist,
+                outcome: "failed",
+                result: null,
+                error: "Timed out waiting for child completion",
+              }
+        );
       }
     }
 
-    const children: SupervisorChildResult[] = plan.steps.map((step, idx) =>
-      stepResults.get(idx) ?? {
-        child_id: -1,
-        specialist: step.specialist,
-        outcome: 'failed',
-        result: null,
-        error: 'Step was never launched',
-      },
+    const children: SupervisorChildResult[] = plan.steps.map(
+      (step, idx) =>
+        stepResults.get(idx) ?? {
+          child_id: -1,
+          specialist: step.specialist,
+          outcome: "failed",
+          result: null,
+          error: "Step was never launched",
+        }
     );
 
-    await ctx.updateProgress({ step: totalSteps - 1, total: totalSteps, message: 'All specialists complete — synthesizing' });
+    await ctx.updateProgress({
+      step: totalSteps - 1,
+      total: totalSteps,
+      message: "All specialists complete — synthesizing",
+    });
 
     // ── Schritt 4: Synthese ─────────────────────────────────
     let synthesis: string;
     if (data.aggregate_with_llm) {
-      synthesis = await synthesizeWithLlm(data.prompt, children, plan, data.supervisor_model)
-        .catch(() => synthesizeResults(children, plan));
+      synthesis = await synthesizeWithLlm(data.prompt, children, plan, data.supervisor_model).catch(
+        () => synthesizeResults(children, plan)
+      );
     } else {
       synthesis = synthesizeResults(children, plan);
     }
@@ -252,46 +264,48 @@ export function makeSupervisorHandler(opts: { engine: BrainEngine }) {
     if (!data.skip_critic) {
       const criticMsg = await runChild(queue, collector, ctx, {
         prompt: `Review the following legal analysis for accuracy, completeness, and citation quality.\n\n${synthesis}`,
-        subagent_def: 'legal-critic',
+        subagent_def: "legal-critic",
         max_turns: 20,
         ...(sourceStamp ? { _source_id: sourceStamp } : {}),
       });
 
-      if (criticMsg && criticMsg.outcome === 'complete') {
-        criticReview = typeof criticMsg.result === 'string'
-          ? criticMsg.result
-          : JSON.stringify(criticMsg.result);
+      if (criticMsg && criticMsg.outcome === "complete") {
+        criticReview =
+          typeof criticMsg.result === "string"
+            ? criticMsg.result
+            : JSON.stringify(criticMsg.result);
 
         // Eine Überarbeitungsrunde, wenn der Critic revise/reject empfiehlt.
         // Die Revision macht der letzte Specialist des Plans (er kennt die
         // Aufgabenstellung des finalen Outputs am besten).
         if (criticRecommendsRevision(criticReview)) {
-          const reviser = plan.steps[plan.steps.length - 1]?.specialist ?? 'legal-researcher';
+          const reviser = plan.steps[plan.steps.length - 1]?.specialist ?? "legal-researcher";
           const reviseMsg = await runChild(queue, collector, ctx, {
             prompt: [
-              'Überarbeite die folgende Analyse anhand des Critic-Feedbacks.',
-              'Behebe jeden genannten Mangel. Behalte korrekte Teile bei.',
-              '',
-              '## Ursprüngliche Analyse',
+              "Überarbeite die folgende Analyse anhand des Critic-Feedbacks.",
+              "Behebe jeden genannten Mangel. Behalte korrekte Teile bei.",
+              "",
+              "## Ursprüngliche Analyse",
               synthesis,
-              '',
-              '## Critic-Feedback',
+              "",
+              "## Critic-Feedback",
               criticReview,
-            ].join('\n'),
+            ].join("\n"),
             subagent_def: reviser,
             max_turns: 20,
             ...(sourceStamp ? { _source_id: sourceStamp } : {}),
           });
-          if (reviseMsg && reviseMsg.outcome === 'complete' && reviseMsg.result != null) {
-            revisedSynthesis = typeof reviseMsg.result === 'string'
-              ? reviseMsg.result
-              : JSON.stringify(reviseMsg.result);
+          if (reviseMsg && reviseMsg.outcome === "complete" && reviseMsg.result != null) {
+            revisedSynthesis =
+              typeof reviseMsg.result === "string"
+                ? reviseMsg.result
+                : JSON.stringify(reviseMsg.result);
           }
         }
       }
     }
 
-    await ctx.updateProgress({ step: totalSteps, total: totalSteps, message: 'Done' });
+    await ctx.updateProgress({ step: totalSteps, total: totalSteps, message: "Done" });
 
     // ── v0.43: Persistiere das Ergebnis als Brain-Page ───────────
     // Damit landet die Agent-Analyse im normalen Brain-Zyklus:
@@ -311,18 +325,22 @@ export function makeSupervisorHandler(opts: { engine: BrainEngine }) {
     });
     try {
       const parsed = parseMarkdown(resultMd);
-      await engine.putPage(resultSlug, {
-        type: 'agent_run',
-        title: parsed.title ?? `Agent-Analyse #${ctx.id}`,
-        compiled_truth: parsed.compiled_truth ?? resultMd,
-        frontmatter: {
-          ...(parsed.frontmatter ?? {}),
-          agent_job_id: ctx.id,
-          agent_type: 'supervisor',
-          ...(caseContext ? { case_slug: caseContext.slug } : {}),
-          ...(data.supervisor_model ? { model: data.supervisor_model } : {}),
+      await engine.putPage(
+        resultSlug,
+        {
+          type: "agent_run",
+          title: parsed.title ?? `Agent-Analyse #${ctx.id}`,
+          compiled_truth: parsed.compiled_truth ?? resultMd,
+          frontmatter: {
+            ...(parsed.frontmatter ?? {}),
+            agent_job_id: ctx.id,
+            agent_type: "supervisor",
+            ...(caseContext ? { case_slug: caseContext.slug } : {}),
+            ...(data.supervisor_model ? { model: data.supervisor_model } : {}),
+          },
         },
-      }, { sourceId: sourceStamp });
+        { sourceId: sourceStamp }
+      );
     } catch (e) {
       // Non-fatal: the job result is still returned; the page write
       // is best-effort so we don't fail a successful analysis.
@@ -355,90 +373,103 @@ interface AgentRunMarkdownOpts {
 }
 
 function buildAgentRunMarkdown(opts: AgentRunMarkdownOpts): string {
-  const { prompt, jobId, caseContext, plan, children, synthesis, criticReview, revisedSynthesis, model } = opts;
+  const {
+    prompt,
+    jobId,
+    caseContext,
+    plan,
+    children,
+    synthesis,
+    criticReview,
+    revisedSynthesis,
+    model,
+  } = opts;
   const dateIso = new Date().toISOString();
   const lines: string[] = [];
 
-  lines.push('---');
-  lines.push(`title: "Agent-Analyse #${jobId}${caseContext ? ` — ${caseContext.title}` : ''}"`);
+  lines.push("---");
+  lines.push(`title: "Agent-Analyse #${jobId}${caseContext ? ` — ${caseContext.title}` : ""}"`);
   lines.push(`type: agent_run`);
   lines.push(`agent_job_id: ${jobId}`);
   lines.push(`agent_type: supervisor`);
   lines.push(`date: ${dateIso}`);
   if (model) lines.push(`model: ${model}`);
   if (caseContext) lines.push(`case_slug: ${caseContext.slug}`);
-  lines.push('---');
-  lines.push('');
+  lines.push("---");
+  lines.push("");
 
-  lines.push('## Aufgabe');
+  lines.push("## Aufgabe");
   lines.push(prompt);
-  lines.push('');
+  lines.push("");
 
   if (caseContext) {
-    lines.push('## Akten-Kontext');
+    lines.push("## Akten-Kontext");
     lines.push(`Akte: [${caseContext.title}](${caseContext.slug})`);
     if (caseContext.deadlines.length > 0) {
-      lines.push('');
-      lines.push('### Fristen');
+      lines.push("");
+      lines.push("### Fristen");
       for (const d of caseContext.deadlines) {
-        lines.push(`- ${d.title}${d.due_date ? ` (bis ${d.due_date})` : ''}`);
+        lines.push(`- ${d.title}${d.due_date ? ` (bis ${d.due_date})` : ""}`);
       }
     }
     if (caseContext.evidence.length > 0) {
-      lines.push('');
-      lines.push('### Beweismittel');
+      lines.push("");
+      lines.push("### Beweismittel");
       for (const e of caseContext.evidence) {
-        lines.push(`- ${e.title}${e.type ? ` (${e.type})` : ''}`);
+        lines.push(`- ${e.title}${e.type ? ` (${e.type})` : ""}`);
       }
     }
-    lines.push('');
+    lines.push("");
   }
 
-  lines.push('## Plan');
+  lines.push("## Plan");
   lines.push(plan.reasoning);
-  lines.push('');
+  lines.push("");
   for (let i = 0; i < plan.steps.length; i++) {
     const step = plan.steps[i]!;
-    lines.push(`${i + 1}. **${step.specialist}**${step.depends_on != null ? ` (hängt ab von Schritt ${step.depends_on + 1})` : ''}`);
-    lines.push(`   > ${step.prompt.slice(0, 200)}${step.prompt.length > 200 ? '…' : ''}`);
+    lines.push(
+      `${i + 1}. **${step.specialist}**${step.depends_on != null ? ` (hängt ab von Schritt ${step.depends_on + 1})` : ""}`
+    );
+    lines.push(`   > ${step.prompt.slice(0, 200)}${step.prompt.length > 200 ? "…" : ""}`);
   }
-  lines.push('');
+  lines.push("");
 
-  lines.push('## Ergebnis');
+  lines.push("## Ergebnis");
   lines.push(synthesis);
-  lines.push('');
+  lines.push("");
 
   if (revisedSynthesis) {
-    lines.push('## Überarbeitetes Ergebnis (nach Critic)');
+    lines.push("## Überarbeitetes Ergebnis (nach Critic)");
     lines.push(revisedSynthesis);
-    lines.push('');
+    lines.push("");
   }
 
   if (criticReview) {
-    lines.push('## Critic-Review');
+    lines.push("## Critic-Review");
     lines.push(criticReview);
-    lines.push('');
+    lines.push("");
   }
 
-  lines.push('## Specialist-Ergebnisse');
+  lines.push("## Specialist-Ergebnisse");
   for (const child of children) {
-    const status = child.outcome === 'complete' ? '✅' : child.outcome === 'failed' ? '❌' : '⏳';
+    const status = child.outcome === "complete" ? "✅" : child.outcome === "failed" ? "❌" : "⏳";
     lines.push(`### ${status} ${child.specialist} (#${child.child_id})`);
     if (child.result) {
-      const text = typeof child.result === 'string' ? child.result : JSON.stringify(child.result, null, 2);
+      const text =
+        typeof child.result === "string" ? child.result : JSON.stringify(child.result, null, 2);
       lines.push(text.slice(0, 500));
-      if (text.length > 500) lines.push('…');
+      if (text.length > 500) lines.push("…");
     }
     if (child.error) {
       lines.push(`**Fehler:** ${child.error}`);
     }
-    lines.push('');
+    lines.push("");
   }
 
-  lines.push('---');
-  lines.push(`*Generiert von Subsumio Supervisor am ${new Date().toLocaleString('de-DE')}*`);
+  lines.push("---");
+  lines.push(`*Generiert von Subsumio Supervisor am ${new Date().toLocaleString("de-DE")}*`);
 
-  return lines.join('\n');
+  return lines.join("\n");
 }
 
 // ── Wellen-Planung (pur, testbar) ───────────────────────────
@@ -454,9 +485,8 @@ export function buildExecutionWaves(steps: ReadonlyArray<SupervisorStep>): numbe
   const waveOf = new Map<number, number>();
   for (let i = 0; i < steps.length; i++) {
     const dep = steps[i]!.depends_on;
-    const validDep = typeof dep === 'number' && Number.isInteger(dep) && dep >= 0 && dep < i
-      ? dep
-      : undefined;
+    const validDep =
+      typeof dep === "number" && Number.isInteger(dep) && dep >= 0 && dep < i ? dep : undefined;
     const wave = validDep === undefined ? 0 : waveOf.get(validDep)! + 1;
     waveOf.set(i, wave);
     (waves[wave] ??= []).push(i);
@@ -471,18 +501,19 @@ export function buildExecutionWaves(steps: ReadonlyArray<SupervisorStep>): numbe
 export function withDependencyContext(
   step: SupervisorStep,
   steps: ReadonlyArray<SupervisorStep>,
-  results: ReadonlyMap<number, SupervisorChildResult>,
+  results: ReadonlyMap<number, SupervisorChildResult>
 ): string {
   const dep = step.depends_on;
-  if (typeof dep !== 'number') return step.prompt;
+  if (typeof dep !== "number") return step.prompt;
   const depResult = results.get(dep);
-  if (!depResult || depResult.outcome !== 'complete' || depResult.result == null) {
+  if (!depResult || depResult.outcome !== "complete" || depResult.result == null) {
     return step.prompt;
   }
-  const resultText = typeof depResult.result === 'string'
-    ? depResult.result
-    : JSON.stringify(depResult.result, null, 2);
-  const specialist = steps[dep]?.specialist ?? 'specialist';
+  const resultText =
+    typeof depResult.result === "string"
+      ? depResult.result
+      : JSON.stringify(depResult.result, null, 2);
+  const specialist = steps[dep]?.specialist ?? "specialist";
   return `${step.prompt}\n\n## Kontext: Ergebnis aus Schritt ${dep + 1} (${specialist})\n\n${resultText}`;
 }
 
@@ -507,29 +538,81 @@ interface CaseContext {
 async function loadCaseContext(
   engine: BrainEngine,
   prompt: string,
-  sourceId?: string,
+  sourceId?: string
 ): Promise<CaseContext | null> {
   // Extract meaningful search terms from the prompt
   const stopWords = new Set([
-    'analyse', 'recherchiere', 'prüfe', 'die', 'der', 'das', 'ein', 'eine',
-    'und', 'oder', 'mit', 'für', 'zur', 'zum', 'von', 'zu', 'im', 'in',
-    'den', 'dem', 'des', 'nach', 'bei', 'aus', 'wie', 'was', 'wenn',
-    'dass', 'sich', 'hat', 'ist', 'sind', 'wurde', 'werden', 'kann',
-    'soll', 'muss', 'was', 'sind', 'wird', 'wurden', 'hatte', 'hatten',
-    'diese', 'dieser', 'dieses', 'alle', 'auch', 'nur', 'noch', 'schon',
-    'bereits', 'jetzt', 'dann', 'wenn', 'als', 'also', 'somit', 'daher',
+    "analyse",
+    "recherchiere",
+    "prüfe",
+    "die",
+    "der",
+    "das",
+    "ein",
+    "eine",
+    "und",
+    "oder",
+    "mit",
+    "für",
+    "zur",
+    "zum",
+    "von",
+    "zu",
+    "im",
+    "in",
+    "den",
+    "dem",
+    "des",
+    "nach",
+    "bei",
+    "aus",
+    "wie",
+    "was",
+    "wenn",
+    "dass",
+    "sich",
+    "hat",
+    "ist",
+    "sind",
+    "wurde",
+    "werden",
+    "kann",
+    "soll",
+    "muss",
+    "was",
+    "sind",
+    "wird",
+    "wurden",
+    "hatte",
+    "hatten",
+    "diese",
+    "dieser",
+    "dieses",
+    "alle",
+    "auch",
+    "nur",
+    "noch",
+    "schon",
+    "bereits",
+    "jetzt",
+    "dann",
+    "wenn",
+    "als",
+    "also",
+    "somit",
+    "daher",
   ]);
   const searchTerms = prompt
     .toLowerCase()
-    .replace(/[^\w\säöüß\-]/g, ' ')
+    .replace(/[^\w\säöüß\-]/g, " ")
     .split(/\s+/)
-    .filter(w => w.length > 3 && !stopWords.has(w))
+    .filter((w) => w.length > 3 && !stopWords.has(w))
     .slice(0, 5);
 
   if (searchTerms.length === 0) return null;
 
-  const pattern = `%${searchTerms.join('%')}%`;
-  const sourceClause = sourceId ? `AND source_id = $2` : '';
+  const pattern = `%${searchTerms.join("%")}%`;
+  const sourceClause = sourceId ? `AND source_id = $2` : "";
   const params: unknown[] = sourceId ? [pattern, sourceId] : [pattern];
 
   const [caseRow] = await engine.executeRaw<{
@@ -546,17 +629,18 @@ async function loadCaseContext(
        ${sourceClause}
      ORDER BY updated_at DESC
      LIMIT 1`,
-    params,
+    params
   );
 
   if (!caseRow) return null;
 
-  const fm = typeof caseRow.frontmatter === 'string'
-    ? JSON.parse(caseRow.frontmatter) as Record<string, unknown>
-    : (caseRow.frontmatter as Record<string, unknown> ?? {});
+  const fm =
+    typeof caseRow.frontmatter === "string"
+      ? (JSON.parse(caseRow.frontmatter) as Record<string, unknown>)
+      : ((caseRow.frontmatter as Record<string, unknown>) ?? {});
 
   // Load related pages (deadlines, evidence, etc.)
-  const sourceClause2 = sourceId ? `AND source_id = $2` : '';
+  const sourceClause2 = sourceId ? `AND source_id = $2` : "";
   const params2: unknown[] = [caseRow.slug];
   if (sourceId) params2.push(sourceId);
 
@@ -576,28 +660,30 @@ async function loadCaseContext(
        )
        ${sourceClause2}
      ORDER BY type, updated_at DESC`,
-    params2,
+    params2
   );
 
   const deadlines = related
-    .filter(r => r.type === 'legal_deadline')
-    .map(r => {
-      const rFm = typeof r.frontmatter === 'string'
-        ? JSON.parse(r.frontmatter) as Record<string, unknown>
-        : (r.frontmatter ?? {}) as Record<string, unknown>;
+    .filter((r) => r.type === "legal_deadline")
+    .map((r) => {
+      const rFm =
+        typeof r.frontmatter === "string"
+          ? (JSON.parse(r.frontmatter) as Record<string, unknown>)
+          : ((r.frontmatter ?? {}) as Record<string, unknown>);
       return {
         title: r.title,
-        due_date: String(rFm.due_date ?? ''),
-        status: String(rFm.status ?? ''),
+        due_date: String(rFm.due_date ?? ""),
+        status: String(rFm.status ?? ""),
       };
     });
 
   const evidence = related
-    .filter(r => r.type === 'evidence' || r.type === 'document' || r.type === 'page')
-    .map(r => {
-      const rFm = typeof r.frontmatter === 'string'
-        ? JSON.parse(r.frontmatter) as Record<string, unknown>
-        : (r.frontmatter ?? {}) as Record<string, unknown>;
+    .filter((r) => r.type === "evidence" || r.type === "document" || r.type === "page")
+    .map((r) => {
+      const rFm =
+        typeof r.frontmatter === "string"
+          ? (JSON.parse(r.frontmatter) as Record<string, unknown>)
+          : ((r.frontmatter ?? {}) as Record<string, unknown>);
       return {
         title: r.title,
         type: String(rFm.doc_type ?? rFm.type ?? r.type),
@@ -616,41 +702,43 @@ async function loadCaseContext(
 function formatCaseContext(ctx: CaseContext): string {
   const lines: string[] = [];
   lines.push(`Akte: ${ctx.title} (${ctx.slug})`);
-  lines.push('');
+  lines.push("");
   if (ctx.content) {
-    lines.push('## Akteninhalt (Auszug)');
+    lines.push("## Akteninhalt (Auszug)");
     lines.push(ctx.content);
-    lines.push('');
+    lines.push("");
   }
   if (ctx.deadlines.length > 0) {
-    lines.push('## Fristen');
+    lines.push("## Fristen");
     for (const d of ctx.deadlines) {
-      lines.push(`- ${d.title}${d.due_date ? ` (bis ${d.due_date})` : ''}${d.status ? ` [${d.status}]` : ''}`);
+      lines.push(
+        `- ${d.title}${d.due_date ? ` (bis ${d.due_date})` : ""}${d.status ? ` [${d.status}]` : ""}`
+      );
     }
-    lines.push('');
+    lines.push("");
   }
   if (ctx.evidence.length > 0) {
-    lines.push('## Beweismittel / Dokumente');
+    lines.push("## Beweismittel / Dokumente");
     for (const e of ctx.evidence) {
-      lines.push(`- ${e.title}${e.type ? ` (${e.type})` : ''}`);
+      lines.push(`- ${e.title}${e.type ? ` (${e.type})` : ""}`);
     }
-    lines.push('');
+    lines.push("");
   }
-  return lines.join('\n');
+  return lines.join("\n");
 }
 
 // ── Dekomposition ───────────────────────────────────────────
 
 async function decomposeTask(prompt: string, model?: string): Promise<SupervisorPlan> {
   // Wir nutzen die Gateway-API für einen schnellen, kostengünstigen Call
-  const { chat } = await import('../../ai/gateway.ts');
+  const { chat } = await import("../../ai/gateway.ts");
 
-  const resolvedModel = model ?? 'claude-haiku-4-5'; // Kostengünstig für Dekomposition
+  const resolvedModel = model ?? "claude-haiku-4-5"; // Kostengünstig für Dekomposition
 
   const result = await chat({
     model: resolvedModel,
     system: DECOMPOSITION_SYSTEM,
-    messages: [{ role: 'user', content: prompt }],
+    messages: [{ role: "user", content: prompt }],
   });
 
   const text = extractTextFromResult(result);
@@ -658,7 +746,7 @@ async function decomposeTask(prompt: string, model?: string): Promise<Supervisor
 }
 
 export function extractTextFromResult(result: unknown): string {
-  if (!result || typeof result !== 'object') return '';
+  if (!result || typeof result !== "object") return "";
   const r = result as { text?: string; content?: string; message?: { content?: string } };
   return r.text ?? r.content ?? r.message?.content ?? JSON.stringify(result);
 }
@@ -672,13 +760,13 @@ export function parsePlanJson(text: string): SupervisorPlan {
     const parsed = JSON.parse(jsonText);
     if (Array.isArray(parsed.steps) && parsed.steps.every(isValidStep)) {
       return {
-        reasoning: String(parsed.reasoning ?? 'No reasoning provided'),
+        reasoning: String(parsed.reasoning ?? "No reasoning provided"),
         steps: parsed.steps.map((s: unknown) => {
           const o = s as Record<string, unknown>;
           return {
             specialist: String(o.specialist),
             prompt: String(o.prompt),
-            ...(typeof o.depends_on === 'number' && Number.isInteger(o.depends_on)
+            ...(typeof o.depends_on === "number" && Number.isInteger(o.depends_on)
               ? { depends_on: o.depends_on }
               : {}),
           };
@@ -691,15 +779,15 @@ export function parsePlanJson(text: string): SupervisorPlan {
 
   // Fallback: Einzel-Schritt mit researcher
   return {
-    reasoning: 'Auto-decomposition failed — falling back to single legal-researcher step',
-    steps: [{ specialist: 'legal-researcher', prompt: text }],
+    reasoning: "Auto-decomposition failed — falling back to single legal-researcher step",
+    steps: [{ specialist: "legal-researcher", prompt: text }],
   };
 }
 
 function isValidStep(s: unknown): boolean {
-  if (!s || typeof s !== 'object') return false;
+  if (!s || typeof s !== "object") return false;
   const o = s as Record<string, unknown>;
-  return typeof o.specialist === 'string' && typeof o.prompt === 'string';
+  return typeof o.specialist === "string" && typeof o.prompt === "string";
 }
 
 // ── Inbox-Sammler ───────────────────────────────────────────
@@ -717,15 +805,15 @@ class InboxCollector {
   async waitFor(
     childIds: number[],
     maxWaitMs: number,
-    pollIntervalMs = 2000,
+    pollIntervalMs = 2000
   ): Promise<Map<number, SupervisorChildResult>> {
     const deadline = Date.now() + maxWaitMs;
     const wanted = new Set(childIds);
 
     while (Date.now() < deadline) {
-      if (childIds.every(id => this.buffer.has(id))) break;
+      if (childIds.every((id) => this.buffer.has(id))) break;
       await this.drainInbox();
-      if (childIds.every(id => this.buffer.has(id))) break;
+      if (childIds.every((id) => this.buffer.has(id))) break;
       await sleep(pollIntervalMs);
     }
 
@@ -744,9 +832,9 @@ class InboxCollector {
       if (!payload) continue;
       this.buffer.set(payload.child_id, {
         child_id: payload.child_id,
-        specialist: '', // wird vom Aufrufer über die Step-Zuordnung gesetzt
-        outcome: payload.outcome ?? 'failed',
-        result: payload.outcome === 'complete' ? payload.result : null,
+        specialist: "", // wird vom Aufrufer über die Step-Zuordnung gesetzt
+        outcome: payload.outcome ?? "failed",
+        result: payload.outcome === "complete" ? payload.result : null,
         error: payload.error ?? null,
       });
     }
@@ -758,17 +846,17 @@ async function runChild(
   queue: MinionQueue,
   collector: InboxCollector,
   ctx: MinionJobContext,
-  childData: Record<string, unknown>,
+  childData: Record<string, unknown>
 ): Promise<SupervisorChildResult | null> {
   const child = await queue.add(
-    'subagent',
+    "subagent",
     childData,
     {
       parent_job_id: ctx.id,
-      on_child_fail: 'continue',
+      on_child_fail: "continue",
       max_stalled: 3,
     },
-    { allowProtectedSubmit: true },
+    { allowProtectedSubmit: true }
   );
   const results = await collector.waitFor([child.id], 20 * 60 * 1000);
   return results.get(child.id) ?? null;
@@ -776,17 +864,14 @@ async function runChild(
 
 // ── Synthese ────────────────────────────────────────────────
 
-function synthesizeResults(
-  children: SupervisorChildResult[],
-  plan: SupervisorPlan,
-): string {
+function synthesizeResults(children: SupervisorChildResult[], plan: SupervisorPlan): string {
   const lines: string[] = [
-    '# Supervisor-Synthese',
-    '',
+    "# Supervisor-Synthese",
+    "",
     `**Plan:** ${plan.reasoning}`,
-    '',
-    '## Ergebnisse der Specialists',
-    '',
+    "",
+    "## Ergebnisse der Specialists",
+    "",
   ];
 
   for (const child of children) {
@@ -796,61 +881,70 @@ function synthesizeResults(
       lines.push(`**Fehler:** ${child.error}`);
     }
     if (child.result) {
-      const resultText = typeof child.result === 'string'
-        ? child.result
-        : JSON.stringify(child.result, null, 2);
-      lines.push('');
+      const resultText =
+        typeof child.result === "string" ? child.result : JSON.stringify(child.result, null, 2);
+      lines.push("");
       lines.push(resultText);
     }
-    lines.push('');
+    lines.push("");
   }
 
-  return lines.join('\n');
+  return lines.join("\n");
 }
 
 async function synthesizeWithLlm(
   userPrompt: string,
   children: SupervisorChildResult[],
   plan: SupervisorPlan,
-  model?: string,
+  model?: string
 ): Promise<string> {
-  const { chat } = await import('../../ai/gateway.ts');
+  const { chat } = await import("../../ai/gateway.ts");
   const raw = synthesizeResults(children, plan);
 
   const result = await chat({
-    model: model ?? 'claude-haiku-4-5',
+    model: model ?? "claude-haiku-4-5",
     system: [
-      'Du bist der Synthese-Schritt eines Legal-AI-Supervisors.',
-      'Du bekommst die Roh-Ergebnisse mehrerer Specialist-Agenten und die ursprüngliche Anfrage.',
-      'Verfasse EINE kohärente, strukturierte Antwort auf die Anfrage.',
-      'Übernimm Zitate (§§, Urteile, Quellen) exakt — erfinde nichts dazu.',
-      'Benenne Widersprüche zwischen den Specialists explizit, statt sie zu glätten.',
+      "Du bist der Synthese-Schritt eines Legal-AI-Supervisors.",
+      "Du bekommst die Roh-Ergebnisse mehrerer Specialist-Agenten und die ursprüngliche Anfrage.",
+      "Verfasse EINE kohärente, strukturierte Antwort auf die Anfrage.",
+      "Übernimm Zitate (§§, Urteile, Quellen) exakt — erfinde nichts dazu.",
+      "Benenne Widersprüche zwischen den Specialists explizit, statt sie zu glätten.",
       'Ende mit: "Diese Zusammenfassung ersetzt keine anwaltliche Prüfung."',
-    ].join('\n'),
-    messages: [{
-      role: 'user',
-      content: `## Ursprüngliche Anfrage\n\n${userPrompt}\n\n## Specialist-Ergebnisse\n\n${raw}`,
-    }],
+    ].join("\n"),
+    messages: [
+      {
+        role: "user",
+        content: `## Ursprüngliche Anfrage\n\n${userPrompt}\n\n## Specialist-Ergebnisse\n\n${raw}`,
+      },
+    ],
   });
 
   const text = extractTextFromResult(result).trim();
-  if (!text) throw new Error('empty LLM synthesis');
+  if (!text) throw new Error("empty LLM synthesis");
   return text;
 }
 
-function parseChildDone(payload: unknown): { child_id: number; outcome: string; result: unknown; error: string | null; job_name: string } | null {
-  if (!payload || typeof payload !== 'object') return null;
+function parseChildDone(
+  payload: unknown
+): {
+  child_id: number;
+  outcome: string;
+  result: unknown;
+  error: string | null;
+  job_name: string;
+} | null {
+  if (!payload || typeof payload !== "object") return null;
   const p = payload as Record<string, unknown>;
-  if (typeof p.child_id !== 'number') return null;
+  if (typeof p.child_id !== "number") return null;
   return {
     child_id: p.child_id,
-    outcome: String(p.outcome ?? ''),
+    outcome: String(p.outcome ?? ""),
     result: p.result ?? null,
     error: p.error != null ? String(p.error) : null,
-    job_name: String(p.job_name ?? ''),
+    job_name: String(p.job_name ?? ""),
   };
 }
 
 function sleep(ms: number): Promise<void> {
-  return new Promise(r => setTimeout(r, ms));
+  return new Promise((r) => setTimeout(r, ms));
 }

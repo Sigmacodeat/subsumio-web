@@ -61,14 +61,14 @@ capture_idea(message_text, source_context):
 
 ### The Authorship Test
 
-| Signal | Destination |
-|--------|-------------|
-| User generated the idea | `brain/originals/{slug}.md` |
-| User's unique synthesis of others' ideas | `brain/originals/` (the synthesis is original) |
-| World concept someone else coined | `brain/concepts/{slug}.md` |
-| Product or business idea | `brain/ideas/{slug}.md` |
-| User's ghostwritten book/essay | `brain/originals/` (note ghostwriter in metadata) |
-| Article ABOUT user | `brain/media/writings/` |
+| Signal                                   | Destination                                       |
+| ---------------------------------------- | ------------------------------------------------- |
+| User generated the idea                  | `brain/originals/{slug}.md`                       |
+| User's unique synthesis of others' ideas | `brain/originals/` (the synthesis is original)    |
+| World concept someone else coined        | `brain/concepts/{slug}.md`                        |
+| Product or business idea                 | `brain/ideas/{slug}.md`                           |
+| User's ghostwritten book/essay           | `brain/originals/` (note ghostwriter in metadata) |
+| Article ABOUT user                       | `brain/media/writings/`                           |
 
 ### Capture Standards
 
@@ -79,6 +79,7 @@ capture_idea(message_text, source_context):
 The vivid version is the real version.
 
 **What counts as worth capturing:**
+
 - Original observations about how the world works
 - Novel connections between disparate things
 - Frameworks and mental models
@@ -88,6 +89,7 @@ The vivid version is the real version.
 - Emotional/psychological insights about self or others
 
 **What does NOT count:**
+
 - Routine operational messages ("ok", "do it")
 - Pure questions without embedded observations
 - Echoing back something the agent said
@@ -99,6 +101,7 @@ The vivid version is the real version.
 just WHAT they think but WHY and HOW they got there?**
 
 If the answer is no, it needs more depth. Include:
+
 - The reasoning path (what led to the insight)
 - The influences (what they were reading/watching/experiencing)
 - The context (conversation, meeting, moment)
@@ -128,6 +131,7 @@ and which audience would find them most novel.
 the intelligence.
 
 Every original MUST link to:
+
 - **People** who shaped the thinking
 - **Companies** where the idea played out
 - **Meetings** where it was discussed
@@ -140,12 +144,14 @@ Every original MUST link to:
 Before creating any entity page, check notability:
 
 **Create a page for:**
+
 - People you know or discuss with specificity
 - Companies you're evaluating, working with, or investing in
 - Media you mention with personal reaction
 - Anyone you've explicitly engaged with
 
 **Don't create pages for:**
+
 - Generic references or passing examples
 - Low-engagement accounts who mentioned you once
 - Pure metaphors ("like the Roman Empire...")
@@ -187,4 +193,4 @@ search enrichment. No stubs. If you make a page, make it good.
 
 ---
 
-*Part of the [GBrain Skillpack](../GBRAIN_SKILLPACK.md).*
+_Part of the [GBrain Skillpack](../GBRAIN_SKILLPACK.md)._

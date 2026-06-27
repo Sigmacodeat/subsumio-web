@@ -27,7 +27,7 @@ brain_first: exempt
 > citation rules (every recommendation cites the source) and back-link
 > enforcement.
 >
-> **Convention:** see [_brain-filing-rules.md](../_brain-filing-rules.md) —
+> **Convention:** see [\_brain-filing-rules.md](../_brain-filing-rules.md) —
 > output files by primary subject (concepts/ for general strategy, projects/
 > for problem-tied playbooks).
 
@@ -67,38 +67,49 @@ The brain page is the artifact. PDF is a rendering, never primary.
 > the key insight, the bottom line.
 
 ## The Core Parallel
+
 How the source's central dynamic maps onto the user's situation.
 
 ## Chapter / Section Triage
+
 For each major section of the source:
+
 - 2-3 sentence summary of what it says
 - Relevance to the problem: HIGH / MEDIUM / LOW
 - One directly applicable quote (if any)
 
 ## The Source's Playbook
+
 The author's framework, tactics, or strategies — organized as:
+
 - What the protagonist DID (tactics)
 - What WORKED and why
 - What FAILED and why
 - What OPPONENTS did that was effective
 
 ## Counter-Tactics
+
 Specific moves from the source that map to the user's situation:
+
 - What to DO (with source evidence)
 - What to AVOID (with source evidence)
 - What to WATCH FOR (warning signs from the source)
 
 ## Applied Playbook
+
 The synthesis — actionable recommendations:
+
 - **Short-term** (this week / this month)
 - **Medium-term** (this quarter)
 - **Long-term** (this year+)
 
 ## Key Quotes
+
 Direct quotes from the source that are devastatingly relevant.
 Maximum 5-10. Quality over quantity.
 
 ## See Also
+
 Links to relevant brain pages (related concepts, related projects).
 ```
 
@@ -166,7 +177,6 @@ Phase 5: Write and deliver
 - `skills/perplexity-research/SKILL.md` — current-intel cross-reference
   for fresh data
 - `skills/conventions/quality.md` — citation + back-link rules
-
 
 ## Contract
 

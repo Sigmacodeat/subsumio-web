@@ -13,10 +13,10 @@
  * here. PGLite in-memory.
  */
 
-import { describe, test, expect, beforeAll, afterAll, beforeEach } from 'bun:test';
-import { PGLiteEngine } from '../src/core/pglite-engine.ts';
-import { registerBuiltinHandlers } from '../src/commands/jobs.ts';
-import { resetPgliteState } from './helpers/reset-pglite.ts';
+import { describe, test, expect, beforeAll, afterAll, beforeEach } from "bun:test";
+import { PGLiteEngine } from "../src/core/pglite-engine.ts";
+import { registerBuiltinHandlers } from "../src/commands/jobs.ts";
+import { resetPgliteState } from "./helpers/reset-pglite.ts";
 
 let engine: PGLiteEngine;
 
@@ -37,32 +37,36 @@ beforeEach(async () => {
 /** Capture registered handlers via a minimal fake worker. */
 async function captureHandlers(): Promise<Map<string, (job: any) => Promise<any>>> {
   const handlers = new Map<string, (job: any) => Promise<any>>();
-  const fakeWorker = { register(name: string, fn: (job: any) => Promise<any>) { handlers.set(name, fn); } };
+  const fakeWorker = {
+    register(name: string, fn: (job: any) => Promise<any>) {
+      handlers.set(name, fn);
+    },
+  };
   await registerBuiltinHandlers(fakeWorker as never, engine);
   return handlers;
 }
 
-describe('jobs autopilot-cycle handler — no repo configured', () => {
-  test('feeds null brainDir → filesystem phases skip (no_brain_dir), DB phases run', async () => {
+describe("jobs autopilot-cycle handler — no repo configured", () => {
+  test("feeds null brainDir → filesystem phases skip (no_brain_dir), DB phases run", async () => {
     const handlers = await captureHandlers();
-    const handler = handlers.get('autopilot-cycle');
+    const handler = handlers.get("autopilot-cycle");
     expect(handler).toBeTruthy();
 
     // No sync.repo_path config on a fresh brain, no repoPath in job data →
     // the handler must pass null (not cwd '.') to runCycle.
     const result = await handler!({
-      data: { phases: ['lint', 'resolve_symbol_edges'] },
+      data: { phases: ["lint", "resolve_symbol_edges"] },
       signal: undefined,
     });
 
     const report = result.report;
     expect(report.brain_dir).toBeNull();
-    const lint = report.phases.find((p: any) => p.phase === 'lint');
-    expect(lint?.status).toBe('skipped');
-    expect(lint?.details?.reason).toBe('no_brain_dir');
-    const rse = report.phases.find((p: any) => p.phase === 'resolve_symbol_edges');
+    const lint = report.phases.find((p: any) => p.phase === "lint");
+    expect(lint?.status).toBe("skipped");
+    expect(lint?.details?.reason).toBe("no_brain_dir");
+    const rse = report.phases.find((p: any) => p.phase === "resolve_symbol_edges");
     expect(rse).toBeTruthy();
-    expect(rse?.details?.reason).not.toBe('no_brain_dir');
-    expect(rse?.status).not.toBe('fail');
+    expect(rse?.details?.reason).not.toBe("no_brain_dir");
+    expect(rse?.status).not.toBe("fail");
   });
 });

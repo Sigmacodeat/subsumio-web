@@ -29,10 +29,10 @@
  * Tested in test/query-cache.test.ts.
  */
 
-import { createHash } from 'node:crypto';
-import type { BrainEngine } from '../engine.ts';
-import type { SearchResult, HybridSearchMeta } from '../types.ts';
-import { buildPageGenerationsSnapshot, CACHE_GATE_WHERE_CLAUSE } from './query-cache-gate.ts';
+import { createHash } from "node:crypto";
+import type { BrainEngine } from "../engine.ts";
+import type { SearchResult, HybridSearchMeta } from "../types.ts";
+import { buildPageGenerationsSnapshot, CACHE_GATE_WHERE_CLAUSE } from "./query-cache-gate.ts";
 
 /** Default cosine similarity threshold for cache hits. */
 export const DEFAULT_SIMILARITY_THRESHOLD = 0.92;
@@ -73,10 +73,10 @@ export interface QueryCacheConfig {
  * land in distinct rows. Empty-string knobsHash is accepted (preserves
  * existing test setups) but production calls always pass the resolved hash.
  */
-export function cacheRowId(queryText: string, sourceId: string, knobsHash = ''): string {
-  const h = createHash('sha256');
+export function cacheRowId(queryText: string, sourceId: string, knobsHash = ""): string {
+  const h = createHash("sha256");
   h.update(`${sourceId}::${queryText}::${knobsHash}`);
-  return h.digest('hex').slice(0, 32);
+  return h.digest("hex").slice(0, 32);
 }
 
 /**
@@ -91,7 +91,7 @@ function embeddingToPgVector(embedding: Float32Array): string {
   for (let i = 0; i < embedding.length; i++) {
     parts[i] = embedding[i].toFixed(6);
   }
-  return `[${parts.join(',')}]`;
+  return `[${parts.join(",")}]`;
 }
 
 export class SemanticQueryCache {
@@ -101,7 +101,7 @@ export class SemanticQueryCache {
 
   constructor(
     private engine: BrainEngine,
-    config?: QueryCacheConfig,
+    config?: QueryCacheConfig
   ) {
     this.enabled = config?.enabled ?? true;
     this.similarityThreshold = clampThreshold(config?.similarityThreshold);
@@ -126,13 +126,13 @@ export class SemanticQueryCache {
    */
   async lookup(
     queryEmbedding: Float32Array | null,
-    opts: { sourceId?: string; knobsHash?: string } = {},
+    opts: { sourceId?: string; knobsHash?: string } = {}
   ): Promise<CacheLookupResult> {
     if (!this.enabled || !queryEmbedding || queryEmbedding.length === 0) {
       return { hit: false };
     }
-    const sourceId = opts.sourceId ?? 'default';
-    const knobsHash = opts.knobsHash ?? '';
+    const sourceId = opts.sourceId ?? "default";
+    const knobsHash = opts.knobsHash ?? "";
     const distanceThreshold = 1 - this.similarityThreshold;
     const vec = embeddingToPgVector(queryEmbedding);
 
@@ -167,7 +167,7 @@ export class SemanticQueryCache {
            AND ${CACHE_GATE_WHERE_CLAUSE}
          ORDER BY qc.embedding <=> $1::vector
          LIMIT 1`,
-        [vec, sourceId, distanceThreshold, knobsHash],
+        [vec, sourceId, distanceThreshold, knobsHash]
       );
 
       if (rows.length === 0) return { hit: false };
@@ -180,7 +180,9 @@ export class SemanticQueryCache {
       const similarity = 1 - row.distance;
 
       // Bump hit_count / last_hit_at \u2014 best-effort.
-      void this.bumpHit(row.id).catch(() => { /* swallow */ });
+      void this.bumpHit(row.id).catch(() => {
+        /* swallow */
+      });
 
       return {
         hit: true,
@@ -205,11 +207,11 @@ export class SemanticQueryCache {
     queryEmbedding: Float32Array | null,
     results: SearchResult[],
     meta: HybridSearchMeta,
-    opts: { sourceId?: string; ttlSeconds?: number; knobsHash?: string } = {},
+    opts: { sourceId?: string; ttlSeconds?: number; knobsHash?: string } = {}
   ): Promise<void> {
     if (!this.enabled || !queryEmbedding || queryEmbedding.length === 0) return;
-    const sourceId = opts.sourceId ?? 'default';
-    const knobsHash = opts.knobsHash ?? '';
+    const sourceId = opts.sourceId ?? "default";
+    const knobsHash = opts.knobsHash ?? "";
     const ttl = clampTtl(opts.ttlSeconds ?? this.ttlSeconds);
     const id = cacheRowId(queryText, sourceId, knobsHash);
     const vec = embeddingToPgVector(queryEmbedding);
@@ -220,7 +222,7 @@ export class SemanticQueryCache {
     // \u2014 legacy compat preserved).
     const pageIds = results
       .map((r) => r.page_id)
-      .filter((id): id is number => typeof id === 'number' && Number.isFinite(id));
+      .filter((id): id is number => typeof id === "number" && Number.isFinite(id));
     const snapshot = await buildPageGenerationsSnapshot(this.engine, pageIds);
 
     try {
@@ -258,7 +260,7 @@ export class SemanticQueryCache {
           ttl,
           JSON.stringify(snapshot.page_generations),
           snapshot.max_generation_at_store,
-        ],
+        ]
       );
     } catch {
       // swallow \u2014 cache write must never break the search hot path.
@@ -272,13 +274,13 @@ export class SemanticQueryCache {
         const rows = await this.engine.executeRaw<{ n: number }>(
           `WITH deleted AS (DELETE FROM query_cache WHERE source_id = $1 RETURNING 1)
            SELECT COUNT(*)::int AS n FROM deleted`,
-          [opts.sourceId],
+          [opts.sourceId]
         );
         return rows[0]?.n ?? 0;
       }
       const rows = await this.engine.executeRaw<{ n: number }>(
         `WITH deleted AS (DELETE FROM query_cache RETURNING 1)
-         SELECT COUNT(*)::int AS n FROM deleted`,
+         SELECT COUNT(*)::int AS n FROM deleted`
       );
       return rows[0]?.n ?? 0;
     } catch {
@@ -295,7 +297,7 @@ export class SemanticQueryCache {
            WHERE created_at + (ttl_seconds || ' seconds')::interval <= now()
            RETURNING 1
          )
-         SELECT COUNT(*)::int AS n FROM deleted`,
+         SELECT COUNT(*)::int AS n FROM deleted`
       );
       return rows[0]?.n ?? 0;
     } catch {
@@ -317,7 +319,7 @@ export class SemanticQueryCache {
            COALESCE(SUM(hit_count), 0)::int AS total_hits,
            COUNT(*) FILTER (WHERE created_at + (ttl_seconds || ' seconds')::interval > now())::int AS fresh_rows,
            COUNT(*) FILTER (WHERE created_at + (ttl_seconds || ' seconds')::interval <= now())::int AS stale_rows
-         FROM query_cache`,
+         FROM query_cache`
       );
       return rows[0] ?? { total_rows: 0, total_hits: 0, fresh_rows: 0, stale_rows: 0 };
     } catch {
@@ -330,26 +332,26 @@ export class SemanticQueryCache {
       `UPDATE query_cache
          SET hit_count = hit_count + 1, last_hit_at = now()
        WHERE id = $1`,
-      [id],
+      [id]
     );
   }
 }
 
 function clampThreshold(v: number | undefined): number {
-  if (typeof v !== 'number' || !Number.isFinite(v)) return DEFAULT_SIMILARITY_THRESHOLD;
+  if (typeof v !== "number" || !Number.isFinite(v)) return DEFAULT_SIMILARITY_THRESHOLD;
   return Math.max(0.5, Math.min(0.999, v));
 }
 
 function clampTtl(v: number | undefined): number {
-  if (typeof v !== 'number' || !Number.isFinite(v) || v <= 0) return DEFAULT_TTL_SECONDS;
+  if (typeof v !== "number" || !Number.isFinite(v) || v <= 0) return DEFAULT_TTL_SECONDS;
   // Cap at 30 days to avoid runaway TTLs.
   return Math.min(60 * 60 * 24 * 30, Math.floor(v));
 }
 
 function safeJsonParse<T>(value: unknown, fallback: T): T {
   if (value == null) return fallback;
-  if (typeof value === 'object') return value as T;
-  if (typeof value !== 'string') return fallback;
+  if (typeof value === "object") return value as T;
+  if (typeof value !== "string") return fallback;
   try {
     return JSON.parse(value) as T;
   } catch {
@@ -364,9 +366,9 @@ function safeJsonParse<T>(value: unknown, fallback: T): T {
  */
 export async function loadCacheConfig(engine: BrainEngine): Promise<QueryCacheConfig> {
   const keys = [
-    'search.cache.enabled',
-    'search.cache.similarity_threshold',
-    'search.cache.ttl_seconds',
+    "search.cache.enabled",
+    "search.cache.similarity_threshold",
+    "search.cache.ttl_seconds",
   ];
   const config: QueryCacheConfig = {
     enabled: true,
@@ -376,15 +378,15 @@ export async function loadCacheConfig(engine: BrainEngine): Promise<QueryCacheCo
   try {
     const rows = await engine.executeRaw<{ key: string; value: string }>(
       `SELECT key, value FROM config WHERE key = ANY($1)`,
-      [keys],
+      [keys]
     );
     for (const row of rows) {
-      if (row.key === 'search.cache.enabled') {
-        config.enabled = row.value === '1' || row.value.toLowerCase() === 'true';
-      } else if (row.key === 'search.cache.similarity_threshold') {
+      if (row.key === "search.cache.enabled") {
+        config.enabled = row.value === "1" || row.value.toLowerCase() === "true";
+      } else if (row.key === "search.cache.similarity_threshold") {
         const v = parseFloat(row.value);
         if (Number.isFinite(v)) config.similarityThreshold = clampThreshold(v);
-      } else if (row.key === 'search.cache.ttl_seconds') {
+      } else if (row.key === "search.cache.ttl_seconds") {
         const v = parseInt(row.value, 10);
         if (Number.isFinite(v)) config.ttlSeconds = clampTtl(v);
       }

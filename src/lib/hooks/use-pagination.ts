@@ -38,7 +38,7 @@ export function usePagination({
     (p: number) => {
       setPageState(Math.max(1, Math.min(p, totalPages)));
     },
-    [totalPages],
+    [totalPages]
   );
 
   const next = useCallback(() => setPage(currentPage + 1), [currentPage, setPage]);
@@ -65,7 +65,7 @@ export function usePaginatedList<T>(items: T[], pageSize = 25) {
 
   const paginatedItems = useMemo(
     () => items.slice(pagination.startIndex, pagination.endIndex),
-    [items, pagination.startIndex, pagination.endIndex],
+    [items, pagination.startIndex, pagination.endIndex]
   );
 
   return { ...pagination, items: paginatedItems };

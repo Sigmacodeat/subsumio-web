@@ -53,15 +53,15 @@ the bottom of the linked plan):
 
 ## Matrix
 
-| Cell | Embedder | Dim | HNSW | Reranker | Notes |
-|---|---|---|---|---|---|
-| A0 | `openai:text-embedding-3-large` | 1536 | yes | none | OpenAI baseline |
-| A1 | `openai:text-embedding-3-large` | 1536 | yes | `zerank-2` | mixed-vendor |
-| B0 | `voyage:voyage-4-large` | 2048 | no (exact) | none | Voyage solo |
-| B1 | `voyage:voyage-4-large` | 2048 | no (exact) | `zerank-2` | mixed-vendor |
-| C0 | `zeroentropyai:zembed-1` | 2560 | no (exact) | none | ZE embedder solo |
-| C1 | `zeroentropyai:zembed-1` | 2560 | no (exact) | `zerank-2` | **ZE full stack** |
-| C2 | `zeroentropyai:zembed-1` | 1280 | yes | `zerank-2` | ZE-Matryoshka ablation |
+| Cell | Embedder                        | Dim  | HNSW       | Reranker   | Notes                  |
+| ---- | ------------------------------- | ---- | ---------- | ---------- | ---------------------- |
+| A0   | `openai:text-embedding-3-large` | 1536 | yes        | none       | OpenAI baseline        |
+| A1   | `openai:text-embedding-3-large` | 1536 | yes        | `zerank-2` | mixed-vendor           |
+| B0   | `voyage:voyage-4-large`         | 2048 | no (exact) | none       | Voyage solo            |
+| B1   | `voyage:voyage-4-large`         | 2048 | no (exact) | `zerank-2` | mixed-vendor           |
+| C0   | `zeroentropyai:zembed-1`        | 2560 | no (exact) | none       | ZE embedder solo       |
+| C1   | `zeroentropyai:zembed-1`        | 2560 | no (exact) | `zerank-2` | **ZE full stack**      |
+| C2   | `zeroentropyai:zembed-1`        | 1280 | yes        | `zerank-2` | ZE-Matryoshka ablation |
 
 ## PR structure — as few as possible
 
@@ -92,6 +92,7 @@ to hand off. Each session ends with a clean deliverable.
 **API spend:** $0
 
 ### What this session ships
+
 Three changes in one PR, bundled so the embedder shootout in gbrain-evals (PR β) has a
 clean prereq baseline:
 
@@ -106,6 +107,7 @@ clean prereq baseline:
 Ships at the end as v0.35.1.0.
 
 ### Prereqs (verify before starting)
+
 - On gbrain master at v0.35.0.0 baseline. `cat VERSION` shows `0.35.0.0`.
 - `bun test` and `bun run verify` both pass on master.
 
@@ -136,6 +138,7 @@ Ships at the end as v0.35.1.0.
 ```
 
 ### Verify before /ship
+
 ```bash
 bun run typecheck
 bun run verify
@@ -143,17 +146,20 @@ bun test test/embedding-pricing.test.ts test/public-exports.test.ts test/eval-lo
 ```
 
 ### Ship
+
 ```bash
 /ship
 ```
 
 ### Deliverable
+
 - `master` of gbrain at v0.35.1.0
 - `gbrain/ai/gateway` reachable from external consumers (verified by canary test)
 - `git tag eval-run-v0.35.1.0-baseline` (annotated, names this exact commit)
 - `gbrain --version` prints `0.35.1.0`
 
 ### Hand-off to Session 2
+
 - gbrain-evals can now `bun update gbrain` to v0.35.1.0
 - The tag preserves the exact commit for any future reproducibility need
 
@@ -167,6 +173,7 @@ bun test test/embedding-pricing.test.ts test/public-exports.test.ts test/eval-lo
 **API spend:** ~$0.10 (smoke verification calls only)
 
 ### What this session ships into PR β (does NOT merge yet)
+
 Wire the harness to drive 3 embedding providers via the newly-exposed gbrain gateway:
 
 1. New typed `EvalAdapterConfig {embedder, dim, reranker?}` passed into each adapter.
@@ -181,6 +188,7 @@ Wire the harness to drive 3 embedding providers via the newly-exposed gbrain gat
    itself comes in Session 3).
 
 ### Prereqs
+
 - Session 1 done. gbrain master at v0.35.1.0.
 - API keys present: `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `VOYAGE_API_KEY`,
   `ZEROENTROPY_API_KEY`. Smoke fails-loud on missing key.
@@ -219,6 +227,7 @@ Wire the harness to drive 3 embedding providers via the newly-exposed gbrain gat
 ```
 
 ### Smoke verification (run manually before opening PR)
+
 ```bash
 bun run eval:smoke -- --embedder openai:text-embedding-3-large --dim 1536
 bun run eval:smoke -- --embedder voyage:voyage-4-large --dim 2048
@@ -230,6 +239,7 @@ All four MUST exit 0. Reports should print the observed vector dim, matching the
 configured dim.
 
 ### Open PR β
+
 ```bash
 gh pr create --base main --title "feat: embedder shootout (adapter + smoke + Cat 13 + eval receipts)" --body "$(cat <<'EOF'
 ## Summary
@@ -252,11 +262,13 @@ EOF
 ```
 
 ### Deliverable
+
 - PR β open against gbrain-evals `main`, green CI
 - Smoke verified against all 3 providers (paste the smoke output in the PR body)
 - Branch ready for Session 3 (Cat 13 curation)
 
 ### Hand-off to Session 3
+
 - Branch `garrytan/embedder-shootout` exists on origin
 - The `--include-subset cat13-embedder` flag is wired but the subset file doesn't exist
   yet — that's Session 3
@@ -270,6 +282,7 @@ EOF
 **API spend:** $0
 
 ### What this session ships into PR β
+
 Hand-curated 50 embedder-sensitive queries from BrainBench's Cat 13 (conceptual recall)
 corpus. These are the queries where a graph/keyword adapter would likely miss but a
 semantic adapter would find.
@@ -279,9 +292,11 @@ weak for embedder claims. Cat 13 is closer to the embedder-sensitive workload bu
 needs hand-selection.
 
 ### Prereqs
+
 - Session 2 done. PR β open with adapter + smoke + subset flag.
 
 ### Workflow
+
 Interactive: Claude proposes queries in batches of 10, you accept/reject/edit each.
 
 1. Claude reads the existing Cat 13 raw query pool:
@@ -318,16 +333,19 @@ feat(eval): curate Cat 13 conceptual-recall subset (50 embedder-sensitive querie
 ```
 
 ### Spot-check before commit
+
 - Pick 5 random queries, run them against a hypothetical graph adapter (e.g. grep on
   the relevant terms) and verify they would NOT surface the right chunk.
 - Run the same 5 against the existing hybrid adapter and verify they DO.
 
 ### Deliverable
+
 - `eval/data/gold/brainbench-cat13-embedder-subset.json` committed to PR β
 - Exactly 50 queries
 - Spot-check evidence in the commit message
 
 ### Hand-off to Session 4
+
 - PR β now has: adapter + smoke + Cat 13 subset
 - Ready for the actual eval runs
 
@@ -340,10 +358,12 @@ feat(eval): curate Cat 13 conceptual-recall subset (50 embedder-sensitive querie
 **API spend:** ~$476 (LongMemEval-heavy; 7 × $68/cell)
 
 ### What this session ships into PR β
+
 7 LongMemEval scored receipts (one per matrix cell). Each is a JSONL of 500
 hypotheses + a JSON file of correctness scores from `evaluate_qa.py`.
 
 ### Prereqs
+
 - Sessions 1+2+3 done. PR β has adapter + smoke + Cat 13.
 - LongMemEval dataset downloaded (gated HuggingFace; one-time setup).
 - `evaluate_qa.py` checked out somewhere (from
@@ -352,6 +372,7 @@ hypotheses + a JSON file of correctness scores from `evaluate_qa.py`.
   `ZEROENTROPY_API_KEY`.
 
 ### Wrapper script
+
 Claude writes `scripts/run-shootout-phase1.sh` in the gbrain-evals branch. Single
 entry point that loops the 7 cells serially with smoke gating + cost-cap aborts.
 
@@ -366,6 +387,7 @@ NEW: scripts/run-shootout-phase1.sh
 ```
 
 ### Run
+
 ```bash
 # Kick off in background; check back in 10-12h
 bash scripts/run-shootout-phase1.sh 2>&1 | tee results/phase1-run-log.txt &
@@ -374,6 +396,7 @@ bash scripts/run-shootout-phase1.sh 2>&1 | tee results/phase1-run-log.txt &
 Use `run_in_background: true` if running through Claude. Check back periodically.
 
 ### Scoring (after all 7 cells done)
+
 ```bash
 for cell in A0 A1 B0 B1 C0 C1 C2; do
   python evaluate_qa.py \
@@ -399,15 +422,18 @@ Each scored file has correctness %.
 ```
 
 ### Verify
+
 - Each `longmemeval-{cell}.jsonl` has exactly 500 lines
 - Each `hypothesis` field is non-empty AND is actual answer text (NOT retrieval text)
 - Each `scored.json` has a `correctness_score` field
 
 ### Deliverable
+
 - 7 scored LongMemEval receipts committed to PR β
 - Real cost ledger committed alongside (compare against estimate)
 
 ### Hand-off to Session 5
+
 - Phase 1 done. Phase 2 (BrainBench, ~3.5h) and writeup remaining.
 
 ---
@@ -419,14 +445,17 @@ Each scored file has correctness %.
 **API spend:** ~$56 (BrainBench is cheap)
 
 ### What this session ships into PR β
+
 - 7 BrainBench cells (relational corpus + Cat 13 subset)
 - Final comparison writeup
 - PR β merged
 
 ### Prereqs
+
 - Session 4 done. PR β has Phase 1 receipts.
 
 ### Phase 2 wrapper script
+
 ```
 NEW: scripts/run-shootout-phase2.sh
 - Per cell: configure provider (same as Phase 1)
@@ -436,11 +465,13 @@ NEW: scripts/run-shootout-phase2.sh
 ```
 
 ### Run
+
 ```bash
 bash scripts/run-shootout-phase2.sh 2>&1 | tee results/phase2-run-log.txt
 ```
 
 ### Writeup
+
 `docs/benchmarks/2026-05-22-embedder-shootout.md`. Structure:
 
 1. **Headline table** — 7 cells × {LongMemEval correctness %, BrainBench relational MRR + P@5, Cat 13 correctness %, total cost}
@@ -471,6 +502,7 @@ bash scripts/run-shootout-phase2.sh 2>&1 | tee results/phase2-run-log.txt
 ```
 
 ### Ship
+
 ```bash
 # Merge PR β to gbrain-evals main
 gh pr merge --squash --auto
@@ -479,11 +511,13 @@ gh pr merge --squash
 ```
 
 ### Deliverable
+
 - PR β merged to gbrain-evals `main`
 - Comparison report public at
   `gbrain-evals/docs/benchmarks/2026-05-22-embedder-shootout.md`
 
 ### Hand-off to Session 6 (optional)
+
 - gbrain-evals master has the full data + writeup
 - Ready for a v0.35.2.0 gbrain release that cross-links it
 
@@ -497,11 +531,13 @@ gh pr merge --squash
 **API spend:** $0
 
 ### What this session ships
+
 A release-notes-only PR that bumps gbrain to v0.35.2.0 with a CHANGELOG entry
 cross-linking the embedder shootout benchmark. Optional — could be folded into the
 next routine release if no rush.
 
 ### Prereqs
+
 - Session 5 done. gbrain-evals merged with the comparison writeup.
 
 ### Commits
@@ -519,11 +555,13 @@ next routine release if no rush.
 ```
 
 ### Ship
+
 ```bash
 /ship
 ```
 
 ### Deliverable
+
 - gbrain v0.35.2.0 on master
 - CHANGELOG entry that drives the release-note headline
 
@@ -531,28 +569,28 @@ next routine release if no rush.
 
 ## Cost ledger (revised, post-review)
 
-| Component | Per cell | × 7 cells |
-|---|---|---|
-| LongMemEval embed | <$0.05 | <$0.35 |
-| LongMemEval Sonnet answer-gen (500q × 2K tokens × $3/M) | $18 | $126 |
-| LongMemEval gpt-4o judge (500q × $0.10/q) | $50 | $350 |
-| BrainBench relational embed | $0.05-0.18 | <$1 |
-| BrainBench Cat 13 answer-gen + judge (50q × $0.14) | $7 | $49 |
-| Smoke harness (30 calls/cell) | <$0.10 | <$1 |
-| **Total** | **~$75/cell** | **~$525** |
+| Component                                               | Per cell      | × 7 cells |
+| ------------------------------------------------------- | ------------- | --------- |
+| LongMemEval embed                                       | <$0.05        | <$0.35    |
+| LongMemEval Sonnet answer-gen (500q × 2K tokens × $3/M) | $18           | $126      |
+| LongMemEval gpt-4o judge (500q × $0.10/q)               | $50           | $350      |
+| BrainBench relational embed                             | $0.05-0.18    | <$1       |
+| BrainBench Cat 13 answer-gen + judge (50q × $0.14)      | $7            | $49       |
+| Smoke harness (30 calls/cell)                           | <$0.10        | <$1       |
+| **Total**                                               | **~$75/cell** | **~$525** |
 
 **Hard cap: $700.** Per-cell hard cap: $90 (wrapper aborts cell if exceeded; partial
 JSONL preserved for resume).
 
 ## Failure modes and recovery
 
-| Failure | Recovery |
-|---|---|
-| Voyage/ZE 429 rate-limit mid-cell | `gateway._shrinkState` halves safety_factor and retries. Cell continues. |
-| ZE 5MB rerank payload cap hit | `applyReranker` fail-opens, returns un-reranked results. Stderr warn. |
+| Failure                                | Recovery                                                                                                          |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Voyage/ZE 429 rate-limit mid-cell      | `gateway._shrinkState` halves safety_factor and retries. Cell continues.                                          |
+| ZE 5MB rerank payload cap hit          | `applyReranker` fail-opens, returns un-reranked results. Stderr warn.                                             |
 | Mid-cell OS interrupt / cost-cap abort | Re-run with `gbrain eval longmemeval --resume-from results/longmemeval-{cell}.jsonl`. Picks up where it left off. |
-| `evaluate_qa.py` auth fail | OPENAI_API_KEY check in wrapper aborts before any spend. |
-| Adapter typo (bad dim) | `EvalAdapterConfig` runtime assertion at constructor throws AIConfigError. Cell aborts before API call. |
+| `evaluate_qa.py` auth fail             | OPENAI_API_KEY check in wrapper aborts before any spend.                                                          |
+| Adapter typo (bad dim)                 | `EvalAdapterConfig` runtime assertion at constructor throws AIConfigError. Cell aborts before API call.           |
 
 ## NOT in scope (deliberate)
 

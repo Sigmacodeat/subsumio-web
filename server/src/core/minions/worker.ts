@@ -11,24 +11,28 @@
  *   await worker.start(); // polls until SIGTERM
  */
 
-import type { BrainEngine } from '../engine.ts';
+import type { BrainEngine } from "../engine.ts";
 import type {
-  MinionJob, MinionJobContext, MinionHandler, MinionWorkerOpts,
-  MinionQueueOpts, TokenUpdate,
-} from './types.ts';
-import { UnrecoverableError } from './types.ts';
-import { MinionQueue } from './queue.ts';
-import { calculateBackoff } from './backoff.ts';
-import { RateLeaseUnavailableError } from './handlers/subagent.ts';
-import { logLeasePressure } from './lease-pressure-audit.ts';
+  MinionJob,
+  MinionJobContext,
+  MinionHandler,
+  MinionWorkerOpts,
+  MinionQueueOpts,
+  TokenUpdate,
+} from "./types.ts";
+import { UnrecoverableError } from "./types.ts";
+import { MinionQueue } from "./queue.ts";
+import { calculateBackoff } from "./backoff.ts";
+import { RateLeaseUnavailableError } from "./handlers/subagent.ts";
+import { logLeasePressure } from "./lease-pressure-audit.ts";
 import {
   runLockRenewalTick,
   resolveLockRenewalKnobs,
   type LockRenewalDeps,
   type LockRenewalState,
-} from './lock-renewal-tick.ts';
-import { lockRenewalAudit } from '../audit/lock-renewal-audit.ts';
-import { isRetryableConnError } from '../retry-matcher.ts';
+} from "./lock-renewal-tick.ts";
+import { lockRenewalAudit } from "../audit/lock-renewal-audit.ts";
+import { isRetryableConnError } from "../retry-matcher.ts";
 
 /**
  * Abort reasons that signal infrastructure failure (PgBouncer outage,
@@ -45,14 +49,11 @@ import { isRetryableConnError } from '../retry-matcher.ts';
  * Exported so tests can pin the named-constant contract (a future edit
  * to this set is a deliberate two-line change, not a silent regression).
  */
-export const INFRASTRUCTURE_ABORT_REASONS = new Set<string>([
-  'lock-renewal-failed',
-  'lock-lost',
-]);
-import { randomUUID } from 'crypto';
-import { EventEmitter } from 'events';
-import { evaluateQuietHours, type QuietHoursConfig } from './quiet-hours.ts';
-import { readFileSync } from 'fs';
+export const INFRASTRUCTURE_ABORT_REASONS = new Set<string>(["lock-renewal-failed", "lock-lost"]);
+import { randomUUID } from "crypto";
+import { EventEmitter } from "events";
+import { evaluateQuietHours, type QuietHoursConfig } from "./quiet-hours.ts";
+import { readFileSync } from "fs";
 
 /**
  * Pure parser for /proc/self/status RSS fields. Returns bytes of
@@ -73,8 +74,8 @@ export function parseRssFromProcStatus(status: string): number | null {
   if (anonMatch === null && shmemMatch === null) {
     return null;
   }
-  const anonKb = parseInt(anonMatch?.[1] ?? '0', 10);
-  const shmemKb = parseInt(shmemMatch?.[1] ?? '0', 10);
+  const anonKb = parseInt(anonMatch?.[1] ?? "0", 10);
+  const shmemKb = parseInt(shmemMatch?.[1] ?? "0", 10);
   if (isNaN(anonKb) || isNaN(shmemKb)) {
     return null;
   }
@@ -104,7 +105,7 @@ export function parseRssFromProcStatus(status: string): number | null {
  * which reads `/proc/self/status`.
  */
 export function getAccurateRss(
-  readStatus: () => string = () => readFileSync('/proc/self/status', 'utf8'),
+  readStatus: () => string = () => readFileSync("/proc/self/status", "utf8")
 ): number {
   try {
     const status = readStatus();
@@ -119,8 +120,8 @@ export function getAccurateRss(
 /** Reason payload emitted with `'unhealthy'` when self-health-check trips.
  *  CLI layer (jobs.ts:work) subscribes and decides whether to call process.exit. */
 export type UnhealthyReason =
-  | { reason: 'db_dead'; consecutiveFailures: number; message: string }
-  | { reason: 'stalled'; waitingCount: number; idleMinutes: number };
+  | { reason: "db_dead"; consecutiveFailures: number; message: string }
+  | { reason: "stalled"; waitingCount: number; idleMinutes: number };
 
 /**
  * Read the quiet_hours JSONB column off a MinionJob, if present. The
@@ -129,7 +130,7 @@ export type UnhealthyReason =
  */
 function readQuietHoursConfig(job: MinionJob): QuietHoursConfig | null {
   const cfg = (job as MinionJob & { quiet_hours?: unknown }).quiet_hours;
-  if (!cfg || typeof cfg !== 'object') return null;
+  if (!cfg || typeof cfg !== "object") return null;
   return cfg as unknown as QuietHoursConfig;
 }
 
@@ -144,8 +145,8 @@ interface InFlightJob {
 
 /** Type-safe `on('unhealthy', ...)` for callers. */
 export interface MinionWorker {
-  on(event: 'unhealthy', listener: (info: UnhealthyReason) => void): this;
-  emit(event: 'unhealthy', info: UnhealthyReason): boolean;
+  on(event: "unhealthy", listener: (info: UnhealthyReason) => void): this;
+  emit(event: "unhealthy", info: UnhealthyReason): boolean;
 }
 
 export class MinionWorker extends EventEmitter {
@@ -188,7 +189,7 @@ export class MinionWorker extends EventEmitter {
 
   constructor(
     private engine: BrainEngine,
-    opts?: MinionWorkerOpts & MinionQueueOpts,
+    opts?: MinionWorkerOpts & MinionQueueOpts
   ) {
     super();
     this.queue = new MinionQueue(engine, {
@@ -196,7 +197,7 @@ export class MinionWorker extends EventEmitter {
       maxAttachmentBytes: opts?.maxAttachmentBytes,
     });
     this.opts = {
-      queue: opts?.queue ?? 'default',
+      queue: opts?.queue ?? "default",
       concurrency: opts?.concurrency ?? 1,
       lockDuration: opts?.lockDuration ?? 30000,
       stalledInterval: opts?.stalledInterval ?? 30000,
@@ -220,8 +221,8 @@ export class MinionWorker extends EventEmitter {
     if (this.opts.stallExitAfterMs <= this.opts.stallWarnAfterMs) {
       throw new Error(
         `MinionWorkerOpts: stallExitAfterMs (${this.opts.stallExitAfterMs}) must be > ` +
-        `stallWarnAfterMs (${this.opts.stallWarnAfterMs}). ` +
-        `The contract is "warn first, exit later" — they cannot fire on the same tick.`,
+          `stallWarnAfterMs (${this.opts.stallWarnAfterMs}). ` +
+          `The contract is "warn first, exit later" — they cannot fire on the same tick.`
       );
     }
   }
@@ -255,23 +256,26 @@ export class MinionWorker extends EventEmitter {
    *  ourselves so the worker dies and the PM restarts it. Subscribers
    *  override this default by adding a listener before start(). */
   private emitUnhealthy(info: UnhealthyReason): void {
-    if (this.listenerCount('unhealthy') === 0) {
-      const detail = info.reason === 'db_dead'
-        ? `DB unreachable (${info.consecutiveFailures} probes): ${info.message}`
-        : `worker stalled (${info.waitingCount} waiting, ${info.idleMinutes}m idle)`;
+    if (this.listenerCount("unhealthy") === 0) {
+      const detail =
+        info.reason === "db_dead"
+          ? `DB unreachable (${info.consecutiveFailures} probes): ${info.message}`
+          : `worker stalled (${info.waitingCount} waiting, ${info.idleMinutes}m idle)`;
       console.error(
         `[health] FATAL: ${detail}. No 'unhealthy' listener registered; ` +
-        `defaulting to process.exit(1) for process-manager restart.`,
+          `defaulting to process.exit(1) for process-manager restart.`
       );
       process.exit(1);
     }
-    this.emit('unhealthy', info);
+    this.emit("unhealthy", info);
   }
 
   /** Start the worker loop. Blocks until stopped. */
   async start(): Promise<void> {
     if (this.handlers.size === 0) {
-      throw new Error('No handlers registered. Call worker.register(name, handler) before start().');
+      throw new Error(
+        "No handlers registered. Call worker.register(name, handler) before start()."
+      );
     }
 
     await this.queue.ensureSchema();
@@ -282,14 +286,14 @@ export class MinionWorker extends EventEmitter {
     // BEFORE the 30s cleanup race expires. Non-shell handlers ignore shutdown
     // and keep running — they get the full 30s window.
     const shutdown = () => {
-      console.log('Minion worker shutting down...');
+      console.log("Minion worker shutting down...");
       this.running = false;
       if (!this.shutdownAbort.signal.aborted) {
-        this.shutdownAbort.abort(new Error('shutdown'));
+        this.shutdownAbort.abort(new Error("shutdown"));
       }
     };
-    process.on('SIGTERM', shutdown);
-    process.on('SIGINT', shutdown);
+    process.on("SIGTERM", shutdown);
+    process.on("SIGINT", shutdown);
 
     // Stall + timeout detection on interval. Order matters: handleStalled FIRST
     // so a stalled job (lock_until expired) gets requeued before handleTimeouts'
@@ -300,21 +304,27 @@ export class MinionWorker extends EventEmitter {
         if (requeued.length > 0) console.log(`Stall detector: requeued ${requeued.length} jobs`);
         if (dead.length > 0) console.log(`Stall detector: dead-lettered ${dead.length} jobs`);
       } catch (e) {
-        console.error('Stall detection error:', e instanceof Error ? e.message : String(e));
+        console.error("Stall detection error:", e instanceof Error ? e.message : String(e));
       }
       try {
         const timedOut = await this.queue.handleTimeouts();
-        if (timedOut.length > 0) console.log(`Timeout detector: dead-lettered ${timedOut.length} jobs (timeout exceeded)`);
+        if (timedOut.length > 0)
+          console.log(`Timeout detector: dead-lettered ${timedOut.length} jobs (timeout exceeded)`);
       } catch (e) {
-        console.error('Timeout detection error:', e instanceof Error ? e.message : String(e));
+        console.error("Timeout detection error:", e instanceof Error ? e.message : String(e));
       }
       try {
         const wallClockTimedOut = await this.queue.handleWallClockTimeouts(this.opts.lockDuration);
         if (wallClockTimedOut.length > 0) {
-          console.log(`Wall-clock detector: dead-lettered ${wallClockTimedOut.length} jobs (wall-clock timeout exceeded)`);
+          console.log(
+            `Wall-clock detector: dead-lettered ${wallClockTimedOut.length} jobs (wall-clock timeout exceeded)`
+          );
         }
       } catch (e) {
-        console.error('Wall-clock timeout detection error:', e instanceof Error ? e.message : String(e));
+        console.error(
+          "Wall-clock timeout detection error:",
+          e instanceof Error ? e.message : String(e)
+        );
       }
     }, this.opts.stalledInterval);
 
@@ -325,7 +335,7 @@ export class MinionWorker extends EventEmitter {
     let rssTimer: ReturnType<typeof setInterval> | null = null;
     if (this.opts.maxRssMb > 0) {
       rssTimer = setInterval(() => {
-        this.checkMemoryLimit('periodic');
+        this.checkMemoryLimit("periodic");
       }, this.opts.rssCheckInterval);
     }
 
@@ -348,7 +358,7 @@ export class MinionWorker extends EventEmitter {
     // setInterval queues callbacks even when the prior is still awaiting; on a
     // hung DB probe that piles up overlapping async checks racing on
     // `consecutiveDbFailures`. The recursive pattern guarantees one tick at a time.
-    const isSupervisedChild = process.env.GBRAIN_SUPERVISED === '1';
+    const isSupervisedChild = process.env.GBRAIN_SUPERVISED === "1";
     let healthTimer: ReturnType<typeof setTimeout> | null = null;
     // issue #1801 (fix #2): the DB-liveness probe (part 1) runs EVEN under a
     // supervisor — it's the worker's own "is MY pool dead" signal, and the
@@ -380,9 +390,9 @@ export class MinionWorker extends EventEmitter {
         const timer = setTimeout(() => ac.abort(), timeoutMs);
         try {
           await Promise.race([
-            this.engine.executeRaw('SELECT 1'),
+            this.engine.executeRaw("SELECT 1"),
             new Promise<never>((_, reject) => {
-              ac.signal.addEventListener('abort', () => {
+              ac.signal.addEventListener("abort", () => {
                 reject(new Error(`probe timeout after ${timeoutMs}ms`));
               });
             }),
@@ -404,16 +414,16 @@ export class MinionWorker extends EventEmitter {
             consecutiveDbFailures++;
             const msg = e instanceof Error ? e.message : String(e);
             console.error(
-              `[health] DB probe failed (${consecutiveDbFailures}/${this.opts.dbFailExitAfter}): ${msg}`,
+              `[health] DB probe failed (${consecutiveDbFailures}/${this.opts.dbFailExitAfter}): ${msg}`
             );
             if (consecutiveDbFailures >= this.opts.dbFailExitAfter) {
               console.error(
                 `[health] DB unreachable after ${this.opts.dbFailExitAfter} consecutive probes. ` +
-                `Emitting 'unhealthy' for process-manager restart.`,
+                  `Emitting 'unhealthy' for process-manager restart.`
               );
               healthExited = true;
               this.emitUnhealthy({
-                reason: 'db_dead',
+                reason: "db_dead",
                 consecutiveFailures: consecutiveDbFailures,
                 message: msg,
               });
@@ -427,66 +437,67 @@ export class MinionWorker extends EventEmitter {
           // detector too would double-act (and both emitting 'unhealthy' +
           // supervisor SIGTERM race). Bare `gbrain jobs work` keeps it.
           if (!isSupervisedChild) {
-          if (this.jobsCompleted > lastKnownCompleted) {
-            lastKnownCompleted = this.jobsCompleted;
-            lastCompletionTime = Date.now();
-            stallWarningSince = null;
-          }
+            if (this.jobsCompleted > lastKnownCompleted) {
+              lastKnownCompleted = this.jobsCompleted;
+              lastCompletionTime = Date.now();
+              stallWarningSince = null;
+            }
 
-          const idleMs = Date.now() - lastCompletionTime;
+            const idleMs = Date.now() - lastCompletionTime;
 
-          // Only check for stalls when no jobs are in-flight and it's been a while
-          if (idleMs > this.opts.stallWarnAfterMs && this.inFlight.size === 0) {
-            try {
-              // Filter by registered handler names so a worker that doesn't
-              // claim a particular job-name doesn't false-positive when those
-              // jobs accumulate in `waiting`. Only counts work THIS worker would
-              // actually have claimed.
-              const handlerNames = this.registeredNames;
-              const rows = handlerNames.length === 0
-                ? [] as { cnt: string }[]
-                : await this.engine.executeRaw<{ cnt: string }>(
-                    `SELECT count(*)::text AS cnt FROM minion_jobs
+            // Only check for stalls when no jobs are in-flight and it's been a while
+            if (idleMs > this.opts.stallWarnAfterMs && this.inFlight.size === 0) {
+              try {
+                // Filter by registered handler names so a worker that doesn't
+                // claim a particular job-name doesn't false-positive when those
+                // jobs accumulate in `waiting`. Only counts work THIS worker would
+                // actually have claimed.
+                const handlerNames = this.registeredNames;
+                const rows =
+                  handlerNames.length === 0
+                    ? ([] as { cnt: string }[])
+                    : await this.engine.executeRaw<{ cnt: string }>(
+                        `SELECT count(*)::text AS cnt FROM minion_jobs
                      WHERE status = 'waiting'
                        AND queue = $1
                        AND name = ANY($2::text[])`,
-                    [this.opts.queue, handlerNames],
-                  );
-              const waiting = parseInt(rows[0]?.cnt ?? '0', 10);
-              const idleMinutes = Math.round(idleMs / 60_000);
-              if (waiting > 0) {
-                // Two thresholds, both measured from `lastCompletionTime` (NOT
-                // from when the warning fired). With defaults (warn=5min,
-                // exit=10min), the first warning fires at idle=5min and the
-                // unhealthy emit fires at idle=10min — matching the contract
-                // documented in MinionWorkerOpts.
-                if (!stallWarningSince) {
-                  stallWarningSince = Date.now();
-                  console.warn(
-                    `[health] Possible stall: ${waiting} waiting job(s) for ` +
-                    `registered handlers, 0 in-flight, ${idleMinutes}m since last completion`,
-                  );
-                } else if (idleMs > this.opts.stallExitAfterMs) {
-                  console.error(
-                    `[health] Worker stalled for ${Math.round(this.opts.stallExitAfterMs / 60_000)}+ ` +
-                    `minutes with ${waiting} waiting job(s). Emitting 'unhealthy' for process-manager restart.`,
-                  );
-                  healthExited = true;
-                  this.emitUnhealthy({
-                    reason: 'stalled',
-                    waitingCount: waiting,
-                    idleMinutes,
-                  });
+                        [this.opts.queue, handlerNames]
+                      );
+                const waiting = parseInt(rows[0]?.cnt ?? "0", 10);
+                const idleMinutes = Math.round(idleMs / 60_000);
+                if (waiting > 0) {
+                  // Two thresholds, both measured from `lastCompletionTime` (NOT
+                  // from when the warning fired). With defaults (warn=5min,
+                  // exit=10min), the first warning fires at idle=5min and the
+                  // unhealthy emit fires at idle=10min — matching the contract
+                  // documented in MinionWorkerOpts.
+                  if (!stallWarningSince) {
+                    stallWarningSince = Date.now();
+                    console.warn(
+                      `[health] Possible stall: ${waiting} waiting job(s) for ` +
+                        `registered handlers, 0 in-flight, ${idleMinutes}m since last completion`
+                    );
+                  } else if (idleMs > this.opts.stallExitAfterMs) {
+                    console.error(
+                      `[health] Worker stalled for ${Math.round(this.opts.stallExitAfterMs / 60_000)}+ ` +
+                        `minutes with ${waiting} waiting job(s). Emitting 'unhealthy' for process-manager restart.`
+                    );
+                    healthExited = true;
+                    this.emitUnhealthy({
+                      reason: "stalled",
+                      waitingCount: waiting,
+                      idleMinutes,
+                    });
+                  }
+                } else {
+                  stallWarningSince = null; // Queue empty (for our handlers) — not stalled, just idle
                 }
-              } else {
-                stallWarningSince = null; // Queue empty (for our handlers) — not stalled, just idle
+              } catch {
+                // DB query failed — the liveness probe above will catch persistent failures
               }
-            } catch {
-              // DB query failed — the liveness probe above will catch persistent failures
+            } else {
+              stallWarningSince = null;
             }
-          } else {
-            stallWarningSince = null;
-          }
           } // end stall detection (NON-supervised only)
         } finally {
           healthRunning = false;
@@ -507,7 +518,7 @@ export class MinionWorker extends EventEmitter {
         try {
           await this.queue.promoteDelayed();
         } catch (e) {
-          console.error('Promotion error:', e instanceof Error ? e.message : String(e));
+          console.error("Promotion error:", e instanceof Error ? e.message : String(e));
         }
 
         // Claim jobs up to concurrency limit
@@ -519,7 +530,7 @@ export class MinionWorker extends EventEmitter {
               lockToken,
               this.opts.lockDuration,
               this.opts.queue,
-              this.registeredNames,
+              this.registeredNames
             );
           } catch (e) {
             // issue #1678 (Codex #1): a reaped pooler socket / nulled instance
@@ -531,15 +542,20 @@ export class MinionWorker extends EventEmitter {
             // pool. Non-retryable errors propagate (real bug → PM restart).
             if (!isRetryableConnError(e)) throw e;
             const msg = e instanceof Error ? e.message : String(e);
-            console.error(`[worker] claim hit a connection error; reconnecting, retry on next tick: ${msg}`);
+            console.error(
+              `[worker] claim hit a connection error; reconnecting, retry on next tick: ${msg}`
+            );
             const reconnect = (this.engine as { reconnect?: () => Promise<void> }).reconnect;
             if (reconnect) {
-              try { await reconnect.call(this.engine); }
-              catch (re) {
-                console.error(`[worker] reconnect after claim error failed: ${re instanceof Error ? re.message : String(re)}`);
+              try {
+                await reconnect.call(this.engine);
+              } catch (re) {
+                console.error(
+                  `[worker] reconnect after claim error failed: ${re instanceof Error ? re.message : String(re)}`
+                );
               }
             }
-            await new Promise(resolve => setTimeout(resolve, this.opts.pollInterval));
+            await new Promise((resolve) => setTimeout(resolve, this.opts.pollInterval));
             continue;
           }
 
@@ -550,37 +566,39 @@ export class MinionWorker extends EventEmitter {
             // queue on 'defer' or marks it cancelled on 'skip'.
             const quietCfg = readQuietHoursConfig(job);
             const verdict = evaluateQuietHours(quietCfg);
-            if (verdict !== 'allow') {
+            if (verdict !== "allow") {
               await this.handleQuietHoursDefer(job, lockToken, verdict);
             } else {
               this.launchJob(job, lockToken);
             }
           } else if (this.inFlight.size === 0) {
             // No jobs and nothing in flight, poll
-            await new Promise(resolve => setTimeout(resolve, this.opts.pollInterval));
+            await new Promise((resolve) => setTimeout(resolve, this.opts.pollInterval));
           } else {
             // Jobs are running but no new ones available, brief pause before re-checking
-            await new Promise(resolve => setTimeout(resolve, 100));
+            await new Promise((resolve) => setTimeout(resolve, 100));
           }
         } else {
           // At concurrency limit, wait briefly before re-checking for free slots
-          await new Promise(resolve => setTimeout(resolve, 100));
+          await new Promise((resolve) => setTimeout(resolve, 100));
         }
       }
     } finally {
       clearInterval(stalledTimer);
       if (rssTimer) clearInterval(rssTimer);
       if (healthTimer) clearTimeout(healthTimer); // recursive setTimeout pattern
-      process.removeListener('SIGTERM', shutdown);
-      process.removeListener('SIGINT', shutdown);
+      process.removeListener("SIGTERM", shutdown);
+      process.removeListener("SIGINT", shutdown);
 
       // Graceful shutdown: wait for all in-flight jobs with timeout
       if (this.inFlight.size > 0) {
-        console.log(`Waiting for ${this.inFlight.size} in-flight job(s) to finish (30s timeout)...`);
-        const pending = Array.from(this.inFlight.values()).map(f => f.promise);
+        console.log(
+          `Waiting for ${this.inFlight.size} in-flight job(s) to finish (30s timeout)...`
+        );
+        const pending = Array.from(this.inFlight.values()).map((f) => f.promise);
         await Promise.race([
           Promise.allSettled(pending),
-          new Promise(resolve => setTimeout(resolve, 30000)),
+          new Promise((resolve) => setTimeout(resolve, 30000)),
         ]);
       }
 
@@ -595,7 +613,7 @@ export class MinionWorker extends EventEmitter {
       // and clobbered the global db singleton on the second call). The
       // pool-slot-release intent is now handled in the CLI handler which
       // does own the engine.
-      console.log('Minion worker stopped.');
+      console.log("Minion worker stopped.");
     }
   }
 
@@ -610,9 +628,13 @@ export class MinionWorker extends EventEmitter {
    * 'skip' → status='cancelled', final_status='skipped_quiet_hours'. The
    *   event is dropped.
    */
-  private async handleQuietHoursDefer(job: MinionJob, lockToken: string, verdict: 'skip' | 'defer'): Promise<void> {
+  private async handleQuietHoursDefer(
+    job: MinionJob,
+    lockToken: string,
+    verdict: "skip" | "defer"
+  ): Promise<void> {
     try {
-      if (verdict === 'skip') {
+      if (verdict === "skip") {
         // Route through MinionQueue.cancelJob so parent jobs in waiting-children
         // see the cancellation and roll up correctly. A direct status='cancelled'
         // UPDATE strands parents forever (no inbox, no dependency resolution).
@@ -620,7 +642,7 @@ export class MinionWorker extends EventEmitter {
         await this.engine.executeRaw(
           `UPDATE minion_jobs SET lock_token = NULL, lock_until = NULL, updated_at = now()
            WHERE id = $1 AND lock_token = $2`,
-          [job.id, lockToken],
+          [job.id, lockToken]
         );
         try {
           await this.queue.cancelJob(job.id);
@@ -631,7 +653,7 @@ export class MinionWorker extends EventEmitter {
             `UPDATE minion_jobs
              SET status = 'cancelled', error_text = 'skipped_quiet_hours', updated_at = now()
              WHERE id = $1 AND status NOT IN ('completed','failed','dead')`,
-            [job.id],
+            [job.id]
           );
         }
         console.log(`Quiet-hours skip: ${job.name} (id=${job.id})`);
@@ -644,12 +666,15 @@ export class MinionWorker extends EventEmitter {
                delay_until = now() + interval '15 minutes',
                updated_at = now()
            WHERE id = $1 AND lock_token = $2`,
-          [job.id, lockToken],
+          [job.id, lockToken]
         );
         console.log(`Quiet-hours defer: ${job.name} (id=${job.id}) → retry after 15m`);
       }
     } catch (e) {
-      console.error(`handleQuietHoursDefer error for job ${job.id}:`, e instanceof Error ? e.message : String(e));
+      console.error(
+        `handleQuietHoursDefer error for job ${job.id}:`,
+        e instanceof Error ? e.message : String(e)
+      );
     }
   }
 
@@ -661,7 +686,7 @@ export class MinionWorker extends EventEmitter {
   /** RSS watchdog. Called from the per-job finally and the periodic timer.
    *  Idempotent: returns early if already not running or already shut down.
    *  When threshold is exceeded, hands off to gracefulShutdown(). */
-  private checkMemoryLimit(source: 'post-job' | 'periodic'): void {
+  private checkMemoryLimit(source: "post-job" | "periodic"): void {
     if (this.opts.maxRssMb <= 0) return;
     if (!this.running) return;
     if (this.gracefulShutdownFired) return;
@@ -678,7 +703,7 @@ export class MinionWorker extends EventEmitter {
 
     // Names of the jobs in flight when memory crested — the diagnostic an
     // operator needs to know WHICH job kind is the memory hog.
-    const inFlightKinds = Array.from(this.inFlight.values()).map(f => f.job.name);
+    const inFlightKinds = Array.from(this.inFlight.values()).map((f) => f.job.name);
 
     // 80%-of-cap soft warn: fires once per crossing (re-arms once RSS drops
     // back under the line) so operators get a heads-up BEFORE the kill rather
@@ -690,8 +715,8 @@ export class MinionWorker extends EventEmitter {
         const ts = new Date().toISOString().slice(11, 19);
         console.warn(
           `[watchdog ${ts}] approaching cap: rss=${rssMb}MB (${Math.round((rssMb / this.opts.maxRssMb) * 100)}% of ${this.opts.maxRssMb}MB) ` +
-          `peak=${this._peakRssMb}MB in_flight=${inFlightKinds.join(',') || 'none'} — next overshoot will drain. ` +
-          `Raise --max-rss if this job kind legitimately needs more.`,
+            `peak=${this._peakRssMb}MB in_flight=${inFlightKinds.join(",") || "none"} — next overshoot will drain. ` +
+            `Raise --max-rss if this job kind legitimately needs more.`
         );
       } else if (rssMb < softLine) {
         this._softWarnFired = false;
@@ -703,10 +728,10 @@ export class MinionWorker extends EventEmitter {
     const ts = new Date().toISOString().slice(11, 19);
     console.warn(
       `[watchdog ${ts}] rss=${rssMb}MB threshold=${this.opts.maxRssMb}MB peak=${this._peakRssMb}MB ` +
-      `jobs_completed=${this.jobsCompleted} in_flight=${inFlightKinds.join(',') || 'none'} source=${source} — draining ` +
-      `(raise --max-rss if this is legitimate working set, not a leak)`,
+        `jobs_completed=${this.jobsCompleted} in_flight=${inFlightKinds.join(",") || "none"} source=${source} — draining ` +
+        `(raise --max-rss if this is legitimate working set, not a leak)`
     );
-    this.gracefulShutdown('watchdog');
+    this.gracefulShutdown("watchdog");
   }
 
   /** Trigger a unified-style graceful shutdown. Fires shutdownAbort + per-job
@@ -790,7 +815,9 @@ export class MinionWorker extends EventEmitter {
     // the engine owns a pool that a transaction-mode pooler can reap. Postgres
     // exposes reconnect(); PGLite (no pooler) doesn't, so the hook is absent
     // and the tick keeps its legacy no-reconnect behavior.
-    const engineReconnect = (this.engine as { reconnect?: (ctx?: { error?: unknown }) => Promise<void> }).reconnect;
+    const engineReconnect = (
+      this.engine as { reconnect?: (ctx?: { error?: unknown }) => Promise<void> }
+    ).reconnect;
     const renewalDeps: LockRenewalDeps = {
       renewLock: (id, tok, dur) => this.queue.renewLock(id, tok, dur),
       audit: lockRenewalAudit,
@@ -798,7 +825,9 @@ export class MinionWorker extends EventEmitter {
       setTimeout: (cb, ms) => globalThis.setTimeout(cb, ms),
       // Forward the tick's classified error (CODEX impl review #2) so a pooler
       // reap during lock renewal is audited as reap_detected, not reconnect_other.
-      ...(engineReconnect ? { reconnect: (ctx?: { error?: unknown }) => engineReconnect.call(this.engine, ctx) } : {}),
+      ...(engineReconnect
+        ? { reconnect: (ctx?: { error?: unknown }) => engineReconnect.call(this.engine, ctx) }
+        : {}),
     };
 
     const lockTimer = setInterval(() => {
@@ -808,17 +837,17 @@ export class MinionWorker extends EventEmitter {
         .then((result) => {
           if (cancelled) return;
           switch (result.kind) {
-            case 'ok':
-            case 'cancelled':
+            case "ok":
+            case "cancelled":
               return;
-            case 'lock_lost':
+            case "lock_lost":
               if (!abort.signal.aborted) {
                 console.warn(`Lock lost for job ${job.id}, aborting execution`);
                 clearInterval(lockTimer);
-                abort.abort(new Error('lock-lost'));
+                abort.abort(new Error("lock-lost"));
               }
               return;
-            case 'should_abort':
+            case "should_abort":
               if (!abort.signal.aborted) {
                 clearInterval(lockTimer);
                 abort.abort(new Error(result.reason));
@@ -846,19 +875,20 @@ export class MinionWorker extends EventEmitter {
     // this generalization, lock-renewal aborts could leave the inFlight
     // slot wedged forever if the handler ignores AbortSignal.
     let graceTimer: ReturnType<typeof setTimeout> | null = null;
-    abort.signal.addEventListener('abort', () => {
+    abort.signal.addEventListener("abort", () => {
       // Avoid scheduling a second grace timer if abort fires again
       // (e.g., timeout + lock-renewal-failed close to each other).
       if (graceTimer != null) return;
       graceTimer = setTimeout(() => {
         if (this.inFlight.has(job.id)) {
-          const reason = abort.signal.reason instanceof Error
-            ? abort.signal.reason.message
-            : String(abort.signal.reason);
+          const reason =
+            abort.signal.reason instanceof Error
+              ? abort.signal.reason.message
+              : String(abort.signal.reason);
           console.warn(
             `Job ${job.id} (${job.name}) did not exit within 30s of abort (reason: ${reason}). ` +
-            `Force-evicting from inFlight to unblock worker. ` +
-            `The handler is still running but the worker will claim new jobs.`
+              `Force-evicting from inFlight to unblock worker. ` +
+              `The handler is still running but the worker will claim new jobs.`
           );
           clearInterval(lockTimer);
           this.inFlight.delete(job.id);
@@ -867,12 +897,9 @@ export class MinionWorker extends EventEmitter {
           // lock has expired (lock-renewal aborts only fire after
           // lockDuration - safetyMargin elapsed without renewal).
           if (!INFRASTRUCTURE_ABORT_REASONS.has(reason)) {
-            this.queue.failJob(
-              job.id,
-              lockToken,
-              'handler ignored abort signal (force-evicted)',
-              'dead',
-            ).catch(() => {});
+            this.queue
+              .failJob(job.id, lockToken, "handler ignored abort signal (force-evicted)", "dead")
+              .catch(() => {});
           }
         }
       }, 30_000);
@@ -885,8 +912,10 @@ export class MinionWorker extends EventEmitter {
     if (job.timeout_ms != null) {
       timeoutTimer = setTimeout(() => {
         if (!abort.signal.aborted) {
-          console.warn(`Job ${job.id} (${job.name}) hit per-job timeout (${job.timeout_ms}ms), aborting`);
-          abort.abort(new Error('timeout'));
+          console.warn(
+            `Job ${job.id} (${job.name}) hit per-job timeout (${job.timeout_ms}ms), aborting`
+          );
+          abort.abort(new Error("timeout"));
         }
       }, job.timeout_ms);
     }
@@ -903,7 +932,7 @@ export class MinionWorker extends EventEmitter {
         if (graceTimer) clearTimeout(graceTimer);
         this.inFlight.delete(job.id);
         this.jobsCompleted += 1;
-        this.checkMemoryLimit('post-job');
+        this.checkMemoryLimit("post-job");
       })
       // D7 / codex C5: close the SECOND unhandledRejection vector. If
       // executeJob's catch path throws (e.g., failJob's executeRaw
@@ -912,10 +941,14 @@ export class MinionWorker extends EventEmitter {
       // process.on('unhandledRejection') and crash the daemon.
       .catch((err) => {
         const msg = err instanceof Error ? err.message : String(err);
-        console.error(`[worker] executeJob unhandled error for job ${job.id} (${job.name}): ${msg}`);
+        console.error(
+          `[worker] executeJob unhandled error for job ${job.id} (${job.name}): ${msg}`
+        );
         try {
           lockRenewalAudit.logExecuteJobRejected(job.id, job.name, err);
-        } catch { /* audit best-effort */ }
+        } catch {
+          /* audit best-effort */
+        }
       });
 
     this.inFlight.set(job.id, { job, lockToken, lockTimer, abort, promise });
@@ -925,11 +958,11 @@ export class MinionWorker extends EventEmitter {
     job: MinionJob,
     lockToken: string,
     abort: AbortController,
-    lockTimer: ReturnType<typeof setInterval>,
+    lockTimer: ReturnType<typeof setInterval>
   ): Promise<void> {
     const handler = this.handlers.get(job.name);
     if (!handler) {
-      await this.queue.failJob(job.id, lockToken, `No handler for job type '${job.name}'`, 'dead');
+      await this.queue.failJob(job.id, lockToken, `No handler for job type '${job.name}'`, "dead");
       return;
     }
 
@@ -952,7 +985,7 @@ export class MinionWorker extends EventEmitter {
         await this.queue.updateTokens(job.id, lockToken, tokens);
       },
       log: async (message: string | Record<string, unknown>) => {
-        const value = typeof message === 'string' ? message : JSON.stringify(message);
+        const value = typeof message === "string" ? message : JSON.stringify(message);
         await this.engine.executeRaw(
           `UPDATE minion_jobs SET stacktrace = COALESCE(stacktrace, '[]'::jsonb) || to_jsonb($1::text),
             updated_at = now()
@@ -981,7 +1014,11 @@ export class MinionWorker extends EventEmitter {
       const completed = await this.queue.completeJob(
         job.id,
         lockToken,
-        result != null ? (typeof result === 'object' ? result as Record<string, unknown> : { value: result }) : undefined,
+        result != null
+          ? typeof result === "object"
+            ? (result as Record<string, unknown>)
+            : { value: result }
+          : undefined
       );
 
       if (!completed) {
@@ -1004,9 +1041,10 @@ export class MinionWorker extends EventEmitter {
       let errorText: string;
       let abortReason: string | null = null;
       if (abort.signal.aborted) {
-        abortReason = abort.signal.reason instanceof Error
-          ? abort.signal.reason.message
-          : String(abort.signal.reason || 'aborted');
+        abortReason =
+          abort.signal.reason instanceof Error
+            ? abort.signal.reason.message
+            : String(abort.signal.reason || "aborted");
         errorText = `aborted: ${abortReason}`;
       } else {
         errorText = err instanceof Error ? err.message : String(err);
@@ -1024,7 +1062,7 @@ export class MinionWorker extends EventEmitter {
       if (abortReason !== null && INFRASTRUCTURE_ABORT_REASONS.has(abortReason)) {
         console.log(
           `Job ${job.id} (${job.name}) released after infrastructure abort (${abortReason}); ` +
-          `stall detector will requeue (no attempt burned)`,
+            `stall detector will requeue (no attempt burned)`
         );
         return;
       }
@@ -1050,7 +1088,10 @@ export class MinionWorker extends EventEmitter {
         // the slot, try again soon", not "give up after a few tries."
         const leaseBackoffMs = 1000 + Math.floor(Math.random() * 2000);
         const released = await this.queue.releaseLeaseFullJob(
-          job.id, lockToken, errorText, leaseBackoffMs,
+          job.id,
+          lockToken,
+          errorText,
+          leaseBackoffMs
         );
         if (!released) {
           console.warn(`Job ${job.id} lease-full release dropped (lock token mismatch)`);
@@ -1075,7 +1116,7 @@ export class MinionWorker extends EventEmitter {
           root_owner_id: job.parent_job_id ?? null,
         });
         console.log(
-          `Job ${job.id} (${job.name}) lease-full, re-queuing in ${Math.round(leaseBackoffMs)}ms (no attempt burned)`,
+          `Job ${job.id} (${job.name}) lease-full, re-queuing in ${Math.round(leaseBackoffMs)}ms (no attempt burned)`
         );
         return;
       }
@@ -1083,19 +1124,22 @@ export class MinionWorker extends EventEmitter {
       const isUnrecoverable = err instanceof UnrecoverableError;
       const attemptsExhausted = job.attempts_made + 1 >= job.max_attempts;
 
-      let newStatus: 'delayed' | 'failed' | 'dead';
+      let newStatus: "delayed" | "failed" | "dead";
       if (isUnrecoverable || attemptsExhausted) {
-        newStatus = 'dead';
+        newStatus = "dead";
       } else {
-        newStatus = 'delayed';
+        newStatus = "delayed";
       }
 
-      const backoffMs = newStatus === 'delayed' ? calculateBackoff({
-        backoff_type: job.backoff_type,
-        backoff_delay: job.backoff_delay,
-        backoff_jitter: job.backoff_jitter,
-        attempts_made: job.attempts_made + 1,
-      }) : 0;
+      const backoffMs =
+        newStatus === "delayed"
+          ? calculateBackoff({
+              backoff_type: job.backoff_type,
+              backoff_delay: job.backoff_delay,
+              backoff_jitter: job.backoff_jitter,
+              attempts_made: job.attempts_made + 1,
+            })
+          : 0;
 
       const failed = await this.queue.failJob(job.id, lockToken, errorText, newStatus, backoffMs);
       if (!failed) {
@@ -1107,8 +1151,10 @@ export class MinionWorker extends EventEmitter {
       // flip + remove_on_fail delete. Worker stays out of multi-statement
       // crash-window territory.
 
-      if (newStatus === 'delayed') {
-        console.log(`Job ${job.id} (${job.name}) failed, retrying in ${Math.round(backoffMs)}ms (attempt ${job.attempts_made + 1}/${job.max_attempts})`);
+      if (newStatus === "delayed") {
+        console.log(
+          `Job ${job.id} (${job.name}) failed, retrying in ${Math.round(backoffMs)}ms (attempt ${job.attempts_made + 1}/${job.max_attempts})`
+        );
       } else {
         console.log(`Job ${job.id} (${job.name}) permanently failed: ${errorText}`);
       }

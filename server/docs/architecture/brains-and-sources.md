@@ -4,8 +4,9 @@ GBrain has two orthogonal axes for organizing knowledge. Users and agents both
 need to understand both of them, or queries misroute silently.
 
 **TL;DR:**
+
 - A **brain** is a database. You can have many.
-- A **source** is a named repo of content *inside* a brain. One brain can hold many.
+- A **source** is a named repo of content _inside_ a brain. One brain can hold many.
 - `--brain <id>` picks WHICH DATABASE.
 - `--source <id>` picks WHICH REPO WITHIN that database.
 - They're independent. You can target any combination.
@@ -18,11 +19,13 @@ need to understand both of them, or queries misroute silently.
 
 A **brain** is one database — PGLite file, self-hosted Postgres, or Supabase.
 Each brain has:
+
 - Its own `pages` table, `chunks` table, `embeddings`, etc.
 - Its own OAuth surface if served over HTTP MCP (v0.19+, PR 2).
 - Its own separate lifecycle, backup, access control.
 
 Brains are enumerated by:
+
 - **host** — your default brain, configured in `~/.gbrain/config.json`.
 - **mounts** — additional brains registered in `~/.gbrain/mounts.json` via
   `gbrain mounts add <id>` (v0.19+).
@@ -32,7 +35,7 @@ longest-path match against registered mount paths. Falls back to `host`.
 
 ### Sources (the repo axis, v0.18.0+)
 
-A **source** is a named content repo *inside* one brain. Every `pages` row
+A **source** is a named content repo _inside_ one brain. Every `pages` row
 carries a `source_id`. Slugs are unique per source, not globally.
 
 Example: in one brain, the slug `topics/ai` can exist under `source=wiki`
@@ -43,14 +46,14 @@ registered `local_path` match in the `sources` table.
 
 ### When does each axis move?
 
-| You want to | Adjust |
-|---|---|
-| Work in a different repo within the same brain (wiki → gstack notes) | `--source` |
-| Query a team-published brain that isn't yours | `--brain` |
-| Isolate a topic so it never leaks into personal search | `--source` with `federated=false` |
-| Share a brain with teammates | `--brain` (mount the team brain) |
-| Add a new repo to your personal brain | `--source` via `gbrain sources add` |
-| Add a team brain | `--brain` via `gbrain mounts add` |
+| You want to                                                          | Adjust                              |
+| -------------------------------------------------------------------- | ----------------------------------- |
+| Work in a different repo within the same brain (wiki → gstack notes) | `--source`                          |
+| Query a team-published brain that isn't yours                        | `--brain`                           |
+| Isolate a topic so it never leaks into personal search               | `--source` with `federated=false`   |
+| Share a brain with teammates                                         | `--brain` (mount the team brain)    |
+| Add a new repo to your personal brain                                | `--source` via `gbrain sources add` |
+| Add a team brain                                                     | `--brain` via `gbrain mounts add`   |
 
 **Rule of thumb:** if the data owner changes, it's a brain boundary. If the
 data owner stays the same but the topic/repo changes, it's a source boundary.
@@ -99,6 +102,7 @@ Inside `~/openclaw/` the `.gbrain-source` dotfile pins every command to
 Everything still targets one DB.
 
 Use this topology when:
+
 - You own all the content.
 - You want cross-repo search to just work.
 - You don't need to share any of it with someone who isn't you.
@@ -132,6 +136,7 @@ Inside `~/team-brains/media/` a `.gbrain-mount` dotfile pins brain to
 `media-team` automatically.
 
 Use this topology when:
+
 - You're on a team and someone publishes a brain the team subscribes to.
 - You need data isolation between work and personal.
 - Different teams/orgs own different brains.
@@ -176,6 +181,7 @@ a specific subdirectory, a `.gbrain-source` dotfile pins the source. So `cd
 `brain=policy-team, source=research` with zero flags.
 
 Use this topology when:
+
 - You cross-cut multiple teams.
 - Each team owns its own brain with its own access policy.
 - You need latent-space federation (agent decides when to query across
@@ -210,8 +216,8 @@ know the other.
   brain (resolved via the precedence above). Don't jump brains without a
   reason.
 - If the user asks a question that crosses topic areas a team might own
-  (e.g. "what did Team X decide last week?"), the right move is to *query
-  the team's brain explicitly* rather than searching host with "team x".
+  (e.g. "what did Team X decide last week?"), the right move is to _query
+  the team's brain explicitly_ rather than searching host with "team x".
 - Cross-brain federation is YOUR JOB, not the DB's. You have the brain list
   (`gbrain mounts list`). You decide when to fan out. You synthesize
   findings. You cite `brain:source:slug`.
@@ -226,7 +232,7 @@ know the other.
   per repo you care about (`gbrain sources add gstack --path ~/gstack`).
   You'll almost never need `--brain`.
 - **When a team publishes a brain:** `gbrain mounts add <team-id> --path
-  <clone> --db-url <url>` and the `.gbrain-mount` dotfile in that checkout
+<clone> --db-url <url>` and the `.gbrain-mount` dotfile in that checkout
   routes queries there automatically.
 - **When you are the CEO-class user with multiple team memberships:** mount
   each team brain. Trust the resolver — inside a team's directory the

@@ -13,8 +13,8 @@
  * page type/slug prefix since SearchResult has no metadata.skill field.
  */
 
-import type { BrainEngine } from './engine.ts';
-import { waitForCapacity } from './backoff.ts';
+import type { BrainEngine } from "./engine.ts";
+import { waitForCapacity } from "./backoff.ts";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -22,7 +22,7 @@ import { waitForCapacity } from './backoff.ts';
 
 export interface EnrichmentRequest {
   entityName: string;
-  entityType: 'person' | 'company';
+  entityType: "person" | "company";
   context: string;
   sourceSlug: string;
   tier?: 1 | 2 | 3;
@@ -30,7 +30,7 @@ export interface EnrichmentRequest {
 
 export interface EnrichmentResult {
   slug: string;
-  action: 'created' | 'updated' | 'skipped';
+  action: "created" | "updated" | "skipped";
   tier: 1 | 2 | 3;
   backlinkCreated: boolean;
   timelineAdded: boolean;
@@ -45,19 +45,19 @@ export interface EnrichmentResult {
 // ---------------------------------------------------------------------------
 
 /** Convert an entity name to a URL-safe slug. */
-export function slugifyEntity(name: string, type: 'person' | 'company'): string {
+export function slugifyEntity(name: string, type: "person" | "company"): string {
   const slug = name
     .toLowerCase()
-    .replace(/['']/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+    .replace(/['']/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 
-  const prefix = type === 'person' ? 'people' : 'companies';
+  const prefix = type === "person" ? "people" : "companies";
   return `${prefix}/${slug}`;
 }
 
 /** Get the brain page path for an entity. */
-export function entityPagePath(name: string, type: 'person' | 'company'): string {
+export function entityPagePath(name: string, type: "person" | "company"): string {
   return slugifyEntity(name, type);
 }
 
@@ -71,7 +71,7 @@ export function entityPagePath(name: string, type: 'person' | 'company'): string
  */
 export async function enrichEntity(
   engine: BrainEngine,
-  request: EnrichmentRequest,
+  request: EnrichmentRequest
 ): Promise<EnrichmentResult> {
   const slug = slugifyEntity(request.entityName, request.entityType);
 
@@ -85,11 +85,11 @@ export async function enrichEntity(
 
   // 3. Check if entity page exists
   const existingPage = await engine.getPage(slug);
-  let action: 'created' | 'updated' | 'skipped';
+  let action: "created" | "updated" | "skipped";
 
   if (existingPage) {
     // UPDATE path — add timeline entry
-    action = 'updated';
+    action = "updated";
   } else {
     // CREATE path — new entity page
     const title = request.entityName;
@@ -99,21 +99,22 @@ export async function enrichEntity(
       title,
       type,
       compiled_truth: content,
-      timeline: '',
+      timeline: "",
       frontmatter: {
-        created: new Date().toISOString().split('T')[0],
+        created: new Date().toISOString().split("T")[0],
         source: request.sourceSlug,
         tier,
       },
     });
-    action = 'created';
+    action = "created";
   }
 
   // 4. Add timeline entry
   let timelineAdded = false;
   try {
-    await engine.addTimelineEntry(slug, { // gbrain-allow-direct-insert: auto-timeline reconciliation triggered by entity reference in source markdown
-      date: new Date().toISOString().split('T')[0] ?? '',
+    await engine.addTimelineEntry(slug, {
+      // gbrain-allow-direct-insert: auto-timeline reconciliation triggered by entity reference in source markdown
+      date: new Date().toISOString().split("T")[0] ?? "",
       summary: `Referenced in [${request.sourceSlug}](${request.sourceSlug}) — ${request.context}`,
       source: request.sourceSlug,
     });
@@ -152,7 +153,7 @@ export async function enrichEntity(
 export async function enrichEntities(
   engine: BrainEngine,
   requests: EnrichmentRequest[],
-  config?: { throttle?: boolean; onProgress?: (done: number, total: number, name: string) => void },
+  config?: { throttle?: boolean; onProgress?: (done: number, total: number, name: string) => void }
 ): Promise<EnrichmentResult[]> {
   const results: EnrichmentResult[] = [];
   for (const req of requests) {
@@ -174,12 +175,12 @@ export async function enrichEntities(
 export async function extractAndEnrich(
   engine: BrainEngine,
   text: string,
-  sourceSlug: string,
+  sourceSlug: string
 ): Promise<EnrichmentResult[]> {
   const entities = extractEntities(text);
   if (entities.length === 0) return [];
 
-  const requests: EnrichmentRequest[] = entities.map(e => ({
+  const requests: EnrichmentRequest[] = entities.map((e) => ({
     entityName: e.name,
     entityType: e.type,
     context: e.context,
@@ -196,20 +197,20 @@ export async function extractAndEnrich(
 /** Count entity mentions across the brain using keyword search. */
 async function countMentions(
   engine: BrainEngine,
-  entityName: string,
+  entityName: string
 ): Promise<{ mentionCount: number; mentionSources: string[] }> {
   try {
     const results = await engine.searchKeyword(entityName, { limit: 100 });
     // Derive sources from slug prefixes since SearchResult has no metadata.skill
     const sources = new Set<string>();
     for (const r of results) {
-      const prefix = r.slug.split('/')[0];
-      if (prefix === 'people' || prefix === 'companies') sources.add('enrich');
-      else if (prefix === 'meetings') sources.add('meeting-ingestion');
-      else if (prefix === 'media') sources.add('media-ingest');
-      else if (prefix === 'sources' || prefix === 'ideas') sources.add('idea-ingest');
-      else if (prefix === 'voice-notes') sources.add('voice-note');
-      else sources.add('brain-ops');
+      const prefix = r.slug.split("/")[0];
+      if (prefix === "people" || prefix === "companies") sources.add("enrich");
+      else if (prefix === "meetings") sources.add("meeting-ingestion");
+      else if (prefix === "media") sources.add("media-ingest");
+      else if (prefix === "sources" || prefix === "ideas") sources.add("idea-ingest");
+      else if (prefix === "voice-notes") sources.add("voice-note");
+      else sources.add("brain-ops");
     }
     return { mentionCount: results.length, mentionSources: [...sources] };
   } catch {
@@ -218,14 +219,11 @@ async function countMentions(
 }
 
 /** Suggest enrichment tier based on mention frequency. */
-function suggestTier(
-  mentionCount: number,
-  mentionSources: string[],
-  context: string,
-): 1 | 2 | 3 {
+function suggestTier(mentionCount: number, mentionSources: string[], context: string): 1 | 2 | 3 {
   // 8+ mentions OR meeting/conversation source → Tier 1
   if (mentionCount >= 8) return 1;
-  if (mentionSources.includes('meeting-ingestion') || mentionSources.includes('voice-note')) return 1;
+  if (mentionSources.includes("meeting-ingestion") || mentionSources.includes("voice-note"))
+    return 1;
 
   // 3-7 mentions across 2+ sources → Tier 2
   if (mentionCount >= 3 && mentionSources.length >= 2) return 2;
@@ -235,16 +233,18 @@ function suggestTier(
 }
 
 /** Generate stub content for a new entity page. */
-function generateStubContent(name: string, type: 'person' | 'company', context: string): string {
-  if (type === 'person') {
+function generateStubContent(name: string, type: "person" | "company", context: string): string {
+  if (type === "person") {
     return `# ${name}\n\n**Type:** Person\n\n## Summary\n\n*Stub page. ${context}*\n\n## Timeline\n`;
   }
   return `# ${name}\n\n**Type:** Company\n\n## Summary\n\n*Stub page. ${context}*\n\n## Timeline\n`;
 }
 
 /** Simple entity extraction from text using regex patterns. */
-export function extractEntities(text: string): Array<{ name: string; type: 'person' | 'company'; context: string }> {
-  const entities: Array<{ name: string; type: 'person' | 'company'; context: string }> = [];
+export function extractEntities(
+  text: string
+): Array<{ name: string; type: "person" | "company"; context: string }> {
+  const entities: Array<{ name: string; type: "person" | "company"; context: string }> = [];
   const seen = new Set<string>();
 
   // Match capitalized multi-word names (likely people or companies)
@@ -257,14 +257,15 @@ export function extractEntities(text: string): Array<{ name: string; type: 'pers
     seen.add(name.toLowerCase());
 
     // Simple heuristics for type classification
-    const isCompany = /Inc\b|Corp\b|Ltd\b|LLC\b|Co\b|Labs?\b|Tech\b|AI\b|Capital\b|Ventures?\b|Fund\b/i.test(name);
-    const type = isCompany ? 'company' : 'person';
+    const isCompany =
+      /Inc\b|Corp\b|Ltd\b|LLC\b|Co\b|Labs?\b|Tech\b|AI\b|Capital\b|Ventures?\b|Fund\b/i.test(name);
+    const type = isCompany ? "company" : "person";
 
     // Extract surrounding context (50 chars each side)
     const idx = match.index;
     const start = Math.max(0, idx - 50);
     const end = Math.min(text.length, idx + name.length + 50);
-    const context = text.slice(start, end).replace(/\n/g, ' ').trim();
+    const context = text.slice(start, end).replace(/\n/g, " ").trim();
 
     entities.push({ name, type, context });
   }

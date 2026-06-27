@@ -19,12 +19,12 @@
  *     └── append-only, pruned to 30 days on read
  */
 
-import matter from 'gray-matter';
-import { readFileSync, existsSync, writeFileSync, mkdirSync, readdirSync } from 'fs';
-import { join, basename } from 'path';
-import { homedir } from 'os';
-import { gbrainPath } from '../core/config.ts';
-import { execSync } from 'child_process';
+import matter from "gray-matter";
+import { readFileSync, existsSync, writeFileSync, mkdirSync, readdirSync } from "fs";
+import { join, basename } from "path";
+import { homedir } from "os";
+import { gbrainPath } from "../core/config.ts";
+import { execSync } from "child_process";
 
 // --- Types ---
 
@@ -40,14 +40,14 @@ interface RecipeSecret {
  * recipes write their bundle into the operator's host agent repo via the
  * `gbrain integrations install` subcommand.
  */
-type InstallKind = 'local-managed' | 'copy-into-host-repo';
+type InstallKind = "local-managed" | "copy-into-host-repo";
 
 interface RecipeFrontmatter {
   id: string;
   name: string;
   version: string;
   description: string;
-  category: 'infra' | 'sense' | 'reflex' | 'voice';
+  category: "infra" | "sense" | "reflex" | "voice";
   install_kind: InstallKind;
   requires: string[];
   secrets: RecipeSecret[];
@@ -76,12 +76,12 @@ interface HeartbeatEntry {
 // --- Health Check DSL Types ---
 
 interface HttpCheck {
-  type: 'http';
+  type: "http";
   url: string;
   method?: string;
   headers?: Record<string, string>;
   body?: string;
-  auth?: 'basic' | 'bearer';
+  auth?: "basic" | "bearer";
   auth_user?: string;
   auth_pass?: string;
   auth_token?: string;
@@ -89,19 +89,19 @@ interface HttpCheck {
 }
 
 interface EnvExistsCheck {
-  type: 'env_exists';
+  type: "env_exists";
   name: string;
   label?: string;
 }
 
 interface CommandCheck {
-  type: 'command';
+  type: "command";
   argv: string[];
   label?: string;
 }
 
 interface AnyOfCheck {
-  type: 'any_of';
+  type: "any_of";
   label?: string;
   checks: HealthCheck[];
 }
@@ -111,7 +111,7 @@ type HealthCheck = string | HttpCheck | EnvExistsCheck | CommandCheck | AnyOfChe
 interface CheckResult {
   integration: string;
   check: string;
-  status: 'ok' | 'fail' | 'timeout' | 'blocked';
+  status: "ok" | "fail" | "timeout" | "blocked";
   output: string;
 }
 
@@ -125,7 +125,7 @@ export function isUnsafeHealthCheck(check: string): boolean {
 
 /** Expand $VAR references with process.env values */
 export function expandVars(s: string): string {
-  return s.replace(/\$([A-Z_][A-Z0-9_]*)/g, (_, name) => process.env[name] || '');
+  return s.replace(/\$([A-Z_][A-Z0-9_]*)/g, (_, name) => process.env[name] || "");
 }
 
 // --- SSRF Protection ---
@@ -133,59 +133,75 @@ export function expandVars(s: string): string {
 // can reuse them without inverting the layering boundary. Re-exported here for
 // backward compat with existing callers + test/integrations.test.ts imports.
 
-export {
-  parseOctet,
-  hostnameToOctets,
-  isPrivateIpv4,
-  isInternalUrl,
-} from '../core/url-safety.ts';
+export { parseOctet, hostnameToOctets, isPrivateIpv4, isInternalUrl } from "../core/url-safety.ts";
 
-import { isInternalUrl } from '../core/url-safety.ts';
+import { isInternalUrl } from "../core/url-safety.ts";
 
 export async function executeHealthCheck(
   check: HealthCheck,
   integrationId: string,
-  isEmbedded: boolean,
+  isEmbedded: boolean
 ): Promise<CheckResult> {
-  const label = typeof check === 'string' ? check : (check as any).label || JSON.stringify(check);
+  const label = typeof check === "string" ? check : (check as any).label || JSON.stringify(check);
   const base = { integration: integrationId, check: label };
 
   // String health checks (deprecated path)
-  if (typeof check === 'string') {
+  if (typeof check === "string") {
     // B2: Hard-block string health_checks for non-embedded recipes. User-provided
     // recipes must use the typed DSL; string health_checks are a known exec/SSRF bypass.
     if (!isEmbedded) {
-      return { ...base, status: 'blocked', output: 'Blocked: string health_checks are restricted to embedded recipes. Migrate to typed health_check DSL (http, command, env_exists, any_of).' };
+      return {
+        ...base,
+        status: "blocked",
+        output:
+          "Blocked: string health_checks are restricted to embedded recipes. Migrate to typed health_check DSL (http, command, env_exists, any_of).",
+      };
     }
     // Defense-in-depth for embedded recipes: still reject obviously dangerous shell metachars.
     if (isUnsafeHealthCheck(check)) {
-      return { ...base, status: 'blocked', output: 'Blocked: contains unsafe shell characters. Migrate to typed health_check DSL.' };
+      return {
+        ...base,
+        status: "blocked",
+        output: "Blocked: contains unsafe shell characters. Migrate to typed health_check DSL.",
+      };
     }
     try {
-      const output = execSync(check, { timeout: 10000, encoding: 'utf-8', env: process.env }).trim();
-      return { ...base, status: output.includes('FAIL') ? 'fail' : 'ok', output };
+      const output = execSync(check, {
+        timeout: 10000,
+        encoding: "utf-8",
+        env: process.env,
+      }).trim();
+      return { ...base, status: output.includes("FAIL") ? "fail" : "ok", output };
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
-      return { ...base, status: msg.includes('TIMEDOUT') ? 'timeout' : 'fail', output: msg };
+      return { ...base, status: msg.includes("TIMEDOUT") ? "timeout" : "fail", output: msg };
     }
   }
 
   // Typed DSL checks
   switch (check.type) {
-    case 'http': {
+    case "http": {
       // Fix 4: gate http health_checks on embedded trust. User-provided recipes
       // must NOT be able to make arbitrary outbound HTTP (SSRF / internal reconnaissance).
       if (!isEmbedded) {
-        return { ...base, status: 'blocked', output: `Blocked: http health_checks are restricted to embedded recipes. (${check.label || check.url})` };
+        return {
+          ...base,
+          status: "blocked",
+          output: `Blocked: http health_checks are restricted to embedded recipes. (${check.label || check.url})`,
+        };
       }
       try {
         const url = expandVars(check.url);
-        if (!url || url.includes('undefined')) {
-          return { ...base, status: 'fail', output: `Missing env var in URL: ${check.url}` };
+        if (!url || url.includes("undefined")) {
+          return { ...base, status: "fail", output: `Missing env var in URL: ${check.url}` };
         }
         // B4: scheme allowlist. B3: manual redirect with per-hop re-validation.
         if (isInternalUrl(url)) {
-          return { ...base, status: 'blocked', output: `Blocked: URL targets internal/private network or uses non-http(s) scheme: ${check.url}` };
+          return {
+            ...base,
+            status: "blocked",
+            output: `Blocked: URL targets internal/private network or uses non-http(s) scheme: ${check.url}`,
+          };
         }
         const headers: Record<string, string> = {};
         if (check.headers) {
@@ -193,16 +209,16 @@ export async function executeHealthCheck(
             headers[k] = expandVars(v);
           }
         }
-        if (check.auth === 'basic' && check.auth_user && check.auth_pass) {
+        if (check.auth === "basic" && check.auth_user && check.auth_pass) {
           const user = expandVars(check.auth_user);
           const pass = expandVars(check.auth_pass);
-          headers['Authorization'] = 'Basic ' + Buffer.from(`${user}:${pass}`).toString('base64');
-        } else if (check.auth === 'bearer' && check.auth_token) {
-          headers['Authorization'] = 'Bearer ' + expandVars(check.auth_token);
+          headers["Authorization"] = "Basic " + Buffer.from(`${user}:${pass}`).toString("base64");
+        } else if (check.auth === "bearer" && check.auth_token) {
+          headers["Authorization"] = "Bearer " + expandVars(check.auth_token);
         }
-        const method = check.method || 'GET';
+        const method = check.method || "GET";
         const body = check.body ? expandVars(check.body) : undefined;
-        if (body && !headers['Content-Type']) headers['Content-Type'] = 'application/json';
+        if (body && !headers["Content-Type"]) headers["Content-Type"] = "application/json";
 
         // B3: manual redirect handling. Follow up to 3 hops, re-validating each Location.
         const MAX_REDIRECTS = 3;
@@ -212,86 +228,110 @@ export async function executeHealthCheck(
           const fetchOpts: RequestInit = {
             method,
             headers,
-            redirect: 'manual',
+            redirect: "manual",
             signal: AbortSignal.timeout(10000),
           };
           if (body) fetchOpts.body = body;
           resp = await fetch(currentUrl, fetchOpts);
           if (resp.status < 300 || resp.status >= 400) break; // terminal
-          const location = resp.headers.get('location');
+          const location = resp.headers.get("location");
           if (!location) break;
           // Resolve relative redirects against the current URL
           let next: string;
           try {
             next = new URL(location, currentUrl).toString();
           } catch {
-            return { ...base, status: 'blocked', output: `Blocked: malformed redirect Location header from ${currentUrl}` };
+            return {
+              ...base,
+              status: "blocked",
+              output: `Blocked: malformed redirect Location header from ${currentUrl}`,
+            };
           }
           if (isInternalUrl(next)) {
-            return { ...base, status: 'blocked', output: `Blocked: redirect hop ${hop + 1} targets internal URL: ${next}` };
+            return {
+              ...base,
+              status: "blocked",
+              output: `Blocked: redirect hop ${hop + 1} targets internal URL: ${next}`,
+            };
           }
           if (hop === MAX_REDIRECTS) {
-            return { ...base, status: 'fail', output: `${check.label || 'HTTP'}: exceeded ${MAX_REDIRECTS} redirect hops` };
+            return {
+              ...base,
+              status: "fail",
+              output: `${check.label || "HTTP"}: exceeded ${MAX_REDIRECTS} redirect hops`,
+            };
           }
           currentUrl = next;
         }
         if (!resp) {
-          return { ...base, status: 'fail', output: `${check.label || 'HTTP'}: no response` };
+          return { ...base, status: "fail", output: `${check.label || "HTTP"}: no response` };
         }
         const ok = resp.status >= 200 && resp.status < 400;
-        return { ...base, status: ok ? 'ok' : 'fail', output: `${check.label || 'HTTP'}: ${ok ? 'OK' : `HTTP ${resp.status}`}` };
+        return {
+          ...base,
+          status: ok ? "ok" : "fail",
+          output: `${check.label || "HTTP"}: ${ok ? "OK" : `HTTP ${resp.status}`}`,
+        };
       } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : String(e);
-        if (msg.includes('TimeoutError') || msg.includes('abort')) {
-          return { ...base, status: 'timeout', output: `${check.label || 'HTTP'}: timeout` };
+        if (msg.includes("TimeoutError") || msg.includes("abort")) {
+          return { ...base, status: "timeout", output: `${check.label || "HTTP"}: timeout` };
         }
-        return { ...base, status: 'fail', output: `${check.label || 'HTTP'}: ${msg}` };
+        return { ...base, status: "fail", output: `${check.label || "HTTP"}: ${msg}` };
       }
     }
 
-    case 'env_exists': {
+    case "env_exists": {
       const val = process.env[check.name];
       return {
         ...base,
-        status: val ? 'ok' : 'fail',
-        output: `${check.label || check.name}: ${val ? 'set' : 'NOT SET'}`,
+        status: val ? "ok" : "fail",
+        output: `${check.label || check.name}: ${val ? "set" : "NOT SET"}`,
       };
     }
 
-    case 'command': {
+    case "command": {
       // Fix 2: Gate command execution on embedded trust. Non-embedded recipes
       // (from $GBRAIN_RECIPES_DIR or ./recipes) must NOT be able to spawn arbitrary binaries.
       if (!isEmbedded) {
-        return { ...base, status: 'blocked', output: `Blocked: command health_checks are restricted to embedded recipes. (${check.argv[0]})` };
+        return {
+          ...base,
+          status: "blocked",
+          output: `Blocked: command health_checks are restricted to embedded recipes. (${check.argv[0]})`,
+        };
       }
       try {
-        const { spawnSync } = await import('child_process');
+        const { spawnSync } = await import("child_process");
         const result = spawnSync(check.argv[0], check.argv.slice(1), {
           timeout: 10000,
-          encoding: 'utf-8',
+          encoding: "utf-8",
           env: process.env,
         });
         const ok = result.status === 0;
-        const output = (result.stdout || '').trim() || (ok ? 'OK' : 'FAIL');
-        return { ...base, status: ok ? 'ok' : 'fail', output: `${check.label || check.argv[0]}: ${output}` };
+        const output = (result.stdout || "").trim() || (ok ? "OK" : "FAIL");
+        return {
+          ...base,
+          status: ok ? "ok" : "fail",
+          output: `${check.label || check.argv[0]}: ${output}`,
+        };
       } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : String(e);
-        return { ...base, status: 'fail', output: `${check.label || check.argv[0]}: ${msg}` };
+        return { ...base, status: "fail", output: `${check.label || check.argv[0]}: ${msg}` };
       }
     }
 
-    case 'any_of': {
+    case "any_of": {
       for (const sub of check.checks) {
         const result = await executeHealthCheck(sub, integrationId, isEmbedded);
-        if (result.status === 'ok') {
-          return { ...base, status: 'ok', output: `${check.label || 'any_of'}: ${result.output}` };
+        if (result.status === "ok") {
+          return { ...base, status: "ok", output: `${check.label || "any_of"}: ${result.output}` };
         }
       }
-      return { ...base, status: 'fail', output: `${check.label || 'any_of'}: all checks failed` };
+      return { ...base, status: "fail", output: `${check.label || "any_of"}: all checks failed` };
     }
 
     default:
-      return { ...base, status: 'fail', output: `Unknown check type: ${(check as any).type}` };
+      return { ...base, status: "fail", output: `Unknown check type: ${(check as any).type}` };
   }
 }
 
@@ -307,19 +347,19 @@ export function parseRecipe(content: string, filename: string): ParsedRecipe | n
     const { data, content: body } = matter(content);
     if (!data.id) return null;
     const installKind: InstallKind =
-      data.install_kind === 'copy-into-host-repo' ? 'copy-into-host-repo' : 'local-managed';
+      data.install_kind === "copy-into-host-repo" ? "copy-into-host-repo" : "local-managed";
     return {
       frontmatter: {
         id: data.id,
         name: data.name || data.id,
-        version: data.version || '0.0.0',
-        description: data.description || '',
-        category: data.category || 'sense',
+        version: data.version || "0.0.0",
+        description: data.description || "",
+        category: data.category || "sense",
         install_kind: installKind,
         requires: data.requires || [],
         secrets: data.secrets || [],
         health_checks: (data.health_checks || []) as HealthCheck[],
-        setup_time: data.setup_time || 'unknown',
+        setup_time: data.setup_time || "unknown",
         cost_estimate: data.cost_estimate,
       },
       body: body.trim(),
@@ -344,18 +384,26 @@ export function parseRecipe(content: string, filename: string): ParsedRecipe | n
 // An attacker who drops a malicious recipe in ./recipes/ MUST NOT get embedded=true.
 export function getRecipeDirs(): Array<{ dir: string; trusted: boolean }> {
   const dirs: Array<{ dir: string; trusted: boolean }> = [];
-  const sourceDir = join(import.meta.dir, '../../recipes');
+  const sourceDir = join(import.meta.dir, "../../recipes");
   if (existsSync(sourceDir)) dirs.push({ dir: sourceDir, trusted: true });
   // Fork-friendly fallback: recipes/ may live at the parent repo root when
   // gbrain is a subdirectory.
-  const parentDir = join(import.meta.dir, '../../../recipes');
+  const parentDir = join(import.meta.dir, "../../../recipes");
   if (existsSync(parentDir)) dirs.push({ dir: parentDir, trusted: true });
-  const globalDir = join(homedir(), '.bun', 'install', 'global', 'node_modules', 'gbrain', 'recipes');
+  const globalDir = join(
+    homedir(),
+    ".bun",
+    "install",
+    "global",
+    "node_modules",
+    "gbrain",
+    "recipes"
+  );
   if (existsSync(globalDir)) dirs.push({ dir: globalDir, trusted: true });
   if (process.env.GBRAIN_RECIPES_DIR && existsSync(process.env.GBRAIN_RECIPES_DIR)) {
     dirs.push({ dir: process.env.GBRAIN_RECIPES_DIR, trusted: false });
   }
-  const cwdDir = join(process.cwd(), 'recipes');
+  const cwdDir = join(process.cwd(), "recipes");
   if (existsSync(cwdDir)) dirs.push({ dir: cwdDir, trusted: false });
   return dirs;
 }
@@ -366,11 +414,11 @@ function loadAllRecipes(): ParsedRecipe[] {
   const seen = new Set<string>();
 
   for (const { dir, trusted } of dirs) {
-    const files = readdirSync(dir).filter(f => f.endsWith('.md'));
+    const files = readdirSync(dir).filter((f) => f.endsWith(".md"));
     for (const file of files) {
       if (seen.has(file)) continue;
       try {
-        const content = readFileSync(join(dir, file), 'utf-8');
+        const content = readFileSync(join(dir, file), "utf-8");
         const recipe = parseRecipe(content, file);
         if (recipe) {
           recipe.embedded = trusted;
@@ -391,12 +439,13 @@ function loadAllRecipes(): ParsedRecipe[] {
 
 function findRecipe(id: string): ParsedRecipe | null {
   const recipes = loadAllRecipes();
-  const exact = recipes.find(r => r.frontmatter.id === id);
+  const exact = recipes.find((r) => r.frontmatter.id === id);
   if (exact) return exact;
 
   // Fuzzy: check if id is a substring match
-  const partial = recipes.filter(r =>
-    r.frontmatter.id.includes(id) || r.frontmatter.name.toLowerCase().includes(id.toLowerCase())
+  const partial = recipes.filter(
+    (r) =>
+      r.frontmatter.id.includes(id) || r.frontmatter.name.toLowerCase().includes(id.toLowerCase())
   );
   if (partial.length === 1) return partial[0];
   if (partial.length > 1) {
@@ -408,9 +457,9 @@ function findRecipe(id: string): ParsedRecipe | null {
   }
 
   console.error(`Recipe '${id}' not found.`);
-  const all = recipes.map(r => r.frontmatter.id);
+  const all = recipes.map((r) => r.frontmatter.id);
   if (all.length > 0) {
-    console.error(`Available recipes: ${all.join(', ')}`);
+    console.error(`Available recipes: ${all.join(", ")}`);
   }
   return null;
 }
@@ -418,11 +467,11 @@ function findRecipe(id: string): ParsedRecipe | null {
 // --- Heartbeat ---
 
 function heartbeatDir(id: string): string {
-  return gbrainPath('integrations', id);
+  return gbrainPath("integrations", id);
 }
 
 function heartbeatPath(id: string): string {
-  return join(heartbeatDir(id), 'heartbeat.jsonl');
+  return join(heartbeatDir(id), "heartbeat.jsonl");
 }
 
 function readHeartbeat(id: string): HeartbeatEntry[] {
@@ -430,7 +479,9 @@ function readHeartbeat(id: string): HeartbeatEntry[] {
   if (!existsSync(path)) return [];
 
   try {
-    const lines = readFileSync(path, 'utf-8').split('\n').filter(l => l.trim());
+    const lines = readFileSync(path, "utf-8")
+      .split("\n")
+      .filter((l) => l.trim());
     const entries: HeartbeatEntry[] = [];
     const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
 
@@ -449,7 +500,7 @@ function readHeartbeat(id: string): HeartbeatEntry[] {
     if (entries.length < lines.length) {
       try {
         mkdirSync(heartbeatDir(id), { recursive: true });
-        writeFileSync(path, entries.map(e => JSON.stringify(e)).join('\n') + '\n');
+        writeFileSync(path, entries.map((e) => JSON.stringify(e)).join("\n") + "\n");
       } catch {
         // Non-fatal: pruning failed
       }
@@ -476,20 +527,20 @@ function checkSecrets(secrets: RecipeSecret[]): { set: string[]; missing: Recipe
   return { set, missing };
 }
 
-type IntegrationStatus = 'available' | 'configured' | 'active';
+type IntegrationStatus = "available" | "configured" | "active";
 
 function getStatus(recipe: ParsedRecipe): IntegrationStatus {
   const { set, missing } = checkSecrets(recipe.frontmatter.secrets);
   // All required secrets must be set to be "configured"
-  if (missing.length > 0) return 'available';
+  if (missing.length > 0) return "available";
 
   const heartbeat = readHeartbeat(recipe.frontmatter.id);
-  const recentEvents = heartbeat.filter(e =>
-    Date.now() - new Date(e.ts).getTime() < 24 * 60 * 60 * 1000
+  const recentEvents = heartbeat.filter(
+    (e) => Date.now() - new Date(e.ts).getTime() < 24 * 60 * 60 * 1000
   );
-  if (recentEvents.length > 0) return 'active';
+  if (recentEvents.length > 0) return "active";
 
-  return 'configured';
+  return "configured";
 }
 
 // --- Dependency Resolution ---
@@ -501,12 +552,12 @@ function checkDependencies(recipe: ParsedRecipe, allRecipes: ParsedRecipe[]): st
   function check(id: string, chain: string[]): void {
     if (visited.has(id)) return;
     if (chain.includes(id)) {
-      warnings.push(`Circular dependency: ${chain.join(' -> ')} -> ${id}`);
+      warnings.push(`Circular dependency: ${chain.join(" -> ")} -> ${id}`);
       return;
     }
     visited.add(id);
 
-    const r = allRecipes.find(r => r.frontmatter.id === id);
+    const r = allRecipes.find((r) => r.frontmatter.id === id);
     if (!r && id !== recipe.frontmatter.id) {
       warnings.push(`${recipe.frontmatter.id} requires '${id}' (not found)`);
       return;
@@ -528,21 +579,21 @@ function checkDependencies(recipe: ParsedRecipe, allRecipes: ParsedRecipe[]): st
 // --- Subcommands ---
 
 function cmdList(args: string[]): void {
-  const jsonMode = args.includes('--json');
+  const jsonMode = args.includes("--json");
   const recipes = loadAllRecipes();
 
   if (recipes.length === 0) {
     if (jsonMode) {
       console.log(JSON.stringify({ senses: [], reflexes: [] }));
     } else {
-      console.log('No integrations available.');
+      console.log("No integrations available.");
     }
     return;
   }
 
-  const infra = recipes.filter(r => r.frontmatter.category === 'infra');
-  const senses = recipes.filter(r => r.frontmatter.category === 'sense');
-  const reflexes = recipes.filter(r => r.frontmatter.category === 'reflex');
+  const infra = recipes.filter((r) => r.frontmatter.category === "infra");
+  const senses = recipes.filter((r) => r.frontmatter.category === "sense");
+  const reflexes = recipes.filter((r) => r.frontmatter.category === "reflex");
 
   if (jsonMode) {
     const toJson = (r: ParsedRecipe) => ({
@@ -555,49 +606,57 @@ function cmdList(args: string[]): void {
       setup_time: r.frontmatter.setup_time,
       requires: r.frontmatter.requires,
     });
-    console.log(JSON.stringify({
-      infra: infra.map(toJson),
-      senses: senses.map(toJson),
-      reflexes: reflexes.map(toJson),
-    }, null, 2));
+    console.log(
+      JSON.stringify(
+        {
+          infra: infra.map(toJson),
+          senses: senses.map(toJson),
+          reflexes: reflexes.map(toJson),
+        },
+        null,
+        2
+      )
+    );
     return;
   }
 
   const printSection = (title: string, items: ParsedRecipe[]) => {
     if (items.length === 0) return;
     console.log(`\n  ${title}`);
-    console.log('  ' + '-'.repeat(62));
+    console.log("  " + "-".repeat(62));
     for (const r of items) {
       const status = getStatus(r);
-      const statusStr = status === 'active' ? 'ACTIVE' : status === 'configured' ? 'CONFIGURED' : 'AVAILABLE';
+      const statusStr =
+        status === "active" ? "ACTIVE" : status === "configured" ? "CONFIGURED" : "AVAILABLE";
       const id = r.frontmatter.id.padEnd(22);
       const desc = r.frontmatter.description.slice(0, 28).padEnd(28);
-      const deps = r.frontmatter.requires.length > 0 ? ` (needs ${r.frontmatter.requires.join(', ')})` : '';
+      const deps =
+        r.frontmatter.requires.length > 0 ? ` (needs ${r.frontmatter.requires.join(", ")})` : "";
       console.log(`  ${id}${desc}  ${statusStr}${deps}`);
     }
   };
 
   // Dashboard view
-  printSection('INFRASTRUCTURE (set up first)', infra);
-  printSection('SENSES (data inputs)', senses);
-  printSection('REFLEXES (automated responses)', reflexes);
+  printSection("INFRASTRUCTURE (set up first)", infra);
+  printSection("SENSES (data inputs)", senses);
+  printSection("REFLEXES (automated responses)", reflexes);
 
   // Stats summary
-  const allHeartbeats = recipes.flatMap(r => readHeartbeat(r.frontmatter.id));
+  const allHeartbeats = recipes.flatMap((r) => readHeartbeat(r.frontmatter.id));
   const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-  const weekEvents = allHeartbeats.filter(e => new Date(e.ts).getTime() >= weekAgo);
+  const weekEvents = allHeartbeats.filter((e) => new Date(e.ts).getTime() >= weekAgo);
   if (weekEvents.length > 0) {
     console.log(`\n  This week: ${weekEvents.length} events logged.`);
   }
 
   console.log("\n  Run 'gbrain integrations show <id>' for setup details.");
-  console.log('');
+  console.log("");
 }
 
 function cmdShow(args: string[]): void {
-  const id = args.find(a => !a.startsWith('-'));
+  const id = args.find((a) => !a.startsWith("-"));
   if (!id) {
-    console.error('Usage: gbrain integrations show <recipe-id>');
+    console.error("Usage: gbrain integrations show <recipe-id>");
     return;
   }
 
@@ -610,11 +669,11 @@ function cmdShow(args: string[]): void {
   console.log(`Category:   ${f.category}`);
   console.log(`Setup time: ${f.setup_time}`);
   if (f.cost_estimate) console.log(`Cost:       ${f.cost_estimate}`);
-  if (f.requires.length > 0) console.log(`Requires:   ${f.requires.join(', ')}`);
+  if (f.requires.length > 0) console.log(`Requires:   ${f.requires.join(", ")}`);
 
-  console.log('\nSecrets needed:');
+  console.log("\nSecrets needed:");
   for (const s of f.secrets) {
-    const isSet = process.env[s.name] ? '  [set]' : '  [missing]';
+    const isSet = process.env[s.name] ? "  [set]" : "  [missing]";
     console.log(`  ${s.name}${isSet}`);
     console.log(`    ${s.description}`);
     console.log(`    Get it: ${s.where}`);
@@ -624,15 +683,15 @@ function cmdShow(args: string[]): void {
     console.log(`\nHealth checks: ${f.health_checks.length} configured`);
   }
 
-  console.log('\n--- Recipe Body ---\n');
+  console.log("\n--- Recipe Body ---\n");
   console.log(recipe.body);
 }
 
 function cmdStatus(args: string[]): void {
-  const jsonMode = args.includes('--json');
-  const id = args.find(a => !a.startsWith('-'));
+  const jsonMode = args.includes("--json");
+  const id = args.find((a) => !a.startsWith("-"));
   if (!id) {
-    console.error('Usage: gbrain integrations status <recipe-id>');
+    console.error("Usage: gbrain integrations status <recipe-id>");
     return;
   }
 
@@ -644,27 +703,33 @@ function cmdStatus(args: string[]): void {
   const status = getStatus(recipe);
 
   if (jsonMode) {
-    console.log(JSON.stringify({
-      id: recipe.frontmatter.id,
-      status,
-      secrets: { set, missing: missing.map(m => ({ name: m.name, where: m.where })) },
-      heartbeat: {
-        total_events: heartbeat.length,
-        last_event: heartbeat.length > 0 ? heartbeat[heartbeat.length - 1] : null,
-      },
-    }, null, 2));
+    console.log(
+      JSON.stringify(
+        {
+          id: recipe.frontmatter.id,
+          status,
+          secrets: { set, missing: missing.map((m) => ({ name: m.name, where: m.where })) },
+          heartbeat: {
+            total_events: heartbeat.length,
+            last_event: heartbeat.length > 0 ? heartbeat[heartbeat.length - 1] : null,
+          },
+        },
+        null,
+        2
+      )
+    );
     return;
   }
 
   console.log(`\n${recipe.frontmatter.name}: ${status.toUpperCase()}`);
 
   if (set.length > 0) {
-    console.log('\nSecrets configured:');
+    console.log("\nSecrets configured:");
     for (const s of set) console.log(`  ${s}  [set]`);
   }
 
   if (missing.length > 0) {
-    console.log('\nMissing secrets:');
+    console.log("\nMissing secrets:");
     for (const m of missing) {
       console.log(`  ${m.name}  [missing]`);
       console.log(`    Get it: ${m.where}`);
@@ -681,25 +746,25 @@ function cmdStatus(args: string[]): void {
 
     if (ageMs > 24 * 60 * 60 * 1000) {
       console.log(`  WARNING: no events in ${Math.floor(ageMs / (24 * 60 * 60 * 1000))} days`);
-      console.log('  Check: is ngrok running? Is the voice server alive?');
-      console.log('  Run: gbrain integrations doctor');
+      console.log("  Check: is ngrok running? Is the voice server alive?");
+      console.log("  Run: gbrain integrations doctor");
     }
   } else {
-    console.log('\nNo heartbeat data yet.');
+    console.log("\nNo heartbeat data yet.");
   }
-  console.log('');
+  console.log("");
 }
 
 async function cmdDoctor(args: string[]): Promise<void> {
-  const jsonMode = args.includes('--json');
+  const jsonMode = args.includes("--json");
   const recipes = loadAllRecipes();
-  const configured = recipes.filter(r => getStatus(r) !== 'available');
+  const configured = recipes.filter((r) => getStatus(r) !== "available");
 
   if (configured.length === 0) {
     if (jsonMode) {
-      console.log(JSON.stringify({ checks: [], overall: 'no_integrations' }));
+      console.log(JSON.stringify({ checks: [], overall: "no_integrations" }));
     } else {
-      console.log('No configured integrations to check.');
+      console.log("No configured integrations to check.");
     }
     return;
   }
@@ -714,30 +779,39 @@ async function cmdDoctor(args: string[]): Promise<void> {
   }
 
   if (jsonMode) {
-    const fails = results.filter(r => r.status !== 'ok');
-    console.log(JSON.stringify({
-      checks: results,
-      overall: fails.length === 0 ? 'ok' : 'issues_found',
-    }, null, 2));
+    const fails = results.filter((r) => r.status !== "ok");
+    console.log(
+      JSON.stringify(
+        {
+          checks: results,
+          overall: fails.length === 0 ? "ok" : "issues_found",
+        },
+        null,
+        2
+      )
+    );
     return;
   }
 
   for (const recipe of configured) {
-    const checks = results.filter(r => r.integration === recipe.frontmatter.id);
-    const allOk = checks.every(c => c.status === 'ok');
-    console.log(`  ${recipe.frontmatter.id}: ${allOk ? 'OK' : 'ISSUES'}`);
+    const checks = results.filter((r) => r.integration === recipe.frontmatter.id);
+    const allOk = checks.every((c) => c.status === "ok");
+    console.log(`  ${recipe.frontmatter.id}: ${allOk ? "OK" : "ISSUES"}`);
     for (const c of checks) {
-      const icon = c.status === 'ok' ? '  \u2713' : c.status === 'timeout' ? '  \u23F1' : '  \u2717';
+      const icon =
+        c.status === "ok" ? "  \u2713" : c.status === "timeout" ? "  \u23F1" : "  \u2717";
       console.log(`${icon} ${c.output}`);
     }
   }
 
-  const totalFails = results.filter(r => r.status !== 'ok').length;
-  console.log(`\n  OVERALL: ${totalFails === 0 ? 'All checks passed' : `${totalFails} issue(s) found`}`);
+  const totalFails = results.filter((r) => r.status !== "ok").length;
+  console.log(
+    `\n  OVERALL: ${totalFails === 0 ? "All checks passed" : `${totalFails} issue(s) found`}`
+  );
 }
 
 function cmdStats(args: string[]): void {
-  const jsonMode = args.includes('--json');
+  const jsonMode = args.includes("--json");
   const recipes = loadAllRecipes();
 
   const allEntries: (HeartbeatEntry & { integration: string })[] = [];
@@ -750,15 +824,15 @@ function cmdStats(args: string[]): void {
 
   if (allEntries.length === 0) {
     if (jsonMode) {
-      console.log(JSON.stringify({ total_events: 0, message: 'No stats yet' }));
+      console.log(JSON.stringify({ total_events: 0, message: "No stats yet" }));
     } else {
-      console.log('No stats yet. Set up an integration and start using it.');
+      console.log("No stats yet. Set up an integration and start using it.");
     }
     return;
   }
 
   const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-  const weekEntries = allEntries.filter(e => new Date(e.ts).getTime() >= weekAgo);
+  const weekEntries = allEntries.filter((e) => new Date(e.ts).getTime() >= weekAgo);
 
   // Count by integration
   const bySense: Record<string, number> = {};
@@ -767,11 +841,17 @@ function cmdStats(args: string[]): void {
   }
 
   if (jsonMode) {
-    console.log(JSON.stringify({
-      total_events: allEntries.length,
-      week_events: weekEntries.length,
-      by_integration: bySense,
-    }, null, 2));
+    console.log(
+      JSON.stringify(
+        {
+          total_events: allEntries.length,
+          week_events: weekEntries.length,
+          by_integration: bySense,
+        },
+        null,
+        2
+      )
+    );
     return;
   }
 
@@ -782,13 +862,13 @@ function cmdStats(args: string[]): void {
     console.log(`    ${name}: ${count} (${pct}%)`);
   }
   console.log(`\n  All time: ${allEntries.length} events`);
-  console.log('');
+  console.log("");
 }
 
 function cmdTest(args: string[]): void {
-  const filePath = args.find(a => !a.startsWith('-'));
+  const filePath = args.find((a) => !a.startsWith("-"));
   if (!filePath) {
-    console.error('Usage: gbrain integrations test <recipe-file.md>');
+    console.error("Usage: gbrain integrations test <recipe-file.md>");
     return;
   }
 
@@ -797,12 +877,12 @@ function cmdTest(args: string[]): void {
     process.exit(1);
   }
 
-  const content = readFileSync(filePath, 'utf-8');
+  const content = readFileSync(filePath, "utf-8");
   const recipe = parseRecipe(content, basename(filePath));
 
   if (!recipe) {
-    console.error('FAIL: Could not parse recipe. Missing or invalid YAML frontmatter.');
-    console.error('Required field: id');
+    console.error("FAIL: Could not parse recipe. Missing or invalid YAML frontmatter.");
+    console.error("Required field: id");
     process.exit(1);
   }
 
@@ -811,17 +891,17 @@ function cmdTest(args: string[]): void {
 
   // Validate required fields
   const f = recipe.frontmatter;
-  if (!f.id) errors.push('Missing: id');
-  if (!f.name) warnings.push('Missing: name (will default to id)');
-  if (!f.description) warnings.push('Missing: description');
-  if (!f.version) warnings.push('Missing: version');
-  if (!['sense', 'reflex'].includes(f.category)) {
+  if (!f.id) errors.push("Missing: id");
+  if (!f.name) warnings.push("Missing: name (will default to id)");
+  if (!f.description) warnings.push("Missing: description");
+  if (!f.version) warnings.push("Missing: version");
+  if (!["sense", "reflex"].includes(f.category)) {
     errors.push(`Invalid category: '${f.category}' (must be 'sense' or 'reflex')`);
   }
 
   // Check secrets format
   for (const s of f.secrets) {
-    if (!s.name) errors.push('Secret missing name');
+    if (!s.name) errors.push("Secret missing name");
     if (!s.where) warnings.push(`Secret '${s.name}' missing 'where' URL`);
   }
 
@@ -834,16 +914,16 @@ function cmdTest(args: string[]): void {
 
   // Check body isn't empty
   if (!recipe.body || recipe.body.length < 50) {
-    warnings.push('Recipe body is very short (< 50 chars). Is the setup guide complete?');
+    warnings.push("Recipe body is very short (< 50 chars). Is the setup guide complete?");
   }
 
   // Report
   if (errors.length > 0) {
-    console.log('FAIL:');
+    console.log("FAIL:");
     for (const e of errors) console.log(`  ✗ ${e}`);
   }
   if (warnings.length > 0) {
-    console.log('WARNINGS:');
+    console.log("WARNINGS:");
     for (const w of warnings) console.log(`  ⚠ ${w}`);
   }
   if (errors.length === 0 && warnings.length === 0) {
@@ -891,15 +971,15 @@ USAGE
 // The v0 install command implements the COPY path; refresh is a follow-up.
 // =============================================================================
 
-import { createHash } from 'node:crypto';
+import { createHash } from "node:crypto";
 import {
   copyFileSync,
   statSync as fsStatSync,
   realpathSync,
   chmodSync,
   appendFileSync as fsAppendFileSync,
-} from 'node:fs';
-import { resolve as pathResolve, dirname as pathDirname } from 'node:path';
+} from "node:fs";
+import { resolve as pathResolve, dirname as pathDirname } from "node:path";
 
 interface ManifestFileEntry {
   src: string;
@@ -934,9 +1014,9 @@ interface GbrainSourceJson {
 }
 
 function sha256OfFile(path: string): string {
-  const h = createHash('sha256');
+  const h = createHash("sha256");
   h.update(readFileSync(path));
-  return h.digest('hex');
+  return h.digest("hex");
 }
 
 /**
@@ -946,9 +1026,9 @@ function sha256OfFile(path: string): string {
  *   - Paths that escape via symlink (resolved real path leaves target root)
  */
 function validateManifestTarget(target: string): string | null {
-  if (target.startsWith('/')) return `absolute path not allowed: ${target}`;
-  if (target.includes('..')) return `parent-dir escape not allowed: ${target}`;
-  if (target.includes('\0')) return `null byte in path: ${target}`;
+  if (target.startsWith("/")) return `absolute path not allowed: ${target}`;
+  if (target.includes("..")) return `parent-dir escape not allowed: ${target}`;
+  if (target.includes("\0")) return `null byte in path: ${target}`;
   return null;
 }
 
@@ -962,7 +1042,7 @@ function validateManifestTarget(target: string): string | null {
 function validateTargetRepo(
   targetRepo: string,
   manifestEntries: ManifestFileEntry[],
-  overwrite: boolean,
+  overwrite: boolean
 ): string | null {
   let resolvedTarget: string;
   try {
@@ -982,17 +1062,20 @@ function validateTargetRepo(
   // Refuse if target is gbrain itself or contains gbrain.
   let gbrainRoot: string | null = null;
   try {
-    gbrainRoot = realpathSync(pathResolve(__dirname, '..', '..'));
+    gbrainRoot = realpathSync(pathResolve(__dirname, "..", ".."));
   } catch {
     // ignore — non-fatal
   }
-  if (gbrainRoot && (resolvedTarget === gbrainRoot || gbrainRoot.startsWith(resolvedTarget + '/'))) {
+  if (
+    gbrainRoot &&
+    (resolvedTarget === gbrainRoot || gbrainRoot.startsWith(resolvedTarget + "/"))
+  ) {
     return `refusing to install into gbrain itself (or a parent dir): ${resolvedTarget}`;
   }
 
   // Must have a .git
   try {
-    const gitStat = fsStatSync(join(resolvedTarget, '.git'));
+    const gitStat = fsStatSync(join(resolvedTarget, ".git"));
     if (!gitStat.isDirectory() && !gitStat.isFile()) {
       return `target has no .git: ${resolvedTarget}`;
     }
@@ -1020,17 +1103,17 @@ interface InstallOpts {
   refresh?: boolean;
   overwrite?: boolean;
   dryRun?: boolean;
-  autoMode?: 'keep-mine' | 'take-theirs' | null;
+  autoMode?: "keep-mine" | "take-theirs" | null;
 }
 
 // Per-file refresh classification per recipes/agent-voice/install/refresh-algorithm.md.
 type FileRefreshState =
-  | 'unchanged-identical'
-  | 'unchanged-stale'
-  | 'locally-modified'
-  | 'source-deleted'
-  | 'host-deleted'
-  | 'new-in-manifest';
+  | "unchanged-identical"
+  | "unchanged-stale"
+  | "locally-modified"
+  | "source-deleted"
+  | "host-deleted"
+  | "new-in-manifest";
 
 interface RefreshClassification {
   src: string;
@@ -1045,9 +1128,9 @@ interface RefreshClassification {
  * Compute SHA-256 of a string buffer.
  */
 function sha256OfBuffer(buf: Buffer): string {
-  const h = createHash('sha256');
+  const h = createHash("sha256");
   h.update(buf);
-  return h.digest('hex');
+  return h.digest("hex");
 }
 
 /**
@@ -1065,7 +1148,7 @@ function classifyForRefresh(
   manifestEntries: ManifestFileEntry[],
   recordedFiles: InstalledFileRecord[],
   recipeBundleRoot: string,
-  resolvedTarget: string,
+  resolvedTarget: string
 ): RefreshClassification[] {
   const recordedByTarget = new Map<string, InstalledFileRecord>();
   for (const r of recordedFiles) recordedByTarget.set(r.target, r);
@@ -1099,28 +1182,66 @@ function classifyForRefresh(
     const recorded = recordedByTarget.get(entry.target);
 
     if (!hostExists) {
-      classifications.push({ src: entry.src, target: entry.target, state: 'host-deleted', recordedSha: recorded?.sha256, currentSrcSha });
+      classifications.push({
+        src: entry.src,
+        target: entry.target,
+        state: "host-deleted",
+        recordedSha: recorded?.sha256,
+        currentSrcSha,
+      });
       continue;
     }
 
     if (!recorded) {
-      classifications.push({ src: entry.src, target: entry.target, state: 'new-in-manifest', currentSrcSha, currentHostSha });
+      classifications.push({
+        src: entry.src,
+        target: entry.target,
+        state: "new-in-manifest",
+        currentSrcSha,
+        currentHostSha,
+      });
       continue;
     }
 
     if (currentHostSha === currentSrcSha) {
-      classifications.push({ src: entry.src, target: entry.target, state: 'unchanged-identical', recordedSha: recorded.sha256, currentSrcSha, currentHostSha });
+      classifications.push({
+        src: entry.src,
+        target: entry.target,
+        state: "unchanged-identical",
+        recordedSha: recorded.sha256,
+        currentSrcSha,
+        currentHostSha,
+      });
     } else if (currentHostSha === recorded.sha256) {
-      classifications.push({ src: entry.src, target: entry.target, state: 'unchanged-stale', recordedSha: recorded.sha256, currentSrcSha, currentHostSha });
+      classifications.push({
+        src: entry.src,
+        target: entry.target,
+        state: "unchanged-stale",
+        recordedSha: recorded.sha256,
+        currentSrcSha,
+        currentHostSha,
+      });
     } else {
-      classifications.push({ src: entry.src, target: entry.target, state: 'locally-modified', recordedSha: recorded.sha256, currentSrcSha, currentHostSha });
+      classifications.push({
+        src: entry.src,
+        target: entry.target,
+        state: "locally-modified",
+        recordedSha: recorded.sha256,
+        currentSrcSha,
+        currentHostSha,
+      });
     }
   }
 
   // Pass 2: anything in recorded but NOT in current manifest = source-deleted.
   for (const r of recordedFiles) {
     if (!manifestTargets.has(r.target)) {
-      classifications.push({ src: r.src, target: r.target, state: 'source-deleted', recordedSha: r.sha256 });
+      classifications.push({
+        src: r.src,
+        target: r.target,
+        state: "source-deleted",
+        recordedSha: r.sha256,
+      });
     }
   }
 
@@ -1132,8 +1253,8 @@ function classifyForRefresh(
  */
 function appendRefreshLog(targetVoiceAgentDir: string, event: object) {
   try {
-    const logPath = pathResolve(targetVoiceAgentDir, '.gbrain-source.refresh.log');
-    fsAppendFileSync(logPath, JSON.stringify({ ts: new Date().toISOString(), ...event }) + '\n');
+    const logPath = pathResolve(targetVoiceAgentDir, ".gbrain-source.refresh.log");
+    fsAppendFileSync(logPath, JSON.stringify({ ts: new Date().toISOString(), ...event }) + "\n");
   } catch {
     /* non-fatal */
   }
@@ -1144,21 +1265,20 @@ function appendRefreshLog(targetVoiceAgentDir: string, event: object) {
  */
 async function refreshRecipeIntoHostRepo(
   recipeId: string,
-  opts: InstallOpts,
+  opts: InstallOpts
 ): Promise<{ classifications: RefreshClassification[]; applied: number; manifestPath: string }> {
   const recipe = findRecipe(recipeId);
   if (!recipe) throw new Error(`recipe not found: ${recipeId}`);
-  if (recipe.frontmatter.install_kind !== 'copy-into-host-repo') {
-    throw new Error(`recipe ${recipeId} is not copy-into-host-repo (install_kind=${recipe.frontmatter.install_kind})`);
+  if (recipe.frontmatter.install_kind !== "copy-into-host-repo") {
+    throw new Error(
+      `recipe ${recipeId} is not copy-into-host-repo (install_kind=${recipe.frontmatter.install_kind})`
+    );
   }
 
-  const recipeDir2 = recipe.sourceDir ?? pathDirname(pathResolve(__dirname, '..', '..', 'recipes'));
-  const recipeBundleRoot = pathResolve(
-    recipeDir2,
-    recipe.filename.replace(/\.md$/, ''),
-  );
-  const manifestPath = join(recipeBundleRoot, 'install', 'manifest.json');
-  const manifest: InstallManifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+  const recipeDir2 = recipe.sourceDir ?? pathDirname(pathResolve(__dirname, "..", "..", "recipes"));
+  const recipeBundleRoot = pathResolve(recipeDir2, recipe.filename.replace(/\.md$/, ""));
+  const manifestPath = join(recipeBundleRoot, "install", "manifest.json");
+  const manifest: InstallManifest = JSON.parse(readFileSync(manifestPath, "utf8"));
 
   let resolvedTarget: string;
   try {
@@ -1170,25 +1290,37 @@ async function refreshRecipeIntoHostRepo(
   const sourceFilePath = pathResolve(
     resolvedTarget,
     manifest.target_root_relative_to_host_repo,
-    '.gbrain-source.json',
+    ".gbrain-source.json"
   );
   if (!existsSync(sourceFilePath)) {
-    throw new Error(`.gbrain-source.json not found at ${sourceFilePath} — this target was never installed via copy-into-host-repo; run without --refresh first`);
+    throw new Error(
+      `.gbrain-source.json not found at ${sourceFilePath} — this target was never installed via copy-into-host-repo; run without --refresh first`
+    );
   }
 
   let recorded: GbrainSourceJson;
   try {
-    recorded = JSON.parse(readFileSync(sourceFilePath, 'utf8'));
+    recorded = JSON.parse(readFileSync(sourceFilePath, "utf8"));
   } catch (err) {
     throw new Error(`failed to parse .gbrain-source.json: ${(err as Error).message}`);
   }
 
   if (recorded.recipe !== recipeId) {
-    throw new Error(`.gbrain-source.json recipe="${recorded.recipe}" does not match requested recipe="${recipeId}"`);
+    throw new Error(
+      `.gbrain-source.json recipe="${recorded.recipe}" does not match requested recipe="${recipeId}"`
+    );
   }
 
-  const allManifestEntries: ManifestFileEntry[] = [...(manifest.files || []), ...(manifest.skills || [])];
-  const classifications = classifyForRefresh(allManifestEntries, recorded.files || [], recipeBundleRoot, resolvedTarget);
+  const allManifestEntries: ManifestFileEntry[] = [
+    ...(manifest.files || []),
+    ...(manifest.skills || []),
+  ];
+  const classifications = classifyForRefresh(
+    allManifestEntries,
+    recorded.files || [],
+    recipeBundleRoot,
+    resolvedTarget
+  );
 
   // Print classification summary.
   const counts: Record<string, number> = {};
@@ -1199,15 +1331,18 @@ async function refreshRecipeIntoHostRepo(
   }
 
   if (opts.dryRun) {
-    console.log('[refresh] DRY RUN — no files written. Per-file detail:');
+    console.log("[refresh] DRY RUN — no files written. Per-file detail:");
     for (const c of classifications) {
       console.log(`  [${c.state}] ${c.target}`);
     }
     return { classifications, applied: 0, manifestPath };
   }
 
-  const targetVoiceAgentDir = pathResolve(resolvedTarget, manifest.target_root_relative_to_host_repo);
-  appendRefreshLog(targetVoiceAgentDir, { event: 'refresh_started', recipe: recipeId, counts });
+  const targetVoiceAgentDir = pathResolve(
+    resolvedTarget,
+    manifest.target_root_relative_to_host_repo
+  );
+  appendRefreshLog(targetVoiceAgentDir, { event: "refresh_started", recipe: recipeId, counts });
 
   let applied = 0;
   const updatedFiles: InstalledFileRecord[] = [];
@@ -1218,94 +1353,165 @@ async function refreshRecipeIntoHostRepo(
     const manifestEntry = allManifestEntries.find((e) => e.target === c.target);
 
     switch (c.state) {
-      case 'unchanged-identical': {
+      case "unchanged-identical": {
         // No-op. Carry forward the recorded entry.
         const r = recorded.files.find((f) => f.target === c.target);
         if (r) updatedFiles.push(r);
         break;
       }
-      case 'unchanged-stale': {
+      case "unchanged-stale": {
         // Operator's file matches the recorded SHA; source has moved. Auto-update.
         copyFileSync(srcAbs, targetAbs);
         if (manifestEntry?.mode) {
-          try { chmodSync(targetAbs, parseInt(manifestEntry.mode, 8)); } catch { /* ignore */ }
+          try {
+            chmodSync(targetAbs, parseInt(manifestEntry.mode, 8));
+          } catch {
+            /* ignore */
+          }
         }
         const newSha = sha256OfBuffer(readFileSync(srcAbs));
-        updatedFiles.push({ src: c.src, target: c.target, sha256: newSha, mode: manifestEntry?.mode || '0644' });
+        updatedFiles.push({
+          src: c.src,
+          target: c.target,
+          sha256: newSha,
+          mode: manifestEntry?.mode || "0644",
+        });
         applied++;
-        appendRefreshLog(targetVoiceAgentDir, { event: 'updated', src: c.src, target: c.target, decision: 'take-theirs' });
+        appendRefreshLog(targetVoiceAgentDir, {
+          event: "updated",
+          src: c.src,
+          target: c.target,
+          decision: "take-theirs",
+        });
         break;
       }
-      case 'locally-modified': {
-        const decision = opts.autoMode || 'keep-mine'; // Default to safety: preserve local edit.
-        if (decision === 'take-theirs') {
+      case "locally-modified": {
+        const decision = opts.autoMode || "keep-mine"; // Default to safety: preserve local edit.
+        if (decision === "take-theirs") {
           copyFileSync(srcAbs, targetAbs);
           if (manifestEntry?.mode) {
-            try { chmodSync(targetAbs, parseInt(manifestEntry.mode, 8)); } catch { /* ignore */ }
+            try {
+              chmodSync(targetAbs, parseInt(manifestEntry.mode, 8));
+            } catch {
+              /* ignore */
+            }
           }
           const newSha = sha256OfBuffer(readFileSync(srcAbs));
-          updatedFiles.push({ src: c.src, target: c.target, sha256: newSha, mode: manifestEntry?.mode || '0644' });
+          updatedFiles.push({
+            src: c.src,
+            target: c.target,
+            sha256: newSha,
+            mode: manifestEntry?.mode || "0644",
+          });
           applied++;
-          appendRefreshLog(targetVoiceAgentDir, { event: 'overwrote_local', src: c.src, target: c.target, decision: 'take-theirs' });
+          appendRefreshLog(targetVoiceAgentDir, {
+            event: "overwrote_local",
+            src: c.src,
+            target: c.target,
+            decision: "take-theirs",
+          });
         } else {
           // keep-mine — the operator's file stays; we update the recorded SHA to their current host SHA
           // so future refreshes don't re-flag the same file until either side changes again.
-          updatedFiles.push({ src: c.src, target: c.target, sha256: c.currentHostSha!, mode: manifestEntry?.mode || '0644' });
-          appendRefreshLog(targetVoiceAgentDir, { event: 'preserved_local', src: c.src, target: c.target, decision: 'keep-mine' });
+          updatedFiles.push({
+            src: c.src,
+            target: c.target,
+            sha256: c.currentHostSha!,
+            mode: manifestEntry?.mode || "0644",
+          });
+          appendRefreshLog(targetVoiceAgentDir, {
+            event: "preserved_local",
+            src: c.src,
+            target: c.target,
+            decision: "keep-mine",
+          });
         }
         console.log(`  [locally-modified] ${c.target} → ${decision}`);
         break;
       }
-      case 'host-deleted': {
+      case "host-deleted": {
         // Operator removed the file. Offer to restore (auto-mode 'take-theirs') or leave it gone (default).
-        const decision = opts.autoMode === 'take-theirs' ? 'restore' : 'leave-deleted';
-        if (decision === 'restore') {
+        const decision = opts.autoMode === "take-theirs" ? "restore" : "leave-deleted";
+        if (decision === "restore") {
           mkdirSync(pathDirname(targetAbs), { recursive: true });
           copyFileSync(srcAbs, targetAbs);
           if (manifestEntry?.mode) {
-            try { chmodSync(targetAbs, parseInt(manifestEntry.mode, 8)); } catch { /* ignore */ }
+            try {
+              chmodSync(targetAbs, parseInt(manifestEntry.mode, 8));
+            } catch {
+              /* ignore */
+            }
           }
           const newSha = sha256OfBuffer(readFileSync(srcAbs));
-          updatedFiles.push({ src: c.src, target: c.target, sha256: newSha, mode: manifestEntry?.mode || '0644' });
+          updatedFiles.push({
+            src: c.src,
+            target: c.target,
+            sha256: newSha,
+            mode: manifestEntry?.mode || "0644",
+          });
           applied++;
-          appendRefreshLog(targetVoiceAgentDir, { event: 'restored', src: c.src, target: c.target, decision: 'restore' });
+          appendRefreshLog(targetVoiceAgentDir, {
+            event: "restored",
+            src: c.src,
+            target: c.target,
+            decision: "restore",
+          });
         } else {
-          appendRefreshLog(targetVoiceAgentDir, { event: 'host_deleted_left_alone', src: c.src, target: c.target });
+          appendRefreshLog(targetVoiceAgentDir, {
+            event: "host_deleted_left_alone",
+            src: c.src,
+            target: c.target,
+          });
           // Don't carry forward into updatedFiles — the file is genuinely gone.
         }
         console.log(`  [host-deleted] ${c.target} → ${decision}`);
         break;
       }
-      case 'source-deleted': {
+      case "source-deleted": {
         // gbrain reference removed this file; offer cleanup with --auto take-theirs.
-        const decision = opts.autoMode === 'take-theirs' ? 'cleanup' : 'leave-orphan';
-        if (decision === 'cleanup') {
+        const decision = opts.autoMode === "take-theirs" ? "cleanup" : "leave-orphan";
+        if (decision === "cleanup") {
           try {
             // Just unlink — keep things conservative.
-            const unlinkSync = require('node:fs').unlinkSync;
+            const unlinkSync = require("node:fs").unlinkSync;
             unlinkSync(targetAbs);
             applied++;
-            appendRefreshLog(targetVoiceAgentDir, { event: 'removed_orphan', target: c.target, decision: 'cleanup' });
+            appendRefreshLog(targetVoiceAgentDir, {
+              event: "removed_orphan",
+              target: c.target,
+              decision: "cleanup",
+            });
           } catch (err) {
-            console.warn(`  [source-deleted] failed to remove orphan ${c.target}: ${(err as Error).message}`);
+            console.warn(
+              `  [source-deleted] failed to remove orphan ${c.target}: ${(err as Error).message}`
+            );
           }
         } else {
-          appendRefreshLog(targetVoiceAgentDir, { event: 'orphan_left_alone', target: c.target });
+          appendRefreshLog(targetVoiceAgentDir, { event: "orphan_left_alone", target: c.target });
         }
         console.log(`  [source-deleted] ${c.target} → ${decision}`);
         break;
       }
-      case 'new-in-manifest': {
+      case "new-in-manifest": {
         // Wasn't in the recorded manifest; was added in this refresh. Default: install it.
         mkdirSync(pathDirname(targetAbs), { recursive: true });
         copyFileSync(srcAbs, targetAbs);
         if (manifestEntry?.mode) {
-          try { chmodSync(targetAbs, parseInt(manifestEntry.mode, 8)); } catch { /* ignore */ }
+          try {
+            chmodSync(targetAbs, parseInt(manifestEntry.mode, 8));
+          } catch {
+            /* ignore */
+          }
         }
         const newSha = sha256OfBuffer(readFileSync(srcAbs));
-        updatedFiles.push({ src: c.src, target: c.target, sha256: newSha, mode: manifestEntry?.mode || '0644' });
+        updatedFiles.push({
+          src: c.src,
+          target: c.target,
+          sha256: newSha,
+          mode: manifestEntry?.mode || "0644",
+        });
         applied++;
-        appendRefreshLog(targetVoiceAgentDir, { event: 'added_new', src: c.src, target: c.target });
+        appendRefreshLog(targetVoiceAgentDir, { event: "added_new", src: c.src, target: c.target });
         break;
       }
     }
@@ -1314,21 +1520,23 @@ async function refreshRecipeIntoHostRepo(
   // Re-write .gbrain-source.json with the updated SHAs.
   const gbrainVersion = (() => {
     try {
-      const pkgPath = pathResolve(__dirname, '..', '..', 'package.json');
-      return JSON.parse(readFileSync(pkgPath, 'utf8')).version || 'unknown';
-    } catch { return 'unknown'; }
+      const pkgPath = pathResolve(__dirname, "..", "..", "package.json");
+      return JSON.parse(readFileSync(pkgPath, "utf8")).version || "unknown";
+    } catch {
+      return "unknown";
+    }
   })();
 
   const updatedRecord: GbrainSourceJson = {
     recipe: recipeId,
     gbrain_version: gbrainVersion,
-    install_kind: 'copy-into-host-repo',
+    install_kind: "copy-into-host-repo",
     copied_at: new Date().toISOString(),
     files: updatedFiles,
   };
-  const fsModule = require('node:fs');
-  fsModule.writeFileSync(sourceFilePath, JSON.stringify(updatedRecord, null, 2) + '\n');
-  appendRefreshLog(targetVoiceAgentDir, { event: 'refresh_complete', applied });
+  const fsModule = require("node:fs");
+  fsModule.writeFileSync(sourceFilePath, JSON.stringify(updatedRecord, null, 2) + "\n");
+  appendRefreshLog(targetVoiceAgentDir, { event: "refresh_complete", applied });
 
   return { classifications, applied, manifestPath };
 }
@@ -1337,43 +1545,38 @@ export { refreshRecipeIntoHostRepo, classifyForRefresh };
 
 export async function installRecipeIntoHostRepo(
   recipeId: string,
-  opts: InstallOpts,
+  opts: InstallOpts
 ): Promise<{ written: number; manifestPath: string }> {
   const recipe = findRecipe(recipeId);
   if (!recipe) throw new Error(`recipe not found: ${recipeId}`);
-  if (recipe.frontmatter.install_kind !== 'copy-into-host-repo') {
+  if (recipe.frontmatter.install_kind !== "copy-into-host-repo") {
     throw new Error(
       `recipe ${recipeId} uses install_kind=${recipe.frontmatter.install_kind}; ` +
-        `this command only supports copy-into-host-repo recipes.`,
+        `this command only supports copy-into-host-repo recipes.`
     );
   }
 
   // Find the recipe bundle root: recipes/<id>/ (sibling to recipes/<id>.md).
   // Use sourceDir from the parsed recipe (fork-friendly) instead of __dirname.
-  const recipeDir = recipe.sourceDir ?? pathDirname(pathResolve(__dirname, '..', '..', 'recipes'));
-  const recipeBundleRoot = pathResolve(
-    recipeDir,
-    recipe.filename.replace(/\.md$/, ''),
-  );
+  const recipeDir = recipe.sourceDir ?? pathDirname(pathResolve(__dirname, "..", "..", "recipes"));
+  const recipeBundleRoot = pathResolve(recipeDir, recipe.filename.replace(/\.md$/, ""));
 
-  const manifestPath = join(recipeBundleRoot, 'install', 'manifest.json');
+  const manifestPath = join(recipeBundleRoot, "install", "manifest.json");
   let manifest: InstallManifest;
   try {
-    manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+    manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
   } catch (err) {
     throw new Error(`failed to read manifest at ${manifestPath}: ${(err as Error).message}`);
   }
 
   // Combine file + skill entries for the validation + copy loop.
-  const allEntries: ManifestFileEntry[] = [
-    ...(manifest.files || []),
-    ...(manifest.skills || []),
-  ];
+  const allEntries: ManifestFileEntry[] = [...(manifest.files || []), ...(manifest.skills || [])];
 
   // Validate every manifest target path.
   for (const entry of allEntries) {
     const reason = validateManifestTarget(entry.target);
-    if (reason) throw new Error(`manifest entry invalid (${entry.src} → ${entry.target}): ${reason}`);
+    if (reason)
+      throw new Error(`manifest entry invalid (${entry.src} → ${entry.target}): ${reason}`);
   }
 
   // Validate the target repo.
@@ -1398,14 +1601,18 @@ export async function installRecipeIntoHostRepo(
     mkdirSync(pathDirname(targetPath), { recursive: true });
     copyFileSync(srcPath, targetPath);
     if (entry.mode) {
-      try { chmodSync(targetPath, parseInt(entry.mode, 8)); } catch { /* non-fatal */ }
+      try {
+        chmodSync(targetPath, parseInt(entry.mode, 8));
+      } catch {
+        /* non-fatal */
+      }
     }
     const hash = sha256OfFile(srcPath);
     installedRecords.push({
       src: entry.src,
       target: entry.target,
       sha256: hash,
-      mode: entry.mode || '0644',
+      mode: entry.mode || "0644",
     });
   }
 
@@ -1413,15 +1620,17 @@ export async function installRecipeIntoHostRepo(
   // Per D11-A: NO upstream_repo field, NO imported_from field.
   const gbrainVersion = (() => {
     try {
-      const pkgPath = pathResolve(__dirname, '..', '..', 'package.json');
-      return JSON.parse(readFileSync(pkgPath, 'utf8')).version || 'unknown';
-    } catch { return 'unknown'; }
+      const pkgPath = pathResolve(__dirname, "..", "..", "package.json");
+      return JSON.parse(readFileSync(pkgPath, "utf8")).version || "unknown";
+    } catch {
+      return "unknown";
+    }
   })();
 
   const gbrainSource: GbrainSourceJson = {
     recipe: recipeId,
     gbrain_version: gbrainVersion,
-    install_kind: 'copy-into-host-repo',
+    install_kind: "copy-into-host-repo",
     copied_at: new Date().toISOString(),
     files: installedRecords,
   };
@@ -1429,14 +1638,19 @@ export async function installRecipeIntoHostRepo(
   const sourceFilePath = join(
     resolvedTarget,
     manifest.target_root_relative_to_host_repo,
-    '.gbrain-source.json',
+    ".gbrain-source.json"
   );
   mkdirSync(pathDirname(sourceFilePath), { recursive: true });
-  writeFileSync(sourceFilePath, JSON.stringify(gbrainSource, null, 2) + '\n');
+  writeFileSync(sourceFilePath, JSON.stringify(gbrainSource, null, 2) + "\n");
 
   // Append resolver rows (if any) to the host's RESOLVER.md or AGENTS.md.
   if (manifest.resolver_rows_to_append && manifest.resolver_rows_to_append.length > 0) {
-    const resolverCandidates = ['RESOLVER.md', 'AGENTS.md', 'skills/RESOLVER.md', 'skills/AGENTS.md'];
+    const resolverCandidates = [
+      "RESOLVER.md",
+      "AGENTS.md",
+      "skills/RESOLVER.md",
+      "skills/AGENTS.md",
+    ];
     let resolverPath: string | null = null;
     for (const candidate of resolverCandidates) {
       const candidatePath = join(resolvedTarget, candidate);
@@ -1444,18 +1658,21 @@ export async function installRecipeIntoHostRepo(
         fsStatSync(candidatePath);
         resolverPath = candidatePath;
         break;
-      } catch { /* not present */ }
+      } catch {
+        /* not present */
+      }
     }
     if (resolverPath) {
-      const rowsBlock = `\n\n<!-- gbrain:agent-voice:resolver-rows -->\n` +
-        manifest.resolver_rows_to_append.map((r) => `- ${r}`).join('\n') +
-        '\n<!-- /gbrain:agent-voice:resolver-rows -->\n';
+      const rowsBlock =
+        `\n\n<!-- gbrain:agent-voice:resolver-rows -->\n` +
+        manifest.resolver_rows_to_append.map((r) => `- ${r}`).join("\n") +
+        "\n<!-- /gbrain:agent-voice:resolver-rows -->\n";
       fsAppendFileSync(resolverPath, rowsBlock);
     } else {
       console.warn(
         `[install] no RESOLVER.md or AGENTS.md in target repo; ` +
           `add these rows manually:\n` +
-          manifest.resolver_rows_to_append.map((r) => `  ${r}`).join('\n'),
+          manifest.resolver_rows_to_append.map((r) => `  ${r}`).join("\n")
       );
     }
   }
@@ -1465,43 +1682,47 @@ export async function installRecipeIntoHostRepo(
 
 async function cmdInstall(args: string[]): Promise<void> {
   let recipeId: string | null = null;
-  const opts: InstallOpts = { target: '' };
+  const opts: InstallOpts = { target: "" };
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
-    if (arg === '--target' || arg === '-t') {
+    if (arg === "--target" || arg === "-t") {
       opts.target = args[++i];
-    } else if (arg === '--refresh') {
+    } else if (arg === "--refresh") {
       opts.refresh = true;
-    } else if (arg === '--overwrite') {
+    } else if (arg === "--overwrite") {
       opts.overwrite = true;
-    } else if (arg === '--dry-run' || arg === '-n') {
+    } else if (arg === "--dry-run" || arg === "-n") {
       opts.dryRun = true;
-    } else if (arg === '--auto') {
+    } else if (arg === "--auto") {
       const mode = args[++i];
-      if (mode !== 'keep-mine' && mode !== 'take-theirs') {
+      if (mode !== "keep-mine" && mode !== "take-theirs") {
         console.error(`--auto must be 'keep-mine' or 'take-theirs', got: ${mode}`);
         process.exit(2);
       }
       opts.autoMode = mode;
-    } else if (arg === '--help' || arg === '-h') {
-      console.log('Usage:');
-      console.log('  gbrain integrations install <recipe-id> --target <host-repo-path> [--overwrite] [--dry-run]');
-      console.log('  gbrain integrations install <recipe-id> --target <host-repo-path> --refresh [--auto keep-mine|take-theirs] [--dry-run]');
+    } else if (arg === "--help" || arg === "-h") {
+      console.log("Usage:");
+      console.log(
+        "  gbrain integrations install <recipe-id> --target <host-repo-path> [--overwrite] [--dry-run]"
+      );
+      console.log(
+        "  gbrain integrations install <recipe-id> --target <host-repo-path> --refresh [--auto keep-mine|take-theirs] [--dry-run]"
+      );
       return;
-    } else if (!recipeId && !arg.startsWith('-')) {
+    } else if (!recipeId && !arg.startsWith("-")) {
       recipeId = arg;
     }
   }
 
   if (!recipeId) {
-    console.error('Usage: gbrain integrations install <recipe-id> --target <host-repo-path>');
+    console.error("Usage: gbrain integrations install <recipe-id> --target <host-repo-path>");
     process.exit(2);
   }
   if (!opts.target) {
-    opts.target = process.env.OPENCLAW_WORKSPACE || '';
+    opts.target = process.env.OPENCLAW_WORKSPACE || "";
     if (!opts.target) {
-      console.error('--target <host-repo-path> required (or set $OPENCLAW_WORKSPACE)');
+      console.error("--target <host-repo-path> required (or set $OPENCLAW_WORKSPACE)");
       process.exit(2);
     }
   }
@@ -1509,17 +1730,23 @@ async function cmdInstall(args: string[]): Promise<void> {
   try {
     if (opts.refresh) {
       const { applied, manifestPath } = await refreshRecipeIntoHostRepo(recipeId, opts);
-      console.log(`[refresh] ${recipeId}: applied ${applied} changes to ${realpathSync(opts.target)}`);
+      console.log(
+        `[refresh] ${recipeId}: applied ${applied} changes to ${realpathSync(opts.target)}`
+      );
       console.log(`[refresh] manifest: ${manifestPath}`);
       if (opts.dryRun) {
-        console.log('[refresh] DRY RUN — no files written.');
+        console.log("[refresh] DRY RUN — no files written.");
       }
     } else {
       const { written, manifestPath } = await installRecipeIntoHostRepo(recipeId, opts);
-      console.log(`[install] ${recipeId}: copied ${written} files into ${realpathSync(opts.target)}`);
+      console.log(
+        `[install] ${recipeId}: copied ${written} files into ${realpathSync(opts.target)}`
+      );
       console.log(`[install] manifest: ${manifestPath}`);
       if (!opts.dryRun) {
-        console.log('[install] next steps: see recipes/' + recipeId + '/install/post-install-hint.md');
+        console.log(
+          "[install] next steps: see recipes/" + recipeId + "/install/post-install-hint.md"
+        );
       }
     }
   } catch (err) {
@@ -1531,7 +1758,7 @@ async function cmdInstall(args: string[]): Promise<void> {
 export async function runIntegrations(args: string[]): Promise<void> {
   const sub = args[0];
 
-  if (!sub || sub === '--help' || sub === '-h') {
+  if (!sub || sub === "--help" || sub === "-h") {
     if (!sub) {
       // Bare command: show dashboard
       cmdList([]);
@@ -1544,25 +1771,25 @@ export async function runIntegrations(args: string[]): Promise<void> {
   const subArgs = args.slice(1);
 
   switch (sub) {
-    case 'list':
+    case "list":
       cmdList(subArgs);
       break;
-    case 'show':
+    case "show":
       cmdShow(subArgs);
       break;
-    case 'install':
+    case "install":
       await cmdInstall(subArgs);
       break;
-    case 'status':
+    case "status":
       cmdStatus(subArgs);
       break;
-    case 'doctor':
+    case "doctor":
       await cmdDoctor(subArgs);
       break;
-    case 'stats':
+    case "stats":
       cmdStats(subArgs);
       break;
-    case 'test':
+    case "test":
       cmdTest(subArgs);
       break;
     default:

@@ -37,19 +37,21 @@ grade_takes phase produces noisy results:
   slightly different wording.
 
 The root cause: `propose_takes` extracts everything that looks like a belief or
-assertion. That's correct for the *takes* table (epistemological layer), but
+assertion. That's correct for the _takes_ table (epistemological layer), but
 `grade_takes` needs a much narrower subset: **falsifiable predictions about
 future outcomes** where we can check what actually happened.
 
 ### Example classifications from production testing
 
 **Genuine predictions (grade-worthy):**
+
 - "X will reach $1M ARR very soon" → company_outcome
-- "X is going to leave Y" → people_move  
+- "X is going to leave Y" → people_move
 - "AI will make authentic authorship more important" → technology
 - "X was convinced Y would win the Z market" → market_call
 
 **Not predictions (should skip grading):**
+
 - "Desire is mimetic" → philosophical belief
 - "X should charge 10x more" → advice
 - "Return from Toronto on Monday" → logistics
@@ -89,13 +91,16 @@ two fields to the JSON output schema).
 Before attempting grading, filter:
 
 ```typescript
-const gradeable = candidates.filter(t =>
-  t.falsifiability !== null && t.falsifiability >= 0.7
-  && t.falsifiability_category !== 'not_prediction'
+const gradeable = candidates.filter(
+  (t) =>
+    t.falsifiability !== null &&
+    t.falsifiability >= 0.7 &&
+    t.falsifiability_category !== "not_prediction"
 );
 ```
 
 This reduces grading volume by ~93% in production, which means:
+
 - LLM cost for grading drops proportionally
 - Evidence retrieval load drops (each grade attempt triggers hybrid search)
 - Calibration profiles are built on real predictions, not noise
@@ -170,15 +175,15 @@ This should replace the stub in the `evidenceRetriever` injection point.
 After implementing the falsifiability filter (as a pre-processing step outside
 the cycle):
 
-| Metric | Before (v2, no filter) | After (v3, with filter) |
-|--------|----------------------|----------------------|
-| Candidates evaluated | 50 | 34 (from 500 screened) |
-| Falsifiable predictions | ~19 (38%) | 34 (100%) |
-| Correct | 10 (52.6% of resolvable) | 10 (58.8% of resolvable) |
-| Incorrect | 5 (26.3%) | 2 (11.8%) |
-| Partial | 4 (21.1%) | 5 (29.4%) |
-| Unresolvable | 31 (62%) | 17 (50%) |
-| Category breakdown | N/A | people_move:13, company_outcome:11, technology:4, market_call:2 |
+| Metric                  | Before (v2, no filter)   | After (v3, with filter)                                         |
+| ----------------------- | ------------------------ | --------------------------------------------------------------- |
+| Candidates evaluated    | 50                       | 34 (from 500 screened)                                          |
+| Falsifiable predictions | ~19 (38%)                | 34 (100%)                                                       |
+| Correct                 | 10 (52.6% of resolvable) | 10 (58.8% of resolvable)                                        |
+| Incorrect               | 5 (26.3%)                | 2 (11.8%)                                                       |
+| Partial                 | 4 (21.1%)                | 5 (29.4%)                                                       |
+| Unresolvable            | 31 (62%)                 | 17 (50%)                                                        |
+| Category breakdown      | N/A                      | people_move:13, company_outcome:11, technology:4, market_call:2 |
 
 Key improvement: **the false positive rate dropped from 62% noise to 0% noise**
 in the gradeable set. The remaining 50% unresolvable rate is genuine — those

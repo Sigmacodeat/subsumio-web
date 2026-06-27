@@ -1,9 +1,11 @@
 # Source Attribution
 
 ## Goal
+
 Every fact in the brain traces to where it came from -- who said it, in what context, and when.
 
 ## What the User Gets
+
 Without this: six months from now, someone reads a brain page and has no idea if "Pedro co-founded Brex" came from Pedro himself, a LinkedIn scrape, or a hallucination. With this: every claim is auditable, conflicts are surfaced, and the brain is a court-admissible record of reality.
 
 ## Implementation
@@ -72,4 +74,5 @@ SOURCE_PRIORITY = [
 5. Look for a page where the user stated something that contradicts an API result. Confirm the contradiction is noted, not silently resolved.
 
 ---
-*Part of the [GBrain Skillpack](../GBRAIN_SKILLPACK.md).*
+
+_Part of the [GBrain Skillpack](../GBRAIN_SKILLPACK.md)._

@@ -134,7 +134,11 @@ export function generateInvoicePdf(data: InvoicePdfData): jsPDF {
       head: [["Datum", "Beschreibung", "Stunden", "Satz", "Betrag"]],
       body: itemRows,
       theme: "grid",
-      headStyles: { fillColor: accentColor as [number, number, number], textColor: 255, fontSize: 9 },
+      headStyles: {
+        fillColor: accentColor as [number, number, number],
+        textColor: 255,
+        fontSize: 9,
+      },
       bodyStyles: { fontSize: 9, textColor: darkText },
       columnStyles: {
         0: { cellWidth: 25 },
@@ -164,7 +168,11 @@ export function generateInvoicePdf(data: InvoicePdfData): jsPDF {
       head: [["Datum", "Auslage", "", "", "Betrag"]],
       body: expenseRows,
       theme: "grid",
-      headStyles: { fillColor: [200, 200, 200] as [number, number, number], textColor: 40, fontSize: 9 },
+      headStyles: {
+        fillColor: [200, 200, 200] as [number, number, number],
+        textColor: 40,
+        fontSize: 9,
+      },
       bodyStyles: { fontSize: 9, textColor: darkText },
       columnStyles: {
         0: { cellWidth: 25 },
@@ -191,7 +199,9 @@ export function generateInvoicePdf(data: InvoicePdfData): jsPDF {
     { label: "Honorar netto", value: data.subtotal },
     ...(data.expenseTotal > 0 ? [{ label: "Auslagen netto", value: data.expenseTotal }] : []),
     { label: `Mehrwertsteuer (${(data.vatRate * 100).toFixed(0)}%)`, value: data.tax },
-    ...(data.advancePayment > 0 ? [{ label: "Vorschuss / Anzahlung", value: -data.advancePayment }] : []),
+    ...(data.advancePayment > 0
+      ? [{ label: "Vorschuss / Anzahlung", value: -data.advancePayment }]
+      : []),
   ];
 
   sums.forEach((s) => {

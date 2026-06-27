@@ -27,7 +27,7 @@
  * safe regex). The simple_pattern shape lives in `simple-pattern.ts`.
  */
 
-import type { Page } from '../types.ts';
+import type { Page } from "../types.ts";
 
 /**
  * Parsed message after orchestrator runs. Matches the existing
@@ -50,7 +50,7 @@ export interface MatchedMessage {
  *     fallback was called and returned this output.
  *   - 'no_match': nothing parsed; returned [] of messages.
  */
-export type ParsePhase = 'regex_match' | 'polish' | 'llm_fallback' | 'no_match';
+export type ParsePhase = "regex_match" | "polish" | "llm_fallback" | "no_match";
 
 /**
  * Verdict from the orchestrator. Surfaced in audit JSONL and the
@@ -86,10 +86,10 @@ export interface ParseResult {
  * extracts `frontmatter.date` slice OR `effective_date` OR explicit
  * fallback OR '1970-01-01'.
  */
-export type DateSource = 'inline' | 'frontmatter' | 'combined';
+export type DateSource = "inline" | "frontmatter" | "combined";
 
 /** Time-format flavor a pattern's regex emits. */
-export type TimeFormat = '12h_ampm' | '24h' | 'unix' | 'rfc2822';
+export type TimeFormat = "12h_ampm" | "24h" | "unix" | "rfc2822";
 
 /**
  * Per D19: how a pattern handles timezone. The orchestrator uses this
@@ -97,9 +97,9 @@ export type TimeFormat = '12h_ampm' | '24h' | 'unix' | 'rfc2822';
  * AND how to construct the ISO timestamp.
  */
 export type TimezonePolicy =
-  | 'inline_utc'             // Existing: regex captures full ISO/UTC; trust it.
-  | 'frontmatter_tz'         // Caller's frontmatter MUST have `timezone:`; refuse otherwise.
-  | 'utc_assumed_with_warn'; // Default UTC; emit once-per-page warn if no frontmatter timezone.
+  | "inline_utc" // Existing: regex captures full ISO/UTC; trust it.
+  | "frontmatter_tz" // Caller's frontmatter MUST have `timezone:`; refuse otherwise.
+  | "utc_assumed_with_warn"; // Default UTC; emit once-per-page warn if no frontmatter timezone.
 
 /**
  * Capture-group index map. Each pattern declares where its captures
@@ -136,7 +136,7 @@ export interface PatternEntry {
   /** Stable kebab-case id. Examples: 'imessage-slack', 'telegram-bracket'. */
   id: string;
   /** Built-in vs user-declared (simple_pattern compiled). */
-  origin: 'builtin' | 'user_simple';
+  origin: "builtin" | "user_simple";
   /**
    * The line-matching regex. Built-ins are hand-vetted (no ReDoS risk).
    * User patterns are compiled from `simple_pattern` spec to a known-
@@ -225,5 +225,5 @@ export interface DateContext {
   /** IANA timezone (e.g. 'America/Los_Angeles') or undefined. */
   timezone?: string;
   /** Which step of the derivation chain won (for debug). */
-  source: 'frontmatter_date' | 'effective_date' | 'explicit' | 'epoch_default';
+  source: "frontmatter_date" | "effective_date" | "explicit" | "epoch_default";
 }

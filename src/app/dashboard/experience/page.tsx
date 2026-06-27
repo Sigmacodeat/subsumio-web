@@ -109,7 +109,9 @@ export default function ExperiencePage() {
       if (minLevel) params.set("min_level", minLevel);
       if (includeExternal) params.set("include_external", "true");
       if (language) params.set("language", language);
-      const res = await fetch(`/api/experience?${params.toString()}`, { signal: AbortSignal.timeout(30_000) });
+      const res = await fetch(`/api/experience?${params.toString()}`, {
+        signal: AbortSignal.timeout(30_000),
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setWhoKnowsResults(data.data?.results || []);
@@ -124,7 +126,9 @@ export default function ExperiencePage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/experience?action=list", { signal: AbortSignal.timeout(30_000) });
+      const res = await fetch("/api/experience?action=list", {
+        signal: AbortSignal.timeout(30_000),
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setProfiles(data.data?.profiles || []);
@@ -139,7 +143,9 @@ export default function ExperiencePage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/experience?action=summary", { signal: AbortSignal.timeout(30_000) });
+      const res = await fetch("/api/experience?action=summary", {
+        signal: AbortSignal.timeout(30_000),
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setSummary(data.data || null);

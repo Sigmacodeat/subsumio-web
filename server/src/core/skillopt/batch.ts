@@ -13,11 +13,11 @@
  * target-models.
  */
 
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import type { BrainEngine } from '../engine.ts';
-import { runSkillOpt } from './orchestrator.ts';
-import type { RunReceipt, SkillOptOpts } from './types.ts';
+import * as fs from "node:fs";
+import * as path from "node:path";
+import type { BrainEngine } from "../engine.ts";
+import { runSkillOpt } from "./orchestrator.ts";
+import type { RunReceipt, SkillOptOpts } from "./types.ts";
 
 export interface BatchAllOpts {
   engine: BrainEngine;
@@ -33,7 +33,7 @@ export interface BatchAllOpts {
   epochs: number;
   batchSize: number;
   lr: number;
-  lrSchedule: 'cosine' | 'linear' | 'constant';
+  lrSchedule: "cosine" | "linear" | "constant";
   split: [number, number, number];
   dryRun: boolean;
   noMutate: boolean;
@@ -53,7 +53,7 @@ export interface BatchAllResult {
   cumulative_cost_usd: number;
   per_skill: Array<{
     skill: string;
-    outcome: 'accepted' | 'no_improvement' | 'aborted' | 'errored' | 'skipped_cap';
+    outcome: "accepted" | "no_improvement" | "aborted" | "errored" | "skipped_cap";
     cost_usd: number;
     receipt?: RunReceipt;
     reason?: string;
@@ -62,7 +62,7 @@ export interface BatchAllResult {
 
 export async function runBatchAll(opts: BatchAllOpts): Promise<BatchAllResult> {
   const skills = collectSkillsWithBenchmarks(opts.skillsDir).filter(
-    (s) => !opts.filter || opts.filter(s),
+    (s) => !opts.filter || opts.filter(s)
   );
   const out: BatchAllResult = {
     skills_scanned: skills.length,
@@ -78,12 +78,17 @@ export async function runBatchAll(opts: BatchAllOpts): Promise<BatchAllResult> {
   for (const skillName of skills) {
     if (out.cumulative_cost_usd >= opts.brainWideMaxCostUsd) {
       out.brain_wide_cap_reached = true;
-      out.per_skill.push({ skill: skillName, outcome: 'skipped_cap', cost_usd: 0, reason: 'brain_wide_cap_reached' });
+      out.per_skill.push({
+        skill: skillName,
+        outcome: "skipped_cap",
+        cost_usd: 0,
+        reason: "brain_wide_cap_reached",
+      });
       continue;
     }
     const remaining = opts.brainWideMaxCostUsd - out.cumulative_cost_usd;
     const cap = Math.min(opts.perSkillMaxCostUsd, remaining);
-    const benchmarkPath = path.join(opts.skillsDir, skillName, 'skillopt-benchmark.jsonl');
+    const benchmarkPath = path.join(opts.skillsDir, skillName, "skillopt-benchmark.jsonl");
 
     const skillOptOpts: SkillOptOpts = {
       engine: opts.engine,
@@ -98,7 +103,7 @@ export async function runBatchAll(opts: BatchAllOpts): Promise<BatchAllResult> {
       optimizerModel: opts.optimizerModel,
       targetModel: opts.targetModel,
       judgeModel: opts.judgeModel,
-      mode: 'patch',
+      mode: "patch",
       dryRun: opts.dryRun,
       noMutate: opts.noMutate,
       allowMutateBundled: opts.allowMutateBundled,
@@ -114,9 +119,9 @@ export async function runBatchAll(opts: BatchAllOpts): Promise<BatchAllResult> {
       const spent = result.receipt.final_cost_usd ?? 0;
       out.cumulative_cost_usd += spent;
       out.skills_run += 1;
-      if (result.outcome === 'accepted') out.accepted += 1;
-      else if (result.outcome === 'no_improvement') out.no_improvement += 1;
-      else if (result.outcome === 'errored') out.errored += 1;
+      if (result.outcome === "accepted") out.accepted += 1;
+      else if (result.outcome === "no_improvement") out.no_improvement += 1;
+      else if (result.outcome === "errored") out.errored += 1;
       out.per_skill.push({
         skill: skillName,
         outcome: result.outcome as never,
@@ -126,7 +131,7 @@ export async function runBatchAll(opts: BatchAllOpts): Promise<BatchAllResult> {
     } catch (err) {
       out.errored += 1;
       const msg = err instanceof Error ? err.message : String(err);
-      out.per_skill.push({ skill: skillName, outcome: 'errored', cost_usd: 0, reason: msg });
+      out.per_skill.push({ skill: skillName, outcome: "errored", cost_usd: 0, reason: msg });
     }
   }
 
@@ -145,7 +150,7 @@ export interface FleetOpts {
   epochs: number;
   batchSize: number;
   lr: number;
-  lrSchedule: 'cosine' | 'linear' | 'constant';
+  lrSchedule: "cosine" | "linear" | "constant";
   split: [number, number, number];
   dryRun: boolean;
   noMutate: boolean;
@@ -162,7 +167,7 @@ export interface FleetResult {
   skill: string;
   per_model: Array<{
     target_model: string;
-    outcome: 'accepted' | 'no_improvement' | 'aborted' | 'errored';
+    outcome: "accepted" | "no_improvement" | "aborted" | "errored";
     best_sel_score: number;
     final_cost_usd: number;
     receipt: RunReceipt;
@@ -187,7 +192,7 @@ export interface FleetResult {
  */
 export async function runFleet(opts: FleetOpts): Promise<FleetResult> {
   if (opts.targetModels.length === 0) {
-    throw new Error('runFleet: targetModels must be non-empty');
+    throw new Error("runFleet: targetModels must be non-empty");
   }
 
   // Fleet runs are ALWAYS no-mutate. The operator must explicitly pick
@@ -200,13 +205,20 @@ export async function runFleet(opts: FleetOpts): Promise<FleetResult> {
     // path that includes the slug. Mkdir the path so apply-edits + version-
     // store work inside it. Copy the SKILL.md into the per-model dir
     // up-front so each fleet run sees the same baseline.
-    const fleetDir = path.join(opts.skillsDir, opts.skillName, 'skillopt', 'fleet', slug);
+    const fleetDir = path.join(opts.skillsDir, opts.skillName, "skillopt", "fleet", slug);
     fs.mkdirSync(fleetDir, { recursive: true });
     // Per-model "skills dir" sees only this one skill.
-    const perModelSkillsDir = path.join(opts.skillsDir, opts.skillName, 'skillopt', 'fleet', slug, 'staging');
+    const perModelSkillsDir = path.join(
+      opts.skillsDir,
+      opts.skillName,
+      "skillopt",
+      "fleet",
+      slug,
+      "staging"
+    );
     fs.mkdirSync(path.join(perModelSkillsDir, opts.skillName), { recursive: true });
-    const stagingSkillPath = path.join(perModelSkillsDir, opts.skillName, 'SKILL.md');
-    const baselinePath = path.join(opts.skillsDir, opts.skillName, 'SKILL.md');
+    const stagingSkillPath = path.join(perModelSkillsDir, opts.skillName, "SKILL.md");
+    const baselinePath = path.join(opts.skillsDir, opts.skillName, "SKILL.md");
     fs.copyFileSync(baselinePath, stagingSkillPath);
 
     const skillOptOpts: SkillOptOpts = {
@@ -222,7 +234,7 @@ export async function runFleet(opts: FleetOpts): Promise<FleetResult> {
       optimizerModel: opts.optimizerModel,
       targetModel,
       judgeModel: opts.judgeModel,
-      mode: 'patch',
+      mode: "patch",
       dryRun: opts.dryRun,
       noMutate,
       allowMutateBundled: opts.allowMutateBundled,
@@ -236,7 +248,7 @@ export async function runFleet(opts: FleetOpts): Promise<FleetResult> {
     const result = await runSkillOpt(skillOptOpts);
     return {
       target_model: targetModel,
-      outcome: result.outcome as 'accepted' | 'no_improvement' | 'aborted' | 'errored',
+      outcome: result.outcome as "accepted" | "no_improvement" | "aborted" | "errored",
       best_sel_score: result.receipt.best_sel_score ?? 0,
       final_cost_usd: result.receipt.final_cost_usd ?? 0,
       receipt: result.receipt,
@@ -245,10 +257,10 @@ export async function runFleet(opts: FleetOpts): Promise<FleetResult> {
 
   const settled = await Promise.allSettled(promises);
   const per_model = settled.map((s, i) => {
-    if (s.status === 'fulfilled') return s.value;
+    if (s.status === "fulfilled") return s.value;
     return {
       target_model: opts.targetModels[i]!,
-      outcome: 'errored' as const,
+      outcome: "errored" as const,
       best_sel_score: 0,
       final_cost_usd: 0,
       receipt: {} as RunReceipt,
@@ -259,7 +271,7 @@ export async function runFleet(opts: FleetOpts): Promise<FleetResult> {
 
   // Pick the best-scoring model.
   const winning = per_model.reduce<{ model: string; score: number } | null>((acc, p) => {
-    if (p.outcome !== 'accepted' && p.outcome !== 'no_improvement') return acc;
+    if (p.outcome !== "accepted" && p.outcome !== "no_improvement") return acc;
     if (acc === null || p.best_sel_score > acc.score) {
       return { model: p.target_model, score: p.best_sel_score };
     }
@@ -274,7 +286,7 @@ export async function runFleet(opts: FleetOpts): Promise<FleetResult> {
 }
 
 function slugifyModel(model: string): string {
-  return model.replace(/[^a-z0-9-]/gi, '-').toLowerCase();
+  return model.replace(/[^a-z0-9-]/gi, "-").toLowerCase();
 }
 
 function collectSkillsWithBenchmarks(skillsDir: string): string[] {
@@ -283,9 +295,13 @@ function collectSkillsWithBenchmarks(skillsDir: string): string[] {
   for (const entry of fs.readdirSync(skillsDir)) {
     const dir = path.join(skillsDir, entry);
     let isDir = false;
-    try { isDir = fs.statSync(dir).isDirectory(); } catch { /* skip */ }
+    try {
+      isDir = fs.statSync(dir).isDirectory();
+    } catch {
+      /* skip */
+    }
     if (!isDir) continue;
-    const benchPath = path.join(dir, 'skillopt-benchmark.jsonl');
+    const benchPath = path.join(dir, "skillopt-benchmark.jsonl");
     if (fs.existsSync(benchPath)) out.push(entry);
   }
   return out.sort();

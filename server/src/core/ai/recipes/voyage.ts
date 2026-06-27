@@ -1,4 +1,4 @@
-import type { Recipe } from '../types.ts';
+import type { Recipe } from "../types.ts";
 
 /**
  * Voyage AI exposes an OpenAI-compatible /embeddings endpoint.
@@ -19,26 +19,34 @@ import type { Recipe } from '../types.ts';
  * gateway. Text-only Voyage models keep their existing path.
  */
 export const voyage: Recipe = {
-  id: 'voyage',
-  name: 'Voyage AI',
-  tier: 'openai-compat',
-  implementation: 'openai-compatible',
-  base_url_default: 'https://api.voyageai.com/v1',
+  id: "voyage",
+  name: "Voyage AI",
+  tier: "openai-compat",
+  implementation: "openai-compatible",
+  base_url_default: "https://api.voyageai.com/v1",
   auth_env: {
-    required: ['VOYAGE_API_KEY'],
-    setup_url: 'https://dash.voyageai.com/api-keys',
+    required: ["VOYAGE_API_KEY"],
+    setup_url: "https://dash.voyageai.com/api-keys",
   },
   touchpoints: {
     embedding: {
       models: [
-        'voyage-4-large', 'voyage-4', 'voyage-4-lite', 'voyage-4-nano',
-        'voyage-3.5', 'voyage-3-large', 'voyage-3', 'voyage-3-lite',
-        'voyage-code-3', 'voyage-finance-2', 'voyage-law-2',
-        'voyage-multimodal-3',
+        "voyage-4-large",
+        "voyage-4",
+        "voyage-4-lite",
+        "voyage-4-nano",
+        "voyage-3.5",
+        "voyage-3-large",
+        "voyage-3",
+        "voyage-3-lite",
+        "voyage-code-3",
+        "voyage-finance-2",
+        "voyage-law-2",
+        "voyage-multimodal-3",
       ],
       default_dims: 1024,
       cost_per_1m_tokens_usd: 0.18,
-      price_last_verified: '2026-04-20',
+      price_last_verified: "2026-04-20",
       // Voyage enforces 120K tokens per batch. Voyage's tokenizer runs
       // ~3-4× denser than OpenAI tiktoken on mixed content (code/JSON/CJK),
       // so the per-recipe pre-split uses 1 char ≈ 1 token at 0.5 utilization
@@ -55,8 +63,9 @@ export const voyage: Recipe = {
       // through local validation and Voyage would reject it with HTTP 400 —
       // which gateway.ts:626 misclassifies as transient (TODO: reclassify
       // 4xx).
-      multimodal_models: ['voyage-multimodal-3'],
+      multimodal_models: ["voyage-multimodal-3"],
     },
   },
-  setup_hint: 'Get an API key at https://dash.voyageai.com/api-keys, then `export VOYAGE_API_KEY=...`',
+  setup_hint:
+    "Get an API key at https://dash.voyageai.com/api-keys, then `export VOYAGE_API_KEY=...`",
 };

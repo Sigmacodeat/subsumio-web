@@ -1,191 +1,426 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="de">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Subsumio für Word</title>
-  <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js" type="text/javascript"></script>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0a0a18; color: #e8e8f0; font-size: 13px; }
-    .header { display: flex; align-items: center; gap: 8px; padding: 12px 14px; border-bottom: 1px solid #1e1e3a; background: #0d0d1a; }
-    .header h1 { font-size: 14px; font-weight: 600; color: #e8e8f0; }
-    .header-logo { width: 20px; height: 20px; background: #6366f1; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: white; }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Subsumio für Word</title>
+    <script
+      src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"
+      type="text/javascript"
+    ></script>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background: #0a0a18;
+        color: #e8e8f0;
+        font-size: 13px;
+      }
+      .header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 14px;
+        border-bottom: 1px solid #1e1e3a;
+        background: #0d0d1a;
+      }
+      .header h1 {
+        font-size: 14px;
+        font-weight: 600;
+        color: #e8e8f0;
+      }
+      .header-logo {
+        width: 20px;
+        height: 20px;
+        background: #6366f1;
+        border-radius: 5px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: 700;
+        color: white;
+      }
 
-    /* Auth */
-    #authSection { padding: 16px; }
-    #authSection p { font-size: 12px; color: #8a8aa8; margin-bottom: 12px; line-height: 1.5; }
-    #status { padding: 8px 10px; border-radius: 6px; font-size: 12px; margin: 0 14px 10px; }
-    #status.ok { background: #10b98115; border: 1px solid #10b98130; color: #34d399; }
-    #status.err { background: #ef444415; border: 1px solid #ef444430; color: #f87171; }
+      /* Auth */
+      #authSection {
+        padding: 16px;
+      }
+      #authSection p {
+        font-size: 12px;
+        color: #8a8aa8;
+        margin-bottom: 12px;
+        line-height: 1.5;
+      }
+      #status {
+        padding: 8px 10px;
+        border-radius: 6px;
+        font-size: 12px;
+        margin: 0 14px 10px;
+      }
+      #status.ok {
+        background: #10b98115;
+        border: 1px solid #10b98130;
+        color: #34d399;
+      }
+      #status.err {
+        background: #ef444415;
+        border: 1px solid #ef444430;
+        color: #f87171;
+      }
 
-    /* Tabs */
-    .tabs { display: flex; border-bottom: 1px solid #1e1e3a; background: #0d0d1a; }
-    .tab-btn { flex: 1; padding: 9px 4px; font-size: 11px; font-weight: 500; color: #8a8aa8; background: none; border: none; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; }
-    .tab-btn:hover { color: #c0c0d8; }
-    .tab-btn.active { color: #6366f1; border-bottom-color: #6366f1; }
-    .tab-panel { display: none; padding: 14px; }
+      /* Tabs */
+      .tabs {
+        display: flex;
+        border-bottom: 1px solid #1e1e3a;
+        background: #0d0d1a;
+      }
+      .tab-btn {
+        flex: 1;
+        padding: 9px 4px;
+        font-size: 11px;
+        font-weight: 500;
+        color: #8a8aa8;
+        background: none;
+        border: none;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        transition: all 0.15s;
+      }
+      .tab-btn:hover {
+        color: #c0c0d8;
+      }
+      .tab-btn.active {
+        color: #6366f1;
+        border-bottom-color: #6366f1;
+      }
+      .tab-panel {
+        display: none;
+        padding: 14px;
+      }
 
-    /* Forms */
-    input, select, textarea { width: 100%; background: #0d0d1a; border: 1px solid #1e1e3a; border-radius: 6px; padding: 8px 10px; color: #e8e8f0; font-size: 12px; margin-bottom: 8px; outline: none; }
-    input:focus, select:focus, textarea:focus { border-color: #6366f1; }
-    input::placeholder, textarea::placeholder { color: #4a4a6a; }
-    textarea { resize: vertical; min-height: 60px; }
-    label { font-size: 11px; color: #8a8aa8; margin-bottom: 4px; display: block; font-weight: 500; }
+      /* Forms */
+      input,
+      select,
+      textarea {
+        width: 100%;
+        background: #0d0d1a;
+        border: 1px solid #1e1e3a;
+        border-radius: 6px;
+        padding: 8px 10px;
+        color: #e8e8f0;
+        font-size: 12px;
+        margin-bottom: 8px;
+        outline: none;
+      }
+      input:focus,
+      select:focus,
+      textarea:focus {
+        border-color: #6366f1;
+      }
+      input::placeholder,
+      textarea::placeholder {
+        color: #4a4a6a;
+      }
+      textarea {
+        resize: vertical;
+        min-height: 60px;
+      }
+      label {
+        font-size: 11px;
+        color: #8a8aa8;
+        margin-bottom: 4px;
+        display: block;
+        font-weight: 500;
+      }
 
-    /* Buttons */
-    .btn { width: 100%; background: #6366f1; color: white; border: none; border-radius: 6px; padding: 9px; font-size: 12px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 6px; }
-    .btn:hover { background: #818cf8; }
-    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    .btn-secondary { background: #1e1e3a; color: #c0c0d8; }
-    .btn-secondary:hover { background: #2a2a4a; }
-    .btn-sm { padding: 7px; font-size: 11px; }
+      /* Buttons */
+      .btn {
+        width: 100%;
+        background: #6366f1;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 9px;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        margin-bottom: 6px;
+      }
+      .btn:hover {
+        background: #818cf8;
+      }
+      .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      .btn-secondary {
+        background: #1e1e3a;
+        color: #c0c0d8;
+      }
+      .btn-secondary:hover {
+        background: #2a2a4a;
+      }
+      .btn-sm {
+        padding: 7px;
+        font-size: 11px;
+      }
 
-    /* Results */
-    .result { display: none; background: #0d0d1a; border: 1px solid #1e1e3a; border-radius: 6px; padding: 10px; margin-top: 8px; font-size: 12px; line-height: 1.6; color: #c0c0d8; max-height: 200px; overflow-y: auto; }
-    .section-status { padding: 7px 10px; border-radius: 6px; font-size: 12px; margin-bottom: 8px; display: none; }
-    .section-status.ok { background: #10b98115; border: 1px solid #10b98130; color: #34d399; }
-    .section-status.err { background: #ef444415; border: 1px solid #ef444430; color: #f87171; }
+      /* Results */
+      .result {
+        display: none;
+        background: #0d0d1a;
+        border: 1px solid #1e1e3a;
+        border-radius: 6px;
+        padding: 10px;
+        margin-top: 8px;
+        font-size: 12px;
+        line-height: 1.6;
+        color: #c0c0d8;
+        max-height: 200px;
+        overflow-y: auto;
+      }
+      .section-status {
+        padding: 7px 10px;
+        border-radius: 6px;
+        font-size: 12px;
+        margin-bottom: 8px;
+        display: none;
+      }
+      .section-status.ok {
+        background: #10b98115;
+        border: 1px solid #10b98130;
+        color: #34d399;
+      }
+      .section-status.err {
+        background: #ef444415;
+        border: 1px solid #ef444430;
+        color: #f87171;
+      }
 
-    /* Obligation items */
-    .oblig-item { padding: 8px; border-radius: 4px; background: #0d0d1a; border: 1px solid #1e1e3a; margin-bottom: 6px; }
-    .oblig-type { font-size: 11px; font-weight: 600; color: #6366f1; margin-bottom: 2px; }
-    .oblig-party { font-size: 11px; color: #8a8aa8; }
-    .oblig-text { font-size: 12px; margin: 3px 0; }
-    .oblig-deadline { font-size: 11px; color: #f59e0b; }
+      /* Obligation items */
+      .oblig-item {
+        padding: 8px;
+        border-radius: 4px;
+        background: #0d0d1a;
+        border: 1px solid #1e1e3a;
+        margin-bottom: 6px;
+      }
+      .oblig-type {
+        font-size: 11px;
+        font-weight: 600;
+        color: #6366f1;
+        margin-bottom: 2px;
+      }
+      .oblig-party {
+        font-size: 11px;
+        color: #8a8aa8;
+      }
+      .oblig-text {
+        font-size: 12px;
+        margin: 3px 0;
+      }
+      .oblig-deadline {
+        font-size: 11px;
+        color: #f59e0b;
+      }
 
-    /* Separator */
-    .sep { border: none; border-top: 1px solid #1e1e3a; margin: 10px 0; }
+      /* Separator */
+      .sep {
+        border: none;
+        border-top: 1px solid #1e1e3a;
+        margin: 10px 0;
+      }
 
-    /* Spinner */
-    .spinner { width: 13px; height: 13px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.6s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
+      /* Spinner */
+      .spinner {
+        width: 13px;
+        height: 13px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-top-color: white;
+        border-radius: 50%;
+        animation: spin 0.6s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
 
-    /* Section title */
-    .sec-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; color: #6a6a8a; margin-bottom: 8px; font-weight: 600; }
-  </style>
-</head>
-<body>
+      /* Section title */
+      .sec-title {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        color: #6a6a8a;
+        margin-bottom: 8px;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <div class="header-logo">S</div>
+      <h1>Subsumio für Word</h1>
+    </div>
 
-<div class="header">
-  <div class="header-logo">S</div>
-  <h1>Subsumio für Word</h1>
-</div>
+    <!-- Auth -->
+    <div id="authSection">
+      <p>
+        Verbinde Subsumio mit Word für KI-gestützte Vertragsanalyse, Entwürfe und Aktenrecherche.
+      </p>
+      <input type="password" id="token" placeholder="Subsumio API-Token" />
+      <button class="btn" id="connectBtn" onclick="connect()">Verbinden</button>
+      <div id="status" style="display: none"></div>
+    </div>
 
-<!-- Auth -->
-<div id="authSection">
-  <p>Verbinde Subsumio mit Word für KI-gestützte Vertragsanalyse, Entwürfe und Aktenrecherche.</p>
-  <input type="password" id="token" placeholder="Subsumio API-Token">
-  <button class="btn" id="connectBtn" onclick="connect()">Verbinden</button>
-  <div id="status" style="display:none"></div>
-</div>
+    <!-- Main Content (nach Login) -->
+    <div id="mainContent" style="display: none">
+      <div id="status" style="display: none; margin-top: 10px"></div>
 
-<!-- Main Content (nach Login) -->
-<div id="mainContent" style="display:none">
-  <div id="status" style="display:none;margin-top:10px"></div>
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab-btn" data-tab="analyze">Analyse</button>
+        <button class="tab-btn" data-tab="contract">Vertrag</button>
+        <button class="tab-btn" data-tab="akte">Akte</button>
+        <button class="tab-btn" data-tab="export">Export</button>
+      </div>
 
-  <!-- Tabs -->
-  <div class="tabs">
-    <button class="tab-btn" data-tab="analyze">Analyse</button>
-    <button class="tab-btn" data-tab="contract">Vertrag</button>
-    <button class="tab-btn" data-tab="akte">Akte</button>
-    <button class="tab-btn" data-tab="export">Export</button>
-  </div>
+      <!-- Tab 1: Analyse -->
+      <div class="tab-panel" data-panel="analyze">
+        <div class="sec-title">Markierten Text analysieren</div>
 
-  <!-- Tab 1: Analyse -->
-  <div class="tab-panel" data-panel="analyze">
-    <div class="sec-title">Markierten Text analysieren</div>
+        <button class="btn" id="analyzeBtn" onclick="analyzeSelection()">Analysieren</button>
+        <div id="analyzeResult" class="result"></div>
 
-    <button class="btn" id="analyzeBtn" onclick="analyzeSelection()">Analysieren</button>
-    <div id="analyzeResult" class="result"></div>
+        <hr class="sep" />
 
-    <hr class="sep">
+        <button class="btn btn-secondary" id="summarizeBtn" onclick="summarizeSelection()">
+          Zusammenfassen
+        </button>
+        <div id="summarizeResult" class="result"></div>
 
-    <button class="btn btn-secondary" id="summarizeBtn" onclick="summarizeSelection()">Zusammenfassen</button>
-    <div id="summarizeResult" class="result"></div>
+        <hr class="sep" />
 
-    <hr class="sep">
+        <button class="btn btn-secondary" id="obligBtn" onclick="extractObligations()">
+          Pflichten extrahieren
+        </button>
+        <div id="obligResult" class="result"></div>
 
-    <button class="btn btn-secondary" id="obligBtn" onclick="extractObligations()">Pflichten extrahieren</button>
-    <div id="obligResult" class="result"></div>
+        <hr class="sep" />
 
-    <hr class="sep">
+        <button class="btn btn-secondary" id="riskBtn" onclick="checkRisks()">
+          Risiken prüfen
+        </button>
+        <div id="riskResult" class="result"></div>
+      </div>
 
-    <button class="btn btn-secondary" id="riskBtn" onclick="checkRisks()">Risiken prüfen</button>
-    <div id="riskResult" class="result"></div>
-  </div>
+      <!-- Tab 2: Vertrag -->
+      <div class="tab-panel" data-panel="contract">
+        <div id="contractStatus" class="section-status"></div>
 
-  <!-- Tab 2: Vertrag -->
-  <div class="tab-panel" data-panel="contract">
-    <div id="contractStatus" class="section-status"></div>
+        <div class="sec-title">Vertragsentwurf</div>
+        <label>Vertragstyp</label>
+        <select id="draftTemplate">
+          <option value="">— Vorlage wählen (optional) —</option>
+          <option value="nda">NDA / Geheimhaltungsvereinbarung</option>
+          <option value="agb">AGB</option>
+          <option value="lizenz">Lizenzvertrag</option>
+          <option value="arbeitsvertrag">Arbeitsvertrag</option>
+          <option value="kaufvertrag">Kaufvertrag</option>
+          <option value="mietvertrag">Mietvertrag</option>
+          <option value="dienstleistung">Dienstleistungsvertrag</option>
+          <option value="kooperation">Kooperationsvertrag</option>
+        </select>
+        <textarea
+          id="draftInstruction"
+          placeholder="Zusätzliche Anweisungen (optional): z.B. 'Bayerisches Recht, Vertragslaufzeit 2 Jahre'"
+        ></textarea>
+        <button class="btn" id="draftBtn" onclick="draftContract()">Entwurf erstellen</button>
+        <div id="draftResult" class="result"></div>
+        <button
+          class="btn btn-secondary btn-sm"
+          id="insertDraftBtn"
+          style="display: none"
+          onclick="insertDraftIntoWord()"
+        >
+          In Word einfügen
+        </button>
 
-    <div class="sec-title">Vertragsentwurf</div>
-    <label>Vertragstyp</label>
-    <select id="draftTemplate">
-      <option value="">— Vorlage wählen (optional) —</option>
-      <option value="nda">NDA / Geheimhaltungsvereinbarung</option>
-      <option value="agb">AGB</option>
-      <option value="lizenz">Lizenzvertrag</option>
-      <option value="arbeitsvertrag">Arbeitsvertrag</option>
-      <option value="kaufvertrag">Kaufvertrag</option>
-      <option value="mietvertrag">Mietvertrag</option>
-      <option value="dienstleistung">Dienstleistungsvertrag</option>
-      <option value="kooperation">Kooperationsvertrag</option>
-    </select>
-    <textarea id="draftInstruction" placeholder="Zusätzliche Anweisungen (optional): z.B. 'Bayerisches Recht, Vertragslaufzeit 2 Jahre'"></textarea>
-    <button class="btn" id="draftBtn" onclick="draftContract()">Entwurf erstellen</button>
-    <div id="draftResult" class="result"></div>
-    <button class="btn btn-secondary btn-sm" id="insertDraftBtn" style="display:none" onclick="insertDraftIntoWord()">In Word einfügen</button>
+        <hr class="sep" />
 
-    <hr class="sep">
+        <div class="sec-title">Redline / Track Changes</div>
+        <textarea
+          id="redlineInstruction"
+          placeholder="Anweisungen: z.B. 'Haftungsklauseln verschärfen, Laufzeit auf 1 Jahr begrenzen'"
+        ></textarea>
+        <button class="btn btn-secondary" id="redlineBtn" onclick="redlineContract()">
+          Redline erstellen (Markierung = Original)
+        </button>
+        <div id="redlineResult" class="result"></div>
+        <button
+          class="btn btn-secondary btn-sm"
+          id="insertRedlineBtn"
+          style="display: none"
+          onclick="insertRedlineIntoWord()"
+        >
+          Redline in Word einfügen
+        </button>
+      </div>
 
-    <div class="sec-title">Redline / Track Changes</div>
-    <textarea id="redlineInstruction" placeholder="Anweisungen: z.B. 'Haftungsklauseln verschärfen, Laufzeit auf 1 Jahr begrenzen'"></textarea>
-    <button class="btn btn-secondary" id="redlineBtn" onclick="redlineContract()">Redline erstellen (Markierung = Original)</button>
-    <div id="redlineResult" class="result"></div>
-    <button class="btn btn-secondary btn-sm" id="insertRedlineBtn" style="display:none" onclick="insertRedlineIntoWord()">Redline in Word einfügen</button>
-  </div>
+      <!-- Tab 3: Akte -->
+      <div class="tab-panel" data-panel="akte">
+        <div id="akteStatus" class="section-status"></div>
 
-  <!-- Tab 3: Akte -->
-  <div class="tab-panel" data-panel="akte">
-    <div id="akteStatus" class="section-status"></div>
+        <div class="sec-title">Akten-Kontext</div>
+        <select id="contextCaseSelect" class="case-select"></select>
+        <button class="btn" id="contextBtn" onclick="loadCaseContext()">Akten-Kontext laden</button>
+        <div id="contextResult" class="result"></div>
 
-    <div class="sec-title">Akten-Kontext</div>
-    <select id="contextCaseSelect" class="case-select"></select>
-    <button class="btn" id="contextBtn" onclick="loadCaseContext()">Akten-Kontext laden</button>
-    <div id="contextResult" class="result"></div>
+        <hr class="sep" />
 
-    <hr class="sep">
+        <div class="sec-title">Chronologie einfügen</div>
+        <select id="chronoCaseSelect" class="case-select"></select>
+        <button class="btn btn-secondary" id="chronoBtn" onclick="insertChronology()">
+          Chronologie generieren & einfügen
+        </button>
 
-    <div class="sec-title">Chronologie einfügen</div>
-    <select id="chronoCaseSelect" class="case-select"></select>
-    <button class="btn btn-secondary" id="chronoBtn" onclick="insertChronology()">Chronologie generieren & einfügen</button>
+        <hr class="sep" />
 
-    <hr class="sep">
+        <div class="sec-title">Pipeline starten</div>
+        <select id="pipelineCaseSelect" class="case-select"></select>
+        <button class="btn btn-secondary" id="pipelineBtn" onclick="triggerPipeline()">
+          Pipeline starten
+        </button>
+      </div>
 
-    <div class="sec-title">Pipeline starten</div>
-    <select id="pipelineCaseSelect" class="case-select"></select>
-    <button class="btn btn-secondary" id="pipelineBtn" onclick="triggerPipeline()">Pipeline starten</button>
-  </div>
+      <!-- Tab 4: Export -->
+      <div class="tab-panel" data-panel="export">
+        <div id="exportStatus" class="section-status"></div>
 
-  <!-- Tab 4: Export -->
-  <div class="tab-panel" data-panel="export">
-    <div id="exportStatus" class="section-status"></div>
+        <div class="sec-title">.docx herunterladen</div>
+        <input type="text" id="exportSlug" placeholder="Page Slug (z.B. memo-xyz-2026)" />
+        <button class="btn" id="exportBtn" onclick="exportDocx()">.docx herunterladen</button>
 
-    <div class="sec-title">.docx herunterladen</div>
-    <input type="text" id="exportSlug" placeholder="Page Slug (z.B. memo-xyz-2026)">
-    <button class="btn" id="exportBtn" onclick="exportDocx()">.docx herunterladen</button>
+        <hr class="sep" />
 
-    <hr class="sep">
+        <div class="sec-title">Auswahl als Brain-Page speichern</div>
+        <input type="text" id="saveTitle" placeholder="Titel (optional)" />
+        <select id="saveCaseSelect" class="case-select"></select>
+        <button class="btn btn-secondary" id="saveBtn" onclick="saveAsBrainPage()">
+          Als Brain-Page speichern
+        </button>
+      </div>
+    </div>
 
-    <div class="sec-title">Auswahl als Brain-Page speichern</div>
-    <input type="text" id="saveTitle" placeholder="Titel (optional)">
-    <select id="saveCaseSelect" class="case-select"></select>
-    <button class="btn btn-secondary" id="saveBtn" onclick="saveAsBrainPage()">Als Brain-Page speichern</button>
-  </div>
-
-</div>
-
-<script type="module" src="./taskpane.ts"></script>
-</body>
+    <script type="module" src="./taskpane.ts"></script>
+  </body>
 </html>

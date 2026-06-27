@@ -62,9 +62,7 @@ describe("runSuperbrainEval", () => {
       makeMockContext({
         coverage: {
           completeness_score: 0.5,
-          sources: [
-            { source_id: "opposing_counsel_notes", source_type: "dms", connected: true },
-          ],
+          sources: [{ source_id: "opposing_counsel_notes", source_type: "dms", connected: true }],
         },
       });
     const summary = await runSuperbrainEval(fetcher, [fixture]);
@@ -79,9 +77,7 @@ describe("runSuperbrainEval", () => {
       makeMockContext({
         coverage: {
           completeness_score: 0.5,
-          sources: [
-            { source_id: "upload", source_type: "upload", connected: true },
-          ],
+          sources: [{ source_id: "upload", source_type: "upload", connected: true }],
         },
       });
     const summary = await runSuperbrainEval(fetcher, [fixture]);
@@ -443,9 +439,7 @@ describe("runSuperbrainEval — advanced metrics", () => {
           ],
         },
         source_freshness: {
-          sources: [
-            { source_id: "s1", expected_fresh: true, actual_fresh: true },
-          ],
+          sources: [{ source_id: "s1", expected_fresh: true, actual_fresh: true }],
         },
       });
     const summary = await runSuperbrainEval(fetcher, fixtures);

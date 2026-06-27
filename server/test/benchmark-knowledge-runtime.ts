@@ -26,19 +26,19 @@
  *        bun run test/benchmark-knowledge-runtime.ts --json
  */
 
-import { PGLiteEngine } from '../src/core/pglite-engine.ts';
-import { operationsByName } from '../src/core/operations.ts';
-import type { OperationContext } from '../src/core/operations.ts';
-import { ResolverRegistry } from '../src/core/resolvers/registry.ts';
-import type { Resolver, ResolverContext } from '../src/core/resolvers/index.ts';
+import { PGLiteEngine } from "../src/core/pglite-engine.ts";
+import { operationsByName } from "../src/core/operations.ts";
+import type { OperationContext } from "../src/core/operations.ts";
+import { ResolverRegistry } from "../src/core/resolvers/registry.ts";
+import type { Resolver, ResolverContext } from "../src/core/resolvers/index.ts";
 import {
   findBareTweetHits,
   findExternalLinks,
   extractXHandleFromFrontmatter,
   scanIntegrity,
-} from '../src/commands/integrity.ts';
+} from "../src/commands/integrity.ts";
 
-const jsonMode = process.argv.includes('--json');
+const jsonMode = process.argv.includes("--json");
 const log = jsonMode ? (..._args: unknown[]) => {} : console.log;
 
 // ─── Shared helpers ─────────────────────────────────────────────
@@ -53,11 +53,11 @@ async function freshEngine(): Promise<PGLiteEngine> {
 function makeOpCtx(engine: PGLiteEngine): OperationContext {
   return {
     engine,
-    config: { engine: 'pglite' } as any,
+    config: { engine: "pglite" } as any,
     logger: { info: () => {}, warn: () => {}, error: () => {} },
     dryRun: false,
     remote: false,
-    sourceId: 'default',
+    sourceId: "default",
   };
 }
 
@@ -93,7 +93,7 @@ function makeTTQSeeds(): SeedPage[] {
         ``,
         `- **${dateA}** | Shipped v${i}.0`,
         `- **${dateB}** | Closed round ${i}`,
-      ].join('\n'),
+      ].join("\n"),
       expectedTimeline: [
         { date: dateA, summary: `Shipped v${i}.0` },
         { date: dateB, summary: `Closed round ${i}` },
@@ -103,18 +103,21 @@ function makeTTQSeeds(): SeedPage[] {
   return seeds;
 }
 
-async function runTTQ(autoTimeline: boolean): Promise<{ expected: number; found: number; pct: number }> {
+async function runTTQ(
+  autoTimeline: boolean
+): Promise<{ expected: number; found: number; pct: number }> {
   const engine = await freshEngine();
-  await engine.setConfig('auto_timeline', autoTimeline ? 'true' : 'false');
+  await engine.setConfig("auto_timeline", autoTimeline ? "true" : "false");
   const ctx = makeOpCtx(engine);
-  const putOp = operationsByName['put_page']!;
+  const putOp = operationsByName["put_page"]!;
 
   const seeds = makeTTQSeeds();
   for (const s of seeds) {
     await putOp.handler(ctx, { slug: s.slug, content: s.content });
   }
 
-  let expected = 0, found = 0;
+  let expected = 0,
+    found = 0;
   const isoDate = (d: unknown): string => {
     if (d instanceof Date) return d.toISOString().slice(0, 10);
     return String(d).slice(0, 10);
@@ -123,7 +126,7 @@ async function runTTQ(autoTimeline: boolean): Promise<{ expected: number; found:
     const entries = await engine.getTimeline(s.slug);
     for (const e of s.expectedTimeline) {
       expected++;
-      if (entries.some(row => isoDate(row.date) === e.date && row.summary === e.summary)) found++;
+      if (entries.some((row) => isoDate(row.date) === e.date && row.summary === e.summary)) found++;
     }
   }
   await engine.disconnect();
@@ -136,16 +139,29 @@ async function runTTQ(autoTimeline: boolean): Promise<{ expected: number; found:
  * from the input handle so runs are reproducible. Mirrors the real
  * x_handle_to_tweet resolver output shape.
  */
-function makeFakeXResolver(): Resolver<{ handle: string; keywords: string }, {
-  url?: string; tweet_id?: string; created_at?: string;
-  candidates: Array<{ tweet_id: string; text: string; created_at: string; score: number; url: string }>;
-}> {
+function makeFakeXResolver(): Resolver<
+  { handle: string; keywords: string },
+  {
+    url?: string;
+    tweet_id?: string;
+    created_at?: string;
+    candidates: Array<{
+      tweet_id: string;
+      text: string;
+      created_at: string;
+      score: number;
+      url: string;
+    }>;
+  }
+> {
   return {
-    id: 'x_handle_to_tweet',
-    cost: 'free',
-    backend: 'local',
-    description: 'Fake for benchmark',
-    async available() { return true; },
+    id: "x_handle_to_tweet",
+    cost: "free",
+    backend: "local",
+    description: "Fake for benchmark",
+    async available() {
+      return true;
+    },
     async resolve(req) {
       const h = req.input.handle;
       // Deterministic distribution: 70% high conf, 20% mid, 10% low
@@ -153,24 +169,26 @@ function makeFakeXResolver(): Resolver<{ handle: string; keywords: string }, {
       let confidence: number;
       if (bucket < 7) confidence = 0.85;
       else if (bucket < 9) confidence = 0.65;
-      else confidence = 0.30;
+      else confidence = 0.3;
 
       const tid = String(1000000000 + (hashString(h) % 999999999));
       return {
         value: {
           url: `https://x.com/${h}/status/${tid}`,
           tweet_id: tid,
-          created_at: '2026-04-01T12:00:00.000Z',
-          candidates: [{
-            tweet_id: tid,
-            text: 'fake tweet text',
-            created_at: '2026-04-01T12:00:00.000Z',
-            score: confidence,
-            url: `https://x.com/${h}/status/${tid}`,
-          }],
+          created_at: "2026-04-01T12:00:00.000Z",
+          candidates: [
+            {
+              tweet_id: tid,
+              text: "fake tweet text",
+              created_at: "2026-04-01T12:00:00.000Z",
+              score: confidence,
+              url: `https://x.com/${h}/status/${tid}`,
+            },
+          ],
         },
         confidence,
-        source: 'fake',
+        source: "fake",
         fetchedAt: new Date(),
       };
     },
@@ -195,7 +213,7 @@ async function runIntegrityBench(): Promise<{
 }> {
   const engine = await freshEngine();
   const ctx = makeOpCtx(engine);
-  const putOp = operationsByName['put_page']!;
+  const putOp = operationsByName["put_page"]!;
 
   const handles: string[] = [];
   for (let i = 0; i < 50; i++) {
@@ -209,7 +227,7 @@ async function runIntegrityBench(): Promise<{
       `---`,
       ``,
       `Person ${i} tweeted about AI safety this year.`,
-    ].join('\n');
+    ].join("\n");
     await putOp.handler(ctx, { slug: `people/person-${i}`, content });
   }
 
@@ -221,14 +239,18 @@ async function runIntegrityBench(): Promise<{
     engine,
     config: {},
     logger: { info: () => {}, warn: () => {}, error: () => {} },
-    requestId: 'bench',
+    requestId: "bench",
     remote: false,
   };
 
   const confidenceThreshold = 0.8;
   const reviewLower = 0.5;
 
-  let bucketAuto = 0, bucketReview = 0, bucketSkip = 0, hits = 0, pages = 0;
+  let bucketAuto = 0,
+    bucketReview = 0,
+    bucketSkip = 0,
+    hits = 0,
+    pages = 0;
 
   const slugs = [...(await engine.getAllSlugs())].sort();
   for (const slug of slugs) {
@@ -241,9 +263,9 @@ async function runIntegrityBench(): Promise<{
     for (const hit of bareHits) {
       hits++;
       const result = await registry.resolve<{ handle: string; keywords: string }, any>(
-        'x_handle_to_tweet',
+        "x_handle_to_tweet",
         { handle, keywords: hit.rawLine.slice(0, 150) },
-        resolverCtx,
+        resolverCtx
       );
       if (result.confidence >= confidenceThreshold) bucketAuto++;
       else if (result.confidence >= reviewLower) bucketReview++;
@@ -274,14 +296,14 @@ async function runDoctorCompletenessBench(): Promise<{
 }> {
   const engine = await freshEngine();
   const ctx = makeOpCtx(engine);
-  const putOp = operationsByName['put_page']!;
+  const putOp = operationsByName["put_page"]!;
 
   // Plant known issues
   //   3 bare-tweet phrases across 2 pages
   //   3 external link citations (look like dead-link candidates)
   //   1 grandfathered page (should be ignored = not counted as surfaced)
   await putOp.handler(ctx, {
-    slug: 'people/alice',
+    slug: "people/alice",
     content: `---
 type: person
 title: Alice
@@ -292,7 +314,7 @@ Alice tweeted about scaling last week. She also posted on X yesterday.
 `,
   });
   await putOp.handler(ctx, {
-    slug: 'people/bob',
+    slug: "people/bob",
     content: `---
 type: person
 title: Bob
@@ -303,7 +325,7 @@ Bob wrote a tweet covering the incident.
 `,
   });
   await putOp.handler(ctx, {
-    slug: 'concepts/essays',
+    slug: "concepts/essays",
     content: `---
 type: concept
 title: Essays
@@ -314,7 +336,7 @@ Also [a third reference](https://invalid.example/path).
 `,
   });
   await putOp.handler(ctx, {
-    slug: 'people/legacy',
+    slug: "people/legacy",
     content: `---
 type: person
 title: Legacy
@@ -347,34 +369,38 @@ Legacy tweeted about old things that should be ignored.
 // ─── Main runner ───────────────────────────────────────────────
 
 async function main() {
-  log('# Knowledge Runtime Benchmark');
+  log("# Knowledge Runtime Benchmark");
   log(`Generated: ${new Date().toISOString().slice(0, 19)}`);
-  log('');
+  log("");
 
-  log('## 1. Time-to-queryable brain');
+  log("## 1. Time-to-queryable brain");
   const ttqBranch = await runTTQ(true);
   const ttqMaster = await runTTQ(false);
-  log(`  branch (auto_timeline=on):  ${ttqBranch.found}/${ttqBranch.expected} queryable (${round(ttqBranch.pct * 100)}%)`);
-  log(`  master (auto_timeline=off): ${ttqMaster.found}/${ttqMaster.expected} queryable (${round(ttqMaster.pct * 100)}%)`);
-  log('');
+  log(
+    `  branch (auto_timeline=on):  ${ttqBranch.found}/${ttqBranch.expected} queryable (${round(ttqBranch.pct * 100)}%)`
+  );
+  log(
+    `  master (auto_timeline=off): ${ttqMaster.found}/${ttqMaster.expected} queryable (${round(ttqMaster.pct * 100)}%)`
+  );
+  log("");
 
-  log('## 2. Integrity repair rate (mocked resolver, 70/20/10 distribution)');
+  log("## 2. Integrity repair rate (mocked resolver, 70/20/10 distribution)");
   const intRes = await runIntegrityBench();
   log(`  pages scanned: ${intRes.pages}`);
   log(`  bare-tweet hits: ${intRes.hits}`);
   log(`  auto-repair (≥0.8):  ${intRes.bucketAuto} (${round(intRes.pctAuto * 100)}%)`);
   log(`  review (0.5–0.8):    ${intRes.bucketReview} (${round(intRes.pctReview * 100)}%)`);
   log(`  skip (<0.5):         ${intRes.bucketSkip} (${round(intRes.pctSkip * 100)}%)`);
-  log('');
+  log("");
 
-  log('## 3. Doctor completeness');
+  log("## 3. Doctor completeness");
   const docRes = await runDoctorCompletenessBench();
   log(`  issues planted:  ${docRes.planted} (6 should surface, 1 grandfathered)`);
   log(`  issues surfaced: ${docRes.surfaced} (${round(docRes.pct * 100)}%)`);
   log(`  bare tweets caught: ${docRes.breakdown.bareTweets}/3`);
   log(`  external links caught: ${docRes.breakdown.externalLinks}/3`);
   log(`  grandfathered correctly skipped: ${docRes.breakdown.grandfathered}/1`);
-  log('');
+  log("");
 
   const report = {
     ttq: { branch: ttqBranch, master: ttqMaster },
@@ -387,7 +413,7 @@ async function main() {
   }
 }
 
-main().catch(e => {
+main().catch((e) => {
   console.error(e);
   process.exit(1);
 });

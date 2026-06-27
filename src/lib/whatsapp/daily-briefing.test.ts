@@ -77,7 +77,13 @@ describe("buildDailyBriefing", () => {
 describe("buildDailyBriefing — extended sections", () => {
   it("includes pending approvals section", () => {
     const approvals: BriefingApproval[] = [
-      { id: "a1", action_type: "document_finalize", summary: "Klageentwurf freigeben", case_slug: "case-1", proposed_at: new Date().toISOString() },
+      {
+        id: "a1",
+        action_type: "document_finalize",
+        summary: "Klageentwurf freigeben",
+        case_slug: "case-1",
+        proposed_at: new Date().toISOString(),
+      },
     ];
     const text = buildDailyBriefing({ cases: cases(), now: NOW, pendingApprovals: approvals });
     expect(text!).toContain("Freigabe wartet");
@@ -95,7 +101,13 @@ describe("buildDailyBriefing — extended sections", () => {
 
   it("includes conflict alerts section", () => {
     const conflicts: BriefingConflict[] = [
-      { id: "c1", description: "Mandantenkonflikt erkannt", severity: "high", case_slug: "case-1", detected_at: new Date().toISOString() },
+      {
+        id: "c1",
+        description: "Mandantenkonflikt erkannt",
+        severity: "high",
+        case_slug: "case-1",
+        detected_at: new Date().toISOString(),
+      },
     ];
     const text = buildDailyBriefing({ cases: cases(), now: NOW, conflicts });
     expect(text!).toContain("Konflikt-Alarm");
@@ -109,7 +121,12 @@ describe("buildDailyBriefing — extended sections", () => {
 
   it("returns non-null with only approvals (no deadlines)", () => {
     const approvals: BriefingApproval[] = [
-      { id: "a1", action_type: "document_finalize", summary: "Test", proposed_at: new Date().toISOString() },
+      {
+        id: "a1",
+        action_type: "document_finalize",
+        summary: "Test",
+        proposed_at: new Date().toISOString(),
+      },
     ];
     const text = buildDailyBriefing({ cases: [], now: NOW, pendingApprovals: approvals });
     expect(text).not.toBeNull();

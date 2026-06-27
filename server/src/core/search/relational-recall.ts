@@ -24,11 +24,15 @@
  * Tested in test/relational-recall.test.ts.
  */
 
-import type { BrainEngine } from '../engine.ts';
-import type { SearchResult, PageType, RelationalFanoutRow } from '../types.ts';
-import { createAuditWriter } from '../audit/audit-writer.ts';
-import { resolveEntitySlugWithSource } from '../entities/resolve.ts';
-import { parseRelationalQuery, type RelationalQuery, type RelationVocab } from './relational-intent.ts';
+import type { BrainEngine } from "../engine.ts";
+import type { SearchResult, PageType, RelationalFanoutRow } from "../types.ts";
+import { createAuditWriter } from "../audit/audit-writer.ts";
+import { resolveEntitySlugWithSource } from "../entities/resolve.ts";
+import {
+  parseRelationalQuery,
+  type RelationalQuery,
+  type RelationVocab,
+} from "./relational-intent.ts";
 
 export interface RelationalArmOpts {
   sourceId?: string;
@@ -41,7 +45,7 @@ export interface RelationalArmOpts {
 
 export interface RelationalArmMeta {
   fired: boolean;
-  kind: RelationalQuery['kind'] | null;
+  kind: RelationalQuery["kind"] | null;
   seeds_resolved: number;
   candidates: number;
   errored: boolean;
@@ -55,18 +59,21 @@ interface RelationalFailureEvent {
 }
 
 const failureWriter = createAuditWriter<RelationalFailureEvent>({
-  featureName: 'relational-recall-failures',
-  errorLabel: 'gbrain',
-  errorTrailer: '; search continues',
+  featureName: "relational-recall-failures",
+  errorLabel: "gbrain",
+  errorTrailer: "; search continues",
 });
 
 /** Recent relational-arm fail-open events — consumed by doctor + search stats. */
-export function readRecentRelationalFailures(days = 7, now: Date = new Date()): RelationalFailureEvent[] {
+export function readRecentRelationalFailures(
+  days = 7,
+  now: Date = new Date()
+): RelationalFailureEvent[] {
   return failureWriter.readRecent(days, now);
 }
 
 function truncate(msg: string, max = 200): string {
-  return msg.length <= max ? msg : msg.slice(0, max - 1) + '…';
+  return msg.length <= max ? msg : msg.slice(0, max - 1) + "…";
 }
 
 /** Sources to resolve a seed against. Federated → the set; scalar → [id];
@@ -74,8 +81,8 @@ function truncate(msg: string, max = 200): string {
  *  enumeration under __all__ is a v1 limitation). */
 function scopeSources(opts: RelationalArmOpts): string[] {
   if (opts.sourceIds && opts.sourceIds.length > 0) return opts.sourceIds;
-  if (opts.sourceId && opts.sourceId !== '__all__') return [opts.sourceId];
-  return ['default'];
+  if (opts.sourceId && opts.sourceId !== "__all__") return [opts.sourceId];
+  return ["default"];
 }
 
 /** Resolve a seed phrase to all in-scope (source_id, slug) pairs that
@@ -83,13 +90,13 @@ function scopeSources(opts: RelationalArmOpts): string[] {
 async function resolveSeedScoped(
   engine: BrainEngine,
   sources: string[],
-  phrase: string,
+  phrase: string
 ): Promise<Array<{ source_id: string; slug: string }>> {
   const out: Array<{ source_id: string; slug: string }> = [];
   const seen = new Set<string>();
   for (const sid of sources) {
     const r = await resolveEntitySlugWithSource(engine, sid, phrase);
-    if (!r || r.source === 'fallback_slugify') continue;
+    if (!r || r.source === "fallback_slugify") continue;
     const key = `${sid}:${r.slug}`;
     if (seen.has(key)) continue;
     seen.add(key);
@@ -102,20 +109,25 @@ async function resolveSeedScoped(
 async function hydrate(
   engine: BrainEngine,
   rows: RelationalFanoutRow[],
-  seedSlug: string,
+  seedSlug: string
 ): Promise<SearchResult[]> {
   if (rows.length === 0) return [];
-  const slugs = Array.from(new Set(rows.map(r => r.slug)));
+  const slugs = Array.from(new Set(rows.map((r) => r.slug)));
   const pageRows = await engine.executeRaw<{
-    page_id: number; slug: string; source_id: string; title: string; type: string; synopsis: string | null;
+    page_id: number;
+    slug: string;
+    source_id: string;
+    title: string;
+    type: string;
+    synopsis: string | null;
   }>(
     `SELECT p.id AS page_id, p.slug, p.source_id, p.title, p.type,
             LEFT(p.compiled_truth, 240) AS synopsis
      FROM pages p
      WHERE p.slug = ANY($1::text[]) AND p.deleted_at IS NULL`,
-    [slugs],
+    [slugs]
   );
-  const byKey = new Map<string, typeof pageRows[number]>();
+  const byKey = new Map<string, (typeof pageRows)[number]>();
   for (const pr of pageRows) byKey.set(`${pr.source_id}:${pr.slug}`, pr);
 
   const out: SearchResult[] = [];
@@ -128,7 +140,7 @@ async function hydrate(
       title: pr.title,
       type: pr.type as PageType,
       chunk_text: pr.synopsis ?? r.slug,
-      chunk_source: 'compiled_truth',
+      chunk_source: "compiled_truth",
       // E1: reinforce the page's REAL canonical chunk; F3: chunkless entity
       // pages key page-level (chunk_id 0 → rrfKey `source:slug:0`, stable and
       // collision-safe; SERIAL chunk ids start at 1 so 0 never aliases a real chunk).
@@ -153,11 +165,16 @@ async function hydrate(
 export async function buildRelationalArm(
   engine: BrainEngine,
   query: string,
-  opts: RelationalArmOpts = {},
+  opts: RelationalArmOpts = {}
 ): Promise<SearchResult[]> {
   const startedAt = Date.now();
   const meta: RelationalArmMeta = {
-    fired: false, kind: null, seeds_resolved: 0, candidates: 0, errored: false, duration_ms: 0,
+    fired: false,
+    kind: null,
+    seeds_resolved: 0,
+    candidates: 0,
+    errored: false,
+    duration_ms: 0,
   };
   const finish = (list: SearchResult[]) => {
     meta.candidates = list.length;
@@ -179,7 +196,7 @@ export async function buildRelationalArm(
       limit: opts.limit,
     };
 
-    if (parsed.kind === 'connects' && parsed.seeds.length === 2) {
+    if (parsed.kind === "connects" && parsed.seeds.length === 2) {
       // Resolve both endpoints; both must resolve or the arm no-ops.
       const resA = await resolveSeedScoped(engine, sources, parsed.seeds[0]);
       const resB = await resolveSeedScoped(engine, sources, parsed.seeds[1]);
@@ -188,23 +205,31 @@ export async function buildRelationalArm(
 
       const perSource = (rs: typeof resA) => ({
         sourceId: rs.length === 1 ? rs[0].source_id : undefined,
-        sourceIds: rs.length > 1 ? Array.from(new Set(rs.map(x => x.source_id))) : undefined,
-        slugs: Array.from(new Set(rs.map(x => x.slug))),
+        sourceIds: rs.length > 1 ? Array.from(new Set(rs.map((x) => x.source_id))) : undefined,
+        slugs: Array.from(new Set(rs.map((x) => x.slug))),
       });
       const a = perSource(resA);
       const b = perSource(resB);
-      const fanA = await engine.relationalFanout(a.slugs, { ...fanoutOpts, sourceId: a.sourceId, sourceIds: a.sourceIds });
-      const fanB = await engine.relationalFanout(b.slugs, { ...fanoutOpts, sourceId: b.sourceId, sourceIds: b.sourceIds });
+      const fanA = await engine.relationalFanout(a.slugs, {
+        ...fanoutOpts,
+        sourceId: a.sourceId,
+        sourceIds: a.sourceIds,
+      });
+      const fanB = await engine.relationalFanout(b.slugs, {
+        ...fanoutOpts,
+        sourceId: b.sourceId,
+        sourceIds: b.sourceIds,
+      });
       // Shared midpoints: nodes reachable from BOTH endpoints (exclude the
       // endpoints themselves). Ordered by combined hop.
-      const bByKey = new Map(fanB.map(r => [`${r.source_id}:${r.slug}`, r] as const));
+      const bByKey = new Map(fanB.map((r) => [`${r.source_id}:${r.slug}`, r] as const));
       const endpointSlugs = new Set([...a.slugs, ...b.slugs]);
       const shared = fanA
-        .filter(r => bByKey.has(`${r.source_id}:${r.slug}`) && !endpointSlugs.has(r.slug))
-        .map(r => ({ row: r, combined: r.hop + bByKey.get(`${r.source_id}:${r.slug}`)!.hop }))
+        .filter((r) => bByKey.has(`${r.source_id}:${r.slug}`) && !endpointSlugs.has(r.slug))
+        .map((r) => ({ row: r, combined: r.hop + bByKey.get(`${r.source_id}:${r.slug}`)!.hop }))
         .sort((x, y) => x.combined - y.combined || x.row.slug.localeCompare(y.row.slug))
-        .map(x => x.row);
-      const list = await hydrate(engine, shared, parsed.seeds.join(' ↔ '));
+        .map((x) => x.row);
+      const list = await hydrate(engine, shared, parsed.seeds.join(" ↔ "));
       meta.fired = list.length > 0;
       return finish(list);
     }
@@ -213,8 +238,8 @@ export async function buildRelationalArm(
     const resolved = await resolveSeedScoped(engine, sources, parsed.seeds[0]);
     if (resolved.length === 0) return finish([]);
     meta.seeds_resolved = resolved.length;
-    const slugs = Array.from(new Set(resolved.map(r => r.slug)));
-    const srcIds = Array.from(new Set(resolved.map(r => r.source_id)));
+    const slugs = Array.from(new Set(resolved.map((r) => r.slug)));
+    const srcIds = Array.from(new Set(resolved.map((r) => r.source_id)));
     const rows = await engine.relationalFanout(slugs, {
       ...fanoutOpts,
       sourceId: srcIds.length === 1 ? srcIds[0] : undefined,

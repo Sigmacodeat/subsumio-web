@@ -15,7 +15,7 @@
  * the skill carries the judgment steps.
  */
 
-import { isAbsolute, resolve as resolvePath } from 'path';
+import { isAbsolute, resolve as resolvePath } from "path";
 
 import {
   applyScaffold,
@@ -23,9 +23,9 @@ import {
   SkillifyScaffoldError,
   SKILL_NAME_PATTERN,
   type ScaffoldPlan,
-} from '../core/skillify/generator.ts';
-import { autoDetectSkillsDir } from '../core/repo-root.ts';
-import { RESOLVER_FILENAMES_LABEL } from '../core/resolver-filenames.ts';
+} from "../core/skillify/generator.ts";
+import { autoDetectSkillsDir } from "../core/repo-root.ts";
+import { RESOLVER_FILENAMES_LABEL } from "../core/resolver-filenames.ts";
 
 // Re-exports for tests.
 export { planScaffold, applyScaffold, SkillifyScaffoldError, SKILL_NAME_PATTERN };
@@ -49,15 +49,15 @@ Run \`gbrain skillify <subcommand> --help\` for per-subcommand options.
 export async function runSkillify(args: string[]): Promise<void> {
   const sub = args[0];
   const rest = args.slice(1);
-  if (!sub || sub === '--help' || sub === '-h') {
+  if (!sub || sub === "--help" || sub === "-h") {
     console.log(HELP_TOP);
     process.exit(0);
   }
-  if (sub === 'scaffold') {
+  if (sub === "scaffold") {
     await runSkillifyScaffold(rest);
     return;
   }
-  if (sub === 'check') {
+  if (sub === "check") {
     await runSkillifyCheck(rest);
     return;
   }
@@ -130,35 +130,35 @@ function parseScaffoldFlags(argv: string[]): ScaffoldFlags {
   };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
-    if (a === '--help' || a === '-h') f.help = true;
-    else if (a === '--json') f.json = true;
-    else if (a === '--dry-run') f.dryRun = true;
-    else if (a === '--force') f.force = true;
-    else if (a === '--writes-pages') f.writesPages = true;
-    else if (a === '--mutating') f.mutating = true;
-    else if (a === '--description') {
+    if (a === "--help" || a === "-h") f.help = true;
+    else if (a === "--json") f.json = true;
+    else if (a === "--dry-run") f.dryRun = true;
+    else if (a === "--force") f.force = true;
+    else if (a === "--writes-pages") f.writesPages = true;
+    else if (a === "--mutating") f.mutating = true;
+    else if (a === "--description") {
       f.description = argv[i + 1] ?? null;
       i++;
-    } else if (a?.startsWith('--description=')) {
-      f.description = a.slice('--description='.length) || null;
-    } else if (a === '--triggers') {
-      const v = argv[i + 1] ?? '';
+    } else if (a?.startsWith("--description=")) {
+      f.description = a.slice("--description=".length) || null;
+    } else if (a === "--triggers") {
+      const v = argv[i + 1] ?? "";
       f.triggers = splitList(v);
       i++;
-    } else if (a?.startsWith('--triggers=')) {
-      f.triggers = splitList(a.slice('--triggers='.length));
-    } else if (a === '--writes-to') {
-      const v = argv[i + 1] ?? '';
+    } else if (a?.startsWith("--triggers=")) {
+      f.triggers = splitList(a.slice("--triggers=".length));
+    } else if (a === "--writes-to") {
+      const v = argv[i + 1] ?? "";
       f.writesTo = splitList(v);
       i++;
-    } else if (a?.startsWith('--writes-to=')) {
-      f.writesTo = splitList(a.slice('--writes-to='.length));
-    } else if (a === '--skills-dir') {
+    } else if (a?.startsWith("--writes-to=")) {
+      f.writesTo = splitList(a.slice("--writes-to=".length));
+    } else if (a === "--skills-dir") {
       f.skillsDir = argv[i + 1] ?? null;
       i++;
-    } else if (a?.startsWith('--skills-dir=')) {
-      f.skillsDir = a.slice('--skills-dir='.length) || null;
-    } else if (a && !a.startsWith('--') && !f.name) {
+    } else if (a?.startsWith("--skills-dir=")) {
+      f.skillsDir = a.slice("--skills-dir=".length) || null;
+    } else if (a && !a.startsWith("--") && !f.name) {
       f.name = a;
     }
   }
@@ -167,8 +167,8 @@ function parseScaffoldFlags(argv: string[]): ScaffoldFlags {
 
 function splitList(v: string): string[] {
   return v
-    .split(',')
-    .map(s => s.trim())
+    .split(",")
+    .map((s) => s.trim())
     .filter(Boolean);
 }
 
@@ -179,12 +179,12 @@ export async function runSkillifyScaffold(args: string[]): Promise<void> {
     process.exit(0);
   }
   if (!flags.name) {
-    console.error('Error: skill name is required.\n');
+    console.error("Error: skill name is required.\n");
     console.error(HELP_SCAFFOLD);
     process.exit(2);
   }
   if (!flags.description) {
-    console.error('Error: --description is required.\n');
+    console.error("Error: --description is required.\n");
     console.error(HELP_SCAFFOLD);
     process.exit(2);
   }
@@ -201,7 +201,7 @@ export async function runSkillifyScaffold(args: string[]): Promise<void> {
   }
   if (!skillsDir) {
     console.error(
-      'Error: could not auto-detect skills/. Pass --skills-dir or set $OPENCLAW_WORKSPACE.',
+      "Error: could not auto-detect skills/. Pass --skills-dir or set $OPENCLAW_WORKSPACE."
     );
     process.exit(2);
   }
@@ -235,7 +235,7 @@ export async function runSkillifyScaffold(args: string[]): Promise<void> {
   if (!plan.resolverFile) {
     const msg = `${RESOLVER_FILENAMES_LABEL} not found in ${skillsDir} or its parent. Create one before scaffolding skills.`;
     if (flags.json) {
-      console.log(JSON.stringify({ ok: false, error: 'no_resolver', message: msg }, null, 2));
+      console.log(JSON.stringify({ ok: false, error: "no_resolver", message: msg }, null, 2));
     } else {
       console.error(msg);
     }
@@ -249,13 +249,13 @@ export async function runSkillifyScaffold(args: string[]): Promise<void> {
           {
             ok: true,
             dryRun: true,
-            files: plan.files.map(f => ({ path: f.path, kind: f.kind })),
+            files: plan.files.map((f) => ({ path: f.path, kind: f.kind })),
             resolverFile: plan.resolverFile,
             resolverAppendBytes: plan.resolverAppend?.length ?? 0,
           },
           null,
-          2,
-        ),
+          2
+        )
       );
     } else {
       console.log(`skillify scaffold --dry-run (${plan.files.length} files):`);
@@ -277,13 +277,13 @@ export async function runSkillifyScaffold(args: string[]): Promise<void> {
         {
           ok: true,
           dryRun: false,
-          files: plan.files.map(f => ({ path: f.path, kind: f.kind })),
+          files: plan.files.map((f) => ({ path: f.path, kind: f.kind })),
           resolverFile: plan.resolverFile,
           resolverAppended: plan.resolverAppend !== null,
         },
         null,
-        2,
-      ),
+        2
+      )
     );
   } else {
     console.log(`skillify scaffold: wrote ${plan.files.length} files.`);
@@ -291,7 +291,7 @@ export async function runSkillifyScaffold(args: string[]): Promise<void> {
     if (plan.resolverAppend !== null) {
       console.log(`  [append] ${plan.resolverFile}`);
     }
-    console.log('\nNext:');
+    console.log("\nNext:");
     console.log(`  1. Replace SKILLIFY_STUB sentinels in the generated files.`);
     console.log(`  2. bun test test/${flags.name}.test.ts`);
     console.log(`  3. gbrain skillify check skills/${flags.name}/scripts/${flags.name}.mjs`);
@@ -308,6 +308,6 @@ export async function runSkillifyScaffold(args: string[]): Promise<void> {
 
 async function runSkillifyCheck(args: string[]): Promise<void> {
   // Late-import to avoid pulling the helpers at module init.
-  const { runSkillifyCheckInline } = await import('./skillify-check.ts');
+  const { runSkillifyCheckInline } = await import("./skillify-check.ts");
   await runSkillifyCheckInline(args);
 }

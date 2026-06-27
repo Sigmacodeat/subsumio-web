@@ -21,7 +21,7 @@ writes_to:
 > **Convention:** see [conventions/quality.md](../conventions/quality.md) for
 > citation rules, verbatim-quote requirements, and back-link enforcement.
 >
-> **Convention:** see [_brain-filing-rules.md](../_brain-filing-rules.md) for
+> **Convention:** see [\_brain-filing-rules.md](../_brain-filing-rules.md) for
 > filing rules. Article pages live under `media/articles/` for raw ingest;
 > personalized one-of-one synthesis output uses the sanctioned
 > `media/articles/<slug>-personalized.md` exception.
@@ -100,10 +100,10 @@ An enriched page passes if it has:
 
 ## Model selection
 
-| Model | Use when | Quote accuracy |
-|-------|----------|----------------|
-| **Sonnet** (default) | Bulk enrichment, most articles | Good — occasionally paraphrases |
-| **Opus** | High-value content, original-thinking pieces, longreads | Excellent — respects "verbatim" instruction |
+| Model                | Use when                                                | Quote accuracy                              |
+| -------------------- | ------------------------------------------------------- | ------------------------------------------- |
+| **Sonnet** (default) | Bulk enrichment, most articles                          | Good — occasionally paraphrases             |
+| **Opus**             | High-value content, original-thinking pieces, longreads | Excellent — respects "verbatim" instruction |
 
 Rule: for bulk enrichment, do a Sonnet draft pass and spot-check 5 with
 the LLM-judge brain-quality eval. If quotes are paraphrased, switch to
@@ -131,7 +131,6 @@ NEVER use `[[wiki-links]]` — they don't render on GitHub.
 - `skills/media-ingest/SKILL.md` — creates the raw article pages this skill enriches
 - `skills/idea-ingest/SKILL.md` — link/article ingestion with author people-page enforcement
 - `skills/conventions/quality.md` — citation + back-link rules
-
 
 ## Contract
 

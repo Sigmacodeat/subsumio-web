@@ -6,14 +6,14 @@ which one applies to their current task.
 
 ## Touchpoints
 
-| When you're working on... | Apply this |
-|---|---|
+| When you're working on...                                            | Apply this                                                                                                                                                                                                                                                                            |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Adding a new advice surface where the brain tells the user something | Voice-gate the output via `gateVoice()` in `src/core/calibration/voice-gate.ts`. Pick a mode: `pattern_statement`, `nudge`, `forecast_blurb`, `dashboard_caption`, `morning_pulse`. Add a new mode only when none of the five fits — extend `VOICE_GATE_MODES` and `DEFAULT_RUBRICS`. |
-| Writing user-facing strings about the user's track record | Conversational, not academic. Friend, not doctor. Concrete numbers ("2 of 3 missed") over abstract metrics ("Brier 0.31"). See `DESIGN.md` voice section. Never use the phrase "according to your data." |
-| Adding a new cycle phase | Extend `BaseCyclePhase` in `src/core/cycle/base-phase.ts`. Inherits source-scope threading + budget metering + error envelope + progress reporter. Declare `budgetUsdKey` + `budgetUsdDefault`. |
-| Adding a new MCP op that reads source-scoped data | Route through `sourceScopeOpts(ctx)` from `src/core/operations.ts`. Type-enforced at the BaseCyclePhase level; manual MCP handlers should do this explicitly. |
-| Writing schema for any new calibration-related table | Stamp every row with `wave_version TEXT NOT NULL DEFAULT 'v0.36.1.0'` (or the current wave's version). The `--undo-wave` command reverses precisely by wave_version. |
-| Adding a new test fixture page under `test/fixtures/calibration/` | Synthetic only. Use the canonical placeholder names: `alice-example`, `acme-example`, `widget-co`, `fund-a/b/c`, `meetings/2026-04-03`. The CI guard `scripts/check-synthetic-corpus-privacy.sh` catches violations. |
+| Writing user-facing strings about the user's track record            | Conversational, not academic. Friend, not doctor. Concrete numbers ("2 of 3 missed") over abstract metrics ("Brier 0.31"). See `DESIGN.md` voice section. Never use the phrase "according to your data."                                                                              |
+| Adding a new cycle phase                                             | Extend `BaseCyclePhase` in `src/core/cycle/base-phase.ts`. Inherits source-scope threading + budget metering + error envelope + progress reporter. Declare `budgetUsdKey` + `budgetUsdDefault`.                                                                                       |
+| Adding a new MCP op that reads source-scoped data                    | Route through `sourceScopeOpts(ctx)` from `src/core/operations.ts`. Type-enforced at the BaseCyclePhase level; manual MCP handlers should do this explicitly.                                                                                                                         |
+| Writing schema for any new calibration-related table                 | Stamp every row with `wave_version TEXT NOT NULL DEFAULT 'v0.36.1.0'` (or the current wave's version). The `--undo-wave` command reverses precisely by wave_version.                                                                                                                  |
+| Adding a new test fixture page under `test/fixtures/calibration/`    | Synthetic only. Use the canonical placeholder names: `alice-example`, `acme-example`, `widget-co`, `fund-a/b/c`, `meetings/2026-04-03`. The CI guard `scripts/check-synthetic-corpus-privacy.sh` catches violations.                                                                  |
 
 ## When to surface a calibration warning
 
@@ -68,6 +68,7 @@ For any read of a calibration profile across mounted brains:
 ## Test seams
 
 Every calibration module accepts test injection via opts:
+
 - `opts.judge` / `opts.thinkRunner` / `opts.extractor` / `opts.evidenceRetriever`
 - `opts.voiceGateJudge` — bypass the Haiku call
 - `opts.preferenceResolver` — bypass the interactive prompt in A/B harness

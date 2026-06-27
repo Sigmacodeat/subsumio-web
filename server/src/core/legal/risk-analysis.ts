@@ -4,7 +4,7 @@
  * against the source (fabricated clauses are dropped). Produces an overall
  * 0–100 score + coarse level, red flags and missing-clause hints.
  */
-import type { BrainEngine } from '../engine.ts';
+import type { BrainEngine } from "../engine.ts";
 import {
   type LegalLLM,
   type RiskLevel,
@@ -18,7 +18,7 @@ import {
   resolveDocumentText,
   scoreToLevel,
   tryParseJSON,
-} from './llm-util.ts';
+} from "./llm-util.ts";
 
 export interface ClauseRisk {
   clause_type: string;
@@ -46,7 +46,7 @@ export interface RiskAnalysisOpts {
   text?: string;
   contract_type?: string;
   jurisdiction?: string;
-  perspective?: 'party_a' | 'party_b' | 'neutral';
+  perspective?: "party_a" | "party_b" | "neutral";
   sourceId?: string;
   sourceIds?: string[];
   llm?: LegalLLM;
@@ -55,12 +55,12 @@ export interface RiskAnalysisOpts {
 
 function buildSystem(contractType: string, jurisdiction: string, perspective: string): string {
   const persp =
-    perspective === 'party_a'
-      ? 'Bewerte aus Sicht von Partei A (Auftraggeber/erste Partei).'
-      : perspective === 'party_b'
-        ? 'Bewerte aus Sicht von Partei B (Auftragnehmer/zweite Partei).'
-        : 'Bewerte neutral aus Sicht beider Parteien.';
-  const typeHint = contractType ? `Vertragstyp: ${contractType}.` : '';
+    perspective === "party_a"
+      ? "Bewerte aus Sicht von Partei A (Auftraggeber/erste Partei)."
+      : perspective === "party_b"
+        ? "Bewerte aus Sicht von Partei B (Auftragnehmer/zweite Partei)."
+        : "Bewerte neutral aus Sicht beider Parteien.";
+  const typeHint = contractType ? `Vertragstyp: ${contractType}.` : "";
   return `Du bist ein juristischer Risiko-Analyst für Verträge (Recht: ${jurisdictionLabel(jurisdiction)}).
 ${typeHint} ${persp}
 Identifiziere riskante Klauseln, bewerte jede mit 0–100 (0=unkritisch, 100=kritisch),
@@ -89,18 +89,18 @@ function parseClauseRisks(v: unknown): ClauseRisk[] {
   if (!Array.isArray(v)) return [];
   const out: ClauseRisk[] = [];
   for (const raw of v) {
-    if (typeof raw !== 'object' || raw === null) continue;
+    if (typeof raw !== "object" || raw === null) continue;
     const o = raw as Record<string, unknown>;
-    if (typeof o.text_excerpt !== 'string') continue;
+    if (typeof o.text_excerpt !== "string") continue;
     const score = asScore(o.score, 0);
     out.push({
-      clause_type: typeof o.clause_type === 'string' ? o.clause_type : 'Sonstige',
+      clause_type: typeof o.clause_type === "string" ? o.clause_type : "Sonstige",
       text_excerpt: o.text_excerpt,
       score,
       level: asRiskLevel(o.level, scoreToLevel(score)),
-      issue: typeof o.issue === 'string' ? o.issue : '',
-      recommendation: typeof o.recommendation === 'string' ? o.recommendation : '',
-      legal_basis: typeof o.legal_basis === 'string' ? o.legal_basis : '',
+      issue: typeof o.issue === "string" ? o.issue : "",
+      recommendation: typeof o.recommendation === "string" ? o.recommendation : "",
+      legal_basis: typeof o.legal_basis === "string" ? o.legal_basis : "",
     });
   }
   return out;
@@ -108,12 +108,12 @@ function parseClauseRisks(v: unknown): ClauseRisk[] {
 
 export async function analyzeRisk(
   engine: BrainEngine,
-  opts: RiskAnalysisOpts,
+  opts: RiskAnalysisOpts
 ): Promise<RiskAnalysis> {
   const warnings: string[] = [];
-  const jurisdiction = opts.jurisdiction ?? 'all';
-  const perspective = opts.perspective ?? 'neutral';
-  const contractType = opts.contract_type ?? '';
+  const jurisdiction = opts.jurisdiction ?? "all";
+  const perspective = opts.perspective ?? "neutral";
+  const contractType = opts.contract_type ?? "";
 
   const resolved = await resolveDocumentText(engine, {
     ...(opts.slug !== undefined ? { slug: opts.slug } : {}),
@@ -125,16 +125,16 @@ export async function analyzeRisk(
 
   const empty: RiskAnalysis = {
     overall_score: 0,
-    overall_level: 'low',
+    overall_level: "low",
     clause_risks: [],
-    summary: '',
+    summary: "",
     red_flags: [],
     missing_clauses: [],
     attorney_review_required: true,
     warnings,
   };
   if (!resolved.text.trim()) {
-    warnings.push('NO_DOCUMENT_TEXT');
+    warnings.push("NO_DOCUMENT_TEXT");
     return empty;
   }
 
@@ -143,7 +143,7 @@ export async function analyzeRisk(
 
   const llm = opts.llm ?? (await defaultLegalLLM());
   if (!llm) {
-    warnings.push('NO_LLM_AVAILABLE');
+    warnings.push("NO_LLM_AVAILABLE");
     return empty;
   }
 
@@ -156,13 +156,13 @@ export async function analyzeRisk(
       maxTokens: 4000,
     });
   } catch (e) {
-    warnings.push(`LLM_CALL_FAILED: ${e instanceof Error ? e.message : 'unknown'}`);
+    warnings.push(`LLM_CALL_FAILED: ${e instanceof Error ? e.message : "unknown"}`);
     return empty;
   }
 
   const parsed = tryParseJSON(raw);
   if (!parsed) {
-    warnings.push('LLM_OUTPUT_NOT_JSON');
+    warnings.push("LLM_OUTPUT_NOT_JSON");
     return empty;
   }
 
@@ -186,7 +186,7 @@ export async function analyzeRisk(
     overall_score,
     overall_level: scoreToLevel(overall_score),
     clause_risks,
-    summary: typeof parsed.summary === 'string' ? parsed.summary : '',
+    summary: typeof parsed.summary === "string" ? parsed.summary : "",
     red_flags: asStringArray(parsed.red_flags),
     missing_clauses: asStringArray(parsed.missing_clauses),
     attorney_review_required: true,

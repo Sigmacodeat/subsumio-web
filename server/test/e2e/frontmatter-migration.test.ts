@@ -23,14 +23,14 @@
  * Run: bun test test/e2e/frontmatter-migration.test.ts
  */
 
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, rmSync } from 'fs';
-import { join } from 'path';
-import { tmpdir } from 'os';
-import { PGLiteEngine } from '../../src/core/pglite-engine.ts';
-import { v0_22_4, __setTestEngineOverride } from '../../src/commands/migrations/v0_22_4.ts';
+import { describe, test, expect, beforeAll, afterAll } from "bun:test";
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, rmSync } from "fs";
+import { join } from "path";
+import { tmpdir } from "os";
+import { PGLiteEngine } from "../../src/core/pglite-engine.ts";
+import { v0_22_4, __setTestEngineOverride } from "../../src/commands/migrations/v0_22_4.ts";
 
-const fence = '---';
+const fence = "---";
 
 let workdir: string;
 let tmpHome: string;
@@ -41,14 +41,14 @@ let originalHome: string | undefined;
 const originalContents = new Map<string, string>();
 
 beforeAll(async () => {
-  workdir = mkdtempSync(join(tmpdir(), 'fm-migration-e2e-'));
-  tmpHome = join(workdir, 'home');
-  brainRootA = join(workdir, 'brain-a');
-  brainRootB = join(workdir, 'brain-b');
+  workdir = mkdtempSync(join(tmpdir(), "fm-migration-e2e-"));
+  tmpHome = join(workdir, "home");
+  brainRootA = join(workdir, "brain-a");
+  brainRootB = join(workdir, "brain-b");
   mkdirSync(tmpHome, { recursive: true });
   mkdirSync(brainRootA, { recursive: true });
   mkdirSync(brainRootB, { recursive: true });
-  mkdirSync(join(tmpHome, '.gbrain', 'migrations'), { recursive: true });
+  mkdirSync(join(tmpHome, ".gbrain", "migrations"), { recursive: true });
 
   // Seed fixture brain pages on disk. Source A has 2 broken pages
   // (NESTED_QUOTES + NULL_BYTES); source B has 1 broken page (NESTED_QUOTES)
@@ -59,14 +59,14 @@ beforeAll(async () => {
   const bClean = `${fence}\ntype: concept\ntitle: clean\n${fence}\n\nbody-b-clean`;
 
   const filesToTrack: Array<{ path: string; content: string }> = [
-    { path: join(brainRootA, 'people', 'phil.md'), content: aBrokenNested },
-    { path: join(brainRootA, 'concepts', 'foo.md'), content: aBrokenNull },
-    { path: join(brainRootB, 'companies', 'co.md'), content: bBroken },
-    { path: join(brainRootB, 'concepts', 'bar.md'), content: bClean },
+    { path: join(brainRootA, "people", "phil.md"), content: aBrokenNested },
+    { path: join(brainRootA, "concepts", "foo.md"), content: aBrokenNull },
+    { path: join(brainRootB, "companies", "co.md"), content: bBroken },
+    { path: join(brainRootB, "concepts", "bar.md"), content: bClean },
   ];
 
   for (const f of filesToTrack) {
-    mkdirSync(join(f.path, '..'), { recursive: true });
+    mkdirSync(join(f.path, ".."), { recursive: true });
     writeFileSync(f.path, f.content);
     originalContents.set(f.path, f.content);
   }
@@ -76,14 +76,14 @@ beforeAll(async () => {
   engine = new PGLiteEngine();
   await engine.connect({});
   await engine.initSchema();
-  await engine.executeRaw(
-    `INSERT INTO sources (id, name, local_path) VALUES ($1, $1, $2)`,
-    ['alpha', brainRootA],
-  );
-  await engine.executeRaw(
-    `INSERT INTO sources (id, name, local_path) VALUES ($1, $1, $2)`,
-    ['beta', brainRootB],
-  );
+  await engine.executeRaw(`INSERT INTO sources (id, name, local_path) VALUES ($1, $1, $2)`, [
+    "alpha",
+    brainRootA,
+  ]);
+  await engine.executeRaw(`INSERT INTO sources (id, name, local_path) VALUES ($1, $1, $2)`, [
+    "beta",
+    brainRootB,
+  ]);
   __setTestEngineOverride(engine);
 
   // Redirect ~/.gbrain/migrations/ output. The orchestrator's gbrainDir()
@@ -102,35 +102,35 @@ afterAll(async () => {
   rmSync(workdir, { recursive: true, force: true });
 });
 
-describe('E2E: v0.22.4 frontmatter-guard migration', () => {
-  test('orchestrator runs end-to-end and produces the expected artifacts', async () => {
+describe("E2E: v0.22.4 frontmatter-guard migration", () => {
+  test("orchestrator runs end-to-end and produces the expected artifacts", async () => {
     const result = await v0_22_4.orchestrator({
       yes: true,
       dryRun: false,
       noAutopilotInstall: true,
     });
 
-    expect(result.version).toBe('0.22.4');
-    expect(['complete', 'partial']).toContain(result.status);
+    expect(result.version).toBe("0.22.4");
+    expect(["complete", "partial"]).toContain(result.status);
     expect(result.phases.length).toBe(3);
-    const auditPhase = result.phases.find((p) => p.name === 'audit')!;
-    expect(auditPhase.status).toBe('complete');
-    const emitPhase = result.phases.find((p) => p.name === 'emit-todo')!;
-    expect(emitPhase.status).toBe('complete');
+    const auditPhase = result.phases.find((p) => p.name === "audit")!;
+    expect(auditPhase.status).toBe("complete");
+    const emitPhase = result.phases.find((p) => p.name === "emit-todo")!;
+    expect(emitPhase.status).toBe("complete");
     expect(result.pending_host_work).toBe(2);
   });
 
-  test('audit JSON report exists and has per-source counts', () => {
-    const reportPath = join(tmpHome, '.gbrain', 'migrations', 'v0.22.4-audit.json');
+  test("audit JSON report exists and has per-source counts", () => {
+    const reportPath = join(tmpHome, ".gbrain", "migrations", "v0.22.4-audit.json");
     expect(existsSync(reportPath)).toBe(true);
-    const report = JSON.parse(readFileSync(reportPath, 'utf8'));
+    const report = JSON.parse(readFileSync(reportPath, "utf8"));
 
     expect(report.ok).toBe(false);
     expect(report.total).toBeGreaterThan(0);
     expect(report.scanned_at).toMatch(/\d{4}-\d{2}-\d{2}T/);
 
-    const alpha = report.per_source.find((s: any) => s.source_id === 'alpha');
-    const beta = report.per_source.find((s: any) => s.source_id === 'beta');
+    const alpha = report.per_source.find((s: any) => s.source_id === "alpha");
+    const beta = report.per_source.find((s: any) => s.source_id === "beta");
     expect(alpha).toBeDefined();
     expect(beta).toBeDefined();
 
@@ -144,48 +144,48 @@ describe('E2E: v0.22.4 frontmatter-guard migration', () => {
     expect(beta.total).toBeGreaterThanOrEqual(1);
 
     // Sample lists carry the affected file paths for each source.
-    expect(alpha.sample.some((s: any) => s.path.includes('phil.md'))).toBe(true);
-    expect(beta.sample.some((s: any) => s.path.includes('co.md'))).toBe(true);
+    expect(alpha.sample.some((s: any) => s.path.includes("phil.md"))).toBe(true);
+    expect(beta.sample.some((s: any) => s.path.includes("co.md"))).toBe(true);
   });
 
-  test('pending-host-work.jsonl carries one entry per source-with-issues', () => {
-    const jsonlPath = join(tmpHome, '.gbrain', 'migrations', 'pending-host-work.jsonl');
+  test("pending-host-work.jsonl carries one entry per source-with-issues", () => {
+    const jsonlPath = join(tmpHome, ".gbrain", "migrations", "pending-host-work.jsonl");
     expect(existsSync(jsonlPath)).toBe(true);
-    const lines = readFileSync(jsonlPath, 'utf8').split('\n').filter(Boolean);
+    const lines = readFileSync(jsonlPath, "utf8").split("\n").filter(Boolean);
     expect(lines.length).toBe(2);
 
     const entries = lines.map((l) => JSON.parse(l));
     const ids = entries.map((e: any) => e.source_id).sort();
-    expect(ids).toEqual(['alpha', 'beta']);
+    expect(ids).toEqual(["alpha", "beta"]);
 
     for (const e of entries) {
-      expect(e.migration).toBe('0.22.4');
+      expect(e.migration).toBe("0.22.4");
       // Dotted-filename convention: the skill pointer matches the user-facing
       // migration doc at skills/migrations/v0.22.4.md, NOT the underscored
       // TS module path.
-      expect(e.skill).toBe('skills/migrations/v0.22.4.md');
-      expect(e.command).toContain('gbrain frontmatter validate');
-      expect(e.command).toContain('--fix');
+      expect(e.skill).toBe("skills/migrations/v0.22.4.md");
+      expect(e.command).toContain("gbrain frontmatter validate");
+      expect(e.command).toContain("--fix");
       expect(e.command).toContain(e.source_path);
     }
   });
 
-  test('audit phase did NOT mutate any fixture brain page (audit-only contract)', () => {
+  test("audit phase did NOT mutate any fixture brain page (audit-only contract)", () => {
     for (const [path, original] of originalContents) {
-      expect(readFileSync(path, 'utf8')).toBe(original);
+      expect(readFileSync(path, "utf8")).toBe(original);
       // Nor should there be a .bak — the migration never invokes writeBrainPage.
-      expect(existsSync(path + '.bak')).toBe(false);
+      expect(existsSync(path + ".bak")).toBe(false);
     }
   });
 
-  test('orchestrator is idempotent — re-running does not duplicate JSONL entries', async () => {
+  test("orchestrator is idempotent — re-running does not duplicate JSONL entries", async () => {
     await v0_22_4.orchestrator({
       yes: true,
       dryRun: false,
       noAutopilotInstall: true,
     });
-    const jsonlPath = join(tmpHome, '.gbrain', 'migrations', 'pending-host-work.jsonl');
-    const lines = readFileSync(jsonlPath, 'utf8').split('\n').filter(Boolean);
+    const jsonlPath = join(tmpHome, ".gbrain", "migrations", "pending-host-work.jsonl");
+    const lines = readFileSync(jsonlPath, "utf8").split("\n").filter(Boolean);
     expect(lines.length).toBe(2);
   });
 });

@@ -21,7 +21,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Plus, Sparkles, ArrowRight, SlidersHorizontal, FileText, Briefcase, Home, Users, Scale, Gavel, ShieldAlert, Building2, Scroll } from "lucide-react";
+import {
+  Loader2,
+  Plus,
+  Sparkles,
+  ArrowRight,
+  SlidersHorizontal,
+  FileText,
+  Briefcase,
+  Home,
+  Users,
+  Scale,
+  Gavel,
+  ShieldAlert,
+  Building2,
+  Scroll,
+} from "lucide-react";
 import { useLang } from "@/lib/use-lang";
 import type { DashboardKey } from "@/content/dashboard";
 import { api } from "@/lib/api";
@@ -112,56 +127,104 @@ export function CaseQuickCreateDialog({
         icon: Home,
         labelKey: "casesnew.template.rental",
         descKey: "casesnew.template.rental_desc",
-        defaults: { title: "", legalArea: "Mietrecht", subArea: "Wohnraummiete", priority: "medium", jurisdiction: "de" },
+        defaults: {
+          title: "",
+          legalArea: "Mietrecht",
+          subArea: "Wohnraummiete",
+          priority: "medium",
+          jurisdiction: "de",
+        },
       },
       {
         id: "employment",
         icon: Users,
         labelKey: "casesnew.template.employment",
         descKey: "casesnew.template.employment_desc",
-        defaults: { title: "", legalArea: "Arbeitsrecht", subArea: "Kündigungsschutz", priority: "high", jurisdiction: "de" },
+        defaults: {
+          title: "",
+          legalArea: "Arbeitsrecht",
+          subArea: "Kündigungsschutz",
+          priority: "high",
+          jurisdiction: "de",
+        },
       },
       {
         id: "contract",
         icon: FileText,
         labelKey: "casesnew.template.contract",
         descKey: "casesnew.template.contract_desc",
-        defaults: { title: "", legalArea: "Zivilrecht", subArea: "Vertragsrecht", priority: "medium", jurisdiction: "de" },
+        defaults: {
+          title: "",
+          legalArea: "Zivilrecht",
+          subArea: "Vertragsrecht",
+          priority: "medium",
+          jurisdiction: "de",
+        },
       },
       {
         id: "family",
         icon: Scale,
         labelKey: "casesnew.template.family",
         descKey: "casesnew.template.family_desc",
-        defaults: { title: "", legalArea: "Familienrecht", subArea: "Scheidung", priority: "high", jurisdiction: "de" },
+        defaults: {
+          title: "",
+          legalArea: "Familienrecht",
+          subArea: "Scheidung",
+          priority: "high",
+          jurisdiction: "de",
+        },
       },
       {
         id: "inheritance",
         icon: Scroll,
         labelKey: "casesnew.template.inheritance",
         descKey: "casesnew.template.inheritance_desc",
-        defaults: { title: "", legalArea: "Erbrecht", subArea: "Testamentsvollstreckung", priority: "medium", jurisdiction: "de" },
+        defaults: {
+          title: "",
+          legalArea: "Erbrecht",
+          subArea: "Testamentsvollstreckung",
+          priority: "medium",
+          jurisdiction: "de",
+        },
       },
       {
         id: "insolvency",
         icon: ShieldAlert,
         labelKey: "casesnew.template.insolvency",
         descKey: "casesnew.template.insolvency_desc",
-        defaults: { title: "", legalArea: "Insolvenzrecht", subArea: "Insolvenzeröffnung", priority: "critical", jurisdiction: "de" },
+        defaults: {
+          title: "",
+          legalArea: "Insolvenzrecht",
+          subArea: "Insolvenzeröffnung",
+          priority: "critical",
+          jurisdiction: "de",
+        },
       },
       {
         id: "criminal",
         icon: Gavel,
         labelKey: "casesnew.template.criminal",
         descKey: "casesnew.template.criminal_desc",
-        defaults: { title: "", legalArea: "Strafrecht", subArea: "Wirtschaftsstrafrecht", priority: "critical", jurisdiction: "de" },
+        defaults: {
+          title: "",
+          legalArea: "Strafrecht",
+          subArea: "Wirtschaftsstrafrecht",
+          priority: "critical",
+          jurisdiction: "de",
+        },
       },
       {
         id: "corporate",
         icon: Building2,
         labelKey: "casesnew.template.corporate",
         descKey: "casesnew.template.corporate_desc",
-        defaults: { title: "", legalArea: "Gesellschaftsrecht", subArea: "Gesellschafterstreit", priority: "high", jurisdiction: "de" },
+        defaults: {
+          title: "",
+          legalArea: "Gesellschaftsrecht",
+          subArea: "Gesellschafterstreit",
+          priority: "high",
+          jurisdiction: "de",
+        },
       },
     ],
     []
@@ -179,7 +242,7 @@ export function CaseQuickCreateDialog({
           role: fm.role || "other",
         };
       });
-    },
+    }
   );
 
   useEffect(() => {
@@ -194,7 +257,10 @@ export function CaseQuickCreateDialog({
   }, [title, lang]);
 
   const clients = useMemo(() => (contacts ?? []).filter((c) => c.role === "client"), [contacts]);
-  const opponents = useMemo(() => (contacts ?? []).filter((c) => c.role === "opponent"), [contacts]);
+  const opponents = useMemo(
+    () => (contacts ?? []).filter((c) => c.role === "opponent"),
+    [contacts]
+  );
 
   const applyTemplate = useCallback(
     (templateId: string) => {
@@ -316,8 +382,16 @@ export function CaseQuickCreateDialog({
                         : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:bg-[color:var(--ds-hover)]"
                     )}
                   >
-                    <Icon size={16} className={active ? "brand-text" : "text-[color:var(--ds-text-muted)]"} />
-                    <span className={cn("text-xs font-medium", active ? "text-[color:var(--ds-text)]" : "text-[color:var(--ds-text-muted)]")}>
+                    <Icon
+                      size={16}
+                      className={active ? "brand-text" : "text-[color:var(--ds-text-muted)]"}
+                    />
+                    <span
+                      className={cn(
+                        "text-xs font-medium",
+                        active ? "text-[color:var(--ds-text)]" : "text-[color:var(--ds-text-muted)]"
+                      )}
+                    >
                       {t(tpl.labelKey as DashboardKey)}
                     </span>
                     <span className="text-[10px] text-[color:var(--ds-text-subtle)]">
@@ -369,10 +443,14 @@ export function CaseQuickCreateDialog({
                 </Label>
                 <Select value={clientSlug} onValueChange={setClientSlug} disabled={loadingContacts}>
                   <SelectTrigger id="quick-client">
-                    <SelectValue placeholder={t("casesnew.quick_client_placeholder" as DashboardKey)} />
+                    <SelectValue
+                      placeholder={t("casesnew.quick_client_placeholder" as DashboardKey)}
+                    />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">{t("casesnew.quick_client_none" as DashboardKey)}</SelectItem>
+                    <SelectItem value="">
+                      {t("casesnew.quick_client_none" as DashboardKey)}
+                    </SelectItem>
                     {clients.map((c) => (
                       <SelectItem key={c.slug} value={c.slug}>
                         {c.name}
@@ -385,12 +463,20 @@ export function CaseQuickCreateDialog({
                 <Label htmlFor="quick-opponent" className="text-xs">
                   {t("casesnew.label_opponent" as DashboardKey)}
                 </Label>
-                <Select value={opponentSlug} onValueChange={setOpponentSlug} disabled={loadingContacts}>
+                <Select
+                  value={opponentSlug}
+                  onValueChange={setOpponentSlug}
+                  disabled={loadingContacts}
+                >
                   <SelectTrigger id="quick-opponent">
-                    <SelectValue placeholder={t("casesnew.quick_opponent_placeholder" as DashboardKey)} />
+                    <SelectValue
+                      placeholder={t("casesnew.quick_opponent_placeholder" as DashboardKey)}
+                    />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">{t("casesnew.quick_opponent_none" as DashboardKey)}</SelectItem>
+                    <SelectItem value="">
+                      {t("casesnew.quick_opponent_none" as DashboardKey)}
+                    </SelectItem>
                     {opponents.map((c) => (
                       <SelectItem key={c.slug} value={c.slug}>
                         {c.name}
@@ -406,7 +492,10 @@ export function CaseQuickCreateDialog({
               <Label htmlFor="quick-jurisdiction" className="text-xs">
                 {t("casesnew.label_jurisdiction" as DashboardKey)}
               </Label>
-              <Select value={jurisdiction} onValueChange={(v) => setJurisdiction(v as "de" | "at" | "ch" | "eu")}>
+              <Select
+                value={jurisdiction}
+                onValueChange={(v) => setJurisdiction(v as "de" | "at" | "ch" | "eu")}
+              >
                 <SelectTrigger id="quick-jurisdiction">
                   <SelectValue />
                 </SelectTrigger>
@@ -427,8 +516,13 @@ export function CaseQuickCreateDialog({
               className="flex items-center gap-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text)]"
             >
               <SlidersHorizontal size={13} />
-              {showAdvanced ? t("casesnew.quick_hide_advanced" as DashboardKey) : t("casesnew.quick_show_advanced" as DashboardKey)}
-              <ArrowRight size={12} className={cn("transition-transform", showAdvanced ? "rotate-90" : "")} />
+              {showAdvanced
+                ? t("casesnew.quick_hide_advanced" as DashboardKey)
+                : t("casesnew.quick_show_advanced" as DashboardKey)}
+              <ArrowRight
+                size={12}
+                className={cn("transition-transform", showAdvanced ? "rotate-90" : "")}
+              />
             </button>
 
             {/* Advanced fields */}
@@ -450,7 +544,12 @@ export function CaseQuickCreateDialog({
                     <Label htmlFor="quick-priority" className="text-xs">
                       {t("casesnew.label_priority" as DashboardKey)}
                     </Label>
-                    <Select value={priority} onValueChange={(v) => setPriority(v as "low" | "medium" | "high" | "critical")}>
+                    <Select
+                      value={priority}
+                      onValueChange={(v) =>
+                        setPriority(v as "low" | "medium" | "high" | "critical")
+                      }
+                    >
                       <SelectTrigger id="quick-priority">
                         <SelectValue />
                       </SelectTrigger>

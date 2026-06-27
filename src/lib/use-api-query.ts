@@ -46,7 +46,7 @@ export interface UseApiQueryResult<T> {
 export function useApiQuery<T>(
   fetcher: () => Promise<T>,
   deps: React.DependencyList,
-  options: UseApiQueryOptions = {},
+  options: UseApiQueryOptions = {}
 ): UseApiQueryResult<T> {
   const { enabled = true, initialData = null } = options;
 

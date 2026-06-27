@@ -1,9 +1,11 @@
 # Meeting Ingestion
 
 ## Goal
+
 Meeting transcripts become brain pages that update every mentioned entity -- attendees, companies, deals, and action items all propagated in one pass.
 
 ## What the User Gets
+
 Without this: meetings vanish into memory, action items are forgotten, and the agent has no idea what was discussed last time you met someone. With this: every meeting is a permanent record that enriches every person and company page it touches, and the user walks into every follow-up already briefed.
 
 ## Implementation
@@ -77,4 +79,5 @@ on new_meeting_transcript(meeting):
 5. Run `gbrain search "{meeting_topic}"`. Confirm the meeting page appears in search results (verifies sync ran).
 
 ---
-*Part of the [GBrain Skillpack](../GBRAIN_SKILLPACK.md).*
+
+_Part of the [GBrain Skillpack](../GBRAIN_SKILLPACK.md)._

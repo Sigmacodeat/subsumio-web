@@ -3,7 +3,7 @@
 // `heic-decode` (no @types package on npm) and `@jsquash/png/encode.js`
 // (subpath the package.json exports map doesn't expose).
 
-declare module 'heic-decode' {
+declare module "heic-decode" {
   interface HeicDecodeResult {
     width: number;
     height: number;
@@ -17,7 +17,7 @@ declare module 'heic-decode' {
   export const all: (opts: HeicDecodeOptions) => Promise<HeicDecodeResult[]>;
 }
 
-declare module '@jsquash/png/encode.js' {
+declare module "@jsquash/png/encode.js" {
   interface ImageDataLike {
     data: Uint8ClampedArray;
     width: number;
@@ -28,15 +28,15 @@ declare module '@jsquash/png/encode.js' {
   export function init(module?: WebAssembly.Module): Promise<unknown>;
 }
 
-declare module '@jsquash/avif/codec/dec/avif_dec.wasm' {
+declare module "@jsquash/avif/codec/dec/avif_dec.wasm" {
   const path: string;
   export default path;
 }
 
-declare module 'pdf2pic' {
+declare module "pdf2pic" {
   interface ConvertOptions {
     density?: number;
-    format?: 'png' | 'jpg' | 'jpeg';
+    format?: "png" | "jpg" | "jpeg";
     width?: number;
     height?: number;
     quality?: number;

@@ -42,12 +42,12 @@ separately for progress.
 
 ## Flags
 
-| Flag | Behavior |
-|---|---|
-| *(none)* | Auto. TTY: `\r`-rewriting single line. Non-TTY: plain line-per-event on stderr. |
-| `--progress-json` | Force JSON-lines mode on stderr (this doc). |
-| `--quiet` | Suppress progress entirely. Warnings and final output still print. |
-| `--progress-interval=<ms>` | Override the minimum interval between tick emits (default 1000). |
+| Flag                       | Behavior                                                                        |
+| -------------------------- | ------------------------------------------------------------------------------- |
+| _(none)_                   | Auto. TTY: `\r`-rewriting single line. Non-TTY: plain line-per-event on stderr. |
+| `--progress-json`          | Force JSON-lines mode on stderr (this doc).                                     |
+| `--quiet`                  | Suppress progress entirely. Warnings and final output still print.              |
+| `--progress-interval=<ms>` | Override the minimum interval between tick emits (default 1000).                |
 
 Global flags: parsed by `src/core/cli-options.ts` before command dispatch,
 so `gbrain --progress-json doctor` works the same as
@@ -58,12 +58,12 @@ parsers see the flag via the shared `CliOptions` singleton).
 
 Every event is a single-line JSON object with these common fields:
 
-| Field | Type | Notes |
-|---|---|---|
-| `event` | string | One of: `start`, `tick`, `heartbeat`, `finish`, `abort`. |
-| `phase` | string | Machine-stable snake_case, dot-separated. See "Phase names" below. |
-| `ts` | ISO 8601 UTC string | Event emission time. |
-| `elapsed_ms` | number | Ms since the phase started. Present on `tick`/`heartbeat`/`finish`/`abort`. |
+| Field        | Type                | Notes                                                                       |
+| ------------ | ------------------- | --------------------------------------------------------------------------- |
+| `event`      | string              | One of: `start`, `tick`, `heartbeat`, `finish`, `abort`.                    |
+| `phase`      | string              | Machine-stable snake_case, dot-separated. See "Phase names" below.          |
+| `ts`         | ISO 8601 UTC string | Event emission time.                                                        |
+| `elapsed_ms` | number              | Ms since the phase started. Present on `tick`/`heartbeat`/`finish`/`abort`. |
 
 ### `start`
 
@@ -85,7 +85,16 @@ won't emit more often than `minIntervalMs` (default 1000) and
 `minItems` (default `max(10, ceil(total/100))`).
 
 ```json
-{"event":"tick","phase":"orphans.scan","done":15000,"total":52000,"pct":28.8,"elapsed_ms":4200,"eta_ms":10300,"ts":"..."}
+{
+  "event": "tick",
+  "phase": "orphans.scan",
+  "done": 15000,
+  "total": 52000,
+  "pct": 28.8,
+  "elapsed_ms": 4200,
+  "eta_ms": 10300,
+  "ts": "..."
+}
 ```
 
 Fields:
@@ -105,7 +114,13 @@ Emitted for long-running single operations that don't iterate
 signal that work is still happening.
 
 ```json
-{"event":"heartbeat","phase":"doctor.markdown_body_completeness","note":"scanning pages for truncation…","elapsed_ms":1000,"ts":"..."}
+{
+  "event": "heartbeat",
+  "phase": "doctor.markdown_body_completeness",
+  "note": "scanning pages for truncation…",
+  "elapsed_ms": 1000,
+  "ts": "..."
+}
 ```
 
 ### `finish`
@@ -113,7 +128,14 @@ signal that work is still happening.
 Emitted when a phase completes normally.
 
 ```json
-{"event":"finish","phase":"import.files","done":52000,"total":52000,"elapsed_ms":187000,"ts":"..."}
+{
+  "event": "finish",
+  "phase": "import.files",
+  "done": 52000,
+  "total": 52000,
+  "elapsed_ms": 187000,
+  "ts": "..."
+}
 ```
 
 ### `abort`
@@ -122,7 +144,13 @@ Emitted by a single process-level SIGINT/SIGTERM handler that tracks every
 live phase. After `abort`, no further events emit for that phase.
 
 ```json
-{"event":"abort","phase":"doctor.markdown_body_completeness","reason":"SIGINT","elapsed_ms":5300,"ts":"..."}
+{
+  "event": "abort",
+  "phase": "doctor.markdown_body_completeness",
+  "reason": "SIGINT",
+  "elapsed_ms": 5300,
+  "ts": "..."
+}
 ```
 
 ## Phase names

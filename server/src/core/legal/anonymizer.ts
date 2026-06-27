@@ -29,11 +29,7 @@ export function anonymize(raw: string, ownerKey: string): string {
 }
 
 /** Verify that a candidate value hashes to the stored anonymized value. */
-export function verifyAnonymized(
-  raw: string,
-  ownerKey: string,
-  anonymized: string,
-): boolean {
+export function verifyAnonymized(raw: string, ownerKey: string, anonymized: string): boolean {
   return anonymize(raw, ownerKey) === anonymized;
 }
 
@@ -46,10 +42,7 @@ export function hashContact(contact: string, ownerKey: string): string {
 }
 
 /** Anonymize free-text facts: replace names, addresses, dates with placeholders. */
-export function anonymizeFacts(
-  text: string,
-  placeholders: Map<string, string>,
-): string {
+export function anonymizeFacts(text: string, placeholders: Map<string, string>): string {
   let result = text;
   for (const [real, placeholder] of placeholders) {
     const escaped = real.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -59,10 +52,7 @@ export function anonymizeFacts(
 }
 
 /** Build placeholder map from a list of sensitive terms. */
-export function buildPlaceholders(
-  terms: string[],
-  prefix: string = "[ENT",
-): Map<string, string> {
+export function buildPlaceholders(terms: string[], prefix: string = "[ENT"): Map<string, string> {
   const map = new Map<string, string>();
   for (let i = 0; i < terms.length; i++) {
     map.set(terms[i], `${prefix}-${String(i + 1).padStart(2, "0")}]`);
@@ -132,7 +122,7 @@ export interface PIIDetection {
  */
 export async function detectPIIWithNER(
   text: string,
-  opts?: { model?: string; abortSignal?: AbortSignal },
+  opts?: { model?: string; abortSignal?: AbortSignal }
 ): Promise<PIIDetection[]> {
   if (!text || text.trim().length < 3) return [];
 
@@ -185,12 +175,20 @@ Rules:
       }
 
       const validTypes: PIIEntityType[] = [
-        "person_name", "organization", "email", "phone", "address",
-        "date_of_birth", "id_number", "iban", "credit_card",
-        "insurance_number", "other_pii",
+        "person_name",
+        "organization",
+        "email",
+        "phone",
+        "address",
+        "date_of_birth",
+        "id_number",
+        "iban",
+        "credit_card",
+        "insurance_number",
+        "other_pii",
       ];
       const type = validTypes.includes(item.type as PIIEntityType)
-        ? item.type as PIIEntityType
+        ? (item.type as PIIEntityType)
         : "other_pii";
 
       detections.push({
@@ -225,7 +223,7 @@ Rules:
  */
 export async function detectPIIHybrid(
   text: string,
-  opts?: { model?: string; abortSignal?: AbortSignal },
+  opts?: { model?: string; abortSignal?: AbortSignal }
 ): Promise<PIIDetection[]> {
   // 1. Regex pass — fast, synchronous
   const regexPII = detectPII(text);
@@ -253,9 +251,7 @@ export async function detectPIIHybrid(
   const sortedNER = [...nerDetections].sort((a, b) => b.confidence - a.confidence);
 
   for (const ner of sortedNER) {
-    const overlaps = usedRanges.some(([s, e]) =>
-      ner.start < e && ner.end > s,
-    );
+    const overlaps = usedRanges.some(([s, e]) => ner.start < e && ner.end > s);
     if (!overlaps) {
       merged.push(ner);
       usedRanges.push([ner.start, ner.end]);
@@ -264,9 +260,7 @@ export async function detectPIIHybrid(
 
   // Add regex detections that don't overlap with any NER detection
   for (const reg of regexDetections) {
-    const overlaps = usedRanges.some(([s, e]) =>
-      reg.start < e && reg.end > s,
-    );
+    const overlaps = usedRanges.some(([s, e]) => reg.start < e && reg.end > s);
     if (!overlaps) {
       merged.push(reg);
       usedRanges.push([reg.start, reg.end]);
@@ -289,21 +283,14 @@ function inferPIIType(raw: string): string {
 }
 
 /** Generate a display-safe case title from anonymized facts. */
-export function generateDisplayTitle(
-  legalArea: string,
-  subArea?: string,
-  index?: number,
-): string {
+export function generateDisplayTitle(legalArea: string, subArea?: string, index?: number): string {
   const sub = subArea ? ` — ${subArea}` : "";
   const idx = index !== undefined ? ` #${index + 1}` : "";
   return `${legalArea}${sub}${idx}`;
 }
 
 /** Generate a case number (Aktenzeichen) from date + counter. */
-export function generateCaseNumber(
-  prefix: string = "LB",
-  counter: number,
-): string {
+export function generateCaseNumber(prefix: string = "LB", counter: number): string {
   const date = new Date();
   const yy = String(date.getFullYear()).slice(-2);
   const mm = String(date.getMonth() + 1).padStart(2, "0");
@@ -329,7 +316,7 @@ export async function rotatePseudonymizationKey(
   engine: import("../engine.ts").BrainEngine,
   oldKey: string,
   newKey: string,
-  opts: { sourceId?: string },
+  opts: { sourceId?: string }
 ): Promise<{ rotated: number; skipped: number }> {
   if (!oldKey || !newKey) throw new Error("Both oldKey and newKey are required");
   if (oldKey === newKey) throw new Error("newKey must differ from oldKey");
@@ -345,7 +332,7 @@ export async function rotatePseudonymizationKey(
        ${sourceClause}
      ORDER BY slug
      LIMIT 10000`,
-    params,
+    params
   );
 
   let rotated = 0;

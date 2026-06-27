@@ -943,7 +943,9 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
                   pageSlug: routeContext.pageSlug,
                 }}
                 className="h-full rounded-none border-0"
-                placeholder={routeContext.caseSlug ? t("chat.placeholder_case") : t("chat.placeholder_global")}
+                placeholder={
+                  routeContext.caseSlug ? t("chat.placeholder_case") : t("chat.placeholder_global")
+                }
                 features={{
                   brainStatus: true,
                   tokenWidget: true,
@@ -1062,7 +1064,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
                     <Activity size={14} className="text-[color:var(--brand-secondary)]" />
                   </div>
                   <div className="min-w-0">
-                    <span className="block truncate text-[13px] font-semibold leading-tight text-[color:var(--ds-text)]">
+                    <span className="block truncate text-[13px] leading-tight font-semibold text-[color:var(--ds-text)]">
                       {t("copilot.copilot")}
                     </span>
                     <span className="block truncate text-[11px] text-[color:var(--ds-text-subtle)]">
@@ -1155,7 +1157,11 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
                       pageSlug: routeContext.pageSlug,
                     }}
                     className="h-full rounded-none border-0"
-                    placeholder={routeContext.caseSlug ? t("chat.placeholder_case") : t("chat.placeholder_global")}
+                    placeholder={
+                      routeContext.caseSlug
+                        ? t("chat.placeholder_case")
+                        : t("chat.placeholder_global")
+                    }
                     features={{
                       brainStatus: true,
                       tokenWidget: true,

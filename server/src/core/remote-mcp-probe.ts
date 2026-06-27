@@ -15,8 +15,13 @@
  */
 
 export type ProbeResult<T = void> =
-  | { ok: true } & ({} extends T ? unknown : T extends void ? unknown : { value: T })
-  | { ok: false; reason: 'network' | 'http' | 'auth' | 'parse' | 'config'; status?: number; message: string };
+  | ({ ok: true } & ({} extends T ? unknown : T extends void ? unknown : { value: T }))
+  | {
+      ok: false;
+      reason: "network" | "http" | "auth" | "parse" | "config";
+      status?: number;
+      message: string;
+    };
 
 /**
  * GET <issuer_url>/.well-known/oauth-authorization-server. Verifies the
@@ -35,11 +40,18 @@ export interface OAuthMetadata {
 
 export async function discoverOAuth(
   issuerUrl: string,
-  opts: { timeoutMs?: number } = {},
-): Promise<{ ok: true; metadata: OAuthMetadata } | { ok: false; reason: 'network' | 'http' | 'parse' | 'config'; status?: number; message: string }> {
-  const trimmed = issuerUrl.replace(/\/+$/, '');
+  opts: { timeoutMs?: number } = {}
+): Promise<
+  | { ok: true; metadata: OAuthMetadata }
+  | { ok: false; reason: "network" | "http" | "parse" | "config"; status?: number; message: string }
+> {
+  const trimmed = issuerUrl.replace(/\/+$/, "");
   if (!/^https?:\/\//i.test(trimmed)) {
-    return { ok: false, reason: 'config', message: `issuer_url must start with http:// or https:// — got: ${issuerUrl}` };
+    return {
+      ok: false,
+      reason: "config",
+      message: `issuer_url must start with http:// or https:// — got: ${issuerUrl}`,
+    };
   }
   const url = `${trimmed}/.well-known/oauth-authorization-server`;
   const controller = new AbortController();
@@ -47,20 +59,41 @@ export async function discoverOAuth(
   try {
     const res = await fetch(url, { signal: controller.signal });
     if (!res.ok) {
-      return { ok: false, reason: 'http', status: res.status, message: `OAuth discovery returned ${res.status} for ${url}` };
+      return {
+        ok: false,
+        reason: "http",
+        status: res.status,
+        message: `OAuth discovery returned ${res.status} for ${url}`,
+      };
     }
     let body: unknown;
     try {
       body = await res.json();
     } catch (e) {
-      return { ok: false, reason: 'parse', message: `OAuth discovery returned non-JSON body: ${(e as Error).message}` };
+      return {
+        ok: false,
+        reason: "parse",
+        message: `OAuth discovery returned non-JSON body: ${(e as Error).message}`,
+      };
     }
-    if (!body || typeof body !== 'object' || typeof (body as OAuthMetadata).token_endpoint !== 'string') {
-      return { ok: false, reason: 'parse', message: `OAuth discovery missing token_endpoint at ${url}` };
+    if (
+      !body ||
+      typeof body !== "object" ||
+      typeof (body as OAuthMetadata).token_endpoint !== "string"
+    ) {
+      return {
+        ok: false,
+        reason: "parse",
+        message: `OAuth discovery missing token_endpoint at ${url}`,
+      };
     }
     return { ok: true, metadata: body as OAuthMetadata };
   } catch (e) {
-    return { ok: false, reason: 'network', message: `OAuth discovery network error: ${(e as Error).message}` };
+    return {
+      ok: false,
+      reason: "network",
+      message: `OAuth discovery network error: ${(e as Error).message}`,
+    };
   } finally {
     clearTimeout(timer);
   }
@@ -82,44 +115,74 @@ export async function mintClientCredentialsToken(
   tokenEndpoint: string,
   clientId: string,
   clientSecret: string,
-  opts: { scope?: string; timeoutMs?: number } = {},
-): Promise<{ ok: true; token: TokenResponse } | { ok: false; reason: 'network' | 'http' | 'auth' | 'parse' | 'config'; status?: number; message: string }> {
-  if (!clientId) return { ok: false, reason: 'config', message: 'client_id is required' };
-  if (!clientSecret) return { ok: false, reason: 'config', message: 'client_secret is required' };
+  opts: { scope?: string; timeoutMs?: number } = {}
+): Promise<
+  | { ok: true; token: TokenResponse }
+  | {
+      ok: false;
+      reason: "network" | "http" | "auth" | "parse" | "config";
+      status?: number;
+      message: string;
+    }
+> {
+  if (!clientId) return { ok: false, reason: "config", message: "client_id is required" };
+  if (!clientSecret) return { ok: false, reason: "config", message: "client_secret is required" };
 
   const body = new URLSearchParams();
-  body.set('grant_type', 'client_credentials');
-  body.set('client_id', clientId);
-  body.set('client_secret', clientSecret);
-  if (opts.scope) body.set('scope', opts.scope);
+  body.set("grant_type", "client_credentials");
+  body.set("client_id", clientId);
+  body.set("client_secret", clientSecret);
+  if (opts.scope) body.set("scope", opts.scope);
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), opts.timeoutMs ?? 10_000);
   try {
     const res = await fetch(tokenEndpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: body.toString(),
       signal: controller.signal,
     });
     if (res.status === 401 || res.status === 403) {
-      return { ok: false, reason: 'auth', status: res.status, message: `OAuth /token returned ${res.status} — check client_id and client_secret` };
+      return {
+        ok: false,
+        reason: "auth",
+        status: res.status,
+        message: `OAuth /token returned ${res.status} — check client_id and client_secret`,
+      };
     }
     if (!res.ok) {
-      return { ok: false, reason: 'http', status: res.status, message: `OAuth /token returned ${res.status}` };
+      return {
+        ok: false,
+        reason: "http",
+        status: res.status,
+        message: `OAuth /token returned ${res.status}`,
+      };
     }
     let json: unknown;
     try {
       json = await res.json();
     } catch (e) {
-      return { ok: false, reason: 'parse', message: `OAuth /token returned non-JSON: ${(e as Error).message}` };
+      return {
+        ok: false,
+        reason: "parse",
+        message: `OAuth /token returned non-JSON: ${(e as Error).message}`,
+      };
     }
-    if (!json || typeof json !== 'object' || typeof (json as TokenResponse).access_token !== 'string') {
-      return { ok: false, reason: 'parse', message: `OAuth /token response missing access_token` };
+    if (
+      !json ||
+      typeof json !== "object" ||
+      typeof (json as TokenResponse).access_token !== "string"
+    ) {
+      return { ok: false, reason: "parse", message: `OAuth /token response missing access_token` };
     }
     return { ok: true, token: json as TokenResponse };
   } catch (e) {
-    return { ok: false, reason: 'network', message: `OAuth /token network error: ${(e as Error).message}` };
+    return {
+      ok: false,
+      reason: "network",
+      message: `OAuth /token network error: ${(e as Error).message}`,
+    };
   } finally {
     clearTimeout(timer);
   }
@@ -140,42 +203,59 @@ export async function mintClientCredentialsToken(
 export async function smokeTestMcp(
   mcpUrl: string,
   accessToken: string,
-  opts: { timeoutMs?: number } = {},
-): Promise<{ ok: true } | { ok: false; reason: 'network' | 'http' | 'auth' | 'parse'; status?: number; message: string }> {
+  opts: { timeoutMs?: number } = {}
+): Promise<
+  | { ok: true }
+  | { ok: false; reason: "network" | "http" | "auth" | "parse"; status?: number; message: string }
+> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), opts.timeoutMs ?? 15_000);
   try {
     const res = await fetch(mcpUrl, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json, text/event-stream',
-        'Authorization': `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+        Accept: "application/json, text/event-stream",
+        Authorization: `Bearer ${accessToken}`,
       },
       body: JSON.stringify({
-        jsonrpc: '2.0',
+        jsonrpc: "2.0",
         id: 1,
-        method: 'initialize',
+        method: "initialize",
         params: {
-          protocolVersion: '2024-11-05',
+          protocolVersion: "2024-11-05",
           capabilities: {},
-          clientInfo: { name: 'gbrain-init-smoke', version: '1' },
+          clientInfo: { name: "gbrain-init-smoke", version: "1" },
         },
       }),
       signal: controller.signal,
     });
     if (res.status === 401 || res.status === 403) {
-      return { ok: false, reason: 'auth', status: res.status, message: `MCP smoke returned ${res.status} — token rejected at ${mcpUrl}` };
+      return {
+        ok: false,
+        reason: "auth",
+        status: res.status,
+        message: `MCP smoke returned ${res.status} — token rejected at ${mcpUrl}`,
+      };
     }
     if (!res.ok) {
-      return { ok: false, reason: 'http', status: res.status, message: `MCP smoke returned ${res.status} from ${mcpUrl}` };
+      return {
+        ok: false,
+        reason: "http",
+        status: res.status,
+        message: `MCP smoke returned ${res.status} from ${mcpUrl}`,
+      };
     }
     // Don't strictly parse the response body — different transports may use
     // SSE framing or plain JSON. A 2xx with the bearer accepted is enough
     // signal that the round-trip works.
     return { ok: true };
   } catch (e) {
-    return { ok: false, reason: 'network', message: `MCP smoke network error: ${(e as Error).message}` };
+    return {
+      ok: false,
+      reason: "network",
+      message: `MCP smoke network error: ${(e as Error).message}`,
+    };
   } finally {
     clearTimeout(timer);
   }

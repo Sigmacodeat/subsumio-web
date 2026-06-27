@@ -18,9 +18,5 @@ export default function DELayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return (
-    <div lang="de">
-      {children}
-    </div>
-  );
+  return <div lang="de">{children}</div>;
 }

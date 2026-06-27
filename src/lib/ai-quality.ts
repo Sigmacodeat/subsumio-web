@@ -93,7 +93,7 @@ export interface AIQualityReport {
 // ── Citation quality ──────────────────────────────────────────────────
 
 export function computeCitationQuality(
-  grounding: GroundingMetadata | null | undefined,
+  grounding: GroundingMetadata | null | undefined
 ): CitationQualityMetrics {
   if (!grounding || !grounding.corpus_checked) {
     return {
@@ -128,14 +128,13 @@ export function computeCitationQuality(
  * or statute references are considered claims.
  * A claim is "supported" if it contains a statute reference (§ ...).
  */
-const CLAIM_SENTENCE_RX =
-  /[^.!?]*\b(?:muss|ist|gilt|kann|hat|sind|wird|darf|soll)\b[^.!?]*[.!?]/gi;
+const CLAIM_SENTENCE_RX = /[^.!?]*\b(?:muss|ist|gilt|kann|hat|sind|wird|darf|soll)\b[^.!?]*[.!?]/gi;
 
 const CITATION_IN_SENTENCE_RX = /§+\s*\d+/;
 
 export function computeClaimQuality(
   answerText: string,
-  groundedCitations: GroundedCitation[] | null | undefined,
+  groundedCitations: GroundedCitation[] | null | undefined
 ): ClaimQualityMetrics {
   const sentences = answerText.match(CLAIM_SENTENCE_RX) ?? [];
   const total_claims = sentences.length;
@@ -150,9 +149,7 @@ export function computeClaimQuality(
   }
 
   const verifiedKeys = new Set(
-    (groundedCitations ?? [])
-      .filter((c) => c.verified)
-      .map((c) => `${c.code}#${c.paragraph}`),
+    (groundedCitations ?? []).filter((c) => c.verified).map((c) => `${c.code}#${c.paragraph}`)
   );
 
   let supported = 0;
@@ -191,7 +188,7 @@ export interface ExpectedDeadline {
 
 export function computeDeadlineQuality(
   detected: DetectedDeadline[],
-  expected: ExpectedDeadline[],
+  expected: ExpectedDeadline[]
 ): DeadlineQualityMetrics {
   const expectedSet = new Set(expected.map((e) => `${e.type}:${e.date ?? e.daysFromNow ?? ""}`));
   const detectedSet = new Set(detected.map((d) => `${d.type}:${d.date ?? d.daysFromNow ?? ""}`));
@@ -233,7 +230,7 @@ export interface DetectedContractIssue {
 
 export function computeContractIssueQuality(
   detected: DetectedContractIssue[],
-  expected: ExpectedContractIssue[],
+  expected: ExpectedContractIssue[]
 ): ContractIssueQualityMetrics {
   const expectedSet = new Set(expected.map((e) => `${e.clause_type}:${e.risk_level}`));
   const detectedSet = new Set(detected.map((d) => `${d.clause_type}:${d.risk_level}`));
@@ -275,10 +272,7 @@ export interface QualityReportInput {
 
 export function computeQualityReport(input: QualityReportInput): AIQualityReport {
   const citation = computeCitationQuality(input.grounding);
-  const claims = computeClaimQuality(
-    input.answerText,
-    input.grounding?.grounded_citations,
-  );
+  const claims = computeClaimQuality(input.answerText, input.grounding?.grounded_citations);
 
   const deadlines =
     input.detectedDeadlines && input.expectedDeadlines
@@ -287,10 +281,7 @@ export function computeQualityReport(input: QualityReportInput): AIQualityReport
 
   const contract_issues =
     input.detectedContractIssues && input.expectedContractIssues
-      ? computeContractIssueQuality(
-          input.detectedContractIssues,
-          input.expectedContractIssues,
-        )
+      ? computeContractIssueQuality(input.detectedContractIssues, input.expectedContractIssues)
       : null;
 
   // Weighted overall score

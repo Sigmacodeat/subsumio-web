@@ -35,9 +35,9 @@
  */
 export function parseRowCells(line: string): string[] | null {
   const trimmed = line.trim();
-  if (!trimmed.startsWith('|') || !trimmed.includes('|', 1)) return null;
-  const inner = trimmed.replace(/^\|/, '').replace(/\|$/, '');
-  return inner.split('|').map(c => c.trim());
+  if (!trimmed.startsWith("|") || !trimmed.includes("|", 1)) return null;
+  const inner = trimmed.replace(/^\|/, "").replace(/\|$/, "");
+  return inner.split("|").map((c) => c.trim());
 }
 
 /**
@@ -46,7 +46,7 @@ export function parseRowCells(line: string): string[] | null {
  * separator when iterating fence rows.
  */
 export function isSeparatorRow(cells: string[]): boolean {
-  return cells.every(c => /^[-:\s]+$/.test(c)) && cells.length > 0;
+  return cells.every((c) => /^[-:\s]+$/.test(c)) && cells.length > 0;
 }
 
 /**
@@ -83,5 +83,5 @@ export function parseStringCell(raw: string): string | undefined {
  * read pipes back out of cell text.
  */
 export function escapeFenceCell(s: string): string {
-  return s.replace(/\|/g, '\\|');
+  return s.replace(/\|/g, "\\|");
 }

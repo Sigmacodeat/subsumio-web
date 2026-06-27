@@ -25,16 +25,16 @@ export interface UnifiedDiffOpts {
 }
 
 export function unifiedDiff(a: string, b: string, opts: UnifiedDiffOpts = {}): string {
-  if (a === b) return '';
+  if (a === b) return "";
   const context = opts.context ?? DEFAULT_CONTEXT;
-  const oldPath = opts.oldPath ?? 'a';
-  const newPath = opts.newPath ?? 'b';
+  const oldPath = opts.oldPath ?? "a";
+  const newPath = opts.newPath ?? "b";
 
   const aSplit = splitLines(a);
   const bSplit = splitLines(b);
 
   const ops = diffLines(aSplit.lines, bSplit.lines);
-  if (ops.length === 0) return '';
+  if (ops.length === 0) return "";
 
   // Step 1: walk ops, attach per-op (aIndex, bIndex) for header math.
   // aIndex = 0-indexed line position in `a` that this op consumes.
@@ -50,25 +50,28 @@ export function unifiedDiff(a: string, b: string, opts: UnifiedDiffOpts = {}): s
     let bi = 0;
     for (const op of ops) {
       ann.push({ op, aIdx: ai, bIdx: bi });
-      if (op.kind === 'equal') {
+      if (op.kind === "equal") {
         ai += 1;
         bi += 1;
-      } else if (op.kind === 'del') ai += 1;
-      else if (op.kind === 'add') bi += 1;
+      } else if (op.kind === "del") ai += 1;
+      else if (op.kind === "add") bi += 1;
     }
   }
 
   // Step 2: identify hunk ranges. A hunk spans from `context` equals
   // before the first change to `context` equals after the last change,
   // with consecutive change-groups within 2*context equals merged.
-  interface Range { start: number; end: number; } // inclusive op indices
+  interface Range {
+    start: number;
+    end: number;
+  } // inclusive op indices
 
   // First find every "change" op index.
   const changes: number[] = [];
   for (let k = 0; k < ann.length; k++) {
-    if (ann[k].op.kind !== 'equal') changes.push(k);
+    if (ann[k].op.kind !== "equal") changes.push(k);
   }
-  if (changes.length === 0) return '';
+  if (changes.length === 0) return "";
 
   // Build merged ranges.
   const ranges: Range[] = [];
@@ -95,7 +98,7 @@ export function unifiedDiff(a: string, b: string, opts: UnifiedDiffOpts = {}): s
     let added = 0;
     while (endIdx + 1 < ann.length && added < context) {
       endIdx += 1;
-      if (ann[endIdx].op.kind === 'equal') added += 1;
+      if (ann[endIdx].op.kind === "equal") added += 1;
     }
     r.end = endIdx;
   }
@@ -113,27 +116,27 @@ export function unifiedDiff(a: string, b: string, opts: UnifiedDiffOpts = {}): s
     const body: string[] = [];
     for (let k = r.start; k <= r.end; k++) {
       const { op, aIdx, bIdx } = ann[k];
-      if (op.kind === 'equal') {
+      if (op.kind === "equal") {
         if (aStart === -1) {
           aStart = aIdx;
           bStart = bIdx;
         }
-        body.push(' ' + op.line);
+        body.push(" " + op.line);
         aCount += 1;
         bCount += 1;
-      } else if (op.kind === 'del') {
+      } else if (op.kind === "del") {
         if (aStart === -1) {
           aStart = aIdx;
           bStart = bIdx;
         }
-        body.push('-' + op.line);
+        body.push("-" + op.line);
         aCount += 1;
-      } else if (op.kind === 'add') {
+      } else if (op.kind === "add") {
         if (aStart === -1) {
           aStart = aIdx;
           bStart = bIdx;
         }
-        body.push('+' + op.line);
+        body.push("+" + op.line);
         bCount += 1;
       }
     }
@@ -151,8 +154,8 @@ export function unifiedDiff(a: string, b: string, opts: UnifiedDiffOpts = {}): s
     // Insert `\ No newline at end of file` after the last ' ' or '-' line.
     for (let i = out.length - 1; i >= 0; i--) {
       const c = out[i].charAt(0);
-      if (c === ' ' || c === '-') {
-        out.splice(i + 1, 0, '\\ No newline at end of file');
+      if (c === " " || c === "-") {
+        out.splice(i + 1, 0, "\\ No newline at end of file");
         break;
       }
     }
@@ -160,14 +163,14 @@ export function unifiedDiff(a: string, b: string, opts: UnifiedDiffOpts = {}): s
   if (!bSplit.trailingNewline) {
     for (let i = out.length - 1; i >= 0; i--) {
       const c = out[i].charAt(0);
-      if (c === ' ' || c === '+') {
-        out.splice(i + 1, 0, '\\ No newline at end of file');
+      if (c === " " || c === "+") {
+        out.splice(i + 1, 0, "\\ No newline at end of file");
         break;
       }
     }
   }
 
-  return out.join('\n') + '\n';
+  return out.join("\n") + "\n";
 }
 
 interface LineSplit {
@@ -177,13 +180,13 @@ interface LineSplit {
 
 function splitLines(s: string): LineSplit {
   if (s.length === 0) return { lines: [], trailingNewline: true };
-  const trailingNewline = s.endsWith('\n');
+  const trailingNewline = s.endsWith("\n");
   const body = trailingNewline ? s.slice(0, -1) : s;
-  return { lines: body.split('\n'), trailingNewline };
+  return { lines: body.split("\n"), trailingNewline };
 }
 
 interface DiffOp {
-  kind: 'equal' | 'del' | 'add';
+  kind: "equal" | "del" | "add";
   line: string;
 }
 
@@ -193,9 +196,7 @@ interface DiffOp {
 function diffLines(a: string[], b: string[]): DiffOp[] {
   const n = a.length;
   const m = b.length;
-  const lcs: number[][] = Array.from({ length: n + 1 }, () =>
-    new Array(m + 1).fill(0),
-  );
+  const lcs: number[][] = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0));
   for (let i = 1; i <= n; i++) {
     for (let j = 1; j <= m; j++) {
       if (a[i - 1] === b[j - 1]) {
@@ -211,23 +212,23 @@ function diffLines(a: string[], b: string[]): DiffOp[] {
   let j = m;
   while (i > 0 && j > 0) {
     if (a[i - 1] === b[j - 1]) {
-      ops.push({ kind: 'equal', line: a[i - 1] });
+      ops.push({ kind: "equal", line: a[i - 1] });
       i -= 1;
       j -= 1;
     } else if (lcs[i - 1][j] >= lcs[i][j - 1]) {
-      ops.push({ kind: 'del', line: a[i - 1] });
+      ops.push({ kind: "del", line: a[i - 1] });
       i -= 1;
     } else {
-      ops.push({ kind: 'add', line: b[j - 1] });
+      ops.push({ kind: "add", line: b[j - 1] });
       j -= 1;
     }
   }
   while (i > 0) {
-    ops.push({ kind: 'del', line: a[i - 1] });
+    ops.push({ kind: "del", line: a[i - 1] });
     i -= 1;
   }
   while (j > 0) {
-    ops.push({ kind: 'add', line: b[j - 1] });
+    ops.push({ kind: "add", line: b[j - 1] });
     j -= 1;
   }
   ops.reverse();

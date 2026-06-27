@@ -12,7 +12,7 @@ export const GET = createHandler(
     try {
       const res = await fetch(`${ENGINE_URL}/api/acls/groups`, {
         headers: ctx.headers,
-      signal: AbortSignal.timeout(10_000),
+        signal: AbortSignal.timeout(10_000),
       });
       if (!res.ok) {
         return apiError("acl_fetch_failed", `Engine returned ${res.status}`, res.status);
@@ -42,7 +42,7 @@ export const POST = createHandler(
         method: "POST",
         headers: { "Content-Type": "application/json", ...ctx.headers },
         body: JSON.stringify({ name: name.trim() }),
-      signal: AbortSignal.timeout(15_000),
+        signal: AbortSignal.timeout(15_000),
       });
       if (!res.ok) {
         return apiError("acl_create_failed", `Engine returned ${res.status}`, res.status);

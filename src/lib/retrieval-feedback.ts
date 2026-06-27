@@ -109,7 +109,7 @@ function hashQuery(query: string): string {
   let hash = 0;
   for (let i = 0; i < query.length; i++) {
     const char = query.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
+    hash = (hash << 5) - hash + char;
     hash = hash & hash;
   }
   return `q${Math.abs(hash).toString(36)}`;
@@ -136,7 +136,7 @@ const FEEDBACK_TYPE_WEIGHT: Record<FeedbackType, number> = {
 const feedbackStore = new Map<string, RetrievalFeedback>();
 
 export function submitFeedback(
-  feedback: Omit<RetrievalFeedback, "id" | "query_hash" | "created_at">,
+  feedback: Omit<RetrievalFeedback, "id" | "query_hash" | "created_at">
 ): RetrievalFeedback {
   const id = `fb-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const query_hash = hashQuery(feedback.query);
@@ -186,9 +186,7 @@ export function getFeedbackForBrain(brainId: string): RetrievalFeedback[] {
 
 // ── Stats ─────────────────────────────────────────────────────────────
 
-export function getFeedbackStats(
-  feedback: RetrievalFeedback[] = getAllFeedback(),
-): FeedbackStats {
+export function getFeedbackStats(feedback: RetrievalFeedback[] = getAllFeedback()): FeedbackStats {
   const byType: Record<FeedbackType, number> = {
     relevant: 0,
     irrelevant: 0,
@@ -204,7 +202,10 @@ export function getFeedbackStats(
   const queries = new Set<string>();
   const results = new Set<string>();
   const queryMap = new Map<string, { query: string; positive: number; negative: number }>();
-  const resultMap = new Map<string, { title: string; negative: number; types: Set<FeedbackType> }>();
+  const resultMap = new Map<
+    string,
+    { title: string; negative: number; types: Set<FeedbackType> }
+  >();
 
   for (const f of feedback) {
     byType[f.feedback_type]++;
@@ -219,7 +220,11 @@ export function getFeedbackStats(
     queryMap.set(f.query_hash, qEntry);
 
     // Result aggregation
-    const rEntry = resultMap.get(f.result_slug) ?? { title: f.result_title, negative: 0, types: new Set() };
+    const rEntry = resultMap.get(f.result_slug) ?? {
+      title: f.result_title,
+      negative: 0,
+      types: new Set(),
+    };
     if (NEGATIVE_TYPES.includes(f.feedback_type)) {
       rEntry.negative++;
       rEntry.types.add(f.feedback_type);
@@ -269,9 +274,12 @@ export function getFeedbackStats(
 // ── Boost Signals for Ranking ─────────────────────────────────────────
 
 export function getFeedbackBoosts(
-  feedback: RetrievalFeedback[] = getAllFeedback(),
+  feedback: RetrievalFeedback[] = getAllFeedback()
 ): FeedbackBoostSignal[] {
-  const slugScores = new Map<string, { slug: string; title: string; netScore: number; count: number }>();
+  const slugScores = new Map<
+    string,
+    { slug: string; title: string; netScore: number; count: number }
+  >();
 
   for (const f of feedback) {
     const entry = slugScores.get(f.result_slug) ?? {
@@ -292,11 +300,12 @@ export function getFeedbackBoosts(
       result_slug: e.slug,
       boost: Math.max(-0.5, Math.min(0.5, e.netScore / e.count)), // Clamp [-0.5, +0.5]
       confidence: Math.min(1, e.count / 10), // Full confidence at 10+ feedbacks
-      reason: e.netScore > 0
-        ? `${e.count} feedback events, net positive`
-        : e.netScore < 0
-          ? `${e.count} feedback events, net negative`
-          : `${e.count} feedback events, neutral`,
+      reason:
+        e.netScore > 0
+          ? `${e.count} feedback events, net positive`
+          : e.netScore < 0
+            ? `${e.count} feedback events, net negative`
+            : `${e.count} feedback events, neutral`,
     }))
     .sort((a, b) => Math.abs(b.boost) - Math.abs(a.boost));
 }
@@ -304,7 +313,7 @@ export function getFeedbackBoosts(
 // ── Eval Export (qrels-compatible) ────────────────────────────────────
 
 export function exportForEval(
-  feedback: RetrievalFeedback[] = getAllFeedback(),
+  feedback: RetrievalFeedback[] = getAllFeedback()
 ): QrelsExportEntry[] {
   const queryGroups = new Map<string, QrelsExportEntry>();
 
@@ -323,7 +332,8 @@ export function exportForEval(
         if (!entry.relevant_slugs.includes(f.result_slug)) entry.relevant_slugs.push(f.result_slug);
         break;
       case "irrelevant":
-        if (!entry.irrelevant_slugs.includes(f.result_slug)) entry.irrelevant_slugs.push(f.result_slug);
+        if (!entry.irrelevant_slugs.includes(f.result_slug))
+          entry.irrelevant_slugs.push(f.result_slug);
         break;
       case "outdated":
         if (!entry.outdated_slugs.includes(f.result_slug)) entry.outdated_slugs.push(f.result_slug);
@@ -342,7 +352,7 @@ export function exportForEval(
 // ── Validation ────────────────────────────────────────────────────────
 
 export function validateFeedback(
-  feedback: Omit<RetrievalFeedback, "id" | "query_hash" | "created_at">,
+  feedback: Omit<RetrievalFeedback, "id" | "query_hash" | "created_at">
 ): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
 

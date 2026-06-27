@@ -74,9 +74,7 @@ describe("mobile-bridge", () => {
     test("falls back gracefully when plugin and navigator.share unavailable", async () => {
       const { nativeShare } = await import("./mobile-bridge");
       // navigator.share is not available in jsdom, so it should silently fail
-      await expect(
-        nativeShare({ title: "Test", text: "Hello" }),
-      ).resolves.toBeUndefined();
+      await expect(nativeShare({ title: "Test", text: "Hello" })).resolves.toBeUndefined();
     });
   });
 });

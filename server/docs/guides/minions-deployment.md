@@ -44,12 +44,12 @@ gbrain jobs supervisor stop
 
 **Exit codes:**
 
-| Code | Meaning |
-|---|---|
-| 0 | Clean shutdown (SIGTERM/SIGINT received, worker drained) |
-| 1 | Max crashes exceeded (worker kept dying) |
-| 2 | Another supervisor holds the PID lock |
-| 3 | PID file unwritable (permission / path error) |
+| Code | Meaning                                                  |
+| ---- | -------------------------------------------------------- |
+| 0    | Clean shutdown (SIGTERM/SIGINT received, worker drained) |
+| 1    | Max crashes exceeded (worker kept dying)                 |
+| 2    | Another supervisor holds the PID lock                    |
+| 3    | PID file unwritable (permission / path error)            |
 
 An agent seeing exit=2 can safely treat it as "one is already running";
 exit=1 should page a human.
@@ -87,22 +87,22 @@ The supervisor solves in-process crash recovery. Platform-level
 supervision (systemd, Fly, Render) handles host-level failures. You
 usually want both.
 
-| Environment | Recommendation |
-|---|---|
-| **Container (Fly / Railway / Render / Heroku)** | `gbrain jobs supervisor` runs as PID 1. The platform restarts the container on OOM / host loss; supervisor restarts the worker on crash. See [Fly.io](#flyio) / [Render / Railway / Heroku](#render--railway--heroku). |
-| **Linux VM with systemd** | Two-layer recommended: systemd supervises `gbrain jobs supervisor`, which in turn supervises `gbrain jobs work`. Buys you automatic restart on reboot (systemd) plus fast crash recovery (supervisor). See [systemd](#systemd). |
-| **Dev laptop / macOS** | `gbrain jobs supervisor` in a terminal. Ctrl-C stops it. No system-level setup needed. |
+| Environment                                     | Recommendation                                                                                                                                                                                                                  |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Container (Fly / Railway / Render / Heroku)** | `gbrain jobs supervisor` runs as PID 1. The platform restarts the container on OOM / host loss; supervisor restarts the worker on crash. See [Fly.io](#flyio) / [Render / Railway / Heroku](#render--railway--heroku).          |
+| **Linux VM with systemd**                       | Two-layer recommended: systemd supervises `gbrain jobs supervisor`, which in turn supervises `gbrain jobs work`. Buys you automatic restart on reboot (systemd) plus fast crash recovery (supervisor). See [systemd](#systemd). |
+| **Dev laptop / macOS**                          | `gbrain jobs supervisor` in a terminal. Ctrl-C stops it. No system-level setup needed.                                                                                                                                          |
 
 ### Variables used in this guide
 
 Substitute these once before copy-pasting any snippet.
 
-| Variable | Meaning | Typical value |
-|---|---|---|
-| `$GBRAIN_BIN` | Absolute path to the `gbrain` binary | `$(command -v gbrain)` — often `/usr/local/bin/gbrain` or `~/.bun/bin/gbrain` |
-| `$GBRAIN_WORKER_USER` | OS user that owns the worker process | the same user that ran `gbrain init`; never `root` |
-| `$GBRAIN_WORKSPACE` | `cwd` for shell jobs submitted by this deployment | absolute path, e.g. `/srv/my-brain` |
-| `$GBRAIN_ENV_FILE` | Secrets file sourced by systemd / shell | `/etc/gbrain.env` (mode 600) |
+| Variable              | Meaning                                           | Typical value                                                                 |
+| --------------------- | ------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `$GBRAIN_BIN`         | Absolute path to the `gbrain` binary              | `$(command -v gbrain)` — often `/usr/local/bin/gbrain` or `~/.bun/bin/gbrain` |
+| `$GBRAIN_WORKER_USER` | OS user that owns the worker process              | the same user that ran `gbrain init`; never `root`                            |
+| `$GBRAIN_WORKSPACE`   | `cwd` for shell jobs submitted by this deployment | absolute path, e.g. `/srv/my-brain`                                           |
+| `$GBRAIN_ENV_FILE`    | Secrets file sourced by systemd / shell           | `/etc/gbrain.env` (mode 600)                                                  |
 
 ### Preconditions
 

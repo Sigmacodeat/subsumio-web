@@ -12,19 +12,19 @@
  * surface "installed N packs in the last week" as info.
  */
 
-import { appendFileSync, mkdirSync, readFileSync, existsSync, readdirSync, statSync } from 'fs';
-import { dirname, join } from 'path';
+import { appendFileSync, mkdirSync, readFileSync, existsSync, readdirSync, statSync } from "fs";
+import { dirname, join } from "path";
 
-import { gbrainPath } from '../config.ts';
+import { gbrainPath } from "../config.ts";
 
 /** Audit event kind. */
 export type SkillpackAuditEventKind =
-  | 'scaffold_bundled'
-  | 'scaffold_third_party'
-  | 'reference_applied'
-  | 'doctor_run'
-  | 'search'
-  | 'registry_refresh';
+  | "scaffold_bundled"
+  | "scaffold_third_party"
+  | "reference_applied"
+  | "doctor_run"
+  | "search"
+  | "registry_refresh";
 
 export interface SkillpackAuditEvent {
   /** ISO 8601 timestamp. */
@@ -38,14 +38,14 @@ export interface SkillpackAuditEvent {
   /** Source URL / path / kebab name (when applicable). */
   source?: string;
   /** Source kind (when applicable). */
-  source_kind?: 'git' | 'tarball' | 'local';
+  source_kind?: "git" | "tarball" | "local";
   /** Pinned commit / tarball SHA (when applicable). */
   pinned_commit?: string | null;
   tarball_sha256?: string | null;
   /** Tier at the time of the event. */
   tier?: string;
   /** Outcome: 'ok' / 'aborted' / 'error'. */
-  outcome: 'ok' | 'aborted' | 'error';
+  outcome: "ok" | "aborted" | "error";
   /** Error summary (when outcome is 'error' or 'aborted'). */
   error?: string;
   /** Optional caller-supplied context (e.g. search query). */
@@ -61,7 +61,7 @@ function computeIsoWeekFilename(now: Date = new Date()): string {
   const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
   const weekNo = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
   const yyyy = d.getUTCFullYear();
-  const ww = String(weekNo).padStart(2, '0');
+  const ww = String(weekNo).padStart(2, "0");
   return `skillpack-${yyyy}-W${ww}.jsonl`;
 }
 
@@ -69,20 +69,20 @@ function computeIsoWeekFilename(now: Date = new Date()): string {
 function resolveAuditDir(): string {
   const override = process.env.GBRAIN_AUDIT_DIR;
   if (override && override.trim()) return override.trim();
-  return gbrainPath('audit');
+  return gbrainPath("audit");
 }
 
 /** Append an event. Best-effort: stderr warn on failure, never throws. */
-export function logSkillpackEvent(event: Omit<SkillpackAuditEvent, 'ts'>): void {
+export function logSkillpackEvent(event: Omit<SkillpackAuditEvent, "ts">): void {
   try {
     const line: SkillpackAuditEvent = { ts: new Date().toISOString(), ...event };
     const auditDir = resolveAuditDir();
     mkdirSync(auditDir, { recursive: true });
     const file = join(auditDir, computeIsoWeekFilename());
-    appendFileSync(file, JSON.stringify(line) + '\n', { encoding: 'utf-8' });
+    appendFileSync(file, JSON.stringify(line) + "\n", { encoding: "utf-8" });
   } catch (err) {
     process.stderr.write(
-      `[skillpack-audit] failed to log event (${(err as Error).message}); continuing\n`,
+      `[skillpack-audit] failed to log event (${(err as Error).message}); continuing\n`
     );
   }
 }
@@ -95,7 +95,7 @@ export function readRecentSkillpackEvents(days: number): SkillpackAuditEvent[] {
   const events: SkillpackAuditEvent[] = [];
   let files: string[];
   try {
-    files = readdirSync(auditDir).filter((f) => f.startsWith('skillpack-') && f.endsWith('.jsonl'));
+    files = readdirSync(auditDir).filter((f) => f.startsWith("skillpack-") && f.endsWith(".jsonl"));
   } catch {
     return [];
   }
@@ -110,11 +110,11 @@ export function readRecentSkillpackEvents(days: number): SkillpackAuditEvent[] {
     }
     let content: string;
     try {
-      content = readFileSync(fullPath, 'utf-8');
+      content = readFileSync(fullPath, "utf-8");
     } catch {
       continue;
     }
-    for (const rawLine of content.split('\n')) {
+    for (const rawLine of content.split("\n")) {
       if (!rawLine.trim()) continue;
       try {
         const e = JSON.parse(rawLine) as SkillpackAuditEvent;

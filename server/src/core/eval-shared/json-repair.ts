@@ -39,8 +39,8 @@ export interface ParsedModelResult {
 const FENCE_RE = /```(?:json)?\s*\n?([\s\S]*?)```/i;
 
 export function parseModelJSON(raw: string): ParsedModelResult {
-  if (typeof raw !== 'string' || !raw.trim()) {
-    throw new Error('parseModelJSON: empty or non-string input');
+  if (typeof raw !== "string" || !raw.trim()) {
+    throw new Error("parseModelJSON: empty or non-string input");
   }
 
   // Strategy 1: strip markdown fences if present, then JSON.parse.
@@ -51,7 +51,7 @@ export function parseModelJSON(raw: string): ParsedModelResult {
   // Strategy 2: extract the first {...} object substring.
   const match = cleaned.match(/\{[\s\S]*\}/);
   if (!match) {
-    throw new Error('parseModelJSON: no JSON object found in input');
+    throw new Error("parseModelJSON: no JSON object found in input");
   }
   const obj = match[0];
 
@@ -67,7 +67,7 @@ export function parseModelJSON(raw: string): ParsedModelResult {
   const reconstructed = regexNuclearOption(obj);
   if (reconstructed) return reconstructed;
 
-  throw new Error('parseModelJSON: all repair strategies failed');
+  throw new Error("parseModelJSON: all repair strategies failed");
 }
 
 function stripFences(s: string): string {
@@ -87,13 +87,13 @@ function repairJson(s: string): string {
   return (
     s
       // Trailing commas before } or ]
-      .replace(/,(\s*[}\]])/g, '$1')
+      .replace(/,(\s*[}\]])/g, "$1")
       // Single-quoted string values used as delimiters around keys/values
       // (only between structural punctuation, to avoid touching apostrophes
       // inside legitimate double-quoted strings).
       .replace(/(?<=[:{,\[]\s*)'([^']*?)'(?=\s*[,}\]:])/g, '"$1"')
       // Unescaped newlines inside double-quoted strings — replace with \n.
-      .replace(/("(?:[^"\\]|\\.)*?)\n((?:[^"\\]|\\.)*?")/g, '$1\\n$2')
+      .replace(/("(?:[^"\\]|\\.)*?)\n((?:[^"\\]|\\.)*?")/g, "$1\\n$2")
   );
 }
 
@@ -126,38 +126,38 @@ function regexNuclearOption(obj: string): ParsedModelResult | null {
     improvements:
       improvements.length > 0
         ? improvements
-        : ['(could not parse improvements from malformed JSON)'],
+        : ["(could not parse improvements from malformed JSON)"],
     _repaired: true,
   };
 }
 
 function shape(parsed: unknown): ParsedModelResult {
-  if (!parsed || typeof parsed !== 'object') {
-    throw new Error('parseModelJSON: parsed value is not an object');
+  if (!parsed || typeof parsed !== "object") {
+    throw new Error("parseModelJSON: parsed value is not an object");
   }
   const p = parsed as Record<string, unknown>;
   const scoresRaw = (p.scores as Record<string, unknown>) ?? {};
   const scores: Record<string, ParsedScore> = {};
   for (const [dim, v] of Object.entries(scoresRaw)) {
-    if (typeof v === 'number') {
+    if (typeof v === "number") {
       scores[dim] = { score: v };
-    } else if (v && typeof v === 'object') {
+    } else if (v && typeof v === "object") {
       const vv = v as Record<string, unknown>;
-      const score = typeof vv.score === 'number' ? vv.score : Number(vv.score);
+      const score = typeof vv.score === "number" ? vv.score : Number(vv.score);
       if (!Number.isFinite(score)) continue;
-      const feedback = typeof vv.feedback === 'string' ? vv.feedback : undefined;
+      const feedback = typeof vv.feedback === "string" ? vv.feedback : undefined;
       scores[dim] = { score, feedback };
     }
   }
 
   const improvements = Array.isArray(p.improvements)
-    ? (p.improvements as unknown[]).filter((x): x is string => typeof x === 'string')
+    ? (p.improvements as unknown[]).filter((x): x is string => typeof x === "string")
     : [];
 
-  const overall = typeof p.overall === 'number' ? p.overall : undefined;
+  const overall = typeof p.overall === "number" ? p.overall : undefined;
 
   if (Object.keys(scores).length === 0) {
-    throw new Error('parseModelJSON: parsed object has no usable scores');
+    throw new Error("parseModelJSON: parsed object has no usable scores");
   }
 
   return { scores, overall, improvements };

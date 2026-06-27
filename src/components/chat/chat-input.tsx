@@ -371,9 +371,7 @@ export function ChatInput({
             onKeyDown={handleKeyDown}
             disabled={disabled}
             placeholder={
-              isStreaming
-                ? t("chat.input.ai_responding")
-                : (placeholder ?? t("chat.placeholder"))
+              isStreaming ? t("chat.input.ai_responding") : (placeholder ?? t("chat.placeholder"))
             }
             rows={1}
             maxLength={50000}

@@ -29,8 +29,8 @@
  * test/intent-weights.test.ts.
  */
 
-import type { QueryIntent } from './query-intent.ts';
-import type { SearchResult } from '../types.ts';
+import type { QueryIntent } from "./query-intent.ts";
+import type { SearchResult } from "../types.ts";
 
 /**
  * Weight adjustments to apply for a classified intent. All factors are
@@ -49,7 +49,7 @@ export interface IntentWeights {
   /** Multiplier on the vector-list rank in RRF fusion. Higher = semantic wins more ties. */
   vectorWeight: number;
   /** Recency tilt to suggest when caller hasn't specified one. */
-  suggestedRecency: 'off' | 'on' | 'strong' | null;
+  suggestedRecency: "off" | "on" | "strong" | null;
   /** Score multiplier for results whose slug/title exactly matches the (lowercased) query. */
   exactMatchBoost: number;
 }
@@ -75,17 +75,17 @@ const INTENT_WEIGHTS: Record<QueryIntent, IntentWeights> = {
     // tilt is the whole game; keyword and vector stay balanced.
     keywordWeight: 1.0,
     vectorWeight: 1.0,
-    suggestedRecency: 'on',
+    suggestedRecency: "on",
     exactMatchBoost: 1.0,
   },
   event: {
     // Event queries: "announcement", "launched", "raised $". Named events
     // have rare entity surface forms that keyword search nails (think
     // company names, dollar amounts). Recency gets a soft tilt too.
-    keywordWeight: 1.20,
+    keywordWeight: 1.2,
     vectorWeight: 0.95,
-    suggestedRecency: 'on',
-    exactMatchBoost: 1.10,
+    suggestedRecency: "on",
+    exactMatchBoost: 1.1,
   },
   general: DEFAULT_WEIGHTS,
 };
@@ -124,16 +124,16 @@ export function effectiveRrfK(baseK: number, weight: number): number {
 export function applyExactMatchBoost(
   results: SearchResult[],
   query: string,
-  weights: IntentWeights,
+  weights: IntentWeights
 ): void {
   if (weights.exactMatchBoost === 1.0) return;
   const q = query.toLowerCase().trim();
   if (!q) return;
   // Pre-compute the kebab form for slug-style matches like "garry tan" → "garry-tan".
-  const qKebab = q.replace(/\s+/g, '-');
+  const qKebab = q.replace(/\s+/g, "-");
   for (const r of results) {
-    const slug = (r.slug ?? '').toLowerCase();
-    const title = (r.title ?? '').toLowerCase().trim();
+    const slug = (r.slug ?? "").toLowerCase();
+    const title = (r.title ?? "").toLowerCase().trim();
     if (slug === q || slug === qKebab || slug.endsWith(`/${qKebab}`) || title === q) {
       r.score *= weights.exactMatchBoost;
       // v0.40.4 attribution stamp (D12=A) — formatter reads this for

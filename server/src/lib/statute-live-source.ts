@@ -14,8 +14,8 @@
 
 export interface LiveStatuteVersion {
   statute_id: string;
-  jurisdiction: 'at' | 'de' | 'ch';
-  source: 'ris-ogd' | 'buzer' | 'opencaselaw';
+  jurisdiction: "at" | "de" | "ch";
+  source: "ris-ogd" | "buzer" | "opencaselaw";
   version_date: string | null;
   title: string | null;
   source_url: string | null;
@@ -30,17 +30,17 @@ export interface LiveStatuteVersion {
  * (entry into force date) and Außerkrafttretensdatum (expiry date).
  */
 export async function fetchRisOgdStatuteVersion(
-  statuteAbbr: string,
+  statuteAbbr: string
 ): Promise<LiveStatuteVersion | null> {
   try {
-    const url = new URL('https://data.bka.gv.at/ris/api/v2.6/bundesrecht');
-    url.searchParams.set('Applikation', 'BrKons');
-    url.searchParams.set('Suchworte', statuteAbbr);
-    url.searchParams.set('DokumenteProSeite', 'Ten');
-    url.searchParams.set('Seitennummer', '1');
+    const url = new URL("https://data.bka.gv.at/ris/api/v2.6/bundesrecht");
+    url.searchParams.set("Applikation", "BrKons");
+    url.searchParams.set("Suchworte", statuteAbbr);
+    url.searchParams.set("DokumenteProSeite", "Ten");
+    url.searchParams.set("Seitennummer", "1");
 
     const res = await fetch(url.toString(), {
-      headers: { Accept: 'application/json' },
+      headers: { Accept: "application/json" },
       signal: AbortSignal.timeout(10000),
     });
     if (!res.ok) return null;
@@ -50,8 +50,8 @@ export async function fetchRisOgdStatuteVersion(
     const docResults = result.OgdDocumentResults as Record<string, unknown> | undefined;
     const rawRefs = docResults?.OgdDocumentReference;
     const refs: Array<Record<string, unknown>> = Array.isArray(rawRefs)
-      ? rawRefs as Array<Record<string, unknown>>
-      : rawRefs && typeof rawRefs === 'object'
+      ? (rawRefs as Array<Record<string, unknown>>)
+      : rawRefs && typeof rawRefs === "object"
         ? [rawRefs as Record<string, unknown>]
         : [];
 
@@ -62,17 +62,18 @@ export async function fetchRisOgdStatuteVersion(
     let bestDate: string | null = null;
 
     for (const ref of refs) {
-      const metadaten = ((ref.Data as Record<string, unknown> | undefined)?.Metadaten ?? {}) as Record<string, unknown>;
+      const metadaten = ((ref.Data as Record<string, unknown> | undefined)?.Metadaten ??
+        {}) as Record<string, unknown>;
       const technisch = (metadaten.Technisch ?? {}) as Record<string, unknown>;
       const allgemein = (metadaten.Allgemein ?? {}) as Record<string, unknown>;
       const br = (metadaten.Bundesrecht ?? {}) as Record<string, unknown>;
 
-      const title = String(br.Kurztitel ?? br.Titel ?? '');
+      const title = String(br.Kurztitel ?? br.Titel ?? "");
       // Check if this is the main statute (not a paragraph)
-      const isMainStatute = !String(technisch.ID ?? '').includes('/');
+      const isMainStatute = !String(technisch.ID ?? "").includes("/");
 
       // Get the latest version date (Inkrafttretensdatum)
-      const inKraft = String(allgemein.Veroeffentlicht ?? br.Inkrafttretensdatum ?? '');
+      const inKraft = String(allgemein.Veroeffentlicht ?? br.Inkrafttretensdatum ?? "");
       const date = inKraft || null;
 
       if (isMainStatute || (!bestRef && title.toLowerCase().includes(statuteAbbr.toLowerCase()))) {
@@ -85,17 +86,23 @@ export async function fetchRisOgdStatuteVersion(
     if (!bestRef) bestRef = refs[0]!;
     if (!bestRef) return null;
 
-    const meta = ((bestRef.Data as Record<string, unknown> | undefined)?.Metadaten ?? {}) as Record<string, unknown>;
+    const meta = ((bestRef.Data as Record<string, unknown> | undefined)?.Metadaten ?? {}) as Record<
+      string,
+      unknown
+    >;
     const br = (meta.Bundesrecht ?? {}) as Record<string, unknown>;
     const technisch = (meta.Technisch ?? {}) as Record<string, unknown>;
     const allgemein = (meta.Allgemein ?? {}) as Record<string, unknown>;
     const title = String(br.Kurztitel ?? br.Titel ?? statuteAbbr);
-    const docUrl = String(allgemein.DokumentUrl ?? `https://www.ris.bka.gv.at/Dokument.wxe?Abfrage=BrKons&Dokumentnummer=${technisch.ID ?? ''}`);
+    const docUrl = String(
+      allgemein.DokumentUrl ??
+        `https://www.ris.bka.gv.at/Dokument.wxe?Abfrage=BrKons&Dokumentnummer=${technisch.ID ?? ""}`
+    );
 
     return {
       statute_id: statuteAbbr,
-      jurisdiction: 'at',
-      source: 'ris-ogd',
+      jurisdiction: "at",
+      source: "ris-ogd",
       version_date: bestDate,
       title,
       source_url: docUrl,
@@ -114,13 +121,13 @@ export async function fetchRisOgdStatuteVersion(
  * which indicates the last amendment date.
  */
 export async function fetchBuzerStatuteVersion(
-  statuteAbbr: string,
+  statuteAbbr: string
 ): Promise<LiveStatuteVersion | null> {
   try {
     // buzer.de search endpoint
     const searchUrl = `https://www.buzer.de/suche.htm?suchbegriff=${encodeURIComponent(statuteAbbr)}`;
     const res = await fetch(searchUrl, {
-      headers: { Accept: 'text/html', 'User-Agent': 'Subsumio-LegalBrain/1.0' },
+      headers: { Accept: "text/html", "User-Agent": "Subsumio-LegalBrain/1.0" },
       signal: AbortSignal.timeout(10000),
     });
     if (!res.ok) return null;
@@ -137,15 +144,15 @@ export async function fetchBuzerStatuteVersion(
 
     // Fetch the law detail page to extract the "Stand" date
     const detailRes = await fetch(lawUrl, {
-      headers: { Accept: 'text/html', 'User-Agent': 'Subsumio-LegalBrain/1.0' },
+      headers: { Accept: "text/html", "User-Agent": "Subsumio-LegalBrain/1.0" },
       signal: AbortSignal.timeout(10000),
     });
     if (!detailRes.ok) {
       // Still return what we have from search
       return {
         statute_id: statuteAbbr,
-        jurisdiction: 'de',
-        source: 'buzer',
+        jurisdiction: "de",
+        source: "buzer",
         version_date: null,
         title: lawTitle,
         source_url: lawUrl,
@@ -165,19 +172,28 @@ export async function fetchBuzerStatuteVersion(
       const numericMatch = dateStr.match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/);
       if (numericMatch) {
         const [, day, month, year] = numericMatch;
-        versionDate = `${year}-${month!.padStart(2, '0')}-${day!.padStart(2, '0')}`;
+        versionDate = `${year}-${month!.padStart(2, "0")}-${day!.padStart(2, "0")}`;
       } else {
         // Try "DD. Monat YYYY" format (German month names)
         const germanMonthMatch = dateStr.match(/(\d{1,2})\.\s*(\w+)\s+(\d{4})/);
         if (germanMonthMatch) {
           const months: Record<string, string> = {
-            Januar: '01', Februar: '02', März: '03', April: '04',
-            Mai: '05', Juni: '06', Juli: '07', August: '08',
-            September: '09', Oktober: '10', November: '11', Dezember: '12',
+            Januar: "01",
+            Februar: "02",
+            März: "03",
+            April: "04",
+            Mai: "05",
+            Juni: "06",
+            Juli: "07",
+            August: "08",
+            September: "09",
+            Oktober: "10",
+            November: "11",
+            Dezember: "12",
           };
           const monthNum = months[germanMonthMatch[2]!];
           if (monthNum) {
-            versionDate = `${germanMonthMatch[3]}-${monthNum}-${germanMonthMatch[1]!.padStart(2, '0')}`;
+            versionDate = `${germanMonthMatch[3]}-${monthNum}-${germanMonthMatch[1]!.padStart(2, "0")}`;
           }
         }
       }
@@ -185,20 +201,22 @@ export async function fetchBuzerStatuteVersion(
 
     // Also try to find "Zuletzt geändert am..." pattern
     if (!versionDate) {
-      const geaendertMatch = detailHtml.match(/(?:zuletzt\s+ge(?:ä|ae)ndert(?:\s+am)?)\s*:?\s*(\d{1,2}\.\s*\d{1,2}\.\d{4})/i);
+      const geaendertMatch = detailHtml.match(
+        /(?:zuletzt\s+ge(?:ä|ae)ndert(?:\s+am)?)\s*:?\s*(\d{1,2}\.\s*\d{1,2}\.\d{4})/i
+      );
       if (geaendertMatch) {
         const numericMatch = geaendertMatch[1]!.match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/);
         if (numericMatch) {
           const [, day, month, year] = numericMatch;
-          versionDate = `${year}-${month!.padStart(2, '0')}-${day!.padStart(2, '0')}`;
+          versionDate = `${year}-${month!.padStart(2, "0")}-${day!.padStart(2, "0")}`;
         }
       }
     }
 
     return {
       statute_id: statuteAbbr,
-      jurisdiction: 'de',
-      source: 'buzer',
+      jurisdiction: "de",
+      source: "buzer",
       version_date: versionDate,
       title: lawTitle,
       source_url: lawUrl,
@@ -214,25 +232,26 @@ export async function fetchBuzerStatuteVersion(
  * Uses the /api/laws/{abbreviation} endpoint which returns consolidation_date.
  */
 export async function fetchOpenCaseLawStatuteVersion(
-  statuteAbbr: string,
+  statuteAbbr: string
 ): Promise<LiveStatuteVersion | null> {
   try {
     const url = `${OPENCASELAW_BASE}/laws/${encodeURIComponent(statuteAbbr)}`;
     const res = await fetch(url, {
-      headers: { Accept: 'application/json' },
+      headers: { Accept: "application/json" },
       signal: AbortSignal.timeout(10000),
     });
     if (!res.ok) return null;
 
     const data = (await res.json()) as Record<string, unknown>;
-    const consolidationDate = typeof data.consolidation_date === 'string' ? data.consolidation_date : null;
-    const title = typeof data.title === 'string' ? data.title : statuteAbbr;
-    const srNumber = typeof data.sr_number === 'string' ? data.sr_number : null;
+    const consolidationDate =
+      typeof data.consolidation_date === "string" ? data.consolidation_date : null;
+    const title = typeof data.title === "string" ? data.title : statuteAbbr;
+    const srNumber = typeof data.sr_number === "string" ? data.sr_number : null;
 
     return {
       statute_id: statuteAbbr,
-      jurisdiction: 'ch',
-      source: 'opencaselaw',
+      jurisdiction: "ch",
+      source: "opencaselaw",
       version_date: consolidationDate,
       title,
       source_url: srNumber ? `https://www.fedlex.admin.ch/eli/cc/${srNumber}` : null,
@@ -243,22 +262,22 @@ export async function fetchOpenCaseLawStatuteVersion(
   }
 }
 
-const OPENCASELAW_BASE = 'https://mcp.opencaselaw.ch/api';
+const OPENCASELAW_BASE = "https://mcp.opencaselaw.ch/api";
 
 /**
  * Fetch live statute version from the appropriate external source
  * based on jurisdiction.
  */
 export async function fetchLiveStatuteVersion(
-  jurisdiction: 'at' | 'de' | 'ch',
-  statuteAbbr: string,
+  jurisdiction: "at" | "de" | "ch",
+  statuteAbbr: string
 ): Promise<LiveStatuteVersion | null> {
   switch (jurisdiction) {
-    case 'at':
+    case "at":
       return fetchRisOgdStatuteVersion(statuteAbbr);
-    case 'de':
+    case "de":
       return fetchBuzerStatuteVersion(statuteAbbr);
-    case 'ch':
+    case "ch":
       return fetchOpenCaseLawStatuteVersion(statuteAbbr);
     default:
       return null;
@@ -270,15 +289,15 @@ export async function fetchLiveStatuteVersion(
  * Processes sequentially with a small delay to be respectful to APIs.
  */
 export async function fetchLiveStatuteVersions(
-  jurisdiction: 'at' | 'de' | 'ch',
-  statuteAbbrs: string[],
+  jurisdiction: "at" | "de" | "ch",
+  statuteAbbrs: string[]
 ): Promise<LiveStatuteVersion[]> {
   const results: LiveStatuteVersion[] = [];
   for (const abbr of statuteAbbrs) {
     const result = await fetchLiveStatuteVersion(jurisdiction, abbr);
     if (result) results.push(result);
     // Small delay between requests
-    await new Promise(r => setTimeout(r, 200));
+    await new Promise((r) => setTimeout(r, 200));
   }
   return results;
 }

@@ -13,12 +13,16 @@
  * exits, leaving the user to check back with `gbrain agent logs`.
  */
 
-import * as fs from 'node:fs';
-import type { BrainEngine } from '../core/engine.ts';
-import { MinionQueue } from '../core/minions/queue.ts';
-import { waitForCompletion, TimeoutError } from '../core/minions/wait-for-completion.ts';
-import type { MinionJobInput, SubagentHandlerData, AggregatorHandlerData } from '../core/minions/types.ts';
-import { runAgentLogs } from './agent-logs.ts';
+import * as fs from "node:fs";
+import type { BrainEngine } from "../core/engine.ts";
+import { MinionQueue } from "../core/minions/queue.ts";
+import { waitForCompletion, TimeoutError } from "../core/minions/wait-for-completion.ts";
+import type {
+  MinionJobInput,
+  SubagentHandlerData,
+  AggregatorHandlerData,
+} from "../core/minions/types.ts";
+import { runAgentLogs } from "./agent-logs.ts";
 
 // ── arg parsing helpers ────────────────────────────────────
 
@@ -26,27 +30,29 @@ function parseFlag(args: string[], flag: string): string | undefined {
   const idx = args.indexOf(flag);
   return idx >= 0 && idx + 1 < args.length ? args[idx + 1] : undefined;
 }
-function hasFlag(args: string[], flag: string): boolean { return args.includes(flag); }
+function hasFlag(args: string[], flag: string): boolean {
+  return args.includes(flag);
+}
 
 /** Keep CLI args that look like flags from being eaten as the prompt. */
 function isKnownFlag(s: string): boolean {
-  return s.startsWith('--');
+  return s.startsWith("--");
 }
 
 // ── command dispatcher ────────────────────────────────────
 
 export async function runAgent(engine: BrainEngine, args: string[]): Promise<void> {
   const sub = args[0];
-  if (!sub || sub === '--help' || sub === '-h') {
+  if (!sub || sub === "--help" || sub === "-h") {
     printHelp();
     return;
   }
 
   switch (sub) {
-    case 'run':
+    case "run":
       await runAgentRun(engine, args.slice(1));
       return;
-    case 'logs':
+    case "logs":
       await runAgentLogsCmd(engine, args.slice(1));
       return;
     default:
@@ -124,22 +130,71 @@ function parseRunFlags(args: string[]): { flags: RunFlags; rest: string[] } {
   let i = 0;
   while (i < args.length) {
     const a = args[i];
-    if (a === '--') { i++; break; }
+    if (a === "--") {
+      i++;
+      break;
+    }
     if (!isKnownFlag(a!)) break;
     switch (a) {
-      case '--subagent-def': flags.subagentDef = args[++i]; i++; break;
-      case '--model':        flags.model = args[++i]; i++; break;
-      case '--max-turns':    flags.maxTurns = parseInt(args[++i] ?? '', 10); i++; break;
-      case '--tools':        flags.tools = (args[++i] ?? '').split(',').map(s => s.trim()).filter(Boolean); i++; break;
-      case '--timeout-ms':   flags.timeoutMs = parseInt(args[++i] ?? '', 10); i++; break;
-      case '--fanout-manifest': flags.fanoutManifest = args[++i]; i++; break;
-      case '--supervisor':   flags.supervisor = true; i++; break;
-      case '--skip-critic':  flags.skipCritic = true; i++; break;
-      case '--llm-synthesis': flags.llmSynthesis = true; i++; break;
-      case '--force-specialists': flags.forceSpecialists = (args[++i] ?? '').split(',').map(s => s.trim()).filter(Boolean); i++; break;
-      case '--follow':       flags.follow = true; i++; break;
-      case '--no-follow':    flags.follow = false; i++; break;
-      case '--detach':       flags.detach = true; flags.follow = false; i++; break;
+      case "--subagent-def":
+        flags.subagentDef = args[++i];
+        i++;
+        break;
+      case "--model":
+        flags.model = args[++i];
+        i++;
+        break;
+      case "--max-turns":
+        flags.maxTurns = parseInt(args[++i] ?? "", 10);
+        i++;
+        break;
+      case "--tools":
+        flags.tools = (args[++i] ?? "")
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+        i++;
+        break;
+      case "--timeout-ms":
+        flags.timeoutMs = parseInt(args[++i] ?? "", 10);
+        i++;
+        break;
+      case "--fanout-manifest":
+        flags.fanoutManifest = args[++i];
+        i++;
+        break;
+      case "--supervisor":
+        flags.supervisor = true;
+        i++;
+        break;
+      case "--skip-critic":
+        flags.skipCritic = true;
+        i++;
+        break;
+      case "--llm-synthesis":
+        flags.llmSynthesis = true;
+        i++;
+        break;
+      case "--force-specialists":
+        flags.forceSpecialists = (args[++i] ?? "")
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+        i++;
+        break;
+      case "--follow":
+        flags.follow = true;
+        i++;
+        break;
+      case "--no-follow":
+        flags.follow = false;
+        i++;
+        break;
+      case "--detach":
+        flags.detach = true;
+        flags.follow = false;
+        i++;
+        break;
       default:
         throw new Error(`unknown flag: ${a}. Run \`gbrain agent run --help\` for usage.`);
     }
@@ -157,13 +212,13 @@ export async function runAgentRun(engine: BrainEngine, args: string[]): Promise<
   // outcomes don't cascade; aggregator waits in waiting-children until
   // Lane 1B's terminal-set check unblocks it.
   if (flags.fanoutManifest) {
-    await runFanout(engine, queue, flags, rest.join(' '));
+    await runFanout(engine, queue, flags, rest.join(" "));
     return;
   }
 
-  const prompt = rest.join(' ').trim();
+  const prompt = rest.join(" ").trim();
   if (!prompt) {
-    console.error('gbrain agent run: prompt is required');
+    console.error("gbrain agent run: prompt is required");
     process.exit(2);
   }
 
@@ -180,14 +235,14 @@ export async function runAgentRun(engine: BrainEngine, args: string[]): Promise<
     const submitOpts: Partial<MinionJobInput> = { max_stalled: 3 };
     if (flags.timeoutMs) submitOpts.timeout_ms = flags.timeoutMs;
 
-    const job = await queue.add('supervisor', data, submitOpts, {
+    const job = await queue.add("supervisor", data, submitOpts, {
       allowProtectedSubmit: true,
     });
 
     process.stderr.write(`submitted: job ${job.id} (supervisor)\n`);
 
     if (flags.detach || !flags.follow) {
-      process.stdout.write(String(job.id) + '\n');
+      process.stdout.write(String(job.id) + "\n");
       return;
     }
     await followJob(engine, queue, job.id, flags.timeoutMs);
@@ -204,14 +259,14 @@ export async function runAgentRun(engine: BrainEngine, args: string[]): Promise<
   const submitOpts: Partial<MinionJobInput> = { max_stalled: 3 };
   if (flags.timeoutMs) submitOpts.timeout_ms = flags.timeoutMs;
 
-  const job = await queue.add('subagent', data as unknown as Record<string, unknown>, submitOpts, {
+  const job = await queue.add("subagent", data as unknown as Record<string, unknown>, submitOpts, {
     allowProtectedSubmit: true,
   });
 
   process.stderr.write(`submitted: job ${job.id} (subagent)\n`);
 
   if (flags.detach || !flags.follow) {
-    process.stdout.write(String(job.id) + '\n');
+    process.stdout.write(String(job.id) + "\n");
     return;
   }
 
@@ -220,13 +275,18 @@ export async function runAgentRun(engine: BrainEngine, args: string[]): Promise<
 
 // ── fan-out ───────────────────────────────────────────────
 
-async function runFanout(engine: BrainEngine, queue: MinionQueue, flags: RunFlags, promptTemplate: string): Promise<void> {
+async function runFanout(
+  engine: BrainEngine,
+  queue: MinionQueue,
+  flags: RunFlags,
+  promptTemplate: string
+): Promise<void> {
   const manifestPath = flags.fanoutManifest!;
   let manifest: Array<{ prompt?: string; input_vars?: Record<string, unknown> }>;
   try {
-    const raw = fs.readFileSync(manifestPath, 'utf8');
+    const raw = fs.readFileSync(manifestPath, "utf8");
     const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) throw new Error('manifest must be a JSON array');
+    if (!Array.isArray(parsed)) throw new Error("manifest must be a JSON array");
     manifest = parsed as typeof manifest;
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
@@ -235,7 +295,7 @@ async function runFanout(engine: BrainEngine, queue: MinionQueue, flags: RunFlag
   }
 
   if (manifest.length === 0) {
-    console.error('gbrain agent run: --fanout-manifest is empty; nothing to run');
+    console.error("gbrain agent run: --fanout-manifest is empty; nothing to run");
     process.exit(2);
   }
 
@@ -252,11 +312,19 @@ async function runFanout(engine: BrainEngine, queue: MinionQueue, flags: RunFlag
     };
     const submitOpts: Partial<MinionJobInput> = { max_stalled: 3 };
     if (flags.timeoutMs) submitOpts.timeout_ms = flags.timeoutMs;
-    const job = await queue.add('subagent', data as unknown as Record<string, unknown>, submitOpts, {
-      allowProtectedSubmit: true,
-    });
+    const job = await queue.add(
+      "subagent",
+      data as unknown as Record<string, unknown>,
+      submitOpts,
+      {
+        allowProtectedSubmit: true,
+      }
+    );
     process.stderr.write(`submitted: job ${job.id} (single-entry manifest short-circuit)\n`);
-    if (flags.detach || !flags.follow) { process.stdout.write(`${job.id}\n`); return; }
+    if (flags.detach || !flags.follow) {
+      process.stdout.write(`${job.id}\n`);
+      return;
+    }
     await followJob(engine, queue, job.id, flags.timeoutMs);
     return;
   }
@@ -265,10 +333,10 @@ async function runFanout(engine: BrainEngine, queue: MinionQueue, flags: RunFlag
   // N children, then flip the aggregator's children_ids to include them.
   const aggregatorSeed: AggregatorHandlerData = { children_ids: [] };
   const aggregator = await queue.add(
-    'subagent_aggregator',
+    "subagent_aggregator",
     aggregatorSeed as unknown as Record<string, unknown>,
     { max_stalled: 3 },
-    { allowProtectedSubmit: true },
+    { allowProtectedSubmit: true }
   );
 
   const childIds: number[] = [];
@@ -283,13 +351,18 @@ async function runFanout(engine: BrainEngine, queue: MinionQueue, flags: RunFlag
     };
     const submitOpts: Partial<MinionJobInput> = {
       parent_job_id: aggregator.id,
-      on_child_fail: 'continue',       // mixed-outcome aggregation
+      on_child_fail: "continue", // mixed-outcome aggregation
       max_stalled: 3,
     };
     if (flags.timeoutMs) submitOpts.timeout_ms = flags.timeoutMs;
-    const child = await queue.add('subagent', data as unknown as Record<string, unknown>, submitOpts, {
-      allowProtectedSubmit: true,
-    });
+    const child = await queue.add(
+      "subagent",
+      data as unknown as Record<string, unknown>,
+      submitOpts,
+      {
+        allowProtectedSubmit: true,
+      }
+    );
     childIds.push(child.id);
   }
 
@@ -298,12 +371,12 @@ async function runFanout(engine: BrainEngine, queue: MinionQueue, flags: RunFlag
   // row's id; the aggregator's seed started with an empty array.
   await engine.executeRaw(
     `UPDATE minion_jobs SET data = jsonb_set(data, '{children_ids}', $1::jsonb) WHERE id = $2`,
-    [JSON.stringify(childIds), aggregator.id],
+    [JSON.stringify(childIds), aggregator.id]
   );
 
   process.stderr.write(
     `submitted: aggregator job ${aggregator.id} + ${childIds.length} subagent children ` +
-    `(${childIds[0]}..${childIds[childIds.length - 1]})\n`,
+      `(${childIds[0]}..${childIds[childIds.length - 1]})\n`
   );
 
   if (flags.detach || !flags.follow) {
@@ -315,11 +388,16 @@ async function runFanout(engine: BrainEngine, queue: MinionQueue, flags: RunFlag
 
 // ── follow ────────────────────────────────────────────────
 
-async function followJob(engine: BrainEngine, queue: MinionQueue, jobId: number, timeoutMs?: number): Promise<void> {
+async function followJob(
+  engine: BrainEngine,
+  queue: MinionQueue,
+  jobId: number,
+  timeoutMs?: number
+): Promise<void> {
   process.stderr.write(`[gbrain agent] following job ${jobId} (Ctrl-C to detach)...\n`);
   const ac = new AbortController();
   const onSigint = () => ac.abort();
-  process.once('SIGINT', onSigint);
+  process.once("SIGINT", onSigint);
   try {
     // Streaming logs happen in the background; we poll the terminal state
     // in parallel so the function returns as soon as the job completes.
@@ -333,26 +411,28 @@ async function followJob(engine: BrainEngine, queue: MinionQueue, jobId: number,
       ac.abort();
       await logsP.catch(() => {});
       process.stderr.write(`[gbrain agent] job ${jobId} terminal: ${job.status}\n`);
-      if (job.result != null) process.stdout.write(JSON.stringify(job.result, null, 2) + '\n');
-      if (job.status !== 'completed') process.exit(1);
+      if (job.result != null) process.stdout.write(JSON.stringify(job.result, null, 2) + "\n");
+      if (job.status !== "completed") process.exit(1);
     } catch (e) {
       if (e instanceof TimeoutError) {
-        process.stderr.write(`[gbrain agent] timeout after ${e.elapsedMs}ms — job is still running. Check with: gbrain jobs get ${jobId}\n`);
+        process.stderr.write(
+          `[gbrain agent] timeout after ${e.elapsedMs}ms — job is still running. Check with: gbrain jobs get ${jobId}\n`
+        );
         process.exit(3);
       }
       throw e;
     }
   } finally {
-    process.removeListener('SIGINT', onSigint);
+    process.removeListener("SIGINT", onSigint);
   }
 }
 
 // ── `gbrain agent logs` ────────────────────────────────────
 
 async function runAgentLogsCmd(engine: BrainEngine, args: string[]): Promise<void> {
-  const jobIdStr = args.find(a => !isKnownFlag(a));
+  const jobIdStr = args.find((a) => !isKnownFlag(a));
   if (!jobIdStr) {
-    console.error('gbrain agent logs: <job_id> is required');
+    console.error("gbrain agent logs: <job_id> is required");
     process.exit(2);
   }
   const jobId = parseInt(jobIdStr, 10);
@@ -360,16 +440,16 @@ async function runAgentLogsCmd(engine: BrainEngine, args: string[]): Promise<voi
     console.error(`gbrain agent logs: "${jobIdStr}" is not a valid job id`);
     process.exit(2);
   }
-  const follow = hasFlag(args, '--follow');
-  const since = parseFlag(args, '--since');
+  const follow = hasFlag(args, "--follow");
+  const since = parseFlag(args, "--since");
 
   const ac = new AbortController();
   const onSigint = () => ac.abort();
-  process.once('SIGINT', onSigint);
+  process.once("SIGINT", onSigint);
   try {
     await runAgentLogs(engine, jobId, { follow, since, signal: ac.signal });
   } finally {
-    process.removeListener('SIGINT', onSigint);
+    process.removeListener("SIGINT", onSigint);
   }
 }
 

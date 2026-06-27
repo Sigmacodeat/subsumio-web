@@ -64,34 +64,27 @@
  *   `--override-disabled` to force-run.
  */
 
-import type { BrainEngine, NewFact } from '../core/engine.ts';
-import type { Page } from '../core/types.ts';
-import {
-  extractFactsFromTurn,
-  isFactsExtractionEnabled,
-} from '../core/facts/extract.ts';
-import { isAvailable, withBudgetTracker } from '../core/ai/gateway.ts';
-import { BudgetTracker, BudgetExhausted } from '../core/budget/budget-tracker.ts';
-import { listSources } from '../core/sources-ops.ts';
-import {
-  loadOpCheckpoint,
-  recordCompleted,
-  type OpCheckpointKey,
-} from '../core/op-checkpoint.ts';
-import { createProgress } from '../core/progress.ts';
-import { getCliOptions, cliOptsToProgressOptions, maybeBackground } from '../core/cli-options.ts';
-import { loadConfig } from '../core/config.ts';
-import { createHash } from 'crypto';
+import type { BrainEngine, NewFact } from "../core/engine.ts";
+import type { Page } from "../core/types.ts";
+import { extractFactsFromTurn, isFactsExtractionEnabled } from "../core/facts/extract.ts";
+import { isAvailable, withBudgetTracker } from "../core/ai/gateway.ts";
+import { BudgetTracker, BudgetExhausted } from "../core/budget/budget-tracker.ts";
+import { listSources } from "../core/sources-ops.ts";
+import { loadOpCheckpoint, recordCompleted, type OpCheckpointKey } from "../core/op-checkpoint.ts";
+import { createProgress } from "../core/progress.ts";
+import { getCliOptions, cliOptsToProgressOptions, maybeBackground } from "../core/cli-options.ts";
+import { loadConfig } from "../core/config.ts";
+import { createHash } from "crypto";
 // v0.41.15.0 (T5): worker-pool primitive + per-source-clamp wrapper +
 // per-page advisory lock + delete-orphans-first replay safety. See plan
 // `~/.claude/plans/system-instruction-you-are-working-fancy-creek.md`
 // decisions D2, D6, D9, D11, D12, D13, D15.
-import { runSlidingPool } from '../core/worker-pool.ts';
-import { parseWorkers, resolveWorkersWithClamp } from '../core/sync-concurrency.ts';
-import { withRefreshingLock, LockUnavailableError } from '../core/db-lock.ts';
-import { assertFactsEmbeddingDimMatchesConfig } from '../core/embedding-dim-check.ts';
-import { writeReceipt, shortRunId } from '../core/extract/receipt-writer.ts';
-import { upsertExtractRollup } from '../core/extract/rollup-writer.ts';
+import { runSlidingPool } from "../core/worker-pool.ts";
+import { parseWorkers, resolveWorkersWithClamp } from "../core/sync-concurrency.ts";
+import { withRefreshingLock, LockUnavailableError } from "../core/db-lock.ts";
+import { assertFactsEmbeddingDimMatchesConfig } from "../core/embedding-dim-check.ts";
+import { writeReceipt, shortRunId } from "../core/extract/receipt-writer.ts";
+import { upsertExtractRollup } from "../core/extract/rollup-writer.ts";
 
 // ---------------------------------------------------------------------------
 // Tunables (exported for tests).
@@ -140,7 +133,7 @@ export const DEFAULT_MAX_COST_USD = 5.0;
  * `--types` flag is an explicit per-run override; cycle config is
  * the single source of truth.
  */
-export const ALLOWED_TYPES = ['conversation', 'meeting', 'slack', 'email'] as const;
+export const ALLOWED_TYPES = ["conversation", "meeting", "slack", "email"] as const;
 export type AllowedType = (typeof ALLOWED_TYPES)[number];
 
 /**
@@ -151,13 +144,13 @@ export type AllowedType = (typeof ALLOWED_TYPES)[number];
 export const PAGE_LIST_BATCH = 10;
 
 /** Op name for the checkpoint primitive. */
-export const CHECKPOINT_OP = 'extract-conversation-facts';
+export const CHECKPOINT_OP = "extract-conversation-facts";
 
 /**
  * Source string written on per-segment facts. Doctor queries the
  * TERMINAL variant below; this variant marks individual fact provenance.
  */
-export const PER_SEGMENT_SOURCE_PREFIX = 'cli:extract-conversation-facts';
+export const PER_SEGMENT_SOURCE_PREFIX = "cli:extract-conversation-facts";
 
 /**
  * Source string written on the page-level terminal audit row (Eng-v2 C7).
@@ -165,7 +158,7 @@ export const PER_SEGMENT_SOURCE_PREFIX = 'cli:extract-conversation-facts';
  * the per-segment source. Partial extraction = no terminal row = page
  * stays in backlog.
  */
-export const TERMINAL_AUDIT_SOURCE = 'cli:extract-conversation-facts:terminal';
+export const TERMINAL_AUDIT_SOURCE = "cli:extract-conversation-facts:terminal";
 
 // ---------------------------------------------------------------------------
 // Public types.
@@ -285,7 +278,7 @@ export interface ExtractConversationFactsResult {
 import {
   parseConversation,
   type ParseConversationOpts as OrchestratorParseOpts,
-} from '../core/conversation-parser/parse.ts';
+} from "../core/conversation-parser/parse.ts";
 
 /**
  * v0.41.13.0 — back-compat shape for direct callers + the existing
@@ -299,7 +292,7 @@ import {
  */
 export function parseConversationMessages(
   body: string,
-  opts: { fallbackDate?: string } = {},
+  opts: { fallbackDate?: string } = {}
 ): ConversationMessage[] {
   const result = parseConversation(body, {
     fallbackDate: opts.fallbackDate,
@@ -320,7 +313,7 @@ export interface SplitSegmentsOpts {
 
 export function splitIntoSegments(
   messages: ConversationMessage[],
-  opts: SplitSegmentsOpts = {},
+  opts: SplitSegmentsOpts = {}
 ): ConversationSegment[] {
   const gapMs = (opts.gapMinutes ?? DEFAULT_SEGMENT_GAP_MINUTES) * 60_000;
   const maxMessages = opts.maxMessages ?? DEFAULT_SEGMENT_MAX_MESSAGES;
@@ -377,16 +370,14 @@ export function splitIntoSegments(
 
 export function renderSegmentForExtraction(
   pageTitle: string,
-  segment: ConversationSegment,
+  segment: ConversationSegment
 ): string {
   const header = [
     `Page: ${pageTitle}`,
-    `Conversation between ${segment.participants.join(' and ')} from ${segment.startIso} to ${segment.endIso}`,
-    '---',
-  ].join('\n');
-  const body = segment.messages
-    .map((m) => `${m.speaker} (${m.timestamp}): ${m.text}`)
-    .join('\n');
+    `Conversation between ${segment.participants.join(" and ")} from ${segment.startIso} to ${segment.endIso}`,
+    "---",
+  ].join("\n");
+  const body = segment.messages.map((m) => `${m.speaker} (${m.timestamp}): ${m.text}`).join("\n");
   const full = `${header}\n${body}`;
   if (full.length <= SEGMENT_TEXT_CHAR_LIMIT) return full;
   // Truncate from the end of the body, keeping the header intact so the
@@ -402,7 +393,7 @@ export function renderSegmentForExtraction(
 
 export function extractConversationFactsFingerprint(opts: { sourceId: string }): string {
   const canonical = JSON.stringify({ sourceId: opts.sourceId });
-  return createHash('sha256').update(canonical).digest('hex').slice(0, 8);
+  return createHash("sha256").update(canonical).digest("hex").slice(0, 8);
 }
 
 function checkpointKey(sourceId: string): OpCheckpointKey {
@@ -427,9 +418,9 @@ export function encodeCheckpointEntry(sourceId: string, slug: string, endIso: st
 
 export function decodeCheckpointEntry(entry: string): DecodedEntry | null {
   // Split on first two pipes only — endIso has no pipes either.
-  const i1 = entry.indexOf('|');
+  const i1 = entry.indexOf("|");
   if (i1 < 0) return null;
-  const i2 = entry.indexOf('|', i1 + 1);
+  const i2 = entry.indexOf("|", i1 + 1);
   if (i2 < 0) return null;
   return {
     sourceId: entry.slice(0, i1),
@@ -439,11 +430,7 @@ export function decodeCheckpointEntry(entry: string): DecodedEntry | null {
 }
 
 /** Returns the newest endIso for a given (sourceId, slug), or null if absent. */
-function findCompletedEndIso(
-  entries: string[],
-  sourceId: string,
-  slug: string,
-): string | null {
+function findCompletedEndIso(entries: string[], sourceId: string, slug: string): string | null {
   let best: string | null = null;
   for (const e of entries) {
     const d = decodeCheckpointEntry(e);
@@ -469,16 +456,16 @@ function filterOutSlug(entries: string[], sourceId: string, slug: string): strin
 // ---------------------------------------------------------------------------
 
 function pageBodyBytes(page: Page): number {
-  const compiled = page.compiled_truth ?? '';
-  const timeline = page.timeline ?? '';
-  return Buffer.byteLength(compiled, 'utf8') + Buffer.byteLength(timeline, 'utf8');
+  const compiled = page.compiled_truth ?? "";
+  const timeline = page.timeline ?? "";
+  return Buffer.byteLength(compiled, "utf8") + Buffer.byteLength(timeline, "utf8");
 }
 
 function readPageBody(page: Page): string {
   // F1: read BOTH compiled_truth AND timeline; iMessage importers
   // place chronological message stream in timeline.
-  const compiled = page.compiled_truth ?? '';
-  const timeline = page.timeline ?? '';
+  const compiled = page.compiled_truth ?? "";
+  const timeline = page.timeline ?? "";
   if (!compiled) return timeline;
   if (!timeline) return compiled;
   return `${compiled}\n\n${timeline}`;
@@ -488,11 +475,11 @@ function readPageBody(page: Page): string {
 // Types config resolver (Eng-v2 A2 — unified single source of truth).
 // ---------------------------------------------------------------------------
 
-const TYPES_CONFIG_KEY = 'cycle.conversation_facts_backfill.types';
+const TYPES_CONFIG_KEY = "cycle.conversation_facts_backfill.types";
 
 async function resolveTypesFromConfig(
   engine: BrainEngine,
-  explicit?: AllowedType[],
+  explicit?: AllowedType[]
 ): Promise<AllowedType[]> {
   if (explicit && explicit.length > 0) return explicit;
   const raw = await engine.getConfig(TYPES_CONFIG_KEY);
@@ -501,7 +488,7 @@ async function resolveTypesFromConfig(
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed)) {
         const filtered = parsed
-          .filter((t): t is string => typeof t === 'string')
+          .filter((t): t is string => typeof t === "string")
           .filter((t): t is AllowedType => (ALLOWED_TYPES as readonly string[]).includes(t));
         if (filtered.length > 0) return filtered;
       }
@@ -560,7 +547,7 @@ function logLockBusyRateLimited(sourceId: string, slug: string): void {
     }
   }
   process.stderr.write(
-    `[extract-conversation-facts] lock-busy for ${sourceId}:${slug} (and possibly more); skipping — another worker holds it. Page will be retried on next enumeration.\n`,
+    `[extract-conversation-facts] lock-busy for ${sourceId}:${slug} (and possibly more); skipping — another worker holds it. Page will be retried on next enumeration.\n`
   );
 }
 
@@ -583,7 +570,7 @@ function logLockBusyRateLimited(sourceId: string, slug: string): void {
 async function deleteOrphanFactsForPage(
   engine: BrainEngine,
   sourceId: string,
-  slug: string,
+  slug: string
 ): Promise<number> {
   try {
     // The two write-source variants this command may have left behind:
@@ -599,9 +586,9 @@ async function deleteOrphanFactsForPage(
          RETURNING 1
        )
        SELECT COUNT(*)::text AS count FROM del`,
-      [sourceId, slug],
+      [sourceId, slug]
     );
-    const n = parseInt(rows[0]?.count ?? '0', 10);
+    const n = parseInt(rows[0]?.count ?? "0", 10);
     return Number.isFinite(n) ? n : 0;
   } catch {
     // Best-effort: a missing source_markdown_slug column on pre-v0.32
@@ -642,7 +629,7 @@ function cpMapKey(sourceId: string, slug: string): string {
 function cpMapToEntries(map: Map<string, string>): string[] {
   const out: string[] = [];
   for (const [key, endIso] of map) {
-    const i = key.indexOf('|');
+    const i = key.indexOf("|");
     if (i < 0) continue;
     const sourceId = key.slice(0, i);
     const slug = key.slice(i + 1);
@@ -668,7 +655,7 @@ function cpEntriesToMap(entries: string[]): Map<string, string> {
 async function processPage(
   state: ExtractCoreState,
   page: Page,
-  sinceIso: string | undefined,
+  sinceIso: string | undefined
 ): Promise<{ newEndIso: string | null }> {
   state.result.pages_considered++;
 
@@ -677,7 +664,7 @@ async function processPage(
   if (bytes > MAX_PAGE_BODY_BYTES) {
     state.result.pages_skipped_too_large++;
     process.stderr.write(
-      `[extract-conversation-facts] SKIP ${page.slug}: ${(bytes / 1024 / 1024).toFixed(1)}MB exceeds 25MB cap\n`,
+      `[extract-conversation-facts] SKIP ${page.slug}: ${(bytes / 1024 / 1024).toFixed(1)}MB exceeds 25MB cap\n`
     );
     return { newEndIso: null };
   }
@@ -692,7 +679,7 @@ async function processPage(
   const parseResult = parseConversation(body, { page });
   const messages = parseResult.messages;
   if (parseResult.timezone_warning) {
-    process.stderr.write(parseResult.timezone_warning + '\n');
+    process.stderr.write(parseResult.timezone_warning + "\n");
   }
   const segments = splitIntoSegments(messages, { sinceIso });
   if (segments.length === 0) {
@@ -710,7 +697,7 @@ async function processPage(
     if (cleaned > 0) {
       state.result.orphan_facts_cleaned += cleaned;
       process.stderr.write(
-        `[extract-conversation-facts] cleaned ${cleaned} orphan fact(s) for ${page.slug} from prior partial run\n`,
+        `[extract-conversation-facts] cleaned ${cleaned} orphan fact(s) for ${page.slug} from prior partial run\n`
       );
     }
   }
@@ -718,16 +705,14 @@ async function processPage(
   // Page-global row_num: after delete-orphans-first the table has no
   // rows for this (sourceId, slug), so we always start from 0. Peek
   // is kept as a defensive fallback for dry-run + non-deleting paths.
-  let rowNum = state.dryRun
-    ? await peekRowNumStart(state.engine, state.sourceId, page.slug)
-    : 0;
+  let rowNum = state.dryRun ? await peekRowNumStart(state.engine, state.sourceId, page.slug) : 0;
   let newestEnd: string | null = null;
   let segmentsThisPage = 0;
   let pageInsertedTotal = 0;
 
   for (const seg of segments) {
     if (state.segmentLimit > 0 && segmentsThisPage >= state.segmentLimit) break;
-    if (state.signal?.aborted) throw new Error('aborted');
+    if (state.signal?.aborted) throw new Error("aborted");
 
     const text = renderSegmentForExtraction(page.title || page.slug, seg);
     const sessionId = `${PER_SEGMENT_SOURCE_PREFIX}:${page.slug}`;
@@ -746,7 +731,7 @@ async function processPage(
       if (err instanceof BudgetExhausted) throw err;
       // Per-segment LLM failures are best-effort; loop continues.
       process.stderr.write(
-        `[extract-conversation-facts] segment ${seg.startIso}..${seg.endIso} extractor failed: ${(err as Error).message}\n`,
+        `[extract-conversation-facts] segment ${seg.startIso}..${seg.endIso} extractor failed: ${(err as Error).message}\n`
       );
       extracted = [];
     }
@@ -765,8 +750,7 @@ async function processPage(
         source_markdown_slug: page.slug,
         source: PER_SEGMENT_SOURCE_PREFIX,
         source_session: sessionId,
-        context:
-          fact.context ?? `from ${page.slug} segment ${seg.startIso}..${seg.endIso}`,
+        context: fact.context ?? `from ${page.slug} segment ${seg.startIso}..${seg.endIso}`,
       }));
       try {
         const ins = await state.engine.insertFacts(rows, { source_id: state.sourceId }); // gbrain-allow-direct-insert: canonical bulk extraction path for conversation pages — fences-as-system-of-record doesn't apply because conversations don't carry `## Facts` fences (the chat-log shape is the source-of-truth)
@@ -778,7 +762,7 @@ async function processPage(
         // boundary, so a duplicate-key or constraint error rolls back
         // this segment only. Loop continues.
         process.stderr.write(
-          `[extract-conversation-facts] segment ${seg.startIso}..${seg.endIso} insertFacts failed: ${(err as Error).message}\n`,
+          `[extract-conversation-facts] segment ${seg.startIso}..${seg.endIso} insertFacts failed: ${(err as Error).message}\n`
         );
       }
       rowNum += extracted.length;
@@ -794,8 +778,7 @@ async function processPage(
   // Eng-v2 C7 / E16: write terminal audit row after all segments commit
   // successfully. Only run when not dry-run AND we got through every
   // segment (no break on segmentLimit; that's an explicit partial run).
-  const fullyProcessed =
-    state.segmentLimit === 0 || segmentsThisPage < state.segmentLimit;
+  const fullyProcessed = state.segmentLimit === 0 || segmentsThisPage < state.segmentLimit;
   if (!state.dryRun && fullyProcessed && newestEnd !== null) {
     try {
       await writeTerminalAuditRow(state.engine, state.sourceId, page.slug, rowNum);
@@ -805,7 +788,7 @@ async function processPage(
       // Terminal-row write failure: page is NOT marked complete; next
       // run resumes. Loud stderr so users see partial-success state.
       process.stderr.write(
-        `[extract-conversation-facts] ${page.slug} terminal audit write failed: ${(err as Error).message}\n`,
+        `[extract-conversation-facts] ${page.slug} terminal audit write failed: ${(err as Error).message}\n`
       );
       // Suppress the resume-state update so doctor still flags this page.
       newestEnd = null;
@@ -822,7 +805,7 @@ async function processPage(
   }
 
   process.stderr.write(
-    `[extract-conversation-facts] ${page.slug}: ${pageInsertedTotal} facts inserted across ${segmentsThisPage} segments\n`,
+    `[extract-conversation-facts] ${page.slug}: ${pageInsertedTotal} facts inserted across ${segmentsThisPage} segments\n`
   );
 
   state.result.pages_processed++;
@@ -833,16 +816,16 @@ async function writeTerminalAuditRow(
   engine: BrainEngine,
   sourceId: string,
   slug: string,
-  rowNum: number,
+  rowNum: number
 ): Promise<void> {
   const fact: NewFact & { row_num: number; source_markdown_slug: string } = {
-    fact: 'EXTRACTION_COMPLETE',
-    kind: 'fact',
+    fact: "EXTRACTION_COMPLETE",
+    kind: "fact",
     entity_slug: null,
     source: TERMINAL_AUDIT_SOURCE,
     source_session: `${TERMINAL_AUDIT_SOURCE}:${slug}`,
     confidence: 1.0,
-    notability: 'low',
+    notability: "low",
     row_num: rowNum,
     source_markdown_slug: slug,
   };
@@ -862,11 +845,11 @@ async function writeTerminalAuditRow(
 export async function runExtractConversationFactsCore(
   engine: BrainEngine,
   opts: ExtractConversationFactsCoreOpts,
-  signal?: AbortSignal,
+  signal?: AbortSignal
 ): Promise<ExtractConversationFactsResult> {
   const sourceId = opts.sourceId;
   if (!sourceId) {
-    throw new Error('runExtractConversationFactsCore: opts.sourceId is required');
+    throw new Error("runExtractConversationFactsCore: opts.sourceId is required");
   }
 
   const result: ExtractConversationFactsResult = {
@@ -886,9 +869,7 @@ export async function runExtractConversationFactsCore(
   if (!opts.overrideDisabled) {
     const enabled = await isFactsExtractionEnabled(engine);
     if (!enabled) {
-      throw new Error(
-        'facts.extraction_enabled=false; pass --override-disabled to force-run',
-      );
+      throw new Error("facts.extraction_enabled=false; pass --override-disabled to force-run");
     }
   }
 
@@ -915,8 +896,8 @@ export async function runExtractConversationFactsCore(
   const workersResolved = resolveWorkersWithClamp(
     engine,
     opts.workers,
-    'extract-conversation-facts',
-    0,
+    "extract-conversation-facts",
+    0
   );
   const workers = workersResolved.workers;
 
@@ -964,12 +945,9 @@ export async function runExtractConversationFactsCore(
       sinceIso = pickLaterIso(checkpointed, opts.sinceIso);
 
       try {
-        await withRefreshingLock(
-          engine,
-          lockId,
-          () => processPage(state, page, sinceIso),
-          { ttlMinutes: PER_PAGE_LOCK_TTL_MINUTES },
-        ).then(() => undefined);
+        await withRefreshingLock(engine, lockId, () => processPage(state, page, sinceIso), {
+          ttlMinutes: PER_PAGE_LOCK_TTL_MINUTES,
+        }).then(() => undefined);
       } catch (err) {
         if (err instanceof LockUnavailableError) {
           // D6: skip-and-continue. Page stays in backlog; next
@@ -1007,7 +985,7 @@ export async function runExtractConversationFactsCore(
         let offset = 0;
         // eslint-disable-next-line no-constant-condition
         while (true) {
-          if (signal?.aborted) throw new Error('aborted');
+          if (signal?.aborted) throw new Error("aborted");
           if (opts.limit && processedPagesCount >= opts.limit) break pageLoop;
 
           const batch = await engine.listPages({
@@ -1108,7 +1086,7 @@ async function writeRunReceiptAndRollup(
   engine: BrainEngine,
   sourceId: string,
   result: ExtractConversationFactsResult,
-  halted: boolean,
+  halted: boolean
 ): Promise<void> {
   const now = new Date().toISOString();
   // run_id: stable-ish identifier for this run. Includes day so multiple
@@ -1120,10 +1098,10 @@ async function writeRunReceiptAndRollup(
   if (result.facts_inserted > 0) {
     try {
       await writeReceipt(engine, {
-        kind: 'facts.conversation',
+        kind: "facts.conversation",
         source_id: sourceId,
         run_id: runId,
-        round: 'full',
+        round: "full",
         extracted_at: now,
         total_rows: result.facts_inserted,
         cost_usd: result.spent_usd ?? 0,
@@ -1142,7 +1120,7 @@ async function writeRunReceiptAndRollup(
   // cycle ran (even no-op runs are signal — they prove the extractor
   // was alive). Best-effort per F-OUT-19.
   await upsertExtractRollup(engine, {
-    kind: 'facts.conversation',
+    kind: "facts.conversation",
     source_id: sourceId,
     cost_delta: result.spent_usd ?? 0,
     round_completed_delta: halted ? 0 : 1,
@@ -1157,14 +1135,14 @@ async function writeRunReceiptAndRollup(
 async function peekRowNumStart(
   engine: BrainEngine,
   sourceId: string,
-  slug: string,
+  slug: string
 ): Promise<number> {
   try {
     const rows = await engine.executeRaw<{ max_row: number | null }>(
       `SELECT COALESCE(MAX(row_num), -1) AS max_row
          FROM facts
         WHERE source_id = $1 AND source_markdown_slug = $2`,
-      [sourceId, slug],
+      [sourceId, slug]
     );
     const maxRow = rows[0]?.max_row ?? -1;
     return Number(maxRow) + 1;
@@ -1203,46 +1181,73 @@ function parseArgs(args: string[]): ParsedArgs {
   const out: ParsedArgs = {};
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
-    if (a === '--help' || a === '-h') { out.help = true; continue; }
-    if (a === '--dry-run') { out.dryRun = true; continue; }
-    if (a === '--force') { out.force = true; continue; }
-    if (a === '--yes' || a === '-y') { out.yes = true; continue; }
-    if (a === '--override-disabled') { out.overrideDisabled = true; continue; }
-    if (a === '--slug') { out.slug = args[++i]; continue; }
-    if (a === '--source-id') { out.sourceId = args[++i]; continue; }
-    if (a === '--since') { out.sinceIso = args[++i]; continue; }
-    if (a === '--types') {
-      const v = args[++i] ?? '';
-      const parts = v.split(',').map((s) => s.trim()).filter(Boolean);
+    if (a === "--help" || a === "-h") {
+      out.help = true;
+      continue;
+    }
+    if (a === "--dry-run") {
+      out.dryRun = true;
+      continue;
+    }
+    if (a === "--force") {
+      out.force = true;
+      continue;
+    }
+    if (a === "--yes" || a === "-y") {
+      out.yes = true;
+      continue;
+    }
+    if (a === "--override-disabled") {
+      out.overrideDisabled = true;
+      continue;
+    }
+    if (a === "--slug") {
+      out.slug = args[++i];
+      continue;
+    }
+    if (a === "--source-id") {
+      out.sourceId = args[++i];
+      continue;
+    }
+    if (a === "--since") {
+      out.sinceIso = args[++i];
+      continue;
+    }
+    if (a === "--types") {
+      const v = args[++i] ?? "";
+      const parts = v
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
       const bad = parts.filter((p) => !(ALLOWED_TYPES as readonly string[]).includes(p));
       if (bad.length > 0) {
-        out.error = `Unknown type(s) in --types: ${bad.join(', ')}. Allowed: ${ALLOWED_TYPES.join(', ')}`;
+        out.error = `Unknown type(s) in --types: ${bad.join(", ")}. Allowed: ${ALLOWED_TYPES.join(", ")}`;
         return out;
       }
       out.types = parts as AllowedType[];
       continue;
     }
-    if (a === '--limit') {
-      const n = parseInt(args[++i] ?? '', 10);
+    if (a === "--limit") {
+      const n = parseInt(args[++i] ?? "", 10);
       if (Number.isFinite(n) && n > 0) out.limit = n;
       continue;
     }
-    if (a === '--sleep') {
-      const n = parseInt(args[++i] ?? '', 10);
+    if (a === "--sleep") {
+      const n = parseInt(args[++i] ?? "", 10);
       if (Number.isFinite(n) && n >= 0) out.sleepMs = n;
       continue;
     }
-    if (a === '--segment-limit') {
-      const n = parseInt(args[++i] ?? '', 10);
+    if (a === "--segment-limit") {
+      const n = parseInt(args[++i] ?? "", 10);
       if (Number.isFinite(n) && n >= 0) out.segmentLimit = n;
       continue;
     }
-    if (a === '--max-cost-usd') {
-      const n = parseFloat(args[++i] ?? '');
+    if (a === "--max-cost-usd") {
+      const n = parseFloat(args[++i] ?? "");
       if (Number.isFinite(n) && n > 0) out.maxCostUsd = n;
       continue;
     }
-    if (a === '--workers' || a === '--concurrency') {
+    if (a === "--workers" || a === "--concurrency") {
       try {
         out.workers = parseWorkers(args[++i]);
       } catch (e) {
@@ -1251,7 +1256,7 @@ function parseArgs(args: string[]): ParsedArgs {
       }
       continue;
     }
-    if (a.startsWith('--')) {
+    if (a.startsWith("--")) {
       out.error = `Unknown flag: ${a}`;
       return out;
     }
@@ -1276,7 +1281,7 @@ chunk-level embedding loses on long conversations.
 
 Options:
   --source-id <id>       Source to operate on (default: 'default').
-  --types <list>         Comma-separated subset of: ${ALLOWED_TYPES.join(', ')}.
+  --types <list>         Comma-separated subset of: ${ALLOWED_TYPES.join(", ")}.
                          Default: reads cycle.conversation_facts_backfill.types config
                          (falls back to the full allowlist).
   --slug <slug>          Process a single page (overrides multi-page enumeration).
@@ -1335,10 +1340,10 @@ function buildJobParams(args: string[]): Record<string, unknown> {
 
 export async function runExtractConversationFacts(
   engine: BrainEngine,
-  args: string[],
+  args: string[]
 ): Promise<void> {
   // --help short-circuit.
-  if (args.includes('--help') || args.includes('-h')) {
+  if (args.includes("--help") || args.includes("-h")) {
     console.log(HELP);
     return;
   }
@@ -1347,7 +1352,7 @@ export async function runExtractConversationFacts(
   const backgrounded = await maybeBackground({
     engine,
     args,
-    jobName: 'extract-conversation-facts',
+    jobName: "extract-conversation-facts",
     paramBuilder: buildJobParams,
   });
   if (backgrounded) return;
@@ -1360,8 +1365,10 @@ export async function runExtractConversationFacts(
   }
 
   // Chat gateway is required for non-dry-run.
-  if (!parsed.dryRun && !isAvailable('chat')) {
-    console.error('Chat gateway unavailable. Configure an Anthropic or compatible chat model, or pass --dry-run to preview segmentation.');
+  if (!parsed.dryRun && !isAvailable("chat")) {
+    console.error(
+      "Chat gateway unavailable. Configure an Anthropic or compatible chat model, or pass --dry-run to preview segmentation."
+    );
     process.exit(1);
   }
 
@@ -1388,7 +1395,7 @@ export async function runExtractConversationFacts(
     ? [parsed.sourceId]
     : (await listSources(engine)).map((s) => s.id);
 
-  progress.start('extract.conversation_facts', sourceIds.length);
+  progress.start("extract.conversation_facts", sourceIds.length);
 
   try {
     for (const sourceId of sourceIds) {
@@ -1426,28 +1433,38 @@ export async function runExtractConversationFacts(
     progress.finish();
   }
 
-  const verb = parsed.dryRun ? '(dry run) would extract' : 'extracted';
+  const verb = parsed.dryRun ? "(dry run) would extract" : "extracted";
   console.log(
     `\nDone: ${verb} ${aggregate.facts_extracted} facts ` +
-    `(${aggregate.facts_inserted} inserted) across ${aggregate.segments_processed} segments ` +
-    `from ${aggregate.pages_processed}/${aggregate.pages_considered} pages ` +
-    `in ${sourceIds.length} source(s). ` +
-    `Spent ~$${totalSpent.toFixed(4)}.`,
+      `(${aggregate.facts_inserted} inserted) across ${aggregate.segments_processed} segments ` +
+      `from ${aggregate.pages_processed}/${aggregate.pages_considered} pages ` +
+      `in ${sourceIds.length} source(s). ` +
+      `Spent ~$${totalSpent.toFixed(4)}.`
   );
   if (aggregate.pages_skipped > 0) {
-    console.log(`  Skipped ${aggregate.pages_skipped} page(s) with no new segments since last checkpoint.`);
+    console.log(
+      `  Skipped ${aggregate.pages_skipped} page(s) with no new segments since last checkpoint.`
+    );
   }
   if (aggregate.pages_skipped_too_large > 0) {
-    console.log(`  Skipped ${aggregate.pages_skipped_too_large} page(s) exceeding ${MAX_PAGE_BODY_BYTES / 1024 / 1024}MB body cap.`);
+    console.log(
+      `  Skipped ${aggregate.pages_skipped_too_large} page(s) exceeding ${MAX_PAGE_BODY_BYTES / 1024 / 1024}MB body cap.`
+    );
   }
   if (aggregate.pages_skipped_disappeared > 0) {
-    console.log(`  Skipped ${aggregate.pages_skipped_disappeared} page(s) that disappeared between enumeration and fetch.`);
+    console.log(
+      `  Skipped ${aggregate.pages_skipped_disappeared} page(s) that disappeared between enumeration and fetch.`
+    );
   }
   if (aggregate.pages_lock_skipped > 0) {
-    console.log(`  Skipped ${aggregate.pages_lock_skipped} page(s) held by another worker / process (will retry next run).`);
+    console.log(
+      `  Skipped ${aggregate.pages_lock_skipped} page(s) held by another worker / process (will retry next run).`
+    );
   }
   if (aggregate.orphan_facts_cleaned > 0) {
-    console.log(`  Cleaned ${aggregate.orphan_facts_cleaned} orphan fact(s) from prior partial runs (D11 replay safety).`);
+    console.log(
+      `  Cleaned ${aggregate.orphan_facts_cleaned} orphan fact(s) from prior partial runs (D11 replay safety).`
+    );
   }
   if (anyBudgetExhausted) {
     console.log(`  Budget cap reached. Re-run with a higher --max-cost-usd to continue.`);
@@ -1470,7 +1487,7 @@ export async function runExtractConversationFacts(
 
 function pickLaterIso(
   a: string | null | undefined,
-  b: string | null | undefined,
+  b: string | null | undefined
 ): string | undefined {
   const av = a ? Date.parse(a) : NaN;
   const bv = b ? Date.parse(b) : NaN;
@@ -1486,5 +1503,5 @@ function sleep(ms: number): Promise<void> {
 
 function isAbortError(err: unknown): boolean {
   if (!(err instanceof Error)) return false;
-  return err.name === 'AbortError' || /aborted|cancell?ed/i.test(err.message);
+  return err.name === "AbortError" || /aborted|cancell?ed/i.test(err.message);
 }

@@ -21,8 +21,8 @@
  * PGLite-only — no DATABASE_URL needed. Hermetic.
  */
 
-import { describe, test, expect, beforeAll, afterAll, beforeEach } from 'bun:test';
-import { PGLiteEngine } from '../../src/core/pglite-engine.ts';
+import { describe, test, expect, beforeAll, afterAll, beforeEach } from "bun:test";
+import { PGLiteEngine } from "../../src/core/pglite-engine.ts";
 
 let engine: PGLiteEngine;
 
@@ -44,16 +44,16 @@ beforeEach(async () => {
 
 async function putPage(slug: string, title = slug) {
   await engine.putPage(slug, {
-    type: 'note',
+    type: "note",
     title,
     compiled_truth: `Body of ${slug}`,
-    timeline: '',
+    timeline: "",
     frontmatter: {},
   });
 }
 
 async function getPageId(slug: string): Promise<number> {
-  const rows = await engine.executeRaw('SELECT id FROM pages WHERE slug = $1', [slug]);
+  const rows = await engine.executeRaw("SELECT id FROM pages WHERE slug = $1", [slug]);
   return (rows[0] as { id: number }).id;
 }
 
@@ -61,39 +61,39 @@ async function link(from: string, to: string) {
   const fromId = await getPageId(from);
   const toId = await getPageId(to);
   await engine.executeRaw(
-    'INSERT INTO links (from_page_id, to_page_id, link_type) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING',
-    [fromId, toId, 'references'],
+    "INSERT INTO links (from_page_id, to_page_id, link_type) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING",
+    [fromId, toId, "references"]
   );
 }
 
 /** Build a hub-and-spokes topology: 'hub' links to N children. */
 async function buildHubTopology(N: number) {
-  await putPage('hub');
+  await putPage("hub");
   for (let i = 0; i < N; i += 1) {
-    const slug = `child-${String(i).padStart(3, '0')}`;
+    const slug = `child-${String(i).padStart(3, "0")}`;
     await putPage(slug);
-    await link('hub', slug);
+    await link("hub", slug);
   }
 }
 
-describe('T8: traverseGraph frontier cap (PGLite)', () => {
-  test('Contract 1: cap-unset returns legacy shape', async () => {
+describe("T8: traverseGraph frontier cap (PGLite)", () => {
+  test("Contract 1: cap-unset returns legacy shape", async () => {
     await buildHubTopology(10);
-    const result = await engine.traverseGraph('hub', 2);
+    const result = await engine.traverseGraph("hub", 2);
     expect(Array.isArray(result)).toBe(true);
     expect(result.length).toBe(11); // hub + 10 children
     for (const node of result) {
-      expect(typeof node.slug).toBe('string');
-      expect(typeof node.title).toBe('string');
-      expect(typeof node.type).toBe('string');
-      expect(typeof node.depth).toBe('number');
+      expect(typeof node.slug).toBe("string");
+      expect(typeof node.title).toBe("string");
+      expect(typeof node.type).toBe("string");
+      expect(typeof node.depth).toBe("number");
       expect(Array.isArray(node.links)).toBe(true);
     }
   }, 30000);
 
-  test('Contract 2: cap bounds the result to <= cap + 1 (hub + capped children)', async () => {
+  test("Contract 2: cap bounds the result to <= cap + 1 (hub + capped children)", async () => {
     await buildHubTopology(20); // 20 children at depth 1
-    const result = await engine.traverseGraph('hub', 2, { frontierCap: 5 });
+    const result = await engine.traverseGraph("hub", 2, { frontierCap: 5 });
     expect(Array.isArray(result)).toBe(true);
     // hub + up to cap children. The recursive LIMIT applies BEFORE outer
     // DISTINCT, so the visible count can be LESS than cap on diamond graphs.
@@ -101,13 +101,13 @@ describe('T8: traverseGraph frontier cap (PGLite)', () => {
     // protection the cap provides — a hard upper bound on traversal output.
     expect(result.length).toBeLessThanOrEqual(6);
     expect(result.length).toBeGreaterThan(0);
-    const slugs = result.map(n => n.slug);
-    expect(slugs).toContain('hub');
+    const slugs = result.map((n) => n.slug);
+    expect(slugs).toContain("hub");
   }, 30000);
 
-  test('Contract 3: MCP wire-shape preserved — Array, not struct', async () => {
+  test("Contract 3: MCP wire-shape preserved — Array, not struct", async () => {
     await buildHubTopology(5);
-    const result = await engine.traverseGraph('hub', 1);
+    const result = await engine.traverseGraph("hub", 1);
     expect(Array.isArray(result)).toBe(true);
     expect(Object.getPrototypeOf(result)).toBe(Array.prototype);
     // Negative regression — no struct fields leaked in (would break MCP wire):
@@ -115,14 +115,14 @@ describe('T8: traverseGraph frontier cap (PGLite)', () => {
     expect((result as unknown as { nodes?: unknown }).nodes).toBeUndefined();
   }, 30000);
 
-  test('Contract 4: concurrent calls on same engine see independent bounded results', async () => {
+  test("Contract 4: concurrent calls on same engine see independent bounded results", async () => {
     await buildHubTopology(30);
     // Two concurrent calls with different caps. Each must see its own bound.
     // If the implementation accidentally introduced shared per-engine state
     // for the cap, one call's cap could bleed into the other.
     const [a, b] = await Promise.all([
-      engine.traverseGraph('hub', 1, { frontierCap: 5 }),
-      engine.traverseGraph('hub', 1, { frontierCap: 10 }),
+      engine.traverseGraph("hub", 1, { frontierCap: 5 }),
+      engine.traverseGraph("hub", 1, { frontierCap: 10 }),
     ]);
     expect(a.length).toBeLessThanOrEqual(6);
     expect(b.length).toBeLessThanOrEqual(11);

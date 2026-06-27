@@ -79,7 +79,7 @@
 
 /** Tagged error classes that bypass `onError` and hard-abort the pool. */
 export const MUST_ABORT_ERROR_TAGS: ReadonlySet<string> = new Set([
-  'BUDGET_EXHAUSTED', // src/core/budget/budget-tracker.ts BudgetExhausted.tag
+  "BUDGET_EXHAUSTED", // src/core/budget/budget-tracker.ts BudgetExhausted.tag
 ]);
 
 /**
@@ -88,9 +88,9 @@ export const MUST_ABORT_ERROR_TAGS: ReadonlySet<string> = new Set([
  * dependencies. Tolerates any thrown value shape.
  */
 export function isMustAbortError(err: unknown): boolean {
-  if (typeof err !== 'object' || err === null) return false;
+  if (typeof err !== "object" || err === null) return false;
   const tag = (err as { tag?: unknown }).tag;
-  return typeof tag === 'string' && MUST_ABORT_ERROR_TAGS.has(tag);
+  return typeof tag === "string" && MUST_ABORT_ERROR_TAGS.has(tag);
 }
 
 /** Per-item failure record stored in `SlidingPoolResult.failures`. */
@@ -139,7 +139,7 @@ export interface SlidingPoolOpts<T> {
    * tolerant semantics for I/O errors (one bad page shouldn't kill
    * a 6594-page backfill). Per D7.
    */
-  onError?: 'continue' | 'abort' | ((err: unknown, item: T, idx: number) => 'continue' | 'abort');
+  onError?: "continue" | "abort" | ((err: unknown, item: T, idx: number) => "continue" | "abort");
   /**
    * Project a stable label from an item for failure records. Default
    * `String(item)`. Pass a projector like `p => p.slug` to keep
@@ -192,13 +192,13 @@ export async function runSlidingPool<T>(opts: SlidingPoolOpts<T>): Promise<Slidi
   const onCallerAbort = () => localAbort.abort();
   if (opts.signal) {
     if (opts.signal.aborted) localAbort.abort();
-    else opts.signal.addEventListener('abort', onCallerAbort, { once: true });
+    else opts.signal.addEventListener("abort", onCallerAbort, { once: true });
   }
 
   // Resolve onError into a uniform function form.
-  const errorPolicy = opts.onError ?? 'continue';
-  const decideOnError = (err: unknown, item: T, idx: number): 'continue' | 'abort' => {
-    if (typeof errorPolicy === 'function') return errorPolicy(err, item, idx);
+  const errorPolicy = opts.onError ?? "continue";
+  const decideOnError = (err: unknown, item: T, idx: number): "continue" | "abort" => {
+    if (typeof errorPolicy === "function") return errorPolicy(err, item, idx);
     return errorPolicy;
   };
 
@@ -238,7 +238,7 @@ export async function runSlidingPool<T>(opts: SlidingPoolOpts<T>): Promise<Slidi
         result.errored++;
         result.failures.push({ idx, label: labelFn(item), error: err });
         const decision = decideOnError(err, item, idx);
-        if (decision === 'abort') {
+        if (decision === "abort") {
           result.aborted = true;
           localAbort.abort();
           return;
@@ -249,11 +249,9 @@ export async function runSlidingPool<T>(opts: SlidingPoolOpts<T>): Promise<Slidi
   }
 
   try {
-    await Promise.all(
-      Array.from({ length: workerCount }, (_, w) => worker(w)),
-    );
+    await Promise.all(Array.from({ length: workerCount }, (_, w) => worker(w)));
   } finally {
-    if (opts.signal) opts.signal.removeEventListener('abort', onCallerAbort);
+    if (opts.signal) opts.signal.removeEventListener("abort", onCallerAbort);
   }
 
   return result;
@@ -284,7 +282,7 @@ export type SettledItem<TOut> =
   | { ok: false; error: unknown; idx: number };
 
 export async function runWithLimit<TIn, TOut>(
-  opts: RunWithLimitOpts<TIn, TOut>,
+  opts: RunWithLimitOpts<TIn, TOut>
 ): Promise<SettledItem<TOut>[]> {
   const items = opts.items;
   const total = items.length;

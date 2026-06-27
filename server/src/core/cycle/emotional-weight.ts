@@ -25,21 +25,21 @@
  * time if your brain is mostly work-life.
  */
 export const HIGH_EMOTION_TAGS: ReadonlySet<string> = new Set([
-  'family',
-  'marriage',
-  'wedding',
-  'loss',
-  'death',
-  'grief',
-  'relationship',
-  'love',
-  'mental-health',
-  'health',
-  'illness',
-  'birth',
-  'children',
-  'kids',
-  'parents',
+  "family",
+  "marriage",
+  "wedding",
+  "loss",
+  "death",
+  "grief",
+  "relationship",
+  "love",
+  "mental-health",
+  "health",
+  "illness",
+  "birth",
+  "children",
+  "kids",
+  "parents",
 ]);
 
 /**
@@ -47,7 +47,7 @@ export const HIGH_EMOTION_TAGS: ReadonlySet<string> = new Set([
  * via the `emotional_weight.user_holder` config key (defaults to 'garry' to
  * match the v0.28 schema's takes table convention).
  */
-export const DEFAULT_USER_HOLDER = 'garry';
+export const DEFAULT_USER_HOLDER = "garry";
 
 export interface EmotionalWeightTake {
   holder: string;
@@ -95,7 +95,7 @@ export interface EmotionalWeightOpts {
  */
 export function computeEmotionalWeight(
   input: EmotionalWeightInput,
-  opts: EmotionalWeightOpts = {},
+  opts: EmotionalWeightOpts = {}
 ): number {
   const tagSet = opts.highEmotionTags ?? HIGH_EMOTION_TAGS;
   const userHolder = (opts.userHolder ?? DEFAULT_USER_HOLDER).toLowerCase();

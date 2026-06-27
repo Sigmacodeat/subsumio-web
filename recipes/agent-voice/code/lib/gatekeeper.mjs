@@ -1,10 +1,10 @@
 /**
  * gatekeeper.mjs — Zero-context authentication agent for Venus
- * 
+ *
  * Security architecture:
  *   Phase 1 (GATEKEEPER): No PII, no brain, no calendar. Only auth tools.
  *   Phase 2 (FULL VENUS): Full context loaded AFTER verification succeeds.
- * 
+ *
  * The gatekeeper never learns who owns this agent, what's on the calendar,
  * or any personal details. It's a generic voice auth gate.
  */
@@ -33,14 +33,14 @@ NEVER:
 - Engage in extended conversation — stay focused on verification`;
 
 // Charon: deep male voice for security gate. Aoede: warm female for full Venus.
-export const GATEKEEPER_VOICE = 'Charon';
-export const VENUS_VOICE = 'Aoede';
+export const GATEKEEPER_VOICE = "Charon";
+export const VENUS_VOICE = "Aoede";
 
 export const GATEKEEPER_TOOLS = [
   {
     name: "send_telegram_code",
     description: "Send a 6-digit verification code to the account owner's Telegram.",
-    parameters: { type: "object", properties: {} }
+    parameters: { type: "object", properties: {} },
   },
   {
     name: "verify_code",
@@ -48,10 +48,10 @@ export const GATEKEEPER_TOOLS = [
     parameters: {
       type: "object",
       properties: {
-        code: { type: "string", description: "The 6-digit code" }
+        code: { type: "string", description: "The 6-digit code" },
       },
-      required: ["code"]
-    }
+      required: ["code"],
+    },
   },
   {
     name: "take_message",
@@ -61,14 +61,15 @@ export const GATEKEEPER_TOOLS = [
       properties: {
         caller_name: { type: "string", description: "Name the caller gives" },
         message: { type: "string", description: "The message" },
-        callback_number: { type: "string", description: "Callback number (optional)" }
+        callback_number: { type: "string", description: "Callback number (optional)" },
       },
-      required: ["caller_name", "message"]
-    }
+      required: ["caller_name", "message"],
+    },
   },
   {
     name: "upgrade_to_venus",
-    description: "ONLY call this AFTER verify_code returns verified=true. This upgrades the call to full assistant mode with all capabilities. Do NOT call this before verification succeeds.",
-    parameters: { type: "object", properties: {} }
-  }
+    description:
+      "ONLY call this AFTER verify_code returns verified=true. This upgrades the call to full assistant mode with all capabilities. Do NOT call this before verification succeeds.",
+    parameters: { type: "object", properties: {} },
+  },
 ];

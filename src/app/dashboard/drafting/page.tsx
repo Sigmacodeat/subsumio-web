@@ -181,9 +181,15 @@ export default function DraftingPage() {
     let cancelled = false;
     api.brain
       .listPages({ type: "legal_case", limit: 200 })
-      .then((pages) => { if (!cancelled) setCases(pages); })
-      .catch(() => { if (!cancelled) setCasesError(true); });
-    return () => { cancelled = true; };
+      .then((pages) => {
+        if (!cancelled) setCases(pages);
+      })
+      .catch(() => {
+        if (!cancelled) setCasesError(true);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const canGenerate = (formData.title || "").trim() && (formData.facts || "").trim();
@@ -465,7 +471,9 @@ export default function DraftingPage() {
             {...register("selectedCaseSlug")}
             className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
           >
-            <option value="">{casesError ? t("drafting.cases_load_error") : t("drafting.no_case")}</option>
+            <option value="">
+              {casesError ? t("drafting.cases_load_error") : t("drafting.no_case")}
+            </option>
             {cases.map((c) => {
               const fm = caseFrontmatter(c);
               return (

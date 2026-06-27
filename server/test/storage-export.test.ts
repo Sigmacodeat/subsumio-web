@@ -9,13 +9,13 @@
  * repoPath OR the right error.
  */
 
-import { describe, test, expect, beforeEach, afterEach, beforeAll, afterAll } from 'bun:test';
-import { mkdtempSync, rmSync, writeFileSync } from 'fs';
-import { join } from 'path';
-import { tmpdir } from 'os';
-import { PGLiteEngine } from '../src/core/pglite-engine.ts';
-import { runExport } from '../src/commands/export.ts';
-import { __resetMissingStorageWarning } from '../src/core/storage-config.ts';
+import { describe, test, expect, beforeEach, afterEach, beforeAll, afterAll } from "bun:test";
+import { mkdtempSync, rmSync, writeFileSync } from "fs";
+import { join } from "path";
+import { tmpdir } from "os";
+import { PGLiteEngine } from "../src/core/pglite-engine.ts";
+import { runExport } from "../src/commands/export.ts";
+import { __resetMissingStorageWarning } from "../src/core/storage-config.ts";
 
 let engine: PGLiteEngine;
 let tmp: string;
@@ -38,8 +38,8 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  tmp = mkdtempSync(join(tmpdir(), 'gbrain-export-test-'));
-  outDir = join(tmp, 'out');
+  tmp = mkdtempSync(join(tmpdir(), "gbrain-export-test-"));
+  outDir = join(tmp, "out");
   exitCode = null;
   stderr = [];
   stdout = [];
@@ -53,22 +53,34 @@ beforeEach(async () => {
 
   originalErr = console.error;
   console.error = (...args: unknown[]) => {
-    stderr.push(args.map(String).join(' '));
+    stderr.push(args.map(String).join(" "));
   };
 
   originalLog = console.log;
   console.log = (...args: unknown[]) => {
-    stdout.push(args.map(String).join(' '));
+    stdout.push(args.map(String).join(" "));
   };
 
   // Reset DB state between tests
-  const tables = ['content_chunks', 'links', 'tags', 'raw_data', 'timeline_entries', 'page_versions', 'ingest_log', 'pages', 'sources'];
+  const tables = [
+    "content_chunks",
+    "links",
+    "tags",
+    "raw_data",
+    "timeline_entries",
+    "page_versions",
+    "ingest_log",
+    "pages",
+    "sources",
+  ];
   for (const t of tables) {
-    await (engine as unknown as { db: { exec(sql: string): Promise<unknown> } }).db.exec(`DELETE FROM ${t}`);
+    await (engine as unknown as { db: { exec(sql: string): Promise<unknown> } }).db.exec(
+      `DELETE FROM ${t}`
+    );
   }
   // Recreate the default source (the schema seed but truncated above).
   await engine.executeRaw(
-    `INSERT INTO sources (id, name) VALUES ('default', 'Default') ON CONFLICT DO NOTHING`,
+    `INSERT INTO sources (id, name) VALUES ('default', 'Default') ON CONFLICT DO NOTHING`
   );
 });
 
@@ -84,63 +96,63 @@ async function tryRunExport(args: string[]): Promise<void> {
     await runExport(engine, args);
   } catch (e) {
     // Swallow only the test-exit sentinel; rethrow others for visibility.
-    if (!(e instanceof Error && e.message.startsWith('__test_exit__:'))) {
+    if (!(e instanceof Error && e.message.startsWith("__test_exit__:"))) {
       throw e;
     }
   }
 }
 
-describe('export --restore-only resolution chain (D5)', () => {
-  test('hard-errors when --restore-only has no --repo and no default source path', async () => {
+describe("export --restore-only resolution chain (D5)", () => {
+  test("hard-errors when --restore-only has no --repo and no default source path", async () => {
     // sources.default has no local_path (the seeded shape).
-    await tryRunExport(['--dir', outDir, '--restore-only']);
+    await tryRunExport(["--dir", outDir, "--restore-only"]);
     expect(exitCode).toBe(1);
-    expect(stderr.join('\n')).toMatch(/requires --repo|configured default source/);
+    expect(stderr.join("\n")).toMatch(/requires --repo|configured default source/);
   });
 
-  test('uses explicit --repo when provided', async () => {
+  test("uses explicit --repo when provided", async () => {
     // Make a brain repo with gbrain.yml that has empty db_only — so we
     // exit through the "0 pages to restore" path without needing real data.
     writeFileSync(
-      join(tmp, 'gbrain.yml'),
+      join(tmp, "gbrain.yml"),
       `storage:
   db_tracked: []
   db_only: []
-`,
+`
     );
-    await tryRunExport(['--dir', outDir, '--restore-only', '--repo', tmp]);
+    await tryRunExport(["--dir", outDir, "--restore-only", "--repo", tmp]);
     expect(exitCode).toBeNull(); // no exit
-    expect(stdout.some((line) => line.includes('Restoring 0'))).toBe(true);
+    expect(stdout.some((line) => line.includes("Restoring 0"))).toBe(true);
   });
 
-  test('falls back to sources default local_path when --repo absent', async () => {
+  test("falls back to sources default local_path when --repo absent", async () => {
     // Configure default source path, write a real gbrain.yml so the storage
     // config check passes — without gbrain.yml the Codex-P0 guard correctly
     // refuses --restore-only (no storage config to scope to).
     await engine.executeRaw(`UPDATE sources SET local_path = $1 WHERE id = 'default'`, [tmp]);
     writeFileSync(
-      join(tmp, 'gbrain.yml'),
-      `storage:\n  db_tracked: []\n  db_only:\n    - media/x/\n`,
+      join(tmp, "gbrain.yml"),
+      `storage:\n  db_tracked: []\n  db_only:\n    - media/x/\n`
     );
-    await tryRunExport(['--dir', outDir, '--restore-only']);
+    await tryRunExport(["--dir", outDir, "--restore-only"]);
     expect(exitCode).toBeNull(); // resolution succeeded
   });
 
-  test('refuses --restore-only when no storage config is present (Codex P0)', async () => {
+  test("refuses --restore-only when no storage config is present (Codex P0)", async () => {
     // Default source has a path but no gbrain.yml. Without a storage config,
     // --restore-only would silently fall through to a full export — exactly
     // the silent-footgun D5 was supposed to prevent.
     await engine.executeRaw(`UPDATE sources SET local_path = $1 WHERE id = 'default'`, [tmp]);
-    await tryRunExport(['--dir', outDir, '--restore-only']);
+    await tryRunExport(["--dir", outDir, "--restore-only"]);
     expect(exitCode).toBe(1);
-    expect(stderr.join('\n')).toMatch(/storage tiering config|gbrain\.yml/);
+    expect(stderr.join("\n")).toMatch(/storage tiering config|gbrain\.yml/);
   });
 
-  test('non-restore export does NOT require --repo (D26)', async () => {
+  test("non-restore export does NOT require --repo (D26)", async () => {
     // Regular export works without --repo since it dumps everything from DB.
     // Pages table is empty → exports 0 pages, no error.
-    await tryRunExport(['--dir', outDir]);
+    await tryRunExport(["--dir", outDir]);
     expect(exitCode).toBeNull();
-    expect(stdout.some((line) => line.includes('Exporting 0'))).toBe(true);
+    expect(stdout.some((line) => line.includes("Exporting 0"))).toBe(true);
   });
 });

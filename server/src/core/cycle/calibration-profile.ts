@@ -25,20 +25,27 @@
  * profiles per source for the same holder.
  */
 
-import { BaseCyclePhase, type ScopedReadOpts, type BasePhaseOpts } from './base-phase.ts';
-import { chat as gatewayChat } from '../ai/gateway.ts';
-import { gateVoice, type VoiceGateGenerator, type VoiceGateJudge } from '../calibration/voice-gate.ts';
-import { patternStatementTemplate, type PatternStatementSlots } from '../calibration/templates.ts';
+import { BaseCyclePhase, type ScopedReadOpts, type BasePhaseOpts } from "./base-phase.ts";
+import { chat as gatewayChat } from "../ai/gateway.ts";
+import {
+  gateVoice,
+  type VoiceGateGenerator,
+  type VoiceGateJudge,
+} from "../calibration/voice-gate.ts";
+import { patternStatementTemplate, type PatternStatementSlots } from "../calibration/templates.ts";
 // v0.41 T10 — domain widening. The aggregator module resolves the active
 // pack's calibration_domains declarations into per-domain Brier+accuracy+
 // extras scorecards stored in calibration_profiles.domain_scorecards JSONB.
-import { aggregateDomainScorecards, type DomainScorecards } from '../calibration/domain-aggregators.ts';
-import { GBrainError } from '../types.ts';
-import type { OperationContext } from '../operations.ts';
-import type { BrainEngine, TakesScorecard } from '../engine.ts';
-import type { PhaseStatus, CyclePhase } from '../cycle.ts';
+import {
+  aggregateDomainScorecards,
+  type DomainScorecards,
+} from "../calibration/domain-aggregators.ts";
+import { GBrainError } from "../types.ts";
+import type { OperationContext } from "../operations.ts";
+import type { BrainEngine, TakesScorecard } from "../engine.ts";
+import type { PhaseStatus, CyclePhase } from "../cycle.ts";
 
-export const CALIBRATION_PROFILE_PROMPT_VERSION = 'v0.36.1.0-stub';
+export const CALIBRATION_PROFILE_PROMPT_VERSION = "v0.36.1.0-stub";
 
 const PATTERN_STATEMENTS_PROMPT = `[v0.36.1.0-stub] You are summarizing a forecaster's track record so they
 can see their patterns. Below is a JSON snapshot of how they performed —
@@ -131,14 +138,14 @@ export async function defaultPatternsGenerator(input: {
   modelHint?: string;
 }): Promise<string[]> {
   const prompt = PATTERN_STATEMENTS_PROMPT.replace(
-    '{SCORECARD_JSON}',
-    JSON.stringify({ holder: input.holder, ...input.scorecard }, null, 2),
+    "{SCORECARD_JSON}",
+    JSON.stringify({ holder: input.holder, ...input.scorecard }, null, 2)
   );
   const feedbackSuffix = input.feedback
     ? `\n\nPrior attempt was rejected for: ${input.feedback}. Try again, more conversational.`
-    : '';
+    : "";
   const result = await gatewayChat({
-    messages: [{ role: 'user', content: prompt + feedbackSuffix }],
+    messages: [{ role: "user", content: prompt + feedbackSuffix }],
     ...(input.modelHint ? { model: input.modelHint } : {}),
     maxTokens: 500,
   });
@@ -149,11 +156,11 @@ export async function defaultPatternsGenerator(input: {
 export async function defaultBiasTagsGenerator(patterns: string[]): Promise<string[]> {
   if (patterns.length === 0) return [];
   const prompt = BIAS_TAGS_PROMPT.replace(
-    '{PATTERNS_BULLETS}',
-    patterns.map(p => `- ${p}`).join('\n'),
+    "{PATTERNS_BULLETS}",
+    patterns.map((p) => `- ${p}`).join("\n")
   );
   const result = await gatewayChat({
-    messages: [{ role: 'user', content: prompt }],
+    messages: [{ role: "user", content: prompt }],
     maxTokens: 200,
   });
   return parseBiasTagsOutput(result.text);
@@ -163,11 +170,11 @@ export async function defaultBiasTagsGenerator(patterns: string[]): Promise<stri
 export function parsePatternStatementsOutput(raw: string): string[] {
   if (!raw || raw.trim().length === 0) return [];
   const lines = raw
-    .split('\n')
-    .map(l => l.trim())
+    .split("\n")
+    .map((l) => l.trim())
     // Strip leading numbering/bullets the LLM may emit despite the prompt.
-    .map(l => l.replace(/^[-*•]\s+|^\d+[.)]\s+/, ''))
-    .filter(l => l.length > 0 && l.length <= 200);
+    .map((l) => l.replace(/^[-*•]\s+|^\d+[.)]\s+/, ""))
+    .filter((l) => l.length > 0 && l.length <= 200);
   return lines.slice(0, 4);
 }
 
@@ -176,8 +183,8 @@ export function parseBiasTagsOutput(raw: string): string[] {
   if (!raw || raw.trim().length === 0) return [];
   let text = raw.trim();
   const fenced = text.match(/^```(?:json)?\s*\n?([\s\S]*?)\n?```$/);
-  if (fenced) text = (fenced[1] ?? '').trim();
-  const firstArr = text.indexOf('[');
+  if (fenced) text = (fenced[1] ?? "").trim();
+  const firstArr = text.indexOf("[");
   if (firstArr === -1) return [];
   let parsed: unknown;
   try {
@@ -187,20 +194,21 @@ export function parseBiasTagsOutput(raw: string): string[] {
   }
   if (!Array.isArray(parsed)) return [];
   return parsed
-    .filter((t): t is string => typeof t === 'string')
-    .map(t => t.trim().toLowerCase())
-    .filter(t => /^[a-z]+(?:-[a-z0-9]+)*$/.test(t))
+    .filter((t): t is string => typeof t === "string")
+    .map((t) => t.trim().toLowerCase())
+    .filter((t) => /^[a-z]+(?:-[a-z0-9]+)*$/.test(t))
     .slice(0, 4);
 }
 
 /** Pick the "loudest" pattern slot for the template fallback. */
 function pickFallbackSlots(scorecard: TakesScorecard): PatternStatementSlots {
   if (!scorecard || scorecard.resolved === 0) {
-    return { domain: 'overall', nRight: 0, nWrong: 0 };
+    return { domain: "overall", nRight: 0, nWrong: 0 };
   }
-  const direction = scorecard.brier !== null && scorecard.brier > 0.25 ? 'over-confident' : 'mostly right';
+  const direction =
+    scorecard.brier !== null && scorecard.brier > 0.25 ? "over-confident" : "mostly right";
   return {
-    domain: 'overall',
+    domain: "overall",
     nRight: scorecard.correct,
     nWrong: scorecard.incorrect,
     direction,
@@ -208,27 +216,27 @@ function pickFallbackSlots(scorecard: TakesScorecard): PatternStatementSlots {
 }
 
 class CalibrationProfilePhase extends BaseCyclePhase {
-  readonly name = 'calibration_profile' as CyclePhase;
-  protected readonly budgetUsdKey = 'cycle.calibration_profile.budget_usd';
+  readonly name = "calibration_profile" as CyclePhase;
+  protected readonly budgetUsdKey = "cycle.calibration_profile.budget_usd";
   protected readonly budgetUsdDefault = 0.5;
 
   protected override mapErrorCode(err: unknown): string {
     if (err instanceof GBrainError) return err.problem;
     if (err instanceof Error) {
-      if (err.message.includes('voice_gate')) return 'CALIBRATION_VOICE_GATE_EXHAUSTED';
+      if (err.message.includes("voice_gate")) return "CALIBRATION_VOICE_GATE_EXHAUSTED";
     }
-    return 'CALIBRATION_PROFILE_UNKNOWN';
+    return "CALIBRATION_PROFILE_UNKNOWN";
   }
 
   protected async process(
     engine: BrainEngine,
     scope: ScopedReadOpts,
     _ctx: OperationContext,
-    opts: CalibrationProfileOpts,
+    opts: CalibrationProfileOpts
   ): Promise<{ summary: string; details: Record<string, unknown>; status?: PhaseStatus }> {
-    const holder = opts.holder ?? 'garry';
+    const holder = opts.holder ?? "garry";
     const promptVersion = opts.promptVersion ?? CALIBRATION_PROFILE_PROMPT_VERSION;
-    const modelId = opts.model ?? 'claude-sonnet-4-6';
+    const modelId = opts.model ?? "claude-sonnet-4-6";
     const gradeCompletion = opts.gradeCompletion ?? 1.0;
     const patternsGenerator = opts.patternsGenerator ?? defaultPatternsGenerator;
     const biasTagsGenerator = opts.biasTagsGenerator ?? defaultBiasTagsGenerator;
@@ -253,8 +261,8 @@ class CalibrationProfilePhase extends BaseCyclePhase {
     if (scorecard.resolved < 5) {
       return {
         summary: `calibration_profile: holder=${holder} has only ${scorecard.resolved} resolved takes (need >=5 for a profile)`,
-        details: { ...result, skipped: 'insufficient_data' },
-        status: 'ok',
+        details: { ...result, skipped: "insufficient_data" },
+        status: "ok",
       };
     }
 
@@ -266,7 +274,7 @@ class CalibrationProfilePhase extends BaseCyclePhase {
         attempt,
         ...(feedback !== undefined ? { feedback } : {}),
       });
-      return lines.join('\n');
+      return lines.join("\n");
     };
 
     // Budget gate before invoking the LLM-driven gate.
@@ -276,16 +284,18 @@ class CalibrationProfilePhase extends BaseCyclePhase {
       maxOutputTokens: 500,
     });
     if (!budget.allowed) {
-      result.warnings.push(`budget exhausted before profile generation (cap $${budget.budgetUsd.toFixed(2)})`);
+      result.warnings.push(
+        `budget exhausted before profile generation (cap $${budget.budgetUsd.toFixed(2)})`
+      );
       return {
         summary: `calibration_profile: skipped — budget exhausted`,
         details: { ...result, budget_exhausted: true },
-        status: 'warn',
+        status: "warn",
       };
     }
 
     const gateInput: Parameters<typeof gateVoice<PatternStatementSlots>>[0] = {
-      mode: 'pattern_statement',
+      mode: "pattern_statement",
       generate,
       templateFallback: {
         fn: patternStatementTemplate,
@@ -301,19 +311,21 @@ class CalibrationProfilePhase extends BaseCyclePhase {
     // Split the final text into lines (the LLM emits multiple patterns on
     // separate lines; the template fallback is a single line).
     result.pattern_statements = gated.text
-      .split('\n')
-      .map(l => l.trim())
-      .filter(l => l.length > 0);
+      .split("\n")
+      .map((l) => l.trim())
+      .filter((l) => l.length > 0);
 
     // Bias tags from the patterns. Best-effort; failure is non-fatal.
     try {
       result.active_bias_tags = await biasTagsGenerator(result.pattern_statements);
     } catch (err) {
-      result.warnings.push(`bias_tags_generator failed: ${err instanceof Error ? err.message : String(err)}`);
+      result.warnings.push(
+        `bias_tags_generator failed: ${err instanceof Error ? err.message : String(err)}`
+      );
     }
 
     // Write the profile row.
-    const sourceId = scope.sourceId ?? 'default';
+    const sourceId = scope.sourceId ?? "default";
 
     // v0.41 T10 — domain_scorecards widening (replaces v0.36.1.0 `{}`
     // placeholder). Resolve the active pack's calibration_domains
@@ -324,18 +336,13 @@ class CalibrationProfilePhase extends BaseCyclePhase {
     // JSONB stays {} (byte-identical to v0.36.1.0 — R1 IRON RULE).
     let domainScorecards: DomainScorecards = {};
     try {
-      const { loadActivePack } = await import('../schema-pack/load-active.ts');
-      const { loadConfig } = await import('../config.ts');
+      const { loadActivePack } = await import("../schema-pack/load-active.ts");
+      const { loadConfig } = await import("../config.ts");
       const cfg = loadConfig();
       const resolved = await loadActivePack({ cfg, remote: false });
       const domains = resolved.manifest.calibration_domains ?? [];
       if (domains.length > 0) {
-        domainScorecards = await aggregateDomainScorecards(
-          engine,
-          holder,
-          domains,
-          sourceId,
-        );
+        domainScorecards = await aggregateDomainScorecards(engine, holder, domains, sourceId);
       }
     } catch (err) {
       // Pack resolution failed (e.g. registry not initialized, manifest
@@ -343,7 +350,7 @@ class CalibrationProfilePhase extends BaseCyclePhase {
       // empty {} scorecard. Matches the v0.36.1.0 baseline behavior so
       // R1 byte-identical regression survives the widening.
       result.warnings.push(
-        `domain_scorecards_aggregation_failed: ${err instanceof Error ? err.message : String(err)}`,
+        `domain_scorecards_aggregation_failed: ${err instanceof Error ? err.message : String(err)}`
       );
     }
 
@@ -376,7 +383,7 @@ class CalibrationProfilePhase extends BaseCyclePhase {
         result.voice_gate_attempts,
         result.active_bias_tags,
         modelId,
-      ],
+      ]
     );
     result.profile_written = true;
 
@@ -384,16 +391,16 @@ class CalibrationProfilePhase extends BaseCyclePhase {
       summary:
         `calibration_profile: holder=${holder} brier=${(scorecard.brier ?? 0).toFixed(2)} ` +
         `(${scorecard.resolved} resolved, ${result.pattern_statements.length} patterns, ` +
-        `${result.active_bias_tags.length} bias tags, gate ${gated.passed ? 'passed' : 'fell back to template'})`,
+        `${result.active_bias_tags.length} bias tags, gate ${gated.passed ? "passed" : "fell back to template"})`,
       details: { ...result },
-      status: 'ok',
+      status: "ok",
     };
   }
 }
 
 export async function runPhaseCalibrationProfile(
   ctx: OperationContext,
-  opts: CalibrationProfileOpts = {},
+  opts: CalibrationProfileOpts = {}
 ) {
   return new CalibrationProfilePhase().run(ctx, opts);
 }

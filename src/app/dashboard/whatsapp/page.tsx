@@ -111,7 +111,9 @@ export default function WhatsAppDashboardPage() {
       ] as const;
       const [statusRes, batch] = await Promise.all([
         api.whatsapp.status().catch(() => null),
-        api.brain.batchListPages([...BATCH_TYPES], 200).catch(() => ({} as Record<string, BrainPage[]>)),
+        api.brain
+          .batchListPages([...BATCH_TYPES], 200)
+          .catch(() => ({}) as Record<string, BrainPage[]>),
       ]);
       setStatus(statusRes);
       const eventPages = batch["conversation_event"] ?? [];
@@ -504,7 +506,9 @@ export default function WhatsAppDashboardPage() {
             </div>
             <div className="grid grid-cols-1 gap-2 md:grid-cols-[1.2fr_1fr_160px_auto]">
               <div className="space-y-1.5">
-                <Label htmlFor="whatsapp-phone" className="text-xs">Telefon</Label>
+                <Label htmlFor="whatsapp-phone" className="text-xs">
+                  Telefon
+                </Label>
                 <Input
                   id="whatsapp-phone"
                   value={phone}
@@ -513,7 +517,9 @@ export default function WhatsAppDashboardPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="whatsapp-name" className="text-xs">Name</Label>
+                <Label htmlFor="whatsapp-name" className="text-xs">
+                  Name
+                </Label>
                 <Input
                   id="whatsapp-name"
                   value={identityName}
@@ -522,7 +528,9 @@ export default function WhatsAppDashboardPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="whatsapp-role" className="text-xs">Rolle</Label>
+                <Label htmlFor="whatsapp-role" className="text-xs">
+                  Rolle
+                </Label>
                 <Select
                   value={identityRole}
                   onValueChange={(v) => setIdentityRole(v as typeof identityRole)}
@@ -539,7 +547,10 @@ export default function WhatsAppDashboardPage() {
                 </Select>
               </div>
               <div className="flex items-end">
-                <Button onClick={() => void addIdentity()} disabled={savingIdentity || !phone.trim()}>
+                <Button
+                  onClick={() => void addIdentity()}
+                  disabled={savingIdentity || !phone.trim()}
+                >
                   {savingIdentity ? (
                     <Loader2 size={14} className="animate-spin" />
                   ) : (

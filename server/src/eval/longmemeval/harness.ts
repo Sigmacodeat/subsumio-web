@@ -10,7 +10,7 @@
  * (a new takes/oauth/dream table) doesn't silently leak across questions.
  */
 
-import { PGLiteEngine } from '../../core/pglite-engine.ts';
+import { PGLiteEngine } from "../../core/pglite-engine.ts";
 
 interface PgTablesRow {
   tablename: string;
@@ -24,12 +24,12 @@ interface PgTablesRow {
  */
 const PRESERVE_TABLES: ReadonlySet<string> = new Set([
   // FK target for pages.source_id; seeded as 'default' by pglite-schema.ts.
-  'sources',
+  "sources",
   // Key-value config; empty in a benchmark run, but config is infrastructure.
-  'config',
+  "config",
   // Coordination locks; not content.
-  'gbrain_cycle_locks',
-  'subagent_rate_leases',
+  "gbrain_cycle_locks",
+  "subagent_rate_leases",
 ]);
 
 export async function createBenchmarkBrain(): Promise<PGLiteEngine> {
@@ -41,20 +41,18 @@ export async function createBenchmarkBrain(): Promise<PGLiteEngine> {
 
 export async function resetTables(engine: PGLiteEngine): Promise<void> {
   const rows = await engine.executeRaw<PgTablesRow>(
-    `SELECT tablename FROM pg_tables WHERE schemaname = 'public'`,
+    `SELECT tablename FROM pg_tables WHERE schemaname = 'public'`
   );
-  const targets = rows.map(r => r.tablename).filter(t => !PRESERVE_TABLES.has(t));
+  const targets = rows.map((r) => r.tablename).filter((t) => !PRESERVE_TABLES.has(t));
   if (targets.length === 0) return;
   // Quote each tablename as an identifier so reserved words and mixed-case
   // names work. RESTART IDENTITY resets serial sequences; CASCADE handles
   // FK dependencies so we don't have to topologically sort.
-  const list = targets.map(t => `"${t.replace(/"/g, '""')}"`).join(', ');
+  const list = targets.map((t) => `"${t.replace(/"/g, '""')}"`).join(", ");
   await engine.executeRaw(`TRUNCATE ${list} RESTART IDENTITY CASCADE`);
 }
 
-export async function withBenchmarkBrain<T>(
-  fn: (engine: PGLiteEngine) => Promise<T>,
-): Promise<T> {
+export async function withBenchmarkBrain<T>(fn: (engine: PGLiteEngine) => Promise<T>): Promise<T> {
   const engine = await createBenchmarkBrain();
   try {
     return await fn(engine);

@@ -27,7 +27,7 @@ mutating: true
 > "second opinion" gate (one model reviews work product before commit). This
 > skill's Phase 3 below uses `gbrain eval cross-modal` instead — three
 > different-provider frontier models score-and-iterate on a documented
-> dimension list *before* tests cement behavior. Use `/cross-modal-review`
+> dimension list _before_ tests cement behavior. Use `/cross-modal-review`
 > for ad-hoc second opinions; use Phase 3 here when skillifying a feature.
 
 ## Contract
@@ -56,6 +56,7 @@ user knows where the gate stands.
 ## Phase 0: Should This Be a Skill?
 
 Before skillifying, check:
+
 - Will this be invoked 2+ times? (One-off work ≠ skill)
 - Is there >20 lines of logic? (Trivial helpers don't need full infrastructure)
 - Does it have a clear trigger phrase a user would actually say?
@@ -87,7 +88,7 @@ tools:
   - exec
   - read
   - write
-mutating: false  # true if it writes to brain/disk
+mutating: false # true if it writes to brain/disk
 ---
 ```
 
@@ -130,11 +131,11 @@ edits writes a new receipt).
 **Default models** (override per slot via `--slot-a-model`, `--slot-b-model`,
 `--slot-c-model`):
 
-| Slot | Default | Provider |
-|------|---------|----------|
-| A | `openai:gpt-4o` | OpenAI |
-| B | `anthropic:claude-opus-4-7` | Anthropic |
-| C | `google:gemini-1.5-pro` | Google |
+| Slot | Default                     | Provider  |
+| ---- | --------------------------- | --------- |
+| A    | `openai:gpt-4o`             | OpenAI    |
+| B    | `anthropic:claude-opus-4-7` | Anthropic |
+| C    | `google:gemini-1.5-pro`     | Google    |
 
 **These MUST be frontier models from DIFFERENT providers.** Using a single
 provider's family or budget models defeats the purpose — different families
@@ -289,7 +290,7 @@ Skillify produces three durable artifacts per skill:
    surfaces the status (`found` / `stale` / `missing`) as informational.
 3. **An audit verdict** from `gbrain skillify check`: `properly skilled` |
    `close — create: <missing items>` | `needs skillify — run /skillify on
-   <target>`. Score is `<passed>/<total>`. Required items gate the verdict;
+<target>`. Score is `<passed>/<total>`. Required items gate the verdict;
    item 11 (cross-modal eval) is informational and never blocks PASS.
 
 JSON output (`gbrain skillify check --json`) includes the same fields plus

@@ -17,7 +17,7 @@
  * to fix.
  */
 
-import type { SearchResult } from '../types.ts';
+import type { SearchResult } from "../types.ts";
 
 const COSINE_DEDUP_THRESHOLD = 0.85;
 const MAX_TYPE_RATIO = 0.6;
@@ -30,7 +30,7 @@ const MAX_PER_PAGE = 2;
  * pglite/postgres engine search paths).
  */
 function pageKey(r: SearchResult): string {
-  const source = r.source_id ?? 'default';
+  const source = r.source_id ?? "default";
   return `${source}:${r.slug}`;
 }
 
@@ -40,7 +40,7 @@ export function dedupResults(
     cosineThreshold?: number;
     maxTypeRatio?: number;
     maxPerPage?: number;
-  },
+  }
 ): SearchResult[] {
   const threshold = opts?.cosineThreshold ?? COSINE_DEDUP_THRESHOLD;
   const maxRatio = opts?.maxTypeRatio ?? MAX_TYPE_RATIO;
@@ -105,7 +105,7 @@ function dedupByTextSimilarity(results: SearchResult[], threshold: number): Sear
 
     for (const k of kept) {
       const kWords = new Set(k.chunk_text.toLowerCase().split(/\s+/));
-      const intersection = new Set([...rWords].filter(w => kWords.has(w)));
+      const intersection = new Set([...rWords].filter((w) => kWords.has(w)));
       const union = new Set([...rWords, ...kWords]);
       const jaccard = intersection.size / union.size;
 
@@ -178,7 +178,7 @@ function guaranteeCompiledTruth(results: SearchResult[], preDedup: SearchResult[
   const output = [...results];
 
   for (const [key, pageChunks] of byPage) {
-    const hasCompiledTruth = pageChunks.some(c => c.chunk_source === 'compiled_truth');
+    const hasCompiledTruth = pageChunks.some((c) => c.chunk_source === "compiled_truth");
     if (hasCompiledTruth) continue;
 
     // Find the best compiled_truth chunk from pre-dedup input for this
@@ -186,7 +186,7 @@ function guaranteeCompiledTruth(results: SearchResult[], preDedup: SearchResult[
     // "r.slug === slug"; now it's the composite key so two same-slug
     // pages in different sources don't mistakenly swap chunks across.
     const candidate = preDedup
-      .filter(r => pageKey(r) === key && r.chunk_source === 'compiled_truth')
+      .filter((r) => pageKey(r) === key && r.chunk_source === "compiled_truth")
       .sort((a, b) => b.score - a.score)[0];
 
     if (!candidate) continue;

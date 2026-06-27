@@ -16,14 +16,14 @@
  * run invoke `gbrain skillopt <name> --epochs N` directly.
  */
 
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import type { BrainEngine } from '../engine.ts';
-import { autoDetectSkillsDirReadOnly } from '../repo-root.ts';
-import { resolveModel } from '../model-config.ts';
-import { runSkillOpt } from './orchestrator.ts';
-import { parseSplit } from './benchmark.ts';
-import type { SkillOptOpts } from './types.ts';
+import * as fs from "node:fs";
+import * as path from "node:path";
+import type { BrainEngine } from "../engine.ts";
+import { autoDetectSkillsDirReadOnly } from "../repo-root.ts";
+import { resolveModel } from "../model-config.ts";
+import { runSkillOpt } from "./orchestrator.ts";
+import { parseSplit } from "./benchmark.ts";
+import type { SkillOptOpts } from "./types.ts";
 
 export interface SkilloptPhaseOpts {
   engine: BrainEngine;
@@ -32,8 +32,8 @@ export interface SkilloptPhaseOpts {
 }
 
 export interface SkilloptPhaseResult {
-  phase: 'skillopt';
-  status: 'ok' | 'skipped' | 'warn' | 'fail';
+  phase: "skillopt";
+  status: "ok" | "skipped" | "warn" | "fail";
   duration_ms: number;
   summary: string;
   details: Record<string, unknown>;
@@ -46,9 +46,9 @@ interface SkillCandidate {
 }
 
 /** Default per-skill cost cap for the phase. */
-const DEFAULT_PER_SKILL_CAP_USD = 0.50;
+const DEFAULT_PER_SKILL_CAP_USD = 0.5;
 /** Default brain-wide cost cap for one cycle. */
-const DEFAULT_BRAIN_WIDE_CAP_USD = 2.00;
+const DEFAULT_BRAIN_WIDE_CAP_USD = 2.0;
 /** Default stale threshold (skip skills that ran within this window). */
 const DEFAULT_STALE_DAYS = 7;
 
@@ -59,34 +59,48 @@ export async function runPhaseSkillopt(opts: SkilloptPhaseOpts): Promise<Skillop
   // Read the feature flag. Default OFF.
   let enabled = false;
   try {
-    const v = await engine.getConfig('cycle.skillopt.enabled');
-    enabled = v === 'true';
-  } catch { /* default OFF */ }
+    const v = await engine.getConfig("cycle.skillopt.enabled");
+    enabled = v === "true";
+  } catch {
+    /* default OFF */
+  }
   if (!enabled) {
     return {
-      phase: 'skillopt',
-      status: 'skipped',
+      phase: "skillopt",
+      status: "skipped",
       duration_ms: Date.now() - start,
-      summary: 'feature flag off (gbrain config set cycle.skillopt.enabled true to enable)',
-      details: { reason: 'feature_flag_off' },
+      summary: "feature flag off (gbrain config set cycle.skillopt.enabled true to enable)",
+      details: { reason: "feature_flag_off" },
     };
   }
 
   // Per-skill + brain-wide cost caps.
-  const perSkillCap = await readNumericConfig(engine, 'cycle.skillopt.per_skill_cap_usd', DEFAULT_PER_SKILL_CAP_USD);
-  const brainWideCap = await readNumericConfig(engine, 'cycle.skillopt.brain_wide_cap_usd', DEFAULT_BRAIN_WIDE_CAP_USD);
-  const staleDays = await readNumericConfig(engine, 'cycle.skillopt.stale_days', DEFAULT_STALE_DAYS);
+  const perSkillCap = await readNumericConfig(
+    engine,
+    "cycle.skillopt.per_skill_cap_usd",
+    DEFAULT_PER_SKILL_CAP_USD
+  );
+  const brainWideCap = await readNumericConfig(
+    engine,
+    "cycle.skillopt.brain_wide_cap_usd",
+    DEFAULT_BRAIN_WIDE_CAP_USD
+  );
+  const staleDays = await readNumericConfig(
+    engine,
+    "cycle.skillopt.stale_days",
+    DEFAULT_STALE_DAYS
+  );
 
   // Locate skills dir.
   const detected = autoDetectSkillsDirReadOnly(process.cwd());
   const skillsDir = detected.dir;
   if (!skillsDir) {
     return {
-      phase: 'skillopt',
-      status: 'skipped',
+      phase: "skillopt",
+      status: "skipped",
       duration_ms: Date.now() - start,
-      summary: 'no skills directory found',
-      details: { reason: 'no_skills_dir' },
+      summary: "no skills directory found",
+      details: { reason: "no_skills_dir" },
     };
   }
 
@@ -94,18 +108,27 @@ export async function runPhaseSkillopt(opts: SkilloptPhaseOpts): Promise<Skillop
   const candidates = await collectCandidates(engine, skillsDir, staleDays);
   if (candidates.length === 0) {
     return {
-      phase: 'skillopt',
-      status: 'ok',
+      phase: "skillopt",
+      status: "ok",
       duration_ms: Date.now() - start,
-      summary: 'no stale skills with benchmarks; nothing to optimize',
+      summary: "no stale skills with benchmarks; nothing to optimize",
       details: { skills_scanned: 0, candidates: 0, brain_wide_cap_usd: brainWideCap },
     };
   }
 
   // Resolve models once. Tiers default to deep/subagent/reasoning.
-  const optimizerModel = await resolveModel(engine, { tier: 'deep', fallback: 'anthropic:claude-opus-4-7' });
-  const targetModel = await resolveModel(engine, { tier: 'subagent', fallback: 'anthropic:claude-sonnet-4-6' });
-  const judgeModel = await resolveModel(engine, { tier: 'reasoning', fallback: 'anthropic:claude-sonnet-4-6' });
+  const optimizerModel = await resolveModel(engine, {
+    tier: "deep",
+    fallback: "anthropic:claude-opus-4-7",
+  });
+  const targetModel = await resolveModel(engine, {
+    tier: "subagent",
+    fallback: "anthropic:claude-sonnet-4-6",
+  });
+  const judgeModel = await resolveModel(engine, {
+    tier: "reasoning",
+    fallback: "anthropic:claude-sonnet-4-6",
+  });
 
   // Run per-skill. Each invocation gets its own per-skill cap; we track
   // cumulative cost across the cycle and bail when brain-wide cap hit.
@@ -117,7 +140,12 @@ export async function runPhaseSkillopt(opts: SkilloptPhaseOpts): Promise<Skillop
     if (opts.signal?.aborted) break;
     if (cumulativeCostUsd >= brainWideCap) {
       skipped_brain_wide_cap += 1;
-      results.push({ skill: c.name, outcome: 'skipped', cost_usd: 0, reason: 'brain_wide_cap_reached' });
+      results.push({
+        skill: c.name,
+        outcome: "skipped",
+        cost_usd: 0,
+        reason: "brain_wide_cap_reached",
+      });
       continue;
     }
     // Cap the per-skill spend at min(per_skill_cap, remaining_brain_wide).
@@ -125,7 +153,7 @@ export async function runPhaseSkillopt(opts: SkilloptPhaseOpts): Promise<Skillop
     const effectiveCap = Math.min(perSkillCap, remaining);
 
     try {
-      const split = parseSplit('4:1:5');
+      const split = parseSplit("4:1:5");
       const skillOptOpts: SkillOptOpts = {
         engine,
         skillName: c.name,
@@ -134,12 +162,12 @@ export async function runPhaseSkillopt(opts: SkilloptPhaseOpts): Promise<Skillop
         epochs: 1, // incremental nightly: ONE epoch per cycle
         batchSize: 4, // smaller batch for the nightly path
         lr: 4,
-        lrSchedule: 'cosine',
+        lrSchedule: "cosine",
         split,
         optimizerModel,
         targetModel,
         judgeModel,
-        mode: 'patch',
+        mode: "patch",
         dryRun: opts.dryRun ?? false,
         // Bundled-skill safety: dream-cycle NEVER auto-mutates bundled skills.
         // For bundled skills we set --no-mutate; the user reviews proposed.md
@@ -164,17 +192,17 @@ export async function runPhaseSkillopt(opts: SkilloptPhaseOpts): Promise<Skillop
       await engine.setConfig(`cycle.skillopt.last_run.${c.name}`, String(Date.now()));
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      results.push({ skill: c.name, outcome: 'errored', cost_usd: 0, reason: msg });
+      results.push({ skill: c.name, outcome: "errored", cost_usd: 0, reason: msg });
     }
   }
 
-  const accepted = results.filter((r) => r.outcome === 'accepted').length;
-  const noImprovement = results.filter((r) => r.outcome === 'no_improvement').length;
-  const errored = results.filter((r) => r.outcome === 'errored').length;
+  const accepted = results.filter((r) => r.outcome === "accepted").length;
+  const noImprovement = results.filter((r) => r.outcome === "no_improvement").length;
+  const errored = results.filter((r) => r.outcome === "errored").length;
 
   return {
-    phase: 'skillopt',
-    status: errored > 0 ? 'warn' : 'ok',
+    phase: "skillopt",
+    status: errored > 0 ? "warn" : "ok",
     duration_ms: Date.now() - start,
     summary: `optimized ${accepted}/${candidates.length} skills (${noImprovement} no-improvement, ${errored} errored, ${skipped_brain_wide_cap} skipped over brain-wide cap)`,
     details: {
@@ -198,7 +226,7 @@ export async function runPhaseSkillopt(opts: SkilloptPhaseOpts): Promise<Skillop
 async function collectCandidates(
   engine: BrainEngine,
   skillsDir: string,
-  staleDays: number,
+  staleDays: number
 ): Promise<SkillCandidate[]> {
   const out: SkillCandidate[] = [];
   if (!fs.existsSync(skillsDir)) return out;
@@ -206,14 +234,16 @@ async function collectCandidates(
   for (const entry of fs.readdirSync(skillsDir)) {
     const skillDir = path.join(skillsDir, entry);
     if (!fs.statSync(skillDir).isDirectory()) continue;
-    const benchPath = path.join(skillDir, 'skillopt-benchmark.jsonl');
+    const benchPath = path.join(skillDir, "skillopt-benchmark.jsonl");
     if (!fs.existsSync(benchPath)) continue;
     // Read last_run_at.
     let lastRunAt: number | null = null;
     try {
       const v = await engine.getConfig(`cycle.skillopt.last_run.${entry}`);
       if (v) lastRunAt = Number(v);
-    } catch { /* fall through */ }
+    } catch {
+      /* fall through */
+    }
     if (lastRunAt !== null && lastRunAt >= cutoffMs) {
       continue; // ran recently; skip
     }
@@ -222,13 +252,19 @@ async function collectCandidates(
   return out;
 }
 
-async function readNumericConfig(engine: BrainEngine, key: string, defaultValue: number): Promise<number> {
+async function readNumericConfig(
+  engine: BrainEngine,
+  key: string,
+  defaultValue: number
+): Promise<number> {
   try {
     const v = await engine.getConfig(key);
     if (v) {
       const n = Number(v);
       if (Number.isFinite(n) && n > 0) return n;
     }
-  } catch { /* fall through */ }
+  } catch {
+    /* fall through */
+  }
   return defaultValue;
 }

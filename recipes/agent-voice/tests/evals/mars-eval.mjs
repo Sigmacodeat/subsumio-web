@@ -12,20 +12,22 @@
  *   node mars-eval.mjs --baseline            # writes to baseline-runs/
  */
 
-import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { MARS } from '../../code/lib/personas/mars.mjs';
-import { runFixtureSet, loadFixturesJsonl, parseEvalCliArgs } from './judge.mjs';
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { MARS } from "../../code/lib/personas/mars.mjs";
+import { runFixtureSet, loadFixturesJsonl, parseEvalCliArgs } from "./judge.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const args = parseEvalCliArgs(process.argv.slice(2));
-const outDir = resolve(__dirname, args.baseline ? 'baseline-runs' : 'baseline-runs/dev');
+const outDir = resolve(__dirname, args.baseline ? "baseline-runs" : "baseline-runs/dev");
 
-const soloFixtures = loadFixturesJsonl(resolve(__dirname, 'fixtures/mars-solo.jsonl'));
-const demoFixtures = loadFixturesJsonl(resolve(__dirname, 'fixtures/mars-demo.jsonl'));
+const soloFixtures = loadFixturesJsonl(resolve(__dirname, "fixtures/mars-solo.jsonl"));
+const demoFixtures = loadFixturesJsonl(resolve(__dirname, "fixtures/mars-demo.jsonl"));
 
-console.error(`[mars-eval] running ${soloFixtures.length} solo + ${demoFixtures.length} demo fixtures (limit=${args.limit || 'none'})`);
+console.error(
+  `[mars-eval] running ${soloFixtures.length} solo + ${demoFixtures.length} demo fixtures (limit=${args.limit || "none"})`
+);
 
 const soloRun = await runFixtureSet({
   fixtures: soloFixtures,
@@ -33,7 +35,7 @@ const soloRun = await runFixtureSet({
   personaModel: args.model,
   outDir,
   limit: args.limit,
-  label: 'mars-solo',
+  label: "mars-solo",
 });
 
 const demoRun = await runFixtureSet({
@@ -42,13 +44,14 @@ const demoRun = await runFixtureSet({
   personaModel: args.model,
   outDir,
   limit: args.limit,
-  label: 'mars-demo',
+  label: "mars-demo",
 });
 
 const overall = {
   solo: soloRun.summary,
   demo: demoRun.summary,
-  overall_pass: soloRun.summary.overall_verdict === 'pass' && demoRun.summary.overall_verdict === 'pass',
+  overall_pass:
+    soloRun.summary.overall_verdict === "pass" && demoRun.summary.overall_verdict === "pass",
 };
 console.log(JSON.stringify(overall, null, 2));
 process.exit(overall.overall_pass ? 0 : 1);

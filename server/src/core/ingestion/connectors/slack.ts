@@ -14,14 +14,14 @@
  * Rate limit: Tier 1 — 1 req/sec per method, burst 1.
  */
 
-import { BaseConnector, type ConnectorConfig, type ConnectorItem } from './base.ts';
-import type { IngestionEvent, IngestionSourceContext } from '../types.ts';
+import { BaseConnector, type ConnectorConfig, type ConnectorItem } from "./base.ts";
+import type { IngestionEvent, IngestionSourceContext } from "../types.ts";
 
-const SLACK_API_BASE = 'https://slack.com/api';
+const SLACK_API_BASE = "https://slack.com/api";
 
 export class SlackConnector extends BaseConnector {
   constructor(config: ConnectorConfig = {}) {
-    super('slack', config);
+    super("slack", config);
   }
 
   getApiRateLimit() {
@@ -34,7 +34,7 @@ export class SlackConnector extends BaseConnector {
 
   async fetchDelta(cursor?: string): Promise<{ items: ConnectorItem[]; nextCursor?: string }> {
     const token = this.getAccessToken();
-    if (!token) throw new Error('Slack bot token not configured');
+    if (!token) throw new Error("Slack bot token not configured");
 
     const channels = await this._listChannels(token);
     const channelFilter = (this._config.filters?.channels as string[]) ?? [];
@@ -55,7 +55,7 @@ export class SlackConnector extends BaseConnector {
           title: `${channel.name}: ${msg.text.slice(0, 80)}`,
           modified_at: new Date(parseFloat(msg.ts) * 1000).toISOString(),
           content: msg.text,
-          content_type: 'text/plain',
+          content_type: "text/plain",
           url: `https://app.slack.com/client/${channel.id}/thread/${msg.ts}`,
           metadata: {
             channel: channel.name,
@@ -84,7 +84,7 @@ export class SlackConnector extends BaseConnector {
       source_kind: this.kind,
       source_uri: item.url ?? `slack://${item.id}`,
       received_at: new Date().toISOString(),
-      content_type: 'text/plain',
+      content_type: "text/plain",
       content: item.content,
       content_hash: this.hashContent(item.content),
       metadata: item.metadata,
@@ -94,24 +94,35 @@ export class SlackConnector extends BaseConnector {
   // ── Internal helpers ──────────────────────────────────────────────
 
   private async _listChannels(token: string): Promise<Array<{ id: string; name: string }>> {
-    const res = await fetch(`${SLACK_API_BASE}/conversations.list?types=public_channel,private_channel`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const data = await res.json() as { ok: boolean; channels?: Array<{ id: string; name: string }>; error?: string };
+    const res = await fetch(
+      `${SLACK_API_BASE}/conversations.list?types=public_channel,private_channel`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+    const data = (await res.json()) as {
+      ok: boolean;
+      channels?: Array<{ id: string; name: string }>;
+      error?: string;
+    };
     if (!data.ok) throw new Error(`Slack conversations.list failed: ${data.error}`);
     return data.channels ?? [];
   }
 
-  private async _fetchMessages(token: string, channelId: string, oldest: number): Promise<Array<{ ts: string; text: string; user?: string }>> {
+  private async _fetchMessages(
+    token: string,
+    channelId: string,
+    oldest: number
+  ): Promise<Array<{ ts: string; text: string; user?: string }>> {
     const url = new URL(`${SLACK_API_BASE}/conversations.history`);
-    url.searchParams.set('channel', channelId);
-    url.searchParams.set('oldest', String(oldest));
-    url.searchParams.set('limit', '100');
+    url.searchParams.set("channel", channelId);
+    url.searchParams.set("oldest", String(oldest));
+    url.searchParams.set("limit", "100");
 
     const res = await fetch(url.toString(), {
       headers: { Authorization: `Bearer ${token}` },
     });
-    const data = await res.json() as {
+    const data = (await res.json()) as {
       ok: boolean;
       messages?: Array<{ ts: string; text: string; user?: string; subtype?: string }>;
       error?: string;

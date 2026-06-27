@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { actionTypeForWhatsAppIntent, buildWhatsAppApproval, writeWhatsAppApproval } from "./approvals";
+import {
+  actionTypeForWhatsAppIntent,
+  buildWhatsAppApproval,
+  writeWhatsAppApproval,
+} from "./approvals";
 import { classifyWhatsAppRisk } from "./risk";
 import type { WhatsAppIdentity } from "@/lib/whatsapp/types";
 
@@ -85,11 +89,15 @@ describe("whatsapp approvals", () => {
       to: "+491701234567",
       related_intake_slug: "legal/intake/2026-06-20/client",
     });
-    expect((approval.frontmatter.payload as { message?: string }).message).toContain("Kanzlei aufgenommen");
+    expect((approval.frontmatter.payload as { message?: string }).message).toContain(
+      "Kanzlei aufgenommen"
+    );
   });
 
   it("writes approval as an agent_action page", async () => {
-    const fetchImpl = vi.fn(async () => new Response(JSON.stringify({ ok: true }), { status: 200 }));
+    const fetchImpl = vi.fn(
+      async () => new Response(JSON.stringify({ ok: true }), { status: 200 })
+    );
     const risk = classifyWhatsAppRisk({
       text: "Rechnung akt 2026-014: 2500 eur",
       messageType: "text",
@@ -102,7 +110,11 @@ describe("whatsapp approvals", () => {
       risk,
     });
 
-    const record = await writeWhatsAppApproval("brain-1", approval, fetchImpl as unknown as typeof fetch);
+    const record = await writeWhatsAppApproval(
+      "brain-1",
+      approval,
+      fetchImpl as unknown as typeof fetch
+    );
 
     expect(record.actionType).toBe("invoice_create");
     const [, init] = fetchImpl.mock.calls[0];

@@ -24,7 +24,7 @@ export const VERSION_RE = /^\d+\.\d+(?:\.\d+){0,2}$/;
 
 /** True iff `v` (optionally `v`-prefixed) is a plain numeric dotted version. */
 export function isValidVersionString(v: string): boolean {
-  return VERSION_RE.test(v.replace(/^v/, ''));
+  return VERSION_RE.test(v.replace(/^v/, ""));
 }
 
 /**
@@ -33,8 +33,8 @@ export function isValidVersionString(v: string): boolean {
  * segment is accepted by the shape gate but truncated here.
  */
 export function parseSemver(v: string): SemverTuple | null {
-  const clean = v.replace(/^v/, '');
-  const parts = clean.split('.');
+  const clean = v.replace(/^v/, "");
+  const parts = clean.split(".");
   if (parts.length < 3) return null;
   const nums = parts.slice(0, 3).map(Number);
   if (nums.some((n) => !Number.isFinite(n))) return null;

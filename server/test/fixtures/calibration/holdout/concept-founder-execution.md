@@ -10,6 +10,7 @@ tags: [concept, calibration-fixture, holdout]
 # Founder Execution
 
 ## Summary
+
 Patterns in how high-performing founders ship versus how struggling ones
 stall. Synthetic anonymized holdout page — NOT seen during prompt tuning.
 

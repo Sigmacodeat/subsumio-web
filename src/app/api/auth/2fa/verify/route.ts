@@ -27,7 +27,7 @@ export const POST = createHandler(
     if (!rl.ok) {
       return Response.json(
         { error: "rate_limited", message: "Zu viele Versuche. Bitte später versuchen." },
-        { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } },
+        { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } }
       );
     }
 
@@ -41,7 +41,10 @@ export const POST = createHandler(
     if (!pendingSecret) return Response.json({ error: "setup_required" }, { status: 400 });
 
     if (pendingExpires && new Date(pendingExpires) < new Date()) {
-      await store.update(ctx.user.id, { pendingTwoFactorSecret: null, pendingTwoFactorExpiresAt: null });
+      await store.update(ctx.user.id, {
+        pendingTwoFactorSecret: null,
+        pendingTwoFactorExpiresAt: null,
+      });
       return Response.json({ error: "setup_expired" }, { status: 410 });
     }
 
@@ -60,5 +63,5 @@ export const POST = createHandler(
     });
 
     return Response.json({ ok: true, enabled: true, backupCodes });
-  },
+  }
 );

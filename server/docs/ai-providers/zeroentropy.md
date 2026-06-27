@@ -109,20 +109,21 @@ gbrain models doctor --json | jq '.probes[] | select(.touchpoint=="reranker_conf
 ```
 
 Two probes run for reranker:
+
 - `reranker_config` (zero-network) — validates the model resolves
   through the recipe registry and is in the touchpoint's allowlist.
 - A reachability probe sends a minimal `{query: "probe", documents:
-  ["probe"]}` rerank to verify auth + URL.
+["probe"]}` rerank to verify auth + URL.
 
 ## Knobs reference
 
-| Config key | Default | Notes |
-|---|---|---|
-| `search.reranker.enabled` | `true` for tokenmax, `false` for others | One-flip opt-in/out |
-| `search.reranker.model` | `zeroentropyai:zerank-2` | Try `zerank-1` (older SOTA) or `zerank-1-small` (Apache-2.0 open) |
-| `search.reranker.top_n_in` | `30` | Candidates sent to reranker (caps API spend) |
-| `search.reranker.top_n_out` | `null` (no truncate) | Truncate reranked output to this many; `null` preserves full length |
-| `search.reranker.timeout_ms` | `5000` | HTTP timeout; long stalls degrade UX worse than RRF fallback |
+| Config key                   | Default                                 | Notes                                                               |
+| ---------------------------- | --------------------------------------- | ------------------------------------------------------------------- |
+| `search.reranker.enabled`    | `true` for tokenmax, `false` for others | One-flip opt-in/out                                                 |
+| `search.reranker.model`      | `zeroentropyai:zerank-2`                | Try `zerank-1` (older SOTA) or `zerank-1-small` (Apache-2.0 open)   |
+| `search.reranker.top_n_in`   | `30`                                    | Candidates sent to reranker (caps API spend)                        |
+| `search.reranker.top_n_out`  | `null` (no truncate)                    | Truncate reranked output to this many; `null` preserves full length |
+| `search.reranker.timeout_ms` | `5000`                                  | HTTP timeout; long stalls degrade UX worse than RRF fallback        |
 
 ## Failure observability
 
@@ -132,6 +133,7 @@ order unchanged. Failures log to
 `~/.gbrain/audit/rerank-failures-YYYY-Www.jsonl` (ISO-week rotation).
 
 `gbrain doctor` reads the audit and surfaces:
+
 - **auth failures** — any single one warns (config-time problem doctor's
   own probe should have caught)
 - **payload-too-large** — any single one warns (workload-mismatch signal)
@@ -164,10 +166,10 @@ Both clear naturally; no operator action required.
 
 ## Troubleshooting
 
-| Symptom | Likely cause | Fix |
-|---|---|---|
-| `embedding_config` probe says invalid dim | Defaulting to 1536 (OpenAI default) | Set `embedding_dimensions` to one of 2560/1280/640/320/160/80/40 |
-| `reranker_config` probe says model not in allowlist | Typo in `search.reranker.model` | Use one of `zerank-2` / `zerank-1` / `zerank-1-small` |
-| `reranker_health` doctor warns about auth | `ZEROENTROPY_API_KEY` not set or invalid | Re-export the env var; `gbrain models doctor` to verify |
-| `reranker_health` doctor warns about transient failures | Upstream flake or rate limit | Reranker fails open to RRF; check ZE status page if persistent |
-| Cache hit rate dipped after upgrade | Expected during rolling deploy | Clears within `cache.ttl_seconds` (default 3600s) |
+| Symptom                                                 | Likely cause                             | Fix                                                              |
+| ------------------------------------------------------- | ---------------------------------------- | ---------------------------------------------------------------- |
+| `embedding_config` probe says invalid dim               | Defaulting to 1536 (OpenAI default)      | Set `embedding_dimensions` to one of 2560/1280/640/320/160/80/40 |
+| `reranker_config` probe says model not in allowlist     | Typo in `search.reranker.model`          | Use one of `zerank-2` / `zerank-1` / `zerank-1-small`            |
+| `reranker_health` doctor warns about auth               | `ZEROENTROPY_API_KEY` not set or invalid | Re-export the env var; `gbrain models doctor` to verify          |
+| `reranker_health` doctor warns about transient failures | Upstream flake or rate limit             | Reranker fails open to RRF; check ZE status page if persistent   |
+| Cache hit rate dipped after upgrade                     | Expected during rolling deploy           | Clears within `cache.ttl_seconds` (default 3600s)                |

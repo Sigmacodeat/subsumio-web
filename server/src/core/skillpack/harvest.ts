@@ -31,13 +31,13 @@ import {
   rmSync,
   statSync,
   writeFileSync,
-} from 'fs';
-import { homedir } from 'os';
-import { dirname, join, relative } from 'path';
+} from "fs";
+import { homedir } from "os";
+import { dirname, join, relative } from "path";
 
-import { copyArtifacts, walkSourceDir } from './copy.ts';
-import { loadSkillSources } from './bundle.ts';
-import { runPrivacyLint, PrivacyLintError } from './harvest-lint.ts';
+import { copyArtifacts, walkSourceDir } from "./copy.ts";
+import { loadSkillSources } from "./bundle.ts";
+import { runPrivacyLint, PrivacyLintError } from "./harvest-lint.ts";
 
 export interface HarvestOptions {
   /** Slug of the skill to harvest (e.g. "my-fork-skill"). */
@@ -56,7 +56,7 @@ export interface HarvestOptions {
   overwriteLocal?: boolean;
 }
 
-export type HarvestStatus = 'harvested' | 'host_skill_missing' | 'slug_collision' | 'lint_failed';
+export type HarvestStatus = "harvested" | "host_skill_missing" | "slug_collision" | "lint_failed";
 
 export interface HarvestResult {
   status: HarvestStatus;
@@ -77,41 +77,37 @@ export class HarvestError extends Error {
   constructor(
     message: string,
     public code:
-      | 'host_skill_missing'
-      | 'host_skill_malformed'
-      | 'slug_collision'
-      | 'path_traversal'
-      | 'symlink_rejected',
+      | "host_skill_missing"
+      | "host_skill_malformed"
+      | "slug_collision"
+      | "path_traversal"
+      | "symlink_rejected"
   ) {
     super(message);
-    this.name = 'HarvestError';
+    this.name = "HarvestError";
   }
 }
 
-const PLUGIN_JSON = 'openclaw.plugin.json';
-const DEFAULT_PRIVATE_PATTERNS_PATH = join(
-  homedir(),
-  '.gbrain',
-  'harvest-private-patterns.txt',
-);
+const PLUGIN_JSON = "openclaw.plugin.json";
+const DEFAULT_PRIVATE_PATTERNS_PATH = join(homedir(), ".gbrain", "harvest-private-patterns.txt");
 
 export function runHarvest(opts: HarvestOptions): HarvestResult {
   const dryRun = opts.dryRun ?? false;
-  const hostSkillDir = join(opts.hostRepoRoot, 'skills', opts.slug);
-  const hostSkillMd = join(hostSkillDir, 'SKILL.md');
+  const hostSkillDir = join(opts.hostRepoRoot, "skills", opts.slug);
+  const hostSkillMd = join(hostSkillDir, "SKILL.md");
 
   if (!existsSync(hostSkillMd)) {
     throw new HarvestError(
       `Host skill not found: ${hostSkillMd}. Pass --from <host-repo-root> pointing at a repo whose skills/<slug>/ exists.`,
-      'host_skill_missing',
+      "host_skill_missing"
     );
   }
 
-  const gbrainSkillDir = join(opts.gbrainRoot, 'skills', opts.slug);
+  const gbrainSkillDir = join(opts.gbrainRoot, "skills", opts.slug);
   if (existsSync(gbrainSkillDir) && !opts.overwriteLocal) {
     throw new HarvestError(
       `Slug collision: gbrain already has skills/${opts.slug}/. Pass --overwrite-local to replace.`,
-      'slug_collision',
+      "slug_collision"
     );
   }
 
@@ -138,8 +134,8 @@ export function runHarvest(opts: HarvestOptions): HarvestResult {
   // the HOST skill dir (every source must canonicalize inside it). For
   // paired sources outside the skill dir, fall through to symlink-only
   // protection (the host repo is user-trusted at this granularity).
-  const skillItems = items.filter(i => i.source.startsWith(hostSkillDir));
-  const pairedItems = items.filter(i => !i.source.startsWith(hostSkillDir));
+  const skillItems = items.filter((i) => i.source.startsWith(hostSkillDir));
+  const pairedItems = items.filter((i) => !i.source.startsWith(hostSkillDir));
 
   let filesCopied: string[] = [];
   try {
@@ -158,14 +154,14 @@ export function runHarvest(opts: HarvestOptions): HarvestResult {
       });
       copyArtifacts(pairedItems, { rejectSymlinks: true, dryRun: true });
     }
-    filesCopied = items.map(i => i.target);
+    filesCopied = items.map((i) => i.target);
   } catch (err) {
     const e = err as Error & { code?: string };
-    if (e.code === 'symlink_rejected') {
-      throw new HarvestError(e.message, 'symlink_rejected');
+    if (e.code === "symlink_rejected") {
+      throw new HarvestError(e.message, "symlink_rejected");
     }
-    if (e.code === 'path_traversal') {
-      throw new HarvestError(e.message, 'path_traversal');
+    if (e.code === "path_traversal") {
+      throw new HarvestError(e.message, "path_traversal");
     }
     throw err;
   }
@@ -175,16 +171,16 @@ export function runHarvest(opts: HarvestOptions): HarvestResult {
   const lintHits: string[] = [];
   if (!opts.noLint && !dryRun) {
     try {
-      runPrivacyLint(
-        filesCopied,
-        opts.privatePatternsPath ?? DEFAULT_PRIVATE_PATTERNS_PATH,
-      );
+      runPrivacyLint(filesCopied, opts.privatePatternsPath ?? DEFAULT_PRIVATE_PATTERNS_PATH);
     } catch (err) {
       if (err instanceof PrivacyLintError) {
         // Rollback: remove every file we just wrote.
-        rollbackHarvest(gbrainSkillDir, pairedItems.map(i => i.target));
+        rollbackHarvest(
+          gbrainSkillDir,
+          pairedItems.map((i) => i.target)
+        );
         return {
-          status: 'lint_failed',
+          status: "lint_failed",
           slug: opts.slug,
           hostSkillDir,
           filesCopied: [],
@@ -205,7 +201,7 @@ export function runHarvest(opts: HarvestOptions): HarvestResult {
   }
 
   return {
-    status: 'harvested',
+    status: "harvested",
     slug: opts.slug,
     hostSkillDir,
     filesCopied,
@@ -252,7 +248,7 @@ function rollbackHarvest(gbrainSkillDir: string, pairedTargets: string[]): void 
 export function addToBundleManifest(gbrainRoot: string, slug: string): boolean {
   const manifestPath = join(gbrainRoot, PLUGIN_JSON);
   if (!existsSync(manifestPath)) return false;
-  const raw = readFileSync(manifestPath, 'utf-8');
+  const raw = readFileSync(manifestPath, "utf-8");
   let manifest;
   try {
     manifest = JSON.parse(raw);
@@ -264,6 +260,6 @@ export function addToBundleManifest(gbrainRoot: string, slug: string): boolean {
   if (manifest.skills.includes(skillRel)) return false;
   manifest.skills.push(skillRel);
   manifest.skills.sort();
-  writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n');
+  writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + "\n");
   return true;
 }

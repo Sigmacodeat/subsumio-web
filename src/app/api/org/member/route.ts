@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 import { getStore, getOrgStore } from "@/lib/auth/store";
 import { createHandler, apiError } from "@/lib/api-handler";
@@ -28,7 +27,11 @@ export const DELETE = createHandler(
     }
 
     if (body.userId === ctx.user.id) {
-      return apiError("owner_cannot_remove_self", "Eigentümer kann sich nicht selbst entfernen", 400);
+      return apiError(
+        "owner_cannot_remove_self",
+        "Eigentümer kann sich nicht selbst entfernen",
+        400
+      );
     }
 
     const store = getStore();
@@ -39,5 +42,5 @@ export const DELETE = createHandler(
 
     await store.update(target.id, { orgId: null });
     return Response.json({ ok: true });
-  },
+  }
 );

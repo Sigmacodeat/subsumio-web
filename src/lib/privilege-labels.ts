@@ -14,10 +14,10 @@ import type { PermissionInfo } from "@/lib/legal-types";
 // ── Privilege Types ───────────────────────────────────────────────────
 
 export type PrivilegeLevel =
-  | "attorney_client"    // Mandantenkommunikation, § 203 StGB
-  | "work_product"       // Anwaltliches Arbeitsergebnis
-  | "joint_defense"      // Joint Defense / Common Interest
-  | "none";              // Kein Privilege
+  | "attorney_client" // Mandantenkommunikation, § 203 StGB
+  | "work_product" // Anwaltliches Arbeitsergebnis
+  | "joint_defense" // Joint Defense / Common Interest
+  | "none"; // Kein Privilege
 
 export const PRIVILEGE_LABELS: Record<PrivilegeLevel, { label: string; description: string }> = {
   attorney_client: {
@@ -41,12 +41,15 @@ export const PRIVILEGE_LABELS: Record<PrivilegeLevel, { label: string; descripti
 // ── Confidentiality Types ─────────────────────────────────────────────
 
 export type ConfidentialityLevel =
-  | "public"       // Öffentlich zugänglich
-  | "internal"     // Internes Team
+  | "public" // Öffentlich zugänglich
+  | "internal" // Internes Team
   | "confidential" // Nur berechtigte Personen
-  | "restricted";  // Streng vertraulich (Ethical Wall)
+  | "restricted"; // Streng vertraulich (Ethical Wall)
 
-export const CONFIDENTIALITY_LABELS: Record<ConfidentialityLevel, { label: string; description: string }> = {
+export const CONFIDENTIALITY_LABELS: Record<
+  ConfidentialityLevel,
+  { label: string; description: string }
+> = {
   public: {
     label: "Öffentlich",
     description: "Für die Öffentlichkeit bestimmt",
@@ -106,7 +109,7 @@ export interface ExportPrivilegeLabel extends PrivilegeLabel {
  */
 export function propagateMatterToDocument(
   matterLabel: MatterPrivilegeLabel,
-  documentOverride?: Partial<PrivilegeLabel>,
+  documentOverride?: Partial<PrivilegeLabel>
 ): DocumentPrivilegeLabel {
   const privilege = documentOverride?.privilege
     ? maxPrivilege(documentOverride.privilege, matterLabel.privilege)
@@ -135,7 +138,7 @@ export function propagateToAiPrompt(
   matterLabels: MatterPrivilegeLabel[],
   includesMatterData: boolean,
   promptId: string,
-  actor: string,
+  actor: string
 ): AiPromptPrivilegeLabel {
   if (matterLabels.length === 0) {
     return {
@@ -150,11 +153,11 @@ export function propagateToAiPrompt(
 
   const privilege = matterLabels.reduce(
     (max, l) => maxPrivilege(max, l.privilege),
-    "none" as PrivilegeLevel,
+    "none" as PrivilegeLevel
   );
   const confidentiality = matterLabels.reduce(
     (max, l) => maxConfidentiality(max, l.confidentiality),
-    "internal" as ConfidentialityLevel,
+    "internal" as ConfidentialityLevel
   );
 
   return {
@@ -177,7 +180,7 @@ export function propagateToExport(
   matterLabels: MatterPrivilegeLabel[],
   exportId: string,
   format: ExportPrivilegeLabel["format"],
-  recipient?: string,
+  recipient?: string
 ): ExportPrivilegeLabel {
   if (matterLabels.length === 0) {
     return {
@@ -194,11 +197,11 @@ export function propagateToExport(
 
   const privilege = matterLabels.reduce(
     (max, l) => maxPrivilege(max, l.privilege),
-    "none" as PrivilegeLevel,
+    "none" as PrivilegeLevel
   );
   const confidentiality = matterLabels.reduce(
     (max, l) => maxConfidentiality(max, l.confidentiality),
-    "internal" as ConfidentialityLevel,
+    "internal" as ConfidentialityLevel
   );
 
   return {
@@ -234,7 +237,10 @@ export function maxPrivilege(a: PrivilegeLevel, b: PrivilegeLevel): PrivilegeLev
   return PRIVILEGE_RANK[a] >= PRIVILEGE_RANK[b] ? a : b;
 }
 
-export function maxConfidentiality(a: ConfidentialityLevel, b: ConfidentialityLevel): ConfidentialityLevel {
+export function maxConfidentiality(
+  a: ConfidentialityLevel,
+  b: ConfidentialityLevel
+): ConfidentialityLevel {
   return CONFIDENTIALITY_RANK[a] >= CONFIDENTIALITY_RANK[b] ? a : b;
 }
 
@@ -248,7 +254,9 @@ export function confidentialityRank(level: ConfidentialityLevel): number {
 
 // ── Permission Info → Labels ──────────────────────────────────────────
 
-export function inferConfidentialityFromPermissions(permissions: PermissionInfo | undefined): ConfidentialityLevel {
+export function inferConfidentialityFromPermissions(
+  permissions: PermissionInfo | undefined
+): ConfidentialityLevel {
   if (!permissions) return "internal";
   if (permissions.blocked_users && permissions.blocked_users.length > 0) return "restricted";
   if (permissions.visibility === "confidential") return "confidential";
@@ -257,7 +265,9 @@ export function inferConfidentialityFromPermissions(permissions: PermissionInfo 
   return "internal";
 }
 
-export function inferPrivilegeFromPermissions(permissions: PermissionInfo | undefined): PrivilegeLevel {
+export function inferPrivilegeFromPermissions(
+  permissions: PermissionInfo | undefined
+): PrivilegeLevel {
   if (!permissions) return "none";
   return permissions.privileged ? "attorney_client" : "none";
 }
@@ -272,7 +282,7 @@ export interface RedactionResult {
 
 export function shouldRedactForExport(
   label: ExportPrivilegeLabel,
-  recipientRole: "client" | "opponent" | "court" | "internal" | "external",
+  recipientRole: "client" | "opponent" | "court" | "internal" | "external"
 ): RedactionResult {
   const fieldsRedacted: string[] = [];
 
@@ -285,7 +295,10 @@ export function shouldRedactForExport(
     };
   }
 
-  if (label.privilege === "work_product" && (recipientRole === "opponent" || recipientRole === "court")) {
+  if (
+    label.privilege === "work_product" &&
+    (recipientRole === "opponent" || recipientRole === "court")
+  ) {
     fieldsRedacted.push("work_product_notes");
     return {
       redacted: true,
@@ -303,7 +316,10 @@ export function shouldRedactForExport(
     };
   }
 
-  if (label.confidentiality === "confidential" && (recipientRole === "opponent" || recipientRole === "external")) {
+  if (
+    label.confidentiality === "confidential" &&
+    (recipientRole === "opponent" || recipientRole === "external")
+  ) {
     fieldsRedacted.push("confidential_sections");
     return {
       redacted: true,
@@ -317,22 +333,30 @@ export function shouldRedactForExport(
 
 // ── Validation ────────────────────────────────────────────────────────
 
-export function validatePrivilegeLabel(label: PrivilegeLabel): { valid: boolean; errors: string[] } {
+export function validatePrivilegeLabel(label: PrivilegeLabel): {
+  valid: boolean;
+  errors: string[];
+} {
   const errors: string[] = [];
 
   if (!label.labeled_at) errors.push("labeled_at is required");
   if (!label.labeled_by) errors.push("labeled_by is required");
   if (!PRIVILEGE_LABELS[label.privilege]) errors.push(`invalid privilege: ${label.privilege}`);
-  if (!CONFIDENTIALITY_LABELS[label.confidentiality]) errors.push(`invalid confidentiality: ${label.confidentiality}`);
+  if (!CONFIDENTIALITY_LABELS[label.confidentiality])
+    errors.push(`invalid confidentiality: ${label.confidentiality}`);
 
   return { valid: errors.length === 0, errors };
 }
 
 export function canShareWith(
   label: PrivilegeLabel,
-  recipientRole: "client" | "opponent" | "court" | "internal" | "external",
+  recipientRole: "client" | "opponent" | "court" | "internal" | "external"
 ): { allowed: boolean; reason: string } {
-  if (label.privilege === "attorney_client" && recipientRole !== "client" && recipientRole !== "internal") {
+  if (
+    label.privilege === "attorney_client" &&
+    recipientRole !== "client" &&
+    recipientRole !== "internal"
+  ) {
     return { allowed: false, reason: "attorney_client privilege — only client and internal" };
   }
 
@@ -344,7 +368,10 @@ export function canShareWith(
     return { allowed: false, reason: "restricted — internal only (ethical wall)" };
   }
 
-  if (label.confidentiality === "confidential" && (recipientRole === "opponent" || recipientRole === "external")) {
+  if (
+    label.confidentiality === "confidential" &&
+    (recipientRole === "opponent" || recipientRole === "external")
+  ) {
     return { allowed: false, reason: "confidential — not for opponent/external" };
   }
 

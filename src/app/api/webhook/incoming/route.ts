@@ -76,5 +76,5 @@ export const POST = createPublicHandler(
       timestamp: new Date().toISOString(),
       message: "Webhook received and queued for processing",
     });
-  },
+  }
 );

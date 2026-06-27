@@ -33,7 +33,11 @@ export const GET = createHandler(
     const cookieState = req.cookies.get(DOCUSIGN_OAUTH_STATE_COOKIE)?.value ?? "";
     const queryState = query.state ?? "";
     if (!cookieState || !queryState || !timingSafeCompare(queryState, cookieState)) {
-      return apiError("state_mismatch", "OAuth state mismatch. Please restart the connection.", 403);
+      return apiError(
+        "state_mismatch",
+        "OAuth state mismatch. Please restart the connection.",
+        403
+      );
     }
 
     const ik = env("DOCUSIGN_INTEGRATION_KEY");

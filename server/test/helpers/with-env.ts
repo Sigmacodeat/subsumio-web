@@ -43,7 +43,7 @@
  */
 export async function withEnv<T>(
   overrides: Record<string, string | undefined>,
-  fn: () => T | Promise<T>,
+  fn: () => T | Promise<T>
 ): Promise<T> {
   const keys = Object.keys(overrides);
   const prior: Record<string, string | undefined> = {};

@@ -22,9 +22,9 @@
  *   gbrain mounts add --mcp-url         — HTTP MCP transport + OAuth (PR 2)
  */
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync, chmodSync, renameSync } from 'fs';
-import { join, resolve } from 'path';
-import { homedir } from 'os';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, chmodSync, renameSync } from "fs";
+import { join, resolve } from "path";
+import { homedir } from "os";
 import {
   loadMounts,
   validateMountId,
@@ -32,19 +32,21 @@ import {
   DuplicateMountPathError,
   type MountEntry,
   type MountsFile,
-} from '../core/brain-registry.ts';
-import { findRepoRoot } from '../core/repo-root.ts';
-import { writeMountsCache, clearMountsCache } from '../core/mounts-cache.ts';
-import { GBrainError } from '../core/types.ts';
+} from "../core/brain-registry.ts";
+import { findRepoRoot } from "../core/repo-root.ts";
+import { writeMountsCache, clearMountsCache } from "../core/mounts-cache.ts";
+import { GBrainError } from "../core/types.ts";
 
-function getMountsDir(): string { return join(homedir(), '.gbrain'); }
+function getMountsDir(): string {
+  return join(homedir(), ".gbrain");
+}
 // v0.40.3.0: GBRAIN_MOUNTS_PATH override exists for tests (libuv caches
 // homedir() at startup on some platforms; HOME mutation alone isn't
 // reliably picked up). Production callers don't set this.
 function getMountsPath(): string {
   const override = process.env.GBRAIN_MOUNTS_PATH;
   if (override) return override;
-  return join(getMountsDir(), 'mounts.json');
+  return join(getMountsDir(), "mounts.json");
 }
 
 /**
@@ -69,8 +71,12 @@ function readMountsFile(path: string = getMountsPath()): MountsFile {
 function writeMountsFile(file: MountsFile, path: string = getMountsPath()): void {
   mkdirSync(getMountsDir(), { recursive: true });
   const tmpPath = `${path}.tmp.${process.pid}.${Math.random().toString(36).slice(2, 10)}`;
-  writeFileSync(tmpPath, JSON.stringify(file, null, 2) + '\n', { mode: 0o600 });
-  try { chmodSync(tmpPath, 0o600); } catch { /* platform dep */ }
+  writeFileSync(tmpPath, JSON.stringify(file, null, 2) + "\n", { mode: 0o600 });
+  try {
+    chmodSync(tmpPath, 0o600);
+  } catch {
+    /* platform dep */
+  }
   // Atomic rename so readers never see a torn file.
   renameSync(tmpPath, path);
 }
@@ -80,7 +86,7 @@ function writeMountsFile(file: MountsFile, path: string = getMountsPath()): void
 interface AddArgs {
   id: string;
   path: string;
-  engine: 'postgres' | 'pglite';
+  engine: "postgres" | "pglite";
   database_url?: string;
   database_path?: string;
   alias?: string;
@@ -89,14 +95,14 @@ interface AddArgs {
 function parseAddArgs(args: string[]): AddArgs {
   if (args.length === 0) {
     throw new GBrainError(
-      'Missing mount id',
-      'gbrain mounts add <id> --path <path> [flags]',
-      'Provide a kebab-case id as the first argument',
+      "Missing mount id",
+      "gbrain mounts add <id> --path <path> [flags]",
+      "Provide a kebab-case id as the first argument"
     );
   }
-  const id = validateMountId(args[0], 'mount id');
+  const id = validateMountId(args[0], "mount id");
   let path: string | undefined;
-  let engine: 'postgres' | 'pglite' | undefined;
+  let engine: "postgres" | "pglite" | undefined;
   let database_url: string | undefined;
   let database_path: string | undefined;
   let alias: string | undefined;
@@ -105,45 +111,57 @@ function parseAddArgs(args: string[]): AddArgs {
     const a = args[i];
     const next = (flag: string): string => {
       const v = args[++i];
-      if (!v) throw new GBrainError(`Missing value for ${flag}`, '', `Pass a value: ${flag} <value>`);
+      if (!v)
+        throw new GBrainError(`Missing value for ${flag}`, "", `Pass a value: ${flag} <value>`);
       return v;
     };
-    if (a === '--path') path = next('--path');
-    else if (a === '--engine') {
-      const v = next('--engine');
-      if (v !== 'postgres' && v !== 'pglite') {
-        throw new GBrainError(`Invalid engine: "${v}"`, 'Must be "postgres" or "pglite"', 'Pass --engine pglite or --engine postgres');
+    if (a === "--path") path = next("--path");
+    else if (a === "--engine") {
+      const v = next("--engine");
+      if (v !== "postgres" && v !== "pglite") {
+        throw new GBrainError(
+          `Invalid engine: "${v}"`,
+          'Must be "postgres" or "pglite"',
+          "Pass --engine pglite or --engine postgres"
+        );
       }
       engine = v;
-    }
-    else if (a === '--db-url' || a === '--database-url') database_url = next(a);
-    else if (a === '--db-path' || a === '--database-path') database_path = next(a);
-    else if (a === '--alias') alias = validateMountId(next('--alias'), '--alias value');
-    else throw new GBrainError(`Unknown flag: ${a}`, '', 'See `gbrain mounts add --help`');
+    } else if (a === "--db-url" || a === "--database-url") database_url = next(a);
+    else if (a === "--db-path" || a === "--database-path") database_path = next(a);
+    else if (a === "--alias") alias = validateMountId(next("--alias"), "--alias value");
+    else throw new GBrainError(`Unknown flag: ${a}`, "", "See `gbrain mounts add --help`");
   }
 
   if (!path) {
-    throw new GBrainError('Missing --path', 'Every mount needs a local clone path (for skills + handlers)', 'Add --path /absolute/path/to/mount');
+    throw new GBrainError(
+      "Missing --path",
+      "Every mount needs a local clone path (for skills + handlers)",
+      "Add --path /absolute/path/to/mount"
+    );
   }
 
   // Engine inference: if user supplied db-url → postgres, if db-path → pglite.
   if (!engine) {
-    if (database_url) engine = 'postgres';
-    else if (database_path) engine = 'pglite';
+    if (database_url) engine = "postgres";
+    else if (database_path) engine = "pglite";
     else {
       throw new GBrainError(
-        'Missing --engine',
-        'Could not infer engine from flags',
-        'Pass --engine pglite --db-path <path> OR --engine postgres --db-url <url>',
+        "Missing --engine",
+        "Could not infer engine from flags",
+        "Pass --engine pglite --db-path <path> OR --engine postgres --db-url <url>"
       );
     }
   }
 
-  if (engine === 'postgres' && !database_url) {
-    throw new GBrainError('postgres mount requires --db-url', '', 'Pass --db-url postgresql://...');
+  if (engine === "postgres" && !database_url) {
+    throw new GBrainError("postgres mount requires --db-url", "", "Pass --db-url postgresql://...");
   }
-  if (engine === 'pglite' && !database_path && !database_url) {
-    throw new GBrainError('pglite mount requires --db-path', '', 'Pass --db-path /path/to/mount/.pglite');
+  if (engine === "pglite" && !database_path && !database_url) {
+    throw new GBrainError(
+      "pglite mount requires --db-path",
+      "",
+      "Pass --db-path /path/to/mount/.pglite"
+    );
   }
 
   return { id, path: resolve(path), engine, database_url, database_path, alias };
@@ -159,25 +177,25 @@ async function runAdd(args: string[]): Promise<void> {
   if (!existsSync(parsed.path)) {
     throw new GBrainError(
       `Mount path does not exist: ${parsed.path}`,
-      'The local clone directory must exist before registering a mount',
-      `Clone the repo first (git clone <repo> ${parsed.path}) then re-run`,
+      "The local clone directory must exist before registering a mount",
+      `Clone the repo first (git clone <repo> ${parsed.path}) then re-run`
     );
   }
 
   const file = readMountsFile();
 
   // Duplicate id check.
-  if (file.mounts.some(m => m.id === parsed.id)) {
+  if (file.mounts.some((m) => m.id === parsed.id)) {
     throw new GBrainError(
       `Mount id already exists: "${parsed.id}"`,
       `Use 'gbrain mounts list' to see registered mounts`,
-      `Remove the existing mount first: gbrain mounts remove ${parsed.id}`,
+      `Remove the existing mount first: gbrain mounts remove ${parsed.id}`
     );
   }
 
   // Duplicate path check (load-bearing — skills/handlers/attestation/git
   // sync all key off path, so two mounts at the same path silently collide).
-  const existingAtPath = file.mounts.find(m => resolve(m.path) === parsed.path);
+  const existingAtPath = file.mounts.find((m) => resolve(m.path) === parsed.path);
   if (existingAtPath) {
     throw new DuplicateMountPathError(parsed.path, existingAtPath.id, parsed.id);
   }
@@ -185,14 +203,15 @@ async function runAdd(args: string[]): Promise<void> {
   // Soft warning: same database_url/database_path under different id. A
   // team can legitimately mount the same remote brain under two aliases,
   // so this is NOT a hard block (Codex finding #9 correction).
-  const urlDupe = file.mounts.find(m =>
-    (parsed.database_url && m.database_url === parsed.database_url) ||
-    (parsed.database_path && m.database_path === parsed.database_path),
+  const urlDupe = file.mounts.find(
+    (m) =>
+      (parsed.database_url && m.database_url === parsed.database_url) ||
+      (parsed.database_path && m.database_path === parsed.database_path)
   );
   if (urlDupe) {
     process.stderr.write(
       `WARN: mount "${parsed.id}" shares database with "${urlDupe.id}". ` +
-      `This is usually a mistake but is allowed for intentional aliasing.\n`,
+        `This is usually a mistake but is allowed for intentional aliasing.\n`
     );
   }
 
@@ -210,8 +229,8 @@ async function runAdd(args: string[]): Promise<void> {
 
   process.stdout.write(
     `Mount "${parsed.id}" added → ${parsed.path}\n` +
-    `  engine: ${parsed.engine}\n` +
-    `  ${parsed.database_url ? `db_url: ${redactUrl(parsed.database_url)}` : `db_path: ${parsed.database_path}`}\n`,
+      `  engine: ${parsed.engine}\n` +
+      `  ${parsed.database_url ? `db_url: ${redactUrl(parsed.database_url)}` : `db_path: ${parsed.database_path}`}\n`
   );
 
   // Publish aggregated resolver + manifest to ~/.gbrain/mounts-cache/. This
@@ -225,34 +244,36 @@ async function runAdd(args: string[]): Promise<void> {
 // ── Subcommand: list ────────────────────────────────────────────────────
 
 function runList(args: string[]): void {
-  const jsonMode = args.includes('--json');
+  const jsonMode = args.includes("--json");
   const file = readMountsFile();
 
   if (jsonMode) {
     // Redact raw db_url in json output (mounts.json is per-user 0600, but
     // stdout can be piped into logs). database_path is fine (it's a local
     // path, not a secret).
-    const redacted = file.mounts.map(m => ({
+    const redacted = file.mounts.map((m) => ({
       ...m,
       database_url: m.database_url ? redactUrl(m.database_url) : undefined,
     }));
-    process.stdout.write(JSON.stringify({ version: file.version, mounts: redacted }, null, 2) + '\n');
+    process.stdout.write(
+      JSON.stringify({ version: file.version, mounts: redacted }, null, 2) + "\n"
+    );
     return;
   }
 
   if (file.mounts.length === 0) {
     process.stdout.write(
-      'No mounts registered.\n\n' +
-      `Add a mount with:\n` +
-      `  gbrain mounts add <id> --path <path> --engine pglite --db-path <path>\n`,
+      "No mounts registered.\n\n" +
+        `Add a mount with:\n` +
+        `  gbrain mounts add <id> --path <path> --engine pglite --db-path <path>\n`
     );
     return;
   }
 
   process.stdout.write(`MOUNTS (${file.mounts.length})\n`);
-  process.stdout.write('─'.repeat(60) + '\n');
+  process.stdout.write("─".repeat(60) + "\n");
   for (const m of file.mounts) {
-    const status = m.enabled === false ? '(disabled)' : '';
+    const status = m.enabled === false ? "(disabled)" : "";
     process.stdout.write(`  ${m.id.padEnd(20)} ${m.engine.padEnd(10)} ${status}\n`);
     process.stdout.write(`    path:    ${m.path}\n`);
     if (m.database_url) {
@@ -269,9 +290,9 @@ function runList(args: string[]): void {
 function runRemove(args: string[]): void {
   if (args.length === 0) {
     throw new GBrainError(
-      'Missing mount id',
-      'gbrain mounts remove <id>',
-      `Run 'gbrain mounts list' to see registered mounts`,
+      "Missing mount id",
+      "gbrain mounts remove <id>",
+      `Run 'gbrain mounts list' to see registered mounts`
     );
   }
   const id = args[0];
@@ -279,18 +300,18 @@ function runRemove(args: string[]): void {
     throw new GBrainError(
       `Cannot remove host brain`,
       `"host" is not a mount — it is the default brain from ~/.gbrain/config.json`,
-      `Use 'gbrain init' to reconfigure the host brain`,
+      `Use 'gbrain init' to reconfigure the host brain`
     );
   }
 
   const file = readMountsFile();
   const before = file.mounts.length;
-  file.mounts = file.mounts.filter(m => m.id !== id);
+  file.mounts = file.mounts.filter((m) => m.id !== id);
   if (file.mounts.length === before) {
     throw new GBrainError(
       `Mount "${id}" not found`,
       `No mount with id "${id}" is registered`,
-      `Run 'gbrain mounts list' to see registered mounts`,
+      `Run 'gbrain mounts list' to see registered mounts`
     );
   }
 
@@ -301,7 +322,11 @@ function runRemove(args: string[]): void {
   // rewrite with the remaining mounts so the aggregated resolver doesn't
   // reference stale entries.
   if (file.mounts.length === 0) {
-    try { clearMountsCache(); } catch { /* best effort */ }
+    try {
+      clearMountsCache();
+    } catch {
+      /* best effort */
+    }
   } else {
     refreshMountsCache();
   }
@@ -319,17 +344,15 @@ function refreshMountsCache(): void {
   const repoRoot = findRepoRoot(process.cwd());
   if (!repoRoot) {
     process.stderr.write(
-      'NOTE: mounts-cache not refreshed (not inside a gbrain repo). ' +
-      'Run `gbrain mounts add|remove` from within a repo to publish ' +
-      'the aggregated resolver for host agents.\n',
+      "NOTE: mounts-cache not refreshed (not inside a gbrain repo). " +
+        "Run `gbrain mounts add|remove` from within a repo to publish " +
+        "the aggregated resolver for host agents.\n"
     );
     return;
   }
-  const hostSkillsDir = join(repoRoot, 'skills');
+  const hostSkillsDir = join(repoRoot, "skills");
   if (!existsSync(hostSkillsDir)) {
-    process.stderr.write(
-      `NOTE: mounts-cache not refreshed (${hostSkillsDir} does not exist).\n`,
-    );
+    process.stderr.write(`NOTE: mounts-cache not refreshed (${hostSkillsDir} does not exist).\n`);
     return;
   }
   try {
@@ -347,9 +370,9 @@ function refreshMountsCache(): void {
 /** Strip password from a postgres:// url for safe display. */
 function redactUrl(url: string): string {
   try {
-    const u = new URL(url.replace(/^postgres(ql)?:\/\//, 'http://'));
-    if (u.password) u.password = '***';
-    return u.toString().replace(/^http:\/\//, 'postgres://');
+    const u = new URL(url.replace(/^postgres(ql)?:\/\//, "http://"));
+    if (u.password) u.password = "***";
+    return u.toString().replace(/^http:\/\//, "postgres://");
   } catch {
     // Opaque URL (e.g. file:// for pglite). Return as-is.
     return url;
@@ -359,7 +382,7 @@ function redactUrl(url: string): string {
 // ── Dispatcher ──────────────────────────────────────────────────────────
 
 export async function runMounts(args: string[]): Promise<void> {
-  if (args.length === 0 || args[0] === '--help' || args[0] === '-h') {
+  if (args.length === 0 || args[0] === "--help" || args[0] === "-h") {
     printHelp();
     return;
   }
@@ -367,34 +390,34 @@ export async function runMounts(args: string[]): Promise<void> {
   const rest = args.slice(1);
 
   switch (sub) {
-    case 'add':
+    case "add":
       await runAdd(rest);
       return;
-    case 'list':
-    case 'ls':
+    case "list":
+    case "ls":
       runList(rest);
       return;
-    case 'remove':
-    case 'rm':
+    case "remove":
+    case "rm":
       runRemove(rest);
       return;
-    case 'enable':
-      runSetMountFlag(rest, 'enabled', true, 'enable');
+    case "enable":
+      runSetMountFlag(rest, "enabled", true, "enable");
       return;
-    case 'disable':
-      runSetMountFlag(rest, 'enabled', false, 'disable');
+    case "disable":
+      runSetMountFlag(rest, "enabled", false, "disable");
       return;
-    case 'trust-frontmatter':
-      runSetMountFlag(rest, 'trust_frontmatter_overrides', true, 'trust-frontmatter');
+    case "trust-frontmatter":
+      runSetMountFlag(rest, "trust_frontmatter_overrides", true, "trust-frontmatter");
       return;
-    case 'untrust-frontmatter':
-      runSetMountFlag(rest, 'trust_frontmatter_overrides', false, 'untrust-frontmatter');
+    case "untrust-frontmatter":
+      runSetMountFlag(rest, "trust_frontmatter_overrides", false, "untrust-frontmatter");
       return;
     default:
       throw new GBrainError(
         `Unknown subcommand: gbrain mounts ${sub}`,
         `Supported: add, list, remove, enable, disable, trust-frontmatter, untrust-frontmatter`,
-        `Run 'gbrain mounts --help' for usage`,
+        `Run 'gbrain mounts --help' for usage`
       );
   }
 }
@@ -410,15 +433,15 @@ export async function runMounts(args: string[]): Promise<void> {
  */
 function runSetMountFlag(
   args: string[],
-  field: 'enabled' | 'trust_frontmatter_overrides',
+  field: "enabled" | "trust_frontmatter_overrides",
   value: boolean,
-  verb: string,
+  verb: string
 ): void {
   if (args.length === 0) {
     throw new GBrainError(
       `Missing mount id`,
       `gbrain mounts ${verb} <id>`,
-      `Run 'gbrain mounts list' to see registered mounts`,
+      `Run 'gbrain mounts list' to see registered mounts`
     );
   }
   const id = args[0];
@@ -426,9 +449,9 @@ function runSetMountFlag(
     throw new GBrainError(
       `Cannot ${verb} host brain`,
       `"host" is not a mount — it is the default brain from ~/.gbrain/config.json`,
-      verb === 'trust-frontmatter' || verb === 'untrust-frontmatter'
+      verb === "trust-frontmatter" || verb === "untrust-frontmatter"
         ? `Host frontmatter is always trusted; this verb applies only to mounted brains.`
-        : `Use 'gbrain init' to reconfigure the host brain`,
+        : `Use 'gbrain init' to reconfigure the host brain`
     );
   }
 
@@ -438,13 +461,13 @@ function runSetMountFlag(
     throw new GBrainError(
       `Mount "${id}" not found`,
       `No mount with id "${id}" is registered`,
-      `Run 'gbrain mounts list' to see registered mounts`,
+      `Run 'gbrain mounts list' to see registered mounts`
     );
   }
 
   // No-op check so the cache refresh + write don't churn when state matches.
   // For `enabled` field, default is true when unset — coerce for comparison.
-  const currentValue = field === 'enabled' ? (mount.enabled ?? true) : (mount[field] ?? false);
+  const currentValue = field === "enabled" ? (mount.enabled ?? true) : (mount[field] ?? false);
   if (currentValue === value) {
     process.stdout.write(`Mount "${id}" already has ${field}=${value}; no change\n`);
     return;

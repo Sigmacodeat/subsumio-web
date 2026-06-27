@@ -9,8 +9,8 @@
  *   - Idempotent re-init does not re-create the column with a different shape
  */
 
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
-import { PGLiteEngine } from '../src/core/pglite-engine.ts';
+import { describe, test, expect, beforeAll, afterAll } from "bun:test";
+import { PGLiteEngine } from "../src/core/pglite-engine.ts";
 
 let engine: PGLiteEngine;
 
@@ -24,24 +24,24 @@ afterAll(async () => {
   await engine.disconnect();
 });
 
-describe('migration v45 facts column shape', () => {
-  test('embedding column is HALFVEC (or VECTOR fallback) — not a different type', async () => {
+describe("migration v45 facts column shape", () => {
+  test("embedding column is HALFVEC (or VECTOR fallback) — not a different type", async () => {
     const rows = await engine.executeRaw<{ udt_name: string }>(
       `SELECT udt_name FROM information_schema.columns
-       WHERE table_name = 'facts' AND column_name = 'embedding'`,
+       WHERE table_name = 'facts' AND column_name = 'embedding'`
     );
     expect(rows.length).toBe(1);
     // HALFVEC on pgvector >= 0.7 (PGLite bundles this); falls back to VECTOR
     // on older Postgres. Either is acceptable.
-    expect(['halfvec', 'vector']).toContain(rows[0].udt_name);
+    expect(["halfvec", "vector"]).toContain(rows[0].udt_name);
   });
 
-  test('embedding dim matches the gateway-configured dim (not hardcoded 1536)', async () => {
+  test("embedding dim matches the gateway-configured dim (not hardcoded 1536)", async () => {
     // The migration reads config.embedding_dimensions. PGLite's schema-init
     // seeds that to __EMBEDDING_DIMS__ replaced with the gateway dim (1536
     // by default). The dim used for the column must match.
     const dimRows = await engine.executeRaw<{ value: string }>(
-      `SELECT value FROM config WHERE key = 'embedding_dimensions'`,
+      `SELECT value FROM config WHERE key = 'embedding_dimensions'`
     );
     const expectedDim = dimRows.length > 0 ? parseInt(dimRows[0].value, 10) : 1536;
 
@@ -50,7 +50,7 @@ describe('migration v45 facts column shape', () => {
     const formatRows = await engine.executeRaw<{ format_type: string }>(
       `SELECT format_type(atttypid, atttypmod) AS format_type
        FROM pg_attribute
-       WHERE attrelid = 'facts'::regclass AND attname = 'embedding'`,
+       WHERE attrelid = 'facts'::regclass AND attname = 'embedding'`
     );
     expect(formatRows.length).toBe(1);
     const formatStr = formatRows[0].format_type;
@@ -60,10 +60,10 @@ describe('migration v45 facts column shape', () => {
     expect(parseInt(m![1], 10)).toBe(expectedDim);
   });
 
-  test('HNSW index uses opclass matching the column type', async () => {
+  test("HNSW index uses opclass matching the column type", async () => {
     const rows = await engine.executeRaw<{ indexdef: string }>(
       `SELECT indexdef FROM pg_indexes
-       WHERE tablename = 'facts' AND indexname = 'idx_facts_embedding_hnsw'`,
+       WHERE tablename = 'facts' AND indexname = 'idx_facts_embedding_hnsw'`
     );
     expect(rows.length).toBe(1);
     const def = rows[0].indexdef;
@@ -72,24 +72,24 @@ describe('migration v45 facts column shape', () => {
     // And the opclass must agree with the column type.
     const colRows = await engine.executeRaw<{ udt_name: string }>(
       `SELECT udt_name FROM information_schema.columns
-       WHERE table_name = 'facts' AND column_name = 'embedding'`,
+       WHERE table_name = 'facts' AND column_name = 'embedding'`
     );
-    if (colRows[0].udt_name === 'halfvec') {
-      expect(def).toContain('halfvec_cosine_ops');
+    if (colRows[0].udt_name === "halfvec") {
+      expect(def).toContain("halfvec_cosine_ops");
     } else {
-      expect(def).toContain('vector_cosine_ops');
+      expect(def).toContain("vector_cosine_ops");
     }
   });
 
-  test('idempotent: re-running initSchema does not change the column type', async () => {
+  test("idempotent: re-running initSchema does not change the column type", async () => {
     const before = await engine.executeRaw<{ udt_name: string }>(
       `SELECT udt_name FROM information_schema.columns
-       WHERE table_name = 'facts' AND column_name = 'embedding'`,
+       WHERE table_name = 'facts' AND column_name = 'embedding'`
     );
     await engine.initSchema();
     const after = await engine.executeRaw<{ udt_name: string }>(
       `SELECT udt_name FROM information_schema.columns
-       WHERE table_name = 'facts' AND column_name = 'embedding'`,
+       WHERE table_name = 'facts' AND column_name = 'embedding'`
     );
     expect(after[0].udt_name).toBe(before[0].udt_name);
   });

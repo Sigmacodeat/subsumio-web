@@ -22,14 +22,14 @@
  * Run: DATABASE_URL=postgresql://... bun run test:e2e test/e2e/postgres-bootstrap.test.ts
  */
 
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
-import { PostgresEngine } from '../../src/core/postgres-engine.ts';
-import { LATEST_VERSION } from '../../src/core/migrate.ts';
+import { describe, test, expect, beforeAll, afterAll } from "bun:test";
+import { PostgresEngine } from "../../src/core/postgres-engine.ts";
+import { LATEST_VERSION } from "../../src/core/migrate.ts";
 
 const DATABASE_URL = process.env.DATABASE_URL;
 const skip = !DATABASE_URL;
 
-describe.skipIf(skip)('PostgresEngine forward-reference bootstrap (E2E)', () => {
+describe.skipIf(skip)("PostgresEngine forward-reference bootstrap (E2E)", () => {
   let engine: PostgresEngine;
 
   beforeAll(async () => {
@@ -41,7 +41,7 @@ describe.skipIf(skip)('PostgresEngine forward-reference bootstrap (E2E)', () => 
     await engine.disconnect();
   });
 
-  test('PostgresEngine.initSchema applies bootstrap → SCHEMA_SQL → migrations on pre-v0.18 brain', async () => {
+  test("PostgresEngine.initSchema applies bootstrap → SCHEMA_SQL → migrations on pre-v0.18 brain", async () => {
     // First call: bring the test DB to LATEST shape so we have something to mutate.
     await engine.initSchema();
 
@@ -50,7 +50,9 @@ describe.skipIf(skip)('PostgresEngine forward-reference bootstrap (E2E)', () => 
     // duplicate slugs across sources (which is valid under the composite
     // UNIQUE this test is undoing).
     const conn = (engine as any).sql;
-    await conn.unsafe(`TRUNCATE pages, content_chunks, links, tags, raw_data, timeline_entries, page_versions, ingest_log RESTART IDENTITY CASCADE`);
+    await conn.unsafe(
+      `TRUNCATE pages, content_chunks, links, tags, raw_data, timeline_entries, page_versions, ingest_log RESTART IDENTITY CASCADE`
+    );
 
     // Mutate to pre-v0.18 shape: drop source_id and the sources table.
     // The advisory lock is released between initSchema calls, so this
@@ -62,13 +64,13 @@ describe.skipIf(skip)('PostgresEngine forward-reference bootstrap (E2E)', () => 
       ALTER TABLE pages DROP COLUMN IF EXISTS source_id CASCADE;
       DROP TABLE IF EXISTS sources CASCADE;
     `);
-    await engine.setConfig('version', '20');
+    await engine.setConfig("version", "20");
 
     // The path under test: full PostgresEngine.initSchema() including the
     // bootstrap call, SCHEMA_SQL replay, and runMigrations chain.
     await engine.initSchema();
 
-    expect(await engine.getConfig('version')).toBe(String(LATEST_VERSION));
+    expect(await engine.getConfig("version")).toBe(String(LATEST_VERSION));
 
     // Verify the forward-referenced column exists after upgrade.
     const colCheck = await conn`
@@ -84,10 +86,10 @@ describe.skipIf(skip)('PostgresEngine forward-reference bootstrap (E2E)', () => 
     expect(srcCheck).toHaveLength(1);
   });
 
-  test('PostgresEngine.initSchema is idempotent on a brain already at LATEST', async () => {
+  test("PostgresEngine.initSchema is idempotent on a brain already at LATEST", async () => {
     // Fresh-LATEST brain. Calling initSchema again must not error and must
     // not regress the version.
     await engine.initSchema();
-    expect(await engine.getConfig('version')).toBe(String(LATEST_VERSION));
+    expect(await engine.getConfig("version")).toBe(String(LATEST_VERSION));
   });
 });

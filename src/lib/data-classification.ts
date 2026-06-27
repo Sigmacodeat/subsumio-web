@@ -34,7 +34,12 @@ export const SENSITIVITY_RANK: Record<DataSensitivity, number> = {
 
 // ── Entity Classes ────────────────────────────────────────────────────
 
-export type EntityClass = "brain_page" | "relational_table" | "file_object" | "event_audit" | "ai_run";
+export type EntityClass =
+  | "brain_page"
+  | "relational_table"
+  | "file_object"
+  | "event_audit"
+  | "ai_run";
 
 export const ENTITY_CLASS_LABELS: Record<EntityClass, string> = {
   brain_page: "Brain Page",
@@ -123,10 +128,29 @@ export const DATA_CLASSIFICATIONS: Record<EntityClass, DataEntityClassification>
     tenant_isolation: true,
     pii_fields: [
       { field: "content", pii_type: "custom", encrypted: false, masked_in_logs: true },
-      { field: "frontmatter.client_name", pii_type: "name", encrypted: false, masked_in_logs: true },
-      { field: "frontmatter.client_email", pii_type: "email", encrypted: false, masked_in_logs: true },
+      {
+        field: "frontmatter.client_name",
+        pii_type: "name",
+        encrypted: false,
+        masked_in_logs: true,
+      },
+      {
+        field: "frontmatter.client_email",
+        pii_type: "email",
+        encrypted: false,
+        masked_in_logs: true,
+      },
     ],
-    page_types: ["case", "contact", "note", "invoice", "playbook", "clause_library", "clause_annotation", "workflow"],
+    page_types: [
+      "case",
+      "contact",
+      "note",
+      "invoice",
+      "playbook",
+      "clause_library",
+      "clause_annotation",
+      "workflow",
+    ],
     immutable: false,
     gobd_relevant: false,
     gdpr_relevant: true,
@@ -242,10 +266,7 @@ export function getClassificationForPage(pageType: string | undefined): DataEnti
 }
 
 /** Check if a sensitivity level meets a minimum requirement */
-export function meetsSensitivity(
-  actual: DataSensitivity,
-  required: DataSensitivity,
-): boolean {
+export function meetsSensitivity(actual: DataSensitivity, required: DataSensitivity): boolean {
   return SENSITIVITY_RANK[actual] >= SENSITIVITY_RANK[required];
 }
 
@@ -281,25 +302,23 @@ export function maskPiiValue(value: string): string {
 }
 
 /** Get all entity classes with a given sensitivity */
-export function filterBySensitivity(
-  sensitivity: DataSensitivity,
-): EntityClass[] {
+export function filterBySensitivity(sensitivity: DataSensitivity): EntityClass[] {
   return (Object.keys(DATA_CLASSIFICATIONS) as EntityClass[]).filter(
-    (ec) => DATA_CLASSIFICATIONS[ec].sensitivity === sensitivity,
+    (ec) => DATA_CLASSIFICATIONS[ec].sensitivity === sensitivity
   );
 }
 
 /** Get all entity classes that are GoBD-relevant */
 export function getGobdRelevantClasses(): EntityClass[] {
   return (Object.keys(DATA_CLASSIFICATIONS) as EntityClass[]).filter(
-    (ec) => DATA_CLASSIFICATIONS[ec].gobd_relevant,
+    (ec) => DATA_CLASSIFICATIONS[ec].gobd_relevant
   );
 }
 
 /** Get all entity classes that are GDPR-relevant */
 export function getGdprRelevantClasses(): EntityClass[] {
   return (Object.keys(DATA_CLASSIFICATIONS) as EntityClass[]).filter(
-    (ec) => DATA_CLASSIFICATIONS[ec].gdpr_relevant,
+    (ec) => DATA_CLASSIFICATIONS[ec].gdpr_relevant
   );
 }
 
@@ -328,25 +347,24 @@ export function isSameBrain(a: TenantScope, b: TenantScope): boolean {
 /** Parse an ISO-8601 duration string into milliseconds */
 export function parseDurationToMs(duration: string): number | null {
   if (duration === "indefinite") return null;
-  const match = duration.match(/^P(?:(\d+)Y)?(?:(\d+)M)?(?:(\d+)W)?(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?$/);
+  const match = duration.match(
+    /^P(?:(\d+)Y)?(?:(\d+)M)?(?:(\d+)W)?(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?$/
+  );
   if (!match) return null;
   const [, years, months, weeks, days, hours, minutes, seconds] = match;
   const ms =
-    (parseInt(years || "0", 10) * 365.25 * 24 * 60 * 60 * 1000) +
-    (parseInt(months || "0", 10) * 30.44 * 24 * 60 * 60 * 1000) +
-    (parseInt(weeks || "0", 10) * 7 * 24 * 60 * 60 * 1000) +
-    (parseInt(days || "0", 10) * 24 * 60 * 60 * 1000) +
-    (parseInt(hours || "0", 10) * 60 * 60 * 1000) +
-    (parseInt(minutes || "0", 10) * 60 * 1000) +
-    (parseInt(seconds || "0", 10) * 1000);
+    parseInt(years || "0", 10) * 365.25 * 24 * 60 * 60 * 1000 +
+    parseInt(months || "0", 10) * 30.44 * 24 * 60 * 60 * 1000 +
+    parseInt(weeks || "0", 10) * 7 * 24 * 60 * 60 * 1000 +
+    parseInt(days || "0", 10) * 24 * 60 * 60 * 1000 +
+    parseInt(hours || "0", 10) * 60 * 60 * 1000 +
+    parseInt(minutes || "0", 10) * 60 * 1000 +
+    parseInt(seconds || "0", 10) * 1000;
   return ms;
 }
 
 /** Calculate when retention expires for a given created date */
-export function calculateRetentionExpiry(
-  createdAt: string,
-  entityClass: EntityClass,
-): Date | null {
+export function calculateRetentionExpiry(createdAt: string, entityClass: EntityClass): Date | null {
   const policy = DATA_CLASSIFICATIONS[entityClass].retention;
   const ms = parseDurationToMs(policy.retention);
   if (ms === null) return null; // indefinite
@@ -357,7 +375,7 @@ export function calculateRetentionExpiry(
 export function isRetentionExpired(
   createdAt: string,
   entityClass: EntityClass,
-  now?: Date,
+  now?: Date
 ): boolean {
   const expiry = calculateRetentionExpiry(createdAt, entityClass);
   if (expiry === null) return false; // indefinite

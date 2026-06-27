@@ -1,18 +1,15 @@
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { ListToolsRequestSchema, CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';
-import type { BrainEngine } from '../core/engine.ts';
-import { operations } from '../core/operations.ts';
-import { VERSION } from '../version.ts';
-import { buildToolDefs } from './tool-defs.ts';
-import { dispatchToolCall, validateParams, buildOperationContext } from './dispatch.ts';
-import { getBrainHotMemoryMeta } from '../core/facts/meta-hook.ts';
+import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { ListToolsRequestSchema, CallToolRequestSchema } from "@modelcontextprotocol/sdk/types.js";
+import type { BrainEngine } from "../core/engine.ts";
+import { operations } from "../core/operations.ts";
+import { VERSION } from "../version.ts";
+import { buildToolDefs } from "./tool-defs.ts";
+import { dispatchToolCall, validateParams, buildOperationContext } from "./dispatch.ts";
+import { getBrainHotMemoryMeta } from "../core/facts/meta-hook.ts";
 
 export async function startMcpServer(engine: BrainEngine) {
-  const server = new Server(
-    { name: 'gbrain', version: VERSION },
-    { capabilities: { tools: {} } },
-  );
+  const server = new Server({ name: "gbrain", version: VERSION }, { capabilities: { tools: {} } });
 
   // Generate tool definitions from operations. Extracted to buildToolDefs so
   // the subagent tool registry (v0.15+) can call the same mapper against a
@@ -35,11 +32,11 @@ export async function startMcpServer(engine: BrainEngine) {
     // `gbrain call <op>` (sets remote=false in src/cli.ts).
     return dispatchToolCall(engine, name, params, {
       remote: true,
-      takesHoldersAllowList: ['world'],
+      takesHoldersAllowList: ["world"],
       // v0.31: source defaults to 'default' for stdio (no per-token scope).
       // Operators who want a different source on stdio MCP should set
       // GBRAIN_SOURCE in the env or use --source via `gbrain call`.
-      sourceId: process.env.GBRAIN_SOURCE || 'default',
+      sourceId: process.env.GBRAIN_SOURCE || "default",
       // v0.31 (eD3): _meta.brain_hot_memory injection so Claude Desktop /
       // Code see the brain's relevant hot memory automatically alongside
       // every tool-call response. Best-effort; absorbs errors.
@@ -67,15 +64,15 @@ export async function startMcpServer(engine: BrainEngine) {
   // closes its stdin half. Treating that as a permanent disconnect kills
   // the server before the first tool call arrives. Signal handlers and
   // transport.onclose still cover the legitimate shutdown paths.
-  if (process.env.MCP_STDIO !== '1') {
-    process.stdin.on('end', () => shutdown('stdin end'));
-    process.stdin.on('close', () => shutdown('stdin close'));
+  if (process.env.MCP_STDIO !== "1") {
+    process.stdin.on("end", () => shutdown("stdin end"));
+    process.stdin.on("close", () => shutdown("stdin close"));
   }
   // @ts-ignore — SDK exposes onclose on transport
-  transport.onclose = () => shutdown('transport close');
-  process.on('SIGTERM', () => shutdown('SIGTERM'));
-  process.on('SIGINT', () => shutdown('SIGINT'));
-  process.on('SIGHUP', () => shutdown('SIGHUP'));
+  transport.onclose = () => shutdown("transport close");
+  process.on("SIGTERM", () => shutdown("SIGTERM"));
+  process.on("SIGINT", () => shutdown("SIGINT"));
+  process.on("SIGHUP", () => shutdown("SIGHUP"));
 }
 
 // Backward compat: used by `gbrain call` command (trusted local path).
@@ -86,9 +83,9 @@ export async function handleToolCall(
   engine: BrainEngine,
   tool: string,
   params: Record<string, unknown>,
-  opts?: { sourceId?: string },
+  opts?: { sourceId?: string }
 ): Promise<unknown> {
-  const op = operations.find(o => o.name === tool);
+  const op = operations.find((o) => o.name === tool);
   if (!op) throw new Error(`Unknown tool: ${tool}`);
 
   const validationError = validateParams(op, params);

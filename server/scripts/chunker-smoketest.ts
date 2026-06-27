@@ -1,4 +1,4 @@
-import { chunkCodeText } from '../src/core/chunkers/code.ts';
+import { chunkCodeText } from "../src/core/chunkers/code.ts";
 
 // Large function body so it doesn't merge with siblings — the CI guard
 // needs at least one chunk with a concrete symbol name to prove the
@@ -39,13 +39,19 @@ export class UserRegistry {
 
 export type UserId = string;
 `;
-const result = await chunkCodeText(src, 'smoketest.ts');
-const hasSymbolNames = result.some(c => c.metadata.symbolName !== null);
-const hasTypeScriptHeader = result.some(c => c.text.startsWith('[TypeScript]'));
-console.log(JSON.stringify({
-  count: result.length,
-  has_symbol_names: hasSymbolNames,
-  has_typescript_header: hasTypeScriptHeader,
-  first_header: result[0]?.text.split('\n')[0],
-  symbol_names: result.map(c => c.metadata.symbolName),
-}, null, 2));
+const result = await chunkCodeText(src, "smoketest.ts");
+const hasSymbolNames = result.some((c) => c.metadata.symbolName !== null);
+const hasTypeScriptHeader = result.some((c) => c.text.startsWith("[TypeScript]"));
+console.log(
+  JSON.stringify(
+    {
+      count: result.length,
+      has_symbol_names: hasSymbolNames,
+      has_typescript_header: hasTypeScriptHeader,
+      first_header: result[0]?.text.split("\n")[0],
+      symbol_names: result.map((c) => c.metadata.symbolName),
+    },
+    null,
+    2
+  )
+);

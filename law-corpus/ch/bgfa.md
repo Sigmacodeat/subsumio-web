@@ -24,14 +24,17 @@ Berufsqualifikationen.
 ## Kernvorschriften
 
 ### Art. 1 — Zweck
+
 Dieses Gesetz regelt die Anerkennung von Ausweisen in Gesundheitsberufen
 und die Ausübung von Gesundheitsberufen.
 
 ### Art. 2 — Geltungsbereich
+
 Dieses Gesetz gilt für die Gesundheitsberufe, die in der Verordnung über
 die Gesundheitsberufe (Gesundheitsberufeverordnung, GBV) aufgeführt sind.
 
 ### Art. 3 — Gesundheitsberufe
+
 Die Gesundheitsberufe umfassen insbesondere:
 a. Pflegefachpersonen;
 b. Hebammen;
@@ -42,12 +45,14 @@ f. Optometristinnen und Optometristen;
 g. Osteopathinnen und Osteopathen.
 
 ### Art. 4 — Anerkennung von Ausweisen
+
 (1) Der Bund anerkennt Ausweise in Gesundheitsberufen, die von Schweizer
 Hochschulen vergeben werden.
 
 (2) Ausweise aus EU/EFTA-Staaten werden nach Massgabe der Bilateralen Abkommen anerkannt.
 
 ### Art. 5 — Ausübung von Gesundheitsberufen
+
 (1) Die Ausübung von Gesundheitsberufen setzt einen anerkannten Ausweis voraus.
 
 (2) Die Kantone regeln die Ausübung von Gesundheitsberufen in ihrem Zuständigkeitsbereich.

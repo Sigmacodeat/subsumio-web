@@ -13,13 +13,20 @@
  * that the corpus can't surface lexically jump from ~0 to high recall.
  */
 
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
-import { PGLiteEngine } from '../src/core/pglite-engine.ts';
-import { hybridSearch } from '../src/core/search/hybrid.ts';
-import { runRetrievalQuality, parseQuestionsJsonl, type SearchFn } from '../src/eval/retrieval-quality/harness.ts';
-import { seedRelationalCorpus, RELATIONAL_QUESTIONS } from './fixtures/retrieval-quality/relational/corpus.ts';
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import { describe, test, expect, beforeAll, afterAll } from "bun:test";
+import { PGLiteEngine } from "../src/core/pglite-engine.ts";
+import { hybridSearch } from "../src/core/search/hybrid.ts";
+import {
+  runRetrievalQuality,
+  parseQuestionsJsonl,
+  type SearchFn,
+} from "../src/eval/retrieval-quality/harness.ts";
+import {
+  seedRelationalCorpus,
+  RELATIONAL_QUESTIONS,
+} from "./fixtures/retrieval-quality/relational/corpus.ts";
+import { readFileSync } from "fs";
+import { join } from "path";
 
 let eng: PGLiteEngine;
 
@@ -30,30 +37,38 @@ beforeAll(async () => {
   await seedRelationalCorpus(eng);
 }, 60_000);
 
-afterAll(async () => { await eng.disconnect(); });
+afterAll(async () => {
+  await eng.disconnect();
+});
 
-const searchFnWith = (relationalRetrieval: boolean): SearchFn => async (q) => {
-  const results = await hybridSearch(eng, q, { limit: 10, relationalRetrieval, expansion: false });
-  return results.map(r => r.slug);
-};
+const searchFnWith =
+  (relationalRetrieval: boolean): SearchFn =>
+  async (q) => {
+    const results = await hybridSearch(eng, q, {
+      limit: 10,
+      relationalRetrieval,
+      expansion: false,
+    });
+    return results.map((r) => r.slug);
+  };
 
-describe('relational A/B', () => {
-  test('corpus has a meaningful question set', () => {
+describe("relational A/B", () => {
+  test("corpus has a meaningful question set", () => {
     expect(RELATIONAL_QUESTIONS.length).toBeGreaterThanOrEqual(30);
   });
 
-  test('relational.jsonl matches the corpus module (no drift)', () => {
-    const path = join(import.meta.dir, 'fixtures/retrieval-quality/relational/relational.jsonl');
-    const fromFile = parseQuestionsJsonl(readFileSync(path, 'utf8'));
+  test("relational.jsonl matches the corpus module (no drift)", () => {
+    const path = join(import.meta.dir, "fixtures/retrieval-quality/relational/relational.jsonl");
+    const fromFile = parseQuestionsJsonl(readFileSync(path, "utf8"));
     expect(JSON.stringify(fromFile)).toBe(JSON.stringify(RELATIONAL_QUESTIONS));
   });
 
-  test('recall@10 lifts materially with the relational arm ON', async () => {
+  test("recall@10 lifts materially with the relational arm ON", async () => {
     const off = await runRetrievalQuality(RELATIONAL_QUESTIONS, searchFnWith(false));
     const on = await runRetrievalQuality(RELATIONAL_QUESTIONS, searchFnWith(true));
 
-    const offFam = off.families.find(f => f.family === 'graph-relationship')!;
-    const onFam = on.families.find(f => f.family === 'graph-relationship')!;
+    const offFam = off.families.find((f) => f.family === "graph-relationship")!;
+    const onFam = on.families.find((f) => f.family === "graph-relationship")!;
 
     // Answers are lexically unrecoverable → baseline recall is near zero.
     expect(offFam.recall_at_10).toBeLessThan(0.25);
@@ -64,8 +79,8 @@ describe('relational A/B', () => {
     expect(onFam.hit_at_3).toBeGreaterThan(offFam.hit_at_3);
   }, 120_000);
 
-  test('no-regression: non-relational query is identical arm-on vs arm-off', async () => {
-    const q = 'early-stage venture fund first checks';
+  test("no-regression: non-relational query is identical arm-on vs arm-off", async () => {
+    const q = "early-stage venture fund first checks";
     const off = await searchFnWith(false)(q);
     const on = await searchFnWith(true)(q);
     expect(on).toEqual(off);

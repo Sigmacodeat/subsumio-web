@@ -22,8 +22,8 @@
  * `per_chunk_synopsis` tier only.
  */
 
-import { CJK_SENTENCE_DELIMITERS } from './cjk.ts';
-import type { CRMode } from './types.ts';
+import { CJK_SENTENCE_DELIMITERS } from "./cjk.ts";
+import type { CRMode } from "./types.ts";
 
 /**
  * Hard cap on the title-only block per chunk. Generous because high-signal
@@ -53,10 +53,10 @@ const SUMMARY_HARD_CAP_CHARS = 300;
  */
 export function buildContextualPrefix(
   title: string | null | undefined,
-  synopsis: string | null | undefined,
+  synopsis: string | null | undefined
 ): string | null {
-  const safeTitle = sanitizeTitle(title ?? '');
-  const safeSynopsis = sanitizeSynopsis(synopsis ?? '');
+  const safeTitle = sanitizeTitle(title ?? "");
+  const safeSynopsis = sanitizeSynopsis(synopsis ?? "");
 
   if (!safeTitle && !safeSynopsis) {
     return null;
@@ -85,9 +85,9 @@ export function buildContextualPrefix(
 export function wrapChunkForEmbedding(
   chunkText: string,
   prefix: string | null,
-  chunkSource: string | null | undefined,
+  chunkSource: string | null | undefined
 ): string {
-  if (chunkSource === 'fenced_code') {
+  if (chunkSource === "fenced_code") {
     return chunkText;
   }
   if (prefix == null) {
@@ -105,10 +105,10 @@ export function wrapChunkForEmbedding(
  *   - trim + cap at TITLE_HARD_CAP_CHARS
  */
 export function sanitizeTitle(title: string): string {
-  if (!title) return '';
+  if (!title) return "";
   return title
-    .replace(/<\/context>/gi, '')
-    .replace(/\s+/g, ' ')
+    .replace(/<\/context>/gi, "")
+    .replace(/\s+/g, " ")
     .trim()
     .slice(0, TITLE_HARD_CAP_CHARS);
 }
@@ -119,10 +119,10 @@ export function sanitizeTitle(title: string): string {
  * cheaper to defend at the wrapper) plus the synopsis cap.
  */
 export function sanitizeSynopsis(synopsis: string): string {
-  if (!synopsis) return '';
+  if (!synopsis) return "";
   return synopsis
-    .replace(/<\/context>/gi, '')
-    .replace(/\s+/g, ' ')
+    .replace(/<\/context>/gi, "")
+    .replace(/\s+/g, " ")
     .trim()
     .slice(0, SUMMARY_HARD_CAP_CHARS);
 }
@@ -137,12 +137,12 @@ export function sanitizeSynopsis(synopsis: string): string {
  * without paying Haiku.
  */
 export function extractFirstTwoSentences(text: string): string {
-  if (!text) return '';
+  if (!text) return "";
 
   // Build sentence-end pattern that handles English `.!?` followed by
   // whitespace AND CJK `。！？` delimiters.
-  const cjkDelims = CJK_SENTENCE_DELIMITERS.map(escapeRegex).join('');
-  const sentenceEnd = new RegExp(`([.!?])\\s+|([${cjkDelims}])`, 'g');
+  const cjkDelims = CJK_SENTENCE_DELIMITERS.map(escapeRegex).join("");
+  const sentenceEnd = new RegExp(`([.!?])\\s+|([${cjkDelims}])`, "g");
 
   // Walk through the first two sentence boundaries.
   let cursor = 0;
@@ -167,7 +167,7 @@ export function extractFirstTwoSentences(text: string): string {
 }
 
 function escapeRegex(s: string): string {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 /**
@@ -176,7 +176,7 @@ function escapeRegex(s: string): string {
  * to invoke `page-summary.ts:generatePerChunkSynopsis` per chunk.
  */
 export function modeRequiresHaiku(mode: CRMode): boolean {
-  return mode === 'per_chunk_synopsis';
+  return mode === "per_chunk_synopsis";
 }
 
 /**
@@ -184,5 +184,5 @@ export function modeRequiresHaiku(mode: CRMode): boolean {
  * `none` skips wrapping; `title` and `per_chunk_synopsis` both wrap.
  */
 export function modeRequiresWrapper(mode: CRMode): boolean {
-  return mode !== 'none';
+  return mode !== "none";
 }

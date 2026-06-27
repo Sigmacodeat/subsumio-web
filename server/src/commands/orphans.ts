@@ -12,9 +12,9 @@
  *   gbrain orphans --include-pseudo # include auto-generated/pseudo pages
  */
 
-import type { BrainEngine } from '../core/engine.ts';
-import { createProgress, startHeartbeat } from '../core/progress.ts';
-import { getCliOptions, cliOptsToProgressOptions } from '../core/cli-options.ts';
+import type { BrainEngine } from "../core/engine.ts";
+import { createProgress, startHeartbeat } from "../core/progress.ts";
+import { getCliOptions, cliOptsToProgressOptions } from "../core/cli-options.ts";
 
 // --- Types ---
 
@@ -35,25 +35,19 @@ export interface OrphanResult {
 // --- Filter constants ---
 
 /** Slug suffixes that are always auto-generated root files */
-const AUTO_SUFFIX_PATTERNS = ['/_index', '/log'];
+const AUTO_SUFFIX_PATTERNS = ["/_index", "/log"];
 
 /** Page slugs that are pseudo-pages by convention */
-const PSEUDO_SLUGS = new Set(['_atlas', '_index', '_stats', '_orphans', '_scratch', 'claude']);
+const PSEUDO_SLUGS = new Set(["_atlas", "_index", "_stats", "_orphans", "_scratch", "claude"]);
 
 /** Slug segment that marks raw sources */
-const RAW_SEGMENT = '/raw/';
+const RAW_SEGMENT = "/raw/";
 
 /** Slug prefixes where no inbound links is expected */
-const DENY_PREFIXES = [
-  'output/',
-  'dashboards/',
-  'scripts/',
-  'templates/',
-  'openclaw/config/',
-];
+const DENY_PREFIXES = ["output/", "dashboards/", "scripts/", "templates/", "openclaw/config/"];
 
 /** First slug segments where no inbound links is expected */
-const FIRST_SEGMENT_EXCLUSIONS = new Set(['scratch', 'thoughts', 'catalog', 'entities']);
+const FIRST_SEGMENT_EXCLUSIONS = new Set(["scratch", "thoughts", "catalog", "entities"]);
 
 // --- Filter logic ---
 
@@ -79,7 +73,7 @@ export function shouldExclude(slug: string): boolean {
   }
 
   // First-segment exclusions
-  const firstSegment = slug.split('/')[0];
+  const firstSegment = slug.split("/")[0];
   if (FIRST_SEGMENT_EXCLUSIONS.has(firstSegment)) return true;
 
   return false;
@@ -89,10 +83,10 @@ export function shouldExclude(slug: string): boolean {
  * Derive domain from frontmatter or first slug segment.
  */
 export function deriveDomain(frontmatterDomain: string | null | undefined, slug: string): string {
-  if (frontmatterDomain && typeof frontmatterDomain === 'string' && frontmatterDomain.trim()) {
+  if (frontmatterDomain && typeof frontmatterDomain === "string" && frontmatterDomain.trim()) {
     return frontmatterDomain.trim();
   }
-  return slug.split('/')[0] || 'root';
+  return slug.split("/")[0] || "root";
 }
 
 // --- Core query ---
@@ -106,7 +100,7 @@ export function deriveDomain(frontmatterDomain: string | null | undefined, slug:
  * the PGLite-vs-Postgres + test-fixture coupling codex flagged.
  */
 export async function queryOrphanPages(
-  engine: BrainEngine,
+  engine: BrainEngine
 ): Promise<{ slug: string; title: string; domain: string | null }[]> {
   return engine.findOrphanPages();
 }
@@ -127,7 +121,7 @@ export async function queryOrphanPages(
  */
 export async function findOrphans(
   engine: BrainEngine,
-  opts: { includePseudo?: boolean; sourceId?: string; sourceIds?: string[] } = {},
+  opts: { includePseudo?: boolean; sourceId?: string; sourceIds?: string[] } = {}
 ): Promise<OrphanResult> {
   const includePseudo = !!opts.includePseudo;
   // v0.41.29.0: `sourceId` (scalar, from `--source` + single-source MCP
@@ -135,22 +129,21 @@ export async function findOrphans(
   // scopes the candidate set. `sourceIds` wins when both set (mirrors
   // sourceScopeOpts precedence).
   const sourceId = opts.sourceId;
-  const sourceIds =
-    opts.sourceIds && opts.sourceIds.length > 0 ? opts.sourceIds : undefined;
+  const sourceIds = opts.sourceIds && opts.sourceIds.length > 0 ? opts.sourceIds : undefined;
   // The NOT EXISTS anti-join over pages × links can take seconds on 50K-page
   // brains. Heartbeat every second so agents see the scan is alive. Keyset
   // pagination was considered and rejected: without an index on
   // links.to_page_id it does no useful work. Adding that index is a
   // follow-up (v0.14.3 schema migration).
   const progress = createProgress(cliOptsToProgressOptions(getCliOptions()));
-  progress.start('orphans.scan');
-  const stopHb = startHeartbeat(progress, 'scanning pages for missing inbound links…');
+  progress.start("orphans.scan");
+  const stopHb = startHeartbeat(progress, "scanning pages for missing inbound links…");
   let allOrphans: { slug: string; title: string; domain: string | null }[];
   let total: number;
   let excludedAll: number;
   try {
     allOrphans = await engine.findOrphanPages(
-      sourceIds ? { sourceIds } : sourceId ? { sourceId } : undefined,
+      sourceIds ? { sourceIds } : sourceId ? { sourceId } : undefined
     );
     // v0.41.29.0 (Codex F6): correct the `total_linkable` denominator.
     // Enumerate ALL live pages (scoped) and count excluded-by-slug across
@@ -160,7 +153,7 @@ export async function findOrphans(
     // total_linkable and suppressing orphan warnings. `getAllSlugs` is NOT
     // used here because it does not filter soft-deleted rows; `total` must
     // match `findOrphanPages`'s `deleted_at IS NULL` candidate universe.
-    let scopeClause = '';
+    let scopeClause = "";
     const liveParams: unknown[] = [];
     if (sourceIds) {
       liveParams.push(sourceIds);
@@ -171,7 +164,7 @@ export async function findOrphans(
     }
     const liveRows = await engine.executeRaw<{ slug: string }>(
       `SELECT slug FROM pages WHERE deleted_at IS NULL${scopeClause}`,
-      liveParams,
+      liveParams
     );
     total = liveRows.length;
     excludedAll = includePseudo
@@ -184,9 +177,9 @@ export async function findOrphans(
 
   const filtered = includePseudo
     ? allOrphans
-    : allOrphans.filter(row => !shouldExclude(row.slug));
+    : allOrphans.filter((row) => !shouldExclude(row.slug));
 
-  const orphans: OrphanPage[] = filtered.map(row => ({
+  const orphans: OrphanPage[] = filtered.map((row) => ({
     slug: row.slug,
     title: row.title,
     domain: deriveDomain(row.domain, row.slug),
@@ -222,12 +215,12 @@ export function formatOrphansText(result: OrphanResult): string {
 
   const { orphans, total_orphans, total_linkable, total_pages, excluded } = result;
   lines.push(
-    `${total_orphans} orphans out of ${total_linkable} linkable pages (${total_pages} total; ${excluded} excluded)\n`,
+    `${total_orphans} orphans out of ${total_linkable} linkable pages (${total_pages} total; ${excluded} excluded)\n`
   );
 
   if (orphans.length === 0) {
-    lines.push('No orphan pages found.');
-    return lines.join('\n');
+    lines.push("No orphan pages found.");
+    return lines.join("\n");
   }
 
   // Group by domain, sort alphabetically within each group
@@ -246,30 +239,30 @@ export function formatOrphansText(result: OrphanResult): string {
     for (const page of pages) {
       lines.push(`  ${page.slug}  ${page.title}`);
     }
-    lines.push('');
+    lines.push("");
   }
 
-  return lines.join('\n').trimEnd();
+  return lines.join("\n").trimEnd();
 }
 
 // --- CLI entry point ---
 
 export async function runOrphans(engine: BrainEngine, args: string[]) {
-  const json = args.includes('--json');
-  const count = args.includes('--count');
-  const includePseudo = args.includes('--include-pseudo');
+  const json = args.includes("--json");
+  const count = args.includes("--count");
+  const includePseudo = args.includes("--include-pseudo");
   // v0.41.29.0: explicit `--source <id>` scopes the orphan scan to one
   // source. Omitted → brain-wide (unchanged). Raw explicit-flag parse on
   // purpose — NOT resolveSourceWithTier, which would pick a default source
   // when the flag is absent and silently scope a bare `gbrain orphans`.
   let sourceId: string | undefined;
   for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--source' && i + 1 < args.length) {
+    if (args[i] === "--source" && i + 1 < args.length) {
       sourceId = args[++i] || undefined;
     }
   }
 
-  if (args.includes('--help') || args.includes('-h')) {
+  if (args.includes("--help") || args.includes("-h")) {
     console.log(`Usage: gbrain orphans [options]
 
 Find pages with no inbound wikilinks.

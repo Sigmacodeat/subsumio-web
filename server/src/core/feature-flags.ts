@@ -27,9 +27,9 @@
  * through `isFederatedV2Enabled(engine)` so future changes to the flag key,
  * default, or backing store happen in one place.
  */
-import type { BrainEngine } from './engine.ts';
+import type { BrainEngine } from "./engine.ts";
 
-export const FEDERATED_V2_CONFIG_KEY = 'sync.federated_v2';
+export const FEDERATED_V2_CONFIG_KEY = "sync.federated_v2";
 
 /**
  * True iff Federated Sync v2 behaviors are enabled (default true).
@@ -45,7 +45,7 @@ export const FEDERATED_V2_CONFIG_KEY = 'sync.federated_v2';
  */
 export async function isFederatedV2Enabled(engine: BrainEngine): Promise<boolean> {
   const value = await engine.getConfig(FEDERATED_V2_CONFIG_KEY);
-  return value !== 'false';
+  return value !== "false";
 }
 
 // ─── General-purpose FeatureFlags (Agency-Level Standard) ──────────────
@@ -58,10 +58,10 @@ export async function isFederatedV2Enabled(engine: BrainEngine): Promise<boolean
  * `false` when it ships OFF (opt-in). The DB config plane overrides.
  */
 export const FEATURE_FLAG_DEFAULTS = {
-  'sync.federated_v2': true,
-  'relational_retrieval': false,
-  'graph_signals': true,
-  'adaptive_return': false,
+  "sync.federated_v2": true,
+  relational_retrieval: false,
+  graph_signals: true,
+  adaptive_return: false,
 } as const;
 
 export type FeatureFlagKey = keyof typeof FEATURE_FLAG_DEFAULTS;
@@ -89,7 +89,7 @@ export class FeatureFlags {
 
   constructor(
     private readonly engine: BrainEngine,
-    opts: { cacheTtlMs?: number } = {},
+    opts: { cacheTtlMs?: number } = {}
   ) {
     this.cacheTtlMs = opts.cacheTtlMs ?? DEFAULT_CACHE_TTL_MS;
   }
@@ -105,15 +105,13 @@ export class FeatureFlags {
     }
 
     const defaultValue =
-      key in FEATURE_FLAG_DEFAULTS
-        ? FEATURE_FLAG_DEFAULTS[key as FeatureFlagKey]
-        : false;
+      key in FEATURE_FLAG_DEFAULTS ? FEATURE_FLAG_DEFAULTS[key as FeatureFlagKey] : false;
 
     let value: boolean;
     try {
       const raw = await this.engine.getConfig(key);
-      if (raw === 'false') value = false;
-      else if (raw === 'true') value = true;
+      if (raw === "false") value = false;
+      else if (raw === "true") value = true;
       else value = defaultValue;
     } catch {
       value = defaultValue;
@@ -133,18 +131,13 @@ export class FeatureFlags {
    * Static one-shot check — no caching. Use when you need a single flag
    * check without constructing a FeatureFlags instance.
    */
-  static async check(
-    engine: BrainEngine,
-    key: FeatureFlagKey | string,
-  ): Promise<boolean> {
+  static async check(engine: BrainEngine, key: FeatureFlagKey | string): Promise<boolean> {
     const defaultValue =
-      key in FEATURE_FLAG_DEFAULTS
-        ? FEATURE_FLAG_DEFAULTS[key as FeatureFlagKey]
-        : false;
+      key in FEATURE_FLAG_DEFAULTS ? FEATURE_FLAG_DEFAULTS[key as FeatureFlagKey] : false;
     try {
       const raw = await engine.getConfig(key);
-      if (raw === 'false') return false;
-      if (raw === 'true') return true;
+      if (raw === "false") return false;
+      if (raw === "true") return true;
       return defaultValue;
     } catch {
       return defaultValue;

@@ -13,9 +13,9 @@
  * No tree-sitter re-parsing needed — the metadata is already there.
  */
 
-import type { BrainEngine } from '../core/engine.ts';
-import { errorFor, serializeError } from '../core/errors.ts';
-import { resolveCodeReadiness, readinessHint } from '../core/code-graph-readiness.ts';
+import type { BrainEngine } from "../core/engine.ts";
+import { errorFor, serializeError } from "../core/errors.ts";
+import { resolveCodeReadiness, readinessHint } from "../core/code-graph-readiness.ts";
 
 export interface CodeDefResult {
   slug: string;
@@ -30,7 +30,7 @@ export interface CodeDefResult {
 export async function findCodeDef(
   engine: BrainEngine,
   symbol: string,
-  opts: { limit?: number; language?: string } = {},
+  opts: { limit?: number; language?: string } = {}
 ): Promise<CodeDefResult[]> {
   const limit = opts.limit ?? 20;
   // v0.41 D2: SQL DDL targets (table/view/index/procedure/schema/database/
@@ -38,20 +38,38 @@ export async function findCodeDef(
   // normalizeSymbolType maps create_table → 'table' etc, so adding the SQL
   // kinds here is what makes `gbrain code-def users` work against SQL.
   const DEF_TYPES = [
-    'function', 'class', 'interface', 'type', 'enum', 'struct', 'trait', 'module', 'contract',
-    'table', 'view', 'index', 'procedure', 'schema', 'database', 'trigger',
+    "function",
+    "class",
+    "interface",
+    "type",
+    "enum",
+    "struct",
+    "trait",
+    "module",
+    "contract",
+    "table",
+    "view",
+    "index",
+    "procedure",
+    "schema",
+    "database",
+    "trigger",
   ];
   const params: unknown[] = [symbol, limit];
-  let whereLang = '';
+  let whereLang = "";
   if (opts.language) {
     params.splice(1, 0, opts.language);
-    whereLang = 'AND cc.language = $2';
+    whereLang = "AND cc.language = $2";
   }
   // Deterministic ordering: exact type matches first (functions before
   // export_statement wrappers), then page slug, then line number.
   const rows = await engine.executeRaw<{
-    slug: string; file: string | null; language: string | null;
-    symbol_type: string | null; start_line: number | null; end_line: number | null;
+    slug: string;
+    file: string | null;
+    language: string | null;
+    symbol_type: string | null;
+    start_line: number | null;
+    end_line: number | null;
     chunk_text: string;
   }>(
     `SELECT p.slug, (p.frontmatter->>'file') AS file, cc.language, cc.symbol_type,
@@ -70,7 +88,7 @@ export async function findCodeDef(
        END,
        p.slug, cc.start_line
      LIMIT $${params.length}`,
-    params,
+    params
   );
   return rows.map((r) => ({
     slug: r.slug,
@@ -90,23 +108,23 @@ function parseFlag(args: string[], name: string): string | undefined {
 }
 
 function shouldEmitJson(args: string[]): boolean {
-  if (args.includes('--json')) return true;
-  if (args.includes('--no-json')) return false;
+  if (args.includes("--json")) return true;
+  if (args.includes("--no-json")) return false;
   // Auto-detect: non-TTY stdout means an agent is piping us — default to JSON.
   return !process.stdout.isTTY;
 }
 
 export async function runCodeDef(engine: BrainEngine, args: string[]): Promise<void> {
-  const symbol = args.find((a) => !a.startsWith('--') && args.indexOf(a) > 0);
+  const symbol = args.find((a) => !a.startsWith("--") && args.indexOf(a) > 0);
   // args[0] is the symbol when invoked as `gbrain code-def <symbol>`
-  const positional = args.filter((a) => !a.startsWith('--'));
+  const positional = args.filter((a) => !a.startsWith("--"));
   const sym = positional[0];
   if (!sym) {
     const err = errorFor({
-      class: 'UsageError',
-      code: 'code_def_requires_symbol',
-      message: 'code-def requires a symbol name',
-      hint: 'gbrain code-def <symbol> [--lang <language>] [--json]',
+      class: "UsageError",
+      code: "code_def_requires_symbol",
+      message: "code-def requires a symbol name",
+      hint: "gbrain code-def <symbol> [--lang <language>] [--json]",
     });
     if (shouldEmitJson(args)) {
       console.log(JSON.stringify({ error: err.envelope }));
@@ -115,20 +133,26 @@ export async function runCodeDef(engine: BrainEngine, args: string[]): Promise<v
     }
     process.exit(2);
   }
-  const limit = parseInt(parseFlag(args, '--limit') || '20', 10);
-  const language = parseFlag(args, '--lang');
+  const limit = parseInt(parseFlag(args, "--limit") || "20", 10);
+  const language = parseFlag(args, "--lang");
   try {
     const results = await findCodeDef(engine, sym, { limit, language });
     // code-def is brain-wide (not source-scoped); readiness is 'symbol' grain.
-    const readiness = await resolveCodeReadiness(engine, { kind: 'symbol', count: results.length });
+    const readiness = await resolveCodeReadiness(engine, { kind: "symbol", count: results.length });
     if (shouldEmitJson(args)) {
-      console.log(JSON.stringify({
-        symbol: sym,
-        count: results.length,
-        status: readiness.status,
-        ready: readiness.ready,
-        results,
-      }, null, 2));
+      console.log(
+        JSON.stringify(
+          {
+            symbol: sym,
+            count: results.length,
+            status: readiness.status,
+            ready: readiness.ready,
+            results,
+          },
+          null,
+          2
+        )
+      );
     } else {
       if (results.length === 0) {
         console.log(`No definitions found for "${sym}"`);
@@ -137,7 +161,7 @@ export async function runCodeDef(engine: BrainEngine, args: string[]): Promise<v
       } else {
         console.log(`Found ${results.length} definition(s) for "${sym}":`);
         for (const r of results) {
-          const loc = r.start_line != null ? `:${r.start_line}` : '';
+          const loc = r.start_line != null ? `:${r.start_line}` : "";
           console.log(`  ${r.file || r.slug}${loc}  (${r.symbol_type})`);
         }
       }

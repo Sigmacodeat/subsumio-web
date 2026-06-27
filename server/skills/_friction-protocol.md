@@ -39,12 +39,12 @@ The CLI auto-fills `ts`, `cwd`, `gbrain_version`, and resolves `run_id` from `$G
 
 ## Severity guide
 
-| severity   | meaning |
-|------------|---------|
-| `blocker`  | Couldn't proceed at all. Hard stop. |
-| `error`    | Command failed unexpectedly. |
+| severity   | meaning                                         |
+| ---------- | ----------------------------------------------- |
+| `blocker`  | Couldn't proceed at all. Hard stop.             |
+| `error`    | Command failed unexpectedly.                    |
 | `confused` | Docs/tool mismatch, ambiguity, missing pointer. |
-| `nit`      | Polish opportunity. Cosmetic or low-impact. |
+| `nit`      | Polish opportunity. Cosmetic or low-impact.     |
 
 Be specific: "doctor says `schema_version=0` and points at apply-migrations, but apply-migrations exits 0 with no output" beats "doctor was confusing."
 

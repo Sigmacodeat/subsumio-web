@@ -10,14 +10,14 @@ v0 shipped `PostgresEngine` backed by Supabase. v0.7 adds `PGLiteEngine` -- embe
 
 Different users have different constraints:
 
-| User | Needs | Best engine |
-|------|-------|-------------|
-| Getting started | Zero-config, no accounts, no server | PGLiteEngine (default since v0.7) |
-| Power user (you) | World-class search, 7K+ pages, zero-ops | PostgresEngine + Supabase |
-| Open source hacker | Single file, no server, git-friendly | PGLiteEngine |
-| Team/enterprise | Multi-user, RLS, audit trail | PostgresEngine + self-hosted |
-| Researcher | Analytics, bulk exports, embeddings | DuckDBEngine (someday) |
-| Edge/mobile | Offline-first, sync later | PGLiteEngine + sync (someday) |
+| User               | Needs                                   | Best engine                       |
+| ------------------ | --------------------------------------- | --------------------------------- |
+| Getting started    | Zero-config, no accounts, no server     | PGLiteEngine (default since v0.7) |
+| Power user (you)   | World-class search, 7K+ pages, zero-ops | PostgresEngine + Supabase         |
+| Open source hacker | Single file, no server, git-friendly    | PGLiteEngine                      |
+| Team/enterprise    | Multi-user, RLS, audit trail            | PostgresEngine + self-hosted      |
+| Researcher         | Analytics, bulk exports, embeddings     | DuckDBEngine (someday)            |
+| Edge/mobile        | Offline-first, sync later               | PGLiteEngine + sync (someday)     |
 
 The engine interface means we don't have to choose. PGLite is the zero-friction default. Supabase is the production scale path. `gbrain migrate --to supabase/pglite` moves between them.
 
@@ -136,6 +136,7 @@ RRF fusion, multi-query expansion, and 4-layer dedup are engine-agnostic. They o
 **Dependencies:** `postgres` (porsager/postgres), `pgvector`
 
 **Postgres-specific features used:**
+
 - `tsvector` + `GIN` index for full-text search with `ts_rank` weighting
 - `pgvector` HNSW index for cosine similarity vector search
 - `pg_trgm` + `GIN` for fuzzy slug resolution
@@ -155,6 +156,7 @@ RRF fusion, multi-query expansion, and 4-layer dedup are engine-agnostic. They o
 **What it is:** Embedded Postgres 17.5 compiled to WASM via ElectricSQL's PGLite. Runs in-process, no server, no Docker, no accounts. Same SQL as PostgresEngine -- not a separate dialect. All 37 BrainEngine methods implemented.
 
 **PGLite-specific details:**
+
 - Uses `pglite-schema.ts` for DDL (pgvector extension, pg_trgm, triggers, indexes)
 - Parameterized queries throughout (shared utilities in `src/core/utils.ts`)
 - `hybridSearch` keyword-only fallback when `OPENAI_API_KEY` is not set
@@ -165,14 +167,14 @@ RRF fusion, multi-query expansion, and 4-layer dedup are engine-agnostic. They o
 
 **When to use PGLite vs Postgres:**
 
-| Factor | PGLite | PostgresEngine + Supabase |
-|--------|--------|--------------------------|
-| Setup | `gbrain init` (zero-config) | Account + connection string |
-| Scale | Good for < 1,000 files | Production-proven at 10K+ |
-| Multi-device | Single machine only | Any device via remote MCP |
-| Cost | Free | Supabase Pro ($25/mo) |
-| Concurrency | Single process | Connection pooling |
-| Backups | Manual (file copy) | Managed by Supabase |
+| Factor       | PGLite                      | PostgresEngine + Supabase   |
+| ------------ | --------------------------- | --------------------------- |
+| Setup        | `gbrain init` (zero-config) | Account + connection string |
+| Scale        | Good for < 1,000 files      | Production-proven at 10K+   |
+| Multi-device | Single machine only         | Any device via remote MCP   |
+| Cost         | Free                        | Supabase Pro ($25/mo)       |
+| Concurrency  | Single process              | Connection pooling          |
+| Backups      | Manual (file copy)          | Managed by Supabase         |
 
 **Migration:** `gbrain migrate --to supabase` exports everything (pages, chunks, embeddings, links, tags, timeline) and imports into Supabase. `gbrain migrate --to pglite` goes the other direction. Bidirectional, lossless.
 
@@ -183,10 +185,14 @@ RRF fusion, multi-query expansion, and 4-layer dedup are engine-agnostic. They o
    ```typescript
    export function createEngine(type: string): BrainEngine {
      switch (type) {
-       case 'pglite': return new PGLiteEngine();
-       case 'postgres': return new PostgresEngine();
-       case 'myengine': return new MyEngine();
-       default: throw new Error(`Unknown engine: ${type}`);
+       case "pglite":
+         return new PGLiteEngine();
+       case "postgres":
+         return new PostgresEngine();
+       case "myengine":
+         return new MyEngine();
+       default:
+         throw new Error(`Unknown engine: ${type}`);
      }
    }
    ```
@@ -210,18 +216,18 @@ Every method in `BrainEngine`. The full interface. No optional methods, no featu
 
 ## Capability matrix
 
-| Capability | PostgresEngine | PGLiteEngine | Notes |
-|-----------|---------------|-------------|-------|
-| CRUD | Full | Full | Same SQL |
-| Keyword search | tsvector + ts_rank | tsvector + ts_rank | Identical (real Postgres) |
-| Vector search | pgvector HNSW | pgvector HNSW | Identical (real Postgres) |
-| Fuzzy slug | pg_trgm | pg_trgm | Identical (real Postgres) |
-| Graph traversal | Recursive CTE | Recursive CTE | Same SQL |
-| Transactions | Full ACID | Full ACID | Both support this |
-| JSONB queries | GIN index | GIN index | Identical |
-| Concurrent access | Connection pooling | Single process | PGLite limitation |
-| Hosting | Supabase, self-hosted, Docker | Local file | |
-| Migration methods | runMigration, getChunksWithEmbeddings | Same | Added v0.7 |
+| Capability        | PostgresEngine                        | PGLiteEngine       | Notes                     |
+| ----------------- | ------------------------------------- | ------------------ | ------------------------- |
+| CRUD              | Full                                  | Full               | Same SQL                  |
+| Keyword search    | tsvector + ts_rank                    | tsvector + ts_rank | Identical (real Postgres) |
+| Vector search     | pgvector HNSW                         | pgvector HNSW      | Identical (real Postgres) |
+| Fuzzy slug        | pg_trgm                               | pg_trgm            | Identical (real Postgres) |
+| Graph traversal   | Recursive CTE                         | Recursive CTE      | Same SQL                  |
+| Transactions      | Full ACID                             | Full ACID          | Both support this         |
+| JSONB queries     | GIN index                             | GIN index          | Identical                 |
+| Concurrent access | Connection pooling                    | Single process     | PGLite limitation         |
+| Hosting           | Supabase, self-hosted, Docker         | Local file         |                           |
+| Migration methods | runMigration, getChunksWithEmbeddings | Same               | Added v0.7                |
 
 ## Future engine ideas
 

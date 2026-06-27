@@ -12,11 +12,11 @@
  * `RESOLVER.md` in new code — import from here.
  */
 
-import { existsSync } from 'fs';
-import { join } from 'path';
+import { existsSync } from "fs";
+import { join } from "path";
 
 /** Ordered: first-match wins. Do not reorder without updating tests. */
-export const RESOLVER_FILENAMES = ['RESOLVER.md', 'AGENTS.md'] as const;
+export const RESOLVER_FILENAMES = ["RESOLVER.md", "AGENTS.md"] as const;
 
 export type ResolverFilename = (typeof RESOLVER_FILENAMES)[number];
 
@@ -57,4 +57,4 @@ export function hasResolverFile(dir: string): boolean {
  * Human-readable list for error messages. Example:
  *   "RESOLVER.md or AGENTS.md"
  */
-export const RESOLVER_FILENAMES_LABEL = RESOLVER_FILENAMES.join(' or ');
+export const RESOLVER_FILENAMES_LABEL = RESOLVER_FILENAMES.join(" or ");

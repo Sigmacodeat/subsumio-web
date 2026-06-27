@@ -210,7 +210,9 @@ export default function DocumentRequestsPage() {
         </div>
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           <div className="space-y-1.5 md:col-span-2">
-            <Label htmlFor="doc-req-case" className="text-xs text-[color:var(--ds-text-muted)]">Akte</Label>
+            <Label htmlFor="doc-req-case" className="text-xs text-[color:var(--ds-text-muted)]">
+              Akte
+            </Label>
             <Input
               id="doc-req-case"
               value={createForm.case_slug}
@@ -219,7 +221,9 @@ export default function DocumentRequestsPage() {
             />
           </div>
           <div className="space-y-1.5 md:col-span-2">
-            <Label htmlFor="doc-req-items" className="text-xs text-[color:var(--ds-text-muted)]">Unterlagen</Label>
+            <Label htmlFor="doc-req-items" className="text-xs text-[color:var(--ds-text-muted)]">
+              Unterlagen
+            </Label>
             <textarea
               id="doc-req-items"
               value={createForm.items}
@@ -230,11 +234,15 @@ export default function DocumentRequestsPage() {
             />
           </div>
           <div className="space-y-1.5 md:col-span-2">
-            <Label htmlFor="doc-req-msg" className="text-xs text-[color:var(--ds-text-muted)]">Nachrichtenentwurf</Label>
+            <Label htmlFor="doc-req-msg" className="text-xs text-[color:var(--ds-text-muted)]">
+              Nachrichtenentwurf
+            </Label>
             <textarea
               id="doc-req-msg"
               value={createForm.message_draft}
-              onChange={(e) => setCreateForm((prev) => ({ ...prev, message_draft: e.target.value }))}
+              onChange={(e) =>
+                setCreateForm((prev) => ({ ...prev, message_draft: e.target.value }))
+              }
               placeholder="Nachrichtenentwurf"
               rows={3}
               className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm leading-relaxed text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--ds-border-strong)] focus:outline-none"

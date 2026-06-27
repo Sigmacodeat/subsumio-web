@@ -27,12 +27,12 @@ const PG_URL_RE = /^(postgres(?:ql)?:\/\/)([^@/?]*@)?([^?]*)(\?.*)?$/i;
  *     → '<redacted-url>'
  */
 export function redactPgUrl(url: unknown): string {
-  if (typeof url !== 'string' || !url) return '<redacted-url>';
+  if (typeof url !== "string" || !url) return "<redacted-url>";
   const match = url.match(PG_URL_RE);
-  if (!match) return '<redacted-url>';
+  if (!match) return "<redacted-url>";
   const [, scheme, userinfo, hostPart, query] = match;
-  const userPart = userinfo ? '***@' : '';
-  return `${scheme}${userPart}${hostPart}${query ?? ''}`;
+  const userPart = userinfo ? "***@" : "";
+  return `${scheme}${userPart}${hostPart}${query ?? ""}`;
 }
 
 /**
@@ -42,7 +42,7 @@ export function redactPgUrl(url: unknown): string {
  * somewhere.
  */
 export function redactDeep<T>(value: T): T {
-  if (typeof value === 'string') {
+  if (typeof value === "string") {
     if (/postgres(?:ql)?:\/\//i.test(value)) {
       return redactPgUrl(value) as unknown as T;
     }
@@ -51,7 +51,7 @@ export function redactDeep<T>(value: T): T {
   if (Array.isArray(value)) {
     return value.map(redactDeep) as unknown as T;
   }
-  if (value && typeof value === 'object') {
+  if (value && typeof value === "object") {
     const out: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
       out[k] = redactDeep(v);

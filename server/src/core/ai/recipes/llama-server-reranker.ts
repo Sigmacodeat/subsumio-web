@@ -1,4 +1,4 @@
-import type { Recipe } from '../types.ts';
+import type { Recipe } from "../types.ts";
 
 /**
  * llama.cpp's `llama-server --reranking` exposes a cross-encoder reranker
@@ -32,18 +32,17 @@ import type { Recipe } from '../types.ts';
  *     NOT guaranteed; users self-hosting ZE should pin their own eval)
  */
 export const llamaServerReranker: Recipe = {
-  id: 'llama-server-reranker',
-  name: 'llama.cpp llama-server (reranker, local)',
-  tier: 'openai-compat',
-  implementation: 'openai-compatible',
+  id: "llama-server-reranker",
+  name: "llama.cpp llama-server (reranker, local)",
+  tier: "openai-compat",
+  implementation: "openai-compatible",
   // Distinct default port from the embedding recipe (8080) so a user
   // running both locally can keep them on separate servers.
-  base_url_default: 'http://localhost:8081/v1',
+  base_url_default: "http://localhost:8081/v1",
   auth_env: {
     required: [],
-    optional: ['LLAMA_SERVER_RERANKER_BASE_URL', 'LLAMA_SERVER_RERANKER_API_KEY'],
-    setup_url:
-      'https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md',
+    optional: ["LLAMA_SERVER_RERANKER_BASE_URL", "LLAMA_SERVER_RERANKER_API_KEY"],
+    setup_url: "https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md",
   },
   touchpoints: {
     reranker: {
@@ -51,13 +50,13 @@ export const llamaServerReranker: Recipe = {
       // Informational placeholder for docs/wizard copy. Real model id is set
       // by the user via `gbrain config set search.reranker.model
       // llama-server-reranker:<--alias value>`.
-      default_model: 'qwen3-reranker-4b',
+      default_model: "qwen3-reranker-4b",
       // Local inference cost — consumed by budget-tracker.ts's rerank
       // pricing lookup (via FREE_LOCAL_RERANK_PROVIDERS) so callers with
       // `--max-cost` don't hard-fail. NOT for API billing; local rerank
       // costs electricity, not tokens.
       cost_per_1m_tokens_usd: 0,
-      price_last_verified: '2026-05-23',
+      price_last_verified: "2026-05-23",
       // Match ZE's per-request cap; llama.cpp has no upstream cap of its
       // own but the pre-flight guard is a defensive ceiling.
       max_payload_bytes: 5_000_000,
@@ -66,7 +65,7 @@ export const llamaServerReranker: Recipe = {
       // llama-server also serves `/reranking`, `/v1/reranking`, and bare
       // `/rerank` aliases — we pin the OpenAI-style `/rerank` path under
       // the existing `/v1` prefix.
-      path: '/rerank',
+      path: "/rerank",
       // CPU-only first-call warmup on a 4B cross-encoder can take 8-15s.
       // The default 5s in gateway.ts:DEFAULT_RERANK_TIMEOUT_MS would
       // fail-open silently. Caller's `input.timeoutMs` and the
@@ -75,10 +74,10 @@ export const llamaServerReranker: Recipe = {
     },
   },
   setup_hint:
-    'Build llama.cpp, then `llama-server --model <gguf-path> --alias ' +
-    '<short-id> --reranking --port 8081`. The --alias makes provider:model ' +
-    'strings short (without it, /v1/models defaults the id to the gguf file ' +
-    'path). Then `gbrain config set search.reranker.model ' +
-    'llama-server-reranker:<short-id>` and `gbrain config set ' +
-    'provider_base_urls.llama-server-reranker http://<host>:8081/v1`.',
+    "Build llama.cpp, then `llama-server --model <gguf-path> --alias " +
+    "<short-id> --reranking --port 8081`. The --alias makes provider:model " +
+    "strings short (without it, /v1/models defaults the id to the gguf file " +
+    "path). Then `gbrain config set search.reranker.model " +
+    "llama-server-reranker:<short-id>` and `gbrain config set " +
+    "provider_base_urls.llama-server-reranker http://<host>:8081/v1`.",
 };

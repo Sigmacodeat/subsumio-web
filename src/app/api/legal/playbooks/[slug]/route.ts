@@ -48,7 +48,7 @@ export const GET = createHandler(
     try {
       const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(slug)}`, {
         headers: ctx.headers,
-      signal: AbortSignal.timeout(30_000),
+        signal: AbortSignal.timeout(30_000),
       });
       if (res.status === 404) return apiError("not_found", "Playbook nicht gefunden", 404);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -99,7 +99,7 @@ export const PATCH = createHandler(
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...ctx.headers },
         body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(30_000),
+        signal: AbortSignal.timeout(30_000),
       });
       if (res.status === 404) return apiError("not_found", "Playbook nicht gefunden", 404);
       if (!res.ok) {
@@ -140,7 +140,7 @@ export const DELETE = createHandler(
       const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(slug)}`, {
         method: "DELETE",
         headers: ctx.headers,
-      signal: AbortSignal.timeout(30_000),
+        signal: AbortSignal.timeout(30_000),
       });
       if (res.status === 404) return apiError("not_found", "Playbook nicht gefunden", 404);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);

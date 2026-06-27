@@ -1,4 +1,3 @@
-
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import {
@@ -36,8 +35,8 @@ export const GET = createHandler(
       return apiError(
         "gate_eval_failed",
         err instanceof Error ? err.message : "gate_eval_failed",
-        500,
+        500
       );
     }
-  },
+  }
 );

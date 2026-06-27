@@ -17,8 +17,8 @@
  * aggregate — would silently inflate scores by hiding hard queries.
  */
 
-import type { BrainEngine } from '../engine.ts';
-import { hybridSearch } from '../search/hybrid.ts';
+import type { BrainEngine } from "../engine.ts";
+import { hybridSearch } from "../search/hybrid.ts";
 import {
   computeExpectedTop1Hit,
   computeFirstRelevantHit,
@@ -27,7 +27,7 @@ import {
   refKey,
   type QrelsFile,
   type QrelsEntry,
-} from './qrels-file.ts';
+} from "./qrels-file.ts";
 
 export interface CorrectnessGateOpts {
   /** Top-K for recall@K. Defaults to DEFAULT_QRELS_THRESHOLDS.k (10). */
@@ -37,7 +37,11 @@ export interface CorrectnessGateOpts {
    * Tests inject a stub to drive deterministic per-query behavior without
    * a real brain.
    */
-  searchFn?: (engine: BrainEngine, query: string, opts: { limit: number }) => Promise<Array<{ source_id?: string; slug: string }>>;
+  searchFn?: (
+    engine: BrainEngine,
+    query: string,
+    opts: { limit: number }
+  ) => Promise<Array<{ source_id?: string; slug: string }>>;
 }
 
 export interface PerQueryResult {
@@ -71,14 +75,14 @@ export interface CorrectnessResult {
 
 /** Build the canonical `${source_id}::${slug}` set for a SearchResult-like array. */
 function toRefKeySet(results: Array<{ source_id?: string; slug: string }>): string[] {
-  return results.map(r => `${r.source_id ?? 'default'}::${r.slug}`);
+  return results.map((r) => `${r.source_id ?? "default"}::${r.slug}`);
 }
 
 async function runOneQuery(
   engine: BrainEngine,
   entry: QrelsEntry,
   k: number,
-  searchFn: NonNullable<CorrectnessGateOpts['searchFn']>,
+  searchFn: NonNullable<CorrectnessGateOpts["searchFn"]>
 ): Promise<PerQueryResult> {
   let retrieved: string[];
   try {
@@ -125,37 +129,43 @@ async function runOneQuery(
 export async function runCorrectnessGate(
   engine: BrainEngine,
   qrels: QrelsFile,
-  opts: CorrectnessGateOpts = {},
+  opts: CorrectnessGateOpts = {}
 ): Promise<CorrectnessResult> {
   if (qrels.queries.length === 0) {
-    throw new Error('runCorrectnessGate: qrels file has no queries');
+    throw new Error("runCorrectnessGate: qrels file has no queries");
   }
   const k = opts.k ?? DEFAULT_QRELS_THRESHOLDS.k;
-  const searchFn = opts.searchFn ?? (async (e, q, o) => {
-    const results = await hybridSearch(e, q, { limit: o.limit });
-    return results.map(r => ({ source_id: r.source_id, slug: r.slug }));
-  });
+  const searchFn =
+    opts.searchFn ??
+    (async (e, q, o) => {
+      const results = await hybridSearch(e, q, { limit: o.limit });
+      return results.map((r) => ({ source_id: r.source_id, slug: r.slug }));
+    });
 
   const perQuery: PerQueryResult[] = [];
   for (const entry of qrels.queries) {
     perQuery.push(await runOneQuery(engine, entry, k, searchFn));
   }
 
-  const errored = perQuery.filter(p => p.errored).length;
+  const errored = perQuery.filter((p) => p.errored).length;
   const run = perQuery.length - errored;
-  const nonErrored = perQuery.filter(p => !p.errored);
+  const nonErrored = perQuery.filter((p) => !p.errored);
 
-  const meanRecall = nonErrored.length === 0
-    ? 0
-    : nonErrored.reduce((s, p) => s + p.recall_at_k, 0) / nonErrored.length;
-  const firstRelevantRate = nonErrored.length === 0
-    ? 0
-    : nonErrored.reduce((s, p) => s + p.first_relevant_hit, 0) / nonErrored.length;
+  const meanRecall =
+    nonErrored.length === 0
+      ? 0
+      : nonErrored.reduce((s, p) => s + p.recall_at_k, 0) / nonErrored.length;
+  const firstRelevantRate =
+    nonErrored.length === 0
+      ? 0
+      : nonErrored.reduce((s, p) => s + p.first_relevant_hit, 0) / nonErrored.length;
 
-  const withExpectedTop1 = nonErrored.filter(p => p.expected_top1_hit !== undefined);
-  const expectedTop1Rate = withExpectedTop1.length === 0
-    ? 0
-    : withExpectedTop1.reduce((s, p) => s + (p.expected_top1_hit ?? 0), 0) / withExpectedTop1.length;
+  const withExpectedTop1 = nonErrored.filter((p) => p.expected_top1_hit !== undefined);
+  const expectedTop1Rate =
+    withExpectedTop1.length === 0
+      ? 0
+      : withExpectedTop1.reduce((s, p) => s + (p.expected_top1_hit ?? 0), 0) /
+        withExpectedTop1.length;
 
   return {
     summary: {

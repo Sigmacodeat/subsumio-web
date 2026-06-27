@@ -118,9 +118,7 @@ export const CATEGORY_LABELS: Record<ClauseCategory, string> = {
 
 // ── Severity → Risk Level Mapping ─────────────────────────────────────
 
-export function severityToRiskLevel(
-  severity: PlaybookSeverity,
-): ClauseRiskLevel {
+export function severityToRiskLevel(severity: PlaybookSeverity): ClauseRiskLevel {
   switch (severity) {
     case "critical":
       return "critical";
@@ -135,21 +133,14 @@ export function severityToRiskLevel(
 
 // ── Helpers ───────────────────────────────────────────────────────────
 
-export function buildAnnotationSlug(
-  contractSlug: string,
-  clauseType: string,
-  at?: Date,
-): string {
+export function buildAnnotationSlug(contractSlug: string, clauseType: string, at?: Date): string {
   const date = at ?? new Date();
   const stamp = date.toISOString().replace(/[:.]/g, "-").slice(0, 19);
   const contractPart = contractSlug.split("/").pop() ?? contractSlug;
   return `clause_annotations/${contractPart}/${clauseType}-${stamp}`;
 }
 
-export function buildAnnotationTitle(
-  clauseType: ClauseCategory,
-  clauseTitle: string,
-): string {
+export function buildAnnotationTitle(clauseType: ClauseCategory, clauseTitle: string): string {
   const catLabel = CATEGORY_LABELS[clauseType] ?? clauseType;
   return `${catLabel}: ${clauseTitle}`;
 }
@@ -224,28 +215,28 @@ export function fmToAnnotation(page: {
 
 export function filterByContract(
   annotations: ClauseAnnotation[],
-  contractSlug: string,
+  contractSlug: string
 ): ClauseAnnotation[] {
   return annotations.filter((a) => a.frontmatter.contract_slug === contractSlug);
 }
 
 export function filterByRisk(
   annotations: ClauseAnnotation[],
-  risk: ClauseRiskLevel,
+  risk: ClauseRiskLevel
 ): ClauseAnnotation[] {
   return annotations.filter((a) => a.frontmatter.risk_level === risk);
 }
 
 export function filterByReviewStatus(
   annotations: ClauseAnnotation[],
-  status: ClauseReviewStatus,
+  status: ClauseReviewStatus
 ): ClauseAnnotation[] {
   return annotations.filter((a) => a.frontmatter.review_status === status);
 }
 
 export function filterByCategory(
   annotations: ClauseAnnotation[],
-  category: ClauseCategory,
+  category: ClauseCategory
 ): ClauseAnnotation[] {
   return annotations.filter((a) => a.frontmatter.clause_type === category);
 }
@@ -254,7 +245,7 @@ export function filterByCategory(
 
 export function sortByRiskLevel(
   annotations: ClauseAnnotation[],
-  direction?: "asc" | "desc",
+  direction?: "asc" | "desc"
 ): ClauseAnnotation[] {
   const order: Record<ClauseRiskLevel, number> = {
     critical: 0,
@@ -271,13 +262,11 @@ export function sortByRiskLevel(
 
 export function sortByAnnotatedAt(
   annotations: ClauseAnnotation[],
-  direction?: "asc" | "desc",
+  direction?: "asc" | "desc"
 ): ClauseAnnotation[] {
   const dir = direction ?? "desc";
   return [...annotations].sort((a, b) => {
-    const cmp = (a.frontmatter.annotated_at ?? "").localeCompare(
-      b.frontmatter.annotated_at ?? "",
-    );
+    const cmp = (a.frontmatter.annotated_at ?? "").localeCompare(b.frontmatter.annotated_at ?? "");
     return dir === "desc" ? -cmp : cmp;
   });
 }
@@ -293,9 +282,7 @@ export interface AnnotationStats {
   rejected: number;
 }
 
-export function computeAnnotationStats(
-  annotations: ClauseAnnotation[],
-): AnnotationStats {
+export function computeAnnotationStats(annotations: ClauseAnnotation[]): AnnotationStats {
   const stats: AnnotationStats = {
     total: annotations.length,
     by_risk: { low: 0, medium: 0, high: 0, critical: 0 },
@@ -310,10 +297,7 @@ export function computeAnnotationStats(
     stats.by_status[a.frontmatter.review_status]++;
     if (a.frontmatter.review_status === "approved") stats.approved++;
     if (a.frontmatter.review_status === "rejected") stats.rejected++;
-    if (
-      a.frontmatter.review_status === "pending" &&
-      a.frontmatter.risk_level === "critical"
-    ) {
+    if (a.frontmatter.review_status === "pending" && a.frontmatter.risk_level === "critical") {
       stats.pending_critical++;
     }
   }

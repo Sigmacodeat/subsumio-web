@@ -42,6 +42,7 @@ mutating: false
 ## Contract
 
 This skill guarantees:
+
 1. At least two structuring options are compared, each with its legal basis (§§).
 2. Each option carries a comparative tax-burden estimate with the calculation path.
 3. A § 42 AO (abuse-of-arrangement) and economic-substance risk note per option.
@@ -57,21 +58,25 @@ optimize the tax burden legally. Do NOT use to analyze an existing Bescheid
 ## Protocol
 
 ### Step 1 — Situation & Goal
+
 Entity structure, taxes in scope, time horizon, the client's actual goal
 (cash-out, reinvestment, succession, exit), and any constraints from the brain's
 advisory history.
 
 ### Step 2 — Generate Options
+
 Draw on the tax corpus and prior similar mandates in the brain. Typical levers:
 Rechtsformwahl (GmbH vs. GmbH & Co. KG vs. Einzelunternehmen), Holding /
 § 8b KStG, Thesaurierung § 34a EStG, Organschaft, Umwandlung (UmwStG),
 investment incentives, timing.
 
 ### Step 3 — Compare & Risk-Rate
+
 Per option: estimated tax burden, § 42 AO / substance risk (low/medium/high),
 non-tax side effects, implementation effort.
 
 ### Step 4 — Recommend
+
 A ranked recommendation with the open questions a human advisor must resolve.
 
 ## Output Format
@@ -112,6 +117,7 @@ Erstellt: [Datum] | Skill: steuer-gestaltung v1.0.0
 - ❌ Recommending arrangements that depend on non-disclosure or mislabeling — never.
 
 ## Error Handling
+
 - Insufficient facts → list the minimum inputs needed to model an option.
 - No comparable mandate or norm in brain → proceed from the corpus only and say so.
 - If the goal implies evasion rather than legal optimization → decline and explain the line.

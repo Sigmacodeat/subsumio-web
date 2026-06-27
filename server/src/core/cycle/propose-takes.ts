@@ -37,23 +37,23 @@
  * phase can run hermetically in unit tests without touching the gateway.
  */
 
-import { randomUUID, createHash } from 'node:crypto';
-import { BaseCyclePhase, type ScopedReadOpts, type BasePhaseOpts } from './base-phase.ts';
-import { chat as gatewayChat } from '../ai/gateway.ts';
-import { writeReceipt } from '../extract/receipt-writer.ts';
-import { upsertExtractRollup } from '../extract/rollup-writer.ts';
-import { GBrainError } from '../types.ts';
-import type { Page, PageFilters } from '../types.ts';
-import type { OperationContext } from '../operations.ts';
-import type { BrainEngine } from '../engine.ts';
-import type { PhaseStatus, CyclePhase } from '../cycle.ts';
+import { randomUUID, createHash } from "node:crypto";
+import { BaseCyclePhase, type ScopedReadOpts, type BasePhaseOpts } from "./base-phase.ts";
+import { chat as gatewayChat } from "../ai/gateway.ts";
+import { writeReceipt } from "../extract/receipt-writer.ts";
+import { upsertExtractRollup } from "../extract/rollup-writer.ts";
+import { GBrainError } from "../types.ts";
+import type { Page, PageFilters } from "../types.ts";
+import type { OperationContext } from "../operations.ts";
+import type { BrainEngine } from "../engine.ts";
+import type { PhaseStatus, CyclePhase } from "../cycle.ts";
 
 /**
  * Bump when the extractor prompt or the JSON output shape changes. Old
  * verdicts in `take_proposals` (composite key includes prompt_version) stay
  * valid as audit history; new runs re-spend LLM tokens on every page.
  */
-export const PROPOSE_TAKES_PROMPT_VERSION = 'v0.36.1.0-tuned-cat15';
+export const PROPOSE_TAKES_PROMPT_VERSION = "v0.36.1.0-tuned-cat15";
 
 /**
  * Tuned extractor prompt, validated against the hand-labeled synthetic
@@ -118,7 +118,7 @@ PAGE PROSE:
 /** One proposed take, as the extractor produces it. */
 export interface ProposedTake {
   claim_text: string;
-  kind: 'fact' | 'take' | 'bet' | 'hunch';
+  kind: "fact" | "take" | "bet" | "hunch";
   holder: string;
   weight: number;
   domain?: string;
@@ -162,7 +162,7 @@ export interface ProposeTakesResult {
  * the composite unique index.
  */
 export function contentHash(pageBody: string): string {
-  return createHash('sha256').update(pageBody).digest('hex');
+  return createHash("sha256").update(pageBody).digest("hex");
 }
 
 /**
@@ -186,22 +186,27 @@ export function extractExistingTakesForDedup(pageBody: string): Array<{
   holder: string;
   weight: number;
 }> {
-  const fenceMatch = pageBody.match(/<!---?\s*gbrain:takes:begin\s*-->([\s\S]*?)<!---?\s*gbrain:takes:end\s*-->/);
+  const fenceMatch = pageBody.match(
+    /<!---?\s*gbrain:takes:begin\s*-->([\s\S]*?)<!---?\s*gbrain:takes:end\s*-->/
+  );
   if (!fenceMatch) return [];
-  const body = fenceMatch[1] ?? '';
+  const body = fenceMatch[1] ?? "";
   const rows: Array<{ claim: string; kind: string; holder: string; weight: number }> = [];
-  for (const line of body.split('\n')) {
-    const cells = line.split('|').map(c => c.trim()).filter((_, i, arr) => i > 0 && i < arr.length - 1);
+  for (const line of body.split("\n")) {
+    const cells = line
+      .split("|")
+      .map((c) => c.trim())
+      .filter((_, i, arr) => i > 0 && i < arr.length - 1);
     // Skip header + separator rows.
     if (cells.length < 4) continue;
-    if (cells[0] === '#' || cells[0]?.match(/^-+$/)) continue;
-    const claim = cells[1] ?? '';
-    if (!claim || claim.startsWith('~~')) continue; // strikethrough = inactive, doesn't count for dedup
-    const kind = cells[2] ?? 'take';
-    const holder = cells[3] ?? 'brain';
-    const weight = Number.parseFloat(cells[4] ?? '0.5');
+    if (cells[0] === "#" || cells[0]?.match(/^-+$/)) continue;
+    const claim = cells[1] ?? "";
+    if (!claim || claim.startsWith("~~")) continue; // strikethrough = inactive, doesn't count for dedup
+    const kind = cells[2] ?? "take";
+    const holder = cells[3] ?? "brain";
+    const weight = Number.parseFloat(cells[4] ?? "0.5");
     rows.push({
-      claim: claim.replace(/^~~|~~$/g, ''),
+      claim: claim.replace(/^~~|~~$/g, ""),
       kind,
       holder,
       weight: Number.isFinite(weight) ? weight : 0.5,
@@ -221,14 +226,15 @@ export function extractExistingTakesForDedup(pageBody: string): Array<{
  * empirically often a sparse list or [].
  */
 export async function defaultExtractor(
-  input: Parameters<ProposeTakesExtractor>[0],
+  input: Parameters<ProposeTakesExtractor>[0]
 ): Promise<ProposedTake[]> {
-  const prompt = EXTRACT_TAKES_PROMPT
-    .replace('{EXISTING_TAKES_JSON}', JSON.stringify(input.existingTakes, null, 2))
-    .replace('{PAGE_BODY}', input.pageBody);
+  const prompt = EXTRACT_TAKES_PROMPT.replace(
+    "{EXISTING_TAKES_JSON}",
+    JSON.stringify(input.existingTakes, null, 2)
+  ).replace("{PAGE_BODY}", input.pageBody);
 
   const result = await gatewayChat({
-    messages: [{ role: 'user', content: prompt }],
+    messages: [{ role: "user", content: prompt }],
     ...(input.modelHint ? { model: input.modelHint } : {}),
     maxTokens: 2048,
   });
@@ -248,10 +254,10 @@ export function parseExtractorOutput(raw: string): ProposedTake[] {
   let text = raw.trim();
   // Strip markdown code fence wrapper.
   const fenced = text.match(/^```(?:json)?\s*\n?([\s\S]*?)\n?```$/);
-  if (fenced) text = (fenced[1] ?? '').trim();
+  if (fenced) text = (fenced[1] ?? "").trim();
   // First-array-or-object substring extraction (defends against leading prose).
-  const firstArr = text.indexOf('[');
-  const firstObj = text.indexOf('{');
+  const firstArr = text.indexOf("[");
+  const firstObj = text.indexOf("{");
   if (firstArr === -1 && firstObj === -1) return [];
   const start = firstArr !== -1 && (firstObj === -1 || firstArr < firstObj) ? firstArr : firstObj;
   let parsed: unknown;
@@ -263,17 +269,17 @@ export function parseExtractorOutput(raw: string): ProposedTake[] {
   const arr = Array.isArray(parsed) ? parsed : [parsed];
   const out: ProposedTake[] = [];
   for (const raw of arr) {
-    if (typeof raw !== 'object' || raw === null) continue;
+    if (typeof raw !== "object" || raw === null) continue;
     const r = raw as Record<string, unknown>;
-    const claim_text = typeof r.claim_text === 'string' ? r.claim_text.trim() : '';
+    const claim_text = typeof r.claim_text === "string" ? r.claim_text.trim() : "";
     if (!claim_text || claim_text.length > 500) continue;
-    const kind = ['fact', 'take', 'bet', 'hunch'].includes(r.kind as string)
-      ? (r.kind as ProposedTake['kind'])
-      : 'take';
-    const holder = typeof r.holder === 'string' && r.holder.length > 0 ? r.holder : 'brain';
-    const weightRaw = typeof r.weight === 'number' ? r.weight : 0.5;
+    const kind = ["fact", "take", "bet", "hunch"].includes(r.kind as string)
+      ? (r.kind as ProposedTake["kind"])
+      : "take";
+    const holder = typeof r.holder === "string" && r.holder.length > 0 ? r.holder : "brain";
+    const weightRaw = typeof r.weight === "number" ? r.weight : 0.5;
     const weight = Math.max(0, Math.min(1, weightRaw));
-    const domain = typeof r.domain === 'string' && r.domain.length > 0 ? r.domain : undefined;
+    const domain = typeof r.domain === "string" && r.domain.length > 0 ? r.domain : undefined;
     out.push({ claim_text, kind, holder, weight, domain });
   }
   return out;
@@ -284,30 +290,31 @@ export function parseExtractorOutput(raw: string): ProposedTake[] {
  * extractor, writes proposals.
  */
 class ProposeTakesPhase extends BaseCyclePhase {
-  readonly name = 'propose_takes' as CyclePhase;
-  protected readonly budgetUsdKey = 'cycle.propose_takes.budget_usd';
+  readonly name = "propose_takes" as CyclePhase;
+  protected readonly budgetUsdKey = "cycle.propose_takes.budget_usd";
   protected readonly budgetUsdDefault = 5.0;
 
   protected override mapErrorCode(err: unknown): string {
     if (err instanceof GBrainError) return err.problem;
     if (err instanceof Error) {
-      if (err.message.includes('content_hash')) return 'CALIBRATION_PROPOSAL_DEDUP_FAIL';
-      if (err.message.includes('budget') || err.message.includes('Budget')) return 'CALIBRATION_GRADE_BUDGET_EXHAUSTED';
+      if (err.message.includes("content_hash")) return "CALIBRATION_PROPOSAL_DEDUP_FAIL";
+      if (err.message.includes("budget") || err.message.includes("Budget"))
+        return "CALIBRATION_GRADE_BUDGET_EXHAUSTED";
     }
-    return 'PROPOSE_TAKES_UNKNOWN';
+    return "PROPOSE_TAKES_UNKNOWN";
   }
 
   protected async process(
     engine: BrainEngine,
     scope: ScopedReadOpts,
     _ctx: OperationContext,
-    opts: ProposeTakesOpts,
+    opts: ProposeTakesOpts
   ): Promise<{ summary: string; details: Record<string, unknown>; status?: PhaseStatus }> {
     const extractor = opts.extractor ?? defaultExtractor;
     const promptVersion = opts.promptVersion ?? PROPOSE_TAKES_PROMPT_VERSION;
     const pageLimit = opts.pageLimit ?? 100;
     const skipPagesWithFence = opts.skipPagesWithFence ?? false;
-    const proposalRunId = `propose-${new Date().toISOString().slice(0, 19).replace(/[-:T]/g, '')}-${randomUUID().slice(0, 8)}`;
+    const proposalRunId = `propose-${new Date().toISOString().slice(0, 19).replace(/[-:T]/g, "")}-${randomUUID().slice(0, 8)}`;
 
     const result: ProposeTakesResult = {
       pages_scanned: 0,
@@ -322,12 +329,12 @@ class ProposeTakesPhase extends BaseCyclePhase {
     const pageFilters: PageFilters = {
       ...scope,
       limit: pageLimit,
-      sort: 'updated_desc',
+      sort: "updated_desc",
     };
     const pages: Page[] = await engine.listPages(pageFilters);
 
     if (opts.reporter) {
-      opts.reporter.start('propose_takes.pages' as never, pages.length);
+      opts.reporter.start("propose_takes.pages" as never, pages.length);
     }
 
     for (const page of pages) {
@@ -335,7 +342,7 @@ class ProposeTakesPhase extends BaseCyclePhase {
       this.tick(opts);
 
       // Skip pages that have NO prose body (e.g. metadata-only entity stubs).
-      const body = page.compiled_truth ?? '';
+      const body = page.compiled_truth ?? "";
       if (body.trim().length === 0) continue;
       if (skipPagesWithFence && hasCompleteFence(body)) continue;
 
@@ -344,12 +351,12 @@ class ProposeTakesPhase extends BaseCyclePhase {
 
       // Idempotency check. If a row exists for (source_id, page_slug, content_hash,
       // prompt_version), this page was already processed — skip and count as cache hit.
-      const sourceId = page.source_id ?? scope.sourceId ?? 'default';
+      const sourceId = page.source_id ?? scope.sourceId ?? "default";
       const cached = await engine.executeRaw<{ id: number }>(
         `SELECT id FROM take_proposals
          WHERE source_id = $1 AND page_slug = $2 AND content_hash = $3 AND prompt_version = $4
          LIMIT 1`,
-        [sourceId, page.slug, ch, promptVersion],
+        [sourceId, page.slug, ch, promptVersion]
       );
       if (cached.length > 0) {
         result.cache_hits += 1;
@@ -359,14 +366,14 @@ class ProposeTakesPhase extends BaseCyclePhase {
 
       // Budget pre-check before the LLM call. Estimate: ~1500 input tokens + 500 output.
       const budget = this.checkBudget({
-        modelId: opts.model ?? 'claude-sonnet-4-6',
+        modelId: opts.model ?? "claude-sonnet-4-6",
         estimatedInputTokens: 1500,
         maxOutputTokens: 500,
       });
       if (!budget.allowed) {
         result.budget_exhausted = true;
         result.warnings.push(
-          `budget exhausted at page ${result.pages_scanned}/${pages.length} (cumulative $${budget.cumulativeCostUsd.toFixed(4)} / cap $${budget.budgetUsd.toFixed(2)})`,
+          `budget exhausted at page ${result.pages_scanned}/${pages.length} (cumulative $${budget.cumulativeCostUsd.toFixed(4)} / cap $${budget.budgetUsd.toFixed(2)})`
         );
         break;
       }
@@ -408,8 +415,8 @@ class ProposeTakesPhase extends BaseCyclePhase {
             p.weight,
             p.domain ?? null,
             JSON.stringify(existingTakes),
-            opts.model ?? 'claude-sonnet-4-6',
-          ],
+            opts.model ?? "claude-sonnet-4-6",
+          ]
         );
         result.proposals_inserted += 1;
       }
@@ -419,14 +426,14 @@ class ProposeTakesPhase extends BaseCyclePhase {
 
     // v0.42 Wave B3: receipt + rollup for propose_takes. Source-scoped
     // via the read scope. Receipt only when proposals actually written.
-    const sourceIdForReceipt = scope.sourceId ?? 'default';
+    const sourceIdForReceipt = scope.sourceId ?? "default";
     if (result.proposals_inserted > 0) {
       try {
         await writeReceipt(engine, {
-          kind: 'takes.proposed',
+          kind: "takes.proposed",
           source_id: sourceIdForReceipt,
           run_id: proposalRunId,
-          round: 'single',
+          round: "single",
           extracted_at: new Date().toISOString(),
           total_rows: result.proposals_inserted,
           cost_usd: 0, // tracker isn't exposed at this layer; cost tracked centrally
@@ -439,7 +446,7 @@ class ProposeTakesPhase extends BaseCyclePhase {
       }
     }
     await upsertExtractRollup(engine, {
-      kind: 'takes.proposed',
+      kind: "takes.proposed",
       source_id: sourceIdForReceipt,
       round_completed_delta: result.budget_exhausted ? 0 : 1,
       halt_delta: result.budget_exhausted ? 1 : 0,
@@ -448,7 +455,7 @@ class ProposeTakesPhase extends BaseCyclePhase {
     return {
       summary: `propose_takes: scanned ${result.pages_scanned} pages, ${result.cache_hits} cached, ${result.proposals_inserted} new proposals (run ${proposalRunId})`,
       details: { ...result, proposal_run_id: proposalRunId, prompt_version: promptVersion },
-      status: result.budget_exhausted ? 'warn' : 'ok',
+      status: result.budget_exhausted ? "warn" : "ok",
     };
   }
 }
@@ -457,10 +464,7 @@ class ProposeTakesPhase extends BaseCyclePhase {
  * Public entry point — mirrors the v0.23 `runPhaseSynthesize` shape so the
  * cycle orchestrator in cycle.ts can call it uniformly.
  */
-export async function runPhaseProposeTakes(
-  ctx: OperationContext,
-  opts: ProposeTakesOpts = {},
-) {
+export async function runPhaseProposeTakes(ctx: OperationContext, opts: ProposeTakesOpts = {}) {
   return new ProposeTakesPhase().run(ctx, opts);
 }
 

@@ -3,7 +3,7 @@
  * languages. Preserves legal terminology, statute references, and jurisdictional
  * context. Returns the translated text plus a glossary of key legal terms.
  */
-import type { BrainEngine } from '../engine.ts';
+import type { BrainEngine } from "../engine.ts";
 import {
   type LegalLLM,
   clipText,
@@ -11,7 +11,7 @@ import {
   resolveDocumentText,
   tryParseJSON,
   asStringArray,
-} from './llm-util.ts';
+} from "./llm-util.ts";
 
 export interface TranslationGlossaryEntry {
   source_term: string;
@@ -42,18 +42,18 @@ export interface TranslateOpts {
 }
 
 const LANG_LABELS: Record<string, string> = {
-  de: 'Deutsch',
-  en: 'Englisch',
-  fr: 'Französisch',
-  it: 'Italienisch',
-  es: 'Spanisch',
-  nl: 'Niederländisch',
-  pl: 'Polnisch',
-  ro: 'Rumänisch',
-  tr: 'Türkisch',
-  ar: 'Arabisch',
-  ru: 'Russisch',
-  zh: 'Chinesisch',
+  de: "Deutsch",
+  en: "Englisch",
+  fr: "Französisch",
+  it: "Italienisch",
+  es: "Spanisch",
+  nl: "Niederländisch",
+  pl: "Polnisch",
+  ro: "Rumänisch",
+  tr: "Türkisch",
+  ar: "Arabisch",
+  ru: "Russisch",
+  zh: "Chinesisch",
 };
 
 function langLabel(code: string): string {
@@ -64,7 +64,7 @@ function buildSystem(
   sourceLang: string,
   targetLang: string,
   legalTerminology: boolean,
-  preserveFormatting: boolean,
+  preserveFormatting: boolean
 ): string {
   const srcLabel = langLabel(sourceLang);
   const tgtLabel = langLabel(targetLang);
@@ -112,16 +112,16 @@ The glossary should contain 0-20 entries covering key legal terms that required 
 
 export async function translateDocument(
   engine: BrainEngine,
-  opts: TranslateOpts,
+  opts: TranslateOpts
 ): Promise<DocumentTranslation> {
   const llm = opts.llm ?? (await defaultLegalLLM());
   if (!llm) {
     return {
-      translated_text: '',
-      source_language: opts.source_language ?? 'auto',
+      translated_text: "",
+      source_language: opts.source_language ?? "auto",
       target_language: opts.target_language,
       glossary: [],
-      warnings: ['LLM_NOT_CONFIGURED: No chat model available for translation.'],
+      warnings: ["LLM_NOT_CONFIGURED: No chat model available for translation."],
       attorney_review_required: true,
     };
   }
@@ -135,8 +135,8 @@ export async function translateDocument(
 
   if (notFound) {
     return {
-      translated_text: '',
-      source_language: opts.source_language ?? 'auto',
+      translated_text: "",
+      source_language: opts.source_language ?? "auto",
       target_language: opts.target_language,
       glossary: [],
       warnings: [`DOCUMENT_NOT_FOUND: slug "${sourceSlug}" does not exist.`],
@@ -146,11 +146,11 @@ export async function translateDocument(
 
   if (!text.trim()) {
     return {
-      translated_text: '',
-      source_language: opts.source_language ?? 'auto',
+      translated_text: "",
+      source_language: opts.source_language ?? "auto",
       target_language: opts.target_language,
       glossary: [],
-      warnings: ['NO_TEXT: No text provided for translation.'],
+      warnings: ["NO_TEXT: No text provided for translation."],
       attorney_review_required: true,
     };
   }
@@ -160,15 +160,15 @@ export async function translateDocument(
   const warnings: string[] = [];
   if (warning) warnings.push(warning);
 
-  const sourceLang = opts.source_language ?? 'auto';
+  const sourceLang = opts.source_language ?? "auto";
   const system = buildSystem(
     sourceLang,
     opts.target_language,
     opts.legal_terminology ?? true,
-    opts.preserve_formatting ?? true,
+    opts.preserve_formatting ?? true
   );
 
-  const userPrompt = `Translate the following text${sourceLang !== 'auto' ? ` from ${langLabel(sourceLang)}` : ''} to ${langLabel(opts.target_language)}:\n\n${clipped}`;
+  const userPrompt = `Translate the following text${sourceLang !== "auto" ? ` from ${langLabel(sourceLang)}` : ""} to ${langLabel(opts.target_language)}:\n\n${clipped}`;
 
   const raw = await llm({ system, user: userPrompt, maxTokens: 8000 });
   const parsed = tryParseJSON(raw);
@@ -179,19 +179,21 @@ export async function translateDocument(
       source_language: sourceLang,
       target_language: opts.target_language,
       glossary: [],
-      warnings: ['UNSTRUCTURED_OUTPUT: Model returned plain text instead of JSON. Translation may be incomplete.'],
+      warnings: [
+        "UNSTRUCTURED_OUTPUT: Model returned plain text instead of JSON. Translation may be incomplete.",
+      ],
       attorney_review_required: true,
     };
   }
 
-  const translatedText = typeof parsed.translated_text === 'string' ? parsed.translated_text : '';
+  const translatedText = typeof parsed.translated_text === "string" ? parsed.translated_text : "";
   const glossary: TranslationGlossaryEntry[] = Array.isArray(parsed.glossary)
     ? parsed.glossary
-        .filter((g): g is Record<string, unknown> => typeof g === 'object' && g !== null)
+        .filter((g): g is Record<string, unknown> => typeof g === "object" && g !== null)
         .map((g) => ({
-          source_term: String(g.source_term ?? ''),
-          target_term: String(g.target_term ?? ''),
-          ...(typeof g.note === 'string' && g.note ? { note: g.note } : {}),
+          source_term: String(g.source_term ?? ""),
+          target_term: String(g.target_term ?? ""),
+          ...(typeof g.note === "string" && g.note ? { note: g.note } : {}),
         }))
         .filter((g) => g.source_term && g.target_term)
     : [];

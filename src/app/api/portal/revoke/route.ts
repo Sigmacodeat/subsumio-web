@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 import { revokePortalToken } from "@/lib/portal-token";
 import { createHandler } from "@/lib/api-handler";
@@ -21,5 +20,5 @@ export const POST = createHandler(
   async (_ctx, body, _query, _req) => {
     await revokePortalToken(body.token);
     return Response.json({ revoked: true });
-  },
+  }
 );

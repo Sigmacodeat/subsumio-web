@@ -21,9 +21,9 @@
  * (the page falls back to title-only per D14 regardless of audit success).
  */
 
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import { resolveAuditDir } from './minions/handlers/shell-audit.ts';
+import * as fs from "node:fs";
+import * as path from "node:path";
+import { resolveAuditDir } from "./minions/handlers/shell-audit.ts";
 
 /**
  * Per-D27 P1-2 failure envelope. Each `kind` maps to a distinct downstream
@@ -36,15 +36,15 @@ import { resolveAuditDir } from './minions/handlers/shell-audit.ts';
  *   source_missing              → walk source-text fallback chain (D11)
  */
 export type SynopsisFailureKind =
-  | 'refusal'
-  | 'empty'
-  | 'malformed'
-  | 'auth_failure'
-  | 'rate_limit'
-  | 'timeout'
-  | 'network'
-  | 'provider_5xx'
-  | 'source_missing';
+  | "refusal"
+  | "empty"
+  | "malformed"
+  | "auth_failure"
+  | "rate_limit"
+  | "timeout"
+  | "network"
+  | "provider_5xx"
+  | "source_missing";
 
 export interface SynopsisFailureAuditEvent {
   ts: string;
@@ -67,7 +67,7 @@ export interface SynopsisFailureAuditEvent {
    * title-only (D14). Lets doctor compute the per-page-degradation rate.
    */
   page_level_fallback: boolean;
-  severity: 'warn';
+  severity: "warn";
 }
 
 const DETAIL_HARD_CAP_CHARS = 200;
@@ -82,7 +82,7 @@ export function computeSynopsisAuditFilename(now: Date = new Date()): string {
   const firstThursdayDayNum = (firstThursday.getUTCDay() + 6) % 7;
   firstThursday.setUTCDate(firstThursday.getUTCDate() - firstThursdayDayNum + 3);
   const weekNum = Math.round((d.getTime() - firstThursday.getTime()) / (7 * 86400000)) + 1;
-  const ww = String(weekNum).padStart(2, '0');
+  const ww = String(weekNum).padStart(2, "0");
   return `synopsis-failures-${isoYear}-W${ww}.jsonl`;
 }
 
@@ -111,17 +111,17 @@ export function logSynopsisFailure(args: LogSynopsisFailureArgs): void {
     kind: args.kind,
     detail: args.detail ? args.detail.slice(0, DETAIL_HARD_CAP_CHARS) : undefined,
     page_level_fallback: args.pageLevelFallback,
-    severity: 'warn',
+    severity: "warn",
   };
   const dir = resolveAuditDir();
   const file = path.join(dir, computeSynopsisAuditFilename());
   try {
     fs.mkdirSync(dir, { recursive: true });
-    fs.appendFileSync(file, JSON.stringify(event) + '\n', { encoding: 'utf8' });
+    fs.appendFileSync(file, JSON.stringify(event) + "\n", { encoding: "utf8" });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     process.stderr.write(
-      `[gbrain] synopsis-failure audit write failed (${msg}); page ${args.pageSlug} continues\n`,
+      `[gbrain] synopsis-failure audit write failed (${msg}); page ${args.pageSlug} continues\n`
     );
   }
 }
@@ -134,7 +134,7 @@ export function logSynopsisFailure(args: LogSynopsisFailureArgs): void {
  */
 export function readRecentSynopsisFailures(
   days = 7,
-  now: Date = new Date(),
+  now: Date = new Date()
 ): SynopsisFailureAuditEvent[] {
   const dir = resolveAuditDir();
   const cutoff = now.getTime() - days * 86400000;
@@ -147,11 +147,11 @@ export function readRecentSynopsisFailures(
     const file = path.join(dir, filename);
     let content: string;
     try {
-      content = fs.readFileSync(file, 'utf8');
+      content = fs.readFileSync(file, "utf8");
     } catch {
       continue;
     }
-    for (const line of content.split('\n')) {
+    for (const line of content.split("\n")) {
       if (line.length === 0) continue;
       try {
         const ev = JSON.parse(line) as SynopsisFailureAuditEvent;
@@ -178,7 +178,7 @@ export interface SynopsisFailureSummary {
 }
 
 export function summarizeSynopsisFailures(
-  events: SynopsisFailureAuditEvent[],
+  events: SynopsisFailureAuditEvent[]
 ): SynopsisFailureSummary | null {
   if (events.length === 0) return null;
   const by_kind: Record<SynopsisFailureKind, number> = {

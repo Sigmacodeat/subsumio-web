@@ -29,10 +29,10 @@
  *     within a group already chronological by engine contract.
  */
 
-import type { TrajectoryPoint } from './engine.ts';
-import { INJECTION_PATTERNS } from './think/sanitize.ts';
+import type { TrajectoryPoint } from "./engine.ts";
+import { INJECTION_PATTERNS } from "./think/sanitize.ts";
 
-export type TrajectoryIntent = 'temporal' | 'knowledge_update' | 'other';
+export type TrajectoryIntent = "temporal" | "knowledge_update" | "other";
 
 export interface FormatTrajectoryOpts {
   /** Drives whether `(superseded prior)` annotation fires. */
@@ -71,7 +71,7 @@ function sanitizeRowText(raw: string): { text: string; matched: boolean } {
     }
   }
   if (text.length > TEXT_CAP_PER_ROW) {
-    text = text.slice(0, TEXT_CAP_PER_ROW - 3) + '...';
+    text = text.slice(0, TEXT_CAP_PER_ROW - 3) + "...";
   }
   return { text, matched };
 }
@@ -100,11 +100,11 @@ function fmtDate(d: Date): string {
  * NULL values fall back to '-'. Event rows always have null value.
  */
 function fmtValue(p: TrajectoryPoint): string {
-  if (p.value === null) return '-';
+  if (p.value === null) return "-";
   const parts = [String(p.value)];
   if (p.unit) parts.push(p.unit);
   if (p.period) parts.push(`/${p.period}`);
-  return parts.join(' ');
+  return parts.join(" ");
 }
 
 /**
@@ -117,7 +117,7 @@ function formatGroup(
   entitySlug: string,
   groupKeyValue: string,
   points: TrajectoryPoint[],
-  opts: { intent?: TrajectoryIntent },
+  opts: { intent?: TrajectoryIntent }
 ): { block: string; sanitizedCount: number } {
   const isMetric = points[0]?.metric !== null;
   const attr = isMetric ? `metric="${groupKeyValue}"` : `event_type="${groupKeyValue}"`;
@@ -125,7 +125,7 @@ function formatGroup(
   const lines: string[] = [];
   let sanitizedCount = 0;
   let priorValue: number | null = null;
-  const annotateSupersession = opts.intent === 'knowledge_update' && isMetric;
+  const annotateSupersession = opts.intent === "knowledge_update" && isMetric;
 
   for (const p of points) {
     const { text, matched } = sanitizeRowText(p.text);
@@ -133,23 +133,23 @@ function formatGroup(
     const date = fmtDate(p.valid_from);
     const valueStr = fmtValue(p);
     const provenance = p.source_session ?? p.source_markdown_slug ?? null;
-    const provSuffix = provenance ? ` (source: ${provenance})` : '';
+    const provSuffix = provenance ? ` (source: ${provenance})` : "";
 
-    let suffix = '';
+    let suffix = "";
     if (annotateSupersession && p.value !== null && priorValue !== null && p.value !== priorValue) {
-      suffix = ' (superseded prior)';
+      suffix = " (superseded prior)";
     }
 
     lines.push(
       isMetric
         ? `  as of ${date}: ${valueStr} — ${text}${suffix}${provSuffix}`
-        : `  as of ${date}: ${text}${suffix}${provSuffix}`,
+        : `  as of ${date}: ${text}${suffix}${provSuffix}`
     );
 
     if (p.value !== null) priorValue = p.value;
   }
 
-  const block = `<trajectory entity="${entitySlug}" ${attr}>\n${lines.join('\n')}\n</trajectory>`;
+  const block = `<trajectory entity="${entitySlug}" ${attr}>\n${lines.join("\n")}\n</trajectory>`;
   return { block, sanitizedCount };
 }
 
@@ -167,7 +167,7 @@ function formatGroup(
 export function formatTrajectoryBlock(
   points: TrajectoryPoint[],
   entitySlug: string,
-  opts: FormatTrajectoryOpts = {},
+  opts: FormatTrajectoryOpts = {}
 ): FormattedTrajectoryBlock {
   const perMetricCap = opts.perMetricCap ?? DEFAULT_PER_METRIC_CAP;
   const totalCap = opts.totalCap ?? DEFAULT_TOTAL_CAP;
@@ -183,7 +183,7 @@ export function formatTrajectoryBlock(
   }
 
   if (groups.size === 0) {
-    return { rendered: '', sanitizedCount: 0, emittedPoints: 0 };
+    return { rendered: "", sanitizedCount: 0, emittedPoints: 0 };
   }
 
   // Apply per-metric cap (chronological order preserved — engine returns
@@ -201,9 +201,10 @@ export function formatTrajectoryBlock(
     const capPerGroup = Math.min(perMetricCap, totalCap - emittedPoints);
     // Keep most-recent N (slice from tail). Engine returns ASC; we preserve
     // ASC within the kept window for chronological prompt rendering.
-    const kept = groupPoints.length > capPerGroup
-      ? groupPoints.slice(groupPoints.length - capPerGroup)
-      : groupPoints;
+    const kept =
+      groupPoints.length > capPerGroup
+        ? groupPoints.slice(groupPoints.length - capPerGroup)
+        : groupPoints;
     const { block, sanitizedCount: gs } = formatGroup(entitySlug, key, kept, opts);
     renderedBlocks.push(block);
     sanitizedCount += gs;
@@ -211,7 +212,7 @@ export function formatTrajectoryBlock(
   }
 
   return {
-    rendered: renderedBlocks.join('\n\n'),
+    rendered: renderedBlocks.join("\n\n"),
     sanitizedCount,
     emittedPoints,
   };

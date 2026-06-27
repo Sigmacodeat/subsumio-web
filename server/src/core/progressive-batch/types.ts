@@ -39,7 +39,7 @@
  * `ramp_500` are intermediate gates. `full` processes whatever items
  * remain after the earlier stages.
  */
-export type Stage = 'trial' | 'ramp_100' | 'ramp_500' | 'full';
+export type Stage = "trial" | "ramp_100" | "ramp_500" | "full";
 
 /**
  * Verdict from a verifier or from the orchestrator's own gating.
@@ -47,14 +47,14 @@ export type Stage = 'trial' | 'ramp_100' | 'ramp_500' | 'full';
  * with a `never` default to catch future additions at compile time.
  */
 export type StageVerdict =
-  | 'proceed'              // All checks passed; advance to next stage
-  | 'abort_data_quality'   // sampleQuality returned ok=false
-  | 'abort_count_mismatch' // OutputCountVerifier: actualDelta outside expected band
-  | 'abort_mutation_mismatch' // IdempotentMutationVerifier: rows-modified count off
-  | 'abort_error_rate'     // observed error rate > Policy.maxErrorRate
-  | 'abort_cost_cap'       // projected full-batch cost > effective cap
-  | 'abort_user'           // Ctrl-C during interactive grace window
-  | 'abort_explicit';      // caller's onStageReport returned {abort: true}
+  | "proceed" // All checks passed; advance to next stage
+  | "abort_data_quality" // sampleQuality returned ok=false
+  | "abort_count_mismatch" // OutputCountVerifier: actualDelta outside expected band
+  | "abort_mutation_mismatch" // IdempotentMutationVerifier: rows-modified count off
+  | "abort_error_rate" // observed error rate > Policy.maxErrorRate
+  | "abort_cost_cap" // projected full-batch cost > effective cap
+  | "abort_user" // Ctrl-C during interactive grace window
+  | "abort_explicit"; // caller's onStageReport returned {abort: true}
 
 /**
  * Reason code attached to abort verdicts. Surfaces in audit JSONL and
@@ -63,14 +63,14 @@ export type StageVerdict =
  * fail-closed contract.
  */
 export type AbortReason =
-  | 'data_quality_sample_failed'
-  | 'count_delta_outside_band'
-  | 'mutation_count_outside_band'
-  | 'error_rate_exceeded'
-  | 'cost_projected_over_cap'
-  | 'no_budget_safety_net'  // D3: neither tracker nor Policy.maxCostUsd set
-  | 'user_aborted'
-  | 'caller_signaled_abort';
+  | "data_quality_sample_failed"
+  | "count_delta_outside_band"
+  | "mutation_count_outside_band"
+  | "error_rate_exceeded"
+  | "cost_projected_over_cap"
+  | "no_budget_safety_net" // D3: neither tracker nor Policy.maxCostUsd set
+  | "user_aborted"
+  | "caller_signaled_abort";
 
 /**
  * Quality verdict returned by `sampleQuality()`. Free-form `reasons`
@@ -91,7 +91,7 @@ export interface QualityVerdict {
  * signal.
  */
 export interface OutputCountVerifier {
-  kind: 'output_count';
+  kind: "output_count";
   /** Pre-stage row count. */
   countBefore(): Promise<number>;
   /** Post-stage row count. */
@@ -118,7 +118,7 @@ export interface OutputCountVerifier {
  * verifier shape closes that gap.
  */
 export interface IdempotentMutationVerifier {
-  kind: 'idempotent_mutation';
+  kind: "idempotent_mutation";
   /**
    * Count rows-mutated by the stage's batch. Caller defines what
    * "mutated" means (chunker_version bump, embedding_at refresh,
@@ -147,7 +147,7 @@ export interface IdempotentMutationVerifier {
  * honestly.
  */
 export interface NoopVerifier {
-  kind: 'noop';
+  kind: "noop";
   /** Cost projection per item at the given stage. */
   costPerItem(stage: Stage): number;
   /**
@@ -159,10 +159,7 @@ export interface NoopVerifier {
 }
 
 /** Discriminated union of all three verifier shapes. */
-export type Verifier =
-  | OutputCountVerifier
-  | IdempotentMutationVerifier
-  | NoopVerifier;
+export type Verifier = OutputCountVerifier | IdempotentMutationVerifier | NoopVerifier;
 
 /**
  * Per-stage report passed to the caller's optional `onStageReport`
@@ -247,7 +244,9 @@ export interface Policy {
    * Per-stage reporter. Default: writes ASCII stage line to stderr.
    * Returns optional response to influence the orchestrator.
    */
-  onStageReport?(report: StageReport): Promise<StageReportResponse | void> | StageReportResponse | void;
+  onStageReport?(
+    report: StageReport
+  ): Promise<StageReportResponse | void> | StageReportResponse | void;
   /** Phase/label for audit + telemetry. */
   label: string;
   /**
@@ -284,5 +283,5 @@ export interface ProgressiveBatchResult {
 export type StageRunner<T> = (
   items: T[],
   stage: Stage,
-  operationId: string,
+  operationId: string
 ) => Promise<{ succeeded: number; failed: number; costUsd: number }>;

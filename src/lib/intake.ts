@@ -43,19 +43,22 @@ export interface IntakeRequestInput {
 }
 
 function safeSlugPart(input: string): string {
-  return input
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 72) || "intake";
+  return (
+    input
+      .toLowerCase()
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "")
+      .slice(0, 72) || "intake"
+  );
 }
 
 function inferMissingDocuments(summary: string): string[] {
   const lower = summary.toLowerCase();
   const docs: string[] = [];
-  if (/\b(kündigung|kuendigung|bescheid|schreiben|vertrag)\b/.test(lower)) docs.push("ausgangsdokument");
+  if (/\b(kündigung|kuendigung|bescheid|schreiben|vertrag)\b/.test(lower))
+    docs.push("ausgangsdokument");
   if (/\bvollmacht\b/.test(lower)) docs.push("vollmacht");
   if (/\bfrist|zugestellt|zustellung|ablauf\b/.test(lower)) docs.push("zustellnachweis");
   return [...new Set(docs)];
@@ -65,7 +68,10 @@ export function hashContact(value: string): string {
   return createHash("sha256").update(value.trim().toLowerCase()).digest("hex");
 }
 
-export function buildIntakeRequest(input: IntakeRequestInput, at: Date = new Date()): {
+export function buildIntakeRequest(
+  input: IntakeRequestInput,
+  at: Date = new Date()
+): {
   slug: string;
   title: string;
   content: string;
@@ -73,7 +79,9 @@ export function buildIntakeRequest(input: IntakeRequestInput, at: Date = new Dat
 } {
   const created = at.toISOString();
   const summary = input.summary.trim();
-  const suffix = safeSlugPart(input.clientName || input.email || input.phoneHash || summary.slice(0, 48) || randomUUID());
+  const suffix = safeSlugPart(
+    input.clientName || input.email || input.phoneHash || summary.slice(0, 48) || randomUUID()
+  );
   const slug = `legal/intake/${created.slice(0, 10)}/${suffix}-${at.getTime()}`;
   const missingDocuments = input.missingDocuments ?? inferMissingDocuments(summary);
   const title = `Intake: ${input.clientName || summary.slice(0, 60) || "Neue Anfrage"}`;
@@ -130,7 +138,9 @@ export async function writeIntakeRequest(
   return { slug: intake.slug };
 }
 
-export function intakeFromPage(page: BrainPage): { slug: string; title: string; frontmatter: IntakeRequestFrontmatter; content?: string } | null {
+export function intakeFromPage(
+  page: BrainPage
+): { slug: string; title: string; frontmatter: IntakeRequestFrontmatter; content?: string } | null {
   const fm = page.frontmatter as Partial<IntakeRequestFrontmatter> | undefined;
   if (fm?.type !== "intake_request") return null;
   return {

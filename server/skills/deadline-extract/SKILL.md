@@ -69,7 +69,7 @@ This skill guarantees:
 4. **Write timeline entries.** Append to the page's timeline section via
    `put_page` (auto_timeline reconciliation prevents duplicates on
    re-runs). Format: `- YYYY-MM-DD: <what is due/happens> [Source:
-   <document>, <location>]`.
+<document>, <location>]`.
 5. **Report.** Sorted deadline list with urgency flags. Offer to chain
    into [cron-scheduler](../cron-scheduler/SKILL.md) for reminder jobs on
    entries the user confirms.

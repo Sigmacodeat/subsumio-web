@@ -14,18 +14,18 @@
  * Run: DATABASE_URL=... bun test test/e2e/integrity-batch.test.ts
  */
 
-import { describe, test, expect, beforeAll, afterAll, beforeEach } from 'bun:test';
-import { hasDatabase, setupDB, teardownDB, getEngine, getConn } from './helpers.ts';
-import { scanIntegrity } from '../../src/commands/integrity.ts';
+import { describe, test, expect, beforeAll, afterAll, beforeEach } from "bun:test";
+import { hasDatabase, setupDB, teardownDB, getEngine, getConn } from "./helpers.ts";
+import { scanIntegrity } from "../../src/commands/integrity.ts";
 
 const skip = !hasDatabase();
 const describeE2E = skip ? describe.skip : describe;
 
 if (skip) {
-  console.log('Skipping E2E integrity batch parity tests (DATABASE_URL not set)');
+  console.log("Skipping E2E integrity batch parity tests (DATABASE_URL not set)");
 }
 
-describeE2E('scanIntegrity batch parity (E2E, Postgres-only)', () => {
+describeE2E("scanIntegrity batch parity (E2E, Postgres-only)", () => {
   beforeAll(async () => {
     await setupDB();
   }, 30_000);
@@ -40,17 +40,17 @@ describeE2E('scanIntegrity batch parity (E2E, Postgres-only)', () => {
     await conn.unsafe(`TRUNCATE pages CASCADE`);
   });
 
-  describe('dedup', () => {
-    test('multi-source duplicate slugs scan ONE PER (source, slug) PAIR (v0.32.8 bug-class fix)', async () => {
+  describe("dedup", () => {
+    test("multi-source duplicate slugs scan ONE PER (source, slug) PAIR (v0.32.8 bug-class fix)", async () => {
       const engine = getEngine();
       const conn = getConn();
 
       // Seed default-source page via the engine.
-      await engine.putPage('people/alice', {
-        type: 'person',
-        title: 'Alice',
-        compiled_truth: 'Alice writes about AI safety.',
-        timeline: '',
+      await engine.putPage("people/alice", {
+        type: "person",
+        title: "Alice",
+        compiled_truth: "Alice writes about AI safety.",
+        timeline: "",
         frontmatter: {},
       });
 
@@ -78,22 +78,22 @@ describeE2E('scanIntegrity batch parity (E2E, Postgres-only)', () => {
     });
   });
 
-  describe('hits', () => {
-    test('bareHits and externalHits arrays match between paths', async () => {
+  describe("hits", () => {
+    test("bareHits and externalHits arrays match between paths", async () => {
       const engine = getEngine();
 
-      await engine.putPage('people/alice', {
-        type: 'person',
-        title: 'Alice',
-        compiled_truth: 'Alice tweeted about AI safety last week.',
-        timeline: '',
+      await engine.putPage("people/alice", {
+        type: "person",
+        title: "Alice",
+        compiled_truth: "Alice tweeted about AI safety last week.",
+        timeline: "",
         frontmatter: {},
       });
-      await engine.putPage('people/bob', {
-        type: 'person',
-        title: 'Bob',
-        compiled_truth: 'Bob wrote at [example](https://example.com/bob).',
-        timeline: '',
+      await engine.putPage("people/bob", {
+        type: "person",
+        title: "Bob",
+        compiled_truth: "Bob wrote at [example](https://example.com/bob).",
+        timeline: "",
         frontmatter: {},
       });
 
@@ -102,31 +102,31 @@ describeE2E('scanIntegrity batch parity (E2E, Postgres-only)', () => {
 
       expect(batchResult.bareHits.length).toBe(seqResult.bareHits.length);
       expect(batchResult.externalHits.length).toBe(seqResult.externalHits.length);
-      expect(batchResult.bareHits.map(h => h.slug).sort()).toEqual(
-        seqResult.bareHits.map(h => h.slug).sort(),
+      expect(batchResult.bareHits.map((h) => h.slug).sort()).toEqual(
+        seqResult.bareHits.map((h) => h.slug).sort()
       );
-      expect(batchResult.externalHits.map(h => h.slug).sort()).toEqual(
-        seqResult.externalHits.map(h => h.slug).sort(),
+      expect(batchResult.externalHits.map((h) => h.slug).sort()).toEqual(
+        seqResult.externalHits.map((h) => h.slug).sort()
       );
     });
   });
 
-  describe('validate', () => {
-    test('validate:false (boolean) page is skipped on both paths', async () => {
+  describe("validate", () => {
+    test("validate:false (boolean) page is skipped on both paths", async () => {
       const engine = getEngine();
 
-      await engine.putPage('people/alice', {
-        type: 'person',
-        title: 'Alice',
-        compiled_truth: 'Alice tweeted about something.',
-        timeline: '',
+      await engine.putPage("people/alice", {
+        type: "person",
+        title: "Alice",
+        compiled_truth: "Alice tweeted about something.",
+        timeline: "",
         frontmatter: {},
       });
-      await engine.putPage('people/legacy', {
-        type: 'person',
-        title: 'Legacy',
-        compiled_truth: 'Legacy tweeted about old stuff.',
-        timeline: '',
+      await engine.putPage("people/legacy", {
+        type: "person",
+        title: "Legacy",
+        compiled_truth: "Legacy tweeted about old stuff.",
+        timeline: "",
         frontmatter: { validate: false },
       });
 
@@ -135,28 +135,28 @@ describeE2E('scanIntegrity batch parity (E2E, Postgres-only)', () => {
 
       expect(batchResult.pagesScanned).toBe(seqResult.pagesScanned);
       expect(batchResult.pagesScanned).toBe(1);
-      expect(batchResult.bareHits.map(h => h.slug)).not.toContain('people/legacy');
-      expect(seqResult.bareHits.map(h => h.slug)).not.toContain('people/legacy');
+      expect(batchResult.bareHits.map((h) => h.slug)).not.toContain("people/legacy");
+      expect(seqResult.bareHits.map((h) => h.slug)).not.toContain("people/legacy");
     });
   });
 
-  describe('topPages', () => {
-    test('topPages ordering matches between paths', async () => {
+  describe("topPages", () => {
+    test("topPages ordering matches between paths", async () => {
       const engine = getEngine();
 
       // Alice has 2 bare-tweet hits; Bob has 1.
-      await engine.putPage('people/alice', {
-        type: 'person',
-        title: 'Alice',
-        compiled_truth: 'Alice tweeted today. Alice tweeted yesterday too.',
-        timeline: '',
+      await engine.putPage("people/alice", {
+        type: "person",
+        title: "Alice",
+        compiled_truth: "Alice tweeted today. Alice tweeted yesterday too.",
+        timeline: "",
         frontmatter: {},
       });
-      await engine.putPage('people/bob', {
-        type: 'person',
-        title: 'Bob',
-        compiled_truth: 'Bob tweeted once.',
-        timeline: '',
+      await engine.putPage("people/bob", {
+        type: "person",
+        title: "Bob",
+        compiled_truth: "Bob tweeted once.",
+        timeline: "",
         frontmatter: {},
       });
 

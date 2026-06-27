@@ -36,11 +36,11 @@
  * out of the confine.
  */
 
-import { existsSync, mkdirSync, renameSync, rmSync, lstatSync } from 'fs';
-import { realpathSync } from 'fs';
-import { join, dirname, basename, resolve as resolvePath } from 'path';
-import { randomBytes } from 'crypto';
-import type { BrainEngine } from './engine.ts';
+import { existsSync, mkdirSync, renameSync, rmSync, lstatSync } from "fs";
+import { realpathSync } from "fs";
+import { join, dirname, basename, resolve as resolvePath } from "path";
+import { randomBytes } from "crypto";
+import type { BrainEngine } from "./engine.ts";
 import {
   parseRemoteUrl,
   cloneRepo,
@@ -48,35 +48,35 @@ import {
   RemoteUrlError,
   GitOperationError,
   type RepoState,
-} from './git-remote.ts';
-import { gbrainPath } from './config.ts';
-import { isValidSourceId } from './source-id.ts';
-import { resolveSourceWithTier, type SourceTier } from './source-resolver.ts';
+} from "./git-remote.ts";
+import { gbrainPath } from "./config.ts";
+import { isValidSourceId } from "./source-id.ts";
+import { resolveSourceWithTier, type SourceTier } from "./source-resolver.ts";
 
 // ── Errors ──────────────────────────────────────────────────────────────────
 
 export type SourceOpErrorCode =
-  | 'invalid_id'
-  | 'source_id_taken'
-  | 'overlapping_path'
-  | 'invalid_remote_url'
-  | 'clone_failed'
-  | 'insert_failed'
-  | 'rename_failed'
-  | 'not_found'
-  | 'protected_id'
-  | 'clone_dir_outside_gbrain'
-  | 'symlink_escape'
-  | 'unmanaged_path';
+  | "invalid_id"
+  | "source_id_taken"
+  | "overlapping_path"
+  | "invalid_remote_url"
+  | "clone_failed"
+  | "insert_failed"
+  | "rename_failed"
+  | "not_found"
+  | "protected_id"
+  | "clone_dir_outside_gbrain"
+  | "symlink_escape"
+  | "unmanaged_path";
 
 export class SourceOpError extends Error {
   constructor(
     public code: SourceOpErrorCode,
     message: string,
-    public cause?: unknown,
+    public cause?: unknown
   ) {
     super(message);
-    this.name = 'SourceOpError';
+    this.name = "SourceOpError";
   }
 }
 
@@ -131,7 +131,7 @@ export interface SourceStatus {
    * source has no local_path (pure DB source). Lets a remote MCP caller
    * diagnose "is the clone OK?" without SSH access to the brain host.
    */
-  clone_state: RepoState | 'not-applicable';
+  clone_state: RepoState | "not-applicable";
 }
 
 export interface AddSourceOpts {
@@ -166,21 +166,21 @@ export interface RemoveSourceOpts {
 function validateSourceId(id: string): void {
   if (!isValidSourceId(id)) {
     throw new SourceOpError(
-      'invalid_id',
-      `Invalid source id "${id}". Must be 1-32 lowercase alnum chars with optional interior hyphens.`,
+      "invalid_id",
+      `Invalid source id "${id}". Must be 1-32 lowercase alnum chars with optional interior hyphens.`
     );
   }
 }
 
 function parseConfig(config: unknown): Record<string, unknown> {
-  if (typeof config === 'string') {
+  if (typeof config === "string") {
     try {
       return JSON.parse(config) as Record<string, unknown>;
     } catch {
       return {};
     }
   }
-  if (typeof config === 'object' && config !== null) return config as Record<string, unknown>;
+  if (typeof config === "object" && config !== null) return config as Record<string, unknown>;
   return {};
 }
 
@@ -190,7 +190,7 @@ function isFederated(config: unknown): boolean {
 
 function getRemoteUrl(config: unknown): string | null {
   const v = parseConfig(config).remote_url;
-  return typeof v === 'string' ? v : null;
+  return typeof v === "string" ? v : null;
 }
 
 async function fetchSourceRow(engine: BrainEngine, id: string): Promise<SourceRow | null> {
@@ -205,7 +205,7 @@ async function fetchSourceRow(engine: BrainEngine, id: string): Promise<SourceRo
   }>(
     `SELECT id, name, local_path, last_commit, last_sync_at, config, created_at
        FROM sources WHERE id = $1`,
-    [id],
+    [id]
   );
   const r = rows[0];
   if (!r) return null;
@@ -215,20 +215,20 @@ async function fetchSourceRow(engine: BrainEngine, id: string): Promise<SourceRo
 async function countPages(engine: BrainEngine, id: string): Promise<number> {
   const rows = await engine.executeRaw<{ n: number }>(
     `SELECT COUNT(*)::int AS n FROM pages WHERE source_id = $1`,
-    [id],
+    [id]
   );
   return rows[0]?.n ?? 0;
 }
 
 /** Default clone dir for a remote-URL source: $GBRAIN_HOME/clones/<id>/ */
 export function defaultCloneDir(id: string): string {
-  return gbrainPath('clones', id);
+  return gbrainPath("clones", id);
 }
 
 /** Temp clone dir under $GBRAIN_HOME/clones/.tmp/<id>-<rand>/ */
 function makeTempCloneDir(id: string): string {
-  const rand = randomBytes(6).toString('hex');
-  return gbrainPath('clones', '.tmp', `${id}-${rand}`);
+  const rand = randomBytes(6).toString("hex");
+  return gbrainPath("clones", ".tmp", `${id}-${rand}`);
 }
 
 /**
@@ -250,7 +250,7 @@ export function isPathContained(child: string, parent: string): boolean {
     return false; // missing path → not contained
   }
   // Append a separator to parent so /foo doesn't match /foobar.
-  const parentWithSep = resolvedParent.endsWith('/') ? resolvedParent : resolvedParent + '/';
+  const parentWithSep = resolvedParent.endsWith("/") ? resolvedParent : resolvedParent + "/";
   return resolvedChild === resolvedParent || resolvedChild.startsWith(parentWithSep);
 }
 
@@ -281,7 +281,7 @@ export function isOwnedClone(src: {
 }): boolean {
   if (!src.local_path) return false;
   const cfg =
-    typeof src.config === 'string'
+    typeof src.config === "string"
       ? (JSON.parse(src.config) as Record<string, unknown>)
       : ((src.config ?? {}) as Record<string, unknown>);
   if (cfg.managed_clone === true) return true;
@@ -298,10 +298,10 @@ export function isOwnedClone(src: {
  */
 export function unownedHint(
   src: { id: string; local_path: string | null },
-  state: RepoState,
+  state: RepoState
 ): string {
-  const path = src.local_path ?? '(none)';
-  if (state === 'healthy') {
+  const path = src.local_path ?? "(none)";
+  if (state === "healthy") {
     return (
       `Source "${src.id}" has config.remote_url set but local_path ${path} is not a ` +
       `clone gbrain created. gbrain syncs it read-only and will never re-clone or delete ` +
@@ -320,22 +320,18 @@ export function unownedHint(
 
 // ── addSource ───────────────────────────────────────────────────────────────
 
-export async function addSource(
-  engine: BrainEngine,
-  opts: AddSourceOpts,
-): Promise<SourceRow> {
+export async function addSource(engine: BrainEngine, opts: AddSourceOpts): Promise<SourceRow> {
   validateSourceId(opts.id);
 
   // Q4: pre-flight collision check before any clone work.
-  const existing = await engine.executeRaw<{ id: string }>(
-    `SELECT id FROM sources WHERE id = $1`,
-    [opts.id],
-  );
+  const existing = await engine.executeRaw<{ id: string }>(`SELECT id FROM sources WHERE id = $1`, [
+    opts.id,
+  ]);
   if (existing.length > 0) {
     throw new SourceOpError(
-      'source_id_taken',
+      "source_id_taken",
       `Source id "${opts.id}" is already registered. ` +
-        `Use 'gbrain sources remove ${opts.id} --confirm-destructive' first, then re-add.`,
+        `Use 'gbrain sources remove ${opts.id} --confirm-destructive' first, then re-add.`
     );
   }
 
@@ -346,7 +342,7 @@ export async function addSource(
       parsedUrl = parseRemoteUrl(opts.remoteUrl);
     } catch (e) {
       if (e instanceof RemoteUrlError) {
-        throw new SourceOpError('invalid_remote_url', e.message, e);
+        throw new SourceOpError("invalid_remote_url", e.message, e);
       }
       throw e;
     }
@@ -360,16 +356,16 @@ export async function addSource(
   if (finalPath) {
     const others = await engine.executeRaw<{ id: string; local_path: string }>(
       `SELECT id, local_path FROM sources WHERE local_path IS NOT NULL AND id != $1`,
-      [opts.id],
+      [opts.id]
     );
     for (const other of others) {
       const a = finalPath;
       const b = other.local_path;
-      if (a === b || a.startsWith(b + '/') || b.startsWith(a + '/')) {
+      if (a === b || a.startsWith(b + "/") || b.startsWith(a + "/")) {
         throw new SourceOpError(
-          'overlapping_path',
+          "overlapping_path",
           `path "${a}" overlaps with existing source "${other.id}" at "${b}". ` +
-            `Overlapping sources are not allowed.`,
+            `Overlapping sources are not allowed.`
         );
       }
     }
@@ -387,7 +383,7 @@ export async function addSource(
       // exist; nuke it just in case.
       rmSync(tempDir, { recursive: true, force: true });
       if (e instanceof GitOperationError) {
-        throw new SourceOpError('clone_failed', e.message, e);
+        throw new SourceOpError("clone_failed", e.message, e);
       }
       throw e;
     }
@@ -409,14 +405,14 @@ export async function addSource(
       await engine.executeRaw(
         `INSERT INTO sources (id, name, local_path, config)
              VALUES ($1, $2, $3, $4::jsonb)`,
-        [opts.id, displayName, finalPath, JSON.stringify(config)],
+        [opts.id, displayName, finalPath, JSON.stringify(config)]
       );
     } catch (e) {
       rmSync(tempDir, { recursive: true, force: true });
       throw new SourceOpError(
-        'insert_failed',
+        "insert_failed",
         `INSERT failed for source "${opts.id}": ${(e as Error).message}`,
-        e,
+        e
       );
     }
 
@@ -436,13 +432,11 @@ export async function addSource(
     } catch (e) {
       rmSync(tempDir, { recursive: true, force: true });
       // Best-effort DB rollback.
-      await engine
-        .executeRaw(`DELETE FROM sources WHERE id = $1`, [opts.id])
-        .catch(() => {});
+      await engine.executeRaw(`DELETE FROM sources WHERE id = $1`, [opts.id]).catch(() => {});
       throw new SourceOpError(
-        'rename_failed',
+        "rename_failed",
         `Could not move clone to final path ${finalPath}: ${(e as Error).message}`,
-        e,
+        e
       );
     }
   } else {
@@ -455,15 +449,15 @@ export async function addSource(
     await engine.executeRaw(
       `INSERT INTO sources (id, name, local_path, config)
            VALUES ($1, $2, $3, $4::jsonb)`,
-      [opts.id, displayName, finalPath, JSON.stringify(config)],
+      [opts.id, displayName, finalPath, JSON.stringify(config)]
     );
   }
 
   const created = await fetchSourceRow(engine, opts.id);
   if (!created) {
     throw new SourceOpError(
-      'insert_failed',
-      `Source "${opts.id}" disappeared after INSERT (concurrent delete?).`,
+      "insert_failed",
+      `Source "${opts.id}" disappeared after INSERT (concurrent delete?).`
     );
   }
   return created;
@@ -491,11 +485,11 @@ export async function addSource(
 export class SourceResolutionError extends Error {
   constructor(
     message: string,
-    public readonly code: 'no_sources' | 'multiple_sources_ambiguous',
-    public readonly availableSources: string[],
+    public readonly code: "no_sources" | "multiple_sources_ambiguous",
+    public readonly availableSources: string[]
   ) {
     super(message);
-    this.name = 'SourceResolutionError';
+    this.name = "SourceResolutionError";
   }
 }
 
@@ -503,9 +497,9 @@ export async function resolveDefaultSource(engine: BrainEngine): Promise<string>
   const sources = await listSources(engine);
   if (sources.length === 0) {
     throw new SourceResolutionError(
-      'no sources registered; run `gbrain sources add` first',
-      'no_sources',
-      [],
+      "no sources registered; run `gbrain sources add` first",
+      "no_sources",
+      []
     );
   }
   if (sources.length === 1) {
@@ -513,9 +507,9 @@ export async function resolveDefaultSource(engine: BrainEngine): Promise<string>
   }
   const ids = sources.map((s) => s.id);
   throw new SourceResolutionError(
-    `multi-source brain — specify --source from: ${ids.join(', ')}`,
-    'multiple_sources_ambiguous',
-    ids,
+    `multi-source brain — specify --source from: ${ids.join(", ")}`,
+    "multiple_sources_ambiguous",
+    ids
   );
 }
 
@@ -549,31 +543,29 @@ export interface ScopedSourceResolution {
  */
 export async function resolveScopedSourceOrThrow(
   engine: BrainEngine,
-  cwd: string = process.cwd(),
+  cwd: string = process.cwd()
 ): Promise<ScopedSourceResolution> {
   const resolved = await resolveSourceWithTier(engine, null, cwd);
-  if (resolved.tier !== 'seed_default') {
+  if (resolved.tier !== "seed_default") {
     return { source_id: resolved.source_id, tier: resolved.tier };
   }
   // Nothing in the chain matched → apply the ambiguity guard (may throw).
   const id = await resolveDefaultSource(engine);
-  return { source_id: id, tier: 'seed_default' };
+  return { source_id: id, tier: "seed_default" };
 }
 
 // ── listSources ─────────────────────────────────────────────────────────────
 
 export async function listSources(
   engine: BrainEngine,
-  opts: { includeArchived?: boolean } = {},
+  opts: { includeArchived?: boolean } = {}
 ): Promise<SourceListEntry[]> {
   // v0.28.1 codex finding (MEDIUM): the prior version ignored the
   // includeArchived flag and returned every row. That leaked archived
   // sources' ids, local_paths, and remote_urls to read-scoped MCP callers
   // who shouldn't see soft-deleted state. Filter at the SQL level so the
   // archived rows never reach the wire by default.
-  const archivedFilter = opts.includeArchived
-    ? ''
-    : 'WHERE archived IS NOT TRUE';
+  const archivedFilter = opts.includeArchived ? "" : "WHERE archived IS NOT TRUE";
   const rows = await engine.executeRaw<{
     id: string;
     name: string;
@@ -582,7 +574,7 @@ export async function listSources(
     config: unknown;
   }>(
     `SELECT id, name, local_path, last_sync_at, config
-       FROM sources ${archivedFilter} ORDER BY (id = 'default') DESC, id`,
+       FROM sources ${archivedFilter} ORDER BY (id = 'default') DESC, id`
   );
   const out: SourceListEntry[] = [];
   for (const r of rows) {
@@ -591,7 +583,7 @@ export async function listSources(
       id: r.id,
       name: r.name,
       local_path: r.local_path,
-      remote_url: typeof cfg.remote_url === 'string' ? cfg.remote_url : null,
+      remote_url: typeof cfg.remote_url === "string" ? cfg.remote_url : null,
       federated: cfg.federated === true,
       page_count: await countPages(engine, r.id),
       last_sync_at: r.last_sync_at ? new Date(r.last_sync_at).toISOString() : null,
@@ -623,20 +615,20 @@ export interface RemoveResult {
  */
 export async function removeSource(
   engine: BrainEngine,
-  opts: RemoveSourceOpts,
+  opts: RemoveSourceOpts
 ): Promise<RemoveResult> {
   validateSourceId(opts.id);
 
-  if (opts.id === 'default') {
+  if (opts.id === "default") {
     throw new SourceOpError(
-      'protected_id',
-      'Cannot remove the "default" source (it backs the pre-v0.17 brain).',
+      "protected_id",
+      'Cannot remove the "default" source (it backs the pre-v0.17 brain).'
     );
   }
 
   const src = await fetchSourceRow(engine, opts.id);
   if (!src) {
-    throw new SourceOpError('not_found', `Source "${opts.id}" not found.`);
+    throw new SourceOpError("not_found", `Source "${opts.id}" not found.`);
   }
 
   const pageCount = await countPages(engine, opts.id);
@@ -655,14 +647,14 @@ export async function removeSource(
   // preview from destructive-guard.ts).
   if (pageCount > 0 && !opts.confirmDestructive && !opts.yes) {
     throw new SourceOpError(
-      'protected_id', // closest existing code; caller can frame as "needs confirm"
-      `Refusing to remove source "${opts.id}" with ${pageCount} pages without --confirm-destructive or --yes.`,
+      "protected_id", // closest existing code; caller can frame as "needs confirm"
+      `Refusing to remove source "${opts.id}" with ${pageCount} pages without --confirm-destructive or --yes.`
     );
   }
 
   // Decide whether we own the clone dir before removing the row.
   const remoteUrl = getRemoteUrl(src.config);
-  const cloneRoot = gbrainPath('clones');
+  const cloneRoot = gbrainPath("clones");
   let cloneRemoved = false;
   if (
     !opts.keepStorage &&
@@ -677,8 +669,8 @@ export async function removeSource(
       const lst = lstatSync(src.local_path);
       if (lst.isSymbolicLink()) {
         throw new SourceOpError(
-          'symlink_escape',
-          `Refusing to delete clone at ${src.local_path}: path is a symlink.`,
+          "symlink_escape",
+          `Refusing to delete clone at ${src.local_path}: path is a symlink.`
         );
       }
       rmSync(src.local_path, { recursive: true, force: true });
@@ -688,7 +680,7 @@ export async function removeSource(
       // Don't fail the whole remove if rmSync had a permission hiccup — log
       // and continue. The DB row deletion is the user-facing operation.
       console.error(
-        `[gbrain] WARN: clone cleanup at ${src.local_path} failed: ${(e as Error).message}`,
+        `[gbrain] WARN: clone cleanup at ${src.local_path} failed: ${(e as Error).message}`
       );
     }
   }
@@ -706,14 +698,11 @@ export async function removeSource(
 
 // ── getSourceStatus ─────────────────────────────────────────────────────────
 
-export async function getSourceStatus(
-  engine: BrainEngine,
-  id: string,
-): Promise<SourceStatus> {
+export async function getSourceStatus(engine: BrainEngine, id: string): Promise<SourceStatus> {
   validateSourceId(id);
   const src = await fetchSourceRow(engine, id);
   if (!src) {
-    throw new SourceOpError('not_found', `Source "${id}" not found.`);
+    throw new SourceOpError("not_found", `Source "${id}" not found.`);
   }
 
   // Archived check — sources.config.archived is a forward-compat slot;
@@ -722,12 +711,12 @@ export async function getSourceStatus(
   // SourceRow shape just for status.
   const archivedRows = await engine.executeRaw<{ archived: boolean | null }>(
     `SELECT archived FROM sources WHERE id = $1`,
-    [id],
+    [id]
   );
   const archived = archivedRows[0]?.archived === true;
 
   const remoteUrl = getRemoteUrl(src.config);
-  let cloneState: SourceStatus['clone_state'] = 'not-applicable';
+  let cloneState: SourceStatus["clone_state"] = "not-applicable";
   if (src.local_path) {
     cloneState = validateRepoState(src.local_path, remoteUrl ?? undefined);
   }
@@ -756,26 +745,23 @@ export async function getSourceStatus(
  *
  * Throws SourceOpError on clone failure. Does NOT touch the DB row.
  */
-export async function recloneIfMissing(
-  engine: BrainEngine,
-  id: string,
-): Promise<boolean> {
+export async function recloneIfMissing(engine: BrainEngine, id: string): Promise<boolean> {
   const src = await fetchSourceRow(engine, id);
   if (!src) {
-    throw new SourceOpError('not_found', `Source "${id}" not found.`);
+    throw new SourceOpError("not_found", `Source "${id}" not found.`);
   }
   const remoteUrl = getRemoteUrl(src.config);
   if (!remoteUrl || !src.local_path) return false;
 
   const state = validateRepoState(src.local_path, remoteUrl);
-  if (state === 'healthy') return false;
+  if (state === "healthy") return false;
 
   // #1881 ownership guard — abort BEFORE any filesystem op. recloneIfMissing
   // deletes local_path; gbrain may only do that to a clone it created, never a
   // user working tree. A row with remote_url + an unowned local_path (the
   // gstack-orchestrator federated shape) is refused here, loudly, untouched.
   if (!isOwnedClone(src)) {
-    throw new SourceOpError('unmanaged_path', unownedHint(src, state));
+    throw new SourceOpError("unmanaged_path", unownedHint(src, state));
   }
 
   // EXDEV-safe atomic reclone. Clone into a SIBLING temp of local_path (not the
@@ -784,14 +770,14 @@ export async function recloneIfMissing(
   // move new in → drop old, so local_path is never left missing-and-unrecoverable.
   const parent = dirname(src.local_path);
   mkdirSync(parent, { recursive: true });
-  const rand = randomBytes(6).toString('hex');
+  const rand = randomBytes(6).toString("hex");
   const tempDir = join(parent, `.gbrain-reclone-${basename(src.local_path)}-${rand}`);
   try {
     cloneRepo(remoteUrl, tempDir);
   } catch (e) {
     rmSync(tempDir, { recursive: true, force: true });
     if (e instanceof GitOperationError) {
-      throw new SourceOpError('clone_failed', e.message, e);
+      throw new SourceOpError("clone_failed", e.message, e);
     }
     throw e;
   }
@@ -801,7 +787,7 @@ export async function recloneIfMissing(
   // rm-rf / rename through a symlink).
   if (!isOwnedClone(src)) {
     rmSync(tempDir, { recursive: true, force: true });
-    throw new SourceOpError('unmanaged_path', unownedHint(src, state));
+    throw new SourceOpError("unmanaged_path", unownedHint(src, state));
   }
   let aside: string | null = null;
   try {
@@ -820,8 +806,8 @@ export async function recloneIfMissing(
       if (lstatSync(src.local_path).isSymbolicLink()) {
         rmSync(tempDir, { recursive: true, force: true });
         throw new SourceOpError(
-          'symlink_escape',
-          `Refusing to re-clone "${id}": local_path ${src.local_path} is a symlink.`,
+          "symlink_escape",
+          `Refusing to re-clone "${id}": local_path ${src.local_path} is a symlink.`
         );
       }
       aside = `${src.local_path}.old-${rand}`;
@@ -845,11 +831,11 @@ export async function recloneIfMissing(
     const asideNote =
       aside && existsSync(aside)
         ? ` Your original clone is preserved at ${aside} — restore it manually; do not delete it.`
-        : '';
+        : "";
     throw new SourceOpError(
-      'rename_failed',
+      "rename_failed",
       `Could not move re-cloned repo to ${src.local_path}: ${(e as Error).message}.${asideNote}`,
-      e,
+      e
     );
   }
   if (aside) rmSync(aside, { recursive: true, force: true });

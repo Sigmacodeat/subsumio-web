@@ -9,6 +9,7 @@
 The contradiction probe (`gbrain eval suspected-contradictions`) treats all claims as timeless. When two chunks make conflicting statements, the judge flags a contradiction regardless of whether both statements were true at their respective points in time.
 
 This worked fine when the brain was mostly static wiki pages. It breaks now that the brain contains:
+
 - Conversation transcripts with claims that were true when spoken
 - Meeting pages capturing what people said on specific dates
 - Takes that evolve (a founder's ARR claim in January vs. July)
@@ -65,6 +66,7 @@ Today the probe would flag January vs. April as a contradiction. The real signal
 What a time-aware probe could surface:
 
 **Claim trajectory tracking:**
+
 ```
 Company: Acme Corp
   2026-01: "$50K MRR" (source: OH transcript)
@@ -74,6 +76,7 @@ Company: Acme Corp
 ```
 
 **Prediction vs. outcome:**
+
 ```
 Founder: Jane Doe (Acme Corp)
   2026-01: "We'll hit $1M ARR by June" (source: batch kickoff)
@@ -83,6 +86,7 @@ Founder: Jane Doe (Acme Corp)
 ```
 
 **Narrative consistency:**
+
 ```
 Founder: John Smith (WidgetCo)
   2026-01: "Our moat is proprietary data" (source: interview)
@@ -98,6 +102,7 @@ This isn't adversarial. It's the kind of pattern an experienced operator notices
 Two distinct events within a short window can conflate during ingestion because the probe has no temporal frame to say "event A is a different event from event B."
 
 Time-aware facts would store (synthetic placeholders):
+
 ```
 fact: "alice-example milestone" valid_from: 2026-04-15 valid_until: 2026-04-15
 fact: "alice-example event in city-a" valid_from: 2026-04-17 valid_until: 2026-04-19
@@ -121,6 +126,7 @@ All of these are correct historical records. The probe should classify them as *
 ## Scenario #4: Decision Tracking
 
 Multi-step decisions that supersede earlier framings example (synthetic):
+
 ```
 2026-04-24: "status: trial" (initial framing)
 2026-04-25: "status: in progress" (confirmed, no longer "trial")
@@ -174,6 +180,7 @@ gbrain eval trajectory "deal-x status"
 ```
 
 Pull all time-stamped claims about an entity+attribute, sort chronologically, detect:
+
 - Regressions (metric went down)
 - Contradictions within the same time window
 - Prediction vs. outcome gaps
@@ -182,6 +189,7 @@ Pull all time-stamped claims about an entity+attribute, sort chronologically, de
 ### Phase 3: Automatic `valid_from`/`valid_until` population
 
 During `extract_facts`, infer temporal bounds from source context:
+
 - Meeting page dated 2026-04-28 → claims valid_from 2026-04-28
 - Takes from transcripts → valid_from = transcript date
 - Imported notes → valid_from = note date
@@ -190,6 +198,7 @@ During `extract_facts`, infer temporal bounds from source context:
 ### Phase 4: Founder scorecard
 
 For founders specifically, a temporal probe could generate:
+
 - **Claim accuracy score** — what they predicted vs. what happened
 - **Consistency score** — how stable their narrative is over time
 - **Growth trajectory** — whether the numbers are actually moving

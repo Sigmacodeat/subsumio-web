@@ -29,8 +29,8 @@
  * supervisor-domain logic, not audit-write primitives.
  */
 
-import { createAuditWriter, computeIsoWeekFilename } from '../../audit/audit-writer.ts';
-import type { SupervisorEmission } from '../supervisor.ts';
+import { createAuditWriter, computeIsoWeekFilename } from "../../audit/audit-writer.ts";
+import type { SupervisorEmission } from "../supervisor.ts";
 
 /**
  * Compute `supervisor-YYYY-Www.jsonl` using ISO-8601 week numbering.
@@ -40,7 +40,7 @@ import type { SupervisorEmission } from '../supervisor.ts';
  * is `supervisor-2026-W53.jsonl`.
  */
 export function computeSupervisorAuditFilename(now: Date = new Date()): string {
-  return computeIsoWeekFilename('supervisor', now);
+  return computeIsoWeekFilename("supervisor", now);
 }
 
 // On-disk shape: SupervisorEmission already carries `event` + `ts`, plus the
@@ -50,9 +50,9 @@ export function computeSupervisorAuditFilename(now: Date = new Date()): string {
 type SupervisorRow = SupervisorEmission & { supervisor_pid: number; ts: string };
 
 const writer = createAuditWriter<SupervisorRow>({
-  featureName: 'supervisor',
-  errorLabel: 'supervisor-audit',
-  errorTrailer: '; continuing',
+  featureName: "supervisor",
+  errorLabel: "supervisor-audit",
+  errorTrailer: "; continuing",
 });
 
 /**
@@ -84,15 +84,15 @@ export function readSupervisorEvents(opts: { sinceMs?: number } = {}): Superviso
   // Replicate the pre-v0.40.4 single-file behavior by reading just the
   // current-week file directly (the shared writer.readRecent() walks two
   // files; behavior-preserving here means staying with one).
-  const fs = require('node:fs') as typeof import('node:fs');
-  const path = require('node:path') as typeof import('node:path');
+  const fs = require("node:fs") as typeof import("node:fs");
+  const path = require("node:path") as typeof import("node:path");
   const dir = writer.resolveDir();
   const filename = computeSupervisorAuditFilename();
   const fullPath = path.join(dir, filename);
 
   let raw: string;
   try {
-    raw = fs.readFileSync(fullPath, 'utf8');
+    raw = fs.readFileSync(fullPath, "utf8");
   } catch {
     return [];
   }
@@ -100,7 +100,7 @@ export function readSupervisorEvents(opts: { sinceMs?: number } = {}): Superviso
   const now = Date.now();
   const cutoff = opts.sinceMs !== undefined ? now - opts.sinceMs : 0;
   const events: SupervisorEmission[] = [];
-  for (const line of raw.split('\n')) {
+  for (const line of raw.split("\n")) {
     if (!line.trim()) continue;
     try {
       const obj = JSON.parse(line) as SupervisorEmission;
@@ -132,7 +132,7 @@ export function readSupervisorEvents(opts: { sinceMs?: number } = {}): Superviso
  */
 export function readRecentSupervisorEvents(
   hours = 24,
-  now: Date = new Date(),
+  now: Date = new Date()
 ): SupervisorEmission[] {
   const days = hours / 24;
   const events = writer.readRecent(days, now);
@@ -158,7 +158,7 @@ export function readRecentSupervisorEvents(
  * silently underreporting — denylist semantics close the bug class this
  * helper was added to fix.
  */
-const CLEAN_EXIT_CAUSES = new Set(['clean_exit', 'graceful_shutdown', 'wedge_restart']);
+const CLEAN_EXIT_CAUSES = new Set(["clean_exit", "graceful_shutdown", "wedge_restart"]);
 
 /**
  * Per-cause crash bucket shape returned by `summarizeCrashes()`. Bucket names
@@ -190,7 +190,7 @@ export interface CrashSummary {
  * `code !== 0`.
  */
 export function isCrashExit(event: SupervisorEmission): boolean {
-  if (event.event !== 'worker_exited') return false;
+  if (event.event !== "worker_exited") return false;
   const cause = event.likely_cause as string | undefined;
   if (cause === undefined) {
     // Legacy fallback for pre-v0.34 entries lacking `likely_cause`. Treat
@@ -225,18 +225,18 @@ export function summarizeCrashes(events: SupervisorEmission[]): CrashSummary {
     clean_exits: 0,
   };
   for (const e of events) {
-    if (e.event !== 'worker_exited') continue;
+    if (e.event !== "worker_exited") continue;
     if (!isCrashExit(e)) {
       summary.clean_exits++;
       continue;
     }
     summary.total++;
     const cause = e.likely_cause as string | undefined;
-    if (cause === 'runtime_error') summary.by_cause.runtime_error++;
-    else if (cause === 'oom_or_external_kill') summary.by_cause.oom_or_external_kill++;
-    else if (cause === 'rss_watchdog') summary.by_cause.rss_watchdog++;
-    else if (cause === 'unknown') summary.by_cause.unknown++;
-    else summary.by_cause.legacy++;  // pre-v0.34 fallback OR future unrecognized cause
+    if (cause === "runtime_error") summary.by_cause.runtime_error++;
+    else if (cause === "oom_or_external_kill") summary.by_cause.oom_or_external_kill++;
+    else if (cause === "rss_watchdog") summary.by_cause.rss_watchdog++;
+    else if (cause === "unknown") summary.by_cause.unknown++;
+    else summary.by_cause.legacy++; // pre-v0.34 fallback OR future unrecognized cause
   }
   return summary;
 }

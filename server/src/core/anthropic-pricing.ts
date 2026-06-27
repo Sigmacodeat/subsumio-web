@@ -16,8 +16,8 @@
  * process. The cycle still runs unbounded for those models.
  */
 
-import { CANONICAL_PRICING, type ModelPricing } from './model-pricing.ts';
-import { splitProviderModelId } from './model-id.ts';
+import { CANONICAL_PRICING, type ModelPricing } from "./model-pricing.ts";
+import { splitProviderModelId } from "./model-id.ts";
 
 export type { ModelPricing };
 
@@ -29,8 +29,8 @@ export type { ModelPricing };
  */
 export const ANTHROPIC_PRICING: Record<string, ModelPricing> = Object.fromEntries(
   Object.entries(CANONICAL_PRICING)
-    .filter(([key]) => key.startsWith('anthropic:'))
-    .map(([key, pricing]) => [key.slice('anthropic:'.length), pricing]),
+    .filter(([key]) => key.startsWith("anthropic:"))
+    .map(([key, pricing]) => [key.slice("anthropic:".length), pricing])
 );
 
 /**
@@ -52,7 +52,7 @@ export const ANTHROPIC_PRICING: Record<string, ModelPricing> = Object.fromEntrie
 export function estimateMaxCostUsd(
   modelId: string,
   estimatedInputTokens: number,
-  maxOutputTokens: number,
+  maxOutputTokens: number
 ): number | null {
   let p: ModelPricing | undefined = ANTHROPIC_PRICING[modelId];
   if (!p) {
@@ -60,8 +60,5 @@ export function estimateMaxCostUsd(
     if (tail) p = ANTHROPIC_PRICING[tail];
   }
   if (!p) return null;
-  return (
-    (estimatedInputTokens / 1_000_000) * p.input +
-    (maxOutputTokens     / 1_000_000) * p.output
-  );
+  return (estimatedInputTokens / 1_000_000) * p.input + (maxOutputTokens / 1_000_000) * p.output;
 }

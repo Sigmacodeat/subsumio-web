@@ -31,5 +31,5 @@ export const GET = createHandler(
     } catch {
       return Response.json({ error: "docusign_not_configured" }, { status: 503 });
     }
-  },
+  }
 );

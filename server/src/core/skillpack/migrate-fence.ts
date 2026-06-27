@@ -20,15 +20,15 @@
  * directly. Loud stderr warning when fallback fires.
  */
 
-import { existsSync, readFileSync, writeFileSync } from 'fs';
-import { join } from 'path';
+import { existsSync, readFileSync, writeFileSync } from "fs";
+import { join } from "path";
 
-import { copyArtifacts, walkSourceDir } from './copy.ts';
-import { findGbrainRoot, loadBundleManifest } from './bundle.ts';
-import { findResolverFile } from '../resolver-filenames.ts';
+import { copyArtifacts, walkSourceDir } from "./copy.ts";
+import { findGbrainRoot, loadBundleManifest } from "./bundle.ts";
+import { findResolverFile } from "../resolver-filenames.ts";
 
-const MANAGED_BEGIN = '<!-- gbrain:skillpack:begin -->';
-const MANAGED_END = '<!-- gbrain:skillpack:end -->';
+const MANAGED_BEGIN = "<!-- gbrain:skillpack:begin -->";
+const MANAGED_END = "<!-- gbrain:skillpack:end -->";
 const RECEIPT_RE =
   /<!-- gbrain:skillpack:manifest cumulative-slugs="([^"]*)" version="([^"]*)" -->/;
 const ROW_RE = /`skills\/([^/]+)\/SKILL\.md`/g;
@@ -44,10 +44,7 @@ export interface MigrateFenceOptions {
   dryRun?: boolean;
 }
 
-export type MigrateFenceStatus =
-  | 'nothing_to_migrate'
-  | 'fence_stripped'
-  | 'fence_malformed';
+export type MigrateFenceStatus = "nothing_to_migrate" | "fence_stripped" | "fence_malformed";
 
 export interface MigrateFenceResult {
   status: MigrateFenceStatus;
@@ -94,7 +91,7 @@ export function parseFence(content: string): ParsedFence | null {
     return {
       beginIdx,
       endIdx,
-      block: '',
+      block: "",
       receiptSlugs: null,
       receiptVersion: null,
       rowSlugs: [],
@@ -104,7 +101,7 @@ export function parseFence(content: string): ParsedFence | null {
     return {
       beginIdx,
       endIdx,
-      block: '',
+      block: "",
       receiptSlugs: null,
       receiptVersion: null,
       rowSlugs: [],
@@ -118,7 +115,7 @@ export function parseFence(content: string): ParsedFence | null {
   let receiptSlugs: string[] | null = null;
   let receiptVersion: string | null = null;
   if (receiptMatch) {
-    receiptSlugs = receiptMatch[1].length === 0 ? [] : receiptMatch[1].split(',');
+    receiptSlugs = receiptMatch[1].length === 0 ? [] : receiptMatch[1].split(",");
     receiptVersion = receiptMatch[2];
   }
 
@@ -152,9 +149,9 @@ export function resolveFenceSlugs(parsed: ParsedFence): {
   if (parsed.receiptSlugs === null) {
     if (parsed.rowSlugs.length > 0) {
       console.error(
-        '[migrate-fence] cumulative-slugs receipt missing — falling back to row parsing (' +
+        "[migrate-fence] cumulative-slugs receipt missing — falling back to row parsing (" +
           parsed.rowSlugs.length +
-          ' slugs found).',
+          " slugs found)."
       );
     }
     return { slugs: parsed.rowSlugs, usedRowFallback: true };
@@ -166,12 +163,12 @@ export function resolveFenceSlugs(parsed: ParsedFence): {
   const rowSet = new Set(parsed.rowSlugs);
   const drift =
     parsed.receiptSlugs.length !== parsed.rowSlugs.length ||
-    parsed.receiptSlugs.some(s => !rowSet.has(s)) ||
-    parsed.rowSlugs.some(s => !receiptSet.has(s));
+    parsed.receiptSlugs.some((s) => !rowSet.has(s)) ||
+    parsed.rowSlugs.some((s) => !receiptSet.has(s));
 
   if (drift) {
     console.error(
-      '[migrate-fence] cumulative-slugs receipt does not match rows — using the union of both sets.',
+      "[migrate-fence] cumulative-slugs receipt does not match rows — using the union of both sets."
     );
     const union = new Set([...parsed.receiptSlugs, ...parsed.rowSlugs]);
     return { slugs: [...union].sort(), usedRowFallback: true };
@@ -193,21 +190,17 @@ export function stripFence(content: string, parsed: ParsedFence): string {
   const after = content.slice(parsed.endIdx);
 
   // Block body sans begin/end markers.
-  const inner = parsed.block
-    .slice(MANAGED_BEGIN.length, parsed.block.length - MANAGED_END.length);
+  const inner = parsed.block.slice(MANAGED_BEGIN.length, parsed.block.length - MANAGED_END.length);
 
   // Strip the receipt comment line (regex-friendly).
-  const innerSansReceipt = inner.replace(RECEIPT_RE, '');
+  const innerSansReceipt = inner.replace(RECEIPT_RE, "");
   // Strip the "Installed by gbrain X.Y.Z — do not hand-edit" reminder
   // (matches even when version varies).
-  const innerSansReminder = innerSansReceipt.replace(
-    /<!-- Installed by gbrain [^>]*-->/,
-    '',
-  );
+  const innerSansReminder = innerSansReceipt.replace(/<!-- Installed by gbrain [^>]*-->/, "");
 
   // Collapse any resulting run of blank lines at the seams into a
   // single blank line for readability.
-  const collapsed = innerSansReminder.replace(/\n{3,}/g, '\n\n');
+  const collapsed = innerSansReminder.replace(/\n{3,}/g, "\n\n");
 
   return before + collapsed + after;
 }
@@ -217,11 +210,11 @@ export function runMigrateFence(opts: MigrateFenceOptions): MigrateFenceResult {
 
   // Find the resolver file (prefer skills-dir variant; fall back to
   // workspace root).
-  const skillsDir = join(opts.targetWorkspace, 'skills');
+  const skillsDir = join(opts.targetWorkspace, "skills");
   const resolverFile = findResolverFile(skillsDir) ?? findResolverFile(opts.targetWorkspace);
   if (!resolverFile) {
     return {
-      status: 'nothing_to_migrate',
+      status: "nothing_to_migrate",
       resolverFile: null,
       fenceSlugs: [],
       usedRowFallback: false,
@@ -231,11 +224,11 @@ export function runMigrateFence(opts: MigrateFenceOptions): MigrateFenceResult {
     };
   }
 
-  const content = readFileSync(resolverFile, 'utf-8');
+  const content = readFileSync(resolverFile, "utf-8");
   const parsed = parseFence(content);
   if (parsed === null) {
     return {
-      status: 'nothing_to_migrate',
+      status: "nothing_to_migrate",
       resolverFile,
       fenceSlugs: [],
       usedRowFallback: false,
@@ -244,10 +237,10 @@ export function runMigrateFence(opts: MigrateFenceOptions): MigrateFenceResult {
       dryRun,
     };
   }
-  if (parsed.block === '') {
+  if (parsed.block === "") {
     // Malformed: one marker without the other.
     return {
-      status: 'fence_malformed',
+      status: "fence_malformed",
       resolverFile,
       fenceSlugs: [],
       usedRowFallback: false,
@@ -267,9 +260,9 @@ export function runMigrateFence(opts: MigrateFenceOptions): MigrateFenceResult {
   if (opts.gbrainRoot) {
     const root = opts.gbrainRoot;
     const manifest = loadBundleManifest(root);
-    const bundleSet = new Set(manifest.skills.map(s => s.replace(/^skills\//, '')));
+    const bundleSet = new Set(manifest.skills.map((s) => s.replace(/^skills\//, "")));
     for (const slug of slugs) {
-      const hostDir = join(opts.targetWorkspace, 'skills', slug);
+      const hostDir = join(opts.targetWorkspace, "skills", slug);
       if (existsSync(hostDir)) {
         skillsAlreadyPresent.push(slug);
         continue;
@@ -280,7 +273,7 @@ export function runMigrateFence(opts: MigrateFenceOptions): MigrateFenceResult {
         // Leave the row alone — the user owns it.
         continue;
       }
-      const srcDir = join(root, 'skills', slug);
+      const srcDir = join(root, "skills", slug);
       const items = walkSourceDir(srcDir, hostDir);
       if (!dryRun) {
         copyArtifacts(items, {});
@@ -296,7 +289,7 @@ export function runMigrateFence(opts: MigrateFenceOptions): MigrateFenceResult {
   }
 
   return {
-    status: 'fence_stripped',
+    status: "fence_stripped",
     resolverFile,
     fenceSlugs: slugs,
     usedRowFallback,

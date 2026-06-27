@@ -22,7 +22,7 @@
  * gate. See plan note "v0.41.27.1+ TODOs" in
  * ~/.claude/plans/system-instruction-you-are-working-eager-bird.md.
  */
-import { execFileSync } from 'node:child_process';
+import { execFileSync } from "node:child_process";
 
 export type GitHeadProbe = (localPath: string) => string | null;
 // `null` distinguishes probe error from known-dirty (false). Doctor treats
@@ -35,10 +35,10 @@ export type GitCleanProbe = (localPath: string, ignoreUntracked?: boolean) => bo
 
 const DEFAULT_HEAD_PROBE: GitHeadProbe = (localPath) => {
   try {
-    const out = execFileSync('git', ['-C', localPath, 'rev-parse', 'HEAD'], {
-      encoding: 'utf8',
+    const out = execFileSync("git", ["-C", localPath, "rev-parse", "HEAD"], {
+      encoding: "utf8",
       timeout: 5000,
-      stdio: ['ignore', 'pipe', 'ignore'],
+      stdio: ["ignore", "pipe", "ignore"],
     });
     return out.trim() || null;
   } catch {
@@ -53,12 +53,12 @@ const DEFAULT_CLEAN_PROBE: GitCleanProbe = (localPath, ignoreUntracked) => {
     // v0.41.32.0 fix for the false-SEVERE bug: untracked dirs (`?? companies/`,
     // `?? media/`) on an otherwise-caught-up repo previously made the tree look
     // dirty and defeated the short-circuit.
-    const args = ['-C', localPath, 'status', '--porcelain'];
-    if (ignoreUntracked) args.push('--untracked-files=no');
-    const out = execFileSync('git', args, {
-      encoding: 'utf8',
+    const args = ["-C", localPath, "status", "--porcelain"];
+    if (ignoreUntracked) args.push("--untracked-files=no");
+    const out = execFileSync("git", args, {
+      encoding: "utf8",
       timeout: 5000,
-      stdio: ['ignore', 'pipe', 'ignore'],
+      stdio: ["ignore", "pipe", "ignore"],
     });
     return out.trim().length === 0;
   } catch {
@@ -92,7 +92,7 @@ export interface GitFreshnessOpts {
    *     files, so a quiet repo with stray untracked dirs is genuinely caught up.
    *     Fixes the false-SEVERE bug without weakening the commit-hash gate.
    */
-  requireCleanWorkingTree?: boolean | 'ignore-untracked';
+  requireCleanWorkingTree?: boolean | "ignore-untracked";
 }
 
 /**
@@ -109,13 +109,13 @@ export interface GitFreshnessOpts {
 export function isSourceUnchangedSinceSync(
   localPath: string | null | undefined,
   lastCommit: string | null | undefined,
-  opts?: GitFreshnessOpts,
+  opts?: GitFreshnessOpts
 ): boolean {
   if (!localPath || !lastCommit) return false;
   const head = _headProbe(localPath);
   if (head === null || head !== lastCommit) return false;
   if (opts?.requireCleanWorkingTree) {
-    const ignoreUntracked = opts.requireCleanWorkingTree === 'ignore-untracked';
+    const ignoreUntracked = opts.requireCleanWorkingTree === "ignore-untracked";
     const isClean = _cleanProbe(localPath, ignoreUntracked);
     // null (probe error) AND false (known dirty) both fail the gate.
     if (isClean !== true) return false;

@@ -189,7 +189,9 @@ export default function WhatsAppTemplatesPage() {
                 </button>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="new-tpl-name" className="text-xs">Template-Name</Label>
+                <Label htmlFor="new-tpl-name" className="text-xs">
+                  Template-Name
+                </Label>
                 <Input
                   id="new-tpl-name"
                   type="text"
@@ -200,7 +202,9 @@ export default function WhatsAppTemplatesPage() {
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1.5">
-                  <Label htmlFor="new-tpl-lang" className="text-xs">Sprache</Label>
+                  <Label htmlFor="new-tpl-lang" className="text-xs">
+                    Sprache
+                  </Label>
                   <Select
                     value={newTemplate.language}
                     onValueChange={(v) => setNewTemplate({ ...newTemplate, language: v })}
@@ -215,7 +219,9 @@ export default function WhatsAppTemplatesPage() {
                   </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="new-tpl-cat" className="text-xs">Kategorie</Label>
+                  <Label htmlFor="new-tpl-cat" className="text-xs">
+                    Kategorie
+                  </Label>
                   <Select
                     value={newTemplate.category}
                     onValueChange={(v) => setNewTemplate({ ...newTemplate, category: v })}
@@ -232,7 +238,9 @@ export default function WhatsAppTemplatesPage() {
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="new-tpl-body" className="text-xs">Inhalt</Label>
+                <Label htmlFor="new-tpl-body" className="text-xs">
+                  Inhalt
+                </Label>
                 <textarea
                   id="new-tpl-body"
                   placeholder="Hallo {{1}}, Ihr Termin am {{2}}..."

@@ -10,9 +10,9 @@
  * No cross-operation file conflicts since each operation has its own file.
  */
 
-import { appendFileSync, readFileSync, existsSync, mkdirSync, writeFileSync, renameSync } from 'fs';
-import { join, dirname } from 'path';
-import { gbrainPath } from './config.ts';
+import { appendFileSync, readFileSync, existsSync, mkdirSync, writeFileSync, renameSync } from "fs";
+import { join, dirname } from "path";
+import { gbrainPath } from "./config.ts";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -42,11 +42,11 @@ export interface TestCase {
   name: string;
   input: string;
   expected: string;
-  source: 'fail-improve-loop';
+  source: "fail-improve-loop";
 }
 
 // Lazy: GBRAIN_HOME may be set after module load, so resolve at call time.
-const getLogDir = () => gbrainPath('fail-improve');
+const getLogDir = () => gbrainPath("fail-improve");
 const MAX_ENTRIES = 1000;
 
 // ---------------------------------------------------------------------------
@@ -60,13 +60,17 @@ const MAX_ENTRIES = 1000;
  */
 function makeAbortError(where: string): Error {
   const err = new Error(`Aborted at ${where}`);
-  err.name = 'AbortError';
+  err.name = "AbortError";
   return err;
 }
 
 function isAbortError(err: unknown): boolean {
-  return !!err && typeof err === 'object' &&
-    ('name' in err && (err as { name: string }).name === 'AbortError');
+  return (
+    !!err &&
+    typeof err === "object" &&
+    "name" in err &&
+    (err as { name: string }).name === "AbortError"
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -98,23 +102,23 @@ export class FailImproveLoop {
     input: string,
     deterministicFn: (input: string, signal?: AbortSignal) => T | null,
     llmFallbackFn: (input: string, signal?: AbortSignal) => Promise<T>,
-    opts?: { signal?: AbortSignal },
+    opts?: { signal?: AbortSignal }
   ): Promise<T> {
     // Pre-flight abort check
-    if (opts?.signal?.aborted) throw makeAbortError('fail-improve:before-start');
+    if (opts?.signal?.aborted) throw makeAbortError("fail-improve:before-start");
 
     // Track call
-    this.incrementCallCount(operation, 'total');
+    this.incrementCallCount(operation, "total");
 
     // Try deterministic first
     const deterResult = deterministicFn(input, opts?.signal);
     if (deterResult !== null && deterResult !== undefined) {
-      this.incrementCallCount(operation, 'deterministic');
+      this.incrementCallCount(operation, "deterministic");
       return deterResult;
     }
 
     // Abort check between deterministic miss and LLM call
-    if (opts?.signal?.aborted) throw makeAbortError('fail-improve:before-fallback');
+    if (opts?.signal?.aborted) throw makeAbortError("fail-improve:before-fallback");
 
     // Deterministic failed, try LLM
     let llmResult: T;
@@ -152,8 +156,8 @@ export class FailImproveLoop {
   logFailure(entry: FailureEntry): void {
     const filePath = this.getLogPath(entry.operation);
     this.ensureDir(filePath);
-    const line = JSON.stringify(entry) + '\n';
-    appendFileSync(filePath, line, 'utf-8');
+    const line = JSON.stringify(entry) + "\n";
+    appendFileSync(filePath, line, "utf-8");
     this.rotateIfNeeded(entry.operation);
   }
 
@@ -162,12 +166,15 @@ export class FailImproveLoop {
     const filePath = this.getLogPath(operation);
     if (!existsSync(filePath)) return [];
     try {
-      return readFileSync(filePath, 'utf-8')
-        .split('\n')
+      return readFileSync(filePath, "utf-8")
+        .split("\n")
         .filter(Boolean)
-        .map(line => {
-          try { return JSON.parse(line); }
-          catch { return null; }
+        .map((line) => {
+          try {
+            return JSON.parse(line);
+          } catch {
+            return null;
+          }
         })
         .filter(Boolean) as FailureEntry[];
     } catch {
@@ -180,7 +187,7 @@ export class FailImproveLoop {
     const failures = this.getFailures(operation);
     const groups = new Map<string, FailureEntry[]>();
     for (const f of failures) {
-      const key = f.input.slice(0, 50).replace(/\s+/g, ' ').trim();
+      const key = f.input.slice(0, 50).replace(/\s+/g, " ").trim();
       if (!groups.has(key)) groups.set(key, []);
       groups.get(key)!.push(f);
     }
@@ -199,7 +206,8 @@ export class FailImproveLoop {
       total_failures: failures.length,
       failures_by_pattern: new Map([...patterns.entries()].map(([k, v]) => [k, v.length])),
       total_improvements: improvements.length,
-      last_improvement: improvements.length > 0 ? improvements[improvements.length - 1].timestamp : undefined,
+      last_improvement:
+        improvements.length > 0 ? improvements[improvements.length - 1].timestamp : undefined,
       total_calls: stats.total,
       deterministic_hits: stats.deterministic,
       deterministic_rate: stats.total > 0 ? stats.deterministic / stats.total : 0,
@@ -210,25 +218,29 @@ export class FailImproveLoop {
   generateTestCases(operation: string): TestCase[] {
     const failures = this.getFailures(operation);
     return failures
-      .filter(f => f.llm_result && !f.llm_result.startsWith('error:') && !f.metadata?.cascade_failure)
+      .filter(
+        (f) => f.llm_result && !f.llm_result.startsWith("error:") && !f.metadata?.cascade_failure
+      )
       .map((f, i) => ({
         name: `auto_${operation}_${i + 1}`,
         input: f.input,
         expected: f.llm_result!,
-        source: 'fail-improve-loop' as const,
+        source: "fail-improve-loop" as const,
       }));
   }
 
   /** Log an improvement (when a new deterministic pattern is added). */
   logImprovement(operation: string, description: string): void {
-    const filePath = join(this.logDir, operation, 'improvements.json');
+    const filePath = join(this.logDir, operation, "improvements.json");
     this.ensureDir(filePath);
     let improvements: any[] = [];
     if (existsSync(filePath)) {
-      try { improvements = JSON.parse(readFileSync(filePath, 'utf-8')); } catch {}
+      try {
+        improvements = JSON.parse(readFileSync(filePath, "utf-8"));
+      } catch {}
     }
     improvements.push({ timestamp: new Date().toISOString(), description });
-    writeFileSync(filePath, JSON.stringify(improvements, null, 2), 'utf-8');
+    writeFileSync(filePath, JSON.stringify(improvements, null, 2), "utf-8");
   }
 
   // -------------------------------------------------------------------------
@@ -248,40 +260,48 @@ export class FailImproveLoop {
     if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
   }
 
-  private incrementCallCount(operation: string, type: 'total' | 'deterministic'): void {
+  private incrementCallCount(operation: string, type: "total" | "deterministic"): void {
     const filePath = this.getCallCountPath(operation);
     this.ensureDir(filePath);
     let counts = { total: 0, deterministic: 0 };
     if (existsSync(filePath)) {
-      try { counts = JSON.parse(readFileSync(filePath, 'utf-8')); } catch {}
+      try {
+        counts = JSON.parse(readFileSync(filePath, "utf-8"));
+      } catch {}
     }
     counts[type]++;
-    writeFileSync(filePath, JSON.stringify(counts), 'utf-8');
+    writeFileSync(filePath, JSON.stringify(counts), "utf-8");
   }
 
   private getCallCounts(operation: string): { total: number; deterministic: number } {
     const filePath = this.getCallCountPath(operation);
     if (!existsSync(filePath)) return { total: 0, deterministic: 0 };
-    try { return JSON.parse(readFileSync(filePath, 'utf-8')); }
-    catch { return { total: 0, deterministic: 0 }; }
+    try {
+      return JSON.parse(readFileSync(filePath, "utf-8"));
+    } catch {
+      return { total: 0, deterministic: 0 };
+    }
   }
 
   private getImprovements(operation: string): Array<{ timestamp: string; description: string }> {
-    const filePath = join(this.logDir, operation, 'improvements.json');
+    const filePath = join(this.logDir, operation, "improvements.json");
     if (!existsSync(filePath)) return [];
-    try { return JSON.parse(readFileSync(filePath, 'utf-8')); }
-    catch { return []; }
+    try {
+      return JSON.parse(readFileSync(filePath, "utf-8"));
+    } catch {
+      return [];
+    }
   }
 
   private rotateIfNeeded(operation: string): void {
     const filePath = this.getLogPath(operation);
     if (!existsSync(filePath)) return;
-    const content = readFileSync(filePath, 'utf-8');
-    const lines = content.split('\n').filter(Boolean);
+    const content = readFileSync(filePath, "utf-8");
+    const lines = content.split("\n").filter(Boolean);
     if (lines.length > MAX_ENTRIES) {
       // Keep last MAX_ENTRIES entries
       const kept = lines.slice(-MAX_ENTRIES);
-      writeFileSync(filePath, kept.join('\n') + '\n', 'utf-8');
+      writeFileSync(filePath, kept.join("\n") + "\n", "utf-8");
     }
   }
 }

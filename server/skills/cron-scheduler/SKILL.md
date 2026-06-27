@@ -23,6 +23,7 @@ mutating: true
 ## Contract
 
 This skill guarantees:
+
 - Schedule staggering: max 1 job per 5-minute slot, no collisions
 - Quiet hours gating: timezone-aware, with user-awake override
 - Thin job prompts: jobs say "Read skills/X/SKILL.md and run it" (no inline 3000-word prompts)
@@ -45,6 +46,7 @@ This skill guarantees:
 ## Idempotency Requirement
 
 Every cron job MUST be idempotent:
+
 - Running the same job twice produces the same result (no duplicate pages, no duplicate timeline entries)
 - Use checkpoint state files to track progress and resume interrupted runs
 - Check for existing output before creating new output

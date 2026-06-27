@@ -43,16 +43,16 @@
  * `tail -F ~/.gbrain/audit/lock-renewal-*.jsonl`.
  */
 
-import * as fs from 'fs';
-import * as path from 'path';
-import { createAuditWriter, resolveAuditDir, computeIsoWeekFilename } from './audit-writer.ts';
-import { redactConnectionInfo } from './redact-connection-info.ts';
+import * as fs from "fs";
+import * as path from "path";
+import { createAuditWriter, resolveAuditDir, computeIsoWeekFilename } from "./audit-writer.ts";
+import { redactConnectionInfo } from "./redact-connection-info.ts";
 
 export type LockRenewalOutcome =
-  | 'failure'
-  | 'success_after_failure'
-  | 'gave_up'
-  | 'executeJob_rejected';
+  | "failure"
+  | "success_after_failure"
+  | "gave_up"
+  | "executeJob_rejected";
 
 export interface LockRenewalAuditEvent {
   ts: string;
@@ -79,12 +79,12 @@ export interface LockRenewalAuditEvent {
   error_code?: string;
 }
 
-const FEATURE_NAME = 'lock-renewal';
+const FEATURE_NAME = "lock-renewal";
 
 const writer = createAuditWriter<LockRenewalAuditEvent>({
   featureName: FEATURE_NAME,
-  errorLabel: 'lock-renewal-audit',
-  errorTrailer: '; continuing',
+  errorLabel: "lock-renewal-audit",
+  errorTrailer: "; continuing",
 });
 
 /**
@@ -105,7 +105,7 @@ export const lockRenewalAudit: LockRenewalAuditSink = {
       job_id: jobId,
       job_name: jobName,
       attempt,
-      outcome: 'failure',
+      outcome: "failure",
       error_message_summary: summarizeError(err),
       error_code: extractErrorCode(err),
     });
@@ -115,7 +115,7 @@ export const lockRenewalAudit: LockRenewalAuditSink = {
       job_id: jobId,
       job_name: jobName,
       attempt: recoveredAfterAttempts,
-      outcome: 'success_after_failure',
+      outcome: "success_after_failure",
       // No error_message_summary or error_code: recovery has no error.
     });
   },
@@ -124,7 +124,7 @@ export const lockRenewalAudit: LockRenewalAuditSink = {
       job_id: jobId,
       job_name: jobName,
       attempt: totalFailures,
-      outcome: 'gave_up',
+      outcome: "gave_up",
       error_message_summary: summarizeError(err),
       error_code: extractErrorCode(err),
     });
@@ -135,7 +135,7 @@ export const lockRenewalAudit: LockRenewalAuditSink = {
       job_name: jobName,
       // No `attempt` — this surface is the stored executeJob promise
       // rejection, unrelated to the per-job renewal counter.
-      outcome: 'executeJob_rejected',
+      outcome: "executeJob_rejected",
       error_message_summary: summarizeError(err),
       error_code: extractErrorCode(err),
     });
@@ -156,7 +156,7 @@ export interface ReadLockRenewalResult {
 
 export function readRecentLockRenewalEvents(
   hours = 24,
-  now: Date = new Date(),
+  now: Date = new Date()
 ): ReadLockRenewalResult {
   const dir = resolveAuditDir();
   const cutoff = now.getTime() - hours * 3_600_000;
@@ -176,14 +176,14 @@ export function readRecentLockRenewalEvents(
     const file = path.join(dir, filename);
     let content: string;
     try {
-      content = fs.readFileSync(file, 'utf8');
+      content = fs.readFileSync(file, "utf8");
       filesScanned++;
     } catch (err) {
       const code = (err as NodeJS.ErrnoException)?.code;
-      if (code && code !== 'ENOENT') filesUnreadable++;
+      if (code && code !== "ENOENT") filesUnreadable++;
       continue;
     }
-    for (const line of content.split('\n')) {
+    for (const line of content.split("\n")) {
       if (line.length === 0) continue;
       try {
         const ev = JSON.parse(line) as LockRenewalAuditEvent;
@@ -209,7 +209,7 @@ export function readRecentLockRenewalEvents(
  */
 export function pruneOldLockRenewalAuditFiles(
   daysToKeep = 30,
-  now: Date = new Date(),
+  now: Date = new Date()
 ): { removed: number; kept: number } {
   const dir = resolveAuditDir();
   const cutoff = now.getTime() - daysToKeep * 86400_000;
@@ -220,14 +220,16 @@ export function pruneOldLockRenewalAuditFiles(
     entries = fs.readdirSync(dir, { withFileTypes: true });
   } catch (err) {
     const code = (err as NodeJS.ErrnoException)?.code;
-    if (code !== 'ENOENT') {
-      process.stderr.write(`[lock-renewal-audit] prune scan failed (${(err as Error).message}); continuing\n`);
+    if (code !== "ENOENT") {
+      process.stderr.write(
+        `[lock-renewal-audit] prune scan failed (${(err as Error).message}); continuing\n`
+      );
     }
     return { removed: 0, kept: 0 };
   }
   for (const entry of entries) {
     if (!entry.isFile()) continue;
-    if (!entry.name.startsWith(`${FEATURE_NAME}-`) || !entry.name.endsWith('.jsonl')) continue;
+    if (!entry.name.startsWith(`${FEATURE_NAME}-`) || !entry.name.endsWith(".jsonl")) continue;
     const file = path.join(dir, entry.name);
     try {
       const st = fs.statSync(file);
@@ -238,7 +240,9 @@ export function pruneOldLockRenewalAuditFiles(
         kept++;
       }
     } catch (err) {
-      process.stderr.write(`[lock-renewal-audit] prune ${entry.name} failed (${(err as Error).message}); continuing\n`);
+      process.stderr.write(
+        `[lock-renewal-audit] prune ${entry.name} failed (${(err as Error).message}); continuing\n`
+      );
     }
   }
   return { removed, kept };
@@ -252,14 +256,14 @@ export function pruneOldLockRenewalAuditFiles(
 function summarizeError(err: unknown): string {
   const raw = err instanceof Error ? err.message : String(err);
   const redacted = redactConnectionInfo(raw);
-  return redacted.replace(/\s+/g, ' ').slice(0, 200);
+  return redacted.replace(/\s+/g, " ").slice(0, 200);
 }
 
 /** Pull Postgres SQLSTATE if present (e.g. '08006' for connection failure). */
 function extractErrorCode(err: unknown): string | undefined {
-  if (err && typeof err === 'object' && 'code' in err) {
+  if (err && typeof err === "object" && "code" in err) {
     const code = (err as { code?: unknown }).code;
-    if (typeof code === 'string') return code;
+    if (typeof code === "string") return code;
   }
   return undefined;
 }

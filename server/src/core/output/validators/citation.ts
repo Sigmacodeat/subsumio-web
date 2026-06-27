@@ -23,7 +23,7 @@
  * pages" as the downstream invariant.
  */
 
-import type { PageValidator, PageValidationContext, ValidationFinding } from '../writer.ts';
+import type { PageValidator, PageValidationContext, ValidationFinding } from "../writer.ts";
 
 // `[Source: ...]` must carry non-whitespace content — a bare `[Source:]`
 // or `[Source:   ]` is decorative and does not satisfy the citation check.
@@ -31,7 +31,7 @@ import type { PageValidator, PageValidationContext, ValidationFinding } from '..
 const CITATION_RE = /\[Source:\s*\S[^\]]*\]|\]\(\s*https?:\/\/[^)]+\)/i;
 
 export const citationValidator: PageValidator = {
-  id: 'citation',
+  id: "citation",
 
   async validate(ctx: PageValidationContext): Promise<ValidationFinding[]> {
     const findings: ValidationFinding[] = [];
@@ -42,8 +42,8 @@ export const citationValidator: PageValidator = {
       if (CITATION_RE.test(p.stripped)) continue;
       findings.push({
         slug: ctx.slug,
-        validator: 'citation',
-        severity: 'error',
+        validator: "citation",
+        severity: "error",
         line: p.startLine,
         message: `Paragraph has no citation marker: "${truncate(p.stripped, 80)}"`,
       });
@@ -72,16 +72,16 @@ interface Paragraph {
  */
 export function splitParagraphs(md: string): Paragraph[] {
   const out: Paragraph[] = [];
-  const lines = md.split('\n');
+  const lines = md.split("\n");
 
   let currentLines: string[] = [];
   let currentStartLine = 1;
   let insideFence = false;
-  let fenceMarker = '';
+  let fenceMarker = "";
 
   const flush = (endLine: number) => {
     if (currentLines.length === 0) return;
-    const raw = currentLines.join('\n');
+    const raw = currentLines.join("\n");
     const stripped = stripInlineNoise(raw).trim();
     if (stripped.length > 0) {
       out.push({ stripped, raw, startLine: currentStartLine });
@@ -102,9 +102,9 @@ export function splitParagraphs(md: string): Paragraph[] {
       }
       continue; // drop fenced lines entirely
     }
-    if (line.startsWith('```') || line.startsWith('~~~')) {
+    if (line.startsWith("```") || line.startsWith("~~~")) {
       insideFence = true;
-      fenceMarker = line.startsWith('```') ? '```' : '~~~';
+      fenceMarker = line.startsWith("```") ? "```" : "~~~";
       // flush current paragraph if any; fences break paragraphs
       flush(i);
       currentStartLine = lineNum + 1;
@@ -133,12 +133,14 @@ export function splitParagraphs(md: string): Paragraph[] {
  *   - HTML comments <!-- ... -->
  */
 function stripInlineNoise(s: string): string {
-  return s
-    // HTML comments (multiline safe via flag)
-    .replace(/<!--[\s\S]*?-->/g, ' ')
-    // Inline code
-    .replace(/`[^`\n]*`/g, ' ')
-    .replace(/\s+/g, ' ');
+  return (
+    s
+      // HTML comments (multiline safe via flag)
+      .replace(/<!--[\s\S]*?-->/g, " ")
+      // Inline code
+      .replace(/`[^`\n]*`/g, " ")
+      .replace(/\s+/g, " ")
+  );
 }
 
 /**
@@ -170,11 +172,17 @@ function looksFactual(stripped: string): boolean {
   if (/^[-*]\s*\[[^\]]+\]\([^)]+\)\s*$/.test(stripped)) return false;
 
   // Short labels without a verb-ish word (too noisy to require citations on)
-  if (stripped.length < 40 && !/\b(is|was|were|has|have|had|will|would|built|raised|founded|said|wrote|attended|works|joined|left|shipped)\b/i.test(stripped)) return false;
+  if (
+    stripped.length < 40 &&
+    !/\b(is|was|were|has|have|had|will|would|built|raised|founded|said|wrote|attended|works|joined|left|shipped)\b/i.test(
+      stripped
+    )
+  )
+    return false;
 
   return true;
 }
 
 function truncate(s: string, n: number): string {
-  return s.length <= n ? s : s.slice(0, n - 3) + '...';
+  return s.length <= n ? s : s.slice(0, n - 3) + "...";
 }

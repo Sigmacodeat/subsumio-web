@@ -34,6 +34,7 @@ writes_to:
 ## Contract
 
 This skill guarantees:
+
 - Every ingested item has a brain page with genuine analysis (not just a summary)
 - The author gets a people page (MANDATORY for anyone whose thinking is worth ingesting)
 - Cross-links created bidirectionally (source ↔ author, source ↔ mentioned entities)
@@ -83,15 +84,19 @@ Format: `- **YYYY-MM-DD** | Referenced in [page title](path) — brief context`
 **Ingested:** {date}
 
 ## Context
+
 {Why this matters now, connected to brain knowledge}
 
 ## Summary
+
 {3-5 bullet core arguments}
 
 ## Key Data / Claims
+
 {Specific facts, numbers, quotes}
 
 ## Analysis
+
 {How this connects to existing brain knowledge. What's new. What contradicts.}
 ```
 

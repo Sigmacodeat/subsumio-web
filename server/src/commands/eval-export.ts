@@ -14,8 +14,8 @@
  *   gbrain eval export [--since 7d] [--limit N] [--tool query|search] > rows.ndjson
  */
 
-import type { BrainEngine } from '../core/engine.ts';
-import type { EvalCandidate } from '../core/types.ts';
+import type { BrainEngine } from "../core/engine.ts";
+import type { EvalCandidate } from "../core/types.ts";
 
 const SCHEMA_VERSION = 1;
 
@@ -23,7 +23,7 @@ interface ExportOpts {
   help?: boolean;
   since?: Date;
   limit?: number;
-  tool?: 'query' | 'search';
+  tool?: "query" | "search";
 }
 
 function parseDurationToMs(s: string): number | null {
@@ -48,11 +48,11 @@ function parseArgs(args: string[]): ExportOpts {
     const arg = args[i]!;
     const next = args[i + 1];
     switch (arg) {
-      case '--help':
-      case '-h':
+      case "--help":
+      case "-h":
         opts.help = true;
         break;
-      case '--since': {
+      case "--since": {
         if (!next) break;
         const ms = parseDurationToMs(next);
         if (ms !== null) {
@@ -64,12 +64,12 @@ function parseArgs(args: string[]): ExportOpts {
         i++;
         break;
       }
-      case '--limit':
+      case "--limit":
         if (next) opts.limit = parseInt(next, 10);
         i++;
         break;
-      case '--tool':
-        if (next === 'query' || next === 'search') {
+      case "--tool":
+        if (next === "query" || next === "search") {
           opts.tool = next;
         } else if (next) {
           console.error(`Invalid --tool value: ${next} (use 'query' or 'search')`);
@@ -114,12 +114,12 @@ export async function runEvalExport(engine: BrainEngine, args: string[]): Promis
   }
 
   // Progress to stderr (stdout is reserved for NDJSON data).
-  const { createProgress, startHeartbeat } = await import('../core/progress.ts');
-  const { getCliOptions, cliOptsToProgressOptions } = await import('../core/cli-options.ts');
+  const { createProgress, startHeartbeat } = await import("../core/progress.ts");
+  const { getCliOptions, cliOptsToProgressOptions } = await import("../core/cli-options.ts");
   const progress = createProgress(cliOptsToProgressOptions(getCliOptions()));
 
-  progress.start('eval.export');
-  const stopHeartbeat = startHeartbeat(progress, 'reading eval_candidates');
+  progress.start("eval.export");
+  const stopHeartbeat = startHeartbeat(progress, "reading eval_candidates");
   let rows: EvalCandidate[];
   try {
     rows = await engine.listEvalCandidates({
@@ -136,24 +136,24 @@ export async function runEvalExport(engine: BrainEngine, args: string[]): Promis
   // stack trace. Matches src/core/progress.ts EPIPE handling precedent.
   const stdout = process.stdout;
   const abortOnEpipe = (err: NodeJS.ErrnoException) => {
-    if (err.code === 'EPIPE') process.exit(0);
+    if (err.code === "EPIPE") process.exit(0);
   };
-  stdout.on('error', abortOnEpipe);
+  stdout.on("error", abortOnEpipe);
 
   let written = 0;
   for (const row of rows) {
     // Prefix every line with schema_version:1 so gbrain-evals can detect
     // schema drift before parsing the rest of the fields.
     const line = JSON.stringify({ schema_version: SCHEMA_VERSION, ...row });
-    if (!stdout.write(line + '\n')) {
+    if (!stdout.write(line + "\n")) {
       // Backpressure: wait for drain before continuing.
-      await new Promise(r => stdout.once('drain', r));
+      await new Promise((r) => stdout.once("drain", r));
     }
     written++;
     progress.tick();
   }
 
-  stdout.off('error', abortOnEpipe);
+  stdout.off("error", abortOnEpipe);
   progress.finish();
   console.error(`exported ${written} row(s)`);
 }

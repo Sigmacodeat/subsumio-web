@@ -15,14 +15,14 @@
  * verdict object directly (sql.json on Postgres, $N::jsonb on PGLite).
  */
 
-import { createHash } from 'node:crypto';
-import type { BrainEngine } from '../engine.ts';
-import { PROMPT_VERSION, TRUNCATION_POLICY } from './types.ts';
-import type { CacheStats, JudgeVerdict } from './types.ts';
+import { createHash } from "node:crypto";
+import type { BrainEngine } from "../engine.ts";
+import { PROMPT_VERSION, TRUNCATION_POLICY } from "./types.ts";
+import type { CacheStats, JudgeVerdict } from "./types.ts";
 
 /** Stable sha256 hex of a string. UTF-8 input. */
 export function hashContent(text: string): string {
-  return createHash('sha256').update(text, 'utf8').digest('hex');
+  return createHash("sha256").update(text, "utf8").digest("hex");
 }
 
 /**
@@ -30,11 +30,7 @@ export function hashContent(text: string): string {
  * collide. This matters because the orchestrator may emit pairs in either
  * direction depending on retrieval order; the verdict is symmetric.
  */
-export function buildCacheKey(opts: {
-  textA: string;
-  textB: string;
-  modelId: string;
-}): {
+export function buildCacheKey(opts: { textA: string; textB: string; modelId: string }): {
   chunk_a_hash: string;
   chunk_b_hash: string;
   model_id: string;
@@ -60,17 +56,17 @@ export function buildCacheKey(opts: {
  * mismatch and treat it as a miss rather than crash downstream.
  */
 function isJudgeVerdict(raw: unknown): raw is JudgeVerdict {
-  if (!raw || typeof raw !== 'object') return false;
+  if (!raw || typeof raw !== "object") return false;
   const v = raw as Record<string, unknown>;
   // v0.34 / Lane A2: shape check matches the new `verdict: Verdict` enum.
   // Old v1-shaped rows (with `contradicts: boolean` instead) fail this guard
   // and get treated as cache misses — same effect as the PROMPT_VERSION '1'
   // rows already being filtered out by the cache-key tuple, but doubly safe.
   return (
-    typeof v.verdict === 'string' &&
-    typeof v.severity === 'string' &&
-    typeof v.confidence === 'number' &&
-    typeof v.axis === 'string'
+    typeof v.verdict === "string" &&
+    typeof v.severity === "string" &&
+    typeof v.confidence === "number" &&
+    typeof v.axis === "string"
   );
 }
 

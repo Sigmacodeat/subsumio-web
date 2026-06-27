@@ -1,10 +1,7 @@
 // @vitest-environment node
 
 import { describe, test, expect } from "vitest";
-import {
-  verifyStripeSignature,
-  STRIPE_SIGNATURE_TOLERANCE_SECONDS,
-} from "./stripe-webhook";
+import { verifyStripeSignature, STRIPE_SIGNATURE_TOLERANCE_SECONDS } from "./stripe-webhook";
 import { createHmac } from "node:crypto";
 
 const SECRET = "whsec_test_secret";
@@ -45,7 +42,9 @@ describe("verifyStripeSignature", () => {
 
   test("returns false for tampered payload", () => {
     const header = makeSignature(PAYLOAD, SECRET, TIMESTAMP);
-    expect(verifyStripeSignature('{"type":"tampered"}', header, SECRET, TIMESTAMP * 1000)).toBe(false);
+    expect(verifyStripeSignature('{"type":"tampered"}', header, SECRET, TIMESTAMP * 1000)).toBe(
+      false
+    );
   });
 
   test("returns false for missing timestamp in header", () => {

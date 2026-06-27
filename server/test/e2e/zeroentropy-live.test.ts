@@ -24,14 +24,14 @@
  * gated by env so contributor PR CI doesn't spend.
  */
 
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
+import { describe, test, expect, beforeAll, afterAll } from "bun:test";
 import {
   configureGateway,
   resetGateway,
   embed,
   embedQuery,
   rerank,
-} from '../../src/core/ai/gateway.ts';
+} from "../../src/core/ai/gateway.ts";
 
 const API_KEY = process.env.ZEROENTROPY_API_KEY;
 
@@ -42,9 +42,9 @@ const skipAll = !API_KEY;
 beforeAll(() => {
   if (skipAll) return;
   configureGateway({
-    embedding_model: 'zeroentropyai:zembed-1',
+    embedding_model: "zeroentropyai:zembed-1",
     embedding_dimensions: 2560,
-    reranker_model: 'zeroentropyai:zerank-2',
+    reranker_model: "zeroentropyai:zerank-2",
     env: { ZEROENTROPY_API_KEY: API_KEY! },
   });
 });
@@ -53,39 +53,39 @@ afterAll(() => {
   if (!skipAll) resetGateway();
 });
 
-describe('ZE live — embed round-trip', () => {
+describe("ZE live — embed round-trip", () => {
   test('embed(["text"]) returns Float32Array[2560]', async () => {
     if (skipAll) {
-      console.warn('[skip] ZEROENTROPY_API_KEY not set');
+      console.warn("[skip] ZEROENTROPY_API_KEY not set");
       return;
     }
-    const [v] = await embed(['hello world']);
+    const [v] = await embed(["hello world"]);
     expect(v).toBeInstanceOf(Float32Array);
     expect(v.length).toBe(2560);
     // Sanity: at least one non-zero element (otherwise the response
     // rewrite probably dropped the payload).
-    const anyNonZero = Array.from(v).some(x => x !== 0);
+    const anyNonZero = Array.from(v).some((x) => x !== 0);
     expect(anyNonZero).toBe(true);
   });
 
   test('embedQuery("text") returns Float32Array[2560] (query side)', async () => {
     if (skipAll) {
-      console.warn('[skip] ZEROENTROPY_API_KEY not set');
+      console.warn("[skip] ZEROENTROPY_API_KEY not set");
       return;
     }
-    const v = await embedQuery('what is foo');
+    const v = await embedQuery("what is foo");
     expect(v).toBeInstanceOf(Float32Array);
     expect(v.length).toBe(2560);
-    const anyNonZero = Array.from(v).some(x => x !== 0);
+    const anyNonZero = Array.from(v).some((x) => x !== 0);
     expect(anyNonZero).toBe(true);
   });
 
-  test('embed batch of 3 returns 3 vectors in order', async () => {
+  test("embed batch of 3 returns 3 vectors in order", async () => {
     if (skipAll) {
-      console.warn('[skip] ZEROENTROPY_API_KEY not set');
+      console.warn("[skip] ZEROENTROPY_API_KEY not set");
       return;
     }
-    const out = await embed(['one', 'two', 'three']);
+    const out = await embed(["one", "two", "three"]);
     expect(out.length).toBe(3);
     for (const v of out) {
       expect(v).toBeInstanceOf(Float32Array);
@@ -107,73 +107,81 @@ describe('ZE live — embed round-trip', () => {
 const ZE_RERANK_TIMEOUT_MS = 25_000;
 const ZE_TEST_TIMEOUT_MS = 30_000;
 
-describe('ZE live — rerank round-trip', () => {
-  test('rerank({query, documents}) returns sorted RerankResult[]', async () => {
-    if (skipAll) {
-      console.warn('[skip] ZEROENTROPY_API_KEY not set');
-      return;
-    }
-    const out = await rerank({
-      query: 'how does photosynthesis work',
-      documents: [
-        'Photosynthesis is the process by which plants convert sunlight to energy.',
-        'My cat likes to eat tuna fish.',
-        'Chlorophyll absorbs red and blue light during photosynthesis.',
-      ],
-      timeoutMs: ZE_RERANK_TIMEOUT_MS,
-    });
-    expect(out.length).toBe(3);
-    for (const r of out) {
-      expect(typeof r.index).toBe('number');
-      expect(typeof r.relevanceScore).toBe('number');
-      // ZE relevance scores are in [0, 1]. Pin the range so a future
-      // contract change is loud.
-      expect(r.relevanceScore).toBeGreaterThanOrEqual(0);
-      expect(r.relevanceScore).toBeLessThanOrEqual(1);
-    }
-    // Photosynthesis-relevant docs should score higher than the cat doc.
-    // We don't pin a specific order (zerank-2 may re-rank the two
-    // photosynthesis docs in either order depending on phrasing), but
-    // the cat doc must NOT be at the top.
-    const topIndex = out[0]!.index;
-    expect(topIndex).not.toBe(1); // index 1 is the cat doc
-  }, ZE_TEST_TIMEOUT_MS);
+describe("ZE live — rerank round-trip", () => {
+  test(
+    "rerank({query, documents}) returns sorted RerankResult[]",
+    async () => {
+      if (skipAll) {
+        console.warn("[skip] ZEROENTROPY_API_KEY not set");
+        return;
+      }
+      const out = await rerank({
+        query: "how does photosynthesis work",
+        documents: [
+          "Photosynthesis is the process by which plants convert sunlight to energy.",
+          "My cat likes to eat tuna fish.",
+          "Chlorophyll absorbs red and blue light during photosynthesis.",
+        ],
+        timeoutMs: ZE_RERANK_TIMEOUT_MS,
+      });
+      expect(out.length).toBe(3);
+      for (const r of out) {
+        expect(typeof r.index).toBe("number");
+        expect(typeof r.relevanceScore).toBe("number");
+        // ZE relevance scores are in [0, 1]. Pin the range so a future
+        // contract change is loud.
+        expect(r.relevanceScore).toBeGreaterThanOrEqual(0);
+        expect(r.relevanceScore).toBeLessThanOrEqual(1);
+      }
+      // Photosynthesis-relevant docs should score higher than the cat doc.
+      // We don't pin a specific order (zerank-2 may re-rank the two
+      // photosynthesis docs in either order depending on phrasing), but
+      // the cat doc must NOT be at the top.
+      const topIndex = out[0]!.index;
+      expect(topIndex).not.toBe(1); // index 1 is the cat doc
+    },
+    ZE_TEST_TIMEOUT_MS
+  );
 
-  test('rerank with top_n=2 returns at most 2 results', async () => {
-    if (skipAll) {
-      console.warn('[skip] ZEROENTROPY_API_KEY not set');
-      return;
-    }
-    const out = await rerank({
-      query: 'photosynthesis',
-      documents: ['photosynthesis a', 'cats b', 'photosynthesis c'],
-      topN: 2,
-      timeoutMs: ZE_RERANK_TIMEOUT_MS,
-    });
-    expect(out.length).toBeLessThanOrEqual(2);
-  }, ZE_TEST_TIMEOUT_MS);
+  test(
+    "rerank with top_n=2 returns at most 2 results",
+    async () => {
+      if (skipAll) {
+        console.warn("[skip] ZEROENTROPY_API_KEY not set");
+        return;
+      }
+      const out = await rerank({
+        query: "photosynthesis",
+        documents: ["photosynthesis a", "cats b", "photosynthesis c"],
+        topN: 2,
+        timeoutMs: ZE_RERANK_TIMEOUT_MS,
+      });
+      expect(out.length).toBeLessThanOrEqual(2);
+    },
+    ZE_TEST_TIMEOUT_MS
+  );
 });
 
-describe('ZE live — flexible dims', () => {
-  test('1280-dim embedding returns Float32Array[1280]', async () => {
+describe("ZE live — flexible dims", () => {
+  test("1280-dim embedding returns Float32Array[1280]", async () => {
     if (skipAll) {
-      console.warn('[skip] ZEROENTROPY_API_KEY not set');
+      console.warn("[skip] ZEROENTROPY_API_KEY not set");
       return;
     }
     resetGateway();
     configureGateway({
-      embedding_model: 'zeroentropyai:zembed-1',
+      embedding_model: "zeroentropyai:zembed-1",
       embedding_dimensions: 1280,
       env: { ZEROENTROPY_API_KEY: API_KEY! },
     });
-    const [v] = await embed(['1280 dim test']);
+    const [v] = await embed(["1280 dim test"]);
     expect(v.length).toBe(1280);
     // Restore 2560 for subsequent tests.
     resetGateway();
     configureGateway({
-      embedding_model: 'zeroentropyai:zembed-1',
+      embedding_model: "zeroentropyai:zembed-1",
       embedding_dimensions: 2560,
-      reranker_model: 'zeroentropyai:zerank-2',
+      reranker_model: "zeroentropyai:zerank-2",
       env: { ZEROENTROPY_API_KEY: API_KEY! },
     });
   });

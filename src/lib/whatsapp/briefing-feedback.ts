@@ -34,7 +34,7 @@ export interface BriefingFeedbackResult {
  * The event is picked up by computeSecretaryMetrics via `whatsapp.briefing_feedback`.
  */
 export async function recordBriefingFeedback(
-  input: BriefingFeedbackInput,
+  input: BriefingFeedbackInput
 ): Promise<BriefingFeedbackResult> {
   const feedbackId = `fb-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
@@ -59,16 +59,36 @@ export async function recordBriefingFeedback(
  * Recognized patterns: "👍", "👎", "ja", "nein", "nützlich", "nutzlos",
  * "hilfreich", "nicht hilfreich", "useful", "not useful"
  */
-export function parseFeedbackFromReply(
-  text: string,
-): { isFeedback: boolean; useful: boolean | null } {
+export function parseFeedbackFromReply(text: string): {
+  isFeedback: boolean;
+  useful: boolean | null;
+} {
   const lower = text.trim().toLowerCase();
 
   // Negative patterns are checked first because some contain a negated
   // positive token (e.g. "nicht hilfreich" contains "hilfreich", and
   // "nein, nicht nützlich" contains "nützlich").
-  const negativePatterns = ["👎", "nein", "nutzlos", "nicht hilfreich", "nicht nützlich", "nicht nutzlich", "not useful", "unhelpful", "bad"];
-  const positivePatterns = ["👍", "ja", "nützlich", "nutzlich", "hilfreich", "useful", "good", "danke"];
+  const negativePatterns = [
+    "👎",
+    "nein",
+    "nutzlos",
+    "nicht hilfreich",
+    "nicht nützlich",
+    "nicht nutzlich",
+    "not useful",
+    "unhelpful",
+    "bad",
+  ];
+  const positivePatterns = [
+    "👍",
+    "ja",
+    "nützlich",
+    "nutzlich",
+    "hilfreich",
+    "useful",
+    "good",
+    "danke",
+  ];
 
   for (const p of negativePatterns) {
     if (lower.includes(p)) {

@@ -12,31 +12,31 @@
  *  D17: D_sel >= 5 floor enforced at benchmark-load time.
  */
 
-import type { BrainEngine } from '../engine.ts';
+import type { BrainEngine } from "../engine.ts";
 
 // ─── Benchmarks + judges ──────────────────────────────────────────────────
 
 /** Rule-check kinds for `judge: rule`. Each is deterministic and free. */
 export type RuleCheckOp =
-  | 'contains'
-  | 'regex'
-  | 'section_present'
-  | 'max_chars'
-  | 'min_citations'
-  | 'tool_called'
-  | 'tool_not_called';
+  | "contains"
+  | "regex"
+  | "section_present"
+  | "max_chars"
+  | "min_citations"
+  | "tool_called"
+  | "tool_not_called";
 
 export interface RuleCheck {
   op: RuleCheckOp;
   arg: string | number;
 }
 
-export type JudgeKind = 'rule' | 'llm' | 'qrels';
+export type JudgeKind = "rule" | "llm" | "qrels";
 
 export type Judge =
-  | { kind: 'rule'; checks: RuleCheck[] }
-  | { kind: 'llm'; rubric: string; model?: string }
-  | { kind: 'qrels'; expected_slugs: string[]; k: number };
+  | { kind: "rule"; checks: RuleCheck[] }
+  | { kind: "llm"; rubric: string; model?: string }
+  | { kind: "qrels"; expected_slugs: string[]; k: number };
 
 export interface BenchmarkTask {
   task_id: string;
@@ -65,24 +65,24 @@ export interface BenchmarkSplit {
 
 /** D9: applyEdit returns a tagged result, not throws. */
 export type EditOp =
-  | { op: 'add'; anchor: string; content: string; reason?: string }
-  | { op: 'replace'; target: string; replacement: string; reason?: string }
-  | { op: 'delete'; target: string; reason?: string };
+  | { op: "add"; anchor: string; content: string; reason?: string }
+  | { op: "replace"; target: string; replacement: string; reason?: string }
+  | { op: "delete"; target: string; reason?: string };
 
 export type EditRejectionReason =
-  | 'anchor_not_found'
-  | 'anchor_ambiguous'
-  | 'target_not_found'
-  | 'target_ambiguous'
-  | 'inside_code_fence'
-  | 'crosses_frontmatter'
-  | 'working_tree_dirty'
-  | 'install_path'
-  | 'no_change';
+  | "anchor_not_found"
+  | "anchor_ambiguous"
+  | "target_not_found"
+  | "target_ambiguous"
+  | "inside_code_fence"
+  | "crosses_frontmatter"
+  | "working_tree_dirty"
+  | "install_path"
+  | "no_change";
 
 export type EditResult =
-  | { outcome: 'applied'; edit: EditOp; newText: string }
-  | { outcome: 'rejected'; edit: EditOp; reason: EditRejectionReason; detail?: string };
+  | { outcome: "applied"; edit: EditOp; newText: string }
+  | { outcome: "rejected"; edit: EditOp; reason: EditRejectionReason; detail?: string };
 
 // ─── Trajectories + rollouts ──────────────────────────────────────────────
 
@@ -104,7 +104,7 @@ export interface Trajectory {
   /** Number of agent turns the loop took. */
   turns: number;
   /** End reason from gateway.toolLoop. */
-  stop_reason: 'end' | 'max_turns' | 'refusal' | 'content_filter' | 'aborted' | 'unrecoverable';
+  stop_reason: "end" | "max_turns" | "refusal" | "content_filter" | "aborted" | "unrecoverable";
   /** Wall-clock duration in ms. */
   duration_ms: number;
 }
@@ -136,7 +136,7 @@ export interface SkillOptOpts {
   batchSize: number;
   /** Max edits per step (the LR). */
   lr: number;
-  lrSchedule: 'cosine' | 'linear' | 'constant';
+  lrSchedule: "cosine" | "linear" | "constant";
   /** Split ratio as 3-tuple, e.g. [4, 1, 5] for 4:1:5. */
   split: [number, number, number];
 
@@ -146,7 +146,7 @@ export interface SkillOptOpts {
   judgeModel: string;
 
   // Modes.
-  mode: 'patch' | 'rewrite';
+  mode: "patch" | "rewrite";
   dryRun: boolean;
   noMutate: boolean;
   allowMutateBundled: boolean;
@@ -163,11 +163,11 @@ export interface SkillOptOpts {
   // the full production pipeline. `disableValidationGate` MUST NOT be wired to
   // any user-facing flag — it disables the core safety gate.
   /** Ablation: 'failure-only' skips the D7 success reflect call. Default 'both'. */
-  reflectMode?: 'both' | 'failure-only';
+  reflectMode?: "both" | "failure-only";
   /** Ablation: greedy-accept every applied edit, skip the D12 median+epsilon gate. Default false. */
   disableValidationGate?: boolean;
   /** Ablation: 'one-shot-rewrite' does ONE rewrite call, no loop, no gate. Default 'reflect'. */
-  optimizerMode?: 'reflect' | 'one-shot-rewrite';
+  optimizerMode?: "reflect" | "one-shot-rewrite";
 
   // Safety.
   maxCostUsd: number;
@@ -201,11 +201,11 @@ export interface RunReceipt {
   epochs: number;
   batch_size: number;
   lr: number;
-  lr_schedule: 'cosine' | 'linear' | 'constant';
+  lr_schedule: "cosine" | "linear" | "constant";
   max_cost_usd: number;
   started_at: string;
   ended_at?: string;
-  outcome?: 'accepted' | 'no_improvement' | 'aborted' | 'errored';
+  outcome?: "accepted" | "no_improvement" | "aborted" | "errored";
   baseline_sel_score?: number;
   best_sel_score?: number;
   baseline_test_score?: number;
@@ -215,14 +215,14 @@ export interface RunReceipt {
   epochs_completed?: number;
   // Ablation provenance (cat31 replayability) — present when a non-default
   // ablation knob was set.
-  reflect_mode?: 'both' | 'failure-only';
+  reflect_mode?: "both" | "failure-only";
   validation_gate_disabled?: boolean;
-  optimizer_mode?: 'reflect' | 'one-shot-rewrite';
+  optimizer_mode?: "reflect" | "one-shot-rewrite";
 }
 
 export interface HistoryRow {
   /** D8: pending → committed two-phase commit. */
-  status: 'pending' | 'committed';
+  status: "pending" | "committed";
   run_id: string;
   version_n: number;
   ts: string;
@@ -257,7 +257,7 @@ export interface GateResult {
   perTaskMedians: Array<{ task_id: string; median: number; runs: number[] }>;
   /** Mean of per-task medians. */
   selScore: number;
-  reason?: 'no_margin' | 'below_baseline' | 'all_judge_errors';
+  reason?: "no_margin" | "below_baseline" | "all_judge_errors";
   /**
    * Every scored rollout this gate produced, in selSet order (runs per task
    * flattened). Used by the orchestrator's forward pass to partition into
@@ -270,7 +270,7 @@ export interface GateResult {
 // ─── Bootstrap sentinel (D15) ─────────────────────────────────────────────
 
 /** D15: sentinel line written at the end of bootstrap-from-routing output. */
-export const BOOTSTRAP_PENDING_REVIEW = '# BOOTSTRAP_PENDING_REVIEW';
+export const BOOTSTRAP_PENDING_REVIEW = "# BOOTSTRAP_PENDING_REVIEW";
 
 // ─── Bundled-skill gate (D16) ─────────────────────────────────────────────
 

@@ -33,6 +33,7 @@ Enrich person and company pages from external sources. Scale effort to importanc
 ## Contract
 
 This skill guarantees:
+
 - Every enriched page has compiled truth (State section) with inline citations
 - Every enriched page has a timeline with dated entries
 - Back-links are created bidirectionally
@@ -62,6 +63,7 @@ When sources conflict, note the contradiction with both citations.
 ## When To Enrich
 
 ### Primary triggers
+
 - User mentions an entity in conversation
 - Entity appears in a meeting transcript or email
 - New contact appears with significant context
@@ -69,6 +71,7 @@ When sources conflict, note the contradiction with both citations.
 - Any ingest pipeline encounters a notable entity
 
 ### Do NOT enrich
+
 - Random mentions with no relationship signal
 - Bot/spam accounts
 - Entities with no substantive connection to the user's work
@@ -78,11 +81,11 @@ When sources conflict, note the contradiction with both citations.
 
 Scale enrichment to importance. Don't waste API calls on low-value entities.
 
-| Tier | Who | Effort | Sources |
-|------|-----|--------|---------|
-| 1 (key) | Inner circle, close collaborators, key contacts | Full pipeline | All available APIs + deep web research |
-| 2 (notable) | Occasional interactions, industry figures | Moderate | Web research + social + brain cross-ref |
-| 3 (minor) | Worth tracking, not critical | Light | Brain cross-ref + social lookup if handle known |
+| Tier        | Who                                             | Effort        | Sources                                         |
+| ----------- | ----------------------------------------------- | ------------- | ----------------------------------------------- |
+| 1 (key)     | Inner circle, close collaborators, key contacts | Full pipeline | All available APIs + deep web research          |
+| 2 (notable) | Occasional interactions, industry figures       | Moderate      | Web research + social + brain cross-ref         |
+| 3 (minor)   | Worth tracking, not critical                    | Light         | Brain cross-ref + social lookup if handle known |
 
 ## The Enrichment Protocol (7 Steps)
 
@@ -93,6 +96,7 @@ Extract people, companies, concepts from the incoming signal.
 ### Step 2: Check brain state
 
 For each entity:
+
 - `gbrain search "name"` -- does a page already exist?
 - **If yes:** UPDATE path (add new signal, update compiled truth if material)
 - **If no:** CREATE path (check notability gate first, then create)
@@ -101,53 +105,59 @@ For each entity:
 
 Don't just capture facts. Capture texture:
 
-| Signal Type | What to Extract |
-|-------------|----------------|
-| Opinions, beliefs | What They Believe section |
-| Current projects, features shipped | What They're Building section |
-| Ambition, career arc, motivation | What Motivates Them section |
-| Topics they return to obsessively | Hobby Horses section |
-| Who they amplify, argue with, respect | Network / Relationships |
-| Ascending, plateauing, pivoting? | Trajectory section |
-| Role, company, funding, location | State section (hard facts) |
+| Signal Type                           | What to Extract               |
+| ------------------------------------- | ----------------------------- |
+| Opinions, beliefs                     | What They Believe section     |
+| Current projects, features shipped    | What They're Building section |
+| Ambition, career arc, motivation      | What Motivates Them section   |
+| Topics they return to obsessively     | Hobby Horses section          |
+| Who they amplify, argue with, respect | Network / Relationships       |
+| Ascending, plateauing, pivoting?      | Trajectory section            |
+| Role, company, funding, location      | State section (hard facts)    |
 
 ### Step 4: External data source lookups
 
 Priority order -- stop when you have enough signal for the entity's tier.
 
 **4a. Brain cross-reference (always, all tiers)**
+
 - `gbrain search "name"` and `gbrain query "what do we know about name"`
 - Check related pages: company pages for person enrichment and vice versa
 - This is free and often the richest source
 
 **4b. Web research (Tier 1 and 2)**
+
 - Use Perplexity, Brave Search, Exa, or equivalent web research tool
 - **Key pattern:** Send existing brain knowledge as context so the search
   returns DELTA (what's new vs what you already know), not a rehash
 - Opus-class models for Tier 1 deep research, lighter models for Tier 2
 
 **4c. Social media lookup (all tiers when handle known)**
+
 - Pull recent posts/tweets for tone, interests, current focus
 - Social media is the highest-texture signal for what someone actually thinks
 
 **4d. People enrichment APIs (Tier 1)**
+
 - LinkedIn data, career history, connections, education
 
 **4e. Company enrichment APIs (Tier 1)**
+
 - Company data, financials, headcount, key hires, recent news
 
-| Data Need | Example Sources | Tier |
-|-----------|----------------|------|
-| Web research | Perplexity, Brave, Exa | 1-2 |
-| LinkedIn / career | Crustdata, Proxycurl, People Data Labs | 1 |
-| Career history | Happenstance, LinkedIn | 1 |
-| Funding / company data | Crunchbase, PitchBook, Clearbit | 1 |
-| Social media | Platform APIs, web scraping | 1-3 |
-| Meeting history | Calendar/meeting transcript tools | 1-2 |
+| Data Need              | Example Sources                        | Tier |
+| ---------------------- | -------------------------------------- | ---- |
+| Web research           | Perplexity, Brave, Exa                 | 1-2  |
+| LinkedIn / career      | Crustdata, Proxycurl, People Data Labs | 1    |
+| Career history         | Happenstance, LinkedIn                 | 1    |
+| Funding / company data | Crunchbase, PitchBook, Clearbit        | 1    |
+| Social media           | Platform APIs, web scraping            | 1-3  |
+| Meeting history        | Calendar/meeting transcript tools      | 1-2  |
 
 ### Step 5: Save raw data (preserves provenance)
 
 Store raw API responses via `put_raw_data` in gbrain:
+
 ```json
 {
   "source": "crustdata",
@@ -202,42 +212,55 @@ location:
 > what's the current state of the relationship.
 
 ## State
+
 Role, company, key context. Hard facts only.
 
 ## What They Believe
+
 Ideology, first principles, worldview. What hills do they die on?
 
 ## What They're Building
+
 Current projects, recent launches, what they're focused on.
 
 ## What Motivates Them
+
 Ambition, career arc, what drives them.
 
 ## Hobby Horses
+
 Topics they return to obsessively. Recurring themes in their work/posts.
 
 ## Assessment
+
 Your read on this person. Strengths, gaps, trajectory.
 
 ## Trajectory
+
 Ascending, plateauing, pivoting, declining? Where are they headed?
 
 ## Relationship
+
 History of interactions, shared context, relationship quality.
 
 ## Contact
+
 Email, social handles, preferred communication channel.
 
 ## Network
+
 Key connections, mutual contacts, organizational relationships.
 
 ## Open Threads
+
 Active conversations, pending items, things to follow up on.
 
 ---
 
 ## Timeline
+
 Reverse chronological. Every entry has a date and [Source: ...] citation.
+
 - **YYYY-MM-DD** | Event description [Source: ...]
 ```
 
@@ -257,14 +280,17 @@ tags: []
 > 1-paragraph executive summary.
 
 ## State
+
 What they do, stage, key people, key metrics, your connection.
 
 ## Open Threads
+
 Active items, pending decisions, things to track.
 
 ---
 
 ## Timeline
+
 - **YYYY-MM-DD** | Event description [Source: ...]
 ```
 
@@ -301,6 +327,7 @@ Timeline entries still need explicit `gbrain timeline-add` calls.
 ## Report Storage
 
 After enrichment sweeps, save a report:
+
 - Number of entities processed
 - New pages created vs existing updated
 - Data sources called and results quality
@@ -319,6 +346,7 @@ This creates an audit trail for brain enrichment over time.
 ## Output Format
 
 An enriched person page contains:
+
 - **Frontmatter** with type, tags, company, relationship, and contact fields
 - **Executive summary** (1 paragraph: how you know them, why they matter, relationship state)
 - **State** section with hard facts and inline `[Source: ...]` citations
@@ -329,6 +357,7 @@ An enriched person page contains:
 - **Timeline** in reverse chronological order, every entry dated with source citation
 
 An enriched company page contains:
+
 - **Frontmatter** with type and tags
 - **Executive summary** (1 paragraph)
 - **State** section (what they do, stage, key people, metrics, your connection)

@@ -24,18 +24,18 @@ Subsumio ist ein **DACH-fokussiertes Legal-AI-Kanzlei-OS** mit starkem technisch
 
 ### Vorhandene Module (aus PRODUCT_CAPABILITIES.md):
 
-| Modul | Reifegrad | Bewertung |
-|-------|-----------|-----------|
-| Kanzlei-Dashboard | breit angelegt | 7/10 |
-| Legal-AI APIs | stark angelegt | 8/10 |
-| Brain/Retrieval | Kern vorhanden | 9/10 |
-| WhatsApp Secretary | stark ausgebaut | 8/10 |
-| Billing/DATEV | angelegt | 6/10 |
-| Contract/CLM | teilweise produktnah | 7/10 |
-| Bulk Review | teilweise | 6/10 |
-| Litigation Analytics | Modell angelegt | 5/10 |
-| Co-Editing | teilweise | 6/10 |
-| Add-ins | angelegt | 6/10 |
+| Modul                | Reifegrad            | Bewertung |
+| -------------------- | -------------------- | --------- |
+| Kanzlei-Dashboard    | breit angelegt       | 7/10      |
+| Legal-AI APIs        | stark angelegt       | 8/10      |
+| Brain/Retrieval      | Kern vorhanden       | 9/10      |
+| WhatsApp Secretary   | stark ausgebaut      | 8/10      |
+| Billing/DATEV        | angelegt             | 6/10      |
+| Contract/CLM         | teilweise produktnah | 7/10      |
+| Bulk Review          | teilweise            | 6/10      |
+| Litigation Analytics | Modell angelegt      | 5/10      |
+| Co-Editing           | teilweise            | 6/10      |
+| Add-ins              | angelegt             | 6/10      |
 
 ### Subsumio-Exklusiv-Features (Burggraben):
 
@@ -216,31 +216,31 @@ Subsumio ist ein **DACH-fokussiertes Legal-AI-Kanzlei-OS** mit starkem technisch
 
 ## 4.1 DACH-Konkurrenten
 
-| Konkurrent | KI mit Zitaten | Fristen | RVG | DATEV | beA | WhatsApp | SOC 2 | Pricing |
-|------------|---------------|--------|-----|-------|-----|----------|-------|---------|
-| Kleos | ❌ | ✅ | ✅ | ✅ | ⚠️ | ❌ | ✅ | Teuer |
-| Advosoft | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | Mittel |
-| iusta | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | Mittel |
-| Buzzard AI | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | Unklar |
-| RA-MICRO | ❌ | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | Teuer |
-| Clio | ⚠️ | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ | Mittel |
-| Subsumio | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | Transparent |
+| Konkurrent | KI mit Zitaten | Fristen | RVG | DATEV | beA | WhatsApp | SOC 2 | Pricing     |
+| ---------- | -------------- | ------- | --- | ----- | --- | -------- | ----- | ----------- |
+| Kleos      | ❌             | ✅      | ✅  | ✅    | ⚠️  | ❌       | ✅    | Teuer       |
+| Advosoft   | ❌             | ❌      | ❌  | ❌    | ❌  | ❌       | ❌    | Mittel      |
+| iusta      | ❌             | ❌      | ❌  | ❌    | ❌  | ❌       | ❌    | Mittel      |
+| Buzzard AI | ❌             | ❌      | ❌  | ❌    | ❌  | ❌       | ❌    | Unklar      |
+| RA-MICRO   | ❌             | ✅      | ✅  | ✅    | ❌  | ❌       | ❌    | Teuer       |
+| Clio       | ⚠️             | ✅      | ❌  | ❌    | ❌  | ❌       | ✅    | Mittel      |
+| Subsumio   | ✅             | ✅      | ✅  | ✅    | ✅  | ✅       | ❌    | Transparent |
 
 ## 4.2 Harvey vs. Subsumio
 
-| Feature | Harvey | Subsumio | Status |
-|---------|--------|----------|--------|
-| Assistant (KI-Chat) | ✅ | ✅ | paritätisch |
-| Vault (Bulk-Review) | ✅ | ✅ | paritätisch |
-| Knowledge (Research) | ✅ | ✅ | paritätisch |
-| Workflow Agents | ✅ | ✅ | paritätisch |
-| Contract Intelligence | ✅ | ✅ (Code) | GAP: mittel (UI) |
-| Command Center | ✅ | ⚠️ | GAP: hoch |
-| Shared Spaces | ✅ | ⚠️ | GAP: hoch |
-| Security (SOC 2) | ✅ | ❌ | Harvey优势 |
-| DACH-Spezifika | ❌ | ✅ | Subsumio优势 |
-| Practice Management | ❌ | ✅ | Subsumio优势 |
-| Pricing | ~$1,000+/seat | ab €0 | Subsumio优势 |
+| Feature               | Harvey        | Subsumio  | Status           |
+| --------------------- | ------------- | --------- | ---------------- |
+| Assistant (KI-Chat)   | ✅            | ✅        | paritätisch      |
+| Vault (Bulk-Review)   | ✅            | ✅        | paritätisch      |
+| Knowledge (Research)  | ✅            | ✅        | paritätisch      |
+| Workflow Agents       | ✅            | ✅        | paritätisch      |
+| Contract Intelligence | ✅            | ✅ (Code) | GAP: mittel (UI) |
+| Command Center        | ✅            | ⚠️        | GAP: hoch        |
+| Shared Spaces         | ✅            | ⚠️        | GAP: hoch        |
+| Security (SOC 2)      | ✅            | ❌        | Harvey优势       |
+| DACH-Spezifika        | ❌            | ✅        | Subsumio优势     |
+| Practice Management   | ❌            | ✅        | Subsumio优势     |
+| Pricing               | ~$1,000+/seat | ab €0     | Subsumio优势     |
 
 ---
 
@@ -248,53 +248,53 @@ Subsumio ist ein **DACH-fokussiertes Legal-AI-Kanzlei-OS** mit starkem technisch
 
 ## 5.1 Kritische Gaps (P0)
 
-| # | Gap | Priorität | Aufwand | Launch-Blocker |
-|---|-----|-----------|---------|----------------|
-| G1 | SOC 2 Type II Zertifizierung | **P0** | External | **Ja** |
-| G2 | Legal-Seiten bilingual (EN) | **P0** | Mittel | **Ja** |
-| G3 | Hardcoded Badge lokalisieren | **P0** | Trivial | **Ja** |
-| G4 | Full CLM Flow nachweisen | **P0** | Mittel | **Ja** |
-| G5 | Penetration Testing | **P0** | External | **Ja** |
+| #   | Gap                          | Priorität | Aufwand  | Launch-Blocker |
+| --- | ---------------------------- | --------- | -------- | -------------- |
+| G1  | SOC 2 Type II Zertifizierung | **P0**    | External | **Ja**         |
+| G2  | Legal-Seiten bilingual (EN)  | **P0**    | Mittel   | **Ja**         |
+| G3  | Hardcoded Badge lokalisieren | **P0**    | Trivial  | **Ja**         |
+| G4  | Full CLM Flow nachweisen     | **P0**    | Mittel   | **Ja**         |
+| G5  | Penetration Testing          | **P0**    | External | **Ja**         |
 
 ## 5.2 Hohe Gaps (P1)
 
-| # | Gap | Priorität | Aufwand | Launch-Blocker |
-|---|-----|-----------|---------|----------------|
-| G6 | ISO 27001 Zertifizierung | P1 | External | Nein |
-| G7 | AT-spezifische Rechtsgrundlagen (RAO, ECG, DSG, BRAG) | P1 | Mittel | Nein |
-| G8 | CH-spezifische Rechtsgrundlagen (BGFA, UWG, DSG, ZGB) | P1 | Mittel | Nein |
-| G9 | Contract Portfolio Insights UI | P1 | Gering | Nein |
-| G10 | Adoption Analytics Dashboard | P1 | Mittel | Nein |
-| G11 | Shared Spaces (Cross-Org) | P1 | Hoch | Nein |
-| G12 | Security Policies Formalisierung | P1 | Mittel | Nein |
-| G13 | SLA Documentation | P1 | Gering | Nein |
-| G14 | Enterprise Support Prozess | P1 | Mittel | Nein |
+| #   | Gap                                                   | Priorität | Aufwand  | Launch-Blocker |
+| --- | ----------------------------------------------------- | --------- | -------- | -------------- |
+| G6  | ISO 27001 Zertifizierung                              | P1        | External | Nein           |
+| G7  | AT-spezifische Rechtsgrundlagen (RAO, ECG, DSG, BRAG) | P1        | Mittel   | Nein           |
+| G8  | CH-spezifische Rechtsgrundlagen (BGFA, UWG, DSG, ZGB) | P1        | Mittel   | Nein           |
+| G9  | Contract Portfolio Insights UI                        | P1        | Gering   | Nein           |
+| G10 | Adoption Analytics Dashboard                          | P1        | Mittel   | Nein           |
+| G11 | Shared Spaces (Cross-Org)                             | P1        | Hoch     | Nein           |
+| G12 | Security Policies Formalisierung                      | P1        | Mittel   | Nein           |
+| G13 | SLA Documentation                                     | P1        | Gering   | Nein           |
+| G14 | Enterprise Support Prozess                            | P1        | Mittel   | Nein           |
 
 ## 5.3 Mittlere Gaps (P2)
 
-| # | Gap | Priorität | Aufwand |
-|---|-----|-----------|---------|
-| G15 | Auto-Playbook Updates | P2 | Mittel |
-| G16 | Agent Conditionals | P2 | Mittel |
-| G17 | SharePoint Native Sync | P2 | Mittel |
-| G18 | Inline Ternaries konsolidieren | P2 | Mittel |
-| G19 | Meta-Keywords erweitern | P2 | Gering |
-| G20 | Open Graph / Twitter Cards | P2 | Mittel |
-| G21 | Guided Tour | P2 | Mittel |
-| G22 | Template Library | P2 | Mittel |
+| #   | Gap                            | Priorität | Aufwand |
+| --- | ------------------------------ | --------- | ------- |
+| G15 | Auto-Playbook Updates          | P2        | Mittel  |
+| G16 | Agent Conditionals             | P2        | Mittel  |
+| G17 | SharePoint Native Sync         | P2        | Mittel  |
+| G18 | Inline Ternaries konsolidieren | P2        | Mittel  |
+| G19 | Meta-Keywords erweitern        | P2        | Gering  |
+| G20 | Open Graph / Twitter Cards     | P2        | Mittel  |
+| G21 | Guided Tour                    | P2        | Mittel  |
+| G22 | Template Library               | P2        | Mittel  |
 
 ## 5.4 Niedrige Gaps (P3)
 
-| # | Gap | Priorität | Aufwand |
-|---|-----|-----------|---------|
-| G23 | Voice-to-Prompt (Mobile) | P3 | Mittel |
-| G24 | Box Integration | P3 | Gering |
-| G25 | Blog/Content-Pages für SEO | P3 | Hoch |
-| G26 | HowTo JSON-LD | P3 | Gering |
-| G27 | Trust Accounting | P3 | Hoch |
-| G28 | Full Litigation Flow | P3 | Hoch |
-| G29 | Defensible Review Sets | P3 | Mittel |
-| G30 | Co-Editing Presence | P3 | Mittel |
+| #   | Gap                        | Priorität | Aufwand |
+| --- | -------------------------- | --------- | ------- |
+| G23 | Voice-to-Prompt (Mobile)   | P3        | Mittel  |
+| G24 | Box Integration            | P3        | Gering  |
+| G25 | Blog/Content-Pages für SEO | P3        | Hoch    |
+| G26 | HowTo JSON-LD              | P3        | Gering  |
+| G27 | Trust Accounting           | P3        | Hoch    |
+| G28 | Full Litigation Flow       | P3        | Hoch    |
+| G29 | Defensible Review Sets     | P3        | Mittel  |
+| G30 | Co-Editing Presence        | P3        | Mittel  |
 
 ---
 
@@ -302,18 +302,18 @@ Subsumio ist ein **DACH-fokussiertes Legal-AI-Kanzlei-OS** mit starkem technisch
 
 ## 6.1 Dimension Scores
 
-| Dimension | Score | Gewicht | Gewichteter Score |
-|-----------|-------|---------|-------------------|
-| Produkt | 8/10 | 20% | 1.6 |
-| Technik | 9/10 | 15% | 1.35 |
-| UX | 9/10 | 15% | 1.35 |
-| Performance | 8/10 | 10% | 0.8 |
-| Security | 8/10 | 15% | 1.2 |
-| AI | 9/10 | 10% | 0.9 |
-| Skalierbarkeit | 8/10 | 5% | 0.4 |
-| Enterprise Readiness | 6/10 | 5% | 0.3 |
-| Marktposition | 8/10 | 3% | 0.24 |
-| Wettbewerbsfähigkeit | 8/10 | 2% | 0.16 |
+| Dimension            | Score | Gewicht | Gewichteter Score |
+| -------------------- | ----- | ------- | ----------------- |
+| Produkt              | 8/10  | 20%     | 1.6               |
+| Technik              | 9/10  | 15%     | 1.35              |
+| UX                   | 9/10  | 15%     | 1.35              |
+| Performance          | 8/10  | 10%     | 0.8               |
+| Security             | 8/10  | 15%     | 1.2               |
+| AI                   | 9/10  | 10%     | 0.9               |
+| Skalierbarkeit       | 8/10  | 5%      | 0.4               |
+| Enterprise Readiness | 6/10  | 5%      | 0.3               |
+| Marktposition        | 8/10  | 3%      | 0.24              |
+| Wettbewerbsfähigkeit | 8/10  | 2%      | 0.16              |
 
 **Gesamtscore: 8.3/10 = 83/100**
 
@@ -506,6 +506,7 @@ Subsumio ist ein **DACH-fokussiertes Legal-AI-Kanzlei-OS** mit starkem technisch
 ### Begründung:
 
 **Für Early Adopters (Solo/Mid-Size DACH-Kanzleien):**
+
 - ✅ Technisch produktionsreif (Next.js 15, React 19, TypeScript)
 - ✅ Robust Security (OWASP abgedeckt, CSRF, Rate Limiting, Encryption)
 - ✅ Agency-Level UX/UI (Animation A+, Accessibility 10/10)
@@ -514,6 +515,7 @@ Subsumio ist ein **DACH-fokussiertes Legal-AI-Kanzlei-OS** mit starkem technisch
 - ⚠️ P0-Probleme müssen behoben werden (SOC 2 Vorbereitung, Legal-Seiten bilingual, Hardcoded Badge, Full CLM Flow, Penetration Testing)
 
 **Für Enterprise-Kunden (Big Law, Corporate Legal):**
+
 - ❌ SOC 2 Type II nicht zertifiziert (Enterprise-Blocker)
 - ❌ ISO 27001 nicht zertifiziert
 - ❌ Adoption Analytics Dashboard fehlt

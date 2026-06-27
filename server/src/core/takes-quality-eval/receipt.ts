@@ -6,8 +6,8 @@
  * compatible. Any changes here MUST be reflected in docs/eval-takes-quality.md
  * since gbrain-evals (sibling repo) consumes this shape.
  */
-import type { RubricDimension } from './rubric.ts';
-import type { DimensionRoll } from './aggregate.ts';
+import type { RubricDimension } from "./rubric.ts";
+import type { DimensionRoll } from "./aggregate.ts";
 
 export interface TakesQualityReceipt {
   schema_version: 1;
@@ -18,7 +18,7 @@ export interface TakesQualityReceipt {
   /** Rubric definition fingerprint (binds receipt to its rubric epoch). */
   rubric_sha8: string;
   corpus: {
-    source: 'db' | 'fs';
+    source: "db" | "fs";
     n_takes: number;
     slug_prefix: string | null;
     corpus_sha8: string;
@@ -30,7 +30,7 @@ export interface TakesQualityReceipt {
   cycles_run: number;
   /** One entry per cycle; the count of contributing models that cycle. */
   successes_per_cycle: number[];
-  verdict: 'pass' | 'fail' | 'inconclusive';
+  verdict: "pass" | "fail" | "inconclusive";
   scores: Partial<Record<RubricDimension, DimensionRoll>>;
   /** Mean of dim means; null when verdict=inconclusive. */
   overall_score: number | null;

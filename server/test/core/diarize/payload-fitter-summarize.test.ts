@@ -16,10 +16,10 @@
  * Hermetic — embedFn and chatFn are caller-supplied stubs.
  */
 
-import { describe, test, expect } from 'bun:test';
-import { fit } from '../../../src/core/diarize/payload-fitter.ts';
-import type { ChatResult } from '../../../src/core/ai/gateway.ts';
-import { BudgetExhausted } from '../../../src/core/budget/budget-tracker.ts';
+import { describe, test, expect } from "bun:test";
+import { fit } from "../../../src/core/diarize/payload-fitter.ts";
+import type { ChatResult } from "../../../src/core/ai/gateway.ts";
+import { BudgetExhausted } from "../../../src/core/budget/budget-tracker.ts";
 
 function fakeEmbed(text: string): Promise<Float32Array> {
   // Deterministic shape: a 4-dim vector seeded from string length + first char code.
@@ -40,11 +40,16 @@ function makeOkChat(usage = { input_tokens: 100, output_tokens: 50 }): StubChat 
     state.calls++;
     return {
       text: `summary-${state.calls}`,
-      blocks: [{ type: 'text', text: `summary-${state.calls}` }],
-      stopReason: 'end',
-      model: 'fake-haiku',
-      providerId: 'fake',
-      usage: { input_tokens: usage.input_tokens, output_tokens: usage.output_tokens, cache_read_tokens: 0, cache_creation_tokens: 0 },
+      blocks: [{ type: "text", text: `summary-${state.calls}` }],
+      stopReason: "end",
+      model: "fake-haiku",
+      providerId: "fake",
+      usage: {
+        input_tokens: usage.input_tokens,
+        output_tokens: usage.output_tokens,
+        cache_read_tokens: 0,
+        cache_creation_tokens: 0,
+      },
     };
   };
   return { fn, state };
@@ -59,28 +64,42 @@ function makeFailingChat(failOnCallIndexes: Set<number>): StubChat {
     }
     return {
       text: `summary-${state.calls}`,
-      blocks: [{ type: 'text', text: `summary-${state.calls}` }],
-      stopReason: 'end',
-      model: 'fake-haiku',
-      providerId: 'fake',
-      usage: { input_tokens: 100, output_tokens: 50, cache_read_tokens: 0, cache_creation_tokens: 0 },
+      blocks: [{ type: "text", text: `summary-${state.calls}` }],
+      stopReason: "end",
+      model: "fake-haiku",
+      providerId: "fake",
+      usage: {
+        input_tokens: 100,
+        output_tokens: 50,
+        cache_read_tokens: 0,
+        cache_creation_tokens: 0,
+      },
     };
   };
   return { fn, state };
 }
 
-interface ItemShape { id: string; text: string }
+interface ItemShape {
+  id: string;
+  text: string;
+}
 
-const wrapSummary = (summary: string, _cluster: ItemShape[]): ItemShape => ({ id: 'summary', text: summary });
+const wrapSummary = (summary: string, _cluster: ItemShape[]): ItemShape => ({
+  id: "summary",
+  text: summary,
+});
 
-describe('fit summarize — happy path', () => {
-  test('5 clusters all succeed → degraded=false, every fitted node carries a summary', async () => {
-    const items: ItemShape[] = Array.from({ length: 20 }, (_, i) => ({ id: String(i), text: `item-${i}` }));
+describe("fit summarize — happy path", () => {
+  test("5 clusters all succeed → degraded=false, every fitted node carries a summary", async () => {
+    const items: ItemShape[] = Array.from({ length: 20 }, (_, i) => ({
+      id: String(i),
+      text: `item-${i}`,
+    }));
     // 20 items / 4 = 5 clusters.
     const chat = makeOkChat();
     const r = await fit<ItemShape>({
       items,
-      strategy: 'summarize',
+      strategy: "summarize",
       maxTokensPerCall: 1000,
       estimateTokens: (it) => it.text.length,
       embedFn: fakeEmbed,
@@ -98,14 +117,17 @@ describe('fit summarize — happy path', () => {
   });
 });
 
-describe('fit summarize — partial failure tolerated', () => {
-  test('1 of 5 fails → success_ratio=0.8 > 0.75, degraded=false', async () => {
-    const items: ItemShape[] = Array.from({ length: 20 }, (_, i) => ({ id: String(i), text: `item-${i}` }));
+describe("fit summarize — partial failure tolerated", () => {
+  test("1 of 5 fails → success_ratio=0.8 > 0.75, degraded=false", async () => {
+    const items: ItemShape[] = Array.from({ length: 20 }, (_, i) => ({
+      id: String(i),
+      text: `item-${i}`,
+    }));
     // Fail only call #3 (out of 5).
     const chat = makeFailingChat(new Set([3]));
     const r = await fit<ItemShape>({
       items,
-      strategy: 'summarize',
+      strategy: "summarize",
       maxTokensPerCall: 1000,
       estimateTokens: (it) => it.text.length,
       embedFn: fakeEmbed,
@@ -121,13 +143,16 @@ describe('fit summarize — partial failure tolerated', () => {
   });
 });
 
-describe('fit summarize — high-failure rate flips degraded', () => {
-  test('3 of 5 fail → success_ratio=0.4 < 0.75, degraded=true', async () => {
-    const items: ItemShape[] = Array.from({ length: 20 }, (_, i) => ({ id: String(i), text: `item-${i}` }));
+describe("fit summarize — high-failure rate flips degraded", () => {
+  test("3 of 5 fail → success_ratio=0.4 < 0.75, degraded=true", async () => {
+    const items: ItemShape[] = Array.from({ length: 20 }, (_, i) => ({
+      id: String(i),
+      text: `item-${i}`,
+    }));
     const chat = makeFailingChat(new Set([1, 2, 3]));
     const r = await fit<ItemShape>({
       items,
-      strategy: 'summarize',
+      strategy: "summarize",
       maxTokensPerCall: 1000,
       estimateTokens: (it) => it.text.length,
       embedFn: fakeEmbed,
@@ -144,13 +169,16 @@ describe('fit summarize — high-failure rate flips degraded', () => {
     expect(r.fitted.length).toBe(2);
   });
 
-  test('custom min_success_ratio shifts the gate', async () => {
-    const items: ItemShape[] = Array.from({ length: 20 }, (_, i) => ({ id: String(i), text: `item-${i}` }));
+  test("custom min_success_ratio shifts the gate", async () => {
+    const items: ItemShape[] = Array.from({ length: 20 }, (_, i) => ({
+      id: String(i),
+      text: `item-${i}`,
+    }));
     const chat = makeFailingChat(new Set([3]));
     // Tighten gate to 0.9 — 4/5 = 0.8 < 0.9 → degraded.
     const r = await fit<ItemShape>({
       items,
-      strategy: 'summarize',
+      strategy: "summarize",
       maxTokensPerCall: 1000,
       estimateTokens: (it) => it.text.length,
       embedFn: fakeEmbed,
@@ -164,42 +192,50 @@ describe('fit summarize — high-failure rate flips degraded', () => {
   });
 });
 
-describe('fit summarize — caller misuse', () => {
-  test('throws when summarize strategy is missing embedFn / chatFn / mappers', async () => {
+describe("fit summarize — caller misuse", () => {
+  test("throws when summarize strategy is missing embedFn / chatFn / mappers", async () => {
     await expect(
       fit({
-        items: [{ id: 'a', text: 'a' }],
-        strategy: 'summarize',
+        items: [{ id: "a", text: "a" }],
+        strategy: "summarize",
         maxTokensPerCall: 100,
         estimateTokens: () => 1,
-      }),
+      })
     ).rejects.toThrow(/embedFn \+ chatFn \+ itemToText \+ summaryToItem/);
   });
 });
 
-describe('fit summarize — budget-respecting (TX1 mid-cluster abort)', () => {
-  test('BudgetExhausted thrown by chatFn propagates and halts remaining clusters', async () => {
-    const items: ItemShape[] = Array.from({ length: 20 }, (_, i) => ({ id: String(i), text: `item-${i}` }));
+describe("fit summarize — budget-respecting (TX1 mid-cluster abort)", () => {
+  test("BudgetExhausted thrown by chatFn propagates and halts remaining clusters", async () => {
+    const items: ItemShape[] = Array.from({ length: 20 }, (_, i) => ({
+      id: String(i),
+      text: `item-${i}`,
+    }));
     // Throw BudgetExhausted on call #2 — proves the throw type propagates.
     let calls = 0;
     const chat = async (): Promise<ChatResult> => {
       calls++;
       if (calls === 2) {
-        throw new BudgetExhausted('cap blown', { reason: 'cost', spent: 10, cap: 1 });
+        throw new BudgetExhausted("cap blown", { reason: "cost", spent: 10, cap: 1 });
       }
       return {
         text: `summary-${calls}`,
-        blocks: [{ type: 'text', text: `summary-${calls}` }],
-        stopReason: 'end',
-        model: 'fake-haiku',
-        providerId: 'fake',
-        usage: { input_tokens: 100, output_tokens: 50, cache_read_tokens: 0, cache_creation_tokens: 0 },
+        blocks: [{ type: "text", text: `summary-${calls}` }],
+        stopReason: "end",
+        model: "fake-haiku",
+        providerId: "fake",
+        usage: {
+          input_tokens: 100,
+          output_tokens: 50,
+          cache_read_tokens: 0,
+          cache_creation_tokens: 0,
+        },
       };
     };
 
     const r = await fit<ItemShape>({
       items,
-      strategy: 'summarize',
+      strategy: "summarize",
       maxTokensPerCall: 1000,
       estimateTokens: (it) => it.text.length,
       embedFn: fakeEmbed,

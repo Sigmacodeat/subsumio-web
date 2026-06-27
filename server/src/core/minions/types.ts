@@ -16,19 +16,19 @@
 // --- Status & Type Unions ---
 
 export type MinionJobStatus =
-  | 'waiting'
-  | 'active'
-  | 'completed'
-  | 'failed'
-  | 'delayed'
-  | 'dead'
-  | 'cancelled'
-  | 'waiting-children'
-  | 'paused';
+  | "waiting"
+  | "active"
+  | "completed"
+  | "failed"
+  | "delayed"
+  | "dead"
+  | "cancelled"
+  | "waiting-children"
+  | "paused";
 
-export type BackoffType = 'fixed' | 'exponential';
+export type BackoffType = "fixed" | "exponential";
 
-export type ChildFailPolicy = 'fail_parent' | 'remove_dep' | 'ignore' | 'continue';
+export type ChildFailPolicy = "fail_parent" | "remove_dep" | "ignore" | "continue";
 
 // --- Job Record ---
 
@@ -137,7 +137,7 @@ export interface MinionJobInput {
    * falls inside the window are deferred (delay +15m) or skipped per policy.
    * Example: `{start:22,end:7,tz:"America/Los_Angeles",policy:"defer"}`.
    */
-  quiet_hours?: { start: number; end: number; tz: string; policy?: 'skip' | 'defer' };
+  quiet_hours?: { start: number; end: number; tz: string; policy?: "skip" | "defer" };
   /**
    * Deterministic stagger key. When multiple jobs share a key (same cron fire),
    * their claim order is decorrelated by hash-based minute-offset. Optional.
@@ -235,7 +235,7 @@ export function rowToInboxMessage(row: Record<string, unknown>): InboxMessage {
     id: row.id as number,
     job_id: row.job_id as number,
     sender: row.sender as string,
-    payload: typeof row.payload === 'string' ? JSON.parse(row.payload) : row.payload,
+    payload: typeof row.payload === "string" ? JSON.parse(row.payload) : row.payload,
     sent_at: new Date(row.sent_at as string),
     read_at: row.read_at ? new Date(row.read_at as string) : null,
   };
@@ -257,10 +257,10 @@ export function rowToInboxMessage(row: Record<string, unknown>): InboxMessage {
  * Backwards compatible: old ChildDoneMessage consumers only read child_id,
  * job_name, and result (non-null on success). Outcome and error are additive.
  */
-export type ChildOutcome = 'complete' | 'failed' | 'dead' | 'cancelled' | 'timeout';
+export type ChildOutcome = "complete" | "failed" | "dead" | "cancelled" | "timeout";
 
 export interface ChildDoneMessage {
-  type: 'child_done';
+  type: "child_done";
   child_id: number;
   job_name: string;
   result: unknown;
@@ -332,10 +332,10 @@ export interface AgentProgress {
 // --- Transcript Entry ---
 
 export type TranscriptEntry =
-  | { type: 'log'; message: string; ts: string }
-  | { type: 'tool_call'; tool: string; args_size: number; result_size: number; ts: string }
-  | { type: 'llm_turn'; model: string; tokens_in: number; tokens_out: number; ts: string }
-  | { type: 'error'; message: string; stack?: string; ts: string };
+  | { type: "log"; message: string; ts: string }
+  | { type: "tool_call"; tool: string; args_size: number; result_size: number; ts: string }
+  | { type: "llm_turn"; model: string; tokens_in: number; tokens_out: number; ts: string }
+  | { type: "error"; message: string; stack?: string; ts: string };
 
 // --- Errors ---
 
@@ -343,7 +343,7 @@ export type TranscriptEntry =
 export class UnrecoverableError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'UnrecoverableError';
+    this.name = "UnrecoverableError";
   }
 }
 
@@ -356,7 +356,10 @@ export function rowToMinionJob(row: Record<string, unknown>): MinionJob {
     queue: row.queue as string,
     status: row.status as MinionJobStatus,
     priority: row.priority as number,
-    data: (typeof row.data === 'string' ? JSON.parse(row.data) : row.data ?? {}) as Record<string, unknown>,
+    data: (typeof row.data === "string" ? JSON.parse(row.data) : (row.data ?? {})) as Record<
+      string,
+      unknown
+    >,
     max_attempts: row.max_attempts as number,
     attempts_made: row.attempts_made as number,
     attempts_started: row.attempts_started as number,
@@ -380,12 +383,29 @@ export function rowToMinionJob(row: Record<string, unknown>): MinionJob {
     remove_on_complete: row.remove_on_complete === true,
     remove_on_fail: row.remove_on_fail === true,
     idempotency_key: (row.idempotency_key as string) || null,
-    quiet_hours: row.quiet_hours ? (typeof row.quiet_hours === 'string' ? JSON.parse(row.quiet_hours) : row.quiet_hours) as Record<string, unknown> : null,
+    quiet_hours: row.quiet_hours
+      ? ((typeof row.quiet_hours === "string"
+          ? JSON.parse(row.quiet_hours)
+          : row.quiet_hours) as Record<string, unknown>)
+      : null,
     stagger_key: (row.stagger_key as string) || null,
-    result: row.result ? (typeof row.result === 'string' ? JSON.parse(row.result) : row.result) as Record<string, unknown> : null,
-    progress: row.progress ? (typeof row.progress === 'string' ? JSON.parse(row.progress) : row.progress) : null,
+    result: row.result
+      ? ((typeof row.result === "string" ? JSON.parse(row.result) : row.result) as Record<
+          string,
+          unknown
+        >)
+      : null,
+    progress: row.progress
+      ? typeof row.progress === "string"
+        ? JSON.parse(row.progress)
+        : row.progress
+      : null,
     error_text: (row.error_text as string) || null,
-    stacktrace: row.stacktrace ? (typeof row.stacktrace === 'string' ? JSON.parse(row.stacktrace) : row.stacktrace) as string[] : [],
+    stacktrace: row.stacktrace
+      ? ((typeof row.stacktrace === "string"
+          ? JSON.parse(row.stacktrace)
+          : row.stacktrace) as string[])
+      : [],
     created_at: new Date(row.created_at as string),
     started_at: row.started_at ? new Date(row.started_at as string) : null,
     finished_at: row.finished_at ? new Date(row.finished_at as string) : null,
@@ -514,7 +534,7 @@ export interface AggregatorHandlerData {
 /** Tool execution context passed to every ToolDef.execute. */
 export interface ToolCtx {
   /** Engine for DB-backed tools (brain_query, put_page, etc.). */
-  engine: import('../engine.ts').BrainEngine;
+  engine: import("../engine.ts").BrainEngine;
   /** The subagent job id (used for audit + put_page namespace enforcement). */
   jobId: number;
   /** Always true for LLM-invoked tools — matches MCP trust boundary. */
@@ -562,17 +582,23 @@ export interface ToolDef {
  * additions pass through). Use the string-literal discriminant on 'type'.
  */
 export type ContentBlock =
-  | { type: 'text'; text: string; [k: string]: unknown }
-  | { type: 'tool_use'; id: string; name: string; input: unknown; [k: string]: unknown }
-  | { type: 'tool_result'; tool_use_id: string; content: unknown; is_error?: boolean; [k: string]: unknown }
+  | { type: "text"; text: string; [k: string]: unknown }
+  | { type: "tool_use"; id: string; name: string; input: unknown; [k: string]: unknown }
+  | {
+      type: "tool_result";
+      tool_use_id: string;
+      content: unknown;
+      is_error?: boolean;
+      [k: string]: unknown;
+    }
   | { type: string; [k: string]: unknown };
 
 /** Stop reason reported to the caller when the subagent loop terminates. */
 export type SubagentStopReason =
-  | 'end_turn'    // Anthropic says end_turn and last message has no tool_use
-  | 'max_turns'   // hit max_turns budget before end_turn
-  | 'refusal'     // detected via stop_reason + content shape
-  | 'error';      // unrecoverable (empty response retry exhausted, etc.)
+  | "end_turn" // Anthropic says end_turn and last message has no tool_use
+  | "max_turns" // hit max_turns budget before end_turn
+  | "refusal" // detected via stop_reason + content shape
+  | "error"; // unrecoverable (empty response retry exhausted, etc.)
 
 /** Terminal result payload emitted by the subagent handler. */
 export interface SubagentResult {

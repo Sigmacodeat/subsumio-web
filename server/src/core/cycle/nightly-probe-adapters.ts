@@ -15,7 +15,7 @@
  * subprocess), so the workspace gbrain runs — not whatever's installed.
  */
 
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync } from "node:fs";
 
 /** Arguments accepted by the longmemeval adapter. */
 export interface LongMemEvalProbeArgs {
@@ -53,8 +53,8 @@ export interface CrossModalBatchSummary {
  * autopilot.
  */
 export async function runLongMemEvalForProbe(args: LongMemEvalProbeArgs): Promise<void> {
-  const { runEvalLongMemEval } = await import('../../commands/eval-longmemeval.ts');
-  await runEvalLongMemEval([args.fixturePath, '--output', args.outputPath]);
+  const { runEvalLongMemEval } = await import("../../commands/eval-longmemeval.ts");
+  await runEvalLongMemEval([args.fixturePath, "--output", args.outputPath]);
 }
 
 /**
@@ -71,35 +71,35 @@ export async function runLongMemEvalForProbe(args: LongMemEvalProbeArgs): Promis
  * cases are paste-ready in the error message.
  */
 export async function runCrossModalBatchForProbe(
-  args: CrossModalProbeArgs,
+  args: CrossModalProbeArgs
 ): Promise<{ exitCode: number; summary: CrossModalBatchSummary }> {
-  const { runEvalCrossModal } = await import('../../commands/eval-cross-modal.ts');
+  const { runEvalCrossModal } = await import("../../commands/eval-cross-modal.ts");
   const exitCode = await runEvalCrossModal([
-    '--batch',
+    "--batch",
     args.batchPath,
-    '--output',
+    "--output",
     args.summaryPath,
-    '--max-usd',
+    "--max-usd",
     String(args.maxUsd),
-    '--yes',
-    '--json',
+    "--yes",
+    "--json",
   ]);
 
   if (!existsSync(args.summaryPath)) {
     throw new Error(
       `nightly-probe-adapter: cross-modal --batch finished (exit ${exitCode}) but ` +
-      `summary file is missing at ${args.summaryPath}. ` +
-      `Hint: confirm the batch input JSONL is valid and writable.`,
+        `summary file is missing at ${args.summaryPath}. ` +
+        `Hint: confirm the batch input JSONL is valid and writable.`
     );
   }
 
   let raw: string;
   try {
-    raw = readFileSync(args.summaryPath, 'utf-8');
+    raw = readFileSync(args.summaryPath, "utf-8");
   } catch (err) {
     throw new Error(
       `nightly-probe-adapter: could not read cross-modal summary at ${args.summaryPath}: ` +
-      `${(err as Error).message}`,
+        `${(err as Error).message}`
     );
   }
 
@@ -109,13 +109,13 @@ export async function runCrossModalBatchForProbe(
   } catch (err) {
     throw new Error(
       `nightly-probe-adapter: cross-modal summary at ${args.summaryPath} is malformed JSON: ` +
-      `${(err as Error).message}. First 200 chars: ${raw.slice(0, 200)}`,
+        `${(err as Error).message}. First 200 chars: ${raw.slice(0, 200)}`
     );
   }
 
-  if (typeof parsed !== 'object' || parsed === null) {
+  if (typeof parsed !== "object" || parsed === null) {
     throw new Error(
-      `nightly-probe-adapter: cross-modal summary at ${args.summaryPath} is not a JSON object`,
+      `nightly-probe-adapter: cross-modal summary at ${args.summaryPath} is not a JSON object`
     );
   }
 
@@ -129,7 +129,7 @@ export async function runCrossModalBatchForProbe(
     inconclusive_count: Number(obj.inconclusive_count ?? 0),
     error_count: Number(obj.error_count ?? 0),
     est_cost_usd: Number(obj.est_cost_usd ?? 0),
-    verdict: typeof obj.verdict === 'string' ? obj.verdict : 'unknown',
+    verdict: typeof obj.verdict === "string" ? obj.verdict : "unknown",
   };
 
   return { exitCode, summary };

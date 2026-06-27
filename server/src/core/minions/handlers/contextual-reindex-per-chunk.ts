@@ -35,20 +35,17 @@
  * local callers (CLI, autopilot, doctor --remediate) can.
  */
 
-import type { MinionJobContext } from '../types.ts';
-import { UnrecoverableError } from '../types.ts';
-import type { BrainEngine } from '../../engine.ts';
+import type { MinionJobContext } from "../types.ts";
+import { UnrecoverableError } from "../types.ts";
+import type { BrainEngine } from "../../engine.ts";
 import {
   reembedPageWithContextualRetrieval,
   type ReembedPageResult,
-} from '../../contextual-retrieval-service.ts';
-import {
-  acquireLease,
-  releaseLease,
-} from '../rate-leases.ts';
-import { resolveSearchMode, loadSearchModeConfig } from '../../search/mode.ts';
+} from "../../contextual-retrieval-service.ts";
+import { acquireLease, releaseLease } from "../rate-leases.ts";
+import { resolveSearchMode, loadSearchModeConfig } from "../../search/mode.ts";
 
-const RATE_LEASE_KEY = 'anthropic:utility:contextual-synopsis';
+const RATE_LEASE_KEY = "anthropic:utility:contextual-synopsis";
 
 /**
  * Default global Haiku RPM for contextual synopsis calls. Anthropic's
@@ -93,7 +90,7 @@ export function makeContextualReindexHandler(opts: MakeContextualReindexHandlerO
   const { engine } = opts;
 
   return async function contextualReindexHandler(
-    ctx: MinionJobContext,
+    ctx: MinionJobContext
   ): Promise<{ ok: true; mode_applied: string; chunks_embedded: number }> {
     const data = parseJobData(ctx.data);
 
@@ -106,7 +103,7 @@ export function makeContextualReindexHandler(opts: MakeContextualReindexHandlerO
     if (!foundPage) {
       throw new UnrecoverableError(
         `Page not found for slug '${data.page_slug}'. ` +
-          `Submitter should include expected_source_id or the page may have been deleted.`,
+          `Submitter should include expected_source_id or the page may have been deleted.`
       );
     }
 
@@ -115,7 +112,7 @@ export function makeContextualReindexHandler(opts: MakeContextualReindexHandlerO
       throw new UnrecoverableError(
         `Source id mismatch for page '${data.page_slug}': expected ` +
           `'${data.expected_source_id}', page actually lives in ` +
-          `'${foundPage.source_id}'. Stale payload?`,
+          `'${foundPage.source_id}'. Stale payload?`
       );
     }
 
@@ -160,7 +157,7 @@ export function makeContextualReindexHandler(opts: MakeContextualReindexHandlerO
         }
         throw new Error(
           `Failed to acquire ${RATE_LEASE_KEY} lease after ${maxAttempts} attempts; ` +
-            `Haiku rate limit pile-up too deep.`,
+            `Haiku rate limit pile-up too deep.`
         );
       },
       releaseSynopsisLease: async () => {
@@ -176,19 +173,17 @@ export function makeContextualReindexHandler(opts: MakeContextualReindexHandlerO
 }
 
 function parseJobData(raw: Record<string, unknown> | undefined): ContextualReindexJobData {
-  if (!raw || typeof raw !== 'object') {
+  if (!raw || typeof raw !== "object") {
     throw new UnrecoverableError(
-      'contextual_reindex_per_chunk job has empty data — page_slug required.',
+      "contextual_reindex_per_chunk job has empty data — page_slug required."
     );
   }
   const pageSlug = raw.page_slug;
-  if (typeof pageSlug !== 'string' || pageSlug.length === 0) {
-    throw new UnrecoverableError(
-      'contextual_reindex_per_chunk requires data.page_slug: string.',
-    );
+  if (typeof pageSlug !== "string" || pageSlug.length === 0) {
+    throw new UnrecoverableError("contextual_reindex_per_chunk requires data.page_slug: string.");
   }
   const expectedSourceId =
-    typeof raw.expected_source_id === 'string' ? raw.expected_source_id : undefined;
+    typeof raw.expected_source_id === "string" ? raw.expected_source_id : undefined;
   return { page_slug: pageSlug, expected_source_id: expectedSourceId };
 }
 
@@ -200,18 +195,18 @@ function parseJobData(raw: Record<string, unknown> | undefined): ContextualReind
  */
 async function tryLoadPageAcrossSources(
   engine: BrainEngine,
-  pageSlug: string,
+  pageSlug: string
 ): Promise<{ source_id: string } | null> {
   // First try default. Most brains live here.
-  const defaultPage = await engine.getPage(pageSlug, { sourceId: 'default' });
+  const defaultPage = await engine.getPage(pageSlug, { sourceId: "default" });
   if (defaultPage) return { source_id: defaultPage.source_id };
 
   // Fall back to walking sources.
   const sources = await engine.executeRaw<{ id: string }>(
-    `SELECT id FROM sources WHERE archived = false`,
+    `SELECT id FROM sources WHERE archived = false`
   );
   for (const { id } of sources) {
-    if (id === 'default') continue; // already tried
+    if (id === "default") continue; // already tried
     const p = await engine.getPage(pageSlug, { sourceId: id });
     if (p) return { source_id: p.source_id };
   }
@@ -220,16 +215,16 @@ async function tryLoadPageAcrossSources(
 
 function classifyResult(
   pageSlug: string,
-  result: ReembedPageResult,
+  result: ReembedPageResult
 ): { ok: true; mode_applied: string; chunks_embedded: number } {
   switch (result.kind) {
-    case 'success':
+    case "success":
       return {
         ok: true,
         mode_applied: result.mode_applied,
         chunks_embedded: result.chunks_embedded,
       };
-    case 'page_fallback':
+    case "page_fallback":
       // Page-level fall-back is still a successful outcome from Minion's
       // perspective — chunks are embedded, page is stamped at the lower
       // tier. The audit JSONL captured the original failure.
@@ -238,18 +233,18 @@ function classifyResult(
         mode_applied: result.mode_applied,
         chunks_embedded: result.chunks_embedded,
       };
-    case 'skipped':
-      return { ok: true, mode_applied: 'skipped', chunks_embedded: 0 };
-    case 'transient_error':
+    case "skipped":
+      return { ok: true, mode_applied: "skipped", chunks_embedded: 0 };
+    case "transient_error":
       // Throw so Minion retries. The queue's backoff policy handles
       // rate-limit + network blips.
       throw new Error(
-        `[contextual_reindex] transient error on page '${pageSlug}' (${result.cause}): ${result.detail}`,
+        `[contextual_reindex] transient error on page '${pageSlug}' (${result.cause}): ${result.detail}`
       );
-    case 'permanent_error':
+    case "permanent_error":
       // UnrecoverableError sends straight to dead-letter; doctor surfaces.
       throw new UnrecoverableError(
-        `[contextual_reindex] permanent error on page '${pageSlug}' (${result.cause}): ${result.detail}`,
+        `[contextual_reindex] permanent error on page '${pageSlug}' (${result.cause}): ${result.detail}`
       );
   }
 }

@@ -20,8 +20,8 @@
  * reproducible.
  */
 
-import type { MinionJobContext, ChildDoneMessage, ChildOutcome } from '../types.ts';
-import type { AggregatorHandlerData } from '../types.ts';
+import type { MinionJobContext, ChildDoneMessage, ChildOutcome } from "../types.ts";
+import type { AggregatorHandlerData } from "../types.ts";
 
 export interface AggregatorResult {
   /** Per-child record in the order children_ids was supplied. */
@@ -48,7 +48,7 @@ export async function subagentAggregatorHandler(ctx: MinionJobContext): Promise<
     return {
       children: [],
       summary: emptySummary(),
-      markdown: '# Aggregated subagent results\n\n_(no children)_',
+      markdown: "# Aggregated subagent results\n\n_(no children)_",
     };
   }
 
@@ -65,7 +65,7 @@ export async function subagentAggregatorHandler(ctx: MinionJobContext): Promise<
   }
 
   const summary = emptySummary();
-  const children: AggregatorResult['children'] = expectedIds.map(childId => {
+  const children: AggregatorResult["children"] = expectedIds.map((childId) => {
     const msg = childDoneByChildId.get(childId);
     if (!msg) {
       // Missing — shouldn't happen under the v0.15 invariants (every
@@ -74,20 +74,20 @@ export async function subagentAggregatorHandler(ctx: MinionJobContext): Promise<
       summary.failed = (summary.failed ?? 0) + 1;
       return {
         child_id: childId,
-        job_name: '',
-        outcome: 'failed',
-        error: 'no child_done message observed in inbox',
+        job_name: "",
+        outcome: "failed",
+        error: "no child_done message observed in inbox",
         result: null,
       };
     }
-    const outcome: ChildOutcome = msg.outcome ?? 'complete';
+    const outcome: ChildOutcome = msg.outcome ?? "complete";
     summary[outcome] = (summary[outcome] ?? 0) + 1;
     return {
       child_id: childId,
       job_name: msg.job_name,
       outcome,
       error: msg.error ?? null,
-      result: outcome === 'complete' ? msg.result : null,
+      result: outcome === "complete" ? msg.result : null,
     };
   });
 
@@ -109,54 +109,57 @@ function formatSummary(s: Record<ChildOutcome, number>): string {
   return Object.entries(s)
     .filter(([, n]) => n > 0)
     .map(([k, n]) => `${k}=${n}`)
-    .join(', ');
+    .join(", ");
 }
 
 function parseChildDone(payload: unknown): ChildDoneMessage | null {
-  const obj = typeof payload === 'string' ? safeParse(payload) : payload;
-  if (!obj || typeof obj !== 'object') return null;
+  const obj = typeof payload === "string" ? safeParse(payload) : payload;
+  if (!obj || typeof obj !== "object") return null;
   const rec = obj as Record<string, unknown>;
-  if (rec.type !== 'child_done' || typeof rec.child_id !== 'number') return null;
+  if (rec.type !== "child_done" || typeof rec.child_id !== "number") return null;
   return {
-    type: 'child_done',
+    type: "child_done",
     child_id: rec.child_id,
-    job_name: typeof rec.job_name === 'string' ? rec.job_name : '',
+    job_name: typeof rec.job_name === "string" ? rec.job_name : "",
     result: rec.result,
-    outcome: typeof rec.outcome === 'string' ? rec.outcome as ChildOutcome : undefined,
-    error: typeof rec.error === 'string' ? rec.error : null,
+    outcome: typeof rec.outcome === "string" ? (rec.outcome as ChildOutcome) : undefined,
+    error: typeof rec.error === "string" ? rec.error : null,
   };
 }
 
 function safeParse(raw: string): unknown {
-  try { return JSON.parse(raw); } catch { return null; }
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
 }
 
 function renderMarkdown(
-  children: AggregatorResult['children'],
+  children: AggregatorResult["children"],
   summary: Record<ChildOutcome, number>,
-  template?: string,
+  template?: string
 ): string {
-  const header = template && template.trim().length > 0
-    ? template
-    : '# Aggregated subagent results';
+  const header =
+    template && template.trim().length > 0 ? template : "# Aggregated subagent results";
 
-  const parts: string[] = [header, ''];
+  const parts: string[] = [header, ""];
   parts.push(`- total: ${children.length}`);
   for (const [outcome, n] of Object.entries(summary)) {
     if (n > 0) parts.push(`- ${outcome}: ${n}`);
   }
-  parts.push('');
+  parts.push("");
 
   for (const c of children) {
-    parts.push(`## child ${c.child_id} (${c.job_name || 'unknown'}) — ${c.outcome}`);
+    parts.push(`## child ${c.child_id} (${c.job_name || "unknown"}) — ${c.outcome}`);
     if (c.error) parts.push(`> error: ${c.error}`);
-    if (c.outcome === 'complete' && c.result !== undefined) {
-      parts.push('```json', JSON.stringify(c.result, null, 2), '```');
+    if (c.outcome === "complete" && c.result !== undefined) {
+      parts.push("```json", JSON.stringify(c.result, null, 2), "```");
     }
-    parts.push('');
+    parts.push("");
   }
 
-  return parts.join('\n').replace(/\n{3,}/g, '\n\n');
+  return parts.join("\n").replace(/\n{3,}/g, "\n\n");
 }
 
 // ── Testing surface ─────────────────────────────────────────

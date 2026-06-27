@@ -35,20 +35,23 @@
  * owner context so post-prune forensic queries still work.
  */
 
-import type { BrainEngine } from '../engine.ts';
+import type { BrainEngine } from "../engine.ts";
 
 /** Status of a reservation attempt. */
 export type ReservationOutcome =
-  | { kind: 'reserved'; new_balance_cents: number; reserved_cents: number }
-  | { kind: 'exhausted'; balance_at_attempt: number; requested_cents: number }
-  | { kind: 'no_budget' } // job has no owner; bypass entirely (Eng D10)
-  | { kind: 'owner_deleted'; root_owner_id: number }; // pruned mid-batch
+  | { kind: "reserved"; new_balance_cents: number; reserved_cents: number }
+  | { kind: "exhausted"; balance_at_attempt: number; requested_cents: number }
+  | { kind: "no_budget" } // job has no owner; bypass entirely (Eng D10)
+  | { kind: "owner_deleted"; root_owner_id: number }; // pruned mid-batch
 
 /** Throw to signal budget exhaustion to the worker / subagent handler. */
 export class BudgetExhausted extends Error {
-  constructor(public owner_id: number, public balance_at_attempt_cents: number) {
+  constructor(
+    public owner_id: number,
+    public balance_at_attempt_cents: number
+  ) {
     super(`budget owner ${owner_id} exhausted: balance ${balance_at_attempt_cents} cents`);
-    this.name = 'BudgetExhausted';
+    this.name = "BudgetExhausted";
   }
 }
 
@@ -56,7 +59,7 @@ export class BudgetExhausted extends Error {
 export class BudgetOwnerDeleted extends Error {
   constructor(public root_owner_id: number) {
     super(`budget owner ${root_owner_id} was deleted; child cannot continue safely`);
-    this.name = 'BudgetOwnerDeleted';
+    this.name = "BudgetOwnerDeleted";
   }
 }
 
@@ -75,12 +78,12 @@ export interface BudgetOwnerInfo {
  */
 export async function getBudgetOwner(
   engine: BrainEngine,
-  jobId: number,
+  jobId: number
 ): Promise<BudgetOwnerInfo | null> {
   const rows = await engine.executeRaw<BudgetOwnerInfo>(
     `SELECT id AS job_id, budget_owner_job_id, budget_root_owner_id, budget_remaining_cents
        FROM minion_jobs WHERE id = $1`,
-    [jobId],
+    [jobId]
   );
   return rows[0] ?? null;
 }
@@ -94,7 +97,7 @@ export async function getBudgetOwner(
 export async function setOwnerBudget(
   engine: BrainEngine,
   ownerJobId: number,
-  budgetUsd: number,
+  budgetUsd: number
 ): Promise<void> {
   const cents = Math.round(budgetUsd * 100);
   await engine.executeRaw(
@@ -103,7 +106,7 @@ export async function setOwnerBudget(
            budget_owner_job_id = $1,
            budget_root_owner_id = $1
        WHERE id = $1`,
-    [ownerJobId, cents],
+    [ownerJobId, cents]
   );
 }
 
@@ -120,14 +123,14 @@ export async function setOwnerBudget(
 export async function inheritBudgetOwner(
   engine: BrainEngine,
   childJobId: number,
-  parentJobId: number,
+  parentJobId: number
 ): Promise<void> {
   await engine.executeRaw(
     `UPDATE minion_jobs SET
        budget_owner_job_id = (SELECT COALESCE(budget_owner_job_id, NULL) FROM minion_jobs WHERE id = $2),
        budget_root_owner_id = (SELECT COALESCE(budget_root_owner_id, NULL) FROM minion_jobs WHERE id = $2)
      WHERE id = $1`,
-    [childJobId, parentJobId],
+    [childJobId, parentJobId]
   );
 }
 
@@ -146,20 +149,20 @@ export async function inheritBudgetOwner(
 export async function reserveBudget(
   engine: BrainEngine,
   childJobId: number,
-  expectedMaxTurnCostCents: number,
+  expectedMaxTurnCostCents: number
 ): Promise<ReservationOutcome> {
   const info = await getBudgetOwner(engine, childJobId);
   if (!info) {
     // Job row vanished — shouldn't happen mid-claim but defensive.
-    return { kind: 'no_budget' };
+    return { kind: "no_budget" };
   }
 
   // Eng D10 disambiguation.
   if (info.budget_owner_job_id === null) {
     if (info.budget_root_owner_id !== null) {
-      return { kind: 'owner_deleted', root_owner_id: info.budget_root_owner_id };
+      return { kind: "owner_deleted", root_owner_id: info.budget_root_owner_id };
     }
-    return { kind: 'no_budget' };
+    return { kind: "no_budget" };
   }
 
   const rows = await engine.executeRaw<{ budget_remaining_cents: number }>(
@@ -167,31 +170,39 @@ export async function reserveBudget(
        SET budget_remaining_cents = budget_remaining_cents - $2
        WHERE id = $1 AND budget_remaining_cents >= $2
        RETURNING budget_remaining_cents`,
-    [info.budget_owner_job_id, expectedMaxTurnCostCents],
+    [info.budget_owner_job_id, expectedMaxTurnCostCents]
   );
   if (rows.length === 0) {
     // CAS miss — owner exhausted. Read current balance for the audit row.
     const peek = await engine.executeRaw<{ budget_remaining_cents: number }>(
       `SELECT budget_remaining_cents FROM minion_jobs WHERE id = $1`,
-      [info.budget_owner_job_id],
+      [info.budget_owner_job_id]
     );
     const balance = peek[0]?.budget_remaining_cents ?? 0;
     await logBudgetEvent(engine, {
       job_id: childJobId,
       owner_id: info.budget_owner_job_id,
-      event_type: 'halted',
+      event_type: "halted",
       cents_delta: 0,
     });
-    return { kind: 'exhausted', balance_at_attempt: balance, requested_cents: expectedMaxTurnCostCents };
+    return {
+      kind: "exhausted",
+      balance_at_attempt: balance,
+      requested_cents: expectedMaxTurnCostCents,
+    };
   }
 
   await logBudgetEvent(engine, {
     job_id: childJobId,
     owner_id: info.budget_owner_job_id,
-    event_type: 'reserved',
+    event_type: "reserved",
     cents_delta: -expectedMaxTurnCostCents,
   });
-  return { kind: 'reserved', new_balance_cents: rows[0]!.budget_remaining_cents, reserved_cents: expectedMaxTurnCostCents };
+  return {
+    kind: "reserved",
+    new_balance_cents: rows[0]!.budget_remaining_cents,
+    reserved_cents: expectedMaxTurnCostCents,
+  };
 }
 
 /**
@@ -202,18 +213,18 @@ export async function refundBudget(
   engine: BrainEngine,
   childJobId: number,
   ownerJobId: number,
-  refundCents: number,
+  refundCents: number
 ): Promise<void> {
   if (refundCents <= 0) return;
   await engine.executeRaw(
     `UPDATE minion_jobs SET budget_remaining_cents = budget_remaining_cents + $2
        WHERE id = $1`,
-    [ownerJobId, refundCents],
+    [ownerJobId, refundCents]
   );
   await logBudgetEvent(engine, {
     job_id: childJobId,
     owner_id: ownerJobId,
-    event_type: 'refunded',
+    event_type: "refunded",
     cents_delta: refundCents,
   });
 }
@@ -231,7 +242,7 @@ export async function refundBudget(
 export async function haltBudgetSubtree(
   engine: BrainEngine,
   ownerJobId: number,
-  reason: 'budget_exhausted' | 'owner_deleted',
+  reason: "budget_exhausted" | "owner_deleted"
 ): Promise<number> {
   // Exclude the owner row itself — setOwnerBudget sets the owner's
   // budget_owner_job_id to its own id (self-referencing so children can
@@ -248,7 +259,7 @@ export async function haltBudgetSubtree(
        AND id != $1
        AND status IN ('waiting', 'delayed')
      RETURNING id`,
-    [ownerJobId, `${reason}: parent ${ownerJobId} hit cap or was deleted`],
+    [ownerJobId, `${reason}: parent ${ownerJobId} hit cap or was deleted`]
   );
   return rows.length;
 }
@@ -257,7 +268,7 @@ export async function haltBudgetSubtree(
 export interface BudgetEventRecord {
   job_id: number;
   owner_id: number;
-  event_type: 'reserved' | 'refunded' | 'spent' | 'lost' | 'halted' | 'owner_deleted';
+  event_type: "reserved" | "refunded" | "spent" | "lost" | "halted" | "owner_deleted";
   cents_delta: number;
   turn_index?: number;
   model?: string;
@@ -266,7 +277,7 @@ export interface BudgetEventRecord {
 /** Best-effort write to minion_budget_log. Mirror of lease-pressure-audit. */
 export async function logBudgetEvent(
   engine: BrainEngine,
-  record: BudgetEventRecord,
+  record: BudgetEventRecord
 ): Promise<void> {
   try {
     await engine.executeRaw(
@@ -280,12 +291,12 @@ export async function logBudgetEvent(
         record.cents_delta,
         record.turn_index ?? null,
         record.model ?? null,
-      ],
+      ]
     );
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     process.stderr.write(
-      `[budget-tracker] WARN: audit write failed for job ${record.job_id}: ${msg}\n`,
+      `[budget-tracker] WARN: audit write failed for job ${record.job_id}: ${msg}\n`
     );
   }
 }

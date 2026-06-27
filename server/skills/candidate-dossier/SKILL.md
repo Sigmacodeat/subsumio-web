@@ -35,6 +35,7 @@ mutating: true
 ## Contract
 
 This skill guarantees:
+
 1. The profile covers history, strengths, motivations, compensation and references with sources.
 2. Every prior touchpoint with the firm is reflected.
 3. Consent / data-protection status and off-limits constraints are flagged.
@@ -72,5 +73,6 @@ or review the pipeline (→ pipeline-review).
 - ❌ Claims about the candidate with no source/touchpoint.
 
 ## Error Handling
+
 - Thin history → state what's known vs missing, don't embellish.
 - No consent on file → mark the dossier internal-only and flag it.

@@ -1,9 +1,11 @@
 # Enrichment Pipeline
 
 ## Goal
+
 Enrich brain pages from external APIs with tiered spend -- full pipeline for key people, light touch for passing mentions, raw data preserved for auditability.
 
 ## What the User Gets
+
 Without this: brain pages are thin shells with only what the user manually typed, API calls are wasted on nobodies, and enrichment data vanishes after the agent session ends. With this: key people have rich, multi-source portraits; spend scales to importance; raw API responses are preserved for re-processing; and cross-references connect the entire graph.
 
 ## Implementation
@@ -100,4 +102,5 @@ on enrich(entity, trigger):
 5. Try to re-enrich the same person. Confirm the system checks the `fetched_at` timestamp and skips if less than a week old.
 
 ---
-*Part of the [GBrain Skillpack](../GBRAIN_SKILLPACK.md).*
+
+_Part of the [GBrain Skillpack](../GBRAIN_SKILLPACK.md)._

@@ -22,7 +22,7 @@
  * graph stays empty and the pure-loop unit tests don't drag in db-lock / cycle.
  */
 
-import type { BrainEngine } from '../engine.ts';
+import type { BrainEngine } from "../engine.ts";
 
 export interface ExtractAtomsDrainDeps {
   /**
@@ -51,8 +51,8 @@ export interface ExtractAtomsDrainOpts {
 }
 
 export interface ExtractAtomsDrainResult {
-  phase: 'extract_atoms';
-  status: 'ok';
+  phase: "extract_atoms";
+  status: "ok";
   extracted: number;
   skipped: number;
   /** Eligible pages still pending after the window. null if the count errored. */
@@ -60,12 +60,12 @@ export interface ExtractAtomsDrainResult {
   /** Batches actually processed. */
   batches: number;
   /** Why the loop stopped: drained | window | no_progress | max_batches. */
-  stopped: 'drained' | 'window' | 'no_progress' | 'max_batches';
+  stopped: "drained" | "window" | "no_progress" | "max_batches";
 }
 
 export async function runExtractAtomsDrain(
   deps: ExtractAtomsDrainDeps,
-  opts: ExtractAtomsDrainOpts,
+  opts: ExtractAtomsDrainOpts
 ): Promise<ExtractAtomsDrainResult> {
   const maxBatches = opts.maxBatches ?? 1000;
   return deps.withLock(async () => {
@@ -73,13 +73,19 @@ export async function runExtractAtomsDrain(
     let extracted = 0;
     let skipped = 0;
     let batches = 0;
-    let stopped: ExtractAtomsDrainResult['stopped'] = 'window';
+    let stopped: ExtractAtomsDrainResult["stopped"] = "window";
 
     while (deps.now() < deadline) {
-      if (batches >= maxBatches) { stopped = 'max_batches'; break; }
+      if (batches >= maxBatches) {
+        stopped = "max_batches";
+        break;
+      }
 
       const before = await deps.countRemaining();
-      if (before === 0) { stopped = 'drained'; break; }
+      if (before === 0) {
+        stopped = "drained";
+        break;
+      }
 
       const r = await deps.runBatch();
       extracted += r.extracted;
@@ -90,12 +96,23 @@ export async function runExtractAtomsDrain(
       // Stop if a batch made zero forward progress — extraction is failing or
       // everything left is ineligible (e.g. all skipped). Prevents a hot loop
       // that spends budget without draining.
-      if (r.extracted === 0 && r.skipped === 0) { stopped = 'no_progress'; break; }
+      if (r.extracted === 0 && r.skipped === 0) {
+        stopped = "no_progress";
+        break;
+      }
     }
 
     const remaining = await deps.countRemaining();
-    if (remaining === 0) stopped = 'drained';
-    return { phase: 'extract_atoms', status: 'ok', extracted, skipped, remaining, batches, stopped };
+    if (remaining === 0) stopped = "drained";
+    return {
+      phase: "extract_atoms",
+      status: "ok",
+      extracted,
+      skipped,
+      remaining,
+      batches,
+      stopped,
+    };
   });
 }
 
@@ -133,18 +150,18 @@ export interface DrainForSourceOpts {
   /** Hard batch cap (belt-and-suspenders). */
   maxBatches?: number;
   /** Optional per-batch progress sink (stderr line in dream; job progress in the handler). */
-  onBatch?: ExtractAtomsDrainDeps['onBatch'];
+  onBatch?: ExtractAtomsDrainDeps["onBatch"];
 }
 
 export async function runExtractAtomsDrainForSource(
   engine: BrainEngine,
-  opts: DrainForSourceOpts,
+  opts: DrainForSourceOpts
 ): Promise<ExtractAtomsDrainResult> {
-  const { withRefreshingLock } = await import('../db-lock.ts');
-  const { runPhaseExtractAtoms, countExtractAtomsBacklog } = await import('./extract-atoms.ts');
-  const { cycleLockIdFor } = await import('../cycle.ts');
+  const { withRefreshingLock } = await import("../db-lock.ts");
+  const { runPhaseExtractAtoms, countExtractAtomsBacklog } = await import("./extract-atoms.ts");
+  const { cycleLockIdFor } = await import("../cycle.ts");
 
-  const extractionSourceId = opts.sourceId ?? 'default';
+  const extractionSourceId = opts.sourceId ?? "default";
   const lockId = cycleLockIdFor(opts.sourceId);
 
   return runExtractAtomsDrain(
@@ -166,6 +183,6 @@ export async function runExtractAtomsDrainForSource(
       now: Date.now,
       onBatch: opts.onBatch,
     },
-    { windowMs: opts.windowSeconds * 1000, maxBatches: opts.maxBatches },
+    { windowMs: opts.windowSeconds * 1000, maxBatches: opts.maxBatches }
   );
 }

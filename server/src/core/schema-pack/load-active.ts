@@ -21,13 +21,13 @@
 // tests can drive the boundary helper with synthetic packs without
 // writing to `~/.gbrain/schema-packs/`.
 
-import { existsSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import type { GBrainConfig } from '../config.ts';
-import { gbrainPath } from '../config.ts';
-import type { SchemaPackManifest } from './manifest-v1.ts';
-import { loadPackFromFile } from './loader.ts';
+import { existsSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import type { GBrainConfig } from "../config.ts";
+import { gbrainPath } from "../config.ts";
+import type { SchemaPackManifest } from "./manifest-v1.ts";
+import { loadPackFromFile } from "./loader.ts";
 import {
   resolveActivePackName,
   resolvePack,
@@ -36,7 +36,7 @@ import {
   type ResolvedPack,
   type ResolutionInput,
   type ResolutionResult,
-} from './registry.ts';
+} from "./registry.ts";
 
 /**
  * Inputs the caller (operations.ts handler / engine query path) provides.
@@ -102,57 +102,67 @@ function defaultPackLocator(name: string): string | null {
   // + 3 calibration domains), everything (meta-pack stacking all three
   // via extends + borrow_from). Each ships as a real YAML at base/<name>.yaml.
   const BUNDLED: ReadonlyArray<string> = [
-    'gbrain-base',
-    'gbrain-recommended',
-    'gbrain-creator',
-    'gbrain-investor',
-    'gbrain-engineer',
-    'gbrain-everything',
+    "gbrain-base",
+    "gbrain-recommended",
+    "gbrain-creator",
+    "gbrain-investor",
+    "gbrain-engineer",
+    "gbrain-everything",
     // v0.42 type-unification: 15-type canonical successor to gbrain-base.
     // Ships as install default (Lane E T17) + via gbrain onboard pack
     // upgrade flow (the unify-types Minion handler).
-    'gbrain-base-v2',
+    "gbrain-base-v2",
     // v0.42+ vertical pack: legal / law firm domain with jurisdiction-aware
     // deadlines, legal-specific link verbs, and case-outcome calibration.
-    'gbrain-legal',
+    "gbrain-legal",
     // v0.42+ vertical pack: tax / accounting domain with DE/AT/CH tax
     // deadlines, invoice link verbs, and filing/deadline calibration.
-    'gbrain-tax',
+    "gbrain-tax",
     // v0.42+ vertical pack: medical / healthcare domain with ICD-coded
     // diagnoses, medication tracking, and diagnosis/treatment calibration.
-    'gbrain-medical',
+    "gbrain-medical",
     // v0.42+ vertical pack: compliance / GRC domain with controls, policies,
     // regulatory obligations (GDPR/AML/EU-AI-Act/ISO), and effectiveness calibration.
-    'gbrain-compliance',
+    "gbrain-compliance",
     // v0.42+ vertical pack: insurance broker/agency domain with policy, claim,
     // coverage, risk types, coverage link verbs, and claim/renewal calibration.
-    'gbrain-insurance',
+    "gbrain-insurance",
     // v0.42+ vertical pack: real estate / property domain with property, unit,
     // lease, tenant, transaction types, location/lease link verbs, and
     // lease-renewal/deal calibration.
-    'gbrain-realestate',
+    "gbrain-realestate",
     // v0.42+ vertical pack: consulting / agency domain (project, client,
     // proposal, deliverable, learning) — institutional memory.
-    'gbrain-consulting',
+    "gbrain-consulting",
     // v0.42+ vertical pack: executive search / recruiting domain (candidate,
     // role, client, placement, search) — the proprietary talent graph.
-    'gbrain-recruiting',
+    "gbrain-recruiting",
   ];
   if (BUNDLED.includes(name)) {
     // Resolve bundled YAML relative to this source file. Works in both
     // direct-bun execution and bun --compile binaries.
     const here = dirname(fileURLToPath(import.meta.url));
-    const bundledPath = join(here, 'base', `${name}.yaml`);
+    const bundledPath = join(here, "base", `${name}.yaml`);
     if (existsSync(bundledPath)) return bundledPath;
     // Repo-root fallback for tests running from a worktree where the
     // module path doesn't resolve to the source tree.
-    const repoRootFallback = join(here, '..', '..', '..', 'src', 'core', 'schema-pack', 'base', `${name}.yaml`);
+    const repoRootFallback = join(
+      here,
+      "..",
+      "..",
+      "..",
+      "src",
+      "core",
+      "schema-pack",
+      "base",
+      `${name}.yaml`
+    );
     if (existsSync(repoRootFallback)) return repoRootFallback;
     return null;
   }
   // User-installed pack at ~/.gbrain/schema-packs/<name>/pack.{yaml,json}
-  const baseDir = gbrainPath('schema-packs', name);
-  const candidates = ['pack.yaml', 'pack.yml', 'pack.json'];
+  const baseDir = gbrainPath("schema-packs", name);
+  const candidates = ["pack.yaml", "pack.yml", "pack.json"];
   for (const c of candidates) {
     const candidate = join(baseDir, c);
     if (existsSync(candidate)) return candidate;
@@ -232,9 +242,9 @@ export function resolveActivePackNameOnly(input: LoadActivePackInput): Resolutio
  */
 export async function findPackSuccessors(
   packName: string,
-  packVersion: string,
+  packVersion: string
 ): Promise<ResolvedPack[]> {
-  const { BUNDLED_PACK_NAMES } = await import('./mutate.ts');
+  const { BUNDLED_PACK_NAMES } = await import("./mutate.ts");
   const candidates: string[] = [];
   for (const name of BUNDLED_PACK_NAMES) {
     if (name !== packName) candidates.push(name);
@@ -274,16 +284,16 @@ export async function findPackSuccessors(
  */
 export function _versionRangeMatches(version: string, range: string): boolean {
   // Exact match (no wildcards)
-  if (!range.includes('x') && !range.includes('*')) {
+  if (!range.includes("x") && !range.includes("*")) {
     return version === range;
   }
   // Convert range like `1.x` or `1.0.x` to a regex
-  const rangeParts = range.split('.');
-  const versionParts = version.split('.');
+  const rangeParts = range.split(".");
+  const versionParts = version.split(".");
   if (rangeParts.length > versionParts.length) return false;
   for (let i = 0; i < rangeParts.length; i++) {
     const r = rangeParts[i];
-    if (r === 'x' || r === '*') continue;
+    if (r === "x" || r === "*") continue;
     if (r !== versionParts[i]) return false;
   }
   return true;
@@ -295,8 +305,14 @@ export function _versionRangeMatches(version: string, range: string): boolean {
  * 3-part because Zod schema validates `M.m.p` only.
  */
 export function _versionDescCompare(a: string, b: string): number {
-  const ap = a.split('.').slice(0, 3).map(n => parseInt(n, 10));
-  const bp = b.split('.').slice(0, 3).map(n => parseInt(n, 10));
+  const ap = a
+    .split(".")
+    .slice(0, 3)
+    .map((n) => parseInt(n, 10));
+  const bp = b
+    .split(".")
+    .slice(0, 3)
+    .map((n) => parseInt(n, 10));
   for (let i = 0; i < 3; i++) {
     if ((ap[i] ?? 0) !== (bp[i] ?? 0)) return (ap[i] ?? 0) - (bp[i] ?? 0);
   }

@@ -15,11 +15,11 @@
 // collide — DO NOTHING. NER does NOT overwrite plain mentions; the verb
 // link goes in as a different row with a different link_type.
 
-import type { BrainEngine } from './engine.ts';
-import type { LinkBatchInput } from './engine.ts';
-import { buildGazetteer, findMentionedEntities, type Gazetteer } from './by-mention.ts';
-import { inferLinkTypeFromPack } from './schema-pack/link-inference.ts';
-import { loadActivePackBestEffort } from './schema-pack/best-effort.ts';
+import type { BrainEngine } from "./engine.ts";
+import type { LinkBatchInput } from "./engine.ts";
+import { buildGazetteer, findMentionedEntities, type Gazetteer } from "./by-mention.ts";
+import { inferLinkTypeFromPack } from "./schema-pack/link-inference.ts";
+import { loadActivePackBestEffort } from "./schema-pack/best-effort.ts";
 
 export interface ExtractNerOpts {
   /** When true: enumerate but don't write. */
@@ -60,7 +60,7 @@ export function getContextWindow(
   body: string,
   offset: number,
   nameLen: number,
-  window: number = CONTEXT_WINDOW_CHARS,
+  window: number = CONTEXT_WINDOW_CHARS
 ): string {
   const start = Math.max(0, offset - window);
   const end = Math.min(body.length, offset + nameLen + window);
@@ -77,7 +77,7 @@ export function getContextWindow(
 export function inferNerLinkType(
   pack: Parameters<typeof inferLinkTypeFromPack>[0],
   targetType: string | undefined,
-  context: string,
+  context: string
 ): string | null {
   if (!targetType) return null;
   try {
@@ -99,7 +99,7 @@ export function inferNerLinkType(
  */
 export async function extractNerLinks(
   engine: BrainEngine,
-  opts: ExtractNerOpts = {},
+  opts: ExtractNerOpts = {}
 ): Promise<ExtractNerResult> {
   const dryRun = opts.dryRun ?? false;
 
@@ -111,11 +111,11 @@ export async function extractNerLinks(
   // Require at least one link_type with an inference.regex; otherwise NER
   // has no patterns to match and we'd waste a full walk.
   const hasRegex = pack.manifest.link_types.some(
-    (lt) => lt.inference && typeof lt.inference === 'object' && 'regex' in lt.inference,
+    (lt) => lt.inference && typeof lt.inference === "object" && "regex" in lt.inference
   );
   if (!hasRegex) return { pages: 0, created: 0, pack_unavailable: true };
 
-  const gazetteer = opts.gazetteer ?? await buildGazetteer(engine);
+  const gazetteer = opts.gazetteer ?? (await buildGazetteer(engine));
   if (gazetteer.size === 0) {
     return { pages: 0, created: 0, pack_unavailable: false };
   }
@@ -160,7 +160,7 @@ export async function extractNerLinks(
     processed++;
     opts.onProgress?.(processed, allRefs.length, created);
 
-    const body = page.compiled_truth + '\n\n' + (page.timeline ?? '');
+    const body = page.compiled_truth + "\n\n" + (page.timeline ?? "");
     if (!body.trim()) continue;
 
     const mentions = findMentionedEntities(body, gazetteer, {
@@ -179,8 +179,8 @@ export async function extractNerLinks(
         from_slug: slug,
         to_slug: m.slug,
         link_type: verb,
-        link_source: 'mentions',
-        link_kind: 'typed_ner',
+        link_source: "mentions",
+        link_kind: "typed_ner",
         context: m.name,
         from_source_id: source_id,
         to_source_id: m.source_id,
@@ -204,7 +204,7 @@ async function buildTargetTypeMap(engine: BrainEngine): Promise<Map<string, stri
     const result = await engine.executeRaw<{ slug: string; source_id: string; type: string }>(
       `SELECT slug, source_id, type FROM pages
          WHERE type IN ('person', 'company', 'organization', 'entity')
-           AND deleted_at IS NULL`,
+           AND deleted_at IS NULL`
     );
     for (const row of result) {
       map.set(`${row.source_id}::${row.slug}`, row.type);

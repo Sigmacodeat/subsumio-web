@@ -17,9 +17,9 @@
  * handler call a clean primitive.
  */
 
-import type { BrainEngine } from './engine.ts';
-import type { ChunkInput } from './types.ts';
-import { embedBatchWithBackoff } from '../commands/embed.ts';
+import type { BrainEngine } from "./engine.ts";
+import type { ChunkInput } from "./types.ts";
+import { embedBatchWithBackoff } from "../commands/embed.ts";
 
 /** Last visited (page_id, chunk_index) for keyset-resume across runs. */
 export interface StaleCursor {
@@ -40,11 +40,7 @@ export interface EmbedStaleOpts {
    * Fired once per batch with the cursor after that batch finishes. Caller
    * uses this for crash-resumable progress (Minion `job.updateProgress`).
    */
-  onProgress?: (state: {
-    embedded: number;
-    chunksProcessed: number;
-    cursor: StaleCursor;
-  }) => void;
+  onProgress?: (state: { embedded: number; chunksProcessed: number; cursor: StaleCursor }) => void;
   /**
    * Optional caller-supplied embed fn. Defaults to `embedBatchWithBackoff`.
    * Test seam: lets unit tests inject a deterministic fake without mocking
@@ -98,13 +94,14 @@ export interface EmbedStaleResult {
 export async function embedStaleForSource(
   engine: BrainEngine,
   sourceId: string,
-  opts: EmbedStaleOpts = {},
+  opts: EmbedStaleOpts = {}
 ): Promise<EmbedStaleResult> {
   const batchSize = opts.batchSize ?? 2000;
   const concurrency = opts.concurrency ?? 20;
   const signal = opts.signal;
-  const embedFn = opts.embedFn ?? ((texts, fnOpts) =>
-    embedBatchWithBackoff(texts, { abortSignal: fnOpts.abortSignal }));
+  const embedFn =
+    opts.embedFn ??
+    ((texts, fnOpts) => embedBatchWithBackoff(texts, { abortSignal: fnOpts.abortSignal }));
 
   let afterPageId = opts.cursor?.afterPageId ?? 0;
   let afterChunkIndex = opts.cursor?.afterChunkIndex ?? -1;
@@ -175,7 +172,7 @@ export async function embedStaleForSource(
       try {
         const embeddings = await embedFn(
           stale.map((c) => c.chunk_text),
-          { abortSignal: signal },
+          { abortSignal: signal }
         );
         const existing = await engine.getChunks(slug, { sourceId: keySourceId });
         const staleIdxToEmbedding = new Map<number, Float32Array>();
@@ -206,7 +203,7 @@ export async function embedStaleForSource(
         process.stderr.write(
           `\n  [embed-stale] error on ${keySourceId}/${slug}: ${
             e instanceof Error ? e.message : String(e)
-          }\n`,
+          }\n`
         );
       }
     }

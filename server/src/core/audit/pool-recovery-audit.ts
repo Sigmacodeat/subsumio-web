@@ -30,14 +30,14 @@
  * batch-retry-audit (v0.41.26.1 posture).
  */
 
-import { createAuditWriter } from './audit-writer.ts';
-import { redactConnectionInfo } from './redact-connection-info.ts';
+import { createAuditWriter } from "./audit-writer.ts";
+import { redactConnectionInfo } from "./redact-connection-info.ts";
 
 export type PoolRecoveryEventKind =
-  | 'reap_detected'
-  | 'reconnect_other'
-  | 'reconnect_succeeded'
-  | 'reconnect_failed';
+  | "reap_detected"
+  | "reconnect_other"
+  | "reconnect_succeeded"
+  | "reconnect_failed";
 
 export interface PoolRecoveryEvent {
   ts: string;
@@ -47,12 +47,12 @@ export interface PoolRecoveryEvent {
   pid: number;
 }
 
-const FEATURE_NAME = 'pool-recovery';
+const FEATURE_NAME = "pool-recovery";
 
 const writer = createAuditWriter<PoolRecoveryEvent>({
   featureName: FEATURE_NAME,
-  errorLabel: 'pool-recovery-audit',
-  errorTrailer: '; continuing',
+  errorLabel: "pool-recovery-audit",
+  errorTrailer: "; continuing",
 });
 
 /** Redact + truncate an error message for safe audit storage. */
@@ -95,7 +95,7 @@ export interface ReadPoolRecoveryResult {
  */
 export function readRecentPoolRecoveries(
   hours = 1,
-  now: Date = new Date(),
+  now: Date = new Date()
 ): ReadPoolRecoveryResult {
   const days = hours / 24;
   const cutoff = now.getTime() - hours * 3_600_000;
@@ -112,10 +112,10 @@ export function readRecentPoolRecoveries(
   let failures = 0;
   let others = 0;
   for (const e of events) {
-    if (e.kind === 'reap_detected') reaps++;
-    else if (e.kind === 'reconnect_succeeded') recoveries++;
-    else if (e.kind === 'reconnect_failed') failures++;
-    else if (e.kind === 'reconnect_other') others++;
+    if (e.kind === "reap_detected") reaps++;
+    else if (e.kind === "reconnect_succeeded") recoveries++;
+    else if (e.kind === "reconnect_failed") failures++;
+    else if (e.kind === "reconnect_other") others++;
   }
 
   return {

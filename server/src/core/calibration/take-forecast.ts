@@ -21,7 +21,7 @@
  * data layer; templates.ts has the user-facing string.
  */
 
-import type { BrainEngine, TakesScorecard } from '../engine.ts';
+import type { BrainEngine, TakesScorecard } from "../engine.ts";
 
 export interface TakeForecastInput {
   /** Take's holder, e.g. 'garry' or 'people/charlie-example'. */
@@ -69,8 +69,8 @@ export function resolveDomainPrefix(domain: string | undefined): string | undefi
   const lower = domain.toLowerCase().trim();
   if (lower.length === 0) return undefined;
   // Slug-prefix-looking values: keep as-is.
-  if (lower.endsWith('/')) return lower;
-  if (lower.startsWith('wiki/') || lower.startsWith('companies/') || lower.startsWith('people/')) {
+  if (lower.endsWith("/")) return lower;
+  if (lower.startsWith("wiki/") || lower.startsWith("companies/") || lower.startsWith("people/")) {
     return lower;
   }
   // Free-form word (e.g. 'macro tech', 'geography') — no slug prefix path,
@@ -94,7 +94,7 @@ export function computeForecast(input: {
 }): TakeForecast {
   const overall_brier = input.overallScorecard.brier;
   const bucket = input.bucketScorecard ?? input.overallScorecard;
-  const bucket_domain = input.domain ?? 'overall';
+  const bucket_domain = input.domain ?? "overall";
   const bucket_n = bucket.resolved;
   const insufficient_data = bucket_n < MIN_BUCKET_N;
   const predicted_brier = insufficient_data ? null : bucket.brier;
@@ -108,16 +108,13 @@ export function computeForecast(input: {
  */
 export async function forecastForTake(
   engine: BrainEngine,
-  input: TakeForecastInput,
+  input: TakeForecastInput
 ): Promise<TakeForecast> {
   const overallScorecard = await engine.getScorecard({ holder: input.holder }, undefined);
   const domainPrefix = resolveDomainPrefix(input.domain);
   let bucketScorecard: TakesScorecard | undefined;
   if (domainPrefix) {
-    bucketScorecard = await engine.getScorecard(
-      { holder: input.holder, domainPrefix },
-      undefined,
-    );
+    bucketScorecard = await engine.getScorecard({ holder: input.holder, domainPrefix }, undefined);
   }
   return computeForecast({
     conviction: input.conviction,
@@ -135,17 +132,17 @@ export async function forecastForTake(
  */
 export async function batchForecast(
   engine: BrainEngine,
-  inputs: TakeForecastInput[],
+  inputs: TakeForecastInput[]
 ): Promise<TakeForecast[]> {
   // Memoize per (holder, domainPrefix) so repeated queries collapse.
   const cache = new Map<string, TakesScorecard>();
   const getOrFetch = async (holder: string, domainPrefix?: string): Promise<TakesScorecard> => {
-    const key = `${holder}|${domainPrefix ?? ''}`;
+    const key = `${holder}|${domainPrefix ?? ""}`;
     const hit = cache.get(key);
     if (hit) return hit;
     const sc = await engine.getScorecard(
       { holder, ...(domainPrefix !== undefined ? { domainPrefix } : {}) },
-      undefined,
+      undefined
     );
     cache.set(key, sc);
     return sc;
@@ -154,16 +151,14 @@ export async function batchForecast(
   for (const input of inputs) {
     const overallScorecard = await getOrFetch(input.holder);
     const domainPrefix = resolveDomainPrefix(input.domain);
-    const bucketScorecard = domainPrefix
-      ? await getOrFetch(input.holder, domainPrefix)
-      : undefined;
+    const bucketScorecard = domainPrefix ? await getOrFetch(input.holder, domainPrefix) : undefined;
     results.push(
       computeForecast({
         conviction: input.conviction,
         ...(input.domain !== undefined ? { domain: input.domain } : {}),
         overallScorecard,
         ...(bucketScorecard !== undefined ? { bucketScorecard } : {}),
-      }),
+      })
     );
   }
   return results;

@@ -68,10 +68,10 @@ Every handler receives a `MinionJobContext`:
 
 ```ts
 interface MinionJobContext {
-  data: Record<string, unknown>;   // job params (whatever the cron submit passed)
-  job: MinionJob;                   // full job row (id, queue, attempts, etc.)
-  signal: AbortSignal;              // set to aborted when the worker is shutting down
-  inbox: MinionInbox;               // read messages sent to this job while it runs
+  data: Record<string, unknown>; // job params (whatever the cron submit passed)
+  job: MinionJob; // full job row (id, queue, attempts, etc.)
+  signal: AbortSignal; // set to aborted when the worker is shutting down
+  inbox: MinionInbox; // read messages sent to this job while it runs
 }
 ```
 

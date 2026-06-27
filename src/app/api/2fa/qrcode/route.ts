@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 import { createHandler } from "@/lib/api-handler";
 
@@ -45,5 +44,5 @@ export const POST = createHandler(
         headers: { "Content-Type": "image/svg+xml", "Cache-Control": "no-store" },
       });
     }
-  },
+  }
 );

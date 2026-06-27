@@ -14,7 +14,7 @@
  * re-implement them (the DRY bar CLAUDE.md asks for: one canonical helper,
  * derived consumers).
  */
-import type { BrainEngine } from '../engine.ts';
+import type { BrainEngine } from "../engine.ts";
 
 /** Injected LLM call. Returns the model's raw text (expected to be JSON). */
 export interface LegalLLM {
@@ -27,12 +27,12 @@ export interface LegalLLM {
  * result instead of throwing — same seam `analyzeDocument`/`runThink` use.
  */
 export async function defaultLegalLLM(): Promise<LegalLLM | null> {
-  const { isAvailable, chat } = await import('../ai/gateway.ts');
-  if (!isAvailable('chat') && !isAvailable('expansion')) return null;
+  const { isAvailable, chat } = await import("../ai/gateway.ts");
+  if (!isAvailable("chat") && !isAvailable("expansion")) return null;
   return async ({ system, user, maxTokens }) => {
     const r = await chat({
       system,
-      messages: [{ role: 'user', content: user }],
+      messages: [{ role: "user", content: user }],
       maxTokens: maxTokens ?? 4000,
     });
     return r.text;
@@ -43,14 +43,14 @@ export async function defaultLegalLLM(): Promise<LegalLLM | null> {
 export async function loadPageText(
   engine: BrainEngine,
   slug: string,
-  opts: { sourceId?: string; sourceIds?: string[] } = {},
+  opts: { sourceId?: string; sourceIds?: string[] } = {}
 ): Promise<string | null> {
   const page = await engine.getPage(slug, {
     ...(opts.sourceId !== undefined ? { sourceId: opts.sourceId } : {}),
     ...(opts.sourceIds !== undefined ? { sourceIds: opts.sourceIds } : {}),
   });
   if (!page) return null;
-  return String((page as { compiled_truth?: string }).compiled_truth ?? '');
+  return String((page as { compiled_truth?: string }).compiled_truth ?? "");
 }
 
 export interface ResolveTextOpts {
@@ -67,7 +67,7 @@ export interface ResolveTextOpts {
  */
 export async function resolveDocumentText(
   engine: BrainEngine,
-  opts: ResolveTextOpts,
+  opts: ResolveTextOpts
 ): Promise<{ text: string; sourceSlug?: string; notFound?: boolean }> {
   if (opts.text && opts.text.trim()) return { text: opts.text };
   if (opts.slug) {
@@ -75,17 +75,14 @@ export async function resolveDocumentText(
       ...(opts.sourceId !== undefined ? { sourceId: opts.sourceId } : {}),
       ...(opts.sourceIds !== undefined ? { sourceIds: opts.sourceIds } : {}),
     });
-    if (loaded === null) return { text: '', sourceSlug: opts.slug, notFound: true };
+    if (loaded === null) return { text: "", sourceSlug: opts.slug, notFound: true };
     return { text: loaded, sourceSlug: opts.slug };
   }
-  return { text: '' };
+  return { text: "" };
 }
 
 /** Clip text to a char ceiling, returning a truncation warning when it bit. */
-export function clipText(
-  text: string,
-  maxChars: number,
-): { clipped: string; warning?: string } {
+export function clipText(text: string, maxChars: number): { clipped: string; warning?: string } {
   if (text.length <= maxChars) return { clipped: text };
   return {
     clipped: text.slice(0, maxChars),
@@ -95,7 +92,10 @@ export function clipText(
 
 /** Parse model output that should be a JSON object, tolerating code fences and prose. */
 export function tryParseJSON(text: string): Record<string, unknown> | null {
-  const stripped = text.trim().replace(/^```(?:json)?\s*\n?/, '').replace(/```\s*$/, '');
+  const stripped = text
+    .trim()
+    .replace(/^```(?:json)?\s*\n?/, "")
+    .replace(/```\s*$/, "");
   try {
     return JSON.parse(stripped) as Record<string, unknown>;
   } catch {
@@ -112,12 +112,12 @@ export function tryParseJSON(text: string): Record<string, unknown> | null {
 }
 
 export function asStringArray(v: unknown): string[] {
-  return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
+  return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
 }
 
 /** Whitespace-normalize for verbatim quote matching (model reflows line breaks). */
 export function normalizeForMatch(s: string): string {
-  return s.replace(/\s+/g, ' ').trim().toLowerCase();
+  return s.replace(/\s+/g, " ").trim().toLowerCase();
 }
 
 /**
@@ -131,15 +131,15 @@ export function groundQuotes<T>(
   items: T[],
   getQuote: (item: T) => string | undefined,
   documentText: string,
-  opts: { label?: string; minQuoteLen?: number } = {},
+  opts: { label?: string; minQuoteLen?: number } = {}
 ): { grounded: T[]; warnings: string[] } {
   const haystack = normalizeForMatch(documentText);
   const minLen = opts.minQuoteLen ?? 8;
-  const label = opts.label ?? 'ITEM';
+  const label = opts.label ?? "ITEM";
   const grounded: T[] = [];
   const warnings: string[] = [];
   for (const it of items) {
-    const q = normalizeForMatch(getQuote(it) ?? '');
+    const q = normalizeForMatch(getQuote(it) ?? "");
     if (q.length >= minLen && haystack.includes(q)) {
       grounded.push(it);
     } else {
@@ -151,35 +151,35 @@ export function groundQuotes<T>(
 
 /** Coerce an unknown into a bounded number in [min,max], or fallback. */
 export function asScore(v: unknown, fallback = 0, min = 0, max = 100): number {
-  const n = typeof v === 'number' ? v : typeof v === 'string' ? Number(v) : NaN;
+  const n = typeof v === "number" ? v : typeof v === "string" ? Number(v) : NaN;
   if (Number.isNaN(n)) return fallback;
   return Math.max(min, Math.min(max, Math.round(n)));
 }
 
-export type RiskLevel = 'low' | 'medium' | 'high' | 'critical';
-const VALID_RISK = new Set<RiskLevel>(['low', 'medium', 'high', 'critical']);
-export function asRiskLevel(v: unknown, fallback: RiskLevel = 'medium'): RiskLevel {
-  return typeof v === 'string' && VALID_RISK.has(v as RiskLevel) ? (v as RiskLevel) : fallback;
+export type RiskLevel = "low" | "medium" | "high" | "critical";
+const VALID_RISK = new Set<RiskLevel>(["low", "medium", "high", "critical"]);
+export function asRiskLevel(v: unknown, fallback: RiskLevel = "medium"): RiskLevel {
+  return typeof v === "string" && VALID_RISK.has(v as RiskLevel) ? (v as RiskLevel) : fallback;
 }
 
 /** Map a 0–100 score to a coarse risk level (shared scale across modules). */
 export function scoreToLevel(score: number): RiskLevel {
-  if (score >= 80) return 'critical';
-  if (score >= 55) return 'high';
-  if (score >= 25) return 'medium';
-  return 'low';
+  if (score >= 80) return "critical";
+  if (score >= 55) return "high";
+  if (score >= 25) return "medium";
+  return "low";
 }
 
 /** The single jurisdiction-label helper, so every prompt phrases it identically. */
 export function jurisdictionLabel(j: string): string {
   switch (j) {
-    case 'at':
-      return 'Österreich (AT)';
-    case 'de':
-      return 'Deutschland (DE)';
-    case 'ch':
-      return 'Schweiz (CH)';
+    case "at":
+      return "Österreich (AT)";
+    case "de":
+      return "Deutschland (DE)";
+    case "ch":
+      return "Schweiz (CH)";
     default:
-      return 'AT, DE oder CH (DACH-Raum)';
+      return "AT, DE oder CH (DACH-Raum)";
   }
 }

@@ -98,8 +98,10 @@ export default function DatevExportPage() {
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => { cancelled = true; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const totalHours = entries.reduce((s, e) => s + (e.hours ?? 0), 0);
@@ -140,7 +142,9 @@ export default function DatevExportPage() {
         </h3>
         <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
           <div className="space-y-1">
-            <Label htmlFor="datev-from" className="text-xs text-[color:var(--ds-text-muted)]">{t("datev.from")}</Label>
+            <Label htmlFor="datev-from" className="text-xs text-[color:var(--ds-text-muted)]">
+              {t("datev.from")}
+            </Label>
             <Input
               id="datev-from"
               type="date"
@@ -149,7 +153,9 @@ export default function DatevExportPage() {
             />
           </div>
           <div className="space-y-1">
-            <Label htmlFor="datev-to" className="text-xs text-[color:var(--ds-text-muted)]">{t("datev.to")}</Label>
+            <Label htmlFor="datev-to" className="text-xs text-[color:var(--ds-text-muted)]">
+              {t("datev.to")}
+            </Label>
             <Input
               id="datev-to"
               type="date"
@@ -158,7 +164,9 @@ export default function DatevExportPage() {
             />
           </div>
           <div className="space-y-1">
-            <Label htmlFor="datev-chart" className="text-xs text-[color:var(--ds-text-muted)]">{t("datev.chart")}</Label>
+            <Label htmlFor="datev-chart" className="text-xs text-[color:var(--ds-text-muted)]">
+              {t("datev.chart")}
+            </Label>
             <Select
               value={settings?.datevKontenrahmen || "SKR03"}
               onValueChange={(v) => {

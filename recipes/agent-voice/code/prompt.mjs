@@ -19,9 +19,13 @@
  * quotes, arrows). Always runs over the assembled prompt.
  */
 
-import { getPersona, buildSharedContext } from './lib/personas/personas.mjs';
-import { getEffectiveAllowlist } from './tools.mjs';
-import { buildMarsContext, buildVenusContext, buildTopicContext } from './lib/context-builder.example.mjs';
+import { getPersona, buildSharedContext } from "./lib/personas/personas.mjs";
+import { getEffectiveAllowlist } from "./tools.mjs";
+import {
+  buildMarsContext,
+  buildVenusContext,
+  buildTopicContext,
+} from "./lib/context-builder.example.mjs";
 
 /**
  * Build the system prompt for a session.
@@ -41,7 +45,7 @@ import { buildMarsContext, buildVenusContext, buildTopicContext } from './lib/co
  * @returns {Promise<string>} sanitized system prompt
  */
 export async function buildSystemPrompt(opts = {}) {
-  const personaKey = (opts.persona || 'venus').toLowerCase();
+  const personaKey = (opts.persona || "venus").toLowerCase();
   const persona = getPersona(personaKey);
 
   // 1. Identity first.
@@ -52,21 +56,22 @@ export async function buildSystemPrompt(opts = {}) {
   const dateTime = opts.dateTime || new Date().toISOString();
   prompt += buildSharedContext({
     authenticated: !!opts.authenticated,
-    identity: opts.identity || '',
+    identity: opts.identity || "",
     dateTime,
-    topicName: opts.topicName || '',
+    topicName: opts.topicName || "",
   });
 
   // 3. Persona body.
-  prompt += persona.prompt + '\n\n';
+  prompt += persona.prompt + "\n\n";
 
   // 4. Live brain context (operator's implementation; degrades to empty
   // string if no brainRoot or layout doesn't match).
   if (opts.brainRoot) {
     try {
-      const ctx = personaKey === 'mars'
-        ? await buildMarsContext({ brainRoot: opts.brainRoot, timezone: opts.timezone })
-        : await buildVenusContext({ brainRoot: opts.brainRoot, timezone: opts.timezone });
+      const ctx =
+        personaKey === "mars"
+          ? await buildMarsContext({ brainRoot: opts.brainRoot, timezone: opts.timezone })
+          : await buildVenusContext({ brainRoot: opts.brainRoot, timezone: opts.timezone });
       if (ctx) prompt += `# Live Context\n${ctx}\n\n`;
     } catch (err) {
       // Context-builder failures are non-fatal — persona answers with no
@@ -123,11 +128,11 @@ export async function buildSystemPrompt(opts = {}) {
 export function sanitizeForRealtime(text) {
   if (!text) return text;
   return text
-    .replace(/[—–]/g, '--')    // em / en dash
-    .replace(/[‘’]/g, "'")      // smart single quotes
-    .replace(/[“”]/g, '"')      // smart double quotes
-    .replace(/→/g, '->')               // right arrow
-    .replace(/←/g, '<-')               // left arrow
-    .replace(/…/g, '...')            // ellipsis
-    .replace(/[^\x00-\x7F]/g, '');         // strip any other non-ASCII
+    .replace(/[—–]/g, "--") // em / en dash
+    .replace(/[‘’]/g, "'") // smart single quotes
+    .replace(/[“”]/g, '"') // smart double quotes
+    .replace(/→/g, "->") // right arrow
+    .replace(/←/g, "<-") // left arrow
+    .replace(/…/g, "...") // ellipsis
+    .replace(/[^\x00-\x7F]/g, ""); // strip any other non-ASCII
 }

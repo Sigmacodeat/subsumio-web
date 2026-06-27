@@ -20,19 +20,19 @@
  * the proposed page text and grade it).
  */
 
-import type { ChatToolDef, ToolHandler } from '../ai/gateway.ts';
-import { operations, type OperationContext, type ParamDef } from '../operations.ts';
-import { paramDefToSchema } from '../../mcp/tool-defs.ts';
-import { loadConfig } from '../config.ts';
-import { BRAIN_TOOL_ALLOWLIST } from '../minions/tools/brain-allowlist.ts';
-import type { BrainEngine } from '../engine.ts';
+import type { ChatToolDef, ToolHandler } from "../ai/gateway.ts";
+import { operations, type OperationContext, type ParamDef } from "../operations.ts";
+import { paramDefToSchema } from "../../mcp/tool-defs.ts";
+import { loadConfig } from "../config.ts";
+import { BRAIN_TOOL_ALLOWLIST } from "../minions/tools/brain-allowlist.ts";
+import type { BrainEngine } from "../engine.ts";
 
 /**
  * A single captured write from a write-flavored rollout. Persists in
  * memory for the duration of one rollout (re-created per task).
  */
 export interface CapturedWrite {
-  op: 'put_page' | 'submit_job' | 'file_upload';
+  op: "put_page" | "submit_job" | "file_upload";
   /** Captured slug (for put_page) or job name (for submit_job). */
   key: string;
   /** Full input object to the op. */
@@ -56,7 +56,7 @@ export interface WriteCaptureRegistry {
   getVirtualPages(): ReadonlyMap<string, CapturedWrite>;
 }
 
-const WRITE_OPS: ReadonlySet<string> = new Set(['put_page', 'submit_job', 'file_upload']);
+const WRITE_OPS: ReadonlySet<string> = new Set(["put_page", "submit_job", "file_upload"]);
 
 /**
  * Build a write-capture registry. Each call returns a FRESH capture set;
@@ -94,90 +94,108 @@ export function buildWriteCaptureRegistry(engine: BrainEngine): WriteCaptureRegi
   const defs = [...baseDefs];
   const handlers = new Map(baseHandlers);
   defs.push({
-    name: 'brain_put_page',
-    description: '[write-capture mode] Write a page to the brain. In write-capture mode, the write is captured in-memory for judge inspection but NOT persisted.',
+    name: "brain_put_page",
+    description:
+      "[write-capture mode] Write a page to the brain. In write-capture mode, the write is captured in-memory for judge inspection but NOT persisted.",
     inputSchema: {
-      type: 'object',
+      type: "object",
       properties: {
-        slug: { type: 'string', description: 'Page slug' },
-        content: { type: 'string', description: 'Markdown body' },
-        type: { type: 'string', description: 'Page type (optional)' },
-        frontmatter: { type: 'object', description: 'YAML frontmatter (optional)' },
+        slug: { type: "string", description: "Page slug" },
+        content: { type: "string", description: "Markdown body" },
+        type: { type: "string", description: "Page type (optional)" },
+        frontmatter: { type: "object", description: "YAML frontmatter (optional)" },
       },
-      required: ['slug', 'content'],
+      required: ["slug", "content"],
     },
   });
-  handlers.set('brain_put_page', {
+  handlers.set("brain_put_page", {
     idempotent: true,
     execute: async (input: unknown) => {
       const i = (input as Record<string, unknown>) ?? {};
-      const slug = String(i.slug ?? '');
-      if (!slug) throw new Error('virtual put_page: slug required');
+      const slug = String(i.slug ?? "");
+      if (!slug) throw new Error("virtual put_page: slug required");
       const captured: CapturedWrite = {
-        op: 'put_page',
+        op: "put_page",
         key: slug,
         input: i,
         ordinal: nextOrdinal++,
       };
       writes.push(captured);
       virtualPages.set(slug, captured);
-      return { ok: true, virtual: true, slug, note: 'Captured by SkillOpt write-capture mode; not persisted.' };
+      return {
+        ok: true,
+        virtual: true,
+        slug,
+        note: "Captured by SkillOpt write-capture mode; not persisted.",
+      };
     },
   });
   defs.push({
-    name: 'brain_submit_job',
-    description: '[write-capture mode] Submit a Minion job. Captured in-memory; not actually submitted.',
+    name: "brain_submit_job",
+    description:
+      "[write-capture mode] Submit a Minion job. Captured in-memory; not actually submitted.",
     inputSchema: {
-      type: 'object',
+      type: "object",
       properties: {
-        name: { type: 'string', description: 'Job name' },
-        params: { type: 'object', description: 'Job params (optional)' },
+        name: { type: "string", description: "Job name" },
+        params: { type: "object", description: "Job params (optional)" },
       },
-      required: ['name'],
+      required: ["name"],
     },
   });
-  handlers.set('brain_submit_job', {
+  handlers.set("brain_submit_job", {
     idempotent: true,
     execute: async (input: unknown) => {
       const i = (input as Record<string, unknown>) ?? {};
-      const name = String(i.name ?? '');
-      if (!name) throw new Error('virtual submit_job: name required');
+      const name = String(i.name ?? "");
+      if (!name) throw new Error("virtual submit_job: name required");
       const captured: CapturedWrite = {
-        op: 'submit_job',
+        op: "submit_job",
         key: name,
         input: i,
         ordinal: nextOrdinal++,
       };
       writes.push(captured);
-      return { ok: true, virtual: true, job_name: name, note: 'Captured by SkillOpt write-capture mode; not submitted.' };
+      return {
+        ok: true,
+        virtual: true,
+        job_name: name,
+        note: "Captured by SkillOpt write-capture mode; not submitted.",
+      };
     },
   });
   defs.push({
-    name: 'brain_file_upload',
-    description: '[write-capture mode] Upload a file to brain storage. Captured in-memory; nothing written to disk.',
+    name: "brain_file_upload",
+    description:
+      "[write-capture mode] Upload a file to brain storage. Captured in-memory; nothing written to disk.",
     inputSchema: {
-      type: 'object',
+      type: "object",
       properties: {
-        path: { type: 'string', description: 'Local file path' },
-        page_slug: { type: 'string', description: 'Associate with page (optional)' },
+        path: { type: "string", description: "Local file path" },
+        page_slug: { type: "string", description: "Associate with page (optional)" },
       },
-      required: ['path'],
+      required: ["path"],
     },
   });
-  handlers.set('brain_file_upload', {
+  handlers.set("brain_file_upload", {
     idempotent: true,
     execute: async (input: unknown) => {
       const i = (input as Record<string, unknown>) ?? {};
-      const filePath = String(i.path ?? '');
-      if (!filePath) throw new Error('virtual file_upload: path required');
+      const filePath = String(i.path ?? "");
+      if (!filePath) throw new Error("virtual file_upload: path required");
       const captured: CapturedWrite = {
-        op: 'file_upload',
+        op: "file_upload",
         key: filePath,
         input: i,
         ordinal: nextOrdinal++,
       };
       writes.push(captured);
-      return { ok: true, virtual: true, path: filePath, note: 'Captured by SkillOpt write-capture mode; nothing uploaded.' };
+      return {
+        ok: true,
+        virtual: true,
+        path: filePath,
+        note: "Captured by SkillOpt write-capture mode; nothing uploaded.",
+      };
     },
   });
 
@@ -199,18 +217,20 @@ function buildOpContext(engine: BrainEngine): OperationContext {
     logger: { info: () => {}, warn: () => {}, error: () => {}, debug: () => {} } as never,
     dryRun: false,
     remote: true,
-    sourceId: 'default',
+    sourceId: "default",
   };
 }
 
 function paramsToSchema(params: Record<string, ParamDef>): Record<string, unknown> {
   return {
-    type: 'object' as const,
+    type: "object" as const,
     properties: Object.fromEntries(
       // Canonical ParamDef→JSON Schema mapper (shared with subagent + MCP + HTTP)
       // so enum/default/items survive. Prior {type,description}-only map dropped them.
-      Object.entries(params).map(([k, v]) => [k, paramDefToSchema(v)]),
+      Object.entries(params).map(([k, v]) => [k, paramDefToSchema(v)])
     ),
-    required: Object.entries(params).filter(([, v]) => v.required).map(([k]) => k),
+    required: Object.entries(params)
+      .filter(([, v]) => v.required)
+      .map(([k]) => k),
   };
 }

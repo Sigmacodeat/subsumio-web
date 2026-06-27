@@ -15,28 +15,28 @@
 
 export const DEFAULT_SOURCE_BOOSTS: Record<string, number> = {
   // Curated, opinionated, high-signal — Garry's own writing
-  'originals/': 1.5,
+  "originals/": 1.5,
   // Reusable knowledge frameworks
-  'concepts/': 1.3,
+  "concepts/": 1.3,
   // Long-form essays / articles
-  'writing/': 1.4,
+  "writing/": 1.4,
   // Entity pages
-  'people/': 1.2,
-  'companies/': 1.2,
-  'deals/': 1.2,
+  "people/": 1.2,
+  "companies/": 1.2,
+  "deals/": 1.2,
   // Notes from real meetings
-  'meetings/': 1.1,
+  "meetings/": 1.1,
   // Ingested third-party content
-  'media/articles/': 1.1,
-  'media/repos/': 1.1,
+  "media/articles/": 1.1,
+  "media/repos/": 1.1,
   // Neutral baselines (explicit for clarity)
-  'yc/': 1.0,
-  'civic/': 1.0,
+  "yc/": 1.0,
+  "civic/": 1.0,
   // Bulk / noisy
-  'daily/': 0.8,
-  'media/x/': 0.7,
+  "daily/": 0.8,
+  "media/x/": 0.7,
   // Chat transcripts — massive, noisy, swamp keyword queries
-  'openclaw/chat/': 0.5,
+  "openclaw/chat/": 0.5,
   // Archived historical content — findable by default but ranked below curated
   // content (issue #1777). NOT hard-excluded: archive/ routinely holds high-signal
   // history (conversation exports, prior-system logs, older notes) users expect to
@@ -44,13 +44,13 @@ export const DEFAULT_SOURCE_BOOSTS: Record<string, number> = {
   // 0.5 is a prior applied in the SQL/fusion layer; the cross-encoder reranker can
   // still PROMOTE a strongly-matching archive page that survives the demote into the
   // rerank candidate window.
-  'archive/': 0.5,
+  "archive/": 0.5,
   // v0.42 extract_receipt pages — surface when relevant (extraction
   // questions, audit trail) but never dominate user content. Per plan
   // D-EXTRACT-42. Receipts stamp `type: extract_receipt` AND
   // `dream_generated: true` in their frontmatter; demote here keeps them
   // findable but ranked below all curated user content.
-  'extracts/': 0.3,
+  "extracts/": 0.3,
 };
 
 /**
@@ -62,11 +62,7 @@ export const DEFAULT_SOURCE_BOOSTS: Record<string, number> = {
  * historical content users expect to find, so it is DEMOTED via
  * DEFAULT_SOURCE_BOOSTS (`archive/`: 0.5) instead of hidden.
  */
-export const DEFAULT_HARD_EXCLUDES: string[] = [
-  'test/',
-  'attachments/',
-  '.raw/',
-];
+export const DEFAULT_HARD_EXCLUDES: string[] = ["test/", "attachments/", ".raw/"];
 
 /**
  * Parse GBRAIN_SOURCE_BOOST env var.
@@ -79,8 +75,8 @@ export const DEFAULT_HARD_EXCLUDES: string[] = [
 export function parseSourceBoostEnv(env: string | undefined): Record<string, number> {
   if (!env) return {};
   const out: Record<string, number> = {};
-  for (const pair of env.split(',')) {
-    const idx = pair.lastIndexOf(':');
+  for (const pair of env.split(",")) {
+    const idx = pair.lastIndexOf(":");
     if (idx <= 0) continue;
     const prefix = pair.slice(0, idx).trim();
     const factor = Number.parseFloat(pair.slice(idx + 1).trim());
@@ -99,7 +95,10 @@ export function parseSourceBoostEnv(env: string | undefined): Record<string, num
  */
 export function parseHardExcludesEnv(env: string | undefined): string[] {
   if (!env) return [];
-  return env.split(',').map(s => s.trim()).filter(s => s.length > 0);
+  return env
+    .split(",")
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
 }
 
 /**
@@ -107,7 +106,7 @@ export function parseHardExcludesEnv(env: string | undefined): string[] {
  * Env entries override defaults (shallow merge); env-only entries are added.
  */
 export function resolveBoostMap(
-  envValue: string | undefined = process.env.GBRAIN_SOURCE_BOOST,
+  envValue: string | undefined = process.env.GBRAIN_SOURCE_BOOST
 ): Record<string, number> {
   const override = parseSourceBoostEnv(envValue);
   return { ...DEFAULT_SOURCE_BOOSTS, ...override };
@@ -123,7 +122,7 @@ export function resolveBoostMap(
 export function resolveHardExcludes(
   excludeOpt?: string[],
   includeOpt?: string[],
-  envValue: string | undefined = process.env.GBRAIN_SEARCH_EXCLUDE,
+  envValue: string | undefined = process.env.GBRAIN_SEARCH_EXCLUDE
 ): string[] {
   const envExcludes = parseHardExcludesEnv(envValue);
   const union = new Set<string>([...DEFAULT_HARD_EXCLUDES, ...envExcludes, ...(excludeOpt ?? [])]);

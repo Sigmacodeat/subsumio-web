@@ -19,18 +19,18 @@
  * postgres.js singleton. `test` only hits a remote URL and doesn't need
  * a local DB.
  */
-import { createHash, randomBytes } from 'crypto';
-import { loadConfig, toEngineConfig } from '../core/config.ts';
-import { createEngine } from '../core/engine-factory.ts';
-import type { BrainEngine } from '../core/engine.ts';
-import { sqlQueryForEngine, executeRawJsonb, type SqlQuery } from '../core/sql-query.ts';
+import { createHash, randomBytes } from "crypto";
+import { loadConfig, toEngineConfig } from "../core/config.ts";
+import { createEngine } from "../core/engine-factory.ts";
+import type { BrainEngine } from "../core/engine.ts";
+import { sqlQueryForEngine, executeRawJsonb, type SqlQuery } from "../core/sql-query.ts";
 
 function hashToken(token: string): string {
-  return createHash('sha256').update(token).digest('hex');
+  return createHash("sha256").update(token).digest("hex");
 }
 
 function generateToken(): string {
-  return 'gbrain_' + randomBytes(32).toString('hex');
+  return "gbrain_" + randomBytes(32).toString("hex");
 }
 
 /**
@@ -40,11 +40,13 @@ function generateToken(): string {
  * brain to write to).
  */
 async function withConfiguredSql<T>(
-  fn: (sql: SqlQuery, engine: BrainEngine) => Promise<T>,
+  fn: (sql: SqlQuery, engine: BrainEngine) => Promise<T>
 ): Promise<T> {
   const config = loadConfig();
   if (!config) {
-    console.error('No GBrain config found. Run `gbrain init` first, or set DATABASE_URL / GBRAIN_DATABASE_URL.');
+    console.error(
+      "No GBrain config found. Run `gbrain init` first, or set DATABASE_URL / GBRAIN_DATABASE_URL."
+    );
     process.exit(1);
   }
   const engineConfig = toEngineConfig(config);
@@ -67,7 +69,10 @@ async function withConfiguredSql<T>(
 }
 
 async function create(name: string, opts: { takesHolders?: string[] } = {}) {
-  if (!name) { console.error('Usage: auth create <name> [--takes-holders world,garry]'); process.exit(1); }
+  if (!name) {
+    console.error("Usage: auth create <name> [--takes-holders world,garry]");
+    process.exit(1);
+  }
   const token = generateToken();
   const hash = hashToken(token);
 
@@ -75,9 +80,8 @@ async function create(name: string, opts: { takesHolders?: string[] } = {}) {
     await withConfiguredSql(async (_sql, engine) => {
       // v0.28: persist per-token takes-holder allow-list. Default ['world'] keeps
       // private hunches hidden from MCP-bound tokens.
-      const takesHolders = opts.takesHolders && opts.takesHolders.length > 0
-        ? opts.takesHolders
-        : ['world'];
+      const takesHolders =
+        opts.takesHolders && opts.takesHolders.length > 0 ? opts.takesHolders : ["world"];
       const permissions = { takes_holders: takesHolders };
       // JSONB write: pass the object via executeRawJsonb with an explicit
       // ::jsonb cast in the SQL string. Both engines round-trip the object
@@ -89,34 +93,43 @@ async function create(name: string, opts: { takesHolders?: string[] } = {}) {
         `INSERT INTO access_tokens (name, token_hash, permissions)
          VALUES ($1, $2, $3::jsonb)`,
         [name, hash],
-        [permissions],
+        [permissions]
       );
       console.log(`Token created for "${name}" (takes_holders=${JSON.stringify(takesHolders)}):\n`);
       console.log(`  ${token}\n`);
-      console.log('Save this token — it will not be shown again.');
+      console.log("Save this token — it will not be shown again.");
       console.log(`Revoke with: gbrain auth revoke "${name}"`);
-      console.log(`Update visibility: gbrain auth permissions "${name}" set-takes-holders world,garry`);
+      console.log(
+        `Update visibility: gbrain auth permissions "${name}" set-takes-holders world,garry`
+      );
     });
   } catch (e: any) {
-    if (e.code === '23505') {
-      console.error(`A token named "${name}" already exists. Revoke it first or use a different name.`);
+    if (e.code === "23505") {
+      console.error(
+        `A token named "${name}" already exists. Revoke it first or use a different name.`
+      );
     } else {
-      console.error('Error:', e.message);
+      console.error("Error:", e.message);
     }
     process.exit(1);
   }
 }
 
 async function permissions(name: string, action: string, value: string | undefined) {
-  if (!name || action !== 'set-takes-holders' || !value) {
-    console.error('Usage: auth permissions <name> set-takes-holders world,garry,brain');
+  if (!name || action !== "set-takes-holders" || !value) {
+    console.error("Usage: auth permissions <name> set-takes-holders world,garry,brain");
     process.exit(1);
   }
   try {
     await withConfiguredSql(async (sql, engine) => {
-      const list = value.split(',').map(s => s.trim()).filter(Boolean);
+      const list = value
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
       if (list.length === 0) {
-        console.error('takes-holders list cannot be empty (use "world" for default-deny on private)');
+        console.error(
+          'takes-holders list cannot be empty (use "world" for default-deny on private)'
+        );
         process.exit(1);
       }
       const perms = { takes_holders: list };
@@ -128,7 +141,7 @@ async function permissions(name: string, action: string, value: string | undefin
             WHERE name = $1
             RETURNING id`,
         [name],
-        [perms],
+        [perms]
       );
       if (result.length === 0) {
         console.error(`Token "${name}" not found.`);
@@ -137,7 +150,7 @@ async function permissions(name: string, action: string, value: string | undefin
       console.log(`Updated "${name}": takes_holders = ${JSON.stringify(list)}`);
     });
   } catch (e: any) {
-    console.error('Error:', e.message);
+    console.error("Error:", e.message);
     process.exit(1);
   }
 }
@@ -153,20 +166,25 @@ async function list() {
       console.log('No tokens found. Create one: gbrain auth create "my-client"');
       return;
     }
-    console.log('Name                  Created              Last Used            Status');
-    console.log('─'.repeat(80));
+    console.log("Name                  Created              Last Used            Status");
+    console.log("─".repeat(80));
     for (const r of rows) {
       const name = (r.name as string).padEnd(20);
       const created = new Date(r.created_at as string).toISOString().slice(0, 19);
-      const lastUsed = r.last_used_at ? new Date(r.last_used_at as string).toISOString().slice(0, 19) : 'never'.padEnd(19);
-      const status = r.revoked_at ? 'REVOKED' : 'active';
+      const lastUsed = r.last_used_at
+        ? new Date(r.last_used_at as string).toISOString().slice(0, 19)
+        : "never".padEnd(19);
+      const status = r.revoked_at ? "REVOKED" : "active";
       console.log(`${name}  ${created}  ${lastUsed}  ${status}`);
     }
   });
 }
 
 async function revoke(name: string) {
-  if (!name) { console.error('Usage: auth revoke <name>'); process.exit(1); }
+  if (!name) {
+    console.error("Usage: auth revoke <name>");
+    process.exit(1);
+  }
   await withConfiguredSql(async (sql) => {
     const rows = await sql`
       UPDATE access_tokens SET revoked_at = now()
@@ -183,7 +201,7 @@ async function revoke(name: string) {
 
 async function test(url: string, token: string) {
   if (!url || !token) {
-    console.error('Usage: auth test <url> --token <token>');
+    console.error("Usage: auth test <url> --token <token>");
     process.exit(1);
   }
 
@@ -193,19 +211,19 @@ async function test(url: string, token: string) {
   // Step 1: Initialize
   try {
     const initRes = await fetch(url, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/json, text/event-stream',
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json, text/event-stream",
       },
       body: JSON.stringify({
-        jsonrpc: '2.0',
-        method: 'initialize',
+        jsonrpc: "2.0",
+        method: "initialize",
         params: {
-          protocolVersion: '2025-03-26',
+          protocolVersion: "2025-03-26",
           capabilities: {},
-          clientInfo: { name: 'gbrain-smoke-test', version: '1.0' },
+          clientInfo: { name: "gbrain-smoke-test", version: "1.0" },
         },
         id: 1,
       }),
@@ -217,7 +235,7 @@ async function test(url: string, token: string) {
       if (body) console.error(`  ${body}`);
       process.exit(1);
     }
-    console.log('  ✓ Initialize handshake');
+    console.log("  ✓ Initialize handshake");
   } catch (e: any) {
     console.error(`  ✗ Connection failed: ${e.message}`);
     process.exit(1);
@@ -226,15 +244,15 @@ async function test(url: string, token: string) {
   // Step 2: List tools
   try {
     const listRes = await fetch(url, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/json, text/event-stream',
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json, text/event-stream",
       },
       body: JSON.stringify({
-        jsonrpc: '2.0',
-        method: 'tools/list',
+        jsonrpc: "2.0",
+        method: "tools/list",
         params: {},
         id: 2,
       }),
@@ -248,20 +266,24 @@ async function test(url: string, token: string) {
     const text = await listRes.text();
     // Parse SSE or JSON response
     let toolCount = 0;
-    if (text.includes('event:')) {
+    if (text.includes("event:")) {
       // SSE format: extract data lines
-      const dataLines = text.split('\n').filter(l => l.startsWith('data:'));
+      const dataLines = text.split("\n").filter((l) => l.startsWith("data:"));
       for (const line of dataLines) {
         try {
           const data = JSON.parse(line.slice(5));
           if (data.result?.tools) toolCount = data.result.tools.length;
-        } catch { /* skip non-JSON lines */ }
+        } catch {
+          /* skip non-JSON lines */
+        }
       }
     } else {
       try {
         const data = JSON.parse(text);
         toolCount = data.result?.tools?.length || 0;
-      } catch { /* parse error */ }
+      } catch {
+        /* parse error */
+      }
     }
 
     console.log(`  ✓ tools/list: ${toolCount} tools available`);
@@ -273,16 +295,16 @@ async function test(url: string, token: string) {
   // Step 3: Call get_stats (real tool call)
   try {
     const statsRes = await fetch(url, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/json, text/event-stream',
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json, text/event-stream",
       },
       body: JSON.stringify({
-        jsonrpc: '2.0',
-        method: 'tools/call',
-        params: { name: 'get_stats', arguments: {} },
+        jsonrpc: "2.0",
+        method: "tools/call",
+        params: { name: "get_stats", arguments: {} },
         id: 3,
       }),
     });
@@ -291,7 +313,7 @@ async function test(url: string, token: string) {
       console.error(`  ✗ get_stats failed: ${statsRes.status}`);
       process.exit(1);
     }
-    console.log('  ✓ get_stats: brain is responding');
+    console.log("  ✓ get_stats: brain is responding");
   } catch (e: any) {
     console.error(`  ✗ get_stats failed: ${e.message}`);
     process.exit(1);
@@ -303,7 +325,7 @@ async function test(url: string, token: string) {
 
 async function revokeClient(clientId: string) {
   if (!clientId) {
-    console.error('Usage: auth revoke-client <client_id>');
+    console.error("Usage: auth revoke-client <client_id>");
     process.exit(1);
   }
   try {
@@ -320,10 +342,10 @@ async function revokeClient(clientId: string) {
         process.exit(1);
       }
       console.log(`OAuth client revoked: "${rows[0].client_name}" (${clientId})`);
-      console.log('Tokens and authorization codes purged via cascade.');
+      console.log("Tokens and authorization codes purged via cascade.");
     });
   } catch (e: any) {
-    console.error('Error:', e.message);
+    console.error("Error:", e.message);
     process.exit(1);
   }
 }
@@ -350,9 +372,9 @@ interface RegisterClientArgs {
 
 export function parseRegisterClientArgs(args: string[]): RegisterClientArgs {
   const out: RegisterClientArgs = {
-    grantTypes: ['client_credentials'],
-    scopes: 'read',
-    sourceId: 'default',
+    grantTypes: ["client_credentials"],
+    scopes: "read",
+    sourceId: "default",
     federatedRead: undefined,
     redirectUris: [],
     tokenEndpointAuthMethod: undefined,
@@ -363,32 +385,47 @@ export function parseRegisterClientArgs(args: string[]): RegisterClientArgs {
     const flag = args[i];
     const value = args[i + 1];
     const requireValue = () => {
-      if (value === undefined || value.startsWith('--')) {
+      if (value === undefined || value.startsWith("--")) {
         throw new Error(`${flag} requires a value`);
       }
       return value;
     };
     switch (flag) {
-      case '--grant-types': {
+      case "--grant-types": {
         const v = requireValue();
-        out.grantTypes = v.split(',').map(s => s.trim()).filter(Boolean);
+        out.grantTypes = v
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
         grantTypesSet = out.grantTypes.length > 0;
         i += 2;
         break;
       }
-      case '--scopes': out.scopes = requireValue(); i += 2; break;
-      case '--source': out.sourceId = requireValue(); i += 2; break;
-      case '--federated-read': {
+      case "--scopes":
+        out.scopes = requireValue();
+        i += 2;
+        break;
+      case "--source":
+        out.sourceId = requireValue();
+        i += 2;
+        break;
+      case "--federated-read": {
         const v = requireValue();
-        out.federatedRead = v.split(',').map(s => s.trim()).filter(Boolean);
-        i += 2; break;
+        out.federatedRead = v
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+        i += 2;
+        break;
       }
-      case '--redirect-uri':
+      case "--redirect-uri":
         out.redirectUris.push(requireValue());
-        i += 2; break;
-      case '--token-endpoint-auth-method':
+        i += 2;
+        break;
+      case "--token-endpoint-auth-method":
         out.tokenEndpointAuthMethod = requireValue();
-        i += 2; break;
+        i += 2;
+        break;
       default:
         throw new Error(`Unknown flag: ${flag}`);
     }
@@ -398,14 +435,16 @@ export function parseRegisterClientArgs(args: string[]): RegisterClientArgs {
   // (just --redirect-uri ...) is the SECURITY.md-recommended pre-registration
   // pattern; making operators redundantly pass `--grant-types` is footgun.
   if (!grantTypesSet && out.redirectUris.length > 0) {
-    out.grantTypes = ['authorization_code', 'refresh_token'];
+    out.grantTypes = ["authorization_code", "refresh_token"];
   }
   return out;
 }
 
 async function registerClient(name: string, args: string[]) {
   if (!name) {
-    console.error('Usage: auth register-client <name> [--grant-types G] [--scopes S] [--source SOURCE] [--federated-read SRC1,SRC2,...] [--redirect-uri URI ...] [--token-endpoint-auth-method client_secret_post|client_secret_basic|none]');
+    console.error(
+      "Usage: auth register-client <name> [--grant-types G] [--scopes S] [--source SOURCE] [--federated-read SRC1,SRC2,...] [--redirect-uri URI ...] [--token-endpoint-auth-method client_secret_post|client_secret_basic|none]"
+    );
     process.exit(1);
   }
   let parsed: RegisterClientArgs;
@@ -413,20 +452,30 @@ async function registerClient(name: string, args: string[]) {
     parsed = parseRegisterClientArgs(args);
   } catch (e: any) {
     console.error(`Error: ${e.message}`);
-    console.error('Usage: auth register-client <name> [--grant-types G] [--scopes S] [--source SOURCE] [--federated-read SRC1,SRC2,...] [--redirect-uri URI ...] [--token-endpoint-auth-method client_secret_post|client_secret_basic|none]');
+    console.error(
+      "Usage: auth register-client <name> [--grant-types G] [--scopes S] [--source SOURCE] [--federated-read SRC1,SRC2,...] [--redirect-uri URI ...] [--token-endpoint-auth-method client_secret_post|client_secret_basic|none]"
+    );
     process.exit(1);
   }
-  const { grantTypes, scopes, sourceId, federatedRead, redirectUris, tokenEndpointAuthMethod } = parsed;
+  const { grantTypes, scopes, sourceId, federatedRead, redirectUris, tokenEndpointAuthMethod } =
+    parsed;
 
   try {
     await withConfiguredSql(async (sql) => {
-      const { GBrainOAuthProvider } = await import('../core/oauth-provider.ts');
+      const { GBrainOAuthProvider } = await import("../core/oauth-provider.ts");
       const provider = new GBrainOAuthProvider({ sql });
       const { clientId, clientSecret } = await provider.registerClientManual(
-        name, grantTypes, scopes, redirectUris, sourceId, federatedRead, tokenEndpointAuthMethod,
+        name,
+        grantTypes,
+        scopes,
+        redirectUris,
+        sourceId,
+        federatedRead,
+        tokenEndpointAuthMethod
       );
-      const effectiveFederated = federatedRead && federatedRead.length > 0 ? federatedRead : [sourceId];
-      const effectiveAuthMethod = tokenEndpointAuthMethod || 'client_secret_post';
+      const effectiveFederated =
+        federatedRead && federatedRead.length > 0 ? federatedRead : [sourceId];
+      const effectiveAuthMethod = tokenEndpointAuthMethod || "client_secret_post";
       console.log(`OAuth client registered: "${name}"\n`);
       console.log(`  Client ID:           ${clientId}`);
       if (clientSecret) {
@@ -434,23 +483,23 @@ async function registerClient(name: string, args: string[]) {
       } else {
         console.log(`  Client Secret:       <public client — none issued>\n`);
       }
-      console.log(`  Grant types:         ${grantTypes.join(', ')}`);
+      console.log(`  Grant types:         ${grantTypes.join(", ")}`);
       console.log(`  Scopes:              ${scopes}`);
       console.log(`  Token auth method:   ${effectiveAuthMethod}`);
       if (redirectUris.length > 0) {
-        console.log(`  Redirect URIs:       ${redirectUris.join(', ')}`);
+        console.log(`  Redirect URIs:       ${redirectUris.join(", ")}`);
       }
       console.log(`  Write source:        ${sourceId}`);
-      console.log(`  Federated reads:     ${effectiveFederated.join(', ')}\n`);
+      console.log(`  Federated reads:     ${effectiveFederated.join(", ")}\n`);
       if (clientSecret) {
-        console.log('Save the client secret — it will not be shown again.');
+        console.log("Save the client secret — it will not be shown again.");
       } else {
-        console.log('Public client (PKCE-only) — no secret needed.');
+        console.log("Public client (PKCE-only) — no secret needed.");
       }
       console.log(`Revoke with: gbrain auth revoke-client "${clientId}"`);
     });
   } catch (e: any) {
-    console.error('Error:', e.message);
+    console.error("Error:", e.message);
     process.exit(1);
   }
 }
@@ -470,38 +519,50 @@ async function registerClient(name: string, args: string[]) {
  * the bare `gbrain auth create <name>` form.
  */
 export function parseAuthCreateArgs(rest: string[]): { name: string; takesHolders?: string[] } {
-  const takesIdx = rest.indexOf('--takes-holders');
-  const takesHolders = takesIdx >= 0 && rest[takesIdx + 1]
-    ? rest[takesIdx + 1].split(',').map(s => s.trim()).filter(Boolean)
-    : undefined;
+  const takesIdx = rest.indexOf("--takes-holders");
+  const takesHolders =
+    takesIdx >= 0 && rest[takesIdx + 1]
+      ? rest[takesIdx + 1]
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : undefined;
   const takesValue = takesIdx >= 0 ? rest[takesIdx + 1] : undefined;
-  const positional = rest.find(a => !a.startsWith('--') && a !== takesValue);
-  return { name: positional || '', takesHolders };
+  const positional = rest.find((a) => !a.startsWith("--") && a !== takesValue);
+  return { name: positional || "", takesHolders };
 }
 
 export async function runAuth(args: string[]): Promise<void> {
   const [cmd, ...rest] = args;
   switch (cmd) {
-    case 'create': {
+    case "create": {
       // v0.28: optional --takes-holders world,garry,brain (default: world only)
       const parsed = parseAuthCreateArgs(rest);
       await create(parsed.name, { takesHolders: parsed.takesHolders });
       return;
     }
-    case 'list': await list(); return;
-    case 'revoke': await revoke(rest[0]); return;
-    case 'permissions': {
+    case "list":
+      await list();
+      return;
+    case "revoke":
+      await revoke(rest[0]);
+      return;
+    case "permissions": {
       // gbrain auth permissions <name> set-takes-holders world,garry
-      await permissions(rest[0] || '', rest[1] || '', rest[2]);
+      await permissions(rest[0] || "", rest[1] || "", rest[2]);
       return;
     }
-    case 'register-client': await registerClient(rest[0], rest.slice(1)); return;
-    case 'revoke-client': await revokeClient(rest[0]); return;
-    case 'test': {
-      const tokenIdx = rest.indexOf('--token');
-      const url = rest.find(a => !a.startsWith('--') && a !== rest[tokenIdx + 1]);
-      const token = tokenIdx >= 0 ? rest[tokenIdx + 1] : '';
-      await test(url || '', token || '');
+    case "register-client":
+      await registerClient(rest[0], rest.slice(1));
+      return;
+    case "revoke-client":
+      await revokeClient(rest[0]);
+      return;
+    case "test": {
+      const tokenIdx = rest.indexOf("--token");
+      const url = rest.find((a) => !a.startsWith("--") && a !== rest[tokenIdx + 1]);
+      const token = tokenIdx >= 0 ? rest[tokenIdx + 1] : "";
+      await test(url || "", token || "");
       return;
     }
     default:

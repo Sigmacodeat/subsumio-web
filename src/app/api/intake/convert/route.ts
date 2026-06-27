@@ -36,11 +36,11 @@ export const POST = createHandler(
   async (ctx, body) => {
     const getRes = await fetch(`${ENGINE_URL}/api/pages/${encodeSlug(body.slug)}`, {
       headers: ctx.headers,
-    signal: AbortSignal.timeout(10_000),
+      signal: AbortSignal.timeout(10_000),
     });
     if (!getRes.ok) return apiError("intake_not_found", "Intake konnte nicht geladen werden", 404);
 
-    const intakePage = intakeFromPage(await getRes.json() as BrainPage);
+    const intakePage = intakeFromPage((await getRes.json()) as BrainPage);
     if (!intakePage) return apiError("not_intake_request", "Die Seite ist kein Intake", 400);
 
     const casePage = buildCaseFromIntake(intakePage, {
@@ -56,7 +56,7 @@ export const POST = createHandler(
       method: "POST",
       headers: { "Content-Type": "application/json", ...ctx.headers },
       body: JSON.stringify(casePage),
-    signal: AbortSignal.timeout(15_000),
+      signal: AbortSignal.timeout(15_000),
     });
     if (!createRes.ok) {
       const message = await createRes.text().catch(() => "");
@@ -80,11 +80,20 @@ export const POST = createHandler(
       }),
       signal: AbortSignal.timeout(15_000),
     });
-    if (!updateRes.ok) return apiError("intake_update_failed", "Akte erstellt, Intake aber nicht aktualisiert", 502);
+    if (!updateRes.ok)
+      return apiError("intake_update_failed", "Akte erstellt, Intake aber nicht aktualisiert", 502);
 
-    broadcastSseEvent(ctx.brainId, "case.created", { slug: casePage.slug, intakeSlug: body.slug, by: ctx.user.email });
-    broadcastSseEvent(ctx.brainId, "intake.updated", { slug: body.slug, convertedCaseSlug: casePage.slug, by: ctx.user.email });
+    broadcastSseEvent(ctx.brainId, "case.created", {
+      slug: casePage.slug,
+      intakeSlug: body.slug,
+      by: ctx.user.email,
+    });
+    broadcastSseEvent(ctx.brainId, "intake.updated", {
+      slug: body.slug,
+      convertedCaseSlug: casePage.slug,
+      by: ctx.user.email,
+    });
 
     return Response.json({ ok: true, case: casePage, intake_slug: body.slug });
-  },
+  }
 );

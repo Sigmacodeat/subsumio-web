@@ -136,7 +136,7 @@ describe("checkContactConflict — no conflicts", () => {
   test("unique name → no conflict", () => {
     const result = checkContactConflict(
       { name: "Neuer Mandant", role: "client" },
-      EXISTING_CONTACTS,
+      EXISTING_CONTACTS
     );
     expect(result.hasConflict).toBe(false);
     expect(result.severity).toBe("none");
@@ -145,10 +145,7 @@ describe("checkContactConflict — no conflicts", () => {
   });
 
   test("empty existing list → no conflict", () => {
-    const result = checkContactConflict(
-      { name: "Max Mustermann", role: "client" },
-      [],
-    );
+    const result = checkContactConflict({ name: "Max Mustermann", role: "client" }, []);
     expect(result.hasConflict).toBe(false);
     expect(result.checkedContacts).toBe(0);
   });
@@ -156,7 +153,7 @@ describe("checkContactConflict — no conflicts", () => {
   test("same slug is skipped", () => {
     const result = checkContactConflict(
       { slug: "c1", name: "Max Mustermann", role: "client" },
-      EXISTING_CONTACTS,
+      EXISTING_CONTACTS
     );
     const selfHit = result.hits.find((h) => h.contact.slug === "c1");
     expect(selfHit).toBeUndefined();
@@ -167,7 +164,7 @@ describe("checkContactConflict — exact name match", () => {
   test("exact name match as same role → low severity", () => {
     const result = checkContactConflict(
       { name: "Max Mustermann", role: "client" },
-      EXISTING_CONTACTS,
+      EXISTING_CONTACTS
     );
     expect(result.hasConflict).toBe(true);
     expect(result.severity).toBe("low");
@@ -178,7 +175,7 @@ describe("checkContactConflict — exact name match", () => {
   test("exact name match as different role → critical (client vs opponent)", () => {
     const result = checkContactConflict(
       { name: "Max Mustermann", role: "opponent" },
-      EXISTING_CONTACTS,
+      EXISTING_CONTACTS
     );
     expect(result.severity).toBe("critical");
     expect(result.warning).toContain("§ 43a BRAO");
@@ -187,7 +184,7 @@ describe("checkContactConflict — exact name match", () => {
   test("exact name match opponent vs existing client → critical", () => {
     const result = checkContactConflict(
       { name: "Anna Schmidt", role: "client" },
-      EXISTING_CONTACTS,
+      EXISTING_CONTACTS
     );
     expect(result.severity).toBe("critical");
   });
@@ -197,7 +194,7 @@ describe("checkContactConflict — fuzzy match", () => {
   test("typo in name → fuzzy match", () => {
     const result = checkContactConflict(
       { name: "Max Mustermanna", role: "client" },
-      EXISTING_CONTACTS,
+      EXISTING_CONTACTS
     );
     expect(result.hasConflict).toBe(true);
     const fuzzy = result.hits.find((h) => h.matchType === "fuzzy");
@@ -207,7 +204,7 @@ describe("checkContactConflict — fuzzy match", () => {
   test("reversed name order → fuzzy or exact match", () => {
     const result = checkContactConflict(
       { name: "Mustermann Max", role: "client" },
-      EXISTING_CONTACTS,
+      EXISTING_CONTACTS
     );
     expect(result.hasConflict).toBe(true);
   });
@@ -217,7 +214,7 @@ describe("checkContactConflict — company match", () => {
   test("same company name → company match", () => {
     const result = checkContactConflict(
       { name: "John Doe", role: "client", company: "Mustermann GmbH" },
-      EXISTING_CONTACTS,
+      EXISTING_CONTACTS
     );
     const companyHit = result.hits.find((h) => h.matchType === "company");
     expect(companyHit).toBeDefined();
@@ -227,14 +224,11 @@ describe("checkContactConflict — company match", () => {
 
 describe("checkContactConflict — results sorting", () => {
   test("hits sorted by similarity descending", () => {
-    const result = checkContactConflict(
-      { name: "Max Mustermann", role: "client" },
-      [
-        ...EXISTING_CONTACTS,
-        { slug: "c6", name: "Max Mustermann", role: "client" },
-        { slug: "c7", name: "Maxx Mustermann", role: "client" },
-      ],
-    );
+    const result = checkContactConflict({ name: "Max Mustermann", role: "client" }, [
+      ...EXISTING_CONTACTS,
+      { slug: "c6", name: "Max Mustermann", role: "client" },
+      { slug: "c7", name: "Maxx Mustermann", role: "client" },
+    ]);
     for (let i = 1; i < result.hits.length; i++) {
       expect(result.hits[i].similarity).toBeLessThanOrEqual(result.hits[i - 1].similarity);
     }
@@ -321,7 +315,7 @@ describe("checkContactConflict — edge cases", () => {
   test("court role never triggers critical", () => {
     const result = checkContactConflict(
       { name: "Max Mustermann", role: "court" },
-      EXISTING_CONTACTS,
+      EXISTING_CONTACTS
     );
     expect(result.severity).not.toBe("critical");
   });
@@ -329,7 +323,7 @@ describe("checkContactConflict — edge cases", () => {
   test("lawyer role never triggers critical", () => {
     const result = checkContactConflict(
       { name: "Max Mustermann", role: "lawyer" },
-      EXISTING_CONTACTS,
+      EXISTING_CONTACTS
     );
     expect(result.severity).not.toBe("critical");
   });
@@ -337,7 +331,7 @@ describe("checkContactConflict — edge cases", () => {
   test("other role never triggers critical", () => {
     const result = checkContactConflict(
       { name: "Max Mustermann", role: "other" },
-      EXISTING_CONTACTS,
+      EXISTING_CONTACTS
     );
     expect(result.severity).not.toBe("critical");
   });

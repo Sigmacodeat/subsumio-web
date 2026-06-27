@@ -199,9 +199,7 @@ export function AclSettings() {
                   ) : (
                     <div className="space-y-1">
                       {members.map((m) => {
-                        const teamMember = teamMembers.find(
-                          (tm) => tm.id === m.user_id
-                        );
+                        const teamMember = teamMembers.find((tm) => tm.id === m.user_id);
                         return (
                           <div
                             key={m.user_id}

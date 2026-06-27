@@ -16,11 +16,11 @@
  */
 
 export const VOICE_GATE_MODES = [
-  'pattern_statement',
-  'nudge',
-  'forecast_blurb',
-  'dashboard_caption',
-  'morning_pulse',
+  "pattern_statement",
+  "nudge",
+  "forecast_blurb",
+  "dashboard_caption",
+  "morning_pulse",
 ] as const;
 
 export type VoiceGateMode = (typeof VOICE_GATE_MODES)[number];
@@ -58,7 +58,7 @@ export interface DashboardCaptionSlots {
 
 export interface MorningPulseSlots {
   brier: number;
-  trend: 'improving' | 'declining' | 'stable';
+  trend: "improving" | "declining" | "stable";
   topPattern: string;
 }
 
@@ -72,7 +72,7 @@ export function patternStatementTemplate(s: PatternStatementSlots): string {
   if (total === 0) {
     return `Not enough resolved ${s.domain} calls yet to spot a pattern.`;
   }
-  const direction = s.direction ?? (s.nWrong > s.nRight ? 'mixed' : 'mostly right');
+  const direction = s.direction ?? (s.nWrong > s.nRight ? "mixed" : "mostly right");
   return `Your ${s.domain} calls have a ${direction} record — ${s.nRight} of ${total} held up.`;
 }
 
@@ -90,7 +90,8 @@ export function forecastBlurbTemplate(s: ForecastBlurbSlots): string {
   if (s.bucketN < 5) {
     return `Forecast unavailable: only ${s.bucketN} resolved ${s.domain} takes at this conviction yet.`;
   }
-  const note = s.bucketBrier > s.overallBrier ? 'worse than your average' : 'on par with your average';
+  const note =
+    s.bucketBrier > s.overallBrier ? "worse than your average" : "on par with your average";
   return (
     `Predicted Brier in ${s.domain} at conviction ${s.conviction.toFixed(2)}: ` +
     `${s.bucketBrier.toFixed(2)} (${note}, n=${s.bucketN}).`
@@ -105,9 +106,9 @@ export function dashboardCaptionTemplate(s: DashboardCaptionSlots): string {
 /** Recall morning pulse Brier+pattern line. */
 export function morningPulseTemplate(s: MorningPulseSlots): string {
   const trendWord =
-    s.trend === 'improving' ? 'improving' : s.trend === 'declining' ? 'declining' : 'stable';
+    s.trend === "improving" ? "improving" : s.trend === "declining" ? "declining" : "stable";
   return (
     `Brier ${s.brier.toFixed(2)} (${trendWord}). ` +
-    (s.topPattern ? `Top pattern: ${s.topPattern}.` : '')
+    (s.topPattern ? `Top pattern: ${s.topPattern}.` : "")
   );
 }

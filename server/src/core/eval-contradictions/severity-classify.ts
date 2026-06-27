@@ -13,7 +13,7 @@
  * post-processing; it does NOT re-classify or override the LLM's call.
  */
 
-import type { ContradictionFinding, HotPage, Severity, Verdict } from './types.ts';
+import type { ContradictionFinding, HotPage, Severity, Verdict } from "./types.ts";
 
 /**
  * v0.34 / Lane A2: 'info' joins the rank as the lowest non-trivial severity
@@ -33,12 +33,12 @@ const SEVERITY_RANK: Record<Severity, number> = { info: 0, low: 1, medium: 2, hi
  * - no_contradiction:      info — not a finding (filtered out by runner emit)
  */
 const DEFAULT_SEVERITY_BY_VERDICT: Record<Verdict, Severity> = {
-  no_contradiction: 'info',
-  contradiction: 'medium',
-  temporal_supersession: 'info',
-  temporal_regression: 'high',
-  temporal_evolution: 'info',
-  negation_artifact: 'low',
+  no_contradiction: "info",
+  contradiction: "medium",
+  temporal_supersession: "info",
+  temporal_regression: "high",
+  temporal_evolution: "info",
+  negation_artifact: "low",
 };
 
 export function defaultSeverityForVerdict(verdict: Verdict): Severity {
@@ -52,8 +52,8 @@ export function defaultSeverityForVerdict(verdict: Verdict): Severity {
  *
  * v0.34 / Lane A2: accepts 'info' as a valid severity.
  */
-export function parseSeverity(value: unknown, fallback: Severity = 'low'): Severity {
-  if (value === 'info' || value === 'low' || value === 'medium' || value === 'high') {
+export function parseSeverity(value: unknown, fallback: Severity = "low"): Severity {
+  if (value === "info" || value === "low" || value === "medium" || value === "high") {
     return value;
   }
   return fallback;
@@ -66,7 +66,7 @@ export function compareSeverityDesc(a: Severity, b: Severity): number {
 
 /** Return findings grouped by severity. Order within each group preserved from input. */
 export function bucketBySeverity(
-  findings: readonly ContradictionFinding[],
+  findings: readonly ContradictionFinding[]
 ): Record<Severity, ContradictionFinding[]> {
   const out: Record<Severity, ContradictionFinding[]> = { info: [], low: [], medium: [], high: [] };
   for (const f of findings) {
@@ -79,10 +79,7 @@ export function bucketBySeverity(
  * Roll up appearances across all findings into per-page totals + max severity.
  * Sorted by appearances DESC, then max_severity DESC for stable ties.
  */
-export function buildHotPages(
-  findings: readonly ContradictionFinding[],
-  limit = 10,
-): HotPage[] {
+export function buildHotPages(findings: readonly ContradictionFinding[], limit = 10): HotPage[] {
   const acc = new Map<string, { count: number; maxSev: Severity }>();
   const touch = (slug: string, sev: Severity) => {
     const prior = acc.get(slug);
@@ -105,7 +102,8 @@ export function buildHotPages(
     max_severity: v.maxSev,
   }));
   rows.sort(
-    (x, y) => y.appearances - x.appearances || SEVERITY_RANK[y.max_severity] - SEVERITY_RANK[x.max_severity],
+    (x, y) =>
+      y.appearances - x.appearances || SEVERITY_RANK[y.max_severity] - SEVERITY_RANK[x.max_severity]
   );
   return rows.slice(0, limit);
 }

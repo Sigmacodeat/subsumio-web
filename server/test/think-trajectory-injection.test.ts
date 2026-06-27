@@ -15,22 +15,22 @@
  * that captures the user message so we can inspect what reached the model.
  */
 
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
-import { PGLiteEngine } from '../src/core/pglite-engine.ts';
-import { runThink, type ThinkLLMClient } from '../src/core/think/index.ts';
+import { describe, test, expect, beforeAll, afterAll } from "bun:test";
+import { PGLiteEngine } from "../src/core/pglite-engine.ts";
+import { runThink, type ThinkLLMClient } from "../src/core/think/index.ts";
 
 let engine: PGLiteEngine;
 
 beforeAll(async () => {
   engine = new PGLiteEngine();
-  await engine.connect({ database_url: '' });
+  await engine.connect({ database_url: "" });
   await engine.initSchema();
 
   // Seed a people page so resolveEntitySlug returns 'exact_page' for marco.
-  await engine.putPage('people/marco-example', {
-    title: 'Marco Example',
-    type: 'person',
-    compiled_truth: 'Marco is a founder.',
+  await engine.putPage("people/marco-example", {
+    title: "Marco Example",
+    type: "person",
+    compiled_truth: "Marco is a founder.",
   });
 
   // Seed metric + event facts on the same entity.
@@ -62,140 +62,149 @@ function captureClient(): { client: ThinkLLMClient; captured: { system: string; 
     create: async (params) => {
       const userMsg = params.messages[0]?.content;
       captured.push({
-        system: typeof params.system === 'string' ? params.system : '',
-        user: typeof userMsg === 'string' ? userMsg : JSON.stringify(userMsg),
+        system: typeof params.system === "string" ? params.system : "",
+        user: typeof userMsg === "string" ? userMsg : JSON.stringify(userMsg),
       });
       return {
-        id: 'stub',
-        type: 'message',
-        role: 'assistant',
-        model: 'stub',
-        stop_reason: 'end_turn',
+        id: "stub",
+        type: "message",
+        role: "assistant",
+        model: "stub",
+        stop_reason: "end_turn",
         stop_sequence: null,
-        usage: { input_tokens: 1, output_tokens: 1, cache_creation_input_tokens: 0, cache_read_input_tokens: 0, server_tool_use: null, service_tier: null },
-        content: [{
-          type: 'text',
-          text: JSON.stringify({ answer: 'stubbed answer', citations: [], gaps: [] }),
-        }],
+        usage: {
+          input_tokens: 1,
+          output_tokens: 1,
+          cache_creation_input_tokens: 0,
+          cache_read_input_tokens: 0,
+          server_tool_use: null,
+          service_tier: null,
+        },
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({ answer: "stubbed answer", citations: [], gaps: [] }),
+          },
+        ],
       } as never;
     },
   };
   return { client, captured };
 }
 
-describe('runThink — trajectory injection happy path', () => {
-  test('temporal intent → trajectory block appears in user message', async () => {
+describe("runThink — trajectory injection happy path", () => {
+  test("temporal intent → trajectory block appears in user message", async () => {
     const { client, captured } = captureClient();
     await runThink(engine, {
-      question: 'When did Marco last switch jobs?',
+      question: "When did Marco last switch jobs?",
       client,
     });
     expect(captured.length).toBe(1);
-    expect(captured[0].user).toContain('Known trajectory:');
+    expect(captured[0].user).toContain("Known trajectory:");
     expect(captured[0].user).toContain('<trajectory entity="people/marco-example"');
-    expect(captured[0].user).toContain('superseded prior');  // knowledge_update annotation
+    expect(captured[0].user).toContain("superseded prior"); // knowledge_update annotation
   });
 
   test('"other" intent → no trajectory block', async () => {
     const { client, captured } = captureClient();
     await runThink(engine, {
-      question: 'Summarize the deal pipeline',
+      question: "Summarize the deal pipeline",
       client,
     });
     expect(captured.length).toBe(1);
-    expect(captured[0].user).not.toContain('Known trajectory:');
-    expect(captured[0].user).not.toContain('<trajectory');
+    expect(captured[0].user).not.toContain("Known trajectory:");
+    expect(captured[0].user).not.toContain("<trajectory");
   });
 });
 
-describe('runThink — kill switches', () => {
-  test('withTrajectory: false bypasses injection even for temporal intent', async () => {
+describe("runThink — kill switches", () => {
+  test("withTrajectory: false bypasses injection even for temporal intent", async () => {
     const { client, captured } = captureClient();
     await runThink(engine, {
-      question: 'When did Marco last switch jobs?',
+      question: "When did Marco last switch jobs?",
       client,
       withTrajectory: false,
     });
-    expect(captured[0].user).not.toContain('Known trajectory:');
+    expect(captured[0].user).not.toContain("Known trajectory:");
   });
 
-  test('think.trajectory_enabled=false config bypasses injection', async () => {
+  test("think.trajectory_enabled=false config bypasses injection", async () => {
     await engine.executeRaw(
       `INSERT INTO config (key, value) VALUES ('think.trajectory_enabled', 'false')
-       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`
     );
     const { client, captured } = captureClient();
     await runThink(engine, {
-      question: 'When did Marco last switch jobs?',
+      question: "When did Marco last switch jobs?",
       client,
     });
-    expect(captured[0].user).not.toContain('Known trajectory:');
+    expect(captured[0].user).not.toContain("Known trajectory:");
     // Restore for subsequent tests
     await engine.executeRaw(`DELETE FROM config WHERE key = 'think.trajectory_enabled'`);
   });
 });
 
-describe('runThink — empty trajectory short-circuits', () => {
-  test('entity that resolves but has no trajectory rows → no block', async () => {
+describe("runThink — empty trajectory short-circuits", () => {
+  test("entity that resolves but has no trajectory rows → no block", async () => {
     // Seed an entity page with NO facts. Question references it.
-    await engine.putPage('people/empty-example', {
-      title: 'Empty Example',
-      type: 'person',
-      compiled_truth: 'No facts here.',
+    await engine.putPage("people/empty-example", {
+      title: "Empty Example",
+      type: "person",
+      compiled_truth: "No facts here.",
     });
     const { client, captured } = captureClient();
     await runThink(engine, {
-      question: 'When did empty last visit?',
+      question: "When did empty last visit?",
       client,
     });
     // No facts → empty trajectory → no block emitted (no cue).
     // We can't strictly assert the block is absent because retrieval
     // might pull in Marco's page if "empty" matches anything in the
     // brain, but we can assert that IF a block exists it's not for Empty.
-    if (captured[0].user.includes('Known trajectory:')) {
+    if (captured[0].user.includes("Known trajectory:")) {
       expect(captured[0].user).not.toContain('entity="people/empty-example"');
     }
   });
 });
 
-describe('runThink — graceful degradation', () => {
-  test('engine.findTrajectory throw is caught; think still returns', async () => {
+describe("runThink — graceful degradation", () => {
+  test("engine.findTrajectory throw is caught; think still returns", async () => {
     // Patch the engine to make findTrajectory throw briefly.
     const originalFn = engine.findTrajectory.bind(engine);
     (engine as { findTrajectory: typeof engine.findTrajectory }).findTrajectory = async () => {
-      throw new Error('synthetic engine failure');
+      throw new Error("synthetic engine failure");
     };
     try {
       const { client, captured } = captureClient();
       const result = await runThink(engine, {
-        question: 'When did Marco last switch jobs?',
+        question: "When did Marco last switch jobs?",
         client,
       });
       // Think doesn't crash; trajectory block is empty.
       expect(captured.length).toBe(1);
-      expect(captured[0].user).not.toContain('Known trajectory:');
+      expect(captured[0].user).not.toContain("Known trajectory:");
       // Note: per-candidate findTrajectory call is wrapped in
       // Promise.allSettled, so the throw is swallowed silently. The
       // outer try/catch in runThink only fires on errors in the
       // orchestration code itself (e.g. import failures).
-      expect(result.answer).toBe('stubbed answer');
+      expect(result.answer).toBe("stubbed answer");
     } finally {
       (engine as { findTrajectory: typeof engine.findTrajectory }).findTrajectory = originalFn;
     }
   });
 });
 
-describe('runThink — trajectory points count exposed via warnings', () => {
-  test('successful injection records TRAJECTORY_INJECTED_*_POINTS warning', async () => {
+describe("runThink — trajectory points count exposed via warnings", () => {
+  test("successful injection records TRAJECTORY_INJECTED_*_POINTS warning", async () => {
     const { client } = captureClient();
     const result = await runThink(engine, {
-      question: 'When did Marco last switch jobs?',
+      question: "When did Marco last switch jobs?",
       client,
     });
-    const trajectoryWarning = result.warnings.find(w => w.startsWith('TRAJECTORY_INJECTED_'));
+    const trajectoryWarning = result.warnings.find((w) => w.startsWith("TRAJECTORY_INJECTED_"));
     expect(trajectoryWarning).toBeDefined();
     // Marco has 3 facts (2 metric + 1 event); kind='all' returns all 3.
-    expect(trajectoryWarning).toContain('3');
+    expect(trajectoryWarning).toContain("3");
   });
 });
 
@@ -214,20 +223,20 @@ describe('runThink — trajectory points count exposed via warnings', () => {
 // Codex P6 flagged: do NOT invent a third ordering. Pin the placement
 // in both modes so future refactors can't drift into a hybrid shape.
 
-describe('runThink — calibration-mode trajectory placement', () => {
-  test('default mode: trajectory block lands AFTER retrieved blocks, BEFORE instruction', async () => {
+describe("runThink — calibration-mode trajectory placement", () => {
+  test("default mode: trajectory block lands AFTER retrieved blocks, BEFORE instruction", async () => {
     const { client, captured } = captureClient();
     await runThink(engine, {
-      question: 'When did Marco last switch jobs?',
+      question: "When did Marco last switch jobs?",
       client,
       // No withCalibration → default-mode prompt assembly.
     });
     const userMsg = captured[0].user;
-    const qIdx = userMsg.indexOf('Question:');
-    const pagesIdx = userMsg.indexOf('<pages>');
-    const takesIdx = userMsg.indexOf('<takes>');
-    const trajIdx = userMsg.indexOf('Known trajectory:');
-    const instructionIdx = userMsg.indexOf('Respond with a single JSON object');
+    const qIdx = userMsg.indexOf("Question:");
+    const pagesIdx = userMsg.indexOf("<pages>");
+    const takesIdx = userMsg.indexOf("<takes>");
+    const trajIdx = userMsg.indexOf("Known trajectory:");
+    const instructionIdx = userMsg.indexOf("Respond with a single JSON object");
 
     // Default mode order: question → pages → takes → trajectory → instruction
     expect(qIdx).toBeGreaterThanOrEqual(0);
@@ -237,15 +246,17 @@ describe('runThink — calibration-mode trajectory placement', () => {
     expect(instructionIdx).toBeGreaterThan(trajIdx);
   });
 
-  test('calibration mode: trajectory lands AFTER calibration block, BEFORE question', async () => {
+  test("calibration mode: trajectory lands AFTER calibration block, BEFORE question", async () => {
     // Seed a minimal calibration profile so withCalibration=true succeeds.
     // The real `calibration_profiles` schema (migration v68+) includes
     // source_id NOT NULL; we discover the schema dynamically via
     // information_schema and INSERT only required columns.
-    const cols = await engine.executeRaw<{ column_name: string; is_nullable: string }>(
-      `SELECT column_name, is_nullable FROM information_schema.columns
-        WHERE table_name = 'calibration_profiles'`,
-    ).catch(() => [] as Array<{ column_name: string; is_nullable: string }>);
+    const cols = await engine
+      .executeRaw<{ column_name: string; is_nullable: string }>(
+        `SELECT column_name, is_nullable FROM information_schema.columns
+        WHERE table_name = 'calibration_profiles'`
+      )
+      .catch(() => [] as Array<{ column_name: string; is_nullable: string }>);
     if (cols.length === 0) {
       // calibration_profiles table doesn't exist on this brain — bail.
       // The placement contract still holds for default mode (tested
@@ -257,7 +268,7 @@ describe('runThink — calibration-mode trajectory placement', () => {
       await engine.executeRaw(
         `INSERT INTO calibration_profiles (source_id, holder, pattern_statements, active_bias_tags, brier)
          VALUES ($1, $2, $3::text[], $4::text[], $5)`,
-        ['default', 'garry', ['test pattern'], ['test-bias'], 0.123],
+        ["default", "garry", ["test pattern"], ["test-bias"], 0.123]
       );
     } catch {
       // Schema mismatch (column added that we don't know about) → skip.
@@ -266,18 +277,18 @@ describe('runThink — calibration-mode trajectory placement', () => {
 
     const { client, captured } = captureClient();
     await runThink(engine, {
-      question: 'When did Marco last switch jobs?',
+      question: "When did Marco last switch jobs?",
       client,
       withCalibration: true,
-      calibrationHolder: 'garry',
+      calibrationHolder: "garry",
     });
     const userMsg = captured[0].user;
-    const pagesIdx = userMsg.indexOf('<pages>');
-    const takesIdx = userMsg.indexOf('<takes>');
-    const calibrationIdx = userMsg.indexOf('<calibration');
-    const trajIdx = userMsg.indexOf('Known trajectory:');
-    const qIdx = userMsg.indexOf('Question:');
-    const instructionIdx = userMsg.indexOf('Respond with a single JSON object');
+    const pagesIdx = userMsg.indexOf("<pages>");
+    const takesIdx = userMsg.indexOf("<takes>");
+    const calibrationIdx = userMsg.indexOf("<calibration");
+    const trajIdx = userMsg.indexOf("Known trajectory:");
+    const qIdx = userMsg.indexOf("Question:");
+    const instructionIdx = userMsg.indexOf("Respond with a single JSON object");
 
     if (calibrationIdx < 0) {
       // The calibration block didn't render — likely because the
@@ -298,20 +309,20 @@ describe('runThink — calibration-mode trajectory placement', () => {
     expect(instructionIdx).toBeGreaterThan(qIdx);
   });
 
-  test('no third prompt ordering: empty trajectory in calibration mode preserves the existing calibration shape', async () => {
+  test("no third prompt ordering: empty trajectory in calibration mode preserves the existing calibration shape", async () => {
     // 'other' intent → no trajectory block. Verify calibration mode's
     // shape is unchanged from the v0.36 baseline.
     const { client, captured } = captureClient();
     await runThink(engine, {
-      question: 'Summarize the deal pipeline',
+      question: "Summarize the deal pipeline",
       client,
       withCalibration: true,
-      calibrationHolder: 'garry',
+      calibrationHolder: "garry",
     });
     const userMsg = captured[0].user;
     // No trajectory header anywhere.
-    expect(userMsg).not.toContain('Known trajectory:');
-    expect(userMsg).not.toContain('<trajectory');
+    expect(userMsg).not.toContain("Known trajectory:");
+    expect(userMsg).not.toContain("<trajectory");
   });
 });
 
@@ -327,8 +338,8 @@ describe('runThink — calibration-mode trajectory placement', () => {
 // The think-path gate exists to avoid wasting findTrajectory SQL on
 // invented slugs in production where the brain has canonical pages.
 
-describe('runThink — resolution_source != fallback_slugify gate', () => {
-  test('candidate that only matches via fallback_slugify is NOT trajectory-queried', async () => {
+describe("runThink — resolution_source != fallback_slugify gate", () => {
+  test("candidate that only matches via fallback_slugify is NOT trajectory-queried", async () => {
     // The test brain has people/marco-example seeded — questions about
     // "marco" resolve via fuzzy_match → people/marco-example.
     // A question about an unseeded name ("zelda") would resolve via
@@ -351,7 +362,7 @@ describe('runThink — resolution_source != fallback_slugify gate', () => {
 
     const { client, captured } = captureClient();
     await runThink(engine, {
-      question: 'When did I last meet zelda?',
+      question: "When did I last meet zelda?",
       client,
     });
 

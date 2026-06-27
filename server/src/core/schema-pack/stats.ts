@@ -15,9 +15,9 @@
 // for human + JSON output, MCP handler in Phase 7 wires it through
 // the operation envelope.
 
-import type { BrainEngine } from '../engine.ts';
-import { loadActivePackBestEffort } from './best-effort.ts';
-import type { OperationContext } from '../operations.ts';
+import type { BrainEngine } from "../engine.ts";
+import { loadActivePackBestEffort } from "./best-effort.ts";
+import type { OperationContext } from "../operations.ts";
 
 export interface StatsOpts {
   /** Single source scope. Omit + omit sourceIds for whole-brain aggregate. */
@@ -68,20 +68,23 @@ interface RawCountRow {
 }
 
 function computeCoverage(typed: number, total: number): number {
-  if (total === 0) return 1.0;  // vacuous truth — matches getBrainScore pattern
+  if (total === 0) return 1.0; // vacuous truth — matches getBrainScore pattern
   return Math.round((typed / total) * 10000) / 10000;
 }
 
 function aggregateRows(rows: RawCountRow[]): PerSourceStats[] {
-  const bySource = new Map<string, { typed: number; untyped: number; total: number; byType: Map<string, number> }>();
+  const bySource = new Map<
+    string,
+    { typed: number; untyped: number; total: number; byType: Map<string, number> }
+  >();
   for (const r of rows) {
-    const sid = r.source_id ?? 'default';
+    const sid = r.source_id ?? "default";
     const cnt = parseInt(r.cnt, 10) || 0;
     if (!bySource.has(sid)) {
       bySource.set(sid, { typed: 0, untyped: 0, total: 0, byType: new Map() });
     }
     const bucket = bySource.get(sid)!;
-    if (r.type === null || r.type === '') {
+    if (r.type === null || r.type === "") {
       bucket.untyped += cnt;
     } else {
       bucket.typed += cnt;
@@ -108,7 +111,9 @@ function aggregateRows(rows: RawCountRow[]): PerSourceStats[] {
 }
 
 function mergeAggregate(per: PerSourceStats[]): PerSourceStats {
-  let typed = 0, untyped = 0, total = 0;
+  let typed = 0,
+    untyped = 0,
+    total = 0;
   const byType = new Map<string, number>();
   for (const s of per) {
     typed += s.typed_pages;
@@ -117,7 +122,7 @@ function mergeAggregate(per: PerSourceStats[]): PerSourceStats {
     for (const t of s.by_type) byType.set(t.type, (byType.get(t.type) ?? 0) + t.count);
   }
   return {
-    source_id: '*',
+    source_id: "*",
     total_pages: total,
     typed_pages: typed,
     untyped_pages: untyped,
@@ -140,7 +145,7 @@ function mergeAggregate(per: PerSourceStats[]): PerSourceStats {
  * + aggregate in one read.
  */
 async function fetchCountRows(engine: BrainEngine, opts: StatsOpts): Promise<RawCountRow[]> {
-  let where = 'WHERE deleted_at IS NULL';
+  let where = "WHERE deleted_at IS NULL";
   const params: unknown[] = [];
   if (opts.sourceIds && opts.sourceIds.length > 0) {
     where += ` AND source_id = ANY($1::text[])`;
@@ -178,11 +183,13 @@ async function fetchCountRows(engine: BrainEngine, opts: StatsOpts): Promise<Raw
  */
 async function detectDeadPrefixes(
   engine: BrainEngine,
-  pack: { manifest: { page_types: ReadonlyArray<{ name: string; path_prefixes: ReadonlyArray<string> }> } },
-  opts: StatsOpts,
+  pack: {
+    manifest: { page_types: ReadonlyArray<{ name: string; path_prefixes: ReadonlyArray<string> }> };
+  },
+  opts: StatsOpts
 ): Promise<DeadPrefixHint[]> {
   const hints: DeadPrefixHint[] = [];
-  let sourceWhere = '';
+  let sourceWhere = "";
   const sourceParam: unknown[] = [];
   if (opts.sourceIds && opts.sourceIds.length > 0) {
     sourceWhere = ` AND source_id = ANY($2::text[])`;
@@ -198,9 +205,9 @@ async function detectDeadPrefixes(
           `SELECT COUNT(*)::text AS cnt FROM pages
            WHERE deleted_at IS NULL
              AND source_path LIKE $1${sourceWhere}`,
-          [`${prefix}%`, ...sourceParam],
+          [`${prefix}%`, ...sourceParam]
         );
-        const cnt = parseInt(rows[0]?.cnt ?? '0', 10) || 0;
+        const cnt = parseInt(rows[0]?.cnt ?? "0", 10) || 0;
         if (cnt === 0) {
           hints.push({ type: t.name, prefix });
         }
@@ -220,7 +227,7 @@ async function detectDeadPrefixes(
  */
 export async function runStatsCore(
   ctx: OperationContext,
-  opts: StatsOpts = {},
+  opts: StatsOpts = {}
 ): Promise<StatsResult> {
   const rows = await fetchCountRows(ctx.engine, opts);
   const per_source = aggregateRows(rows);

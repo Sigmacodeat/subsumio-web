@@ -21,8 +21,8 @@
  * the RRF-deduped pipeline.
  */
 
-import type { BrainEngine } from '../engine.ts';
-import type { SearchResult } from '../types.ts';
+import type { BrainEngine } from "../engine.ts";
+import type { SearchResult } from "../types.ts";
 
 const MAX_WALK_DEPTH = 2;
 const NEIGHBOR_CAP_PER_HOP = 50;
@@ -40,7 +40,7 @@ interface ChunkWithScore {
   chunk_id: number;
   score: number;
   hop: number;
-  source: 'anchor' | 'neighbor';
+  source: "anchor" | "neighbor";
 }
 
 /**
@@ -51,15 +51,15 @@ interface ChunkWithScore {
 export async function expandAnchors(
   engine: BrainEngine,
   anchors: SearchResult[],
-  opts: TwoPassOpts = {},
+  opts: TwoPassOpts = {}
 ): Promise<ChunkWithScore[]> {
   const depth = Math.min(Math.max(opts.walkDepth ?? 0, 0), MAX_WALK_DEPTH);
   if (depth === 0 && !opts.nearSymbol) {
-    return anchors.map(a => ({
+    return anchors.map((a) => ({
       chunk_id: a.chunk_id,
       score: a.score,
       hop: 0,
-      source: 'anchor' as const,
+      source: "anchor" as const,
     }));
   }
 
@@ -69,7 +69,7 @@ export async function expandAnchors(
       chunk_id: a.chunk_id,
       score: a.score,
       hop: 0,
-      source: 'anchor',
+      source: "anchor",
     });
   }
 
@@ -89,16 +89,16 @@ export async function expandAnchors(
              JOIN pages p ON p.id = cc.page_id
              WHERE cc.symbol_name_qualified = $1 AND p.source_id = $2
              LIMIT 50`,
-            [opts.nearSymbol, opts.sourceId],
+            [opts.nearSymbol, opts.sourceId]
           )
         : await engine.executeRaw<{ id: number }>(
             `SELECT id FROM content_chunks WHERE symbol_name_qualified = $1 LIMIT 50`,
-            [opts.nearSymbol],
+            [opts.nearSymbol]
           );
       const baseScore = anchors.length > 0 ? anchors[0]!.score : 1.0;
       for (const r of rows) {
         if (!seen.has(r.id)) {
-          seen.set(r.id, { chunk_id: r.id, score: baseScore, hop: 0, source: 'anchor' });
+          seen.set(r.id, { chunk_id: r.id, score: baseScore, hop: 0, source: "anchor" });
         }
       }
     } catch {
@@ -108,7 +108,9 @@ export async function expandAnchors(
 
   // Walk N hops. Frontier advances each iteration; each expansion adds
   // unseen chunks with decayed scores.
-  let frontier = Array.from(seen.values()).filter(c => c.hop === 0).map(c => c.chunk_id);
+  let frontier = Array.from(seen.values())
+    .filter((c) => c.hop === 0)
+    .map((c) => c.chunk_id);
   for (let hop = 1; hop <= depth; hop++) {
     if (frontier.length === 0) break;
     const nextFrontier = new Set<number>();
@@ -118,10 +120,10 @@ export async function expandAnchors(
       const current = seen.get(chunkId);
       if (!current) continue;
 
-      let edges: import('../types.ts').CodeEdgeResult[] = [];
+      let edges: import("../types.ts").CodeEdgeResult[] = [];
       try {
         edges = await engine.getEdgesByChunk(chunkId, {
-          direction: 'both',
+          direction: "both",
           limit: NEIGHBOR_CAP_PER_HOP,
         });
       } catch {
@@ -153,11 +155,11 @@ export async function expandAnchors(
                  WHERE cc.symbol_name_qualified = ANY($1::text[])
                    AND p.source_id = $2
                  LIMIT ${NEIGHBOR_CAP_PER_HOP}`,
-                [unresolvedTargets, opts.sourceId],
+                [unresolvedTargets, opts.sourceId]
               )
             : await engine.executeRaw<{ id: number }>(
                 `SELECT id FROM content_chunks WHERE symbol_name_qualified = ANY($1::text[]) LIMIT ${NEIGHBOR_CAP_PER_HOP}`,
-                [unresolvedTargets],
+                [unresolvedTargets]
               );
           for (const r of resolved) directChunkIds.push(r.id);
         } catch {
@@ -168,7 +170,7 @@ export async function expandAnchors(
       for (const tid of directChunkIds) {
         if (seen.has(tid)) continue;
         const nbScore = current.score * decay;
-        seen.set(tid, { chunk_id: tid, score: nbScore, hop, source: 'neighbor' });
+        seen.set(tid, { chunk_id: tid, score: nbScore, hop, source: "neighbor" });
         nextFrontier.add(tid);
       }
     }
@@ -187,31 +189,41 @@ export async function expandAnchors(
  */
 export async function hydrateChunks(
   engine: BrainEngine,
-  chunkIds: number[],
+  chunkIds: number[]
 ): Promise<SearchResult[]> {
   if (chunkIds.length === 0) return [];
   const rows = await engine.executeRaw<{
-    slug: string; page_id: number; title: string; type: string; source_id: string;
-    chunk_id: number; chunk_index: number; chunk_text: string; chunk_source: string;
+    slug: string;
+    page_id: number;
+    title: string;
+    type: string;
+    source_id: string;
+    chunk_id: number;
+    chunk_index: number;
+    chunk_text: string;
+    chunk_source: string;
   }>(
     `SELECT p.slug, p.id as page_id, p.title, p.type, p.source_id,
             cc.id as chunk_id, cc.chunk_index, cc.chunk_text, cc.chunk_source
        FROM content_chunks cc
        JOIN pages p ON p.id = cc.page_id
        WHERE cc.id = ANY($1::int[])`,
-    [chunkIds],
+    [chunkIds]
   );
-  return rows.map((r) => ({
-    slug: r.slug,
-    page_id: r.page_id,
-    title: r.title,
-    type: r.type as import('../types.ts').PageType,
-    chunk_text: r.chunk_text,
-    chunk_source: r.chunk_source as 'compiled_truth' | 'timeline',
-    chunk_id: r.chunk_id,
-    chunk_index: r.chunk_index,
-    score: 0, // two-pass caller assigns scores.
-    stale: false,
-    source_id: r.source_id,
-  } as SearchResult));
+  return rows.map(
+    (r) =>
+      ({
+        slug: r.slug,
+        page_id: r.page_id,
+        title: r.title,
+        type: r.type as import("../types.ts").PageType,
+        chunk_text: r.chunk_text,
+        chunk_source: r.chunk_source as "compiled_truth" | "timeline",
+        chunk_id: r.chunk_id,
+        chunk_index: r.chunk_index,
+        score: 0, // two-pass caller assigns scores.
+        stale: false,
+        source_id: r.source_id,
+      }) as SearchResult
+  );
 }

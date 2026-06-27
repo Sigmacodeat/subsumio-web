@@ -17,13 +17,13 @@
  * format actionable messages.
  */
 
-import { readFileSync, existsSync } from 'fs';
-import { join } from 'path';
+import { readFileSync, existsSync } from "fs";
+import { join } from "path";
 
-import type { BundleManifest } from './bundle.ts';
+import type { BundleManifest } from "./bundle.ts";
 
 /** Current manifest API version. */
-export const SKILLPACK_API_VERSION = 'gbrain-skillpack-v1' as const;
+export const SKILLPACK_API_VERSION = "gbrain-skillpack-v1" as const;
 
 /** Current runbook schema version. */
 export const RUNBOOK_SCHEMA_VERSION = 1 as const;
@@ -82,35 +82,35 @@ export interface SkillpackManifest {
 
 /** Structured error code surface. */
 export type SkillpackManifestErrorCode =
-  | 'manifest_not_found'
-  | 'manifest_malformed_json'
-  | 'manifest_missing_field'
-  | 'manifest_invalid_field'
-  | 'manifest_unknown_api_version'
-  | 'manifest_unsupported_schema_version'
-  | 'manifest_skill_not_found';
+  | "manifest_not_found"
+  | "manifest_malformed_json"
+  | "manifest_missing_field"
+  | "manifest_invalid_field"
+  | "manifest_unknown_api_version"
+  | "manifest_unsupported_schema_version"
+  | "manifest_skill_not_found";
 
 export class SkillpackManifestError extends Error {
   constructor(
     message: string,
     public code: SkillpackManifestErrorCode,
-    public detail?: { field?: string; expected?: string; actual?: unknown },
+    public detail?: { field?: string; expected?: string; actual?: unknown }
   ) {
     super(message);
-    this.name = 'SkillpackManifestError';
+    this.name = "SkillpackManifestError";
   }
 }
 
 const REQUIRED_FIELDS = [
-  'api_version',
-  'name',
-  'version',
-  'description',
-  'author',
-  'license',
-  'homepage',
-  'gbrain_min_version',
-  'skills',
+  "api_version",
+  "name",
+  "version",
+  "description",
+  "author",
+  "license",
+  "homepage",
+  "gbrain_min_version",
+  "skills",
 ] as const;
 
 const NAME_RE = /^[a-z][a-z0-9-]{1,63}$/;
@@ -123,12 +123,12 @@ const SEMVER_RE = /^\d+\.\d+\.\d+(?:\.\d+)?(?:-[A-Za-z0-9._-]+)?$/;
  */
 export function validateSkillpackManifest(
   raw: unknown,
-  opts: { maxRunbookSchemaVersion?: number; maxEvalSchemaVersion?: number } = {},
+  opts: { maxRunbookSchemaVersion?: number; maxEvalSchemaVersion?: number } = {}
 ): SkillpackManifest {
-  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
     throw new SkillpackManifestError(
-      'skillpack.json must be a JSON object at the top level',
-      'manifest_malformed_json',
+      "skillpack.json must be a JSON object at the top level",
+      "manifest_malformed_json"
     );
   }
   const obj = raw as Record<string, unknown>;
@@ -137,8 +137,8 @@ export function validateSkillpackManifest(
     if (!(field in obj)) {
       throw new SkillpackManifestError(
         `skillpack.json is missing required field: ${field}`,
-        'manifest_missing_field',
-        { field },
+        "manifest_missing_field",
+        { field }
       );
     }
   }
@@ -146,116 +146,119 @@ export function validateSkillpackManifest(
   if (obj.api_version !== SKILLPACK_API_VERSION) {
     throw new SkillpackManifestError(
       `skillpack.json api_version must be "${SKILLPACK_API_VERSION}"; got ${JSON.stringify(obj.api_version)}`,
-      'manifest_unknown_api_version',
-      { field: 'api_version', expected: SKILLPACK_API_VERSION, actual: obj.api_version },
+      "manifest_unknown_api_version",
+      { field: "api_version", expected: SKILLPACK_API_VERSION, actual: obj.api_version }
     );
   }
 
-  if (typeof obj.name !== 'string' || !NAME_RE.test(obj.name)) {
+  if (typeof obj.name !== "string" || !NAME_RE.test(obj.name)) {
     throw new SkillpackManifestError(
       `name must be a lowercase kebab-case string (2-64 chars, [a-z0-9-], leading alpha); got ${JSON.stringify(obj.name)}`,
-      'manifest_invalid_field',
-      { field: 'name', expected: NAME_RE.source, actual: obj.name },
+      "manifest_invalid_field",
+      { field: "name", expected: NAME_RE.source, actual: obj.name }
     );
   }
 
-  if (typeof obj.version !== 'string' || !SEMVER_RE.test(obj.version)) {
+  if (typeof obj.version !== "string" || !SEMVER_RE.test(obj.version)) {
     throw new SkillpackManifestError(
       `version must be semver shape (e.g. "0.1.0" or "0.1.0.1"); got ${JSON.stringify(obj.version)}`,
-      'manifest_invalid_field',
-      { field: 'version', expected: SEMVER_RE.source, actual: obj.version },
+      "manifest_invalid_field",
+      { field: "version", expected: SEMVER_RE.source, actual: obj.version }
     );
   }
 
-  for (const field of ['description', 'author', 'license', 'homepage', 'gbrain_min_version']) {
+  for (const field of ["description", "author", "license", "homepage", "gbrain_min_version"]) {
     const value = obj[field];
-    if (typeof value !== 'string' || value.length === 0) {
+    if (typeof value !== "string" || value.length === 0) {
       throw new SkillpackManifestError(
         `${field} must be a non-empty string`,
-        'manifest_invalid_field',
-        { field, actual: value },
+        "manifest_invalid_field",
+        { field, actual: value }
       );
     }
   }
 
-  if (typeof obj.homepage === 'string' && !/^https?:\/\//.test(obj.homepage)) {
+  if (typeof obj.homepage === "string" && !/^https?:\/\//.test(obj.homepage)) {
     throw new SkillpackManifestError(
       `homepage must be an http(s) URL; got ${obj.homepage}`,
-      'manifest_invalid_field',
-      { field: 'homepage', actual: obj.homepage },
+      "manifest_invalid_field",
+      { field: "homepage", actual: obj.homepage }
     );
   }
 
   if (!SEMVER_RE.test(obj.gbrain_min_version as string)) {
     throw new SkillpackManifestError(
       `gbrain_min_version must be semver shape (e.g. "0.36.0"); got ${JSON.stringify(obj.gbrain_min_version)}`,
-      'manifest_invalid_field',
-      { field: 'gbrain_min_version', expected: SEMVER_RE.source, actual: obj.gbrain_min_version },
+      "manifest_invalid_field",
+      { field: "gbrain_min_version", expected: SEMVER_RE.source, actual: obj.gbrain_min_version }
     );
   }
 
   if (!Array.isArray(obj.skills) || obj.skills.length === 0) {
     throw new SkillpackManifestError(
       `skills must be a non-empty array of relative paths (e.g. ["skills/foo"])`,
-      'manifest_invalid_field',
-      { field: 'skills', actual: obj.skills },
+      "manifest_invalid_field",
+      { field: "skills", actual: obj.skills }
     );
   }
   for (const skillPath of obj.skills) {
-    if (typeof skillPath !== 'string' || !skillPath.startsWith('skills/') || skillPath.includes('..')) {
+    if (
+      typeof skillPath !== "string" ||
+      !skillPath.startsWith("skills/") ||
+      skillPath.includes("..")
+    ) {
       throw new SkillpackManifestError(
         `skills entries must be relative paths starting with "skills/" and free of ".." traversal; got ${JSON.stringify(skillPath)}`,
-        'manifest_invalid_field',
-        { field: 'skills', actual: skillPath },
+        "manifest_invalid_field",
+        { field: "skills", actual: skillPath }
       );
     }
   }
 
   // Optional fields — type check only when present.
   for (const arrField of [
-    'shared_deps',
-    'excluded_from_install',
-    'unit_tests',
-    'e2e_tests',
-    'llm_evals',
-    'routing_evals',
+    "shared_deps",
+    "excluded_from_install",
+    "unit_tests",
+    "e2e_tests",
+    "llm_evals",
+    "routing_evals",
   ]) {
     if (arrField in obj) {
       const v = obj[arrField];
-      if (!Array.isArray(v) || !v.every((x) => typeof x === 'string')) {
+      if (!Array.isArray(v) || !v.every((x) => typeof x === "string")) {
         throw new SkillpackManifestError(
           `${arrField}, if present, must be an array of strings`,
-          'manifest_invalid_field',
-          { field: arrField, actual: v },
+          "manifest_invalid_field",
+          { field: arrField, actual: v }
         );
       }
     }
   }
 
   if (obj.runbooks !== undefined) {
-    if (typeof obj.runbooks !== 'object' || obj.runbooks === null || Array.isArray(obj.runbooks)) {
+    if (typeof obj.runbooks !== "object" || obj.runbooks === null || Array.isArray(obj.runbooks)) {
       throw new SkillpackManifestError(
         `runbooks, if present, must be an object`,
-        'manifest_invalid_field',
-        { field: 'runbooks', actual: obj.runbooks },
+        "manifest_invalid_field",
+        { field: "runbooks", actual: obj.runbooks }
       );
     }
     const runbookObj = obj.runbooks as Record<string, unknown>;
-    if (runbookObj.bootstrap !== undefined && typeof runbookObj.bootstrap !== 'string') {
+    if (runbookObj.bootstrap !== undefined && typeof runbookObj.bootstrap !== "string") {
       throw new SkillpackManifestError(
         `runbooks.bootstrap must be a string path`,
-        'manifest_invalid_field',
-        { field: 'runbooks.bootstrap', actual: runbookObj.bootstrap },
+        "manifest_invalid_field",
+        { field: "runbooks.bootstrap", actual: runbookObj.bootstrap }
       );
     }
   }
 
-  if (obj.changelog !== undefined && typeof obj.changelog !== 'string') {
-    throw new SkillpackManifestError(
-      `changelog must be a string path`,
-      'manifest_invalid_field',
-      { field: 'changelog', actual: obj.changelog },
-    );
+  if (obj.changelog !== undefined && typeof obj.changelog !== "string") {
+    throw new SkillpackManifestError(`changelog must be a string path`, "manifest_invalid_field", {
+      field: "changelog",
+      actual: obj.changelog,
+    });
   }
 
   // Schema-version forward-compat (codex outside-voice gap).
@@ -263,35 +266,35 @@ export function validateSkillpackManifest(
   const maxEval = opts.maxEvalSchemaVersion ?? EVAL_SCHEMA_VERSION;
   if (obj.runbook_schema_version !== undefined) {
     const v = obj.runbook_schema_version;
-    if (typeof v !== 'number' || !Number.isInteger(v) || v < 1) {
+    if (typeof v !== "number" || !Number.isInteger(v) || v < 1) {
       throw new SkillpackManifestError(
         `runbook_schema_version must be a positive integer`,
-        'manifest_invalid_field',
-        { field: 'runbook_schema_version', actual: v },
+        "manifest_invalid_field",
+        { field: "runbook_schema_version", actual: v }
       );
     }
     if (v > maxRunbook) {
       throw new SkillpackManifestError(
         `runbook_schema_version ${v} exceeds maximum supported (${maxRunbook}). Run \`gbrain upgrade\``,
-        'manifest_unsupported_schema_version',
-        { field: 'runbook_schema_version', expected: `<= ${maxRunbook}`, actual: v },
+        "manifest_unsupported_schema_version",
+        { field: "runbook_schema_version", expected: `<= ${maxRunbook}`, actual: v }
       );
     }
   }
   if (obj.eval_schema_version !== undefined) {
     const v = obj.eval_schema_version;
-    if (typeof v !== 'number' || !Number.isInteger(v) || v < 1) {
+    if (typeof v !== "number" || !Number.isInteger(v) || v < 1) {
       throw new SkillpackManifestError(
         `eval_schema_version must be a positive integer`,
-        'manifest_invalid_field',
-        { field: 'eval_schema_version', actual: v },
+        "manifest_invalid_field",
+        { field: "eval_schema_version", actual: v }
       );
     }
     if (v > maxEval) {
       throw new SkillpackManifestError(
         `eval_schema_version ${v} exceeds maximum supported (${maxEval}). Run \`gbrain upgrade\``,
-        'manifest_unsupported_schema_version',
-        { field: 'eval_schema_version', expected: `<= ${maxEval}`, actual: v },
+        "manifest_unsupported_schema_version",
+        { field: "eval_schema_version", expected: `<= ${maxEval}`, actual: v }
       );
     }
   }
@@ -305,21 +308,21 @@ export function validateSkillpackManifest(
  * unknown api_version, or skill directory missing on disk.
  */
 export function loadSkillpackManifest(packRoot: string): SkillpackManifest {
-  const manifestPath = join(packRoot, 'skillpack.json');
+  const manifestPath = join(packRoot, "skillpack.json");
   if (!existsSync(manifestPath)) {
     throw new SkillpackManifestError(
       `skillpack.json not found at ${manifestPath}`,
-      'manifest_not_found',
+      "manifest_not_found"
     );
   }
 
   let raw: unknown;
   try {
-    raw = JSON.parse(readFileSync(manifestPath, 'utf-8'));
+    raw = JSON.parse(readFileSync(manifestPath, "utf-8"));
   } catch (err) {
     throw new SkillpackManifestError(
       `skillpack.json is not valid JSON: ${(err as Error).message}`,
-      'manifest_malformed_json',
+      "manifest_malformed_json"
     );
   }
 
@@ -331,8 +334,8 @@ export function loadSkillpackManifest(packRoot: string): SkillpackManifest {
     if (!existsSync(abs)) {
       throw new SkillpackManifestError(
         `skillpack.json declares skill "${skillPath}" but ${abs} does not exist`,
-        'manifest_skill_not_found',
-        { field: 'skills', actual: skillPath },
+        "manifest_skill_not_found",
+        { field: "skills", actual: skillPath }
       );
     }
   }

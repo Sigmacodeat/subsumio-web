@@ -9,10 +9,7 @@ import type { NextRequest } from "next/server";
 export function validateCronAuth(req: NextRequest): Response | null {
   const secret = process.env.CRON_SECRET;
   if (!secret) {
-    return Response.json(
-      { error: "cron_not_configured" },
-      { status: 503 },
-    );
+    return Response.json({ error: "cron_not_configured" }, { status: 503 });
   }
   const auth = req.headers.get("authorization");
   const expected = `Bearer ${secret}`;

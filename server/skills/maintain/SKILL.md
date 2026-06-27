@@ -42,6 +42,7 @@ Periodic brain health checks and cleanup.
 ## Contract
 
 This skill guarantees:
+
 - All health dimensions are checked (stale, orphan, dead links, cross-refs, backlinks, citations, filing, tags)
 - Each issue found has a specific fix action
 - Back-link iron law is enforced
@@ -72,6 +73,7 @@ pages → `graph_coverage` caps at 70; unconfigured embedding key → caps at 60
 the command bails with a list of what's missing rather than looping.
 
 Use the per-dimension walk below (Phase 2 onward) when:
+
 - The user explicitly asks for a dimension-by-dimension audit
 - You're investigating why score is stuck below `--remediate`'s ceiling
 - A specific dimension needs manual judgment that the auto path skips
@@ -82,33 +84,46 @@ Use the per-dimension walk below (Phase 2 onward) when:
 2. **Check each dimension:**
 
 ### Stale pages
+
 Pages where compiled_truth is older than the latest timeline entry. The assessment hasn't been updated to reflect recent evidence.
+
 - Check the health output for stale page count
 - For each stale page: read the page from gbrain, review timeline, determine if compiled_truth needs rewriting
 
 ### Orphan pages
+
 Pages with zero inbound links. Nobody references them.
+
 - Review orphans: are they genuinely isolated or just missing links?
 - Add links in gbrain from related pages or flag for deletion
 
 ### Dead links
+
 Links pointing to pages that don't exist.
+
 - Remove dead links in gbrain
 
 ### Missing cross-references
+
 Pages that mention entity names but don't have formal links.
+
 - Read compiled_truth from gbrain, extract entity mentions, create links in gbrain
 
 ### Link graph extraction
+
 If link_count is 0 or low relative to page_count, run batch extraction:
+
 ```bash
 gbrain extract links --dir ~/brain
 ```
+
 This scans all markdown files for entity references, See Also sections, and
 frontmatter fields, then creates typed links in the database.
 
 ### Timeline extraction
+
 If timeline_entry_count is 0, extract structured timeline from markdown:
+
 ```bash
 gbrain extract timeline --dir ~/brain
 ```
@@ -139,6 +154,7 @@ pages to `wiki/personal/patterns/<theme>` when ≥`dream.patterns.min_evidence`
 (default 3) reflections support a pattern.
 
 **Quality bar (Iron Law for synthesis):**
+
 1. Quote the user verbatim. Do not paraphrase memorable phrasings.
 2. Cross-reference compulsively: every new page MUST have at least one wikilink.
 3. Slug discipline: lowercase alphanumeric and hyphens only. NO underscores, NO file extensions.
@@ -157,8 +173,7 @@ so re-running on the same content is a no-op. `dream.synthesize.exclude_patterns
 Each entry is auto-wrapped as a word-boundary regex (e.g. `medical` matches
 "medical advice" but NOT "comedical"). Power users may pass full regex.
 
-**Cooldown:** the cycle's spend cap. `dream.synthesize.cooldown_hours` (default
-12) means at most ~2 synthesize runs per day under autopilot. The completion
+**Cooldown:** the cycle's spend cap. `dream.synthesize.cooldown_hours` (default 12) means at most ~2 synthesize runs per day under autopilot. The completion
 timestamp is stored in `dream.synthesize.last_completion_ts` and is written
 ONLY on successful runs (not on skipped/failed). Explicit `--input` /
 `--date` / `--from` / `--to` invocations bypass cooldown.
@@ -167,6 +182,7 @@ ONLY on successful runs (not on skipped/failed). Explicit `--input` /
 verdicts) but skips the Sonnet synthesis pass. NOT zero LLM calls.
 
 **Configure synthesize on a fresh brain:**
+
 ```bash
 gbrain config set dream.synthesize.session_corpus_dir /path/to/transcripts
 gbrain config set dream.synthesize.enabled true
@@ -175,6 +191,7 @@ gbrain dream                                       # full 8-phase cycle
 ```
 
 **Invocation patterns:**
+
 ```bash
 gbrain dream                                          # full cycle
 gbrain dream --phase synthesize                       # just synthesize
@@ -191,20 +208,26 @@ Parses `- **YYYY-MM-DD** | Source — Summary` and `### YYYY-MM-DD — Title` fo
 Note: extracted entries improve structured queries (`gbrain timeline`), not vector search.
 
 ### Autopilot check
+
 Verify autopilot is running:
+
 ```bash
 gbrain autopilot --status
 ```
+
 If not running, install it:
+
 ```bash
 gbrain autopilot --install --repo ~/brain
 ```
+
 Autopilot runs sync, extract, and embed in a continuous loop with adaptive scheduling.
 In v0.11.1+, autopilot dispatches each cycle as a single `autopilot-cycle`
 Minion job and supervises the worker child — one install step gives you
 sync + extract + embed + backlinks + durable job processing.
 
 ### Fix a half-migrated install
+
 A v0.11.0 install where the migration skill never fired leaves Minions
 partially set up: schema is applied, but `~/.gbrain/preferences.json`
 doesn't exist, autopilot runs inline, host manifests still reference
@@ -225,7 +248,9 @@ gbrain apply-migrations --yes
 Full troubleshooting guide: `docs/guides/minions-fix.md`.
 
 ### Back-link enforcement
+
 Check that the back-linking iron law is being followed:
+
 - For each recently updated page, check if entities mentioned in it have
   corresponding back-links FROM those entity pages
 - A mention without a back-link is a broken brain
@@ -233,7 +258,9 @@ Check that the back-linking iron law is being followed:
 - Format: `- **YYYY-MM-DD** | Referenced in [page title](path) -- brief context`
 
 ### Filing rule violations
+
 Check for common misfiling patterns (see `skills/_brain-filing-rules.md`):
+
 - Content with clear primary subjects filed in `sources/` instead of the
   appropriate directory (people/, companies/, concepts/, etc.)
 - Use gbrain search to find pages in `sources/` that reference specific
@@ -241,14 +268,18 @@ Check for common misfiling patterns (see `skills/_brain-filing-rules.md`):
 - Flag misfiled pages for review or re-filing
 
 ### Citation audit
+
 Spot-check pages for missing `[Source: ...]` citations:
+
 - Read 5-10 recently updated pages
 - Check that compiled truth (above the line) has inline citations
 - Check that timeline entries have source attribution
 - Flag pages where facts appear without provenance
 
 ### Tag consistency
+
 Inconsistent tagging (e.g., "vc" vs "venture-capital", "ai" vs "artificial-intelligence").
+
 - Standardize to the most common variant using gbrain tag operations
 
 ### Graph population (v0.10.3+)
@@ -280,22 +311,28 @@ So link-extract is mostly a one-time backfill. timeline-extract should be re-run
 after bulk imports or content edits that add new dated entries.
 
 ### Embedding freshness
+
 Chunks without embeddings, or chunks embedded with an old model.
+
 - For large embedding refreshes (>1000 chunks), use nohup:
   `nohup gbrain embed refresh > /tmp/gbrain-embed.log 2>&1 &`
 - Then check progress: `tail -1 /tmp/gbrain-embed.log`
 
 ### Security (RLS verification)
+
 Run `gbrain doctor --json` and check the RLS status.
 All tables should show RLS enabled. If not, run `gbrain init` again.
 
 ### Schema health
+
 Check that the schema version is up to date. `gbrain doctor --json` reports
 the current version vs expected. If behind, `gbrain init` runs migrations
 automatically.
 
 ### File storage health
+
 Check the integrity of stored files and redirect pointers:
+
 - Run `gbrain files verify` to check all DB records have valid data
 - Run `gbrain files status` to see migration state (local, mirrored, redirected)
 - Check for orphan `.redirect.yaml` pointers that reference missing storage files
@@ -303,7 +340,9 @@ Check the integrity of stored files and redirect pointers:
 - If storage backend is configured: verify redirect pointers resolve (download test)
 
 ### Open threads
+
 Timeline items older than 30 days with unresolved action items.
+
 - Flag for review
 
 ## Benchmark Testing
@@ -320,6 +359,7 @@ Compare results from `gbrain search` (keyword) vs `gbrain query` (hybrid).
 Quality matters more than speed (2.5s right > 200ms wrong).
 
 When to run benchmarks:
+
 - After major brain imports or re-imports
 - After gbrain version upgrades
 - After embedding regeneration
@@ -340,6 +380,7 @@ staleness.
 
 Run `gbrain embed --stale` to refresh embeddings for pages that have changed since
 their last embedding. For large brains (>5000 pages), run this with nohup:
+
 ```bash
 nohup gbrain embed --stale > /tmp/gbrain-embed.log 2>&1 &
 ```
@@ -358,6 +399,7 @@ compiled truth rewrite (see the maintain workflow above).
 ## Report Storage
 
 After maintenance runs, save a report:
+
 - Health check results (before/after scores for each dimension)
 - Back-link violations found and fixed
 - Filing rule violations found

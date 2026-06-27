@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 import { getStore, getOrgStore } from "@/lib/auth/store";
 import { signActionToken, bindFragment, INVITE_TOKEN_TTL_SECONDS } from "@/lib/auth/tokens";
@@ -48,7 +47,7 @@ export const POST = createHandler(
 
     const token = await signActionToken(
       { uid: ctx.user.id, purpose: "invite", bind: await bindFragment(`${org.id}:${email}`) },
-      INVITE_TOKEN_TTL_SECONDS,
+      INVITE_TOKEN_TTL_SECONDS
     );
     const joinUrl = `${siteUrl()}/join?token=${encodeURIComponent(token)}&org=${encodeURIComponent(org.id)}&email=${encodeURIComponent(email)}`;
 
@@ -67,5 +66,5 @@ export const POST = createHandler(
       return Response.json({ ok: true, devJoinUrl: joinUrl });
     }
     return Response.json({ ok: true });
-  },
+  }
 );

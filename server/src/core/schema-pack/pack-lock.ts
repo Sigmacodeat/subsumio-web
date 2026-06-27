@@ -28,15 +28,15 @@
 // so two different packs never block each other. Honors `GBRAIN_HOME`
 // via the shared `gbrainPath()` helper.
 
-import { closeSync, mkdirSync, openSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { gbrainPath } from '../config.ts';
+import { closeSync, mkdirSync, openSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { gbrainPath } from "../config.ts";
 
 export const DEFAULT_LOCK_TTL_MS = 60_000;
 export const REFRESH_INTERVAL_MS = 10_000;
 export const DEFAULT_WAIT_TIMEOUT_MS = 0; // 0 = fail-immediately on EEXIST
 
-export type LockOutcome = 'acquired' | 'stolen_stale' | 'forced';
+export type LockOutcome = "acquired" | "stolen_stale" | "forced";
 
 export interface PackLockOpts {
   /** TTL in ms before another acquirer considers the lock stale. Default 60s. */
@@ -69,13 +69,13 @@ export interface LockFileRecord {
 }
 
 export class PackLockBusyError extends Error {
-  readonly code = 'LOCK_BUSY' as const;
+  readonly code = "LOCK_BUSY" as const;
   readonly heldBy: number;
   readonly ageMs: number;
   readonly ttlMs: number;
   constructor(message: string, opts: { heldBy: number; ageMs: number; ttlMs: number }) {
     super(message);
-    this.name = 'PackLockBusyError';
+    this.name = "PackLockBusyError";
     this.heldBy = opts.heldBy;
     this.ageMs = opts.ageMs;
     this.ttlMs = opts.ttlMs;
@@ -90,24 +90,24 @@ function defaultIsPidAlive(pid: number): boolean {
   } catch (err) {
     const code = (err as NodeJS.ErrnoException).code;
     // EPERM means the process exists but we lack permission to signal.
-    return code === 'EPERM';
+    return code === "EPERM";
   }
 }
 
 function resolveLockPath(packName: string, lockDir?: string): string {
-  const dir = lockDir ?? gbrainPath('schema-packs', '.locks');
+  const dir = lockDir ?? gbrainPath("schema-packs", ".locks");
   return join(dir, `${packName}.lock`);
 }
 
 function readLockFile(path: string): LockFileRecord | null {
   try {
-    const raw = readFileSync(path, 'utf-8');
+    const raw = readFileSync(path, "utf-8");
     const parsed = JSON.parse(raw) as Partial<LockFileRecord>;
     if (
-      typeof parsed.pid === 'number' &&
-      typeof parsed.ts === 'number' &&
-      typeof parsed.ttlMs === 'number' &&
-      typeof parsed.hostname === 'string'
+      typeof parsed.pid === "number" &&
+      typeof parsed.ts === "number" &&
+      typeof parsed.ttlMs === "number" &&
+      typeof parsed.hostname === "string"
     ) {
       return parsed as LockFileRecord;
     }
@@ -121,7 +121,7 @@ function writeLockRecord(path: string, fd: number, record: LockFileRecord): void
   // We hold an open fd from the atomic create; truncate-and-write via fd.
   // Bun's fs.writeFileSync(path, ...) when the file exists is fine here
   // because we already own the lock (exclusive create succeeded).
-  writeFileSync(path, JSON.stringify(record), 'utf-8');
+  writeFileSync(path, JSON.stringify(record), "utf-8");
   // Keep the fd open until release so file is held by this process; some
   // FS layers prefer this for crash detection. (Functionally a no-op on
   // POSIX where unlink() works regardless.)
@@ -135,12 +135,12 @@ function writeLockRecord(path: string, fd: number, record: LockFileRecord): void
  */
 function atomicAcquire(lockPath: string): number {
   try {
-    return openSync(lockPath, 'wx');
+    return openSync(lockPath, "wx");
   } catch (err) {
     const code = (err as NodeJS.ErrnoException).code;
-    if (code === 'ENOENT') {
+    if (code === "ENOENT") {
       mkdirSync(dirname(lockPath), { recursive: true });
-      return openSync(lockPath, 'wx');
+      return openSync(lockPath, "wx");
     }
     throw err;
   }
@@ -153,12 +153,12 @@ function atomicAcquire(lockPath: string): number {
 export function isLockStale(
   record: LockFileRecord,
   now: number,
-  isPidAlive: (pid: number) => boolean,
-): { stale: boolean; reason: 'ttl_expired' | 'pid_dead' | 'live' } {
+  isPidAlive: (pid: number) => boolean
+): { stale: boolean; reason: "ttl_expired" | "pid_dead" | "live" } {
   const ageMs = now - record.ts;
-  if (ageMs > record.ttlMs) return { stale: true, reason: 'ttl_expired' };
-  if (!isPidAlive(record.pid)) return { stale: true, reason: 'pid_dead' };
-  return { stale: false, reason: 'live' };
+  if (ageMs > record.ttlMs) return { stale: true, reason: "ttl_expired" };
+  if (!isPidAlive(record.pid)) return { stale: true, reason: "pid_dead" };
+  return { stale: false, reason: "live" };
 }
 
 /**
@@ -168,26 +168,29 @@ export function isLockStale(
  */
 export function acquirePackLock(
   packName: string,
-  opts: PackLockOpts = {},
+  opts: PackLockOpts = {}
 ): { lockPath: string; outcome: LockOutcome; record: LockFileRecord } {
   const ttlMs = opts.ttlMs ?? DEFAULT_LOCK_TTL_MS;
   const now = opts.now ?? Date.now;
   const isPidAlive = opts.isPidAlive ?? defaultIsPidAlive;
   const lockPath = resolveLockPath(packName, opts.lockDir);
 
-  const tryOnce = (): number | 'EEXIST' => {
+  const tryOnce = (): number | "EEXIST" => {
     try {
       return atomicAcquire(lockPath);
     } catch (err) {
-      if ((err as NodeJS.ErrnoException).code === 'EEXIST') return 'EEXIST';
+      if ((err as NodeJS.ErrnoException).code === "EEXIST") return "EEXIST";
       throw err;
     }
   };
 
-  const writeNew = (fd: number, outcome: LockOutcome): { lockPath: string; outcome: LockOutcome; record: LockFileRecord } => {
+  const writeNew = (
+    fd: number,
+    outcome: LockOutcome
+  ): { lockPath: string; outcome: LockOutcome; record: LockFileRecord } => {
     const record: LockFileRecord = {
       pid: process.pid,
-      hostname: process.env.HOSTNAME ?? 'unknown',
+      hostname: process.env.HOSTNAME ?? "unknown",
       ts: now(),
       ttlMs,
     };
@@ -197,43 +200,51 @@ export function acquirePackLock(
 
   // First attempt: clean acquire.
   const first = tryOnce();
-  if (first !== 'EEXIST') return writeNew(first, 'acquired');
+  if (first !== "EEXIST") return writeNew(first, "acquired");
 
   // EEXIST: inspect.
   const existing = readLockFile(lockPath);
   if (existing === null) {
     // Lockfile is corrupt — treat as stale and steal.
-    try { unlinkSync(lockPath); } catch { /* race with another stealer; retry below */ }
+    try {
+      unlinkSync(lockPath);
+    } catch {
+      /* race with another stealer; retry below */
+    }
     const retry = tryOnce();
-    if (retry === 'EEXIST') {
+    if (retry === "EEXIST") {
       throw new PackLockBusyError(
         `pack ${packName} lock is corrupt and another process re-acquired it during recovery`,
-        { heldBy: -1, ageMs: 0, ttlMs },
+        { heldBy: -1, ageMs: 0, ttlMs }
       );
     }
-    return writeNew(retry, 'stolen_stale');
+    return writeNew(retry, "stolen_stale");
   }
 
   const staleness = isLockStale(existing, now(), isPidAlive);
   if (staleness.stale || opts.force) {
-    try { unlinkSync(lockPath); } catch { /* race with another stealer; retry below */ }
+    try {
+      unlinkSync(lockPath);
+    } catch {
+      /* race with another stealer; retry below */
+    }
     const retry = tryOnce();
-    if (retry === 'EEXIST') {
+    if (retry === "EEXIST") {
       // Another stealer won. Surface as busy with the current holder.
       const current = readLockFile(lockPath);
       const ageMs = current ? now() - current.ts : 0;
       throw new PackLockBusyError(
-        `pack ${packName} lock was stolen by another process during our recovery (pid=${current?.pid ?? '?'})`,
-        { heldBy: current?.pid ?? -1, ageMs, ttlMs: current?.ttlMs ?? ttlMs },
+        `pack ${packName} lock was stolen by another process during our recovery (pid=${current?.pid ?? "?"})`,
+        { heldBy: current?.pid ?? -1, ageMs, ttlMs: current?.ttlMs ?? ttlMs }
       );
     }
-    return writeNew(retry, opts.force ? 'forced' : 'stolen_stale');
+    return writeNew(retry, opts.force ? "forced" : "stolen_stale");
   }
 
   // Live and non-stale: refuse.
   throw new PackLockBusyError(
     `pack ${packName} is locked by pid=${existing.pid} (held ${Math.round((now() - existing.ts) / 1000)}s, ttl=${Math.round(existing.ttlMs / 1000)}s; --force to steal)`,
-    { heldBy: existing.pid, ageMs: now() - existing.ts, ttlMs: existing.ttlMs },
+    { heldBy: existing.pid, ageMs: now() - existing.ts, ttlMs: existing.ttlMs }
   );
 }
 
@@ -246,7 +257,7 @@ export function acquirePackLock(
 function refreshLock(lockPath: string, record: LockFileRecord, now: number): boolean {
   try {
     const next: LockFileRecord = { ...record, ts: now };
-    writeFileSync(lockPath, JSON.stringify(next), 'utf-8');
+    writeFileSync(lockPath, JSON.stringify(next), "utf-8");
     return true;
   } catch {
     return false;
@@ -261,9 +272,11 @@ function releasePackLock(lockPath: string): void {
   try {
     unlinkSync(lockPath);
   } catch (err) {
-    if ((err as NodeJS.ErrnoException).code !== 'ENOENT') {
+    if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
       // Don't throw from a finally path — log to stderr and move on.
-      process.stderr.write(`[pack-lock] release failed for ${lockPath}: ${(err as Error).message}\n`);
+      process.stderr.write(
+        `[pack-lock] release failed for ${lockPath}: ${(err as Error).message}\n`
+      );
     }
   }
 }
@@ -278,7 +291,7 @@ function releasePackLock(lockPath: string): void {
 export async function withPackLock<T>(
   packName: string,
   opts: PackLockOpts,
-  fn: () => Promise<T> | T,
+  fn: () => Promise<T> | T
 ): Promise<T> {
   const acquired = acquirePackLock(packName, opts);
   const now = opts.now ?? Date.now;
@@ -288,7 +301,7 @@ export async function withPackLock<T>(
     refreshLock(acquired.lockPath, currentRecord, now());
   }, REFRESH_INTERVAL_MS);
   // Don't keep the process alive just for the refresh timer.
-  if (typeof (refresh as NodeJS.Timer).unref === 'function') (refresh as NodeJS.Timer).unref();
+  if (typeof (refresh as NodeJS.Timer).unref === "function") (refresh as NodeJS.Timer).unref();
   try {
     return await fn();
   } finally {

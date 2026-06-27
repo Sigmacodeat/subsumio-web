@@ -32,6 +32,7 @@ never changes.
 (voice-to-brain, remote MCP) depend on this. Set it up first.
 
 **Why this matters:**
+
 - Voice-to-brain needs a public URL for Twilio webhooks
 - Remote MCP needs a public URL for Claude Desktop and Perplexity
 - Free ngrok URLs change on every restart, breaking all integrations
@@ -69,6 +70,7 @@ Twilio webhooks and Claude Desktop connection.
 4. Copy your **Authtoken** and paste it to me"
 
 Validate:
+
 ```bash
 ngrok config add-authtoken $NGROK_AUTHTOKEN \
   && echo "PASS: ngrok configured" \
@@ -76,6 +78,7 @@ ngrok config add-authtoken $NGROK_AUTHTOKEN \
 ```
 
 If ngrok is not installed:
+
 - **Mac:** `brew install ngrok`
 - **Linux:** `curl -sL https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.tgz | tar xz -C /usr/local/bin`
 
@@ -84,11 +87,7 @@ If ngrok is not installed:
 ### Step 2: Claim a Fixed Domain
 
 Tell the user:
-"1. Go to https://dashboard.ngrok.com/domains
-2. Click **'+ New Domain'**
-3. Choose a name (e.g., `your-brain.ngrok.app`)
-4. Click **'Create'**
-5. Tell me the domain name you chose"
+"1. Go to https://dashboard.ngrok.com/domains 2. Click **'+ New Domain'** 3. Choose a name (e.g., `your-brain.ngrok.app`) 4. Click **'Create'** 5. Tell me the domain name you chose"
 
 If user stayed on free tier (no fixed domain), note that URLs will change on
 restart and the watchdog will need to update Twilio. Recommend upgrading later.
@@ -104,6 +103,7 @@ ngrok http 8765
 ```
 
 Verify:
+
 ```bash
 curl -sf http://localhost:4040/api/tunnels \
   && echo "PASS: ngrok tunnel active" \
@@ -155,6 +155,7 @@ fi
 ```
 
 Add to crontab:
+
 ```bash
 */2 * * * * NGROK_DOMAIN=your-brain.ngrok.app /path/to/ngrok-watchdog.sh >> /tmp/ngrok-watchdog.log 2>&1
 ```
@@ -169,6 +170,7 @@ echo '{"ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","event":"setup_complete","source_
 ## Connecting AI Clients (after tunnel is running)
 
 **Claude Code:**
+
 ```bash
 claude mcp add gbrain -t http https://your-brain.ngrok.app/mcp \
   -H "Authorization: Bearer YOUR_GBRAIN_TOKEN"
@@ -237,13 +239,13 @@ to debug MCP connection issues (see request/response headers, latency, errors).
 
 ## Cost Estimate
 
-| Component | Monthly Cost |
-|-----------|-------------|
-| ngrok Free | $0 (ephemeral URLs, change on restart) |
-| ngrok Hobby | $8/mo (1 fixed domain, enough for MCP + voice) |
-| ngrok Pro | $20/mo (2+ domains, IP restrictions) |
-| **Recommended** | **$8/mo (Hobby)** |
+| Component       | Monthly Cost                                   |
+| --------------- | ---------------------------------------------- |
+| ngrok Free      | $0 (ephemeral URLs, change on restart)         |
+| ngrok Hobby     | $8/mo (1 fixed domain, enough for MCP + voice) |
+| ngrok Pro       | $20/mo (2+ domains, IP restrictions)           |
+| **Recommended** | **$8/mo (Hobby)**                              |
 
 ---
 
-*Part of the [GBrain Skillpack](../docs/GBRAIN_SKILLPACK.md). See also: [Voice-to-Brain](twilio-voice-brain.md), [Remote MCP Deployment](../docs/mcp/DEPLOY.md)*
+_Part of the [GBrain Skillpack](../docs/GBRAIN_SKILLPACK.md). See also: [Voice-to-Brain](twilio-voice-brain.md), [Remote MCP Deployment](../docs/mcp/DEPLOY.md)_

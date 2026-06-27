@@ -28,26 +28,26 @@
  * if precision@HIGH < 0.75; fail PR if < 0.50.
  */
 
-import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync, statSync } from 'fs';
-import { join, resolve } from 'path';
-import { homedir } from 'os';
-import type { BrainEngine } from '../core/engine.ts';
+import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync, statSync } from "fs";
+import { join, resolve } from "path";
+import { homedir } from "os";
+import type { BrainEngine } from "../core/engine.ts";
 
 const DEFAULT_TARGETS = { high: 20, medium: 20, low: 10 } as const;
-const DEFAULT_CORPUS_DIRS = ['meetings/', 'personal/', 'daily/'] as const;
+const DEFAULT_CORPUS_DIRS = ["meetings/", "personal/", "daily/"] as const;
 const MIN_PARAGRAPH_CHARS = 80;
 const MAX_PARAGRAPH_CHARS = 800;
-const HAIKU_BATCH_SIZE = 10;  // candidates pre-classified per LLM call
+const HAIKU_BATCH_SIZE = 10; // candidates pre-classified per LLM call
 
 export interface MinedCandidate {
-  path: string;       // relative path within brain repo
+  path: string; // relative path within brain repo
   paragraph: string;
-  predicted_tier: 'high' | 'medium' | 'low';
+  predicted_tier: "high" | "medium" | "low";
   predicted_at: string;
 }
 
 export interface ConfirmedCase extends MinedCandidate {
-  confirmed_tier: 'high' | 'medium' | 'low';
+  confirmed_tier: "high" | "medium" | "low";
   confirmed_at: string;
   /** Optional anonymized version (replaces names with placeholders). */
   anonymized_paragraph?: string;
@@ -66,12 +66,12 @@ interface MineOpts {
 
 /** Resolve the path where mining writes its candidates JSONL. */
 export function defaultMiningOutPath(): string {
-  return join(homedir(), '.gbrain', 'eval', 'notability-mining-candidates.jsonl');
+  return join(homedir(), ".gbrain", "eval", "notability-mining-candidates.jsonl");
 }
 
 /** Resolve the path where review writes confirmed cases. */
 export function defaultReviewOutPath(): string {
-  return join(homedir(), '.gbrain', 'eval', 'notability-real.jsonl');
+  return join(homedir(), ".gbrain", "eval", "notability-real.jsonl");
 }
 
 /**
@@ -79,22 +79,24 @@ export function defaultReviewOutPath(): string {
  * `root`. Used for mining; the candidates JSONL stores these so reviewers
  * can find the source page.
  */
-export function walkMarkdownFiles(root: string, prefix: string = ''): string[] {
+export function walkMarkdownFiles(root: string, prefix: string = ""): string[] {
   const out: string[] = [];
   const dir = join(root, prefix);
   if (!existsSync(dir)) return out;
   for (const entry of readdirSync(dir)) {
-    if (entry.startsWith('.') || entry === 'node_modules') continue;
+    if (entry.startsWith(".") || entry === "node_modules") continue;
     const sub = join(prefix, entry);
     const full = join(root, sub);
     try {
       const st = statSync(full);
       if (st.isDirectory()) {
         out.push(...walkMarkdownFiles(root, sub));
-      } else if (st.isFile() && entry.endsWith('.md')) {
+      } else if (st.isFile() && entry.endsWith(".md")) {
         out.push(sub);
       }
-    } catch { /* skip unreadable */ }
+    } catch {
+      /* skip unreadable */
+    }
   }
   return out;
 }
@@ -104,13 +106,15 @@ export function walkMarkdownFiles(root: string, prefix: string = ''): string[] {
  * fragments and giant code blocks don't bias the eval set.
  */
 export function splitParagraphs(body: string): string[] {
-  return body
-    .split(/\n\n+/)
-    .map(p => p.trim())
-    .filter(p => p.length >= MIN_PARAGRAPH_CHARS && p.length <= MAX_PARAGRAPH_CHARS)
-    // Drop frontmatter-shape lines (pure key: value blocks) which slip
-    // past the paragraph splitter when frontmatter is malformed.
-    .filter(p => !/^---\s*$/m.test(p) || p.split('\n').length > 3);
+  return (
+    body
+      .split(/\n\n+/)
+      .map((p) => p.trim())
+      .filter((p) => p.length >= MIN_PARAGRAPH_CHARS && p.length <= MAX_PARAGRAPH_CHARS)
+      // Drop frontmatter-shape lines (pure key: value blocks) which slip
+      // past the paragraph splitter when frontmatter is malformed.
+      .filter((p) => !/^---\s*$/m.test(p) || p.split("\n").length > 3)
+  );
 }
 
 /**
@@ -124,7 +128,7 @@ export function splitParagraphs(body: string): string[] {
  */
 export async function mineNotabilityCandidates(
   repoPath: string,
-  opts: MineOpts = {},
+  opts: MineOpts = {}
 ): Promise<MinedCandidate[]> {
   const targetHigh = opts.targetHigh ?? DEFAULT_TARGETS.high;
   const targetMedium = opts.targetMedium ?? DEFAULT_TARGETS.medium;
@@ -138,11 +142,13 @@ export async function mineNotabilityCandidates(
     const files = walkMarkdownFiles(repoPath, dir);
     for (const f of files) {
       try {
-        const body = readFileSync(join(repoPath, f), 'utf-8');
+        const body = readFileSync(join(repoPath, f), "utf-8");
         for (const p of splitParagraphs(body)) {
           allCandidates.push({ path: f, paragraph: p });
         }
-      } catch { /* unreadable file — skip */ }
+      } catch {
+        /* unreadable file — skip */
+      }
     }
   }
 
@@ -152,32 +158,34 @@ export async function mineNotabilityCandidates(
 
   // Step 2: pre-classify (Haiku) each candidate to bucket. Fallback:
   // round-robin tier assignment when no gateway is available.
-  const buckets: Record<'high' | 'medium' | 'low', Candidate[]> = {
-    high: [], medium: [], low: [],
+  const buckets: Record<"high" | "medium" | "low", Candidate[]> = {
+    high: [],
+    medium: [],
+    low: [],
   };
 
   if (opts.skipLlm) {
     // Round-robin so the bucket distribution is roughly balanced; the
     // operator hand-confirms tier in the review step regardless.
     for (let i = 0; i < allCandidates.length; i++) {
-      const tier = (['high', 'medium', 'low'] as const)[i % 3];
+      const tier = (["high", "medium", "low"] as const)[i % 3];
       buckets[tier].push(allCandidates[i]);
     }
   } else {
-    const { isAvailable } = await import('../core/ai/gateway.ts');
-    if (!isAvailable('chat')) {
+    const { isAvailable } = await import("../core/ai/gateway.ts");
+    if (!isAvailable("chat")) {
       // No gateway → round-robin (same as skipLlm).
       for (let i = 0; i < allCandidates.length; i++) {
-        const tier = (['high', 'medium', 'low'] as const)[i % 3];
+        const tier = (["high", "medium", "low"] as const)[i % 3];
         buckets[tier].push(allCandidates[i]);
       }
     } else {
       // Haiku classification in batches to amortize per-call overhead.
       for (let i = 0; i < allCandidates.length; i += HAIKU_BATCH_SIZE) {
         const batch = allCandidates.slice(i, i + HAIKU_BATCH_SIZE);
-        const tiers = await classifyBatch(batch.map(c => c.paragraph));
+        const tiers = await classifyBatch(batch.map((c) => c.paragraph));
         for (let j = 0; j < batch.length; j++) {
-          const tier = tiers[j] ?? 'medium';
+          const tier = tiers[j] ?? "medium";
           buckets[tier].push(batch[j]);
         }
       }
@@ -197,7 +205,7 @@ export async function mineNotabilityCandidates(
     // Group by top-level dir.
     const byDir = new Map<string, Candidate[]>();
     for (const c of bucket) {
-      const topDir = c.path.split('/')[0] ?? '';
+      const topDir = c.path.split("/")[0] ?? "";
       if (!byDir.has(topDir)) byDir.set(topDir, []);
       byDir.get(topDir)!.push(c);
     }
@@ -217,13 +225,13 @@ export async function mineNotabilityCandidates(
   }
 
   for (const c of sampleStratified(buckets.high, targetHigh)) {
-    result.push({ ...c, predicted_tier: 'high', predicted_at: now });
+    result.push({ ...c, predicted_tier: "high", predicted_at: now });
   }
   for (const c of sampleStratified(buckets.medium, targetMedium)) {
-    result.push({ ...c, predicted_tier: 'medium', predicted_at: now });
+    result.push({ ...c, predicted_tier: "medium", predicted_at: now });
   }
   for (const c of sampleStratified(buckets.low, targetLow)) {
-    result.push({ ...c, predicted_tier: 'low', predicted_at: now });
+    result.push({ ...c, predicted_tier: "low", predicted_at: now });
   }
 
   return result;
@@ -234,56 +242,55 @@ export async function mineNotabilityCandidates(
  * one per input. Error tolerant: any failed batch falls back to 'medium'
  * (the safest middle bucket so the candidate isn't lost).
  */
-async function classifyBatch(paragraphs: string[]): Promise<Array<'high' | 'medium' | 'low'>> {
+async function classifyBatch(paragraphs: string[]): Promise<Array<"high" | "medium" | "low">> {
   if (paragraphs.length === 0) return [];
 
-  const { chat } = await import('../core/ai/gateway.ts');
+  const { chat } = await import("../core/ai/gateway.ts");
 
   const system = [
-    'Classify each paragraph into HIGH, MEDIUM, or LOW notability for personal-knowledge memory:',
-    '- HIGH: Life events (separation, death, birth, hospitalization), major commitments,',
-    '  relationship status changes, health changes, emotional breakthroughs, financial decisions.',
-    '- MEDIUM: Durable preferences, beliefs, strong opinions that reveal character.',
-    '- LOW: Logistical noise, restaurant orders, routine scheduling.',
-    '',
+    "Classify each paragraph into HIGH, MEDIUM, or LOW notability for personal-knowledge memory:",
+    "- HIGH: Life events (separation, death, birth, hospitalization), major commitments,",
+    "  relationship status changes, health changes, emotional breakthroughs, financial decisions.",
+    "- MEDIUM: Durable preferences, beliefs, strong opinions that reveal character.",
+    "- LOW: Logistical noise, restaurant orders, routine scheduling.",
+    "",
     'Output strictly one JSON object: {"tiers":["high"|"medium"|"low",...]} ',
-    'with one entry per input in order. No prose, no fences.',
-  ].join('\n');
+    "with one entry per input in order. No prose, no fences.",
+  ].join("\n");
 
-  const userMsg = paragraphs
-    .map((p, i) => `<p index="${i}">\n${p}\n</p>`)
-    .join('\n\n');
+  const userMsg = paragraphs.map((p, i) => `<p index="${i}">\n${p}\n</p>`).join("\n\n");
 
   try {
     const result = await chat({
-      model: 'anthropic:claude-haiku-4-5-20251001',
+      model: "anthropic:claude-haiku-4-5-20251001",
       system,
-      messages: [{ role: 'user', content: userMsg }],
+      messages: [{ role: "user", content: userMsg }],
       maxTokens: 200,
     });
-    const text = result.text.trim().replace(/^```(?:json)?\s*/, '').replace(/\s*```$/, '');
+    const text = result.text
+      .trim()
+      .replace(/^```(?:json)?\s*/, "")
+      .replace(/\s*```$/, "");
     const parsed = JSON.parse(text) as { tiers?: string[] };
     if (Array.isArray(parsed.tiers)) {
-      return parsed.tiers.map(t =>
-        ['high', 'medium', 'low'].includes(t)
-          ? (t as 'high' | 'medium' | 'low')
-          : 'medium',
+      return parsed.tiers.map((t) =>
+        ["high", "medium", "low"].includes(t) ? (t as "high" | "medium" | "low") : "medium"
       );
     }
   } catch {
     // Fall through to default
   }
-  return paragraphs.map(() => 'medium');
+  return paragraphs.map(() => "medium");
 }
 
 /** Load + parse a JSONL file of MinedCandidate or ConfirmedCase. */
 export function loadJsonlCases<T>(path: string): T[] {
   if (!existsSync(path)) return [];
-  return readFileSync(path, 'utf-8')
-    .split('\n')
-    .map(l => l.trim())
+  return readFileSync(path, "utf-8")
+    .split("\n")
+    .map((l) => l.trim())
     .filter(Boolean)
-    .map(l => {
+    .map((l) => {
       try {
         return JSON.parse(l) as T;
       } catch {
@@ -295,9 +302,9 @@ export function loadJsonlCases<T>(path: string): T[] {
 
 /** Append (overwrite) JSONL cases to a path. */
 export function writeJsonlCases<T>(path: string, cases: T[]): void {
-  const dir = path.split('/').slice(0, -1).join('/');
+  const dir = path.split("/").slice(0, -1).join("/");
   if (dir) mkdirSync(dir, { recursive: true });
-  const lines = cases.map(c => JSON.stringify(c)).join('\n') + '\n';
+  const lines = cases.map((c) => JSON.stringify(c)).join("\n") + "\n";
   writeFileSync(path, lines);
 }
 
@@ -314,16 +321,16 @@ interface RunNotabilityEvalArgs {
 /** CLI entrypoint dispatched from src/cli.ts. */
 export async function runNotabilityEval(args: RunNotabilityEvalArgs): Promise<void> {
   switch (args.cmd) {
-    case 'mine': {
+    case "mine": {
       if (!args.repoPath) {
-        throw new Error('mine requires a repoPath. Set sync.repo_path or pass --repo PATH.');
+        throw new Error("mine requires a repoPath. Set sync.repo_path or pass --repo PATH.");
       }
       const out = (args.flags.out as string) || defaultMiningOutPath();
       const candidates = await mineNotabilityCandidates(resolve(args.repoPath), {
-        targetHigh: args.flags['target-high'] ? Number(args.flags['target-high']) : undefined,
-        targetMedium: args.flags['target-medium'] ? Number(args.flags['target-medium']) : undefined,
-        targetLow: args.flags['target-low'] ? Number(args.flags['target-low']) : undefined,
-        skipLlm: args.flags['skip-llm'] === true,
+        targetHigh: args.flags["target-high"] ? Number(args.flags["target-high"]) : undefined,
+        targetMedium: args.flags["target-medium"] ? Number(args.flags["target-medium"]) : undefined,
+        targetLow: args.flags["target-low"] ? Number(args.flags["target-low"]) : undefined,
+        skipLlm: args.flags["skip-llm"] === true,
       });
       writeJsonlCases(out, candidates);
       // eslint-disable-next-line no-console
@@ -333,7 +340,7 @@ export async function runNotabilityEval(args: RunNotabilityEvalArgs): Promise<vo
       return;
     }
 
-    case 'review': {
+    case "review": {
       const inPath = (args.flags.in as string) || defaultMiningOutPath();
       const outPath = (args.flags.out as string) || defaultReviewOutPath();
       const candidates = loadJsonlCases<MinedCandidate>(inPath);
@@ -346,9 +353,9 @@ export async function runNotabilityEval(args: RunNotabilityEvalArgs): Promise<vo
       // over readline. Tests cover the pure mining path; the TTY loop
       // gets a smoke-only test that injects answers via process.stdin.
       const confirmed: ConfirmedCase[] = [];
-      const { default: readline } = await import('readline');
+      const { default: readline } = await import("readline");
       const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-      const ask = (q: string) => new Promise<string>(r => rl.question(q, a => r(a)));
+      const ask = (q: string) => new Promise<string>((r) => rl.question(q, (a) => r(a)));
 
       try {
         // eslint-disable-next-line no-console
@@ -364,10 +371,12 @@ export async function runNotabilityEval(args: RunNotabilityEvalArgs): Promise<vo
           console.log(c.paragraph);
           // eslint-disable-next-line no-console
           console.log(`Predicted: ${c.predicted_tier}`);
-          const ans = (await ask('Confirm tier (h/m/l) or q to quit, s to skip: ')).trim().toLowerCase();
-          if (ans === 'q') break;
-          if (ans === 's') continue;
-          const tier = ans === 'h' ? 'high' : ans === 'l' ? 'low' : 'medium';
+          const ans = (await ask("Confirm tier (h/m/l) or q to quit, s to skip: "))
+            .trim()
+            .toLowerCase();
+          if (ans === "q") break;
+          if (ans === "s") continue;
+          const tier = ans === "h" ? "high" : ans === "l" ? "low" : "medium";
           confirmed.push({ ...c, confirmed_tier: tier, confirmed_at: now() });
         }
       } finally {
@@ -379,23 +388,25 @@ export async function runNotabilityEval(args: RunNotabilityEvalArgs): Promise<vo
       return;
     }
 
-    case 'help':
+    case "help":
     default:
       // eslint-disable-next-line no-console
-      console.log([
-        'gbrain notability-eval — eval suite for the notability gate.',
-        '',
-        'Subcommands:',
-        '  mine   Walk the brain repo, sample paragraphs, write candidates.',
-        '  review Hand-confirm tiers in a TTY. Writes ~/.gbrain/eval/notability-real.jsonl.',
-        '',
-        'Flags:',
-        '  --target-high N   Default 20',
-        '  --target-medium N Default 20',
-        '  --target-low N    Default 10',
-        '  --out PATH        Override output JSONL path',
-        '  --in PATH         Review only: input candidates JSONL',
-        '  --skip-llm        Mine: skip Haiku pre-classify (round-robin tier assign)',
-      ].join('\n'));
+      console.log(
+        [
+          "gbrain notability-eval — eval suite for the notability gate.",
+          "",
+          "Subcommands:",
+          "  mine   Walk the brain repo, sample paragraphs, write candidates.",
+          "  review Hand-confirm tiers in a TTY. Writes ~/.gbrain/eval/notability-real.jsonl.",
+          "",
+          "Flags:",
+          "  --target-high N   Default 20",
+          "  --target-medium N Default 20",
+          "  --target-low N    Default 10",
+          "  --out PATH        Override output JSONL path",
+          "  --in PATH         Review only: input candidates JSONL",
+          "  --skip-llm        Mine: skip Haiku pre-classify (round-robin tier assign)",
+        ].join("\n")
+      );
   }
 }

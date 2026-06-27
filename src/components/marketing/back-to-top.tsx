@@ -32,7 +32,7 @@ export default function BackToTop({ lang = "en" }: { lang?: "en" | "de" }) {
           transition={{ duration: 0.2 }}
           onClick={scrollToTop}
           aria-label={UI_STRINGS[lang].backToTopAria}
-          className="fixed bottom-8 right-8 z-50 w-11 h-11 rounded-full [background:var(--mk-surface-2)] border [border-color:var(--mk-border)] shadow-lg shadow-black/20 flex items-center justify-center [color:var(--mk-text)] hover:[color:var(--brand-primary)] hover:[border-color:var(--brand-primary)]/40 transition-all focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/50"
+          className="fixed right-8 bottom-8 z-50 flex h-11 w-11 items-center justify-center rounded-full border [border-color:var(--mk-border)] [color:var(--mk-text)] shadow-lg shadow-black/20 transition-all [background:var(--mk-surface-2)] hover:[border-color:var(--brand-primary)]/40 hover:[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)]/50 focus:outline-none"
         >
           <ArrowUp size={18} />
         </motion.button>

@@ -67,14 +67,14 @@ gbrain publish brain/companies/acme.md --out /tmp/acme-share.html
 
 The publish command automatically removes all private/internal data:
 
-| Stripped | Example | Why |
-|---------|---------|-----|
-| YAML frontmatter | `title:`, `type:`, `tags:` | Internal metadata |
-| `[Source: ...]` citations | All formats | Provenance is internal |
-| Confirmation numbers | `ABC123DEF` -> "on file" | PII/booking data |
-| Brain cross-links | `[Jane](../people/jane.md)` -> `Jane` | Internal paths |
-| Timeline section | Everything below `---` / `## Timeline` | Raw evidence log |
-| "See also" lines | Internal references | Brain navigation |
+| Stripped                  | Example                                | Why                    |
+| ------------------------- | -------------------------------------- | ---------------------- |
+| YAML frontmatter          | `title:`, `type:`, `tags:`             | Internal metadata      |
+| `[Source: ...]` citations | All formats                            | Provenance is internal |
+| Confirmation numbers      | `ABC123DEF` -> "on file"               | PII/booking data       |
+| Brain cross-links         | `[Jane](../people/jane.md)` -> `Jane`  | Internal paths         |
+| Timeline section          | Everything below `---` / `## Timeline` | Raw evidence log       |
+| "See also" lines          | Internal references                    | Brain navigation       |
 
 **Preserved:** external URLs (`https://...`), all other content.
 
@@ -132,6 +132,7 @@ not present anywhere in the file.
 ## Updating a Published Page
 
 Re-run the publish command with the same output path:
+
 ```bash
 gbrain publish brain/companies/acme.md --password "same-password" --out shares/acme.html
 ```

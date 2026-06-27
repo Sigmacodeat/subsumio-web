@@ -22,31 +22,33 @@
  * Run: DATABASE_URL=... bun test test/e2e/postgres-jsonb.test.ts
  */
 
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
-import {
-  hasDatabase, setupDB, teardownDB, getEngine, getConn,
-} from './helpers.ts';
+import { describe, test, expect, beforeAll, afterAll } from "bun:test";
+import { hasDatabase, setupDB, teardownDB, getEngine, getConn } from "./helpers.ts";
 
 const skip = !hasDatabase();
 const describeE2E = skip ? describe.skip : describe;
 
 if (skip) {
-  console.log('Skipping E2E JSONB round-trip tests (DATABASE_URL not set)');
+  console.log("Skipping E2E JSONB round-trip tests (DATABASE_URL not set)");
 }
 
-describeE2E('Postgres JSONB round-trip — frontmatter / data / pages_updated / metadata', () => {
-  beforeAll(async () => { await setupDB(); });
-  afterAll(async () => { await teardownDB(); });
+describeE2E("Postgres JSONB round-trip — frontmatter / data / pages_updated / metadata", () => {
+  beforeAll(async () => {
+    await setupDB();
+  });
+  afterAll(async () => {
+    await teardownDB();
+  });
 
-  test('pages.frontmatter — putPage stores object, not string literal', async () => {
+  test("pages.frontmatter — putPage stores object, not string literal", async () => {
     const engine = getEngine();
     const conn = getConn();
 
-    await engine.putPage('jsonb-test/frontmatter', {
-      type: 'concept',
-      title: 'JSONB roundtrip',
-      compiled_truth: 'body',
-      frontmatter: { author: 'garry', score: 7, tags: ['x', 'y'] },
+    await engine.putPage("jsonb-test/frontmatter", {
+      type: "concept",
+      title: "JSONB roundtrip",
+      compiled_truth: "body",
+      frontmatter: { author: "garry", score: 7, tags: ["x", "y"] },
     });
 
     const rows = await conn.unsafe(`
@@ -60,18 +62,18 @@ describeE2E('Postgres JSONB round-trip — frontmatter / data / pages_updated / 
     `);
 
     expect(rows).toHaveLength(1);
-    expect(rows[0].jt).toBe('object');
-    expect(rows[0].author).toBe('garry');
-    expect(rows[0].score).toBe('7');
-    expect(rows[0].tags).toEqual(['x', 'y']);
+    expect(rows[0].jt).toBe("object");
+    expect(rows[0].author).toBe("garry");
+    expect(rows[0].score).toBe("7");
+    expect(rows[0].tags).toEqual(["x", "y"]);
   }, 30_000);
 
-  test('raw_data.data — putRawData stores object, not string literal', async () => {
+  test("raw_data.data — putRawData stores object, not string literal", async () => {
     const engine = getEngine();
     const conn = getConn();
 
-    await engine.putPage('jsonb-test/raw', { type: 'concept', title: 't', compiled_truth: '' });
-    await engine.putRawData('jsonb-test/raw', 'unit-test', { kind: 'fixture', count: 42 });
+    await engine.putPage("jsonb-test/raw", { type: "concept", title: "t", compiled_truth: "" });
+    await engine.putRawData("jsonb-test/raw", "unit-test", { kind: "fixture", count: 42 });
 
     const rows = await conn.unsafe(`
       SELECT
@@ -84,20 +86,20 @@ describeE2E('Postgres JSONB round-trip — frontmatter / data / pages_updated / 
     `);
 
     expect(rows).toHaveLength(1);
-    expect(rows[0].jt).toBe('object');
-    expect(rows[0].kind).toBe('fixture');
-    expect(rows[0].count).toBe('42');
+    expect(rows[0].jt).toBe("object");
+    expect(rows[0].kind).toBe("fixture");
+    expect(rows[0].count).toBe("42");
   });
 
-  test('ingest_log.pages_updated — logIngest stores array, not string literal', async () => {
+  test("ingest_log.pages_updated — logIngest stores array, not string literal", async () => {
     const engine = getEngine();
     const conn = getConn();
 
     await engine.logIngest({
-      source_type: 'unit-test',
-      source_ref: 'jsonb-roundtrip',
-      pages_updated: ['a/b', 'c/d', 'e/f'],
-      summary: 'roundtrip-check',
+      source_type: "unit-test",
+      source_ref: "jsonb-roundtrip",
+      pages_updated: ["a/b", "c/d", "e/f"],
+      summary: "roundtrip-check",
     });
 
     const rows = await conn.unsafe(`
@@ -110,12 +112,12 @@ describeE2E('Postgres JSONB round-trip — frontmatter / data / pages_updated / 
     `);
 
     expect(rows).toHaveLength(1);
-    expect(rows[0].jt).toBe('array');
-    expect(rows[0].first).toBe('a/b');
+    expect(rows[0].jt).toBe("array");
+    expect(rows[0].first).toBe("a/b");
     expect(rows[0].len).toBe(3);
   });
 
-  test('files.metadata — write site uses sql.json, not string interpolation', async () => {
+  test("files.metadata — write site uses sql.json, not string interpolation", async () => {
     const conn = getConn();
 
     // Mimic the write at src/commands/files.ts:254 (the bonus fix).
@@ -127,7 +129,7 @@ describeE2E('Postgres JSONB round-trip — frontmatter / data / pages_updated / 
         'application/octet-stream',
         ${0},
         'sha256:test',
-        ${conn.json({ type: 'archive', upload_method: 'unit-test' })}
+        ${conn.json({ type: "archive", upload_method: "unit-test" })}
       )
     `;
 
@@ -141,22 +143,22 @@ describeE2E('Postgres JSONB round-trip — frontmatter / data / pages_updated / 
     `);
 
     expect(rows).toHaveLength(1);
-    expect(rows[0].jt).toBe('object');
-    expect(rows[0].type).toBe('archive');
-    expect(rows[0].method).toBe('unit-test');
+    expect(rows[0].jt).toBe("object");
+    expect(rows[0].type).toBe("archive");
+    expect(rows[0].method).toBe("unit-test");
   });
 
-  test('page_versions.frontmatter — INSERT...SELECT propagates object shape', async () => {
+  test("page_versions.frontmatter — INSERT...SELECT propagates object shape", async () => {
     const engine = getEngine();
     const conn = getConn();
 
-    await engine.putPage('jsonb-test/versioned', {
-      type: 'concept',
-      title: 'versioned',
-      compiled_truth: 'v1',
-      frontmatter: { mood: 'happy' },
+    await engine.putPage("jsonb-test/versioned", {
+      type: "concept",
+      title: "versioned",
+      compiled_truth: "v1",
+      frontmatter: { mood: "happy" },
     });
-    await engine.createVersion('jsonb-test/versioned');
+    await engine.createVersion("jsonb-test/versioned");
 
     const rows = await conn.unsafe(`
       SELECT
@@ -168,7 +170,7 @@ describeE2E('Postgres JSONB round-trip — frontmatter / data / pages_updated / 
     `);
 
     expect(rows.length).toBeGreaterThan(0);
-    expect(rows[0].jt).toBe('object');
-    expect(rows[0].mood).toBe('happy');
+    expect(rows[0].jt).toBe("object");
+    expect(rows[0].mood).toBe("happy");
   });
 });

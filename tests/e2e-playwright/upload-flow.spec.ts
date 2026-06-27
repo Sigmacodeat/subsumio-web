@@ -21,14 +21,16 @@ test.describe("Upload Flow", () => {
     await page.locator('input[name="email"]').fill(email);
     await page.locator('input[name="password"]').fill(TEST_USER.password);
     await page.locator('form button[type="submit"]').click();
-    await page.waitForFunction(() => window.location.pathname === '/dashboard', { timeout: 45_000 });
+    await page.waitForFunction(() => window.location.pathname === "/dashboard", {
+      timeout: 45_000,
+    });
     await page.waitForLoadState("domcontentloaded");
   });
 
   test("navigates to upload page", async ({ page }) => {
     await page.goto("/dashboard/upload");
-    await expect(page.locator('text=Dokument hochladen')).toBeVisible();
-    await expect(page.locator('text=Markdown, PDF oder Text')).toBeVisible();
+    await expect(page.locator("text=Dokument hochladen")).toBeVisible();
+    await expect(page.locator("text=Markdown, PDF oder Text")).toBeVisible();
   });
 
   test("shows validation for unsupported file type", async ({ page }) => {
@@ -46,12 +48,12 @@ test.describe("Upload Flow", () => {
     });
 
     // UI should show dropzone area
-    await expect(page.locator('text=Dateien hierher ziehen')).toBeVisible();
+    await expect(page.locator("text=Dateien hierher ziehen")).toBeVisible();
   });
 
   test("upload page has offline indicator", async ({ page }) => {
     await page.goto("/dashboard/upload");
     // The page uses isOnline() — we just verify the UI loads
-    await expect(page.locator('text=Dateien hierher ziehen')).toBeVisible();
+    await expect(page.locator("text=Dateien hierher ziehen")).toBeVisible();
   });
 });

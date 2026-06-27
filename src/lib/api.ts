@@ -78,7 +78,11 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     });
   } catch (err) {
     if (err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError")) {
-      throw new ApiRequestError("Anfrage timeout — Server nicht erreichbar", 408, "request_timeout");
+      throw new ApiRequestError(
+        "Anfrage timeout — Server nicht erreichbar",
+        408,
+        "request_timeout"
+      );
     }
     throw err;
   }
@@ -203,10 +207,7 @@ export const api = {
       return request(`/api/queries/recent?limit=${limit}`);
     },
 
-    cockpit(opts?: {
-      types?: string;
-      recentLimit?: number;
-    }): Promise<{
+    cockpit(opts?: { types?: string; recentLimit?: number }): Promise<{
       stats: BrainStats | null;
       recent: RecentQuery[];
       pages: Record<string, BrainPage[]>;

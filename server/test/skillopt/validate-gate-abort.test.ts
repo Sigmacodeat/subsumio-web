@@ -10,65 +10,73 @@
  * calls — a pricing crash masquerading as a real "0/N" measurement. The fix
  * re-throws any MUST_ABORT-class error so the caller aborts loudly.
  */
-import { describe, test, expect } from 'bun:test';
-import { runValidationGate, scoreSkillOnTasks } from '../../src/core/skillopt/validate-gate.ts';
-import type { BenchmarkTask } from '../../src/core/skillopt/types.ts';
+import { describe, test, expect } from "bun:test";
+import { runValidationGate, scoreSkillOnTasks } from "../../src/core/skillopt/validate-gate.ts";
+import type { BenchmarkTask } from "../../src/core/skillopt/types.ts";
 
 const TASKS: BenchmarkTask[] = [
-  { task_id: 't1', task: 'do a thing', judge: { kind: 'rule', checks: [{ op: 'contains', arg: 'x' }] } } as never,
-  { task_id: 't2', task: 'do another', judge: { kind: 'rule', checks: [{ op: 'contains', arg: 'y' }] } } as never,
+  {
+    task_id: "t1",
+    task: "do a thing",
+    judge: { kind: "rule", checks: [{ op: "contains", arg: "x" }] },
+  } as never,
+  {
+    task_id: "t2",
+    task: "do another",
+    judge: { kind: "rule", checks: [{ op: "contains", arg: "y" }] },
+  } as never,
 ];
 
 function budgetExhausted(): Error {
   const e = new Error('no pricing entry for model "anthropic:claude-haiku-4-5" (kind=chat)');
-  (e as { tag?: string }).tag = 'BUDGET_EXHAUSTED';
+  (e as { tag?: string }).tag = "BUDGET_EXHAUSTED";
   return e;
 }
 
-describe('runValidationGate — must-abort errors surface', () => {
-  test('a BUDGET_EXHAUSTED rollout error is re-thrown, not scored 0', async () => {
+describe("runValidationGate — must-abort errors surface", () => {
+  test("a BUDGET_EXHAUSTED rollout error is re-thrown, not scored 0", async () => {
     const throwingRollout = (async () => {
       throw budgetExhausted();
     }) as never;
     await expect(
       runValidationGate({
         engine: {} as never,
-        candidateSkillText: 'skill',
+        candidateSkillText: "skill",
         selSet: TASKS,
         bestScore: -1,
-        targetModel: 'anthropic:claude-haiku-4-5',
+        targetModel: "anthropic:claude-haiku-4-5",
         runsPerTask: 1,
         rolloutFn: throwingRollout,
-      }),
+      })
     ).rejects.toThrow(/no pricing entry/);
   });
 
-  test('scoreSkillOnTasks propagates the abort too (does not return a vacuous 0)', async () => {
+  test("scoreSkillOnTasks propagates the abort too (does not return a vacuous 0)", async () => {
     const throwingRollout = (async () => {
       throw budgetExhausted();
     }) as never;
     await expect(
       scoreSkillOnTasks({
         engine: {} as never,
-        skillText: 'skill',
+        skillText: "skill",
         tasks: TASKS,
-        targetModel: 'anthropic:claude-haiku-4-5',
+        targetModel: "anthropic:claude-haiku-4-5",
         runsPerTask: 1,
         rolloutFn: throwingRollout,
-      }),
+      })
     ).rejects.toThrow(/no pricing entry/);
   });
 
-  test('an ordinary (non-abort) rollout error still scores 0 — fail-open preserved', async () => {
+  test("an ordinary (non-abort) rollout error still scores 0 — fail-open preserved", async () => {
     const flakyRollout = (async () => {
-      throw new Error('transient judge hiccup'); // no .tag → not must-abort
+      throw new Error("transient judge hiccup"); // no .tag → not must-abort
     }) as never;
     const gate = await runValidationGate({
       engine: {} as never,
-      candidateSkillText: 'skill',
+      candidateSkillText: "skill",
       selSet: TASKS,
       bestScore: -1,
-      targetModel: 'anthropic:claude-haiku-4-5',
+      targetModel: "anthropic:claude-haiku-4-5",
       runsPerTask: 1,
       rolloutFn: flakyRollout,
     });

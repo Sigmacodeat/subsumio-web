@@ -146,7 +146,9 @@ export default function DataExportPage() {
               try {
                 const data =
                   backupQuery.data ??
-                  (await fetch("/api/data-export/backup", { signal: AbortSignal.timeout(30_000) }).then((r) => r.json()));
+                  (await fetch("/api/data-export/backup", {
+                    signal: AbortSignal.timeout(30_000),
+                  }).then((r) => r.json()));
                 const blob = new Blob([JSON.stringify(data, null, 2)], {
                   type: "application/json",
                 });

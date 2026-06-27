@@ -23,10 +23,10 @@
  * pure: input is text, output is text + outcome.
  */
 
-import * as fs from 'node:fs';
-import { execFileSync } from 'node:child_process';
-import { dirname } from 'node:path';
-import type { EditOp, EditResult, EditRejectionReason } from './types.ts';
+import * as fs from "node:fs";
+import { execFileSync } from "node:child_process";
+import { dirname } from "node:path";
+import type { EditOp, EditResult, EditRejectionReason } from "./types.ts";
 
 // ─── Public API ───────────────────────────────────────────────────────────
 
@@ -44,11 +44,11 @@ export function applyEdit(text: string, edit: EditOp): EditResult {
 
   // Apply the edit to the body slice only.
   const result = applyEditToBody(body, edit, bodyStart);
-  if (result.outcome === 'rejected') return result;
+  if (result.outcome === "rejected") return result;
 
   // Reassemble: frontmatter + new body.
   const newText = text.slice(0, bodyStart) + result.newText;
-  return { outcome: 'applied', edit, newText };
+  return { outcome: "applied", edit, newText };
 }
 
 /**
@@ -63,19 +63,24 @@ export function applyEdit(text: string, edit: EditOp): EditResult {
 export function applyEditBatch(
   text: string,
   edits: EditOp[],
-  lrBudget: number,
+  lrBudget: number
 ): { newText: string; results: EditResult[] } {
   let cur = text;
   const results: EditResult[] = [];
   let appliedCount = 0;
   for (const edit of edits) {
     if (appliedCount >= lrBudget) {
-      results.push({ outcome: 'rejected', edit, reason: 'no_change', detail: 'lr_budget_exhausted' });
+      results.push({
+        outcome: "rejected",
+        edit,
+        reason: "no_change",
+        detail: "lr_budget_exhausted",
+      });
       continue;
     }
     const r = applyEdit(cur, edit);
     results.push(r);
-    if (r.outcome === 'applied') {
+    if (r.outcome === "applied") {
       cur = r.newText;
       appliedCount += 1;
     }
@@ -105,24 +110,33 @@ export function splitFrontmatter(text: string): FrontmatterSplit {
 
 // ─── Body edit application ────────────────────────────────────────────────
 
-function applyEditToBody(body: string, edit: EditOp, bodyStartOffset: number):
-  | { outcome: 'applied'; newText: string }
-  | { outcome: 'rejected'; edit: EditOp; reason: EditRejectionReason; detail?: string } {
+function applyEditToBody(
+  body: string,
+  edit: EditOp,
+  bodyStartOffset: number
+):
+  | { outcome: "applied"; newText: string }
+  | { outcome: "rejected"; edit: EditOp; reason: EditRejectionReason; detail?: string } {
   switch (edit.op) {
-    case 'add':
+    case "add":
       return applyAdd(body, edit, bodyStartOffset);
-    case 'replace':
+    case "replace":
       return applyReplace(body, edit, bodyStartOffset);
-    case 'delete':
+    case "delete":
       return applyDelete(body, edit, bodyStartOffset);
   }
 }
 
-function applyAdd(body: string, edit: EditOp & { op: 'add' }, bodyStartOffset: number):
-  | { outcome: 'applied'; newText: string }
-  | { outcome: 'rejected'; edit: EditOp; reason: EditRejectionReason; detail?: string } {
+function applyAdd(
+  body: string,
+  edit: EditOp & { op: "add" },
+  bodyStartOffset: number
+):
+  | { outcome: "applied"; newText: string }
+  | { outcome: "rejected"; edit: EditOp; reason: EditRejectionReason; detail?: string } {
   const anchor = edit.anchor.trim();
-  if (!anchor) return { outcome: 'rejected', edit, reason: 'anchor_not_found', detail: 'empty anchor' };
+  if (!anchor)
+    return { outcome: "rejected", edit, reason: "anchor_not_found", detail: "empty anchor" };
 
   // Heading-style anchors: "## Heading Title" or just "Heading Title".
   // Try heading match first; fallback to exact-line match.
@@ -133,19 +147,29 @@ function applyAdd(body: string, edit: EditOp & { op: 'add' }, bodyStartOffset: n
   } else if (headingMatches.length === 0) {
     const lineMatches = findExactLineMatches(body, anchor);
     if (lineMatches.length === 0) {
-      return { outcome: 'rejected', edit, reason: 'anchor_not_found' };
+      return { outcome: "rejected", edit, reason: "anchor_not_found" };
     }
     if (lineMatches.length > 1) {
-      return { outcome: 'rejected', edit, reason: 'anchor_ambiguous', detail: `${lineMatches.length} matches` };
+      return {
+        outcome: "rejected",
+        edit,
+        reason: "anchor_ambiguous",
+        detail: `${lineMatches.length} matches`,
+      };
     }
     insertAfter = lineMatches[0]!.endOfLine;
   } else {
-    return { outcome: 'rejected', edit, reason: 'anchor_ambiguous', detail: `${headingMatches.length} heading matches` };
+    return {
+      outcome: "rejected",
+      edit,
+      reason: "anchor_ambiguous",
+      detail: `${headingMatches.length} heading matches`,
+    };
   }
 
   // Inside-code-fence guard: refuse if insert point is inside a ```fence```.
   if (isInsideCodeFence(body, insertAfter)) {
-    return { outcome: 'rejected', edit, reason: 'inside_code_fence' };
+    return { outcome: "rejected", edit, reason: "inside_code_fence" };
   }
 
   // No need to check crosses_frontmatter — we're operating on body only,
@@ -153,62 +177,82 @@ function applyAdd(body: string, edit: EditOp & { op: 'add' }, bodyStartOffset: n
   void bodyStartOffset;
 
   // Insert content on a new line after the anchor.
-  const insertion = '\n' + edit.content.trimEnd() + '\n';
+  const insertion = "\n" + edit.content.trimEnd() + "\n";
   const newBody = body.slice(0, insertAfter) + insertion + body.slice(insertAfter);
   if (newBody === body) {
-    return { outcome: 'rejected', edit, reason: 'no_change' };
+    return { outcome: "rejected", edit, reason: "no_change" };
   }
-  return { outcome: 'applied', newText: newBody };
+  return { outcome: "applied", newText: newBody };
 }
 
-function applyReplace(body: string, edit: EditOp & { op: 'replace' }, bodyStartOffset: number):
-  | { outcome: 'applied'; newText: string }
-  | { outcome: 'rejected'; edit: EditOp; reason: EditRejectionReason; detail?: string } {
+function applyReplace(
+  body: string,
+  edit: EditOp & { op: "replace" },
+  bodyStartOffset: number
+):
+  | { outcome: "applied"; newText: string }
+  | { outcome: "rejected"; edit: EditOp; reason: EditRejectionReason; detail?: string } {
   const target = edit.target;
-  if (!target) return { outcome: 'rejected', edit, reason: 'target_not_found', detail: 'empty target' };
+  if (!target)
+    return { outcome: "rejected", edit, reason: "target_not_found", detail: "empty target" };
 
   const occurrences = countOccurrences(body, target);
-  if (occurrences === 0) return { outcome: 'rejected', edit, reason: 'target_not_found' };
+  if (occurrences === 0) return { outcome: "rejected", edit, reason: "target_not_found" };
   if (occurrences > 1) {
-    return { outcome: 'rejected', edit, reason: 'target_ambiguous', detail: `${occurrences} matches` };
+    return {
+      outcome: "rejected",
+      edit,
+      reason: "target_ambiguous",
+      detail: `${occurrences} matches`,
+    };
   }
   const matchIdx = body.indexOf(target);
   if (isInsideCodeFence(body, matchIdx)) {
-    return { outcome: 'rejected', edit, reason: 'inside_code_fence' };
+    return { outcome: "rejected", edit, reason: "inside_code_fence" };
   }
   void bodyStartOffset;
   const newBody = body.slice(0, matchIdx) + edit.replacement + body.slice(matchIdx + target.length);
   if (newBody === body) {
-    return { outcome: 'rejected', edit, reason: 'no_change' };
+    return { outcome: "rejected", edit, reason: "no_change" };
   }
-  return { outcome: 'applied', newText: newBody };
+  return { outcome: "applied", newText: newBody };
 }
 
-function applyDelete(body: string, edit: EditOp & { op: 'delete' }, bodyStartOffset: number):
-  | { outcome: 'applied'; newText: string }
-  | { outcome: 'rejected'; edit: EditOp; reason: EditRejectionReason; detail?: string } {
+function applyDelete(
+  body: string,
+  edit: EditOp & { op: "delete" },
+  bodyStartOffset: number
+):
+  | { outcome: "applied"; newText: string }
+  | { outcome: "rejected"; edit: EditOp; reason: EditRejectionReason; detail?: string } {
   const target = edit.target;
-  if (!target) return { outcome: 'rejected', edit, reason: 'target_not_found', detail: 'empty target' };
+  if (!target)
+    return { outcome: "rejected", edit, reason: "target_not_found", detail: "empty target" };
 
   const occurrences = countOccurrences(body, target);
-  if (occurrences === 0) return { outcome: 'rejected', edit, reason: 'target_not_found' };
+  if (occurrences === 0) return { outcome: "rejected", edit, reason: "target_not_found" };
   if (occurrences > 1) {
-    return { outcome: 'rejected', edit, reason: 'target_ambiguous', detail: `${occurrences} matches` };
+    return {
+      outcome: "rejected",
+      edit,
+      reason: "target_ambiguous",
+      detail: `${occurrences} matches`,
+    };
   }
   const matchIdx = body.indexOf(target);
   if (isInsideCodeFence(body, matchIdx)) {
-    return { outcome: 'rejected', edit, reason: 'inside_code_fence' };
+    return { outcome: "rejected", edit, reason: "inside_code_fence" };
   }
   void bodyStartOffset;
   // Delete the target plus a trailing newline if present (keep markdown tidy).
   const after = matchIdx + target.length;
-  const hasTrailingNl = body[after] === '\n';
+  const hasTrailingNl = body[after] === "\n";
   const cutEnd = hasTrailingNl ? after + 1 : after;
   const newBody = body.slice(0, matchIdx) + body.slice(cutEnd);
   if (newBody === body) {
-    return { outcome: 'rejected', edit, reason: 'no_change' };
+    return { outcome: "rejected", edit, reason: "no_change" };
   }
-  return { outcome: 'applied', newText: newBody };
+  return { outcome: "applied", newText: newBody };
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────
@@ -219,9 +263,9 @@ interface MatchPos {
 }
 
 function findHeadingMatches(body: string, anchor: string): MatchPos[] {
-  const heading = anchor.replace(/^#+\s*/, '').trim();
-  const escaped = heading.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const re = new RegExp(`^(#{1,6})\\s+${escaped}\\s*$`, 'gm');
+  const heading = anchor.replace(/^#+\s*/, "").trim();
+  const escaped = heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const re = new RegExp(`^(#{1,6})\\s+${escaped}\\s*$`, "gm");
   const out: MatchPos[] = [];
   let match: RegExpExecArray | null;
   while ((match = re.exec(body)) !== null) {
@@ -234,7 +278,7 @@ function findHeadingMatches(body: string, anchor: string): MatchPos[] {
 
 function findExactLineMatches(body: string, anchor: string): MatchPos[] {
   const target = anchor.trim();
-  const lines = body.split('\n');
+  const lines = body.split("\n");
   const out: MatchPos[] = [];
   let offset = 0;
   for (const line of lines) {
@@ -265,7 +309,7 @@ function countOccurrences(haystack: string, needle: string): number {
 export function isInsideCodeFence(body: string, offset: number): boolean {
   if (offset < 0 || offset > body.length) return false;
   const before = body.slice(0, offset);
-  const lines = before.split('\n');
+  const lines = before.split("\n");
   let inFence = false;
   for (const line of lines) {
     if (line.match(/^```/)) inFence = !inFence;
@@ -283,24 +327,24 @@ export function isInsideCodeFence(body: string, offset: number): boolean {
  *
  * Mirrors src/core/skill-fix-gates.ts:getWorkingTreeStatus.
  */
-export function getWorkingTreeStatusForFile(filePath: string): 'clean' | 'dirty' | 'not_a_repo' {
+export function getWorkingTreeStatusForFile(filePath: string): "clean" | "dirty" | "not_a_repo" {
   try {
     const cwd = dirname(filePath);
     // First check we're in a repo.
     try {
-      execFileSync('git', ['rev-parse', '--git-dir'], { cwd, stdio: 'pipe' });
+      execFileSync("git", ["rev-parse", "--git-dir"], { cwd, stdio: "pipe" });
     } catch {
-      return 'not_a_repo';
+      return "not_a_repo";
     }
     // Then check status on this specific file.
-    const out = execFileSync('git', ['status', '--porcelain', '--', filePath], {
+    const out = execFileSync("git", ["status", "--porcelain", "--", filePath], {
       cwd,
-      encoding: 'utf8',
-      stdio: 'pipe',
+      encoding: "utf8",
+      stdio: "pipe",
     }).trim();
-    return out.length === 0 ? 'clean' : 'dirty';
+    return out.length === 0 ? "clean" : "dirty";
   } catch {
-    return 'not_a_repo';
+    return "not_a_repo";
   }
 }
 
@@ -309,10 +353,10 @@ export function getWorkingTreeStatusForFile(filePath: string): 'clean' | 'dirty'
  * but provided here for ad-hoc callers (orchestrator uses version-store).
  */
 export function atomicWrite(filePath: string, content: string): void {
-  const tmp = filePath + '.tmp';
-  const fd = fs.openSync(tmp, 'w');
+  const tmp = filePath + ".tmp";
+  const fd = fs.openSync(tmp, "w");
   try {
-    fs.writeFileSync(fd, content, { encoding: 'utf8' });
+    fs.writeFileSync(fd, content, { encoding: "utf8" });
     fs.fsyncSync(fd);
   } finally {
     fs.closeSync(fd);

@@ -33,34 +33,34 @@
  * error would break them without their opt-out.
  */
 
-import type { PageValidator, PageValidationContext, ValidationFinding } from '../writer.ts';
+import type { PageValidator, PageValidationContext, ValidationFinding } from "../writer.ts";
 
 export const tripleHrValidator: PageValidator = {
-  id: 'triple-hr',
+  id: "triple-hr",
 
   async validate(ctx: PageValidationContext): Promise<ValidationFinding[]> {
     const findings: ValidationFinding[] = [];
 
     // Case 1: standalone --- inside compiled_truth
-    const compiledLines = ctx.compiledTruth.split('\n');
+    const compiledLines = ctx.compiledTruth.split("\n");
     let insideFence = false;
-    let fenceMarker = '';
+    let fenceMarker = "";
     for (let i = 0; i < compiledLines.length; i++) {
       const line = compiledLines[i];
       if (insideFence) {
         if (line.startsWith(fenceMarker)) insideFence = false;
         continue;
       }
-      if (line.startsWith('```') || line.startsWith('~~~')) {
+      if (line.startsWith("```") || line.startsWith("~~~")) {
         insideFence = true;
-        fenceMarker = line.startsWith('```') ? '```' : '~~~';
+        fenceMarker = line.startsWith("```") ? "```" : "~~~";
         continue;
       }
       if (/^-{3,}\s*$/.test(line)) {
         findings.push({
           slug: ctx.slug,
-          validator: 'triple-hr',
-          severity: 'warning',
+          validator: "triple-hr",
+          severity: "warning",
           line: i + 1,
           message: `Bare "---" line in compiled_truth would re-split on round-trip. Use spaced em-dash or thematic-break inside a list context.`,
         });
@@ -70,7 +70,7 @@ export const tripleHrValidator: PageValidator = {
 
     // Case 2: timeline has a heading (###) that looks like compiled-truth content
     // spilled below the bar. Timeline should be bullet-only lines or empty.
-    const timelineLines = ctx.timeline.split('\n');
+    const timelineLines = ctx.timeline.split("\n");
     for (let i = 0; i < timelineLines.length; i++) {
       const line = timelineLines[i].trim();
       if (line.length === 0) continue;
@@ -79,8 +79,8 @@ export const tripleHrValidator: PageValidator = {
       if (/^#{1,6}\s/.test(line)) {
         findings.push({
           slug: ctx.slug,
-          validator: 'triple-hr',
-          severity: 'warning',
+          validator: "triple-hr",
+          severity: "warning",
           line: i + 1,
           message: `Heading in timeline section: "${truncate(line, 60)}". Timeline entries should be append-only bullet lines.`,
         });
@@ -93,5 +93,5 @@ export const tripleHrValidator: PageValidator = {
 };
 
 function truncate(s: string, n: number): string {
-  return s.length <= n ? s : s.slice(0, n - 3) + '...';
+  return s.length <= n ? s : s.slice(0, n - 3) + "...";
 }

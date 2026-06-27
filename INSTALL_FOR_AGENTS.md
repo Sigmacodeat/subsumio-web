@@ -10,6 +10,7 @@ protocol (install, read order, trust boundary, common tasks). Claude Code reads
 `CLAUDE.md` automatically and can skip ahead.
 
 If you fetched this file by URL without cloning yet, the companion files live at:
+
 - `https://raw.githubusercontent.com/garrytan/gbrain/master/AGENTS.md` — start here
 - `https://raw.githubusercontent.com/garrytan/gbrain/master/llms.txt` — full doc map
 - `https://raw.githubusercontent.com/garrytan/gbrain/master/llms-full.txt` — same map, inlined
@@ -100,24 +101,24 @@ Per-query cost @ 10K queries/mo (typical single-user volume):
 > a one-time setup decision that controls retrieval payload size. Which mode
 > do you want?
 >
->   1) conservative — tight 4K budget, no LLM expansion, 10 chunks max.
->      Best for Haiku subagents, cost-sensitive setups, high-volume loops.
->
->   2) balanced — 12K budget, no expansion, 25 chunks. Sonnet-tier sweet spot.
->
->   3) tokenmax (recommended default — preserves v0.31.x retrieval shape) —
->      no budget, LLM expansion ON, 50 chunks. Best for Opus/frontier models.
+> 1. conservative — tight 4K budget, no LLM expansion, 10 chunks max.
+>    Best for Haiku subagents, cost-sensitive setups, high-volume loops.
+> 2. balanced — 12K budget, no expansion, 25 chunks. Sonnet-tier sweet spot.
+> 3. tokenmax (recommended default — preserves v0.31.x retrieval shape) —
+>    no budget, LLM expansion ON, 50 chunks. Best for Opus/frontier models.
 >
 > Cost depends on BOTH the mode AND the downstream model you run. See the
 > matrix above for the 9-cell breakdown.
 
 If the operator picks a non-default mode, run:
+
 ```bash
 gbrain config set search.mode <mode>
 ```
 
 If they pick tokenmax AND want to preserve the literal v0.31.x default
 (limit=20 instead of tokenmax's 50), also run:
+
 ```bash
 gbrain config set search.searchLimit 20
 ```
@@ -154,6 +155,7 @@ For brand-new empty brains, skip this step — auto-link populates the graph as 
 agent writes pages going forward. There is nothing to backfill yet.
 
 After this step:
+
 - `gbrain graph-query <slug> --depth 2` works (relationship traversal)
 - Search ranks well-connected entities higher (backlink boost)
 - Every future `put_page` auto-creates typed links and reconciles stale ones
@@ -306,26 +308,32 @@ see structured recommendations across 5 brain-health axes (orphans,
 stale embeddings, entity link coverage, timeline coverage, takes count).
 
 **On first connect (after `gbrain init`):**
+
 ```bash
 gbrain onboard --check --json
 ```
+
 The JSON envelope (`schema_version: 1`) carries `recommendations[]` with
 `apply_policy` per item: `auto_apply` (safe to run unattended),
 `prompt_required` (needs explicit user consent), or `manual_only`
 (LLM-bearing, user must run themselves).
 
 **After every `gbrain upgrade`:**
+
 ```bash
 gbrain onboard --check --json
 ```
+
 New versions may surface new opportunities. The post-upgrade banner
 nudges the user when it runs, but agents should re-probe as a hygiene
 step regardless.
 
 **Unattended remediation (cron / autopilot):**
+
 ```bash
 gbrain onboard --auto --max-usd 5
 ```
+
 Refuses without `--max-usd N`. Runs auto-eligible items only. The
 autopilot daemon also consults onboard recommendations on its tick — no
 explicit agent action needed for the autonomous path.
@@ -340,6 +348,7 @@ scope — admin alone is insufficient. The MCP op returns
 grants.
 
 **Privacy + consent gates:**
+
 - `gbrain takes extract --from-pages` sends concept/atom/lore/briefing/
   writing/originals page content to your configured chat model (default
   Anthropic Haiku). Refuses to run unless `takes.bootstrap_enabled=true`
@@ -348,7 +357,9 @@ grants.
   until v0.42.1's eval gate (do not bypass).
 
 **Suppress nudges in CI / scripted environments:**
+
 ```bash
 export GBRAIN_NO_ONBOARD_NUDGE=1
 ```
+
 Init + upgrade banners auto-skip in non-TTY too.

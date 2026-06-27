@@ -35,6 +35,7 @@ mutating: false
 ## Contract
 
 This skill guarantees:
+
 1. Candidates are ranked by explicit fit criteria (experience, sector, seniority, availability).
 2. Each match has a one-line rationale and the source.
 3. Conflicts are flagged (off-limits, recently placed, client overlap).
@@ -72,5 +73,6 @@ Use to build a shortlist for a role. Do NOT use to write one candidate's profile
 - ❌ Ignoring data-protection / consent constraints on candidate data.
 
 ## Error Handling
+
 - Role under-specified → list the must-haves needed before ranking.
 - Thin talent graph → state coverage; recommend importing past searches.

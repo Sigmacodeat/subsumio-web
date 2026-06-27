@@ -15,9 +15,9 @@ import type { NextRequest } from "next/server";
 export type RateTier = "standard" | "heavy" | "search";
 
 const TIER_MAX: Record<RateTier, { max: number; windowMs: number }> = {
-  standard: { max: 120, windowMs: 60_000 },   // 120/min
-  search:   { max: 60,  windowMs: 60_000 },   // 60/min
-  heavy:    { max: 30,  windowMs: 60_000 },   // 30/min
+  standard: { max: 120, windowMs: 60_000 }, // 120/min
+  search: { max: 60, windowMs: 60_000 }, // 60/min
+  heavy: { max: 30, windowMs: 60_000 }, // 30/min
 };
 
 /** Prüft Rate-Limit für einen authentifizierten Request.
@@ -26,7 +26,7 @@ const TIER_MAX: Record<RateTier, { max: number; windowMs: number }> = {
 export async function checkApiRate(
   userId: string,
   tier: RateTier,
-  _req?: NextRequest,
+  _req?: NextRequest
 ): Promise<{ ok: boolean; retryAfterSeconds: number }> {
   const { max, windowMs } = TIER_MAX[tier];
   const key = `api:${tier}:${userId}`;
@@ -38,7 +38,7 @@ export async function checkApiRate(
 export async function requireApiRate(
   userId: string,
   tier: RateTier,
-  req?: NextRequest,
+  req?: NextRequest
 ): Promise<Response | null> {
   const result = await checkApiRate(userId, tier, req);
   if (!result.ok) {
@@ -54,7 +54,7 @@ export async function requireApiRate(
           "Content-Type": "application/json",
           "Retry-After": String(result.retryAfterSeconds),
         },
-      },
+      }
     );
   }
   return null;

@@ -10,11 +10,11 @@
  *   gbrain check-backlinks fix --dry-run                  # preview fixes
  */
 
-import { readFileSync, writeFileSync, readdirSync, statSync, lstatSync, existsSync } from 'fs';
-import { join, relative, basename } from 'path';
-import { extractEntityRefs as canonicalExtractEntityRefs } from '../core/link-extraction.ts';
-import { createProgress, startHeartbeat } from '../core/progress.ts';
-import { getCliOptions, cliOptsToProgressOptions } from '../core/cli-options.ts';
+import { readFileSync, writeFileSync, readdirSync, statSync, lstatSync, existsSync } from "fs";
+import { join, relative, basename } from "path";
+import { extractEntityRefs as canonicalExtractEntityRefs } from "../core/link-extraction.ts";
+import { createProgress, startHeartbeat } from "../core/progress.ts";
+import { getCliOptions, cliOptsToProgressOptions } from "../core/cli-options.ts";
 
 interface BacklinkGap {
   /** The page that mentions the entity */
@@ -37,11 +37,14 @@ interface BacklinkGap {
  * (e.g. "people/alice"); this wrapper strips the prefix back off so existing
  * filesystem-walker code that does `${dir}/${slug}` keeps working.
  */
-export function extractEntityRefs(content: string, _pagePath: string): { name: string; slug: string; dir: string }[] {
+export function extractEntityRefs(
+  content: string,
+  _pagePath: string
+): { name: string; slug: string; dir: string }[] {
   const refs = canonicalExtractEntityRefs(content);
   return refs
-    .filter(r => r.dir === 'people' || r.dir === 'companies')
-    .map(r => ({
+    .filter((r) => r.dir === "people" || r.dir === "companies")
+    .map((r) => ({
       name: r.name,
       slug: r.slug.startsWith(`${r.dir}/`) ? r.slug.slice(r.dir.length + 1) : r.slug,
       dir: r.dir,
@@ -54,7 +57,7 @@ export function extractPageTitle(content: string): string {
   if (fmMatch) return fmMatch[1];
   const h1Match = content.match(/^#\s+(.+)$/m);
   if (h1Match) return h1Match[1].trim();
-  return 'Untitled';
+  return "Untitled";
 }
 
 /** Check if a page already contains a back-link to a given source file */
@@ -75,15 +78,17 @@ export function findBacklinkGaps(brainDir: string): BacklinkGap[] {
   const allPages: { path: string; relPath: string; content: string }[] = [];
   function walk(dir: string) {
     for (const entry of readdirSync(dir)) {
-      if (entry.startsWith('.')) continue;
+      if (entry.startsWith(".")) continue;
       const full = join(dir, entry);
       if (lstatSync(full).isDirectory()) {
         walk(full);
-      } else if (entry.endsWith('.md') && !entry.startsWith('_')) {
+      } else if (entry.endsWith(".md") && !entry.startsWith("_")) {
         const relPath = relative(brainDir, full);
         try {
-          allPages.push({ path: full, relPath, content: readFileSync(full, 'utf-8') });
-        } catch { /* skip unreadable */ }
+          allPages.push({ path: full, relPath, content: readFileSync(full, "utf-8") });
+        } catch {
+          /* skip unreadable */
+        }
       }
     }
   }
@@ -92,7 +97,7 @@ export function findBacklinkGaps(brainDir: string): BacklinkGap[] {
   // Build a lookup of existing pages by directory/slug
   const pagesBySlug = new Map<string, { path: string; content: string }>();
   for (const page of allPages) {
-    const slug = page.relPath.replace('.md', '');
+    const slug = page.relPath.replace(".md", "");
     pagesBySlug.set(slug, { path: page.path, content: page.content });
   }
 
@@ -121,7 +126,7 @@ export function findBacklinkGaps(brainDir: string): BacklinkGap[] {
       if (!hasBacklink(target.content, sourceFilename)) {
         gaps.push({
           sourcePage: page.relPath,
-          targetPage: targetSlug + '.md',
+          targetPage: targetSlug + ".md",
           entityName: ref.name,
           sourceTitle: extractPageTitle(page.content),
         });
@@ -133,7 +138,11 @@ export function findBacklinkGaps(brainDir: string): BacklinkGap[] {
 }
 
 /** Fix back-link gaps by appending timeline entries to target pages */
-export function fixBacklinkGaps(brainDir: string, gaps: BacklinkGap[], dryRun: boolean = false): number {
+export function fixBacklinkGaps(
+  brainDir: string,
+  gaps: BacklinkGap[],
+  dryRun: boolean = false
+): number {
   const today = new Date().toISOString().slice(0, 10);
   let fixed = 0;
 
@@ -149,32 +158,32 @@ export function fixBacklinkGaps(brainDir: string, gaps: BacklinkGap[], dryRun: b
     const targetPath = join(brainDir, targetPage);
     if (!existsSync(targetPath)) continue;
 
-    let content = readFileSync(targetPath, 'utf-8');
+    let content = readFileSync(targetPath, "utf-8");
 
     for (const gap of targetGaps) {
       // Compute relative path from target to source
-      const targetDir = targetPage.split('/').slice(0, -1);
-      const sourceDir = gap.sourcePage.split('/');
+      const targetDir = targetPage.split("/").slice(0, -1);
+      const sourceDir = gap.sourcePage.split("/");
       const depth = targetDir.length;
-      const relPrefix = '../'.repeat(depth);
+      const relPrefix = "../".repeat(depth);
       const relPath = relPrefix + gap.sourcePage;
 
       const entry = buildBacklinkEntry(gap.sourceTitle, relPath, today);
 
       // Insert into Timeline section
-      if (content.includes('## Timeline')) {
-        const parts = content.split('## Timeline');
+      if (content.includes("## Timeline")) {
+        const parts = content.split("## Timeline");
         const afterTimeline = parts[1];
         const nextSection = afterTimeline.match(/\n## /);
         if (nextSection) {
-          const insertIdx = parts[0].length + '## Timeline'.length + nextSection.index!;
-          content = content.slice(0, insertIdx) + '\n' + entry + content.slice(insertIdx);
+          const insertIdx = parts[0].length + "## Timeline".length + nextSection.index!;
+          content = content.slice(0, insertIdx) + "\n" + entry + content.slice(insertIdx);
         } else {
-          content = content.trimEnd() + '\n' + entry + '\n';
+          content = content.trimEnd() + "\n" + entry + "\n";
         }
       } else {
         // Add Timeline section
-        content = content.trimEnd() + '\n\n## Timeline\n\n' + entry + '\n';
+        content = content.trimEnd() + "\n\n## Timeline\n\n" + entry + "\n";
       }
       fixed++;
     }
@@ -188,13 +197,13 @@ export function fixBacklinkGaps(brainDir: string, gaps: BacklinkGap[], dryRun: b
 }
 
 export interface BacklinksOpts {
-  action: 'check' | 'fix';
+  action: "check" | "fix";
   dir: string;
   dryRun?: boolean;
 }
 
 export interface BacklinksResult {
-  action: 'check' | 'fix';
+  action: "check" | "fix";
   gaps_found: number;
   fixed: number;
   pages_affected: number;
@@ -207,7 +216,7 @@ export interface BacklinksResult {
  * Safe to call from the worker — no process.exit.
  */
 export async function runBacklinksCore(opts: BacklinksOpts): Promise<BacklinksResult> {
-  if (!['check', 'fix'].includes(opts.action)) {
+  if (!["check", "fix"].includes(opts.action)) {
     throw new Error(`Invalid backlinks action "${opts.action}". Allowed: check, fix.`);
   }
   if (!existsSync(opts.dir)) {
@@ -217,8 +226,8 @@ export async function runBacklinksCore(opts: BacklinksOpts): Promise<BacklinksRe
   // findBacklinkGaps is a sync double-walk of the brain dir. On 50K-page
   // brains that can take seconds — heartbeat so agents see we're working.
   const progress = createProgress(cliOptsToProgressOptions(getCliOptions()));
-  progress.start('backlinks.scan');
-  const stopHb = startHeartbeat(progress, 'walking pages for missing back-links…');
+  progress.start("backlinks.scan");
+  const stopHb = startHeartbeat(progress, "walking pages for missing back-links…");
   let gaps: BacklinkGap[];
   try {
     gaps = findBacklinkGaps(opts.dir);
@@ -226,34 +235,46 @@ export async function runBacklinksCore(opts: BacklinksOpts): Promise<BacklinksRe
     stopHb();
     progress.finish();
   }
-  const pagesAffected = new Set(gaps.map(g => g.targetPage)).size;
+  const pagesAffected = new Set(gaps.map((g) => g.targetPage)).size;
 
-  if (opts.action === 'fix' && gaps.length > 0) {
+  if (opts.action === "fix" && gaps.length > 0) {
     const fixed = fixBacklinkGaps(opts.dir, gaps, !!opts.dryRun);
-    return { action: 'fix', gaps_found: gaps.length, fixed, pages_affected: pagesAffected, dryRun: !!opts.dryRun };
+    return {
+      action: "fix",
+      gaps_found: gaps.length,
+      fixed,
+      pages_affected: pagesAffected,
+      dryRun: !!opts.dryRun,
+    };
   }
-  return { action: opts.action, gaps_found: gaps.length, fixed: 0, pages_affected: pagesAffected, dryRun: !!opts.dryRun };
+  return {
+    action: opts.action,
+    gaps_found: gaps.length,
+    fixed: 0,
+    pages_affected: pagesAffected,
+    dryRun: !!opts.dryRun,
+  };
 }
 
 export async function runBacklinks(args: string[]) {
   const subcommand = args[0];
-  const dirIdx = args.indexOf('--dir');
-  const brainDir = dirIdx >= 0 ? args[dirIdx + 1] : '.';
-  const dryRun = args.includes('--dry-run');
+  const dirIdx = args.indexOf("--dir");
+  const brainDir = dirIdx >= 0 ? args[dirIdx + 1] : ".";
+  const dryRun = args.includes("--dry-run");
 
-  if (!subcommand || !['check', 'fix'].includes(subcommand)) {
-    console.error('Usage: gbrain check-backlinks <check|fix> [--dir <brain-dir>] [--dry-run]');
-    console.error('  check    Report missing back-links');
-    console.error('  fix      Create missing back-links (appends to Timeline)');
-    console.error('  --dir    Brain directory (default: current directory)');
-    console.error('  --dry-run  Preview fixes without writing');
+  if (!subcommand || !["check", "fix"].includes(subcommand)) {
+    console.error("Usage: gbrain check-backlinks <check|fix> [--dir <brain-dir>] [--dry-run]");
+    console.error("  check    Report missing back-links");
+    console.error("  fix      Create missing back-links (appends to Timeline)");
+    console.error("  --dir    Brain directory (default: current directory)");
+    console.error("  --dry-run  Preview fixes without writing");
     process.exit(1);
   }
 
   let result: BacklinksResult;
   try {
     result = await runBacklinksCore({
-      action: subcommand as 'check' | 'fix',
+      action: subcommand as "check" | "fix",
       dir: brainDir,
       dryRun,
     });
@@ -263,10 +284,10 @@ export async function runBacklinks(args: string[]) {
   }
 
   if (result.gaps_found === 0) {
-    console.log('No missing back-links found.');
+    console.log("No missing back-links found.");
     return;
   }
-  if (result.action === 'check') {
+  if (result.action === "check") {
     // Re-walk for user-facing output (core returns counts, CLI shows detail).
     const gaps = findBacklinkGaps(brainDir);
     console.log(`Found ${gaps.length} missing back-link(s):\n`);
@@ -276,10 +297,12 @@ export async function runBacklinks(args: string[]) {
     }
     console.log(`\nRun 'gbrain check-backlinks fix --dir ${brainDir}' to create them.`);
   } else {
-    const label = result.dryRun ? '(dry run) ' : '';
-    console.log(`${label}Fixed ${result.fixed} missing back-link(s) across ${result.pages_affected} page(s).`);
+    const label = result.dryRun ? "(dry run) " : "";
+    console.log(
+      `${label}Fixed ${result.fixed} missing back-link(s) across ${result.pages_affected} page(s).`
+    );
     if (result.dryRun) {
-      console.log('\nRe-run without --dry-run to apply.');
+      console.log("\nRe-run without --dry-run to apply.");
     }
   }
 }

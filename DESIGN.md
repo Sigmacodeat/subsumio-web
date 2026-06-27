@@ -32,36 +32,38 @@ back to a hand-written template from `src/core/calibration/templates.ts`.
 CSS variables in `admin/src/index.css`. SVG renderer inlines literals
 matching these tokens (`src/core/calibration/svg-renderer.ts`).
 
-| Token              | Value     | Use                                       |
-|--------------------|-----------|-------------------------------------------|
-| `--bg-primary`     | `#0a0a0f` | Page background                           |
-| `--bg-secondary`   | `#14141f` | Sidebar, cards                            |
-| `--bg-tertiary`    | `#1e1e2e` | Subtle surfaces, borders                  |
-| `--text-primary`   | `#e0e0e0` | Body text                                 |
-| `--text-secondary` | `#888`    | Headings, labels                          |
+| Token              | Value     | Use                                                                |
+| ------------------ | --------- | ------------------------------------------------------------------ |
+| `--bg-primary`     | `#0a0a0f` | Page background                                                    |
+| `--bg-secondary`   | `#14141f` | Sidebar, cards                                                     |
+| `--bg-tertiary`    | `#1e1e2e` | Subtle surfaces, borders                                           |
+| `--text-primary`   | `#e0e0e0` | Body text                                                          |
+| `--text-secondary` | `#888`    | Headings, labels                                                   |
 | `--text-muted`     | `#777`    | Tertiary text — TD2 bumped from #555 for WCAG AA contrast (~5.5:1) |
-| `--accent`         | `#3b82f6` | Active states, links, primary CTAs        |
-| `--success`        | `#22c55e` | Healthy / ok status                       |
-| `--warning`        | `#f59e0b` | Doctor warnings                           |
-| `--error`          | `#ef4444` | Failures, destructive confirmations       |
+| `--accent`         | `#3b82f6` | Active states, links, primary CTAs                                 |
+| `--success`        | `#22c55e` | Healthy / ok status                                                |
+| `--warning`        | `#f59e0b` | Doctor warnings                                                    |
+| `--error`          | `#ef4444` | Failures, destructive confirmations                                |
 
 Dark theme is the only theme. No light mode toggle planned — admin is an
 operator tool, not a marketing surface. Users live in the terminal with a
 dark theme already.
 
 WCAG contrast:
+
 - Body text (#e0e0e0 on #0a0a0f) → ~14:1, AAA
 - Muted text (#777 on #0a0a0f) → ~5.5:1, AA (was 4.0 / fail before TD2)
 - Accent links (#3b82f6 on #0a0a0f) → ~5.7:1, AA
 
 ## Typography
 
-| Variable           | Value                       | Use                            |
-|--------------------|-----------------------------|---------------------------------|
-| `--font-sans`      | `Inter, system-ui, sans-serif` | UI text, headings, body         |
-| `--font-mono`      | `JetBrains Mono, monospace` | Numbers, slugs, code, terminal-ish data |
+| Variable      | Value                          | Use                                     |
+| ------------- | ------------------------------ | --------------------------------------- |
+| `--font-sans` | `Inter, system-ui, sans-serif` | UI text, headings, body                 |
+| `--font-mono` | `JetBrains Mono, monospace`    | Numbers, slugs, code, terminal-ish data |
 
 Type scale (de facto, not formalized yet):
+
 - 18px: sidebar logo / page title
 - 14px: body
 - 13px: nav items
@@ -98,6 +100,7 @@ Numeric inputs `.toFixed()`-coerced. Admin SPA renders via
 `requireAdmin` middleware.
 
 Why server-rendered SVG (per D23):
+
 - Chart logic stays close to the data math.
 - Zero new client-side chart-library dep.
 - SVG is accessible (text labels), scalable, copy-paste-friendly to PR
@@ -106,6 +109,7 @@ Why server-rendered SVG (per D23):
   scorecard, etc.).
 
 Four chart renderers in v0.36.1.0:
+
 - `renderBrierTrend({ series })` — sparkline + baseline reference at 0.25
 - `renderDomainBars({ bars })` — horizontal accuracy bars
 - `renderAbandonedThreadsCard(threads)` — text rows + "revisit now" links

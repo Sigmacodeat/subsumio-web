@@ -54,8 +54,8 @@ export function csvCell(value: string | number | undefined): string {
 /** Steuerkennzeichen für DATEV je nach USt-Satz.
  *  19 % DE = 19, 20 % AT = 20, 0 % = 0 (Ausland/Reverse-Charge). */
 export function steuerKennzeichen(vatRate: number): string {
-  if (vatRate >= 0.19 && vatRate < 0.20) return "19";
-  if (vatRate >= 0.20) return "20";
+  if (vatRate >= 0.19 && vatRate < 0.2) return "19";
+  if (vatRate >= 0.2) return "20";
   return "0";
 }
 
@@ -76,7 +76,7 @@ export function generateDatevCsv(
     ustId?: string;
   } | null,
   periodFrom: string,
-  periodTo: string,
+  periodTo: string
 ): string {
   const kontenrahmen = settings?.datevKontenrahmen || "SKR03";
   const konten = KONTENRAHMEN[kontenrahmen] || KONTENRAHMEN.SKR03;

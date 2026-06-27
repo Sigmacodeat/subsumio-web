@@ -34,9 +34,9 @@
  * just (deadline, grace, label).
  */
 
-import { Worker } from 'node:worker_threads';
+import { Worker } from "node:worker_threads";
 
-export type WatchdogAction = 'wait' | 'sigterm' | 'sigkill';
+export type WatchdogAction = "wait" | "sigterm" | "sigkill";
 
 /**
  * Pure decision function — the watchdog's whole state machine, extracted so it's
@@ -45,10 +45,14 @@ export type WatchdogAction = 'wait' | 'sigterm' | 'sigkill';
  *   deadline <= elapsed < +grace  -> 'sigterm' (clean-shutdown chance)
  *   elapsed >= deadline + grace   -> 'sigkill' (guaranteed)
  */
-export function watchdogDecision(elapsedMs: number, deadlineMs: number, graceMs: number): WatchdogAction {
-  if (elapsedMs >= deadlineMs + graceMs) return 'sigkill';
-  if (elapsedMs >= deadlineMs) return 'sigterm';
-  return 'wait';
+export function watchdogDecision(
+  elapsedMs: number,
+  deadlineMs: number,
+  graceMs: number
+): WatchdogAction {
+  if (elapsedMs >= deadlineMs + graceMs) return "sigkill";
+  if (elapsedMs >= deadlineMs) return "sigterm";
+  return "wait";
 }
 
 export interface ProcessWatchdogOpts {
@@ -74,10 +78,19 @@ export interface WatchdogHandle {
 const DEFAULT_GRACE_MS = 30_000;
 
 function defaultWarn(msg: string): void {
-  try { process.stderr.write(msg + '\n'); } catch { /* stderr may be broken */ }
+  try {
+    process.stderr.write(msg + "\n");
+  } catch {
+    /* stderr may be broken */
+  }
 }
 
-const INERT: WatchdogHandle = { dispose() {}, get active() { return false; } };
+const INERT: WatchdogHandle = {
+  dispose() {},
+  get active() {
+    return false;
+  },
+};
 
 /**
  * Worker body (runs on its own OS thread). Inline string so `eval: true` bakes
@@ -124,7 +137,8 @@ export function installProcessWatchdog(opts: ProcessWatchdogOpts): WatchdogHandl
   const deadlineMs = Math.floor(opts.deadlineMs);
   const graceMs = Math.max(0, Math.floor(opts.graceMs ?? DEFAULT_GRACE_MS));
   // Sanitize label to a safe charset (defends the inline worker string + log lines).
-  const label = (opts.label ?? 'watchdog').replace(/[^A-Za-z0-9_.:-]/g, '').slice(0, 40) || 'watchdog';
+  const label =
+    (opts.label ?? "watchdog").replace(/[^A-Za-z0-9_.:-]/g, "").slice(0, 40) || "watchdog";
   const heartbeatMs = Math.max(0, Math.floor(opts.heartbeatMs ?? 0));
 
   if (!Number.isFinite(deadlineMs) || deadlineMs <= 0) return INERT;
@@ -137,7 +151,9 @@ export function installProcessWatchdog(opts: ProcessWatchdogOpts): WatchdogHandl
     // Don't let the watchdog keep the process alive past clean completion.
     (worker as unknown as { unref?: () => void }).unref?.();
     // A worker-side error must never crash the host; log and move on.
-    worker.on('error', (err) => warn(`[${label}] watchdog worker error: ${err instanceof Error ? err.message : String(err)}`));
+    worker.on("error", (err) =>
+      warn(`[${label}] watchdog worker error: ${err instanceof Error ? err.message : String(err)}`)
+    );
     let disposed = false;
     return {
       dispose() {
@@ -145,17 +161,32 @@ export function installProcessWatchdog(opts: ProcessWatchdogOpts): WatchdogHandl
         disposed = true;
         void worker.terminate();
       },
-      get active() { return !disposed; },
+      get active() {
+        return !disposed;
+      },
     };
   } catch (err) {
     // Fallback: in-process timer. Starvation-vulnerable — say so loudly.
     warn(
       `[${label}] could not start out-of-band watchdog (${err instanceof Error ? err.message : String(err)}); ` +
-      `falling back to an in-process timer that will NOT fire if the event loop is starved.`,
+        `falling back to an in-process timer that will NOT fire if the event loop is starved.`
     );
     let killed = false;
-    const term = setTimeout(() => { try { process.kill(process.pid, 'SIGTERM'); } catch { /* */ } }, deadlineMs);
-    const kill = setTimeout(() => { killed = true; try { process.kill(process.pid, 'SIGKILL'); } catch { /* */ } }, deadlineMs + graceMs);
+    const term = setTimeout(() => {
+      try {
+        process.kill(process.pid, "SIGTERM");
+      } catch {
+        /* */
+      }
+    }, deadlineMs);
+    const kill = setTimeout(() => {
+      killed = true;
+      try {
+        process.kill(process.pid, "SIGKILL");
+      } catch {
+        /* */
+      }
+    }, deadlineMs + graceMs);
     (term as unknown as { unref?: () => void }).unref?.();
     (kill as unknown as { unref?: () => void }).unref?.();
     let disposed = false;
@@ -166,7 +197,9 @@ export function installProcessWatchdog(opts: ProcessWatchdogOpts): WatchdogHandl
         clearTimeout(term);
         clearTimeout(kill);
       },
-      get active() { return !disposed; },
+      get active() {
+        return !disposed;
+      },
     };
   }
 }

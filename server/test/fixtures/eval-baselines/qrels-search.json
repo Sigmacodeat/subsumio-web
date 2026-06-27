@@ -55,7 +55,10 @@
       "query_id": "q8-product-design",
       "query": "design system component library",
       "embedding_dim": 7,
-      "relevant_slugs": ["writing/design-system-essay-example", "projects/component-library-example"],
+      "relevant_slugs": [
+        "writing/design-system-essay-example",
+        "projects/component-library-example"
+      ],
       "first_relevant_slug": "writing/design-system-essay-example"
     },
     {

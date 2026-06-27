@@ -26,7 +26,7 @@
  * See docs/progress-events.md for the full reference.
  */
 
-export type ProgressMode = 'auto' | 'human' | 'json' | 'quiet';
+export type ProgressMode = "auto" | "human" | "json" | "quiet";
 
 export interface ProgressOptions {
   mode?: ProgressMode;
@@ -66,7 +66,7 @@ function installSignalHandler(): void {
   if (signalHandlerInstalled) return;
   signalHandlerInstalled = true;
 
-  const onSignal = (reason: 'SIGINT' | 'SIGTERM') => {
+  const onSignal = (reason: "SIGINT" | "SIGTERM") => {
     // Copy to array so abort() can mutate liveReporters during iteration.
     const snapshot = Array.from(liveReporters);
     for (const entry of snapshot) {
@@ -79,21 +79,24 @@ function installSignalHandler(): void {
   };
 
   // once() so we don't block user handlers or double-fire.
-  process.once('SIGINT', () => onSignal('SIGINT'));
-  process.once('SIGTERM', () => onSignal('SIGTERM'));
+  process.once("SIGINT", () => onSignal("SIGINT"));
+  process.once("SIGTERM", () => onSignal("SIGTERM"));
 }
 
 // ---------------------------------------------------------------------------
 // Mode resolution
 // ---------------------------------------------------------------------------
 
-function resolveMode(mode: ProgressMode, stream: NodeJS.WritableStream): 'human-tty' | 'human-plain' | 'json' | 'quiet' {
-  if (mode === 'quiet') return 'quiet';
-  if (mode === 'json') return 'json';
+function resolveMode(
+  mode: ProgressMode,
+  stream: NodeJS.WritableStream
+): "human-tty" | "human-plain" | "json" | "quiet" {
+  if (mode === "quiet") return "quiet";
+  if (mode === "json") return "json";
   const isTty = (stream as { isTTY?: boolean }).isTTY === true;
-  if (mode === 'human') return isTty ? 'human-tty' : 'human-plain';
+  if (mode === "human") return isTty ? "human-tty" : "human-plain";
   // auto
-  return isTty ? 'human-tty' : 'human-plain';
+  return isTty ? "human-tty" : "human-plain";
 }
 
 // ---------------------------------------------------------------------------
@@ -119,7 +122,7 @@ function attachErrorListener(stream: NodeJS.WritableStream): void {
   if (errorListenersAttached.has(stream)) return;
   errorListenersAttached.add(stream);
   // 'error' on a raw tty/pipe is rare, but EPIPE can surface this way.
-  (stream as NodeJS.EventEmitter).on?.('error', () => {
+  (stream as NodeJS.EventEmitter).on?.("error", () => {
     brokenStreams.add(stream);
   });
 }
@@ -128,10 +131,15 @@ function attachErrorListener(stream: NodeJS.WritableStream): void {
 // Rendering helpers
 // ---------------------------------------------------------------------------
 
-function renderHumanLine(phase: string, done: number | undefined, total: number | undefined, note: string | undefined): string {
+function renderHumanLine(
+  phase: string,
+  done: number | undefined,
+  total: number | undefined,
+  note: string | undefined
+): string {
   const parts: string[] = [`[${phase}]`];
-  if (typeof done === 'number') {
-    if (typeof total === 'number' && total > 0) {
+  if (typeof done === "number") {
+    if (typeof total === "number" && total > 0) {
       const pct = Math.floor((done / total) * 100);
       parts.push(`${done}/${total} (${pct}%)`);
     } else {
@@ -139,7 +147,7 @@ function renderHumanLine(phase: string, done: number | undefined, total: number 
     }
   }
   if (note) parts.push(note);
-  return parts.join(' ');
+  return parts.join(" ");
 }
 
 function nowIso(): string {
@@ -172,22 +180,25 @@ interface ReporterInternal extends ProgressReporter {
 class Reporter implements ReporterInternal {
   _phasePath: string[];
   private stream: NodeJS.WritableStream;
-  private renderMode: 'human-tty' | 'human-plain' | 'json' | 'quiet';
+  private renderMode: "human-tty" | "human-plain" | "json" | "quiet";
   private minIntervalMs: number;
   private minItemsOverride?: number;
   private state: PhaseState | null = null;
 
-  constructor(parentPath: string[], opts: Required<Omit<ProgressOptions, 'stream' | 'minIntervalMs' | 'minItems'>> & {
-    stream: NodeJS.WritableStream;
-    minIntervalMs: number;
-    minItems?: number;
-  }) {
+  constructor(
+    parentPath: string[],
+    opts: Required<Omit<ProgressOptions, "stream" | "minIntervalMs" | "minItems">> & {
+      stream: NodeJS.WritableStream;
+      minIntervalMs: number;
+      minItems?: number;
+    }
+  ) {
     this._phasePath = parentPath;
     this.stream = opts.stream;
     this.renderMode = resolveMode(opts.mode, opts.stream);
     this.minIntervalMs = opts.minIntervalMs;
     this.minItemsOverride = opts.minItems;
-    if (this.renderMode !== 'quiet') {
+    if (this.renderMode !== "quiet") {
       attachErrorListener(this.stream);
       installSignalHandler();
     }
@@ -200,7 +211,7 @@ class Reporter implements ReporterInternal {
   }
 
   private emitJson(obj: Record<string, unknown>): void {
-    safeWrite(this.stream, JSON.stringify(obj) + '\n');
+    safeWrite(this.stream, JSON.stringify(obj) + "\n");
   }
 
   private emitHumanLine(line: string): void {
@@ -213,24 +224,25 @@ class Reporter implements ReporterInternal {
     //
     // JSON mode (emitJson) is deliberately NOT prefixed — consumers
     // parse the NDJSON and would choke on a `[id] {...}` shape.
-    const { getSourcePrefix } = require('./console-prefix.ts') as typeof import('./console-prefix.ts');
+    const { getSourcePrefix } =
+      require("./console-prefix.ts") as typeof import("./console-prefix.ts");
     const prefix = getSourcePrefix();
     const tagged = prefix ? `[${prefix}] ${line}` : line;
-    if (this.renderMode === 'human-tty') {
+    if (this.renderMode === "human-tty") {
       // \r rewrite: clear-to-EOL then carriage-return-positioned line.
       safeWrite(this.stream, `\r\x1b[2K${tagged}`);
     } else {
-      safeWrite(this.stream, tagged + '\n');
+      safeWrite(this.stream, tagged + "\n");
     }
   }
 
   private finalizeHumanLine(): void {
     // When a TTY phase ends, move to a new line so subsequent output doesn't overwrite.
-    if (this.renderMode === 'human-tty') safeWrite(this.stream, '\n');
+    if (this.renderMode === "human-tty") safeWrite(this.stream, "\n");
   }
 
   private phaseName(localPhase: string): string {
-    return [...this._phasePath, localPhase].join('.');
+    return [...this._phasePath, localPhase].join(".");
   }
 
   start(localPhase: string, total?: number): void {
@@ -258,14 +270,14 @@ class Reporter implements ReporterInternal {
     liveReporters.add(live);
     s.live = live;
 
-    if (this.renderMode === 'quiet') return;
+    if (this.renderMode === "quiet") return;
 
-    if (this.renderMode === 'json') {
-      const obj: Record<string, unknown> = { event: 'start', phase, ts: nowIso() };
-      if (typeof total === 'number') obj.total = total;
+    if (this.renderMode === "json") {
+      const obj: Record<string, unknown> = { event: "start", phase, ts: nowIso() };
+      if (typeof total === "number") obj.total = total;
       this.emitJson(obj);
     } else {
-      this.emitHumanLine(renderHumanLine(phase, undefined, total, 'start'));
+      this.emitHumanLine(renderHumanLine(phase, undefined, total, "start"));
     }
   }
 
@@ -274,7 +286,7 @@ class Reporter implements ReporterInternal {
     if (!s) return;
     s.done += n;
 
-    if (this.renderMode === 'quiet') return;
+    if (this.renderMode === "quiet") return;
 
     const now = Date.now();
     const sinceEmit = now - s.lastEmitMs;
@@ -290,15 +302,15 @@ class Reporter implements ReporterInternal {
     s.lastDoneEmitted = s.done;
 
     const elapsedMs = now - s.startedAt;
-    if (this.renderMode === 'json') {
+    if (this.renderMode === "json") {
       const obj: Record<string, unknown> = {
-        event: 'tick',
+        event: "tick",
         phase: s.phase,
         done: s.done,
         elapsed_ms: elapsedMs,
         ts: nowIso(),
       };
-      if (typeof s.total === 'number' && s.total > 0) {
+      if (typeof s.total === "number" && s.total > 0) {
         obj.total = s.total;
         obj.pct = Math.round((s.done / s.total) * 1000) / 10; // one decimal
         if (s.done > 0) {
@@ -317,14 +329,14 @@ class Reporter implements ReporterInternal {
   heartbeat(note: string): void {
     const s = this.state;
     if (!s) return;
-    if (this.renderMode === 'quiet') return;
+    if (this.renderMode === "quiet") return;
 
     const now = Date.now();
     const elapsedMs = now - s.startedAt;
 
-    if (this.renderMode === 'json') {
+    if (this.renderMode === "json") {
       this.emitJson({
-        event: 'heartbeat',
+        event: "heartbeat",
         phase: s.phase,
         note,
         elapsed_ms: elapsedMs,
@@ -348,21 +360,23 @@ class Reporter implements ReporterInternal {
       s.live = null;
     }
 
-    if (this.renderMode !== 'quiet') {
+    if (this.renderMode !== "quiet") {
       const elapsedMs = Date.now() - s.startedAt;
-      if (this.renderMode === 'json') {
+      if (this.renderMode === "json") {
         const obj: Record<string, unknown> = {
-          event: 'finish',
+          event: "finish",
           phase: s.phase,
           elapsed_ms: elapsedMs,
           ts: nowIso(),
         };
         if (s.done > 0) obj.done = s.done;
-        if (typeof s.total === 'number') obj.total = s.total;
+        if (typeof s.total === "number") obj.total = s.total;
         if (note) obj.note = note;
         this.emitJson(obj);
       } else {
-        this.emitHumanLine(renderHumanLine(s.phase, s.done > 0 ? s.done : undefined, s.total, note ?? 'done'));
+        this.emitHumanLine(
+          renderHumanLine(s.phase, s.done > 0 ? s.done : undefined, s.total, note ?? "done")
+        );
         this.finalizeHumanLine();
       }
     }
@@ -377,18 +391,20 @@ class Reporter implements ReporterInternal {
       clearInterval(s.heartbeatTimer);
       s.heartbeatTimer = undefined;
     }
-    if (this.renderMode !== 'quiet') {
+    if (this.renderMode !== "quiet") {
       const elapsedMs = Date.now() - s.startedAt;
-      if (this.renderMode === 'json') {
+      if (this.renderMode === "json") {
         this.emitJson({
-          event: 'abort',
+          event: "abort",
           phase: s.phase,
           reason,
           elapsed_ms: elapsedMs,
           ts: nowIso(),
         });
       } else {
-        this.emitHumanLine(renderHumanLine(s.phase, s.done > 0 ? s.done : undefined, s.total, `aborted (${reason})`));
+        this.emitHumanLine(
+          renderHumanLine(s.phase, s.done > 0 ? s.done : undefined, s.total, `aborted (${reason})`)
+        );
         this.finalizeHumanLine();
       }
     }
@@ -431,13 +447,13 @@ class Reporter implements ReporterInternal {
   // doesn't re-evaluate TTY for children — they inherit the explicit mode).
   private modeForChildren(): ProgressMode {
     switch (this.renderMode) {
-      case 'human-tty':
-      case 'human-plain':
-        return 'human';
-      case 'json':
-        return 'json';
-      case 'quiet':
-        return 'quiet';
+      case "human-tty":
+      case "human-plain":
+        return "human";
+      case "json":
+        return "json";
+      case "quiet":
+        return "quiet";
     }
   }
 }
@@ -449,7 +465,7 @@ class Reporter implements ReporterInternal {
 export function createProgress(opts: ProgressOptions = {}): ProgressReporter {
   const stream = opts.stream ?? process.stderr;
   return new Reporter([], {
-    mode: opts.mode ?? 'auto',
+    mode: opts.mode ?? "auto",
     stream,
     minIntervalMs: opts.minIntervalMs ?? 1000,
     minItems: opts.minItems,

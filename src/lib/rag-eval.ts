@@ -343,7 +343,15 @@ export async function runEval(
   const overallNdcg = avg(results.map((r) => r.ndcg ?? 0));
 
   const byCategory: EvalSummary["byCategory"] = {};
-  for (const cat of ["statute", "case_law", "procedure", "general", "contract_clause", "memo", "bulk_review"]) {
+  for (const cat of [
+    "statute",
+    "case_law",
+    "procedure",
+    "general",
+    "contract_clause",
+    "memo",
+    "bulk_review",
+  ]) {
     const catResults = results.filter((r) => r.category === cat);
     if (catResults.length > 0) {
       byCategory[cat] = {

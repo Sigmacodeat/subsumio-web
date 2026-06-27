@@ -10,29 +10,33 @@
  *   this path with manifest paths like `query/SKILL.md`.
  */
 
-import { readFileSync, existsSync, readdirSync } from 'fs';
-import { join, relative } from 'path';
-import { findResolverFile, findAllResolverFiles, RESOLVER_FILENAMES_LABEL } from './resolver-filenames.ts';
-import { loadOrDeriveManifest } from './skill-manifest.ts';
+import { readFileSync, existsSync, readdirSync } from "fs";
+import { join, relative } from "path";
+import {
+  findResolverFile,
+  findAllResolverFiles,
+  RESOLVER_FILENAMES_LABEL,
+} from "./resolver-filenames.ts";
+import { loadOrDeriveManifest } from "./skill-manifest.ts";
 import {
   indexResolverTriggers,
   lintRoutingFixtures,
   loadRoutingFixtures,
   runRoutingEval,
-} from './routing-eval.ts';
-import { runFilingAudit } from './filing-audit.ts';
+} from "./routing-eval.ts";
+import { runFilingAudit } from "./filing-audit.ts";
 import {
   entriesToResolverContent,
   findPrimaryResolverPath,
   loadSkillTriggerIndex,
-} from './skill-trigger-index.ts';
+} from "./skill-trigger-index.ts";
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
 export interface ResolvableFix {
-  type: 'add_trigger' | 'remove_trigger' | 'add_frontmatter' | 'create_stub';
+  type: "add_trigger" | "remove_trigger" | "add_frontmatter" | "create_stub";
   file: string;
   section?: string;
   skill_path?: string;
@@ -40,23 +44,23 @@ export interface ResolvableFix {
 
 export interface ResolvableIssue {
   type:
-    | 'unreachable'
-    | 'mece_overlap'
-    | 'mece_gap'
-    | 'dry_violation'
-    | 'missing_file'
-    | 'orphan_trigger'
+    | "unreachable"
+    | "mece_overlap"
+    | "mece_gap"
+    | "dry_violation"
+    | "missing_file"
+    | "orphan_trigger"
     // Check 5 (W2): routing eval results surfaced as advisories.
-    | 'routing_miss'
-    | 'routing_ambiguous'
-    | 'routing_false_positive'
-    | 'routing_fixture_lint'
+    | "routing_miss"
+    | "routing_ambiguous"
+    | "routing_false_positive"
+    | "routing_fixture_lint"
     // Check 6 (W3): brain-filing audit findings.
-    | 'filing_missing_writes_to'
-    | 'filing_unknown_directory'
+    | "filing_missing_writes_to"
+    | "filing_unknown_directory"
     // D-CX-9: scaffolded skill still carries SKILLIFY_STUB sentinel.
-    | 'skillify_stub_unreplaced';
-  severity: 'error' | 'warning';
+    | "skillify_stub_unreplaced";
+  severity: "error" | "warning";
   skill: string;
   message: string;
   action: string;
@@ -107,16 +111,16 @@ export interface FixResult {
 
 /** Skills that intentionally overlap with many others (always-on, routers). */
 const OVERLAP_WHITELIST = new Set([
-  'ingest',           // router that delegates to idea-ingest, media-ingest, meeting-ingestion
-  'signal-detector',  // always-on, fires on every message
-  'brain-ops',        // always-on, every brain read/write
+  "ingest", // router that delegates to idea-ingest, media-ingest, meeting-ingestion
+  "signal-detector", // always-on, fires on every message
+  "brain-ops", // always-on, every brain read/write
 ]);
 
 export interface ResolverEntry {
   trigger: string;
-  skillPath: string;       // e.g., 'skills/query/SKILL.md'
-  isGStack: boolean;       // GStack: X entries (external, skip file check)
-  section: string;         // e.g., 'Brain operations'
+  skillPath: string; // e.g., 'skills/query/SKILL.md'
+  isGStack: boolean; // GStack: X entries (external, skip file check)
+  section: string; // e.g., 'Brain operations'
 }
 
 /**
@@ -147,9 +151,9 @@ export interface ResolverEntry {
  */
 export function parseResolverEntries(resolverContent: string): ResolverEntry[] {
   const entries: ResolverEntry[] = [];
-  let currentSection = '';
+  let currentSection = "";
 
-  for (const line of resolverContent.split('\n')) {
+  for (const line of resolverContent.split("\n")) {
     // Track section headings
     const headingMatch = line.match(/^##\s+(.+)/);
     if (headingMatch) {
@@ -158,18 +162,25 @@ export function parseResolverEntries(resolverContent: string): ResolverEntry[] {
     }
 
     // ── Format 1: Markdown table rows ──
-    if (line.startsWith('|') && !line.includes('---')) {
-      const cols = line.split('|').map(c => c.trim()).filter(Boolean);
+    if (line.startsWith("|") && !line.includes("---")) {
+      const cols = line
+        .split("|")
+        .map((c) => c.trim())
+        .filter(Boolean);
       if (cols.length < 2) continue;
 
       const trigger = cols[0];
       const skillCol = cols[1];
 
       // Skip header rows
-      if (trigger.toLowerCase() === 'trigger' || trigger.toLowerCase() === 'skill') continue;
+      if (trigger.toLowerCase() === "trigger" || trigger.toLowerCase() === "skill") continue;
 
       // GStack / external references (Check `ACCESS_POLICY.md`, Read X, GStack: Y)
-      if (skillCol.startsWith('GStack:') || skillCol.startsWith('Check ') || skillCol.startsWith('Read ')) {
+      if (
+        skillCol.startsWith("GStack:") ||
+        skillCol.startsWith("Check ") ||
+        skillCol.startsWith("Read ")
+      ) {
         entries.push({ trigger, skillPath: skillCol, isGStack: true, section: currentSection });
         continue;
       }
@@ -177,7 +188,12 @@ export function parseResolverEntries(resolverContent: string): ResolverEntry[] {
       // Backtick-wrapped skill path
       const pathMatch = skillCol.match(/`(skills\/[^`]+\/SKILL\.md)`/);
       if (pathMatch) {
-        entries.push({ trigger, skillPath: pathMatch[1], isGStack: false, section: currentSection });
+        entries.push({
+          trigger,
+          skillPath: pathMatch[1],
+          isGStack: false,
+          section: currentSection,
+        });
       }
       continue;
     }
@@ -195,12 +211,12 @@ export function parseResolverEntries(resolverContent: string): ResolverEntry[] {
       const triggersRaw = listMatch[2].trim();
       // Strip optional explicit path suffix (D3: stripped, NOT captured).
       // Both Unicode → and ASCII -> accepted; skillPath is always derived.
-      const cleaned = triggersRaw.replace(/\s*(?:→|->)\s*`skills\/[^`]+`\s*$/, '');
+      const cleaned = triggersRaw.replace(/\s*(?:→|->)\s*`skills\/[^`]+`\s*$/, "");
       // Split on |, drop empty pieces and the literal `...` placeholder.
       const triggers = cleaned
-        .split('|')
-        .map(t => t.trim())
-        .filter(t => t.length > 0 && t !== '...');
+        .split("|")
+        .map((t) => t.trim())
+        .filter((t) => t.length > 0 && t !== "...");
       const skillPath = `skills/${skillName}/SKILL.md`;
       // Multiple entries share skillPath; checkResolvable dedupes downstream.
       for (const trigger of triggers) {
@@ -225,8 +241,13 @@ function extractTriggers(skillContent: string): string[] {
   const triggersMatch = fm.match(/^triggers:\s*\n((?:\s+-\s+.+\n?)*)/m);
   if (!triggersMatch) return [];
   return triggersMatch[1]
-    .split('\n')
-    .map(l => l.replace(/^\s+-\s+/, '').replace(/^["']|["']$/g, '').trim())
+    .split("\n")
+    .map((l) =>
+      l
+        .replace(/^\s+-\s+/, "")
+        .replace(/^["']|["']$/g, "")
+        .trim()
+    )
     .filter(Boolean);
 }
 
@@ -243,15 +264,21 @@ export interface CrossCuttingPattern {
 }
 
 export const CROSS_CUTTING_PATTERNS: CrossCuttingPattern[] = [
-  { pattern: /iron\s*law.*back-?link/i,
-    conventions: ['conventions/quality.md'],
-    label: 'Iron Law back-linking' },
-  { pattern: /citation.*format.*\[Source:/i,
-    conventions: ['conventions/quality.md'],
-    label: 'citation format rules' },
-  { pattern: /notability.*gate/i,
-    conventions: ['conventions/quality.md', '_brain-filing-rules.md'],
-    label: 'notability gate' },
+  {
+    pattern: /iron\s*law.*back-?link/i,
+    conventions: ["conventions/quality.md"],
+    label: "Iron Law back-linking",
+  },
+  {
+    pattern: /citation.*format.*\[Source:/i,
+    conventions: ["conventions/quality.md"],
+    label: "citation format rules",
+  },
+  {
+    pattern: /notability.*gate/i,
+    conventions: ["conventions/quality.md", "_brain-filing-rules.md"],
+    label: "notability gate",
+  },
 ];
 
 /** Proximity window (lines) within which a delegation reference suppresses
@@ -261,7 +288,7 @@ export const DRY_PROXIMITY_LINES = 40;
 
 export interface DelegationRef {
   convention: string; // normalized relative path, e.g., 'conventions/quality.md'
-  line: number;       // 1-indexed line number of the reference
+  line: number; // 1-indexed line number of the reference
 }
 
 /**
@@ -276,7 +303,7 @@ export interface DelegationRef {
  */
 export function extractDelegationTargets(content: string): DelegationRef[] {
   const refs: DelegationRef[] = [];
-  const lines = content.split('\n');
+  const lines = content.split("\n");
   // Match backtick-wrapped skills/ paths that point at a known delegation
   // target. Scoped to conventions/ subtree and _brain-filing-rules.md.
   const pathRe = /`skills\/((?:conventions\/[^`]+\.md)|(?:_brain-filing-rules\.md))`/g;
@@ -324,20 +351,20 @@ export function checkResolvable(skillsDir: string): ResolvableReport {
   // still have a concrete target (auto-fix paths that touch RESOLVER.md
   // will create it on first write).
   const resolverPathOrNull = findPrimaryResolverPath(skillsDir);
-  const resolverPath = resolverPathOrNull ?? join(skillsDir, 'RESOLVER.md');
+  const resolverPath = resolverPathOrNull ?? join(skillsDir, "RESOLVER.md");
   if (!resolverPathOrNull && triggerEntries.length === 0) {
     // No RESOLVER.md / AGENTS.md anywhere AND no skill ships frontmatter
     // triggers — the resolver tree is fully empty. Preserve the
     // original 'missing_file' error semantics so doctor's UX doesn't
     // regress for genuinely-uninitialized skills directories.
-    const suggested = join(skillsDir, 'RESOLVER.md');
+    const suggested = join(skillsDir, "RESOLVER.md");
     const missingIssue: ResolvableIssue = {
-      type: 'missing_file',
-      severity: 'error',
+      type: "missing_file",
+      severity: "error",
       skill: RESOLVER_FILENAMES_LABEL,
       message: `${RESOLVER_FILENAMES_LABEL} not found in ${skillsDir} or its parent (and no SKILL.md frontmatter declares triggers:)`,
       action: `Create ${suggested} with skill routing tables, or add 'triggers:' to each SKILL.md frontmatter`,
-      fix: { type: 'create_stub', file: suggested },
+      fix: { type: "create_stub", file: suggested },
     };
     return {
       ok: false,
@@ -359,9 +386,7 @@ export function checkResolvable(skillsDir: string): ResolvableReport {
   const { skills: manifest } = loadOrDeriveManifest(skillsDir);
 
   // Build lookup sets
-  const resolverSkillPaths = new Set(
-    entries.filter(e => !e.isGStack).map(e => e.skillPath)
-  );
+  const resolverSkillPaths = new Set(entries.filter((e) => !e.isGStack).map((e) => e.skillPath));
 
   // 1. Check every manifest skill is reachable from RESOLVER.md
   let reachable = 0;
@@ -374,22 +399,22 @@ export function checkResolvable(skillsDir: string): ResolvableReport {
     } else {
       // Also check if the skill name appears in any resolver entry
       const nameInResolver = entries.some(
-        e => e.skillPath.includes(skill.name) || e.trigger.includes(skill.name)
+        (e) => e.skillPath.includes(skill.name) || e.trigger.includes(skill.name)
       );
       if (nameInResolver) {
         reachable++;
       } else {
         unreachable++;
         // Find the best section for this skill based on its description
-        const section = 'Brain operations'; // default suggestion
+        const section = "Brain operations"; // default suggestion
         issues.push({
-          type: 'unreachable',
-          severity: 'error',
+          type: "unreachable",
+          severity: "error",
           skill: skill.name,
           message: `Skill '${skill.name}' is in manifest but has no trigger row in ${RESOLVER_FILENAMES_LABEL}`,
           action: `Add a trigger row for 'skills/${skill.path}' in RESOLVER.md under ${section}`,
           fix: {
-            type: 'add_trigger',
+            type: "add_trigger",
             file: resolverPath,
             section,
             skill_path: `skills/${skill.path}`,
@@ -405,31 +430,31 @@ export function checkResolvable(skillsDir: string): ResolvableReport {
 
     // Resolver uses 'skills/query/SKILL.md', manifest uses 'query/SKILL.md'
     // The file on disk is at skillsDir + 'query/SKILL.md'
-    const relPath = entry.skillPath.replace(/^skills\//, '');
+    const relPath = entry.skillPath.replace(/^skills\//, "");
     const fullPath = join(skillsDir, relPath);
 
     if (!existsSync(fullPath)) {
       issues.push({
-        type: 'missing_file',
-        severity: 'error',
+        type: "missing_file",
+        severity: "error",
         skill: entry.skillPath,
         message: `RESOLVER.md references '${entry.skillPath}' but the file doesn't exist`,
         action: `Create the skill at '${fullPath}' or remove the resolver entry`,
-        fix: { type: 'create_stub', file: fullPath },
+        fix: { type: "create_stub", file: fullPath },
       });
     }
 
     // Check if in manifest
-    const skillName = relPath.replace(/\/SKILL\.md$/, '');
-    const inManifest = manifest.some(s => s.name === skillName);
+    const skillName = relPath.replace(/\/SKILL\.md$/, "");
+    const inManifest = manifest.some((s) => s.name === skillName);
     if (!inManifest && existsSync(fullPath)) {
       issues.push({
-        type: 'orphan_trigger',
-        severity: 'warning',
+        type: "orphan_trigger",
+        severity: "warning",
         skill: skillName,
         message: `RESOLVER.md has a trigger for '${skillName}' which is not in manifest.json`,
         action: `Register '${skillName}' in skills/manifest.json or remove from RESOLVER.md`,
-        fix: { type: 'remove_trigger', file: resolverPath, skill_path: entry.skillPath },
+        fix: { type: "remove_trigger", file: resolverPath, skill_path: entry.skillPath },
       });
     }
   }
@@ -442,7 +467,7 @@ export function checkResolvable(skillsDir: string): ResolvableReport {
     const skillPath = join(skillsDir, skill.path);
     if (!existsSync(skillPath)) continue;
     try {
-      const content = readFileSync(skillPath, 'utf-8');
+      const content = readFileSync(skillPath, "utf-8");
       const triggers = extractTriggers(content);
       for (const t of triggers) {
         const normalized = t.toLowerCase().trim();
@@ -457,14 +482,14 @@ export function checkResolvable(skillsDir: string): ResolvableReport {
   for (const [trigger, skills] of triggerMap) {
     if (skills.length <= 1) continue;
     // Filter out whitelisted skills
-    const nonWhitelisted = skills.filter(s => !OVERLAP_WHITELIST.has(s));
+    const nonWhitelisted = skills.filter((s) => !OVERLAP_WHITELIST.has(s));
     if (nonWhitelisted.length <= 1) continue;
     overlaps++;
     issues.push({
-      type: 'mece_overlap',
-      severity: 'warning',
-      skill: nonWhitelisted.join(', '),
-      message: `Trigger '${trigger}' matches multiple skills: ${nonWhitelisted.join(', ')}`,
+      type: "mece_overlap",
+      severity: "warning",
+      skill: nonWhitelisted.join(", "),
+      message: `Trigger '${trigger}' matches multiple skills: ${nonWhitelisted.join(", ")}`,
       action: `Add disambiguation rule in RESOLVER.md or narrow triggers in one skill's frontmatter`,
     });
   }
@@ -476,18 +501,18 @@ export function checkResolvable(skillsDir: string): ResolvableReport {
     const skillPath = join(skillsDir, skill.path);
     if (!existsSync(skillPath)) continue;
     try {
-      const content = readFileSync(skillPath, 'utf-8');
+      const content = readFileSync(skillPath, "utf-8");
       const triggers = extractTriggers(content);
       if (triggers.length === 0) {
         gaps++;
         issues.push({
-          type: 'mece_gap',
-          severity: 'warning',
+          type: "mece_gap",
+          severity: "warning",
           skill: skill.name,
           message: `Skill '${skill.name}' has no triggers: field in its SKILL.md frontmatter`,
           action: `Add a triggers: array to the frontmatter of skills/${skill.path}`,
           fix: {
-            type: 'add_frontmatter',
+            type: "add_frontmatter",
             file: skillPath,
             skill_path: `skills/${skill.path}`,
           },
@@ -507,23 +532,28 @@ export function checkResolvable(skillsDir: string): ResolvableReport {
     const skillPath = join(skillsDir, skill.path);
     if (!existsSync(skillPath)) continue;
     try {
-      const content = readFileSync(skillPath, 'utf-8');
+      const content = readFileSync(skillPath, "utf-8");
       const delegations = extractDelegationTargets(content);
       for (const { pattern, conventions, label } of CROSS_CUTTING_PATTERNS) {
-        const globalRe = new RegExp(pattern.source, pattern.flags.includes('g') ? pattern.flags : pattern.flags + 'g');
+        const globalRe = new RegExp(
+          pattern.source,
+          pattern.flags.includes("g") ? pattern.flags : pattern.flags + "g"
+        );
         const matches = [...content.matchAll(globalRe)];
         for (const m of matches) {
-          const matchLine = content.slice(0, m.index ?? 0).split('\n').length;
+          const matchLine = content.slice(0, m.index ?? 0).split("\n").length;
           const suppressed = delegations.some(
-            d => conventions.includes(d.convention) && Math.abs(d.line - matchLine) <= DRY_PROXIMITY_LINES
+            (d) =>
+              conventions.includes(d.convention) &&
+              Math.abs(d.line - matchLine) <= DRY_PROXIMITY_LINES
           );
           if (suppressed) continue;
           issues.push({
-            type: 'dry_violation',
-            severity: 'warning',
+            type: "dry_violation",
+            severity: "warning",
             skill: skill.name,
             message: `Skill '${skill.name}' inlines ${label} instead of delegating to a convention file`,
-            action: `Replace inlined rules with a reference to one of: ${conventions.join(', ')}`,
+            action: `Replace inlined rules with a reference to one of: ${conventions.join(", ")}`,
           });
           break; // one issue per pattern per skill
         }
@@ -542,23 +572,23 @@ export function checkResolvable(skillsDir: string): ResolvableReport {
     const lintIssues = lintRoutingFixtures(loaded.fixtures, triggerIndex);
     for (const lint of lintIssues) {
       issues.push({
-        type: 'routing_fixture_lint',
-        severity: 'warning',
-        skill: lint.fixture.expected_skill ?? 'unknown',
+        type: "routing_fixture_lint",
+        severity: "warning",
+        skill: lint.fixture.expected_skill ?? "unknown",
         message: `Routing fixture lint (${lint.reason}): "${lint.fixture.intent}"`,
         action: `Edit skills/<skill>/routing-eval.jsonl to fix: ${lint.detail}`,
       });
     }
     const routingReport = runRoutingEval(resolverContent, loaded.fixtures);
     for (const d of routingReport.details) {
-      if (d.outcome === 'pass') continue;
+      if (d.outcome === "pass") continue;
       const kind =
-        d.outcome === 'missed'
-          ? 'routing_miss'
-          : d.outcome === 'ambiguous'
-            ? 'routing_ambiguous'
-            : 'routing_false_positive';
-      const skillName = d.fixture.expected_skill ?? 'negative-case';
+        d.outcome === "missed"
+          ? "routing_miss"
+          : d.outcome === "ambiguous"
+            ? "routing_ambiguous"
+            : "routing_false_positive";
+      const skillName = d.fixture.expected_skill ?? "negative-case";
       // v0.41.11: triggers live in SKILL.md frontmatter (canonical) AND
       // RESOLVER.md rows. Point the agent at the canonical surface
       // first; the dispatcher map is the secondary edit point.
@@ -567,18 +597,18 @@ export function checkResolvable(skillsDir: string): ResolvableReport {
         : `the relevant skill's SKILL.md frontmatter triggers:`;
       issues.push({
         type: kind,
-        severity: 'warning',
+        severity: "warning",
         skill: skillName,
         message: `Routing ${d.outcome} for intent "${d.fixture.intent}"`,
-        action: `Update routing-eval.jsonl fixture or broaden ${editTarget} (${d.note ?? 'no additional detail'})`,
+        action: `Update routing-eval.jsonl fixture or broaden ${editTarget} (${d.note ?? "no additional detail"})`,
       });
     }
   }
   for (const m of loaded.malformed) {
     issues.push({
-      type: 'routing_fixture_lint',
-      severity: 'warning',
-      skill: 'routing-eval',
+      type: "routing_fixture_lint",
+      severity: "warning",
+      skill: "routing-eval",
       message: `Malformed routing fixture ${m.file}:${m.line}`,
       action: `Fix the JSONL in routing-eval.jsonl at line ${m.line}: ${m.error}`,
     });
@@ -590,8 +620,8 @@ export function checkResolvable(skillsDir: string): ResolvableReport {
   // shipped without a real implementation — warning-severity in
   // default mode, error-promoted under --strict via D-CX-3.
   for (const skill of manifest) {
-    const skillDir = join(skillsDir, skill.path.replace(/\/SKILL\.md$/, ''));
-    const scriptDir = join(skillDir, 'scripts');
+    const skillDir = join(skillsDir, skill.path.replace(/\/SKILL\.md$/, ""));
+    const scriptDir = join(skillDir, "scripts");
     const candidates: string[] = [join(skillsDir, skill.path)];
     if (existsSync(scriptDir)) {
       try {
@@ -604,11 +634,11 @@ export function checkResolvable(skillsDir: string): ResolvableReport {
     }
     for (const candidate of candidates) {
       try {
-        const content = readFileSync(candidate, 'utf-8');
-        if (content.includes('SKILLIFY_STUB: replace before running check-resolvable --strict')) {
+        const content = readFileSync(candidate, "utf-8");
+        if (content.includes("SKILLIFY_STUB: replace before running check-resolvable --strict")) {
           issues.push({
-            type: 'skillify_stub_unreplaced',
-            severity: 'warning',
+            type: "skillify_stub_unreplaced",
+            severity: "warning",
             skill: skill.name,
             message: `Skill '${skill.name}' still contains the SKILLIFY_STUB sentinel in ${relative(skillsDir, candidate)}`,
             action: `Replace the SKILLIFY_STUB sentinel in ${candidate} with a real implementation or remove the file. D-CX-9 gate.`,
@@ -632,16 +662,16 @@ export function checkResolvable(skillsDir: string): ResolvableReport {
     }
   } catch (err) {
     issues.push({
-      type: 'filing_unknown_directory',
-      severity: 'warning',
-      skill: 'brain-filing-rules',
+      type: "filing_unknown_directory",
+      severity: "warning",
+      skill: "brain-filing-rules",
       message: `_brain-filing-rules.json failed to load`,
       action: `Fix skills/_brain-filing-rules.json: ${(err as Error).message}`,
     });
   }
 
-  const errors = issues.filter(i => i.severity === 'error');
-  const warnings = issues.filter(i => i.severity === 'warning');
+  const errors = issues.filter((i) => i.severity === "error");
+  const warnings = issues.filter((i) => i.severity === "warning");
   return {
     ok: errors.length === 0,
     errors,
@@ -658,5 +688,5 @@ export function checkResolvable(skillsDir: string): ResolvableReport {
 }
 
 // Re-export auto-fix so callers have one canonical entry point.
-export { autoFixDryViolations } from './dry-fix.ts';
-export type { AutoFixOptions, AutoFixReport, FixOutcome } from './dry-fix.ts';
+export { autoFixDryViolations } from "./dry-fix.ts";
+export type { AutoFixOptions, AutoFixReport, FixOutcome } from "./dry-fix.ts";

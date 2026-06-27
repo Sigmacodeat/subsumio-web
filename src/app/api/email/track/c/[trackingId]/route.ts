@@ -49,10 +49,9 @@ export const GET = createPublicHandler(
 
     // Verify HMAC signature to prevent open redirect attacks
     if (!encodedUrl || !signature || !verifyUrlSignature(encodedUrl, signature)) {
-      return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_APP_URL || "https://subsum.eu"}/`,
-        { status: 302 }
-      );
+      return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || "https://subsum.eu"}/`, {
+        status: 302,
+      });
     }
 
     // Decode the original URL

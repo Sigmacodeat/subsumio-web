@@ -13,10 +13,10 @@
  * callers are trusted; the cycle calls `discoverTranscripts` directly.
  */
 
-import { readFileSync, readdirSync, statSync } from 'node:fs';
-import { join, basename } from 'node:path';
-import type { BrainEngine } from './engine.ts';
-import { isDreamOutput } from './cycle/transcript-discovery.ts';
+import { readFileSync, readdirSync, statSync } from "node:fs";
+import { join, basename } from "node:path";
+import type { BrainEngine } from "./engine.ts";
+import { isDreamOutput } from "./cycle/transcript-discovery.ts";
 
 export interface RecentTranscriptOpts {
   /** Window in days. Default 7. */
@@ -56,15 +56,15 @@ const SUMMARY_HEAD_CHARS = 250;
  */
 export async function listRecentTranscripts(
   engine: BrainEngine,
-  opts: RecentTranscriptOpts = {},
+  opts: RecentTranscriptOpts = {}
 ): Promise<RecentTranscript[]> {
   const days = Math.max(0, opts.days ?? 7);
   const summary = opts.summary !== false;
   const limit = Math.max(1, Math.min(opts.limit ?? 50, 500));
 
   const dirs: string[] = [];
-  const sessionDir = await engine.getConfig('dream.synthesize.session_corpus_dir');
-  const meetingDir = await engine.getConfig('dream.synthesize.meeting_transcripts_dir');
+  const sessionDir = await engine.getConfig("dream.synthesize.session_corpus_dir");
+  const meetingDir = await engine.getConfig("dream.synthesize.meeting_transcripts_dir");
   if (sessionDir) dirs.push(sessionDir);
   if (meetingDir) dirs.push(meetingDir);
   if (dirs.length === 0) return [];
@@ -83,7 +83,7 @@ export async function listRecentTranscripts(
       continue;
     }
     for (const name of entries) {
-      if (!name.endsWith('.txt')) continue;
+      if (!name.endsWith(".txt")) continue;
       const full = join(dir, name);
       let st;
       try {
@@ -105,7 +105,7 @@ export async function listRecentTranscripts(
     if (out.length >= limit) break;
     let raw: string;
     try {
-      raw = readFileSync(c.path, 'utf-8');
+      raw = readFileSync(c.path, "utf-8");
     } catch {
       continue;
     }
@@ -130,11 +130,14 @@ export async function listRecentTranscripts(
  * Strips leading whitespace; preserves internal newlines truncated by the cap.
  */
 function buildSummary(raw: string): string {
-  const trimmed = raw.replace(/^[\s​﻿]+/, '');
+  const trimmed = raw.replace(/^[\s​﻿]+/, "");
   // First non-empty line.
   const firstLineEnd = trimmed.search(/\r?\n/);
   const firstLine = firstLineEnd === -1 ? trimmed : trimmed.slice(0, firstLineEnd);
-  const after = firstLineEnd === -1 ? '' : trimmed.slice(firstLineEnd + 1, firstLineEnd + 1 + SUMMARY_HEAD_CHARS);
+  const after =
+    firstLineEnd === -1
+      ? ""
+      : trimmed.slice(firstLineEnd + 1, firstLineEnd + 1 + SUMMARY_HEAD_CHARS);
   if (!after) return firstLine;
   return `${firstLine}\n${after}`.trim();
 }

@@ -7,6 +7,7 @@ minutes per run; NOT in default `bun test`.
 ## When to add a script here
 
 Put a test here if it:
+
 - Costs more than ~30s wallclock per run
 - Needs real Postgres (not PGLite in-memory)
 - Spins up multiple processes or measures concurrency
@@ -16,6 +17,7 @@ Put a test here if it:
 ## When to use `*.slow.test.ts` instead
 
 Put a slow test in `test/` with the `.slow.test.ts` suffix if it:
+
 - Runs under `bun test` (TypeScript, uses bun:test imports)
 - Is correctness-shaped, not ops-shaped (asserts behavior of one function)
 - Can stub external dependencies

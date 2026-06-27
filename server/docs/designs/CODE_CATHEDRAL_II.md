@@ -9,7 +9,7 @@
 
 v0.19.0 shipped code indexing: tree-sitter chunker, 29 active languages, symbol columns, forward doc↔impl linking, incremental embed cache, BrainBench code category. Four cathedral-I items got deferred during shipping: `query --lang` filter, `sync --all` cost preview, markdown fence extraction, reverse-scan doc↔impl backfill.
 
-Cathedral II is a promise-keeping release for those four, bundled with the leap that makes gbrain *the* code search: structural edges (call graph + references + imports + inheritance), parent-scope capture, doc-comment FTS binding, and two-pass retrieval. No more grep-class retrieval on code.
+Cathedral II is a promise-keeping release for those four, bundled with the leap that makes gbrain _the_ code search: structural edges (call graph + references + imports + inheritance), parent-scope capture, doc-comment FTS binding, and two-pass retrieval. No more grep-class retrieval on code.
 
 ## The 10x leap
 
@@ -41,6 +41,7 @@ Both Layer 0 items are prerequisites for the 10x leap to actually move retrieval
 **Qualified symbol identity across all 8 langs.** `parent_symbol_path` (A3) is the source of truth for scope; edges use qualified names built from it. Examples: `Admin::UsersController#render` (Ruby instance), `Admin::UsersController.find_all` (Ruby singleton), `admin.users_controller.UsersController.render` (Python), `(*UsersController).Render` (Go), `users::UsersController::render` (Rust), `com.acme.admin.UsersController.render` (Java). Per-lang delimiter + method/class-method distinction. Ruby ships fully in ranker (CLI + A2 two-pass) — no deferral.
 
 **Split schema (two tables, not one polymorphic):**
+
 ```sql
 CREATE TABLE code_edges_chunk (
   from_chunk_id INTEGER NOT NULL REFERENCES content_chunks(id) ON DELETE CASCADE,
@@ -60,6 +61,7 @@ CREATE TABLE code_edges_symbol (
   UNIQUE (from_chunk_id, to_symbol_qualified, edge_type)
 );
 ```
+
 `code_edges_chunk` = resolved (both endpoints known). `code_edges_symbol` = unresolved (target symbol exists by qualified name, definition chunk not yet seen). Promotion from symbol→chunk table happens on later import. `source_id` is TEXT matching actual `sources.id` type.
 
 **Shipped languages:** TypeScript, TSX, JavaScript, Ruby, Python, Go, Rust, Java (8 langs, ~85% of real brain code). Other languages chunk normally (via B1 lazy-load) but don't emit edges in v0.20.0 — extension is one query file + delimiter config per language, shippable as small follow-up PRs.
@@ -70,9 +72,9 @@ CREATE TABLE code_edges_symbol (
 
 **A3. Parent-scope capture + nested-chunk emission.** Two parts:
 
-*Part 1:* Nested symbols get `parent_symbol_path text[]` on `content_chunks`. Embedded into chunk header: `[TypeScript] src/foo.ts:42-58 function formatResult (in BrainEngine.searchKeyword)`. Scope flows into embedding. Dual-use: drives A1's qualified symbol identity.
+_Part 1:_ Nested symbols get `parent_symbol_path text[]` on `content_chunks`. Embedded into chunk header: `[TypeScript] src/foo.ts:42-58 function formatResult (in BrainEngine.searchKeyword)`. Scope flows into embedding. Dual-use: drives A1's qualified symbol identity.
 
-*Part 2:* Extend `splitLargeNode` to emit nested functions/methods/inner-classes as their own chunks. The current chunker is top-level-node oriented — a `class Foo { method1() {} method2() {} }` emits one chunk. Parent_symbol_path on top-level nodes is empty (no parent above top level), so A3 contributes nothing without sub-top-level chunks. Part 2 makes the scope annotation load-bearing.
+_Part 2:_ Extend `splitLargeNode` to emit nested functions/methods/inner-classes as their own chunks. The current chunker is top-level-node oriented — a `class Foo { method1() {} method2() {} }` emits one chunk. Parent_symbol_path on top-level nodes is empty (no parent above top level), so A3 contributes nothing without sub-top-level chunks. Part 2 makes the scope annotation load-bearing.
 
 **A4. Doc-comment → symbol binding.** Leading AST comment extracted to `doc_comment text`. Lands on **chunk-grain** search_vector (Layer 0b prerequisite) with FTS weight `'A'`. Natural-language queries rank docstring matches above body text and below title. `'A' > 'B' > 'C' > 'D'` per Postgres FTS weight convention.
 

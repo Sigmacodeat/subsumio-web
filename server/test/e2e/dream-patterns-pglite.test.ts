@@ -20,9 +20,9 @@
  * Run: bun test test/e2e/dream-patterns-pglite.test.ts
  */
 
-import { describe, test, expect } from 'bun:test';
-import { PGLiteEngine } from '../../src/core/pglite-engine.ts';
-import { runPhasePatterns } from '../../src/core/cycle/patterns.ts';
+import { describe, test, expect } from "bun:test";
+import { PGLiteEngine } from "../../src/core/pglite-engine.ts";
+import { runPhasePatterns } from "../../src/core/cycle/patterns.ts";
 
 interface TestRig {
   engine: PGLiteEngine;
@@ -32,13 +32,17 @@ interface TestRig {
 
 async function setupRig(): Promise<TestRig> {
   const engine = new PGLiteEngine();
-  await engine.connect({ engine: 'pglite' } as never);
+  await engine.connect({ engine: "pglite" } as never);
   await engine.initSchema();
   return {
     engine,
-    brainDir: '/tmp/gbrain-patterns-test',
+    brainDir: "/tmp/gbrain-patterns-test",
     cleanup: async () => {
-      try { await engine.disconnect(); } catch { /* */ }
+      try {
+        await engine.disconnect();
+      } catch {
+        /* */
+      }
     },
   };
 }
@@ -61,38 +65,38 @@ async function withoutAnthropicKey<T>(body: () => Promise<T>): Promise<T> {
  */
 async function seedReflections(engine: PGLiteEngine, count: number): Promise<void> {
   for (let i = 0; i < count; i++) {
-    const slug = `wiki/personal/reflections/2026-04-${String(15 + i).padStart(2, '0')}-test-pattern-aaa${i}`;
+    const slug = `wiki/personal/reflections/2026-04-${String(15 + i).padStart(2, "0")}-test-pattern-aaa${i}`;
     await engine.putPage(slug, {
-      type: 'note',
+      type: "note",
       title: `Reflection ${i}`,
       compiled_truth: `Sample reflection content ${i} discussing recurring theme of work-life balance.`,
-      timeline: '',
-      frontmatter: { type: 'note', title: `Reflection ${i}` },
+      timeline: "",
+      frontmatter: { type: "note", title: `Reflection ${i}` },
     });
   }
 }
 
-describe('E2E patterns — disabled', () => {
-  test('skipped when dream.patterns.enabled=false', async () => {
+describe("E2E patterns — disabled", () => {
+  test("skipped when dream.patterns.enabled=false", async () => {
     // 30s timeout: a fresh PGLiteEngine + initSchema (36 migrations,
     // pgvector WASM cold start) clears in ~3s but spikes to 6-15s under
     // full-e2e-suite load contention. Default 5s timeout was eating the
     // happy path.
     const rig = await setupRig();
     try {
-      await rig.engine.setConfig('dream.patterns.enabled', 'false');
+      await rig.engine.setConfig("dream.patterns.enabled", "false");
       const result = await runPhasePatterns(rig.engine, {
         brainDir: rig.brainDir,
         dryRun: false,
       });
-      expect(result.status).toBe('skipped');
-      expect((result.details as { reason?: string }).reason).toBe('disabled');
+      expect(result.status).toBe("skipped");
+      expect((result.details as { reason?: string }).reason).toBe("disabled");
     } finally {
       await rig.cleanup();
     }
   }, 30_000);
 
-  test('default-enabled when config key unset', async () => {
+  test("default-enabled when config key unset", async () => {
     const rig = await setupRig();
     try {
       // No reflections seeded → falls through to insufficient_evidence,
@@ -101,48 +105,48 @@ describe('E2E patterns — disabled', () => {
         brainDir: rig.brainDir,
         dryRun: false,
       });
-      expect(result.status).toBe('skipped');
-      expect((result.details as { reason?: string }).reason).toBe('insufficient_evidence');
+      expect(result.status).toBe("skipped");
+      expect((result.details as { reason?: string }).reason).toBe("insufficient_evidence");
     } finally {
       await rig.cleanup();
     }
   }, 30_000);
 });
 
-describe('E2E patterns — insufficient_evidence', () => {
-  test('skipped with 0 reflections', async () => {
+describe("E2E patterns — insufficient_evidence", () => {
+  test("skipped with 0 reflections", async () => {
     const rig = await setupRig();
     try {
       const result = await runPhasePatterns(rig.engine, {
         brainDir: rig.brainDir,
         dryRun: false,
       });
-      expect(result.status).toBe('skipped');
-      expect((result.details as { reason?: string }).reason).toBe('insufficient_evidence');
+      expect(result.status).toBe("skipped");
+      expect((result.details as { reason?: string }).reason).toBe("insufficient_evidence");
     } finally {
       await rig.cleanup();
     }
   }, 30_000);
 
-  test('skipped with reflections below min_evidence', async () => {
+  test("skipped with reflections below min_evidence", async () => {
     const rig = await setupRig();
     try {
-      await rig.engine.setConfig('dream.patterns.min_evidence', '5');
+      await rig.engine.setConfig("dream.patterns.min_evidence", "5");
       await seedReflections(rig.engine, 3); // below 5
       const result = await runPhasePatterns(rig.engine, {
         brainDir: rig.brainDir,
         dryRun: false,
       });
-      expect(result.status).toBe('skipped');
-      expect((result.details as { reason?: string }).reason).toBe('insufficient_evidence');
+      expect(result.status).toBe("skipped");
+      expect((result.details as { reason?: string }).reason).toBe("insufficient_evidence");
     } finally {
       await rig.cleanup();
     }
   }, 30_000);
 });
 
-describe('E2E patterns — no API key', () => {
-  test('enough reflections, no ANTHROPIC_API_KEY → skipped no_api_key', async () => {
+describe("E2E patterns — no API key", () => {
+  test("enough reflections, no ANTHROPIC_API_KEY → skipped no_api_key", async () => {
     const rig = await setupRig();
     try {
       await seedReflections(rig.engine, 5); // above default min_evidence (3)
@@ -151,8 +155,8 @@ describe('E2E patterns — no API key', () => {
           brainDir: rig.brainDir,
           dryRun: false,
         });
-        expect(result.status).toBe('skipped');
-        expect((result.details as { reason?: string }).reason).toBe('no_api_key');
+        expect(result.status).toBe("skipped");
+        expect((result.details as { reason?: string }).reason).toBe("no_api_key");
       });
     } finally {
       await rig.cleanup();
@@ -160,8 +164,8 @@ describe('E2E patterns — no API key', () => {
   }, 30_000);
 });
 
-describe('E2E patterns — dry-run', () => {
-  test('dry-run returns ok with reflections_considered and zero patterns_written', async () => {
+describe("E2E patterns — dry-run", () => {
+  test("dry-run returns ok with reflections_considered and zero patterns_written", async () => {
     const rig = await setupRig();
     try {
       await seedReflections(rig.engine, 5);
@@ -169,7 +173,7 @@ describe('E2E patterns — dry-run', () => {
         brainDir: rig.brainDir,
         dryRun: true,
       });
-      expect(result.status).toBe('ok');
+      expect(result.status).toBe("ok");
       expect((result.details as { dryRun: boolean }).dryRun).toBe(true);
       expect((result.details as { reflections_considered: number }).reflections_considered).toBe(5);
       expect((result.details as { patterns_written: number }).patterns_written).toBe(0);

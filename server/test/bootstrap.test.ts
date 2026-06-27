@@ -19,9 +19,9 @@
  * what this test exercises.
  */
 
-import { describe, test, expect } from 'bun:test';
-import { PGLiteEngine } from '../src/core/pglite-engine.ts';
-import { LATEST_VERSION } from '../src/core/migrate.ts';
+import { describe, test, expect } from "bun:test";
+import { PGLiteEngine } from "../src/core/pglite-engine.ts";
+import { LATEST_VERSION } from "../src/core/migrate.ts";
 
 // Tier 3 opt-out: this file tests the cold init / bootstrap path explicitly.
 // If GBRAIN_PGLITE_SNAPSHOT is set (ci:local sets it for unit shards), every
@@ -30,8 +30,8 @@ import { LATEST_VERSION } from '../src/core/migrate.ts';
 // trivially. Unset for this file's process.
 delete process.env.GBRAIN_PGLITE_SNAPSHOT;
 
-describe('PGLiteEngine#applyForwardReferenceBootstrap', () => {
-  test('no-op on fresh install (no pages or links table)', async () => {
+describe("PGLiteEngine#applyForwardReferenceBootstrap", () => {
+  test("no-op on fresh install (no pages or links table)", async () => {
     const engine = new PGLiteEngine();
     await engine.connect({});
     try {
@@ -47,7 +47,7 @@ describe('PGLiteEngine#applyForwardReferenceBootstrap', () => {
     }
   }, 30000);
 
-  test('idempotent: calling twice produces same result', async () => {
+  test("idempotent: calling twice produces same result", async () => {
     const engine = new PGLiteEngine();
     await engine.connect({});
     try {
@@ -81,7 +81,7 @@ describe('PGLiteEngine#applyForwardReferenceBootstrap', () => {
     }
   }, 30000);
 
-  test('no-op on modern brain (source_id and links provenance already present)', async () => {
+  test("no-op on modern brain (source_id and links provenance already present)", async () => {
     const engine = new PGLiteEngine();
     await engine.connect({});
     try {
@@ -99,7 +99,7 @@ describe('PGLiteEngine#applyForwardReferenceBootstrap', () => {
     }
   }, 30000);
 
-  test('full path: pre-v0.18 brain reaches LATEST_VERSION via initSchema', async () => {
+  test("full path: pre-v0.18 brain reaches LATEST_VERSION via initSchema", async () => {
     const engine = new PGLiteEngine();
     await engine.connect({});
     try {
@@ -118,12 +118,12 @@ describe('PGLiteEngine#applyForwardReferenceBootstrap', () => {
         ALTER TABLE links DROP CONSTRAINT IF EXISTS links_resolution_type_check;
         ALTER TABLE links DROP COLUMN IF EXISTS resolution_type;
       `);
-      await engine.setConfig('version', '20');
+      await engine.setConfig("version", "20");
 
       // Path under test: bootstrap → SCHEMA_SQL → runMigrations
       await engine.initSchema();
 
-      expect(await engine.getConfig('version')).toBe(String(LATEST_VERSION));
+      expect(await engine.getConfig("version")).toBe(String(LATEST_VERSION));
 
       const { rows: srcCol } = await db.query(`
         SELECT column_name FROM information_schema.columns
@@ -138,7 +138,7 @@ describe('PGLiteEngine#applyForwardReferenceBootstrap', () => {
     }
   }, 30000);
 
-  test('fresh install regression: initSchema on empty DB produces LATEST', async () => {
+  test("fresh install regression: initSchema on empty DB produces LATEST", async () => {
     // The bootstrap's table-existence probe must not mis-classify "no table"
     // as "pre-v0.18 brain." Without the table-existence guard, the bootstrap
     // would call runMigrations against an empty DB and crash on
@@ -147,7 +147,7 @@ describe('PGLiteEngine#applyForwardReferenceBootstrap', () => {
     await engine.connect({});
     try {
       await engine.initSchema();
-      expect(await engine.getConfig('version')).toBe(String(LATEST_VERSION));
+      expect(await engine.getConfig("version")).toBe(String(LATEST_VERSION));
 
       const db = (engine as any).db;
       const pages = await db.query(`SELECT 1 FROM pages LIMIT 0`);
@@ -161,7 +161,7 @@ describe('PGLiteEngine#applyForwardReferenceBootstrap', () => {
     }
   }, 30000);
 
-  test('pre-v0.13 links shape: bootstrap adds link_source + origin_page_id', async () => {
+  test("pre-v0.13 links shape: bootstrap adds link_source + origin_page_id", async () => {
     // Issues #266 / #357 — pre-v0.13 brains had `links` without
     // `link_source` / `origin_page_id`. Schema blob's
     // `CREATE INDEX idx_links_source` would crash before v11 ran.

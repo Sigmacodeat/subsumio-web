@@ -20,45 +20,47 @@
  *  - native recipes (openai, anthropic, google) are not consulted via resolveAuth (they use their AI-SDK adapters directly)
  */
 
-import { describe, expect, test } from 'bun:test';
-import { defaultResolveAuth, applyResolveAuth } from '../../src/core/ai/gateway.ts';
-import { listRecipes, getRecipe } from '../../src/core/ai/recipes/index.ts';
-import { AIConfigError } from '../../src/core/ai/errors.ts';
-import type { Recipe } from '../../src/core/ai/types.ts';
+import { describe, expect, test } from "bun:test";
+import { defaultResolveAuth, applyResolveAuth } from "../../src/core/ai/gateway.ts";
+import { listRecipes, getRecipe } from "../../src/core/ai/recipes/index.ts";
+import { AIConfigError } from "../../src/core/ai/errors.ts";
+import type { Recipe } from "../../src/core/ai/types.ts";
 
-const TOUCHPOINTS: Array<'embedding' | 'expansion' | 'chat'> = ['embedding', 'expansion', 'chat'];
+const TOUCHPOINTS: Array<"embedding" | "expansion" | "chat"> = ["embedding", "expansion", "chat"];
 
-describe('IRON RULE: existing 9 recipes survive the v0.32 resolveAuth refactor', () => {
-  test('all 9 baseline recipes are still registered (subset, allows post-v0.32 additions)', () => {
-    const ids = new Set(listRecipes().map(r => r.id));
+describe("IRON RULE: existing 9 recipes survive the v0.32 resolveAuth refactor", () => {
+  test("all 9 baseline recipes are still registered (subset, allows post-v0.32 additions)", () => {
+    const ids = new Set(listRecipes().map((r) => r.id));
     for (const baseline of [
-      'anthropic',
-      'deepseek',
-      'google',
-      'groq',
-      'litellm',
-      'ollama',
-      'openai',
-      'together',
-      'voyage',
+      "anthropic",
+      "deepseek",
+      "google",
+      "groq",
+      "litellm",
+      "ollama",
+      "openai",
+      "together",
+      "voyage",
     ]) {
       expect(ids.has(baseline), `baseline recipe ${baseline} missing post-refactor`).toBe(true);
     }
   });
 
-  test('every recipe with a non-empty required[] returns Authorization Bearer <key>', () => {
+  test("every recipe with a non-empty required[] returns Authorization Bearer <key>", () => {
     for (const r of listRecipes()) {
       const required = r.auth_env?.required ?? [];
       if (required.length === 0) continue;
       const env = { [required[0]]: `fake-${r.id}-key` };
-      const auth = defaultResolveAuth(r, env, 'embedding');
-      expect(auth.headerName).toBe('Authorization');
+      const auth = defaultResolveAuth(r, env, "embedding");
+      expect(auth.headerName).toBe("Authorization");
       expect(auth.token).toBe(`Bearer fake-${r.id}-key`);
     }
   });
 
-  test('missing required env throws AIConfigError naming the recipe + touchpoint', () => {
-    const recipesWithRequired = listRecipes().filter(r => (r.auth_env?.required ?? []).length > 0);
+  test("missing required env throws AIConfigError naming the recipe + touchpoint", () => {
+    const recipesWithRequired = listRecipes().filter(
+      (r) => (r.auth_env?.required ?? []).length > 0
+    );
     expect(recipesWithRequired.length).toBeGreaterThan(0);
     for (const r of recipesWithRequired) {
       for (const tp of TOUCHPOINTS) {
@@ -77,97 +79,99 @@ describe('IRON RULE: existing 9 recipes survive the v0.32 resolveAuth refactor',
     }
   });
 
-  test('Ollama (empty required, OLLAMA_API_KEY set) reads it as the Bearer token', () => {
-    const ollama = getRecipe('ollama');
+  test("Ollama (empty required, OLLAMA_API_KEY set) reads it as the Bearer token", () => {
+    const ollama = getRecipe("ollama");
     expect(ollama).toBeDefined();
     expect(ollama!.auth_env?.required ?? []).toEqual([]);
     const optional = ollama!.auth_env?.optional ?? [];
-    expect(optional).toContain('OLLAMA_API_KEY');
+    expect(optional).toContain("OLLAMA_API_KEY");
     // OLLAMA_API_KEY (a non-URL-shaped optional) becomes the Bearer.
-    const auth = defaultResolveAuth(ollama!, { OLLAMA_API_KEY: 'fake-token' }, 'embedding');
-    expect(auth.headerName).toBe('Authorization');
-    expect(auth.token).toBe('Bearer fake-token');
+    const auth = defaultResolveAuth(ollama!, { OLLAMA_API_KEY: "fake-token" }, "embedding");
+    expect(auth.headerName).toBe("Authorization");
+    expect(auth.token).toBe("Bearer fake-token");
   });
 
   test('Ollama (no env at all) falls back to "Bearer unauthenticated"', () => {
-    const ollama = getRecipe('ollama');
-    const auth = defaultResolveAuth(ollama!, {}, 'embedding');
-    expect(auth.headerName).toBe('Authorization');
-    expect(auth.token).toBe('Bearer unauthenticated');
+    const ollama = getRecipe("ollama");
+    const auth = defaultResolveAuth(ollama!, {}, "embedding");
+    expect(auth.headerName).toBe("Authorization");
+    expect(auth.token).toBe("Bearer unauthenticated");
   });
 
-  test('URL-shaped optional env (OLLAMA_BASE_URL, LLAMA_SERVER_BASE_URL) does NOT become the Bearer token', () => {
+  test("URL-shaped optional env (OLLAMA_BASE_URL, LLAMA_SERVER_BASE_URL) does NOT become the Bearer token", () => {
     // Regression for the v0.32 default-fallback design: optional entries
     // ending in _URL or _BASE_URL are config (cfg.base_urls), not auth.
     // The fallback must skip them and consult the next optional API-key entry.
-    const ollama = getRecipe('ollama');
+    const ollama = getRecipe("ollama");
     const auth1 = defaultResolveAuth(
       ollama!,
-      { OLLAMA_BASE_URL: 'http://my-ollama/v1' },
-      'embedding',
+      { OLLAMA_BASE_URL: "http://my-ollama/v1" },
+      "embedding"
     );
-    expect(auth1.token, 'OLLAMA_BASE_URL must not become Bearer token').toBe('Bearer unauthenticated');
+    expect(auth1.token, "OLLAMA_BASE_URL must not become Bearer token").toBe(
+      "Bearer unauthenticated"
+    );
 
     // When BOTH BASE_URL and API_KEY are set, the API_KEY wins.
     const auth2 = defaultResolveAuth(
       ollama!,
-      { OLLAMA_BASE_URL: 'http://my-ollama/v1', OLLAMA_API_KEY: 'real-key' },
-      'embedding',
+      { OLLAMA_BASE_URL: "http://my-ollama/v1", OLLAMA_API_KEY: "real-key" },
+      "embedding"
     );
-    expect(auth2.token).toBe('Bearer real-key');
+    expect(auth2.token).toBe("Bearer real-key");
   });
 
-  test('all 3 touchpoints produce identical auth for the same recipe + env', () => {
+  test("all 3 touchpoints produce identical auth for the same recipe + env", () => {
     // Critical regression: pre-v0.32, embedding had a fallback to
     // ${recipe.id.toUpperCase()}_API_KEY that expansion and chat lacked.
     // Post-D12=A unification, all 3 touchpoints go through the same
     // resolver, so the auth shape MUST match.
     for (const r of listRecipes()) {
-      if (r.implementation !== 'openai-compatible') continue;
+      if (r.implementation !== "openai-compatible") continue;
       const required = r.auth_env?.required ?? [];
       const env: Record<string, string> = {};
       if (required.length > 0) env[required[0]] = `fake-${r.id}-key`;
 
-      const embeddingAuth = applyResolveAuth(r, { env } as any, 'embedding');
-      const expansionAuth = applyResolveAuth(r, { env } as any, 'expansion');
-      const chatAuth = applyResolveAuth(r, { env } as any, 'chat');
+      const embeddingAuth = applyResolveAuth(r, { env } as any, "embedding");
+      const expansionAuth = applyResolveAuth(r, { env } as any, "expansion");
+      const chatAuth = applyResolveAuth(r, { env } as any, "chat");
 
       expect(embeddingAuth, `${r.id} embed=expand`).toEqual(expansionAuth);
       expect(expansionAuth, `${r.id} expand=chat`).toEqual(chatAuth);
     }
   });
 
-  test('applyResolveAuth converts Authorization Bearer to {apiKey} (SDK-native path)', () => {
-    const voyage = getRecipe('voyage')!;
-    const env = { VOYAGE_API_KEY: 'fake-voyage-key' };
-    const auth = applyResolveAuth(voyage, { env } as any, 'embedding');
-    expect(auth.apiKey).toBe('fake-voyage-key');
+  test("applyResolveAuth converts Authorization Bearer to {apiKey} (SDK-native path)", () => {
+    const voyage = getRecipe("voyage")!;
+    const env = { VOYAGE_API_KEY: "fake-voyage-key" };
+    const auth = applyResolveAuth(voyage, { env } as any, "embedding");
+    expect(auth.apiKey).toBe("fake-voyage-key");
     expect(auth.headers).toBeUndefined();
   });
 
-  test('applyResolveAuth respects a recipe.resolveAuth override that returns a custom header', () => {
+  test("applyResolveAuth respects a recipe.resolveAuth override that returns a custom header", () => {
     // Synthetic recipe with a custom-header resolveAuth (Azure-style preview;
     // the actual Azure recipe lands in commit 8). Ensures the seam works.
     const fakeAzure: Recipe = {
-      id: 'fake-azure',
-      name: 'Fake Azure',
-      tier: 'openai-compat',
-      implementation: 'openai-compatible',
-      auth_env: { required: ['FAKE_AZURE_API_KEY'] },
+      id: "fake-azure",
+      name: "Fake Azure",
+      tier: "openai-compat",
+      implementation: "openai-compatible",
+      auth_env: { required: ["FAKE_AZURE_API_KEY"] },
       touchpoints: {},
       resolveAuth(env) {
         const k = env.FAKE_AZURE_API_KEY;
-        if (!k) throw new AIConfigError('Fake Azure requires FAKE_AZURE_API_KEY.');
-        return { headerName: 'api-key', token: k };
+        if (!k) throw new AIConfigError("Fake Azure requires FAKE_AZURE_API_KEY.");
+        return { headerName: "api-key", token: k };
       },
     };
-    const env = { FAKE_AZURE_API_KEY: 'fake-key' };
-    const auth = applyResolveAuth(fakeAzure, { env } as any, 'embedding');
-    expect(auth.apiKey, 'custom-header path must NOT set apiKey').toBeUndefined();
-    expect(auth.headers).toEqual({ 'api-key': 'fake-key' });
+    const env = { FAKE_AZURE_API_KEY: "fake-key" };
+    const auth = applyResolveAuth(fakeAzure, { env } as any, "embedding");
+    expect(auth.apiKey, "custom-header path must NOT set apiKey").toBeUndefined();
+    expect(auth.headers).toEqual({ "api-key": "fake-key" });
   });
 
-  test('native-* recipes have no resolveAuth declared; they take native SDK paths', () => {
+  test("native-* recipes have no resolveAuth declared; they take native SDK paths", () => {
     // Confirms the architectural invariant: resolveAuth is only consulted by
     // the openai-compatible branches in instantiate{Embedding,Expansion,Chat}.
     // Native recipes (openai, anthropic, google) use createOpenAI /
@@ -175,23 +179,23 @@ describe('IRON RULE: existing 9 recipes survive the v0.32 resolveAuth refactor',
     // own apiKey field. This test pins that resolveAuth is intentionally
     // absent on the native recipes — a future drift that adds it without
     // wiring it through the native branches would silently fail this assert.
-    for (const id of ['openai', 'anthropic', 'google']) {
+    for (const id of ["openai", "anthropic", "google"]) {
       const r = getRecipe(id);
       expect(r, `recipe ${id} missing`).toBeDefined();
-      expect(r!.tier).toBe('native');
+      expect(r!.tier).toBe("native");
       expect(r!.resolveAuth, `${id} should NOT declare resolveAuth in v0.32`).toBeUndefined();
     }
   });
 
-  test('only Azure overrides resolveAuth in v0.32 (default applies elsewhere)', () => {
+  test("only Azure overrides resolveAuth in v0.32 (default applies elsewhere)", () => {
     // The default resolver covers every openai-compatible recipe except
     // Azure, which uses the api-key custom-header path. The IRON RULE
     // contract: any new override beyond Azure must be reviewed for
     // double-auth + back-compat regression.
     const overrides = listRecipes().filter(
-      r => r.implementation === 'openai-compatible' && r.resolveAuth,
+      (r) => r.implementation === "openai-compatible" && r.resolveAuth
     );
-    expect(overrides.map(r => r.id).sort()).toEqual(['azure-openai']);
+    expect(overrides.map((r) => r.id).sort()).toEqual(["azure-openai"]);
   });
 });
 
@@ -205,134 +209,131 @@ describe('IRON RULE: existing 9 recipes survive the v0.32 resolveAuth refactor',
  * call time so the failure is loud at gateway configure, not silent on the
  * wire.
  */
-describe('default_headers / resolveDefaultHeaders contract (v0.37.2.0)', () => {
+describe("default_headers / resolveDefaultHeaders contract (v0.37.2.0)", () => {
   const baseCfg = { env: {} } as any;
 
-  test('Bearer auth + default_headers returns both apiKey AND headers', () => {
+  test("Bearer auth + default_headers returns both apiKey AND headers", () => {
     const synthetic: Recipe = {
-      id: 'fake-bearer-defaults',
-      name: 'Fake Bearer Defaults',
-      tier: 'openai-compat',
-      implementation: 'openai-compatible',
-      auth_env: { required: ['FAKE_KEY'] },
+      id: "fake-bearer-defaults",
+      name: "Fake Bearer Defaults",
+      tier: "openai-compat",
+      implementation: "openai-compatible",
+      auth_env: { required: ["FAKE_KEY"] },
       touchpoints: {},
       default_headers: {
-        'HTTP-Referer': 'https://example.test',
-        'X-App-Title': 'fake-app',
+        "HTTP-Referer": "https://example.test",
+        "X-App-Title": "fake-app",
       },
     };
-    const env = { FAKE_KEY: 'sk-fake' };
-    const auth = applyResolveAuth(synthetic, { env } as any, 'embedding');
-    expect(auth.apiKey).toBe('sk-fake');
+    const env = { FAKE_KEY: "sk-fake" };
+    const auth = applyResolveAuth(synthetic, { env } as any, "embedding");
+    expect(auth.apiKey).toBe("sk-fake");
     expect(auth.headers).toEqual({
-      'HTTP-Referer': 'https://example.test',
-      'X-App-Title': 'fake-app',
+      "HTTP-Referer": "https://example.test",
+      "X-App-Title": "fake-app",
     });
   });
 
-  test('resolveDefaultHeaders is preferred over static default_headers when only resolveDefaultHeaders is set', () => {
+  test("resolveDefaultHeaders is preferred over static default_headers when only resolveDefaultHeaders is set", () => {
     const synthetic: Recipe = {
-      id: 'fake-resolver',
-      name: 'Fake Resolver',
-      tier: 'openai-compat',
-      implementation: 'openai-compatible',
-      auth_env: { required: ['FAKE_KEY'] },
+      id: "fake-resolver",
+      name: "Fake Resolver",
+      tier: "openai-compat",
+      implementation: "openai-compatible",
+      auth_env: { required: ["FAKE_KEY"] },
       touchpoints: {},
       resolveDefaultHeaders(env) {
         return {
-          'HTTP-Referer': env.OVERRIDE_REFERER ?? 'https://default.test',
-          'X-Title': env.OVERRIDE_TITLE ?? 'default-title',
+          "HTTP-Referer": env.OVERRIDE_REFERER ?? "https://default.test",
+          "X-Title": env.OVERRIDE_TITLE ?? "default-title",
         };
       },
     };
-    const env = { FAKE_KEY: 'sk-fake', OVERRIDE_REFERER: 'https://forked.test', OVERRIDE_TITLE: 'Forked' };
-    const auth = applyResolveAuth(synthetic, { env } as any, 'chat');
+    const env = {
+      FAKE_KEY: "sk-fake",
+      OVERRIDE_REFERER: "https://forked.test",
+      OVERRIDE_TITLE: "Forked",
+    };
+    const auth = applyResolveAuth(synthetic, { env } as any, "chat");
     expect(auth.headers).toEqual({
-      'HTTP-Referer': 'https://forked.test',
-      'X-Title': 'Forked',
+      "HTTP-Referer": "https://forked.test",
+      "X-Title": "Forked",
     });
   });
 
-  test('declaring BOTH default_headers AND resolveDefaultHeaders throws AIConfigError', () => {
+  test("declaring BOTH default_headers AND resolveDefaultHeaders throws AIConfigError", () => {
     const synthetic: Recipe = {
-      id: 'fake-conflict',
-      name: 'Fake Conflict',
-      tier: 'openai-compat',
-      implementation: 'openai-compatible',
-      auth_env: { required: ['FAKE_KEY'] },
+      id: "fake-conflict",
+      name: "Fake Conflict",
+      tier: "openai-compat",
+      implementation: "openai-compatible",
+      auth_env: { required: ["FAKE_KEY"] },
       touchpoints: {},
-      default_headers: { 'X-One': '1' },
-      resolveDefaultHeaders: () => ({ 'X-Two': '2' }),
+      default_headers: { "X-One": "1" },
+      resolveDefaultHeaders: () => ({ "X-Two": "2" }),
     };
-    const env = { FAKE_KEY: 'sk-fake' };
-    expect(() =>
-      applyResolveAuth(synthetic, { env } as any, 'embedding'),
-    ).toThrow(AIConfigError);
+    const env = { FAKE_KEY: "sk-fake" };
+    expect(() => applyResolveAuth(synthetic, { env } as any, "embedding")).toThrow(AIConfigError);
   });
 
-  test('default_headers containing Authorization throws AIConfigError (auth-shadow guard)', () => {
+  test("default_headers containing Authorization throws AIConfigError (auth-shadow guard)", () => {
     const synthetic: Recipe = {
-      id: 'fake-shadow-auth',
-      name: 'Fake Shadow Auth',
-      tier: 'openai-compat',
-      implementation: 'openai-compatible',
-      auth_env: { required: ['FAKE_KEY'] },
+      id: "fake-shadow-auth",
+      name: "Fake Shadow Auth",
+      tier: "openai-compat",
+      implementation: "openai-compatible",
+      auth_env: { required: ["FAKE_KEY"] },
       touchpoints: {},
       // Any casing of Authorization should be caught — SDK header keys are
       // case-insensitive on the wire, so 'authorization', 'Authorization', and
       // 'AUTHORIZATION' all reach the same final header.
-      default_headers: { authorization: 'Bearer attacker-token' },
+      default_headers: { authorization: "Bearer attacker-token" },
     };
-    const env = { FAKE_KEY: 'sk-fake' };
-    expect(() =>
-      applyResolveAuth(synthetic, { env } as any, 'embedding'),
-    ).toThrow(AIConfigError);
+    const env = { FAKE_KEY: "sk-fake" };
+    expect(() => applyResolveAuth(synthetic, { env } as any, "embedding")).toThrow(AIConfigError);
   });
 
-  test('default_headers shadowing a custom-header resolveAuth (Azure-style) throws AIConfigError', () => {
+  test("default_headers shadowing a custom-header resolveAuth (Azure-style) throws AIConfigError", () => {
     const synthetic: Recipe = {
-      id: 'fake-shadow-custom',
-      name: 'Fake Shadow Custom',
-      tier: 'openai-compat',
-      implementation: 'openai-compatible',
-      auth_env: { required: ['FAKE_AZ_KEY'] },
+      id: "fake-shadow-custom",
+      name: "Fake Shadow Custom",
+      tier: "openai-compat",
+      implementation: "openai-compatible",
+      auth_env: { required: ["FAKE_AZ_KEY"] },
       touchpoints: {},
       resolveAuth(env) {
         const k = env.FAKE_AZ_KEY;
-        if (!k) throw new AIConfigError('missing key');
-        return { headerName: 'api-key', token: k };
+        if (!k) throw new AIConfigError("missing key");
+        return { headerName: "api-key", token: k };
       },
       // 'api-key' shadows the resolver's header — must throw.
-      default_headers: { 'api-key': 'attacker-value' },
+      default_headers: { "api-key": "attacker-value" },
     };
-    const env = { FAKE_AZ_KEY: 'real-key' };
-    expect(() =>
-      applyResolveAuth(synthetic, { env } as any, 'embedding'),
-    ).toThrow(AIConfigError);
+    const env = { FAKE_AZ_KEY: "real-key" };
+    expect(() => applyResolveAuth(synthetic, { env } as any, "embedding")).toThrow(AIConfigError);
   });
 
-  test('all four touchpoints produce identical default_headers for the same recipe + env', () => {
+  test("all four touchpoints produce identical default_headers for the same recipe + env", () => {
     // Critical regression: defaults must apply identically across
     // embedding/expansion/chat/reranker; the recipe declares them once and the
     // gateway must thread them through every site.
     const synthetic: Recipe = {
-      id: 'fake-all-touchpoints',
-      name: 'Fake All Touchpoints',
-      tier: 'openai-compat',
-      implementation: 'openai-compatible',
-      auth_env: { required: ['FAKE_KEY'] },
+      id: "fake-all-touchpoints",
+      name: "Fake All Touchpoints",
+      tier: "openai-compat",
+      implementation: "openai-compatible",
+      auth_env: { required: ["FAKE_KEY"] },
       touchpoints: {},
-      default_headers: { 'X-Static': 'static-val' },
+      default_headers: { "X-Static": "static-val" },
     };
-    const env = { FAKE_KEY: 'sk-fake' };
-    const e = applyResolveAuth(synthetic, { env } as any, 'embedding');
-    const x = applyResolveAuth(synthetic, { env } as any, 'expansion');
-    const c = applyResolveAuth(synthetic, { env } as any, 'chat');
-    const r = applyResolveAuth(synthetic, { env } as any, 'reranker');
+    const env = { FAKE_KEY: "sk-fake" };
+    const e = applyResolveAuth(synthetic, { env } as any, "embedding");
+    const x = applyResolveAuth(synthetic, { env } as any, "expansion");
+    const c = applyResolveAuth(synthetic, { env } as any, "chat");
+    const r = applyResolveAuth(synthetic, { env } as any, "reranker");
     expect(e).toEqual(x);
     expect(x).toEqual(c);
     expect(c).toEqual(r);
-    expect(e.headers).toEqual({ 'X-Static': 'static-val' });
+    expect(e.headers).toEqual({ "X-Static": "static-val" });
   });
 });
-

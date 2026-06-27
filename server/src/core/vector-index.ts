@@ -14,19 +14,19 @@
  *   - monitorBuild: progress reporter during long-running CREATE INDEX.
  */
 
-import type { BrainEngine } from './engine.ts';
+import type { BrainEngine } from "./engine.ts";
 
 export const PGVECTOR_HNSW_VECTOR_MAX_DIMS = 2000;
 
 const CHUNK_EMBEDDING_HNSW_INDEX =
-  'CREATE INDEX IF NOT EXISTS idx_chunks_embedding ON content_chunks USING hnsw (embedding vector_cosine_ops);';
+  "CREATE INDEX IF NOT EXISTS idx_chunks_embedding ON content_chunks USING hnsw (embedding vector_cosine_ops);";
 
 export function chunkEmbeddingIndexSql(dims: number): string {
   if (dims <= PGVECTOR_HNSW_VECTOR_MAX_DIMS) return CHUNK_EMBEDDING_HNSW_INDEX;
   return [
-    '-- idx_chunks_embedding skipped: pgvector HNSW vector indexes support',
+    "-- idx_chunks_embedding skipped: pgvector HNSW vector indexes support",
     `-- at most ${PGVECTOR_HNSW_VECTOR_MAX_DIMS} dimensions; exact vector scans remain available.`,
-  ].join('\n');
+  ].join("\n");
 }
 
 export function applyChunkEmbeddingIndexPolicy(sql: string, dims: number): string {
@@ -62,18 +62,22 @@ export interface ActiveBuildInfo {
  */
 export async function checkActiveBuild(
   engine: BrainEngine,
-  indexName: string,
+  indexName: string
 ): Promise<ActiveBuildInfo> {
-  if (engine.kind !== 'postgres') return { active: false };
+  if (engine.kind !== "postgres") return { active: false };
   try {
-    const rows = await engine.executeRaw<{ pid: number; query: string; application_name: string | null }>(
+    const rows = await engine.executeRaw<{
+      pid: number;
+      query: string;
+      application_name: string | null;
+    }>(
       `SELECT pid, query, application_name
        FROM pg_stat_activity
        WHERE state = 'active'
          AND (query ILIKE $1 OR query ILIKE $2)
          AND pid != pg_backend_pid()
        LIMIT 1`,
-      [`%CREATE INDEX%${indexName}%`, `%REINDEX%${indexName}%`],
+      [`%CREATE INDEX%${indexName}%`, `%REINDEX%${indexName}%`]
     );
     if (rows.length === 0) return { active: false };
     const r = rows[0];
@@ -97,9 +101,9 @@ export async function checkActiveBuild(
  */
 export async function dropZombieIndexes(
   engine: BrainEngine,
-  tableNames: string[] = ['content_chunks', 'pages', 'takes'],
+  tableNames: string[] = ["content_chunks", "pages", "takes"]
 ): Promise<{ dropped: string[] }> {
-  if (engine.kind !== 'postgres') return { dropped: [] };
+  if (engine.kind !== "postgres") return { dropped: [] };
   const dropped: string[] = [];
   try {
     // Find invalid indexes on our tables.
@@ -110,13 +114,15 @@ export async function dropZombieIndexes(
        JOIN pg_class t ON t.oid = ix.indrelid
        WHERE ix.indisvalid = false
          AND t.relname = ANY($1)`,
-      [tableNames],
+      [tableNames]
     );
     for (const r of rows) {
       // Guard: skip if there's an active build for this index.
       const active = await checkActiveBuild(engine, r.indexname);
       if (active.active) {
-        process.stderr.write(`[hnsw] skipping zombie cleanup of ${r.indexname} — active build (pid ${active.pid})\n`);
+        process.stderr.write(
+          `[hnsw] skipping zombie cleanup of ${r.indexname} — active build (pid ${active.pid})\n`
+        );
         continue;
       }
       try {
@@ -154,30 +160,30 @@ export async function dropZombieIndexes(
 export async function dropAndRebuild(
   engine: BrainEngine,
   spec: IndexSpec,
-  opts: { reason: string; force?: boolean } = { reason: 'manual' },
+  opts: { reason: string; force?: boolean } = { reason: "manual" }
 ): Promise<{ rebuilt: boolean; tempName: string }> {
-  if (engine.kind !== 'postgres') {
+  if (engine.kind !== "postgres") {
     return { rebuilt: false, tempName: spec.name };
   }
 
   const active = await checkActiveBuild(engine, spec.name);
   if (active.active && !opts.force) {
     process.stderr.write(
-      `[hnsw] dropAndRebuild ${spec.name} aborted: active build pid ${active.pid} (${active.application_name ?? 'unknown'}). Pass --force to proceed anyway.\n`,
+      `[hnsw] dropAndRebuild ${spec.name} aborted: active build pid ${active.pid} (${active.application_name ?? "unknown"}). Pass --force to proceed anyway.\n`
     );
     return { rebuilt: false, tempName: spec.name };
   }
 
   const ts = Date.now();
   const tempName = `${spec.name}_rebuild_${ts}`;
-  const where = spec.condition ? ` WHERE ${spec.condition}` : '';
+  const where = spec.condition ? ` WHERE ${spec.condition}` : "";
 
   process.stderr.write(`[hnsw] rebuild ${spec.name} → ${tempName} (reason=${opts.reason})\n`);
 
   // Step 3: build the new index (CONCURRENTLY) under a reserved connection.
-  await engine.withReservedConnection(async conn => {
+  await engine.withReservedConnection(async (conn) => {
     await conn.executeRaw(
-      `CREATE INDEX CONCURRENTLY IF NOT EXISTS ${tempName} ON ${spec.table} USING ${spec.using}${where}`,
+      `CREATE INDEX CONCURRENTLY IF NOT EXISTS ${tempName} ON ${spec.table} USING ${spec.using}${where}`
     );
   });
 
@@ -213,9 +219,9 @@ export async function monitorBuild(
   engine: BrainEngine,
   indexName: string,
   onProgress: (status: BuildProgress) => void,
-  opts: { intervalMs?: number; maxIterations?: number } = {},
+  opts: { intervalMs?: number; maxIterations?: number } = {}
 ): Promise<void> {
-  if (engine.kind !== 'postgres') return;
+  if (engine.kind !== "postgres") return;
   const interval = opts.intervalMs ?? 30000;
   const maxIterations = opts.maxIterations ?? 240; // 240 * 30s = 2h cap
   const t0 = Date.now();
@@ -226,12 +232,14 @@ export async function monitorBuild(
     try {
       const rows = await engine.executeRaw<{ size: number }>(
         `SELECT pg_relation_size(c.oid) AS size FROM pg_class c WHERE c.relname = $1 LIMIT 1`,
-        [indexName],
+        [indexName]
       );
       if (rows[0]) size_bytes = Number(rows[0].size);
-    } catch { /* size probe optional */ }
+    } catch {
+      /* size probe optional */
+    }
     onProgress({ elapsed_ms: Date.now() - t0, size_bytes, pid: active.pid });
-    await new Promise(r => setTimeout(r, interval));
+    await new Promise((r) => setTimeout(r, interval));
   }
 }
 
@@ -242,6 +250,6 @@ export async function monitorBuild(
  */
 export function isSupabaseAutoMaintenance(active: ActiveBuildInfo): boolean {
   if (!active.active) return false;
-  const appName = (active.application_name ?? '').toLowerCase();
-  return appName.includes('supabase') || appName.includes('postgres-meta');
+  const appName = (active.application_name ?? "").toLowerCase();
+  return appName.includes("supabase") || appName.includes("postgres-meta");
 }

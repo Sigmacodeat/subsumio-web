@@ -9,17 +9,25 @@
  * cancel <id>`.
  */
 
-import type { MinionQueue } from './queue.ts';
-import type { MinionJob, MinionJobStatus } from './types.ts';
+import type { MinionQueue } from "./queue.ts";
+import type { MinionJob, MinionJobStatus } from "./types.ts";
 
 export class TimeoutError extends Error {
-  constructor(public readonly jobId: number, public readonly elapsedMs: number) {
+  constructor(
+    public readonly jobId: number,
+    public readonly elapsedMs: number
+  ) {
     super(`timeout after ${elapsedMs}ms waiting for job ${jobId}`);
-    this.name = 'TimeoutError';
+    this.name = "TimeoutError";
   }
 }
 
-const TERMINAL_STATES: readonly MinionJobStatus[] = ['completed', 'failed', 'dead', 'cancelled'] as const;
+const TERMINAL_STATES: readonly MinionJobStatus[] = [
+  "completed",
+  "failed",
+  "dead",
+  "cancelled",
+] as const;
 const TERMINAL_SET = new Set<MinionJobStatus>(TERMINAL_STATES);
 
 export interface WaitOpts {
@@ -41,7 +49,7 @@ export interface WaitOpts {
 export async function waitForCompletion(
   queue: MinionQueue,
   jobId: number,
-  opts: WaitOpts = {},
+  opts: WaitOpts = {}
 ): Promise<MinionJob> {
   const timeoutMs = opts.timeoutMs ?? 24 * 60 * 60 * 1000;
   const pollMs = opts.pollMs ?? 1000;
@@ -77,14 +85,14 @@ function delay(ms: number, signal?: AbortSignal): Promise<void> {
   if (ms <= 0) return Promise.resolve();
   return new Promise((resolve) => {
     const t = setTimeout(() => {
-      signal?.removeEventListener('abort', onAbort);
+      signal?.removeEventListener("abort", onAbort);
       resolve();
     }, ms);
     const onAbort = () => {
       clearTimeout(t);
       resolve();
     };
-    signal?.addEventListener('abort', onAbort, { once: true });
+    signal?.addEventListener("abort", onAbort, { once: true });
   });
 }
 

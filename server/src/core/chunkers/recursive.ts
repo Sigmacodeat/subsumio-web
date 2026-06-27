@@ -17,7 +17,7 @@
  * Lossless invariant: non-overlapping portions reassemble to original.
  */
 
-import { countCJKAwareWords, CJK_SENTENCE_DELIMITERS, CJK_CLAUSE_DELIMITERS } from '../cjk.ts';
+import { countCJKAwareWords, CJK_SENTENCE_DELIMITERS, CJK_CLAUSE_DELIMITERS } from "../cjk.ts";
 
 /**
  * Markdown chunker version. Folded into the per-page chunker_version column
@@ -37,17 +37,17 @@ import { countCJKAwareWords, CJK_SENTENCE_DELIMITERS, CJK_CLAUSE_DELIMITERS } fr
 export const MARKDOWN_CHUNKER_VERSION = 3;
 
 const DELIMITERS: string[][] = [
-  ['\n\n'],                          // L0: paragraphs
-  ['\n'],                            // L1: lines
-  ['. ', '! ', '? ', '.\n', '!\n', '?\n', ...CJK_SENTENCE_DELIMITERS], // L2: sentences
-  ['; ', ': ', ', ', ...CJK_CLAUSE_DELIMITERS],                         // L3: clauses
-  [],                                // L4: words (whitespace + CJK char-slice fallback)
+  ["\n\n"], // L0: paragraphs
+  ["\n"], // L1: lines
+  [". ", "! ", "? ", ".\n", "!\n", "?\n", ...CJK_SENTENCE_DELIMITERS], // L2: sentences
+  ["; ", ": ", ", ", ...CJK_CLAUSE_DELIMITERS], // L3: clauses
+  [], // L4: words (whitespace + CJK char-slice fallback)
 ];
 
 export interface ChunkOptions {
-  chunkSize?: number;    // target words per chunk (default 300)
+  chunkSize?: number; // target words per chunk (default 300)
   chunkOverlap?: number; // overlap words (default 50)
-  maxChars?: number;     // hard cap on any chunk's char length (default 6000)
+  maxChars?: number; // hard cap on any chunk's char length (default 6000)
 }
 
 export interface TextChunk {
@@ -58,7 +58,7 @@ export interface TextChunk {
 // v0.28: import takes-fence stripper as a pre-processing pass. Takes content
 // lives in the takes table only; duplicating it inside content_chunks would
 // bypass the per-token MCP allow-list (Codex P0 #3 privacy fix).
-import { stripTakesFence } from '../takes-fence.ts';
+import { stripTakesFence } from "../takes-fence.ts";
 
 // v0.32.2 (Codex R2-#1 P0): same posture for facts — private fact rows must
 // not reach content_chunks.chunk_text, embeddings, or search. Pass
@@ -67,7 +67,7 @@ import { stripTakesFence } from '../takes-fence.ts';
 // at the row level. The fence shell stays in the chunked body so callers
 // that re-import the chunk content can still parse it; only the private
 // rows go.
-import { stripFactsFence } from '../facts-fence.ts';
+import { stripFactsFence } from "../facts-fence.ts";
 
 export function chunkText(text: string, opts?: ChunkOptions): TextChunk[] {
   const chunkSize = opts?.chunkSize || 300;
@@ -84,7 +84,7 @@ export function chunkText(text: string, opts?: ChunkOptions): TextChunk[] {
   // v0.32.2: also strip private facts (Codex R2-#1). World facts stay so
   // search retains its public-knowledge surface; private rows are filtered
   // out at the fence-row level via stripFactsFence({keepVisibility:['world']}).
-  const stripped = stripFactsFence(stripTakesFence(text), { keepVisibility: ['world'] });
+  const stripped = stripFactsFence(stripTakesFence(text), { keepVisibility: ["world"] });
   if (!stripped || stripped.trim().length === 0) return [];
 
   const wordCount = countWords(stripped);
@@ -173,7 +173,7 @@ function splitAtDelimiters(text: string, delimiters: string[]): string[] {
 
   while (remaining.length > 0) {
     let earliest = -1;
-    let earliestDelim = '';
+    let earliestDelim = "";
 
     for (const delim of delimiters) {
       const idx = remaining.indexOf(delim);
@@ -201,7 +201,7 @@ function splitAtDelimiters(text: string, delimiters: string[]): string[] {
     // Already added above
   }
 
-  return pieces.filter(p => p.trim().length > 0);
+  return pieces.filter((p) => p.trim().length > 0);
 }
 
 /**
@@ -216,8 +216,7 @@ function splitOnWhitespace(text: string, target: number): string[] {
 
   // No whitespace tokens, OR a single token longer than `target` chars
   // (greedy /\S+/g returns a CJK paragraph as one "word"). Slice by char.
-  const noUsefulWhitespace =
-    words.length === 0 || (words.length === 1 && words[0].length > target);
+  const noUsefulWhitespace = words.length === 0 || (words.length === 1 && words[0].length > target);
   if (noUsefulWhitespace) {
     if (text.trim().length === 0) return [];
     const pieces: string[] = [];
@@ -231,7 +230,7 @@ function splitOnWhitespace(text: string, target: number): string[] {
 
   const pieces: string[] = [];
   for (let i = 0; i < words.length; i += target) {
-    const slice = words.slice(i, i + target).join('');
+    const slice = words.slice(i, i + target).join("");
     if (slice.trim().length > 0) {
       pieces.push(slice);
     }
@@ -289,15 +288,15 @@ function applyOverlap(chunks: string[], overlapWords: number): string[] {
  */
 function extractTrailingContext(text: string, targetWords: number): string {
   const words = text.match(/\S+\s*/g) || [];
-  if (words.length <= targetWords) return '';
+  if (words.length <= targetWords) return "";
 
-  const trailing = words.slice(-targetWords).join('');
+  const trailing = words.slice(-targetWords).join("");
 
   // Try to find a sentence boundary to start from
   const sentenceStart = trailing.search(/[.!?]\s+/);
   if (sentenceStart !== -1 && sentenceStart < trailing.length / 2) {
     // Start after the sentence boundary
-    const afterSentence = trailing.slice(sentenceStart).replace(/^[.!?]\s+/, '');
+    const afterSentence = trailing.slice(sentenceStart).replace(/^[.!?]\s+/, "");
     if (afterSentence.trim().length > 0) {
       return afterSentence;
     }

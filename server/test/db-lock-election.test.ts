@@ -9,15 +9,15 @@
  *   - Different lock IDs are independent
  */
 
-import { describe, test, expect, beforeAll, afterAll, beforeEach } from 'bun:test';
-import { PGLiteEngine } from '../src/core/pglite-engine.ts';
-import { tryWithDbElection, tryAcquireDbLock } from '../src/core/db-lock.ts';
+import { describe, test, expect, beforeAll, afterAll, beforeEach } from "bun:test";
+import { PGLiteEngine } from "../src/core/pglite-engine.ts";
+import { tryWithDbElection, tryAcquireDbLock } from "../src/core/db-lock.ts";
 
 let engine: PGLiteEngine;
 
 beforeAll(async () => {
   engine = new PGLiteEngine();
-  await engine.connect({ database_url: '' });
+  await engine.connect({ database_url: "" });
   await engine.initSchema();
 });
 
@@ -29,29 +29,29 @@ beforeEach(async () => {
   await engine.executeRaw(`DELETE FROM gbrain_cycle_locks WHERE id LIKE 'test-election-%'`);
 });
 
-describe('tryWithDbElection', () => {
-  test('first caller wins → fn runs → returns its value', async () => {
-    const result = await tryWithDbElection(engine, 'test-election-1', 1, async () => 'won');
-    expect(result).toBe('won');
+describe("tryWithDbElection", () => {
+  test("first caller wins → fn runs → returns its value", async () => {
+    const result = await tryWithDbElection(engine, "test-election-1", 1, async () => "won");
+    expect(result).toBe("won");
   });
 
-  test('lock auto-released after fn returns', async () => {
+  test("lock auto-released after fn returns", async () => {
     // First call acquires + releases.
-    await tryWithDbElection(engine, 'test-election-2', 1, async () => 'first');
+    await tryWithDbElection(engine, "test-election-2", 1, async () => "first");
     // Second call should win because the first released.
-    const r = await tryWithDbElection(engine, 'test-election-2', 1, async () => 'second');
-    expect(r).toBe('second');
+    const r = await tryWithDbElection(engine, "test-election-2", 1, async () => "second");
+    expect(r).toBe("second");
   });
 
-  test('concurrent acquire by a different holder returns null (not my tick)', async () => {
+  test("concurrent acquire by a different holder returns null (not my tick)", async () => {
     // Manually acquire the lock so tryWithDbElection finds it held.
-    const handle = await tryAcquireDbLock(engine, 'test-election-3', 1);
+    const handle = await tryAcquireDbLock(engine, "test-election-3", 1);
     expect(handle).not.toBeNull();
     try {
       let ran = false;
-      const r = await tryWithDbElection(engine, 'test-election-3', 1, async () => {
+      const r = await tryWithDbElection(engine, "test-election-3", 1, async () => {
         ran = true;
-        return 'should not run';
+        return "should not run";
       });
       expect(r).toBeNull();
       expect(ran).toBe(false);
@@ -60,25 +60,25 @@ describe('tryWithDbElection', () => {
     }
   });
 
-  test('fn throw releases the lock cleanly + rethrows', async () => {
+  test("fn throw releases the lock cleanly + rethrows", async () => {
     await expect(
-      tryWithDbElection(engine, 'test-election-4', 1, async () => {
-        throw new Error('boom');
-      }),
-    ).rejects.toThrow('boom');
+      tryWithDbElection(engine, "test-election-4", 1, async () => {
+        throw new Error("boom");
+      })
+    ).rejects.toThrow("boom");
 
     // Lock was released — next caller can acquire.
-    const r = await tryWithDbElection(engine, 'test-election-4', 1, async () => 'ok');
-    expect(r).toBe('ok');
+    const r = await tryWithDbElection(engine, "test-election-4", 1, async () => "ok");
+    expect(r).toBe("ok");
   });
 
-  test('different lock IDs are independent', async () => {
-    const a = await tryAcquireDbLock(engine, 'test-election-A', 1);
+  test("different lock IDs are independent", async () => {
+    const a = await tryAcquireDbLock(engine, "test-election-A", 1);
     expect(a).not.toBeNull();
     try {
       // Different id should not conflict.
-      const r = await tryWithDbElection(engine, 'test-election-B', 1, async () => 'B-won');
-      expect(r).toBe('B-won');
+      const r = await tryWithDbElection(engine, "test-election-B", 1, async () => "B-won");
+      expect(r).toBe("B-won");
     } finally {
       await a!.release();
     }

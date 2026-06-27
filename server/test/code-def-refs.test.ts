@@ -10,11 +10,11 @@
  *   - Empty-result case returns empty array (not an error).
  */
 
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
-import { PGLiteEngine } from '../src/core/pglite-engine.ts';
-import { importCodeFile } from '../src/core/import-file.ts';
-import { findCodeDef } from '../src/commands/code-def.ts';
-import { findCodeRefs } from '../src/commands/code-refs.ts';
+import { describe, test, expect, beforeAll, afterAll } from "bun:test";
+import { PGLiteEngine } from "../src/core/pglite-engine.ts";
+import { importCodeFile } from "../src/core/import-file.ts";
+import { findCodeDef } from "../src/commands/code-def.ts";
+import { findCodeRefs } from "../src/commands/code-refs.ts";
 
 let engine: PGLiteEngine;
 
@@ -142,79 +142,79 @@ export async function performDump(engine: BrainEngine, slug: string): Promise<Br
   return engine;
 }
 `;
-  await importCodeFile(engine, 'src/engine.ts', brainEngineSrc, { noEmbed: true });
-  await importCodeFile(engine, 'src/sync.ts', consumerSrc, { noEmbed: true });
+  await importCodeFile(engine, "src/engine.ts", brainEngineSrc, { noEmbed: true });
+  await importCodeFile(engine, "src/sync.ts", consumerSrc, { noEmbed: true });
 });
 
 afterAll(async () => {
   await engine.disconnect();
 });
 
-describe('findCodeDef', () => {
-  test('finds the definition of an interface', async () => {
-    const results = await findCodeDef(engine, 'BrainEngine');
+describe("findCodeDef", () => {
+  test("finds the definition of an interface", async () => {
+    const results = await findCodeDef(engine, "BrainEngine");
     expect(results.length).toBeGreaterThanOrEqual(1);
     // Should match in src/engine.ts, not in src/sync.ts
-    const engineSlugMatch = results.find((r) => r.slug === 'src-engine-ts');
+    const engineSlugMatch = results.find((r) => r.slug === "src-engine-ts");
     expect(engineSlugMatch).toBeDefined();
   });
 
-  test('finds a function definition', async () => {
-    const results = await findCodeDef(engine, 'makeBrainEngine');
+  test("finds a function definition", async () => {
+    const results = await findCodeDef(engine, "makeBrainEngine");
     expect(results.length).toBeGreaterThanOrEqual(1);
-    const match = results.find((r) => r.slug === 'src-engine-ts');
+    const match = results.find((r) => r.slug === "src-engine-ts");
     expect(match).toBeDefined();
     expect(match!.symbol_type).toMatch(/function|export/);
   });
 
-  test('returns empty for unknown symbol', async () => {
-    const results = await findCodeDef(engine, 'ThisSymbolDoesNotExist');
+  test("returns empty for unknown symbol", async () => {
+    const results = await findCodeDef(engine, "ThisSymbolDoesNotExist");
     expect(results).toEqual([]);
   });
 
-  test('language filter narrows to typescript only', async () => {
-    const results = await findCodeDef(engine, 'BrainEngine', { language: 'typescript' });
+  test("language filter narrows to typescript only", async () => {
+    const results = await findCodeDef(engine, "BrainEngine", { language: "typescript" });
     expect(results.length).toBeGreaterThanOrEqual(1);
-    for (const r of results) expect(r.language).toBe('typescript');
+    for (const r of results) expect(r.language).toBe("typescript");
   });
 
-  test('language filter with non-matching language returns empty', async () => {
-    const results = await findCodeDef(engine, 'BrainEngine', { language: 'python' });
+  test("language filter with non-matching language returns empty", async () => {
+    const results = await findCodeDef(engine, "BrainEngine", { language: "python" });
     expect(results).toEqual([]);
   });
 });
 
-describe('findCodeRefs', () => {
-  test('finds multiple usage sites across files', async () => {
-    const results = await findCodeRefs(engine, 'BrainEngine');
+describe("findCodeRefs", () => {
+  test("finds multiple usage sites across files", async () => {
+    const results = await findCodeRefs(engine, "BrainEngine");
     expect(results.length).toBeGreaterThanOrEqual(2);
     // Should include both files
     const slugs = new Set(results.map((r) => r.slug));
-    expect(slugs.has('src-engine-ts')).toBe(true);
-    expect(slugs.has('src-sync-ts')).toBe(true);
+    expect(slugs.has("src-engine-ts")).toBe(true);
+    expect(slugs.has("src-sync-ts")).toBe(true);
   });
 
-  test('ranks by slug + line number (deterministic)', async () => {
-    const results = await findCodeRefs(engine, 'performSync');
+  test("ranks by slug + line number (deterministic)", async () => {
+    const results = await findCodeRefs(engine, "performSync");
     // performSync is defined in src/sync.ts — findCodeRefs should list it
-    const match = results.find((r) => r.slug === 'src-sync-ts');
+    const match = results.find((r) => r.slug === "src-sync-ts");
     expect(match).toBeDefined();
   });
 
-  test('empty query returns empty (no crash on empty ILIKE)', async () => {
-    const results = await findCodeRefs(engine, 'ZzzNothingZzz');
+  test("empty query returns empty (no crash on empty ILIKE)", async () => {
+    const results = await findCodeRefs(engine, "ZzzNothingZzz");
     expect(results).toEqual([]);
   });
 
-  test('limit caps result count', async () => {
-    const results = await findCodeRefs(engine, 'engine', { limit: 1 });
+  test("limit caps result count", async () => {
+    const results = await findCodeRefs(engine, "engine", { limit: 1 });
     expect(results.length).toBeLessThanOrEqual(1);
   });
 
-  test('results include snippets for agent consumption', async () => {
-    const results = await findCodeRefs(engine, 'BrainEngine');
+  test("results include snippets for agent consumption", async () => {
+    const results = await findCodeRefs(engine, "BrainEngine");
     for (const r of results) {
-      expect(typeof r.snippet).toBe('string');
+      expect(typeof r.snippet).toBe("string");
       expect(r.snippet.length).toBeGreaterThan(0);
       expect(r.snippet.length).toBeLessThanOrEqual(500);
     }

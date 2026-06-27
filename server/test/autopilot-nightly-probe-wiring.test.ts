@@ -12,32 +12,32 @@
  * tests in nightly-quality-probe.test.ts).
  */
 
-import { describe, test, expect } from 'bun:test';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { describe, test, expect } from "bun:test";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 
-const AUTOPILOT_SRC = resolve('src/commands/autopilot.ts');
-const SOURCE = readFileSync(AUTOPILOT_SRC, 'utf-8');
+const AUTOPILOT_SRC = resolve("src/commands/autopilot.ts");
+const SOURCE = readFileSync(AUTOPILOT_SRC, "utf-8");
 
-describe('autopilot wiring: nightly quality probe', () => {
-  test('imports runNightlyQualityProbe from the phase module', () => {
+describe("autopilot wiring: nightly quality probe", () => {
+  test("imports runNightlyQualityProbe from the phase module", () => {
     expect(SOURCE).toContain(`runNightlyQualityProbe`);
     expect(SOURCE).toContain(`nightly-quality-probe`);
   });
 
-  test('uses the eng-D2 adapter module (not direct subprocess of eval-longmemeval/cross-modal)', () => {
+  test("uses the eng-D2 adapter module (not direct subprocess of eval-longmemeval/cross-modal)", () => {
     expect(SOURCE).toContain(`nightly-probe-adapters`);
     expect(SOURCE).toContain(`runLongMemEvalForProbe`);
     expect(SOURCE).toContain(`runCrossModalBatchForProbe`);
   });
 
-  test('feature flag gate present: cfg.autopilot.nightly_quality_probe.enabled', () => {
+  test("feature flag gate present: cfg.autopilot.nightly_quality_probe.enabled", () => {
     // Per D10: the scheduler ONLY checks the feature flag. The 24h rate-limit
     // lives inside runNightlyQualityProbe itself (no scheduler-side precheck).
     expect(SOURCE).toContain(`nightly_quality_probe?.enabled === true`);
   });
 
-  test('NO scheduler-side rate-limit check (D10 simplification)', () => {
+  test("NO scheduler-side rate-limit check (D10 simplification)", () => {
     // Codex round-1 #11 caught: scheduler-side rate-limit duplicates phase-internal logic.
     // The wiring code MUST NOT call shouldRunNightly directly OR read recent events
     // before invoking the phase.
@@ -45,15 +45,17 @@ describe('autopilot wiring: nightly quality probe', () => {
     expect(SOURCE).not.toContain(`readRecentQualityProbeEvents(`);
   });
 
-  test('probe call wrapped in try/catch that does NOT bump consecutiveErrors', () => {
+  test("probe call wrapped in try/catch that does NOT bump consecutiveErrors", () => {
     // The try/catch around the probe must log the error but never crash the loop.
     // We verify the structural pattern: the probe call is inside a try block,
     // the catch block calls logError, and consecutiveErrors is not bumped inside the catch.
     expect(SOURCE).toMatch(/try\s*\{\s*[^}]*nightly_quality_probe/);
-    expect(SOURCE).toMatch(/catch[\s\S]*?autopilot\.nightly_probe[\s\S]*?do NOT bump consecutiveErrors/);
+    expect(SOURCE).toMatch(
+      /catch[\s\S]*?autopilot\.nightly_probe[\s\S]*?do NOT bump consecutiveErrors/
+    );
   });
 
-  test('DI shape: isEnabled / hasEmbeddingProvider / resolveMaxUsd / resolveRepoRoot / runLongMemEval / runCrossModalBatch / now', () => {
+  test("DI shape: isEnabled / hasEmbeddingProvider / resolveMaxUsd / resolveRepoRoot / runLongMemEval / runCrossModalBatch / now", () => {
     // The exact 7 fields of NightlyProbeDeps.
     expect(SOURCE).toContain(`isEnabled:`);
     expect(SOURCE).toContain(`hasEmbeddingProvider:`);
@@ -69,7 +71,7 @@ describe('autopilot wiring: nightly quality probe', () => {
     expect(SOURCE).toContain(`gateway`);
   });
 
-  test('max_usd default = 5 when config unset (matches plan default per D10)', () => {
+  test("max_usd default = 5 when config unset (matches plan default per D10)", () => {
     expect(SOURCE).toMatch(/max_usd\s*\?\?\s*5/);
   });
 });

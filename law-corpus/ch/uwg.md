@@ -23,9 +23,11 @@ zwischen Unternehmen und Konsumenten.
 ## Kernvorschriften
 
 ### Art. 1 — Zweck
+
 Dieses Gesetz bezweckt den Schutz vor unlauterem Wettbewerb.
 
 ### Art. 2 — Grundsatz
+
 (1) Unlauter und widerrechtlich ist jedes täuschende oder das Vertrauen
 verletzende Verhalten oder Geschäftsgebaren, das gegen den Grundsatz
 von Treu und Glauben verstösst.
@@ -38,6 +40,7 @@ d. unlautere Vergleichswerbung betreibt;
 e. den Kunden über die eigenen Leistungen irreführt.
 
 ### Art. 3 — Irreführende Werbung
+
 (1) Unlauter handelt, wer irreführende Angaben über eigene oder fremde
 Leistungen macht.
 
@@ -46,6 +49,7 @@ die Beschaffenheit, den Preis, die Herkunft oder die Verfügbarkeit
 der Leistung zu erwecken.
 
 ### Art. 4 — Vergleichende Werbung
+
 (1) Vergleichende Werbung ist zulässig, wenn sie:
 a. nicht irreführend ist;
 b. keine Verwechslungsgefahr begründet;
@@ -56,11 +60,13 @@ d. sich auf vergleichbare Leistungen bezieht.
 oder Konditionen, die nicht allgemein erhältlich sind.
 
 ### Art. 5 — Schädigung des Rufs
+
 Unlauter handelt, wer den Ruf, die Zuverlässigkeit oder die Leistungsfähigkeit
 eines Mitbewerbers durch unwahre, irreführende oder unnötig herabsetzende
 Äusserungen schädigt.
 
 ### Art. 6 — Geschäftsgeheimnisse
+
 (1) Unlauter handelt, wer Geschäftsgeheimnisse unbefugt verwertet oder
 Dritten mitteilt.
 
@@ -70,18 +76,21 @@ b. mit einem berechtigten Interesse an Geheimhaltung verbunden sind;
 c. nach dem erkennbaren Willen des Berechtigten geheim gehalten werden sollen.
 
 ### Art. 7 — Sog- und Ausbeutungshandlungen
+
 Unlauter handelt, wer:
 a. die Leistung eines Mitbewerbers ausnützt (Soghandlung);
 b. sich die Reputation eines Mitbewerbers zunutze macht;
 c. fremde Leistungen systematisch nachahmt, ohne eigene Leistung zu erbringen.
 
 ### Art. 8 — Rabatte und Zugaben
+
 (1) Rabatte sind zulässig, wenn sie transparent und nicht diskriminierend sind.
 
 (2) Unlauter sind versteckte Rabatte oder Zugaben, die den Kunden über
 den tatsächlichen Preis irreführen.
 
 ### Art. 9 — Schutz der Konsumenten
+
 Unlauter handelt, wer gegenüber Konsumenten:
 a. aggressive Verkaufsmethoden anwendet;
 b. falsche Angaben über Preisnachlässe macht;
@@ -89,6 +98,7 @@ c. versteckte Kosten berechnet;
 d. die Rücktrittsrechte verschleiert.
 
 ### Art. 10 — Klagen
+
 (1) Wer in seinem Kundenkreis oder otherwise im Wettbewerb bedroht ist,
 kann auf Unterlassung klagen.
 

@@ -13,7 +13,7 @@
  * Falls back to recursive chunker on any failure.
  */
 
-import { chunkText as recursiveChunk, type TextChunk } from './recursive.ts';
+import { chunkText as recursiveChunk, type TextChunk } from "./recursive.ts";
 
 export interface SemanticChunkOptions {
   chunkSize?: number;
@@ -23,7 +23,7 @@ export interface SemanticChunkOptions {
 
 export async function chunkTextSemantic(
   text: string,
-  opts: SemanticChunkOptions,
+  opts: SemanticChunkOptions
 ): Promise<TextChunk[]> {
   const chunkSize = opts.chunkSize || 300;
   const chunkOverlap = opts.chunkOverlap || 50;
@@ -58,7 +58,7 @@ export async function chunkTextSemantic(
     const chunks: TextChunk[] = [];
     let idx = 0;
     for (const group of groups) {
-      const groupText = group.join(' ');
+      const groupText = group.join(" ");
       const wordCount = (groupText.match(/\S+/g) || []).length;
 
       if (wordCount > chunkSize * 1.5) {
@@ -84,9 +84,7 @@ export async function chunkTextSemantic(
 export function splitSentences(text: string): string[] {
   // Split on sentence-ending punctuation followed by whitespace or newline
   const raw = text.split(/(?<=[.!?])\s+/);
-  return raw
-    .map(s => s.trim())
-    .filter(s => s.length > 0);
+  return raw.map((s) => s.trim()).filter((s) => s.length > 0);
 }
 
 /**
@@ -136,7 +134,7 @@ function findBoundariesSavGol(similarities: number[]): number[] {
 
   // Filter by percentile: only keep minima where similarity is below 80th percentile
   const threshold = percentile(similarities, 0.2); // low similarity = topic shift
-  const filtered = minima.filter(i => {
+  const filtered = minima.filter((i) => {
     const simIdx = Math.min(i, similarities.length - 1);
     return similarities[simIdx] < threshold;
   });
@@ -172,7 +170,7 @@ function savitzkyGolay(
   data: number[],
   windowSize: number,
   polyOrder: number,
-  derivOrder: number,
+  derivOrder: number
 ): number[] {
   const half = Math.floor(windowSize / 2);
   const n = data.length;
@@ -239,7 +237,9 @@ function groupAtBoundaries(sentences: string[], boundaries: number[]): string[][
 // Math helpers
 
 function cosineSimilarity(a: Float32Array, b: Float32Array): number {
-  let dot = 0, normA = 0, normB = 0;
+  let dot = 0,
+    normA = 0,
+    normB = 0;
   for (let i = 0; i < a.length; i++) {
     dot += a[i] * b[i];
     normA += a[i] * a[i];
@@ -267,7 +267,8 @@ function enforceMinDistance(boundaries: number[], minDist: number): number[] {
 }
 
 function transpose(m: number[][]): number[][] {
-  const rows = m.length, cols = m[0].length;
+  const rows = m.length,
+    cols = m[0].length;
   const result: number[][] = Array.from({ length: cols }, () => new Array(rows).fill(0));
   for (let i = 0; i < rows; i++) {
     for (let j = 0; j < cols; j++) {
@@ -278,7 +279,9 @@ function transpose(m: number[][]): number[][] {
 }
 
 function matMul(a: number[][], b: number[][]): number[][] {
-  const rows = a.length, cols = b[0].length, inner = b.length;
+  const rows = a.length,
+    cols = b[0].length,
+    inner = b.length;
   const result: number[][] = Array.from({ length: rows }, () => new Array(cols).fill(0));
   for (let i = 0; i < rows; i++) {
     for (let j = 0; j < cols; j++) {
@@ -312,7 +315,7 @@ function invertMatrix(m: number[][]): number[][] {
 
     const pivot = aug[col][col];
     if (Math.abs(pivot) < 1e-12) {
-      throw new Error('Matrix is singular');
+      throw new Error("Matrix is singular");
     }
 
     // Scale pivot row
@@ -330,7 +333,7 @@ function invertMatrix(m: number[][]): number[][] {
     }
   }
 
-  return aug.map(row => row.slice(n));
+  return aug.map((row) => row.slice(n));
 }
 
 function factorialN(n: number): number {

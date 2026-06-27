@@ -42,11 +42,11 @@
  * (global) or `data.no_self_fix: true` (per-job).
  */
 
-import type { BrainEngine } from '../engine.ts';
-import type { MinionQueue } from './queue.ts';
-import { classifyJobError, RECOVERABLE_CLUSTERS, type ErrorCluster } from './error-classify.ts';
-import type { SubagentHandlerData } from './types.ts';
-import { inheritBudgetOwner } from './budget-tracker.ts';
+import type { BrainEngine } from "../engine.ts";
+import type { MinionQueue } from "./queue.ts";
+import { classifyJobError, RECOVERABLE_CLUSTERS, type ErrorCluster } from "./error-classify.ts";
+import type { SubagentHandlerData } from "./types.ts";
+import { inheritBudgetOwner } from "./budget-tracker.ts";
 
 export interface SelfFixDecision {
   /** Should we self-fix this failure? */
@@ -78,11 +78,10 @@ export async function computeChainDepth(engine: BrainEngine, jobId: number): Pro
   let depth = 0;
   let cursor: number | null = jobId;
   while (cursor !== null && depth < 10 /* safety cap */) {
-    const rows: Array<{ parent_job_id: number | null; data: unknown }> =
-      await engine.executeRaw(
-        `SELECT parent_job_id, data FROM minion_jobs WHERE id = $1`,
-        [cursor],
-      );
+    const rows: Array<{ parent_job_id: number | null; data: unknown }> = await engine.executeRaw(
+      `SELECT parent_job_id, data FROM minion_jobs WHERE id = $1`,
+      [cursor]
+    );
     if (rows.length === 0) break;
     const data = rows[0]!.data as Record<string, unknown> | null;
     if (data && data.is_self_fix_child === true) {
@@ -102,14 +101,14 @@ export async function decideSelfFix(
   jobId: number,
   jobData: SubagentHandlerData,
   lastError: string | null,
-  opts: SelfFixOpts = {},
+  opts: SelfFixOpts = {}
 ): Promise<SelfFixDecision> {
   const merged = { ...DEFAULT_OPTS, ...opts };
   if (!merged.enabled) {
-    return { should_fix: false, reason: 'self_fix_disabled_globally' };
+    return { should_fix: false, reason: "self_fix_disabled_globally" };
   }
   if (jobData.no_self_fix) {
-    return { should_fix: false, reason: 'no_self_fix_flag_on_job' };
+    return { should_fix: false, reason: "no_self_fix_flag_on_job" };
   }
   const cluster = classifyJobError(lastError);
   if (!RECOVERABLE_CLUSTERS.has(cluster)) {
@@ -134,47 +133,48 @@ export async function decideSelfFix(
 export function buildSelfFixPrompt(
   originalPrompt: string,
   cluster: ErrorCluster,
-  lastError: string,
+  lastError: string
 ): string {
   switch (cluster) {
-    case 'prompt_too_long': {
+    case "prompt_too_long": {
       // Truncation strategy: keep first 1000 chars + last 2000 chars of
       // the original prompt so the leaf task survives. Honest scope — v0.42
       // will replace with semantic reduction (drop tool_results first,
       // then Haiku-summarize older pairs).
       const first = originalPrompt.slice(0, 1000);
-      const last = originalPrompt.length > 3000
-        ? '\n\n... (middle truncated) ...\n\n' + originalPrompt.slice(-2000)
-        : '';
+      const last =
+        originalPrompt.length > 3000
+          ? "\n\n... (middle truncated) ...\n\n" + originalPrompt.slice(-2000)
+          : "";
       return [
         `[self-fix retry] Your previous attempt failed because the prompt was too long.`,
         `Original task (truncated to fit context):`,
-        '',
+        "",
         first + last,
-        '',
+        "",
         `Provide your answer based on the truncated task. If critical context is missing, say so.`,
-      ].join('\n');
+      ].join("\n");
     }
-    case 'tool_schema_mismatch':
+    case "tool_schema_mismatch":
       return [
         `[self-fix retry] Your previous attempt failed because a tool call had invalid arguments.`,
         `Error: ${lastError}`,
-        '',
+        "",
         `Original task:`,
         originalPrompt,
-        '',
+        "",
         `Retry the task. Double-check tool arguments against each tool's input_schema before calling.`,
-      ].join('\n');
-    case 'malformed_json':
+      ].join("\n");
+    case "malformed_json":
       return [
         `[self-fix retry] Your previous attempt failed because the response was not valid JSON.`,
         `Error: ${lastError}`,
-        '',
+        "",
         `Original task:`,
         originalPrompt,
-        '',
+        "",
         `Retry. Your final response MUST be valid JSON — no prose, no markdown fences, no commentary.`,
-      ].join('\n');
+      ].join("\n");
     default:
       return `[self-fix retry] ${originalPrompt}`;
   }
@@ -195,21 +195,24 @@ export async function submitSelfFixChild(
     data: SubagentHandlerData;
     last_error: string;
   },
-  cluster: ErrorCluster,
+  cluster: ErrorCluster
 ): Promise<{ child_id: number } | null> {
   try {
     const childPrompt = buildSelfFixPrompt(parent.data.prompt, cluster, parent.last_error);
-    const childData: SubagentHandlerData & { is_self_fix_child: true; self_fix_cluster: ErrorCluster } = {
+    const childData: SubagentHandlerData & {
+      is_self_fix_child: true;
+      self_fix_cluster: ErrorCluster;
+    } = {
       ...parent.data,
       prompt: childPrompt,
       is_self_fix_child: true,
       self_fix_cluster: cluster,
     };
     const child = await queue.add(
-      'subagent',
+      "subagent",
       childData as unknown as Record<string, unknown>,
       { parent_job_id: parent.id, max_attempts: 1 }, // single attempt; if self-fix fails, that's terminal
-      { allowProtectedSubmit: true },
+      { allowProtectedSubmit: true }
     );
     // Inherit budget owner if parent has one.
     await inheritBudgetOwner(engine, child.id, parent.id);
@@ -220,7 +223,7 @@ export async function submitSelfFixChild(
       classifier_bucket: cluster,
       chain_depth: 1, // depth from parent's perspective — refined at next-tier check
       policy_applied: `buildSelfFixPrompt:${cluster}`,
-      outcome: 'submitted',
+      outcome: "submitted",
     });
     return { child_id: child.id };
   } catch (err) {
@@ -250,7 +253,7 @@ export interface SelfFixEventRecord {
 /** Best-effort write to minion_self_fix_log (audit table from migration v94). */
 export async function logSelfFixEvent(
   engine: BrainEngine,
-  record: SelfFixEventRecord,
+  record: SelfFixEventRecord
 ): Promise<void> {
   try {
     await engine.executeRaw(
@@ -264,12 +267,12 @@ export async function logSelfFixEvent(
         record.chain_depth,
         record.policy_applied ?? null,
         record.outcome,
-      ],
+      ]
     );
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     process.stderr.write(
-      `[self-fix-audit] WARN: write failed for parent ${record.parent_id}: ${msg}\n`,
+      `[self-fix-audit] WARN: write failed for parent ${record.parent_id}: ${msg}\n`
     );
   }
 }

@@ -20,7 +20,10 @@ export const GET = createHandler(
   async (ctx) => {
     let brain: unknown = { error: "engine_unavailable", pages: [] };
     try {
-      const upstream = await fetch(`${ENGINE_URL}/api/export`, { headers: ctx.headers, signal: AbortSignal.timeout(10_000) });
+      const upstream = await fetch(`${ENGINE_URL}/api/export`, {
+        headers: ctx.headers,
+        signal: AbortSignal.timeout(10_000),
+      });
       if (upstream.ok) brain = await upstream.json();
     } catch {
       // Engine offline: Konto-Daten trotzdem exportieren, Brain-Teil markiert.

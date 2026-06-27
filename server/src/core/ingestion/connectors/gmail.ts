@@ -15,12 +15,8 @@
  *   3. OAuth2 scopes: https://www.googleapis.com/auth/gmail.readonly
  */
 
-import {
-  BaseConnector,
-  type ConnectorConfig,
-  type ConnectorItem,
-} from './base.ts';
-import { type IngestionEvent, type IngestionContentType } from '../types.ts';
+import { BaseConnector, type ConnectorConfig, type ConnectorItem } from "./base.ts";
+import { type IngestionEvent, type IngestionContentType } from "../types.ts";
 
 interface GmailMessage {
   id: string;
@@ -51,7 +47,7 @@ export class GmailConnector extends BaseConnector {
   private labelFilter?: string[];
 
   constructor(config: ConnectorConfig) {
-    super('gmail', config);
+    super("gmail", config);
     this.labelFilter = config.filters?.labels as string[] | undefined;
   }
 
@@ -62,16 +58,16 @@ export class GmailConnector extends BaseConnector {
 
   async refreshToken(): Promise<void> {
     const refreshToken = await this._loadState().then((s) => s?.refresh_token);
-    if (!refreshToken) throw new Error('No refresh token');
+    if (!refreshToken) throw new Error("No refresh token");
 
-    const res = await fetch('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    const res = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
-        grant_type: 'refresh_token',
+        grant_type: "refresh_token",
         refresh_token: refreshToken,
-        client_id: this._config.client_id ?? '',
-        client_secret: this._config.client_secret ?? '',
+        client_id: this._config.client_id ?? "",
+        client_secret: this._config.client_secret ?? "",
       }),
     });
 
@@ -82,12 +78,12 @@ export class GmailConnector extends BaseConnector {
 
   async fetchDelta(cursor?: string): Promise<{ items: ConnectorItem[]; nextCursor?: string }> {
     const token = this.getAccessToken();
-    if (!token) throw new Error('Not authenticated');
+    if (!token) throw new Error("Not authenticated");
 
     let historyId = cursor;
     if (!historyId) {
       // First sync: get the user's current historyId from profile.
-      const profileRes = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/profile', {
+      const profileRes = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/profile", {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!profileRes.ok) throw new Error(`Profile failed: ${profileRes.status}`);
@@ -96,13 +92,13 @@ export class GmailConnector extends BaseConnector {
     }
 
     // Fetch history changes.
-    const historyUrl = new URL('https://gmail.googleapis.com/gmail/v1/users/me/history');
-    historyUrl.searchParams.set('startHistoryId', historyId!);
-    historyUrl.searchParams.set('historyTypes', 'messageAdded');
-    historyUrl.searchParams.set('labelId', 'INBOX');
+    const historyUrl = new URL("https://gmail.googleapis.com/gmail/v1/users/me/history");
+    historyUrl.searchParams.set("startHistoryId", historyId!);
+    historyUrl.searchParams.set("historyTypes", "messageAdded");
+    historyUrl.searchParams.set("labelId", "INBOX");
     if (this.labelFilter) {
       for (const label of this.labelFilter) {
-        historyUrl.searchParams.append('labelId', label);
+        historyUrl.searchParams.append("labelId", label);
       }
     }
 
@@ -122,24 +118,24 @@ export class GmailConnector extends BaseConnector {
     for (const msgId of messageIds) {
       const msgRes = await fetch(
         `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msgId}?format=full`,
-        { headers: { Authorization: `Bearer ${token}` } },
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       if (!msgRes.ok) continue;
       const msg: GmailMessage = await msgRes.json();
 
       const headers = msg.payload?.headers ?? [];
-      const subject = headers.find((h) => h.name === 'Subject')?.value ?? '(no subject)';
-      const from = headers.find((h) => h.name === 'From')?.value ?? '';
-      const to = headers.find((h) => h.name === 'To')?.value ?? '';
-      const date = headers.find((h) => h.name === 'Date')?.value ?? new Date().toISOString();
+      const subject = headers.find((h) => h.name === "Subject")?.value ?? "(no subject)";
+      const from = headers.find((h) => h.name === "From")?.value ?? "";
+      const to = headers.find((h) => h.name === "To")?.value ?? "";
+      const date = headers.find((h) => h.name === "Date")?.value ?? new Date().toISOString();
 
       // Extract body (prefer plain text, fallback to HTML).
-      let body = '';
-      const textPart = msg.payload?.parts?.find((p) => p.mimeType === 'text/plain');
+      let body = "";
+      const textPart = msg.payload?.parts?.find((p) => p.mimeType === "text/plain");
       if (textPart?.body?.data) {
-        body = Buffer.from(textPart.body.data, 'base64url').toString('utf-8');
+        body = Buffer.from(textPart.body.data, "base64url").toString("utf-8");
       } else if (msg.payload?.body?.data) {
-        body = Buffer.from(msg.payload.body.data, 'base64url').toString('utf-8');
+        body = Buffer.from(msg.payload.body.data, "base64url").toString("utf-8");
       }
 
       // Detect attachments.
@@ -156,7 +152,7 @@ export class GmailConnector extends BaseConnector {
         title: subject,
         modified_at: new Date(parseInt(msg.internalDate)).toISOString(),
         content: body,
-        content_type: 'text/plain',
+        content_type: "text/plain",
         url: `https://mail.google.com/mail/u/0/#inbox/${msg.threadId}`,
         metadata: {
           thread_id: msg.threadId,
@@ -204,14 +200,14 @@ export class GmailConnector extends BaseConnector {
       `## Body`,
       ``,
       item.content,
-    ].join('\n');
+    ].join("\n");
 
     return {
       source_id: this.id,
       source_kind: this.kind,
       source_uri: item.url ?? `gmail://${item.id}`,
       received_at: new Date().toISOString(),
-      content_type: 'text/markdown' as IngestionContentType,
+      content_type: "text/markdown" as IngestionContentType,
       content: markdown,
       content_hash: this.hashContent(markdown),
       metadata: {

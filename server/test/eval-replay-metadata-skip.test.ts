@@ -13,14 +13,14 @@
  *      (i.e. the discriminator + schema_version validators are both live)
  */
 
-import { describe, test, expect, beforeAll, afterAll, beforeEach } from 'bun:test';
-import { writeFileSync, mkdtempSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { describe, test, expect, beforeAll, afterAll, beforeEach } from "bun:test";
+import { writeFileSync, mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
-import { PGLiteEngine } from '../src/core/pglite-engine.ts';
-import { resetPgliteState } from './helpers/reset-pglite.ts';
-import { replayCore } from '../src/commands/eval-replay.ts';
+import { PGLiteEngine } from "../src/core/pglite-engine.ts";
+import { resetPgliteState } from "./helpers/reset-pglite.ts";
+import { replayCore } from "../src/commands/eval-replay.ts";
 
 let engine: PGLiteEngine;
 
@@ -38,18 +38,18 @@ beforeEach(async () => {
   await resetPgliteState(engine);
 });
 
-describe('eval-replay metadata-skip regression (v0.41)', () => {
-  test('parseNdjson skips _kind:baseline_metadata header line', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'eval-replay-meta-skip-'));
-    const baselinePath = join(dir, 'baseline.ndjson');
+describe("eval-replay metadata-skip regression (v0.41)", () => {
+  test("parseNdjson skips _kind:baseline_metadata header line", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "eval-replay-meta-skip-"));
+    const baselinePath = join(dir, "baseline.ndjson");
 
     // Synthetic baseline file with metadata header + 2 captured rows.
     const metadataLine = JSON.stringify({
       schema_version: 1,
-      _kind: 'baseline_metadata',
-      label: 'test',
-      published_at: '2026-05-24T00:00:00Z',
-      source_hash: 'fake-hash',
+      _kind: "baseline_metadata",
+      label: "test",
+      published_at: "2026-05-24T00:00:00Z",
+      source_hash: "fake-hash",
       thresholds: { jaccard: 0.85, top1: 0.8, latency_multiplier: 2.0 },
       row_count: 2,
       baseline_mean_latency_ms: 100,
@@ -57,17 +57,17 @@ describe('eval-replay metadata-skip regression (v0.41)', () => {
     const row1 = JSON.stringify({
       id: 1,
       schema_version: 1,
-      tool_name: 'query',
-      query: '',  // empty query → skipped, doesn't touch the engine
-      retrieved_slugs: ['a'],
+      tool_name: "query",
+      query: "", // empty query → skipped, doesn't touch the engine
+      retrieved_slugs: ["a"],
       latency_ms: 100,
     });
     const row2 = JSON.stringify({
       id: 2,
       schema_version: 1,
-      tool_name: 'query',
-      query: '',
-      retrieved_slugs: ['b'],
+      tool_name: "query",
+      query: "",
+      retrieved_slugs: ["b"],
       latency_ms: 100,
     });
     writeFileSync(baselinePath, `${metadataLine}\n${row1}\n${row2}\n`);
@@ -84,17 +84,17 @@ describe('eval-replay metadata-skip regression (v0.41)', () => {
     }
   });
 
-  test('parseNdjson still rejects malformed rows (validator live, not silently dropping everything)', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'eval-replay-meta-skip-'));
-    const baselinePath = join(dir, 'bad.ndjson');
+  test("parseNdjson still rejects malformed rows (validator live, not silently dropping everything)", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "eval-replay-meta-skip-"));
+    const baselinePath = join(dir, "bad.ndjson");
 
     const metadataLine = JSON.stringify({
       schema_version: 1,
-      _kind: 'baseline_metadata',
-      label: 'test',
+      _kind: "baseline_metadata",
+      label: "test",
     });
     // Row missing schema_version entirely → should still throw.
-    const badRow = JSON.stringify({ id: 1, tool_name: 'query', query: 'x' });
+    const badRow = JSON.stringify({ id: 1, tool_name: "query", query: "x" });
     writeFileSync(baselinePath, `${metadataLine}\n${badRow}\n`);
 
     try {

@@ -45,7 +45,7 @@
  * delivers correctly), NOT a MAX-style aggregate.
  */
 
-import type { BrainEngine } from '../engine.ts';
+import type { BrainEngine } from "../engine.ts";
 
 /**
  * Snapshot of (pageId, generation) pairs plus the corpus-state MAX
@@ -82,7 +82,7 @@ export interface PageGenerationsSnapshot {
  */
 export async function buildPageGenerationsSnapshot(
   engine: BrainEngine,
-  pageIds: number[],
+  pageIds: number[]
 ): Promise<PageGenerationsSnapshot> {
   // Empty pageIds: just fetch MAX(generation) for the bookmark. Skip the
   // per-page branch entirely (UNION ALL with an empty IN clause is a
@@ -98,7 +98,7 @@ export async function buildPageGenerationsSnapshot(
       // Per D20, empty-result cache rows trust Layer 1 exclusively;
       // bumping the clock on subsequent writes correctly invalidates them.
       const rows = await engine.executeRaw<{ v: number }>(
-        `SELECT COALESCE((SELECT value FROM page_generation_clock WHERE id = 1), 0)::bigint AS v`,
+        `SELECT COALESCE((SELECT value FROM page_generation_clock WHERE id = 1), 0)::bigint AS v`
       );
       snapshot.max_generation_at_store = Number(rows[0]?.v ?? 0);
       return snapshot;
@@ -119,7 +119,7 @@ export async function buildPageGenerationsSnapshot(
        SELECT 'CLOCK' AS k,
               COALESCE((SELECT value FROM page_generation_clock WHERE id = 1), 0)::bigint AS v,
               TRUE AS is_max`,
-      [pageIds],
+      [pageIds]
     );
 
     for (const row of rows) {
@@ -200,7 +200,7 @@ export function validateCacheRowAgainstPages(
   current: {
     max_generation: number;
     page_generations: Record<string, number | undefined>;
-  },
+  }
 ): boolean {
   // Layer 1: bookmark. `current.max_generation` is the global clock value
   // (kept named max_generation for back-compat at call sites; the underlying

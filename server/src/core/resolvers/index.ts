@@ -13,14 +13,10 @@ export type {
   ResolverResult,
   ResolverLogger,
   ResolverErrorCode,
-} from './interface.ts';
+} from "./interface.ts";
 
-export { ResolverError } from './interface.ts';
+export { ResolverError } from "./interface.ts";
 
-export {
-  ResolverRegistry,
-  getDefaultRegistry,
-  _resetDefaultRegistry,
-} from './registry.ts';
+export { ResolverRegistry, getDefaultRegistry, _resetDefaultRegistry } from "./registry.ts";
 
-export type { ResolverListFilter, ResolverSummary } from './registry.ts';
+export type { ResolverListFilter, ResolverSummary } from "./registry.ts";

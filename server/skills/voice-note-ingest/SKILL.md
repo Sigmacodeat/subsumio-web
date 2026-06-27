@@ -26,7 +26,7 @@ writes_to:
 > **Convention:** see [conventions/quality.md](../conventions/quality.md) for
 > citation rules, back-link enforcement, and exact-phrasing requirements.
 >
-> **Convention:** see [_brain-filing-rules.md](../_brain-filing-rules.md) for
+> **Convention:** see [\_brain-filing-rules.md](../_brain-filing-rules.md) for
 > the filing decision protocol.
 
 ## Iron Law
@@ -182,7 +182,6 @@ No batching.
   text-channel idea capture
 - `skills/idea-ingest/SKILL.md` — for typed-text idea ingestion
 - `skills/conventions/quality.md` — citation + back-link rules
-
 
 ## Contract
 

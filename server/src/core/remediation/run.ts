@@ -10,20 +10,13 @@
 //   - D7 per-step recheck (re-compute plan from fresh health)
 //   - Hooks for caller observability (no console.* in the library)
 
-import crypto from 'crypto';
-import type { BrainEngine } from '../engine.ts';
-import {
-  computeRecommendations,
-} from '../brain-score-recommendations.ts';
-import type { RemediationStep } from '../remediation-step.ts';
-import { loadRecommendationContext } from './context.ts';
-import { computeRemediationPlan } from './plan.ts';
-import type {
-  RemediationHooks,
-  RemediationOpts,
-  RemediationResult,
-  StepResult,
-} from './types.ts';
+import crypto from "crypto";
+import type { BrainEngine } from "../engine.ts";
+import { computeRecommendations } from "../brain-score-recommendations.ts";
+import type { RemediationStep } from "../remediation-step.ts";
+import { loadRecommendationContext } from "./context.ts";
+import { computeRemediationPlan } from "./plan.ts";
+import type { RemediationHooks, RemediationOpts, RemediationResult, StepResult } from "./types.ts";
 
 /**
  * Submit ordered Remediation jobs sequentially per D3, with D5 cascade
@@ -40,7 +33,7 @@ import type {
 export async function runRemediation(
   engine: BrainEngine,
   opts: RemediationOpts = {},
-  hooks: RemediationHooks = {},
+  hooks: RemediationHooks = {}
 ): Promise<RemediationResult> {
   const targetScore = opts.targetScore ?? 90;
   const maxJobs = opts.maxJobs ?? Infinity;
@@ -52,18 +45,15 @@ export async function runRemediation(
   // Lazy-load orchestration deps so the library entry-point doesn't pay
   // their cost on a --dry-run shortcut path (or when callers only need
   // computeRemediationPlan).
-  const {
-    BudgetTracker,
-    BudgetExhausted,
-  } = await import('../budget/budget-tracker.ts');
-  const { withBudgetTracker } = await import('../ai/gateway.ts');
+  const { BudgetTracker, BudgetExhausted } = await import("../budget/budget-tracker.ts");
+  const { withBudgetTracker } = await import("../ai/gateway.ts");
   const {
     computePlanHash,
     saveRemediationCheckpoint,
     loadRemediationCheckpoint,
     listRemediationCheckpoints,
     clearRemediationCheckpoint,
-  } = await import('../remediation-checkpoint.ts');
+  } = await import("../remediation-checkpoint.ts");
 
   const ctx = await loadRecommendationContext(engine);
 
@@ -87,8 +77,9 @@ export async function runRemediation(
   }
 
   const initialHealth = await engine.getHealth();
-  let recs: RemediationStep[] = computeRecommendations(initialHealth, ctx)
-    .filter((r) => r.status === 'remediable');
+  let recs: RemediationStep[] = computeRecommendations(initialHealth, ctx).filter(
+    (r) => r.status === "remediable"
+  );
   if (recs.length === 0) {
     hooks.onNothingToDo?.(initialHealth.brain_score, targetScore);
     return {
@@ -141,7 +132,7 @@ export async function runRemediation(
     hooks.onResumeLoaded?.(
       planHash,
       completedFromCheckpoint.size,
-      recs.length - completedFromCheckpoint.size,
+      recs.length - completedFromCheckpoint.size
     );
   }
 
@@ -173,7 +164,7 @@ export async function runRemediation(
         step: i + 1,
         id: r.id,
         job_id: null,
-        status: 'dry_run',
+        status: "dry_run",
       })),
       aborted_count: 0,
     };
@@ -184,9 +175,9 @@ export async function runRemediation(
   const abortedIds = new Set<string>();
   const doctorRunId = crypto.randomUUID();
 
-  const { MinionQueue } = await import('../minions/queue.ts');
-  const { waitForCompletion } = await import('../minions/wait-for-completion.ts');
-  const isPGLite = engine.kind === 'pglite';
+  const { MinionQueue } = await import("../minions/queue.ts");
+  const { waitForCompletion } = await import("../minions/wait-for-completion.ts");
+  const isPGLite = engine.kind === "pglite";
   const queue = new MinionQueue(engine);
 
   // A4 amended: install a BudgetTracker scope around the plan-step loop so
@@ -195,11 +186,11 @@ export async function runRemediation(
   // onExhausted callback persists the checkpoint BEFORE the throw propagates;
   // the caller hook surfaces the actionable --resume hint.
   const remediateTracker = new BudgetTracker({
-    label: 'remediation.run',
+    label: "remediation.run",
     maxCostUsd: maxUsd,
   });
 
-  let exhaustionSnapshot: NonNullable<RemediationResult['budget_exhausted']> | undefined;
+  let exhaustionSnapshot: NonNullable<RemediationResult["budget_exhausted"]> | undefined;
   remediateTracker.onExhausted(() => {
     const cp = {
       schema_version: 1 as const,
@@ -208,12 +199,17 @@ export async function runRemediation(
       target_score: targetScore,
       started_at: new Date().toISOString(),
       completed: submitted
-        .filter((s) => s.status === 'completed')
-        .map((s) => ({ id: s.id, job: '', status: s.status, job_id: s.job_id ?? null })),
+        .filter((s) => s.status === "completed")
+        .map((s) => ({ id: s.id, job: "", status: s.status, job_id: s.job_id ?? null })),
       aborted_at: new Date().toISOString(),
-      abort_reason: 'budget_exhausted' as const,
+      abort_reason: "budget_exhausted" as const,
       budget_snapshot: exhaustionSnapshot
-        ? { spent: exhaustionSnapshot.spent, cap: exhaustionSnapshot.cap, reason: exhaustionSnapshot.reason, model_id: exhaustionSnapshot.model_id }
+        ? {
+            spent: exhaustionSnapshot.spent,
+            cap: exhaustionSnapshot.cap,
+            reason: exhaustionSnapshot.reason,
+            model_id: exhaustionSnapshot.model_id,
+          }
         : undefined,
     };
     saveRemediationCheckpoint(cp);
@@ -229,7 +225,12 @@ export async function runRemediation(
 
       // Resume: skip steps that the checkpoint already marked completed.
       if (completedFromCheckpoint.has(step.id)) {
-        const result: StepResult = { step: stepCount, id: step.id, job_id: null, status: 'completed' };
+        const result: StepResult = {
+          step: stepCount,
+          id: step.id,
+          job_id: null,
+          status: "completed",
+        };
         submitted.push(result);
         hooks.onStepEnd?.(result);
         recs.shift();
@@ -238,7 +239,12 @@ export async function runRemediation(
 
       // D5: if depends_on intersects aborted, skip + cascade
       if (step.depends_on && step.depends_on.some((d: string) => abortedIds.has(d))) {
-        const result: StepResult = { step: stepCount, id: step.id, job_id: null, status: 'skipped_dep_aborted' };
+        const result: StepResult = {
+          step: stepCount,
+          id: step.id,
+          job_id: null,
+          status: "skipped_dep_aborted",
+        };
         submitted.push(result);
         abortedIds.add(step.id);
         hooks.onStepEnd?.(result);
@@ -253,18 +259,18 @@ export async function runRemediation(
           step.job,
           { ...step.params, doctor_run_id: doctorRunId },
           {
-            queue: 'default',
+            queue: "default",
             idempotency_key: step.idempotency_key,
             max_attempts: 2,
             maxWaiting: 1,
           },
-          isProtected ? { allowProtectedSubmit: true } : undefined,
+          isProtected ? { allowProtectedSubmit: true } : undefined
         );
         const submittedResult: StepResult = {
           step: stepCount,
           id: step.id,
           job_id: job.id,
-          status: 'submitted',
+          status: "submitted",
         };
         submitted.push(submittedResult);
 
@@ -273,7 +279,7 @@ export async function runRemediation(
           timeoutMs: (step.est_seconds + 60) * 1000,
         });
         submittedResult.status = terminal.status;
-        if (terminal.status !== 'completed') {
+        if (terminal.status !== "completed") {
           abortedIds.add(step.id);
         }
         hooks.onStepEnd?.(submittedResult);
@@ -305,11 +311,11 @@ export async function runRemediation(
       // steps with bumped retry suffix (D1).
       if (recs.length === 0 || stepCount >= maxJobs) break;
       const freshHealth = await engine.getHealth();
-      recs = computeRecommendations(freshHealth, ctx).filter((r) => r.status === 'remediable');
+      recs = computeRecommendations(freshHealth, ctx).filter((r) => r.status === "remediable");
     }
   };
 
-  let budgetAbort: NonNullable<RemediationResult['budget_exhausted']> | undefined;
+  let budgetAbort: NonNullable<RemediationResult["budget_exhausted"]> | undefined;
   try {
     await withBudgetTracker(remediateTracker, runLoop);
   } catch (err) {

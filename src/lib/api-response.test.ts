@@ -172,7 +172,11 @@ describe("apiPaginated", () => {
 
 describe("apiStream", () => {
   test("returns 200 with SSE headers", () => {
-    const stream = new ReadableStream({ start(c) { c.close(); } });
+    const stream = new ReadableStream({
+      start(c) {
+        c.close();
+      },
+    });
     const res = apiStream(stream);
     expect(res.status).toBe(200);
     expect(res.headers.get("Content-Type")).toBe("text/event-stream");
@@ -182,19 +186,31 @@ describe("apiStream", () => {
   });
 
   test("sets X-AI-Generated header when aiGenerated is true", () => {
-    const stream = new ReadableStream({ start(c) { c.close(); } });
+    const stream = new ReadableStream({
+      start(c) {
+        c.close();
+      },
+    });
     const res = apiStream(stream, { aiGenerated: true });
     expect(res.headers.get("X-AI-Generated")).toBe("true");
   });
 
   test("omits X-AI-Generated when not set", () => {
-    const stream = new ReadableStream({ start(c) { c.close(); } });
+    const stream = new ReadableStream({
+      start(c) {
+        c.close();
+      },
+    });
     const res = apiStream(stream);
     expect(res.headers.get("X-AI-Generated")).toBeNull();
   });
 
   test("accepts custom content type", () => {
-    const stream = new ReadableStream({ start(c) { c.close(); } });
+    const stream = new ReadableStream({
+      start(c) {
+        c.close();
+      },
+    });
     const res = apiStream(stream, { contentType: "application/x-ndjson" });
     expect(res.headers.get("Content-Type")).toBe("application/x-ndjson");
   });

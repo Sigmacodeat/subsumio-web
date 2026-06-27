@@ -1,5 +1,6 @@
 <!-- schema-version: 0.5.0 -->
 <!-- source: https://raw.githubusercontent.com/garrytan/gbrain/master/docs/GBRAIN_RECOMMENDED_SCHEMA.md -->
+
 # Brain: The LLM-Maintained Knowledge Base
 
 A system prompt for any AI agent that wants to build and maintain a personal knowledge base. This describes the pattern, the architecture, and the operational discipline that makes it work.
@@ -25,6 +26,7 @@ Every piece of knowledge passes through a decision tree and lands in exactly one
 This is the single most important structural decision. Without it, knowledge bases rot — the same fact lives in three places with three different versions, nobody knows which is current, and the agent (or human) stops trusting the system. MECE directories with explicit resolver rules prevent this.
 
 Every directory has a `README.md` (the resolver) that answers two questions:
+
 1. **What goes here** — a positive definition with a concrete test
 2. **What does NOT go here** — the key distinctions from neighboring directories that the agent might confuse
 
@@ -32,7 +34,7 @@ The brain also has a top-level `RESOLVER.md` — a numbered decision tree the ag
 
 **The agent must read the resolver before creating any new page.** This is not optional.
 
-**Important nuance: MECE applies to directories, not to reality.** Real people and entities are multi-faceted — a political founder can also be a friend, donor, media actor, and hiring candidate. The resolver picks the *primary home* for their page (people/), but the page itself uses typed backlinks and cross-references to surface all their facets. The MECE rule prevents duplicate pages, not duplicate relationships. Cross-references are how adjacency is preserved without breaking the one-page-per-entity rule.
+**Important nuance: MECE applies to directories, not to reality.** Real people and entities are multi-faceted — a political founder can also be a friend, donor, media actor, and hiring candidate. The resolver picks the _primary home_ for their page (people/), but the page itself uses typed backlinks and cross-references to surface all their facets. The MECE rule prevents duplicate pages, not duplicate relationships. Cross-references are how adjacency is preserved without breaking the one-page-per-entity rule.
 
 ### 2. Compiled Truth + Timeline (Two-Layer Pages)
 
@@ -160,6 +162,7 @@ In a system fed by meetings, email, social media, contacts, and APIs, **entity i
 ### Canonical slugs
 
 Every entity gets a canonical slug that serves as its stable ID:
+
 - People: `first-last.md` (all lowercase, hyphens for spaces)
 - Companies: `company-name.md`
 - If collisions arise, disambiguate: `david-liu-crustdata.md`, `david-liu-meta.md`
@@ -179,6 +182,7 @@ Aliases include: misspellings from meeting transcripts, maiden names, nicknames,
 ### Deduplication protocol
 
 Before creating any new page, the agent must:
+
 1. Search existing pages by name (exact and fuzzy)
 2. Search aliases across all pages: `grep -rl "NAME_VARIANT" /data/brain/people/ --include="*.md"`
 3. Check .raw/ sidecars for matching email addresses or social handles
@@ -188,6 +192,7 @@ Before creating any new page, the agent must:
 ### Merge protocol
 
 When you discover two pages are the same person:
+
 1. Pick the more complete page as the survivor
 2. Merge all timeline entries from the duplicate into the survivor (chronological order)
 3. Merge all aliases
@@ -201,12 +206,12 @@ During weekly lint, actively look for potential duplicates: similar names, same 
 
 The most common filing confusions and how to resolve them:
 
-- **Concept vs. Idea:** Could you *teach* it as a framework? → concept. Could you *build* it? → idea.
+- **Concept vs. Idea:** Could you _teach_ it as a framework? → concept. Could you _build_ it? → idea.
 - **Concept vs. Personal:** Would you share it in a professional talk? → concept. Is it private reflection? → personal.
 - **Idea vs. Project:** Is anyone working on it? Yes → project. No → idea. The graduation moment is when work starts.
-- **Writing vs. Media:** Writing is the *artifact* (the essay). Media is the *production and distribution infrastructure* (content pipeline, social monitoring).
+- **Writing vs. Media:** Writing is the _artifact_ (the essay). Media is the _production and distribution infrastructure_ (content pipeline, social monitoring).
 - **Writing vs. Concepts:** A concept page is distilled (200 words of compiled truth). An essay is developed prose (argument, narrative, story).
-- **Person vs. Company:** Is it about *them as a human*? → people/. Is it about *the organization*? → companies/. Both pages link to each other.
+- **Person vs. Company:** Is it about _them as a human_? → people/. Is it about _the organization_? → companies/. Both pages link to each other.
 - **Household vs. Personal:** Would a PA execute on it? → household (operational). Is it private reflection? → personal.
 - **Sources vs. .raw/ sidecars:** Per-entity enrichment data → .raw/ sidecar. Bulk multi-entity imports → sources/.
 
@@ -225,27 +230,33 @@ The most important page type. A great person page is a well-researched briefing 
 > know walking into any interaction with them.
 
 ## State
+
 - **Role:** Current title
 - **Company:** Current org
 - **Relationship:** To you (friend, colleague, investor, etc.)
 - **Key context:** 2-4 bullets of what matters right now
 
 ## What They Believe
+
 Worldview, positions, first principles. The hills they die on.
 Every claim must cite its source and type:
+
 - [Belief] — observed: [tweet/meeting/article, date]
 - [Belief] — self-described: [interview/bio, date]
 - [Belief] — inferred: [pattern across N interactions, confidence: high/medium/low]
 
 ## What They're Building
+
 Current projects, recent ships, product direction.
 
 ## What Motivates Them
+
 Ambition drivers, career arc, what gets them out of bed.
 Distinguish between what they say motivates them (self-described) and
 what their behavior suggests (observed/inferred).
 
 ## Communication Style
+
 How they prefer to communicate. How they handle disagreement.
 What energizes them in conversation.
 This section is high-value but requires careful sourcing.
@@ -254,9 +265,11 @@ language in emails/tweets, visible patterns). Never generalize
 from a single data point. Mark confidence level.
 
 ## Hobby Horses
+
 Topics they return to obsessively. Recurring themes in their public voice.
 
 ## Assessment
+
 - **Strengths:** What they're great at. Be specific.
 - **Gaps:** Where they could grow. Be specific and fair.
 - **Net read:** One-line synthesis.
@@ -264,24 +277,30 @@ Topics they return to obsessively. Recurring themes in their public voice.
 - **Last assessed:** YYYY-MM-DD
 
 ## Trajectory
+
 Ascending, plateauing, pivoting, declining? Evidence.
 
 ## Relationship
+
 History of interactions, temperature, dynamic.
 
 ## Contact
+
 - Email, phone, LinkedIn, X handle, location
 
 ## Network
+
 - **Close to:** People they're frequently seen with
 - **Crew:** Which cluster they belong to
 
 ## Open Threads
+
 - Active items, pending intros, follow-ups
 
 ---
 
 ## Timeline
+
 - **YYYY-MM-DD** | Source — What happened.
 ```
 
@@ -308,6 +327,7 @@ The context sections (Beliefs, Motivations, Communication Style, Assessment) are
 > What they do, stage, why they matter.
 
 ## State
+
 - **What:** One-line description
 - **Stage:** Seed / Series A / Growth / Public
 - **Key people:** Names with links to people pages
@@ -331,8 +351,11 @@ The context sections (Beliefs, Motivations, Communication Style, Assessment) are
 > What was decided. What was left unsaid.
 
 ## Attendees
+
 ## Key Decisions
+
 ## Action Items
+
 ## Connections to other brain pages
 
 ---
@@ -360,6 +383,7 @@ Facts are table stakes. Context is the value.
 ### When to enrich
 
 **Any time** a person or company signal appears:
+
 - Someone is mentioned in a meeting transcript → enrich
 - Someone emails you → enrich
 - Someone interacts with you on social media → enrich
@@ -380,7 +404,7 @@ Facts are table stakes. Context is the value.
 
 ### Data source skills
 
-Each external data source should be its own named skill with full API documentation, auth patterns, and usage notes. The enrich skill orchestrates them — it decides *which* sources to call based on tier, then delegates to the individual skill for *how* to call the API.
+Each external data source should be its own named skill with full API documentation, auth patterns, and usage notes. The enrich skill orchestrates them — it decides _which_ sources to call based on tier, then delegates to the individual skill for _how_ to call the API.
 
 This keeps things DRY: the enrich skill owns the logic (when to enrich, what tier, what to extract), and each data source skill owns the API contract (endpoints, auth, rate limits, gotchas, validation rules).
 
@@ -396,6 +420,7 @@ Recommended data source skills:
 - **Contact data** — email, phone, location from your contacts. (Google Contacts, etc.)
 
 The typical enrichment flow for a new person:
+
 1. **Network search** → find LinkedIn URL, career arc, alternate names
 2. **People enrichment** → deep structured data (skills, work history, education, contact info)
 3. **Semantic search** → find personal sites, talks, writing that reveal beliefs and perspective
@@ -404,6 +429,7 @@ The typical enrichment flow for a new person:
 6. **Meeting history** → past interactions with you
 
 For a new company:
+
 1. **Company intelligence** → funding, investors, headcount, financials
 2. **Web search** → product, press, traction
 3. **Social search** → company's public positioning
@@ -448,6 +474,7 @@ When re-enriching: overwrite the source key with fresh data + new timestamp. Don
 ### Validation rules
 
 When auto-enriching from people/company APIs:
+
 - **Low connection/follower count (e.g., <20):** Likely wrong person. Save to .raw/ with a `"validation": "low_connections"` flag. Don't auto-write to the brain page.
 - **Name mismatch:** If the returned name doesn't share a last name with the entity, skip.
 - **Obviously joke profiles:** Career arcs mentioning absurd titles — skip.
@@ -462,17 +489,20 @@ If enrichment involves browser-based lookups (LinkedIn, authenticated pages), se
 Not everyone deserves a brain page. Scale page creation to relationship importance:
 
 **Always create a page for:**
+
 - Anyone you've had a 1:1 or small-group meeting with
 - Key colleagues, partners, and direct collaborators
 - Anyone with a strong working relationship or better
 - Family, close friends, inner circle
 
 **Create if signal exists:**
+
 - People from contacts with recent interaction
 - Anyone mentioned by name in conversation with context
 - Event contacts with multiple shared events
 
 **Do NOT create:**
+
 - Random names from mass event guest lists with no interaction
 - Single-name entries with no identifying context
 - Contacts with no relationship signal at all
@@ -488,6 +518,7 @@ Skills are the modular building blocks of the system. There are three types, and
 Each external API or data source gets its own named skill. The skill owns the API contract: endpoints, authentication, rate limits, error handling, validation rules, and what the response looks like.
 
 Examples:
+
 - **People enrichment** (Crustdata, Proxycurl, People Data Labs) — structured LinkedIn-like data
 - **Network search** (Happenstance, Clay) — search professional network, find mutual connections
 - **Company intelligence** (Captain API/Pitchbook, Crunchbase) — funding, investors, financials
@@ -501,9 +532,10 @@ Data source skills are **never called directly by the user.** They're called by 
 
 ### 2. Orchestration skills (coordinators)
 
-These skills contain the *logic* — they decide what to do, then delegate to data source skills for how to do it.
+These skills contain the _logic_ — they decide what to do, then delegate to data source skills for how to do it.
 
 **The enrich skill** is the most important orchestration skill. It decides:
+
 - Is this a CREATE (new page) or UPDATE (new signal)?
 - What tier is this entity? (determines which data sources to call)
 - What signal types to extract from the source material?
@@ -511,6 +543,7 @@ These skills contain the *logic* — they decide what to do, then delegate to da
 - How to write the results to the brain?
 
 Other orchestration skills:
+
 - **Meeting ingestion** — pulls meetings from a meeting tool, creates brain meeting pages with analysis, then calls enrich for every attendee and company discussed
 - **Email triage / executive assistant** — processes inbox, handles scheduling, then calls enrich when it encounters people or companies
 - **Social monitoring** — scans public social media for mentions and engagement, then calls enrich for notable accounts
@@ -518,6 +551,7 @@ Other orchestration skills:
 ### 3. Pipeline skills (end-to-end workflows)
 
 These are the user-facing skills that chain multiple orchestration and data source skills together:
+
 - **Morning briefing** — reads calendar + tasks + brain state + recent signals → produces a briefing
 - **Person research** — given a name, runs full Tier 1 enrichment and presents the result
 - **Weekly brain maintenance** — runs lint, flags stale pages, suggests enrichment targets
@@ -595,20 +629,24 @@ Each cron job is essentially: "wake up, read a skill, do the work, post results 
 ### Recommended cron jobs for a brain-powered system
 
 **High frequency (every 10-30 minutes):**
+
 - **Email monitor** — scan inbox, classify by priority, post digest to a notification channel. Handle low-risk items (scheduling, acknowledgments) directly.
 - **Message monitor** — check key communication channels for unreplied messages from important contacts. Surface them with suggested responses.
 
 **Medium frequency (every 1-3 hours):**
+
 - **Social radar** — scan public social media for mentions of you or your organization, engagement, emerging narratives. Alert on items that need attention. Call enrich for notable new accounts engaging with you.
 - **Heartbeat** — the omnibus check. Calendar lookahead, task review, email scan, brain state review. Post if something needs attention; stay silent if not.
 
 **Daily:**
+
 - **Morning briefing** — calendar + tasks + urgent items + overnight signals → one notification. The "here's your day" message.
 - **Task prep** — archive yesterday's completed tasks, build today's list from calendar + backlog + recurring items.
 - **Meeting ingestion** — pull all new meetings from your meeting tool, run full ingestion (create meeting pages, propagate to entity pages, extract tasks). This is the heaviest cron job — it touches the most brain pages.
 - **Social media collection** — archive your own posts, track engagement velocity, detect deletions. Feed into media/ pages.
 
 **Weekly:**
+
 - **Brain lint** — run the full maintenance pass: contradictions, stale pages, orphans, missing cross-references, MECE filing violations. Post a report.
 - **Enrichment sweep** — find brain pages that haven't been enriched in 90+ days, or pages with many `[No data yet]` sections. Queue them for re-enrichment.
 - **Contact sync** — pull recent additions from your contacts, cross-reference with brain. Create pages for significant new contacts.
@@ -674,6 +712,7 @@ A cron job fires at 3:00 PM daily with the prompt: "Read skills/meeting-ingestio
 **Step 3: Process Meeting 1 — "Product Review with Sarah Chen and Mike Torres."**
 
 The agent creates `brain/meetings/2026-04-07-product-review.md` with:
+
 - Its own analysis above the line (not a copy of the AI summary — reframed through what the brain already knows about the attendees and the project)
 - Key decisions, action items, and connections to other brain pages
 - Full transcript below the line
@@ -685,6 +724,7 @@ For **Sarah Chen** — the agent searches the brain: `grep -rl "Sarah Chen" /dat
 For **Mike Torres** — brain search finds `people/mike-torres.md`. Page exists but is thin: just a name, title, and one previous meeting entry. → **Tier 2**: web search + social + brain cross-reference. Agent finds his recent blog posts (feeds into What They Believe), his X activity (feeds into Hobby Horses), and cross-references him with two other brain pages that mention him. Updates compiled truth above the line.
 
 For **"Alex from Meridian Labs"** (mentioned in the meeting but not an attendee) — brain search finds nothing. → **CREATE path**:
+
 1. Reads RESOLVER.md: "a specific named person" → `people/`
 2. Creates `people/alex-rivera.md` using the person template from schema.md
 3. Runs **Tier 1 enrichment** (full pipeline): network search → finds LinkedIn URL. People enrichment API → full structured profile. Semantic search → finds a conference talk. Web search → finds press coverage of Meridian Labs' recent funding.
@@ -698,12 +738,15 @@ For **"Alex from Meridian Labs"** (mentioned in the meeting but not an attendee)
 **Step 7: Repeat for Meeting 2.** Same flow.
 
 **Step 8: Commit and notify.**
+
 ```bash
 cd /data/brain && git add -A && git commit -m "meetings: 2026-04-07 product review, investor sync" && git push
 ```
+
 Posts summary to the Meetings notification channel: "Processed 2 meetings. Created 1 new person page (Alex Rivera). Updated 4 entity pages. 5 action items extracted."
 
 **Files touched in this run:**
+
 ```
 brain/
 ├── meetings/
@@ -736,6 +779,7 @@ An email monitor cron fires at 12:00 PM. Its prompt: "Read skills/executive-assi
 **Step 3: Enrich the unknown sender.**
 
 The agent calls the enrich skill. Enrich searches the brain:
+
 ```bash
 grep -rl "David Park" /data/brain/people/ --include="*.md"  # no results
 grep -rl "Ridgeline" /data/brain/companies/ --include="*.md"  # no results
@@ -753,11 +797,13 @@ No match. → **CREATE path.**
 4. Also checks `companies/ridgeline-ventures.md` — doesn't exist. Creates a thin page with what's known from the web search.
 
 **Step 4: Back in the EA skill.** Now the agent has context. It classifies the email:
+
 - Priority: Medium (co-invest opportunity, not urgent)
 - Context: David Park is a GP at a fund that focuses on enterprise SaaS. NovaTech is already in the brain from a previous meeting.
 - Action needed: User should review
 
 Posts to the Emails notification channel:
+
 > **Co-invest opportunity — NovaTech Series A**
 > From: David Park, GP at Ridgeline Ventures
 > He's reaching out about co-investing in NovaTech's Series A. Ridgeline focuses on enterprise SaaS.
@@ -784,6 +830,7 @@ Creates `people/lena-kovac.md` with minimal data: X handle, display name, the re
 > Technical builder. Engaged with a post about developer tooling on X.
 
 ## State
+
 - **X:** @lena_builds
 - **Relationship:** None yet — social interaction only
 - **Confidence:** low (1 interaction)
@@ -791,6 +838,7 @@ Creates `people/lena-kovac.md` with minimal data: X handle, display name, the re
 ---
 
 ## Timeline
+
 - **2026-04-07** | X reply — Replied to post about developer tools.
   Thoughtful technical take on compiler-driven UX. 50+ likes.
 ```
@@ -800,6 +848,7 @@ Creates `people/lena-kovac.md` with minimal data: X handle, display name, the re
 The morning email sweep finds an email from `lena@kovac.dev` — subject: "Loved your talk at the devtools summit — would love to chat about what we're building."
 
 The agent calls enrich. Searches the brain:
+
 ```bash
 grep -rl "lena" /data/brain/people/ --include="*.md"  # finds people/lena-kovac.md
 grep -rl "kovac.dev" /data/brain/people/ --include="*.md"  # no alias match yet
@@ -860,6 +909,7 @@ After every meeting (via Circleback, Otter, Fireflies, or manual notes):
 ### Email ingestion
 
 When processing email:
+
 - Extract people and companies mentioned
 - Call enrich with email context (tone, requests, relationship signals)
 - Note scheduling, commitments, follow-ups
@@ -867,6 +917,7 @@ When processing email:
 ### Social media ingestion
 
 When monitoring social media:
+
 - Capture what people you track are saying publicly (beliefs, projects, opinions)
 - Detect engagement patterns (who's replying to you, who's amplifying you)
 - Call enrich for notable accounts → feed into "What They Believe" and "Hobby Horses" sections
@@ -874,6 +925,7 @@ When monitoring social media:
 ### Manual ingestion
 
 When you mention someone or something in conversation:
+
 - Your own comments are the highest-value signal — always capture these
 - "Really sharp on the technical side, could be a good advisor for the infra project" → that goes in the person's page immediately
 - If the brain page is thin, trigger a full enrichment
@@ -891,6 +943,7 @@ At scale (500+ pages), add search tooling (embeddings, BM25, or tools like gbrai
 Once you have cron jobs, ingest jobs, and sub-agents all touching the brain repo, **index.md and log.md become merge-conflict magnets.** Every workflow wants to append to log.md and update index.md on every commit.
 
 Practical mitigations:
+
 - **Treat index.md as derived, not hand-maintained.** Instead of updating it in every ingest workflow, rebuild it periodically (daily or on-demand) by scanning the directory tree. This eliminates it as a write hotspot.
 - **Make log.md append-safe.** Each entry is a self-contained line with a timestamp prefix. Concurrent appends to the end of the file rarely conflict. If they do, both sides are correct — just keep both lines.
 - **Commit in batches, not per-page.** When an ingest job updates 10 entity pages, commit once at the end, not 10 times. This reduces conflict surface.
@@ -900,6 +953,7 @@ Practical mitigations:
 ## Maintenance (Lint)
 
 Periodically (weekly), the agent should:
+
 - **Deduplication scan:** Look for potential duplicate pages — similar names, same company, same email across different pages. Merge when confirmed.
 - **Contradictions:** Check for conflicting facts between pages (e.g., two pages listing different roles for the same person at the same company).
 - **Staleness:** Flag State sections superseded by newer Timeline entries.
@@ -934,6 +988,7 @@ During lint passes, flag pages that haven't been updated in 6+ months for review
 ## What makes a great brain
 
 A great brain lets you walk into any meeting, call, or decision already knowing:
+
 1. Who this person is and what they care about (30 seconds of reading)
 2. What the company's actual state is (not what they said 6 months ago)
 3. What open threads exist between you (promises, follow-ups, deals)
@@ -975,17 +1030,17 @@ When creating or filing a new page, walk this decision tree. Every piece of know
 
 When two directories seem to fit, apply these tiebreakers:
 
-- **Person vs. Company:** If the page is about *them as a human* (beliefs, relationship, trajectory), it's people/. If it's about *the organization they run*, it's companies/. Both pages link to each other.
-- **Concept vs. Idea:** Could you *teach* it to someone as a framework? Concept. Could you *build* it? Idea.
+- **Person vs. Company:** If the page is about _them as a human_ (beliefs, relationship, trajectory), it's people/. If it's about _the organization they run_, it's companies/. Both pages link to each other.
+- **Concept vs. Idea:** Could you _teach_ it to someone as a framework? Concept. Could you _build_ it? Idea.
 - **Concept vs. Personal:** Would you share it in a professional talk? Concept. Is it private reflection? Personal.
 - **Idea vs. Project:** Is anyone working on it? If yes, project. If no, idea. The graduation moment is when work starts.
 - **Writing vs. Concepts:** Concepts are distilled (200 words of compiled truth). Writing is developed prose (argument, narrative, story).
-- **Writing vs. Media:** Writing is the *artifact*. Media is the *production and distribution infrastructure*.
-- **Org vs. Programs:** org/ is institutional knowledge *about* your organization. programs/ is about your personal role and priorities within it.
+- **Writing vs. Media:** Writing is the _artifact_. Media is the _production and distribution infrastructure_.
+- **Org vs. Programs:** org/ is institutional knowledge _about_ your organization. programs/ is about your personal role and priorities within it.
 - **Civic vs. People:** Political figures get people/ pages. Their legislative agenda and political positioning as civic actors goes in civic/.
 - **Household vs. Personal:** If a PA would execute on it, it's household (operational). If it's private reflection, it's personal (inner life).
 - **Sources vs. .raw/ sidecars:** Per-entity enrichment data → .raw/ sidecar next to the entity. Bulk multi-entity imports → sources/.
-- **Agent vs. Sources:** Sources feed *into* the brain. Agent deliverables are synthesized output that feeds *into your reading*.
+- **Agent vs. Sources:** Sources feed _into_ the brain. Agent deliverables are synthesized output that feeds _into your reading_.
 
 ### Special directories (not knowledge)
 

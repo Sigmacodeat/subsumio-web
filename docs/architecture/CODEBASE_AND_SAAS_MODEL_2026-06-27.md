@@ -72,24 +72,26 @@
 ## 2.1 Multi-Tenancy Architektur
 
 ### Tenant Isolation
+
 - **Row-Level Security (RLS):** Postgres RLS Policies pro Tabelle
 - **Organization Scoping:** Alle Daten sind an `organization_id` gebunden
 - **User-Organization Mapping:** `organization_members` Tabelle für User-Rollen
 - **Tenant Boundary Tests:** `src/lib/tenant-boundary.test.ts`
 
 ### Tenant Struktur
+
 ```typescript
 interface Organization {
   id: string;
   name: string;
   slug: string;
-  plan: 'free' | 'starter' | 'professional' | 'enterprise';
+  plan: "free" | "starter" | "professional" | "enterprise";
   seats: number;
   created_at: string;
   settings: {
-    default_language: 'de' | 'en';
+    default_language: "de" | "en";
     timezone: string;
-    currency: 'EUR' | 'CHF';
+    currency: "EUR" | "CHF";
   };
 }
 
@@ -97,7 +99,7 @@ interface OrganizationMember {
   id: string;
   organization_id: string;
   user_id: string;
-  role: 'owner' | 'admin' | 'editor' | 'viewer';
+  role: "owner" | "admin" | "editor" | "viewer";
   invited_by: string;
   invited_at: string;
   accepted_at: string;
@@ -107,8 +109,9 @@ interface OrganizationMember {
 ## 2.2 Billing & Plans
 
 ### Plan Tiers
+
 ```typescript
-type PlanTier = 'free' | 'starter' | 'professional' | 'enterprise';
+type PlanTier = "free" | "starter" | "professional" | "enterprise";
 
 interface PlanLimits {
   max_users: number;
@@ -122,6 +125,7 @@ interface PlanLimits {
 ```
 
 ### Plan Konfiguration
+
 - **File:** `src/lib/billing/plans.ts`
 - **Features:**
   - Free: 1 User, 10 Cases, 100 AI Queries
@@ -130,6 +134,7 @@ interface PlanLimits {
   - Enterprise: Unlimited Users, Unlimited Cases, Unlimited AI Queries
 
 ### Billing Integration
+
 - **Provider:** Stripe
 - **Checkout:** `src/app/api/billing/checkout/route.ts`
 - **Webhook:** `src/app/api/billing/webhook/route.ts`
@@ -140,23 +145,26 @@ interface PlanLimits {
 ## 2.3 Quota System
 
 ### Quota Types
+
 ```typescript
-type QuotaType = 
-  | 'queries'           // AI Queries
-  | 'pages'             // Brain Pages
-  | 'storage'           // Storage Usage
-  | 'whatsapp_messages' // WhatsApp Messages
-  | 'api_calls'         // API Calls
-  | 'seats';            // User Seats
+type QuotaType =
+  | "queries" // AI Queries
+  | "pages" // Brain Pages
+  | "storage" // Storage Usage
+  | "whatsapp_messages" // WhatsApp Messages
+  | "api_calls" // API Calls
+  | "seats"; // User Seats
 ```
 
 ### Quota Enforcement
+
 - **File:** `src/lib/quota.test.ts`
 - **API:** `src/app/api/usage/quota/route.ts`
 - **Rate Limiting:** `src/lib/rate-limit-api.ts`
 - **Usage Tracking:** `src/lib/usage.ts`
 
 ### Quota Logic
+
 ```typescript
 interface QuotaCheck {
   quota_type: QuotaType;
@@ -170,6 +178,7 @@ interface QuotaCheck {
 ## 2.4 Usage Tracking
 
 ### Usage Metrics
+
 - **File:** `src/lib/usage.ts`
 - **API:** `src/app/api/usage/route.ts`
 - **Metrics:**
@@ -180,6 +189,7 @@ interface QuotaCheck {
   - Active Users per Day/Week/Month
 
 ### Usage Dashboard
+
 - **File:** `src/app/dashboard/adoption-analytics/page.tsx`
 - **Features:**
   - Total Users
@@ -246,6 +256,7 @@ subsumio-web/
 ## 3.2 Wichtige Module
 
 ### 3.2.1 Auth & Identity
+
 - **Files:**
   - `src/lib/auth/server.ts` – Server-side Auth Helpers
   - `src/lib/auth/store.ts` – Session Store
@@ -259,6 +270,7 @@ subsumio-web/
   - 2FA Support
 
 ### 3.2.2 Permissions (RBAC)
+
 - **File:** `src/lib/permissions.ts`
 - **Actions:**
   - `brain.read`, `brain.write`
@@ -269,6 +281,7 @@ subsumio-web/
   - `owner`, `admin`, `editor`, `viewer`
 
 ### 3.2.3 Legal AI Pipeline
+
 - **Files:**
   - `src/lib/legal/` – Legal AI Logic
   - `src/app/api/legal/` – Legal AI API Routes
@@ -283,6 +296,7 @@ subsumio-web/
   - Auto Playbooks
 
 ### 3.2.4 WhatsApp Integration
+
 - **Files:**
   - `src/lib/whatsapp/` – WhatsApp Logic
   - `src/app/api/whatsapp/` – WhatsApp API Routes
@@ -295,6 +309,7 @@ subsumio-web/
   - Secretary Metrics
 
 ### 3.2.5 Billing & Subscriptions
+
 - **Files:**
   - `src/lib/billing/` – Billing Logic
   - `src/app/api/billing/` – Billing API Routes
@@ -306,6 +321,7 @@ subsumio-web/
   - Dunning
 
 ### 3.2.6 Practice Management
+
 - **Files:**
   - `src/lib/` – Practice Management Logic
   - `src/app/dashboard/` – Dashboard UI
@@ -318,6 +334,7 @@ subsumio-web/
   - DATEV Export
 
 ### 3.2.7 Shared Spaces (Cross-Org)
+
 - **Files:**
   - `src/lib/shared-spaces.ts` – Shared Spaces Logic
   - `src/app/api/shared-spaces/` – Shared Spaces API
@@ -335,6 +352,7 @@ subsumio-web/
 ## 4.1 Core Tables
 
 ### Users & Organizations
+
 ```sql
 users (id, email, name, created_at)
 organizations (id, name, slug, plan, seats, created_at)
@@ -342,24 +360,28 @@ organization_members (id, organization_id, user_id, role, invited_by, invited_at
 ```
 
 ### Cases & Documents
+
 ```sql
 legal_cases (id, title, status, case_number, organization_id, created_at)
 documents (id, title, file_type, file_size, storage_path, case_id, uploaded_by, uploaded_at)
 ```
 
 ### Billing & Usage
+
 ```sql
 subscriptions (id, organization_id, stripe_customer_id, stripe_subscription_id, plan, status, created_at)
 usage_records (id, organization_id, user_id, quota_type, amount, recorded_at)
 ```
 
 ### WhatsApp
+
 ```sql
 whatsapp_identities (id, phone_number, organization_id, user_id, verified_at)
 whatsapp_messages (id, message_id, phone_number, direction, content, created_at)
 ```
 
 ### Shared Spaces
+
 ```sql
 shared_spaces (id, slug, name, description, organization_id, created_by, expires_at, status, access_token, settings)
 shared_space_participants (id, shared_space_id, user_id, email, role, invited_by, invited_at, accepted_at)
@@ -374,6 +396,7 @@ whatsapp_document_mappings (id, whatsapp_message_id, shared_space_id, document_i
 ## 5.1 API Handler Pattern
 
 ### createHandler Wrapper
+
 ```typescript
 export const POST = createHandler(
   {
@@ -395,6 +418,7 @@ export const POST = createHandler(
 ```
 
 ### Guards Applied
+
 1. Engine config check
 2. Auth (session → EngineContext)
 3. RBAC (can(user, action))
@@ -408,6 +432,7 @@ export const POST = createHandler(
 ## 5.2 API Routes
 
 ### Legal AI
+
 - `/api/legal/contract-draft` – Contract Drafting
 - `/api/legal/contract-redline` – Contract Redline
 - `/api/legal/analyze` – Document Analysis
@@ -416,24 +441,28 @@ export const POST = createHandler(
 - `/api/legal/auto-playbook` – Auto Playbooks
 
 ### Brain & Search
+
 - `/api/think` – Brain Query
 - `/api/search` – Search
 - `/api/pages` – Brain Pages CRUD
 - `/api/graph` – Graph Query
 
 ### Billing
+
 - `/api/billing/checkout` – Checkout
 - `/api/billing/webhook` – Stripe Webhook
 - `/api/billing/portal` – Customer Portal
 - `/api/billing/seats` – Seat Management
 
 ### WhatsApp
+
 - `/api/whatsapp/webhook` – WhatsApp Webhook
 - `/api/whatsapp/send` – Send Message
 - `/api/whatsapp/flow-endpoint` – Flow Endpoint
 - `/api/whatsapp/document-to-space` – Document to Space Mapping
 
 ### Shared Spaces
+
 - `/api/shared-spaces` – Shared Spaces CRUD
 - `/api/shared-spaces/[id]` – Shared Space Detail
 - `/api/shared-spaces/[id]/documents` – Documents CRUD
@@ -445,37 +474,44 @@ export const POST = createHandler(
 ## 6.1 Security Layers
 
 ### 1. Network Layer
+
 - IP Allow-Listing (Middleware)
 - HTTPS Only
 - CSP Headers
 
 ### 2. Auth Layer
+
 - Session-based Auth
 - API Key Auth
 - SSO via WorkOS
 - 2FA Support
 
 ### 3. Authorization Layer
+
 - RBAC (Permissions)
 - Row-Level Security (RLS)
 - Tenant Boundary Enforcement
 
 ### 4. CSRF Protection
+
 - Double-Submit Cookie
 - Header Validation
 - Timing-Safe Comparison
 
 ### 5. Rate Limiting
+
 - Per-User Rate Limits
 - Tier-Based Rate Limits
 - IP-Based Rate Limits
 
 ### 6. Quota Enforcement
+
 - Per-Organization Quotas
 - Per-User Quotas
 - Reset Logic
 
 ### 7. Audit Logging
+
 - All Actions Logged
 - User Attribution
 - Timestamp
@@ -484,16 +520,19 @@ export const POST = createHandler(
 ## 6.2 Compliance
 
 ### SOC 2 Type II
+
 - **Status:** Policies dokumentiert, Audit ausständig
 - **File:** `docs/security/SOC2_SECURITY_POLICIES_2026-06-27.md`
 
 ### GDPR
+
 - Data Export API
 - Data Retention Policies
 - Right to Deletion
 - Consent Management
 
 ### AI Act
+
 - AI Act Compliance Dashboard
 - AI Notice Components
 - Citation Gate
@@ -506,6 +545,7 @@ export const POST = createHandler(
 ## 7.1 GitHub Actions Workflow
 
 ### Jobs
+
 1. **lint** – ESLint
 2. **format-check** – Prettier
 3. **build** – Next.js Build
@@ -521,6 +561,7 @@ export const POST = createHandler(
 13. **production-gate** – All Checks Must Pass
 
 ### Production Gate
+
 - All jobs must pass
 - Security scan required
 - Performance tests required
@@ -529,6 +570,7 @@ export const POST = createHandler(
 ## 7.2 Dependencies
 
 ### Dependabot
+
 - **File:** `.github/dependabot.yml`
 - **Scope:** npm (Root + Server), GitHub Actions
 - **Schedule:** Weekly
@@ -541,21 +583,25 @@ export const POST = createHandler(
 ## 8.1 Test Tiers
 
 ### Unit Tests
+
 - **Framework:** Vitest
 - **Coverage:** Core Libraries
 - **Files:** `src/lib/*.test.ts`
 
 ### Integration Tests
+
 - **Framework:** Vitest
 - **Coverage:** API Routes
 - **Files:** `src/app/api/*.test.ts`
 
 ### E2E Tests
+
 - **Framework:** Playwright
 - **Coverage:** Critical Flows
 - **Files:** `tests/e2e-playwright/*.spec.ts`
 
 ### Load Tests
+
 - **Framework:** k6
 - **Coverage:** Performance Under Load
 - **Files:** `tests/load/*.js`
@@ -563,6 +609,7 @@ export const POST = createHandler(
 ## 8.2 Test Coverage
 
 ### Critical Flows
+
 - Auth Flow
 - Case Management Flow
 - Signature Flow
@@ -577,16 +624,19 @@ export const POST = createHandler(
 ## 9.1 Infrastructure
 
 ### Server
+
 - **Provider:** Hetzner (CX33, Falkenstein)
 - **OS:** Linux
 - **SSH:** `subsumio-hetzner`
 
 ### Storage
+
 - **Primary:** Hetzner S3-compatible Storage (B2)
 - **Backup:** Second Region (optional)
 - **Encryption:** AES-256-GCM at rest
 
 ### Database
+
 - **Primary:** Postgres with pgvector
 - **Backup:** Daily Backups
 - **Replication:** Optional
@@ -594,12 +644,14 @@ export const POST = createHandler(
 ## 9.2 Deployment Process
 
 ### CI/CD
+
 - **Trigger:** Push to main
 - **Build:** Docker Build
 - **Test:** Full CI Pipeline
 - **Deploy:** Production Gate → Deploy
 
 ### Environment Variables
+
 - **File:** `.env.example`
 - **Scope:** API URLs, Secrets, Auth, Billing, WhatsApp, Encryption, Redis, Integrations, Monitoring
 
@@ -610,6 +662,7 @@ export const POST = createHandler(
 ## 10.1 Metrics
 
 ### Application Metrics
+
 - Request Latency
 - Error Rate
 - Throughput
@@ -617,6 +670,7 @@ export const POST = createHandler(
 - Feature Usage
 
 ### Business Metrics
+
 - Active Users
 - Subscription Revenue
 - Churn Rate
@@ -626,11 +680,13 @@ export const POST = createHandler(
 ## 10.2 Logging
 
 ### Audit Log
+
 - **File:** `src/lib/audit.ts`
 - **Scope:** All User Actions
 - **Fields:** Action, User, Timestamp, Details
 
 ### Error Log
+
 - **Scope:** Application Errors
 - **Fields:** Error Type, Stack Trace, Context
 
@@ -639,20 +695,25 @@ export const POST = createHandler(
 # 11. External Integrations
 
 ## 11.1 Payment
+
 - **Stripe:** Billing, Subscriptions, Checkout
 
 ## 11.2 Identity
+
 - **WorkOS:** SSO, SCIM
 
 ## 11.3 Legal
+
 - **DocuSign:** Electronic Signatures
 - **beA:** German Bar Association
 - **DATEV:** Accounting Export
 
 ## 11.4 Communication
+
 - **WhatsApp:** Messaging, Legal Secretary
 
 ## 11.5 Storage
+
 - **Hetzner S3:** Document Storage
 
 ---
@@ -660,6 +721,7 @@ export const POST = createHandler(
 # 12. Roadmap & Future Work
 
 ## 12.1 Completed (2026-06-27)
+
 - ✅ P0-P3 Audit Tasks
 - ✅ Shared Spaces Implementation
 - ✅ Load Testing
@@ -667,6 +729,7 @@ export const POST = createHandler(
 - ✅ Performance Testing
 
 ## 12.2 Pending
+
 - ⬜ Penetration Testing (External)
 - ⬜ SOC 2 Type II Audit (External)
 - ⬜ Additional Enterprise Features

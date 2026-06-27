@@ -176,11 +176,11 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
               {t.badge}
             </div>
             <ClipReveal delay={0.1} duration={0.7} direction="up">
-            <h1 className="mb-6 text-[clamp(2.5rem,10vw,3.75rem)] leading-[1.08] font-black tracking-tight [color:var(--mk-text)] md:text-6xl">
-              {t.h1a}
-              <br />
-              <span className="gradient-text glow-text">{t.h1b}</span>
-            </h1>
+              <h1 className="mb-6 text-[clamp(2.5rem,10vw,3.75rem)] leading-[1.08] font-black tracking-tight [color:var(--mk-text)] md:text-6xl">
+                {t.h1a}
+                <br />
+                <span className="gradient-text glow-text">{t.h1b}</span>
+              </h1>
             </ClipReveal>
             <p className="mx-auto mb-10 max-w-xl text-lg leading-relaxed [color:var(--mk-text-muted)] md:text-xl lg:mx-0">
               {t.sub}
@@ -229,32 +229,36 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
                 viewport={viewport}
                 transition={{ delay: idx * 0.08, duration: 0.3 }}
               >
-                <GlowCard glowColor="var(--signal-blue)" intensity={0.12} className="h-full flex flex-col rounded-2xl border [border-color:var(--mk-border)] p-7 transition-all [background:var(--mk-surface)] hover:-translate-y-1 hover:border-[var(--brand-primary)]/40 hover:[background:var(--mk-hover)]">
-                <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl border border-[var(--signal-blue)]/20 bg-[var(--signal-blue)]/10 transition-transform duration-300 hover:scale-110">
-                  <Icon size={22} className="text-[var(--signal-blue)]" />
-                </div>
-                <h2 className="mb-1 text-lg font-bold [color:var(--mk-text)]">{platform.name}</h2>
-                <p className="mb-5 text-sm font-medium text-[var(--signal-blue)]">
-                  {platform.tagline}
-                </p>
-                <ol className="flex-1 space-y-3">
-                  {platform.steps.map((step, i) => (
-                    <li
-                      key={step}
-                      className="flex gap-3 text-sm leading-relaxed [color:var(--mk-text-muted)]"
-                    >
-                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-[var(--signal-blue)]/30 bg-[var(--signal-blue)]/20 text-xs font-bold text-[var(--signal-blue)]">
-                        {i + 1}
-                      </span>
-                      {step}
-                    </li>
-                  ))}
-                </ol>
-                {platform.note && (
-                  <p className="mt-5 border-t [border-color:var(--mk-border)] pt-4 text-xs leading-relaxed [color:var(--mk-text-subtle)]">
-                    {platform.note}
+                <GlowCard
+                  glowColor="var(--signal-blue)"
+                  intensity={0.12}
+                  className="flex h-full flex-col rounded-2xl border [border-color:var(--mk-border)] p-7 transition-all [background:var(--mk-surface)] hover:-translate-y-1 hover:border-[var(--brand-primary)]/40 hover:[background:var(--mk-hover)]"
+                >
+                  <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl border border-[var(--signal-blue)]/20 bg-[var(--signal-blue)]/10 transition-transform duration-300 hover:scale-110">
+                    <Icon size={22} className="text-[var(--signal-blue)]" />
+                  </div>
+                  <h2 className="mb-1 text-lg font-bold [color:var(--mk-text)]">{platform.name}</h2>
+                  <p className="mb-5 text-sm font-medium text-[var(--signal-blue)]">
+                    {platform.tagline}
                   </p>
-                )}
+                  <ol className="flex-1 space-y-3">
+                    {platform.steps.map((step, i) => (
+                      <li
+                        key={step}
+                        className="flex gap-3 text-sm leading-relaxed [color:var(--mk-text-muted)]"
+                      >
+                        <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-[var(--signal-blue)]/30 bg-[var(--signal-blue)]/20 text-xs font-bold text-[var(--signal-blue)]">
+                          {i + 1}
+                        </span>
+                        {step}
+                      </li>
+                    ))}
+                  </ol>
+                  {platform.note && (
+                    <p className="mt-5 border-t [border-color:var(--mk-border)] pt-4 text-xs leading-relaxed [color:var(--mk-text-subtle)]">
+                      {platform.note}
+                    </p>
+                  )}
                 </GlowCard>
               </motion.div>
             );

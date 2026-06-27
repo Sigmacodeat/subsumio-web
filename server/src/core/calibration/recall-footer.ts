@@ -26,7 +26,7 @@
  * arrives when we accumulate generated_at history.
  */
 
-import type { CalibrationProfileRow } from '../../commands/calibration.ts';
+import type { CalibrationProfileRow } from "../../commands/calibration.ts";
 
 export interface AbandonedThreadSummary {
   claim: string;
@@ -42,11 +42,11 @@ export interface RecallFooterOpts {
 
 export function buildRecallCalibrationFooter(opts: RecallFooterOpts): string {
   const { profile, abandonedThreads } = opts;
-  if (!profile) return '';
-  if (profile.total_resolved < 5) return '';
+  if (!profile) return "";
+  if (profile.total_resolved < 5) return "";
 
   const lines: string[] = [];
-  lines.push('Calibration this quarter:');
+  lines.push("Calibration this quarter:");
 
   // Brier line. v0.36.1.0 has only the current snapshot — no 90d comparison.
   if (profile.brier !== null) {
@@ -58,24 +58,24 @@ export function buildRecallCalibrationFooter(opts: RecallFooterOpts): string {
   }
 
   if (abandonedThreads && abandonedThreads.length > 0) {
-    lines.push('');
-    lines.push('Threads you opened and never came back to:');
+    lines.push("");
+    lines.push("Threads you opened and never came back to:");
     const colWidth = opts.threadColumnWidth ?? 50;
     for (const t of abandonedThreads.slice(0, 5)) {
-      const claim = t.claim.length > colWidth ? t.claim.slice(0, colWidth - 1) + '…' : t.claim;
-      const padded = claim.padEnd(colWidth, ' ');
+      const claim = t.claim.length > colWidth ? t.claim.slice(0, colWidth - 1) + "…" : t.claim;
+      const padded = claim.padEnd(colWidth, " ");
       lines.push(`  · ${padded}(${t.monthsSilent} months silent)`);
     }
   }
 
-  return lines.join('\n');
+  return lines.join("\n");
 }
 
 function trendNote(brier: number): string {
   // Map Brier to a conversational anchor. No history yet so we describe
   // the absolute value rather than trend.
-  if (brier <= 0.1) return '(strong calibration).';
-  if (brier <= 0.2) return '(solid).';
-  if (brier <= 0.25) return '(near baseline).';
-  return '(worse than always-50% baseline — review your high-conviction calls).';
+  if (brier <= 0.1) return "(strong calibration).";
+  if (brier <= 0.2) return "(solid).";
+  if (brier <= 0.25) return "(near baseline).";
+  return "(worse than always-50% baseline — review your high-conviction calls).";
 }

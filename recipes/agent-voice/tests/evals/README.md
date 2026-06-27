@@ -31,15 +31,15 @@ node tests/evals/mars-eval.mjs --model claude-sonnet-4-6 --limit 5
 
 ## Cost estimate
 
-| Component | Cost |
-|---|---|
-| Mars persona response × 1 fixture | ~$0.002 (Sonnet 4.6) |
-| Three judges × 1 fixture | ~$0.01 (Sonnet + GPT-4o + Gemini Pro) |
-| Mars-eval full run (10 fixtures) | ~$0.12 |
-| Venus-eval full run (10 fixtures) | ~$0.12 |
-| Persona-routing full run (10 fixtures) | ~$0.12 |
-| Mars-multilingual full run (5 fixtures × 3 languages) | ~$0.20 |
-| **Total per release** | **~$0.60** |
+| Component                                             | Cost                                  |
+| ----------------------------------------------------- | ------------------------------------- |
+| Mars persona response × 1 fixture                     | ~$0.002 (Sonnet 4.6)                  |
+| Three judges × 1 fixture                              | ~$0.01 (Sonnet + GPT-4o + Gemini Pro) |
+| Mars-eval full run (10 fixtures)                      | ~$0.12                                |
+| Venus-eval full run (10 fixtures)                     | ~$0.12                                |
+| Persona-routing full run (10 fixtures)                | ~$0.12                                |
+| Mars-multilingual full run (5 fixtures × 3 languages) | ~$0.20                                |
+| **Total per release**                                 | **~$0.60**                            |
 
 Capped well below the $1-3 budget. Cost stays low because the judge runs are short (one fixture in, JSON verdict out, ~150 tokens each).
 
@@ -52,6 +52,7 @@ Capped well below the $1-3 budget. Cost stays low because the judge runs are sho
 ## When evals fail
 
 Per axis:
+
 - `stays_in_character` fails → check that the persona prompt still has its identity-first framing and hasn't drifted toward generic assistant tone
 - `respects_mode_boundary` fails → Mars is doing logistics OR Venus is going long; check the persona's redirect rules
 - `brevity` fails → Venus is over-explaining; check the 1-3-sentence cap in the prompt

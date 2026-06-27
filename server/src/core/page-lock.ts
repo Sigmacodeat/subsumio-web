@@ -22,10 +22,10 @@
  *   }
  */
 
-import { existsSync, mkdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { createHash } from 'node:crypto';
-import { gbrainPath } from './config.ts';
+import { existsSync, mkdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { createHash } from "node:crypto";
+import { gbrainPath } from "./config.ts";
 
 const LOCK_TTL_MS = 5 * 60 * 1000; // 5 minutes — matches eng-review fold spec
 
@@ -48,8 +48,8 @@ export interface AcquirePageLockOpts {
 }
 
 function lockPathFor(slug: string, lockRoot?: string): string {
-  const sha = createHash('sha256').update(slug).digest('hex');
-  const dir = lockRoot ?? gbrainPath('page-locks');
+  const sha = createHash("sha256").update(slug).digest("hex");
+  const dir = lockRoot ?? gbrainPath("page-locks");
   return join(dir, `${sha}.lock`);
 }
 
@@ -67,12 +67,12 @@ function isPidAlive(pid: number): boolean {
   } catch (e) {
     const code = (e as NodeJS.ErrnoException).code;
     // ESRCH = no such process; anything else (e.g. EPERM) = still alive.
-    return code !== 'ESRCH';
+    return code !== "ESRCH";
   }
 }
 
 function tryAcquireOnce(slug: string, lockPath: string): PageLockHandle | null {
-  const dir = join(lockPath, '..');
+  const dir = join(lockPath, "..");
   mkdirSync(dir, { recursive: true });
   const pid = process.pid;
 
@@ -80,8 +80,8 @@ function tryAcquireOnce(slug: string, lockPath: string): PageLockHandle | null {
     try {
       const st = statSync(lockPath);
       const ageMs = Date.now() - st.mtimeMs;
-      const content = readFileSync(lockPath, 'utf-8').trim();
-      const existingPid = parseInt(content.split('\n')[0] || '0', 10);
+      const content = readFileSync(lockPath, "utf-8").trim();
+      const existingPid = parseInt(content.split("\n")[0] || "0", 10);
       const pidAlive = isPidAlive(existingPid);
 
       if (pidAlive && ageMs < LOCK_TTL_MS) {
@@ -106,8 +106,8 @@ function tryAcquireOnce(slug: string, lockPath: string): PageLockHandle | null {
     },
     release: async () => {
       try {
-        const content = readFileSync(lockPath, 'utf-8').trim();
-        const heldPid = parseInt(content.split('\n')[0] || '0', 10);
+        const content = readFileSync(lockPath, "utf-8").trim();
+        const heldPid = parseInt(content.split("\n")[0] || "0", 10);
         if (heldPid === pid) unlinkSync(lockPath);
       } catch {
         /* already gone */
@@ -123,7 +123,7 @@ function tryAcquireOnce(slug: string, lockPath: string): PageLockHandle | null {
  */
 export async function acquirePageLock(
   slug: string,
-  opts: AcquirePageLockOpts = {},
+  opts: AcquirePageLockOpts = {}
 ): Promise<PageLockHandle | null> {
   const lockPath = lockPathFor(slug, opts.lockRoot);
   const deadline = Date.now() + (opts.timeoutMs ?? 0);
@@ -133,7 +133,7 @@ export async function acquirePageLock(
   if (attempt) return attempt;
 
   while (Date.now() < deadline) {
-    await new Promise(r => setTimeout(r, pollMs));
+    await new Promise((r) => setTimeout(r, pollMs));
     attempt = tryAcquireOnce(slug, lockPath);
     if (attempt) return attempt;
   }
@@ -148,11 +148,13 @@ export async function acquirePageLock(
 export async function withPageLock<T>(
   slug: string,
   fn: () => Promise<T>,
-  opts: AcquirePageLockOpts = {},
+  opts: AcquirePageLockOpts = {}
 ): Promise<T> {
   const handle = await acquirePageLock(slug, { timeoutMs: 30_000, ...opts });
   if (!handle) {
-    throw new Error(`acquirePageLock: could not acquire lock for slug "${slug}" within ${opts.timeoutMs ?? 30_000}ms`);
+    throw new Error(
+      `acquirePageLock: could not acquire lock for slug "${slug}" within ${opts.timeoutMs ?? 30_000}ms`
+    );
   }
   try {
     return await fn();

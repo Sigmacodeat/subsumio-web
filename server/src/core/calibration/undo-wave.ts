@@ -39,9 +39,9 @@
  *   be reverted.
  */
 
-import { execFileSync } from 'node:child_process';
-import { GSTACK_LEARNING_NAMESPACE } from './gstack-coupling.ts';
-import type { BrainEngine } from '../engine.ts';
+import { execFileSync } from "node:child_process";
+import { GSTACK_LEARNING_NAMESPACE } from "./gstack-coupling.ts";
+import type { BrainEngine } from "../engine.ts";
 
 export interface UndoWaveOpts {
   /** Wave version to reverse. v0.36.1.0 ship state: 'v0.36.1.0'. */
@@ -78,13 +78,10 @@ export interface UndoWaveResult {
  * step is idempotent: re-running --undo-wave is a no-op when no
  * wave-version-matching rows exist.
  */
-export async function undoWave(
-  engine: BrainEngine,
-  opts: UndoWaveOpts,
-): Promise<UndoWaveResult> {
+export async function undoWave(engine: BrainEngine, opts: UndoWaveOpts): Promise<UndoWaveResult> {
   const waveVersion = opts.waveVersion;
   const dryRun = opts.dryRun ?? false;
-  const resolvedByLabel = opts.resolvedByLabel ?? 'gbrain:grade_takes';
+  const resolvedByLabel = opts.resolvedByLabel ?? "gbrain:grade_takes";
   const result: UndoWaveResult = {
     wave_version: waveVersion,
     dry_run: dryRun,
@@ -104,9 +101,9 @@ export async function undoWave(
   const targetTakeRows = await engine.executeRaw<{ take_id: number }>(
     `SELECT DISTINCT take_id FROM take_grade_cache
      WHERE wave_version = $1 AND applied = true`,
-    [waveVersion],
+    [waveVersion]
   );
-  const targetTakeIds = targetTakeRows.map(r => r.take_id);
+  const targetTakeIds = targetTakeRows.map((r) => r.take_id);
 
   if (targetTakeIds.length > 0) {
     if (dryRun) {
@@ -114,7 +111,7 @@ export async function undoWave(
         `SELECT COUNT(*)::int AS count FROM takes
          WHERE id = ANY($1::bigint[])
            AND resolved_by = $2`,
-        [targetTakeIds, resolvedByLabel],
+        [targetTakeIds, resolvedByLabel]
       );
       result.resolutions_reverted = counted[0]?.count ?? 0;
     } else {
@@ -130,7 +127,7 @@ export async function undoWave(
          WHERE id = ANY($1::bigint[])
            AND resolved_by = $2
          RETURNING id`,
-        [targetTakeIds, resolvedByLabel],
+        [targetTakeIds, resolvedByLabel]
       );
       result.resolutions_reverted = reverted.length;
     }
@@ -146,14 +143,14 @@ export async function undoWave(
          SET applied = false
        WHERE wave_version = $1 AND applied = true
        RETURNING take_id`,
-      [waveVersion],
+      [waveVersion]
     );
     result.grade_cache_unapplied = cacheUnset.length;
   } else {
     const cacheCount = await engine.executeRaw<{ count: number }>(
       `SELECT COUNT(*)::int AS count FROM take_grade_cache
        WHERE wave_version = $1 AND applied = true`,
-      [waveVersion],
+      [waveVersion]
     );
     result.grade_cache_unapplied = cacheCount[0]?.count ?? 0;
   }
@@ -162,13 +159,13 @@ export async function undoWave(
   if (dryRun) {
     const counted = await engine.executeRaw<{ count: number }>(
       `SELECT COUNT(*)::int AS count FROM calibration_profiles WHERE wave_version = $1`,
-      [waveVersion],
+      [waveVersion]
     );
     result.profiles_deleted = counted[0]?.count ?? 0;
   } else {
     const deleted = await engine.executeRaw<{ id: number }>(
       `DELETE FROM calibration_profiles WHERE wave_version = $1 RETURNING id`,
-      [waveVersion],
+      [waveVersion]
     );
     result.profiles_deleted = deleted.length;
   }
@@ -177,13 +174,13 @@ export async function undoWave(
   if (dryRun) {
     const counted = await engine.executeRaw<{ count: number }>(
       `SELECT COUNT(*)::int AS count FROM take_nudge_log WHERE wave_version = $1`,
-      [waveVersion],
+      [waveVersion]
     );
     result.nudges_purged = counted[0]?.count ?? 0;
   } else {
     const purged = await engine.executeRaw<{ id: number }>(
       `DELETE FROM take_nudge_log WHERE wave_version = $1 RETURNING id`,
-      [waveVersion],
+      [waveVersion]
     );
     result.nudges_purged = purged.length;
   }
@@ -192,14 +189,14 @@ export async function undoWave(
   if (opts.scrubGstack && !dryRun) {
     result.gstack_scrub_attempted = true;
     try {
-      execFileSync('gstack-learnings-prune', [
-        '--key-prefix',
-        GSTACK_LEARNING_NAMESPACE,
-      ], { encoding: 'utf8', timeout: 10_000 });
+      execFileSync("gstack-learnings-prune", ["--key-prefix", GSTACK_LEARNING_NAMESPACE], {
+        encoding: "utf8",
+        timeout: 10_000,
+      });
     } catch (err) {
       result.warnings.push(
         `gstack scrub failed: ${err instanceof Error ? err.message : String(err)}. ` +
-          `Run \`gstack-learnings-prune --key-prefix ${GSTACK_LEARNING_NAMESPACE}\` manually.`,
+          `Run \`gstack-learnings-prune --key-prefix ${GSTACK_LEARNING_NAMESPACE}\` manually.`
       );
     }
   }

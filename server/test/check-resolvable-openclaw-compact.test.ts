@@ -22,19 +22,9 @@ import { describe, test, expect } from "bun:test";
 import { join } from "path";
 import { checkResolvable } from "../src/core/check-resolvable.ts";
 
-const COMPACT_FIXTURE = join(
-  import.meta.dir,
-  "fixtures",
-  "openclaw-compact-resolver",
-  "skills"
-);
+const COMPACT_FIXTURE = join(import.meta.dir, "fixtures", "openclaw-compact-resolver", "skills");
 
-const MIXED_MERGE_FIXTURE = join(
-  import.meta.dir,
-  "fixtures",
-  "openclaw-mixed-merge",
-  "skills"
-);
+const MIXED_MERGE_FIXTURE = join(import.meta.dir, "fixtures", "openclaw-mixed-merge", "skills");
 
 describe("v0.41.7.0 — compact list-format resolver (PR #1370 regression)", () => {
   const report = checkResolvable(COMPACT_FIXTURE);
@@ -53,7 +43,7 @@ describe("v0.41.7.0 — compact list-format resolver (PR #1370 regression)", () 
     if (report.errors.length > 0) {
       console.error(
         "Unexpected errors:\n",
-        report.errors.map(e => `  - [${e.type}] ${e.skill}: ${e.message}`).join("\n")
+        report.errors.map((e) => `  - [${e.type}] ${e.skill}: ${e.message}`).join("\n")
       );
     }
     expect(report.errors.length).toBe(0);
@@ -64,11 +54,11 @@ describe("v0.41.7.0 — compact list-format resolver (PR #1370 regression)", () 
     // D5 fixture upgrade: every SKILL.md stub carries valid frontmatter
     // triggers, so the mece_gap detection should stay silent. If this
     // assertion ever fires, a fixture file lost its triggers: array.
-    const gaps = report.warnings.filter(w => w.type === "mece_gap");
+    const gaps = report.warnings.filter((w) => w.type === "mece_gap");
     if (gaps.length > 0) {
       console.error(
         "Unexpected mece_gap warnings:\n",
-        gaps.map(w => `  - ${w.skill}: ${w.message}`).join("\n")
+        gaps.map((w) => `  - ${w.skill}: ${w.message}`).join("\n")
       );
     }
     expect(gaps.length).toBe(0);
@@ -81,19 +71,19 @@ describe("v0.41.7.0 — compact list-format resolver (PR #1370 regression)", () 
     // before they reach the resolver entry stream, so we should NOT
     // see orphan_trigger warnings naming any of these.
     const proseBulletNames = ["Note", "Convention", "TODO", "Important"];
-    const orphans = report.warnings.filter(w => w.type === "orphan_trigger");
+    const orphans = report.warnings.filter((w) => w.type === "orphan_trigger");
     for (const name of proseBulletNames) {
-      const hit = orphans.find(w => w.skill === name);
+      const hit = orphans.find((w) => w.skill === name);
       expect(hit, `prose bullet "${name}" should not surface as orphan_trigger`).toBeUndefined();
     }
   });
 
   test("zero missing_file warnings (every list entry resolves to disk)", () => {
-    const missing = report.warnings.filter(w => w.type === "missing_file");
+    const missing = report.warnings.filter((w) => w.type === "missing_file");
     if (missing.length > 0) {
       console.error(
         "Unexpected missing_file warnings:\n",
-        missing.map(w => `  - ${w.skill}: ${w.message}`).join("\n")
+        missing.map((w) => `  - ${w.skill}: ${w.message}`).join("\n")
       );
     }
     expect(missing.length).toBe(0);
@@ -116,7 +106,7 @@ describe("v0.41.7.0 — D-CX-14 mixed-merge (table + parent AGENTS.md)", () => {
     if (report.errors.length > 0) {
       console.error(
         "Unexpected errors:\n",
-        report.errors.map(e => `  - [${e.type}] ${e.skill}: ${e.message}`).join("\n")
+        report.errors.map((e) => `  - [${e.type}] ${e.skill}: ${e.message}`).join("\n")
       );
     }
     expect(report.errors.length).toBe(0);
@@ -131,9 +121,7 @@ describe("v0.41.7.0 — D-CX-14 mixed-merge (table + parent AGENTS.md)", () => {
     const expectedTableSkills = ["query", "enrich", "briefing", "migrate", "setup"];
     const expectedListSkills = ["adversary-tracking", "civic-intelligence", "book-mirror"];
     for (const name of [...expectedTableSkills, ...expectedListSkills]) {
-      const unreachable = report.errors.find(
-        e => e.type === "unreachable" && e.skill === name
-      );
+      const unreachable = report.errors.find((e) => e.type === "unreachable" && e.skill === name);
       expect(unreachable, `${name} should be reachable`).toBeUndefined();
     }
   });

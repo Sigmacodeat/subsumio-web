@@ -10,14 +10,14 @@
  * Hermetic, no API keys.
  */
 
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
-import { PGLiteEngine } from '../src/core/pglite-engine.ts';
+import { describe, test, expect, beforeAll, afterAll } from "bun:test";
+import { PGLiteEngine } from "../src/core/pglite-engine.ts";
 
 let engine: PGLiteEngine;
 
 beforeAll(async () => {
   engine = new PGLiteEngine();
-  await engine.connect({ database_url: '' });
+  await engine.connect({ database_url: "" });
   await engine.initSchema();
 }, 60_000);
 
@@ -25,8 +25,8 @@ afterAll(async () => {
   await engine.disconnect();
 });
 
-describe('PGLite — facts.event_type round-trip', () => {
-  test('event_type column is queryable and projects through findTrajectory', async () => {
+describe("PGLite — facts.event_type round-trip", () => {
+  test("event_type column is queryable and projects through findTrajectory", async () => {
     // Insert one metric row + one event-only row + one row with neither set
     // for the same entity.
     await engine.executeRaw(`
@@ -51,24 +51,24 @@ describe('PGLite — facts.event_type round-trip', () => {
     `);
 
     // kind: 'all' (default) returns all three
-    const all = await engine.findTrajectory({ entitySlug: 'people/alice' });
+    const all = await engine.findTrajectory({ entitySlug: "people/alice" });
     expect(all.length).toBe(3);
 
     // Find the event row and assert event_type round-trips
-    const eventRow = all.find(p => p.event_type === 'meeting');
+    const eventRow = all.find((p) => p.event_type === "meeting");
     expect(eventRow).toBeDefined();
     expect(eventRow!.metric).toBeNull();
     expect(eventRow!.value).toBeNull();
-    expect(eventRow!.text).toBe('last met at Blue Bottle');
+    expect(eventRow!.text).toBe("last met at Blue Bottle");
 
     // Find the metric row and assert event_type is null
-    const metricRow = all.find(p => p.metric === 'mrr');
+    const metricRow = all.find((p) => p.metric === "mrr");
     expect(metricRow).toBeDefined();
     expect(metricRow!.event_type).toBeNull();
     expect(metricRow!.value).toBe(50000);
 
     // Find the legacy row and assert both null
-    const legacyRow = all.find(p => p.text === 'legacy free-text fact');
+    const legacyRow = all.find((p) => p.text === "legacy free-text fact");
     expect(legacyRow).toBeDefined();
     expect(legacyRow!.metric).toBeNull();
     expect(legacyRow!.event_type).toBeNull();
@@ -76,51 +76,51 @@ describe('PGLite — facts.event_type round-trip', () => {
 
   test('kind: "metric" filter returns only typed-claim rows', async () => {
     const points = await engine.findTrajectory({
-      entitySlug: 'people/alice',
-      kind: 'metric',
+      entitySlug: "people/alice",
+      kind: "metric",
     });
     expect(points.length).toBe(1);
-    expect(points[0].metric).toBe('mrr');
+    expect(points[0].metric).toBe("mrr");
     expect(points[0].event_type).toBeNull();
   });
 
   test('kind: "event" filter returns only event_type rows', async () => {
     const points = await engine.findTrajectory({
-      entitySlug: 'people/alice',
-      kind: 'event',
+      entitySlug: "people/alice",
+      kind: "event",
     });
     expect(points.length).toBe(1);
     expect(points[0].metric).toBeNull();
-    expect(points[0].event_type).toBe('meeting');
+    expect(points[0].event_type).toBe("meeting");
   });
 
   test('kind: "all" explicit matches default', async () => {
     const explicit = await engine.findTrajectory({
-      entitySlug: 'people/alice',
-      kind: 'all',
+      entitySlug: "people/alice",
+      kind: "all",
     });
-    const implicit = await engine.findTrajectory({ entitySlug: 'people/alice' });
+    const implicit = await engine.findTrajectory({ entitySlug: "people/alice" });
     expect(explicit.length).toBe(implicit.length);
     expect(explicit.length).toBe(3);
   });
 
-  test('chronological ordering preserved when mixed metric + event rows', async () => {
-    const points = await engine.findTrajectory({ entitySlug: 'people/alice' });
+  test("chronological ordering preserved when mixed metric + event rows", async () => {
+    const points = await engine.findTrajectory({ entitySlug: "people/alice" });
     expect(points.length).toBe(3);
     // 2026-01-01 → 2026-02-15 → 2026-03-01
-    expect(points[0].valid_from.toISOString().slice(0, 10)).toBe('2026-01-01');
-    expect(points[1].valid_from.toISOString().slice(0, 10)).toBe('2026-02-15');
-    expect(points[2].valid_from.toISOString().slice(0, 10)).toBe('2026-03-01');
+    expect(points[0].valid_from.toISOString().slice(0, 10)).toBe("2026-01-01");
+    expect(points[1].valid_from.toISOString().slice(0, 10)).toBe("2026-02-15");
+    expect(points[2].valid_from.toISOString().slice(0, 10)).toBe("2026-03-01");
   });
 
-  test('metric filter still works alongside event_type column', async () => {
+  test("metric filter still works alongside event_type column", async () => {
     // Existing `metric` filter is a SEPARATE narrow — pinpoints one
     // canonical metric label. event_type doesn't change its behavior.
     const points = await engine.findTrajectory({
-      entitySlug: 'people/alice',
-      metric: 'mrr',
+      entitySlug: "people/alice",
+      metric: "mrr",
     });
     expect(points.length).toBe(1);
-    expect(points[0].metric).toBe('mrr');
+    expect(points[0].metric).toBe("mrr");
   });
 });

@@ -37,9 +37,9 @@
  * commit 13 wires it.
  */
 
-import type { BrainEngine, FactInsertStatus, NewFact } from '../engine.ts';
-import { isFactsBackstopEligible } from './eligibility.ts';
-import type { PageType } from '../types.ts';
+import type { BrainEngine, FactInsertStatus, NewFact } from "../engine.ts";
+import { isFactsBackstopEligible } from "./eligibility.ts";
+import type { PageType } from "../types.ts";
 
 export interface FactsBackstopCtx {
   engine: BrainEngine;
@@ -55,11 +55,11 @@ export interface FactsBackstopCtx {
    *   - 'file_upload'        — file_upload import path
    *   - 'code_import'        — code import path
    */
-  source: 'sync:import' | 'mcp:put_page' | 'mcp:extract_facts' | 'file_upload' | 'code_import';
+  source: "sync:import" | "mcp:put_page" | "mcp:extract_facts" | "file_upload" | "code_import";
   /** Execution mode — D8. Default 'queue' (fire-and-forget). */
-  mode?: 'queue' | 'inline';
+  mode?: "queue" | "inline";
   /** Notability filter — D4. Default 'all'; sync uses 'high-only'. */
-  notabilityFilter?: 'all' | 'high-only';
+  notabilityFilter?: "all" | "high-only";
   /** Abort signal for shutdown propagation. */
   abortSignal?: AbortSignal;
   /** Mirrors OperationContext.remote for trust-aware logging paths. */
@@ -67,7 +67,7 @@ export interface FactsBackstopCtx {
   /** Optional entity hints (extract_facts MCP op forwards these). */
   entityHints?: string[];
   /** Optional visibility tier (default 'private'). extract_facts forwards `world` when caller asks. */
-  visibility?: 'private' | 'world';
+  visibility?: "private" | "world";
   /** Override the chat model (extract_facts forwards user's model param when set). */
   model?: string;
 }
@@ -75,18 +75,22 @@ export interface FactsBackstopCtx {
 /** Discriminated return shape based on FactsBackstopCtx.mode. */
 export type FactsBackstopResult =
   | {
-      mode: 'queue';
+      mode: "queue";
       enqueued: boolean;
       queueDepth: number;
-      skipped?: 'extraction_disabled' | 'queue_overflow' | 'queue_shutdown' | `eligibility_failed:${string}`;
+      skipped?:
+        | "extraction_disabled"
+        | "queue_overflow"
+        | "queue_shutdown"
+        | `eligibility_failed:${string}`;
     }
   | {
-      mode: 'inline';
+      mode: "inline";
       inserted: number;
       duplicate: number;
       superseded: number;
       fact_ids: number[];
-      skipped?: 'extraction_disabled' | `eligibility_failed:${string}`;
+      skipped?: "extraction_disabled" | `eligibility_failed:${string}`;
     };
 
 interface ParsedPageInput {
@@ -134,30 +138,37 @@ export function __resetBackstopWarningsForTests(): void {
  */
 export async function runFactsBackstop(
   parsedPage: ParsedPageInput,
-  ctx: FactsBackstopCtx,
+  ctx: FactsBackstopCtx
 ): Promise<FactsBackstopResult> {
-  const mode = ctx.mode ?? 'queue';
+  const mode = ctx.mode ?? "queue";
 
   // --- Eligibility + kill-switch gates (run before any LLM cost) ---
-  const { isFactsExtractionEnabled } = await import('./extract.ts');
+  const { isFactsExtractionEnabled } = await import("./extract.ts");
   const enabled = await isFactsExtractionEnabled(ctx.engine);
   if (!enabled) {
-    return mode === 'queue'
-      ? { mode: 'queue', enqueued: false, queueDepth: 0, skipped: 'extraction_disabled' }
-      : { mode: 'inline', inserted: 0, duplicate: 0, superseded: 0, fact_ids: [], skipped: 'extraction_disabled' };
+    return mode === "queue"
+      ? { mode: "queue", enqueued: false, queueDepth: 0, skipped: "extraction_disabled" }
+      : {
+          mode: "inline",
+          inserted: 0,
+          duplicate: 0,
+          superseded: 0,
+          fact_ids: [],
+          skipped: "extraction_disabled",
+        };
   }
 
   const eligible = isFactsBackstopEligible(parsedPage.slug, parsedPage);
   if (!eligible.ok) {
     const skipped = `eligibility_failed:${eligible.reason}` as const;
-    return mode === 'queue'
-      ? { mode: 'queue', enqueued: false, queueDepth: 0, skipped }
-      : { mode: 'inline', inserted: 0, duplicate: 0, superseded: 0, fact_ids: [], skipped };
+    return mode === "queue"
+      ? { mode: "queue", enqueued: false, queueDepth: 0, skipped }
+      : { mode: "inline", inserted: 0, duplicate: 0, superseded: 0, fact_ids: [], skipped };
   }
 
   // --- Mode dispatch ---
-  if (mode === 'queue') {
-    const { getFactsQueue } = await import('./queue.ts');
+  if (mode === "queue") {
+    const { getFactsQueue } = await import("./queue.ts");
     const queue = getFactsQueue();
     const enqueued = queue.enqueue(async (signal) => {
       // v0.31.2 (PR1 commit 13): facts:absorb writer wired here. Errors
@@ -167,7 +178,7 @@ export async function runFactsBackstop(
       try {
         await runPipeline(parsedPage, ctx, signal);
       } catch (err) {
-        const { classifyFactsAbsorbError, writeFactsAbsorbLog } = await import('./absorb-log.ts');
+        const { classifyFactsAbsorbError, writeFactsAbsorbLog } = await import("./absorb-log.ts");
         const reason = classifyFactsAbsorbError(err);
         const msg = err instanceof Error ? err.message : String(err);
         await writeFactsAbsorbLog(ctx.engine, parsedPage.slug, reason, msg, ctx.sourceId);
@@ -178,17 +189,17 @@ export async function runFactsBackstop(
       // -1 means the queue is shutting down OR cap-overflow drop fired.
       // Caller can disambiguate via getCounters() if they care; for now
       // collapse to a single skipped reason and record the absorb event.
-      const { writeFactsAbsorbLog } = await import('./absorb-log.ts');
+      const { writeFactsAbsorbLog } = await import("./absorb-log.ts");
       await writeFactsAbsorbLog(
         ctx.engine,
         parsedPage.slug,
-        'queue_overflow',
+        "queue_overflow",
         `queue capacity hit; enqueue dropped (sessionId=${ctx.sessionId ?? parsedPage.slug})`,
-        ctx.sourceId,
+        ctx.sourceId
       );
-      return { mode: 'queue', enqueued: false, queueDepth: 0, skipped: 'queue_overflow' };
+      return { mode: "queue", enqueued: false, queueDepth: 0, skipped: "queue_overflow" };
     }
-    return { mode: 'queue', enqueued: true, queueDepth: enqueued };
+    return { mode: "queue", enqueued: true, queueDepth: enqueued };
   }
 
   // 'inline' mode: caller awaits the full pipeline. Errors bubble to the
@@ -197,7 +208,7 @@ export async function runFactsBackstop(
   // here because the caller decides whether the failure is interesting
   // enough to record (vs. retry, vs. surface directly to the user).
   const r = await runPipeline(parsedPage, ctx, ctx.abortSignal);
-  return { mode: 'inline', ...r };
+  return { mode: "inline", ...r };
 }
 
 /**
@@ -219,12 +230,16 @@ export async function runFactsBackstop(
  */
 export async function runFactsPipeline(
   turnText: string,
-  ctx: FactsBackstopCtx,
+  ctx: FactsBackstopCtx
 ): Promise<{ inserted: number; duplicate: number; superseded: number; fact_ids: number[] }> {
-  return runPipelineWithBody({
-    turnText,
-    isDreamGenerated: false,
-  }, ctx, ctx.abortSignal);
+  return runPipelineWithBody(
+    {
+      turnText,
+      isDreamGenerated: false,
+    },
+    ctx,
+    ctx.abortSignal
+  );
 }
 
 /**
@@ -239,15 +254,15 @@ export async function runFactsPipeline(
 async function runPipeline(
   parsedPage: ParsedPageInput,
   ctx: FactsBackstopCtx,
-  abortSignal?: AbortSignal,
+  abortSignal?: AbortSignal
 ): Promise<{ inserted: number; duplicate: number; superseded: number; fact_ids: number[] }> {
   return runPipelineWithBody(
     {
       turnText: parsedPage.compiled_truth,
-      isDreamGenerated: false,  // eligibility check already rejected dream pages
+      isDreamGenerated: false, // eligibility check already rejected dream pages
     },
     ctx,
-    abortSignal,
+    abortSignal
   );
 }
 
@@ -280,12 +295,12 @@ async function runPipeline(
 async function runPipelineWithBody(
   input: { turnText: string; isDreamGenerated: boolean },
   ctx: FactsBackstopCtx,
-  abortSignal?: AbortSignal,
+  abortSignal?: AbortSignal
 ): Promise<{ inserted: number; duplicate: number; superseded: number; fact_ids: number[] }> {
-  const { extractFactsFromTurn } = await import('./extract.ts');
-  const { resolveEntitySlug } = await import('../entities/resolve.ts');
-  const { cosineSimilarity } = await import('./classify.ts');
-  const { writeFactsToFence, lookupSourceLocalPath } = await import('./fence-write.ts');
+  const { extractFactsFromTurn } = await import("./extract.ts");
+  const { resolveEntitySlug } = await import("../entities/resolve.ts");
+  const { cosineSimilarity } = await import("./classify.ts");
+  const { writeFactsToFence, lookupSourceLocalPath } = await import("./fence-write.ts");
 
   if (abortSignal?.aborted) {
     return { inserted: 0, duplicate: 0, superseded: 0, fact_ids: [] };
@@ -302,8 +317,8 @@ async function runPipelineWithBody(
     model: ctx.model,
   });
 
-  const filter = ctx.notabilityFilter ?? 'all';
-  const visibility = ctx.visibility ?? 'private';
+  const filter = ctx.notabilityFilter ?? "all";
+  const visibility = ctx.visibility ?? "private";
 
   let inserted = 0;
   let duplicate = 0;
@@ -313,7 +328,7 @@ async function runPipelineWithBody(
   // Phase 1: per-fact filter + dedup. Surviving facts (no dedup hit)
   // get grouped by entity_slug for the fence-write phase below.
   type SurvivedFact = {
-    f: typeof facts[number];
+    f: (typeof facts)[number];
     resolvedSlug: string | null;
   };
   const survived: SurvivedFact[] = [];
@@ -322,7 +337,7 @@ async function runPipelineWithBody(
     if (abortSignal?.aborted) break;
 
     // D4: notability filter applied post-extraction, pre-insert.
-    if (filter === 'high-only' && f.notability !== 'high') continue;
+    if (filter === "high-only" && f.notability !== "high") continue;
 
     const resolvedSlug = f.entity_slug
       ? await resolveEntitySlug(ctx.engine, ctx.sourceId, f.entity_slug)
@@ -337,14 +352,17 @@ async function runPipelineWithBody(
         ctx.sourceId,
         resolvedSlug,
         f.fact,
-        { embedding: f.embedding, k: DEDUP_CANDIDATE_LIMIT },
+        { embedding: f.embedding, k: DEDUP_CANDIDATE_LIMIT }
       );
       let topId: number | null = null;
       let topScore = -1;
       for (const c of candidates) {
         if (!c.embedding) continue;
         const s = cosineSimilarity(f.embedding, c.embedding);
-        if (s > topScore) { topScore = s; topId = c.id; }
+        if (s > topScore) {
+          topScore = s;
+          topId = c.id;
+        }
       }
       if (topId !== null && topScore >= DEDUP_THRESHOLD) {
         matchedExistingId = topId;
@@ -389,9 +407,10 @@ async function runPipelineWithBody(
   const legacyBucket: SurvivedFact[] = [];
   if (localPath === null) {
     warnOnce(
-      'facts:thin-client-fallback',
-      '[facts] sources.local_path unset for source_id=' + ctx.sourceId +
-      ' — falling through to DB-only inserts. Configure local_path via `gbrain sources update` to enable system-of-record fence writes.',
+      "facts:thin-client-fallback",
+      "[facts] sources.local_path unset for source_id=" +
+        ctx.sourceId +
+        " — falling through to DB-only inserts. Configure local_path via `gbrain sources update` to enable system-of-record fence writes."
     );
     for (const s of survived) legacyBucket.push(s);
   } else {
@@ -412,8 +431,8 @@ async function runPipelineWithBody(
     };
     const result = await ctx.engine.insertFact(newFact, { source_id: ctx.sourceId }); // gbrain-allow-direct-insert: legacy DB-only fallback for unparented / thin-client facts (no entity page to fence onto)
     fact_ids.push(result.id);
-    if (result.status === 'inserted') inserted += 1;
-    else if ((result.status as FactInsertStatus) === 'duplicate') duplicate += 1;
+    if (result.status === "inserted") inserted += 1;
+    else if ((result.status as FactInsertStatus) === "duplicate") duplicate += 1;
     else superseded += 1;
   }
 
@@ -444,7 +463,7 @@ async function runPipelineWithBody(
     const result = await writeFactsToFence(
       ctx.engine,
       { sourceId: ctx.sourceId, localPath, slug },
-      inputFacts,
+      inputFacts
     );
 
     if (result.fenceWriteFailed) {
@@ -475,8 +494,8 @@ async function runPipelineWithBody(
         };
         const legacyResult = await ctx.engine.insertFact(newFact, { source_id: ctx.sourceId }); // gbrain-allow-direct-insert: stub-guard fallback for unprefixed entity slugs (no fenceable page)
         fact_ids.push(legacyResult.id);
-        if (legacyResult.status === 'inserted') inserted += 1;
-        else if ((legacyResult.status as FactInsertStatus) === 'duplicate') duplicate += 1;
+        if (legacyResult.status === "inserted") inserted += 1;
+        else if ((legacyResult.status as FactInsertStatus) === "duplicate") duplicate += 1;
         else superseded += 1;
       }
       continue;
@@ -485,8 +504,8 @@ async function runPipelineWithBody(
       // Defensive: writeFactsToFence sees localPath as null. We
       // checked above so this shouldn't fire — log loud + skip.
       warnOnce(
-        'facts:fence-write-unexpected-fallback',
-        `[facts] writeFactsToFence returned legacyFallback for slug=${slug} despite localPath being set — investigation needed.`,
+        "facts:fence-write-unexpected-fallback",
+        `[facts] writeFactsToFence returned legacyFallback for slug=${slug} despite localPath being set — investigation needed.`
       );
       continue;
     }

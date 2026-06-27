@@ -49,8 +49,7 @@ describe("build-llms generator", () => {
     expect(lines[0], "first line must be H1").toBe("# GBrain");
 
     // Blockquote summary on line 2 or 3 (spec allows blank line after H1).
-    const hasEarlyBlockquote =
-      lines.slice(1, 4).some((line) => line.startsWith("> "));
+    const hasEarlyBlockquote = lines.slice(1, 4).some((line) => line.startsWith("> "));
     expect(hasEarlyBlockquote, "needs > blockquote summary near top").toBe(true);
 
     // Required H2 sections for GBrain's user need (config/debug/migration).
@@ -69,8 +68,7 @@ describe("build-llms generator", () => {
     const committedLlms = readFileSync(resolveRepoPath("llms.txt"), "utf8");
     const committedFull = readFileSync(resolveRepoPath("llms-full.txt"), "utf8");
 
-    const helpMsg =
-      "Run `bun run build:llms` and commit the updated output before shipping.";
+    const helpMsg = "Run `bun run build:llms` and commit the updated output before shipping.";
     expect(committedLlms, helpMsg).toBe(llmsTxt);
     expect(committedFull, helpMsg).toBe(llmsFullTxt);
   });
@@ -100,7 +98,7 @@ describe("build-llms generator", () => {
     const bytes = Buffer.byteLength(llmsFullTxt, "utf8");
     expect(
       bytes,
-      `llms-full.txt is ${bytes} bytes (budget ${FULL_SIZE_BUDGET}). Add includeInFull: false to large entries.`,
+      `llms-full.txt is ${bytes} bytes (budget ${FULL_SIZE_BUDGET}). Add includeInFull: false to large entries.`
     ).toBeLessThan(FULL_SIZE_BUDGET);
   });
 });

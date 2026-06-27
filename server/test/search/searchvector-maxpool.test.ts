@@ -21,10 +21,10 @@
  * returns 1.0) so the assertion keys off pure cosine, not slug-prefix weighting.
  */
 
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
-import { PGLiteEngine } from '../../src/core/pglite-engine.ts';
-import { configureGateway } from '../../src/core/ai/gateway.ts';
-import type { ChunkInput } from '../../src/core/types.ts';
+import { describe, test, expect, beforeAll, afterAll } from "bun:test";
+import { PGLiteEngine } from "../../src/core/pglite-engine.ts";
+import { configureGateway } from "../../src/core/ai/gateway.ts";
+import type { ChunkInput } from "../../src/core/types.ts";
 
 let engine: PGLiteEngine;
 
@@ -52,7 +52,7 @@ beforeAll(async () => {
   // preload default surviving a sibling shard file that reconfigured the
   // gateway to the v0.37 ZE/1280 default and didn't reset.
   configureGateway({
-    embedding_model: 'openai:text-embedding-3-large',
+    embedding_model: "openai:text-embedding-3-large",
     embedding_dimensions: DIM,
     env: { ...process.env },
   });
@@ -61,35 +61,79 @@ beforeAll(async () => {
   await engine.initSchema();
 
   // Seeded first → lowest page_id. Three strong chunks.
-  await engine.putPage('notes/hub', {
-    type: 'note',
-    title: 'Hub Page',
-    compiled_truth: 'hub a. hub b. hub c.',
+  await engine.putPage("notes/hub", {
+    type: "note",
+    title: "Hub Page",
+    compiled_truth: "hub a. hub b. hub c.",
   });
   const hubChunks: ChunkInput[] = [
-    { chunk_index: 0, chunk_text: 'hub a', chunk_source: 'compiled_truth', embedding: gradedEmb(0.99, 10), token_count: 2 },
-    { chunk_index: 1, chunk_text: 'hub b', chunk_source: 'compiled_truth', embedding: gradedEmb(0.98, 11), token_count: 2 },
-    { chunk_index: 2, chunk_text: 'hub c', chunk_source: 'compiled_truth', embedding: gradedEmb(0.97, 12), token_count: 2 },
+    {
+      chunk_index: 0,
+      chunk_text: "hub a",
+      chunk_source: "compiled_truth",
+      embedding: gradedEmb(0.99, 10),
+      token_count: 2,
+    },
+    {
+      chunk_index: 1,
+      chunk_text: "hub b",
+      chunk_source: "compiled_truth",
+      embedding: gradedEmb(0.98, 11),
+      token_count: 2,
+    },
+    {
+      chunk_index: 2,
+      chunk_text: "hub c",
+      chunk_source: "compiled_truth",
+      embedding: gradedEmb(0.97, 12),
+      token_count: 2,
+    },
   ];
-  await engine.upsertChunks('notes/hub', hubChunks);
+  await engine.upsertChunks("notes/hub", hubChunks);
 
   // The page that MUST surface — one strong chunk, below hub's chunks but above fillers.
-  await engine.putPage('notes/needle', {
-    type: 'note',
-    title: 'Needle Page',
-    compiled_truth: 'the needle',
+  await engine.putPage("notes/needle", {
+    type: "note",
+    title: "Needle Page",
+    compiled_truth: "the needle",
   });
-  await engine.upsertChunks('notes/needle', [
-    { chunk_index: 0, chunk_text: 'the needle', chunk_source: 'compiled_truth', embedding: gradedEmb(0.95, 13), token_count: 2 },
+  await engine.upsertChunks("notes/needle", [
+    {
+      chunk_index: 0,
+      chunk_text: "the needle",
+      chunk_source: "compiled_truth",
+      embedding: gradedEmb(0.95, 13),
+      token_count: 2,
+    },
   ]);
 
-  await engine.putPage('notes/filler-a', { type: 'note', title: 'Filler A', compiled_truth: 'filler a' });
-  await engine.upsertChunks('notes/filler-a', [
-    { chunk_index: 0, chunk_text: 'filler a', chunk_source: 'compiled_truth', embedding: gradedEmb(0.90, 14), token_count: 2 },
+  await engine.putPage("notes/filler-a", {
+    type: "note",
+    title: "Filler A",
+    compiled_truth: "filler a",
+  });
+  await engine.upsertChunks("notes/filler-a", [
+    {
+      chunk_index: 0,
+      chunk_text: "filler a",
+      chunk_source: "compiled_truth",
+      embedding: gradedEmb(0.9, 14),
+      token_count: 2,
+    },
   ]);
-  await engine.putPage('notes/filler-b', { type: 'note', title: 'Filler B', compiled_truth: 'filler b' });
-  await engine.upsertChunks('notes/filler-b', [
-    { chunk_index: 0, chunk_text: 'filler b', chunk_source: 'compiled_truth', embedding: gradedEmb(0.90, 15), token_count: 2 },
+  await engine.putPage("notes/filler-b", {
+    type: "note",
+    title: "Filler B",
+    compiled_truth: "filler b",
+  });
+  await engine.upsertChunks("notes/filler-b", [
+    {
+      chunk_index: 0,
+      chunk_text: "filler b",
+      chunk_source: "compiled_truth",
+      embedding: gradedEmb(0.9, 15),
+      token_count: 2,
+    },
   ]);
 });
 
@@ -97,34 +141,34 @@ afterAll(async () => {
   await engine.disconnect();
 });
 
-describe('searchVector per-page max-pool (T1)', () => {
-  test('returns DISTINCT pages — no page appears more than once', async () => {
-    const results = await engine.searchVector(basisEmbedding(0), { limit: 3, detail: 'high' });
-    const slugs = results.map(r => r.slug);
+describe("searchVector per-page max-pool (T1)", () => {
+  test("returns DISTINCT pages — no page appears more than once", async () => {
+    const results = await engine.searchVector(basisEmbedding(0), { limit: 3, detail: "high" });
+    const slugs = results.map((r) => r.slug);
     const unique = new Set(slugs);
     expect(unique.size).toBe(slugs.length); // pooling: one row per page
   });
 
-  test('a strong chunk is NOT crowded out by a hub page (needle surfaces)', async () => {
-    const results = await engine.searchVector(basisEmbedding(0), { limit: 3, detail: 'high' });
-    const slugs = results.map(r => r.slug);
+  test("a strong chunk is NOT crowded out by a hub page (needle surfaces)", async () => {
+    const results = await engine.searchVector(basisEmbedding(0), { limit: 3, detail: "high" });
+    const slugs = results.map((r) => r.slug);
     // OLD chunk-grain path: top-3 = hub,hub,hub → needle absent. Pooled: needle present.
-    expect(slugs).toContain('notes/needle');
-    expect(slugs.filter(s => s === 'notes/hub').length).toBe(1);
+    expect(slugs).toContain("notes/needle");
+    expect(slugs.filter((s) => s === "notes/hub").length).toBe(1);
   });
 
-  test('hub still ranks #1 by its best chunk (max-pool keeps the strongest)', async () => {
-    const results = await engine.searchVector(basisEmbedding(0), { limit: 3, detail: 'high' });
-    expect(results[0].slug).toBe('notes/hub');
+  test("hub still ranks #1 by its best chunk (max-pool keeps the strongest)", async () => {
+    const results = await engine.searchVector(basisEmbedding(0), { limit: 3, detail: "high" });
+    expect(results[0].slug).toBe("notes/hub");
     // hub represented by its 0.99 chunk (chunk_index 0), not a weaker one
     expect(results[0].chunk_index).toBe(0);
   });
 
-  test('larger limit returns each page once, ordered by best-chunk score', async () => {
-    const results = await engine.searchVector(basisEmbedding(0), { limit: 10, detail: 'high' });
-    const slugs = results.map(r => r.slug);
+  test("larger limit returns each page once, ordered by best-chunk score", async () => {
+    const results = await engine.searchVector(basisEmbedding(0), { limit: 10, detail: "high" });
+    const slugs = results.map((r) => r.slug);
     expect(new Set(slugs).size).toBe(slugs.length);
-    expect(slugs[0]).toBe('notes/hub');
-    expect(slugs[1]).toBe('notes/needle'); // 0.95 beats the 0.90 fillers
+    expect(slugs[0]).toBe("notes/hub");
+    expect(slugs[1]).toBe("notes/needle"); // 0.95 beats the 0.90 fillers
   });
 });

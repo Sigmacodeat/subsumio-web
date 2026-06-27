@@ -18,7 +18,7 @@
 // behavior (the helper returns { canonical: type, isAliasExpansion: false }).
 // Existing tests pass unchanged on pack-less brains.
 
-import type { SchemaPackManifest } from './manifest-v1.ts';
+import type { SchemaPackManifest } from "./manifest-v1.ts";
 
 export interface ExpandedTypeFilter {
   /** The canonical type to match (always present). */
@@ -64,7 +64,7 @@ export interface ExpandedTypeFilter {
  */
 export function expandTypeFilter(
   type: string,
-  pack: Pick<SchemaPackManifest, 'page_types'> | null | undefined,
+  pack: Pick<SchemaPackManifest, "page_types"> | null | undefined
 ): ExpandedTypeFilter {
   if (!pack) {
     return {
@@ -93,16 +93,21 @@ export function expandTypeFilter(
     const mappingRules = (pack as { mapping_rules?: unknown[] }).mapping_rules;
     if (Array.isArray(mappingRules)) {
       for (const rule of mappingRules) {
-        if (typeof rule !== 'object' || rule === null) continue;
-        const r = rule as { kind?: unknown; from_type?: unknown; subtype?: unknown; subtype_field?: unknown };
-        if (r.kind !== 'retype') continue;
+        if (typeof rule !== "object" || rule === null) continue;
+        const r = rule as {
+          kind?: unknown;
+          from_type?: unknown;
+          subtype?: unknown;
+          subtype_field?: unknown;
+        };
+        if (r.kind !== "retype") continue;
         if (r.from_type !== type) continue;
-        if (typeof r.subtype !== 'string') continue;
+        if (typeof r.subtype !== "string") continue;
         return {
           canonical: pt.name,
           subtypeFilter: {
             canonical: pt.name,
-            subtypeField: typeof r.subtype_field === 'string' ? r.subtype_field : 'subtype',
+            subtypeField: typeof r.subtype_field === "string" ? r.subtype_field : "subtype",
             subtypeValue: r.subtype,
           },
           isAliasExpansion: true,
@@ -114,12 +119,13 @@ export function expandTypeFilter(
     // Common case for hand-written packs that declare subtypes but don't
     // wire mapping_rules.
     const subtypeRule = pt.subtypes?.find((s) => s.name === type);
-    if (subtypeRule?.when.frontmatter_field !== undefined
-        && subtypeRule.when.frontmatter_value !== undefined) {
+    if (
+      subtypeRule?.when.frontmatter_field !== undefined &&
+      subtypeRule.when.frontmatter_value !== undefined
+    ) {
       const v = subtypeRule.when.frontmatter_value;
-      const subtypeValue = typeof v === 'boolean' ? String(v)
-        : typeof v === 'number' ? String(v)
-        : String(v);
+      const subtypeValue =
+        typeof v === "boolean" ? String(v) : typeof v === "number" ? String(v) : String(v);
       return {
         canonical: pt.name,
         subtypeFilter: {
@@ -138,7 +144,7 @@ export function expandTypeFilter(
       canonical: pt.name,
       subtypeFilter: {
         canonical: pt.name,
-        subtypeField: 'subtype',
+        subtypeField: "subtype",
         subtypeValue: type,
       },
       isAliasExpansion: true,
@@ -165,7 +171,7 @@ export function expandTypeFilter(
  */
 export function buildTypeFilterSql(
   expanded: ExpandedTypeFilter,
-  startParamIndex: number = 1,
+  startParamIndex: number = 1
 ): { sql: string; params: string[] } {
   if (!expanded.isAliasExpansion || !expanded.subtypeFilter) {
     return {

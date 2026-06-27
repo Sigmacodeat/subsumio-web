@@ -29,9 +29,9 @@
  * `readSupervisorEvents` to use the same 2-file pattern.
  */
 
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import { resolveAuditDir } from '../minions/handlers/shell-audit.ts';
+import * as fs from "node:fs";
+import * as path from "node:path";
+import { resolveAuditDir } from "../minions/handlers/shell-audit.ts";
 
 export interface StubGuardEvent {
   /** ISO-8601 timestamp of when the guard fired. */
@@ -60,7 +60,7 @@ export function computeStubGuardAuditFilename(now: Date = new Date()): string {
   const firstThursdayDayNum = (firstThursday.getUTCDay() + 6) % 7;
   firstThursday.setUTCDate(firstThursday.getUTCDate() - firstThursdayDayNum + 3);
   const weekNum = Math.round((d.getTime() - firstThursday.getTime()) / (7 * 86400000)) + 1;
-  const ww = String(weekNum).padStart(2, '0');
+  const ww = String(weekNum).padStart(2, "0");
   return `stub-guard-${isoYear}-W${ww}.jsonl`;
 }
 
@@ -70,15 +70,15 @@ export function computeStubGuardAuditFilename(now: Date = new Date()): string {
  * DB-only fallback path in `backstop.ts` must keep working even when the
  * audit log can't be written.
  */
-export function logStubGuardEvent(event: Omit<StubGuardEvent, 'ts'>): void {
+export function logStubGuardEvent(event: Omit<StubGuardEvent, "ts">): void {
   const dir = resolveAuditDir();
   const filename = computeStubGuardAuditFilename();
   const fullPath = path.join(dir, filename);
-  const line = JSON.stringify({ ts: new Date().toISOString(), ...event }) + '\n';
+  const line = JSON.stringify({ ts: new Date().toISOString(), ...event }) + "\n";
 
   try {
     fs.mkdirSync(dir, { recursive: true });
-    fs.appendFileSync(fullPath, line, { encoding: 'utf8' });
+    fs.appendFileSync(fullPath, line, { encoding: "utf8" });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     process.stderr.write(`[stub-guard-audit] write failed (${msg}); continuing\n`);
@@ -97,7 +97,9 @@ export function logStubGuardEvent(event: Omit<StubGuardEvent, 'ts'>): void {
  * Returns events sorted oldest-first. Missing files / parse errors return []
  * for that file (still reads the other one).
  */
-export function readRecentStubGuardEvents(opts: { sinceMs: number; now?: Date } = { sinceMs: 24 * 60 * 60 * 1000 }): StubGuardEvent[] {
+export function readRecentStubGuardEvents(
+  opts: { sinceMs: number; now?: Date } = { sinceMs: 24 * 60 * 60 * 1000 }
+): StubGuardEvent[] {
   const now = opts.now ?? new Date();
   const dir = resolveAuditDir();
 
@@ -118,11 +120,11 @@ export function readRecentStubGuardEvents(opts: { sinceMs: number; now?: Date } 
     const fullPath = path.join(dir, filename);
     let raw: string;
     try {
-      raw = fs.readFileSync(fullPath, 'utf8');
+      raw = fs.readFileSync(fullPath, "utf8");
     } catch {
       continue;
     }
-    for (const line of raw.split('\n')) {
+    for (const line of raw.split("\n")) {
       if (!line.trim()) continue;
       try {
         const obj = JSON.parse(line) as StubGuardEvent;

@@ -31,18 +31,18 @@
  * shard pool would starve other PGLite tests of cold-start time.
  */
 
-import { describe, test, expect } from 'bun:test';
-import { mkdtempSync, rmSync } from 'fs';
-import { tmpdir } from 'os';
-import { join } from 'path';
-import { PGLiteEngine } from '../src/core/pglite-engine.ts';
+import { describe, test, expect } from "bun:test";
+import { mkdtempSync, rmSync } from "fs";
+import { tmpdir } from "os";
+import { join } from "path";
+import { PGLiteEngine } from "../src/core/pglite-engine.ts";
 
 function newTempDataDir(): string {
-  return mkdtempSync(join(tmpdir(), 'gbrain-disconnect-test-'));
+  return mkdtempSync(join(tmpdir(), "gbrain-disconnect-test-"));
 }
 
-describe('PGLiteEngine.disconnect() — v0.41.8.0 lifecycle invariants', () => {
-  test('ORDERING: db.close() is called BEFORE releaseLock()', async () => {
+describe("PGLiteEngine.disconnect() — v0.41.8.0 lifecycle invariants", () => {
+  test("ORDERING: db.close() is called BEFORE releaseLock()", async () => {
     const dataDir = newTempDataDir();
     try {
       const engine = new PGLiteEngine();
@@ -63,7 +63,7 @@ describe('PGLiteEngine.disconnect() — v0.41.8.0 lifecycle invariants', () => {
         // Tiny delay so a flipped ordering would actually show up
         // (release-before-close would beat us if we returned instantly).
         await new Promise((r) => setTimeout(r, 10));
-        calls.push('db.close');
+        calls.push("db.close");
         return realClose();
       };
 
@@ -78,7 +78,7 @@ describe('PGLiteEngine.disconnect() — v0.41.8.0 lifecycle invariants', () => {
       // measure that the lockDir mkdir is still present immediately
       // before close runs and gone after disconnect returns. The
       // lockDir's existence is observable on disk.
-      const { existsSync } = await import('fs');
+      const { existsSync } = await import("fs");
       const lockDir = eng._lock!.lockDir;
       expect(existsSync(lockDir)).toBe(true);
 
@@ -97,7 +97,7 @@ describe('PGLiteEngine.disconnect() — v0.41.8.0 lifecycle invariants', () => {
 
       await engine.disconnect();
 
-      expect(calls).toContain('db.close');
+      expect(calls).toContain("db.close");
       expect(lockStillPresentAtCloseFinish).toBe(true);
       expect(existsSync(lockDir)).toBe(false);
     } finally {
@@ -105,7 +105,7 @@ describe('PGLiteEngine.disconnect() — v0.41.8.0 lifecycle invariants', () => {
     }
   });
 
-  test('SNAPSHOT + EARLY-NULL: _db is nulled before await close', async () => {
+  test("SNAPSHOT + EARLY-NULL: _db is nulled before await close", async () => {
     const dataDir = newTempDataDir();
     try {
       const engine = new PGLiteEngine();
@@ -133,7 +133,7 @@ describe('PGLiteEngine.disconnect() — v0.41.8.0 lifecycle invariants', () => {
     }
   });
 
-  test('LOCK LEAK GUARD: if db.close() throws, lock still releases', async () => {
+  test("LOCK LEAK GUARD: if db.close() throws, lock still releases", async () => {
     const dataDir = newTempDataDir();
     try {
       const engine = new PGLiteEngine();
@@ -145,13 +145,13 @@ describe('PGLiteEngine.disconnect() — v0.41.8.0 lifecycle invariants', () => {
         _lock: { lockDir: string; acquired: boolean } | null;
       };
 
-      const { existsSync } = await import('fs');
+      const { existsSync } = await import("fs");
       const lockDir = eng._lock!.lockDir;
       expect(existsSync(lockDir)).toBe(true);
 
       // Force close to throw. The lock MUST still release.
       eng._db!.close = async () => {
-        throw new Error('synthetic close failure');
+        throw new Error("synthetic close failure");
       };
 
       // The throw will propagate out of disconnect — that's fine.
@@ -161,7 +161,7 @@ describe('PGLiteEngine.disconnect() — v0.41.8.0 lifecycle invariants', () => {
         await engine.disconnect();
       } catch (e) {
         threw = true;
-        expect(e instanceof Error && e.message).toContain('synthetic close failure');
+        expect(e instanceof Error && e.message).toContain("synthetic close failure");
       }
       expect(threw).toBe(true);
       // CRITICAL: lock must be gone even though close threw.
@@ -171,7 +171,7 @@ describe('PGLiteEngine.disconnect() — v0.41.8.0 lifecycle invariants', () => {
     }
   });
 
-  test('IDEMPOTENCY: double disconnect is a clean no-op on the second call', async () => {
+  test("IDEMPOTENCY: double disconnect is a clean no-op on the second call", async () => {
     const dataDir = newTempDataDir();
     try {
       const engine = new PGLiteEngine();
@@ -199,7 +199,7 @@ describe('PGLiteEngine.disconnect() — v0.41.8.0 lifecycle invariants', () => {
     }
   });
 
-  test('RECONNECT after disconnect sees clean state', async () => {
+  test("RECONNECT after disconnect sees clean state", async () => {
     const dataDir = newTempDataDir();
     try {
       const engine = new PGLiteEngine();
@@ -211,7 +211,7 @@ describe('PGLiteEngine.disconnect() — v0.41.8.0 lifecycle invariants', () => {
       await engine.connect({ database_path: dataDir });
       await engine.initSchema();
       // Smoke: a SELECT 1 round-trip proves the new handle is alive.
-      const result = await engine.executeRaw<{ ok: number }>('SELECT 1 AS ok');
+      const result = await engine.executeRaw<{ ok: number }>("SELECT 1 AS ok");
       expect(result[0].ok).toBe(1);
       await engine.disconnect();
     } finally {

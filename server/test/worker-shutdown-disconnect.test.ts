@@ -22,9 +22,9 @@
  * forbids in non-serial unit tests.
  */
 
-import { describe, test, expect, beforeAll, afterAll, spyOn } from 'bun:test';
-import { PGLiteEngine } from '../src/core/pglite-engine.ts';
-import { MinionWorker } from '../src/core/minions/worker.ts';
+import { describe, test, expect, beforeAll, afterAll, spyOn } from "bun:test";
+import { PGLiteEngine } from "../src/core/pglite-engine.ts";
+import { MinionWorker } from "../src/core/minions/worker.ts";
 
 let engine: PGLiteEngine;
 
@@ -35,15 +35,19 @@ beforeAll(async () => {
 }, 30_000);
 
 afterAll(async () => {
-  try { await engine.disconnect(); } catch { /* already disconnected */ }
+  try {
+    await engine.disconnect();
+  } catch {
+    /* already disconnected */
+  }
 });
 
-describe('MinionWorker engine-ownership invariant', () => {
-  test('worker.start() shutdown does NOT call engine.disconnect()', async () => {
-    const worker = new MinionWorker(engine, { queue: 'test-no-disconnect', pollInterval: 10 });
-    worker.register('noop', async () => ({ ok: true }));
+describe("MinionWorker engine-ownership invariant", () => {
+  test("worker.start() shutdown does NOT call engine.disconnect()", async () => {
+    const worker = new MinionWorker(engine, { queue: "test-no-disconnect", pollInterval: 10 });
+    worker.register("noop", async () => ({ ok: true }));
 
-    const disconnectSpy = spyOn(engine, 'disconnect');
+    const disconnectSpy = spyOn(engine, "disconnect");
 
     setTimeout(() => worker.stop(), 50);
     await worker.start();
@@ -53,9 +57,9 @@ describe('MinionWorker engine-ownership invariant', () => {
     disconnectSpy.mockRestore();
   });
 
-  test('engine remains usable after worker.start() returns', async () => {
-    const worker = new MinionWorker(engine, { queue: 'test-still-usable', pollInterval: 10 });
-    worker.register('noop', async () => ({ ok: true }));
+  test("engine remains usable after worker.start() returns", async () => {
+    const worker = new MinionWorker(engine, { queue: "test-still-usable", pollInterval: 10 });
+    worker.register("noop", async () => ({ ok: true }));
 
     setTimeout(() => worker.stop(), 50);
     await worker.start();
@@ -63,7 +67,7 @@ describe('MinionWorker engine-ownership invariant', () => {
     // Engine must still be connected and queryable. If worker.start()
     // ever disconnects again, this throws "PGLite not connected" and the
     // regression is loud.
-    const result = await engine.executeRaw('SELECT 1 as ok');
+    const result = await engine.executeRaw("SELECT 1 as ok");
     expect(result.length).toBe(1);
     expect((result[0] as { ok: number }).ok).toBe(1);
   });

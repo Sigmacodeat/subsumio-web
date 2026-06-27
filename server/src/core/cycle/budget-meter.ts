@@ -20,10 +20,10 @@
  * estimate + actual usage when reported back.
  */
 
-import { mkdirSync, appendFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { isoWeekFilename, resolveAuditDir } from '../audit-week-file.ts';
-import { estimateMaxCostUsd, ANTHROPIC_PRICING } from '../anthropic-pricing.ts';
+import { mkdirSync, appendFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { isoWeekFilename, resolveAuditDir } from "../audit-week-file.ts";
+import { estimateMaxCostUsd, ANTHROPIC_PRICING } from "../anthropic-pricing.ts";
 
 export interface BudgetMeterOpts {
   /** USD cap for the whole cycle. 0 or negative disables the gate. */
@@ -60,13 +60,13 @@ const _unpricedWarnings = new Set<string>();
 
 function auditFilePath(override?: string): string {
   if (override) return override;
-  return join(resolveAuditDir(), isoWeekFilename('dream-budget'));
+  return join(resolveAuditDir(), isoWeekFilename("dream-budget"));
 }
 
 function writeLedgerLine(path: string, entry: object): void {
   try {
     mkdirSync(dirname(path), { recursive: true });
-    appendFileSync(path, JSON.stringify(entry) + '\n');
+    appendFileSync(path, JSON.stringify(entry) + "\n");
   } catch {
     // Best-effort. Audit failure must not gate the cycle.
   }
@@ -87,7 +87,11 @@ export class BudgetMeter {
    * Caller is responsible for skipping the actual LLM call when allowed=false.
    */
   check(estimate: SubmitEstimate): BudgetCheckResult {
-    const cost = estimateMaxCostUsd(estimate.modelId, estimate.estimatedInputTokens, estimate.maxOutputTokens);
+    const cost = estimateMaxCostUsd(
+      estimate.modelId,
+      estimate.estimatedInputTokens,
+      estimate.maxOutputTokens
+    );
 
     // Codex P1 #10: non-Anthropic / unpriced models bypass the gate.
     if (cost === null) {
@@ -96,14 +100,14 @@ export class BudgetMeter {
         _unpricedWarnings.add(estimate.modelId);
         process.stderr.write(
           `[budget] BUDGET_METER_NO_PRICING: model "${estimate.modelId}" not in ANTHROPIC_PRICING. ` +
-          `Budget gate disabled for this submit. (Per-provider pricing modules: TODO v0.29.)\n`,
+            `Budget gate disabled for this submit. (Per-provider pricing modules: TODO v0.29.)\n`
         );
       }
       writeLedgerLine(this.auditPath, {
         schema_version: 1,
         phase: this.opts.phase,
         ts: new Date().toISOString(),
-        event: 'submit_unpriced',
+        event: "submit_unpriced",
         model: estimate.modelId,
         label: estimate.label,
         estimated_input_tokens: estimate.estimatedInputTokens,
@@ -125,14 +129,19 @@ export class BudgetMeter {
         schema_version: 1,
         phase: this.opts.phase,
         ts: new Date().toISOString(),
-        event: 'submit',
+        event: "submit",
         model: estimate.modelId,
         label: estimate.label,
         estimated_cost_usd: cost,
         cumulative_cost_usd: this.cumulativeUsd,
         budget_usd: this.opts.budgetUsd,
       });
-      return { allowed: true, estimatedCostUsd: cost, cumulativeCostUsd: this.cumulativeUsd, budgetUsd: this.opts.budgetUsd };
+      return {
+        allowed: true,
+        estimatedCostUsd: cost,
+        cumulativeCostUsd: this.cumulativeUsd,
+        budgetUsd: this.opts.budgetUsd,
+      };
     }
 
     const projected = this.cumulativeUsd + cost;
@@ -141,7 +150,7 @@ export class BudgetMeter {
         schema_version: 1,
         phase: this.opts.phase,
         ts: new Date().toISOString(),
-        event: 'submit_denied',
+        event: "submit_denied",
         model: estimate.modelId,
         label: estimate.label,
         estimated_cost_usd: cost,
@@ -162,21 +171,30 @@ export class BudgetMeter {
       schema_version: 1,
       phase: this.opts.phase,
       ts: new Date().toISOString(),
-      event: 'submit',
+      event: "submit",
       model: estimate.modelId,
       label: estimate.label,
       estimated_cost_usd: cost,
       cumulative_cost_usd: this.cumulativeUsd,
       budget_usd: this.opts.budgetUsd,
     });
-    return { allowed: true, estimatedCostUsd: cost, cumulativeCostUsd: this.cumulativeUsd, budgetUsd: this.opts.budgetUsd };
+    return {
+      allowed: true,
+      estimatedCostUsd: cost,
+      cumulativeCostUsd: this.cumulativeUsd,
+      budgetUsd: this.opts.budgetUsd,
+    };
   }
 
   /** Cumulative cost spent so far this cycle. */
-  get totalSpent(): number { return this.cumulativeUsd; }
+  get totalSpent(): number {
+    return this.cumulativeUsd;
+  }
 
   /** Count of submits that bypassed the gate due to missing pricing. */
-  get unpricedSubmits(): number { return this.unpricedSubmitsThisCycle; }
+  get unpricedSubmits(): number {
+    return this.unpricedSubmitsThisCycle;
+  }
 }
 
 /** Test helper: reset the once-per-process warning memo. */

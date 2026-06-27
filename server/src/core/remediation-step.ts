@@ -21,15 +21,15 @@
  * JSON-stringify ordering.
  */
 
-import { createHash } from 'node:crypto';
+import { createHash } from "node:crypto";
 
 /**
  * Severity buckets — drive ordering (critical first) and operator UX.
  */
-export type RemediationSeverity = 'critical' | 'high' | 'medium' | 'low';
+export type RemediationSeverity = "critical" | "high" | "medium" | "low";
 
 /** Triage status of an individual check's autofix path. */
-export type RemediationStatus = 'remediable' | 'human_only' | 'blocked';
+export type RemediationStatus = "remediable" | "human_only" | "blocked";
 
 /**
  * Structured remediation step emitted by doctor checks.
@@ -77,20 +77,18 @@ export interface RemediationStep {
  * — we own this surface and it must stay zero-dep stable).
  */
 export function canonicalJson(value: unknown): string {
-  if (value === null || typeof value !== 'object') return JSON.stringify(value);
-  if (Array.isArray(value)) return '[' + value.map(canonicalJson).join(',') + ']';
+  if (value === null || typeof value !== "object") return JSON.stringify(value);
+  if (Array.isArray(value)) return "[" + value.map(canonicalJson).join(",") + "]";
   const obj = value as Record<string, unknown>;
   const keys = Object.keys(obj).sort();
-  return '{' + keys.map((k) =>
-    JSON.stringify(k) + ':' + canonicalJson(obj[k])
-  ).join(',') + '}';
+  return "{" + keys.map((k) => JSON.stringify(k) + ":" + canonicalJson(obj[k])).join(",") + "}";
 }
 
 /**
  * SHA-256 of a UTF-8 string, hex-encoded.
  */
 function sha256Hex(input: string): string {
-  return createHash('sha256').update(input).digest('hex');
+  return createHash("sha256").update(input).digest("hex");
 }
 
 /**
@@ -103,7 +101,7 @@ function sha256Hex(input: string): string {
 export function idempotencyKey(
   source: string,
   job: string,
-  params: Record<string, unknown>,
+  params: Record<string, unknown>
 ): string {
   return `${source}:${job}:${sha256Hex(canonicalJson(params)).slice(0, 8)}`;
 }
@@ -134,7 +132,7 @@ export function makeRemediationStep(opts: {
   /** Status. Defaults to 'remediable' (the only kind that ships in plans). */
   status?: RemediationStatus;
 }): RemediationStep {
-  const source = opts.source ?? 'default';
+  const source = opts.source ?? "default";
   const idemKey = idempotencyKey(source, opts.job, opts.params);
   return {
     id: opts.id ?? idemKey,
@@ -147,6 +145,6 @@ export function makeRemediationStep(opts: {
     depends_on: opts.depends_on,
     rationale: opts.rationale,
     protected: opts.protected,
-    status: opts.status ?? 'remediable',
+    status: opts.status ?? "remediable",
   };
 }

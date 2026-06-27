@@ -35,11 +35,11 @@
  *   gbrain whoknows "ai agents" --limit 10 --json
  */
 
-import type { BrainEngine } from '../core/engine.ts';
-import type { PageType, SearchResult } from '../core/types.ts';
-import { hybridSearch } from '../core/search/hybrid.ts';
-import { loadConfig, isThinClient } from '../core/config.ts';
-import { callRemoteTool, unpackToolResult } from '../core/mcp-client.ts';
+import type { BrainEngine } from "../core/engine.ts";
+import type { PageType, SearchResult } from "../core/types.ts";
+import { hybridSearch } from "../core/search/hybrid.ts";
+import { loadConfig, isThinClient } from "../core/config.ts";
+import { callRemoteTool, unpackToolResult } from "../core/mcp-client.ts";
 
 export interface WhoknowsOpts {
   topic: string;
@@ -94,7 +94,7 @@ export interface WhoknowsResult {
 
 // v0.39 T1.5 — DEFAULT_TYPES preserved for parity when no activePack is
 // threaded. Pack-aware callers go through expertTypesFromPack().
-const DEFAULT_TYPES: PageType[] = ['person', 'company'];
+const DEFAULT_TYPES: PageType[] = ["person", "company"];
 const DEFAULT_LIMIT = 5;
 const RECENCY_HALF_LIFE_DAYS = 180; // 6 months
 const RECENCY_FLOOR = 0.1;
@@ -118,7 +118,7 @@ export function rankCandidates(
     days_since_effective: number | null;
     salience_raw: number | null;
   }>,
-  limit: number = DEFAULT_LIMIT,
+  limit: number = DEFAULT_LIMIT
 ): WhoknowsResult[] {
   const ranked = candidates.map((c) => {
     // expertise: sub-linear via log(1 + raw_match). raw_match comes from
@@ -179,7 +179,7 @@ export function rankCandidates(
  */
 export async function findExperts(
   engine: BrainEngine,
-  opts: WhoknowsOpts,
+  opts: WhoknowsOpts
 ): Promise<WhoknowsResult[]> {
   const types = opts.types ?? DEFAULT_TYPES;
   const limit = opts.limit ?? DEFAULT_LIMIT;
@@ -193,8 +193,8 @@ export async function findExperts(
   const results: SearchResult[] = await hybridSearch(engine, opts.topic, {
     types,
     limit: innerLimit,
-    salience: 'off',
-    recency: 'off',
+    salience: "off",
+    recency: "off",
     sourceId: opts.sourceId,
     sourceIds: opts.sourceIds,
   });
@@ -206,7 +206,7 @@ export async function findExperts(
   //    fan-out by taking max raw_match per composite key.
   const byKey = new Map<string, SearchResult>();
   for (const r of results) {
-    const key = `${r.source_id ?? 'default'}::${r.slug}`;
+    const key = `${r.source_id ?? "default"}::${r.slug}`;
     const prev = byKey.get(key);
     if (!prev || r.score > prev.score) byKey.set(key, r);
   }
@@ -215,7 +215,7 @@ export async function findExperts(
   // 3. Batch-fetch salience + effective_date per (slug, source_id) ref.
   const refs = candidates.map((c) => ({
     slug: c.slug,
-    source_id: c.source_id ?? 'default',
+    source_id: c.source_id ?? "default",
   }));
   const [salienceMap, dateMap] = await Promise.all([
     engine.getSalienceScores(refs).catch(() => new Map<string, number>()),
@@ -225,7 +225,7 @@ export async function findExperts(
   // 4. Build the ranking-function input shape.
   const now = Date.now();
   const inputs = candidates.map((c) => {
-    const sourceId = c.source_id ?? 'default';
+    const sourceId = c.source_id ?? "default";
     const key = `${sourceId}::${c.slug}`;
     const salienceRaw = salienceMap.get(key);
     // Salience scores from getSalienceScores are emotional_weight × 5 +
@@ -270,19 +270,25 @@ function parseArgs(args: string[]): CliOpts | { help: true } | { error: string }
   const positional: string[] = [];
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
-    if (a === '--help' || a === '-h') return { help: true };
-    if (a === '--json') { opts.json = true; continue; }
-    if (a === '--explain') { opts.explain = true; continue; }
-    if (a === '--limit') {
-      const n = parseInt(args[++i] ?? '', 10);
+    if (a === "--help" || a === "-h") return { help: true };
+    if (a === "--json") {
+      opts.json = true;
+      continue;
+    }
+    if (a === "--explain") {
+      opts.explain = true;
+      continue;
+    }
+    if (a === "--limit") {
+      const n = parseInt(args[++i] ?? "", 10);
       if (Number.isFinite(n) && n > 0) opts.limit = n;
       continue;
     }
-    if (a?.startsWith('--')) continue; // ignore unknown flags
-    if (typeof a === 'string') positional.push(a);
+    if (a?.startsWith("--")) continue; // ignore unknown flags
+    if (typeof a === "string") positional.push(a);
   }
-  if (positional.length === 0) return { error: 'topic argument required' };
-  opts.topic = positional.join(' ');
+  if (positional.length === 0) return { error: "topic argument required" };
+  opts.topic = positional.join(" ");
   return opts as CliOpts;
 }
 
@@ -303,16 +309,13 @@ Examples:
   gbrain whoknows "ai agents" --limit 10 --json
 `;
 
-export async function runWhoknows(
-  engine: BrainEngine,
-  args: string[],
-): Promise<void> {
+export async function runWhoknows(engine: BrainEngine, args: string[]): Promise<void> {
   const parsed = parseArgs(args);
-  if ('help' in parsed) {
+  if ("help" in parsed) {
     console.log(HELP);
     return;
   }
-  if ('error' in parsed) {
+  if ("error" in parsed) {
     console.error(`gbrain whoknows: ${parsed.error}`);
     console.error(HELP);
     process.exit(2);
@@ -324,19 +327,32 @@ export async function runWhoknows(
   let results: WhoknowsResult[];
   const cfg = loadConfig();
   if (isThinClient(cfg)) {
-    const raw = await callRemoteTool(cfg!, 'find_experts', {
-      topic: parsed.topic,
-      limit: parsed.limit,
-      explain: parsed.explain,
-    }, { timeoutMs: 30_000 });
+    const raw = await callRemoteTool(
+      cfg!,
+      "find_experts",
+      {
+        topic: parsed.topic,
+        limit: parsed.limit,
+        explain: parsed.explain,
+      },
+      { timeoutMs: 30_000 }
+    );
     results = unpackToolResult<WhoknowsResult[]>(raw);
   } else {
     // v0.40.6.0 T1.5 wiring (D4): consult the active pack for expert
     // types. Pack-load failure → empty filter (NOT hardcoded defaults
     // per the silent-violation bug class Finding 1.3 closed). Local
     // CLI: ctx.remote=false so the trust gate accepts the resolution.
-    const { loadActivePackBestEffort, expertTypesFromPack } = await import('../core/schema-pack/index.ts');
-    const fakeCtx = { engine, config: {}, logger: console, dryRun: false, remote: false, sourceId: undefined } as unknown as import('../core/operations.ts').OperationContext;
+    const { loadActivePackBestEffort, expertTypesFromPack } =
+      await import("../core/schema-pack/index.ts");
+    const fakeCtx = {
+      engine,
+      config: {},
+      logger: console,
+      dryRun: false,
+      remote: false,
+      sourceId: undefined,
+    } as unknown as import("../core/operations.ts").OperationContext;
     const pack = await loadActivePackBestEffort(fakeCtx);
     const types = pack ? (expertTypesFromPack(pack.manifest) as PageType[]) : [];
     results = await findExperts(engine, {
@@ -358,26 +374,26 @@ export async function runWhoknows(
   }
 
   // Human format: rank | score | type | slug — title
-  const header = `${pad('#', 3)} ${pad('score', 7)} ${pad('type', 8)} slug — title`;
+  const header = `${pad("#", 3)} ${pad("score", 7)} ${pad("type", 8)} slug — title`;
   console.log(header);
-  console.log('-'.repeat(Math.min(80, header.length)));
+  console.log("-".repeat(Math.min(80, header.length)));
   results.forEach((r, i) => {
     const score = r.score.toFixed(3);
     console.log(
-      `${pad(String(i + 1), 3)} ${pad(score, 7)} ${pad(r.type, 8)} ${r.slug} — ${r.title}`,
+      `${pad(String(i + 1), 3)} ${pad(score, 7)} ${pad(r.type, 8)} ${r.slug} — ${r.title}`
     );
     if (parsed.explain) {
       const f = r.factors;
-      const days = f.days_since_effective == null ? 'cold' : f.days_since_effective.toFixed(0);
+      const days = f.days_since_effective == null ? "cold" : f.days_since_effective.toFixed(0);
       console.log(
         `      expertise=${f.expertise.toFixed(3)} (raw=${f.raw_match.toFixed(3)}) ` +
           `recency=${f.recency_factor.toFixed(3)} (${days}d) ` +
-          `salience=${f.salience.toFixed(3)} → factor=${f.salience_factor.toFixed(3)}`,
+          `salience=${f.salience.toFixed(3)} → factor=${f.salience_factor.toFixed(3)}`
       );
     }
   });
 }
 
 function pad(s: string, n: number): string {
-  return s.length >= n ? s : s + ' '.repeat(n - s.length);
+  return s.length >= n ? s : s + " ".repeat(n - s.length);
 }

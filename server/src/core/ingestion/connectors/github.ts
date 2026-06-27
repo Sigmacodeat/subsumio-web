@@ -14,12 +14,8 @@
  *   3. Optional filters: --filters '{"repos":["owner/repo"],"labels":["bug"]}'
  */
 
-import {
-  BaseConnector,
-  type ConnectorConfig,
-  type ConnectorItem,
-} from './base.ts';
-import { type IngestionEvent, type IngestionContentType } from '../types.ts';
+import { BaseConnector, type ConnectorConfig, type ConnectorItem } from "./base.ts";
+import { type IngestionEvent, type IngestionContentType } from "../types.ts";
 
 interface GitHubIssue {
   id: number;
@@ -57,7 +53,7 @@ export class GitHubConnector extends BaseConnector {
   private labels: string[];
 
   constructor(config: ConnectorConfig) {
-    super('github', config);
+    super("github", config);
     this.repos = (config.filters?.repos as string[]) ?? [];
     this.labels = (config.filters?.labels as string[]) ?? [];
   }
@@ -74,7 +70,7 @@ export class GitHubConnector extends BaseConnector {
 
   async fetchDelta(cursor?: string): Promise<{ items: ConnectorItem[]; nextCursor?: string }> {
     const token = this.getAccessToken();
-    if (!token) throw new Error('Not authenticated');
+    if (!token) throw new Error("Not authenticated");
 
     const since = cursor ?? new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const items: ConnectorItem[] = [];
@@ -85,17 +81,17 @@ export class GitHubConnector extends BaseConnector {
     for (const repo of reposToSync) {
       // Fetch issues updated since cursor.
       const issuesUrl = new URL(`https://api.github.com/repos/${repo}/issues`);
-      issuesUrl.searchParams.set('since', since);
-      issuesUrl.searchParams.set('state', 'all');
-      issuesUrl.searchParams.set('per_page', '100');
-      issuesUrl.searchParams.set('sort', 'updated');
-      issuesUrl.searchParams.set('direction', 'asc');
+      issuesUrl.searchParams.set("since", since);
+      issuesUrl.searchParams.set("state", "all");
+      issuesUrl.searchParams.set("per_page", "100");
+      issuesUrl.searchParams.set("sort", "updated");
+      issuesUrl.searchParams.set("direction", "asc");
 
       const res = await fetch(issuesUrl, {
         headers: {
           Authorization: `Bearer ${token}`,
-          Accept: 'application/vnd.github+json',
-          'X-GitHub-Api-Version': '2022-11-28',
+          Accept: "application/vnd.github+json",
+          "X-GitHub-Api-Version": "2022-11-28",
         },
       });
 
@@ -104,7 +100,7 @@ export class GitHubConnector extends BaseConnector {
         continue;
       }
 
-      const issues = await res.json() as GitHubIssue[];
+      const issues = (await res.json()) as GitHubIssue[];
 
       for (const issue of issues) {
         // Filter by labels if configured.
@@ -123,13 +119,13 @@ export class GitHubConnector extends BaseConnector {
             {
               headers: {
                 Authorization: `Bearer ${token}`,
-                Accept: 'application/vnd.github+json',
-                'X-GitHub-Api-Version': '2022-11-28',
+                Accept: "application/vnd.github+json",
+                "X-GitHub-Api-Version": "2022-11-28",
               },
-            },
+            }
           );
           if (commentsRes.ok) {
-            comments = await commentsRes.json() as GitHubComment[];
+            comments = (await commentsRes.json()) as GitHubComment[];
           }
         }
 
@@ -138,7 +134,7 @@ export class GitHubConnector extends BaseConnector {
           title: issue.title,
           modified_at: issue.updated_at,
           content: JSON.stringify({ issue, comments }),
-          content_type: 'application/json',
+          content_type: "application/json",
           url: issue.html_url,
           metadata: {
             repo,
@@ -165,8 +161,8 @@ export class GitHubConnector extends BaseConnector {
     const comments: GitHubComment[] = parsed.comments ?? [];
     const meta = item.metadata ?? {};
 
-    const type = meta.is_pr ? 'PR' : 'Issue';
-    const labels = (meta.labels as string[]).map((l) => `\`${l}\``).join(', ');
+    const type = meta.is_pr ? "PR" : "Issue";
+    const labels = (meta.labels as string[]).map((l) => `\`${l}\``).join(", ");
 
     const markdown = [
       `---`,
@@ -175,7 +171,7 @@ export class GitHubConnector extends BaseConnector {
       `repo: ${meta.repo}`,
       `number: ${meta.number}`,
       `state: ${meta.state}`,
-      `labels: [${(meta.labels as string[]).join(', ')}]`,
+      `labels: [${(meta.labels as string[]).join(", ")}]`,
       `author: ${meta.author}`,
       `---`,
       ``,
@@ -183,24 +179,24 @@ export class GitHubConnector extends BaseConnector {
       ``,
       `**Repository:** [${meta.repo}](https://github.com/${meta.repo})  `,
       `**State:** ${meta.state}  `,
-      `**Labels:** ${labels || 'none'}  `,
+      `**Labels:** ${labels || "none"}  `,
       `**Author:** @${meta.author}  `,
       `**URL:** ${item.url}`,
       ``,
       `## Description`,
       ``,
-      issue.body ?? '(no description)',
+      issue.body ?? "(no description)",
       ``,
-      comments.length > 0 ? `## Comments (${comments.length})` : '',
-      ...comments.map((c) => [`### @${c.user.login} — ${c.created_at}`, c.body ?? ''].join('\n')),
-    ].join('\n');
+      comments.length > 0 ? `## Comments (${comments.length})` : "",
+      ...comments.map((c) => [`### @${c.user.login} — ${c.created_at}`, c.body ?? ""].join("\n")),
+    ].join("\n");
 
     return {
       source_id: this.id,
       source_kind: this.kind,
       source_uri: item.url ?? `github://${meta.repo}/${meta.number}`,
       received_at: new Date().toISOString(),
-      content_type: 'text/markdown' as IngestionContentType,
+      content_type: "text/markdown" as IngestionContentType,
       content: markdown,
       content_hash: this.hashContent(markdown),
       metadata: {
@@ -213,15 +209,15 @@ export class GitHubConnector extends BaseConnector {
   }
 
   private async _fetchWatchedRepos(token: string): Promise<string[]> {
-    const res = await fetch('https://api.github.com/user/subscriptions?per_page=100', {
+    const res = await fetch("https://api.github.com/user/subscriptions?per_page=100", {
       headers: {
         Authorization: `Bearer ${token}`,
-        Accept: 'application/vnd.github+json',
-        'X-GitHub-Api-Version': '2022-11-28',
+        Accept: "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
       },
     });
     if (!res.ok) return [];
-    const repos = await res.json() as GitHubRepo[];
+    const repos = (await res.json()) as GitHubRepo[];
     return repos.map((r) => r.full_name);
   }
 }

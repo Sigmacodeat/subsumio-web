@@ -101,26 +101,26 @@ is_notable(entity):
 
 ### What Counts as Original Thinking
 
-| Capture | Don't Capture |
-|---------|---------------|
-| Original observations about how the world works | "ok", "do it", "sure" |
-| Novel connections between disparate things | Pure questions without observations |
-| Frameworks and mental models | Echoing back what the agent said |
-| Pattern recognition ("I keep seeing X in every Y") | Acknowledgments and reactions |
-| Hot takes with reasoning | Routine operational messages |
-| Metaphors that reveal new angles | Requests without embedded insight |
+| Capture                                            | Don't Capture                       |
+| -------------------------------------------------- | ----------------------------------- |
+| Original observations about how the world works    | "ok", "do it", "sure"               |
+| Novel connections between disparate things         | Pure questions without observations |
+| Frameworks and mental models                       | Echoing back what the agent said    |
+| Pattern recognition ("I keep seeing X in every Y") | Acknowledgments and reactions       |
+| Hot takes with reasoning                           | Routine operational messages        |
+| Metaphors that reveal new angles                   | Requests without embedded insight   |
 
 ### Filing Rules
 
-| Signal | Destination |
-|--------|-------------|
-| User generated the idea | `brain/originals/{slug}.md` |
+| Signal                            | Destination                                    |
+| --------------------------------- | ---------------------------------------------- |
+| User generated the idea           | `brain/originals/{slug}.md`                    |
 | User's synthesis of others' ideas | `brain/originals/` (the synthesis is original) |
-| World concept someone else coined | `brain/concepts/{slug}.md` |
-| Product or business idea | `brain/ideas/{slug}.md` |
-| Person mentioned | `brain/people/{slug}.md` |
-| Company mentioned | `brain/companies/{slug}.md` |
-| Media referenced | `brain/media/{type}/{slug}.md` |
+| World concept someone else coined | `brain/concepts/{slug}.md`                     |
+| Product or business idea          | `brain/ideas/{slug}.md`                        |
+| Person mentioned                  | `brain/people/{slug}.md`                       |
+| Company mentioned                 | `brain/companies/{slug}.md`                    |
+| Media referenced                  | `brain/media/{type}/{slug}.md`                 |
 
 ### The Iron Law of Back-Linking
 
@@ -187,4 +187,4 @@ to Pedro" only works if Pedro's page links back to every mention.
 
 ---
 
-*Part of the [GBrain Skillpack](../GBRAIN_SKILLPACK.md).*
+_Part of the [GBrain Skillpack](../GBRAIN_SKILLPACK.md)._

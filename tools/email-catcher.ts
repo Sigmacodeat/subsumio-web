@@ -51,7 +51,11 @@ async function persist(email: Record<string, unknown>): Promise<void> {
 function parseAddress(line: string): { email: string; name: string | null } {
   const raw = line.trim();
   const angle = raw.match(/^(.*?)<([^>]+)>$/);
-  if (angle) return { name: angle[1].trim().replace(/^"|"$/g, "") || null, email: angle[2].trim().toLowerCase() };
+  if (angle)
+    return {
+      name: angle[1].trim().replace(/^"|"$/g, "") || null,
+      email: angle[2].trim().toLowerCase(),
+    };
   return { email: raw.toLowerCase(), name: null };
 }
 
@@ -76,7 +80,11 @@ function parseSmtpData(data: string): Omit<CaughtEmail, "id" | "createdAt"> {
         fromEmail = parsed.email;
         fromName = parsed.name;
       } else if (lower.startsWith("to:")) {
-        const addrs = line.slice(3).split(",").map((s) => parseAddress(s).email).filter(Boolean);
+        const addrs = line
+          .slice(3)
+          .split(",")
+          .map((s) => parseAddress(s).email)
+          .filter(Boolean);
         toEmails.push(...addrs);
       } else if (lower.startsWith("subject:")) {
         subject = line.slice(8).trim();
@@ -87,7 +95,8 @@ function parseSmtpData(data: string): Omit<CaughtEmail, "id" | "createdAt"> {
   }
 
   const body = bodyLines.join("\n").trim();
-  const isHtml = body.toLowerCase().includes("<html") || body.toLowerCase().includes("<!doctype html");
+  const isHtml =
+    body.toLowerCase().includes("<html") || body.toLowerCase().includes("<!doctype html");
 
   return {
     fromEmail,
@@ -148,7 +157,9 @@ function startSmtp(port: number) {
               updatedAt: now,
             };
             persist(email).then(() => {
-              console.log(`[smtp] caught: ${email.subject} from ${email.fromEmail} to ${email.toEmails.join(", ")}`);
+              console.log(
+                `[smtp] caught: ${email.subject} from ${email.fromEmail} to ${email.toEmails.join(", ")}`
+              );
             });
             socket.write("250 OK\r\n");
             mailData = "";

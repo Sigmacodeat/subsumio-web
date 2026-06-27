@@ -47,7 +47,7 @@
  * issue (per D12 → A full-lake; honest about scope).
  */
 
-import { AsyncLocalStorage } from 'node:async_hooks';
+import { AsyncLocalStorage } from "node:async_hooks";
 
 const __prefixStore = new AsyncLocalStorage<string>();
 
@@ -89,7 +89,7 @@ export function slog(...args: unknown[]): void {
     console.log(...args);
     return;
   }
-  process.stdout.write(prefixLines(formatArgs(args), prefix) + '\n');
+  process.stdout.write(prefixLines(formatArgs(args), prefix) + "\n");
 }
 
 /**
@@ -104,7 +104,7 @@ export function serr(...args: unknown[]): void {
     console.error(...args);
     return;
   }
-  process.stderr.write(prefixLines(formatArgs(args), prefix) + '\n');
+  process.stderr.write(prefixLines(formatArgs(args), prefix) + "\n");
 }
 
 /**
@@ -116,7 +116,7 @@ export function serr(...args: unknown[]): void {
 function formatArgs(args: unknown[]): string {
   return args
     .map((a) => {
-      if (typeof a === 'string') return a;
+      if (typeof a === "string") return a;
       if (a instanceof Error) return a.stack ?? a.message;
       try {
         return JSON.stringify(a);
@@ -124,7 +124,7 @@ function formatArgs(args: unknown[]): string {
         return String(a);
       }
     })
-    .join(' ');
+    .join(" ");
 }
 
 /**
@@ -141,5 +141,8 @@ function formatArgs(args: unknown[]): string {
  */
 function prefixLines(text: string, prefix: string): string {
   const tag = `[${prefix}] `;
-  return text.split('\n').map((line) => tag + line).join('\n');
+  return text
+    .split("\n")
+    .map((line) => tag + line)
+    .join("\n");
 }

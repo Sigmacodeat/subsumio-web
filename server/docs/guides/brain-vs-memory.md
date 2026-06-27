@@ -1,9 +1,11 @@
 # Brain vs Memory vs Session
 
 ## Goal
+
 Know what goes in GBrain, what goes in agent memory, and what stays in session context -- so every piece of information lands in the right layer.
 
 ## What the User Gets
+
 Without this: people dossiers get stored in agent memory (lost on agent reset), user preferences get stored in GBrain (cluttering knowledge pages), and the agent re-asks questions it already knows the answer to. With this: world knowledge persists in the brain, operational state persists in agent memory, and the agent never puts information in the wrong layer.
 
 ## Implementation
@@ -72,4 +74,5 @@ on user_asks(question):
 5. After an agent reset, confirm GBrain knowledge is still accessible. Run `gbrain get <any_slug>` -- world knowledge should survive the reset.
 
 ---
-*Part of the [GBrain Skillpack](../GBRAIN_SKILLPACK.md).*
+
+_Part of the [GBrain Skillpack](../GBRAIN_SKILLPACK.md)._

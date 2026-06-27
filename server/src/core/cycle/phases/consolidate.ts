@@ -22,10 +22,10 @@
  * extractTotals (cycle.ts) — facts_consolidated + takes_written.
  */
 
-import type { BrainEngine, FactRow } from '../../engine.ts';
-import type { PhaseResult } from '../../cycle.ts';
-import { cosineSimilarity } from '../../facts/classify.ts';
-import { isAborted } from '../../abort-check.ts';
+import type { BrainEngine, FactRow } from "../../engine.ts";
+import type { PhaseResult } from "../../cycle.ts";
+import { cosineSimilarity } from "../../facts/classify.ts";
+import { isAborted } from "../../abort-check.ts";
 
 export interface ConsolidatePhaseOpts {
   dryRun?: boolean;
@@ -47,7 +47,7 @@ export interface ConsolidatePhaseOpts {
 
 export async function runPhaseConsolidate(
   engine: BrainEngine,
-  opts: ConsolidatePhaseOpts = {},
+  opts: ConsolidatePhaseOpts = {}
 ): Promise<PhaseResult> {
   const dryRun = opts.dryRun === true;
   const threshold = opts.clusterThreshold ?? 0.85;
@@ -64,7 +64,9 @@ export async function runPhaseConsolidate(
   let buckets: Array<{ source_id: string; entity_slug: string; count: number }>;
   try {
     buckets = await engine.executeRaw<{
-      source_id: string; entity_slug: string; count: number;
+      source_id: string;
+      entity_slug: string;
+      count: number;
     }>(`
       SELECT source_id, entity_slug, COUNT(*)::int AS count
       FROM facts
@@ -76,14 +78,14 @@ export async function runPhaseConsolidate(
     `);
   } catch (err) {
     return {
-      phase: 'consolidate',
-      status: 'fail',
+      phase: "consolidate",
+      status: "fail",
       duration_ms: 0,
-      summary: 'failed to scan unconsolidated facts',
+      summary: "failed to scan unconsolidated facts",
       details: { error: err instanceof Error ? err.message : String(err) },
       error: {
-        class: 'ConsolidateScanFailed',
-        code: 'consolidate_scan_failed',
+        class: "ConsolidateScanFailed",
+        code: "consolidate_scan_failed",
         message: err instanceof Error ? err.message : String(err),
       },
     };
@@ -96,7 +98,11 @@ export async function runPhaseConsolidate(
     // so no inner guard is needed).
     if (isAborted(opts.signal)) break;
     if (opts.yieldDuringPhase) {
-      try { await opts.yieldDuringPhase(); } catch { /* keepalive errors non-fatal */ }
+      try {
+        await opts.yieldDuringPhase();
+      } catch {
+        /* keepalive errors non-fatal */
+      }
     }
 
     const facts = await engine.listFactsByEntity(b.source_id, b.entity_slug, {
@@ -104,7 +110,7 @@ export async function runPhaseConsolidate(
       limit: 100,
     });
     // Re-filter to unconsolidated since listFactsByEntity returns all active.
-    const unconsolidated = facts.filter(f => f.consolidated_at == null);
+    const unconsolidated = facts.filter((f) => f.consolidated_at == null);
     if (unconsolidated.length < minPerBucket) {
       bucketsSkipped += 1;
       continue;
@@ -112,7 +118,7 @@ export async function runPhaseConsolidate(
 
     // Age gate: oldest must be at least minOldestAgeMs old.
     const oldest = unconsolidated.reduce((min, f) =>
-      f.valid_from.getTime() < min.valid_from.getTime() ? f : min,
+      f.valid_from.getTime() < min.valid_from.getTime() ? f : min
     );
     if (Date.now() - oldest.valid_from.getTime() < minOldestAgeMs) {
       bucketsSkipped += 1;
@@ -125,7 +131,7 @@ export async function runPhaseConsolidate(
     // Resolve entity_slug → page_id. If page missing in this source, skip.
     const pageRows = await engine.executeRaw<{ id: number }>(
       `SELECT id FROM pages WHERE source_id = $1 AND slug = $2 AND deleted_at IS NULL LIMIT 1`,
-      [b.source_id, b.entity_slug],
+      [b.source_id, b.entity_slug]
     );
     if (pageRows.length === 0) continue;
     const pageId = pageRows[0].id;
@@ -133,7 +139,7 @@ export async function runPhaseConsolidate(
     // Existing row_num max for this page → start appending after it.
     const rowMaxRows = await engine.executeRaw<{ max: number }>(
       `SELECT COALESCE(MAX(row_num), 0)::int AS max FROM takes WHERE page_id = $1`,
-      [pageId],
+      [pageId]
     );
     let nextRowNum = (rowMaxRows[0]?.max ?? 0) + 1;
 
@@ -144,9 +150,11 @@ export async function runPhaseConsolidate(
       // synthesis pass.
       const best = cluster.reduce((a, b) => (b.confidence > a.confidence ? b : a));
       const avgWeight = cluster.reduce((s, f) => s + f.confidence, 0) / cluster.length;
-      const sources = Array.from(new Set(cluster.map(c => c.source_session ?? c.source).filter(Boolean))).join(',');
+      const sources = Array.from(
+        new Set(cluster.map((c) => c.source_session ?? c.source).filter(Boolean))
+      ).join(",");
       const sinceISO = cluster
-        .map(c => c.valid_from)
+        .map((c) => c.valid_from)
         .reduce((min, d) => (d < min ? d : min))
         .toISOString()
         .slice(0, 10);
@@ -171,7 +179,7 @@ export async function runPhaseConsolidate(
         `SELECT id FROM takes
          WHERE page_id = $1 AND claim = $2 AND since_date = $3
          LIMIT 1`,
-        [pageId, best.fact, sinceISO],
+        [pageId, best.fact, sinceISO]
       );
 
       let takeId: number;
@@ -181,27 +189,29 @@ export async function runPhaseConsolidate(
         // source_session values that the prior run didn't see); leave
         // row_num + weight untouched to keep the take's identity stable.
         takeId = existing[0].id;
-        await engine.executeRaw(
-          `UPDATE takes SET source = $1, updated_at = now() WHERE id = $2`,
-          [sources.slice(0, 200), takeId],
-        );
+        await engine.executeRaw(`UPDATE takes SET source = $1, updated_at = now() WHERE id = $2`, [
+          sources.slice(0, 200),
+          takeId,
+        ]);
       } else {
-        const inserted = await engine.addTakesBatch([{
-          page_id: pageId,
-          row_num: nextRowNum,
-          claim: best.fact,
-          kind: 'fact',
-          holder: 'self',
-          weight: clamp01(avgWeight),
-          since_date: sinceISO,
-          source: sources.slice(0, 200),
-          active: true,
-        }]);
+        const inserted = await engine.addTakesBatch([
+          {
+            page_id: pageId,
+            row_num: nextRowNum,
+            claim: best.fact,
+            kind: "fact",
+            holder: "self",
+            weight: clamp01(avgWeight),
+            since_date: sinceISO,
+            source: sources.slice(0, 200),
+            active: true,
+          },
+        ]);
         if (inserted < 1) continue;
 
         const idRows = await engine.executeRaw<{ id: number }>(
           `SELECT id FROM takes WHERE page_id = $1 AND row_num = $2`,
-          [pageId, nextRowNum],
+          [pageId, nextRowNum]
         );
         if (idRows.length === 0) {
           nextRowNum += 1;
@@ -245,15 +255,15 @@ export async function runPhaseConsolidate(
              SET valid_until = $1
            WHERE id = $2
              AND (valid_until IS DISTINCT FROM $1)`,
-          [newer.valid_from, older.id],
+          [newer.valid_from, older.id]
         );
       }
     }
   }
 
   return {
-    phase: 'consolidate',
-    status: factsConsolidated > 0 ? 'ok' : 'ok',
+    phase: "consolidate",
+    status: factsConsolidated > 0 ? "ok" : "ok",
     duration_ms: 0,
     summary: dryRun
       ? `(dry-run) would promote ${factsConsolidated} facts into ${takesWritten} takes across ${bucketsProcessed} buckets`

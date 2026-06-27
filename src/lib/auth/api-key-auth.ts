@@ -26,7 +26,7 @@ export function extractBearerToken(authHeader: string | null): string | null {
 }
 
 export async function verifyApiKey(
-  authHeader: string | null,
+  authHeader: string | null
 ): Promise<{ ctx: EngineContext; key: StoredApiKey } | null> {
   const token = extractBearerToken(authHeader);
   if (!token) return null;
@@ -61,9 +61,7 @@ export async function verifyApiKey(
   if (apiKey) headers["x-subsumio-api-key"] = apiKey;
 
   // Fire-and-forget: update lastUsedAt
-  store
-    .update(match.id, { lastUsedAt: new Date().toISOString() })
-    .catch(() => {});
+  store.update(match.id, { lastUsedAt: new Date().toISOString() }).catch(() => {});
 
   return {
     ctx: { headers, brainId, plan, user },

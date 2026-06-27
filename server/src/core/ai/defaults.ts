@@ -17,5 +17,5 @@
 // 1280 is the closest analog to legacy OpenAI 1536d while staying on
 // the high-recall section of ZE's Matryoshka curve. Valid ZE Matryoshka
 // steps: {2560, 1280, 640, 320, 160, 80, 40} — see ai/dims.ts.
-export const DEFAULT_EMBEDDING_MODEL = 'zeroentropyai:zembed-1';
+export const DEFAULT_EMBEDDING_MODEL = "zeroentropyai:zembed-1";
 export const DEFAULT_EMBEDDING_DIMENSIONS = 1280;

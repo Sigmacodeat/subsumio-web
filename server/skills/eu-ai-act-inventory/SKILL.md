@@ -41,6 +41,7 @@ mutating: true
 ## Contract
 
 This skill guarantees:
+
 1. Each AI system gets a risk class (prohibited / high-risk Annex III / limited Art.50 / minimal) with the reason.
 2. The obligations that follow the class are listed.
 3. Missing evidence is flagged against the 02.08.2026 deadline.
@@ -89,5 +90,6 @@ Begründung: […]
 - ❌ Ignoring the 02.08.2026 deadline on open items.
 
 ## Error Handling
+
 - System purpose/usage unclear → ask; classification without it is unreliable.
 - Borderline Annex III → flag both readings and route to a human decision.

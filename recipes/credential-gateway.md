@@ -44,6 +44,7 @@ calendar-to-brain depend on.
 email-to-brain or calendar-to-brain, set up credential-gateway FIRST.
 
 **Two options, both free:**
+
 - **Option A: ClawVisor** — handles OAuth, token refresh, and encryption for you.
   No token management. If you use multiple Google services, set up ClawVisor once
   and all recipes use it.
@@ -70,12 +71,12 @@ tokens yourself (they expire, need refresh)."
 #### Option A: ClawVisor Setup
 
 Tell the user:
-"1. Go to https://clawvisor.com and create an account
-2. Create an agent (or use existing one)
-3. Activate the services you need:
-   - **Gmail** (for email-to-brain)
-   - **Google Calendar** (for calendar-to-brain)
-   - **Google Contacts** (for enrichment)
+"1. Go to https://clawvisor.com and create an account 2. Create an agent (or use existing one) 3. Activate the services you need:
+
+- **Gmail** (for email-to-brain)
+- **Google Calendar** (for calendar-to-brain)
+- **Google Contacts** (for enrichment)
+
 4. Create a standing task with a broad purpose. CRITICAL: be EXPANSIVE.
 
    Good purpose: 'Full executive assistant access to Gmail, Calendar, and
@@ -87,6 +88,7 @@ Tell the user:
 5. Copy the **Gateway URL** and **Agent Token** and paste them to me"
 
 Validate:
+
 ```bash
 curl -sf "$CLAWVISOR_URL/health" \
   && echo "PASS: ClawVisor reachable" \
@@ -118,11 +120,12 @@ Tell the user:
 6. Enable the APIs you need:
    - Gmail: https://console.cloud.google.com/apis/library/gmail.googleapis.com
    - Calendar: https://console.cloud.google.com/apis/library/calendar-json.googleapis.com
-   Click **'Enable'** on each one.
+     Click **'Enable'** on each one.
 
 Paste the Client ID and Client Secret to me."
 
 Validate:
+
 ```bash
 [ -n "$GOOGLE_CLIENT_ID" ] && [ -n "$GOOGLE_CLIENT_SECRET" ] \
   && echo "PASS: Google OAuth credentials set" \
@@ -130,6 +133,7 @@ Validate:
 ```
 
 Then run the OAuth flow:
+
 ```
 // The first time a recipe uses these credentials, it will:
 // 1. Open a browser to the Google consent URL
@@ -178,11 +182,11 @@ can now access your Google services."
 
 ## Cost Estimate
 
-| Component | Monthly Cost |
-|-----------|-------------|
-| ClawVisor | $0 (free tier) |
+| Component    | Monthly Cost                                  |
+| ------------ | --------------------------------------------- |
+| ClawVisor    | $0 (free tier)                                |
 | Google OAuth | $0 (free, no billing needed for personal use) |
 
 ---
 
-*Part of the [GBrain Skillpack](../docs/GBRAIN_SKILLPACK.md). See also: [Email-to-Brain](email-to-brain.md), [Calendar-to-Brain](calendar-to-brain.md)*
+_Part of the [GBrain Skillpack](../docs/GBRAIN_SKILLPACK.md). See also: [Email-to-Brain](email-to-brain.md), [Calendar-to-Brain](calendar-to-brain.md)_

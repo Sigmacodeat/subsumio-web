@@ -1,8 +1,8 @@
-import postgres from 'postgres';
-import { GBrainError, type EngineConfig } from './types.ts';
-import { SCHEMA_SQL } from './schema-embedded.ts';
-import type { BrainEngine } from './engine.ts';
-import { verifySchema } from './schema-verify.ts';
+import postgres from "postgres";
+import { GBrainError, type EngineConfig } from "./types.ts";
+import { SCHEMA_SQL } from "./schema-embedded.ts";
+import type { BrainEngine } from "./engine.ts";
+import { verifySchema } from "./schema-verify.ts";
 
 let sql: ReturnType<typeof postgres> | null = null;
 let connectedUrl: string | null = null;
@@ -30,9 +30,9 @@ export const POOL_END_TIMEOUT_SECONDS = 2;
  * awaiting sequentially, so the per-pool bounds run concurrently instead of
  * stacking.
  */
-export async function endPoolBounded(
-  pool: { end: (opts?: { timeout?: number }) => Promise<void> },
-): Promise<void> {
+export async function endPoolBounded(pool: {
+  end: (opts?: { timeout?: number }) => Promise<void>;
+}): Promise<void> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   const guard = new Promise<void>((resolve) => {
     timer = setTimeout(resolve, POOL_END_TIMEOUT_SECONDS * 1000 + 500);
@@ -40,7 +40,9 @@ export async function endPoolBounded(
   });
   try {
     await Promise.race([
-      pool.end({ timeout: POOL_END_TIMEOUT_SECONDS }).catch(() => { /* idempotent / already-closed */ }),
+      pool.end({ timeout: POOL_END_TIMEOUT_SECONDS }).catch(() => {
+        /* idempotent / already-closed */
+      }),
       guard,
     ]);
   } finally {
@@ -68,7 +70,7 @@ const DEFAULT_POOL_SIZE_FALLBACK = 10;
  * `GBRAIN_PREPARE=true` env var (or `?prepare=true` on the URL) is the
  * documented escape hatch.
  */
-const AUTO_DETECT_PORTS = new Set(['6543']);
+const AUTO_DETECT_PORTS = new Set(["6543"]);
 
 /**
  * Decide whether to force `prepare: true`/`false` on the postgres.js client.
@@ -85,14 +87,14 @@ const AUTO_DETECT_PORTS = new Set(['6543']);
  */
 export function resolvePrepare(url: string): boolean | undefined {
   const envPrepare = process.env.GBRAIN_PREPARE;
-  if (envPrepare === 'false' || envPrepare === '0') return false;
-  if (envPrepare === 'true' || envPrepare === '1') return true;
+  if (envPrepare === "false" || envPrepare === "0") return false;
+  if (envPrepare === "true" || envPrepare === "1") return true;
 
   try {
-    const parsed = new URL(url.replace(/^postgres(ql)?:\/\//, 'http://'));
-    const urlPrepare = parsed.searchParams.get('prepare');
-    if (urlPrepare === 'false') return false;
-    if (urlPrepare === 'true') return true;
+    const parsed = new URL(url.replace(/^postgres(ql)?:\/\//, "http://"));
+    const urlPrepare = parsed.searchParams.get("prepare");
+    if (urlPrepare === "false") return false;
+    if (urlPrepare === "true") return true;
 
     if (AUTO_DETECT_PORTS.has(parsed.port)) {
       return false;
@@ -105,7 +107,7 @@ export function resolvePrepare(url: string): boolean | undefined {
 }
 
 export function resolvePoolSize(explicit?: number): number {
-  if (typeof explicit === 'number' && explicit > 0) return explicit;
+  if (typeof explicit === "number" && explicit > 0) return explicit;
   const raw = process.env.GBRAIN_POOL_SIZE;
   if (raw) {
     const parsed = parseInt(raw, 10);
@@ -154,23 +156,23 @@ export function resolvePoolSize(explicit?: number): number {
  * transaction mode (transaction-mode poolers strip session-state SETs
  * between transactions); startup parameters are durable.
  */
-const DEFAULT_STATEMENT_TIMEOUT = '5min';
-const DEFAULT_IDLE_TX_TIMEOUT = '5min';
+const DEFAULT_STATEMENT_TIMEOUT = "5min";
+const DEFAULT_IDLE_TX_TIMEOUT = "5min";
 
 export function resolveSessionTimeouts(): Record<string, string> {
   const out: Record<string, string> = {};
   const add = (envKey: string, gucKey: string, defaultVal: string) => {
     const raw = process.env[envKey];
-    if (raw === '0' || raw === 'off') return; // explicitly disabled
+    if (raw === "0" || raw === "off") return; // explicitly disabled
     const val = raw ?? defaultVal;
     if (val) out[gucKey] = val;
   };
-  add('GBRAIN_STATEMENT_TIMEOUT', 'statement_timeout', DEFAULT_STATEMENT_TIMEOUT);
-  add('GBRAIN_IDLE_TX_TIMEOUT', 'idle_in_transaction_session_timeout', DEFAULT_IDLE_TX_TIMEOUT);
+  add("GBRAIN_STATEMENT_TIMEOUT", "statement_timeout", DEFAULT_STATEMENT_TIMEOUT);
+  add("GBRAIN_IDLE_TX_TIMEOUT", "idle_in_transaction_session_timeout", DEFAULT_IDLE_TX_TIMEOUT);
   // client_connection_check_interval is opt-in: Postgres 14+ only, and some
   // managed pooler tiers reject unknown startup parameters. Users can enable
   // it explicitly once they know their Postgres version supports it.
-  add('GBRAIN_CLIENT_CHECK_INTERVAL', 'client_connection_check_interval', '');
+  add("GBRAIN_CLIENT_CHECK_INTERVAL", "client_connection_check_interval", "");
   return out;
 }
 
@@ -192,9 +194,9 @@ export async function setSessionDefaults(_sql: ReturnType<typeof postgres>): Pro
 export function getConnection(): ReturnType<typeof postgres> {
   if (!sql) {
     throw new GBrainError(
-      'No database connection',
-      'connect() has not been called',
-      'Run gbrain init --supabase or gbrain init --url <connection_string>',
+      "No database connection",
+      "connect() has not been called",
+      "Run gbrain init --supabase or gbrain init --url <connection_string>"
     );
   }
   return sql;
@@ -218,7 +220,9 @@ export async function connect(config: EngineConfig): Promise<boolean> {
   if (sql) {
     // Warn if a different URL is passed — the old connection is still in use
     if (config.database_url && connectedUrl && config.database_url !== connectedUrl) {
-      console.warn('[gbrain] connect() called with a different database_url but a connection already exists. Using existing connection.');
+      console.warn(
+        "[gbrain] connect() called with a different database_url but a connection already exists. Using existing connection."
+      );
     }
     return false; // joined an existing singleton — caller is a borrower
   }
@@ -226,9 +230,9 @@ export async function connect(config: EngineConfig): Promise<boolean> {
   const url = config.database_url;
   if (!url) {
     throw new GBrainError(
-      'No database URL',
-      'database_url is missing from config',
-      'Run gbrain init --supabase or gbrain init --url <connection_string>',
+      "No database URL",
+      "database_url is missing from config",
+      "Run gbrain init --supabase or gbrain init --url <connection_string>"
     );
   }
 
@@ -247,16 +251,16 @@ export async function connect(config: EngineConfig): Promise<boolean> {
       // exists, skipping" floods stdout under idempotent CREATE statements
       // during migrations + initSchema, and breaks stdout-parsing callers like
       // `gbrain jobs submit --json | ...`). Opt back in with GBRAIN_PG_NOTICES=1.
-      onnotice: process.env.GBRAIN_PG_NOTICES === '1' ? undefined : () => {},
+      onnotice: process.env.GBRAIN_PG_NOTICES === "1" ? undefined : () => {},
     };
     if (Object.keys(timeouts).length > 0) {
       opts.connection = timeouts;
     }
-    if (typeof prepare === 'boolean') {
+    if (typeof prepare === "boolean") {
       opts.prepare = prepare;
       if (!prepare) {
         console.warn(
-          '[gbrain] Prepared statements disabled (PgBouncer transaction-mode convention on port 6543). Override with GBRAIN_PREPARE=true if your pooler runs in session mode.',
+          "[gbrain] Prepared statements disabled (PgBouncer transaction-mode convention on port 6543). Override with GBRAIN_PREPARE=true if your pooler runs in session mode."
         );
       }
     }
@@ -273,9 +277,9 @@ export async function connect(config: EngineConfig): Promise<boolean> {
     connectedUrl = null;
     const msg = e instanceof Error ? e.message : String(e);
     throw new GBrainError(
-      'Cannot connect to database',
+      "Cannot connect to database",
       msg,
-      'Check your connection URL in ~/.gbrain/config.json',
+      "Check your connection URL in ~/.gbrain/config.json"
     );
   }
 }
@@ -287,11 +291,13 @@ export async function disconnect(): Promise<void> {
   // The audit module is lazy-imported to keep db.ts cold-path-free for
   // tools that import db without ever calling disconnect.
   try {
-    const { logDbDisconnect } = await import('./audit/db-disconnect-audit.ts');
+    const { logDbDisconnect } = await import("./audit/db-disconnect-audit.ts");
     // db.ts is always the module-singleton path by construction; no
     // instance-pool callers go through here.
-    logDbDisconnect('postgres', 'module');
-  } catch { /* best-effort; never block disconnect on audit failure */ }
+    logDbDisconnect("postgres", "module");
+  } catch {
+    /* best-effort; never block disconnect on audit failure */
+  }
   // #1471 (codex #6): snapshot + null the singleton BEFORE awaiting end(), so a
   // concurrent module connect() can't observe a non-null `sql` mid-teardown and
   // join a pool that's already closing. Mirrors the v0.41.8.0 PGLite-disconnect
@@ -313,9 +319,11 @@ export async function initSchema(): Promise<void> {
   }
 }
 
-export { verifySchema } from './schema-verify.ts';
+export { verifySchema } from "./schema-verify.ts";
 
-export async function withTransaction<T>(fn: (tx: ReturnType<typeof postgres>) => Promise<T>): Promise<T> {
+export async function withTransaction<T>(
+  fn: (tx: ReturnType<typeof postgres>) => Promise<T>
+): Promise<T> {
   const conn = getConnection();
   return conn.begin(async (tx) => {
     return fn(tx as unknown as ReturnType<typeof postgres>);
@@ -333,7 +341,7 @@ const RETRYABLE_DB_CONNECT_PATTERNS = [
 export function isRetryableDbConnectError(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err);
   if (!msg) return false;
-  return RETRYABLE_DB_CONNECT_PATTERNS.some(p => p.test(msg));
+  return RETRYABLE_DB_CONNECT_PATTERNS.some((p) => p.test(msg));
 }
 
 export interface ConnectWithRetryOpts {
@@ -346,9 +354,9 @@ export interface ConnectWithRetryOpts {
 export async function connectWithRetry(
   engine: BrainEngine,
   config: EngineConfig & { poolSize?: number },
-  opts: ConnectWithRetryOpts = {},
+  opts: ConnectWithRetryOpts = {}
 ): Promise<void> {
-  const noRetry = opts.noRetry ?? (process.env.GBRAIN_NO_RETRY_CONNECT === '1');
+  const noRetry = opts.noRetry ?? process.env.GBRAIN_NO_RETRY_CONNECT === "1";
   const attempts = noRetry ? 1 : (opts.attempts ?? 3);
   const baseDelayMs = opts.baseDelayMs ?? 1000;
   const log = opts.log ?? ((line) => console.warn(line));
@@ -368,7 +376,7 @@ export async function connectWithRetry(
       const delay = baseDelayMs * Math.pow(2, i);
       const msg = e instanceof Error ? e.message : String(e);
       log(`[connect] attempt ${i + 1} failed (${msg.slice(0, 80)}), retrying in ${delay}ms`);
-      await new Promise(resolve => setTimeout(resolve, delay));
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
   // Unreachable, but TS needs the throw.

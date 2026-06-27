@@ -82,6 +82,7 @@ flags). For these adjacent jobs, route elsewhere:
 ## When to invoke
 
 Invoke when the user (or a sibling skill) says any of:
+
 - "Add a `researcher` type to my schema"
 - "I have 4000 untyped pages under `meetings/`"
 - "My brain doesn't know that `journal-article` is a type"
@@ -264,26 +265,38 @@ loadActivePack — v0.40.6.0 closed the cross-process invalidation gap).
 When invoked, this skill produces structured output suitable for both human + JSON consumption:
 
 **Per-mutation result (JSON):**
+
 ```json
-{"schema_version": 1, "pack": "mine", "path": "/Users/.../pack.json", "format": "json", "prev_sha8": "a1b2c3d4", "new_sha8": "e5f6g7h8"}
+{
+  "schema_version": 1,
+  "pack": "mine",
+  "path": "/Users/.../pack.json",
+  "format": "json",
+  "prev_sha8": "a1b2c3d4",
+  "new_sha8": "e5f6g7h8"
+}
 ```
 
 **Per-batch result (from `schema_apply_mutations` MCP op):**
+
 ```json
 {"schema_version": 1, "pack": "mine", "batch_id": "batch-1716491400-abc123", "mutations_applied": 3, "results": [{...}, {...}, {...}]}
 ```
 
 **Stats JSON (per-source + aggregate + dead-prefix hints):**
+
 ```json
 {"schema_version": 1, "pack_identity": "mine@1.0.0+abc12345", "aggregate": {"total_pages": 4823, "typed_pages": 4710, "untyped_pages": 113, "coverage": 0.9766, "by_type": [{"type": "person", "count": 2104}, ...]}, "per_source": [...], "dead_prefixes": [{"type": "researcher", "prefix": "people/researchers/"}]}
 ```
 
 **Sync dry-run JSON:**
+
 ```json
 {"schema_version": 1, "apply": false, "pack_identity": "mine@1.0.0+abc12345", "per_prefix": [{"type": "meeting", "prefix": "meetings/", "would_apply": 4000, "sample_slugs": ["meetings/2026-01-01-foo", ...], "dead_prefix": false, "applied": 0}], "total_would_apply": 4000, "total_applied": 0}
 ```
 
 **Human output (the agent's final summary):**
+
 - One line per mutation: `Pack: <name> (<format>)` and `Sha8: <prev> → <new>`
 - Stats: total pages, typed %, untyped count, per-type breakdown, dead-prefix list
 - Sync: per-prefix `would_apply`/`applied` count + sample slugs in dry-run mode

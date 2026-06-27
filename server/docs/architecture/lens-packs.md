@@ -24,6 +24,7 @@ picks up the pack's declared phases on the next `gbrain dream` run.
 ```
 
 ### gbrain-creator
+
 Atom + concept content-creator lifecycle. Drives two cycle phases:
 
 - `extract_atoms` — per source, Haiku extracts 1-3 atoms from each
@@ -41,6 +42,7 @@ One calibration domain: `concept_themes` / cluster_summary / [concept]
 outcomes to score against).
 
 ### gbrain-investor
+
 YC / investor lens. Declares 2 net-new page types on top of
 gbrain-base's deal/person/company/yc seed:
 
@@ -59,6 +61,7 @@ takes), `founder_evaluation` (scalar_brier over person-attached takes),
 conviction so high-stakes misses cost more).
 
 ### gbrain-engineer
+
 Bridge-only pack. Declares `learning` page type + reuses base `code`.
 No new cycle phases — the daemon-side `gstack-learnings` IngestionSource
 (T8) watches `~/.gstack/projects/{repo}/learnings.jsonl` and emits
@@ -70,6 +73,7 @@ Speculative ADR/postmortem/refactor_thesis/tech_debt types deferred
 to v0.42+ — they'll ship when a real user authors the first one (D8).
 
 ### gbrain-everything
+
 Meta-pack stacking creator + investor + engineer via the v0.38
 `extends` + `borrow_from` chain. Single-active-pack constraint
 preserved — this IS the active pack; the registry walks extends +
@@ -124,8 +128,8 @@ investment in Anthropic" can land in BOTH `deal_success` AND
 - **Lossless OpenClaw migration.** The `markdown-greenfield`
   importer (T7, mode='migration') re-ingests existing OpenClaw
   pages with permanent slug-keyed idempotency + per-row JSONL audit
-  + the `imported_from` marker so extract_atoms + synthesize_concepts
-  don't re-extract already-atomized material.
+  - the `imported_from` marker so extract_atoms + synthesize_concepts
+    don't re-extract already-atomized material.
 
 ## v0.41.2.1 follow-ups (filed in plan)
 
@@ -140,4 +144,4 @@ investment in Anthropic" can land in BOTH `deal_success` AND
 - op_checkpoint resumability for cross-cycle continuation in both
   phases.
 - Parity-baseline eval gates against your OpenClaw's existing 13K atoms
-  + 11K concepts on a 500-page sample subset.
+  - 11K concepts on a 500-page sample subset.

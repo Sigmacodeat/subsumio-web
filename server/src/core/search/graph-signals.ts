@@ -38,10 +38,10 @@
  * rates cross-process.
  */
 
-import type { SearchResult } from '../types.ts';
-import type { AdjacencyRow } from '../types.ts';
-import type { BrainEngine } from '../engine.ts';
-import { createAuditWriter } from '../audit/audit-writer.ts';
+import type { SearchResult } from "../types.ts";
+import type { AdjacencyRow } from "../types.ts";
+import type { BrainEngine } from "../engine.ts";
+import { createAuditWriter } from "../audit/audit-writer.ts";
 
 // ===========================================================================
 // Constants (D14=B halved magnitudes; the score-distribution probe feeds the
@@ -53,7 +53,7 @@ import { createAuditWriter } from '../audit/audit-writer.ts';
 export const ADJACENCY_BOOST = 1.05;
 /** Multiplier applied when cross-source hits >= CROSS_SOURCE_MIN_HITS.
  *  STACKS on top of ADJACENCY_BOOST when both fire. */
-export const CROSS_SOURCE_BOOST = 1.10;
+export const CROSS_SOURCE_BOOST = 1.1;
 /** Multiplier applied to non-top-scoring members of a session group.
  *  Sub-1.0 means DEMOTE, not boost (D11=B). */
 export const SESSION_DEMOTE = 0.95;
@@ -134,14 +134,14 @@ interface GraphSignalsFailureEvent {
 }
 
 const failureWriter = createAuditWriter<GraphSignalsFailureEvent>({
-  featureName: 'graph-signals-failures',
-  errorLabel: 'gbrain',
-  errorTrailer: '; search continues',
+  featureName: "graph-signals-failures",
+  errorLabel: "gbrain",
+  errorTrailer: "; search continues",
 });
 
 function truncateErrorSummary(msg: string, max = 200): string {
   if (msg.length <= max) return msg;
-  return msg.slice(0, max - 1) + '…';
+  return msg.slice(0, max - 1) + "…";
 }
 
 /**
@@ -151,7 +151,7 @@ function truncateErrorSummary(msg: string, max = 200): string {
  */
 export function readRecentGraphSignalsFailures(
   days = 7,
-  now: Date = new Date(),
+  now: Date = new Date()
 ): GraphSignalsFailureEvent[] {
   return failureWriter.readRecent(days, now);
 }
@@ -194,11 +194,11 @@ const DATE_SEGMENT_RE = /^\d{4}-\d{2}-\d{2}/;
 // themselves). A path like `transcripts/chat/funding-discussion` should
 // be the WHOLE thing (parent + marker + session id), which only works
 // if 'transcripts' is NOT a marker but 'chat' IS.
-const SESSION_MARKERS = new Set(['chat', 'session', 'sessions']);
+const SESSION_MARKERS = new Set(["chat", "session", "sessions"]);
 
 export function sessionPrefix(slug: string): string | null {
-  if (!slug.includes('/')) return null;
-  const segments = slug.split('/');
+  if (!slug.includes("/")) return null;
+  const segments = slug.split("/");
   // Strategy: walk segments left-to-right. Find the first segment that's
   // either a session marker (chat/session/sessions) OR a date prefix.
   // Session prefix shape:
@@ -218,11 +218,11 @@ export function sessionPrefix(slug: string): string | null {
     if (SESSION_MARKERS.has(seg)) {
       // Session id is segment i+1 (or the marker itself if i+1 doesn't exist).
       const sessionIdIdx = Math.min(i + 1, segments.length - 1);
-      return segments.slice(0, sessionIdIdx + 1).join('/');
+      return segments.slice(0, sessionIdIdx + 1).join("/");
     }
     if (DATE_SEGMENT_RE.test(seg)) {
       // Date anchor — session is everything up to and including the date.
-      return segments.slice(0, i + 1).join('/');
+      return segments.slice(0, i + 1).join("/");
     }
   }
   // No session marker and no date anchor — entity / topic / docs
@@ -239,7 +239,13 @@ export function computeScoreDistribution(scores: number[]): ScoreDistribution {
   const n = scores.length;
   if (n === 0) {
     return {
-      top_k_size: 0, min: 0, p25: 0, p50: 0, p75: 0, p95: 0, max: 0,
+      top_k_size: 0,
+      min: 0,
+      p25: 0,
+      p50: 0,
+      p75: 0,
+      p95: 0,
+      max: 0,
       reorder_band_width: 0,
     };
   }
@@ -254,7 +260,7 @@ export function computeScoreDistribution(scores: number[]): ScoreDistribution {
     top_k_size: n,
     min: asc[0],
     p25: pct(0.25),
-    p50: pct(0.50),
+    p50: pct(0.5),
     p75: pct(0.75),
     p95: pct(0.95),
     max: asc[asc.length - 1],
@@ -289,7 +295,7 @@ export function computeScoreDistribution(scores: number[]): ScoreDistribution {
 export async function applyGraphSignals(
   results: SearchResult[],
   engine: BrainEngine,
-  opts: GraphSignalsOpts,
+  opts: GraphSignalsOpts
 ): Promise<void> {
   const startedAt = Date.now();
   const meta: GraphSignalsMeta = {
@@ -315,7 +321,7 @@ export async function applyGraphSignals(
   // Score-distribution probe always fires when enabled (instrumentation
   // for T-todo-2 calibration wave, even if no signal subsequently fires).
   if (opts.onScoreDistribution) {
-    opts.onScoreDistribution(computeScoreDistribution(topK.map(r => r.score)));
+    opts.onScoreDistribution(computeScoreDistribution(topK.map((r) => r.score)));
   }
 
   // ---- Adjacency + cross-source ----
@@ -326,7 +332,7 @@ export async function applyGraphSignals(
   // such rows from the dedup set; they can't be matched in the result
   // Map anyway.
   const uniquePageIds = Array.from(
-    new Set(topK.map(r => r.page_id).filter(id => typeof id === 'number' && id > 0)),
+    new Set(topK.map((r) => r.page_id).filter((id) => typeof id === "number" && id > 0))
   );
 
   let adjacency: Map<number, AdjacencyRow>;
@@ -382,7 +388,7 @@ export async function applyGraphSignals(
   const sessionGroups = new Map<string, SearchResult[]>();
   for (const r of topK) {
     const prefix = sessionPrefix(r.slug);
-    if (prefix === null) continue;  // not session-shaped — skip diversification
+    if (prefix === null) continue; // not session-shaped — skip diversification
     let group = sessionGroups.get(prefix);
     if (!group) {
       group = [];

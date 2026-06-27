@@ -16,9 +16,9 @@
  *  - Crashed holders auto-release via TTL expiry (no PID-liveness landmine).
  */
 
-import { tryAcquireDbLock, type DbLockHandle } from '../db-lock.ts';
-import { errorFor } from '../errors.ts';
-import type { BrainEngine } from '../engine.ts';
+import { tryAcquireDbLock, type DbLockHandle } from "../db-lock.ts";
+import { errorFor } from "../errors.ts";
+import type { BrainEngine } from "../engine.ts";
 
 const DEFAULT_TTL_MINUTES = 60;
 const DEFAULT_REFRESH_INTERVAL_MS = 15 * 60 * 1000;
@@ -36,7 +36,7 @@ export function lockIdFor(skillName: string): string {
 export async function tryAcquireSkilloptLock(
   engine: BrainEngine,
   skillName: string,
-  ttlMinutes: number = DEFAULT_TTL_MINUTES,
+  ttlMinutes: number = DEFAULT_TTL_MINUTES
 ): Promise<DbLockHandle | null> {
   return tryAcquireDbLock(engine, lockIdFor(skillName), ttlMinutes);
 }
@@ -58,13 +58,13 @@ export async function withSkilloptLock<T>(
   skillName: string,
   fn: (handle: DbLockHandle) => Promise<T>,
   ttlMinutes: number = DEFAULT_TTL_MINUTES,
-  refreshIntervalMs: number = DEFAULT_REFRESH_INTERVAL_MS,
+  refreshIntervalMs: number = DEFAULT_REFRESH_INTERVAL_MS
 ): Promise<T> {
   const handle = await tryAcquireSkilloptLock(engine, skillName, ttlMinutes);
   if (handle === null) {
     throw errorFor({
-      class: 'LockBusy',
-      code: 'lock_busy',
+      class: "LockBusy",
+      code: "lock_busy",
       message: `Another SkillOpt run is in progress for skill '${skillName}'.`,
       hint: `Wait for it to finish, or check 'gbrain jobs supervisor status'. Stale lock holders auto-expire after ${ttlMinutes} minutes.`,
     });
@@ -77,7 +77,7 @@ export async function withSkilloptLock<T>(
     });
   }, refreshIntervalMs);
   // Don't keep the event loop alive on the refresh timer alone.
-  if (typeof refresher.unref === 'function') refresher.unref();
+  if (typeof refresher.unref === "function") refresher.unref();
 
   try {
     return await fn(handle);

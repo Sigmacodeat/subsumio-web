@@ -140,17 +140,17 @@ proxy for worker env.
 
 ## Decision table
 
-| Operation | Surface | Why |
-|---|---|---|
-| `search` / `query` | HTTP MCP via thin-client | Has MCP op; OAuth-scoped. |
-| `get_page` / `list_pages` | HTTP MCP | Same. |
-| `put_page` | HTTP MCP | Same; respects subagent allow-list when applicable. |
-| `find_experts` / `find_orphans` | HTTP MCP | Same. |
-| `sync` / `embed` / `extract` | Shell job + `inherit:` | `localOnly: true`. |
-| `dream` | Shell job + `inherit:` | `localOnly: true`. |
-| `doctor` | Shell job + `inherit:` (or no inherit if no DB) | `localOnly: true`. |
-| `autopilot` | Run as a daemon directly on the host | Long-lived, not job-shaped. |
-| `init` / `secrets` | One-time host setup | Operator action, not agent action. |
+| Operation                       | Surface                                         | Why                                                 |
+| ------------------------------- | ----------------------------------------------- | --------------------------------------------------- |
+| `search` / `query`              | HTTP MCP via thin-client                        | Has MCP op; OAuth-scoped.                           |
+| `get_page` / `list_pages`       | HTTP MCP                                        | Same.                                               |
+| `put_page`                      | HTTP MCP                                        | Same; respects subagent allow-list when applicable. |
+| `find_experts` / `find_orphans` | HTTP MCP                                        | Same.                                               |
+| `sync` / `embed` / `extract`    | Shell job + `inherit:`                          | `localOnly: true`.                                  |
+| `dream`                         | Shell job + `inherit:`                          | `localOnly: true`.                                  |
+| `doctor`                        | Shell job + `inherit:` (or no inherit if no DB) | `localOnly: true`.                                  |
+| `autopilot`                     | Run as a daemon directly on the host            | Long-lived, not job-shaped.                         |
+| `init` / `secrets`              | One-time host setup                             | Operator action, not agent action.                  |
 
 ## Recommended patterns
 
@@ -178,7 +178,7 @@ If your agent submits shell jobs that pass secrets via `env:`:
 {
   "cmd": "gbrain sync --skip-failed",
   "cwd": "/data/gbrain",
-  "env": { "GBRAIN_DATABASE_URL": "postgresql://..." }
+  "env": { "GBRAIN_DATABASE_URL": "postgresql://..." },
 }
 ```
 
@@ -189,7 +189,7 @@ Switch to (recommended):
 {
   "cmd": "gbrain sync --skip-failed",
   "cwd": "/data/gbrain",
-  "inherit": ["database_url"]
+  "inherit": ["database_url"],
 }
 ```
 

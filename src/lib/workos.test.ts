@@ -54,9 +54,9 @@ describe("workos", () => {
     test("throws when CLIENT_ID is missing", async () => {
       delete process.env.WORKOS_CLIENT_ID;
       const { getAuthorizationUrl } = await freshImport();
-      expect(() =>
-        getAuthorizationUrl({ redirectUri: "https://app.com/callback" }),
-      ).toThrow("WORKOS_CLIENT_ID missing");
+      expect(() => getAuthorizationUrl({ redirectUri: "https://app.com/callback" })).toThrow(
+        "WORKOS_CLIENT_ID missing"
+      );
     });
 
     test("returns correct URL with required params", async () => {
@@ -104,9 +104,9 @@ describe("workos", () => {
     test("throws when API_KEY is missing", async () => {
       delete process.env.WORKOS_API_KEY;
       const { authenticateWithCode } = await freshImport();
-      await expect(
-        authenticateWithCode("code123", "https://app.com/callback"),
-      ).rejects.toThrow("WORKOS_API_KEY missing");
+      await expect(authenticateWithCode("code123", "https://app.com/callback")).rejects.toThrow(
+        "WORKOS_API_KEY missing"
+      );
     });
 
     test("returns auth response on success", async () => {
@@ -125,7 +125,7 @@ describe("workos", () => {
         new Response(JSON.stringify(mockResponse), {
           status: 200,
           headers: { "Content-Type": "application/json" },
-        }),
+        })
       );
       const { authenticateWithCode } = await freshImport();
       const result = await authenticateWithCode("code123", "https://app.com/callback");
@@ -139,24 +139,20 @@ describe("workos", () => {
         new Response(JSON.stringify({ message: "Invalid code" }), {
           status: 400,
           headers: { "Content-Type": "application/json" },
-        }),
+        })
       );
       const { authenticateWithCode } = await freshImport();
-      await expect(
-        authenticateWithCode("bad_code", "https://app.com/callback"),
-      ).rejects.toThrow("Invalid code");
+      await expect(authenticateWithCode("bad_code", "https://app.com/callback")).rejects.toThrow(
+        "Invalid code"
+      );
     });
 
     test("throws with status when no error message in response", async () => {
       process.env.WORKOS_API_KEY = "sk_test";
       process.env.WORKOS_CLIENT_ID = "client_test";
-      vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-        new Response("{}", { status: 401 }),
-      );
+      vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response("{}", { status: 401 }));
       const { authenticateWithCode } = await freshImport();
-      await expect(
-        authenticateWithCode("code", "https://app.com/callback"),
-      ).rejects.toThrow("401");
+      await expect(authenticateWithCode("code", "https://app.com/callback")).rejects.toThrow("401");
     });
   });
 
@@ -179,7 +175,7 @@ describe("workos", () => {
         new Response(JSON.stringify(mockProfile), {
           status: 200,
           headers: { "Content-Type": "application/json" },
-        }),
+        })
       );
       const { getUserProfile } = await freshImport();
       const result = await getUserProfile("user_1");
@@ -190,7 +186,7 @@ describe("workos", () => {
     test("throws on non-200 response", async () => {
       process.env.WORKOS_API_KEY = "sk_test";
       vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-        new Response(JSON.stringify({ error: "Not found" }), { status: 404 }),
+        new Response(JSON.stringify({ error: "Not found" }), { status: 404 })
       );
       const { getUserProfile } = await freshImport();
       await expect(getUserProfile("unknown")).rejects.toThrow("Not found");

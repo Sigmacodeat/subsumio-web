@@ -7,7 +7,7 @@
  * Extracted here so all three share one regression point.
  */
 
-import { existsSync, readFileSync } from 'fs';
+import { existsSync, readFileSync } from "fs";
 
 export interface SupervisorPidStatus {
   /** Parsed pid from the PID file, or null if missing/corrupt. */
@@ -24,7 +24,7 @@ export interface SupervisorPidStatus {
 export function readSupervisorPid(pidFile: string): SupervisorPidStatus {
   if (!existsSync(pidFile)) return { pid: null, running: false };
   try {
-    const line = readFileSync(pidFile, 'utf8').trim().split('\n')[0];
+    const line = readFileSync(pidFile, "utf8").trim().split("\n")[0];
     const parsed = parseInt(line, 10);
     if (Number.isNaN(parsed) || parsed <= 0) return { pid: null, running: false };
     try {
@@ -33,7 +33,7 @@ export function readSupervisorPid(pidFile: string): SupervisorPidStatus {
     } catch (e) {
       const code = (e as NodeJS.ErrnoException)?.code;
       // EPERM: process exists but not signalable by us → still running.
-      return { pid: parsed, running: code === 'EPERM' };
+      return { pid: parsed, running: code === "EPERM" };
     }
   } catch {
     return { pid: null, running: false };

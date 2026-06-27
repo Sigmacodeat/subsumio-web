@@ -30,7 +30,7 @@ mutating: false
 > mid-flow gate (one model reviews work product before commit, with refusal
 > routing). The `gbrain eval cross-modal` command (v0.27.x) is a sibling
 > surface: 3 different-provider frontier models score-and-iterate on a
-> documented dimension list *before* tests cement behavior. Use this skill
+> documented dimension list _before_ tests cement behavior. Use this skill
 > for ad-hoc second opinions; use `gbrain eval cross-modal` for the
 > skillify Phase 3 quality gate. The two are complementary, not redundant.
 
@@ -95,6 +95,7 @@ Independent diff review from a different AI system. The user invokes
 RECOGNIZE when this is the right tool and recommend it explicitly.
 
 **When to recommend `/codex review`:**
+
 - After a substantive diff lands and before merge
 - When the user wants a second opinion that's NOT another Claude
 
@@ -190,7 +191,6 @@ decision.
 - `skills/testing/SKILL.md` — runs the project test suite; complementary
   signal for "is this commit safe to land"
 - `skills/conventions/cross-modal.yaml` — review pairs + refusal routing
-
 
 ## Output Format
 

@@ -37,14 +37,14 @@ export interface SplitProviderModelId {
   model: string;
 }
 
-const EMPTY: SplitProviderModelId = { provider: null, model: '' };
+const EMPTY: SplitProviderModelId = { provider: null, model: "" };
 
 export function splitProviderModelId(input: string | null | undefined): SplitProviderModelId {
   if (input === null || input === undefined) return EMPTY;
   const trimmed = input.trim();
   if (trimmed.length === 0) return EMPTY;
 
-  const colon = trimmed.indexOf(':');
+  const colon = trimmed.indexOf(":");
   if (colon !== -1) {
     return {
       provider: trimmed.slice(0, colon),
@@ -52,7 +52,7 @@ export function splitProviderModelId(input: string | null | undefined): SplitPro
     };
   }
 
-  const slash = trimmed.indexOf('/');
+  const slash = trimmed.indexOf("/");
   if (slash !== -1) {
     return {
       provider: trimmed.slice(0, slash),
@@ -79,7 +79,7 @@ export function splitProviderModelId(input: string | null | undefined): SplitPro
  *   - `:claude-sonnet-4-6` / `/claude-...` → returned as-is (malformed leading separator —
  *                                            empty-string provider; downstream throws loudly)
  */
-export function normalizeModelId(input: string, defaultProvider = 'anthropic'): string {
+export function normalizeModelId(input: string, defaultProvider = "anthropic"): string {
   const { provider, model } = splitProviderModelId(input);
   // Return unchanged (so resolveRecipe throws loudly — #1698) when:
   //   - empty/whitespace input (`model === ''`), or
@@ -89,6 +89,6 @@ export function normalizeModelId(input: string, defaultProvider = 'anthropic'): 
   //     (e.g. `:claude-sonnet-4-6` → `anthropic:claude-sonnet-4-6`), masking a typo as a
   //     valid Anthropic model. A `null` provider (bare name like `claude-opus-4-7`) still
   //     defaults — that's the intended path.
-  if (!model || provider === '') return input;
+  if (!model || provider === "") return input;
   return provider ? `${provider}:${model}` : `${defaultProvider}:${model}`;
 }

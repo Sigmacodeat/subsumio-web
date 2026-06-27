@@ -27,7 +27,7 @@
  * (UPSERT is atomic per row).
  */
 
-import type { BrainEngine } from '../engine.ts';
+import type { BrainEngine } from "../engine.ts";
 
 /**
  * One UPSERT increments per audit event. All counters default to 0 so
@@ -69,7 +69,7 @@ function today(): string {
  */
 export async function upsertExtractRollup(
   engine: BrainEngine,
-  input: RollupUpsertInput,
+  input: RollupUpsertInput
 ): Promise<{ ok: boolean; error?: string }> {
   const day = input.day ?? today();
   const cost = input.cost_delta ?? 0;
@@ -95,7 +95,7 @@ export async function upsertExtractRollup(
          round_completed_count  = extract_rollup_7d.round_completed_count  + EXCLUDED.round_completed_count,
          rollup_write_failures  = extract_rollup_7d.rollup_write_failures  + EXCLUDED.rollup_write_failures,
          updated_at             = now()`,
-      [input.kind, input.source_id, day, cost, halts, evalFails, evalPasses, completed, failures],
+      [input.kind, input.source_id, day, cost, halts, evalFails, evalPasses, completed, failures]
     );
     return { ok: true };
   } catch (err) {
@@ -115,7 +115,7 @@ function rollupErrorLogOnce(kind: string, day: string, msg: string): void {
   if (_loggedRollupErrors.has(key)) return;
   _loggedRollupErrors.add(key);
   console.error(
-    `[extract-rollup] write failed (best-effort; audit JSONL remains source of truth): ${msg}`,
+    `[extract-rollup] write failed (best-effort; audit JSONL remains source of truth): ${msg}`
   );
 }
 

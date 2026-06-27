@@ -18,9 +18,9 @@
  * autopilot cycle would burn 300 round-trips against the host's rate limiter.
  */
 
-import { loadConfig, isThinClient } from '../core/config.ts';
-import { callRemoteTool, unpackToolResult, RemoteMcpError } from '../core/mcp-client.ts';
-import type { DoctorReport, Check } from './doctor.ts';
+import { loadConfig, isThinClient } from "../core/config.ts";
+import { callRemoteTool, unpackToolResult, RemoteMcpError } from "../core/mcp-client.ts";
+import type { DoctorReport, Check } from "./doctor.ts";
 
 interface RemoteFlags {
   json: boolean;
@@ -28,8 +28,8 @@ interface RemoteFlags {
 }
 
 function parseFlags(args: string[]): RemoteFlags {
-  const json = args.includes('--json');
-  const tIdx = args.indexOf('--timeout');
+  const json = args.includes("--json");
+  const tIdx = args.indexOf("--timeout");
   let timeoutMs = 15 * 60 * 1000;
   if (tIdx !== -1 && args[tIdx + 1]) {
     timeoutMs = parseDuration(args[tIdx + 1]) ?? timeoutMs;
@@ -41,36 +41,40 @@ function parseDuration(s: string): number | null {
   const m = s.match(/^(\d+(?:\.\d+)?)(ms|s|m|h)?$/);
   if (!m) return null;
   const n = parseFloat(m[1]);
-  const unit = m[2] ?? 'ms';
+  const unit = m[2] ?? "ms";
   switch (unit) {
-    case 'ms': return n;
-    case 's': return n * 1000;
-    case 'm': return n * 60_000;
-    case 'h': return n * 3_600_000;
+    case "ms":
+      return n;
+    case "s":
+      return n * 1000;
+    case "m":
+      return n * 60_000;
+    case "h":
+      return n * 3_600_000;
   }
   return null;
 }
 
 export async function runRemote(args: string[]): Promise<void> {
   const sub = args[0];
-  if (!sub || sub === '--help' || sub === '-h') {
+  if (!sub || sub === "--help" || sub === "-h") {
     printHelp();
     process.exit(0);
   }
   const config = loadConfig();
   if (!isThinClient(config)) {
     console.error(
-      '`gbrain remote` requires thin-client mode. This install has no remote_mcp config.\n' +
-      'Run `gbrain init --mcp-only` to set up thin-client mode, or use the local CLI directly.',
+      "`gbrain remote` requires thin-client mode. This install has no remote_mcp config.\n" +
+        "Run `gbrain init --mcp-only` to set up thin-client mode, or use the local CLI directly."
     );
     process.exit(1);
   }
   const subArgs = args.slice(1);
 
-  if (sub === 'ping') {
+  if (sub === "ping") {
     return runRemotePing(config!, subArgs);
   }
-  if (sub === 'doctor') {
+  if (sub === "doctor") {
     return runRemoteDoctorCli(config!, subArgs);
   }
   console.error(`Unknown subcommand: gbrain remote ${sub}\n`);
@@ -79,15 +83,19 @@ export async function runRemote(args: string[]): Promise<void> {
 }
 
 function printHelp(): void {
-  console.log('Usage: gbrain remote <subcommand>');
-  console.log('');
-  console.log('Subcommands:');
-  console.log('  ping            Trigger an autopilot cycle on the remote host (sync + extract + embed).');
-  console.log('  doctor          Run brain health checks on the remote host and render the report.');
-  console.log('');
-  console.log('Flags:');
-  console.log('  --json          Emit structured JSON instead of human output.');
-  console.log('  --timeout DUR   ping only: max wait (e.g. 5m, 30m, 90s). Default: 15m.');
+  console.log("Usage: gbrain remote <subcommand>");
+  console.log("");
+  console.log("Subcommands:");
+  console.log(
+    "  ping            Trigger an autopilot cycle on the remote host (sync + extract + embed)."
+  );
+  console.log(
+    "  doctor          Run brain health checks on the remote host and render the report."
+  );
+  console.log("");
+  console.log("Flags:");
+  console.log("  --json          Emit structured JSON instead of human output.");
+  console.log("  --timeout DUR   ping only: max wait (e.g. 5m, 30m, 90s). Default: 15m.");
 }
 
 /**
@@ -102,14 +110,17 @@ function printHelp(): void {
  * Payload uses `data: {phases: [...]}`, NOT `params:` — the submit_job op
  * shape takes `data`. Codex review #8 catch.
  */
-async function runRemotePing(config: NonNullable<ReturnType<typeof loadConfig>>, args: string[]): Promise<void> {
+async function runRemotePing(
+  config: NonNullable<ReturnType<typeof loadConfig>>,
+  args: string[]
+): Promise<void> {
   const { json, timeoutMs } = parseFlags(args);
 
   let submitted: { id: number; name: string; state: string };
   try {
-    const res = await callRemoteTool(config, 'submit_job', {
-      name: 'autopilot-cycle',
-      data: { phases: ['sync', 'extract', 'embed'] },
+    const res = await callRemoteTool(config, "submit_job", {
+      name: "autopilot-cycle",
+      data: { phases: ["sync", "extract", "embed"] },
     });
     submitted = unpackToolResult<{ id: number; name: string; state: string }>(res);
   } catch (e) {
@@ -131,11 +142,14 @@ async function runRemotePing(config: NonNullable<ReturnType<typeof loadConfig>>,
 
     let job: { id: number; state: string; failed_reason?: string };
     try {
-      const res = await callRemoteTool(config, 'get_job', { id: submitted.id });
+      const res = await callRemoteTool(config, "get_job", { id: submitted.id });
       job = unpackToolResult<{ id: number; state: string; failed_reason?: string }>(res);
     } catch (e) {
       // Network blip mid-poll: log and keep going. Surface only if persistent.
-      if (!json) console.error(`  poll #${attempt} failed (${e instanceof Error ? e.message : String(e)}); continuing...`);
+      if (!json)
+        console.error(
+          `  poll #${attempt} failed (${e instanceof Error ? e.message : String(e)}); continuing...`
+        );
       continue;
     }
 
@@ -144,21 +158,25 @@ async function runRemotePing(config: NonNullable<ReturnType<typeof loadConfig>>,
       if (!json) console.error(`  job #${submitted.id} → ${job.state}`);
     }
 
-    const terminal = ['completed', 'failed', 'dead', 'cancelled'];
+    const terminal = ["completed", "failed", "dead", "cancelled"];
     if (terminal.includes(job.state)) {
-      const ok = job.state === 'completed';
+      const ok = job.state === "completed";
       if (json) {
-        console.log(JSON.stringify({
-          status: ok ? 'success' : 'error',
-          job_id: submitted.id,
-          state: job.state,
-          ...(job.failed_reason ? { failed_reason: job.failed_reason } : {}),
-          elapsed_ms: Date.now() - startMs,
-        }));
+        console.log(
+          JSON.stringify({
+            status: ok ? "success" : "error",
+            job_id: submitted.id,
+            state: job.state,
+            ...(job.failed_reason ? { failed_reason: job.failed_reason } : {}),
+            elapsed_ms: Date.now() - startMs,
+          })
+        );
       } else {
-        console.log(ok
-          ? `\nautopilot-cycle complete (${Math.round((Date.now() - startMs) / 1000)}s).`
-          : `\nautopilot-cycle ended ${job.state}${job.failed_reason ? `: ${job.failed_reason}` : ''}.`);
+        console.log(
+          ok
+            ? `\nautopilot-cycle complete (${Math.round((Date.now() - startMs) / 1000)}s).`
+            : `\nautopilot-cycle ended ${job.state}${job.failed_reason ? `: ${job.failed_reason}` : ""}.`
+        );
       }
       process.exit(ok ? 0 : 1);
     }
@@ -166,15 +184,19 @@ async function runRemotePing(config: NonNullable<ReturnType<typeof loadConfig>>,
 
   // Timeout
   if (json) {
-    console.log(JSON.stringify({
-      status: 'error',
-      reason: 'timeout',
-      job_id: submitted.id,
-      last_state: lastState,
-      message: `ping timed out after ${Math.round(timeoutMs / 1000)}s; check job ${submitted.id} on the host.`,
-    }));
+    console.log(
+      JSON.stringify({
+        status: "error",
+        reason: "timeout",
+        job_id: submitted.id,
+        last_state: lastState,
+        message: `ping timed out after ${Math.round(timeoutMs / 1000)}s; check job ${submitted.id} on the host.`,
+      })
+    );
   } else {
-    console.error(`\nping timed out after ${Math.round(timeoutMs / 1000)}s. Job #${submitted.id} is still ${lastState}.`);
+    console.error(
+      `\nping timed out after ${Math.round(timeoutMs / 1000)}s. Job #${submitted.id} is still ${lastState}.`
+    );
     console.error(`Run \`gbrain jobs get ${submitted.id}\` on the host to inspect.`);
   }
   process.exit(1);
@@ -182,13 +204,15 @@ async function runRemotePing(config: NonNullable<ReturnType<typeof loadConfig>>,
 
 function failPing(e: unknown, json: boolean): never {
   const msg = e instanceof Error ? e.message : String(e);
-  const reason = e instanceof RemoteMcpError ? e.reason : 'unknown';
+  const reason = e instanceof RemoteMcpError ? e.reason : "unknown";
   if (json) {
-    console.log(JSON.stringify({ status: 'error', reason, message: msg }));
+    console.log(JSON.stringify({ status: "error", reason, message: msg }));
   } else {
     console.error(`Failed to submit autopilot-cycle: ${msg}`);
-    if (reason === 'auth' || reason === 'auth_after_refresh') {
-      console.error('Hint: ensure the OAuth client was registered with admin scope (`--scopes read,write,admin`).');
+    if (reason === "auth" || reason === "auth_after_refresh") {
+      console.error(
+        "Hint: ensure the OAuth client was registered with admin scope (`--scopes read,write,admin`)."
+      );
     }
   }
   process.exit(1);
@@ -199,22 +223,27 @@ function failPing(e: unknown, json: boolean): never {
  * the same way local doctor renders --json output, and exits 0/1 based on
  * status (healthy → 0, warnings/unhealthy → 0/1 respectively).
  */
-async function runRemoteDoctorCli(config: NonNullable<ReturnType<typeof loadConfig>>, args: string[]): Promise<void> {
+async function runRemoteDoctorCli(
+  config: NonNullable<ReturnType<typeof loadConfig>>,
+  args: string[]
+): Promise<void> {
   const { json } = parseFlags(args);
 
   let report: DoctorReport;
   try {
-    const res = await callRemoteTool(config, 'run_doctor', {});
+    const res = await callRemoteTool(config, "run_doctor", {});
     report = unpackToolResult<DoctorReport>(res);
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    const reason = e instanceof RemoteMcpError ? e.reason : 'unknown';
+    const reason = e instanceof RemoteMcpError ? e.reason : "unknown";
     if (json) {
-      console.log(JSON.stringify({ status: 'error', reason, message: msg }));
+      console.log(JSON.stringify({ status: "error", reason, message: msg }));
     } else {
       console.error(`Failed to run remote doctor: ${msg}`);
-      if (reason === 'auth' || reason === 'auth_after_refresh') {
-        console.error('Hint: run_doctor requires admin scope. Re-register the client with `--scopes read,write,admin`.');
+      if (reason === "auth" || reason === "auth_after_refresh") {
+        console.error(
+          "Hint: run_doctor requires admin scope. Re-register the client with `--scopes read,write,admin`."
+        );
       }
     }
     process.exit(1);
@@ -225,26 +254,26 @@ async function runRemoteDoctorCli(config: NonNullable<ReturnType<typeof loadConf
   } else {
     renderDoctorReport(report);
   }
-  process.exit(report.status === 'unhealthy' ? 1 : 0);
+  process.exit(report.status === "unhealthy" ? 1 : 0);
 }
 
 function renderDoctorReport(report: DoctorReport): void {
-  console.log('\nGBrain Health Check (remote host)');
-  console.log('=================================');
+  console.log("\nGBrain Health Check (remote host)");
+  console.log("=================================");
   for (const c of report.checks) {
-    const icon = c.status === 'ok' ? 'OK' : c.status === 'warn' ? 'WARN' : 'FAIL';
+    const icon = c.status === "ok" ? "OK" : c.status === "warn" ? "WARN" : "FAIL";
     console.log(`  [${icon}] ${c.name}: ${c.message}`);
   }
   console.log(`\nHealth score: ${report.health_score}/100. Status: ${report.status}.`);
-  if (report.status === 'unhealthy') {
-    const fails = report.checks.filter((c: Check) => c.status === 'fail');
+  if (report.status === "unhealthy") {
+    const fails = report.checks.filter((c: Check) => c.status === "fail");
     if (fails.length > 0) {
-      console.log('\nFailures:');
+      console.log("\nFailures:");
       for (const f of fails) console.log(`  - ${f.name}: ${f.message}`);
     }
   }
 }
 
 function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }

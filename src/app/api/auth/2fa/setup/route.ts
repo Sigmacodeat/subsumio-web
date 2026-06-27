@@ -27,5 +27,5 @@ export const POST = createHandler(
     });
 
     return Response.json({ url, qrData: url });
-  },
+  }
 );

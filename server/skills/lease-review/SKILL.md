@@ -40,6 +40,7 @@ mutating: true
 ## Contract
 
 This skill guarantees:
+
 1. Term, rent + escalation, deposit, options, notice periods and obligations are extracted with the clause location.
 2. Each flagged risk cites the lease passage it derives from.
 3. The review states whose position it is taken from (landlord / tenant).
@@ -86,5 +87,6 @@ roll (→ rent-roll-analysis) or a purchase/sale (→ property-due-diligence).
 - ❌ Reviewing without stating whose position the risk assessment takes.
 
 ## Error Handling
+
 - Lease wording unavailable → review the summary only and state what is missing.
 - Residential vs commercial unclear → ask; the rules differ materially.

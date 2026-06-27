@@ -10,7 +10,7 @@ import { createIdempotencyStore } from "@/lib/idempotency";
 const store = createIdempotencyStore(
   "subsumio_whatsapp_messages",
   ["from_phone_hash text", "message_type text", "status text"],
-  { primaryKeyColumn: "message_id" },
+  { primaryKeyColumn: "message_id" }
 );
 
 export async function isMessageProcessed(messageId: string): Promise<boolean> {
@@ -21,7 +21,7 @@ export async function markMessageProcessed(
   messageId: string,
   fromPhoneHash?: string,
   messageType?: string,
-  status?: string,
+  status?: string
 ): Promise<void> {
   await store.markProcessed(messageId, fromPhoneHash ?? null, messageType ?? null, status ?? null);
 }

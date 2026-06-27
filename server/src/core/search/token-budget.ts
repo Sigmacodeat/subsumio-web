@@ -24,7 +24,7 @@
  * Pure module. No DB, no LLM, no async. Tested in test/token-budget.test.ts.
  */
 
-import type { SearchResult } from '../types.ts';
+import type { SearchResult } from "../types.ts";
 
 /**
  * Cheap char/4 token estimate. Returns 0 for empty strings.
@@ -75,9 +75,9 @@ export interface TokenBudgetMeta {
  */
 export function enforceTokenBudget(
   results: SearchResult[],
-  budget: number | undefined,
+  budget: number | undefined
 ): { results: SearchResult[]; meta: TokenBudgetMeta } {
-  const safeBudget = typeof budget === 'number' && budget > 0 ? budget : 0;
+  const safeBudget = typeof budget === "number" && budget > 0 ? budget : 0;
 
   if (safeBudget === 0 || results.length === 0) {
     return {

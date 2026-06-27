@@ -13,14 +13,14 @@
  * inject a fake reader).
  */
 
-import { createInterface } from 'readline';
+import { createInterface } from "readline";
 
-import type { ResolvedSource } from './remote-source.ts';
-import type { SkillpackManifest } from './manifest-v1.ts';
-import type { SkillpackState } from './state.ts';
-import { isAlreadyTrusted } from './state.ts';
+import type { ResolvedSource } from "./remote-source.ts";
+import type { SkillpackManifest } from "./manifest-v1.ts";
+import type { SkillpackState } from "./state.ts";
+import { isAlreadyTrusted } from "./state.ts";
 
-export type SkillpackTier = 'endorsed' | 'community' | 'experimental' | 'dead' | 'local';
+export type SkillpackTier = "endorsed" | "community" | "experimental" | "dead" | "local";
 
 export interface TrustPromptInput {
   manifest: SkillpackManifest;
@@ -34,19 +34,19 @@ export interface TrustPromptDecision {
   trusted: boolean;
   /** Reason for the decision, useful for stderr log lines + tests. */
   reason:
-    | 'already_trusted'
-    | 'prompt_accepted'
-    | 'prompt_rejected'
-    | 'local_path_no_prompt'
-    | 'trust_flag_bypassed'
-    | 'non_tty_no_trust_flag';
+    | "already_trusted"
+    | "prompt_accepted"
+    | "prompt_rejected"
+    | "local_path_no_prompt"
+    | "trust_flag_bypassed"
+    | "non_tty_no_trust_flag";
 }
 
 /** Render the identity block shown to the user. Pure function. */
 export function renderIdentityBlock(input: TrustPromptInput): string {
   const { manifest, resolved, tier } = input;
   const lines: string[] = [];
-  lines.push('[skillpack] About to scaffold:');
+  lines.push("[skillpack] About to scaffold:");
   lines.push(`  Name:          ${manifest.name}`);
   lines.push(`  Version:       ${manifest.version}`);
   lines.push(`  Author:        ${manifest.author}`);
@@ -59,7 +59,7 @@ export function renderIdentityBlock(input: TrustPromptInput): string {
   }
   lines.push(`  Tier:          ${tier}`);
   lines.push(`  Description:   ${manifest.description}`);
-  return lines.join('\n');
+  return lines.join("\n");
 }
 
 export interface AskTrustOptions {
@@ -88,12 +88,12 @@ function defaultReadLine(question: string): Promise<string> {
  */
 export async function askTrust(
   input: TrustPromptInput,
-  opts: AskTrustOptions = {},
+  opts: AskTrustOptions = {}
 ): Promise<TrustPromptDecision> {
   // Local-path sources skip the trust gate entirely. The user owns the
   // directory; they're already trusting whatever lives there.
-  if (input.resolved.kind === 'local') {
-    return { trusted: true, reason: 'local_path_no_prompt' };
+  if (input.resolved.kind === "local") {
+    return { trusted: true, reason: "local_path_no_prompt" };
   }
 
   // Already trusted check (codex G4 identity match).
@@ -105,29 +105,29 @@ export async function askTrust(
       tarball_sha256: input.resolved.tarball_sha256,
     })
   ) {
-    return { trusted: true, reason: 'already_trusted' };
+    return { trusted: true, reason: "already_trusted" };
   }
 
   const block = renderIdentityBlock({ ...input });
-  process.stderr.write(block + '\n');
+  process.stderr.write(block + "\n");
 
   if (opts.trustFlag) {
-    process.stderr.write('[skillpack] --trust flag passed; proceeding without confirm prompt.\n');
-    return { trusted: true, reason: 'trust_flag_bypassed' };
+    process.stderr.write("[skillpack] --trust flag passed; proceeding without confirm prompt.\n");
+    return { trusted: true, reason: "trust_flag_bypassed" };
   }
 
   const isTTY = opts.isTTY ?? Boolean(process.stdin.isTTY && process.stderr.isTTY);
   if (!isTTY) {
     process.stderr.write(
-      '[skillpack] non-TTY environment and no --trust flag; refusing to scaffold a new third-party source without explicit consent.\n',
+      "[skillpack] non-TTY environment and no --trust flag; refusing to scaffold a new third-party source without explicit consent.\n"
     );
-    return { trusted: false, reason: 'non_tty_no_trust_flag' };
+    return { trusted: false, reason: "non_tty_no_trust_flag" };
   }
 
   const reader = opts.readLine ?? defaultReadLine;
-  const answer = (await reader('Continue? [y/N]: ')).trim().toLowerCase();
-  if (answer === 'y' || answer === 'yes') {
-    return { trusted: true, reason: 'prompt_accepted' };
+  const answer = (await reader("Continue? [y/N]: ")).trim().toLowerCase();
+  if (answer === "y" || answer === "yes") {
+    return { trusted: true, reason: "prompt_accepted" };
   }
-  return { trusted: false, reason: 'prompt_rejected' };
+  return { trusted: false, reason: "prompt_rejected" };
 }

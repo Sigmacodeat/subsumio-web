@@ -20,10 +20,10 @@
  * Reference: https://developers.google.com/identity/protocols/oauth2/native-app
  */
 
-import { randomBytes, createHash } from 'node:crypto';
+import { randomBytes, createHash } from "node:crypto";
 
-const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
-const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
+const GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
+const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 
 export interface GoogleAuthUrl {
   /** The URL to open in the user's browser. */
@@ -44,12 +44,12 @@ export interface GoogleTokenResponse {
 
 /** Generate a random base64url-safe string. */
 function randomBase64url(n: number): string {
-  return randomBytes(n).toString('base64url');
+  return randomBytes(n).toString("base64url");
 }
 
 /** SHA-256 hash for PKCE code_challenge. */
 function pkceChallenge(verifier: string): string {
-  return createHash('sha256').update(verifier).digest('base64url');
+  return createHash("sha256").update(verifier).digest("base64url");
 }
 
 /**
@@ -63,22 +63,22 @@ function pkceChallenge(verifier: string): string {
 export function generateAuthUrl(
   clientId: string,
   redirectUri: string,
-  scopes: string,
+  scopes: string
 ): GoogleAuthUrl {
   const codeVerifier = randomBase64url(32);
   const codeChallenge = pkceChallenge(codeVerifier);
   const state = randomBase64url(16);
 
   const url = new URL(GOOGLE_AUTH_URL);
-  url.searchParams.set('client_id', clientId);
-  url.searchParams.set('redirect_uri', redirectUri);
-  url.searchParams.set('response_type', 'code');
-  url.searchParams.set('scope', scopes);
-  url.searchParams.set('code_challenge', codeChallenge);
-  url.searchParams.set('code_challenge_method', 'S256');
-  url.searchParams.set('state', state);
-  url.searchParams.set('access_type', 'offline'); // Request refresh_token
-  url.searchParams.set('prompt', 'consent');      // Force consent screen (ensures refresh_token)
+  url.searchParams.set("client_id", clientId);
+  url.searchParams.set("redirect_uri", redirectUri);
+  url.searchParams.set("response_type", "code");
+  url.searchParams.set("scope", scopes);
+  url.searchParams.set("code_challenge", codeChallenge);
+  url.searchParams.set("code_challenge_method", "S256");
+  url.searchParams.set("state", state);
+  url.searchParams.set("access_type", "offline"); // Request refresh_token
+  url.searchParams.set("prompt", "consent"); // Force consent screen (ensures refresh_token)
 
   return { url: url.toString(), codeVerifier, state };
 }
@@ -98,13 +98,13 @@ export async function exchangeCode(
   codeVerifier: string,
   clientId: string,
   clientSecret: string,
-  redirectUri: string,
+  redirectUri: string
 ): Promise<GoogleTokenResponse> {
   const res = await fetch(GOOGLE_TOKEN_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
-      grant_type: 'authorization_code',
+      grant_type: "authorization_code",
       code,
       redirect_uri: redirectUri,
       client_id: clientId,
@@ -132,13 +132,13 @@ export async function exchangeCode(
 export async function refreshAccessToken(
   refreshToken: string,
   clientId: string,
-  clientSecret: string,
+  clientSecret: string
 ): Promise<GoogleTokenResponse> {
   const res = await fetch(GOOGLE_TOKEN_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
-      grant_type: 'refresh_token',
+      grant_type: "refresh_token",
       refresh_token: refreshToken,
       client_id: clientId,
       client_secret: clientSecret,

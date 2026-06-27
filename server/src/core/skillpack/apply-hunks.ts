@@ -39,9 +39,12 @@ export interface ParsedDiff {
 }
 
 export class ApplyHunksError extends Error {
-  constructor(message: string, public code: 'parse_error') {
+  constructor(
+    message: string,
+    public code: "parse_error"
+  ) {
     super(message);
-    this.name = 'ApplyHunksError';
+    this.name = "ApplyHunksError";
   }
 }
 
@@ -53,16 +56,16 @@ export class ApplyHunksError extends Error {
 export function parseUnifiedDiff(text: string): ParsedDiff {
   const hunks: Hunk[] = [];
   if (text.length === 0) return { hunks };
-  const lines = text.split('\n');
+  const lines = text.split("\n");
   // Strip a trailing empty entry that arises when text ends with '\n'.
-  if (lines.length > 0 && lines[lines.length - 1] === '') lines.pop();
+  if (lines.length > 0 && lines[lines.length - 1] === "") lines.pop();
 
   let i = 0;
   while (i < lines.length) {
     const line = lines[i];
 
     // Skip file headers and any inter-hunk junk until we hit a hunk header.
-    if (!line.startsWith('@@')) {
+    if (!line.startsWith("@@")) {
       i += 1;
       continue;
     }
@@ -70,7 +73,7 @@ export function parseUnifiedDiff(text: string): ParsedDiff {
     // Hunk header: @@ -aStart,aCount +bStart,bCount @@
     const m = /^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@/.exec(line);
     if (!m) {
-      throw new ApplyHunksError(`Malformed hunk header: ${line}`, 'parse_error');
+      throw new ApplyHunksError(`Malformed hunk header: ${line}`, "parse_error");
     }
     const oldStart = parseInt(m[1], 10);
     const oldCount = m[2] !== undefined ? parseInt(m[2], 10) : 1;
@@ -91,27 +94,27 @@ export function parseUnifiedDiff(text: string): ParsedDiff {
     let bSeen = 0;
     while (i < lines.length) {
       const ln = lines[i];
-      if (ln.startsWith('@@') || ln.startsWith('---') || ln.startsWith('+++')) break;
-      if (ln === '\\ No newline at end of file') {
+      if (ln.startsWith("@@") || ln.startsWith("---") || ln.startsWith("+++")) break;
+      if (ln === "\\ No newline at end of file") {
         // Attribute to the previous body line — was it from a or b?
         if (body.length > 0) {
           const prev = body[body.length - 1].charAt(0);
-          if (prev === '-' || prev === ' ') oldNoNewlineAtEnd = true;
-          if (prev === '+' || prev === ' ') newNoNewlineAtEnd = true;
+          if (prev === "-" || prev === " ") oldNoNewlineAtEnd = true;
+          if (prev === "+" || prev === " ") newNoNewlineAtEnd = true;
         }
         i += 1;
         continue;
       }
       const c = ln.charAt(0);
-      if (c === ' ') {
+      if (c === " ") {
         aSeen += 1;
         bSeen += 1;
-      } else if (c === '-') aSeen += 1;
-      else if (c === '+') bSeen += 1;
+      } else if (c === "-") aSeen += 1;
+      else if (c === "+") bSeen += 1;
       else {
         // Unknown prefix; tolerate as context (gnu diff sometimes emits
         // empty-prefix blank lines for an empty context line).
-        body.push(' ' + ln);
+        body.push(" " + ln);
         aSeen += 1;
         bSeen += 1;
         i += 1;
@@ -123,7 +126,7 @@ export function parseUnifiedDiff(text: string): ParsedDiff {
       // marker, keep going to consume it. Otherwise we're done with
       // this hunk.
       if (aSeen >= oldCount && bSeen >= newCount) {
-        if (i >= lines.length || lines[i] !== '\\ No newline at end of file') {
+        if (i >= lines.length || lines[i] !== "\\ No newline at end of file") {
           break;
         }
         // else loop continues and consumes the marker
@@ -154,7 +157,7 @@ export interface ApplyHunksResult {
   /** Per-hunk applied/skipped flag (in hunk order). */
   outcomes: Array<{
     hunk: number;
-    status: 'applied' | 'conflict_missing' | 'conflict_ambiguous';
+    status: "applied" | "conflict_missing" | "conflict_ambiguous";
   }>;
 }
 
@@ -175,7 +178,7 @@ export function applyHunks(targetText: string, diff: ParsedDiff): ApplyHunksResu
   let currentText = targetText;
   let applied = 0;
   let conflicted = 0;
-  const outcomes: ApplyHunksResult['outcomes'] = [];
+  const outcomes: ApplyHunksResult["outcomes"] = [];
 
   for (let i = 0; i < diff.hunks.length; i++) {
     const hunk = diff.hunks[i];
@@ -184,12 +187,12 @@ export function applyHunks(targetText: string, diff: ParsedDiff): ApplyHunksResu
     for (const ln of hunk.lines) {
       const c = ln.charAt(0);
       const body = ln.slice(1);
-      if (c === ' ') {
+      if (c === " ") {
         beforeLines.push(body);
         afterLines.push(body);
-      } else if (c === '-') {
+      } else if (c === "-") {
         beforeLines.push(body);
-      } else if (c === '+') {
+      } else if (c === "+") {
         afterLines.push(body);
       }
     }
@@ -200,7 +203,7 @@ export function applyHunks(targetText: string, diff: ParsedDiff): ApplyHunksResu
     if (beforeLines.length === 0) {
       currentText = applyPureAddition(currentText, afterLines, hunk);
       applied += 1;
-      outcomes.push({ hunk: i, status: 'applied' });
+      outcomes.push({ hunk: i, status: "applied" });
       continue;
     }
 
@@ -208,12 +211,12 @@ export function applyHunks(targetText: string, diff: ParsedDiff): ApplyHunksResu
     const matches = findAllMatches(split.lines, beforeLines);
     if (matches.length === 0) {
       conflicted += 1;
-      outcomes.push({ hunk: i, status: 'conflict_missing' });
+      outcomes.push({ hunk: i, status: "conflict_missing" });
       continue;
     }
     if (matches.length > 1) {
       conflicted += 1;
-      outcomes.push({ hunk: i, status: 'conflict_ambiguous' });
+      outcomes.push({ hunk: i, status: "conflict_ambiguous" });
       continue;
     }
 
@@ -228,12 +231,10 @@ export function applyHunks(targetText: string, diff: ParsedDiff): ApplyHunksResu
     // hunk's range covers the end of the file, the result loses its
     // trailing newline. Otherwise preserve whatever the file had.
     const coversEnd = at + beforeLines.length === split.lines.length;
-    const trailingNewline = coversEnd
-      ? !hunk.newNoNewlineAtEnd
-      : split.trailingNewline;
+    const trailingNewline = coversEnd ? !hunk.newNoNewlineAtEnd : split.trailingNewline;
     currentText = joinLines(newLines, trailingNewline);
     applied += 1;
-    outcomes.push({ hunk: i, status: 'applied' });
+    outcomes.push({ hunk: i, status: "applied" });
   }
 
   return { text: currentText, applied, conflicted, outcomes };
@@ -244,7 +245,11 @@ function applyPureAddition(text: string, additions: string[], hunk: Hunk): strin
   // Pure addition at oldStart (1-indexed, before any content). If
   // oldStart is 0 or 1 with oldCount 0, insert at the file start.
   const insertAt = Math.max(0, hunk.oldStart - 1);
-  const newLines = [...split.lines.slice(0, insertAt), ...additions, ...split.lines.slice(insertAt)];
+  const newLines = [
+    ...split.lines.slice(0, insertAt),
+    ...additions,
+    ...split.lines.slice(insertAt),
+  ];
   const trailingNewline =
     insertAt === split.lines.length ? !hunk.newNoNewlineAtEnd : split.trailingNewline;
   return joinLines(newLines, trailingNewline);
@@ -257,14 +262,14 @@ interface SplitText {
 
 function splitTextPreserveTrailing(text: string): SplitText {
   if (text.length === 0) return { lines: [], trailingNewline: true };
-  const trailingNewline = text.endsWith('\n');
+  const trailingNewline = text.endsWith("\n");
   const body = trailingNewline ? text.slice(0, -1) : text;
-  return { lines: body.split('\n'), trailingNewline };
+  return { lines: body.split("\n"), trailingNewline };
 }
 
 function joinLines(lines: string[], trailingNewline: boolean): string {
-  if (lines.length === 0) return trailingNewline ? '' : '';
-  return lines.join('\n') + (trailingNewline ? '\n' : '');
+  if (lines.length === 0) return trailingNewline ? "" : "";
+  return lines.join("\n") + (trailingNewline ? "\n" : "");
 }
 
 /**

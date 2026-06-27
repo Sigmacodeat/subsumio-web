@@ -14,7 +14,7 @@
  */
 
 export interface LongMemEvalTurn {
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   content: string;
 }
 
@@ -59,17 +59,17 @@ export interface PageInputForImport {
  * and session_id so the JSONL emit step can recover session_id from a chunk.
  */
 function renderSession(session: LongMemEvalSession, date?: string): string {
-  const fm: string[] = ['---', 'type: note'];
+  const fm: string[] = ["---", "type: note"];
   if (date) fm.push(`date: ${date}`);
   fm.push(`session_id: ${session.session_id}`);
-  fm.push('---', '');
+  fm.push("---", "");
 
   const body: string[] = [];
   for (const turn of session.turns) {
     body.push(`**${turn.role}:** ${turn.content}`);
-    body.push('');
+    body.push("");
   }
-  return fm.join('\n') + body.join('\n');
+  return fm.join("\n") + body.join("\n");
 }
 
 /**
@@ -93,7 +93,11 @@ function normalizeSessions(question: LongMemEvalQuestion): LongMemEvalSession[] 
       // _s shape: this entry is a turn array directly.
       const sid = ids[i] ?? `lme_${question.question_id}_${i}`;
       sessions.push({ session_id: sid, turns: item as LongMemEvalTurn[] });
-    } else if (item && typeof item === 'object' && Array.isArray((item as LongMemEvalSession).turns)) {
+    } else if (
+      item &&
+      typeof item === "object" &&
+      Array.isArray((item as LongMemEvalSession).turns)
+    ) {
       // Oracle shape: {session_id, turns} object.
       const sess = item as LongMemEvalSession;
       sessions.push({
@@ -120,7 +124,10 @@ function normalizeSessions(question: LongMemEvalQuestion): LongMemEvalSession[] 
  * harness's resetTables).
  */
 function sanitizeSessionIdForSlug(sessionId: string): string {
-  return sessionId.toLowerCase().replace(/[_.]/g, '-').replace(/[^a-z0-9-]/g, '-');
+  return sessionId
+    .toLowerCase()
+    .replace(/[_.]/g, "-")
+    .replace(/[^a-z0-9-]/g, "-");
 }
 
 export function haystackToPages(question: LongMemEvalQuestion): PageInputForImport[] {

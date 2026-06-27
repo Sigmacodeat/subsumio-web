@@ -22,8 +22,8 @@
  * hostname, so a second DNS lookup at fetch time can't rebind to internal.
  */
 
-import { lookup as nodeDnsLookup } from 'node:dns/promises';
-import { isInternalUrl, isPrivateIpv4, hostnameToOctets } from './url-safety.ts';
+import { lookup as nodeDnsLookup } from "node:dns/promises";
+import { isInternalUrl, isPrivateIpv4, hostnameToOctets } from "./url-safety.ts";
 
 // Module-level seam so tests can swap DNS resolution without `mock.module`
 // (which is banned in non-serial unit tests per scripts/check-test-isolation.sh R2).
@@ -50,20 +50,20 @@ export class SSRFError extends Error {
   readonly code: SSRFErrorCode;
   constructor(code: SSRFErrorCode, message: string) {
     super(message);
-    this.name = 'SSRFError';
+    this.name = "SSRFError";
     this.code = code;
   }
 }
 
 export type SSRFErrorCode =
-  | 'INTERNAL_HOST'
-  | 'INVALID_URL'
-  | 'INVALID_SCHEME'
-  | 'CREDENTIALS_IN_URL'
-  | 'DNS_RESOLUTION_FAILED'
-  | 'DNS_RESOLVED_INTERNAL'
-  | 'SSRF_REDIRECT_DENIED'
-  | 'SSRF_HOP_LIMIT';
+  | "INTERNAL_HOST"
+  | "INVALID_URL"
+  | "INVALID_SCHEME"
+  | "CREDENTIALS_IN_URL"
+  | "DNS_RESOLUTION_FAILED"
+  | "DNS_RESOLVED_INTERNAL"
+  | "SSRF_REDIRECT_DENIED"
+  | "SSRF_HOP_LIMIT";
 
 /**
  * Validate a URL against SSRF policy and resolve its hostname to an IP.
@@ -83,25 +83,31 @@ export async function validateAndResolveUrl(urlStr: string): Promise<ResolvedTar
   try {
     url = new URL(urlStr);
   } catch {
-    throw new SSRFError('INVALID_URL', `Malformed URL: ${truncate(urlStr)}`);
+    throw new SSRFError("INVALID_URL", `Malformed URL: ${truncate(urlStr)}`);
   }
 
-  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-    throw new SSRFError('INVALID_SCHEME', `Unsupported scheme ${url.protocol}; only http(s) allowed`);
+  if (url.protocol !== "http:" && url.protocol !== "https:") {
+    throw new SSRFError(
+      "INVALID_SCHEME",
+      `Unsupported scheme ${url.protocol}; only http(s) allowed`
+    );
   }
 
   if (url.username || url.password) {
-    throw new SSRFError('CREDENTIALS_IN_URL', 'Credentials embedded in URL are not permitted');
+    throw new SSRFError("CREDENTIALS_IN_URL", "Credentials embedded in URL are not permitted");
   }
 
   // Layer 1: static check covers IPv4 hex/octal/single-int, IPv6 ULA + link-local,
   // metadata hostnames, CGNAT, IPv4-mapped IPv6.
   if (isInternalUrl(urlStr)) {
-    throw new SSRFError('INTERNAL_HOST', `URL targets internal/private network: ${truncate(urlStr)}`);
+    throw new SSRFError(
+      "INTERNAL_HOST",
+      `URL targets internal/private network: ${truncate(urlStr)}`
+    );
   }
 
   let host = url.hostname;
-  if (host.startsWith('[') && host.endsWith(']')) host = host.slice(1, -1);
+  if (host.startsWith("[") && host.endsWith("]")) host = host.slice(1, -1);
 
   // If the host is already an IP literal, isInternalUrl already validated it.
   // Skip DNS lookup and return the literal as-is.
@@ -109,8 +115,8 @@ export async function validateAndResolveUrl(urlStr: string): Promise<ResolvedTar
     return {
       resolvedUrl: urlStr,
       resolvedIp: host,
-      originalHost: '',
-      ipv6: host.includes(':'),
+      originalHost: "",
+      ipv6: host.includes(":"),
     };
   }
 
@@ -121,20 +127,20 @@ export async function validateAndResolveUrl(urlStr: string): Promise<ResolvedTar
     addrs = await _dnsLookup(host, { all: true, family: 0 });
   } catch (err) {
     throw new SSRFError(
-      'DNS_RESOLUTION_FAILED',
-      `Failed to resolve ${host}: ${err instanceof Error ? err.message : String(err)}`,
+      "DNS_RESOLUTION_FAILED",
+      `Failed to resolve ${host}: ${err instanceof Error ? err.message : String(err)}`
     );
   }
 
   if (addrs.length === 0) {
-    throw new SSRFError('DNS_RESOLUTION_FAILED', `No DNS records for ${host}`);
+    throw new SSRFError("DNS_RESOLUTION_FAILED", `No DNS records for ${host}`);
   }
 
   for (const a of addrs) {
     if (isAddressInternal(a.address, a.family)) {
       throw new SSRFError(
-        'DNS_RESOLVED_INTERNAL',
-        `${host} resolves to internal address ${a.address} (DNS rebinding attempt?)`,
+        "DNS_RESOLVED_INTERNAL",
+        `${host} resolves to internal address ${a.address} (DNS rebinding attempt?)`
       );
     }
   }
@@ -159,7 +165,7 @@ export async function validateAndResolveUrl(urlStr: string): Promise<ResolvedTar
 }
 
 function isIpLiteral(host: string): boolean {
-  if (host.includes(':')) return true; // IPv6 literal (already bracket-stripped)
+  if (host.includes(":")) return true; // IPv6 literal (already bracket-stripped)
   return hostnameToOctets(host) !== null;
 }
 
@@ -170,10 +176,10 @@ function isAddressInternal(addr: string, family: number): boolean {
   }
   if (family === 6) {
     const lower = addr.toLowerCase();
-    if (lower === '::1' || lower === '::') return true;
+    if (lower === "::1" || lower === "::") return true;
     if (/^f[cd][0-9a-f]{2}:/.test(lower)) return true; // ULA fc00::/7
     if (/^fe[89ab][0-9a-f]:/.test(lower)) return true; // link-local fe80::/10
-    if (lower.startsWith('::ffff:')) {
+    if (lower.startsWith("::ffff:")) {
       const tail = lower.slice(7);
       const dotted = hostnameToOctets(tail);
       if (dotted && isPrivateIpv4(dotted)) return true;
@@ -198,7 +204,7 @@ export async function fetchWithSSRFGuard(
   init: RequestInit & {
     maxRedirects?: number;
     timeoutMs?: number;
-  } = {},
+  } = {}
 ): Promise<Response> {
   const maxRedirects = init.maxRedirects ?? 3;
   const timeoutMs = init.timeoutMs ?? 5000;
@@ -208,7 +214,7 @@ export async function fetchWithSSRFGuard(
   const onAbort = () => controller.abort();
   if (externalSignal) {
     if (externalSignal.aborted) controller.abort();
-    else externalSignal.addEventListener('abort', onAbort, { once: true });
+    else externalSignal.addEventListener("abort", onAbort, { once: true });
   }
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -219,23 +225,23 @@ export async function fetchWithSSRFGuard(
       const target = await validateAndResolveUrl(currentUrl);
       const fetchInit: RequestInit = {
         ...init,
-        redirect: 'manual',
+        redirect: "manual",
         signal: controller.signal,
       };
       // Set Host header to the original hostname so SNI/TLS works correctly
       // (we're fetching by resolved IP but the server expects the real host).
       const headers = new Headers(init.headers || {});
       if (target.originalHost) {
-        headers.set('Host', target.originalHost);
+        headers.set("Host", target.originalHost);
       }
       fetchInit.headers = headers;
       const res = await fetch(target.resolvedUrl, fetchInit);
       // Redirect status codes
       if ([301, 302, 303, 307, 308].includes(res.status)) {
         if (hops >= maxRedirects) {
-          throw new SSRFError('SSRF_HOP_LIMIT', `Exceeded ${maxRedirects} redirect hops`);
+          throw new SSRFError("SSRF_HOP_LIMIT", `Exceeded ${maxRedirects} redirect hops`);
         }
-        const location = res.headers.get('location');
+        const location = res.headers.get("location");
         if (!location) {
           return res; // redirect with no Location — return as-is, caller decides
         }
@@ -249,10 +255,10 @@ export async function fetchWithSSRFGuard(
     }
   } finally {
     clearTimeout(timer);
-    if (externalSignal) externalSignal.removeEventListener('abort', onAbort);
+    if (externalSignal) externalSignal.removeEventListener("abort", onAbort);
   }
 }
 
 function truncate(s: string, n = 200): string {
-  return s.length > n ? s.slice(0, n) + '...' : s;
+  return s.length > n ? s.slice(0, n) + "..." : s;
 }

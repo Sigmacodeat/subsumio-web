@@ -217,7 +217,12 @@ export const PATCH = createHandler(
                 (d.frontmatter ?? {}).status === "tombstoned"
             );
             const UNTOMBSTONE_BATCH = 5;
-            const untombstones: Array<{ slug: string; ok: boolean; status?: number; error?: string }> = [];
+            const untombstones: Array<{
+              slug: string;
+              ok: boolean;
+              status?: number;
+              error?: string;
+            }> = [];
             for (let i = 0; i < tombstoned.length; i += UNTOMBSTONE_BATCH) {
               const batch = tombstoned.slice(i, i + UNTOMBSTONE_BATCH);
               const batchResults = await Promise.all(
@@ -499,7 +504,12 @@ export const DELETE = createHandler(
               caseSlugForms.has((d.frontmatter ?? {}).case_slug as string)
             );
             const TOMBSTONE_BATCH = 5;
-            const tombstones: Array<{ slug: string; ok: boolean; status?: number; error?: string }> = [];
+            const tombstones: Array<{
+              slug: string;
+              ok: boolean;
+              status?: number;
+              error?: string;
+            }> = [];
             for (let i = 0; i < matched.length; i += TOMBSTONE_BATCH) {
               const batch = matched.slice(i, i + TOMBSTONE_BATCH);
               const batchResults = await Promise.all(

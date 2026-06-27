@@ -1,6 +1,6 @@
-import { spawnSync } from 'node:child_process';
-import type { BrainEngine } from '../core/engine.ts';
-import { startMcpServer } from '../mcp/server.ts';
+import { spawnSync } from "node:child_process";
+import type { BrainEngine } from "../core/engine.ts";
+import { startMcpServer } from "../mcp/server.ts";
 
 // Maximum time the stdio path will wait for engine.disconnect() (PGLite
 // close + advisory lock release) before forcing exit. Keeps a wedged
@@ -26,7 +26,7 @@ export interface ServeOptions {
   // so test stubs that record + return are accepted without casts;
   // `process.exit`'s `never` return is assignable to `void`.
   stdin?: NodeJS.ReadableStream & { isTTY?: boolean };
-  signals?: Pick<NodeJS.Process, 'on'>;
+  signals?: Pick<NodeJS.Process, "on">;
   exit?: (code?: number) => void;
   log?: (msg: string) => void;
   // Test seam: replace startMcpServer to avoid booting the real MCP SDK
@@ -65,29 +65,25 @@ export interface ServeOptions {
   mcpStdio?: boolean;
 }
 
-export async function runServe(
-  engine: BrainEngine,
-  args: string[] = [],
-  opts: ServeOptions = {},
-) {
+export async function runServe(engine: BrainEngine, args: string[] = [], opts: ServeOptions = {}) {
   // v0.26+: --http dispatches to the full OAuth 2.1 server (serve-http.ts)
   // with admin dashboard, scope enforcement, SSE feed, and the requireBearerAuth
   // middleware. Master's simpler startHttpTransport from v0.22.7 is superseded
   // — the OAuth provider in serve-http.ts handles bearer auth via
   // verifyAccessToken with legacy access_tokens fallback (so v0.22.7 callers
   // that used `gbrain auth create` keep working unchanged).
-  const isHttp = args.includes('--http');
+  const isHttp = args.includes("--http");
 
   if (isHttp) {
-    const portIdx = args.indexOf('--port');
+    const portIdx = args.indexOf("--port");
     const port = portIdx >= 0 ? parseInt(args[portIdx + 1]) || 3131 : 3131;
 
-    const ttlIdx = args.indexOf('--token-ttl');
+    const ttlIdx = args.indexOf("--token-ttl");
     const tokenTtl = ttlIdx >= 0 ? parseInt(args[ttlIdx + 1]) || 3600 : 3600;
 
-    const enableDcr = args.includes('--enable-dcr');
+    const enableDcr = args.includes("--enable-dcr");
 
-    const publicUrlIdx = args.indexOf('--public-url');
+    const publicUrlIdx = args.indexOf("--public-url");
     const publicUrl = publicUrlIdx >= 0 ? args[publicUrlIdx + 1] : undefined;
 
     // F8 escape hatch: --log-full-params writes raw payloads to mcp_request_log
@@ -95,7 +91,7 @@ export async function runServe(
     // (privacy-first); operators running gbrain on their own laptop can flip
     // it on for debug visibility. Loud startup warning fires in serve-http.ts
     // when set so the posture change is visible in stderr.
-    const logFullParams = args.includes('--log-full-params');
+    const logFullParams = args.includes("--log-full-params");
 
     // v0.34.1 (#864, D11): `--bind HOST` lets operators choose the network
     // interface to listen on. When unset, runServeHttp defaults to 127.0.0.1
@@ -104,47 +100,59 @@ export async function runServe(
     // left undefined here when the flag is absent so the WARN-on-public-url
     // path in serve-http can distinguish "operator chose loopback explicitly"
     // from "operator didn't set the flag at all."
-    const bindIdx = args.indexOf('--bind');
+    const bindIdx = args.indexOf("--bind");
     const bind = bindIdx >= 0 ? args[bindIdx + 1] : undefined;
 
     // v0.36.x #1024: suppress the printed admin bootstrap token. Pair with
     // GBRAIN_ADMIN_BOOTSTRAP_TOKEN for production deployments that don't
     // want the value leaking into log aggregators on every supervisor
     // restart.
-    const suppressBootstrapToken = args.includes('--suppress-bootstrap-token');
+    const suppressBootstrapToken = args.includes("--suppress-bootstrap-token");
 
     // v0.43 — `--with-worker`: start the minion worker IN-PROCESS next to the
     // HTTP server. For PGLite installs this is the ONLY way to process agent
     // jobs (single-writer embedded DB — a second `gbrain jobs work` process
     // would conflict); for small Postgres deployments it saves a process.
     // Large deployments keep running a dedicated `gbrain jobs work`.
-    const withWorker = args.includes('--with-worker');
+    const withWorker = args.includes("--with-worker");
     if (withWorker) {
-      const { MinionWorker } = await import('../core/minions/worker.ts');
-      const { MinionQueue } = await import('../core/minions/queue.ts');
-      const { registerBuiltinHandlers } = await import('./jobs.ts');
+      const { MinionWorker } = await import("../core/minions/worker.ts");
+      const { MinionQueue } = await import("../core/minions/queue.ts");
+      const { registerBuiltinHandlers } = await import("./jobs.ts");
       const queue = new MinionQueue(engine);
       await queue.ensureSchema();
-      const worker = new MinionWorker(engine, { queue: 'default' });
+      const worker = new MinionWorker(engine, { queue: "default" });
       await registerBuiltinHandlers(worker, engine);
       // Embedded mode: a worker health failure must NOT kill the HTTP server.
       // Log loudly; the worker stops, the API stays up, operators see it.
-      worker.on('unhealthy', (info) => {
+      worker.on("unhealthy", (info) => {
         console.error(
-          `[serve --with-worker] worker unhealthy (${info.reason ?? 'unknown'}): ` +
-          `${'message' in info ? info.message : ''} — worker stopped, HTTP API unaffected. ` +
-          `Restart the process to resume job processing.`,
+          `[serve --with-worker] worker unhealthy (${info.reason ?? "unknown"}): ` +
+            `${"message" in info ? info.message : ""} — worker stopped, HTTP API unaffected. ` +
+            `Restart the process to resume job processing.`
         );
         worker.stop();
       });
       void worker.start().catch((err) => {
-        console.error(`[serve --with-worker] worker crashed: ${err instanceof Error ? err.message : String(err)} — HTTP API unaffected.`);
+        console.error(
+          `[serve --with-worker] worker crashed: ${err instanceof Error ? err.message : String(err)} — HTTP API unaffected.`
+        );
       });
-      console.error(`[serve --with-worker] minion worker started in-process (handlers: ${worker.registeredNames.join(', ')})`);
+      console.error(
+        `[serve --with-worker] minion worker started in-process (handlers: ${worker.registeredNames.join(", ")})`
+      );
     }
 
-    const { runServeHttp } = await import('./serve-http.ts');
-    await runServeHttp(engine, { port, tokenTtl, enableDcr, publicUrl, logFullParams, bind, suppressBootstrapToken });
+    const { runServeHttp } = await import("./serve-http.ts");
+    await runServeHttp(engine, {
+      port,
+      tokenTtl,
+      enableDcr,
+      publicUrl,
+      logFullParams,
+      bind,
+      suppressBootstrapToken,
+    });
     return;
   }
 
@@ -153,7 +161,7 @@ export async function runServe(
   // trigger graceful release of the PGLite write lock held by `engine`.
   // The HTTP / OAuth path above has its own lifecycle in serve-http.ts
   // and is intentionally NOT wired into this stdio plumbing.
-  console.error('Starting GBrain MCP server (stdio)...');
+  console.error("Starting GBrain MCP server (stdio)...");
 
   installStdioLifecycle(engine, args, opts);
 
@@ -168,7 +176,7 @@ export async function runServe(
 
 interface StdioLifecycleDeps {
   stdin: NodeJS.ReadableStream & { isTTY?: boolean };
-  signals: Pick<NodeJS.Process, 'on'>;
+  signals: Pick<NodeJS.Process, "on">;
   exit: (code?: number) => void;
   log: (msg: string) => void;
   getParentPid: () => number;
@@ -177,19 +185,20 @@ interface StdioLifecycleDeps {
   probeWatchdog: () => boolean;
 }
 
-function installStdioLifecycle(
-  engine: BrainEngine,
-  args: string[],
-  opts: ServeOptions,
-): void {
+function installStdioLifecycle(engine: BrainEngine, args: string[], opts: ServeOptions): void {
   const deps: StdioLifecycleDeps = {
     stdin: opts.stdin ?? process.stdin,
     signals: opts.signals ?? process,
-    exit: opts.exit ?? ((code?: number) => { process.exit(code); }),
+    exit:
+      opts.exit ??
+      ((code?: number) => {
+        process.exit(code);
+      }),
     log: opts.log ?? ((msg: string) => console.error(msg)),
     getParentPid: opts.getParentPid ?? readLiveParentPid,
     setInterval: opts.setInterval ?? ((fn, ms) => setInterval(fn, ms)),
-    clearInterval: opts.clearInterval ?? ((h) => clearInterval(h as ReturnType<typeof setInterval>)),
+    clearInterval:
+      opts.clearInterval ?? ((h) => clearInterval(h as ReturnType<typeof setInterval>)),
     probeWatchdog: opts.probeWatchdog ?? probeWatchdogAvailable,
   };
 
@@ -217,7 +226,7 @@ function installStdioLifecycle(
     // (process.kill(pid, 0) → ESRCH) will reclaim it.
     const deadline = setTimeout(() => {
       deps.log(
-        `GBrain MCP server: cleanup deadline (${CLEANUP_DEADLINE_MS}ms) exceeded — forcing exit`,
+        `GBrain MCP server: cleanup deadline (${CLEANUP_DEADLINE_MS}ms) exceeded — forcing exit`
       );
       deps.exit(0);
     }, CLEANUP_DEADLINE_MS);
@@ -240,9 +249,9 @@ function installStdioLifecycle(
   // observed real-world hosts (Claude Desktop on macOS, hermes-agent
   // restart) send these instead of closing stdin. All three get the same
   // graceful path; the idempotency guard absorbs duplicate signals.
-  deps.signals.on('SIGTERM', () => beginShutdown('SIGTERM'));
-  deps.signals.on('SIGINT', () => beginShutdown('SIGINT'));
-  deps.signals.on('SIGHUP', () => beginShutdown('SIGHUP'));
+  deps.signals.on("SIGTERM", () => beginShutdown("SIGTERM"));
+  deps.signals.on("SIGINT", () => beginShutdown("SIGINT"));
+  deps.signals.on("SIGHUP", () => beginShutdown("SIGHUP"));
 
   // Stdin EOF — the parent closes the pipe but the MCP SDK's
   // StdioServerTransport only listens for 'data'/'error', not 'end' or
@@ -261,10 +270,10 @@ function installStdioLifecycle(
   // parent-process watchdog below still cover legitimate shutdown paths.
   // `mcpStdio` is the injectable form; default reads the env once at
   // install time so tests stay isolated (no process.env mutation).
-  const mcpStdioMode = opts.mcpStdio ?? (process.env.MCP_STDIO === '1');
+  const mcpStdioMode = opts.mcpStdio ?? process.env.MCP_STDIO === "1";
   if (!deps.stdin.isTTY && !mcpStdioMode) {
-    deps.stdin.once('end', () => beginShutdown('stdin-end'));
-    deps.stdin.once('close', () => beginShutdown('stdin-close'));
+    deps.stdin.once("end", () => beginShutdown("stdin-end"));
+    deps.stdin.once("close", () => beginShutdown("stdin-close"));
   }
 
   // Parent-process watchdog. Some hosts (launchd, cron, certain MCP
@@ -296,12 +305,12 @@ function installStdioLifecycle(
   if (initialParentPid !== 1) {
     if (!deps.probeWatchdog()) {
       deps.log(
-        '[gbrain serve] watchdog disabled: ps unavailable, parent-death detection unavailable — child will rely on stdin EOF / signals only',
+        "[gbrain serve] watchdog disabled: ps unavailable, parent-death detection unavailable — child will rely on stdin EOF / signals only"
       );
     } else {
       parentWatchdog = deps.setInterval(() => {
         if (deps.getParentPid() !== initialParentPid) {
-          beginShutdown('parent-died');
+          beginShutdown("parent-died");
         }
       }, PARENT_WATCHDOG_INTERVAL_MS);
       (parentWatchdog as { unref?: () => void } | null)?.unref?.();
@@ -322,7 +331,7 @@ function installStdioLifecycle(
       if (idleTimer) clearTimeout(idleTimer);
       idleTimer = setTimeout(
         () => beginShutdown(`stdio-idle-timeout (${idleTimeoutSec}s)`),
-        idleTimeoutSec * 1000,
+        idleTimeoutSec * 1000
       );
       idleTimer.unref?.();
     };
@@ -330,7 +339,7 @@ function installStdioLifecycle(
     // Reset on every chunk. We can't observe SDK-parsed messages from
     // here, but every JSON-RPC frame causes a 'data' event on stdin, so
     // chunk-level granularity is sufficient.
-    deps.stdin.on('data', armIdle);
+    deps.stdin.on("data", armIdle);
     deps.log(`GBrain MCP server: stdio idle timeout = ${idleTimeoutSec}s`);
   }
 }
@@ -354,11 +363,11 @@ function installStdioLifecycle(
  */
 function readLiveParentPid(): number {
   try {
-    const r = spawnSync('ps', ['-o', 'ppid=', '-p', String(process.pid)], {
-      encoding: 'utf8',
+    const r = spawnSync("ps", ["-o", "ppid=", "-p", String(process.pid)], {
+      encoding: "utf8",
       timeout: 1000,
     });
-    if (r.status === 0 && typeof r.stdout === 'string') {
+    if (r.status === 0 && typeof r.stdout === "string") {
       const n = parseInt(r.stdout.trim(), 10);
       if (Number.isInteger(n) && n >= 0) return n;
     }
@@ -385,11 +394,11 @@ function readLiveParentPid(): number {
  */
 function probeWatchdogAvailable(): boolean {
   try {
-    const r = spawnSync('ps', ['-o', 'ppid=', '-p', String(process.pid)], {
-      encoding: 'utf8',
+    const r = spawnSync("ps", ["-o", "ppid=", "-p", String(process.pid)], {
+      encoding: "utf8",
       timeout: 1000,
     });
-    if (r.status !== 0 || typeof r.stdout !== 'string') return false;
+    if (r.status !== 0 || typeof r.stdout !== "string") return false;
     const n = parseInt(r.stdout.trim(), 10);
     return Number.isInteger(n) && n >= 0;
   } catch {
@@ -398,7 +407,7 @@ function probeWatchdogAvailable(): boolean {
 }
 
 function parseStdioIdleTimeout(args: string[]): number {
-  const idx = args.indexOf('--stdio-idle-timeout');
+  const idx = args.indexOf("--stdio-idle-timeout");
   if (idx < 0) return 0;
   const raw = args[idx + 1];
   // Strict parsing — silent fallback to 0 turns an opt-in safety net into
@@ -409,22 +418,22 @@ function parseStdioIdleTimeout(args: string[]): number {
   // value are surfaced as a CLI error before we install the timer.
   if (raw === undefined) {
     throw new Error(
-      '--stdio-idle-timeout requires a non-negative integer (seconds). Got: (missing value)',
+      "--stdio-idle-timeout requires a non-negative integer (seconds). Got: (missing value)"
     );
   }
   // Reject empty / whitespace-only explicitly: `Number('')` is 0 in JS,
   // which would silently turn `--stdio-idle-timeout ""` into the
   // documented opt-out — the exact silent-fallback failure mode this
   // strict parser exists to prevent.
-  if (raw.trim() === '') {
+  if (raw.trim() === "") {
     throw new Error(
-      '--stdio-idle-timeout requires a non-negative integer (seconds). Got: (blank value)',
+      "--stdio-idle-timeout requires a non-negative integer (seconds). Got: (blank value)"
     );
   }
   const n = Number(raw);
   if (!Number.isInteger(n) || n < 0) {
     throw new Error(
-      `--stdio-idle-timeout requires a non-negative integer (seconds). Got: ${JSON.stringify(raw)}`,
+      `--stdio-idle-timeout requires a non-negative integer (seconds). Got: ${JSON.stringify(raw)}`
     );
   }
   return n;

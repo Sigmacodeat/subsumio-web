@@ -14,10 +14,10 @@
  * because it needs a real embedding to key on.
  */
 
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
-import { PGLiteEngine } from '../src/core/pglite-engine.ts';
-import { hybridSearchCached } from '../src/core/search/hybrid.ts';
-import type { PageInput, HybridSearchMeta } from '../src/core/types.ts';
+import { describe, test, expect, beforeAll, afterAll } from "bun:test";
+import { PGLiteEngine } from "../src/core/pglite-engine.ts";
+import { hybridSearchCached } from "../src/core/search/hybrid.ts";
+import type { PageInput, HybridSearchMeta } from "../src/core/types.ts";
 
 let engine: PGLiteEngine;
 const savedKey = process.env.OPENAI_API_KEY;
@@ -28,29 +28,29 @@ beforeAll(async () => {
   await engine.initSchema();
   // Insert a small fixture set so keyword search has something to find.
   // Use long chunk_texts so token budget cuts have observable effect.
-  const longText = 'x'.repeat(800);  // ~200 tokens of body text
+  const longText = "x".repeat(800); // ~200 tokens of body text
   const pages: Array<{ slug: string; page: PageInput }> = [
     {
-      slug: 'alice-foo',
+      slug: "alice-foo",
       page: {
-        type: 'person',
-        title: 'Alice Foo',
+        type: "person",
+        title: "Alice Foo",
         compiled_truth: `Alice Foo is a builder. ${longText}`,
       },
     },
     {
-      slug: 'bob-bar',
+      slug: "bob-bar",
       page: {
-        type: 'person',
-        title: 'Bob Bar',
+        type: "person",
+        title: "Bob Bar",
         compiled_truth: `Bob Bar is a builder. ${longText}`,
       },
     },
     {
-      slug: 'carol-baz',
+      slug: "carol-baz",
       page: {
-        type: 'person',
-        title: 'Carol Baz',
+        type: "person",
+        title: "Carol Baz",
         compiled_truth: `Carol Baz is a builder. ${longText}`,
       },
     },
@@ -64,44 +64,56 @@ beforeAll(async () => {
 
 afterAll(async () => {
   if (savedKey) process.env.OPENAI_API_KEY = savedKey;
-  try { await engine.disconnect(); } catch { /* ignore */ }
+  try {
+    await engine.disconnect();
+  } catch {
+    /* ignore */
+  }
 });
 
-describe('hybridSearchCached \u2014 meta surfaces intent', () => {
-  test('entity query classifies as entity', async () => {
+describe("hybridSearchCached \u2014 meta surfaces intent", () => {
+  test("entity query classifies as entity", async () => {
     let meta: HybridSearchMeta | undefined;
-    await hybridSearchCached(engine, 'who is alice-foo', {
+    await hybridSearchCached(engine, "who is alice-foo", {
       limit: 5,
-      onMeta: (m) => { meta = m; },
+      onMeta: (m) => {
+        meta = m;
+      },
     });
-    expect(meta?.intent).toBe('entity');
+    expect(meta?.intent).toBe("entity");
   });
 
-  test('temporal query classifies as temporal', async () => {
+  test("temporal query classifies as temporal", async () => {
     let meta: HybridSearchMeta | undefined;
-    await hybridSearchCached(engine, 'what happened last week', {
+    await hybridSearchCached(engine, "what happened last week", {
       limit: 5,
-      onMeta: (m) => { meta = m; },
+      onMeta: (m) => {
+        meta = m;
+      },
     });
-    expect(meta?.intent).toBe('temporal');
+    expect(meta?.intent).toBe("temporal");
   });
 
-  test('event query classifies as event', async () => {
+  test("event query classifies as event", async () => {
     let meta: HybridSearchMeta | undefined;
-    await hybridSearchCached(engine, 'who raised $10M', {
+    await hybridSearchCached(engine, "who raised $10M", {
       limit: 5,
-      onMeta: (m) => { meta = m; },
+      onMeta: (m) => {
+        meta = m;
+      },
     });
-    expect(meta?.intent).toBe('event');
+    expect(meta?.intent).toBe("event");
   });
 });
 
-describe('hybridSearchCached \u2014 token budget', () => {
-  test('budget undefined returns no token_budget meta (no cut)', async () => {
+describe("hybridSearchCached \u2014 token budget", () => {
+  test("budget undefined returns no token_budget meta (no cut)", async () => {
     let meta: HybridSearchMeta | undefined;
-    const results = await hybridSearchCached(engine, 'alice', {
+    const results = await hybridSearchCached(engine, "alice", {
       limit: 10,
-      onMeta: (m) => { meta = m; },
+      onMeta: (m) => {
+        meta = m;
+      },
     });
     // Don't assert non-empty here — keyword tokenization depends on the
     // pglite analyzer config. What matters: meta is shaped right and
@@ -110,32 +122,36 @@ describe('hybridSearchCached \u2014 token budget', () => {
     expect(meta?.token_budget).toBeUndefined();
   });
 
-  test('budget meta is always emitted when budget is set', async () => {
+  test("budget meta is always emitted when budget is set", async () => {
     let meta: HybridSearchMeta | undefined;
-    const results = await hybridSearchCached(engine, 'alice', {
+    const results = await hybridSearchCached(engine, "alice", {
       limit: 10,
       tokenBudget: 250,
-      onMeta: (m) => { meta = m; },
+      onMeta: (m) => {
+        meta = m;
+      },
     });
     expect(meta?.token_budget).toBeDefined();
     expect(meta?.token_budget?.budget).toBe(250);
     expect(meta?.token_budget?.kept).toBe(results.length);
   });
 
-  test('tight budget cuts the result set', async () => {
+  test("tight budget cuts the result set", async () => {
     // First find out the result count without a budget so the assertion
     // is robust to the fixture’s actual chunking.
-    const unbounded = await hybridSearchCached(engine, 'builder', { limit: 10 });
+    const unbounded = await hybridSearchCached(engine, "builder", { limit: 10 });
     // Skip the cut test if the fixture happens to return only one row
     // (keyword search may dedupe by page); the budget enforcement itself
     // is exhaustively unit-tested in test/token-budget.test.ts.
     if (unbounded.length < 2) return;
 
     let meta: HybridSearchMeta | undefined;
-    const results = await hybridSearchCached(engine, 'builder', {
+    const results = await hybridSearchCached(engine, "builder", {
       limit: 10,
-      tokenBudget: 250,  // enough for ~1 row of fixture data
-      onMeta: (m) => { meta = m; },
+      tokenBudget: 250, // enough for ~1 row of fixture data
+      onMeta: (m) => {
+        meta = m;
+      },
     });
     expect(meta?.token_budget?.budget).toBe(250);
     expect(meta?.token_budget?.kept).toBe(results.length);
@@ -145,41 +161,47 @@ describe('hybridSearchCached \u2014 token budget', () => {
   });
 });
 
-describe('hybridSearchCached \u2014 cache disabled fallback', () => {
-  test('keyword-only path emits cache.status=disabled', async () => {
+describe("hybridSearchCached \u2014 cache disabled fallback", () => {
+  test("keyword-only path emits cache.status=disabled", async () => {
     // No embedding available \u2192 cache decision degrades to disabled.
     let meta: HybridSearchMeta | undefined;
-    await hybridSearchCached(engine, 'who is alice-foo', {
+    await hybridSearchCached(engine, "who is alice-foo", {
       limit: 5,
-      onMeta: (m) => { meta = m; },
+      onMeta: (m) => {
+        meta = m;
+      },
     });
     // cache may be 'disabled' (no embedding provider) or 'miss'.
     // Either way the field exists.
     expect(meta?.cache).toBeDefined();
-    expect(['disabled', 'miss']).toContain(meta?.cache?.status ?? '');
+    expect(["disabled", "miss"]).toContain(meta?.cache?.status ?? "");
   });
 
-  test('useCache=false explicitly disables', async () => {
+  test("useCache=false explicitly disables", async () => {
     let meta: HybridSearchMeta | undefined;
-    await hybridSearchCached(engine, 'who is bob-bar', {
+    await hybridSearchCached(engine, "who is bob-bar", {
       limit: 5,
       useCache: false,
-      onMeta: (m) => { meta = m; },
+      onMeta: (m) => {
+        meta = m;
+      },
     });
-    expect(meta?.cache?.status).toBe('disabled');
+    expect(meta?.cache?.status).toBe("disabled");
   });
 });
 
-describe('hybridSearchCached \u2014 intent weighting toggle', () => {
-  test('intentWeighting=false still emits intent in meta (for visibility)', async () => {
+describe("hybridSearchCached \u2014 intent weighting toggle", () => {
+  test("intentWeighting=false still emits intent in meta (for visibility)", async () => {
     let meta: HybridSearchMeta | undefined;
-    await hybridSearchCached(engine, 'who is alice-foo', {
+    await hybridSearchCached(engine, "who is alice-foo", {
       limit: 5,
       intentWeighting: false,
-      onMeta: (m) => { meta = m; },
+      onMeta: (m) => {
+        meta = m;
+      },
     });
     // Intent classification itself still runs (cheap regex); only the
     // weight adjustment is disabled. So meta.intent stays populated.
-    expect(meta?.intent).toBe('entity');
+    expect(meta?.intent).toBe("entity");
   });
 });

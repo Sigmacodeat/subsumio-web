@@ -31,8 +31,8 @@ export type WorkerExitEvent = {
   code?: number | null;
 };
 
-export type WorkerExitClassification = 'crash' | 'clean_exit';
+export type WorkerExitClassification = "crash" | "clean_exit";
 
 export function classifyWorkerExit(event: WorkerExitEvent): WorkerExitClassification {
-  return event.code === 0 ? 'clean_exit' : 'crash';
+  return event.code === 0 ? "clean_exit" : "crash";
 }

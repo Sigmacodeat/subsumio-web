@@ -40,6 +40,7 @@ at anything other than `http://localhost:<port>` so the OAuth issuer in
 discovery metadata matches what clients hit (RFC 8414 §3.3).
 
 Supported clients:
+
 - **ChatGPT** — requires OAuth 2.1 + PKCE. Works natively with `--http`.
 - **Claude Desktop / Cowork** — OAuth 2.1 or legacy bearer tokens.
 - **Perplexity** — OAuth 2.1 client credentials grant.
@@ -57,6 +58,7 @@ Your AI client (Claude Desktop, Perplexity, etc.)
 ```
 
 This requires:
+
 1. A Postgres-backed brain (the `access_tokens` table only exists on Postgres;
    running `gbrain serve --http` against a PGLite install fails fast at startup)
 2. A machine running `gbrain serve --http`
@@ -139,10 +141,10 @@ Host-repo wrappers can register programmatically:
 
 ```ts
 await oauthProvider.registerClientManual(
-  'perplexity',
-  ['client_credentials'],
-  'read write',
-  [],  // redirect_uris, empty for CC
+  "perplexity",
+  ["client_credentials"],
+  "read write",
+  [] // redirect_uris, empty for CC
 );
 ```
 
@@ -180,11 +182,11 @@ Every operation is tagged `read | write | admin`. Four operations are
 `file_upload`, `file_list`, `file_url`. Remote agents cannot reach local
 filesystem surface area.
 
-| Scope | What it allows |
-|-------|---------------|
-| `read` | `search`, `query`, `get_page`, `list_pages`, graph traversal |
-| `write` | `put_page`, `delete_page`, `add_link`, `add_timeline_entry` |
-| `admin` | Client management, token revocation, sweep, local-only ops |
+| Scope   | What it allows                                               |
+| ------- | ------------------------------------------------------------ |
+| `read`  | `search`, `query`, `get_page`, `list_pages`, graph traversal |
+| `write` | `put_page`, `delete_page`, `add_link`, `add_timeline_entry`  |
+| `admin` | Client management, token revocation, sweep, local-only ops   |
 
 ## Legacy Bearer Token Setup
 
@@ -268,14 +270,14 @@ Remote servers must be added via Settings > Integrations, NOT
 
 ## Expected Latencies
 
-| Operation | Typical Latency | Notes |
-|-----------|----------------|-------|
-| get_page | < 100ms | Single DB query |
-| list_pages | < 200ms | DB query with filters |
-| search (keyword) | 100-300ms | Full-text search |
-| query (hybrid) | 1-3s | Embedding + vector + keyword + RRF |
-| put_page | 100-500ms | Write + trigger search_vector update |
-| get_stats | < 100ms | Aggregate query |
+| Operation        | Typical Latency | Notes                                |
+| ---------------- | --------------- | ------------------------------------ |
+| get_page         | < 100ms         | Single DB query                      |
+| list_pages       | < 200ms         | DB query with filters                |
+| search (keyword) | 100-300ms       | Full-text search                     |
+| query (hybrid)   | 1-3s            | Embedding + vector + keyword + RRF   |
+| put_page         | 100-500ms       | Write + trigger search_vector update |
+| get_stats        | < 100ms         | Aggregate query                      |
 
 **Note:** `gbrain serve --http` shipped in v0.26.0 with OAuth 2.1 + admin
 dashboard baked into the binary. The custom HTTP wrapper pattern (see

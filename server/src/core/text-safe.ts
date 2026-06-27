@@ -40,7 +40,7 @@ function isLowSurrogate(code: number): boolean {
  * faces the same multi-byte concern.
  */
 export function truncateUtf8(text: string, maxChars: number): string {
-  if (!text) return '';
+  if (!text) return "";
   if (text.length <= maxChars) return text;
   return text.slice(0, Math.max(0, safeSplitIndex(text, maxChars)));
 }

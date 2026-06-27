@@ -6,8 +6,8 @@
 //
 // Hermetic: no engine, no PGLite, no env mutation, no DATABASE_URL.
 
-import { describe, expect, test } from 'bun:test';
-import { withRetry, RetryAbortError } from '../../src/core/retry.ts';
+import { describe, expect, test } from "bun:test";
+import { withRetry, RetryAbortError } from "../../src/core/retry.ts";
 
 class FakeGBrainError extends Error {
   problem: string;
@@ -19,8 +19,8 @@ class FakeGBrainError extends Error {
   }
 }
 
-describe('withRetry reconnect callback (v0.41.25.0)', () => {
-  test('calls reconnect AFTER classification + onRetry, BEFORE sleep', async () => {
+describe("withRetry reconnect callback (v0.41.25.0)", () => {
+  test("calls reconnect AFTER classification + onRetry, BEFORE sleep", async () => {
     // Record the order of side effects so the contract is pinned: classifier
     // result determines reconnect, onRetry observes the retry intent, then
     // reconnect rebuilds state, THEN the inter-attempt sleep happens.
@@ -32,58 +32,64 @@ describe('withRetry reconnect callback (v0.41.25.0)', () => {
         attempts++;
         order.push(`fn-attempt-${attempts}`);
         if (attempts === 1) {
-          throw new FakeGBrainError('No database connection', 'connect() has not been called');
+          throw new FakeGBrainError("No database connection", "connect() has not been called");
         }
-        return 'recovered';
+        return "recovered";
       },
       {
         delayMs: 30, // small but observable sleep
-        onRetry: () => { order.push('onRetry'); },
-        reconnect: async () => { order.push('reconnect-start'); await new Promise(r => setTimeout(r, 1)); order.push('reconnect-end'); },
-      },
+        onRetry: () => {
+          order.push("onRetry");
+        },
+        reconnect: async () => {
+          order.push("reconnect-start");
+          await new Promise((r) => setTimeout(r, 1));
+          order.push("reconnect-end");
+        },
+      }
     );
     const elapsed = Date.now() - start;
-    expect(result).toBe('recovered');
+    expect(result).toBe("recovered");
     expect(attempts).toBe(2);
     // Required order: first attempt fails -> onRetry -> reconnect -> sleep -> second attempt
     expect(order).toEqual([
-      'fn-attempt-1',
-      'onRetry',
-      'reconnect-start',
-      'reconnect-end',
-      'fn-attempt-2',
+      "fn-attempt-1",
+      "onRetry",
+      "reconnect-start",
+      "reconnect-end",
+      "fn-attempt-2",
     ]);
     // Sleep happened (delayMs=30) so elapsed must be at least delayMs + reconnect
     expect(elapsed).toBeGreaterThanOrEqual(30);
   });
 
-  test('does NOT call reconnect when opts.reconnect is undefined (back-compat)', async () => {
+  test("does NOT call reconnect when opts.reconnect is undefined (back-compat)", async () => {
     // Existing call sites that don't opt in must see identical v0.41.18.0 behavior.
     let attempts = 0;
     const result = await withRetry(
       async () => {
         attempts++;
-        if (attempts === 1) throw new Error('Connection terminated unexpectedly');
-        return 'ok';
+        if (attempts === 1) throw new Error("Connection terminated unexpectedly");
+        return "ok";
       },
-      { delayMs: 0 },
+      { delayMs: 0 }
     );
-    expect(result).toBe('ok');
+    expect(result).toBe("ok");
     expect(attempts).toBe(2);
   });
 
-  test('reconnect failure PROPAGATES as the new error (codex finding 3 fail-loud)', async () => {
+  test("reconnect failure PROPAGATES as the new error (codex finding 3 fail-loud)", async () => {
     // The reconnect helper itself throwing means the underlying problem
     // isn't transient — DB really down, auth failed, etc. Operators want
     // to see THAT error, not the masking "No database connection" symptom.
     let attempts = 0;
     let reconnectCalls = 0;
-    const realCause = new Error('AuthError: invalid credentials');
+    const realCause = new Error("AuthError: invalid credentials");
     await expect(
       withRetry(
         async () => {
           attempts++;
-          throw new FakeGBrainError('No database connection', 'connect() has not been called');
+          throw new FakeGBrainError("No database connection", "connect() has not been called");
         },
         {
           delayMs: 0,
@@ -92,15 +98,15 @@ describe('withRetry reconnect callback (v0.41.25.0)', () => {
             reconnectCalls++;
             throw realCause;
           },
-        },
-      ),
-    ).rejects.toThrow('AuthError: invalid credentials');
+        }
+      )
+    ).rejects.toThrow("AuthError: invalid credentials");
     // First attempt threw, then reconnect threw immediately — no further attempts.
     expect(attempts).toBe(1);
     expect(reconnectCalls).toBe(1);
   });
 
-  test('signal.aborted BEFORE reconnect call short-circuits with RetryAbortError', async () => {
+  test("signal.aborted BEFORE reconnect call short-circuits with RetryAbortError", async () => {
     const ctrl = new AbortController();
     let attempts = 0;
     let reconnectCalls = 0;
@@ -110,21 +116,23 @@ describe('withRetry reconnect callback (v0.41.25.0)', () => {
         async () => {
           attempts++;
           ctrl.abort(); // fire abort right when the retryable error throws
-          throw new FakeGBrainError('No database connection', 'x');
+          throw new FakeGBrainError("No database connection", "x");
         },
         {
           delayMs: 30,
           signal: ctrl.signal,
-          reconnect: async () => { reconnectCalls++; },
-        },
-      ),
+          reconnect: async () => {
+            reconnectCalls++;
+          },
+        }
+      )
     ).rejects.toBeInstanceOf(RetryAbortError);
     expect(attempts).toBe(1);
     // Reconnect MUST NOT fire after abort — clean shutdown takes priority.
     expect(reconnectCalls).toBe(0);
   });
 
-  test('onRetry is now awaited (back-compat-safe for sync arrows)', async () => {
+  test("onRetry is now awaited (back-compat-safe for sync arrows)", async () => {
     // An async onRetry taking 50ms should delay the inter-attempt sleep by
     // 50ms. v0.41.18.0 fire-and-forget would have lost that delay.
     let attempts = 0;
@@ -132,13 +140,15 @@ describe('withRetry reconnect callback (v0.41.25.0)', () => {
     await withRetry(
       async () => {
         attempts++;
-        if (attempts === 1) throw new Error('Connection terminated unexpectedly');
-        return 'ok';
+        if (attempts === 1) throw new Error("Connection terminated unexpectedly");
+        return "ok";
       },
       {
         delayMs: 0, // sleep itself is 0
-        onRetry: async () => { await new Promise(r => setTimeout(r, 50)); },
-      },
+        onRetry: async () => {
+          await new Promise((r) => setTimeout(r, 50));
+        },
+      }
     );
     const elapsed = Date.now() - start;
     expect(attempts).toBe(2);

@@ -5,6 +5,7 @@ description: Optimiere Frontend / Marketing Pages nach Agency-Level Standards
 # Frontend / Marketing Optimization
 
 ## Scope
+
 - `src/app/` — alle Public Pages (landing, pricing, login, signup, forgot, reset, features, partners, imprint, privacy, terms, security, download, whatsapp, subsumio)
 - `src/app/de/` — deutsche Lokalisierung
 - `src/components/marketing/` — Marketing-Komponenten
@@ -14,6 +15,7 @@ description: Optimiere Frontend / Marketing Pages nach Agency-Level Standards
 - `src/app/globals.css` — Globale Styles
 
 ## Kontext laden
+
 1. Lese `src/app/layout.tsx` für Root-Layout & Provider
 2. Lese `src/app/page.tsx` für Landing Page
 3. Lese `src/content/*.ts` für alle Content-Quellen
@@ -21,6 +23,7 @@ description: Optimiere Frontend / Marketing Pages nach Agency-Level Standards
 5. Lese `src/app/globals.css` für Design-Tokens
 
 ## Optimierungs-Checkliste
+
 - [ ] **Performance**: LCP < 2.5s, CLS < 0.1, INP < 200ms
 - [ ] **SEO**: Meta-Tags, OpenGraph, structured data (JSON-LD), sitemap.xml, robots.txt
 - [ ] **Accessibility**: WCAG 2.1 AA, ARIA-Labels, Keyboard-Navigation, Focus-States
@@ -33,6 +36,7 @@ description: Optimiere Frontend / Marketing Pages nach Agency-Level Standards
 - [ ] **Fonts**: Next.js Font Optimization, display=swap
 
 ## Test-Befehle
+
 ```bash
 # Lighthouse Audit
 npx lighthouse http://localhost:3000 --output html --output-path ./lighthouse-report.html
@@ -48,6 +52,7 @@ npx eslint src/app/ src/components/marketing/ src/content/
 ```
 
 ## Agency-Level Standards
+
 - **Hero Section**: Klare Value Proposition, CTA above the fold, Social Proof
 - **Feature Sections**: Benefit-driven Headlines, Icons aus Lucide, konsistente Card-Layouts
 - **Social Proof**: Testimonials mit Avatar+Name+Rolle, Logos der Partner

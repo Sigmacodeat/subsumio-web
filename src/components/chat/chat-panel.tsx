@@ -426,7 +426,15 @@ export interface ChatPanelHandle {
 }
 
 export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function ChatPanel(
-  { context = { type: "global" }, features, persistHistory = true, className, title, initialQuery, placeholder },
+  {
+    context = { type: "global" },
+    features,
+    persistHistory = true,
+    className,
+    title,
+    initialQuery,
+    placeholder,
+  },
   ref
 ) {
   const { t, lang } = useLang();

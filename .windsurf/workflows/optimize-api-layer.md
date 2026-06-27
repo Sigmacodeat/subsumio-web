@@ -5,6 +5,7 @@ description: Optimiere API Layer / Next.js API Routes nach Agency-Level Standard
 # API Layer Optimization
 
 ## Scope
+
 - `src/app/api/` — 97 API Routes (auth, legal, dms, docusign, billing, connectors, etc.)
 - `src/lib/api.ts` — Client-side API Wrapper
 - `src/lib/engine-proxy.ts` — Engine Proxy für Server-side Engine Calls
@@ -12,6 +13,7 @@ description: Optimiere API Layer / Next.js API Routes nach Agency-Level Standard
 - `src/middleware.ts` — Next.js Middleware (Auth, CSRF, Rate-Limiting)
 
 ## API Route Kategorien
+
 - **Auth**: `/api/auth/*` (13 Routes) — Login, Logout, 2FA, Signup, Reset, OAuth
 - **Legal**: `/api/legal/*` (16 Routes) — AI-Deadlines, Analyze, Anonymize, Conflict-Check, Contract-Draft/Redline, Document-Review, Due-Diligence, Judgements, Memo, Risk-Analysis, RVG, Statute, Summarize, Tabular-Review
 - **DMS**: `/api/dms/*` (3 Routes) — Document Management
@@ -25,6 +27,7 @@ description: Optimiere API Layer / Next.js API Routes nach Agency-Level Standard
 - **Core**: stats, search, pages, graph, queries, think, upload, usage, health, audit, comments, approvals, agents, api-keys, team, settings, whatsapp, webhook, marketing-agent, rag-eval, demo, data-export, 2fa, brains
 
 ## Kontext laden
+
 1. Lese `src/middleware.ts` für Auth & Security Pipeline
 2. Lese `src/lib/engine-proxy.ts` für Engine-Proxy Pattern
 3. Lese `src/lib/api.ts` für Client-side API Patterns
@@ -34,6 +37,7 @@ description: Optimiere API Layer / Next.js API Routes nach Agency-Level Standard
 7. Lese `src/lib/audit.ts` für Audit-Logging
 
 ## Optimierungs-Checkliste
+
 - [ ] **Auth**: Jede Route prüft Session, Role, Permissions
 - [ ] **Input Validation**: Zod-Schema für jeden Request Body / Query Params
 - [ ] **Error Handling**: Konsistente Error-Responses ({ error: string, code: string })
@@ -48,6 +52,7 @@ description: Optimiere API Layer / Next.js API Routes nach Agency-Level Standard
 - [ ] **Webhooks**: Signature-Verification, Idempotency, Retry-Logic
 
 ## Test-Befehle
+
 ```bash
 # API Route Tests
 npx vitest run src/lib/*.test.ts
@@ -63,6 +68,7 @@ npx eslint src/app/api/ src/lib/
 ```
 
 ## Agency-Level Standards
+
 - **Route Handler Pattern**: `export async function POST(req: NextRequest) { ... }`
 - **Validation**: Zod-Schema → `schema.parse(body)` → typed handler
 - **Error Response**: `{ error: "Human readable", code: "MACHINE_CODE", details?: {} }`

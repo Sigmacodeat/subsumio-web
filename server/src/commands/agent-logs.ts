@@ -10,11 +10,11 @@
  * No new DB tables; all the infrastructure landed in prior Lane commits.
  */
 
-import type { BrainEngine } from '../core/engine.ts';
-import { readSubagentAuditForJob } from '../core/minions/handlers/subagent-audit.ts';
-import type { SubagentAuditEvent } from '../core/minions/handlers/subagent-audit.ts';
-import { loadTranscriptRows, renderTranscript } from '../core/minions/transcript.ts';
-import type { SubagentMessageRow } from '../core/minions/transcript.ts';
+import type { BrainEngine } from "../core/engine.ts";
+import { readSubagentAuditForJob } from "../core/minions/handlers/subagent-audit.ts";
+import type { SubagentAuditEvent } from "../core/minions/handlers/subagent-audit.ts";
+import { loadTranscriptRows, renderTranscript } from "../core/minions/transcript.ts";
+import type { SubagentMessageRow } from "../core/minions/transcript.ts";
 
 export interface AgentLogsOpts {
   follow?: boolean;
@@ -28,14 +28,18 @@ export interface AgentLogsOpts {
   signal?: AbortSignal;
 }
 
-const TERMINAL_STATUSES = new Set(['completed', 'failed', 'dead', 'cancelled']);
+const TERMINAL_STATUSES = new Set(["completed", "failed", "dead", "cancelled"]);
 
 export async function runAgentLogs(
   engine: BrainEngine,
   jobId: number,
-  opts: AgentLogsOpts = {},
+  opts: AgentLogsOpts = {}
 ): Promise<void> {
-  const write = opts.write ?? ((s: string) => { process.stdout.write(s); });
+  const write =
+    opts.write ??
+    ((s: string) => {
+      process.stdout.write(s);
+    });
   const sinceIso = parseSince(opts.since);
 
   // Seeded render: dump everything we have right now.
@@ -66,7 +70,7 @@ async function dumpSince(
   engine: BrainEngine,
   jobId: number,
   sinceIso: string | undefined,
-  write: (s: string) => void,
+  write: (s: string) => void
 ): Promise<string | undefined> {
   const audit = readSubagentAuditForJob(jobId, sinceIso ? { sinceIso } : {});
   const { messages, tools } = await loadTranscriptRows(engine, jobId);
@@ -98,9 +102,9 @@ async function dumpSince(
   if (messages.length > 0 && !sinceIso) {
     const status = await readJobStatus(engine, jobId);
     if (status && TERMINAL_STATUSES.has(status)) {
-      write('\n');
+      write("\n");
       write(renderTranscript(messages, tools));
-      write('\n');
+      write("\n");
     }
   }
 
@@ -108,8 +112,8 @@ async function dumpSince(
 }
 
 function formatAudit(e: SubagentAuditEvent): string {
-  if (e.type === 'submission') {
-    return `[submission] ${e.caller} model=${e.model ?? '?'} tools=${e.tools_count ?? 0}`;
+  if (e.type === "submission") {
+    return `[submission] ${e.caller} model=${e.model ?? "?"} tools=${e.tools_count ?? 0}`;
   }
   // heartbeat
   const parts = [`[${e.event}]`, `turn=${e.turn_idx}`];
@@ -122,22 +126,24 @@ function formatAudit(e: SubagentAuditEvent): string {
       t.out ? `out=${t.out}` : null,
       t.cache_read ? `cache_read=${t.cache_read}` : null,
       t.cache_create ? `cache_create=${t.cache_create}` : null,
-    ].filter(Boolean).join(' ');
+    ]
+      .filter(Boolean)
+      .join(" ");
     if (tokStr) parts.push(`tokens(${tokStr})`);
   }
   if (e.error) parts.push(`error="${e.error.slice(0, 100)}"`);
-  return parts.join(' ');
+  return parts.join(" ");
 }
 
 function formatMessage(m: SubagentMessageRow): string {
-  const blockTypes = m.content_blocks.map(b => b.type).join(',');
-  return `[message #${m.message_idx} ${m.role}] blocks=${blockTypes || '(empty)'}`;
+  const blockTypes = m.content_blocks.map((b) => b.type).join(",");
+  return `[message #${m.message_idx} ${m.role}] blocks=${blockTypes || "(empty)"}`;
 }
 
 async function readJobStatus(engine: BrainEngine, jobId: number): Promise<string | null> {
   const rows = await engine.executeRaw<{ status: string }>(
     `SELECT status FROM minion_jobs WHERE id = $1`,
-    [jobId],
+    [jobId]
   );
   return rows[0]?.status ?? null;
 }
@@ -154,26 +160,32 @@ export function parseSince(input: string | undefined): string | undefined {
     const [, nStr, unitRaw] = rel;
     const unit = unitRaw!.toLowerCase();
     const n = parseInt(nStr!, 10);
-    const mult = unit === 's' ? 1000
-      : unit === 'm' ? 60_000
-      : unit === 'h' ? 3_600_000
-      : 86_400_000; // 'd'
+    const mult =
+      unit === "s" ? 1000 : unit === "m" ? 60_000 : unit === "h" ? 3_600_000 : 86_400_000; // 'd'
     return new Date(Date.now() - n * mult).toISOString();
   }
   // Assume ISO. `new Date(input).toISOString()` both validates and
   // normalizes; invalid ISO throws.
   const d = new Date(trimmed);
   if (isNaN(d.getTime())) {
-    throw new Error(`--since: could not parse "${input}" as ISO-8601 or relative (e.g. "5m", "1h")`);
+    throw new Error(
+      `--since: could not parse "${input}" as ISO-8601 or relative (e.g. "5m", "1h")`
+    );
   }
   return d.toISOString();
 }
 
 function sleep(ms: number, signal?: AbortSignal): Promise<void> {
   return new Promise((resolve) => {
-    const t = setTimeout(() => { signal?.removeEventListener('abort', onAbort); resolve(); }, ms);
-    const onAbort = () => { clearTimeout(t); resolve(); };
-    signal?.addEventListener('abort', onAbort, { once: true });
+    const t = setTimeout(() => {
+      signal?.removeEventListener("abort", onAbort);
+      resolve();
+    }, ms);
+    const onAbort = () => {
+      clearTimeout(t);
+      resolve();
+    };
+    signal?.addEventListener("abort", onAbort, { once: true });
   });
 }
 

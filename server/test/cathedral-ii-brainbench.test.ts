@@ -16,11 +16,11 @@
  * v0.19.0's grep-class baseline.
  */
 
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
-import { PGLiteEngine } from '../src/core/pglite-engine.ts';
-import { importCodeFile } from '../src/core/import-file.ts';
+import { describe, test, expect, beforeAll, afterAll } from "bun:test";
+import { PGLiteEngine } from "../src/core/pglite-engine.ts";
+import { importCodeFile } from "../src/core/import-file.ts";
 
-describe('Cathedral II BrainBench — call_graph_recall', () => {
+describe("Cathedral II BrainBench — call_graph_recall", () => {
   let engine: PGLiteEngine;
 
   beforeAll(async () => {
@@ -31,18 +31,12 @@ describe('Cathedral II BrainBench — call_graph_recall', () => {
     // Import two related files. A calls helper; B defines helper.
     // Layer 5 edge extraction should capture the calls edge from A's
     // body to 'helper'.
-    await importCodeFile(
-      engine,
-      'src/a.ts',
-      'export function runner() { return helper(); }\n',
-      { noEmbed: true },
-    );
-    await importCodeFile(
-      engine,
-      'src/b.ts',
-      'export function helper() { return 42; }\n',
-      { noEmbed: true },
-    );
+    await importCodeFile(engine, "src/a.ts", "export function runner() { return helper(); }\n", {
+      noEmbed: true,
+    });
+    await importCodeFile(engine, "src/b.ts", "export function helper() { return 42; }\n", {
+      noEmbed: true,
+    });
   });
 
   afterAll(async () => {
@@ -50,35 +44,33 @@ describe('Cathedral II BrainBench — call_graph_recall', () => {
   }, 30_000);
 
   test('getCallersOf("helper") returns runner as a caller', async () => {
-    const results = await engine.getCallersOf('helper', { allSources: true });
+    const results = await engine.getCallersOf("helper", { allSources: true });
     expect(results.length).toBeGreaterThanOrEqual(1);
-    const fromRunner = results.find(r => r.from_symbol_qualified === 'runner');
+    const fromRunner = results.find((r) => r.from_symbol_qualified === "runner");
     expect(fromRunner).toBeDefined();
-    expect(fromRunner!.edge_type).toBe('calls');
+    expect(fromRunner!.edge_type).toBe("calls");
   });
 
   test('getCalleesOf("runner") returns helper as a callee', async () => {
-    const results = await engine.getCalleesOf('runner', { allSources: true });
+    const results = await engine.getCalleesOf("runner", { allSources: true });
     expect(results.length).toBeGreaterThanOrEqual(1);
-    const toHelper = results.find(r => r.to_symbol_qualified === 'helper');
+    const toHelper = results.find((r) => r.to_symbol_qualified === "helper");
     expect(toHelper).toBeDefined();
   });
 
-  test('re-importing the same file is idempotent (no duplicate edges)', async () => {
-    const before = await engine.getCallersOf('helper', { allSources: true });
-    await importCodeFile(
-      engine,
-      'src/a.ts',
-      'export function runner() { return helper(); }\n',
-      { noEmbed: true, force: true },
-    );
-    const after = await engine.getCallersOf('helper', { allSources: true });
+  test("re-importing the same file is idempotent (no duplicate edges)", async () => {
+    const before = await engine.getCallersOf("helper", { allSources: true });
+    await importCodeFile(engine, "src/a.ts", "export function runner() { return helper(); }\n", {
+      noEmbed: true,
+      force: true,
+    });
+    const after = await engine.getCallersOf("helper", { allSources: true });
     // Per-chunk invalidation wipes then re-writes, so counts should match.
     expect(after.length).toBe(before.length);
   });
 });
 
-describe('Cathedral II BrainBench — parent_scope_coverage', () => {
+describe("Cathedral II BrainBench — parent_scope_coverage", () => {
   let engine: PGLiteEngine;
 
   beforeAll(async () => {
@@ -91,13 +83,13 @@ describe('Cathedral II BrainBench — parent_scope_coverage', () => {
     // parentSymbolPath [ClassName].
     await importCodeFile(
       engine,
-      'src/brain.ts',
+      "src/brain.ts",
       `export class BrainEngine {
   searchKeyword(q: string) { return q; }
   searchVector(emb: Float32Array) { return emb; }
 }
 `,
-      { noEmbed: true },
+      { noEmbed: true }
     );
   });
 
@@ -105,25 +97,25 @@ describe('Cathedral II BrainBench — parent_scope_coverage', () => {
     await engine.disconnect();
   }, 30_000);
 
-  test('nested method chunks persist parent_symbol_path', async () => {
-    const chunks = await engine.getChunks('src-brain-ts');
+  test("nested method chunks persist parent_symbol_path", async () => {
+    const chunks = await engine.getChunks("src-brain-ts");
     expect(chunks.length).toBeGreaterThanOrEqual(3);
 
-    const method = chunks.find(c => c.symbol_name === 'searchKeyword');
+    const method = chunks.find((c) => c.symbol_name === "searchKeyword");
     expect(method).toBeDefined();
-    expect(method!.parent_symbol_path).toEqual(['BrainEngine']);
+    expect(method!.parent_symbol_path).toEqual(["BrainEngine"]);
 
-    const klass = chunks.find(c => c.symbol_name === 'BrainEngine');
+    const klass = chunks.find((c) => c.symbol_name === "BrainEngine");
     expect(klass).toBeDefined();
     // Class-level chunk: parent_symbol_path is null / empty (top-level).
     const klassPath = klass!.parent_symbol_path as string[] | null;
     expect(klassPath == null || klassPath.length === 0).toBe(true);
   });
 
-  test('qualified symbol name resolves for nested methods', async () => {
-    const chunks = await engine.getChunks('src-brain-ts');
-    const method = chunks.find(c => c.symbol_name === 'searchKeyword');
-    expect(method!.symbol_name_qualified).toBe('BrainEngine.searchKeyword');
+  test("qualified symbol name resolves for nested methods", async () => {
+    const chunks = await engine.getChunks("src-brain-ts");
+    const method = chunks.find((c) => c.symbol_name === "searchKeyword");
+    expect(method!.symbol_name_qualified).toBe("BrainEngine.searchKeyword");
   });
 
   test('getCallersOf("searchKeyword") matches the bare short name', async () => {
@@ -131,16 +123,16 @@ describe('Cathedral II BrainBench — parent_scope_coverage', () => {
     // short-name match path (Layer 5's unresolved capture).
     await importCodeFile(
       engine,
-      'src/caller.ts',
+      "src/caller.ts",
       `import { BrainEngine } from './brain';
 function demo() {
   const e = new BrainEngine();
   return e.searchKeyword('hi');
 }
 `,
-      { noEmbed: true },
+      { noEmbed: true }
     );
-    const callers = await engine.getCallersOf('searchKeyword', { allSources: true });
+    const callers = await engine.getCallersOf("searchKeyword", { allSources: true });
     expect(callers.length).toBeGreaterThanOrEqual(1);
   });
 });

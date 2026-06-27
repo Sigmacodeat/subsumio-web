@@ -64,8 +64,10 @@ export default function RetentionPage() {
       if (!cancelled) setLoading(false);
     }
     load();
-    return () => { cancelled = true; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const toReview = cases.filter((c) => c.action === "review");

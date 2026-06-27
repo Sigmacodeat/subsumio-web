@@ -40,27 +40,27 @@ export const DEFAULT_RECENCY_DECAY: RecencyDecayMap = {
   // Evergreen (curated, opinion, knowledge artifacts) — no decay.
   // concepts/ is the canonical evergreen tier; originals/ + writing/ get
   // long-tail decay so freshly-published essays do see a small nudge.
-  'concepts/':       { halflifeDays:   0, coefficient: 0   },
-  'originals/':      { halflifeDays: 180, coefficient: 0.5 },
-  'writing/':        { halflifeDays: 365, coefficient: 0.4 },
+  "concepts/": { halflifeDays: 0, coefficient: 0 },
+  "originals/": { halflifeDays: 180, coefficient: 0.5 },
+  "writing/": { halflifeDays: 365, coefficient: 0.4 },
 
   // Time-bound personal records — strongest decay, biggest coefficient.
   // The user is asking "what was on my plate this week" / "what did we
   // discuss in our 1:1"; freshness IS the signal.
-  'daily/':          { halflifeDays:  14, coefficient: 1.5 },
-  'meetings/':       { halflifeDays:  60, coefficient: 1.0 },
+  "daily/": { halflifeDays: 14, coefficient: 1.5 },
+  "meetings/": { halflifeDays: 60, coefficient: 1.0 },
 
   // Bulk feeds — generic prefixes only. Real fork names go in user
   // gbrain.yml, never in shipped defaults.
-  'chat/':           { halflifeDays:   7, coefficient: 1.0 },
-  'media/x/':        { halflifeDays:   7, coefficient: 1.5 },
-  'media/articles/': { halflifeDays:  90, coefficient: 0.5 },
+  "chat/": { halflifeDays: 7, coefficient: 1.0 },
+  "media/x/": { halflifeDays: 7, coefficient: 1.5 },
+  "media/articles/": { halflifeDays: 90, coefficient: 0.5 },
 
   // Entities — slow decay (a deal from 2 years ago is still relevant
   // to a current portfolio query; less so to "what's new lately").
-  'people/':         { halflifeDays: 365, coefficient: 0.3 },
-  'companies/':      { halflifeDays: 365, coefficient: 0.3 },
-  'deals/':          { halflifeDays: 180, coefficient: 0.5 },
+  "people/": { halflifeDays: 365, coefficient: 0.3 },
+  "companies/": { halflifeDays: 365, coefficient: 0.3 },
+  "deals/": { halflifeDays: 180, coefficient: 0.5 },
 };
 
 /** Fallback applied to slugs that don't match any default or override prefix. */
@@ -71,9 +71,12 @@ export const DEFAULT_FALLBACK: RecencyDecayConfig = {
 
 /** Sentinel error thrown by parsers; CLI catches it and exits with a useful message. */
 export class RecencyDecayParseError extends Error {
-  constructor(message: string, public readonly source: 'env' | 'yaml' | 'caller') {
+  constructor(
+    message: string,
+    public readonly source: "env" | "yaml" | "caller"
+  ) {
     super(message);
-    this.name = 'RecencyDecayParseError';
+    this.name = "RecencyDecayParseError";
   }
 }
 
@@ -90,24 +93,27 @@ export class RecencyDecayParseError extends Error {
 export function parseRecencyDecayEnv(env: string | undefined): RecencyDecayMap {
   if (!env) return {};
   const out: RecencyDecayMap = {};
-  const triples = env.split(',').map(s => s.trim()).filter(Boolean);
+  const triples = env
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
   for (const triple of triples) {
     // Prefix can't contain `:` because the field separator is `:`. We split
     // on the FIRST and SECOND `:` from the right so the prefix may safely
     // contain `/` etc. but NOT colons.
-    const lastIdx = triple.lastIndexOf(':');
+    const lastIdx = triple.lastIndexOf(":");
     if (lastIdx <= 0) {
       throw new RecencyDecayParseError(
         `Invalid GBRAIN_RECENCY_DECAY entry "${triple}": expected prefix:halflife:coefficient`,
-        'env',
+        "env"
       );
     }
     const beforeLast = triple.slice(0, lastIdx);
-    const middleIdx = beforeLast.lastIndexOf(':');
+    const middleIdx = beforeLast.lastIndexOf(":");
     if (middleIdx <= 0) {
       throw new RecencyDecayParseError(
         `Invalid GBRAIN_RECENCY_DECAY entry "${triple}": expected prefix:halflife:coefficient`,
-        'env',
+        "env"
       );
     }
     const prefix = triple.slice(0, middleIdx).trim();
@@ -116,18 +122,21 @@ export function parseRecencyDecayEnv(env: string | undefined): RecencyDecayMap {
     const halflife = Number.parseFloat(halflifeRaw);
     const coefficient = Number.parseFloat(coefficientRaw);
     if (!prefix) {
-      throw new RecencyDecayParseError(`Empty prefix in GBRAIN_RECENCY_DECAY entry "${triple}"`, 'env');
+      throw new RecencyDecayParseError(
+        `Empty prefix in GBRAIN_RECENCY_DECAY entry "${triple}"`,
+        "env"
+      );
     }
     if (!Number.isFinite(halflife) || halflife < 0) {
       throw new RecencyDecayParseError(
         `Invalid halflifeDays "${halflifeRaw}" in GBRAIN_RECENCY_DECAY (must be number >= 0; 0 = evergreen)`,
-        'env',
+        "env"
       );
     }
     if (!Number.isFinite(coefficient) || coefficient < 0) {
       throw new RecencyDecayParseError(
         `Invalid coefficient "${coefficientRaw}" in GBRAIN_RECENCY_DECAY (must be number >= 0)`,
-        'env',
+        "env"
       );
     }
     out[prefix] = { halflifeDays: halflife, coefficient };
@@ -146,19 +155,22 @@ export function parseRecencyDecayEnv(env: string | undefined): RecencyDecayMap {
  */
 export function parseRecencyDecayYaml(parsed: unknown): RecencyDecayMap {
   if (parsed == null) return {};
-  if (typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+  if (typeof parsed !== "object" || Array.isArray(parsed)) return {};
   const obj = parsed as Record<string, unknown>;
   const recency = obj.recency;
   if (recency == null) return {};
-  if (typeof recency !== 'object' || Array.isArray(recency)) {
-    throw new RecencyDecayParseError(`gbrain.yml recency: must be a map, got ${typeof recency}`, 'yaml');
+  if (typeof recency !== "object" || Array.isArray(recency)) {
+    throw new RecencyDecayParseError(
+      `gbrain.yml recency: must be a map, got ${typeof recency}`,
+      "yaml"
+    );
   }
   const out: RecencyDecayMap = {};
   for (const [prefix, raw] of Object.entries(recency as Record<string, unknown>)) {
-    if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
+    if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
       throw new RecencyDecayParseError(
         `gbrain.yml recency."${prefix}" must be an object with halflifeDays + coefficient`,
-        'yaml',
+        "yaml"
       );
     }
     const cfg = raw as Record<string, unknown>;
@@ -167,13 +179,13 @@ export function parseRecencyDecayYaml(parsed: unknown): RecencyDecayMap {
     if (!Number.isFinite(halflife) || halflife < 0) {
       throw new RecencyDecayParseError(
         `gbrain.yml recency."${prefix}".halflifeDays invalid (must be number >= 0)`,
-        'yaml',
+        "yaml"
       );
     }
     if (!Number.isFinite(coefficient) || coefficient < 0) {
       throw new RecencyDecayParseError(
         `gbrain.yml recency."${prefix}".coefficient invalid (must be number >= 0)`,
-        'yaml',
+        "yaml"
       );
     }
     out[prefix] = { halflifeDays: halflife, coefficient };
@@ -185,11 +197,13 @@ export function parseRecencyDecayYaml(parsed: unknown): RecencyDecayMap {
  * Merge defaults + yaml + env + caller-supplied overrides into the effective
  * decay map. Later sources win. Empty entries are dropped.
  */
-export function resolveRecencyDecayMap(opts: {
-  yaml?: unknown;
-  envValue?: string;
-  caller?: RecencyDecayMap;
-} = {}): RecencyDecayMap {
+export function resolveRecencyDecayMap(
+  opts: {
+    yaml?: unknown;
+    envValue?: string;
+    caller?: RecencyDecayMap;
+  } = {}
+): RecencyDecayMap {
   const fromYaml = opts.yaml !== undefined ? parseRecencyDecayYaml(opts.yaml) : {};
   const fromEnv = parseRecencyDecayEnv(opts.envValue ?? process.env.GBRAIN_RECENCY_DECAY);
   return {

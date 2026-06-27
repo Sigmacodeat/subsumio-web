@@ -26,11 +26,11 @@
  * table. Follows the code-def / code-refs pattern.
  */
 
-import type { BrainEngine } from '../core/engine.ts';
-import { errorFor, serializeError } from '../core/errors.ts';
-import { resolveScopedSourceOrThrow, SourceResolutionError } from '../core/sources-ops.ts';
-import { formatSoleNonDefaultNudge } from '../core/source-resolver.ts';
-import { resolveCodeReadiness, readinessHint } from '../core/code-graph-readiness.ts';
+import type { BrainEngine } from "../core/engine.ts";
+import { errorFor, serializeError } from "../core/errors.ts";
+import { resolveScopedSourceOrThrow, SourceResolutionError } from "../core/sources-ops.ts";
+import { formatSoleNonDefaultNudge } from "../core/source-resolver.ts";
+import { resolveCodeReadiness, readinessHint } from "../core/code-graph-readiness.ts";
 
 /** A bad/invalid `.gbrain-source` pin or GBRAIN_SOURCE value surfaces from
  * `resolveSourceWithTier`'s `assertSourceExists` as a plain Error with one of
@@ -39,9 +39,11 @@ import { resolveCodeReadiness, readinessHint } from '../core/code-graph-readines
 function isResolverUserError(e: unknown): boolean {
   if (!(e instanceof Error)) return false;
   const m = e.message;
-  return (m.startsWith('Source "') && m.includes(' not found.'))
-    || m.startsWith('Invalid --source value')
-    || m.startsWith('Invalid GBRAIN_SOURCE value');
+  return (
+    (m.startsWith('Source "') && m.includes(" not found.")) ||
+    m.startsWith("Invalid --source value") ||
+    m.startsWith("Invalid GBRAIN_SOURCE value")
+  );
 }
 
 function parseFlag(args: string[], name: string): string | undefined {
@@ -50,20 +52,20 @@ function parseFlag(args: string[], name: string): string | undefined {
 }
 
 function shouldEmitJson(args: string[]): boolean {
-  if (args.includes('--json')) return true;
-  if (args.includes('--no-json')) return false;
+  if (args.includes("--json")) return true;
+  if (args.includes("--no-json")) return false;
   return !process.stdout.isTTY;
 }
 
 export async function runCodeCallers(engine: BrainEngine, args: string[]): Promise<void> {
-  const positional = args.filter((a) => !a.startsWith('--'));
+  const positional = args.filter((a) => !a.startsWith("--"));
   const sym = positional[0];
   if (!sym) {
     const err = errorFor({
-      class: 'UsageError',
-      code: 'code_callers_requires_symbol',
-      message: 'code-callers requires a symbol name',
-      hint: 'gbrain code-callers <symbol> [--source S | --all-sources] [--limit N] [--json]',
+      class: "UsageError",
+      code: "code_callers_requires_symbol",
+      message: "code-callers requires a symbol name",
+      hint: "gbrain code-callers <symbol> [--source S | --all-sources] [--limit N] [--json]",
     });
     if (shouldEmitJson(args)) {
       console.log(JSON.stringify({ error: err.envelope }));
@@ -72,9 +74,9 @@ export async function runCodeCallers(engine: BrainEngine, args: string[]): Promi
     }
     process.exit(2);
   }
-  const limit = parseInt(parseFlag(args, '--limit') || '100', 10);
-  const allSources = args.includes('--all-sources');
-  let sourceId = parseFlag(args, '--source');
+  const limit = parseInt(parseFlag(args, "--limit") || "100", 10);
+  const allSources = args.includes("--all-sources");
+  let sourceId = parseFlag(args, "--source");
 
   // When neither --source nor --all-sources is set, resolve through the full
   // source-resolution chain (honors the .gbrain-source pin, env, local_path,
@@ -86,17 +88,17 @@ export async function runCodeCallers(engine: BrainEngine, args: string[]): Promi
       sourceId = resolved.source_id;
       // Nudge only when we auto-routed to the sole non-default source (the one
       // tier with no explicit user signal). Matches sync/import behavior.
-      if (resolved.tier === 'sole_non_default') {
+      if (resolved.tier === "sole_non_default") {
         const nudge = formatSoleNonDefaultNudge(resolved.source_id);
         if (nudge) console.error(nudge);
       }
     } catch (e: unknown) {
       if (e instanceof SourceResolutionError) {
         const env = errorFor({
-          class: 'UsageError',
+          class: "UsageError",
           code: e.code,
           message: e.message,
-          hint: 'pass --source <id> for one source, or --all-sources to search every source',
+          hint: "pass --source <id> for one source, or --all-sources to search every source",
         }).envelope;
         if (shouldEmitJson(args)) {
           console.log(JSON.stringify({ error: env }));
@@ -109,10 +111,10 @@ export async function runCodeCallers(engine: BrainEngine, args: string[]): Promi
       // source) → clean usage error, not an uncaught stack.
       if (isResolverUserError(e)) {
         const env = errorFor({
-          class: 'UsageError',
-          code: 'invalid_source_pin',
+          class: "UsageError",
+          code: "invalid_source_pin",
           message: (e as Error).message,
-          hint: 'fix the .gbrain-source pin / GBRAIN_SOURCE value, or pass --source <id> / --all-sources',
+          hint: "fix the .gbrain-source pin / GBRAIN_SOURCE value, or pass --source <id> / --all-sources",
         }).envelope;
         if (shouldEmitJson(args)) {
           console.log(JSON.stringify({ error: env }));
@@ -132,19 +134,27 @@ export async function runCodeCallers(engine: BrainEngine, args: string[]): Promi
       sourceId: sourceId ?? undefined,
     });
 
-    const scope = allSources ? 'all' : 'single';
+    const scope = allSources ? "all" : "single";
     const envelopeSourceId = allSources ? null : (sourceId ?? null);
 
     // Call-graph readiness ('edge' grain): distinguishes "graph not built / still
     // indexing" from "genuinely no callers" when count === 0.
     const readiness = await resolveCodeReadiness(engine, {
-      kind: 'edge', count: edges.length, sourceId: sourceId ?? undefined, allSources,
+      kind: "edge",
+      count: edges.length,
+      sourceId: sourceId ?? undefined,
+      allSources,
     });
 
     if (shouldEmitJson(args)) {
       const out: Record<string, unknown> = {
-        symbol: sym, source_id: envelopeSourceId, scope, count: edges.length,
-        status: readiness.status, ready: readiness.ready, callers: edges,
+        symbol: sym,
+        source_id: envelopeSourceId,
+        scope,
+        count: edges.length,
+        status: readiness.status,
+        ready: readiness.ready,
+        callers: edges,
       };
       if (edges.length === 0 && !allSources && sourceId) {
         out.hint = `No callers in source '${sourceId}'. Try --all-sources to search every source.`;
@@ -152,7 +162,9 @@ export async function runCodeCallers(engine: BrainEngine, args: string[]): Promi
       console.log(JSON.stringify(out, null, 2));
     } else if (edges.length === 0) {
       if (!allSources && sourceId) {
-        console.log(`No callers found for "${sym}" in source '${sourceId}'. Try --all-sources to search every source.`);
+        console.log(
+          `No callers found for "${sym}" in source '${sourceId}'. Try --all-sources to search every source.`
+        );
       } else {
         console.log(`No callers found for "${sym}".`);
       }
@@ -161,7 +173,7 @@ export async function runCodeCallers(engine: BrainEngine, args: string[]): Promi
     } else {
       console.log(`${edges.length} caller(s) for "${sym}":`);
       for (const e of edges) {
-        const res = e.resolved ? 'resolved' : 'unresolved';
+        const res = e.resolved ? "resolved" : "unresolved";
         console.log(`  ${e.from_symbol_qualified}  → ${e.to_symbol_qualified}  [${res}]`);
       }
     }

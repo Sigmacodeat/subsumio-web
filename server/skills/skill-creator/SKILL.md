@@ -20,6 +20,7 @@ mutating: true
 ## Contract
 
 This skill guarantees:
+
 - New skill follows conformance standard (frontmatter + required sections)
 - MECE check: no overlap with existing skills' triggers
 - Manifest.json updated

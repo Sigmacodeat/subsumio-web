@@ -1,12 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "./select";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "./select";
 
 describe("Select", () => {
   it("renders trigger with placeholder", () => {

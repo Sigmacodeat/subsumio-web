@@ -62,10 +62,13 @@ export function constantLr(base: number, _t: number, _totalSteps: number): numbe
 export type LrScheduleFn = (base: number, t: number, totalSteps: number) => number;
 
 /** Resolve a schedule name to its function. */
-export function resolveLrSchedule(name: 'cosine' | 'linear' | 'constant'): LrScheduleFn {
+export function resolveLrSchedule(name: "cosine" | "linear" | "constant"): LrScheduleFn {
   switch (name) {
-    case 'cosine': return cosineLr;
-    case 'linear': return linearLr;
-    case 'constant': return constantLr;
+    case "cosine":
+      return cosineLr;
+    case "linear":
+      return linearLr;
+    case "constant":
+      return constantLr;
   }
 }

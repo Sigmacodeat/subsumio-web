@@ -52,7 +52,7 @@
 
 /** The frontmatter key name. Treat as a stable contract — renaming
  *  this means rewriting every consumer of the skip semantic. */
-export const EMBED_SKIP_KEY = 'embed_skip';
+export const EMBED_SKIP_KEY = "embed_skip";
 
 /** SQL fragment that excludes pages with the embed-skip marker.
  *  Callers must already JOIN `pages` (aliased as `p`) — the bare
@@ -71,14 +71,13 @@ export const EMBED_SKIP_KEY = 'embed_skip';
  *  level. Works identically on Postgres (real) and PGLite (PostgreSQL
  *  17.5 in WASM). The `NOT` negates so we KEEP rows that DON'T have
  *  the marker. */
-export const EMBED_SKIP_FILTER_FRAGMENT =
-  `NOT (COALESCE(p.frontmatter, '{}'::jsonb) ? '${EMBED_SKIP_KEY}')`;
+export const EMBED_SKIP_FILTER_FRAGMENT = `NOT (COALESCE(p.frontmatter, '{}'::jsonb) ? '${EMBED_SKIP_KEY}')`;
 
 export interface EmbedSkipMarker {
   /** Why the page was skipped. v0.41 ships only `'oversized'`; future
    *  reasons (e.g. `'chunk_token_limit'` from the deferred v0.42
    *  chunk-level quarantine) extend this enum. */
-  reason: 'oversized';
+  reason: "oversized";
   /** Body bytes at the time of assessment. Operator visibility: at a
    *  glance, see how oversized the page is. */
   bytes: number;
@@ -96,7 +95,7 @@ export interface EmbedSkipMarker {
  *  the operator why + when at a glance. */
 export function buildEmbedSkipMarker(bytes: number, now: Date = new Date()): EmbedSkipMarker {
   return {
-    reason: 'oversized',
+    reason: "oversized",
     bytes,
     assessed_at: now.toISOString(),
   };
@@ -123,7 +122,7 @@ export function isEmbedSkipped(frontmatter: Record<string, unknown> | null | und
  *  for callers that walk pages JS-side (e.g. `gbrain embed --all`
  *  walks pages directly rather than going through listStaleChunks). */
 export function filterOutEmbedSkipped<T extends { frontmatter?: Record<string, unknown> | null }>(
-  pages: ReadonlyArray<T>,
+  pages: ReadonlyArray<T>
 ): T[] {
   return pages.filter((p) => !isEmbedSkipped(p.frontmatter ?? null));
 }

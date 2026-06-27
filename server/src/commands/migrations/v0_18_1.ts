@@ -16,19 +16,24 @@
  * fires on upgrade, because doctor + connectEngine never call initSchema().
  */
 
-import type { Migration, OrchestratorOpts, OrchestratorResult, OrchestratorPhaseResult } from './types.ts';
+import type {
+  Migration,
+  OrchestratorOpts,
+  OrchestratorResult,
+  OrchestratorPhaseResult,
+} from "./types.ts";
 
 // ── Phase A — Schema ────────────────────────────────────────
 
 async function phaseASchema(opts: OrchestratorOpts): Promise<OrchestratorPhaseResult> {
-  if (opts.dryRun) return { name: 'schema', status: 'skipped', detail: 'dry-run' };
+  if (opts.dryRun) return { name: "schema", status: "skipped", detail: "dry-run" };
   try {
-    const { runMigrateOnlyCore } = await import('./in-process.ts');
+    const { runMigrateOnlyCore } = await import("./in-process.ts");
     await runMigrateOnlyCore();
-    return { name: 'schema', status: 'complete' };
+    return { name: "schema", status: "complete" };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    return { name: 'schema', status: 'failed', detail: msg };
+    return { name: "schema", status: "failed", detail: msg };
   }
 }
 
@@ -38,11 +43,11 @@ async function orchestrator(opts: OrchestratorOpts): Promise<OrchestratorResult>
   const phases: OrchestratorPhaseResult[] = [];
   phases.push(await phaseASchema(opts));
 
-  const anyFailed = phases.some(p => p.status === 'failed');
-  const status: OrchestratorResult['status'] = anyFailed ? 'partial' : 'complete';
+  const anyFailed = phases.some((p) => p.status === "failed");
+  const status: OrchestratorResult["status"] = anyFailed ? "partial" : "complete";
 
   return {
-    version: '0.18.1',
+    version: "0.18.1",
     status,
     phases,
     pending_host_work: 0,
@@ -52,18 +57,18 @@ async function orchestrator(opts: OrchestratorOpts): Promise<OrchestratorResult>
 // ── Export ──────────────────────────────────────────────────
 
 export const v0_18_1: Migration = {
-  version: '0.18.1',
+  version: "0.18.1",
   featurePitch: {
-    headline: 'Row Level Security hardened on all public tables + escape hatch.',
+    headline: "Row Level Security hardened on all public tables + escape hatch.",
     description:
-      'v0.18.1 fixes a latent security gap: 10 gbrain-managed public tables ' +
-      'shipped without RLS. On Supabase, they were reachable by the anon key. ' +
-      'Migration v24 backfills RLS on existing brains automatically when ' +
-      '`gbrain apply-migrations` runs. `gbrain doctor` now scans every ' +
-      'public table (no hardcoded allowlist) and exits 1 on gaps. For tables ' +
-      'that should stay anon-readable on purpose, operators set a ' +
-      '`GBRAIN:RLS_EXEMPT reason=<why>` comment via psql. See ' +
-      'docs/guides/rls-and-you.md.',
+      "v0.18.1 fixes a latent security gap: 10 gbrain-managed public tables " +
+      "shipped without RLS. On Supabase, they were reachable by the anon key. " +
+      "Migration v24 backfills RLS on existing brains automatically when " +
+      "`gbrain apply-migrations` runs. `gbrain doctor` now scans every " +
+      "public table (no hardcoded allowlist) and exits 1 on gaps. For tables " +
+      "that should stay anon-readable on purpose, operators set a " +
+      "`GBRAIN:RLS_EXEMPT reason=<why>` comment via psql. See " +
+      "docs/guides/rls-and-you.md.",
   },
   orchestrator,
 };

@@ -19,16 +19,13 @@
  *   gbrain connector remove github
  */
 
-import { ConnectorManager, SUPPORTED_CONNECTORS } from '../core/ingestion/connectors/index.ts';
-import type { ConnectorConfig } from '../core/ingestion/connectors/base.ts';
-import {
-  generateAuthUrl,
-  exchangeCode,
-} from '../core/ingestion/connectors/google-oauth.ts';
-import { createServer } from 'node:http';
-import { readFileSync, writeFileSync } from 'node:fs';
-import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { ConnectorManager, SUPPORTED_CONNECTORS } from "../core/ingestion/connectors/index.ts";
+import type { ConnectorConfig } from "../core/ingestion/connectors/base.ts";
+import { generateAuthUrl, exchangeCode } from "../core/ingestion/connectors/google-oauth.ts";
+import { createServer } from "node:http";
+import { readFileSync, writeFileSync } from "node:fs";
+import { homedir } from "node:os";
+import { join } from "node:path";
 
 function printUsage(): void {
   console.log(`
@@ -44,7 +41,7 @@ Subcommands:
   enable <service>                 Enable a connector
   disable <service>                Disable a connector
 
-Services: ${SUPPORTED_CONNECTORS.join(', ')}
+Services: ${SUPPORTED_CONNECTORS.join(", ")}
 
 Add options (per service):
   Google Drive / Gmail (OAuth2):
@@ -65,10 +62,10 @@ Add options (per service):
 function parseFlags(args: string[]): Record<string, string> {
   const flags: Record<string, string> = {};
   for (let i = 0; i < args.length; i++) {
-    if (args[i].startsWith('--')) {
-      const key = args[i].slice(2).replace(/-/g, '_');
-      const value = args[i + 1] ?? '';
-      if (!value.startsWith('--')) {
+    if (args[i].startsWith("--")) {
+      const key = args[i].slice(2).replace(/-/g, "_");
+      const value = args[i + 1] ?? "";
+      if (!value.startsWith("--")) {
         flags[key] = value;
         i++;
       }
@@ -84,12 +81,12 @@ function flagsToConfig(flags: Record<string, string>): ConnectorConfig {
   if (flags.api_key) config.api_key = flags.api_key;
   if (flags.redirect_uri) config.redirect_uri = flags.redirect_uri;
   if (flags.poll_interval) config.poll_interval_ms = parseInt(flags.poll_interval, 10);
-  if (flags.mode) config.mode = flags.mode as 'trickle' | 'migration';
+  if (flags.mode) config.mode = flags.mode as "trickle" | "migration";
   if (flags.filters) {
     try {
       config.filters = JSON.parse(flags.filters);
     } catch {
-      console.error('Invalid --filters JSON');
+      console.error("Invalid --filters JSON");
       process.exit(1);
     }
   }
@@ -102,57 +99,61 @@ export async function runConnector(args: string[]): Promise<number> {
   const manager = new ConnectorManager();
 
   switch (sub) {
-    case 'list': {
+    case "list": {
       const list = await manager.list();
       if (list.length === 0) {
-        console.log('No connectors configured.');
-        console.log(`Run: gbrain connector add <service> (supported: ${SUPPORTED_CONNECTORS.join(', ')})`);
+        console.log("No connectors configured.");
+        console.log(
+          `Run: gbrain connector add <service> (supported: ${SUPPORTED_CONNECTORS.join(", ")})`
+        );
         return 0;
       }
-      console.log('Connector          Enabled    Connected');
-      console.log('─────────────────────────────────────────');
+      console.log("Connector          Enabled    Connected");
+      console.log("─────────────────────────────────────────");
       for (const c of list) {
         const name = c.service.padEnd(18);
-        const en = c.enabled ? 'yes' : 'no';
-        const conn = c.connected ? 'yes' : 'no';
+        const en = c.enabled ? "yes" : "no";
+        const conn = c.connected ? "yes" : "no";
         console.log(`${name} ${en.padEnd(10)} ${conn}`);
       }
       return 0;
     }
 
-    case 'add': {
+    case "add": {
       if (!service) {
-        console.error('Error: missing service. Usage: gbrain connector add <service>');
+        console.error("Error: missing service. Usage: gbrain connector add <service>");
         return 1;
       }
       if (!SUPPORTED_CONNECTORS.includes(service)) {
         console.error(`Error: unsupported service "${service}".`);
-        console.error(`Supported: ${SUPPORTED_CONNECTORS.join(', ')}`);
+        console.error(`Supported: ${SUPPORTED_CONNECTORS.join(", ")}`);
         return 1;
       }
       const config = flagsToConfig(flags);
       await manager.add(service, config);
       console.log(`Connector added: ${service}`);
-      console.log(`Run "gbrain connector sync ${service}" to start syncing, or restart the daemon.`);
+      console.log(
+        `Run "gbrain connector sync ${service}" to start syncing, or restart the daemon.`
+      );
       return 0;
     }
 
-    case 'auth': {
+    case "auth": {
       if (!service) {
-        console.error('Error: missing service. Usage: gbrain connector auth <service>');
+        console.error("Error: missing service. Usage: gbrain connector auth <service>");
         return 1;
       }
-      if (!['google-drive', 'gmail'].includes(service)) {
+      if (!["google-drive", "gmail"].includes(service)) {
         console.error(`Error: OAuth2 web flow is only supported for google-drive and gmail.`);
         console.error(`For Notion/GitHub, use: gbrain connector add ${service} --api-key KEY`);
         return 1;
       }
 
       // Load saved state (client_id, client_secret from prior `add`).
-      const statePath = join(homedir(), '.gbrain', 'connectors', `${service}.json`);
+      const statePath = join(homedir(), ".gbrain", "connectors", `${service}.json`);
       let state: Record<string, unknown>;
       try {
-        state = JSON.parse(readFileSync(statePath, 'utf-8'));
+        state = JSON.parse(readFileSync(statePath, "utf-8"));
       } catch {
         console.error(`Error: no saved config for ${service}. Run first:`);
         console.error(`  gbrain connector add ${service} --client-id XXX --client-secret YYY`);
@@ -162,7 +163,7 @@ export async function runConnector(args: string[]): Promise<number> {
       const cfg = (state.config ?? {}) as Record<string, unknown>;
       const clientId = (state.client_id ?? cfg.client_id) as string | undefined;
       const clientSecret = (state.client_secret ?? cfg.client_secret) as string | undefined;
-      const redirectUri = (cfg.redirect_uri as string) ?? 'http://localhost:3000/oauth/callback';
+      const redirectUri = (cfg.redirect_uri as string) ?? "http://localhost:3000/oauth/callback";
 
       if (!clientId || !clientSecret) {
         console.error(`Error: client_id and client_secret required. Run:`);
@@ -170,41 +171,58 @@ export async function runConnector(args: string[]): Promise<number> {
         return 1;
       }
 
-      const scopes = service === 'gmail'
-        ? 'https://www.googleapis.com/auth/gmail.readonly'
-        : 'https://www.googleapis.com/auth/drive.readonly';
+      const scopes =
+        service === "gmail"
+          ? "https://www.googleapis.com/auth/gmail.readonly"
+          : "https://www.googleapis.com/auth/drive.readonly";
 
       const auth = generateAuthUrl(clientId, redirectUri, scopes);
 
       // Persist PKCE data for the callback server to pick up.
-      const pkcePath = join(homedir(), '.gbrain', 'connectors', `.${service}-pkce.tmp.json`);
-      writeFileSync(pkcePath, JSON.stringify({ verifier: auth.codeVerifier, state: auth.state, clientId, clientSecret, redirectUri }));
+      const pkcePath = join(homedir(), ".gbrain", "connectors", `.${service}-pkce.tmp.json`);
+      writeFileSync(
+        pkcePath,
+        JSON.stringify({
+          verifier: auth.codeVerifier,
+          state: auth.state,
+          clientId,
+          clientSecret,
+          redirectUri,
+        })
+      );
 
       // Open browser (best-effort; fall back to printing URL).
       console.log(`\nOpening browser for ${service} authentication...`);
       console.log(`If the browser doesn't open, visit this URL:\n  ${auth.url}\n`);
       try {
-        const openCmd = process.platform === 'darwin' ? 'open' : process.platform === 'win32' ? 'start' : 'xdg-open';
-        const { execSync } = await import('node:child_process');
-        execSync(`${openCmd} "${auth.url}"`, { stdio: 'ignore' });
+        const openCmd =
+          process.platform === "darwin"
+            ? "open"
+            : process.platform === "win32"
+              ? "start"
+              : "xdg-open";
+        const { execSync } = await import("node:child_process");
+        execSync(`${openCmd} "${auth.url}"`, { stdio: "ignore" });
       } catch {
         /* ignore — URL already printed */
       }
 
       // Start a temporary callback server.
       const callbackUrl = new URL(redirectUri);
-      const callbackPort = parseInt(callbackUrl.port || '80', 10);
+      const callbackPort = parseInt(callbackUrl.port || "80", 10);
 
       return new Promise<number>((resolve) => {
         const server = createServer((req, res) => {
-          const url = new URL(req.url ?? '/', `http://localhost:${callbackPort}`);
-          const code = url.searchParams.get('code');
-          const returnedState = url.searchParams.get('state');
-          const error = url.searchParams.get('error');
+          const url = new URL(req.url ?? "/", `http://localhost:${callbackPort}`);
+          const code = url.searchParams.get("code");
+          const returnedState = url.searchParams.get("state");
+          const error = url.searchParams.get("error");
 
           if (error) {
-            res.writeHead(400, { 'Content-Type': 'text/html' });
-            res.end(`<html><body><h2>Authentication Failed</h2><p>${error}</p><p>You can close this tab.</p></body></html>`);
+            res.writeHead(400, { "Content-Type": "text/html" });
+            res.end(
+              `<html><body><h2>Authentication Failed</h2><p>${error}</p><p>You can close this tab.</p></body></html>`
+            );
             server.close();
             console.error(`OAuth error: ${error}`);
             resolve(1);
@@ -212,28 +230,34 @@ export async function runConnector(args: string[]): Promise<number> {
           }
 
           if (!code) {
-            res.writeHead(200, { 'Content-Type': 'text/html' });
-            res.end('<html><body><h2>Waiting for authorization...</h2></body></html>');
+            res.writeHead(200, { "Content-Type": "text/html" });
+            res.end("<html><body><h2>Waiting for authorization...</h2></body></html>");
             return;
           }
 
           // Read PKCE data back.
-          let pkce: { verifier: string; state: string; clientId: string; clientSecret: string; redirectUri: string };
+          let pkce: {
+            verifier: string;
+            state: string;
+            clientId: string;
+            clientSecret: string;
+            redirectUri: string;
+          };
           try {
-            pkce = JSON.parse(readFileSync(pkcePath, 'utf-8'));
+            pkce = JSON.parse(readFileSync(pkcePath, "utf-8"));
           } catch {
-            res.writeHead(500, { 'Content-Type': 'text/html' });
-            res.end('<html><body><h2>Error</h2><p>PKCE data missing. Try again.</p></body></html>');
+            res.writeHead(500, { "Content-Type": "text/html" });
+            res.end("<html><body><h2>Error</h2><p>PKCE data missing. Try again.</p></body></html>");
             server.close();
             resolve(1);
             return;
           }
 
           if (returnedState !== pkce.state) {
-            res.writeHead(400, { 'Content-Type': 'text/html' });
-            res.end('<html><body><h2>Error</h2><p>State mismatch. Try again.</p></body></html>');
+            res.writeHead(400, { "Content-Type": "text/html" });
+            res.end("<html><body><h2>Error</h2><p>State mismatch. Try again.</p></body></html>");
             server.close();
-            console.error('OAuth error: state mismatch');
+            console.error("OAuth error: state mismatch");
             resolve(1);
             return;
           }
@@ -246,22 +270,33 @@ export async function runConnector(args: string[]): Promise<number> {
               if (tokens.refresh_token) {
                 (newState as Record<string, unknown>).refresh_token = tokens.refresh_token;
               }
-              (newState as Record<string, unknown>).token_expires_at = Date.now() + tokens.expires_in * 1000;
+              (newState as Record<string, unknown>).token_expires_at =
+                Date.now() + tokens.expires_in * 1000;
               writeFileSync(statePath, JSON.stringify(newState, null, 2));
-              try { require('node:fs').unlinkSync(pkcePath); } catch { /* ignore */ }
+              try {
+                require("node:fs").unlinkSync(pkcePath);
+              } catch {
+                /* ignore */
+              }
 
-              res.writeHead(200, { 'Content-Type': 'text/html' });
-              res.end('<html><body><h2>Success!</h2><p>You can close this tab and return to the terminal.</p></body></html>');
+              res.writeHead(200, { "Content-Type": "text/html" });
+              res.end(
+                "<html><body><h2>Success!</h2><p>You can close this tab and return to the terminal.</p></body></html>"
+              );
               server.close();
               console.log(`\n✅ ${service} authenticated successfully.`);
               console.log(`   Access token saved. Run "gbrain connector sync ${service}" to test.`);
               resolve(0);
             })
             .catch((err) => {
-              res.writeHead(500, { 'Content-Type': 'text/html' });
-              res.end(`<html><body><h2>Error</h2><p>${err instanceof Error ? err.message : String(err)}</p></body></html>`);
+              res.writeHead(500, { "Content-Type": "text/html" });
+              res.end(
+                `<html><body><h2>Error</h2><p>${err instanceof Error ? err.message : String(err)}</p></body></html>`
+              );
               server.close();
-              console.error(`Token exchange failed: ${err instanceof Error ? err.message : String(err)}`);
+              console.error(
+                `Token exchange failed: ${err instanceof Error ? err.message : String(err)}`
+              );
               resolve(1);
             });
         });
@@ -271,17 +306,20 @@ export async function runConnector(args: string[]): Promise<number> {
         });
 
         // 5-minute timeout.
-        setTimeout(() => {
-          server.close();
-          console.error('Error: OAuth callback timed out after 5 minutes.');
-          resolve(1);
-        }, 5 * 60 * 1000);
+        setTimeout(
+          () => {
+            server.close();
+            console.error("Error: OAuth callback timed out after 5 minutes.");
+            resolve(1);
+          },
+          5 * 60 * 1000
+        );
       });
     }
 
-    case 'remove': {
+    case "remove": {
       if (!service) {
-        console.error('Error: missing service. Usage: gbrain connector remove <service>');
+        console.error("Error: missing service. Usage: gbrain connector remove <service>");
         return 1;
       }
       await manager.remove(service);
@@ -289,9 +327,9 @@ export async function runConnector(args: string[]): Promise<number> {
       return 0;
     }
 
-    case 'sync': {
+    case "sync": {
       if (!service) {
-        console.error('Error: missing service. Usage: gbrain connector sync <service>');
+        console.error("Error: missing service. Usage: gbrain connector sync <service>");
         return 1;
       }
       console.log(`Triggering sync for ${service}...`);
@@ -322,16 +360,16 @@ export async function runConnector(args: string[]): Promise<number> {
       }
     }
 
-    case 'status': {
+    case "status": {
       if (!service) {
         // Show all connector statuses.
         const list = await manager.list();
         if (list.length === 0) {
-          console.log('No connectors configured.');
+          console.log("No connectors configured.");
           return 0;
         }
         for (const c of list) {
-          const status = c.connected ? 'connected' : (c.enabled ? 'disconnected' : 'disabled');
+          const status = c.connected ? "connected" : c.enabled ? "disconnected" : "disabled";
           console.log(`${c.service}: ${status}`);
         }
         return 0;
@@ -341,9 +379,9 @@ export async function runConnector(args: string[]): Promise<number> {
       return 0;
     }
 
-    case 'enable': {
+    case "enable": {
       if (!service) {
-        console.error('Error: missing service. Usage: gbrain connector enable <service>');
+        console.error("Error: missing service. Usage: gbrain connector enable <service>");
         return 1;
       }
       await manager.setEnabled(service, true);
@@ -351,9 +389,9 @@ export async function runConnector(args: string[]): Promise<number> {
       return 0;
     }
 
-    case 'disable': {
+    case "disable": {
       if (!service) {
-        console.error('Error: missing service. Usage: gbrain connector disable <service>');
+        console.error("Error: missing service. Usage: gbrain connector disable <service>");
         return 1;
       }
       await manager.setEnabled(service, false);

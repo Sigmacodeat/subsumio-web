@@ -20,18 +20,25 @@ let fixtures: string[] = [];
 
 afterEach(() => {
   for (const f of fixtures) {
-    try { rmSync(f, { recursive: true, force: true }); } catch { /* ignore */ }
+    try {
+      rmSync(f, { recursive: true, force: true });
+    } catch {
+      /* ignore */
+    }
   }
   fixtures = [];
 });
 
-function makeSkillsFixture(files: Record<string, string>, opts: { gitInit?: boolean } = {}): string {
+function makeSkillsFixture(
+  files: Record<string, string>,
+  opts: { gitInit?: boolean } = {}
+): string {
   const dir = mkdtempSync(join(tmpdir(), "gbrain-dryfix-"));
   fixtures.push(dir);
   const skillNames = Object.keys(files);
   writeFileSync(
     join(dir, "manifest.json"),
-    JSON.stringify({ skills: skillNames.map(n => ({ name: n, path: `${n}/SKILL.md` })) }, null, 2)
+    JSON.stringify({ skills: skillNames.map((n) => ({ name: n, path: `${n}/SKILL.md` })) }, null, 2)
   );
   for (const [name, body] of Object.entries(files)) {
     mkdirSync(join(dir, name), { recursive: true });
@@ -76,12 +83,7 @@ describe("expandBullet", () => {
   });
 
   test("bullet with sub-bullets", () => {
-    const lines = [
-      "- top-level bullet",
-      "  - sub one",
-      "  - sub two",
-      "- next sibling",
-    ];
+    const lines = ["- top-level bullet", "  - sub one", "  - sub two", "- next sibling"];
     const block = expandBullet(lines, 0);
     expect(block).toEqual({ startLine: 0, endLine: 2 });
   });
@@ -151,9 +153,12 @@ describe("isInsideCodeFence", () => {
 
 describe("autoFixDryViolations", () => {
   test("replaces paragraph-form heading (Iron Law)", () => {
-    const dir = makeSkillsFixture({
-      a: "# A\n\n## Iron Law: Back-Linking (MANDATORY)\n\nbody text.\n",
-    }, { gitInit: true });
+    const dir = makeSkillsFixture(
+      {
+        a: "# A\n\n## Iron Law: Back-Linking (MANDATORY)\n\nbody text.\n",
+      },
+      { gitInit: true }
+    );
     const report = autoFixDryViolations(dir);
     expect(report.fixed).toHaveLength(1);
     expect(report.fixed[0].status).toBe("applied");
@@ -163,9 +168,12 @@ describe("autoFixDryViolations", () => {
   });
 
   test("replaces bullet-item inlined rule", () => {
-    const dir = makeSkillsFixture({
-      b: "# B\n\n- First\n- Check the notability gate before creating a page\n- Last\n",
-    }, { gitInit: true });
+    const dir = makeSkillsFixture(
+      {
+        b: "# B\n\n- First\n- Check the notability gate before creating a page\n- Last\n",
+      },
+      { gitInit: true }
+    );
     const report = autoFixDryViolations(dir);
     expect(report.fixed).toHaveLength(1);
     const updated = readFileSync(join(dir, "b", "SKILL.md"), "utf-8");
@@ -175,52 +183,67 @@ describe("autoFixDryViolations", () => {
   });
 
   test("does NOT rewrite a Convention callout (block_is_callout)", () => {
-    const dir = makeSkillsFixture({
-      c: "> **Convention:** See `skills/conventions/quality.md` for Iron Law back-linking rules.\n",
-    }, { gitInit: true });
+    const dir = makeSkillsFixture(
+      {
+        c: "> **Convention:** See `skills/conventions/quality.md` for Iron Law back-linking rules.\n",
+      },
+      { gitInit: true }
+    );
     const report = autoFixDryViolations(dir);
     // proximity suppression means no violation to fix in the first place
     expect(report.fixed).toHaveLength(0);
   });
 
   test("skips match inside fenced code block", () => {
-    const dir = makeSkillsFixture({
-      d: "# D\n\nExample:\n```\n## Iron Law: Back-Linking (MANDATORY)\n```\ntext.\n",
-    }, { gitInit: true });
+    const dir = makeSkillsFixture(
+      {
+        d: "# D\n\nExample:\n```\n## Iron Law: Back-Linking (MANDATORY)\n```\ntext.\n",
+      },
+      { gitInit: true }
+    );
     const report = autoFixDryViolations(dir);
-    const sk = report.skipped.find(s => s.reason === "inside_code_fence");
+    const sk = report.skipped.find((s) => s.reason === "inside_code_fence");
     expect(sk).toBeDefined();
     expect(report.fixed).toHaveLength(0);
   });
 
   test("skips when pattern matches more than once", () => {
-    const dir = makeSkillsFixture({
-      e: "## Iron Law: Back-Linking (MANDATORY)\n\nThe Iron Law Back-Link applies to every entity.\n",
-    }, { gitInit: true });
+    const dir = makeSkillsFixture(
+      {
+        e: "## Iron Law: Back-Linking (MANDATORY)\n\nThe Iron Law Back-Link applies to every entity.\n",
+      },
+      { gitInit: true }
+    );
     const report = autoFixDryViolations(dir);
-    const sk = report.skipped.find(s => s.reason === "ambiguous_multiple_matches");
+    const sk = report.skipped.find((s) => s.reason === "ambiguous_multiple_matches");
     expect(sk).toBeDefined();
   });
 
   test("skips when delegation already within 10 lines (idempotent)", () => {
-    const dir = makeSkillsFixture({
-      f: "> **Convention:** See `skills/conventions/quality.md`.\n\nCheck the notability gate.\n",
-    }, { gitInit: true });
+    const dir = makeSkillsFixture(
+      {
+        f: "> **Convention:** See `skills/conventions/quality.md`.\n\nCheck the notability gate.\n",
+      },
+      { gitInit: true }
+    );
     const report = autoFixDryViolations(dir);
-    const sk = report.skipped.find(s => s.reason === "already_delegated");
+    const sk = report.skipped.find((s) => s.reason === "already_delegated");
     expect(sk).toBeDefined();
     expect(report.fixed).toHaveLength(0);
   });
 
   test("skips when working tree is dirty", () => {
-    const dir = makeSkillsFixture({
-      g: "## Iron Law: Back-Linking (MANDATORY)\n\nbody.\n",
-    }, { gitInit: true });
+    const dir = makeSkillsFixture(
+      {
+        g: "## Iron Law: Back-Linking (MANDATORY)\n\nbody.\n",
+      },
+      { gitInit: true }
+    );
     // dirty the file: add another line post-commit
     const p = join(dir, "g", "SKILL.md");
     writeFileSync(p, readFileSync(p, "utf-8") + "\nextra edit\n");
     const report = autoFixDryViolations(dir);
-    const sk = report.skipped.find(s => s.reason === "working_tree_dirty");
+    const sk = report.skipped.find((s) => s.reason === "working_tree_dirty");
     expect(sk).toBeDefined();
     // file unchanged
     expect(readFileSync(p, "utf-8")).toContain("## Iron Law: Back-Linking");
@@ -228,22 +251,28 @@ describe("autoFixDryViolations", () => {
 
   test("refuses to write when skill is NOT inside a git repo (no_git_backup)", () => {
     // no gitInit — writing would destroy user data with no rollback
-    const dir = makeSkillsFixture({
-      ng: "## Iron Law: Back-Linking (MANDATORY)\n\nbody.\n",
-    }, { gitInit: false });
+    const dir = makeSkillsFixture(
+      {
+        ng: "## Iron Law: Back-Linking (MANDATORY)\n\nbody.\n",
+      },
+      { gitInit: false }
+    );
     const p = join(dir, "ng", "SKILL.md");
     const before = readFileSync(p, "utf-8");
     const report = autoFixDryViolations(dir);
-    const sk = report.skipped.find(s => s.reason === "no_git_backup");
+    const sk = report.skipped.find((s) => s.reason === "no_git_backup");
     expect(sk).toBeDefined();
     expect(report.fixed).toHaveLength(0);
     expect(readFileSync(p, "utf-8")).toBe(before);
   });
 
   test("preserves trailing newline when block is at EOF", () => {
-    const dir = makeSkillsFixture({
-      eof: "## Iron Law: Back-Linking (MANDATORY)\n",
-    }, { gitInit: true });
+    const dir = makeSkillsFixture(
+      {
+        eof: "## Iron Law: Back-Linking (MANDATORY)\n",
+      },
+      { gitInit: true }
+    );
     const report = autoFixDryViolations(dir);
     expect(report.fixed).toHaveLength(1);
     const after = readFileSync(join(dir, "eof", "SKILL.md"), "utf-8");
@@ -251,9 +280,12 @@ describe("autoFixDryViolations", () => {
   });
 
   test("dry-run mode does not write files", () => {
-    const dir = makeSkillsFixture({
-      h: "# H\n\n## Iron Law: Back-Linking (MANDATORY)\n\nbody.\n",
-    }, { gitInit: true });
+    const dir = makeSkillsFixture(
+      {
+        h: "# H\n\n## Iron Law: Back-Linking (MANDATORY)\n\nbody.\n",
+      },
+      { gitInit: true }
+    );
     const before = readFileSync(join(dir, "h", "SKILL.md"), "utf-8");
     const report = autoFixDryViolations(dir, { dryRun: true });
     expect(report.fixed).toHaveLength(1);
@@ -263,9 +295,12 @@ describe("autoFixDryViolations", () => {
   });
 
   test("ENOENT on skill file does not crash", () => {
-    const dir = makeSkillsFixture({
-      i: "## Iron Law: Back-Linking (MANDATORY)\n",
-    }, { gitInit: true });
+    const dir = makeSkillsFixture(
+      {
+        i: "## Iron Law: Back-Linking (MANDATORY)\n",
+      },
+      { gitInit: true }
+    );
     // remove the skill file after fixture creation but before fix runs
     rmSync(join(dir, "i", "SKILL.md"));
     const report = autoFixDryViolations(dir);
@@ -274,9 +309,12 @@ describe("autoFixDryViolations", () => {
   });
 
   test("notability gate accepts _brain-filing-rules.md as delegation", () => {
-    const dir = makeSkillsFixture({
-      j: "> **Filing rule:** Read `skills/_brain-filing-rules.md`.\n\nCheck the notability gate.\n",
-    }, { gitInit: true });
+    const dir = makeSkillsFixture(
+      {
+        j: "> **Filing rule:** Read `skills/_brain-filing-rules.md`.\n\nCheck the notability gate.\n",
+      },
+      { gitInit: true }
+    );
     const report = autoFixDryViolations(dir);
     // suppressed by proximity + filing-rule delegation
     expect(report.fixed).toHaveLength(0);

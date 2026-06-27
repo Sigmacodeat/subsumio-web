@@ -9,9 +9,9 @@
 // two meetings on the same date with the same summary on the same entity
 // page would silently drop the second one.
 
-import type { BrainEngine } from './engine.ts';
-import type { TimelineBatchInput } from './engine.ts';
-import { buildGazetteer, findMentionedEntities, type Gazetteer } from './by-mention.ts';
+import type { BrainEngine } from "./engine.ts";
+import type { TimelineBatchInput } from "./engine.ts";
+import { buildGazetteer, findMentionedEntities, type Gazetteer } from "./by-mention.ts";
 
 export interface ExtractTimelineFromMeetingsOpts {
   dryRun?: boolean;
@@ -51,13 +51,13 @@ const BATCH_SIZE = 200;
 
 export async function extractTimelineFromMeetings(
   engine: BrainEngine,
-  opts: ExtractTimelineFromMeetingsOpts = {},
+  opts: ExtractTimelineFromMeetingsOpts = {}
 ): Promise<ExtractTimelineFromMeetingsResult> {
   const dryRun = opts.dryRun ?? false;
   const sinceMs = opts.since ? new Date(opts.since).getTime() : null;
 
   // 1. Fetch all meeting pages (one round-trip).
-  const sourceFilter = opts.sourceIdFilter ? `AND source_id = $1` : '';
+  const sourceFilter = opts.sourceIdFilter ? `AND source_id = $1` : "";
   const meetingParams = opts.sourceIdFilter ? [opts.sourceIdFilter] : [];
   const meetings = await engine.executeRaw<MeetingRow>(
     `SELECT slug, source_id, title, effective_date, updated_at,
@@ -67,7 +67,7 @@ export async function extractTimelineFromMeetings(
         AND deleted_at IS NULL
         ${sourceFilter}
       ORDER BY effective_date DESC NULLS LAST, slug`,
-    meetingParams,
+    meetingParams
   );
 
   if (meetings.length === 0) {
@@ -87,7 +87,7 @@ export async function extractTimelineFromMeetings(
       WHERE l.link_type = 'attended'
         AND pf.type = 'meeting'
         AND pf.deleted_at IS NULL
-        AND pt.deleted_at IS NULL`,
+        AND pt.deleted_at IS NULL`
   );
   const attendeesByMeeting = new Map<string, AttendedEdgeRow[]>();
   for (const e of attendedEdges) {
@@ -100,7 +100,7 @@ export async function extractTimelineFromMeetings(
 
   // 3. For each meeting, derive entity mentions (gazetteer-based) + merge
   // with attendee edges. Each (meeting, entity) produces ONE timeline row.
-  const gazetteer = opts.gazetteer ?? await buildGazetteer(engine);
+  const gazetteer = opts.gazetteer ?? (await buildGazetteer(engine));
 
   const batch: TimelineBatchInput[] = [];
   let entriesCreated = 0;
@@ -149,7 +149,7 @@ export async function extractTimelineFromMeetings(
     // referencing itself by title). The cross-source guard in
     // findMentionedEntities already drops mentions targeting a different
     // source than the gazetteer entry was built from.
-    const body = meeting.compiled_truth + '\n\n' + meeting.timeline;
+    const body = meeting.compiled_truth + "\n\n" + meeting.timeline;
     if (body.trim()) {
       const mentions = findMentionedEntities(body, gazetteer, {
         fromSlug: meeting.slug,

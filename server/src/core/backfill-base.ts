@@ -16,13 +16,13 @@
  * index exists and creates it CONCURRENTLY if missing.
  */
 
-import type { BrainEngine } from './engine.ts';
-import { isStatementTimeoutError, isRetryableConnError } from './retry-matcher.ts';
+import type { BrainEngine } from "./engine.ts";
+import { isStatementTimeoutError, isRetryableConnError } from "./retry-matcher.ts";
 // v0.41.18.0: swap inline setTimeout for shared abortableSleep so the sleep
 // primitive is unified across the codebase. Backfill's outer-loop + batch-
 // halving control flow stays intact (orthogonal to withRetry's per-call retry
 // shape) — the unification is at the sleep primitive only, per codex H-6.
-import { abortableSleep } from './retry.ts';
+import { abortableSleep } from "./retry.ts";
 
 export interface BackfillSpec<TRow = Record<string, unknown>> {
   /** Stable identifier — used in checkpoint key + CLI dispatch. */
@@ -48,7 +48,10 @@ export interface BackfillSpec<TRow = Record<string, unknown>> {
    * Compute updates for a batch of rows. Returns one entry per row that
    * needs updating; rows not present in the result are unchanged.
    */
-  compute: (rows: TRow[], engine: BrainEngine) => Promise<Array<{ id: number; updates: Record<string, unknown> }>>;
+  compute: (
+    rows: TRow[],
+    engine: BrainEngine
+  ) => Promise<Array<{ id: number; updates: Record<string, unknown> }>>;
   /**
    * Optional partial-index requirement (P2 / X4). Runner verifies/creates
    * the index CONCURRENTLY on first run. Skipped on PGLite (no CONCURRENTLY).
@@ -114,7 +117,7 @@ async function getCheckpoint(engine: BrainEngine, name: string, fresh: boolean):
   try {
     const rows = await engine.executeRaw<{ value: string }>(
       `SELECT value FROM config WHERE key = $1 LIMIT 1`,
-      [checkpointKey(name)],
+      [checkpointKey(name)]
     );
     if (rows.length === 0) return 0;
     const n = Number(rows[0].value);
@@ -136,27 +139,29 @@ async function setCheckpoint(engine: BrainEngine, name: string, lastId: number):
  */
 export async function ensureBackfillIndex<TRow>(
   engine: BrainEngine,
-  spec: BackfillSpec<TRow>,
+  spec: BackfillSpec<TRow>
 ): Promise<{ existed: boolean; created: boolean }> {
-  if (engine.kind !== 'postgres' || !spec.requiredIndex) {
+  if (engine.kind !== "postgres" || !spec.requiredIndex) {
     return { existed: true, created: false };
   }
   const { name, sql } = spec.requiredIndex;
   try {
     const rows = await engine.executeRaw<{ exists: boolean }>(
       `SELECT EXISTS(SELECT 1 FROM pg_indexes WHERE indexname = $1) AS exists`,
-      [name],
+      [name]
     );
     if (rows[0]?.exists) return { existed: true, created: false };
     // Create the index. CONCURRENTLY can't run inside a transaction, so we
     // route via the reserved connection and let the engine handle txn
     // semantics directly.
-    await engine.withReservedConnection(async conn => {
+    await engine.withReservedConnection(async (conn) => {
       await conn.executeRaw(sql);
     });
     return { existed: false, created: true };
   } catch (err) {
-    process.stderr.write(`[backfill] index creation failed: ${(err as Error).message}; will continue without partial index\n`);
+    process.stderr.write(
+      `[backfill] index creation failed: ${(err as Error).message}; will continue without partial index\n`
+    );
     return { existed: false, created: false };
   }
 }
@@ -168,11 +173,11 @@ export async function ensureBackfillIndex<TRow>(
 export async function runBackfill<TRow = Record<string, unknown>>(
   engine: BrainEngine,
   spec: BackfillSpec<TRow>,
-  opts: BackfillRunOpts = {},
+  opts: BackfillRunOpts = {}
 ): Promise<BackfillResult> {
   const t0 = Date.now();
-  const idCol = spec.idColumn ?? 'id';
-  const cols = [idCol, ...spec.selectColumns.filter(c => c !== idCol)];
+  const idCol = spec.idColumn ?? "id";
+  const cols = [idCol, ...spec.selectColumns.filter((c) => c !== idCol)];
   const maxErrors = opts.maxErrors ?? DEFAULT_MAX_ERRORS;
   const perBatchTimeoutSec = opts.perBatchTimeoutSec ?? DEFAULT_PER_BATCH_TIMEOUT_SEC;
 
@@ -189,12 +194,18 @@ export async function runBackfill<TRow = Record<string, unknown>>(
   let batchNum = 0;
 
   while (true) {
-    const remaining = opts.maxRows ? Math.max(0, opts.maxRows - examined) : Number.POSITIVE_INFINITY;
+    const remaining = opts.maxRows
+      ? Math.max(0, opts.maxRows - examined)
+      : Number.POSITIVE_INFINITY;
     if (remaining <= 0) {
       return {
-        examined, updated, errors, lastId,
+        examined,
+        updated,
+        errors,
+        lastId,
         durationSec: (Date.now() - t0) / 1000,
-        cappedByMaxRows: true, cappedByErrors: false,
+        cappedByMaxRows: true,
+        cappedByErrors: false,
       };
     }
     const effective = Math.min(batchSize, remaining);
@@ -202,19 +213,23 @@ export async function runBackfill<TRow = Record<string, unknown>>(
     let rows: TRow[];
     try {
       rows = await engine.executeRaw<TRow>(
-        `SELECT ${cols.join(', ')} FROM ${spec.table}
+        `SELECT ${cols.join(", ")} FROM ${spec.table}
          WHERE ${idCol} > $1 AND (${spec.needsBackfill})
          ORDER BY ${idCol}
          LIMIT $2`,
-        [lastId, effective],
+        [lastId, effective]
       );
     } catch (err) {
       errors++;
       if (errors >= maxErrors) {
         return {
-          examined, updated, errors, lastId,
+          examined,
+          updated,
+          errors,
+          lastId,
           durationSec: (Date.now() - t0) / 1000,
-          cappedByMaxRows: false, cappedByErrors: true,
+          cappedByMaxRows: false,
+          cappedByErrors: true,
         };
       }
       // Connection drop: brief sleep + retry the same window.
@@ -228,9 +243,13 @@ export async function runBackfill<TRow = Record<string, unknown>>(
     if (rows.length === 0) {
       // No more rows match the predicate. Done.
       return {
-        examined, updated, errors, lastId,
+        examined,
+        updated,
+        errors,
+        lastId,
         durationSec: (Date.now() - t0) / 1000,
-        cappedByMaxRows: false, cappedByErrors: false,
+        cappedByMaxRows: false,
+        cappedByErrors: false,
       };
     }
     examined += rows.length;
@@ -244,7 +263,9 @@ export async function runBackfill<TRow = Record<string, unknown>>(
       if (errors >= maxErrors) break;
       if (isStatementTimeoutError(err)) {
         batchSize = Math.max(MIN_BATCH_SIZE, Math.floor(batchSize / 2));
-        process.stderr.write(`[backfill:${spec.name}] compute timeout; halving batch to ${batchSize}\n`);
+        process.stderr.write(
+          `[backfill:${spec.name}] compute timeout; halving batch to ${batchSize}\n`
+        );
         continue;
       }
       throw err;
@@ -256,13 +277,15 @@ export async function runBackfill<TRow = Record<string, unknown>>(
     // and SET LOCAL evaporates.
     if (!opts.dryRun && computedUpdates.length > 0) {
       try {
-        await engine.withReservedConnection(async conn => {
+        await engine.withReservedConnection(async (conn) => {
           await conn.executeRaw(`BEGIN`);
           try {
-            if (engine.kind === 'postgres') {
-              await conn.executeRaw(`SET LOCAL statement_timeout = '${perBatchTimeoutSec}s'`).catch(() => {
-                /* some Postgres tiers restrict SET LOCAL; falls through */
-              });
+            if (engine.kind === "postgres") {
+              await conn
+                .executeRaw(`SET LOCAL statement_timeout = '${perBatchTimeoutSec}s'`)
+                .catch(() => {
+                  /* some Postgres tiers restrict SET LOCAL; falls through */
+                });
             }
             for (const { id, updates } of computedUpdates) {
               const setClauses: string[] = [];
@@ -275,8 +298,8 @@ export async function runBackfill<TRow = Record<string, unknown>>(
               }
               if (setClauses.length === 0) continue;
               await conn.executeRaw(
-                `UPDATE ${spec.table} SET ${setClauses.join(', ')} WHERE ${idCol} = $1`,
-                params,
+                `UPDATE ${spec.table} SET ${setClauses.join(", ")} WHERE ${idCol} = $1`,
+                params
               );
               updated++;
             }
@@ -291,7 +314,9 @@ export async function runBackfill<TRow = Record<string, unknown>>(
         if (errors >= maxErrors) break;
         if (isStatementTimeoutError(err)) {
           batchSize = Math.max(MIN_BATCH_SIZE, Math.floor(batchSize / 2));
-          process.stderr.write(`[backfill:${spec.name}] write timeout; halving batch to ${batchSize}\n`);
+          process.stderr.write(
+            `[backfill:${spec.name}] write timeout; halving batch to ${batchSize}\n`
+          );
           continue;
         }
         if (isRetryableConnError(err)) {
@@ -305,7 +330,7 @@ export async function runBackfill<TRow = Record<string, unknown>>(
     // Advance the checkpoint to the highest id we examined this batch.
     const idAccessor = idCol;
     const lastBatchId = (rows[rows.length - 1] as Record<string, unknown>)[idAccessor];
-    if (typeof lastBatchId === 'number') lastId = lastBatchId;
+    if (typeof lastBatchId === "number") lastId = lastBatchId;
     if (!opts.dryRun) await setCheckpoint(engine, spec.name, lastId);
 
     opts.onBatch?.({
@@ -319,9 +344,13 @@ export async function runBackfill<TRow = Record<string, unknown>>(
   }
 
   return {
-    examined, updated, errors, lastId,
+    examined,
+    updated,
+    errors,
+    lastId,
     durationSec: (Date.now() - t0) / 1000,
-    cappedByMaxRows: false, cappedByErrors: errors >= maxErrors,
+    cappedByMaxRows: false,
+    cappedByErrors: errors >= maxErrors,
   };
 }
 

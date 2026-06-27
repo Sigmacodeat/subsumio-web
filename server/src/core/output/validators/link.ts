@@ -14,12 +14,12 @@
  * knows. This matches how engine.addLink is called downstream.
  */
 
-import type { PageValidator, PageValidationContext, ValidationFinding } from '../writer.ts';
+import type { PageValidator, PageValidationContext, ValidationFinding } from "../writer.ts";
 
 const MD_LINK_RE = /\[([^\]]+)\]\(([^)]+)\)/g;
 
 export const linkValidator: PageValidator = {
-  id: 'link',
+  id: "link",
 
   async validate(ctx: PageValidationContext): Promise<ValidationFinding[]> {
     const findings: ValidationFinding[] = [];
@@ -36,8 +36,8 @@ export const linkValidator: PageValidator = {
       if (isNonBrainRef(href)) {
         findings.push({
           slug: ctx.slug,
-          validator: 'link',
-          severity: 'warning',
+          validator: "link",
+          severity: "warning",
           line,
           message: `Non-brain link (mailto/anchor/scheme): ${truncate(href, 80)}`,
         });
@@ -48,8 +48,8 @@ export const linkValidator: PageValidator = {
       if (!slug) {
         findings.push({
           slug: ctx.slug,
-          validator: 'link',
-          severity: 'warning',
+          validator: "link",
+          severity: "warning",
           line,
           message: `Unresolvable link path: ${truncate(href, 80)}`,
         });
@@ -70,8 +70,8 @@ export const linkValidator: PageValidator = {
       for (const pos of positions) {
         findings.push({
           slug: ctx.slug,
-          validator: 'link',
-          severity: 'error',
+          validator: "link",
+          severity: "error",
           line: pos.line,
           message: `Dangling wikilink to ${slug} (no such page)`,
         });
@@ -106,11 +106,11 @@ export function isNonBrainRef(href: string): boolean {
 export function normalizeToSlug(href: string): string | null {
   let s = href.trim();
   // Strip repeated leading relative-path components (./, ../, multiple levels).
-  while (/^\.\.?\/+/.test(s)) s = s.replace(/^\.\.?\/+/, '');
+  while (/^\.\.?\/+/.test(s)) s = s.replace(/^\.\.?\/+/, "");
   // Strip leading slashes
-  s = s.replace(/^\/+/g, '');
+  s = s.replace(/^\/+/g, "");
   // Strip trailing .md
-  s = s.replace(/\.md$/i, '');
+  s = s.replace(/\.md$/i, "");
   // Must look like dir/name (or dir/name/subname)
   if (!/^[a-z0-9][a-z0-9\-]*(\/[a-z0-9][a-z0-9\-]*)+$/i.test(s)) return null;
   return s.toLowerCase();
@@ -121,22 +121,22 @@ export function normalizeToSlug(href: string): string | null {
  * inside fenced code blocks — those are examples, not wikilinks.
  */
 function* iterateLinks(body: string): IterableIterator<{ match: RegExpExecArray; line: number }> {
-  const lines = body.split('\n');
+  const lines = body.split("\n");
   let insideFence = false;
-  let fenceMarker = '';
+  let fenceMarker = "";
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     if (insideFence) {
       if (line.startsWith(fenceMarker)) insideFence = false;
       continue;
     }
-    if (line.startsWith('```') || line.startsWith('~~~')) {
+    if (line.startsWith("```") || line.startsWith("~~~")) {
       insideFence = true;
-      fenceMarker = line.startsWith('```') ? '```' : '~~~';
+      fenceMarker = line.startsWith("```") ? "```" : "~~~";
       continue;
     }
     // Strip inline code so `[x](y)` inside backticks doesn't get validated
-    const cleanedLine = line.replace(/`[^`\n]*`/g, '');
+    const cleanedLine = line.replace(/`[^`\n]*`/g, "");
     MD_LINK_RE.lastIndex = 0;
     let m: RegExpExecArray | null;
     while ((m = MD_LINK_RE.exec(cleanedLine)) !== null) {
@@ -146,5 +146,5 @@ function* iterateLinks(body: string): IterableIterator<{ match: RegExpExecArray;
 }
 
 function truncate(s: string, n: number): string {
-  return s.length <= n ? s : s.slice(0, n - 3) + '...';
+  return s.length <= n ? s : s.slice(0, n - 3) + "...";
 }

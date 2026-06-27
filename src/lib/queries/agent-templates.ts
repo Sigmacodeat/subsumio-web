@@ -104,7 +104,9 @@ export function useAgentTemplates(search?: string) {
     queryFn: async () => {
       const params = new URLSearchParams();
       if (search) params.set("search", search);
-      const data = await apiGet<{ templates?: AgentTemplate[] }>(`/api/agent-templates?${params.toString()}`);
+      const data = await apiGet<{ templates?: AgentTemplate[] }>(
+        `/api/agent-templates?${params.toString()}`
+      );
       return (data?.templates ?? []) as AgentTemplate[];
     },
   });

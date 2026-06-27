@@ -11,23 +11,25 @@
  *
  * Safety net: the busy loop self-exits after 8s so a failed test kill can't hang CI.
  */
-import { installProcessWatchdog } from '../../src/core/process-watchdog.ts';
+import { installProcessWatchdog } from "../../src/core/process-watchdog.ts";
 
-const mode = process.argv[2] ?? 'starve-with';
+const mode = process.argv[2] ?? "starve-with";
 const deadlineMs = Number(process.argv[3] ?? 300);
 const graceMs = Number(process.argv[4] ?? 150);
 
-if (mode === 'starve-with' || mode === 'clean-dispose') {
-  const handle = installProcessWatchdog({ deadlineMs, graceMs, label: 'test-wd' });
-  if (mode === 'clean-dispose') {
+if (mode === "starve-with" || mode === "clean-dispose") {
+  const handle = installProcessWatchdog({ deadlineMs, graceMs, label: "test-wd" });
+  if (mode === "clean-dispose") {
     handle.dispose();
-    process.stdout.write('DISPOSED\n');
+    process.stdout.write("DISPOSED\n");
     process.exit(0);
   }
 }
 
 // Starve the main event loop with a synchronous busy loop (simulates ReDoS).
 const start = Date.now();
-while (Date.now() - start < 8000) { /* spin — no await, no yield */ }
-process.stdout.write('SURVIVED\n'); // must NOT print under starve-with
+while (Date.now() - start < 8000) {
+  /* spin — no await, no yield */
+}
+process.stdout.write("SURVIVED\n"); // must NOT print under starve-with
 process.exit(0);

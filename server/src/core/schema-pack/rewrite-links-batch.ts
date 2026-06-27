@@ -22,7 +22,7 @@
 // `to_page_id` references a page with old slug (in the given sourceId),
 // updating the FK to the new slug's page_id. Returns total rows touched.
 
-import type { BrainEngine } from '../engine.ts';
+import type { BrainEngine } from "../engine.ts";
 
 export interface RewriteLinkPair {
   from_slug: string;
@@ -44,7 +44,7 @@ export interface RewriteLinkPair {
  */
 export async function rewriteLinksBatch(
   engine: BrainEngine,
-  pairs: ReadonlyArray<RewriteLinkPair>,
+  pairs: ReadonlyArray<RewriteLinkPair>
 ): Promise<number> {
   if (pairs.length === 0) return 0;
   // Looking up new page_id for each (to_slug, source_id) pair in one query
@@ -57,11 +57,11 @@ export async function rewriteLinksBatch(
     // Resolve old + new page ids
     const oldRows = await engine.executeRaw<{ id: number }>(
       `SELECT id FROM pages WHERE slug = $1 AND source_id = $2 LIMIT 1`,
-      [p.from_slug, p.source_id],
+      [p.from_slug, p.source_id]
     );
     const newRows = await engine.executeRaw<{ id: number }>(
       `SELECT id FROM pages WHERE slug = $1 AND source_id = $2 LIMIT 1`,
-      [p.to_slug, p.source_id],
+      [p.to_slug, p.source_id]
     );
     if (oldRows.length === 0 || newRows.length === 0) continue;
     const oldId = oldRows[0].id;
@@ -69,21 +69,21 @@ export async function rewriteLinksBatch(
     const fromRes = await engine.executeRaw<{ updated: string }>(
       `WITH upd AS (UPDATE links SET from_page_id = $1 WHERE from_page_id = $2 RETURNING 1)
        SELECT COUNT(*)::text AS updated FROM upd`,
-      [newId, oldId],
+      [newId, oldId]
     );
     const toRes = await engine.executeRaw<{ updated: string }>(
       `WITH upd AS (UPDATE links SET to_page_id = $1 WHERE to_page_id = $2 RETURNING 1)
        SELECT COUNT(*)::text AS updated FROM upd`,
-      [newId, oldId],
+      [newId, oldId]
     );
     const originRes = await engine.executeRaw<{ updated: string }>(
       `WITH upd AS (UPDATE links SET origin_page_id = $1 WHERE origin_page_id = $2 RETURNING 1)
        SELECT COUNT(*)::text AS updated FROM upd`,
-      [newId, oldId],
+      [newId, oldId]
     );
-    total += parseInt(fromRes[0]?.updated ?? '0', 10) || 0;
-    total += parseInt(toRes[0]?.updated ?? '0', 10) || 0;
-    total += parseInt(originRes[0]?.updated ?? '0', 10) || 0;
+    total += parseInt(fromRes[0]?.updated ?? "0", 10) || 0;
+    total += parseInt(toRes[0]?.updated ?? "0", 10) || 0;
+    total += parseInt(originRes[0]?.updated ?? "0", 10) || 0;
   }
   return total;
 }

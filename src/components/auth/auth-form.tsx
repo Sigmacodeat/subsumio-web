@@ -13,7 +13,12 @@ import { SubsumioLogo } from "@/components/brand/subsumio-logo";
 import { MarketingBackground } from "@/components/marketing/chrome";
 import { p, type Lang } from "@/content/site";
 import { styleForIndustry } from "@/lib/industry-theme";
-import { ClipReveal, MagneticButton, StaggerContainer, StaggerItem } from "@/components/marketing/motion-system";
+import {
+  ClipReveal,
+  MagneticButton,
+  StaggerContainer,
+  StaggerItem,
+} from "@/components/marketing/motion-system";
 
 const COPY = {
   en: {
@@ -164,7 +169,11 @@ function AuthFormInner({ mode, lang }: { mode: "login" | "signup"; lang: Lang })
       <div className="relative z-10 w-full max-w-md">
         <StaggerContainer className="flex flex-col items-center">
           <StaggerItem>
-            <Link href={p(lang, "")} className="mb-8 flex justify-center" aria-label="Subsumio home">
+            <Link
+              href={p(lang, "")}
+              className="mb-8 flex justify-center"
+              aria-label="Subsumio home"
+            >
               <SubsumioLogo size={40} />
             </Link>
           </StaggerItem>

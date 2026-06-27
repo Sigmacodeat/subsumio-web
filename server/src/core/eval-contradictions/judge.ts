@@ -19,9 +19,9 @@
  * gateway.__setChatTransportForTests.
  */
 
-import { chat, type ChatResult } from '../ai/gateway.ts';
-import { parseSeverity, defaultSeverityForVerdict } from './severity-classify.ts';
-import type { JudgeVerdict, ResolutionKind, Verdict } from './types.ts';
+import { chat, type ChatResult } from "../ai/gateway.ts";
+import { parseSeverity, defaultSeverityForVerdict } from "./severity-classify.ts";
+import type { JudgeVerdict, ResolutionKind, Verdict } from "./types.ts";
 
 const FENCE_RE = /```(?:json)?\s*\n?([\s\S]*?)```/i;
 
@@ -34,7 +34,7 @@ const FENCE_RE = /```(?:json)?\s*\n?([\s\S]*?)```/i;
  * payload. Same 4-strategy spirit, narrower contract.)
  */
 export function parseJudgeJSON(text: string): unknown {
-  if (!text) throw new Error('parseJudgeJSON: empty response');
+  if (!text) throw new Error("parseJudgeJSON: empty response");
   // Strategy 1: direct parse (strict JSON).
   try {
     return JSON.parse(text);
@@ -53,7 +53,7 @@ export function parseJudgeJSON(text: string): unknown {
   // Strategy 3: common-repairs pass — trailing commas, single→double quotes.
   const cleaned = text
     .replace(FENCE_RE, (_, inner) => inner)
-    .replace(/,(\s*[}\]])/g, '$1')
+    .replace(/,(\s*[}\]])/g, "$1")
     .replace(/(['"])?([\w-]+)\1?\s*:/g, '"$2":')
     .trim();
   // Extract the first {...} block if there's surrounding prose.
@@ -65,7 +65,7 @@ export function parseJudgeJSON(text: string): unknown {
       // fall through
     }
   }
-  throw new Error('parseJudgeJSON: all strategies failed');
+  throw new Error("parseJudgeJSON: all strategies failed");
 }
 
 /** Default per-pair text budget (UTF-8-safe truncation). C4 default. */
@@ -75,7 +75,7 @@ export const DEFAULT_MAX_PAIR_CHARS = 1500;
 // dream-cycle chunker's safeSplitIndex). Imported here for the local
 // `buildJudgePrompt` use AND re-exported for back-compat with anything
 // importing it from this module.
-import { truncateUtf8 } from '../text-safe.ts';
+import { truncateUtf8 } from "../text-safe.ts";
 export { truncateUtf8 };
 
 export interface JudgeInput {
@@ -126,13 +126,13 @@ export interface JudgeOutput {
  */
 function parseResolutionKind(value: unknown): ResolutionKind | null {
   if (
-    value === 'takes_supersede' ||
-    value === 'dream_synthesize' ||
-    value === 'takes_mark_debate' ||
-    value === 'manual_review' ||
-    value === 'temporal_supersede' ||
-    value === 'flag_for_review' ||
-    value === 'log_timeline_change'
+    value === "takes_supersede" ||
+    value === "dream_synthesize" ||
+    value === "takes_mark_debate" ||
+    value === "manual_review" ||
+    value === "temporal_supersede" ||
+    value === "flag_for_review" ||
+    value === "log_timeline_change"
   ) {
     return value;
   }
@@ -140,17 +140,17 @@ function parseResolutionKind(value: unknown): ResolutionKind | null {
 }
 
 const VALID_VERDICTS: ReadonlySet<Verdict> = new Set([
-  'no_contradiction',
-  'contradiction',
-  'temporal_supersession',
-  'temporal_regression',
-  'temporal_evolution',
-  'negation_artifact',
+  "no_contradiction",
+  "contradiction",
+  "temporal_supersession",
+  "temporal_regression",
+  "temporal_evolution",
+  "negation_artifact",
 ]);
 
 /** Validate a verdict string from JSON; throws on missing/invalid so caller maps to parse_fail. */
 export function parseVerdict(value: unknown): Verdict {
-  if (typeof value !== 'string' || !VALID_VERDICTS.has(value as Verdict)) {
+  if (typeof value !== "string" || !VALID_VERDICTS.has(value as Verdict)) {
     throw new Error(`judge JSON missing or invalid verdict: ${JSON.stringify(value)}`);
   }
   return value as Verdict;
@@ -171,8 +171,8 @@ export function parseVerdict(value: unknown): Verdict {
  * confidence floor — they're informational classifications, not error flags.
  */
 export function normalizeVerdict(raw: unknown): JudgeVerdict {
-  if (!raw || typeof raw !== 'object') {
-    throw new Error('judge JSON missing or not an object');
+  if (!raw || typeof raw !== "object") {
+    throw new Error("judge JSON missing or not an object");
   }
   const v = raw as Record<string, unknown>;
   // Parse verdict first so we can throw a useful error before checking other
@@ -181,17 +181,17 @@ export function normalizeVerdict(raw: unknown): JudgeVerdict {
   // semantics because the prompt now asks for verdict explicitly.
   let verdict = parseVerdict(v.verdict);
   const rawConfidence = v.confidence;
-  if (typeof rawConfidence !== 'number' || !Number.isFinite(rawConfidence)) {
-    throw new Error('judge JSON missing or invalid confidence');
+  if (typeof rawConfidence !== "number" || !Number.isFinite(rawConfidence)) {
+    throw new Error("judge JSON missing or invalid confidence");
   }
   const clampedConfidence = Math.min(1, Math.max(0, rawConfidence));
-  const axisRaw = typeof v.axis === 'string' ? v.axis : '';
+  const axisRaw = typeof v.axis === "string" ? v.axis : "";
   const resolutionKind = parseResolutionKind(v.resolution_kind);
 
   // C1 double-enforce: only `verdict === 'contradiction'` carries the
   // confidence floor. Downgrade to no_contradiction below the threshold.
-  if (verdict === 'contradiction' && clampedConfidence < 0.7) {
-    verdict = 'no_contradiction';
+  if (verdict === "contradiction" && clampedConfidence < 0.7) {
+    verdict = "no_contradiction";
   }
 
   // Severity: judge can set it; if invalid, fall back to the default for the
@@ -200,15 +200,15 @@ export function normalizeVerdict(raw: unknown): JudgeVerdict {
   // route through defaultSeverityForVerdict instead so each verdict gets a
   // meaningful default.
   const severity = parseSeverity(v.severity, defaultSeverityForVerdict(verdict));
-  const isFinding = verdict !== 'no_contradiction';
+  const isFinding = verdict !== "no_contradiction";
 
   // Only `contradiction` keeps the v1 fallback to 'manual_review' when the
   // judge omits a resolution_kind. The new verdicts pass through whatever the
   // judge said (or null) and auto-supersession.ts picks the kind based on
   // verdict semantics.
   let normalizedResolutionKind: ResolutionKind | null;
-  if (verdict === 'contradiction') {
-    normalizedResolutionKind = resolutionKind ?? 'manual_review';
+  if (verdict === "contradiction") {
+    normalizedResolutionKind = resolutionKind ?? "manual_review";
   } else if (isFinding) {
     normalizedResolutionKind = resolutionKind ?? null;
   } else {
@@ -218,7 +218,7 @@ export function normalizeVerdict(raw: unknown): JudgeVerdict {
   return {
     verdict,
     severity,
-    axis: isFinding ? axisRaw : '',
+    axis: isFinding ? axisRaw : "",
     confidence: clampedConfidence,
     resolution_kind: normalizedResolutionKind,
   };
@@ -252,80 +252,92 @@ export function buildJudgePrompt(opts: {
 }): string {
   const a = truncateUtf8(opts.a.text, opts.maxPairChars);
   const b = truncateUtf8(opts.b.text, opts.maxPairChars);
-  const aMeta = [opts.a.slug, opts.a.source_tier && `source-tier ${opts.a.source_tier}`, opts.a.holder && `holder ${opts.a.holder}`].filter(Boolean).join(', ');
-  const bMeta = [opts.b.slug, opts.b.source_tier && `source-tier ${opts.b.source_tier}`, opts.b.holder && `holder ${opts.b.holder}`].filter(Boolean).join(', ');
+  const aMeta = [
+    opts.a.slug,
+    opts.a.source_tier && `source-tier ${opts.a.source_tier}`,
+    opts.a.holder && `holder ${opts.a.holder}`,
+  ]
+    .filter(Boolean)
+    .join(", ");
+  const bMeta = [
+    opts.b.slug,
+    opts.b.source_tier && `source-tier ${opts.b.source_tier}`,
+    opts.b.holder && `holder ${opts.b.holder}`,
+  ]
+    .filter(Boolean)
+    .join(", ");
   // Lane A1: emit the page-level effective_date on its own line so the judge
   // can reason temporally. `(date unknown)` keeps the v1 fallback behavior
   // when the page has no effective_date — judge classifies on text alone.
-  const aDateTag = opts.a.effective_date ? `(from: ${opts.a.effective_date})` : '(date unknown)';
-  const bDateTag = opts.b.effective_date ? `(from: ${opts.b.effective_date})` : '(date unknown)';
+  const aDateTag = opts.a.effective_date ? `(from: ${opts.a.effective_date})` : "(date unknown)";
+  const bDateTag = opts.b.effective_date ? `(from: ${opts.b.effective_date})` : "(date unknown)";
   return [
-    'You are a contradiction judge for a personal knowledge brain. The user',
-    'ran a search and got two results back. Decide whether the two statements',
+    "You are a contradiction judge for a personal knowledge brain. The user",
+    "ran a search and got two results back. Decide whether the two statements",
     "contradict each other in a way that would mislead someone trying to",
     "answer the user's query.",
-    '',
+    "",
     `User's query: ${opts.query}`,
-    '',
+    "",
     `Statement A ${aDateTag} (${aMeta}):`,
     a,
-    '',
+    "",
     `Statement B ${bDateTag} (${bMeta}):`,
     b,
-    '',
-    'Rules:',
-    '- The (from: YYYY-MM-DD) tag is the page-level effective date. Use it to',
-    '  classify what kind of difference this is, not just whether it exists.',
-    '  (date unknown) means the page has no temporal anchor — judge on text',
-    '  alone for that side.',
-    '- Pick exactly one verdict from the six values below.',
-    '- Use temporal_supersession when the newer-dated claim updates or replaces',
-    '  the older one (role change, status change). Not an error.',
-    '- Use temporal_regression when a metric or status went BACKWARDS over time',
-    '  (e.g., MRR dropped from $200K to $150K). This is a signal worth flagging.',
-    '- Use temporal_evolution for legitimate change over time that is neither',
-    '  supersession nor regression (e.g., evolving narrative, multi-step decision).',
-    '- Use negation_artifact when one side contains an explicit negation that',
+    "",
+    "Rules:",
+    "- The (from: YYYY-MM-DD) tag is the page-level effective date. Use it to",
+    "  classify what kind of difference this is, not just whether it exists.",
+    "  (date unknown) means the page has no temporal anchor — judge on text",
+    "  alone for that side.",
+    "- Pick exactly one verdict from the six values below.",
+    "- Use temporal_supersession when the newer-dated claim updates or replaces",
+    "  the older one (role change, status change). Not an error.",
+    "- Use temporal_regression when a metric or status went BACKWARDS over time",
+    "  (e.g., MRR dropped from $200K to $150K). This is a signal worth flagging.",
+    "- Use temporal_evolution for legitimate change over time that is neither",
+    "  supersession nor regression (e.g., evolving narrative, multi-step decision).",
+    "- Use negation_artifact when one side contains an explicit negation that",
     '  the surface tokens make look like a positive claim (e.g., "NOT X" parsed',
     '  as "X"). The data is correct; the apparent conflict is a parsing artifact.',
-    '- Use contradiction ONLY for genuinely conflicting claims at the same point',
-    '  in time, where the dates do not explain the difference.',
-    '- Use no_contradiction when the statements are compatible.',
-    '',
-    '- Subjective opinions held at different times by the SAME holder may be',
-    '  a contradiction (a flip). Opinions held by DIFFERENT holders are not.',
-    '- Different aspects of the same entity are not contradictions.',
+    "- Use contradiction ONLY for genuinely conflicting claims at the same point",
+    "  in time, where the dates do not explain the difference.",
+    "- Use no_contradiction when the statements are compatible.",
+    "",
+    "- Subjective opinions held at different times by the SAME holder may be",
+    "  a contradiction (a flip). Opinions held by DIFFERENT holders are not.",
+    "- Different aspects of the same entity are not contradictions.",
     "- Incidental disagreements unrelated to the user's query do not count.",
-    '  Judge only on claims relevant to what the user asked.',
-    '',
-    'Reply with JSON ONLY:',
-    '{',
+    "  Judge only on claims relevant to what the user asked.",
+    "",
+    "Reply with JSON ONLY:",
+    "{",
     '  "verdict": "no_contradiction" | "contradiction" | "temporal_supersession" | "temporal_regression" | "temporal_evolution" | "negation_artifact",',
     '  "severity": "info" | "low" | "medium" | "high",',
     '  "axis": "<one-line: what they disagree about, or empty>",',
     '  "confidence": 0.0..1.0,',
     '  "resolution_kind": "takes_supersede" | "dream_synthesize" | "takes_mark_debate" | "manual_review" | "temporal_supersede" | "flag_for_review" | "log_timeline_change" | null',
-    '}',
-    '',
-    'Severity rubric:',
-    '- info: temporal_supersession and temporal_evolution (not errors; informational).',
-    '- low: naming/format differences (Alice Smith vs A. Smith); negation artifacts.',
-    '- medium: factual values that may be stale (revenue, headcount).',
-    '- high: identity / structural claims (founder/CEO/CFO role); temporal_regression.',
-    '',
-    'Reply verdict:contradiction only when confidence >= 0.7. Other verdicts have',
-    'no confidence floor.',
-  ].join('\n');
+    "}",
+    "",
+    "Severity rubric:",
+    "- info: temporal_supersession and temporal_evolution (not errors; informational).",
+    "- low: naming/format differences (Alice Smith vs A. Smith); negation artifacts.",
+    "- medium: factual values that may be stale (revenue, headcount).",
+    "- high: identity / structural claims (founder/CEO/CFO role); temporal_regression.",
+    "",
+    "Reply verdict:contradiction only when confidence >= 0.7. Other verdicts have",
+    "no confidence floor.",
+  ].join("\n");
 }
 
 /** Detect refusal-shaped responses. Caller maps to judge_errors.refusal. */
 function isRefusalResponse(result: ChatResult): boolean {
-  if (result.stopReason === 'refusal') return true;
-  const txt = result.text?.toLowerCase?.() ?? '';
+  if (result.stopReason === "refusal") return true;
+  const txt = result.text?.toLowerCase?.() ?? "";
   return (
     txt.includes("i can't help") ||
-    txt.includes('i cannot help') ||
-    txt.includes('refuse to answer')
+    txt.includes("i cannot help") ||
+    txt.includes("refuse to answer")
   );
 }
 
@@ -347,12 +359,12 @@ export async function judgeContradiction(input: JudgeInput): Promise<JudgeOutput
   const callFn = input.chatFn ?? chat;
   const result = await callFn({
     model: input.model,
-    messages: [{ role: 'user', content: prompt }],
+    messages: [{ role: "user", content: prompt }],
     maxTokens: 200,
     abortSignal: input.abortSignal,
   });
   if (isRefusalResponse(result)) {
-    throw new Error('judge refused to answer');
+    throw new Error("judge refused to answer");
   }
   const raw = parseJudgeJSON(result.text);
   const verdict = normalizeVerdict(raw);

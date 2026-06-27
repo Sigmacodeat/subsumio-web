@@ -99,9 +99,9 @@ set, it writes to the default.
 
 Every source row stores `config.federated: boolean` in its JSONB config.
 
-| Value | Meaning |
-|-------|---------|
-| `true` | Source participates in unqualified `gbrain search "X"` results. |
+| Value                             | Meaning                                                                               |
+| --------------------------------- | ------------------------------------------------------------------------------------- |
+| `true`                            | Source participates in unqualified `gbrain search "X"` results.                       |
 | `false` (default for new sources) | Source only searched when explicitly named via `--source <id>` or qualified citation. |
 
 The seeded `default` source is `federated=true` so pre-v0.17 brains

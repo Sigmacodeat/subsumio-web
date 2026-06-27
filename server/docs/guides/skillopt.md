@@ -70,39 +70,39 @@ proposal (this lives in v0.42 follow-up; v1 emits the audit event).
 
 ## Flags
 
-| Flag | Default | Purpose |
-|---|---|---|
-| `--benchmark <path>` | `skills/<n>/skillopt-benchmark.jsonl` | Path to benchmark JSONL |
-| `--bootstrap-from-skill` | off | Generate a starter benchmark from SKILL.md (recommended; no routing-eval needed) |
-| `--bootstrap-tasks N` | 15 | How many starter tasks `--bootstrap-from-skill` generates (max 50) |
-| `--bootstrap-from-routing` | off | Auto-build benchmark from routing-eval.jsonl |
-| `--bootstrap-reviewed` | off | Required after human-reviewing bootstrap output |
-| `--epochs N` | 4 | Outer-loop iterations |
-| `--batch-size N` | 8 | Tasks per inner step |
-| `--lr N` | 4 | Max edits per step |
-| `--lr-schedule cosine\|linear\|constant` | cosine | Edit-budget decay |
-| `--split TRAIN:SEL:TEST` | 4:1:5 | Ratio; refuses if D_sel < 5 |
-| `--optimizer-model MODEL` | tier.deep | Reflects + proposes |
-| `--target-model MODEL` | tier.subagent | Executes the skill |
-| `--judge-model MODEL` | tier.reasoning | Scores rollouts |
-| `--patch \| --rewrite` | patch | Edit ops only vs. full rewrites |
-| `--dry-run` | off | Cost preview, no LLM calls |
-| `--no-mutate` | off | Write proposed.md, don't replace SKILL.md (no held-out needed) |
-| `--allow-mutate-bundled` | off | Required to mutate gbrain-bundled skills in place — ALSO requires `--held-out` (>=5 rows) or the run hard-refuses |
-| `--held-out <path>` | — | Independent test set (same JSONL shape as the benchmark, task IDs disjoint from it). A candidate that beats the benchmark but regresses on the held-out set is refused. Required for in-place bundled mutation. |
-| `--max-cost-usd N` | 5.00 | Hard cap; preflight refuses if exceeded |
-| `--max-runtime-min N` | 30 | Wall-clock cap |
-| `--force` | off | Bypass dirty-working-tree refusal |
-| `--resume <run-id>` | off | Resume a prior interrupted run |
-| `--json` | off | Machine-readable stdout |
+| Flag                                     | Default                               | Purpose                                                                                                                                                                                                         |
+| ---------------------------------------- | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--benchmark <path>`                     | `skills/<n>/skillopt-benchmark.jsonl` | Path to benchmark JSONL                                                                                                                                                                                         |
+| `--bootstrap-from-skill`                 | off                                   | Generate a starter benchmark from SKILL.md (recommended; no routing-eval needed)                                                                                                                                |
+| `--bootstrap-tasks N`                    | 15                                    | How many starter tasks `--bootstrap-from-skill` generates (max 50)                                                                                                                                              |
+| `--bootstrap-from-routing`               | off                                   | Auto-build benchmark from routing-eval.jsonl                                                                                                                                                                    |
+| `--bootstrap-reviewed`                   | off                                   | Required after human-reviewing bootstrap output                                                                                                                                                                 |
+| `--epochs N`                             | 4                                     | Outer-loop iterations                                                                                                                                                                                           |
+| `--batch-size N`                         | 8                                     | Tasks per inner step                                                                                                                                                                                            |
+| `--lr N`                                 | 4                                     | Max edits per step                                                                                                                                                                                              |
+| `--lr-schedule cosine\|linear\|constant` | cosine                                | Edit-budget decay                                                                                                                                                                                               |
+| `--split TRAIN:SEL:TEST`                 | 4:1:5                                 | Ratio; refuses if D_sel < 5                                                                                                                                                                                     |
+| `--optimizer-model MODEL`                | tier.deep                             | Reflects + proposes                                                                                                                                                                                             |
+| `--target-model MODEL`                   | tier.subagent                         | Executes the skill                                                                                                                                                                                              |
+| `--judge-model MODEL`                    | tier.reasoning                        | Scores rollouts                                                                                                                                                                                                 |
+| `--patch \| --rewrite`                   | patch                                 | Edit ops only vs. full rewrites                                                                                                                                                                                 |
+| `--dry-run`                              | off                                   | Cost preview, no LLM calls                                                                                                                                                                                      |
+| `--no-mutate`                            | off                                   | Write proposed.md, don't replace SKILL.md (no held-out needed)                                                                                                                                                  |
+| `--allow-mutate-bundled`                 | off                                   | Required to mutate gbrain-bundled skills in place — ALSO requires `--held-out` (>=5 rows) or the run hard-refuses                                                                                               |
+| `--held-out <path>`                      | —                                     | Independent test set (same JSONL shape as the benchmark, task IDs disjoint from it). A candidate that beats the benchmark but regresses on the held-out set is refused. Required for in-place bundled mutation. |
+| `--max-cost-usd N`                       | 5.00                                  | Hard cap; preflight refuses if exceeded                                                                                                                                                                         |
+| `--max-runtime-min N`                    | 30                                    | Wall-clock cap                                                                                                                                                                                                  |
+| `--force`                                | off                                   | Bypass dirty-working-tree refusal                                                                                                                                                                               |
+| `--resume <run-id>`                      | off                                   | Resume a prior interrupted run                                                                                                                                                                                  |
+| `--json`                                 | off                                   | Machine-readable stdout                                                                                                                                                                                         |
 
 ## Exit codes
 
-| Code | Meaning |
-|---|---|
-| 0 | Improved + accepted (or `--no-mutate` proposed.md written) |
-| 1 | No improvement; best skill unchanged |
-| 2 | Aborted by gate (dirty tree, over budget, bench validation, etc.) |
+| Code | Meaning                                                           |
+| ---- | ----------------------------------------------------------------- |
+| 0    | Improved + accepted (or `--no-mutate` proposed.md written)        |
+| 1    | No improvement; best skill unchanged                              |
+| 2    | Aborted by gate (dirty tree, over budget, bench validation, etc.) |
 
 ## Cost model
 
@@ -119,18 +119,18 @@ refuses to start when the estimate exceeds `--max-cost-usd`.
 
 ## Safety guards (the cathedral)
 
-| Guard | Decision | What it prevents |
-|---|---|---|
-| Validation gate is mandatory | D12 (paper) | Accepting LLM judge noise as improvement |
-| Frontmatter mutation forbidden | D5 | Routing surface drift (`check-resolvable` regression) |
-| Per-skill DB lock | D14 | Two concurrent runs corrupting history/versions |
-| Bundled-skill gate | D16 | Auto-mutating skills shipped with gbrain (in-place mutation requires `--allow-mutate-bundled` + a `--held-out` set of >=5 benchmark-disjoint tasks; else hard-refuse + proposed.md) |
-| Held-out gate | F11 | Accepting a candidate that overfits its own benchmark — `--held-out` refuses a candidate whose held-out score regresses below baseline |
-| Bootstrap review sentinel | D15 | Self-referential benchmark gaming |
-| Read-only tool sandbox in rollouts | D13 | Optimization runs writing junk pages to your brain |
-| History-intent-first atomic commit | D8 | Half-written SKILL.md on crash |
-| Cost preflight | D3 | Surprise mid-run budget exhaustion |
-| Dirty-tree refusal | dry-fix pattern | Overwriting your uncommitted changes |
+| Guard                              | Decision        | What it prevents                                                                                                                                                                    |
+| ---------------------------------- | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Validation gate is mandatory       | D12 (paper)     | Accepting LLM judge noise as improvement                                                                                                                                            |
+| Frontmatter mutation forbidden     | D5              | Routing surface drift (`check-resolvable` regression)                                                                                                                               |
+| Per-skill DB lock                  | D14             | Two concurrent runs corrupting history/versions                                                                                                                                     |
+| Bundled-skill gate                 | D16             | Auto-mutating skills shipped with gbrain (in-place mutation requires `--allow-mutate-bundled` + a `--held-out` set of >=5 benchmark-disjoint tasks; else hard-refuse + proposed.md) |
+| Held-out gate                      | F11             | Accepting a candidate that overfits its own benchmark — `--held-out` refuses a candidate whose held-out score regresses below baseline                                              |
+| Bootstrap review sentinel          | D15             | Self-referential benchmark gaming                                                                                                                                                   |
+| Read-only tool sandbox in rollouts | D13             | Optimization runs writing junk pages to your brain                                                                                                                                  |
+| History-intent-first atomic commit | D8              | Half-written SKILL.md on crash                                                                                                                                                      |
+| Cost preflight                     | D3              | Surprise mid-run budget exhaustion                                                                                                                                                  |
+| Dirty-tree refusal                 | dry-fix pattern | Overwriting your uncommitted changes                                                                                                                                                |
 
 ## When NOT to use SkillOpt
 

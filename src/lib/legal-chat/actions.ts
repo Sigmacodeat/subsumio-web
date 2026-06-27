@@ -139,10 +139,10 @@ async function batchListPages(
   limit = 200
 ): Promise<Record<string, BrainPage[]>> {
   const entries = await Promise.all(
-    types.map(async (type) => [
-      type,
-      await listPages(brainId, type, limit).catch(() => [] as BrainPage[]),
-    ] as const)
+    types.map(
+      async (type) =>
+        [type, await listPages(brainId, type, limit).catch(() => [] as BrainPage[])] as const
+    )
   );
   return Object.fromEntries(entries);
 }
@@ -2572,7 +2572,11 @@ export async function processIntent(ctx: ChatContext, intent: ParsedIntent): Pro
   }
 
   if (intent.kind === "bea_status") {
-    const batch = await batchListPages(ctx.sender.brainId, ["bea_draft", "bea_message", "filing_package"], 20);
+    const batch = await batchListPages(
+      ctx.sender.brainId,
+      ["bea_draft", "bea_message", "filing_package"],
+      20
+    );
     const drafts = batch["bea_draft"] ?? [];
     const messages = batch["bea_message"] ?? [];
     const filings = batch["filing_package"] ?? [];

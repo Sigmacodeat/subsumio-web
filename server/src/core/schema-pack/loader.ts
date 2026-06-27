@@ -16,17 +16,21 @@
 // when available. Empty file → INVALID_SHAPE. Unknown extension → falls
 // through to JSON.parse attempt.
 
-import { readFileSync } from 'node:fs';
-import { extname } from 'node:path';
-import { parseSchemaPackManifest, type SchemaPackManifest } from './manifest-v1.ts';
+import { readFileSync } from "node:fs";
+import { extname } from "node:path";
+import { parseSchemaPackManifest, type SchemaPackManifest } from "./manifest-v1.ts";
 
 export class SchemaPackLoaderError extends Error {
-  readonly code: 'PARSE_ERROR' | 'FILE_NOT_FOUND' | 'UNSUPPORTED_EXTENSION';
+  readonly code: "PARSE_ERROR" | "FILE_NOT_FOUND" | "UNSUPPORTED_EXTENSION";
   readonly path: string;
 
-  constructor(code: 'PARSE_ERROR' | 'FILE_NOT_FOUND' | 'UNSUPPORTED_EXTENSION', message: string, path: string) {
+  constructor(
+    code: "PARSE_ERROR" | "FILE_NOT_FOUND" | "UNSUPPORTED_EXTENSION",
+    message: string,
+    path: string
+  ) {
     super(message);
-    this.name = 'SchemaPackLoaderError';
+    this.name = "SchemaPackLoaderError";
     this.code = code;
     this.path = path;
   }
@@ -40,9 +44,13 @@ export class SchemaPackLoaderError extends Error {
 export function loadPackFromFile(path: string): SchemaPackManifest {
   let content: string;
   try {
-    content = readFileSync(path, 'utf-8');
+    content = readFileSync(path, "utf-8");
   } catch (e) {
-    throw new SchemaPackLoaderError('FILE_NOT_FOUND', `cannot read pack file: ${(e as Error).message}`, path);
+    throw new SchemaPackLoaderError(
+      "FILE_NOT_FOUND",
+      `cannot read pack file: ${(e as Error).message}`,
+      path
+    );
   }
   return loadPackFromString(content, path);
 }
@@ -54,18 +62,26 @@ export function loadPackFromFile(path: string): SchemaPackManifest {
 export function loadPackFromString(content: string, hint: string): SchemaPackManifest {
   const ext = extname(hint).toLowerCase();
   let raw: unknown;
-  if (ext === '.json') {
+  if (ext === ".json") {
     try {
       raw = JSON.parse(content);
     } catch (e) {
-      throw new SchemaPackLoaderError('PARSE_ERROR', `JSON parse error: ${(e as Error).message}`, hint);
+      throw new SchemaPackLoaderError(
+        "PARSE_ERROR",
+        `JSON parse error: ${(e as Error).message}`,
+        hint
+      );
     }
   } else {
     // Default to YAML for .yaml, .yml, and unknown extensions.
     try {
       raw = parseYamlMini(content);
     } catch (e) {
-      throw new SchemaPackLoaderError('PARSE_ERROR', `YAML parse error: ${(e as Error).message}`, hint);
+      throw new SchemaPackLoaderError(
+        "PARSE_ERROR",
+        `YAML parse error: ${(e as Error).message}`,
+        hint
+      );
     }
   }
   return parseSchemaPackManifest(raw, { path: hint });
@@ -96,14 +112,14 @@ export function parseYamlMini(content: string): unknown {
 
   function stripComment(line: string): string {
     // Strip comments outside quoted strings. Simple state machine.
-    let result = '';
+    let result = "";
     let inSingle = false;
     let inDouble = false;
     for (let j = 0; j < line.length; j++) {
       const c = line[j];
       if (c === "'" && !inDouble) inSingle = !inSingle;
       else if (c === '"' && !inSingle) inDouble = !inDouble;
-      else if (c === '#' && !inSingle && !inDouble) break;
+      else if (c === "#" && !inSingle && !inDouble) break;
       result += c;
     }
     return result;
@@ -111,23 +127,31 @@ export function parseYamlMini(content: string): unknown {
 
   function parseScalar(raw: string): unknown {
     const trimmed = raw.trim();
-    if (trimmed === '' || trimmed === '~' || trimmed === 'null') return null;
-    if (trimmed === 'true') return true;
-    if (trimmed === 'false') return false;
+    if (trimmed === "" || trimmed === "~" || trimmed === "null") return null;
+    if (trimmed === "true") return true;
+    if (trimmed === "false") return false;
     // JSON-style array or object — try JSON.parse first
-    if ((trimmed.startsWith('[') && trimmed.endsWith(']')) ||
-        (trimmed.startsWith('{') && trimmed.endsWith('}'))) {
-      try { return JSON.parse(trimmed); } catch { /* fall through to flow-sequence parse */ }
+    if (
+      (trimmed.startsWith("[") && trimmed.endsWith("]")) ||
+      (trimmed.startsWith("{") && trimmed.endsWith("}"))
+    ) {
+      try {
+        return JSON.parse(trimmed);
+      } catch {
+        /* fall through to flow-sequence parse */
+      }
       // YAML flow sequence: [foo, bar, baz] with bare words.
-      if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+      if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
         const inner = trimmed.slice(1, -1).trim();
-        if (inner === '') return [];
-        return inner.split(',').map(item => parseScalar(item.trim()));
+        if (inner === "") return [];
+        return inner.split(",").map((item) => parseScalar(item.trim()));
       }
     }
     // Quoted string
-    if ((trimmed.startsWith('"') && trimmed.endsWith('"')) ||
-        (trimmed.startsWith("'") && trimmed.endsWith("'"))) {
+    if (
+      (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+      (trimmed.startsWith("'") && trimmed.endsWith("'"))
+    ) {
       return trimmed.slice(1, -1);
     }
     // Number
@@ -139,12 +163,12 @@ export function parseYamlMini(content: string): unknown {
 
   function indentOf(line: string): number {
     let n = 0;
-    while (n < line.length && line[n] === ' ') n++;
+    while (n < line.length && line[n] === " ") n++;
     return n;
   }
 
   function isBlank(line: string): boolean {
-    return stripComment(line).trim() === '';
+    return stripComment(line).trim() === "";
   }
 
   function parseBlock(baseIndent: number): unknown {
@@ -155,7 +179,7 @@ export function parseYamlMini(content: string): unknown {
     const firstIndent = indentOf(firstNonBlank);
     if (firstIndent < baseIndent) return null;
     const firstStripped = firstNonBlank.slice(firstIndent);
-    if (firstStripped.startsWith('- ')) return parseSequence(baseIndent);
+    if (firstStripped.startsWith("- ")) return parseSequence(baseIndent);
     return parseMapping(baseIndent);
   }
 
@@ -168,12 +192,12 @@ export function parseYamlMini(content: string): unknown {
       const indent = indentOf(line);
       if (indent < baseIndent) break;
       const stripped = line.slice(indent);
-      if (!stripped.startsWith('- ')) break;
+      if (!stripped.startsWith("- ")) break;
       const after = stripped.slice(2);
       i++;
       // Inline scalar after "- "
-      if (!after.includes(':') || after.endsWith(':')) {
-        if (after.endsWith(':')) {
+      if (!after.includes(":") || after.endsWith(":")) {
+        if (after.endsWith(":")) {
           // "- key:" followed by nested mapping
           const map: Record<string, unknown> = {};
           map[after.slice(0, -1).trim()] = parseBlock(indent + 2);
@@ -185,12 +209,12 @@ export function parseYamlMini(content: string): unknown {
             const nextIndent = indentOf(next);
             if (nextIndent !== indent + 2) break;
             const nextStripped = next.slice(nextIndent);
-            const colonIdx = nextStripped.indexOf(':');
+            const colonIdx = nextStripped.indexOf(":");
             if (colonIdx < 0) break;
             const key = nextStripped.slice(0, colonIdx).trim();
             const rest = nextStripped.slice(colonIdx + 1).trim();
             i++;
-            if (rest === '') {
+            if (rest === "") {
               map[key] = parseBlock(nextIndent + 2);
             } else {
               map[key] = parseScalar(rest);
@@ -202,11 +226,11 @@ export function parseYamlMini(content: string): unknown {
         }
       } else {
         // "- key: value" — start of an inline mapping entry
-        const colonIdx = after.indexOf(':');
+        const colonIdx = after.indexOf(":");
         const key = after.slice(0, colonIdx).trim();
         const rest = after.slice(colonIdx + 1).trim();
         const map: Record<string, unknown> = {};
-        if (rest === '') {
+        if (rest === "") {
           map[key] = parseBlock(indent + 2);
         } else {
           map[key] = parseScalar(rest);
@@ -219,13 +243,13 @@ export function parseYamlMini(content: string): unknown {
           const nextIndent = indentOf(next);
           if (nextIndent !== indent + 2) break;
           const nextStripped = next.slice(nextIndent);
-          if (nextStripped.startsWith('- ')) break;
-          const colonIdx2 = nextStripped.indexOf(':');
+          if (nextStripped.startsWith("- ")) break;
+          const colonIdx2 = nextStripped.indexOf(":");
           if (colonIdx2 < 0) break;
           const key2 = nextStripped.slice(0, colonIdx2).trim();
           const rest2 = nextStripped.slice(colonIdx2 + 1).trim();
           i++;
-          if (rest2 === '') {
+          if (rest2 === "") {
             map[key2] = parseBlock(nextIndent + 2);
           } else {
             map[key2] = parseScalar(rest2);
@@ -250,12 +274,12 @@ export function parseYamlMini(content: string): unknown {
         break;
       }
       const stripped = line.slice(indent);
-      const colonIdx = stripped.indexOf(':');
+      const colonIdx = stripped.indexOf(":");
       if (colonIdx < 0) break;
       const key = stripped.slice(0, colonIdx).trim();
       const rest = stripped.slice(colonIdx + 1).trim();
       i++;
-      if (rest === '') {
+      if (rest === "") {
         result[key] = parseBlock(indent + 2);
       } else {
         result[key] = parseScalar(rest);

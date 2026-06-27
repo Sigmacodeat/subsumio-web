@@ -10,49 +10,48 @@
  *       fails the build if the committed doc differs from regenerated.
  */
 
-import { readFileSync, writeFileSync, existsSync } from 'fs';
-import { join } from 'path';
+import { readFileSync, writeFileSync, existsSync } from "fs";
+import { join } from "path";
 
-import { describeRubric } from '../src/core/skillpack/rubric.ts';
+import { describeRubric } from "../src/core/skillpack/rubric.ts";
 
-const REPO_ROOT = join(import.meta.dir, '..');
-const DOC_PATH = join(REPO_ROOT, 'docs', 'skillpack-anatomy.md');
+const REPO_ROOT = join(import.meta.dir, "..");
+const DOC_PATH = join(REPO_ROOT, "docs", "skillpack-anatomy.md");
 
-const BEGIN = '<!-- BEGIN auto-generated:rubric -->';
-const END = '<!-- END auto-generated:rubric -->';
+const BEGIN = "<!-- BEGIN auto-generated:rubric -->";
+const END = "<!-- END auto-generated:rubric -->";
 
 function buildRubricSection(): string {
   const rubric = describeRubric();
-  const core = rubric.filter((d) => d.category === 'core');
-  const badges = rubric.filter((d) => d.category === 'badge');
+  const core = rubric.filter((d) => d.category === "core");
+  const badges = rubric.filter((d) => d.category === "badge");
 
   const rows = (list: typeof rubric) =>
     list
       .map(
-        (d) =>
-          `| ${d.id} | \`${d.name}\` | ${d.description} | ${d.auto_fixable ? 'yes' : 'no'} |`,
+        (d) => `| ${d.id} | \`${d.name}\` | ${d.description} | ${d.auto_fixable ? "yes" : "no"} |`
       )
-      .join('\n');
+      .join("\n");
 
   return [
     BEGIN,
-    '',
-    '### Core dimensions (5; must all pass to publish at any tier)',
-    '',
-    '| # | Name | Description | Auto-fixable |',
-    '|---|------|-------------|--------------|',
+    "",
+    "### Core dimensions (5; must all pass to publish at any tier)",
+    "",
+    "| # | Name | Description | Auto-fixable |",
+    "|---|------|-------------|--------------|",
     rows(core),
-    '',
-    '### Quality badges (5; earn for tier eligibility)',
-    '',
-    '| # | Name | Description | Auto-fixable |',
-    '|---|------|-------------|--------------|',
+    "",
+    "### Quality badges (5; earn for tier eligibility)",
+    "",
+    "| # | Name | Description | Auto-fixable |",
+    "|---|------|-------------|--------------|",
     rows(badges),
-    '',
-    '_Generated from `src/core/skillpack/rubric.ts` by `bun run scripts/build-skillpack-anatomy.ts`._',
-    '',
+    "",
+    "_Generated from `src/core/skillpack/rubric.ts` by `bun run scripts/build-skillpack-anatomy.ts`._",
+    "",
     END,
-  ].join('\n');
+  ].join("\n");
 }
 
 const HAND_WRITTEN_FRAME = `# Skillpack anatomy
@@ -149,13 +148,13 @@ gbrain skillpack registry --url X     # point at a custom registry
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
-  const checkMode = args.includes('--check');
+  const checkMode = args.includes("--check");
 
   const generatedSection = buildRubricSection();
 
-  let existing = '';
+  let existing = "";
   if (existsSync(DOC_PATH)) {
-    existing = readFileSync(DOC_PATH, 'utf-8');
+    existing = readFileSync(DOC_PATH, "utf-8");
   }
 
   let next: string;
@@ -172,11 +171,11 @@ async function main(): Promise<void> {
   if (checkMode) {
     if (existing.trim() !== next.trim()) {
       process.stderr.write(
-        '[check-anatomy-fresh] docs/skillpack-anatomy.md is out of sync with rubric.ts. Run `bun run scripts/build-skillpack-anatomy.ts` to regenerate.\n',
+        "[check-anatomy-fresh] docs/skillpack-anatomy.md is out of sync with rubric.ts. Run `bun run scripts/build-skillpack-anatomy.ts` to regenerate.\n"
       );
       process.exit(1);
     }
-    process.stderr.write('[check-anatomy-fresh] docs/skillpack-anatomy.md is fresh.\n');
+    process.stderr.write("[check-anatomy-fresh] docs/skillpack-anatomy.md is fresh.\n");
     process.exit(0);
   }
 

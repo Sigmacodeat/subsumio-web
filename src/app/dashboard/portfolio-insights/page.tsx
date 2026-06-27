@@ -83,14 +83,18 @@ const severityIcon: Record<string, typeof AlertTriangle> = {
 };
 
 export default function PortfolioInsightsPage() {
-  const { data, loading, error, refetch: load } = useApiQuery<PortfolioInsights>(
-    async () => {
-      const res = await fetch("/api/legal/portfolio-insights?daysBack=180", { signal: AbortSignal.timeout(30_000) });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return (await res.json()) as PortfolioInsights;
-    },
-    []
-  );
+  const {
+    data,
+    loading,
+    error,
+    refetch: load,
+  } = useApiQuery<PortfolioInsights>(async () => {
+    const res = await fetch("/api/legal/portfolio-insights?daysBack=180", {
+      signal: AbortSignal.timeout(30_000),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return (await res.json()) as PortfolioInsights;
+  }, []);
 
   if (loading) {
     return (

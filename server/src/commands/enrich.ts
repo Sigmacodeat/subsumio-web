@@ -29,28 +29,28 @@
  * fans out one job per source when --source is omitted.
  */
 
-import type { BrainEngine } from '../core/engine.ts';
-import type { EnrichCandidate, PageType } from '../core/types.ts';
-import { operations } from '../core/operations.ts';
-import type { OperationContext } from '../core/operations.ts';
-import { isAvailable, chat, getChatModel, withBudgetTracker } from '../core/ai/gateway.ts';
-import { BudgetTracker, BudgetExhausted } from '../core/budget/budget-tracker.ts';
-import { hybridSearch } from '../core/search/hybrid.ts';
-import { serializeMarkdown } from '../core/markdown.ts';
-import { listSources } from '../core/sources-ops.ts';
+import type { BrainEngine } from "../core/engine.ts";
+import type { EnrichCandidate, PageType } from "../core/types.ts";
+import { operations } from "../core/operations.ts";
+import type { OperationContext } from "../core/operations.ts";
+import { isAvailable, chat, getChatModel, withBudgetTracker } from "../core/ai/gateway.ts";
+import { BudgetTracker, BudgetExhausted } from "../core/budget/budget-tracker.ts";
+import { hybridSearch } from "../core/search/hybrid.ts";
+import { serializeMarkdown } from "../core/markdown.ts";
+import { listSources } from "../core/sources-ops.ts";
 import {
   loadOpCheckpoint,
   recordCompleted,
   clearOpCheckpoint,
   fingerprint,
   type OpCheckpointKey,
-} from '../core/op-checkpoint.ts';
-import { createProgress } from '../core/progress.ts';
-import { getCliOptions, cliOptsToProgressOptions, maybeBackground } from '../core/cli-options.ts';
-import { loadConfig } from '../core/config.ts';
-import { runSlidingPool } from '../core/worker-pool.ts';
-import { parseWorkers, resolveWorkersWithClamp } from '../core/sync-concurrency.ts';
-import { withRefreshingLock, LockUnavailableError } from '../core/db-lock.ts';
+} from "../core/op-checkpoint.ts";
+import { createProgress } from "../core/progress.ts";
+import { getCliOptions, cliOptsToProgressOptions, maybeBackground } from "../core/cli-options.ts";
+import { loadConfig } from "../core/config.ts";
+import { runSlidingPool } from "../core/worker-pool.ts";
+import { parseWorkers, resolveWorkersWithClamp } from "../core/sync-concurrency.ts";
+import { withRefreshingLock, LockUnavailableError } from "../core/db-lock.ts";
 import {
   DEFAULT_THIN_THRESHOLD,
   MIN_CONTEXT_CHARS,
@@ -60,23 +60,23 @@ import {
   buildEnrichPrompt,
   parseSynthesis,
   type EnrichEvidence,
-} from '../core/enrich/thin.ts';
+} from "../core/enrich/thin.ts";
 
 // ---------------------------------------------------------------------------
 // Tunables (exported for tests).
 // ---------------------------------------------------------------------------
 
 export const DEFAULT_LIMIT = 50;
-export const DEFAULT_TYPES: PageType[] = ['person', 'company'];
+export const DEFAULT_TYPES: PageType[] = ["person", "company"];
 export const DEFAULT_MAX_COST_USD = 5.0;
 /** Default re-enrich window: skip pages enriched within the last 30 days. */
 export const DEFAULT_REENRICH_DAYS = 30;
 /** Per-page advisory lock TTL. withRefreshingLock refreshes at 1/6 the TTL. */
 export const PER_PAGE_LOCK_TTL_MINUTES = 2;
-export const CHECKPOINT_OP = 'enrich';
+export const CHECKPOINT_OP = "enrich";
 /** Frontmatter provenance marker. Survives put_page write-through (which only
  *  overrides ingested_via / ingested_at / source_kind). */
-export const ENRICHED_BY = 'cli:enrich';
+export const ENRICHED_BY = "cli:enrich";
 /** Retrieval fan-out caps (keep evidence bounded). */
 export const HYBRID_SEARCH_LIMIT = 8;
 export const BACKLINK_LIMIT = 12;
@@ -86,7 +86,7 @@ const CHECKPOINT_FLUSH_EVERY = 25;
 /** Rough per-page cost estimate (USD) for the dry-run preview. */
 const COST_ESTIMATE_PER_PAGE_USD = 0.01;
 
-export const ENRICH_ORDERS = ['inbound-links', 'salience', 'updated'] as const;
+export const ENRICH_ORDERS = ["inbound-links", "salience", "updated"] as const;
 export type EnrichOrder = (typeof ENRICH_ORDERS)[number];
 
 // ---------------------------------------------------------------------------
@@ -190,7 +190,7 @@ const defaultSynthesize: SynthesizeFn = async ({ system, user, model, abortSigna
   const res = await chat({
     model,
     system,
-    messages: [{ role: 'user', content: user }],
+    messages: [{ role: "user", content: user }],
     maxTokens: 2048,
     abortSignal,
     cacheSystem: true,
@@ -206,7 +206,7 @@ async function retrieveEvidence(
   engine: BrainEngine,
   sourceId: string,
   slug: string,
-  title: string,
+  title: string
 ): Promise<EnrichEvidence[]> {
   const evidence: EnrichEvidence[] = [];
   const seen = new Set<string>();
@@ -236,7 +236,7 @@ async function retrieveEvidence(
     let n = 0;
     for (const l of backlinks) {
       if (n >= BACKLINK_LIMIT) break;
-      const ctx = (l.context ?? '').trim();
+      const ctx = (l.context ?? "").trim();
       if (!ctx) continue;
       const dedup = `${l.from_slug}:${ctx.slice(0, 40)}`;
       if (seen.has(dedup)) continue;
@@ -255,7 +255,7 @@ async function retrieveEvidence(
         WHERE source_id = $1 AND entity_slug = $2 AND expired_at IS NULL
         ORDER BY confidence DESC, id DESC
         LIMIT $3`,
-      [sourceId, slug, FACT_LIMIT],
+      [sourceId, slug, FACT_LIMIT]
     );
     for (const r of rows) {
       const text = r.context ? `${r.fact} (${r.context})` : r.fact;
@@ -291,12 +291,9 @@ async function enrichOne(ctx: EnrichOneCtx, candidate: EnrichCandidate): Promise
   const lockId = `enrich:${sourceId}:${slug}`;
 
   try {
-    await withRefreshingLock(
-      engine,
-      lockId,
-      () => enrichOneLocked(ctx, candidate),
-      { ttlMinutes: PER_PAGE_LOCK_TTL_MINUTES },
-    );
+    await withRefreshingLock(engine, lockId, () => enrichOneLocked(ctx, candidate), {
+      ttlMinutes: PER_PAGE_LOCK_TTL_MINUTES,
+    });
   } catch (err) {
     if (err instanceof LockUnavailableError) {
       ctx.result.pages_skipped_lock++;
@@ -336,7 +333,7 @@ async function enrichOneLocked(ctx: EnrichOneCtx, candidate: EnrichCandidate): P
     slug,
     title: page.title || slug,
     kind,
-    currentBody: page.compiled_truth ?? '',
+    currentBody: page.compiled_truth ?? "",
     evidence,
   });
 
@@ -367,17 +364,17 @@ async function enrichOneLocked(ctx: EnrichOneCtx, candidate: EnrichCandidate): P
     enriched_at: new Date().toISOString(),
     enriched_by: ENRICHED_BY,
   };
-  const content = serializeMarkdown(newFrontmatter, parsed.body, page.timeline ?? '', {
+  const content = serializeMarkdown(newFrontmatter, parsed.body, page.timeline ?? "", {
     type: page.type,
     title: page.title,
     tags,
   });
 
-  const putPageOp = operations.find((o) => o.name === 'put_page');
-  if (!putPageOp) throw new Error('put_page operation missing (gbrain build issue)');
+  const putPageOp = operations.find((o) => o.name === "put_page");
+  if (!putPageOp) throw new Error("put_page operation missing (gbrain build issue)");
   const opCtx: OperationContext = {
     engine,
-    config: ctx.config ?? { engine: 'pglite' as const },
+    config: ctx.config ?? { engine: "pglite" as const },
     logger: {
       info: () => {},
       warn: (msg: string) => process.stderr.write(`[enrich] WARN: ${msg}\n`),
@@ -400,9 +397,9 @@ async function enrichOneLocked(ctx: EnrichOneCtx, candidate: EnrichCandidate): P
 export async function runEnrichCore(
   engine: BrainEngine,
   opts: EnrichCoreOpts,
-  signal?: AbortSignal,
+  signal?: AbortSignal
 ): Promise<EnrichResult> {
-  if (!opts.sourceId) throw new Error('runEnrichCore: opts.sourceId is required');
+  if (!opts.sourceId) throw new Error("runEnrichCore: opts.sourceId is required");
 
   const result: EnrichResult = {
     candidates_considered: 0,
@@ -417,7 +414,7 @@ export async function runEnrichCore(
   const types = opts.types && opts.types.length > 0 ? opts.types : DEFAULT_TYPES;
   const order: EnrichOrder = ENRICH_ORDERS.includes(opts.order as EnrichOrder)
     ? (opts.order as EnrichOrder)
-    : 'inbound-links';
+    : "inbound-links";
   const limit = opts.limit && opts.limit > 0 ? opts.limit : DEFAULT_LIMIT;
   const thinThreshold = opts.thinThreshold ?? DEFAULT_THIN_THRESHOLD;
   const minContextChars = opts.minContextChars ?? MIN_CONTEXT_CHARS;
@@ -427,7 +424,7 @@ export async function runEnrichCore(
   const synthesizeFn = opts.synthesizeFn ?? defaultSynthesize;
   const config = loadConfig();
 
-  const workersResolved = resolveWorkersWithClamp(engine, opts.workers, 'enrich', 0);
+  const workersResolved = resolveWorkersWithClamp(engine, opts.workers, "enrich", 0);
   const workers = workersResolved.workers;
 
   // Candidate enumeration — ONE source-aware, memory-bounded SQL query.
@@ -469,18 +466,18 @@ export async function runEnrichCore(
     let pool;
     try {
       pool = await runSlidingPool<EnrichCandidate>({
-      items: pending,
-      workers,
-      signal,
-      failureLabel: (c) => c.slug,
-      onItem: async (c) => {
-        await enrichOne(oneCtx, c);
-        // Periodic checkpoint flush so a crash mid-run doesn't lose progress.
-        if (!dryRun && done.size - lastFlush >= CHECKPOINT_FLUSH_EVERY) {
-          lastFlush = done.size;
-          await recordCompleted(engine, cpKey, [...done]);
-        }
-      },
+        items: pending,
+        workers,
+        signal,
+        failureLabel: (c) => c.slug,
+        onItem: async (c) => {
+          await enrichOne(oneCtx, c);
+          // Periodic checkpoint flush so a crash mid-run doesn't lose progress.
+          if (!dryRun && done.size - lastFlush >= CHECKPOINT_FLUSH_EVERY) {
+            lastFlush = done.size;
+            await recordCompleted(engine, cpKey, [...done]);
+          }
+        },
       });
     } catch (err) {
       // P2#1 (codex): BudgetExhausted aborts the pool and propagates. Flush the
@@ -508,10 +505,12 @@ export async function runEnrichCore(
   // One tracker reference for both the run and the post-hoc overage check.
   // External tracker (cycle phase): used as-is, no withBudgetTracker wrap (that
   // would REPLACE not stack). Internal: capped at maxCostUsd ?? DEFAULT.
-  const tracker = opts.budgetTracker ?? new BudgetTracker({
-    maxCostUsd: opts.maxCostUsd ?? DEFAULT_MAX_COST_USD,
-    label: `enrich:${sourceId}`,
-  });
+  const tracker =
+    opts.budgetTracker ??
+    new BudgetTracker({
+      maxCostUsd: opts.maxCostUsd ?? DEFAULT_MAX_COST_USD,
+      label: `enrich:${sourceId}`,
+    });
   try {
     if (opts.budgetTracker) {
       await body();
@@ -569,80 +568,118 @@ function parseDurationDays(raw: string): number | undefined {
   if (!m) return undefined;
   const n = parseInt(m[1], 10);
   if (!Number.isFinite(n) || n < 0) return undefined;
-  const unit = m[2] ?? 'd';
-  return unit === 'h' ? n * 3_600_000 : n * 86_400_000;
+  const unit = m[2] ?? "d";
+  return unit === "h" ? n * 3_600_000 : n * 86_400_000;
 }
 
 export function parseArgs(args: string[]): ParsedArgs {
   const out: ParsedArgs = {};
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
-    if (a === '--help' || a === '-h') { out.help = true; continue; }
+    if (a === "--help" || a === "-h") {
+      out.help = true;
+      continue;
+    }
     // --background / --follow are handled by the dispatcher (maybeBackground /
     // fan-out); accept them here as no-ops so the inline-degrade path (PGLite)
     // and buildJobParams don't trip the unknown-flag guard.
-    if (a === '--background' || a === '--follow') { continue; }
-    if (a === '--thin') { continue; } // accepted; thin-filter is always applied
-    if (a === '--dry-run') { out.dryRun = true; continue; }
-    if (a === '--force' || a === '--resume') {
+    if (a === "--background" || a === "--follow") {
+      continue;
+    }
+    if (a === "--thin") {
+      continue;
+    } // accepted; thin-filter is always applied
+    if (a === "--dry-run") {
+      out.dryRun = true;
+      continue;
+    }
+    if (a === "--force" || a === "--resume") {
       // --resume is the documented flag; it's the DEFAULT behavior (checkpoint
       // auto-resumes). --force clears the checkpoint. Treat --resume as a no-op
       // affirmation and --force as the clear.
-      if (a === '--force') out.force = true;
+      if (a === "--force") out.force = true;
       continue;
     }
-    if (a === '--yes' || a === '-y') { out.yes = true; continue; }
-    if (a === '--json') { out.json = true; continue; }
-    if (a === '--source' || a === '--source-id') { out.sourceId = args[++i]; continue; }
-    if (a === '--model') { out.model = args[++i]; continue; }
-    if (a === '--order') {
+    if (a === "--yes" || a === "-y") {
+      out.yes = true;
+      continue;
+    }
+    if (a === "--json") {
+      out.json = true;
+      continue;
+    }
+    if (a === "--source" || a === "--source-id") {
+      out.sourceId = args[++i];
+      continue;
+    }
+    if (a === "--model") {
+      out.model = args[++i];
+      continue;
+    }
+    if (a === "--order") {
       const v = args[++i] as EnrichOrder;
       if (!ENRICH_ORDERS.includes(v)) {
-        out.error = `Invalid --order: ${v}. Allowed: ${ENRICH_ORDERS.join(', ')}`;
+        out.error = `Invalid --order: ${v}. Allowed: ${ENRICH_ORDERS.join(", ")}`;
         return out;
       }
       out.order = v;
       continue;
     }
-    if (a === '--types') {
-      const v = args[++i] ?? '';
-      const parts = v.split(',').map((s) => s.trim()).filter(Boolean);
-      if (parts.length === 0) { out.error = '--types requires a comma-separated list'; return out; }
+    if (a === "--types") {
+      const v = args[++i] ?? "";
+      const parts = v
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      if (parts.length === 0) {
+        out.error = "--types requires a comma-separated list";
+        return out;
+      }
       out.types = parts as PageType[];
       continue;
     }
-    if (a === '--limit') {
-      const n = parseInt(args[++i] ?? '', 10);
+    if (a === "--limit") {
+      const n = parseInt(args[++i] ?? "", 10);
       if (Number.isFinite(n) && n > 0) out.limit = n;
       continue;
     }
-    if (a === '--workers' || a === '--concurrency') {
-      try { out.workers = parseWorkers(args[++i]); }
-      catch (e) { out.error = (e as Error).message; return out; }
+    if (a === "--workers" || a === "--concurrency") {
+      try {
+        out.workers = parseWorkers(args[++i]);
+      } catch (e) {
+        out.error = (e as Error).message;
+        return out;
+      }
       continue;
     }
-    if (a === '--max-usd' || a === '--max-cost-usd') {
-      const n = parseFloat(args[++i] ?? '');
+    if (a === "--max-usd" || a === "--max-cost-usd") {
+      const n = parseFloat(args[++i] ?? "");
       if (Number.isFinite(n) && n > 0) out.maxCostUsd = n;
       continue;
     }
-    if (a === '--min-context') {
-      const n = parseInt(args[++i] ?? '', 10);
+    if (a === "--min-context") {
+      const n = parseInt(args[++i] ?? "", 10);
       if (Number.isFinite(n) && n >= 0) out.minContextChars = n;
       continue;
     }
-    if (a === '--thin-threshold') {
-      const n = parseInt(args[++i] ?? '', 10);
+    if (a === "--thin-threshold") {
+      const n = parseInt(args[++i] ?? "", 10);
       if (Number.isFinite(n) && n > 0) out.thinThreshold = n;
       continue;
     }
-    if (a === '--reenrich-after') {
-      const ms = parseDurationDays(args[++i] ?? '');
-      if (ms === undefined) { out.error = 'Invalid --reenrich-after (use e.g. 30d or 12h)'; return out; }
+    if (a === "--reenrich-after") {
+      const ms = parseDurationDays(args[++i] ?? "");
+      if (ms === undefined) {
+        out.error = "Invalid --reenrich-after (use e.g. 30d or 12h)";
+        return out;
+      }
       out.reenrichAfterMs = ms;
       continue;
     }
-    if (a.startsWith('--')) { out.error = `Unknown flag: ${a}`; return out; }
+    if (a.startsWith("--")) {
+      out.error = `Unknown flag: ${a}`;
+      return out;
+    }
   }
   return out;
 }
@@ -744,16 +781,19 @@ function addInto(agg: EnrichResult, r: EnrichResult): void {
 }
 
 export async function runEnrich(engine: BrainEngine, args: string[]): Promise<void> {
-  if (args.includes('--help') || args.includes('-h')) {
+  if (args.includes("--help") || args.includes("-h")) {
     console.log(HELP);
     return;
   }
 
   // --background: fan out one Minion job per source (D4). With --source, one job.
   // PGLite has no worker daemon → fall through to inline (note emitted below).
-  if (args.includes('--background') && engine.kind !== 'pglite') {
+  if (args.includes("--background") && engine.kind !== "pglite") {
     const parsed = parseArgs(args);
-    if (parsed.error) { console.error(parsed.error); process.exit(1); }
+    if (parsed.error) {
+      console.error(parsed.error);
+      process.exit(1);
+    }
     const sourceIds = parsed.sourceId
       ? [parsed.sourceId]
       : (await listSources(engine)).map((s) => s.id);
@@ -761,31 +801,33 @@ export async function runEnrich(engine: BrainEngine, args: string[]): Promise<vo
       // Single source (or only one source exists) → one job via maybeBackground.
       const backgrounded = await maybeBackground({
         engine,
-        args: parsed.sourceId ? args : [...args, '--source', sourceIds[0] ?? 'default'],
-        jobName: 'enrich',
+        args: parsed.sourceId ? args : [...args, "--source", sourceIds[0] ?? "default"],
+        jobName: "enrich",
         paramBuilder: buildJobParams,
       });
       if (backgrounded) return;
     } else {
       // Multi-source fan-out: one job per source.
-      const { MinionQueue } = await import('../core/minions/queue.ts');
+      const { MinionQueue } = await import("../core/minions/queue.ts");
       const queue = new MinionQueue(engine);
       const ids: number[] = [];
       for (const sid of sourceIds) {
         const job = await queue.add(
-          'enrich',
+          "enrich",
           { ...buildJobParams(args), sourceId: sid },
-          { idempotency_key: backgroundIdempotencyKey(sid, args) },
+          { idempotency_key: backgroundIdempotencyKey(sid, args) }
         );
         ids.push(job.id);
       }
-      console.log(`Submitted ${ids.length} enrich job(s) (one per source): ${ids.map((i) => `job_id=${i}`).join(' ')}`);
-      console.log('Follow with: gbrain jobs follow <id>');
+      console.log(
+        `Submitted ${ids.length} enrich job(s) (one per source): ${ids.map((i) => `job_id=${i}`).join(" ")}`
+      );
+      console.log("Follow with: gbrain jobs follow <id>");
       return;
     }
-  } else if (args.includes('--background')) {
+  } else if (args.includes("--background")) {
     // PGLite + --background: no worker daemon; degrade to inline.
-    process.stderr.write('[--background] PGLite has no worker daemon; running enrich inline.\n');
+    process.stderr.write("[--background] PGLite has no worker daemon; running enrich inline.\n");
   }
 
   const parsed = parseArgs(args);
@@ -796,14 +838,18 @@ export async function runEnrich(engine: BrainEngine, args: string[]): Promise<vo
   }
 
   // Chat gateway required for non-dry-run.
-  if (!parsed.dryRun && !isAvailable('chat')) {
-    console.error('Chat gateway unavailable. Configure a chat model (e.g. `gbrain config set chat_model anthropic:claude-haiku-4-5`), or pass --dry-run to preview candidates.');
+  if (!parsed.dryRun && !isAvailable("chat")) {
+    console.error(
+      "Chat gateway unavailable. Configure a chat model (e.g. `gbrain config set chat_model anthropic:claude-haiku-4-5`), or pass --dry-run to preview candidates."
+    );
     process.exit(1);
   }
 
   // Non-TTY execute without --max-usd or --yes is refused (cost guardrail).
   if (!parsed.dryRun && parsed.maxCostUsd === undefined && !parsed.yes && !process.stdout.isTTY) {
-    console.error('Refusing to spend without a cap in a non-interactive context. Pass --max-usd <FLOAT> or --yes.');
+    console.error(
+      "Refusing to spend without a cap in a non-interactive context. Pass --max-usd <FLOAT> or --yes."
+    );
     process.exit(1);
   }
 
@@ -815,7 +861,9 @@ export async function runEnrich(engine: BrainEngine, args: string[]): Promise<vo
   if (!parsed.dryRun && process.stdout.isTTY && !parsed.yes && parsed.maxCostUsd === undefined) {
     const limit = parsed.limit ?? DEFAULT_LIMIT;
     const est = (limit * sourceIds.length * COST_ESTIMATE_PER_PAGE_USD).toFixed(2);
-    console.error(`About to enrich up to ${limit} page(s) per source across ${sourceIds.length} source(s), est. ~$${est}. Re-run with --max-usd or --yes to confirm.`);
+    console.error(
+      `About to enrich up to ${limit} page(s) per source across ${sourceIds.length} source(s), est. ~$${est}. Re-run with --max-usd or --yes to confirm.`
+    );
     process.exit(2);
   }
 
@@ -823,7 +871,7 @@ export async function runEnrich(engine: BrainEngine, args: string[]): Promise<vo
   let totalSpent = 0;
   let anyBudgetExhausted = false;
   const progress = createProgress(cliOptsToProgressOptions(getCliOptions()));
-  progress.start('enrich', sourceIds.length);
+  progress.start("enrich", sourceIds.length);
 
   try {
     for (const sourceId of sourceIds) {
@@ -851,30 +899,36 @@ export async function runEnrich(engine: BrainEngine, args: string[]): Promise<vo
   }
 
   if (parsed.json) {
-    console.log(JSON.stringify({
-      schema_version: 1,
-      ...aggregate,
-      spent_usd: totalSpent,
-      budget_exhausted: anyBudgetExhausted,
-      sources: sourceIds.length,
-      dry_run: !!parsed.dryRun,
-    }, null, 2));
+    console.log(
+      JSON.stringify(
+        {
+          schema_version: 1,
+          ...aggregate,
+          spent_usd: totalSpent,
+          budget_exhausted: anyBudgetExhausted,
+          sources: sourceIds.length,
+          dry_run: !!parsed.dryRun,
+        },
+        null,
+        2
+      )
+    );
   } else if (parsed.dryRun) {
     console.log(
       `\n(dry run) ${aggregate.candidates_considered} thin candidate(s) across ${sourceIds.length} source(s); ` +
-      `${aggregate.would_enrich ?? 0} have enough context to enrich, ` +
-      `${aggregate.pages_skipped_insufficient} lack context. ` +
-      `Est. ~$${(aggregate.candidates_considered * COST_ESTIMATE_PER_PAGE_USD).toFixed(2)} to run.`,
+        `${aggregate.would_enrich ?? 0} have enough context to enrich, ` +
+        `${aggregate.pages_skipped_insufficient} lack context. ` +
+        `Est. ~$${(aggregate.candidates_considered * COST_ESTIMATE_PER_PAGE_USD).toFixed(2)} to run.`
     );
   } else {
     console.log(
       `\nDone: enriched ${aggregate.pages_enriched} page(s) ` +
-      `(${aggregate.pages_skipped_insufficient} skipped insufficient, ` +
-      `${aggregate.pages_skipped_lock} lock-busy, ${aggregate.pages_failed} failed) ` +
-      `across ${sourceIds.length} source(s). Spent ~$${totalSpent.toFixed(4)}.`,
+        `(${aggregate.pages_skipped_insufficient} skipped insufficient, ` +
+        `${aggregate.pages_skipped_lock} lock-busy, ${aggregate.pages_failed} failed) ` +
+        `across ${sourceIds.length} source(s). Spent ~$${totalSpent.toFixed(4)}.`
     );
     if (anyBudgetExhausted) {
-      console.log('  Budget cap reached. Re-run with a higher --max-usd to continue.');
+      console.log("  Budget cap reached. Re-run with a higher --max-usd to continue.");
     }
   }
 

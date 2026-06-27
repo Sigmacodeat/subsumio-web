@@ -14,32 +14,28 @@
  * replacement command. Clean break, no deprecated alias (D10-amended).
  */
 
-import { existsSync, readFileSync } from 'fs';
-import { isAbsolute, resolve as resolvePath, join } from 'path';
+import { existsSync, readFileSync } from "fs";
+import { isAbsolute, resolve as resolvePath, join } from "path";
 
 import {
   bundledSkillSlugs,
   findGbrainRoot,
   loadBundleManifest,
   BundleError,
-} from '../core/skillpack/bundle.ts';
-import { runScaffold, ScaffoldError } from '../core/skillpack/scaffold.ts';
-import { runReference, runReferenceAll, runReferenceApply } from '../core/skillpack/reference.ts';
-import { runMigrateFence } from '../core/skillpack/migrate-fence.ts';
-import { runScrubLegacy } from '../core/skillpack/scrub-legacy.ts';
-import { runHarvest, HarvestError } from '../core/skillpack/harvest.ts';
-import { autoDetectSkillsDir } from '../core/repo-root.ts';
-import {
-  RemoteSourceError,
-  classifySpec,
-  resolveSource,
-} from '../core/skillpack/remote-source.ts';
+} from "../core/skillpack/bundle.ts";
+import { runScaffold, ScaffoldError } from "../core/skillpack/scaffold.ts";
+import { runReference, runReferenceAll, runReferenceApply } from "../core/skillpack/reference.ts";
+import { runMigrateFence } from "../core/skillpack/migrate-fence.ts";
+import { runScrubLegacy } from "../core/skillpack/scrub-legacy.ts";
+import { runHarvest, HarvestError } from "../core/skillpack/harvest.ts";
+import { autoDetectSkillsDir } from "../core/repo-root.ts";
+import { RemoteSourceError, classifySpec, resolveSource } from "../core/skillpack/remote-source.ts";
 import {
   ScaffoldThirdPartyError,
   runScaffoldThirdParty,
-} from '../core/skillpack/scaffold-third-party.ts';
-import { SkillpackManifestError } from '../core/skillpack/manifest-v1.ts';
-import { VERSION } from '../version.ts';
+} from "../core/skillpack/scaffold-third-party.ts";
+import { SkillpackManifestError } from "../core/skillpack/manifest-v1.ts";
+import { VERSION } from "../version.ts";
 
 const HELP_TOP = `gbrain skillpack <subcommand> [options]
 
@@ -97,66 +93,66 @@ Removed in v0.33 (use migrate-fence to upgrade, then \`scaffold\`):
 export async function runSkillpack(args: string[]): Promise<void> {
   const sub = args[0];
   const rest = args.slice(1);
-  if (!sub || sub === '--help' || sub === '-h') {
+  if (!sub || sub === "--help" || sub === "-h") {
     console.log(HELP_TOP);
     process.exit(0);
   }
   switch (sub) {
-    case 'list':
+    case "list":
       await cmdList(rest);
       return;
-    case 'scaffold':
+    case "scaffold":
       await cmdScaffold(rest);
       return;
-    case 'reference':
+    case "reference":
       await cmdReference(rest);
       return;
-    case 'migrate-fence':
+    case "migrate-fence":
       await cmdMigrateFence(rest);
       return;
-    case 'scrub-legacy-fence-rows':
+    case "scrub-legacy-fence-rows":
       await cmdScrubLegacy(rest);
       return;
-    case 'harvest':
+    case "harvest":
       await cmdHarvest(rest);
       return;
-    case 'diff':
+    case "diff":
       await cmdDiff(rest);
       return;
-    case 'check':
+    case "check":
       await routeCheck(rest);
       return;
-    case 'search':
+    case "search":
       await cmdSearch(rest);
       return;
-    case 'info':
+    case "info":
       await cmdInfo(rest);
       return;
-    case 'registry':
+    case "registry":
       await cmdRegistry(rest);
       return;
-    case 'doctor':
+    case "doctor":
       await cmdDoctor(rest);
       return;
-    case 'init':
+    case "init":
       await cmdInit(rest);
       return;
-    case 'pack':
+    case "pack":
       await cmdPack(rest);
       return;
-    case 'endorse':
+    case "endorse":
       await cmdEndorse(rest);
       return;
-    case 'install':
+    case "install":
       console.error(
         "Error: 'gbrain skillpack install' was removed in v0.33. Use 'gbrain skillpack scaffold <name>' instead.\n" +
-          "If you're upgrading from an older release, run 'gbrain skillpack migrate-fence' once to strip the legacy managed block, then scaffold any new skills.",
+          "If you're upgrading from an older release, run 'gbrain skillpack migrate-fence' once to strip the legacy managed block, then scaffold any new skills."
       );
       process.exit(2);
       return;
-    case 'uninstall':
+    case "uninstall":
       console.error(
-        "Error: 'gbrain skillpack uninstall' was removed in v0.33. The new scaffold model lets you own scaffolded files outright — to remove a skill, delete its directory (rm -rf skills/<slug>/) and any paired source files declared in its frontmatter.",
+        "Error: 'gbrain skillpack uninstall' was removed in v0.33. The new scaffold model lets you own scaffolded files outright — to remove a skill, delete its directory (rm -rf skills/<slug>/) and any paired source files declared in its frontmatter."
       );
       process.exit(2);
       return;
@@ -174,7 +170,7 @@ function resolveAbs(p: string): string {
 function findGbrainOrDie(): string {
   const root = findGbrainRoot();
   if (!root) {
-    console.error('Error: could not find gbrain repo root.');
+    console.error("Error: could not find gbrain repo root.");
     process.exit(2);
   }
   return root;
@@ -182,11 +178,11 @@ function findGbrainOrDie(): string {
 
 function resolveWorkspace(opts: { workspace?: string | null; skillsDir?: string | null }): string {
   if (opts.workspace) return resolveAbs(opts.workspace);
-  if (opts.skillsDir) return resolvePath(resolveAbs(opts.skillsDir), '..');
+  if (opts.skillsDir) return resolvePath(resolveAbs(opts.skillsDir), "..");
   const detected = autoDetectSkillsDir();
-  if (detected.dir) return resolvePath(detected.dir, '..');
+  if (detected.dir) return resolvePath(detected.dir, "..");
   console.error(
-    'Error: could not auto-detect a target workspace. Pass --workspace <path> or set $OPENCLAW_WORKSPACE.',
+    "Error: could not auto-detect a target workspace. Pass --workspace <path> or set $OPENCLAW_WORKSPACE."
   );
   process.exit(2);
 }
@@ -196,11 +192,13 @@ function resolveWorkspace(opts: { workspace?: string | null; skillsDir?: string 
 // ---------------------------------------------------------------------------
 
 async function cmdList(args: string[]): Promise<void> {
-  if (args.includes('--help') || args.includes('-h')) {
-    console.log('gbrain skillpack list [--json]\n\nPrint every skill bundled in openclaw.plugin.json.');
+  if (args.includes("--help") || args.includes("-h")) {
+    console.log(
+      "gbrain skillpack list [--json]\n\nPrint every skill bundled in openclaw.plugin.json."
+    );
     process.exit(0);
   }
-  const json = args.includes('--json');
+  const json = args.includes("--json");
   const gbrainRoot = findGbrainOrDie();
   let manifest;
   try {
@@ -211,11 +209,11 @@ async function cmdList(args: string[]): Promise<void> {
   }
   const slugs = bundledSkillSlugs(manifest);
   if (json) {
-    const entries = slugs.map(slug => {
-      const skillMd = join(gbrainRoot, 'skills', slug, 'SKILL.md');
+    const entries = slugs.map((slug) => {
+      const skillMd = join(gbrainRoot, "skills", slug, "SKILL.md");
       let description: string | null = null;
       if (existsSync(skillMd)) {
-        const body = readFileSync(skillMd, 'utf-8');
+        const body = readFileSync(skillMd, "utf-8");
         const fm = body.match(/^---\n([\s\S]*?)\n---/);
         if (fm) {
           const descMatch = fm[1].match(/^description:\s*["']?([^\n"']+)/m);
@@ -224,7 +222,9 @@ async function cmdList(args: string[]): Promise<void> {
       }
       return { name: slug, description };
     });
-    console.log(JSON.stringify({ name: manifest.name, version: manifest.version, skills: entries }, null, 2));
+    console.log(
+      JSON.stringify({ name: manifest.name, version: manifest.version, skills: entries }, null, 2)
+    );
   } else {
     console.log(`${manifest.name} ${manifest.version} bundle — ${slugs.length} skills:`);
     for (const slug of slugs) console.log(`  ${slug}`);
@@ -237,45 +237,45 @@ async function cmdList(args: string[]): Promise<void> {
 // ---------------------------------------------------------------------------
 
 async function cmdScaffold(args: string[]): Promise<void> {
-  if (args.includes('--help') || args.includes('-h')) {
+  if (args.includes("--help") || args.includes("-h")) {
     console.log(
-      'gbrain skillpack scaffold <name> | <source> | --all [--workspace PATH] [--dry-run] [--trust] [--no-cache] [--json]\n\n' +
-      '<name>   — bundled skill slug (e.g. `book-mirror`)\n' +
-      '<source> — third-party skillpack source. Accepted shapes:\n' +
-      '             owner/repo                (expands to https://github.com/owner/repo)\n' +
-      '             https://...git            (verbatim https URL)\n' +
-      '             ./local/dir/              (local pack root)\n' +
-      '             ./local/pack.tgz          (local tarball)\n' +
-      '\nFlags:\n' +
-      '  --workspace PATH    Target workspace (default: auto-detected)\n' +
-      '  --all               Scaffold every bundled skill (gbrain only)\n' +
-      '  --dry-run           Validate + report; no writes\n' +
-      '  --trust             Skip first-install confirm prompt (CI / unattended agents)\n' +
-      '  --no-cache          Force fresh clone/extract for third-party sources\n' +
-      '  --json              Stable JSON envelope for agent consumption',
+      "gbrain skillpack scaffold <name> | <source> | --all [--workspace PATH] [--dry-run] [--trust] [--no-cache] [--json]\n\n" +
+        "<name>   — bundled skill slug (e.g. `book-mirror`)\n" +
+        "<source> — third-party skillpack source. Accepted shapes:\n" +
+        "             owner/repo                (expands to https://github.com/owner/repo)\n" +
+        "             https://...git            (verbatim https URL)\n" +
+        "             ./local/dir/              (local pack root)\n" +
+        "             ./local/pack.tgz          (local tarball)\n" +
+        "\nFlags:\n" +
+        "  --workspace PATH    Target workspace (default: auto-detected)\n" +
+        "  --all               Scaffold every bundled skill (gbrain only)\n" +
+        "  --dry-run           Validate + report; no writes\n" +
+        "  --trust             Skip first-install confirm prompt (CI / unattended agents)\n" +
+        "  --no-cache          Force fresh clone/extract for third-party sources\n" +
+        "  --json              Stable JSON envelope for agent consumption"
     );
     process.exit(0);
   }
-  const json = args.includes('--json');
-  const dryRun = args.includes('--dry-run');
-  const all = args.includes('--all');
-  const trustFlag = args.includes('--trust');
-  const noCache = args.includes('--no-cache');
+  const json = args.includes("--json");
+  const dryRun = args.includes("--dry-run");
+  const all = args.includes("--all");
+  const trustFlag = args.includes("--trust");
+  const noCache = args.includes("--no-cache");
   let name: string | null = null;
   let workspace: string | null = null;
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
-    if (a === '--workspace') {
+    if (a === "--workspace") {
       workspace = args[i + 1] ?? null;
       i++;
-    } else if (a?.startsWith('--workspace=')) {
-      workspace = a.slice('--workspace='.length) || null;
-    } else if (a && !a.startsWith('--') && !name) {
+    } else if (a?.startsWith("--workspace=")) {
+      workspace = a.slice("--workspace=".length) || null;
+    } else if (a && !a.startsWith("--") && !name) {
       name = a;
     }
   }
   if (!all && !name) {
-    console.error('Error: pass a skill name, third-party source, or --all.');
+    console.error("Error: pass a skill name, third-party source, or --all.");
     process.exit(2);
   }
 
@@ -334,17 +334,23 @@ async function cmdScaffold(args: string[]): Promise<void> {
       dryRun,
     });
     if (json) {
-      console.log(JSON.stringify({ ok: true, dryRun: result.dryRun, summary: result.summary, files: result.files }, null, 2));
+      console.log(
+        JSON.stringify(
+          { ok: true, dryRun: result.dryRun, summary: result.summary, files: result.files },
+          null,
+          2
+        )
+      );
     } else {
       console.log(
-        `${dryRun ? 'scaffold --dry-run' : 'scaffold'}: ${result.summary.wroteNew} wrote, ${result.summary.skippedExisting} skipped (already present), ${result.summary.pairedSourcesWritten} paired source(s)`,
+        `${dryRun ? "scaffold --dry-run" : "scaffold"}: ${result.summary.wroteNew} wrote, ${result.summary.skippedExisting} skipped (already present), ${result.summary.pairedSourcesWritten} paired source(s)`
       );
       // Next-action hint for the agent + the operator. Print only on
       // actual writes (re-runs that just skip are noise-quieter).
       if (!dryRun && result.summary.wroteNew > 0) {
-        const onboardingPath = join(targetWorkspace, 'skills', '_AGENT_README.md');
+        const onboardingPath = join(targetWorkspace, "skills", "_AGENT_README.md");
         console.log(
-          `\nNext: your agent walks \`skills/*/SKILL.md\` frontmatter \`triggers:\` for routing.\nIf this is a fresh install, read ${onboardingPath} for the agent contract.\nWhen gbrain ships an update later, run \`gbrain skillpack reference --all\` to sweep.`,
+          `\nNext: your agent walks \`skills/*/SKILL.md\` frontmatter \`triggers:\` for routing.\nIf this is a fresh install, read ${onboardingPath} for the agent contract.\nWhen gbrain ships an update later, run \`gbrain skillpack reference --all\` to sweep.`
         );
       }
     }
@@ -375,18 +381,19 @@ async function runThirdPartyScaffold(opts: ThirdPartyScaffoldOptions): Promise<v
   // Step 1: resolve the source. Kebab names get a registry lookup first;
   // everything else hits the direct resolveSource() path.
   let resolved;
-  let registryTier: 'endorsed' | 'community' | 'experimental' | 'dead' | undefined;
+  let registryTier: "endorsed" | "community" | "experimental" | "dead" | undefined;
   try {
     const cls = classifySpec(opts.spec);
-    if (cls.kind === 'kebab') {
+    if (cls.kind === "kebab") {
       // Registry path: load catalog, find pack, follow to URL.
-      const { loadRegistry, findPackWithTier } = await import('../core/skillpack/registry-client.ts');
+      const { loadRegistry, findPackWithTier } =
+        await import("../core/skillpack/registry-client.ts");
       const loaded = await loadRegistry({});
       const found = findPackWithTier(loaded, cls.normalized);
       if (!found) {
         console.error(
           `Error: no skillpack named "${cls.normalized}" in the registry (${loaded.registry_url}).\n` +
-            `Run \`gbrain skillpack search ${cls.normalized}\` for matches, or pass a full source (owner/repo, https URL, ./path, ./*.tgz).`,
+            `Run \`gbrain skillpack search ${cls.normalized}\` for matches, or pass a full source (owner/repo, https URL, ./path, ./*.tgz).`
         );
         process.exit(2);
       }
@@ -414,14 +421,14 @@ async function runThirdPartyScaffold(opts: ThirdPartyScaffoldOptions): Promise<v
         dryRun: opts.dryRun,
         tier: registryTier,
       },
-      VERSION,
+      VERSION
     );
 
     if (opts.json) {
       console.log(
         JSON.stringify(
           {
-            ok: result.status !== 'aborted_no_trust',
+            ok: result.status !== "aborted_no_trust",
             status: result.status,
             pack: {
               name: result.manifest.name,
@@ -438,42 +445,42 @@ async function runThirdPartyScaffold(opts: ThirdPartyScaffoldOptions): Promise<v
             bootstrap_shown: result.bootstrap.shown,
           },
           null,
-          2,
-        ),
+          2
+        )
       );
     } else {
-      if (result.status === 'aborted_no_trust') {
+      if (result.status === "aborted_no_trust") {
         console.error(
-          `skillpack scaffold: aborted (trust decision: ${result.trustDecision.reason}). No files written.`,
+          `skillpack scaffold: aborted (trust decision: ${result.trustDecision.reason}). No files written.`
         );
         process.exit(1);
       }
       const m = result.manifest;
       const summary = result.copy?.summary;
       console.log(
-        `${opts.dryRun ? 'scaffold (dry-run)' : 'scaffold'}: ${m.name}@${m.version} by ${m.author}` +
-          (summary
-            ? ` — ${summary.wroteNew} wrote, ${summary.skippedExisting} skipped`
-            : ''),
+        `${opts.dryRun ? "scaffold (dry-run)" : "scaffold"}: ${m.name}@${m.version} by ${m.author}` +
+          (summary ? ` — ${summary.wroteNew} wrote, ${summary.skippedExisting} skipped` : "")
       );
-      if (result.resolved.kind !== 'local') {
+      if (result.resolved.kind !== "local") {
         console.log(
           `Source: ${result.resolved.source}` +
-            (result.resolved.pinned_commit ? ` @ ${result.resolved.pinned_commit.slice(0, 12)}` : ''),
+            (result.resolved.pinned_commit
+              ? ` @ ${result.resolved.pinned_commit.slice(0, 12)}`
+              : "")
         );
       }
       if (result.bootstrap.shown) {
         // Bootstrap framing on stderr so stdout stays clean for the agent contract.
-        process.stderr.write('\n' + result.bootstrap.text + '\n');
+        process.stderr.write("\n" + result.bootstrap.text + "\n");
       }
       if (!opts.dryRun && summary && summary.wroteNew > 0) {
         console.log(
           `\nNext: your agent walks skills/*/SKILL.md frontmatter triggers: for routing.\n` +
-            `Run \`gbrain skillpack reference ${m.name}\` later if upstream changes.`,
+            `Run \`gbrain skillpack reference ${m.name}\` later if upstream changes.`
         );
       }
     }
-    process.exit(result.status === 'aborted_no_trust' ? 1 : 0);
+    process.exit(result.status === "aborted_no_trust" ? 1 : 0);
   } catch (err) {
     if (err instanceof ScaffoldThirdPartyError || err instanceof SkillpackManifestError) {
       console.error(`skillpack scaffold: ${(err as Error).message}`);
@@ -488,40 +495,40 @@ async function runThirdPartyScaffold(opts: ThirdPartyScaffoldOptions): Promise<v
 // ---------------------------------------------------------------------------
 
 async function cmdReference(args: string[]): Promise<void> {
-  if (args.includes('--help') || args.includes('-h')) {
+  if (args.includes("--help") || args.includes("-h")) {
     console.log(
-      'gbrain skillpack reference <name> | --all [--workspace PATH] [--apply-clean-hunks] [--since <version>] [--dry-run] [--json]\n\n' +
-        '  --since <version>   With --all, restrict the sweep to skills whose source\n' +
-        '                      changed in gbrain between <version> and HEAD. Useful\n' +
-        '                      after `gbrain upgrade` to see only what moved.',
+      "gbrain skillpack reference <name> | --all [--workspace PATH] [--apply-clean-hunks] [--since <version>] [--dry-run] [--json]\n\n" +
+        "  --since <version>   With --all, restrict the sweep to skills whose source\n" +
+        "                      changed in gbrain between <version> and HEAD. Useful\n" +
+        "                      after `gbrain upgrade` to see only what moved."
     );
     process.exit(0);
   }
-  const json = args.includes('--json');
-  const apply = args.includes('--apply-clean-hunks');
-  const dryRun = args.includes('--dry-run');
-  const all = args.includes('--all');
+  const json = args.includes("--json");
+  const apply = args.includes("--apply-clean-hunks");
+  const dryRun = args.includes("--dry-run");
+  const all = args.includes("--all");
   let name: string | null = null;
   let workspace: string | null = null;
   let since: string | null = null;
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
-    if (a === '--workspace') {
+    if (a === "--workspace") {
       workspace = args[i + 1] ?? null;
       i++;
-    } else if (a?.startsWith('--workspace=')) {
-      workspace = a.slice('--workspace='.length) || null;
-    } else if (a === '--since') {
+    } else if (a?.startsWith("--workspace=")) {
+      workspace = a.slice("--workspace=".length) || null;
+    } else if (a === "--since") {
       since = args[i + 1] ?? null;
       i++;
-    } else if (a?.startsWith('--since=')) {
-      since = a.slice('--since='.length) || null;
-    } else if (a && !a.startsWith('--') && !name) {
+    } else if (a?.startsWith("--since=")) {
+      since = a.slice("--since=".length) || null;
+    } else if (a && !a.startsWith("--") && !name) {
       name = a;
     }
   }
   if (!all && !name) {
-    console.error('Error: pass a skill name or --all.');
+    console.error("Error: pass a skill name or --all.");
     process.exit(2);
   }
 
@@ -532,7 +539,7 @@ async function cmdReference(args: string[]): Promise<void> {
     if (apply) {
       if (all) {
         console.error(
-          'Error: --apply-clean-hunks is intentionally NOT supported with --all. Apply one skill at a time.',
+          "Error: --apply-clean-hunks is intentionally NOT supported with --all. Apply one skill at a time."
         );
         process.exit(2);
       }
@@ -543,11 +550,13 @@ async function cmdReference(args: string[]): Promise<void> {
       // output's `framing` field already, and the docstring on the
       // command-help covers it.
       const twoWayWarning =
-        'WARNING: --apply-clean-hunks is a two-way diff against gbrain\'s CURRENT bundle.\n' +
-        '         gbrain does NOT have access to the version you originally scaffolded.\n' +
-        '         Hunks where your LOCAL edits differ from gbrain WILL be aligned to gbrain.\n' +
-        '         If you have intentional local edits, run `gbrain skillpack reference ' + name + '`\n' +
-        '         (read-only) first to inspect, OR pass --dry-run on this command.';
+        "WARNING: --apply-clean-hunks is a two-way diff against gbrain's CURRENT bundle.\n" +
+        "         gbrain does NOT have access to the version you originally scaffolded.\n" +
+        "         Hunks where your LOCAL edits differ from gbrain WILL be aligned to gbrain.\n" +
+        "         If you have intentional local edits, run `gbrain skillpack reference " +
+        name +
+        "`\n" +
+        "         (read-only) first to inspect, OR pass --dry-run on this command.";
       if (!dryRun && !json) console.error(twoWayWarning);
 
       const result = runReferenceApply({ gbrainRoot, targetWorkspace, skillSlug: name!, dryRun });
@@ -555,16 +564,18 @@ async function cmdReference(args: string[]): Promise<void> {
       else {
         console.log(result.framing);
         console.log(
-          `reference --apply-clean-hunks: ${result.summary.totalHunksApplied} hunk(s) applied, ${result.summary.totalHunksConflicted} conflict(s)`,
+          `reference --apply-clean-hunks: ${result.summary.totalHunksApplied} hunk(s) applied, ${result.summary.totalHunksConflicted} conflict(s)`
         );
         for (const f of result.files) {
-          if (f.status === 'identical') continue;
+          if (f.status === "identical") continue;
           console.log(`  ${f.status.padEnd(15)} ${f.target}`);
           for (const c of f.conflicts) console.log(`    ${c}`);
         }
         if (result.summary.totalHunksConflicted > 0) {
           console.log(
-            '\nConflicts left in place. Run `gbrain skillpack reference ' + name + '` to inspect\nthe unified diffs and patch by hand. The conflict_missing / conflict_ambiguous\nlabels above indicate WHY the hunk could not be applied automatically.',
+            "\nConflicts left in place. Run `gbrain skillpack reference " +
+              name +
+              "` to inspect\nthe unified diffs and patch by hand. The conflict_missing / conflict_ambiguous\nlabels above indicate WHY the hunk could not be applied automatically."
           );
         }
       }
@@ -578,18 +589,18 @@ async function cmdReference(args: string[]): Promise<void> {
       // the ref (tarball install, missing tag, etc).
       let sinceFilter: Set<string> | null = null;
       if (since) {
-        const { changedSlugsSinceVersion } = await import('../core/skillpack/bundle.ts');
+        const { changedSlugsSinceVersion } = await import("../core/skillpack/bundle.ts");
         const slugs = changedSlugsSinceVersion(gbrainRoot, since);
         if (slugs === null) {
           console.error(
-            `warn: --since '${since}' could not be resolved (no git checkout, missing tag, or git error). Falling back to full sweep.`,
+            `warn: --since '${since}' could not be resolved (no git checkout, missing tag, or git error). Falling back to full sweep.`
           );
         } else {
           sinceFilter = new Set(slugs);
         }
       }
       const filteredSkills = sinceFilter
-        ? result.skills.filter(s => sinceFilter!.has(s.slug))
+        ? result.skills.filter((s) => sinceFilter!.has(s.slug))
         : result.skills;
       const filtered = { ...result, skills: filteredSkills };
       if (json) console.log(JSON.stringify(filtered, null, 2));
@@ -599,11 +610,11 @@ async function cmdReference(args: string[]): Promise<void> {
           console.log(`(filtered to ${filteredSkills.length} skill(s) changed since ${since})`);
         }
         if (filteredSkills.length === 0) {
-          console.log('  (no skills changed in the requested window)');
+          console.log("  (no skills changed in the requested window)");
         }
         for (const s of filteredSkills) {
           console.log(
-            `  ${s.slug.padEnd(40)} identical:${s.summary.identical} differs:${s.summary.differs} missing:${s.summary.missing}`,
+            `  ${s.slug.padEnd(40)} identical:${s.summary.identical} differs:${s.summary.differs} missing:${s.summary.missing}`
           );
         }
       }
@@ -615,24 +626,28 @@ async function cmdReference(args: string[]): Promise<void> {
     else {
       console.log(result.framing);
       console.log(
-        `reference: identical:${result.summary.identical} differs:${result.summary.differs} missing:${result.summary.missing}`,
+        `reference: identical:${result.summary.identical} differs:${result.summary.differs} missing:${result.summary.missing}`
       );
       for (const f of result.files) {
-        if (f.status === 'identical') continue;
+        if (f.status === "identical") continue;
         console.log(`\n  ${f.status.padEnd(10)} ${f.target}`);
         if (f.unifiedDiff) console.log(f.unifiedDiff);
       }
       // Per-category action hints for the agent.
       if (result.summary.missing > 0 || result.summary.differs > 0) {
-        console.log('\nAgent decision policy per file:');
+        console.log("\nAgent decision policy per file:");
         if (result.summary.missing > 0) {
           console.log(
-            '  missing → gbrain has a file you don\'t. Usually safe to `gbrain skillpack scaffold ' + name + '` again to land it.',
+            "  missing → gbrain has a file you don't. Usually safe to `gbrain skillpack scaffold " +
+              name +
+              "` again to land it."
           );
         }
         if (result.summary.differs > 0) {
           console.log(
-            '  differs → was your local edit intentional? Keep it (gbrain is reference, not law).\n            Accidental drift? Patch by hand, or `gbrain skillpack reference ' + name + ' --apply-clean-hunks`\n            (READ the two-way merge warning in that command\'s output first).',
+            "  differs → was your local edit intentional? Keep it (gbrain is reference, not law).\n            Accidental drift? Patch by hand, or `gbrain skillpack reference " +
+              name +
+              " --apply-clean-hunks`\n            (READ the two-way merge warning in that command's output first)."
           );
         }
       }
@@ -652,20 +667,20 @@ async function cmdReference(args: string[]): Promise<void> {
 // ---------------------------------------------------------------------------
 
 async function cmdMigrateFence(args: string[]): Promise<void> {
-  if (args.includes('--help') || args.includes('-h')) {
-    console.log('gbrain skillpack migrate-fence [--workspace PATH] [--dry-run] [--json]');
+  if (args.includes("--help") || args.includes("-h")) {
+    console.log("gbrain skillpack migrate-fence [--workspace PATH] [--dry-run] [--json]");
     process.exit(0);
   }
-  const json = args.includes('--json');
-  const dryRun = args.includes('--dry-run');
+  const json = args.includes("--json");
+  const dryRun = args.includes("--dry-run");
   let workspace: string | null = null;
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
-    if (a === '--workspace') {
+    if (a === "--workspace") {
       workspace = args[i + 1] ?? null;
       i++;
-    } else if (a?.startsWith('--workspace=')) {
-      workspace = a.slice('--workspace='.length) || null;
+    } else if (a?.startsWith("--workspace=")) {
+      workspace = a.slice("--workspace=".length) || null;
     }
   }
   const gbrainRoot = findGbrainOrDie();
@@ -675,20 +690,21 @@ async function cmdMigrateFence(args: string[]): Promise<void> {
   else {
     console.log(`migrate-fence: ${result.status}`);
     if (result.resolverFile) console.log(`  resolver: ${result.resolverFile}`);
-    if (result.fenceSlugs.length) console.log(`  fenced slugs: ${result.fenceSlugs.join(', ')}`);
-    if (result.skillsCopied.length) console.log(`  skills copied: ${result.skillsCopied.join(', ')}`);
+    if (result.fenceSlugs.length) console.log(`  fenced slugs: ${result.fenceSlugs.join(", ")}`);
+    if (result.skillsCopied.length)
+      console.log(`  skills copied: ${result.skillsCopied.join(", ")}`);
     if (result.skillsAlreadyPresent.length)
-      console.log(`  already present: ${result.skillsAlreadyPresent.join(', ')}`);
+      console.log(`  already present: ${result.skillsAlreadyPresent.join(", ")}`);
     if (result.usedRowFallback)
-      console.log('  (used row-parsing fallback — receipt was missing or drifted)');
+      console.log("  (used row-parsing fallback — receipt was missing or drifted)");
     // Next-action hint for the agent on a successful strip.
-    if (result.status === 'fence_stripped' && !dryRun) {
+    if (result.status === "fence_stripped" && !dryRun) {
       console.log(
-        '\nNext: your routing model just changed. The managed-block fence is gone.\nYour agent should walk `skills/*/SKILL.md` frontmatter `triggers:` for routing.\nPreserved table rows are a transitional bridge — once frontmatter walking is\nconfirmed working, run `gbrain skillpack scrub-legacy-fence-rows` to clean up.\nFresh install? Read `skills/_AGENT_README.md` for the full agent contract.',
+        "\nNext: your routing model just changed. The managed-block fence is gone.\nYour agent should walk `skills/*/SKILL.md` frontmatter `triggers:` for routing.\nPreserved table rows are a transitional bridge — once frontmatter walking is\nconfirmed working, run `gbrain skillpack scrub-legacy-fence-rows` to clean up.\nFresh install? Read `skills/_AGENT_README.md` for the full agent contract."
       );
     }
   }
-  process.exit(result.status === 'fence_malformed' ? 2 : 0);
+  process.exit(result.status === "fence_malformed" ? 2 : 0);
 }
 
 // ---------------------------------------------------------------------------
@@ -696,22 +712,20 @@ async function cmdMigrateFence(args: string[]): Promise<void> {
 // ---------------------------------------------------------------------------
 
 async function cmdScrubLegacy(args: string[]): Promise<void> {
-  if (args.includes('--help') || args.includes('-h')) {
-    console.log(
-      'gbrain skillpack scrub-legacy-fence-rows [--workspace PATH] [--dry-run] [--json]',
-    );
+  if (args.includes("--help") || args.includes("-h")) {
+    console.log("gbrain skillpack scrub-legacy-fence-rows [--workspace PATH] [--dry-run] [--json]");
     process.exit(0);
   }
-  const json = args.includes('--json');
-  const dryRun = args.includes('--dry-run');
+  const json = args.includes("--json");
+  const dryRun = args.includes("--dry-run");
   let workspace: string | null = null;
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
-    if (a === '--workspace') {
+    if (a === "--workspace") {
       workspace = args[i + 1] ?? null;
       i++;
-    } else if (a?.startsWith('--workspace=')) {
-      workspace = a.slice('--workspace='.length) || null;
+    } else if (a?.startsWith("--workspace=")) {
+      workspace = a.slice("--workspace=".length) || null;
     }
   }
   const targetWorkspace = resolveWorkspace({ workspace });
@@ -719,10 +733,10 @@ async function cmdScrubLegacy(args: string[]): Promise<void> {
   if (json) console.log(JSON.stringify(result, null, 2));
   else {
     console.log(
-      `scrub-legacy-fence-rows: ${result.removed.length} removed, ${result.preserved.length} preserved`,
+      `scrub-legacy-fence-rows: ${result.removed.length} removed, ${result.preserved.length} preserved`
     );
-    if (result.removed.length) console.log(`  removed: ${result.removed.join(', ')}`);
-    if (result.preserved.length) console.log(`  preserved: ${result.preserved.join(', ')}`);
+    if (result.removed.length) console.log(`  removed: ${result.removed.join(", ")}`);
+    if (result.preserved.length) console.log(`  preserved: ${result.preserved.join(", ")}`);
   }
   process.exit(0);
 }
@@ -732,31 +746,31 @@ async function cmdScrubLegacy(args: string[]): Promise<void> {
 // ---------------------------------------------------------------------------
 
 async function cmdSearch(args: string[]): Promise<void> {
-  if (args.includes('--help') || args.includes('-h')) {
+  if (args.includes("--help") || args.includes("-h")) {
     console.log(
-      'gbrain skillpack search [<query>] [--tier endorsed|community|experimental|dead] [--json] [--refresh] [--url URL]',
+      "gbrain skillpack search [<query>] [--tier endorsed|community|experimental|dead] [--json] [--refresh] [--url URL]"
     );
     process.exit(0);
   }
-  const json = args.includes('--json');
-  const refresh = args.includes('--refresh');
+  const json = args.includes("--json");
+  const refresh = args.includes("--refresh");
   let query: string | undefined;
-  let tier: 'endorsed' | 'community' | 'experimental' | 'dead' | undefined;
+  let tier: "endorsed" | "community" | "experimental" | "dead" | undefined;
   let urlOverride: string | undefined;
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
-    if (a === '--tier') {
+    if (a === "--tier") {
       tier = args[i + 1] as typeof tier;
       i++;
-    } else if (a === '--url') {
+    } else if (a === "--url") {
       urlOverride = args[i + 1];
       i++;
-    } else if (a && !a.startsWith('--') && !query) {
+    } else if (a && !a.startsWith("--") && !query) {
       query = a;
     }
   }
 
-  const { loadRegistry, searchPacks } = await import('../core/skillpack/registry-client.ts');
+  const { loadRegistry, searchPacks } = await import("../core/skillpack/registry-client.ts");
   const loaded = await loadRegistry({ url: urlOverride, refresh });
   const results = searchPacks(loaded, { query, tier });
 
@@ -781,52 +795,63 @@ async function cmdSearch(args: string[]): Promise<void> {
           })),
         },
         null,
-        2,
-      ),
+        2
+      )
     );
     process.exit(0);
   }
 
   if (results.length === 0) {
-    console.log(`(no skillpacks matched${query ? ` "${query}"` : ''}${tier ? ` (tier=${tier})` : ''})`);
+    console.log(
+      `(no skillpacks matched${query ? ` "${query}"` : ""}${tier ? ` (tier=${tier})` : ""})`
+    );
     process.exit(0);
   }
-  console.log(`${results.length} skillpack${results.length === 1 ? '' : 's'} (from ${loaded.registry_url})\n`);
+  console.log(
+    `${results.length} skillpack${results.length === 1 ? "" : "s"} (from ${loaded.registry_url})\n`
+  );
   for (const r of results) {
-    const tierBadge = r.tier === 'endorsed' ? '★' : r.tier === 'community' ? '·' : r.tier === 'experimental' ? '?' : '✗';
+    const tierBadge =
+      r.tier === "endorsed"
+        ? "★"
+        : r.tier === "community"
+          ? "·"
+          : r.tier === "experimental"
+            ? "?"
+            : "✗";
     console.log(`  ${tierBadge} ${r.entry.name}@${r.entry.version}  [${r.tier}]`);
     console.log(`    ${r.entry.description}`);
     console.log(`    by ${r.entry.author}  ·  ${r.entry.homepage}`);
-    if (r.entry.tags.length > 0) console.log(`    tags: ${r.entry.tags.join(', ')}`);
-    console.log('');
+    if (r.entry.tags.length > 0) console.log(`    tags: ${r.entry.tags.join(", ")}`);
+    console.log("");
   }
   process.exit(0);
 }
 
 async function cmdInfo(args: string[]): Promise<void> {
-  if (args.includes('--help') || args.includes('-h')) {
-    console.log('gbrain skillpack info <name> [--json] [--refresh] [--url URL]');
+  if (args.includes("--help") || args.includes("-h")) {
+    console.log("gbrain skillpack info <name> [--json] [--refresh] [--url URL]");
     process.exit(0);
   }
-  const json = args.includes('--json');
-  const refresh = args.includes('--refresh');
+  const json = args.includes("--json");
+  const refresh = args.includes("--refresh");
   let name: string | undefined;
   let urlOverride: string | undefined;
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
-    if (a === '--url') {
+    if (a === "--url") {
       urlOverride = args[i + 1];
       i++;
-    } else if (a && !a.startsWith('--') && !name) {
+    } else if (a && !a.startsWith("--") && !name) {
       name = a;
     }
   }
   if (!name) {
-    console.error('Error: pass a skillpack name.');
+    console.error("Error: pass a skillpack name.");
     process.exit(2);
   }
 
-  const { loadRegistry, findPackWithTier } = await import('../core/skillpack/registry-client.ts');
+  const { loadRegistry, findPackWithTier } = await import("../core/skillpack/registry-client.ts");
   const loaded = await loadRegistry({ url: urlOverride, refresh });
   const found = findPackWithTier(loaded, name);
   if (!found) {
@@ -855,8 +880,8 @@ async function cmdInfo(args: string[]): Promise<void> {
           skills: found.entry.skills,
         },
         null,
-        2,
-      ),
+        2
+      )
     );
     process.exit(0);
   }
@@ -868,31 +893,33 @@ async function cmdInfo(args: string[]): Promise<void> {
   console.log(`  Pinned commit: ${found.entry.source.pinned_commit}`);
   console.log(`  Tarball SHA:   sha256:${found.entry.tarball_sha256}`);
   console.log(`  gbrain min:    ${found.entry.gbrain_min_version}`);
-  console.log(`  Validated:     ${found.entry.validated_at} (run ${found.entry.validation_run_id})`);
-  console.log(`  Tags:          ${found.entry.tags.join(', ')}`);
+  console.log(
+    `  Validated:     ${found.entry.validated_at} (run ${found.entry.validation_run_id})`
+  );
+  console.log(`  Tags:          ${found.entry.tags.join(", ")}`);
   console.log(`  Skills (${found.entry.skills_count}):`);
   for (const s of found.entry.skills) console.log(`    - ${s}`);
-  console.log('\nTo scaffold:');
+  console.log("\nTo scaffold:");
   console.log(`  gbrain skillpack scaffold ${found.entry.name}`);
   process.exit(0);
 }
 
 async function cmdRegistry(args: string[]): Promise<void> {
-  if (args.includes('--help') || args.includes('-h')) {
+  if (args.includes("--help") || args.includes("-h")) {
     console.log(
-      'gbrain skillpack registry [--url URL] [--refresh] [--json]\n' +
-        '\n' +
-        '  --url URL    Set the registry URL (writes to ~/.gbrain/config.json)\n' +
-        '  --refresh    Force a fresh fetch from the current registry URL\n' +
-        '  --json       JSON output for agent consumption',
+      "gbrain skillpack registry [--url URL] [--refresh] [--json]\n" +
+        "\n" +
+        "  --url URL    Set the registry URL (writes to ~/.gbrain/config.json)\n" +
+        "  --refresh    Force a fresh fetch from the current registry URL\n" +
+        "  --json       JSON output for agent consumption"
     );
     process.exit(0);
   }
-  const json = args.includes('--json');
-  const refresh = args.includes('--refresh');
+  const json = args.includes("--json");
+  const refresh = args.includes("--refresh");
   let setUrl: string | undefined;
   for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--url' && args[i + 1]) {
+    if (args[i] === "--url" && args[i + 1]) {
       setUrl = args[i + 1];
       i++;
     }
@@ -900,12 +927,12 @@ async function cmdRegistry(args: string[]): Promise<void> {
 
   if (setUrl) {
     // Persist to ~/.gbrain/config.json under skillpack.registry_url.
-    const { gbrainPath } = await import('../core/config.ts');
-    const cfgPath = gbrainPath('config.json');
+    const { gbrainPath } = await import("../core/config.ts");
+    const cfgPath = gbrainPath("config.json");
     let cfg: Record<string, unknown> = {};
     if (existsSync(cfgPath)) {
       try {
-        cfg = JSON.parse(readFileSync(cfgPath, 'utf-8')) as Record<string, unknown>;
+        cfg = JSON.parse(readFileSync(cfgPath, "utf-8")) as Record<string, unknown>;
       } catch {
         cfg = {};
       }
@@ -914,15 +941,15 @@ async function cmdRegistry(args: string[]): Promise<void> {
       ...((cfg.skillpack as Record<string, unknown>) ?? {}),
       registry_url: setUrl,
     };
-    const tmp = cfgPath + '.tmp';
-    const fs = await import('fs');
-    fs.mkdirSync(require('path').dirname(cfgPath), { recursive: true });
-    fs.writeFileSync(tmp, JSON.stringify(cfg, null, 2) + '\n');
+    const tmp = cfgPath + ".tmp";
+    const fs = await import("fs");
+    fs.mkdirSync(require("path").dirname(cfgPath), { recursive: true });
+    fs.writeFileSync(tmp, JSON.stringify(cfg, null, 2) + "\n");
     fs.renameSync(tmp, cfgPath);
     console.log(`Set skillpack.registry_url = ${setUrl}`);
   }
 
-  const { loadRegistry, resolveRegistryUrl } = await import('../core/skillpack/registry-client.ts');
+  const { loadRegistry, resolveRegistryUrl } = await import("../core/skillpack/registry-client.ts");
   const url = resolveRegistryUrl({});
   try {
     const loaded = await loadRegistry({ refresh });
@@ -938,16 +965,19 @@ async function cmdRegistry(args: string[]): Promise<void> {
             bundles: Object.keys(loaded.catalog.bundles ?? {}),
           },
           null,
-          2,
-        ),
+          2
+        )
       );
     } else {
       console.log(`Registry: ${loaded.registry_url}`);
-      console.log(`Origin:   ${loaded.origin}` + (loaded.cache_age_ms !== null ? ` (${loaded.cache_age_ms}ms old)` : ''));
+      console.log(
+        `Origin:   ${loaded.origin}` +
+          (loaded.cache_age_ms !== null ? ` (${loaded.cache_age_ms}ms old)` : "")
+      );
       console.log(`Updated:  ${loaded.catalog.updated_at}`);
       console.log(`Skillpacks: ${loaded.catalog.skillpacks.length}`);
       const bundleNames = Object.keys(loaded.catalog.bundles ?? {});
-      if (bundleNames.length > 0) console.log(`Bundles:   ${bundleNames.join(', ')}`);
+      if (bundleNames.length > 0) console.log(`Bundles:   ${bundleNames.join(", ")}`);
     }
     process.exit(0);
   } catch (err) {
@@ -962,33 +992,33 @@ async function cmdRegistry(args: string[]): Promise<void> {
 // ---------------------------------------------------------------------------
 
 async function cmdDoctor(args: string[]): Promise<void> {
-  if (args.includes('--help') || args.includes('-h')) {
+  if (args.includes("--help") || args.includes("-h")) {
     console.log(
-      'gbrain skillpack doctor <pack-dir> [--quick|--full] [--fix] [--yes] [--json]\n\n' +
-        '  <pack-dir>   Path to the skillpack root (where skillpack.json lives)\n' +
-        '  --quick      Structural rubric (~5s, no sandbox/LLM/DB) — default\n' +
-        '  --full       Add publish-gate suite execution (lands in a follow-up wave)\n' +
-        '  --fix        Auto-scaffold missing pieces flagged auto_fixable=true\n' +
-        '  --yes        Skip confirm prompts (CI / unattended)\n' +
-        '  --json       Stable JSON envelope for agent consumption',
+      "gbrain skillpack doctor <pack-dir> [--quick|--full] [--fix] [--yes] [--json]\n\n" +
+        "  <pack-dir>   Path to the skillpack root (where skillpack.json lives)\n" +
+        "  --quick      Structural rubric (~5s, no sandbox/LLM/DB) — default\n" +
+        "  --full       Add publish-gate suite execution (lands in a follow-up wave)\n" +
+        "  --fix        Auto-scaffold missing pieces flagged auto_fixable=true\n" +
+        "  --yes        Skip confirm prompts (CI / unattended)\n" +
+        "  --json       Stable JSON envelope for agent consumption"
     );
     process.exit(0);
   }
-  const json = args.includes('--json');
-  const fix = args.includes('--fix');
-  const yes = args.includes('--yes');
-  const mode = args.includes('--full') ? 'full' : 'quick';
+  const json = args.includes("--json");
+  const fix = args.includes("--fix");
+  const yes = args.includes("--yes");
+  const mode = args.includes("--full") ? "full" : "quick";
   let packDir: string | undefined;
   for (const a of args) {
-    if (a && !a.startsWith('--') && !packDir) packDir = a;
+    if (a && !a.startsWith("--") && !packDir) packDir = a;
   }
   if (!packDir) {
-    console.error('Error: pass the path to the pack root (where skillpack.json lives).');
+    console.error("Error: pass the path to the pack root (where skillpack.json lives).");
     process.exit(2);
   }
   const packRoot = resolveAbs(packDir);
 
-  const { runDoctor, formatDoctorResult } = await import('../core/skillpack/doctor.ts');
+  const { runDoctor, formatDoctorResult } = await import("../core/skillpack/doctor.ts");
   const result = await runDoctor({ packRoot, mode, fix, yes });
 
   if (json) {
@@ -998,7 +1028,7 @@ async function cmdDoctor(args: string[]): Promise<void> {
   }
 
   // Exit codes: 0 if score=10, 1 if 6-9, 2 if blocked/<5.
-  if (result.tier_eligibility === 'blocked' || result.score < 5) {
+  if (result.tier_eligibility === "blocked" || result.score < 5) {
     process.exit(2);
   }
   if (result.score < 10) process.exit(1);
@@ -1010,20 +1040,20 @@ async function cmdDoctor(args: string[]): Promise<void> {
 // ---------------------------------------------------------------------------
 
 async function cmdInit(args: string[]): Promise<void> {
-  if (args.includes('--help') || args.includes('-h')) {
+  if (args.includes("--help") || args.includes("-h")) {
     console.log(
-      'gbrain skillpack init <name> [--target PATH] [--minimal] [--author NAME] [--license SPDX] [--homepage URL] [--dry-run] [--json]\n\n' +
-        '  <name>       Pack name (lowercase kebab; becomes manifest.name + dir leaf)\n' +
-        '  --target     Target dir (default: ./<name>)\n' +
-        '  --minimal    Skip test/, e2e/, evals/ (advanced; doctor will score lower)\n' +
-        '  --dry-run    Report intent, no writes\n' +
-        '  --json       JSON envelope for agent consumption',
+      "gbrain skillpack init <name> [--target PATH] [--minimal] [--author NAME] [--license SPDX] [--homepage URL] [--dry-run] [--json]\n\n" +
+        "  <name>       Pack name (lowercase kebab; becomes manifest.name + dir leaf)\n" +
+        "  --target     Target dir (default: ./<name>)\n" +
+        "  --minimal    Skip test/, e2e/, evals/ (advanced; doctor will score lower)\n" +
+        "  --dry-run    Report intent, no writes\n" +
+        "  --json       JSON envelope for agent consumption"
     );
     process.exit(0);
   }
-  const json = args.includes('--json');
-  const minimal = args.includes('--minimal');
-  const dryRun = args.includes('--dry-run');
+  const json = args.includes("--json");
+  const minimal = args.includes("--minimal");
+  const dryRun = args.includes("--dry-run");
   let name: string | undefined;
   let target: string | undefined;
   let author: string | undefined;
@@ -1031,28 +1061,28 @@ async function cmdInit(args: string[]): Promise<void> {
   let homepage: string | undefined;
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
-    if (a === '--target') {
+    if (a === "--target") {
       target = args[i + 1];
       i++;
-    } else if (a === '--author') {
+    } else if (a === "--author") {
       author = args[i + 1];
       i++;
-    } else if (a === '--license') {
+    } else if (a === "--license") {
       license = args[i + 1];
       i++;
-    } else if (a === '--homepage') {
+    } else if (a === "--homepage") {
       homepage = args[i + 1];
       i++;
-    } else if (a && !a.startsWith('--') && !name) {
+    } else if (a && !a.startsWith("--") && !name) {
       name = a;
     }
   }
   if (!name) {
-    console.error('Error: pass the new skillpack name.');
+    console.error("Error: pass the new skillpack name.");
     process.exit(2);
   }
 
-  const { runInitScaffold, InitScaffoldError } = await import('../core/skillpack/init-scaffold.ts');
+  const { runInitScaffold, InitScaffoldError } = await import("../core/skillpack/init-scaffold.ts");
   const targetDir = resolveAbs(target ?? `./${name}`);
 
   try {
@@ -1077,20 +1107,20 @@ async function cmdInit(args: string[]): Promise<void> {
             manifest: result.manifest,
           },
           null,
-          2,
-        ),
+          2
+        )
       );
     } else {
       console.log(
-        `${dryRun ? 'init (dry-run)' : 'init'}: ${result.filesWritten.length} files written, ${result.filesSkippedExisting.length} skipped (already existed) at ${result.targetDir}`,
+        `${dryRun ? "init (dry-run)" : "init"}: ${result.filesWritten.length} files written, ${result.filesSkippedExisting.length} skipped (already existed) at ${result.targetDir}`
       );
       if (result.filesSkippedExisting.length > 0 && !dryRun) {
-        console.log('\nSkipped existing files (preserved):');
+        console.log("\nSkipped existing files (preserved):");
         for (const p of result.filesSkippedExisting) console.log(`  ${p}`);
       }
       if (!dryRun) {
         console.log(
-          `\nNext:\n  cd ${result.targetDir}\n  gbrain skillpack doctor . --quick\n  # iterate, then:\n  gbrain skillpack pack`,
+          `\nNext:\n  cd ${result.targetDir}\n  gbrain skillpack doctor . --quick\n  # iterate, then:\n  gbrain skillpack pack`
         );
       }
     }
@@ -1109,34 +1139,34 @@ async function cmdInit(args: string[]): Promise<void> {
 // ---------------------------------------------------------------------------
 
 async function cmdPack(args: string[]): Promise<void> {
-  if (args.includes('--help') || args.includes('-h')) {
+  if (args.includes("--help") || args.includes("-h")) {
     console.log(
-      'gbrain skillpack pack [<pack-dir>] [--out PATH] [--dry-run] [--skip-doctor] [--json]\n\n' +
-        '  <pack-dir>    Pack root (default: .)\n' +
-        '  --out PATH    Output dir for the tarball (default: <pack-dir>)\n' +
-        '  --dry-run     Validate only, no tarball\n' +
-        '  --skip-doctor Skip the doctor gate (publish-gate skill uses this)\n' +
-        '  --json        JSON envelope for agent consumption',
+      "gbrain skillpack pack [<pack-dir>] [--out PATH] [--dry-run] [--skip-doctor] [--json]\n\n" +
+        "  <pack-dir>    Pack root (default: .)\n" +
+        "  --out PATH    Output dir for the tarball (default: <pack-dir>)\n" +
+        "  --dry-run     Validate only, no tarball\n" +
+        "  --skip-doctor Skip the doctor gate (publish-gate skill uses this)\n" +
+        "  --json        JSON envelope for agent consumption"
     );
     process.exit(0);
   }
-  const json = args.includes('--json');
-  const dryRun = args.includes('--dry-run');
-  const skipDoctor = args.includes('--skip-doctor');
+  const json = args.includes("--json");
+  const dryRun = args.includes("--dry-run");
+  const skipDoctor = args.includes("--skip-doctor");
   let packDir: string | undefined;
   let outDir: string | undefined;
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
-    if (a === '--out') {
+    if (a === "--out") {
       outDir = args[i + 1];
       i++;
-    } else if (a && !a.startsWith('--') && !packDir) {
+    } else if (a && !a.startsWith("--") && !packDir) {
       packDir = a;
     }
   }
-  const packRoot = resolveAbs(packDir ?? '.');
+  const packRoot = resolveAbs(packDir ?? ".");
 
-  const { runPackPublish, PackPublishError } = await import('../core/skillpack/pack-publish.ts');
+  const { runPackPublish, PackPublishError } = await import("../core/skillpack/pack-publish.ts");
   try {
     const result = await runPackPublish({
       packRoot,
@@ -1149,10 +1179,12 @@ async function cmdPack(args: string[]): Promise<void> {
     } else if (result.refused_reason) {
       console.error(`skillpack pack: refused — ${result.refused_reason}`);
       if (result.doctor) {
-        const blocked = result.doctor.dimensions.filter((d) => !d.passed && d.category === 'core');
+        const blocked = result.doctor.dimensions.filter((d) => !d.passed && d.category === "core");
         for (const d of blocked) console.error(`  ✗ ${d.name}: ${d.detail}`);
       }
-      console.error('\nRun `gbrain skillpack doctor . --fix --yes` to auto-scaffold what you can, then re-run.');
+      console.error(
+        "\nRun `gbrain skillpack doctor . --fix --yes` to auto-scaffold what you can, then re-run."
+      );
       process.exit(2);
     } else if (result.tarball) {
       console.log(`pack: ${result.pack_name}@${result.pack_version} -> ${result.tarball.outPath}`);
@@ -1161,7 +1193,9 @@ async function cmdPack(args: string[]): Promise<void> {
       console.log(`  Compressed:     ${result.tarball.compressedBytes} bytes`);
       console.log(`  Tier eligible:  ${result.tarball.tier_eligibility}`);
     } else {
-      console.log(`pack (dry-run): ${result.pack_name}@${result.pack_version} — doctor verdict ${result.doctor?.tier_eligibility ?? '(skipped)'}`);
+      console.log(
+        `pack (dry-run): ${result.pack_name}@${result.pack_version} — doctor verdict ${result.doctor?.tier_eligibility ?? "(skipped)"}`
+      );
     }
     process.exit(0);
   } catch (err) {
@@ -1178,50 +1212,50 @@ async function cmdPack(args: string[]): Promise<void> {
 // ---------------------------------------------------------------------------
 
 async function cmdEndorse(args: string[]): Promise<void> {
-  if (args.includes('--help') || args.includes('-h')) {
+  if (args.includes("--help") || args.includes("-h")) {
     console.log(
-      'gbrain skillpack endorse <name> [--tier endorsed|community|experimental|dead] [--repo PATH] [--note TEXT] [--push] [--dry-run] [--json]\n\n' +
-        '  <name>     Pack name as it appears in registry.json\n' +
-        '  --tier     Target tier (default: endorsed)\n' +
-        '  --repo     Path to a clone of the registry repo (default: .)\n' +
-        '  --note     Optional human note recorded in endorsements.json\n' +
-        '  --push     git push origin HEAD after committing\n' +
-        '  --dry-run  Report what would change without writing or committing\n' +
-        '  --json     Stable JSON envelope for agent consumption\n\n' +
-        'This is the Garry-only operator workflow. It writes endorsements.json + commits;\n' +
-        'requires a clone of garrytan/gbrain-skillpack-registry (or any registry-shaped repo).',
+      "gbrain skillpack endorse <name> [--tier endorsed|community|experimental|dead] [--repo PATH] [--note TEXT] [--push] [--dry-run] [--json]\n\n" +
+        "  <name>     Pack name as it appears in registry.json\n" +
+        "  --tier     Target tier (default: endorsed)\n" +
+        "  --repo     Path to a clone of the registry repo (default: .)\n" +
+        "  --note     Optional human note recorded in endorsements.json\n" +
+        "  --push     git push origin HEAD after committing\n" +
+        "  --dry-run  Report what would change without writing or committing\n" +
+        "  --json     Stable JSON envelope for agent consumption\n\n" +
+        "This is the Garry-only operator workflow. It writes endorsements.json + commits;\n" +
+        "requires a clone of garrytan/gbrain-skillpack-registry (or any registry-shaped repo)."
     );
     process.exit(0);
   }
-  const json = args.includes('--json');
-  const dryRun = args.includes('--dry-run');
-  const push = args.includes('--push');
+  const json = args.includes("--json");
+  const dryRun = args.includes("--dry-run");
+  const push = args.includes("--push");
   let name: string | undefined;
-  let tier: 'endorsed' | 'community' | 'experimental' | 'dead' | undefined;
+  let tier: "endorsed" | "community" | "experimental" | "dead" | undefined;
   let repo: string | undefined;
   let note: string | undefined;
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
-    if (a === '--tier') {
+    if (a === "--tier") {
       tier = args[i + 1] as typeof tier;
       i++;
-    } else if (a === '--repo') {
+    } else if (a === "--repo") {
       repo = args[i + 1];
       i++;
-    } else if (a === '--note') {
+    } else if (a === "--note") {
       note = args[i + 1];
       i++;
-    } else if (a && !a.startsWith('--') && !name) {
+    } else if (a && !a.startsWith("--") && !name) {
       name = a;
     }
   }
   if (!name) {
-    console.error('Error: pass a skillpack name.');
+    console.error("Error: pass a skillpack name.");
     process.exit(2);
   }
 
-  const { runEndorse, EndorseError } = await import('../core/skillpack/endorse.ts');
-  const registryRepoRoot = resolveAbs(repo ?? '.');
+  const { runEndorse, EndorseError } = await import("../core/skillpack/endorse.ts");
+  const registryRepoRoot = resolveAbs(repo ?? ".");
 
   try {
     const result = runEndorse({
@@ -1235,7 +1269,7 @@ async function cmdEndorse(args: string[]): Promise<void> {
     if (json) {
       console.log(JSON.stringify(result, null, 2));
     } else {
-      const verb = dryRun ? 'would endorse' : 'endorsed';
+      const verb = dryRun ? "would endorse" : "endorsed";
       const fromTo = result.prior_tier
         ? `${result.prior_tier} -> ${result.new_tier}`
         : `(unset) -> ${result.new_tier}`;
@@ -1259,35 +1293,35 @@ async function cmdEndorse(args: string[]): Promise<void> {
 // ---------------------------------------------------------------------------
 
 async function cmdHarvest(args: string[]): Promise<void> {
-  if (args.includes('--help') || args.includes('-h')) {
+  if (args.includes("--help") || args.includes("-h")) {
     console.log(
-      'gbrain skillpack harvest <slug> --from <host-repo-root> [--no-lint] [--dry-run] [--overwrite-local] [--json]',
+      "gbrain skillpack harvest <slug> --from <host-repo-root> [--no-lint] [--dry-run] [--overwrite-local] [--json]"
     );
     process.exit(0);
   }
-  const json = args.includes('--json');
-  const dryRun = args.includes('--dry-run');
-  const noLint = args.includes('--no-lint');
-  const overwriteLocal = args.includes('--overwrite-local');
+  const json = args.includes("--json");
+  const dryRun = args.includes("--dry-run");
+  const noLint = args.includes("--no-lint");
+  const overwriteLocal = args.includes("--overwrite-local");
   let slug: string | null = null;
   let from: string | null = null;
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
-    if (a === '--from') {
+    if (a === "--from") {
       from = args[i + 1] ?? null;
       i++;
-    } else if (a?.startsWith('--from=')) {
-      from = a.slice('--from='.length) || null;
-    } else if (a && !a.startsWith('--') && !slug) {
+    } else if (a?.startsWith("--from=")) {
+      from = a.slice("--from=".length) || null;
+    } else if (a && !a.startsWith("--") && !slug) {
       slug = a;
     }
   }
   if (!slug) {
-    console.error('Error: pass a slug.');
+    console.error("Error: pass a slug.");
     process.exit(2);
   }
   if (!from) {
-    console.error('Error: pass --from <host-repo-root>.');
+    console.error("Error: pass --from <host-repo-root>.");
     process.exit(2);
   }
   const gbrainRoot = findGbrainOrDie();
@@ -1304,18 +1338,17 @@ async function cmdHarvest(args: string[]): Promise<void> {
     if (json) console.log(JSON.stringify(result, null, 2));
     else {
       console.log(`harvest ${slug}: ${result.status}`);
-      if (result.filesCopied.length)
-        console.log(`  files: ${result.filesCopied.length} copied`);
+      if (result.filesCopied.length) console.log(`  files: ${result.filesCopied.length} copied`);
       if (result.pairedSources.length)
-        console.log(`  paired sources: ${result.pairedSources.join(', ')}`);
-      if (result.manifestUpdated) console.log('  openclaw.plugin.json updated');
+        console.log(`  paired sources: ${result.pairedSources.join(", ")}`);
+      if (result.manifestUpdated) console.log("  openclaw.plugin.json updated");
       if (result.lintHits.length) {
-        console.log('  privacy-lint hits (harvest rolled back):');
+        console.log("  privacy-lint hits (harvest rolled back):");
         for (const h of result.lintHits) console.log(`    ${h}`);
       }
     }
     // Exit non-zero on lint failure so the editorial workflow knows to scrub.
-    process.exit(result.status === 'lint_failed' ? 1 : 0);
+    process.exit(result.status === "lint_failed" ? 1 : 0);
   } catch (err) {
     if (err instanceof HarvestError || err instanceof BundleError) {
       console.error(`skillpack harvest: ${(err as Error).message}`);
@@ -1333,53 +1366,57 @@ async function cmdHarvest(args: string[]): Promise<void> {
 async function cmdDiff(args: string[]): Promise<void> {
   // Lazy-import the legacy diff helper. T12 deletes installer.ts; until
   // then this path keeps the existing semantics.
-  const { diffSkill } = await import('../core/skillpack/installer.ts');
-  if (args.includes('--help') || args.includes('-h')) {
-    console.log('gbrain skillpack diff <name> [--workspace PATH] [--json]');
+  const { diffSkill } = await import("../core/skillpack/installer.ts");
+  if (args.includes("--help") || args.includes("-h")) {
+    console.log("gbrain skillpack diff <name> [--workspace PATH] [--json]");
     process.exit(0);
   }
-  const json = args.includes('--json');
+  const json = args.includes("--json");
   let name: string | null = null;
   let skillsDir: string | null = null;
   let workspace: string | null = null;
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
-    if (a === '--workspace') {
+    if (a === "--workspace") {
       workspace = args[i + 1] ?? null;
       i++;
-    } else if (a?.startsWith('--workspace=')) {
-      workspace = a.slice('--workspace='.length) || null;
-    } else if (a === '--skills-dir') {
+    } else if (a?.startsWith("--workspace=")) {
+      workspace = a.slice("--workspace=".length) || null;
+    } else if (a === "--skills-dir") {
       skillsDir = args[i + 1] ?? null;
       i++;
-    } else if (a?.startsWith('--skills-dir=')) {
-      skillsDir = a.slice('--skills-dir='.length) || null;
-    } else if (a && !a.startsWith('--') && !name) {
+    } else if (a?.startsWith("--skills-dir=")) {
+      skillsDir = a.slice("--skills-dir=".length) || null;
+    } else if (a && !a.startsWith("--") && !name) {
       name = a;
     }
   }
   if (!name) {
-    console.error('Error: pass a skill name.');
+    console.error("Error: pass a skill name.");
     process.exit(2);
   }
   const gbrainRoot = findGbrainOrDie();
   const targetSkillsDir = skillsDir
     ? resolveAbs(skillsDir)
-    : join(resolveWorkspace({ workspace }), 'skills');
+    : join(resolveWorkspace({ workspace }), "skills");
   try {
     const diffs = diffSkill(gbrainRoot, name, targetSkillsDir);
-    const clean = diffs.every(d => d.identical && d.existing);
+    const clean = diffs.every((d) => d.identical && d.existing);
     if (json) console.log(JSON.stringify({ ok: true, skillName: name, diffs }, null, 2));
     else {
       console.log(`skillpack diff ${name} → ${targetSkillsDir}`);
       for (const d of diffs) {
         let tag: string;
-        if (!d.existing) tag = 'missing  ';
-        else if (d.identical) tag = 'identical';
-        else tag = 'differs  ';
+        if (!d.existing) tag = "missing  ";
+        else if (d.identical) tag = "identical";
+        else tag = "differs  ";
         console.log(`  ${tag}  ${d.target}  (src ${d.sourceBytes}B / tgt ${d.targetBytes}B)`);
       }
-      console.log(clean ? '\n✓ all files match the bundle.' : '\n(Run `gbrain skillpack reference ' + name + '` for a unified diff.)');
+      console.log(
+        clean
+          ? "\n✓ all files match the bundle."
+          : "\n(Run `gbrain skillpack reference " + name + "` for a unified diff.)"
+      );
     }
     // v0.33: diff is informational; exit 0 always.
     process.exit(0);
@@ -1397,6 +1434,6 @@ async function cmdDiff(args: string[]): Promise<void> {
 // ---------------------------------------------------------------------------
 
 async function routeCheck(args: string[]): Promise<void> {
-  const { runSkillpackCheck } = await import('./skillpack-check.ts');
+  const { runSkillpackCheck } = await import("./skillpack-check.ts");
   await runSkillpackCheck(args);
 }

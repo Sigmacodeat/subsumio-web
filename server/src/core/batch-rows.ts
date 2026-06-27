@@ -52,8 +52,8 @@
  * engine callers passing arbitrarily large batches should chunk (~1-5K rows).
  */
 
-import type { LinkBatchInput, TimelineBatchInput, TakeBatchInput } from './engine.ts';
-import { normalizeWeightForStorage } from './takes-fence.ts';
+import type { LinkBatchInput, TimelineBatchInput, TakeBatchInput } from "./engine.ts";
+import { normalizeWeightForStorage } from "./takes-fence.ts";
 
 /**
  * Strip Unicode NUL (U+0000) from a free-text body field. Fast-path the common
@@ -61,7 +61,7 @@ import { normalizeWeightForStorage } from './takes-fence.ts';
  * Only call this on free-prose columns, never on identity/security fields (see
  * the NUL POLICY note above).
  */
-export const stripNul = (s: string): string => (s.includes('\0') ? s.replace(/\0/g, '') : s);
+export const stripNul = (s: string): string => (s.includes("\0") ? s.replace(/\0/g, "") : s);
 
 /** One links row, keys === the jsonb_to_recordset column list. */
 export interface LinkRow {
@@ -105,29 +105,29 @@ export interface TakeRow {
 }
 
 export function buildLinkRows(links: LinkBatchInput[]): LinkRow[] {
-  return links.map(l => ({
+  return links.map((l) => ({
     from_slug: l.from_slug,
     to_slug: l.to_slug,
-    link_type: l.link_type || '',
-    context: stripNul(l.context || ''), // free-text body: NUL-stripped
-    link_source: l.link_source || 'markdown',
+    link_type: l.link_type || "",
+    context: stripNul(l.context || ""), // free-text body: NUL-stripped
+    link_source: l.link_source || "markdown",
     origin_slug: l.origin_slug || null,
     origin_field: l.origin_field || null,
-    from_source_id: l.from_source_id || 'default',
-    to_source_id: l.to_source_id || 'default',
-    origin_source_id: l.origin_source_id || 'default',
+    from_source_id: l.from_source_id || "default",
+    to_source_id: l.to_source_id || "default",
+    origin_source_id: l.origin_source_id || "default",
     link_kind: l.link_kind ?? null,
   }));
 }
 
 export function buildTimelineRows(entries: TimelineBatchInput[]): TimelineRow[] {
-  return entries.map(e => ({
+  return entries.map((e) => ({
     slug: e.slug,
     date: e.date,
-    source: e.source || '',
+    source: e.source || "",
     summary: stripNul(e.summary), // free-text body: NUL-stripped
-    detail: stripNul(e.detail || ''), // free-text body: NUL-stripped
-    source_id: e.source_id || 'default',
+    detail: stripNul(e.detail || ""), // free-text body: NUL-stripped
+    source_id: e.source_id || "default",
   }));
 }
 
@@ -136,9 +136,12 @@ export function buildTimelineRows(entries: TimelineBatchInput[]): TimelineRow[] 
  * emit the TAKES_WEIGHT_CLAMPED stderr counter exactly as before. Weight
  * normalization (clamp to [0,1] + round to 0.05 grid) stays centralized here.
  */
-export function buildTakeRows(rowsIn: TakeBatchInput[]): { rows: TakeRow[]; weightClamped: number } {
+export function buildTakeRows(rowsIn: TakeBatchInput[]): {
+  rows: TakeRow[];
+  weightClamped: number;
+} {
   let weightClamped = 0;
-  const rows = rowsIn.map(r => {
+  const rows = rowsIn.map((r) => {
     const { weight, clamped } = normalizeWeightForStorage(r.weight);
     if (clamped) weightClamped++;
     return {

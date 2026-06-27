@@ -12,8 +12,14 @@ import { PRICING, PRICING_FAQ, VALUE_PROPS, UI_STRINGS, p, type Lang } from "@/c
 import { SectionHeading } from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
 import { PricingGrid } from "./pricing-grid";
-import { Reveal, StaggerContainer, StaggerItem, GlowCard, ClipReveal, MagneticButton } from "./motion-system";
-
+import {
+  Reveal,
+  StaggerContainer,
+  StaggerItem,
+  GlowCard,
+  ClipReveal,
+  MagneticButton,
+} from "./motion-system";
 
 export default function PricingPage({ lang }: { lang: Lang }) {
   const pricing = PRICING[lang];
@@ -65,10 +71,7 @@ export default function PricingPage({ lang }: { lang: Lang }) {
       <section className="relative z-10 border-y [border-color:var(--mk-border)] px-4 py-24 [background:var(--mk-surface)] sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <Reveal variant="up">
-            <SectionHeading
-              title={ui.noGamesTitle}
-              sub={ui.noGamesSub}
-            />
+            <SectionHeading title={ui.noGamesTitle} sub={ui.noGamesSub} />
           </Reveal>
           <StaggerContainer className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4" stagger={0.08}>
             {valueProps.map((prop) => (
@@ -81,7 +84,9 @@ export default function PricingPage({ lang }: { lang: Lang }) {
                     <Check size={18} className="[color:var(--signal-green)]" />
                   </div>
                   <h3 className="mb-2 text-base font-bold [color:var(--mk-text)]">{prop.title}</h3>
-                  <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">{prop.desc}</p>
+                  <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">
+                    {prop.desc}
+                  </p>
                 </GlowCard>
               </StaggerItem>
             ))}
@@ -105,9 +110,7 @@ export default function PricingPage({ lang }: { lang: Lang }) {
           <h2 className="mb-4 text-3xl font-black [color:var(--mk-text)] md:text-4xl">
             {ui.stillQuestions}
           </h2>
-          <p className="mb-10 text-lg [color:var(--mk-text-muted)]">
-            {ui.writeUs}
-          </p>
+          <p className="mb-10 text-lg [color:var(--mk-text-muted)]">{ui.writeUs}</p>
           <Link href={p(lang, "/signup")}>
             <MagneticButton strength={0.25}>
               <Button size="xl" variant="glow">

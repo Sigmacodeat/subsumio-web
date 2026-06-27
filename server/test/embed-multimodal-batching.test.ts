@@ -10,7 +10,7 @@
 //   - embedQueryMultimodal returns 1024-dim vector
 //   - embedQueryMultimodalImage returns 1024-dim vector
 
-import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import {
   configureGateway,
   embedMultimodal,
@@ -18,7 +18,7 @@ import {
   embedQueryMultimodal,
   embedQueryMultimodalImage,
   resetGateway,
-} from '../src/core/ai/gateway.ts';
+} from "../src/core/ai/gateway.ts";
 
 type FetchHandler = (url: string, init: RequestInit) => Promise<Response>;
 let fetchHandler: FetchHandler | null = null;
@@ -27,8 +27,8 @@ const origFetch = globalThis.fetch;
 beforeEach(() => {
   fetchHandler = null;
   globalThis.fetch = (async (url: string | URL | Request, init?: RequestInit) => {
-    if (!fetchHandler) throw new Error('fetch called but no handler installed');
-    return fetchHandler(typeof url === 'string' ? url : url.toString(), init ?? {});
+    if (!fetchHandler) throw new Error("fetch called but no handler installed");
+    return fetchHandler(typeof url === "string" ? url : url.toString(), init ?? {});
   }) as typeof fetch;
 });
 
@@ -39,9 +39,9 @@ afterEach(() => {
 
 function configureVoyage(env: Record<string, string | undefined> = {}) {
   configureGateway({
-    embedding_model: 'voyage:voyage-multimodal-3',
+    embedding_model: "voyage:voyage-multimodal-3",
     embedding_dimensions: 1024,
-    env: { VOYAGE_API_KEY: 'test-key', ...env },
+    env: { VOYAGE_API_KEY: "test-key", ...env },
   });
 }
 
@@ -50,32 +50,32 @@ function fakeResponse(count: number, dims = 1024): Response {
     embedding: Array.from({ length: dims }, () => 0.1 * (i + 1)),
     index: i,
   }));
-  return new Response(JSON.stringify({ data, model: 'voyage-multimodal-3' }), {
+  return new Response(JSON.stringify({ data, model: "voyage-multimodal-3" }), {
     status: 200,
-    headers: { 'Content-Type': 'application/json' },
+    headers: { "Content-Type": "application/json" },
   });
 }
 
 function makeImg() {
   return {
-    kind: 'image_base64' as const,
-    data: Buffer.from('fake').toString('base64'),
-    mime: 'image/jpeg',
+    kind: "image_base64" as const,
+    data: Buffer.from("fake").toString("base64"),
+    mime: "image/jpeg",
   };
 }
 
-describe('Voyage multimodal — text variant + inputType discipline', () => {
-  test('text input variant sends correct Voyage content shape', async () => {
+describe("Voyage multimodal — text variant + inputType discipline", () => {
+  test("text input variant sends correct Voyage content shape", async () => {
     configureVoyage();
     let capturedBody: any;
     fetchHandler = async (_url, init) => {
       capturedBody = JSON.parse(init.body as string);
       return fakeResponse(1);
     };
-    const vecs = await embedMultimodal([{ kind: 'text', text: 'hello world' }]);
+    const vecs = await embedMultimodal([{ kind: "text", text: "hello world" }]);
     expect(vecs.length).toBe(1);
     expect(vecs[0]).toBeInstanceOf(Float32Array);
-    expect(capturedBody.inputs[0].content[0]).toEqual({ type: 'text', text: 'hello world' });
+    expect(capturedBody.inputs[0].content[0]).toEqual({ type: "text", text: "hello world" });
   });
 
   test('opts.inputType="query" threads through to Voyage wire body', async () => {
@@ -85,8 +85,8 @@ describe('Voyage multimodal — text variant + inputType discipline', () => {
       capturedBody = JSON.parse(init.body as string);
       return fakeResponse(1);
     };
-    await embedMultimodal([{ kind: 'text', text: 'q' }], { inputType: 'query' });
-    expect(capturedBody.input_type).toBe('query');
+    await embedMultimodal([{ kind: "text", text: "q" }], { inputType: "query" });
+    expect(capturedBody.input_type).toBe("query");
   });
 
   test('default inputType is "document" (preserves pre-v0.36 ingest behavior)', async () => {
@@ -97,30 +97,27 @@ describe('Voyage multimodal — text variant + inputType discipline', () => {
       return fakeResponse(1);
     };
     await embedMultimodal([makeImg()]);
-    expect(capturedBody.input_type).toBe('document');
+    expect(capturedBody.input_type).toBe("document");
   });
 
-  test('mixed text + image inputs in one batch — each gets correct content type', async () => {
+  test("mixed text + image inputs in one batch — each gets correct content type", async () => {
     configureVoyage();
     let capturedBody: any;
     fetchHandler = async (_url, init) => {
       capturedBody = JSON.parse(init.body as string);
       return fakeResponse(2);
     };
-    await embedMultimodal([
-      { kind: 'text', text: 'hello' },
-      makeImg(),
-    ]);
-    expect(capturedBody.inputs[0].content[0].type).toBe('text');
-    expect(capturedBody.inputs[1].content[0].type).toBe('image_base64');
+    await embedMultimodal([{ kind: "text", text: "hello" }, makeImg()]);
+    expect(capturedBody.inputs[0].content[0].type).toBe("text");
+    expect(capturedBody.inputs[1].content[0].type).toBe("image_base64");
   });
 });
 
-describe('embedQueryMultimodal — text query path', () => {
-  test('returns 1024-dim Float32Array via Voyage query embed', async () => {
+describe("embedQueryMultimodal — text query path", () => {
+  test("returns 1024-dim Float32Array via Voyage query embed", async () => {
     configureVoyage();
     fetchHandler = async () => fakeResponse(1, 1024);
-    const v = await embedQueryMultimodal('hackathon photos');
+    const v = await embedQueryMultimodal("hackathon photos");
     expect(v).toBeInstanceOf(Float32Array);
     expect(v.length).toBe(1024);
   });
@@ -132,19 +129,19 @@ describe('embedQueryMultimodal — text query path', () => {
       capturedBody = JSON.parse(init.body as string);
       return fakeResponse(1);
     };
-    await embedQueryMultimodal('q');
-    expect(capturedBody.input_type).toBe('query');
-    expect(capturedBody.inputs[0].content[0]).toEqual({ type: 'text', text: 'q' });
+    await embedQueryMultimodal("q");
+    expect(capturedBody.input_type).toBe("query");
+    expect(capturedBody.inputs[0].content[0]).toEqual({ type: "text", text: "q" });
   });
 });
 
-describe('embedQueryMultimodalImage — image query path', () => {
-  test('returns 1024-dim Float32Array via Voyage image-query embed', async () => {
+describe("embedQueryMultimodalImage — image query path", () => {
+  test("returns 1024-dim Float32Array via Voyage image-query embed", async () => {
     configureVoyage();
     fetchHandler = async () => fakeResponse(1, 1024);
     const v = await embedQueryMultimodalImage({
-      data: Buffer.from('fake').toString('base64'),
-      mime: 'image/png',
+      data: Buffer.from("fake").toString("base64"),
+      mime: "image/png",
     });
     expect(v).toBeInstanceOf(Float32Array);
     expect(v.length).toBe(1024);
@@ -158,41 +155,41 @@ describe('embedQueryMultimodalImage — image query path', () => {
       return fakeResponse(1);
     };
     await embedQueryMultimodalImage({
-      data: Buffer.from('xyz').toString('base64'),
-      mime: 'image/webp',
+      data: Buffer.from("xyz").toString("base64"),
+      mime: "image/webp",
     });
-    expect(capturedBody.input_type).toBe('query');
-    expect(capturedBody.inputs[0].content[0].type).toBe('image_base64');
-    expect(capturedBody.inputs[0].content[0].image_base64).toContain('data:image/webp;base64,');
+    expect(capturedBody.input_type).toBe("query");
+    expect(capturedBody.inputs[0].content[0].type).toBe("image_base64");
+    expect(capturedBody.inputs[0].content[0].image_base64).toContain("data:image/webp;base64,");
   });
 });
 
-describe('embedMultimodalSafe — partial-failure surfacing', () => {
-  test('happy path returns full embeddings array, no failed indices', async () => {
+describe("embedMultimodalSafe — partial-failure surfacing", () => {
+  test("happy path returns full embeddings array, no failed indices", async () => {
     configureVoyage();
     fetchHandler = async () => fakeResponse(3);
     const result = await embedMultimodalSafe([makeImg(), makeImg(), makeImg()]);
     expect(result.failedIndices).toEqual([]);
     expect(result.embeddings.length).toBe(3);
-    expect(result.embeddings.every(v => v instanceof Float32Array)).toBe(true);
+    expect(result.embeddings.every((v) => v instanceof Float32Array)).toBe(true);
   });
 
-  test('empty input array returns empty result without HTTP call', async () => {
+  test("empty input array returns empty result without HTTP call", async () => {
     configureVoyage();
     fetchHandler = async () => {
-      throw new Error('should not be called');
+      throw new Error("should not be called");
     };
     const result = await embedMultimodalSafe([]);
     expect(result.failedIndices).toEqual([]);
     expect(result.embeddings).toEqual([]);
   });
 
-  test('all-fail batch records every input as failed', async () => {
+  test("all-fail batch records every input as failed", async () => {
     configureVoyage();
     let callCount = 0;
     fetchHandler = async () => {
       callCount++;
-      return new Response('rate limited', { status: 429 });
+      return new Response("rate limited", { status: 429 });
     };
     const result = await embedMultimodalSafe([makeImg(), makeImg()]);
     expect(result.failedIndices).toEqual([0, 1]);
@@ -202,7 +199,7 @@ describe('embedMultimodalSafe — partial-failure surfacing', () => {
     expect(callCount).toBeGreaterThanOrEqual(2);
   });
 
-  test('mid-batch failure: binary-search retry recovers good inputs', async () => {
+  test("mid-batch failure: binary-search retry recovers good inputs", async () => {
     configureVoyage();
     // Strategy: track which inputs were sent in each batch by hashing the
     // request body. Input index 2 always fails when sent solo; other splits succeed.
@@ -212,17 +209,21 @@ describe('embedMultimodalSafe — partial-failure surfacing', () => {
       // Any batch containing TARGET2 fails transiently — forces the binary-search
       // split until input 2 is isolated, at which point single-input fail is recorded.
       const containsTarget = body.inputs.some((inp: any) =>
-        inp.content?.[0]?.image_base64?.includes('VEFSR0VUMg'),
+        inp.content?.[0]?.image_base64?.includes("VEFSR0VUMg")
       );
       if (containsTarget) {
-        return new Response('contains-target-fail', { status: 503 });
+        return new Response("contains-target-fail", { status: 503 });
       }
       return fakeResponse(requestSize);
     };
     const inputs = [
       makeImg(),
       makeImg(),
-      { kind: 'image_base64' as const, data: Buffer.from('TARGET2').toString('base64'), mime: 'image/jpeg' },
+      {
+        kind: "image_base64" as const,
+        data: Buffer.from("TARGET2").toString("base64"),
+        mime: "image/jpeg",
+      },
     ];
     const result = await embedMultimodalSafe(inputs);
     // Inputs 0,1 should succeed via the binary-search split; input 2 fails permanently
@@ -232,18 +233,18 @@ describe('embedMultimodalSafe — partial-failure surfacing', () => {
     expect(result.embeddings[2]).toBeUndefined();
   });
 
-  test('AIConfigError (permanent) fails fast without binary-search retry', async () => {
+  test("AIConfigError (permanent) fails fast without binary-search retry", async () => {
     configureVoyage();
     let callCount = 0;
     fetchHandler = async () => {
       callCount++;
-      return new Response('unauthorized', { status: 401 });
+      return new Response("unauthorized", { status: 401 });
     };
     const result = await embedMultimodalSafe([makeImg(), makeImg(), makeImg(), makeImg()]);
     // AIConfigError (401) is permanent — no point in binary-search retry.
     // All 4 inputs should be reported as failed after the single call.
     expect(result.failedIndices).toEqual([0, 1, 2, 3]);
     expect(callCount).toBe(1);
-    expect(result.lastError?.message).toContain('401');
+    expect(result.lastError?.message).toContain("401");
   });
 });

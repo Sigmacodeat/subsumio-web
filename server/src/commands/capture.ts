@@ -30,15 +30,15 @@
  *   - --json: structured response for agents.
  */
 
-import { readFileSync } from 'node:fs';
-import matter from 'gray-matter';
-import type { BrainEngine } from '../core/engine.ts';
-import { loadConfig, isThinClient } from '../core/config.ts';
-import { callRemoteTool, unpackToolResult, RemoteMcpError } from '../core/mcp-client.ts';
-import { computeContentHash } from '../core/ingestion/types.ts';
-import { operations } from '../core/operations.ts';
-import type { OperationContext } from '../core/operations.ts';
-import { resolveSourceWithTier } from '../core/source-resolver.ts';
+import { readFileSync } from "node:fs";
+import matter from "gray-matter";
+import type { BrainEngine } from "../core/engine.ts";
+import { loadConfig, isThinClient } from "../core/config.ts";
+import { callRemoteTool, unpackToolResult, RemoteMcpError } from "../core/mcp-client.ts";
+import { computeContentHash } from "../core/ingestion/types.ts";
+import { operations } from "../core/operations.ts";
+import type { OperationContext } from "../core/operations.ts";
+import { resolveSourceWithTier } from "../core/source-resolver.ts";
 
 interface RunOpts {
   content?: string;
@@ -56,35 +56,44 @@ function parseArgs(args: string[]): RunOpts | { help: true; positional: string |
   const positional: string[] = [];
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
-    if (a === '--help' || a === '-h') return { help: true, positional: undefined };
-    if (a === '--quiet' || a === '-q') { opts.quiet = true; continue; }
-    if (a === '--json') { opts.json = true; continue; }
-    if (a === '--stdin') { opts.stdin = true; continue; }
-    if (a === '--file') {
+    if (a === "--help" || a === "-h") return { help: true, positional: undefined };
+    if (a === "--quiet" || a === "-q") {
+      opts.quiet = true;
+      continue;
+    }
+    if (a === "--json") {
+      opts.json = true;
+      continue;
+    }
+    if (a === "--stdin") {
+      opts.stdin = true;
+      continue;
+    }
+    if (a === "--file") {
       const v = args[++i];
       if (v) opts.filePath = v;
       continue;
     }
-    if (a === '--slug') {
+    if (a === "--slug") {
       const v = args[++i];
       if (v) opts.slug = v;
       continue;
     }
-    if (a === '--type') {
+    if (a === "--type") {
       const v = args[++i];
       if (v) opts.type = v;
       continue;
     }
-    if (a === '--source') {
+    if (a === "--source") {
       const v = args[++i];
       if (v) opts.source = v;
       continue;
     }
-    if (a.startsWith('--')) continue; // unknown flag, ignore
+    if (a.startsWith("--")) continue; // unknown flag, ignore
     positional.push(a);
   }
   if (positional.length > 0) {
-    opts.content = positional.join(' ');
+    opts.content = positional.join(" ");
   }
   return opts;
 }
@@ -134,8 +143,8 @@ Examples:
 
 function defaultSlug(content: string, now: Date = new Date()): string {
   const y = now.getUTCFullYear();
-  const m = String(now.getUTCMonth() + 1).padStart(2, '0');
-  const d = String(now.getUTCDate()).padStart(2, '0');
+  const m = String(now.getUTCMonth() + 1).padStart(2, "0");
+  const d = String(now.getUTCDate()).padStart(2, "0");
   const hashPrefix = computeContentHash(content).slice(0, 8);
   return `inbox/${y}-${m}-${d}-${hashPrefix}`;
 }
@@ -166,7 +175,7 @@ export function detectBinaryNullByte(buf: Buffer): number {
 async function readStdinBuffer(): Promise<Buffer> {
   const chunks: Buffer[] = [];
   for await (const chunk of process.stdin) {
-    chunks.push(typeof chunk === 'string' ? Buffer.from(chunk, 'utf8') : (chunk as Buffer));
+    chunks.push(typeof chunk === "string" ? Buffer.from(chunk, "utf8") : (chunk as Buffer));
   }
   return Buffer.concat(chunks);
 }
@@ -183,7 +192,7 @@ async function readStdinBuffer(): Promise<Buffer> {
  */
 export function normalizeForHash(s: string): string {
   // Strip BOM, normalize line endings to LF, trim, NFKC for Unicode-stable hash.
-  return s.replace(/^﻿/, '').replace(/\r\n/g, '\n').trim().normalize('NFKC');
+  return s.replace(/^﻿/, "").replace(/\r\n/g, "\n").trim().normalize("NFKC");
 }
 
 /**
@@ -200,12 +209,16 @@ export function normalizeForHash(s: string): string {
  *     server-side put_page op converts to OperationError but the underlying
  *     PG message is in the .cause chain)
  */
-export function maybeRewriteSourceFkError(err: unknown, sourceId: string | undefined): string | null {
+export function maybeRewriteSourceFkError(
+  err: unknown,
+  sourceId: string | undefined
+): string | null {
   if (!sourceId) return null;
   const msg = err instanceof Error ? err.message : String(err);
   // Match both the raw Postgres wording and OperationError-wrapped variants.
-  const matchesFk = msg.includes('pages_source_id_fk')
-    || (msg.includes('foreign key constraint') && msg.includes('source'));
+  const matchesFk =
+    msg.includes("pages_source_id_fk") ||
+    (msg.includes("foreign key constraint") && msg.includes("source"));
   if (!matchesFk) return null;
   return `source '${sourceId}' is not registered. Register it first:\n  gbrain sources add ${sourceId} --path <path>\n\nList registered sources:\n  gbrain sources list`;
 }
@@ -216,10 +229,9 @@ export function maybeRewriteSourceFkError(err: unknown, sourceId: string | undef
  * Falls back to 'Capture' when no usable line exists.
  */
 function deriveTitle(rawBody: string): string {
-  const firstLine = rawBody
-    .split('\n')
-    .find((l) => l.trim().length > 0 && l.trim() !== '---') ?? '';
-  return firstLine.replace(/^#+\s*/, '').slice(0, 80) || 'Capture';
+  const firstLine =
+    rawBody.split("\n").find((l) => l.trim().length > 0 && l.trim() !== "---") ?? "";
+  return firstLine.replace(/^#+\s*/, "").slice(0, 80) || "Capture";
 }
 
 /**
@@ -250,7 +262,7 @@ export function mergeCaptureFrontmatter(rawBody: string, opts: RunOpts): string 
   // Detect frontmatter: leading `---\n` or `---\r\n`, tolerating leading BOM/whitespace.
   // We do NOT use the more permissive `startsWith('---')` because a body that opens
   // with a horizontal-rule like `--- separator ---` would false-positive.
-  const trimmedStart = rawBody.replace(/^﻿/, '');
+  const trimmedStart = rawBody.replace(/^﻿/, "");
   const hasFrontmatter = /^---\r?\n/.test(trimmedStart);
 
   if (!hasFrontmatter) {
@@ -258,9 +270,9 @@ export function mergeCaptureFrontmatter(rawBody: string, opts: RunOpts): string 
     // structure) wrap under a derived heading.
     const title = deriveTitle(rawBody);
     const fm: Record<string, unknown> = {
-      type: opts.type ?? 'note',
+      type: opts.type ?? "note",
       title,
-      captured_via: opts.source ?? 'capture-cli',
+      captured_via: opts.source ?? "capture-cli",
       captured_at: nowIso,
     };
     const looksMarkdown = /^#{1,6}\s/.test(rawBody.trimStart());
@@ -274,7 +286,7 @@ export function mergeCaptureFrontmatter(rawBody: string, opts: RunOpts): string 
     parsed = matter(rawBody);
   } catch (e) {
     throw new Error(
-      `malformed frontmatter in capture input: ${e instanceof Error ? e.message : String(e)}`,
+      `malformed frontmatter in capture input: ${e instanceof Error ? e.message : String(e)}`
     );
   }
   const userFm = (parsed.data ?? {}) as Record<string, unknown>;
@@ -285,9 +297,9 @@ export function mergeCaptureFrontmatter(rawBody: string, opts: RunOpts): string 
     // assignment AFTER the spread is intentional: it lets us implement the
     // mixed precedence (CLI flag wins for `type`; user wins for `title`/
     // `captured_via`/`captured_at`) in one expression per key.
-    type: opts.type ?? userFm.type ?? 'note',
+    type: opts.type ?? userFm.type ?? "note",
     title: userFm.title ?? deriveTitle(parsed.content),
-    captured_via: userFm.captured_via ?? opts.source ?? 'capture-cli',
+    captured_via: userFm.captured_via ?? opts.source ?? "capture-cli",
     captured_at: userFm.captured_at ?? nowIso,
   };
   return matter.stringify(parsed.content, merged);
@@ -325,9 +337,9 @@ function printReceipt(result: CaptureResult, quiet: boolean, json: boolean): voi
     console.log(result.slug);
     return;
   }
-  console.log('captured:');
+  console.log("captured:");
   console.log(`  slug:          ${result.slug}`);
-  console.log(`  status:        ${result.status ?? 'unknown'}`);
+  console.log(`  status:        ${result.status ?? "unknown"}`);
   console.log(`  content_hash:  ${result.content_hash.slice(0, 16)}…`);
   if (result.path) {
     console.log(`  file:          ${result.path}`);
@@ -337,7 +349,7 @@ function printReceipt(result: CaptureResult, quiet: boolean, json: boolean): voi
 
 export async function runCapture(engine: BrainEngine | null, args: string[]): Promise<void> {
   const parsed = parseArgs(args);
-  if ('help' in parsed) {
+  if ("help" in parsed) {
     console.log(HELP);
     return;
   }
@@ -352,7 +364,9 @@ export async function runCapture(engine: BrainEngine | null, args: string[]): Pr
     console.error(`gbrain capture: --source is not supported on thin-client installs.`);
     console.error(`Server-side OAuth client registration determines source scope.`);
     console.error(`On the server, run:`);
-    console.error(`  gbrain auth register-client <name> --source ${parsed.source} --scopes "read write"`);
+    console.error(
+      `  gbrain auth register-client <name> --source ${parsed.source} --scopes "read write"`
+    );
     process.exit(1);
   }
 
@@ -360,10 +374,10 @@ export async function runCapture(engine: BrainEngine | null, args: string[]): Pr
   // sees real bytes (not UTF-8-decoded mojibake). Stdin uses the same
   // Buffer path so --stdin gets the same protection as --file.
   let rawBuffer: Buffer | null = null;
-  let inputLabel = ''; // for error messages
+  let inputLabel = ""; // for error messages
   if (parsed.stdin) {
     rawBuffer = await readStdinBuffer();
-    inputLabel = 'stdin';
+    inputLabel = "stdin";
   } else if (parsed.filePath) {
     inputLabel = parsed.filePath;
     try {
@@ -371,7 +385,7 @@ export async function runCapture(engine: BrainEngine | null, args: string[]): Pr
       rawBuffer = readFileSync(parsed.filePath);
     } catch (e) {
       console.error(
-        `gbrain capture: failed to read ${parsed.filePath}: ${e instanceof Error ? e.message : String(e)}`,
+        `gbrain capture: failed to read ${parsed.filePath}: ${e instanceof Error ? e.message : String(e)}`
       );
       process.exit(1);
     }
@@ -380,11 +394,11 @@ export async function runCapture(engine: BrainEngine | null, args: string[]): Pr
     // for guard parity (a positional string with a literal `\x00` would
     // also be rejected). Inline thoughts almost never trigger this; it's
     // pure defense-in-depth.
-    rawBuffer = Buffer.from(parsed.content, 'utf8');
-    inputLabel = 'positional content';
+    rawBuffer = Buffer.from(parsed.content, "utf8");
+    inputLabel = "positional content";
   } else {
-    console.error('gbrain capture: provide content positionally, --file PATH, or --stdin');
-    console.error('Run `gbrain capture --help` for examples.');
+    console.error("gbrain capture: provide content positionally, --file PATH, or --stdin");
+    console.error("Run `gbrain capture --help` for examples.");
     process.exit(1);
   }
 
@@ -394,23 +408,23 @@ export async function runCapture(engine: BrainEngine | null, args: string[]): Pr
   if (nullByteOffset !== -1) {
     console.error(
       `gbrain capture: refusing to capture binary content from ${inputLabel}\n` +
-      `  Found null byte at offset ${nullByteOffset} (first 8KB scan); ` +
-      `text files (including UTF-8 CJK/emoji/BOM) never contain NUL bytes.\n` +
-      `  Binary content (image/audio/video/pdf) is not yet supported via capture — ` +
-      `install a content-type processor skillpack when available.`,
+        `  Found null byte at offset ${nullByteOffset} (first 8KB scan); ` +
+        `text files (including UTF-8 CJK/emoji/BOM) never contain NUL bytes.\n` +
+        `  Binary content (image/audio/video/pdf) is not yet supported via capture — ` +
+        `install a content-type processor skillpack when available.`
     );
     process.exit(1);
   }
 
   // Decode to UTF-8 string AFTER the binary guard.
-  const rawBody = rawBuffer!.toString('utf8');
+  const rawBody = rawBuffer!.toString("utf8");
 
   // CV9: refuse empty content based on the normalized form (whitespace-only
   // input is still empty), but preserve original bytes in storedBody for
   // the put_page write so CRLF / BOM / trailing-newline tests pass.
   const normalizedBody = normalizeForHash(rawBody);
   if (normalizedBody.length === 0) {
-    console.error('gbrain capture: refusing to capture empty content');
+    console.error("gbrain capture: refusing to capture empty content");
     process.exit(1);
   }
 
@@ -422,7 +436,7 @@ export async function runCapture(engine: BrainEngine | null, args: string[]): Pr
   // probe the sources table; CV7 above already rejected explicit --source
   // on thin-client. Implicit source resolution on thin-client uses
   // 'default' (the server's auth layer scopes the actual write).
-  let resolvedSourceId = 'default';
+  let resolvedSourceId = "default";
   if (!isThinClient(cfg) && engine) {
     try {
       const { source_id } = await resolveSourceWithTier(engine, parsed.source ?? null);
@@ -455,9 +469,9 @@ export async function runCapture(engine: BrainEngine | null, args: string[]): Pr
     try {
       raw = await callRemoteTool(
         cfg!,
-        'put_page',
+        "put_page",
         { slug, content: fullContent },
-        { timeoutMs: 30_000 },
+        { timeoutMs: 30_000 }
       );
     } catch (e) {
       // A2/T1: detect server-side FK violation and rewrite to friendly hint.
@@ -468,12 +482,12 @@ export async function runCapture(engine: BrainEngine | null, args: string[]): Pr
         console.error(`gbrain capture: ${hint}`);
       } else if (e instanceof RemoteMcpError) {
         console.error(`gbrain capture: remote put_page failed: ${e.message}`);
-        console.error('Run `gbrain remote doctor` to diagnose the connection.');
+        console.error("Run `gbrain remote doctor` to diagnose the connection.");
       } else {
         console.error(
-          `gbrain capture: remote put_page failed: ${e instanceof Error ? e.message : String(e)}`,
+          `gbrain capture: remote put_page failed: ${e instanceof Error ? e.message : String(e)}`
         );
-        console.error('Run `gbrain remote doctor` to diagnose the connection.');
+        console.error("Run `gbrain remote doctor` to diagnose the connection.");
       }
       process.exit(1);
     }
@@ -494,7 +508,7 @@ export async function runCapture(engine: BrainEngine | null, args: string[]): Pr
       // regardless of --source. --source maps to source_id (the DB FK),
       // not the ingestion-channel taxonomy. Conflating these was the
       // root cause of WARN-8's audit-trail labeling problem.
-      source_kind: 'capture-cli',
+      source_kind: "capture-cli",
       captured_at: capturedAt,
     };
     printReceipt(result, parsed.quiet ?? false, parsed.json ?? false);
@@ -504,21 +518,27 @@ export async function runCapture(engine: BrainEngine | null, args: string[]): Pr
   // Local install: route through put_page operation directly so we
   // exercise the same write-through path the MCP server uses.
   if (!engine) {
-    console.error('gbrain capture: engine not connected');
+    console.error("gbrain capture: engine not connected");
     process.exit(1);
   }
-  const putPageOp = operations.find((o) => o.name === 'put_page');
+  const putPageOp = operations.find((o) => o.name === "put_page");
   if (!putPageOp) {
-    console.error('gbrain capture: put_page operation missing (gbrain build issue)');
+    console.error("gbrain capture: put_page operation missing (gbrain build issue)");
     process.exit(1);
   }
   const ctx: OperationContext = {
     engine,
-    config: cfg ?? { engine: 'pglite' as const },
+    config: cfg ?? { engine: "pglite" as const },
     logger: {
-      info: (msg: string) => { process.stderr.write(`[capture] ${msg}\n`); },
-      warn: (msg: string) => { process.stderr.write(`[capture] WARN: ${msg}\n`); },
-      error: (msg: string) => { process.stderr.write(`[capture] ERROR: ${msg}\n`); },
+      info: (msg: string) => {
+        process.stderr.write(`[capture] ${msg}\n`);
+      },
+      warn: (msg: string) => {
+        process.stderr.write(`[capture] WARN: ${msg}\n`);
+      },
+      error: (msg: string) => {
+        process.stderr.write(`[capture] ERROR: ${msg}\n`);
+      },
     },
     dryRun: false,
     remote: false,
@@ -535,14 +555,14 @@ export async function runCapture(engine: BrainEngine | null, args: string[]): Pr
     const sourceUri = parsed.filePath
       ? `file://${parsed.filePath}`
       : parsed.stdin
-        ? 'stdin'
-        : 'cli-positional';
+        ? "stdin"
+        : "cli-positional";
     const result = (await putPageOp.handler(ctx, {
       slug,
       content: fullContent,
-      source_kind: 'capture-cli',
+      source_kind: "capture-cli",
       source_uri: sourceUri,
-      ingested_via: 'capture-cli',
+      ingested_via: "capture-cli",
     })) as {
       slug: string;
       status?: string;
@@ -558,11 +578,11 @@ export async function runCapture(engine: BrainEngine | null, args: string[]): Pr
         written: result.write_through?.written ?? false,
         path: result.write_through?.path,
         // CV3: source_kind is the channel taxonomy, NOT the DB source FK.
-        source_kind: 'capture-cli',
+        source_kind: "capture-cli",
         captured_at: capturedAt,
       },
       parsed.quiet ?? false,
-      parsed.json ?? false,
+      parsed.json ?? false
     );
   } catch (e) {
     // A2: detect FK violation on sources table and rewrite to friendly hint.
@@ -574,7 +594,7 @@ export async function runCapture(engine: BrainEngine | null, args: string[]): Pr
       console.error(`gbrain capture: ${hint}`);
     } else {
       console.error(
-        `gbrain capture: put_page failed: ${e instanceof Error ? e.message : String(e)}`,
+        `gbrain capture: put_page failed: ${e instanceof Error ? e.message : String(e)}`
       );
     }
     process.exit(1);

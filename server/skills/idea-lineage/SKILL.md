@@ -155,24 +155,30 @@ Use this shape for normal answers:
 
 ```markdown
 ## Current Live Version
+
 [1-3 sentences. Include confidence: high / medium / low.]
 
 ## Lineage
+
 - First mention: [date] - [claim] ([source-id:slug], "short quote")
 - Best articulation: [date] - [claim] ([source-id:slug], "short quote")
 - Turning point: [date] - [what changed] ([source-id:slug])
 
 ## Reversals and Contradictions
+
 - Reversal: [what changed, with before/after evidence]
 - Contradiction: [what conflicts, or "No clear evidence found"]
 
 ## Abandoned Branches
+
 - [branch] - [why it appears abandoned, with evidence]
 
 ## Related Concepts
+
 - [concept slug or title] - [relationship]
 
 ## Evidence Gaps
+
 - [bucket or claim] - [what was checked and what is missing]
 ```
 

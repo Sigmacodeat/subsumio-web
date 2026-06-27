@@ -32,20 +32,20 @@
 /** Min-safe XML attribute / text node escape. */
 export function escapeXml(s: string): string {
   return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 const TOKEN = {
-  bgPrimary: '#0a0a0f',
-  bgSecondary: '#14141f',
-  textPrimary: '#e0e0e0',
-  textSecondary: '#888',
-  textMuted: '#777', // TD2 bump
-  accent: '#3b82f6',
+  bgPrimary: "#0a0a0f",
+  bgSecondary: "#14141f",
+  textPrimary: "#e0e0e0",
+  textSecondary: "#888",
+  textMuted: "#777", // TD2 bump
+  accent: "#3b82f6",
 } as const;
 
 // ─── Brier trend sparkline ──────────────────────────────────────────
@@ -74,7 +74,7 @@ export function renderBrierTrend(opts: BrierTrendOpts): string {
   const plotH = h - padT - padB;
 
   if (opts.series.length === 0) {
-    return svgEmpty(w, h, 'No Brier-trend data yet (need 5+ resolved takes)');
+    return svgEmpty(w, h, "No Brier-trend data yet (need 5+ resolved takes)");
   }
 
   // y-axis: Brier in [0, 0.4]. 0 = perfect; 0.25 = always-50% baseline.
@@ -85,7 +85,7 @@ export function renderBrierTrend(opts: BrierTrendOpts): string {
 
   const points = opts.series
     .map((p, i) => `${xScale(i).toFixed(1)},${yScale(p.brier).toFixed(1)}`)
-    .join(' ');
+    .join(" ");
 
   // Baseline reference line at Brier=0.25 (always-50%).
   const baselineY = yScale(0.25).toFixed(1);
@@ -97,13 +97,13 @@ export function renderBrierTrend(opts: BrierTrendOpts): string {
     const last = opts.series[opts.series.length - 1]!;
     labels.push(
       `<text x="${padL}" y="${h - 8}" font-size="11" fill="${TOKEN.textMuted}">${escapeXml(first.date)}</text>`,
-      `<text x="${w - padR}" y="${h - 8}" font-size="11" fill="${TOKEN.textMuted}" text-anchor="end">${escapeXml(last.date)}</text>`,
+      `<text x="${w - padR}" y="${h - 8}" font-size="11" fill="${TOKEN.textMuted}" text-anchor="end">${escapeXml(last.date)}</text>`
     );
   }
   // Y-axis: 0.0 / 0.2 / 0.4 labels.
   for (const y of [0, 0.2, 0.4]) {
     labels.push(
-      `<text x="${padL - 6}" y="${yScale(y).toFixed(1) + 4}" font-size="11" fill="${TOKEN.textMuted}" text-anchor="end">${y.toFixed(1)}</text>`,
+      `<text x="${padL - 6}" y="${yScale(y).toFixed(1) + 4}" font-size="11" fill="${TOKEN.textMuted}" text-anchor="end">${y.toFixed(1)}</text>`
     );
   }
 
@@ -112,7 +112,7 @@ export function renderBrierTrend(opts: BrierTrendOpts): string {
   <text x="${padL}" y="14" font-size="12" fill="${TOKEN.textSecondary}">Brier (lower is better)</text>
   <line x1="${padL}" y1="${baselineY}" x2="${w - padR}" y2="${baselineY}" stroke="${TOKEN.textMuted}" stroke-dasharray="2,3" stroke-width="1"/>
   <polyline points="${points}" fill="none" stroke="${TOKEN.accent}" stroke-width="2"/>
-  ${labels.join('\n  ')}
+  ${labels.join("\n  ")}
 </svg>`;
 }
 
@@ -143,7 +143,7 @@ export function renderDomainBars(opts: DomainBarsOpts): string {
   const h = padT + opts.bars.length * rowH + 12;
 
   if (opts.bars.length === 0) {
-    return svgEmpty(w, 60, 'No per-domain scorecard data yet');
+    return svgEmpty(w, 60, "No per-domain scorecard data yet");
   }
 
   const plotW = w - padL - padR;
@@ -160,7 +160,7 @@ export function renderDomainBars(opts: DomainBarsOpts): string {
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="Per-domain accuracy">
   <rect width="${w}" height="${h}" fill="${TOKEN.bgPrimary}"/>
-  <text x="${padL - 8}" y="${padT - 8}" font-size="12" fill="${TOKEN.textSecondary}" text-anchor="end">Per-domain accuracy</text>${rows.join('')}
+  <text x="${padL - 8}" y="${padT - 8}" font-size="12" fill="${TOKEN.textSecondary}" text-anchor="end">Per-domain accuracy</text>${rows.join("")}
 </svg>`;
 }
 
@@ -183,7 +183,7 @@ export function renderAbandonedThreadsCard(threads: AbandonedThread[], width = 6
   const h = padT + Math.max(threads.length, 1) * rowH + 12;
 
   if (threads.length === 0) {
-    return svgEmpty(width, 80, 'No abandoned high-conviction threads — clean slate');
+    return svgEmpty(width, 80, "No abandoned high-conviction threads — clean slate");
   }
 
   const rows = threads.map((t, i) => {
@@ -191,7 +191,7 @@ export function renderAbandonedThreadsCard(threads: AbandonedThread[], width = 6
     // Truncate claim for SVG layout — full claim shown in admin via tooltip
     // (admin SPA renders the SVG, then layers HTML tooltips). Server side
     // can't measure text width so we cap at 70 chars.
-    const claim = t.claim.length > 70 ? t.claim.slice(0, 70) + '…' : t.claim;
+    const claim = t.claim.length > 70 ? t.claim.slice(0, 70) + "…" : t.claim;
     const meta = `conviction ${t.conviction.toFixed(2)} · ${t.monthsSilent} months silent`;
     const href = t.revisitHref ?? `/admin/calibration/revisit/${t.takeId}`;
     return `
@@ -202,7 +202,7 @@ export function renderAbandonedThreadsCard(threads: AbandonedThread[], width = 6
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${h}" viewBox="0 0 ${width} ${h}" role="img" aria-label="Abandoned threads">
   <rect width="${width}" height="${h}" fill="${TOKEN.bgPrimary}"/>
-  <text x="16" y="${padT - 8}" font-size="12" fill="${TOKEN.textSecondary}">You committed to these and never revisited</text>${rows.join('')}
+  <text x="16" y="${padT - 8}" font-size="12" fill="${TOKEN.textSecondary}">You committed to these and never revisited</text>${rows.join("")}
 </svg>`;
 }
 
@@ -216,24 +216,24 @@ export interface PatternStatementsCardItem {
 
 export function renderPatternStatementsCard(
   statements: PatternStatementsCardItem[],
-  width = 600,
+  width = 600
 ): string {
   const padT = 24;
   const rowH = 36;
   const h = padT + Math.max(statements.length, 1) * rowH + 12;
   if (statements.length === 0) {
-    return svgEmpty(width, 60, 'No active patterns yet');
+    return svgEmpty(width, 60, "No active patterns yet");
   }
   const rows = statements.map((s, i) => {
     const y = padT + i * rowH;
-    const txt = s.text.length > 90 ? s.text.slice(0, 90) + '…' : s.text;
+    const txt = s.text.length > 90 ? s.text.slice(0, 90) + "…" : s.text;
     const href = s.drillHref ?? `/admin/calibration/pattern/${i + 1}`;
     return `
   <a href="${escapeXml(href)}"><text x="16" y="${y + 22}" font-size="14" fill="${TOKEN.textPrimary}">${escapeXml(txt)}</text></a>`;
   });
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${h}" viewBox="0 0 ${width} ${h}" role="img" aria-label="Calibration pattern statements">
   <rect width="${width}" height="${h}" fill="${TOKEN.bgPrimary}"/>
-  <text x="16" y="${padT - 8}" font-size="12" fill="${TOKEN.textSecondary}">Active patterns (click to drill down)</text>${rows.join('')}
+  <text x="16" y="${padT - 8}" font-size="12" fill="${TOKEN.textSecondary}">Active patterns (click to drill down)</text>${rows.join("")}
 </svg>`;
 }
 

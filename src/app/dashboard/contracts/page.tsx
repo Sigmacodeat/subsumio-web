@@ -35,9 +35,11 @@ import { RotateCcw, GitCompare } from "lucide-react";
 import dynamic from "next/dynamic";
 
 const ContractRedlineViewer = dynamic(() =>
-  import("@/components/contract-redline-viewer").then((m) => m.ContractRedlineViewer));
+  import("@/components/contract-redline-viewer").then((m) => m.ContractRedlineViewer)
+);
 const ContractQuickCreateDialog = dynamic(() =>
-  import("@/components/legal/ContractQuickCreateDialog").then((m) => m.ContractQuickCreateDialog));
+  import("@/components/legal/ContractQuickCreateDialog").then((m) => m.ContractQuickCreateDialog)
+);
 
 interface ContractItem {
   slug: string;

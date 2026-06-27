@@ -21,24 +21,24 @@ The resolved provider + dimensions get persisted to `~/.gbrain/config.json` atom
 
 ## TL;DR table
 
-| Provider | env vars | default dims | cost ($/1M tokens) | local? | multimodal? |
-|---|---|---|---|---|---|
-| `zeroentropyai` | `ZEROENTROPY_API_KEY` | 2560 (Matryoshka to 1280/640/320/...) | 0.05 | no | no |
-| `openai` | `OPENAI_API_KEY` | 1536 | 0.13 | no | no |
-| `openrouter` | `OPENROUTER_API_KEY` | 1536 | 0.02 | no | model-dependent |
-| `voyage` | `VOYAGE_API_KEY` | 1024 | 0.18 | no | yes (`voyage-multimodal-3`) |
-| `google` | `GOOGLE_GENERATIVE_AI_API_KEY` | 768 | 0.025 | no | no |
-| `azure-openai` | `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_DEPLOYMENT` | 1536 | 0.13 | no | no |
-| `minimax` | `MINIMAX_API_KEY` | 1536 | 0.07 | no | no |
-| `dashscope` | `DASHSCOPE_API_KEY` | 1024 | varies | no | no |
-| `zhipu` | `ZHIPUAI_API_KEY` | 1024 | varies | no | no |
-| `ollama` | (none — runs locally) | 768 | 0 | yes | no |
-| `llama-server` | (none — runs locally) | user-set | 0 | yes | no |
-| `litellm` | `LITELLM_API_KEY` (optional) | user-set | varies | yes (proxy) | no |
-| `together` | `TOGETHER_API_KEY` | 768 | varies | no | no |
-| `anthropic` | (no embedding model — chat only) | — | — | — | — |
-| `deepseek` | (no embedding model — chat only) | — | — | — | — |
-| `groq` | (no embedding model — chat only) | — | — | — | — |
+| Provider        | env vars                                                                   | default dims                          | cost ($/1M tokens) | local?      | multimodal?                 |
+| --------------- | -------------------------------------------------------------------------- | ------------------------------------- | ------------------ | ----------- | --------------------------- |
+| `zeroentropyai` | `ZEROENTROPY_API_KEY`                                                      | 2560 (Matryoshka to 1280/640/320/...) | 0.05               | no          | no                          |
+| `openai`        | `OPENAI_API_KEY`                                                           | 1536                                  | 0.13               | no          | no                          |
+| `openrouter`    | `OPENROUTER_API_KEY`                                                       | 1536                                  | 0.02               | no          | model-dependent             |
+| `voyage`        | `VOYAGE_API_KEY`                                                           | 1024                                  | 0.18               | no          | yes (`voyage-multimodal-3`) |
+| `google`        | `GOOGLE_GENERATIVE_AI_API_KEY`                                             | 768                                   | 0.025              | no          | no                          |
+| `azure-openai`  | `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_DEPLOYMENT` | 1536                                  | 0.13               | no          | no                          |
+| `minimax`       | `MINIMAX_API_KEY`                                                          | 1536                                  | 0.07               | no          | no                          |
+| `dashscope`     | `DASHSCOPE_API_KEY`                                                        | 1024                                  | varies             | no          | no                          |
+| `zhipu`         | `ZHIPUAI_API_KEY`                                                          | 1024                                  | varies             | no          | no                          |
+| `ollama`        | (none — runs locally)                                                      | 768                                   | 0                  | yes         | no                          |
+| `llama-server`  | (none — runs locally)                                                      | user-set                              | 0                  | yes         | no                          |
+| `litellm`       | `LITELLM_API_KEY` (optional)                                               | user-set                              | varies             | yes (proxy) | no                          |
+| `together`      | `TOGETHER_API_KEY`                                                         | 768                                   | varies             | no          | no                          |
+| `anthropic`     | (no embedding model — chat only)                                           | —                                     | —                  | —           | —                           |
+| `deepseek`      | (no embedding model — chat only)                                           | —                                     | —                  | —           | —                           |
+| `groq`          | (no embedding model — chat only)                                           | —                                     | —                  | —           | —                           |
 
 **Note on local providers.** Ollama and llama-server have no required API key, so they don't show up in env-detection auto-pick. Pick them explicitly with `--embedding-model ollama:<model>` to avoid silently routing to a daemon that may not be running.
 
@@ -49,6 +49,7 @@ If `gbrain import` fails with `expected N dimensions, not M`, run `gbrain doctor
 The doctor distinguishes two repair paths:
 
 - **Empty brain** (no embedded chunks yet) — drop and re-init at the right dim:
+
   ```
   gbrain init --force --pglite --embedding-model <provider>:<model> --embedding-dimensions <N>
   ```
@@ -108,6 +109,7 @@ Single OpenAI-compatible API for fan-out to OpenAI, Anthropic, Google, DeepSeek,
 **Chat**: every chat model OR proxies works through `/v1/chat/completions`. The recipe lists 8 curated entry points (GPT-5.2 family, Claude 4.5/4.6/4.7, Gemini 3 Flash Preview, DeepSeek); any other OR catalog ID also works. Tool-calling envelope is supported by the OR endpoint, but per-model capability varies — check https://openrouter.ai/models before counting on tools for a specific slug.
 
 **Optional env**:
+
 - `OPENROUTER_BASE_URL` — point at a self-hosted OR-compatible proxy.
 - `OPENROUTER_REFERER` (default `https://gbrain.ai`) and `OPENROUTER_TITLE` (default `gbrain`) — attribution headers for OR's leaderboard. Forks running gbrain inside a different agent stack (OpenClaw deployments etc.) should set these so their traffic gets attributed to them, not gbrain.
 
@@ -158,6 +160,7 @@ This is the catch-all for "my provider isn't in the list above." Set up LiteLLM,
 ## Choosing dimensions
 
 Three numbers matter:
+
 1. **Provider's native dims**: each model has a "true" output dim (e.g. OpenAI `text-embedding-3-large` is 3072 native).
 2. **Matryoshka reductions**: most modern providers let you request a smaller vector via the `dimensions` field.
 3. **HNSW cap**: pgvector's HNSW index supports up to 2000 dims. Brains above that fall back to exact vector scans (slower but correct; gbrain handles the SQL automatically via `chunkEmbeddingIndexSql` in `src/core/vector-index.ts`).

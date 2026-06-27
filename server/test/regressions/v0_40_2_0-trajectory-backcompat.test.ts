@@ -13,16 +13,16 @@
  * Hermetic, no DATABASE_URL, no API keys.
  */
 
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
-import { PGLiteEngine } from '../../src/core/pglite-engine.ts';
-import { computeTrajectoryStats } from '../../src/core/trajectory.ts';
-import { computeFounderScorecard } from '../../src/commands/founder-scorecard.ts';
+import { describe, test, expect, beforeAll, afterAll } from "bun:test";
+import { PGLiteEngine } from "../../src/core/pglite-engine.ts";
+import { computeTrajectoryStats } from "../../src/core/trajectory.ts";
+import { computeFounderScorecard } from "../../src/commands/founder-scorecard.ts";
 
 let engine: PGLiteEngine;
 
 beforeAll(async () => {
   engine = new PGLiteEngine();
-  await engine.connect({ database_url: '' });
+  await engine.connect({ database_url: "" });
   await engine.initSchema();
 }, 60_000);
 
@@ -30,7 +30,7 @@ afterAll(async () => {
   await engine.disconnect();
 });
 
-describe('v0.40.2.0 back-compat — event rows ignored by metric callers', () => {
+describe("v0.40.2.0 back-compat — event rows ignored by metric callers", () => {
   beforeAll(async () => {
     // Seed: one metric row (mrr=50K → 75K → 100K) + one event-only row.
     // The event row shares the entity but has metric=NULL.
@@ -56,21 +56,21 @@ describe('v0.40.2.0 back-compat — event rows ignored by metric callers', () =>
     `);
   });
 
-  test('computeTrajectoryStats output is byte-identical with and without event rows', async () => {
+  test("computeTrajectoryStats output is byte-identical with and without event rows", async () => {
     // Pull all points (kind:'all' default) — includes the event row.
     const allPoints = await engine.findTrajectory({
-      entitySlug: 'companies/acme-test',
+      entitySlug: "companies/acme-test",
     });
     expect(allPoints.length).toBe(4);
-    expect(allPoints.some(p => p.event_type === 'meeting')).toBe(true);
+    expect(allPoints.some((p) => p.event_type === "meeting")).toBe(true);
 
     // Pull only metric rows (the kind callers actually want).
     const metricPoints = await engine.findTrajectory({
-      entitySlug: 'companies/acme-test',
-      kind: 'metric',
+      entitySlug: "companies/acme-test",
+      kind: "metric",
     });
     expect(metricPoints.length).toBe(3);
-    expect(metricPoints.every(p => p.event_type === null)).toBe(true);
+    expect(metricPoints.every((p) => p.event_type === null)).toBe(true);
 
     // Critical: computeTrajectoryStats over BOTH inputs MUST yield the
     // same regressions + drift_score. The event row should be silently
@@ -82,25 +82,25 @@ describe('v0.40.2.0 back-compat — event rows ignored by metric callers', () =>
     expect(allStats.drift_score).toBe(metricStats.drift_score);
   });
 
-  test('computeFounderScorecard ignores event rows in per-metric math', async () => {
+  test("computeFounderScorecard ignores event rows in per-metric math", async () => {
     const allPoints = await engine.findTrajectory({
-      entitySlug: 'companies/acme-test',
+      entitySlug: "companies/acme-test",
     });
 
     const withEventRows = computeFounderScorecard({
-      entitySlug: 'companies/acme-test',
-      windowSince: '2026-01-01',
-      windowUntil: '2026-12-31',
+      entitySlug: "companies/acme-test",
+      windowSince: "2026-01-01",
+      windowUntil: "2026-12-31",
       points: allPoints,
       takes: [],
     });
 
     // Filter out the event row manually for the comparison case.
-    const metricOnly = allPoints.filter(p => p.metric !== null);
+    const metricOnly = allPoints.filter((p) => p.metric !== null);
     const withoutEventRows = computeFounderScorecard({
-      entitySlug: 'companies/acme-test',
-      windowSince: '2026-01-01',
-      windowUntil: '2026-12-31',
+      entitySlug: "companies/acme-test",
+      windowSince: "2026-01-01",
+      windowUntil: "2026-12-31",
       points: metricOnly,
       takes: [],
     });
@@ -110,34 +110,34 @@ describe('v0.40.2.0 back-compat — event rows ignored by metric callers', () =>
     expect(withEventRows).toEqual(withoutEventRows);
   });
 
-  test('founder-scorecard math does not throw NaN on mixed input', async () => {
+  test("founder-scorecard math does not throw NaN on mixed input", async () => {
     const allPoints = await engine.findTrajectory({
-      entitySlug: 'companies/acme-test',
+      entitySlug: "companies/acme-test",
     });
     const scorecard = computeFounderScorecard({
-      entitySlug: 'companies/acme-test',
-      windowSince: '2026-01-01',
-      windowUntil: '2026-12-31',
+      entitySlug: "companies/acme-test",
+      windowSince: "2026-01-01",
+      windowUntil: "2026-12-31",
       points: allPoints,
       takes: [],
     });
     // Spot-check key fields: nothing should be NaN.
     const json = JSON.stringify(scorecard);
-    expect(json).not.toContain('NaN');
+    expect(json).not.toContain("NaN");
   });
 
   test('kind: "all" returns event row in chronological position', async () => {
     const points = await engine.findTrajectory({
-      entitySlug: 'companies/acme-test',
+      entitySlug: "companies/acme-test",
     });
     // Chronological order: 2026-01-01, 2026-04-01, 2026-05-15 (event), 2026-07-01
-    expect(points.map(p => p.valid_from.toISOString().slice(0, 10))).toEqual([
-      '2026-01-01',
-      '2026-04-01',
-      '2026-05-15',
-      '2026-07-01',
+    expect(points.map((p) => p.valid_from.toISOString().slice(0, 10))).toEqual([
+      "2026-01-01",
+      "2026-04-01",
+      "2026-05-15",
+      "2026-07-01",
     ]);
-    expect(points[2].event_type).toBe('meeting');
+    expect(points[2].event_type).toBe("meeting");
     expect(points[2].metric).toBeNull();
   });
 });

@@ -166,9 +166,9 @@ I run a personal AI agent on OpenClaw. It has a persona, knows who I am, and mai
 
 I tweeted about this a few days ago:
 
-> *You are not allowed to do one-off work. If I ask you to do something and it's the kind of thing that will need to happen again, you must: do it manually the first time on 3 to 10 items. Show me the output. If I approve, codify it into a skill file. If it should run automatically, put it on a cron.*
+> _You are not allowed to do one-off work. If I ask you to do something and it's the kind of thing that will need to happen again, you must: do it manually the first time on 3 to 10 items. Show me the output. If I approve, codify it into a skill file. If it should run automatically, put it on a cron._
 
-> *The test: if I have to ask you for something twice, you failed.*
+> _The test: if I have to ask you for something twice, you failed._
 
 That resonated: a thousand likes, twenty-five hundred bookmarks. People thought it was a prompt engineering trick. It's not. It's the same architecture.
 
@@ -188,15 +188,16 @@ Five definitions. Three layers. One principle. Thin harness, fat skills.
 
 When building GBrain features, use this decision guide:
 
-| Question | If YES | If NO |
-|----------|--------|-------|
-| Does the agent need to think, adapt, or ask questions? | **Skill** (recipe markdown) | Code |
-| Same input always produces same output? | **Code** (CLI command) | Skill |
-| Does it require judgment about the user's environment? | **Skill** | Code |
-| Is it a lookup, list, or status check? | **Code** | Probably skill |
-| Does it change behavior based on conversation context? | **Skill** | Code |
+| Question                                               | If YES                      | If NO          |
+| ------------------------------------------------------ | --------------------------- | -------------- |
+| Does the agent need to think, adapt, or ask questions? | **Skill** (recipe markdown) | Code           |
+| Same input always produces same output?                | **Code** (CLI command)      | Skill          |
+| Does it require judgment about the user's environment? | **Skill**                   | Code           |
+| Is it a lookup, list, or status check?                 | **Code**                    | Probably skill |
+| Does it change behavior based on conversation context? | **Skill**                   | Code           |
 
 **GBrain examples:**
+
 - `gbrain integrations list` = **Code** (reads files, checks env vars, deterministic)
 - `gbrain integrations status` = **Code** (checks env vars + heartbeat, deterministic)
 - `gbrain integrations doctor` = **Code** (runs health checks, deterministic)

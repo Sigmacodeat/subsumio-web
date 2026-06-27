@@ -16,13 +16,13 @@
  * importing them imports the rest of their module's dependency graph.
  */
 
-import { describe, test } from 'bun:test';
-import fc from 'fast-check';
+import { describe, test } from "bun:test";
+import fc from "fast-check";
 
-import { validatePageSlug, validateFilename } from '../../src/core/operations.ts';
-import { splitBody } from '../../src/core/markdown.ts';
-import { slugifyPath } from '../../src/core/sync.ts';
-import { sanitizeQueryForPrompt } from '../../src/core/search/expansion.ts';
+import { validatePageSlug, validateFilename } from "../../src/core/operations.ts";
+import { splitBody } from "../../src/core/markdown.ts";
+import { slugifyPath } from "../../src/core/sync.ts";
+import { sanitizeQueryForPrompt } from "../../src/core/search/expansion.ts";
 
 const NUM_RUNS = 1000;
 
@@ -36,7 +36,7 @@ function fuzzVoidValidator(name: string, fn: (s: string) => void) {
           /* throwing is fine — contract is "no wedge", not "always succeeds" */
         }
       }),
-      { numRuns: NUM_RUNS },
+      { numRuns: NUM_RUNS }
     );
   });
 }
@@ -46,44 +46,44 @@ function fuzzStringSanitizer(name: string, fn: (s: string) => string) {
     fc.assert(
       fc.property(fc.string(), (input) => {
         const out = fn(input);
-        if (typeof out !== 'string') {
+        if (typeof out !== "string") {
           throw new Error(`${name} returned non-string: ${typeof out}`);
         }
       }),
-      { numRuns: NUM_RUNS },
+      { numRuns: NUM_RUNS }
     );
   });
 }
 
-describe('mixed-purity validator fuzz', () => {
-  fuzzVoidValidator('validatePageSlug', validatePageSlug);
-  fuzzVoidValidator('validateFilename', validateFilename);
+describe("mixed-purity validator fuzz", () => {
+  fuzzVoidValidator("validatePageSlug", validatePageSlug);
+  fuzzVoidValidator("validateFilename", validateFilename);
 
-  fuzzStringSanitizer('sanitizeQueryForPrompt', sanitizeQueryForPrompt);
-  fuzzStringSanitizer('slugifyPath', slugifyPath);
+  fuzzStringSanitizer("sanitizeQueryForPrompt", sanitizeQueryForPrompt);
+  fuzzStringSanitizer("slugifyPath", slugifyPath);
 
-  test('splitBody: returns shape { compiled_truth, timeline } on any input', () => {
+  test("splitBody: returns shape { compiled_truth, timeline } on any input", () => {
     fc.assert(
       fc.property(fc.string(), (input) => {
         const out = splitBody(input);
-        if (typeof out !== 'object' || out === null) {
+        if (typeof out !== "object" || out === null) {
           throw new Error(`splitBody returned non-object: ${typeof out}`);
         }
-        if (typeof out.compiled_truth !== 'string') {
+        if (typeof out.compiled_truth !== "string") {
           throw new Error(`splitBody.compiled_truth not a string: ${typeof out.compiled_truth}`);
         }
-        if (typeof out.timeline !== 'string') {
+        if (typeof out.timeline !== "string") {
           throw new Error(`splitBody.timeline not a string: ${typeof out.timeline}`);
         }
       }),
-      { numRuns: NUM_RUNS },
+      { numRuns: NUM_RUNS }
     );
   });
 
   // Sentinel stress for splitBody — feed YAML-ish strings with `---`,
   // `## Timeline`, etc, to exercise the sentinel parser branches.
-  test('splitBody: stress sentinels with shaped inputs', () => {
-    const sentinels = ['---', '## Timeline', '## History', '<!-- timeline -->', '--- timeline ---'];
+  test("splitBody: stress sentinels with shaped inputs", () => {
+    const sentinels = ["---", "## Timeline", "## History", "<!-- timeline -->", "--- timeline ---"];
     fc.assert(
       fc.property(
         fc.string(),
@@ -92,11 +92,11 @@ describe('mixed-purity validator fuzz', () => {
         (head, sentinel, tail) => {
           const input = `${head}\n${sentinel}\n${tail}`;
           const out = splitBody(input);
-          if (typeof out.compiled_truth !== 'string') throw new Error('compiled_truth not string');
-          if (typeof out.timeline !== 'string') throw new Error('timeline not string');
-        },
+          if (typeof out.compiled_truth !== "string") throw new Error("compiled_truth not string");
+          if (typeof out.timeline !== "string") throw new Error("timeline not string");
+        }
       ),
-      { numRuns: 500 },
+      { numRuns: 500 }
     );
   });
 });

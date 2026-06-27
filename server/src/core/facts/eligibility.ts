@@ -34,7 +34,7 @@
  * groups by reason).
  */
 
-import type { PageType } from '../types.ts';
+import type { PageType } from "../types.ts";
 
 export type EligibilityResult = { ok: true } | { ok: false; reason: string };
 
@@ -44,7 +44,7 @@ export type EligibilityResult = { ok: true } | { ok: false; reason: string };
  * legacy default) still extracts because the directory tells us it's
  * conversation-shape.
  */
-const RESCUE_SLUG_PREFIXES = ['meetings/', 'personal/', 'daily/'] as const;
+const RESCUE_SLUG_PREFIXES = ["meetings/", "personal/", "daily/"] as const;
 
 // v0.41.22 (T21, codex F-ELIGIBLE finding): UNION of gbrain-base's hardcoded
 // types AND gbrain-base-v2's canonical extractable types. Pre-rebase plan
@@ -69,29 +69,41 @@ const RESCUE_SLUG_PREFIXES = ['meetings/', 'personal/', 'daily/'] as const;
 // call sites (operations.ts + import-file.ts + others).
 const ELIGIBLE_TYPES: PageType[] = [
   // gbrain-base (legacy) types
-  'note', 'meeting', 'slack', 'email', 'calendar-event', 'source', 'writing',
+  "note",
+  "meeting",
+  "slack",
+  "email",
+  "calendar-event",
+  "source",
+  "writing",
   // gbrain-base-v2 canonical types declared extractable in the pack
   // (concept deliberately omitted — see above)
-  'media', 'tweet', 'atom', 'analysis',
+  "media",
+  "tweet",
+  "atom",
+  "analysis",
 ];
 
 const MIN_BODY_CHARS = 80;
 
 export function isFactsBackstopEligible(
   slug: string,
-  parsed: { type: PageType; compiled_truth: string; frontmatter: Record<string, unknown> } | null | undefined,
+  parsed:
+    | { type: PageType; compiled_truth: string; frontmatter: Record<string, unknown> }
+    | null
+    | undefined
 ): EligibilityResult {
-  if (!parsed) return { ok: false, reason: 'no_parsed_page' };
-  if (slug.startsWith('wiki/agents/')) return { ok: false, reason: 'subagent_namespace' };
+  if (!parsed) return { ok: false, reason: "no_parsed_page" };
+  if (slug.startsWith("wiki/agents/")) return { ok: false, reason: "subagent_namespace" };
   if (parsed.frontmatter && parsed.frontmatter.dream_generated === true) {
-    return { ok: false, reason: 'dream_generated' };
+    return { ok: false, reason: "dream_generated" };
   }
 
-  const body = (parsed.compiled_truth ?? '').trim();
-  if (body.length < MIN_BODY_CHARS) return { ok: false, reason: 'too_short' };
+  const body = (parsed.compiled_truth ?? "").trim();
+  if (body.length < MIN_BODY_CHARS) return { ok: false, reason: "too_short" };
 
   const typeOk = ELIGIBLE_TYPES.includes(parsed.type);
-  const slugOk = RESCUE_SLUG_PREFIXES.some(p => slug.startsWith(p));
+  const slugOk = RESCUE_SLUG_PREFIXES.some((p) => slug.startsWith(p));
   if (!typeOk && !slugOk) return { ok: false, reason: `kind:${parsed.type}` };
 
   return { ok: true };

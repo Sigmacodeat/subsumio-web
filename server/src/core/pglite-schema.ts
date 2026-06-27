@@ -21,8 +21,8 @@
  * test/edge-bundle.test.ts has a drift detection test.
  */
 
-import { applyChunkEmbeddingIndexPolicy } from './vector-index.ts';
-import { DEFAULT_EMBEDDING_MODEL, DEFAULT_EMBEDDING_DIMENSIONS } from './ai/defaults.ts';
+import { applyChunkEmbeddingIndexPolicy } from "./vector-index.ts";
+import { DEFAULT_EMBEDDING_MODEL, DEFAULT_EMBEDDING_DIMENSIONS } from "./ai/defaults.ts";
 
 const PGLITE_SCHEMA_SQL_TEMPLATE = `
 -- GBrain PGLite schema (local embedded Postgres)
@@ -1064,7 +1064,7 @@ CREATE INDEX IF NOT EXISTS page_aliases_slug_idx
  */
 export function getPGLiteSchema(
   dims: number = DEFAULT_EMBEDDING_DIMENSIONS,
-  model: string = DEFAULT_EMBEDDING_MODEL,
+  model: string = DEFAULT_EMBEDDING_MODEL
 ): string {
   const parsedDims = Number(dims);
   if (!Number.isInteger(parsedDims) || parsedDims <= 0) {

@@ -28,8 +28,8 @@ import {
   unlinkSync,
   writeFileSync,
   writeSync,
-} from 'fs';
-import { dirname, join } from 'path';
+} from "fs";
+import { dirname, join } from "path";
 
 import {
   enumerateBundle,
@@ -37,19 +37,19 @@ import {
   pathSlug,
   type BundleEntry,
   type BundleManifest,
-} from './bundle.ts';
-import { findResolverFile } from '../resolver-filenames.ts';
+} from "./bundle.ts";
+import { findResolverFile } from "../resolver-filenames.ts";
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
 export type FileOutcome =
-  | 'wrote_new'
-  | 'wrote_overwrite'
-  | 'skipped_locally_modified'
-  | 'skipped_identical'
-  | 'skipped_overwrite_local_declined';
+  | "wrote_new"
+  | "wrote_overwrite"
+  | "skipped_locally_modified"
+  | "skipped_identical"
+  | "skipped_overwrite_local_declined";
 
 export interface FileResult {
   source: string;
@@ -61,7 +61,7 @@ export interface FileResult {
 export interface ManagedBlockResult {
   resolverFile: string;
   applied: boolean;
-  skippedReason?: 'resolver_not_found' | 'no_change';
+  skippedReason?: "resolver_not_found" | "no_change";
 }
 
 export interface InstallPlan {
@@ -96,14 +96,10 @@ export interface InstallOptions {
 export class InstallError extends Error {
   constructor(
     message: string,
-    public code:
-      | 'lock_held'
-      | 'bundle_error'
-      | 'target_missing'
-      | 'unknown_skill',
+    public code: "lock_held" | "bundle_error" | "target_missing" | "unknown_skill"
   ) {
     super(message);
-    this.name = 'InstallError';
+    this.name = "InstallError";
   }
 }
 
@@ -115,16 +111,16 @@ export class UninstallError extends Error {
   constructor(
     message: string,
     public code:
-      | 'lock_held'
-      | 'bundle_error'
-      | 'target_missing'
-      | 'unknown_skill'
-      | 'user_added_slug'      // slug not in cumulative-slugs receipt (D8)
-      | 'locally_modified'     // file content diverged from bundle (D11)
-      | 'managed_block_missing',
+      | "lock_held"
+      | "bundle_error"
+      | "target_missing"
+      | "unknown_skill"
+      | "user_added_slug" // slug not in cumulative-slugs receipt (D8)
+      | "locally_modified" // file content diverged from bundle (D11)
+      | "managed_block_missing"
   ) {
     super(message);
-    this.name = 'UninstallError';
+    this.name = "UninstallError";
   }
 }
 
@@ -147,7 +143,7 @@ export function planInstall(opts: InstallOptions): InstallPlan {
     manifest,
   });
 
-  const entryOutcomes = entries.map(e => {
+  const entryOutcomes = entries.map((e) => {
     const target = join(opts.targetSkillsDir, e.relTarget);
     const existing = existsSync(target);
     let identical = false;
@@ -178,7 +174,7 @@ export function planInstall(opts: InstallOptions): InstallPlan {
 // ---------------------------------------------------------------------------
 
 function lockPath(workspace: string): string {
-  return join(workspace, '.gbrain-skillpack.lock');
+  return join(workspace, ".gbrain-skillpack.lock");
 }
 
 interface LockInfo {
@@ -190,7 +186,7 @@ function readLock(workspace: string): LockInfo | null {
   const p = lockPath(workspace);
   if (!existsSync(p)) return null;
   try {
-    const content = readFileSync(p, 'utf-8');
+    const content = readFileSync(p, "utf-8");
     const pid = parseInt(content.trim(), 10);
     const mtimeMs = statSync(p).mtimeMs;
     return { pid: isNaN(pid) ? -1 : pid, mtimeMs };
@@ -218,7 +214,7 @@ function acquireLock(workspace: string, opts: InstallOptions): void {
     if (stale && !opts.forceUnlock) {
       throw new InstallError(
         `Stale skillpack lock at ${p} (pid ${existing.pid}, ${Math.round(age / 1000)}s old). Pass --force-unlock to proceed.`,
-        'lock_held',
+        "lock_held"
       );
     }
     if (stale && opts.forceUnlock) {
@@ -230,12 +226,12 @@ function acquireLock(workspace: string, opts: InstallOptions): void {
     } else if (!stale) {
       throw new InstallError(
         `Another skillpack install appears to be running (pid ${existing.pid}). Wait or pass --force-unlock.`,
-        'lock_held',
+        "lock_held"
       );
     }
   }
   mkdirSync(dirname(p), { recursive: true });
-  const fd = openSync(p, 'w');
+  const fd = openSync(p, "w");
   try {
     writeSync(fd, String(process.pid));
   } finally {
@@ -256,8 +252,8 @@ function releaseLock(workspace: string): void {
 // Managed block (AGENTS.md / RESOLVER.md)
 // ---------------------------------------------------------------------------
 
-const MANAGED_BEGIN = '<!-- gbrain:skillpack:begin -->';
-const MANAGED_END = '<!-- gbrain:skillpack:end -->';
+const MANAGED_BEGIN = "<!-- gbrain:skillpack:begin -->";
+const MANAGED_END = "<!-- gbrain:skillpack:end -->";
 
 // Receipt comment embedded inside the fence on every write. Lets the
 // next install distinguish "row gbrain installed previously" from
@@ -273,7 +269,7 @@ const RECEIPT_RE =
 
 function buildReceipt(cumulativeSlugs: string[], version: string): string {
   const sorted = [...cumulativeSlugs].sort();
-  return `<!-- gbrain:skillpack:manifest cumulative-slugs="${sorted.join(',')}" version="${version}" -->`;
+  return `<!-- gbrain:skillpack:manifest cumulative-slugs="${sorted.join(",")}" version="${version}" -->`;
 }
 
 /**
@@ -281,52 +277,49 @@ function buildReceipt(cumulativeSlugs: string[], version: string): string {
  * receipt is present (pre-v0.19 fences). The slug list is split on
  * comma; an empty string returns an empty list.
  */
-export function parseReceipt(resolverContent: string): { cumulativeSlugs: string[]; version: string } | null {
+export function parseReceipt(
+  resolverContent: string
+): { cumulativeSlugs: string[]; version: string } | null {
   const beginIdx = resolverContent.indexOf(MANAGED_BEGIN);
   const endIdx = resolverContent.indexOf(MANAGED_END);
   if (beginIdx === -1 || endIdx === -1 || endIdx <= beginIdx) return null;
   const block = resolverContent.slice(beginIdx, endIdx);
   const m = RECEIPT_RE.exec(block);
   if (!m) return null;
-  const slugs = m[1].length === 0 ? [] : m[1].split(',');
+  const slugs = m[1].length === 0 ? [] : m[1].split(",");
   return { cumulativeSlugs: slugs, version: m[2] };
 }
 
 export function buildManagedBlock(
   manifest: BundleManifest,
   slugs: string[],
-  cumulativeSlugs?: string[],
+  cumulativeSlugs?: string[]
 ): string {
   const sorted = [...slugs].sort();
-  const rows = sorted.map(
-    slug => `| "${slug}" | \`skills/${slug}/SKILL.md\` |`,
-  );
+  const rows = sorted.map((slug) => `| "${slug}" | \`skills/${slug}/SKILL.md\` |`);
   // Default cumulative = the rendered slug set when caller didn't
   // pass one explicitly (kept backward-compatible with older callers
   // that don't yet thread the cumulative set through).
   const receipt = buildReceipt(cumulativeSlugs ?? sorted, manifest.version);
   return [
     MANAGED_BEGIN,
-    '',
+    "",
     `<!-- Installed by gbrain ${manifest.version} — do not hand-edit between markers. -->`,
     receipt,
-    '',
-    '| Trigger | Skill |',
-    '|---------|-------|',
+    "",
+    "| Trigger | Skill |",
+    "|---------|-------|",
     ...rows,
-    '',
+    "",
     MANAGED_END,
-  ].join('\n');
+  ].join("\n");
 }
 
 /**
  * Replace the managed block in `resolverContent` with `newBlock`. If
  * no managed block exists yet, append one (preceded by a blank line).
  */
-export function updateManagedBlock(
-  resolverContent: string,
-  newBlock: string,
-): string {
+export function updateManagedBlock(resolverContent: string, newBlock: string): string {
   const beginIdx = resolverContent.indexOf(MANAGED_BEGIN);
   const endIdx = resolverContent.indexOf(MANAGED_END);
   if (beginIdx !== -1 && endIdx !== -1 && endIdx > beginIdx) {
@@ -334,12 +327,12 @@ export function updateManagedBlock(
     const after = resolverContent.slice(endIdx + MANAGED_END.length);
     return before + newBlock + after;
   }
-  const needsNewline = resolverContent.endsWith('\n') ? '' : '\n';
-  return resolverContent + needsNewline + '\n' + newBlock + '\n';
+  const needsNewline = resolverContent.endsWith("\n") ? "" : "\n";
+  return resolverContent + needsNewline + "\n" + newBlock + "\n";
 }
 
 function writeAtomic(file: string, content: string): void {
-  const tmp = file + '.tmp.' + process.pid + '.' + Date.now();
+  const tmp = file + ".tmp." + process.pid + "." + Date.now();
   mkdirSync(dirname(file), { recursive: true });
   writeFileSync(tmp, content);
   renameSync(tmp, file);
@@ -361,10 +354,7 @@ export interface InstallResult {
   };
 }
 
-export function applyInstall(
-  plan: InstallPlan,
-  opts: InstallOptions,
-): InstallResult {
+export function applyInstall(plan: InstallPlan, opts: InstallOptions): InstallResult {
   const files: FileResult[] = [];
 
   // Lock acquisition. Dry-run does NOT touch the lockfile — it's read-only.
@@ -377,22 +367,22 @@ export function applyInstall(
       const target = join(plan.targetSkillsDir, entry.relTarget);
       let outcome: FileOutcome;
       if (!existing) {
-        outcome = 'wrote_new';
+        outcome = "wrote_new";
         if (!opts.dryRun) {
           const content = readFileSync(entry.source);
           mkdirSync(dirname(target), { recursive: true });
           writeFileSync(target, content);
         }
       } else if (identical) {
-        outcome = 'skipped_identical';
+        outcome = "skipped_identical";
       } else if (opts.overwriteLocal) {
-        outcome = 'wrote_overwrite';
+        outcome = "wrote_overwrite";
         if (!opts.dryRun) {
           const content = readFileSync(entry.source);
           writeFileSync(target, content);
         }
       } else {
-        outcome = 'skipped_locally_modified';
+        outcome = "skipped_locally_modified";
       }
       files.push({
         source: entry.source,
@@ -408,9 +398,7 @@ export function applyInstall(
     // bundleSlugs    = the FULL bundle manifest's slug list (always
     //                  populated; used for the install-all prune path).
     // isInstallAll   = caller passed --all (no specific skillSlug).
-    const installedSlugs = opts.skillSlug
-      ? [opts.skillSlug]
-      : plan.manifest.skills.map(pathSlug);
+    const installedSlugs = opts.skillSlug ? [opts.skillSlug] : plan.manifest.skills.map(pathSlug);
     const bundleSlugs = plan.manifest.skills.map(pathSlug);
     const isInstallAll = !opts.skillSlug;
     const managedBlock = applyManagedBlock(
@@ -420,16 +408,14 @@ export function applyInstall(
       installedSlugs,
       bundleSlugs,
       isInstallAll,
-      opts.dryRun ?? false,
+      opts.dryRun ?? false
     );
 
     const summary = {
-      wroteNew: files.filter(f => f.outcome === 'wrote_new').length,
-      wroteOverwrite: files.filter(f => f.outcome === 'wrote_overwrite').length,
-      skippedIdentical: files.filter(f => f.outcome === 'skipped_identical').length,
-      skippedLocallyModified: files.filter(
-        f => f.outcome === 'skipped_locally_modified',
-      ).length,
+      wroteNew: files.filter((f) => f.outcome === "wrote_new").length,
+      wroteOverwrite: files.filter((f) => f.outcome === "wrote_overwrite").length,
+      skippedIdentical: files.filter((f) => f.outcome === "skipped_identical").length,
+      skippedLocallyModified: files.filter((f) => f.outcome === "skipped_locally_modified").length,
     };
 
     return { dryRun: opts.dryRun ?? false, files, managedBlock, summary };
@@ -445,18 +431,18 @@ function applyManagedBlock(
   installedSlugs: string[],
   bundleSlugs: string[],
   isInstallAll: boolean,
-  dryRun: boolean,
+  dryRun: boolean
 ): ManagedBlockResult {
   // Prefer skills-dir resolver; fall back to workspace-root resolver.
   const resolver = findResolverFile(skillsDir) ?? findResolverFile(workspace);
   if (!resolver) {
     return {
-      resolverFile: '',
+      resolverFile: "",
       applied: false,
-      skippedReason: 'resolver_not_found',
+      skippedReason: "resolver_not_found",
     };
   }
-  const existing = readFileSync(resolver, 'utf-8');
+  const existing = readFileSync(resolver, "utf-8");
 
   // Step 1: figure out what gbrain previously installed into this fence.
   //   - If receipt is present, trust it as the cumulative-slug history.
@@ -465,9 +451,7 @@ function applyManagedBlock(
   //     the receipt feature existed, so trust them as the prior set.
   const receipt = parseReceipt(existing);
   const priorCumulativeSlugs =
-    receipt !== null
-      ? new Set(receipt.cumulativeSlugs)
-      : new Set(extractManagedSlugs(existing));
+    receipt !== null ? new Set(receipt.cumulativeSlugs) : new Set(extractManagedSlugs(existing));
 
   // Step 2: compute the new cumulative slug set.
   //   - Single-skill install: union(prior, installed). Per-skill
@@ -517,7 +501,7 @@ function applyManagedBlock(
   }
   for (const slug of unknownSlugs) {
     console.error(
-      `[skillpack] unknown row in managed block: "${slug}" at skills/${slug}/SKILL.md — not in gbrain's installed set. Investigate: user-added skill, hand-edited fence, or typo?`,
+      `[skillpack] unknown row in managed block: "${slug}" at skills/${slug}/SKILL.md — not in gbrain's installed set. Investigate: user-added skill, hand-edited fence, or typo?`
     );
   }
 
@@ -528,7 +512,7 @@ function applyManagedBlock(
   const newBlock = buildManagedBlock(manifest, cumulativeArr, cumulativeArr);
   const updated = updateManagedBlock(existing, newBlock);
   if (updated === existing) {
-    return { resolverFile: resolver, applied: false, skippedReason: 'no_change' };
+    return { resolverFile: resolver, applied: false, skippedReason: "no_change" };
   }
   if (!dryRun) writeAtomic(resolver, updated);
   return { resolverFile: resolver, applied: true };
@@ -564,7 +548,7 @@ export interface SkillDiff {
 export function diffSkill(
   gbrainRoot: string,
   skillSlug: string,
-  targetSkillsDir: string,
+  targetSkillsDir: string
 ): SkillDiff[] {
   const manifest = loadBundleManifest(gbrainRoot);
   const entries = enumerateBundle({ gbrainRoot, skillSlug, manifest });
@@ -621,10 +605,7 @@ export function diffSkill(
  * cumulative-slugs. Other rows (other installed skills, user-added
  * unknown rows) are preserved.
  */
-export type UninstallFileOutcome =
-  | 'removed'
-  | 'kept_locally_modified'
-  | 'absent';
+export type UninstallFileOutcome = "removed" | "kept_locally_modified" | "absent";
 
 export interface UninstallFileResult {
   target: string;
@@ -690,15 +671,14 @@ export function applyUninstall(opts: UninstallOptions): UninstallResult {
   try {
     // ── Step 2: D8 — receipt-presence check ────────────────────────
     const resolver =
-      findResolverFile(opts.targetSkillsDir) ??
-      findResolverFile(opts.targetWorkspace);
+      findResolverFile(opts.targetSkillsDir) ?? findResolverFile(opts.targetWorkspace);
     if (!resolver) {
       throw new UninstallError(
         `No managed block (RESOLVER.md / AGENTS.md) at ${opts.targetSkillsDir} or ${opts.targetWorkspace}; nothing to uninstall.`,
-        'managed_block_missing',
+        "managed_block_missing"
       );
     }
-    const resolverContent = readFileSync(resolver, 'utf-8');
+    const resolverContent = readFileSync(resolver, "utf-8");
     const receipt = parseReceipt(resolverContent);
     if (!receipt) {
       // Pre-v0.19 fence with no receipt: every existing row is presumed
@@ -707,7 +687,7 @@ export function applyUninstall(opts: UninstallOptions): UninstallResult {
       if (!existingRowSlugs.includes(opts.skillSlug)) {
         throw new UninstallError(
           `Skill '${opts.skillSlug}' is not in the managed block. Either it was never installed by gbrain, or the slug is mistyped. Inspect ${resolver} and the skills/${opts.skillSlug}/ directory before retrying.`,
-          'unknown_skill',
+          "unknown_skill"
         );
       }
       // Otherwise proceed; we'll write a fresh receipt on the way out.
@@ -717,7 +697,7 @@ export function applyUninstall(opts: UninstallOptions): UninstallResult {
       // Either way, refuse-and-warn.
       throw new UninstallError(
         `Skill '${opts.skillSlug}' is not in gbrain's installed set (cumulative-slugs receipt has no record of it). gbrain refuses to uninstall what it didn't install. If you hand-added this row to ${resolver}, remove it manually. If the slug is mistyped, run \`gbrain skillpack list\` to see what's installed.`,
-        'user_added_slug',
+        "user_added_slug"
       );
     }
 
@@ -730,12 +710,12 @@ export function applyUninstall(opts: UninstallOptions): UninstallResult {
       gbrainRoot: opts.gbrainRoot,
       skillSlug: opts.skillSlug,
       manifest,
-    }).filter(e => !e.sharedDep);
+    }).filter((e) => !e.sharedDep);
 
     if (entries.length === 0) {
       throw new UninstallError(
         `Skill '${opts.skillSlug}' has no bundle entries — likely an unknown slug or stale receipt. Verify with \`gbrain skillpack list\`.`,
-        'unknown_skill',
+        "unknown_skill"
       );
     }
 
@@ -746,14 +726,14 @@ export function applyUninstall(opts: UninstallOptions): UninstallResult {
     const fileChecks: Array<{
       entry: BundleEntry;
       target: string;
-      kind: 'identical' | 'modified' | 'absent';
+      kind: "identical" | "modified" | "absent";
     }> = [];
     const blockedByLocalMod: string[] = [];
 
     for (const entry of entries) {
       const target = join(opts.targetSkillsDir, entry.relTarget);
       if (!existsSync(target)) {
-        fileChecks.push({ entry, target, kind: 'absent' });
+        fileChecks.push({ entry, target, kind: "absent" });
         continue;
       }
       let identical = false;
@@ -765,9 +745,9 @@ export function applyUninstall(opts: UninstallOptions): UninstallResult {
         identical = false;
       }
       if (identical) {
-        fileChecks.push({ entry, target, kind: 'identical' });
+        fileChecks.push({ entry, target, kind: "identical" });
       } else {
-        fileChecks.push({ entry, target, kind: 'modified' });
+        fileChecks.push({ entry, target, kind: "modified" });
         if (!opts.overwriteLocal) blockedByLocalMod.push(target);
       }
     }
@@ -775,8 +755,8 @@ export function applyUninstall(opts: UninstallOptions): UninstallResult {
     // Refuse loudly BEFORE any filesystem mutation if anything blocked.
     if (blockedByLocalMod.length > 0) {
       throw new UninstallError(
-        `Refusing to uninstall '${opts.skillSlug}': ${blockedByLocalMod.length} file(s) differ from the bundle (you've hand-edited them):\n  ${blockedByLocalMod.join('\n  ')}\n\nPass --overwrite-local to drop your edits, or run \`gbrain skillpack diff ${opts.skillSlug}\` to inspect first.`,
-        'locally_modified',
+        `Refusing to uninstall '${opts.skillSlug}': ${blockedByLocalMod.length} file(s) differ from the bundle (you've hand-edited them):\n  ${blockedByLocalMod.join("\n  ")}\n\nPass --overwrite-local to drop your edits, or run \`gbrain skillpack diff ${opts.skillSlug}\` to inspect first.`,
+        "locally_modified"
       );
     }
 
@@ -784,17 +764,17 @@ export function applyUninstall(opts: UninstallOptions): UninstallResult {
     const files: UninstallFileResult[] = [];
     for (const { entry, target, kind } of fileChecks) {
       let outcome: UninstallFileOutcome;
-      if (kind === 'absent') {
-        outcome = 'absent';
+      if (kind === "absent") {
+        outcome = "absent";
       } else {
         // Either identical (safe to remove) or modified-with-overwrite-local.
-        outcome = 'removed';
+        outcome = "removed";
         if (!opts.dryRun) {
           try {
             unlinkSync(target);
           } catch {
             // File vanished between check and unlink — treat as already-gone.
-            outcome = 'absent';
+            outcome = "absent";
           }
         }
       }
@@ -814,15 +794,13 @@ export function applyUninstall(opts: UninstallOptions): UninstallResult {
       opts.targetSkillsDir,
       manifest,
       opts.skillSlug,
-      opts.dryRun ?? false,
+      opts.dryRun ?? false
     );
 
     const summary = {
-      removed: files.filter(f => f.outcome === 'removed').length,
-      keptLocallyModified: files.filter(
-        f => f.outcome === 'kept_locally_modified',
-      ).length,
-      absent: files.filter(f => f.outcome === 'absent').length,
+      removed: files.filter((f) => f.outcome === "removed").length,
+      keptLocallyModified: files.filter((f) => f.outcome === "kept_locally_modified").length,
+      absent: files.filter((f) => f.outcome === "absent").length,
     };
 
     return { dryRun: opts.dryRun ?? false, files, managedBlock, summary };
@@ -844,25 +822,22 @@ function applyManagedBlockUninstall(
   skillsDir: string,
   manifest: BundleManifest,
   removedSlug: string,
-  dryRun: boolean,
+  dryRun: boolean
 ): ManagedBlockResult {
-  const resolver =
-    findResolverFile(skillsDir) ?? findResolverFile(workspace);
+  const resolver = findResolverFile(skillsDir) ?? findResolverFile(workspace);
   if (!resolver) {
     return {
-      resolverFile: '',
+      resolverFile: "",
       applied: false,
-      skippedReason: 'resolver_not_found',
+      skippedReason: "resolver_not_found",
     };
   }
-  const existing = readFileSync(resolver, 'utf-8');
+  const existing = readFileSync(resolver, "utf-8");
 
   // Step 1: read prior cumulative set.
   const receipt = parseReceipt(existing);
   const priorCumulativeSlugs =
-    receipt !== null
-      ? new Set(receipt.cumulativeSlugs)
-      : new Set(extractManagedSlugs(existing));
+    receipt !== null ? new Set(receipt.cumulativeSlugs) : new Set(extractManagedSlugs(existing));
 
   // Step 2: drop the removed slug.
   const newCumulative = new Set(priorCumulativeSlugs);
@@ -885,7 +860,7 @@ function applyManagedBlockUninstall(
   }
   for (const slug of unknownSlugs) {
     console.error(
-      `[skillpack] unknown row in managed block: "${slug}" at skills/${slug}/SKILL.md — not in gbrain's installed set. Investigate: user-added skill, hand-edited fence, or typo?`,
+      `[skillpack] unknown row in managed block: "${slug}" at skills/${slug}/SKILL.md — not in gbrain's installed set. Investigate: user-added skill, hand-edited fence, or typo?`
     );
   }
 
@@ -894,7 +869,7 @@ function applyManagedBlockUninstall(
   const newBlock = buildManagedBlock(manifest, cumulativeArr, cumulativeArr);
   const updated = updateManagedBlock(existing, newBlock);
   if (updated === existing) {
-    return { resolverFile: resolver, applied: false, skippedReason: 'no_change' };
+    return { resolverFile: resolver, applied: false, skippedReason: "no_change" };
   }
   if (!dryRun) writeAtomic(resolver, updated);
   return { resolverFile: resolver, applied: true };

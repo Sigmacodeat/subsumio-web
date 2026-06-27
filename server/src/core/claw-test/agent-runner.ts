@@ -78,7 +78,7 @@ export interface TranscriptSink {
 
 export interface TranscriptEvent {
   ts: number;
-  channel: 'stdin' | 'stdout' | 'stderr';
+  channel: "stdin" | "stdout" | "stderr";
   bytes: Buffer;
 }
 
@@ -97,7 +97,7 @@ export function registerAgentRunner(name: string, factory: AgentRunnerFactory): 
 export function resolveAgentRunner(name: string): AgentRunner {
   const factory = registry.get(name);
   if (!factory) {
-    const known = [...registry.keys()].sort().join(', ') || '(none registered)';
+    const known = [...registry.keys()].sort().join(", ") || "(none registered)";
     throw new Error(`unknown agent ${JSON.stringify(name)}; registered: ${known}`);
   }
   return factory();

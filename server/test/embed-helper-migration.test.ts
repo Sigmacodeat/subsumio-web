@@ -30,66 +30,62 @@
  *   test/worker-pool.test.ts; embed inherits those by import.
  */
 
-import { describe, test, expect } from 'bun:test';
-import { readFileSync } from 'fs';
-import { resolve } from 'path';
+import { describe, test, expect } from "bun:test";
+import { readFileSync } from "fs";
+import { resolve } from "path";
 
-const REPO_ROOT = resolve(import.meta.dir, '..');
-const EMBED_PATH = resolve(REPO_ROOT, 'src/commands/embed.ts');
-const EMBED_SOURCE = readFileSync(EMBED_PATH, 'utf-8');
+const REPO_ROOT = resolve(import.meta.dir, "..");
+const EMBED_PATH = resolve(REPO_ROOT, "src/commands/embed.ts");
+const EMBED_SOURCE = readFileSync(EMBED_PATH, "utf-8");
 
-describe('embed.ts → worker-pool migration (T3)', () => {
-  test('imports runSlidingPool from worker-pool helper', () => {
+describe("embed.ts → worker-pool migration (T3)", () => {
+  test("imports runSlidingPool from worker-pool helper", () => {
     expect(EMBED_SOURCE).toMatch(
-      /import\s*\{\s*runSlidingPool\s*\}\s*from\s*['"]\.\.\/core\/worker-pool\.ts['"]/,
+      /import\s*\{\s*runSlidingPool\s*\}\s*from\s*['"]\.\.\/core\/worker-pool\.ts['"]/
     );
   });
 
-  test('calls runSlidingPool at least twice (embedAll + embedAllStale paths)', () => {
+  test("calls runSlidingPool at least twice (embedAll + embedAllStale paths)", () => {
     const matches = EMBED_SOURCE.match(/runSlidingPool\(/g) ?? [];
     expect(matches.length).toBeGreaterThanOrEqual(2);
   });
 
-  test('pre-migration `let nextIdx = 0; async function worker()` shape is gone', () => {
+  test("pre-migration `let nextIdx = 0; async function worker()` shape is gone", () => {
     // The exact shape the migration replaced. Either token alone could
     // legitimately appear in a comment or string literal; both together
     // on adjacent lines indicates a regression to the inline pool.
-    const inlinePool =
-      /let\s+nextIdx\s*=\s*0\s*;\s*\n\s*async\s+function\s+worker\s*\(/;
+    const inlinePool = /let\s+nextIdx\s*=\s*0\s*;\s*\n\s*async\s+function\s+worker\s*\(/;
     expect(EMBED_SOURCE).not.toMatch(inlinePool);
   });
 
-  test('pre-migration `Promise.all(Array.from({ length: numWorkers }, () => worker()))` is gone', () => {
+  test("pre-migration `Promise.all(Array.from({ length: numWorkers }, () => worker()))` is gone", () => {
     // Migration-specific shape from the original inline pool. The
     // generic `Promise.all(...)` pattern is still allowed elsewhere
     // (gateway, etc.); only the worker-pool-fanout shape is banned.
-    const fanout =
-      /Promise\.all\(Array\.from\(\{\s*length:\s*numWorkers\s*\}/;
+    const fanout = /Promise\.all\(Array\.from\(\{\s*length:\s*numWorkers\s*\}/;
     expect(EMBED_SOURCE).not.toMatch(fanout);
   });
 
-  test('preserves GBRAIN_EMBED_CONCURRENCY default of 20 (codex #13)', () => {
+  test("preserves GBRAIN_EMBED_CONCURRENCY default of 20 (codex #13)", () => {
     // The pre-migration default must survive: env override or 20.
     // Routing through resolveWorkersWithClamp would change this behavior
     // (autoConcurrency returns 1 for small file counts even on Postgres),
     // breaking every existing brain that relies on the 20-worker default.
     expect(EMBED_SOURCE).toMatch(
-      /parseInt\(process\.env\.GBRAIN_EMBED_CONCURRENCY\s*\|\|\s*['"]20['"]/,
+      /parseInt\(process\.env\.GBRAIN_EMBED_CONCURRENCY\s*\|\|\s*['"]20['"]/
     );
   });
 
-  test('runSlidingPool call sites pass `workers: CONCURRENCY`', () => {
+  test("runSlidingPool call sites pass `workers: CONCURRENCY`", () => {
     // The migrated calls must thread the pre-existing CONCURRENCY value
     // through, not invent a new default. Catches the regression where
     // a future contributor swaps `workers: CONCURRENCY` for a literal.
     // Allow optional commas/whitespace — match both call sites' shape.
-    const callSites = EMBED_SOURCE.match(
-      /runSlidingPool\(\s*\{[\s\S]*?workers:\s*CONCURRENCY/g,
-    );
+    const callSites = EMBED_SOURCE.match(/runSlidingPool\(\s*\{[\s\S]*?workers:\s*CONCURRENCY/g);
     expect(callSites?.length ?? 0).toBeGreaterThanOrEqual(2);
   });
 
-  test('embedAllStale path still threads the cancellation signal into pool', () => {
+  test("embedAllStale path still threads the cancellation signal into pool", () => {
     // The pre-migration code checked `!budgetSignal.aborted` in the worker
     // loop. The migration moves that check into the helper via the `signal`
     // option. #1737 then composed the wall-clock budget with the caller's
@@ -97,11 +93,11 @@ describe('embed.ts → worker-pool migration (T3)', () => {
     // a killed job stops the pool too. If a future refactor drops the signal,
     // both wall-clock budget AND cooperative abort cancellation regress.
     expect(EMBED_SOURCE).toMatch(
-      /runSlidingPool\(\s*\{[\s\S]*?signal:\s*effectiveSignal[\s\S]*?\}\)/,
+      /runSlidingPool\(\s*\{[\s\S]*?signal:\s*effectiveSignal[\s\S]*?\}\)/
     );
   });
 
-  test('failureLabel projector uses page.slug (memory bound on large brains)', () => {
+  test("failureLabel projector uses page.slug (memory bound on large brains)", () => {
     // Per codex #10 + D7, failures[] must not store full Page objects.
     // We can't test the runtime behavior without a full mock engine, but
     // we CAN assert the call sites pass the projector explicitly.

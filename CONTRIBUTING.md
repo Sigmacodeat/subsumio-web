@@ -94,18 +94,18 @@ trailing-newline and exports-count checks.
 same shard share a process, so process-global state leaks between them. Four
 lint rules (`scripts/check-test-isolation.sh`, R1-R4) enforce isolation:
 
-| Rule | What it bans | Fix |
-|---|---|---|
-| **R1** | Direct `process.env.X = ...` mutation | Use `withEnv()` from `test/helpers/with-env.ts`, or rename to `*.serial.test.ts` |
-| **R2** | `mock.module(...)` anywhere in the file | Rename to `*.serial.test.ts` |
-| **R3** | `new PGLiteEngine(` outside ~50 lines after `beforeAll(` | Use the canonical PGLite block (see below) |
-| **R4** | `new PGLiteEngine(` without paired `afterAll(disconnect)` | Add the `afterAll(() => engine.disconnect())` |
+| Rule   | What it bans                                              | Fix                                                                              |
+| ------ | --------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| **R1** | Direct `process.env.X = ...` mutation                     | Use `withEnv()` from `test/helpers/with-env.ts`, or rename to `*.serial.test.ts` |
+| **R2** | `mock.module(...)` anywhere in the file                   | Rename to `*.serial.test.ts`                                                     |
+| **R3** | `new PGLiteEngine(` outside ~50 lines after `beforeAll(`  | Use the canonical PGLite block (see below)                                       |
+| **R4** | `new PGLiteEngine(` without paired `afterAll(disconnect)` | Add the `afterAll(() => engine.disconnect())`                                    |
 
 Canonical PGLite block (R3 + R4 compliant — paste this verbatim):
 
 ```ts
-import { PGLiteEngine } from '../src/core/pglite-engine.ts';
-import { resetPgliteState } from './helpers/reset-pglite.ts';
+import { PGLiteEngine } from "../src/core/pglite-engine.ts";
+import { resetPgliteState } from "./helpers/reset-pglite.ts";
 
 let engine: PGLiteEngine;
 
@@ -114,18 +114,22 @@ beforeAll(async () => {
   await engine.connect({});
   await engine.initSchema();
 });
-afterAll(async () => { await engine.disconnect(); });
-beforeEach(async () => { await resetPgliteState(engine); });
+afterAll(async () => {
+  await engine.disconnect();
+});
+beforeEach(async () => {
+  await resetPgliteState(engine);
+});
 ```
 
 Env-touching tests:
 
 ```ts
-import { withEnv } from './helpers/with-env.ts';
+import { withEnv } from "./helpers/with-env.ts";
 
-test('reads OPENAI_API_KEY', async () => {
-  await withEnv({ OPENAI_API_KEY: 'sk-test' }, async () => {
-    expect(loadConfig().openai_key).toBe('sk-test');
+test("reads OPENAI_API_KEY", async () => {
+  await withEnv({ OPENAI_API_KEY: "sk-test" }, async () => {
+    expect(loadConfig().openai_key).toBe("sk-test");
   });
 });
 ```
@@ -143,7 +147,8 @@ state across `it()` boundaries. Quarantine count cap: 10 (informational).
 Files that violated these rules at the v0.26.7 baseline are listed in
 `scripts/check-test-isolation.allowlist`. **The allow-list MUST shrink over
 time** ... never add new entries. v0.26.8 (env sweep) and v0.26.9 (PGLite sweep
-+ codemod) remove entries as files get fixed.
+
+- codemod) remove entries as files get fixed.
 
 ### Local CI gate (recommended before pushing, v0.23.1+)
 
@@ -179,6 +184,7 @@ automatically appears in the CLI, MCP server, and tools-json:
 3. That's it. The CLI, MCP server, and tools-json are generated from operations.
 
 For CLI-only commands (init, upgrade, import, export, files, embed, doctor, sync):
+
 1. Create `src/commands/mycommand.ts`
 2. Add the case to `src/cli.ts`
 

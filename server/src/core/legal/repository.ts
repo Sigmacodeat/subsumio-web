@@ -24,10 +24,7 @@ import type {
   Strategy,
   Outcome,
 } from "./types.ts";
-import {
-  generateCaseNumber,
-  generateDisplayTitle,
-} from "./anonymizer.ts";
+import { generateCaseNumber, generateDisplayTitle } from "./anonymizer.ts";
 import { slugifyPath } from "../sync.ts";
 
 // ---------------------------------------------------------------------------
@@ -59,7 +56,7 @@ function fromPageFrontmatter(
   title: string,
   frontmatter: Record<string, unknown>,
   sourceId: string,
-  createdAt: string,
+  createdAt: string
 ): LegalEntity {
   return {
     id: slug,
@@ -69,11 +66,9 @@ function fromPageFrontmatter(
     specializations: (frontmatter.specializations as string[]) || [],
     jurisdiction: (frontmatter.jurisdiction as string) || "",
     jurisdictionLevel:
-      (frontmatter.jurisdiction_level as LegalEntity["jurisdictionLevel"]) ||
-      "local",
+      (frontmatter.jurisdiction_level as LegalEntity["jurisdictionLevel"]) || "local",
     contactHash: (frontmatter.contact_hash as string) || undefined,
-    anonymizedCaseCount:
-      (frontmatter.anonymized_case_count as number) || 0,
+    anonymizedCaseCount: (frontmatter.anonymized_case_count as number) || 0,
     winRate: (frontmatter.win_rate as number) || undefined,
     notes: "", // stored in page body
     tags: (frontmatter.tags as string[]) || [],
@@ -112,7 +107,7 @@ function fromCaseFrontmatter(
   title: string,
   frontmatter: Record<string, unknown>,
   sourceId: string,
-  createdAt: string,
+  createdAt: string
 ): LegalCase {
   return {
     id: slug,
@@ -147,7 +142,10 @@ function fromCaseFrontmatter(
 // ---------------------------------------------------------------------------
 
 export class LegalEntityRepository {
-  constructor(private sql: ReturnType<typeof postgres>, private sourceId: string) {}
+  constructor(
+    private sql: ReturnType<typeof postgres>,
+    private sourceId: string
+  ) {}
 
   async create(input: LegalEntityCreateInput): Promise<LegalEntity> {
     const slug = slugifyPath(input.displayName);
@@ -202,7 +200,7 @@ export class LegalEntityRepository {
       r.title as string,
       (r.frontmatter as Record<string, unknown>) || {},
       this.sourceId,
-      (r.created_at as string) || now(),
+      (r.created_at as string) || now()
     );
   }
 
@@ -227,7 +225,8 @@ export class LegalEntityRepository {
       query = this.sql`${query} AND frontmatter->>'legal_type' = ${options.type}`;
     }
     if (options?.legalArea) {
-      query = this.sql`${query} AND frontmatter->'legal_areas' @> ${this.sql.json([options.legalArea])}::jsonb`;
+      query = this
+        .sql`${query} AND frontmatter->'legal_areas' @> ${this.sql.json([options.legalArea])}::jsonb`;
     }
     if (options?.jurisdiction) {
       query = this.sql`${query} AND frontmatter->>'jurisdiction' = ${options.jurisdiction}`;
@@ -238,15 +237,23 @@ export class LegalEntityRepository {
       LIMIT ${limit} OFFSET ${offset}
     `;
 
-    return (rows as unknown as Array<{ slug: string; type: string; title: string; frontmatter: Record<string, unknown>; created_at: string }>).map((r) =>
+    return (
+      rows as unknown as Array<{
+        slug: string;
+        type: string;
+        title: string;
+        frontmatter: Record<string, unknown>;
+        created_at: string;
+      }>
+    ).map((r) =>
       fromPageFrontmatter(
         r.slug,
         r.type,
         r.title,
         r.frontmatter || {},
         this.sourceId,
-        r.created_at || now(),
-      ),
+        r.created_at || now()
+      )
     );
   }
 
@@ -306,7 +313,10 @@ export class LegalEntityRepository {
 // ---------------------------------------------------------------------------
 
 export class LegalCaseRepository {
-  constructor(private sql: ReturnType<typeof postgres>, private sourceId: string) {}
+  constructor(
+    private sql: ReturnType<typeof postgres>,
+    private sourceId: string
+  ) {}
 
   async create(input: LegalCaseCreateInput): Promise<LegalCase> {
     const count = await this.count();
@@ -316,7 +326,8 @@ export class LegalCaseRepository {
     const legalCase: LegalCase = {
       id: slug,
       caseNumber: input.caseNumber || generateCaseNumber("LB", count + 1),
-      displayTitle: input.displayTitle || generateDisplayTitle(input.legalArea, input.subArea, count),
+      displayTitle:
+        input.displayTitle || generateDisplayTitle(input.legalArea, input.subArea, count),
       legalArea: input.legalArea,
       subArea: input.subArea,
       status: "open",
@@ -370,7 +381,7 @@ export class LegalCaseRepository {
       r.title as string,
       (r.frontmatter as Record<string, unknown>) || {},
       this.sourceId,
-      (r.created_at as string) || now(),
+      (r.created_at as string) || now()
     );
     c.facts = (r.compiled_truth as string) || "";
     return c;
@@ -412,13 +423,21 @@ export class LegalCaseRepository {
       LIMIT ${limit} OFFSET ${offset}
     `;
 
-    return (rows as unknown as Array<{ slug: string; title: string; frontmatter: Record<string, unknown>; compiled_truth: string; created_at: string }>).map((r) => {
+    return (
+      rows as unknown as Array<{
+        slug: string;
+        title: string;
+        frontmatter: Record<string, unknown>;
+        compiled_truth: string;
+        created_at: string;
+      }>
+    ).map((r) => {
       const c = fromCaseFrontmatter(
         r.slug,
         r.title,
         r.frontmatter || {},
         this.sourceId,
-        r.created_at || now(),
+        r.created_at || now()
       );
       c.facts = r.compiled_truth || "";
       return c;
@@ -524,10 +543,16 @@ export class LegalCaseRepository {
     if (!existing) return null;
 
     existing.outcome = outcome;
-    existing.status = outcome.result === "pending" ? "pending" :
-      outcome.result === "settled" ? "settled" :
-      outcome.result === "won" ? "won" :
-      outcome.result === "lost" ? "lost" : "open";
+    existing.status =
+      outcome.result === "pending"
+        ? "pending"
+        : outcome.result === "settled"
+          ? "settled"
+          : outcome.result === "won"
+            ? "won"
+            : outcome.result === "lost"
+              ? "lost"
+              : "open";
     existing.updatedAt = now();
 
     await this.sql`

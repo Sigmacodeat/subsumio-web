@@ -28,7 +28,9 @@ import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import type { BrainPage, Entity } from "@/lib/types";
 import { GobdIntegrityPanel } from "@/components/gobd-integrity-panel";
-const ChatPanel = lazy(() => import("@/components/chat/chat-panel").then((m) => ({ default: m.ChatPanel })));
+const ChatPanel = lazy(() =>
+  import("@/components/chat/chat-panel").then((m) => ({ default: m.ChatPanel }))
+);
 import { MessageCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { useLang } from "@/lib/use-lang";
 
@@ -441,24 +443,30 @@ export default function BrainDetailPage() {
         </button>
         {chatOpen && (
           <div className="mt-2 h-[500px]">
-            <Suspense fallback={<div className="flex items-center justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-[color:var(--ds-text-muted)]" /></div>}>
-            <ChatPanel
-              context={{ type: "brain_page", pageSlug: slug }}
-              features={{
-                caseSelector: false,
-                jurisdictionSelector: true,
-                modelSelector: true,
-                modeSelector: true,
-                fileUpload: false,
-                sessionHistory: true,
-                tokenWidget: true,
-                brainStatus: true,
-                exampleQueries: true,
-                exportChat: true,
-                messageActions: true,
-              }}
-              className="h-full"
-            />
+            <Suspense
+              fallback={
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-[color:var(--ds-text-muted)]" />
+                </div>
+              }
+            >
+              <ChatPanel
+                context={{ type: "brain_page", pageSlug: slug }}
+                features={{
+                  caseSelector: false,
+                  jurisdictionSelector: true,
+                  modelSelector: true,
+                  modeSelector: true,
+                  fileUpload: false,
+                  sessionHistory: true,
+                  tokenWidget: true,
+                  brainStatus: true,
+                  exampleQueries: true,
+                  exportChat: true,
+                  messageActions: true,
+                }}
+                className="h-full"
+              />
             </Suspense>
           </div>
         )}

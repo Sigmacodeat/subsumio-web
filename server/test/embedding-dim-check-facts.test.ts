@@ -14,16 +14,16 @@
  * The PGLite-engine skip case uses `{kind: 'pglite'}`. R1+R2 compliant.
  */
 
-import { describe, test, expect } from 'bun:test';
+import { describe, test, expect } from "bun:test";
 import {
   readFactsEmbeddingDim,
   buildFactsAlterRecipe,
   FactsEmbeddingDimMismatchError,
   assertFactsEmbeddingDimMatchesConfig,
-} from '../src/core/embedding-dim-check.ts';
-import type { BrainEngine } from '../src/core/engine.ts';
-import { readFileSync } from 'fs';
-import { resolve } from 'path';
+} from "../src/core/embedding-dim-check.ts";
+import type { BrainEngine } from "../src/core/engine.ts";
+import { readFileSync } from "fs";
+import { resolve } from "path";
 
 /**
  * Synthetic engine satisfying the slice of BrainEngine these helpers
@@ -31,7 +31,7 @@ import { resolve } from 'path';
  * pre-program responses keyed on substring matches in the SQL.
  */
 function makeStubEngine(opts: {
-  kind: 'postgres' | 'pglite';
+  kind: "postgres" | "pglite";
   factsExists?: boolean;
   factsFormatted?: string | null;
 }): BrainEngine {
@@ -40,10 +40,10 @@ function makeStubEngine(opts: {
   const eng = {
     kind: opts.kind,
     async executeRaw<T>(sql: string): Promise<T[]> {
-      if (sql.includes('information_schema.columns') && sql.includes("'facts'")) {
+      if (sql.includes("information_schema.columns") && sql.includes("'facts'")) {
         return [{ exists }] as unknown as T[];
       }
-      if (sql.includes('format_type') && sql.includes("'facts'")) {
+      if (sql.includes("format_type") && sql.includes("'facts'")) {
         return [{ formatted }] as unknown as T[];
       }
       return [] as T[];
@@ -52,42 +52,42 @@ function makeStubEngine(opts: {
   return eng as unknown as BrainEngine;
 }
 
-describe('readFactsEmbeddingDim', () => {
-  test('returns exists=false when facts.embedding column is absent', async () => {
-    const eng = makeStubEngine({ kind: 'postgres', factsExists: false });
+describe("readFactsEmbeddingDim", () => {
+  test("returns exists=false when facts.embedding column is absent", async () => {
+    const eng = makeStubEngine({ kind: "postgres", factsExists: false });
     const r = await readFactsEmbeddingDim(eng);
     expect(r.exists).toBe(false);
     expect(r.dims).toBeNull();
     expect(r.columnType).toBeNull();
   });
 
-  test('parses halfvec(N) shape', async () => {
+  test("parses halfvec(N) shape", async () => {
     const eng = makeStubEngine({
-      kind: 'postgres',
+      kind: "postgres",
       factsExists: true,
-      factsFormatted: 'halfvec(1536)',
+      factsFormatted: "halfvec(1536)",
     });
     const r = await readFactsEmbeddingDim(eng);
     expect(r.exists).toBe(true);
     expect(r.dims).toBe(1536);
-    expect(r.columnType).toBe('halfvec');
+    expect(r.columnType).toBe("halfvec");
   });
 
-  test('parses vector(N) shape', async () => {
+  test("parses vector(N) shape", async () => {
     const eng = makeStubEngine({
-      kind: 'postgres',
+      kind: "postgres",
       factsExists: true,
-      factsFormatted: 'vector(1024)',
+      factsFormatted: "vector(1024)",
     });
     const r = await readFactsEmbeddingDim(eng);
     expect(r.exists).toBe(true);
     expect(r.dims).toBe(1024);
-    expect(r.columnType).toBe('vector');
+    expect(r.columnType).toBe("vector");
   });
 
-  test('returns null columnType when format_type returns null', async () => {
+  test("returns null columnType when format_type returns null", async () => {
     const eng = makeStubEngine({
-      kind: 'postgres',
+      kind: "postgres",
       factsExists: true,
       factsFormatted: null,
     });
@@ -97,119 +97,112 @@ describe('readFactsEmbeddingDim', () => {
     expect(r.columnType).toBeNull();
   });
 
-  test('halfvec match preferred over vector match (codex #19 regex shadowing)', async () => {
+  test("halfvec match preferred over vector match (codex #19 regex shadowing)", async () => {
     // The substring "vec" appears in "halfvec"; a naive /vector/i regex
     // would shadow the halfvec branch. Pin the ordering invariant.
     const eng = makeStubEngine({
-      kind: 'postgres',
+      kind: "postgres",
       factsExists: true,
-      factsFormatted: 'halfvec(1280)',
+      factsFormatted: "halfvec(1280)",
     });
     const r = await readFactsEmbeddingDim(eng);
-    expect(r.columnType).toBe('halfvec');
+    expect(r.columnType).toBe("halfvec");
     expect(r.dims).toBe(1280);
   });
 });
 
-describe('buildFactsAlterRecipe', () => {
-  test('halfvec recipe uses halfvec_cosine_ops + halfvec(N) USING cast', () => {
-    const recipe = buildFactsAlterRecipe(1536, 1280, 'halfvec');
-    expect(recipe).toContain('DROP INDEX IF EXISTS idx_facts_embedding_hnsw');
-    expect(recipe).toContain('halfvec(1280)');
-    expect(recipe).toContain('USING embedding::halfvec(1280)');
-    expect(recipe).toContain('halfvec_cosine_ops');
-    expect(recipe).not.toContain('vector_cosine_ops');
+describe("buildFactsAlterRecipe", () => {
+  test("halfvec recipe uses halfvec_cosine_ops + halfvec(N) USING cast", () => {
+    const recipe = buildFactsAlterRecipe(1536, 1280, "halfvec");
+    expect(recipe).toContain("DROP INDEX IF EXISTS idx_facts_embedding_hnsw");
+    expect(recipe).toContain("halfvec(1280)");
+    expect(recipe).toContain("USING embedding::halfvec(1280)");
+    expect(recipe).toContain("halfvec_cosine_ops");
+    expect(recipe).not.toContain("vector_cosine_ops");
   });
 
-  test('vector recipe uses vector_cosine_ops + vector(N) USING cast', () => {
-    const recipe = buildFactsAlterRecipe(1024, 2048, 'vector');
-    expect(recipe).toContain('vector(2048)');
-    expect(recipe).toContain('USING embedding::vector(2048)');
-    expect(recipe).toContain('vector_cosine_ops');
-    expect(recipe).not.toContain('halfvec_cosine_ops');
+  test("vector recipe uses vector_cosine_ops + vector(N) USING cast", () => {
+    const recipe = buildFactsAlterRecipe(1024, 2048, "vector");
+    expect(recipe).toContain("vector(2048)");
+    expect(recipe).toContain("USING embedding::vector(2048)");
+    expect(recipe).toContain("vector_cosine_ops");
+    expect(recipe).not.toContain("halfvec_cosine_ops");
   });
 
-  test('recipe carries the maintenance-window warning (codex #18)', () => {
-    const recipe = buildFactsAlterRecipe(1536, 1280, 'halfvec');
+  test("recipe carries the maintenance-window warning (codex #18)", () => {
+    const recipe = buildFactsAlterRecipe(1536, 1280, "halfvec");
     expect(recipe).toMatch(/maintenance window/i);
-    expect(recipe).toContain('rewrites every row');
+    expect(recipe).toContain("rewrites every row");
   });
 
-  test('recipe is the full DROP → ALTER → CREATE flow, not just REINDEX', () => {
+  test("recipe is the full DROP → ALTER → CREATE flow, not just REINDEX", () => {
     // Codex #18 specifically called out that REINDEX alone after ALTER
     // TYPE isn't sufficient — pgvector won't pick up the new column type
     // on the partial HNSW index. The recipe must be DROP + ALTER + CREATE.
-    const recipe = buildFactsAlterRecipe(1536, 1280, 'halfvec');
+    const recipe = buildFactsAlterRecipe(1536, 1280, "halfvec");
     expect(recipe).toMatch(/DROP INDEX[\s\S]*ALTER TABLE[\s\S]*CREATE INDEX/);
   });
 });
 
-describe('FactsEmbeddingDimMismatchError', () => {
-  test('tag matches the worker-pool MUST_ABORT semantics for D13 parity', () => {
-    const err = new FactsEmbeddingDimMismatchError(
-      'test',
-      1536,
-      1280,
-      'halfvec',
-    );
+describe("FactsEmbeddingDimMismatchError", () => {
+  test("tag matches the worker-pool MUST_ABORT semantics for D13 parity", () => {
+    const err = new FactsEmbeddingDimMismatchError("test", 1536, 1280, "halfvec");
     // Tag-based dispatch (mirrors BudgetExhausted shape).
-    expect(err.tag).toBe('FACTS_EMBEDDING_DIM_MISMATCH');
-    expect(err.name).toBe('FactsEmbeddingDimMismatchError');
+    expect(err.tag).toBe("FACTS_EMBEDDING_DIM_MISMATCH");
+    expect(err.name).toBe("FactsEmbeddingDimMismatchError");
     expect(err instanceof Error).toBe(true);
     expect(err.columnDims).toBe(1536);
     expect(err.configuredDims).toBe(1280);
-    expect(err.columnType).toBe('halfvec');
+    expect(err.columnType).toBe("halfvec");
   });
 });
 
-describe('assertFactsEmbeddingDimMatchesConfig', () => {
-  test('PGLite engines silently skip (no probe, no throw)', async () => {
-    const eng = makeStubEngine({ kind: 'pglite' });
+describe("assertFactsEmbeddingDimMatchesConfig", () => {
+  test("PGLite engines silently skip (no probe, no throw)", async () => {
+    const eng = makeStubEngine({ kind: "pglite" });
     // Should resolve without throwing — PGLite branch short-circuits.
     await assertFactsEmbeddingDimMatchesConfig(eng);
   });
 
-  test('Postgres without facts column resolves cleanly (pre-v40 path)', async () => {
-    const eng = makeStubEngine({ kind: 'postgres', factsExists: false });
+  test("Postgres without facts column resolves cleanly (pre-v40 path)", async () => {
+    const eng = makeStubEngine({ kind: "postgres", factsExists: false });
     await assertFactsEmbeddingDimMatchesConfig(eng);
   });
 });
 
-describe('doctor checkFactsEmbeddingWidthConsistency wiring (T6)', () => {
-  const DOC_PATH = resolve(import.meta.dir, '..', 'src/commands/doctor.ts');
-  const DOC_SRC = readFileSync(DOC_PATH, 'utf-8');
+describe("doctor checkFactsEmbeddingWidthConsistency wiring (T6)", () => {
+  const DOC_PATH = resolve(import.meta.dir, "..", "src/commands/doctor.ts");
+  const DOC_SRC = readFileSync(DOC_PATH, "utf-8");
 
-  test('doctor.ts exports the new check function', () => {
-    expect(DOC_SRC).toMatch(
-      /export\s+async\s+function\s+checkFactsEmbeddingWidthConsistency/,
-    );
+  test("doctor.ts exports the new check function", () => {
+    expect(DOC_SRC).toMatch(/export\s+async\s+function\s+checkFactsEmbeddingWidthConsistency/);
   });
 
-  test('check is registered in runDoctor alongside the content_chunks check', () => {
+  test("check is registered in runDoctor alongside the content_chunks check", () => {
     expect(DOC_SRC).toMatch(/checkFactsEmbeddingWidthConsistency\(engine\)/);
     // Must appear AFTER the content_chunks check so a single
     // mismatch surface ordering is stable in the JSON envelope.
-    const widthIdx = DOC_SRC.indexOf('checkEmbeddingWidthConsistency(engine)');
-    const factsIdx = DOC_SRC.indexOf('checkFactsEmbeddingWidthConsistency(engine)');
+    const widthIdx = DOC_SRC.indexOf("checkEmbeddingWidthConsistency(engine)");
+    const factsIdx = DOC_SRC.indexOf("checkFactsEmbeddingWidthConsistency(engine)");
     expect(widthIdx).toBeGreaterThan(0);
     expect(factsIdx).toBeGreaterThan(0);
     expect(widthIdx).toBeLessThan(factsIdx);
   });
 
-  test('doctor check uses readFactsEmbeddingDim from the shared helper', () => {
+  test("doctor check uses readFactsEmbeddingDim from the shared helper", () => {
     expect(DOC_SRC).toMatch(/readFactsEmbeddingDim/);
   });
 
-  test('doctor check uses buildFactsAlterRecipe (NOT a hand-rolled ALTER string)', () => {
+  test("doctor check uses buildFactsAlterRecipe (NOT a hand-rolled ALTER string)", () => {
     expect(DOC_SRC).toMatch(/buildFactsAlterRecipe/);
   });
 });
 
-describe('postgres-engine fact insert cast (T6, codex #20)', () => {
-  const PG_PATH = resolve(import.meta.dir, '..', 'src/core/postgres-engine.ts');
-  const PG_SRC = readFileSync(PG_PATH, 'utf-8');
+describe("postgres-engine fact insert cast (T6, codex #20)", () => {
+  const PG_PATH = resolve(import.meta.dir, "..", "src/core/postgres-engine.ts");
+  const PG_SRC = readFileSync(PG_PATH, "utf-8");
 
-  test('insertFacts batch path uses cached castSuffix, NOT a hardcoded ::vector', () => {
+  test("insertFacts batch path uses cached castSuffix, NOT a hardcoded ::vector", () => {
     expect(PG_SRC).toMatch(/resolveFactsEmbeddingCast/);
     // The fixed call sites use `castSuffix`, not the literal `::vector`.
     const literalHits = PG_SRC.match(/embedLit[^,)]*'::vector'/g);
@@ -219,7 +212,7 @@ describe('postgres-engine fact insert cast (T6, codex #20)', () => {
     expect(literalHits ?? []).toEqual([]);
   });
 
-  test('cached cast suffix has a test-only reset hook for unit cases', () => {
+  test("cached cast suffix has a test-only reset hook for unit cases", () => {
     expect(PG_SRC).toMatch(/__resetFactsEmbeddingCastCacheForTest/);
   });
 });

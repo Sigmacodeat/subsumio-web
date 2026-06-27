@@ -26,8 +26,8 @@
  * fail-loud gate is BudgetTracker's TX2 contract at run time.
  */
 
-import { canonicalLookup } from '../model-pricing.ts';
-import { VALIDATION_RUNS_PER_TASK } from './types.ts';
+import { canonicalLookup } from "../model-pricing.ts";
+import { VALIDATION_RUNS_PER_TASK } from "./types.ts";
 
 /** Conservative per-rollout token estimates (input + output). */
 const ROLLOUT_INPUT_TOKENS = 3000; // skill + task prompt + tool defs
@@ -93,40 +93,40 @@ export function estimateCost(opts: PreflightOpts): PreflightEstimate {
   // F11 held-out: baseline + candidate scored on the held-out set at every
   // accepted step. Upper-bound: assume every step accepts (2 = baseline+candidate).
   const heldOutSize = opts.heldOutSize ?? 0;
-  const heldOutRollouts = heldOutSize > 0
-    ? totalSteps * heldOutSize * VALIDATION_RUNS_PER_TASK * 2
-    : 0;
+  const heldOutRollouts =
+    heldOutSize > 0 ? totalSteps * heldOutSize * VALIDATION_RUNS_PER_TASK * 2 : 0;
 
   // Cumulative counts across the whole run.
-  const rollout_calls = totalSteps * rolloutsPerStep
-    + opts.selSize * VALIDATION_RUNS_PER_TASK // baseline sel eval
-    + opts.selSize * VALIDATION_RUNS_PER_TASK * totalSteps // per-step sel validation
-    + opts.testSize * 2 // final test eval (best + baseline)
-    + heldOutRollouts; // F11 held-out gate (baseline+candidate per accepted step)
-  const reflect_calls = totalSteps * reflectsPerStep
-    + opts.epochs; // slow-update meta calls
-  const judge_calls = opts.selSize // baseline (1 per task; median-of-3 is in the rollout count already? — no, judge runs per rollout)
-    + opts.selSize * VALIDATION_RUNS_PER_TASK * totalSteps // per-step validation
-    + opts.testSize * 2 // final test judges (best + baseline)
-    + heldOutRollouts; // F11 held-out judges (1 per held-out rollout)
+  const rollout_calls =
+    totalSteps * rolloutsPerStep +
+    opts.selSize * VALIDATION_RUNS_PER_TASK + // baseline sel eval
+    opts.selSize * VALIDATION_RUNS_PER_TASK * totalSteps + // per-step sel validation
+    opts.testSize * 2 + // final test eval (best + baseline)
+    heldOutRollouts; // F11 held-out gate (baseline+candidate per accepted step)
+  const reflect_calls = totalSteps * reflectsPerStep + opts.epochs; // slow-update meta calls
+  const judge_calls =
+    opts.selSize + // baseline (1 per task; median-of-3 is in the rollout count already? — no, judge runs per rollout)
+    opts.selSize * VALIDATION_RUNS_PER_TASK * totalSteps + // per-step validation
+    opts.testSize * 2 + // final test judges (best + baseline)
+    heldOutRollouts; // F11 held-out judges (1 per held-out rollout)
 
   // Cost per call type.
   const targetPrice = lookupPrice(opts.targetModel);
   const optimizerPrice = lookupPrice(opts.optimizerModel);
   const judgePrice = lookupPrice(opts.judgeModel);
 
-  const rolloutCost = rollout_calls * (
-    (ROLLOUT_INPUT_TOKENS * targetPrice.input) / 1_000_000
-    + (ROLLOUT_OUTPUT_TOKENS * targetPrice.output) / 1_000_000
-  );
-  const reflectCost = reflect_calls * (
-    (REFLECT_INPUT_TOKENS * optimizerPrice.input) / 1_000_000
-    + (REFLECT_OUTPUT_TOKENS * optimizerPrice.output) / 1_000_000
-  );
-  const judgeCost = judge_calls * (
-    (JUDGE_INPUT_TOKENS * judgePrice.input) / 1_000_000
-    + (JUDGE_OUTPUT_TOKENS * judgePrice.output) / 1_000_000
-  );
+  const rolloutCost =
+    rollout_calls *
+    ((ROLLOUT_INPUT_TOKENS * targetPrice.input) / 1_000_000 +
+      (ROLLOUT_OUTPUT_TOKENS * targetPrice.output) / 1_000_000);
+  const reflectCost =
+    reflect_calls *
+    ((REFLECT_INPUT_TOKENS * optimizerPrice.input) / 1_000_000 +
+      (REFLECT_OUTPUT_TOKENS * optimizerPrice.output) / 1_000_000);
+  const judgeCost =
+    judge_calls *
+    ((JUDGE_INPUT_TOKENS * judgePrice.input) / 1_000_000 +
+      (JUDGE_OUTPUT_TOKENS * judgePrice.output) / 1_000_000);
 
   // D11 prompt caching gives ~50% discount on stable layers. Apply
   // conservatively (assume 50% of optimizer + judge tokens are cached).
@@ -142,8 +142,14 @@ export function estimateCost(opts: PreflightOpts): PreflightEstimate {
     rollout_calls,
     reflect_calls,
     judge_calls,
-    est_input_tokens: rollout_calls * ROLLOUT_INPUT_TOKENS + reflect_calls * REFLECT_INPUT_TOKENS + judge_calls * JUDGE_INPUT_TOKENS,
-    est_output_tokens: rollout_calls * ROLLOUT_OUTPUT_TOKENS + reflect_calls * REFLECT_OUTPUT_TOKENS + judge_calls * JUDGE_OUTPUT_TOKENS,
+    est_input_tokens:
+      rollout_calls * ROLLOUT_INPUT_TOKENS +
+      reflect_calls * REFLECT_INPUT_TOKENS +
+      judge_calls * JUDGE_INPUT_TOKENS,
+    est_output_tokens:
+      rollout_calls * ROLLOUT_OUTPUT_TOKENS +
+      reflect_calls * REFLECT_OUTPUT_TOKENS +
+      judge_calls * JUDGE_OUTPUT_TOKENS,
     est_cost_usd: total,
     per_model_cost_usd: {
       [opts.targetModel]: rolloutCost,
@@ -166,8 +172,10 @@ export function formatPreflightReport(est: PreflightEstimate, opts: PreflightOpt
     `  Judges:     ${est.judge_calls.toLocaleString()} calls`,
     `  Tokens:     ~${(est.est_input_tokens / 1000).toFixed(0)}K in / ~${(est.est_output_tokens / 1000).toFixed(0)}K out`,
     `  Est. cost:  $${est.est_cost_usd.toFixed(2)} (cap: $${opts.maxCostUsd.toFixed(2)})`,
-    est.exceeds_cap ? `  WARNING:    estimate exceeds --max-cost-usd cap.` : '',
-  ].filter(Boolean).join('\n');
+    est.exceeds_cap ? `  WARNING:    estimate exceeds --max-cost-usd cap.` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 /**

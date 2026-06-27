@@ -8,10 +8,10 @@
  *   await connectorDaemon.stop();
  */
 
-import type { BrainEngine } from '../../engine.ts';
-import type { Logger } from '../../operations.ts';
-import { IngestionDaemon, type IngestionDispatcher } from '../daemon.ts';
-import { ConnectorManager } from './manager.ts';
+import type { BrainEngine } from "../../engine.ts";
+import type { Logger } from "../../operations.ts";
+import { IngestionDaemon, type IngestionDispatcher } from "../daemon.ts";
+import { ConnectorManager } from "./manager.ts";
 
 /**
  * Start the ingestion daemon with all enabled connectors registered.
@@ -24,7 +24,7 @@ import { ConnectorManager } from './manager.ts';
 export async function startConnectorIngestion(
   engine: BrainEngine,
   logger: Logger,
-  dispatch: IngestionDispatcher,
+  dispatch: IngestionDispatcher
 ): Promise<IngestionDaemon> {
   const daemon = new IngestionDaemon({ engine, logger, dispatch });
 
@@ -40,19 +40,21 @@ export async function startConnectorIngestion(
         logger.info(`[connectors] Registered: ${connector.id}`);
       } catch (err) {
         logger.warn(
-          `[connectors] Failed to register ${connector.id}: ${err instanceof Error ? err.message : String(err)}`,
+          `[connectors] Failed to register ${connector.id}: ${err instanceof Error ? err.message : String(err)}`
         );
       }
     }
   } else {
-    logger.info('[connectors] No enabled connectors found. Run `gbrain connector add <service>` to configure.');
+    logger.info(
+      "[connectors] No enabled connectors found. Run `gbrain connector add <service>` to configure."
+    );
   }
 
   // Also register built-in sources if this is the first daemon start.
   // (file-watcher, inbox-folder are registered by the caller if desired)
 
   await daemon.start();
-  logger.info('[connectors] Ingestion daemon started with connectors');
+  logger.info("[connectors] Ingestion daemon started with connectors");
 
   return daemon;
 }

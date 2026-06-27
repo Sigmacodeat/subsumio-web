@@ -1,14 +1,14 @@
-declare module '*.heic' {
+declare module "*.heic" {
   const path: string;
   export default path;
 }
 
-declare module '*.avif' {
+declare module "*.avif" {
   const path: string;
   export default path;
 }
 
-declare module '*.wasm' {
+declare module "*.wasm" {
   const path: string;
   export default path;
 }

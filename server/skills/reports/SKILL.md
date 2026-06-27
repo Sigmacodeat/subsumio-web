@@ -21,6 +21,7 @@ mutating: true
 ## Contract
 
 This skill guarantees:
+
 - Reports saved with timestamped filenames and frontmatter
 - Keyword routing: query → report category mapping
 - Latest report loadable by category name
@@ -31,11 +32,11 @@ This skill guarantees:
 1. **Save report.** Write to `reports/{category}/{YYYY-MM-DD-HHMM}.md` with frontmatter:
    ```yaml
    ---
-   title: {report title}
+   title: { report title }
    type: report
-   category: {category name}
-   date: {YYYY-MM-DD}
-   time: {HH:MM PT}
+   category: { category name }
+   date: { YYYY-MM-DD }
+   time: { HH:MM PT }
    ---
    ```
 2. **Load latest.** Given a category, find the most recent report file.

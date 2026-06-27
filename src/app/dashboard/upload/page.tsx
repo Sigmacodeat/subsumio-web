@@ -170,7 +170,9 @@ function UploadPageInner() {
         if (!cancelled) setCasesLoading(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const addFiles = useCallback(
@@ -566,7 +568,9 @@ function UploadPageInner() {
             disabled={casesLoading}
           >
             <SelectTrigger id="upload-case" className="w-full">
-              <SelectValue placeholder={casesLoading ? "Akten werden geladen…" : "— Bitte Akte auswählen —"} />
+              <SelectValue
+                placeholder={casesLoading ? "Akten werden geladen…" : "— Bitte Akte auswählen —"}
+              />
             </SelectTrigger>
             <SelectContent>
               {cases.map((c) => (

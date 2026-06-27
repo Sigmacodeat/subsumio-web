@@ -28,7 +28,7 @@
  * a new SQL call inside the orchestrator is automatically covered.
  */
 
-import { StructuredAgentError } from '../errors.ts';
+import { StructuredAgentError } from "../errors.ts";
 
 /**
  * Detect Postgres SQLSTATE 57014 (query_canceled) on an unknown thrown
@@ -38,12 +38,12 @@ import { StructuredAgentError } from '../errors.ts';
  * type so we can probe both.
  */
 export function isQueryCanceledError(err: unknown): boolean {
-  if (!err || typeof err !== 'object') return false;
+  if (!err || typeof err !== "object") return false;
   const e = err as Record<string, unknown>;
   // postgres.js + pg both attach the SQLSTATE on .code as a string.
-  if (e.code === '57014') return true;
+  if (e.code === "57014") return true;
   // PGLite exposes via .code or surfaces in .message.
-  if (e.sqlState === '57014') return true;
+  if (e.sqlState === "57014") return true;
   // Last-resort message scan (some wrapping layers strip the .code).
   const msg = err instanceof Error ? err.message : String(err);
   return /canceling statement due to|query.*canceled|sqlstate[\s:]+57014/i.test(msg);
@@ -59,12 +59,12 @@ export function isQueryCanceledError(err: unknown): boolean {
 export function classifyBrainstormError(err: unknown): unknown {
   if (!isQueryCanceledError(err)) return err;
   return new StructuredAgentError({
-    class: 'BrainstormError',
-    code: 'brainstorm_timeout',
-    message: 'Brainstorm query was canceled by Postgres',
+    class: "BrainstormError",
+    code: "brainstorm_timeout",
+    message: "Brainstorm query was canceled by Postgres",
     hint:
-      'Causes: statement_timeout (often PgBouncer transaction-mode), lock_timeout, or user-cancel. ' +
-      'Workarounds: try a smaller --limit, retry once, or ask your brain admin about ' +
-      'statement_timeout / PgBouncer settings. The orchestrator entry-point wrap covers every internal SQL site.',
+      "Causes: statement_timeout (often PgBouncer transaction-mode), lock_timeout, or user-cancel. " +
+      "Workarounds: try a smaller --limit, retry once, or ask your brain admin about " +
+      "statement_timeout / PgBouncer settings. The orchestrator entry-point wrap covers every internal SQL site.",
   });
 }

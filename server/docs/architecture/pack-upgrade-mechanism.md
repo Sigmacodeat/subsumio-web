@@ -103,11 +103,11 @@ that tuple lights up the `pack_upgrade_available` onboard check.
 
 `migration_from.version` accepts three shapes:
 
-| Form | Matches |
-|------|---------|
-| `1.0.0` (exact literal) | `1.0.0` only |
-| `1.x` (major wildcard) | `1.0.0`, `1.5.2`, `1.99.99` |
-| `1.0.x` (minor wildcard) | `1.0.0`, `1.0.5`, `1.0.99` |
+| Form                     | Matches                     |
+| ------------------------ | --------------------------- |
+| `1.0.0` (exact literal)  | `1.0.0` only                |
+| `1.x` (major wildcard)   | `1.0.0`, `1.5.2`, `1.99.99` |
+| `1.0.x` (minor wildcard) | `1.0.0`, `1.0.5`, `1.0.99`  |
 
 `*` is accepted as an alias for `x`.
 
@@ -135,11 +135,11 @@ filesystem-scan cost needs the cache invalidation strategy from
 
 The shipped onboard contract has 3 apply_policy values:
 
-| Policy | Meaning |
-|--------|---------|
-| `auto_apply` | Autopilot runs unattended |
-| `prompt_required` | Autopilot in `--auto-with-prompt` mode prompts user |
-| `manual_only` | Autopilot NEVER auto-fires; user must explicitly submit |
+| Policy            | Meaning                                                 |
+| ----------------- | ------------------------------------------------------- |
+| `auto_apply`      | Autopilot runs unattended                               |
+| `prompt_required` | Autopilot in `--auto-with-prompt` mode prompts user     |
+| `manual_only`     | Autopilot NEVER auto-fires; user must explicitly submit |
 
 `pack_upgrade_available` emits a `RemediationStep` with `protected:
 true` + `job: 'unify-types'`. `toOnboardRecommendation` in
@@ -190,7 +190,7 @@ mapping_rules:
   # All v2 mapping rules (copy from v2 yaml)
   # ... ~40 rules ...
   # Custom: relocate v2-tagged academics to researcher
-  - { kind: retype, from_type: person, to_type: researcher, path_filter: 'researchers/%' }
+  - { kind: retype, from_type: person, to_type: researcher, path_filter: "researchers/%" }
   # Catch-all
   - kind: retype
     from_type: "*unknown*"
@@ -231,7 +231,7 @@ add `GBRAIN_AUDIT_FULL=1` (v0.43+ TODO; not yet wired).
 - Cross-brain federated mounts that disagree on canonical packs
 - Automatic rollback (today: manual SQL or `gbrain pages restore`)
 - LLM-assisted mapping_rules codegen from production data (`gbrain
-  schema detect-mappings`; deferred to v0.43+)
+schema detect-mappings`; deferred to v0.43+)
 
 ## Reference
 

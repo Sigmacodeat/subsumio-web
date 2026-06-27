@@ -35,8 +35,8 @@
  * who add columns follow the same shape (or fail this test and learn).
  */
 
-import { readFileSync } from 'fs';
-import { resolve } from 'path';
+import { readFileSync } from "fs";
+import { resolve } from "path";
 
 export interface AddedColumnRef {
   table: string;
@@ -54,7 +54,8 @@ function extractAlterAddColumnsFromSql(sql: string): Array<{ table: string; colu
   const result: Array<{ table: string; column: string }> = [];
   // Identifier shape: optional quote, word chars, optional matching quote.
   // Handles bare `pages`, double-quoted `"pages"`, and backtick `\`pages\``.
-  const re = /ALTER\s+TABLE\s+(?:IF\s+EXISTS\s+)?(?:ONLY\s+)?["`]?(\w+)["`]?\s+ADD\s+COLUMN\s+(?:IF\s+NOT\s+EXISTS\s+)?["`]?(\w+)["`]?/gi;
+  const re =
+    /ALTER\s+TABLE\s+(?:IF\s+EXISTS\s+)?(?:ONLY\s+)?["`]?(\w+)["`]?\s+ADD\s+COLUMN\s+(?:IF\s+NOT\s+EXISTS\s+)?["`]?(\w+)["`]?/gi;
   let m: RegExpExecArray | null;
   while ((m = re.exec(sql)) !== null) {
     result.push({ table: m[1].toLowerCase(), column: m[2].toLowerCase() });
@@ -79,8 +80,8 @@ function extractAlterAddColumnsFromSql(sql: string): Array<{ table: string; colu
  * names the table.column; the contributor can grep for it in migrate.ts).
  */
 export function extractAddedColumnsFromMigrations(): AddedColumnRef[] {
-  const migratePath = resolve(process.cwd(), 'src/core/migrate.ts');
-  const source = readFileSync(migratePath, 'utf-8');
+  const migratePath = resolve(process.cwd(), "src/core/migrate.ts");
+  const source = readFileSync(migratePath, "utf-8");
 
   const seen = new Set<string>();
   const result: AddedColumnRef[] = [];

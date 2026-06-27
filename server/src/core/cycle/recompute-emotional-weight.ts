@@ -19,10 +19,10 @@
  * the cycle continues to the next phase.
  */
 
-import type { BrainEngine } from '../engine.ts';
-import type { PhaseResult, PhaseError } from '../cycle.ts';
-import { computeEmotionalWeight } from './emotional-weight.ts';
-import type { GBrainConfig } from '../config.ts';
+import type { BrainEngine } from "../engine.ts";
+import type { PhaseResult, PhaseError } from "../cycle.ts";
+import { computeEmotionalWeight } from "./emotional-weight.ts";
+import type { GBrainConfig } from "../config.ts";
 
 export interface RecomputeEmotionalWeightOpts {
   /** When false, the phase reads + computes but skips the UPDATE. */
@@ -44,19 +44,19 @@ export interface RecomputeEmotionalWeightResult extends PhaseResult {
 
 export async function runPhaseRecomputeEmotionalWeight(
   engine: BrainEngine,
-  opts: RecomputeEmotionalWeightOpts,
+  opts: RecomputeEmotionalWeightOpts
 ): Promise<RecomputeEmotionalWeightResult> {
   const start = Date.now();
   try {
     // Resolve override tag list + user-holder from config (optional).
-    const overrideTags = await engine.getConfig('emotional_weight.high_tags');
-    const userHolder = await engine.getConfig('emotional_weight.user_holder');
+    const overrideTags = await engine.getConfig("emotional_weight.high_tags");
+    const userHolder = await engine.getConfig("emotional_weight.user_holder");
     let highEmotionTags: ReadonlySet<string> | undefined;
     if (overrideTags) {
       try {
         const parsed = JSON.parse(overrideTags) as unknown;
-        if (Array.isArray(parsed) && parsed.every(t => typeof t === 'string')) {
-          highEmotionTags = new Set(parsed.map(t => t.toLowerCase()));
+        if (Array.isArray(parsed) && parsed.every((t) => typeof t === "string")) {
+          highEmotionTags = new Set(parsed.map((t) => t.toLowerCase()));
         }
       } catch {
         // Bad JSON — fall back to default seed list. The doctor check
@@ -67,48 +67,66 @@ export async function runPhaseRecomputeEmotionalWeight(
     // Incremental path: empty array means "no changes touched" — record
     // a zero-work success and return without touching the DB.
     if (Array.isArray(opts.affectedSlugs) && opts.affectedSlugs.length === 0) {
-      return result('ok', 'recompute_emotional_weight (incremental, 0 slugs)', 0, {
-        mode: 'incremental',
-        pages_recomputed: 0,
-      }, start);
+      return result(
+        "ok",
+        "recompute_emotional_weight (incremental, 0 slugs)",
+        0,
+        {
+          mode: "incremental",
+          pages_recomputed: 0,
+        },
+        start
+      );
     }
 
     const inputs = await engine.batchLoadEmotionalInputs(opts.affectedSlugs);
-    const writes = inputs.map(row => ({
+    const writes = inputs.map((row) => ({
       slug: row.slug,
       source_id: row.source_id,
       weight: computeEmotionalWeight(
         { tags: row.tags, takes: row.takes },
-        { highEmotionTags, userHolder: userHolder ?? undefined },
+        { highEmotionTags, userHolder: userHolder ?? undefined }
       ),
     }));
 
     if (opts.dryRun) {
-      return result('ok', `recompute_emotional_weight (dry-run, ${writes.length} pages)`, writes.length, {
-        mode: opts.affectedSlugs ? 'incremental' : 'full',
-        pages_recomputed: writes.length,
-        dry_run: true,
-      }, start);
+      return result(
+        "ok",
+        `recompute_emotional_weight (dry-run, ${writes.length} pages)`,
+        writes.length,
+        {
+          mode: opts.affectedSlugs ? "incremental" : "full",
+          pages_recomputed: writes.length,
+          dry_run: true,
+        },
+        start
+      );
     }
 
     const updated = await engine.setEmotionalWeightBatch(writes);
 
-    return result('ok', `recompute_emotional_weight (${updated} pages)`, updated, {
-      mode: opts.affectedSlugs ? 'incremental' : 'full',
-      pages_recomputed: updated,
-    }, start);
+    return result(
+      "ok",
+      `recompute_emotional_weight (${updated} pages)`,
+      updated,
+      {
+        mode: opts.affectedSlugs ? "incremental" : "full",
+        pages_recomputed: updated,
+      },
+      start
+    );
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     const err: PhaseError = {
-      class: 'InternalError',
-      code: 'RECOMPUTE_EMOTIONAL_WEIGHT_FAIL',
-      message: msg || 'recompute_emotional_weight phase threw',
+      class: "InternalError",
+      code: "RECOMPUTE_EMOTIONAL_WEIGHT_FAIL",
+      message: msg || "recompute_emotional_weight phase threw",
     };
     return {
-      phase: 'recompute_emotional_weight',
-      status: 'fail',
+      phase: "recompute_emotional_weight",
+      status: "fail",
       duration_ms: Date.now() - start,
-      summary: 'recompute_emotional_weight failed',
+      summary: "recompute_emotional_weight failed",
       details: { error: err },
       error: err,
       pages_recomputed: 0,
@@ -117,14 +135,14 @@ export async function runPhaseRecomputeEmotionalWeight(
 }
 
 function result(
-  status: 'ok',
+  status: "ok",
   summary: string,
   pagesRecomputed: number,
   details: Record<string, unknown>,
-  start: number,
+  start: number
 ): RecomputeEmotionalWeightResult {
   return {
-    phase: 'recompute_emotional_weight',
+    phase: "recompute_emotional_weight",
     status,
     duration_ms: Date.now() - start,
     summary,

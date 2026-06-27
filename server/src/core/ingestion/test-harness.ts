@@ -33,10 +33,10 @@ import type {
   IngestionSource,
   IngestionSourceContext,
   IngestionSourceHealth,
-} from './types.ts';
-import { validateIngestionEvent } from './types.ts';
-import type { BrainEngine } from '../engine.ts';
-import type { Logger } from '../operations.ts';
+} from "./types.ts";
+import { validateIngestionEvent } from "./types.ts";
+import type { BrainEngine } from "../engine.ts";
+import type { Logger } from "../operations.ts";
 
 export interface IngestionTestHarnessOpts {
   /** Source-specific config passed to source.start(ctx). Defaults to {}. */
@@ -61,7 +61,7 @@ export interface IngestionTestHarnessOpts {
 export class IngestionTestHarness {
   private readonly opts: IngestionTestHarnessOpts;
   private readonly _events: IngestionEvent[] = [];
-  private readonly _logs: Array<{ level: 'info' | 'warn' | 'error'; msg: string }> = [];
+  private readonly _logs: Array<{ level: "info" | "warn" | "error"; msg: string }> = [];
   private readonly _validationErrors: string[] = [];
   private readonly _abortController = new AbortController();
   private _currentTime: number;
@@ -82,7 +82,7 @@ export class IngestionTestHarness {
   }
 
   /** Recorded log calls from the source. */
-  get logs(): readonly { level: 'info' | 'warn' | 'error'; msg: string }[] {
+  get logs(): readonly { level: "info" | "warn" | "error"; msg: string }[] {
     return this._logs;
   }
 
@@ -120,9 +120,15 @@ export class IngestionTestHarness {
   private buildCaptureLogger(): Logger {
     const logs = this._logs;
     return {
-      info(msg: string) { logs.push({ level: 'info', msg }); },
-      warn(msg: string) { logs.push({ level: 'warn', msg }); },
-      error(msg: string) { logs.push({ level: 'error', msg }); },
+      info(msg: string) {
+        logs.push({ level: "info", msg });
+      },
+      warn(msg: string) {
+        logs.push({ level: "warn", msg });
+      },
+      error(msg: string) {
+        logs.push({ level: "error", msg });
+      },
     };
   }
 
@@ -135,7 +141,9 @@ export class IngestionTestHarness {
    */
   async run(source: IngestionSource): Promise<void> {
     if (this._running) {
-      throw new Error('IngestionTestHarness already running a source; construct a new harness per test');
+      throw new Error(
+        "IngestionTestHarness already running a source; construct a new harness per test"
+      );
     }
     this._activeSource = source;
     this._running = true;
@@ -155,7 +163,7 @@ export class IngestionTestHarness {
    */
   advance(ms: number): void {
     if (ms < 0) {
-      throw new Error('IngestionTestHarness.advance(ms): ms must be >= 0');
+      throw new Error("IngestionTestHarness.advance(ms): ms must be >= 0");
     }
     this._currentTime += ms;
   }
@@ -172,12 +180,12 @@ export class IngestionTestHarness {
    */
   async healthCheck(): Promise<IngestionSourceHealth> {
     if (!this._activeSource) {
-      throw new Error('IngestionTestHarness.healthCheck(): no source started');
+      throw new Error("IngestionTestHarness.healthCheck(): no source started");
     }
     if (this._activeSource.healthCheck) {
       return this._activeSource.healthCheck();
     }
-    return { status: 'ok' };
+    return { status: "ok" };
   }
 
   /**
@@ -190,8 +198,9 @@ export class IngestionTestHarness {
     const stopPromise = this._activeSource.stop();
     const timeoutPromise = new Promise<void>((_, reject) => {
       const t = setTimeout(
-        () => reject(new Error(`IngestionTestHarness.stop(): source did not stop within ${graceMs}ms`)),
-        graceMs,
+        () =>
+          reject(new Error(`IngestionTestHarness.stop(): source did not stop within ${graceMs}ms`)),
+        graceMs
       );
       // Clear the timeout if stop resolves first so the test process doesn't
       // hang on a pending timer.
@@ -225,13 +234,13 @@ export class IngestionTestHarness {
  */
 export function expectEvent(event: IngestionEvent | undefined) {
   function fail(msg: string): never {
-    const got = event === undefined ? 'undefined' : JSON.stringify(event, null, 2);
+    const got = event === undefined ? "undefined" : JSON.stringify(event, null, 2);
     throw new Error(`expectEvent: ${msg}\nGot: ${got}`);
   }
 
   return {
     toExist(): IngestionEvent {
-      if (event === undefined) fail('event was undefined');
+      if (event === undefined) fail("event was undefined");
       return event as IngestionEvent;
     },
     toHaveKind(kind: string): void {
@@ -247,7 +256,7 @@ export function expectEvent(event: IngestionEvent | undefined) {
       }
     },
     toHaveSourceUri(matching: string | RegExp): void {
-      if (!event) fail('event was undefined');
+      if (!event) fail("event was undefined");
       const uri = event.source_uri;
       if (matching instanceof RegExp) {
         if (!matching.test(uri)) fail(`source_uri '${uri}' did not match ${matching}`);
@@ -262,7 +271,7 @@ export function expectEvent(event: IngestionEvent | undefined) {
       }
     },
     toHaveContentHash(hash?: string): void {
-      if (!event) fail('event was undefined');
+      if (!event) fail("event was undefined");
       if (!/^[0-9a-f]{64}$/i.test(event.content_hash)) {
         fail(`content_hash '${event.content_hash}' is not a valid SHA-256 hex string`);
       }
@@ -271,23 +280,25 @@ export function expectEvent(event: IngestionEvent | undefined) {
       }
     },
     toBeUntrusted(): void {
-      if (!event) fail('event was undefined');
+      if (!event) fail("event was undefined");
       if (event.untrusted_payload !== true) {
         fail(`expected untrusted_payload: true, got ${event.untrusted_payload}`);
       }
     },
     toBeTrusted(): void {
-      if (!event) fail('event was undefined');
+      if (!event) fail("event was undefined");
       if (event.untrusted_payload === true) {
-        fail('expected event to be trusted, but untrusted_payload was true');
+        fail("expected event to be trusted, but untrusted_payload was true");
       }
     },
     toHaveMetadata(matcher: Record<string, unknown>): void {
-      if (!event) fail('event was undefined');
+      if (!event) fail("event was undefined");
       const md = event.metadata ?? {};
       for (const [k, v] of Object.entries(matcher)) {
         if ((md as Record<string, unknown>)[k] !== v) {
-          fail(`expected metadata.${k}=${JSON.stringify(v)}, got ${JSON.stringify((md as Record<string, unknown>)[k])}`);
+          fail(
+            `expected metadata.${k}=${JSON.stringify(v)}, got ${JSON.stringify((md as Record<string, unknown>)[k])}`
+          );
         }
       }
     },
@@ -309,14 +320,14 @@ function createThrowingEngineProxy(): BrainEngine {
       // Some runtime probes happen during Promise unwrapping etc. — let
       // these pass without throwing so the harness doesn't blow up on
       // type introspection. The named methods are what trigger the error.
-      if (prop === 'then' || prop === Symbol.toPrimitive || prop === Symbol.toStringTag) {
+      if (prop === "then" || prop === Symbol.toPrimitive || prop === Symbol.toStringTag) {
         return undefined;
       }
       throw new Error(
         `IngestionTestHarness: source attempted to access BrainEngine.${String(prop)} ` +
-        `but no engine was provided. Pass { engine } to new IngestionTestHarness({...}) ` +
-        `with a real engine (e.g. new PGLiteEngine()) if the source needs DB access, ` +
-        `OR refactor the source so it doesn't touch the engine and only emits events.`,
+          `but no engine was provided. Pass { engine } to new IngestionTestHarness({...}) ` +
+          `with a real engine (e.g. new PGLiteEngine()) if the source needs DB access, ` +
+          `OR refactor the source so it doesn't touch the engine and only emits events.`
       );
     },
   });

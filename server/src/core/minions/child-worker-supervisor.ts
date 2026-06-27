@@ -36,17 +36,17 @@
  *                  (escalating exponential backoff).
  */
 
-import { spawn, type ChildProcess } from 'child_process';
-import { buildSpawnInvocation, detectTini } from './spawn-helpers.ts';
-import { classifyWorkerExit } from './exit-classification.ts';
-import { calculateBackoffMs } from './supervisor.ts';
-import { WORKER_EXIT_RSS_WATCHDOG } from './worker-exit-codes.ts';
+import { spawn, type ChildProcess } from "child_process";
+import { buildSpawnInvocation, detectTini } from "./spawn-helpers.ts";
+import { classifyWorkerExit } from "./exit-classification.ts";
+import { calculateBackoffMs } from "./supervisor.ts";
+import { WORKER_EXIT_RSS_WATCHDOG } from "./worker-exit-codes.ts";
 
 export type ChildSupervisorEvent =
-  | { kind: 'worker_spawned'; pid: number; tini: boolean }
-  | { kind: 'worker_spawn_failed'; error: string; phase: 'sync' | 'async'; errnoCode?: string }
+  | { kind: "worker_spawned"; pid: number; tini: boolean }
+  | { kind: "worker_spawn_failed"; error: string; phase: "sync" | "async"; errnoCode?: string }
   | {
-      kind: 'worker_exited';
+      kind: "worker_exited";
       code: number | null;
       signal: NodeJS.Signals | null;
       runDurationMs: number;
@@ -54,14 +54,14 @@ export type ChildSupervisorEvent =
       crashCount: number;
     }
   | {
-      kind: 'backoff';
+      kind: "backoff";
       ms: number;
       crashCount: number;
-      reason: 'clean_exit' | 'crash' | 'budget_exceeded' | 'rss_watchdog' | 'wedge_restart';
+      reason: "clean_exit" | "crash" | "budget_exceeded" | "rss_watchdog" | "wedge_restart";
     }
   | {
-      kind: 'health_warn';
-      reason: 'clean_restart_budget_exceeded' | 'rss_watchdog_loop';
+      kind: "health_warn";
+      reason: "clean_restart_budget_exceeded" | "rss_watchdog_loop";
       count: number;
       windowMs: number;
     };
@@ -176,7 +176,7 @@ export class ChildWorkerSupervisor {
   }
   /** Whether tini was detected at construction. Used by tests + worker_spawned event payload. */
   get isTiniDetected(): boolean {
-    return this.tiniPath !== '';
+    return this.tiniPath !== "";
   }
 
   /**
@@ -238,11 +238,11 @@ export class ChildWorkerSupervisor {
         settled = true;
         resolve();
       };
-      child.once('exit', onExit);
+      child.once("exit", onExit);
       setTimeout(() => {
         if (settled) return;
         settled = true;
-        child.removeListener('exit', onExit);
+        child.removeListener("exit", onExit);
         resolve();
       }, timeoutMs);
     });
@@ -267,7 +267,7 @@ export class ChildWorkerSupervisor {
     // SIGTERM the captured child (liveness-gated, same fix as killChild).
     if (child.exitCode === null && child.signalCode === null) {
       try {
-        child.kill('SIGTERM');
+        child.kill("SIGTERM");
       } catch {
         /* already dead */
       }
@@ -277,7 +277,7 @@ export class ChildWorkerSupervisor {
     // respawned one.
     if (child.exitCode === null && child.signalCode === null) {
       try {
-        child.kill('SIGKILL');
+        child.kill("SIGKILL");
       } catch {
         /* already dead */
       }
@@ -318,21 +318,21 @@ export class ChildWorkerSupervisor {
       const { cmd: spawnCmd, args: spawnArgs } = buildSpawnInvocation(
         this.tiniPath,
         this.opts.cliPath,
-        this.opts.args,
+        this.opts.args
       );
 
       let child: ChildProcess;
       try {
         child = spawn(spawnCmd, spawnArgs, {
-          stdio: 'inherit',
+          stdio: "inherit",
           env,
         });
       } catch (err: unknown) {
         // Synchronous spawn error (e.g. invalid cliPath shape). Count as a crash.
         this.opts.onEvent({
-          kind: 'worker_spawn_failed',
+          kind: "worker_spawn_failed",
           error: err instanceof Error ? err.message : String(err),
-          phase: 'sync',
+          phase: "sync",
         });
         this._crashCount++;
         this._lastExitCode = null;
@@ -343,25 +343,25 @@ export class ChildWorkerSupervisor {
       this._child = child;
 
       this.opts.onEvent({
-        kind: 'worker_spawned',
+        kind: "worker_spawned",
         pid: child.pid ?? -1,
-        tini: this.tiniPath !== '',
+        tini: this.tiniPath !== "",
       });
 
       // Async spawn errors (ENOENT, EACCES). Node fires 'error' first, then
       // 'exit' with code=null. We log the error; the 'exit' handler increments
       // crashCount as usual so the restart loop bounds permanent misconfigs
       // via max_crashes.
-      child.on('error', (err) => {
+      child.on("error", (err) => {
         this.opts.onEvent({
-          kind: 'worker_spawn_failed',
+          kind: "worker_spawn_failed",
           error: err.message,
-          phase: 'async',
+          phase: "async",
           errnoCode: (err as NodeJS.ErrnoException).code,
         });
       });
 
-      child.on('exit', (code, signal) => {
+      child.on("exit", (code, signal) => {
         this._child = null;
 
         if (this.opts.isStopping()) {
@@ -397,17 +397,13 @@ export class ChildWorkerSupervisor {
           this._watchdogExitTimestamps.push(nowMs);
           const windowMs = this.opts.watchdogLoopWindowMs ?? DEFAULTS.watchdogLoopWindowMs;
           const cutoff = nowMs - windowMs;
-          this._watchdogExitTimestamps = this._watchdogExitTimestamps.filter(
-            (t) => t > cutoff,
-          );
-        } else if (classifyWorkerExit({ code }) === 'clean_exit') {
+          this._watchdogExitTimestamps = this._watchdogExitTimestamps.filter((t) => t > cutoff);
+        } else if (classifyWorkerExit({ code }) === "clean_exit") {
           const nowMs = this.now();
           this._cleanRestartTimestamps.push(nowMs);
           const windowMs = this.opts.cleanRestartWindowMs ?? DEFAULTS.cleanRestartWindowMs;
           const cutoff = nowMs - windowMs;
-          this._cleanRestartTimestamps = this._cleanRestartTimestamps.filter(
-            (t) => t > cutoff,
-          );
+          this._cleanRestartTimestamps = this._cleanRestartTimestamps.filter((t) => t > cutoff);
         } else {
           const resetMs = this.opts.stableRunResetMs ?? DEFAULTS.stableRunResetMs;
           if (runDuration > resetMs) {
@@ -425,23 +421,23 @@ export class ChildWorkerSupervisor {
           // though the kill signal was SIGTERM/SIGKILL, so the audit summary
           // (supervisor-audit.ts CLEAN_EXIT_CAUSES) counts it as a self-heal,
           // not a crash.
-          likelyCause = 'wedge_restart';
-        } else if (signal === 'SIGKILL') {
-          likelyCause = 'oom_or_external_kill';
-        } else if (signal === 'SIGTERM') {
-          likelyCause = 'graceful_shutdown';
+          likelyCause = "wedge_restart";
+        } else if (signal === "SIGKILL") {
+          likelyCause = "oom_or_external_kill";
+        } else if (signal === "SIGTERM") {
+          likelyCause = "graceful_shutdown";
         } else if (code === WORKER_EXIT_RSS_WATCHDOG) {
-          likelyCause = 'rss_watchdog';
+          likelyCause = "rss_watchdog";
         } else if (code === 1) {
-          likelyCause = 'runtime_error';
+          likelyCause = "runtime_error";
         } else if (code === 0) {
-          likelyCause = 'clean_exit';
+          likelyCause = "clean_exit";
         } else {
-          likelyCause = 'unknown';
+          likelyCause = "unknown";
         }
 
         this.opts.onEvent({
-          kind: 'worker_exited',
+          kind: "worker_exited",
           code: code ?? null,
           signal: signal ?? null,
           runDurationMs: runDuration,
@@ -462,10 +458,10 @@ export class ChildWorkerSupervisor {
       // budget accounting (the supervisor's wedgeRestartLoopBudget owns that).
       this._lastWasIntentionalRestart = false;
       this.opts.onEvent({
-        kind: 'backoff',
+        kind: "backoff",
         ms: 0,
         crashCount: this._crashCount,
-        reason: 'wedge_restart',
+        reason: "wedge_restart",
       });
       return;
     }
@@ -479,20 +475,20 @@ export class ChildWorkerSupervisor {
       const windowMs = this.opts.cleanRestartWindowMs ?? DEFAULTS.cleanRestartWindowMs;
       if (this._cleanRestartTimestamps.length > budget) {
         this.opts.onEvent({
-          kind: 'health_warn',
-          reason: 'clean_restart_budget_exceeded',
+          kind: "health_warn",
+          reason: "clean_restart_budget_exceeded",
           count: this._cleanRestartTimestamps.length,
           windowMs,
         });
         const cooldown =
           this.opts._backoffFloorMs !== undefined
             ? this.opts._backoffFloorMs
-            : this.opts.cleanRestartBudgetBackoffMs ?? DEFAULTS.cleanRestartBudgetBackoffMs;
+            : (this.opts.cleanRestartBudgetBackoffMs ?? DEFAULTS.cleanRestartBudgetBackoffMs);
         this.opts.onEvent({
-          kind: 'backoff',
+          kind: "backoff",
           ms: Math.round(cooldown),
           crashCount: this._crashCount,
-          reason: 'budget_exceeded',
+          reason: "budget_exceeded",
         });
         this._inBackoff = true;
         try {
@@ -504,10 +500,10 @@ export class ChildWorkerSupervisor {
       }
       // Within budget — immediate restart.
       this.opts.onEvent({
-        kind: 'backoff',
+        kind: "backoff",
         ms: 0,
         crashCount: this._crashCount,
-        reason: 'clean_exit',
+        reason: "clean_exit",
       });
       return;
     }
@@ -523,8 +519,8 @@ export class ChildWorkerSupervisor {
       const windowMs = this.opts.watchdogLoopWindowMs ?? DEFAULTS.watchdogLoopWindowMs;
       if (count > budget) {
         this.opts.onEvent({
-          kind: 'health_warn',
-          reason: 'rss_watchdog_loop',
+          kind: "health_warn",
+          reason: "rss_watchdog_loop",
           count,
           windowMs,
         });
@@ -532,12 +528,12 @@ export class ChildWorkerSupervisor {
       const watchdogBackoff =
         this.opts._backoffFloorMs !== undefined
           ? this.opts._backoffFloorMs
-          : this.opts.watchdogBackoffMs ?? DEFAULTS.watchdogBackoffMs;
+          : (this.opts.watchdogBackoffMs ?? DEFAULTS.watchdogBackoffMs);
       this.opts.onEvent({
-        kind: 'backoff',
+        kind: "backoff",
         ms: Math.round(watchdogBackoff),
         crashCount: this._crashCount,
-        reason: 'rss_watchdog',
+        reason: "rss_watchdog",
       });
       this._inBackoff = true;
       try {
@@ -557,10 +553,10 @@ export class ChildWorkerSupervisor {
         : calculateBackoffMs(this._crashCount - 1);
 
     this.opts.onEvent({
-      kind: 'backoff',
+      kind: "backoff",
       ms: Math.round(backoff),
       crashCount: this._crashCount,
-      reason: 'crash',
+      reason: "crash",
     });
 
     this._inBackoff = true;

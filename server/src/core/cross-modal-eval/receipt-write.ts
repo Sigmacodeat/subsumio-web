@@ -7,11 +7,11 @@
  * directory` from a fresh `~/.gbrain/`.
  */
 
-import { mkdirSync, writeFileSync } from 'fs';
-import { dirname } from 'path';
+import { mkdirSync, writeFileSync } from "fs";
+import { dirname } from "path";
 
 export function writeReceipt(path: string, content: string | object): void {
-  const body = typeof content === 'string' ? content : JSON.stringify(content, null, 2);
+  const body = typeof content === "string" ? content : JSON.stringify(content, null, 2);
   mkdirSync(dirname(path), { recursive: true });
-  writeFileSync(path, body, 'utf-8');
+  writeFileSync(path, body, "utf-8");
 }

@@ -19,6 +19,7 @@ A user ran `gbrain lsd "what story should Garry's List write next" --yes` on a 1
 7. **Zero ideas surfaced to the user** — complete failure
 
 A retry with `--limit 12` explicit:
+
 - Far set correctly returned 12 pages, cost was $0.39
 - But judge still failed: `parseJudgeJSON: no strategy produced valid JSON`
 - Again, 0 ideas survived to output (96 generated, 0 scored)
@@ -29,7 +30,7 @@ A retry with `--limit 12` explicit:
 
 **File:** `src/core/brainstorm/domain-bank.ts` → `fetchFar()` → `listPrefixSampledPages()`
 
-The domain bank samples pages by directory prefix to get diversity. `listPrefixSampledPages` returns **one page per prefix passed in**. On a 13K-page brain with ~2,000 unique prefixes (books/, civic/bundles/, civic/gl-article-*, people/, concepts/, etc.), passing all prefixes produces ~2,000 rows — not the configured `m=12`.
+The domain bank samples pages by directory prefix to get diversity. `listPrefixSampledPages` returns **one page per prefix passed in**. On a 13K-page brain with ~2,000 unique prefixes (books/, civic/bundles/, civic/gl-article-\*, people/, concepts/, etc.), passing all prefixes produces ~2,000 rows — not the configured `m=12`.
 
 The cost estimator uses `m` (12) to predict crosses and cost. But the actual cross phase receives 1,985 far-set pages, producing `2 × 1985 = 3,970` crosses at 4 ideas each = 15,868 ideas.
 
@@ -38,6 +39,7 @@ The cost estimator uses `m` (12) to predict crosses and cost. But the actual cro
 ### RC2: No Cost Circuit Breaker
 
 There is no mechanism to:
+
 - Abort if estimated cost exceeds a threshold
 - Abort mid-run if actual spend diverges from estimate
 - Cap the far set size regardless of prefix count
@@ -87,6 +89,7 @@ The judge call alone would have been:
 ### P2: Cost Guardrails (Critical — defense in depth)
 
 New flags for `brainstorm` and `lsd` commands:
+
 - `--max-cost <usd>` (default $5): hard-abort if pre-run estimate exceeds
 - `--strict-budget`: abort mid-run if running cost exceeds 5× estimate
 - `--max-far-set <n>` (default 50): explicit far set size cap
@@ -114,11 +117,11 @@ Strip unpaired UTF-16 surrogates from page content before building cross prompts
 budgets:
   # Global defaults
   default:
-    max_input_tokens: 500_000    # per-command input token cap
-    max_output_tokens: 200_000   # per-command output token cap  
-    max_cost_usd: 5.00           # per-command dollar cap
-    max_runtime_seconds: 300     # 5-minute wall-clock cap
-    
+    max_input_tokens: 500_000 # per-command input token cap
+    max_output_tokens: 200_000 # per-command output token cap
+    max_cost_usd: 5.00 # per-command dollar cap
+    max_runtime_seconds: 300 # 5-minute wall-clock cap
+
   # Per-command overrides
   brainstorm:
     max_cost_usd: 2.00
@@ -138,6 +141,7 @@ budgets:
 ```
 
 **Commands affected:**
+
 - `brainstorm` / `lsd` — bisociation crosses + judge (this incident)
 - `dream` — dream cycle phases (enrichment, emotional weight, etc.)
 - `extract all` — link + timeline extraction across all pages
@@ -147,6 +151,7 @@ budgets:
 - `doctor --remediate` — autonomous self-healing via Minions
 
 **Implementation approach:**
+
 1. Add a `BudgetTracker` class that wraps LLM calls with token/cost/time accounting
 2. Every analysis function receives a budget context
 3. On budget exhaustion: save partial results, emit a structured warning, exit cleanly
@@ -176,6 +181,7 @@ Example: 15,868 ideas need judging, context limit 900K tokens
 ### P7: Structured Error Recovery (Proposed)
 
 When a cross or judge call fails:
+
 - Save the partial results immediately (don't wait for the full run)
 - Emit a machine-readable error event (not just a log warning)
 - Support `--retry-failed` to re-run only the failed crosses without repeating successful ones

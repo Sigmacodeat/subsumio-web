@@ -50,20 +50,20 @@ import {
   closeSync as _closeSync,
   unlinkSync as _unlinkSync,
   statSync as _statSync,
-} from 'fs';
-import { join as _joinPath } from 'path';
-import { gbrainPath as _gbrainPath } from './config.ts';
-import { createHash as _createHash } from 'crypto';
+} from "fs";
+import { join as _joinPath } from "path";
+import { gbrainPath as _gbrainPath } from "./config.ts";
+import { createHash as _createHash } from "crypto";
 
-export const DEFAULT_SOURCE_ID = 'default';
+export const DEFAULT_SOURCE_ID = "default";
 /** Reserved sentinel paths (e.g. `<head>`) start with this; never file paths. */
-export const SENTINEL_PREFIX = '<';
+export const SENTINEL_PREFIX = "<";
 export const DEFAULT_AUTOSKIP_AFTER = 3;
 const LOCK_STALE_MS = 30_000;
 const LOCK_SPIN_MS = 50;
 const LOCK_TIMEOUT_MS = 5_000;
 
-export type SyncFailureState = 'open' | 'acknowledged' | 'auto_skipped';
+export type SyncFailureState = "open" | "acknowledged" | "auto_skipped";
 
 export interface SyncFailure {
   /** Owning source (#1939 Codex #2 — failures must not merge across sources). */
@@ -105,7 +105,7 @@ export function isSkippablePath(path: string): boolean {
  */
 export function resolveAutoSkipThreshold(): number {
   const raw = process.env.GBRAIN_SYNC_AUTOSKIP_AFTER;
-  if (raw === undefined || raw === '') return DEFAULT_AUTOSKIP_AFTER;
+  if (raw === undefined || raw === "") return DEFAULT_AUTOSKIP_AFTER;
   const n = Number(raw);
   if (!Number.isFinite(n) || n < 0) return DEFAULT_AUTOSKIP_AFTER;
   return Math.floor(n);
@@ -118,68 +118,82 @@ export function resolveAutoSkipThreshold(): number {
  */
 export function classifyErrorCode(errorMsg: string): string {
   // SLUG_MISMATCH: thrown by importFromFile() at src/core/import-file.ts.
-  if (/slug.*does not match|SLUG_MISMATCH/i.test(errorMsg)) return 'SLUG_MISMATCH';
+  if (/slug.*does not match|SLUG_MISMATCH/i.test(errorMsg)) return "SLUG_MISMATCH";
 
   // DB-layer errors come BEFORE the YAML duplicate-key check.
   if (/duplicate key value violates unique constraint|DB_DUPLICATE_KEY/i.test(errorMsg)) {
-    return 'DB_DUPLICATE_KEY';
+    return "DB_DUPLICATE_KEY";
   }
   if (/canceling statement due to statement timeout|STATEMENT_TIMEOUT/i.test(errorMsg)) {
-    return 'STATEMENT_TIMEOUT';
+    return "STATEMENT_TIMEOUT";
   }
 
   // YAML / frontmatter patterns.
-  if (/YAML parse failed|YAML_PARSE/i.test(errorMsg)) return 'YAML_PARSE';
+  if (/YAML parse failed|YAML_PARSE/i.test(errorMsg)) return "YAML_PARSE";
   if (/YAMLException|duplicated mapping key|YAML_DUPLICATE_KEY/i.test(errorMsg)) {
-    return 'YAML_DUPLICATE_KEY';
+    return "YAML_DUPLICATE_KEY";
   }
-  if (/File is empty or whitespace-only|Frontmatter must start with ---|MISSING_OPEN/i.test(errorMsg)) {
-    return 'MISSING_OPEN';
+  if (
+    /File is empty or whitespace-only|Frontmatter must start with ---|MISSING_OPEN/i.test(errorMsg)
+  ) {
+    return "MISSING_OPEN";
   }
-  if (/No closing --- delimiter|Heading at line .* found inside frontmatter|MISSING_CLOSE/i.test(errorMsg)) {
-    return 'MISSING_CLOSE';
+  if (
+    /No closing --- delimiter|Heading at line .* found inside frontmatter|MISSING_CLOSE/i.test(
+      errorMsg
+    )
+  ) {
+    return "MISSING_CLOSE";
   }
-  if (/Frontmatter block is empty|EMPTY_FRONTMATTER/i.test(errorMsg)) return 'EMPTY_FRONTMATTER';
-  if (/Content contains null bytes|NULL_BYTES|null byte/i.test(errorMsg)) return 'NULL_BYTES';
-  if (/Nested double quotes|NESTED_QUOTES/i.test(errorMsg)) return 'NESTED_QUOTES';
+  if (/Frontmatter block is empty|EMPTY_FRONTMATTER/i.test(errorMsg)) return "EMPTY_FRONTMATTER";
+  if (/Content contains null bytes|NULL_BYTES|null byte/i.test(errorMsg)) return "NULL_BYTES";
+  if (/Nested double quotes|NESTED_QUOTES/i.test(errorMsg)) return "NESTED_QUOTES";
 
   // Generic fallbacks.
-  if (/invalid UTF-?8|INVALID_UTF8/i.test(errorMsg)) return 'INVALID_UTF8';
-  if (/file too large|content too large|FILE_TOO_LARGE/i.test(errorMsg)) return 'FILE_TOO_LARGE';
-  if (/skipping symlink|symlink|SYMLINK_NOT_ALLOWED/i.test(errorMsg)) return 'SYMLINK_NOT_ALLOWED';
+  if (/invalid UTF-?8|INVALID_UTF8/i.test(errorMsg)) return "INVALID_UTF8";
+  if (/file too large|content too large|FILE_TOO_LARGE/i.test(errorMsg)) return "FILE_TOO_LARGE";
+  if (/skipping symlink|symlink|SYMLINK_NOT_ALLOWED/i.test(errorMsg)) return "SYMLINK_NOT_ALLOWED";
 
   // takes-v2 fence + holder grammar failures.
   if (/TAKES_TABLE_MALFORMED|TAKES_ROW_NUM_COLLISION|TAKES_FENCE_UNBALANCED/i.test(errorMsg)) {
-    return 'TAKES_TABLE_MALFORMED';
+    return "TAKES_TABLE_MALFORMED";
   }
-  if (/TAKES_HOLDER_INVALID/i.test(errorMsg)) return 'TAKES_HOLDER_INVALID';
+  if (/TAKES_HOLDER_INVALID/i.test(errorMsg)) return "TAKES_HOLDER_INVALID";
 
   // Embedding error classification.
   if (/embedding requires [A-Z][A-Z0-9_]+_API_KEY|EMBEDDING_NO_CREDS/i.test(errorMsg)) {
-    return 'EMBEDDING_NO_CREDS';
+    return "EMBEDDING_NO_CREDS";
   }
   if (/Anthropic has no embedding model|EMBEDDING_NO_TOUCHPOINT/i.test(errorMsg)) {
-    return 'EMBEDDING_NO_TOUCHPOINT';
+    return "EMBEDDING_NO_TOUCHPOINT";
   }
   if (/\brate.?limit|\b429\b|too many requests|rate_limited|RateLimit/i.test(errorMsg)) {
-    return 'EMBEDDING_RATE_LIMIT';
+    return "EMBEDDING_RATE_LIMIT";
   }
-  if (/insufficient_quota|quota exceeded|exceeded.*quota|credit balance is too low|billing|EMBEDDING_QUOTA/i.test(errorMsg)) {
-    return 'EMBEDDING_QUOTA';
+  if (
+    /insufficient_quota|quota exceeded|exceeded.*quota|credit balance is too low|billing|EMBEDDING_QUOTA/i.test(
+      errorMsg
+    )
+  ) {
+    return "EMBEDDING_QUOTA";
   }
-  if (/maximum context length|max_tokens|context length|input too long|input length exceeds|tokens? exceed|too many tokens|EMBEDDING_OVERSIZE/i.test(errorMsg)) {
-    return 'EMBEDDING_OVERSIZE';
+  if (
+    /maximum context length|max_tokens|context length|input too long|input length exceeds|tokens? exceed|too many tokens|EMBEDDING_OVERSIZE/i.test(
+      errorMsg
+    )
+  ) {
+    return "EMBEDDING_OVERSIZE";
   }
 
   // content-sanity reject disposition.
-  if (/PAGE_JUNK_PATTERN/i.test(errorMsg)) return 'PAGE_JUNK_PATTERN';
+  if (/PAGE_JUNK_PATTERN/i.test(errorMsg)) return "PAGE_JUNK_PATTERN";
 
-  return 'UNKNOWN';
+  return "UNKNOWN";
 }
 
 /** Group failures by error code and return a sorted summary. */
 export function summarizeFailuresByCode(
-  failures: Array<{ error: string; code?: string }>,
+  failures: Array<{ error: string; code?: string }>
 ): Array<{ code: string; count: number }> {
   const counts: Record<string, number> = {};
   for (const f of failures) {
@@ -197,13 +211,13 @@ export function summarizeFailuresByCode(
  * summarized `{code, count}[]`. Empty input → empty string.
  */
 export function formatCodeBreakdown(
-  input: Array<{ error: string; code?: string }> | Array<{ code: string; count: number }>,
+  input: Array<{ error: string; code?: string }> | Array<{ code: string; count: number }>
 ): string {
   const summary =
-    input.length > 0 && typeof (input[0] as { count?: unknown }).count === 'number'
+    input.length > 0 && typeof (input[0] as { count?: unknown }).count === "number"
       ? (input as Array<{ code: string; count: number }>)
       : summarizeFailuresByCode(input as Array<{ error: string; code?: string }>);
-  return summary.map(s => `  ${s.code}: ${s.count}`).join('\n');
+  return summary.map((s) => `  ${s.code}: ${s.count}`).join("\n");
 }
 
 function _failuresDir(): string {
@@ -211,7 +225,7 @@ function _failuresDir(): string {
 }
 
 export function syncFailuresPath(): string {
-  return _joinPath(_failuresDir(), 'sync-failures.jsonl');
+  return _joinPath(_failuresDir(), "sync-failures.jsonl");
 }
 
 function _ledgerKey(f: { source_id: string; path: string }): string {
@@ -228,7 +242,7 @@ function _ledgerKey(f: { source_id: string; path: string }): string {
  * keeps surfacing it.
  */
 function _applyMirror(f: SyncFailure): SyncFailure {
-  if (f.state === 'acknowledged') {
+  if (f.state === "acknowledged") {
     f.acknowledged = true;
     f.acknowledged_at = f.resolved_at ?? f.ts;
   } else {
@@ -242,37 +256,36 @@ function _applyMirror(f: SyncFailure): SyncFailure {
 
 function _normalizeRow(raw: Record<string, unknown>): SyncFailure {
   const source_id =
-    typeof raw.source_id === 'string' && raw.source_id ? raw.source_id : DEFAULT_SOURCE_ID;
-  const error = String(raw.error ?? '');
-  const code = typeof raw.code === 'string' && raw.code ? raw.code : classifyErrorCode(error);
-  const ts = typeof raw.ts === 'string' && raw.ts ? raw.ts : new Date(0).toISOString();
-  const first_seen =
-    typeof raw.first_seen === 'string' && raw.first_seen ? raw.first_seen : ts;
+    typeof raw.source_id === "string" && raw.source_id ? raw.source_id : DEFAULT_SOURCE_ID;
+  const error = String(raw.error ?? "");
+  const code = typeof raw.code === "string" && raw.code ? raw.code : classifyErrorCode(error);
+  const ts = typeof raw.ts === "string" && raw.ts ? raw.ts : new Date(0).toISOString();
+  const first_seen = typeof raw.first_seen === "string" && raw.first_seen ? raw.first_seen : ts;
   let state: SyncFailureState;
-  if (raw.state === 'open' || raw.state === 'acknowledged' || raw.state === 'auto_skipped') {
+  if (raw.state === "open" || raw.state === "acknowledged" || raw.state === "auto_skipped") {
     state = raw.state;
   } else {
-    state = raw.acknowledged === true || raw.acknowledged_at ? 'acknowledged' : 'open';
+    state = raw.acknowledged === true || raw.acknowledged_at ? "acknowledged" : "open";
   }
   const attempts =
-    typeof raw.attempts === 'number' && Number.isFinite(raw.attempts) && raw.attempts > 0
+    typeof raw.attempts === "number" && Number.isFinite(raw.attempts) && raw.attempts > 0
       ? Math.floor(raw.attempts)
       : 1;
   const row: SyncFailure = {
     source_id,
-    path: String(raw.path ?? ''),
+    path: String(raw.path ?? ""),
     error,
     code,
-    commit: String(raw.commit ?? ''),
-    line: typeof raw.line === 'number' ? raw.line : undefined,
+    commit: String(raw.commit ?? ""),
+    line: typeof raw.line === "number" ? raw.line : undefined,
     first_seen,
     ts,
     attempts,
     state,
     resolved_at:
-      typeof raw.resolved_at === 'string'
+      typeof raw.resolved_at === "string"
         ? raw.resolved_at
-        : typeof raw.acknowledged_at === 'string'
+        : typeof raw.acknowledged_at === "string"
           ? raw.acknowledged_at
           : undefined,
   };
@@ -285,14 +298,14 @@ function _mergeGroup(group: SyncFailure[]): SyncFailure {
   const latest = sorted[sorted.length - 1];
   const first_seen = sorted.reduce(
     (m, r) => (r.first_seen && r.first_seen < m ? r.first_seen : m),
-    sorted[0].first_seen,
+    sorted[0].first_seen
   );
-  const hasOpen = group.some(r => r.state === 'open');
-  const hasAuto = group.some(r => r.state === 'auto_skipped');
-  const state: SyncFailureState = hasOpen ? 'open' : hasAuto ? 'auto_skipped' : 'acknowledged';
+  const hasOpen = group.some((r) => r.state === "open");
+  const hasAuto = group.some((r) => r.state === "auto_skipped");
+  const state: SyncFailureState = hasOpen ? "open" : hasAuto ? "auto_skipped" : "acknowledged";
   // attempts reconstruction: distinct commits is a proxy for distinct runs;
   // never under-count below the largest recorded attempts.
-  const distinctCommits = new Set(group.map(r => r.commit)).size;
+  const distinctCommits = new Set(group.map((r) => r.commit)).size;
   const maxAttempts = group.reduce((m, r) => Math.max(m, r.attempts), 0);
   const attempts = Math.max(distinctCommits, maxAttempts, 1);
   return _applyMirror({ ...latest, first_seen, state, attempts });
@@ -306,9 +319,9 @@ function _mergeGroup(group: SyncFailure[]): SyncFailure {
 export function loadSyncFailures(): SyncFailure[] {
   const path = syncFailuresPath();
   if (!_existsSync(path)) return [];
-  const raw = _readFileSync(path, 'utf-8');
+  const raw = _readFileSync(path, "utf-8");
   const rows: SyncFailure[] = [];
-  for (const line of raw.split('\n')) {
+  for (const line of raw.split("\n")) {
     const trimmed = line.trim();
     if (!trimmed) continue;
     try {
@@ -333,7 +346,7 @@ export function loadSyncFailures(): SyncFailure[] {
 
 /** Unresolved failures (open + auto_skipped). */
 export function unacknowledgedSyncFailures(): SyncFailure[] {
-  return loadSyncFailures().filter(e => e.state !== 'acknowledged');
+  return loadSyncFailures().filter((e) => e.state !== "acknowledged");
 }
 
 // ─── Concurrency: cross-process lock + atomic write ──────────────────
@@ -348,15 +361,19 @@ function _acquireLock(lockPath: string): boolean {
   // eslint-disable-next-line no-constant-condition
   while (true) {
     try {
-      _closeSync(_openSync(lockPath, 'wx'));
+      _closeSync(_openSync(lockPath, "wx"));
       return true;
     } catch (e) {
-      if ((e as NodeJS.ErrnoException)?.code !== 'EEXIST') return false; // best-effort
+      if ((e as NodeJS.ErrnoException)?.code !== "EEXIST") return false; // best-effort
       // Age-based stale break (prefer age over PID liveness, per db-lock learning).
       try {
         const st = _statSync(lockPath);
         if (Date.now() - st.mtimeMs > LOCK_STALE_MS) {
-          try { _unlinkSync(lockPath); } catch { /* raced; retry */ }
+          try {
+            _unlinkSync(lockPath);
+          } catch {
+            /* raced; retry */
+          }
           continue;
         }
       } catch {
@@ -375,16 +392,20 @@ function _acquireLock(lockPath: string): boolean {
  */
 export function withLedgerLock<T>(fn: () => T): T {
   _mkdirSync(_failuresDir(), { recursive: true });
-  const lockPath = syncFailuresPath() + '.lock';
+  const lockPath = syncFailuresPath() + ".lock";
   const got = _acquireLock(lockPath);
   if (!got) {
-    console.warn('[sync-failures] could not acquire ledger lock; proceeding best-effort');
+    console.warn("[sync-failures] could not acquire ledger lock; proceeding best-effort");
   }
   try {
     return fn();
   } finally {
     if (got) {
-      try { _unlinkSync(lockPath); } catch { /* already gone */ }
+      try {
+        _unlinkSync(lockPath);
+      } catch {
+        /* already gone */
+      }
     }
   }
 }
@@ -393,8 +414,8 @@ function _writeAll(entries: SyncFailure[]): void {
   _mkdirSync(_failuresDir(), { recursive: true });
   const target = syncFailuresPath();
   const tmp = `${target}.tmp-${process.pid}`;
-  const body = entries.map(e => JSON.stringify(e)).join('\n');
-  _writeFileSync(tmp, entries.length ? body + '\n' : '');
+  const body = entries.map((e) => JSON.stringify(e)).join("\n");
+  _writeFileSync(tmp, entries.length ? body + "\n" : "");
   _renameSync(tmp, target); // atomic on POSIX
 }
 
@@ -413,7 +434,7 @@ function _recordAndClear(
   sourceId: string,
   succeededPaths: string[],
   failures: Array<{ path: string; error: string; line?: number }>,
-  commit: string,
+  commit: string
 ): Map<string, number> {
   return withLedgerLock(() => {
     const entries = loadSyncFailures();
@@ -431,7 +452,7 @@ function _recordAndClear(
       const key = _ledgerKey({ source_id: sourceId, path: f.path });
       const ex = byKey.get(key);
       const code = classifyErrorCode(f.error);
-      if (ex && ex.state === 'open') {
+      if (ex && ex.state === "open") {
         ex.attempts += 1;
         ex.ts = now;
         ex.commit = commit;
@@ -452,8 +473,8 @@ function _recordAndClear(
             first_seen: now,
             ts: now,
             attempts: 1,
-            state: 'open',
-          }),
+            state: "open",
+          })
         );
       }
       mutated = true;
@@ -467,7 +488,7 @@ function _recordAndClear(
     for (const f of failures) {
       attempts.set(
         f.path,
-        byKey.get(_ledgerKey({ source_id: sourceId, path: f.path }))?.attempts ?? 1,
+        byKey.get(_ledgerKey({ source_id: sourceId, path: f.path }))?.attempts ?? 1
       );
     }
     return attempts;
@@ -481,7 +502,7 @@ function _recordAndClear(
 export function recordFailures(
   sourceId: string,
   failures: Array<{ path: string; error: string; line?: number }>,
-  commit: string,
+  commit: string
 ): void {
   if (failures.length === 0) return;
   _recordAndClear(sourceId, [], failures, commit);
@@ -492,8 +513,8 @@ export function clearFailures(sourceId: string, paths: string[]): void {
   if (paths.length === 0) return;
   withLedgerLock(() => {
     const entries = loadSyncFailures();
-    const remove = new Set(paths.map(p => _ledgerKey({ source_id: sourceId, path: p })));
-    const kept = entries.filter(e => !remove.has(_ledgerKey(e)));
+    const remove = new Set(paths.map((p) => _ledgerKey({ source_id: sourceId, path: p })));
+    const kept = entries.filter((e) => !remove.has(_ledgerKey(e)));
     if (kept.length !== entries.length) _writeAll(kept);
   });
 }
@@ -510,10 +531,10 @@ export function acknowledgeFailures(sourceId?: string): AcknowledgeResult {
     let changed = 0;
     const acked: SyncFailure[] = [];
     for (const e of entries) {
-      if (e.state !== 'open') continue;
+      if (e.state !== "open") continue;
       if (sourceId !== undefined && e.source_id !== sourceId) continue;
       if (!isSkippablePath(e.path)) continue;
-      e.state = 'acknowledged';
+      e.state = "acknowledged";
       e.resolved_at = now;
       _applyMirror(e);
       changed++;
@@ -534,15 +555,15 @@ export function autoSkipFailures(sourceId: string, paths: string[]): Acknowledge
   return withLedgerLock(() => {
     const entries = loadSyncFailures();
     const target = new Set(
-      paths.filter(isSkippablePath).map(p => _ledgerKey({ source_id: sourceId, path: p })),
+      paths.filter(isSkippablePath).map((p) => _ledgerKey({ source_id: sourceId, path: p }))
     );
     const now = new Date().toISOString();
     let changed = 0;
     const skipped: SyncFailure[] = [];
     for (const e of entries) {
       if (!target.has(_ledgerKey(e))) continue;
-      if (e.state !== 'open') continue;
-      e.state = 'auto_skipped';
+      if (e.state !== "open") continue;
+      e.state = "auto_skipped";
       e.resolved_at = now;
       _applyMirror(e);
       changed++;
@@ -558,7 +579,7 @@ export function autoSkipFailures(sourceId: string, paths: string[]): Acknowledge
 /** @deprecated use recordFailures(sourceId, …). Defaults to the host source. */
 export function recordSyncFailures(
   failures: Array<{ path: string; error: string; line?: number }>,
-  commit: string,
+  commit: string
 ): void {
   recordFailures(DEFAULT_SOURCE_ID, failures, commit);
 }
@@ -571,7 +592,7 @@ export function acknowledgeSyncFailures(): AcknowledgeResult {
 // ─── Pure decisions (no side effects — the unit-test surface) ─────────
 
 export interface GateDecision {
-  action: 'hard_block' | 'block' | 'advance' | 'advance_then_autoskip';
+  action: "hard_block" | "block" | "advance" | "advance_then_autoskip";
   autoSkipPaths: string[];
 }
 
@@ -595,10 +616,10 @@ export function decideGateAction(args: {
   threshold: number;
   skipFailed: boolean;
 }): GateDecision {
-  if (args.sentinels.length > 0) return { action: 'hard_block', autoSkipPaths: [] };
-  if (args.fileFailures.length === 0) return { action: 'advance', autoSkipPaths: [] };
-  if (args.skipFailed) return { action: 'advance', autoSkipPaths: [] };
-  if (args.threshold <= 0) return { action: 'block', autoSkipPaths: [] };
+  if (args.sentinels.length > 0) return { action: "hard_block", autoSkipPaths: [] };
+  if (args.fileFailures.length === 0) return { action: "advance", autoSkipPaths: [] };
+  if (args.skipFailed) return { action: "advance", autoSkipPaths: [] };
+  if (args.threshold <= 0) return { action: "block", autoSkipPaths: [] };
 
   const chronic: string[] = [];
   let fresh = 0;
@@ -607,13 +628,13 @@ export function decideGateAction(args: {
     if (a >= args.threshold) chronic.push(f.path);
     else fresh++;
   }
-  if (fresh > 0) return { action: 'block', autoSkipPaths: [] };
-  if (chronic.length > 0) return { action: 'advance_then_autoskip', autoSkipPaths: chronic };
-  return { action: 'block', autoSkipPaths: [] };
+  if (fresh > 0) return { action: "block", autoSkipPaths: [] };
+  if (chronic.length > 0) return { action: "advance_then_autoskip", autoSkipPaths: chronic };
+  return { action: "block", autoSkipPaths: [] };
 }
 
 export interface SeverityResult {
-  status: 'ok' | 'warn' | 'fail';
+  status: "ok" | "warn" | "fail";
   unresolved: number;
   open: number;
   auto_skipped: number;
@@ -635,17 +656,15 @@ export function decideSyncFailureSeverity(args: {
   nowMs: number;
   failHours: number;
 }): SeverityResult {
-  const unresolved = args.entries.filter(
-    e => e.state === 'open' || e.state === 'auto_skipped',
-  );
-  const autoSkipped = unresolved.filter(e => e.state === 'auto_skipped').length;
+  const unresolved = args.entries.filter((e) => e.state === "open" || e.state === "auto_skipped");
+  const autoSkipped = unresolved.filter((e) => e.state === "auto_skipped").length;
   const open = unresolved.length - autoSkipped;
   if (unresolved.length === 0) {
-    return { status: 'ok', unresolved: 0, open: 0, auto_skipped: 0 };
+    return { status: "ok", unresolved: 0, open: 0, auto_skipped: 0 };
   }
   let oldestOpenMs = Infinity;
   for (const e of unresolved) {
-    if (e.state !== 'open') continue;
+    if (e.state !== "open") continue;
     const ms = Date.parse(e.ts);
     if (Number.isFinite(ms)) oldestOpenMs = Math.min(oldestOpenMs, ms);
   }
@@ -655,7 +674,7 @@ export function decideSyncFailureSeverity(args: {
   // bookmark past the fail cadence. `auto_skipped` rows already advanced the
   // bookmark (indexing is NOT wedged) so they stay WARN-visible regardless of
   // count, matching the state-machine contract. (#1939 adversarial finding #3.)
-  const status: 'warn' | 'fail' = open >= 10 || blockedTooLong ? 'fail' : 'warn';
+  const status: "warn" | "fail" = open >= 10 || blockedTooLong ? "fail" : "warn";
   return { status, unresolved: unresolved.length, open, auto_skipped: autoSkipped };
 }
 
@@ -691,8 +710,8 @@ export interface SyncGateOutcome {
  */
 export async function applySyncFailureGate(input: SyncGateInput): Promise<SyncGateOutcome> {
   const threshold = input.threshold ?? resolveAutoSkipThreshold();
-  const sentinels = input.failedFiles.filter(f => !isSkippablePath(f.path));
-  const fileFailures = input.failedFiles.filter(f => isSkippablePath(f.path));
+  const sentinels = input.failedFiles.filter((f) => !isSkippablePath(f.path));
+  const fileFailures = input.failedFiles.filter((f) => isSkippablePath(f.path));
 
   // Fast path: clean run touched no failures and no successes — nothing to
   // reconcile in the ledger, just advance.
@@ -712,7 +731,7 @@ export async function applySyncFailureGate(input: SyncGateInput): Promise<SyncGa
     input.sourceId,
     input.succeededPaths,
     input.failedFiles,
-    input.commit,
+    input.commit
   );
 
   const decision = decideGateAction({
@@ -730,10 +749,10 @@ export async function applySyncFailureGate(input: SyncGateInput): Promise<SyncGa
     else fresh++;
   }
 
-  if (decision.action === 'hard_block' || decision.action === 'block') {
+  if (decision.action === "hard_block" || decision.action === "block") {
     return {
       advanced: false,
-      sentinelBlocked: decision.action === 'hard_block',
+      sentinelBlocked: decision.action === "hard_block",
       fresh,
       chronic,
       autoSkipped: [],
@@ -748,7 +767,7 @@ export async function applySyncFailureGate(input: SyncGateInput): Promise<SyncGa
   let acknowledged = 0;
   if (input.skipFailed) {
     acknowledged = acknowledgeFailures(input.sourceId).count;
-  } else if (decision.action === 'advance_then_autoskip') {
+  } else if (decision.action === "advance_then_autoskip") {
     autoSkipped = decision.autoSkipPaths;
     autoSkipFailures(input.sourceId, autoSkipped);
   }

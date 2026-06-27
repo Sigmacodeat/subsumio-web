@@ -29,10 +29,9 @@
  * splice entirely so the caller's prompt stays byte-for-byte as provided.
  */
 
-import type { ToolDef } from './types.ts';
+import type { ToolDef } from "./types.ts";
 
-export const DEFAULT_SUBAGENT_SYSTEM =
-  'You are a helpful assistant running as a gbrain subagent.';
+export const DEFAULT_SUBAGENT_SYSTEM = "You are a helpful assistant running as a gbrain subagent.";
 
 export interface SystemPromptOpts {
   /** Skip the auto-generated tool guidance preamble. */
@@ -53,11 +52,11 @@ export interface SystemPromptOpts {
 export function buildSystemPrompt(
   toolDefs: ToolDef[],
   userSystem: string | undefined,
-  opts: SystemPromptOpts = {},
+  opts: SystemPromptOpts = {}
 ): string {
   const base = userSystem ?? DEFAULT_SUBAGENT_SYSTEM;
   if (opts.no_tool_preamble || toolDefs.length === 0) return base;
-  return base + '\n\n' + renderToolPreamble(toolDefs);
+  return base + "\n\n" + renderToolPreamble(toolDefs);
 }
 
 /**
@@ -90,22 +89,22 @@ export function renderToolPreamble(toolDefs: ToolDef[]): string {
       // Normalize any embedded whitespace/newlines so the rendered line
       // stays single-line. Defense against a plugin author shipping a
       // multi-line hint (which would corrupt the preamble layout).
-      const hint = t.usage_hint.replace(/\s+/g, ' ').trim();
+      const hint = t.usage_hint.replace(/\s+/g, " ").trim();
       lines.push(`- \`${t.name}\` — ${hint}`);
     } else {
       lines.push(`- \`${t.name}\``);
     }
   }
   return [
-    'You have the following tools available. Reach for them by default — do NOT',
-    'describe file contents, hypothetical shell output, or planned database',
-    'writes in prose. Call the tool.',
-    '',
+    "You have the following tools available. Reach for them by default — do NOT",
+    "describe file contents, hypothetical shell output, or planned database",
+    "writes in prose. Call the tool.",
+    "",
     ...lines,
-    '',
-    'When the task asks you to write a file, run a command, or modify the',
-    'filesystem, prefer a `shell` or `bash` tool if one is in your registry.',
-    'Brain tools (`put_page`, `search`, `query`) write to the gbrain database,',
-    'not to local files.',
-  ].join('\n');
+    "",
+    "When the task asks you to write a file, run a command, or modify the",
+    "filesystem, prefer a `shell` or `bash` tool if one is in your registry.",
+    "Brain tools (`put_page`, `search`, `query`) write to the gbrain database,",
+    "not to local files.",
+  ].join("\n");
 }

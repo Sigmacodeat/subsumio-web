@@ -27,36 +27,36 @@ export interface EmbeddingPricing {
  */
 export const EMBEDDING_PRICING: Record<string, EmbeddingPricing> = {
   // OpenAI (https://openai.com/api/pricing/, verified 2026-05-11)
-  'openai:text-embedding-3-large': { pricePerMTok: 0.13 },
-  'openai:text-embedding-3-small': { pricePerMTok: 0.02 },
+  "openai:text-embedding-3-large": { pricePerMTok: 0.13 },
+  "openai:text-embedding-3-small": { pricePerMTok: 0.02 },
   // Legacy OpenAI ada (still common in older brains)
-  'openai:text-embedding-ada-002': { pricePerMTok: 0.10 },
+  "openai:text-embedding-ada-002": { pricePerMTok: 0.1 },
   // Voyage (https://www.voyageai.com/pricing)
-  'voyage:voyage-3-large':         { pricePerMTok: 0.18 },
-  'voyage:voyage-3':               { pricePerMTok: 0.06 },
-  'voyage:voyage-4-large':         { pricePerMTok: 0.18 },
+  "voyage:voyage-3-large": { pricePerMTok: 0.18 },
+  "voyage:voyage-3": { pricePerMTok: 0.06 },
+  "voyage:voyage-4-large": { pricePerMTok: 0.18 },
   // ZeroEntropy (https://zeroentropy.dev/pricing — zembed-1)
-  'zeroentropyai:zembed-1':        { pricePerMTok: 0.05 },
+  "zeroentropyai:zembed-1": { pricePerMTok: 0.05 },
 };
 
 export type PriceLookupResult =
-  | { kind: 'known'; pricePerMTok: number; key: string }
-  | { kind: 'unknown'; provider: string; model: string };
+  | { kind: "known"; pricePerMTok: number; key: string }
+  | { kind: "unknown"; provider: string; model: string };
 
 /**
  * Resolve a model string into a price-per-1M-tokens. Accepts both
  * `provider:model` and bare `model` forms (bare assumes openai).
  */
 export function lookupEmbeddingPrice(modelString: string): PriceLookupResult {
-  const [providerRaw, modelRaw] = modelString.includes(':')
-    ? modelString.split(':', 2)
-    : ['openai', modelString];
+  const [providerRaw, modelRaw] = modelString.includes(":")
+    ? modelString.split(":", 2)
+    : ["openai", modelString];
   const provider = providerRaw.trim().toLowerCase();
-  const model = (modelRaw ?? '').trim();
+  const model = (modelRaw ?? "").trim();
   const key = `${provider}:${model}`;
   const hit = EMBEDDING_PRICING[key];
-  if (hit) return { kind: 'known', pricePerMTok: hit.pricePerMTok, key };
-  return { kind: 'unknown', provider, model };
+  if (hit) return { kind: "known", pricePerMTok: hit.pricePerMTok, key };
+  return { kind: "unknown", provider, model };
 }
 
 /**

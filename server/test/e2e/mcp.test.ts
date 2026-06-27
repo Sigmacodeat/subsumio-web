@@ -10,24 +10,27 @@
  * agent compatibility.
  */
 
-import { describe, test, expect } from 'bun:test';
-import { operations } from '../../src/core/operations.ts';
+import { describe, test, expect } from "bun:test";
+import { operations } from "../../src/core/operations.ts";
 
-describe('E2E: MCP Tool Generation', () => {
-  test('operations generate valid MCP tool definitions', () => {
+describe("E2E: MCP Tool Generation", () => {
+  test("operations generate valid MCP tool definitions", () => {
     // This replicates exactly what server.ts does in the tools/list handler
-    const tools = operations.map(op => ({
+    const tools = operations.map((op) => ({
       name: op.name,
       description: op.description,
       inputSchema: {
-        type: 'object' as const,
+        type: "object" as const,
         properties: Object.fromEntries(
-          Object.entries(op.params).map(([k, v]) => [k, {
-            type: v.type === 'array' ? 'array' : v.type,
-            ...(v.description ? { description: v.description } : {}),
-            ...(v.enum ? { enum: v.enum } : {}),
-            ...(v.items ? { items: { type: v.items.type } } : {}),
-          }]),
+          Object.entries(op.params).map(([k, v]) => [
+            k,
+            {
+              type: v.type === "array" ? "array" : v.type,
+              ...(v.description ? { description: v.description } : {}),
+              ...(v.enum ? { enum: v.enum } : {}),
+              ...(v.items ? { items: { type: v.items.type } } : {}),
+            },
+          ])
         ),
         required: Object.entries(op.params)
           .filter(([, v]) => v.required)
@@ -41,27 +44,27 @@ describe('E2E: MCP Tool Generation', () => {
     for (const tool of tools) {
       expect(tool.name).toBeTruthy();
       expect(tool.description).toBeTruthy();
-      expect(tool.inputSchema.type).toBe('object');
-      expect(typeof tool.inputSchema.properties).toBe('object');
+      expect(tool.inputSchema.type).toBe("object");
+      expect(typeof tool.inputSchema.properties).toBe("object");
       expect(Array.isArray(tool.inputSchema.required)).toBe(true);
     }
 
     // Verify specific tools exist
-    const names = tools.map(t => t.name);
-    expect(names).toContain('get_page');
-    expect(names).toContain('put_page');
-    expect(names).toContain('search');
-    expect(names).toContain('query');
-    expect(names).toContain('add_link');
-    expect(names).toContain('get_health');
-    expect(names).toContain('sync_brain');
-    expect(names).toContain('file_upload');
+    const names = tools.map((t) => t.name);
+    expect(names).toContain("get_page");
+    expect(names).toContain("put_page");
+    expect(names).toContain("search");
+    expect(names).toContain("query");
+    expect(names).toContain("add_link");
+    expect(names).toContain("get_health");
+    expect(names).toContain("sync_brain");
+    expect(names).toContain("file_upload");
   });
 
-  test('MCP server module can be imported', async () => {
+  test("MCP server module can be imported", async () => {
     // Verify the server module loads without errors
-    const mod = await import('../../src/mcp/server.ts');
-    expect(typeof mod.startMcpServer).toBe('function');
-    expect(typeof mod.handleToolCall).toBe('function');
+    const mod = await import("../../src/mcp/server.ts");
+    expect(typeof mod.startMcpServer).toBe("function");
+    expect(typeof mod.handleToolCall).toBe("function");
   });
 });

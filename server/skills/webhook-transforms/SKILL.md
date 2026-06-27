@@ -21,6 +21,7 @@ mutating: true
 ## Contract
 
 This skill guarantees:
+
 - External events are transformed into brain pages with proper citations
 - Raw payloads are preserved (dead-letter queue if transform fails)
 - Entity extraction runs on every transformed event
@@ -53,18 +54,21 @@ This skill guarantees:
 ## Example Transforms
 
 ### SMS Received
+
 ```
 Input: {from: "+1555...", body: "Meeting moved to 3pm", timestamp: "..."}
 Output: Timeline entry on sender's brain page + task update if action item detected
 ```
 
 ### Meeting Completed
+
 ```
 Input: {title: "Weekly sync", attendees: [...], transcript: "...", summary: "..."}
 Output: Delegate to meeting-ingestion skill
 ```
 
 ### Social Mention
+
 ```
 Input: {platform: "twitter", author: "@handle", text: "...", url: "..."}
 Output: Brain page in media/ + entity extraction + backlinks

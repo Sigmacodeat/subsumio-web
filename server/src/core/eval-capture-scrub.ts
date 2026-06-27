@@ -23,7 +23,7 @@
  * module itself.
  */
 
-const REDACTED = '[REDACTED]';
+const REDACTED = "[REDACTED]";
 
 // Emails: RFC-5322-adjacent. Keeps the host so replay debug can say "an
 // email was redacted" without leaking the local-part.
@@ -32,8 +32,7 @@ const EMAIL_RE = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g;
 // Phones: US (###-###-####, (###) ###-####, ##########) and E.164 (+country).
 // Reject short strings of 10 digits with no separators/prefix to limit
 // false positives on order numbers and other generic long integers.
-const PHONE_RE =
-  /(?<!\d)(?:\+\d{1,3}[\s.-]?)?(?:\(\d{3}\)\s?|\d{3}[\s.-])\d{3}[\s.-]?\d{4}(?!\d)/g;
+const PHONE_RE = /(?<!\d)(?:\+\d{1,3}[\s.-]?)?(?:\(\d{3}\)\s?|\d{3}[\s.-])\d{3}[\s.-]?\d{4}(?!\d)/g;
 
 // SSN: XXX-XX-XXXX with dashes required (bare 9-digit blobs are too
 // ambiguous — phone numbers, account IDs).
@@ -41,8 +40,7 @@ const SSN_RE = /(?<!\d)\d{3}-\d{2}-\d{4}(?!\d)/g;
 
 // JWT: three base64url segments. Lookbehind prevents partial matches in
 // the middle of longer identifiers.
-const JWT_RE =
-  /\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\b/g;
+const JWT_RE = /\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\b/g;
 
 // Bearer tokens after Authorization header literal or "Bearer " prefix.
 const BEARER_RE = /\b(?:bearer|Bearer)\s+[A-Za-z0-9._~+/-]{10,}=*/g;
@@ -95,7 +93,7 @@ export function scrubPii(input: string): string {
 
   // 6. Credit cards: every candidate must pass Luhn to be replaced.
   out = out.replace(CC_RE, (match) => {
-    const digitsOnly = match.replace(/\D/g, '');
+    const digitsOnly = match.replace(/\D/g, "");
     if (digitsOnly.length < 13 || digitsOnly.length > 19) return match;
     return luhnOk(digitsOnly) ? REDACTED : match;
   });

@@ -44,7 +44,7 @@ export {
   type TarballExtractResult,
   type TarballPackOptions,
   type TarballPackResult,
-} from '../skillpack/tarball.ts';
+} from "../skillpack/tarball.ts";
 
 // TOFU trust prompts. v0.37 fingerprints by author + pinned-commit +
 // tarball SHA + tier; v0.38 reuses this for schema packs (same trust
@@ -56,7 +56,7 @@ export {
   type SkillpackTier,
   type TrustPromptDecision,
   type TrustPromptInput,
-} from '../skillpack/trust-prompt.ts';
+} from "../skillpack/trust-prompt.ts";
 
 // Registry HTTP client (fetch + etag + soft-TTL + stale-fallback).
 // Artifact-shape-agnostic — the JSON schema for the registry entry is
@@ -73,7 +73,7 @@ export {
   type LoadedRegistry,
   type LoadRegistryOptions,
   type RegistryClientErrorCode,
-} from '../skillpack/registry-client.ts';
+} from "../skillpack/registry-client.ts";
 
 // Remote source resolution (git clone via git-remote.ts SSRF-hardened
 // path; tarball URL download). Used by `scaffold` for both skillpack
@@ -87,7 +87,7 @@ export {
   type ResolvedSourceKind,
   type ResolveSourceOptions,
   type SpecKind,
-} from '../skillpack/remote-source.ts';
+} from "../skillpack/remote-source.ts";
 
 // Registry schema definitions for tier rubric (CORE / BADGES /
 // effective_tier). v0.37 used for skillpacks; v0.38 schema-packs
@@ -108,7 +108,7 @@ export {
   type RegistrySchemaErrorCode,
   type RegistrySource,
   type RegistryTier,
-} from '../skillpack/registry-schema.ts';
+} from "../skillpack/registry-schema.ts";
 
 // Third-party scaffold pipeline. v0.37's `scaffold` command pattern —
 // resolve spec → fetch → validate → cache → display runbook. v0.38
@@ -121,4 +121,4 @@ export {
   type ScaffoldThirdPartyOptions,
   type ScaffoldThirdPartyResult,
   type ScaffoldThirdPartyStatus,
-} from '../skillpack/scaffold-third-party.ts';
+} from "../skillpack/scaffold-third-party.ts";

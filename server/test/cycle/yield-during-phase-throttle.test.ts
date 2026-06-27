@@ -22,11 +22,11 @@
 // design — the throttle starts the clock at phase entry. For a
 // healthy fast run, 0 fires is correct.
 
-import { describe, test, expect, beforeAll, afterAll, beforeEach } from 'bun:test';
-import { PGLiteEngine } from '../../src/core/pglite-engine.ts';
-import { runPhaseExtractAtoms } from '../../src/core/cycle/extract-atoms.ts';
-import { resetPgliteState } from '../helpers/reset-pglite.ts';
-import type { ChatResult, ChatOpts } from '../../src/core/ai/gateway.ts';
+import { describe, test, expect, beforeAll, afterAll, beforeEach } from "bun:test";
+import { PGLiteEngine } from "../../src/core/pglite-engine.ts";
+import { runPhaseExtractAtoms } from "../../src/core/cycle/extract-atoms.ts";
+import { resetPgliteState } from "../helpers/reset-pglite.ts";
+import type { ChatResult, ChatOpts } from "../../src/core/ai/gateway.ts";
 
 let engine: PGLiteEngine;
 
@@ -46,27 +46,29 @@ beforeEach(async () => {
 
 function stubChat(): (o: ChatOpts) => Promise<ChatResult> {
   return async (_o: ChatOpts) => ({
-    text: JSON.stringify([{ title: 'T', atom_type: 'insight', body: 'b' }]),
-    blocks: [{ type: 'text', text: '' }],
-    stopReason: 'end',
+    text: JSON.stringify([{ title: "T", atom_type: "insight", body: "b" }]),
+    blocks: [{ type: "text", text: "" }],
+    stopReason: "end",
     usage: { input_tokens: 10, output_tokens: 10, cache_read_tokens: 0, cache_creation_tokens: 0 },
-    model: 'anthropic:claude-haiku-4-5',
-    providerId: 'anthropic',
+    model: "anthropic:claude-haiku-4-5",
+    providerId: "anthropic",
   });
 }
 
-describe('extract_atoms yieldDuringPhase throttle (T3)', () => {
-  test('fast iterations within 30s fire 0 yields (throttle blocks first 30s after start)', async () => {
+describe("extract_atoms yieldDuringPhase throttle (T3)", () => {
+  test("fast iterations within 30s fire 0 yields (throttle blocks first 30s after start)", async () => {
     const yieldTimestamps: number[] = [];
-    const yieldFn = async () => { yieldTimestamps.push(Date.now()); };
+    const yieldFn = async () => {
+      yieldTimestamps.push(Date.now());
+    };
     await runPhaseExtractAtoms(engine, {
-      sourceId: 'default',
+      sourceId: "default",
       _transcripts: [
-        { filePath: '/tmp/a', content: 'a', contentHash: 'a1'.repeat(8) },
-        { filePath: '/tmp/b', content: 'b', contentHash: 'b2'.repeat(8) },
-        { filePath: '/tmp/c', content: 'c', contentHash: 'c3'.repeat(8) },
-        { filePath: '/tmp/d', content: 'd', contentHash: 'd4'.repeat(8) },
-        { filePath: '/tmp/e', content: 'e', contentHash: 'e5'.repeat(8) },
+        { filePath: "/tmp/a", content: "a", contentHash: "a1".repeat(8) },
+        { filePath: "/tmp/b", content: "b", contentHash: "b2".repeat(8) },
+        { filePath: "/tmp/c", content: "c", contentHash: "c3".repeat(8) },
+        { filePath: "/tmp/d", content: "d", contentHash: "d4".repeat(8) },
+        { filePath: "/tmp/e", content: "e", contentHash: "e5".repeat(8) },
       ],
       _pages: [],
       _chat: stubChat(),
@@ -80,35 +82,37 @@ describe('extract_atoms yieldDuringPhase throttle (T3)', () => {
     expect(yieldTimestamps.length).toBe(0);
   });
 
-  test('phase tolerates undefined yieldDuringPhase', async () => {
+  test("phase tolerates undefined yieldDuringPhase", async () => {
     // Sanity: phase doesn't crash without the hook.
     const result = await runPhaseExtractAtoms(engine, {
-      sourceId: 'default',
+      sourceId: "default",
       _transcripts: [],
       _pages: [],
     });
-    expect(result.phase).toBe('extract_atoms');
+    expect(result.phase).toBe("extract_atoms");
   });
 
-  test('yieldDuringPhase throw is non-fatal (logged, not propagated)', async () => {
-    const throwingYield = async () => { throw new Error('lock stolen'); };
+  test("yieldDuringPhase throw is non-fatal (logged, not propagated)", async () => {
+    const throwingYield = async () => {
+      throw new Error("lock stolen");
+    };
     // Even if yieldDuringPhase throws (would fire after 30s wall-clock),
     // phase doesn't crash. We can't easily trigger >30s in a test, but
     // we CAN verify the catch wrapper exists by reading the source.
-    const fs = await import('fs');
+    const fs = await import("fs");
     const src = fs.readFileSync(
-      new URL('../../src/core/cycle/extract-atoms.ts', import.meta.url),
-      'utf-8',
+      new URL("../../src/core/cycle/extract-atoms.ts", import.meta.url),
+      "utf-8"
     );
     expect(src).toMatch(/try\s*\{\s*await\s+opts\.yieldDuringPhase\(\)/);
     expect(src).toMatch(/yieldDuringPhase failed \(non-fatal\)/);
     // Phase itself runs without throwing.
     const result = await runPhaseExtractAtoms(engine, {
-      sourceId: 'default',
+      sourceId: "default",
       _transcripts: [],
       _pages: [],
       yieldDuringPhase: throwingYield,
     });
-    expect(result.phase).toBe('extract_atoms');
+    expect(result.phase).toBe("extract_atoms");
   });
 });

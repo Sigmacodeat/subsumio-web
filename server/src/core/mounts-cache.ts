@@ -24,16 +24,16 @@
  * Only writeMountsCache touches disk.
  */
 
-import { readFileSync, existsSync, mkdirSync, writeFileSync, rmSync, renameSync } from 'fs';
-import { join } from 'path';
-import { homedir } from 'os';
-import { parseResolverEntries } from './check-resolvable.ts';
-import { loadSkillTriggerIndex } from './skill-trigger-index.ts';
-import { HOST_BRAIN_ID, type MountEntry } from './brain-registry.ts';
+import { readFileSync, existsSync, mkdirSync, writeFileSync, rmSync, renameSync } from "fs";
+import { join } from "path";
+import { homedir } from "os";
+import { parseResolverEntries } from "./check-resolvable.ts";
+import { loadSkillTriggerIndex } from "./skill-trigger-index.ts";
+import { HOST_BRAIN_ID, type MountEntry } from "./brain-registry.ts";
 
 /** Default location of the aggregated cache directory. */
 function getMountsCacheDir(): string {
-  return join(homedir(), '.gbrain', 'mounts-cache');
+  return join(homedir(), ".gbrain", "mounts-cache");
 }
 
 /** A composed resolver entry with full provenance for audit + dispatch. */
@@ -102,15 +102,15 @@ export interface ComposedManifest {
 }
 
 /** Default skills-subdir within a mount's clone. */
-const DEFAULT_SKILLS_SUBDIR = 'skills';
+const DEFAULT_SKILLS_SUBDIR = "skills";
 
 /** Extract the filename-part of a skills-relative path (e.g. 'query/SKILL.md' → 'query'). */
 function skillNameFromRelPath(relPath: string): string {
   // 'skills/query/SKILL.md' → 'query'; 'query/SKILL.md' → 'query'
-  const parts = relPath.split('/');
-  const skillIdx = parts.indexOf('skills');
+  const parts = relPath.split("/");
+  const skillIdx = parts.indexOf("skills");
   const start = skillIdx >= 0 ? skillIdx + 1 : 0;
-  if (start >= parts.length) return '';
+  if (start >= parts.length) return "";
   return parts[start];
 }
 
@@ -126,11 +126,17 @@ function skillNameFromRelPath(relPath: string): string {
 export function composeResolvers(
   hostSkillsDir: string,
   mounts: MountEntry[],
-  opts: { readFile?: (path: string) => string | null } = {},
+  opts: { readFile?: (path: string) => string | null } = {}
 ): ComposedResolver {
-  const readFile = opts.readFile ?? ((p: string) => {
-    try { return existsSync(p) ? readFileSync(p, 'utf-8') : null; } catch { return null; }
-  });
+  const readFile =
+    opts.readFile ??
+    ((p: string) => {
+      try {
+        return existsSync(p) ? readFileSync(p, "utf-8") : null;
+      } catch {
+        return null;
+      }
+    });
 
   // v0.41.11: route host trigger discovery through the shared primitive
   // so cross-brain mounted dispatch sees the same merged index that
@@ -141,18 +147,18 @@ export function composeResolvers(
   // when the caller provides a custom reader (used in some test paths);
   // when the caller-supplied reader returns null AND the loader returns
   // empty, the resulting empty entry list is preserved.
-  const hostResolverPath = join(hostSkillsDir, 'RESOLVER.md');
+  const hostResolverPath = join(hostSkillsDir, "RESOLVER.md");
   // Touch the injected readFile so existing tests that count read calls
   // (none currently, but the contract is public) stay stable.
   readFile(hostResolverPath);
   const hostRawEntries = loadSkillTriggerIndex(hostSkillsDir);
 
   // Host entries: fully qualified against the host skills dir.
-  const hostEntries: ComposedResolverEntry[] = hostRawEntries.map(e => {
+  const hostEntries: ComposedResolverEntry[] = hostRawEntries.map((e) => {
     const isExternal = e.isGStack;
     const abs = isExternal
       ? e.skillPath
-      : join(hostSkillsDir, e.skillPath.replace(/^skills\//, ''));
+      : join(hostSkillsDir, e.skillPath.replace(/^skills\//, ""));
     const name = isExternal ? e.skillPath : skillNameFromRelPath(e.skillPath);
     return {
       trigger: e.trigger,
@@ -178,7 +184,7 @@ export function composeResolvers(
   for (const mount of mounts) {
     if (mount.enabled === false) continue;
     const mountSkillsDir = join(mount.path, DEFAULT_SKILLS_SUBDIR);
-    const resolverPath = join(mountSkillsDir, 'RESOLVER.md');
+    const resolverPath = join(mountSkillsDir, "RESOLVER.md");
     const content = readFile(resolverPath);
     // v0.41.11: route mount trigger discovery through the shared
     // primitive too — same drift-bug-class fix as the host path above.
@@ -187,13 +193,13 @@ export function composeResolvers(
     // (neither RESOLVER.md nor any frontmatter triggers) contributes
     // nothing. Not an error.
     if (rawEntries.length === 0 && !content) continue;
-    const composed: ComposedResolverEntry[] = rawEntries.map(e => {
+    const composed: ComposedResolverEntry[] = rawEntries.map((e) => {
       const isExternal = e.isGStack;
       const shortName = isExternal ? e.skillPath : skillNameFromRelPath(e.skillPath);
       const qualifiedName = isExternal ? shortName : `${mount.id}::${shortName}`;
       const abs = isExternal
         ? e.skillPath
-        : join(mountSkillsDir, e.skillPath.replace(/^skills\//, ''));
+        : join(mountSkillsDir, e.skillPath.replace(/^skills\//, ""));
       return {
         trigger: e.trigger,
         qualifiedName,
@@ -207,7 +213,7 @@ export function composeResolvers(
 
     for (const entry of composed) {
       if (entry.isExternal) continue;
-      const shortName = entry.qualifiedName.split('::').pop() ?? '';
+      const shortName = entry.qualifiedName.split("::").pop() ?? "";
       if (!shortName) continue;
       if (hostSkillNames.has(shortName)) {
         // Shadow: host wins. Record so doctor can emit a warning.
@@ -234,7 +240,7 @@ export function composeResolvers(
   // Shadows: group by host entry.
   const shadows: ShadowInfo[] = [];
   for (const [name, shadowedMounts] of shadowedByName.entries()) {
-    const hostEntry = hostEntries.find(h => h.qualifiedName === name && !h.isExternal);
+    const hostEntry = hostEntries.find((h) => h.qualifiedName === name && !h.isExternal);
     if (!hostEntry) continue;
     shadows.push({
       skillName: name,
@@ -269,11 +275,20 @@ export function composeResolvers(
  * file is absent or malformed (propagating the same forgiving semantics as
  * check-resolvable's loadManifest).
  */
-function readManifestSkills(skillsDir: string, readFile?: (p: string) => string | null): Array<{ name: string; path: string }> {
-  const path = join(skillsDir, 'manifest.json');
-  const reader = readFile ?? ((p: string) => {
-    try { return existsSync(p) ? readFileSync(p, 'utf-8') : null; } catch { return null; }
-  });
+function readManifestSkills(
+  skillsDir: string,
+  readFile?: (p: string) => string | null
+): Array<{ name: string; path: string }> {
+  const path = join(skillsDir, "manifest.json");
+  const reader =
+    readFile ??
+    ((p: string) => {
+      try {
+        return existsSync(p) ? readFileSync(p, "utf-8") : null;
+      } catch {
+        return null;
+      }
+    });
   const content = reader(path);
   if (!content) return [];
   try {
@@ -292,15 +307,15 @@ function readManifestSkills(skillsDir: string, readFile?: (p: string) => string 
 export function composeManifests(
   hostSkillsDir: string,
   mounts: MountEntry[],
-  opts: { readFile?: (path: string) => string | null } = {},
+  opts: { readFile?: (path: string) => string | null } = {}
 ): ComposedManifest {
   const hostSkills = readManifestSkills(hostSkillsDir, opts.readFile);
-  const hostEntries: ManifestEntry[] = hostSkills.map(s => ({
+  const hostEntries: ManifestEntry[] = hostSkills.map((s) => ({
     name: s.name,
     absolutePath: join(hostSkillsDir, s.path),
     brainId: HOST_BRAIN_ID,
   }));
-  const hostNames = new Set(hostEntries.map(e => e.name));
+  const hostNames = new Set(hostEntries.map((e) => e.name));
 
   // Mount entries always get their namespace-qualified name regardless of
   // shadow by a host skill. The namespace form `yc-media::ingest` must stay
@@ -335,19 +350,19 @@ export function composeManifests(
  */
 export function renderResolverMarkdown(composed: ComposedResolver): string {
   const lines: string[] = [];
-  lines.push('# GBrain Skill Resolver (aggregated)');
-  lines.push('');
-  lines.push('Auto-generated by `gbrain mounts add|remove|sync`. Do not edit by hand.');
-  lines.push('Host agents (your OpenClaw / Claude Code install) should prefer this file over');
-  lines.push('the repo-checked-in `skills/RESOLVER.md` when it exists.');
-  lines.push('');
-  lines.push('See `docs/architecture/brains-and-sources.md` for the mental model.');
-  lines.push('');
+  lines.push("# GBrain Skill Resolver (aggregated)");
+  lines.push("");
+  lines.push("Auto-generated by `gbrain mounts add|remove|sync`. Do not edit by hand.");
+  lines.push("Host agents (your OpenClaw / Claude Code install) should prefer this file over");
+  lines.push("the repo-checked-in `skills/RESOLVER.md` when it exists.");
+  lines.push("");
+  lines.push("See `docs/architecture/brains-and-sources.md` for the mental model.");
+  lines.push("");
 
   // Group entries by section in insertion order.
   const bySection = new Map<string, ComposedResolverEntry[]>();
   for (const e of composed.entries) {
-    const key = e.section || '(uncategorized)';
+    const key = e.section || "(uncategorized)";
     const bucket = bySection.get(key) ?? [];
     bucket.push(e);
     bySection.set(key, bucket);
@@ -355,57 +370,63 @@ export function renderResolverMarkdown(composed: ComposedResolver): string {
 
   for (const [section, entries] of bySection.entries()) {
     lines.push(`## ${section}`);
-    lines.push('');
-    lines.push('| Trigger | Skill | Brain |');
-    lines.push('|---------|-------|-------|');
+    lines.push("");
+    lines.push("| Trigger | Skill | Brain |");
+    lines.push("|---------|-------|-------|");
     for (const e of entries) {
       const skillCol = e.isExternal ? e.absolutePath : `\`${e.absolutePath}\``;
       lines.push(`| ${e.trigger} | ${skillCol} | ${e.brainId} |`);
     }
-    lines.push('');
+    lines.push("");
   }
 
   if (composed.shadows.length > 0) {
-    lines.push('## Shadows');
-    lines.push('');
-    lines.push('Host skills that shadow mount skills of the same name:');
-    lines.push('');
+    lines.push("## Shadows");
+    lines.push("");
+    lines.push("Host skills that shadow mount skills of the same name:");
+    lines.push("");
     for (const s of composed.shadows) {
-      lines.push(`- \`${s.skillName}\` (host) shadows ${s.shadowedMounts.map(m => `\`${m.mountId}::${s.skillName}\``).join(', ')}`);
+      lines.push(
+        `- \`${s.skillName}\` (host) shadows ${s.shadowedMounts.map((m) => `\`${m.mountId}::${s.skillName}\``).join(", ")}`
+      );
     }
-    lines.push('');
+    lines.push("");
   }
 
   if (composed.ambiguities.length > 0) {
-    lines.push('## Ambiguous bare names');
-    lines.push('');
-    lines.push('These skill names are defined in multiple mounts. Use the explicit');
-    lines.push('namespace form (e.g. `yc-media::ingest`) to disambiguate.');
-    lines.push('');
+    lines.push("## Ambiguous bare names");
+    lines.push("");
+    lines.push("These skill names are defined in multiple mounts. Use the explicit");
+    lines.push("namespace form (e.g. `yc-media::ingest`) to disambiguate.");
+    lines.push("");
     for (const a of composed.ambiguities) {
-      lines.push(`- \`${a.skillName}\` → ${a.mountIds.map(m => `\`${m}::${a.skillName}\``).join(', ')}`);
+      lines.push(
+        `- \`${a.skillName}\` → ${a.mountIds.map((m) => `\`${m}::${a.skillName}\``).join(", ")}`
+      );
     }
-    lines.push('');
+    lines.push("");
   }
 
-  return lines.join('\n');
+  return lines.join("\n");
 }
 
 /** Render the composed manifest as manifest.json bytes. */
 export function renderManifestJson(composed: ComposedManifest): string {
-  return JSON.stringify(
-    {
-      generated_by: 'gbrain mounts',
-      generated_at: new Date().toISOString(),
-      skills: composed.entries.map(e => ({
-        name: e.name,
-        path: e.absolutePath,
-        brain: e.brainId,
-      })),
-    },
-    null,
-    2,
-  ) + '\n';
+  return (
+    JSON.stringify(
+      {
+        generated_by: "gbrain mounts",
+        generated_at: new Date().toISOString(),
+        skills: composed.entries.map((e) => ({
+          name: e.name,
+          path: e.absolutePath,
+          brain: e.brainId,
+        })),
+      },
+      null,
+      2
+    ) + "\n"
+  );
 }
 
 /**
@@ -416,7 +437,7 @@ export function renderManifestJson(composed: ComposedManifest): string {
 export function writeMountsCache(
   hostSkillsDir: string,
   mounts: MountEntry[],
-  opts: { cacheDir?: string } = {},
+  opts: { cacheDir?: string } = {}
 ): { resolverPath: string; manifestPath: string } {
   const cacheDir = opts.cacheDir ?? getMountsCacheDir();
   mkdirSync(cacheDir, { recursive: true });
@@ -424,8 +445,8 @@ export function writeMountsCache(
   const resolver = composeResolvers(hostSkillsDir, mounts);
   const manifest = composeManifests(hostSkillsDir, mounts);
 
-  const resolverPath = join(cacheDir, 'RESOLVER.md');
-  const manifestPath = join(cacheDir, 'manifest.json');
+  const resolverPath = join(cacheDir, "RESOLVER.md");
+  const manifestPath = join(cacheDir, "manifest.json");
 
   // Unique tmp names per call so concurrent `gbrain mounts add|remove`
   // invocations don't clobber each other's .tmp file. The two-file swap

@@ -27,7 +27,7 @@ export const POST = createHandler(
     if (!rl.ok) {
       return Response.json(
         { error: "rate_limited", message: "Zu viele Versuche. Bitte später versuchen." },
-        { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } },
+        { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } }
       );
     }
 

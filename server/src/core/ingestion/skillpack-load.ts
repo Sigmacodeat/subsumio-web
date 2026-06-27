@@ -36,19 +36,17 @@
  * breaking manifest change.
  */
 
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import type { IngestionSource } from './types.ts';
-import { INGESTION_SOURCE_API_VERSION } from './types.ts';
+import * as fs from "node:fs";
+import * as path from "node:path";
+import type { IngestionSource } from "./types.ts";
+import { INGESTION_SOURCE_API_VERSION } from "./types.ts";
 
 /** Currently-supported api_version values. Reverse aliases for older
  *  versions live here when we ship contract v2 — until then there's just
  *  the canonical v1. */
-const COMPATIBLE_API_VERSIONS: ReadonlySet<string> = new Set([
-  INGESTION_SOURCE_API_VERSION,
-]);
+const COMPATIBLE_API_VERSIONS: ReadonlySet<string> = new Set([INGESTION_SOURCE_API_VERSION]);
 
-const SUPPORTED_PLUGIN_VERSION = 'gbrain-plugin-v1';
+const SUPPORTED_PLUGIN_VERSION = "gbrain-plugin-v1";
 
 export interface IngestionSourceDeclaration {
   /** Source kind taxonomy. Must be unique across all loaded sources. */
@@ -74,8 +72,7 @@ interface IngestionSourceManifestSlice {
 
 /** Factory contract — default export shape every skillpack source module
  *  must conform to. */
-export type IngestionSourceFactory =
-  (config: Record<string, unknown>) => IngestionSource;
+export type IngestionSourceFactory = (config: Record<string, unknown>) => IngestionSource;
 
 export interface LoadedIngestionSource {
   /** The plugin/skillpack that shipped this source. For error messages
@@ -117,10 +114,13 @@ export interface LoadSkillpackSourcesOpts {
  * loading entirely so the user sees the loud-fail message in doctor.
  */
 export async function loadSkillpackSources(
-  opts: LoadSkillpackSourcesOpts = {},
+  opts: LoadSkillpackSourcesOpts = {}
 ): Promise<SkillpackSourceLoadResult> {
-  const raw = opts.envPath ?? process.env.GBRAIN_PLUGIN_PATH ?? '';
-  const paths = raw.split(':').map((s) => s.trim()).filter(Boolean);
+  const raw = opts.envPath ?? process.env.GBRAIN_PLUGIN_PATH ?? "";
+  const paths = raw
+    .split(":")
+    .map((s) => s.trim())
+    .filter(Boolean);
   const result: SkillpackSourceLoadResult = { sources: [], warnings: [] };
 
   // Left-wins collision tracking on `kind`. Two skillpacks declaring the
@@ -144,7 +144,7 @@ export async function loadSkillpackSources(
       continue;
     }
 
-    const manifestPath = path.join(p, 'gbrain.plugin.json');
+    const manifestPath = path.join(p, "gbrain.plugin.json");
     if (!fs.existsSync(manifestPath)) {
       // Not an error — many plugins ship only subagents and skip the
       // ingestion_sources field. Silently move on.
@@ -153,10 +153,10 @@ export async function loadSkillpackSources(
 
     let manifest: IngestionSourceManifestSlice;
     try {
-      manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+      manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
     } catch (e) {
       result.warnings.push(
-        `[ingestion-load] invalid manifest JSON at ${manifestPath}: ${e instanceof Error ? e.message : String(e)}`,
+        `[ingestion-load] invalid manifest JSON at ${manifestPath}: ${e instanceof Error ? e.message : String(e)}`
       );
       continue;
     }
@@ -164,7 +164,7 @@ export async function loadSkillpackSources(
     if (manifest.plugin_version !== SUPPORTED_PLUGIN_VERSION) {
       result.warnings.push(
         `[ingestion-load] unsupported plugin_version '${manifest.plugin_version}' at ${manifestPath} ` +
-          `(gbrain supports '${SUPPORTED_PLUGIN_VERSION}')`,
+          `(gbrain supports '${SUPPORTED_PLUGIN_VERSION}')`
       );
       continue;
     }
@@ -174,9 +174,9 @@ export async function loadSkillpackSources(
       continue;
     }
 
-    if (typeof manifest.name !== 'string' || manifest.name.length === 0) {
+    if (typeof manifest.name !== "string" || manifest.name.length === 0) {
       result.warnings.push(
-        `[ingestion-load] manifest at ${manifestPath} missing required "name" field; skipping`,
+        `[ingestion-load] manifest at ${manifestPath} missing required "name" field; skipping`
       );
       continue;
     }
@@ -184,9 +184,7 @@ export async function loadSkillpackSources(
     for (const decl of manifest.ingestion_sources) {
       const declErr = validateDeclaration(decl);
       if (declErr) {
-        result.warnings.push(
-          `[ingestion-load] ${manifest.name} declaration rejected: ${declErr}`,
-        );
+        result.warnings.push(`[ingestion-load] ${manifest.name} declaration rejected: ${declErr}`);
         continue;
       }
 
@@ -200,7 +198,7 @@ export async function loadSkillpackSources(
             `against a different contract version. Fix: upgrade the ` +
             `skillpack (publisher needs to rebuild against the new ` +
             `IngestionSource contract) OR downgrade gbrain. Skillpack docs: ` +
-            `https://github.com/garrytan/gbrain/blob/master/docs/ingestion-source-skillpack.md`,
+            `https://github.com/garrytan/gbrain/blob/master/docs/ingestion-source-skillpack.md`
         );
         continue;
       }
@@ -210,7 +208,7 @@ export async function loadSkillpackSources(
         result.warnings.push(
           `[ingestion-load] kind collision: source '${decl.kind}' from ` +
             `'${manifest.name}' at ${p} is shadowed by earlier ` +
-            `'${prior.pluginName}' at ${prior.pluginRoot} (first wins)`,
+            `'${prior.pluginName}' at ${prior.pluginRoot} (first wins)`
         );
         continue;
       }
@@ -220,14 +218,14 @@ export async function loadSkillpackSources(
       if (!modulePath.startsWith(p + path.sep) && modulePath !== p) {
         result.warnings.push(
           `[ingestion-load] ${manifest.name} source '${decl.kind}' module ` +
-            `path '${decl.module}' escapes plugin root; rejected`,
+            `path '${decl.module}' escapes plugin root; rejected`
         );
         continue;
       }
       if (!fs.existsSync(modulePath)) {
         result.warnings.push(
           `[ingestion-load] ${manifest.name} source '${decl.kind}' module ` +
-            `not found at ${modulePath}; rejected`,
+            `not found at ${modulePath}; rejected`
         );
         continue;
       }
@@ -241,7 +239,7 @@ export async function loadSkillpackSources(
       } catch (e) {
         result.warnings.push(
           `[ingestion-load] ${manifest.name} source '${decl.kind}' failed ` +
-            `to import: ${e instanceof Error ? e.message : String(e)}`,
+            `to import: ${e instanceof Error ? e.message : String(e)}`
         );
         continue;
       }
@@ -255,7 +253,7 @@ export async function loadSkillpackSources(
         result.warnings.push(
           `[ingestion-load] ${manifest.name} source '${decl.kind}' module ` +
             `${modulePath} does not export a factory function as its default. ` +
-            `Expected: \`export default function createSource(config) { return { id, kind, start, stop }; }\``,
+            `Expected: \`export default function createSource(config) { return { id, kind, start, stop }; }\``
         );
         continue;
       }
@@ -279,26 +277,30 @@ export async function loadSkillpackSources(
  * string on failure. Pure function, no I/O.
  */
 function validateDeclaration(decl: unknown): string | null {
-  if (decl === null || typeof decl !== 'object') {
-    return 'declaration must be an object';
+  if (decl === null || typeof decl !== "object") {
+    return "declaration must be an object";
   }
   const d = decl as Record<string, unknown>;
-  if (typeof d.kind !== 'string' || d.kind.length === 0) {
-    return 'kind must be a non-empty string';
+  if (typeof d.kind !== "string" || d.kind.length === 0) {
+    return "kind must be a non-empty string";
   }
-  if (typeof d.module !== 'string' || d.module.length === 0) {
+  if (typeof d.module !== "string" || d.module.length === 0) {
     return `source '${d.kind}': module must be a non-empty string`;
   }
-  if (typeof d.api_version !== 'string' || d.api_version.length === 0) {
+  if (typeof d.api_version !== "string" || d.api_version.length === 0) {
     return `source '${d.kind}': api_version must be a non-empty string`;
   }
   if (d.default_config !== undefined) {
-    if (d.default_config === null || typeof d.default_config !== 'object' || Array.isArray(d.default_config)) {
+    if (
+      d.default_config === null ||
+      typeof d.default_config !== "object" ||
+      Array.isArray(d.default_config)
+    ) {
       return `source '${d.kind}': default_config must be a plain object when present`;
     }
   }
   if (d.permissions !== undefined) {
-    if (!Array.isArray(d.permissions) || !d.permissions.every((p) => typeof p === 'string')) {
+    if (!Array.isArray(d.permissions) || !d.permissions.every((p) => typeof p === "string")) {
       return `source '${d.kind}': permissions must be an array of strings when present`;
     }
   }
@@ -307,16 +309,16 @@ function validateDeclaration(decl: unknown): string | null {
 
 /** Extract a factory function from a loaded module (ESM or CJS-interop). */
 function extractFactory(mod: unknown): IngestionSourceFactory | null {
-  if (mod === null || typeof mod !== 'object') return null;
+  if (mod === null || typeof mod !== "object") return null;
   const m = mod as Record<string, unknown>;
   // ESM default export: `import` produces an object whose `default`
   // property is the value we want.
-  if (typeof m.default === 'function') {
+  if (typeof m.default === "function") {
     return m.default as IngestionSourceFactory;
   }
   // Some CJS-interop modules surface their default directly as the
   // exports object. Treat the module itself as the factory if callable.
-  if (typeof mod === 'function') {
+  if (typeof mod === "function") {
     return mod as IngestionSourceFactory;
   }
   return null;
@@ -326,7 +328,7 @@ function rejectIfNotAbsolute(p: string): string | null {
   if (/^[a-z][a-z0-9+.-]*:\/\//i.test(p)) {
     return `[ingestion-load] remote URL rejected: ${p}`;
   }
-  if (p.startsWith('~')) {
+  if (p.startsWith("~")) {
     return `[ingestion-load] ~-prefixed path rejected (expand explicitly): ${p}`;
   }
   if (!path.isAbsolute(p)) {

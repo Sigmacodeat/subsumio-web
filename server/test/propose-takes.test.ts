@@ -14,7 +14,7 @@
  *  - parseExtractorOutput unit tests for the raw JSON parser
  */
 
-import { describe, test, expect } from 'bun:test';
+import { describe, test, expect } from "bun:test";
 import {
   runPhaseProposeTakes,
   parseExtractorOutput,
@@ -24,10 +24,10 @@ import {
   PROPOSE_TAKES_PROMPT_VERSION,
   type ProposeTakesExtractor,
   type ProposedTake,
-} from '../src/core/cycle/propose-takes.ts';
-import type { OperationContext } from '../src/core/operations.ts';
-import type { BrainEngine } from '../src/core/engine.ts';
-import type { Page } from '../src/core/types.ts';
+} from "../src/core/cycle/propose-takes.ts";
+import type { OperationContext } from "../src/core/operations.ts";
+import type { BrainEngine } from "../src/core/engine.ts";
+import type { Page } from "../src/core/types.ts";
 
 // ─── Mock engine ────────────────────────────────────────────────────
 
@@ -44,14 +44,14 @@ function buildMockEngine(opts: {
   const existing = opts.existingProposals ?? new Set<string>();
 
   const engine = {
-    kind: 'pglite',
+    kind: "pglite",
     async listPages() {
       return opts.pages;
     },
     async executeRaw<T>(sql: string, params?: unknown[]): Promise<T[]> {
       captured.push({ sql, params: params ?? [] });
       // SELECT idempotency check
-      if (sql.includes('SELECT id FROM take_proposals')) {
+      if (sql.includes("SELECT id FROM take_proposals")) {
         const [sourceId, slug, ch, pv] = params ?? [];
         const key = `${sourceId}|${slug}|${ch}|${pv}`;
         if (existing.has(key)) return [{ id: 1 } as unknown as T];
@@ -69,12 +69,12 @@ function buildPage(opts: { slug: string; body: string; sourceId?: string }): Pag
   return {
     id: 1,
     slug: opts.slug,
-    type: 'analysis',
+    type: "analysis",
     title: opts.slug,
     compiled_truth: opts.body,
-    timeline: '',
+    timeline: "",
     frontmatter: {},
-    source_id: opts.sourceId ?? 'default',
+    source_id: opts.sourceId ?? "default",
     created_at: new Date(),
     updated_at: new Date(),
   } as Page;
@@ -87,99 +87,101 @@ function buildCtx(engine: BrainEngine): OperationContext {
     logger: { info() {}, warn() {}, error() {} } as never,
     dryRun: false,
     remote: false,
-    sourceId: 'default',
+    sourceId: "default",
   };
 }
 
 // ─── parseExtractorOutput ───────────────────────────────────────────
 
-describe('parseExtractorOutput', () => {
-  test('parses a clean JSON array', () => {
-    const raw = '[{"claim_text":"Cities send messages","kind":"take","holder":"brain","weight":0.65}]';
+describe("parseExtractorOutput", () => {
+  test("parses a clean JSON array", () => {
+    const raw =
+      '[{"claim_text":"Cities send messages","kind":"take","holder":"brain","weight":0.65}]';
     const out = parseExtractorOutput(raw);
     expect(out).toHaveLength(1);
-    expect(out[0]!.claim_text).toBe('Cities send messages');
-    expect(out[0]!.kind).toBe('take');
+    expect(out[0]!.claim_text).toBe("Cities send messages");
+    expect(out[0]!.kind).toBe("take");
     expect(out[0]!.weight).toBe(0.65);
   });
 
-  test('strips markdown code fence wrapping', () => {
+  test("strips markdown code fence wrapping", () => {
     const raw = '```json\n[{"claim_text":"X","kind":"bet","holder":"world","weight":0.8}]\n```';
     const out = parseExtractorOutput(raw);
     expect(out).toHaveLength(1);
   });
 
-  test('accepts a single object as a one-element array', () => {
+  test("accepts a single object as a one-element array", () => {
     const raw = '{"claim_text":"Y","kind":"hunch","holder":"brain","weight":0.4}';
     const out = parseExtractorOutput(raw);
     expect(out).toHaveLength(1);
-    expect(out[0]!.kind).toBe('hunch');
+    expect(out[0]!.kind).toBe("hunch");
   });
 
-  test('skips leading prose before the JSON', () => {
-    const raw = 'Here are the takes:\n\n[{"claim_text":"Z","kind":"take","holder":"brain","weight":0.5}]';
+  test("skips leading prose before the JSON", () => {
+    const raw =
+      'Here are the takes:\n\n[{"claim_text":"Z","kind":"take","holder":"brain","weight":0.5}]';
     const out = parseExtractorOutput(raw);
     expect(out).toHaveLength(1);
   });
 
-  test('returns [] on empty input', () => {
-    expect(parseExtractorOutput('')).toEqual([]);
-    expect(parseExtractorOutput('   ')).toEqual([]);
+  test("returns [] on empty input", () => {
+    expect(parseExtractorOutput("")).toEqual([]);
+    expect(parseExtractorOutput("   ")).toEqual([]);
   });
 
-  test('returns [] on malformed JSON without throwing', () => {
-    expect(parseExtractorOutput('[not valid json')).toEqual([]);
-    expect(parseExtractorOutput('completely unrelated prose')).toEqual([]);
+  test("returns [] on malformed JSON without throwing", () => {
+    expect(parseExtractorOutput("[not valid json")).toEqual([]);
+    expect(parseExtractorOutput("completely unrelated prose")).toEqual([]);
   });
 
-  test('drops rows without claim_text and rows over 500 chars', () => {
-    const longClaim = 'x'.repeat(600);
+  test("drops rows without claim_text and rows over 500 chars", () => {
+    const longClaim = "x".repeat(600);
     const raw = JSON.stringify([
-      { kind: 'take', holder: 'brain', weight: 0.5 }, // no claim_text
-      { claim_text: longClaim, kind: 'take', holder: 'brain', weight: 0.5 },
-      { claim_text: 'valid', kind: 'take', holder: 'brain', weight: 0.5 },
+      { kind: "take", holder: "brain", weight: 0.5 }, // no claim_text
+      { claim_text: longClaim, kind: "take", holder: "brain", weight: 0.5 },
+      { claim_text: "valid", kind: "take", holder: "brain", weight: 0.5 },
     ]);
     expect(parseExtractorOutput(raw)).toHaveLength(1);
   });
 
   test('coerces unknown kind to "take" and clamps weight to [0,1]', () => {
     const raw = JSON.stringify([
-      { claim_text: 'a', kind: 'unknown_kind', holder: 'brain', weight: 2.5 },
-      { claim_text: 'b', kind: 'take', holder: 'brain', weight: -0.5 },
+      { claim_text: "a", kind: "unknown_kind", holder: "brain", weight: 2.5 },
+      { claim_text: "b", kind: "take", holder: "brain", weight: -0.5 },
     ]);
     const out = parseExtractorOutput(raw);
-    expect(out[0]!.kind).toBe('take');
+    expect(out[0]!.kind).toBe("take");
     expect(out[0]!.weight).toBe(1);
     expect(out[1]!.weight).toBe(0);
   });
 
-  test('preserves optional domain field', () => {
+  test("preserves optional domain field", () => {
     const raw = '[{"claim_text":"X","kind":"take","holder":"brain","weight":0.5,"domain":"macro"}]';
     const out = parseExtractorOutput(raw);
-    expect(out[0]!.domain).toBe('macro');
+    expect(out[0]!.domain).toBe("macro");
   });
 });
 
 // ─── contentHash ────────────────────────────────────────────────────
 
-describe('contentHash', () => {
-  test('produces deterministic SHA-256 hex', () => {
-    const h1 = contentHash('hello world');
-    const h2 = contentHash('hello world');
+describe("contentHash", () => {
+  test("produces deterministic SHA-256 hex", () => {
+    const h1 = contentHash("hello world");
+    const h2 = contentHash("hello world");
     expect(h1).toBe(h2);
     expect(h1).toHaveLength(64);
     expect(h1).toMatch(/^[0-9a-f]+$/);
   });
 
-  test('different input produces different hash', () => {
-    expect(contentHash('a')).not.toBe(contentHash('b'));
+  test("different input produces different hash", () => {
+    expect(contentHash("a")).not.toBe(contentHash("b"));
   });
 });
 
 // ─── hasCompleteFence ───────────────────────────────────────────────
 
-describe('hasCompleteFence', () => {
-  test('detects a well-formed fence', () => {
+describe("hasCompleteFence", () => {
+  test("detects a well-formed fence", () => {
     const body = `# Page
 
 <!-- gbrain:takes:begin -->
@@ -193,27 +195,29 @@ prose continues
     expect(hasCompleteFence(body)).toBe(true);
   });
 
-  test('returns false when fence is incomplete (begin only)', () => {
-    expect(hasCompleteFence('<!-- gbrain:takes:begin -->\n| #')).toBe(false);
+  test("returns false when fence is incomplete (begin only)", () => {
+    expect(hasCompleteFence("<!-- gbrain:takes:begin -->\n| #")).toBe(false);
   });
 
-  test('returns false when no fence at all', () => {
-    expect(hasCompleteFence('just some prose')).toBe(false);
+  test("returns false when no fence at all", () => {
+    expect(hasCompleteFence("just some prose")).toBe(false);
   });
 
-  test('detects fence with triple-dash variant', () => {
-    expect(hasCompleteFence('<!--- gbrain:takes:begin -->\n| # |\n<!--- gbrain:takes:end -->')).toBe(true);
+  test("detects fence with triple-dash variant", () => {
+    expect(
+      hasCompleteFence("<!--- gbrain:takes:begin -->\n| # |\n<!--- gbrain:takes:end -->")
+    ).toBe(true);
   });
 });
 
 // ─── extractExistingTakesForDedup ───────────────────────────────────
 
-describe('extractExistingTakesForDedup', () => {
-  test('returns [] when no fence present', () => {
-    expect(extractExistingTakesForDedup('plain prose')).toEqual([]);
+describe("extractExistingTakesForDedup", () => {
+  test("returns [] when no fence present", () => {
+    expect(extractExistingTakesForDedup("plain prose")).toEqual([]);
   });
 
-  test('parses active rows from a well-formed fence', () => {
+  test("parses active rows from a well-formed fence", () => {
     const body = `<!-- gbrain:takes:begin -->
 | # | claim | kind | who | weight | since | source |
 |---|-------|------|-----|--------|-------|--------|
@@ -222,12 +226,12 @@ describe('extractExistingTakesForDedup', () => {
 <!-- gbrain:takes:end -->`;
     const out = extractExistingTakesForDedup(body);
     expect(out).toHaveLength(2);
-    expect(out[0]!.claim).toBe('Cities send messages');
-    expect(out[0]!.kind).toBe('take');
+    expect(out[0]!.claim).toBe("Cities send messages");
+    expect(out[0]!.kind).toBe("take");
     expect(out[1]!.weight).toBe(0.8);
   });
 
-  test('skips strikethrough rows', () => {
+  test("skips strikethrough rows", () => {
     const body = `<!-- gbrain:takes:begin -->
 | # | claim | kind | who | weight |
 |---|-------|------|-----|--------|
@@ -236,38 +240,49 @@ describe('extractExistingTakesForDedup', () => {
 <!-- gbrain:takes:end -->`;
     const out = extractExistingTakesForDedup(body);
     expect(out).toHaveLength(1);
-    expect(out[0]!.claim).toBe('active claim');
+    expect(out[0]!.claim).toBe("active claim");
   });
 });
 
 // ─── Phase integration ──────────────────────────────────────────────
 
-describe('runPhaseProposeTakes — phase integration', () => {
-  test('happy path: scans pages, extracts proposals, writes via INSERT', async () => {
-    const pages = [buildPage({ slug: 'wiki/concepts/network-effects', body: 'Marketplaces with cold-start liquidity always win.' })];
+describe("runPhaseProposeTakes — phase integration", () => {
+  test("happy path: scans pages, extracts proposals, writes via INSERT", async () => {
+    const pages = [
+      buildPage({
+        slug: "wiki/concepts/network-effects",
+        body: "Marketplaces with cold-start liquidity always win.",
+      }),
+    ];
     const { engine, captured } = buildMockEngine({ pages });
     const extractor: ProposeTakesExtractor = async () => [
-      { claim_text: 'Marketplaces with cold-start liquidity win', kind: 'bet', holder: 'brain', weight: 0.7, domain: 'market' },
+      {
+        claim_text: "Marketplaces with cold-start liquidity win",
+        kind: "bet",
+        holder: "brain",
+        weight: 0.7,
+        domain: "market",
+      },
     ];
     const result = await runPhaseProposeTakes(buildCtx(engine), { extractor });
 
-    expect(result.status).toBe('ok');
+    expect(result.status).toBe("ok");
     const details = result.details as Record<string, unknown>;
     expect(details.pages_scanned).toBe(1);
     expect(details.cache_misses).toBe(1);
     expect(details.cache_hits).toBe(0);
     expect(details.proposals_inserted).toBe(1);
 
-    const inserts = captured.filter(c => c.sql.includes('INSERT INTO take_proposals'));
+    const inserts = captured.filter((c) => c.sql.includes("INSERT INTO take_proposals"));
     expect(inserts).toHaveLength(1);
-    expect(inserts[0]!.params[5]).toBe('Marketplaces with cold-start liquidity win'); // claim_text
-    expect(inserts[0]!.params[6]).toBe('bet'); // kind
-    expect(inserts[0]!.params[9]).toBe('market'); // domain
+    expect(inserts[0]!.params[5]).toBe("Marketplaces with cold-start liquidity win"); // claim_text
+    expect(inserts[0]!.params[6]).toBe("bet"); // kind
+    expect(inserts[0]!.params[9]).toBe("market"); // domain
   });
 
-  test('cache hit: page already in take_proposals is skipped', async () => {
-    const body = 'A page that was already processed.';
-    const pages = [buildPage({ slug: 'wiki/old-page', body })];
+  test("cache hit: page already in take_proposals is skipped", async () => {
+    const body = "A page that was already processed.";
+    const pages = [buildPage({ slug: "wiki/old-page", body })];
     const ch = contentHash(body);
     const existing = new Set([`default|wiki/old-page|${ch}|${PROPOSE_TAKES_PROMPT_VERSION}`]);
     const { engine, captured } = buildMockEngine({ pages, existingProposals: existing });
@@ -284,10 +299,10 @@ describe('runPhaseProposeTakes — phase integration', () => {
     expect(details.proposals_inserted).toBe(0);
     // v0.42: extract rollup row UPSERTs on every phase invocation (best-
     // effort cache). Filter the assertion to take_proposals INSERTs only.
-    expect(captured.filter(c => c.sql.includes('INSERT INTO take_proposals'))).toHaveLength(0);
+    expect(captured.filter((c) => c.sql.includes("INSERT INTO take_proposals"))).toHaveLength(0);
   });
 
-  test('passes existing fence rows to extractor as dedup context (F2 fix)', async () => {
+  test("passes existing fence rows to extractor as dedup context (F2 fix)", async () => {
     const body = `# Page
 
 <!-- gbrain:takes:begin -->
@@ -297,7 +312,7 @@ describe('runPhaseProposeTakes — phase integration', () => {
 <!-- gbrain:takes:end -->
 
 New prose appended here.`;
-    const pages = [buildPage({ slug: 'wiki/existing', body })];
+    const pages = [buildPage({ slug: "wiki/existing", body })];
     const { engine } = buildMockEngine({ pages });
     let receivedExistingTakes: unknown;
     const extractor: ProposeTakesExtractor = async ({ existingTakes }) => {
@@ -307,36 +322,38 @@ New prose appended here.`;
     await runPhaseProposeTakes(buildCtx(engine), { extractor });
 
     expect(Array.isArray(receivedExistingTakes)).toBe(true);
-    expect((receivedExistingTakes as Array<{ claim: string }>)[0]?.claim).toBe('Already captured claim');
+    expect((receivedExistingTakes as Array<{ claim: string }>)[0]?.claim).toBe(
+      "Already captured claim"
+    );
   });
 
-  test('extractor throw on a single page logs warning + phase continues', async () => {
+  test("extractor throw on a single page logs warning + phase continues", async () => {
     const pages = [
-      buildPage({ slug: 'wiki/a', body: 'page A prose' }),
-      buildPage({ slug: 'wiki/b', body: 'page B prose' }),
+      buildPage({ slug: "wiki/a", body: "page A prose" }),
+      buildPage({ slug: "wiki/b", body: "page B prose" }),
     ];
     const { engine } = buildMockEngine({ pages });
     let callCount = 0;
     const extractor: ProposeTakesExtractor = async () => {
       callCount++;
-      if (callCount === 1) throw new Error('LLM timeout');
-      return [{ claim_text: 'second page claim', kind: 'take', holder: 'brain', weight: 0.5 }];
+      if (callCount === 1) throw new Error("LLM timeout");
+      return [{ claim_text: "second page claim", kind: "take", holder: "brain", weight: 0.5 }];
     };
     const result = await runPhaseProposeTakes(buildCtx(engine), { extractor });
 
-    expect(result.status).toBe('ok');
+    expect(result.status).toBe("ok");
     const details = result.details as Record<string, unknown>;
     expect(details.pages_scanned).toBe(2);
     expect(details.proposals_inserted).toBe(1);
     expect((details.warnings as string[]).length).toBeGreaterThan(0);
-    expect((details.warnings as string[])[0]).toContain('LLM timeout');
+    expect((details.warnings as string[])[0]).toContain("LLM timeout");
   });
 
-  test('pages with empty compiled_truth are skipped silently (no extractor call)', async () => {
+  test("pages with empty compiled_truth are skipped silently (no extractor call)", async () => {
     const pages = [
-      buildPage({ slug: 'wiki/empty', body: '' }),
-      buildPage({ slug: 'wiki/whitespace', body: '   \n   ' }),
-      buildPage({ slug: 'wiki/real', body: 'has prose' }),
+      buildPage({ slug: "wiki/empty", body: "" }),
+      buildPage({ slug: "wiki/whitespace", body: "   \n   " }),
+      buildPage({ slug: "wiki/real", body: "has prose" }),
     ];
     const { engine } = buildMockEngine({ pages });
     let extractorCalls = 0;
@@ -348,13 +365,13 @@ New prose appended here.`;
     expect(extractorCalls).toBe(1);
   });
 
-  test('skipPagesWithFence:true bypasses pages that already have a complete fence', async () => {
+  test("skipPagesWithFence:true bypasses pages that already have a complete fence", async () => {
     const pages = [
       buildPage({
-        slug: 'wiki/fenced',
+        slug: "wiki/fenced",
         body: `<!-- gbrain:takes:begin -->\n| # | claim | kind | who | weight |\n|---|---|---|---|---|\n| 1 | x | take | brain | 0.5 |\n<!-- gbrain:takes:end -->\n\nprose`,
       }),
-      buildPage({ slug: 'wiki/unfenced', body: 'plain prose only' }),
+      buildPage({ slug: "wiki/unfenced", body: "plain prose only" }),
     ];
     const { engine } = buildMockEngine({ pages });
     let extractorCalls = 0;
@@ -366,22 +383,22 @@ New prose appended here.`;
     expect(extractorCalls).toBe(1);
   });
 
-  test('proposal_run_id is stable across all proposals from one phase invocation', async () => {
+  test("proposal_run_id is stable across all proposals from one phase invocation", async () => {
     const pages = [
-      buildPage({ slug: 'wiki/a', body: 'page a' }),
-      buildPage({ slug: 'wiki/b', body: 'page b' }),
+      buildPage({ slug: "wiki/a", body: "page a" }),
+      buildPage({ slug: "wiki/b", body: "page b" }),
     ];
     const { engine, captured } = buildMockEngine({ pages });
     const extractor: ProposeTakesExtractor = async () => [
-      { claim_text: 'x', kind: 'take', holder: 'brain', weight: 0.5 },
+      { claim_text: "x", kind: "take", holder: "brain", weight: 0.5 },
     ];
     await runPhaseProposeTakes(buildCtx(engine), { extractor });
-    const inserts = captured.filter(c => c.sql.includes('INSERT INTO take_proposals'));
+    const inserts = captured.filter((c) => c.sql.includes("INSERT INTO take_proposals"));
     expect(inserts).toHaveLength(2);
     const runIdA = inserts[0]!.params[4];
     const runIdB = inserts[1]!.params[4];
     expect(runIdA).toBe(runIdB);
-    expect(typeof runIdA).toBe('string');
-    expect((runIdA as string).startsWith('propose-')).toBe(true);
+    expect(typeof runIdA).toBe("string");
+    expect((runIdA as string).startsWith("propose-")).toBe(true);
   });
 });

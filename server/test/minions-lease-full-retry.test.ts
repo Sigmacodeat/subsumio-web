@@ -16,17 +16,20 @@
  * error class and routes here.
  */
 
-import { describe, test, expect, beforeAll, afterAll, beforeEach } from 'bun:test';
-import { PGLiteEngine } from '../src/core/pglite-engine.ts';
-import { MinionQueue } from '../src/core/minions/queue.ts';
-import { logLeasePressure, countRecentLeasePressure } from '../src/core/minions/lease-pressure-audit.ts';
+import { describe, test, expect, beforeAll, afterAll, beforeEach } from "bun:test";
+import { PGLiteEngine } from "../src/core/pglite-engine.ts";
+import { MinionQueue } from "../src/core/minions/queue.ts";
+import {
+  logLeasePressure,
+  countRecentLeasePressure,
+} from "../src/core/minions/lease-pressure-audit.ts";
 
 let engine: PGLiteEngine;
 let queue: MinionQueue;
 
 beforeAll(async () => {
   engine = new PGLiteEngine();
-  await engine.connect({ database_url: '' });
+  await engine.connect({ database_url: "" });
   await engine.initSchema();
   queue = new MinionQueue(engine);
 });
@@ -36,9 +39,9 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  await engine.executeRaw('DELETE FROM minion_lease_pressure_log');
-  await engine.executeRaw('DELETE FROM subagent_rate_leases');
-  await engine.executeRaw('DELETE FROM minion_jobs');
+  await engine.executeRaw("DELETE FROM minion_lease_pressure_log");
+  await engine.executeRaw("DELETE FROM subagent_rate_leases");
+  await engine.executeRaw("DELETE FROM minion_jobs");
 });
 
 /**
@@ -49,55 +52,56 @@ beforeEach(async () => {
  * needs attempts_started > 0 first — i.e. a real claim must have run.
  */
 async function claimJobReal(name: string): Promise<{ id: number; lockToken: string }> {
-  const lockToken = 'lock_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
-  const claimed = await queue.claim(lockToken, 30_000, 'default', [name]);
-  if (!claimed) throw new Error('claim returned null — queue had no jobs');
+  const lockToken = "lock_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8);
+  const claimed = await queue.claim(lockToken, 30_000, "default", [name]);
+  if (!claimed) throw new Error("claim returned null — queue had no jobs");
   return { id: claimed.id, lockToken };
 }
 
-describe('queue.releaseLeaseFullJob (Bug 2 load-bearing)', () => {
-  test('flips status to delayed without incrementing attempts_made', async () => {
-    await queue.add('test-flip', {});
-    const { id, lockToken } = await claimJobReal('test-flip');
+describe("queue.releaseLeaseFullJob (Bug 2 load-bearing)", () => {
+  test("flips status to delayed without incrementing attempts_made", async () => {
+    await queue.add("test-flip", {});
+    const { id, lockToken } = await claimJobReal("test-flip");
     const before = await queue.getJob(id);
     expect(before!.attempts_made).toBe(0);
     expect(before!.attempts_started).toBe(1); // claim bumped this
 
     const released = await queue.releaseLeaseFullJob(
-      id, lockToken, 'rate lease "anthropic:messages" full (8/8)', 1500,
+      id,
+      lockToken,
+      'rate lease "anthropic:messages" full (8/8)',
+      1500
     );
     expect(released).not.toBeNull();
 
     const after = await queue.getJob(id);
-    expect(after!.status).toBe('delayed');
+    expect(after!.status).toBe("delayed");
     // attempts_made UNCHANGED — this is the entire point of Bug 2.
     expect(after!.attempts_made).toBe(0);
     expect(after!.delay_until).toBeDefined();
-    expect(after!.error_text).toContain('lease');
+    expect(after!.error_text).toContain("lease");
     // Lock cleared so next claim can pick it up.
     expect(after!.lock_token).toBeNull();
   });
 
-  test('returns null on lock_token mismatch (idempotency guard)', async () => {
-    await queue.add('test-mismatch', {});
-    const { id } = await claimJobReal('test-mismatch');
-    const released = await queue.releaseLeaseFullJob(
-      id, 'wrong-token', 'err', 1500,
-    );
+  test("returns null on lock_token mismatch (idempotency guard)", async () => {
+    await queue.add("test-mismatch", {});
+    const { id } = await claimJobReal("test-mismatch");
+    const released = await queue.releaseLeaseFullJob(id, "wrong-token", "err", 1500);
     expect(released).toBeNull();
     // Status stays active (other path won the race).
     const after = await queue.getJob(id);
-    expect(after!.status).toBe('active');
+    expect(after!.status).toBe("active");
     expect(after!.attempts_made).toBe(0);
   });
 
-  test('multiple bounces do not increment attempts_made (regression vs Bug 2)', async () => {
+  test("multiple bounces do not increment attempts_made (regression vs Bug 2)", async () => {
     // 5 bounces with a tiny real-time sleep between each so the delay_until
     // window expires before the next claim. 5 is enough to prove the
     // contract; the original field-report bug class dead-lettered at 3.
-    await queue.add('test-many', {});
+    await queue.add("test-many", {});
     for (let i = 0; i < 5; i++) {
-      const { id, lockToken } = await claimJobReal('test-many');
+      const { id, lockToken } = await claimJobReal("test-many");
       const released = await queue.releaseLeaseFullJob(id, lockToken, `bounce ${i}`, 5);
       expect(released).not.toBeNull();
       // After releaseLeaseFullJob, status='delayed' with delay_until. The
@@ -107,7 +111,7 @@ describe('queue.releaseLeaseFullJob (Bug 2 load-bearing)', () => {
       await engine.executeRaw(
         `UPDATE minion_jobs SET status = 'waiting', delay_until = NULL
            WHERE id = $1 AND status = 'delayed'`,
-        [id],
+        [id]
       );
     }
     // Find the job — there's only one.
@@ -117,7 +121,7 @@ describe('queue.releaseLeaseFullJob (Bug 2 load-bearing)', () => {
       attempts_started: number;
       status: string;
     }>(
-      `SELECT id, attempts_made, attempts_started, status FROM minion_jobs WHERE name = 'test-many'`,
+      `SELECT id, attempts_made, attempts_started, status FROM minion_jobs WHERE name = 'test-many'`
     );
     expect(rows.length).toBe(1);
     // attempts_started counts every claim (5 in this test) but attempts_made
@@ -127,26 +131,26 @@ describe('queue.releaseLeaseFullJob (Bug 2 load-bearing)', () => {
     expect(rows[0]!.attempts_started).toBe(5);
 
     // Now prove the asymmetry: failJob on a DIFFERENT job DOES increment.
-    await queue.add('test-asymmetry', {});
-    const fail = await claimJobReal('test-asymmetry');
-    await queue.failJob(fail.id, fail.lockToken, 'real err', 'delayed', 100);
+    await queue.add("test-asymmetry", {});
+    const fail = await claimJobReal("test-asymmetry");
+    await queue.failJob(fail.id, fail.lockToken, "real err", "delayed", 100);
     const failRow = await queue.getJob(fail.id);
     expect(failRow!.attempts_made).toBe(1); // failJob DID increment
   });
 });
 
-describe('logLeasePressure (Eng D8 audit writer)', () => {
-  test('persists denormalized context inline', async () => {
-    const job = await queue.add('test-name', {});
+describe("logLeasePressure (Eng D8 audit writer)", () => {
+  test("persists denormalized context inline", async () => {
+    const job = await queue.add("test-name", {});
     await logLeasePressure(engine, {
       job_id: job.id,
-      lease_key: 'anthropic:messages',
+      lease_key: "anthropic:messages",
       active_at_bounce: 8,
       max_concurrent: 8,
-      queue_name: 'default',
-      job_name: 'test-name',
-      model: 'claude-sonnet-4-6',
-      provider: 'anthropic',
+      queue_name: "default",
+      job_name: "test-name",
+      model: "claude-sonnet-4-6",
+      provider: "anthropic",
       root_owner_id: null,
     });
     const rows = await engine.executeRaw<{
@@ -157,21 +161,21 @@ describe('logLeasePressure (Eng D8 audit writer)', () => {
     }>(
       `SELECT lease_key, job_name, model, provider
          FROM minion_lease_pressure_log WHERE job_id = $1`,
-      [job.id],
+      [job.id]
     );
     expect(rows.length).toBe(1);
-    expect(rows[0]!.lease_key).toBe('anthropic:messages');
-    expect(rows[0]!.job_name).toBe('test-name');
-    expect(rows[0]!.model).toBe('claude-sonnet-4-6');
-    expect(rows[0]!.provider).toBe('anthropic');
+    expect(rows[0]!.lease_key).toBe("anthropic:messages");
+    expect(rows[0]!.job_name).toBe("test-name");
+    expect(rows[0]!.model).toBe("claude-sonnet-4-6");
+    expect(rows[0]!.provider).toBe("anthropic");
   });
 
-  test('countRecentLeasePressure counts rows in a window', async () => {
-    const job = await queue.add('t', {});
+  test("countRecentLeasePressure counts rows in a window", async () => {
+    const job = await queue.add("t", {});
     for (let i = 0; i < 5; i++) {
       await logLeasePressure(engine, {
         job_id: job.id,
-        lease_key: 'anthropic:messages',
+        lease_key: "anthropic:messages",
         active_at_bounce: 8,
         max_concurrent: 8,
       });
@@ -180,35 +184,33 @@ describe('logLeasePressure (Eng D8 audit writer)', () => {
     expect(count).toBe(5);
   });
 
-  test('SET NULL FK keeps audit row alive after job is hard-deleted (Eng D3)', async () => {
-    const job = await queue.add('temp', {});
+  test("SET NULL FK keeps audit row alive after job is hard-deleted (Eng D3)", async () => {
+    const job = await queue.add("temp", {});
     await logLeasePressure(engine, {
       job_id: job.id,
-      lease_key: 'anthropic:messages',
+      lease_key: "anthropic:messages",
       active_at_bounce: 8,
       max_concurrent: 8,
-      queue_name: 'default',
-      job_name: 'temp',
-      model: 'claude-sonnet-4-6',
+      queue_name: "default",
+      job_name: "temp",
+      model: "claude-sonnet-4-6",
     });
     // Hard-delete the job (simulating `gbrain jobs prune`).
-    await engine.executeRaw('DELETE FROM minion_jobs WHERE id = $1', [job.id]);
+    await engine.executeRaw("DELETE FROM minion_jobs WHERE id = $1", [job.id]);
     // Audit row survives.
     const rows = await engine.executeRaw<{
       job_id: number | null;
       job_name: string | null;
       model: string | null;
-    }>(
-      `SELECT job_id, job_name, model FROM minion_lease_pressure_log`,
-    );
+    }>(`SELECT job_id, job_name, model FROM minion_lease_pressure_log`);
     expect(rows.length).toBe(1);
     expect(rows[0]!.job_id).toBeNull(); // SET NULL fired
     // Denormalized columns SURVIVE — the whole point of D8 + codex pass-3 #7.
-    expect(rows[0]!.job_name).toBe('temp');
-    expect(rows[0]!.model).toBe('claude-sonnet-4-6');
+    expect(rows[0]!.job_name).toBe("temp");
+    expect(rows[0]!.model).toBe("claude-sonnet-4-6");
   });
 
-  test('write failure does not throw (best-effort contract)', async () => {
+  test("write failure does not throw (best-effort contract)", async () => {
     // Drive a constraint violation via a NULL on a NOT NULL column.
     // We do this by passing a bogus `job_id` that doesn't exist — but
     // wait, SET NULL FK accepts that. So instead just verify no-throw
@@ -218,10 +220,10 @@ describe('logLeasePressure (Eng D8 audit writer)', () => {
     await expect(
       logLeasePressure(engine, {
         job_id: 9999999, // non-existent
-        lease_key: 'anthropic:messages',
+        lease_key: "anthropic:messages",
         active_at_bounce: 8,
         max_concurrent: 8,
-      }),
+      })
     ).resolves.toBeUndefined();
   });
 });

@@ -21,16 +21,16 @@
  * registry layer.
  */
 
-import { execFileSync } from 'child_process';
-import { existsSync, mkdirSync, readdirSync, renameSync, rmSync, statSync } from 'fs';
-import { isAbsolute, join, resolve } from 'path';
+import { execFileSync } from "child_process";
+import { existsSync, mkdirSync, readdirSync, renameSync, rmSync, statSync } from "fs";
+import { isAbsolute, join, resolve } from "path";
 
-import { gbrainPath } from '../config.ts';
-import { GIT_SSRF_FLAGS, RemoteUrlError, cloneRepo, parseRemoteUrl } from '../git-remote.ts';
-import { extractTarball, fileSha256 } from './tarball.ts';
+import { gbrainPath } from "../config.ts";
+import { GIT_SSRF_FLAGS, RemoteUrlError, cloneRepo, parseRemoteUrl } from "../git-remote.ts";
+import { extractTarball, fileSha256 } from "./tarball.ts";
 
 /** Kinds of third-party source we accept. */
-export type ResolvedSourceKind = 'git' | 'tarball' | 'local';
+export type ResolvedSourceKind = "git" | "tarball" | "local";
 
 export interface ResolvedSource {
   /** Absolute path to the pack root (where skillpack.json lives). */
@@ -48,23 +48,23 @@ export interface ResolvedSource {
 }
 
 export type RemoteSourceErrorCode =
-  | 'spec_empty'
-  | 'spec_local_missing'
-  | 'spec_local_not_pack_root'
-  | 'spec_tarball_missing'
-  | 'spec_kebab_invalid_shape'
-  | 'spec_url_invalid'
-  | 'clone_failed'
-  | 'rev_parse_failed';
+  | "spec_empty"
+  | "spec_local_missing"
+  | "spec_local_not_pack_root"
+  | "spec_tarball_missing"
+  | "spec_kebab_invalid_shape"
+  | "spec_url_invalid"
+  | "clone_failed"
+  | "rev_parse_failed";
 
 export class RemoteSourceError extends Error {
   constructor(
     message: string,
     public code: RemoteSourceErrorCode,
-    public detail?: { spec?: string; cause?: string },
+    public detail?: { spec?: string; cause?: string }
   ) {
     super(message);
-    this.name = 'RemoteSourceError';
+    this.name = "RemoteSourceError";
   }
 }
 
@@ -79,93 +79,101 @@ export interface ResolveSourceOptions {
  *  because `git-url` and `kebab` are pre-resolution states, while `git` is
  *  the post-resolution kind on ResolvedSource.
  */
-export type SpecKind = 'git-url' | 'tarball' | 'local' | 'kebab';
+export type SpecKind = "git-url" | "tarball" | "local" | "kebab";
 
 /** Classify the spec without doing any I/O beyond a single stat. */
 export function classifySpec(spec: string): { kind: SpecKind; normalized: string } {
-  if (!spec || typeof spec !== 'string') {
-    throw new RemoteSourceError('source spec is empty', 'spec_empty', { spec });
+  if (!spec || typeof spec !== "string") {
+    throw new RemoteSourceError("source spec is empty", "spec_empty", { spec });
   }
   const trimmed = spec.trim();
   if (trimmed.length === 0) {
-    throw new RemoteSourceError('source spec is empty', 'spec_empty', { spec });
+    throw new RemoteSourceError("source spec is empty", "spec_empty", { spec });
   }
 
   // URL: starts with http(s)://, ends in .git or contains github.com / gitlab.com path.
   if (/^https?:\/\//.test(trimmed)) {
-    return { kind: 'git-url', normalized: trimmed };
+    return { kind: "git-url", normalized: trimmed };
   }
 
   // Local path: starts with /, ./, ../, or ~/
   if (
     isAbsolute(trimmed) ||
-    trimmed.startsWith('./') ||
-    trimmed.startsWith('../') ||
-    trimmed.startsWith('~/')
+    trimmed.startsWith("./") ||
+    trimmed.startsWith("../") ||
+    trimmed.startsWith("~/")
   ) {
-    const expanded = trimmed.startsWith('~/') ? join(process.env.HOME ?? '', trimmed.slice(2)) : trimmed;
+    const expanded = trimmed.startsWith("~/")
+      ? join(process.env.HOME ?? "", trimmed.slice(2))
+      : trimmed;
     const abs = resolve(expanded);
     // Tarball if it's a .tgz / .tar.gz file.
     if (/\.(tgz|tar\.gz)$/.test(abs)) {
-      return { kind: 'tarball', normalized: abs };
+      return { kind: "tarball", normalized: abs };
     }
-    return { kind: 'local', normalized: abs };
+    return { kind: "local", normalized: abs };
   }
 
   // owner/repo short-form (github inferred): exactly one `/` and both halves
   // look like GitHub identifiers (alnum + dash/dot/underscore).
   if (/^[A-Za-z0-9][A-Za-z0-9._-]{0,38}\/[A-Za-z0-9][A-Za-z0-9._-]{0,99}$/.test(trimmed)) {
-    return { kind: 'git-url', normalized: `https://github.com/${trimmed}.git` };
+    return { kind: "git-url", normalized: `https://github.com/${trimmed}.git` };
   }
 
   // Bare kebab-name: defer to registry resolution. Caller (registry-client)
   // must convert to a URL before re-calling resolveSource.
   if (/^[a-z][a-z0-9-]{1,63}$/.test(trimmed)) {
-    return { kind: 'kebab', normalized: trimmed };
+    return { kind: "kebab", normalized: trimmed };
   }
 
   throw new RemoteSourceError(
     `cannot classify source spec ${JSON.stringify(spec)} — must be a kebab name, owner/repo, https URL, local dir, or .tgz path`,
-    'spec_kebab_invalid_shape',
-    { spec },
+    "spec_kebab_invalid_shape",
+    { spec }
   );
 }
 
 /** Compute the cache root, honoring opts override. */
 function cacheRoot(opts: ResolveSourceOptions): string {
-  return opts.cacheRoot ?? gbrainPath('skillpack-cache');
+  return opts.cacheRoot ?? gbrainPath("skillpack-cache");
 }
 
 /** Resolve HEAD SHA of a remote git URL via `git ls-remote`. */
 function resolveRemoteHead(url: string, branch: string | undefined): string {
   const argv = [
     ...GIT_SSRF_FLAGS,
-    'ls-remote',
-    '--exit-code',
+    "ls-remote",
+    "--exit-code",
     url,
-    branch ? `refs/heads/${branch}` : 'HEAD',
+    branch ? `refs/heads/${branch}` : "HEAD",
   ];
   try {
-    const output = execFileSync('git', argv, {
-      encoding: 'utf-8',
-      env: { ...process.env, GIT_TERMINAL_PROMPT: '0' },
+    const output = execFileSync("git", argv, {
+      encoding: "utf-8",
+      env: { ...process.env, GIT_TERMINAL_PROMPT: "0" },
       timeout: 60_000,
     });
-    const firstLine = output.split('\n').find((l) => l.trim().length > 0);
+    const firstLine = output.split("\n").find((l) => l.trim().length > 0);
     if (!firstLine) {
-      throw new RemoteSourceError(`git ls-remote returned no refs for ${url}`, 'rev_parse_failed', { spec: url });
+      throw new RemoteSourceError(`git ls-remote returned no refs for ${url}`, "rev_parse_failed", {
+        spec: url,
+      });
     }
     const sha = firstLine.split(/\s+/)[0]?.trim();
     if (!sha || !/^[a-f0-9]{40}$/.test(sha)) {
-      throw new RemoteSourceError(`git ls-remote gave invalid sha for ${url}: ${firstLine}`, 'rev_parse_failed', { spec: url });
+      throw new RemoteSourceError(
+        `git ls-remote gave invalid sha for ${url}: ${firstLine}`,
+        "rev_parse_failed",
+        { spec: url }
+      );
     }
     return sha;
   } catch (err) {
     if (err instanceof RemoteSourceError) throw err;
     throw new RemoteSourceError(
       `git ls-remote failed for ${url}: ${(err as Error).message}`,
-      'rev_parse_failed',
-      { spec: url, cause: (err as Error).message },
+      "rev_parse_failed",
+      { spec: url, cause: (err as Error).message }
     );
   }
 }
@@ -173,25 +181,21 @@ function resolveRemoteHead(url: string, branch: string | undefined): string {
 /** Compute the per-source cache directory. */
 function gitCachePath(root: string, parsedUrl: URL, sha: string): string {
   const host = parsedUrl.hostname;
-  const ownerRepo = parsedUrl.pathname.replace(/^\/+/, '').replace(/\.git$/, '');
-  return join(root, 'git', host, ownerRepo, sha);
+  const ownerRepo = parsedUrl.pathname.replace(/^\/+/, "").replace(/\.git$/, "");
+  return join(root, "git", host, ownerRepo, sha);
 }
 
 /** Resolve a git URL into a ResolvedSource. */
-function resolveGitSource(
-  url: string,
-  opts: ResolveSourceOptions,
-): ResolvedSource {
+function resolveGitSource(url: string, opts: ResolveSourceOptions): ResolvedSource {
   let parsedSafe: URL;
   try {
     parsedSafe = new URL(parseRemoteUrl(url).url);
   } catch (err) {
     if (err instanceof RemoteUrlError) {
-      throw new RemoteSourceError(
-        `remote URL rejected: ${err.message}`,
-        'spec_url_invalid',
-        { spec: url, cause: err.code },
-      );
+      throw new RemoteSourceError(`remote URL rejected: ${err.message}`, "spec_url_invalid", {
+        spec: url,
+        cause: err.code,
+      });
     }
     throw err;
   }
@@ -204,7 +208,7 @@ function resolveGitSource(
     if (entries.length > 0) {
       return {
         path: cacheDir,
-        kind: 'git',
+        kind: "git",
         source: parsedSafe.toString(),
         pinned_commit: sha,
         tarball_sha256: null,
@@ -214,7 +218,7 @@ function resolveGitSource(
   }
 
   // Stage in a sibling .tmp dir so a failed clone doesn't poison the cache slot.
-  const stageDir = cacheDir + '.tmp-' + process.pid + '-' + Date.now();
+  const stageDir = cacheDir + ".tmp-" + process.pid + "-" + Date.now();
   mkdirSync(stageDir, { recursive: true });
   try {
     cloneRepo(parsedSafe.toString(), stageDir, { depth: 1, timeoutMs: 600_000 });
@@ -224,8 +228,8 @@ function resolveGitSource(
     } catch {}
     throw new RemoteSourceError(
       `clone failed for ${parsedSafe.toString()}: ${(err as Error).message}`,
-      'clone_failed',
-      { spec: url, cause: (err as Error).message },
+      "clone_failed",
+      { spec: url, cause: (err as Error).message }
     );
   }
 
@@ -233,9 +237,9 @@ function resolveGitSource(
   // race where HEAD moved between ls-remote and clone).
   let cloneSha: string;
   try {
-    cloneSha = execFileSync('git', ['rev-parse', 'HEAD'], {
+    cloneSha = execFileSync("git", ["rev-parse", "HEAD"], {
       cwd: stageDir,
-      encoding: 'utf-8',
+      encoding: "utf-8",
       timeout: 30_000,
     }).trim();
   } catch (err) {
@@ -244,8 +248,8 @@ function resolveGitSource(
     } catch {}
     throw new RemoteSourceError(
       `git rev-parse HEAD failed after clone: ${(err as Error).message}`,
-      'rev_parse_failed',
-      { spec: url, cause: (err as Error).message },
+      "rev_parse_failed",
+      { spec: url, cause: (err as Error).message }
     );
   }
 
@@ -257,13 +261,13 @@ function resolveGitSource(
       rmSync(stageDir, { recursive: true, force: true });
     } catch {}
   } else {
-    mkdirSync(join(cacheDir, '..'), { recursive: true });
+    mkdirSync(join(cacheDir, ".."), { recursive: true });
     renameSync(stageDir, cacheDir);
   }
 
   return {
     path: cacheDir,
-    kind: 'git',
+    kind: "git",
     source: parsedSafe.toString(),
     pinned_commit: cloneSha,
     tarball_sha256: null,
@@ -272,34 +276,31 @@ function resolveGitSource(
 }
 
 /** Resolve a local tarball into a ResolvedSource (extract into cache by SHA). */
-function resolveTarballSource(
-  tarballPath: string,
-  opts: ResolveSourceOptions,
-): ResolvedSource {
+function resolveTarballSource(tarballPath: string, opts: ResolveSourceOptions): ResolvedSource {
   if (!existsSync(tarballPath)) {
     throw new RemoteSourceError(
       `tarball file does not exist: ${tarballPath}`,
-      'spec_tarball_missing',
-      { spec: tarballPath },
+      "spec_tarball_missing",
+      { spec: tarballPath }
     );
   }
   if (!statSync(tarballPath).isFile()) {
     throw new RemoteSourceError(
       `tarball path is not a regular file: ${tarballPath}`,
-      'spec_tarball_missing',
-      { spec: tarballPath },
+      "spec_tarball_missing",
+      { spec: tarballPath }
     );
   }
 
   const sha = fileSha256(tarballPath);
-  const cacheDir = join(cacheRoot(opts), 'tarball', sha);
+  const cacheDir = join(cacheRoot(opts), "tarball", sha);
 
   if (!opts.noCache && existsSync(cacheDir)) {
     const entries = readdirSync(cacheDir);
     if (entries.length > 0) {
       return findPackRoot({
         path: cacheDir,
-        kind: 'tarball',
+        kind: "tarball",
         source: tarballPath,
         pinned_commit: null,
         tarball_sha256: sha,
@@ -308,7 +309,7 @@ function resolveTarballSource(
     }
   }
 
-  const stageDir = cacheDir + '.tmp-' + process.pid + '-' + Date.now();
+  const stageDir = cacheDir + ".tmp-" + process.pid + "-" + Date.now();
   mkdirSync(stageDir, { recursive: true });
   try {
     extractTarball({ tgzPath: tarballPath, destDir: stageDir });
@@ -324,13 +325,13 @@ function resolveTarballSource(
       rmSync(stageDir, { recursive: true, force: true });
     } catch {}
   } else {
-    mkdirSync(join(cacheDir, '..'), { recursive: true });
+    mkdirSync(join(cacheDir, ".."), { recursive: true });
     renameSync(stageDir, cacheDir);
   }
 
   return findPackRoot({
     path: cacheDir,
-    kind: 'tarball',
+    kind: "tarball",
     source: tarballPath,
     pinned_commit: null,
     tarball_sha256: sha,
@@ -344,12 +345,12 @@ function resolveTarballSource(
  * the root. Find the actual pack root (the directory containing skillpack.json).
  */
 function findPackRoot(s: ResolvedSource): ResolvedSource {
-  if (existsSync(join(s.path, 'skillpack.json'))) return s;
+  if (existsSync(join(s.path, "skillpack.json"))) return s;
   // Look one level deep.
   const entries = readdirSync(s.path);
   for (const e of entries) {
     const candidate = join(s.path, e);
-    if (statSync(candidate).isDirectory() && existsSync(join(candidate, 'skillpack.json'))) {
+    if (statSync(candidate).isDirectory() && existsSync(join(candidate, "skillpack.json"))) {
       return { ...s, path: candidate };
     }
   }
@@ -360,29 +361,27 @@ function findPackRoot(s: ResolvedSource): ResolvedSource {
 /** Resolve a local directory: just validate it has skillpack.json. */
 function resolveLocalSource(absPath: string): ResolvedSource {
   if (!existsSync(absPath)) {
-    throw new RemoteSourceError(
-      `local path does not exist: ${absPath}`,
-      'spec_local_missing',
-      { spec: absPath },
-    );
+    throw new RemoteSourceError(`local path does not exist: ${absPath}`, "spec_local_missing", {
+      spec: absPath,
+    });
   }
   if (!statSync(absPath).isDirectory()) {
     throw new RemoteSourceError(
       `local path is not a directory: ${absPath}`,
-      'spec_local_not_pack_root',
-      { spec: absPath },
+      "spec_local_not_pack_root",
+      { spec: absPath }
     );
   }
-  if (!existsSync(join(absPath, 'skillpack.json'))) {
+  if (!existsSync(join(absPath, "skillpack.json"))) {
     throw new RemoteSourceError(
       `local path is not a pack root (no skillpack.json): ${absPath}`,
-      'spec_local_not_pack_root',
-      { spec: absPath },
+      "spec_local_not_pack_root",
+      { spec: absPath }
     );
   }
   return {
     path: absPath,
-    kind: 'local',
+    kind: "local",
     source: absPath,
     pinned_commit: null,
     tarball_sha256: null,
@@ -397,24 +396,24 @@ function resolveLocalSource(absPath: string): ResolvedSource {
 export function resolveSource(spec: string, opts: ResolveSourceOptions = {}): ResolvedSource {
   const classified = classifySpec(spec);
   switch (classified.kind) {
-    case 'git-url':
+    case "git-url":
       return resolveGitSource(classified.normalized, opts);
-    case 'tarball':
+    case "tarball":
       return resolveTarballSource(classified.normalized, opts);
-    case 'local':
+    case "local":
       return resolveLocalSource(classified.normalized);
-    case 'kebab':
+    case "kebab":
       throw new RemoteSourceError(
         `bare short-name ${JSON.stringify(classified.normalized)} requires registry lookup — call the registry client first`,
-        'spec_kebab_invalid_shape',
-        { spec },
+        "spec_kebab_invalid_shape",
+        { spec }
       );
     default: {
       const _exhaustive: never = classified.kind;
       throw new RemoteSourceError(
         `unhandled spec kind: ${String(_exhaustive)}`,
-        'spec_kebab_invalid_shape',
-        { spec },
+        "spec_kebab_invalid_shape",
+        { spec }
       );
     }
   }

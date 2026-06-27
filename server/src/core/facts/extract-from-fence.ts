@@ -31,8 +31,8 @@
  *     warning surfaced by extract-facts, not a parse failure.
  */
 
-import type { NewFact, FactKind, FactVisibility } from '../engine.ts';
-import type { ParsedFact } from '../facts-fence.ts';
+import type { NewFact, FactKind, FactVisibility } from "../engine.ts";
+import type { ParsedFact } from "../facts-fence.ts";
 
 /**
  * Fence-extracted fact row. Structural superset of `NewFact` with the
@@ -54,7 +54,7 @@ export type FenceExtractedFact = NewFact & {
  * Exported so the migration orchestrator (commit 6) can reuse it when
  * fencing pre-v51 DB facts that have no `source` recorded.
  */
-export const FENCE_SOURCE_DEFAULT = 'fence:reconcile';
+export const FENCE_SOURCE_DEFAULT = "fence:reconcile";
 
 function parseValidDate(s: string | undefined): Date | undefined {
   if (!s) return undefined;
@@ -112,34 +112,34 @@ export interface ExtractFromFenceOpts {
  */
 export const METRIC_NORMALIZATION_MAP: ReadonlyMap<string, string> = new Map([
   // Revenue / financial
-  ['mrr', 'mrr'],
-  ['monthly recurring revenue', 'mrr'],
-  ['arr', 'arr'],
-  ['annual recurring revenue', 'arr'],
-  ['revenue', 'revenue'],
-  ['burn', 'burn_rate'],
-  ['burn rate', 'burn_rate'],
-  ['runway', 'runway'],
-  ['cash', 'cash'],
-  ['gross margin', 'gross_margin'],
+  ["mrr", "mrr"],
+  ["monthly recurring revenue", "mrr"],
+  ["arr", "arr"],
+  ["annual recurring revenue", "arr"],
+  ["revenue", "revenue"],
+  ["burn", "burn_rate"],
+  ["burn rate", "burn_rate"],
+  ["runway", "runway"],
+  ["cash", "cash"],
+  ["gross margin", "gross_margin"],
   // Funding
-  ['fundraise', 'fundraise'],
-  ['raise', 'fundraise'],
+  ["fundraise", "fundraise"],
+  ["raise", "fundraise"],
   // People
-  ['headcount', 'headcount'],
-  ['team size', 'team_size'],
-  ['team', 'team_size'],
+  ["headcount", "headcount"],
+  ["team size", "team_size"],
+  ["team", "team_size"],
   // Users / engagement
-  ['users', 'users'],
-  ['mau', 'mau'],
-  ['monthly active users', 'mau'],
-  ['dau', 'dau'],
-  ['daily active users', 'dau'],
-  ['churn', 'churn_rate'],
-  ['churn rate', 'churn_rate'],
+  ["users", "users"],
+  ["mau", "mau"],
+  ["monthly active users", "mau"],
+  ["dau", "dau"],
+  ["daily active users", "dau"],
+  ["churn", "churn_rate"],
+  ["churn rate", "churn_rate"],
   // Unit economics
-  ['cac', 'cac'],
-  ['ltv', 'ltv'],
+  ["cac", "cac"],
+  ["ltv", "ltv"],
 ]);
 
 /**
@@ -158,7 +158,7 @@ export function normalizeMetricLabel(raw: string | undefined | null): string | u
   // Collapse runs of whitespace to single underscore, strip non-alphanumeric
   // edges. Allows users to write "Net Promoter Score" → `net_promoter_score`
   // without registering it.
-  return trimmed.replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+  return trimmed.replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
 }
 
 /**
@@ -174,12 +174,12 @@ export function extractFactsFromFenceText(
   facts: ParsedFact[],
   slug: string,
   sourceId: string,
-  opts: ExtractFromFenceOpts = {},
+  opts: ExtractFromFenceOpts = {}
 ): FenceExtractedFact[] {
   const today = opts.nowOverride ?? todayUtcDate();
   const pageDateFallback = opts.pageEffectiveDate ?? undefined;
 
-  return facts.map(f => {
+  return facts.map((f) => {
     // v0.35.4 (D-ENG-1) valid_from precedence: fence > pageEffectiveDate > engine default (now).
     const fenceDate = parseValidDate(f.validFrom);
     const validFrom = fenceDate ?? pageDateFallback ?? undefined;
@@ -221,8 +221,8 @@ export function extractFactsFromFenceText(
       // here so the DB-side index hits use the canonical name; value /
       // unit / period stored verbatim.
       claim_metric: normalizeMetricLabel(f.claimMetric) ?? null,
-      claim_value:  f.claimValue ?? null,
-      claim_unit:   f.claimUnit ?? null,
+      claim_value: f.claimValue ?? null,
+      claim_unit: f.claimUnit ?? null,
       claim_period: f.claimPeriod ?? null,
     };
     return row;

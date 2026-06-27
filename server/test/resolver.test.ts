@@ -13,14 +13,12 @@ describe("RESOLVER.md", () => {
     expect(existsSync(RESOLVER_PATH)).toBe(true);
   });
 
-  const resolverContent = existsSync(RESOLVER_PATH)
-    ? readFileSync(RESOLVER_PATH, "utf-8")
-    : "";
+  const resolverContent = existsSync(RESOLVER_PATH) ? readFileSync(RESOLVER_PATH, "utf-8") : "";
 
   test("references only existing skill files", () => {
     // Delegates to checkResolvable — no reimplemented parsing logic
     const report = checkResolvable(SKILLS_DIR);
-    const missingFiles = report.issues.filter(i => i.type === "missing_file");
+    const missingFiles = report.issues.filter((i) => i.type === "missing_file");
     expect(missingFiles.length).toBe(0);
   });
 
@@ -43,9 +41,9 @@ describe("RESOLVER.md", () => {
   test("every manifest skill is reachable from resolver", () => {
     // Delegates to checkResolvable — the shared function handles all validation
     const report = checkResolvable(SKILLS_DIR);
-    const unreachable = report.issues.filter(i => i.type === "unreachable");
+    const unreachable = report.issues.filter((i) => i.type === "unreachable");
     if (unreachable.length > 0) {
-      const names = unreachable.map(i => `${i.skill}: ${i.action}`).join("\n  ");
+      const names = unreachable.map((i) => `${i.skill}: ${i.action}`).join("\n  ");
       throw new Error(`Unreachable skills:\n  ${names}`);
     }
     expect(report.summary.unreachable).toBe(0);
@@ -71,7 +69,7 @@ describe("RESOLVER.md trigger round-trip (D5/C)", () => {
     while ((m = rowRe.exec(content)) !== null) {
       const rawTriggers = m[1];
       const skillPath = m[2];
-      const triggerStrings = Array.from(rawTriggers.matchAll(/"([^"]+)"/g)).map(t => t[1]);
+      const triggerStrings = Array.from(rawTriggers.matchAll(/"([^"]+)"/g)).map((t) => t[1]);
       if (triggerStrings.length > 0) {
         out.push({ triggers: triggerStrings, skillPath });
       }
@@ -96,17 +94,24 @@ describe("RESOLVER.md trigger round-trip (D5/C)", () => {
       const frontmatter = fmMatch[1];
       // Parse frontmatter triggers: list. Match "..." OR '...' items separately
       // so apostrophes inside double-quoted values don't truncate the capture.
-      const triggersBlock = frontmatter.match(/triggers:\s*\n((?:\s*-\s*(?:"[^"]*"|'[^']*')\s*\n?)+)/);
+      const triggersBlock = frontmatter.match(
+        /triggers:\s*\n((?:\s*-\s*(?:"[^"]*"|'[^']*')\s*\n?)+)/
+      );
       const declaredTriggers = triggersBlock
-        ? Array.from(triggersBlock[1].matchAll(/-\s*(?:"([^"]*)"|'([^']*)')/g))
-            .map(m => m[1] ?? m[2])
+        ? Array.from(triggersBlock[1].matchAll(/-\s*(?:"([^"]*)"|'([^']*)')/g)).map(
+            (m) => m[1] ?? m[2]
+          )
         : [];
 
       // Fuzzy match: RESOLVER.md phrases are natural-language summaries of the
       // skill's intent; frontmatter triggers are the agent-facing phrase set.
       // Match is case-insensitive, trailing-punctuation-insensitive, and supports
       // "/"-split compounds (e.g., "pause/resume agent" → ["pause", "resume agent"]).
-      const normalize = (s: string) => s.toLowerCase().replace(/[?!.,]+$/, "").trim();
+      const normalize = (s: string) =>
+        s
+          .toLowerCase()
+          .replace(/[?!.,]+$/, "")
+          .trim();
       const declaredLower = declaredTriggers.map(normalize);
 
       function matchesAny(phrase: string): boolean {
@@ -117,20 +122,23 @@ describe("RESOLVER.md trigger round-trip (D5/C)", () => {
         }
         // Slash-split compound: every part should have some fuzzy frontmatter hit
         if (p.includes("/")) {
-          const parts = p.split("/").map(s => s.trim()).filter(Boolean);
-          const allParts = parts.every(part =>
-            declaredLower.some(ft => ft.includes(part) || part.includes(ft))
+          const parts = p
+            .split("/")
+            .map((s) => s.trim())
+            .filter(Boolean);
+          const allParts = parts.every((part) =>
+            declaredLower.some((ft) => ft.includes(part) || part.includes(ft))
           );
           if (allParts) return true;
         }
         return false;
       }
 
-      const missing = row.triggers.filter(t => !matchesAny(t));
+      const missing = row.triggers.filter((t) => !matchesAny(t));
       if (missing.length > 0) {
         throw new Error(
           `RESOLVER.md routes ${JSON.stringify(missing)} to ${row.skillPath}, but the ` +
-          `skill's frontmatter has no fuzzy match. Declared: ${JSON.stringify(declaredTriggers)}`
+            `skill's frontmatter has no fuzzy match. Declared: ${JSON.stringify(declaredTriggers)}`
         );
       }
     });
@@ -146,7 +154,7 @@ describe("Skill example-name validator (D13)", () => {
   const opNames: string[] = (() => {
     if (!existsSync(OPERATIONS_PATH)) return [];
     const content = readFileSync(OPERATIONS_PATH, "utf-8");
-    return Array.from(content.matchAll(/^\s+name:\s*'([a-z_]+)',/gm)).map(m => m[1]);
+    return Array.from(content.matchAll(/^\s+name:\s*'([a-z_]+)',/gm)).map((m) => m[1]);
   })();
 
   const knownNames = new Set<string>([...opNames, ...PROTECTED_JOB_NAMES]);
@@ -189,15 +197,16 @@ describe("Skill example-name validator (D13)", () => {
       const body = content.replace(/^---\n[\s\S]*?\n---\n/, "");
       // Match only `name=` (with equals, not colon) to avoid YAML false positives
       // if the frontmatter strip ever breaks. Captures quoted word values.
-      const refs = Array.from(body.matchAll(/name\s*=\s*["']([a-z_][a-z_0-9]*)["']/gi))
-        .map(m => m[1]);
+      const refs = Array.from(body.matchAll(/name\s*=\s*["']([a-z_][a-z_0-9]*)["']/gi)).map(
+        (m) => m[1]
+      );
       const unique = [...new Set(refs)];
-      const unknown = unique.filter(n => !knownNames.has(n));
+      const unknown = unique.filter((n) => !knownNames.has(n));
       if (unknown.length > 0) {
         throw new Error(
           `${rel}: references name="..." values not declared in src/core/operations.ts or ` +
-          `PROTECTED_JOB_NAMES: ${JSON.stringify(unknown)}. ` +
-          `Known: ${JSON.stringify([...knownNames].sort())}`
+            `PROTECTED_JOB_NAMES: ${JSON.stringify(unknown)}. ` +
+            `Known: ${JSON.stringify([...knownNames].sort())}`
         );
       }
     });

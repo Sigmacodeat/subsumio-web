@@ -6,11 +6,13 @@ export const maxDuration = 300;
 
 const validActions = new Set(["pause", "resume", "cancel", "replay", "inbox"]);
 
-const inboxSchema = z.object({
-  message: z.string().min(1).max(8000).optional(),
-  content: z.string().max(8000).optional(),
-  query: z.string().max(4000).optional(),
-}).passthrough();
+const inboxSchema = z
+  .object({
+    message: z.string().min(1).max(8000).optional(),
+    content: z.string().max(8000).optional(),
+    query: z.string().max(4000).optional(),
+  })
+  .passthrough();
 
 export const GET = createHandler(
   {
@@ -26,7 +28,10 @@ export const GET = createHandler(
     const path = sub === "inbox" ? `${id}/inbox` : id;
 
     try {
-      const res = await fetch(`${ENGINE_URL}/api/agents/${path}`, { headers: ctx.headers, signal: AbortSignal.timeout(10_000) });
+      const res = await fetch(`${ENGINE_URL}/api/agents/${path}`, {
+        headers: ctx.headers,
+        signal: AbortSignal.timeout(10_000),
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return Response.json(await res.json());
     } catch (err) {
@@ -72,7 +77,7 @@ export const POST = createHandler(
         method: "POST",
         headers: isInbox ? { "Content-Type": "application/json", ...ctx.headers } : ctx.headers,
         ...(isInbox && body ? { body: JSON.stringify(body) } : {}),
-      signal: AbortSignal.timeout(15_000),
+        signal: AbortSignal.timeout(15_000),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return Response.json(await res.json());

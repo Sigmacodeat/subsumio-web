@@ -16,7 +16,7 @@
  * throws on length mismatch; the early-return on length keeps the comparison
  * timing-independent of the length-check itself.
  */
-import { timingSafeEqual } from 'node:crypto';
+import { timingSafeEqual } from "node:crypto";
 
 /**
  * True iff `a` and `b` are equal-length hex strings with the same bytes.
@@ -30,7 +30,7 @@ import { timingSafeEqual } from 'node:crypto';
  */
 export function safeHexEqual(a: string, b: string): boolean {
   if (a.length !== b.length) return false;
-  return timingSafeEqual(Buffer.from(a, 'hex'), Buffer.from(b, 'hex'));
+  return timingSafeEqual(Buffer.from(a, "hex"), Buffer.from(b, "hex"));
 }
 
 /**
@@ -45,8 +45,8 @@ export function safeHexEqual(a: string, b: string): boolean {
  * plain string, not hex-encoded bytes.
  */
 export function safeStringEqual(a: string, b: string): boolean {
-  const aBuf = Buffer.from(a, 'utf8');
-  const bBuf = Buffer.from(b, 'utf8');
+  const aBuf = Buffer.from(a, "utf8");
+  const bBuf = Buffer.from(b, "utf8");
   if (aBuf.length !== bBuf.length) return false;
   return timingSafeEqual(aBuf, bBuf);
 }

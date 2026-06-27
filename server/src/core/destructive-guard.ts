@@ -13,7 +13,7 @@
  * and recoverable AFTER you pull it (within a grace period).
  */
 
-import type { BrainEngine } from './engine.ts';
+import type { BrainEngine } from "./engine.ts";
 
 // ── Types ───────────────────────────────────────────────────
 
@@ -51,12 +51,12 @@ export const CONFIRM_THRESHOLD_PAGES = 1;
  */
 export async function assessDestructiveImpact(
   engine: BrainEngine,
-  sourceId: string,
+  sourceId: string
 ): Promise<DestructiveImpact | null> {
   // Fetch source metadata
   const sources = await engine.executeRaw<{ id: string; name: string }>(
     `SELECT id, name FROM sources WHERE id = $1`,
-    [sourceId],
+    [sourceId]
   );
   if (sources.length === 0) return null;
 
@@ -65,7 +65,7 @@ export async function assessDestructiveImpact(
   // Count pages
   const pageRows = await engine.executeRaw<{ n: number }>(
     `SELECT COUNT(*)::int AS n FROM pages WHERE source_id = $1`,
-    [sourceId],
+    [sourceId]
   );
   const pageCount = pageRows[0]?.n ?? 0;
 
@@ -74,7 +74,7 @@ export async function assessDestructiveImpact(
     `SELECT COUNT(*)::int AS n FROM content_chunks cc
      JOIN pages p ON cc.page_id = p.id
      WHERE p.source_id = $1`,
-    [sourceId],
+    [sourceId]
   );
   const chunkCount = chunkRows[0]?.n ?? 0;
 
@@ -83,7 +83,7 @@ export async function assessDestructiveImpact(
     `SELECT COUNT(*)::int AS n FROM content_chunks cc
      JOIN pages p ON cc.page_id = p.id
      WHERE p.source_id = $1 AND cc.embedding IS NOT NULL`,
-    [sourceId],
+    [sourceId]
   );
   const embeddingCount = embedRows[0]?.n ?? 0;
 
@@ -95,12 +95,12 @@ export async function assessDestructiveImpact(
     `SELECT EXISTS (
        SELECT 1 FROM information_schema.tables
        WHERE table_schema = 'public' AND table_name = 'files'
-     ) AS exists`,
+     ) AS exists`
   );
   if (filesTableRows[0]?.exists) {
     const fileRows = await engine.executeRaw<{ n: number }>(
       `SELECT COUNT(*)::int AS n FROM files WHERE source_id = $1`,
-      [sourceId],
+      [sourceId]
     );
     fileCount = fileRows[0]?.n ?? 0;
   }
@@ -111,9 +111,10 @@ export async function assessDestructiveImpact(
   if (embeddingCount > 0) parts.push(`${embeddingCount.toLocaleString()} embeddings`);
   if (fileCount > 0) parts.push(`${fileCount.toLocaleString()} files`);
 
-  const summary = parts.length > 0
-    ? `⚠️  This will permanently delete: ${parts.join(', ')}`
-    : `Source "${sourceId}" has no data (safe to remove).`;
+  const summary =
+    parts.length > 0
+      ? `⚠️  This will permanently delete: ${parts.join(", ")}`
+      : `Source "${sourceId}" has no data (safe to remove).`;
 
   return {
     sourceId,
@@ -138,7 +139,7 @@ export function checkDestructiveConfirmation(
     yes?: boolean;
     confirmDestructive?: boolean;
     dryRun?: boolean;
-  },
+  }
 ): string | null {
   // Dry run always passes (no side effects)
   if (opts.dryRun) return null;
@@ -179,13 +180,18 @@ export function checkDestructiveConfirmation(
  */
 export async function softDeleteSource(
   engine: BrainEngine,
-  sourceId: string,
+  sourceId: string
 ): Promise<SoftDeletedSource | null> {
   // Atomic: only flip rows that are currently active. Returns the metadata
   // we need without a follow-up SELECT. RETURNING projects the columns the
   // caller cares about; pageCount is a separate count.
   const expiresClause = `now() + (${SOFT_DELETE_TTL_HOURS} || ' hours')::interval`;
-  const rows = await engine.executeRaw<{ id: string; name: string; archived_at: string; archive_expires_at: string }>(
+  const rows = await engine.executeRaw<{
+    id: string;
+    name: string;
+    archived_at: string;
+    archive_expires_at: string;
+  }>(
     `UPDATE sources
      SET archived = true,
          archived_at = now(),
@@ -193,14 +199,14 @@ export async function softDeleteSource(
          config = COALESCE(config, '{}'::jsonb) || '{"federated": false}'::jsonb
      WHERE id = $1 AND archived = false
      RETURNING id, name, archived_at, archive_expires_at`,
-    [sourceId],
+    [sourceId]
   );
   if (rows.length === 0) return null;
   const row = rows[0];
 
   const pageRows = await engine.executeRaw<{ n: number }>(
     `SELECT COUNT(*)::int AS n FROM pages WHERE source_id = $1`,
-    [sourceId],
+    [sourceId]
   );
   const pageCount = pageRows[0]?.n ?? 0;
 
@@ -224,7 +230,7 @@ export async function softDeleteSource(
 export async function restoreSource(
   engine: BrainEngine,
   sourceId: string,
-  refederate: boolean = true,
+  refederate: boolean = true
 ): Promise<boolean> {
   const federatedPatch = refederate ? '{"federated": true}' : '{"federated": false}';
   const rows = await engine.executeRaw<{ id: string }>(
@@ -235,7 +241,7 @@ export async function restoreSource(
          config = COALESCE(config, '{}'::jsonb) || $1::jsonb
      WHERE id = $2 AND archived = true
      RETURNING id`,
-    [federatedPatch, sourceId],
+    [federatedPatch, sourceId]
   );
   return rows.length > 0;
 }
@@ -247,9 +253,7 @@ export async function restoreSource(
  * containment. Faster, indexable on demand, no JSONB reserved-key collision
  * with future config schemas.
  */
-export async function listArchivedSources(
-  engine: BrainEngine,
-): Promise<SoftDeletedSource[]> {
+export async function listArchivedSources(engine: BrainEngine): Promise<SoftDeletedSource[]> {
   const rows = await engine.executeRaw<{
     id: string;
     name: string;
@@ -262,7 +266,7 @@ export async function listArchivedSources(
         COALESCE((SELECT COUNT(*)::int FROM pages p WHERE p.source_id = s.id), 0) AS page_count
      FROM sources s
      WHERE s.archived = true
-     ORDER BY s.archived_at DESC`,
+     ORDER BY s.archived_at DESC`
   );
 
   return rows.map((row) => ({
@@ -282,15 +286,13 @@ export async function listArchivedSources(
  * with `archived = true AND archive_expires_at <= now()`. Server-side
  * filter; one round-trip; cascade-friendly.
  */
-export async function purgeExpiredSources(
-  engine: BrainEngine,
-): Promise<string[]> {
+export async function purgeExpiredSources(engine: BrainEngine): Promise<string[]> {
   const rows = await engine.executeRaw<{ id: string }>(
     `DELETE FROM sources
      WHERE archived = true
        AND archive_expires_at IS NOT NULL
        AND archive_expires_at <= now()
-     RETURNING id`,
+     RETURNING id`
   );
   return rows.map((r) => r.id);
 }
@@ -318,7 +320,7 @@ export function formatImpact(impact: DestructiveImpact): string {
     `╚══════════════════════════════════════════════════════════╝`,
     ``,
   ];
-  return lines.join('\n');
+  return lines.join("\n");
 }
 
 export function formatSoftDelete(sd: SoftDeletedSource): string {
@@ -333,5 +335,5 @@ export function formatSoftDelete(sd: SoftDeletedSource): string {
     `  Restore:  gbrain sources restore ${sd.id}`,
     `  Purge now: gbrain sources purge ${sd.id} --confirm-destructive`,
     ``,
-  ].join('\n');
+  ].join("\n");
 }

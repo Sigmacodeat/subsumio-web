@@ -13,8 +13,13 @@
  *     (regression guard for FAIL-CLOSED behavior)
  */
 
-import { describe, test, expect } from 'bun:test';
-import { matchesSlugAllowList, operations, OperationError, type OperationContext } from '../src/core/operations.ts';
+import { describe, test, expect } from "bun:test";
+import {
+  matchesSlugAllowList,
+  operations,
+  OperationError,
+  type OperationContext,
+} from "../src/core/operations.ts";
 
 const STUB_LOGGER = {
   info: () => {},
@@ -22,10 +27,12 @@ const STUB_LOGGER = {
   error: () => {},
 };
 
-const STUB_CONFIG = {} as unknown as Parameters<typeof operations[number]['handler']>[0]['config'];
+const STUB_CONFIG = {} as unknown as Parameters<
+  (typeof operations)[number]["handler"]
+>[0]["config"];
 
 function findOp(name: string) {
-  const op = operations.find(o => o.name === name);
+  const op = operations.find((o) => o.name === name);
   if (!op) throw new Error(`operation ${name} not found`);
   return op;
 }
@@ -37,9 +44,11 @@ function findOp(name: string) {
 function stubEngine() {
   return new Proxy({} as never, {
     get(_target, prop: string) {
-      return () => { throw new Error(`engine.${prop} should not have been called — gate failed`); };
+      return () => {
+        throw new Error(`engine.${prop} should not have been called — gate failed`);
+      };
     },
-  }) as Parameters<typeof operations[number]['handler']>[0]['engine'];
+  }) as Parameters<(typeof operations)[number]["handler"]>[0]["engine"];
 }
 
 function makeCtx(overrides: Partial<OperationContext> = {}): OperationContext {
@@ -56,108 +65,123 @@ function makeCtx(overrides: Partial<OperationContext> = {}): OperationContext {
   } as OperationContext;
 }
 
-describe('matchesSlugAllowList — glob semantics', () => {
-  test('exact match (no glob suffix)', () => {
-    expect(matchesSlugAllowList('foo/bar', ['foo/bar'])).toBe(true);
-    expect(matchesSlugAllowList('foo/bar/baz', ['foo/bar'])).toBe(false);
+describe("matchesSlugAllowList — glob semantics", () => {
+  test("exact match (no glob suffix)", () => {
+    expect(matchesSlugAllowList("foo/bar", ["foo/bar"])).toBe(true);
+    expect(matchesSlugAllowList("foo/bar/baz", ["foo/bar"])).toBe(false);
   });
 
-  test('shallow glob: prefix/* matches any single direct child segment', () => {
-    expect(matchesSlugAllowList('wiki/personal/reflections/2026-04-25-arete-paradox-a3f8c1',
-      ['wiki/personal/reflections/*'])).toBe(true);
-    expect(matchesSlugAllowList('wiki/personal/reflections',
-      ['wiki/personal/reflections/*'])).toBe(false);
+  test("shallow glob: prefix/* matches any single direct child segment", () => {
+    expect(
+      matchesSlugAllowList("wiki/personal/reflections/2026-04-25-arete-paradox-a3f8c1", [
+        "wiki/personal/reflections/*",
+      ])
+    ).toBe(true);
+    expect(matchesSlugAllowList("wiki/personal/reflections", ["wiki/personal/reflections/*"])).toBe(
+      false
+    );
   });
 
-  test('recursive: prefix/* matches deep children too', () => {
-    expect(matchesSlugAllowList('wiki/originals/ideas/2026-04-25-foo',
-      ['wiki/originals/*'])).toBe(true);
-    expect(matchesSlugAllowList('wiki/originals/ideas/foo/bar',
-      ['wiki/originals/*'])).toBe(true);
+  test("recursive: prefix/* matches deep children too", () => {
+    expect(matchesSlugAllowList("wiki/originals/ideas/2026-04-25-foo", ["wiki/originals/*"])).toBe(
+      true
+    );
+    expect(matchesSlugAllowList("wiki/originals/ideas/foo/bar", ["wiki/originals/*"])).toBe(true);
   });
 
-  test('rejects slugs outside every prefix', () => {
-    const list = [
-      'wiki/personal/reflections/*',
-      'wiki/originals/*',
-    ];
-    expect(matchesSlugAllowList('wiki/finance/secret', list)).toBe(false);
-    expect(matchesSlugAllowList('wiki/people/alice', list)).toBe(false);
+  test("rejects slugs outside every prefix", () => {
+    const list = ["wiki/personal/reflections/*", "wiki/originals/*"];
+    expect(matchesSlugAllowList("wiki/finance/secret", list)).toBe(false);
+    expect(matchesSlugAllowList("wiki/people/alice", list)).toBe(false);
   });
 
-  test('empty list rejects everything', () => {
-    expect(matchesSlugAllowList('wiki/anything', [])).toBe(false);
+  test("empty list rejects everything", () => {
+    expect(matchesSlugAllowList("wiki/anything", [])).toBe(false);
   });
 
-  test('does NOT match prefix without trailing segment', () => {
-    expect(matchesSlugAllowList('wiki/personal/reflections',
-      ['wiki/personal/reflections/*'])).toBe(false);
+  test("does NOT match prefix without trailing segment", () => {
+    expect(matchesSlugAllowList("wiki/personal/reflections", ["wiki/personal/reflections/*"])).toBe(
+      false
+    );
   });
 });
 
-describe('put_page — trusted-workspace allow-list', () => {
-  const put_page = findOp('put_page');
+describe("put_page — trusted-workspace allow-list", () => {
+  const put_page = findOp("put_page");
 
-  test('REJECTS when slug is outside the allow-list', async () => {
+  test("REJECTS when slug is outside the allow-list", async () => {
     const ctx = makeCtx({
-      allowedSlugPrefixes: ['wiki/personal/reflections/*', 'wiki/originals/*'],
+      allowedSlugPrefixes: ["wiki/personal/reflections/*", "wiki/originals/*"],
     });
-    await expect(put_page.handler(ctx, {
-      slug: 'wiki/finance/secret',
-      content: '---\ntitle: x\n---\nbody',
-    })).rejects.toMatchObject({
-      code: 'permission_denied',
+    await expect(
+      put_page.handler(ctx, {
+        slug: "wiki/finance/secret",
+        content: "---\ntitle: x\n---\nbody",
+      })
+    ).rejects.toMatchObject({
+      code: "permission_denied",
     });
   });
 
-  test('REJECTS path-traversal-like slug (slug regex catches it earlier in the import path; allow-list also catches via no-match)', async () => {
+  test("REJECTS path-traversal-like slug (slug regex catches it earlier in the import path; allow-list also catches via no-match)", async () => {
     const ctx = makeCtx({
-      allowedSlugPrefixes: ['wiki/personal/reflections/*'],
+      allowedSlugPrefixes: ["wiki/personal/reflections/*"],
     });
     // The slug regex in validatePageSlug rejects `..`; here we test the
     // allow-list layer specifically with a slug that LOOKS legal but isn't on the list.
-    await expect(put_page.handler(ctx, {
-      slug: 'wiki/people/garry-tan',
-      content: '---\ntitle: x\n---\nbody',
-    })).rejects.toMatchObject({
-      code: 'permission_denied',
+    await expect(
+      put_page.handler(ctx, {
+        slug: "wiki/people/garry-tan",
+        content: "---\ntitle: x\n---\nbody",
+      })
+    ).rejects.toMatchObject({
+      code: "permission_denied",
     });
   });
 });
 
-describe('put_page — legacy namespace check (regression guard)', () => {
-  const put_page = findOp('put_page');
+describe("put_page — legacy namespace check (regression guard)", () => {
+  const put_page = findOp("put_page");
 
-  test('REJECTS write outside wiki/agents/<id>/ when allow-list is unset', async () => {
+  test("REJECTS write outside wiki/agents/<id>/ when allow-list is unset", async () => {
     // The v0.15 anti-prompt-injection guarantee: subagent without explicit
     // allow-list MUST be confined to its own agent namespace. This test
     // ensures v0.21 doesn't regress that boundary.
     const ctx = makeCtx({ allowedSlugPrefixes: undefined });
-    await expect(put_page.handler(ctx, {
-      slug: 'wiki/personal/reflections/2026-04-25-foo',
-      content: '---\ntitle: x\n---\nbody',
-    })).rejects.toMatchObject({
-      code: 'permission_denied',
+    await expect(
+      put_page.handler(ctx, {
+        slug: "wiki/personal/reflections/2026-04-25-foo",
+        content: "---\ntitle: x\n---\nbody",
+      })
+    ).rejects.toMatchObject({
+      code: "permission_denied",
     });
   });
 
-  test('REJECTS write outside wiki/agents/<id>/ when allow-list is empty array', async () => {
+  test("REJECTS write outside wiki/agents/<id>/ when allow-list is empty array", async () => {
     const ctx = makeCtx({ allowedSlugPrefixes: [] });
-    await expect(put_page.handler(ctx, {
-      slug: 'wiki/personal/reflections/2026-04-25-foo',
-      content: '---\ntitle: x\n---\nbody',
-    })).rejects.toMatchObject({
-      code: 'permission_denied',
+    await expect(
+      put_page.handler(ctx, {
+        slug: "wiki/personal/reflections/2026-04-25-foo",
+        content: "---\ntitle: x\n---\nbody",
+      })
+    ).rejects.toMatchObject({
+      code: "permission_denied",
     });
   });
 
-  test('REJECTS when viaSubagent=true but subagentId is missing (FAIL-CLOSED)', async () => {
-    const ctx = makeCtx({ subagentId: undefined as unknown as number, allowedSlugPrefixes: undefined });
-    await expect(put_page.handler(ctx, {
-      slug: 'wiki/agents/42/foo',
-      content: '---\ntitle: x\n---\nbody',
-    })).rejects.toMatchObject({
-      code: 'permission_denied',
+  test("REJECTS when viaSubagent=true but subagentId is missing (FAIL-CLOSED)", async () => {
+    const ctx = makeCtx({
+      subagentId: undefined as unknown as number,
+      allowedSlugPrefixes: undefined,
+    });
+    await expect(
+      put_page.handler(ctx, {
+        slug: "wiki/agents/42/foo",
+        content: "---\ntitle: x\n---\nbody",
+      })
+    ).rejects.toMatchObject({
+      code: "permission_denied",
     });
   });
 });

@@ -63,9 +63,7 @@ function renderLlmsTxt(): string {
     lines.push(`## ${section.heading}`);
     lines.push("");
     for (const entry of section.entries) {
-      lines.push(
-        `- [${entry.title}](${urlFor(entry)}): ${entry.description}`,
-      );
+      lines.push(`- [${entry.title}](${urlFor(entry)}): ${entry.description}`);
     }
     lines.push("");
   }
@@ -88,12 +86,8 @@ function renderLlmsFullTxt(): { content: string; sizes: Array<{ path: string; by
   lines.push("");
   lines.push(`> ${PROJECT.summary}`);
   lines.push("");
-  lines.push(
-    `This file concatenates core GBrain documentation for single-fetch ingestion.`,
-  );
-  lines.push(
-    `For the link-only index, see \`llms.txt\`. Source of truth: ${PROJECT.repoUrl}.`,
-  );
+  lines.push(`This file concatenates core GBrain documentation for single-fetch ingestion.`);
+  lines.push(`For the link-only index, see \`llms.txt\`. Source of truth: ${PROJECT.repoUrl}.`);
   lines.push("");
 
   for (const section of SECTIONS) {
@@ -108,9 +102,7 @@ function renderLlmsFullTxt(): { content: string; sizes: Array<{ path: string; by
       if (!existsSync(absPath)) {
         // build-llms won't silently skip — surface the problem. Test case 1
         // catches this too, but fail fast for manual runs.
-        throw new Error(
-          `llms-config references missing file: ${entry.path}`,
-        );
+        throw new Error(`llms-config references missing file: ${entry.path}`);
       }
 
       const body = readFileSync(absPath, "utf8");
@@ -136,20 +128,14 @@ function validateConfig(): void {
     for (const entry of section.entries) {
       const absPath = resolveRepoPath(entry.path);
       if (!existsSync(absPath)) {
-        throw new Error(
-          `llms-config references missing path: ${entry.path}`,
-        );
+        throw new Error(`llms-config references missing path: ${entry.path}`);
       }
       const st = statSync(absPath);
       if (isDirectoryPath(entry.path) && !st.isDirectory()) {
-        throw new Error(
-          `llms-config path ends with '/' but is a file: ${entry.path}`,
-        );
+        throw new Error(`llms-config path ends with '/' but is a file: ${entry.path}`);
       }
       if (!isDirectoryPath(entry.path) && !st.isFile()) {
-        throw new Error(
-          `llms-config path is a directory but missing trailing '/': ${entry.path}`,
-        );
+        throw new Error(`llms-config path is a directory but missing trailing '/': ${entry.path}`);
       }
     }
   }
@@ -182,11 +168,9 @@ function main(): void {
   if (fullBytes > FULL_SIZE_BUDGET) {
     console.warn("");
     console.warn(
-      `WARN: llms-full.txt (${fullBytes} bytes) exceeds FULL_SIZE_BUDGET (${FULL_SIZE_BUDGET} bytes).`,
+      `WARN: llms-full.txt (${fullBytes} bytes) exceeds FULL_SIZE_BUDGET (${FULL_SIZE_BUDGET} bytes).`
     );
-    console.warn(
-      "Add `includeInFull: false` to the biggest entries in scripts/llms-config.ts:",
-    );
+    console.warn("Add `includeInFull: false` to the biggest entries in scripts/llms-config.ts:");
     const sorted = [...sizes].sort((a, b) => b.bytes - a.bytes);
     for (const entry of sorted.slice(0, 5)) {
       console.warn(`  ${entry.bytes} bytes  ${entry.path}`);

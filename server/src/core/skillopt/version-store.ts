@@ -29,31 +29,31 @@
  *     ...
  */
 
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import { atomicWrite } from './apply-edits.ts';
-import type { EditOp, HistoryRow } from './types.ts';
+import * as fs from "node:fs";
+import * as path from "node:path";
+import { atomicWrite } from "./apply-edits.ts";
+import type { EditOp, HistoryRow } from "./types.ts";
 
 // ─── Path helpers ────────────────────────────────────────────────────────
 
 export function skilloptDir(skillsDir: string, skillName: string): string {
-  return path.join(skillsDir, skillName, 'skillopt');
+  return path.join(skillsDir, skillName, "skillopt");
 }
 
 export function versionsDir(skillsDir: string, skillName: string): string {
-  return path.join(skilloptDir(skillsDir, skillName), 'versions');
+  return path.join(skilloptDir(skillsDir, skillName), "versions");
 }
 
 export function historyPath(skillsDir: string, skillName: string): string {
-  return path.join(skilloptDir(skillsDir, skillName), 'history.json');
+  return path.join(skilloptDir(skillsDir, skillName), "history.json");
 }
 
 export function bestPath(skillsDir: string, skillName: string): string {
-  return path.join(skilloptDir(skillsDir, skillName), 'best.md');
+  return path.join(skilloptDir(skillsDir, skillName), "best.md");
 }
 
 export function skillPath(skillsDir: string, skillName: string): string {
-  return path.join(skillsDir, skillName, 'SKILL.md');
+  return path.join(skillsDir, skillName, "SKILL.md");
 }
 
 export function versionPath(
@@ -61,9 +61,9 @@ export function versionPath(
   skillName: string,
   versionN: number,
   epoch: number,
-  step: number,
+  step: number
 ): string {
-  const n = String(versionN).padStart(4, '0');
+  const n = String(versionN).padStart(4, "0");
   return path.join(versionsDir(skillsDir, skillName), `v${n}_e${epoch}_s${step}.md`);
 }
 
@@ -78,9 +78,9 @@ export function loadHistory(skillsDir: string, skillName: string): HistoryRow[] 
   const p = historyPath(skillsDir, skillName);
   if (!fs.existsSync(p)) return [];
   try {
-    const raw = fs.readFileSync(p, 'utf8');
+    const raw = fs.readFileSync(p, "utf8");
     const parsed: unknown = JSON.parse(raw);
-    if (!parsed || typeof parsed !== 'object') return [];
+    if (!parsed || typeof parsed !== "object") return [];
     const obj = parsed as Record<string, unknown>;
     if (obj.schema !== 1 || !Array.isArray(obj.rows)) return [];
     return obj.rows as HistoryRow[];
@@ -94,7 +94,7 @@ export function loadHistory(skillsDir: string, skillName: string): HistoryRow[] 
 function writeHistory(skillsDir: string, skillName: string, rows: HistoryRow[]): void {
   const p = historyPath(skillsDir, skillName);
   fs.mkdirSync(path.dirname(p), { recursive: true });
-  atomicWrite(p, JSON.stringify({ schema: 1, rows } satisfies HistoryFile, null, 2) + '\n');
+  atomicWrite(p, JSON.stringify({ schema: 1, rows } satisfies HistoryFile, null, 2) + "\n");
 }
 
 // ─── D8 two-phase commit ─────────────────────────────────────────────────
@@ -132,14 +132,14 @@ export function acceptCandidate(input: AcceptInput): AcceptResult {
   // Compute version_n (next sequence after the highest committed row).
   const history = loadHistory(skillsDir, skillName);
   const maxCommitted = history
-    .filter((r) => r.status === 'committed')
+    .filter((r) => r.status === "committed")
     .reduce((m, r) => Math.max(m, r.version_n), 0);
   const versionN = maxCommitted + 1;
 
   // Step 1: append history row (pending).
   const ts = new Date().toISOString();
   const pendingRow: HistoryRow = {
-    status: 'pending',
+    status: "pending",
     run_id: runId,
     version_n: versionN,
     ts,
@@ -161,9 +161,9 @@ export function acceptCandidate(input: AcceptInput): AcceptResult {
 
   // Step 5: flip pending → committed.
   const updated = loadHistory(skillsDir, skillName).map((r) =>
-    r.run_id === runId && r.version_n === versionN && r.status === 'pending'
-      ? { ...r, status: 'committed' as const }
-      : r,
+    r.run_id === runId && r.version_n === versionN && r.status === "pending"
+      ? { ...r, status: "committed" as const }
+      : r
   );
   writeHistory(skillsDir, skillName, updated);
 
@@ -200,18 +200,22 @@ export function writeProposed(skillsDir: string, skillName: string, candidateTex
  */
 export function revertAllPending(skillsDir: string, skillName: string): number {
   const history = loadHistory(skillsDir, skillName);
-  const pending = history.filter((r) => r.status === 'pending');
+  const pending = history.filter((r) => r.status === "pending");
   if (pending.length === 0) return 0;
 
   for (const row of pending) {
     // Delete the snapshot. We don't know epoch/step from the history row
     // alone, so we search the versions dir for files matching `vNNNN_*.md`.
-    const verN = String(row.version_n).padStart(4, '0');
+    const verN = String(row.version_n).padStart(4, "0");
     const dir = versionsDir(skillsDir, skillName);
     if (fs.existsSync(dir)) {
       for (const entry of fs.readdirSync(dir)) {
         if (entry.startsWith(`v${verN}_`)) {
-          try { fs.unlinkSync(path.join(dir, entry)); } catch { /* ignore */ }
+          try {
+            fs.unlinkSync(path.join(dir, entry));
+          } catch {
+            /* ignore */
+          }
         }
       }
     }
@@ -219,21 +223,25 @@ export function revertAllPending(skillsDir: string, skillName: string): number {
 
   // Restore best.md to the most-recent COMMITTED version (or remove it if
   // no committed version exists).
-  const committed = history.filter((r) => r.status === 'committed');
+  const committed = history.filter((r) => r.status === "committed");
   const bestP = bestPath(skillsDir, skillName);
   if (committed.length === 0) {
     if (fs.existsSync(bestP)) {
-      try { fs.unlinkSync(bestP); } catch { /* ignore */ }
+      try {
+        fs.unlinkSync(bestP);
+      } catch {
+        /* ignore */
+      }
     }
   } else {
     const highest = committed.reduce((m, r) => (r.version_n > m.version_n ? r : m), committed[0]!);
     const dir = versionsDir(skillsDir, skillName);
-    const verN = String(highest.version_n).padStart(4, '0');
+    const verN = String(highest.version_n).padStart(4, "0");
     if (fs.existsSync(dir)) {
       for (const entry of fs.readdirSync(dir)) {
         if (entry.startsWith(`v${verN}_`)) {
           const src = path.join(dir, entry);
-          atomicWrite(bestP, fs.readFileSync(src, 'utf8'));
+          atomicWrite(bestP, fs.readFileSync(src, "utf8"));
           break;
         }
       }
@@ -241,7 +249,7 @@ export function revertAllPending(skillsDir: string, skillName: string): number {
   }
 
   // Trim pending rows out of history.
-  const kept = history.filter((r) => r.status !== 'pending');
+  const kept = history.filter((r) => r.status !== "pending");
   writeHistory(skillsDir, skillName, kept);
   return pending.length;
 }

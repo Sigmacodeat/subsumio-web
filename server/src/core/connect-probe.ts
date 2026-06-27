@@ -20,10 +20,10 @@
  * Never throws: every failure path maps to `{ ok: false, reason, message }`.
  */
 
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 
-export type ConnectProbeReason = 'auth' | 'unreachable' | 'timeout' | 'tool_error' | 'unknown';
+export type ConnectProbeReason = "auth" | "unreachable" | "timeout" | "tool_error" | "unknown";
 
 /** Default smoke-probe timeout. Single source of truth shared with connect.ts. */
 export const DEFAULT_PROBE_TIMEOUT_MS = 15_000;
@@ -45,7 +45,7 @@ export interface ProbeDeps {
   connectAndCall: (
     mcpUrl: string,
     token: string,
-    signal: AbortSignal,
+    signal: AbortSignal
   ) => Promise<{ isError?: boolean; content?: unknown }>;
 }
 
@@ -54,25 +54,31 @@ export interface ProbeDeps {
  * classification is unit-testable without a network.
  */
 export function classifyProbeError(message: string): ConnectProbeReason {
-  if (/timeout|abort/i.test(message)) return 'timeout';
-  if (isAuthErrorMessage(message)) return 'auth';
+  if (/timeout|abort/i.test(message)) return "timeout";
+  if (isAuthErrorMessage(message)) return "auth";
   // undici/fetch + MCP SDK transport failures: DNS, ECONNREFUSED, TLS,
   // getaddrinfo, and the SDK's friendly "Unable to connect..." wrapper.
-  if (/fetch failed|unable to connect|connection refused|failed to connect|could not connect|ENOTFOUND|ECONNREFUSED|ECONNRESET|EHOSTUNREACH|ETIMEDOUT|network|socket|tls|certificate/i.test(message)) {
-    return 'unreachable';
+  if (
+    /fetch failed|unable to connect|connection refused|failed to connect|could not connect|ENOTFOUND|ECONNREFUSED|ECONNRESET|EHOSTUNREACH|ETIMEDOUT|network|socket|tls|certificate/i.test(
+      message
+    )
+  ) {
+    return "unreachable";
   }
-  return 'unknown';
+  return "unknown";
 }
 
 /** Pull the text payload out of an MCP tool result's content array. */
 export function extractResultText(content: unknown): string {
-  if (!Array.isArray(content)) return '';
+  if (!Array.isArray(content)) return "";
   return content
-    .map((c) => (c && typeof c === 'object' && typeof (c as { text?: unknown }).text === 'string'
-      ? (c as { text: string }).text
-      : ''))
+    .map((c) =>
+      c && typeof c === "object" && typeof (c as { text?: unknown }).text === "string"
+        ? (c as { text: string }).text
+        : ""
+    )
     .filter(Boolean)
-    .join('\n');
+    .join("\n");
 }
 
 const DEFAULT_DEPS: ProbeDeps = {
@@ -83,20 +89,21 @@ const DEFAULT_DEPS: ProbeDeps = {
         signal,
       },
     });
-    const client = new Client(
-      { name: 'gbrain-connect-probe', version: '1' },
-      { capabilities: {} },
-    );
+    const client = new Client({ name: "gbrain-connect-probe", version: "1" }, { capabilities: {} });
     // close() lives in a finally that wraps connect() too — if connect()
     // throws mid-handshake the transport/socket must still be torn down.
     try {
       await client.connect(transport);
       // callTool's return is a wide union (incl. the legacy {toolResult}
       // shape); we only read isError + content, so narrow at the boundary.
-      const res = await client.callTool({ name: 'get_brain_identity', arguments: {} });
+      const res = await client.callTool({ name: "get_brain_identity", arguments: {} });
       return res as { isError?: boolean; content?: unknown };
     } finally {
-      try { await client.close(); } catch { /* best-effort */ }
+      try {
+        await client.close();
+      } catch {
+        /* best-effort */
+      }
     }
   },
 };
@@ -109,7 +116,7 @@ const DEFAULT_DEPS: ProbeDeps = {
 export async function probeBrainIdentity(
   mcpUrl: string,
   token: string,
-  opts: { timeoutMs?: number; deps?: ProbeDeps } = {},
+  opts: { timeoutMs?: number; deps?: ProbeDeps } = {}
 ): Promise<ConnectProbeResult> {
   const deps = opts.deps ?? DEFAULT_DEPS;
   const timeoutMs = opts.timeoutMs ?? DEFAULT_PROBE_TIMEOUT_MS;
@@ -123,16 +130,19 @@ export async function probeBrainIdentity(
   // exits regardless.
   const timeoutGuard = new Promise<never>((_resolve, reject) => {
     timer = setTimeout(() => {
-      controller.abort(new Error('timeout'));
+      controller.abort(new Error("timeout"));
       // Message must contain "timeout" so classifyProbeError maps it correctly.
       reject(new Error(`probe timeout after ${timeoutMs}ms`));
     }, timeoutMs);
   });
   try {
-    const res = await Promise.race([deps.connectAndCall(mcpUrl, token, controller.signal), timeoutGuard]);
+    const res = await Promise.race([
+      deps.connectAndCall(mcpUrl, token, controller.signal),
+      timeoutGuard,
+    ]);
     if (res.isError) {
-      const message = extractResultText(res.content) || 'unknown tool error';
-      const reason = isAuthErrorMessage(message) ? 'auth' : 'tool_error';
+      const message = extractResultText(res.content) || "unknown tool error";
+      const reason = isAuthErrorMessage(message) ? "auth" : "tool_error";
       return { ok: false, reason, message };
     }
     const identity = extractResultText(res.content);

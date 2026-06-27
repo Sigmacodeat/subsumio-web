@@ -62,22 +62,16 @@ scrypt(password, salt, 64, { N: 16384, r: 8, p: 1 }, async (err, key) => {
       console.log("INVALID SCHEME");
       process.exit(1);
     }
-    scrypt(
-      password,
-      Buffer.from(saltHex, "hex"),
-      64,
-      { N: 16384, r: 8, p: 1 },
-      (err2, key2) => {
-        if (err2) {
-          console.error(err2);
-          process.exit(1);
-        }
-        const expected = Buffer.from(hashHex, "hex");
-        const ok = key2.length === expected.length && timingSafeEqual(key2, expected);
-        console.log("Password verify:", ok ? "SUCCESS" : "FAILED");
-        pool.end();
+    scrypt(password, Buffer.from(saltHex, "hex"), 64, { N: 16384, r: 8, p: 1 }, (err2, key2) => {
+      if (err2) {
+        console.error(err2);
+        process.exit(1);
       }
-    );
+      const expected = Buffer.from(hashHex, "hex");
+      const ok = key2.length === expected.length && timingSafeEqual(key2, expected);
+      console.log("Password verify:", ok ? "SUCCESS" : "FAILED");
+      pool.end();
+    });
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
     console.error("DB Error:", message);

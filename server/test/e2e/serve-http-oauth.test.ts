@@ -12,21 +12,21 @@
  * Run: GBRAIN_DATABASE_URL=... bun test test/e2e/serve-http-oauth.test.ts
  */
 
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
-import { hasDatabase } from './helpers.ts';
+import { describe, test, expect, beforeAll, afterAll } from "bun:test";
+import { hasDatabase } from "./helpers.ts";
 
 const skip = !hasDatabase();
 const describeE2E = skip ? describe.skip : describe;
 
 if (skip) {
-  console.log('Skipping E2E serve-http-oauth tests (DATABASE_URL not set)');
+  console.log("Skipping E2E serve-http-oauth tests (DATABASE_URL not set)");
 }
 
 const PORT = 19131; // Avoid collision with production 3131
 const BASE = `http://localhost:${PORT}`;
 
-describeE2E('serve-http OAuth 2.1 E2E (v0.26.1 + v0.26.2 + v0.26.3)', () => {
-  let serverProcess: ReturnType<typeof import('child_process').spawn> | null = null;
+describeE2E("serve-http OAuth 2.1 E2E (v0.26.1 + v0.26.2 + v0.26.3)", () => {
+  let serverProcess: ReturnType<typeof import("child_process").spawn> | null = null;
   let clientId: string | undefined;
   let clientSecret: string | undefined;
   // DCR-registered clients accumulate here so afterAll can revoke them too
@@ -34,7 +34,7 @@ describeE2E('serve-http OAuth 2.1 E2E (v0.26.1 + v0.26.2 + v0.26.3)', () => {
   const dcrClientIds: string[] = [];
 
   beforeAll(async () => {
-    const { execSync, spawn } = await import('child_process');
+    const { execSync, spawn } = await import("child_process");
 
     // Register a test OAuth client via CLI.
     // env: { ...process.env } is required: bun's execSync does NOT inherit
@@ -54,61 +54,79 @@ describeE2E('serve-http OAuth 2.1 E2E (v0.26.1 + v0.26.2 + v0.26.3)', () => {
     // ceiling does not auto-grant it to every minted token.
     const regOutput = execSync(
       'bun run src/cli.ts auth register-client e2e-oauth-test --grant-types client_credentials --scopes "read write admin"',
-      { cwd: process.cwd(), encoding: 'utf8', env: { ...process.env } }
+      { cwd: process.cwd(), encoding: "utf8", env: { ...process.env } }
     );
     const idMatch = regOutput.match(/Client ID:\s+(gbrain_cl_\S+)/);
     const secretMatch = regOutput.match(/Client Secret:\s+(gbrain_cs_\S+)/);
-    if (!idMatch || !secretMatch) throw new Error('Failed to register test client:\n' + regOutput);
+    if (!idMatch || !secretMatch) throw new Error("Failed to register test client:\n" + regOutput);
     clientId = idMatch[1];
     clientSecret = secretMatch[1];
 
     // Start the HTTP server. v0.26.2 adds --enable-dcr so the /register
     // endpoint is reachable for the DCR response-shape test.
-    serverProcess = spawn('bun', [
-      'run', 'src/cli.ts', 'serve', '--http',
-      '--port', String(PORT),
-      '--public-url', `http://localhost:${PORT}`,
-      '--enable-dcr',
-    ], {
-      cwd: process.cwd(),
-      env: process.env,
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
+    serverProcess = spawn(
+      "bun",
+      [
+        "run",
+        "src/cli.ts",
+        "serve",
+        "--http",
+        "--port",
+        String(PORT),
+        "--public-url",
+        `http://localhost:${PORT}`,
+        "--enable-dcr",
+      ],
+      {
+        cwd: process.cwd(),
+        env: process.env,
+        stdio: ["ignore", "pipe", "pipe"],
+      }
+    );
 
     // Collect stderr for debugging failures
-    let stderr = '';
-    serverProcess.stderr?.on('data', (d: Buffer) => { stderr += d.toString(); });
+    let stderr = "";
+    serverProcess.stderr?.on("data", (d: Buffer) => {
+      stderr += d.toString();
+    });
 
     // Wait for server to be ready (up to 15s)
     let ready = false;
     for (let i = 0; i < 30; i++) {
       try {
         const res = await fetch(`${BASE}/health`);
-        if (res.ok) { ready = true; break; }
+        if (res.ok) {
+          ready = true;
+          break;
+        }
       } catch {}
-      await new Promise(r => setTimeout(r, 500));
+      await new Promise((r) => setTimeout(r, 500));
     }
-    if (!ready) throw new Error('Server failed to start within 15s.\nstderr: ' + stderr.slice(-500));
+    if (!ready)
+      throw new Error("Server failed to start within 15s.\nstderr: " + stderr.slice(-500));
   }, 30_000);
 
   afterAll(async () => {
     // Kill server first so it can't issue more tokens during cleanup.
     if (serverProcess) {
-      serverProcess.kill('SIGTERM');
-      await new Promise(r => setTimeout(r, 1000));
-      if (!serverProcess.killed) serverProcess.kill('SIGKILL');
+      serverProcess.kill("SIGTERM");
+      await new Promise((r) => setTimeout(r, 1000));
+      if (!serverProcess.killed) serverProcess.kill("SIGKILL");
     }
     // v0.26.2 cleanup contract: only revoke if registration succeeded
     // (clientId guard) and surface any cleanup failure to stderr without
     // throwing — a real test failure is more interesting than the cleanup
     // error that follows it. Same shape applies to DCR-registered clients
     // tracked in dcrClientIds.
-    const { execSync } = await import('child_process');
+    const { execSync } = await import("child_process");
     const toRevoke = [...(clientId ? [clientId] : []), ...dcrClientIds];
     for (const id of toRevoke) {
       try {
-        execSync(`bun run src/cli.ts auth revoke-client "${id}"`,
-          { cwd: process.cwd(), encoding: 'utf8', env: { ...process.env } });
+        execSync(`bun run src/cli.ts auth revoke-client "${id}"`, {
+          cwd: process.cwd(),
+          encoding: "utf8",
+          env: { ...process.env },
+        });
       } catch (e: any) {
         // eslint-disable-next-line no-console
         console.error(`[afterAll] revoke-client cleanup failed for ${id}: ${e.message}`);
@@ -117,10 +135,12 @@ describeE2E('serve-http OAuth 2.1 E2E (v0.26.1 + v0.26.2 + v0.26.3)', () => {
   }, 30_000);
 
   // Helper: mint a token with given scopes
-  async function mintToken(scope = 'read write'): Promise<{ access_token: string; expires_in: number; scope: string }> {
+  async function mintToken(
+    scope = "read write"
+  ): Promise<{ access_token: string; expires_in: number; scope: string }> {
     const res = await fetch(`${BASE}/token`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: `grant_type=client_credentials&client_id=${clientId}&client_secret=${clientSecret}&scope=${encodeURIComponent(scope)}`,
     });
     expect(res.ok).toBe(true);
@@ -130,13 +150,13 @@ describeE2E('serve-http OAuth 2.1 E2E (v0.26.1 + v0.26.2 + v0.26.3)', () => {
   // Helper: call MCP JSON-RPC with a bearer token
   async function mcpCall(token: string, method: string, params?: any): Promise<Response> {
     return fetch(`${BASE}/mcp`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json, text/event-stream',
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        Accept: "application/json, text/event-stream",
       },
-      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, ...(params ? { params } : {}) }),
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, ...(params ? { params } : {}) }),
     });
   }
 
@@ -144,42 +164,42 @@ describeE2E('serve-http OAuth 2.1 E2E (v0.26.1 + v0.26.2 + v0.26.3)', () => {
   // Fix 1: client_credentials tokens validate at /mcp
   // =========================================================================
 
-  test('mint token via client_credentials grant', async () => {
-    const data = await mintToken('read write');
+  test("mint token via client_credentials grant", async () => {
+    const data = await mintToken("read write");
     expect(data.access_token).toMatch(/^gbrain_at_/);
     expect(data.expires_in).toBe(3600);
-    expect(data.scope).toContain('read');
+    expect(data.scope).toContain("read");
   });
 
-  test('minted token is accepted at /mcp — tools/list returns tools', async () => {
-    const { access_token } = await mintToken('read');
-    const res = await mcpCall(access_token, 'tools/list');
+  test("minted token is accepted at /mcp — tools/list returns tools", async () => {
+    const { access_token } = await mintToken("read");
+    const res = await mcpCall(access_token, "tools/list");
 
     // Before v0.26.1 fix: 401 {"error":"invalid_token","error_description":"Token has no expiration time"}
     expect(res.status).not.toBe(401);
 
     const body = await res.text();
-    expect(body).toContain('tools');
-    expect(body).toContain('search'); // search tool should be in the list
-    expect(body).toContain('query');  // query tool too
+    expect(body).toContain("tools");
+    expect(body).toContain("search"); // search tool should be in the list
+    expect(body).toContain("query"); // query tool too
   }, 15_000);
 
-  test('minted token works for tools/call — search executes', async () => {
-    const { access_token } = await mintToken('read');
-    const res = await mcpCall(access_token, 'tools/call', {
-      name: 'search',
-      arguments: { query: 'gbrain', limit: 1 },
+  test("minted token works for tools/call — search executes", async () => {
+    const { access_token } = await mintToken("read");
+    const res = await mcpCall(access_token, "tools/call", {
+      name: "search",
+      arguments: { query: "gbrain", limit: 1 },
     });
 
     expect(res.status).not.toBe(401);
     const body = await res.text();
     // Should contain search results, not an auth error
-    expect(body).not.toContain('invalid_token');
-    expect(body).toContain('result');
+    expect(body).not.toContain("invalid_token");
+    expect(body).toContain("result");
   }, 15_000);
 
-  test('expired/invalid token is rejected at /mcp', async () => {
-    const res = await mcpCall('gbrain_at_totally_fake_token', 'tools/list');
+  test("expired/invalid token is rejected at /mcp", async () => {
+    const res = await mcpCall("gbrain_at_totally_fake_token", "tools/list");
     // Invalid tokens should not return 200 with tool results
     const body = await res.text();
     expect(body).not.toContain('"tools"');
@@ -187,14 +207,14 @@ describeE2E('serve-http OAuth 2.1 E2E (v0.26.1 + v0.26.2 + v0.26.3)', () => {
     expect(res.status).toBeGreaterThanOrEqual(400);
   });
 
-  test('missing Authorization header returns 401', async () => {
+  test("missing Authorization header returns 401", async () => {
     const res = await fetch(`${BASE}/mcp`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json, text/event-stream',
+        "Content-Type": "application/json",
+        Accept: "application/json, text/event-stream",
       },
-      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' }),
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list" }),
     });
     expect(res.status).toBe(401);
   });
@@ -203,23 +223,23 @@ describeE2E('serve-http OAuth 2.1 E2E (v0.26.1 + v0.26.2 + v0.26.3)', () => {
   // Fix 2: OAuth metadata includes client_credentials
   // =========================================================================
 
-  test('OAuth AS metadata includes all three grant types', async () => {
+  test("OAuth AS metadata includes all three grant types", async () => {
     const res = await fetch(`${BASE}/.well-known/oauth-authorization-server`);
     expect(res.ok).toBe(true);
-    const meta = await res.json() as any;
-    expect(meta.grant_types_supported).toContain('authorization_code');
-    expect(meta.grant_types_supported).toContain('refresh_token');
-    expect(meta.grant_types_supported).toContain('client_credentials');
+    const meta = (await res.json()) as any;
+    expect(meta.grant_types_supported).toContain("authorization_code");
+    expect(meta.grant_types_supported).toContain("refresh_token");
+    expect(meta.grant_types_supported).toContain("client_credentials");
   });
 
-  test('OAuth metadata issuer matches public URL', async () => {
+  test("OAuth metadata issuer matches public URL", async () => {
     const res = await fetch(`${BASE}/.well-known/oauth-authorization-server`);
-    const meta = await res.json() as any;
+    const meta = (await res.json()) as any;
     expect(meta.issuer).toBe(`http://localhost:${PORT}/`);
-    expect(meta.token_endpoint).toContain('/token');
-    expect(meta.scopes_supported).toContain('read');
-    expect(meta.scopes_supported).toContain('write');
-    expect(meta.scopes_supported).toContain('admin');
+    expect(meta.token_endpoint).toContain("/token");
+    expect(meta.scopes_supported).toContain("read");
+    expect(meta.scopes_supported).toContain("write");
+    expect(meta.scopes_supported).toContain("admin");
   });
 
   // T2 (eng-review): scopes_supported advertises the full ALLOWED_SCOPES_LIST
@@ -227,13 +247,13 @@ describeE2E('serve-http OAuth 2.1 E2E (v0.26.1 + v0.26.2 + v0.26.3)', () => {
   // v0.28 sources_admin and users_admin scopes via standard discovery.
   // Pre-v0.28 the list was hardcoded to ['read','write','admin'] in
   // serve-http.ts:195 and this assertion would have failed.
-  test('OAuth metadata advertises all 5 v0.28 scopes (sources_admin + users_admin)', async () => {
+  test("OAuth metadata advertises all 5 v0.28 scopes (sources_admin + users_admin)", async () => {
     const res = await fetch(`${BASE}/.well-known/oauth-authorization-server`);
-    const meta = await res.json() as any;
-    expect(meta.scopes_supported).toContain('sources_admin');
-    expect(meta.scopes_supported).toContain('users_admin');
+    const meta = (await res.json()) as any;
+    expect(meta.scopes_supported).toContain("sources_admin");
+    expect(meta.scopes_supported).toContain("users_admin");
     expect(meta.scopes_supported).toEqual(
-      expect.arrayContaining(['admin', 'read', 'sources_admin', 'users_admin', 'write']),
+      expect.arrayContaining(["admin", "read", "sources_admin", "users_admin", "write"])
     );
   });
 
@@ -241,70 +261,72 @@ describeE2E('serve-http OAuth 2.1 E2E (v0.26.1 + v0.26.2 + v0.26.3)', () => {
   // Fix 3: Express 5 compatibility
   // =========================================================================
 
-  test('admin dashboard serves SPA index.html (not Express error)', async () => {
+  test("admin dashboard serves SPA index.html (not Express error)", async () => {
     const res = await fetch(`${BASE}/admin/`);
     const html = await res.text();
-    expect(html).toContain('GBrain Admin');
-    expect(html).not.toContain('<pre>Cannot GET');
+    expect(html).toContain("GBrain Admin");
+    expect(html).not.toContain("<pre>Cannot GET");
   });
 
-  test('admin sub-routes serve SPA fallback', async () => {
+  test("admin sub-routes serve SPA fallback", async () => {
     const res = await fetch(`${BASE}/admin/agents`);
     const html = await res.text();
-    expect(html).toContain('GBrain Admin');
+    expect(html).toContain("GBrain Admin");
   });
 
   // v0.36.1.x #1076: GET /mcp must return 405 (Method Not Allowed) per the
   // MCP Streamable HTTP spec, not 404. claude.ai + other probing clients
   // distinguish "endpoint exists, no SSE channel" from "endpoint missing"
   // on this status code; 404 makes them give up.
-  test('GET /mcp returns 405 with Allow: POST, DELETE (v0.36.1.x #1076)', async () => {
-    const res = await fetch(`${BASE}/mcp`, { method: 'GET' });
+  test("GET /mcp returns 405 with Allow: POST, DELETE (v0.36.1.x #1076)", async () => {
+    const res = await fetch(`${BASE}/mcp`, { method: "GET" });
     expect(res.status).toBe(405);
-    expect(res.headers.get('Allow')).toBe('POST, DELETE');
-    const body = await res.json() as { jsonrpc?: string; error?: { code?: number } };
-    expect(body.jsonrpc).toBe('2.0');
+    expect(res.headers.get("Allow")).toBe("POST, DELETE");
+    const body = (await res.json()) as { jsonrpc?: string; error?: { code?: number } };
+    expect(body.jsonrpc).toBe("2.0");
     expect(body.error?.code).toBe(-32000);
   });
 
-  test('X-Forwarded-For header does not crash server', async () => {
+  test("X-Forwarded-For header does not crash server", async () => {
     const res = await fetch(`${BASE}/health`, {
-      headers: { 'X-Forwarded-For': '10.0.0.1, 172.16.0.1' },
+      headers: { "X-Forwarded-For": "10.0.0.1, 172.16.0.1" },
     });
     expect(res.ok).toBe(true);
-    const data = await res.json() as any;
-    expect(data.status).toBe('ok');
+    const data = (await res.json()) as any;
+    expect(data.status).toBe("ok");
   });
 
   // =========================================================================
   // Scope enforcement
   // =========================================================================
 
-  test('read-only token is rejected for write operations', async () => {
-    const { access_token } = await mintToken('read');
-    const res = await mcpCall(access_token, 'tools/call', {
-      name: 'put_page',
-      arguments: { slug: 'e2e-scope-test', content: '---\ntitle: test\n---\ntest' },
+  test("read-only token is rejected for write operations", async () => {
+    const { access_token } = await mintToken("read");
+    const res = await mcpCall(access_token, "tools/call", {
+      name: "put_page",
+      arguments: { slug: "e2e-scope-test", content: "---\ntitle: test\n---\ntest" },
     });
 
     const body = await res.text();
     // Should be rejected via scope check (403 or JSON-RPC error with scope message)
-    expect(res.status === 403 || body.includes('scope') || body.includes('Insufficient')).toBe(true);
+    expect(res.status === 403 || body.includes("scope") || body.includes("Insufficient")).toBe(
+      true
+    );
   }, 15_000);
 
-  test('write-scoped token can call read operations', async () => {
-    const { access_token } = await mintToken('read write');
-    const res = await mcpCall(access_token, 'tools/call', {
-      name: 'search',
-      arguments: { query: 'test', limit: 1 },
+  test("write-scoped token can call read operations", async () => {
+    const { access_token } = await mintToken("read write");
+    const res = await mcpCall(access_token, "tools/call", {
+      name: "search",
+      arguments: { query: "test", limit: 1 },
     });
 
     expect(res.status).not.toBe(401);
     expect(res.status).not.toBe(403);
     const body = await res.text();
     // Should get a result, not an auth error
-    expect(body).not.toContain('invalid_token');
-    expect(body).not.toContain('insufficient_scope');
+    expect(body).not.toContain("invalid_token");
+    expect(body).not.toContain("insufficient_scope");
   }, 15_000);
 
   // =========================================================================
@@ -313,11 +335,11 @@ describeE2E('serve-http OAuth 2.1 E2E (v0.26.1 + v0.26.2 + v0.26.3)', () => {
   // saturated pool can't pin /health and trigger orchestrator restart cascades.
   // =========================================================================
 
-  test('v0.28.10: /health returns liveness-only body (no engine stats)', async () => {
+  test("v0.28.10: /health returns liveness-only body (no engine stats)", async () => {
     const res = await fetch(`${BASE}/health`);
     expect(res.ok).toBe(true);
-    const data = await res.json() as any;
-    expect(data.status).toBe('ok');
+    const data = (await res.json()) as any;
+    expect(data.status).toBe("ok");
     expect(data.version).toBeDefined();
     expect(data.engine).toBeDefined();
     // Regression: pre-v0.28.10 /health spread getStats() (page_count,
@@ -329,39 +351,41 @@ describeE2E('serve-http OAuth 2.1 E2E (v0.26.1 + v0.26.2 + v0.26.3)', () => {
     expect(data.chunk_count).toBeUndefined();
     expect(data.embedded_count).toBeUndefined();
     // Body shape is exactly {status, version, engine}.
-    expect(Object.keys(data).sort()).toEqual(['engine', 'status', 'version']);
+    expect(Object.keys(data).sort()).toEqual(["engine", "status", "version"]);
   });
 
-  test('v0.28.10: /admin/api/full-stats without admin cookie returns 401', async () => {
+  test("v0.28.10: /admin/api/full-stats without admin cookie returns 401", async () => {
     const res = await fetch(`${BASE}/admin/api/full-stats`);
     expect(res.status).toBe(401);
-    const data = await res.json() as any;
-    expect(data.error).toBe('Admin authentication required');
+    const data = (await res.json()) as any;
+    expect(data.error).toBe("Admin authentication required");
   });
 
-  test('v0.28.10: /admin/api/full-stats with valid admin cookie returns getStats() body', async () => {
+  test("v0.28.10: /admin/api/full-stats with valid admin cookie returns getStats() body", async () => {
     // Same magic-link cookie dance the existing single-use test uses.
     // Skip gracefully if the bootstrap token isn't extractable — the 401
     // case above pins the auth gate; this test pins the happy path.
-    const stderrBuf = (serverProcess as any)?._stderrBuffer || '';
+    const stderrBuf = (serverProcess as any)?._stderrBuffer || "";
     const tokenMatch = String(stderrBuf).match(/Admin Token[\s\S]*?([a-f0-9]{32,64})/);
     if (!tokenMatch) {
-      console.warn('[e2e] skipped /admin/api/full-stats happy path: could not extract bootstrap token');
+      console.warn(
+        "[e2e] skipped /admin/api/full-stats happy path: could not extract bootstrap token"
+      );
       return;
     }
     const bootstrapToken = tokenMatch[1];
 
     const issueRes = await fetch(`${BASE}/admin/api/issue-magic-link`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${bootstrapToken}` },
-      body: '{}',
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${bootstrapToken}` },
+      body: "{}",
     });
     expect(issueRes.ok).toBe(true);
-    const { url } = await issueRes.json() as any;
+    const { url } = (await issueRes.json()) as any;
 
-    const click = await fetch(url, { redirect: 'manual' });
+    const click = await fetch(url, { redirect: "manual" });
     expect(click.status).toBe(302);
-    const setCookie = click.headers.get('set-cookie') || '';
+    const setCookie = click.headers.get("set-cookie") || "";
     const cookieMatch = setCookie.match(/gbrain_admin=([^;]+)/);
     expect(cookieMatch).toBeTruthy();
     const cookieValue = cookieMatch![1];
@@ -370,13 +394,13 @@ describeE2E('serve-http OAuth 2.1 E2E (v0.26.1 + v0.26.2 + v0.26.3)', () => {
       headers: { Cookie: `gbrain_admin=${cookieValue}` },
     });
     expect(statsRes.ok).toBe(true);
-    const stats = await statsRes.json() as any;
-    expect(stats.status).toBe('ok');
+    const stats = (await statsRes.json()) as any;
+    expect(stats.status).toBe("ok");
     expect(stats.version).toBeDefined();
     expect(stats.engine).toBeDefined();
     // The full-stats body is probeHealth's spread of getStats() — page_count
     // is the canonical signal that we're hitting the heavy path here.
-    expect(typeof stats.page_count).toBe('number');
+    expect(typeof stats.page_count).toBe("number");
     expect(stats.page_count).toBeGreaterThanOrEqual(0);
   }, 15_000);
 
@@ -384,27 +408,27 @@ describeE2E('serve-http OAuth 2.1 E2E (v0.26.1 + v0.26.2 + v0.26.3)', () => {
   // Token lifecycle
   // =========================================================================
 
-  test('multiple tokens can be minted and used independently', async () => {
-    const t1 = await mintToken('read');
-    const t2 = await mintToken('read write');
+  test("multiple tokens can be minted and used independently", async () => {
+    const t1 = await mintToken("read");
+    const t2 = await mintToken("read write");
 
     // Both should work
-    const r1 = await mcpCall(t1.access_token, 'tools/list');
-    const r2 = await mcpCall(t2.access_token, 'tools/list');
+    const r1 = await mcpCall(t1.access_token, "tools/list");
+    const r2 = await mcpCall(t2.access_token, "tools/list");
 
     expect(r1.status).not.toBe(401);
     expect(r2.status).not.toBe(401);
   }, 15_000);
 
-  test('wrong client_secret is rejected at token endpoint', async () => {
+  test("wrong client_secret is rejected at token endpoint", async () => {
     const res = await fetch(`${BASE}/token`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: `grant_type=client_credentials&client_id=${clientId}&client_secret=gbrain_cs_wrong_secret&scope=read`,
     });
     expect(res.ok).toBe(false);
-    const data = await res.json() as any;
-    expect(data.error).toBe('invalid_grant');
+    const data = (await res.json()) as any;
+    expect(data.error).toBe("invalid_grant");
   });
 
   // =========================================================================
@@ -418,20 +442,20 @@ describeE2E('serve-http OAuth 2.1 E2E (v0.26.1 + v0.26.2 + v0.26.3)', () => {
   // the internal-store shape test in test/oauth.test.ts is not enough on its
   // own (Codex flagged it as the wrong seam).
 
-  test('DCR /register returns numeric client_id_issued_at (RFC 7591 §3.2.1)', async () => {
+  test("DCR /register returns numeric client_id_issued_at (RFC 7591 §3.2.1)", async () => {
     const res = await fetch(`${BASE}/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        client_name: 'e2e-dcr-shape',
-        redirect_uris: ['https://example.com/cb'],
-        grant_types: ['authorization_code'],
-        token_endpoint_auth_method: 'client_secret_basic',
-        scope: 'read',
+        client_name: "e2e-dcr-shape",
+        redirect_uris: ["https://example.com/cb"],
+        grant_types: ["authorization_code"],
+        token_endpoint_auth_method: "client_secret_basic",
+        scope: "read",
       }),
     });
     expect(res.ok).toBe(true);
-    const body = await res.json() as any;
+    const body = (await res.json()) as any;
 
     // Track for cleanup before any assertion that could throw.
     if (body.client_id) dcrClientIds.push(body.client_id);
@@ -439,14 +463,14 @@ describeE2E('serve-http OAuth 2.1 E2E (v0.26.1 + v0.26.2 + v0.26.3)', () => {
     // The contract: client_id_issued_at is REQUIRED to be a JSON number per
     // RFC 7591. Pre-v0.26.2 with prepare:false returned this as a string
     // (e.g., "1735689600") and strict clients rejected the registration.
-    expect(typeof body.client_id_issued_at).toBe('number');
+    expect(typeof body.client_id_issued_at).toBe("number");
     expect(Number.isFinite(body.client_id_issued_at)).toBe(true);
     expect(body.client_id_issued_at).toBeGreaterThan(0);
 
     // client_secret_expires_at is OPTIONAL. If present, it must also be a
     // number. Undefined/missing means "does not expire" per the spec.
     if (body.client_secret_expires_at !== undefined) {
-      expect(typeof body.client_secret_expires_at).toBe('number');
+      expect(typeof body.client_secret_expires_at).toBe("number");
       expect(Number.isFinite(body.client_secret_expires_at)).toBe(true);
     }
   }, 15_000);
@@ -460,14 +484,14 @@ describeE2E('serve-http OAuth 2.1 E2E (v0.26.1 + v0.26.2 + v0.26.3)', () => {
   // test/oauth.test.ts proves DB DELETE works but does NOT prove the
   // subcommand exists or routes correctly.
 
-  test('auth revoke-client (CLI) deletes client + cascades to tokens', async () => {
-    const { execSync } = await import('child_process');
+  test("auth revoke-client (CLI) deletes client + cascades to tokens", async () => {
+    const { execSync } = await import("child_process");
 
     // Step 1: register a throwaway client via CLI.
     // env: { ...process.env } per the bun execSync inheritance fix above.
     const regOutput = execSync(
-      'bun run src/cli.ts auth register-client e2e-revoke-cli --grant-types client_credentials --scopes read',
-      { cwd: process.cwd(), encoding: 'utf8', env: { ...process.env } }
+      "bun run src/cli.ts auth register-client e2e-revoke-cli --grant-types client_credentials --scopes read",
+      { cwd: process.cwd(), encoding: "utf8", env: { ...process.env } }
     );
     const idMatch = regOutput.match(/Client ID:\s+(gbrain_cl_\S+)/);
     const secretMatch = regOutput.match(/Client Secret:\s+(gbrain_cs_\S+)/);
@@ -478,22 +502,23 @@ describeE2E('serve-http OAuth 2.1 E2E (v0.26.1 + v0.26.2 + v0.26.3)', () => {
 
     // Step 2: mint a token through the live server.
     const tokenRes = await fetch(`${BASE}/token`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: `grant_type=client_credentials&client_id=${id}&client_secret=${secret}&scope=read`,
     });
     expect(tokenRes.ok).toBe(true);
-    const { access_token } = await tokenRes.json() as any;
+    const { access_token } = (await tokenRes.json()) as any;
 
     // Sanity: the freshly-minted token works at /mcp.
-    const before = await mcpCall(access_token, 'tools/list');
+    const before = await mcpCall(access_token, "tools/list");
     expect(before.status).not.toBe(401);
 
     // Step 3: revoke via the CLI subprocess.
-    const revokeOutput = execSync(
-      `bun run src/cli.ts auth revoke-client "${id}"`,
-      { cwd: process.cwd(), encoding: 'utf8', env: { ...process.env } }
-    );
+    const revokeOutput = execSync(`bun run src/cli.ts auth revoke-client "${id}"`, {
+      cwd: process.cwd(),
+      encoding: "utf8",
+      env: { ...process.env },
+    });
     // The handler prints the human confirmation lines. No exit code != 0
     // here since execSync would throw.
     expect(revokeOutput).toMatch(/OAuth client revoked/);
@@ -504,20 +529,23 @@ describeE2E('serve-http OAuth 2.1 E2E (v0.26.1 + v0.26.2 + v0.26.3)', () => {
     // Match the existing pattern at line 156: SDK error mapping varies
     // (401/403/500), so we assert non-success status + non-success body
     // rather than a single status code.
-    const after = await mcpCall(access_token, 'tools/list');
+    const after = await mcpCall(access_token, "tools/list");
     expect(after.status).toBeGreaterThanOrEqual(400);
     const afterBody = await after.text();
     expect(afterBody).not.toContain('"tools":[');
 
     // Step 5: re-running revoke-client on the now-deleted id must exit 1.
     let secondRunFailed = false;
-    let secondRunStderr = '';
+    let secondRunStderr = "";
     try {
-      execSync(`bun run src/cli.ts auth revoke-client "${id}"`,
-        { cwd: process.cwd(), encoding: 'utf8', env: { ...process.env } });
+      execSync(`bun run src/cli.ts auth revoke-client "${id}"`, {
+        cwd: process.cwd(),
+        encoding: "utf8",
+        env: { ...process.env },
+      });
     } catch (e: any) {
       secondRunFailed = true;
-      secondRunStderr = (e.stderr || '').toString() + (e.stdout || '').toString();
+      secondRunStderr = (e.stderr || "").toString() + (e.stdout || "").toString();
     }
     expect(secondRunFailed).toBe(true);
     expect(secondRunStderr).toMatch(/No client found/);
@@ -535,46 +563,51 @@ describeE2E('serve-http OAuth 2.1 E2E (v0.26.1 + v0.26.2 + v0.26.3)', () => {
   // column-doesn't-exist errors via the existing best-effort try/catch
   // and the row never appears.
 
-  test('v0.26.3: /mcp request persists agent_name + params + error_message', async () => {
-    const postgres = (await import('postgres')).default;
-    const sql = postgres(process.env.GBRAIN_DATABASE_URL || process.env.DATABASE_URL || '', { prepare: false });
+  test("v0.26.3: /mcp request persists agent_name + params + error_message", async () => {
+    const postgres = (await import("postgres")).default;
+    const sql = postgres(process.env.GBRAIN_DATABASE_URL || process.env.DATABASE_URL || "", {
+      prepare: false,
+    });
     try {
       // Wipe any prior log rows for our test client so we can assert exact counts.
       await sql`DELETE FROM mcp_request_log WHERE token_name = ${clientId!}`;
 
       // Mint a fresh write-scoped token and make a successful tools/list call.
       const tokenRes = await fetch(`${BASE}/token`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: `grant_type=client_credentials&client_id=${clientId!}&client_secret=${clientSecret!}&scope=read`,
       });
       expect(tokenRes.ok).toBe(true);
-      const { access_token } = await tokenRes.json() as any;
-      const okRes = await mcpCall(access_token, 'tools/list');
+      const { access_token } = (await tokenRes.json()) as any;
+      const okRes = await mcpCall(access_token, "tools/list");
       expect(okRes.status).not.toBe(401);
 
       // Trigger an error path so the error_message column gets a value too.
       // Request a tool that doesn't exist — v0.28.10 logs unknown-op attempts
       // with operation = the attempted name and error_message starting with
       // 'unknown_operation:'.
-      await mcpCall(access_token, 'tools/call', { name: 'this_tool_does_not_exist', arguments: {} });
+      await mcpCall(access_token, "tools/call", {
+        name: "this_tool_does_not_exist",
+        arguments: {},
+      });
 
       // Allow async best-effort INSERT to flush.
-      await new Promise(r => setTimeout(r, 250));
+      await new Promise((r) => setTimeout(r, 250));
 
-      const rows = await sql`
+      const rows = (await sql`
         SELECT operation, status, agent_name, params, error_message
         FROM mcp_request_log
         WHERE token_name = ${clientId!}
         ORDER BY created_at ASC
-      ` as unknown as Array<Record<string, unknown>>;
+      `) as unknown as Array<Record<string, unknown>>;
 
       expect(rows.length).toBeGreaterThanOrEqual(2);
 
       // Agent name resolved from oauth_clients.client_name (the JOIN in
       // verifyAccessToken or the agent_name backfill path).
       for (const row of rows) {
-        expect(row.agent_name).toBe('e2e-oauth-test');
+        expect(row.agent_name).toBe("e2e-oauth-test");
       }
 
       // v0.28.10: tools/list logs as operation='tools/list' (the JSON-RPC
@@ -582,21 +615,21 @@ describeE2E('serve-http OAuth 2.1 E2E (v0.26.1 + v0.26.2 + v0.26.3)', () => {
       // tool name> (the convention preserved from pre-v0.28.10 dispatch
       // logging — agents querying mcp_request_log filter by tool name, not
       // by JSON-RPC method).
-      const listRow = rows.find(r => r.operation === 'tools/list');
+      const listRow = rows.find((r) => r.operation === "tools/list");
       expect(listRow).toBeDefined();
-      expect(listRow!.status).toBe('success');
+      expect(listRow!.status).toBe("success");
 
       // The unknown-op call shows up with operation = the attempted name.
-      const callRow = rows.find(r => r.operation === 'this_tool_does_not_exist');
+      const callRow = rows.find((r) => r.operation === "this_tool_does_not_exist");
       expect(callRow).toBeDefined();
-      expect(callRow!.status).toBe('error');
+      expect(callRow!.status).toBe("error");
 
       // error_message populated on the failed call.
-      const errorRow = rows.find(r => r.status === 'error');
+      const errorRow = rows.find((r) => r.status === "error");
       expect(errorRow).toBeDefined();
       expect(errorRow!.error_message).toBeTruthy();
-      expect(typeof errorRow!.error_message).toBe('string');
-      expect(errorRow!.error_message as string).toContain('unknown_operation');
+      expect(typeof errorRow!.error_message).toBe("string");
+      expect(errorRow!.error_message as string).toContain("unknown_operation");
     } finally {
       await sql.end();
     }
@@ -627,7 +660,7 @@ describeE2E('serve-http OAuth 2.1 E2E (v0.26.1 + v0.26.2 + v0.26.3)', () => {
     // We assert that the 401 lands BEFORE any SQL gets built, so we don't
     // crash the server with malformed SQL on the way to the auth check.
     const res = await fetch(`${BASE}/admin/api/requests?agent=${probe}`, {
-      method: 'GET',
+      method: "GET",
     });
     // No admin cookie — must hit 401, not 500 (no SQL crash).
     expect(res.status).toBe(401);
@@ -646,15 +679,17 @@ describeE2E('serve-http OAuth 2.1 E2E (v0.26.1 + v0.26.2 + v0.26.3)', () => {
   // the server default. This test registers a client with a custom TTL,
   // mints a token, and asserts the response's expires_in matches.
 
-  test('v0.26.3: per-client token_ttl is honored on token mint', async () => {
-    const postgres = (await import('postgres')).default;
-    const sql = postgres(process.env.GBRAIN_DATABASE_URL || process.env.DATABASE_URL || '', { prepare: false });
+  test("v0.26.3: per-client token_ttl is honored on token mint", async () => {
+    const postgres = (await import("postgres")).default;
+    const sql = postgres(process.env.GBRAIN_DATABASE_URL || process.env.DATABASE_URL || "", {
+      prepare: false,
+    });
     try {
       // Register a client + set a custom token_ttl (24 hours = 86400 seconds).
-      const { execSync } = await import('child_process');
+      const { execSync } = await import("child_process");
       const regOutput = execSync(
-        'bun run src/cli.ts auth register-client e2e-test-ttl --grant-types client_credentials --scopes read',
-        { cwd: process.cwd(), encoding: 'utf8', env: { ...process.env } }
+        "bun run src/cli.ts auth register-client e2e-test-ttl --grant-types client_credentials --scopes read",
+        { cwd: process.cwd(), encoding: "utf8", env: { ...process.env } }
       );
       const idMatch = regOutput.match(/Client ID:\s+(gbrain_cl_\S+)/);
       const secretMatch = regOutput.match(/Client Secret:\s+(gbrain_cs_\S+)/);
@@ -669,34 +704,34 @@ describeE2E('serve-http OAuth 2.1 E2E (v0.26.1 + v0.26.2 + v0.26.3)', () => {
 
       // Mint a token. Response must include expires_in close to 86400.
       const tokenRes = await fetch(`${BASE}/token`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: `grant_type=client_credentials&client_id=${id}&client_secret=${secret}&scope=read`,
       });
       expect(tokenRes.ok).toBe(true);
-      const body = await tokenRes.json() as any;
+      const body = (await tokenRes.json()) as any;
       expect(body.expires_in).toBe(86400);
 
       // Update TTL to a different value mid-test, mint again, assert new value.
       await sql`UPDATE oauth_clients SET token_ttl = 7200 WHERE client_id = ${id}`;
       const tokenRes2 = await fetch(`${BASE}/token`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: `grant_type=client_credentials&client_id=${id}&client_secret=${secret}&scope=read`,
       });
       expect(tokenRes2.ok).toBe(true);
-      const body2 = await tokenRes2.json() as any;
+      const body2 = (await tokenRes2.json()) as any;
       expect(body2.expires_in).toBe(7200);
 
       // NULL token_ttl falls back to server default (3600 = 1 hour).
       await sql`UPDATE oauth_clients SET token_ttl = NULL WHERE client_id = ${id}`;
       const tokenRes3 = await fetch(`${BASE}/token`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: `grant_type=client_credentials&client_id=${id}&client_secret=${secret}&scope=read`,
       });
       expect(tokenRes3.ok).toBe(true);
-      const body3 = await tokenRes3.json() as any;
+      const body3 = (await tokenRes3.json()) as any;
       expect(body3.expires_in).toBe(3600);
     } finally {
       await sql.end();
@@ -714,17 +749,19 @@ describeE2E('serve-http OAuth 2.1 E2E (v0.26.1 + v0.26.2 + v0.26.3)', () => {
   // path (Express auto-sets this for HTML body) so browsers render the
   // styled page instead of treating it as plain text.
 
-  test('v0.26.3: invalid magic-link nonce returns styled 401 HTML page', async () => {
-    const res = await fetch(`${BASE}/admin/auth/garbage_nonce_that_does_not_exist`, { redirect: 'manual' });
+  test("v0.26.3: invalid magic-link nonce returns styled 401 HTML page", async () => {
+    const res = await fetch(`${BASE}/admin/auth/garbage_nonce_that_does_not_exist`, {
+      redirect: "manual",
+    });
     expect(res.status).toBe(401);
-    const ct = res.headers.get('content-type') || '';
-    expect(ct).toContain('text/html');
+    const ct = res.headers.get("content-type") || "";
+    expect(ct).toContain("text/html");
     const body = await res.text();
-    expect(body).toContain('expired');
-    expect(body).toContain('GBrain');
+    expect(body).toContain("expired");
+    expect(body).toContain("GBrain");
   });
 
-  test('v0.26.3: magic-link nonce is single-use (second click fails)', async () => {
+  test("v0.26.3: magic-link nonce is single-use (second click fails)", async () => {
     // Get a real bootstrap token from the spawned server's environment.
     // The server prints it to stderr at startup but commit 16 removed our
     // regex extractor. Use the issue-magic-link endpoint directly with the
@@ -736,38 +773,38 @@ describeE2E('serve-http OAuth 2.1 E2E (v0.26.1 + v0.26.2 + v0.26.3)', () => {
     // spawn handle. The spawn already started so stderr has flushed.
     // Skip if we can't extract — the test is best-effort coverage of the
     // single-use semantic; the styled-401 test above covers the negative path.
-    const stderrBuf = (serverProcess as any)?._stderrBuffer || '';
+    const stderrBuf = (serverProcess as any)?._stderrBuffer || "";
     const tokenMatch = String(stderrBuf).match(/Admin Token[\s\S]*?([a-f0-9]{32,64})/);
     if (!tokenMatch) {
       // No way to get the bootstrap token in this test fixture — skip gracefully.
       // The unit-level coverage for nonce single-use is in oauth.test.ts and
       // the styled-401 test above pins the consumed-nonce path.
-      console.warn('[e2e] skipped magic-link single-use: could not extract bootstrap token');
+      console.warn("[e2e] skipped magic-link single-use: could not extract bootstrap token");
       return;
     }
     const bootstrapToken = tokenMatch[1];
 
     // Mint a one-time nonce.
     const issueRes = await fetch(`${BASE}/admin/api/issue-magic-link`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${bootstrapToken}` },
-      body: '{}',
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${bootstrapToken}` },
+      body: "{}",
     });
     expect(issueRes.ok).toBe(true);
-    const { url } = await issueRes.json() as any;
-    expect(url).toContain('/admin/auth/');
+    const { url } = (await issueRes.json()) as any;
+    expect(url).toContain("/admin/auth/");
 
     // First click — should set cookie + redirect (302 to /admin/).
-    const first = await fetch(url, { redirect: 'manual' });
+    const first = await fetch(url, { redirect: "manual" });
     expect(first.status).toBe(302);
-    const cookie = first.headers.get('set-cookie') || '';
-    expect(cookie).toContain('gbrain_admin=');
+    const cookie = first.headers.get("set-cookie") || "";
+    expect(cookie).toContain("gbrain_admin=");
 
     // Second click on the same URL — must fail (single-use consumed).
-    const second = await fetch(url, { redirect: 'manual' });
+    const second = await fetch(url, { redirect: "manual" });
     expect(second.status).toBe(401);
     const secondBody = await second.text();
-    expect(secondBody).toContain('GBrain');
+    expect(secondBody).toContain("GBrain");
   }, 15_000);
 
   // =========================================================================
@@ -779,27 +816,29 @@ describeE2E('serve-http OAuth 2.1 E2E (v0.26.1 + v0.26.2 + v0.26.3)', () => {
   // This test confirms the agent_name is correctly resolved across both
   // auth lanes (oauth client + legacy api key).
 
-  test('v0.26.3: agent_name resolves correctly for OAuth + legacy paths', async () => {
-    const postgres = (await import('postgres')).default;
-    const sql = postgres(process.env.GBRAIN_DATABASE_URL || process.env.DATABASE_URL || '', { prepare: false });
+  test("v0.26.3: agent_name resolves correctly for OAuth + legacy paths", async () => {
+    const postgres = (await import("postgres")).default;
+    const sql = postgres(process.env.GBRAIN_DATABASE_URL || process.env.DATABASE_URL || "", {
+      prepare: false,
+    });
     try {
       // Make an OAuth-authenticated request — agent_name should be the OAuth client_name.
       const tokenRes = await fetch(`${BASE}/token`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: `grant_type=client_credentials&client_id=${clientId!}&client_secret=${clientSecret!}&scope=read`,
       });
-      const { access_token } = await tokenRes.json() as any;
-      await mcpCall(access_token, 'tools/list');
-      await new Promise(r => setTimeout(r, 250));
+      const { access_token } = (await tokenRes.json()) as any;
+      await mcpCall(access_token, "tools/list");
+      await new Promise((r) => setTimeout(r, 250));
 
-      const oauthRows = await sql`
+      const oauthRows = (await sql`
         SELECT agent_name FROM mcp_request_log
         WHERE token_name = ${clientId!}
         ORDER BY created_at DESC LIMIT 1
-      ` as unknown as Array<{ agent_name: string }>;
+      `) as unknown as Array<{ agent_name: string }>;
       expect(oauthRows.length).toBeGreaterThan(0);
-      expect(oauthRows[0].agent_name).toBe('e2e-oauth-test');
+      expect(oauthRows[0].agent_name).toBe("e2e-oauth-test");
     } finally {
       await sql.end();
     }
@@ -812,15 +851,15 @@ describeE2E('serve-http OAuth 2.1 E2E (v0.26.1 + v0.26.2 + v0.26.3)', () => {
   // Defense-in-depth: the admin register-client endpoint must validate
   // input. Pre-fix would have crashed or returned 500.
 
-  test('v0.26.3: /admin/api/register-client without name returns 400', async () => {
+  test("v0.26.3: /admin/api/register-client without name returns 400", async () => {
     // Endpoint is admin-cookie-gated. Without auth we should get 401, not 500.
     // Without a name in the body (with auth) we should get 400. We test the
     // 401 path here as a basic input-validation smoke; the 400 path requires
     // an admin session which the test fixture doesn't easily produce.
     const res = await fetch(`${BASE}/admin/api/register-client`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: '{}',
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "{}",
     });
     expect(res.status).toBe(401);
   });
@@ -844,16 +883,16 @@ describeE2E('serve-http OAuth 2.1 E2E (v0.26.1 + v0.26.2 + v0.26.3)', () => {
   //
   // Together they close the path even if either layer regresses alone.
 
-  test('F7: HTTP MCP cannot submit shell jobs (RCE regression)', async () => {
+  test("F7: HTTP MCP cannot submit shell jobs (RCE regression)", async () => {
     // v0.28.10: must mint admin scope. submit_job's required scope is
     // 'admin'; without it, hasScope() rejects with insufficient_scope BEFORE
     // the F7 protected-name guard at operations.ts:1527 fires. To validate
     // the actual RCE protection (the protected-name guard), the token has
     // to clear the scope check first.
-    const { access_token } = await mintToken('admin');
-    const res = await mcpCall(access_token, 'tools/call', {
-      name: 'submit_job',
-      arguments: { name: 'shell', data: { cmd: 'id' } },
+    const { access_token } = await mintToken("admin");
+    const res = await mcpCall(access_token, "tools/call", {
+      name: "submit_job",
+      arguments: { name: "shell", data: { cmd: "id" } },
     });
 
     const body = await res.text();
@@ -863,8 +902,8 @@ describeE2E('serve-http OAuth 2.1 E2E (v0.26.1 + v0.26.2 + v0.26.3)', () => {
     // (no command executed) and the positive invariant (rejection signal).
     const rejected =
       res.status >= 400 ||
-      body.includes('permission_denied') ||
-      body.includes('cannot be submitted over MCP');
+      body.includes("permission_denied") ||
+      body.includes("cannot be submitted over MCP");
     expect(rejected).toBe(true);
 
     // Negative: response must NOT contain a successful submit_job result
@@ -873,18 +912,18 @@ describeE2E('serve-http OAuth 2.1 E2E (v0.26.1 + v0.26.2 + v0.26.3)', () => {
     expect(body).not.toMatch(/"job_id"\s*:\s*"?\d+/);
   }, 15_000);
 
-  test('F7: HTTP MCP cannot submit subagent jobs (protected name)', async () => {
+  test("F7: HTTP MCP cannot submit subagent jobs (protected name)", async () => {
     // Same admin-scope requirement as the shell-job sibling test above.
-    const { access_token } = await mintToken('admin');
-    const res = await mcpCall(access_token, 'tools/call', {
-      name: 'submit_job',
-      arguments: { name: 'subagent', data: { prompt: 'noop' } },
+    const { access_token } = await mintToken("admin");
+    const res = await mcpCall(access_token, "tools/call", {
+      name: "submit_job",
+      arguments: { name: "subagent", data: { prompt: "noop" } },
     });
     const body = await res.text();
     const rejected =
       res.status >= 400 ||
-      body.includes('permission_denied') ||
-      body.includes('cannot be submitted over MCP');
+      body.includes("permission_denied") ||
+      body.includes("cannot be submitted over MCP");
     expect(rejected).toBe(true);
     expect(body).not.toMatch(/"job_id"\s*:\s*"?\d+/);
   }, 15_000);

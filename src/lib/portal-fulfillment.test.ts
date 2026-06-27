@@ -28,7 +28,11 @@ describe("portal fulfillment", () => {
   });
 
   test("marks request partially fulfilled until all required items are received", () => {
-    const result = fulfillDocumentRequestItems(baseFrontmatter, "uploads/vollmacht", "vollmacht.pdf");
+    const result = fulfillDocumentRequestItems(
+      baseFrontmatter,
+      "uploads/vollmacht",
+      "vollmacht.pdf"
+    );
     expect(result.status).toBe("partially_fulfilled");
     expect(result.items[0].received_document_slug).toBe("uploads/vollmacht");
   });
@@ -38,12 +42,17 @@ describe("portal fulfillment", () => {
       {
         ...baseFrontmatter,
         items: [
-          { key: "vollmacht", label: "Vollmacht", required: true, received_document_slug: "uploads/vollmacht" },
+          {
+            key: "vollmacht",
+            label: "Vollmacht",
+            required: true,
+            received_document_slug: "uploads/vollmacht",
+          },
           { key: "kuendigung", label: "Kündigung", required: true },
         ],
       },
       "uploads/kuendigung",
-      "kuendigung.pdf",
+      "kuendigung.pdf"
     );
     expect(result.status).toBe("fulfilled");
     expect(result.items[1].received_document_slug).toBe("uploads/kuendigung");

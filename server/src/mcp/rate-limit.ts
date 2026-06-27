@@ -49,9 +49,9 @@ export class RateLimiter {
   private readonly clock: Clock;
 
   constructor(opts: RateLimitOpts, clock: Clock = Date.now) {
-    if (opts.limit <= 0) throw new Error('RateLimiter: limit must be > 0');
-    if (opts.windowMs <= 0) throw new Error('RateLimiter: windowMs must be > 0');
-    if (opts.lruCap <= 0) throw new Error('RateLimiter: lruCap must be > 0');
+    if (opts.limit <= 0) throw new Error("RateLimiter: limit must be > 0");
+    if (opts.windowMs <= 0) throw new Error("RateLimiter: windowMs must be > 0");
+    if (opts.lruCap <= 0) throw new Error("RateLimiter: lruCap must be > 0");
     this.opts = opts;
     this.clock = clock;
   }
@@ -132,11 +132,20 @@ function envInt(name: string, fallback: number): number {
 }
 
 /** Build limiters from env. Keep this lazy — tests can construct RateLimiter directly. */
-export function buildDefaultLimiters(clock: Clock = Date.now): { ip: RateLimiter; token: RateLimiter } {
-  const lruCap = envInt('GBRAIN_HTTP_RATE_LIMIT_LRU', 10000);
+export function buildDefaultLimiters(clock: Clock = Date.now): {
+  ip: RateLimiter;
+  token: RateLimiter;
+} {
+  const lruCap = envInt("GBRAIN_HTTP_RATE_LIMIT_LRU", 10000);
   const windowMs = 60_000;
   return {
-    ip: new RateLimiter({ limit: envInt('GBRAIN_HTTP_RATE_LIMIT_IP', 30), windowMs, lruCap }, clock),
-    token: new RateLimiter({ limit: envInt('GBRAIN_HTTP_RATE_LIMIT_TOKEN', 60), windowMs, lruCap }, clock),
+    ip: new RateLimiter(
+      { limit: envInt("GBRAIN_HTTP_RATE_LIMIT_IP", 30), windowMs, lruCap },
+      clock
+    ),
+    token: new RateLimiter(
+      { limit: envInt("GBRAIN_HTTP_RATE_LIMIT_TOKEN", 60), windowMs, lruCap },
+      clock
+    ),
   };
 }

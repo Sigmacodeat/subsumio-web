@@ -28,15 +28,15 @@
  *   20. Code-block + token interaction
  */
 
-import { describe, test, expect, beforeAll, afterAll, beforeEach } from 'bun:test';
-import { PGLiteEngine } from '../src/core/pglite-engine.ts';
+import { describe, test, expect, beforeAll, afterAll, beforeEach } from "bun:test";
+import { PGLiteEngine } from "../src/core/pglite-engine.ts";
 import {
   buildGazetteer,
   findMentionedEntities,
   LINKABLE_ENTITY_TYPES,
   type Gazetteer,
   type GazetteerEntry,
-} from '../src/core/by-mention.ts';
+} from "../src/core/by-mention.ts";
 
 let engine: PGLiteEngine;
 
@@ -51,12 +51,12 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  await engine.executeRaw('DELETE FROM links');
-  await engine.executeRaw('DELETE FROM pages');
+  await engine.executeRaw("DELETE FROM links");
+  await engine.executeRaw("DELETE FROM pages");
 });
 
 // Tiny gazetteer builder for pure-fn cases that don't need engine.
-function gazetteerFromEntries(entries: Omit<GazetteerEntry, 'tokens'>[]): Gazetteer {
+function gazetteerFromEntries(entries: Omit<GazetteerEntry, "tokens">[]): Gazetteer {
   const TOKEN_RE = /[a-zA-Z0-9]+/g;
   const tokenize = (s: string): string[] => {
     TOKEN_RE.lastIndex = 0;
@@ -83,179 +83,194 @@ function gazetteerFromEntries(entries: Omit<GazetteerEntry, 'tokens'>[]): Gazett
 // findMentionedEntities — pure unit tests
 // ============================================================
 
-describe('findMentionedEntities — pure cases', () => {
-  test('1. single-token title match', () => {
+describe("findMentionedEntities — pure cases", () => {
+  test("1. single-token title match", () => {
     const g = gazetteerFromEntries([
-      { slug: 'companies/acme', source_id: 'default', title: 'Acme' },
+      { slug: "companies/acme", source_id: "default", title: "Acme" },
     ]);
-    const mentions = findMentionedEntities('Acme launched today.', g, {
-      fromSlug: 'writing/post-1', fromSourceId: 'default',
+    const mentions = findMentionedEntities("Acme launched today.", g, {
+      fromSlug: "writing/post-1",
+      fromSourceId: "default",
     });
     expect(mentions).toHaveLength(1);
-    expect(mentions[0]!.slug).toBe('companies/acme');
-    expect(mentions[0]!.name).toBe('Acme');
+    expect(mentions[0]!.slug).toBe("companies/acme");
+    expect(mentions[0]!.name).toBe("Acme");
     expect(mentions[0]!.offset).toBe(0);
   });
 
   test('2. multi-word phrase pass — "Acme Corp" matches multi-word, not single', () => {
     const g = gazetteerFromEntries([
-      { slug: 'companies/acme', source_id: 'default', title: 'Acme' },
-      { slug: 'companies/acme-corp', source_id: 'default', title: 'Acme Corp' },
+      { slug: "companies/acme", source_id: "default", title: "Acme" },
+      { slug: "companies/acme-corp", source_id: "default", title: "Acme Corp" },
     ]);
-    const mentions = findMentionedEntities('We met with Acme Corp last week.', g, {
-      fromSlug: 'writing/post-1', fromSourceId: 'default',
+    const mentions = findMentionedEntities("We met with Acme Corp last week.", g, {
+      fromSlug: "writing/post-1",
+      fromSourceId: "default",
     });
     // longest-match wins → only the multi-word target
     expect(mentions).toHaveLength(1);
-    expect(mentions[0]!.slug).toBe('companies/acme-corp');
+    expect(mentions[0]!.slug).toBe("companies/acme-corp");
   });
 
   test('3. case folding — "iOS Engineer" title matches "ios engineer" in body', () => {
     const g = gazetteerFromEntries([
-      { slug: 'people/ios-engineer', source_id: 'default', title: 'iOS Engineer' },
+      { slug: "people/ios-engineer", source_id: "default", title: "iOS Engineer" },
     ]);
-    const mentions = findMentionedEntities('Looking to hire an ios engineer.', g, {
-      fromSlug: 'writing/post-1', fromSourceId: 'default',
+    const mentions = findMentionedEntities("Looking to hire an ios engineer.", g, {
+      fromSlug: "writing/post-1",
+      fromSourceId: "default",
     });
     expect(mentions).toHaveLength(1);
-    expect(mentions[0]!.slug).toBe('people/ios-engineer');
+    expect(mentions[0]!.slug).toBe("people/ios-engineer");
   });
 
   test('4. whole-word boundary — "Acme" matches "Acme." but NOT "Acmecorp"', () => {
     const g = gazetteerFromEntries([
-      { slug: 'companies/acme', source_id: 'default', title: 'Acme' },
+      { slug: "companies/acme", source_id: "default", title: "Acme" },
     ]);
     // Should match (sentence-ending dot is a token break)
-    const m1 = findMentionedEntities('We bought Acme.', g, {
-      fromSlug: 'writing/post-1', fromSourceId: 'default',
+    const m1 = findMentionedEntities("We bought Acme.", g, {
+      fromSlug: "writing/post-1",
+      fromSourceId: "default",
     });
     expect(m1).toHaveLength(1);
     // Should NOT match — "Acmecorp" tokenizes as single token "acmecorp"
-    const m2 = findMentionedEntities('Acmecorp is unrelated.', g, {
-      fromSlug: 'writing/post-1', fromSourceId: 'default',
+    const m2 = findMentionedEntities("Acmecorp is unrelated.", g, {
+      fromSlug: "writing/post-1",
+      fromSourceId: "default",
     });
     expect(m2).toHaveLength(0);
   });
 
   test('5. possessive form — "Acme\'s growth" → Acme matches', () => {
     const g = gazetteerFromEntries([
-      { slug: 'companies/acme', source_id: 'default', title: 'Acme' },
+      { slug: "companies/acme", source_id: "default", title: "Acme" },
     ]);
     const mentions = findMentionedEntities("Acme's growth is impressive.", g, {
-      fromSlug: 'writing/post-1', fromSourceId: 'default',
+      fromSlug: "writing/post-1",
+      fromSourceId: "default",
     });
     expect(mentions).toHaveLength(1);
-    expect(mentions[0]!.slug).toBe('companies/acme');
+    expect(mentions[0]!.slug).toBe("companies/acme");
   });
 
-  test('6. code-block stripping — mentions inside ``` blocks ignored', () => {
+  test("6. code-block stripping — mentions inside ``` blocks ignored", () => {
     const g = gazetteerFromEntries([
-      { slug: 'companies/acme', source_id: 'default', title: 'Acme' },
+      { slug: "companies/acme", source_id: "default", title: "Acme" },
     ]);
-    const body = '```\nAcme code\n```\nNothing here.';
+    const body = "```\nAcme code\n```\nNothing here.";
     const mentions = findMentionedEntities(body, g, {
-      fromSlug: 'writing/post-1', fromSourceId: 'default',
+      fromSlug: "writing/post-1",
+      fromSourceId: "default",
     });
     expect(mentions).toHaveLength(0);
   });
 
-  test('10. first-mention-only cap — 5 body mentions of same entity → 1 link', () => {
+  test("10. first-mention-only cap — 5 body mentions of same entity → 1 link", () => {
     const g = gazetteerFromEntries([
-      { slug: 'companies/acme', source_id: 'default', title: 'Acme' },
+      { slug: "companies/acme", source_id: "default", title: "Acme" },
     ]);
-    const body = 'Acme one. Acme two. Acme three. Acme four. Acme five.';
+    const body = "Acme one. Acme two. Acme three. Acme four. Acme five.";
     const mentions = findMentionedEntities(body, g, {
-      fromSlug: 'writing/post-1', fromSourceId: 'default',
+      fromSlug: "writing/post-1",
+      fromSourceId: "default",
     });
     expect(mentions).toHaveLength(1);
   });
 
-  test('11. empty gazetteer → empty result', () => {
+  test("11. empty gazetteer → empty result", () => {
     const g: Gazetteer = new Map();
-    const mentions = findMentionedEntities('Anything goes here.', g, {
-      fromSlug: 'writing/post-1', fromSourceId: 'default',
+    const mentions = findMentionedEntities("Anything goes here.", g, {
+      fromSlug: "writing/post-1",
+      fromSourceId: "default",
     });
     expect(mentions).toEqual([]);
   });
 
-  test('12. empty text → empty result', () => {
+  test("12. empty text → empty result", () => {
     const g = gazetteerFromEntries([
-      { slug: 'companies/acme', source_id: 'default', title: 'Acme' },
+      { slug: "companies/acme", source_id: "default", title: "Acme" },
     ]);
-    const mentions = findMentionedEntities('', g, {
-      fromSlug: 'writing/post-1', fromSourceId: 'default',
+    const mentions = findMentionedEntities("", g, {
+      fromSlug: "writing/post-1",
+      fromSourceId: "default",
     });
     expect(mentions).toEqual([]);
   });
 
-  test('14. multi-word shared first token — longest-match wins', () => {
+  test("14. multi-word shared first token — longest-match wins", () => {
     const g = gazetteerFromEntries([
-      { slug: 'companies/acme', source_id: 'default', title: 'Acme' },
-      { slug: 'companies/acme-corp', source_id: 'default', title: 'Acme Corp' },
-      { slug: 'companies/acme-foundation', source_id: 'default', title: 'Acme Foundation' },
+      { slug: "companies/acme", source_id: "default", title: "Acme" },
+      { slug: "companies/acme-corp", source_id: "default", title: "Acme Corp" },
+      { slug: "companies/acme-foundation", source_id: "default", title: "Acme Foundation" },
     ]);
-    const body = 'Acme Foundation announced. Then Acme Corp. Then plain Acme.';
+    const body = "Acme Foundation announced. Then Acme Corp. Then plain Acme.";
     const mentions = findMentionedEntities(body, g, {
-      fromSlug: 'writing/post-1', fromSourceId: 'default',
+      fromSlug: "writing/post-1",
+      fromSourceId: "default",
     });
     // First offset: "Acme Foundation" — longest match wins.
     // Second occurrence of "Acme": multi-word "Acme Corp" matches → multi-word wins.
     // Third: plain "Acme" alone — single-word match.
-    const slugs = mentions.map(m => m.slug);
-    expect(slugs).toContain('companies/acme-foundation');
-    expect(slugs).toContain('companies/acme-corp');
-    expect(slugs).toContain('companies/acme');
+    const slugs = mentions.map((m) => m.slug);
+    expect(slugs).toContain("companies/acme-foundation");
+    expect(slugs).toContain("companies/acme-corp");
+    expect(slugs).toContain("companies/acme");
   });
 
-  test('15. determinism — same body + same gazetteer → identical output across 10 calls', () => {
+  test("15. determinism — same body + same gazetteer → identical output across 10 calls", () => {
     const g = gazetteerFromEntries([
-      { slug: 'companies/acme', source_id: 'default', title: 'Acme' },
-      { slug: 'companies/acme-corp', source_id: 'default', title: 'Acme Corp' },
-      { slug: 'people/alice', source_id: 'default', title: 'Alice Smith' },
+      { slug: "companies/acme", source_id: "default", title: "Acme" },
+      { slug: "companies/acme-corp", source_id: "default", title: "Acme Corp" },
+      { slug: "people/alice", source_id: "default", title: "Alice Smith" },
     ]);
-    const body = 'Acme Corp and Alice Smith and Acme met. Then Alice Smith again.';
+    const body = "Acme Corp and Alice Smith and Acme met. Then Alice Smith again.";
     const refs = new Set<string>();
     for (let i = 0; i < 10; i++) {
       const mentions = findMentionedEntities(body, g, {
-        fromSlug: 'writing/post-1', fromSourceId: 'default',
+        fromSlug: "writing/post-1",
+        fromSourceId: "default",
       });
       refs.add(JSON.stringify(mentions));
     }
     expect(refs.size).toBe(1);
   });
 
-  test('16. self-link guard (D13) — entity page mentioning own title skips', () => {
+  test("16. self-link guard (D13) — entity page mentioning own title skips", () => {
     const g = gazetteerFromEntries([
-      { slug: 'companies/acme', source_id: 'default', title: 'Acme' },
+      { slug: "companies/acme", source_id: "default", title: "Acme" },
     ]);
     // Page IS the Acme page; body mentions "Acme" → self-link guard skips.
-    const mentions = findMentionedEntities('Acme has 500 customers.', g, {
-      fromSlug: 'companies/acme', fromSourceId: 'default',
+    const mentions = findMentionedEntities("Acme has 500 customers.", g, {
+      fromSlug: "companies/acme",
+      fromSourceId: "default",
     });
     expect(mentions).toEqual([]);
   });
 
-  test('17. cross-source guard — page in source A mentions entity in source B → no link', () => {
+  test("17. cross-source guard — page in source A mentions entity in source B → no link", () => {
     const g = gazetteerFromEntries([
-      { slug: 'companies/acme', source_id: 'team-b', title: 'Acme' },
+      { slug: "companies/acme", source_id: "team-b", title: "Acme" },
     ]);
-    const mentions = findMentionedEntities('We met Acme today.', g, {
-      fromSlug: 'writing/post-1', fromSourceId: 'team-a', // different source
+    const mentions = findMentionedEntities("We met Acme today.", g, {
+      fromSlug: "writing/post-1",
+      fromSourceId: "team-a", // different source
     });
     expect(mentions).toEqual([]);
   });
 
-  test('20. code-block + token interaction — body text outside block linked, inside skipped', () => {
+  test("20. code-block + token interaction — body text outside block linked, inside skipped", () => {
     const g = gazetteerFromEntries([
-      { slug: 'companies/acme', source_id: 'default', title: 'Acme' },
+      { slug: "companies/acme", source_id: "default", title: "Acme" },
     ]);
     // Single backtick inline-code blocks the inner mention; outer mention fires.
-    const body = 'Outside: Acme works. Inline `Acme inside` should skip. After.';
+    const body = "Outside: Acme works. Inline `Acme inside` should skip. After.";
     const mentions = findMentionedEntities(body, g, {
-      fromSlug: 'writing/post-1', fromSourceId: 'default',
+      fromSlug: "writing/post-1",
+      fromSourceId: "default",
     });
     expect(mentions).toHaveLength(1); // first-mention-only cap
-    expect(mentions[0]!.slug).toBe('companies/acme');
+    expect(mentions[0]!.slug).toBe("companies/acme");
   });
 });
 
@@ -263,17 +278,25 @@ describe('findMentionedEntities — pure cases', () => {
 // buildGazetteer — engine-backed tests
 // ============================================================
 
-describe('buildGazetteer — engine integration', () => {
+describe("buildGazetteer — engine integration", () => {
   test('7. min-length filter — title "AI" (length 2) not in gazetteer', async () => {
-    await engine.putPage('companies/ai', {
-      type: 'company', title: 'AI', compiled_truth: 'b', timeline: '', frontmatter: {},
+    await engine.putPage("companies/ai", {
+      type: "company",
+      title: "AI",
+      compiled_truth: "b",
+      timeline: "",
+      frontmatter: {},
     });
-    await engine.putPage('companies/acme', {
-      type: 'company', title: 'Acme', compiled_truth: 'b', timeline: '', frontmatter: {},
+    await engine.putPage("companies/acme", {
+      type: "company",
+      title: "Acme",
+      compiled_truth: "b",
+      timeline: "",
+      frontmatter: {},
     });
     const g = await buildGazetteer(engine);
-    expect(g.has('acme')).toBe(true);
-    expect(g.has('ai')).toBe(false);
+    expect(g.has("acme")).toBe(true);
+    expect(g.has("ai")).toBe(false);
   });
 
   test('8. ignore-list at build — "Apple" suppressed when no companies/apple page', async () => {
@@ -291,47 +314,66 @@ describe('buildGazetteer — engine integration', () => {
     // verify it IS in the gazetteer (per CK12 inverse rule); seed another
     // run with no Apple entity and verify the ignore-list doesn't add one.
     // Both behaviors covered by the existingTitles vs ignore_set logic.
-    await engine.putPage('people/alice', {
-      type: 'person', title: 'Alice Example', compiled_truth: 'b', timeline: '', frontmatter: {},
+    await engine.putPage("people/alice", {
+      type: "person",
+      title: "Alice Example",
+      compiled_truth: "b",
+      timeline: "",
+      frontmatter: {},
     });
     const g = await buildGazetteer(engine);
     // No Apple entity seeded → 'apple' not a gazetteer key (trivially).
-    expect(g.has('apple')).toBe(false);
+    expect(g.has("apple")).toBe(false);
     // Alice IS in gazetteer.
-    expect(g.has('alice')).toBe(true);
+    expect(g.has("alice")).toBe(true);
   });
 
   test('9. ignore-list inverse — title "Apple" matches when companies/apple exists (CK12)', async () => {
-    await engine.putPage('companies/apple', {
-      type: 'company', title: 'Apple', compiled_truth: 'b', timeline: '', frontmatter: {},
+    await engine.putPage("companies/apple", {
+      type: "company",
+      title: "Apple",
+      compiled_truth: "b",
+      timeline: "",
+      frontmatter: {},
     });
     const g = await buildGazetteer(engine);
     // existingTitles has "Apple" so the ignore-list does NOT suppress;
     // gazetteer presence wins per CK12 rule.
-    expect(g.has('apple')).toBe(true);
-    expect(g.get('apple')![0]!.slug).toBe('companies/apple');
+    expect(g.has("apple")).toBe(true);
+    expect(g.get("apple")![0]!.slug).toBe("companies/apple");
   });
 
-  test('13. all entity pages soft-deleted → empty gazetteer', async () => {
-    await engine.putPage('people/alice', {
-      type: 'person', title: 'Alice Example', compiled_truth: 'b', timeline: '', frontmatter: {},
+  test("13. all entity pages soft-deleted → empty gazetteer", async () => {
+    await engine.putPage("people/alice", {
+      type: "person",
+      title: "Alice Example",
+      compiled_truth: "b",
+      timeline: "",
+      frontmatter: {},
     });
-    await engine.softDeletePage('people/alice');
+    await engine.softDeletePage("people/alice");
     const g = await buildGazetteer(engine);
     expect(g.size).toBe(0);
   });
 
-  test('18. hardcoded type filter — page with type=meeting NOT in gazetteer', async () => {
-    await engine.putPage('meetings/2026-01-15', {
-      type: 'meeting' as any, title: 'Weekly Sync',
-      compiled_truth: 'b', timeline: '', frontmatter: {},
+  test("18. hardcoded type filter — page with type=meeting NOT in gazetteer", async () => {
+    await engine.putPage("meetings/2026-01-15", {
+      type: "meeting" as any,
+      title: "Weekly Sync",
+      compiled_truth: "b",
+      timeline: "",
+      frontmatter: {},
     });
-    await engine.putPage('people/bob', {
-      type: 'person', title: 'Robert Builder', compiled_truth: 'b', timeline: '', frontmatter: {},
+    await engine.putPage("people/bob", {
+      type: "person",
+      title: "Robert Builder",
+      compiled_truth: "b",
+      timeline: "",
+      frontmatter: {},
     });
     const g = await buildGazetteer(engine);
-    expect(g.has('weekly')).toBe(false); // meeting type filtered out
-    expect(g.has('robert')).toBe(true);  // person type included
+    expect(g.has("weekly")).toBe(false); // meeting type filtered out
+    expect(g.has("robert")).toBe(true); // person type included
   });
 
   test('19. min-length + ignore-list interaction — "YC" (2 chars) filtered by min-length BEFORE ignore-list', async () => {
@@ -340,30 +382,38 @@ describe('buildGazetteer — engine integration', () => {
     // ignore-list never fires. We test the regression that the min-length
     // gate runs BEFORE the ignore-list (so adding Box to ignore-list
     // doesn't accidentally change the filter ordering).
-    await engine.putPage('companies/box', {
-      type: 'company', title: 'Box', compiled_truth: 'b', timeline: '', frontmatter: {},
+    await engine.putPage("companies/box", {
+      type: "company",
+      title: "Box",
+      compiled_truth: "b",
+      timeline: "",
+      frontmatter: {},
     });
     const g = await buildGazetteer(engine);
     // "Box" is 3 chars → min-length filter drops it (whether or not in ignore-list).
-    expect(g.has('box')).toBe(false);
+    expect(g.has("box")).toBe(false);
   });
 
-  test('extraIgnore — user-supplied additional ignore tokens', async () => {
-    await engine.putPage('people/john', {
-      type: 'person', title: 'John', compiled_truth: 'b', timeline: '', frontmatter: {},
+  test("extraIgnore — user-supplied additional ignore tokens", async () => {
+    await engine.putPage("people/john", {
+      type: "person",
+      title: "John",
+      compiled_truth: "b",
+      timeline: "",
+      frontmatter: {},
     });
     // No companies/john exists, so adding John to extraIgnore should suppress.
     const g1 = await buildGazetteer(engine);
-    expect(g1.has('john')).toBe(true); // baseline: in gazetteer
-    const g2 = await buildGazetteer(engine, { extraIgnore: ['John'] });
+    expect(g1.has("john")).toBe(true); // baseline: in gazetteer
+    const g2 = await buildGazetteer(engine, { extraIgnore: ["John"] });
     // But title "John" IS the entity title — existingTitles.has('John') is true.
     // Per CK12 rule, gazetteer presence wins → John IS still in.
-    expect(g2.has('john')).toBe(true);
+    expect(g2.has("john")).toBe(true);
   });
 
-  test('LINKABLE_ENTITY_TYPES exposes the hardcoded contract', () => {
+  test("LINKABLE_ENTITY_TYPES exposes the hardcoded contract", () => {
     // Regression: if anyone changes the hardcoded type list, this test
     // forces a deliberate change (and a corresponding test update).
-    expect(LINKABLE_ENTITY_TYPES).toEqual(['person', 'company', 'organization', 'entity']);
+    expect(LINKABLE_ENTITY_TYPES).toEqual(["person", "company", "organization", "entity"]);
   });
 });

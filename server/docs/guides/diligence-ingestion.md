@@ -45,6 +45,7 @@ mkdir -p brain/diligence/{company-slug}/.raw
 
 **Step 4: Diarize and Save.**
 Write extracted content to `brain/diligence/{company}/{doc-name}.md`:
+
 - Document title and type
 - Section-by-section breakdown with key metrics
 - Notable footnotes or caveats
@@ -61,35 +62,42 @@ Every diligence directory needs an `index.md`:
 # {Company Name} — Diligence
 
 ## Round Details
+
 - Stage: Series A
 - Amount: $10M
 - Date: 2026-04
 
 ## Document Inventory
+
 - [Pitch Deck](pitch-deck.md) — 25 slides, company overview + traction
 - [Financial Model](financial-model.md) — 5 tabs, 3-year projections
 - [Cap Table](cap-table.md) — current ownership + option pool
 
 ## Key Findings
+
 - Revenue growing 30% MoM for last 6 months
 - CAC payback period: 4 months
 - Net retention: 135%
 
 ## Bull Case
+
 - Strong product-market fit signal (NPS 72)
 - Expanding into adjacent vertical
 
 ## Bear Case
+
 - Single customer represents 40% of revenue
 - Burn rate increased 3x last quarter
 
 ## Open Questions
+
 - What's the path to profitability?
 - How defensible is the moat?
 ```
 
 **Step 7: Enrich Company Brain Page.**
 Update `brain/companies/{slug}.md`:
+
 - Add document sources to frontmatter
 - Update compiled truth with key findings
 - Add "See Also" link to diligence directory
@@ -108,6 +116,7 @@ published version. Strip internal notes and raw assessment language.
 ### Quality Bar
 
 A good diligence page reads like an intelligence assessment:
+
 - **What they say** vs **what the data shows** (the gap is the insight)
 - Explicit bull/bear case (not just a summary)
 - Key metrics highlighted, not buried
@@ -148,4 +157,4 @@ A good diligence page reads like an intelligence assessment:
 
 ---
 
-*Part of the [GBrain Skillpack](../GBRAIN_SKILLPACK.md).*
+_Part of the [GBrain Skillpack](../GBRAIN_SKILLPACK.md)._

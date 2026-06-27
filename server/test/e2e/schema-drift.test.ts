@@ -22,9 +22,9 @@
  *  Or: bun run ci:local  (the full Docker-backed gate)
  */
 
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
-import { PGLiteEngine } from '../../src/core/pglite-engine.ts';
-import { PostgresEngine } from '../../src/core/postgres-engine.ts';
+import { describe, test, expect, beforeAll, afterAll } from "bun:test";
+import { PGLiteEngine } from "../../src/core/pglite-engine.ts";
+import { PostgresEngine } from "../../src/core/postgres-engine.ts";
 import {
   type SchemaSnapshot,
   type SnapshotQueryRow,
@@ -32,13 +32,13 @@ import {
   diffSnapshots,
   formatDiffForFailure,
   isCleanDiff,
-} from '../helpers/schema-diff.ts';
+} from "../helpers/schema-diff.ts";
 
 const DATABASE_URL = process.env.DATABASE_URL;
 const skip = !DATABASE_URL;
 
 if (skip) {
-  console.log('Skipping E2E schema drift gate (DATABASE_URL not set)');
+  console.log("Skipping E2E schema drift gate (DATABASE_URL not set)");
 }
 
 // Tier 3 opt-out: this file constructs a fresh in-memory PGLite to compare
@@ -60,10 +60,10 @@ delete process.env.GBRAIN_PGLITE_SNAPSHOT;
 const PG_ONLY_TABLES = [
   // file_migration_ledger drives the v0.18 storage-object rewrite on
   // Postgres. PGLite never had blob storage so the ledger has no consumer.
-  'file_migration_ledger',
+  "file_migration_ledger",
 ];
 
-describe.skipIf(skip)('schema drift: PGLite ↔ Postgres post-initSchema parity (E2E)', () => {
+describe.skipIf(skip)("schema drift: PGLite ↔ Postgres post-initSchema parity (E2E)", () => {
   let pglite: PGLiteEngine;
   let pg: PostgresEngine;
   let pgliteSnap: SchemaSnapshot;
@@ -94,20 +94,20 @@ describe.skipIf(skip)('schema drift: PGLite ↔ Postgres post-initSchema parity 
     const pgConnPre = (pg as any).sql;
 
     const url = new URL(DATABASE_URL!);
-    const dbName = url.pathname.replace(/^\//, '');
+    const dbName = url.pathname.replace(/^\//, "");
     const host = url.hostname;
-    const isLocalhost = host === 'localhost' || host === '127.0.0.1' || host.endsWith('.local');
+    const isLocalhost = host === "localhost" || host === "127.0.0.1" || host.endsWith(".local");
     // db-name pattern is the floor: gbrain_test, *_test, test_*, *_e2e.
     // Required REGARDLESS of any override — a production db named "production_data"
     // cannot be reset even with GBRAIN_TEST_DB=1.
     const looksLikeTestDb = /^(gbrain_test|.*_test|test_.*|.*_e2e)$/i.test(dbName);
-    const ciOptIn = process.env.GBRAIN_TEST_DB === '1';
+    const ciOptIn = process.env.GBRAIN_TEST_DB === "1";
     // resetAllowed semantics: db name is test-shaped AND (localhost OR ci-opt-in).
     // Neither host nor env-var alone is sufficient.
     const resetAllowed = looksLikeTestDb && (isLocalhost || ciOptIn);
 
     if (resetAllowed) {
-      await pgConnPre.unsafe('DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;');
+      await pgConnPre.unsafe("DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;");
     } else {
       // Surface a loud, paste-ready hint. The test will still try initSchema;
       // if the caller already had a fresh DB the parity check passes anyway.
@@ -141,7 +141,7 @@ describe.skipIf(skip)('schema drift: PGLite ↔ Postgres post-initSchema parity 
     if (pg) await pg.disconnect();
   }, 30_000);
 
-  test('post-initSchema schemas are equivalent (modulo allowlist)', () => {
+  test("post-initSchema schemas are equivalent (modulo allowlist)", () => {
     const diff = diffSnapshots(pgSnap, pgliteSnap, { allowlistPgOnlyTables: PG_ONLY_TABLES });
     if (!isCleanDiff(diff)) {
       throw new Error(`Schema drift detected:\n${formatDiffForFailure(diff)}`);
@@ -151,7 +151,7 @@ describe.skipIf(skip)('schema drift: PGLite ↔ Postgres post-initSchema parity 
 
   // Sentinel cases. Each is the v0.26.1 bug class for one specific table.
   // Failing here gives a tighter blame message than the global parity test.
-  for (const sentinel of ['oauth_clients', 'mcp_request_log', 'access_tokens', 'eval_candidates']) {
+  for (const sentinel of ["oauth_clients", "mcp_request_log", "access_tokens", "eval_candidates"]) {
     test(`regression #588: ${sentinel} columns match across engines`, () => {
       const pgCols = pgSnap.get(sentinel);
       const pgliteCols = pgliteSnap.get(sentinel);
@@ -160,7 +160,7 @@ describe.skipIf(skip)('schema drift: PGLite ↔ Postgres post-initSchema parity 
       const diff = diffSnapshots(
         new Map([[sentinel, pgCols!]]),
         new Map([[sentinel, pgliteCols!]]),
-        { allowlistPgOnlyTables: [] },
+        { allowlistPgOnlyTables: [] }
       );
       if (!isCleanDiff(diff)) {
         throw new Error(`Drift on ${sentinel}:\n${formatDiffForFailure(diff)}`);
@@ -168,13 +168,15 @@ describe.skipIf(skip)('schema drift: PGLite ↔ Postgres post-initSchema parity 
     });
   }
 
-  test('Postgres-only tables on the allowlist are still absent from PGLite', () => {
+  test("Postgres-only tables on the allowlist are still absent from PGLite", () => {
     // Defensive: if someone adds `files` to PGLite without removing it from
     // the allowlist, we want to know — the allowlist would silently shadow
     // a real divergence in coverage policy.
     for (const t of PG_ONLY_TABLES) {
       expect(pgSnap.has(t), `${t} should be in Postgres schema`).toBe(true);
-      expect(pgliteSnap.has(t), `${t} unexpectedly added to PGLite — remove from allowlist`).toBe(false);
+      expect(pgliteSnap.has(t), `${t} unexpectedly added to PGLite — remove from allowlist`).toBe(
+        false
+      );
     }
   });
 });

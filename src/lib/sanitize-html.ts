@@ -130,7 +130,12 @@ DOMPurify.addHook("beforeSanitizeAttributes", (node: Element) => {
   const safeData = /^data:image\/(?:png|jpeg|jpg|gif|webp|bmp);/i;
   for (const attr of ["src", "href"] as const) {
     const val = node.getAttribute(attr);
-    if (val && val.trim().toLowerCase().startsWith("data:") && !safeData.test(val) && dangerousData.test(val)) {
+    if (
+      val &&
+      val.trim().toLowerCase().startsWith("data:") &&
+      !safeData.test(val) &&
+      dangerousData.test(val)
+    ) {
       node.removeAttribute(attr);
     }
   }

@@ -9,19 +9,19 @@ when and how to use them. This file is that knowledge.
 
 Your tool inventory includes these (prefixed `gbrain__` in OpenClaw):
 
-| Tool | Use for |
-|------|---------|
-| `gbrain__search` / `search` | Keyword search — fast, always works |
-| `gbrain__query` / `query` | Hybrid search (keyword + semantic) — best quality |
-| `gbrain__get_page` / `get_page` | Direct page read when you know the slug |
-| `gbrain__get_links` / `get_links` | Outgoing links from a page |
-| `gbrain__get_backlinks` / `get_backlinks` | Who references this entity |
-| `gbrain__get_timeline` / `get_timeline` | Dated events for an entity |
-| `gbrain__resolve_slugs` / `resolve_slugs` | Fuzzy slug resolution |
-| `gbrain__traverse_graph` / `traverse_graph` | Walk the relationship graph |
-| `gbrain__put_page` / `put_page` | Create or update a brain page |
-| `gbrain__add_timeline_entry` | Add a dated event |
-| `gbrain__add_link` | Add a relationship edge |
+| Tool                                        | Use for                                           |
+| ------------------------------------------- | ------------------------------------------------- |
+| `gbrain__search` / `search`                 | Keyword search — fast, always works               |
+| `gbrain__query` / `query`                   | Hybrid search (keyword + semantic) — best quality |
+| `gbrain__get_page` / `get_page`             | Direct page read when you know the slug           |
+| `gbrain__get_links` / `get_links`           | Outgoing links from a page                        |
+| `gbrain__get_backlinks` / `get_backlinks`   | Who references this entity                        |
+| `gbrain__get_timeline` / `get_timeline`     | Dated events for an entity                        |
+| `gbrain__resolve_slugs` / `resolve_slugs`   | Fuzzy slug resolution                             |
+| `gbrain__traverse_graph` / `traverse_graph` | Walk the relationship graph                       |
+| `gbrain__put_page` / `put_page`             | Create or update a brain page                     |
+| `gbrain__add_timeline_entry`                | Add a dated event                                 |
+| `gbrain__add_link`                          | Add a relationship edge                           |
 
 Tool names vary by transport (MCP uses short names, OpenClaw plugin uses
 `gbrain__` prefix). Both work. Use whichever your environment provides.
@@ -54,14 +54,14 @@ thousands of pages. The answer is almost always there.
 
 Standard directory structure:
 
-| Directory | Type | Example |
-|-----------|------|---------|
-| `people/` | person | `people/paul-graham.md` |
-| `companies/` | company | `companies/stripe.md` |
-| `deals/` | deal | `deals/stripe-series-c.md` |
-| `meetings/` | meeting | `meetings/2026-04-23-weekly-sync.md` |
-| `projects/` | project | `projects/gbrain.md` |
-| `yc/` | yc | `yc/batch-w26.md` |
+| Directory    | Type    | Example                              |
+| ------------ | ------- | ------------------------------------ |
+| `people/`    | person  | `people/paul-graham.md`              |
+| `companies/` | company | `companies/stripe.md`                |
+| `deals/`     | deal    | `deals/stripe-series-c.md`           |
+| `meetings/`  | meeting | `meetings/2026-04-23-weekly-sync.md` |
+| `projects/`  | project | `projects/gbrain.md`                 |
+| `yc/`        | yc      | `yc/batch-w26.md`                    |
 
 When creating new pages, include proper frontmatter with `type`, `title`,
 and `tags` fields.
@@ -89,13 +89,13 @@ skips opted-out skills.
 
 **Strict canonical form (the parser is loud about typos):**
 
-| Form | Result |
-|---|---|
-| `brain_first: exempt` | ✅ matches |
-| `brain-first: exempt` | ⚠ doctor hint — snake_case required |
-| `BrainFirst: exempt`  | ⚠ doctor hint — snake_case required |
-| `brain_first: "exempt"` | ⚠ doctor hint — drop the quotes |
-| `brain_first: Exempt` | ⚠ doctor hint — value must be lowercase |
+| Form                    | Result                                              |
+| ----------------------- | --------------------------------------------------- |
+| `brain_first: exempt`   | ✅ matches                                          |
+| `brain-first: exempt`   | ⚠ doctor hint — snake_case required                 |
+| `BrainFirst: exempt`    | ⚠ doctor hint — snake_case required                 |
+| `brain_first: "exempt"` | ⚠ doctor hint — drop the quotes                     |
+| `brain_first: Exempt`   | ⚠ doctor hint — value must be lowercase             |
 | `brain_first: required` | ⚠ doctor hint — only `exempt` is supported in v0.36 |
 
 A near-miss prints a paste-ready fix line and the skill stays flagged

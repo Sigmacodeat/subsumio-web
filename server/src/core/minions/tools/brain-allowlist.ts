@@ -22,12 +22,12 @@
  * level; repeats re-derive the same embedding over identical content.
  */
 
-import type { BrainEngine } from '../../engine.ts';
-import type { GBrainConfig } from '../../config.ts';
-import { operations } from '../../operations.ts';
-import type { Operation, OperationContext } from '../../operations.ts';
-import { paramDefToSchema } from '../../../mcp/tool-defs.ts';
-import type { ToolCtx, ToolDef } from '../types.ts';
+import type { BrainEngine } from "../../engine.ts";
+import type { GBrainConfig } from "../../config.ts";
+import { operations } from "../../operations.ts";
+import type { Operation, OperationContext } from "../../operations.ts";
+import { paramDefToSchema } from "../../../mcp/tool-defs.ts";
+import type { ToolCtx, ToolDef } from "../types.ts";
 
 /**
  * v0.15 brain-tool allow-list. Review carefully when extending. Op names
@@ -46,28 +46,28 @@ import type { ToolCtx, ToolDef } from '../types.ts';
  * instead of silently dropping a tool.
  */
 export const BRAIN_TOOL_ALLOWLIST: ReadonlySet<string> = new Set([
-  'query',
-  'search',
-  'get_page',
-  'list_pages',
-  'file_list',
-  'file_url',
-  'get_backlinks',
-  'traverse_graph',
+  "query",
+  "search",
+  "get_page",
+  "list_pages",
+  "file_list",
+  "file_url",
+  "get_backlinks",
+  "traverse_graph",
   // v114 (#1941): read-only provenance discovery. Edge-WRITE ops (add_link /
   // remove_link) are deliberately NOT allowlisted — exposing graph writes to
   // subagents is a separate trust decision.
-  'list_link_sources',
-  'resolve_slugs',
-  'get_ingest_log',
-  'put_page',
+  "list_link_sources",
+  "resolve_slugs",
+  "get_ingest_log",
+  "put_page",
   // v0.29 — Salience + Anomaly Detection. Both read-only. `get_recent_transcripts`
   // is intentionally NOT included: subagent calls always have ctx.remote=true,
   // and the v0.29 trust gate rejects remote callers — adding it here would be
   // a footgun (subagent calls op, gets permission_denied, looks like a bug).
   // The cycle synthesize phase already calls discoverTranscripts directly.
-  'get_recent_salience',
-  'find_anomalies',
+  "get_recent_salience",
+  "find_anomalies",
 ]);
 
 /**
@@ -85,20 +85,31 @@ export const BRAIN_TOOL_ALLOWLIST: ReadonlySet<string> = new Set([
  * just render as `- \`name\`` with no hint suffix.
  */
 export const BRAIN_TOOL_USAGE_HINTS: Readonly<Record<string, string>> = {
-  query: 'Use for natural-language semantic search across the brain (vector + keyword hybrid). Returns ranked passages with citations. First choice when the user asks a question of the brain.',
-  search: 'Use for hybrid keyword + vector search returning ranked page hits. Use over `query` when you want page-level not chunk-level results (e.g. "find pages about X").',
-  get_page: 'Read a brain page by its slug. Returns the full markdown body + frontmatter + linked pages.',
-  list_pages: 'List pages by type or slug-prefix filter. Use when you need to enumerate (e.g. "list all `people/` pages") instead of search.',
-  file_list: 'List uploaded files (attachments) by slug-prefix or content type. NOT the local filesystem — only files the brain has stored.',
-  file_url: 'Get a presigned URL for a brain-stored file. Read-only; expires.',
+  query:
+    "Use for natural-language semantic search across the brain (vector + keyword hybrid). Returns ranked passages with citations. First choice when the user asks a question of the brain.",
+  search:
+    'Use for hybrid keyword + vector search returning ranked page hits. Use over `query` when you want page-level not chunk-level results (e.g. "find pages about X").',
+  get_page:
+    "Read a brain page by its slug. Returns the full markdown body + frontmatter + linked pages.",
+  list_pages:
+    'List pages by type or slug-prefix filter. Use when you need to enumerate (e.g. "list all `people/` pages") instead of search.',
+  file_list:
+    "List uploaded files (attachments) by slug-prefix or content type. NOT the local filesystem — only files the brain has stored.",
+  file_url: "Get a presigned URL for a brain-stored file. Read-only; expires.",
   get_backlinks: 'List every page that links TO the given slug. Use for "what references this".',
-  traverse_graph: 'Walk the typed-edge graph starting from a slug (e.g. `works_at`, `founded`, `invested_in`). Use for relationship queries.',
-  list_link_sources: 'List the distinct link provenances in the brain with edge counts (e.g. `citation-graph`, `manual`). Use to discover which edge-writers have populated the graph.',
-  resolve_slugs: 'Resolve free-form entity names to canonical slugs (e.g. "Alice" → `people/alice-example`). Use before any tool that takes a slug if the user gave a name not a slug.',
-  get_ingest_log: 'Read the brain ingestion log for diagnostic / verification queries.',
-  put_page: 'Write a markdown page to the gbrain DATABASE (NOT the local filesystem). Page becomes searchable + linkable. Slug must match the agent\'s allowed namespace.',
-  get_recent_salience: 'Read pages ranked by emotional + activity salience over a recency window. Use for "what\'s been on my mind lately".',
-  find_anomalies: 'Read cohort-level activity outliers (e.g. tag-cohort or type-cohort with unusual recent volume). Use for "what\'s unusual lately".',
+  traverse_graph:
+    "Walk the typed-edge graph starting from a slug (e.g. `works_at`, `founded`, `invested_in`). Use for relationship queries.",
+  list_link_sources:
+    "List the distinct link provenances in the brain with edge counts (e.g. `citation-graph`, `manual`). Use to discover which edge-writers have populated the graph.",
+  resolve_slugs:
+    'Resolve free-form entity names to canonical slugs (e.g. "Alice" → `people/alice-example`). Use before any tool that takes a slug if the user gave a name not a slug.',
+  get_ingest_log: "Read the brain ingestion log for diagnostic / verification queries.",
+  put_page:
+    "Write a markdown page to the gbrain DATABASE (NOT the local filesystem). Page becomes searchable + linkable. Slug must match the agent's allowed namespace.",
+  get_recent_salience:
+    'Read pages ranked by emotional + activity salience over a recency window. Use for "what\'s been on my mind lately".',
+  find_anomalies:
+    'Read cohort-level activity outliers (e.g. tag-cohort or type-cohort with unusual recent volume). Use for "what\'s unusual lately".',
 };
 
 /** Matches Anthropic's tool-name constraint. No dots. */
@@ -108,7 +119,7 @@ function sanitizeToolName(opName: string): string {
   // Prefix with brain_ and replace any non-conforming char. For the v0.15
   // allow-list, every op name is already a valid simple identifier, so this
   // is defense-in-depth.
-  const prefixed = `brain_${opName}`.replace(/[^a-zA-Z0-9_-]/g, '_');
+  const prefixed = `brain_${opName}`.replace(/[^a-zA-Z0-9_-]/g, "_");
   return prefixed.slice(0, 64);
 }
 
@@ -119,11 +130,13 @@ function sanitizeToolName(opName: string): string {
  */
 function paramsToInputSchema(op: Operation): Record<string, unknown> {
   return {
-    type: 'object' as const,
+    type: "object" as const,
     properties: Object.fromEntries(
-      Object.entries(op.params).map(([k, v]) => [k, paramDefToSchema(v)]),
+      Object.entries(op.params).map(([k, v]) => [k, paramDefToSchema(v)])
     ),
-    required: Object.entries(op.params).filter(([, v]) => v.required).map(([k]) => k),
+    required: Object.entries(op.params)
+      .filter(([, v]) => v.required)
+      .map(([k]) => k),
   };
 }
 
@@ -141,7 +154,7 @@ function paramsToInputSchema(op: Operation): Record<string, unknown> {
 function namespacedPutPageSchema(
   op: Operation,
   subagentId: number,
-  allowedSlugPrefixes?: readonly string[],
+  allowedSlugPrefixes?: readonly string[]
 ): Record<string, unknown> {
   const base = paramsToInputSchema(op);
   const props = (base.properties as Record<string, Record<string, unknown>>) ?? {};
@@ -150,7 +163,7 @@ function namespacedPutPageSchema(
       props.slug = {
         ...props.slug,
         description:
-          `Page slug. MUST match one of these prefix globs: ${allowedSlugPrefixes.join(', ')}. ` +
+          `Page slug. MUST match one of these prefix globs: ${allowedSlugPrefixes.join(", ")}. ` +
           `Slugs use lowercase alphanumeric segments separated by '/'. No leading slash, no '.md' extension, no underscores.`,
       };
     } else {
@@ -224,18 +237,16 @@ function buildOpContext(deps: OpContextDeps): OperationContext {
       error: (msg: string) => process.stderr.write(`[subagent-tool:${deps.jobId}] ERROR: ${msg}\n`),
     },
     dryRun: false,
-    remote: true,                // match MCP trust boundary for auto-link skip
+    remote: true, // match MCP trust boundary for auto-link skip
     // v0.43 multi-tenant: tenant jobs carry their source; local jobs keep
     // the host default. NEVER hardcode 'default' here — a tenant agent
     // reading/writing the host source is a cross-tenant data leak.
-    sourceId: deps.sourceId ?? 'default',
+    sourceId: deps.sourceId ?? "default",
     jobId: deps.jobId,
     subagentId: deps.subagentId,
-    viaSubagent: true,           // FAIL-CLOSED: put_page etc. enforce namespace
+    viaSubagent: true, // FAIL-CLOSED: put_page etc. enforce namespace
     brainId: deps.brainId,
-    allowedSlugPrefixes: deps.allowedSlugPrefixes
-      ? [...deps.allowedSlugPrefixes]
-      : undefined,
+    allowedSlugPrefixes: deps.allowedSlugPrefixes ? [...deps.allowedSlugPrefixes] : undefined,
   };
 }
 
@@ -249,13 +260,14 @@ function buildOpContext(deps: OpContextDeps): OperationContext {
 export function buildBrainTools(opts: BuildBrainToolsOpts): ToolDef[] {
   const filter = opts.allowedNames ?? BRAIN_TOOL_ALLOWLIST;
   const picked: Operation[] = operations.filter(
-    op => BRAIN_TOOL_ALLOWLIST.has(op.name) && filter.has(op.name),
+    (op) => BRAIN_TOOL_ALLOWLIST.has(op.name) && filter.has(op.name)
   );
 
-  return picked.map<ToolDef>(op => {
-    const schema = op.name === 'put_page'
-      ? namespacedPutPageSchema(op, opts.subagentId, opts.allowedSlugPrefixes)
-      : paramsToInputSchema(op);
+  return picked.map<ToolDef>((op) => {
+    const schema =
+      op.name === "put_page"
+        ? namespacedPutPageSchema(op, opts.subagentId, opts.allowedSlugPrefixes)
+        : paramsToInputSchema(op);
 
     const toolName = sanitizeToolName(op.name);
     if (!ANTHROPIC_NAME_RE.test(toolName)) {
@@ -283,7 +295,7 @@ export function buildBrainTools(opts: BuildBrainToolsOpts): ToolDef[] {
           allowedSlugPrefixes: opts.allowedSlugPrefixes,
           sourceId: opts.sourceId,
         });
-        const params = (input && typeof input === 'object') ? input as Record<string, unknown> : {};
+        const params = input && typeof input === "object" ? (input as Record<string, unknown>) : {};
         return op.handler(opCtx, params);
       },
     };
@@ -297,11 +309,9 @@ export function buildBrainTools(opts: BuildBrainToolsOpts): ToolDef[] {
  * never fires.
  */
 export function filterAllowedTools(registry: ToolDef[], allowedToolNames: string[]): ToolDef[] {
-  const indexByName = new Map(registry.map(t => [t.name, t]));
+  const indexByName = new Map(registry.map((t) => [t.name, t]));
   // Also index by the un-prefixed op name (for friendlier allowed_tools entries).
-  const indexByShort = new Map(
-    registry.map(t => [t.name.replace(/^brain_/, ''), t]),
-  );
+  const indexByShort = new Map(registry.map((t) => [t.name.replace(/^brain_/, ""), t]));
   const seen = new Set<string>();
   const picked: ToolDef[] = [];
   for (const requested of allowedToolNames) {
@@ -309,7 +319,7 @@ export function filterAllowedTools(registry: ToolDef[], allowedToolNames: string
     if (!match) {
       throw new Error(
         `subagent allowed_tools references unknown tool "${requested}". ` +
-        `Known: ${[...indexByName.keys()].join(', ')}`,
+          `Known: ${[...indexByName.keys()].join(", ")}`
       );
     }
     if (seen.has(match.name)) continue;

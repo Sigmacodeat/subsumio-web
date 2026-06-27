@@ -39,6 +39,7 @@ mutating: true
 ## Contract
 
 This skill guarantees:
+
 1. Coverage scope, limits/sub-limits, deductibles and exclusions are extracted with the clause location.
 2. Each flagged risk cites the policy passage it derives from.
 3. Findings are mapped to the client's situation where the brain has it.
@@ -84,5 +85,6 @@ client's book (→ coverage-gap-finder).
 - ❌ Assessing in isolation when the client's risk situation is in the brain.
 
 ## Error Handling
+
 - Policy wording not available → review the schedule only and say what is missing.
 - Line unknown → ask; do not assume standard terms.

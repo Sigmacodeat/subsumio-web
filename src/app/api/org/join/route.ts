@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 import { getStore, getOrgStore } from "@/lib/auth/store";
 import { verifyActionToken, bindFragment } from "@/lib/auth/tokens";
@@ -36,7 +35,11 @@ export const POST = createHandler(
       return Response.json({ ok: true, org: { name: org.name } });
     }
     if (ctx.user.orgId) {
-      return apiError("leave_current_org_first", "Bitte verlasse zuerst die aktuelle Organisation", 409);
+      return apiError(
+        "leave_current_org_first",
+        "Bitte verlasse zuerst die aktuelle Organisation",
+        409
+      );
     }
 
     const store = getStore();
@@ -49,5 +52,5 @@ export const POST = createHandler(
 
     await store.update(ctx.user.id, { orgId: org.id });
     return Response.json({ ok: true, org: { name: org.name } });
-  },
+  }
 );

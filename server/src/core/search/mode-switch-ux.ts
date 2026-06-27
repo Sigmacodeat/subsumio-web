@@ -31,17 +31,17 @@
  * via the Minion idempotency_key contract (v0.13.1).
  */
 
-import type { BrainEngine } from '../engine.ts';
-import { readLineSafe } from '../../commands/init.ts';
-import { MinionQueue } from '../minions/queue.ts';
-import { isSearchMode, type SearchMode } from './mode.ts';
+import type { BrainEngine } from "../engine.ts";
+import { readLineSafe } from "../../commands/init.ts";
+import { MinionQueue } from "../minions/queue.ts";
+import { isSearchMode, type SearchMode } from "./mode.ts";
 
 export type TransitionKind =
-  | 'no_change'
-  | 'narrowing'
-  | 'broadening'
-  | 'tokenmax_opt_in'
-  | 'invalid_new_mode';
+  | "no_change"
+  | "narrowing"
+  | "broadening"
+  | "tokenmax_opt_in"
+  | "invalid_new_mode";
 
 export interface TransitionSummary {
   kind: TransitionKind;
@@ -51,7 +51,7 @@ export interface TransitionSummary {
   callout_lines: string[];
 }
 
-export type WorkerStatus = 'active' | 'stale' | 'never_seen';
+export type WorkerStatus = "active" | "stale" | "never_seen";
 
 export interface WorkerProbeResult {
   status: WorkerStatus;
@@ -68,7 +68,11 @@ export interface ModeSwitchOpts {
   /** Test seam: injectable worker probe. */
   probeFn?: (engine: BrainEngine) => Promise<WorkerProbeResult>;
   /** Test seam: injectable Minion submitter (avoids real queue in unit tests). */
-  submitFn?: (jobName: string, params: Record<string, unknown>, idempotencyKey: string) => Promise<number>;
+  submitFn?: (
+    jobName: string,
+    params: Record<string, unknown>,
+    idempotencyKey: string
+  ) => Promise<number>;
 }
 
 /**
@@ -93,11 +97,11 @@ export const WORKER_STALE_THRESHOLD_MS = 120_000;
  */
 export function summarizeTransition(
   oldMode: SearchMode | null,
-  newMode: string,
+  newMode: string
 ): TransitionSummary {
   if (!isSearchMode(newMode)) {
     return {
-      kind: 'invalid_new_mode',
+      kind: "invalid_new_mode",
       reindex_required: false,
       callout_lines: [
         `Invalid search.mode value: "${newMode}".`,
@@ -108,7 +112,7 @@ export function summarizeTransition(
 
   if (oldMode === newMode) {
     return {
-      kind: 'no_change',
+      kind: "no_change",
       reindex_required: false,
       callout_lines: [],
     };
@@ -116,11 +120,11 @@ export function summarizeTransition(
 
   // tokenmax opt-in wins regardless of old mode. Triggers reindex prompt
   // because per-chunk Haiku synopsis backfill is needed for full quality.
-  if (newMode === 'tokenmax') {
+  if (newMode === "tokenmax") {
     return {
-      kind: 'tokenmax_opt_in',
+      kind: "tokenmax_opt_in",
       reindex_required: true,
-      reindex_command: 'gbrain reindex --markdown',
+      reindex_command: "gbrain reindex --markdown",
       cost_estimate_per_query_cents: 0.03, // ~$0.0003 per typical search
       callout_lines: [
         `Switched to tokenmax. Per-chunk Haiku synopsis enabled.`,
@@ -135,7 +139,7 @@ export function summarizeTransition(
   // reranker + expansion). Cache will refill within TTL; no backfill.
   if (oldMode && narrowness(newMode) < narrowness(oldMode)) {
     return {
-      kind: 'narrowing',
+      kind: "narrowing",
       reindex_required: false,
       callout_lines: [
         `Switched to ${newMode}. Some features dropped from prior mode.`,
@@ -146,7 +150,7 @@ export function summarizeTransition(
 
   // Default: broadening or first-time set to balanced.
   return {
-    kind: 'broadening',
+    kind: "broadening",
     reindex_required: false,
     callout_lines: [
       `Switched to ${newMode}.`,
@@ -160,11 +164,11 @@ export function summarizeTransition(
 // Cheap ordering for narrowing detection. Higher = more features enabled.
 function narrowness(mode: SearchMode): number {
   switch (mode) {
-    case 'conservative':
+    case "conservative":
       return 1;
-    case 'balanced':
+    case "balanced":
       return 2;
-    case 'tokenmax':
+    case "tokenmax":
       return 3;
   }
 }
@@ -183,7 +187,7 @@ function narrowness(mode: SearchMode): number {
  * Minion worker" path.
  */
 export async function probeWorkerAvailable(engine: BrainEngine): Promise<WorkerProbeResult> {
-  const startCmd = 'gbrain jobs work';
+  const startCmd = "gbrain jobs work";
   try {
     // gbrain doesn't have a minion_workers heartbeat table yet (B7 follow-up
     // from v0.19.1 — see CLAUDE.md). Use a proxy: any minion_jobs row
@@ -196,28 +200,28 @@ export async function probeWorkerAvailable(engine: BrainEngine): Promise<WorkerP
                 COALESCE(finished_at, '-infinity'::timestamptz)
               ))::text AS ts
          FROM minion_jobs
-        WHERE COALESCE(started_at, finished_at) > now() - INTERVAL '10 minutes'`,
+        WHERE COALESCE(started_at, finished_at) > now() - INTERVAL '10 minutes'`
     );
     const ts = rows[0]?.ts;
     if (!ts) {
-      return { status: 'never_seen', paste_ready_start_command: startCmd };
+      return { status: "never_seen", paste_ready_start_command: startCmd };
     }
     const ageMs = Date.now() - new Date(ts).getTime();
     if (ageMs <= WORKER_STALE_THRESHOLD_MS) {
       return {
-        status: 'active',
+        status: "active",
         last_heartbeat_iso: ts,
         paste_ready_start_command: startCmd,
       };
     }
     return {
-      status: 'stale',
+      status: "stale",
       last_heartbeat_iso: ts,
       paste_ready_start_command: startCmd,
     };
   } catch {
     // Table may not exist on a fresh brain. Treat as never_seen.
-    return { status: 'never_seen', paste_ready_start_command: startCmd };
+    return { status: "never_seen", paste_ready_start_command: startCmd };
   }
 }
 
@@ -229,7 +233,7 @@ export async function probeWorkerAvailable(engine: BrainEngine): Promise<WorkerP
 export function buildReindexIdempotencyKey(
   sourceId: string,
   chunkerVersion: number,
-  modeOrCorpusGen: string,
+  modeOrCorpusGen: string
 ): string {
   return `cr-backfill:${sourceId}:${chunkerVersion}:${modeOrCorpusGen}`;
 }
@@ -244,7 +248,7 @@ export function buildReindexIdempotencyKey(
  * Minion idempotency_key ensures the reindex doesn't submit twice.
  */
 export async function runModeSwitchUx(opts: ModeSwitchOpts): Promise<void> {
-  if (process.env.GBRAIN_NO_MODE_SWITCH_UX === '1') return;
+  if (process.env.GBRAIN_NO_MODE_SWITCH_UX === "1") return;
   if (!isSearchMode(opts.newMode)) {
     // The runConfig caller should have validated. Defense-in-depth:
     // print the invalid banner anyway.
@@ -254,7 +258,7 @@ export async function runModeSwitchUx(opts: ModeSwitchOpts): Promise<void> {
   }
 
   const summary = summarizeTransition(opts.oldMode, opts.newMode);
-  if (summary.kind === 'no_change') return; // Quiet no-op.
+  if (summary.kind === "no_change") return; // Quiet no-op.
 
   // Print banner regardless of TTY/non-TTY.
   console.error(`[mode-switch] ${summary.callout_lines[0]}`);
@@ -272,12 +276,8 @@ export async function runModeSwitchUx(opts: ModeSwitchOpts): Promise<void> {
   }
 
   // TTY + interactive: prompt.
-  const answer = await readLineSafe(
-    `Run '${summary.reindex_command}' now? [y/N]: `,
-    'n',
-    60_000,
-  );
-  if (answer.toLowerCase() !== 'y' && answer.toLowerCase() !== 'yes') {
+  const answer = await readLineSafe(`Run '${summary.reindex_command}' now? [y/N]: `, "n", 60_000);
+  if (answer.toLowerCase() !== "y" && answer.toLowerCase() !== "yes") {
     console.error(`[mode-switch] Skipped. Run \`${summary.reindex_command}\` when ready.`);
     return;
   }
@@ -286,7 +286,7 @@ export async function runModeSwitchUx(opts: ModeSwitchOpts): Promise<void> {
   const probeFn = opts.probeFn ?? probeWorkerAvailable;
   const worker = await probeFn(opts.engine);
 
-  if (worker.status !== 'active') {
+  if (worker.status !== "active") {
     // Loud-fail per D3 to avoid the silent-stall footgun. Caller can
     // still invoke reindex inline (`gbrain reindex --markdown` runs
     // synchronously without a worker on the PGLite inline path).
@@ -304,11 +304,13 @@ export async function runModeSwitchUx(opts: ModeSwitchOpts): Promise<void> {
   const submitFn = opts.submitFn ?? defaultSubmit;
   try {
     const jobId = await submitFn(
-      'reindex',
+      "reindex",
       { markdown: true, source_id: sourceId },
-      idempotencyKey,
+      idempotencyKey
     );
-    console.error(`[mode-switch] Submitted as job ${jobId}. Watch with: gbrain jobs follow ${jobId}`);
+    console.error(
+      `[mode-switch] Submitted as job ${jobId}. Watch with: gbrain jobs follow ${jobId}`
+    );
   } catch (err) {
     console.error(`[mode-switch] Submit failed: ${(err as Error).message}`);
     console.error(`[mode-switch] Run inline: ${summary.reindex_command}`);
@@ -317,14 +319,14 @@ export async function runModeSwitchUx(opts: ModeSwitchOpts): Promise<void> {
   async function defaultSubmit(
     jobName: string,
     params: Record<string, unknown>,
-    idemKey: string,
+    idemKey: string
   ): Promise<number> {
     const queue = new MinionQueue(opts.engine);
     const job = await queue.add(
       jobName,
       params,
       { idempotency_key: idemKey },
-      { allowProtectedSubmit: true },
+      { allowProtectedSubmit: true }
     );
     return job.id;
   }
@@ -333,18 +335,18 @@ export async function runModeSwitchUx(opts: ModeSwitchOpts): Promise<void> {
 async function resolveDefaultSourceId(engine: BrainEngine): Promise<string> {
   try {
     const rows = await engine.executeRaw<{ id: string }>(
-      `SELECT id FROM sources WHERE id = 'default' LIMIT 1`,
+      `SELECT id FROM sources WHERE id = 'default' LIMIT 1`
     );
-    return rows[0]?.id ?? 'default';
+    return rows[0]?.id ?? "default";
   } catch {
-    return 'default';
+    return "default";
   }
 }
 
 async function resolveChunkerVersion(engine: BrainEngine): Promise<number> {
   try {
     const rows = await engine.executeRaw<{ v: string | null }>(
-      `SELECT value AS v FROM config WHERE key = 'chunker_version'`,
+      `SELECT value AS v FROM config WHERE key = 'chunker_version'`
     );
     const v = Number(rows[0]?.v ?? 0);
     return Number.isFinite(v) ? v : 0;

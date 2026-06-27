@@ -16,7 +16,7 @@
  * If valid_until is set and we're past it, decay returns 0 regardless.
  */
 
-import type { FactRow, FactKind } from '../engine.ts';
+import type { FactRow, FactKind } from "../engine.ts";
 
 /**
  * Halflife in days per fact kind. Exported as a const so tests can pin

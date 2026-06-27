@@ -59,26 +59,26 @@
  * ledger semantics (see plan D12 for full rationale).
  */
 
-import type { BrainEngine } from './engine.ts';
-import { MARKDOWN_CHUNKER_VERSION } from './chunkers/recursive.ts';
-import { lookupEmbeddingPrice, estimateCostFromChars } from './embedding-pricing.ts';
-import { computeReembedEstimate } from './post-upgrade-reembed.ts';
+import type { BrainEngine } from "./engine.ts";
+import { MARKDOWN_CHUNKER_VERSION } from "./chunkers/recursive.ts";
+import { lookupEmbeddingPrice, estimateCostFromChars } from "./embedding-pricing.ts";
+import { computeReembedEstimate } from "./post-upgrade-reembed.ts";
 
 // ============================================================================
 // Constants
 // ============================================================================
 
 /** v0.36.0.0 cutover target: ZeroEntropy zembed-1 at 1024d via Matryoshka. */
-export const ZE_TARGET_EMBEDDING_MODEL = 'zeroentropyai:zembed-1';
+export const ZE_TARGET_EMBEDDING_MODEL = "zeroentropyai:zembed-1";
 export const ZE_TARGET_EMBEDDING_DIM = 1280;
-export const ZE_TARGET_RERANKER_MODEL = 'zeroentropyai:zerank-2';
+export const ZE_TARGET_RERANKER_MODEL = "zeroentropyai:zerank-2";
 
 /** Config keys (D12). */
-export const KEY_PROMPT_SHOWN = 'ze_switch_prompt_shown';
-export const KEY_REQUESTED = 'ze_switch_requested';
-export const KEY_APPLIED = 'ze_switch_applied';
-export const KEY_DECLINED_AT = 'ze_switch_declined_at';
-export const KEY_PREVIOUS_SNAPSHOT = 'ze_switch_previous_snapshot';
+export const KEY_PROMPT_SHOWN = "ze_switch_prompt_shown";
+export const KEY_REQUESTED = "ze_switch_requested";
+export const KEY_APPLIED = "ze_switch_applied";
+export const KEY_DECLINED_AT = "ze_switch_declined_at";
+export const KEY_PREVIOUS_SNAPSHOT = "ze_switch_previous_snapshot";
 
 /** C3 eligibility: skip prompt for tiny brains (< 100 pages) to avoid noise. */
 export const ZE_MIN_PAGES_FOR_OFFER = 100;
@@ -138,13 +138,18 @@ export type ZeSwitchSnapshot = {
  * CLI renders the warning box; planner stays data-pure.
  */
 export type ApplyResult =
-  | { status: 'applied'; plan: RetrievalUpgradeState }
-  | { status: 'skipped_already_applied'; plan: RetrievalUpgradeState }
-  | { status: 'skipped_no_work'; plan: RetrievalUpgradeState }
-  | { status: 'declined'; plan: RetrievalUpgradeState }
-  | { status: 'planned'; plan: RetrievalUpgradeState }
-  | { status: 'refused'; plan: RetrievalUpgradeState; reason: 'env_override'; warning: EnvOverrideWarning }
-  | { status: 'failed'; plan: RetrievalUpgradeState; reason: string };
+  | { status: "applied"; plan: RetrievalUpgradeState }
+  | { status: "skipped_already_applied"; plan: RetrievalUpgradeState }
+  | { status: "skipped_no_work"; plan: RetrievalUpgradeState }
+  | { status: "declined"; plan: RetrievalUpgradeState }
+  | { status: "planned"; plan: RetrievalUpgradeState }
+  | {
+      status: "refused";
+      plan: RetrievalUpgradeState;
+      reason: "env_override";
+      warning: EnvOverrideWarning;
+    }
+  | { status: "failed"; plan: RetrievalUpgradeState; reason: string };
 
 /**
  * v0.41.2.1 — env-override safety gate.
@@ -167,19 +172,19 @@ export interface EnvOverrideWarning {
 export function detectEnvOverride(
   targetModel: string,
   targetDim: number,
-  env: NodeJS.ProcessEnv = process.env,
+  env: NodeJS.ProcessEnv = process.env
 ): EnvOverrideWarning {
-  const vars: EnvOverrideWarning['vars'] = [];
+  const vars: EnvOverrideWarning["vars"] = [];
   const envModel = env.GBRAIN_EMBEDDING_MODEL?.trim();
   if (envModel && envModel !== targetModel) {
-    vars.push({ name: 'GBRAIN_EMBEDDING_MODEL', current: envModel, target: targetModel });
+    vars.push({ name: "GBRAIN_EMBEDDING_MODEL", current: envModel, target: targetModel });
   }
   const envDimRaw = env.GBRAIN_EMBEDDING_DIMENSIONS?.trim();
   if (envDimRaw) {
     const envDim = Number(envDimRaw);
     if (!Number.isFinite(envDim) || envDim !== targetDim) {
       vars.push({
-        name: 'GBRAIN_EMBEDDING_DIMENSIONS',
+        name: "GBRAIN_EMBEDDING_DIMENSIONS",
         current: envDimRaw,
         target: String(targetDim),
       });
@@ -196,26 +201,26 @@ export function detectEnvOverride(
  */
 export function formatEnvOverrideWarning(w: EnvOverrideWarning): string {
   const lines: string[] = [];
-  lines.push('+----------------------------------------------------------------------------+');
-  lines.push('| ENV OVERRIDE DETECTED - ACTION REQUIRED                                    |');
-  lines.push('+----------------------------------------------------------------------------+');
+  lines.push("+----------------------------------------------------------------------------+");
+  lines.push("| ENV OVERRIDE DETECTED - ACTION REQUIRED                                    |");
+  lines.push("+----------------------------------------------------------------------------+");
   for (const v of w.vars) {
-    lines.push(`| ${v.name} is set in your environment:`.padEnd(77) + '|');
-    lines.push(`|   Current env: ${v.current}`.padEnd(77) + '|');
-    lines.push(`|   Switch target: ${v.target}`.padEnd(77) + '|');
-    lines.push('|                                                                            |');
+    lines.push(`| ${v.name} is set in your environment:`.padEnd(77) + "|");
+    lines.push(`|   Current env: ${v.current}`.padEnd(77) + "|");
+    lines.push(`|   Switch target: ${v.target}`.padEnd(77) + "|");
+    lines.push("|                                                                            |");
   }
-  lines.push('| The env var takes HIGHEST PRECEDENCE and will override this switch.        |');
-  lines.push('| Update your .env file or shell environment before retrying:                |');
-  lines.push('|                                                                            |');
-  const unsetCmd = `   unset ${w.vars.map(v => v.name).join(' ')}`;
+  lines.push("| The env var takes HIGHEST PRECEDENCE and will override this switch.        |");
+  lines.push("| Update your .env file or shell environment before retrying:                |");
+  lines.push("|                                                                            |");
+  const unsetCmd = `   unset ${w.vars.map((v) => v.name).join(" ")}`;
   // Match the other content-line pattern: `|` + 76 chars + `|` = 78 total.
   lines.push(`|${unsetCmd.padEnd(76)}|`);
-  lines.push('|                                                                            |');
-  lines.push('| Without this change, the switch has NO EFFECT at runtime.                  |');
-  lines.push('| Pass --ignore-env-override to apply anyway (advanced; you know why).       |');
-  lines.push('+----------------------------------------------------------------------------+');
-  return lines.join('\n');
+  lines.push("|                                                                            |");
+  lines.push("| Without this change, the switch has NO EFFECT at runtime.                  |");
+  lines.push("| Pass --ignore-env-override to apply anyway (advanced; you know why).       |");
+  lines.push("+----------------------------------------------------------------------------+");
+  return lines.join("\n");
 }
 
 /**
@@ -244,34 +249,34 @@ export interface ApplyOpts {
 export async function planRetrievalUpgrade(engine: BrainEngine): Promise<RetrievalUpgradeState> {
   // Current config — file plane + DB plane both feed this; we read DB plane
   // because that's what the upgrade flow writes.
-  const currentEmbeddingModel = await getStringConfig(engine, 'embedding_model')
-    ?? 'openai:text-embedding-3-large';
-  const currentDimStr = await engine.getConfig('embedding_dimensions');
+  const currentEmbeddingModel =
+    (await getStringConfig(engine, "embedding_model")) ?? "openai:text-embedding-3-large";
+  const currentDimStr = await engine.getConfig("embedding_dimensions");
   const currentDim = currentDimStr ? parseInt(currentDimStr, 10) : 1536;
 
   const declinedAtStr = await engine.getConfig(KEY_DECLINED_AT);
   const declinedAt = declinedAtStr ? new Date(declinedAtStr) : null;
   const declinedTooLongAgo = declinedAt
-    ? (Date.now() - declinedAt.getTime()) > ZE_DECLINE_REASK_DAYS * 24 * 60 * 60 * 1000
+    ? Date.now() - declinedAt.getTime() > ZE_DECLINE_REASK_DAYS * 24 * 60 * 60 * 1000
     : true; // never declined = same as "decline expired" for the iff check
   const alreadyDeclined = declinedAt !== null && !declinedTooLongAgo;
 
-  const applied = (await engine.getConfig(KEY_APPLIED)) === 'true';
+  const applied = (await engine.getConfig(KEY_APPLIED)) === "true";
 
   // Page-count probe (C3-d) — cheap COUNT(*).
   const pageCountRows = await engine.executeRaw<{ count: string | number }>(
-    `SELECT COUNT(*)::bigint AS count FROM pages WHERE deleted_at IS NULL`,
+    `SELECT COUNT(*)::bigint AS count FROM pages WHERE deleted_at IS NULL`
   );
   const totalPages = Number(pageCountRows[0]?.count ?? 0);
 
-  const isOnZE = currentEmbeddingModel.startsWith('zeroentropyai:');
-  const isLegacyDefault = currentEmbeddingModel === 'openai:text-embedding-3-large';
+  const isOnZE = currentEmbeddingModel.startsWith("zeroentropyai:");
+  const isLegacyDefault = currentEmbeddingModel === "openai:text-embedding-3-large";
 
   const zeSwitchOffered =
-    !isOnZE
-    && !alreadyDeclined
-    && !applied
-    && (isLegacyDefault || totalPages > ZE_MIN_PAGES_FOR_OFFER);
+    !isOnZE &&
+    !alreadyDeclined &&
+    !applied &&
+    (isLegacyDefault || totalPages > ZE_MIN_PAGES_FOR_OFFER);
 
   // Chunker-bump pending: same query the v0.32.7 prompt uses.
   const chunkerEstimate = await computeReembedEstimate(engine, currentEmbeddingModel);
@@ -281,9 +286,8 @@ export async function planRetrievalUpgrade(engine: BrainEngine): Promise<Retriev
   // Dim-change pending: all non-deleted pages, when target dim differs.
   const targetEmbeddingModel = zeSwitchOffered ? ZE_TARGET_EMBEDDING_MODEL : null;
   const targetDim = zeSwitchOffered ? ZE_TARGET_EMBEDDING_DIM : null;
-  const pagesPendingDim = zeSwitchOffered && currentDim !== ZE_TARGET_EMBEDDING_DIM
-    ? totalPages
-    : 0;
+  const pagesPendingDim =
+    zeSwitchOffered && currentDim !== ZE_TARGET_EMBEDDING_DIM ? totalPages : 0;
 
   // C4 cost math: ONE re-embed pass covers both surfaces. MAX, not SUM.
   // When dim is changing, every page re-embeds at the new dim regardless of
@@ -297,23 +301,22 @@ export async function planRetrievalUpgrade(engine: BrainEngine): Promise<Retriev
   const price = lookupEmbeddingPrice(targetModelForCost);
   const charsPerPageRows = await engine.executeRaw<{ avg_chars: string | number | null }>(
     `SELECT COALESCE(AVG(LENGTH(compiled_truth) + LENGTH(timeline)), 0)::bigint AS avg_chars
-       FROM pages WHERE deleted_at IS NULL`,
+       FROM pages WHERE deleted_at IS NULL`
   );
   const avgChars = Number(charsPerPageRows[0]?.avg_chars ?? 0);
   const totalChars = avgChars * pagesToReembed;
-  const estCostUsd = price.kind === 'known'
-    ? estimateCostFromChars(totalChars, price.pricePerMTok)
-    : 0;
+  const estCostUsd =
+    price.kind === "known" ? estimateCostFromChars(totalChars, price.pricePerMTok) : 0;
 
-  const estMinutes = pagesToReembed === 0
-    ? 0
-    : Math.max(1, Math.ceil(pagesToReembed / EMBED_PAGES_PER_MINUTE));
+  const estMinutes =
+    pagesToReembed === 0 ? 0 : Math.max(1, Math.ceil(pagesToReembed / EMBED_PAGES_PER_MINUTE));
   // PGLite: schema change is fast (single-writer, no concurrency, in-process).
   // Postgres: drop+recreate column + HNSW rebuild scales with row count.
   // Cap at 60s — past that the user should be on a worker job anyway.
-  const estSchemaChangeSeconds = engine.kind === 'pglite'
-    ? 1
-    : Math.min(60, Math.ceil(totalPages * POSTGRES_DDL_MS_PER_PAGE / 1000));
+  const estSchemaChangeSeconds =
+    engine.kind === "pglite"
+      ? 1
+      : Math.min(60, Math.ceil((totalPages * POSTGRES_DDL_MS_PER_PAGE) / 1000));
 
   return {
     chunker_bump_pending: chunkerBumpPending,
@@ -351,22 +354,22 @@ export async function planRetrievalUpgrade(engine: BrainEngine): Promise<Retriev
 export async function applyRetrievalUpgrade(
   engine: BrainEngine,
   plan: RetrievalUpgradeState,
-  opts: ApplyOpts = {},
+  opts: ApplyOpts = {}
 ): Promise<ApplyResult> {
   // Idempotency.
-  if ((await engine.getConfig(KEY_APPLIED)) === 'true') {
-    return { status: 'skipped_already_applied', plan };
+  if ((await engine.getConfig(KEY_APPLIED)) === "true") {
+    return { status: "skipped_already_applied", plan };
   }
   // No-work fast path.
   if (!plan.ze_switch_offered && !plan.chunker_bump_pending) {
-    return { status: 'skipped_no_work', plan };
+    return { status: "skipped_no_work", plan };
   }
   // The chunker-only path doesn't need a schema transition. Caller's
   // responsibility to invoke the existing `gbrain reindex --markdown` flow.
   // We return skipped_no_work for this case since the planner is the ZE-switch
   // applier; chunker-only re-embed continues through the legacy v0.32.7 path.
   if (!plan.ze_switch_offered) {
-    return { status: 'skipped_no_work', plan };
+    return { status: "skipped_no_work", plan };
   }
 
   // v0.41.2.1 D9 #7 — env-override gate fires FIRST, before any mutation.
@@ -380,7 +383,7 @@ export async function applyRetrievalUpgrade(
   const targetDim0 = plan.target_dim ?? ZE_TARGET_EMBEDDING_DIM;
   const envWarning = detectEnvOverride(targetModel, targetDim0);
   if (envWarning.triggered && !opts.ignoreEnvOverride) {
-    return { status: 'refused', plan, reason: 'env_override', warning: envWarning };
+    return { status: "refused", plan, reason: "env_override", warning: envWarning };
   }
 
   try {
@@ -388,13 +391,13 @@ export async function applyRetrievalUpgrade(
     const snapshot: ZeSwitchSnapshot = {
       embedding_model: plan.current_embedding_model,
       embedding_dimensions: plan.current_dim,
-      search_reranker_enabled: (await engine.getConfig('search.reranker.enabled')) === 'true',
-      search_reranker_model: await engine.getConfig('search.reranker.model'),
+      search_reranker_enabled: (await engine.getConfig("search.reranker.enabled")) === "true",
+      search_reranker_model: await engine.getConfig("search.reranker.model"),
     };
     await engine.setConfig(KEY_PREVIOUS_SNAPSHOT, JSON.stringify(snapshot));
 
     // 2. Record intent.
-    await engine.setConfig(KEY_REQUESTED, 'true');
+    await engine.setConfig(KEY_REQUESTED, "true");
 
     // 3. Schema transition atomically (D18). DROP indexes, swap column,
     //    recreate indexes — all in one transaction so a crash mid-flight
@@ -404,19 +407,22 @@ export async function applyRetrievalUpgrade(
     await runSchemaTransition(engine, targetDim);
 
     // 4. Write config.
-    await engine.setConfig('embedding_model', plan.target_embedding_model ?? ZE_TARGET_EMBEDDING_MODEL);
-    await engine.setConfig('embedding_dimensions', String(targetDim));
-    await engine.setConfig('search.reranker.enabled', 'true');
-    await engine.setConfig('search.reranker.model', ZE_TARGET_RERANKER_MODEL);
+    await engine.setConfig(
+      "embedding_model",
+      plan.target_embedding_model ?? ZE_TARGET_EMBEDDING_MODEL
+    );
+    await engine.setConfig("embedding_dimensions", String(targetDim));
+    await engine.setConfig("search.reranker.enabled", "true");
+    await engine.setConfig("search.reranker.model", ZE_TARGET_RERANKER_MODEL);
 
     // 5. Mark work complete.
-    await engine.setConfig(KEY_APPLIED, 'true');
-    await engine.setConfig(KEY_PROMPT_SHOWN, 'true');
+    await engine.setConfig(KEY_APPLIED, "true");
+    await engine.setConfig(KEY_PROMPT_SHOWN, "true");
 
-    return { status: 'applied', plan };
+    return { status: "applied", plan };
   } catch (err) {
     return {
-      status: 'failed',
+      status: "failed",
       plan,
       reason: err instanceof Error ? err.message : String(err),
     };
@@ -425,12 +431,12 @@ export async function applyRetrievalUpgrade(
 
 /** Mark the prompt as shown without accepting. User picked Enter (default = stay). */
 export async function recordDeclinedThisRun(engine: BrainEngine): Promise<void> {
-  await engine.setConfig(KEY_PROMPT_SHOWN, 'true');
+  await engine.setConfig(KEY_PROMPT_SHOWN, "true");
 }
 
 /** Mark "never ask again". User picked 'n'. */
 export async function recordDeclinedForever(engine: BrainEngine): Promise<void> {
-  await engine.setConfig(KEY_PROMPT_SHOWN, 'true');
+  await engine.setConfig(KEY_PROMPT_SHOWN, "true");
   await engine.setConfig(KEY_DECLINED_AT, new Date().toISOString());
 }
 
@@ -440,18 +446,18 @@ export async function recordDeclinedForever(engine: BrainEngine): Promise<void> 
  */
 export async function resumeRetrievalUpgrade(
   engine: BrainEngine,
-  opts: ApplyOpts = {},
+  opts: ApplyOpts = {}
 ): Promise<ApplyResult> {
-  const requested = (await engine.getConfig(KEY_REQUESTED)) === 'true';
-  const applied = (await engine.getConfig(KEY_APPLIED)) === 'true';
+  const requested = (await engine.getConfig(KEY_REQUESTED)) === "true";
+  const applied = (await engine.getConfig(KEY_APPLIED)) === "true";
   const plan = await planRetrievalUpgrade(engine);
 
   if (applied) {
-    return { status: 'skipped_already_applied', plan };
+    return { status: "skipped_already_applied", plan };
   }
   if (!requested) {
     // Nothing to resume — caller should run `applyRetrievalUpgrade` fresh.
-    return { status: 'skipped_no_work', plan };
+    return { status: "skipped_no_work", plan };
   }
 
   // v0.41.2.1 D9 #6 — env-override gate fires FIRST on resume too.
@@ -462,7 +468,7 @@ export async function resumeRetrievalUpgrade(
   const targetDim = ZE_TARGET_EMBEDDING_DIM;
   const envWarning = detectEnvOverride(ZE_TARGET_EMBEDDING_MODEL, targetDim);
   if (envWarning.triggered && !opts.ignoreEnvOverride) {
-    return { status: 'refused', plan, reason: 'env_override', warning: envWarning };
+    return { status: "refused", plan, reason: "env_override", warning: envWarning };
   }
 
   // requested=true, applied=false. Either schema is at target and config
@@ -471,16 +477,16 @@ export async function resumeRetrievalUpgrade(
   // then write config + mark applied.
   try {
     await runSchemaTransition(engine, targetDim);
-    await engine.setConfig('embedding_model', ZE_TARGET_EMBEDDING_MODEL);
-    await engine.setConfig('embedding_dimensions', String(targetDim));
-    await engine.setConfig('search.reranker.enabled', 'true');
-    await engine.setConfig('search.reranker.model', ZE_TARGET_RERANKER_MODEL);
-    await engine.setConfig(KEY_APPLIED, 'true');
-    await engine.setConfig(KEY_PROMPT_SHOWN, 'true');
-    return { status: 'applied', plan };
+    await engine.setConfig("embedding_model", ZE_TARGET_EMBEDDING_MODEL);
+    await engine.setConfig("embedding_dimensions", String(targetDim));
+    await engine.setConfig("search.reranker.enabled", "true");
+    await engine.setConfig("search.reranker.model", ZE_TARGET_RERANKER_MODEL);
+    await engine.setConfig(KEY_APPLIED, "true");
+    await engine.setConfig(KEY_PROMPT_SHOWN, "true");
+    return { status: "applied", plan };
   } catch (err) {
     return {
-      status: 'failed',
+      status: "failed",
       plan,
       reason: err instanceof Error ? err.message : String(err),
     };
@@ -492,14 +498,16 @@ export async function resumeRetrievalUpgrade(
  * schema transition to the prior width, restores prior config. Caller is
  * responsible for surfacing the cost-warning prompt BEFORE invoking this.
  */
-export async function undoRetrievalUpgrade(engine: BrainEngine): Promise<
-  | { status: 'undone'; snapshot: ZeSwitchSnapshot }
-  | { status: 'no_snapshot' }
-  | { status: 'failed'; reason: string }
+export async function undoRetrievalUpgrade(
+  engine: BrainEngine
+): Promise<
+  | { status: "undone"; snapshot: ZeSwitchSnapshot }
+  | { status: "no_snapshot" }
+  | { status: "failed"; reason: string }
 > {
   const snapshotStr = await engine.getConfig(KEY_PREVIOUS_SNAPSHOT);
   if (!snapshotStr) {
-    return { status: 'no_snapshot' };
+    return { status: "no_snapshot" };
   }
 
   let snapshot: ZeSwitchSnapshot;
@@ -507,28 +515,31 @@ export async function undoRetrievalUpgrade(engine: BrainEngine): Promise<
     snapshot = JSON.parse(snapshotStr) as ZeSwitchSnapshot;
   } catch (err) {
     return {
-      status: 'failed',
+      status: "failed",
       reason: `corrupt ze_switch_previous_snapshot: ${err instanceof Error ? err.message : String(err)}`,
     };
   }
 
   try {
     await runSchemaTransition(engine, snapshot.embedding_dimensions);
-    await engine.setConfig('embedding_model', snapshot.embedding_model);
-    await engine.setConfig('embedding_dimensions', String(snapshot.embedding_dimensions));
-    await engine.setConfig('search.reranker.enabled', snapshot.search_reranker_enabled ? 'true' : 'false');
+    await engine.setConfig("embedding_model", snapshot.embedding_model);
+    await engine.setConfig("embedding_dimensions", String(snapshot.embedding_dimensions));
+    await engine.setConfig(
+      "search.reranker.enabled",
+      snapshot.search_reranker_enabled ? "true" : "false"
+    );
     if (snapshot.search_reranker_model) {
-      await engine.setConfig('search.reranker.model', snapshot.search_reranker_model);
+      await engine.setConfig("search.reranker.model", snapshot.search_reranker_model);
     } else {
-      await engine.unsetConfig('search.reranker.model');
+      await engine.unsetConfig("search.reranker.model");
     }
     // Reset applied marker so the planner re-offers on a future upgrade.
     await engine.unsetConfig(KEY_APPLIED);
     await engine.unsetConfig(KEY_REQUESTED);
-    return { status: 'undone', snapshot };
+    return { status: "undone", snapshot };
   } catch (err) {
     return {
-      status: 'failed',
+      status: "failed",
       reason: err instanceof Error ? err.message : String(err),
     };
   }
@@ -571,7 +582,7 @@ async function runSchemaTransition(engine: BrainEngine, targetDim: number): Prom
     await tx.executeRaw(`ALTER TABLE content_chunks DROP COLUMN IF EXISTS embedding`);
     await tx.executeRaw(`ALTER TABLE content_chunks ADD COLUMN embedding vector(${targetDim})`);
     await tx.executeRaw(
-      `CREATE INDEX IF NOT EXISTS idx_chunks_embedding ON content_chunks USING hnsw (embedding vector_cosine_ops)`,
+      `CREATE INDEX IF NOT EXISTS idx_chunks_embedding ON content_chunks USING hnsw (embedding vector_cosine_ops)`
     );
 
     // Image/multimodal embedding column — rebuild index but preserve
@@ -585,14 +596,14 @@ async function runSchemaTransition(engine: BrainEngine, targetDim: number): Prom
          WHERE table_schema = 'public'
            AND table_name = 'content_chunks'
            AND column_name = 'embedding_image'
-       ) AS exists`,
+       ) AS exists`
     );
     if (hasImageCol[0]?.exists) {
       await tx.executeRaw(`DROP INDEX IF EXISTS idx_chunks_embedding_image`);
       await tx.executeRaw(
         `CREATE INDEX IF NOT EXISTS idx_chunks_embedding_image
            ON content_chunks USING hnsw (embedding_image vector_cosine_ops)
-           WHERE embedding_image IS NOT NULL`,
+           WHERE embedding_image IS NOT NULL`
       );
     }
   });

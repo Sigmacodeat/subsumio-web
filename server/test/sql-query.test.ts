@@ -1,6 +1,6 @@
-import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
-import { PGLiteEngine } from '../src/core/pglite-engine.ts';
-import { sqlQueryForEngine, executeRawJsonb } from '../src/core/sql-query.ts';
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import { PGLiteEngine } from "../src/core/pglite-engine.ts";
+import { sqlQueryForEngine, executeRawJsonb } from "../src/core/sql-query.ts";
 
 let engine: PGLiteEngine;
 
@@ -13,29 +13,29 @@ afterAll(async () => {
   if (engine) await engine.disconnect();
 });
 
-describe('sqlQueryForEngine', () => {
-  test('runs parameterized tagged-template SQL against PGLite', async () => {
+describe("sqlQueryForEngine", () => {
+  test("runs parameterized tagged-template SQL against PGLite", async () => {
     const sql = sqlQueryForEngine(engine);
-    const rows = await sql`SELECT ${'pglite'}::text AS engine, ${3}::int AS count`;
-    expect(rows).toEqual([{ engine: 'pglite', count: 3 }]);
+    const rows = await sql`SELECT ${"pglite"}::text AS engine, ${3}::int AS count`;
+    expect(rows).toEqual([{ engine: "pglite", count: 3 }]);
   });
 
-  test('rejects postgres.js-style fragment / object values explicitly', async () => {
+  test("rejects postgres.js-style fragment / object values explicitly", async () => {
     const sql = sqlQueryForEngine(engine);
-    await expect(
-      sql`SELECT ${(Promise.resolve([]) as any)}::text AS bad`
-    ).rejects.toThrow(/only supports scalar bind values/);
-    await expect(
-      sql`SELECT ${(['read', 'write'] as any)}::text[] AS bad`
-    ).rejects.toThrow(/only supports scalar bind values/);
-    await expect(
-      sql`SELECT ${({ takes_holders: ['world'] } as any)}::jsonb AS bad`
-    ).rejects.toThrow(/only supports scalar bind values/);
+    await expect(sql`SELECT ${Promise.resolve([]) as any}::text AS bad`).rejects.toThrow(
+      /only supports scalar bind values/
+    );
+    await expect(sql`SELECT ${["read", "write"] as any}::text[] AS bad`).rejects.toThrow(
+      /only supports scalar bind values/
+    );
+    await expect(sql`SELECT ${{ takes_holders: ["world"] } as any}::jsonb AS bad`).rejects.toThrow(
+      /only supports scalar bind values/
+    );
   });
 });
 
-describe('executeRawJsonb (D1 wave / v0.31)', () => {
-  test('round-trips an object as JSONB on PGLite (jsonb_typeof = object, ->>  reads value)', async () => {
+describe("executeRawJsonb (D1 wave / v0.31)", () => {
+  test("round-trips an object as JSONB on PGLite (jsonb_typeof = object, ->>  reads value)", async () => {
     // Verifies the cross-engine JSONB write helper produces a real Postgres
     // JSONB object — not a quoted JSON string. Codex's plan-review #9 said
     // "use the actual JSONB contract, not string-grep for backslash-quote",
@@ -47,21 +47,21 @@ describe('executeRawJsonb (D1 wave / v0.31)', () => {
         engine,
         `INSERT INTO ${tableName} (j) VALUES ($1::jsonb)`,
         [],
-        [{ k: 'v', n: 42 }],
+        [{ k: "v", n: 42 }]
       );
       const rows = await engine.executeRaw<{ kind: string; k: string; n: number }>(
-        `SELECT jsonb_typeof(j) AS kind, j->>'k' AS k, (j->>'n')::int AS n FROM ${tableName}`,
+        `SELECT jsonb_typeof(j) AS kind, j->>'k' AS k, (j->>'n')::int AS n FROM ${tableName}`
       );
       expect(rows).toHaveLength(1);
-      expect(rows[0].kind).toBe('object');
-      expect(rows[0].k).toBe('v');
+      expect(rows[0].kind).toBe("object");
+      expect(rows[0].k).toBe("v");
       expect(rows[0].n).toBe(42);
     } finally {
       await engine.executeRaw(`DROP TABLE ${tableName}`);
     }
   });
 
-  test('takes-holders shape: object preserved, ->> returns the encoded array, NOT a double-encoded string (v0.12.0 regression guard)', async () => {
+  test("takes-holders shape: object preserved, ->> returns the encoded array, NOT a double-encoded string (v0.12.0 regression guard)", async () => {
     // The v0.12.0 silent-data-loss bug stored `${JSON.stringify(perms)}::jsonb`
     // as a JSON string-of-an-object, so `permissions->>'takes_holders'`
     // would return a string with backslashes instead of the array.
@@ -70,15 +70,15 @@ describe('executeRawJsonb (D1 wave / v0.31)', () => {
     // the array as a text), and jsonb_typeof on the parent stays 'object'.
     const tableName = `t_perms_${Math.random().toString(36).slice(2, 10)}`;
     await engine.executeRaw(
-      `CREATE TEMP TABLE ${tableName} (id serial PRIMARY KEY, permissions jsonb)`,
+      `CREATE TEMP TABLE ${tableName} (id serial PRIMARY KEY, permissions jsonb)`
     );
     try {
-      const perms = { takes_holders: ['world', 'garry'] };
+      const perms = { takes_holders: ["world", "garry"] };
       await executeRawJsonb(
         engine,
         `INSERT INTO ${tableName} (permissions) VALUES ($1::jsonb)`,
         [],
-        [perms],
+        [perms]
       );
       const rows = await engine.executeRaw<{
         outer_kind: string;
@@ -91,21 +91,21 @@ describe('executeRawJsonb (D1 wave / v0.31)', () => {
            jsonb_typeof(permissions->'takes_holders') AS holders_kind,
            permissions->'takes_holders'->>0 AS first_holder,
            permissions::text AS text_form
-         FROM ${tableName}`,
+         FROM ${tableName}`
       );
       expect(rows).toHaveLength(1);
       // The parent JSONB is an object; the takes_holders child is an array.
       // Pre-fix this would be 'string' / 'string' (string-of-object).
-      expect(rows[0].outer_kind).toBe('object');
-      expect(rows[0].holders_kind).toBe('array');
-      expect(rows[0].first_holder).toBe('world');
+      expect(rows[0].outer_kind).toBe("object");
+      expect(rows[0].holders_kind).toBe("array");
+      expect(rows[0].first_holder).toBe("world");
       // Defense in depth: the text representation must NOT contain
       // backslash-quote sequences, which is what double-encoded JSONB
       // looked like in the v0.12.0 incident (e.g. `"{\"takes_holders\":...}"`).
       expect(rows[0].text_form).not.toContain('\\"');
       // And the text representation should look like a normal JSON object
       // — starts with `{`, not `"{`.
-      expect(rows[0].text_form.startsWith('{')).toBe(true);
+      expect(rows[0].text_form.startsWith("{")).toBe(true);
     } finally {
       await engine.executeRaw(`DROP TABLE ${tableName}`);
     }
@@ -118,14 +118,9 @@ describe('executeRawJsonb (D1 wave / v0.31)', () => {
     const tableName = `t_jnull_${Math.random().toString(36).slice(2, 10)}`;
     await engine.executeRaw(`CREATE TEMP TABLE ${tableName} (j jsonb)`);
     try {
-      await executeRawJsonb(
-        engine,
-        `INSERT INTO ${tableName} (j) VALUES ($1::jsonb)`,
-        [],
-        [null],
-      );
+      await executeRawJsonb(engine, `INSERT INTO ${tableName} (j) VALUES ($1::jsonb)`, [], [null]);
       const rows = await engine.executeRaw<{ kind: string | null; is_null: boolean }>(
-        `SELECT jsonb_typeof(j) AS kind, (j IS NULL) AS is_null FROM ${tableName}`,
+        `SELECT jsonb_typeof(j) AS kind, (j IS NULL) AS is_null FROM ${tableName}`
       );
       expect(rows[0].is_null).toBe(true);
       // jsonb_typeof on SQL NULL returns NULL.
@@ -135,31 +130,31 @@ describe('executeRawJsonb (D1 wave / v0.31)', () => {
     }
   });
 
-  test('mixes scalar params and jsonb params in positional order', async () => {
+  test("mixes scalar params and jsonb params in positional order", async () => {
     // Real call shape: scalars first ($1..$N), JSONB params next
     // ($N+1..$N+M). Mirrors the auth.ts `INSERT INTO access_tokens
     // (name, token_hash, permissions) VALUES ($1, $2, $3::jsonb)` pattern.
     const tableName = `t_mix_${Math.random().toString(36).slice(2, 10)}`;
     await engine.executeRaw(
-      `CREATE TEMP TABLE ${tableName} (name text, weight int, payload jsonb)`,
+      `CREATE TEMP TABLE ${tableName} (name text, weight int, payload jsonb)`
     );
     try {
       await executeRawJsonb(
         engine,
         `INSERT INTO ${tableName} (name, weight, payload) VALUES ($1, $2, $3::jsonb)`,
-        ['alice', 7],
-        [{ tags: ['a', 'b'] }],
+        ["alice", 7],
+        [{ tags: ["a", "b"] }]
       );
       const rows = await engine.executeRaw<{ name: string; weight: number; first_tag: string }>(
-        `SELECT name, weight, payload->'tags'->>0 AS first_tag FROM ${tableName}`,
+        `SELECT name, weight, payload->'tags'->>0 AS first_tag FROM ${tableName}`
       );
-      expect(rows).toEqual([{ name: 'alice', weight: 7, first_tag: 'a' }]);
+      expect(rows).toEqual([{ name: "alice", weight: 7, first_tag: "a" }]);
     } finally {
       await engine.executeRaw(`DROP TABLE ${tableName}`);
     }
   });
 
-  test('rejects non-scalar values in scalarParams (defense in depth)', async () => {
+  test("rejects non-scalar values in scalarParams (defense in depth)", async () => {
     // The scalar position validator should fire even when a misuse passes
     // an object via scalarParams instead of jsonbParams. Catches the
     // cross-up-the-positions footgun loud at the helper boundary.
@@ -167,13 +162,13 @@ describe('executeRawJsonb (D1 wave / v0.31)', () => {
       executeRawJsonb(
         engine,
         `SELECT $1::text AS bad`,
-        [{ object: 'in scalar position' } as any],
-        [],
-      ),
+        [{ object: "in scalar position" } as any],
+        []
+      )
     ).rejects.toThrow(/only supports scalar bind values/);
   });
 
-  test('rejects a top-level array jsonb param (gbrain#1861 P2a guard)', async () => {
+  test("rejects a top-level array jsonb param (gbrain#1861 P2a guard)", async () => {
     // A bare JS array bound to a $N::jsonb position can serialize as a Postgres
     // array literal (not jsonb) through postgres.js, re-entering the
     // "malformed array literal" class #1861 escaped. The helper must reject it
@@ -184,8 +179,8 @@ describe('executeRawJsonb (D1 wave / v0.31)', () => {
         engine,
         `INSERT INTO nope (j) VALUES ($1::jsonb)`,
         [],
-        [[{ a: 1 }, { a: 2 }] as any],
-      ),
+        [[{ a: 1 }, { a: 2 }] as any]
+      )
     ).rejects.toThrow(/top-level array jsonb param/);
   });
 });

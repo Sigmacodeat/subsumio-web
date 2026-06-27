@@ -33,8 +33,8 @@
  * actual congestion signal. Codex pass-3 #2.
  */
 
-import type { BrainEngine } from '../engine.ts';
-import { tryWithDbElection } from '../db-lock.ts';
+import type { BrainEngine } from "../engine.ts";
+import { tryWithDbElection } from "../db-lock.ts";
 
 /** Rolling-window stats the controller reads each tick. */
 export interface ControllerWindowStats {
@@ -98,7 +98,7 @@ export const DEFAULT_CONTROLLER_OPTS: ControllerOpts = {
 export function nextLeaseCap(
   current: number,
   window: ControllerWindowStats,
-  opts: ControllerOpts = DEFAULT_CONTROLLER_OPTS,
+  opts: ControllerOpts = DEFAULT_CONTROLLER_OPTS
 ): number {
   const windowMin = Math.max(1e-6, window.window_ms / 60_000);
   const bounceRatePerMin = window.bounce_count / windowMin;
@@ -146,7 +146,7 @@ export function nextLeaseCap(
  */
 export async function readControllerWindow(
   engine: BrainEngine,
-  windowMs: number,
+  windowMs: number
 ): Promise<ControllerWindowStats> {
   // Bounce count over window. Pre-v93 brains return 0 silently.
   let bounceCount = 0;
@@ -154,9 +154,9 @@ export async function readControllerWindow(
     const rows = await engine.executeRaw<{ count: string }>(
       `SELECT count(*)::text AS count FROM minion_lease_pressure_log
         WHERE bounced_at > now() - ($1::double precision * interval '1 millisecond')`,
-      [windowMs],
+      [windowMs]
     );
-    bounceCount = parseInt(rows[0]?.count ?? '0', 10);
+    bounceCount = parseInt(rows[0]?.count ?? "0", 10);
   } catch {
     /* pre-v93 brain */
   }
@@ -172,9 +172,9 @@ export async function readControllerWindow(
         WHERE finished_at > now() - ($1::double precision * interval '1 millisecond')
           AND status IN ('failed', 'dead')
           AND (error_text ILIKE '%429%' OR error_text ILIKE '%rate limit%')`,
-      [windowMs],
+      [windowMs]
     );
-    upstream429Count = parseInt(rows[0]?.count ?? '0', 10);
+    upstream429Count = parseInt(rows[0]?.count ?? "0", 10);
   } catch {
     /* DB unavailable */
   }
@@ -188,9 +188,9 @@ export async function readControllerWindow(
       `SELECT COALESCE(AVG(active_at_bounce::double precision / NULLIF(max_concurrent, 0)), 0) AS util
          FROM minion_lease_pressure_log
         WHERE bounced_at > now() - ($1::double precision * interval '1 millisecond')`,
-      [windowMs],
+      [windowMs]
     );
-    const raw = parseFloat(String(rows[0]?.util ?? '0'));
+    const raw = parseFloat(String(rows[0]?.util ?? "0"));
     leaseUtilization = Number.isFinite(raw) ? raw : 0;
   } catch {
     /* pre-v93 brain */
@@ -212,13 +212,13 @@ export async function readControllerWindow(
          AND started_at IS NOT NULL
          AND finished_at IS NOT NULL
          AND finished_at > now() - ($1::double precision * interval '1 millisecond')`,
-      [windowMs],
+      [windowMs]
     );
     const p50 = Number(rows[0]?.p50 ?? 0);
     const p95 = Number(rows[0]?.p95 ?? 0);
-    const samples = parseInt(String(rows[0]?.samples ?? '0'), 10);
+    const samples = parseInt(String(rows[0]?.samples ?? "0"), 10);
     if (samples >= 3 && p50 > 0) {
-      latencyStable = (p95 / p50) < 2;
+      latencyStable = p95 / p50 < 2;
     }
   } catch {
     /* DB unavailable; default stable */
@@ -240,10 +240,10 @@ export async function readControllerWindow(
  */
 export async function readCurrentLeaseCap(
   engine: BrainEngine,
-  opts: ControllerOpts = DEFAULT_CONTROLLER_OPTS,
+  opts: ControllerOpts = DEFAULT_CONTROLLER_OPTS
 ): Promise<number> {
   try {
-    const v = await engine.getConfig('minions.lease_cap_current').catch(() => null);
+    const v = await engine.getConfig("minions.lease_cap_current").catch(() => null);
     if (v) {
       const n = Number(v);
       if (Number.isFinite(n) && n >= opts.min_floor && n <= opts.max_ceiling) return n;
@@ -260,7 +260,7 @@ export async function readCurrentLeaseCap(
  * the new value within their cache TTL.
  */
 export async function writeLeaseCap(engine: BrainEngine, cap: number): Promise<void> {
-  await engine.setConfig('minions.lease_cap_current', String(cap));
+  await engine.setConfig("minions.lease_cap_current", String(cap));
 }
 
 /**
@@ -271,9 +271,9 @@ export async function writeLeaseCap(engine: BrainEngine, cap: number): Promise<v
 export async function controllerTick(
   engine: BrainEngine,
   opts: ControllerOpts = DEFAULT_CONTROLLER_OPTS,
-  windowMs: number = 60_000,
+  windowMs: number = 60_000
 ): Promise<{ previous: number; next: number; changed: boolean } | null> {
-  return tryWithDbElection(engine, 'minions-lease-cap-controller', 2, async () => {
+  return tryWithDbElection(engine, "minions-lease-cap-controller", 2, async () => {
     const window = await readControllerWindow(engine, windowMs);
     const current = await readCurrentLeaseCap(engine, opts);
     const next = nextLeaseCap(current, window, opts);

@@ -26,28 +26,31 @@ Here's a real skill file. This one teaches an AI agent to screen phone calls:
 # Voice Agent — Your Phone Number
 
 Caller → Twilio → <Stream> WebSocket → Voice Server (port 8765)
-                                            ↕ audio
-                                      OpenAI Realtime API
-                                            ↓ tool calls
-                                      Brain / Calendar / Telegram
+↕ audio
+OpenAI Realtime API
+↓ tool calls
+Brain / Calendar / Telegram
 
 ## Call Routing
 
 Every inbound call routes based on caller phone number + brain lookup:
 
 ### Owner → Authenticated Mode
+
 - Send crypto-random 6-digit code to secure channel
 - Caller reads it back
 - Match → full assistant mode (brain, calendar, scheduling)
 - No match → treated as unknown caller
 
 ### Known Person, Inner Circle (brain score ≥ 4) → Forward
+
 - Greet by name with brain context
 - Transfer to cell
 - If no answer (30s timeout), take message
 - Text Telegram with who called and context
 
 ### Unknown Caller → Screen
+
 - Get their name, look them up in brain
 - If inner circle → offer to transfer
 - Otherwise → take message
@@ -122,6 +125,7 @@ Here's a real example. This is the diligence recipe's detection logic:
 ## Detection
 
 Recognize data room materials by:
+
 - PDF filenames: "Data Deck", "Intro Deck", "Cap Table",
   "Financial Model", "Pitch Deck", "Series [A-D]"
 - Spreadsheets with tabs: Revenue, Retention, Cohorts,

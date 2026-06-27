@@ -4,8 +4,8 @@
  * derivation are identical across backends.
  */
 
-import { GBrainError } from './types.ts';
-import type { TakeResolution, TakesScorecard } from './engine.ts';
+import { GBrainError } from "./types.ts";
+import type { TakeResolution, TakesScorecard } from "./engine.ts";
 
 /**
  * Derive the (quality, outcome) tuple that gets written to the takes row.
@@ -19,15 +19,16 @@ import type { TakeResolution, TakesScorecard } from './engine.ts';
  * function is the first line, surfacing a clear CLI-friendly error before
  * the row hits the DB.
  */
-export function deriveResolutionTuple(
-  resolution: TakeResolution,
-): { quality: 'correct' | 'incorrect' | 'partial' | 'unresolvable'; outcome: boolean | null } {
+export function deriveResolutionTuple(resolution: TakeResolution): {
+  quality: "correct" | "incorrect" | "partial" | "unresolvable";
+  outcome: boolean | null;
+} {
   const { quality, outcome } = resolution;
   if (quality === undefined && outcome === undefined) {
     throw new GBrainError(
-      'TAKE_RESOLUTION_INVALID',
-      'resolveTake: must pass either `quality` (correct|incorrect|partial|unresolvable) or `outcome` (true|false)',
-      'use --quality on the CLI; --outcome is the back-compat alias and cannot express partial or unresolvable',
+      "TAKE_RESOLUTION_INVALID",
+      "resolveTake: must pass either `quality` (correct|incorrect|partial|unresolvable) or `outcome` (true|false)",
+      "use --quality on the CLI; --outcome is the back-compat alias and cannot express partial or unresolvable"
     );
   }
   if (quality !== undefined) {
@@ -35,24 +36,24 @@ export function deriveResolutionTuple(
     // surface the contradiction loudly instead of silently overwriting.
     // 'unresolvable' (v0.36.1.1) is null-outcome, same as 'partial'.
     if (outcome !== undefined) {
-      const expected = quality === 'correct' ? true : quality === 'incorrect' ? false : null;
+      const expected = quality === "correct" ? true : quality === "incorrect" ? false : null;
       if (expected !== outcome) {
         throw new GBrainError(
-          'TAKE_RESOLUTION_INVALID',
+          "TAKE_RESOLUTION_INVALID",
           `resolveTake: --quality=${quality} contradicts --outcome=${outcome}`,
-          'pass only one of --quality or --outcome; they cannot disagree',
+          "pass only one of --quality or --outcome; they cannot disagree"
         );
       }
     }
     return {
       quality,
-      outcome: quality === 'correct' ? true : quality === 'incorrect' ? false : null,
+      outcome: quality === "correct" ? true : quality === "incorrect" ? false : null,
     };
   }
   // Back-compat path: only `outcome` was supplied (v0.28 callers). Boolean
   // outcome can never derive 'unresolvable' — that requires explicit quality.
   return {
-    quality: outcome ? 'correct' : 'incorrect',
+    quality: outcome ? "correct" : "incorrect",
     outcome: outcome ?? null,
   };
 }
@@ -103,9 +104,7 @@ export function finalizeScorecard(raw: ScorecardRowRaw): TakesScorecard {
     incorrect,
     partial,
     accuracy: binary > 0 ? correct / binary : null,
-    brier: binary > 0 && raw.brier !== null && raw.brier !== undefined
-      ? Number(raw.brier)
-      : null,
+    brier: binary > 0 && raw.brier !== null && raw.brier !== undefined ? Number(raw.brier) : null,
     partial_rate: resolved > 0 ? partial / resolved : null,
     unresolvable_count: unresolvableCount,
     unresolvable_rate: unresolvableDenom > 0 ? unresolvableCount / unresolvableDenom : null,
@@ -117,4 +116,4 @@ export function finalizeScorecard(raw: ScorecardRowRaw): TakesScorecard {
  * be optimistic (D11). 20% partial means 1 in 5 bets escaped the Brier
  * denominator — the user is hedging into the unmeasured bucket.
  */
-export const PARTIAL_RATE_WARNING_THRESHOLD = 0.20;
+export const PARTIAL_RATE_WARNING_THRESHOLD = 0.2;

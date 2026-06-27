@@ -16,12 +16,12 @@
  * Filed as v0.33+ follow-up.
  */
 
-export const CJK_SLUG_CHARS = '一-鿿぀-ゟ゠-ヿ가-힯';
+export const CJK_SLUG_CHARS = "一-鿿぀-ゟ゠-ヿ가-힯";
 
 export const CJK_RANGES_REGEX = new RegExp(`[${CJK_SLUG_CHARS}]`);
 
-export const CJK_SENTENCE_DELIMITERS = ['。', '！', '？']; // 。！？
-export const CJK_CLAUSE_DELIMITERS = ['；', '：', '，', '、']; // ；：，、
+export const CJK_SENTENCE_DELIMITERS = ["。", "！", "？"]; // 。！？
+export const CJK_CLAUSE_DELIMITERS = ["；", "：", "，", "、"]; // ；：，、
 
 /**
  * Density threshold for switching word-count strategy. Below this CJK char
@@ -29,7 +29,7 @@ export const CJK_CLAUSE_DELIMITERS = ['；', '：', '，', '、']; // ；：，�
  * (so a 5000-word English doc with one Japanese term doesn't get char-counted
  * and over-split). At or above, it's CJK-mostly.
  */
-export const CJK_DENSITY_THRESHOLD = 0.30;
+export const CJK_DENSITY_THRESHOLD = 0.3;
 
 export function hasCJK(s: string): boolean {
   return CJK_RANGES_REGEX.test(s);
@@ -47,9 +47,9 @@ export function hasCJK(s: string): boolean {
  */
 export function countCJKAwareWords(s: string): number {
   if (s.length === 0) return 0;
-  const cjkMatches = s.match(new RegExp(`[${CJK_SLUG_CHARS}]`, 'g'));
+  const cjkMatches = s.match(new RegExp(`[${CJK_SLUG_CHARS}]`, "g"));
   const cjkCount = cjkMatches ? cjkMatches.length : 0;
-  const nonWhitespace = s.replace(/\s/g, '').length;
+  const nonWhitespace = s.replace(/\s/g, "").length;
   if (nonWhitespace === 0) return 0;
   const density = cjkCount / nonWhitespace;
   if (density >= CJK_DENSITY_THRESHOLD) {
@@ -63,5 +63,5 @@ export function countCJKAwareWords(s: string): number {
  * Must escape backslash FIRST so the introduced backslashes aren't double-escaped.
  */
 export function escapeLikePattern(s: string): string {
-  return s.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
+  return s.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_");
 }

@@ -292,7 +292,10 @@ export default function WorkflowsPage() {
 
                     {/* Custom prompt */}
                     <div className="space-y-2">
-                      <Label htmlFor="wf-prompt" className="text-xs font-medium text-[color:var(--ds-text)]">
+                      <Label
+                        htmlFor="wf-prompt"
+                        className="text-xs font-medium text-[color:var(--ds-text)]"
+                      >
                         Aufgabe (optional anpassen)
                       </Label>
                       <textarea
@@ -307,7 +310,10 @@ export default function WorkflowsPage() {
 
                     {/* Case slug */}
                     <div className="space-y-2">
-                      <Label htmlFor="wf-case" className="text-xs font-medium text-[color:var(--ds-text)]">
+                      <Label
+                        htmlFor="wf-case"
+                        className="text-xs font-medium text-[color:var(--ds-text)]"
+                      >
                         Zugehörige Akte (optional)
                       </Label>
                       <Input

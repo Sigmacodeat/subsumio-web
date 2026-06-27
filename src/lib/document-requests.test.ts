@@ -9,7 +9,9 @@ import type { BrainPage } from "./types";
 
 describe("document requests", () => {
   it("extracts common requested document items from German text", () => {
-    const items = extractRequestedDocumentItems("Bitte Vollmacht, Bescheid und Zustellnachweis hochladen");
+    const items = extractRequestedDocumentItems(
+      "Bitte Vollmacht, Bescheid und Zustellnachweis hochladen"
+    );
     expect(items.map((i) => i.key)).toEqual(["vollmacht", "bescheid", "zustellnachweis"]);
   });
 
@@ -36,7 +38,9 @@ describe("document requests", () => {
   });
 
   it("writes document requests as mergeable brain pages", async () => {
-    const fetchImpl = vi.fn(async () => new Response(JSON.stringify({ ok: true }), { status: 200 }));
+    const fetchImpl = vi.fn(
+      async () => new Response(JSON.stringify({ ok: true }), { status: 200 })
+    );
     const request = await buildDocumentRequest({
       caseSlug: "legal/cases/2026-014",
       items: ["Vollmacht"],
@@ -55,10 +59,13 @@ describe("document requests", () => {
       slug: "legal/document-requests/x",
       title: "Dokumentenanfrage",
       content: "Bitte senden",
-      frontmatter: (await buildDocumentRequest({ caseSlug: "legal/cases/1", items: ["Vollmacht"] })).frontmatter,
+      frontmatter: (await buildDocumentRequest({ caseSlug: "legal/cases/1", items: ["Vollmacht"] }))
+        .frontmatter,
     } as BrainPage;
 
     expect(documentRequestFromPage(page)?.frontmatter.type).toBe("document_request");
-    expect(documentRequestFromPage({ ...page, frontmatter: { type: "legal_case" } } as BrainPage)).toBeNull();
+    expect(
+      documentRequestFromPage({ ...page, frontmatter: { type: "legal_case" } } as BrainPage)
+    ).toBeNull();
   });
 });

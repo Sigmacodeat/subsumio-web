@@ -12,6 +12,7 @@ Before shipping (/ship) or reviewing (/review), always run the full test suite.
 Two equivalent paths:
 
 **Path A — local CI gate (recommended, v0.23.1+):**
+
 - `bun run ci:local` runs the entire stack inside Docker: gitleaks (host), unit
   tests with `DATABASE_URL` unset, and all 29 E2E files sequentially against a
   fresh pgvector container. Stronger than PR CI's 2-file Tier 1 set; closer to
@@ -23,6 +24,7 @@ Two equivalent paths:
   schema/skills/package.json changes. Fast iteration during a focused branch.
 
 **Path B — manual lifecycle (still supported):**
+
 - `bun test` — unit tests (no database required)
 - Follow the "E2E test DB lifecycle" steps above to spin up the test DB,
   run `bun run test:e2e`, then tear it down.
@@ -46,7 +48,6 @@ invalid type literal that the runner accepted. Caught one of these
 shipping the v0.23.2 round-trip E2E (`type: 'reflection'` is not a
 member of `PageType`). Run `bun run typecheck` once before push, even
 when only test files changed.
-
 
 ## CHANGELOG + VERSION are branch-scoped
 
@@ -83,12 +84,14 @@ If any answer is no, fix it before continuing.
 - Every entry should make someone think "oh nice, I want to try that."
 
 **What to omit:**
+
 - "Codex caught X that the CEO review missed" — private process detail.
 - "D-CX-3 split errors/warnings" — tag is meaningless to users; name the feature instead.
 - "Fix-wave PR #N supersedes #M" — supersede chains belong in PR bodies, not release notes.
 - "215 new cases, 3 decisions applied, 7 reviews cleared" — these are planning-mode metrics.
 
 **What to keep:**
+
 - The user-facing change: what commands exist now, what flag was added, what behavior fixed.
 - Numbers that mean something to the user: TTHW, commands that timed out before, detection counts.
 - Upgrade instructions: `gbrain upgrade` + any manual step if needed.
@@ -120,15 +123,15 @@ of the development process, it does NOT belong in the CHANGELOG.
   "Claude noticed").
 - "Plan + reviews" summary bullets. The plan lives in `~/.claude/plans/`;
   if a future reader wants the backstory they can grep there.
-- Any wording that frames a shipped feature as a *recovery* from a planning
+- Any wording that frames a shipped feature as a _recovery_ from a planning
   mistake ("the first plan was wrong", "we corrected the approach", "the
   shipped version supersedes the original design").
 
 **Smell test:** read the entry as a stranger who has never touched gbrain.
 If any sentence makes them think "why are you telling me this?", cut it.
 Every sentence in the release-summary AND in the itemized changes must
-answer one of three questions: *What can I now do? How do I use it? What
-should I watch for after I upgrade?*
+answer one of three questions: _What can I now do? How do I use it? What
+should I watch for after I upgrade?_
 
 Every version entry in `CHANGELOG.md` MUST start with a release-summary section in
 the GStack/Garry voice — one viewport's worth of prose + tables that lands like a
@@ -181,6 +184,7 @@ The shape:
    need to know exactly what moved.
 
 Voice rules (apply throughout):
+
 - No em dashes (use commas, periods, "...").
 - No AI vocabulary (delve, robust, comprehensive, nuanced, fundamental, etc.) or
   banned phrases ("here's the kicker", "the bottom line", etc.).
@@ -203,6 +207,7 @@ mechanics; those exist in older history but should not be the model for new
 work.
 
 Source material to pull from:
+
 - CHANGELOG.md previous entry for prior context
 - Latest `gbrain-evals/docs/benchmarks/[latest].md` for headline numbers (sibling repo)
 - Recent commits (`git log <prev-version>..HEAD --oneline`) for what shipped
@@ -226,7 +231,7 @@ integration close the loop.
 
 Template (adapt the verify commands per release):
 
-```markdown
+````markdown
 ## To take advantage of v[version]
 
 `gbrain upgrade` should do this automatically. If it didn't, or if `gbrain doctor`
@@ -236,6 +241,8 @@ warns about a partial migration:
    ```bash
    gbrain apply-migrations --yes
    ```
+````
+
 2. **Your agent reads `skills/migrations/v[version].md` the next time you interact with it.**
    [One sentence on whether headless agents need manual action, or whether the
    orchestrator already handled the mechanical side.]
@@ -251,7 +258,8 @@ warns about a partial migration:
    - which step broke
 
    This feedback loop is how the gbrain maintainers find fragile upgrade paths. Thank you.
-```
+
+````
 
 **Skip this block** for patches that are pure bug fixes with zero user-facing action
 (rare). If the release has a schema migration, data backfill, or new feature the
@@ -356,10 +364,9 @@ for action in actions/checkout oven-sh/setup-bun actions/upload-artifact actions
   tag=$(grep -r "$action@" .github/workflows/ | head -1 | grep -o '#.*' | tr -d '# ')
   [ -n "$tag" ] && echo "$action@$tag: $(gh api repos/$action/git/ref/tags/$tag --jq .object.sha 2>/dev/null)"
 done
-```
+````
 
 If any SHA differs from what's in the workflow files, update the pin and version comment.
-
 
 ## PR descriptions cover the whole branch
 
@@ -396,6 +403,7 @@ Never merge external PRs directly into master. Instead, use the "fix wave" workf
    `Co-Authored-By:` trailers. Include a summary of what merged and what closed.
 
 **Community PR guardrails:**
+
 - Always AskUserQuestion before accepting commits that touch voice, tone, or
   promotional material (README intro, CHANGELOG voice, skill templates).
 - Never auto-merge PRs that remove YC references or "neutralize" the founder perspective.
@@ -430,4 +438,3 @@ Why this over alternatives: adding `garrytan-agents` as a collaborator, or
 flipping the repo-wide "send secrets to fork PRs" toggle, both broaden
 secret distribution to every fork PR from that account or any fork. Moving
 the branch keeps secret scope tight to just the one PR being shipped.
-

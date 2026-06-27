@@ -16,10 +16,10 @@
  * always reserving 1 connection for HNSW + heartbeat + doctor probes.
  */
 
-import { resolveDirectPoolSize } from '../core/connection-manager.ts';
-import { listBackfills, getBackfill } from '../core/backfill-registry.ts';
-import { runBackfill, clearBackfillCheckpoint } from '../core/backfill-base.ts';
-import { loadConfig, toEngineConfig } from '../core/config.ts';
+import { resolveDirectPoolSize } from "../core/connection-manager.ts";
+import { listBackfills, getBackfill } from "../core/backfill-registry.ts";
+import { runBackfill, clearBackfillCheckpoint } from "../core/backfill-base.ts";
+import { loadConfig, toEngineConfig } from "../core/config.ts";
 
 interface BackfillArgs {
   kind?: string;
@@ -50,25 +50,25 @@ function parseArgs(args: string[]): BackfillArgs {
   const positional: string[] = [];
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
-    if (a.startsWith('--')) {
+    if (a.startsWith("--")) {
       // Skip the value when the flag takes one.
-      if (['--batch-size', '--concurrency', '--max-errors'].includes(a)) i++;
+      if (["--batch-size", "--concurrency", "--max-errors"].includes(a)) i++;
       continue;
     }
     positional.push(a);
   }
   const kind = positional[0];
   return {
-    kind: kind === 'list' ? undefined : kind,
-    list: kind === 'list' || has('--list'),
-    batchSize: num('--batch-size'),
-    concurrency: num('--concurrency'),
-    resume: has('--resume'),
-    dryRun: has('--dry-run'),
-    keepIndex: has('--keep-index'),
-    maxErrors: num('--max-errors'),
-    fresh: has('--fresh'),
-    help: has('--help') || has('-h'),
+    kind: kind === "list" ? undefined : kind,
+    list: kind === "list" || has("--list"),
+    batchSize: num("--batch-size"),
+    concurrency: num("--concurrency"),
+    resume: has("--resume"),
+    dryRun: has("--dry-run"),
+    keepIndex: has("--keep-index"),
+    maxErrors: num("--max-errors"),
+    fresh: has("--fresh"),
+    help: has("--help") || has("-h"),
   };
 }
 
@@ -116,21 +116,24 @@ function clampConcurrency(requested: number | undefined): { effective: number; w
 
 export async function runBackfillCommand(args: string[]): Promise<void> {
   const cli = parseArgs(args);
-  if (cli.help) { printHelp(); return; }
+  if (cli.help) {
+    printHelp();
+    return;
+  }
 
   if (cli.list) {
     const entries = listBackfills();
     console.log(`Registered backfills (v0.30.1):\n`);
     for (const e of entries) {
-      const status = e.v030_1_status === 'implemented' ? '✓' : '⊘';
+      const status = e.v030_1_status === "implemented" ? "✓" : "⊘";
       console.log(`  ${status} ${e.spec.name.padEnd(20)} ${e.description}`);
     }
-    console.log('');
+    console.log("");
     return;
   }
 
   if (!cli.kind) {
-    console.error('Usage: gbrain backfill <kind> [flags]   |   gbrain backfill list');
+    console.error("Usage: gbrain backfill <kind> [flags]   |   gbrain backfill list");
     process.exit(2);
   }
 
@@ -139,14 +142,16 @@ export async function runBackfillCommand(args: string[]): Promise<void> {
     console.error(`No backfill registered with name "${cli.kind}". Run \`gbrain backfill list\`.`);
     process.exit(2);
   }
-  if (reg.v030_1_status === 'declared-only') {
-    console.error(`Backfill "${cli.kind}" is declared-only in v0.30.1 — the schema migration ships in v0.30.2.`);
+  if (reg.v030_1_status === "declared-only") {
+    console.error(
+      `Backfill "${cli.kind}" is declared-only in v0.30.1 — the schema migration ships in v0.30.2.`
+    );
     process.exit(2);
   }
 
   const config = loadConfig();
   if (!config) {
-    console.error('No brain configured. Run: gbrain init');
+    console.error("No brain configured. Run: gbrain init");
     process.exit(2);
   }
 
@@ -154,7 +159,7 @@ export async function runBackfillCommand(args: string[]): Promise<void> {
   const { effective: concurrency, warning } = clampConcurrency(cli.concurrency);
   if (warning) console.warn(warning);
 
-  const { createEngine } = await import('../core/engine-factory.ts');
+  const { createEngine } = await import("../core/engine-factory.ts");
   const engine = await createEngine(toEngineConfig(config));
   await engine.connect(toEngineConfig(config));
 
@@ -163,8 +168,10 @@ export async function runBackfillCommand(args: string[]): Promise<void> {
     console.log(`Cleared checkpoint for backfill.${reg.spec.name}`);
   }
 
-  console.log(`Running backfill: ${reg.spec.name}${cli.dryRun ? ' (dry-run)' : ''}`);
-  console.log(`  batch_size=${cli.batchSize ?? 1000}  concurrency=${concurrency}  max_errors=${cli.maxErrors ?? 200}`);
+  console.log(`Running backfill: ${reg.spec.name}${cli.dryRun ? " (dry-run)" : ""}`);
+  console.log(
+    `  batch_size=${cli.batchSize ?? 1000}  concurrency=${concurrency}  max_errors=${cli.maxErrors ?? 200}`
+  );
 
   let lastReport = Date.now();
   const result = await runBackfill(engine, reg.spec, {
@@ -176,13 +183,15 @@ export async function runBackfillCommand(args: string[]): Promise<void> {
     onBatch: (info) => {
       const now = Date.now();
       if (now - lastReport > 2000) {
-        console.log(`  batch ${info.batch}: cumulative=${info.cumulative} lastId=${info.lastId} errors=${info.errorsSeen} effectiveBatchSize=${info.effectiveBatchSize}`);
+        console.log(
+          `  batch ${info.batch}: cumulative=${info.cumulative} lastId=${info.lastId} errors=${info.errorsSeen} effectiveBatchSize=${info.effectiveBatchSize}`
+        );
         lastReport = now;
       }
     },
   });
 
-  console.log('');
+  console.log("");
   console.log(`Backfill ${reg.spec.name} complete.`);
   console.log(`  examined: ${result.examined}`);
   console.log(`  updated:  ${result.updated}`);

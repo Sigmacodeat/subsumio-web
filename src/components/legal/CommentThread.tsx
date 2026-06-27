@@ -28,7 +28,9 @@ export default function CommentThread({
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch(`/api/comments?parentSlug=${encodeURIComponent(parentSlug)}`);
+        const res = await fetch(`/api/comments?parentSlug=${encodeURIComponent(parentSlug)}`, {
+          signal: AbortSignal.timeout(15_000),
+        });
         if (res.ok) {
           const data = await res.json();
           setComments(data.comments ?? []);

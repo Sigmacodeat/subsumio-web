@@ -16,7 +16,7 @@
  *   regression guard.
  */
 
-import type { ParsedModelResult } from './json-repair.ts';
+import type { ParsedModelResult } from "./json-repair.ts";
 
 export type SlotResult =
   | { ok: true; modelId: string; parsed: ParsedModelResult }
@@ -35,12 +35,12 @@ export interface DimensionRoll {
   /** All raw scores from successful models, in slot order. */
   scores: number[];
   /** Pass=false reason if this dim fails. */
-  failReason?: 'mean_below_7' | 'min_below_5';
+  failReason?: "mean_below_7" | "min_below_5";
 }
 
 export interface AggregateResult {
   /** Verdict: 'pass' | 'fail' | 'inconclusive' (Q3=A). */
-  verdict: 'pass' | 'fail' | 'inconclusive';
+  verdict: "pass" | "fail" | "inconclusive";
   /** Number of slots that returned parseable scores. */
   successes: number;
   /** Number of slots that errored or returned unparseable output. */
@@ -64,15 +64,13 @@ const TOP_IMPROVEMENTS_CAP = 10;
 const DEDUP_PREFIX_LEN = 40;
 
 export function aggregate(input: AggregateInput): AggregateResult {
-  const successes = input.slots.filter(s => s.ok);
-  const failures = input.slots.filter(s => !s.ok) as Array<
-    Extract<SlotResult, { ok: false }>
-  >;
-  const errors = failures.map(f => ({ modelId: f.modelId, error: f.error }));
+  const successes = input.slots.filter((s) => s.ok);
+  const failures = input.slots.filter((s) => !s.ok) as Array<Extract<SlotResult, { ok: false }>>;
+  const errors = failures.map((f) => ({ modelId: f.modelId, error: f.error }));
 
   if (successes.length < MIN_SUCCESSES_FOR_VERDICT) {
     return {
-      verdict: 'inconclusive',
+      verdict: "inconclusive",
       successes: successes.length,
       failures: failures.length,
       dimensions: {},
@@ -107,25 +105,23 @@ export function aggregate(input: AggregateInput): AggregateResult {
     const mean = scores.reduce((a, b) => a + b, 0) / scores.length;
     const min = Math.min(...scores);
     const roll: DimensionRoll = { mean: round1(mean), min, scores };
-    if (roll.mean < PASS_MEAN_THRESHOLD) roll.failReason = 'mean_below_7';
-    else if (roll.min < PASS_FLOOR_THRESHOLD) roll.failReason = 'min_below_5';
+    if (roll.mean < PASS_MEAN_THRESHOLD) roll.failReason = "mean_below_7";
+    else if (roll.min < PASS_FLOOR_THRESHOLD) roll.failReason = "min_below_5";
     dimensions[dim] = roll;
   }
 
   const dimRolls = Object.values(dimensions);
   const overall =
-    dimRolls.length > 0
-      ? round1(dimRolls.reduce((a, b) => a + b.mean, 0) / dimRolls.length)
-      : 0;
-  const allDimsPass = dimRolls.every(d => !d.failReason);
-  const verdict: 'pass' | 'fail' = allDimsPass ? 'pass' : 'fail';
+    dimRolls.length > 0 ? round1(dimRolls.reduce((a, b) => a + b.mean, 0) / dimRolls.length) : 0;
+  const allDimsPass = dimRolls.every((d) => !d.failReason);
+  const verdict: "pass" | "fail" = allDimsPass ? "pass" : "fail";
 
   const topImprovements = dedupImprovements(
-    successes.flatMap(s => (s.ok ? s.parsed.improvements : [])),
+    successes.flatMap((s) => (s.ok ? s.parsed.improvements : []))
   ).slice(0, TOP_IMPROVEMENTS_CAP);
 
   const verdictMessage =
-    verdict === 'pass'
+    verdict === "pass"
       ? `PASS: every dimension mean >=${PASS_MEAN_THRESHOLD} and min >=${PASS_FLOOR_THRESHOLD} ` +
         `across ${successes.length}/${input.slots.length} models. Overall ${overall}/10.`
       : describeFailure(dimensions, successes.length, input.slots.length, overall);
@@ -146,7 +142,7 @@ function describeFailure(
   dimensions: Record<string, DimensionRoll>,
   successes: number,
   total: number,
-  overall: number,
+  overall: number
 ): string {
   const failed = Object.entries(dimensions).filter(([, d]) => d.failReason);
   if (failed.length === 0) {
@@ -154,12 +150,12 @@ function describeFailure(
   }
   const reasons = failed
     .map(([name, d]) => {
-      if (d.failReason === 'mean_below_7') {
+      if (d.failReason === "mean_below_7") {
         return `${name} mean=${d.mean} (<${PASS_MEAN_THRESHOLD})`;
       }
-      return `${name} min=${d.min} (<${PASS_FLOOR_THRESHOLD}; scores=[${d.scores.join(', ')}])`;
+      return `${name} min=${d.min} (<${PASS_FLOOR_THRESHOLD}; scores=[${d.scores.join(", ")}])`;
     })
-    .join('; ');
+    .join("; ");
   return `FAIL across ${successes}/${total} models. Overall ${overall}/10. Failing: ${reasons}.`;
 }
 
@@ -167,7 +163,7 @@ function dedupImprovements(items: string[]): string[] {
   const seen = new Set<string>();
   const out: string[] = [];
   for (const item of items) {
-    const key = item.slice(0, DEDUP_PREFIX_LEN).toLowerCase().replace(/\s+/g, ' ').trim();
+    const key = item.slice(0, DEDUP_PREFIX_LEN).toLowerCase().replace(/\s+/g, " ").trim();
     if (seen.has(key)) continue;
     seen.add(key);
     out.push(item);

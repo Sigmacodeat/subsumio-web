@@ -26,9 +26,7 @@ describe("useOfflineSync", () => {
 
   test("starts with loading=true and null data", () => {
     const fetcher = vi.fn(async () => "data");
-    const { result } = renderHook(() =>
-      useOfflineSync({ key: "test", fetcher }),
-    );
+    const { result } = renderHook(() => useOfflineSync({ key: "test", fetcher }));
     expect(result.current.loading).toBe(true);
     expect(result.current.data).toBeNull();
     expect(result.current.error).toBeNull();
@@ -36,9 +34,7 @@ describe("useOfflineSync", () => {
 
   test("fetches data and sets it", async () => {
     const fetcher = vi.fn(async () => ({ items: [1, 2, 3] }));
-    const { result } = renderHook(() =>
-      useOfflineSync({ key: "test", fetcher }),
-    );
+    const { result } = renderHook(() => useOfflineSync({ key: "test", fetcher }));
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -61,11 +57,11 @@ describe("useOfflineSync", () => {
   });
 
   test("falls back to cache on fetch error", async () => {
-    const fetcher = vi.fn(async () => { throw new Error("network"); });
+    const fetcher = vi.fn(async () => {
+      throw new Error("network");
+    });
     vi.mocked(getCache).mockResolvedValueOnce("cached-data");
-    const { result } = renderHook(() =>
-      useOfflineSync({ key: "test", fetcher }),
-    );
+    const { result } = renderHook(() => useOfflineSync({ key: "test", fetcher }));
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -77,11 +73,11 @@ describe("useOfflineSync", () => {
   });
 
   test("sets error when fetch fails and no cache", async () => {
-    const fetcher = vi.fn(async () => { throw new Error("network"); });
+    const fetcher = vi.fn(async () => {
+      throw new Error("network");
+    });
     vi.mocked(getCache).mockResolvedValue(null);
-    const { result } = renderHook(() =>
-      useOfflineSync({ key: "test", fetcher }),
-    );
+    const { result } = renderHook(() => useOfflineSync({ key: "test", fetcher }));
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -94,9 +90,7 @@ describe("useOfflineSync", () => {
 
   test("does not fetch when disabled", async () => {
     const fetcher = vi.fn(async () => "data");
-    const { result } = renderHook(() =>
-      useOfflineSync({ key: "test", fetcher, enabled: false }),
-    );
+    const { result } = renderHook(() => useOfflineSync({ key: "test", fetcher, enabled: false }));
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -108,9 +102,7 @@ describe("useOfflineSync", () => {
 
   test("refresh re-fetches data", async () => {
     const fetcher = vi.fn(async () => "data1");
-    const { result } = renderHook(() =>
-      useOfflineSync({ key: "test", fetcher }),
-    );
+    const { result } = renderHook(() => useOfflineSync({ key: "test", fetcher }));
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -125,11 +117,11 @@ describe("useOfflineSync", () => {
   });
 
   test("handles non-Error thrown values", async () => {
-    const fetcher = vi.fn(async () => { throw "string error"; });
+    const fetcher = vi.fn(async () => {
+      throw "string error";
+    });
     vi.mocked(getCache).mockResolvedValue(null);
-    const { result } = renderHook(() =>
-      useOfflineSync({ key: "test", fetcher }),
-    );
+    const { result } = renderHook(() => useOfflineSync({ key: "test", fetcher }));
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);

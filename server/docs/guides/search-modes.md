@@ -1,9 +1,11 @@
 # Search Modes
 
 ## Goal
+
 Know which search command to use and when -- keyword, hybrid, or direct -- so every lookup is fast and returns the right result.
 
 ## What the User Gets
+
 Without this: the agent fumbles between search commands, returns chunks when full pages are needed, runs expensive semantic searches when a direct get would do, or misses results entirely. With this: every lookup uses the optimal mode, token budgets are respected, and the user gets the right information in the fewest calls.
 
 ## Implementation
@@ -75,4 +77,5 @@ on user_asks_about(topic):
 5. After a search returns a chunk, run `gbrain get` on the slug from that chunk. Confirm the full page contains more context than the chunk alone.
 
 ---
-*Part of the [GBrain Skillpack](../GBRAIN_SKILLPACK.md).*
+
+_Part of the [GBrain Skillpack](../GBRAIN_SKILLPACK.md)._

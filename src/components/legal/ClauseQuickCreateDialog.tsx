@@ -81,7 +81,8 @@ export function ClauseQuickCreateDialog({
       onOpenChange(false);
       if (onCreated) onCreated();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : t("clauses.toast_create_failed" as DashboardKey);
+      const msg =
+        err instanceof Error ? err.message : t("clauses.toast_create_failed" as DashboardKey);
       addToast({ type: "error", title: msg });
     } finally {
       setCreating(false);

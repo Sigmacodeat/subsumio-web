@@ -84,22 +84,22 @@ until then.
 
 Before tiering, on Garry's 306-skill OpenClaw:
 
-| Metric | Before |
-|---|---|
-| Skills in system prompt | 306 |
-| Skill-description tokens per turn | ~25,000 |
-| Skill routing accuracy | degrading |
-| Session startup | slow |
+| Metric                            | Before    |
+| --------------------------------- | --------- |
+| Skills in system prompt           | 306       |
+| Skill-description tokens per turn | ~25,000   |
+| Skill routing accuracy            | degrading |
+| Session startup                   | slow      |
 
 After tiering:
 
-| Metric | After |
-|---|---|
-| Skills in system prompt (Tier A) | 35 |
-| Skill-description tokens per turn | ~4,000 |
-| Skills still accessible (A + B + C) | 301 |
-| Capability loss | zero |
-| **Tokens freed per turn** | **~21,000** |
+| Metric                              | After       |
+| ----------------------------------- | ----------- |
+| Skills in system prompt (Tier A)    | 35          |
+| Skill-description tokens per turn   | ~4,000      |
+| Skills still accessible (A + B + C) | 301         |
+| Capability loss                     | zero        |
+| **Tokens freed per turn**           | **~21,000** |
 
 21K tokens per turn is not a small optimization. It's the difference between
 the model having room to think and the model being squeezed. It's the
@@ -132,8 +132,8 @@ your own resolvers across machines is covered in
 GBrain's resolver parser used to require markdown tables:
 
 ```markdown
-| Trigger | Skill |
-|---------|-------|
+| Trigger     | Skill                          |
+| ----------- | ------------------------------ |
 | "gift idea" | `skills/gift-advisor/SKILL.md` |
 ```
 
@@ -167,10 +167,10 @@ A few rules to keep the parser unambiguous:
   bullets like `- **Note**: see [link]` from being mis-parsed as skill
   rows in real-world AGENTS.md files.
 - **The path always resolves to `skills/<name>/SKILL.md`.** An optional
-  `→ \`skills/path\`` (or ASCII `->`) suffix is allowed for readability,
-  but the parser strips it. For non-conventional paths (skills under
-  nested directories, references into `conventions/`, anything that
-  isn't `skills/<name>/SKILL.md`), use the table format.
+  `→ \`skills/path\``(or ASCII`->`) suffix is allowed for readability,
+but the parser strips it. For non-conventional paths (skills under
+nested directories, references into `conventions/`, anything that
+isn't `skills/<name>/SKILL.md`), use the table format.
 - **Triggers separate with `|`.** Empty pieces and the literal `...`
   placeholder are dropped. Each trigger becomes its own resolver entry,
   all pointing at the same skill.

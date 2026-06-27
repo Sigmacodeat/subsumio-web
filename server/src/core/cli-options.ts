@@ -9,7 +9,7 @@
  * Shared-operation handlers see the same values via OperationContext.cliOpts.
  */
 
-import type { ProgressOptions } from './progress.ts';
+import type { ProgressOptions } from "./progress.ts";
 
 export interface CliOptions {
   quiet: boolean;
@@ -57,15 +57,15 @@ export function parseGlobalFlags(argv: string[]): { cliOpts: CliOptions; rest: s
 
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
-    if (a === '--quiet') {
+    if (a === "--quiet") {
       cliOpts.quiet = true;
       continue;
     }
-    if (a === '--progress-json') {
+    if (a === "--progress-json") {
       cliOpts.progressJson = true;
       continue;
     }
-    if (a === '--progress-interval' && i + 1 < argv.length) {
+    if (a === "--progress-interval" && i + 1 < argv.length) {
       const next = argv[i + 1];
       const parsed = parseInterval(next);
       if (parsed !== null) {
@@ -77,8 +77,8 @@ export function parseGlobalFlags(argv: string[]): { cliOpts: CliOptions; rest: s
       rest.push(a);
       continue;
     }
-    if (a.startsWith('--progress-interval=')) {
-      const val = a.slice('--progress-interval='.length);
+    if (a.startsWith("--progress-interval=")) {
+      const val = a.slice("--progress-interval=".length);
       const parsed = parseInterval(val);
       if (parsed !== null) {
         cliOpts.progressInterval = parsed;
@@ -88,7 +88,7 @@ export function parseGlobalFlags(argv: string[]): { cliOpts: CliOptions; rest: s
       continue;
     }
     // v0.31.1: --timeout=Ns or --timeout Ns. Accepts plain ms, "30s", "2m".
-    if (a === '--timeout' && i + 1 < argv.length) {
+    if (a === "--timeout" && i + 1 < argv.length) {
       const next = argv[i + 1];
       const parsed = parseTimeout(next);
       if (parsed !== null) {
@@ -99,8 +99,8 @@ export function parseGlobalFlags(argv: string[]): { cliOpts: CliOptions; rest: s
       rest.push(a);
       continue;
     }
-    if (a.startsWith('--timeout=')) {
-      const val = a.slice('--timeout='.length);
+    if (a.startsWith("--timeout=")) {
+      const val = a.slice("--timeout=".length);
       const parsed = parseTimeout(val);
       if (parsed !== null) {
         cliOpts.timeoutMs = parsed;
@@ -110,7 +110,7 @@ export function parseGlobalFlags(argv: string[]): { cliOpts: CliOptions; rest: s
       continue;
     }
     // v0.40.4 — --explain for `gbrain search/query` per-stage attribution.
-    if (a === '--explain') {
+    if (a === "--explain") {
       cliOpts.explain = true;
       continue;
     }
@@ -133,8 +133,8 @@ export function parseTimeout(s: string): number | null {
   if (!m) return null;
   const n = Number(m[1]);
   if (!Number.isFinite(n) || n <= 0) return null;
-  const unit = m[2] ?? 'ms';
-  const ms = unit === 'ms' ? n : unit === 's' ? n * 1000 : n * 60_000;
+  const unit = m[2] ?? "ms";
+  const ms = unit === "ms" ? n : unit === "s" ? n * 1000 : n * 60_000;
   return Math.floor(ms);
 }
 
@@ -157,9 +157,9 @@ function parseInterval(s: string): number | null {
  * shell pipelines don't suddenly see JSON noise.
  */
 export function cliOptsToProgressOptions(cliOpts: CliOptions): ProgressOptions {
-  if (cliOpts.quiet) return { mode: 'quiet' };
-  if (cliOpts.progressJson) return { mode: 'json', minIntervalMs: cliOpts.progressInterval };
-  return { mode: 'auto', minIntervalMs: cliOpts.progressInterval };
+  if (cliOpts.quiet) return { mode: "quiet" };
+  if (cliOpts.progressJson) return { mode: "json", minIntervalMs: cliOpts.progressInterval };
+  return { mode: "auto", minIntervalMs: cliOpts.progressInterval };
 }
 
 // ---------------------------------------------------------------------------
@@ -199,12 +199,12 @@ export function _resetCliOptionsForTest(): void {
 export function childGlobalFlags(cliOpts?: CliOptions): string {
   const opts = cliOpts ?? activeCliOptions;
   const parts: string[] = [];
-  if (opts.quiet) parts.push('--quiet');
-  if (opts.progressJson) parts.push('--progress-json');
+  if (opts.quiet) parts.push("--quiet");
+  if (opts.progressJson) parts.push("--progress-json");
   if (opts.progressInterval !== DEFAULT_CLI_OPTIONS.progressInterval) {
     parts.push(`--progress-interval=${opts.progressInterval}`);
   }
-  return parts.length > 0 ? ' ' + parts.join(' ') : '';
+  return parts.length > 0 ? " " + parts.join(" ") : "";
 }
 
 // ============================================================
@@ -225,8 +225,8 @@ export function childGlobalFlags(cliOpts?: CliOptions): string {
 // worker daemon.
 // ============================================================
 
-import type { BrainEngine } from './engine.ts';
-import { createHash } from 'crypto';
+import type { BrainEngine } from "./engine.ts";
+import { createHash } from "crypto";
 
 export interface MaybeBackgroundOpts {
   engine: BrainEngine;
@@ -248,20 +248,18 @@ export interface MaybeBackgroundOpts {
  * @returns true if backgrounded (caller MUST exit), false otherwise.
  */
 export async function maybeBackground(opts: MaybeBackgroundOpts): Promise<boolean> {
-  if (!opts.args.includes('--background')) return false;
+  if (!opts.args.includes("--background")) return false;
 
-  const filtered = opts.args.filter((a) => a !== '--background' && a !== '--follow');
+  const filtered = opts.args.filter((a) => a !== "--background" && a !== "--follow");
   const params = opts.paramBuilder(filtered);
-  const follow = opts.args.includes('--follow');
-  const source = opts.source ?? 'cli';
+  const follow = opts.args.includes("--follow");
+  const source = opts.source ?? "cli";
 
   // PGLite has no worker daemon. Per the doc-stated semantics, degrade
   // to inline with a clear stderr note rather than silently failing.
-  if (opts.engine.kind === 'pglite') {
-    process.stderr.write(
-      `[--background] PGLite has no worker daemon; running inline.\n`,
-    );
-    return false;  // caller runs inline
+  if (opts.engine.kind === "pglite") {
+    process.stderr.write(`[--background] PGLite has no worker daemon; running inline.\n`);
+    return false; // caller runs inline
   }
 
   // D9: content-hash idempotency key. No time-slot — same intent = same
@@ -270,10 +268,10 @@ export async function maybeBackground(opts: MaybeBackgroundOpts): Promise<boolea
   const idempotency_key = `${source}:${opts.jobName}:${sha8(canonicalJson(params))}`;
 
   try {
-    const { MinionQueue } = await import('./minions/queue.ts');
+    const { MinionQueue } = await import("./minions/queue.ts");
     const queue = new MinionQueue(opts.engine);
     const job = await queue.add(opts.jobName, params, {
-      queue: 'default',
+      queue: "default",
       idempotency_key,
       max_attempts: 2,
     });
@@ -282,15 +280,15 @@ export async function maybeBackground(opts: MaybeBackgroundOpts): Promise<boolea
     if (follow) {
       // exec `gbrain jobs follow <id>` so the user sees live stream
       // without losing the durable-queue submission.
-      const { spawn } = await import('child_process');
-      const cmd = process.argv[0] ?? 'bun';
-      const script = process.argv[1] ?? '';
-      const child = spawn(cmd, [script, 'jobs', 'follow', String(job.id)], {
-        stdio: 'inherit',
+      const { spawn } = await import("child_process");
+      const cmd = process.argv[0] ?? "bun";
+      const script = process.argv[1] ?? "";
+      const child = spawn(cmd, [script, "jobs", "follow", String(job.id)], {
+        stdio: "inherit",
       });
-      await new Promise<void>((resolve) => child.on('exit', () => resolve()));
+      await new Promise<void>((resolve) => child.on("exit", () => resolve()));
     }
-    return true;  // caller exits
+    return true; // caller exits
   } catch (e) {
     process.stderr.write(`[--background] submit failed: ${(e as Error).message}\n`);
     process.exit(1);
@@ -298,12 +296,12 @@ export async function maybeBackground(opts: MaybeBackgroundOpts): Promise<boolea
 }
 
 function sha8(s: string): string {
-  return createHash('sha256').update(s).digest('hex').slice(0, 8);
+  return createHash("sha256").update(s).digest("hex").slice(0, 8);
 }
 
 function canonicalJson(value: unknown): string {
-  if (value === null || typeof value !== 'object') return JSON.stringify(value);
-  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
+  if (value === null || typeof value !== "object") return JSON.stringify(value);
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
   const keys = Object.keys(value as Record<string, unknown>).sort();
-  return `{${keys.map((k) => `${JSON.stringify(k)}:${canonicalJson((value as Record<string, unknown>)[k])}`).join(',')}}`;
+  return `{${keys.map((k) => `${JSON.stringify(k)}:${canonicalJson((value as Record<string, unknown>)[k])}`).join(",")}}`;
 }

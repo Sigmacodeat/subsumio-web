@@ -31,8 +31,7 @@ export const PROJECT = {
     "GBrain is a personal knowledge brain and GStack mod for agent platforms. Pluggable engines (PGLite default, Postgres+pgvector for scale), contract-first operations, 26 fat-markdown skills. Teaches agents brain ops, ingestion, enrichment, scheduling, identity, and access control.",
   repoUrl: "https://github.com/garrytan/gbrain",
   rawBaseUrl:
-    process.env.LLMS_REPO_BASE ??
-    "https://raw.githubusercontent.com/garrytan/gbrain/master",
+    process.env.LLMS_REPO_BASE ?? "https://raw.githubusercontent.com/garrytan/gbrain/master",
 };
 
 export const SECTIONS: DocSection[] = [
@@ -95,8 +94,7 @@ export const SECTIONS: DocSection[] = [
       },
       {
         title: "docs/GBRAIN_RECOMMENDED_SCHEMA.md",
-        description:
-          "MECE directory structure (people/, companies/, concepts/).",
+        description: "MECE directory structure (people/, companies/, concepts/).",
         path: "docs/GBRAIN_RECOMMENDED_SCHEMA.md",
         // v0.40.6.0: 64KB reference doc. Web index entry stays; the single-fetch
         // bundle gets the README + setup guides instead. Keeps llms-full.txt
@@ -184,8 +182,7 @@ export const SECTIONS: DocSection[] = [
     entries: [
       {
         title: "docs/GBRAIN_VERIFY.md",
-        description:
-          "7-check post-setup verification. Start here when something feels off.",
+        description: "7-check post-setup verification. Start here when something feels off.",
         path: "docs/GBRAIN_VERIFY.md",
       },
       {
@@ -205,8 +202,7 @@ export const SECTIONS: DocSection[] = [
     entries: [
       {
         title: "docs/UPGRADING_DOWNSTREAM_AGENTS.md",
-        description:
-          "Patches for downstream agent skill forks. One section per release.",
+        description: "Patches for downstream agent skill forks. One section per release.",
         path: "docs/UPGRADING_DOWNSTREAM_AGENTS.md",
         // Excluded from inlined bundle (v0.41.7.0): 25KB of release-by-release
         // migration patches that are valuable as a reference but don't need
@@ -217,14 +213,12 @@ export const SECTIONS: DocSection[] = [
       },
       {
         title: "skills/migrations/",
-        description:
-          "Per-version (v0.5.0 - v0.14.1) agent-executable migration instructions.",
+        description: "Per-version (v0.5.0 - v0.14.1) agent-executable migration instructions.",
         path: "skills/migrations/",
       },
       {
         title: "CHANGELOG.md",
-        description:
-          "Release-summary voice + itemized changes + self-repair block per version.",
+        description: "Release-summary voice + itemized changes + self-repair block per version.",
         path: "CHANGELOG.md",
         includeInFull: false,
       },

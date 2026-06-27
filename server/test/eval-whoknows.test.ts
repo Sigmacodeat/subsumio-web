@@ -1,7 +1,7 @@
-import { describe, it, expect } from 'bun:test';
-import { writeFileSync, unlinkSync } from 'fs';
-import { tmpdir } from 'os';
-import { join } from 'path';
+import { describe, it, expect } from "bun:test";
+import { writeFileSync, unlinkSync } from "fs";
+import { tmpdir } from "os";
+import { join } from "path";
 import {
   jaccardAtK,
   topKHit,
@@ -10,7 +10,7 @@ import {
   REGRESSION_THRESHOLD,
   MIN_REPLAY_ROWS,
   type FixtureRow,
-} from '../src/commands/eval-whoknows.ts';
+} from "../src/commands/eval-whoknows.ts";
 
 /**
  * v0.33 eval harness unit tests — pure functions only.
@@ -19,96 +19,96 @@ import {
  * test/e2e/whoknows.test.ts. This file verifies the math and the parser.
  */
 
-describe('eval-whoknows / jaccardAtK', () => {
-  it('identical 3-element sets → 1.0', () => {
-    expect(jaccardAtK(['a', 'b', 'c'], ['a', 'b', 'c'], 3)).toBeCloseTo(1.0, 5);
+describe("eval-whoknows / jaccardAtK", () => {
+  it("identical 3-element sets → 1.0", () => {
+    expect(jaccardAtK(["a", "b", "c"], ["a", "b", "c"], 3)).toBeCloseTo(1.0, 5);
   });
 
-  it('disjoint sets → 0', () => {
-    expect(jaccardAtK(['a', 'b', 'c'], ['x', 'y', 'z'], 3)).toBe(0);
+  it("disjoint sets → 0", () => {
+    expect(jaccardAtK(["a", "b", "c"], ["x", "y", "z"], 3)).toBe(0);
   });
 
-  it('partial overlap (2 of 3 match) → 2/4 = 0.5', () => {
-    expect(jaccardAtK(['a', 'b', 'c'], ['a', 'b', 'z'], 3)).toBeCloseTo(0.5, 5);
+  it("partial overlap (2 of 3 match) → 2/4 = 0.5", () => {
+    expect(jaccardAtK(["a", "b", "c"], ["a", "b", "z"], 3)).toBeCloseTo(0.5, 5);
   });
 
-  it('respects k cutoff — ignores beyond top-k', () => {
-    expect(jaccardAtK(['a', 'b', 'x'], ['a', 'b', 'y'], 2)).toBeCloseTo(1.0, 5);
+  it("respects k cutoff — ignores beyond top-k", () => {
+    expect(jaccardAtK(["a", "b", "x"], ["a", "b", "y"], 2)).toBeCloseTo(1.0, 5);
   });
 
-  it('empty both sets → 1.0 (vacuously stable)', () => {
+  it("empty both sets → 1.0 (vacuously stable)", () => {
     expect(jaccardAtK([], [], 3)).toBe(1);
   });
 
-  it('empty one side, non-empty other → 0', () => {
-    expect(jaccardAtK([], ['a', 'b', 'c'], 3)).toBe(0);
+  it("empty one side, non-empty other → 0", () => {
+    expect(jaccardAtK([], ["a", "b", "c"], 3)).toBe(0);
   });
 
-  it('duplicates in input collapse via Set semantics', () => {
+  it("duplicates in input collapse via Set semantics", () => {
     // Set-Jaccard, not multiset — duplicates collapse.
-    expect(jaccardAtK(['a', 'a', 'a'], ['a'], 3)).toBe(1);
+    expect(jaccardAtK(["a", "a", "a"], ["a"], 3)).toBe(1);
   });
 });
 
-describe('eval-whoknows / topKHit', () => {
-  it('expected slug at position 1 → hit', () => {
-    expect(topKHit(['alice', 'bob', 'carol'], ['alice'], 3)).toBe(true);
+describe("eval-whoknows / topKHit", () => {
+  it("expected slug at position 1 → hit", () => {
+    expect(topKHit(["alice", "bob", "carol"], ["alice"], 3)).toBe(true);
   });
 
-  it('expected slug at position 3 → hit (within top-3)', () => {
-    expect(topKHit(['x', 'y', 'alice'], ['alice'], 3)).toBe(true);
+  it("expected slug at position 3 → hit (within top-3)", () => {
+    expect(topKHit(["x", "y", "alice"], ["alice"], 3)).toBe(true);
   });
 
-  it('expected slug at position 4 → miss (beyond top-3)', () => {
-    expect(topKHit(['x', 'y', 'z', 'alice'], ['alice'], 3)).toBe(false);
+  it("expected slug at position 4 → miss (beyond top-3)", () => {
+    expect(topKHit(["x", "y", "z", "alice"], ["alice"], 3)).toBe(false);
   });
 
-  it('no expected match anywhere → miss', () => {
-    expect(topKHit(['x', 'y', 'z'], ['alice'], 3)).toBe(false);
+  it("no expected match anywhere → miss", () => {
+    expect(topKHit(["x", "y", "z"], ["alice"], 3)).toBe(false);
   });
 
-  it('multiple expected slugs — hit if ANY appears in top-3', () => {
-    expect(topKHit(['x', 'bob', 'z'], ['alice', 'bob', 'carol'], 3)).toBe(true);
+  it("multiple expected slugs — hit if ANY appears in top-3", () => {
+    expect(topKHit(["x", "bob", "z"], ["alice", "bob", "carol"], 3)).toBe(true);
   });
 
-  it('empty actual results → miss', () => {
-    expect(topKHit([], ['alice'], 3)).toBe(false);
+  it("empty actual results → miss", () => {
+    expect(topKHit([], ["alice"], 3)).toBe(false);
   });
 
-  it('empty expected → miss (cannot match anything)', () => {
-    expect(topKHit(['alice', 'bob'], [], 3)).toBe(false);
+  it("empty expected → miss (cannot match anything)", () => {
+    expect(topKHit(["alice", "bob"], [], 3)).toBe(false);
   });
 });
 
-describe('eval-whoknows / readFixture', () => {
+describe("eval-whoknows / readFixture", () => {
   function tmpFixture(content: string): string {
     const path = join(tmpdir(), `whoknows-eval-test-${Date.now()}-${Math.random()}.jsonl`);
     writeFileSync(path, content);
     return path;
   }
 
-  it('parses well-formed JSONL', () => {
+  it("parses well-formed JSONL", () => {
     const path = tmpFixture(
       '{"query":"lab automation","expected_top_3_slugs":["wiki/people/alice","wiki/people/bob"]}\n' +
-        '{"query":"fintech","expected_top_3_slugs":["wiki/companies/acme"],"notes":"hot topic"}\n',
+        '{"query":"fintech","expected_top_3_slugs":["wiki/companies/acme"],"notes":"hot topic"}\n'
     );
     try {
       const rows = readFixture(path);
       expect(rows.length).toBe(2);
-      expect(rows[0].query).toBe('lab automation');
+      expect(rows[0].query).toBe("lab automation");
       expect(rows[0].expected_top_3_slugs.length).toBe(2);
-      expect(rows[1].notes).toBe('hot topic');
+      expect(rows[1].notes).toBe("hot topic");
     } finally {
       unlinkSync(path);
     }
   });
 
-  it('skips blank lines and comments (#, //)', () => {
+  it("skips blank lines and comments (#, //)", () => {
     const path = tmpFixture(
-      '# this is a comment\n' +
-        '\n' +
-        '// another comment\n' +
-        '{"query":"x","expected_top_3_slugs":["y"]}\n',
+      "# this is a comment\n" +
+        "\n" +
+        "// another comment\n" +
+        '{"query":"x","expected_top_3_slugs":["y"]}\n'
     );
     try {
       const rows = readFixture(path);
@@ -118,12 +118,12 @@ describe('eval-whoknows / readFixture', () => {
     }
   });
 
-  it('throws on missing file', () => {
-    expect(() => readFixture('/nonexistent/path/abc.jsonl')).toThrow(/fixture not found/);
+  it("throws on missing file", () => {
+    expect(() => readFixture("/nonexistent/path/abc.jsonl")).toThrow(/fixture not found/);
   });
 
-  it('throws on malformed JSON line', () => {
-    const path = tmpFixture('{not json\n');
+  it("throws on malformed JSON line", () => {
+    const path = tmpFixture("{not json\n");
     try {
       expect(() => readFixture(path)).toThrow(/malformed JSONL line/);
     } finally {
@@ -131,7 +131,7 @@ describe('eval-whoknows / readFixture', () => {
     }
   });
 
-  it('throws on row missing required fields', () => {
+  it("throws on row missing required fields", () => {
     const path = tmpFixture('{"query":"x"}\n'); // missing expected_top_3_slugs
     try {
       expect(() => readFixture(path)).toThrow(/missing required fields/);
@@ -140,29 +140,27 @@ describe('eval-whoknows / readFixture', () => {
     }
   });
 
-  it('filters non-string entries in expected_top_3_slugs', () => {
-    const path = tmpFixture(
-      '{"query":"x","expected_top_3_slugs":["alice", null, 42, "bob"]}\n',
-    );
+  it("filters non-string entries in expected_top_3_slugs", () => {
+    const path = tmpFixture('{"query":"x","expected_top_3_slugs":["alice", null, 42, "bob"]}\n');
     try {
       const rows = readFixture(path);
-      expect(rows[0].expected_top_3_slugs).toEqual(['alice', 'bob']);
+      expect(rows[0].expected_top_3_slugs).toEqual(["alice", "bob"]);
     } finally {
       unlinkSync(path);
     }
   });
 });
 
-describe('eval-whoknows / thresholds', () => {
-  it('HIT_RATE_THRESHOLD locked at 0.8 per ENG-D2', () => {
+describe("eval-whoknows / thresholds", () => {
+  it("HIT_RATE_THRESHOLD locked at 0.8 per ENG-D2", () => {
     expect(HIT_RATE_THRESHOLD).toBe(0.8);
   });
 
-  it('REGRESSION_THRESHOLD locked at 0.4 per ENG-D2', () => {
+  it("REGRESSION_THRESHOLD locked at 0.4 per ENG-D2", () => {
     expect(REGRESSION_THRESHOLD).toBe(0.4);
   });
 
-  it('MIN_REPLAY_ROWS sparseness fallback at 20', () => {
+  it("MIN_REPLAY_ROWS sparseness fallback at 20", () => {
     expect(MIN_REPLAY_ROWS).toBe(20);
   });
 });
@@ -171,19 +169,19 @@ describe('eval-whoknows / thresholds', () => {
 // runEvalWhoknows picks the impl (local findExperts vs thin-client MCP-routed).
 // These tests pin the type-level contract and the export presence; full
 // thin-client routing E2E is in the engine-required integration suite.
-describe('eval-whoknows / WhoknowsFn contract', () => {
-  it('module exports WhoknowsFn type alias', async () => {
+describe("eval-whoknows / WhoknowsFn contract", () => {
+  it("module exports WhoknowsFn type alias", async () => {
     // The type is structurally `(topic: string, limit: number) => Promise<WhoknowsResult[]>`.
     // Confirm import resolves without throwing.
-    const mod = await import('../src/commands/eval-whoknows.ts');
-    expect(typeof mod.runEvalWhoknows).toBe('function');
+    const mod = await import("../src/commands/eval-whoknows.ts");
+    expect(typeof mod.runEvalWhoknows).toBe("function");
   });
 
-  it('runEvalWhoknows accepts null engine (thin-client signature)', async () => {
+  it("runEvalWhoknows accepts null engine (thin-client signature)", async () => {
     // Signature gate: the function must be callable with engine=null. We use
     // a missing-fixture path to short-circuit before any engine/MCP use, so
     // this test pins ONLY the signature acceptance, not the routing logic.
-    const { runEvalWhoknows } = await import('../src/commands/eval-whoknows.ts');
+    const { runEvalWhoknows } = await import("../src/commands/eval-whoknows.ts");
     const exitCode = await runEvalWhoknows(null, []); // no fixture path → 2
     expect(exitCode).toBe(2);
   });

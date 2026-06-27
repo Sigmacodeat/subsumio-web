@@ -15,10 +15,10 @@
 // (also entity primitive). Per-type `aliases: [person]` is the opt-in;
 // primitive sharing is not.
 
-import { assertNever } from '../types.ts';
-import type { PackPrimitive } from './manifest-v1.ts';
+import { assertNever } from "../types.ts";
+import type { PackPrimitive } from "./manifest-v1.ts";
 
-export { PACK_PRIMITIVES, type PackPrimitive } from './manifest-v1.ts';
+export { PACK_PRIMITIVES, type PackPrimitive } from "./manifest-v1.ts";
 
 export interface PrimitiveDefaults {
   /** Default link verbs the primitive emits in inferLinkType heuristics. */
@@ -34,42 +34,42 @@ export interface PrimitiveDefaults {
 }
 
 const ENTITY: PrimitiveDefaults = {
-  default_link_verbs: ['works_at', 'founded', 'mentions', 'invested_in', 'advises', 'attended'],
-  default_frontmatter_fields: ['aliases', 'email', 'location', 'role'],
+  default_link_verbs: ["works_at", "founded", "mentions", "invested_in", "advises", "attended"],
+  default_frontmatter_fields: ["aliases", "email", "location", "role"],
   default_expert_routing: true,
-  default_rubric: 'entity-default',
+  default_rubric: "entity-default",
   default_extractable: true,
 };
 
 const MEDIA: PrimitiveDefaults = {
-  default_link_verbs: ['cites', 'references', 'authored_by'],
-  default_frontmatter_fields: ['url', 'source', 'author', 'date'],
+  default_link_verbs: ["cites", "references", "authored_by"],
+  default_frontmatter_fields: ["url", "source", "author", "date"],
   default_expert_routing: false,
-  default_rubric: 'media-default',
+  default_rubric: "media-default",
   default_extractable: false,
 };
 
 const TEMPORAL: PrimitiveDefaults = {
-  default_link_verbs: ['attended', 'occurred_at'],
-  default_frontmatter_fields: ['date', 'attendees', 'duration', 'location'],
+  default_link_verbs: ["attended", "occurred_at"],
+  default_frontmatter_fields: ["date", "attendees", "duration", "location"],
   default_expert_routing: false,
-  default_rubric: 'temporal-default',
+  default_rubric: "temporal-default",
   default_extractable: true,
 };
 
 const ANNOTATION: PrimitiveDefaults = {
-  default_link_verbs: ['claims', 'sources_from'],
-  default_frontmatter_fields: ['confidence', 'valid_from', 'source'],
+  default_link_verbs: ["claims", "sources_from"],
+  default_frontmatter_fields: ["confidence", "valid_from", "source"],
   default_expert_routing: false,
-  default_rubric: 'annotation-default',
+  default_rubric: "annotation-default",
   default_extractable: false,
 };
 
 const CONCEPT: PrimitiveDefaults = {
-  default_link_verbs: ['relates_to', 'supersedes', 'mentions'],
-  default_frontmatter_fields: ['tags'],
+  default_link_verbs: ["relates_to", "supersedes", "mentions"],
+  default_frontmatter_fields: ["tags"],
   default_expert_routing: false,
-  default_rubric: 'concept-default',
+  default_rubric: "concept-default",
   default_extractable: false,
 };
 
@@ -80,11 +80,17 @@ const CONCEPT: PrimitiveDefaults = {
  */
 export function getPrimitiveDefaults(p: PackPrimitive): PrimitiveDefaults {
   switch (p) {
-    case 'entity': return ENTITY;
-    case 'media': return MEDIA;
-    case 'temporal': return TEMPORAL;
-    case 'annotation': return ANNOTATION;
-    case 'concept': return CONCEPT;
-    default: return assertNever(p);
+    case "entity":
+      return ENTITY;
+    case "media":
+      return MEDIA;
+    case "temporal":
+      return TEMPORAL;
+    case "annotation":
+      return ANNOTATION;
+    case "concept":
+      return CONCEPT;
+    default:
+      return assertNever(p);
   }
 }

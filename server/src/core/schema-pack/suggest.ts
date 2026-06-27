@@ -10,8 +10,8 @@
 // returns deterministic heuristic-only suggestions rather than throwing.
 // Test seam via `opts.suggestFn` lets unit tests stub the LLM entirely.
 
-import type { BrainEngine } from '../engine.ts';
-import { runDetect, type DetectResult } from './detect.ts';
+import type { BrainEngine } from "../engine.ts";
+import { runDetect, type DetectResult } from "./detect.ts";
 
 export interface SuggestOpts {
   sourceId?: string;
@@ -31,7 +31,7 @@ export interface SuggestPromptInput {
  * the public Suggestion type with confidence floors + dedup.
  */
 export interface RawSuggestion {
-  kind: 'add_type' | 'add_alias' | 'rename' | 'mark_experimental';
+  kind: "add_type" | "add_alias" | "rename" | "mark_experimental";
   summary: string;
   confidence: number; // [0, 1]
   evidence?: string[]; // optional sample slug list
@@ -60,7 +60,7 @@ export interface SuggestResult {
  */
 function heuristicSuggestions(detected: DetectResult): RawSuggestion[] {
   return detected.prefixes.map((p) => ({
-    kind: 'add_type' as const,
+    kind: "add_type" as const,
     summary: `Add type \`${p.suggested_type}\` for ${p.page_count} pages under \`${p.prefix}\``,
     confidence: 0.5,
     evidence: p.sample_types.slice(0, 3),
@@ -69,9 +69,9 @@ function heuristicSuggestions(detected: DetectResult): RawSuggestion[] {
 
 export async function runSuggest(
   engine: BrainEngine,
-  opts: SuggestOpts = {},
+  opts: SuggestOpts = {}
 ): Promise<SuggestResult> {
-  const sourceId = opts.sourceId ?? 'default';
+  const sourceId = opts.sourceId ?? "default";
   const maxSampleSize = opts.maxSampleSize ?? 200;
 
   const detected = await runDetect(engine, { sourceId, maxTypes: 50 });
@@ -88,20 +88,20 @@ export async function runSuggest(
   } else {
     // Try the gateway; on any failure fall back to heuristic.
     try {
-      const { isAvailable } = await import('../ai/gateway.ts');
-      if (!isAvailable('chat')) {
-        notes.push('No LLM chat provider configured — returning heuristic-only suggestions.');
+      const { isAvailable } = await import("../ai/gateway.ts");
+      if (!isAvailable("chat")) {
+        notes.push("No LLM chat provider configured — returning heuristic-only suggestions.");
         raw = heuristicSuggestions(detected);
       } else {
         // Real gateway call deferred to a future wave; v0.39.0.0 ships the
         // hermetic heuristic-by-default path and the test seam. The full
         // LLM prompt-tuning loop is in test/eval-schema-authoring (T16)
         // which uses the same `suggestFn` seam.
-        notes.push('LLM refinement deferred to v0.39.1+; using heuristic fallback.');
+        notes.push("LLM refinement deferred to v0.39.1+; using heuristic fallback.");
         raw = heuristicSuggestions(detected);
       }
     } catch {
-      notes.push('Gateway unavailable — using heuristic fallback.');
+      notes.push("Gateway unavailable — using heuristic fallback.");
       raw = heuristicSuggestions(detected);
     }
   }
@@ -124,7 +124,9 @@ export async function runSuggest(
   suggestions.sort((a, b) => b.confidence - a.confidence);
 
   if (detected.untyped_pages > 0 && suggestions.length === 0) {
-    notes.push(`${detected.untyped_pages} untyped pages detected but no suggestions produced — run \`gbrain schema review-candidates --json\` to see the disk-derived candidate set.`);
+    notes.push(
+      `${detected.untyped_pages} untyped pages detected but no suggestions produced — run \`gbrain schema review-candidates --json\` to see the disk-derived candidate set.`
+    );
   }
 
   return { suggestions, notes, source_id: sourceId };

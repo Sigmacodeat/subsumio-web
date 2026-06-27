@@ -61,7 +61,10 @@ export default function BeaPage() {
     let cancelled = false;
     (async () => {
       try {
-        const batch = await api.brain.batchListPages(["bea_draft", "bea_message", "filing_package"], 50);
+        const batch = await api.brain.batchListPages(
+          ["bea_draft", "bea_message", "filing_package"],
+          50
+        );
         if (cancelled) return;
         const draftPages = batch["bea_draft"] ?? [];
         const importedPages = batch["bea_message"] ?? [];

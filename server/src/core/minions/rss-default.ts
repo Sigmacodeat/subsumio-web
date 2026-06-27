@@ -31,8 +31,8 @@
  * disable the watchdog entirely).
  */
 
-import { totalmem } from 'os';
-import { readFileSync } from 'fs';
+import { totalmem } from "os";
+import { readFileSync } from "fs";
 
 const MB = 1024 * 1024;
 export const RSS_DEFAULT_FLOOR_MB = 4096;
@@ -43,7 +43,7 @@ export interface ResolvedMaxRss {
   /** The resolved cap in MB. */
   mb: number;
   /** Where the memory basis came from. */
-  source: 'cgroup-limited' | 'host';
+  source: "cgroup-limited" | "host";
   /** The basis (min of cgroup limit and host RAM) in MB, for the startup log. */
   basisMb: number;
 }
@@ -60,15 +60,15 @@ export interface ResolvedMaxRss {
  * `readFile` is injectable for hermetic tests.
  */
 export function readCgroupMemLimitBytes(
-  readFile: (path: string) => string = (p) => readFileSync(p, 'utf8'),
+  readFile: (path: string) => string = (p) => readFileSync(p, "utf8")
 ): number | null {
   // cgroup v2
   try {
-    const raw = readFile('/sys/fs/cgroup/memory.max').trim();
-    if (raw && raw !== 'max') {
+    const raw = readFile("/sys/fs/cgroup/memory.max").trim();
+    if (raw && raw !== "max") {
       const n = Number(raw);
       if (Number.isFinite(n) && n > 0) return n;
-    } else if (raw === 'max') {
+    } else if (raw === "max") {
       return null;
     }
   } catch {
@@ -76,7 +76,7 @@ export function readCgroupMemLimitBytes(
   }
   // cgroup v1
   try {
-    const raw = readFile('/sys/fs/cgroup/memory/memory.limit_in_bytes').trim();
+    const raw = readFile("/sys/fs/cgroup/memory/memory.limit_in_bytes").trim();
     const n = Number(raw);
     if (Number.isFinite(n) && n > 0) return n;
   } catch {
@@ -125,7 +125,7 @@ export function describeDefaultMaxRss(opts: ResolveMaxRssOpts = {}): ResolvedMax
   // the graceful drain always beats the kernel OOM-killer.
   if (mb >= basisMb) mb = Math.max(1, Math.floor(basisMb * RSS_DEFAULT_FRACTION));
 
-  return { mb, source: cgroupLimited ? 'cgroup-limited' : 'host', basisMb };
+  return { mb, source: cgroupLimited ? "cgroup-limited" : "host", basisMb };
 }
 
 /**

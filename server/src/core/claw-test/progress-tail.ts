@@ -14,7 +14,7 @@
 
 export interface ProgressEvent {
   phase: string;
-  event?: string;       // 'start' | 'tick' | 'finish' | etc per docs/progress-events.md
+  event?: string; // 'start' | 'tick' | 'finish' | etc per docs/progress-events.md
   ts?: string;
   [key: string]: unknown;
 }
@@ -22,16 +22,16 @@ export interface ProgressEvent {
 /** Parse a single stderr buffer into the progress events it contains. */
 export function parseProgressEvents(stderr: string): ProgressEvent[] {
   const out: ProgressEvent[] = [];
-  for (const line of stderr.split('\n')) {
+  for (const line of stderr.split("\n")) {
     const trimmed = line.trim();
-    if (!trimmed.startsWith('{')) continue;
+    if (!trimmed.startsWith("{")) continue;
     let parsed: unknown;
     try {
       parsed = JSON.parse(trimmed);
     } catch {
       continue;
     }
-    if (parsed && typeof parsed === 'object' && typeof (parsed as any).phase === 'string') {
+    if (parsed && typeof parsed === "object" && typeof (parsed as any).phase === "string") {
       out.push(parsed as ProgressEvent);
     }
   }
@@ -53,6 +53,6 @@ export function eventsByPhase(events: ProgressEvent[]): Map<string, ProgressEven
  * Returns the missing phase names (empty array on full coverage).
  */
 export function verifyExpectedPhases(events: ProgressEvent[], expected: string[]): string[] {
-  const seen = new Set(events.map(e => e.phase));
-  return expected.filter(p => !seen.has(p));
+  const seen = new Set(events.map((e) => e.phase));
+  return expected.filter((p) => !seen.has(p));
 }

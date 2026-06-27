@@ -49,6 +49,7 @@ mutating: false
 ### Step 1 — Parse Query
 
 Extract from the user's request:
+
 - **Legal issue**: what question needs a precedent?
 - **Norm(s)**: which § §§ are at issue?
 - **Court level preference**: BGH only / all courts / specific court
@@ -77,6 +78,7 @@ gbrain query "Welche Leitentscheidungen gibt es zu [issue]?" --think
 ### Bindende Entscheidungen (BGH / EuGH / BVerfG)
 
 #### 1. [Gericht] [Az.], [Datum]
+
 - **Leitsatz:** [Text des Leitsatzes]
 - **Norm:** § [X] [Gesetz]
 - **Relevanz:** [Warum diese Entscheidung hier zutrifft]
@@ -91,16 +93,19 @@ gbrain query "Welche Leitentscheidungen gibt es zu [issue]?" --think
 ### Nicht gefunden im Brain-Corpus
 
 Falls relevante Entscheide fehlen:
+
 > Keine bindende BGH-Rechtsprechung zu [Frage] im Brain-Corpus indexiert.
 > Empfehlung: Recherche in juris, beck-online, RIS (AT), oder EUR-Lex.
 
 ### Fazit
+
 [2–3 Sätze: Welche Linie verfolgt die Rechtsprechung?]
 ```
 
 ### Step 4 — Optional: Link to Case
 
 If a legal_case page exists in the brain, add the found precedents as `cites` links:
+
 ```
 gbrain add_link --from "legal/cases/[case-slug]" --to "[precedent-slug]" --type cites
 ```
@@ -111,7 +116,7 @@ gbrain add_link --from "legal/cases/[case-slug]" --to "[precedent-slug]" --type 
 BVerfG (Verfassungsrecht)
     │
     ├── BGH (Zivilrecht, Strafrecht)
-    ├── BVerwG (Verwaltungsrecht)  
+    ├── BVerwG (Verwaltungsrecht)
     ├── BFH (Steuerrecht)
     ├── BAG (Arbeitsrecht)
     └── BSG (Sozialrecht)

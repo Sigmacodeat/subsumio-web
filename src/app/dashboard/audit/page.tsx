@@ -143,20 +143,24 @@ export default function AuditLogPage() {
   const [selectedEntry, setSelectedEntry] = useState<AuditEntry | null>(null);
   const [showFilters, setShowFilters] = useState(false);
 
-  const { data: auditData, loading, error, refetch: loadEntries } = useApiQuery<{ entries: AuditEntry[] }>(
-    async () => {
-      const params = new URLSearchParams();
-      if (filterAction) params.set("action", filterAction);
-      if (filterEntityType) params.set("entityType", filterEntityType);
-      if (filterFrom) params.set("from", filterFrom);
-      if (filterTo) params.set("to", filterTo);
-      params.set("limit", "500");
-      const res = await fetch(`/api/audit?${params.toString()}`, { signal: AbortSignal.timeout(30_000) });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return (await res.json()) as { entries: AuditEntry[] };
-    },
-    [filterAction, filterEntityType, filterFrom, filterTo]
-  );
+  const {
+    data: auditData,
+    loading,
+    error,
+    refetch: loadEntries,
+  } = useApiQuery<{ entries: AuditEntry[] }>(async () => {
+    const params = new URLSearchParams();
+    if (filterAction) params.set("action", filterAction);
+    if (filterEntityType) params.set("entityType", filterEntityType);
+    if (filterFrom) params.set("from", filterFrom);
+    if (filterTo) params.set("to", filterTo);
+    params.set("limit", "500");
+    const res = await fetch(`/api/audit?${params.toString()}`, {
+      signal: AbortSignal.timeout(30_000),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return (await res.json()) as { entries: AuditEntry[] };
+  }, [filterAction, filterEntityType, filterFrom, filterTo]);
 
   const entries = useMemo(() => auditData?.entries ?? [], [auditData]);
 

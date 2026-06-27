@@ -23,29 +23,29 @@
  *   2 — usage error (couldn't resolve workspace, doctor crash, etc.)
  */
 
-import { existsSync, readFileSync } from 'fs';
-import { join } from 'path';
+import { existsSync, readFileSync } from "fs";
+import { join } from "path";
 
-import { autoDetectSkillsDirReadOnly } from '../src/core/repo-root.ts';
-import { skillBrainFirstCheck } from '../src/commands/doctor.ts';
-import { autoFixDryViolations } from '../src/core/dry-fix.ts';
-import { parseSkillFrontmatter } from '../src/core/skill-frontmatter.ts';
+import { autoDetectSkillsDirReadOnly } from "../src/core/repo-root.ts";
+import { skillBrainFirstCheck } from "../src/commands/doctor.ts";
+import { autoFixDryViolations } from "../src/core/dry-fix.ts";
+import { parseSkillFrontmatter } from "../src/core/skill-frontmatter.ts";
 import {
   analyzeSkillBrainFirst,
   buildBrainFirstSummaryLine,
   FORMERLY_HARDCODED_EXEMPT,
-} from '../src/core/skill-brain-first.ts';
-import { loadOrDeriveManifest } from '../src/core/skill-manifest.ts';
+} from "../src/core/skill-brain-first.ts";
+import { loadOrDeriveManifest } from "../src/core/skill-manifest.ts";
 
 function main(): number {
   const args = process.argv.slice(2);
-  const jsonMode = args.includes('--json');
-  const fixPreview = args.includes('--fix-preview');
+  const jsonMode = args.includes("--json");
+  const fixPreview = args.includes("--fix-preview");
 
   if (!process.env.OPENCLAW_WORKSPACE && !process.env.GBRAIN_SKILLS_DIR) {
     process.stderr.write(
-      '[live-brain-first] No skills dir source set. Set OPENCLAW_WORKSPACE or GBRAIN_SKILLS_DIR.\n' +
-      '  $OPENCLAW_WORKSPACE=~/.openclaw/workspace bun run scripts/live-brain-first-check.ts\n',
+      "[live-brain-first] No skills dir source set. Set OPENCLAW_WORKSPACE or GBRAIN_SKILLS_DIR.\n" +
+        "  $OPENCLAW_WORKSPACE=~/.openclaw/workspace bun run scripts/live-brain-first-check.ts\n"
     );
     return 0; // not configured = not a failure
   }
@@ -53,12 +53,14 @@ function main(): number {
   const detected = autoDetectSkillsDirReadOnly();
   if (!detected || !detected.dir || !existsSync(detected.dir)) {
     process.stderr.write(
-      `[live-brain-first] Could not resolve skills dir from OPENCLAW_WORKSPACE / GBRAIN_SKILLS_DIR / cwd walk-up.\n`,
+      `[live-brain-first] Could not resolve skills dir from OPENCLAW_WORKSPACE / GBRAIN_SKILLS_DIR / cwd walk-up.\n`
     );
     return 2;
   }
 
-  process.stderr.write(`[live-brain-first] Scanning ${detected.dir} (source: ${detected.source})\n\n`);
+  process.stderr.write(
+    `[live-brain-first] Scanning ${detected.dir} (source: ${detected.source})\n\n`
+  );
 
   const check = skillBrainFirstCheck(detected.dir);
   const violators = check.issues ?? [];
@@ -83,18 +85,22 @@ function main(): number {
     if (!existsSync(skillPath)) continue;
     let content: string;
     try {
-      content = readFileSync(skillPath, 'utf-8');
+      content = readFileSync(skillPath, "utf-8");
     } catch {
       continue;
     }
     const fm = parseSkillFrontmatter(content);
     const a = analyzeSkillBrainFirst(content, entry.name, fm);
-    if (a.status === 'ok') {
-      if (a.reason === 'compliant_callout' || a.reason === 'compliant_phase' || a.reason === 'compliant_position') {
+    if (a.status === "ok") {
+      if (
+        a.reason === "compliant_callout" ||
+        a.reason === "compliant_phase" ||
+        a.reason === "compliant_position"
+      ) {
         compliantViaCallout.push(a.skill);
-      } else if (a.reason === 'exempt_explicit') {
+      } else if (a.reason === "exempt_explicit") {
         exemptByFrontmatter.push(a.skill);
-      } else if (a.reason === 'exempt_no_external') {
+      } else if (a.reason === "exempt_no_external") {
         exemptByNoExternal.push(a.skill);
       }
     } else {
@@ -122,44 +128,48 @@ function main(): number {
     console.log(`Workspace: ${detected.dir}`);
     console.log(`Source: ${detected.source}`);
     console.log(`Total skills scanned: ${manifest.skills.length}`);
-    console.log('');
+    console.log("");
     console.log(`Compliant via callout/phase/position: ${compliantViaCallout.length}`);
     console.log(`Exempt by frontmatter (brain_first: exempt): ${exemptByFrontmatter.length}`);
     console.log(`Exempt by no-external-pattern: ${exemptByNoExternal.length}`);
-    console.log('');
+    console.log("");
     console.log(`Flagged (formerly hardcoded-exempt in PR #1206): ${flaggedFormerly.length}`);
     if (flaggedFormerly.length > 0) {
       for (const s of flaggedFormerly.sort()) console.log(`  - ${s}`);
     }
-    console.log('');
+    console.log("");
     console.log(`Flagged (genuinely new violators): ${flaggedNew.length}`);
     if (flaggedNew.length > 0) {
       for (const s of flaggedNew.sort()) console.log(`  - ${s}`);
     }
-    console.log('');
+    console.log("");
 
     if (violators.length === 0) {
-      console.log('STATUS: ok — no brain-first violators in the live deployment');
+      console.log("STATUS: ok — no brain-first violators in the live deployment");
     } else {
-      console.log('STATUS: warn — fix with:');
-      console.log('  gbrain doctor --fix       # auto-add canonical Convention callout (writes files)');
-      console.log('  gbrain doctor --fix --dry-run   # preview without writing');
-      console.log('  or add `brain_first: exempt` to each flagged skill\'s frontmatter');
+      console.log("STATUS: warn — fix with:");
+      console.log(
+        "  gbrain doctor --fix       # auto-add canonical Convention callout (writes files)"
+      );
+      console.log("  gbrain doctor --fix --dry-run   # preview without writing");
+      console.log("  or add `brain_first: exempt` to each flagged skill's frontmatter");
     }
   }
 
   // --fix-preview: also run autoFixDryViolations against the live workspace
   // in dry-run mode to show what callouts the auto-fix would insert.
   if (fixPreview) {
-    process.stderr.write('\n[live-brain-first] Running auto-fix dry-run preview...\n');
+    process.stderr.write("\n[live-brain-first] Running auto-fix dry-run preview...\n");
     const report = autoFixDryViolations(detected.dir, { dryRun: true });
     const brainFirstProposed = report.fixed.filter(
-      f => f.status === 'proposed' && f.patternLabel === 'brain-first compliance',
+      (f) => f.status === "proposed" && f.patternLabel === "brain-first compliance"
     );
     if (brainFirstProposed.length === 0) {
-      console.log('No brain-first auto-fix proposals.');
+      console.log("No brain-first auto-fix proposals.");
     } else {
-      console.log(`\nWould insert canonical Convention callout into ${brainFirstProposed.length} skill(s):`);
+      console.log(
+        `\nWould insert canonical Convention callout into ${brainFirstProposed.length} skill(s):`
+      );
       for (const p of brainFirstProposed.slice(0, 10)) {
         console.log(`  - ${p.skill}`);
       }

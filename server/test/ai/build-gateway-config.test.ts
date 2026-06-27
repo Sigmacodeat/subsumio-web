@@ -18,20 +18,20 @@
  * canonical pattern (enforced by scripts/check-test-isolation.sh).
  */
 
-import { describe, expect, test } from 'bun:test';
-import { buildGatewayConfig } from '../../src/cli.ts';
-import type { GBrainConfig } from '../../src/core/config.ts';
-import { withEnv } from '../helpers/with-env.ts';
+import { describe, expect, test } from "bun:test";
+import { buildGatewayConfig } from "../../src/cli.ts";
+import type { GBrainConfig } from "../../src/core/config.ts";
+import { withEnv } from "../helpers/with-env.ts";
 
 const PASSTHROUGHS: Array<{ envVar: string; recipeId: string }> = [
-  { envVar: 'LLAMA_SERVER_BASE_URL', recipeId: 'llama-server' },
-  { envVar: 'OLLAMA_BASE_URL', recipeId: 'ollama' },
-  { envVar: 'LMSTUDIO_BASE_URL', recipeId: 'lmstudio' },
-  { envVar: 'LITELLM_BASE_URL', recipeId: 'litellm' },
-  { envVar: 'OPENROUTER_BASE_URL', recipeId: 'openrouter' },
+  { envVar: "LLAMA_SERVER_BASE_URL", recipeId: "llama-server" },
+  { envVar: "OLLAMA_BASE_URL", recipeId: "ollama" },
+  { envVar: "LMSTUDIO_BASE_URL", recipeId: "lmstudio" },
+  { envVar: "LITELLM_BASE_URL", recipeId: "litellm" },
+  { envVar: "OPENROUTER_BASE_URL", recipeId: "openrouter" },
 ];
 
-const TEST_VALUE = 'http://proxy.example.test/v1';
+const TEST_VALUE = "http://proxy.example.test/v1";
 
 const baseConfig: GBrainConfig = {} as unknown as GBrainConfig;
 
@@ -48,40 +48,37 @@ function envFor(target: { envVar: string } | null): Record<string, string | unde
   return overrides;
 }
 
-describe('buildGatewayConfig env-baseURL passthrough', () => {
+describe("buildGatewayConfig env-baseURL passthrough", () => {
   for (const passthrough of PASSTHROUGHS) {
     test(`${passthrough.envVar} flows through to base_urls.${passthrough.recipeId}`, async () => {
       await withEnv(envFor(passthrough), async () => {
         const cfg = buildGatewayConfig(baseConfig);
         expect(
           cfg.base_urls?.[passthrough.recipeId],
-          `${passthrough.envVar} → base_urls.${passthrough.recipeId}`,
+          `${passthrough.envVar} → base_urls.${passthrough.recipeId}`
         ).toBe(TEST_VALUE);
       });
     });
   }
 
-  test('unset env vars do NOT populate base_urls keys', async () => {
+  test("unset env vars do NOT populate base_urls keys", async () => {
     await withEnv(envFor(null), async () => {
       const cfg = buildGatewayConfig(baseConfig);
       for (const { recipeId } of PASSTHROUGHS) {
         expect(
           cfg.base_urls?.[recipeId],
-          `${recipeId} key should be absent when env unset`,
+          `${recipeId} key should be absent when env unset`
         ).toBeUndefined();
       }
     });
   });
 
-  test('caller-provided provider_base_urls override env (config wins)', async () => {
-    await withEnv(
-      { ...envFor(null), OPENROUTER_BASE_URL: 'http://env.example/v1' },
-      async () => {
-        const cfg = buildGatewayConfig({
-          provider_base_urls: { openrouter: 'http://config.example/v1' },
-        } as unknown as GBrainConfig);
-        expect(cfg.base_urls?.openrouter).toBe('http://config.example/v1');
-      },
-    );
+  test("caller-provided provider_base_urls override env (config wins)", async () => {
+    await withEnv({ ...envFor(null), OPENROUTER_BASE_URL: "http://env.example/v1" }, async () => {
+      const cfg = buildGatewayConfig({
+        provider_base_urls: { openrouter: "http://config.example/v1" },
+      } as unknown as GBrainConfig);
+      expect(cfg.base_urls?.openrouter).toBe("http://config.example/v1");
+    });
   });
 });

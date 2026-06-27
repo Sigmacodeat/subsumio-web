@@ -15,9 +15,9 @@
  * nDCG@k (more discriminating than P@k for the optimization signal).
  */
 
-import { chat as gatewayChat } from '../ai/gateway.ts';
-import { ndcgAtK } from '../search/eval.ts';
-import type { Judge, RuleCheck, ScoredRollout, Trajectory } from './types.ts';
+import { chat as gatewayChat } from "../ai/gateway.ts";
+import { ndcgAtK } from "../search/eval.ts";
+import type { Judge, RuleCheck, ScoredRollout, Trajectory } from "./types.ts";
 
 /** Score a trajectory against a judge. Returns a ScoredRollout. */
 export async function scoreTrajectory(
@@ -29,14 +29,14 @@ export async function scoreTrajectory(
     chatFn?: typeof gatewayChat;
     /** Test seam — substitute clock for cache invalidation. */
     now?: () => Date;
-  } = {},
+  } = {}
 ): Promise<ScoredRollout> {
   switch (judge.kind) {
-    case 'rule':
+    case "rule":
       return { trajectory, score: scoreRule(trajectory, judge.checks) };
-    case 'llm':
+    case "llm":
       return scoreLlm(trajectory, judge.rubric, judge.model ?? opts.judgeModel, opts);
-    case 'qrels':
+    case "qrels":
       return { trajectory, score: scoreQrels(trajectory, judge.expected_slugs, judge.k) };
   }
 }
@@ -59,35 +59,38 @@ export function scoreRule(trajectory: Trajectory, checks: RuleCheck[]): number {
 function applyCheck(trajectory: Trajectory, check: RuleCheck): boolean {
   const text = trajectory.final_text;
   switch (check.op) {
-    case 'contains':
-      return typeof check.arg === 'string' && text.includes(check.arg);
-    case 'regex': {
-      if (typeof check.arg !== 'string') return false;
+    case "contains":
+      return typeof check.arg === "string" && text.includes(check.arg);
+    case "regex": {
+      if (typeof check.arg !== "string") return false;
       try {
-        return new RegExp(check.arg, 'm').test(text);
+        return new RegExp(check.arg, "m").test(text);
       } catch {
         return false;
       }
     }
-    case 'section_present': {
-      if (typeof check.arg !== 'string') return false;
+    case "section_present": {
+      if (typeof check.arg !== "string") return false;
       // Match the heading (any depth, plus the literal text). Trim args
       // and allow leading-# variants.
-      const heading = check.arg.replace(/^#+\s*/, '').trim();
-      const escaped = heading.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const re = new RegExp(`^#{1,6}\\s+${escaped}\\s*$`, 'mi');
+      const heading = check.arg.replace(/^#+\s*/, "").trim();
+      const escaped = heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const re = new RegExp(`^#{1,6}\\s+${escaped}\\s*$`, "mi");
       return re.test(text);
     }
-    case 'max_chars':
-      return typeof check.arg === 'number' && text.length <= check.arg;
-    case 'min_citations':
-      return typeof check.arg === 'number' && countCitations(text) >= check.arg;
-    case 'tool_called':
-      return typeof check.arg === 'string' &&
-        trajectory.tool_calls.some((tc) => tc.name === check.arg && !tc.failed);
-    case 'tool_not_called':
-      return typeof check.arg === 'string' &&
-        !trajectory.tool_calls.some((tc) => tc.name === check.arg);
+    case "max_chars":
+      return typeof check.arg === "number" && text.length <= check.arg;
+    case "min_citations":
+      return typeof check.arg === "number" && countCitations(text) >= check.arg;
+    case "tool_called":
+      return (
+        typeof check.arg === "string" &&
+        trajectory.tool_calls.some((tc) => tc.name === check.arg && !tc.failed)
+      );
+    case "tool_not_called":
+      return (
+        typeof check.arg === "string" && !trajectory.tool_calls.some((tc) => tc.name === check.arg)
+      );
   }
 }
 
@@ -99,7 +102,11 @@ function applyCheck(trajectory: Trajectory, check: RuleCheck): boolean {
  */
 export function countCitations(text: string): number {
   const mdLinks = (text.match(/\[[^\]]+\]\([^)]+\)/g) ?? []).length;
-  const brainRefs = (text.match(/\b(?:wiki|people|companies|deals|topics|concepts|projects|writing|originals)\/[a-z0-9][a-z0-9-\/]*\b/gi) ?? []).length;
+  const brainRefs = (
+    text.match(
+      /\b(?:wiki|people|companies|deals|topics|concepts|projects|writing|originals)\/[a-z0-9][a-z0-9-\/]*\b/gi
+    ) ?? []
+  ).length;
   const footnotes = (text.match(/\[\d+\]/g) ?? []).length;
   return mdLinks + brainRefs + footnotes;
 }
@@ -124,13 +131,13 @@ No prose before or after. No code fences. No extra fields. The score MUST be a n
  * error + pessimistic fallback score=0).
  */
 export function parseJudgeJson(raw: string): { score: number | string; rationale?: string } | null {
-  if (typeof raw !== 'string' || !raw.trim()) return null;
+  if (typeof raw !== "string" || !raw.trim()) return null;
   // Strip markdown fences if present.
   const fenced = raw.match(/```(?:json)?\s*\n?([\s\S]*?)```/i);
   const cleaned = (fenced ? fenced[1]! : raw).trim();
   // Try direct parse first.
   const direct = tryJsonParse(cleaned);
-  if (direct && typeof direct === 'object' && 'score' in (direct as object)) {
+  if (direct && typeof direct === "object" && "score" in (direct as object)) {
     return direct as { score: number | string; rationale?: string };
   }
   // Extract first {...} substring.
@@ -138,27 +145,31 @@ export function parseJudgeJson(raw: string): { score: number | string; rationale
   if (!match) return null;
   const obj = match[0];
   const second = tryJsonParse(obj);
-  if (second && typeof second === 'object' && 'score' in (second as object)) {
+  if (second && typeof second === "object" && "score" in (second as object)) {
     return second as { score: number | string; rationale?: string };
   }
   // Last attempt: strip trailing commas.
-  const repaired = obj.replace(/,(\s*[}\]])/g, '$1');
+  const repaired = obj.replace(/,(\s*[}\]])/g, "$1");
   const third = tryJsonParse(repaired);
-  if (third && typeof third === 'object' && 'score' in (third as object)) {
+  if (third && typeof third === "object" && "score" in (third as object)) {
     return third as { score: number | string; rationale?: string };
   }
   return null;
 }
 
 function tryJsonParse(s: string): unknown | null {
-  try { return JSON.parse(s); } catch { return null; }
+  try {
+    return JSON.parse(s);
+  } catch {
+    return null;
+  }
 }
 
 async function scoreLlm(
   trajectory: Trajectory,
   rubric: string,
   judgeModel: string | undefined,
-  opts: { chatFn?: typeof gatewayChat },
+  opts: { chatFn?: typeof gatewayChat }
 ): Promise<ScoredRollout> {
   const chat = opts.chatFn ?? gatewayChat;
   const userMsg = `RUBRIC: ${rubric}\n\nAGENT OUTPUT:\n${trajectory.final_text}\n\nScore the output against the rubric. Reply with the JSON object only.`;
@@ -166,28 +177,26 @@ async function scoreLlm(
     const result = await chat({
       model: judgeModel,
       system: LLM_JUDGE_SYSTEM,
-      messages: [{ role: 'user', content: userMsg }],
+      messages: [{ role: "user", content: userMsg }],
       maxTokens: 200,
       cacheSystem: true, // D11: judge system prompt is stable across calls.
     });
     const parsed = parseJudgeJson(result.text);
     if (!parsed) {
-      return { trajectory, score: 0, judge_error: 'llm_parse_failed' };
+      return { trajectory, score: 0, judge_error: "llm_parse_failed" };
     }
-    if (!('score' in parsed)) {
-      return { trajectory, score: 0, judge_error: 'llm_parse_no_score_field' };
+    if (!("score" in parsed)) {
+      return { trajectory, score: 0, judge_error: "llm_parse_no_score_field" };
     }
     const raw = parsed.score;
-    let score = typeof raw === 'number' ? raw : Number(raw);
+    let score = typeof raw === "number" ? raw : Number(raw);
     if (!Number.isFinite(score)) {
-      return { trajectory, score: 0, judge_error: 'llm_parse_score_not_number' };
+      return { trajectory, score: 0, judge_error: "llm_parse_score_not_number" };
     }
     if (score < 0) score = 0;
     if (score > 1) score = 1;
-    const rationale = typeof parsed.rationale === 'string' ? parsed.rationale : undefined;
-    return rationale !== undefined
-      ? { trajectory, score, rationale }
-      : { trajectory, score };
+    const rationale = typeof parsed.rationale === "string" ? parsed.rationale : undefined;
+    return rationale !== undefined ? { trajectory, score, rationale } : { trajectory, score };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     // Pessimistic fallback (D12 paper-faithful: judge failure = score 0,
@@ -208,11 +217,7 @@ async function scoreLlm(
  *
  * Returns 0 when no retrieval tool was called (the skill didn't even try).
  */
-export function scoreQrels(
-  trajectory: Trajectory,
-  expectedSlugs: string[],
-  k: number,
-): number {
+export function scoreQrels(trajectory: Trajectory, expectedSlugs: string[], k: number): number {
   const candidateSlugs = extractRetrievedSlugs(trajectory);
   if (candidateSlugs.length === 0) return 0;
   // ndcgAtK expects (hits, grades:Map<slug,number>, k). All expected slugs
@@ -246,17 +251,17 @@ export function extractRetrievedSlugs(trajectory: Trajectory): string[] {
 
 function pickSlugs(output: unknown): string[] {
   if (!output) return [];
-  if (typeof output === 'string') {
+  if (typeof output === "string") {
     // Some ops return a single slug string.
-    return output.includes('/') ? [output] : [];
+    return output.includes("/") ? [output] : [];
   }
   if (Array.isArray(output)) {
     return output.flatMap(pickSlugs);
   }
-  if (typeof output === 'object') {
+  if (typeof output === "object") {
     const obj = output as Record<string, unknown>;
     const out: string[] = [];
-    if (typeof obj.slug === 'string') out.push(obj.slug);
+    if (typeof obj.slug === "string") out.push(obj.slug);
     if (Array.isArray(obj.results)) out.push(...pickSlugs(obj.results));
     if (Array.isArray(obj.pages)) out.push(...pickSlugs(obj.pages));
     if (Array.isArray(obj.matches)) out.push(...pickSlugs(obj.matches));

@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 import { addComment, listComments, deleteComment } from "@/lib/comments";
 import { createHandler, apiError } from "@/lib/api-handler";
@@ -6,9 +5,14 @@ import { broadcastSseEvent } from "@/lib/realtime-bus";
 
 export const dynamic = "force-dynamic";
 
-const commentsQuerySchema = z.object({
-  parentSlug: z.string().min(1, "parentSlug_required").or(z.literal("").transform(() => undefined)),
-}).passthrough();
+const commentsQuerySchema = z
+  .object({
+    parentSlug: z
+      .string()
+      .min(1, "parentSlug_required")
+      .or(z.literal("").transform(() => undefined)),
+  })
+  .passthrough();
 
 const commentsPostSchema = z.object({
   parent_slug: z.string().min(1, "parent_slug_required"),
@@ -39,7 +43,7 @@ export const GET = createHandler(
       console.error("[comments] list failed:", err instanceof Error ? err.message : String(err));
       return apiError("internal_error", "Kommentare konnten nicht geladen werden", 500);
     }
-  },
+  }
 );
 
 export const POST = createHandler(
@@ -65,13 +69,17 @@ export const POST = createHandler(
         threadId: body.thread_id,
         parentCommentId: body.parent_comment_id,
       });
-      broadcastSseEvent(ctx.brainId, "comment.added", { caseSlug: body.parent_slug, commentId: comment.id, by: ctx.user.email });
+      broadcastSseEvent(ctx.brainId, "comment.added", {
+        caseSlug: body.parent_slug,
+        commentId: comment.id,
+        by: ctx.user.email,
+      });
       return Response.json({ comment }, { status: 201 });
     } catch (err) {
       console.error("[comments] create failed:", err instanceof Error ? err.message : String(err));
       return apiError("internal_error", "Kommentar konnte nicht erstellt werden", 500);
     }
-  },
+  }
 );
 
 export const DELETE = createHandler(
@@ -88,7 +96,11 @@ export const DELETE = createHandler(
         userRole: ctx.user.role,
       });
       if (!result.success) {
-        return apiError("delete_failed", "Kommentar konnte nicht gelöscht werden (nicht gefunden oder keine Berechtigung)", 403);
+        return apiError(
+          "delete_failed",
+          "Kommentar konnte nicht gelöscht werden (nicht gefunden oder keine Berechtigung)",
+          403
+        );
       }
       broadcastSseEvent(ctx.brainId, "comment.deleted", { commentId: body.id, by: ctx.user.email });
       return Response.json({ ok: true });
@@ -96,5 +108,5 @@ export const DELETE = createHandler(
       console.error("[comments] delete failed:", err instanceof Error ? err.message : String(err));
       return apiError("internal_error", "Kommentar konnte nicht gelöscht werden", 500);
     }
-  },
+  }
 );

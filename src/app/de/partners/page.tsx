@@ -19,7 +19,12 @@ export const metadata: Metadata = {
 export default function Page() {
   return (
     <>
-      <JsonLd data={breadcrumbLd([{ name: "Subsumio", url: "/de" }, { name: "Partnerprogramm", url: "/de/partners" }])} />
+      <JsonLd
+        data={breadcrumbLd([
+          { name: "Subsumio", url: "/de" },
+          { name: "Partnerprogramm", url: "/de/partners" },
+        ])}
+      />
       <PartnersPage lang="de" />
     </>
   );

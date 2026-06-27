@@ -25,12 +25,12 @@
  *      to lock or to track.
  */
 
-import { join } from 'path';
+import { join } from "path";
 
-import { copyArtifacts, walkSourceDir } from './copy.ts';
-import type { CopyItem } from './copy.ts';
-import { enumerateScaffoldEntries, loadBundleManifest } from './bundle.ts';
-import type { ScaffoldEntry } from './bundle.ts';
+import { copyArtifacts, walkSourceDir } from "./copy.ts";
+import type { CopyItem } from "./copy.ts";
+import { enumerateScaffoldEntries, loadBundleManifest } from "./bundle.ts";
+import type { ScaffoldEntry } from "./bundle.ts";
 
 export interface ScaffoldOptions {
   /** Absolute path to gbrain repo root (source-of-truth bundle). */
@@ -43,7 +43,7 @@ export interface ScaffoldOptions {
   dryRun?: boolean;
 }
 
-export type ScaffoldOutcome = 'wrote_new' | 'skipped_existing';
+export type ScaffoldOutcome = "wrote_new" | "skipped_existing";
 
 export interface ScaffoldFileResult {
   source: string;
@@ -69,10 +69,10 @@ export interface ScaffoldResult {
 export class ScaffoldError extends Error {
   constructor(
     message: string,
-    public code: 'bundle_error' | 'target_missing' | 'unknown_skill',
+    public code: "bundle_error" | "target_missing" | "unknown_skill"
   ) {
     super(message);
-    this.name = 'ScaffoldError';
+    this.name = "ScaffoldError";
   }
 }
 
@@ -103,14 +103,14 @@ export function runScaffold(opts: ScaffoldOptions): ScaffoldResult {
     });
   } catch (err) {
     const e = err as Error & { code?: string };
-    if (e.code === 'skill_not_found') {
-      throw new ScaffoldError(e.message, 'unknown_skill');
+    if (e.code === "skill_not_found") {
+      throw new ScaffoldError(e.message, "unknown_skill");
     }
-    throw new ScaffoldError(e.message, 'bundle_error');
+    throw new ScaffoldError(e.message, "bundle_error");
   }
 
   // Map ScaffoldEntry → CopyItem (workspace-rooted target path).
-  const items: CopyItem[] = entries.map(e => ({
+  const items: CopyItem[] = entries.map((e) => ({
     source: e.source,
     target: join(opts.targetWorkspace, e.relWorkspaceTarget),
   }));
@@ -136,9 +136,7 @@ export function runScaffold(opts: ScaffoldOptions): ScaffoldResult {
     summary: {
       wroteNew: copyResult.summary.wroteNew,
       skippedExisting: copyResult.summary.skippedExisting,
-      pairedSourcesWritten: files.filter(
-        f => f.outcome === 'wrote_new' && f.pairedSource,
-      ).length,
+      pairedSourcesWritten: files.filter((f) => f.outcome === "wrote_new" && f.pairedSource).length,
     },
   };
 }

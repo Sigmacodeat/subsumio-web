@@ -190,9 +190,7 @@ function runGit(args: string[], cwd: string): string {
   const result = spawnSync("git", args, { cwd, encoding: "utf8" });
   if (result.status !== 0) {
     const stderr = (result.stderr || "").trim();
-    process.stderr.write(
-      `select-e2e: git ${args.join(" ")} failed: ${stderr}\n`
-    );
+    process.stderr.write(`select-e2e: git ${args.join(" ")} failed: ${stderr}\n`);
     process.exit(2);
   }
   return result.stdout || "";

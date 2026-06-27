@@ -76,8 +76,12 @@ import {
   type ConflictCheckResult,
 } from "@/lib/contact-conflict";
 import { cn } from "@/lib/utils";
-const ChatPanel = lazy(() => import("@/components/chat/chat-panel").then((m) => ({ default: m.ChatPanel })));
-const MatterContextPanel = lazy(() => import("@/components/legal/MatterContextPanel").then((m) => ({ default: m.MatterContextPanel })));
+const ChatPanel = lazy(() =>
+  import("@/components/chat/chat-panel").then((m) => ({ default: m.ChatPanel }))
+);
+const MatterContextPanel = lazy(() =>
+  import("@/components/legal/MatterContextPanel").then((m) => ({ default: m.MatterContextPanel }))
+);
 import {
   STATUS_TEXT,
   STATUS_BG,
@@ -638,7 +642,9 @@ export default function CaseDetailPage() {
       try {
         const [page, batch] = await Promise.all([
           api.brain.getPage(slug),
-          api.brain.batchListPages(["legal_contact", "legal_deadline"], 300).catch(() => ({} as Record<string, BrainPage[]>)),
+          api.brain
+            .batchListPages(["legal_contact", "legal_deadline"], 300)
+            .catch(() => ({}) as Record<string, BrainPage[]>),
         ]);
         const allContacts = batch["legal_contact"] ?? [];
         const allDeadlinePages = batch["legal_deadline"] ?? [];
@@ -1930,10 +1936,7 @@ export default function CaseDetailPage() {
       <div className="flex-1 overflow-y-auto px-4 py-3">
         {activeTab === "overview" && (
           <div className="max-w-3xl space-y-4">
-            <CaseOverviewWidgets
-              caseData={caseData}
-              onTabChange={(tab) => setActiveTab(tab)}
-            />
+            <CaseOverviewWidgets caseData={caseData} onTabChange={(tab) => setActiveTab(tab)} />
 
             {/* Quick Actions */}
             <div className="flex gap-2">
@@ -4975,29 +4978,41 @@ export default function CaseDetailPage() {
 
         {activeTab === "strategy" && (
           <div className="max-w-3xl space-y-4">
-            <Suspense fallback={<div className="flex items-center justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-[color:var(--ds-text-muted)]" /></div>}>
+            <Suspense
+              fallback={
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-[color:var(--ds-text-muted)]" />
+                </div>
+              }
+            >
               <MatterContextPanel caseSlug={caseData.slug} defaultOpen={true} />
             </Suspense>
             <div className="h-[500px]">
-              <Suspense fallback={<div className="flex items-center justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-[color:var(--ds-text-muted)]" /></div>}>
-              <ChatPanel
-                context={{ type: "case", caseSlug: caseData.slug }}
-                features={{
-                  caseSelector: false,
-                  jurisdictionSelector: true,
-                  modelSelector: true,
-                  modeSelector: true,
-                  fileUpload: true,
-                  sessionHistory: true,
-                  tokenWidget: true,
-                  brainStatus: true,
-                  exampleQueries: true,
-                  exportChat: true,
-                  messageActions: true,
-                }}
-                className="h-full"
-                title={`${t("cases.detail_chat_title")}: ${caseData.title}`}
-              />
+              <Suspense
+                fallback={
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-[color:var(--ds-text-muted)]" />
+                  </div>
+                }
+              >
+                <ChatPanel
+                  context={{ type: "case", caseSlug: caseData.slug }}
+                  features={{
+                    caseSelector: false,
+                    jurisdictionSelector: true,
+                    modelSelector: true,
+                    modeSelector: true,
+                    fileUpload: true,
+                    sessionHistory: true,
+                    tokenWidget: true,
+                    brainStatus: true,
+                    exampleQueries: true,
+                    exportChat: true,
+                    messageActions: true,
+                  }}
+                  className="h-full"
+                  title={`${t("cases.detail_chat_title")}: ${caseData.title}`}
+                />
               </Suspense>
             </div>
           </div>

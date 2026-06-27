@@ -19,11 +19,11 @@
  * 9th GC phase that already prunes op_checkpoints).
  */
 
-import * as fs from 'fs';
-import * as path from 'path';
-import { createAuditWriter, resolveAuditDir, computeIsoWeekFilename } from './audit-writer.ts';
-import { redactConnectionInfo } from './redact-connection-info.ts';
-import type { BatchAuditSite } from '../retry.ts';
+import * as fs from "fs";
+import * as path from "path";
+import { createAuditWriter, resolveAuditDir, computeIsoWeekFilename } from "./audit-writer.ts";
+import { redactConnectionInfo } from "./redact-connection-info.ts";
+import type { BatchAuditSite } from "../retry.ts";
 
 export interface BatchRetryAuditEvent {
   ts: string;
@@ -37,7 +37,7 @@ export interface BatchRetryAuditEvent {
    * 'success' = a retry attempt succeeded and the batch completed.
    * 'exhausted' = all retries failed; batch rows were lost.
    */
-  outcome: 'success' | 'exhausted';
+  outcome: "success" | "exhausted";
   /** Computed delay in ms before this retry attempt. */
   delay_ms: number;
   /** First 200 chars of the error message (privacy posture). */
@@ -46,12 +46,12 @@ export interface BatchRetryAuditEvent {
   error_code?: string;
 }
 
-const FEATURE_NAME = 'batch-retry';
+const FEATURE_NAME = "batch-retry";
 
 const writer = createAuditWriter<BatchRetryAuditEvent>({
   featureName: FEATURE_NAME,
-  errorLabel: 'batch-retry-audit',
-  errorTrailer: '; continuing',
+  errorLabel: "batch-retry-audit",
+  errorTrailer: "; continuing",
 });
 
 /**
@@ -63,13 +63,13 @@ export function logBatchRetry(
   batchSize: number,
   attempt: number,
   delayMs: number,
-  err: unknown,
+  err: unknown
 ): void {
   writer.log({
     site,
     batch_size: batchSize,
     attempt,
-    outcome: 'success',
+    outcome: "success",
     delay_ms: delayMs,
     error_message_summary: summarizeError(err),
     error_code: extractErrorCode(err),
@@ -84,13 +84,13 @@ export function logBatchExhausted(
   site: BatchAuditSite,
   batchSize: number,
   totalAttempts: number,
-  err: unknown,
+  err: unknown
 ): void {
   writer.log({
     site,
     batch_size: batchSize,
     attempt: totalAttempts,
-    outcome: 'exhausted',
+    outcome: "exhausted",
     delay_ms: 0,
     error_message_summary: summarizeError(err),
     error_code: extractErrorCode(err),
@@ -114,7 +114,7 @@ export interface ReadBatchRetryResult {
 
 export function readRecentBatchRetryEvents(
   hours = 24,
-  now: Date = new Date(),
+  now: Date = new Date()
 ): ReadBatchRetryResult {
   const dir = resolveAuditDir();
   const cutoff = now.getTime() - hours * 3_600_000;
@@ -134,17 +134,17 @@ export function readRecentBatchRetryEvents(
     const file = path.join(dir, filename);
     let content: string;
     try {
-      content = fs.readFileSync(file, 'utf8');
+      content = fs.readFileSync(file, "utf8");
       filesScanned++;
     } catch (err) {
       // ENOENT is expected when no events have fired for this window;
       // count actual permission / IO failures separately so doctor can
       // surface them (codex H-9).
       const code = (err as NodeJS.ErrnoException)?.code;
-      if (code && code !== 'ENOENT') filesUnreadable++;
+      if (code && code !== "ENOENT") filesUnreadable++;
       continue;
     }
-    for (const line of content.split('\n')) {
+    for (const line of content.split("\n")) {
       if (line.length === 0) continue;
       try {
         const ev = JSON.parse(line) as BatchRetryAuditEvent;
@@ -155,7 +155,12 @@ export function readRecentBatchRetryEvents(
       }
     }
   }
-  return { events, corrupted_lines: corruptedLines, files_scanned: filesScanned, files_unreadable: filesUnreadable };
+  return {
+    events,
+    corrupted_lines: corruptedLines,
+    files_scanned: filesScanned,
+    files_unreadable: filesUnreadable,
+  };
 }
 
 /**
@@ -169,7 +174,7 @@ export function readRecentBatchRetryEvents(
  */
 export function pruneOldBatchRetryAuditFiles(
   daysToKeep = 30,
-  now: Date = new Date(),
+  now: Date = new Date()
 ): { removed: number; kept: number } {
   const dir = resolveAuditDir();
   const cutoff = now.getTime() - daysToKeep * 86400_000;
@@ -180,15 +185,17 @@ export function pruneOldBatchRetryAuditFiles(
     entries = fs.readdirSync(dir, { withFileTypes: true });
   } catch (err) {
     const code = (err as NodeJS.ErrnoException)?.code;
-    if (code !== 'ENOENT') {
-      process.stderr.write(`[batch-retry-audit] prune scan failed (${(err as Error).message}); continuing\n`);
+    if (code !== "ENOENT") {
+      process.stderr.write(
+        `[batch-retry-audit] prune scan failed (${(err as Error).message}); continuing\n`
+      );
     }
     return { removed: 0, kept: 0 };
   }
   for (const entry of entries) {
     if (!entry.isFile()) continue;
     // Filename shape: batch-retry-YYYY-Www.jsonl
-    if (!entry.name.startsWith(`${FEATURE_NAME}-`) || !entry.name.endsWith('.jsonl')) continue;
+    if (!entry.name.startsWith(`${FEATURE_NAME}-`) || !entry.name.endsWith(".jsonl")) continue;
     const file = path.join(dir, entry.name);
     try {
       const st = fs.statSync(file);
@@ -200,7 +207,9 @@ export function pruneOldBatchRetryAuditFiles(
       }
     } catch (err) {
       // File raced away between readdir + stat / unlink — skip silently.
-      process.stderr.write(`[batch-retry-audit] prune ${entry.name} failed (${(err as Error).message}); continuing\n`);
+      process.stderr.write(
+        `[batch-retry-audit] prune ${entry.name} failed (${(err as Error).message}); continuing\n`
+      );
     }
   }
   return { removed, kept };
@@ -217,14 +226,14 @@ export function pruneOldBatchRetryAuditFiles(
 function summarizeError(err: unknown): string {
   const raw = err instanceof Error ? err.message : String(err);
   const redacted = redactConnectionInfo(raw);
-  return redacted.replace(/\s+/g, ' ').slice(0, 200);
+  return redacted.replace(/\s+/g, " ").slice(0, 200);
 }
 
 /** Pull Postgres SQLSTATE if present (e.g. '57014' for statement_timeout). */
 function extractErrorCode(err: unknown): string | undefined {
-  if (err && typeof err === 'object' && 'code' in err) {
+  if (err && typeof err === "object" && "code" in err) {
     const code = (err as { code?: unknown }).code;
-    if (typeof code === 'string') return code;
+    if (typeof code === "string") return code;
   }
   return undefined;
 }

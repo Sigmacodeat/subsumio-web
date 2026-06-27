@@ -32,7 +32,7 @@
 //
 // Re-run the spike when upgrading Bun: `bun scripts/spike-bun-vm-timeout.ts`
 
-import { runInContext, createContext } from 'node:vm';
+import { runInContext, createContext } from "node:vm";
 
 export const LINK_EXTRACTION_TOTAL_BUDGET_MS = 500 as const;
 export const PER_REGEX_TIMEOUT_MS = 50 as const;
@@ -55,7 +55,7 @@ export const MAX_REGEX_INPUT_CHARS = (() => {
 export class RegexInputTooLargeError extends Error {
   constructor(public readonly length: number) {
     super(`regex input ${length} chars exceeds cap ${MAX_REGEX_INPUT_CHARS}`);
-    this.name = 'RegexInputTooLargeError';
+    this.name = "RegexInputTooLargeError";
   }
 }
 
@@ -64,7 +64,7 @@ export class RegexTimeoutError extends Error {
   readonly pattern: string;
   constructor(verb: string, pattern: string) {
     super(`regex for verb "${verb}" exceeded ${PER_REGEX_TIMEOUT_MS}ms timeout`);
-    this.name = 'RegexTimeoutError';
+    this.name = "RegexTimeoutError";
     this.verb = verb;
     this.pattern = pattern;
   }
@@ -73,8 +73,10 @@ export class RegexTimeoutError extends Error {
 export class PageBudgetExceededError extends Error {
   readonly cumulativeMs: number;
   constructor(cumulativeMs: number) {
-    super(`page link-extraction budget exceeded: ${cumulativeMs.toFixed(1)}ms > ${LINK_EXTRACTION_TOTAL_BUDGET_MS}ms`);
-    this.name = 'PageBudgetExceededError';
+    super(
+      `page link-extraction budget exceeded: ${cumulativeMs.toFixed(1)}ms > ${LINK_EXTRACTION_TOTAL_BUDGET_MS}ms`
+    );
+    this.name = "PageBudgetExceededError";
     this.cumulativeMs = cumulativeMs;
   }
 }
@@ -124,9 +126,13 @@ export class PageRegexBudget {
   }
 
   /** Diagnostic getter for tests + doctor metrics. */
-  getCumulativeMs(): number { return this.cumulativeMs; }
+  getCumulativeMs(): number {
+    return this.cumulativeMs;
+  }
   /** Whether the budget has been exhausted (subsequent calls return undefined). */
-  isExhausted(): boolean { return this.exhausted; }
+  isExhausted(): boolean {
+    return this.exhausted;
+  }
 }
 
 /**
@@ -143,7 +149,7 @@ export class PageRegexBudget {
 export function runRegexBounded(
   pattern: string,
   text: string,
-  timeoutMs: number = PER_REGEX_TIMEOUT_MS,
+  timeoutMs: number = PER_REGEX_TIMEOUT_MS
 ): RegExpMatchArray | null {
   // v0.41.37.0 #1569: input-length cap BEFORE the vm. Over the cap, skip the
   // regex entirely (the surrounding budget treats the throw as degrade). This
@@ -163,6 +169,6 @@ export function runRegexBounded(
     // vm throws on timeout. Treat any error in regex compile/exec as
     // a degrade signal (return null, NOT throw — the caller will count
     // this against the budget).
-    throw new RegexTimeoutError('<unknown-verb>', pattern);
+    throw new RegexTimeoutError("<unknown-verb>", pattern);
   }
 }

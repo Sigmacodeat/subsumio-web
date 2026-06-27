@@ -25,16 +25,16 @@
  * suite at `test/rerank-audit.test.ts`.
  */
 
-import { createAuditWriter, computeIsoWeekFilename } from './audit/audit-writer.ts';
+import { createAuditWriter, computeIsoWeekFilename } from "./audit/audit-writer.ts";
 
 /** Stable error-classification union; matches RerankError.reason. */
 export type RerankFailureReason =
-  | 'auth'
-  | 'rate_limit'
-  | 'network'
-  | 'timeout'
-  | 'payload_too_large'
-  | 'unknown';
+  | "auth"
+  | "rate_limit"
+  | "network"
+  | "timeout"
+  | "payload_too_large"
+  | "unknown";
 
 export interface RerankFailureEvent {
   ts: string;
@@ -54,12 +54,12 @@ export interface RerankFailureEvent {
    */
   error_summary: string;
   /** Always 'warn' — matches RerankError's "all failures degrade UX". */
-  severity: 'warn';
+  severity: "warn";
 }
 
 /** ISO-week-rotated filename: `rerank-failures-YYYY-Www.jsonl`. */
 export function computeRerankAuditFilename(now: Date = new Date()): string {
-  return computeIsoWeekFilename('rerank-failures', now);
+  return computeIsoWeekFilename("rerank-failures", now);
 }
 
 /**
@@ -68,26 +68,26 @@ export function computeRerankAuditFilename(now: Date = new Date()): string {
  */
 function truncateErrorSummary(msg: string, max = 200): string {
   if (msg.length <= max) return msg;
-  return msg.slice(0, max - 1) + '…';
+  return msg.slice(0, max - 1) + "…";
 }
 
 const writer = createAuditWriter<RerankFailureEvent>({
-  featureName: 'rerank-failures',
-  errorLabel: 'gbrain',
-  errorMessagePrefix: 'rerank-failure audit ',
-  errorTrailer: '; search continues',
+  featureName: "rerank-failures",
+  errorLabel: "gbrain",
+  errorMessagePrefix: "rerank-failure audit ",
+  errorTrailer: "; search continues",
 });
 
 /**
  * Append a rerank-failure event. Best-effort: write failure logs to stderr
  * but never throws.
  */
-export function logRerankFailure(event: Omit<RerankFailureEvent, 'ts' | 'severity'>): void {
+export function logRerankFailure(event: Omit<RerankFailureEvent, "ts" | "severity">): void {
   writer.log({
-    severity: 'warn',
+    severity: "warn",
     ...event,
     error_summary: truncateErrorSummary(event.error_summary),
-  } as Omit<RerankFailureEvent, 'ts'>);
+  } as Omit<RerankFailureEvent, "ts">);
 }
 
 /**

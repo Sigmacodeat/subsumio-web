@@ -10,11 +10,11 @@
  * pipeline (not just chunkText directly) and asserts that no chunk text
  * contains the fenced content.
  */
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
-import { setupDB, teardownDB, hasDatabase, getEngine } from './helpers.ts';
-import { chunkText } from '../../src/core/chunkers/recursive.ts';
-import { TAKES_FENCE_BEGIN, TAKES_FENCE_END } from '../../src/core/takes-fence.ts';
-import { importFromContent } from '../../src/core/import-file.ts';
+import { describe, test, expect, beforeAll, afterAll } from "bun:test";
+import { setupDB, teardownDB, hasDatabase, getEngine } from "./helpers.ts";
+import { chunkText } from "../../src/core/chunkers/recursive.ts";
+import { TAKES_FENCE_BEGIN, TAKES_FENCE_END } from "../../src/core/takes-fence.ts";
+import { importFromContent } from "../../src/core/import-file.ts";
 
 const RUN = hasDatabase();
 const d = RUN ? describe : describe.skip;
@@ -46,8 +46,8 @@ afterAll(async () => {
   await teardownDB();
 });
 
-describe('chunkText (unit) strips fenced takes content', () => {
-  test('output chunks do NOT contain takes-fence markers', () => {
+describe("chunkText (unit) strips fenced takes content", () => {
+  test("output chunks do NOT contain takes-fence markers", () => {
     const chunks = chunkText(PAGE_BODY, { chunkSize: 100, chunkOverlap: 20 });
     for (const c of chunks) {
       expect(c.text).not.toContain(TAKES_FENCE_BEGIN);
@@ -55,51 +55,51 @@ describe('chunkText (unit) strips fenced takes content', () => {
     }
   });
 
-  test('output chunks do NOT contain fenced claim content', () => {
+  test("output chunks do NOT contain fenced claim content", () => {
     const chunks = chunkText(PAGE_BODY, { chunkSize: 100, chunkOverlap: 20 });
-    const allText = chunks.map(c => c.text).join('\n');
+    const allText = chunks.map((c) => c.text).join("\n");
     // Sensitive content from inside the fence
-    expect(allText).not.toContain('Burned out signal in last OH');
-    expect(allText).not.toContain('OH body language');
+    expect(allText).not.toContain("Burned out signal in last OH");
+    expect(allText).not.toContain("OH body language");
   });
 
-  test('output chunks DO contain non-fence prose', () => {
+  test("output chunks DO contain non-fence prose", () => {
     const chunks = chunkText(PAGE_BODY, { chunkSize: 100, chunkOverlap: 20 });
-    const allText = chunks.map(c => c.text).join('\n');
-    expect(allText).toContain('strong founder');
-    expect(allText).toContain('B2B SaaS');
-    expect(allText).toContain('Background');
+    const allText = chunks.map((c) => c.text).join("\n");
+    expect(allText).toContain("strong founder");
+    expect(allText).toContain("B2B SaaS");
+    expect(allText).toContain("Background");
   });
 });
 
-d('chunker strip end-to-end via importFromContent', () => {
-  test('imported page has chunks but none contain fenced content', async () => {
+d("chunker strip end-to-end via importFromContent", () => {
+  test("imported page has chunks but none contain fenced content", async () => {
     const engine = getEngine();
     // Front-matter the body so parseMarkdown classifies it correctly
     const fmBody = `---\ntitle: Alice Strip Test\ntype: person\n---\n\n${PAGE_BODY}`;
-    await importFromContent(engine, 'people/alice-strip-test', fmBody, { noEmbed: true });
+    await importFromContent(engine, "people/alice-strip-test", fmBody, { noEmbed: true });
 
     // Read chunks back from DB
     const rows = await engine.executeRaw<{ chunk_text: string }>(
       `SELECT cc.chunk_text FROM content_chunks cc
        JOIN pages p ON p.id = cc.page_id
        WHERE p.slug = $1`,
-      ['people/alice-strip-test'],
+      ["people/alice-strip-test"]
     );
     expect(rows.length).toBeGreaterThan(0);
     for (const r of rows) {
       expect(r.chunk_text).not.toContain(TAKES_FENCE_BEGIN);
       expect(r.chunk_text).not.toContain(TAKES_FENCE_END);
-      expect(r.chunk_text).not.toContain('Burned out signal in last OH');
+      expect(r.chunk_text).not.toContain("Burned out signal in last OH");
     }
   });
 
-  test('takes_fence_chunk_leak doctor invariant: no chunk row contains the begin marker', async () => {
+  test("takes_fence_chunk_leak doctor invariant: no chunk row contains the begin marker", async () => {
     const engine = getEngine();
     // Confirm the contract globally — across all pages in the brain.
     const leaks = await engine.executeRaw<{ count: number }>(
       `SELECT count(*)::int AS count FROM content_chunks
-       WHERE chunk_text LIKE '%<!--- gbrain:takes:%'`,
+       WHERE chunk_text LIKE '%<!--- gbrain:takes:%'`
     );
     expect(Number(leaks[0]?.count)).toBe(0);
   });

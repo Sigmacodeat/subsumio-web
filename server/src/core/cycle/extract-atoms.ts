@@ -44,21 +44,29 @@
 // sourceId arg — atoms always wrote to 'default' regardless of source,
 // which made the NOT EXISTS guard ineffective on federated brains.
 
-import type { BrainEngine } from '../engine.ts';
-import type { PhaseResult } from '../cycle.ts';
-import type { GBrainConfig } from '../config.ts';
-import type { ProgressReporter } from '../progress.ts';
-import { chat as gatewayChat } from '../ai/gateway.ts';
-import { writeReceipt } from '../extract/receipt-writer.ts';
-import { upsertExtractRollup } from '../extract/rollup-writer.ts';
+import type { BrainEngine } from "../engine.ts";
+import type { PhaseResult } from "../cycle.ts";
+import type { GBrainConfig } from "../config.ts";
+import type { ProgressReporter } from "../progress.ts";
+import { chat as gatewayChat } from "../ai/gateway.ts";
+import { writeReceipt } from "../extract/receipt-writer.ts";
+import { upsertExtractRollup } from "../extract/rollup-writer.ts";
 
 const DEFAULT_BUDGET_USD = 0.3;
 
 // v0.42+ TODO: read atom_type enum from active pack manifest at runtime.
 const ATOM_TYPES = [
-  'insight', 'anecdote', 'quote', 'framework', 'statistic',
-  'story_angle', 'strategy_angle', 'strategy', 'endorsement',
-  'critique', 'collection',
+  "insight",
+  "anecdote",
+  "quote",
+  "framework",
+  "statistic",
+  "story_angle",
+  "strategy_angle",
+  "strategy",
+  "endorsement",
+  "critique",
+  "collection",
 ] as const;
 
 // v0.41.2.1 (D2): brain-page discovery constants. Hardcoded for now;
@@ -66,7 +74,12 @@ const ATOM_TYPES = [
 // active pack manifest (symmetric with the existing
 // src/core/facts/eligibility.ts:49 TODO).
 const EXTRACTABLE_PAGE_TYPES = [
-  'meeting', 'source', 'article', 'video', 'book', 'original',
+  "meeting",
+  "source",
+  "article",
+  "video",
+  "book",
+  "original",
 ] as const;
 const PAGE_DISCOVERY_BUDGET = 50;
 const MIN_PAGE_CHARS_FOR_EXTRACTION = 500;
@@ -114,7 +127,7 @@ export interface ExtractAtomsOpts {
 
 interface ExtractedAtom {
   title: string;
-  atom_type: typeof ATOM_TYPES[number];
+  atom_type: (typeof ATOM_TYPES)[number];
   body: string;
   source_quote?: string;
   lesson?: string;
@@ -136,7 +149,7 @@ source_quote (verbatim ≤200 chars), lesson (one sentence), virality_score
 (0-100), emotional_register (one of: shocking, inspiring, funny, sobering,
 practical, controversial)}.
 
-atom_type MUST be one of: ${ATOM_TYPES.join(', ')}.
+atom_type MUST be one of: ${ATOM_TYPES.join(", ")}.
 
 Output ONLY the JSON array, no prose.`;
 
@@ -166,7 +179,7 @@ interface DiscoveredPage {
 export async function discoverExtractablePages(
   engine: BrainEngine,
   sourceId: string,
-  affectedSlugs?: string[],
+  affectedSlugs?: string[]
 ): Promise<DiscoveredPage[]> {
   const hasFilter = Array.isArray(affectedSlugs) && affectedSlugs.length > 0;
   const sql = `
@@ -181,7 +194,7 @@ export async function discoverExtractablePages(
       AND COALESCE(p.frontmatter->>'imported_from',   '') <> 'markdown-greenfield'
       AND COALESCE(p.frontmatter->>'dream_generated', '') <> 'true'
       AND length(COALESCE(p.compiled_truth, '')) >= $3
-      ${hasFilter ? "AND p.slug = ANY($5::text[])" : ''}
+      ${hasFilter ? "AND p.slug = ANY($5::text[])" : ""}
       AND NOT EXISTS (
         SELECT 1
         FROM pages atom
@@ -236,7 +249,7 @@ export async function discoverExtractablePages(
  */
 export async function countExtractAtomsBacklog(
   engine: BrainEngine,
-  sourceId?: string,
+  sourceId?: string
 ): Promise<number | null> {
   try {
     // Two modes: scoped (the phase's per-source `remaining`) vs brain-wide
@@ -303,7 +316,7 @@ export async function countExtractAtomsBacklog(
 export async function atomsExistingForHashes(
   engine: BrainEngine,
   sourceId: string,
-  contentHash16s: string[],
+  contentHash16s: string[]
 ): Promise<Set<string>> {
   if (contentHash16s.length === 0) return new Set();
   try {
@@ -314,12 +327,14 @@ export async function atomsExistingForHashes(
           AND source_id = $1
           AND deleted_at IS NULL
           AND frontmatter->>'source_hash' = ANY($2::text[])`,
-      [sourceId, contentHash16s],
+      [sourceId, contentHash16s]
     );
-    return new Set(rows.map(r => r.h));
+    return new Set(rows.map((r) => r.h));
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.error(`[extract_atoms] batch idempotency check failed (assuming none extracted): ${msg}`);
+    console.error(
+      `[extract_atoms] batch idempotency check failed (assuming none extracted): ${msg}`
+    );
     return new Set();
   }
 }
@@ -334,19 +349,20 @@ export async function atomsExistingForHashes(
  */
 export async function runPhaseExtractAtoms(
   engine: BrainEngine,
-  opts: ExtractAtomsOpts = {},
+  opts: ExtractAtomsOpts = {}
 ): Promise<PhaseResult> {
-  const sourceId = opts.sourceId ?? 'default';
+  const sourceId = opts.sourceId ?? "default";
   const chat = opts._chat ?? gatewayChat;
 
   // 1a. Get transcripts (test seam OR production discovery).
   //     v0.41.2.1: config loader switched to loadConfigWithEngine() so the
   //     dream.* DB-plane merge from Phase 1 reaches this phase.
-  let transcripts: Array<{ filePath: string; content: string; contentHash: string }> = opts._transcripts ?? [];
+  let transcripts: Array<{ filePath: string; content: string; contentHash: string }> =
+    opts._transcripts ?? [];
   if (transcripts.length === 0 && opts.brainDir !== undefined && opts._transcripts === undefined) {
     try {
-      const { discoverTranscripts } = await import('./transcript-discovery.ts');
-      const { loadConfigWithEngine } = await import('../config.ts');
+      const { discoverTranscripts } = await import("./transcript-discovery.ts");
+      const { loadConfigWithEngine } = await import("../config.ts");
       const cfgRaw = opts._loadConfig
         ? await opts._loadConfig()
         : await loadConfigWithEngine(engine);
@@ -387,7 +403,7 @@ export async function runPhaseExtractAtoms(
   //    the discovery SQL's NOT EXISTS subquery (already batched).
   const transcriptsLive: typeof transcripts = [];
   let duplicatesSkipped = 0;
-  const allHashes16 = transcripts.map(t => t.contentHash.slice(0, 16));
+  const allHashes16 = transcripts.map((t) => t.contentHash.slice(0, 16));
   // Surface a heartbeat before the batch query so even an instant
   // short-circuit shows a sign of life (closes Issue 2 silent-phase pain).
   opts.progress?.heartbeat(`checking existing atoms for ${allHashes16.length} transcripts`);
@@ -405,31 +421,37 @@ export async function runPhaseExtractAtoms(
   //    raw transcript file even if the same content was later imported
   //    as a brain page).
   type WorkItem =
-    | { kind: 'transcript'; filePath: string; content: string; contentHash: string }
-    | { kind: 'page'; slug: string; content: string; contentHash: string };
+    | { kind: "transcript"; filePath: string; content: string; contentHash: string }
+    | { kind: "page"; slug: string; content: string; contentHash: string };
 
   const seenHashes = new Set<string>();
   const work: WorkItem[] = [];
   for (const t of transcriptsLive) {
-    if (seenHashes.has(t.contentHash)) { duplicatesSkipped++; continue; }
+    if (seenHashes.has(t.contentHash)) {
+      duplicatesSkipped++;
+      continue;
+    }
     seenHashes.add(t.contentHash);
-    work.push({ kind: 'transcript', ...t });
+    work.push({ kind: "transcript", ...t });
   }
   for (const p of pages) {
-    if (seenHashes.has(p.contentHash)) { duplicatesSkipped++; continue; }
+    if (seenHashes.has(p.contentHash)) {
+      duplicatesSkipped++;
+      continue;
+    }
     seenHashes.add(p.contentHash);
-    work.push({ kind: 'page', ...p });
+    work.push({ kind: "page", ...p });
   }
 
   // Phase-level no-op: nothing to extract today.
   if (work.length === 0 && transcripts.length === 0 && pages.length === 0) {
     return {
-      phase: 'extract_atoms',
-      status: 'skipped',
+      phase: "extract_atoms",
+      status: "skipped",
       duration_ms: 0,
-      summary: 'extract_atoms: no transcripts or pages to process',
+      summary: "extract_atoms: no transcripts or pages to process",
       details: {
-        reason: 'no_work',
+        reason: "no_work",
         source_id: sourceId,
         atoms_extracted: 0,
         transcripts_processed: 0,
@@ -482,18 +504,18 @@ export async function runPhaseExtractAtoms(
   for (const item of work) {
     await maybeYield();
     if (estimatedSpendUsd >= budgetCap) {
-      if (item.kind === 'transcript') transcriptsSkipped++;
+      if (item.kind === "transcript") transcriptsSkipped++;
       else pagesSkipped++;
       continue;
     }
 
-    const originLabel = item.kind === 'transcript' ? item.filePath : item.slug;
+    const originLabel = item.kind === "transcript" ? item.filePath : item.slug;
     try {
       const result = await chat({
         system: EXTRACT_PROMPT,
         messages: [
           {
-            role: 'user',
+            role: "user",
             content: `Source: ${originLabel}\n\n---\n\n${item.content.slice(0, 50_000)}`,
           },
         ],
@@ -510,7 +532,7 @@ export async function runPhaseExtractAtoms(
 
       const atoms = parseAtomsResponse(result.text);
       if (atoms.length === 0) {
-        if (item.kind === 'transcript') transcriptsProcessed++;
+        if (item.kind === "transcript") transcriptsProcessed++;
         else pagesProcessed++;
         continue;
       }
@@ -519,7 +541,7 @@ export async function runPhaseExtractAtoms(
         for (const atom of atoms) {
           const slug = `atoms/${todayDate()}/${slugify(atom.title)}`;
           const originFrontmatter =
-            item.kind === 'transcript'
+            item.kind === "transcript"
               ? { source_path: item.filePath }
               : { source_slug: item.slug };
           // v0.41.2.1 D9 #1 — thread sourceId through every putPage so
@@ -529,10 +551,10 @@ export async function runPhaseExtractAtoms(
             slug,
             {
               title: atom.title,
-              type: 'atom',
+              type: "atom",
               compiled_truth: atom.body,
               frontmatter: {
-                type: 'atom',
+                type: "atom",
                 atom_type: atom.atom_type,
                 ...originFrontmatter,
                 source_hash: item.contentHash.slice(0, 16),
@@ -541,18 +563,18 @@ export async function runPhaseExtractAtoms(
                 ...(atom.virality_score !== undefined && { virality_score: atom.virality_score }),
                 ...(atom.emotional_register && { emotional_register: atom.emotional_register }),
                 extracted_at: new Date().toISOString(),
-                extracted_by: 'extract_atoms-v0.41.2.1',
+                extracted_by: "extract_atoms-v0.41.2.1",
               },
-              timeline: '',
+              timeline: "",
             },
-            { sourceId },
+            { sourceId }
           );
           totalAtomsExtracted++;
         }
       } else {
         totalAtomsExtracted += atoms.length; // count for dry-run reporting
       }
-      if (item.kind === 'transcript') transcriptsProcessed++;
+      if (item.kind === "transcript") transcriptsProcessed++;
       else pagesProcessed++;
       // v0.41.19.0 (T4): one tick per processed item, with a count note.
       // Reporter rate-limits to ~1 line/sec; safe to tick every iter.
@@ -572,10 +594,10 @@ export async function runPhaseExtractAtoms(
     const runId = `atoms-${Date.now().toString(36)}-${sourceId.slice(0, 4)}`;
     try {
       await writeReceipt(engine, {
-        kind: 'atoms',
+        kind: "atoms",
         source_id: sourceId,
         run_id: runId,
-        round: 'single',
+        round: "single",
         extracted_at: new Date().toISOString(),
         total_rows: totalAtomsExtracted,
         cost_usd: estimatedSpendUsd,
@@ -589,7 +611,7 @@ export async function runPhaseExtractAtoms(
   }
   if (!opts.dryRun) {
     await upsertExtractRollup(engine, {
-      kind: 'atoms',
+      kind: "atoms",
       source_id: sourceId,
       cost_delta: estimatedSpendUsd,
       round_completed_delta: failures.length === 0 ? 1 : 0,
@@ -598,17 +620,17 @@ export async function runPhaseExtractAtoms(
   }
 
   return {
-    phase: 'extract_atoms',
-    status: failures.length > 0 ? 'warn' : 'ok',
+    phase: "extract_atoms",
+    status: failures.length > 0 ? "warn" : "ok",
     duration_ms: 0,
     summary:
       `extract_atoms: ${totalAtomsExtracted} atoms from ` +
       `${transcriptsProcessed}/${transcripts.length} transcripts + ` +
       `${pagesProcessed}/${pages.length} pages` +
-      (failures.length > 0 ? ` (${failures.length} failed)` : '') +
+      (failures.length > 0 ? ` (${failures.length} failed)` : "") +
       (transcriptsSkipped + pagesSkipped > 0
         ? ` (${transcriptsSkipped + pagesSkipped} budget-skipped)`
-        : ''),
+        : ""),
     details: {
       atoms_extracted: totalAtomsExtracted,
       transcripts_processed: transcriptsProcessed,
@@ -639,7 +661,7 @@ export function parseAtomsResponse(raw: string): ExtractedAtom[] {
   if (fenceMatch) cleaned = fenceMatch[1].trim();
 
   // Find the first JSON array bracket.
-  const arrayStart = cleaned.indexOf('[');
+  const arrayStart = cleaned.indexOf("[");
   if (arrayStart === -1) return [];
   cleaned = cleaned.slice(arrayStart);
 
@@ -648,7 +670,7 @@ export function parseAtomsResponse(raw: string): ExtractedAtom[] {
     parsed = JSON.parse(cleaned);
   } catch {
     // Try trimming back from the end to recover from trailing prose.
-    const arrayEnd = cleaned.lastIndexOf(']');
+    const arrayEnd = cleaned.lastIndexOf("]");
     if (arrayEnd === -1) return [];
     try {
       parsed = JSON.parse(cleaned.slice(0, arrayEnd + 1));
@@ -661,27 +683,28 @@ export function parseAtomsResponse(raw: string): ExtractedAtom[] {
 
   const atoms: ExtractedAtom[] = [];
   for (const item of parsed) {
-    if (typeof item !== 'object' || item === null) continue;
+    if (typeof item !== "object" || item === null) continue;
     const obj = item as Record<string, unknown>;
-    const title = typeof obj.title === 'string' ? obj.title.slice(0, 200) : null;
-    const atomType = typeof obj.atom_type === 'string' ? obj.atom_type : null;
-    const body = typeof obj.body === 'string' ? obj.body : null;
+    const title = typeof obj.title === "string" ? obj.title.slice(0, 200) : null;
+    const atomType = typeof obj.atom_type === "string" ? obj.atom_type : null;
+    const body = typeof obj.body === "string" ? obj.body : null;
     if (!title || !atomType || !body) continue;
-    if (!ATOM_TYPES.includes(atomType as typeof ATOM_TYPES[number])) continue;
+    if (!ATOM_TYPES.includes(atomType as (typeof ATOM_TYPES)[number])) continue;
     atoms.push({
       title,
-      atom_type: atomType as typeof ATOM_TYPES[number],
+      atom_type: atomType as (typeof ATOM_TYPES)[number],
       body,
-      source_quote: typeof obj.source_quote === 'string' ? obj.source_quote.slice(0, 500) : undefined,
-      lesson: typeof obj.lesson === 'string' ? obj.lesson : undefined,
+      source_quote:
+        typeof obj.source_quote === "string" ? obj.source_quote.slice(0, 500) : undefined,
+      lesson: typeof obj.lesson === "string" ? obj.lesson : undefined,
       virality_score:
-        typeof obj.virality_score === 'number' &&
+        typeof obj.virality_score === "number" &&
         obj.virality_score >= 0 &&
         obj.virality_score <= 100
           ? obj.virality_score
           : undefined,
       emotional_register:
-        typeof obj.emotional_register === 'string' ? obj.emotional_register : undefined,
+        typeof obj.emotional_register === "string" ? obj.emotional_register : undefined,
     });
   }
   return atoms;
@@ -694,9 +717,9 @@ function todayDate(): string {
 function slugify(s: string): string {
   return s
     .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/[^a-z0-9\s-]/g, "")
     .trim()
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
     .slice(0, 60);
 }

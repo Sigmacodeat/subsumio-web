@@ -171,7 +171,7 @@ export default function MailboxClient({
       const params = new URLSearchParams({ limit: "100" });
       if (folderVal) params.set("folder", folderVal);
       if (searchVal) params.set("search", searchVal);
-      const res = await fetch(`/api/email/messages?${params}`, { cache: "no-store" });
+      const res = await fetch(`/api/email/messages?${params}`, { cache: "no-store", signal: AbortSignal.timeout(30_000) });
       if (!res.ok) {
         const body = (await res.json().catch(() => ({}))) as { error?: string };
         throw new Error(body.error || `HTTP ${res.status}`);
@@ -771,7 +771,9 @@ function MessageDetail({
             : ""
       );
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [viewMode, message.html, message.text]);
 
   return (

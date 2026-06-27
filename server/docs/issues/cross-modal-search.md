@@ -9,12 +9,14 @@ gbrain has a working multimodal embedding pipeline (Voyage multimodal-3, `embedd
 **What the user sees:** You can't search "photos from the hackathon" and get actual images. You can't upload a photo and ask "what do we know about this person?" Text search returns text. Image embeddings sit unused except via explicit `embeddingColumn: 'embedding_image'` override, which no user-facing path triggers.
 
 **What the system does:**
+
 - Text queries embed through the configured text model (OpenAI/ZE) and search the text column
 - The `embedding_image` column exists (Voyage multimodal-3, 1024d) with 11,204 embedded chunks and a valid 83 MB HNSW index
 - `postgres-engine.ts:searchVector()` supports `embeddingColumn: 'embedding_image'` but the query vector must come from a compatible model (Voyage multimodal, 1024d)
 - Currently, `embedQuery()` always uses the text embedding model, producing a 1536d or 2560d vector that can't query the 1024d image column
 
 **What it should do:**
+
 1. Detect cross-modal intent in a search query ("show me photos of...", "find images from...", or explicit image search flag)
 2. Embed the text query through Voyage multimodal-3 (same model used for image embeddings)
 3. Search the `embedding_image` column with the multimodal query vector
@@ -52,8 +54,9 @@ From Voyage docs: voyage-multimodal-3 encodes text, images, and interleaved text
 ### Search routing is text-only
 
 `hybrid.ts` line ~414:
+
 ```typescript
-const embeddings = await Promise.all(queries.map(q => embedQuery(q)));
+const embeddings = await Promise.all(queries.map((q) => embedQuery(q)));
 ```
 
 `embedQuery()` always uses the global text model. No path exists to embed a text query through the multimodal model for cross-modal search.
@@ -67,7 +70,7 @@ const embeddings = await Promise.all(queries.map(q => embedQuery(q)));
 Add a lightweight intent classifier that detects when a query is looking for images:
 
 ```typescript
-function detectCrossModalIntent(query: string): 'text' | 'image' | 'both' {
+function detectCrossModalIntent(query: string): "text" | "image" | "both" {
   // Explicit image patterns
   const imagePatterns = [
     /\b(show|find|get)\s+(me\s+)?(photos?|images?|pictures?|screenshots?)/i,
@@ -75,8 +78,8 @@ function detectCrossModalIntent(query: string): 'text' | 'image' | 'both' {
     /\b(whiteboard|diagram|slide|screenshot)\b/i,
     /\bphoto(s)?\s+(of|from|at|with)\b/i,
   ];
-  if (imagePatterns.some(p => p.test(query))) return 'image';
-  return 'text'; // Default: text-only
+  if (imagePatterns.some((p) => p.test(query))) return "image";
+  return "text"; // Default: text-only
 }
 ```
 
@@ -94,6 +97,7 @@ export async function embedQueryMultimodal(text: string): Promise<Float32Array> 
 **3. Hybrid search routing** (extend `hybrid.ts`)
 
 When cross-modal intent is detected:
+
 - Embed query through multimodal model (Voyage multimodal-3, 1024d)
 - Search `embedding_image` column
 - Return results with a `modality: 'image'` tag
@@ -104,7 +108,7 @@ When cross-modal intent is detected:
 ```typescript
 interface SearchOpts {
   // ... existing fields
-  crossModal?: 'text' | 'image' | 'both' | 'auto';  // Default: 'auto' (intent detection)
+  crossModal?: "text" | "image" | "both" | "auto"; // Default: 'auto' (intent detection)
 }
 ```
 
@@ -156,9 +160,9 @@ This is a prerequisite for Phase 1 since result display needs to know which chun
 
 ## Phasing
 
-| Phase | Scope | Effort | Value |
-|---|---|---|---|
-| **1 (this PR)** | Text → Image search with intent detection | Medium | High — unlocks "find photos" queries |
-| 2 | Image → Text search (upload photo, find related text) | Medium | Medium — cool but niche use case |
-| 3 | Unified multimodal column (everything in one space) | Large | High — but expensive and requires re-embedding |
-| Prereq | Fix modality column backfill | Small | Required for Phase 1 |
+| Phase           | Scope                                                 | Effort | Value                                          |
+| --------------- | ----------------------------------------------------- | ------ | ---------------------------------------------- |
+| **1 (this PR)** | Text → Image search with intent detection             | Medium | High — unlocks "find photos" queries           |
+| 2               | Image → Text search (upload photo, find related text) | Medium | Medium — cool but niche use case               |
+| 3               | Unified multimodal column (everything in one space)   | Large  | High — but expensive and requires re-embedding |
+| Prereq          | Fix modality column backfill                          | Small  | Required for Phase 1                           |

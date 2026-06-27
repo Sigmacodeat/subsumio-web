@@ -13,17 +13,17 @@
  * the input fallback ('text') so a misbehaving LLM can never break search.
  */
 
-import type { ModalityMode } from './query-intent.ts';
+import type { ModalityMode } from "./query-intent.ts";
 
 /** Default model tier for the tie-break call. Haiku 4.5 via utility tier. */
 const TIE_BREAK_TIMEOUT_MS = 1000;
 
 const SYSTEM_PROMPT =
-  'You classify search query modality. Output exactly one word: text, image, or both.\n' +
-  '- text: the user wants written content (notes, takes, bios, articles)\n' +
-  '- image: the user wants visual content (photos, screenshots, diagrams)\n' +
-  '- both: the user is asking something that could be either\n' +
-  'Output nothing except one of: text image both';
+  "You classify search query modality. Output exactly one word: text, image, or both.\n" +
+  "- text: the user wants written content (notes, takes, bios, articles)\n" +
+  "- image: the user wants visual content (photos, screenshots, diagrams)\n" +
+  "- both: the user is asking something that could be either\n" +
+  "Output nothing except one of: text image both";
 
 /**
  * Run a Haiku tie-break to classify the modality of an ambiguous query.
@@ -36,16 +36,16 @@ const SYSTEM_PROMPT =
  */
 export async function classifyModalityWithLLM(
   query: string,
-  fallback: ModalityMode = 'text',
+  fallback: ModalityMode = "text"
 ): Promise<ModalityMode> {
-  let chat: typeof import('../ai/gateway.ts').chat;
-  let isAvailable: typeof import('../ai/gateway.ts').isAvailable;
+  let chat: typeof import("../ai/gateway.ts").chat;
+  let isAvailable: typeof import("../ai/gateway.ts").isAvailable;
   try {
-    ({ chat, isAvailable } = await import('../ai/gateway.ts'));
+    ({ chat, isAvailable } = await import("../ai/gateway.ts"));
   } catch {
     return fallback;
   }
-  if (!isAvailable('chat')) {
+  if (!isAvailable("chat")) {
     // Quiet bail — caller decides whether to warn.
     return fallback;
   }
@@ -54,7 +54,7 @@ export async function classifyModalityWithLLM(
   try {
     const result = await chat({
       system: SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: query.slice(0, 500) }],
+      messages: [{ role: "user", content: query.slice(0, 500) }],
       maxTokens: 16,
       abortSignal: controller.signal,
     });
@@ -72,8 +72,11 @@ export async function classifyModalityWithLLM(
  * trailing punctuation + casing. Anything unrecognized → fallback.
  */
 export function parseModality(raw: string, fallback: ModalityMode): ModalityMode {
-  const normalized = raw.trim().toLowerCase().replace(/[^a-z]+/g, '');
-  if (normalized === 'text' || normalized === 'image' || normalized === 'both') {
+  const normalized = raw
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z]+/g, "");
+  if (normalized === "text" || normalized === "image" || normalized === "both") {
     return normalized;
   }
   return fallback;

@@ -13,26 +13,26 @@
  * `gbrain skillify check` can tell whether a receipt is current or stale.
  */
 
-import { join } from 'path';
+import { join } from "path";
 
-import { chat as gwChat } from '../ai/gateway.ts';
-import type { ChatMessage } from '../ai/gateway.ts';
-import { aggregate } from './aggregate.ts';
-import type { AggregateResult, SlotResult } from './aggregate.ts';
-import { parseModelJSON } from './json-repair.ts';
-import { receiptName, sha8 } from './receipt-name.ts';
-import { writeReceipt } from './receipt-write.ts';
-import { canonicalLookup } from '../model-pricing.ts';
+import { chat as gwChat } from "../ai/gateway.ts";
+import type { ChatMessage } from "../ai/gateway.ts";
+import { aggregate } from "./aggregate.ts";
+import type { AggregateResult, SlotResult } from "./aggregate.ts";
+import { parseModelJSON } from "./json-repair.ts";
+import { receiptName, sha8 } from "./receipt-name.ts";
+import { writeReceipt } from "./receipt-write.ts";
+import { canonicalLookup } from "../model-pricing.ts";
 
 export const RECEIPT_SCHEMA_VERSION = 1;
 
 /** Default dimensions match the v1.1.0 SKILL.md. */
 export const DEFAULT_DIMENSIONS: string[] = [
-  'GOAL_ACHIEVEMENT — Does the output actually accomplish what the task asked for?',
-  'DEPTH — Is the output substantive, or surface-level / thin?',
-  'SOURCING — Are claims backed by evidence, links, or citations?',
-  'SPECIFICITY — Are there concrete details, data, quotes, examples?',
-  'USEFULNESS — Would the intended audience find this valuable?',
+  "GOAL_ACHIEVEMENT — Does the output actually accomplish what the task asked for?",
+  "DEPTH — Is the output substantive, or surface-level / thin?",
+  "SOURCING — Are claims backed by evidence, links, or citations?",
+  "SPECIFICITY — Are there concrete details, data, quotes, examples?",
+  "USEFULNESS — Would the intended audience find this valuable?",
 ];
 
 /**
@@ -44,9 +44,9 @@ export const DEFAULT_DIMENSIONS: string[] = [
  * `--slot-a-model`, `--slot-b-model`, `--slot-c-model` on the CLI.
  */
 export const DEFAULT_SLOTS: SlotConfig[] = [
-  { id: 'A', model: 'openai:gpt-4o' },
-  { id: 'B', model: 'anthropic:claude-opus-4-7' },
-  { id: 'C', model: 'google:gemini-1.5-pro' },
+  { id: "A", model: "openai:gpt-4o" },
+  { id: "B", model: "anthropic:claude-opus-4-7" },
+  { id: "C", model: "google:gemini-1.5-pro" },
 ];
 
 export interface SlotConfig {
@@ -77,9 +77,9 @@ export interface RunEvalOpts {
 }
 
 export type ProgressEvent =
-  | { kind: 'cycle_start'; cycle: number; total: number }
-  | { kind: 'slot_done'; cycle: number; slotId: string; modelId: string; ok: boolean; ms: number }
-  | { kind: 'cycle_end'; cycle: number; verdict: 'pass' | 'fail' | 'inconclusive' };
+  | { kind: "cycle_start"; cycle: number; total: number }
+  | { kind: "slot_done"; cycle: number; slotId: string; modelId: string; ok: boolean; ms: number }
+  | { kind: "cycle_end"; cycle: number; verdict: "pass" | "fail" | "inconclusive" };
 
 export interface CycleReceipt {
   schema_version: 1;
@@ -123,10 +123,10 @@ export async function runEval(opts: RunEvalOpts): Promise<RunEvalResult> {
 
   const cycleReceipts: CycleReceipt[] = [];
   let finalAggregate: AggregateResult | null = null;
-  let finalReceiptPath = '';
+  let finalReceiptPath = "";
 
   for (let cycle = 1; cycle <= cycles; cycle++) {
-    opts.onProgress?.({ kind: 'cycle_start', cycle, total: cycles });
+    opts.onProgress?.({ kind: "cycle_start", cycle, total: cycles });
 
     const slotResults = await runOneCycle({
       task: opts.task,
@@ -145,8 +145,7 @@ export async function runEval(opts: RunEvalOpts): Promise<RunEvalResult> {
     // Receipt filename: <slug>-<sha8 of output>.json on cycle 1; subsequent
     // cycles append `.cycle<N>` so we don't clobber.
     const baseName = receiptName(slug, opts.output);
-    const receiptFile =
-      cycle === 1 ? baseName : baseName.replace(/\.json$/, `.cycle${cycle}.json`);
+    const receiptFile = cycle === 1 ? baseName : baseName.replace(/\.json$/, `.cycle${cycle}.json`);
     const receiptPath = join(opts.receiptDir, receiptFile);
 
     const receipt: CycleReceipt = {
@@ -157,8 +156,8 @@ export async function runEval(opts: RunEvalOpts): Promise<RunEvalResult> {
       slug,
       timestamp: new Date().toISOString(),
       dimensions,
-      slots: slotResults.map(s => ({
-        id: s.modelId.split(':')[0]!.toUpperCase().slice(0, 1),
+      slots: slotResults.map((s) => ({
+        id: s.modelId.split(":")[0]!.toUpperCase().slice(0, 1),
         model: s.modelId,
         ok: s.ok,
         error: s.ok ? undefined : s.error,
@@ -173,13 +172,13 @@ export async function runEval(opts: RunEvalOpts): Promise<RunEvalResult> {
     cycleReceipts.push(receipt);
     finalReceiptPath = receiptPath;
 
-    opts.onProgress?.({ kind: 'cycle_end', cycle, verdict: agg.verdict });
+    opts.onProgress?.({ kind: "cycle_end", cycle, verdict: agg.verdict });
 
-    if (agg.verdict === 'pass' || agg.verdict === 'inconclusive') break;
+    if (agg.verdict === "pass" || agg.verdict === "inconclusive") break;
   }
 
   if (!finalAggregate) {
-    throw new Error('runEval: no cycles ran');
+    throw new Error("runEval: no cycles ran");
   }
 
   return { finalAggregate, cycles: cycleReceipts, finalReceiptPath };
@@ -199,28 +198,22 @@ interface OneCycleOpts {
 async function runOneCycle(opts: OneCycleOpts): Promise<SlotResult[]> {
   const prompt = buildPrompt(opts.task, opts.dimensions, opts.output);
 
-  const tasks = opts.slots.map(slot => callSlot(slot, prompt, opts));
+  const tasks = opts.slots.map((slot) => callSlot(slot, prompt, opts));
   const settled = await Promise.allSettled(tasks);
 
   const slotResults: SlotResult[] = settled.map((s, idx) => {
     const slot = opts.slots[idx]!;
-    if (s.status === 'fulfilled') return s.value;
+    if (s.status === "fulfilled") return s.value;
     return { ok: false, modelId: slot.model, error: errorMessage(s.reason) };
   });
 
   return slotResults;
 }
 
-async function callSlot(
-  slot: SlotConfig,
-  prompt: string,
-  opts: OneCycleOpts,
-): Promise<SlotResult> {
+async function callSlot(slot: SlotConfig, prompt: string, opts: OneCycleOpts): Promise<SlotResult> {
   const start = Date.now();
   try {
-    const messages: ChatMessage[] = [
-      { role: 'user', content: prompt },
-    ];
+    const messages: ChatMessage[] = [{ role: "user", content: prompt }];
     const result = await gwChat({
       model: slot.model,
       system: SYSTEM_PROMPT,
@@ -229,10 +222,10 @@ async function callSlot(
       abortSignal: opts.abortSignal,
     });
 
-    const parsed = parseModelJSON(result.text ?? '');
+    const parsed = parseModelJSON(result.text ?? "");
     const ms = Date.now() - start;
     opts.onProgress?.({
-      kind: 'slot_done',
+      kind: "slot_done",
       cycle: opts.cycle,
       slotId: slot.id,
       modelId: slot.model,
@@ -244,7 +237,7 @@ async function callSlot(
     const ms = Date.now() - start;
     const msg = errorMessage(err);
     opts.onProgress?.({
-      kind: 'slot_done',
+      kind: "slot_done",
       cycle: opts.cycle,
       slotId: slot.id,
       modelId: slot.model,
@@ -256,46 +249,46 @@ async function callSlot(
 }
 
 function buildPrompt(task: string, dimensions: string[], output: string): string {
-  const dimList = dimensions.map((d, i) => `${i + 1}. ${d}`).join('\n');
+  const dimList = dimensions.map((d, i) => `${i + 1}. ${d}`).join("\n");
   return [
-    'You are a strict quality evaluator. Given a TASK and an OUTPUT, evaluate whether the output achieves the task goals.',
-    '',
-    'TASK:',
+    "You are a strict quality evaluator. Given a TASK and an OUTPUT, evaluate whether the output achieves the task goals.",
+    "",
+    "TASK:",
     task,
-    '',
+    "",
     `Score the OUTPUT 1-10 on each dimension:`,
     dimList,
-    '',
-    'Scoring calibration:',
-    '  9-10: Exceptional — would impress a domain expert',
-    '  7-8:  Solid — accomplishes the goal, no major gaps',
-    '  5-6:  Mediocre — obvious weaknesses',
-    '  3-4:  Poor — missing important elements',
-    '  1-2:  Failed',
-    '',
-    'Then list exactly 10 specific, actionable improvements — concrete changes with examples, prioritized by impact.',
-    '',
-    'Respond in JSON only (no markdown fences):',
-    '{',
+    "",
+    "Scoring calibration:",
+    "  9-10: Exceptional — would impress a domain expert",
+    "  7-8:  Solid — accomplishes the goal, no major gaps",
+    "  5-6:  Mediocre — obvious weaknesses",
+    "  3-4:  Poor — missing important elements",
+    "  1-2:  Failed",
+    "",
+    "Then list exactly 10 specific, actionable improvements — concrete changes with examples, prioritized by impact.",
+    "",
+    "Respond in JSON only (no markdown fences):",
+    "{",
     '  "scores": {',
     '    "dim_1_name": { "score": N, "feedback": "..." },',
-    '    ...',
-    '  },',
+    "    ...",
+    "  },",
     '  "overall": N,',
     '  "improvements": ["1. ...", "2. ...", ... "10. ..."]',
-    '}',
-    '',
-    'OUTPUT:',
+    "}",
+    "",
+    "OUTPUT:",
     output,
-  ].join('\n');
+  ].join("\n");
 }
 
 const SYSTEM_PROMPT =
-  'You are a strict quality evaluator. Reply with JSON only. Do not wrap in markdown fences. ' +
-  'Each score must be an integer 1-10. Improvements must be concrete and actionable.';
+  "You are a strict quality evaluator. Reply with JSON only. Do not wrap in markdown fences. " +
+  "Each score must be an integer 1-10. Improvements must be concrete and actionable.";
 
 function clampCycles(n: number | undefined): number {
-  if (typeof n !== 'number' || !Number.isFinite(n)) return 1;
+  if (typeof n !== "number" || !Number.isFinite(n)) return 1;
   if (n < 1) return 1;
   if (n > 3) return 3;
   return Math.floor(n);

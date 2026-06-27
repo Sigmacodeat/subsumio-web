@@ -13,7 +13,14 @@ import { UI_STRINGS } from "@/content/site";
 import { PARTNERS } from "@/content/partners";
 import { SectionHeading, ICONS } from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
-import { Reveal, StaggerContainer, StaggerItem, GlowCard, ClipReveal, MagneticButton } from "./motion-system";
+import {
+  Reveal,
+  StaggerContainer,
+  StaggerItem,
+  GlowCard,
+  ClipReveal,
+  MagneticButton,
+} from "./motion-system";
 
 export default function PartnersPage({ lang }: { lang: Lang }) {
   const t = PARTNERS[lang];
@@ -36,12 +43,12 @@ export default function PartnersPage({ lang }: { lang: Lang }) {
             {t.badge}
           </span>
           <ClipReveal delay={0.1} duration={0.7} direction="up">
-          <h1 className="mb-6 text-[clamp(2.35rem,10.5vw,3.75rem)] leading-[1.08] font-black tracking-tight text-balance [color:var(--mk-text)] md:text-6xl">
-            {t.h1a}
-            <span className="sr-only"> </span>
-            <br />
-            <span className="gradient-text-premium glow-text">{t.h1b}</span>
-          </h1>
+            <h1 className="mb-6 text-[clamp(2.35rem,10.5vw,3.75rem)] leading-[1.08] font-black tracking-tight text-balance [color:var(--mk-text)] md:text-6xl">
+              {t.h1a}
+              <span className="sr-only"> </span>
+              <br />
+              <span className="gradient-text-premium glow-text">{t.h1b}</span>
+            </h1>
           </ClipReveal>
           <p className="mx-auto mb-4 max-w-2xl text-lg leading-relaxed [color:var(--mk-text-muted)] md:text-xl">
             {t.sub}

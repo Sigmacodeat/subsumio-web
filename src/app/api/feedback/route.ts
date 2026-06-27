@@ -61,7 +61,7 @@ export const POST = createHandler(
 
     const entry = submitFeedback(feedbackInput);
     return apiSuccess({ id: entry.id, created_at: entry.created_at });
-  },
+  }
 );
 
 const feedbackQuerySchema = z.object({
@@ -96,5 +96,5 @@ export const GET = createHandler(
       default:
         return apiError("validation_error", "Unknown action", 400);
     }
-  },
+  }
 );

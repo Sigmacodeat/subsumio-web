@@ -113,7 +113,9 @@ export default function MobilePipelinePage() {
     setOutputLoading(true);
     setOutputView(null);
     try {
-      const res = await fetch(`/api/pages/${encodeURIComponent(slug)}`, { signal: AbortSignal.timeout(30_000) });
+      const res = await fetch(`/api/pages/${encodeURIComponent(slug)}`, {
+        signal: AbortSignal.timeout(30_000),
+      });
       if (res.ok) {
         const page = await res.json();
         setOutputView({ slug, content: String(page.compiled_truth ?? page.content ?? "") });

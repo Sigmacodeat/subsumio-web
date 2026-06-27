@@ -1,4 +1,4 @@
-import type { BrainEngine } from './engine.ts';
+import type { BrainEngine } from "./engine.ts";
 
 /**
  * Minimal tagged SQL function used by OAuth/admin/auth infrastructure.
@@ -15,7 +15,10 @@ import type { BrainEngine } from './engine.ts';
  * v0.31 plan review).
  */
 export type SqlValue = string | number | bigint | boolean | Date | null;
-export type SqlQuery = (strings: TemplateStringsArray, ...values: SqlValue[]) => Promise<Record<string, unknown>[]>;
+export type SqlQuery = (
+  strings: TemplateStringsArray,
+  ...values: SqlValue[]
+) => Promise<Record<string, unknown>[]>;
 
 /**
  * Build a minimal tagged-template SQL adapter over the active BrainEngine.
@@ -35,8 +38,8 @@ export function sqlQueryForEngine(engine: BrainEngine): SqlQuery {
       assertSqlValue(value);
     }
     const query = strings.reduce((acc, str, i) => {
-      return acc + str + (i < values.length ? `$${i + 1}` : '');
-    }, '');
+      return acc + str + (i < values.length ? `$${i + 1}` : "");
+    }, "");
     return engine.executeRaw(query, values);
   };
 }
@@ -44,23 +47,23 @@ export function sqlQueryForEngine(engine: BrainEngine): SqlQuery {
 function assertSqlValue(value: unknown): asserts value is SqlValue {
   if (
     value === null ||
-    typeof value === 'string' ||
-    typeof value === 'number' ||
-    typeof value === 'bigint' ||
-    typeof value === 'boolean' ||
+    typeof value === "string" ||
+    typeof value === "number" ||
+    typeof value === "bigint" ||
+    typeof value === "boolean" ||
     value instanceof Date
   ) {
     return;
   }
 
   const kind = Array.isArray(value)
-    ? 'array'
-    : value && typeof (value as { then?: unknown }).then === 'function'
-      ? 'promise'
+    ? "array"
+    : value && typeof (value as { then?: unknown }).then === "function"
+      ? "promise"
       : typeof value;
   throw new TypeError(
     `sqlQueryForEngine only supports scalar bind values; got ${kind}. ` +
-    'Use fixed SQL with scalar params, or executeRawJsonb for JSONB writes.',
+      "Use fixed SQL with scalar params, or executeRawJsonb for JSONB writes."
   );
 }
 
@@ -108,7 +111,7 @@ export async function executeRawJsonb<R = Record<string, unknown>>(
   engine: BrainEngine,
   sql: string,
   scalarParams: SqlValue[],
-  jsonbParams: unknown[],
+  jsonbParams: unknown[]
 ): Promise<R[]> {
   for (const value of scalarParams) {
     assertSqlValue(value);
@@ -124,10 +127,10 @@ export async function executeRawJsonb<R = Record<string, unknown>>(
   for (const value of jsonbParams) {
     if (Array.isArray(value)) {
       throw new TypeError(
-        'executeRawJsonb: a top-level array jsonb param can bind as a Postgres ' +
-        'array literal (not jsonb) through postgres.js. Wrap it in an object — ' +
-        "e.g. `[{ rows: [...] }]` with `jsonb_to_recordset(($N::jsonb)->'rows')`. " +
-        '(gbrain#1861)',
+        "executeRawJsonb: a top-level array jsonb param can bind as a Postgres " +
+          "array literal (not jsonb) through postgres.js. Wrap it in an object — " +
+          "e.g. `[{ rows: [...] }]` with `jsonb_to_recordset(($N::jsonb)->'rows')`. " +
+          "(gbrain#1861)"
       );
     }
   }

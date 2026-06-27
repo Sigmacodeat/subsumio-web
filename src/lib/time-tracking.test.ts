@@ -17,11 +17,66 @@ import {
 // ── Fixtures ──
 
 const FIXTURE_ENTRIES: TimeEntryWithCase[] = [
-  { id: "t1", description: "Recherche", minutes: 60, date: "2026-01-15", rate: 200, billable: true, billed: false, lawyer: "Dr. Schmidt", activity_type: "research", case_slug: "case-1" },
-  { id: "t2", description: "Klageentwurf", minutes: 120, date: "2026-01-20", rate: 250, billable: true, billed: false, lawyer: "Dr. Schmidt", activity_type: "drafting", case_slug: "case-1" },
-  { id: "t3", description: "Mandantengespräch", minutes: 30, date: "2026-02-01", rate: 200, billable: true, billed: true, invoice_number: "INV-001", lawyer: "Dr. Müller", activity_type: "meeting", case_slug: "case-2" },
-  { id: "t4", description: "Intern", minutes: 45, date: "2026-02-05", billable: false, billed: false, lawyer: "Dr. Schmidt", activity_type: "other", case_slug: "case-1" },
-  { id: "t5", description: "Gerichtstermin", minutes: 180, date: "2026-02-10", rate: 300, billable: true, billed: false, lawyer: "Dr. Müller", activity_type: "court", case_slug: "case-2" },
+  {
+    id: "t1",
+    description: "Recherche",
+    minutes: 60,
+    date: "2026-01-15",
+    rate: 200,
+    billable: true,
+    billed: false,
+    lawyer: "Dr. Schmidt",
+    activity_type: "research",
+    case_slug: "case-1",
+  },
+  {
+    id: "t2",
+    description: "Klageentwurf",
+    minutes: 120,
+    date: "2026-01-20",
+    rate: 250,
+    billable: true,
+    billed: false,
+    lawyer: "Dr. Schmidt",
+    activity_type: "drafting",
+    case_slug: "case-1",
+  },
+  {
+    id: "t3",
+    description: "Mandantengespräch",
+    minutes: 30,
+    date: "2026-02-01",
+    rate: 200,
+    billable: true,
+    billed: true,
+    invoice_number: "INV-001",
+    lawyer: "Dr. Müller",
+    activity_type: "meeting",
+    case_slug: "case-2",
+  },
+  {
+    id: "t4",
+    description: "Intern",
+    minutes: 45,
+    date: "2026-02-05",
+    billable: false,
+    billed: false,
+    lawyer: "Dr. Schmidt",
+    activity_type: "other",
+    case_slug: "case-1",
+  },
+  {
+    id: "t5",
+    description: "Gerichtstermin",
+    minutes: 180,
+    date: "2026-02-10",
+    rate: 300,
+    billable: true,
+    billed: false,
+    lawyer: "Dr. Müller",
+    activity_type: "court",
+    case_slug: "case-2",
+  },
 ];
 
 // ── computeSummary ──
@@ -50,18 +105,46 @@ describe("computeSummary", () => {
   });
 
   test("all non-billable → zero billable amount", () => {
-    const summary = computeSummary([{ id: "x", description: "intern", minutes: 60, date: "2026-01-01", billable: false, billed: false }]);
+    const summary = computeSummary([
+      {
+        id: "x",
+        description: "intern",
+        minutes: 60,
+        date: "2026-01-01",
+        billable: false,
+        billed: false,
+      },
+    ]);
     expect(summary.billable_amount).toBe(0);
     expect(summary.total_minutes).toBe(60);
   });
 
   test("entry without rate → 0 in billable amount", () => {
-    const summary = computeSummary([{ id: "x", description: "pro-bono", minutes: 60, date: "2026-01-01", billable: true, billed: false }]);
+    const summary = computeSummary([
+      {
+        id: "x",
+        description: "pro-bono",
+        minutes: 60,
+        date: "2026-01-01",
+        billable: true,
+        billed: false,
+      },
+    ]);
     expect(summary.billable_amount).toBe(0);
   });
 
   test("minutes=0 → contributes 0 to summary", () => {
-    const summary = computeSummary([{ id: "x", description: "zero", minutes: 0, date: "2026-01-01", billable: true, billed: false, rate: 200 }]);
+    const summary = computeSummary([
+      {
+        id: "x",
+        description: "zero",
+        minutes: 0,
+        date: "2026-01-01",
+        billable: true,
+        billed: false,
+        rate: 200,
+      },
+    ]);
     expect(summary.total_minutes).toBe(0);
     expect(summary.billable_amount).toBe(0);
   });
@@ -100,7 +183,11 @@ describe("filterEntries", () => {
   });
 
   test("combined filters: billable + unbilled + lawyer", () => {
-    const filtered = filterEntries(FIXTURE_ENTRIES, { billable: true, unbilled: true, lawyer: "Müller" });
+    const filtered = filterEntries(FIXTURE_ENTRIES, {
+      billable: true,
+      unbilled: true,
+      lawyer: "Müller",
+    });
     expect(filtered).toHaveLength(1);
     expect(filtered[0].id).toBe("t5");
   });
@@ -161,7 +248,12 @@ describe("createTimeEntry", () => {
   });
 
   test("can create non-billable entry", () => {
-    const entry = createTimeEntry({ description: "Intern", minutes: 30, date: "2026-03-01", billable: false });
+    const entry = createTimeEntry({
+      description: "Intern",
+      minutes: 30,
+      date: "2026-03-01",
+      billable: false,
+    });
     expect(entry.billable).toBe(false);
   });
 
@@ -176,7 +268,16 @@ describe("createTimeEntry", () => {
 
 describe("updateEntry", () => {
   test("updates existing entry", () => {
-    const entries = [{ id: "t1", description: "Old", minutes: 60, date: "2026-01-01", billable: true, billed: false }];
+    const entries = [
+      {
+        id: "t1",
+        description: "Old",
+        minutes: 60,
+        date: "2026-01-01",
+        billable: true,
+        billed: false,
+      },
+    ];
     const result = updateEntry(entries, "t1", { description: "New", minutes: 90 });
     expect(result.found).toBe(true);
     expect(result.updated?.description).toBe("New");
@@ -184,15 +285,38 @@ describe("updateEntry", () => {
   });
 
   test("returns found=false for non-existent id", () => {
-    const entries = [{ id: "t1", description: "Test", minutes: 60, date: "2026-01-01", billable: true, billed: false }];
+    const entries = [
+      {
+        id: "t1",
+        description: "Test",
+        minutes: 60,
+        date: "2026-01-01",
+        billable: true,
+        billed: false,
+      },
+    ];
     const result = updateEntry(entries, "nonexistent", { description: "New" });
     expect(result.found).toBe(false);
   });
 
   test("preserves other entries", () => {
     const entries = [
-      { id: "t1", description: "A", minutes: 60, date: "2026-01-01", billable: true, billed: false },
-      { id: "t2", description: "B", minutes: 30, date: "2026-01-02", billable: true, billed: false },
+      {
+        id: "t1",
+        description: "A",
+        minutes: 60,
+        date: "2026-01-01",
+        billable: true,
+        billed: false,
+      },
+      {
+        id: "t2",
+        description: "B",
+        minutes: 30,
+        date: "2026-01-02",
+        billable: true,
+        billed: false,
+      },
     ];
     const result = updateEntry(entries, "t1", { description: "Updated" });
     expect(result.entries[1].description).toBe("B");
@@ -200,14 +324,33 @@ describe("updateEntry", () => {
   });
 
   test("marks as billed with invoice number", () => {
-    const entries = [{ id: "t1", description: "Test", minutes: 60, date: "2026-01-01", billable: true, billed: false }];
+    const entries = [
+      {
+        id: "t1",
+        description: "Test",
+        minutes: 60,
+        date: "2026-01-01",
+        billable: true,
+        billed: false,
+      },
+    ];
     const result = updateEntry(entries, "t1", { billed: true, invoice_number: "INV-2026-001" });
     expect(result.updated?.billed).toBe(true);
     expect(result.updated?.invoice_number).toBe("INV-2026-001");
   });
 
   test("partial update preserves non-updated fields", () => {
-    const entries = [{ id: "t1", description: "Original", minutes: 60, date: "2026-01-01", billable: true, billed: false, rate: 200 }];
+    const entries = [
+      {
+        id: "t1",
+        description: "Original",
+        minutes: 60,
+        date: "2026-01-01",
+        billable: true,
+        billed: false,
+        rate: 200,
+      },
+    ];
     const result = updateEntry(entries, "t1", { minutes: 90 });
     expect(result.updated?.description).toBe("Original");
     expect(result.updated?.minutes).toBe(90);
@@ -220,8 +363,22 @@ describe("updateEntry", () => {
 describe("deleteEntry", () => {
   test("removes entry by id", () => {
     const entries = [
-      { id: "t1", description: "A", minutes: 60, date: "2026-01-01", billable: true, billed: false },
-      { id: "t2", description: "B", minutes: 30, date: "2026-01-02", billable: true, billed: false },
+      {
+        id: "t1",
+        description: "A",
+        minutes: 60,
+        date: "2026-01-01",
+        billable: true,
+        billed: false,
+      },
+      {
+        id: "t2",
+        description: "B",
+        minutes: 30,
+        date: "2026-01-02",
+        billable: true,
+        billed: false,
+      },
     ];
     const result = deleteEntry(entries, "t1");
     expect(result.found).toBe(true);
@@ -230,7 +387,16 @@ describe("deleteEntry", () => {
   });
 
   test("returns found=false for non-existent id", () => {
-    const entries = [{ id: "t1", description: "A", minutes: 60, date: "2026-01-01", billable: true, billed: false }];
+    const entries = [
+      {
+        id: "t1",
+        description: "A",
+        minutes: 60,
+        date: "2026-01-01",
+        billable: true,
+        billed: false,
+      },
+    ];
     const result = deleteEntry(entries, "nonexistent");
     expect(result.found).toBe(false);
   });
@@ -280,12 +446,22 @@ describe("computeBillingSummary", () => {
 
   test("sorts by_case by billable_amount descending", () => {
     const summary = computeBillingSummary(FIXTURE_ENTRIES);
-    expect(summary.by_case[0].billable_amount).toBeGreaterThanOrEqual(summary.by_case[1].billable_amount);
+    expect(summary.by_case[0].billable_amount).toBeGreaterThanOrEqual(
+      summary.by_case[1].billable_amount
+    );
   });
 
   test("uses default_rate when entry has no rate", () => {
     const entries: TimeEntryWithCase[] = [
-      { id: "t1", description: "No rate", minutes: 60, date: "2026-01-01", billable: true, billed: false, case_slug: "case-1" },
+      {
+        id: "t1",
+        description: "No rate",
+        minutes: 60,
+        date: "2026-01-01",
+        billable: true,
+        billed: false,
+        case_slug: "case-1",
+      },
     ];
     const summary = computeBillingSummary(entries, 150);
     expect(summary.by_case[0].billable_amount).toBe(150);
@@ -293,7 +469,15 @@ describe("computeBillingSummary", () => {
 
   test("entry with no rate and no default → 0 amount", () => {
     const entries: TimeEntryWithCase[] = [
-      { id: "t1", description: "No rate", minutes: 60, date: "2026-01-01", billable: true, billed: false, case_slug: "case-1" },
+      {
+        id: "t1",
+        description: "No rate",
+        minutes: 60,
+        date: "2026-01-01",
+        billable: true,
+        billed: false,
+        case_slug: "case-1",
+      },
     ];
     const summary = computeBillingSummary(entries);
     expect(summary.by_case[0].billable_amount).toBe(0);
@@ -309,7 +493,16 @@ describe("computeBillingSummary", () => {
 
   test("all entries already billed → empty summary", () => {
     const entries: TimeEntryWithCase[] = [
-      { id: "t1", description: "Billed", minutes: 60, date: "2026-01-01", billable: true, billed: true, invoice_number: "INV-001", case_slug: "case-1" },
+      {
+        id: "t1",
+        description: "Billed",
+        minutes: 60,
+        date: "2026-01-01",
+        billable: true,
+        billed: true,
+        invoice_number: "INV-001",
+        case_slug: "case-1",
+      },
     ];
     const summary = computeBillingSummary(entries);
     expect(summary.total_unbilled_entries).toBe(0);
@@ -318,7 +511,15 @@ describe("computeBillingSummary", () => {
 
   test("entries without case_slug grouped under _unknown", () => {
     const entries: TimeEntryWithCase[] = [
-      { id: "t1", description: "No case", minutes: 60, date: "2026-01-01", billable: true, billed: false, rate: 200 },
+      {
+        id: "t1",
+        description: "No case",
+        minutes: 60,
+        date: "2026-01-01",
+        billable: true,
+        billed: false,
+        rate: 200,
+      },
     ];
     const summary = computeBillingSummary(entries);
     expect(summary.by_case).toHaveLength(1);
@@ -327,9 +528,36 @@ describe("computeBillingSummary", () => {
 
   test("multiple cases with different amounts", () => {
     const entries: TimeEntryWithCase[] = [
-      { id: "t1", description: "A", minutes: 30, date: "2026-01-01", billable: true, billed: false, rate: 200, case_slug: "case-a" },
-      { id: "t2", description: "B", minutes: 60, date: "2026-01-02", billable: true, billed: false, rate: 300, case_slug: "case-b" },
-      { id: "t3", description: "C", minutes: 120, date: "2026-01-03", billable: true, billed: false, rate: 250, case_slug: "case-a" },
+      {
+        id: "t1",
+        description: "A",
+        minutes: 30,
+        date: "2026-01-01",
+        billable: true,
+        billed: false,
+        rate: 200,
+        case_slug: "case-a",
+      },
+      {
+        id: "t2",
+        description: "B",
+        minutes: 60,
+        date: "2026-01-02",
+        billable: true,
+        billed: false,
+        rate: 300,
+        case_slug: "case-b",
+      },
+      {
+        id: "t3",
+        description: "C",
+        minutes: 120,
+        date: "2026-01-03",
+        billable: true,
+        billed: false,
+        rate: 250,
+        case_slug: "case-a",
+      },
     ];
     const summary = computeBillingSummary(entries);
     expect(summary.by_case).toHaveLength(2);
@@ -423,7 +651,14 @@ describe("groupByCase", () => {
 
   test("entries without case_slug → _unknown", () => {
     const entries: TimeEntryWithCase[] = [
-      { id: "t1", description: "No case", minutes: 60, date: "2026-01-01", billable: true, billed: false },
+      {
+        id: "t1",
+        description: "No case",
+        minutes: 60,
+        date: "2026-01-01",
+        billable: true,
+        billed: false,
+      },
     ];
     const grouped = groupByCase(entries);
     expect(grouped.get("_unknown")).toHaveLength(1);
@@ -436,8 +671,24 @@ describe("groupByCase", () => {
 
   test("single case → single group", () => {
     const entries: TimeEntryWithCase[] = [
-      { id: "t1", description: "A", minutes: 60, date: "2026-01-01", billable: true, billed: false, case_slug: "case-x" },
-      { id: "t2", description: "B", minutes: 30, date: "2026-01-02", billable: true, billed: false, case_slug: "case-x" },
+      {
+        id: "t1",
+        description: "A",
+        minutes: 60,
+        date: "2026-01-01",
+        billable: true,
+        billed: false,
+        case_slug: "case-x",
+      },
+      {
+        id: "t2",
+        description: "B",
+        minutes: 30,
+        date: "2026-01-02",
+        billable: true,
+        billed: false,
+        case_slug: "case-x",
+      },
     ];
     const grouped = groupByCase(entries);
     expect(grouped.size).toBe(1);

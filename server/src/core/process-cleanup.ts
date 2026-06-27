@@ -93,23 +93,27 @@ async function runCleanupPass(): Promise<void> {
   const entries = Array.from(registry.values());
   if (entries.length === 0) return;
 
-  const deadline = new Promise<'deadline'>((resolve) => {
-    const t = setTimeout(() => resolve('deadline'), CLEANUP_DEADLINE_MS);
-    if (typeof (t as { unref?: () => void }).unref === 'function') {
+  const deadline = new Promise<"deadline">((resolve) => {
+    const t = setTimeout(() => resolve("deadline"), CLEANUP_DEADLINE_MS);
+    if (typeof (t as { unref?: () => void }).unref === "function") {
       (t as { unref: () => void }).unref();
     }
   });
 
   const cleanupAll = Promise.allSettled(
     entries.map(async (e) => {
-      try { await e.fn(); }
-      catch (err) {
+      try {
+        await e.fn();
+      } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
-        try { process.stderr.write(`[process-cleanup] ${e.name}: ${msg}\n`); }
-        catch { /* even stderr might be broken */ }
+        try {
+          process.stderr.write(`[process-cleanup] ${e.name}: ${msg}\n`);
+        } catch {
+          /* even stderr might be broken */
+        }
         throw err;
       }
-    }),
+    })
   );
 
   await Promise.race([cleanupAll, deadline]);
@@ -132,40 +136,51 @@ export function installSignalHandlers(): void {
       // signal-terminated processes. The actual integer doesn't matter
       // much (shells generally use it as advisory); the goal is "exit
       // promptly after cleanup".
-      const code = signal === 'SIGTERM' ? 143 : signal === 'SIGHUP' ? 129 : signal === 'SIGPIPE' ? 141 : 1;
+      const code =
+        signal === "SIGTERM" ? 143 : signal === "SIGHUP" ? 129 : signal === "SIGPIPE" ? 141 : 1;
       process.exit(code);
     });
   };
 
-  process.on('SIGTERM', () => handleSignal('SIGTERM'));
-  process.on('SIGHUP', () => handleSignal('SIGHUP'));
+  process.on("SIGTERM", () => handleSignal("SIGTERM"));
+  process.on("SIGHUP", () => handleSignal("SIGHUP"));
   // SIGPIPE in Node is rarely raised directly (Node ignores it by default
   // and surfaces an EPIPE write error on the stream instead). Listen anyway
   // for environments where it does fire.
-  process.on('SIGPIPE', () => handleSignal('SIGPIPE'));
+  process.on("SIGPIPE", () => handleSignal("SIGPIPE"));
 
-  process.on('uncaughtException', (err) => {
-    try { process.stderr.write(`[uncaughtException] ${err instanceof Error ? err.stack ?? err.message : err}\n`); }
-    catch { /* stderr might be broken */ }
+  process.on("uncaughtException", (err) => {
+    try {
+      process.stderr.write(
+        `[uncaughtException] ${err instanceof Error ? (err.stack ?? err.message) : err}\n`
+      );
+    } catch {
+      /* stderr might be broken */
+    }
     void runCleanupPass().finally(() => process.exit(1));
   });
-  process.on('unhandledRejection', (reason) => {
-    try { process.stderr.write(`[unhandledRejection] ${reason instanceof Error ? reason.stack ?? reason.message : reason}\n`); }
-    catch { /* stderr might be broken */ }
+  process.on("unhandledRejection", (reason) => {
+    try {
+      process.stderr.write(
+        `[unhandledRejection] ${reason instanceof Error ? (reason.stack ?? reason.message) : reason}\n`
+      );
+    } catch {
+      /* stderr might be broken */
+    }
     void runCleanupPass().finally(() => process.exit(1));
   });
 
   // EPIPE on stdout — the canonical `gbrain sync | head -N` case. Route
   // through the cleanup pass so locks release BEFORE we exit.
-  process.stdout.on('error', (err: NodeJS.ErrnoException) => {
-    if (err.code === 'EPIPE') {
+  process.stdout.on("error", (err: NodeJS.ErrnoException) => {
+    if (err.code === "EPIPE") {
       void triggerCleanupAndExit(0);
     }
   });
   // Same for stderr — less common but possible (e.g. `2>&1 | head` after
   // stderr was rerouted to stdout).
-  process.stderr.on('error', (err: NodeJS.ErrnoException) => {
-    if (err.code === 'EPIPE') {
+  process.stderr.on("error", (err: NodeJS.ErrnoException) => {
+    if (err.code === "EPIPE") {
       // No stderr means no useful logs on the way out; still cleanup.
       void triggerCleanupAndExit(0);
     }

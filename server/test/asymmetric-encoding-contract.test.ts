@@ -18,30 +18,28 @@
  *   `embedQuery`, this test fails before the regression ships.
  */
 
-import { describe, test, expect, afterEach } from 'bun:test';
-import { readFileSync } from 'fs';
-import { resolve } from 'path';
+import { describe, test, expect, afterEach } from "bun:test";
+import { readFileSync } from "fs";
+import { resolve } from "path";
 import {
   configureGateway,
   resetGateway,
   embed,
   embedQuery,
   __setEmbedTransportForTests,
-} from '../src/core/ai/gateway.ts';
+} from "../src/core/ai/gateway.ts";
 
 function configureZE() {
   configureGateway({
-    embedding_model: 'zeroentropyai:zembed-1',
+    embedding_model: "zeroentropyai:zembed-1",
     embedding_dimensions: 1280,
-    env: { ZEROENTROPY_API_KEY: 'sk-fake' },
+    env: { ZEROENTROPY_API_KEY: "sk-fake" },
   });
 }
 
 function fakeEmbeddings(count: number, dims: number) {
   return {
-    embeddings: Array.from({ length: count }, () =>
-      Array.from({ length: dims }, () => 0.1),
-    ),
+    embeddings: Array.from({ length: count }, () => Array.from({ length: dims }, () => 0.1)),
   };
 }
 
@@ -50,8 +48,8 @@ afterEach(() => {
   resetGateway();
 });
 
-describe('Search read path uses embedQuery (D17 behavior contract)', () => {
-  test('embedQuery threads input_type=query through transport for ZE', async () => {
+describe("Search read path uses embedQuery (D17 behavior contract)", () => {
+  test("embedQuery threads input_type=query through transport for ZE", async () => {
     configureZE();
     let capturedOpts: any = null;
     __setEmbedTransportForTests((async (args: any) => {
@@ -59,11 +57,11 @@ describe('Search read path uses embedQuery (D17 behavior contract)', () => {
       return fakeEmbeddings(1, 1280);
     }) as any);
 
-    await embedQuery('what does foo bar do?');
-    expect(capturedOpts?.openaiCompatible?.input_type).toBe('query');
+    await embedQuery("what does foo bar do?");
+    expect(capturedOpts?.openaiCompatible?.input_type).toBe("query");
   });
 
-  test('embed (index path) threads input_type=document for ZE', async () => {
+  test("embed (index path) threads input_type=document for ZE", async () => {
     configureZE();
     let capturedOpts: any = null;
     __setEmbedTransportForTests((async (args: any) => {
@@ -71,55 +69,48 @@ describe('Search read path uses embedQuery (D17 behavior contract)', () => {
       return fakeEmbeddings(args.values.length, 1280);
     }) as any);
 
-    await embed(['this is a document being indexed']);
-    expect(capturedOpts?.openaiCompatible?.input_type).toBe('document');
+    await embed(["this is a document being indexed"]);
+    expect(capturedOpts?.openaiCompatible?.input_type).toBe("document");
   });
 });
 
-describe('Source-text contract (cheap belt + suspenders)', () => {
+describe("Source-text contract (cheap belt + suspenders)", () => {
   // These tests fail-fast if a refactor accidentally swaps embedQuery → embed
   // on the search read path. The behavior test above catches the runtime
   // regression; this catches the static one (broken import, renamed helper).
 
-  test('src/core/search/hybrid.ts imports embedQuery from embedding.ts', () => {
-    const src = readFileSync(
-      resolve(process.cwd(), 'src/core/search/hybrid.ts'),
-      'utf8',
-    );
+  test("src/core/search/hybrid.ts imports embedQuery from embedding.ts", () => {
+    const src = readFileSync(resolve(process.cwd(), "src/core/search/hybrid.ts"), "utf8");
     // The import must include embedQuery; matches both `embedQuery` and `{ embed, embedQuery }`.
     expect(src).toMatch(/from '..\/embedding.ts'/);
-    expect(src).toContain('embedQuery');
+    expect(src).toContain("embedQuery");
   });
 
-  test('src/core/search/hybrid.ts calls embedQuery at the search-time query path', () => {
-    const src = readFileSync(
-      resolve(process.cwd(), 'src/core/search/hybrid.ts'),
-      'utf8',
-    );
+  test("src/core/search/hybrid.ts calls embedQuery at the search-time query path", () => {
+    const src = readFileSync(resolve(process.cwd(), "src/core/search/hybrid.ts"), "utf8");
     // Look for the call site (any whitespace shape). The line at 414 today is
     // `await Promise.all(queries.map(q => embedQuery(q)))`. The regex stays
     // permissive: match `embedQuery(` anywhere in the file body.
     expect(src).toMatch(/embedQuery\s*\(/);
   });
 
-  test('src/core/embedding.ts re-exports both embed and embedQuery', () => {
-    const src = readFileSync(
-      resolve(process.cwd(), 'src/core/embedding.ts'),
-      'utf8',
-    );
+  test("src/core/embedding.ts re-exports both embed and embedQuery", () => {
+    const src = readFileSync(resolve(process.cwd(), "src/core/embedding.ts"), "utf8");
     // The embedding module is the seam between gateway and search.
     // Both functions MUST be exported so consumers can route correctly.
     expect(src).toMatch(/export\s+(?:async\s+)?function\s+embed\s*\(|export\s*\{[^}]*\bembed\b/);
-    expect(src).toMatch(/export\s+(?:async\s+)?function\s+embedQuery\s*\(|export\s*\{[^}]*\bembedQuery\b/);
+    expect(src).toMatch(
+      /export\s+(?:async\s+)?function\s+embedQuery\s*\(|export\s*\{[^}]*\bembedQuery\b/
+    );
   });
 });
 
-describe('Symmetric providers ignore input_type (OpenAI regression guard)', () => {
-  test('OpenAI text-embedding-3-large produces no input_type field', async () => {
+describe("Symmetric providers ignore input_type (OpenAI regression guard)", () => {
+  test("OpenAI text-embedding-3-large produces no input_type field", async () => {
     configureGateway({
-      embedding_model: 'openai:text-embedding-3-large',
+      embedding_model: "openai:text-embedding-3-large",
       embedding_dimensions: 1024,
-      env: { OPENAI_API_KEY: 'sk-fake' },
+      env: { OPENAI_API_KEY: "sk-fake" },
     });
     let capturedOpts: any = null;
     __setEmbedTransportForTests((async (args: any) => {
@@ -127,8 +118,8 @@ describe('Symmetric providers ignore input_type (OpenAI regression guard)', () =
       return fakeEmbeddings(1, 1024);
     }) as any);
 
-    await embedQuery('hello');
+    await embedQuery("hello");
     // OpenAI is symmetric — input_type would be rejected by the API.
-    expect(JSON.stringify(capturedOpts)).not.toContain('input_type');
+    expect(JSON.stringify(capturedOpts)).not.toContain("input_type");
   });
 });

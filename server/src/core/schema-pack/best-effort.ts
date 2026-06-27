@@ -22,10 +22,10 @@
 // pack-load problem) — not silent (results look normal but contradict
 // user intent).
 
-import { loadConfig } from '../config.ts';
-import type { OperationContext } from '../operations.ts';
-import { loadActivePack } from './load-active.ts';
-import type { ResolvedPack } from './registry.ts';
+import { loadConfig } from "../config.ts";
+import type { OperationContext } from "../operations.ts";
+import { loadActivePack } from "./load-active.ts";
+import type { ResolvedPack } from "./registry.ts";
 
 /**
  * Best-effort loader for the active schema pack. Returns null on any
@@ -45,7 +45,7 @@ import type { ResolvedPack } from './registry.ts';
  *   const results = await search(query, { types });
  */
 export async function loadActivePackBestEffort(
-  ctx: OperationContext,
+  ctx: OperationContext
 ): Promise<ResolvedPack | null> {
   try {
     return await loadActivePack({

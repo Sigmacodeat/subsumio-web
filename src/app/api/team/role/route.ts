@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 import { getStore, getOrgStore, type KanzleiRole } from "@/lib/auth/store";
 import { createHandler, apiError } from "@/lib/api-handler";
@@ -40,18 +39,22 @@ const handler = createHandler(
     }
 
     if (targetUser.id === ctx.user.id && targetUser.role === "admin" && body.role !== "admin") {
-      const orgMembers = ctx.user.orgId ? await store.listByOrg(ctx.user.orgId) : await store.list();
-      const adminCount = orgMembers.filter(
-        (u) => u.role === "admin"
-      ).length;
+      const orgMembers = ctx.user.orgId
+        ? await store.listByOrg(ctx.user.orgId)
+        : await store.list();
+      const adminCount = orgMembers.filter((u) => u.role === "admin").length;
       if (adminCount <= 1) {
-        return apiError("last_admin_cannot_change_role", "Letzter Admin kann nicht degradiert werden", 409);
+        return apiError(
+          "last_admin_cannot_change_role",
+          "Letzter Admin kann nicht degradiert werden",
+          409
+        );
       }
     }
 
     await store.update(body.userId, { role: body.role });
     return Response.json({ ok: true, userId: body.userId, role: body.role });
-  },
+  }
 );
 
 export const POST = handler;

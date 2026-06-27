@@ -7,29 +7,29 @@
  * Privacy: records only versions + outcome + reason. No paths, no content.
  */
 
-import { createAuditWriter } from './audit-writer.ts';
+import { createAuditWriter } from "./audit-writer.ts";
 
 export interface SelfUpgradeAuditEvent {
   ts: string;
   /** Which channel made the decision. */
-  channel: 'invocation' | 'autopilot';
+  channel: "invocation" | "autopilot";
   /** The SelfUpgradeAction (`apply` / `notify` / `busy` / ...). */
   action: string;
   current: string;
   latest?: string | null;
   /** Terminal outcome when an apply was attempted. */
-  outcome?: 'applied' | 'failed' | 'skipped';
+  outcome?: "applied" | "failed" | "skipped";
   reason?: string;
   error?: string;
 }
 
 const writer = createAuditWriter<SelfUpgradeAuditEvent>({
-  featureName: 'self-upgrade',
-  errorLabel: 'self-upgrade-audit',
-  errorTrailer: '; continuing',
+  featureName: "self-upgrade",
+  errorLabel: "self-upgrade-audit",
+  errorTrailer: "; continuing",
 });
 
-export function logSelfUpgrade(event: Omit<SelfUpgradeAuditEvent, 'ts'> & { ts?: string }): void {
+export function logSelfUpgrade(event: Omit<SelfUpgradeAuditEvent, "ts"> & { ts?: string }): void {
   writer.log(event);
 }
 

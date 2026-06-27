@@ -1,5 +1,5 @@
-import { readFileSync, existsSync } from 'fs';
-import { join } from 'path';
+import { readFileSync, existsSync } from "fs";
+import { join } from "path";
 
 /**
  * Storage tier configuration loaded from gbrain.yml.
@@ -14,12 +14,14 @@ export interface StorageConfig {
   db_only: string[];
 }
 
-export type StorageTier = 'db_tracked' | 'db_only' | 'unspecified';
+export type StorageTier = "db_tracked" | "db_only" | "unspecified";
 
 /** Recognized YAML keys (canonical and deprecated). */
 const STORAGE_KEYS = new Set([
-  'db_tracked', 'db_only',
-  'git_tracked', 'supabase_only', // deprecated aliases
+  "db_tracked",
+  "db_only",
+  "git_tracked",
+  "supabase_only", // deprecated aliases
 ]);
 
 /**
@@ -49,7 +51,7 @@ type RawStorage = {
 };
 
 function parseStorageYaml(content: string): RawStorage | null {
-  const lines = content.split('\n').map((line) => line.replace(/\r$/, ''));
+  const lines = content.split("\n").map((line) => line.replace(/\r$/, ""));
 
   let inStorage = false;
   let currentList: keyof RawStorage | null = null;
@@ -58,15 +60,15 @@ function parseStorageYaml(content: string): RawStorage | null {
 
   for (const line of lines) {
     // Strip comments. Conservative: drop trailing `# ...` and full-line `#`.
-    const noComment = line.replace(/\s+#.*$/, '').replace(/^#.*$/, '');
-    if (noComment.trim() === '') continue;
+    const noComment = line.replace(/\s+#.*$/, "").replace(/^#.*$/, "");
+    if (noComment.trim() === "") continue;
 
     // Top-level key (no leading whitespace).
-    if (!noComment.startsWith(' ') && !noComment.startsWith('\t')) {
-      const colon = noComment.indexOf(':');
+    if (!noComment.startsWith(" ") && !noComment.startsWith("\t")) {
+      const colon = noComment.indexOf(":");
       if (colon === -1) continue;
       const key = noComment.slice(0, colon).trim();
-      if (key === 'storage') {
+      if (key === "storage") {
         inStorage = true;
         sawStorage = true;
         currentList = null;
@@ -79,11 +81,14 @@ function parseStorageYaml(content: string): RawStorage | null {
 
     if (!inStorage) continue;
 
-    const indented = noComment.replace(/^\s+/, '');
+    const indented = noComment.replace(/^\s+/, "");
 
-    if (indented.startsWith('-')) {
+    if (indented.startsWith("-")) {
       if (!currentList) continue;
-      const value = indented.slice(1).trim().replace(/^["']|["']$/g, '');
+      const value = indented
+        .slice(1)
+        .trim()
+        .replace(/^["']|["']$/g, "");
       if (value) {
         if (!raw[currentList]) raw[currentList] = [];
         raw[currentList]!.push(value);
@@ -91,14 +96,14 @@ function parseStorageYaml(content: string): RawStorage | null {
       continue;
     }
 
-    const colon = indented.indexOf(':');
+    const colon = indented.indexOf(":");
     if (colon === -1) continue;
     const key = indented.slice(0, colon).trim();
     if (STORAGE_KEYS.has(key)) {
       currentList = key as keyof RawStorage;
       // Inline empty list: `db_only: []`.
       const remainder = indented.slice(colon + 1).trim();
-      if (remainder === '[]' && !raw[currentList]) {
+      if (remainder === "[]" && !raw[currentList]) {
         raw[currentList] = [];
       }
       continue;
@@ -133,20 +138,22 @@ function normalizeStorageConfig(raw: RawStorage): StorageConfig {
   if (hasDeprecated && !_deprecationWarned) {
     _deprecationWarned = true;
     const which = [
-      raw.git_tracked ? '`git_tracked`' : null,
-      raw.supabase_only ? '`supabase_only`' : null,
-    ].filter(Boolean).join(' and ');
+      raw.git_tracked ? "`git_tracked`" : null,
+      raw.supabase_only ? "`supabase_only`" : null,
+    ]
+      .filter(Boolean)
+      .join(" and ");
     if (hasCanonical) {
       console.warn(
         `Warning: ${which} in gbrain.yml is deprecated and ignored ` +
           `(canonical keys db_tracked/db_only are present). ` +
-          `Remove the deprecated keys, or run \`gbrain doctor --fix\`.`,
+          `Remove the deprecated keys, or run \`gbrain doctor --fix\`.`
       );
     } else {
       console.warn(
         `Warning: ${which} in gbrain.yml is deprecated. ` +
           `Rename to db_tracked / db_only — see docs/storage-tiering.md. ` +
-          `Run \`gbrain doctor --fix\` for an automated rename.`,
+          `Run \`gbrain doctor --fix\` for an automated rename.`
       );
     }
   }
@@ -185,19 +192,19 @@ let _missingStorageWarned = false;
 export function loadStorageConfig(repoPath?: string | null): StorageConfig | null {
   if (!repoPath) return null;
 
-  const yamlPath = join(repoPath, 'gbrain.yml');
+  const yamlPath = join(repoPath, "gbrain.yml");
   if (!existsSync(yamlPath)) return null;
 
   // Read failure is a real error (not a "feature not configured" signal).
   // Throwing here lets the caller decide whether to crash or fall back.
-  const content = readFileSync(yamlPath, 'utf-8');
+  const content = readFileSync(yamlPath, "utf-8");
 
   let raw: RawStorage | null;
   try {
     raw = parseStorageYaml(content);
   } catch (error) {
     console.warn(
-      `Warning: Failed to parse gbrain.yml: ${error instanceof Error ? error.message : String(error)}`,
+      `Warning: Failed to parse gbrain.yml: ${error instanceof Error ? error.message : String(error)}`
     );
     return null;
   }
@@ -209,7 +216,7 @@ export function loadStorageConfig(repoPath?: string | null): StorageConfig | nul
       console.warn(
         `Warning: ${yamlPath} exists but has no storage configuration. ` +
           `Add a "storage:" section with db_tracked / db_only arrays, ` +
-          `or remove gbrain.yml to suppress this warning.`,
+          `or remove gbrain.yml to suppress this warning.`
       );
     }
     return null;
@@ -224,7 +231,7 @@ export function loadStorageConfig(repoPath?: string | null): StorageConfig | nul
       console.warn(
         `Warning: ${yamlPath} exists but has no storage configuration. ` +
           `Add a "storage:" section with db_tracked / db_only arrays, ` +
-          `or remove gbrain.yml to suppress this warning.`,
+          `or remove gbrain.yml to suppress this warning.`
       );
     }
     return merged;
@@ -238,7 +245,7 @@ export function loadStorageConfig(repoPath?: string | null): StorageConfig | nul
 export class StorageConfigError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'StorageConfigError';
+    this.name = "StorageConfigError";
   }
 }
 
@@ -265,7 +272,7 @@ export function validateStorageConfig(config: StorageConfig): string[] {
 
   const allPaths = [...config.db_tracked, ...config.db_only];
   for (const path of allPaths) {
-    if (!path.endsWith('/')) {
+    if (!path.endsWith("/")) {
       warnings.push(`Directory path "${path}" should end with "/" for consistency`);
     }
   }
@@ -293,10 +300,10 @@ export function normalizeAndValidateStorageConfig(input: StorageConfig): Storage
     const normalized: string[] = [];
     const changed: string[] = [];
     for (const p of paths) {
-      if (p.endsWith('/')) {
+      if (p.endsWith("/")) {
         normalized.push(p);
       } else {
-        normalized.push(p + '/');
+        normalized.push(p + "/");
         changed.push(`"${p}" → "${p}/"`);
       }
     }
@@ -311,7 +318,7 @@ export function normalizeAndValidateStorageConfig(input: StorageConfig): Storage
     _normalizationInfoEmitted = true;
     console.warn(
       `Note: normalized ${allChanged.length} storage path(s) in gbrain.yml — ` +
-        `${allChanged.join(', ')}. Add trailing "/" to suppress this note.`,
+        `${allChanged.join(", ")}. Add trailing "/" to suppress this note.`
     );
   }
 
@@ -321,7 +328,7 @@ export function normalizeAndValidateStorageConfig(input: StorageConfig): Storage
     if (trackedSet.has(path)) {
       throw new StorageConfigError(
         `gbrain.yml: directory "${path}" appears in both db_tracked and db_only — ` +
-          `pick one tier. Edit gbrain.yml to remove the overlap.`,
+          `pick one tier. Edit gbrain.yml to remove the overlap.`
       );
     }
   }
@@ -340,7 +347,7 @@ export function normalizeAndValidateStorageConfig(input: StorageConfig): Storage
  * trailing-`/` directories.
  */
 function matchesTierDir(slug: string, dir: string): boolean {
-  if (!dir.endsWith('/')) return false; // not normalized — matcher refuses
+  if (!dir.endsWith("/")) return false; // not normalized — matcher refuses
   // slug must equal dir's bare prefix OR start with the trailing-slash form.
   // Example: dir = 'media/x/' matches 'media/x/anything' but not 'media/x'
   // or 'media/xerox'. (A slug that exactly equals 'media/x' is a directory-
@@ -357,9 +364,9 @@ export function isDbOnly(slug: string, config: StorageConfig): boolean {
 }
 
 export function getStorageTier(slug: string, config: StorageConfig): StorageTier {
-  if (isDbTracked(slug, config)) return 'db_tracked';
-  if (isDbOnly(slug, config)) return 'db_only';
-  return 'unspecified';
+  if (isDbTracked(slug, config)) return "db_tracked";
+  if (isDbOnly(slug, config)) return "db_only";
+  return "unspecified";
 }
 
 // ── Deprecated aliases — to be removed in a future release ────────

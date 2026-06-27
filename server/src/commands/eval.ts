@@ -10,105 +10,105 @@
  *   gbrain eval --qrels <path> --strategy hybrid --rrf-k 30 --k 5
  */
 
-import { readFileSync, existsSync } from 'fs';
-import type { BrainEngine } from '../core/engine.ts';
+import { readFileSync, existsSync } from "fs";
+import type { BrainEngine } from "../core/engine.ts";
 import {
   runEval,
   parseQrels,
   type EvalConfig,
   type EvalReport,
   type QueryResult,
-} from '../core/search/eval.ts';
+} from "../core/search/eval.ts";
 
 export async function runEvalCommand(engine: BrainEngine, args: string[]): Promise<void> {
   // v0.25.0 — sub-subcommand dispatch. Bare `gbrain eval --qrels ...`
   // falls through to the legacy IR-metrics flow so existing callers
   // don't break.
   const sub = args[0];
-  if (sub === 'export') {
-    const { runEvalExport } = await import('./eval-export.ts');
+  if (sub === "export") {
+    const { runEvalExport } = await import("./eval-export.ts");
     return runEvalExport(engine, args.slice(1));
   }
-  if (sub === 'prune') {
-    const { runEvalPrune } = await import('./eval-prune.ts');
+  if (sub === "prune") {
+    const { runEvalPrune } = await import("./eval-prune.ts");
     return runEvalPrune(engine, args.slice(1));
   }
-  if (sub === 'replay') {
-    const { runEvalReplay } = await import('./eval-replay.ts');
+  if (sub === "replay") {
+    const { runEvalReplay } = await import("./eval-replay.ts");
     return runEvalReplay(engine, args.slice(1));
   }
-  if (sub === 'gate') {
+  if (sub === "gate") {
     // v0.41 — eval gate. Two paths (regression via --baseline, correctness
     // via --qrels). Needs an engine: correctness gate runs live retrieval;
     // regression gate calls replayCore in-process (codex round-2 #7).
-    const { runEvalGate } = await import('./eval-gate.ts');
+    const { runEvalGate } = await import("./eval-gate.ts");
     return runEvalGate(engine, args.slice(1));
   }
-  if (sub === 'cross-modal') {
+  if (sub === "cross-modal") {
     // No-DB sub-subcommand. The cli.ts dispatcher routes the user-facing
     // path before connectEngine, so this branch only fires when callers
     // already have an engine and re-enter via runEvalCommand. Engine is
     // intentionally unused.
-    const { runEvalCrossModal } = await import('./eval-cross-modal.ts');
+    const { runEvalCrossModal } = await import("./eval-cross-modal.ts");
     process.exit(await runEvalCrossModal(args.slice(1)));
   }
-  if (sub === 'code-retrieval') {
+  if (sub === "code-retrieval") {
     // v0.33.3 pre-w0 — code-retrieval baseline / gate harness. Needs a brain
     // for the baseline (BaselineStrategy calls hybridSearch); --compare
     // mode reads JSON only but the engine is already connected by this
     // dispatcher.
-    const { runEvalCodeRetrieval } = await import('./eval-code-retrieval.ts');
+    const { runEvalCodeRetrieval } = await import("./eval-code-retrieval.ts");
     return runEvalCodeRetrieval(engine, args.slice(1));
   }
-  if (sub === 'retrieval-quality') {
+  if (sub === "retrieval-quality") {
     // T6 — NamedThingBench. Gold query set vs hybrid retrieval; gates the
     // families that ARE the retrieval-maxpool incident (title/alias/dilution).
-    const { runEvalRetrievalQuality } = await import('./eval-retrieval-quality.ts');
+    const { runEvalRetrievalQuality } = await import("./eval-retrieval-quality.ts");
     return runEvalRetrievalQuality(engine, args.slice(1));
   }
-  if (sub === 'brainstorm') {
+  if (sub === "brainstorm") {
     // v0.37.0 (D3 + codex r2 #11) — three-axis evaluation gate for the
     // brainstorm + LSD wave. Engine connected (calls hybridSearch +
     // listAllPageRefs for grounding signal). Exit code mirrors eval
     // convention: 0 pass, 1 fail, 2 inconclusive.
-    const { runEvalBrainstorm } = await import('./eval-brainstorm.ts');
+    const { runEvalBrainstorm } = await import("./eval-brainstorm.ts");
     process.exit(await runEvalBrainstorm(engine, args.slice(1)));
   }
-  if (sub === 'whoknows') {
+  if (sub === "whoknows") {
     // v0.33 two-layer eval gate (ENG-D2): hand-labeled fixture =
     // quality, eval_candidates replay = regression. Pass criteria
     // baked in (>=80% top-3 hit rate; >=0.4 Jaccard with sparseness fallback).
-    const { runEvalWhoknows } = await import('./eval-whoknows.ts');
+    const { runEvalWhoknows } = await import("./eval-whoknows.ts");
     process.exit(await runEvalWhoknows(engine, args.slice(1)));
   }
-  if (sub === 'suspected-contradictions') {
+  if (sub === "suspected-contradictions") {
     // v0.32.6 — contradiction probe. Engine connected (calls hybridSearch +
     // the eval_contradictions_cache + _runs tables). Matches the `replay`
     // dispatch pattern.
-    const { runEvalSuspectedContradictions } = await import('./eval-suspected-contradictions.ts');
+    const { runEvalSuspectedContradictions } = await import("./eval-suspected-contradictions.ts");
     return runEvalSuspectedContradictions(engine, args.slice(1));
   }
-  if (sub === 'trajectory') {
+  if (sub === "trajectory") {
     // v0.35.4 (T6) — chronological claim trajectory for an entity. Engine
     // is connected; thin-client routing handled inside the command file.
-    const { runEvalTrajectory } = await import('./eval-trajectory.ts');
+    const { runEvalTrajectory } = await import("./eval-trajectory.ts");
     return runEvalTrajectory(engine, args.slice(1));
   }
-  if (sub === 'conversation-parser') {
+  if (sub === "conversation-parser") {
     // v0.41.13.0 — fixture-corpus CI gate for the 12-pattern built-in
     // registry + opt-in LLM polish/fallback. Pure-function eval; no
     // DB access, no API keys when --no-llm is passed. Wired into
     // bun run verify so built-in regressions block PRs.
-    const { runEvalConversationParser } = await import('./eval-conversation-parser.ts');
+    const { runEvalConversationParser } = await import("./eval-conversation-parser.ts");
     process.exit(await runEvalConversationParser(args.slice(1)));
   }
   // v0.32.3 search-lite — per-mode orchestrator + comparison report.
-  if (sub === 'run-all') {
-    const { runEvalRunAll } = await import('./eval-run-all.ts');
+  if (sub === "run-all") {
+    const { runEvalRunAll } = await import("./eval-run-all.ts");
     return runEvalRunAll(engine, args.slice(1));
   }
-  if (sub === 'compare') {
-    const { runEvalCompare } = await import('./eval-compare.ts');
+  if (sub === "compare") {
+    const { runEvalCompare } = await import("./eval-compare.ts");
     return runEvalCompare(args.slice(1));
   }
 
@@ -120,7 +120,7 @@ export async function runEvalCommand(engine: BrainEngine, args: string[]): Promi
   }
 
   if (!opts.qrels) {
-    console.error('Error: --qrels <path|json> is required\n');
+    console.error("Error: --qrels <path|json> is required\n");
     printHelp();
     process.exit(1);
   }
@@ -134,21 +134,21 @@ export async function runEvalCommand(engine: BrainEngine, args: string[]): Promi
   }
 
   if (qrels.length === 0) {
-    console.error('Error: qrels file contains no queries');
+    console.error("Error: qrels file contains no queries");
     process.exit(1);
   }
 
   const k = opts.k ?? 5;
-  const configA = buildConfig(opts, 'a');
+  const configA = buildConfig(opts, "a");
 
-  const { createProgress } = await import('../core/progress.ts');
-  const { getCliOptions, cliOptsToProgressOptions } = await import('../core/cli-options.ts');
+  const { createProgress } = await import("../core/progress.ts");
+  const { getCliOptions, cliOptsToProgressOptions } = await import("../core/cli-options.ts");
   const progress = createProgress(cliOptsToProgressOptions(getCliOptions()));
 
   if (opts.configB || opts.configBPath) {
     // A/B comparison mode
-    const configB = buildConfig(opts, 'b');
-    progress.start('eval.ab', qrels.length * 2);
+    const configB = buildConfig(opts, "b");
+    progress.start("eval.ab", qrels.length * 2);
     const onProgress = (_done: number, _total: number, q: string) => progress.tick(1, q);
     const [reportA, reportB] = await Promise.all([
       runEval(engine, qrels, configA, k, { onProgress }),
@@ -158,7 +158,7 @@ export async function runEvalCommand(engine: BrainEngine, args: string[]): Promi
     printABTable(reportA, reportB, k);
   } else {
     // Single-run mode
-    progress.start('eval.single', qrels.length);
+    progress.start("eval.single", qrels.length);
     const report = await runEval(engine, qrels, configA, k, {
       onProgress: (_done, _total, q) => progress.tick(1, q),
     });
@@ -177,7 +177,7 @@ interface ParsedArgs {
   configAPath?: string;
   configBPath?: string;
   configB?: EvalConfig;
-  strategy?: EvalConfig['strategy'];
+  strategy?: EvalConfig["strategy"];
   rrfK?: number;
   expand?: boolean;
   dedupCosine?: number;
@@ -195,27 +195,64 @@ function parseArgs(args: string[]): ParsedArgs {
     const next = args[i + 1];
 
     switch (arg) {
-      case '--help': case '-h': opts.help = true; break;
-      case '--qrels': opts.qrels = next; i++; break;
-      case '--config-a': opts.configAPath = next; i++; break;
-      case '--config-b': opts.configBPath = next; i++; break;
-      case '--strategy': opts.strategy = next as EvalConfig['strategy']; i++; break;
-      case '--rrf-k': opts.rrfK = parseInt(next, 10); i++; break;
-      case '--expand': opts.expand = true; break;
-      case '--no-expand': opts.expand = false; break;
-      case '--dedup-cosine': opts.dedupCosine = parseFloat(next); i++; break;
-      case '--dedup-type-ratio': opts.dedupTypeRatio = parseFloat(next); i++; break;
-      case '--dedup-max-per-page': opts.dedupMaxPerPage = parseInt(next, 10); i++; break;
-      case '--limit': opts.limit = parseInt(next, 10); i++; break;
-      case '--k': opts.k = parseInt(next, 10); i++; break;
+      case "--help":
+      case "-h":
+        opts.help = true;
+        break;
+      case "--qrels":
+        opts.qrels = next;
+        i++;
+        break;
+      case "--config-a":
+        opts.configAPath = next;
+        i++;
+        break;
+      case "--config-b":
+        opts.configBPath = next;
+        i++;
+        break;
+      case "--strategy":
+        opts.strategy = next as EvalConfig["strategy"];
+        i++;
+        break;
+      case "--rrf-k":
+        opts.rrfK = parseInt(next, 10);
+        i++;
+        break;
+      case "--expand":
+        opts.expand = true;
+        break;
+      case "--no-expand":
+        opts.expand = false;
+        break;
+      case "--dedup-cosine":
+        opts.dedupCosine = parseFloat(next);
+        i++;
+        break;
+      case "--dedup-type-ratio":
+        opts.dedupTypeRatio = parseFloat(next);
+        i++;
+        break;
+      case "--dedup-max-per-page":
+        opts.dedupMaxPerPage = parseInt(next, 10);
+        i++;
+        break;
+      case "--limit":
+        opts.limit = parseInt(next, 10);
+        i++;
+        break;
+      case "--k":
+        opts.k = parseInt(next, 10);
+        i++;
+        break;
     }
   }
 
   return opts;
 }
 
-function buildConfig(opts: ParsedArgs, side: 'a' | 'b'): EvalConfig {
-  const pathOpt = side === 'a' ? opts.configAPath : opts.configBPath;
+function buildConfig(opts: ParsedArgs, side: "a" | "b"): EvalConfig {
+  const pathOpt = side === "a" ? opts.configAPath : opts.configBPath;
 
   // Start from file or inline JSON if provided
   let base: EvalConfig = {};
@@ -224,7 +261,7 @@ function buildConfig(opts: ParsedArgs, side: 'a' | 'b'): EvalConfig {
   }
 
   // CLI flags override config file (only for side A — side B comes entirely from its config file)
-  if (side === 'a') {
+  if (side === "a") {
     if (opts.strategy !== undefined) base.strategy = opts.strategy;
     if (opts.rrfK !== undefined) base.rrf_k = opts.rrfK;
     if (opts.expand !== undefined) base.expand = opts.expand;
@@ -234,11 +271,11 @@ function buildConfig(opts: ParsedArgs, side: 'a' | 'b'): EvalConfig {
     if (opts.limit !== undefined) base.limit = opts.limit;
 
     // Defaults for side A
-    if (!base.name) base.name = 'Config A';
-    if (!base.strategy) base.strategy = 'hybrid';
+    if (!base.name) base.name = "Config A";
+    if (!base.strategy) base.strategy = "hybrid";
   } else {
-    if (!base.name) base.name = 'Config B';
-    if (!base.strategy) base.strategy = 'hybrid';
+    if (!base.name) base.name = "Config B";
+    if (!base.strategy) base.strategy = "hybrid";
   }
 
   return base;
@@ -246,14 +283,14 @@ function buildConfig(opts: ParsedArgs, side: 'a' | 'b'): EvalConfig {
 
 function loadConfigFile(pathOrJson: string): EvalConfig {
   const trimmed = pathOrJson.trimStart();
-  if (trimmed.startsWith('{')) {
+  if (trimmed.startsWith("{")) {
     return JSON.parse(pathOrJson) as EvalConfig;
   }
   if (!existsSync(pathOrJson)) {
     console.error(`Config file not found: ${pathOrJson}`);
     process.exit(1);
   }
-  return JSON.parse(readFileSync(pathOrJson, 'utf-8')) as EvalConfig;
+  return JSON.parse(readFileSync(pathOrJson, "utf-8")) as EvalConfig;
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -262,14 +299,21 @@ function loadConfigFile(pathOrJson: string): EvalConfig {
 
 function printSingleTable(report: EvalReport): void {
   const { config, k, queries } = report;
-  const label = config.name ?? config.strategy ?? 'hybrid';
+  const label = config.name ?? config.strategy ?? "hybrid";
 
-  console.log(`\ngbrain eval — ${queries.length} quer${queries.length === 1 ? 'y' : 'ies'} · strategy: ${label} · k=${k}\n`);
+  console.log(
+    `\ngbrain eval — ${queries.length} quer${queries.length === 1 ? "y" : "ies"} · strategy: ${label} · k=${k}\n`
+  );
 
   const COL_QUERY = 36;
   const COL_NUM = 7;
-  const header = padR('Query', COL_QUERY) + padL(`P@${k}`, COL_NUM) + padL(`R@${k}`, COL_NUM) + padL('MRR', COL_NUM) + padL(`nDCG@${k}`, COL_NUM);
-  const divider = '─'.repeat(header.length);
+  const header =
+    padR("Query", COL_QUERY) +
+    padL(`P@${k}`, COL_NUM) +
+    padL(`R@${k}`, COL_NUM) +
+    padL("MRR", COL_NUM) +
+    padL(`nDCG@${k}`, COL_NUM);
+  const divider = "─".repeat(header.length);
 
   console.log(header);
   console.log(divider);
@@ -277,30 +321,30 @@ function printSingleTable(report: EvalReport): void {
   for (const q of queries) {
     console.log(
       padR(truncate(q.query, COL_QUERY - 1), COL_QUERY) +
-      padL(fmt(q.precision_at_k), COL_NUM) +
-      padL(fmt(q.recall_at_k), COL_NUM) +
-      padL(fmt(q.mrr), COL_NUM) +
-      padL(fmt(q.ndcg_at_k), COL_NUM),
+        padL(fmt(q.precision_at_k), COL_NUM) +
+        padL(fmt(q.recall_at_k), COL_NUM) +
+        padL(fmt(q.mrr), COL_NUM) +
+        padL(fmt(q.ndcg_at_k), COL_NUM)
     );
   }
 
   console.log(divider);
   console.log(
-    padR('Mean', COL_QUERY) +
-    padL(fmt(report.mean_precision), COL_NUM) +
-    padL(fmt(report.mean_recall), COL_NUM) +
-    padL(fmt(report.mean_mrr), COL_NUM) +
-    padL(fmt(report.mean_ndcg), COL_NUM),
+    padR("Mean", COL_QUERY) +
+      padL(fmt(report.mean_precision), COL_NUM) +
+      padL(fmt(report.mean_recall), COL_NUM) +
+      padL(fmt(report.mean_mrr), COL_NUM) +
+      padL(fmt(report.mean_ndcg), COL_NUM)
   );
-  console.log('');
+  console.log("");
 }
 
 function printABTable(reportA: EvalReport, reportB: EvalReport, k: number): void {
-  const labelA = reportA.config.name ?? 'Config A';
-  const labelB = reportB.config.name ?? 'Config B';
+  const labelA = reportA.config.name ?? "Config A";
+  const labelB = reportB.config.name ?? "Config B";
   const n = reportA.queries.length;
 
-  console.log(`\ngbrain eval — ${n} quer${n === 1 ? 'y' : 'ies'} · A/B comparison · k=${k}\n`);
+  console.log(`\ngbrain eval — ${n} quer${n === 1 ? "y" : "ies"} · A/B comparison · k=${k}\n`);
 
   const COL_QUERY = 34;
   const COL_METRIC = 8;
@@ -310,7 +354,7 @@ function printABTable(reportA: EvalReport, reportB: EvalReport, k: number): void
   const aLabel = ` ${labelA} `.slice(0, COL_METRIC * COLS_PER_SIDE - 2);
   const bLabel = ` ${labelB} `.slice(0, COL_METRIC * COLS_PER_SIDE - 2);
   const line1 =
-    ' '.repeat(COL_QUERY) +
+    " ".repeat(COL_QUERY) +
     padR(`── ${aLabel} `, COL_METRIC * COLS_PER_SIDE) +
     padR(`── ${bLabel} `, COL_METRIC * COLS_PER_SIDE) +
     `  Δ nDCG`;
@@ -318,15 +362,17 @@ function printABTable(reportA: EvalReport, reportB: EvalReport, k: number): void
 
   // Header line 2: metric names
   const metricHeader = (suffix: string) =>
-    padL(`P@${k}`, COL_METRIC) + padL('MRR', COL_METRIC) + padL(`nDCG@${k}`, COL_METRIC);
+    padL(`P@${k}`, COL_METRIC) + padL("MRR", COL_METRIC) + padL(`nDCG@${k}`, COL_METRIC);
 
   const line2 =
-    padR('Query', COL_QUERY) +
-    metricHeader('A') +
-    '  ' + metricHeader('B') +
-    '  ' + padL('Δ nDCG', 10);
+    padR("Query", COL_QUERY) +
+    metricHeader("A") +
+    "  " +
+    metricHeader("B") +
+    "  " +
+    padL("Δ nDCG", 10);
   console.log(line2);
-  console.log('─'.repeat(line2.length));
+  console.log("─".repeat(line2.length));
 
   for (let i = 0; i < reportA.queries.length; i++) {
     const qa = reportA.queries[i];
@@ -336,36 +382,38 @@ function printABTable(reportA: EvalReport, reportB: EvalReport, k: number): void
 
     console.log(
       padR(truncate(qa.query, COL_QUERY - 1), COL_QUERY) +
-      padL(fmt(qa.precision_at_k), COL_METRIC) +
-      padL(fmt(qa.mrr), COL_METRIC) +
-      padL(fmt(qa.ndcg_at_k), COL_METRIC) +
-      '  ' +
-      padL(fmt(qb.precision_at_k), COL_METRIC) +
-      padL(fmt(qb.mrr), COL_METRIC) +
-      padL(fmt(qb.ndcg_at_k), COL_METRIC) +
-      '  ' + padL(deltaStr, 10),
+        padL(fmt(qa.precision_at_k), COL_METRIC) +
+        padL(fmt(qa.mrr), COL_METRIC) +
+        padL(fmt(qa.ndcg_at_k), COL_METRIC) +
+        "  " +
+        padL(fmt(qb.precision_at_k), COL_METRIC) +
+        padL(fmt(qb.mrr), COL_METRIC) +
+        padL(fmt(qb.ndcg_at_k), COL_METRIC) +
+        "  " +
+        padL(deltaStr, 10)
     );
   }
 
-  const divider = '─'.repeat(line2.length);
+  const divider = "─".repeat(line2.length);
   console.log(divider);
 
   const meanDelta = reportB.mean_ndcg - reportA.mean_ndcg;
-  const meanDeltaStr = (meanDelta > 0 ? '+' : '') + fmt(meanDelta);
-  const winner = meanDelta > 0 ? ' ✓ B wins' : meanDelta < 0 ? ' ✓ A wins' : ' tie';
+  const meanDeltaStr = (meanDelta > 0 ? "+" : "") + fmt(meanDelta);
+  const winner = meanDelta > 0 ? " ✓ B wins" : meanDelta < 0 ? " ✓ A wins" : " tie";
 
   console.log(
-    padR('Mean', COL_QUERY) +
-    padL(fmt(reportA.mean_precision), COL_METRIC) +
-    padL(fmt(reportA.mean_mrr), COL_METRIC) +
-    padL(fmt(reportA.mean_ndcg), COL_METRIC) +
-    '  ' +
-    padL(fmt(reportB.mean_precision), COL_METRIC) +
-    padL(fmt(reportB.mean_mrr), COL_METRIC) +
-    padL(fmt(reportB.mean_ndcg), COL_METRIC) +
-    '  ' + padL(meanDeltaStr + winner, 10),
+    padR("Mean", COL_QUERY) +
+      padL(fmt(reportA.mean_precision), COL_METRIC) +
+      padL(fmt(reportA.mean_mrr), COL_METRIC) +
+      padL(fmt(reportA.mean_ndcg), COL_METRIC) +
+      "  " +
+      padL(fmt(reportB.mean_precision), COL_METRIC) +
+      padL(fmt(reportB.mean_mrr), COL_METRIC) +
+      padL(fmt(reportB.mean_ndcg), COL_METRIC) +
+      "  " +
+      padL(meanDeltaStr + winner, 10)
   );
-  console.log('');
+  console.log("");
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -377,19 +425,20 @@ function fmt(n: number): string {
 }
 
 function padR(s: string, width: number): string {
-  return s.length >= width ? s.slice(0, width) : s + ' '.repeat(width - s.length);
+  return s.length >= width ? s.slice(0, width) : s + " ".repeat(width - s.length);
 }
 
 function padL(s: string, width: number): string {
-  return s.length >= width ? s.slice(0, width) : ' '.repeat(width - s.length) + s;
+  return s.length >= width ? s.slice(0, width) : " ".repeat(width - s.length) + s;
 }
 
 function truncate(s: string, max: number): string {
-  return s.length > max ? s.slice(0, max - 1) + '…' : s;
+  return s.length > max ? s.slice(0, max - 1) + "…" : s;
 }
 
 function printHelp(): void {
-  console.log(`
+  console.log(
+    `
 gbrain eval — measure and compare retrieval quality
 
 USAGE
@@ -431,5 +480,6 @@ EXAMPLES
   gbrain eval --qrels ./qrels.json --strategy keyword
   gbrain eval --qrels ./qrels.json --rrf-k 30
   gbrain eval --qrels ./qrels.json --config-a baseline.json --config-b experiment.json
-`.trim());
+`.trim()
+  );
 }

@@ -56,23 +56,23 @@ Bausteine in einen durchgehenden WhatsApp-first Workflow.
 
 ## Existierende Codebasis
 
-| Capability | Vorhandener Einstieg |
-|---|---|
-| WhatsApp Webhook | `src/app/api/whatsapp/webhook/route.ts` |
-| WhatsApp Domain Types | `src/lib/whatsapp/types.ts` |
-| Sender Identity | `src/lib/whatsapp/identity.ts`, `src/lib/whatsapp/identity-store.ts` |
-| Outbound Gate | `src/lib/whatsapp/outbound-gate.ts`, `src/lib/whatsapp/proactive-send.ts` |
-| Media + Voice | `src/lib/whatsapp/media.ts`, `src/lib/whatsapp/transcribe.ts` |
-| Intent Router | `src/lib/legal-chat/actions.ts` |
-| WhatsApp Dashboard | `src/app/dashboard/whatsapp/page.tsx` |
-| Matter Context | `src/lib/matter-context.ts`, `src/app/api/matter-context/[caseSlug]/route.ts` |
-| Workflows | `src/lib/workflow.ts`, `src/app/api/workflows/route.ts` |
-| Approvals | `src/lib/approval.ts`, `src/app/api/approvals/route.ts` |
-| Time Tracking | `src/lib/time-tracking.ts`, `src/app/api/time/route.ts` |
-| Invoicing | `src/app/api/invoices/*`, `src/app/dashboard/invoicing/page.tsx` |
-| Portal | `src/app/portal/[token]/page.tsx`, `src/app/api/portal/*` |
-| Legal AI APIs | `src/app/api/legal/*` |
-| Audit | `src/lib/audit.ts`, `src/app/api/audit/route.ts` |
+| Capability            | Vorhandener Einstieg                                                          |
+| --------------------- | ----------------------------------------------------------------------------- |
+| WhatsApp Webhook      | `src/app/api/whatsapp/webhook/route.ts`                                       |
+| WhatsApp Domain Types | `src/lib/whatsapp/types.ts`                                                   |
+| Sender Identity       | `src/lib/whatsapp/identity.ts`, `src/lib/whatsapp/identity-store.ts`          |
+| Outbound Gate         | `src/lib/whatsapp/outbound-gate.ts`, `src/lib/whatsapp/proactive-send.ts`     |
+| Media + Voice         | `src/lib/whatsapp/media.ts`, `src/lib/whatsapp/transcribe.ts`                 |
+| Intent Router         | `src/lib/legal-chat/actions.ts`                                               |
+| WhatsApp Dashboard    | `src/app/dashboard/whatsapp/page.tsx`                                         |
+| Matter Context        | `src/lib/matter-context.ts`, `src/app/api/matter-context/[caseSlug]/route.ts` |
+| Workflows             | `src/lib/workflow.ts`, `src/app/api/workflows/route.ts`                       |
+| Approvals             | `src/lib/approval.ts`, `src/app/api/approvals/route.ts`                       |
+| Time Tracking         | `src/lib/time-tracking.ts`, `src/app/api/time/route.ts`                       |
+| Invoicing             | `src/app/api/invoices/*`, `src/app/dashboard/invoicing/page.tsx`              |
+| Portal                | `src/app/portal/[token]/page.tsx`, `src/app/api/portal/*`                     |
+| Legal AI APIs         | `src/app/api/legal/*`                                                         |
+| Audit                 | `src/lib/audit.ts`, `src/app/api/audit/route.ts`                              |
 
 ## Integration Spine
 
@@ -269,21 +269,21 @@ Default:
 
 ## Intent- und Risiko-Matrix
 
-| Intent | Kanal | Risiko | Default-Verhalten |
-|---|---|---:|---|
-| `time_entry` | intern | low | WhatsApp-Bestaetigung reicht |
-| `expense` | intern | low | WhatsApp-Bestaetigung reicht |
-| `case_note` | intern | low | WhatsApp-Bestaetigung reicht |
-| `media_upload` | intern/client | low | speichern, Aktenzuordnung bestaetigen |
-| `case_summary` | intern | medium | nur fuer berechtigte Rollen |
-| `document_fetch` | intern | medium | nur Metadaten/Link, kein Leak |
-| `deadline` | intern | high | Approval oder Fristen-Review |
-| `create_case` | intern/assistant | medium | Kollisionspruefung zuerst |
-| `close_case` | intern | high | Dashboard/Approval erforderlich |
-| `create_invoice` | intern/assistant | high | Rechnung nur als Entwurf |
-| `message_send_client` | intern/assistant | critical | Anwalt-Freigabe immer |
-| `legal_advice_to_client` | client | critical | nie autonom, Entwurf fuer Anwalt |
-| `conflict_check` | alle | high | Ergebnis nie als final ohne Review |
+| Intent                   | Kanal            |   Risiko | Default-Verhalten                     |
+| ------------------------ | ---------------- | -------: | ------------------------------------- |
+| `time_entry`             | intern           |      low | WhatsApp-Bestaetigung reicht          |
+| `expense`                | intern           |      low | WhatsApp-Bestaetigung reicht          |
+| `case_note`              | intern           |      low | WhatsApp-Bestaetigung reicht          |
+| `media_upload`           | intern/client    |      low | speichern, Aktenzuordnung bestaetigen |
+| `case_summary`           | intern           |   medium | nur fuer berechtigte Rollen           |
+| `document_fetch`         | intern           |   medium | nur Metadaten/Link, kein Leak         |
+| `deadline`               | intern           |     high | Approval oder Fristen-Review          |
+| `create_case`            | intern/assistant |   medium | Kollisionspruefung zuerst             |
+| `close_case`             | intern           |     high | Dashboard/Approval erforderlich       |
+| `create_invoice`         | intern/assistant |     high | Rechnung nur als Entwurf              |
+| `message_send_client`    | intern/assistant | critical | Anwalt-Freigabe immer                 |
+| `legal_advice_to_client` | client           | critical | nie autonom, Entwurf fuer Anwalt      |
+| `conflict_check`         | alle             |     high | Ergebnis nie als final ohne Review    |
 
 ## Kern-Workflows
 
@@ -421,7 +421,13 @@ type OrchestrationResult = {
   eventSlug: string;
   workflowRunSlug?: string;
   actionSlug?: string;
-  status: "ignored" | "routed" | "pending_confirmation" | "pending_approval" | "executed" | "failed";
+  status:
+    | "ignored"
+    | "routed"
+    | "pending_confirmation"
+    | "pending_approval"
+    | "executed"
+    | "failed";
 };
 ```
 

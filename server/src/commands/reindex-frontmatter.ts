@@ -23,9 +23,9 @@
  *                      (bypasses no-op-on-equal guard).
  */
 
-import type { BrainEngine } from '../core/engine.ts';
-import { backfillEffectiveDate } from '../core/backfill-effective-date.ts';
-import { createInterface } from 'readline';
+import type { BrainEngine } from "../core/engine.ts";
+import { backfillEffectiveDate } from "../core/backfill-effective-date.ts";
+import { createInterface } from "readline";
 
 export interface ReindexFrontmatterOpts {
   sourceId?: string;
@@ -48,7 +48,7 @@ export interface ReindexFrontmatterOpts {
 }
 
 export interface ReindexFrontmatterResult {
-  status: 'ok' | 'dry_run' | 'cancelled';
+  status: "ok" | "dry_run" | "cancelled";
   examined: number;
   updated: number;
   fallback: number;
@@ -60,19 +60,19 @@ export interface ReindexFrontmatterResult {
 async function countAffected(
   engine: BrainEngine,
   slugPrefix: string | undefined,
-  sourceId: string | undefined,
+  sourceId: string | undefined
 ): Promise<number> {
   const where: string[] = [];
   const params: unknown[] = [];
   if (slugPrefix) {
-    params.push(slugPrefix.replace(/[\\%_]/g, (c) => '\\' + c) + '%');
+    params.push(slugPrefix.replace(/[\\%_]/g, (c) => "\\" + c) + "%");
     where.push(`slug LIKE $${params.length} ESCAPE '\\\\'`);
   }
   if (sourceId) {
     params.push(sourceId);
     where.push(`source_id = $${params.length}`);
   }
-  const sql = `SELECT COUNT(*)::text AS n FROM pages${where.length ? ' WHERE ' + where.join(' AND ') : ''}`;
+  const sql = `SELECT COUNT(*)::text AS n FROM pages${where.length ? " WHERE " + where.join(" AND ") : ""}`;
   const rows = await engine.executeRaw<{ n: string }>(sql, params);
   return Number(rows[0]?.n ?? 0);
 }
@@ -80,17 +80,17 @@ async function countAffected(
 async function confirm(prompt: string): Promise<boolean> {
   if (!process.stdin.isTTY) return false; // No TTY = require --yes
   const rl = createInterface({ input: process.stdin, output: process.stderr });
-  return new Promise(resolve => {
-    rl.question(prompt + ' [y/N] ', (ans: string) => {
+  return new Promise((resolve) => {
+    rl.question(prompt + " [y/N] ", (ans: string) => {
       rl.close();
-      resolve(ans.trim().toLowerCase() === 'y');
+      resolve(ans.trim().toLowerCase() === "y");
     });
   });
 }
 
 export async function runReindexFrontmatter(
   engine: BrainEngine,
-  opts: ReindexFrontmatterOpts,
+  opts: ReindexFrontmatterOpts
 ): Promise<ReindexFrontmatterResult> {
   const total = await countAffected(engine, opts.slugPrefix, opts.sourceId);
 
@@ -106,7 +106,7 @@ export async function runReindexFrontmatter(
       maxRows: total > 0 ? total : undefined,
     });
     return {
-      status: 'dry_run',
+      status: "dry_run",
       examined: r.examined,
       updated: r.updated,
       fallback: r.fallback,
@@ -118,11 +118,16 @@ export async function runReindexFrontmatter(
 
   // Confirm in TTY non-yes flow.
   if (!opts.yes && !opts.json && total > 100) {
-    const ok = await confirm(`Reindex effective_date on ${total} page(s)? Force=${opts.force ? 'yes' : 'no'}.`);
+    const ok = await confirm(
+      `Reindex effective_date on ${total} page(s)? Force=${opts.force ? "yes" : "no"}.`
+    );
     if (!ok) {
       return {
-        status: 'cancelled',
-        examined: 0, updated: 0, fallback: 0, durationSec: 0,
+        status: "cancelled",
+        examined: 0,
+        updated: 0,
+        fallback: 0,
+        durationSec: 0,
         slug_prefix: opts.slugPrefix,
         source_filter: opts.sourceId,
       };
@@ -135,13 +140,15 @@ export async function runReindexFrontmatter(
     fresh: true, // CLI is explicit; ignore checkpoint from prior orchestrator runs
     onBatch: ({ batch, lastId, rowsTouched, cumulative }) => {
       if (!opts.json && batch % 5 === 0) {
-        process.stderr.write(`  [reindex] batch ${batch} | last_id=${lastId} | examined=${cumulative} | updated=${rowsTouched}\n`);
+        process.stderr.write(
+          `  [reindex] batch ${batch} | last_id=${lastId} | examined=${cumulative} | updated=${rowsTouched}\n`
+        );
       }
     },
   });
 
   return {
-    status: 'ok',
+    status: "ok",
     examined: r.examined,
     updated: r.updated,
     fallback: r.fallback,
@@ -156,28 +163,27 @@ export async function reindexFrontmatterCli(args: string[]): Promise<void> {
   const opts: ReindexFrontmatterOpts = {};
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
-    if (a === '--source') opts.sourceId = args[++i];
-    else if (a === '--slug-prefix') opts.slugPrefix = args[++i];
-    else if (a === '--dry-run') opts.dryRun = true;
-    else if (a === '--yes' || a === '-y') opts.yes = true;
-    else if (a === '--json') opts.json = true;
-    else if (a === '--force') opts.force = true;
-    else if (a === '--workers' || a === '--concurrency') {
+    if (a === "--source") opts.sourceId = args[++i];
+    else if (a === "--slug-prefix") opts.slugPrefix = args[++i];
+    else if (a === "--dry-run") opts.dryRun = true;
+    else if (a === "--yes" || a === "-y") opts.yes = true;
+    else if (a === "--json") opts.json = true;
+    else if (a === "--force") opts.force = true;
+    else if (a === "--workers" || a === "--concurrency") {
       // v0.41.15.0 (T12): accepted but informational only — see opts doc.
-      const v = parseInt(args[++i] ?? '', 10);
+      const v = parseInt(args[++i] ?? "", 10);
       if (Number.isFinite(v) && v >= 1) opts.workers = v;
-    }
-    else {
+    } else {
       console.error(`Unknown arg: ${a}`);
       process.exit(2);
     }
   }
 
-  const { createEngine } = await import('../core/engine-factory.ts');
-  const { loadConfig, toEngineConfig } = await import('../core/config.ts');
+  const { createEngine } = await import("../core/engine-factory.ts");
+  const { loadConfig, toEngineConfig } = await import("../core/config.ts");
   const cfg = loadConfig();
   if (!cfg) {
-    console.error('No gbrain config; run `gbrain init` first.');
+    console.error("No gbrain config; run `gbrain init` first.");
     process.exit(1);
   }
   const engineConfig = toEngineConfig(cfg);
@@ -194,15 +200,15 @@ export async function reindexFrontmatterCli(args: string[]): Promise<void> {
     if (opts.json) {
       console.log(JSON.stringify(result, null, 2));
     } else {
-      const noun = result.status === 'dry_run' ? 'would update' : 'updated';
+      const noun = result.status === "dry_run" ? "would update" : "updated";
       console.error(
         `\nReindex ${result.status}: examined=${result.examined} ${noun}=${result.updated} ` +
-        `fallback=${result.fallback} dur=${result.durationSec.toFixed(1)}s`,
+          `fallback=${result.fallback} dur=${result.durationSec.toFixed(1)}s`
       );
     }
-    if (result.status === 'cancelled') process.exit(1);
+    if (result.status === "cancelled") process.exit(1);
   } finally {
-    if ('disconnect' in engine && typeof engine.disconnect === 'function') {
+    if ("disconnect" in engine && typeof engine.disconnect === "function") {
       await engine.disconnect();
     }
   }

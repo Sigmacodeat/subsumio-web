@@ -595,7 +595,10 @@ export const D = {
   },
   "deadlines.quick_cancel": { de: "Abbrechen", en: "Cancel" },
   "deadlines.quick_show_advanced": { de: "Erweiterte Felder", en: "Advanced fields" },
-  "deadlines.quick_hide_advanced": { de: "Erweiterte Felder ausblenden", en: "Hide advanced fields" },
+  "deadlines.quick_hide_advanced": {
+    de: "Erweiterte Felder ausblenden",
+    en: "Hide advanced fields",
+  },
   "deadlines.create_another": { de: "Weitere anlegen", en: "Create another" },
   "deadlines.update_failed": {
     de: "Frist konnte nicht aktualisiert werden",
@@ -1194,74 +1197,257 @@ export const D = {
   "dashboard.loading": { de: "Laden…", en: "Loading…" },
 
   // ── Module-specific error titles ──
-  "error.adoption-analytics_title": { de: "Adoption-Analytics konnten nicht geladen werden", en: "Adoption analytics could not be loaded" },
-  "error.agents_title": { de: "Agenten konnten nicht geladen werden", en: "Agents could not be loaded" },
-  "error.analytics_title": { de: "Analytics konnten nicht geladen werden", en: "Analytics could not be loaded" },
-  "error.analyze_title": { de: "Modul konnte nicht geladen werden", en: "Module could not be loaded" },
-  "error.anonymize_title": { de: "Anonymisierung konnte nicht geladen werden", en: "Anonymization could not be loaded" },
-  "error.api-keys_title": { de: "API-Schlüssel konnten nicht geladen werden", en: "API keys could not be loaded" },
-  "error.approvals_title": { de: "Freigaben konnten nicht geladen werden", en: "Approvals could not be loaded" },
-  "error.assistant_title": { de: "Assistent konnte nicht geladen werden", en: "Assistant could not be loaded" },
-  "error.audit_title": { de: "Audit-Log konnte nicht geladen werden", en: "Audit log could not be loaded" },
+  "error.adoption-analytics_title": {
+    de: "Adoption-Analytics konnten nicht geladen werden",
+    en: "Adoption analytics could not be loaded",
+  },
+  "error.agents_title": {
+    de: "Agenten konnten nicht geladen werden",
+    en: "Agents could not be loaded",
+  },
+  "error.analytics_title": {
+    de: "Analytics konnten nicht geladen werden",
+    en: "Analytics could not be loaded",
+  },
+  "error.analyze_title": {
+    de: "Modul konnte nicht geladen werden",
+    en: "Module could not be loaded",
+  },
+  "error.anonymize_title": {
+    de: "Anonymisierung konnte nicht geladen werden",
+    en: "Anonymization could not be loaded",
+  },
+  "error.api-keys_title": {
+    de: "API-Schlüssel konnten nicht geladen werden",
+    en: "API keys could not be loaded",
+  },
+  "error.approvals_title": {
+    de: "Freigaben konnten nicht geladen werden",
+    en: "Approvals could not be loaded",
+  },
+  "error.assistant_title": {
+    de: "Assistent konnte nicht geladen werden",
+    en: "Assistant could not be loaded",
+  },
+  "error.audit_title": {
+    de: "Audit-Log konnte nicht geladen werden",
+    en: "Audit log could not be loaded",
+  },
   "error.bea_title": { de: "beA konnten nicht geladen werden", en: "beA could not be loaded" },
-  "error.billing_title": { de: "Abrechnung konnte nicht geladen werden", en: "Billing could not be loaded" },
+  "error.billing_title": {
+    de: "Abrechnung konnte nicht geladen werden",
+    en: "Billing could not be loaded",
+  },
   "error.brain_title": { de: "Brain konnte nicht geladen werden", en: "Brain could not be loaded" },
-  "error.calendar-export_title": { de: "Kalender-Export konnte nicht geladen werden", en: "Calendar export could not be loaded" },
-  "error.case-scanner_title": { de: "Akten-Scanner konnte nicht geladen werden", en: "Case scanner could not be loaded" },
-  "error.cases_title": { de: "Akten konnten nicht geladen werden", en: "Cases could not be loaded" },
+  "error.calendar-export_title": {
+    de: "Kalender-Export konnte nicht geladen werden",
+    en: "Calendar export could not be loaded",
+  },
+  "error.case-scanner_title": {
+    de: "Akten-Scanner konnte nicht geladen werden",
+    en: "Case scanner could not be loaded",
+  },
+  "error.cases_title": {
+    de: "Akten konnten nicht geladen werden",
+    en: "Cases could not be loaded",
+  },
   "error.chat_title": { de: "Chat konnte nicht geladen werden", en: "Chat could not be loaded" },
-  "error.clause-library_title": { de: "Klauselbibliothek konnte nicht geladen werden", en: "Clause library could not be loaded" },
-  "error.client-portal_title": { de: "Mandantenportal konnte nicht geladen werden", en: "Client portal could not be loaded" },
-  "error.compliance_title": { de: "Compliance konnte nicht geladen werden", en: "Compliance could not be loaded" },
-  "error.connectors_title": { de: "Connectors konnten nicht geladen werden", en: "Connectors could not be loaded" },
-  "error.contacts_title": { de: "Kontakte konnten nicht geladen werden", en: "Contacts could not be loaded" },
-  "error.contracts_title": { de: "Verträge konnten nicht geladen werden", en: "Contracts could not be loaded" },
-  "error.controlling_title": { de: "Controlling konnte nicht geladen werden", en: "Controlling could not be loaded" },
-  "error.cost-calculator_title": { de: "Kostenrechner konnte nicht geladen werden", en: "Cost calculator could not be loaded" },
-  "error.data-export_title": { de: "Daten-Export konnte nicht geladen werden", en: "Data export could not be loaded" },
-  "error.datev-export_title": { de: "DATEV-Export konnte nicht geladen werden", en: "DATEV export could not be loaded" },
-  "error.deadlines_title": { de: "Fristen konnten nicht geladen werden", en: "Deadlines could not be loaded" },
-  "error.deep-analysis_title": { de: "Tiefenanalyse konnte nicht geladen werden", en: "Deep analysis could not be loaded" },
-  "error.document-requests_title": { de: "Dokumentenanfragen konnten nicht geladen werden", en: "Document requests could not be loaded" },
-  "error.drafting_title": { de: "Drafting konnte nicht geladen werden", en: "Drafting could not be loaded" },
-  "error.email-import_title": { de: "E-Mail-Import konnte nicht geladen werden", en: "Email import could not be loaded" },
-  "error.experience_title": { de: "Experience konnte nicht geladen werden", en: "Experience could not be loaded" },
+  "error.clause-library_title": {
+    de: "Klauselbibliothek konnte nicht geladen werden",
+    en: "Clause library could not be loaded",
+  },
+  "error.client-portal_title": {
+    de: "Mandantenportal konnte nicht geladen werden",
+    en: "Client portal could not be loaded",
+  },
+  "error.compliance_title": {
+    de: "Compliance konnte nicht geladen werden",
+    en: "Compliance could not be loaded",
+  },
+  "error.connectors_title": {
+    de: "Connectors konnten nicht geladen werden",
+    en: "Connectors could not be loaded",
+  },
+  "error.contacts_title": {
+    de: "Kontakte konnten nicht geladen werden",
+    en: "Contacts could not be loaded",
+  },
+  "error.contracts_title": {
+    de: "Verträge konnten nicht geladen werden",
+    en: "Contracts could not be loaded",
+  },
+  "error.controlling_title": {
+    de: "Controlling konnte nicht geladen werden",
+    en: "Controlling could not be loaded",
+  },
+  "error.cost-calculator_title": {
+    de: "Kostenrechner konnte nicht geladen werden",
+    en: "Cost calculator could not be loaded",
+  },
+  "error.data-export_title": {
+    de: "Daten-Export konnte nicht geladen werden",
+    en: "Data export could not be loaded",
+  },
+  "error.datev-export_title": {
+    de: "DATEV-Export konnte nicht geladen werden",
+    en: "DATEV export could not be loaded",
+  },
+  "error.deadlines_title": {
+    de: "Fristen konnten nicht geladen werden",
+    en: "Deadlines could not be loaded",
+  },
+  "error.deep-analysis_title": {
+    de: "Tiefenanalyse konnte nicht geladen werden",
+    en: "Deep analysis could not be loaded",
+  },
+  "error.document-requests_title": {
+    de: "Dokumentenanfragen konnten nicht geladen werden",
+    en: "Document requests could not be loaded",
+  },
+  "error.drafting_title": {
+    de: "Drafting konnte nicht geladen werden",
+    en: "Drafting could not be loaded",
+  },
+  "error.email-import_title": {
+    de: "E-Mail-Import konnte nicht geladen werden",
+    en: "Email import could not be loaded",
+  },
+  "error.experience_title": {
+    de: "Experience konnte nicht geladen werden",
+    en: "Experience could not be loaded",
+  },
   "error.graph_title": { de: "Graph konnte nicht geladen werden", en: "Graph could not be loaded" },
-  "error.import-kanzlei_title": { de: "Kanzlei-Import konnte nicht geladen werden", en: "Firm import could not be loaded" },
-  "error.intake_title": { de: "Eingang konnten nicht geladen werden", en: "Intake could not be loaded" },
-  "error.invoicing_title": { de: "Rechnungen konnten nicht geladen werden", en: "Invoices could not be loaded" },
-  "error.judgements-sync_title": { de: "Rechtsprechung-Sync konnte nicht geladen werden", en: "Case law sync could not be loaded" },
-  "error.kollisionspruefung_title": { de: "Kollisionsprüfung konnte nicht geladen werden", en: "Conflict check could not be loaded" },
-  "error.mobile_title": { de: "Mobile konnte nicht geladen werden", en: "Mobile could not be loaded" },
-  "error.monitoring_title": { de: "Monitoring konnte nicht geladen werden", en: "Monitoring could not be loaded" },
-  "error.norms_title": { de: "Normen konnten nicht geladen werden", en: "Statutes could not be loaded" },
-  "error.obligation-tracking_title": { de: "Obliegenheits-Tracking konnte nicht geladen werden", en: "Obligation tracking could not be loaded" },
-  "error.onboarding_title": { de: "Onboarding konnte nicht geladen werden", en: "Onboarding could not be loaded" },
-  "error.opponents_title": { de: "Gegner konnten nicht geladen werden", en: "Opponents could not be loaded" },
-  "error.playbooks_title": { de: "Playbooks konnten nicht geladen werden", en: "Playbooks could not be loaded" },
-  "error.portfolio-insights_title": { de: "Portfolio-Insights konnten nicht geladen werden", en: "Portfolio insights could not be loaded" },
-  "error.precedent-search_title": { de: "Präzedenzfall-Suche konnte nicht geladen werden", en: "Precedent search could not be loaded" },
-  "error.process-strategy_title": { de: "Prozessstrategie konnte nicht geladen werden", en: "Process strategy could not be loaded" },
+  "error.import-kanzlei_title": {
+    de: "Kanzlei-Import konnte nicht geladen werden",
+    en: "Firm import could not be loaded",
+  },
+  "error.intake_title": {
+    de: "Eingang konnten nicht geladen werden",
+    en: "Intake could not be loaded",
+  },
+  "error.invoicing_title": {
+    de: "Rechnungen konnten nicht geladen werden",
+    en: "Invoices could not be loaded",
+  },
+  "error.judgements-sync_title": {
+    de: "Rechtsprechung-Sync konnte nicht geladen werden",
+    en: "Case law sync could not be loaded",
+  },
+  "error.kollisionspruefung_title": {
+    de: "Kollisionsprüfung konnte nicht geladen werden",
+    en: "Conflict check could not be loaded",
+  },
+  "error.mobile_title": {
+    de: "Mobile konnte nicht geladen werden",
+    en: "Mobile could not be loaded",
+  },
+  "error.monitoring_title": {
+    de: "Monitoring konnte nicht geladen werden",
+    en: "Monitoring could not be loaded",
+  },
+  "error.norms_title": {
+    de: "Normen konnten nicht geladen werden",
+    en: "Statutes could not be loaded",
+  },
+  "error.obligation-tracking_title": {
+    de: "Obliegenheits-Tracking konnte nicht geladen werden",
+    en: "Obligation tracking could not be loaded",
+  },
+  "error.onboarding_title": {
+    de: "Onboarding konnte nicht geladen werden",
+    en: "Onboarding could not be loaded",
+  },
+  "error.opponents_title": {
+    de: "Gegner konnten nicht geladen werden",
+    en: "Opponents could not be loaded",
+  },
+  "error.playbooks_title": {
+    de: "Playbooks konnten nicht geladen werden",
+    en: "Playbooks could not be loaded",
+  },
+  "error.portfolio-insights_title": {
+    de: "Portfolio-Insights konnten nicht geladen werden",
+    en: "Portfolio insights could not be loaded",
+  },
+  "error.precedent-search_title": {
+    de: "Präzedenzfall-Suche konnte nicht geladen werden",
+    en: "Precedent search could not be loaded",
+  },
+  "error.process-strategy_title": {
+    de: "Prozessstrategie konnte nicht geladen werden",
+    en: "Process strategy could not be loaded",
+  },
   "error.query_title": { de: "Query konnte nicht geladen werden", en: "Query could not be loaded" },
-  "error.rag-eval_title": { de: "RAG-Eval konnte nicht geladen werden", en: "RAG eval could not be loaded" },
-  "error.rechtsprechung_title": { de: "Rechtsprechung konnte nicht geladen werden", en: "Case law could not be loaded" },
-  "error.reports_title": { de: "Berichte konnten nicht geladen werden", en: "Reports could not be loaded" },
-  "error.research_title": { de: "Recherche konnte nicht geladen werden", en: "Research could not be loaded" },
-  "error.review-queue_title": { de: "Review-Queue konnte nicht geladen werden", en: "Review queue could not be loaded" },
-  "error.settings_title": { de: "Einstellungen konnten nicht geladen werden", en: "Settings could not be loaded" },
-  "error.shared-spaces_title": { de: "Geteilte Bereiche konnten nicht geladen werden", en: "Shared spaces could not be loaded" },
-  "error.signature_title": { de: "Signaturen konnten nicht geladen werden", en: "Signatures could not be loaded" },
-  "error.sources_title": { de: "Quellen konnten nicht geladen werden", en: "Sources could not be loaded" },
-  "error.tabular-review_title": { de: "Tabular-Review konnte nicht geladen werden", en: "Tabular review could not be loaded" },
+  "error.rag-eval_title": {
+    de: "RAG-Eval konnte nicht geladen werden",
+    en: "RAG eval could not be loaded",
+  },
+  "error.rechtsprechung_title": {
+    de: "Rechtsprechung konnte nicht geladen werden",
+    en: "Case law could not be loaded",
+  },
+  "error.reports_title": {
+    de: "Berichte konnten nicht geladen werden",
+    en: "Reports could not be loaded",
+  },
+  "error.research_title": {
+    de: "Recherche konnte nicht geladen werden",
+    en: "Research could not be loaded",
+  },
+  "error.review-queue_title": {
+    de: "Review-Queue konnte nicht geladen werden",
+    en: "Review queue could not be loaded",
+  },
+  "error.settings_title": {
+    de: "Einstellungen konnten nicht geladen werden",
+    en: "Settings could not be loaded",
+  },
+  "error.shared-spaces_title": {
+    de: "Geteilte Bereiche konnten nicht geladen werden",
+    en: "Shared spaces could not be loaded",
+  },
+  "error.signature_title": {
+    de: "Signaturen konnten nicht geladen werden",
+    en: "Signatures could not be loaded",
+  },
+  "error.sources_title": {
+    de: "Quellen konnten nicht geladen werden",
+    en: "Sources could not be loaded",
+  },
+  "error.tabular-review_title": {
+    de: "Tabular-Review konnte nicht geladen werden",
+    en: "Tabular review could not be loaded",
+  },
   "error.team_title": { de: "Team konnte nicht geladen werden", en: "Team could not be loaded" },
-  "error.translate_title": { de: "Übersetzung konnte nicht geladen werden", en: "Translation could not be loaded" },
-  "error.upload_title": { de: "Upload konnte nicht geladen werden", en: "Upload could not be loaded" },
+  "error.translate_title": {
+    de: "Übersetzung konnte nicht geladen werden",
+    en: "Translation could not be loaded",
+  },
+  "error.upload_title": {
+    de: "Upload konnte nicht geladen werden",
+    en: "Upload could not be loaded",
+  },
   "error.vault_title": { de: "Vault konnte nicht geladen werden", en: "Vault could not be loaded" },
-  "error.verfahrensdoku_title": { de: "Verfahrensdokumentation konnte nicht geladen werden", en: "Procedure documentation could not be loaded" },
-  "error.version-history_title": { de: "Versionshistorie konnte nicht geladen werden", en: "Version history could not be loaded" },
-  "error.whatsapp_title": { de: "WhatsApp konnte nicht geladen werden", en: "WhatsApp could not be loaded" },
-  "error.word-addin_title": { de: "Word-Add-In konnte nicht geladen werden", en: "Word add-in could not be loaded" },
-  "error.workflows_title": { de: "Workflows konnten nicht geladen werden", en: "Workflows could not be loaded" },
+  "error.verfahrensdoku_title": {
+    de: "Verfahrensdokumentation konnte nicht geladen werden",
+    en: "Procedure documentation could not be loaded",
+  },
+  "error.version-history_title": {
+    de: "Versionshistorie konnte nicht geladen werden",
+    en: "Version history could not be loaded",
+  },
+  "error.whatsapp_title": {
+    de: "WhatsApp konnte nicht geladen werden",
+    en: "WhatsApp could not be loaded",
+  },
+  "error.word-addin_title": {
+    de: "Word-Add-In konnte nicht geladen werden",
+    en: "Word add-in could not be loaded",
+  },
+  "error.workflows_title": {
+    de: "Workflows konnten nicht geladen werden",
+    en: "Workflows could not be loaded",
+  },
 
   // ── Onboarding errors ──
   "onboarding.error_complete": {
@@ -1909,11 +2095,26 @@ export const D = {
 
   // ── Unified Chat ──
   "chat.placeholder": { de: "Frage oder Aufgabe eingeben…", en: "Enter a question or task…" },
-  "chat.placeholder_case": { de: "Frage zur Akte, Rechtsfrage oder Aufgabe stellen…", en: "Ask about the matter, a legal question, or task…" },
-  "chat.placeholder_global": { de: "Rechtsfrage, Frist prüfen oder Schriftsatz entwerfen…", en: "Ask a legal question, check deadlines, or draft a document…" },
-  "chat.placeholder_deadline": { de: "Fristen prüfen, berechnen oder analysieren…", en: "Check, calculate or analyze deadlines…" },
-  "chat.placeholder_draft": { de: "Schriftsatz entwerfen, Klage oder Begründung…", en: "Draft a pleading, lawsuit, or brief…" },
-  "chat.placeholder_research": { de: "Rechtsprechung, Normen oder Gutachten recherchieren…", en: "Research case law, statutes, or opinions…" },
+  "chat.placeholder_case": {
+    de: "Frage zur Akte, Rechtsfrage oder Aufgabe stellen…",
+    en: "Ask about the matter, a legal question, or task…",
+  },
+  "chat.placeholder_global": {
+    de: "Rechtsfrage, Frist prüfen oder Schriftsatz entwerfen…",
+    en: "Ask a legal question, check deadlines, or draft a document…",
+  },
+  "chat.placeholder_deadline": {
+    de: "Fristen prüfen, berechnen oder analysieren…",
+    en: "Check, calculate or analyze deadlines…",
+  },
+  "chat.placeholder_draft": {
+    de: "Schriftsatz entwerfen, Klage oder Begründung…",
+    en: "Draft a pleading, lawsuit, or brief…",
+  },
+  "chat.placeholder_research": {
+    de: "Rechtsprechung, Normen oder Gutachten recherchieren…",
+    en: "Research case law, statutes, or opinions…",
+  },
   "chat.title": { de: "Assistent", en: "Assistant" },
   "chat.empty_title": {
     de: "Was soll ich für die Akte prüfen?",
@@ -4486,7 +4687,10 @@ export const D = {
   "casesnew.quick_opponent_placeholder": { de: "Gegner auswählen…", en: "Select opponent…" },
   "casesnew.quick_opponent_none": { de: "Kein Gegner", en: "No opponent" },
   "casesnew.quick_show_advanced": { de: "Erweiterte Felder", en: "Advanced fields" },
-  "casesnew.quick_hide_advanced": { de: "Erweiterte Felder ausblenden", en: "Hide advanced fields" },
+  "casesnew.quick_hide_advanced": {
+    de: "Erweiterte Felder ausblenden",
+    en: "Hide advanced fields",
+  },
   "casesnew.quick_full_form_hint": {
     de: "Für die vollständige Erfassung mit Sachverhalt, Tags und Kollisionsprüfung:",
     en: "For complete intake with facts, tags and conflict check:",
@@ -4540,14 +4744,20 @@ export const D = {
   "cases.widget.documents": { de: "Dokumente", en: "Documents" },
   "cases.widget.document_count": { de: "Dokumente", en: "documents" },
   "cases.widget.no_documents": { de: "Noch keine Dokumente", en: "No documents yet" },
-  "cases.widget.document_hint": { de: "Upload in der Dokumenten-Tab", en: "Upload in documents tab" },
+  "cases.widget.document_hint": {
+    de: "Upload in der Dokumenten-Tab",
+    en: "Upload in documents tab",
+  },
   "cases.widget.billing": { de: "Abrechnung", en: "Billing" },
   "cases.widget.no_time": { de: "Keine gebuchte Zeit", en: "No time logged" },
   "cases.widget.expenses": { de: "Auslagen", en: "expenses" },
   "cases.widget.no_expenses": { de: "Keine Auslagen", en: "No expenses" },
   "cases.widget.strategy": { de: "KI-Strategie", en: "AI Strategy" },
   "cases.widget.ai_ready": { de: "KI-Analyse bereit", en: "AI analysis ready" },
-  "cases.widget.ai_hint": { de: "Chancen, Risiken & Nächste Schritte", en: "Chances, risks & next steps" },
+  "cases.widget.ai_hint": {
+    de: "Chancen, Risiken & Nächste Schritte",
+    en: "Chances, risks & next steps",
+  },
 
   // ── WhatsApp Templates errors ──
   "wamplates.error_load": { de: "Fehler beim Laden", en: "Failed to load" },
@@ -4688,12 +4898,18 @@ export const D = {
   "signature.error_save": { de: "Speichern fehlgeschlagen", en: "Save failed" },
   "signature.btn_cancel": { de: "Abbrechen", en: "Cancel" },
   "signature.btn_request": { de: "Unterschrift anfordern", en: "Request signature" },
-  "signature.quick_title": { de: "Signatur-Anfrage schnell erstellen", en: "Quick create signature request" },
+  "signature.quick_title": {
+    de: "Signatur-Anfrage schnell erstellen",
+    en: "Quick create signature request",
+  },
   "signature.quick_desc": {
     de: "Dokument zur Unterschrift vorbereiten und im Brain speichern.",
     en: "Prepare document for signature and save to brain.",
   },
-  "signature.quick_select_draft": { de: "Entwurf auswählen (optional)", en: "Select draft (optional)" },
+  "signature.quick_select_draft": {
+    de: "Entwurf auswählen (optional)",
+    en: "Select draft (optional)",
+  },
   "signature.quick_manual": { de: "Manuell eingeben", en: "Enter manually" },
   "signature.quick_document": { de: "Dokument", en: "Document" },
   "signature.quick_recipient": { de: "Empfänger-Name", en: "Recipient name" },

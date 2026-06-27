@@ -12,15 +12,15 @@
 // v0.40 wave completes (skillpack code is load-bearing for many users;
 // migrating it requires its own care + test coverage).
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import type { SchemaPackManifest } from '../schema-pack/manifest-v1.ts';
+import { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync } from "node:fs";
+import { dirname, join } from "node:path";
+import type { SchemaPackManifest } from "../schema-pack/manifest-v1.ts";
 
 /**
  * Discriminator for artifact type. Drives which manifest validator runs
  * + which install target directory + which trust gate fires.
  */
-export type ArtifactKind = 'skillpack' | 'schemapack';
+export type ArtifactKind = "skillpack" | "schemapack";
 
 export interface ArtifactDescriptor {
   kind: ArtifactKind;
@@ -41,21 +41,21 @@ export interface ArtifactDescriptor {
  * Returns null on unrecognized input.
  */
 export function detectArtifactKind(path: string): ArtifactKind | null {
-  if (path.endsWith('.gbrain-schema')) return 'schemapack';
-  if (path.endsWith('.gbrain-skillpack')) return 'skillpack';
+  if (path.endsWith(".gbrain-schema")) return "schemapack";
+  if (path.endsWith(".gbrain-skillpack")) return "skillpack";
   if (!existsSync(path)) return null;
   try {
     // Directory: look for the canonical manifest file.
-    if (existsSync(join(path, 'pack.yaml'))) {
-      const raw = readFileSync(join(path, 'pack.yaml'), 'utf-8');
-      if (raw.includes('gbrain-schema-pack-v1')) return 'schemapack';
+    if (existsSync(join(path, "pack.yaml"))) {
+      const raw = readFileSync(join(path, "pack.yaml"), "utf-8");
+      if (raw.includes("gbrain-schema-pack-v1")) return "schemapack";
     }
-    if (existsSync(join(path, 'pack.json'))) {
-      const raw = readFileSync(join(path, 'pack.json'), 'utf-8');
-      if (raw.includes('gbrain-schema-pack-v1')) return 'schemapack';
+    if (existsSync(join(path, "pack.json"))) {
+      const raw = readFileSync(join(path, "pack.json"), "utf-8");
+      if (raw.includes("gbrain-schema-pack-v1")) return "schemapack";
     }
-    if (existsSync(join(path, 'skillpack.json'))) {
-      return 'skillpack';
+    if (existsSync(join(path, "skillpack.json"))) {
+      return "skillpack";
     }
   } catch {
     return null;
@@ -69,9 +69,7 @@ export function detectArtifactKind(path: string): ArtifactKind | null {
  * cleanly.
  */
 export function targetDirForKind(kind: ArtifactKind, gbrainHome: string): string {
-  return kind === 'schemapack'
-    ? join(gbrainHome, 'schema-packs')
-    : join(gbrainHome, 'skillpacks');
+  return kind === "schemapack" ? join(gbrainHome, "schema-packs") : join(gbrainHome, "skillpacks");
 }
 
 /**
@@ -81,24 +79,28 @@ export function targetDirForKind(kind: ArtifactKind, gbrainHome: string): string
  * descriptive message.
  */
 export function validateManifestByKind(kind: ArtifactKind, manifest: unknown): void {
-  if (kind === 'schemapack') {
+  if (kind === "schemapack") {
     // Delegate to the schema-pack manifest validator. Throws on failure.
-    if (typeof manifest !== 'object' || manifest === null) {
-      throw new Error('schemapack manifest must be an object');
+    if (typeof manifest !== "object" || manifest === null) {
+      throw new Error("schemapack manifest must be an object");
     }
     const m = manifest as { api_version?: unknown };
-    if (m.api_version !== 'gbrain-schema-pack-v1') {
-      throw new Error(`schemapack manifest api_version must be "gbrain-schema-pack-v1"; got ${JSON.stringify(m.api_version)}`);
+    if (m.api_version !== "gbrain-schema-pack-v1") {
+      throw new Error(
+        `schemapack manifest api_version must be "gbrain-schema-pack-v1"; got ${JSON.stringify(m.api_version)}`
+      );
     }
     return;
   }
-  if (kind === 'skillpack') {
-    if (typeof manifest !== 'object' || manifest === null) {
-      throw new Error('skillpack manifest must be an object');
+  if (kind === "skillpack") {
+    if (typeof manifest !== "object" || manifest === null) {
+      throw new Error("skillpack manifest must be an object");
     }
     const m = manifest as { api_version?: unknown };
-    if (m.api_version !== 'gbrain-skillpack-v1') {
-      throw new Error(`skillpack manifest api_version must be "gbrain-skillpack-v1"; got ${JSON.stringify(m.api_version)}`);
+    if (m.api_version !== "gbrain-skillpack-v1") {
+      throw new Error(
+        `skillpack manifest api_version must be "gbrain-skillpack-v1"; got ${JSON.stringify(m.api_version)}`
+      );
     }
     return;
   }
@@ -119,7 +121,7 @@ export function validateManifestByKind(kind: ArtifactKind, manifest: unknown): v
 export function installArtifact(
   desc: ArtifactDescriptor,
   gbrainHome: string,
-  copyContent: (sourcePath: string, targetDir: string) => void,
+  copyContent: (sourcePath: string, targetDir: string) => void
 ): { installed_at: string; target: string; kind: ArtifactKind } {
   validateManifestByKind(desc.kind, desc.manifest);
   const targetParent = targetDirForKind(desc.kind, gbrainHome);

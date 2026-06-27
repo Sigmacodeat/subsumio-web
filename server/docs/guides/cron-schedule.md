@@ -16,15 +16,15 @@ fixed. You wake up and the brain is smarter than when you went to sleep.
 
 ## The Schedule
 
-| Frequency | Job | Brain Interaction | Recipe |
-|-----------|-----|-------------------|--------|
-| Every 30 min | Email monitoring | Search sender, update people pages | [email-to-brain](../../recipes/email-to-brain.md) |
-| Every 30 min | X/Twitter collection | Create/update media pages, entity extraction | [x-to-brain](../../recipes/x-to-brain.md) |
-| 3x/day (weekdays) | Meeting sync | Full ingestion + attendee propagation | [meeting-sync](../../recipes/meeting-sync.md) |
-| Weekly | Calendar sync | Daily files + attendee enrichment | [calendar-to-brain](../../recipes/calendar-to-brain.md) |
-| Daily AM | Morning briefing | Search calendar attendees, deal status, active threads | [briefing skill](../../skills/briefing/SKILL.md) |
-| Weekly | Brain maintenance | `gbrain doctor`, embed stale, orphan detection | [maintain skill](../../skills/maintain/SKILL.md) |
-| Nightly | Dream cycle | Entity sweep, enrich thin spots, fix citations | See below |
+| Frequency         | Job                  | Brain Interaction                                      | Recipe                                                  |
+| ----------------- | -------------------- | ------------------------------------------------------ | ------------------------------------------------------- |
+| Every 30 min      | Email monitoring     | Search sender, update people pages                     | [email-to-brain](../../recipes/email-to-brain.md)       |
+| Every 30 min      | X/Twitter collection | Create/update media pages, entity extraction           | [x-to-brain](../../recipes/x-to-brain.md)               |
+| 3x/day (weekdays) | Meeting sync         | Full ingestion + attendee propagation                  | [meeting-sync](../../recipes/meeting-sync.md)           |
+| Weekly            | Calendar sync        | Daily files + attendee enrichment                      | [calendar-to-brain](../../recipes/calendar-to-brain.md) |
+| Daily AM          | Morning briefing     | Search calendar attendees, deal status, active threads | [briefing skill](../../skills/briefing/SKILL.md)        |
+| Weekly            | Brain maintenance    | `gbrain doctor`, embed stale, orphan detection         | [maintain skill](../../skills/maintain/SKILL.md)        |
+| Nightly           | Dream cycle          | Entity sweep, enrich thin spots, fix citations         | See below                                               |
 
 ## Implementation: Setting Up Cron Jobs
 
@@ -130,6 +130,7 @@ dream_cycle():
 deep, REM) run automatically during quiet hours.
 
 **Hermes Agent:**
+
 ```bash
 /cron add "0 2 * * *" "Dream cycle: search today's sessions for
   entities I mentioned. For each person, company, or idea: check
@@ -140,6 +141,7 @@ deep, REM) run automatically during quiet hours.
 ```
 
 **Claude Code / Custom agents:** Create a script:
+
 ```bash
 #!/bin/bash
 # dream-cycle.sh
@@ -190,4 +192,4 @@ echo "Dream cycle complete at $(date)"
 
 ---
 
-*Part of the [GBrain Skillpack](../GBRAIN_SKILLPACK.md). See also: [Quiet Hours](quiet-hours.md), [Operational Disciplines](operational-disciplines.md)*
+_Part of the [GBrain Skillpack](../GBRAIN_SKILLPACK.md). See also: [Quiet Hours](quiet-hours.md), [Operational Disciplines](operational-disciplines.md)_

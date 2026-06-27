@@ -23,6 +23,7 @@ mutating: false
 ## Contract
 
 This skill guarantees:
+
 - Calendar/meetings for today are loaded with brain context per attendee
 - Open threads from yesterday are surfaced
 - Active tasks reviewed with priority ordering

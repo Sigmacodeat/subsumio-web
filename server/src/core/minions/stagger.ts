@@ -20,7 +20,7 @@ const FNV_PRIME = 0x01000193;
 
 /** Minutes offset in [0, 59] for the given stagger key. */
 export function staggerMinuteOffset(key: string): number {
-  if (!key || typeof key !== 'string') return 0;
+  if (!key || typeof key !== "string") return 0;
   let h = FNV_OFFSET;
   for (let i = 0; i < key.length; i++) {
     h ^= key.charCodeAt(i);

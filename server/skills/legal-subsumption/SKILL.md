@@ -43,6 +43,7 @@ mutating: true
 ## Contract
 
 This skill guarantees:
+
 1. Every applicable norm is cited with § number and statute acronym
 2. The subsumption follows Gutachtenstil (issue → norm → subsumption → result)
 3. Controlling BGH/OGH/BFH decisions are cited where found in brain
@@ -58,6 +59,7 @@ applicable norms, or the legal consequence. Do NOT use for pure factual queries.
 ### Step 1 — Extract the Fact Pattern
 
 Parse the user's input into:
+
 - **Parties**: Who is involved (Kläger/Beklagter, Schuldner/Gläubiger)?
 - **Acts**: What happened (Handlung, Unterlassen, Erfolg)?
 - **Context**: Which legal area applies (Zivilrecht, Strafrecht, Steuerrecht, Verwaltungsrecht)?
@@ -71,6 +73,7 @@ gbrain search "<key facts> Norm Tatbestand" --source legal-corpus
 ```
 
 If the brain has the law corpus loaded (DE: BGB, StGB, ZPO, HGB, AO, UStG, EStG; AT: ABGB, StGB, ZPO; CH: OR, ZGB):
+
 - Search for the relevant norms by fact pattern keywords
 - Retrieve the exact § text
 
@@ -126,12 +129,12 @@ gbrain put_page \
 
 ## Jurisdiction Quick Reference
 
-| Jurisdiction | Civil | Criminal | Tax | Procedure |
-|---|---|---|---|---|
-| DE | BGB, HGB, GmbHG | StGB, OWiG | EStG, KStG, UStG, AO | ZPO, StPO |
-| AT | ABGB, UGB | StGB, VStG | EStG, UStG, BAO | ZPO, StPO |
-| CH | OR, ZGB | StGB | DBG, MWSTG | ZPO, StPO |
-| EU | DSGVO, HGB | — | MwStSystRL | EuGH-Verfahren |
+| Jurisdiction | Civil           | Criminal   | Tax                  | Procedure      |
+| ------------ | --------------- | ---------- | -------------------- | -------------- |
+| DE           | BGB, HGB, GmbHG | StGB, OWiG | EStG, KStG, UStG, AO | ZPO, StPO      |
+| AT           | ABGB, UGB       | StGB, VStG | EStG, UStG, BAO      | ZPO, StPO      |
+| CH           | OR, ZGB         | StGB       | DBG, MWSTG           | ZPO, StPO      |
+| EU           | DSGVO, HGB      | —          | MwStSystRL           | EuGH-Verfahren |
 
 ## Error Handling
 

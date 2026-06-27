@@ -18,9 +18,9 @@
  * output via `--json` for scripted callers.
  */
 
-import { existsSync, renameSync, statSync } from 'fs';
-import { dirname } from 'path';
-import { loadConfig, loadConfigFileOnly, gbrainPath } from '../core/config.ts';
+import { existsSync, renameSync, statSync } from "fs";
+import { dirname } from "path";
+import { loadConfig, loadConfigFileOnly, gbrainPath } from "../core/config.ts";
 
 interface ReinitOpts {
   embeddingModel: string;
@@ -38,25 +38,23 @@ export async function runReinitPglite(args: string[]): Promise<void> {
   // works there and migrating data is non-destructive — wipe-and-reinit
   // on Postgres would drop the entire brain.
   const cfg = loadConfig();
-  if (cfg?.engine !== 'pglite') {
+  if (cfg?.engine !== "pglite") {
     fail(
       opts.jsonOutput,
-      'not_pglite',
-      `gbrain reinit-pglite is for PGLite brains only (current engine: ${cfg?.engine || 'none'}). ` +
-        `For Postgres, see docs/embedding-migrations.md for the in-place ALTER recipe.`,
+      "not_pglite",
+      `gbrain reinit-pglite is for PGLite brains only (current engine: ${cfg?.engine || "none"}). ` +
+        `For Postgres, see docs/embedding-migrations.md for the in-place ALTER recipe.`
     );
   }
 
   // Resolve the active brain path. `--path` override > config > default.
-  const dbPath = opts.customPath
-    || cfg.database_path
-    || gbrainPath('brain.pglite');
+  const dbPath = opts.customPath || cfg.database_path || gbrainPath("brain.pglite");
 
   if (!existsSync(dbPath)) {
     fail(
       opts.jsonOutput,
-      'no_brain',
-      `No PGLite brain found at ${dbPath}. Run \`gbrain init --pglite\` to create one.`,
+      "no_brain",
+      `No PGLite brain found at ${dbPath}. Run \`gbrain init --pglite\` to create one.`
     );
   }
 
@@ -65,22 +63,24 @@ export async function runReinitPglite(args: string[]): Promise<void> {
   try {
     const stats = statSync(dbPath);
     sizeMb = Math.round((stats.size / (1024 * 1024)) * 10) / 10;
-  } catch { /* best-effort */ }
+  } catch {
+    /* best-effort */
+  }
 
   // Show plan.
   if (!opts.jsonOutput) {
-    console.log('');
-    console.log('gbrain reinit-pglite — wipe and re-create the PGLite brain.');
-    console.log('');
-    console.log('  Active brain:        ' + dbPath + (sizeMb > 0 ? ` (${sizeMb} MB)` : ''));
-    console.log('  Backup destination:  ' + dbPath + '.bak');
-    console.log('  New embedding model: ' + opts.embeddingModel);
-    console.log('  New dimensions:      ' + opts.embeddingDimensions);
-    console.log('  Re-sync after init:  ' + (opts.noSync ? 'NO (--no-sync)' : 'YES'));
-    console.log('');
-    console.log('This is destructive: every page, chunk, and embedding in the');
-    console.log('brain is wiped. The .bak file lets you roll back by `mv`.');
-    console.log('');
+    console.log("");
+    console.log("gbrain reinit-pglite — wipe and re-create the PGLite brain.");
+    console.log("");
+    console.log("  Active brain:        " + dbPath + (sizeMb > 0 ? ` (${sizeMb} MB)` : ""));
+    console.log("  Backup destination:  " + dbPath + ".bak");
+    console.log("  New embedding model: " + opts.embeddingModel);
+    console.log("  New dimensions:      " + opts.embeddingDimensions);
+    console.log("  Re-sync after init:  " + (opts.noSync ? "NO (--no-sync)" : "YES"));
+    console.log("");
+    console.log("This is destructive: every page, chunk, and embedding in the");
+    console.log("brain is wiped. The .bak file lets you roll back by `mv`.");
+    console.log("");
   }
 
   // TTY confirmation.
@@ -88,16 +88,16 @@ export async function runReinitPglite(args: string[]): Promise<void> {
     if (!process.stdin.isTTY) {
       fail(
         opts.jsonOutput,
-        'no_tty_no_yes',
-        'Non-TTY environment requires --yes to confirm destruction.',
+        "no_tty_no_yes",
+        "Non-TTY environment requires --yes to confirm destruction."
       );
     }
-    const confirmed = await promptYesNo('Wipe and reinit?');
+    const confirmed = await promptYesNo("Wipe and reinit?");
     if (!confirmed) {
       if (opts.jsonOutput) {
-        console.log(JSON.stringify({ status: 'aborted', reason: 'user_declined' }));
+        console.log(JSON.stringify({ status: "aborted", reason: "user_declined" }));
       } else {
-        console.log('Aborted. Brain untouched.');
+        console.log("Aborted. Brain untouched.");
       }
       process.exit(0);
     }
@@ -106,12 +106,12 @@ export async function runReinitPglite(args: string[]): Promise<void> {
   // Step 1: back up existing brain.
   // If a previous .bak exists, refuse rather than silently overwriting it —
   // the user's last rollback target is more valuable than this attempt's.
-  const bakPath = dbPath + '.bak';
+  const bakPath = dbPath + ".bak";
   if (existsSync(bakPath)) {
     fail(
       opts.jsonOutput,
-      'bak_exists',
-      `Backup already exists at ${bakPath}. Move or delete it first to avoid clobbering your previous rollback target.`,
+      "bak_exists",
+      `Backup already exists at ${bakPath}. Move or delete it first to avoid clobbering your previous rollback target.`
     );
   }
 
@@ -125,8 +125,8 @@ export async function runReinitPglite(args: string[]): Promise<void> {
   } catch (e: unknown) {
     fail(
       opts.jsonOutput,
-      'backup_failed',
-      `Failed to back up brain to ${bakPath}: ${e instanceof Error ? e.message : String(e)}`,
+      "backup_failed",
+      `Failed to back up brain to ${bakPath}: ${e instanceof Error ? e.message : String(e)}`
     );
   }
 
@@ -136,91 +136,108 @@ export async function runReinitPglite(args: string[]): Promise<void> {
   // so we go through the full Lane B precedence chain + dim-mismatch
   // detector + saveConfig merge.
   const initArgs = [
-    '--pglite',
-    '--embedding-model', opts.embeddingModel,
-    '--embedding-dimensions', String(opts.embeddingDimensions),
+    "--pglite",
+    "--embedding-model",
+    opts.embeddingModel,
+    "--embedding-dimensions",
+    String(opts.embeddingDimensions),
   ];
   if (opts.customPath) {
-    initArgs.push('--path', opts.customPath);
+    initArgs.push("--path", opts.customPath);
   }
-  if (opts.jsonOutput) initArgs.push('--json');
+  if (opts.jsonOutput) initArgs.push("--json");
 
-  const { runInit } = await import('./init.ts');
+  const { runInit } = await import("./init.ts");
   await runInit(initArgs);
 
   // Step 3: re-sync (unless --no-sync). Best-effort because the user
   // already has a working brain; sync failure shouldn't roll back.
   if (!opts.noSync) {
-    if (!opts.jsonOutput) console.log('');
-    if (!opts.jsonOutput) console.log('Re-syncing brain repo...');
+    if (!opts.jsonOutput) console.log("");
+    if (!opts.jsonOutput) console.log("Re-syncing brain repo...");
     try {
       // Need an engine handle to call runSync. Open one against the
       // freshly-init'd brain.
-      const { createEngine } = await import('../core/engine-factory.ts');
+      const { createEngine } = await import("../core/engine-factory.ts");
       const newCfg = loadConfig();
       if (!newCfg) {
-        if (!opts.jsonOutput) console.error('Warning: no config after reinit; skipping sync. Run `gbrain sync` manually.');
+        if (!opts.jsonOutput)
+          console.error(
+            "Warning: no config after reinit; skipping sync. Run `gbrain sync` manually."
+          );
         return;
       }
-      const engine = await createEngine({ engine: 'pglite' });
-      await engine.connect({ database_path: newCfg.database_path || dbPath, engine: 'pglite' });
+      const engine = await createEngine({ engine: "pglite" });
+      await engine.connect({ database_path: newCfg.database_path || dbPath, engine: "pglite" });
       try {
-        const { runSync } = await import('./sync.ts');
+        const { runSync } = await import("./sync.ts");
         await runSync(engine, []);
       } finally {
-        try { await engine.disconnect(); } catch { /* best-effort */ }
+        try {
+          await engine.disconnect();
+        } catch {
+          /* best-effort */
+        }
       }
     } catch (e: unknown) {
       if (!opts.jsonOutput) {
-        console.error('');
-        console.error(`Warning: sync after reinit failed (${e instanceof Error ? e.message : String(e)}).`);
-        console.error('The brain is initialized but empty. Run \`gbrain sync\` to populate it.');
+        console.error("");
+        console.error(
+          `Warning: sync after reinit failed (${e instanceof Error ? e.message : String(e)}).`
+        );
+        console.error("The brain is initialized but empty. Run \`gbrain sync\` to populate it.");
       }
     }
   }
 
   if (opts.jsonOutput) {
-    console.log(JSON.stringify({
-      status: 'success',
-      brain_path: dbPath,
-      backup_path: bakPath,
-      embedding_model: opts.embeddingModel,
-      embedding_dimensions: opts.embeddingDimensions,
-      synced: !opts.noSync,
-    }));
+    console.log(
+      JSON.stringify({
+        status: "success",
+        brain_path: dbPath,
+        backup_path: bakPath,
+        embedding_model: opts.embeddingModel,
+        embedding_dimensions: opts.embeddingDimensions,
+        synced: !opts.noSync,
+      })
+    );
   } else {
-    console.log('');
-    console.log('Reinit complete. To roll back:');
+    console.log("");
+    console.log("Reinit complete. To roll back:");
     console.log(`  mv ${bakPath} ${dbPath}`);
   }
 }
 
 function parseArgs(args: string[]): ReinitOpts {
-  const helpRequested = args.includes('--help') || args.includes('-h');
+  const helpRequested = args.includes("--help") || args.includes("-h");
   if (helpRequested) {
     printHelp();
     process.exit(0);
   }
 
-  const yes = args.includes('--yes') || args.includes('-y');
-  const jsonOutput = args.includes('--json');
-  const noSync = args.includes('--no-sync');
+  const yes = args.includes("--yes") || args.includes("-y");
+  const jsonOutput = args.includes("--json");
+  const noSync = args.includes("--no-sync");
 
-  const modelIdx = args.indexOf('--embedding-model');
-  const dimsIdx = args.indexOf('--embedding-dimensions');
-  const pathIdx = args.indexOf('--path');
+  const modelIdx = args.indexOf("--embedding-model");
+  const dimsIdx = args.indexOf("--embedding-dimensions");
+  const pathIdx = args.indexOf("--path");
 
   if (modelIdx < 0 || modelIdx === args.length - 1) {
-    fail(jsonOutput, 'missing_model', '--embedding-model <provider:model> is required.');
+    fail(jsonOutput, "missing_model", "--embedding-model <provider:model> is required.");
   }
   if (dimsIdx < 0 || dimsIdx === args.length - 1) {
-    fail(jsonOutput, 'missing_dims', '--embedding-dimensions <N> is required.');
+    fail(jsonOutput, "missing_dims", "--embedding-dimensions <N> is required.");
   }
 
   const dimsStr = args[dimsIdx + 1];
   const dims = parseInt(dimsStr, 10);
   if (!Number.isInteger(dims) || dims <= 0) {
-    fail(jsonOutput, 'invalid_dims', `--embedding-dimensions must be a positive integer (got: ${dimsStr}).`);
+    fail(
+      jsonOutput,
+      "invalid_dims",
+      `--embedding-dimensions must be a positive integer (got: ${dimsStr}).`
+    );
   }
 
   return {
@@ -268,7 +285,7 @@ See also:
 
 function fail(jsonOutput: boolean, reason: string, message: string): never {
   if (jsonOutput) {
-    console.log(JSON.stringify({ status: 'error', reason, message }));
+    console.log(JSON.stringify({ status: "error", reason, message }));
   } else {
     console.error(message);
   }
@@ -281,13 +298,13 @@ async function promptYesNo(question: string): Promise<boolean> {
   process.stdout.write(`${question} (y/N): `);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const stdin = process.stdin as any;
-  stdin.setEncoding?.('utf8');
+  stdin.setEncoding?.("utf8");
   return new Promise<boolean>((resolve) => {
     const onData = (chunk: string) => {
       const answer = chunk.trim().toLowerCase();
-      stdin.off?.('data', onData);
-      resolve(answer === 'y' || answer === 'yes');
+      stdin.off?.("data", onData);
+      resolve(answer === "y" || answer === "yes");
     };
-    stdin.on?.('data', onData);
+    stdin.on?.("data", onData);
   });
 }

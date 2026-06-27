@@ -18,12 +18,12 @@ survives any agent swap. Your agent config survives any knowledge tool swap.
 
 **"Is this about how the agent operates, or is this knowledge about the world?"**
 
-| Question | If YES -> Agent Repo | If YES -> Brain Repo |
-|----------|---------------------|---------------------|
-| Would this file transfer if you switched AI agents? | YES | -- |
-| Would this file transfer if you switched to a different person? | -- | YES |
-| Is this about how the agent behaves? | YES | -- |
-| Is this about a person, company, deal, meeting, or idea? | -- | YES |
+| Question                                                        | If YES -> Agent Repo | If YES -> Brain Repo |
+| --------------------------------------------------------------- | -------------------- | -------------------- |
+| Would this file transfer if you switched AI agents?             | YES                  | --                   |
+| Would this file transfer if you switched to a different person? | --                   | YES                  |
+| Is this about how the agent behaves?                            | YES                  | --                   |
+| Is this about a person, company, deal, meeting, or idea?        | --                   | YES                  |
 
 ### Quick Decision Tree
 
@@ -155,4 +155,4 @@ the search index current. The agent repo is never indexed by GBrain.
 
 ---
 
-*Part of the [GBrain Skillpack](../GBRAIN_SKILLPACK.md).*
+_Part of the [GBrain Skillpack](../GBRAIN_SKILLPACK.md)._

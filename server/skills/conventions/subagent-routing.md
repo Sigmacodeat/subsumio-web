@@ -62,16 +62,16 @@ opted out. Respect it.
 
 Even when Minions is the default (mode A), some work should run inline:
 
-| Condition | Action |
-|---|---|
-| Single tool call, < 30s | Inline, always |
-| Read-only query | Inline |
-| User is waiting in real-time for the answer | Inline |
-| Multi-step, user can walk away | Minion |
-| Parallel 2+ streams | Minion (parent + children) |
-| Needs to survive restart | Minion |
-| User wants progress updates | Minion |
-| Research / bulk operation | Minion |
+| Condition                                   | Action                     |
+| ------------------------------------------- | -------------------------- |
+| Single tool call, < 30s                     | Inline, always             |
+| Read-only query                             | Inline                     |
+| User is waiting in real-time for the answer | Inline                     |
+| Multi-step, user can walk away              | Minion                     |
+| Parallel 2+ streams                         | Minion (parent + children) |
+| Needs to survive restart                    | Minion                     |
+| User wants progress updates                 | Minion                     |
+| Research / bulk operation                   | Minion                     |
 
 **Rule of thumb:** if the user might ask "is it done yet?", use a Minion.
 

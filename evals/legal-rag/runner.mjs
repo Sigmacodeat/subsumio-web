@@ -180,7 +180,9 @@ async function runEval() {
       job_id: jobId,
     });
 
-    const avg = Object.values(rowScores).reduce((s, r) => s + r.score, 0) / Math.max(1, Object.values(rowScores).length);
+    const avg =
+      Object.values(rowScores).reduce((s, r) => s + r.score, 0) /
+      Math.max(1, Object.values(rowScores).length);
     console.log(`  → avg score: ${(avg * 100).toFixed(1)}%`);
   }
 
@@ -206,7 +208,8 @@ async function runEval() {
   const byDifficulty = { easy: [], medium: [], hard: [] };
   for (const r of results) {
     if (r.error || !r.scores) continue;
-    const avg = Object.values(r.scores).reduce((s, v) => s + v.score, 0) / Object.keys(r.scores).length;
+    const avg =
+      Object.values(r.scores).reduce((s, v) => s + v.score, 0) / Object.keys(r.scores).length;
     byDifficulty[r.difficulty]?.push(avg);
   }
 

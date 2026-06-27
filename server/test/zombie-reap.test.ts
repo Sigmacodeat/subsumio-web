@@ -13,33 +13,33 @@
  * so the next file in the shard sees a clean listener set.
  */
 
-import { describe, test, expect, afterAll } from 'bun:test';
+import { describe, test, expect, afterAll } from "bun:test";
 import {
   installSigchldHandler,
   _uninstallSigchldHandlerForTests,
-} from '../src/core/zombie-reap.ts';
+} from "../src/core/zombie-reap.ts";
 
 afterAll(() => {
   _uninstallSigchldHandlerForTests();
 });
 
-describe('installSigchldHandler', () => {
-  test('registers a SIGCHLD listener after first call', () => {
-    const before = process.listeners('SIGCHLD').length;
+describe("installSigchldHandler", () => {
+  test("registers a SIGCHLD listener after first call", () => {
+    const before = process.listeners("SIGCHLD").length;
     installSigchldHandler();
-    const after = process.listeners('SIGCHLD').length;
+    const after = process.listeners("SIGCHLD").length;
     expect(after).toBeGreaterThanOrEqual(before + (before === 0 ? 1 : 0));
-    expect(process.listeners('SIGCHLD').length).toBeGreaterThanOrEqual(1);
+    expect(process.listeners("SIGCHLD").length).toBeGreaterThanOrEqual(1);
   });
 
-  test('idempotent: two calls leave exactly one of our listeners', () => {
+  test("idempotent: two calls leave exactly one of our listeners", () => {
     // Start clean — remove any handler from the previous test (this file's
     // own only — afterAll handles the global cleanup).
     _uninstallSigchldHandlerForTests();
     installSigchldHandler();
-    const afterFirst = process.listeners('SIGCHLD').length;
+    const afterFirst = process.listeners("SIGCHLD").length;
     installSigchldHandler();
-    const afterSecond = process.listeners('SIGCHLD').length;
+    const afterSecond = process.listeners("SIGCHLD").length;
     // The includes() guard in installSigchldHandler must prevent the
     // second call from adding a duplicate. EventEmitter does NOT dedupe.
     expect(afterSecond).toBe(afterFirst);

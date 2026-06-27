@@ -228,10 +228,12 @@ describe("Portal Isolation Specification", () => {
   it("portal token brain_id must match the case's brain", () => {
     const tokenBrain = TENANT_A.brain_id;
     const caseBrain = TENANT_B.brain_id;
-    expect(isSameBrain(
-      { brain_id: tokenBrain, org_id: TENANT_A.org_id },
-      { brain_id: caseBrain, org_id: TENANT_B.org_id },
-    )).toBe(false);
+    expect(
+      isSameBrain(
+        { brain_id: tokenBrain, org_id: TENANT_A.org_id },
+        { brain_id: caseBrain, org_id: TENANT_B.org_id }
+      )
+    ).toBe(false);
   });
 });
 

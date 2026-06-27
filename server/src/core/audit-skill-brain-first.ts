@@ -29,15 +29,15 @@
  * one rotation discipline.
  */
 
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import { resolveAuditDir } from './minions/handlers/shell-audit.ts';
+import * as fs from "node:fs";
+import * as path from "node:path";
+import { resolveAuditDir } from "./minions/handlers/shell-audit.ts";
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-export type BrainFirstAuditEventKind = 'detected' | 'resolved' | 'fixed';
+export type BrainFirstAuditEventKind = "detected" | "resolved" | "fixed";
 
 export interface BrainFirstAuditEvent {
   ts: string;
@@ -48,13 +48,13 @@ export interface BrainFirstAuditEvent {
   /** Optional run correlation id (e.g. `${pid}-${startEpochMs}`). */
   doctor_run_id?: string;
   /** Stable code consumed by future doctor `skill_brain_first_trend` check. */
-  code: 'SKILL_BRAIN_FIRST';
-  severity: 'info';
+  code: "SKILL_BRAIN_FIRST";
+  severity: "info";
 }
 
 export interface SnapshotDiff {
-  added: string[];     // slugs newly in violation
-  removed: string[];   // slugs no longer in violation (resolved / removed)
+  added: string[]; // slugs newly in violation
+  removed: string[]; // slugs no longer in violation (resolved / removed)
   unchanged: string[]; // slugs in both (no audit write)
 }
 
@@ -76,11 +76,11 @@ export function computeBrainFirstAuditFilename(now: Date = new Date()): string {
   const firstThursdayDayNum = (firstThursday.getUTCDay() + 6) % 7;
   firstThursday.setUTCDate(firstThursday.getUTCDate() - firstThursdayDayNum + 3);
   const weekNum = Math.round((d.getTime() - firstThursday.getTime()) / (7 * 86400000)) + 1;
-  const ww = String(weekNum).padStart(2, '0');
+  const ww = String(weekNum).padStart(2, "0");
   return `skill-brain-first-${isoYear}-W${ww}.jsonl`;
 }
 
-const SNAPSHOT_FILENAME = 'skill-brain-first-snapshot.json';
+const SNAPSHOT_FILENAME = "skill-brain-first-snapshot.json";
 
 // ---------------------------------------------------------------------------
 // Snapshot I/O
@@ -105,23 +105,20 @@ export function loadSnapshot(): { violators: Set<string>; present: boolean } {
   const file = path.join(resolveAuditDir(), SNAPSHOT_FILENAME);
   let content: string;
   try {
-    content = fs.readFileSync(file, 'utf8');
+    content = fs.readFileSync(file, "utf8");
   } catch {
     return { violators: new Set(), present: false };
   }
   try {
     const parsed = JSON.parse(content) as SnapshotFile;
-    if (
-      typeof parsed !== 'object' || parsed === null ||
-      !Array.isArray(parsed.violators)
-    ) {
+    if (typeof parsed !== "object" || parsed === null || !Array.isArray(parsed.violators)) {
       // Corrupt shape — once-per-process warn, treat as missing.
       warnOnce(`[gbrain] snapshot corrupt: ${file} (unexpected shape); treating as missing`);
       return { violators: new Set(), present: false };
     }
     const slugs = new Set<string>();
     for (const v of parsed.violators) {
-      if (typeof v === 'string' && v.length > 0) slugs.add(v);
+      if (typeof v === "string" && v.length > 0) slugs.add(v);
     }
     return { violators: slugs, present: true };
   } catch (err) {
@@ -135,10 +132,7 @@ export function loadSnapshot(): { violators: Set<string>; present: boolean } {
  * Compute the added/removed/unchanged diff against the previous snapshot.
  * Pure function (no I/O) so callers can compose it with caching layers.
  */
-export function diffAgainstSnapshot(
-  current: Set<string>,
-  previous: Set<string>,
-): SnapshotDiff {
+export function diffAgainstSnapshot(current: Set<string>, previous: Set<string>): SnapshotDiff {
   const added: string[] = [];
   const removed: string[] = [];
   const unchanged: string[] = [];
@@ -183,13 +177,17 @@ export function writeSnapshotAtomically(violators: Set<string>, now: Date = new 
   };
   try {
     fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(tmpPath, JSON.stringify(payload, null, 2) + '\n', { encoding: 'utf8' });
+    fs.writeFileSync(tmpPath, JSON.stringify(payload, null, 2) + "\n", { encoding: "utf8" });
     fs.renameSync(tmpPath, finalPath);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     process.stderr.write(`[gbrain] snapshot write failed (${msg}); doctor continues\n`);
     // Best-effort cleanup of the tmpfile if rename failed mid-flight.
-    try { fs.unlinkSync(tmpPath); } catch { /* ignore */ }
+    try {
+      fs.unlinkSync(tmpPath);
+    } catch {
+      /* ignore */
+    }
   }
 }
 
@@ -204,20 +202,20 @@ export function writeSnapshotAtomically(violators: Set<string>, now: Date = new 
  * continues even if the audit dir is read-only or the disk is full.
  */
 export function logBrainFirstEvent(
-  partial: Omit<BrainFirstAuditEvent, 'ts' | 'severity' | 'code'>,
-  now: Date = new Date(),
+  partial: Omit<BrainFirstAuditEvent, "ts" | "severity" | "code">,
+  now: Date = new Date()
 ): void {
   const event: BrainFirstAuditEvent = {
     ts: now.toISOString(),
-    severity: 'info',
-    code: 'SKILL_BRAIN_FIRST',
+    severity: "info",
+    code: "SKILL_BRAIN_FIRST",
     ...partial,
   };
   const dir = resolveAuditDir();
   const file = path.join(dir, computeBrainFirstAuditFilename(now));
   try {
     fs.mkdirSync(dir, { recursive: true });
-    fs.appendFileSync(file, JSON.stringify(event) + '\n', { encoding: 'utf8' });
+    fs.appendFileSync(file, JSON.stringify(event) + "\n", { encoding: "utf8" });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     process.stderr.write(`[gbrain] brain-first audit write failed (${msg}); doctor continues\n`);
@@ -233,22 +231,28 @@ export function appendAuditEventsForTransitions(
   diff: SnapshotDiff,
   patternsBySlug: Map<string, string[]>,
   doctor_run_id?: string,
-  now: Date = new Date(),
+  now: Date = new Date()
 ): void {
   for (const slug of diff.added) {
-    logBrainFirstEvent({
-      event: 'detected',
-      skill: slug,
-      external_patterns: patternsBySlug.get(slug),
-      doctor_run_id,
-    }, now);
+    logBrainFirstEvent(
+      {
+        event: "detected",
+        skill: slug,
+        external_patterns: patternsBySlug.get(slug),
+        doctor_run_id,
+      },
+      now
+    );
   }
   for (const slug of diff.removed) {
-    logBrainFirstEvent({
-      event: 'resolved',
-      skill: slug,
-      doctor_run_id,
-    }, now);
+    logBrainFirstEvent(
+      {
+        event: "resolved",
+        skill: slug,
+        doctor_run_id,
+      },
+      now
+    );
   }
 }
 
@@ -263,7 +267,7 @@ export function appendAuditEventsForTransitions(
  */
 export function readRecentBrainFirstEvents(
   days = 7,
-  now: Date = new Date(),
+  now: Date = new Date()
 ): BrainFirstAuditEvent[] {
   const dir = resolveAuditDir();
   const cutoff = now.getTime() - days * 86400000;
@@ -276,11 +280,11 @@ export function readRecentBrainFirstEvents(
     const file = path.join(dir, filename);
     let content: string;
     try {
-      content = fs.readFileSync(file, 'utf8');
+      content = fs.readFileSync(file, "utf8");
     } catch {
       continue;
     }
-    for (const line of content.split('\n')) {
+    for (const line of content.split("\n")) {
       if (line.length === 0) continue;
       try {
         const ev = JSON.parse(line) as BrainFirstAuditEvent;

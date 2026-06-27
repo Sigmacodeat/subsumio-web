@@ -45,6 +45,7 @@ mutating: true
 ## Contract
 
 This skill guarantees:
+
 1. The place of supply (Leistungsort) is determined with its § (3a/3b/3c UStG …).
 2. Who owes the VAT is stated (supplier vs. recipient / Reverse-Charge § 13b).
 3. Cross-border cases classify intra-Community vs. third-country and the exemption §.
@@ -60,15 +61,18 @@ or for an existing Bescheid (→ tax-ruling-lookup).
 ## Protocol
 
 ### Step 1 — Classify the Transaction
+
 - Supply of goods or services? B2B or B2C? Domestic / intra-EU / third country?
 - Parties' VAT status and USt-IdNr (valid? VIES-checkable?).
 
 ### Step 2 — Determine Place of Supply & Liability
+
 Apply § 3a/3b/3c UStG for the Leistungsort; determine the Steuerschuldner
 (supplier or, under § 13b, the recipient). Flag intra-Community supply (§ 6a,
 exempt under § 4 Nr. 1b with valid USt-IdNr + Gelangensnachweis) or acquisition.
 
 ### Step 3 — Input VAT & Invoice
+
 Check § 15 UStG deduction prerequisites and § 14/14a mandatory invoice fields;
 check the e-invoicing mandate (DE B2B phase-in) for the period.
 
@@ -112,6 +116,7 @@ Erstellt: [Datum] | Skill: umsatzsteuer-check v1.0.0
 - ❌ Stating a rate as final for the wrong period (rates and e-invoicing rules change).
 
 ## Error Handling
+
 - USt-IdNr cannot be verified here → flag for VIES check, do not assume exemption.
 - Facts insufficient to fix the place of supply → list what is needed.
 - Period not given → default to current year and state the assumption.

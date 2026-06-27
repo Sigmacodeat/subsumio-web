@@ -18,7 +18,7 @@
  * concurrency + dropping under load.
  */
 
-import { registerBackgroundWorkDrainer } from '../background-work.ts';
+import { registerBackgroundWorkDrainer } from "../background-work.ts";
 
 export interface FactsQueueCounters {
   enqueued: number;
@@ -78,9 +78,11 @@ export class FactsQueue {
     this.shutdownGraceMs = Math.max(0, opts.shutdownGraceMs ?? 5000);
     this.externalAbort = opts.abortSignal;
     if (this.externalAbort) {
-      const onAbort = () => { void this.shutdown(); };
+      const onAbort = () => {
+        void this.shutdown();
+      };
       if (this.externalAbort.aborted) onAbort();
-      else this.externalAbort.addEventListener('abort', onAbort, { once: true });
+      else this.externalAbort.addEventListener("abort", onAbort, { once: true });
     }
   }
 
@@ -103,7 +105,9 @@ export class FactsQueue {
     this.pending.push({ job, sessionId, enqueuedAt: Date.now() });
     this.counters.enqueued += 1;
     // Non-blocking pump: schedule on microtask so callers stay sync.
-    queueMicrotask(() => { void this.pump(); });
+    queueMicrotask(() => {
+      void this.pump();
+    });
     return this.pending.length;
   }
 
@@ -150,7 +154,7 @@ export class FactsQueue {
    * their logs).
    */
   async drainPending(
-    opts: { timeout?: number } = {},
+    opts: { timeout?: number } = {}
   ): Promise<{ drained: number; unfinished: number }> {
     const timeout = opts.timeout ?? 1000;
     const initiallyPending = this.pending.length;
@@ -159,10 +163,7 @@ export class FactsQueue {
       return { drained: 0, unfinished: 0 };
     }
     const start = Date.now();
-    while (
-      (this.pending.length > 0 || this.inflightTotal > 0) &&
-      Date.now() - start < timeout
-    ) {
+    while ((this.pending.length > 0 || this.inflightTotal > 0) && Date.now() - start < timeout) {
       // 25ms poll interval matches shutdown() below; consistent rhythm.
       await sleep(25);
     }
@@ -219,11 +220,14 @@ export class FactsQueue {
     } catch (err) {
       // Don't propagate; caller sees nothing — the queue surface is fire-and-
       // forget by design. Counters expose visibility for `gbrain doctor`.
-      const wasAbort = err instanceof Error && (err.name === 'AbortError' || /aborted/i.test(err.message));
+      const wasAbort =
+        err instanceof Error && (err.name === "AbortError" || /aborted/i.test(err.message));
       if (!wasAbort) {
         this.counters.failed += 1;
         // eslint-disable-next-line no-console
-        console.warn(`[facts-queue] job failed for session=${entry.sessionId}: ${err instanceof Error ? err.message : String(err)}`);
+        console.warn(
+          `[facts-queue] job failed for session=${entry.sessionId}: ${err instanceof Error ? err.message : String(err)}`
+        );
       } else {
         this.counters.dropped_shutdown += 1;
       }
@@ -233,13 +237,15 @@ export class FactsQueue {
       else this.inflightBySession.set(entry.sessionId, remaining);
       this.inflightTotal -= 1;
       // Pump in case the released slot unblocks another entry.
-      queueMicrotask(() => { void this.pump(); });
+      queueMicrotask(() => {
+        void this.pump();
+      });
     }
   }
 }
 
 function sleep(ms: number): Promise<void> {
-  return new Promise(r => setTimeout(r, ms));
+  return new Promise((r) => setTimeout(r, ms));
 }
 
 // ── Process-singleton ──────────────────────────────────────
@@ -264,8 +270,11 @@ export function __resetFactsQueueForTests(): void {
 // a live engine before disconnect (#1762). `drainPending` itself stays
 // non-aborting — the abort is the registry's separate post-drain step.
 registerBackgroundWorkDrainer({
-  name: 'facts',
+  name: "facts",
   order: 0,
-  drain: (ms) => getFactsQueue().drainPending({ timeout: ms }).then((r) => ({ unfinished: r.unfinished })),
+  drain: (ms) =>
+    getFactsQueue()
+      .drainPending({ timeout: ms })
+      .then((r) => ({ unfinished: r.unfinished })),
   abort: () => getFactsQueue().shutdown(),
 });

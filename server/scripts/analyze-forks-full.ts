@@ -14,7 +14,7 @@ if (!TOKEN) {
   process.exit(1);
 }
 
-const TOP_N = 100;            // Wie viele der Top-Forks analysieren
+const TOP_N = 100; // Wie viele der Top-Forks analysieren
 const COMMITS_PER_FORK = 100; // Max Commits pro Fork
 const RATE_LIMIT_PAUSE = 800; // ms zwischen Requests
 
@@ -78,13 +78,23 @@ async function fetchCommits(owner: string, repo: string, since: string): Promise
   return Array.isArray(data) ? data : [];
 }
 
-async function fetchCompare(owner: string, repo: string, baseSha: string, headSha: string): Promise<any> {
+async function fetchCompare(
+  owner: string,
+  repo: string,
+  baseSha: string,
+  headSha: string
+): Promise<any> {
   const url = `https://api.github.com/repos/garrytan/gbrain/compare/master...${owner}:${repo}:master`;
   const data = await githubFetch(url);
   return data;
 }
 
-async function fetchFileContent(owner: string, repo: string, path: string, ref: string): Promise<string | null> {
+async function fetchFileContent(
+  owner: string,
+  repo: string,
+  path: string,
+  ref: string
+): Promise<string | null> {
   const url = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}?ref=${ref}`;
   const data = await githubFetch(url);
   if (!data || !data.content) return null;
@@ -108,9 +118,10 @@ async function fetchRepoFiles(owner: string, repo: string, ref: string): Promise
 async function analyzeFork(fork: any): Promise<any> {
   const owner = fork.owner;
   const repo = fork.repo;
-  const since = new Date(fork.pushed_at).getTime() > new Date("2026-01-01").getTime()
-    ? new Date(Date.now() - 90 * 86400000).toISOString()  // Letzte 90 Tage
-    : new Date(Date.now() - 30 * 86400000).toISOString(); // Letzte 30 Tage
+  const since =
+    new Date(fork.pushed_at).getTime() > new Date("2026-01-01").getTime()
+      ? new Date(Date.now() - 90 * 86400000).toISOString() // Letzte 90 Tage
+      : new Date(Date.now() - 30 * 86400000).toISOString(); // Letzte 30 Tage
 
   console.log(`\n=== [${fork.rank}] ${owner}/${repo} ===`);
 
@@ -172,11 +183,33 @@ async function analyzeFork(fork: any): Promise<any> {
 
   // 3d. Feature-Keywords aus Commit-Messages extrahieren
   const featureKeywords = [
-    "skill", "feature", "add", "new", "oauth", "docker", "deploy",
-    "manifest", "friction", "research", "ingest", "connector",
-    "plugin", "integration", "ui", "web", "api", "auth",
-    "sync", "import", "export", "migration", "test",
-    "fix", "improve", "optimize", "refactor"
+    "skill",
+    "feature",
+    "add",
+    "new",
+    "oauth",
+    "docker",
+    "deploy",
+    "manifest",
+    "friction",
+    "research",
+    "ingest",
+    "connector",
+    "plugin",
+    "integration",
+    "ui",
+    "web",
+    "api",
+    "auth",
+    "sync",
+    "import",
+    "export",
+    "migration",
+    "test",
+    "fix",
+    "improve",
+    "optimize",
+    "refactor",
   ];
 
   const keywordMatches: Record<string, number> = {};
@@ -226,13 +259,14 @@ function generateReport(results: any[]): string {
   ];
 
   // Kategorisierung
-  const withSkills = results.filter((r) =>
-    r.interesting_new.some((f: string) => f.includes("skills/")) ||
-    Object.keys(r.keyword_matches).some((k) => k === "skill")
+  const withSkills = results.filter(
+    (r) =>
+      r.interesting_new.some((f: string) => f.includes("skills/")) ||
+      Object.keys(r.keyword_matches).some((k) => k === "skill")
   );
 
-  const withNewFeatures = results.filter((r) =>
-    r.interesting_new.length > 0 || r.commits_count > 5
+  const withNewFeatures = results.filter(
+    (r) => r.interesting_new.length > 0 || r.commits_count > 5
   );
 
   const withCodeChanges = results.filter((r) =>
@@ -246,7 +280,7 @@ function generateReport(results: any[]): string {
     `- **Mit Code-Änderungen:** ${withCodeChanges.length}`,
     `- **Mit neuen Features:** ${withNewFeatures.length}`,
     `- **Mit Commits > 5:** ${results.filter((r) => r.commits_count > 5).length}`,
-    ``,
+    ``
   );
 
   // Top nach Commits
@@ -257,7 +291,13 @@ function generateReport(results: any[]): string {
       `${r.rank}. **${r.owner}/${r.repo}** — ${r.commits_count} commits, ${r.stars} stars`,
       `   - URL: ${r.html_url}`,
       `   - Neue Dateien: ${r.new_files.length} | Modifiziert: ${r.modified_files.length}`,
-      `   - Keywords: ${Object.entries(r.keyword_matches).sort((a: any, b: any) => b[1] - a[1]).slice(0, 5).map(([k, v]) => `${k}(${v})`).join(", ") || "-"}`,
+      `   - Keywords: ${
+        Object.entries(r.keyword_matches)
+          .sort((a: any, b: any) => b[1] - a[1])
+          .slice(0, 5)
+          .map(([k, v]) => `${k}(${v})`)
+          .join(", ") || "-"
+      }`,
       ``
     );
   }
@@ -265,13 +305,23 @@ function generateReport(results: any[]): string {
   // Neue Skills detailliert
   lines.push(`## Neue Skills & Konventionen`, ``);
   for (const r of withSkills) {
-    if (r.interesting_new.length === 0 && Object.keys(r.keyword_matches).filter((k) => k === "skill").length === 0) continue;
+    if (
+      r.interesting_new.length === 0 &&
+      Object.keys(r.keyword_matches).filter((k) => k === "skill").length === 0
+    )
+      continue;
     lines.push(
       `### ${r.owner}/${r.repo}`,
       `- Commits: ${r.commits_count} | Stars: ${r.stars}`,
       `- Neue interessante Dateien:`,
       ...r.interesting_new.map((f: string) => `  - \`${f}\``),
-      `- Keywords: ${Object.entries(r.keyword_matches).sort((a: any, b: any) => b[1] - a[1]).slice(0, 8).map(([k, v]) => `${k}(${v})`).join(", ") || "-"}`,
+      `- Keywords: ${
+        Object.entries(r.keyword_matches)
+          .sort((a: any, b: any) => b[1] - a[1])
+          .slice(0, 8)
+          .map(([k, v]) => `${k}(${v})`)
+          .join(", ") || "-"
+      }`,
       `- Compare: ${r.compare_url}`,
       ``
     );
@@ -344,8 +394,12 @@ async function main() {
   console.log(`Analysiert: ${results.length}`);
   console.log(`Mit Commits > 0: ${results.filter((r) => r.commits_count > 0).length}`);
   console.log(`Mit Commits > 5: ${results.filter((r) => r.commits_count > 5).length}`);
-  console.log(`Mit neuen Skills: ${results.filter((r) => r.interesting_new?.some((f: string) => f.includes("skills/"))).length}`);
-  console.log(`Mit Code-Änderungen: ${results.filter((r) => r.modified_files?.some((f: string) => f.includes("src/"))).length}`);
+  console.log(
+    `Mit neuen Skills: ${results.filter((r) => r.interesting_new?.some((f: string) => f.includes("skills/"))).length}`
+  );
+  console.log(
+    `Mit Code-Änderungen: ${results.filter((r) => r.modified_files?.some((f: string) => f.includes("src/"))).length}`
+  );
   console.log(`Mit neuen Dateien: ${results.filter((r) => r.new_files?.length > 0).length}`);
 }
 

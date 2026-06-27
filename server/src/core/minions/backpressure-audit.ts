@@ -16,9 +16,9 @@
  * for compliance — a disk-full attacker can silently disable it.
  */
 
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import { gbrainPath } from '../config.ts';
+import * as fs from "node:fs";
+import * as path from "node:path";
+import { gbrainPath } from "../config.ts";
 
 export interface BackpressureAuditEvent {
   ts: string;
@@ -26,7 +26,7 @@ export interface BackpressureAuditEvent {
   name: string;
   waiting_count: number;
   max_waiting: number;
-  decision: 'coalesced';
+  decision: "coalesced";
   returned_job_id: number;
 }
 
@@ -46,7 +46,7 @@ export function computeAuditFilename(now: Date = new Date()): string {
   const firstThursdayDayNum = (firstThursday.getUTCDay() + 6) % 7;
   firstThursday.setUTCDate(firstThursday.getUTCDate() - firstThursdayDayNum + 3);
   const weekNum = Math.round((d.getTime() - firstThursday.getTime()) / (7 * 86400000)) + 1;
-  const ww = String(weekNum).padStart(2, '0');
+  const ww = String(weekNum).padStart(2, "0");
   return `backpressure-${isoYear}-W${ww}.jsonl`;
 }
 
@@ -54,22 +54,25 @@ export function computeAuditFilename(now: Date = new Date()): string {
 export function resolveAuditDir(): string {
   const override = process.env.GBRAIN_AUDIT_DIR;
   if (override && override.trim().length > 0) return override;
-  return gbrainPath('audit');
+  return gbrainPath("audit");
 }
 
-export function logBackpressureCoalesce(event: Omit<BackpressureAuditEvent, 'ts' | 'decision'>): void {
+export function logBackpressureCoalesce(
+  event: Omit<BackpressureAuditEvent, "ts" | "decision">
+): void {
   const dir = resolveAuditDir();
   const filename = computeAuditFilename();
   const fullPath = path.join(dir, filename);
-  const line = JSON.stringify({
-    ...event,
-    decision: 'coalesced' as const,
-    ts: new Date().toISOString(),
-  }) + '\n';
+  const line =
+    JSON.stringify({
+      ...event,
+      decision: "coalesced" as const,
+      ts: new Date().toISOString(),
+    }) + "\n";
 
   try {
     fs.mkdirSync(dir, { recursive: true });
-    fs.appendFileSync(fullPath, line, { encoding: 'utf8' });
+    fs.appendFileSync(fullPath, line, { encoding: "utf8" });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     process.stderr.write(`[backpressure-audit] write failed (${msg}); submission continues\n`);

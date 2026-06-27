@@ -12,27 +12,27 @@ bumps the version.
 
 ## Subcommands
 
-| Command | Brain required? | Exit codes |
-|---|---|---|
-| `gbrain eval takes-quality run [flags]` | yes (samples takes) | 0 PASS, 1 FAIL, 2 INCONCLUSIVE |
-| `gbrain eval takes-quality replay <receipt>` | **no** (disk-only) | 0 PASS, 1 FAIL, 2 INCONCLUSIVE |
-| `gbrain eval takes-quality trend [flags]` | yes (reads runs table) | 0 |
-| `gbrain eval takes-quality regress --against <receipt>` | yes | 0 OK, 1 regression |
+| Command                                                 | Brain required?        | Exit codes                     |
+| ------------------------------------------------------- | ---------------------- | ------------------------------ |
+| `gbrain eval takes-quality run [flags]`                 | yes (samples takes)    | 0 PASS, 1 FAIL, 2 INCONCLUSIVE |
+| `gbrain eval takes-quality replay <receipt>`            | **no** (disk-only)     | 0 PASS, 1 FAIL, 2 INCONCLUSIVE |
+| `gbrain eval takes-quality trend [flags]`               | yes (reads runs table) | 0                              |
+| `gbrain eval takes-quality regress --against <receipt>` | yes                    | 0 OK, 1 regression             |
 
 `replay` is the only mode that runs without `DATABASE_URL` — it reads the
 receipt file from disk and re-renders it. The other modes need the brain.
 
 ## `run` flags
 
-| Flag | Default | Notes |
-|---|---|---|
-| `--limit N` | 100 | Random sample of N takes from the brain. |
-| `--cycles N` | 3 (TTY) / 1 (non-TTY) | Up to N panel calls before giving up; early-stop on PASS or INCONCLUSIVE. |
-| `--budget-usd N` | unset | Abort before next call's projected cost would exceed cap. Models without a `pricing.ts` entry fail loud (codex #4). |
-| `--source db|fs` | `db` | `fs` is reserved for v0.33+. |
-| `--slug-prefix P` | unset | Filter takes to pages whose slug starts with P. |
-| `--models a,b,c` | `openai:gpt-4o,anthropic:claude-opus-4-7,google:gemini-1.5-pro` | Comma-separated panel. |
-| `--json` | off | Emit the full receipt to stdout. |
+| Flag              | Default                                                         | Notes                                                                                                               |
+| ----------------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| `--limit N`       | 100                                                             | Random sample of N takes from the brain.                                                                            |
+| `--cycles N`      | 3 (TTY) / 1 (non-TTY)                                           | Up to N panel calls before giving up; early-stop on PASS or INCONCLUSIVE.                                           |
+| `--budget-usd N`  | unset                                                           | Abort before next call's projected cost would exceed cap. Models without a `pricing.ts` entry fail loud (codex #4). |
+| `--source db      | fs`                                                             | `db`                                                                                                                | `fs` is reserved for v0.33+. |
+| `--slug-prefix P` | unset                                                           | Filter takes to pages whose slug starts with P.                                                                     |
+| `--models a,b,c`  | `openai:gpt-4o,anthropic:claude-opus-4-7,google:gemini-1.5-pro` | Comma-separated panel.                                                                                              |
+| `--json`          | off                                                             | Emit the full receipt to stdout.                                                                                    |
 
 ## Receipt JSON shape (`schema_version: 1`)
 
@@ -119,8 +119,15 @@ JSON shape (`--json`):
 {
   "schema_version": 1,
   "rows": [
-    { "id": 42, "ts": "...", "rubric_version": "v1.0", "verdict": "pass",
-      "overall_score": 7.3, "cost_usd": 1.85, "corpus_sha8": "abcd1234" }
+    {
+      "id": 42,
+      "ts": "...",
+      "rubric_version": "v1.0",
+      "verdict": "pass",
+      "overall_score": 7.3,
+      "cost_usd": 1.85,
+      "corpus_sha8": "abcd1234"
+    }
   ]
 }
 ```
@@ -152,6 +159,7 @@ not listed (e.g. internal aggregator state, gateway providerMetadata) is
 **not** in the receipt and may change without notice.
 
 When you need to evolve the schema:
+
 1. Additive optional field → no version bump; old consumers ignore the
    new key, new consumers read it.
 2. Renamed or removed field, or changed semantics → bump

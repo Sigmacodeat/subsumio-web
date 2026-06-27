@@ -20,7 +20,12 @@ export default function Page() {
   return (
     <>
       <JsonLd data={organizationLd()} />
-      <JsonLd data={breadcrumbLd([{ name: "Subsumio", url: "/de" }, { name: "WhatsApp-Copilot", url: "/de/whatsapp" }])} />
+      <JsonLd
+        data={breadcrumbLd([
+          { name: "Subsumio", url: "/de" },
+          { name: "WhatsApp-Copilot", url: "/de/whatsapp" },
+        ])}
+      />
       <WhatsAppPage lang="de" />
     </>
   );

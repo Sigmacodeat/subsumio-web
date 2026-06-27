@@ -14,18 +14,21 @@
  * engine-free and unit-testable.
  */
 
-import type { BrainEngine } from '../../core/engine.ts';
-import { hybridSearch } from '../../core/search/hybrid.ts';
-import type { CodeQuestion, RetrievalStrategy } from './harness.ts';
+import type { BrainEngine } from "../../core/engine.ts";
+import { hybridSearch } from "../../core/search/hybrid.ts";
+import type { CodeQuestion, RetrievalStrategy } from "./harness.ts";
 
 // ─────────────────────────────────────────────────────────────────
 // Baseline: hybridSearch over the same brain
 // ─────────────────────────────────────────────────────────────────
 
 export class BaselineStrategy implements RetrievalStrategy {
-  readonly mode = 'baseline' as const;
+  readonly mode = "baseline" as const;
 
-  constructor(private readonly engine: BrainEngine, private readonly sourceId: string) {}
+  constructor(
+    private readonly engine: BrainEngine,
+    private readonly sourceId: string
+  ) {}
 
   async retrieve(q: CodeQuestion, k: number): Promise<{ files: string[]; latency_ms: number }> {
     const t0 = Date.now();
@@ -33,7 +36,7 @@ export class BaselineStrategy implements RetrievalStrategy {
     // chunks; we collapse to unique file paths in rank order.
     const results = await hybridSearch(this.engine, q.query, {
       limit: Math.max(k * 3, 10), // overshoot to get distinct files
-      strategy: 'hybrid',
+      strategy: "hybrid",
       expand: false, // deterministic; no multi-query expansion
     } as any);
     const latency_ms = Date.now() - t0;
@@ -60,9 +63,12 @@ export class BaselineStrategy implements RetrievalStrategy {
 // ─────────────────────────────────────────────────────────────────
 
 export class WithCodeIntelStrategy implements RetrievalStrategy {
-  readonly mode = 'with-code-intel' as const;
+  readonly mode = "with-code-intel" as const;
 
-  constructor(private readonly engine: BrainEngine, private readonly sourceId: string) {}
+  constructor(
+    private readonly engine: BrainEngine,
+    private readonly sourceId: string
+  ) {}
 
   async retrieve(q: CodeQuestion, k: number): Promise<{ files: string[]; latency_ms: number }> {
     const t0 = Date.now();
@@ -94,8 +100,8 @@ export class WithCodeIntelStrategy implements RetrievalStrategy {
 function pickFilePath(result: any): string | null {
   if (!result?.slug) return null;
   const slug: string = result.slug;
-  if (slug.startsWith('code/')) {
-    return slug.slice('code/'.length);
+  if (slug.startsWith("code/")) {
+    return slug.slice("code/".length);
   }
   // Some code pages may sit under different prefixes depending on source
   // config; for now, only handle the canonical 'code/' prefix.

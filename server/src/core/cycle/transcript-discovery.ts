@@ -9,10 +9,10 @@
  * No DB; pure filesystem + crypto. Tested with hermetic temp directories.
  */
 
-import { readFileSync, readdirSync, statSync } from 'node:fs';
-import { join, basename } from 'node:path';
-import { createHash } from 'node:crypto';
-import { pruneDir } from '../sync.ts';
+import { readFileSync, readdirSync, statSync } from "node:fs";
+import { join, basename } from "node:path";
+import { createHash } from "node:crypto";
+import { pruneDir } from "../sync.ts";
 
 export interface DiscoveredTranscript {
   /** Absolute path to the transcript file. */
@@ -69,8 +69,8 @@ const WORD_BOUNDARY_HEURISTIC = /^[a-zA-Z][a-zA-Z0-9_-]*$/;
  * insensitive value, word boundary on `true`).
  */
 const DREAM_MARKER_REGEX_SRC =
-  '^\\uFEFF?-{3}\\r?\\n[\\s\\S]{0,2000}?dream_generated\\s*:\\s*true\\b';
-export const DREAM_OUTPUT_MARKER_RE = new RegExp(DREAM_MARKER_REGEX_SRC, 'i');
+  "^\\uFEFF?-{3}\\r?\\n[\\s\\S]{0,2000}?dream_generated\\s*:\\s*true\\b";
+export const DREAM_OUTPUT_MARKER_RE = new RegExp(DREAM_MARKER_REGEX_SRC, "i");
 
 /**
  * v0.37.0 (D9 / D4): brainstorm + LSD frontmatter markers. `mode: lsd`
@@ -82,12 +82,12 @@ export const DREAM_OUTPUT_MARKER_RE = new RegExp(DREAM_MARKER_REGEX_SRC, 'i');
  * pages for patterns) is filed as a v0.37.1 follow-up.
  */
 const LSD_MODE_MARKER_REGEX_SRC =
-  '^\\uFEFF?-{3}\\r?\\n[\\s\\S]{0,2000}?mode\\s*:\\s*(?:"|\\\'|)lsd(?:"|\\\'|)\\s*(?:\\r?\\n|$)';
-export const LSD_OUTPUT_MARKER_RE = new RegExp(LSD_MODE_MARKER_REGEX_SRC, 'i');
+  "^\\uFEFF?-{3}\\r?\\n[\\s\\S]{0,2000}?mode\\s*:\\s*(?:\"|\\'|)lsd(?:\"|\\'|)\\s*(?:\\r?\\n|$)";
+export const LSD_OUTPUT_MARKER_RE = new RegExp(LSD_MODE_MARKER_REGEX_SRC, "i");
 
 const BRAINSTORM_MODE_MARKER_REGEX_SRC =
-  '^\\uFEFF?-{3}\\r?\\n[\\s\\S]{0,2000}?mode\\s*:\\s*(?:"|\\\'|)brainstorm(?:"|\\\'|)\\s*(?:\\r?\\n|$)';
-export const BRAINSTORM_OUTPUT_MARKER_RE = new RegExp(BRAINSTORM_MODE_MARKER_REGEX_SRC, 'i');
+  "^\\uFEFF?-{3}\\r?\\n[\\s\\S]{0,2000}?mode\\s*:\\s*(?:\"|\\'|)brainstorm(?:\"|\\'|)\\s*(?:\\r?\\n|$)";
+export const BRAINSTORM_OUTPUT_MARKER_RE = new RegExp(BRAINSTORM_MODE_MARKER_REGEX_SRC, "i");
 
 /** True iff this content carries the LSD frontmatter marker (D4 noise-by-design skip). */
 export function isLsdOutput(content: string): boolean {
@@ -131,7 +131,7 @@ export function compileExcludePatterns(patterns: string[] | undefined): RegExp[]
     if (!p) continue;
     try {
       const src = WORD_BOUNDARY_HEURISTIC.test(p) ? `\\b${p}\\b` : p;
-      out.push(new RegExp(src, 'i'));
+      out.push(new RegExp(src, "i"));
     } catch (e) {
       // Bad regex from user config — skip with stderr warning, don't crash.
       const msg = e instanceof Error ? e.message : String(e);
@@ -142,7 +142,7 @@ export function compileExcludePatterns(patterns: string[] | undefined): RegExp[]
 }
 
 function hashContent(text: string): string {
-  return createHash('sha256').update(text, 'utf8').digest('hex');
+  return createHash("sha256").update(text, "utf8").digest("hex");
 }
 
 function isInDateRange(date: string | null, opts: DiscoverOpts): boolean {
@@ -187,7 +187,7 @@ function listTextFiles(dir: string): string[] {
           // skipped at descent time.
           if (!pruneDir(name, d)) continue;
           walk(full);
-        } else if (st.isFile() && (name.endsWith('.txt') || name.endsWith('.md'))) {
+        } else if (st.isFile() && (name.endsWith(".txt") || name.endsWith(".md"))) {
           out.push(full);
         }
       } catch {
@@ -216,13 +216,13 @@ export function discoverTranscripts(opts: DiscoverOpts): DiscoveredTranscript[] 
   const bypass = opts.bypassGuard === true;
   const excludeRes = compileExcludePatterns(opts.excludePatterns);
   const dirs = [opts.corpusDir, opts.meetingTranscriptsDir].filter(
-    (d): d is string => typeof d === 'string' && d.length > 0,
+    (d): d is string => typeof d === "string" && d.length > 0
   );
 
   const results: DiscoveredTranscript[] = [];
   for (const dir of dirs) {
     for (const filePath of listTextFiles(dir)) {
-      const ext = filePath.endsWith('.md') ? '.md' : '.txt';
+      const ext = filePath.endsWith(".md") ? ".md" : ".txt";
       const baseName = basename(filePath, ext);
       const dateMatch = DATE_RE.exec(baseName);
       const inferredDate = dateMatch ? dateMatch[1] : null;
@@ -230,13 +230,15 @@ export function discoverTranscripts(opts: DiscoverOpts): DiscoveredTranscript[] 
 
       let content: string;
       try {
-        content = readFileSync(filePath, 'utf8');
+        content = readFileSync(filePath, "utf8");
       } catch {
         continue;
       }
       if (content.length < minChars) continue;
       if (isDreamOutput(content, bypass)) {
-        process.stderr.write(`[dream] skipped ${baseName}: dream_generated marker (self-consumption guard)\n`);
+        process.stderr.write(
+          `[dream] skipped ${baseName}: dream_generated marker (self-consumption guard)\n`
+        );
         continue;
       }
       if (matchesAnyExclude(content, excludeRes)) continue;
@@ -262,28 +264,30 @@ export function discoverTranscripts(opts: DiscoverOpts): DiscoveredTranscript[] 
  */
 export function readSingleTranscript(
   filePath: string,
-  opts: { minChars?: number; excludePatterns?: string[]; bypassGuard?: boolean } = {},
+  opts: { minChars?: number; excludePatterns?: string[]; bypassGuard?: boolean } = {}
 ): DiscoveredTranscript | null {
   const minChars = opts.minChars ?? 2000;
   const bypass = opts.bypassGuard === true;
   const excludeRes = compileExcludePatterns(opts.excludePatterns);
   let content: string;
   try {
-    content = readFileSync(filePath, 'utf8');
+    content = readFileSync(filePath, "utf8");
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     throw new Error(`could not read transcript at ${filePath}: ${msg}`);
   }
   if (content.length < minChars) return null;
   if (isDreamOutput(content, bypass)) {
-    const ext = filePath.endsWith('.md') ? '.md' : '.txt';
-      const baseName = basename(filePath, ext);
-    process.stderr.write(`[dream] readSingleTranscript skipped ${baseName}: dream_generated marker (self-consumption guard)\n`);
+    const ext = filePath.endsWith(".md") ? ".md" : ".txt";
+    const baseName = basename(filePath, ext);
+    process.stderr.write(
+      `[dream] readSingleTranscript skipped ${baseName}: dream_generated marker (self-consumption guard)\n`
+    );
     return null;
   }
   if (matchesAnyExclude(content, excludeRes)) return null;
-  const ext = filePath.endsWith('.md') ? '.md' : '.txt';
-      const baseName = basename(filePath, ext);
+  const ext = filePath.endsWith(".md") ? ".md" : ".txt";
+  const baseName = basename(filePath, ext);
   const dateMatch = DATE_RE.exec(baseName);
   return {
     filePath,

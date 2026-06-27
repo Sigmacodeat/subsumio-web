@@ -23,15 +23,15 @@
 // chains (cycles) are rejected at pack LOAD time, not here. Cycles inside
 // the depth limit can't form because BFS deduplicates visits.
 
-import type { SchemaPackManifest } from './manifest-v1.ts';
+import type { SchemaPackManifest } from "./manifest-v1.ts";
 
 export const ALIAS_CLOSURE_MAX_DEPTH = 4 as const;
 
 export class AliasCycleError extends Error {
   readonly path: string[];
   constructor(path: string[]) {
-    super(`alias cycle detected: ${path.join(' → ')}`);
-    this.name = 'AliasCycleError';
+    super(`alias cycle detected: ${path.join(" → ")}`);
+    this.name = "AliasCycleError";
     this.path = path;
   }
 }
@@ -40,8 +40,10 @@ export class AliasDepthExceededError extends Error {
   readonly type: string;
   readonly depth: number;
   constructor(type: string, depth: number) {
-    super(`alias closure for "${type}" exceeded max depth ${ALIAS_CLOSURE_MAX_DEPTH} at depth ${depth}`);
-    this.name = 'AliasDepthExceededError';
+    super(
+      `alias closure for "${type}" exceeded max depth ${ALIAS_CLOSURE_MAX_DEPTH} at depth ${depth}`
+    );
+    this.name = "AliasDepthExceededError";
     this.type = type;
     this.depth = depth;
   }
@@ -66,7 +68,10 @@ export function buildAliasGraph(manifest: SchemaPackManifest): AliasGraph {
   const adj = new Map<string, Set<string>>();
   const ensure = (t: string): Set<string> => {
     let s = adj.get(t);
-    if (!s) { s = new Set(); adj.set(t, s); }
+    if (!s) {
+      s = new Set();
+      adj.set(t, s);
+    }
     return s;
   };
   for (const pt of manifest.page_types) {
@@ -85,7 +90,9 @@ export function buildAliasGraph(manifest: SchemaPackManifest): AliasGraph {
 }
 
 function detectCycles(adj: Map<string, Set<string>>): void {
-  const WHITE = 0, GRAY = 1, BLACK = 2;
+  const WHITE = 0,
+    GRAY = 1,
+    BLACK = 2;
   const color = new Map<string, number>();
   for (const node of adj.keys()) color.set(node, WHITE);
 
@@ -126,7 +133,7 @@ function detectCycles(adj: Map<string, Set<string>>): void {
 export function expandClosure(
   queryType: string,
   graph: AliasGraph,
-  opts: { onDepthExceeded?: (type: string) => void } = {},
+  opts: { onDepthExceeded?: (type: string) => void } = {}
 ): string[] {
   const visited = new Set<string>([queryType]);
   let frontier = [queryType];
@@ -148,8 +155,9 @@ export function expandClosure(
   }
   // Check whether we ran out of depth before exhausting the graph.
   if (depth === ALIAS_CLOSURE_MAX_DEPTH && frontier.length > 0) {
-    const stillFrontier = frontier.flatMap(t => Array.from(graph.get(t) ?? []))
-      .filter(n => !visited.has(n));
+    const stillFrontier = frontier
+      .flatMap((t) => Array.from(graph.get(t) ?? []))
+      .filter((n) => !visited.has(n));
     if (stillFrontier.length > 0) {
       opts.onDepthExceeded?.(queryType);
     }
@@ -162,19 +170,17 @@ export function expandClosure(
  * the resolved (closure_for_every_type) map, used as the eval_candidates
  * inline-snapshot key (E11). Deterministic: sorts both keys and values.
  */
-export async function computeAliasClosureHash(
-  manifest: SchemaPackManifest,
-): Promise<string> {
+export async function computeAliasClosureHash(manifest: SchemaPackManifest): Promise<string> {
   const graph = buildAliasGraph(manifest);
-  const allTypes = manifest.page_types.map(pt => pt.name).sort();
+  const allTypes = manifest.page_types.map((pt) => pt.name).sort();
   const resolved: Record<string, string[]> = {};
   for (const t of allTypes) {
     resolved[t] = expandClosure(t, graph);
   }
   const canonical = JSON.stringify(resolved);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(canonical));
+  const hashBuffer = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(canonical));
   return Array.from(new Uint8Array(hashBuffer))
     .slice(0, 8)
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('');
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 }

@@ -13,12 +13,28 @@ const KEYWORD_RULES: Array<{
   reason: { de: string; en: string };
 }> = [
   {
-    keywords: ["miet", "mieter", "vermieter", "wohnung", "mietverhältnis", "mietvertrag", "kündigung", "mietsache"],
+    keywords: [
+      "miet",
+      "mieter",
+      "vermieter",
+      "wohnung",
+      "mietverhältnis",
+      "mietvertrag",
+      "kündigung",
+      "mietsache",
+    ],
     suggestion: { legalArea: "Mietrecht", subArea: "Wohnraummiete", priority: "medium" },
     reason: { de: "Mietrecht erkannt", en: "Rental law detected" },
   },
   {
-    keywords: ["arbeits", "arbeitnehmer", "arbeitgeber", "kündigungsschutz", "arbeitsvertrag", "abfindung"],
+    keywords: [
+      "arbeits",
+      "arbeitnehmer",
+      "arbeitgeber",
+      "kündigungsschutz",
+      "arbeitsvertrag",
+      "abfindung",
+    ],
     suggestion: { legalArea: "Arbeitsrecht", subArea: "Kündigungsschutz", priority: "high" },
     reason: { de: "Arbeitsrecht erkannt", en: "Labor law detected" },
   },
@@ -33,7 +49,14 @@ const KEYWORD_RULES: Array<{
     reason: { de: "Erbrecht erkannt", en: "Inheritance law detected" },
   },
   {
-    keywords: ["vertrag", "vertragsbruch", "schadensersatz", "forderung", "zahlung", "vertragsrecht"],
+    keywords: [
+      "vertrag",
+      "vertragsbruch",
+      "schadensersatz",
+      "forderung",
+      "zahlung",
+      "vertragsrecht",
+    ],
     suggestion: { legalArea: "Zivilrecht", subArea: "Vertragsrecht", priority: "medium" },
     reason: { de: "Vertragsrecht erkannt", en: "Contract law detected" },
   },
@@ -43,13 +66,23 @@ const KEYWORD_RULES: Array<{
     reason: { de: "Gesellschaftsrecht erkannt", en: "Corporate law detected" },
   },
   {
-    keywords: ["dsgvo", "datenschutz", "datenschutzverletzung", "personenbezogene daten", "auftragsverarbeitung"],
+    keywords: [
+      "dsgvo",
+      "datenschutz",
+      "datenschutzverletzung",
+      "personenbezogene daten",
+      "auftragsverarbeitung",
+    ],
     suggestion: { legalArea: "Datenschutzrecht", subArea: "DSGVO", priority: "high" },
     reason: { de: "Datenschutzrecht erkannt", en: "Data protection law detected" },
   },
   {
     keywords: ["insolvenz", "insolvenzverwalter", "restschuldbefreiung", "konkurs"],
-    suggestion: { legalArea: "Insolvenzrecht", subArea: "Insolvenzeröffnung", priority: "critical" },
+    suggestion: {
+      legalArea: "Insolvenzrecht",
+      subArea: "Insolvenzeröffnung",
+      priority: "critical",
+    },
     reason: { de: "Insolvenzrecht erkannt", en: "Insolvency law detected" },
   },
   {
@@ -89,7 +122,11 @@ const KEYWORD_RULES: Array<{
   },
   {
     keywords: ["versicherung", "kfz", "rechtsschutz", "lebensversicherung", "schadensregulierung"],
-    suggestion: { legalArea: "Versicherungsrecht", subArea: "Kfz-Versicherung", priority: "medium" },
+    suggestion: {
+      legalArea: "Versicherungsrecht",
+      subArea: "Kfz-Versicherung",
+      priority: "medium",
+    },
     reason: { de: "Versicherungsrecht erkannt", en: "Insurance law detected" },
   },
   {
@@ -122,17 +159,22 @@ export function suggestCaseFromTitle(
   return null;
 }
 
-export function detectJurisdictionFromTitle(
-  title: string
-): "de" | "at" | "ch" | "eu" | null {
+export function detectJurisdictionFromTitle(title: string): "de" | "at" | "ch" | "eu" | null {
   const normalized = title.toLowerCase();
   if (normalized.includes("österreich") || normalized.includes("at-")) return "at";
   if (normalized.includes("schweiz") || normalized.includes("ch-")) return "ch";
-  if (normalized.includes("eu-") || normalized.includes("europäisch") || normalized.includes("brüssel")) return "eu";
+  if (
+    normalized.includes("eu-") ||
+    normalized.includes("europäisch") ||
+    normalized.includes("brüssel")
+  )
+    return "eu";
   if (normalized.includes("deutschland") || normalized.includes("deutsch")) return "de";
   return null;
 }
 
-export function defaultCaseValues(): Required<Pick<CaseSuggestion, "jurisdiction" | "status" | "priority">> {
+export function defaultCaseValues(): Required<
+  Pick<CaseSuggestion, "jurisdiction" | "status" | "priority">
+> {
   return { jurisdiction: "de", status: "open", priority: "medium" };
 }

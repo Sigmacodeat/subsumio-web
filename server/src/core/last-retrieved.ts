@@ -33,9 +33,9 @@
  *   the user never sees the write-back cost in the response time.
  */
 
-import type { BrainEngine } from './engine.ts';
-import { isUndefinedColumnError } from './utils.ts';
-import { registerBackgroundWorkDrainer } from './background-work.ts';
+import type { BrainEngine } from "./engine.ts";
+import { isUndefinedColumnError } from "./utils.ts";
+import { registerBackgroundWorkDrainer } from "./background-work.ts";
 
 let _trackRetrievalCache: { ts: number; enabled: boolean } | null = null;
 const TRACK_RETRIEVAL_CACHE_TTL_MS = 30_000;
@@ -67,30 +67,29 @@ const TRACK_RETRIEVAL_CACHE_TTL_MS = 30_000;
 const pendingLastRetrievedWrites = new Set<Promise<unknown>>();
 const DRAIN_TIMEOUT_MS = 5_000;
 
-export type DrainOutcome = { outcome: 'drained' | 'timeout'; pending: number };
+export type DrainOutcome = { outcome: "drained" | "timeout"; pending: number };
 
 export async function awaitPendingLastRetrievedWrites(
-  timeoutMs: number = DRAIN_TIMEOUT_MS,
+  timeoutMs: number = DRAIN_TIMEOUT_MS
 ): Promise<DrainOutcome> {
   if (pendingLastRetrievedWrites.size === 0) {
-    return { outcome: 'drained', pending: 0 };
+    return { outcome: "drained", pending: 0 };
   }
   // Snapshot up front: if a new write appears after we start draining,
   // we deliberately don't await it. CLI flow guarantees op-dispatch
   // is complete before this call, so the set is effectively frozen.
   const snapshot = Array.from(pendingLastRetrievedWrites);
   let timer: ReturnType<typeof setTimeout> | undefined;
-  const timeout = new Promise<'timeout'>((resolve) => {
-    timer = setTimeout(() => resolve('timeout'), timeoutMs);
+  const timeout = new Promise<"timeout">((resolve) => {
+    timer = setTimeout(() => resolve("timeout"), timeoutMs);
   });
-  const drain = Promise.allSettled(snapshot).then(() => 'drained' as const);
+  const drain = Promise.allSettled(snapshot).then(() => "drained" as const);
   const outcome = await Promise.race([drain, timeout]);
   if (timer) clearTimeout(timer);
-  if (outcome === 'timeout') {
+  if (outcome === "timeout") {
     const pending = pendingLastRetrievedWrites.size;
     console.warn(
-      `[last-retrieved] drain timed out after ${timeoutMs}ms; ` +
-        `${pending} writes still pending`,
+      `[last-retrieved] drain timed out after ${timeoutMs}ms; ` + `${pending} writes still pending`
     );
     // Adversarial-review C1: in long-lived daemons (`gbrain serve`), a
     // timed-out IIFE stays in the set forever because its `.finally`
@@ -102,9 +101,9 @@ export async function awaitPendingLastRetrievedWrites(
     for (const p of snapshot) {
       pendingLastRetrievedWrites.delete(p);
     }
-    return { outcome: 'timeout', pending };
+    return { outcome: "timeout", pending };
   }
-  return { outcome: 'drained', pending: 0 };
+  return { outcome: "drained", pending: 0 };
 }
 
 function trackLastRetrievedWrite(promise: Promise<unknown>): void {
@@ -129,7 +128,7 @@ export function _peekPendingLastRetrievedWritesForTests(): number {
 // v0.42.20.0 — register as a background-work sink (order 1; no abort — bare
 // UPDATEs, nothing to hard-stop). Drained before CLI disconnect.
 registerBackgroundWorkDrainer({
-  name: 'last-retrieved',
+  name: "last-retrieved",
   order: 1,
   drain: (ms) => awaitPendingLastRetrievedWrites(ms).then((r) => ({ unfinished: r.pending })),
 });
@@ -146,8 +145,8 @@ async function isTrackingEnabled(engine: BrainEngine): Promise<boolean> {
   }
   let enabled = true;
   try {
-    const raw = await engine.getConfig('search.track_retrieval');
-    if (raw === 'false' || raw === '0' || raw === 'off' || raw === 'no') {
+    const raw = await engine.getConfig("search.track_retrieval");
+    if (raw === "false" || raw === "0" || raw === "off" || raw === "no") {
       enabled = false;
     }
   } catch {
@@ -194,7 +193,7 @@ export function bumpLastRetrievedAt(engine: BrainEngine, pageIds: number[]): voi
     } catch (err) {
       // Pre-v77 brain (column missing) falls through silently — the search
       // op already returned, the LSD signal just stays NULL until upgrade.
-      if (isUndefinedColumnError(err, 'last_retrieved_at')) return;
+      if (isUndefinedColumnError(err, "last_retrieved_at")) return;
       // Other errors: stderr-warn but don't break the op response.
       const msg = err instanceof Error ? err.message : String(err);
       console.warn(`[last-retrieved] write-back failed (best-effort): ${msg}`);

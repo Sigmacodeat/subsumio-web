@@ -20,17 +20,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Plus, CalendarClock, AlertTriangle, Gavel, FileText, ChevronDown } from "lucide-react";
+import {
+  Loader2,
+  Plus,
+  CalendarClock,
+  AlertTriangle,
+  Gavel,
+  FileText,
+  ChevronDown,
+} from "lucide-react";
 import { useLang } from "@/lib/use-lang";
 import type { DashboardKey } from "@/content/dashboard";
 import { api } from "@/lib/api";
 import { isOnline, enqueueMutation } from "@/lib/offline-store";
 import { useToast } from "@/components/ui/toast";
-import {
-  DEADLINE_RULES,
-  computeDueDate,
-  type DeadlineRule,
-} from "@/lib/legal-deadlines";
+import { DEADLINE_RULES, computeDueDate, type DeadlineRule } from "@/lib/legal-deadlines";
 import type { BrainPage } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -71,16 +75,13 @@ export function DeadlineQuickCreateDialog({
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [calcPreview, setCalcPreview] = useState<string | null>(null);
 
-  const { data: cases, loading: loadingCases } = useDialogFetch<CaseOption[]>(
-    open,
-    async () => {
-      const pages = await api.brain.listPages({ type: "legal_case", limit: 200 });
-      return pages.map((p: BrainPage) => ({
-        slug: p.slug,
-        title: p.title || p.slug,
-      }));
-    },
-  );
+  const { data: cases, loading: loadingCases } = useDialogFetch<CaseOption[]>(open, async () => {
+    const pages = await api.brain.listPages({ type: "legal_case", limit: 200 });
+    return pages.map((p: BrainPage) => ({
+      slug: p.slug,
+      title: p.title || p.slug,
+    }));
+  });
 
   useEffect(() => {
     if (!ruleKey) {
@@ -293,10 +294,14 @@ export function DeadlineQuickCreateDialog({
                       }}
                     >
                       <SelectTrigger id="quick-deadline-rule">
-                        <SelectValue placeholder={t("deadlines.create_rule_none" as DashboardKey)} />
+                        <SelectValue
+                          placeholder={t("deadlines.create_rule_none" as DashboardKey)}
+                        />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">{t("deadlines.create_rule_none" as DashboardKey)}</SelectItem>
+                        <SelectItem value="">
+                          {t("deadlines.create_rule_none" as DashboardKey)}
+                        </SelectItem>
                         {DEADLINE_RULES.map((rule: DeadlineRule) => (
                           <SelectItem key={rule.key} value={rule.key}>
                             {rule.label} ({rule.law})

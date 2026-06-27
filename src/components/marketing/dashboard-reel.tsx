@@ -469,8 +469,7 @@ export default function DashboardReel({
                       {UI_STRINGS[lang].deadlinesLabel}
                     </h3>
                     <span className="text-xs font-medium text-rose-400">
-                      {v.deadlines.filter((d) => d.urgent).length}{" "}
-                      {UI_STRINGS[lang].urgentLabel}
+                      {v.deadlines.filter((d) => d.urgent).length} {UI_STRINGS[lang].urgentLabel}
                     </span>
                   </div>
                   {v.deadlines.map((d, i) => (

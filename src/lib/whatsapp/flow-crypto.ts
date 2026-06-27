@@ -76,7 +76,7 @@ export function decryptFlowRequest(body: {
         key: privateKey,
         ...RSA_PADDING,
       },
-      encryptedAesKey,
+      encryptedAesKey
     );
 
     // 2. Decrypt flow data using AES-GCM-256
@@ -87,10 +87,7 @@ export function decryptFlowRequest(body: {
     const decipher = createDecipheriv("aes-256-gcm", aesKey, iv);
     decipher.setAuthTag(authTag);
 
-    const decrypted = Buffer.concat([
-      decipher.update(ciphertext),
-      decipher.final(),
-    ]);
+    const decrypted = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
 
     const request = JSON.parse(decrypted.toString("utf8")) as DecryptedFlowRequest;
 
@@ -104,7 +101,7 @@ export function decryptFlowRequest(body: {
 export function encryptFlowResponse(
   response: FlowEndpointResponse,
   aesKey: Buffer,
-  iv: Buffer,
+  iv: Buffer
 ): string {
   // Flip the IV for the response (per Meta protocol)
   const flippedIv = Buffer.from(iv).reverse();
@@ -112,10 +109,7 @@ export function encryptFlowResponse(
   const plaintext = JSON.stringify(response);
 
   const cipher = createCipheriv("aes-256-gcm", aesKey, flippedIv);
-  const encrypted = Buffer.concat([
-    cipher.update(plaintext, "utf8"),
-    cipher.final(),
-  ]);
+  const encrypted = Buffer.concat([cipher.update(plaintext, "utf8"), cipher.final()]);
   const authTag = cipher.getAuthTag();
 
   // Response format: encrypted_data + auth_tag, base64 encoded

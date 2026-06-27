@@ -26,27 +26,35 @@ tags: [engineering, acme-corp]
 ---
 
 ## Executive Summary
+
 One paragraph. How you know them, why they matter.
 
 ## State
+
 VP Engineering at Acme Corp. Managing 45-person team. Reports to CEO.
 
 ## What They Believe
+
 Strong opinions on test coverage. "Ship it when the tests pass, not before."
 
 ## What They're Building
+
 Leading the API migration from REST to GraphQL. Target: Q3 completion.
 
 ## Assessment
+
 Sharp technical leader. Under-appreciated internally. Watch for signs of burnout.
 
 ## Trajectory
+
 Ascending. Likely CTO track if the migration succeeds.
 
 ## Relationship
+
 Met through Pedro. Had coffee 3x. Last: discussed API architecture thesis.
 
 ## Contact
+
 sarah@acmecorp.com | @sarahchen | linkedin.com/in/sarahchen
 
 ---
@@ -89,10 +97,10 @@ update_brain_page(slug, new_info, source):
 
 ### The Rules
 
-| Zone | Action | Explanation |
-|------|--------|-------------|
+| Zone           | Action      | Explanation                                       |
+| -------------- | ----------- | ------------------------------------------------- |
 | Compiled truth | **REWRITE** | Current synthesis. Changes when evidence changes. |
-| Timeline | **APPEND** | Evidence trail. Never edited, only added to. |
+| Timeline       | **APPEND**  | Evidence trail. Never edited, only added to.      |
 
 **Every compiled truth claim must trace to timeline entries.** If the Assessment
 says "under-appreciated internally," there should be timeline entries that
@@ -134,4 +142,4 @@ support that claim.
 
 ---
 
-*Part of the [GBrain Skillpack](../GBRAIN_SKILLPACK.md). See also: [Source Attribution](source-attribution.md), [Entity Detection](entity-detection.md)*
+_Part of the [GBrain Skillpack](../GBRAIN_SKILLPACK.md). See also: [Source Attribution](source-attribution.md), [Entity Detection](entity-detection.md)_

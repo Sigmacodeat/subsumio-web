@@ -3,11 +3,13 @@ import { ImprintContent } from "@/components/legal/legal-content";
 
 export const metadata: Metadata = {
   title: "Impressum",
-  description: "Impressum und Betreiberinformationen für Subsumio — der AI Legal Workspace für Kanzleien in DACH.",
+  description:
+    "Impressum und Betreiberinformationen für Subsumio — der AI Legal Workspace für Kanzleien in DACH.",
   alternates: { canonical: "/de/imprint", languages: { en: "/imprint", de: "/de/imprint" } },
   openGraph: {
     title: "Impressum — Subsumio",
-    description: "Impressum und Betreiberinformationen für Subsumio — der AI Legal Workspace für Kanzleien in DACH.",
+    description:
+      "Impressum und Betreiberinformationen für Subsumio — der AI Legal Workspace für Kanzleien in DACH.",
     url: "/de/imprint",
     type: "website",
   },

@@ -13,15 +13,15 @@
  *        bun run test/benchmark-put-page-latency.ts --json
  */
 
-import { PGLiteEngine } from '../src/core/pglite-engine.ts';
-import { operationsByName } from '../src/core/operations.ts';
-import type { OperationContext } from '../src/core/operations.ts';
+import { PGLiteEngine } from "../src/core/pglite-engine.ts";
+import { operationsByName } from "../src/core/operations.ts";
+import type { OperationContext } from "../src/core/operations.ts";
 
 const N_WRITES = 200;
 const N_TARGETS = 10;
 
 async function main() {
-  const jsonMode = process.argv.includes('--json');
+  const jsonMode = process.argv.includes("--json");
 
   const engine = new PGLiteEngine();
   await engine.connect({});
@@ -30,25 +30,25 @@ async function main() {
   // Seed target pages so auto-link has something to resolve against
   for (let i = 0; i < N_TARGETS; i++) {
     await engine.putPage(`people/target-${i}`, {
-      type: 'person',
+      type: "person",
       title: `Target ${i}`,
-      compiled_truth: '',
-      timeline: '',
+      compiled_truth: "",
+      timeline: "",
       frontmatter: {},
     });
   }
 
   const ctx: OperationContext = {
     engine,
-    config: { engine: 'pglite' } as any,
+    config: { engine: "pglite" } as any,
     logger: { info: () => {}, warn: () => {}, error: () => {} },
     dryRun: false,
     remote: false,
-    sourceId: 'default',
+    sourceId: "default",
   };
 
-  const putOp = operationsByName['put_page'];
-  if (!putOp) throw new Error('put_page operation not found');
+  const putOp = operationsByName["put_page"];
+  if (!putOp) throw new Error("put_page operation not found");
 
   const latenciesMs: number[] = [];
   let timelineEntriesWritten = 0;
@@ -66,14 +66,16 @@ async function main() {
       ``,
       `Met with [Target ${targetIdx}](people/target-${targetIdx}) about scaling.`,
       ``,
-      ...(hasTimeline ? [
-        `## Timeline`,
-        ``,
-        `- **2026-03-01** | Kickoff`,
-        `- **2026-03-15** | Draft shipped`,
-        `- **2026-04-02** | Final review`,
-      ] : []),
-    ].join('\n');
+      ...(hasTimeline
+        ? [
+            `## Timeline`,
+            ``,
+            `- **2026-03-01** | Kickoff`,
+            `- **2026-03-15** | Draft shipped`,
+            `- **2026-04-02** | Final review`,
+          ]
+        : []),
+    ].join("\n");
 
     const t0 = performance.now();
     const result: any = await putOp.handler(ctx, { slug, content: body });
@@ -87,7 +89,8 @@ async function main() {
   await engine.disconnect();
 
   latenciesMs.sort((a, b) => a - b);
-  const p = (pct: number) => latenciesMs[Math.min(latenciesMs.length - 1, Math.floor(latenciesMs.length * pct))];
+  const p = (pct: number) =>
+    latenciesMs[Math.min(latenciesMs.length - 1, Math.floor(latenciesMs.length * pct))];
   const mean = latenciesMs.reduce((a, b) => a + b, 0) / latenciesMs.length;
 
   const report = {
@@ -96,7 +99,7 @@ async function main() {
     timeline_entries_written: timelineEntriesWritten,
     latency_ms: {
       mean: round(mean),
-      p50: round(p(0.50)),
+      p50: round(p(0.5)),
       p95: round(p(0.95)),
       p99: round(p(0.99)),
       max: round(latenciesMs[latenciesMs.length - 1]),

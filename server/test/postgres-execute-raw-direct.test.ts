@@ -1,5 +1,5 @@
-import { describe, expect, test } from 'bun:test';
-import { PostgresEngine } from '../src/core/postgres-engine.ts';
+import { describe, expect, test } from "bun:test";
+import { PostgresEngine } from "../src/core/postgres-engine.ts";
 
 /**
  * executeRawDirect routing decision (PR #1816 lock hot-path fix).
@@ -67,45 +67,45 @@ function makeEngine(opts: {
   return engine;
 }
 
-describe('PostgresEngine.executeRawDirect — routing decision (PR #1816)', () => {
-  test('dual-pool active + not in tx → routes to direct (ddl) pool', async () => {
-    const readConn = fakeSql('read');
-    const directConn = fakeSql('direct');
+describe("PostgresEngine.executeRawDirect — routing decision (PR #1816)", () => {
+  test("dual-pool active + not in tx → routes to direct (ddl) pool", async () => {
+    const readConn = fakeSql("read");
+    const directConn = fakeSql("direct");
     const engine = makeEngine({ dualPoolActive: true, readConn, directConn });
 
-    const rows = await engine.executeRawDirect<{ via: string }>('UPDATE minion_jobs SET x=1');
-    expect(rows[0].via).toBe('direct');
+    const rows = await engine.executeRawDirect<{ via: string }>("UPDATE minion_jobs SET x=1");
+    expect(rows[0].via).toBe("direct");
   });
 
-  test('inside a transaction → honors the tx connection (never reroutes off it)', async () => {
-    const readConn = fakeSql('read');
-    const directConn = fakeSql('direct');
-    const txConn = fakeSql('tx');
+  test("inside a transaction → honors the tx connection (never reroutes off it)", async () => {
+    const readConn = fakeSql("read");
+    const directConn = fakeSql("direct");
+    const txConn = fakeSql("tx");
     // dual-pool is active, but _sql (tx) !== peekReadPool() (read) → inTransaction.
     const engine = makeEngine({ dualPoolActive: true, readConn, directConn, txConn });
 
-    const rows = await engine.executeRawDirect<{ via: string }>('UPDATE minion_jobs SET x=1');
-    expect(rows[0].via).toBe('tx');
+    const rows = await engine.executeRawDirect<{ via: string }>("UPDATE minion_jobs SET x=1");
+    expect(rows[0].via).toBe("tx");
   });
 
-  test('dual-pool inactive → falls back to the read pool', async () => {
-    const readConn = fakeSql('read');
-    const directConn = fakeSql('direct');
+  test("dual-pool inactive → falls back to the read pool", async () => {
+    const readConn = fakeSql("read");
+    const directConn = fakeSql("direct");
     const engine = makeEngine({ dualPoolActive: false, readConn, directConn });
 
-    const rows = await engine.executeRawDirect<{ via: string }>('UPDATE minion_jobs SET x=1');
-    expect(rows[0].via).toBe('read');
+    const rows = await engine.executeRawDirect<{ via: string }>("UPDATE minion_jobs SET x=1");
+    expect(rows[0].via).toBe("read");
   });
 
-  test('already-aborted signal short-circuits with AbortError before routing the query', async () => {
-    const readConn = fakeSql('read');
-    const directConn = fakeSql('direct');
+  test("already-aborted signal short-circuits with AbortError before routing the query", async () => {
+    const readConn = fakeSql("read");
+    const directConn = fakeSql("direct");
     const engine = makeEngine({ dualPoolActive: true, readConn, directConn });
 
     const ac = new AbortController();
     ac.abort();
     await expect(
-      engine.executeRawDirect('UPDATE minion_jobs SET x=1', [], { signal: ac.signal }),
+      engine.executeRawDirect("UPDATE minion_jobs SET x=1", [], { signal: ac.signal })
     ).rejects.toThrow(/abort/i);
   });
 });

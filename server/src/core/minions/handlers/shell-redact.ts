@@ -33,10 +33,7 @@
  * @param secrets  Map of inherit-name → resolved value. Empty values are skipped.
  *                 Order doesn't matter (each value is independently replaced).
  */
-export function redactSecretsInText(
-  text: string,
-  secrets: ReadonlyMap<string, string>,
-): string {
+export function redactSecretsInText(text: string, secrets: ReadonlyMap<string, string>): string {
   if (text.length === 0 || secrets.size === 0) return text;
   let result = text;
   for (const [name, value] of secrets) {

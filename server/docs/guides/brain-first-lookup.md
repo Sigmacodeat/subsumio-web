@@ -44,6 +44,7 @@ is wasting money and giving worse answers.
 ## Why Brain First
 
 The brain has context no external API can provide:
+
 - Relationship history (how you know them, what you discussed)
 - Your own assessments (what you think of them, not their LinkedIn bio)
 - Meeting transcripts (what was said, what was decided)
@@ -82,4 +83,4 @@ thesis, he's interested in your take on AI agents."
 
 ---
 
-*Part of the [GBrain Skillpack](../GBRAIN_SKILLPACK.md). See also: [Brain-Agent Loop](brain-agent-loop.md), [Search Modes](search-modes.md)*
+_Part of the [GBrain Skillpack](../GBRAIN_SKILLPACK.md). See also: [Brain-Agent Loop](brain-agent-loop.md), [Search Modes](search-modes.md)_

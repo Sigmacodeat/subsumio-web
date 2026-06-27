@@ -19,7 +19,7 @@ import { useEffect, useState } from "react";
 export function useDialogFetch<T>(
   open: boolean,
   fetcher: () => Promise<T>,
-  deps: React.DependencyList = [],
+  deps: React.DependencyList = []
 ): { data: T | null; loading: boolean; error: string | null } {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(false);

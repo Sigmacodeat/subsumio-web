@@ -11,8 +11,8 @@ import {
   embedQuery as gatewayEmbedQuery,
   getEmbeddingModel as gatewayGetModel,
   getEmbeddingDimensions as gatewayGetDims,
-} from './ai/gateway.ts';
-import { lookupEmbeddingPrice } from './embedding-pricing.ts';
+} from "./ai/gateway.ts";
+import { lookupEmbeddingPrice } from "./embedding-pricing.ts";
 
 // v0.27.1: re-export multimodal embedding so callers can pull both text and
 // image embedding APIs from `src/core/embedding`. import-image-file consumes
@@ -27,12 +27,8 @@ export {
   embedMultimodalSafe,
   embedQueryMultimodal,
   embedQueryMultimodalImage,
-} from './ai/gateway.ts';
-export type {
-  MultimodalInput,
-  EmbedMultimodalOpts,
-  MultimodalBatchResult,
-} from './ai/types.ts';
+} from "./ai/gateway.ts";
+export type { MultimodalInput, EmbedMultimodalOpts, MultimodalBatchResult } from "./ai/types.ts";
 
 /** Embed one text (document-side for asymmetric providers). */
 export async function embed(text: string): Promise<Float32Array> {
@@ -53,7 +49,7 @@ export async function embed(text: string): Promise<Float32Array> {
  */
 export async function embedQuery(
   text: string,
-  opts?: { embeddingModel?: string; dimensions?: number; abortSignal?: AbortSignal },
+  opts?: { embeddingModel?: string; dimensions?: number; abortSignal?: AbortSignal }
 ): Promise<Float32Array> {
   return gatewayEmbedQuery(text, opts);
 }
@@ -90,7 +86,7 @@ export interface EmbedBatchOptions {
 const BATCH_SIZE = 100;
 export async function embedBatch(
   texts: string[],
-  options: EmbedBatchOptions = {},
+  options: EmbedBatchOptions = {}
 ): Promise<Float32Array[]> {
   if (!texts || texts.length === 0) return [];
   // Build the gateway-call passthrough once; undefined fields stay undefined
@@ -115,7 +111,7 @@ export async function embedBatch(
 
 /** Currently-configured embedding model (short form without provider prefix). */
 export function getEmbeddingModelName(): string {
-  return gatewayGetModel().split(':').slice(1).join(':') || 'text-embedding-3-large';
+  return gatewayGetModel().split(":").slice(1).join(":") || "text-embedding-3-large";
 }
 
 /** Currently-configured embedding dimensions. */
@@ -124,7 +120,7 @@ export function getEmbeddingDimensions(): number {
 }
 
 // Back-compat exports for tests that imported these from v0.13.
-export const EMBEDDING_MODEL = 'text-embedding-3-large';
+export const EMBEDDING_MODEL = "text-embedding-3-large";
 export const EMBEDDING_DIMENSIONS = 1536;
 
 /**
@@ -151,7 +147,7 @@ export function currentEmbeddingPricePerMTok(): number {
     return 0.13;
   }
   const hit = lookupEmbeddingPrice(modelString);
-  return hit.kind === 'known' ? hit.pricePerMTok : 0.13;
+  return hit.kind === "known" ? hit.pricePerMTok : 0.13;
 }
 
 /**
@@ -191,7 +187,7 @@ export function currentEmbeddingSignature(): string {
  * sync-time cost gate only BLOCKS on the inline path. See sync.ts:2346
  * (`effectiveNoEmbed`) — this mirrors that resolution exactly.
  */
-export type SyncEmbedMode = 'deferred' | 'inline';
+export type SyncEmbedMode = "deferred" | "inline";
 
 /**
  * Resolve the embed mode from the same three signals sync.ts uses to
@@ -214,7 +210,7 @@ export function willEmbedSynchronously(opts: {
 }): SyncEmbedMode {
   const effectiveNoEmbed =
     opts.v2Enabled && !opts.serialFlag && !opts.noEmbed ? true : opts.noEmbed;
-  return effectiveNoEmbed ? 'deferred' : 'inline';
+  return effectiveNoEmbed ? "deferred" : "inline";
 }
 
 /**
@@ -224,10 +220,6 @@ export function willEmbedSynchronously(opts: {
  * money gate, and blocking the cheap markdown import for cost the import
  * doesn't synchronously incur is the bug this fix removes.
  */
-export function shouldBlockSync(
-  costUsd: number,
-  floorUsd: number,
-  mode: SyncEmbedMode,
-): boolean {
-  return mode === 'inline' && costUsd > floorUsd;
+export function shouldBlockSync(costUsd: number, floorUsd: number, mode: SyncEmbedMode): boolean {
+  return mode === "inline" && costUsd > floorUsd;
 }

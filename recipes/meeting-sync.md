@@ -39,6 +39,7 @@ items. Each one should propagate to the relevant brain pages. Without this recip
 meetings are black holes. With it, every meeting compounds the brain.
 
 **The flow:**
+
 1. Circleback records and transcribes the meeting (automatic, no user action)
 2. The sync script pulls completed meetings from Circleback API
 3. Each meeting becomes a brain page at `brain/meetings/{YYYY-MM-DD}-{slug}.md`
@@ -71,6 +72,7 @@ Agent reads meeting page
 ## Opinionated Defaults
 
 **Meeting page format:**
+
 ```markdown
 ---
 type: meeting
@@ -85,11 +87,13 @@ tags: [team, weekly, sync]
 ---
 
 ## Key Points
+
 - Discussed Q2 roadmap priorities
 - Alice is blocked on the API migration
 - Bob's prototype is ready for review
 
 ## Action Items
+
 - [ ] Alice: unblock API migration by Friday
 - [ ] Bob: share prototype link in Slack
 - [ ] Carol: schedule design review for next week
@@ -104,6 +108,7 @@ tags: [team, weekly, sync]
 ```
 
 **Attendee filtering:**
+
 - Skip calendar resources (e.g., "YC-SF Conference Room")
 - Skip group addresses (e.g., "team@company.com")
 - Extract display names, not email addresses
@@ -134,6 +139,7 @@ Note: Circleback's free tier records up to 10 meetings/month. Pro ($17/mo)
 is unlimited. You need at least one recorded meeting for the sync to work."
 
 Validate immediately:
+
 ```bash
 curl -sf -H "Authorization: Bearer $CIRCLEBACK_TOKEN" \
   "https://app.circleback.ai/api/mcp" \
@@ -176,11 +182,13 @@ node meeting-sync.mjs --days 7
 ```
 
 This syncs the last 7 days of meetings. For a full backfill:
+
 ```bash
 node meeting-sync.mjs --start 2026-01-01 --end $(date +%Y-%m-%d)
 ```
 
 Verify:
+
 ```bash
 ls brain/meetings/ | head -10
 ```
@@ -197,6 +205,7 @@ gbrain embed --stale
 ```
 
 Verify:
+
 ```bash
 gbrain search "meeting" --limit 3
 ```
@@ -218,6 +227,7 @@ This is YOUR job (the agent). For each meeting:
 ### Step 6: Set Up Cron
 
 Sync 3x daily on weekdays:
+
 ```bash
 # 10 AM, 4 PM, 9 PM PT on weekdays
 0 10,16,21 * * 1-5 cd /path/to/meeting-sync && node meeting-sync.mjs >> /tmp/meeting-sync.log 2>&1
@@ -243,6 +253,7 @@ These are production-tested patterns from syncing 280+ meeting transcripts.
 ### SSE Response Parsing
 
 Circleback returns JSONRPC 2.0 over SSE (Server-Sent Events):
+
 ```
 call_circleback(tool_name, args):
   body = {jsonrpc: '2.0', id: next_id(), method: 'tools/call',
@@ -262,6 +273,7 @@ call_circleback(tool_name, args):
 ```
 
 **Non-obvious:** The response is JSON inside SSE inside JSONRPC. You have to:
+
 1. Strip `data: ` prefix
 2. Parse the SSE line as JSON
 3. Drill into `result.content[0].text`
@@ -364,24 +376,27 @@ live sync to index the new pages.
 
 ## Cost Estimate
 
-| Component | Monthly Cost |
-|-----------|-------------|
+| Component            | Monthly Cost        |
+| -------------------- | ------------------- |
 | Circleback Free tier | $0 (10 meetings/mo) |
-| Circleback Pro | $17/mo (unlimited) |
-| **Recommended** | **$17/mo (Pro)** |
+| Circleback Pro       | $17/mo (unlimited)  |
+| **Recommended**      | **$17/mo (Pro)**    |
 
 ## Troubleshooting
 
 **No meetings found:**
+
 - Check that Circleback has recorded meetings (open the Circleback dashboard)
 - The Circleback bot must join the meeting for recording to work
 - Check the date range: `--days 30` to widen the search
 
 **Transcript is empty:**
+
 - Some meetings may not have transcripts (e.g., no audio, bot was removed)
 - Check the Circleback dashboard for the specific meeting's status
 
 **Duplicate meetings:**
+
 - The sync script checks for existing files by source_id
 - If duplicates appear, the idempotency check may be failing
 - Delete duplicates manually and re-run sync

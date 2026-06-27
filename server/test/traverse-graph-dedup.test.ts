@@ -14,8 +14,8 @@
  * same SQL; an E2E test covers Postgres.
  */
 
-import { describe, test, expect, beforeAll, afterAll, beforeEach } from 'bun:test';
-import { PGLiteEngine } from '../src/core/pglite-engine.ts';
+import { describe, test, expect, beforeAll, afterAll, beforeEach } from "bun:test";
+import { PGLiteEngine } from "../src/core/pglite-engine.ts";
 
 let engine: PGLiteEngine;
 
@@ -30,18 +30,32 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  for (const t of ['links', 'pages']) {
+  for (const t of ["links", "pages"]) {
     await (engine as any).db.exec(`DELETE FROM ${t}`);
   }
 });
 
-describe('Bug 6/10 — traverseGraph jsonb_agg DISTINCT', () => {
-  test('collapses two provenance rows for the same (from,to,type) edge', async () => {
-    await engine.putPage('people/alice', { type: 'person', title: 'Alice', compiled_truth: '', frontmatter: {} });
-    await engine.putPage('companies/acme', { type: 'company', title: 'Acme', compiled_truth: '', frontmatter: {} });
+describe("Bug 6/10 — traverseGraph jsonb_agg DISTINCT", () => {
+  test("collapses two provenance rows for the same (from,to,type) edge", async () => {
+    await engine.putPage("people/alice", {
+      type: "person",
+      title: "Alice",
+      compiled_truth: "",
+      frontmatter: {},
+    });
+    await engine.putPage("companies/acme", {
+      type: "company",
+      title: "Acme",
+      compiled_truth: "",
+      frontmatter: {},
+    });
 
-    const alice = await (engine as any).db.query(`SELECT id FROM pages WHERE slug = 'people/alice'`);
-    const acme = await (engine as any).db.query(`SELECT id FROM pages WHERE slug = 'companies/acme'`);
+    const alice = await (engine as any).db.query(
+      `SELECT id FROM pages WHERE slug = 'people/alice'`
+    );
+    const acme = await (engine as any).db.query(
+      `SELECT id FROM pages WHERE slug = 'companies/acme'`
+    );
     const fromId = alice.rows[0].id as string;
     const toId = acme.rows[0].id as string;
 
@@ -51,56 +65,68 @@ describe('Bug 6/10 — traverseGraph jsonb_agg DISTINCT', () => {
     await (engine as any).db.query(
       `INSERT INTO links (from_page_id, to_page_id, link_type, origin_page_id, link_source)
        VALUES ($1, $2, 'works_at', $1, 'markdown')`,
-      [fromId, toId],
+      [fromId, toId]
     );
     await (engine as any).db.query(
       `INSERT INTO links (from_page_id, to_page_id, link_type, origin_page_id, link_source)
        VALUES ($1, $2, 'works_at', NULL, 'frontmatter')`,
-      [fromId, toId],
+      [fromId, toId]
     );
 
     // Provenance preserved at the table level.
     const rawCount = await (engine as any).db.query(
       `SELECT count(*)::int as n FROM links WHERE from_page_id = $1 AND to_page_id = $2 AND link_type = 'works_at'`,
-      [fromId, toId],
+      [fromId, toId]
     );
     expect(rawCount.rows[0].n).toBe(2);
 
     // Aggregated output dedups.
-    const nodes = await engine.traverseGraph('people/alice', 2);
-    const alicedNode = nodes.find(n => n.slug === 'people/alice');
+    const nodes = await engine.traverseGraph("people/alice", 2);
+    const alicedNode = nodes.find((n) => n.slug === "people/alice");
     expect(alicedNode).toBeDefined();
 
     const worksAtEdges = alicedNode!.links.filter(
-      l => l.to_slug === 'companies/acme' && l.link_type === 'works_at',
+      (l) => l.to_slug === "companies/acme" && l.link_type === "works_at"
     );
     expect(worksAtEdges.length).toBe(1);
   });
 
-  test('keeps genuinely distinct link types even between same nodes', async () => {
-    await engine.putPage('people/bob', { type: 'person', title: 'Bob', compiled_truth: '', frontmatter: {} });
-    await engine.putPage('companies/widget', { type: 'company', title: 'Widget', compiled_truth: '', frontmatter: {} });
+  test("keeps genuinely distinct link types even between same nodes", async () => {
+    await engine.putPage("people/bob", {
+      type: "person",
+      title: "Bob",
+      compiled_truth: "",
+      frontmatter: {},
+    });
+    await engine.putPage("companies/widget", {
+      type: "company",
+      title: "Widget",
+      compiled_truth: "",
+      frontmatter: {},
+    });
 
     const bob = await (engine as any).db.query(`SELECT id FROM pages WHERE slug = 'people/bob'`);
-    const widget = await (engine as any).db.query(`SELECT id FROM pages WHERE slug = 'companies/widget'`);
+    const widget = await (engine as any).db.query(
+      `SELECT id FROM pages WHERE slug = 'companies/widget'`
+    );
     const fromId = bob.rows[0].id as string;
     const toId = widget.rows[0].id as string;
 
     await (engine as any).db.query(
       `INSERT INTO links (from_page_id, to_page_id, link_type, origin_page_id, link_source)
        VALUES ($1, $2, 'works_at', $1, 'markdown')`,
-      [fromId, toId],
+      [fromId, toId]
     );
     await (engine as any).db.query(
       `INSERT INTO links (from_page_id, to_page_id, link_type, origin_page_id, link_source)
        VALUES ($1, $2, 'founded', $1, 'markdown')`,
-      [fromId, toId],
+      [fromId, toId]
     );
 
-    const nodes = await engine.traverseGraph('people/bob', 2);
-    const bobNode = nodes.find(n => n.slug === 'people/bob');
-    const edges = bobNode!.links.filter(l => l.to_slug === 'companies/widget');
-    const types = edges.map(l => l.link_type).sort();
-    expect(types).toEqual(['founded', 'works_at']);
+    const nodes = await engine.traverseGraph("people/bob", 2);
+    const bobNode = nodes.find((n) => n.slug === "people/bob");
+    const edges = bobNode!.links.filter((l) => l.to_slug === "companies/widget");
+    const types = edges.map((l) => l.link_type).sort();
+    expect(types).toEqual(["founded", "works_at"]);
   });
 });

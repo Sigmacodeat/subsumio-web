@@ -9,8 +9,8 @@
  * providerOptions shape to produce vector(N)".
  */
 
-import type { Implementation } from './types.ts';
-import { AIConfigError } from './errors.ts';
+import type { Implementation } from "./types.ts";
+import { AIConfigError } from "./errors.ts";
 
 // Voyage hosted models that accept `output_dimension` (values:
 // 256 / 512 / 1024 / 2048). Per Voyage's API parameter docs as of 2026-05.
@@ -21,13 +21,13 @@ import { AIConfigError } from './errors.ts';
 // rejects the parameter. The negative regression assertion in
 // test/ai/gateway.test.ts pins this contract.
 const VOYAGE_OUTPUT_DIMENSION_MODELS = new Set([
-  'voyage-4-large',
-  'voyage-4',
-  'voyage-4-lite',
-  'voyage-3-large',
-  'voyage-3.5',
-  'voyage-3.5-lite',
-  'voyage-code-3',
+  "voyage-4-large",
+  "voyage-4",
+  "voyage-4-lite",
+  "voyage-3-large",
+  "voyage-3.5",
+  "voyage-3.5-lite",
+  "voyage-code-3",
 ]);
 
 // Voyage's flexible-dim endpoint only accepts these four discrete values.
@@ -54,7 +54,7 @@ export function isValidVoyageOutputDim(dims: number): boolean {
 // case: `embedding_model: zeroentropyai:zembed-1` configured without
 // `embedding_dimensions` falls back to DEFAULT_EMBEDDING_DIMENSIONS=1536
 // (an OpenAI default), which ZE doesn't accept.
-const ZEROENTROPY_DIM_MODELS = new Set(['zembed-1']);
+const ZEROENTROPY_DIM_MODELS = new Set(["zembed-1"]);
 export const ZEROENTROPY_VALID_DIMS = [2560, 1280, 640, 320, 160, 80, 40] as const;
 
 export function supportsZeroEntropyDimension(modelId: string): boolean {
@@ -72,8 +72,8 @@ export function isValidZeroEntropyDim(dims: number): boolean {
 // fix so users don't see opaque "vector dimension mismatch" errors after
 // `gbrain ze-switch --undo` lands them on OpenAI at the wrong dim.
 const OPENAI_TEXT3_MAX_DIMS: Record<string, number> = {
-  'text-embedding-3-small': 1536,
-  'text-embedding-3-large': 3072,
+  "text-embedding-3-small": 1536,
+  "text-embedding-3-large": 3072,
 };
 
 export function isOpenAITextEmbedding3Model(modelId: string): boolean {
@@ -113,38 +113,41 @@ export function dimsProviderOptions(
   implementation: Implementation,
   modelId: string,
   dims: number,
-  inputType?: 'query' | 'document',
+  inputType?: "query" | "document"
 ): Record<string, any> | undefined {
   switch (implementation) {
-    case 'native-openai': {
+    case "native-openai": {
       // text-embedding-3-* supports dimensions; text-embedding-ada-002 does not.
       // OpenAI embeddings are symmetric — inputType ignored.
-      if (modelId.startsWith('text-embedding-3')) {
+      if (modelId.startsWith("text-embedding-3")) {
         // v0.36.0.0 (D13): fail-loud when configured dim is outside the
         // model's Matryoshka range. OpenAI returns HTTP 400 otherwise with
         // a generic message that misroutes as a network blip.
-        if (isOpenAITextEmbedding3Model(modelId) && !isValidOpenAITextEmbedding3Dim(modelId, dims)) {
+        if (
+          isOpenAITextEmbedding3Model(modelId) &&
+          !isValidOpenAITextEmbedding3Dim(modelId, dims)
+        ) {
           const max = maxOpenAITextEmbedding3Dim(modelId)!;
           throw new AIConfigError(
             `OpenAI model "${modelId}" supports embedding_dimensions in 1..${max}, got ${dims}.`,
             `Set \`embedding_dimensions\` to a value between 1 and ${max} ` +
-            `(\`gbrain config set embedding_dimensions ${Math.min(1024, max)}\` is a common default).`,
+              `(\`gbrain config set embedding_dimensions ${Math.min(1024, max)}\` is a common default).`
           );
         }
         return { openai: { dimensions: dims } };
       }
       return undefined;
     }
-    case 'native-google': {
-      if (modelId.startsWith('gemini-embedding') || modelId === 'text-embedding-004') {
+    case "native-google": {
+      if (modelId.startsWith("gemini-embedding") || modelId === "text-embedding-004") {
         return { google: { outputDimensionality: dims } };
       }
       return undefined;
     }
-    case 'native-anthropic':
+    case "native-anthropic":
       // Anthropic has no embedding model.
       return undefined;
-    case 'openai-compatible':
+    case "openai-compatible":
       // ZE zembed-1 — flexible Matryoshka dims + asymmetric input_type.
       // Lives BEFORE the generic openai-compatible fall-through to avoid
       // sending input_type to providers (Azure/DashScope/Zhipu) that
@@ -153,15 +156,15 @@ export function dimsProviderOptions(
         if (!isValidZeroEntropyDim(dims)) {
           throw new AIConfigError(
             `ZeroEntropy model "${modelId}" supports dimensions only in ` +
-            `{${ZEROENTROPY_VALID_DIMS.join(', ')}}, got ${dims}.`,
+              `{${ZEROENTROPY_VALID_DIMS.join(", ")}}, got ${dims}.`,
             `Set \`embedding_dimensions\` to one of ` +
-            `${ZEROENTROPY_VALID_DIMS.join('/')} in your gbrain config.`,
+              `${ZEROENTROPY_VALID_DIMS.join("/")} in your gbrain config.`
           );
         }
         return {
           openaiCompatible: {
             dimensions: dims,
-            input_type: inputType ?? 'document',
+            input_type: inputType ?? "document",
           },
         };
       }
@@ -181,10 +184,10 @@ export function dimsProviderOptions(
         if (!isValidVoyageOutputDim(dims)) {
           throw new AIConfigError(
             `Voyage model "${modelId}" supports output_dimension only in ` +
-            `{${VOYAGE_VALID_OUTPUT_DIMS.join(', ')}}, got ${dims}.`,
+              `{${VOYAGE_VALID_OUTPUT_DIMS.join(", ")}}, got ${dims}.`,
             `Set \`embedding_dimensions\` to one of ` +
-            `${VOYAGE_VALID_OUTPUT_DIMS.join('/')} in your gbrain config, or ` +
-            `switch to a fixed-dim Voyage model (e.g. voyage-3, voyage-3-lite).`,
+              `${VOYAGE_VALID_OUTPUT_DIMS.join("/")} in your gbrain config, or ` +
+              `switch to a fixed-dim Voyage model (e.g. voyage-3, voyage-3-lite).`
           );
         }
         return {
@@ -201,13 +204,16 @@ export function dimsProviderOptions(
       // configured for a smaller width (e.g. 1536) hard-fail at first embed.
       // Azure/OpenAI-compat embeddings are symmetric — inputType ignored.
       // v0.36.0.0 (D13): same range validation as native-openai path.
-      if (modelId.startsWith('text-embedding-3')) {
-        if (isOpenAITextEmbedding3Model(modelId) && !isValidOpenAITextEmbedding3Dim(modelId, dims)) {
+      if (modelId.startsWith("text-embedding-3")) {
+        if (
+          isOpenAITextEmbedding3Model(modelId) &&
+          !isValidOpenAITextEmbedding3Dim(modelId, dims)
+        ) {
           const max = maxOpenAITextEmbedding3Dim(modelId)!;
           throw new AIConfigError(
             `OpenAI model "${modelId}" supports embedding_dimensions in 1..${max}, got ${dims}.`,
             `Set \`embedding_dimensions\` to a value between 1 and ${max} ` +
-            `(\`gbrain config set embedding_dimensions ${Math.min(1024, max)}\` is a common default).`,
+              `(\`gbrain config set embedding_dimensions ${Math.min(1024, max)}\` is a common default).`
           );
         }
         return { openaiCompatible: { dimensions: dims } };
@@ -217,7 +223,7 @@ export function dimsProviderOptions(
       // OpenAI-compat path. Without this, user-selected non-default dims are
       // silently ignored and the provider returns its default size.
       // Symmetric retrieval — inputType ignored.
-      if (modelId === 'text-embedding-v3' || modelId === 'embedding-3') {
+      if (modelId === "text-embedding-v3" || modelId === "embedding-3") {
         return { openaiCompatible: { dimensions: dims } };
       }
       // MiniMax embo-01 takes a `type: 'db' | 'query'` field for asymmetric
@@ -225,8 +231,8 @@ export function dimsProviderOptions(
       // into the new inputType seam is a follow-up (see plan's deferred
       // section "Fix MiniMax embo-01 asymmetry"). When fixed: map
       // inputType==='query' → type:'query', else 'db'.
-      if (modelId === 'embo-01') {
-        return { openaiCompatible: { type: 'db' } };
+      if (modelId === "embo-01") {
+        return { openaiCompatible: { type: "db" } };
       }
       return undefined;
   }

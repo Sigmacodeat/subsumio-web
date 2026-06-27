@@ -31,7 +31,9 @@ export default function MobilePage() {
       setCaps(c);
       setLoading(false);
     });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   async function handlePush() {

@@ -171,7 +171,9 @@ describe("frontmatterToMonitor", () => {
   });
 
   test("filters invalid source values", () => {
-    const monitor = frontmatterToMonitor(makeMonitorPage({ sources: ["case-law", "invalid", "legislation"] }));
+    const monitor = frontmatterToMonitor(
+      makeMonitorPage({ sources: ["case-law", "invalid", "legislation"] })
+    );
     expect(monitor!.sources).toEqual(["case-law", "legislation"]);
   });
 

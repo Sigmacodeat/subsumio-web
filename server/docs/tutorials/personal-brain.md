@@ -31,13 +31,13 @@ Git repo is the system of record. The whole thing is multiplayer by default: any
 
 ## Prerequisites
 
-| Requirement | Why |
-|---|---|
-| GitHub account (org or personal) | For the two repos that store the agent + brain |
-| Render account | For hosting the agent runtime |
-| Telegram account | For talking to your agent |
-| API keys: OpenAI, Anthropic at minimum | Embeddings + the Claude model |
-| About $100 to $150 a month | Render Pro + Supabase + API usage |
+| Requirement                            | Why                                            |
+| -------------------------------------- | ---------------------------------------------- |
+| GitHub account (org or personal)       | For the two repos that store the agent + brain |
+| Render account                         | For hosting the agent runtime                  |
+| Telegram account                       | For talking to your agent                      |
+| API keys: OpenAI, Anthropic at minimum | Embeddings + the Claude model                  |
+| About $100 to $150 a month             | Render Pro + Supabase + API usage              |
 
 ---
 
@@ -167,7 +167,7 @@ gbrain config set database_url "postgresql://postgres.YOUR-PROJECT:YOUR-PASSWORD
 
 ### 7c. Fix the IPv4 gotcha for migrations, DDL, and worker locks
 
-The transaction pooler (7b) carries your normal reads and writes over IPv4. But GBrain runs schema migrations, DDL, and background-worker locks on a *direct* connection, which it derives from your pooler URL by swapping the host to `db.YOUR-PROJECT.supabase.co:5432`. That direct host is **IPv6-only**. On an IPv4-only host (most Render plans), reads work but migrations hang and worker locks orphan, often silently.
+The transaction pooler (7b) carries your normal reads and writes over IPv4. But GBrain runs schema migrations, DDL, and background-worker locks on a _direct_ connection, which it derives from your pooler URL by swapping the host to `db.YOUR-PROJECT.supabase.co:5432`. That direct host is **IPv6-only**. On an IPv4-only host (most Render plans), reads work but migrations hang and worker locks orphan, often silently.
 
 Two ways to fix it. The free one first:
 
@@ -232,13 +232,13 @@ Brains share through git. My main agent can populate another agent's brain by pu
 
 ## What this costs
 
-| Component | Monthly cost |
-|-----------|-------------|
-| Render Pro (minimum viable) | about $85 |
-| Supabase (small) | free to $25 |
-| OpenAI API (embeddings) | $5 to $20 (much less if you use ZeroEntropy as the default) |
-| Anthropic API (Claude) | $50 to $500 (usage dependent) |
-| **Total minimum** | **about $100 to $150 a month** |
+| Component                   | Monthly cost                                                |
+| --------------------------- | ----------------------------------------------------------- |
+| Render Pro (minimum viable) | about $85                                                   |
+| Supabase (small)            | free to $25                                                 |
+| OpenAI API (embeddings)     | $5 to $20 (much less if you use ZeroEntropy as the default) |
+| Anthropic API (Claude)      | $50 to $500 (usage dependent)                               |
+| **Total minimum**           | **about $100 to $150 a month**                              |
 
 My production setup is about $10,000 a month, but that's 10 instances, 200 crons, processing email and Slack and calendar in real time, running sub-agents. Not what you need on day one.
 

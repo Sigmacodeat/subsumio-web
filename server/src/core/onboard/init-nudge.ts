@@ -13,7 +13,7 @@
 // Bypass: GBRAIN_NO_ONBOARD_NUDGE=1 short-circuits. Non-TTY default
 // also short-circuits (CI/scripted callers see nothing).
 
-import type { BrainEngine } from '../engine.ts';
+import type { BrainEngine } from "../engine.ts";
 
 const NUDGE_BUDGET_MS = 3000;
 
@@ -32,7 +32,7 @@ const NUDGE_BUDGET_MS = 3000;
  */
 export async function runInitNudge(engine: BrainEngine): Promise<void> {
   try {
-    if (process.env.GBRAIN_NO_ONBOARD_NUDGE === '1') return;
+    if (process.env.GBRAIN_NO_ONBOARD_NUDGE === "1") return;
     if (!process.stderr.isTTY) return;
 
     const controller = new AbortController();
@@ -52,14 +52,14 @@ export async function runInitNudge(engine: BrainEngine): Promise<void> {
       engine.executeRaw<{ count: string | number }>(
         `SELECT COUNT(*) AS count FROM content_chunks WHERE embedding IS NULL`,
         [],
-        { signal: controller.signal },
+        { signal: controller.signal }
       ),
       engine.executeRaw<{ count: string | number }>(
         `SELECT COUNT(*) AS count FROM pages
            WHERE type IN ('person', 'company', 'organization', 'entity')
              AND deleted_at IS NULL`,
         [],
-        { signal: controller.signal },
+        { signal: controller.signal }
       ),
       engine.executeRaw<{ count: string | number }>(
         `SELECT COUNT(*) AS count FROM pages p
@@ -67,7 +67,7 @@ export async function runInitNudge(engine: BrainEngine): Promise<void> {
              AND p.deleted_at IS NULL
              AND EXISTS (SELECT 1 FROM links l WHERE l.to_page_id = p.id)`,
         [],
-        { signal: controller.signal },
+        { signal: controller.signal }
       ),
       engine.executeRaw<{ count: string | number }>(
         `SELECT COUNT(*) AS count FROM pages p
@@ -75,20 +75,18 @@ export async function runInitNudge(engine: BrainEngine): Promise<void> {
              AND p.deleted_at IS NULL
              AND EXISTS (SELECT 1 FROM timeline_entries t WHERE t.page_id = p.id)`,
         [],
-        { signal: controller.signal },
+        { signal: controller.signal }
       ),
-      engine.executeRaw<{ count: string | number }>(
-        `SELECT COUNT(*) AS count FROM takes`,
-        [],
-        { signal: controller.signal },
-      ),
+      engine.executeRaw<{ count: string | number }>(`SELECT COUNT(*) AS count FROM takes`, [], {
+        signal: controller.signal,
+      }),
     ]);
     clearTimeout(timer);
 
     checksAttempted = results.length;
     for (let i = 0; i < results.length; i++) {
       const r = results[i];
-      if (r.status === 'rejected') {
+      if (r.status === "rejected") {
         partial = true;
         continue;
       }
@@ -105,10 +103,10 @@ export async function runInitNudge(engine: BrainEngine): Promise<void> {
     const linkCoverage = totalEntities > 0 ? linkedCount / totalEntities : 1;
     const timelineCoverage = totalEntities > 0 ? timelineCount / totalEntities : 1;
     const hasRecommendations =
-      totalStale > 0
-      || (totalEntities > 0 && linkCoverage < 0.7)
-      || (totalEntities > 0 && timelineCoverage < 0.9)
-      || takesCount === 0;
+      totalStale > 0 ||
+      (totalEntities > 0 && linkCoverage < 0.7) ||
+      (totalEntities > 0 && timelineCoverage < 0.9) ||
+      takesCount === 0;
 
     if (!hasRecommendations && !partial) return;
 
@@ -121,17 +119,21 @@ export async function runInitNudge(engine: BrainEngine): Promise<void> {
     if (totalEntities > 0 && timelineCoverage < 0.9) {
       parts.push(`timeline coverage ${Math.round(timelineCoverage * 100)}%`);
     }
-    if (takesCount === 0) parts.push('0 takes');
+    if (takesCount === 0) parts.push("0 takes");
 
     process.stderr.write(
-      `\n[onboard] Brain has opportunities: ${parts.join(', ')}.\n` +
-      `[onboard] Run 'gbrain onboard --check' to see the plan.` +
-      (partial ? ` (${checksRan}/${checksAttempted} checks complete; run gbrain onboard --check for full recommendations)` : '') +
-      `\n`,
+      `\n[onboard] Brain has opportunities: ${parts.join(", ")}.\n` +
+        `[onboard] Run 'gbrain onboard --check' to see the plan.` +
+        (partial
+          ? ` (${checksRan}/${checksAttempted} checks complete; run gbrain onboard --check for full recommendations)`
+          : "") +
+        `\n`
     );
   } catch (err) {
     // A18: NEVER crash init from the nudge. Log and continue.
-    process.stderr.write(`[onboard] nudge skipped (${err instanceof Error ? err.message : String(err)})\n`);
+    process.stderr.write(
+      `[onboard] nudge skipped (${err instanceof Error ? err.message : String(err)})\n`
+    );
   }
 }
 
@@ -141,10 +143,10 @@ export async function runInitNudge(engine: BrainEngine): Promise<void> {
  */
 export async function runUpgradeBanner(_engine: BrainEngine): Promise<void> {
   try {
-    if (process.env.GBRAIN_NO_ONBOARD_NUDGE === '1') return;
+    if (process.env.GBRAIN_NO_ONBOARD_NUDGE === "1") return;
     if (!process.stderr.isTTY) return;
     process.stderr.write(
-      `\n[onboard] Upgrade complete. Run 'gbrain onboard --check' to see if the new version surfaces any new opportunities.\n`,
+      `\n[onboard] Upgrade complete. Run 'gbrain onboard --check' to see if the new version surfaces any new opportunities.\n`
     );
   } catch {
     // A18 posture for symmetry.

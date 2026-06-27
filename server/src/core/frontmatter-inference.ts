@@ -58,7 +58,7 @@
  *     'heading' (first # in content), 'filename-full' (no date strip)
  */
 
-import { basename, dirname, relative } from 'path';
+import { basename, dirname, relative } from "path";
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -84,9 +84,9 @@ export interface DirectoryRule {
   /** Optional tags to add. */
   tags?: string[];
   /** Where to look for dates. Default: 'filename'. */
-  datePattern?: 'filename' | 'dirname' | 'none';
+  datePattern?: "filename" | "dirname" | "none";
   /** How to extract title. Default: 'filename'. */
-  titleStrategy?: 'filename' | 'heading' | 'filename-full';
+  titleStrategy?: "filename" | "heading" | "filename-full";
 }
 
 // ─── Directory Rules ─────────────────────────────────────────────────
@@ -97,172 +97,273 @@ export const DIRECTORY_RULES: DirectoryRule[] = [
   // Apple Notes — bulk import from Apple Notes app. Filenames are
   // "YYYY-MM-DD Title.md" with HTML-styled content.
   {
-    pathPrefix: 'apple notes/youtube shows/',
-    type: 'apple-note',
-    source: 'apple-notes',
-    tags: ['youtube', 'shows'],
-    datePattern: 'filename',
-    titleStrategy: 'filename',
+    pathPrefix: "apple notes/youtube shows/",
+    type: "apple-note",
+    source: "apple-notes",
+    tags: ["youtube", "shows"],
+    datePattern: "filename",
+    titleStrategy: "filename",
   },
   {
-    pathPrefix: 'apple notes/yc/',
-    type: 'apple-note',
-    source: 'apple-notes',
-    tags: ['yc'],
-    datePattern: 'filename',
-    titleStrategy: 'filename',
+    pathPrefix: "apple notes/yc/",
+    type: "apple-note",
+    source: "apple-notes",
+    tags: ["yc"],
+    datePattern: "filename",
+    titleStrategy: "filename",
   },
   {
-    pathPrefix: 'apple notes/archived/',
-    type: 'apple-note',
-    source: 'apple-notes',
-    tags: ['archived'],
-    datePattern: 'filename',
-    titleStrategy: 'filename',
+    pathPrefix: "apple notes/archived/",
+    type: "apple-note",
+    source: "apple-notes",
+    tags: ["archived"],
+    datePattern: "filename",
+    titleStrategy: "filename",
   },
   {
-    pathPrefix: 'apple notes/politics/',
-    type: 'apple-note',
-    source: 'apple-notes',
-    tags: ['politics'],
-    datePattern: 'filename',
-    titleStrategy: 'filename',
+    pathPrefix: "apple notes/politics/",
+    type: "apple-note",
+    source: "apple-notes",
+    tags: ["politics"],
+    datePattern: "filename",
+    titleStrategy: "filename",
   },
   {
-    pathPrefix: 'apple notes/pitch notes/',
-    type: 'apple-note',
-    source: 'apple-notes',
-    tags: ['pitch-notes'],
-    datePattern: 'filename',
-    titleStrategy: 'filename',
+    pathPrefix: "apple notes/pitch notes/",
+    type: "apple-note",
+    source: "apple-notes",
+    tags: ["pitch-notes"],
+    datePattern: "filename",
+    titleStrategy: "filename",
   },
   {
-    pathPrefix: 'apple notes/gstack/',
-    type: 'apple-note',
-    source: 'apple-notes',
-    tags: ['gstack'],
-    datePattern: 'filename',
-    titleStrategy: 'filename',
+    pathPrefix: "apple notes/gstack/",
+    type: "apple-note",
+    source: "apple-notes",
+    tags: ["gstack"],
+    datePattern: "filename",
+    titleStrategy: "filename",
   },
   {
-    pathPrefix: 'apple notes/photo-cameras/',
-    type: 'apple-note',
-    source: 'apple-notes',
-    tags: ['photography'],
-    datePattern: 'filename',
-    titleStrategy: 'filename',
+    pathPrefix: "apple notes/photo-cameras/",
+    type: "apple-note",
+    source: "apple-notes",
+    tags: ["photography"],
+    datePattern: "filename",
+    titleStrategy: "filename",
   },
   {
-    pathPrefix: 'apple notes/jan bowman notes/',
-    type: 'apple-note',
-    source: 'apple-notes',
-    tags: ['therapy', 'jan-bowman'],
-    datePattern: 'filename',
-    titleStrategy: 'filename',
+    pathPrefix: "apple notes/jan bowman notes/",
+    type: "apple-note",
+    source: "apple-notes",
+    tags: ["therapy", "jan-bowman"],
+    datePattern: "filename",
+    titleStrategy: "filename",
   },
   // Catch-all for Apple Notes not in a subfolder
   {
-    pathPrefix: 'apple notes/',
-    type: 'apple-note',
-    source: 'apple-notes',
-    datePattern: 'filename',
-    titleStrategy: 'filename',
+    pathPrefix: "apple notes/",
+    type: "apple-note",
+    source: "apple-notes",
+    datePattern: "filename",
+    titleStrategy: "filename",
   },
 
   // Calendar diarization files
   {
-    pathPrefix: 'daily/calendar/',
-    type: 'calendar-index',
-    source: 'calendar',
-    datePattern: 'filename',
-    titleStrategy: 'filename',
+    pathPrefix: "daily/calendar/",
+    type: "calendar-index",
+    source: "calendar",
+    datePattern: "filename",
+    titleStrategy: "filename",
   },
 
   // Documentation/workspace repos. These make generated frontmatter useful
   // instead of flattening everything to the catch-all `note` type.
-  { pathPrefix: 'docs/runbooks/', type: 'guide', source: 'docs', tags: ['runbook'], titleStrategy: 'heading' },
-  { pathPrefix: 'runbooks/', type: 'guide', source: 'docs', tags: ['runbook'], titleStrategy: 'heading' },
-  { pathPrefix: 'docs/guides/', type: 'guide', source: 'docs', tags: ['guide'], titleStrategy: 'heading' },
-  { pathPrefix: 'docs/policies/', type: 'guide', source: 'docs', tags: ['policy'], titleStrategy: 'heading' },
-  { pathPrefix: 'docs/projects/', type: 'project', source: 'docs', tags: ['project'], titleStrategy: 'heading' },
-  { pathPrefix: 'docs/audits/', type: 'analysis', source: 'docs', tags: ['audit'], titleStrategy: 'heading' },
-  { pathPrefix: 'docs/research/', type: 'analysis', source: 'docs', tags: ['research'], titleStrategy: 'heading' },
-  { pathPrefix: 'docs/evaos/', type: 'architecture', source: 'docs', tags: ['evaos'], titleStrategy: 'heading' },
-  { pathPrefix: 'docs/architecture/', type: 'architecture', source: 'docs', titleStrategy: 'heading' },
-  { pathPrefix: 'docs/providers/', type: 'source', source: 'docs', tags: ['provider'], titleStrategy: 'heading' },
-  { pathPrefix: 'security/', type: 'guide', source: 'docs', tags: ['security'], titleStrategy: 'heading' },
-  { pathPrefix: 'support/', type: 'source', source: 'docs', tags: ['support'], titleStrategy: 'heading' },
-  { pathPrefix: 'notes/', type: 'note', titleStrategy: 'heading' },
+  {
+    pathPrefix: "docs/runbooks/",
+    type: "guide",
+    source: "docs",
+    tags: ["runbook"],
+    titleStrategy: "heading",
+  },
+  {
+    pathPrefix: "runbooks/",
+    type: "guide",
+    source: "docs",
+    tags: ["runbook"],
+    titleStrategy: "heading",
+  },
+  {
+    pathPrefix: "docs/guides/",
+    type: "guide",
+    source: "docs",
+    tags: ["guide"],
+    titleStrategy: "heading",
+  },
+  {
+    pathPrefix: "docs/policies/",
+    type: "guide",
+    source: "docs",
+    tags: ["policy"],
+    titleStrategy: "heading",
+  },
+  {
+    pathPrefix: "docs/projects/",
+    type: "project",
+    source: "docs",
+    tags: ["project"],
+    titleStrategy: "heading",
+  },
+  {
+    pathPrefix: "docs/audits/",
+    type: "analysis",
+    source: "docs",
+    tags: ["audit"],
+    titleStrategy: "heading",
+  },
+  {
+    pathPrefix: "docs/research/",
+    type: "analysis",
+    source: "docs",
+    tags: ["research"],
+    titleStrategy: "heading",
+  },
+  {
+    pathPrefix: "docs/evaos/",
+    type: "architecture",
+    source: "docs",
+    tags: ["evaos"],
+    titleStrategy: "heading",
+  },
+  {
+    pathPrefix: "docs/architecture/",
+    type: "architecture",
+    source: "docs",
+    titleStrategy: "heading",
+  },
+  {
+    pathPrefix: "docs/providers/",
+    type: "source",
+    source: "docs",
+    tags: ["provider"],
+    titleStrategy: "heading",
+  },
+  {
+    pathPrefix: "security/",
+    type: "guide",
+    source: "docs",
+    tags: ["security"],
+    titleStrategy: "heading",
+  },
+  {
+    pathPrefix: "support/",
+    type: "source",
+    source: "docs",
+    tags: ["support"],
+    titleStrategy: "heading",
+  },
+  { pathPrefix: "notes/", type: "note", titleStrategy: "heading" },
 
   // Personal sections
   {
-    pathPrefix: 'personal/therapy/',
-    type: 'therapy-session',
-    source: 'therapy',
-    datePattern: 'filename',
-    titleStrategy: 'filename',
+    pathPrefix: "personal/therapy/",
+    type: "therapy-session",
+    source: "therapy",
+    datePattern: "filename",
+    titleStrategy: "filename",
   },
   {
-    pathPrefix: 'personal/reflections/',
-    type: 'reflection',
-    source: 'personal',
-    datePattern: 'filename',
-    titleStrategy: 'heading',
+    pathPrefix: "personal/reflections/",
+    type: "reflection",
+    source: "personal",
+    datePattern: "filename",
+    titleStrategy: "heading",
   },
   {
-    pathPrefix: 'personal/',
-    type: 'personal',
-    source: 'personal',
-    datePattern: 'none',
-    titleStrategy: 'heading',
+    pathPrefix: "personal/",
+    type: "personal",
+    source: "personal",
+    datePattern: "none",
+    titleStrategy: "heading",
   },
 
   // Writing
   {
-    pathPrefix: 'writing/essays/',
-    type: 'essay',
-    source: 'writing',
-    datePattern: 'filename',
-    titleStrategy: 'heading',
+    pathPrefix: "writing/essays/",
+    type: "essay",
+    source: "writing",
+    datePattern: "filename",
+    titleStrategy: "heading",
   },
   {
-    pathPrefix: 'writing/ideas/',
-    type: 'idea',
-    source: 'writing',
-    datePattern: 'filename',
-    titleStrategy: 'heading',
+    pathPrefix: "writing/ideas/",
+    type: "idea",
+    source: "writing",
+    datePattern: "filename",
+    titleStrategy: "heading",
   },
   {
-    pathPrefix: 'writing/',
-    type: 'writing',
-    source: 'writing',
-    datePattern: 'filename',
-    titleStrategy: 'heading',
+    pathPrefix: "writing/",
+    type: "writing",
+    source: "writing",
+    datePattern: "filename",
+    titleStrategy: "heading",
   },
 
   // Entity directories — these should already have frontmatter in most cases,
   // but the 55 people pages etc. that don't get handled here.
   // Legal corpus — statutes and regulations
-  { pathPrefix: 'law-corpus/', type: 'statute', source: 'legal-corpus', tags: ['law', 'statute'], titleStrategy: 'heading' },
+  {
+    pathPrefix: "law-corpus/",
+    type: "statute",
+    source: "legal-corpus",
+    tags: ["law", "statute"],
+    titleStrategy: "heading",
+  },
 
   // Legal judgements and court decisions
-  { pathPrefix: 'legal/judgements/', type: 'court_decision', source: 'legal-judgements', tags: ['law', 'court-decision'], titleStrategy: 'heading' },
-  { pathPrefix: 'legal/eu-judgements/', type: 'eu_court_decision', source: 'eur-lex', tags: ['law', 'eu-court-decision'], titleStrategy: 'heading' },
-  { pathPrefix: 'legal/analyses/', type: 'legal_document', source: 'legal-analysis', tags: ['law', 'analysis'], titleStrategy: 'heading' },
-  { pathPrefix: 'legal/cases/', type: 'legal-case', source: 'legal-case', tags: ['law', 'case'], titleStrategy: 'heading' },
+  {
+    pathPrefix: "legal/judgements/",
+    type: "court_decision",
+    source: "legal-judgements",
+    tags: ["law", "court-decision"],
+    titleStrategy: "heading",
+  },
+  {
+    pathPrefix: "legal/eu-judgements/",
+    type: "eu_court_decision",
+    source: "eur-lex",
+    tags: ["law", "eu-court-decision"],
+    titleStrategy: "heading",
+  },
+  {
+    pathPrefix: "legal/analyses/",
+    type: "legal_document",
+    source: "legal-analysis",
+    tags: ["law", "analysis"],
+    titleStrategy: "heading",
+  },
+  {
+    pathPrefix: "legal/cases/",
+    type: "legal-case",
+    source: "legal-case",
+    tags: ["law", "case"],
+    titleStrategy: "heading",
+  },
 
-  { pathPrefix: 'people/', type: 'person', titleStrategy: 'heading' },
-  { pathPrefix: 'companies/', type: 'company', titleStrategy: 'heading' },
-  { pathPrefix: 'projects/', type: 'project', titleStrategy: 'heading' },
-  { pathPrefix: 'civic/', type: 'civic', titleStrategy: 'heading' },
-  { pathPrefix: 'events/', type: 'event', titleStrategy: 'heading', datePattern: 'filename' },
-  { pathPrefix: 'meetings/', type: 'meeting', titleStrategy: 'heading', datePattern: 'filename' },
-  { pathPrefix: 'media/', type: 'media', titleStrategy: 'heading' },
+  { pathPrefix: "people/", type: "person", titleStrategy: "heading" },
+  { pathPrefix: "companies/", type: "company", titleStrategy: "heading" },
+  { pathPrefix: "projects/", type: "project", titleStrategy: "heading" },
+  { pathPrefix: "civic/", type: "civic", titleStrategy: "heading" },
+  { pathPrefix: "events/", type: "event", titleStrategy: "heading", datePattern: "filename" },
+  { pathPrefix: "meetings/", type: "meeting", titleStrategy: "heading", datePattern: "filename" },
+  { pathPrefix: "media/", type: "media", titleStrategy: "heading" },
 
   // Catch-all for any remaining files. The CLI does not write this rule by
   // default; users must pass --include-catch-all so `type: note` means an
   // intentional fallback instead of "the script did not know what this was".
-  { pathPrefix: '', type: 'note', titleStrategy: 'heading' },
+  { pathPrefix: "", type: "note", titleStrategy: "heading" },
 ];
 
 // ─── Date extraction ─────────────────────────────────────────────────
@@ -289,31 +390,28 @@ export function extractDateFromFilename(filename: string): string | null {
 /** Extract title from filename, stripping date prefix and extension. */
 export function extractTitleFromFilename(filename: string): string {
   // Remove .md extension
-  let title = filename.replace(/\.md$/i, '');
+  let title = filename.replace(/\.md$/i, "");
 
   // Strip YYYY-MM-DD prefix (with separator)
-  title = title.replace(/^\d{4}-\d{2}-\d{2}[\s_-]+/, '');
+  title = title.replace(/^\d{4}-\d{2}-\d{2}[\s_-]+/, "");
 
   // Strip YYYY MM DD prefix (space-separated)
-  title = title.replace(/^\d{4}\s+\d{2}\s+\d{2}\s+/, '');
+  title = title.replace(/^\d{4}\s+\d{2}\s+\d{2}\s+/, "");
 
   // Clean up: title case, replace dashes/underscores with spaces
-  title = title
-    .replace(/[-_]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
+  title = title.replace(/[-_]/g, " ").replace(/\s+/g, " ").trim();
 
   // Don't title-case if it already has mixed case (e.g., "YC presidency")
   if (title === title.toLowerCase() || title === title.toUpperCase()) {
-    title = title.replace(/\b\w/g, c => c.toUpperCase());
+    title = title.replace(/\b\w/g, (c) => c.toUpperCase());
   }
 
-  return title || 'Untitled';
+  return title || "Untitled";
 }
 
 /** Extract title from first heading (# ...) in content. */
 export function extractTitleFromHeading(content: string): string | null {
-  const lines = content.split('\n');
+  const lines = content.split("\n");
   for (const line of lines.slice(0, 20)) {
     const m = line.match(/^#\s+(.+)/);
     if (m) return m[1].trim();
@@ -332,9 +430,9 @@ export function extractTitleFromHeading(content: string): string | null {
  */
 export function inferFrontmatter(relativePath: string, content: string): InferredFrontmatter {
   // Check if file already has frontmatter
-  const firstNonEmpty = content.split('\n').find(l => l.trim().length > 0);
-  if (firstNonEmpty?.trim() === '---') {
-    return { title: '', type: '', skipped: true };
+  const firstNonEmpty = content.split("\n").find((l) => l.trim().length > 0);
+  if (firstNonEmpty?.trim() === "---") {
+    return { title: "", type: "", skipped: true };
   }
 
   const lowerPath = relativePath.toLowerCase();
@@ -351,23 +449,23 @@ export function inferFrontmatter(relativePath: string, content: string): Inferre
 
   // Default rule if none matched
   if (!matchedRule) {
-    matchedRule = { pathPrefix: '', type: 'note', titleStrategy: 'heading' };
+    matchedRule = { pathPrefix: "", type: "note", titleStrategy: "heading" };
   }
 
   // Extract date
   let date: string | undefined;
-  const datePattern = matchedRule.datePattern ?? 'filename';
-  if (datePattern === 'filename') {
+  const datePattern = matchedRule.datePattern ?? "filename";
+  if (datePattern === "filename") {
     date = extractDateFromFilename(filename) ?? undefined;
   }
 
   // Extract title
   let title: string;
-  const titleStrategy = matchedRule.titleStrategy ?? 'filename';
-  if (titleStrategy === 'heading') {
+  const titleStrategy = matchedRule.titleStrategy ?? "filename";
+  if (titleStrategy === "heading") {
     title = extractTitleFromHeading(content) ?? extractTitleFromFilename(filename);
-  } else if (titleStrategy === 'filename-full') {
-    title = filename.replace(/\.md$/i, '').replace(/[-_]/g, ' ').trim();
+  } else if (titleStrategy === "filename-full") {
+    title = filename.replace(/\.md$/i, "").replace(/[-_]/g, " ").trim();
   } else {
     title = extractTitleFromFilename(filename);
   }
@@ -375,10 +473,10 @@ export function inferFrontmatter(relativePath: string, content: string): Inferre
   // Build tags from rule + subfolder
   const tags = [...(matchedRule.tags ?? [])];
   // Add subfolder as tag for Apple Notes (e.g., "YC", "Politics")
-  if (matchedRule.source === 'apple-notes' && matchedRule.pathPrefix === 'apple notes/') {
-    const parts = relativePath.split('/');
+  if (matchedRule.source === "apple-notes" && matchedRule.pathPrefix === "apple notes/") {
+    const parts = relativePath.split("/");
     if (parts.length > 2) {
-      const subfolder = parts[1].toLowerCase().replace(/\s+/g, '-');
+      const subfolder = parts[1].toLowerCase().replace(/\s+/g, "-");
       if (!tags.includes(subfolder)) tags.push(subfolder);
     }
   }
@@ -389,7 +487,7 @@ export function inferFrontmatter(relativePath: string, content: string): Inferre
     date,
     source: matchedRule.source,
     tags: tags.length > 0 ? tags : undefined,
-    matchedRule: matchedRule.pathPrefix || '(default)',
+    matchedRule: matchedRule.pathPrefix || "(default)",
   };
 }
 
@@ -398,9 +496,9 @@ export function inferFrontmatter(relativePath: string, content: string): Inferre
  * Returns the `---\n...\n---\n` string to prepend to content.
  */
 export function serializeFrontmatter(fm: InferredFrontmatter): string {
-  if (fm.skipped) return '';
+  if (fm.skipped) return "";
 
-  const lines: string[] = ['---'];
+  const lines: string[] = ["---"];
 
   // Title — quote if it contains special YAML chars
   const needsQuote = /[:"'#\[\]{}|>&*!?,]/.test(fm.title);
@@ -421,22 +519,27 @@ export function serializeFrontmatter(fm: InferredFrontmatter): string {
     // engine's step 3a output and v0.37.5.0's YAML-aware validator). Fall
     // back to JSON.stringify (double quotes) only when the value contains an
     // apostrophe — YAML's single-quote escaping (`''`) reads poorly.
-    lines.push(`tags: [${fm.tags.map(t => t.includes("'") ? JSON.stringify(t) : `'${t}'`).join(', ')}]`);
+    lines.push(
+      `tags: [${fm.tags.map((t) => (t.includes("'") ? JSON.stringify(t) : `'${t}'`)).join(", ")}]`
+    );
   }
 
-  lines.push('---');
-  return lines.join('\n') + '\n';
+  lines.push("---");
+  return lines.join("\n") + "\n";
 }
 
 /**
  * Apply frontmatter inference to file content.
  * Returns the content with frontmatter prepended, or the original content if it already has frontmatter.
  */
-export function applyInference(relativePath: string, content: string): { content: string; inferred: InferredFrontmatter } {
+export function applyInference(
+  relativePath: string,
+  content: string
+): { content: string; inferred: InferredFrontmatter } {
   const inferred = inferFrontmatter(relativePath, content);
   if (inferred.skipped) {
     return { content, inferred };
   }
   const fm = serializeFrontmatter(inferred);
-  return { content: fm + '\n' + content, inferred };
+  return { content: fm + "\n" + content, inferred };
 }

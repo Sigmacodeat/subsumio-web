@@ -13,16 +13,32 @@ interface EmptyStateProps {
   className?: string;
 }
 
-export function EmptyState({ icon: Icon, title, description, actionLabel, onAction, className }: EmptyStateProps) {
+export function EmptyState({
+  icon: Icon,
+  title,
+  description,
+  actionLabel,
+  onAction,
+  className,
+}: EmptyStateProps) {
   return (
-    <div className={cn("flex flex-col items-center justify-center text-center py-16 px-6 rounded-xl border border-dashed border-[color:var(--ds-border-strong)] bg-[color:var(--ds-surface)]", className)}>
+    <div
+      className={cn(
+        "flex flex-col items-center justify-center rounded-xl border border-dashed border-[color:var(--ds-border-strong)] bg-[color:var(--ds-surface)] px-6 py-16 text-center",
+        className
+      )}
+    >
       {Icon && (
-        <div className="w-16 h-16 rounded-2xl bg-[color:var(--ds-surface-2)] flex items-center justify-center mb-5">
+        <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[color:var(--ds-surface-2)]">
           <Icon size={26} className="text-[color:var(--ds-text-subtle)]" />
         </div>
       )}
-      <h3 className="text-sm font-semibold text-[color:var(--ds-text)] tracking-tight">{title}</h3>
-      {description && <p className="mt-2 text-xs text-[color:var(--ds-text-muted)] max-w-sm leading-relaxed">{description}</p>}
+      <h3 className="text-sm font-semibold tracking-tight text-[color:var(--ds-text)]">{title}</h3>
+      {description && (
+        <p className="mt-2 max-w-sm text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
+          {description}
+        </p>
+      )}
       {actionLabel && onAction && (
         <Button onClick={onAction} className="mt-5" size="sm">
           {actionLabel}

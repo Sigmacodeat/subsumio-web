@@ -24,6 +24,7 @@ mutating: true
 ## Contract
 
 This skill guarantees:
+
 - 8 core tests verify gbrain + OpenClaw health after restart
 - Known failures are auto-fixed before reporting
 - User-extensible via `~/.gbrain/smoke-tests.d/*.sh` drop-in scripts
@@ -32,36 +33,41 @@ This skill guarantees:
 
 ## Built-in Tests
 
-| # | Test | Auto-Fix |
-|---|------|----------|
-| 1 | Bun runtime | Install from bun.sh |
-| 2 | GBrain CLI loads | Reinstall deps |
-| 3 | GBrain database (doctor) | — |
-| 4 | GBrain worker process | Start worker |
-| 5 | OpenClaw Codex plugin (Zod CJS) | `npm install zod@4 --force` |
-| 6 | OpenClaw gateway | — (may not be started yet) |
-| 7 | Embedding API key | — (check .env) |
-| 8 | Brain repo exists | — |
+| #   | Test                            | Auto-Fix                    |
+| --- | ------------------------------- | --------------------------- |
+| 1   | Bun runtime                     | Install from bun.sh         |
+| 2   | GBrain CLI loads                | Reinstall deps              |
+| 3   | GBrain database (doctor)        | —                           |
+| 4   | GBrain worker process           | Start worker                |
+| 5   | OpenClaw Codex plugin (Zod CJS) | `npm install zod@4 --force` |
+| 6   | OpenClaw gateway                | — (may not be started yet)  |
+| 7   | Embedding API key               | — (check .env)              |
+| 8   | Brain repo exists               | —                           |
 
 ## Usage
 
 ### CLI
+
 ```bash
 gbrain smoke-test
 ```
 
 ### Direct
+
 ```bash
 bash scripts/smoke-test.sh
 ```
 
 ### From OpenClaw bootstrap
+
 Add to your `ensure-services.sh` or equivalent:
+
 ```bash
 bash /path/to/gbrain/scripts/smoke-test.sh >> /tmp/bootstrap.log 2>&1
 ```
 
 ### From an agent
+
 ```
 exec: bash /data/gbrain/scripts/smoke-test.sh
 ```
@@ -77,6 +83,7 @@ redis-cli ping | grep -q PONG
 ```
 
 Rules:
+
 - Exit 0 = pass, non-zero = fail
 - Filename becomes the test name (e.g. `check-redis` from `check-redis.sh`)
 - Keep tests fast (< 10s each)
@@ -103,6 +110,7 @@ fi
 ```
 
 ### Design rules:
+
 1. **Test first** — never fix without confirming broken
 2. **Re-test after fix** — verify the fix worked
 3. **Timeout everything** — `timeout N` on any command that could hang
@@ -112,17 +120,18 @@ fi
 
 ## Environment Variables
 
-| Var | Default | Description |
-|-----|---------|-------------|
-| `GBRAIN_SMOKE_LOG` | `/tmp/gbrain-smoke-test.log` | Log file path |
-| `GBRAIN_DIR_OVERRIDE` | (auto-detect) | Force gbrain install path |
-| `GBRAIN_DATABASE_URL` | (from .env) | Database connection URL |
-| `OPENCLAW_GATEWAY_PORT` | `18789` | Gateway port to test |
-| `GBRAIN_BRAIN_PATH` | `/data/brain` | Brain repo path |
+| Var                     | Default                      | Description               |
+| ----------------------- | ---------------------------- | ------------------------- |
+| `GBRAIN_SMOKE_LOG`      | `/tmp/gbrain-smoke-test.log` | Log file path             |
+| `GBRAIN_DIR_OVERRIDE`   | (auto-detect)                | Force gbrain install path |
+| `GBRAIN_DATABASE_URL`   | (from .env)                  | Database connection URL   |
+| `OPENCLAW_GATEWAY_PORT` | `18789`                      | Gateway port to test      |
+| `GBRAIN_BRAIN_PATH`     | `/data/brain`                | Brain repo path           |
 
 ## Known Issues & Their Auto-Fixes
 
 ### Codex Zod core.cjs Missing (discovered 2026-04-23)
+
 - **Symptom:** `Cannot find module './core.cjs'` → all Codex ACP sessions fail
 - **Cause:** Zod v4 npm package ships without `core.cjs` in some installs
 - **Auto-fix:** `npm install zod@4 --force` in the codex extension's zod dir
@@ -130,6 +139,7 @@ fi
 - This is why smoke tests must run on every restart
 
 ### GBrain Worker Auth Failure
+
 - **Symptom:** Worker can't connect to DB
 - **Cause:** `GBRAIN_DATABASE_URL` not propagated to worker subprocess
 - **Auto-fix:** Script explicitly passes both `DATABASE_URL` and `GBRAIN_DATABASE_URL`

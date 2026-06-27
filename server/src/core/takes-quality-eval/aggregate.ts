@@ -19,14 +19,14 @@
  * threshold logic applies, just over the stricter set.
  */
 
-import type { ParsedModelResult } from '../eval-shared/json-repair.ts';
+import type { ParsedModelResult } from "../eval-shared/json-repair.ts";
 import {
   RUBRIC_DIMENSIONS,
   PASS_MEAN_THRESHOLD,
   PASS_FLOOR_THRESHOLD,
   MIN_SUCCESSES_FOR_VERDICT,
   type RubricDimension,
-} from './rubric.ts';
+} from "./rubric.ts";
 
 export type SlotResult =
   | { ok: true; modelId: string; parsed: ParsedModelResult }
@@ -42,11 +42,11 @@ export interface DimensionRoll {
   max: number;
   scores: number[];
   per_model: Record<string, number>;
-  failReason?: 'mean_below_7' | 'min_below_5';
+  failReason?: "mean_below_7" | "min_below_5";
 }
 
 export interface AggregateResult {
-  verdict: 'pass' | 'fail' | 'inconclusive';
+  verdict: "pass" | "fail" | "inconclusive";
   /** Slots that returned parseable AND complete (all 5 dims) scores. */
   successes: number;
   /** Slots that errored or returned incomplete scores. */
@@ -85,13 +85,13 @@ export function aggregate(input: AggregateInput): AggregateResult {
       continue;
     }
     if (!hasAllRequiredDims(s.parsed)) {
-      const missing = RUBRIC_DIMENSIONS.filter(d => {
+      const missing = RUBRIC_DIMENSIONS.filter((d) => {
         const e = s.parsed.scores[d];
         return !e || !Number.isFinite(e.score);
       });
       failed.push({
         modelId: s.modelId,
-        error: `incomplete_scores: missing dim(s) [${missing.join(', ')}]`,
+        error: `incomplete_scores: missing dim(s) [${missing.join(", ")}]`,
       });
       continue;
     }
@@ -100,7 +100,7 @@ export function aggregate(input: AggregateInput): AggregateResult {
 
   if (contributing.length < MIN_SUCCESSES_FOR_VERDICT) {
     return {
-      verdict: 'inconclusive',
+      verdict: "inconclusive",
       successes: contributing.length,
       failures: failed.length,
       dimensions: {},
@@ -133,22 +133,22 @@ export function aggregate(input: AggregateInput): AggregateResult {
       scores,
       per_model: perModel,
     };
-    if (roll.mean < PASS_MEAN_THRESHOLD) roll.failReason = 'mean_below_7';
-    else if (roll.min < PASS_FLOOR_THRESHOLD) roll.failReason = 'min_below_5';
+    if (roll.mean < PASS_MEAN_THRESHOLD) roll.failReason = "mean_below_7";
+    else if (roll.min < PASS_FLOOR_THRESHOLD) roll.failReason = "min_below_5";
     dimensions[dim] = roll;
   }
 
   const dimRolls = Object.values(dimensions);
   const overall = round1(dimRolls.reduce((a, b) => a + b.mean, 0) / dimRolls.length);
-  const allDimsPass = dimRolls.every(d => !d.failReason);
-  const verdict: 'pass' | 'fail' = allDimsPass ? 'pass' : 'fail';
+  const allDimsPass = dimRolls.every((d) => !d.failReason);
+  const verdict: "pass" | "fail" = allDimsPass ? "pass" : "fail";
 
   const topImprovements = dedupImprovements(
-    contributing.flatMap(s => s.parsed.improvements),
+    contributing.flatMap((s) => s.parsed.improvements)
   ).slice(0, TOP_IMPROVEMENTS_CAP);
 
   const verdictMessage =
-    verdict === 'pass'
+    verdict === "pass"
       ? `PASS: every dim mean >=${PASS_MEAN_THRESHOLD} and min >=${PASS_FLOOR_THRESHOLD} ` +
         `across ${contributing.length}/${input.slots.length} models. Overall ${overall}/10.`
       : describeFailure(dimensions, contributing.length, input.slots.length, overall);
@@ -169,20 +169,21 @@ function describeFailure(
   dimensions: Record<RubricDimension, DimensionRoll>,
   successes: number,
   total: number,
-  overall: number,
+  overall: number
 ): string {
   const failedDims = (Object.entries(dimensions) as Array<[RubricDimension, DimensionRoll]>).filter(
-    ([, d]) => d.failReason,
+    ([, d]) => d.failReason
   );
   if (failedDims.length === 0) {
     return `FAIL: aggregate failure with no dimension flagged.`;
   }
   const reasons = failedDims
     .map(([name, d]) => {
-      if (d.failReason === 'mean_below_7') return `${name} mean=${d.mean} (<${PASS_MEAN_THRESHOLD})`;
-      return `${name} min=${d.min} (<${PASS_FLOOR_THRESHOLD}; scores=[${d.scores.join(', ')}])`;
+      if (d.failReason === "mean_below_7")
+        return `${name} mean=${d.mean} (<${PASS_MEAN_THRESHOLD})`;
+      return `${name} min=${d.min} (<${PASS_FLOOR_THRESHOLD}; scores=[${d.scores.join(", ")}])`;
     })
-    .join('; ');
+    .join("; ");
   return `FAIL across ${successes}/${total} models. Overall ${overall}/10. Failing: ${reasons}.`;
 }
 
@@ -190,7 +191,7 @@ function dedupImprovements(items: string[]): string[] {
   const seen = new Set<string>();
   const out: string[] = [];
   for (const item of items) {
-    const key = item.slice(0, DEDUP_PREFIX_LEN).toLowerCase().replace(/\s+/g, ' ').trim();
+    const key = item.slice(0, DEDUP_PREFIX_LEN).toLowerCase().replace(/\s+/g, " ").trim();
     if (seen.has(key)) continue;
     seen.add(key);
     out.push(item);

@@ -34,9 +34,7 @@ describe("fetchPages", () => {
   });
 
   test("returns empty array on non-200 response", async () => {
-    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response("error", { status: 500 }),
-    );
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response("error", { status: 500 }));
     const result = await fetchPages("brain-1", "case", 50);
     expect(result).toEqual([]);
   });
@@ -50,7 +48,7 @@ describe("fetchPages", () => {
       new Response(JSON.stringify(pages), {
         status: 200,
         headers: { "Content-Type": "application/json" },
-      }),
+      })
     );
     const result = await fetchPages("brain-1", "case", 50);
     expect(result).toHaveLength(2);
@@ -62,7 +60,7 @@ describe("fetchPages", () => {
       new Response(JSON.stringify({ error: "bad" }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
-      }),
+      })
     );
     const result = await fetchPages("brain-1", "case", 50);
     expect(result).toEqual([]);

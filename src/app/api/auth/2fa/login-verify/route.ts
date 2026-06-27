@@ -56,7 +56,7 @@ export const POST = createPublicHandler(
     if (!userRl.ok) {
       return Response.json(
         { error: "rate_limited", message: "Zu viele 2FA-Versuche. Bitte später versuchen." },
-        { status: 429, headers: { "Retry-After": String(userRl.retryAfterSeconds) } },
+        { status: 429, headers: { "Retry-After": String(userRl.retryAfterSeconds) } }
       );
     }
 
@@ -81,7 +81,10 @@ export const POST = createPublicHandler(
 
     // Create session
     const sessionToken = await signSession({ uid: user.id, email: user.email, role: user.role });
-    void logAudit("user.login", "user", { entityId: user.id, details: { ip, method: usedBackupCode ? "2fa_backup" : "2fa" } });
+    void logAudit("user.login", "user", {
+      entityId: user.id,
+      details: { ip, method: usedBackupCode ? "2fa_backup" : "2fa" },
+    });
 
     const res = NextResponse.json({ user: toPublic(user) });
     res.cookies.set(SESSION_COOKIE, sessionToken, {

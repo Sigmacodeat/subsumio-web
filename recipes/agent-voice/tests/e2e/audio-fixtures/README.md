@@ -4,10 +4,10 @@ Pre-recorded 16kHz mono 16-bit PCM WAV files. Used by `voice-roundtrip.test.mjs`
 and `voice-full-flow.test.mjs` as the source for Chromium's
 `--use-file-for-fake-audio-capture` flag.
 
-| File | Content | Use case |
-|------|---------|----------|
-| `utterance-add.wav` | "What is two plus two?" | Semantic verify: response must mention 4 / four |
-| `utterance-joke.wav` | "Tell me a one line joke." | Liveness: response just needs to exist and be coherent |
+| File                        | Content                                                 | Use case                                                                 |
+| --------------------------- | ------------------------------------------------------- | ------------------------------------------------------------------------ |
+| `utterance-add.wav`         | "What is two plus two?"                                 | Semantic verify: response must mention 4 / four                          |
+| `utterance-joke.wav`        | "Tell me a one line joke."                              | Liveness: response just needs to exist and be coherent                   |
 | `utterance-brain-query.wav` | "Search the brain for any recent notes about projects." | Tool-call verify: response should invoke `search` then summarize results |
 
 ## Regenerating

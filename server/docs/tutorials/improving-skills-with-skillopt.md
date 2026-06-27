@@ -110,15 +110,15 @@ Each line has three fields:
 
 The rule checks you can use:
 
-| `op` | `arg` | Passes when the agent's answer… |
-|---|---|---|
-| `contains` | string | includes that substring |
-| `regex` | string | matches that regex (multiline) |
-| `section_present` | heading text | has a markdown heading with that text |
-| `max_chars` | number | is at most that many characters (punishes padding) |
-| `min_citations` | number | has at least N citations (markdown links, `wiki/…` refs, `[1]` footnotes) |
-| `tool_called` | tool name | the agent called that tool during the rollout |
-| `tool_not_called` | tool name | the agent did NOT call that tool |
+| `op`              | `arg`        | Passes when the agent's answer…                                           |
+| ----------------- | ------------ | ------------------------------------------------------------------------- |
+| `contains`        | string       | includes that substring                                                   |
+| `regex`           | string       | matches that regex (multiline)                                            |
+| `section_present` | heading text | has a markdown heading with that text                                     |
+| `max_chars`       | number       | is at most that many characters (punishes padding)                        |
+| `min_citations`   | number       | has at least N citations (markdown links, `wiki/…` refs, `[1]` footnotes) |
+| `tool_called`     | tool name    | the agent called that tool during the rollout                             |
+| `tool_not_called` | tool name    | the agent did NOT call that tool                                          |
 
 Rule judges are the right place to start. They're free, deterministic, and they
 force you to say concretely what a good answer looks like. (`judge.kind` can also
@@ -189,11 +189,11 @@ When it finishes, the last lines tell you everything:
 
 ### Reading the outcome
 
-| Outcome | Exit code | What it means | What to do |
-|---|---|---|---|
-| `accepted` | 0 | A candidate beat the baseline. SKILL.md was rewritten (or a proposed file written — see Step 5). | Review the diff, keep it. |
-| `no_improvement` | 1 | Nothing cleared the gate. Your skill is already good, or the benchmark can't tell good from bad. | Strengthen the benchmark (Step 6) or stop. |
-| `aborted` | 2 | A gate stopped it: dirty working tree, over budget, `D_sel < 5`, or `--dry-run`. | Read the message — it names the gate. |
+| Outcome          | Exit code | What it means                                                                                    | What to do                                 |
+| ---------------- | --------- | ------------------------------------------------------------------------------------------------ | ------------------------------------------ |
+| `accepted`       | 0         | A candidate beat the baseline. SKILL.md was rewritten (or a proposed file written — see Step 5). | Review the diff, keep it.                  |
+| `no_improvement` | 1         | Nothing cleared the gate. Your skill is already good, or the benchmark can't tell good from bad. | Strengthen the benchmark (Step 6) or stop. |
+| `aborted`        | 2         | A gate stopped it: dirty working tree, over budget, `D_sel < 5`, or `--dry-run`.                 | Read the message — it names the gate.      |
 
 `no_improvement` is not a failure. It's the gate doing its job: it would rather
 keep your known-good skill than accept a change it can't prove is better.
@@ -294,4 +294,4 @@ brain-wide cost cap.
   delete the sentinel → `--bootstrap-reviewed --split 1:1:1`. Tune the count with
   `--bootstrap-tasks N` (max 50).
 - **Bootstrap from existing routing fixtures** instead: `gbrain skillopt <name>
-  --bootstrap-from-routing` (routing tasks test dispatch, not quality — tighten them).
+--bootstrap-from-routing` (routing tasks test dispatch, not quality — tighten them).

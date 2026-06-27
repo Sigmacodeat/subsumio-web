@@ -14,21 +14,25 @@ export interface ProbeResult {
  * port-open is insufficient — a broken daemon can accept connections but
  * serve garbage. We validate the response is JSON with the expected shape.
  */
-export async function probeOpenAICompat(baseUrl: string, timeoutMs: number = 1000): Promise<ProbeResult> {
+export async function probeOpenAICompat(
+  baseUrl: string,
+  timeoutMs: number = 1000
+): Promise<ProbeResult> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const res = await fetch(new URL('/v1/models', baseUrl).toString(), {
+    const res = await fetch(new URL("/v1/models", baseUrl).toString(), {
       signal: controller.signal,
-      headers: { accept: 'application/json' },
+      headers: { accept: "application/json" },
     });
     clearTimeout(timer);
-    if (!res.ok) return { reachable: true, models_endpoint_valid: false, error: `HTTP ${res.status}` };
+    if (!res.ok)
+      return { reachable: true, models_endpoint_valid: false, error: `HTTP ${res.status}` };
     const body = await res.json().catch(() => null);
-    if (!body || typeof body !== 'object') {
-      return { reachable: true, models_endpoint_valid: false, error: 'non-JSON response' };
+    if (!body || typeof body !== "object") {
+      return { reachable: true, models_endpoint_valid: false, error: "non-JSON response" };
     }
-    const isList = (body as any).object === 'list' && Array.isArray((body as any).data);
+    const isList = (body as any).object === "list" && Array.isArray((body as any).data);
     return { reachable: true, models_endpoint_valid: isList };
   } catch (e) {
     clearTimeout(timer);
@@ -37,12 +41,12 @@ export async function probeOpenAICompat(baseUrl: string, timeoutMs: number = 100
 }
 
 export async function probeOllama(): Promise<ProbeResult> {
-  const url = process.env.OLLAMA_BASE_URL ?? 'http://localhost:11434/v1';
+  const url = process.env.OLLAMA_BASE_URL ?? "http://localhost:11434/v1";
   return probeOpenAICompat(url);
 }
 
 export async function probeLMStudio(): Promise<ProbeResult> {
-  const url = process.env.LMSTUDIO_BASE_URL ?? 'http://localhost:1234/v1';
+  const url = process.env.LMSTUDIO_BASE_URL ?? "http://localhost:1234/v1";
   return probeOpenAICompat(url);
 }
 
@@ -54,6 +58,6 @@ export async function probeLMStudio(): Promise<ProbeResult> {
  * probe agrees with what the gateway will actually call).
  */
 export async function probeLlamaServer(baseURL?: string): Promise<ProbeResult> {
-  const url = baseURL ?? process.env.LLAMA_SERVER_BASE_URL ?? 'http://localhost:8080/v1';
+  const url = baseURL ?? process.env.LLAMA_SERVER_BASE_URL ?? "http://localhost:8080/v1";
   return probeOpenAICompat(url);
 }

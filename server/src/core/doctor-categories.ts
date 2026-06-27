@@ -47,63 +47,63 @@
  * it in CI.
  */
 
-export type CheckCategory = 'brain' | 'skill' | 'ops' | 'meta';
+export type CheckCategory = "brain" | "skill" | "ops" | "meta";
 
 /**
  * Data-integrity signals. Everything that asks "is the brain's actual data
  * healthy and complete?"
  */
 export const BRAIN_CHECK_NAMES: ReadonlySet<string> = new Set([
-  'abandoned_threads',
-  'brain_score',
-  'calibration_freshness',
-  'child_table_orphans',
-  'content_sanity_audit_recent',
-  'contextual_retrieval_coverage',
-  'contradictions',
-  'conversation_facts_backlog',
-  'conversation_format_coverage',
-  'conversation_parser_probe_health',
-  'cross_modal_modality_backfill',
-  'cycle_freshness',
-  'effective_date_health',
-  'embedding_column_registry',
-  'embedding_env_override',
-  'embedding_provider',
-  'embedding_width_consistency',
-  'embeddings',
-  'eval_drift',
-  'extract_atoms_backlog',
-  'extract_health',
-  'facts_embedding_width_consistency',
-  'facts_extraction_health',
-  'facts_health',
-  'frontmatter_integrity',
-  'grade_confidence_drift',
-  'graph_coverage',
-  'graph_signals_coverage',
-  'hidden_by_search_policy',
-  'image_assets',
-  'integrity',
-  'jsonb_integrity',
-  'link_resolution_opportunity',
-  'links_extraction_lag',
-  'markdown_body_completeness',
-  'nightly_quality_probe_health',
-  'ocr_health',
-  'orphan_ratio',
-  'oversized_pages',
-  'quarantined_pages',
-  'flagged_pages',
-  'salience_health',
-  'scraper_junk_pages',
-  'source_routing_health',
-  'stub_guard_24h',
-  'sync_failures',
-  'sync_freshness',
-  'takes_weight_grid',
-  'unified_multimodal_coverage',
-  'voice_gate_health',
+  "abandoned_threads",
+  "brain_score",
+  "calibration_freshness",
+  "child_table_orphans",
+  "content_sanity_audit_recent",
+  "contextual_retrieval_coverage",
+  "contradictions",
+  "conversation_facts_backlog",
+  "conversation_format_coverage",
+  "conversation_parser_probe_health",
+  "cross_modal_modality_backfill",
+  "cycle_freshness",
+  "effective_date_health",
+  "embedding_column_registry",
+  "embedding_env_override",
+  "embedding_provider",
+  "embedding_width_consistency",
+  "embeddings",
+  "eval_drift",
+  "extract_atoms_backlog",
+  "extract_health",
+  "facts_embedding_width_consistency",
+  "facts_extraction_health",
+  "facts_health",
+  "frontmatter_integrity",
+  "grade_confidence_drift",
+  "graph_coverage",
+  "graph_signals_coverage",
+  "hidden_by_search_policy",
+  "image_assets",
+  "integrity",
+  "jsonb_integrity",
+  "link_resolution_opportunity",
+  "links_extraction_lag",
+  "markdown_body_completeness",
+  "nightly_quality_probe_health",
+  "ocr_health",
+  "orphan_ratio",
+  "oversized_pages",
+  "quarantined_pages",
+  "flagged_pages",
+  "salience_health",
+  "scraper_junk_pages",
+  "source_routing_health",
+  "stub_guard_24h",
+  "sync_failures",
+  "sync_freshness",
+  "takes_weight_grid",
+  "unified_multimodal_coverage",
+  "voice_gate_health",
 ]);
 
 /**
@@ -115,47 +115,47 @@ export const BRAIN_CHECK_NAMES: ReadonlySet<string> = new Set([
  * skill-flavored name) live under 'brain'.
  */
 export const SKILL_CHECK_NAMES: ReadonlySet<string> = new Set([
-  'resolver_health',
-  'skill_brain_first',
-  'skill_conformance',
-  'whoknows_health',
+  "resolver_health",
+  "skill_brain_first",
+  "skill_conformance",
+  "whoknows_health",
 ]);
 
 /**
  * Infrastructure liveness signals. DB, workers, OAuth, RLS, locks, providers.
  */
 export const OPS_CHECK_NAMES: ReadonlySet<string> = new Set([
-  'alternative_providers',
-  'autopilot_lock_scope',
-  'batch_retry_health',
-  'brainstorm_health',
-  'connection',
-  'federation_health',
-  'home_dir_in_worktree',
-  'index_audit',
-  'oauth_confidential_client_health',
-  'orphan_clones',
-  'pgbouncer_prepare',
-  'pgvector',
-  'pool_budget',
-  'progressive_batch_audit_health',
-  'queue_health',
-  'reranker_health',
-  'rls',
-  'rls_event_trigger',
-  'search_mode',
-  'pool_reap_health',
-  'self_upgrade_health',
-  'stale_locks',
-  'subagent_capability',
-  'subagent_health',
-  'supervisor',
-  'supervisor_niceness',
-  'supervisor_singleton',
-  'sync_consolidation',
-  'wedged_queue',
-  'worker_oom_loop',
-  'ze_embedding_health',
+  "alternative_providers",
+  "autopilot_lock_scope",
+  "batch_retry_health",
+  "brainstorm_health",
+  "connection",
+  "federation_health",
+  "home_dir_in_worktree",
+  "index_audit",
+  "oauth_confidential_client_health",
+  "orphan_clones",
+  "pgbouncer_prepare",
+  "pgvector",
+  "pool_budget",
+  "progressive_batch_audit_health",
+  "queue_health",
+  "reranker_health",
+  "rls",
+  "rls_event_trigger",
+  "search_mode",
+  "pool_reap_health",
+  "self_upgrade_health",
+  "stale_locks",
+  "subagent_capability",
+  "subagent_health",
+  "supervisor",
+  "supervisor_niceness",
+  "supervisor_singleton",
+  "sync_consolidation",
+  "wedged_queue",
+  "worker_oom_loop",
+  "ze_embedding_health",
 ]);
 
 /**
@@ -163,16 +163,16 @@ export const OPS_CHECK_NAMES: ReadonlySet<string> = new Set([
  * housekeeping. Default category for unknown names (with stderr warn).
  */
 export const META_CHECK_NAMES: ReadonlySet<string> = new Set([
-  'cycle_phase_scope',
-  'eval_capture',
-  'minions_migration',
-  'multi_source_drift',
-  'schema_pack_active',
-  'schema_pack_consistency',
-  'schema_pack_source_drift',
-  'schema_version',
-  'slug_fallback_audit',
-  'upgrade_errors',
+  "cycle_phase_scope",
+  "eval_capture",
+  "minions_migration",
+  "multi_source_drift",
+  "schema_pack_active",
+  "schema_pack_consistency",
+  "schema_pack_source_drift",
+  "schema_version",
+  "slug_fallback_audit",
+  "upgrade_errors",
 ]);
 
 /**
@@ -191,17 +191,17 @@ export function _resetUnknownCheckWarningsForTest(): void {
  * the runtime backstop so contributors notice in dev before CI fails.
  */
 export function categorizeCheck(name: string): CheckCategory {
-  if (BRAIN_CHECK_NAMES.has(name)) return 'brain';
-  if (SKILL_CHECK_NAMES.has(name)) return 'skill';
-  if (OPS_CHECK_NAMES.has(name)) return 'ops';
-  if (META_CHECK_NAMES.has(name)) return 'meta';
+  if (BRAIN_CHECK_NAMES.has(name)) return "brain";
+  if (SKILL_CHECK_NAMES.has(name)) return "skill";
+  if (OPS_CHECK_NAMES.has(name)) return "ops";
+  if (META_CHECK_NAMES.has(name)) return "meta";
   if (!_warnedUnknown.has(name)) {
     _warnedUnknown.add(name);
     process.stderr.write(
-      `[doctor-categories] unknown check name '${name}' — defaulting to 'meta'. Add it to src/core/doctor-categories.ts.\n`,
+      `[doctor-categories] unknown check name '${name}' — defaulting to 'meta'. Add it to src/core/doctor-categories.ts.\n`
     );
   }
-  return 'meta';
+  return "meta";
 }
 
 /**

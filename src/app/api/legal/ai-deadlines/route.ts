@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 import { ENGINE_URL, recordQuota } from "@/lib/engine";
 import { detectDeadlines, resolveRelativeDeadline } from "@/lib/ai-deadline-detect";
@@ -53,7 +52,7 @@ export const POST = createHandler(
                   matched_rule: d.matchedRule,
                   ai_confidence: d.confidence,
                 },
-              signal: AbortSignal.timeout(30_000),
+                signal: AbortSignal.timeout(30_000),
               }),
             });
             createdSlugs.push(slug);
@@ -84,5 +83,5 @@ export const POST = createHandler(
     }
 
     return Response.json(response);
-  },
+  }
 );

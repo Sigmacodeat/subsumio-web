@@ -65,25 +65,28 @@ tags: [task, <project-slug>]
 # [Task Title]
 
 ## Description
+
 [What needs to be done]
 
 ## Acceptance Criteria
+
 - [ ] [Criterion 1]
 - [ ] [Criterion 2]
 
 ## Notes
+
 [Additional context, links, references]
 ```
 
 ## Commands
 
-| Intent | Action |
-|--------|--------|
-| "Create task for X" | Create page with type=task, link to project/case |
-| "What are my open tasks?" | Query pages where type=task and status=open |
-| "Mark task X as done" | Update page frontmatter status=done |
-| "Block task X on Y" | Update parent field or add dependency note |
-| "Tasks for project Z" | Query tasks where project=Z slug |
+| Intent                    | Action                                           |
+| ------------------------- | ------------------------------------------------ |
+| "Create task for X"       | Create page with type=task, link to project/case |
+| "What are my open tasks?" | Query pages where type=task and status=open      |
+| "Mark task X as done"     | Update page frontmatter status=done              |
+| "Block task X on Y"       | Update parent field or add dependency note       |
+| "Tasks for project Z"     | Query tasks where project=Z slug                 |
 
 ## Chaining
 

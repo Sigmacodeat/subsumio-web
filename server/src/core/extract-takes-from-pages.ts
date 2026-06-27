@@ -13,12 +13,17 @@
 // 100+-case eval suite. v0.42 ships the classifier + CLI; autopilot stays
 // blocked until eval coverage catches up.
 
-import type { BrainEngine } from './engine.ts';
-import type { TakeBatchInput, TakeKind } from './engine.ts';
-import { chat, isAvailable } from './ai/gateway.ts';
+import type { BrainEngine } from "./engine.ts";
+import type { TakeBatchInput, TakeKind } from "./engine.ts";
+import { chat, isAvailable } from "./ai/gateway.ts";
 
 export const ALLOWED_PAGE_TYPES = [
-  'concept', 'atom', 'lore', 'briefing', 'writing', 'originals',
+  "concept",
+  "atom",
+  "lore",
+  "briefing",
+  "writing",
+  "originals",
 ] as const;
 
 const CLASSIFIER_SYSTEM = `You extract gradeable CLAIMS from longform writing.
@@ -76,7 +81,9 @@ interface PageRow {
  * Pure helper: parse Haiku JSON output into typed claims. Returns []
  * on any parse failure (caller treats as "no claims extracted").
  */
-export function parseClaimsJson(raw: string): Array<{ claim: string; kind: TakeKind; weight: number }> {
+export function parseClaimsJson(
+  raw: string
+): Array<{ claim: string; kind: TakeKind; weight: number }> {
   try {
     // Strip code fences if model wrapped output in ```json.
     let text = raw.trim();
@@ -86,12 +93,12 @@ export function parseClaimsJson(raw: string): Array<{ claim: string; kind: TakeK
     if (!Array.isArray(parsed)) return [];
     const valid: Array<{ claim: string; kind: TakeKind; weight: number }> = [];
     for (const item of parsed) {
-      if (!item || typeof item !== 'object') continue;
-      const claim = typeof item.claim === 'string' ? item.claim.trim().slice(0, 200) : '';
-      const kind = typeof item.kind === 'string' ? item.kind : '';
-      const weightRaw = typeof item.weight === 'number' ? item.weight : 0.5;
+      if (!item || typeof item !== "object") continue;
+      const claim = typeof item.claim === "string" ? item.claim.trim().slice(0, 200) : "";
+      const kind = typeof item.kind === "string" ? item.kind : "";
+      const weightRaw = typeof item.weight === "number" ? item.weight : 0.5;
       const weight = Math.max(0, Math.min(1, weightRaw));
-      if (!claim || !['fact', 'take', 'bet', 'hunch'].includes(kind)) continue;
+      if (!claim || !["fact", "take", "bet", "hunch"].includes(kind)) continue;
       valid.push({ claim, kind, weight });
     }
     return valid;
@@ -102,7 +109,7 @@ export function parseClaimsJson(raw: string): Array<{ claim: string; kind: TakeK
 
 export async function extractTakesFromPages(
   engine: BrainEngine,
-  opts: ExtractTakesFromPagesOpts,
+  opts: ExtractTakesFromPagesOpts
 ): Promise<ExtractTakesFromPagesResult> {
   // A12 consent gate: refuse without bootstrap_enabled even on manual call.
   if (!opts.bootstrapEnabled) {
@@ -114,7 +121,7 @@ export async function extractTakesFromPages(
     };
   }
 
-  if (!isAvailable('chat')) {
+  if (!isAvailable("chat")) {
     return {
       pages_scanned: 0,
       claims_extracted: 0,
@@ -125,13 +132,13 @@ export async function extractTakesFromPages(
 
   const dryRun = opts.dryRun ?? false;
   const maxPages = opts.maxPages ?? 50;
-  const holder = opts.holder ?? 'system';
-  const sourceFilter = opts.sourceIdFilter ? `AND source_id = $1` : '';
+  const holder = opts.holder ?? "system";
+  const sourceFilter = opts.sourceIdFilter ? `AND source_id = $1` : "";
   const params = opts.sourceIdFilter ? [opts.sourceIdFilter] : [];
 
   // Fetch eligible pages. Order by updated_at DESC so recently-edited
   // pages get bootstrapped first.
-  const typesList = ALLOWED_PAGE_TYPES.map((t) => `'${t}'`).join(', ');
+  const typesList = ALLOWED_PAGE_TYPES.map((t) => `'${t}'`).join(", ");
   const pages = await engine.executeRaw<PageRow>(
     `SELECT id, slug, source_id, type, compiled_truth, updated_at
        FROM pages
@@ -141,7 +148,7 @@ export async function extractTakesFromPages(
         ${sourceFilter}
       ORDER BY updated_at DESC
       LIMIT ${maxPages}`,
-    params,
+    params
   );
 
   let pagesScanned = 0;
@@ -174,11 +181,11 @@ export async function extractTakesFromPages(
     let response: { text: string };
     try {
       response = await chat({
-        model: opts.model ?? 'anthropic:claude-haiku-4-5',
+        model: opts.model ?? "anthropic:claude-haiku-4-5",
         system: CLASSIFIER_SYSTEM,
         messages: [
           {
-            role: 'user',
+            role: "user",
             content: `<page slug="${page.slug}" type="${page.type}">\n${text}\n</page>`,
           },
         ],
@@ -207,7 +214,7 @@ export async function extractTakesFromPages(
         kind: c.kind,
         holder,
         weight: c.weight,
-        source: 'cli:takes-bootstrap-from-pages',
+        source: "cli:takes-bootstrap-from-pages",
       });
     }
     if (batch.length >= 200) await flush();

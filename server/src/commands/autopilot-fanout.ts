@@ -30,8 +30,8 @@
  * row layer; cost duplication is the visible tradeoff).
  */
 
-import type { BrainEngine, SourceRow } from '../core/engine.ts';
-import type { MinionQueue } from '../core/minions/queue.ts';
+import type { BrainEngine, SourceRow } from "../core/engine.ts";
+import type { MinionQueue } from "../core/minions/queue.ts";
 
 const FULL_CYCLE_FLOOR_MIN = 60;
 
@@ -74,13 +74,13 @@ export interface FanoutResult {
  * still allowed (operator opt-in) but documented as ineffective on PGLite.
  */
 export async function resolveFanoutMax(engine: BrainEngine): Promise<number> {
-  const override = await engine.getConfig('autopilot.fanout_max_per_tick');
+  const override = await engine.getConfig("autopilot.fanout_max_per_tick");
   if (override) {
     const n = parseInt(override, 10);
     if (Number.isFinite(n) && n >= 1) return n;
     // Invalid override falls through to default — never silently below 1.
   }
-  return engine.kind === 'pglite' ? 1 : 4;
+  return engine.kind === "pglite" ? 1 : 4;
 }
 
 /**
@@ -90,7 +90,7 @@ export async function resolveFanoutMax(engine: BrainEngine): Promise<number> {
  */
 export function readLastFullCycleAt(src: SourceRow): Date | null {
   const raw = src.config?.last_full_cycle_at;
-  if (typeof raw !== 'string') return null;
+  if (typeof raw !== "string") return null;
   const d = new Date(raw);
   return Number.isFinite(d.getTime()) ? d : null;
 }
@@ -104,7 +104,11 @@ export function readLastFullCycleAt(src: SourceRow): Date | null {
  * a brain may have fresh sync but stale extract/embed. The 60-min floor on
  * full-cycle is the canonical freshness signal for autopilot dispatch.
  */
-export function isSourceStale(src: SourceRow, now = Date.now(), floorMin = FULL_CYCLE_FLOOR_MIN): boolean {
+export function isSourceStale(
+  src: SourceRow,
+  now = Date.now(),
+  floorMin = FULL_CYCLE_FLOOR_MIN
+): boolean {
   const last = readLastFullCycleAt(src);
   if (last === null) return true;
   const ageMin = (now - last.getTime()) / 60_000;
@@ -125,7 +129,7 @@ export function selectSourcesForDispatch(
   sources: SourceRow[],
   fanoutMax: number,
   now = Date.now(),
-  floorMin = FULL_CYCLE_FLOOR_MIN,
+  floorMin = FULL_CYCLE_FLOOR_MIN
 ): { dispatch: SourceRow[]; skippedFresh: SourceRow[]; skippedCap: SourceRow[] } {
   const stale: SourceRow[] = [];
   const fresh: SourceRow[] = [];
@@ -156,9 +160,9 @@ export function selectSourcesForDispatch(
 export async function dispatchPerSource(
   engine: BrainEngine,
   queue: MinionQueue,
-  opts: FanoutOpts,
+  opts: FanoutOpts
 ): Promise<FanoutResult> {
-  const emit = opts.emit ?? ((line) => process.stderr.write(line + '\n'));
+  const emit = opts.emit ?? ((line) => process.stderr.write(line + "\n"));
   const log = opts.log ?? ((line) => console.log(line));
 
   let sources: SourceRow[];
@@ -169,7 +173,12 @@ export async function dispatchPerSource(
     // to the legacy single-job path. The error path here also covers
     // a misconfigured engine, but legacy fallback is safer than failing.
     if (opts.jsonMode) {
-      emit(JSON.stringify({ event: 'fanout_unavailable', error: e instanceof Error ? e.message : String(e) }));
+      emit(
+        JSON.stringify({
+          event: "fanout_unavailable",
+          error: e instanceof Error ? e.message : String(e),
+        })
+      );
     }
     sources = [];
   }
@@ -178,18 +187,20 @@ export async function dispatchPerSource(
     // Legacy path — preserves today's behavior for single-source brains
     // (default source) and pre-v0.18 brains without the sources table.
     const job = await queue.add(
-      'autopilot-cycle',
+      "autopilot-cycle",
       { repoPath: opts.repoPath },
       {
-        queue: 'default',
+        queue: "default",
         idempotency_key: `autopilot-cycle:${opts.slot}`,
         max_attempts: 2,
         timeout_ms: opts.timeoutMs,
         maxWaiting: 1,
-      },
+      }
     );
     if (opts.jsonMode) {
-      emit(JSON.stringify({ event: 'dispatched', job_id: job.id, mode: 'legacy', slot: opts.slot }));
+      emit(
+        JSON.stringify({ event: "dispatched", job_id: job.id, mode: "legacy", slot: opts.slot })
+      );
     } else {
       log(`[dispatch] job #${job.id} autopilot-cycle (legacy single-source)`);
     }
@@ -201,16 +212,16 @@ export async function dispatchPerSource(
   const dispatched: string[] = [];
   for (const src of dispatch) {
     try {
-      const remoteUrl = typeof src.config?.remote_url === 'string' ? src.config.remote_url : null;
+      const remoteUrl = typeof src.config?.remote_url === "string" ? src.config.remote_url : null;
       const job = await queue.add(
-        'autopilot-cycle',
+        "autopilot-cycle",
         {
           repoPath: opts.repoPath,
           source_id: src.id,
           pull: !!remoteUrl,
         },
         {
-          queue: 'default',
+          queue: "default",
           // Per-source idempotency key — two ticks for the same source
           // within the same slot coalesce; different sources never collide.
           idempotency_key: `autopilot-cycle:${src.id}:${opts.slot}`,
@@ -222,31 +233,37 @@ export async function dispatchPerSource(
           // killing the fan-out. The per-source idempotency_key
           // already provides the right dedup granularity (one job per
           // source per slot, regardless of how many ticks try).
-        },
+        }
       );
       dispatched.push(src.id);
       if (opts.jsonMode) {
-        emit(JSON.stringify({
-          event: 'dispatched',
-          job_id: job.id,
-          mode: 'per_source',
-          source_id: src.id,
-          pull: !!remoteUrl,
-          slot: opts.slot,
-        }));
+        emit(
+          JSON.stringify({
+            event: "dispatched",
+            job_id: job.id,
+            mode: "per_source",
+            source_id: src.id,
+            pull: !!remoteUrl,
+            slot: opts.slot,
+          })
+        );
       } else {
-        log(`[dispatch] job #${job.id} autopilot-cycle source=${src.id}${remoteUrl ? ' pull=yes' : ''}`);
+        log(
+          `[dispatch] job #${job.id} autopilot-cycle source=${src.id}${remoteUrl ? " pull=yes" : ""}`
+        );
       }
     } catch (e) {
       // Per-source submit failure does NOT abort the tick (codex E1 F1
       // defensive). Other sources still dispatched; this one retries
       // next tick.
       if (opts.jsonMode) {
-        emit(JSON.stringify({
-          event: 'fanout_submit_failed',
-          source_id: src.id,
-          error: e instanceof Error ? e.message : String(e),
-        }));
+        emit(
+          JSON.stringify({
+            event: "fanout_submit_failed",
+            source_id: src.id,
+            error: e instanceof Error ? e.message : String(e),
+          })
+        );
       } else {
         log(`[dispatch] WARN source=${src.id}: ${e instanceof Error ? e.message : String(e)}`);
       }
@@ -254,17 +271,19 @@ export async function dispatchPerSource(
   }
 
   if (skippedCap.length > 0 && opts.jsonMode) {
-    emit(JSON.stringify({
-      event: 'fanout_cap_reached',
-      cap: opts.fanoutMax,
-      pending: skippedCap.map(s => s.id),
-    }));
+    emit(
+      JSON.stringify({
+        event: "fanout_cap_reached",
+        cap: opts.fanoutMax,
+        pending: skippedCap.map((s) => s.id),
+      })
+    );
   }
 
   return {
     dispatched,
-    skipped_fresh: skippedFresh.map(s => s.id),
-    skipped_cap: skippedCap.map(s => s.id),
+    skipped_fresh: skippedFresh.map((s) => s.id),
+    skipped_cap: skippedCap.map((s) => s.id),
     legacy_fallback: false,
   };
 }

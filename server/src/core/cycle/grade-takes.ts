@@ -34,20 +34,20 @@
  * phase runs hermetically in unit tests.
  */
 
-import { createHash } from 'node:crypto';
-import { BaseCyclePhase, type ScopedReadOpts, type BasePhaseOpts } from './base-phase.ts';
-import { chat as gatewayChat } from '../ai/gateway.ts';
-import { GBrainError } from '../types.ts';
-import type { OperationContext } from '../operations.ts';
-import type { BrainEngine, Take, TakeResolution } from '../engine.ts';
-import type { PhaseStatus, CyclePhase } from '../cycle.ts';
+import { createHash } from "node:crypto";
+import { BaseCyclePhase, type ScopedReadOpts, type BasePhaseOpts } from "./base-phase.ts";
+import { chat as gatewayChat } from "../ai/gateway.ts";
+import { GBrainError } from "../types.ts";
+import type { OperationContext } from "../operations.ts";
+import type { BrainEngine, Take, TakeResolution } from "../engine.ts";
+import type { PhaseStatus, CyclePhase } from "../cycle.ts";
 
 /**
  * Bump when the judge prompt or the JSON output shape changes. Old verdicts
  * stay valid (composite cache key includes prompt_version); new runs re-spend
  * LLM tokens.
  */
-export const GRADE_TAKES_PROMPT_VERSION = 'v0.36.1.0-stub';
+export const GRADE_TAKES_PROMPT_VERSION = "v0.36.1.0-stub";
 
 export const GRADE_TAKE_PROMPT = `[v0.36.1.0-stub] You are grading a single forecasting take. The author
 made this claim on the given date. Based on the evidence provided, did the
@@ -78,7 +78,7 @@ EVIDENCE:
 
 /** Verdict from a single judge model. */
 export interface JudgeVerdict {
-  verdict: 'correct' | 'incorrect' | 'partial' | 'unresolvable';
+  verdict: "correct" | "incorrect" | "partial" | "unresolvable";
   confidence: number;
   reasoning: string;
 }
@@ -104,10 +104,15 @@ export type JudgeFn = (input: {
  * auto-apply 'correct'.
  */
 export interface EnsembleVerdict {
-  verdict: JudgeVerdict['verdict'];
+  verdict: JudgeVerdict["verdict"];
   minConfidence: number;
   agreement: number; // 0..3, count of models that returned this verdict
-  modelVerdicts: Array<{ modelId: string; verdict: JudgeVerdict['verdict']; confidence: number; failed?: boolean }>;
+  modelVerdicts: Array<{
+    modelId: string;
+    verdict: JudgeVerdict["verdict"];
+    confidence: number;
+    failed?: boolean;
+  }>;
 }
 
 /**
@@ -125,16 +130,16 @@ export interface EnsembleVerdict {
  * minConfidence >= threshold) rule.
  */
 export function aggregateEnsemble(
-  results: Array<{ modelId: string; verdict: JudgeVerdict | null }>,
+  results: Array<{ modelId: string; verdict: JudgeVerdict | null }>
 ): EnsembleVerdict {
-  const modelVerdicts: EnsembleVerdict['modelVerdicts'] = results.map(r =>
+  const modelVerdicts: EnsembleVerdict["modelVerdicts"] = results.map((r) =>
     r.verdict
       ? { modelId: r.modelId, verdict: r.verdict.verdict, confidence: r.verdict.confidence }
-      : { modelId: r.modelId, verdict: 'unresolvable', confidence: 0, failed: true },
+      : { modelId: r.modelId, verdict: "unresolvable", confidence: 0, failed: true }
   );
 
   // Tally only the non-failed verdicts.
-  const tally = new Map<JudgeVerdict['verdict'], number>();
+  const tally = new Map<JudgeVerdict["verdict"], number>();
   for (const r of results) {
     if (!r.verdict) continue;
     tally.set(r.verdict.verdict, (tally.get(r.verdict.verdict) ?? 0) + 1);
@@ -142,7 +147,7 @@ export function aggregateEnsemble(
 
   // Pick the winner. Tie-break: prefer non-unresolvable, then alphabetical
   // for determinism.
-  let winner: JudgeVerdict['verdict'] = 'unresolvable';
+  let winner: JudgeVerdict["verdict"] = "unresolvable";
   let bestCount = 0;
   for (const [v, n] of tally.entries()) {
     if (n > bestCount) {
@@ -150,9 +155,9 @@ export function aggregateEnsemble(
       bestCount = n;
     } else if (n === bestCount) {
       // Tie. Prefer non-unresolvable.
-      if (winner === 'unresolvable' && v !== 'unresolvable') {
+      if (winner === "unresolvable" && v !== "unresolvable") {
         winner = v;
-      } else if (v !== 'unresolvable' && winner !== 'unresolvable' && v < winner) {
+      } else if (v !== "unresolvable" && winner !== "unresolvable" && v < winner) {
         winner = v;
       }
     }
@@ -259,7 +264,9 @@ export interface GradeTakesResult {
  * evidence OR a different judge produces a fresh row.
  */
 export function evidenceSignature(evidence: string, judgeModelId: string): string {
-  return createHash('sha256').update(judgeModelId + '|' + evidence).digest('hex');
+  return createHash("sha256")
+    .update(judgeModelId + "|" + evidence)
+    .digest("hex");
 }
 
 /**
@@ -270,8 +277,8 @@ export function parseJudgeOutput(raw: string): JudgeVerdict | null {
   if (!raw || raw.trim().length === 0) return null;
   let text = raw.trim();
   const fenced = text.match(/^```(?:json)?\s*\n?([\s\S]*?)\n?```$/);
-  if (fenced) text = (fenced[1] ?? '').trim();
-  const firstObj = text.indexOf('{');
+  if (fenced) text = (fenced[1] ?? "").trim();
+  const firstObj = text.indexOf("{");
   if (firstObj === -1) return null;
   let parsed: unknown;
   try {
@@ -279,15 +286,18 @@ export function parseJudgeOutput(raw: string): JudgeVerdict | null {
   } catch {
     return null;
   }
-  if (typeof parsed !== 'object' || parsed === null) return null;
+  if (typeof parsed !== "object" || parsed === null) return null;
   const r = parsed as Record<string, unknown>;
-  const validVerdicts = ['correct', 'incorrect', 'partial', 'unresolvable'] as const;
-  const verdict = validVerdicts.includes(r.verdict as never) ? (r.verdict as JudgeVerdict['verdict']) : null;
+  const validVerdicts = ["correct", "incorrect", "partial", "unresolvable"] as const;
+  const verdict = validVerdicts.includes(r.verdict as never)
+    ? (r.verdict as JudgeVerdict["verdict"])
+    : null;
   if (!verdict) return null;
-  const confRaw = typeof r.confidence === 'number' ? r.confidence : Number.parseFloat(String(r.confidence ?? ''));
+  const confRaw =
+    typeof r.confidence === "number" ? r.confidence : Number.parseFloat(String(r.confidence ?? ""));
   if (!Number.isFinite(confRaw)) return null;
   const confidence = Math.max(0, Math.min(1, confRaw));
-  const reasoning = typeof r.reasoning === 'string' ? r.reasoning.slice(0, 400) : '';
+  const reasoning = typeof r.reasoning === "string" ? r.reasoning.slice(0, 400) : "";
   return { verdict, confidence, reasoning };
 }
 
@@ -296,11 +306,14 @@ export function parseJudgeOutput(raw: string): JudgeVerdict | null {
  * retrieval lands in v0.37+ via hybrid search over pages newer than the
  * take's since_date. Documented limitation per CDX-8 + D17.
  */
-export async function defaultEvidenceRetriever(take: Take, _scope: ScopedReadOpts): Promise<string> {
+export async function defaultEvidenceRetriever(
+  take: Take,
+  _scope: ScopedReadOpts
+): Promise<string> {
   return `[evidence retrieval not yet wired — v0.36.1.0 ship-state]
 Take claim text (the only "evidence" available pre-T-retrieval-impl):
   ${take.claim}
-Made on: ${take.since_date ?? 'unknown'}
+Made on: ${take.since_date ?? "unknown"}
 `;
 }
 
@@ -312,16 +325,15 @@ export async function defaultJudge(input: {
   evidence: string;
   modelHint?: string;
 }): Promise<JudgeVerdict> {
-  const prompt = GRADE_TAKE_PROMPT
-    .replace('{CLAIM}', input.take.claim)
-    .replace('{KIND}', input.take.kind)
-    .replace('{HOLDER}', input.take.holder)
-    .replace('{SINCE_DATE}', input.take.since_date ?? 'unknown')
-    .replace('{WEIGHT}', String(input.take.weight))
-    .replace('{EVIDENCE_BLOCK}', input.evidence);
+  const prompt = GRADE_TAKE_PROMPT.replace("{CLAIM}", input.take.claim)
+    .replace("{KIND}", input.take.kind)
+    .replace("{HOLDER}", input.take.holder)
+    .replace("{SINCE_DATE}", input.take.since_date ?? "unknown")
+    .replace("{WEIGHT}", String(input.take.weight))
+    .replace("{EVIDENCE_BLOCK}", input.evidence);
 
   const result = await gatewayChat({
-    messages: [{ role: 'user', content: prompt }],
+    messages: [{ role: "user", content: prompt }],
     ...(input.modelHint ? { model: input.modelHint } : {}),
     maxTokens: 600,
   });
@@ -331,9 +343,9 @@ export async function defaultJudge(input: {
     // still lands in the cache (operator sees the LLM's parse failure
     // surfaced via warnings) rather than disappearing silently.
     return {
-      verdict: 'unresolvable',
+      verdict: "unresolvable",
       confidence: 0.0,
-      reasoning: 'judge_output_parse_failed',
+      reasoning: "judge_output_parse_failed",
     };
   }
   return parsed;
@@ -348,7 +360,7 @@ export function takeIsOldEnough(take: Take, minAgeMonths: number, now: Date = ne
   const cutoff = new Date(now);
   cutoff.setMonth(cutoff.getMonth() - minAgeMonths);
   // Tolerant date parsing — since_date can be YYYY-MM-DD or YYYY-MM.
-  const sinceStr = take.since_date.length === 7 ? take.since_date + '-15' : take.since_date;
+  const sinceStr = take.since_date.length === 7 ? take.since_date + "-15" : take.since_date;
   const sinceDate = new Date(sinceStr);
   if (Number.isNaN(sinceDate.getTime())) return false;
   return sinceDate.getTime() <= cutoff.getTime();
@@ -358,8 +370,11 @@ export function takeIsOldEnough(take: Take, minAgeMonths: number, now: Date = ne
  * Derive the TakeResolution for a verdict. 'unresolvable' DOES NOT auto-apply
  * — only correct/incorrect/partial do.
  */
-function verdictToResolution(verdict: JudgeVerdict, resolvedByLabel: string): TakeResolution | null {
-  if (verdict.verdict === 'unresolvable') return null;
+function verdictToResolution(
+  verdict: JudgeVerdict,
+  resolvedByLabel: string
+): TakeResolution | null {
+  if (verdict.verdict === "unresolvable") return null;
   return {
     quality: verdict.verdict,
     resolvedBy: resolvedByLabel,
@@ -368,24 +383,25 @@ function verdictToResolution(verdict: JudgeVerdict, resolvedByLabel: string): Ta
 }
 
 class GradeTakesPhase extends BaseCyclePhase {
-  readonly name = 'grade_takes' as CyclePhase;
-  protected readonly budgetUsdKey = 'cycle.grade_takes.budget_usd';
+  readonly name = "grade_takes" as CyclePhase;
+  protected readonly budgetUsdKey = "cycle.grade_takes.budget_usd";
   protected readonly budgetUsdDefault = 3.0;
 
   protected override mapErrorCode(err: unknown): string {
     if (err instanceof GBrainError) return err.problem;
     if (err instanceof Error) {
-      if (err.message.includes('budget') || err.message.includes('Budget')) return 'CALIBRATION_GRADE_BUDGET_EXHAUSTED';
-      if (err.message.includes('parse')) return 'CALIBRATION_GRADE_PARSE_FAIL';
+      if (err.message.includes("budget") || err.message.includes("Budget"))
+        return "CALIBRATION_GRADE_BUDGET_EXHAUSTED";
+      if (err.message.includes("parse")) return "CALIBRATION_GRADE_PARSE_FAIL";
     }
-    return 'GRADE_TAKES_UNKNOWN';
+    return "GRADE_TAKES_UNKNOWN";
   }
 
   protected async process(
     engine: BrainEngine,
     scope: ScopedReadOpts,
     _ctx: OperationContext,
-    opts: GradeTakesOpts,
+    opts: GradeTakesOpts
   ): Promise<{ summary: string; details: Record<string, unknown>; status?: PhaseStatus }> {
     const judge = opts.judge ?? defaultJudge;
     const evidenceRetriever = opts.evidenceRetriever ?? defaultEvidenceRetriever;
@@ -394,8 +410,8 @@ class GradeTakesPhase extends BaseCyclePhase {
     const takeLimit = opts.takeLimit ?? 50;
     const autoResolve = opts.autoResolve ?? false; // D17 default OFF
     const autoResolveThreshold = opts.autoResolveThreshold ?? 0.95; // D12 conservative
-    const resolvedByLabel = opts.resolvedByLabel ?? 'gbrain:grade_takes';
-    const judgeModelId = opts.model ?? 'claude-sonnet-4-6';
+    const resolvedByLabel = opts.resolvedByLabel ?? "gbrain:grade_takes";
+    const judgeModelId = opts.model ?? "claude-sonnet-4-6";
 
     const useEnsemble = opts.useEnsemble ?? false;
     const ensembleThreshold = opts.ensembleThreshold ?? 0.85;
@@ -417,12 +433,12 @@ class GradeTakesPhase extends BaseCyclePhase {
     const takes = await engine.listTakes({
       resolved: false,
       active: true,
-      sortBy: 'since_date',
+      sortBy: "since_date",
       limit: takeLimit,
     });
 
     if (opts.reporter) {
-      opts.reporter.start('grade_takes.takes' as never, takes.length);
+      opts.reporter.start("grade_takes.takes" as never, takes.length);
     }
 
     const now = new Date();
@@ -440,11 +456,15 @@ class GradeTakesPhase extends BaseCyclePhase {
       const sig = evidenceSignature(evidence, judgeModelId);
 
       // Idempotency: skip when (take_id, prompt_version, judge_model_id, evidence_signature) exists.
-      const cached = await engine.executeRaw<{ verdict: string; confidence: number; applied: boolean }>(
+      const cached = await engine.executeRaw<{
+        verdict: string;
+        confidence: number;
+        applied: boolean;
+      }>(
         `SELECT verdict, confidence, applied FROM take_grade_cache
          WHERE take_id = $1 AND prompt_version = $2 AND judge_model_id = $3 AND evidence_signature = $4
          LIMIT 1`,
-        [take.id, promptVersion, judgeModelId, sig],
+        [take.id, promptVersion, judgeModelId, sig]
       );
       if (cached.length > 0) {
         result.cache_hits += 1;
@@ -460,7 +480,7 @@ class GradeTakesPhase extends BaseCyclePhase {
       if (!budget.allowed) {
         result.budget_exhausted = true;
         result.warnings.push(
-          `budget exhausted at take ${result.takes_scanned}/${takes.length} (cumulative $${budget.cumulativeCostUsd.toFixed(4)} / cap $${budget.budgetUsd.toFixed(2)})`,
+          `budget exhausted at take ${result.takes_scanned}/${takes.length} (cumulative $${budget.cumulativeCostUsd.toFixed(4)} / cap $${budget.budgetUsd.toFixed(2)})`
         );
         break;
       }
@@ -482,30 +502,40 @@ class GradeTakesPhase extends BaseCyclePhase {
       const inBorderlineBand =
         verdict.confidence >= ensembleTriggerBand[0] &&
         verdict.confidence < ensembleTriggerBand[1] &&
-        verdict.verdict !== 'unresolvable';
+        verdict.verdict !== "unresolvable";
 
-      if (useEnsemble && inBorderlineBand && opts.ensembleJudges && opts.ensembleJudges.length > 0) {
+      if (
+        useEnsemble &&
+        inBorderlineBand &&
+        opts.ensembleJudges &&
+        opts.ensembleJudges.length > 0
+      ) {
         result.ensemble_invoked += 1;
         const ensembleResults = await Promise.allSettled(
-          opts.ensembleJudges.map(j => j.fn({ take, evidence, modelHint: j.modelId })),
+          opts.ensembleJudges.map((j) => j.fn({ take, evidence, modelHint: j.modelId }))
         );
-        const collected: Array<{ modelId: string; verdict: JudgeVerdict | null }> = opts.ensembleJudges.map((j, i) => {
-          const res = ensembleResults[i];
-          if (res && res.status === 'fulfilled') return { modelId: j.modelId, verdict: res.value };
-          return { modelId: j.modelId, verdict: null };
-        });
+        const collected: Array<{ modelId: string; verdict: JudgeVerdict | null }> =
+          opts.ensembleJudges.map((j, i) => {
+            const res = ensembleResults[i];
+            if (res && res.status === "fulfilled")
+              return { modelId: j.modelId, verdict: res.value };
+            return { modelId: j.modelId, verdict: null };
+          });
         const ensemble = aggregateEnsemble(collected);
 
         // Record the ensemble verdict in the cache row instead of the single-model
         // verdict. The judge_model_id becomes 'ensemble:<modelA>+<modelB>+<modelC>'
         // so a future re-run with different ensemble membership doesn't collide.
-        recordedJudgeModelId = `ensemble:${opts.ensembleJudges.map(j => j.modelId).join('+')}`;
+        recordedJudgeModelId = `ensemble:${opts.ensembleJudges.map((j) => j.modelId).join("+")}`;
         recordedVerdict = {
           verdict: ensemble.verdict,
           confidence: ensemble.minConfidence,
-          reasoning: `ensemble agreement ${ensemble.agreement}/3; per-model: ${
-            ensemble.modelVerdicts.map(m => `${m.modelId}=${m.verdict}@${m.confidence.toFixed(2)}${m.failed ? '(failed)' : ''}`).join(', ')
-          }`,
+          reasoning: `ensemble agreement ${ensemble.agreement}/3; per-model: ${ensemble.modelVerdicts
+            .map(
+              (m) =>
+                `${m.modelId}=${m.verdict}@${m.confidence.toFixed(2)}${m.failed ? "(failed)" : ""}`
+            )
+            .join(", ")}`,
         };
         if (ensemble.agreement === 3) result.ensemble_unanimous += 1;
 
@@ -514,7 +544,7 @@ class GradeTakesPhase extends BaseCyclePhase {
         ensembleApplyEligible =
           ensemble.agreement === 3 &&
           ensemble.minConfidence >= ensembleThreshold &&
-          ensemble.verdict !== 'unresolvable';
+          ensemble.verdict !== "unresolvable";
       }
 
       // Decide auto-resolve eligibility BEFORE writing to cache so the
@@ -525,7 +555,7 @@ class GradeTakesPhase extends BaseCyclePhase {
       const resolution = verdictToResolution(recordedVerdict, resolvedByLabel);
       let shouldApply = false;
       if (autoResolve && resolution !== null) {
-        if (recordedJudgeModelId.startsWith('ensemble:')) {
+        if (recordedJudgeModelId.startsWith("ensemble:")) {
           shouldApply = ensembleApplyEligible;
         } else {
           shouldApply = recordedVerdict.confidence >= autoResolveThreshold;
@@ -535,9 +565,10 @@ class GradeTakesPhase extends BaseCyclePhase {
       // Compute a NEW evidence_signature when ensemble fires, since the
       // cache composite key includes judge_model_id. (sig was computed
       // against the single-model judge_model_id earlier.)
-      const recordedSig = recordedJudgeModelId === judgeModelId
-        ? sig
-        : evidenceSignature(evidence, recordedJudgeModelId);
+      const recordedSig =
+        recordedJudgeModelId === judgeModelId
+          ? sig
+          : evidenceSignature(evidence, recordedJudgeModelId);
 
       // Write the verdict to the cache. Idempotency conflict means another
       // run beat us to it; either way the row exists with consistent state.
@@ -546,7 +577,15 @@ class GradeTakesPhase extends BaseCyclePhase {
            (take_id, prompt_version, judge_model_id, evidence_signature, verdict, confidence, applied)
          VALUES ($1, $2, $3, $4, $5, $6, $7)
          ON CONFLICT (take_id, prompt_version, judge_model_id, evidence_signature) DO NOTHING`,
-        [take.id, promptVersion, recordedJudgeModelId, recordedSig, recordedVerdict.verdict, recordedVerdict.confidence, shouldApply],
+        [
+          take.id,
+          promptVersion,
+          recordedJudgeModelId,
+          recordedSig,
+          recordedVerdict.verdict,
+          recordedVerdict.confidence,
+          shouldApply,
+        ]
       );
       result.verdicts_written += 1;
 
@@ -559,10 +598,10 @@ class GradeTakesPhase extends BaseCyclePhase {
           // T11 / E4 — gstack-learnings coupling on incorrect / partial
           // auto-resolutions. Best-effort: failures log warning + continue.
           if (
-            (recordedVerdict.verdict === 'incorrect' || recordedVerdict.verdict === 'partial') &&
+            (recordedVerdict.verdict === "incorrect" || recordedVerdict.verdict === "partial") &&
             opts.writeGstackLearnings === true
           ) {
-            const { writeIncorrectResolution } = await import('../calibration/gstack-coupling.ts');
+            const { writeIncorrectResolution } = await import("../calibration/gstack-coupling.ts");
             const coupling = await writeIncorrectResolution({
               event: {
                 takeId: take.id,
@@ -577,9 +616,9 @@ class GradeTakesPhase extends BaseCyclePhase {
               },
               enabled: true,
             });
-            if (!coupling.written && coupling.reason !== 'config_disabled') {
+            if (!coupling.written && coupling.reason !== "config_disabled") {
               result.warnings.push(
-                `gstack coupling skipped (take ${take.id}): ${coupling.reason}${coupling.error ? ` — ${coupling.error}` : ''}`,
+                `gstack coupling skipped (take ${take.id}): ${coupling.reason}${coupling.error ? ` — ${coupling.error}` : ""}`
               );
             }
           }
@@ -607,15 +646,12 @@ class GradeTakesPhase extends BaseCyclePhase {
         auto_resolve: autoResolve,
         auto_resolve_threshold: autoResolveThreshold,
       },
-      status: result.budget_exhausted ? 'warn' : 'ok',
+      status: result.budget_exhausted ? "warn" : "ok",
     };
   }
 }
 
-export async function runPhaseGradeTakes(
-  ctx: OperationContext,
-  opts: GradeTakesOpts = {},
-) {
+export async function runPhaseGradeTakes(ctx: OperationContext, opts: GradeTakesOpts = {}) {
   return new GradeTakesPhase().run(ctx, opts);
 }
 

@@ -10,12 +10,16 @@
  *
  * Serial: stubs the gateway embed transport (process-global module state).
  */
-import { describe, test, expect, beforeAll, afterAll, beforeEach, afterEach } from 'bun:test';
-import { PGLiteEngine } from '../src/core/pglite-engine.ts';
-import { resetPgliteState } from './helpers/reset-pglite.ts';
-import { importFromContent } from '../src/core/import-file.ts';
-import { configureGateway, resetGateway, __setEmbedTransportForTests } from '../src/core/ai/gateway.ts';
-import { currentEmbeddingSignature } from '../src/core/embedding.ts';
+import { describe, test, expect, beforeAll, afterAll, beforeEach, afterEach } from "bun:test";
+import { PGLiteEngine } from "../src/core/pglite-engine.ts";
+import { resetPgliteState } from "./helpers/reset-pglite.ts";
+import { importFromContent } from "../src/core/import-file.ts";
+import {
+  configureGateway,
+  resetGateway,
+  __setEmbedTransportForTests,
+} from "../src/core/ai/gateway.ts";
+import { currentEmbeddingSignature } from "../src/core/embedding.ts";
 
 let engine: PGLiteEngine;
 let colDim: number;
@@ -34,20 +38,23 @@ beforeEach(async () => {
   await resetPgliteState(engine);
   const rows = await engine.executeRaw<{ dim: number }>(
     `SELECT atttypmod AS dim FROM pg_attribute
-      WHERE attrelid = 'content_chunks'::regclass AND attname = 'embedding' AND attnum > 0`,
+      WHERE attrelid = 'content_chunks'::regclass AND attname = 'embedding' AND attnum > 0`
   );
   colDim = Number(rows[0]?.dim);
   configureGateway({
-    embedding_model: 'openai:text-embedding-3-large',
+    embedding_model: "openai:text-embedding-3-large",
     embedding_dimensions: colDim,
-    env: { OPENAI_API_KEY: 'sk-test-import-stamp' },
+    env: { OPENAI_API_KEY: "sk-test-import-stamp" },
   });
   // Fake transport (AI SDK embedMany shape): receives { values }, returns
   // one zero-vector (sized to the column) per input value.
-  __setEmbedTransportForTests(async ({ values }: { values: string[] }) => ({
-    embeddings: values.map(() => Array(colDim).fill(0)),
-    usage: { tokens: 0 },
-  }) as any);
+  __setEmbedTransportForTests(
+    async ({ values }: { values: string[] }) =>
+      ({
+        embeddings: values.map(() => Array(colDim).fill(0)),
+        usage: { tokens: 0 },
+      }) as any
+  );
 });
 
 afterEach(() => {
@@ -58,19 +65,26 @@ afterEach(() => {
 async function signatureOf(slug: string): Promise<string | null> {
   const rows = await engine.executeRaw<{ embedding_signature: string | null }>(
     `SELECT embedding_signature FROM pages WHERE slug = $1 AND source_id = 'default'`,
-    [slug],
+    [slug]
   );
   return rows[0]?.embedding_signature ?? null;
 }
 
-describe('importFromContent embedding_signature stamping (F1)', () => {
-  test('embeds inline → stamps the current signature', async () => {
-    await importFromContent(engine, 'concepts/stamped', '# Stamped\n\nsome body content to chunk and embed.', {});
-    expect(await signatureOf('concepts/stamped')).toBe(currentEmbeddingSignature());
+describe("importFromContent embedding_signature stamping (F1)", () => {
+  test("embeds inline → stamps the current signature", async () => {
+    await importFromContent(
+      engine,
+      "concepts/stamped",
+      "# Stamped\n\nsome body content to chunk and embed.",
+      {}
+    );
+    expect(await signatureOf("concepts/stamped")).toBe(currentEmbeddingSignature());
   });
 
-  test('--no-embed → leaves signature NULL (grandfathered, not stale)', async () => {
-    await importFromContent(engine, 'concepts/unstamped', '# Unstamped\n\nbody content.', { noEmbed: true });
-    expect(await signatureOf('concepts/unstamped')).toBeNull();
+  test("--no-embed → leaves signature NULL (grandfathered, not stale)", async () => {
+    await importFromContent(engine, "concepts/unstamped", "# Unstamped\n\nbody content.", {
+      noEmbed: true,
+    });
+    expect(await signatureOf("concepts/unstamped")).toBeNull();
   });
 });

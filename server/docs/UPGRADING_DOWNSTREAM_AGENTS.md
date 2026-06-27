@@ -124,6 +124,7 @@ pages. With auto-link, that's automatic. Step 7 is now about content updates,
 not link creation.
 
 Old (delete):
+
 ```markdown
 ### Step 7: Cross-reference
 
@@ -134,6 +135,7 @@ Old (delete):
 ```
 
 New (paste):
+
 ```markdown
 ### Step 7: Cross-reference
 
@@ -154,14 +156,17 @@ Timeline entries still need explicit `gbrain timeline-add` calls.
 ## After all four diffs are applied
 
 1. **Bump the version banner** at the top of each forked file:
+
    ```
    # Based on gbrain v0.12.0 skills/<skill-name>, extended with <your-agent>-specific config
    ```
 
 2. **Run the v0.12.0 backfill** (this populates the graph for your existing brain):
+
    ```bash
    gbrain post-upgrade
    ```
+
    The v0.12.0 release wires post-upgrade to call `apply-migrations --yes`
    automatically, which runs the v0_12_0 orchestrator (schema → config check →
    `extract links --source db` → `extract timeline --source db` → verify).
@@ -232,13 +237,13 @@ separator. If your agent writes pages with a bare `---` delimiter, migrate to
 `inferType` now auto-detects five additional directory patterns as their own
 page types (previously they all defaulted to `concept`):
 
-| Path pattern           | New type       |
-|------------------------|----------------|
-| `/wiki/analysis/`      | `analysis`     |
-| `/wiki/guides/`        | `guide`        |
-| `/wiki/hardware/`      | `hardware`     |
-| `/wiki/architecture/`  | `architecture` |
-| `/writing/`            | `writing`      |
+| Path pattern          | New type       |
+| --------------------- | -------------- |
+| `/wiki/analysis/`     | `analysis`     |
+| `/wiki/guides/`       | `guide`        |
+| `/wiki/hardware/`     | `hardware`     |
+| `/wiki/architecture/` | `architecture` |
+| `/writing/`           | `writing`      |
 
 If your skills or queries filter by `type=concept` and expect wiki content in
 that bucket, update them to include the new types.
@@ -263,6 +268,7 @@ references that did not resolve to existing pages. For meetings, this usually me
 attendees you haven't created a person page for yet.
 
 If `unresolved.length > 0`:
+
 - Option 1 (create pages now): trigger an enrichment pass to build the missing people pages.
 - Option 2 (defer): log the unresolved names to the enrichment queue for later.
 - Option 3 (accept the gap): the attendee edge will not be created until a page exists.
@@ -319,6 +325,7 @@ v0.13 edges carry new `link_type` values. If your fork has graph-query skills th
 ### Type normalization NOT in v0.13
 
 Legacy rows with `link_type='attendee'` or `link_type='mention'` coexist with new `'attended'` / `'mentions'` rows. Your queries filtering on old type names keep working. A separate opt-in `gbrain normalize-types` command in v0.14 handles the rename.
+
 ## v0.14.0 shell jobs (optional adoption, no skill edits)
 
 Adds a `shell` job type to Minions so deterministic cron scripts (API fetch, token
@@ -362,7 +369,7 @@ upcoming `gbrain crontab-to-minions <file>` helper is P1 in TODOS.
 
 v0.15 ships `gbrain agent run` / `gbrain agent logs`, a new `subagent` handler
 type in Minions, and a plugin contract for host-repo subagent defs. None of the
-existing skills need surgery. The question for downstream agents is *how* to
+existing skills need surgery. The question for downstream agents is _how_ to
 adopt the new runtime, not how to patch around a breaking change.
 
 ### 1. Run a worker with an Anthropic key
@@ -477,7 +484,7 @@ For consumers that need the validator inside another script, import from
 gbrain's `markdown` export instead of duplicating logic:
 
 ```ts
-import { parseMarkdown } from 'gbrain/markdown';
+import { parseMarkdown } from "gbrain/markdown";
 
 const parsed = parseMarkdown(content, filePath, { validate: true, expectedSlug });
 for (const err of parsed.errors ?? []) {
@@ -534,11 +541,11 @@ version. Each new version appends a section; old sections stay so you can catch 
 multiple versions at once.
 
 To check what your fork is missing:
+
 ```bash
 diff <(grep -A3 "Based on gbrain" ~/<your-fork>/skills/brain-ops/SKILL.md) \
      <(grep "v[0-9]" ~/gbrain/skills/migrations/ | tail -3)
 ```
-
 
 ## v0.36.5.0 — Free-form secret inheritance for shell jobs calling `gbrain` CLI
 
@@ -561,7 +568,7 @@ resolves values at spawn time.
 {
   "cmd": "gbrain sync --skip-failed && gbrain embed --stale",
   "cwd": "/data/gbrain",
-  "inherit": ["database_url", "anthropic_api_key", "voyage_api_key"]
+  "inherit": ["database_url", "anthropic_api_key", "voyage_api_key"],
 }
 ```
 
@@ -603,10 +610,9 @@ job + `inherit:` for `localOnly` admin ops (`sync`, `embed`, `dream`,
 
 **Errors to handle** (your agent submits shell jobs; surface these clearly):
 
-| Error | What it means | Agent action |
-|---|---|---|
-| `shell: inherit must be an array of config-key names` | `inherit` wasn't an array. | Pass `"inherit": ["database_url", ...]`. |
-| `shell: inherit entries must be non-empty strings` | Element was empty, non-string, or null. | Use snake_case config-key names. |
-| `shell: inherit name "<X>" must match [a-z][a-z0-9_]*` | Name failed snake_case regex (uppercase, leading underscore, etc.). | Use the config-key verbatim — `database_url`, not `DATABASE_URL`. |
-| `shell: inherit requested "<X>" but worker has no <X> configured` | Worker can't resolve the name from its `loadConfig()`. | Run `gbrain config set <X> <value>` on the worker host. |
-
+| Error                                                             | What it means                                                       | Agent action                                                      |
+| ----------------------------------------------------------------- | ------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `shell: inherit must be an array of config-key names`             | `inherit` wasn't an array.                                          | Pass `"inherit": ["database_url", ...]`.                          |
+| `shell: inherit entries must be non-empty strings`                | Element was empty, non-string, or null.                             | Use snake_case config-key names.                                  |
+| `shell: inherit name "<X>" must match [a-z][a-z0-9_]*`            | Name failed snake_case regex (uppercase, leading underscore, etc.). | Use the config-key verbatim — `database_url`, not `DATABASE_URL`. |
+| `shell: inherit requested "<X>" but worker has no <X> configured` | Worker can't resolve the name from its `loadConfig()`.              | Run `gbrain config set <X> <value>` on the worker host.           |

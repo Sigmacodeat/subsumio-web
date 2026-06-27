@@ -34,7 +34,7 @@ export interface SchemaDiff {
     column: string;
     pg: ColumnInfo;
     pglite: ColumnInfo;
-    reason: 'udt_name' | 'is_nullable' | 'column_default';
+    reason: "udt_name" | "is_nullable" | "column_default";
   }>;
 }
 
@@ -121,8 +121,14 @@ export async function snapshotIndexes(query: IndexSnapshotQueryFn): Promise<Inde
       indexName: row.index_name,
       tableName: row.table_name,
       columns: row.columns,
-      isUnique: row.is_unique === true || (row.is_unique as unknown) === 'true' || (row.is_unique as unknown) === 't',
-      isPartial: row.is_partial === true || (row.is_partial as unknown) === 'true' || (row.is_partial as unknown) === 't',
+      isUnique:
+        row.is_unique === true ||
+        (row.is_unique as unknown) === "true" ||
+        (row.is_unique as unknown) === "t",
+      isPartial:
+        row.is_partial === true ||
+        (row.is_partial as unknown) === "true" ||
+        (row.is_partial as unknown) === "t",
     });
   }
   return snap;
@@ -140,7 +146,7 @@ export interface IndexDiff {
 export function diffIndexSnapshots(
   pg: IndexSnapshot,
   pglite: IndexSnapshot,
-  opts: { allowlist?: string[] } = {},
+  opts: { allowlist?: string[] } = {}
 ): IndexDiff {
   const allow = new Set(opts.allowlist ?? []);
   const out: IndexDiff = { pgOnly: [], pgliteOnly: [], mismatched: [] };
@@ -154,17 +160,17 @@ export function diffIndexSnapshots(
     }
     // Shape compare. Index definitions render slightly differently across
     // engines for the WHERE clause; normalize whitespace before comparing.
-    const normPg = info.columns.replace(/\s+/g, ' ').trim().toLowerCase();
-    const normPl = other.columns.replace(/\s+/g, ' ').trim().toLowerCase();
+    const normPg = info.columns.replace(/\s+/g, " ").trim().toLowerCase();
+    const normPl = other.columns.replace(/\s+/g, " ").trim().toLowerCase();
     if (normPg !== normPl) {
-      out.mismatched.push({ pg: info, pglite: other, reason: 'definition_mismatch' });
+      out.mismatched.push({ pg: info, pglite: other, reason: "definition_mismatch" });
       continue;
     }
     if (info.isUnique !== other.isUnique) {
-      out.mismatched.push({ pg: info, pglite: other, reason: 'uniqueness_mismatch' });
+      out.mismatched.push({ pg: info, pglite: other, reason: "uniqueness_mismatch" });
     }
     if (info.isPartial !== other.isPartial) {
-      out.mismatched.push({ pg: info, pglite: other, reason: 'partial_mismatch' });
+      out.mismatched.push({ pg: info, pglite: other, reason: "partial_mismatch" });
     }
   }
   for (const [name, info] of pglite) {
@@ -187,7 +193,9 @@ export function formatIndexDiffForFailure(diff: IndexDiff): string {
     }
   }
   if (diff.pgliteOnly.length > 0) {
-    lines.push(`Indexes in PGLite but MISSING in Postgres (mirror in src/schema.sql or migrate.ts):`);
+    lines.push(
+      `Indexes in PGLite but MISSING in Postgres (mirror in src/schema.sql or migrate.ts):`
+    );
     for (const i of diff.pgliteOnly) {
       lines.push(`  - ${i.indexName} on ${i.tableName}: ${i.columns}`);
     }
@@ -200,7 +208,7 @@ export function formatIndexDiffForFailure(diff: IndexDiff): string {
       lines.push(`      PGLite: ${m.pglite.columns}`);
     }
   }
-  return lines.join('\n');
+  return lines.join("\n");
 }
 
 /**
@@ -220,7 +228,7 @@ export async function snapshotSchema(query: SnapshotQueryFn): Promise<SchemaSnap
     cols.set(row.column_name, {
       dataType: row.data_type,
       udtName: row.udt_name,
-      isNullable: row.is_nullable === 'YES',
+      isNullable: row.is_nullable === "YES",
       columnDefault: row.column_default ?? null,
     });
   }
@@ -237,10 +245,10 @@ function normaliseDefault(d: string | null): string | null {
   if (d === null) return null;
   // Order matters: collapse whitespace FIRST so the trailing-type-cast strip
   // matches at end-of-string regardless of trailing spaces.
-  let normalised = d.trim().replace(/\s+/g, ' ');
+  let normalised = d.trim().replace(/\s+/g, " ");
   // Strip trailing type casts like ::text, ::jsonb, ::uuid — PGLite sometimes
   // omits them and Postgres sometimes includes them for string defaults.
-  normalised = normalised.replace(/::[a-z_][a-z0-9_]*(\[\])?$/i, '');
+  normalised = normalised.replace(/::[a-z_][a-z0-9_]*(\[\])?$/i, "");
   return normalised;
 }
 
@@ -252,7 +260,7 @@ function normaliseDefault(d: string | null): string | null {
 export function diffSnapshots(
   pg: SchemaSnapshot,
   pglite: SchemaSnapshot,
-  opts: { allowlistPgOnlyTables: string[] },
+  opts: { allowlistPgOnlyTables: string[] }
 ): SchemaDiff {
   const allowlist = new Set(opts.allowlistPgOnlyTables);
   const diff: SchemaDiff = {
@@ -280,15 +288,33 @@ export function diffSnapshots(
       // udt_name is the canonical type identity (catches `_text` vs `_int4`,
       // vector dimensions, etc.). data_type is the human-readable category.
       if (pgInfo.udtName !== pgliteInfo.udtName) {
-        diff.typeMismatches.push({ table, column: col, pg: pgInfo, pglite: pgliteInfo, reason: 'udt_name' });
+        diff.typeMismatches.push({
+          table,
+          column: col,
+          pg: pgInfo,
+          pglite: pgliteInfo,
+          reason: "udt_name",
+        });
         continue;
       }
       if (pgInfo.isNullable !== pgliteInfo.isNullable) {
-        diff.typeMismatches.push({ table, column: col, pg: pgInfo, pglite: pgliteInfo, reason: 'is_nullable' });
+        diff.typeMismatches.push({
+          table,
+          column: col,
+          pg: pgInfo,
+          pglite: pgliteInfo,
+          reason: "is_nullable",
+        });
         continue;
       }
       if (normaliseDefault(pgInfo.columnDefault) !== normaliseDefault(pgliteInfo.columnDefault)) {
-        diff.typeMismatches.push({ table, column: col, pg: pgInfo, pglite: pgliteInfo, reason: 'column_default' });
+        diff.typeMismatches.push({
+          table,
+          column: col,
+          pg: pgInfo,
+          pglite: pgliteInfo,
+          reason: "column_default",
+        });
       }
     }
     if (missingInPGLite.length > 0) {
@@ -326,65 +352,81 @@ export function formatDiffForFailure(diff: SchemaDiff): string {
   const lines: string[] = [];
 
   if (diff.tablesMissingInPGLite.length > 0) {
-    lines.push('Tables present on Postgres but missing from PGLite end-state:');
+    lines.push("Tables present on Postgres but missing from PGLite end-state:");
     for (const t of diff.tablesMissingInPGLite) {
       lines.push(`  - ${t}`);
-      lines.push(`    Hint: add CREATE TABLE for "${t}" to src/core/pglite-schema.ts, or add it to the allowlist if intentionally Postgres-only.`);
+      lines.push(
+        `    Hint: add CREATE TABLE for "${t}" to src/core/pglite-schema.ts, or add it to the allowlist if intentionally Postgres-only.`
+      );
     }
   }
 
   if (diff.columnsMissingInPGLite.length > 0) {
-    lines.push('Columns missing from PGLite end-state:');
+    lines.push("Columns missing from PGLite end-state:");
     for (const { table, columns } of diff.columnsMissingInPGLite) {
       for (const col of columns) {
         lines.push(`  - ${table}.${col}`);
-        lines.push(`    Hint: add "${col}" to the ${table} CREATE TABLE in src/core/pglite-schema.ts, or add a sqlFor.pglite branch in the relevant migration.`);
+        lines.push(
+          `    Hint: add "${col}" to the ${table} CREATE TABLE in src/core/pglite-schema.ts, or add a sqlFor.pglite branch in the relevant migration.`
+        );
       }
     }
   }
 
   if (diff.columnsMissingInPostgres.length > 0) {
-    lines.push('Columns present on PGLite but missing from Postgres:');
+    lines.push("Columns present on PGLite but missing from Postgres:");
     for (const { table, columns } of diff.columnsMissingInPostgres) {
       for (const col of columns) {
         lines.push(`  - ${table}.${col}`);
-        lines.push(`    Hint: either add "${col}" to ${table} in src/schema.sql + the migrations chain, or remove it from src/core/pglite-schema.ts.`);
+        lines.push(
+          `    Hint: either add "${col}" to ${table} in src/schema.sql + the migrations chain, or remove it from src/core/pglite-schema.ts.`
+        );
       }
     }
   }
 
   if (diff.typeMismatches.length > 0) {
-    lines.push('Type / nullability / default mismatches:');
+    lines.push("Type / nullability / default mismatches:");
     for (const m of diff.typeMismatches) {
       lines.push(`  - ${m.table}.${m.column} (${m.reason})`);
-      if (m.reason === 'udt_name') {
-        lines.push(`      pg=${m.pg.dataType}/${m.pg.udtName}  pglite=${m.pglite.dataType}/${m.pglite.udtName}`);
-      } else if (m.reason === 'is_nullable') {
-        lines.push(`      pg.isNullable=${m.pg.isNullable}  pglite.isNullable=${m.pglite.isNullable}`);
+      if (m.reason === "udt_name") {
+        lines.push(
+          `      pg=${m.pg.dataType}/${m.pg.udtName}  pglite=${m.pglite.dataType}/${m.pglite.udtName}`
+        );
+      } else if (m.reason === "is_nullable") {
+        lines.push(
+          `      pg.isNullable=${m.pg.isNullable}  pglite.isNullable=${m.pglite.isNullable}`
+        );
       } else {
-        lines.push(`      pg.default=${JSON.stringify(m.pg.columnDefault)}  pglite.default=${JSON.stringify(m.pglite.columnDefault)}`);
+        lines.push(
+          `      pg.default=${JSON.stringify(m.pg.columnDefault)}  pglite.default=${JSON.stringify(m.pglite.columnDefault)}`
+        );
       }
     }
   }
 
   if (diff.tablesUnexpectedlyInPGLite.length > 0) {
-    lines.push('Tables in PGLite that have no Postgres counterpart (suspicious — verify intentional):');
+    lines.push(
+      "Tables in PGLite that have no Postgres counterpart (suspicious — verify intentional):"
+    );
     for (const t of diff.tablesUnexpectedlyInPGLite) {
       lines.push(`  - ${t}`);
     }
   }
 
-  if (lines.length === 0) return 'no diff';
-  return lines.join('\n');
+  if (lines.length === 0) return "no diff";
+  return lines.join("\n");
 }
 
 /**
  * Returns true when the diff has zero issues.
  */
 export function isCleanDiff(diff: SchemaDiff): boolean {
-  return diff.tablesMissingInPGLite.length === 0
-    && diff.columnsMissingInPGLite.length === 0
-    && diff.columnsMissingInPostgres.length === 0
-    && diff.typeMismatches.length === 0
-    && diff.tablesUnexpectedlyInPGLite.length === 0;
+  return (
+    diff.tablesMissingInPGLite.length === 0 &&
+    diff.columnsMissingInPGLite.length === 0 &&
+    diff.columnsMissingInPostgres.length === 0 &&
+    diff.typeMismatches.length === 0 &&
+    diff.tablesUnexpectedlyInPGLite.length === 0
+  );
 }

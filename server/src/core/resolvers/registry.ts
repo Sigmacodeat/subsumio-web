@@ -11,13 +11,8 @@
  * that way so it can be unit-tested without mocking engine/storage.
  */
 
-import type {
-  Resolver,
-  ResolverContext,
-  ResolverCost,
-  ResolverResult,
-} from './interface.ts';
-import { ResolverError } from './interface.ts';
+import type { Resolver, ResolverContext, ResolverCost, ResolverResult } from "./interface.ts";
+import { ResolverError } from "./interface.ts";
 
 export interface ResolverListFilter {
   cost?: ResolverCost;
@@ -46,14 +41,14 @@ export class ResolverRegistry {
    * copy-paste bugs early.
    */
   register<I, O>(resolver: Resolver<I, O>): void {
-    if (!resolver.id || typeof resolver.id !== 'string') {
-      throw new ResolverError('schema', 'Resolver.id must be a non-empty string');
+    if (!resolver.id || typeof resolver.id !== "string") {
+      throw new ResolverError("schema", "Resolver.id must be a non-empty string");
     }
     if (this.resolvers.has(resolver.id)) {
       throw new ResolverError(
-        'already_registered',
+        "already_registered",
         `Resolver '${resolver.id}' is already registered`,
-        resolver.id,
+        resolver.id
       );
     }
     this.resolvers.set(resolver.id, resolver as Resolver<unknown, unknown>);
@@ -63,7 +58,7 @@ export class ResolverRegistry {
   get(id: string): Resolver<unknown, unknown> {
     const r = this.resolvers.get(id);
     if (!r) {
-      throw new ResolverError('not_found', `Resolver '${id}' not found`, id);
+      throw new ResolverError("not_found", `Resolver '${id}' not found`, id);
     }
     return r;
   }
@@ -75,8 +70,8 @@ export class ResolverRegistry {
   /** List all resolvers, optionally filtered by cost or backend. */
   list(filter?: ResolverListFilter): ResolverSummary[] {
     let all: Resolver<unknown, unknown>[] = [...this.resolvers.values()];
-    if (filter?.cost) all = all.filter(r => r.cost === filter.cost);
-    if (filter?.backend) all = all.filter(r => r.backend === filter.backend);
+    if (filter?.cost) all = all.filter((r) => r.cost === filter.cost);
+    if (filter?.backend) all = all.filter((r) => r.backend === filter.backend);
     return all.map(toSummary).sort((a, b) => a.id.localeCompare(b.id));
   }
 
@@ -97,15 +92,15 @@ export class ResolverRegistry {
     id: string,
     input: I,
     ctx: ResolverContext,
-    opts?: { timeoutMs?: number },
+    opts?: { timeoutMs?: number }
   ): Promise<ResolverResult<O>> {
     const resolver = this.get(id) as Resolver<I, O>;
     const ok = await resolver.available(ctx);
     if (!ok) {
       throw new ResolverError(
-        'unavailable',
+        "unavailable",
         `Resolver '${id}' is not available (check config/env)`,
-        id,
+        id
       );
     }
     return resolver.resolve({ input, context: ctx, timeoutMs: opts?.timeoutMs });

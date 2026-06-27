@@ -94,6 +94,7 @@ export default function MobileTimePage() {
           date: now.toISOString().split("T")[0],
           started_at: startTime?.toISOString() ?? now.toISOString(),
         }),
+        signal: AbortSignal.timeout(15_000),
       });
 
       // Fallback: save as brain page

@@ -55,12 +55,9 @@ export const POST = createPublicHandler(
     if (!(await verifyPassword(password, user.passwordHash))) {
       const failStatus = await recordFailedLogin(email);
       if (failStatus.locked) {
-        return apiError(
-          "account_locked",
-          "Account locked due to too many failed attempts.",
-          429,
-          { retryAfterSeconds: failStatus.retryAfterSeconds }
-        );
+        return apiError("account_locked", "Account locked due to too many failed attempts.", 429, {
+          retryAfterSeconds: failStatus.retryAfterSeconds,
+        });
       }
       return apiError("invalid_credentials", "Invalid credentials", 401);
     }
@@ -74,7 +71,7 @@ export const POST = createPublicHandler(
       const challengeBind = await bindFragment(user.id + user.passwordHash);
       const challengeToken = await signActionToken(
         { uid: user.id, purpose: "2fa_challenge", bind: challengeBind },
-        CHALLENGE_TOKEN_TTL_SECONDS,
+        CHALLENGE_TOKEN_TTL_SECONDS
       );
       return NextResponse.json({ error: "2fa_required", challengeToken });
     }

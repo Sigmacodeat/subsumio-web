@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 import { getStore } from "@/lib/auth/store";
 import { encrypt, decrypt } from "@/lib/encryption";
@@ -10,11 +9,13 @@ function looksLikeApiKey(key: string): boolean {
   return key.length >= 8 && /^[A-Za-z0-9_\-\.]+$/.test(key);
 }
 
-const apiKeysPostSchema = z.object({
-  openaiKey: z.string().optional(),
-  anthropicKey: z.string().optional(),
-  zeroEntropyKey: z.string().optional(),
-}).passthrough();
+const apiKeysPostSchema = z
+  .object({
+    openaiKey: z.string().optional(),
+    anthropicKey: z.string().optional(),
+    zeroEntropyKey: z.string().optional(),
+  })
+  .passthrough();
 
 export const POST = createHandler(
   {
@@ -63,7 +64,7 @@ export const POST = createHandler(
     });
 
     return Response.json({ ok: true });
-  },
+  }
 );
 
 export const GET = createHandler(
@@ -100,5 +101,5 @@ export const GET = createHandler(
       hasAnthropicKey: Boolean(anthropicKey),
       hasZeroEntropyKey: Boolean(zeroEntropyKey),
     });
-  },
+  }
 );

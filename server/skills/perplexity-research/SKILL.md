@@ -41,13 +41,13 @@ instead of repeating settled fact.
 
 ## When to use this vs other tools
 
-| Need | Use |
-|------|-----|
-| Deep research with citations | **This skill** — Perplexity + Opus |
-| Quick URL content | `web_fetch` |
-| Brain-only lookup | `gbrain query` / `gbrain search` |
-| Real-time social monitoring | external X / social-media collectors |
-| Structured data lookup against a tracker | `skills/data-research/SKILL.md` |
+| Need                                     | Use                                  |
+| ---------------------------------------- | ------------------------------------ |
+| Deep research with citations             | **This skill** — Perplexity + Opus   |
+| Quick URL content                        | `web_fetch`                          |
+| Brain-only lookup                        | `gbrain query` / `gbrain search`     |
+| Real-time social monitoring              | external X / social-media collectors |
+| Structured data lookup against a tracker | `skills/data-research/SKILL.md`      |
 
 ## Output structure
 
@@ -69,19 +69,24 @@ recency_filter: "[hour|day|week|month|none]"
 > and current web state.
 
 ## Key New Developments
+
 What's changed since the brain was last updated on this topic.
 
 ## Confirming Signals
+
 Web evidence validating existing brain knowledge.
 
 ## Contradictions or Updates
+
 Things that conflict with the brain — these need a closer look.
 
 ## Recommended Brain Updates
+
 Specific page updates the user might want to make based on this research.
 Each item: which page, what to add or change, source URL.
 
 ## Citations
+
 - [Source title](URL) — accessed YYYY-MM-DD
 - [Source title](URL) — accessed YYYY-MM-DD
 - ...
@@ -119,10 +124,10 @@ gbrain put_page research/<slug>      # via the put_page operation
 
 ## Models
 
-| Model | Cost / query | Use when |
-|-------|-------------|----------|
-| Perplexity sonar-pro | ~\$0.04 | Deep analysis, entity enrichment, deal research |
-| Perplexity sonar | ~\$0.007 | Quick lookups, bulk monitoring, briefing pipelines |
+| Model                | Cost / query | Use when                                           |
+| -------------------- | ------------ | -------------------------------------------------- |
+| Perplexity sonar-pro | ~\$0.04      | Deep analysis, entity enrichment, deal research    |
+| Perplexity sonar     | ~\$0.007     | Quick lookups, bulk monitoring, briefing pipelines |
 
 Default to sonar-pro. Drop to sonar for bulk / cron contexts where cost
 matters more than depth.
@@ -181,7 +186,6 @@ for news-cycle topics; omit for evergreen research.
   entity-enrichment loop
 - `skills/data-research/SKILL.md` — structured-data trackers (different
   shape: parameterized YAML recipes, not free-form research)
-
 
 ## Contract
 

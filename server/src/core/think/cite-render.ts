@@ -19,8 +19,8 @@
 
 export interface ParsedCitation {
   page_slug: string;
-  row_num: number | null;     // null = page-level citation, set = take citation
-  citation_index: number;     // 1-based order in the body
+  row_num: number | null; // null = page-level citation, set = take citation
+  citation_index: number; // 1-based order in the body
 }
 
 /**
@@ -50,7 +50,7 @@ export function parseInlineCitations(body: string): ParsedCitation[] {
     const rowStr = match[2];
     const row_num = rowStr ? parseInt(rowStr, 10) : null;
     if (row_num !== null && (!Number.isFinite(row_num) || row_num <= 0)) continue;
-    const key = `${slug}#${row_num ?? '_'}`;
+    const key = `${slug}#${row_num ?? "_"}`;
     if (seen.has(key)) continue;
     seen.add(key);
     out.push({ page_slug: slug, row_num, citation_index: idx++ });
@@ -62,30 +62,31 @@ export function parseInlineCitations(body: string): ParsedCitation[] {
  * Validate a structured citations array from the model. Returns the
  * cleaned list + any warnings about dropped/invalid entries.
  */
-export function normalizeStructuredCitations(
-  raw: unknown,
-): { citations: ParsedCitation[]; warnings: string[] } {
+export function normalizeStructuredCitations(raw: unknown): {
+  citations: ParsedCitation[];
+  warnings: string[];
+} {
   const citations: ParsedCitation[] = [];
   const warnings: string[] = [];
   if (!Array.isArray(raw)) {
-    return { citations, warnings: ['CITATIONS_NOT_ARRAY'] };
+    return { citations, warnings: ["CITATIONS_NOT_ARRAY"] };
   }
   let idx = 1;
   const seen = new Set<string>();
   for (const c of raw) {
-    if (typeof c !== 'object' || c === null) {
-      warnings.push('CITATION_NOT_OBJECT');
+    if (typeof c !== "object" || c === null) {
+      warnings.push("CITATION_NOT_OBJECT");
       continue;
     }
     const slug = (c as { page_slug?: unknown }).page_slug;
     const row = (c as { row_num?: unknown }).row_num;
-    if (typeof slug !== 'string' || !slug.trim()) {
-      warnings.push('CITATION_MISSING_SLUG');
+    if (typeof slug !== "string" || !slug.trim()) {
+      warnings.push("CITATION_MISSING_SLUG");
       continue;
     }
     let row_num: number | null = null;
     if (row !== null && row !== undefined) {
-      const n = typeof row === 'number' ? row : parseInt(String(row), 10);
+      const n = typeof row === "number" ? row : parseInt(String(row), 10);
       if (Number.isFinite(n) && n > 0) {
         row_num = n;
       } else {
@@ -93,7 +94,7 @@ export function normalizeStructuredCitations(
         continue;
       }
     }
-    const key = `${slug.toLowerCase()}#${row_num ?? '_'}`;
+    const key = `${slug.toLowerCase()}#${row_num ?? "_"}`;
     if (seen.has(key)) continue;
     seen.add(key);
     citations.push({ page_slug: slug.toLowerCase(), row_num, citation_index: idx++ });
@@ -141,7 +142,7 @@ export interface CitationContext {
  */
 export function validateCitationsAgainstContext(
   citations: ParsedCitation[],
-  ctx: CitationContext,
+  ctx: CitationContext
 ): { valid: ParsedCitation[]; invalid: ParsedCitation[]; warnings: string[] } {
   const valid: ParsedCitation[] = [];
   const invalid: ParsedCitation[] = [];
@@ -149,15 +150,13 @@ export function validateCitationsAgainstContext(
   for (const c of citations) {
     const slug = c.page_slug.toLowerCase();
     const inContext =
-      c.row_num === null
-        ? ctx.pageSlugs.has(slug)
-        : ctx.takeKeys.has(`${slug}#${c.row_num}`);
+      c.row_num === null ? ctx.pageSlugs.has(slug) : ctx.takeKeys.has(`${slug}#${c.row_num}`);
     if (inContext) {
       valid.push(c);
     } else {
       invalid.push(c);
       warnings.push(
-        `CITATION_NOT_IN_CONTEXT: ${c.page_slug}${c.row_num === null ? '' : `#${c.row_num}`}`,
+        `CITATION_NOT_IN_CONTEXT: ${c.page_slug}${c.row_num === null ? "" : `#${c.row_num}`}`
       );
     }
   }
@@ -174,13 +173,13 @@ export function validateCitationsAgainstContext(
  */
 export function resolveCitations(
   structuredRaw: unknown,
-  answerBody: string,
+  answerBody: string
 ): { citations: ParsedCitation[]; warnings: string[]; usedFallback: boolean } {
   const structured = normalizeStructuredCitations(structuredRaw);
   if (structured.citations.length > 0) {
     return { citations: structured.citations, warnings: structured.warnings, usedFallback: false };
   }
   const fallback = parseInlineCitations(answerBody);
-  const warnings = [...structured.warnings, 'CITATIONS_REGEX_FALLBACK'];
+  const warnings = [...structured.warnings, "CITATIONS_REGEX_FALLBACK"];
   return { citations: fallback, warnings, usedFallback: true };
 }

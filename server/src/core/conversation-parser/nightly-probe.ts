@@ -27,7 +27,7 @@
  * unit tests don't touch real LLMs or real fixtures.
  */
 
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync } from "node:fs";
 import {
   parseFixtureJsonl,
   scoreFixture,
@@ -35,15 +35,15 @@ import {
   type ConversationFixture,
   type EvalReport,
   type FixtureScore,
-} from './eval.ts';
+} from "./eval.ts";
 
 export type ProbeOutcome =
-  | 'pass'
-  | 'fail'
-  | 'rate_limited'
-  | 'budget_exceeded'
-  | 'adversarial_false_positive'
-  | 'no_embedding_key';
+  | "pass"
+  | "fail"
+  | "rate_limited"
+  | "budget_exceeded"
+  | "adversarial_false_positive"
+  | "no_embedding_key";
 
 export interface NightlyProbeResult {
   outcome: ProbeOutcome;
@@ -94,7 +94,7 @@ export interface NightlyProbeDeps {
  *   6. All pass: 'pass'.
  */
 export async function runConversationParserNightlyProbe(
-  deps: NightlyProbeDeps,
+  deps: NightlyProbeDeps
 ): Promise<NightlyProbeResult> {
   const ts = deps.now().toISOString();
   const baseResult = {
@@ -109,12 +109,12 @@ export async function runConversationParserNightlyProbe(
   };
 
   // Gate 1: enabled?
-  const enabled = deps.isEnabled() || deps.searchMode() === 'tokenmax';
+  const enabled = deps.isEnabled() || deps.searchMode() === "tokenmax";
   if (!enabled) {
     return {
       ...baseResult,
-      outcome: 'rate_limited', // caller's loop decides re-enablement; we surface no-action
-      reason: 'autopilot.conversation_parser_probe.enabled=false (and search.mode != tokenmax)',
+      outcome: "rate_limited", // caller's loop decides re-enablement; we surface no-action
+      reason: "autopilot.conversation_parser_probe.enabled=false (and search.mode != tokenmax)",
     };
   }
 
@@ -122,8 +122,8 @@ export async function runConversationParserNightlyProbe(
   if (deps.shouldSkipForRateLimit()) {
     return {
       ...baseResult,
-      outcome: 'rate_limited',
-      reason: 'probe ran within the last 24h',
+      outcome: "rate_limited",
+      reason: "probe ran within the last 24h",
     };
   }
 
@@ -131,8 +131,8 @@ export async function runConversationParserNightlyProbe(
   if (!deps.hasLlmKey()) {
     return {
       ...baseResult,
-      outcome: 'no_embedding_key',
-      reason: 'no Anthropic key configured (polish/fallback would be no-ops)',
+      outcome: "no_embedding_key",
+      reason: "no Anthropic key configured (polish/fallback would be no-ops)",
     };
   }
 
@@ -142,7 +142,7 @@ export async function runConversationParserNightlyProbe(
   if (!existsSync(fixturePath) || !existsSync(adversarialPath)) {
     return {
       ...baseResult,
-      outcome: 'fail',
+      outcome: "fail",
       reason: `fixture path missing: ${!existsSync(fixturePath) ? fixturePath : adversarialPath}`,
     };
   }
@@ -150,14 +150,12 @@ export async function runConversationParserNightlyProbe(
   let positiveFixtures: ConversationFixture[];
   let adversarialFixtures: ConversationFixture[];
   try {
-    positiveFixtures = parseFixtureJsonl(readFileSync(fixturePath, 'utf8'));
-    adversarialFixtures = parseFixtureJsonl(
-      readFileSync(adversarialPath, 'utf8'),
-    );
+    positiveFixtures = parseFixtureJsonl(readFileSync(fixturePath, "utf8"));
+    adversarialFixtures = parseFixtureJsonl(readFileSync(adversarialPath, "utf8"));
   } catch (err) {
     return {
       ...baseResult,
-      outcome: 'fail',
+      outcome: "fail",
       reason: `fixture parse failed: ${(err as Error).message}`,
     };
   }
@@ -165,25 +163,21 @@ export async function runConversationParserNightlyProbe(
   // Score everything WITH LLM enabled (the parser's config flags
   // determine whether polish/fallback actually fires; this probe
   // doesn't override them).
-  const positiveScores: FixtureScore[] = positiveFixtures.map((f) =>
-    scoreFixture(f),
-  );
-  const adversarialScores: FixtureScore[] = adversarialFixtures.map((f) =>
-    scoreFixture(f),
-  );
+  const positiveScores: FixtureScore[] = positiveFixtures.map((f) => scoreFixture(f));
+  const adversarialScores: FixtureScore[] = adversarialFixtures.map((f) => scoreFixture(f));
 
   // Adversarial fixtures must score `messages_parsed === 0`.
   const adversarialFps = adversarialScores.filter((s) => !s.passed).length;
   const allScores = [...positiveScores, ...adversarialScores];
   const aggregate: EvalReport = aggregateScores(allScores);
 
-  let outcome: ProbeOutcome = 'pass';
+  let outcome: ProbeOutcome = "pass";
   let reason: string | undefined;
   if (adversarialFps > 0) {
-    outcome = 'adversarial_false_positive';
+    outcome = "adversarial_false_positive";
     reason = `${adversarialFps} adversarial fixture(s) parsed to non-empty (LLM hallucinated structure)`;
   } else if (aggregate.failed > 0) {
-    outcome = 'fail';
+    outcome = "fail";
     reason = `${aggregate.failed} fixture(s) failed (see failed_fixture_ids)`;
   }
 

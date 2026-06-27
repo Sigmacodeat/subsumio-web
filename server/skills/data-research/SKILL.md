@@ -50,6 +50,7 @@ All three use the same 7-phase pipeline with parameterized recipes.
 ### Phase 1: Define Research Recipe
 
 Ask the user what they want to track. Either:
+
 - Pick a built-in recipe: investor-updates, expense-tracker, company-updates
 - Define a custom recipe with: source queries, classification rules, extraction schema,
   tracker page path, tracker format
@@ -60,6 +61,7 @@ to scaffold a new one.
 ### Phase 2: Search Sources
 
 Brain first (maybe we already have this data). Then:
+
 - **Email** via credential gateway: windowed queries (quarterly, monthly if truncated)
 - **Web** via search: public filings, press releases, regulatory data
 - **APIs**: any structured data source the recipe defines
@@ -74,6 +76,7 @@ Skip marketing, newsletters, noise based on recipe's classification rules.
 ### Phase 4: Extract Structured Data
 
 **EXTRACTION INTEGRITY RULE:**
+
 1. Save raw source immediately (before any extraction)
 2. Extract fields using deterministic regex first, LLM fallback
 3. When summarizing batch results: **re-read from saved files**
@@ -92,6 +95,7 @@ This prevents a known hallucination bug where batch-processed amounts were
 ### Phase 6: Deduplicate
 
 Before adding to tracker:
+
 - Exact match (same key fields) → skip
 - Fuzzy match (same entity + date + similar amount within tolerance) → flag for review
 - Different amount for same entity+date → add with note (could be correction)
@@ -126,8 +130,8 @@ Brain page at the recipe's `tracker_page` path with markdown tables:
 ```markdown
 ### 2026
 
-| Date | Company | MRR | ARR | Growth | Status |
-|------|---------|-----|-----|--------|--------|
+| Date       | Company    | MRR   | ARR   | Growth     | Status         |
+| ---------- | ---------- | ----- | ----- | ---------- | -------------- |
 | 2026-04-01 | Example Co | $188K | $2.3M | +14.7% MoM | [Source](link) |
 ```
 

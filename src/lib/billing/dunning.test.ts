@@ -16,7 +16,12 @@ describe("dunning escalation logic", () => {
     test("failure 1: warning email with retry date", async () => {
       const { buildDunningEmailBody } = await import("./dunning");
       const retryDate = new Date("2026-07-01T10:00:00Z");
-      const result = buildDunningEmailBody("Kanzlei Müller", 1, retryDate, "https://billing.subsum.io/portal");
+      const result = buildDunningEmailBody(
+        "Kanzlei Müller",
+        1,
+        retryDate,
+        "https://billing.subsum.io/portal"
+      );
       expect(result.subject).toContain("Zahlungsproblem");
       expect(result.body).toContain("Kanzlei Müller");
       expect(result.body).toContain("nicht erfolgreich");

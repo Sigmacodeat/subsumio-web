@@ -39,31 +39,57 @@ const T = {
   },
 } as const;
 
-function Shell({ home, title, subtitle, lang, children }: { home: string; title: string; subtitle: string; lang: Lang; children: React.ReactNode }) {
+function Shell({
+  home,
+  title,
+  subtitle,
+  lang,
+  children,
+}: {
+  home: string;
+  title: string;
+  subtitle: string;
+  lang: Lang;
+  children: React.ReactNode;
+}) {
   const t = T[lang];
   return (
-    <div data-tone="light" className="min-h-screen [background:var(--mk-bg)] px-6 py-16">
-      <div className="max-w-2xl mx-auto">
-        <Link href={home} className="text-sm brand-text hover:underline">{t.backLink}</Link>
-        <h1 className="text-3xl font-black [color:var(--mk-text)] mt-8 mb-2">{title}</h1>
-        <p className="text-xs [color:var(--mk-text-subtle)] mb-6">{subtitle}</p>
-        <div className="space-y-3 text-sm [color:var(--mk-text-muted)] leading-relaxed">{children}</div>
+    <div data-tone="light" className="min-h-screen px-6 py-16 [background:var(--mk-bg)]">
+      <div className="mx-auto max-w-2xl">
+        <Link href={home} className="brand-text text-sm hover:underline">
+          {t.backLink}
+        </Link>
+        <h1 className="mt-8 mb-2 text-3xl font-black [color:var(--mk-text)]">{title}</h1>
+        <p className="mb-6 text-xs [color:var(--mk-text-subtle)]">{subtitle}</p>
+        <div className="space-y-3 text-sm leading-relaxed [color:var(--mk-text-muted)]">
+          {children}
+        </div>
       </div>
     </div>
   );
 }
 
 function H2({ children }: { children: React.ReactNode }) {
-  return <h2 className="[color:var(--mk-text)] font-semibold text-lg mb-2 mt-8">{children}</h2>;
+  return <h2 className="mt-8 mb-2 text-lg font-semibold [color:var(--mk-text)]">{children}</h2>;
 }
 
 function DraftBanner({ lang, children }: { lang: Lang; children: React.ReactNode }) {
   return (
-    <div className="p-4 rounded-lg border border-amber-500/30 bg-amber-500/5 text-amber-300 text-xs">{children}</div>
+    <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 text-xs text-amber-300">
+      {children}
+    </div>
   );
 }
 
-function LegalLinks({ home, exclude, lang }: { home: string; exclude: "privacy" | "terms" | "imprint"; lang: Lang }) {
+function LegalLinks({
+  home,
+  exclude,
+  lang,
+}: {
+  home: string;
+  exclude: "privacy" | "terms" | "imprint";
+  lang: Lang;
+}) {
   const t = T[lang];
   const links = [
     { key: "privacy" as const, href: `${home === "/" ? "" : home}/privacy`, label: t.privacy },
@@ -76,7 +102,9 @@ function LegalLinks({ home, exclude, lang }: { home: string; exclude: "privacy" 
       {links.map((l, i) => (
         <span key={l.key}>
           {i > 0 && " · "}
-          <Link href={l.href} className="brand-text hover:underline">{l.label}</Link>
+          <Link href={l.href} className="brand-text hover:underline">
+            {l.label}
+          </Link>
         </span>
       ))}
     </p>
@@ -90,9 +118,19 @@ export function ImprintContent({ home, lang = "de" }: { home: string; lang?: Lan
       <Shell home={home} lang={lang} title={t.imprintTitle} subtitle={t.imprintSubtitle}>
         <DraftBanner lang={lang}>{t.draftNotice}</DraftBanner>
         <H2>Operator</H2>
-        <p>[Company name]<br />[Street, number]<br />[ZIP, city, country]</p>
+        <p>
+          [Company name]
+          <br />
+          [Street, number]
+          <br />
+          [ZIP, city, country]
+        </p>
         <H2>Contact</H2>
-        <p>Email: hello@subsum.eu<br />[Phone]</p>
+        <p>
+          Email: hello@subsum.eu
+          <br />
+          [Phone]
+        </p>
         <H2>Authorized representatives</H2>
         <p>[Name of authorized representative]</p>
         <H2>Commercial register</H2>
@@ -106,8 +144,8 @@ export function ImprintContent({ home, lang = "de" }: { home: string; lang?: Lan
         </p>
         <H2>Note on DACH jurisdictions</H2>
         <p>
-          This imprint is provided per § 5 DDG (Germany). For Austria, provider information per
-          § 5 ECG applies; for Switzerland, no statutory imprint obligation exists, but provider
+          This imprint is provided per § 5 DDG (Germany). For Austria, provider information per § 5
+          ECG applies; for Switzerland, no statutory imprint obligation exists, but provider
           identification per Art. 3 UWG is provided voluntarily.
         </p>
         <LegalLinks home={home} exclude="imprint" lang={lang} />
@@ -118,9 +156,19 @@ export function ImprintContent({ home, lang = "de" }: { home: string; lang?: Lan
     <Shell home={home} lang={lang} title={t.imprintTitle} subtitle={t.imprintSubtitle}>
       <DraftBanner lang={lang}>{t.draftNotice}</DraftBanner>
       <H2>Betreiber</H2>
-      <p>[Firmenname]<br />[Straße, Hausnummer]<br />[PLZ, Ort, Land]</p>
+      <p>
+        [Firmenname]
+        <br />
+        [Straße, Hausnummer]
+        <br />
+        [PLZ, Ort, Land]
+      </p>
       <H2>Kontakt</H2>
-      <p>E-Mail: hello@subsum.eu<br />[Telefon]</p>
+      <p>
+        E-Mail: hello@subsum.eu
+        <br />
+        [Telefon]
+      </p>
       <H2>Vertretungsberechtigt</H2>
       <p>[Name der vertretungsberechtigten Person]</p>
       <H2>Registereintrag</H2>
@@ -136,7 +184,8 @@ export function ImprintContent({ home, lang = "de" }: { home: string; lang?: Lan
       <p>
         Dieses Impressum wird gemäß § 5 DDG (Deutschland) bereitgestellt. Für Österreich gilt die
         Anbieterkennzeichnung nach § 5 ECG; für die Schweiz besteht keine gesetzliche
-        Impressumspflicht, jedoch wird die Anbieterkennzeichnung nach Art. 3 UWG freiwillig bereitgestellt.
+        Impressumspflicht, jedoch wird die Anbieterkennzeichnung nach Art. 3 UWG freiwillig
+        bereitgestellt.
       </p>
       <LegalLinks home={home} exclude="imprint" lang={lang} />
     </Shell>
@@ -155,7 +204,15 @@ export function PrivacyContent({ home, lang = "de" }: { home: string; lang?: Lan
           Responsible for data processing on this website and the hosted Subsumio service
           (hereinafter &ldquo;Service&rdquo;) is:
         </p>
-        <p className="mt-2">[Company name]<br />[Street, number]<br />[ZIP, city, country]<br />Email: hello@subsum.eu</p>
+        <p className="mt-2">
+          [Company name]
+          <br />
+          [Street, number]
+          <br />
+          [ZIP, city, country]
+          <br />
+          Email: hello@subsum.eu
+        </p>
         <p className="mt-2">
           Data Protection Officer (if appointed): [Name, contact]. Appointment is required e.g. when
           processing special categories of personal data on a large scale (Art. 37 GDPR; DE: § 38
@@ -167,11 +224,15 @@ export function PrivacyContent({ home, lang = "de" }: { home: string; lang?: Lan
           Subsumio is designed as a data-minimising product. There are two operating models with
           different data-protection roles:
         </p>
-        <ul className="list-disc pl-5 mt-2 space-y-1">
-          <li><strong className="[color:var(--mk-text)]">Self-hosting:</strong> The engine runs on your own
-            infrastructure. Content is never transmitted to us; we have no access.</li>
-          <li><strong className="[color:var(--mk-text)]">Hosted EU cloud:</strong> We process content
-            exclusively to provide the Service — never to train AI models.</li>
+        <ul className="mt-2 list-disc space-y-1 pl-5">
+          <li>
+            <strong className="[color:var(--mk-text)]">Self-hosting:</strong> The engine runs on
+            your own infrastructure. Content is never transmitted to us; we have no access.
+          </li>
+          <li>
+            <strong className="[color:var(--mk-text)]">Hosted EU cloud:</strong> We process content
+            exclusively to provide the Service — never to train AI models.
+          </li>
         </ul>
 
         <H2>3. Website operation</H2>
@@ -194,33 +255,39 @@ export function PrivacyContent({ home, lang = "de" }: { home: string; lang?: Lan
         <p>
           Where you upload personal data of your clients/customers,{" "}
           <strong className="[color:var(--mk-text)]">you are the Controller</strong> and we act as{" "}
-          <strong className="[color:var(--mk-text)]">Processor</strong> (Art. 28 GDPR). A DPA must be
-          concluded before such use (template provided). Professionals bound by secrecy
-          (DE: § 203 StGB; AT: § 9 RAO; CH: Art. 321 StGB) must additionally ensure compliant
-          involvement of supporting persons — we recommend self-hosting or the EU cloud with a
-          separate confidentiality agreement.
+          <strong className="[color:var(--mk-text)]">Processor</strong> (Art. 28 GDPR). A DPA must
+          be concluded before such use (template provided). Professionals bound by secrecy (DE: §
+          203 StGB; AT: § 9 RAO; CH: Art. 321 StGB) must additionally ensure compliant involvement
+          of supporting persons — we recommend self-hosting or the EU cloud with a separate
+          confidentiality agreement.
         </p>
 
         <H2>6. AI functions</H2>
         <p>
-          For synthesis and agent functions, relevant content excerpts are transmitted to LLM/embedding
-          providers who process under instruction and do not use the data for training (Art. 6(1)(b)
-          GDPR or DPA). With self-hosting, you choose providers and models freely or run a local model.
+          For synthesis and agent functions, relevant content excerpts are transmitted to
+          LLM/embedding providers who process under instruction and do not use the data for training
+          (Art. 6(1)(b) GDPR or DPA). With self-hosting, you choose providers and models freely or
+          run a local model.
         </p>
 
         <H2>7. Processors and recipients</H2>
         <p>
           Depending on configuration, the following categories may be involved (all with DPAs;
-          third-country transfers only on the basis of EU Standard Contractual Clauses, Art. 46 GDPR):
+          third-country transfers only on the basis of EU Standard Contractual Clauses, Art. 46
+          GDPR):
         </p>
-        <ul className="list-disc pl-5 mt-2 space-y-1">
+        <ul className="mt-2 list-disc space-y-1 pl-5">
           <li>Hosting/infrastructure (web app and/or engine), primarily EU data centres</li>
           <li>LLM providers (answers/agents) and embedding providers (search)</li>
           <li>Payment provider for paid plans</li>
-          <li>Email delivery service for transactional messages (deadline digest, password reset)</li>
+          <li>
+            Email delivery service for transactional messages (deadline digest, password reset)
+          </li>
           <li>Optional: distributed rate-limiting service</li>
         </ul>
-        <p className="mt-2">Before launch, specify: [providers with seat country and transfer basis].</p>
+        <p className="mt-2">
+          Before launch, specify: [providers with seat country and transfer basis].
+        </p>
 
         <H2>8. Retention period</H2>
         <p>
@@ -254,11 +321,19 @@ export function PrivacyContent({ home, lang = "de" }: { home: string; lang?: Lan
         Verantwortlich für die Datenverarbeitung auf dieser Website und im gehosteten
         Subsumio-Dienst (im Folgenden &bdquo;Dienst&ldquo;) ist:
       </p>
-      <p className="mt-2">[Firmenname]<br />[Straße, Hausnummer]<br />[PLZ, Ort, Land]<br />E-Mail: hello@subsum.eu</p>
       <p className="mt-2">
-        Datenschutzbeauftragte/r (sofern bestellt): [Name, Kontakt]. Eine Bestellpflicht besteht
-        u. a. bei umfangreicher Verarbeitung besonderer Kategorien personenbezogener Daten
-        (Art. 37 DSGVO i. V. m. § 38 BDSG (DE) / § 9 DSG (AT); CH: keine DPO-Pflicht nach DSG).
+        [Firmenname]
+        <br />
+        [Straße, Hausnummer]
+        <br />
+        [PLZ, Ort, Land]
+        <br />
+        E-Mail: hello@subsum.eu
+      </p>
+      <p className="mt-2">
+        Datenschutzbeauftragte/r (sofern bestellt): [Name, Kontakt]. Eine Bestellpflicht besteht u.
+        a. bei umfangreicher Verarbeitung besonderer Kategorien personenbezogener Daten (Art. 37
+        DSGVO i. V. m. § 38 BDSG (DE) / § 9 DSG (AT); CH: keine DPO-Pflicht nach DSG).
       </p>
 
       <H2>2. Grundsatz: Datensparsamkeit und Betriebsmodelle</H2>
@@ -266,18 +341,23 @@ export function PrivacyContent({ home, lang = "de" }: { home: string; lang?: Lan
         Subsumio ist als datensparsames Produkt konzipiert. Es gibt zwei Betriebsmodelle mit
         unterschiedlichen datenschutzrechtlichen Rollen:
       </p>
-      <ul className="list-disc pl-5 mt-2 space-y-1">
-        <li><strong className="[color:var(--mk-text)]">Self-Hosting:</strong> Die Engine läuft auf Ihrer eigenen
-          Infrastruktur. Inhalte werden nicht an uns übermittelt; wir haben keinen Zugriff.</li>
-        <li><strong className="[color:var(--mk-text)]">Gehostete EU-Cloud:</strong> Wir verarbeiten Inhalte
-          ausschließlich zur Erbringung des Dienstes — niemals zum Training von KI-Modellen.</li>
+      <ul className="mt-2 list-disc space-y-1 pl-5">
+        <li>
+          <strong className="[color:var(--mk-text)]">Self-Hosting:</strong> Die Engine läuft auf
+          Ihrer eigenen Infrastruktur. Inhalte werden nicht an uns übermittelt; wir haben keinen
+          Zugriff.
+        </li>
+        <li>
+          <strong className="[color:var(--mk-text)]">Gehostete EU-Cloud:</strong> Wir verarbeiten
+          Inhalte ausschließlich zur Erbringung des Dienstes — niemals zum Training von KI-Modellen.
+        </li>
       </ul>
 
       <H2>3. Betrieb der Website</H2>
       <p>
         Beim Aufruf verarbeitet der Hosting-Dienstleister technisch notwendige Server-Logdaten
-        (IP-Adresse, Zeitpunkt, abgerufene Ressource, User-Agent) zur Auslieferung und
-        Absicherung — berechtigtes Interesse (Art. 6 Abs. 1 lit. f DSGVO). Es werden keine
+        (IP-Adresse, Zeitpunkt, abgerufene Ressource, User-Agent) zur Auslieferung und Absicherung —
+        berechtigtes Interesse (Art. 6 Abs. 1 lit. f DSGVO). Es werden keine
         Marketing-/Tracking-Cookies ohne Einwilligung gesetzt.
       </p>
 
@@ -285,16 +365,16 @@ export function PrivacyContent({ home, lang = "de" }: { home: string; lang?: Lan
       <p>
         Zur Nutzung verarbeiten wir Bestandsdaten: E-Mail, Name, ein nicht umkehrbar gehashtes
         Passwort (scrypt), Empfehlungscode — zur Vertragserfüllung (Art. 6 Abs. 1 lit. b DSGVO).
-        Login-/Registrierungsversuche werden zur Missbrauchsabwehr ratenbegrenzt (Art. 6 Abs. 1
-        lit. f DSGVO). Kostenpflichtige Pläne werden über einen Zahlungsdienstleister abgerechnet.
+        Login-/Registrierungsversuche werden zur Missbrauchsabwehr ratenbegrenzt (Art. 6 Abs. 1 lit.
+        f DSGVO). Kostenpflichtige Pläne werden über einen Zahlungsdienstleister abgerechnet.
       </p>
 
       <H2>5. Inhalte und Mandantendaten — Auftragsverarbeitung</H2>
       <p>
         Soweit Sie personenbezogene Daten Ihrer Mandanten/Kunden einstellen, sind{" "}
-        <strong className="[color:var(--mk-text)]">Sie der Verantwortliche</strong> und wir handeln als{" "}
-        <strong className="[color:var(--mk-text)]">Auftragsverarbeiter</strong> (Art. 28 DSGVO). Vor einer
-        solchen Nutzung ist ein AVV abzuschließen (Vorlage wird bereitgestellt).
+        <strong className="[color:var(--mk-text)]">Sie der Verantwortliche</strong> und wir handeln
+        als <strong className="[color:var(--mk-text)]">Auftragsverarbeiter</strong> (Art. 28 DSGVO).
+        Vor einer solchen Nutzung ist ein AVV abzuschließen (Vorlage wird bereitgestellt).
         Berufsgeheimnisträger (DE: § 203 StGB; AT: § 9 RAO; CH: Art. 321 StGB) beachten zusätzlich
         die Anforderungen an mitwirkende Personen — hierfür empfehlen wir Self-Hosting oder die
         EU-Cloud mit gesonderter Verschwiegenheitsverpflichtung.
@@ -304,8 +384,8 @@ export function PrivacyContent({ home, lang = "de" }: { home: string; lang?: Lan
       <p>
         Für Synthese- und Agentenfunktionen werden relevante Inhaltsausschnitte an LLM-/Embedding-
         Anbieter übermittelt, die weisungsgebunden verarbeiten und die Daten nicht zum Training
-        verwenden (Art. 6 Abs. 1 lit. b DSGVO bzw. AVV). Beim Self-Hosting wählen Sie Anbieter
-        und Modelle frei oder betreiben ein lokales Modell.
+        verwenden (Art. 6 Abs. 1 lit. b DSGVO bzw. AVV). Beim Self-Hosting wählen Sie Anbieter und
+        Modelle frei oder betreiben ein lokales Modell.
       </p>
 
       <H2>7. Auftragsverarbeiter und Empfänger</H2>
@@ -313,20 +393,25 @@ export function PrivacyContent({ home, lang = "de" }: { home: string; lang?: Lan
         Je nach Konfiguration können folgende Kategorien eingebunden sein (alle mit AVV;
         Drittland-Transfers nur auf Basis von EU-Standardvertragsklauseln, Art. 46 DSGVO):
       </p>
-      <ul className="list-disc pl-5 mt-2 space-y-1">
+      <ul className="mt-2 list-disc space-y-1 pl-5">
         <li>Hosting/Infrastruktur (Web-App und/oder Engine), vorrangig EU-Rechenzentren</li>
         <li>LLM-Anbieter (Antworten/Agenten) und Embedding-Anbieter (Suche)</li>
         <li>Zahlungsdienstleister für kostenpflichtige Pläne</li>
-        <li>E-Mail-Versanddienst für transaktionale Nachrichten (Fristen-Digest, Passwort-Reset)</li>
+        <li>
+          E-Mail-Versanddienst für transaktionale Nachrichten (Fristen-Digest, Passwort-Reset)
+        </li>
         <li>Optional: Dienst zur verteilten Ratenbegrenzung</li>
       </ul>
-      <p className="mt-2">Vor Launch konkret benennen: [Anbieter mit Sitzland und Transfergrundlage].</p>
+      <p className="mt-2">
+        Vor Launch konkret benennen: [Anbieter mit Sitzland und Transfergrundlage].
+      </p>
 
       <H2>8. Speicherdauer</H2>
       <p>
         Kontodaten für die Vertragsdauer; Löschung nach Kündigung, soweit keine
         Aufbewahrungspflichten (DE: § 147 AO, § 257 HGB; AT: § 132 BAO; CH: OR 962) entgegenstehen.
-        Inhalte werden auf Ihre Weisung bzw. mit Vertragsende gelöscht. Server-Logs nach [z. B. 14 Tagen].
+        Inhalte werden auf Ihre Weisung bzw. mit Vertragsende gelöscht. Server-Logs nach [z. B. 14
+        Tagen].
       </p>
 
       <H2>9. Ihre Rechte</H2>
@@ -334,8 +419,8 @@ export function PrivacyContent({ home, lang = "de" }: { home: string; lang?: Lan
         Sie haben Rechte auf Auskunft (Art. 15), Berichtigung (Art. 16), Löschung (Art. 17),
         Einschränkung (Art. 18), Datenübertragbarkeit (Art. 20) und Widerspruch (Art. 21 DSGVO).
         Einen vollständigen Export Ihrer Konto- und Brain-Daten als JSON können Sie selbst über{" "}
-        <span className="[color:var(--mk-text)]">Einstellungen → Account → Daten exportieren</span> auslösen.
-        Es besteht ein Beschwerderecht bei einer Aufsichtsbehörde.
+        <span className="[color:var(--mk-text)]">Einstellungen → Account → Daten exportieren</span>{" "}
+        auslösen. Es besteht ein Beschwerderecht bei einer Aufsichtsbehörde.
       </p>
 
       <H2>10. Änderungen</H2>
@@ -357,8 +442,8 @@ export function TermsContent({ home, lang = "de" }: { home: string; lang?: Lang 
         <p>
           (1) These Terms apply to the use of the hosted Subsumio service (&ldquo;Service&rdquo;)
           between [Company name] (&ldquo;Provider&rdquo;) and the Customer. (2) The offering is
-          directed exclusively at businesses within the meaning of § 14 BGB (DE) / § 1 UGB (AT) /
-          OR 944 (CH), legal entities under public law and public-law special funds (B2B). (3)
+          directed exclusively at businesses within the meaning of § 14 BGB (DE) / § 1 UGB (AT) / OR
+          944 (CH), legal entities under public law and public-law special funds (B2B). (3)
           Deviating terms of the Customer apply only with express written consent.
         </p>
 
@@ -371,27 +456,31 @@ export function TermsContent({ home, lang = "de" }: { home: string; lang?: Lang 
 
         <H2>§ 3 Service description</H2>
         <p>
-          (1) The Provider offers the Service according to the service description valid at
-          contract formation (plan features, fair-use limits). (2) The Service is provided with
-          standard industry availability, not uninterrupted access; maintenance and force majeure
-          are reserved. (3) Features may evolve as long as the core contractual utility is preserved.
+          (1) The Provider offers the Service according to the service description valid at contract
+          formation (plan features, fair-use limits). (2) The Service is provided with standard
+          industry availability, not uninterrupted access; maintenance and force majeure are
+          reserved. (3) Features may evolve as long as the core contractual utility is preserved.
         </p>
 
         <H2>§ 4 Prices, payment, term</H2>
         <p>
-          (1) The prices shown on the <Link href={`${home === "/" ? "" : home}/pricing`} className="brand-text hover:underline">pricing page</Link>{" "}
-          apply, plus VAT. (2) Billing via the payment provider in advance. (3) The contract
-          renews for the billing period unless terminated at its end. (4) Up/downgrades take
-          effect at the next billing period.
+          (1) The prices shown on the{" "}
+          <Link href={`${home === "/" ? "" : home}/pricing`} className="brand-text hover:underline">
+            pricing page
+          </Link>{" "}
+          apply, plus VAT. (2) Billing via the payment provider in advance. (3) The contract renews
+          for the billing period unless terminated at its end. (4) Up/downgrades take effect at the
+          next billing period.
         </p>
 
         <H2>§ 5 Customer obligations</H2>
         <p>
-          (1) Keep access credentials secret, secure accounts appropriately. (2) Upload only
-          content you are authorised to process. (3) The Service does{" "}
-          <strong className="[color:var(--mk-text)]">not provide legal, tax or other advice</strong>; it is
-          a tool for organising and synthesising your own documents. Professional and regulatory
-          responsibility (including deadline and conflict checks) remains with the Customer.
+          (1) Keep access credentials secret, secure accounts appropriately. (2) Upload only content
+          you are authorised to process. (3) The Service does{" "}
+          <strong className="[color:var(--mk-text)]">not provide legal, tax or other advice</strong>
+          ; it is a tool for organising and synthesising your own documents. Professional and
+          regulatory responsibility (including deadline and conflict checks) remains with the
+          Customer.
         </p>
 
         <H2>§ 6 Data protection and confidentiality</H2>
@@ -399,16 +488,16 @@ export function TermsContent({ home, lang = "de" }: { home: string; lang?: Lang 
           (1) When processing personal data of third parties, the parties conclude a DPA (Art. 28
           GDPR), which takes precedence over these Terms in case of conflict. (2) For professionals
           bound by secrecy (DE: § 203(4) StGB; AT: § 9 RAO; CH: Art. 321 StGB), a separate
-          confidentiality agreement applies. (3) No use of customer content for AI training. (4)
-          At contract end, the Customer can export their data; thereafter deletion per the Privacy
+          confidentiality agreement applies. (3) No use of customer content for AI training. (4) At
+          contract end, the Customer can export their data; thereafter deletion per the Privacy
           Policy.
         </p>
 
         <H2>§ 7 AI-specific notices</H2>
         <p>
           Answers, citations and agent results are machine-generated aids and may be incorrect.
-          Source references serve verification; substantive review by the Customer before use
-          (e.g. in briefs) is required.
+          Source references serve verification; substantive review by the Customer before use (e.g.
+          in briefs) is required.
         </p>
 
         <H2>§ 8 Liability</H2>
@@ -416,8 +505,8 @@ export function TermsContent({ home, lang = "de" }: { home: string; lang?: Lang 
           (1) Unlimited liability for intent and gross negligence and for damages from injury to
           life, body or health. (2) For simple negligence only in case of breach of a cardinal
           obligation, limited to the typically foreseeable damage. (3) Otherwise liability is
-          excluded. (4) The Product Liability Act remains unaffected. [Optional monetary limit to
-          be reviewed by a lawyer.]
+          excluded. (4) The Product Liability Act remains unaffected. [Optional monetary limit to be
+          reviewed by a lawyer.]
         </p>
 
         <H2>§ 9 Partner programme</H2>
@@ -446,7 +535,8 @@ export function TermsContent({ home, lang = "de" }: { home: string; lang?: Lang 
         zwischen [Firmenname] (&bdquo;Anbieter&ldquo;) und dem Kunden. (2) Das Angebot richtet sich
         ausschließlich an Unternehmer i. S. d. § 14 BGB (DE) / § 1 UGB (AT) / OR 944 (CH),
         juristische Personen des öffentlichen Rechts und öffentlich-rechtliche Sondervermögen (B2B).
-        (3) Abweichende Bedingungen des Kunden gelten nur bei ausdrücklicher schriftlicher Zustimmung.
+        (3) Abweichende Bedingungen des Kunden gelten nur bei ausdrücklicher schriftlicher
+        Zustimmung.
       </p>
 
       <H2>§ 2 Vertragsschluss</H2>
@@ -459,37 +549,42 @@ export function TermsContent({ home, lang = "de" }: { home: string; lang?: Lang 
       <H2>§ 3 Leistungsbeschreibung</H2>
       <p>
         (1) Der Anbieter stellt den Dienst gemäß der zum Vertragsschluss geltenden
-        Leistungsbeschreibung (Plan-Features, Fair-Use-Grenzen) bereit. (2) Geschuldet ist eine
-        nach dem Stand der Technik übliche Verfügbarkeit, keine ununterbrochene Erreichbarkeit;
-        Wartung und höhere Gewalt bleiben vorbehalten. (3) Funktionen können fortentwickelt werden,
-        solange der vertragliche Kernnutzen erhalten bleibt.
+        Leistungsbeschreibung (Plan-Features, Fair-Use-Grenzen) bereit. (2) Geschuldet ist eine nach
+        dem Stand der Technik übliche Verfügbarkeit, keine ununterbrochene Erreichbarkeit; Wartung
+        und höhere Gewalt bleiben vorbehalten. (3) Funktionen können fortentwickelt werden, solange
+        der vertragliche Kernnutzen erhalten bleibt.
       </p>
 
       <H2>§ 4 Preise, Zahlung, Laufzeit</H2>
       <p>
-        (1) Es gelten die auf der <Link href={`${home === "/" ? "" : home}/pricing`} className="brand-text hover:underline">Preisseite</Link>{" "}
-        ausgewiesenen Preise zzgl. USt. (2) Abrechnung über den Zahlungsdienstleister im Voraus.
-        (3) Der Vertrag verlängert sich um den Abrechnungszeitraum, sofern nicht zu dessen Ende
+        (1) Es gelten die auf der{" "}
+        <Link href={`${home === "/" ? "" : home}/pricing`} className="brand-text hover:underline">
+          Preisseite
+        </Link>{" "}
+        ausgewiesenen Preise zzgl. USt. (2) Abrechnung über den Zahlungsdienstleister im Voraus. (3)
+        Der Vertrag verlängert sich um den Abrechnungszeitraum, sofern nicht zu dessen Ende
         gekündigt. (4) Up-/Downgrades werden zum nächsten Abrechnungszeitraum wirksam.
       </p>
 
       <H2>§ 5 Pflichten des Kunden</H2>
       <p>
-        (1) Zugangsdaten geheim halten, Konten angemessen absichern. (2) Nur Inhalte einstellen,
-        zu deren Verarbeitung der Kunde berechtigt ist. (3) Der Dienst erbringt{" "}
-        <strong className="[color:var(--mk-text)]">keine Rechts-, Steuer- oder sonstige Beratung</strong>; er
-        ist ein Hilfsmittel zur Organisation und Synthese eigener Unterlagen. Die fachliche und
-        berufsrechtliche Verantwortung (inkl. Fristen- und Kollisionskontrolle) verbleibt beim Kunden.
+        (1) Zugangsdaten geheim halten, Konten angemessen absichern. (2) Nur Inhalte einstellen, zu
+        deren Verarbeitung der Kunde berechtigt ist. (3) Der Dienst erbringt{" "}
+        <strong className="[color:var(--mk-text)]">
+          keine Rechts-, Steuer- oder sonstige Beratung
+        </strong>
+        ; er ist ein Hilfsmittel zur Organisation und Synthese eigener Unterlagen. Die fachliche und
+        berufsrechtliche Verantwortung (inkl. Fristen- und Kollisionskontrolle) verbleibt beim
+        Kunden.
       </p>
 
       <H2>§ 6 Datenschutz und Verschwiegenheit</H2>
       <p>
-        (1) Bei Verarbeitung personenbezogener Daten Dritter schließen die Parteien einen AVV
-        (Art. 28 DSGVO), der diesen AGB im Konfliktfall vorgeht. (2) Für Berufsgeheimnisträger gilt
-        eine gesonderte Verschwiegenheitsverpflichtung (DE: § 203 Abs. 4 StGB; AT: § 9 RAO;
-        CH: Art. 321 StGB). (3) Keine Nutzung von Kundeninhalten zum KI-Training. (4) Bei
-        Vertragsende kann der Kunde seine Daten selbst exportieren; danach Löschung nach Maßgabe
-        der Datenschutzerklärung.
+        (1) Bei Verarbeitung personenbezogener Daten Dritter schließen die Parteien einen AVV (Art.
+        28 DSGVO), der diesen AGB im Konfliktfall vorgeht. (2) Für Berufsgeheimnisträger gilt eine
+        gesonderte Verschwiegenheitsverpflichtung (DE: § 203 Abs. 4 StGB; AT: § 9 RAO; CH: Art. 321
+        StGB). (3) Keine Nutzung von Kundeninhalten zum KI-Training. (4) Bei Vertragsende kann der
+        Kunde seine Daten selbst exportieren; danach Löschung nach Maßgabe der Datenschutzerklärung.
       </p>
 
       <H2>§ 7 KI-spezifische Hinweise</H2>
@@ -509,7 +604,9 @@ export function TermsContent({ home, lang = "de" }: { home: string; lang?: Lang 
       </p>
 
       <H2>§ 9 Partnerprogramm</H2>
-      <p>Für das Empfehlungs-/Partnerprogramm gelten ergänzend die gesonderten Partnerbedingungen.</p>
+      <p>
+        Für das Empfehlungs-/Partnerprogramm gelten ergänzend die gesonderten Partnerbedingungen.
+      </p>
 
       <H2>§ 10 Schlussbestimmungen</H2>
       <p>

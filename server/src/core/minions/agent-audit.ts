@@ -28,9 +28,9 @@
  * the same way they treat ~/.gbrain (private).
  */
 
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import { gbrainPath } from '../config.ts';
+import * as fs from "node:fs";
+import * as path from "node:path";
+import { gbrainPath } from "../config.ts";
 
 export interface AgentAuditEvent {
   ts: string;
@@ -43,7 +43,7 @@ export interface AgentAuditEvent {
   max_concurrent: number;
   budget_remaining_cents: number | null;
   prompt_byte_count: number;
-  outcome: 'submitted' | 'completed' | 'failed' | 'budget_exceeded' | 'aborted';
+  outcome: "submitted" | "completed" | "failed" | "budget_exceeded" | "aborted";
   final_spend_cents?: number;
   error_summary?: string;
 }
@@ -58,18 +58,18 @@ export function computeAuditFilename(now: Date = new Date()): string {
   const firstThursdayDayNum = (firstThursday.getUTCDay() + 6) % 7;
   firstThursday.setUTCDate(firstThursday.getUTCDate() - firstThursdayDayNum + 3);
   const weekNum = Math.round((d.getTime() - firstThursday.getTime()) / (7 * 86400000)) + 1;
-  const ww = String(weekNum).padStart(2, '0');
+  const ww = String(weekNum).padStart(2, "0");
   return `agent-jobs-${isoYear}-W${ww}.jsonl`;
 }
 
 function resolveAuditDir(): string {
   const env = process.env.GBRAIN_AUDIT_DIR;
   if (env && env.trim()) return env.trim();
-  return gbrainPath('audit');
+  return gbrainPath("audit");
 }
 
 /** Append one event. Best-effort; logs to stderr on failure. */
-export function logAgentSubmission(event: Omit<AgentAuditEvent, 'ts'>): void {
+export function logAgentSubmission(event: Omit<AgentAuditEvent, "ts">): void {
   const fullEvent: AgentAuditEvent = {
     ts: new Date().toISOString(),
     ...event,
@@ -78,11 +78,11 @@ export function logAgentSubmission(event: Omit<AgentAuditEvent, 'ts'>): void {
     const dir = resolveAuditDir();
     fs.mkdirSync(dir, { recursive: true });
     const file = path.join(dir, computeAuditFilename());
-    fs.appendFileSync(file, JSON.stringify(fullEvent) + '\n', 'utf8');
+    fs.appendFileSync(file, JSON.stringify(fullEvent) + "\n", "utf8");
   } catch (err) {
     process.stderr.write(
       `[agent-audit] failed to write submission event for job ${event.job_id}: ` +
-      `${err instanceof Error ? err.message : String(err)}\n`,
+        `${err instanceof Error ? err.message : String(err)}\n`
     );
   }
 }
@@ -94,14 +94,16 @@ export function readRecentAgentEvents(days: number, now: Date = new Date()): Age
   const cutoff = new Date(now.getTime() - days * 86400000);
   const events: AgentAuditEvent[] = [];
   try {
-    const files = fs.readdirSync(dir).filter(f => f.startsWith('agent-jobs-') && f.endsWith('.jsonl'));
+    const files = fs
+      .readdirSync(dir)
+      .filter((f) => f.startsWith("agent-jobs-") && f.endsWith(".jsonl"));
     for (const f of files) {
       const filePath = path.join(dir, f);
       const stat = fs.statSync(filePath);
       // Skip files older than (cutoff - 14 days) — gives a buffer for the ISO week boundary.
       if (stat.mtime < new Date(cutoff.getTime() - 14 * 86400000)) continue;
-      const content = fs.readFileSync(filePath, 'utf8');
-      for (const line of content.split('\n')) {
+      const content = fs.readFileSync(filePath, "utf8");
+      for (const line of content.split("\n")) {
         if (!line.trim()) continue;
         try {
           const ev = JSON.parse(line) as AgentAuditEvent;
@@ -114,7 +116,7 @@ export function readRecentAgentEvents(days: number, now: Date = new Date()): Age
     }
   } catch (err) {
     process.stderr.write(
-      `[agent-audit] failed to read recent events: ${err instanceof Error ? err.message : String(err)}\n`,
+      `[agent-audit] failed to read recent events: ${err instanceof Error ? err.message : String(err)}\n`
     );
   }
   // Newest first.

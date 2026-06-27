@@ -16,8 +16,8 @@
 // page_types: [...] from the domain declaration — JOIN pages too and
 // filter by p.type = ANY($page_types::text[]).
 
-import type { BrainEngine } from '../engine.ts';
-import type { AggregatorKind, CalibrationDomain } from '../schema-pack/manifest-v1.ts';
+import type { BrainEngine } from "../engine.ts";
+import type { AggregatorKind, CalibrationDomain } from "../schema-pack/manifest-v1.ts";
 
 export interface DomainScorecard {
   /** Number of resolved takes contributing to this scorecard. */
@@ -54,7 +54,7 @@ export async function aggregateDomainScorecards(
   engine: BrainEngine,
   holder: string,
   domains: CalibrationDomain[],
-  sourceId: string,
+  sourceId: string
 ): Promise<DomainScorecards> {
   const out: DomainScorecards = {};
   for (const domain of domains) {
@@ -79,16 +79,16 @@ async function aggregateOneDomain(
   engine: BrainEngine,
   holder: string,
   domain: CalibrationDomain,
-  sourceId: string,
+  sourceId: string
 ): Promise<DomainScorecard> {
   switch (domain.aggregator) {
-    case 'scalar_brier':
+    case "scalar_brier":
       return aggregateScalarBrier(engine, holder, domain, sourceId);
-    case 'weighted_brier':
+    case "weighted_brier":
       return aggregateWeightedBrier(engine, holder, domain, sourceId);
-    case 'count_based':
+    case "count_based":
       return aggregateCountBased(engine, holder, domain, sourceId);
-    case 'cluster_summary':
+    case "cluster_summary":
       return aggregateClusterSummary(engine, holder, domain, sourceId);
   }
 }
@@ -102,7 +102,7 @@ async function aggregateScalarBrier(
   engine: BrainEngine,
   holder: string,
   domain: CalibrationDomain,
-  sourceId: string,
+  sourceId: string
 ): Promise<DomainScorecard> {
   const rows = await engine.executeRaw<{
     n: number;
@@ -123,14 +123,14 @@ async function aggregateScalarBrier(
        AND t.resolved_outcome IS NOT NULL
        AND p.type = ANY($3::text[])
        AND p.source_id = $4`,
-    [domain.name, holder, domain.page_types, sourceId],
+    [domain.name, holder, domain.page_types, sourceId]
   );
   const row = rows[0] ?? { n: 0, brier: null, accuracy: null };
   return {
     n: row.n,
     brier: row.n > 0 ? row.brier : null,
     accuracy: row.n > 0 ? row.accuracy : null,
-    aggregator: 'scalar_brier',
+    aggregator: "scalar_brier",
     page_types: [...domain.page_types],
   };
 }
@@ -145,7 +145,7 @@ async function aggregateWeightedBrier(
   engine: BrainEngine,
   holder: string,
   domain: CalibrationDomain,
-  sourceId: string,
+  sourceId: string
 ): Promise<DomainScorecard> {
   const rows = await engine.executeRaw<{
     n: number;
@@ -172,14 +172,14 @@ async function aggregateWeightedBrier(
        (SUM(sq_err * conviction) / NULLIF(SUM(conviction), 0))::real AS brier,
        (SUM(CASE WHEN hit THEN 1 ELSE 0 END)::real / NULLIF(COUNT(*), 0))::real AS accuracy
      FROM scored`,
-    [domain.name, holder, domain.page_types, sourceId],
+    [domain.name, holder, domain.page_types, sourceId]
   );
   const row = rows[0] ?? { n: 0, brier: null, accuracy: null };
   return {
     n: row.n,
     brier: row.n > 0 ? row.brier : null,
     accuracy: row.n > 0 ? row.accuracy : null,
-    aggregator: 'weighted_brier',
+    aggregator: "weighted_brier",
     page_types: [...domain.page_types],
   };
 }
@@ -193,7 +193,7 @@ async function aggregateCountBased(
   engine: BrainEngine,
   holder: string,
   domain: CalibrationDomain,
-  sourceId: string,
+  sourceId: string
 ): Promise<DomainScorecard> {
   const rows = await engine.executeRaw<{ n: number; accuracy: number | null }>(
     `SELECT
@@ -209,14 +209,14 @@ async function aggregateCountBased(
        AND t.resolved_outcome IS NOT NULL
        AND p.type = ANY($3::text[])
        AND p.source_id = $4`,
-    [domain.name, holder, domain.page_types, sourceId],
+    [domain.name, holder, domain.page_types, sourceId]
   );
   const row = rows[0] ?? { n: 0, accuracy: null };
   return {
     n: row.n,
     brier: null,
     accuracy: row.n > 0 ? row.accuracy : null,
-    aggregator: 'count_based',
+    aggregator: "count_based",
     page_types: [...domain.page_types],
   };
 }
@@ -235,7 +235,7 @@ async function aggregateClusterSummary(
   engine: BrainEngine,
   holder: string,
   domain: CalibrationDomain,
-  sourceId: string,
+  sourceId: string
 ): Promise<DomainScorecard> {
   // For cluster_summary, "holder" is informational only — concepts aren't
   // owned by a holder the way takes are. We still scope by source.
@@ -256,7 +256,7 @@ async function aggregateClusterSummary(
      WHERE type = ANY($1::text[])
        AND source_id = $2
        AND deleted_at IS NULL`,
-    [domain.page_types, sourceId],
+    [domain.page_types, sourceId]
   );
   const row = rows[0] ?? { n: 0, t1: 0, t2: 0, t3: 0, t4: 0 };
   // holder is unused for cluster_summary but documented for symmetry
@@ -265,7 +265,7 @@ async function aggregateClusterSummary(
     n: row.n,
     brier: null,
     accuracy: null,
-    aggregator: 'cluster_summary',
+    aggregator: "cluster_summary",
     page_types: [...domain.page_types],
     extras: {
       tier_counts: {

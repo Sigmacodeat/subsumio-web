@@ -14,9 +14,9 @@
  *   // detects the seeded schema_version and migrates forward to LATEST.
  */
 
-import { existsSync, mkdirSync, readFileSync } from 'fs';
-import { dirname } from 'path';
-import { PGLiteEngine } from '../pglite-engine.ts';
+import { existsSync, mkdirSync, readFileSync } from "fs";
+import { dirname } from "path";
+import { PGLiteEngine } from "../pglite-engine.ts";
 
 export interface SeedOpts {
   /** Absolute path to the .pglite file to create. */
@@ -36,7 +36,7 @@ export async function seedPglite(opts: SeedOpts): Promise<void> {
 
   const engine = new PGLiteEngine();
   try {
-    await engine.connect({ engine: 'pglite', database_path: opts.dbPath });
+    await engine.connect({ engine: "pglite", database_path: opts.dbPath });
     // Execute statements one at a time so an error names the offending
     // statement. The seed file is committed to source so we can normalize
     // its line endings; we rely on `;\n` as the statement terminator.
@@ -48,7 +48,7 @@ export async function seedPglite(opts: SeedOpts): Promise<void> {
         await (engine as any).db.exec(trimmed);
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
-        const preview = trimmed.slice(0, 120).replace(/\s+/g, ' ');
+        const preview = trimmed.slice(0, 120).replace(/\s+/g, " ");
         throw new Error(`seedPglite: SQL execution failed at "${preview}…": ${msg}`);
       }
     }
@@ -62,7 +62,7 @@ export async function seedPgliteFromFile(opts: { dbPath: string; sqlPath: string
   if (!existsSync(opts.sqlPath)) {
     throw new Error(`seedPglite: seed SQL not found at ${opts.sqlPath}`);
   }
-  const sql = readFileSync(opts.sqlPath, 'utf-8');
+  const sql = readFileSync(opts.sqlPath, "utf-8");
   return seedPglite({ dbPath: opts.dbPath, sql });
 }
 
@@ -73,7 +73,7 @@ export async function seedPgliteFromFile(opts: { dbPath: string; sqlPath: string
  */
 function splitStatements(sql: string): string[] {
   const out: string[] = [];
-  let buf = '';
+  let buf = "";
   let inSingle = false;
   let inLineComment = false;
   let i = 0;
@@ -82,18 +82,22 @@ function splitStatements(sql: string): string[] {
     const next = sql[i + 1];
     if (inLineComment) {
       buf += c;
-      if (c === '\n') inLineComment = false;
+      if (c === "\n") inLineComment = false;
       i++;
       continue;
     }
     if (inSingle) {
       buf += c;
-      if (c === "'" && next === "'") { buf += next; i += 2; continue; }
+      if (c === "'" && next === "'") {
+        buf += next;
+        i += 2;
+        continue;
+      }
       if (c === "'") inSingle = false;
       i++;
       continue;
     }
-    if (c === '-' && next === '-') {
+    if (c === "-" && next === "-") {
       inLineComment = true;
       buf += c;
       i++;
@@ -105,10 +109,10 @@ function splitStatements(sql: string): string[] {
       i++;
       continue;
     }
-    if (c === ';') {
+    if (c === ";") {
       buf += c;
       out.push(buf);
-      buf = '';
+      buf = "";
       i++;
       continue;
     }

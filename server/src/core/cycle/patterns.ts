@@ -18,15 +18,15 @@
  *     ON CONFLICT semantics in importFromContent).
  */
 
-import { join, dirname } from 'node:path';
-import { mkdirSync, writeFileSync, existsSync, readFileSync } from 'node:fs';
-import type { BrainEngine } from '../engine.ts';
-import type { PhaseResult, PhaseError } from '../cycle.ts';
-import { MinionQueue } from '../minions/queue.ts';
-import { waitForCompletion, TimeoutError } from '../minions/wait-for-completion.ts';
-import type { MinionJobInput, SubagentHandlerData } from '../minions/types.ts';
-import { serializeMarkdown } from '../markdown.ts';
-import type { Page, PageType } from '../types.ts';
+import { join, dirname } from "node:path";
+import { mkdirSync, writeFileSync, existsSync, readFileSync } from "node:fs";
+import type { BrainEngine } from "../engine.ts";
+import type { PhaseResult, PhaseError } from "../cycle.ts";
+import { MinionQueue } from "../minions/queue.ts";
+import { waitForCompletion, TimeoutError } from "../minions/wait-for-completion.ts";
+import type { MinionJobInput, SubagentHandlerData } from "../minions/types.ts";
+import { serializeMarkdown } from "../markdown.ts";
+import type { Page, PageType } from "../types.ts";
 
 export interface PatternsPhaseOpts {
   brainDir: string;
@@ -36,22 +36,22 @@ export interface PatternsPhaseOpts {
 
 export async function runPhasePatterns(
   engine: BrainEngine,
-  opts: PatternsPhaseOpts,
+  opts: PatternsPhaseOpts
 ): Promise<PhaseResult> {
   const start = Date.now();
   try {
     const config = await loadPatternsConfig(engine);
 
     if (!config.enabled) {
-      return skipped('disabled', 'dream.patterns.enabled is false');
+      return skipped("disabled", "dream.patterns.enabled is false");
     }
 
     // Gather reflections within lookback window.
     const reflections = await gatherReflections(engine, config.lookbackDays);
     if (reflections.length < config.minEvidence) {
       return skipped(
-        'insufficient_evidence',
-        `${reflections.length} reflections in last ${config.lookbackDays}d (need ≥${config.minEvidence})`,
+        "insufficient_evidence",
+        `${reflections.length} reflections in last ${config.lookbackDays}d (need ≥${config.minEvidence})`
       );
     }
 
@@ -65,13 +65,18 @@ export async function runPhasePatterns(
 
     // Submit one subagent for pattern detection.
     if (!process.env.ANTHROPIC_API_KEY) {
-      return skipped('no_api_key', 'ANTHROPIC_API_KEY unset; pattern detection skipped');
+      return skipped("no_api_key", "ANTHROPIC_API_KEY unset; pattern detection skipped");
     }
 
     const allowedSlugPrefixes = await loadAllowedSlugPrefixes();
     if (allowedSlugPrefixes.length === 0) {
-      return failed(makeError('InternalError', 'NO_ALLOWLIST',
-        'skills/_brain-filing-rules.json missing dream_synthesize_paths.globs'));
+      return failed(
+        makeError(
+          "InternalError",
+          "NO_ALLOWLIST",
+          "skills/_brain-filing-rules.json missing dream_synthesize_paths.globs"
+        )
+      );
     }
 
     const queue = new MinionQueue(engine);
@@ -85,9 +90,14 @@ export async function runPhasePatterns(
       max_stalled: 3,
       timeout_ms: 30 * 60 * 1000,
     };
-    const job = await queue.add('subagent', data as unknown as Record<string, unknown>, submitOpts, {
-      allowProtectedSubmit: true,
-    });
+    const job = await queue.add(
+      "subagent",
+      data as unknown as Record<string, unknown>,
+      submitOpts,
+      {
+        allowProtectedSubmit: true,
+      }
+    );
 
     let outcome: string;
     try {
@@ -97,12 +107,16 @@ export async function runPhasePatterns(
       });
       outcome = final.status;
     } catch (e) {
-      if (e instanceof TimeoutError) outcome = 'timeout';
+      if (e instanceof TimeoutError) outcome = "timeout";
       else throw e;
     }
 
     if (opts.yieldDuringPhase) {
-      try { await opts.yieldDuringPhase(); } catch { /* best-effort */ }
+      try {
+        await opts.yieldDuringPhase();
+      } catch {
+        /* best-effort */
+      }
     }
 
     // Collect refs the subagent wrote (codex finding #2 — query tool exec rows).
@@ -121,8 +135,13 @@ export async function runPhasePatterns(
       job_id: job.id,
     });
   } catch (e) {
-    return failed(makeError('InternalError', 'PATTERNS_PHASE_FAIL',
-      e instanceof Error ? (e.message || 'patterns phase threw') : String(e)));
+    return failed(
+      makeError(
+        "InternalError",
+        "PATTERNS_PHASE_FAIL",
+        e instanceof Error ? e.message || "patterns phase threw" : String(e)
+      )
+    );
   } finally {
     void start;
   }
@@ -138,17 +157,17 @@ interface PatternsConfig {
 }
 
 async function loadPatternsConfig(engine: BrainEngine): Promise<PatternsConfig> {
-  const enabledStr = await engine.getConfig('dream.patterns.enabled');
-  const enabled = enabledStr === null ? true : enabledStr === 'true';
-  const lookbackStr = await engine.getConfig('dream.patterns.lookback_days');
-  const minEvidenceStr = await engine.getConfig('dream.patterns.min_evidence');
+  const enabledStr = await engine.getConfig("dream.patterns.enabled");
+  const enabled = enabledStr === null ? true : enabledStr === "true";
+  const lookbackStr = await engine.getConfig("dream.patterns.lookback_days");
+  const minEvidenceStr = await engine.getConfig("dream.patterns.min_evidence");
   // v0.28: unified model resolution
-  const { resolveModel } = await import('../model-config.ts');
+  const { resolveModel } = await import("../model-config.ts");
   const model = await resolveModel(engine, {
-    configKey: 'models.dream.patterns',
-    deprecatedConfigKey: 'dream.patterns.model',
-    tier: 'reasoning',
-    fallback: 'sonnet',
+    configKey: "models.dream.patterns",
+    deprecatedConfigKey: "dream.patterns.model",
+    tier: "reasoning",
+    fallback: "sonnet",
   });
   return {
     enabled,
@@ -168,22 +187,26 @@ interface ReflectionRef {
 
 async function gatherReflections(
   engine: BrainEngine,
-  lookbackDays: number,
+  lookbackDays: number
 ): Promise<ReflectionRef[]> {
   const since = new Date(Date.now() - lookbackDays * 24 * 60 * 60 * 1000).toISOString();
-  const rows = await engine.executeRaw<{ slug: string; title: string | null; compiled_truth: string | null }>(
+  const rows = await engine.executeRaw<{
+    slug: string;
+    title: string | null;
+    compiled_truth: string | null;
+  }>(
     `SELECT slug, title, compiled_truth
        FROM pages
       WHERE slug LIKE 'wiki/personal/reflections/%'
         AND updated_at >= $1::timestamptz
       ORDER BY updated_at DESC
       LIMIT 100`,
-    [since],
+    [since]
   );
-  return rows.map(r => ({
+  return rows.map((r) => ({
     slug: r.slug,
     title: r.title ?? r.slug,
-    excerpt: (r.compiled_truth ?? '').slice(0, 600),
+    excerpt: (r.compiled_truth ?? "").slice(0, 600),
   }));
 }
 
@@ -193,7 +216,7 @@ function buildPatternsPrompt(reflections: ReflectionRef[], minEvidence: number):
   const today = new Date().toISOString().slice(0, 10);
   const corpus = reflections
     .map((r, i) => `### ${i + 1}. [[${r.slug}]] — ${r.title}\n${r.excerpt}`)
-    .join('\n\n---\n\n');
+    .join("\n\n---\n\n");
 
   return `You are surfacing recurring themes across the user's recent reflections.
 
@@ -223,7 +246,7 @@ When done, briefly list the pattern slugs you wrote/updated in your final messag
 
 async function collectChildPutPageSlugs(
   engine: BrainEngine,
-  childIds: number[],
+  childIds: number[]
 ): Promise<Array<{ slug: string; source_id: string }>> {
   if (childIds.length === 0) return [];
   // v0.32.8: subagent put_page tool schema doesn't expose source_id (subagents
@@ -239,22 +262,22 @@ async function collectChildPutPageSlugs(
         AND tool_name = 'brain_put_page'
         AND status = 'complete'
       ORDER BY 1`,
-    [childIds],
+    [childIds]
   );
   return rows
-    .map(r => r.slug)
-    .filter((s): s is string => typeof s === 'string' && s.length > 0)
-    .map(slug => ({ slug, source_id: 'default' }));
+    .map((r) => r.slug)
+    .filter((s): s is string => typeof s === "string" && s.length > 0)
+    .map((slug) => ({ slug, source_id: "default" }));
 }
 
 // ── Reverse-write ────────────────────────────────────────────────────
 
-import { validateSourceId } from '../utils.ts';
+import { validateSourceId } from "../utils.ts";
 
 async function reverseWriteRefs(
   engine: BrainEngine,
   brainDir: string,
-  refs: Array<{ slug: string; source_id: string }>,
+  refs: Array<{ slug: string; source_id: string }>
 ): Promise<number> {
   let count = 0;
   for (const { slug, source_id } of refs) {
@@ -270,11 +293,12 @@ async function reverseWriteRefs(
       // so same-slug-different-source pages don't collide on disk. Default-source
       // pages stay at brainDir/<slug>.md so single-source brains see no change.
       // `.sources/` is a reserved prefix; walkBrainRepo skips dot-dirs.
-      const filePath = source_id === 'default'
-        ? join(brainDir, `${slug}.md`)
-        : join(brainDir, '.sources', source_id, `${slug}.md`);
+      const filePath =
+        source_id === "default"
+          ? join(brainDir, `${slug}.md`)
+          : join(brainDir, ".sources", source_id, `${slug}.md`);
       mkdirSync(dirname(filePath), { recursive: true });
-      writeFileSync(filePath, md, 'utf8');
+      writeFileSync(filePath, md, "utf8");
       count++;
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -286,35 +310,32 @@ async function reverseWriteRefs(
 
 function renderPageToMarkdown(page: Page, tags: string[]): string {
   const frontmatter = (page.frontmatter ?? {}) as Record<string, unknown>;
-  return serializeMarkdown(
-    frontmatter,
-    page.compiled_truth ?? '',
-    page.timeline ?? '',
-    {
-      type: (page.type as string) ?? 'note',
-      title: page.title ?? '',
-      tags,
-    },
-  );
+  return serializeMarkdown(frontmatter, page.compiled_truth ?? "", page.timeline ?? "", {
+    type: (page.type as string) ?? "note",
+    title: page.title ?? "",
+    tags,
+  });
 }
 
 // ── Allow-list (shared with synthesize.ts) ───────────────────────────
 
 async function loadAllowedSlugPrefixes(): Promise<string[]> {
   const candidates = [
-    join(process.cwd(), 'skills', '_brain-filing-rules.json'),
-    join(__dirname, '..', '..', '..', 'skills', '_brain-filing-rules.json'),
+    join(process.cwd(), "skills", "_brain-filing-rules.json"),
+    join(__dirname, "..", "..", "..", "skills", "_brain-filing-rules.json"),
   ];
   for (const path of candidates) {
     if (!existsSync(path)) continue;
     try {
-      const raw = readFileSync(path, 'utf8');
+      const raw = readFileSync(path, "utf8");
       const parsed = JSON.parse(raw) as { dream_synthesize_paths?: { globs?: unknown } };
       const globs = parsed?.dream_synthesize_paths?.globs;
-      if (Array.isArray(globs) && globs.every(g => typeof g === 'string')) {
+      if (Array.isArray(globs) && globs.every((g) => typeof g === "string")) {
         return globs as string[];
       }
-    } catch { /* try next */ }
+    } catch {
+      /* try next */
+    }
   }
   return [];
 }
@@ -322,13 +343,13 @@ async function loadAllowedSlugPrefixes(): Promise<string[]> {
 // ── Status helpers ───────────────────────────────────────────────────
 
 function ok(summary: string, details: Record<string, unknown> = {}): PhaseResult {
-  return { phase: 'patterns', status: 'ok', duration_ms: 0, summary, details };
+  return { phase: "patterns", status: "ok", duration_ms: 0, summary, details };
 }
 
 function skipped(reason: string, summary: string): PhaseResult {
   return {
-    phase: 'patterns',
-    status: 'skipped',
+    phase: "patterns",
+    status: "skipped",
     duration_ms: 0,
     summary,
     details: { reason },
@@ -337,10 +358,10 @@ function skipped(reason: string, summary: string): PhaseResult {
 
 function failed(error: PhaseError): PhaseResult {
   return {
-    phase: 'patterns',
-    status: 'fail',
+    phase: "patterns",
+    status: "fail",
     duration_ms: 0,
-    summary: 'patterns phase failed',
+    summary: "patterns phase failed",
     details: {},
     error,
   };

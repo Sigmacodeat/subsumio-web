@@ -34,54 +34,199 @@ const WORD_RX = /\b[a-zA-Z][a-zA-Z\-']{0,40}\b/g;
 
 // Lowercased entity-prefix paths the brain uses for canonical entity pages.
 // Slugs starting with one of these prefixes are high-precision candidates.
-const ENTITY_PREFIXES = [
-  'people/',
-  'companies/',
-  'organizations/',
-  'orgs/',
-  'deals/',
-] as const;
+const ENTITY_PREFIXES = ["people/", "companies/", "organizations/", "orgs/", "deals/"] as const;
 
 // Stop-word set — common English words that would otherwise produce
 // noise candidates. Curated to ~200 words from typical question vocab.
 // Lowercased; comparison happens after the candidate is lowercased.
 const STOP_WORDS = new Set([
   // Articles + pronouns
-  'a', 'an', 'the', 'i', 'you', 'he', 'she', 'we', 'they', 'it', 'me',
-  'us', 'them', 'my', 'your', 'his', 'her', 'our', 'their', 'this',
-  'that', 'these', 'those',
+  "a",
+  "an",
+  "the",
+  "i",
+  "you",
+  "he",
+  "she",
+  "we",
+  "they",
+  "it",
+  "me",
+  "us",
+  "them",
+  "my",
+  "your",
+  "his",
+  "her",
+  "our",
+  "their",
+  "this",
+  "that",
+  "these",
+  "those",
   // Common auxiliary + question verbs
-  'is', 'am', 'are', 'was', 'were', 'be', 'been', 'being',
-  'have', 'has', 'had', 'do', 'does', 'did', 'doing',
-  'can', 'could', 'will', 'would', 'should', 'may', 'might', 'must',
+  "is",
+  "am",
+  "are",
+  "was",
+  "were",
+  "be",
+  "been",
+  "being",
+  "have",
+  "has",
+  "had",
+  "do",
+  "does",
+  "did",
+  "doing",
+  "can",
+  "could",
+  "will",
+  "would",
+  "should",
+  "may",
+  "might",
+  "must",
   // Question words
-  'what', 'when', 'where', 'who', 'whom', 'whose', 'why', 'how', 'which',
+  "what",
+  "when",
+  "where",
+  "who",
+  "whom",
+  "whose",
+  "why",
+  "how",
+  "which",
   // Prepositions + conjunctions
-  'of', 'in', 'on', 'at', 'to', 'from', 'with', 'without', 'by',
-  'for', 'about', 'against', 'between', 'through', 'during',
-  'before', 'after', 'above', 'below', 'and', 'or', 'but', 'nor',
-  'so', 'yet', 'because', 'if', 'as', 'than', 'into', 'onto',
+  "of",
+  "in",
+  "on",
+  "at",
+  "to",
+  "from",
+  "with",
+  "without",
+  "by",
+  "for",
+  "about",
+  "against",
+  "between",
+  "through",
+  "during",
+  "before",
+  "after",
+  "above",
+  "below",
+  "and",
+  "or",
+  "but",
+  "nor",
+  "so",
+  "yet",
+  "because",
+  "if",
+  "as",
+  "than",
+  "into",
+  "onto",
   // Temporal nouns
-  'time', 'date', 'day', 'week', 'month', 'year', 'today', 'yesterday',
-  'tomorrow', 'now', 'then', 'ago', 'since', 'until', 'long',
+  "time",
+  "date",
+  "day",
+  "week",
+  "month",
+  "year",
+  "today",
+  "yesterday",
+  "tomorrow",
+  "now",
+  "then",
+  "ago",
+  "since",
+  "until",
+  "long",
   // Generic head nouns + relatives
-  'thing', 'things', 'something', 'anything', 'nothing', 'one', 'ones',
-  'kind', 'sort', 'type', 'sort', 'lot', 'lots',
+  "thing",
+  "things",
+  "something",
+  "anything",
+  "nothing",
+  "one",
+  "ones",
+  "kind",
+  "sort",
+  "type",
+  "sort",
+  "lot",
+  "lots",
   // Common verbs that show up in questions
-  'last', 'first', 'next', 'previous', 'recent', 'latest', 'current',
-  'still', 'just', 'also', 'only', 'such', 'much', 'many', 'most',
-  'more', 'less', 'few', 'some', 'any', 'all', 'no', 'not', 'each',
-  'every', 'both', 'either', 'neither', 'same', 'different', 'other',
-  'others', 'another',
+  "last",
+  "first",
+  "next",
+  "previous",
+  "recent",
+  "latest",
+  "current",
+  "still",
+  "just",
+  "also",
+  "only",
+  "such",
+  "much",
+  "many",
+  "most",
+  "more",
+  "less",
+  "few",
+  "some",
+  "any",
+  "all",
+  "no",
+  "not",
+  "each",
+  "every",
+  "both",
+  "either",
+  "neither",
+  "same",
+  "different",
+  "other",
+  "others",
+  "another",
   // Misc
-  'said', 'say', 'says', 'told', 'tell', 'tells', 'asked', 'ask',
-  'know', 'knew', 'known', 'think', 'thought',
-  'changed', 'switched', 'moved', 'updated',
-  'good', 'bad', 'better', 'worse', 'best', 'worst',
-  'new', 'old', 'big', 'small', 'high', 'low',
+  "said",
+  "say",
+  "says",
+  "told",
+  "tell",
+  "tells",
+  "asked",
+  "ask",
+  "know",
+  "knew",
+  "known",
+  "think",
+  "thought",
+  "changed",
+  "switched",
+  "moved",
+  "updated",
+  "good",
+  "bad",
+  "better",
+  "worse",
+  "best",
+  "worst",
+  "new",
+  "old",
+  "big",
+  "small",
+  "high",
+  "low",
 ]);
 
-export type ResolutionSource = 'exact_page' | 'fuzzy_match' | 'fallback_slugify';
+export type ResolutionSource = "exact_page" | "fuzzy_match" | "fallback_slugify";
 
 export interface EntityCandidate {
   /**
@@ -94,7 +239,7 @@ export interface EntityCandidate {
    * 'retrieved' = came from a retrieval result's slug (`people/marco`).
    * 'extracted' = derived from question text via noun-phrase scan.
    */
-  origin: 'retrieved' | 'extracted';
+  origin: "retrieved" | "extracted";
 }
 
 const MAX_CANDIDATES = 5;
@@ -113,7 +258,7 @@ const MAX_CANDIDATES = 5;
  */
 export function extractCandidateEntities(
   question: string,
-  retrievedSlugs: ReadonlyArray<string>,
+  retrievedSlugs: ReadonlyArray<string>
 ): EntityCandidate[] {
   const out: EntityCandidate[] = [];
   const seen = new Set<string>();
@@ -121,12 +266,12 @@ export function extractCandidateEntities(
   // Source 1: retrieved slugs matching known entity prefixes.
   for (const slug of retrievedSlugs) {
     if (out.length >= MAX_CANDIDATES) break;
-    if (typeof slug !== 'string') continue;
+    if (typeof slug !== "string") continue;
     const lower = slug.toLowerCase();
-    if (!ENTITY_PREFIXES.some(p => lower.startsWith(p))) continue;
+    if (!ENTITY_PREFIXES.some((p) => lower.startsWith(p))) continue;
     if (seen.has(lower)) continue;
     seen.add(lower);
-    out.push({ raw: slug, origin: 'retrieved' });
+    out.push({ raw: slug, origin: "retrieved" });
   }
 
   // Source 2: noun-phrase extraction from question text. Tokenize the
@@ -136,13 +281,13 @@ export function extractCandidateEntities(
   //   when did I last meet marco at blue bottle
   // and stitches into ["meet marco", "blue bottle"] because "at" is a
   // stop-word boundary between "marco" and "blue".
-  if (out.length < MAX_CANDIDATES && typeof question === 'string') {
-    const tokens = (question.match(WORD_RX) ?? []).map(t => t.toLowerCase());
+  if (out.length < MAX_CANDIDATES && typeof question === "string") {
+    const tokens = (question.match(WORD_RX) ?? []).map((t) => t.toLowerCase());
     const phrases: string[] = [];
     let current: string[] = [];
     const flush = () => {
       if (current.length > 0) {
-        const joined = current.join(' ');
+        const joined = current.join(" ");
         if (joined.length >= 2 && joined.length <= 40) phrases.push(joined);
       }
       current = [];
@@ -165,7 +310,7 @@ export function extractCandidateEntities(
       if (core.length < 2) continue;
       if (seen.has(core)) continue;
       seen.add(core);
-      out.push({ raw: core, origin: 'extracted' });
+      out.push({ raw: core, origin: "extracted" });
     }
   }
 
@@ -177,10 +322,33 @@ export function extractCandidateEntities(
 // don't strip legitimate entity-name first words like "Apple". When in
 // doubt, leave the candidate intact and let downstream resolution decide.
 const LEADING_VERBS = new Set([
-  'meet', 'met', 'saw', 'see', 'seen', 'visit', 'visited',
-  'spoke', 'speak', 'spoken', 'talked', 'talk', 'called', 'call', 'wrote', 'write',
-  'got', 'get', 'gotten', 'bought', 'buy', 'received', 'sold',
-  'pinged', 'emailed', 'texted', 'reached',
+  "meet",
+  "met",
+  "saw",
+  "see",
+  "seen",
+  "visit",
+  "visited",
+  "spoke",
+  "speak",
+  "spoken",
+  "talked",
+  "talk",
+  "called",
+  "call",
+  "wrote",
+  "write",
+  "got",
+  "get",
+  "gotten",
+  "bought",
+  "buy",
+  "received",
+  "sold",
+  "pinged",
+  "emailed",
+  "texted",
+  "reached",
 ]);
 
 /**
@@ -192,5 +360,5 @@ function stripLeadingVerb(phrase: string): string {
   const words = phrase.split(/\s+/);
   if (words.length < 2) return phrase;
   if (!LEADING_VERBS.has(words[0])) return phrase;
-  return words.slice(1).join(' ');
+  return words.slice(1).join(" ");
 }

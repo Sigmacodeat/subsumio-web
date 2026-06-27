@@ -13,9 +13,9 @@
  *  - D15: refuses bootstrap output that still has the BOOTSTRAP_PENDING_REVIEW sentinel.
  */
 
-import { createHash } from 'node:crypto';
-import * as fs from 'node:fs';
-import { errorFor } from '../errors.ts';
+import { createHash } from "node:crypto";
+import * as fs from "node:fs";
+import { errorFor } from "../errors.ts";
 import {
   type Benchmark,
   type BenchmarkSplit,
@@ -25,16 +25,16 @@ import {
   type RuleCheckOp,
   BOOTSTRAP_PENDING_REVIEW,
   D_SEL_MIN_SIZE,
-} from './types.ts';
+} from "./types.ts";
 
 const VALID_RULE_OPS: ReadonlySet<RuleCheckOp> = new Set([
-  'contains',
-  'regex',
-  'section_present',
-  'max_chars',
-  'min_citations',
-  'tool_called',
-  'tool_not_called',
+  "contains",
+  "regex",
+  "section_present",
+  "max_chars",
+  "min_citations",
+  "tool_called",
+  "tool_not_called",
 ]);
 
 /**
@@ -45,18 +45,15 @@ const VALID_RULE_OPS: ReadonlySet<RuleCheckOp> = new Set([
  *        When false (default), the loader refuses files that still carry the
  *        BOOTSTRAP_PENDING_REVIEW sentinel line (D15).
  */
-export function loadBenchmark(
-  path: string,
-  opts: { bootstrapReviewed?: boolean } = {},
-): Benchmark {
+export function loadBenchmark(path: string, opts: { bootstrapReviewed?: boolean } = {}): Benchmark {
   let content: string;
   try {
-    content = fs.readFileSync(path, 'utf8');
+    content = fs.readFileSync(path, "utf8");
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     throw errorFor({
-      class: 'BenchmarkNotFound',
-      code: 'benchmark_not_found',
+      class: "BenchmarkNotFound",
+      code: "benchmark_not_found",
       message: `Benchmark file unreadable: ${path} (${msg})`,
       hint: `Auto-generate a starter with 'gbrain skillopt <skill> --bootstrap-from-skill' (reads SKILL.md), then review + run with --bootstrap-reviewed --split 1:1:1. Or pass --bootstrap-from-routing if a routing-eval.jsonl exists.`,
     });
@@ -64,8 +61,8 @@ export function loadBenchmark(
 
   if (content.trim().length === 0) {
     throw errorFor({
-      class: 'BenchmarkEmpty',
-      code: 'benchmark_empty',
+      class: "BenchmarkEmpty",
+      code: "benchmark_empty",
       message: `Benchmark file is empty: ${path}`,
       hint: `Add at least ${D_SEL_MIN_SIZE} tasks (one JSON object per line) — D_sel requires >=${D_SEL_MIN_SIZE} after split.`,
     });
@@ -74,13 +71,13 @@ export function loadBenchmark(
   // D15: detect the bootstrap-pending sentinel before parsing rows.
   // Sentinel is always the LAST non-empty line of the file. A user who's
   // hand-reviewed the bootstrap deletes the line before re-running.
-  const allLines = content.split('\n');
+  const allLines = content.split("\n");
   const lastNonEmpty = [...allLines].reverse().find((l) => l.trim().length > 0);
   if (lastNonEmpty && lastNonEmpty.trim() === BOOTSTRAP_PENDING_REVIEW) {
     if (!opts.bootstrapReviewed) {
       throw errorFor({
-        class: 'BootstrapPendingReview',
-        code: 'bootstrap_pending_review',
+        class: "BootstrapPendingReview",
+        code: "bootstrap_pending_review",
         message: `Benchmark at ${path} is a bootstrap output awaiting human review.`,
         hint: `Review the file, delete the trailing '${BOOTSTRAP_PENDING_REVIEW}' line, then re-run with --bootstrap-reviewed.`,
       });
@@ -103,8 +100,8 @@ export function loadBenchmark(
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       throw errorFor({
-        class: 'BenchmarkMalformed',
-        code: 'benchmark_malformed',
+        class: "BenchmarkMalformed",
+        code: "benchmark_malformed",
         message: `Row ${i + 1} is not valid JSON: ${msg}`,
         hint: `Fix the offending line in ${path}; benchmarks are one JSON object per line.`,
       });
@@ -113,8 +110,8 @@ export function loadBenchmark(
     const task = validateRow(parsed, i + 1, path);
     if (seenIds.has(task.task_id)) {
       throw errorFor({
-        class: 'BenchmarkDuplicateId',
-        code: 'benchmark_duplicate_task_id',
+        class: "BenchmarkDuplicateId",
+        code: "benchmark_duplicate_task_id",
         message: `Duplicate task_id '${task.task_id}' at row ${i + 1}.`,
         hint: `Every task_id in ${path} must be unique.`,
       });
@@ -125,8 +122,8 @@ export function loadBenchmark(
 
   if (tasks.length === 0) {
     throw errorFor({
-      class: 'BenchmarkEmpty',
-      code: 'benchmark_empty',
+      class: "BenchmarkEmpty",
+      code: "benchmark_empty",
       message: `Benchmark file at ${path} has no tasks.`,
       hint: `Add at least ${D_SEL_MIN_SIZE} tasks.`,
     });
@@ -141,31 +138,31 @@ export function loadBenchmark(
 
 /** Validate a single parsed row. Throws StructuredAgentError on failure. */
 function validateRow(parsed: unknown, rowNum: number, path: string): BenchmarkTask {
-  if (!parsed || typeof parsed !== 'object') {
+  if (!parsed || typeof parsed !== "object") {
     throw errorFor({
-      class: 'BenchmarkMalformed',
-      code: 'benchmark_malformed',
+      class: "BenchmarkMalformed",
+      code: "benchmark_malformed",
       message: `Row ${rowNum} is not an object.`,
       hint: `Each line in ${path} must be a JSON object with task_id, task, judge.`,
     });
   }
   const obj = parsed as Record<string, unknown>;
 
-  const task_id = typeof obj.task_id === 'string' ? obj.task_id.trim() : '';
+  const task_id = typeof obj.task_id === "string" ? obj.task_id.trim() : "";
   if (!task_id) {
     throw errorFor({
-      class: 'BenchmarkMalformed',
-      code: 'benchmark_missing_task_id',
+      class: "BenchmarkMalformed",
+      code: "benchmark_missing_task_id",
       message: `Row ${rowNum} is missing a non-empty task_id.`,
       hint: `Add a unique task_id string to row ${rowNum} of ${path}.`,
     });
   }
 
-  const task = typeof obj.task === 'string' ? obj.task : '';
+  const task = typeof obj.task === "string" ? obj.task : "";
   if (!task.trim()) {
     throw errorFor({
-      class: 'BenchmarkMalformed',
-      code: 'benchmark_missing_task',
+      class: "BenchmarkMalformed",
+      code: "benchmark_missing_task",
       message: `Row ${rowNum} (${task_id}) is missing a non-empty task description.`,
       hint: `Add a 'task' field describing the prompt to run against the skill.`,
     });
@@ -176,58 +173,64 @@ function validateRow(parsed: unknown, rowNum: number, path: string): BenchmarkTa
 }
 
 function validateJudge(raw: unknown, rowNum: number, task_id: string, path: string): Judge {
-  if (!raw || typeof raw !== 'object') {
+  if (!raw || typeof raw !== "object") {
     throw errorFor({
-      class: 'BenchmarkMalformed',
-      code: 'benchmark_missing_judge',
+      class: "BenchmarkMalformed",
+      code: "benchmark_missing_judge",
       message: `Row ${rowNum} (${task_id}) is missing a judge object.`,
       hint: `Add a 'judge' field with shape {"kind":"rule"|"llm"|"qrels", ...}.`,
     });
   }
   const j = raw as Record<string, unknown>;
   const kind = j.kind;
-  if (kind === 'rule') {
+  if (kind === "rule") {
     const checks = j.checks;
     if (!Array.isArray(checks) || checks.length === 0) {
       throw errorFor({
-        class: 'BenchmarkMalformed',
-        code: 'benchmark_judge_rule_no_checks',
+        class: "BenchmarkMalformed",
+        code: "benchmark_judge_rule_no_checks",
         message: `Row ${rowNum} (${task_id}) judge.kind='rule' needs a non-empty checks array.`,
         hint: `Add at least one check, e.g. {"op":"max_chars","arg":4000}.`,
       });
     }
-    const validated: RuleCheck[] = checks.map((c, ci) => validateRuleCheck(c, rowNum, ci, task_id, path));
-    return { kind: 'rule', checks: validated };
+    const validated: RuleCheck[] = checks.map((c, ci) =>
+      validateRuleCheck(c, rowNum, ci, task_id, path)
+    );
+    return { kind: "rule", checks: validated };
   }
-  if (kind === 'llm') {
-    const rubric = typeof j.rubric === 'string' ? j.rubric : '';
+  if (kind === "llm") {
+    const rubric = typeof j.rubric === "string" ? j.rubric : "";
     if (!rubric.trim()) {
       throw errorFor({
-        class: 'BenchmarkMalformed',
-        code: 'benchmark_judge_llm_no_rubric',
+        class: "BenchmarkMalformed",
+        code: "benchmark_judge_llm_no_rubric",
         message: `Row ${rowNum} (${task_id}) judge.kind='llm' needs a non-empty rubric string.`,
         hint: `Add a 'rubric' field describing how to score the output 0..1.`,
       });
     }
-    const model = typeof j.model === 'string' ? j.model : undefined;
-    return model !== undefined ? { kind: 'llm', rubric, model } : { kind: 'llm', rubric };
+    const model = typeof j.model === "string" ? j.model : undefined;
+    return model !== undefined ? { kind: "llm", rubric, model } : { kind: "llm", rubric };
   }
-  if (kind === 'qrels') {
+  if (kind === "qrels") {
     const expected_slugs = Array.isArray(j.expected_slugs) ? j.expected_slugs : null;
-    if (!expected_slugs || expected_slugs.length === 0 || !expected_slugs.every((s) => typeof s === 'string')) {
+    if (
+      !expected_slugs ||
+      expected_slugs.length === 0 ||
+      !expected_slugs.every((s) => typeof s === "string")
+    ) {
       throw errorFor({
-        class: 'BenchmarkMalformed',
-        code: 'benchmark_judge_qrels_no_expected',
+        class: "BenchmarkMalformed",
+        code: "benchmark_judge_qrels_no_expected",
         message: `Row ${rowNum} (${task_id}) judge.kind='qrels' needs expected_slugs: string[].`,
         hint: `Add an array of expected slugs the retrieval should return.`,
       });
     }
-    const k = typeof j.k === 'number' && j.k > 0 ? Math.floor(j.k) : 10;
-    return { kind: 'qrels', expected_slugs: expected_slugs as string[], k };
+    const k = typeof j.k === "number" && j.k > 0 ? Math.floor(j.k) : 10;
+    return { kind: "qrels", expected_slugs: expected_slugs as string[], k };
   }
   throw errorFor({
-    class: 'BenchmarkMalformed',
-    code: 'benchmark_judge_unknown_kind',
+    class: "BenchmarkMalformed",
+    code: "benchmark_judge_unknown_kind",
     message: `Row ${rowNum} (${task_id}) judge.kind='${String(kind)}' is not one of rule|llm|qrels.`,
     hint: `Use one of: {"kind":"rule","checks":[...]}, {"kind":"llm","rubric":"..."}, {"kind":"qrels","expected_slugs":[...]}.`,
   });
@@ -238,31 +241,31 @@ function validateRuleCheck(
   rowNum: number,
   checkIdx: number,
   task_id: string,
-  path: string,
+  path: string
 ): RuleCheck {
-  if (!raw || typeof raw !== 'object') {
+  if (!raw || typeof raw !== "object") {
     throw errorFor({
-      class: 'BenchmarkMalformed',
-      code: 'benchmark_rule_check_malformed',
+      class: "BenchmarkMalformed",
+      code: "benchmark_rule_check_malformed",
       message: `Row ${rowNum} (${task_id}) rule check #${checkIdx} is not an object.`,
       hint: `Each check must be {"op":"...","arg":...}.`,
     });
   }
   const c = raw as Record<string, unknown>;
   const op = c.op;
-  if (typeof op !== 'string' || !VALID_RULE_OPS.has(op as RuleCheckOp)) {
+  if (typeof op !== "string" || !VALID_RULE_OPS.has(op as RuleCheckOp)) {
     throw errorFor({
-      class: 'BenchmarkMalformed',
-      code: 'benchmark_rule_check_unknown_op',
+      class: "BenchmarkMalformed",
+      code: "benchmark_rule_check_unknown_op",
       message: `Row ${rowNum} (${task_id}) rule check #${checkIdx} has unknown op '${String(op)}'.`,
-      hint: `Valid ops: ${[...VALID_RULE_OPS].join(', ')}.`,
+      hint: `Valid ops: ${[...VALID_RULE_OPS].join(", ")}.`,
     });
   }
   const arg = c.arg;
-  if (typeof arg !== 'string' && typeof arg !== 'number') {
+  if (typeof arg !== "string" && typeof arg !== "number") {
     throw errorFor({
-      class: 'BenchmarkMalformed',
-      code: 'benchmark_rule_check_bad_arg',
+      class: "BenchmarkMalformed",
+      code: "benchmark_rule_check_bad_arg",
       message: `Row ${rowNum} (${task_id}) rule check #${checkIdx} has non-string/number arg.`,
       hint: `arg must be a string (contains, regex, section_present, tool_called, tool_not_called) or number (max_chars, min_citations).`,
     });
@@ -279,8 +282,8 @@ export function computeBenchmarkSha8(tasks: BenchmarkTask[]): string {
     .slice()
     .sort((a, b) => (a.task_id < b.task_id ? -1 : a.task_id > b.task_id ? 1 : 0))
     .map((t) => JSON.stringify({ task_id: t.task_id, task: t.task, judge: t.judge }))
-    .join('\n');
-  return createHash('sha256').update(canonical).digest('hex').slice(0, 8);
+    .join("\n");
+  return createHash("sha256").update(canonical).digest("hex").slice(0, 8);
 }
 
 /**
@@ -294,14 +297,14 @@ export function computeBenchmarkSha8(tasks: BenchmarkTask[]): string {
 export function splitBench(
   benchmark: Benchmark,
   ratio: [number, number, number],
-  opts: { allowSmallSel?: boolean } = {},
+  opts: { allowSmallSel?: boolean } = {}
 ): BenchmarkSplit {
   const [r1, r2, r3] = ratio;
   if (r1 <= 0 || r2 <= 0 || r3 <= 0) {
     throw errorFor({
-      class: 'BadSplit',
-      code: 'split_bad_ratio',
-      message: `Split ratio ${ratio.join(':')} has a zero or negative segment.`,
+      class: "BadSplit",
+      code: "split_bad_ratio",
+      message: `Split ratio ${ratio.join(":")} has a zero or negative segment.`,
       hint: `Use positive integers like 4:1:5.`,
     });
   }
@@ -324,10 +327,10 @@ export function splitBench(
   // D17: refuse if D_sel < 5 unless explicitly overridden.
   if (sel.length < D_SEL_MIN_SIZE && !opts.allowSmallSel) {
     throw errorFor({
-      class: 'DSelTooSmall',
-      code: 'd_sel_too_small',
+      class: "DSelTooSmall",
+      code: "d_sel_too_small",
       message: `D_sel has ${sel.length} task(s) after split (need >=${D_SEL_MIN_SIZE} for meaningful validation).`,
-      hint: `Add more tasks to the benchmark (need ~${Math.ceil((D_SEL_MIN_SIZE * total) / r2)} total for ${ratio.join(':')}) or pass --split with a larger sel segment.`,
+      hint: `Add more tasks to the benchmark (need ~${Math.ceil((D_SEL_MIN_SIZE * total) / r2)} total for ${ratio.join(":")}) or pass --split with a larger sel segment.`,
     });
   }
 
@@ -336,11 +339,11 @@ export function splitBench(
 
 /** Parse a split string like "4:1:5" into a tuple. */
 export function parseSplit(s: string): [number, number, number] {
-  const parts = s.split(':').map((p) => Number(p.trim()));
+  const parts = s.split(":").map((p) => Number(p.trim()));
   if (parts.length !== 3 || parts.some((p) => !Number.isFinite(p) || p <= 0)) {
     throw errorFor({
-      class: 'BadSplit',
-      code: 'split_unparseable',
+      class: "BadSplit",
+      code: "split_unparseable",
       message: `Invalid --split value '${s}'.`,
       hint: `Use three positive integers separated by ':', e.g. '4:1:5'.`,
     });

@@ -47,26 +47,26 @@
  * `extractDelegationTargets` which only matches backtick paths.
  */
 
-import type { ParsedFrontmatter } from './skill-frontmatter.ts';
-import { formatBrainFirstTypoHint } from './skill-frontmatter.ts';
+import type { ParsedFrontmatter } from "./skill-frontmatter.ts";
+import { formatBrainFirstTypoHint } from "./skill-frontmatter.ts";
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
 export type BrainFirstReason =
-  | 'exempt_explicit'      // brain_first: exempt in frontmatter
-  | 'exempt_no_external'   // no external-lookup pattern present in body
-  | 'compliant_callout'    // canonical > **Convention:** ... brain-first ... callout
-  | 'compliant_phase'      // explicit ## Phase 1 / Step 0 brain heading
-  | 'compliant_position'   // first brain ref appears before first external ref (body)
-  | 'missing_brain_first'; // external pattern + no compliance signal
+  | "exempt_explicit" // brain_first: exempt in frontmatter
+  | "exempt_no_external" // no external-lookup pattern present in body
+  | "compliant_callout" // canonical > **Convention:** ... brain-first ... callout
+  | "compliant_phase" // explicit ## Phase 1 / Step 0 brain heading
+  | "compliant_position" // first brain ref appears before first external ref (body)
+  | "missing_brain_first"; // external pattern + no compliance signal
 
 export interface BrainFirstAnalysis {
   /** Stable identifier — the manifest entry name OR the dir name. */
   skill: string;
   /** OK if any exemption or compliance path matched; warn otherwise. */
-  status: 'ok' | 'warn';
+  status: "ok" | "warn";
   /** Why the analyzer landed where it did. Drives the doctor message. */
   reason: BrainFirstReason;
   /**
@@ -110,14 +110,14 @@ export interface BrainFirstAnalysis {
  * referenced with all four shapes across skills.
  */
 export const EXTERNAL_LOOKUP_PATTERNS: ReadonlyArray<{ name: string; re: RegExp }> = [
-  { name: 'web_search', re: /\bweb_search\b/i },
-  { name: 'web_fetch', re: /\bweb_fetch\b/i },
-  { name: 'exa', re: /\bexa[\s._-]/i },
-  { name: 'perplexity', re: /\bperplexity\b/i },
-  { name: 'happenstance', re: /\bhappenstance\b/i },
-  { name: 'crustdata', re: /\bcrustdata\b/i },
-  { name: 'captain_api', re: /\bcaptain[\s._-]?api\b/i },
-  { name: 'firecrawl', re: /\bfirecrawl\b/i },
+  { name: "web_search", re: /\bweb_search\b/i },
+  { name: "web_fetch", re: /\bweb_fetch\b/i },
+  { name: "exa", re: /\bexa[\s._-]/i },
+  { name: "perplexity", re: /\bperplexity\b/i },
+  { name: "happenstance", re: /\bhappenstance\b/i },
+  { name: "crustdata", re: /\bcrustdata\b/i },
+  { name: "captain_api", re: /\bcaptain[\s._-]?api\b/i },
+  { name: "firecrawl", re: /\bfirecrawl\b/i },
 ];
 
 /**
@@ -192,20 +192,54 @@ const FRONTMATTER_RE = /^---\n[\s\S]*?\n---\n?/;
  */
 export const FORMERLY_HARDCODED_EXEMPT: ReadonlySet<string> = new Set([
   // Brain-internal skills (PR rationale: "ARE the brain")
-  'brain-ops', 'brain-commit', 'brain-enrichment-pipeline', 'brain-export',
-  'brain-ingest-gate', 'brain-librarian', 'brain-link-refs', 'brain-link-report',
-  'brain-pdf', 'brain-pdf-auto', 'brain-plan', 'brain-publish', 'brain-storage',
-  'brain-storage-links', 'brain-taxonomist',
-  'gbrain', 'gbrain-pr', 'gbrain-upgrade', 'benchmark-gbrain',
+  "brain-ops",
+  "brain-commit",
+  "brain-enrichment-pipeline",
+  "brain-export",
+  "brain-ingest-gate",
+  "brain-librarian",
+  "brain-link-refs",
+  "brain-link-report",
+  "brain-pdf",
+  "brain-pdf-auto",
+  "brain-plan",
+  "brain-publish",
+  "brain-storage",
+  "brain-storage-links",
+  "brain-taxonomist",
+  "gbrain",
+  "gbrain-pr",
+  "gbrain-upgrade",
+  "benchmark-gbrain",
   // External-tool wrappers (their entire job IS external lookup)
-  'exa', 'happenstance', 'crustdata', 'captain-api',
+  "exa",
+  "happenstance",
+  "crustdata",
+  "captain-api",
   // Pure-infra skills (system, not knowledge)
-  'healthcheck', 'backblaze', 'browser', 'browser-use', 'binary-deps',
-  'captcha-solver', 'container-restart', 'durable-service', 'data-loss-gate',
-  'channel-discovery', 'clawvisor', 'clawvisor-shield',
-  'cron-scheduler', 'cronify', 'correction-pipeline',
-  'acknowledge', 'ask-user', 'backoff',
-  'acp-coding', 'code-pr', 'skill-creator', 'ingest', 'freshness-monitor',
+  "healthcheck",
+  "backblaze",
+  "browser",
+  "browser-use",
+  "binary-deps",
+  "captcha-solver",
+  "container-restart",
+  "durable-service",
+  "data-loss-gate",
+  "channel-discovery",
+  "clawvisor",
+  "clawvisor-shield",
+  "cron-scheduler",
+  "cronify",
+  "correction-pipeline",
+  "acknowledge",
+  "ask-user",
+  "backoff",
+  "acp-coding",
+  "code-pr",
+  "skill-creator",
+  "ingest",
+  "freshness-monitor",
 ]);
 
 // ---------------------------------------------------------------------------
@@ -226,19 +260,19 @@ export const FORMERLY_HARDCODED_EXEMPT: ReadonlySet<string> = new Set([
 export function analyzeSkillBrainFirst(
   content: string,
   skillName: string,
-  frontmatter: ParsedFrontmatter | null,
+  frontmatter: ParsedFrontmatter | null
 ): BrainFirstAnalysis {
   const formerly = FORMERLY_HARDCODED_EXEMPT.has(skillName);
   const typo_hint = frontmatter?.brain_first_typo
-    ? formatBrainFirstTypoHint(frontmatter.brain_first_typo) ?? undefined
+    ? (formatBrainFirstTypoHint(frontmatter.brain_first_typo) ?? undefined)
     : undefined;
 
   // Exemption 1: explicit declarative opt-out
-  if (frontmatter?.brain_first === 'exempt') {
+  if (frontmatter?.brain_first === "exempt") {
     return {
       skill: skillName,
-      status: 'ok',
-      reason: 'exempt_explicit',
+      status: "ok",
+      reason: "exempt_explicit",
       external_patterns_matched: [],
       typo_hint,
       formerly_hardcoded_exempt: formerly,
@@ -250,17 +284,17 @@ export function analyzeSkillBrainFirst(
   const body = stripFrontmatter(content);
 
   // Scan body for external-lookup patterns.
-  const external_patterns_matched = EXTERNAL_LOOKUP_PATTERNS
-    .filter(p => p.re.test(body))
-    .map(p => p.name);
+  const external_patterns_matched = EXTERNAL_LOOKUP_PATTERNS.filter((p) => p.re.test(body)).map(
+    (p) => p.name
+  );
 
   // Exemption 2: no external pattern present anywhere in body. Trivially
   // doesn't need brain-first — the skill never reaches for external data.
   if (external_patterns_matched.length === 0) {
     return {
       skill: skillName,
-      status: 'ok',
-      reason: 'exempt_no_external',
+      status: "ok",
+      reason: "exempt_no_external",
       external_patterns_matched: [],
       typo_hint,
       formerly_hardcoded_exempt: formerly,
@@ -273,8 +307,8 @@ export function analyzeSkillBrainFirst(
   if (CONVENTION_CALLOUT_RE.test(body)) {
     return {
       skill: skillName,
-      status: 'ok',
-      reason: 'compliant_callout',
+      status: "ok",
+      reason: "compliant_callout",
       external_patterns_matched,
       typo_hint,
       formerly_hardcoded_exempt: formerly,
@@ -285,8 +319,8 @@ export function analyzeSkillBrainFirst(
   if (PHASE_HEADING_RE.test(body)) {
     return {
       skill: skillName,
-      status: 'ok',
-      reason: 'compliant_phase',
+      status: "ok",
+      reason: "compliant_phase",
       external_patterns_matched,
       typo_hint,
       formerly_hardcoded_exempt: formerly,
@@ -305,8 +339,8 @@ export function analyzeSkillBrainFirst(
   ) {
     return {
       skill: skillName,
-      status: 'ok',
-      reason: 'compliant_position',
+      status: "ok",
+      reason: "compliant_position",
       external_patterns_matched,
       typo_hint,
       formerly_hardcoded_exempt: formerly,
@@ -316,8 +350,8 @@ export function analyzeSkillBrainFirst(
   // Otherwise: external pattern present, no compliance signal. Warn.
   return {
     skill: skillName,
-    status: 'warn',
-    reason: 'missing_brain_first',
+    status: "warn",
+    reason: "missing_brain_first",
     external_patterns_matched,
     typo_hint,
     formerly_hardcoded_exempt: formerly,
@@ -336,7 +370,7 @@ export function analyzeSkillBrainFirst(
  * in frontmatter must not count as the "first external reference."
  */
 export function stripFrontmatter(content: string): string {
-  return content.replace(FRONTMATTER_RE, '');
+  return content.replace(FRONTMATTER_RE, "");
 }
 
 /**
@@ -381,19 +415,19 @@ export function findFirstExternalRefOffset(body: string): number {
  * the formerly-hardcoded-exempt note when applicable.
  */
 export function buildBrainFirstSummaryLine(a: BrainFirstAnalysis): string {
-  if (a.status === 'ok') {
+  if (a.status === "ok") {
     return `${a.skill}: ok (${a.reason})`;
   }
   const parts: string[] = [
-    `${a.skill}: external lookup (${a.external_patterns_matched.join(', ')}) without brain-first compliance`,
+    `${a.skill}: external lookup (${a.external_patterns_matched.join(", ")}) without brain-first compliance`,
   ];
   if (a.formerly_hardcoded_exempt) {
     parts.push(
-      `(was hardcoded-exempt in PR #1206 — opt out explicitly via 'brain_first: exempt' or run 'gbrain doctor --fix' to add the canonical callout)`,
+      `(was hardcoded-exempt in PR #1206 — opt out explicitly via 'brain_first: exempt' or run 'gbrain doctor --fix' to add the canonical callout)`
     );
   }
   if (a.typo_hint) {
     parts.push(`(typo: ${a.typo_hint})`);
   }
-  return parts.join(' ');
+  return parts.join(" ");
 }

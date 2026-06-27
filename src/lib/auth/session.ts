@@ -17,12 +17,28 @@ export {
   verifySessionCore,
 } from "./session-core";
 
-import { signSession, getAuthSecret, SESSION_TTL_SECONDS, verifySessionCore, type SessionPayload, type SessionResult } from "./session-core";
+import {
+  signSession,
+  getAuthSecret,
+  SESSION_TTL_SECONDS,
+  verifySessionCore,
+  type SessionPayload,
+  type SessionResult,
+} from "./session-core";
 
-export async function createSession(userId: string, email: string, role: SessionPayload["role"]): Promise<SessionResult> {
+export async function createSession(
+  userId: string,
+  email: string,
+  role: SessionPayload["role"]
+): Promise<SessionResult> {
   const minVersion = await getMinRevocationVersion(userId);
   const version = minVersion + 1;
-  const token = await signSession({ uid: userId, email, role }, getAuthSecret(), SESSION_TTL_SECONDS, version);
+  const token = await signSession(
+    { uid: userId, email, role },
+    getAuthSecret(),
+    SESSION_TTL_SECONDS,
+    version
+  );
   return {
     token,
     cookieOptions: {
@@ -36,14 +52,18 @@ export async function createSession(userId: string, email: string, role: Session
 }
 
 // Revocation store — Node only (Postgres-backed in production).
-import { revokeAllSessions, isSessionVersionValid, getMinRevocationVersion } from "./revocation-store";
+import {
+  revokeAllSessions,
+  isSessionVersionValid,
+  getMinRevocationVersion,
+} from "./revocation-store";
 
 export { revokeAllSessions, isSessionVersionValid };
 
 /** Full session verification including revocation check (Node only). */
 export async function verifySession(
   token: string | undefined | null,
-  secret?: string,
+  secret?: string
 ): Promise<SessionPayload | null> {
   const payload = await verifySessionCore(token, secret);
   if (!payload) return null;

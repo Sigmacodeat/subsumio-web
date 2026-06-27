@@ -35,7 +35,7 @@ export const SOURCE_ID_RE = /^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$/;
 
 /** Returns true if the string matches the canonical source_id regex. */
 export function isValidSourceId(s: unknown): s is string {
-  return typeof s === 'string' && SOURCE_ID_RE.test(s);
+  return typeof s === "string" && SOURCE_ID_RE.test(s);
 }
 
 /**
@@ -47,8 +47,8 @@ export function assertValidSourceId(s: unknown): asserts s is string {
   if (!isValidSourceId(s)) {
     throw new Error(
       `Invalid source_id: ${JSON.stringify(s)}. ` +
-      `Must be 1-32 lowercase alnum chars with optional interior hyphens ` +
-      `(matches ${SOURCE_ID_RE}).`,
+        `Must be 1-32 lowercase alnum chars with optional interior hyphens ` +
+        `(matches ${SOURCE_ID_RE}).`
     );
   }
 }

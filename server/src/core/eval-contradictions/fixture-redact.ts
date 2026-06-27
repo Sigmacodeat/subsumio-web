@@ -21,22 +21,22 @@
  * pre-commit review surfaces every redaction made.
  */
 
-import { scrubPii } from '../eval-capture-scrub.ts';
+import { scrubPii } from "../eval-capture-scrub.ts";
 
 const SLUG_PREFIX_REWRITES: Record<string, string> = {
-  'people/': 'people/',
-  'companies/': 'companies/',
-  'deals/': 'deals/',
-  'projects/': 'projects/',
-  'meetings/': 'meetings/',
+  "people/": "people/",
+  "companies/": "companies/",
+  "deals/": "deals/",
+  "projects/": "projects/",
+  "meetings/": "meetings/",
 };
 
 const PLACEHOLDER_POOL: Record<string, string[]> = {
-  'people/': ['alice', 'bob', 'charlie', 'diana', 'eve', 'frank', 'grace', 'hank'],
-  'companies/': ['acme', 'widget-co', 'globex', 'initech', 'piedpiper', 'hooli', 'pinnacle'],
-  'deals/': ['acme-seed', 'widget-series-a', 'globex-series-b', 'initech-seed'],
-  'projects/': ['project-alpha', 'project-beta', 'project-gamma'],
-  'meetings/': [],  // dates are kept; meeting-id segment redacted to numeric.
+  "people/": ["alice", "bob", "charlie", "diana", "eve", "frank", "grace", "hank"],
+  "companies/": ["acme", "widget-co", "globex", "initech", "piedpiper", "hooli", "pinnacle"],
+  "deals/": ["acme-seed", "widget-series-a", "globex-series-b", "initech-seed"],
+  "projects/": ["project-alpha", "project-beta", "project-gamma"],
+  "meetings/": [], // dates are kept; meeting-id segment redacted to numeric.
 };
 
 /** First+last name detector. Two-word capitalized run, length 2..40. */
@@ -63,13 +63,13 @@ export function createRedactionSession(): RedactionSession {
     slugMap: new Map(),
     nameMap: new Map(),
     poolOffset: {
-      'people/': 0,
-      'companies/': 0,
-      'deals/': 0,
-      'projects/': 0,
-      'meetings/': 0,
+      "people/": 0,
+      "companies/": 0,
+      "deals/": 0,
+      "projects/": 0,
+      "meetings/": 0,
     },
-    numericSalt: 1.7,  // multiply revenues by 1.7 to obscure (deterministic).
+    numericSalt: 1.7, // multiply revenues by 1.7 to obscure (deterministic).
     audit: [],
   };
 }
@@ -107,11 +107,11 @@ export function redactSlug(session: RedactionSession, slug: string): string {
 /** Allocate a quoted-name placeholder (per-session deterministic). */
 function allocateNamePlaceholder(session: RedactionSession, lowerName: string): string {
   if (session.nameMap.has(lowerName)) return session.nameMap.get(lowerName)!;
-  const peopleCount = session.poolOffset['people/'] ?? 0;
-  const pool = PLACEHOLDER_POOL['people/'];
+  const peopleCount = session.poolOffset["people/"] ?? 0;
+  const pool = PLACEHOLDER_POOL["people/"];
   const first = pool[peopleCount % pool.length];
   // Bump the people offset so name + slug pools stay in sync visually.
-  session.poolOffset['people/'] = peopleCount + 1;
+  session.poolOffset["people/"] = peopleCount + 1;
   const placeholder = `${first.charAt(0).toUpperCase()}${first.slice(1)} Example`;
   session.nameMap.set(lowerName, placeholder);
   return placeholder;
@@ -136,7 +136,7 @@ export function redactMonetary(session: RedactionSession, text: string): string 
   return text.replace(MONETARY_REGEX, (match, value: string, suffix: string) => {
     const v = parseFloat(value);
     if (!Number.isFinite(v)) return match;
-    const obfuscated = (v * session.numericSalt).toFixed(1).replace(/\.0$/, '');
+    const obfuscated = (v * session.numericSalt).toFixed(1).replace(/\.0$/, "");
     const out = `$${obfuscated}${suffix.toUpperCase()}`;
     session.audit.push(`monetary: ${match} → ${out}`);
     return out;
@@ -162,7 +162,7 @@ export function isCleanForCommit(text: string): boolean {
   // " Example" suffix), JWT-shaped tokens, raw email patterns. These should
   // all have been caught upstream.
   const looksLikeRawName = /\b[A-Z][a-z]{2,19}\s+[A-Z][a-z]{2,19}\b/.test(text);
-  if (looksLikeRawName && !text.includes(' Example')) return false;
+  if (looksLikeRawName && !text.includes(" Example")) return false;
   const looksLikeEmail = /[\w.+-]+@[\w-]+\.[\w.-]+/.test(text);
   if (looksLikeEmail) return false;
   return true;

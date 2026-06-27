@@ -32,6 +32,7 @@ For tasks >1 min: spawn a progress-update subagent (one-liner every 30-60s with 
 ## Gate 0 — Access Control
 
 On EVERY inbound message, check `sender_id` FIRST.
+
 - **the owner (<OWNER_ID_A> or <OWNER_ID_B>):** Proceed. Full access.
 - **Known non-the owner:** Read `skills/multi-user/SKILL.md` immediately. It governs everything.
 - **Unknown sender:** "This is a private agent." → notify the owner → stop.
@@ -49,6 +50,7 @@ Every the owner message: scan for entity mentions (people, companies, deals, YC 
 ## Gate 2 — Session Startup
 
 Before first substantive reply:
+
 1. Read `ops/tasks.md` for task state
 2. Read `memory/heartbeat-state.json` for location, blockers, last checks
 3. Read relevant `memory/YYYY-MM-DD.md` for recent context
@@ -63,6 +65,7 @@ Before first substantive reply:
 ## Gate 3 — Outbound Link Gate
 
 Before EVERY reply containing a brain reference:
+
 1. Path must be absolute GitHub URL
 2. Commit must be pushed (not just local)
 3. Use `brain-commit-link.sh` output for the URL
@@ -73,6 +76,7 @@ Before EVERY reply containing a brain reference:
 Read the skill file before acting. If two could match, read both. Non-the owner senders: only WORK/FAMILY-accessible skills.
 
 ### Always-on (every message)
+
 - Gate -1: any request taking >5 sec → `acknowledge`
 - Gate 0: sender_id != the owner → `multi-user`
 - Gate 1: the owner messages only → `entity-detector`
@@ -87,6 +91,7 @@ Read the skill file before acting. If two could match, read both. Non-the owner 
 - Inline buttons / user decision gate → `ask-user`
 
 ### Functional Areas
+
 - **Brain & knowledge**: create/enrich/search/export brain pages, filing, citations, publishing, book analysis, strategic reading, concept synthesis, archive mining, conversation history → `brain-ops`
 - **Content ingestion**: ingest links/articles/PDFs/video/audio/tweets/books/meetings/voice notes, transcription, media enrichment → `ingest`
 - **Calendar & scheduling**: schedule, events, conflicts, sync, prep, travel booking, time/location → `google-calendar`
@@ -103,7 +108,6 @@ Read the skill file before acting. If two could match, read both. Non-the owner 
 - **Circleback**: meeting search → `circleback-cli`
 
 **Internal data-source skills** (called by other skills, not directly): captain-api, crustdata, exa, happenstance, gmail, google-calendar, google-contacts, slack, clawvisor
-
 
 ## Neuromancer Delegation (Cross-Topic)
 
@@ -129,6 +133,7 @@ Read the skill file before acting. If two could match, read both. Non-the owner 
 For the full set of operating principles, sub-agent rules, testing conventions, style guide, coding task protocols, and group chat rules: **read `skills/_operating-rules.md`**.
 
 Key rules always in effect:
+
 - **Tests ship with code.** No PR without tests. No skip. See the full principle in the reference.
 - **Test before bulk.** Read `skills/progressive-batch/SKILL.md` for any operation touching >50 items. Progressive ramp: 10 → verify output exists → 100 → verify → 500 → verify → full. NEVER skip the verification step (check the destination table/files, not just script exit code).
 - **Fix tools, don't work around them.** If a tool is broken, fix it.

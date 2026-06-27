@@ -8,16 +8,13 @@
 // This test pins the constant via the migration query observable. If
 // the TTL ever climbs back above 5 min, the ops pain comes back.
 
-import { describe, test, expect } from 'bun:test';
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import { describe, test, expect } from "bun:test";
+import { readFileSync } from "fs";
+import { join } from "path";
 
-describe('cycle lock TTL (T2 regression pin)', () => {
-  test('LOCK_TTL_MINUTES === 5 in src/core/cycle.ts', () => {
-    const src = readFileSync(
-      join(__dirname, '..', '..', 'src', 'core', 'cycle.ts'),
-      'utf-8',
-    );
+describe("cycle lock TTL (T2 regression pin)", () => {
+  test("LOCK_TTL_MINUTES === 5 in src/core/cycle.ts", () => {
+    const src = readFileSync(join(__dirname, "..", "..", "src", "core", "cycle.ts"), "utf-8");
     // Pin the literal constant value. Two patterns guarded:
     //   - LOCK_TTL_MINUTES = 5
     //   - LOCK_TTL_MS = 5 * 60 * 1000

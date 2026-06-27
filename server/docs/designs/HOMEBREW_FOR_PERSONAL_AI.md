@@ -65,7 +65,6 @@ health_checks:
   - curl -s https://api.openai.com/v1/models > /dev/null
 setup_time: 30 min
 ---
-
 [Opinionated setup instructions the agent executes...]
 ```
 
@@ -87,6 +86,7 @@ x-to-brain (standalone, uses X API directly)
 ### Health Dashboard
 
 `gbrain integrations doctor` runs health_checks from every configured recipe:
+
 ```
 $ gbrain integrations doctor
   voice-to-brain:   ✓ Twilio reachable  ✓ OpenAI key valid  ✓ ngrok tunnel up
@@ -97,6 +97,7 @@ $ gbrain integrations doctor
 ### Sense Analytics
 
 `gbrain integrations stats` aggregates heartbeat data:
+
 ```
 $ gbrain integrations stats
   This week: 1,247 signals ingested
@@ -116,24 +117,23 @@ id: deal-tracker
 category: reflex
 triggers:
   - type: page_updated
-    filter: {type: deal, field: status}
+    filter: { type: deal, field: status }
   - type: timeline_entry
-    filter: {source: email, mentions: deal}
+    filter: { source: email, mentions: deal }
 action: alert
 ---
-
 When a deal page's status changes or a new email mentions a deal,
 alert the user with context from the brain.
 ```
 
 ## Roadmap
 
-| Version | What Ships | Key Recipe |
-|---------|-----------|------------|
-| v0.7.0 | Recipe format, CLI, SKILLPACK breakout | voice-to-brain |
-| v0.8.0 | 3 more senses, reflex format | email, X, calendar |
-| v0.9.0 | Community recipes, install executor | community submissions |
-| v1.0.0 | Full senses/reflexes, health dashboard | meeting-prep, dream-cycle |
+| Version | What Ships                             | Key Recipe                |
+| ------- | -------------------------------------- | ------------------------- |
+| v0.7.0  | Recipe format, CLI, SKILLPACK breakout | voice-to-brain            |
+| v0.8.0  | 3 more senses, reflex format           | email, X, calendar        |
+| v0.9.0  | Community recipes, install executor    | community submissions     |
+| v1.0.0  | Full senses/reflexes, health dashboard | meeting-prep, dream-cycle |
 
 ## Key Design Decisions
 

@@ -31,10 +31,10 @@
  *    run.
  */
 
-import { readdirSync, lstatSync, statSync } from 'fs';
-import { join, relative } from 'path';
-import type { BrainEngine } from './engine.ts';
-import { pathToSlug } from './sync.ts';
+import { readdirSync, lstatSync, statSync } from "fs";
+import { join, relative } from "path";
+import type { BrainEngine } from "./engine.ts";
+import { pathToSlug } from "./sync.ts";
 
 export interface SourceWithPath {
   id: string;
@@ -71,7 +71,7 @@ const SAMPLE_LIMIT = 5;
 function walkMarkdownAndMdxFiles(
   root: string,
   limit: number,
-  deadlineMs: number,
+  deadlineMs: number
 ): { files: { relPath: string }[]; truncated: boolean } {
   const files: { relPath: string }[] = [];
   let truncated = false;
@@ -86,7 +86,7 @@ function walkMarkdownAndMdxFiles(
     }
     for (const entry of entries) {
       if (truncated) return;
-      if (entry.startsWith('.')) continue;
+      if (entry.startsWith(".")) continue;
       const full = join(d, entry);
       let isDir = false;
       try {
@@ -98,9 +98,9 @@ function walkMarkdownAndMdxFiles(
         walk(full);
         continue;
       }
-      const isMd = entry.endsWith('.md') || entry.endsWith('.mdx');
+      const isMd = entry.endsWith(".md") || entry.endsWith(".mdx");
       if (!isMd) continue;
-      if (entry.startsWith('_')) continue; // matches extract.ts convention
+      if (entry.startsWith("_")) continue; // matches extract.ts convention
       files.push({ relPath: relative(root, full) });
       if (files.length >= limit) {
         truncated = true;
@@ -137,11 +137,11 @@ function walkMarkdownAndMdxFiles(
 async function batchProbeExistence(
   engine: BrainEngine,
   slugs: string[],
-  sourceId: string,
+  sourceId: string
 ): Promise<Map<string, Set<string>>> {
   if (slugs.length === 0) return new Map();
   // Build a positional VALUES clause: ($1::text), ($2), ($3), ...
-  const valuePlaceholders = slugs.map((_, i) => `($${i + 1}::text)`).join(', ');
+  const valuePlaceholders = slugs.map((_, i) => `($${i + 1}::text)`).join(", ");
   const sourceParamIdx = slugs.length + 1;
   const sql = `
     WITH candidates(slug) AS (VALUES ${valuePlaceholders})
@@ -152,10 +152,10 @@ async function batchProbeExistence(
          AND p.source_id IN ('default', $${sourceParamIdx}::text)
     ORDER BY c.slug, p.source_id
   `;
-  const rows = await engine.executeRaw<{ slug: string; source_id: string | null }>(
-    sql,
-    [...slugs, sourceId],
-  );
+  const rows = await engine.executeRaw<{ slug: string; source_id: string | null }>(sql, [
+    ...slugs,
+    sourceId,
+  ]);
   const map = new Map<string, Set<string>>();
   for (const r of rows) {
     if (!map.has(r.slug)) map.set(r.slug, new Set());
@@ -175,7 +175,7 @@ async function batchProbeExistence(
 export async function findMisroutedPages(
   engine: BrainEngine,
   sources: SourceWithPath[],
-  opts: { limit?: number; timeoutMs?: number } = {},
+  opts: { limit?: number; timeoutMs?: number } = {}
 ): Promise<MisroutedResult> {
   const limit = opts.limit ?? DEFAULT_FILE_LIMIT;
   const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
@@ -186,7 +186,7 @@ export async function findMisroutedPages(
   const sample: MisroutedSample[] = [];
 
   for (const src of sources) {
-    if (src.id === 'default') continue;
+    if (src.id === "default") continue;
     if (!src.local_path) continue;
     if (Date.now() >= deadlineMs) {
       walkTruncated = true;
@@ -197,13 +197,13 @@ export async function findMisroutedPages(
     if (files.length === 0) continue;
 
     // Convert FS paths to canonical slugs (lowercased, extension stripped).
-    const slugs = Array.from(new Set(files.map(f => pathToSlug(f.relPath))));
+    const slugs = Array.from(new Set(files.map((f) => pathToSlug(f.relPath))));
     const existenceMap = await batchProbeExistence(engine, slugs, src.id);
 
     for (const slug of slugs) {
       const present = existenceMap.get(slug);
       if (!present) continue; // missing both — uningested, not misroute
-      const hasDefault = present.has('default');
+      const hasDefault = present.has("default");
       const hasSource = present.has(src.id);
       // The misroute heuristic: present at default, missing from intended source.
       if (hasDefault && !hasSource) {

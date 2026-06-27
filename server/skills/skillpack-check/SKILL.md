@@ -34,6 +34,7 @@ Running `gbrain skillpack-check` returns a JSON report with:
 - **`migrations`**: applied/pending/partial counts from `apply-migrations --list`.
 
 Exit code:
+
 - `0` — healthy, nothing to do.
 - `1` — action needed. Read `actions[]` and execute.
 - `2` — could not determine (binary crash or missing subcommand). Investigate.
@@ -94,7 +95,11 @@ a required subcommand crashed. Check:
   "doctor": {
     "exit_code": 1,
     "checks": [
-      { "name": "minions_migration", "status": "fail", "message": "MINIONS HALF-INSTALLED (partial migration: 0.11.0). Run: gbrain apply-migrations --yes" }
+      {
+        "name": "minions_migration",
+        "status": "fail",
+        "message": "MINIONS HALF-INSTALLED (partial migration: 0.11.0). Run: gbrain apply-migrations --yes"
+      }
     ]
   },
   "migrations": {

@@ -30,7 +30,7 @@ points them at the four artifacts every pack ships:
   DISPLAYS this after `scaffold` lands; the agent walks per-step at
   its own discretion. No auto-executor (codex T1 supply-chain hardening).
 - `CHANGELOG.md` — Keep-a-Changelog shape. The doctor's `changelog_
-  present_and_current` dimension fails if there's no `## [<version>]`
+present_and_current` dimension fails if there's no `## [<version>]`
   entry matching the manifest's `version`.
 
 ## What the doctor scores
@@ -43,7 +43,7 @@ Ten binary dimensions, split into:
 2. `skills_have_skill_md` — every listed skill has SKILL.md with
    name / description / triggers
 3. `routing_evals_present` — each skill has routing-eval.jsonl with
-   >= 5 intents
+   > = 5 intents
 4. `skills_have_unique_triggers` — MECE at the pack level
 5. `changelog_present_and_current` — CHANGELOG entry for current version
 

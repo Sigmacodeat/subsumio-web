@@ -25,16 +25,16 @@
  * caller proceeds.
  */
 
-import type { BrainEngine } from '../engine.ts';
-import { GBrainError } from '../types.ts';
+import type { BrainEngine } from "../engine.ts";
+import { GBrainError } from "../types.ts";
 
 export const FACTS_ABSORB_REASONS = [
-  'gateway_error',
-  'parse_failure',
-  'queue_overflow',
-  'queue_shutdown',
-  'embed_failure',
-  'pipeline_error',
+  "gateway_error",
+  "parse_failure",
+  "queue_overflow",
+  "queue_shutdown",
+  "embed_failure",
+  "pipeline_error",
 ] as const;
 
 // v0.39.3.0 WARN-4 + CV13 — module-scoped flag so the first-occurrence
@@ -49,7 +49,7 @@ export function _resetFactsAbsorbDisconnectedFlagForTests(): void {
   _hasLoggedDisconnectedFactsAbsorb = false;
 }
 
-export type FactsAbsorbReason = typeof FACTS_ABSORB_REASONS[number];
+export type FactsAbsorbReason = (typeof FACTS_ABSORB_REASONS)[number];
 
 /**
  * Write one row to ingest_log for a facts:absorb event. The row's shape:
@@ -70,13 +70,13 @@ export async function writeFactsAbsorbLog(
   ref: string,
   reason: FactsAbsorbReason,
   detail: string,
-  sourceId: string = 'default',
+  sourceId: string = "default"
 ): Promise<void> {
   try {
-    const cleanedDetail = (detail ?? '').toString().slice(0, 240);
+    const cleanedDetail = (detail ?? "").toString().slice(0, 240);
     await engine.logIngest({
       source_id: sourceId,
-      source_type: 'facts:absorb',
+      source_type: "facts:absorb",
       source_ref: ref,
       pages_updated: [],
       summary: `${reason}: ${cleanedDetail}`,
@@ -89,14 +89,14 @@ export async function writeFactsAbsorbLog(
     // CLI capture path. Per-capture noise is suppressed; CV13 prints
     // ONE first-occurrence stack trace so the next user reporting it
     // gives us the call site to fix in v0.38.4.
-    if (e instanceof GBrainError && e.problem === 'No database connection') {
+    if (e instanceof GBrainError && e.problem === "No database connection") {
       if (!_hasLoggedDisconnectedFactsAbsorb) {
         _hasLoggedDisconnectedFactsAbsorb = true;
         // eslint-disable-next-line no-console
         console.warn(
           `[facts:absorb] suppressed: 'No database connection' fires on a separate engine handle ` +
-          `(known WARN-4 in v0.38; subsequent occurrences silent this process). ` +
-          `First-occurrence trace for v0.38.4 diagnosis:\n${e.stack ?? '<no stack>'}`,
+            `(known WARN-4 in v0.38; subsequent occurrences silent this process). ` +
+            `First-occurrence trace for v0.38.4 diagnosis:\n${e.stack ?? "<no stack>"}`
         );
       }
       // Subsequent occurrences silent — the page write itself succeeded;
@@ -111,7 +111,7 @@ export async function writeFactsAbsorbLog(
     // drift, etc.) instead of suppressing them globally.
     // eslint-disable-next-line no-console
     console.warn(
-      `[facts:absorb] failed to log ${reason} for ${ref}: ${e instanceof Error ? e.message : String(e)}`,
+      `[facts:absorb] failed to log ${reason} for ${ref}: ${e instanceof Error ? e.message : String(e)}`
     );
   }
 }
@@ -123,27 +123,30 @@ export async function writeFactsAbsorbLog(
  * (e.g. tests, future telemetry consumers).
  */
 export function classifyFactsAbsorbError(err: unknown): FactsAbsorbReason {
-  if (!err) return 'pipeline_error';
+  if (!err) return "pipeline_error";
   const msg = err instanceof Error ? err.message : String(err);
-  const name = err instanceof Error ? err.name : '';
+  const name = err instanceof Error ? err.name : "";
 
   // Anthropic / OpenAI / Voyage all surface 4xx/5xx + timeouts in similar shapes.
-  if (/timeout|timed?\s?out|ETIMEDOUT/i.test(msg)) return 'gateway_error';
-  if (/429|rate[\s-]?limit|too many requests/i.test(msg)) return 'gateway_error';
-  if (/5\d\d|server error|internal server|bad gateway|service unavail/i.test(msg)) return 'gateway_error';
-  if (/ECONNRESET|ECONNREFUSED|EAI_AGAIN|getaddrinfo/i.test(msg)) return 'gateway_error';
+  if (/timeout|timed?\s?out|ETIMEDOUT/i.test(msg)) return "gateway_error";
+  if (/429|rate[\s-]?limit|too many requests/i.test(msg)) return "gateway_error";
+  if (/5\d\d|server error|internal server|bad gateway|service unavail/i.test(msg))
+    return "gateway_error";
+  if (/ECONNRESET|ECONNREFUSED|EAI_AGAIN|getaddrinfo/i.test(msg)) return "gateway_error";
 
   // Parser failures from extract.ts's 4-strategy fallback.
-  if (/JSON.parse|unexpected token|invalid json|not valid JSON/i.test(msg)) return 'parse_failure';
+  if (/JSON.parse|unexpected token|invalid json|not valid JSON/i.test(msg)) return "parse_failure";
 
   // Queue counter increments — currently bubble through specific paths but
   // could surface here if a caller routes them.
-  if (name === 'QueueOverflowError' || /queue.*overflow|cap.*hit/i.test(msg)) return 'queue_overflow';
-  if (name === 'QueueShutdownError' || /queue.*shutdown|shutting down/i.test(msg)) return 'queue_shutdown';
+  if (name === "QueueOverflowError" || /queue.*overflow|cap.*hit/i.test(msg))
+    return "queue_overflow";
+  if (name === "QueueShutdownError" || /queue.*shutdown|shutting down/i.test(msg))
+    return "queue_shutdown";
 
   // Embed-specific: extract.ts catches embedOne errors and stores NULL embedding.
   // If a caller surfaces it explicitly, route to embed_failure.
-  if (/embed/i.test(msg) && /(fail|error)/i.test(msg)) return 'embed_failure';
+  if (/embed/i.test(msg) && /(fail|error)/i.test(msg)) return "embed_failure";
 
-  return 'pipeline_error';
+  return "pipeline_error";
 }

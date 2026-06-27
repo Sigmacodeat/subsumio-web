@@ -16,9 +16,9 @@
  * slower-write input.
  */
 
-import { describe, test, expect, beforeAll, afterAll, beforeEach } from 'bun:test';
-import { PGLiteEngine } from '../../src/core/pglite-engine.ts';
-import { configureGateway, resetGateway } from '../../src/core/ai/gateway.ts';
+import { describe, test, expect, beforeAll, afterAll, beforeEach } from "bun:test";
+import { PGLiteEngine } from "../../src/core/pglite-engine.ts";
+import { configureGateway, resetGateway } from "../../src/core/ai/gateway.ts";
 
 let engine: PGLiteEngine;
 let DIMS: number;
@@ -29,9 +29,9 @@ beforeAll(async () => {
   // tests in this shard process have configured first.
   resetGateway();
   configureGateway({
-    embedding_model: 'openai:text-embedding-3-large',
+    embedding_model: "openai:text-embedding-3-large",
     embedding_dimensions: 1536,
-    env: { OPENAI_API_KEY: 'sk-test-fake-key-for-stub' },
+    env: { OPENAI_API_KEY: "sk-test-fake-key-for-stub" },
   });
   DIMS = 1536;
   engine = new PGLiteEngine();
@@ -47,11 +47,11 @@ beforeEach(async () => {
   // Hard-reset the test page + its chunks so each test starts clean.
   // Required when this file runs alongside others in the same bun
   // test shard process (PGLite instance is shared).
-  await engine.executeRaw(`DELETE FROM pages WHERE slug = $1`, ['test/race-target']);
+  await engine.executeRaw(`DELETE FROM pages WHERE slug = $1`, ["test/race-target"]);
   await engine.executeRaw(
     `INSERT INTO pages (source_id, slug, type, title, compiled_truth)
      VALUES ('default', $1, 'concept', 'Race test page', 'body')`,
-    ['test/race-target'],
+    ["test/race-target"]
   );
 });
 
@@ -61,42 +61,42 @@ function makeVector(seed: number): Float32Array {
   return v;
 }
 
-describe('D24 NULL→non-NULL upsert race fix', () => {
-  test('cold path: existing embedding NULL → take new', async () => {
+describe("D24 NULL→non-NULL upsert race fix", () => {
+  test("cold path: existing embedding NULL → take new", async () => {
     // First write: chunk_text 'cold' with no prior embedding.
     await engine.upsertChunks(
-      'test/race-target',
+      "test/race-target",
       [
         {
           chunk_index: 0,
-          chunk_text: 'cold path test',
-          chunk_source: 'compiled_truth',
+          chunk_text: "cold path test",
+          chunk_source: "compiled_truth",
           embedding: makeVector(1.0),
           token_count: 3,
         },
       ],
-      { sourceId: 'default' },
+      { sourceId: "default" }
     );
-    const chunks = await engine.getChunks('test/race-target', { sourceId: 'default' });
+    const chunks = await engine.getChunks("test/race-target", { sourceId: "default" });
     expect(chunks.length).toBe(1);
     // Chunk exists with the embedding we wrote.
-    expect(chunks[0].chunk_text).toBe('cold path test');
+    expect(chunks[0].chunk_text).toBe("cold path test");
   });
 
-  test('fresher write wins over stale write (text unchanged)', async () => {
+  test("fresher write wins over stale write (text unchanged)", async () => {
     // Seed: chunk at index 1 with embedded_at = now (recent).
     await engine.upsertChunks(
-      'test/race-target',
+      "test/race-target",
       [
         {
           chunk_index: 1,
-          chunk_text: 'race text',
-          chunk_source: 'compiled_truth',
+          chunk_text: "race text",
+          chunk_source: "compiled_truth",
           embedding: makeVector(2.0),
           token_count: 2,
         },
       ],
-      { sourceId: 'default' },
+      { sourceId: "default" }
     );
 
     // Capture the now-stored embedded_at as the reference 'fresh' time.
@@ -104,7 +104,7 @@ describe('D24 NULL→non-NULL upsert race fix', () => {
       `SELECT embedded_at FROM content_chunks
         WHERE page_id = (SELECT id FROM pages WHERE slug = $1 AND source_id = 'default')
           AND chunk_index = 1`,
-      ['test/race-target'],
+      ["test/race-target"]
     );
     const freshTs = beforeRace[0]?.embedded_at;
     expect(freshTs).toBeTruthy();
@@ -140,7 +140,7 @@ describe('D24 NULL→non-NULL upsert race fix', () => {
                 THEN EXCLUDED.embedded_at
            ELSE content_chunks.embedded_at
          END`,
-      ['test/race-target'],
+      ["test/race-target"]
     );
 
     // After the stale write, the embedded_at should be UNCHANGED
@@ -150,7 +150,7 @@ describe('D24 NULL→non-NULL upsert race fix', () => {
       `SELECT embedded_at FROM content_chunks
         WHERE page_id = (SELECT id FROM pages WHERE slug = $1 AND source_id = 'default')
           AND chunk_index = 1`,
-      ['test/race-target'],
+      ["test/race-target"]
     );
     // The fresher write's timestamp survives; the stale write loses.
     // Normalize both to ISO strings so Date↔string equality is stable.
@@ -159,43 +159,43 @@ describe('D24 NULL→non-NULL upsert race fix', () => {
     expect(after).toBe(before);
   });
 
-  test('text change with no new embedding resets both columns to NULL', async () => {
+  test("text change with no new embedding resets both columns to NULL", async () => {
     // Seed chunk at index 2 with embedding.
     await engine.upsertChunks(
-      'test/race-target',
+      "test/race-target",
       [
         {
           chunk_index: 2,
-          chunk_text: 'original text',
-          chunk_source: 'compiled_truth',
+          chunk_text: "original text",
+          chunk_source: "compiled_truth",
           embedding: makeVector(3.0),
           token_count: 2,
         },
       ],
-      { sourceId: 'default' },
+      { sourceId: "default" }
     );
 
     // Re-write with DIFFERENT text but NO embedding (simulates re-chunk
     // path before re-embedding). Both columns should reset to NULL.
     await engine.upsertChunks(
-      'test/race-target',
+      "test/race-target",
       [
         {
           chunk_index: 2,
-          chunk_text: 'changed text',
-          chunk_source: 'compiled_truth',
+          chunk_text: "changed text",
+          chunk_source: "compiled_truth",
           // no embedding
           token_count: 2,
         },
       ],
-      { sourceId: 'default' },
+      { sourceId: "default" }
     );
 
     const rows = await engine.executeRaw<{ embedded_at: Date | null; embedding_null: boolean }>(
       `SELECT embedded_at, embedding IS NULL AS embedding_null FROM content_chunks
         WHERE page_id = (SELECT id FROM pages WHERE slug = $1 AND source_id = 'default')
           AND chunk_index = 2`,
-      ['test/race-target'],
+      ["test/race-target"]
     );
     expect(rows[0].embedded_at).toBeNull();
     expect(rows[0].embedding_null).toBe(true);

@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiStream, apiError, recordQuota } from "@/lib/api-handler";
@@ -27,7 +26,12 @@ export const POST = createHandler(
     audit: (_ctx, b) => ({
       action: "legal.redline" as const,
       entityType: "document",
-      details: { jurisdiction: b.jurisdiction, perspective: b.perspective, contractType: b.contract_type, hasCounterparty: Boolean(b.counterparty_text) },
+      details: {
+        jurisdiction: b.jurisdiction,
+        perspective: b.perspective,
+        contractType: b.contract_type,
+        hasCounterparty: Boolean(b.counterparty_text),
+      },
     }),
   },
   async (ctx, body, _query, _req) => {
@@ -48,7 +52,7 @@ export const POST = createHandler(
         method: "POST",
         headers: { "Content-Type": "application/json", ...ctx.headers },
         body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(300_000),
+        signal: AbortSignal.timeout(300_000),
       });
 
       if (!upstream.ok) {
@@ -63,13 +67,10 @@ export const POST = createHandler(
 
       // If engine returns SSE stream, wrap with citation gate
       if (contentType.includes("text/event-stream")) {
-        return apiStream(
-          createCitationGateStream(upstream.body!),
-          {
-            contentType,
-            aiGenerated: true,
-          }
-        );
+        return apiStream(createCitationGateStream(upstream.body!), {
+          contentType,
+          aiGenerated: true,
+        });
       }
 
       // Engine returns JSON — parse, ground statute citations, inject _grounding
@@ -100,8 +101,11 @@ export const POST = createHandler(
 
       return Response.json(result);
     } catch (err) {
-      console.error("[contract-redline] engine unreachable:", err instanceof Error ? err.message : String(err));
+      console.error(
+        "[contract-redline] engine unreachable:",
+        err instanceof Error ? err.message : String(err)
+      );
       return apiError("service_unavailable", "Engine nicht erreichbar", 503);
     }
-  },
+  }
 );

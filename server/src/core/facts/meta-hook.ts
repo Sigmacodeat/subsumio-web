@@ -14,9 +14,9 @@
  * so the felt-memory feature works on every transport.
  */
 
-import type { OperationContext } from './../operations.ts';
-import type { FactRow } from './../engine.ts';
-import { effectiveConfidence } from './decay.ts';
+import type { OperationContext } from "./../operations.ts";
+import type { FactRow } from "./../engine.ts";
+import { effectiveConfidence } from "./decay.ts";
 
 const DEFAULT_TTL_MS = 30_000;
 const DEFAULT_TOP_K = 10;
@@ -39,18 +39,17 @@ const _cache = new Map<string, CacheEntry>();
 export async function getBrainHotMemoryMeta(
   name: string,
   ctx: OperationContext,
-  opts: { topK?: number; ttlMs?: number } = {},
+  opts: { topK?: number; ttlMs?: number } = {}
 ): Promise<Record<string, unknown> | undefined> {
   // Don't inject on tool calls that themselves manipulate hot memory —
   // the agent doesn't need the brain's hot memory wrapped around its own
   // recall response.
-  if (name === 'recall' || name === 'extract_facts' || name === 'forget_fact') return undefined;
+  if (name === "recall" || name === "extract_facts" || name === "forget_fact") return undefined;
 
-  const sourceId = ctx.sourceId ?? 'default';
-  const sessionId = (ctx as { source_session?: string }).source_session
-    ?? null;
+  const sourceId = ctx.sourceId ?? "default";
+  const sessionId = (ctx as { source_session?: string }).source_session ?? null;
   const allowListHash = hashAllowList(ctx.takesHoldersAllowList);
-  const cacheKey = `${sourceId}::${sessionId ?? '_'}::${allowListHash}`;
+  const cacheKey = `${sourceId}::${sessionId ?? "_"}::${allowListHash}`;
 
   const ttl = Math.max(1000, opts.ttlMs ?? DEFAULT_TTL_MS);
   const topK = Math.max(1, Math.min(opts.topK ?? DEFAULT_TOP_K, 25));
@@ -63,18 +62,22 @@ export async function getBrainHotMemoryMeta(
 
   // Build a fresh payload. Visibility tier: remote → world-only;
   // local → all rows.
-  const visibility = ctx.remote === false ? undefined : ['world'] as ('world' | 'private')[];
+  const visibility = ctx.remote === false ? undefined : (["world"] as ("world" | "private")[]);
 
   let rows: FactRow[] = [];
   if (sessionId) {
     rows = await ctx.engine.listFactsBySession(sourceId, sessionId, {
-      activeOnly: true, limit: topK, visibility,
+      activeOnly: true,
+      limit: topK,
+      visibility,
     });
   }
   // If no session-scoped rows, fall back to recent across the source.
   if (rows.length === 0) {
     rows = await ctx.engine.listFactsSince(sourceId, new Date(Date.now() - 24 * 60 * 60 * 1000), {
-      activeOnly: true, limit: topK, visibility,
+      activeOnly: true,
+      limit: topK,
+      visibility,
     });
   }
   if (rows.length === 0) {
@@ -91,7 +94,7 @@ export async function getBrainHotMemoryMeta(
     brain_hot_memory: {
       source_id: sourceId,
       session_id: sessionId,
-      facts: rows.map(r => ({
+      facts: rows.map((r) => ({
         id: r.id,
         fact: r.fact,
         kind: r.kind,
@@ -113,7 +116,7 @@ export function bumpHotMemoryCache(sourceId: string, sessionId: string | null): 
   // Walk the cache and prune any entry matching this source+session prefix
   // (regardless of allow-list hash). Visitors with different visibility
   // tiers all get fresh data on next read.
-  const prefix = `${sourceId}::${sessionId ?? '_'}::`;
+  const prefix = `${sourceId}::${sessionId ?? "_"}::`;
   for (const k of _cache.keys()) {
     if (k.startsWith(prefix)) _cache.delete(k);
   }
@@ -126,7 +129,7 @@ export function __resetHotMemoryCacheForTests(): void {
 
 /** Stable hash of the (sorted) allow-list. Mirrors the auth contract. */
 function hashAllowList(list: string[] | undefined): string {
-  if (!list || list.length === 0) return '_';
+  if (!list || list.length === 0) return "_";
   const sorted = [...list].sort();
-  return sorted.join('|');
+  return sorted.join("|");
 }

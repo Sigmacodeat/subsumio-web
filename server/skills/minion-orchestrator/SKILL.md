@@ -48,6 +48,7 @@ mutating: true
 
 Minions is a Postgres-native job queue for durable, observable background work.
 This single skill handles two lanes:
+
 - Deterministic shell jobs (`gbrain jobs submit shell ...`)
 - LLM subagent jobs (`gbrain agent run ...`)
 
@@ -58,6 +59,7 @@ is defined in `skills/conventions/subagent-routing.md` — the project default i
 fire); Mode A (all-through-Minions) is opt-in.
 
 Guarantees:
+
 - Jobs survive gateway restart (Postgres-backed)
 - Every job has structured progress, token accounting, and session transcripts
 - Running agents can be steered mid-flight via inbox messages
@@ -66,15 +68,15 @@ Guarantees:
 
 ## Route the Request: Shell Job vs Subagent
 
-| Condition | Action |
-|---|---|
-| User asks for deterministic command/script run | Shell job (CLI: `gbrain jobs submit shell ...`) |
-| User asks to "run in minions" + explicit command/argv | Shell job (CLI, `--params` with `cmd` or `argv`) |
-| User asks for research/reasoning/iterative agent | Subagent job (CLI: `gbrain agent run`) |
-| User asks to steer/pause/resume an agent | Subagent job lifecycle tools (MCP-callable) |
-| Single simple operation under ~30s | Consider inline execution first |
-| Needs restart durability/observability | Submit as Minion job |
-| Parallel work (2+ streams) | `gbrain agent run --fanout-manifest` or parent + child subagents |
+| Condition                                             | Action                                                           |
+| ----------------------------------------------------- | ---------------------------------------------------------------- |
+| User asks for deterministic command/script run        | Shell job (CLI: `gbrain jobs submit shell ...`)                  |
+| User asks to "run in minions" + explicit command/argv | Shell job (CLI, `--params` with `cmd` or `argv`)                 |
+| User asks for research/reasoning/iterative agent      | Subagent job (CLI: `gbrain agent run`)                           |
+| User asks to steer/pause/resume an agent              | Subagent job lifecycle tools (MCP-callable)                      |
+| Single simple operation under ~30s                    | Consider inline execution first                                  |
+| Needs restart durability/observability                | Submit as Minion job                                             |
+| Parallel work (2+ streams)                            | `gbrain agent run --fanout-manifest` or parent + child subagents |
 
 If intent is ambiguous, ask one clarification:
 "Do you want a deterministic shell command job, or an LLM agent job?"
@@ -113,16 +115,19 @@ Shell jobs take their command via `--params` as a JSON object with `cmd` (string
 or `argv` (array), plus `cwd` and optional `env`.
 
 Command string form:
+
 ```
 gbrain jobs submit shell --params '{"cmd":"echo hello","cwd":"/abs/path"}'
 ```
 
 Argv form (no shell expansion):
+
 ```
 gbrain jobs submit shell --params '{"argv":["bash","-lc","echo hello"],"cwd":"/abs/path"}'
 ```
 
 Inline execution on PGLite or any one-shot deployment:
+
 ```
 gbrain jobs submit shell --params '{"cmd":"echo hello","cwd":"/tmp"}' --follow
 ```
@@ -153,7 +158,7 @@ cancel_job id=ID
 replay_job id=ID
 ```
 
-`replay_job` is not protected — only shell *submission* is. Agents can
+`replay_job` is not protected — only shell _submission_ is. Agents can
 cancel or replay a shell job without CLI access.
 
 Use idempotency keys for recurring shell workloads to avoid duplicate runs.
@@ -181,6 +186,7 @@ gbrain agent run "Research Acme Corp revenue" --tools "search,query"
 is rejected at submit time with `allowed_tools references unknown tool`.
 
 For parallel work with a fan-out manifest:
+
 ```
 gbrain agent run --fanout-manifest companies.json
 ```
@@ -192,6 +198,7 @@ and claims AFTER every child terminates. See
 `src/core/minions/handlers/subagent-aggregator.ts`.
 
 Flags (from `src/commands/agent.ts`):
+
 - `--subagent-def <name>` — named subagent definition
 - `--model <id>` — override model
 - `--max-turns <N>` — cap the LLM loop
@@ -220,6 +227,7 @@ Progress includes: step count, total steps, message, token usage, last tool call
 ## Phase 3: Steer
 
 Send a message to redirect a running agent:
+
 ```
 send_job_message id=ID payload={"directive":"focus on revenue, skip headcount"}
 ```

@@ -1,5 +1,9 @@
 import { randomUUID } from "node:crypto";
-import type { DocumentRequestFrontmatter, DocumentRequestItem, DocumentRequestStatus } from "@/lib/document-requests";
+import type {
+  DocumentRequestFrontmatter,
+  DocumentRequestItem,
+  DocumentRequestStatus,
+} from "@/lib/document-requests";
 import type { CommunicationEntry, DocumentEntry } from "@/lib/legal-types";
 
 function normalize(input: string): string {
@@ -20,7 +24,7 @@ function tokens(input: string): string[] {
 export function findDocumentRequestItemIndex(
   items: DocumentRequestItem[],
   filename: string,
-  preferredKey?: string,
+  preferredKey?: string
 ): number {
   if (preferredKey) {
     const exact = items.findIndex((item) => item.key === preferredKey);
@@ -41,7 +45,9 @@ export function findDocumentRequestItemIndex(
 
   if (scored[0]) return scored[0].index;
 
-  const firstOpenRequired = items.findIndex((item) => item.required && !item.received_document_slug);
+  const firstOpenRequired = items.findIndex(
+    (item) => item.required && !item.received_document_slug
+  );
   if (firstOpenRequired >= 0) return firstOpenRequired;
   return items.findIndex((item) => !item.received_document_slug);
 }
@@ -50,7 +56,7 @@ export function fulfillDocumentRequestItems(
   frontmatter: DocumentRequestFrontmatter,
   uploadedDocumentSlug: string,
   filename: string,
-  preferredKey?: string,
+  preferredKey?: string
 ): {
   items: DocumentRequestItem[];
   status: DocumentRequestStatus;
@@ -89,9 +95,16 @@ export function buildPortalDocumentEntry(input: {
   };
 }
 
-export function appendCaseDocument(documents: DocumentEntry[] | undefined, entry: DocumentEntry): DocumentEntry[] {
+export function appendCaseDocument(
+  documents: DocumentEntry[] | undefined,
+  entry: DocumentEntry
+): DocumentEntry[] {
   const current = Array.isArray(documents) ? documents : [];
-  if (current.some((doc) => (entry.slug && doc.slug === entry.slug) || (entry.url && doc.url === entry.url))) {
+  if (
+    current.some(
+      (doc) => (entry.slug && doc.slug === entry.slug) || (entry.url && doc.url === entry.url)
+    )
+  ) {
     return current;
   }
   return [...current, entry];

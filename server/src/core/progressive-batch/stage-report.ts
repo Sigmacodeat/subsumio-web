@@ -9,7 +9,7 @@
  * across every terminal). One report per stage, written to stderr.
  */
 
-import type { StageReport } from './types.ts';
+import type { StageReport } from "./types.ts";
 
 /**
  * Pure ASCII single-line report for a stage. Suitable for stderr.
@@ -30,15 +30,13 @@ export function formatStageLine(r: StageReport): string {
     `dt=${r.stageMs}ms`,
   ];
   if (r.deltaObserved !== undefined) {
-    parts.push(
-      `delta=${r.deltaObserved}/${r.deltaExpected ?? 'n/a'}`,
-    );
+    parts.push(`delta=${r.deltaObserved}/${r.deltaExpected ?? "n/a"}`);
   }
   if (r.abortReason) parts.push(`reason=${r.abortReason}`);
   if (r.qualityReasons && r.qualityReasons.length > 0) {
     parts.push(`quality_issues=${r.qualityReasons.length}`);
   }
-  return `[progressive-batch ${parts.join(' ')}]`;
+  return `[progressive-batch ${parts.join(" ")}]`;
 }
 
 /**
@@ -47,6 +45,5 @@ export function formatStageLine(r: StageReport): string {
 export function defaultStageReport(r: StageReport): void {
   // We want this on stderr so stdout JSON envelopes from the caller
   // (e.g. `gbrain reindex --json`) stay clean.
-  process.stderr.write(formatStageLine(r) + '\n');
+  process.stderr.write(formatStageLine(r) + "\n");
 }
-

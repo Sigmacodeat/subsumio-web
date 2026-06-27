@@ -11,6 +11,7 @@
 ## P0 — Vor Launch (kritisch)
 
 ### 1. SOC 2 Type II Zertifizierung
+
 - **Status:** Nicht gestartet
 - **Aufwand:** 4–6 Wochen Vorbereitung + 3–6 Monate Audit-Periode
 - **Aktion:**
@@ -22,6 +23,7 @@
 - **Budget:** ~€15.000–50.000
 
 ### 2. Penetration Testing
+
 - **Status:** Nicht beauftragt
 - **Aufwand:** 2–3 Wochen
 - **Aktion:**
@@ -31,6 +33,7 @@
 - **Budget:** ~€5.000–15.000
 
 ### 3. ISO 27001 Zertifizierung (optional für Early Adopters)
+
 - **Status:** Nicht gestartet
 - **Aufwand:** 8–12 Wochen Vorbereitung + Audit
 - **Aktion:**
@@ -44,6 +47,7 @@
 ## P1 — Kurz nach Launch
 
 ### 4. Verlags-Content-Partnerschaft
+
 - **Status:** Keine Kontakte
 - **Aktion:**
   - [ ] MANZ Verlag ansprechen (AT — Rechtskommentare)
@@ -54,6 +58,7 @@
 - **Budget:** Verhandlungssache
 
 ### 5. Security Policies Formalisierung
+
 - **Status:** Teilweise vorhanden (im Code verstreut)
 - **Aktion:**
   - [ ] Security Policy Dokument erstellen (Access Control, Encryption, Incident Response)
@@ -63,6 +68,7 @@
 - **Budget:** Intern
 
 ### 6. SLA Documentation
+
 - **Status:** Fehlt
 - **Aktion:**
   - [ ] Uptime SLA definieren (99.5% für Pro, 99.9% für Team/Enterprise)
@@ -72,6 +78,7 @@
 - **Budget:** Intern
 
 ### 7. Enterprise Support Prozess
+
 - **Status:** Fehlt
 - **Aktion:**
   - [ ] Support-Ticket-System auswählen (z.B. Linear, Zendesk, HelpScout)
@@ -85,6 +92,7 @@
 ## P2 — Mittelfristig
 
 ### 8. Brand Awareness
+
 - [ ] Case Studies von Early Adopters erstellen
 - [ ] Testimonials sammeln
 - [ ] LinkedIn-Präenz aufbauen
@@ -92,6 +100,7 @@
 - [ ] Blog/Content-Marketing (SEO)
 
 ### 9. Trust Center
+
 - [ ] trust.subsum.io Seite erstellen
 - [ ] Security Whitepaper veröffentlichen
 - [ ] Sub-processor Liste
@@ -101,22 +110,22 @@
 
 ## Budget-Summary
 
-| Item | Budget (geschätzt) |
-|---|---|
-| SOC 2 Type II | €15.000–50.000 |
-| Penetration Testing | €5.000–15.000 |
-| ISO 27001 | €10.000–30.000 |
-| Verlags-Partnerschaft | Verhandlungssache |
-| SLA/Support Tools | €200–500/Monat |
+| Item                             | Budget (geschätzt)  |
+| -------------------------------- | ------------------- |
+| SOC 2 Type II                    | €15.000–50.000      |
+| Penetration Testing              | €5.000–15.000       |
+| ISO 27001                        | €10.000–30.000      |
+| Verlags-Partnerschaft            | Verhandlungssache   |
+| SLA/Support Tools                | €200–500/Monat      |
 | **Gesamt (exkl. Partnerschaft)** | **~€30.000–95.000** |
 
 ---
 
 ## Timeline
 
-| Phase | Dauer | Items |
-|---|---|---|
-| Pre-Launch | 4–6 Wochen | SOC 2 Vorbereitung, Pentest, Security Policies |
-| Launch | Woche 5 | Early Adopters (Solo/Mid-Size DACH) |
+| Phase       | Dauer      | Items                                                 |
+| ----------- | ---------- | ----------------------------------------------------- |
+| Pre-Launch  | 4–6 Wochen | SOC 2 Vorbereitung, Pentest, Security Policies        |
+| Launch      | Woche 5    | Early Adopters (Solo/Mid-Size DACH)                   |
 | Post-Launch | 3–6 Monate | SOC 2 Audit-Periode, ISO 27001, Verlags-Partnerschaft |
-| Enterprise | Monat 4–6 | Enterprise-Deals nach SOC 2 |
+| Enterprise  | Monat 4–6  | Enterprise-Deals nach SOC 2                           |

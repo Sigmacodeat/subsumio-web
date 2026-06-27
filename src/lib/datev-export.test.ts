@@ -89,7 +89,7 @@ describe("steuerKennzeichen", () => {
   });
 
   test("20 % AT → '20'", () => {
-    expect(steuerKennzeichen(0.20)).toBe("20");
+    expect(steuerKennzeichen(0.2)).toBe("20");
   });
 
   test("0 % → '0'", () => {
@@ -144,7 +144,7 @@ describe("KONTENRAHMEN", () => {
 describe("generateDatevCsv — Header & Struktur", () => {
   test("CSV-Header ist kanonisch", () => {
     expect(DATEV_CSV_HEADER).toBe(
-      "USt-ID;Datum;Belegnr;Buchungstext;Konto;Gegenkonto;Betrag;Steuerkennzeichen;Kostenstelle;Mandant;Stunden;Typ;Berater;Mandant-Nr",
+      "USt-ID;Datum;Belegnr;Buchungstext;Konto;Gegenkonto;Betrag;Steuerkennzeichen;Kostenstelle;Mandant;Stunden;Typ;Berater;Mandant-Nr"
     );
   });
 
@@ -228,7 +228,7 @@ describe("generateDatevCsv — Kontenrahmen", () => {
       [sampleEntries[0]],
       { ...sampleSettings, datevKontenrahmen: "SKR04" },
       "2026-01-01",
-      "2026-12-31",
+      "2026-12-31"
     );
     const row = csv.split("\n")[1];
     expect(row).toContain("4400");
@@ -240,7 +240,7 @@ describe("generateDatevCsv — Kontenrahmen", () => {
       [sampleEntries[0]],
       { ...sampleSettings, datevKontenrahmen: "SKR49" },
       "2026-01-01",
-      "2026-12-31",
+      "2026-12-31"
     );
     const row = csv.split("\n")[1];
     expect(row).toContain("4400");
@@ -252,7 +252,7 @@ describe("generateDatevCsv — Kontenrahmen", () => {
       [sampleEntries[0]],
       { ...sampleSettings, datevKontenrahmen: undefined },
       "2026-01-01",
-      "2026-12-31",
+      "2026-12-31"
     );
     const row = csv.split("\n")[1];
     expect(row).toContain("8400");
@@ -350,7 +350,7 @@ describe("generateDatevCsv — Berater- & Mandant-Nr", () => {
       [sampleEntries[0]],
       { ...sampleSettings, datevBeraterNr: undefined },
       "2026-01-01",
-      "2026-12-31",
+      "2026-12-31"
     );
     const row = csv.split("\n")[1];
     // Berater-Feld ist leer (zweiter Wert von rechts)
@@ -370,7 +370,7 @@ describe("generateDatevCsv — USt-ID", () => {
       [sampleEntries[0]],
       { ...sampleSettings, ustId: undefined },
       "2026-01-01",
-      "2026-12-31",
+      "2026-12-31"
     );
     const row = csv.split("\n")[1];
     const cells = row.split(";");
@@ -469,7 +469,7 @@ describe("steuerKennzeichen — erweiterte Edge Cases", () => {
   });
 
   test("0.20 → '20'", () => {
-    expect(steuerKennzeichen(0.20)).toBe("20");
+    expect(steuerKennzeichen(0.2)).toBe("20");
   });
 
   test("0.25 (über AT-Satz) → '20'", () => {
@@ -487,7 +487,7 @@ describe("generateDatevCsv — SKR04/SKR49 Auslagenkonten", () => {
       [sampleEntries[1]],
       { ...sampleSettings, datevKontenrahmen: "SKR04" },
       "2026-01-01",
-      "2026-12-31",
+      "2026-12-31"
     );
     const fields = csv.split("\n")[1].split(";");
     expect(fields[4]).toBe("6300");
@@ -498,7 +498,7 @@ describe("generateDatevCsv — SKR04/SKR49 Auslagenkonten", () => {
       [sampleEntries[1]],
       { ...sampleSettings, datevKontenrahmen: "SKR49" },
       "2026-01-01",
-      "2026-12-31",
+      "2026-12-31"
     );
     const fields = csv.split("\n")[1].split(";");
     expect(fields[4]).toBe("4900");
@@ -511,7 +511,7 @@ describe("generateDatevCsv — Ungültiger Kontenrahmen", () => {
       [sampleEntries[0]],
       { ...sampleSettings, datevKontenrahmen: "INVALID" },
       "2026-01-01",
-      "2026-12-31",
+      "2026-12-31"
     );
     const fields = csv.split("\n")[1].split(";");
     expect(fields[4]).toBe("8400");

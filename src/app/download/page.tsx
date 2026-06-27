@@ -18,7 +18,12 @@ export const metadata: Metadata = {
 export default function Page() {
   return (
     <>
-      <JsonLd data={breadcrumbLd([{ name: "Subsumio", url: "/" }, { name: "Download", url: "/download" }])} />
+      <JsonLd
+        data={breadcrumbLd([
+          { name: "Subsumio", url: "/" },
+          { name: "Download", url: "/download" },
+        ])}
+      />
       <DownloadPage lang="en" />
     </>
   );

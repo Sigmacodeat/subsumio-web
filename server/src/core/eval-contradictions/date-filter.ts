@@ -42,24 +42,34 @@ const DATE_REGEX =
   /\b(?:(\d{4})-(\d{2})-(\d{2})|(\d{4})\/(\d{2})\/(\d{2})|(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\w*\.?\s+(\d{1,2}),?\s+(\d{4})|(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\w*\.?\s+(\d{4})|Q[1-4]\s+(\d{4})|(\d{4}))\b/g;
 
 const MONTH_INDEX: Record<string, number> = {
-  Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5,
-  Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11,
+  Jan: 0,
+  Feb: 1,
+  Mar: 2,
+  Apr: 3,
+  May: 4,
+  Jun: 5,
+  Jul: 6,
+  Aug: 7,
+  Sep: 8,
+  Oct: 9,
+  Nov: 10,
+  Dec: 11,
 };
 
 export interface DateFilterDecision {
   skip: boolean;
   reason:
-    | 'both_explicit_separated'
-    | 'one_or_both_missing_dates'
-    | 'same_paragraph_dual_date'
-    | 'overlapping_or_close'
+    | "both_explicit_separated"
+    | "one_or_both_missing_dates"
+    | "same_paragraph_dual_date"
+    | "overlapping_or_close"
     /**
      * v0.34 / Lane B: both sides have a non-null page-level effective_date,
      * so the judge will see the temporal anchors and classify supersession /
      * regression / evolution explicitly. Rule 3's >30d skip would otherwise
      * silently kill exactly the cases the new verdicts exist to surface.
      */
-    | 'both_have_effective_date';
+    | "both_have_effective_date";
 }
 
 export interface DateFilterInput {
@@ -99,16 +109,24 @@ function parseDateMatch(m: RegExpExecArray): Date | null {
   let day = 1;
   if (m[1] && m[2] && m[3]) {
     // YYYY-MM-DD
-    year = +m[1]; month = +m[2] - 1; day = +m[3];
+    year = +m[1];
+    month = +m[2] - 1;
+    day = +m[3];
   } else if (m[4] && m[5] && m[6]) {
     // YYYY/MM/DD
-    year = +m[4]; month = +m[5] - 1; day = +m[6];
+    year = +m[4];
+    month = +m[5] - 1;
+    day = +m[6];
   } else if (m[7] && m[8] && m[9]) {
     // Mon DD YYYY
-    year = +m[9]; month = MONTH_INDEX[m[7]] ?? 0; day = +m[8];
+    year = +m[9];
+    month = MONTH_INDEX[m[7]] ?? 0;
+    day = +m[8];
   } else if (m[10] && m[11]) {
     // Mon YYYY (no day) — assume first of month
-    year = +m[11]; month = MONTH_INDEX[m[10]] ?? 0; day = 1;
+    year = +m[11];
+    month = MONTH_INDEX[m[10]] ?? 0;
+    day = 1;
   } else if (m[12]) {
     // Q1-4 YYYY
     year = +m[12];
@@ -157,11 +175,8 @@ function maxDateSeparationDays(a: Date[], b: Date[]): number {
  * when other dates in the chunks are far apart.
  */
 export function shouldSkipForDateMismatch(input: DateFilterInput): DateFilterDecision {
-  if (
-    hasSameParagraphDualDate(input.textA) ||
-    hasSameParagraphDualDate(input.textB)
-  ) {
-    return { skip: false, reason: 'same_paragraph_dual_date' };
+  if (hasSameParagraphDualDate(input.textA) || hasSameParagraphDualDate(input.textB)) {
+    return { skip: false, reason: "same_paragraph_dual_date" };
   }
   // v0.34 / Lane B: when BOTH sides have a non-null page-level effective_date,
   // the judge will see them via the (from: YYYY-MM-DD) tag and can classify
@@ -170,16 +185,16 @@ export function shouldSkipForDateMismatch(input: DateFilterInput): DateFilterDec
   // new verdict taxonomy exists to surface (e.g. the role-change-across-
   // years case where chunk-text dates are years apart).
   if (input.effectiveDateA && input.effectiveDateB) {
-    return { skip: false, reason: 'both_have_effective_date' };
+    return { skip: false, reason: "both_have_effective_date" };
   }
   const datesA = extractDates(input.textA);
   const datesB = extractDates(input.textB);
   if (datesA.length === 0 || datesB.length === 0) {
-    return { skip: false, reason: 'one_or_both_missing_dates' };
+    return { skip: false, reason: "one_or_both_missing_dates" };
   }
   const sep = maxDateSeparationDays(datesA, datesB);
   if (sep > DATE_SEPARATION_DAYS) {
-    return { skip: true, reason: 'both_explicit_separated' };
+    return { skip: true, reason: "both_explicit_separated" };
   }
-  return { skip: false, reason: 'overlapping_or_close' };
+  return { skip: false, reason: "overlapping_or_close" };
 }

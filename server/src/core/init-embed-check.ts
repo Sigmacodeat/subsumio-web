@@ -27,16 +27,16 @@
  * `embedding_check`.
  */
 
-import type { GBrainConfig } from './config.ts';
-import { loadConfigFileOnly } from './config.ts';
-import { buildGatewayConfig } from './ai/build-gateway-config.ts';
-import type { EmbeddingDiagnosis } from './ai/gateway.ts';
+import type { GBrainConfig } from "./config.ts";
+import { loadConfigFileOnly } from "./config.ts";
+import { buildGatewayConfig } from "./ai/build-gateway-config.ts";
+import type { EmbeddingDiagnosis } from "./ai/gateway.ts";
 
 export interface InitEmbedCheckResult {
   /** config-level ok: provider key present + recipe valid. */
   ok: boolean;
   /** when the whole check was skipped, why. */
-  skipped?: 'no_embedding' | 'flag' | 'env' | 'no_model';
+  skipped?: "no_embedding" | "flag" | "env" | "no_model";
   /** diagnosis reason when `ok === false`. */
   reason?: string;
   /** live test-embed result, undefined when not run. */
@@ -67,11 +67,11 @@ export interface RunInitEmbedCheckOpts {
 /** Classify a live-probe error into a coarse, stable reason. */
 function classifyLiveReason(err: unknown): string {
   const msg = (err instanceof Error ? err.message : String(err)).toLowerCase();
-  if (/timed out|timeout|abort/.test(msg)) return 'timeout';
-  if (/auth|unauthor|401|403|api[_-]?key|credential/.test(msg)) return 'auth';
-  if (/rate.?limit|429|too many/.test(msg)) return 'rate_limit';
-  if (/network|econn|fetch failed|enotfound|dns/.test(msg)) return 'network';
-  return 'unknown';
+  if (/timed out|timeout|abort/.test(msg)) return "timeout";
+  if (/auth|unauthor|401|403|api[_-]?key|credential/.test(msg)) return "auth";
+  if (/rate.?limit|429|too many/.test(msg)) return "rate_limit";
+  if (/network|econn|fetch failed|enotfound|dns/.test(msg)) return "network";
+  return "unknown";
 }
 
 /**
@@ -82,17 +82,24 @@ function classifyLiveReason(err: unknown): string {
  * which is private and returns the doctor-shaped `ProbeResult`. v0.42+ TODO:
  * unify the two onto one shared embed-probe core.)
  */
-export async function liveTestEmbed(
-  opts?: { timeoutMs?: number },
-): Promise<{ ok: true } | { ok: false; reason: string; message: string }> {
-  const { embed } = await import('./ai/gateway.ts');
+export async function liveTestEmbed(opts?: {
+  timeoutMs?: number;
+}): Promise<{ ok: true } | { ok: false; reason: string; message: string }> {
+  const { embed } = await import("./ai/gateway.ts");
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(new Error('embed probe timed out')), opts?.timeoutMs ?? 5000);
+  const timer = setTimeout(
+    () => controller.abort(new Error("embed probe timed out")),
+    opts?.timeoutMs ?? 5000
+  );
   try {
-    await embed(['probe'], { inputType: 'query', abortSignal: controller.signal });
+    await embed(["probe"], { inputType: "query", abortSignal: controller.signal });
     return { ok: true };
   } catch (err) {
-    return { ok: false, reason: classifyLiveReason(err), message: err instanceof Error ? err.message : String(err) };
+    return {
+      ok: false,
+      reason: classifyLiveReason(err),
+      message: err instanceof Error ? err.message : String(err),
+    };
   } finally {
     clearTimeout(timer);
   }
@@ -101,47 +108,53 @@ export async function liveTestEmbed(
 /** Init-specific warning for a non-ok diagnosis. Names `--no-embedding` +
  *  `--skip-embed-check` (NOT `--no-embed`, which is the sync/embed flag). */
 function formatInitEmbedWarning(d: Exclude<EmbeddingDiagnosis, { ok: true }>): string {
-  const lines: string[] = ['', '  Heads up: embedding is configured but not ready.'];
+  const lines: string[] = ["", "  Heads up: embedding is configured but not ready."];
   switch (d.reason) {
-    case 'missing_env':
-      lines.push(`  Model "${d.model}" needs ${d.missingEnvVars.join(', ')} — not set in your shell or ~/.gbrain/config.json.`);
-      lines.push('  Set it before first sync:');
+    case "missing_env":
+      lines.push(
+        `  Model "${d.model}" needs ${d.missingEnvVars.join(", ")} — not set in your shell or ~/.gbrain/config.json.`
+      );
+      lines.push("  Set it before first sync:");
       lines.push(`    export ${d.missingEnvVars[0]}=...`);
       break;
-    case 'unknown_provider':
+    case "unknown_provider":
       lines.push(`  Model "${d.model}" uses unknown provider "${d.provider}".`);
       lines.push(`  ${d.message}`);
       break;
-    case 'no_touchpoint':
+    case "no_touchpoint":
       lines.push(`  Provider "${d.provider}" has no embedding touchpoint.`);
       break;
-    case 'user_provided_model_unset':
+    case "user_provided_model_unset":
       lines.push(`  Provider "${d.provider}" needs an explicit model id (provider:model).`);
       break;
-    case 'no_model_configured':
-      lines.push('  No embedding model is configured.');
+    case "no_model_configured":
+      lines.push("  No embedding model is configured.");
       break;
-    case 'no_gateway_config':
-      lines.push('  Embedding gateway is not configured (startup-order bug — please file an issue).');
+    case "no_gateway_config":
+      lines.push(
+        "  Embedding gateway is not configured (startup-order bug — please file an issue)."
+      );
       break;
   }
-  lines.push('  Without it, `gbrain sync` imports pages but embeds 0 (search + code graph stay empty).');
-  lines.push('  Fixes:');
-  lines.push('    • Set the key above, then run `gbrain sync`.');
-  lines.push('    • Or defer embedding entirely: re-run init with --no-embedding.');
-  lines.push('    • Or skip this check: --skip-embed-check (or GBRAIN_INIT_SKIP_EMBED_CHECK=1).');
-  return lines.join('\n');
+  lines.push(
+    "  Without it, `gbrain sync` imports pages but embeds 0 (search + code graph stay empty)."
+  );
+  lines.push("  Fixes:");
+  lines.push("    • Set the key above, then run `gbrain sync`.");
+  lines.push("    • Or defer embedding entirely: re-run init with --no-embedding.");
+  lines.push("    • Or skip this check: --skip-embed-check (or GBRAIN_INIT_SKIP_EMBED_CHECK=1).");
+  return lines.join("\n");
 }
 
 function formatLiveProbeWarning(p: { reason: string; message: string }, model: string): string {
   return [
-    '',
+    "",
     `  Heads up: an embedding key is set but a test embed failed (${p.reason}).`,
     `  Model: ${model}`,
     `  Error: ${p.message}`,
-    '  `gbrain sync` may fail to embed. Verify the key/endpoint, or re-run init',
-    '  with --skip-embed-check to bypass this probe.',
-  ].join('\n');
+    "  `gbrain sync` may fail to embed. Verify the key/endpoint, or re-run init",
+    "  with --skip-embed-check to bypass this probe.",
+  ].join("\n");
 }
 
 /**
@@ -150,15 +163,17 @@ function formatLiveProbeWarning(p: { reason: string; message: string }, model: s
  * runs a best-effort live probe. Warns to stderr; never throws; init proceeds
  * regardless. Returns the result for the `--json` envelope.
  */
-export async function runInitEmbedCheck(opts: RunInitEmbedCheckOpts): Promise<InitEmbedCheckResult> {
+export async function runInitEmbedCheck(
+  opts: RunInitEmbedCheckOpts
+): Promise<InitEmbedCheckResult> {
   const warn = opts.warn ?? ((m: string) => console.error(m));
 
-  if (opts.noEmbedding) return { ok: true, skipped: 'no_embedding' };
-  if (opts.skipFlag) return { ok: true, skipped: 'flag' };
-  if (process.env.GBRAIN_INIT_SKIP_EMBED_CHECK === '1') return { ok: true, skipped: 'env' };
+  if (opts.noEmbedding) return { ok: true, skipped: "no_embedding" };
+  if (opts.skipFlag) return { ok: true, skipped: "flag" };
+  if (process.env.GBRAIN_INIT_SKIP_EMBED_CHECK === "1") return { ok: true, skipped: "env" };
   // No model resolved means resolveAIOptions already fail-loud'd (or deferred);
   // nothing to validate here.
-  if (!opts.resolvedModel) return { ok: true, skipped: 'no_model' };
+  if (!opts.resolvedModel) return { ok: true, skipped: "no_model" };
 
   // Build the effective gateway config the SAME way runtime does so the check
   // sees the same keys AND provider base URLs (D1A + D7A).
@@ -173,7 +188,7 @@ export async function runInitEmbedCheck(opts: RunInitEmbedCheckOpts): Promise<In
     ...(opts.apiKey ? { openai_api_key: opts.apiKey } : {}),
   };
 
-  const { configureGateway, diagnoseEmbedding } = await import('./ai/gateway.ts');
+  const { configureGateway, diagnoseEmbedding } = await import("./ai/gateway.ts");
   configureGateway(buildGatewayConfig(effective));
 
   const diag = diagnoseEmbedding();

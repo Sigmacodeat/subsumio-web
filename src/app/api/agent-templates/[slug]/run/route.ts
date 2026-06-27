@@ -37,7 +37,7 @@ export const POST = createHandler(
     try {
       const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(slug)}`, {
         headers: ctx.headers,
-      signal: AbortSignal.timeout(10_000),
+        signal: AbortSignal.timeout(10_000),
       });
       if (res.status === 404) return apiNotFound("Agent-Template");
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -78,7 +78,7 @@ export const POST = createHandler(
         method: "POST",
         headers: { "Content-Type": "application/json", ...ctx.headers },
         body: JSON.stringify(supervisorData),
-      signal: AbortSignal.timeout(15_000),
+        signal: AbortSignal.timeout(15_000),
       });
 
       if (!res.ok) {

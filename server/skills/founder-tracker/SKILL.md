@@ -34,6 +34,7 @@ mutating: false
 ## Contract
 
 This skill guarantees:
+
 1. Last contact, open commitments (yours and theirs) and changes-since are surfaced with sources.
 2. Suggested questions are grounded in the open items, not generic.
 3. The brief ends with an explicit gap list (what isn't on file).
@@ -71,5 +72,6 @@ deal memo (→ deal-memo) or review the whole portfolio (→ portfolio-review).
 - ❌ Presenting a stale snapshot as current — state the as-of date.
 
 ## Error Handling
+
 - No prior context → say so; offer to prep from the deck only.
 - Multiple entities with the same name → disambiguate before summarizing.

@@ -174,10 +174,7 @@ describe("collectSSEChunks", () => {
   });
 
   it("returns empty string for stream with no chunks", async () => {
-    const stream = makeSSEStream([
-      'data: {"citations":[]}\n\n',
-      "data: [DONE]\n\n",
-    ]);
+    const stream = makeSSEStream(['data: {"citations":[]}\n\n', "data: [DONE]\n\n"]);
 
     const result = await collectSSEChunks(stream);
     expect(result).toBe("");

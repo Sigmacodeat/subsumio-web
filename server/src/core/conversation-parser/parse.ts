@@ -25,19 +25,16 @@
  * test-isolatable.
  */
 
-import {
-  BUILTIN_PATTERNS,
-  cleanSpeaker,
-} from './builtins.ts';
+import { BUILTIN_PATTERNS, cleanSpeaker } from "./builtins.ts";
 import type {
   DateContext,
   MatchedMessage,
   ParseConversationOpts,
   ParseResult,
   PatternEntry,
-} from './types.ts';
+} from "./types.ts";
 
-export type { ParseConversationOpts, ParseResult, MatchedMessage } from './types.ts';
+export type { ParseConversationOpts, ParseResult, MatchedMessage } from "./types.ts";
 
 /**
  * How many head-of-body lines to score patterns against (D18).
@@ -105,20 +102,20 @@ export function deriveDateContext(opts: ParseConversationOpts): DateContext {
       return {
         fallbackDate: sliced,
         timezone: extractTimezone(opts.page),
-        source: 'explicit',
+        source: "explicit",
       };
     }
   }
   const page = opts.page;
   if (page?.frontmatter) {
     const fmDate = page.frontmatter.date;
-    if (typeof fmDate === 'string') {
+    if (typeof fmDate === "string") {
       const sliced = fmDate.slice(0, 10);
       if (/^\d{4}-\d{2}-\d{2}$/.test(sliced)) {
         return {
           fallbackDate: sliced,
           timezone: extractTimezone(page),
-          source: 'frontmatter_date',
+          source: "frontmatter_date",
         };
       }
     }
@@ -127,19 +124,19 @@ export function deriveDateContext(opts: ParseConversationOpts): DateContext {
     return {
       fallbackDate: page.effective_date.toISOString().slice(0, 10),
       timezone: extractTimezone(page),
-      source: 'effective_date',
+      source: "effective_date",
     };
   }
   return {
-    fallbackDate: '1970-01-01',
+    fallbackDate: "1970-01-01",
     timezone: extractTimezone(page),
-    source: 'epoch_default',
+    source: "epoch_default",
   };
 }
 
-function extractTimezone(page: ParseConversationOpts['page']): string | undefined {
+function extractTimezone(page: ParseConversationOpts["page"]): string | undefined {
   const tz = page?.frontmatter?.timezone;
-  return typeof tz === 'string' && tz.length > 0 ? tz : undefined;
+  return typeof tz === "string" && tz.length > 0 ? tz : undefined;
 }
 
 /**
@@ -149,8 +146,8 @@ function extractTimezone(page: ParseConversationOpts['page']): string | undefine
 function to24h(hour: number, ampm: string | undefined): number {
   if (!ampm) return hour;
   const am = ampm.toUpperCase();
-  if (am === 'PM' && hour < 12) return hour + 12;
-  if (am === 'AM' && hour === 12) return 0;
+  if (am === "PM" && hour < 12) return hour + 12;
+  if (am === "AM" && hour === 12) return 0;
   return hour;
 }
 
@@ -170,13 +167,13 @@ function to24h(hour: number, ampm: string | undefined): number {
 function buildIso(
   match: RegExpExecArray,
   entry: PatternEntry,
-  dateCtx: DateContext,
+  dateCtx: DateContext
 ): string | null {
   const { captures } = entry;
 
   // Pattern-specific date reconstruction.
   switch (entry.id) {
-    case 'telegram-text-export': {
+    case "telegram-text-export": {
       // groups: 1=speaker, 2=monthName, 3=day, 4=year, 5=hour, 6=min, 7=sec, 8=ampm
       const monthName = match[2];
       const day = Number(match[3]);
@@ -187,10 +184,10 @@ function buildIso(
       const month = monthNameToIndex(monthName);
       if (month < 0 || !Number.isFinite(day) || !Number.isFinite(year)) return null;
       const hour = to24h(hourRaw, ampm);
-      const date = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      return `${date}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00Z`;
+      const date = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      return `${date}T${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00Z`;
     }
-    case 'whatsapp-iso': {
+    case "whatsapp-iso": {
       // groups: 1=dd, 2=mm, 3=yy, 4=hh, 5=mm, 6=ss, 7=speaker, 8=text
       const day = Number(match[1]);
       const month = Number(match[2]);
@@ -199,10 +196,10 @@ function buildIso(
       const hour = Number(match[4]);
       const minute = Number(match[5]);
       if (![day, month, year, hour, minute].every(Number.isFinite)) return null;
-      const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      return `${date}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00Z`;
+      const date = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      return `${date}T${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00Z`;
     }
-    case 'whatsapp-us': {
+    case "whatsapp-us": {
       // groups: 1=mm, 2=dd, 3=yy, 4=hh, 5=mm, 6=ampm, 7=speaker, 8=text
       const month = Number(match[1]);
       const day = Number(match[2]);
@@ -213,10 +210,10 @@ function buildIso(
       const ampm = match[6];
       if (![month, day, year, hourRaw, minute].every(Number.isFinite)) return null;
       const hour = to24h(hourRaw, ampm);
-      const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      return `${date}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00Z`;
+      const date = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      return `${date}T${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00Z`;
     }
-    case 'discord-export': {
+    case "discord-export": {
       // groups: 1=mm, 2=dd, 3=yyyy, 4=hh, 5=mm, 6=ampm, 7=speaker
       const month = Number(match[1]);
       const day = Number(match[2]);
@@ -226,10 +223,10 @@ function buildIso(
       const ampm = match[6];
       if (![month, day, year, hourRaw, minute].every(Number.isFinite)) return null;
       const hour = to24h(hourRaw, ampm);
-      const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      return `${date}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00Z`;
+      const date = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      return `${date}T${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00Z`;
     }
-    case 'teams-export': {
+    case "teams-export": {
       // groups: 1=speaker, 2=mm, 3=dd, 4=yyyy, 5=hh, 6=mm, 7=ampm, 8=text
       const month = Number(match[2]);
       const day = Number(match[3]);
@@ -239,52 +236,50 @@ function buildIso(
       const ampm = match[7];
       if (![month, day, year, hourRaw, minute].every(Number.isFinite)) return null;
       const hour = to24h(hourRaw, ampm);
-      const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      return `${date}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00Z`;
+      const date = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      return `${date}T${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00Z`;
     }
   }
 
   // Generic path for patterns whose captures map directly to
   // date/hour/minute/ampm groups.
   if (
-    entry.date_source === 'inline' &&
+    entry.date_source === "inline" &&
     captures.date_group !== undefined &&
     captures.hour_group !== undefined &&
     captures.minute_group !== undefined
   ) {
     const date = match[captures.date_group];
-    if (typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    if (typeof date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
       return null;
     }
     const hourRaw = Number(match[captures.hour_group]);
     const minute = Number(match[captures.minute_group]);
     if (!Number.isFinite(hourRaw) || !Number.isFinite(minute)) return null;
-    const ampm =
-      captures.ampm_group !== undefined ? match[captures.ampm_group] : undefined;
+    const ampm = captures.ampm_group !== undefined ? match[captures.ampm_group] : undefined;
     const hour = to24h(hourRaw, ampm);
-    return `${date}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00Z`;
+    return `${date}T${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00Z`;
   }
 
   // Time-only patterns: date from DateContext.
   if (
-    entry.date_source === 'frontmatter' &&
+    entry.date_source === "frontmatter" &&
     captures.hour_group !== undefined &&
     captures.minute_group !== undefined
   ) {
     const hourRaw = Number(match[captures.hour_group]);
     const minute = Number(match[captures.minute_group]);
     if (!Number.isFinite(hourRaw) || !Number.isFinite(minute)) return null;
-    const ampm =
-      captures.ampm_group !== undefined ? match[captures.ampm_group] : undefined;
+    const ampm = captures.ampm_group !== undefined ? match[captures.ampm_group] : undefined;
     const hour = to24h(hourRaw, ampm);
-    return `${dateCtx.fallbackDate}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00Z`;
+    return `${dateCtx.fallbackDate}T${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00Z`;
   }
 
   // No-time patterns (irc-classic): only frontmatter date is
   // available; anchor every message at 00:00:00 of that day.
   // Honest: messages lose intra-day ordering, but at least they
   // parse and the day-level fact attribution is correct.
-  if (entry.date_source === 'frontmatter' && captures.hour_group === undefined) {
+  if (entry.date_source === "frontmatter" && captures.hour_group === undefined) {
     return `${dateCtx.fallbackDate}T00:00:00Z`;
   }
 
@@ -292,8 +287,18 @@ function buildIso(
 }
 
 const MONTHS_SHORT = [
-  'jan', 'feb', 'mar', 'apr', 'may', 'jun',
-  'jul', 'aug', 'sep', 'oct', 'nov', 'dec',
+  "jan",
+  "feb",
+  "mar",
+  "apr",
+  "may",
+  "jun",
+  "jul",
+  "aug",
+  "sep",
+  "oct",
+  "nov",
+  "dec",
 ];
 function monthNameToIndex(name: string): number {
   return MONTHS_SHORT.indexOf(name.toLowerCase().slice(0, 3));
@@ -316,7 +321,7 @@ function monthNameToIndex(name: string): number {
 export function applyPattern(
   body: string,
   entry: PatternEntry,
-  dateCtx: DateContext,
+  dateCtx: DateContext
 ): MatchedMessage[] {
   if (!body) return [];
   const out: MatchedMessage[] = [];
@@ -341,11 +346,11 @@ export function applyPattern(
     if (m) {
       const iso = buildIso(m, entry, dateCtx);
       if (iso === null) continue; // reconstruction failed; skip line
-      const rawSpeaker = m[entry.captures.speaker_group] ?? '';
+      const rawSpeaker = m[entry.captures.speaker_group] ?? "";
       const speaker = cleanSpeaker(rawSpeaker, entry.speaker_clean);
-      let text = '';
+      let text = "";
       if (entry.captures.text_group > 0) {
-        text = (m[entry.captures.text_group] ?? '').trim();
+        text = (m[entry.captures.text_group] ?? "").trim();
       }
       // Multi-line patterns: text on next line(s) until next anchor.
       // (Even when text_group is set, multi_line=true means SUBSEQUENT
@@ -383,10 +388,7 @@ function getNonBlankLines(body: string, headCap?: number): string[] {
  * passes the array to all 12 candidates (saves 11 redundant body
  * splits per fallback pass).
  */
-function scoreFromLines(
-  lines: readonly string[],
-  entry: PatternEntry,
-): number {
+function scoreFromLines(lines: readonly string[], entry: PatternEntry): number {
   if (lines.length === 0) return 0;
   let anchored = 0;
   for (const line of lines) {
@@ -433,12 +435,9 @@ export function scorePatternFull(body: string, entry: PatternEntry): number {
  * for back-compat. `extract-conversation-facts.ts` adapts via
  * `parseConversation(body, { page })` in T5.
  */
-export function parseConversation(
-  body: string,
-  opts: ParseConversationOpts = {},
-): ParseResult {
+export function parseConversation(body: string, opts: ParseConversationOpts = {}): ParseResult {
   if (!body) {
-    return { messages: [], phase: 'no_match' };
+    return { messages: [], phase: "no_match" };
   }
 
   const dateCtx = deriveDateContext(opts);
@@ -450,7 +449,7 @@ export function parseConversation(
   const candidates: readonly PatternEntry[] = [...builtinPool, ...userPool];
 
   if (candidates.length === 0) {
-    return { messages: [], phase: 'no_match' };
+    return { messages: [], phase: "no_match" };
   }
 
   // D18: score every candidate; pick the highest. Tie-break on
@@ -521,7 +520,7 @@ export function parseConversation(
   if (top.score < SCORING_MIN_ACCEPTANCE) {
     return {
       messages: [],
-      phase: 'no_match',
+      phase: "no_match",
       patterns_scored: patternsScored,
       unmatched_line_count: opts.diagnostic
         ? body.split(/\r?\n/).filter((l) => l.trim().length > 0).length
@@ -534,7 +533,7 @@ export function parseConversation(
   // Timezone warning surface (D19).
   let timezone_warning: string | undefined;
   if (
-    top.entry.timezone_policy === 'utc_assumed_with_warn' &&
+    top.entry.timezone_policy === "utc_assumed_with_warn" &&
     !dateCtx.timezone &&
     messages.length > 0
   ) {
@@ -543,14 +542,12 @@ export function parseConversation(
 
   return {
     messages,
-    phase: 'regex_match',
+    phase: "regex_match",
     matched_pattern_id: top.entry.id,
     patterns_scored: patternsScored,
     timezone_warning,
     unmatched_line_count: opts.diagnostic
-      ? body
-          .split(/\r?\n/)
-          .filter((l) => l.trim().length > 0).length - messages.length
+      ? body.split(/\r?\n/).filter((l) => l.trim().length > 0).length - messages.length
       : undefined,
   };
 }

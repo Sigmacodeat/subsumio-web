@@ -20,16 +20,18 @@
  */
 
 export function normalizeAlias(raw: string): string {
-  if (typeof raw !== 'string') return '';
-  return raw
-    .normalize('NFKC')
-    .toLowerCase()
-    .replace(/[\s ]+/g, ' ')
-    .trim()
-    // strip a single layer of wrapping quotes/brackets left by loose YAML
-    .replace(/^["'`\[(]+/, '')
-    .replace(/["'`\])]+$/, '')
-    .trim();
+  if (typeof raw !== "string") return "";
+  return (
+    raw
+      .normalize("NFKC")
+      .toLowerCase()
+      .replace(/[\s ]+/g, " ")
+      .trim()
+      // strip a single layer of wrapping quotes/brackets left by loose YAML
+      .replace(/^["'`\[(]+/, "")
+      .replace(/["'`\])]+$/, "")
+      .trim()
+  );
 }
 
 /**
@@ -41,15 +43,15 @@ export function normalizeAlias(raw: string): string {
 export function normalizeAliasList(value: unknown): string[] {
   const out = new Set<string>();
   const push = (v: unknown) => {
-    if (typeof v !== 'string') return;
+    if (typeof v !== "string") return;
     const n = normalizeAlias(v);
     if (n.length > 0) out.add(n);
   };
   if (Array.isArray(value)) {
     for (const v of value) push(v);
-  } else if (typeof value === 'string') {
+  } else if (typeof value === "string") {
     // A scalar `aliases: Hall of Light` OR a comma-list `aliases: a, b`.
-    if (value.includes(',')) value.split(',').forEach(push);
+    if (value.includes(",")) value.split(",").forEach(push);
     else push(value);
   }
   return Array.from(out);

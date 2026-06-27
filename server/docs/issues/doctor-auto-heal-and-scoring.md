@@ -34,11 +34,11 @@ Only 280 of 7,131 issues are real problems. 96% are cosmetic noise.
 
 ### Test Cases
 
-| Frontmatter issues | Severity breakdown | Expected status |
-|---|---|---|
-| 0 issues | n/a | OK |
-| 50 NESTED_QUOTES only | 0 error, 50 info | OK (with note) |
-| 3 YAML_PARSE | 3 error | WARN |
+| Frontmatter issues                | Severity breakdown | Expected status          |
+| --------------------------------- | ------------------ | ------------------------ |
+| 0 issues                          | n/a                | OK                       |
+| 50 NESTED_QUOTES only             | 0 error, 50 info   | OK (with note)           |
+| 3 YAML_PARSE                      | 3 error            | WARN                     |
 | 6900 NESTED_QUOTES + 3 YAML_PARSE | 3 error, 6900 info | WARN (mentions 3 errors) |
 
 ---
@@ -57,6 +57,7 @@ These aren't contradictions — they're the same topic evolving over time. The p
 ### Evidence
 
 From a probe run on 50 queries with top-k=15:
+
 - 120 contradictions detected (112 high, 8 medium)
 - After manual review: ~60% were temporal evolutions, not real conflicts
 - Pages have `effective_date` or `created` timestamps that could disambiguate
@@ -70,12 +71,12 @@ From a probe run on 50 queries with top-k=15:
 
 ### Test Cases
 
-| Page A date | Page A claim | Page B date | Page B claim | Expected verdict |
-|---|---|---|---|---|
-| 2026-04 | "Considering X" | 2026-05 | "Chose Y" | temporal_supersession |
-| 2026-04 | "Revenue is $1M" | 2026-04 | "Revenue is $500K" | contradiction |
-| null | "X is true" | null | "X is false" | contradiction |
-| 2025-01 | "CEO of Company" | 2026-01 | "Former CEO" | temporal_supersession |
+| Page A date | Page A claim     | Page B date | Page B claim       | Expected verdict      |
+| ----------- | ---------------- | ----------- | ------------------ | --------------------- |
+| 2026-04     | "Considering X"  | 2026-05     | "Chose Y"          | temporal_supersession |
+| 2026-04     | "Revenue is $1M" | 2026-04     | "Revenue is $500K" | contradiction         |
+| null        | "X is true"      | null        | "X is false"       | contradiction         |
+| 2025-01     | "CEO of Company" | 2026-01     | "Former CEO"       | temporal_supersession |
 
 ---
 
@@ -103,17 +104,21 @@ Store in `.gbrain/doctor-baselines.json` so it works without config too:
 
 ```json
 {
-  "multi_source_drift": { "count": 4800, "acknowledged_at": "2026-05-15", "reason": "pre-v0.30.3 putPage misroutes" }
+  "multi_source_drift": {
+    "count": 4800,
+    "acknowledged_at": "2026-05-15",
+    "reason": "pre-v0.30.3 putPage misroutes"
+  }
 }
 ```
 
 ### Test Cases
 
-| Actual drift | Baseline | Expected |
-|---|---|---|
-| 4791 | 4800 | OK |
-| 4900 | 4800 | WARN ("100 new drift beyond baseline") |
-| 4791 | 0 (no baseline) | WARN (current behavior) |
+| Actual drift | Baseline        | Expected                               |
+| ------------ | --------------- | -------------------------------------- |
+| 4791         | 4800            | OK                                     |
+| 4900         | 4800            | WARN ("100 new drift beyond baseline") |
+| 4791         | 0 (no baseline) | WARN (current behavior)                |
 
 ---
 
@@ -138,13 +143,13 @@ When image files are missing from disk (stored externally, purged from git), the
 
 Many doctor warnings have known fixes that are safe to auto-apply:
 
-| Warning | Auto-fix |
-|---|---|
-| Supervisor not running | Start supervisor |
-| Stale embeddings | Submit `embed --stale` job |
+| Warning                | Auto-fix                                 |
+| ---------------------- | ---------------------------------------- |
+| Supervisor not running | Start supervisor                         |
+| Stale embeddings       | Submit `embed --stale` job               |
 | Extract coverage < 70% | Submit `extract all --skip-existing` job |
-| Stale sync | Submit sync job |
-| Effective date drift | Run `reindex-frontmatter` |
+| Stale sync             | Submit sync job                          |
+| Effective date drift   | Run `reindex-frontmatter`                |
 
 ### Proposed Fix
 
@@ -170,13 +175,13 @@ doctor:
 
 ### Test Cases
 
-| Check status | Auto-heal enabled | Job already queued | Expected |
-|---|---|---|---|
-| WARN: stale embeds | yes | no | Submit embed job |
-| WARN: stale embeds | yes | yes | Skip (idempotent) |
-| FAIL: max_crashes | yes | n/a | Don't auto-fix FAILs |
-| WARN: stale embeds | no | n/a | Report only |
-| WARN: image_assets | yes (but skipped) | n/a | Report only |
+| Check status       | Auto-heal enabled | Job already queued | Expected             |
+| ------------------ | ----------------- | ------------------ | -------------------- |
+| WARN: stale embeds | yes               | no                 | Submit embed job     |
+| WARN: stale embeds | yes               | yes                | Skip (idempotent)    |
+| FAIL: max_crashes  | yes               | n/a                | Don't auto-fix FAILs |
+| WARN: stale embeds | no                | n/a                | Report only          |
+| WARN: image_assets | yes (but skipped) | n/a                | Report only          |
 
 ---
 
@@ -206,6 +211,7 @@ Going from 99% → 100% embed coverage weighs the same as 50% → 51%. But the l
 ### Proposed Fix
 
 Threshold-based scoring:
+
 - 100% = full points
 - ≥95% = 90% of points
 - ≥80% = 70% of points

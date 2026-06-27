@@ -16,7 +16,11 @@ let fixtures: string[] = [];
 
 afterEach(() => {
   for (const f of fixtures) {
-    try { rmSync(f, { recursive: true, force: true }); } catch { /* ignore */ }
+    try {
+      rmSync(f, { recursive: true, force: true });
+    } catch {
+      /* ignore */
+    }
   }
   fixtures = [];
 });
@@ -29,14 +33,14 @@ function makeGitFixture(skills: Record<string, string>): string {
   const skillsDir = join(root, "skills");
   mkdirSync(skillsDir, { recursive: true });
   const names = Object.keys(skills);
-  const rows = names.map(n => `| "${n}" | \`skills/${n}/SKILL.md\` |`).join("\n");
+  const rows = names.map((n) => `| "${n}" | \`skills/${n}/SKILL.md\` |`).join("\n");
   writeFileSync(
     join(skillsDir, "RESOLVER.md"),
     `## Test\n| Trigger | Skill |\n|-----|-----|\n${rows}\n`
   );
   writeFileSync(
     join(skillsDir, "manifest.json"),
-    JSON.stringify({ skills: names.map(n => ({ name: n, path: `${n}/SKILL.md` })) }, null, 2)
+    JSON.stringify({ skills: names.map((n) => ({ name: n, path: `${n}/SKILL.md` })) }, null, 2)
   );
   for (const [name, body] of Object.entries(skills)) {
     mkdirSync(join(skillsDir, name), { recursive: true });
@@ -50,7 +54,10 @@ function makeGitFixture(skills: Record<string, string>): string {
   return root;
 }
 
-function runDoctor(cwd: string, args: string[]): { stdout: string; stderr: string; status: number } {
+function runDoctor(
+  cwd: string,
+  args: string[]
+): { stdout: string; stderr: string; status: number } {
   const res = spawnSync("bun", [CLI, "doctor", "--fast", ...args], {
     cwd,
     encoding: "utf-8",

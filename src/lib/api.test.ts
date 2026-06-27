@@ -21,7 +21,7 @@ describe("api.brain", () => {
 
   test("stats() calls /api/stats", async () => {
     vi.mocked(csrfFetch).mockResolvedValueOnce(
-      new Response(JSON.stringify({ total_pages: 10 }), { status: 200 }),
+      new Response(JSON.stringify({ total_pages: 10 }), { status: 200 })
     );
     const result = await api.brain.stats();
     expect(result.total_pages).toBe(10);
@@ -32,7 +32,10 @@ describe("api.brain", () => {
 
   test("search() calls /api/search with query and limit", async () => {
     vi.mocked(csrfFetch).mockResolvedValueOnce(
-      new Response(JSON.stringify([{ slug: "cases/1", title: "Test", snippet: "...", score: 0.9 }]), { status: 200 }),
+      new Response(
+        JSON.stringify([{ slug: "cases/1", title: "Test", snippet: "...", score: 0.9 }]),
+        { status: 200 }
+      )
     );
     const result = await api.brain.search("test query", 5);
     expect(result).toHaveLength(1);
@@ -41,9 +44,7 @@ describe("api.brain", () => {
   });
 
   test("search() encodes special characters", async () => {
-    vi.mocked(csrfFetch).mockResolvedValueOnce(
-      new Response(JSON.stringify([]), { status: 200 }),
-    );
+    vi.mocked(csrfFetch).mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }));
     await api.brain.search("äöü & special", 10);
     const [url] = vi.mocked(csrfFetch).mock.calls[0];
     expect(url).toContain("%C3%A4%C3%B6%C3%BC");
@@ -52,7 +53,7 @@ describe("api.brain", () => {
 
   test("getPage() encodes slug segments", async () => {
     vi.mocked(csrfFetch).mockResolvedValueOnce(
-      new Response(JSON.stringify({ slug: "cases/1", title: "Test", content: "" }), { status: 200 }),
+      new Response(JSON.stringify({ slug: "cases/1", title: "Test", content: "" }), { status: 200 })
     );
     await api.brain.getPage("cases/test case");
     const [url] = vi.mocked(csrfFetch).mock.calls[0];
@@ -60,9 +61,7 @@ describe("api.brain", () => {
   });
 
   test("listPages() builds query params", async () => {
-    vi.mocked(csrfFetch).mockResolvedValueOnce(
-      new Response(JSON.stringify([]), { status: 200 }),
-    );
+    vi.mocked(csrfFetch).mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }));
     await api.brain.listPages({ limit: 20, type: "case", source: "upload" });
     const [url] = vi.mocked(csrfFetch).mock.calls[0];
     expect(url).toContain("limit=20");
@@ -71,9 +70,7 @@ describe("api.brain", () => {
   });
 
   test("listPages() with no options", async () => {
-    vi.mocked(csrfFetch).mockResolvedValueOnce(
-      new Response(JSON.stringify([]), { status: 200 }),
-    );
+    vi.mocked(csrfFetch).mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }));
     await api.brain.listPages();
     const [url] = vi.mocked(csrfFetch).mock.calls[0];
     expect(url).toContain("/api/pages?");
@@ -81,7 +78,7 @@ describe("api.brain", () => {
 
   test("createPage() sends POST with body", async () => {
     vi.mocked(csrfFetch).mockResolvedValueOnce(
-      new Response(JSON.stringify({ slug: "cases/new" }), { status: 200 }),
+      new Response(JSON.stringify({ slug: "cases/new" }), { status: 200 })
     );
     const result = await api.brain.createPage({ slug: "cases/new", title: "New" });
     expect(result.slug).toBe("cases/new");
@@ -91,7 +88,7 @@ describe("api.brain", () => {
 
   test("updatePage() sends POST with merge:true", async () => {
     vi.mocked(csrfFetch).mockResolvedValueOnce(
-      new Response(JSON.stringify({ slug: "cases/1", success: true }), { status: 200 }),
+      new Response(JSON.stringify({ slug: "cases/1", success: true }), { status: 200 })
     );
     await api.brain.updatePage({ slug: "cases/1", title: "Updated" });
     const [, opts] = vi.mocked(csrfFetch).mock.calls[0];
@@ -102,7 +99,7 @@ describe("api.brain", () => {
 
   test("deletePage() sends DELETE", async () => {
     vi.mocked(csrfFetch).mockResolvedValueOnce(
-      new Response(JSON.stringify({ success: true }), { status: 200 }),
+      new Response(JSON.stringify({ success: true }), { status: 200 })
     );
     await api.brain.deletePage("cases/1");
     const [, opts] = vi.mocked(csrfFetch).mock.calls[0];
@@ -111,7 +108,7 @@ describe("api.brain", () => {
 
   test("graph() calls /api/graph", async () => {
     vi.mocked(csrfFetch).mockResolvedValueOnce(
-      new Response(JSON.stringify({ nodes: [], links: [] }), { status: 200 }),
+      new Response(JSON.stringify({ nodes: [], links: [] }), { status: 200 })
     );
     await api.brain.graph();
     const [url] = vi.mocked(csrfFetch).mock.calls[0];
@@ -119,25 +116,19 @@ describe("api.brain", () => {
   });
 
   test("recentQueries() calls /api/queries/recent", async () => {
-    vi.mocked(csrfFetch).mockResolvedValueOnce(
-      new Response(JSON.stringify([]), { status: 200 }),
-    );
+    vi.mocked(csrfFetch).mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }));
     await api.brain.recentQueries(5);
     const [url] = vi.mocked(csrfFetch).mock.calls[0];
     expect(url).toContain("/api/queries/recent?limit=5");
   });
 
   test("throws on non-OK response", async () => {
-    vi.mocked(csrfFetch).mockResolvedValueOnce(
-      new Response("Not found", { status: 404 }),
-    );
+    vi.mocked(csrfFetch).mockResolvedValueOnce(new Response("Not found", { status: 404 }));
     await expect(api.brain.stats()).rejects.toThrow();
   });
 
   test("throws with HTTP status when body is empty", async () => {
-    vi.mocked(csrfFetch).mockResolvedValueOnce(
-      new Response("", { status: 500 }),
-    );
+    vi.mocked(csrfFetch).mockResolvedValueOnce(new Response("", { status: 500 }));
     await expect(api.brain.stats()).rejects.toThrow("HTTP 500");
   });
 });

@@ -17,13 +17,13 @@
  */
 
 export type Family =
-  | 'title-substring'
-  | 'generic-to-named'
-  | 'alias-synonym'
-  | 'multi-chunk-dilution'
-  | 'short-vs-rich'
-  | 'graph-relationship'
-  | 'hard-negative';
+  | "title-substring"
+  | "generic-to-named"
+  | "alias-synonym"
+  | "multi-chunk-dilution"
+  | "short-vs-rich"
+  | "graph-relationship"
+  | "hard-negative";
 
 export interface NamedThingQuestion {
   family: Family;
@@ -41,7 +41,7 @@ export interface NamedThingQuestion {
    */
   seed?: string;
   linkTypes?: string[];
-  kind?: 'who_rel' | 'who_at' | 'connects' | 'intro';
+  kind?: "who_rel" | "who_at" | "connects" | "intro";
 }
 
 /** Ranked slugs for a query, best-first. */
@@ -84,34 +84,55 @@ export interface RetrievalQualityReport {
 const K = 3;
 
 export function scoreQuestion(q: NamedThingQuestion, ranked: string[]): QuestionResult {
-  if (q.family === 'hard-negative') {
+  if (q.family === "hard-negative") {
     const forbidden = new Set(q.forbidden ?? []);
     const topK = ranked.slice(0, K);
-    const clean = !topK.some(s => forbidden.has(s));
-    return { family: q.family, query: q.query, hit_at_1: clean, hit_at_3: clean, reciprocal_rank: clean ? 1 : 0, negative_clean: clean, recall_at_k: 0, recall_at_10: 0 };
+    const clean = !topK.some((s) => forbidden.has(s));
+    return {
+      family: q.family,
+      query: q.query,
+      hit_at_1: clean,
+      hit_at_3: clean,
+      reciprocal_rank: clean ? 1 : 0,
+      negative_clean: clean,
+      recall_at_k: 0,
+      recall_at_10: 0,
+    };
   }
   const relevant = new Set(q.relevant ?? []);
-  const firstRelevantIdx = ranked.findIndex(s => relevant.has(s));
+  const firstRelevantIdx = ranked.findIndex((s) => relevant.has(s));
   const hit1 = firstRelevantIdx === 0;
   const hit3 = firstRelevantIdx >= 0 && firstRelevantIdx < K;
   const rr = firstRelevantIdx >= 0 ? 1 / (firstRelevantIdx + 1) : 0;
   const recallAt = (k: number): number => {
     if (relevant.size === 0) return 0;
     const top = ranked.slice(0, k);
-    const found = top.filter(s => relevant.has(s)).length;
+    const found = top.filter((s) => relevant.has(s)).length;
     return found / relevant.size;
   };
-  return { family: q.family, query: q.query, hit_at_1: hit1, hit_at_3: hit3, reciprocal_rank: rr, recall_at_k: recallAt(K), recall_at_10: recallAt(10) };
+  return {
+    family: q.family,
+    query: q.query,
+    hit_at_1: hit1,
+    hit_at_3: hit3,
+    reciprocal_rank: rr,
+    recall_at_k: recallAt(K),
+    recall_at_10: recallAt(10),
+  };
 }
 
 export async function runRetrievalQuality(
   questions: NamedThingQuestion[],
-  searchFn: SearchFn,
+  searchFn: SearchFn
 ): Promise<RetrievalQualityReport> {
   const results: QuestionResult[] = [];
   for (const q of questions) {
     let ranked: string[] = [];
-    try { ranked = await searchFn(q.query); } catch { ranked = []; }
+    try {
+      ranked = await searchFn(q.query);
+    } catch {
+      ranked = [];
+    }
     results.push(scoreQuestion(q, ranked));
   }
   const byFamily = new Map<Family, QuestionResult[]>();
@@ -126,8 +147,8 @@ export async function runRetrievalQuality(
     families.push({
       family,
       n,
-      hit_at_1: n ? list.filter(r => r.hit_at_1).length / n : 0,
-      hit_at_3: n ? list.filter(r => r.hit_at_3).length / n : 0,
+      hit_at_1: n ? list.filter((r) => r.hit_at_1).length / n : 0,
+      hit_at_3: n ? list.filter((r) => r.hit_at_3).length / n : 0,
       mrr: n ? list.reduce((s, r) => s + r.reciprocal_rank, 0) / n : 0,
       recall_at_k: n ? list.reduce((s, r) => s + r.recall_at_k, 0) / n : 0,
       recall_at_10: n ? list.reduce((s, r) => s + r.recall_at_10, 0) / n : 0,
@@ -156,11 +177,11 @@ export interface GateOpts {
  */
 export const DEFAULT_GATE: GateOpts = {
   hardFamilies: {
-    'title-substring': { hit_at_1: floorEnv('GBRAIN_NTB_TITLE_HIT1', 0.95) },
-    'multi-chunk-dilution': { hit_at_3: floorEnv('GBRAIN_NTB_DILUTION_HIT3', 1.0) },
-    'alias-synonym': { hit_at_1: floorEnv('GBRAIN_NTB_ALIAS_HIT1', 0.98) },
+    "title-substring": { hit_at_1: floorEnv("GBRAIN_NTB_TITLE_HIT1", 0.95) },
+    "multi-chunk-dilution": { hit_at_3: floorEnv("GBRAIN_NTB_DILUTION_HIT3", 1.0) },
+    "alias-synonym": { hit_at_1: floorEnv("GBRAIN_NTB_ALIAS_HIT1", 0.98) },
   },
-  softFamilies: ['generic-to-named', 'short-vs-rich', 'graph-relationship', 'hard-negative'],
+  softFamilies: ["generic-to-named", "short-vs-rich", "graph-relationship", "hard-negative"],
 };
 
 function floorEnv(name: string, dflt: number): number {
@@ -170,20 +191,35 @@ function floorEnv(name: string, dflt: number): number {
   return Number.isFinite(n) && n >= 0 && n <= 1 ? n : dflt;
 }
 
-export interface GateBreach { family: Family; metric: 'hit_at_1' | 'hit_at_3'; got: number; floor: number; }
-export interface GateResult { pass: boolean; breaches: GateBreach[]; warnings: GateBreach[]; }
+export interface GateBreach {
+  family: Family;
+  metric: "hit_at_1" | "hit_at_3";
+  got: number;
+  floor: number;
+}
+export interface GateResult {
+  pass: boolean;
+  breaches: GateBreach[];
+  warnings: GateBreach[];
+}
 
-export function evaluateGate(report: RetrievalQualityReport, opts: GateOpts = DEFAULT_GATE): GateResult {
-  const byFamily = new Map(report.families.map(f => [f.family, f]));
+export function evaluateGate(
+  report: RetrievalQualityReport,
+  opts: GateOpts = DEFAULT_GATE
+): GateResult {
+  const byFamily = new Map(report.families.map((f) => [f.family, f]));
   const breaches: GateBreach[] = [];
-  for (const [family, floors] of Object.entries(opts.hardFamilies) as [Family, { hit_at_1?: number; hit_at_3?: number }][]) {
+  for (const [family, floors] of Object.entries(opts.hardFamilies) as [
+    Family,
+    { hit_at_1?: number; hit_at_3?: number },
+  ][]) {
     const fr = byFamily.get(family);
     if (!fr || fr.n === 0) continue; // no questions for this family → nothing to gate
     if (floors.hit_at_1 !== undefined && fr.hit_at_1 < floors.hit_at_1) {
-      breaches.push({ family, metric: 'hit_at_1', got: fr.hit_at_1, floor: floors.hit_at_1 });
+      breaches.push({ family, metric: "hit_at_1", got: fr.hit_at_1, floor: floors.hit_at_1 });
     }
     if (floors.hit_at_3 !== undefined && fr.hit_at_3 < floors.hit_at_3) {
-      breaches.push({ family, metric: 'hit_at_3', got: fr.hit_at_3, floor: floors.hit_at_3 });
+      breaches.push({ family, metric: "hit_at_3", got: fr.hit_at_3, floor: floors.hit_at_3 });
     }
   }
   // Soft families: surface low Hit@3 as warnings (informational until enforced).
@@ -191,7 +227,7 @@ export function evaluateGate(report: RetrievalQualityReport, opts: GateOpts = DE
   for (const family of opts.softFamilies) {
     const fr = byFamily.get(family);
     if (fr && fr.n > 0 && fr.hit_at_3 < 0.8) {
-      warnings.push({ family, metric: 'hit_at_3', got: fr.hit_at_3, floor: 0.8 });
+      warnings.push({ family, metric: "hit_at_3", got: fr.hit_at_3, floor: 0.8 });
     }
   }
   return { pass: breaches.length === 0, breaches, warnings };
@@ -199,9 +235,9 @@ export function evaluateGate(report: RetrievalQualityReport, opts: GateOpts = DE
 
 export function parseQuestionsJsonl(text: string): NamedThingQuestion[] {
   const out: NamedThingQuestion[] = [];
-  for (const line of text.split('\n')) {
+  for (const line of text.split("\n")) {
     const t = line.trim();
-    if (!t || t.startsWith('//') || t.startsWith('#')) continue;
+    if (!t || t.startsWith("//") || t.startsWith("#")) continue;
     const obj = JSON.parse(t) as NamedThingQuestion;
     out.push(obj);
   }

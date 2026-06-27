@@ -52,6 +52,7 @@ gbrain list_pages --type legal-case
 ```
 
 Check frontmatter fields:
+
 - `client_name`
 - `opponent_name`
 - `own_lawyer_name`
@@ -59,19 +60,20 @@ Check frontmatter fields:
 ### Step 2 — Classify Findings
 
 For each match, determine:
+
 - Role in case: client, opponent, or other
 - Case status: open, pending, settled, closed
 - Whether the case is still active
 
 ### Step 3 — Assess Conflict Severity
 
-| Scenario | Severity | Explanation |
-|---|---|---|
-| Same person as client AND opponent in different cases | **CRITICAL** | Direct conflict per § 43 Abs. 1 BRAO |
-| Former opponent now wants to be client | **HIGH** | Risk of using confidential information |
-| Same opponent in multiple active cases | **MEDIUM** | Monitor for inconsistent positions |
-| Same client in multiple cases | **LOW** | No direct conflict, but watch for opposing interests |
-| No matches found | **NONE** | No conflict detected in brain |
+| Scenario                                              | Severity     | Explanation                                          |
+| ----------------------------------------------------- | ------------ | ---------------------------------------------------- |
+| Same person as client AND opponent in different cases | **CRITICAL** | Direct conflict per § 43 Abs. 1 BRAO                 |
+| Former opponent now wants to be client                | **HIGH**     | Risk of using confidential information               |
+| Same opponent in multiple active cases                | **MEDIUM**   | Monitor for inconsistent positions                   |
+| Same client in multiple cases                         | **LOW**      | No direct conflict, but watch for opposing interests |
+| No matches found                                      | **NONE**     | No conflict detected in brain                        |
 
 ### Step 4 — Report
 

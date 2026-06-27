@@ -23,20 +23,20 @@
  * is a no-op unless --force is passed.
  */
 
-import type { BrainEngine } from '../core/engine.ts';
-import { importCodeFile } from '../core/import-file.ts';
-import { estimateTokens } from '../core/chunkers/code.ts';
-import { getEmbeddingModelName, estimateEmbeddingCostUsd } from '../core/embedding.ts';
-import { errorFor, serializeError } from '../core/errors.ts';
-import { createInterface } from 'readline';
-import { createProgress } from '../core/progress.ts';
-import { getCliOptions, cliOptsToProgressOptions } from '../core/cli-options.ts';
-import { BudgetTracker, BudgetExhausted } from '../core/budget/budget-tracker.ts';
-import { withBudgetTracker } from '../core/ai/gateway.ts';
+import type { BrainEngine } from "../core/engine.ts";
+import { importCodeFile } from "../core/import-file.ts";
+import { estimateTokens } from "../core/chunkers/code.ts";
+import { getEmbeddingModelName, estimateEmbeddingCostUsd } from "../core/embedding.ts";
+import { errorFor, serializeError } from "../core/errors.ts";
+import { createInterface } from "readline";
+import { createProgress } from "../core/progress.ts";
+import { getCliOptions, cliOptsToProgressOptions } from "../core/cli-options.ts";
+import { BudgetTracker, BudgetExhausted } from "../core/budget/budget-tracker.ts";
+import { withBudgetTracker } from "../core/ai/gateway.ts";
 // v0.41.15.0 (T11, D9): per-batch parallel workers. BudgetExhausted
 // auto-aborts via the worker-pool's D13 bypass.
-import { runSlidingPool } from '../core/worker-pool.ts';
-import { parseWorkers, resolveWorkersWithClamp } from '../core/sync-concurrency.ts';
+import { runSlidingPool } from "../core/worker-pool.ts";
+import { parseWorkers, resolveWorkersWithClamp } from "../core/sync-concurrency.ts";
 
 export interface ReindexCodeOpts {
   sourceId?: string;
@@ -67,7 +67,7 @@ export interface ReindexCodeOpts {
 }
 
 export interface ReindexCodeResult {
-  status: 'ok' | 'dry_run' | 'cancelled' | 'source_id_required';
+  status: "ok" | "dry_run" | "cancelled" | "source_id_required";
   codePages: number;
   reindexed: number;
   skipped: number;
@@ -90,21 +90,21 @@ export interface ReindexCodeResult {
  * (not the CLI wrapper) because the CLI wrapper's dry-run branch returns
  * before the gate block.
  */
-const CODE_TUNED_BARE_MODELS = new Set(['voyage-code-3']);
+const CODE_TUNED_BARE_MODELS = new Set(["voyage-code-3"]);
 
 export type NudgeDecision =
   | { shouldNudge: false }
-  | { shouldNudge: true; currentModel: string; recommendedModel: 'voyage:voyage-code-3' };
+  | { shouldNudge: true; currentModel: string; recommendedModel: "voyage:voyage-code-3" };
 
 export function shouldNudgeCodeModel(bareModelName: string | undefined | null): NudgeDecision {
-  if (!bareModelName || typeof bareModelName !== 'string') return { shouldNudge: false };
+  if (!bareModelName || typeof bareModelName !== "string") return { shouldNudge: false };
   const trimmed = bareModelName.trim();
   if (!trimmed) return { shouldNudge: false };
   if (CODE_TUNED_BARE_MODELS.has(trimmed.toLowerCase())) return { shouldNudge: false };
   return {
     shouldNudge: true,
     currentModel: trimmed,
-    recommendedModel: 'voyage:voyage-code-3',
+    recommendedModel: "voyage:voyage-code-3",
   };
 }
 
@@ -114,7 +114,7 @@ function printCodeModelNudge(decision: Extract<NudgeDecision, { shouldNudge: tru
     `[reindex-code] Configured embedding model is \`${decision.currentModel}\`. For pure code retrieval, Voyage's code-tuned \`voyage-code-3\` typically outperforms general-purpose models. Switch:\n` +
       `  gbrain config set embedding_model ${decision.recommendedModel}\n` +
       `  gbrain config set embedding_dimensions 1024\n` +
-      `Suppress with GBRAIN_NO_CODE_MODEL_NUDGE=1.\n`,
+      `Suppress with GBRAIN_NO_CODE_MODEL_NUDGE=1.\n`
   );
 }
 
@@ -128,29 +128,29 @@ async function fetchCodePages(
   engine: BrainEngine,
   sourceId: string | undefined,
   batchSize: number,
-  offset: number,
+  offset: number
 ): Promise<CodePageRow[]> {
   // Direct SQL: listPages doesn't expose source_id filtering, and we need
   // compiled_truth + frontmatter anyway (not just the Page shape).
-  const sourceClause = sourceId ? `AND p.source_id = '${sourceId.replace(/'/g, "''")}'` : '';
+  const sourceClause = sourceId ? `AND p.source_id = '${sourceId.replace(/'/g, "''")}'` : "";
   const rows = await engine.executeRaw<CodePageRow>(
     `SELECT p.slug, p.compiled_truth, p.frontmatter
      FROM pages p
      WHERE p.type = 'code' ${sourceClause}
      ORDER BY p.slug
-     LIMIT ${batchSize} OFFSET ${offset}`,
+     LIMIT ${batchSize} OFFSET ${offset}`
   );
   return rows;
 }
 
 async function countCodePages(engine: BrainEngine, sourceId: string | undefined): Promise<number> {
-  const sourceClause = sourceId ? `AND p.source_id = '${sourceId.replace(/'/g, "''")}'` : '';
+  const sourceClause = sourceId ? `AND p.source_id = '${sourceId.replace(/'/g, "''")}'` : "";
   const rows = await engine.executeRaw<{ n: string | number }>(
-    `SELECT COUNT(*)::text AS n FROM pages p WHERE p.type = 'code' ${sourceClause}`,
+    `SELECT COUNT(*)::text AS n FROM pages p WHERE p.type = 'code' ${sourceClause}`
   );
   if (rows.length === 0) return 0;
   const raw = rows[0]!.n;
-  return typeof raw === 'string' ? parseInt(raw, 10) : raw;
+  return typeof raw === "string" ? parseInt(raw, 10) : raw;
 }
 
 /**
@@ -162,7 +162,7 @@ async function countCodePages(engine: BrainEngine, sourceId: string | undefined)
 async function estimateReindexCost(
   engine: BrainEngine,
   sourceId: string | undefined,
-  batchSize: number,
+  batchSize: number
 ): Promise<{ totalTokens: number; totalPages: number }> {
   let totalTokens = 0;
   let totalPages = 0;
@@ -186,15 +186,15 @@ async function promptYesNo(question: string): Promise<boolean> {
     rl.question(question, (answer) => {
       rl.close();
       const a = answer.trim().toLowerCase();
-      resolve(a === 'y' || a === 'yes');
+      resolve(a === "y" || a === "yes");
     });
-    rl.on('close', () => resolve(false));
+    rl.on("close", () => resolve(false));
   });
 }
 
 export async function runReindexCode(
   engine: BrainEngine,
-  opts: ReindexCodeOpts = {},
+  opts: ReindexCodeOpts = {}
 ): Promise<ReindexCodeResult> {
   const batchSize = opts.batchSize ?? 100;
 
@@ -209,7 +209,7 @@ export async function runReindexCode(
     totalPages > 0 &&
     !opts.json &&
     !opts.noEmbed &&
-    process.env.GBRAIN_NO_CODE_MODEL_NUDGE !== '1'
+    process.env.GBRAIN_NO_CODE_MODEL_NUDGE !== "1"
   ) {
     const decision = shouldNudgeCodeModel(getEmbeddingModelName());
     if (decision.shouldNudge) printCodeModelNudge(decision);
@@ -217,7 +217,7 @@ export async function runReindexCode(
 
   if (opts.dryRun) {
     return {
-      status: 'dry_run',
+      status: "dry_run",
       codePages: totalPages,
       reindexed: 0,
       skipped: 0,
@@ -230,7 +230,7 @@ export async function runReindexCode(
 
   if (totalPages === 0) {
     return {
-      status: 'ok',
+      status: "ok",
       codePages: 0,
       reindexed: 0,
       skipped: 0,
@@ -245,7 +245,7 @@ export async function runReindexCode(
   // the content source. relativePath comes from frontmatter.file (set by
   // the original importCodeFile call). Progress via stderr reporter.
   const reporter = createProgress(cliOptsToProgressOptions(getCliOptions()));
-  reporter.start('reindex_code.pages', totalPages);
+  reporter.start("reindex_code.pages", totalPages);
 
   let reindexed = 0;
   let skipped = 0;
@@ -273,8 +273,8 @@ export async function runReindexCode(
         const writersResolved = resolveWorkersWithClamp(
           engine,
           opts.workers,
-          'reindex-code',
-          batch.length,
+          "reindex-code",
+          batch.length
         );
         await runSlidingPool({
           items: batch,
@@ -282,16 +282,16 @@ export async function runReindexCode(
           failureLabel: (row) => row.slug,
           onItem: async (row) => {
             const fm = row.frontmatter ?? {};
-            const relPath = typeof fm.file === 'string' ? fm.file : null;
+            const relPath = typeof fm.file === "string" ? fm.file : null;
             if (!relPath) {
               failed++;
-              failures.push({ slug: row.slug, error: 'missing frontmatter.file' });
+              failures.push({ slug: row.slug, error: "missing frontmatter.file" });
               reporter.tick();
               return;
             }
             if (!row.compiled_truth) {
               failed++;
-              failures.push({ slug: row.slug, error: 'missing compiled_truth' });
+              failures.push({ slug: row.slug, error: "missing compiled_truth" });
               reporter.tick();
               return;
             }
@@ -301,8 +301,8 @@ export async function runReindexCode(
                 force: opts.force,
                 sourceId: opts.sourceId,
               });
-              if (result.status === 'imported') reindexed++;
-              else if (result.status === 'skipped') skipped++;
+              if (result.status === "imported") reindexed++;
+              else if (result.status === "skipped") skipped++;
               else {
                 failed++;
                 failures.push({ slug: row.slug, error: result.error ?? result.status });
@@ -328,8 +328,8 @@ export async function runReindexCode(
   };
 
   try {
-    if (typeof opts.maxCostUsd === 'number' && opts.maxCostUsd > 0) {
-      const tracker = new BudgetTracker({ maxCostUsd: opts.maxCostUsd, label: 'reindex-code' });
+    if (typeof opts.maxCostUsd === "number" && opts.maxCostUsd > 0) {
+      const tracker = new BudgetTracker({ maxCostUsd: opts.maxCostUsd, label: "reindex-code" });
       await withBudgetTracker(tracker, reindexBody);
     } else {
       await reindexBody();
@@ -348,7 +348,7 @@ export async function runReindexCode(
     // message + non-zero exit; the library result lets agent callers see
     // what happened without grep'ing stderr.
     return {
-      status: 'ok',
+      status: "ok",
       codePages: totalPages,
       reindexed,
       skipped,
@@ -357,14 +357,14 @@ export async function runReindexCode(
       costUsd: budgetExhausted.spent,
       model: getEmbeddingModelName(),
       failures: [
-        { slug: '(budget)', error: budgetExhausted.message },
+        { slug: "(budget)", error: budgetExhausted.message },
         ...(failures.length > 0 ? failures : []),
       ],
     };
   }
 
   return {
-    status: 'ok',
+    status: "ok",
     codePages: totalPages,
     reindexed,
     skipped,
@@ -397,21 +397,28 @@ export function buildCostRefusal(opts: {
   model: string;
 }): CostRefusal {
   if (opts.json) {
-    const envelope = serializeError(errorFor({
-      class: 'ConfirmationRequired',
-      code: 'cost_preview_requires_yes',
-      message: opts.previewMsg,
-      hint: 'Pass --yes to proceed, or --dry-run to see the preview and exit 0.',
-    }));
+    const envelope = serializeError(
+      errorFor({
+        class: "ConfirmationRequired",
+        code: "cost_preview_requires_yes",
+        message: opts.previewMsg,
+        hint: "Pass --yes to proceed, or --dry-run to see the preview and exit 0.",
+      })
+    );
     return {
-      stdout: JSON.stringify({ error: envelope, preview: opts.preview, costUsd: opts.costUsd, model: opts.model }),
+      stdout: JSON.stringify({
+        error: envelope,
+        preview: opts.preview,
+        costUsd: opts.costUsd,
+        model: opts.model,
+      }),
     };
   }
   return {
     stderr:
       `${opts.previewMsg}\n` +
-      'Refusing to re-embed non-interactively without confirmation. ' +
-      'Pass --yes to proceed, or --dry-run for the preview (exit 0).',
+      "Refusing to re-embed non-interactively without confirmation. " +
+      "Pass --yes to proceed, or --dry-run for the preview (exit 0).",
   };
 }
 
@@ -421,19 +428,20 @@ export function buildCostRefusal(opts: {
  * ConfirmationRequired (matches sync --all), 1 on runtime error.
  */
 export async function runReindexCodeCli(engine: BrainEngine, args: string[]): Promise<void> {
-  const sourceIdx = args.indexOf('--source');
+  const sourceIdx = args.indexOf("--source");
   const sourceId = sourceIdx >= 0 ? args[sourceIdx + 1] : undefined;
-  const dryRun = args.includes('--dry-run');
-  const yes = args.includes('--yes') || args.includes('-y');
-  const json = args.includes('--json');
-  const force = args.includes('--force');
-  const noEmbed = args.includes('--no-embed');
+  const dryRun = args.includes("--dry-run");
+  const yes = args.includes("--yes") || args.includes("-y");
+  const json = args.includes("--json");
+  const force = args.includes("--force");
+  const noEmbed = args.includes("--no-embed");
 
   // v0.41.15.0 (T11, D9): --workers N for per-batch parallelism.
   let workers: number | undefined;
-  const workersIdx = args.indexOf('--workers');
-  const concurrencyIdx = args.indexOf('--concurrency');
-  const workersValIdx = workersIdx >= 0 ? workersIdx + 1 : (concurrencyIdx >= 0 ? concurrencyIdx + 1 : -1);
+  const workersIdx = args.indexOf("--workers");
+  const concurrencyIdx = args.indexOf("--concurrency");
+  const workersValIdx =
+    workersIdx >= 0 ? workersIdx + 1 : concurrencyIdx >= 0 ? concurrencyIdx + 1 : -1;
   if (workersValIdx > 0 && workersValIdx < args.length) {
     try {
       workers = parseWorkers(args[workersValIdx]);
@@ -445,13 +453,15 @@ export async function runReindexCodeCli(engine: BrainEngine, args: string[]): Pr
 
   // F3: --max-cost / --max-cost-usd both accepted for symmetry with brainstorm.
   let maxCostUsd: number | undefined;
-  for (const flag of ['--max-cost', '--max-cost-usd']) {
+  for (const flag of ["--max-cost", "--max-cost-usd"]) {
     const idx = args.indexOf(flag);
     if (idx >= 0) {
       const v = args[idx + 1];
       const n = v ? parseFloat(v) : NaN;
       if (!Number.isFinite(n) || n <= 0) {
-        console.error(`gbrain reindex --code: ${flag} requires a positive number in USD (got ${v ?? '(missing)'})`);
+        console.error(
+          `gbrain reindex --code: ${flag} requires a positive number in USD (got ${v ?? "(missing)"})`
+        );
         process.exit(2);
       }
       maxCostUsd = n;
@@ -460,16 +470,25 @@ export async function runReindexCodeCli(engine: BrainEngine, args: string[]): Pr
   }
 
   if (dryRun) {
-    const result = await runReindexCode(engine, { sourceId, dryRun: true, yes, json, force, noEmbed, maxCostUsd, workers });
+    const result = await runReindexCode(engine, {
+      sourceId,
+      dryRun: true,
+      yes,
+      json,
+      force,
+      noEmbed,
+      maxCostUsd,
+      workers,
+    });
     if (json) {
       console.log(JSON.stringify(result));
     } else {
       console.log(
         `reindex-code preview: ${result.codePages} code page(s), ` +
           `~${result.totalTokens.toLocaleString()} tokens, ` +
-          `est. $${result.costUsd.toFixed(2)} on ${result.model}.`,
+          `est. $${result.costUsd.toFixed(2)} on ${result.model}.`
       );
-      console.log('--dry-run: exit without reindexing.');
+      console.log("--dry-run: exit without reindexing.");
     }
     return;
   }
@@ -485,9 +504,20 @@ export async function runReindexCodeCli(engine: BrainEngine, args: string[]): Pr
 
     if (preview.totalPages === 0) {
       if (json) {
-        console.log(JSON.stringify({ status: 'ok', codePages: 0, reindexed: 0, skipped: 0, failed: 0, totalTokens: 0, costUsd: 0, model: getEmbeddingModelName() }));
+        console.log(
+          JSON.stringify({
+            status: "ok",
+            codePages: 0,
+            reindexed: 0,
+            skipped: 0,
+            failed: 0,
+            totalTokens: 0,
+            costUsd: 0,
+            model: getEmbeddingModelName(),
+          })
+        );
       } else {
-        console.log('No code pages to reindex.');
+        console.log("No code pages to reindex.");
       }
       return;
     }
@@ -497,28 +527,42 @@ export async function runReindexCodeCli(engine: BrainEngine, args: string[]): Pr
       if (!isTTY || json) {
         // Guardrail unchanged: refuse + exit 2, no spend. Only the FORMAT splits
         // on --json now (human refusal on stderr otherwise) — #1784.
-        const refusal = buildCostRefusal({ json, previewMsg, preview, costUsd, model: getEmbeddingModelName() });
+        const refusal = buildCostRefusal({
+          json,
+          previewMsg,
+          preview,
+          costUsd,
+          model: getEmbeddingModelName(),
+        });
         if (refusal.stdout) console.log(refusal.stdout);
         if (refusal.stderr) console.error(refusal.stderr);
         process.exit(2);
       }
       console.log(previewMsg);
-      const answer = await promptYesNo('Proceed? [y/N] ');
+      const answer = await promptYesNo("Proceed? [y/N] ");
       if (!answer) {
-        console.log('Cancelled.');
+        console.log("Cancelled.");
         return;
       }
     }
   }
 
-  const result = await runReindexCode(engine, { sourceId, yes, json, force, noEmbed, maxCostUsd, workers });
+  const result = await runReindexCode(engine, {
+    sourceId,
+    yes,
+    json,
+    force,
+    noEmbed,
+    maxCostUsd,
+    workers,
+  });
   if (json) {
     console.log(JSON.stringify(result));
   } else {
     console.log(
       `reindex-code: ${result.reindexed} reindexed, ${result.skipped} skipped, ${result.failed} failed ` +
         `(${result.codePages} total code pages, ~${result.totalTokens.toLocaleString()} tokens, ` +
-        `est. $${result.costUsd.toFixed(2)}).`,
+        `est. $${result.costUsd.toFixed(2)}).`
     );
     if (result.failures && result.failures.length > 0) {
       console.log(`\n${result.failures.length} failure(s):`);

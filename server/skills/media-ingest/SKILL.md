@@ -42,6 +42,7 @@ Ingest video, audio, PDF, book, screenshot, and GitHub repo content into the bra
 ## Contract
 
 This skill guarantees:
+
 - Every ingested media item has a brain page with analysis (not just a transcript dump)
 - Transcripts (video/audio) saved in raw and human-readable formats
 - Entity extraction: every person and company mentioned gets back-linked
@@ -56,15 +57,15 @@ Every mention of a person or company with a brain page MUST create a back-link.
 
 ### Phase 1: Identify format and fetch
 
-| Format | Action |
-|--------|--------|
-| YouTube/video URL | Fetch transcript (Whisper, transcription service, or captions) |
-| Audio file (.mp3/.wav/.m4a/.ogg/.flac) | `gbrain import` handles it natively — transcribed via the configured STT provider, filed as a `transcription` page |
-| PDF | `gbrain import` handles it natively — text layer extracted in-engine; scanned PDFs get a best-effort OCR fallback (needs GraphicsMagick/Ghostscript + vision model), otherwise skipped with a `pdf_text_layer_sparse` warning |
-| DOCX / EML / CSV / XLSX | `gbrain import` handles them natively — extracted to text, frontmatter synthesized (EML: Subject→title, Date→date) |
-| Book PDF | Extract text, identify chapters/sections |
-| Screenshot/image | OCR via vision model, extract text and entities |
-| GitHub repo | Clone, read README + key files, summarize architecture |
+| Format                                 | Action                                                                                                                                                                                                                        |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| YouTube/video URL                      | Fetch transcript (Whisper, transcription service, or captions)                                                                                                                                                                |
+| Audio file (.mp3/.wav/.m4a/.ogg/.flac) | `gbrain import` handles it natively — transcribed via the configured STT provider, filed as a `transcription` page                                                                                                            |
+| PDF                                    | `gbrain import` handles it natively — text layer extracted in-engine; scanned PDFs get a best-effort OCR fallback (needs GraphicsMagick/Ghostscript + vision model), otherwise skipped with a `pdf_text_layer_sparse` warning |
+| DOCX / EML / CSV / XLSX                | `gbrain import` handles them natively — extracted to text, frontmatter synthesized (EML: Subject→title, Date→date)                                                                                                            |
+| Book PDF                               | Extract text, identify chapters/sections                                                                                                                                                                                      |
+| Screenshot/image                       | OCR via vision model, extract text and entities                                                                                                                                                                               |
+| GitHub repo                            | Clone, read README + key files, summarize architecture                                                                                                                                                                        |
 
 Native document ingestion (`src/core/extract-document.ts`) means you do NOT need
 external pre-processors for the formats above: point `gbrain import <dir>` at the
@@ -87,21 +88,26 @@ File by primary subject (not format). Use this template:
 **Created:** {date}
 
 ## Summary
+
 {Key points, not a transcript dump}
 
 ## Key Segments / Highlights
+
 {For video/audio: timestamped highlights. For books: chapter summaries.}
 
 ## People Mentioned
+
 {List with links to brain pages}
 
 ## Companies Mentioned
+
 {List with links to brain pages}
 ```
 
 ### Phase 4: Entity extraction and propagation
 
 For every person and company mentioned:
+
 1. Check brain for existing page
 2. Create/enrich if needed (delegate to enrich skill)
 3. Add back-link from entity page to this media page

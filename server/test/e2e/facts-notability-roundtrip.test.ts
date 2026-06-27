@@ -17,7 +17,7 @@
  * Run: DATABASE_URL=... bun test test/e2e/facts-notability-roundtrip.test.ts
  */
 
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
+import { describe, test, expect, beforeAll, afterAll } from "bun:test";
 import {
   hasDatabase,
   setupDB,
@@ -25,17 +25,17 @@ import {
   getEngine,
   runMigrationsUpTo,
   getConn,
-} from './helpers.ts';
-import { LATEST_VERSION } from '../../src/core/migrate.ts';
+} from "./helpers.ts";
+import { LATEST_VERSION } from "../../src/core/migrate.ts";
 
 const skip = !hasDatabase();
 const describeE2E = skip ? describe.skip : describe;
 
 if (skip) {
-  console.log('Skipping facts notability round-trip E2E (DATABASE_URL not set)');
+  console.log("Skipping facts notability round-trip E2E (DATABASE_URL not set)");
 }
 
-describeE2E('facts notability column — Postgres row-mapper round-trip', () => {
+describeE2E("facts notability column — Postgres row-mapper round-trip", () => {
   beforeAll(async () => {
     await setupDB();
     await runMigrationsUpTo(getEngine(), LATEST_VERSION);
@@ -48,88 +48,88 @@ describeE2E('facts notability column — Postgres row-mapper round-trip', () => 
     await teardownDB();
   });
 
-  test('inserts a fact with notability=high and reads it back', async () => {
+  test("inserts a fact with notability=high and reads it back", async () => {
     const engine = getEngine();
     const r = await engine.insertFact(
       {
-        fact: 'roundtrip high fact',
-        kind: 'event',
-        entity_slug: 'notability-roundtrip-high',
-        source: 'test',
-        notability: 'high',
+        fact: "roundtrip high fact",
+        kind: "event",
+        entity_slug: "notability-roundtrip-high",
+        source: "test",
+        notability: "high",
       },
-      { source_id: 'default' },
+      { source_id: "default" }
     );
-    expect(r.status).toBe('inserted');
+    expect(r.status).toBe("inserted");
 
-    const rows = await engine.listFactsByEntity('default', 'notability-roundtrip-high');
-    const ours = rows.find(x => x.id === r.id);
+    const rows = await engine.listFactsByEntity("default", "notability-roundtrip-high");
+    const ours = rows.find((x) => x.id === r.id);
     expect(ours).toBeDefined();
-    expect(ours!.notability).toBe('high');
+    expect(ours!.notability).toBe("high");
   });
 
-  test('inserts a fact with notability=medium and reads it back', async () => {
+  test("inserts a fact with notability=medium and reads it back", async () => {
     const engine = getEngine();
     const r = await engine.insertFact(
       {
-        fact: 'roundtrip medium fact',
-        kind: 'preference',
-        entity_slug: 'notability-roundtrip-medium',
-        source: 'test',
-        notability: 'medium',
+        fact: "roundtrip medium fact",
+        kind: "preference",
+        entity_slug: "notability-roundtrip-medium",
+        source: "test",
+        notability: "medium",
       },
-      { source_id: 'default' },
+      { source_id: "default" }
     );
 
-    const rows = await engine.listFactsByEntity('default', 'notability-roundtrip-medium');
-    const ours = rows.find(x => x.id === r.id);
-    expect(ours!.notability).toBe('medium');
+    const rows = await engine.listFactsByEntity("default", "notability-roundtrip-medium");
+    const ours = rows.find((x) => x.id === r.id);
+    expect(ours!.notability).toBe("medium");
   });
 
-  test('inserts a fact with notability=low and reads it back', async () => {
+  test("inserts a fact with notability=low and reads it back", async () => {
     const engine = getEngine();
     const r = await engine.insertFact(
       {
-        fact: 'roundtrip low fact',
-        kind: 'fact',
-        entity_slug: 'notability-roundtrip-low',
-        source: 'test',
-        notability: 'low',
+        fact: "roundtrip low fact",
+        kind: "fact",
+        entity_slug: "notability-roundtrip-low",
+        source: "test",
+        notability: "low",
       },
-      { source_id: 'default' },
+      { source_id: "default" }
     );
 
-    const rows = await engine.listFactsByEntity('default', 'notability-roundtrip-low');
-    const ours = rows.find(x => x.id === r.id);
-    expect(ours!.notability).toBe('low');
+    const rows = await engine.listFactsByEntity("default", "notability-roundtrip-low");
+    const ours = rows.find((x) => x.id === r.id);
+    expect(ours!.notability).toBe("low");
   });
 
-  test('omitting notability defaults to medium', async () => {
+  test("omitting notability defaults to medium", async () => {
     const engine = getEngine();
     const r = await engine.insertFact(
       {
-        fact: 'roundtrip default-tier fact',
-        kind: 'fact',
-        entity_slug: 'notability-roundtrip-default',
-        source: 'test',
+        fact: "roundtrip default-tier fact",
+        kind: "fact",
+        entity_slug: "notability-roundtrip-default",
+        source: "test",
       },
-      { source_id: 'default' },
+      { source_id: "default" }
     );
 
-    const rows = await engine.listFactsByEntity('default', 'notability-roundtrip-default');
-    const ours = rows.find(x => x.id === r.id);
-    expect(ours!.notability).toBe('medium');
+    const rows = await engine.listFactsByEntity("default", "notability-roundtrip-default");
+    const ours = rows.find((x) => x.id === r.id);
+    expect(ours!.notability).toBe("medium");
   });
 
-  test('listFactsSince also surfaces notability', async () => {
+  test("listFactsSince also surfaces notability", async () => {
     const engine = getEngine();
     const since = new Date(Date.now() - 60_000);
-    const rows = await engine.listFactsSince('default', since);
+    const rows = await engine.listFactsSince("default", since);
     // Filter to our test rows.
-    const ours = rows.filter(r => r.entity_slug?.startsWith('notability-roundtrip-'));
+    const ours = rows.filter((r) => r.entity_slug?.startsWith("notability-roundtrip-"));
     expect(ours.length).toBeGreaterThanOrEqual(3);
     for (const r of ours) {
-      expect(['high', 'medium', 'low']).toContain(r.notability);
+      expect(["high", "medium", "low"]).toContain(r.notability);
     }
   });
 });

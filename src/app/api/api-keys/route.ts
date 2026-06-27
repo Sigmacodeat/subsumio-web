@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 import { generateApiKey, hashApiKey, getApiKeyPrefix } from "@/lib/api-keys";
 import { getApiKeyStore } from "@/lib/api-key-store";
@@ -11,11 +10,13 @@ const createKeySchema = z.object({
   scopes: z.array(z.enum(VALID_SCOPES)).min(1, "invalid_scopes").default(["read"]),
 });
 
-const patchKeySchema = z.object({
-  id: z.string().min(1, "id_required"),
-  name: z.string().trim().max(80).optional(),
-  active: z.boolean().optional(),
-}).refine((data) => data.name !== undefined || data.active !== undefined, "nothing_to_update");
+const patchKeySchema = z
+  .object({
+    id: z.string().min(1, "id_required"),
+    name: z.string().trim().max(80).optional(),
+    active: z.boolean().optional(),
+  })
+  .refine((data) => data.name !== undefined || data.active !== undefined, "nothing_to_update");
 
 const deleteKeySchema = z.object({
   id: z.string().min(1, "id_required"),
@@ -40,7 +41,7 @@ export const GET = createHandler(
       createdBy: k.createdBy,
     }));
     return Response.json({ keys });
-  },
+  }
 );
 
 export const POST = createHandler(
@@ -83,9 +84,9 @@ export const POST = createHandler(
         },
         plaintextKey: key,
       },
-      { status: 201 },
+      { status: 201 }
     );
-  },
+  }
 );
 
 export const PATCH = createHandler(
@@ -113,7 +114,7 @@ export const PATCH = createHandler(
 
     const updated = await store.update(body.id, patch);
     return Response.json({ key: updated });
-  },
+  }
 );
 
 export const DELETE = createHandler(
@@ -137,5 +138,5 @@ export const DELETE = createHandler(
 
     await store.delete(body.id);
     return Response.json({ ok: true });
-  },
+  }
 );

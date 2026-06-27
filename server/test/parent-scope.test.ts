@@ -13,11 +13,11 @@
  * line reflects scope, (4) round-trips through upsertChunks intact.
  */
 
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
-import { PGLiteEngine } from '../src/core/pglite-engine.ts';
-import { chunkCodeText } from '../src/core/chunkers/code.ts';
+import { describe, test, expect, beforeAll, afterAll } from "bun:test";
+import { PGLiteEngine } from "../src/core/pglite-engine.ts";
+import { chunkCodeText } from "../src/core/chunkers/code.ts";
 
-describe('Layer 6 (A3) — nested-chunk emission (TypeScript class)', () => {
+describe("Layer 6 (A3) — nested-chunk emission (TypeScript class)", () => {
   const source = `
 export class BrainEngine {
   searchKeyword(query: string) {
@@ -34,49 +34,49 @@ export class BrainEngine {
 }
 `.trim();
 
-  test('emits parent + one chunk per method', async () => {
-    const chunks = await chunkCodeText(source, 'src/brain.ts');
+  test("emits parent + one chunk per method", async () => {
+    const chunks = await chunkCodeText(source, "src/brain.ts");
     // 1 parent (BrainEngine) + 3 methods = 4 chunks
     expect(chunks.length).toBeGreaterThanOrEqual(4);
-    const symbols = chunks.map(c => c.metadata.symbolName);
-    expect(symbols).toContain('BrainEngine');
-    expect(symbols).toContain('searchKeyword');
-    expect(symbols).toContain('searchVector');
-    expect(symbols).toContain('getPage');
+    const symbols = chunks.map((c) => c.metadata.symbolName);
+    expect(symbols).toContain("BrainEngine");
+    expect(symbols).toContain("searchKeyword");
+    expect(symbols).toContain("searchVector");
+    expect(symbols).toContain("getPage");
   });
 
-  test('method chunks carry parentSymbolPath = [ClassName]', async () => {
-    const chunks = await chunkCodeText(source, 'src/brain.ts');
-    const method = chunks.find(c => c.metadata.symbolName === 'searchKeyword');
+  test("method chunks carry parentSymbolPath = [ClassName]", async () => {
+    const chunks = await chunkCodeText(source, "src/brain.ts");
+    const method = chunks.find((c) => c.metadata.symbolName === "searchKeyword");
     expect(method).toBeDefined();
-    expect(method!.metadata.parentSymbolPath).toEqual(['BrainEngine']);
+    expect(method!.metadata.parentSymbolPath).toEqual(["BrainEngine"]);
   });
 
-  test('parent chunk has empty parentSymbolPath (top-level)', async () => {
-    const chunks = await chunkCodeText(source, 'src/brain.ts');
-    const parent = chunks.find(c => c.metadata.symbolName === 'BrainEngine');
+  test("parent chunk has empty parentSymbolPath (top-level)", async () => {
+    const chunks = await chunkCodeText(source, "src/brain.ts");
+    const parent = chunks.find((c) => c.metadata.symbolName === "BrainEngine");
     expect(parent).toBeDefined();
     expect(parent!.metadata.parentSymbolPath).toEqual([]);
   });
 
-  test('method chunk header includes scope suffix', async () => {
-    const chunks = await chunkCodeText(source, 'src/brain.ts');
-    const method = chunks.find(c => c.metadata.symbolName === 'searchKeyword');
-    expect(method!.text).toContain('(in BrainEngine)');
+  test("method chunk header includes scope suffix", async () => {
+    const chunks = await chunkCodeText(source, "src/brain.ts");
+    const method = chunks.find((c) => c.metadata.symbolName === "searchKeyword");
+    expect(method!.text).toContain("(in BrainEngine)");
   });
 
-  test('parent chunk body contains member digest, not full bodies', async () => {
-    const chunks = await chunkCodeText(source, 'src/brain.ts');
-    const parent = chunks.find(c => c.metadata.symbolName === 'BrainEngine');
+  test("parent chunk body contains member digest, not full bodies", async () => {
+    const chunks = await chunkCodeText(source, "src/brain.ts");
+    const parent = chunks.find((c) => c.metadata.symbolName === "BrainEngine");
     // Parent body slim: has declaration + Members list, NOT full method bodies.
-    expect(parent!.text).toContain('Members:');
+    expect(parent!.text).toContain("Members:");
     // runQuery / runVec are nested-method bodies — they belong to the
     // separately-emitted method chunks, not the parent's member digest.
-    expect(parent!.text).not.toContain('runQuery');
+    expect(parent!.text).not.toContain("runQuery");
   });
 });
 
-describe('Layer 6 (A3) — Python class', () => {
+describe("Layer 6 (A3) — Python class", () => {
   const source = `
 class UserService:
     def get_user(self, uid):
@@ -86,19 +86,19 @@ class UserService:
         self.store.put(user.id, user)
 `.trim();
 
-  test('emits class + 2 method chunks with parent path', async () => {
-    const chunks = await chunkCodeText(source, 'src/user_service.py');
-    const symbols = chunks.map(c => c.metadata.symbolName);
-    expect(symbols).toContain('UserService');
-    expect(symbols).toContain('get_user');
-    expect(symbols).toContain('save_user');
+  test("emits class + 2 method chunks with parent path", async () => {
+    const chunks = await chunkCodeText(source, "src/user_service.py");
+    const symbols = chunks.map((c) => c.metadata.symbolName);
+    expect(symbols).toContain("UserService");
+    expect(symbols).toContain("get_user");
+    expect(symbols).toContain("save_user");
 
-    const method = chunks.find(c => c.metadata.symbolName === 'get_user');
-    expect(method!.metadata.parentSymbolPath).toEqual(['UserService']);
+    const method = chunks.find((c) => c.metadata.symbolName === "get_user");
+    expect(method!.metadata.parentSymbolPath).toEqual(["UserService"]);
   });
 });
 
-describe('Layer 6 (A3) — Ruby class + module (Rubyist coverage)', () => {
+describe("Layer 6 (A3) — Ruby class + module (Rubyist coverage)", () => {
   const source = `
 module Admin
   class UsersController
@@ -113,31 +113,31 @@ module Admin
 end
 `.trim();
 
-  test('emits nested Ruby methods with their class as parent', async () => {
-    const chunks = await chunkCodeText(source, 'app/controllers/admin/users_controller.rb');
-    const symbols = chunks.map(c => c.metadata.symbolName);
-    expect(symbols).toContain('UsersController');
-    expect(symbols).toContain('render');
-    expect(symbols).toContain('find_all');
+  test("emits nested Ruby methods with their class as parent", async () => {
+    const chunks = await chunkCodeText(source, "app/controllers/admin/users_controller.rb");
+    const symbols = chunks.map((c) => c.metadata.symbolName);
+    expect(symbols).toContain("UsersController");
+    expect(symbols).toContain("render");
+    expect(symbols).toContain("find_all");
 
-    const render = chunks.find(c => c.metadata.symbolName === 'render');
+    const render = chunks.find((c) => c.metadata.symbolName === "render");
     // At minimum the immediate parent class shows up; full
     // qualified-name (Admin::UsersController#render) lands in Layer 5.
-    expect(render!.metadata.parentSymbolPath).toContain('UsersController');
+    expect(render!.metadata.parentSymbolPath).toContain("UsersController");
   });
 });
 
-describe('Layer 6 (A3) — top-level function unchanged', () => {
-  test('standalone function emits one chunk with empty parent path', async () => {
-    const source = 'export function parse(input: string) { return input; }';
-    const chunks = await chunkCodeText(source, 'src/parse.ts');
+describe("Layer 6 (A3) — top-level function unchanged", () => {
+  test("standalone function emits one chunk with empty parent path", async () => {
+    const source = "export function parse(input: string) { return input; }";
+    const chunks = await chunkCodeText(source, "src/parse.ts");
     expect(chunks.length).toBe(1);
-    expect(chunks[0]!.metadata.symbolName).toBe('parse');
+    expect(chunks[0]!.metadata.symbolName).toBe("parse");
     expect(chunks[0]!.metadata.parentSymbolPath).toEqual([]);
   });
 });
 
-describe('Layer 6 (A3) — parent_symbol_path round-trips through upsertChunks', () => {
+describe("Layer 6 (A3) — parent_symbol_path round-trips through upsertChunks", () => {
   let engine: PGLiteEngine;
 
   beforeAll(async () => {
@@ -145,30 +145,32 @@ describe('Layer 6 (A3) — parent_symbol_path round-trips through upsertChunks',
     await engine.connect({});
     await engine.initSchema();
 
-    await engine.putPage('src-brain-ts', {
-      type: 'code',
-      page_kind: 'code',
-      title: 'src/brain.ts (typescript)',
-      compiled_truth: 'export class BrainEngine { search() { return 42; } }',
-      timeline: '',
+    await engine.putPage("src-brain-ts", {
+      type: "code",
+      page_kind: "code",
+      title: "src/brain.ts (typescript)",
+      compiled_truth: "export class BrainEngine { search() { return 42; } }",
+      timeline: "",
     });
-    await engine.upsertChunks('src-brain-ts', [
+    await engine.upsertChunks("src-brain-ts", [
       {
         chunk_index: 0,
-        chunk_text: '[TypeScript] src/brain.ts:1-1 class BrainEngine\n\nexport class BrainEngine { ... }',
-        chunk_source: 'compiled_truth',
-        language: 'typescript',
-        symbol_name: 'BrainEngine',
-        symbol_type: 'class',
+        chunk_text:
+          "[TypeScript] src/brain.ts:1-1 class BrainEngine\n\nexport class BrainEngine { ... }",
+        chunk_source: "compiled_truth",
+        language: "typescript",
+        symbol_name: "BrainEngine",
+        symbol_type: "class",
       },
       {
         chunk_index: 1,
-        chunk_text: '[TypeScript] src/brain.ts:1-1 method search (in BrainEngine)\n\nsearch() { return 42; }',
-        chunk_source: 'compiled_truth',
-        language: 'typescript',
-        symbol_name: 'search',
-        symbol_type: 'method',
-        parent_symbol_path: ['BrainEngine'],
+        chunk_text:
+          "[TypeScript] src/brain.ts:1-1 method search (in BrainEngine)\n\nsearch() { return 42; }",
+        chunk_source: "compiled_truth",
+        language: "typescript",
+        symbol_name: "search",
+        symbol_type: "method",
+        parent_symbol_path: ["BrainEngine"],
       },
     ]);
   });
@@ -177,15 +179,17 @@ describe('Layer 6 (A3) — parent_symbol_path round-trips through upsertChunks',
     await engine.disconnect();
   }, 30_000);
 
-  test('parent_symbol_path persists as text[] and survives round-trip', async () => {
-    const chunks = await engine.getChunks('src-brain-ts');
+  test("parent_symbol_path persists as text[] and survives round-trip", async () => {
+    const chunks = await engine.getChunks("src-brain-ts");
     expect(chunks.length).toBe(2);
-    const method = chunks.find(c => c.symbol_name === 'search');
+    const method = chunks.find((c) => c.symbol_name === "search");
     expect(method).toBeDefined();
-    expect(method!.parent_symbol_path).toEqual(['BrainEngine']);
+    expect(method!.parent_symbol_path).toEqual(["BrainEngine"]);
 
-    const klass = chunks.find(c => c.symbol_name === 'BrainEngine');
+    const klass = chunks.find((c) => c.symbol_name === "BrainEngine");
     // Class-level chunk: parent path is null in the DB (no enclosing scope).
-    expect(klass!.parent_symbol_path == null || (klass!.parent_symbol_path as string[]).length === 0).toBe(true);
+    expect(
+      klass!.parent_symbol_path == null || (klass!.parent_symbol_path as string[]).length === 0
+    ).toBe(true);
   });
 });

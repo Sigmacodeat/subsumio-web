@@ -15,10 +15,10 @@
  * step can render them into distinct <pages> / <takes> blocks for the prompt.
  */
 
-import type { BrainEngine, TakeHit, Take } from '../engine.ts';
-import { hybridSearch } from '../search/hybrid.ts';
-import type { SearchResult } from '../types.ts';
-import { sanitizeQueryForPrompt } from '../search/expansion.ts';
+import type { BrainEngine, TakeHit, Take } from "../engine.ts";
+import { hybridSearch } from "../search/hybrid.ts";
+import type { SearchResult } from "../types.ts";
+import { sanitizeQueryForPrompt } from "../search/expansion.ts";
 
 export interface ThinkGatherOpts {
   question: string;
@@ -53,7 +53,7 @@ export interface ThinkGatherResult {
     takesFromKeyword: number;
     takesFromVector: number;
     graphHits: number;
-    questionSanitizedFor: 'expansion' | 'none';
+    questionSanitizedFor: "expansion" | "none";
   };
 }
 
@@ -69,11 +69,7 @@ function rrfScore(rank: number): number {
  * by fused score descending. Mirrors the RRF pattern in src/core/search/hybrid.ts
  * but generalized for take-vs-take and take-vs-page key shapes.
  */
-function fuseRanked<T>(
-  a: T[],
-  b: T[],
-  keyFn: (item: T) => string,
-): T[] {
+function fuseRanked<T>(a: T[], b: T[], keyFn: (item: T) => string): T[] {
   const scores = new Map<string, { item: T; score: number }>();
   for (let i = 0; i < a.length; i++) {
     const k = keyFn(a[i]);
@@ -90,7 +86,7 @@ function fuseRanked<T>(
   }
   return Array.from(scores.values())
     .sort((x, y) => y.score - x.score)
-    .map(s => s.item);
+    .map((s) => s.item);
 }
 
 /**
@@ -100,7 +96,7 @@ function fuseRanked<T>(
  */
 export async function runGather(
   engine: BrainEngine,
-  opts: ThinkGatherOpts,
+  opts: ThinkGatherOpts
 ): Promise<ThinkGatherResult> {
   const gatherLimit = opts.gatherLimit ?? 40;
   const takesLimit = opts.takesLimit ?? 30;
@@ -113,7 +109,7 @@ export async function runGather(
   // Stream 1: hybrid page search (existing primitive).
   const pagesPromise = hybridSearch(engine, opts.question, {
     limit: gatherLimit,
-    expansion: false,  // think provides its own anchor + graph context; no need for re-expansion
+    expansion: false, // think provides its own anchor + graph context; no need for re-expansion
     sourceId: opts.sourceId,
     sourceIds: opts.sourceIds,
   }).catch((e) => {
@@ -122,38 +118,45 @@ export async function runGather(
   });
 
   // Stream 2: keyword search across takes.
-  const takesKwPromise = engine.searchTakes(opts.question, {
-    limit: takesLimit,
-    takesHoldersAllowList: opts.takesHoldersAllowList,
-    sourceId: opts.sourceId,
-    sourceIds: opts.sourceIds,
-  }).catch((e) => {
-    process.stderr.write(`[think.gather] takes-keyword stream failed: ${(e as Error).message}\n`);
-    return [] as TakeHit[];
-  });
+  const takesKwPromise = engine
+    .searchTakes(opts.question, {
+      limit: takesLimit,
+      takesHoldersAllowList: opts.takesHoldersAllowList,
+      sourceId: opts.sourceId,
+      sourceIds: opts.sourceIds,
+    })
+    .catch((e) => {
+      process.stderr.write(`[think.gather] takes-keyword stream failed: ${(e as Error).message}\n`);
+      return [] as TakeHit[];
+    });
 
   // Stream 3: vector search across takes (only when an embedding is supplied).
   const takesVecPromise: Promise<TakeHit[]> = opts.questionEmbedding
-    ? engine.searchTakesVector(opts.questionEmbedding, {
-        limit: takesLimit,
-        takesHoldersAllowList: opts.takesHoldersAllowList,
-        sourceId: opts.sourceId,
-        sourceIds: opts.sourceIds,
-      }).catch((e) => {
-        process.stderr.write(`[think.gather] takes-vector stream failed: ${(e as Error).message}\n`);
-        return [] as TakeHit[];
-      })
+    ? engine
+        .searchTakesVector(opts.questionEmbedding, {
+          limit: takesLimit,
+          takesHoldersAllowList: opts.takesHoldersAllowList,
+          sourceId: opts.sourceId,
+          sourceIds: opts.sourceIds,
+        })
+        .catch((e) => {
+          process.stderr.write(
+            `[think.gather] takes-vector stream failed: ${(e as Error).message}\n`
+          );
+          return [] as TakeHit[];
+        })
     : Promise.resolve([] as TakeHit[]);
 
   // Stream 4: graph walk (anchor only).
   const graphPromise: Promise<string[]> = opts.anchor
-    ? engine.traversePaths(opts.anchor, {
-        depth: graphDepth,
-        direction: 'both',
-        sourceId: opts.sourceId,
-        sourceIds: opts.sourceIds,
-      })
-        .then(paths => {
+    ? engine
+        .traversePaths(opts.anchor, {
+          depth: graphDepth,
+          direction: "both",
+          sourceId: opts.sourceId,
+          sourceIds: opts.sourceIds,
+        })
+        .then((paths) => {
           const slugs = new Set<string>([opts.anchor!]);
           for (const p of paths) {
             slugs.add(p.from_slug);
@@ -168,13 +171,17 @@ export async function runGather(
     : Promise.resolve([] as string[]);
 
   const [pages, takesKw, takesVec, graphSlugs] = await Promise.all([
-    pagesPromise, takesKwPromise, takesVecPromise, graphPromise,
+    pagesPromise,
+    takesKwPromise,
+    takesVecPromise,
+    graphPromise,
   ]);
 
   // Fuse takes streams (keyword + vector). Key by (page_slug, row_num).
   const fusedTakes = fuseRanked(
-    takesKw, takesVec,
-    (h: TakeHit) => `${h.page_slug}#${h.row_num}`,
+    takesKw,
+    takesVec,
+    (h: TakeHit) => `${h.page_slug}#${h.row_num}`
   ).slice(0, takesLimit);
 
   return {
@@ -186,7 +193,7 @@ export async function runGather(
       takesFromKeyword: takesKw.length,
       takesFromVector: takesVec.length,
       graphHits: graphSlugs.length,
-      questionSanitizedFor: sanitizedQuestion === opts.question ? 'none' : 'expansion',
+      questionSanitizedFor: sanitizedQuestion === opts.question ? "none" : "expansion",
     },
   };
 }
@@ -197,21 +204,30 @@ export async function runGather(
  * takes are rendered via the renderTakesBlock helper from sanitize.ts.
  */
 export function renderPagesBlock(pages: SearchResult[], excerptLen = 600): string {
-  return pages.map((p, idx) => {
-    const slug = String((p as unknown as { slug?: string }).slug ?? '');
-    const excerpt = String(
-      (p as unknown as { compiled_truth?: string; chunk_text?: string; snippet?: string }).chunk_text
-      ?? (p as unknown as { compiled_truth?: string }).compiled_truth
-      ?? (p as unknown as { snippet?: string }).snippet
-      ?? '',
-    ).slice(0, excerptLen);
-    return `<page slug="${slug}" rank="${idx + 1}">\n${excerpt}\n</page>`;
-  }).join('\n\n');
+  return pages
+    .map((p, idx) => {
+      const slug = String((p as unknown as { slug?: string }).slug ?? "");
+      const excerpt = String(
+        (p as unknown as { compiled_truth?: string; chunk_text?: string; snippet?: string })
+          .chunk_text ??
+          (p as unknown as { compiled_truth?: string }).compiled_truth ??
+          (p as unknown as { snippet?: string }).snippet ??
+          ""
+      ).slice(0, excerptLen);
+      return `<page slug="${slug}" rank="${idx + 1}">\n${excerpt}\n</page>`;
+    })
+    .join("\n\n");
 }
 
 export function takesHitToTakeForPrompt(h: TakeHit | Take): {
-  page_slug: string; row_num: number; claim: string; kind: string;
-  holder: string; weight: number; source?: string | null; since_date?: string | null;
+  page_slug: string;
+  row_num: number;
+  claim: string;
+  kind: string;
+  holder: string;
+  weight: number;
+  source?: string | null;
+  since_date?: string | null;
 } {
   // TakeHit + Take share the slug/claim/kind/holder/weight surface.
   const t = h as Take & TakeHit;
@@ -222,7 +238,7 @@ export function takesHitToTakeForPrompt(h: TakeHit | Take): {
     kind: t.kind,
     holder: t.holder,
     weight: t.weight,
-    source: 'source' in t ? (t as Take).source : null,
-    since_date: 'since_date' in t ? (t as Take).since_date : null,
+    source: "source" in t ? (t as Take).source : null,
+    since_date: "since_date" in t ? (t as Take).since_date : null,
   };
 }

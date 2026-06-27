@@ -39,7 +39,7 @@ export function editDistance(a: string, b: string): number {
       const del = prev[j] + 1;
       const ins = curr[j - 1] + 1;
       const sub = prev[j - 1] + cost;
-      curr[j] = del < ins ? (del < sub ? del : sub) : (ins < sub ? ins : sub);
+      curr[j] = del < ins ? (del < sub ? del : sub) : ins < sub ? ins : sub;
     }
     const swap = prev;
     prev = curr;
@@ -58,7 +58,7 @@ export function editDistance(a: string, b: string): number {
 export function suggestNearest(
   input: string,
   candidates: readonly string[],
-  maxDistance = 3,
+  maxDistance = 3
 ): string | null {
   let best: string | null = null;
   let bestDist = maxDistance + 1;

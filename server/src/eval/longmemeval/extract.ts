@@ -30,13 +30,10 @@
  * the optimistic claim).
  */
 
-import { createHash } from 'crypto';
-import type { ThinkLLMClient } from '../../core/think/index.ts';
-import {
-  resolveEntitySlugWithSource,
-  type ResolutionSource,
-} from '../../core/entities/resolve.ts';
-import type { BrainEngine, NewFact } from '../../core/engine.ts';
+import { createHash } from "crypto";
+import type { ThinkLLMClient } from "../../core/think/index.ts";
+import { resolveEntitySlugWithSource, type ResolutionSource } from "../../core/entities/resolve.ts";
+import type { BrainEngine, NewFact } from "../../core/engine.ts";
 
 /**
  * Parse a JSON array from LLM output. The cross-modal `parseModelJSON`
@@ -48,7 +45,7 @@ import type { BrainEngine, NewFact } from '../../core/engine.ts';
  * throw as "fail open, 0 facts for this session."
  */
 function parseExtractedJsonArray(raw: string): unknown[] {
-  if (typeof raw !== 'string' || !raw.trim()) return [];
+  if (typeof raw !== "string" || !raw.trim()) return [];
   // Strip ```json ... ``` fences if present.
   const fenceMatch = raw.match(/```(?:json)?\s*\n?([\s\S]*?)```/i);
   const cleaned = (fenceMatch ? fenceMatch[1] : raw).trim();
@@ -80,7 +77,7 @@ export interface ExtractedClaim {
   unit: string | null;
   period: string | null;
   event_type: string | null;
-  valid_from: string;  // YYYY-MM-DD or ISO
+  valid_from: string; // YYYY-MM-DD or ISO
   text: string;
 }
 
@@ -162,7 +159,7 @@ Output ONLY the JSON array. No prose, no markdown fences.`;
  * session content shifts.
  */
 function hashSessionBody(body: string): string {
-  return createHash('sha256').update(body).digest('hex');
+  return createHash("sha256").update(body).digest("hex");
 }
 
 /**
@@ -178,14 +175,14 @@ async function canonicalizeEntity(
   engine: BrainEngine,
   sourceId: string,
   rawEntity: string,
-  aliasMap: AliasMap,
+  aliasMap: AliasMap
 ): Promise<{ slug: string; source: ResolutionSource } | null> {
   const normalized = rawEntity.trim().toLowerCase();
   if (!normalized) return null;
 
   // Direct alias hit (full normalized form).
   if (aliasMap.has(normalized)) {
-    return { slug: aliasMap.get(normalized)!, source: 'fuzzy_match' };
+    return { slug: aliasMap.get(normalized)!, source: "fuzzy_match" };
   }
 
   // Multi-word: check the first-token alias too. "Marco Smith" matches
@@ -193,7 +190,7 @@ async function canonicalizeEntity(
   const firstToken = normalized.split(/\s+/)[0];
   if (firstToken !== normalized && aliasMap.has(firstToken)) {
     aliasMap.set(normalized, aliasMap.get(firstToken)!);
-    return { slug: aliasMap.get(firstToken)!, source: 'fuzzy_match' };
+    return { slug: aliasMap.get(firstToken)!, source: "fuzzy_match" };
   }
 
   // No alias hit — resolve via engine. Real-page hits take priority over
@@ -218,18 +215,18 @@ async function canonicalizeEntity(
  * bad row doesn't poison the batch.
  */
 function validateClaim(raw: unknown): ExtractedClaim | null {
-  if (!raw || typeof raw !== 'object') return null;
+  if (!raw || typeof raw !== "object") return null;
   const r = raw as Record<string, unknown>;
-  if (typeof r.entity !== 'string' || r.entity.trim() === '') return null;
-  if (typeof r.text !== 'string') return null;
-  if (typeof r.valid_from !== 'string' || !/^\d{4}-\d{2}-\d{2}/.test(r.valid_from)) return null;
+  if (typeof r.entity !== "string" || r.entity.trim() === "") return null;
+  if (typeof r.text !== "string") return null;
+  if (typeof r.valid_from !== "string" || !/^\d{4}-\d{2}-\d{2}/.test(r.valid_from)) return null;
   // Exactly one of metric or event_type should be set (xor). Defensive:
   // accept null for both (treats as no-op but doesn't crash).
-  const metric = typeof r.metric === 'string' ? r.metric : null;
-  const eventType = typeof r.event_type === 'string' ? r.event_type : null;
-  const value = typeof r.value === 'number' && Number.isFinite(r.value) ? r.value : null;
-  const unit = typeof r.unit === 'string' ? r.unit : null;
-  const period = typeof r.period === 'string' ? r.period : null;
+  const metric = typeof r.metric === "string" ? r.metric : null;
+  const eventType = typeof r.event_type === "string" ? r.event_type : null;
+  const value = typeof r.value === "number" && Number.isFinite(r.value) ? r.value : null;
+  const unit = typeof r.unit === "string" ? r.unit : null;
+  const period = typeof r.period === "string" ? r.period : null;
   return {
     entity: r.entity,
     metric,
@@ -250,7 +247,7 @@ function validateClaim(raw: unknown): ExtractedClaim | null {
 async function callExtractor(
   client: ThinkLLMClient,
   body: string,
-  model: string,
+  model: string
 ): Promise<ExtractedClaim[] | null> {
   let response;
   try {
@@ -258,13 +255,13 @@ async function callExtractor(
       model,
       max_tokens: 2000,
       system: EXTRACTOR_SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: body }],
+      messages: [{ role: "user", content: body }],
     });
   } catch {
     return null;
   }
-  const block = response.content.find(b => b.type === 'text');
-  const text = block && 'text' in block ? block.text : '';
+  const block = response.content.find((b) => b.type === "text");
+  const text = block && "text" in block ? block.text : "";
   if (!text) return [];
 
   const parsed = parseExtractedJsonArray(text);
@@ -335,13 +332,13 @@ export async function extractAndInsertClaims(opts: {
     if (!canonical) continue;
     rows.push({
       fact: c.text,
-      kind: c.event_type ? 'event' : 'fact',
+      kind: c.event_type ? "event" : "fact",
       entity_slug: canonical.slug,
-      visibility: 'private',
+      visibility: "private",
       valid_from: new Date(c.valid_from),
-      source: 'longmemeval:extractor',
+      source: "longmemeval:extractor",
       source_session: opts.sessionId,
-      notability: 'medium',
+      notability: "medium",
       embedding: null,
       claim_metric: c.metric,
       claim_value: c.value,

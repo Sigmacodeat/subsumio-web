@@ -3,7 +3,7 @@
 > A diary of the **valuable ideas** surfaced by the community-PR wave, kept so that
 > good thinking survives even when the PR that carried it is closed. gbrain moves
 > fast and the maintainer's "cathedral" rewrites supersede most individual PRs —
-> but the *idea* behind a closed PR is often still worth something.
+> but the _idea_ behind a closed PR is often still worth something.
 >
 > **Bar for this file:** an idea only earns a line if it is (a) still live on
 > master and (b) genuinely valuable to gbrain users. **Graduating an idea to
@@ -85,7 +85,7 @@ these are the densest source of real bugs in the whole backlog.
   accessors lack the retry wrapper. **Pick the best fix per layer and land as a wave.**
 - **lint `--fix` corrupts mid-doc fences** (#1417 @trinh-macbook, #1597 @chungty) —
   **OPEN, high.** Detector/fixer regex disagree, so `lint --fix` strips the closing fence
-  of mid-document ```` ```markdown ```` blocks and autopilot re-corrupts the page every
+  of mid-document ` ```markdown ` blocks and autopilot re-corrupts the page every
   cycle. Only unwrap whole-page fences.
 - **backlinks worker defaults to `fix`** (#1853 @choomz; #1027 @sliday; #495 @23salus) —
   **OPEN, high.** Empty-payload backlinks jobs default to `action='fix'`, silently
@@ -107,7 +107,7 @@ these are the densest source of real bugs in the whole backlog.
 - **HOME-isolation in tests** (#205/#517/#534 @orendi84, #434 @lloydarmbrust) — **OPEN,
   high.** The E2E suite spawns `gbrain init/import` against the developer's real
   `~/.gbrain/config.json`, clobbering their live DB URL+keys. Isolate HOME to a tmpdir.
-  *(A footgun that bites contributors of this very repo.)*
+  _(A footgun that bites contributors of this very repo.)_
 - **dim-aware embed write target** (#1263, @DmitryBMsk) — **OPEN, high.** `upsertChunks`
   always writes the legacy `embedding vector(1536)` column, so brains on an alternate
   column (`embedding_ze halfvec(2560)`) fail with dim-mismatch on every write.
@@ -177,7 +177,7 @@ these are the densest source of real bugs in the whole backlog.
 The AI-gateway + recipes + `user_provided_models` system already absorbed ~40
 per-vendor embedding PRs (Ollama, Gemini, Azure, DashScope, DeepSeek, Zhipu, E5,
 bge-m3, Copilot, Composio, Kimi, LM Studio, Mistral, Hunyuan, MiniMax…). The
-*residue* worth keeping:
+_residue_ worth keeping:
 
 - **litellm proxy unusable for chat** (#1953 @miroslavb, #1938 @BKF-Gitty) — **OPEN, high.**
   The `litellm-proxy` recipe declares only an embedding touchpoint (no chat), so
@@ -220,7 +220,7 @@ triage report) and should be treated as a coordinated design, not piecemeal merg
   remote MCP caller can pass `source_id` (or `__all__`) to `query`/`get_page` to read
   sources outside their OAuth `allowedSources` — the param bypasses `sourceScopeOpts`
   (CWE-285). Clamp to token claims, fail-closed. **#1394 (get_page source_id) must land
-  *with* this clamp, not before it.**
+  _with_ this clamp, not before it.**
 - **Read-side prefix/federation enforcement** (#1860 @choomz, #1790 @colin-atlas,
   #470 @AdityaRajeshGadgil, #1508 @tim404x) — **OPEN, high.** `bound_slug_prefixes` is
   enforced on write but not read; exact `get_page` uses scalar `ctx.sourceId` while fuzzy
@@ -256,8 +256,8 @@ triage report) and should be treated as a coordinated design, not piecemeal merg
 - **Destructive reclone gate** (#1705, @mvanhorn) — **OPEN, high, SECURITY.**
   `recloneIfMissing` does `rm`+rename over `src.local_path` without verifying it's
   gbrain-managed, so a re-pointed source can wipe a user's working tree. Gate behind
-  `isManagedRecloneTarget()` + reject `..`. *(The maintainer's own #1960 is the canonical
-  landing for this class — cross-check.)*
+  `isManagedRecloneTarget()` + reject `..`. _(The maintainer's own #1960 is the canonical
+  landing for this class — cross-check.)_
 - **CORS preflight asymmetry** (#983, @yashkot007) — **OPEN, high, SECURITY.** Preflight
   returns the full method/header surface unconditionally while the actual-request path
   gates on the allowlist — leaks allowed surface to non-allowlisted origins.
@@ -272,14 +272,14 @@ triage report) and should be treated as a coordinated design, not piecemeal merg
   #1396 @xuezhaolan) — **OPEN, high.** CRLF breaks frontmatter + skill-trigger parsing
   (CI is Ubuntu-only so it never surfaces), `/dev/stdin` doesn't exist, a POSIX postinstall
   one-liner hard-fails `bun install`, backslash bundle keys. A coordinated "first-class
-  Windows" pass. *(A working Windows binary + CI target #180/#181 is the prerequisite for
-  the full story.)*
+  Windows" pass. _(A working Windows binary + CI target #180/#181 is the prerequisite for
+  the full story.)_
 - **`.gbrainignore` / per-repo exclusion** (#1483 @eepaul; repo-local code filters
   #1011 @AndrewLauder; `--respect-gitignore` #1159 @jetsetterfl) — **OPEN, high.** Sync
   indexes every file with no ignore mechanism (`data/`, `*.parquet`, fixtures, vendored
   trees), bloating DB + embedding cost. gitignore-parity `.gbrainignore` + per-source
-  `excludePatterns`. *(See also the maintainer's walker-prune work; #1942 prunes
-  vendor/dist/build.)*
+  `excludePatterns`. _(See also the maintainer's walker-prune work; #1942 prunes
+  vendor/dist/build.)_
 - **Monorepo sub-path sources** (#774, @jeremyknows) — **HELD, high.** `--src-subpath`
   (split repo into git-root + logical-source axes) + `--exclude` so one repo can hold N
   sources at subdirs.
@@ -303,14 +303,14 @@ These are net-new surfaces held for a product decision, not auto-closed.
 
 - **Alternative engines** — SQLite/`bun:sqlite`+FTS5 single-file backend (#291, @mvanhorn)
   and Neo4j GraphBrain REST backend (#594, @pkyanam). Both conflict with the two-engine
-  lockstep invariant and the Postgres-for-memory North Star, but the *zero-WASM single-file*
+  lockstep invariant and the Postgres-for-memory North Star, but the _zero-WASM single-file_
   install story (SQLite) is strategically interesting. **HELD.**
 - **Page versioning / soft-delete / read audit** (#573, @cropsgg) — **HELD, high.** Snapshots
   with provenance, soft-delete tombstones + hard purge, read-path audit treating edits as
   derivative works. Ambitious cathedral-scope; maintainer-owned territory.
 - **Configurable embedding dimension** (#1051, @vincedk-alt) — **HELD, high.** `schema.sql`
   hardcodes `vector(1536)`; read `embedding_dimensions` from config (default 1536). The
-  canonical fix that dozens of local-provider PRs hack around. *(Pairs with #1263.)*
+  canonical fix that dozens of local-provider PRs hack around. _(Pairs with #1263.)_
 - **Transcribe skill** (#1449, @RyanAlberts) — **OPEN, high.** Implements the empty
   video/audio branch of `media-ingest` (YouTube captions fast path + yt-dlp/whisper
   fallback), $0 by default. A genuine capability gap.
@@ -318,7 +318,7 @@ These are net-new surfaces held for a product decision, not auto-closed.
   for decrypted iPhone backups (contacts→person pages, iMessage→conversation pages); zero
   network, thin-client refused.
 - **Compounding dream phase** (#509, @durang) — **HELD, high.** An LLM "7th phase" that
-  *creates* structure (orphan-mention people, knowledge gaps, concept-dup at cosine>0.92,
+  _creates_ structure (orphan-mention people, knowledge gaps, concept-dup at cosine>0.92,
   decay, incomplete pages) vs the deterministic phases. Overlaps `enrich --thin`.
 - **Codex-OAuth for dream** (#977, @barronlroth) / **dream gateway + `migrate-embedding-dim`**
   (#1013, @cxbitz) — **HELD, high.** OAuth-backed chat for synthesis; a command to resize
@@ -342,7 +342,7 @@ These are net-new surfaces held for a product decision, not auto-closed.
   has zero view into the minions queue. Add a cross-cutting `[queue]` dead-jobs check.
 - **Orphan-metric alignment** (#1107 @colin477, #915 @xaviroblessarries, #1202 @rwbaker) —
   **OPEN, high.** `get_health` counts ingestion-by-design (`daily/`, briefings), soft-deleted,
-  and hub pages as orphans, distorting `brain_score`; CLI `find_orphans` uses a *different*
+  and hub pages as orphans, distorting `brain_score`; CLI `find_orphans` uses a _different_
   predicate than `getHealth`. Unify on one islanded predicate with sensible exclusions.
 - **doctor check-name registry drift** (#1839, @mvanhorn) — **OPEN, med.** Several emitted
   checks aren't registered in `doctor-categories`, printing `unknown check name` every run;
@@ -360,7 +360,7 @@ These are net-new surfaces held for a product decision, not auto-closed.
   preflight false-reject each 5–15 times. A short "already fixed / known" note in the
   release notes or a CONTRIBUTING "before you file" list would cut the re-file rate.
 - **The recipe system is working as a pressure valve** — it correctly absorbed ~40 vendor
-  PRs into config rather than code. The remaining provider asks are about *capabilities*
+  PRs into config rather than code. The remaining provider asks are about _capabilities_
   the recipe schema doesn't yet express (asymmetric `input_type`, Matryoshka dims, per-item
   RPM caps, alternative credential groups), not new vendors.
 - **i18n (§1) and local-first chat (§5) are the two biggest "serve a billion" coverage

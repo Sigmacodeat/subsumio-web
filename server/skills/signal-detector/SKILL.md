@@ -36,6 +36,7 @@ intellectual capital. Entities are bookkeeping. Both compound over time.
 ## Contract
 
 This skill guarantees:
+
 - Fires on every message (no exceptions unless purely operational)
 - Runs in parallel (spawned, never blocks main response)
 - Captures ideas with the user's EXACT phrasing (no paraphrasing)
@@ -47,6 +48,7 @@ This skill guarantees:
 > **Convention:** See `skills/conventions/quality.md` for Iron Law back-linking.
 
 Every time this skill creates or updates a brain page that mentions a person or company:
+
 1. Check if that person/company has a brain page
 2. If yes → add a back-link FROM their page TO the page you just created/updated
 3. Format: `- **YYYY-MM-DD** | Referenced in [page title](path) — brief context`
@@ -57,6 +59,7 @@ Every time this skill creates or updates a brain page that mentions a person or 
 ### Phase 1: Idea/Observation Detection (PRIMARY)
 
 When the user expresses a novel thought, observation, thesis, or framework:
+
 - If it's the user's **original thinking** (they generated it) → create/update `originals/{slug}`
 - If it's a **world concept** they're referencing → create/update `concepts/{slug}`
 - If it's a **product or business idea** → create/update `ideas/{slug}`
@@ -84,6 +87,7 @@ need to call `gbrain link` manually. Timeline entries still need explicit calls.
 ### Phase 3: Signal Logging
 
 Always log a one-line summary:
+
 - `Signals: 0 ideas, 0 entities, 0 facts (skipped: operational)`
 - `Signals: 1 idea (captured → originals/x), 2 entities (enriched → people/y, companies/z)`
 

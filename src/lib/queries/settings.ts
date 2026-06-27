@@ -7,7 +7,7 @@ export class ApiGetError extends Error {
   constructor(
     public readonly status: number,
     public readonly body: string,
-    public readonly path: string,
+    public readonly path: string
   ) {
     const snippet = body.slice(0, 200);
     super(`HTTP ${status} on ${path}: ${snippet}`);
@@ -237,7 +237,13 @@ export function useDataExportBackup() {
 export function useSettingsApiKeys() {
   return useQuery({
     queryKey: ["settings", "engine-api-keys"],
-    queryFn: () => apiGet<{ ok: boolean; openaiKey?: string; anthropicKey?: string; zeroEntropyKey?: string } | null>("/api/settings/api-keys"),
+    queryFn: () =>
+      apiGet<{
+        ok: boolean;
+        openaiKey?: string;
+        anthropicKey?: string;
+        zeroEntropyKey?: string;
+      } | null>("/api/settings/api-keys"),
   });
 }
 
@@ -312,8 +318,7 @@ export interface ModelPreferenceResponse {
 export function useModelPreference() {
   return useQuery({
     queryKey: ["settings", "model"],
-    queryFn: () =>
-      apiGet<{ data: ModelPreferenceResponse }>("/api/settings/model"),
+    queryFn: () => apiGet<{ data: ModelPreferenceResponse }>("/api/settings/model"),
   });
 }
 

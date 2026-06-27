@@ -35,49 +35,60 @@
  * afterAll regardless of test outcome.
  */
 
-import { describe, it, expect, beforeAll, afterAll } from 'bun:test';
-import { spawnSync } from 'child_process';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync, readFileSync, realpathSync } from 'fs';
-import { join, dirname } from 'path';
-import { tmpdir, homedir } from 'os';
+import { describe, it, expect, beforeAll, afterAll } from "bun:test";
+import { spawnSync } from "child_process";
+import {
+  mkdtempSync,
+  mkdirSync,
+  writeFileSync,
+  rmSync,
+  existsSync,
+  readFileSync,
+  realpathSync,
+} from "fs";
+import { join, dirname } from "path";
+import { tmpdir, homedir } from "os";
 
 // ── Tier 2 gating ──────────────────────────────────────────────────────────
-const OPENCLAW = which('openclaw');
+const OPENCLAW = which("openclaw");
 const SKIP = !OPENCLAW;
-const SKIP_MSG = '[openclaw-plugin-load-real] openclaw CLI not available; skipping Tier 2 e2e';
+const SKIP_MSG = "[openclaw-plugin-load-real] openclaw CLI not available; skipping Tier 2 e2e";
 
 function which(bin: string): string | null {
-  const r = spawnSync('which', [bin], { encoding: 'utf8' });
+  const r = spawnSync("which", [bin], { encoding: "utf8" });
   if (r.status !== 0) return null;
   const path = r.stdout.trim();
   return path || null;
 }
 
 // Hardcoded plugin id matches src/openclaw-context-engine.ts default export.
-const PLUGIN_ID = 'gbrain-context-engine';
-const ENGINE_ID = 'gbrain-context';
+const PLUGIN_ID = "gbrain-context-engine";
+const ENGINE_ID = "gbrain-context";
 // Use a process-unique profile name so two concurrent test runs (e.g.,
 // Conductor sibling workspaces) don't collide on `~/.openclaw-<profile>`.
 const PROFILE = `gbrain-ctx-e2e-${process.pid}`;
 const PROFILE_DIR = join(homedir(), `.openclaw-${PROFILE}`);
 
-let fixtureDir = '';
-let repoRoot = '';
+let fixtureDir = "";
+let repoRoot = "";
 
-function runOpenclaw(args: string[], opts: { timeoutMs?: number } = {}): {
+function runOpenclaw(
+  args: string[],
+  opts: { timeoutMs?: number } = {}
+): {
   exitCode: number;
   stdout: string;
   stderr: string;
 } {
-  const r = spawnSync(OPENCLAW!, ['--profile', PROFILE, ...args], {
-    encoding: 'utf8',
+  const r = spawnSync(OPENCLAW!, ["--profile", PROFILE, ...args], {
+    encoding: "utf8",
     timeout: opts.timeoutMs ?? 60_000,
     env: { ...process.env },
   });
   return {
     exitCode: r.status ?? -1,
-    stdout: r.stdout ?? '',
-    stderr: r.stderr ?? '',
+    stdout: r.stdout ?? "",
+    stderr: r.stderr ?? "",
   };
 }
 
@@ -86,59 +97,66 @@ function cleanup() {
   // Best-effort: uninstall the plugin and rm the profile dir. Both may
   // already be gone (e.g., beforeAll partial failure); ignore errors.
   try {
-    runOpenclaw(['plugins', 'uninstall', '--force', PLUGIN_ID], { timeoutMs: 30_000 });
-  } catch { /* noop */ }
+    runOpenclaw(["plugins", "uninstall", "--force", PLUGIN_ID], { timeoutMs: 30_000 });
+  } catch {
+    /* noop */
+  }
   try {
     if (existsSync(PROFILE_DIR)) rmSync(PROFILE_DIR, { recursive: true, force: true });
-  } catch { /* noop */ }
+  } catch {
+    /* noop */
+  }
   try {
     if (fixtureDir && existsSync(fixtureDir)) rmSync(fixtureDir, { recursive: true, force: true });
-  } catch { /* noop */ }
+  } catch {
+    /* noop */
+  }
 }
 
-describe('openclaw-plugin-load-real (Tier 2 e2e)', () => {
+describe("openclaw-plugin-load-real (Tier 2 e2e)", () => {
   beforeAll(async () => {
     if (SKIP) {
       console.warn(SKIP_MSG);
       return;
     }
 
-    repoRoot = spawnSync('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf8' })
-      .stdout.trim();
-    if (!repoRoot) throw new Error('not in a git repo — cannot resolve plugin source path');
+    repoRoot = spawnSync("git", ["rev-parse", "--show-toplevel"], {
+      encoding: "utf8",
+    }).stdout.trim();
+    if (!repoRoot) throw new Error("not in a git repo — cannot resolve plugin source path");
 
-    fixtureDir = mkdtempSync(join(tmpdir(), 'gbrain-ctx-plugin-real-'));
+    fixtureDir = mkdtempSync(join(tmpdir(), "gbrain-ctx-plugin-real-"));
 
     // Write the fixture's package.json + openclaw.plugin.json from templates.
-    const fixtureTemplate = join(repoRoot, 'test', 'fixtures', 'openclaw-plugin-real');
+    const fixtureTemplate = join(repoRoot, "test", "fixtures", "openclaw-plugin-real");
     writeFileSync(
-      join(fixtureDir, 'package.json'),
-      readFileSync(join(fixtureTemplate, 'package.json.template'), 'utf8'),
+      join(fixtureDir, "package.json"),
+      readFileSync(join(fixtureTemplate, "package.json.template"), "utf8")
     );
     writeFileSync(
-      join(fixtureDir, 'openclaw.plugin.json'),
-      readFileSync(join(fixtureTemplate, 'openclaw.plugin.json.template'), 'utf8'),
+      join(fixtureDir, "openclaw.plugin.json"),
+      readFileSync(join(fixtureTemplate, "openclaw.plugin.json.template"), "utf8")
     );
 
     // Build our real entry to a single JS bundle. This is the same source
     // (`src/openclaw-context-engine.ts`) that the release ships; only the
     // packaging layer (test fixture's package.json) is test-specific.
     const buildResult = spawnSync(
-      'bun',
+      "bun",
       [
-        'build',
-        join(repoRoot, 'src', 'openclaw-context-engine.ts'),
-        '--target=bun',
-        '--outfile',
-        join(fixtureDir, 'entry.js'),
+        "build",
+        join(repoRoot, "src", "openclaw-context-engine.ts"),
+        "--target=bun",
+        "--outfile",
+        join(fixtureDir, "entry.js"),
       ],
-      { encoding: 'utf8', timeout: 60_000 },
+      { encoding: "utf8", timeout: 60_000 }
     );
     if (buildResult.status !== 0) {
       throw new Error(`bun build failed (exit ${buildResult.status}): ${buildResult.stderr}`);
     }
-    if (!existsSync(join(fixtureDir, 'entry.js'))) {
-      throw new Error('bun build did not produce entry.js');
+    if (!existsSync(join(fixtureDir, "entry.js"))) {
+      throw new Error("bun build did not produce entry.js");
     }
 
     // Install via openclaw plugins install --link into the isolated profile.
@@ -146,16 +164,14 @@ describe('openclaw-plugin-load-real (Tier 2 e2e)', () => {
     // dangerous-code scanner flags the surrounding gbrain repo (tests use
     // child_process etc.); the test fixture is dev-trusted, same provenance
     // as the test runner.
-    const install = runOpenclaw([
-      'plugins', 'install',
-      '--link',
-      '--dangerously-force-unsafe-install',
-      fixtureDir,
-    ], { timeoutMs: 60_000 });
+    const install = runOpenclaw(
+      ["plugins", "install", "--link", "--dangerously-force-unsafe-install", fixtureDir],
+      { timeoutMs: 60_000 }
+    );
     if (install.exitCode !== 0) {
       throw new Error(
         `openclaw plugins install failed (exit ${install.exitCode}).\n` +
-        `stdout: ${install.stdout}\nstderr: ${install.stderr}`,
+          `stdout: ${install.stdout}\nstderr: ${install.stderr}`
       );
     }
   });
@@ -164,100 +180,89 @@ describe('openclaw-plugin-load-real (Tier 2 e2e)', () => {
     cleanup();
   });
 
-  it.skipIf(SKIP)(
-    'openclaw imports the entry file and reports status=loaded',
-    () => {
-      const r = runOpenclaw(['plugins', 'inspect', PLUGIN_ID, '--json'], { timeoutMs: 30_000 });
-      expect(r.exitCode).toBe(0);
+  it.skipIf(SKIP)("openclaw imports the entry file and reports status=loaded", () => {
+    const r = runOpenclaw(["plugins", "inspect", PLUGIN_ID, "--json"], { timeoutMs: 30_000 });
+    expect(r.exitCode).toBe(0);
 
-      const inspect = JSON.parse(r.stdout);
-      expect(inspect.plugin).toBeDefined();
-      // status=loaded means: openclaw imported the entry.js module, read the
-      // default export, and called register(api) without throwing.
-      expect(inspect.plugin.status).toBe('loaded');
-      expect(inspect.plugin.imported).toBe(true);
-      expect(inspect.plugin.activated).toBe(true);
-    },
-  );
+    const inspect = JSON.parse(r.stdout);
+    expect(inspect.plugin).toBeDefined();
+    // status=loaded means: openclaw imported the entry.js module, read the
+    // default export, and called register(api) without throwing.
+    expect(inspect.plugin.status).toBe("loaded");
+    expect(inspect.plugin.imported).toBe(true);
+    expect(inspect.plugin.activated).toBe(true);
+  });
 
-  it.skipIf(SKIP)(
-    'default export carries the expected id / name / description metadata',
-    () => {
-      const r = runOpenclaw(['plugins', 'inspect', PLUGIN_ID, '--json'], { timeoutMs: 30_000 });
-      expect(r.exitCode).toBe(0);
-      const inspect = JSON.parse(r.stdout);
+  it.skipIf(SKIP)("default export carries the expected id / name / description metadata", () => {
+    const r = runOpenclaw(["plugins", "inspect", PLUGIN_ID, "--json"], { timeoutMs: 30_000 });
+    expect(r.exitCode).toBe(0);
+    const inspect = JSON.parse(r.stdout);
 
-      // Openclaw reads these directly from the default export of our entry.
-      // If we rename a field in src/openclaw-context-engine.ts, this fails.
-      expect(inspect.plugin.id).toBe(PLUGIN_ID);
-      expect(inspect.plugin.name).toBe('GBrain Context Engine');
-      expect(inspect.plugin.description).toContain('Deterministic temporal/spatial context injection');
-    },
-  );
+    // Openclaw reads these directly from the default export of our entry.
+    // If we rename a field in src/openclaw-context-engine.ts, this fails.
+    expect(inspect.plugin.id).toBe(PLUGIN_ID);
+    expect(inspect.plugin.name).toBe("GBrain Context Engine");
+    expect(inspect.plugin.description).toContain(
+      "Deterministic temporal/spatial context injection"
+    );
+  });
 
-  it.skipIf(SKIP)(
-    'register(api) ran without producing error-level diagnostics',
-    () => {
-      const r = runOpenclaw(['plugins', 'inspect', PLUGIN_ID, '--json'], { timeoutMs: 30_000 });
-      expect(r.exitCode).toBe(0);
-      const inspect = JSON.parse(r.stdout);
+  it.skipIf(SKIP)("register(api) ran without producing error-level diagnostics", () => {
+    const r = runOpenclaw(["plugins", "inspect", PLUGIN_ID, "--json"], { timeoutMs: 30_000 });
+    expect(r.exitCode).toBe(0);
+    const inspect = JSON.parse(r.stdout);
 
-      const errors = (inspect.diagnostics ?? []).filter((d: { level: string }) => d.level === 'error');
-      expect(errors).toEqual([]);
+    const errors = (inspect.diagnostics ?? []).filter(
+      (d: { level: string }) => d.level === "error"
+    );
+    expect(errors).toEqual([]);
 
-      // The trust warning is expected for --link installs — it's openclaw
-      // telling the operator that --link bypasses install-record provenance.
-      // We assert it's there so a future openclaw change that elevates it to
-      // error-level surfaces here too.
-      const warns = (inspect.diagnostics ?? []).filter((d: { level: string }) => d.level === 'warn');
-      const hasTrustWarning = warns.some((d: { message: string }) =>
-        d.message.includes('install/load-path provenance'),
-      );
-      expect(hasTrustWarning).toBe(true);
-    },
-  );
+    // The trust warning is expected for --link installs — it's openclaw
+    // telling the operator that --link bypasses install-record provenance.
+    // We assert it's there so a future openclaw change that elevates it to
+    // error-level surfaces here too.
+    const warns = (inspect.diagnostics ?? []).filter((d: { level: string }) => d.level === "warn");
+    const hasTrustWarning = warns.some((d: { message: string }) =>
+      d.message.includes("install/load-path provenance")
+    );
+    expect(hasTrustWarning).toBe(true);
+  });
 
-  it.skipIf(SKIP)(
-    'plugins.slots.contextEngine binding to gbrain-context validates cleanly',
-    () => {
-      // Wiring our id into the slot is the runtime hand-off — when
-      // openclaw initializes an agent, it reads this slot and resolves the
-      // engine from the contextEngine registry. config validate fails if
-      // the slot value doesn't reference a known engine.
-      const setResult = runOpenclaw(
-        ['config', 'set', 'plugins.slots.contextEngine', ENGINE_ID],
-        { timeoutMs: 30_000 },
-      );
-      expect(setResult.exitCode).toBe(0);
+  it.skipIf(SKIP)("plugins.slots.contextEngine binding to gbrain-context validates cleanly", () => {
+    // Wiring our id into the slot is the runtime hand-off — when
+    // openclaw initializes an agent, it reads this slot and resolves the
+    // engine from the contextEngine registry. config validate fails if
+    // the slot value doesn't reference a known engine.
+    const setResult = runOpenclaw(["config", "set", "plugins.slots.contextEngine", ENGINE_ID], {
+      timeoutMs: 30_000,
+    });
+    expect(setResult.exitCode).toBe(0);
 
-      const validateResult = runOpenclaw(['config', 'validate'], { timeoutMs: 30_000 });
-      expect(validateResult.exitCode).toBe(0);
-      expect(validateResult.stdout).toContain('Config valid');
-    },
-  );
+    const validateResult = runOpenclaw(["config", "validate"], { timeoutMs: 30_000 });
+    expect(validateResult.exitCode).toBe(0);
+    expect(validateResult.stdout).toContain("Config valid");
+  });
 
-  it.skipIf(SKIP)(
-    'plugins doctor produces zero errors for our plugin id',
-    () => {
-      const r = runOpenclaw(['plugins', 'doctor'], { timeoutMs: 30_000 });
-      // Doctor may exit non-zero overall if ANY plugin has issues; the
-      // assertion we care about is that OUR id is not in an error line.
-      // Match a "${PLUGIN_ID}: <message>" pattern with error keywords.
-      const combined = `${r.stdout}\n${r.stderr}`;
-      const lines = combined.split('\n').filter(l => l.includes(PLUGIN_ID));
-      const errorLines = lines.filter(l =>
-        /error|failed|cannot|missing|not registered/i.test(l)
-        && !l.includes('without install/load-path provenance'), // expected trust warning
-      );
-      if (errorLines.length > 0) {
-        console.error('Unexpected error lines for', PLUGIN_ID, ':\n', errorLines.join('\n'));
-      }
-      expect(errorLines).toEqual([]);
-    },
-  );
+  it.skipIf(SKIP)("plugins doctor produces zero errors for our plugin id", () => {
+    const r = runOpenclaw(["plugins", "doctor"], { timeoutMs: 30_000 });
+    // Doctor may exit non-zero overall if ANY plugin has issues; the
+    // assertion we care about is that OUR id is not in an error line.
+    // Match a "${PLUGIN_ID}: <message>" pattern with error keywords.
+    const combined = `${r.stdout}\n${r.stderr}`;
+    const lines = combined.split("\n").filter((l) => l.includes(PLUGIN_ID));
+    const errorLines = lines.filter(
+      (l) =>
+        /error|failed|cannot|missing|not registered/i.test(l) &&
+        !l.includes("without install/load-path provenance") // expected trust warning
+    );
+    if (errorLines.length > 0) {
+      console.error("Unexpected error lines for", PLUGIN_ID, ":\n", errorLines.join("\n"));
+    }
+    expect(errorLines).toEqual([]);
+  });
 
   it.skipIf(SKIP)(
-    'openclaw public SDK registerContextEngine accepts our factory shape',
+    "openclaw public SDK registerContextEngine accepts our factory shape",
     async () => {
       // Programmatic round-trip via the SDK that plugin entries actually
       // use. This is the API our register(api) calls; importing and using
@@ -277,10 +282,12 @@ describe('openclaw-plugin-load-real (Tier 2 e2e)', () => {
       const importErrors: string[] = [];
       try {
         // @ts-ignore — bare specifier resolution depends on node_modules.
-        const sdk = await import('openclaw/plugin-sdk');
+        const sdk = await import("openclaw/plugin-sdk");
         registerContextEngine = sdk.registerContextEngine;
       } catch (err) {
-        importErrors.push(`bare 'openclaw/plugin-sdk': ${err instanceof Error ? err.message : String(err)}`);
+        importErrors.push(
+          `bare 'openclaw/plugin-sdk': ${err instanceof Error ? err.message : String(err)}`
+        );
       }
 
       if (!registerContextEngine) {
@@ -295,35 +302,39 @@ describe('openclaw-plugin-load-real (Tier 2 e2e)', () => {
         try {
           const realBin = realpathSync(OPENCLAW!);
           const openclawModuleDir = dirname(realBin);
-          const sdkPath = join(openclawModuleDir, 'dist', 'plugin-sdk', 'index.js');
+          const sdkPath = join(openclawModuleDir, "dist", "plugin-sdk", "index.js");
           if (existsSync(sdkPath)) {
             // @ts-ignore — absolute-path dynamic import bypasses node_modules resolution.
             const sdk = await import(sdkPath);
             registerContextEngine = sdk.registerContextEngine;
           } else {
-            importErrors.push(`SDK not found at ${sdkPath} (resolved from openclaw bin ${realBin})`);
+            importErrors.push(
+              `SDK not found at ${sdkPath} (resolved from openclaw bin ${realBin})`
+            );
           }
         } catch (err) {
-          importErrors.push(`bin-relative resolve: ${err instanceof Error ? err.message : String(err)}`);
+          importErrors.push(
+            `bin-relative resolve: ${err instanceof Error ? err.message : String(err)}`
+          );
         }
       }
 
       if (!registerContextEngine) {
         throw new Error(
           `openclaw/plugin-sdk could not be resolved from any known location. ` +
-          `Errors:\n  ${importErrors.join('\n  ')}\n` +
-          `This test runs only when openclaw CLI is installed; SDK resolution should follow.`,
+            `Errors:\n  ${importErrors.join("\n  ")}\n` +
+            `This test runs only when openclaw CLI is installed; SDK resolution should follow.`
         );
       }
-      expect(typeof registerContextEngine).toBe('function');
+      expect(typeof registerContextEngine).toBe("function");
 
-      const { createGBrainContextEngine } = await import('../../src/core/context-engine.ts');
+      const { createGBrainContextEngine } = await import("../../src/core/context-engine.ts");
 
-      const tmp = mkdtempSync(join(tmpdir(), 'gbrain-ctx-sdk-rt-'));
+      const tmp = mkdtempSync(join(tmpdir(), "gbrain-ctx-sdk-rt-"));
       try {
-        mkdirSync(join(tmp, 'memory'), { recursive: true });
-        writeFileSync(join(tmp, 'memory', 'heartbeat-state.json'), '{}');
-        writeFileSync(join(tmp, 'memory', 'upcoming-flights.json'), '{}');
+        mkdirSync(join(tmp, "memory"), { recursive: true });
+        writeFileSync(join(tmp, "memory", "heartbeat-state.json"), "{}");
+        writeFileSync(join(tmp, "memory", "upcoming-flights.json"), "{}");
 
         // Use a process-unique id so we don't collide with whatever the
         // suite-level plugin installation already wrote into the registry.
@@ -331,29 +342,26 @@ describe('openclaw-plugin-load-real (Tier 2 e2e)', () => {
 
         // Should not throw. If openclaw's API contract drifts (e.g., requires
         // additional args, returns Promise instead of void), this fails.
-        registerContextEngine!(
-          dynamicId,
-          () => createGBrainContextEngine({ workspaceDir: tmp }),
-        );
+        registerContextEngine!(dynamicId, () => createGBrainContextEngine({ workspaceDir: tmp }));
 
         // Also verify the engine the factory produces still has the
         // expected ContextEngine interface shape (info, ingest, assemble,
         // compact) — these are the methods openclaw will call.
         const engine = createGBrainContextEngine({ workspaceDir: tmp });
         expect(engine.info.id).toBe(ENGINE_ID);
-        expect(typeof engine.ingest).toBe('function');
-        expect(typeof engine.assemble).toBe('function');
-        expect(typeof engine.compact).toBe('function');
+        expect(typeof engine.ingest).toBe("function");
+        expect(typeof engine.assemble).toBe("function");
+        expect(typeof engine.compact).toBe("function");
 
         // Assemble actually produces the Live Context block — same code
         // path openclaw will hit when it resolves the slot during an agent
         // turn. Proves the FULL load-and-call path works against openclaw's
         // public SDK.
-        const result = await engine.assemble({ sessionId: 'sdk-roundtrip', messages: [] });
-        expect(result.systemPromptAddition).toContain('Live Context');
+        const result = await engine.assemble({ sessionId: "sdk-roundtrip", messages: [] });
+        expect(result.systemPromptAddition).toContain("Live Context");
       } finally {
         rmSync(tmp, { recursive: true, force: true });
       }
-    },
+    }
   );
 });

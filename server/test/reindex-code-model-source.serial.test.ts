@@ -17,31 +17,31 @@
  * embedding model name, not the legacy hardcoded constant.
  */
 
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
-import { PGLiteEngine } from '../src/core/pglite-engine.ts';
-import { runReindexCode } from '../src/commands/reindex-code.ts';
-import { configureGateway, resetGateway } from '../src/core/ai/gateway.ts';
+import { describe, test, expect, beforeAll, afterAll } from "bun:test";
+import { PGLiteEngine } from "../src/core/pglite-engine.ts";
+import { runReindexCode } from "../src/commands/reindex-code.ts";
+import { configureGateway, resetGateway } from "../src/core/ai/gateway.ts";
 
-describe('runReindexCode — model field reflects gateway (IRON RULE regression)', () => {
+describe("runReindexCode — model field reflects gateway (IRON RULE regression)", () => {
   let engine: PGLiteEngine;
   let prevNudgeEnv: string | undefined;
 
   beforeAll(async () => {
     // Suppress nudge so it doesn't write to stderr during this test.
     prevNudgeEnv = process.env.GBRAIN_NO_CODE_MODEL_NUDGE;
-    process.env.GBRAIN_NO_CODE_MODEL_NUDGE = '1';
+    process.env.GBRAIN_NO_CODE_MODEL_NUDGE = "1";
 
     engine = new PGLiteEngine();
     await engine.connect({});
     await engine.initSchema();
 
-    await engine.putPage('src-foo-ts', {
-      type: 'code',
-      page_kind: 'code',
-      title: 'src/foo.ts (typescript)',
-      compiled_truth: 'export function foo() { return 42; }',
-      timeline: '',
-      frontmatter: { language: 'typescript', file: 'src/foo.ts' },
+    await engine.putPage("src-foo-ts", {
+      type: "code",
+      page_kind: "code",
+      title: "src/foo.ts (typescript)",
+      compiled_truth: "export function foo() { return 42; }",
+      timeline: "",
+      frontmatter: { language: "typescript", file: "src/foo.ts" },
     });
   });
 
@@ -54,24 +54,24 @@ describe('runReindexCode — model field reflects gateway (IRON RULE regression)
 
   test('voyage:voyage-code-3 configured → result.model is "voyage-code-3", NOT "text-embedding-3-large"', async () => {
     configureGateway({
-      embedding_model: 'voyage:voyage-code-3',
+      embedding_model: "voyage:voyage-code-3",
       embedding_dimensions: 1024,
-      env: { VOYAGE_API_KEY: 'pa-test' },
+      env: { VOYAGE_API_KEY: "pa-test" },
     });
     const result = await runReindexCode(engine, { dryRun: true });
-    expect(result.model).toBe('voyage-code-3');
-    expect(result.model).not.toBe('text-embedding-3-large');
+    expect(result.model).toBe("voyage-code-3");
+    expect(result.model).not.toBe("text-embedding-3-large");
     resetGateway();
   });
 
   test('openai:text-embedding-3-small configured → result.model is "text-embedding-3-small"', async () => {
     configureGateway({
-      embedding_model: 'openai:text-embedding-3-small',
+      embedding_model: "openai:text-embedding-3-small",
       embedding_dimensions: 1536,
-      env: { OPENAI_API_KEY: 'sk-test' },
+      env: { OPENAI_API_KEY: "sk-test" },
     });
     const result = await runReindexCode(engine, { dryRun: true });
-    expect(result.model).toBe('text-embedding-3-small');
+    expect(result.model).toBe("text-embedding-3-small");
     resetGateway();
   });
 
@@ -79,12 +79,12 @@ describe('runReindexCode — model field reflects gateway (IRON RULE regression)
     // Regression coverage: any provider:model the gateway accepts should
     // round-trip through the cost preview as the bare name.
     configureGateway({
-      embedding_model: 'voyage:voyage-4-large',
+      embedding_model: "voyage:voyage-4-large",
       embedding_dimensions: 2048,
-      env: { VOYAGE_API_KEY: 'pa-test' },
+      env: { VOYAGE_API_KEY: "pa-test" },
     });
     const result = await runReindexCode(engine, { dryRun: true });
-    expect(result.model).toBe('voyage-4-large');
+    expect(result.model).toBe("voyage-4-large");
     resetGateway();
   });
 });

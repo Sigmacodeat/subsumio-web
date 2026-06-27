@@ -24,9 +24,9 @@
  *     [--force] [--json]
  */
 
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { resolve as resolvePath } from 'node:path';
-import type { EvalCandidateInput } from '../core/types.ts';
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { resolve as resolvePath } from "node:path";
+import type { EvalCandidateInput } from "../core/types.ts";
 import {
   BASELINE_FILE_SCHEMA_VERSION,
   DEFAULT_THRESHOLDS,
@@ -37,8 +37,8 @@ import {
   type BaselineMetadata,
   type BaselineRow,
   type BaselineThresholds,
-} from '../core/bench/baseline-file.ts';
-import { createAuditWriter } from '../core/audit/audit-writer.ts';
+} from "../core/bench/baseline-file.ts";
+import { createAuditWriter } from "../core/audit/audit-writer.ts";
 
 interface PublishOpts {
   help?: boolean;
@@ -62,9 +62,9 @@ interface BenchPublishAuditEvent {
 }
 
 const auditWriter = createAuditWriter<BenchPublishAuditEvent>({
-  featureName: 'bench-publish',
-  errorLabel: 'bench-publish-audit',
-  errorTrailer: '; continuing',
+  featureName: "bench-publish",
+  errorLabel: "bench-publish-audit",
+  errorTrailer: "; continuing",
 });
 
 function parseArgs(args: string[]): PublishOpts {
@@ -73,37 +73,37 @@ function parseArgs(args: string[]): PublishOpts {
     const arg = args[i]!;
     const next = args[i + 1];
     switch (arg) {
-      case '--help':
-      case '-h':
+      case "--help":
+      case "-h":
         opts.help = true;
         break;
-      case '--from':
+      case "--from":
         opts.from = next;
         i++;
         break;
-      case '--to':
+      case "--to":
         opts.to = next;
         i++;
         break;
-      case '--label':
+      case "--label":
         opts.label = next;
         i++;
         break;
-      case '--force':
+      case "--force":
         opts.force = true;
         break;
-      case '--json':
+      case "--json":
         opts.json = true;
         break;
-      case '--threshold-jaccard':
+      case "--threshold-jaccard":
         opts.thresholds.jaccard = Number(next);
         i++;
         break;
-      case '--threshold-top1':
+      case "--threshold-top1":
         opts.thresholds.top1 = Number(next);
         i++;
         break;
-      case '--threshold-latency-multiplier':
+      case "--threshold-latency-multiplier":
         opts.thresholds.latency_multiplier = Number(next);
         i++;
         break;
@@ -158,16 +158,16 @@ function parseInputRow(line: string, lineNo: number): EvalCandidateInput {
   } catch (err) {
     throw new Error(`Line ${lineNo}: malformed JSON: ${(err as Error).message}`);
   }
-  if (typeof parsed !== 'object' || parsed === null) {
+  if (typeof parsed !== "object" || parsed === null) {
     throw new Error(`Line ${lineNo} is not a JSON object`);
   }
   const row = parsed as Partial<EvalCandidateInput> & Record<string, unknown>;
   // schema_version is optional on input (some test/synthetic inputs omit it).
   // Strict shape check on the actual fields we use.
-  if (row.tool_name !== 'query' && row.tool_name !== 'search') {
+  if (row.tool_name !== "query" && row.tool_name !== "search") {
     throw new Error(`Line ${lineNo} missing or invalid tool_name (must be 'query' or 'search')`);
   }
-  if (typeof row.query !== 'string') {
+  if (typeof row.query !== "string") {
     throw new Error(`Line ${lineNo} missing query`);
   }
   if (!Array.isArray(row.retrieved_slugs)) {
@@ -176,7 +176,7 @@ function parseInputRow(line: string, lineNo: number): EvalCandidateInput {
   if (!Array.isArray(row.source_ids)) {
     throw new Error(`Line ${lineNo} missing source_ids`);
   }
-  if (typeof row.latency_ms !== 'number') {
+  if (typeof row.latency_ms !== "number") {
     throw new Error(`Line ${lineNo} missing latency_ms`);
   }
   return row as EvalCandidateInput;
@@ -184,7 +184,7 @@ function parseInputRow(line: string, lineNo: number): EvalCandidateInput {
 
 /** Per eng-D5: dedup key includes source_ids so multi-source brains don't collapse. */
 function dedupKey(row: BaselineRow): string {
-  const sources = [...row.source_ids].sort().join(',');
+  const sources = [...row.source_ids].sort().join(",");
   return `${row.tool_name}|${sources}|${row.query_hash}`;
 }
 
@@ -194,13 +194,13 @@ function dedupKey(row: BaselineRow): string {
  */
 export function buildBaselineFromInput(
   input: EvalCandidateInput[],
-  opts: { label: string; thresholds?: Partial<BaselineThresholds>; publishedAt?: Date },
+  opts: { label: string; thresholds?: Partial<BaselineThresholds>; publishedAt?: Date }
 ): BaselineFile {
   if (input.length === 0) {
-    throw new Error('no rows to publish (empty input)');
+    throw new Error("no rows to publish (empty input)");
   }
 
-  const rows: BaselineRow[] = input.map(r => ({
+  const rows: BaselineRow[] = input.map((r) => ({
     ...r,
     query_hash: computeQueryHash(r.query),
   }));
@@ -214,28 +214,32 @@ export function buildBaselineFromInput(
   }
   const dupes = [...seen.entries()].filter(([, rs]) => rs.length > 1);
   if (dupes.length > 0) {
-    const first5 = dupes.slice(0, 5).map(([key, rs]) => {
-      const sample = rs[0]!;
-      return `  ${key}  (query="${sample.query.slice(0, 60)}", ${rs.length} copies)`;
-    }).join('\n');
+    const first5 = dupes
+      .slice(0, 5)
+      .map(([key, rs]) => {
+        const sample = rs[0]!;
+        return `  ${key}  (query="${sample.query.slice(0, 60)}", ${rs.length} copies)`;
+      })
+      .join("\n");
     throw new Error(
       `Found ${dupes.length} duplicate (tool_name, source_ids, query_hash) key(s). First ${Math.min(5, dupes.length)}:\n${first5}\n\n` +
-      `Hint: dedupe your captured rows before publishing, e.g.\n` +
-      `  jq -c -s 'group_by(.tool_name + "|" + (.source_ids|sort|join(",")) + "|" + .query) | map(.[0]) | .[]' /tmp/captured.ndjson > /tmp/deduped.ndjson`,
+        `Hint: dedupe your captured rows before publishing, e.g.\n` +
+        `  jq -c -s 'group_by(.tool_name + "|" + (.source_ids|sort|join(",")) + "|" + .query) | map(.[0]) | .[]' /tmp/captured.ndjson > /tmp/deduped.ndjson`
     );
   }
 
   const thresholds: BaselineThresholds = {
     jaccard: opts.thresholds?.jaccard ?? DEFAULT_THRESHOLDS.jaccard,
     top1: opts.thresholds?.top1 ?? DEFAULT_THRESHOLDS.top1,
-    latency_multiplier: opts.thresholds?.latency_multiplier ?? DEFAULT_THRESHOLDS.latency_multiplier,
+    latency_multiplier:
+      opts.thresholds?.latency_multiplier ?? DEFAULT_THRESHOLDS.latency_multiplier,
   };
 
   const baselineMeanLatencyMs = rows.reduce((s, r) => s + r.latency_ms, 0) / rows.length;
 
   const metadata: BaselineMetadata = {
     schema_version: BASELINE_FILE_SCHEMA_VERSION,
-    _kind: 'baseline_metadata',
+    _kind: "baseline_metadata",
     label: opts.label,
     published_at: (opts.publishedAt ?? new Date()).toISOString(),
     source_hash: computeSourceHash(rows),
@@ -249,14 +253,14 @@ export function buildBaselineFromInput(
 
 /** Derive a default label from the output path basename (sans extension). */
 function deriveLabel(toPath: string): string {
-  const base = toPath.split('/').pop() ?? toPath;
-  return base.replace(/\.baseline\.ndjson$/, '').replace(/\.ndjson$/, '');
+  const base = toPath.split("/").pop() ?? toPath;
+  return base.replace(/\.baseline\.ndjson$/, "").replace(/\.ndjson$/, "");
 }
 
 /** Read + parse the input NDJSON. Throws with line context on failure. */
 function readInputNdjson(path: string): EvalCandidateInput[] {
-  const content = readFileSync(path, 'utf-8');
-  const lines = content.split('\n');
+  const content = readFileSync(path, "utf-8");
+  const lines = content.split("\n");
   const rows: EvalCandidateInput[] = [];
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]!.trim();
@@ -275,12 +279,12 @@ export async function runBenchPublish(args: string[]): Promise<void> {
 
   // USAGE checks (exit 2)
   if (!opts.from) {
-    console.error('Error: --from FILE is required\n');
+    console.error("Error: --from FILE is required\n");
     printHelp();
     process.exit(2);
   }
   if (!opts.to) {
-    console.error('Error: --to FILE is required\n');
+    console.error("Error: --to FILE is required\n");
     printHelp();
     process.exit(2);
   }
@@ -304,7 +308,7 @@ export async function runBenchPublish(args: string[]): Promise<void> {
     console.error(`Error: ${msg}`);
     auditWriter.log({
       label,
-      source_hash: '',
+      source_hash: "",
       row_count: 0,
       output_path: outputPath,
       thresholds: { ...DEFAULT_THRESHOLDS, ...opts.thresholds },
@@ -325,7 +329,7 @@ export async function runBenchPublish(args: string[]): Promise<void> {
     console.error(`Error: ${msg}`);
     auditWriter.log({
       label,
-      source_hash: '',
+      source_hash: "",
       row_count: input.length,
       output_path: outputPath,
       thresholds: { ...DEFAULT_THRESHOLDS, ...opts.thresholds },
@@ -364,21 +368,29 @@ export async function runBenchPublish(args: string[]): Promise<void> {
   });
 
   if (opts.json) {
-    console.log(JSON.stringify({
-      schema_version: 1,
-      output_path: outputPath,
-      label: file.metadata.label,
-      source_hash: file.metadata.source_hash,
-      row_count: file.rows.length,
-      baseline_mean_latency_ms: file.metadata.baseline_mean_latency_ms,
-      thresholds: file.metadata.thresholds,
-    }, null, 2));
+    console.log(
+      JSON.stringify(
+        {
+          schema_version: 1,
+          output_path: outputPath,
+          label: file.metadata.label,
+          source_hash: file.metadata.source_hash,
+          row_count: file.rows.length,
+          baseline_mean_latency_ms: file.metadata.baseline_mean_latency_ms,
+          thresholds: file.metadata.thresholds,
+        },
+        null,
+        2
+      )
+    );
   } else {
     console.log(`Wrote ${outputPath}`);
     console.log(`  Label:    ${file.metadata.label}`);
     console.log(`  Rows:     ${file.rows.length}`);
     console.log(`  Hash:     ${file.metadata.source_hash.slice(0, 16)}…`);
     console.log(`  Latency:  ${file.metadata.baseline_mean_latency_ms.toFixed(0)}ms baseline mean`);
-    console.log(`  Gate:     jaccard>=${file.metadata.thresholds.jaccard} top1>=${file.metadata.thresholds.top1} latency<=${file.metadata.thresholds.latency_multiplier}x`);
+    console.log(
+      `  Gate:     jaccard>=${file.metadata.thresholds.jaccard} top1>=${file.metadata.thresholds.top1} latency<=${file.metadata.thresholds.latency_multiplier}x`
+    );
   }
 }

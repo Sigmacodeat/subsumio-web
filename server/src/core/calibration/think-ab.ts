@@ -21,7 +21,7 @@
  *     passing thinkRunner injection.
  */
 
-import type { BrainEngine } from '../engine.ts';
+import type { BrainEngine } from "../engine.ts";
 
 export interface ABRunInput {
   question: string;
@@ -32,9 +32,15 @@ export interface ABRunInput {
   /** Source for the row. */
   sourceId: string;
   /** Inject for tests; production runs the real `runThink` twice. */
-  thinkRunner?: (opts: { question: string; withCalibration: boolean }) => Promise<{ answer: string; modelUsed?: string }>;
+  thinkRunner?: (opts: {
+    question: string;
+    withCalibration: boolean;
+  }) => Promise<{ answer: string; modelUsed?: string }>;
   /** Inject for tests; production prompts the user via stdin. */
-  preferenceResolver?: (opts: { baseline: string; withCalibration: string }) => Promise<'baseline' | 'with_calibration' | 'neither' | 'tie'>;
+  preferenceResolver?: (opts: {
+    baseline: string;
+    withCalibration: string;
+  }) => Promise<"baseline" | "with_calibration" | "neither" | "tie">;
   /** Optional notes from the user. */
   notes?: string;
 }
@@ -42,7 +48,7 @@ export interface ABRunInput {
 export interface ABRunResult {
   baselineAnswer: string;
   withCalibrationAnswer: string;
-  preferred: 'baseline' | 'with_calibration' | 'neither' | 'tie';
+  preferred: "baseline" | "with_calibration" | "neither" | "tie";
   modelUsed?: string | undefined;
   rowId?: number;
 }
@@ -53,10 +59,12 @@ export interface ABRunResult {
  */
 export async function runAbTrial(input: ABRunInput): Promise<ABRunResult> {
   if (!input.thinkRunner) {
-    throw new Error('runAbTrial: thinkRunner not provided (production wiring lives in src/commands/think.ts)');
+    throw new Error(
+      "runAbTrial: thinkRunner not provided (production wiring lives in src/commands/think.ts)"
+    );
   }
   if (!input.preferenceResolver) {
-    throw new Error('runAbTrial: preferenceResolver not provided');
+    throw new Error("runAbTrial: preferenceResolver not provided");
   }
 
   const baseline = await input.thinkRunner({ question: input.question, withCalibration: false });
@@ -78,7 +86,7 @@ export async function runAbTrial(input: ABRunInput): Promise<ABRunResult> {
       preferred,
       baseline.modelUsed ?? withCal.modelUsed ?? null,
       input.notes ?? null,
-    ],
+    ]
   );
   return {
     baselineAnswer: baseline.answer,
@@ -109,21 +117,21 @@ export interface AbReportResult {
  */
 export async function buildAbReport(
   engine: BrainEngine,
-  opts: { days?: number } = {},
+  opts: { days?: number } = {}
 ): Promise<AbReportResult> {
   const days = opts.days ?? 30;
   const rows = await engine.executeRaw<{ preferred: string; count: number }>(
     `SELECT preferred, COUNT(*)::int AS count
        FROM think_ab_results
        WHERE ran_at >= now() - INTERVAL '${days} days'
-       GROUP BY preferred`,
+       GROUP BY preferred`
   );
   const counts = { baseline: 0, with_calibration: 0, tie: 0, neither: 0 };
   for (const r of rows) {
-    if (r.preferred === 'baseline') counts.baseline = r.count;
-    else if (r.preferred === 'with_calibration') counts.with_calibration = r.count;
-    else if (r.preferred === 'tie') counts.tie = r.count;
-    else if (r.preferred === 'neither') counts.neither = r.count;
+    if (r.preferred === "baseline") counts.baseline = r.count;
+    else if (r.preferred === "with_calibration") counts.with_calibration = r.count;
+    else if (r.preferred === "tie") counts.tie = r.count;
+    else if (r.preferred === "neither") counts.neither = r.count;
   }
   const total = counts.baseline + counts.with_calibration + counts.tie + counts.neither;
   const decisive = counts.baseline + counts.with_calibration;
@@ -150,7 +158,7 @@ export function formatAbReport(report: AbReportResult, days: number): string {
   lines.push(`  Total trials: ${report.total_trials}`);
   if (report.total_trials === 0) {
     lines.push('  No data yet. Try: gbrain think --ab "<question>"');
-    return lines.join('\n');
+    return lines.join("\n");
   }
   lines.push(`  Baseline wins:           ${report.baseline_wins}`);
   lines.push(`  With-calibration wins:   ${report.with_calibration_wins}`);
@@ -158,13 +166,17 @@ export function formatAbReport(report: AbReportResult, days: number): string {
   lines.push(`  Neither:                 ${report.neither}`);
   if (report.with_calibration_win_rate !== null) {
     const pct = (report.with_calibration_win_rate * 100).toFixed(1);
-    lines.push(`  With-calibration win rate (decisive trials only): ${pct}% (n=${report.decisive_trials})`);
+    lines.push(
+      `  With-calibration win rate (decisive trials only): ${pct}% (n=${report.decisive_trials})`
+    );
   }
   if (report.net_negative) {
-    lines.push('');
-    lines.push('⚠ calibration_net_negative: with-calibration is losing more than half of decisive trials.');
-    lines.push('  Consider tuning the anti-bias prompt rewrite (src/core/think/prompt.ts) or');
-    lines.push('  disabling --with-calibration via config until you tune.');
+    lines.push("");
+    lines.push(
+      "⚠ calibration_net_negative: with-calibration is losing more than half of decisive trials."
+    );
+    lines.push("  Consider tuning the anti-bias prompt rewrite (src/core/think/prompt.ts) or");
+    lines.push("  disabling --with-calibration via config until you tune.");
   }
-  return lines.join('\n');
+  return lines.join("\n");
 }

@@ -29,7 +29,7 @@ export async function getMinRevocationVersion(userId: string): Promise<number> {
   try {
     const { rows } = await pool.query<{ min_version: number }>(
       "SELECT min_version FROM subsumio_session_revocations WHERE user_id = $1",
-      [userId],
+      [userId]
     );
     return rows[0]?.min_version ?? 0;
   } catch {
@@ -53,11 +53,14 @@ export async function revokeAllSessions(userId: string): Promise<void> {
        ON CONFLICT (user_id)
        DO UPDATE SET min_version = subsumio_session_revocations.min_version + 1, updated_at = now()
        RETURNING min_version`,
-      [userId],
+      [userId]
     );
     revokedVersions.set(userId, rows[0]?.min_version ?? 1);
   } catch (err) {
-    console.error(`[revocation] failed to persist for ${userId}:`, err instanceof Error ? err.message : String(err));
+    console.error(
+      `[revocation] failed to persist for ${userId}:`,
+      err instanceof Error ? err.message : String(err)
+    );
   }
 }
 

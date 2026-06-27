@@ -13,8 +13,8 @@
  * @see https://docs.openclaw.ai/concepts/context-engine
  */
 
-import { readFileSync, existsSync, statSync } from 'fs';
-import { join } from 'path';
+import { readFileSync, existsSync, statSync } from "fs";
+import { join } from "path";
 // Types inlined from openclaw/plugin-sdk to avoid hard dependency during development.
 // At runtime inside OpenClaw, the real SDK is available; these types ensure build compat.
 
@@ -50,7 +50,11 @@ interface IngestResult {
 
 export interface ContextEngine {
   readonly info: ContextEngineInfo;
-  ingest(params: { sessionId: string; message: AgentMessage; isHeartbeat?: boolean }): Promise<IngestResult>;
+  ingest(params: {
+    sessionId: string;
+    message: AgentMessage;
+    isHeartbeat?: boolean;
+  }): Promise<IngestResult>;
   assemble(params: {
     sessionId: string;
     sessionKey?: string;
@@ -84,12 +88,16 @@ async function ensureSdkLoaded(): Promise<void> {
   _sdkLoaded = true;
   try {
     // @ts-ignore — openclaw/plugin-sdk is resolved at runtime by the OpenClaw host; not a build-time dep.
-    const sdk = await import('openclaw/plugin-sdk/core');
+    const sdk = await import("openclaw/plugin-sdk/core");
     _delegateCompactionToRuntime = sdk.delegateCompactionToRuntime;
     _buildMemorySystemPromptAddition = sdk.buildMemorySystemPromptAddition;
   } catch {
     // Not running inside OpenClaw — use fallbacks
-    _delegateCompactionToRuntime = async () => ({ ok: true, compacted: false, reason: 'no-runtime' });
+    _delegateCompactionToRuntime = async () => ({
+      ok: true,
+      compacted: false,
+      reason: "no-runtime",
+    });
     _buildMemorySystemPromptAddition = () => undefined;
   }
 }
@@ -101,8 +109,8 @@ export function __resetSdkLoadStateForTests(): void {
   _buildMemorySystemPromptAddition = undefined;
 }
 
-export const ENGINE_ID = 'gbrain-context';
-export const ENGINE_NAME = 'GBrain Context Engine';
+export const ENGINE_ID = "gbrain-context";
+export const ENGINE_NAME = "GBrain Context Engine";
 /**
  * Engine contract version — bumps when the engine's public method shape
  * changes (ContextEngine interface, AssembleResult fields, etc), NOT when
@@ -111,7 +119,7 @@ export const ENGINE_NAME = 'GBrain Context Engine';
  * semantic: this is an interface-stability marker for OpenClaw's loader,
  * not a release tag.
  */
-export const ENGINE_API_VERSION = '0.1.0';
+export const ENGINE_API_VERSION = "0.1.0";
 /** @deprecated Use ENGINE_API_VERSION. Kept for back-compat with v0.32.5 callers. */
 export const ENGINE_VERSION = ENGINE_API_VERSION;
 
@@ -133,7 +141,7 @@ export const ENGINE_VERSION = ENGINE_API_VERSION;
 function loadJsonFile<T = unknown>(filePath: string): T | null {
   try {
     if (!existsSync(filePath)) return null;
-    return JSON.parse(readFileSync(filePath, 'utf8'));
+    return JSON.parse(readFileSync(filePath, "utf8"));
   } catch {
     return null;
   }
@@ -148,26 +156,52 @@ function loadJsonFile<T = unknown>(filePath: string): T | null {
  * context block.
  */
 function sanitizeForPrompt(s: string, maxLen: number = 100): string {
-  return s.replace(/[\n\r\t\x00-\x1F\x7F]/g, ' ').slice(0, maxLen).trim();
+  return s
+    .replace(/[\n\r\t\x00-\x1F\x7F]/g, " ")
+    .slice(0, maxLen)
+    .trim();
 }
 
 /** Common airport → timezone mapping */
 const AIRPORT_TZ: Record<string, string> = {
-  SFO: 'US/Pacific', LAX: 'US/Pacific', SJC: 'US/Pacific', SEA: 'US/Pacific', PDX: 'US/Pacific',
-  JFK: 'US/Eastern', LGA: 'US/Eastern', EWR: 'US/Eastern', BOS: 'US/Eastern',
-  DCA: 'US/Eastern', IAD: 'US/Eastern', MIA: 'US/Eastern', ATL: 'US/Eastern',
-  ORD: 'US/Central', DFW: 'US/Central', IAH: 'US/Central', AUS: 'US/Central',
-  DEN: 'US/Mountain', PHX: 'US/Arizona',
-  HNL: 'Pacific/Honolulu',
-  YYZ: 'America/Toronto', YVR: 'America/Vancouver', YUL: 'America/Montreal',
-  NRT: 'Asia/Tokyo', HND: 'Asia/Tokyo', ICN: 'Asia/Seoul',
-  SIN: 'Asia/Singapore', HKG: 'Asia/Hong_Kong', TPE: 'Asia/Taipei',
-  LHR: 'Europe/London', CDG: 'Europe/Paris', FCO: 'Europe/Rome',
-  LIS: 'Europe/Lisbon', BCN: 'Europe/Madrid',
+  SFO: "US/Pacific",
+  LAX: "US/Pacific",
+  SJC: "US/Pacific",
+  SEA: "US/Pacific",
+  PDX: "US/Pacific",
+  JFK: "US/Eastern",
+  LGA: "US/Eastern",
+  EWR: "US/Eastern",
+  BOS: "US/Eastern",
+  DCA: "US/Eastern",
+  IAD: "US/Eastern",
+  MIA: "US/Eastern",
+  ATL: "US/Eastern",
+  ORD: "US/Central",
+  DFW: "US/Central",
+  IAH: "US/Central",
+  AUS: "US/Central",
+  DEN: "US/Mountain",
+  PHX: "US/Arizona",
+  HNL: "Pacific/Honolulu",
+  YYZ: "America/Toronto",
+  YVR: "America/Vancouver",
+  YUL: "America/Montreal",
+  NRT: "Asia/Tokyo",
+  HND: "Asia/Tokyo",
+  ICN: "Asia/Seoul",
+  SIN: "Asia/Singapore",
+  HKG: "Asia/Hong_Kong",
+  TPE: "Asia/Taipei",
+  LHR: "Europe/London",
+  CDG: "Europe/Paris",
+  FCO: "Europe/Rome",
+  LIS: "Europe/Lisbon",
+  BCN: "Europe/Madrid",
 };
 
-const DEFAULT_TZ = 'US/Pacific';
-const DEFAULT_HOME = 'San Francisco';
+const DEFAULT_TZ = "US/Pacific";
+const DEFAULT_HOME = "San Francisco";
 /**
  * Sentinel `tz` value emitted when an active flight points to an airport not in
  * AIRPORT_TZ. Pre-v0.32.5 this branch silently fell back to US/Pacific and
@@ -176,7 +210,7 @@ const DEFAULT_HOME = 'San Francisco';
  * computation in generateLiveContext, and formatContextBlock renders an
  * explicit "timezone unavailable" warning in place of Time/Day.
  */
-const UNKNOWN_TZ = 'UNKNOWN';
+const UNKNOWN_TZ = "UNKNOWN";
 
 // ── Types ───────────────────────────────────────────────────────────────
 
@@ -260,44 +294,48 @@ interface LiveContext {
 
 function getTimeInTz(tz: string): { iso: string; dayOfWeek: string; hour: number } {
   const now = new Date();
-  const fmt = new Intl.DateTimeFormat('en-US', {
+  const fmt = new Intl.DateTimeFormat("en-US", {
     timeZone: tz,
-    year: 'numeric', month: '2-digit', day: '2-digit',
-    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
     hour12: false,
   });
   const parts = fmt.formatToParts(now);
-  const get = (t: string) => parts.find(p => p.type === t)?.value ?? '00';
+  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "00";
 
   const utcH = now.getUTCHours();
-  const localH = parseInt(get('hour'));
+  const localH = parseInt(get("hour"));
   let offset = localH - utcH;
   if (offset > 12) offset -= 24;
   if (offset < -12) offset += 24;
-  const sign = offset >= 0 ? '+' : '-';
+  const sign = offset >= 0 ? "+" : "-";
   const abs = Math.abs(offset);
-  const offsetStr = `${sign}${String(abs).padStart(2, '0')}:00`;
+  const offsetStr = `${sign}${String(abs).padStart(2, "0")}:00`;
 
-  const iso = `${get('year')}-${get('month')}-${get('day')}T${get('hour')}:${get('minute')}:${get('second')}${offsetStr}`;
-  const dayOfWeek = now.toLocaleDateString('en-US', { timeZone: tz, weekday: 'long' });
+  const iso = `${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}:${get("second")}${offsetStr}`;
+  const dayOfWeek = now.toLocaleDateString("en-US", { timeZone: tz, weekday: "long" });
 
   return { iso, dayOfWeek, hour: localH };
 }
 
 function resolveLocation(
   hb: HeartbeatState | null,
-  flights: FlightData | null,
+  flights: FlightData | null
 ): { city: string; tz: string; source: string } {
   if (hb?.currentLocation?.timezone) {
     return {
       city: hb.currentLocation.city ?? DEFAULT_HOME,
       tz: hb.currentLocation.timezone,
-      source: hb.currentLocation.source ?? 'heartbeat',
+      source: hb.currentLocation.source ?? "heartbeat",
     };
   }
 
   // Heartbeat has no tz. Check flights.
-  const active = flights?.flights?.find(f => f.status === 'active');
+  const active = flights?.flights?.find((f) => f.status === "active");
   if (active?.destination) {
     const destUpper = active.destination.toUpperCase();
     const knownTz = AIRPORT_TZ[destUpper];
@@ -317,7 +355,7 @@ function resolveLocation(
     };
   }
 
-  return { city: DEFAULT_HOME, tz: DEFAULT_TZ, source: 'default' };
+  return { city: DEFAULT_HOME, tz: DEFAULT_TZ, source: "default" };
 }
 
 /** Parse a calendar event time string into a Date. Handles ISO and date-only formats. */
@@ -330,7 +368,7 @@ function parseEventTime(timeStr: string | undefined): Date | null {
 /** Get events happening now or in the next N hours from the calendar cache. */
 function resolveActivity(
   cache: CalendarCache | null,
-  nowMs: number,
+  nowMs: number
 ): { currentEvent: CalendarEvent | null; nextEvents: CalendarEvent[]; calendarStale: boolean } {
   if (!cache?.events?.length) {
     return { currentEvent: null, nextEvents: [], calendarStale: true };
@@ -338,7 +376,7 @@ function resolveActivity(
 
   // Check staleness: if cache is >6 hours old, flag it
   const lastUpdated = cache.lastUpdated ? new Date(cache.lastUpdated).getTime() : 0;
-  const calendarStale = (nowMs - lastUpdated) > 6 * 60 * 60 * 1000;
+  const calendarStale = nowMs - lastUpdated > 6 * 60 * 60 * 1000;
 
   const LOOKAHEAD_MS = 4 * 60 * 60 * 1000; // next 4 hours
   let currentEvent: CalendarEvent | null = null;
@@ -346,11 +384,11 @@ function resolveActivity(
 
   for (const evt of cache.events) {
     // Skip all-day events (date-only, no 'T' in start)
-    if (evt.start && !evt.start.includes('T')) continue;
+    if (evt.start && !evt.start.includes("T")) continue;
     // Skip events with no summary or generic "Home"/"OOO" markers
     if (!evt.summary) continue;
     const lower = evt.summary.toLowerCase();
-    if (lower === 'home' || lower === 'ooo' || lower.startsWith('out of office')) continue;
+    if (lower === "home" || lower === "ooo" || lower.startsWith("out of office")) continue;
 
     const startMs = parseEventTime(evt.start)?.getTime();
     const endMs = parseEventTime(evt.end)?.getTime();
@@ -385,15 +423,15 @@ const MAX_TASKS_MD_BYTES = 1_000_000;
 /** Extract open tasks from ops/tasks.md "## Today" section. */
 function resolveTodayTasks(workspaceDir: string): string[] {
   try {
-    const path = join(workspaceDir, 'ops', 'tasks.md');
+    const path = join(workspaceDir, "ops", "tasks.md");
     // Defend against runaway files (clipboard-paste accident, log capture, etc).
     // statSync throws if the file doesn't exist; that lands in the outer catch.
     if (statSync(path).size > MAX_TASKS_MD_BYTES) return [];
-    const raw = readFileSync(path, 'utf8');
+    const raw = readFileSync(path, "utf8");
     const todayMatch = raw.match(/## Today[\s\S]*?(?=\n## |$)/);
     if (!todayMatch) return [];
 
-    const lines = todayMatch[0].split('\n');
+    const lines = todayMatch[0].split("\n");
     const open: string[] = [];
     for (const line of lines) {
       // Match unchecked task lines: - [ ] **task name** ...
@@ -410,9 +448,11 @@ function generateLiveContext(workspaceDir: string): LiveContext {
   // Batch-load every workspace file once per assemble() so we don't pay 4+
   // sync disk reads on the hot path. Each path can independently miss; null
   // values flow through cleanly.
-  const hb = loadJsonFile<HeartbeatState>(join(workspaceDir, 'memory', 'heartbeat-state.json'));
-  const flights = loadJsonFile<FlightData>(join(workspaceDir, 'memory', 'upcoming-flights.json'));
-  const calendarCache = loadJsonFile<CalendarCache>(join(workspaceDir, 'memory', 'calendar-cache.json'));
+  const hb = loadJsonFile<HeartbeatState>(join(workspaceDir, "memory", "heartbeat-state.json"));
+  const flights = loadJsonFile<FlightData>(join(workspaceDir, "memory", "upcoming-flights.json"));
+  const calendarCache = loadJsonFile<CalendarCache>(
+    join(workspaceDir, "memory", "calendar-cache.json")
+  );
 
   const location = resolveLocation(hb, flights);
   const nowMs = Date.now();
@@ -432,21 +472,28 @@ function generateLiveContext(workspaceDir: string): LiveContext {
   // When timezone is unknown we cannot reason about wall-clock quiet hours.
   // Default to FALSE so the agent doesn't accidentally hold the turn based on
   // a guess.
-  const wallClockQuietHours = time ? (time.hour >= 23 || time.hour < 8) : false;
+  const wallClockQuietHours = time ? time.hour >= 23 || time.hour < 8 : false;
   const quietHoursActive = !userAwake && wallClockQuietHours;
 
   // Home time when traveling
   let homeTime: string | null = null;
-  if (location.tz !== DEFAULT_TZ && location.tz !== 'US/Pacific' && location.tz !== 'America/Los_Angeles') {
-    const ptFmt = new Intl.DateTimeFormat('en-US', {
+  if (
+    location.tz !== DEFAULT_TZ &&
+    location.tz !== "US/Pacific" &&
+    location.tz !== "America/Los_Angeles"
+  ) {
+    const ptFmt = new Intl.DateTimeFormat("en-US", {
       timeZone: DEFAULT_TZ,
-      hour: 'numeric', minute: '2-digit', hour12: true, weekday: 'short',
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+      weekday: "short",
     });
-    homeTime = ptFmt.format(new Date()) + ' PT';
+    homeTime = ptFmt.format(new Date()) + " PT";
   }
 
   // Active travel
-  const activeFlight = flights?.flights?.find(f => f.status === 'active');
+  const activeFlight = flights?.flights?.find((f) => f.status === "active");
   const activeTravel = activeFlight
     ? `${activeFlight.flightNumber}: ${activeFlight.origin}→${activeFlight.destination}`
     : null;
@@ -478,24 +525,32 @@ function formatEventShort(evt: CalendarEvent, tz: string): string {
   // Calendar events are external (Google Calendar, ICS feeds). Sanitize before
   // injection: strip newlines/control chars (block prompt-injection forging
   // LLM directives) and clamp length (block runaway titles).
-  const name = sanitizeForPrompt(evt.summary ?? 'Untitled');
-  let time = '';
-  if (evt.start?.includes('T')) {
+  const name = sanitizeForPrompt(evt.summary ?? "Untitled");
+  let time = "";
+  if (evt.start?.includes("T")) {
     try {
       const d = new Date(evt.start);
-      time = d.toLocaleTimeString('en-US', { timeZone: tz, hour: 'numeric', minute: '2-digit', hour12: true });
-    } catch { /* fall through */ }
+      time = d.toLocaleTimeString("en-US", {
+        timeZone: tz,
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
+    } catch {
+      /* fall through */
+    }
   }
   const attendeeStr = evt.attendees?.length
-    ? ` (with ${evt.attendees.slice(0, 3).map(a => sanitizeForPrompt(a, 50)).join(', ')}${evt.attendees.length > 3 ? ` +${evt.attendees.length - 3}` : ''})`
-    : '';
+    ? ` (with ${evt.attendees
+        .slice(0, 3)
+        .map((a) => sanitizeForPrompt(a, 50))
+        .join(", ")}${evt.attendees.length > 3 ? ` +${evt.attendees.length - 3}` : ""})`
+    : "";
   return time ? `${time} — ${name}${attendeeStr}` : `${name}${attendeeStr}`;
 }
 
 function formatContextBlock(ctx: LiveContext): string {
-  const lines: string[] = [
-    `## Live Context (deterministic, injected by gbrain-context engine)`,
-  ];
+  const lines: string[] = [`## Live Context (deterministic, injected by gbrain-context engine)`];
 
   // Time/Day vs Timezone-unavailable branch.
   if (ctx.now && ctx.dayOfWeek && ctx.timezone !== UNKNOWN_TZ) {
@@ -517,7 +572,7 @@ function formatContextBlock(ctx: LiveContext): string {
     lines.push(`- **Active travel:** ${ctx.activeTravel}`);
   }
   if (!ctx.userAwake) {
-    lines.push(`- **User awake:** no (quiet hours ${ctx.quietHoursActive ? 'active' : 'paused'})`);
+    lines.push(`- **User awake:** no (quiet hours ${ctx.quietHoursActive ? "active" : "paused"})`);
   }
 
   // Current activity
@@ -535,24 +590,24 @@ function formatContextBlock(ctx: LiveContext): string {
 
   // Open tasks (if any)
   if (ctx.todayTasks.length > 0) {
-    lines.push(`- **Open tasks:** ${ctx.todayTasks.join(' · ')}`);
+    lines.push(`- **Open tasks:** ${ctx.todayTasks.join(" · ")}`);
   }
 
   if (ctx.calendarStale) {
     lines.push(`- ⚠️ Calendar cache >6h old — verify events via ClawVisor if time-sensitive`);
   }
 
-  lines.push('');
-  lines.push('> This block is computed on every turn. Trust it over compaction summaries for time/location/activity.');
+  lines.push("");
+  lines.push(
+    "> This block is computed on every turn. Trust it over compaction summaries for time/location/activity."
+  );
 
-  return lines.join('\n');
+  return lines.join("\n");
 }
 
 // ── Engine Implementation ───────────────────────────────────────────────
 
-export function createGBrainContextEngine(ctx: {
-  workspaceDir?: string;
-}): ContextEngine {
+export function createGBrainContextEngine(ctx: { workspaceDir?: string }): ContextEngine {
   const workspaceDir = ctx.workspaceDir ?? process.cwd();
 
   const engine: ContextEngine = {
@@ -560,7 +615,7 @@ export function createGBrainContextEngine(ctx: {
       id: ENGINE_ID,
       name: ENGINE_NAME,
       version: ENGINE_API_VERSION,
-      ownsCompaction: false,  // delegate to legacy runtime
+      ownsCompaction: false, // delegate to legacy runtime
     } satisfies ContextEngineInfo,
 
     async ingest({ message }) {
@@ -590,12 +645,10 @@ export function createGBrainContextEngine(ctx: {
       return {
         messages,
         estimatedTokens: messages.reduce((sum, m) => {
-          const text = typeof m.content === 'string'
-            ? m.content
-            : JSON.stringify(m.content);
+          const text = typeof m.content === "string" ? m.content : JSON.stringify(m.content);
           return sum + Math.ceil(text.length / 4);
         }, 0),
-        systemPromptAddition: parts.join('\n\n'),
+        systemPromptAddition: parts.join("\n\n"),
       };
     },
 
@@ -603,7 +656,13 @@ export function createGBrainContextEngine(ctx: {
       // Lazy SDK load on first method call (was top-level await pre-L0-B).
       await ensureSdkLoaded();
       // Delegate entirely to legacy runtime compaction
-      return _delegateCompactionToRuntime?.(params) ?? { ok: true, compacted: false, reason: 'no-runtime' };
+      return (
+        _delegateCompactionToRuntime?.(params) ?? {
+          ok: true,
+          compacted: false,
+          reason: "no-runtime",
+        }
+      );
     },
   };
 

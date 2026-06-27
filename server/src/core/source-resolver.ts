@@ -13,12 +13,12 @@
  * commands (Steps 4/5), and the operation layer (Step 2+).
  */
 
-import { readFileSync, existsSync } from 'fs';
-import { join, dirname, resolve } from 'path';
-import type { BrainEngine } from './engine.ts';
-import { SOURCE_ID_RE, isValidSourceId } from './source-id.ts';
+import { readFileSync, existsSync } from "fs";
+import { join, dirname, resolve } from "path";
+import type { BrainEngine } from "./engine.ts";
+import { SOURCE_ID_RE, isValidSourceId } from "./source-id.ts";
 
-const DOTFILE = '.gbrain-source';
+const DOTFILE = ".gbrain-source";
 // Canonical SOURCE_ID_RE imported from `source-id.ts` (single source of truth).
 // Re-exported below as `__testing.SOURCE_ID_RE` for legacy test imports.
 // Two validator shapes per codex r2 P1-F:
@@ -36,7 +36,7 @@ function readDotfileWalk(startDir: string): string | null {
     const candidate = join(dir, DOTFILE);
     if (existsSync(candidate)) {
       try {
-        const content = readFileSync(candidate, 'utf8').trim().split('\n')[0].trim();
+        const content = readFileSync(candidate, "utf8").trim().split("\n")[0].trim();
         // Silent-fallback tier per codex P1-F: invalid dotfile content
         // (legacy ids with underscores, hand-edits with whitespace, etc.)
         // falls through to the next tier instead of throwing. The CLI's
@@ -71,7 +71,7 @@ function readDotfileWalk(startDir: string): string | null {
 export async function resolveSourceId(
   engine: BrainEngine,
   explicit: string | null | undefined,
-  cwd: string = process.cwd(),
+  cwd: string = process.cwd()
 ): Promise<string> {
   // 1. Explicit flag wins.
   if (explicit) {
@@ -103,13 +103,13 @@ export async function resolveSourceId(
   //    Uses longest-prefix match so nested-path configurations (e.g.
   //    gstack at ~/gstack + plans at ~/gstack/plans) pick the deepest.
   const registered = await engine.executeRaw<{ id: string; local_path: string }>(
-    `SELECT id, local_path FROM sources WHERE local_path IS NOT NULL`,
+    `SELECT id, local_path FROM sources WHERE local_path IS NOT NULL`
   );
   const cwdResolved = resolve(cwd);
   let best: { id: string; pathLen: number } | null = null;
   for (const r of registered) {
     const p = resolve(r.local_path);
-    if (cwdResolved === p || cwdResolved.startsWith(p + '/')) {
+    if (cwdResolved === p || cwdResolved.startsWith(p + "/")) {
       if (!best || p.length > best.pathLen) {
         best = { id: r.id, pathLen: p.length };
       }
@@ -121,7 +121,7 @@ export async function resolveSourceId(
   // Silent-fallback tier per codex P1-F: an invalid `sources.default` config
   // value (operator hand-edit gone wrong, legacy underscore id) falls through
   // to tier 6 rather than throwing. Resolver stays robust to bad config.
-  const globalDefault = await engine.getConfig('sources.default');
+  const globalDefault = await engine.getConfig("sources.default");
   if (globalDefault && isValidSourceId(globalDefault)) {
     await assertSourceExists(engine, globalDefault);
     return globalDefault;
@@ -143,7 +143,7 @@ export async function resolveSourceId(
 
   // 6. Fallback: the seeded 'default' source. Always exists post-migration
   //    v16 so this is a safe terminal.
-  return 'default';
+  return "default";
 }
 
 /**
@@ -164,11 +164,11 @@ async function pickSoleNonDefaultSource(engine: BrainEngine): Promise<string | n
   let rows: Array<{ id: string }>;
   try {
     rows = await engine.executeRaw<{ id: string }>(
-      `SELECT id FROM sources WHERE local_path IS NOT NULL AND id != 'default' AND archived = false`,
+      `SELECT id FROM sources WHERE local_path IS NOT NULL AND id != 'default' AND archived = false`
     );
   } catch {
     rows = await engine.executeRaw<{ id: string }>(
-      `SELECT id FROM sources WHERE local_path IS NOT NULL AND id != 'default'`,
+      `SELECT id FROM sources WHERE local_path IS NOT NULL AND id != 'default'`
     );
   }
   if (rows.length === 1) return rows[0].id;
@@ -185,20 +185,19 @@ async function pickSoleNonDefaultSource(engine: BrainEngine): Promise<string | n
  * print to stderr; this helper just builds the line.
  */
 export function formatSoleNonDefaultNudge(sourceId: string): string | null {
-  if (process.env.GBRAIN_NO_SOLE_NON_DEFAULT_NUDGE === '1') return null;
+  if (process.env.GBRAIN_NO_SOLE_NON_DEFAULT_NUDGE === "1") return null;
   return `[gbrain] routing to source '${sourceId}' (sole non-default source registered; pass --source to override).`;
 }
 
 async function assertSourceExists(engine: BrainEngine, id: string): Promise<void> {
-  const rows = await engine.executeRaw<{ id: string }>(
-    `SELECT id FROM sources WHERE id = $1`,
-    [id],
-  );
+  const rows = await engine.executeRaw<{ id: string }>(`SELECT id FROM sources WHERE id = $1`, [
+    id,
+  ]);
   if (rows.length === 0) {
     throw new Error(
       `Source "${id}" not found. Available sources: ` +
-      `run \`gbrain sources list\` to see registered sources, ` +
-      `or \`gbrain sources add ${id}\` to create it.`,
+        `run \`gbrain sources list\` to see registered sources, ` +
+        `or \`gbrain sources add ${id}\` to create it.`
     );
   }
 }
@@ -222,12 +221,12 @@ async function assertSourceExists(engine: BrainEngine, id: string): Promise<void
  */
 export async function getDefaultSourcePath(
   engine: BrainEngine,
-  cwd: string = process.cwd(),
+  cwd: string = process.cwd()
 ): Promise<string | null> {
   const sourceId = await resolveSourceId(engine, null, cwd);
   const rows = await engine.executeRaw<{ local_path: string | null }>(
     `SELECT local_path FROM sources WHERE id = $1`,
-    [sourceId],
+    [sourceId]
   );
   if (rows[0]?.local_path) return rows[0].local_path;
 
@@ -235,7 +234,7 @@ export async function getDefaultSourcePath(
   // config table under sync.repo_path. The sources table exists but its
   // local_path is NULL for the seeded 'default' row. Fall back so storage
   // tiering works without forcing a `gbrain sources add . --path .` migration.
-  const legacyPath = await engine.getConfig('sync.repo_path');
+  const legacyPath = await engine.getConfig("sync.repo_path");
   return legacyPath ?? null;
 }
 
@@ -247,15 +246,15 @@ export async function getDefaultSourcePath(
  * Order matches the 1-6 priority of `resolveSourceId()`.
  */
 export const SOURCE_TIER_NAMES = [
-  'flag',
-  'env',
-  'dotfile',
-  'local_path',
-  'brain_default',
-  'sole_non_default',
-  'seed_default',
+  "flag",
+  "env",
+  "dotfile",
+  "local_path",
+  "brain_default",
+  "sole_non_default",
+  "seed_default",
 ] as const;
-export type SourceTier = typeof SOURCE_TIER_NAMES[number];
+export type SourceTier = (typeof SOURCE_TIER_NAMES)[number];
 
 /**
  * Same resolution chain as `resolveSourceId()`, but also returns
@@ -271,7 +270,7 @@ export type SourceTier = typeof SOURCE_TIER_NAMES[number];
 export async function resolveSourceWithTier(
   engine: BrainEngine,
   explicit: string | null | undefined,
-  cwd: string = process.cwd(),
+  cwd: string = process.cwd()
 ): Promise<{ source_id: string; tier: SourceTier; detail?: string }> {
   // 1. Explicit flag wins.
   if (explicit) {
@@ -279,7 +278,7 @@ export async function resolveSourceWithTier(
       throw new Error(`Invalid --source value "${explicit}". Must match [a-z0-9-]{1,32}.`);
     }
     await assertSourceExists(engine, explicit);
-    return { source_id: explicit, tier: 'flag', detail: `--source ${explicit}` };
+    return { source_id: explicit, tier: "flag", detail: `--source ${explicit}` };
   }
 
   // 2. Env var.
@@ -289,37 +288,37 @@ export async function resolveSourceWithTier(
       throw new Error(`Invalid GBRAIN_SOURCE value "${env}". Must match [a-z0-9-]{1,32}.`);
     }
     await assertSourceExists(engine, env);
-    return { source_id: env, tier: 'env', detail: `GBRAIN_SOURCE=${env}` };
+    return { source_id: env, tier: "env", detail: `GBRAIN_SOURCE=${env}` };
   }
 
   // 3. .gbrain-source dotfile walk-up.
   const dotfile = readDotfileWalk(cwd);
   if (dotfile) {
     await assertSourceExists(engine, dotfile);
-    return { source_id: dotfile, tier: 'dotfile', detail: `.gbrain-source` };
+    return { source_id: dotfile, tier: "dotfile", detail: `.gbrain-source` };
   }
 
   // 4. Registered source whose local_path contains CWD.
   const registered = await engine.executeRaw<{ id: string; local_path: string }>(
-    `SELECT id, local_path FROM sources WHERE local_path IS NOT NULL`,
+    `SELECT id, local_path FROM sources WHERE local_path IS NOT NULL`
   );
   const cwdResolved = resolve(cwd);
   let best: { id: string; path: string; pathLen: number } | null = null;
   for (const r of registered) {
     const p = resolve(r.local_path);
-    if (cwdResolved === p || cwdResolved.startsWith(p + '/')) {
+    if (cwdResolved === p || cwdResolved.startsWith(p + "/")) {
       if (!best || p.length > best.pathLen) {
         best = { id: r.id, path: p, pathLen: p.length };
       }
     }
   }
-  if (best) return { source_id: best.id, tier: 'local_path', detail: best.path };
+  if (best) return { source_id: best.id, tier: "local_path", detail: best.path };
 
   // 5. Brain-level default. Silent-fallback (P1-F) like tier 5 in resolveSourceId.
-  const globalDefault = await engine.getConfig('sources.default');
+  const globalDefault = await engine.getConfig("sources.default");
   if (globalDefault && isValidSourceId(globalDefault)) {
     await assertSourceExists(engine, globalDefault);
-    return { source_id: globalDefault, tier: 'brain_default', detail: 'sources.default config' };
+    return { source_id: globalDefault, tier: "brain_default", detail: "sources.default config" };
   }
 
   // 5.5. Single-non-default-source convenience (v0.41.13, #1434).
@@ -329,13 +328,13 @@ export async function resolveSourceWithTier(
   if (soleNonDefault) {
     return {
       source_id: soleNonDefault,
-      tier: 'sole_non_default',
+      tier: "sole_non_default",
       detail: `only non-default registered source with local_path`,
     };
   }
 
   // 6. Fallback: seeded 'default' source.
-  return { source_id: 'default', tier: 'seed_default' };
+  return { source_id: "default", tier: "seed_default" };
 }
 
 /** Exposed for tests. */

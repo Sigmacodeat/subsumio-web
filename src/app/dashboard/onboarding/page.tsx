@@ -381,7 +381,10 @@ export default function OnboardingPage() {
 
                 <div className="grid gap-3 md:grid-cols-2">
                   <div className="space-y-1.5">
-                    <Label htmlFor="ob-firm" className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+                    <Label
+                      htmlFor="ob-firm"
+                      className="text-xs font-medium text-[color:var(--ds-text-muted)]"
+                    >
                       {t("onboarding.profile_firm")}
                     </Label>
                     <Input
@@ -392,7 +395,10 @@ export default function OnboardingPage() {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="ob-owner" className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+                    <Label
+                      htmlFor="ob-owner"
+                      className="text-xs font-medium text-[color:var(--ds-text-muted)]"
+                    >
                       {t("onboarding.profile_owner")}
                     </Label>
                     <Input
@@ -403,7 +409,10 @@ export default function OnboardingPage() {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="ob-email" className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+                    <Label
+                      htmlFor="ob-email"
+                      className="text-xs font-medium text-[color:var(--ds-text-muted)]"
+                    >
                       {t("onboarding.profile_email")}
                     </Label>
                     <Input
@@ -414,7 +423,10 @@ export default function OnboardingPage() {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="ob-country" className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+                    <Label
+                      htmlFor="ob-country"
+                      className="text-xs font-medium text-[color:var(--ds-text-muted)]"
+                    >
                       {t("onboarding.profile_country")}
                     </Label>
                     <Select
@@ -435,25 +447,30 @@ export default function OnboardingPage() {
 
                 <div className="grid gap-3 md:grid-cols-[0.9fr_1.1fr]">
                   <div className="space-y-1.5">
-                    <Label htmlFor="ob-role" className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+                    <Label
+                      htmlFor="ob-role"
+                      className="text-xs font-medium text-[color:var(--ds-text-muted)]"
+                    >
                       {t("onboarding.profile_role")}
                     </Label>
-                    <Select
-                      value={profile.role}
-                      onValueChange={(v) => updateProfile("role", v)}
-                    >
+                    <Select value={profile.role} onValueChange={(v) => updateProfile("role", v)}>
                       <SelectTrigger id="ob-role">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="lawyer">{t("onboarding.role_lawyer")}</SelectItem>
                         <SelectItem value="assistant">{t("onboarding.role_assistant")}</SelectItem>
-                        <SelectItem value="management">{t("onboarding.role_management")}</SelectItem>
+                        <SelectItem value="management">
+                          {t("onboarding.role_management")}
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="ob-focus" className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+                    <Label
+                      htmlFor="ob-focus"
+                      className="text-xs font-medium text-[color:var(--ds-text-muted)]"
+                    >
                       {t("onboarding.profile_focus")}
                     </Label>
                     <Input
@@ -506,17 +523,20 @@ export default function OnboardingPage() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="ob-wa-phone" className="text-xs font-medium text-[color:var(--ds-text-muted)]">
-                      {t("onboarding.whatsapp_phone")}
-                    </Label>
-                    <Input
-                      id="ob-wa-phone"
-                      value={whatsappPhone}
-                      onChange={(e) => setWhatsappPhone(e.target.value)}
-                      placeholder={t("onboarding.whatsapp_phone_hint")}
-                    />
-                  </div>
+                    <div className="space-y-1.5">
+                      <Label
+                        htmlFor="ob-wa-phone"
+                        className="text-xs font-medium text-[color:var(--ds-text-muted)]"
+                      >
+                        {t("onboarding.whatsapp_phone")}
+                      </Label>
+                      <Input
+                        id="ob-wa-phone"
+                        value={whatsappPhone}
+                        onChange={(e) => setWhatsappPhone(e.target.value)}
+                        placeholder={t("onboarding.whatsapp_phone_hint")}
+                      />
+                    </div>
                     <div className="flex items-start gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2">
                       <p className="text-xs text-amber-600">
                         Für WhatsApp Business wird ein Meta-Webhook benötigt. Nach dem Onboarding
@@ -574,7 +594,10 @@ export default function OnboardingPage() {
 
                 <div className="grid gap-3 md:grid-cols-2">
                   <div className="space-y-1.5">
-                    <Label htmlFor="ob-rate" className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+                    <Label
+                      htmlFor="ob-rate"
+                      className="text-xs font-medium text-[color:var(--ds-text-muted)]"
+                    >
                       {t("onboarding.billing_rate")}
                     </Label>
                     <Input
@@ -586,7 +609,10 @@ export default function OnboardingPage() {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="ob-increment" className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+                    <Label
+                      htmlFor="ob-increment"
+                      className="text-xs font-medium text-[color:var(--ds-text-muted)]"
+                    >
                       {t("onboarding.billing_increment")}
                     </Label>
                     <Select
@@ -605,7 +631,10 @@ export default function OnboardingPage() {
                     </Select>
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="ob-iban" className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+                    <Label
+                      htmlFor="ob-iban"
+                      className="text-xs font-medium text-[color:var(--ds-text-muted)]"
+                    >
                       {t("onboarding.billing_iban")}
                     </Label>
                     <Input
@@ -616,7 +645,10 @@ export default function OnboardingPage() {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="ob-bank" className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+                    <Label
+                      htmlFor="ob-bank"
+                      className="text-xs font-medium text-[color:var(--ds-text-muted)]"
+                    >
                       {t("onboarding.billing_bank")}
                     </Label>
                     <Input

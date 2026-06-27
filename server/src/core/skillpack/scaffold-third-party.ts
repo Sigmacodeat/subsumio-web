@@ -15,12 +15,16 @@
  * Returns a structured result the CLI and the publish-gate both consume.
  */
 
-import { join } from 'path';
+import { join } from "path";
 
-import { bundleManifestFromSkillpack, loadSkillpackManifest, type SkillpackManifest } from './manifest-v1.ts';
-import { buildBootstrapDisplay, type BootstrapDisplayResult } from './bootstrap-display.ts';
-import { copyArtifacts, type CopyItem, type CopyResult } from './copy.ts';
-import { enumerateScaffoldEntries, type ScaffoldEntry } from './bundle.ts';
+import {
+  bundleManifestFromSkillpack,
+  loadSkillpackManifest,
+  type SkillpackManifest,
+} from "./manifest-v1.ts";
+import { buildBootstrapDisplay, type BootstrapDisplayResult } from "./bootstrap-display.ts";
+import { copyArtifacts, type CopyItem, type CopyResult } from "./copy.ts";
+import { enumerateScaffoldEntries, type ScaffoldEntry } from "./bundle.ts";
 import {
   defaultStatePath,
   loadState,
@@ -28,9 +32,9 @@ import {
   upsertEntry,
   type SkillpackState,
   type SkillpackStateEntry,
-} from './state.ts';
-import { askTrust, type SkillpackTier, type TrustPromptDecision } from './trust-prompt.ts';
-import type { ResolvedSource } from './remote-source.ts';
+} from "./state.ts";
+import { askTrust, type SkillpackTier, type TrustPromptDecision } from "./trust-prompt.ts";
+import type { ResolvedSource } from "./remote-source.ts";
 
 export interface ScaffoldThirdPartyOptions {
   /** Result of resolveSource() (already cached/cloned/extracted). */
@@ -52,10 +56,10 @@ export interface ScaffoldThirdPartyOptions {
 }
 
 export type ScaffoldThirdPartyStatus =
-  | 'wrote_new'
-  | 'all_skipped_existing'
-  | 'dry_run'
-  | 'aborted_no_trust';
+  | "wrote_new"
+  | "all_skipped_existing"
+  | "dry_run"
+  | "aborted_no_trust";
 
 export interface ScaffoldThirdPartyResult {
   status: ScaffoldThirdPartyStatus;
@@ -71,19 +75,20 @@ export interface ScaffoldThirdPartyResult {
 export class ScaffoldThirdPartyError extends Error {
   constructor(
     message: string,
-    public code:
-      | 'gbrain_version_too_old'
-      | 'manifest_invalid'
-      | 'scaffold_failed',
+    public code: "gbrain_version_too_old" | "manifest_invalid" | "scaffold_failed"
   ) {
     super(message);
-    this.name = 'ScaffoldThirdPartyError';
+    this.name = "ScaffoldThirdPartyError";
   }
 }
 
 /** Semver compare: returns true when actualVer >= requiredVer. */
 function semverGte(actual: string, required: string): boolean {
-  const parse = (s: string): number[] => s.replace(/^v/, '').split(/[.-]/, 4).map((x) => parseInt(x, 10) || 0);
+  const parse = (s: string): number[] =>
+    s
+      .replace(/^v/, "")
+      .split(/[.-]/, 4)
+      .map((x) => parseInt(x, 10) || 0);
   const a = parse(actual);
   const r = parse(required);
   for (let i = 0; i < Math.max(a.length, r.length); i++) {
@@ -97,7 +102,7 @@ function semverGte(actual: string, required: string): boolean {
 
 export async function runScaffoldThirdParty(
   opts: ScaffoldThirdPartyOptions,
-  currentGbrainVersion: string,
+  currentGbrainVersion: string
 ): Promise<ScaffoldThirdPartyResult> {
   // 1. Load + validate the manifest from the resolved pack root.
   let manifest: SkillpackManifest;
@@ -106,7 +111,7 @@ export async function runScaffoldThirdParty(
   } catch (err) {
     throw new ScaffoldThirdPartyError(
       `skillpack manifest invalid: ${(err as Error).message}`,
-      'manifest_invalid',
+      "manifest_invalid"
     );
   }
 
@@ -114,31 +119,31 @@ export async function runScaffoldThirdParty(
   if (!semverGte(currentGbrainVersion, manifest.gbrain_min_version)) {
     throw new ScaffoldThirdPartyError(
       `skillpack ${manifest.name} requires gbrain >= ${manifest.gbrain_min_version}; you have ${currentGbrainVersion}. Run \`gbrain upgrade\` first.`,
-      'gbrain_version_too_old',
+      "gbrain_version_too_old"
     );
   }
 
   // 3. Trust prompt (skipped for local sources, already-trusted, or --trust).
   const state = loadState({ statePath: opts.statePath });
-  const tier: SkillpackTier = opts.tier ?? (opts.resolved.kind === 'local' ? 'local' : 'community');
+  const tier: SkillpackTier = opts.tier ?? (opts.resolved.kind === "local" ? "local" : "community");
   const trustDecision = await askTrust(
     { manifest, resolved: opts.resolved, tier, state },
     {
       trustFlag: opts.trustFlag,
       isTTY: opts.isTTY,
       readLine: opts.readLine,
-    },
+    }
   );
 
   if (!trustDecision.trusted) {
     return {
-      status: 'aborted_no_trust',
+      status: "aborted_no_trust",
       manifest,
       resolved: opts.resolved,
       trustDecision,
       copy: null,
       entries: [],
-      bootstrap: { shown: false, text: '', bootstrapPath: null },
+      bootstrap: { shown: false, text: "", bootstrapPath: null },
       state,
     };
   }
@@ -159,7 +164,7 @@ export async function runScaffoldThirdParty(
   } catch (err) {
     throw new ScaffoldThirdPartyError(
       `enumeration failed: ${(err as Error).message}`,
-      'scaffold_failed',
+      "scaffold_failed"
     );
   }
 
@@ -199,10 +204,10 @@ export async function runScaffoldThirdParty(
   }
 
   const status: ScaffoldThirdPartyStatus = opts.dryRun
-    ? 'dry_run'
+    ? "dry_run"
     : copy.summary.wroteNew > 0
-      ? 'wrote_new'
-      : 'all_skipped_existing';
+      ? "wrote_new"
+      : "all_skipped_existing";
 
   return {
     status,
@@ -218,4 +223,4 @@ export async function runScaffoldThirdParty(
 
 // Re-export the default state path for convenience (so callers can pass it
 // through without re-importing).
-export { defaultStatePath } from './state.ts';
+export { defaultStatePath } from "./state.ts";

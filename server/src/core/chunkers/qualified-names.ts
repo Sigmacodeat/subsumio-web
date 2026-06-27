@@ -32,7 +32,7 @@
  * name is missing, we return null (edge extractor skips the row).
  */
 
-import type { SupportedCodeLanguage } from './code.ts';
+import type { SupportedCodeLanguage } from "./code.ts";
 
 interface QualifiedNameConfig {
   /** Delimiter between namespace segments (e.g. '::' for Ruby, '.' for Python). */
@@ -49,17 +49,17 @@ interface QualifiedNameConfig {
 }
 
 const LANG_CONFIG: Partial<Record<SupportedCodeLanguage, QualifiedNameConfig>> = {
-  typescript: { segmentDelim: '.' },
-  tsx:        { segmentDelim: '.' },
-  javascript: { segmentDelim: '.' },
-  python:     { segmentDelim: '.' },
-  go:         { segmentDelim: '.' },
-  rust:       { segmentDelim: '::' },
-  java:       { segmentDelim: '.' },
-  ruby:       {
-    segmentDelim: '::',
-    methodDelim: '#',
-    staticDelim: '.',
+  typescript: { segmentDelim: "." },
+  tsx: { segmentDelim: "." },
+  javascript: { segmentDelim: "." },
+  python: { segmentDelim: "." },
+  go: { segmentDelim: "." },
+  rust: { segmentDelim: "::" },
+  java: { segmentDelim: "." },
+  ruby: {
+    segmentDelim: "::",
+    methodDelim: "#",
+    staticDelim: ".",
     distinguishInstanceMethods: true,
   },
 };
@@ -82,7 +82,7 @@ export function buildQualifiedName(input: {
     // matching doesn't lose it entirely. Not ideal for disambiguation
     // but better than dropping the edge on the floor.
     return input.parentSymbolPath.length > 0
-      ? `${input.parentSymbolPath.join('.')}.${input.symbolName}`
+      ? `${input.parentSymbolPath.join(".")}.${input.symbolName}`
       : input.symbolName;
   }
 
@@ -90,14 +90,14 @@ export function buildQualifiedName(input: {
 
   const parents = input.parentSymbolPath.join(cfg.segmentDelim);
 
-  if (cfg.distinguishInstanceMethods && input.symbolType === 'function') {
+  if (cfg.distinguishInstanceMethods && input.symbolType === "function") {
     // Ruby: instance method — Class#method. We can't tell `def self.m` from
     // `def m` at chunk level without inspecting the node type; the chunker
     // normalizes both to 'function', so we default to instance-method form
     // and accept that edge-identity for Ruby singletons will collide with
     // instance methods of the same name in the same class. In practice
     // this is rare and the parentSymbolPath disambiguates most cases.
-    return `${parents}${cfg.methodDelim ?? '#'}${input.symbolName}`;
+    return `${parents}${cfg.methodDelim ?? "#"}${input.symbolName}`;
   }
 
   return `${parents}${cfg.segmentDelim}${input.symbolName}`;

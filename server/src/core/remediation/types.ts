@@ -8,7 +8,7 @@
 //   - src/commands/onboard.ts (gbrain onboard --check / --auto)
 //   - src/core/operations.ts (MCP op run_onboard, admin scope)
 
-import type { RemediationStep } from '../remediation-step.ts';
+import type { RemediationStep } from "../remediation-step.ts";
 
 /**
  * Options for computeRemediationPlan. All fields are optional with
@@ -119,7 +119,10 @@ export interface RemediationHooks {
   /** Fired after each step reaches a terminal state (or skip). */
   onStepEnd?: (result: StepResult) => void;
   /** Fired on BudgetExhausted thrown mid-loop. */
-  onBudgetExhausted?: (planHash: string, snapshot: NonNullable<RemediationResult['budget_exhausted']>) => void;
+  onBudgetExhausted?: (
+    planHash: string,
+    snapshot: NonNullable<RemediationResult["budget_exhausted"]>
+  ) => void;
   /** Fired on resume-checkpoint load (resume mode only). */
   onResumeLoaded?: (planHash: string, completedCount: number, remainingCount: number) => void;
   /** Fired on resume-checkpoint miss (resume mode only). */

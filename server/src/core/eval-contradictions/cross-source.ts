@@ -13,8 +13,8 @@
  * itself classifies during ranking.
  */
 
-import { DEFAULT_SOURCE_BOOSTS } from '../search/source-boost.ts';
-import type { ContradictionPair, SourceTier, SourceTierBreakdown } from './types.ts';
+import { DEFAULT_SOURCE_BOOSTS } from "../search/source-boost.ts";
+import type { ContradictionPair, SourceTier, SourceTierBreakdown } from "./types.ts";
 
 /**
  * Classify a slug into a tier. Longest-prefix-match. Unknown/baseline slugs
@@ -22,34 +22,32 @@ import type { ContradictionPair, SourceTier, SourceTierBreakdown } from './types
  * directories.
  */
 export function classifySlugTier(slug: string): SourceTier {
-  if (!slug) return 'other';
+  if (!slug) return "other";
   const lower = slug.toLowerCase();
   // Match longest prefix first.
   const prefixes = Object.keys(DEFAULT_SOURCE_BOOSTS).sort((a, b) => b.length - a.length);
   for (const prefix of prefixes) {
     if (lower.startsWith(prefix)) {
       const boost = DEFAULT_SOURCE_BOOSTS[prefix];
-      if (boost > 1.05) return 'curated';
-      if (boost < 0.95) return 'bulk';
-      return 'other';
+      if (boost > 1.05) return "curated";
+      if (boost < 0.95) return "bulk";
+      return "other";
     }
   }
-  return 'other';
+  return "other";
 }
 
 function bucketKey(a: SourceTier, b: SourceTier): keyof SourceTierBreakdown {
   // Order-independent: 'curated' beats 'bulk' beats 'other' for the cross-tier label.
   const has = (t: SourceTier) => a === t || b === t;
-  if (a === 'curated' && b === 'curated') return 'curated_vs_curated';
-  if (a === 'bulk' && b === 'bulk') return 'bulk_vs_bulk';
-  if (has('curated') && has('bulk')) return 'curated_vs_bulk';
-  return 'other';
+  if (a === "curated" && b === "curated") return "curated_vs_curated";
+  if (a === "bulk" && b === "bulk") return "bulk_vs_bulk";
+  if (has("curated") && has("bulk")) return "curated_vs_bulk";
+  return "other";
 }
 
 /** Build the breakdown across a set of pairs. */
-export function buildSourceTierBreakdown(
-  pairs: readonly ContradictionPair[],
-): SourceTierBreakdown {
+export function buildSourceTierBreakdown(pairs: readonly ContradictionPair[]): SourceTierBreakdown {
   const out: SourceTierBreakdown = {
     curated_vs_curated: 0,
     curated_vs_bulk: 0,

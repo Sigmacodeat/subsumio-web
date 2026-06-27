@@ -11,8 +11,8 @@
 // Privacy: type names + slug prefixes come from the user's own brain. No
 // PII flows out. Cap output to top-N prefixes per source to bound size.
 
-import type { BrainEngine } from '../engine.ts';
-import type { SchemaPackManifest } from './manifest-v1.ts';
+import type { BrainEngine } from "../engine.ts";
+import type { SchemaPackManifest } from "./manifest-v1.ts";
 
 export interface DetectOpts {
   /** Source to detect against. Defaults to 'default'. */
@@ -31,7 +31,10 @@ export interface DetectResult {
   /** Page count with type=null (the "missing schema" signal). */
   untyped_pages: number;
   /** Candidate manifest matching detected shape. */
-  candidate: Pick<SchemaPackManifest, 'api_version' | 'name' | 'version' | 'description' | 'page_types' | 'takes_kinds'>;
+  candidate: Pick<
+    SchemaPackManifest,
+    "api_version" | "name" | "version" | "description" | "page_types" | "takes_kinds"
+  >;
   /** Per-prefix breakdown for human review. */
   prefixes: Array<{
     prefix: string;
@@ -61,19 +64,21 @@ export function buildCandidate(opts: {
   types: TypeRow[];
   minPagesPerPrefix: number;
   maxTypes: number;
-}): DetectResult['candidate'] {
+}): DetectResult["candidate"] {
   const { prefixes, minPagesPerPrefix, maxTypes } = opts;
-  const filtered = prefixes
-    .filter((p) => p.cnt >= minPagesPerPrefix)
-    .slice(0, maxTypes);
+  const filtered = prefixes.filter((p) => p.cnt >= minPagesPerPrefix).slice(0, maxTypes);
 
   const page_types = filtered.map((p) => {
     // Suggest a type name from the prefix. Strip trailing slash, replace
     // non-alphanum with hyphen, lowercase.
-    const typeName = p.prefix.replace(/\/$/, '').replace(/[^a-z0-9]+/gi, '-').toLowerCase() || 'untyped';
+    const typeName =
+      p.prefix
+        .replace(/\/$/, "")
+        .replace(/[^a-z0-9]+/gi, "-")
+        .toLowerCase() || "untyped";
     return {
       name: typeName,
-      primitive: 'entity' as const,
+      primitive: "entity" as const,
       path_prefixes: [p.prefix],
       aliases: [],
       extractable: false,
@@ -82,12 +87,13 @@ export function buildCandidate(opts: {
   });
 
   return {
-    api_version: 'gbrain-schema-pack-v1' as const,
-    name: 'detected-candidate',
-    version: '0.0.1',
-    description: 'Auto-detected from brain shape via `gbrain schema detect`. Review with `gbrain schema review-candidates` before activating.',
+    api_version: "gbrain-schema-pack-v1" as const,
+    name: "detected-candidate",
+    version: "0.0.1",
+    description:
+      "Auto-detected from brain shape via `gbrain schema detect`. Review with `gbrain schema review-candidates` before activating.",
     page_types,
-    takes_kinds: ['fact', 'take', 'bet', 'hunch'],
+    takes_kinds: ["fact", "take", "bet", "hunch"],
   };
 }
 
@@ -96,23 +102,24 @@ export function buildCandidate(opts: {
  * the candidate, return as DetectResult. The CLI wraps this with --json
  * envelope + human formatter.
  */
-export async function runDetect(
-  engine: BrainEngine,
-  opts: DetectOpts = {},
-): Promise<DetectResult> {
-  const sourceId = opts.sourceId ?? 'default';
+export async function runDetect(engine: BrainEngine, opts: DetectOpts = {}): Promise<DetectResult> {
+  const sourceId = opts.sourceId ?? "default";
   const minPagesPerPrefix = opts.minPagesPerPrefix ?? 5;
   const maxTypes = opts.maxTypes ?? 50;
 
   // Total + null-type counts (the schema-mismatch signal Persona A needs).
-  const totals = await engine.executeRaw<{ total: string | number; untyped: string | number; typed: string | number }>(
+  const totals = await engine.executeRaw<{
+    total: string | number;
+    untyped: string | number;
+    typed: string | number;
+  }>(
     `SELECT
        COUNT(*)::text AS total,
        COUNT(*) FILTER (WHERE type IS NULL OR type = '')::text AS untyped,
        COUNT(*) FILTER (WHERE type IS NOT NULL AND type != '')::text AS typed
      FROM pages
      WHERE source_id = $1 AND deleted_at IS NULL`,
-    [sourceId],
+    [sourceId]
   );
   const total_pages = Number(totals[0]?.total ?? 0);
   const untyped_pages = Number(totals[0]?.untyped ?? 0);
@@ -121,7 +128,11 @@ export async function runDetect(
   // Per-prefix distribution via the existing substring extraction primitive
   // (already used by whoknows/find_experts; sub-second on 50K-row brains
   // per the engine audit in /plan-eng-review section 4).
-  const prefixRows = await engine.executeRaw<{ prefix: string; cnt: string | number; sample_types: string | string[] | null }>(
+  const prefixRows = await engine.executeRaw<{
+    prefix: string;
+    cnt: string | number;
+    sample_types: string | string[] | null;
+  }>(
     `SELECT
        substring(slug from '^[^/]+/') AS prefix,
        COUNT(*)::text AS cnt,
@@ -134,7 +145,7 @@ export async function runDetect(
      HAVING COUNT(*) >= $2
      ORDER BY COUNT(*) DESC
      LIMIT $3`,
-    [sourceId, minPagesPerPrefix, maxTypes],
+    [sourceId, minPagesPerPrefix, maxTypes]
   );
 
   const prefixes: PrefixRow[] = prefixRows.map((r) => ({
@@ -151,7 +162,7 @@ export async function runDetect(
      GROUP BY type
      ORDER BY COUNT(*) DESC
      LIMIT 100`,
-    [sourceId],
+    [sourceId]
   );
   const types: TypeRow[] = typeRows.map((r) => ({ type: r.type, cnt: Number(r.cnt) }));
 
@@ -164,7 +175,7 @@ export async function runDetect(
     prefix: p.prefix,
     page_count: p.cnt,
     sample_types: p.sample_types.slice(0, 5),
-    suggested_type: candidate.page_types[i]?.name ?? 'untyped',
+    suggested_type: candidate.page_types[i]?.name ?? "untyped",
   }));
 
   return {

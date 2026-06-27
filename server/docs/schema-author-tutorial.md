@@ -71,6 +71,7 @@ gbrain schema add-type researcher \
 Output: `Pack: mine (json)` + `Sha8: <prev> → <new>`.
 
 What just happened:
+
 - The mutation went through `withMutation`'s 8-step skeleton: bundled-guard → per-pack lock → read → mutate → file-plane lint validation → atomic write → audit log → cache invalidation.
 - The pack now declares `researcher` as an entity primitive bound to `people/researchers/`, marked `extractable: true` (eligible for facts extraction) and `expert_routing: true` (surfaces in `whoknows` queries).
 - An audit row landed in `~/.gbrain/audit/schema-mutations-YYYY-Www.jsonl` with your type name SHA-8-redacted and the prefix's first segment only (`people`) for privacy.
@@ -147,7 +148,11 @@ You'll see something like:
       "type": "researcher",
       "prefix": "people/researchers/",
       "would_apply": 3,
-      "sample_slugs": ["people/researchers/alice-example", "people/researchers/bob-example", "people/researchers/charlie-example"],
+      "sample_slugs": [
+        "people/researchers/alice-example",
+        "people/researchers/bob-example",
+        "people/researchers/charlie-example"
+      ],
       "applied": 0
     }
   ],
@@ -177,6 +182,7 @@ If your researcher pages contain ML-related content, they'll surface in the rank
 ## What you built
 
 You now have:
+
 - A fork of `gbrain-base` named `mine` at `~/.gbrain/schema-packs/mine/pack.json`, active in your brain via `~/.gbrain/config.json`.
 - A `researcher` page type registered in the pack with `entity` primitive, `people/researchers/` prefix, `extractable: true`, `expert_routing: true`.
 - 3 pages typed as `researcher` (backfilled from disk via `gbrain schema sync --apply`).

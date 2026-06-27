@@ -14,32 +14,32 @@
  * pattern. A positive match means the bug has been re-introduced.
  */
 
-import { test, expect } from 'bun:test';
-import { readFileSync } from 'fs';
-import { resolve } from 'path';
+import { test, expect } from "bun:test";
+import { readFileSync } from "fs";
+import { resolve } from "path";
 
 // Resolve relative to this test file so it works on any machine + in CI.
-const REPO_ROOT = resolve(import.meta.dir, '../..');
-const OPS = resolve(REPO_ROOT, 'src/core/operations.ts');
-const HYBRID = resolve(REPO_ROOT, 'src/core/search/hybrid.ts');
-const IMPORT_FILE = resolve(REPO_ROOT, 'src/core/import-file.ts');
+const REPO_ROOT = resolve(import.meta.dir, "../..");
+const OPS = resolve(REPO_ROOT, "src/core/operations.ts");
+const HYBRID = resolve(REPO_ROOT, "src/core/search/hybrid.ts");
+const IMPORT_FILE = resolve(REPO_ROOT, "src/core/import-file.ts");
 
-test('operations.ts put_page does not gate embedding on OPENAI_API_KEY alone', () => {
-  const src = readFileSync(OPS, 'utf-8');
+test("operations.ts put_page does not gate embedding on OPENAI_API_KEY alone", () => {
+  const src = readFileSync(OPS, "utf-8");
   // The forbidden pattern from v0.13
   expect(src).not.toMatch(/!\s*process\.env\.OPENAI_API_KEY/);
   // The fix MUST reference isAvailable from the gateway
   expect(src).toMatch(/isAvailable\s*\(\s*['"]embedding['"]/);
 });
 
-test('hybrid.ts search does not gate vector path on OPENAI_API_KEY alone', () => {
-  const src = readFileSync(HYBRID, 'utf-8');
+test("hybrid.ts search does not gate vector path on OPENAI_API_KEY alone", () => {
+  const src = readFileSync(HYBRID, "utf-8");
   expect(src).not.toMatch(/!\s*process\.env\.OPENAI_API_KEY/);
   expect(src).toMatch(/isAvailable\s*\(\s*['"]embedding['"]/);
 });
 
-test('import-file.ts does NOT silently swallow embedding failures', () => {
-  const src = readFileSync(IMPORT_FILE, 'utf-8');
+test("import-file.ts does NOT silently swallow embedding failures", () => {
+  const src = readFileSync(IMPORT_FILE, "utf-8");
   // The v0.13 try/catch that warned-and-continued is gone. If embedding fails,
   // the error must propagate — silent drop is unacceptable (Codex C2).
   // Evidence: the embedBatch call should not be inside a try/catch that only

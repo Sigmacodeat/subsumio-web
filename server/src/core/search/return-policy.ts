@@ -22,7 +22,7 @@
  * Pure + dependency-light so it unit-tests in isolation.
  */
 
-export type AdaptiveQueryIntent = 'entity' | 'temporal' | 'event' | 'general';
+export type AdaptiveQueryIntent = "entity" | "temporal" | "event" | "general";
 
 export interface AdaptiveReturnConfig {
   /** Master switch. Default false — no behavior change for existing callers. */
@@ -60,19 +60,23 @@ export interface AdaptiveReturnDecision {
 export type AdaptiveReturnInput = boolean | Partial<AdaptiveReturnConfig> | undefined;
 
 function clampInt(v: unknown, fallback: number, min: number): number {
-  const n = typeof v === 'number' ? Math.floor(v) : Number.NaN;
+  const n = typeof v === "number" ? Math.floor(v) : Number.NaN;
   return Number.isFinite(n) && n >= min ? n : fallback;
 }
 
 /** Read adaptive-return defaults from a loaded config object (DB or file plane). */
 export function adaptiveReturnFromConfig(
-  cfg: Record<string, unknown> | null | undefined,
+  cfg: Record<string, unknown> | null | undefined
 ): Partial<AdaptiveReturnConfig> {
   const search = (cfg?.search ?? {}) as Record<string, unknown>;
   const out: Partial<AdaptiveReturnConfig> = {};
-  if (typeof search.adaptive_return === 'boolean') out.enabled = search.adaptive_return;
+  if (typeof search.adaptive_return === "boolean") out.enabled = search.adaptive_return;
   if (search.adaptive_return_entity_max !== undefined)
-    out.entityMax = clampInt(search.adaptive_return_entity_max, DEFAULT_ADAPTIVE_RETURN.entityMax, 1);
+    out.entityMax = clampInt(
+      search.adaptive_return_entity_max,
+      DEFAULT_ADAPTIVE_RETURN.entityMax,
+      1
+    );
   if (search.adaptive_return_other_max !== undefined)
     out.otherMax = clampInt(search.adaptive_return_other_max, DEFAULT_ADAPTIVE_RETURN.otherMax, 1);
   if (search.adaptive_return_min_keep !== undefined)
@@ -83,7 +87,7 @@ export function adaptiveReturnFromConfig(
 /** Merge defaults → config-plane → per-call into a concrete config. */
 export function resolveAdaptiveReturn(
   perCall: AdaptiveReturnInput,
-  fromConfig?: Partial<AdaptiveReturnConfig>,
+  fromConfig?: Partial<AdaptiveReturnConfig>
 ): AdaptiveReturnConfig {
   const base: AdaptiveReturnConfig = { ...DEFAULT_ADAPTIVE_RETURN, ...(fromConfig ?? {}) };
   if (perCall === undefined) return base;
@@ -99,7 +103,7 @@ export function resolveAdaptiveReturn(
 /** True iff the gate is on (per-call or config). Used for the cache skip. */
 export function adaptiveReturnEnabled(
   perCall: AdaptiveReturnInput,
-  cfg: Record<string, unknown> | null | undefined,
+  cfg: Record<string, unknown> | null | undefined
 ): boolean {
   return resolveAdaptiveReturn(perCall, adaptiveReturnFromConfig(cfg)).enabled;
 }
@@ -112,15 +116,21 @@ export function adaptiveReturnEnabled(
 export function applyAdaptiveReturn<T>(
   results: T[],
   intent: AdaptiveQueryIntent,
-  cfg: AdaptiveReturnConfig,
+  cfg: AdaptiveReturnConfig
 ): { kept: T[]; decision: AdaptiveReturnDecision } {
   if (!cfg.enabled || results.length === 0) {
     return {
       kept: results,
-      decision: { applied: false, intent, cap: results.length, kept: results.length, total: results.length },
+      decision: {
+        applied: false,
+        intent,
+        cap: results.length,
+        kept: results.length,
+        total: results.length,
+      },
     };
   }
-  const cap = intent === 'entity' ? cfg.entityMax : cfg.otherMax;
+  const cap = intent === "entity" ? cfg.entityMax : cfg.otherMax;
   const minKeep = Math.max(1, cfg.minKeep);
   const keep = Math.max(minKeep, Math.min(cap, results.length));
   const kept = results.slice(0, keep);

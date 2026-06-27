@@ -32,10 +32,10 @@
  *   2 = inconclusive (fewer than 2 fixtures produced parseable results)
  */
 
-import type { BrainEngine } from '../core/engine.ts';
-import { readFileSync, existsSync } from 'fs';
-import { runBrainstorm, BRAINSTORM_PROFILE } from '../core/brainstorm/orchestrator.ts';
-import { loadConfig } from '../core/config.ts';
+import type { BrainEngine } from "../core/engine.ts";
+import { readFileSync, existsSync } from "fs";
+import { runBrainstorm, BRAINSTORM_PROFILE } from "../core/brainstorm/orchestrator.ts";
+import { loadConfig } from "../core/config.ts";
 
 export interface BrainstormEvalFixture {
   question: string;
@@ -92,7 +92,7 @@ export interface BrainstormEvalReport {
     grounding: number;
   };
   /** pass / fail / inconclusive. */
-  verdict: 'pass' | 'fail' | 'inconclusive';
+  verdict: "pass" | "fail" | "inconclusive";
   /** Reasons supporting the verdict. */
   reasons: string[];
   total_cost_usd: number;
@@ -115,11 +115,11 @@ function parseArgs(args: string[]): EvalBrainstormCliArgs {
   let i = 0;
   while (i < args.length) {
     const a = args[i];
-    if (a === '--help' || a === '-h') {
+    if (a === "--help" || a === "-h") {
       out.help = true;
-    } else if (a === '--json') {
+    } else if (a === "--json") {
       out.json = true;
-    } else if (a === '--limit') {
+    } else if (a === "--limit") {
       const v = args[++i];
       const n = v ? parseInt(v, 10) : NaN;
       if (!Number.isFinite(n) || n <= 0) {
@@ -127,19 +127,28 @@ function parseArgs(args: string[]): EvalBrainstormCliArgs {
         return out;
       }
       out.limit = n;
-    } else if (a === '--distance-min') {
+    } else if (a === "--distance-min") {
       const n = parseFloat(args[++i]);
-      if (!Number.isFinite(n)) { out.error = '--distance-min requires a number'; return out; }
+      if (!Number.isFinite(n)) {
+        out.error = "--distance-min requires a number";
+        return out;
+      }
       out.distance_min = n;
-    } else if (a === '--usefulness-min') {
+    } else if (a === "--usefulness-min") {
       const n = parseFloat(args[++i]);
-      if (!Number.isFinite(n)) { out.error = '--usefulness-min requires a number'; return out; }
+      if (!Number.isFinite(n)) {
+        out.error = "--usefulness-min requires a number";
+        return out;
+      }
       out.usefulness_min = n;
-    } else if (a === '--grounding-min') {
+    } else if (a === "--grounding-min") {
       const n = parseFloat(args[++i]);
-      if (!Number.isFinite(n)) { out.error = '--grounding-min requires a number'; return out; }
+      if (!Number.isFinite(n)) {
+        out.error = "--grounding-min requires a number";
+        return out;
+      }
       out.grounding_min = n;
-    } else if (a.startsWith('--')) {
+    } else if (a.startsWith("--")) {
       out.error = `unknown flag: ${a}`;
       return out;
     } else {
@@ -178,7 +187,7 @@ export function readBrainstormEvalFixture(path: string): BrainstormEvalFixture[]
   if (!existsSync(path)) {
     throw new Error(`fixture not found: ${path}`);
   }
-  const text = readFileSync(path, 'utf8');
+  const text = readFileSync(path, "utf8");
   const fixtures: BrainstormEvalFixture[] = [];
   for (const line of text.split(/\r?\n/)) {
     const trimmed = line.trim();
@@ -189,15 +198,15 @@ export function readBrainstormEvalFixture(path: string): BrainstormEvalFixture[]
     } catch {
       continue; // skip malformed rows; we report parseable_fixtures separately
     }
-    if (typeof parsed !== 'object' || parsed === null) continue;
+    if (typeof parsed !== "object" || parsed === null) continue;
     const obj = parsed as Record<string, unknown>;
-    if (typeof obj.question !== 'string' || obj.question.trim().length === 0) continue;
+    if (typeof obj.question !== "string" || obj.question.trim().length === 0) continue;
     fixtures.push({
       question: obj.question,
       expected_far_prefixes: Array.isArray(obj.expected_far_prefixes)
-        ? obj.expected_far_prefixes.filter((x): x is string => typeof x === 'string')
+        ? obj.expected_far_prefixes.filter((x): x is string => typeof x === "string")
         : undefined,
-      notes: typeof obj.notes === 'string' ? obj.notes : undefined,
+      notes: typeof obj.notes === "string" ? obj.notes : undefined,
     });
   }
   return fixtures;
@@ -229,13 +238,13 @@ export function summarizeFixture(
   realSlugs: Set<string>
 ): PerFixtureResult {
   const passing = result.ideas.filter((i) => i.passes);
-  const meanDistance = passing.length === 0
-    ? 0
-    : passing.reduce((s, i) => s + i.distance_score, 0) / passing.length;
+  const meanDistance =
+    passing.length === 0 ? 0 : passing.reduce((s, i) => s + i.distance_score, 0) / passing.length;
   const judgedPassing = passing.filter((i) => i.judge !== undefined);
-  const meanUsefulness = judgedPassing.length === 0
-    ? Number.NaN
-    : judgedPassing.reduce((s, i) => s + (i.judge!.weighted_score), 0) / judgedPassing.length;
+  const meanUsefulness =
+    judgedPassing.length === 0
+      ? Number.NaN
+      : judgedPassing.reduce((s, i) => s + i.judge!.weighted_score, 0) / judgedPassing.length;
   const grounding = computeGroundingRate(result.ideas, realSlugs);
 
   return {
@@ -255,39 +264,54 @@ export function summarizeFixture(
 export function computeVerdict(
   perFixture: PerFixtureResult[],
   thresholds: BrainstormEvalThresholds
-): { aggregate: { distance: number; usefulness: number; grounding: number }; verdict: 'pass' | 'fail' | 'inconclusive'; reasons: string[] } {
+): {
+  aggregate: { distance: number; usefulness: number; grounding: number };
+  verdict: "pass" | "fail" | "inconclusive";
+  reasons: string[];
+} {
   const usable = perFixture.filter((r) => r.pass_count > 0 && !r.judge_failed);
   if (usable.length < 2) {
     return {
       aggregate: { distance: 0, usefulness: 0, grounding: 0 },
-      verdict: 'inconclusive',
-      reasons: [`Only ${usable.length} fixture(s) produced parseable, judged ideas. Need at least 2 to compute meaningful aggregates.`],
+      verdict: "inconclusive",
+      reasons: [
+        `Only ${usable.length} fixture(s) produced parseable, judged ideas. Need at least 2 to compute meaningful aggregates.`,
+      ],
     };
   }
   const distance = usable.reduce((s, r) => s + r.mean_distance, 0) / usable.length;
   const validUseful = usable.filter((r) => Number.isFinite(r.mean_usefulness));
-  const usefulness = validUseful.length === 0
-    ? 0
-    : validUseful.reduce((s, r) => s + r.mean_usefulness, 0) / validUseful.length;
+  const usefulness =
+    validUseful.length === 0
+      ? 0
+      : validUseful.reduce((s, r) => s + r.mean_usefulness, 0) / validUseful.length;
   const grounding = usable.reduce((s, r) => s + r.grounding_rate, 0) / usable.length;
 
   const reasons: string[] = [];
   if (distance < thresholds.distance_min) {
-    reasons.push(`distance ${distance.toFixed(3)} < ${thresholds.distance_min} (ideas too close to the question — domain-bank not surfacing distant pages)`);
+    reasons.push(
+      `distance ${distance.toFixed(3)} < ${thresholds.distance_min} (ideas too close to the question — domain-bank not surfacing distant pages)`
+    );
   }
   if (usefulness < thresholds.usefulness_min) {
-    reasons.push(`usefulness ${usefulness.toFixed(2)} < ${thresholds.usefulness_min} (ideas far but low judge score)`);
+    reasons.push(
+      `usefulness ${usefulness.toFixed(2)} < ${thresholds.usefulness_min} (ideas far but low judge score)`
+    );
   }
   if (grounding < thresholds.grounding_min) {
-    reasons.push(`grounding ${grounding.toFixed(3)} < ${thresholds.grounding_min} (some ideas cite non-existent slugs — hallucination signal)`);
+    reasons.push(
+      `grounding ${grounding.toFixed(3)} < ${thresholds.grounding_min} (some ideas cite non-existent slugs — hallucination signal)`
+    );
   }
   if (reasons.length > 0) {
-    return { aggregate: { distance, usefulness, grounding }, verdict: 'fail', reasons };
+    return { aggregate: { distance, usefulness, grounding }, verdict: "fail", reasons };
   }
   return {
     aggregate: { distance, usefulness, grounding },
-    verdict: 'pass',
-    reasons: [`all three axes cleared: distance ${distance.toFixed(3)} >= ${thresholds.distance_min}, usefulness ${usefulness.toFixed(2)} >= ${thresholds.usefulness_min}, grounding ${grounding.toFixed(3)} >= ${thresholds.grounding_min}`],
+    verdict: "pass",
+    reasons: [
+      `all three axes cleared: distance ${distance.toFixed(3)} >= ${thresholds.distance_min}, usefulness ${usefulness.toFixed(2)} >= ${thresholds.usefulness_min}, grounding ${grounding.toFixed(3)} >= ${thresholds.grounding_min}`,
+    ],
   };
 }
 
@@ -310,7 +334,7 @@ export async function runEvalBrainstorm(engine: BrainEngine, args: string[]): Pr
     return 2;
   }
   if (!parsed.fixture) {
-    console.error('gbrain eval brainstorm: fixture path required');
+    console.error("gbrain eval brainstorm: fixture path required");
     console.error(HELP);
     return 2;
   }
@@ -335,7 +359,9 @@ export async function runEvalBrainstorm(engine: BrainEngine, args: string[]): Pr
   let totalCost = 0;
   for (const [idx, fix] of slice.entries()) {
     if (!parsed.json) {
-      console.error(`[eval-brainstorm] ${idx + 1}/${slice.length}: ${fix.question.slice(0, 60)}...`);
+      console.error(
+        `[eval-brainstorm] ${idx + 1}/${slice.length}: ${fix.question.slice(0, 60)}...`
+      );
     }
     try {
       const result = await runBrainstorm(engine, config, {
@@ -385,9 +411,15 @@ export async function runEvalBrainstorm(engine: BrainEngine, args: string[]): Pr
     console.log(`\n=== gbrain eval brainstorm ===`);
     console.log(`Fixture: ${parsed.fixture}`);
     console.log(`Parseable: ${report.parseable_fixtures}/${report.total_fixtures}`);
-    console.log(`Distance:   ${aggregate.distance.toFixed(3)} (threshold ${thresholds.distance_min})`);
-    console.log(`Usefulness: ${aggregate.usefulness.toFixed(2)} (threshold ${thresholds.usefulness_min})`);
-    console.log(`Grounding:  ${aggregate.grounding.toFixed(3)} (threshold ${thresholds.grounding_min})`);
+    console.log(
+      `Distance:   ${aggregate.distance.toFixed(3)} (threshold ${thresholds.distance_min})`
+    );
+    console.log(
+      `Usefulness: ${aggregate.usefulness.toFixed(2)} (threshold ${thresholds.usefulness_min})`
+    );
+    console.log(
+      `Grounding:  ${aggregate.grounding.toFixed(3)} (threshold ${thresholds.grounding_min})`
+    );
     console.log(`Cost:       $${totalCost.toFixed(2)}`);
     console.log(`Verdict:    ${verdict.toUpperCase()}`);
     for (const r of reasons) {
@@ -395,5 +427,5 @@ export async function runEvalBrainstorm(engine: BrainEngine, args: string[]): Pr
     }
   }
 
-  return verdict === 'pass' ? 0 : verdict === 'fail' ? 1 : 2;
+  return verdict === "pass" ? 0 : verdict === "fail" ? 1 : 2;
 }

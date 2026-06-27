@@ -20,9 +20,9 @@ export function installSigchldHandler(): void {
   // SIGCHLD is POSIX-only. On Windows, `process.on('SIGCHLD', ...)` throws
   // "ENOTSUP" because Windows doesn't have signals. Guard by platform so a
   // future Windows port of any gbrain CLI doesn't crash at boot.
-  if (process.platform === 'win32') return;
-  if (!process.listeners('SIGCHLD').includes(reapHandler)) {
-    process.on('SIGCHLD', reapHandler);
+  if (process.platform === "win32") return;
+  if (!process.listeners("SIGCHLD").includes(reapHandler)) {
+    process.on("SIGCHLD", reapHandler);
   }
 }
 
@@ -32,5 +32,5 @@ export function installSigchldHandler(): void {
  * `test/zombie-reap.test.ts`.
  */
 export function _uninstallSigchldHandlerForTests(): void {
-  process.removeListener('SIGCHLD', reapHandler);
+  process.removeListener("SIGCHLD", reapHandler);
 }

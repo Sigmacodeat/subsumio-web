@@ -18,9 +18,9 @@
  * matches (e.g. 'foo' matching 'food') are rare in well-written code.
  */
 
-import type { BrainEngine } from '../core/engine.ts';
-import { errorFor, serializeError } from '../core/errors.ts';
-import { resolveCodeReadiness, readinessHint } from '../core/code-graph-readiness.ts';
+import type { BrainEngine } from "../core/engine.ts";
+import { errorFor, serializeError } from "../core/errors.ts";
+import { resolveCodeReadiness, readinessHint } from "../core/code-graph-readiness.ts";
 
 export interface CodeRefResult {
   slug: string;
@@ -36,20 +36,24 @@ export interface CodeRefResult {
 export async function findCodeRefs(
   engine: BrainEngine,
   symbol: string,
-  opts: { limit?: number; language?: string } = {},
+  opts: { limit?: number; language?: string } = {}
 ): Promise<CodeRefResult[]> {
   const limit = opts.limit ?? 50;
   const params: unknown[] = [`%${symbol}%`];
-  let whereLang = '';
+  let whereLang = "";
   if (opts.language) {
     params.push(opts.language);
     whereLang = `AND cc.language = $${params.length}`;
   }
   params.push(limit);
   const rows = await engine.executeRaw<{
-    slug: string; file: string | null; language: string | null;
-    symbol_name: string | null; symbol_type: string | null;
-    start_line: number | null; end_line: number | null;
+    slug: string;
+    file: string | null;
+    language: string | null;
+    symbol_name: string | null;
+    symbol_type: string | null;
+    start_line: number | null;
+    end_line: number | null;
     chunk_text: string;
   }>(
     `SELECT p.slug, (p.frontmatter->>'file') AS file, cc.language,
@@ -62,7 +66,7 @@ export async function findCodeRefs(
        ${whereLang}
      ORDER BY p.slug, cc.start_line NULLS LAST
      LIMIT $${params.length}`,
-    params,
+    params
   );
   return rows.map((r) => ({
     slug: r.slug,
@@ -82,20 +86,20 @@ function parseFlag(args: string[], name: string): string | undefined {
 }
 
 function shouldEmitJson(args: string[]): boolean {
-  if (args.includes('--json')) return true;
-  if (args.includes('--no-json')) return false;
+  if (args.includes("--json")) return true;
+  if (args.includes("--no-json")) return false;
   return !process.stdout.isTTY;
 }
 
 export async function runCodeRefs(engine: BrainEngine, args: string[]): Promise<void> {
-  const positional = args.filter((a) => !a.startsWith('--'));
+  const positional = args.filter((a) => !a.startsWith("--"));
   const sym = positional[0];
   if (!sym) {
     const err = errorFor({
-      class: 'UsageError',
-      code: 'code_refs_requires_symbol',
-      message: 'code-refs requires a symbol name',
-      hint: 'gbrain code-refs <symbol> [--lang <language>] [--json]',
+      class: "UsageError",
+      code: "code_refs_requires_symbol",
+      message: "code-refs requires a symbol name",
+      hint: "gbrain code-refs <symbol> [--lang <language>] [--json]",
     });
     if (shouldEmitJson(args)) {
       console.log(JSON.stringify({ error: err.envelope }));
@@ -104,20 +108,26 @@ export async function runCodeRefs(engine: BrainEngine, args: string[]): Promise<
     }
     process.exit(2);
   }
-  const limit = parseInt(parseFlag(args, '--limit') || '50', 10);
-  const language = parseFlag(args, '--lang');
+  const limit = parseInt(parseFlag(args, "--limit") || "50", 10);
+  const language = parseFlag(args, "--lang");
   try {
     const results = await findCodeRefs(engine, sym, { limit, language });
     // code-refs is brain-wide (not source-scoped); readiness is 'symbol' grain.
-    const readiness = await resolveCodeReadiness(engine, { kind: 'symbol', count: results.length });
+    const readiness = await resolveCodeReadiness(engine, { kind: "symbol", count: results.length });
     if (shouldEmitJson(args)) {
-      console.log(JSON.stringify({
-        symbol: sym,
-        count: results.length,
-        status: readiness.status,
-        ready: readiness.ready,
-        results,
-      }, null, 2));
+      console.log(
+        JSON.stringify(
+          {
+            symbol: sym,
+            count: results.length,
+            status: readiness.status,
+            ready: readiness.ready,
+            results,
+          },
+          null,
+          2
+        )
+      );
     } else {
       if (results.length === 0) {
         console.log(`No references found for "${sym}"`);
@@ -126,8 +136,8 @@ export async function runCodeRefs(engine: BrainEngine, args: string[]): Promise<
       } else {
         console.log(`Found ${results.length} reference(s) to "${sym}":`);
         for (const r of results) {
-          const loc = r.start_line != null ? `:${r.start_line}` : '';
-          const sig = r.symbol_name ? ` in ${r.symbol_name}` : '';
+          const loc = r.start_line != null ? `:${r.start_line}` : "";
+          const sig = r.symbol_name ? ` in ${r.symbol_name}` : "";
           console.log(`  ${r.file || r.slug}${loc}${sig}`);
         }
       }

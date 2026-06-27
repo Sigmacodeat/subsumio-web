@@ -15,27 +15,32 @@
 // process.exit. SQL via engine.executeRaw with `sourceScopeOpts(ctx)`
 // when ctx threads — onboard surface threads explicitly per A26.
 
-import type { BrainEngine } from '../engine.ts';
-import type { RemediationStep } from '../remediation-step.ts';
-import { makeRemediationStep } from '../remediation-step.ts';
+import type { BrainEngine } from "../engine.ts";
+import type { RemediationStep } from "../remediation-step.ts";
+import { makeRemediationStep } from "../remediation-step.ts";
 
 /** Shared shape returned by all four checks. */
 export interface OnboardCheckResult {
   check: {
     name: string;
-    status: 'ok' | 'warn' | 'fail';
+    status: "ok" | "warn" | "fail";
     message: string;
   };
   remediations: RemediationStep[];
 }
 
 /** Internal sql helper. Returns first row or empty object on throw. */
-async function safeCount(engine: BrainEngine, sql: string, params: unknown[] = []): Promise<number> {
+async function safeCount(
+  engine: BrainEngine,
+  sql: string,
+  params: unknown[] = []
+): Promise<number> {
   try {
     const result = await engine.executeRaw(sql, params);
-    const rows = (result as { rows?: Array<Record<string, unknown>> } | undefined)?.rows
-      ?? (result as Array<Record<string, unknown>> | undefined)
-      ?? [];
+    const rows =
+      (result as { rows?: Array<Record<string, unknown>> } | undefined)?.rows ??
+      (result as Array<Record<string, unknown>> | undefined) ??
+      [];
     const row = rows[0] ?? {};
     const raw = (row as Record<string, unknown>).count ?? (row as Record<string, unknown>).c ?? 0;
     const n = Number(raw);
@@ -51,52 +56,54 @@ async function safeCount(engine: BrainEngine, sql: string, params: unknown[] = [
  * Backed by content_chunks_stale_idx partial index (v100) so the count
  * is cheap even on big brains.
  */
-export async function checkEmbedStaleness(
-  engine: BrainEngine,
-): Promise<OnboardCheckResult> {
+export async function checkEmbedStaleness(engine: BrainEngine): Promise<OnboardCheckResult> {
   const staleCount = await safeCount(
     engine,
-    `SELECT COUNT(*) AS count FROM content_chunks WHERE embedding IS NULL`,
+    `SELECT COUNT(*) AS count FROM content_chunks WHERE embedding IS NULL`
   );
   const remediations: RemediationStep[] = [];
-  let status: 'ok' | 'warn' | 'fail' = 'ok';
+  let status: "ok" | "warn" | "fail" = "ok";
   let message: string;
 
   if (staleCount === 0) {
-    message = 'No stale chunks';
+    message = "No stale chunks";
   } else if (staleCount < 1000) {
-    status = 'warn';
+    status = "warn";
     message = `${staleCount} stale chunks (small backlog)`;
-    remediations.push(makeRemediationStep({
-      id: 'onboard.embed_catch_up',
-      job: 'embed-catch-up',
-      params: { batchSize: 500 },
-      severity: 'medium',
-      est_seconds: Math.min(900, Math.ceil(staleCount * 0.2)),
-      est_usd_cost: staleCount * 0.00002,
-      rationale: `${staleCount} chunks awaiting embedding`,
-      status: 'remediable',
-    }));
+    remediations.push(
+      makeRemediationStep({
+        id: "onboard.embed_catch_up",
+        job: "embed-catch-up",
+        params: { batchSize: 500 },
+        severity: "medium",
+        est_seconds: Math.min(900, Math.ceil(staleCount * 0.2)),
+        est_usd_cost: staleCount * 0.00002,
+        rationale: `${staleCount} chunks awaiting embedding`,
+        status: "remediable",
+      })
+    );
   } else {
     // v0.41.18.0: warn-only even on large backlogs. Doctor exit code should
     // not flip from a brain that has pages waiting to be embedded — that's
     // a "needs work" condition, not a "broken" one. The high-severity
     // remediation still surfaces via onboard's plan.
-    status = 'warn';
+    status = "warn";
     message = `${staleCount} stale chunks (large backlog — vector search returning outdated content)`;
-    remediations.push(makeRemediationStep({
-      id: 'onboard.embed_catch_up',
-      job: 'embed-catch-up',
-      params: { batchSize: 1000, priority: 'recent' },
-      severity: 'high',
-      est_seconds: Math.min(3600, Math.ceil(staleCount * 0.2)),
-      est_usd_cost: staleCount * 0.00002,
-      rationale: `${staleCount} chunks awaiting embedding; recent-first catch-up`,
-      status: 'remediable',
-    }));
+    remediations.push(
+      makeRemediationStep({
+        id: "onboard.embed_catch_up",
+        job: "embed-catch-up",
+        params: { batchSize: 1000, priority: "recent" },
+        severity: "high",
+        est_seconds: Math.min(3600, Math.ceil(staleCount * 0.2)),
+        est_usd_cost: staleCount * 0.00002,
+        rationale: `${staleCount} chunks awaiting embedding; recent-first catch-up`,
+        status: "remediable",
+      })
+    );
   }
   return {
-    check: { name: 'embed_staleness', status, message },
+    check: { name: "embed_staleness", status, message },
     remediations,
   };
 }
@@ -112,30 +119,32 @@ export async function checkEmbedStaleness(
  * itself so doctor + onboard render show "coverage: 31% ± 1.3%" not
  * a misleading point estimate.
  */
-export async function checkEntityLinkCoverage(
-  engine: BrainEngine,
-): Promise<OnboardCheckResult> {
+export async function checkEntityLinkCoverage(engine: BrainEngine): Promise<OnboardCheckResult> {
   // Total entity pages
   const totalEntities = await safeCount(
     engine,
     `SELECT COUNT(*) AS count FROM pages
        WHERE type IN ('person', 'company', 'organization', 'entity')
-         AND deleted_at IS NULL`,
+         AND deleted_at IS NULL`
   );
 
   if (totalEntities === 0) {
     return {
-      check: { name: 'entity_link_coverage', status: 'ok', message: 'No entity pages — coverage check vacuous' },
+      check: {
+        name: "entity_link_coverage",
+        status: "ok",
+        message: "No entity pages — coverage check vacuous",
+      },
       remediations: [],
     };
   }
 
   // Decide TABLESAMPLE policy (PG only, when >50K entities)
-  const useSample = engine.kind === 'postgres' && totalEntities > 50_000;
+  const useSample = engine.kind === "postgres" && totalEntities > 50_000;
   const samplePct = useSample
     ? Math.max(2.0, Math.min(100.0, (5000.0 / totalEntities) * 100))
     : 100;
-  const sampleClause = useSample ? `TABLESAMPLE BERNOULLI (${samplePct.toFixed(2)})` : '';
+  const sampleClause = useSample ? `TABLESAMPLE BERNOULLI (${samplePct.toFixed(2)})` : "";
 
   // Sample query: counts entities with inbound links
   const linkedCount = await safeCount(
@@ -145,7 +154,7 @@ export async function checkEntityLinkCoverage(
        WHERE p.type IN ('person', 'company', 'organization', 'entity')
          AND p.deleted_at IS NULL
          AND EXISTS (SELECT 1 FROM links l WHERE l.to_page_id = p.id)
-     ) sub`,
+     ) sub`
   );
   const sampleSize = useSample
     ? Math.max(1, Math.round(totalEntities * (samplePct / 100)))
@@ -157,10 +166,10 @@ export async function checkEntityLinkCoverage(
 
   const pct = Math.round(coverage * 100);
   const ciPct = (ci * 100).toFixed(1);
-  const sampleNote = useSample ? ` (sampled ${samplePct.toFixed(1)}%)` : '';
+  const sampleNote = useSample ? ` (sampled ${samplePct.toFixed(1)}%)` : "";
 
   const remediations: RemediationStep[] = [];
-  let status: 'ok' | 'warn' | 'fail' = 'ok';
+  let status: "ok" | "warn" | "fail" = "ok";
   let message: string;
 
   // v0.41.18.0: warn-only, never fail. Empty entity link coverage is "needs
@@ -171,34 +180,38 @@ export async function checkEntityLinkCoverage(
   if (coverage >= 0.7) {
     message = `Coverage ${pct}% ± ${ciPct}%${sampleNote}`;
   } else if (coverage >= 0.4) {
-    status = 'warn';
+    status = "warn";
     message = `Coverage ${pct}% ± ${ciPct}% (target 70%)${sampleNote}`;
-    remediations.push(makeRemediationStep({
-      id: 'onboard.extract_ner_links',
-      job: 'extract-ner',
-      params: {},
-      severity: 'medium',
-      est_seconds: 300,
-      est_usd_cost: 0,
-      rationale: `Entity link coverage at ${pct}%; NER extraction lifts typed-link density`,
-      status: 'remediable',
-    }));
+    remediations.push(
+      makeRemediationStep({
+        id: "onboard.extract_ner_links",
+        job: "extract-ner",
+        params: {},
+        severity: "medium",
+        est_seconds: 300,
+        est_usd_cost: 0,
+        rationale: `Entity link coverage at ${pct}%; NER extraction lifts typed-link density`,
+        status: "remediable",
+      })
+    );
   } else {
-    status = 'warn';
+    status = "warn";
     message = `Coverage ${pct}% ± ${ciPct}% (target 70%)${sampleNote}`;
-    remediations.push(makeRemediationStep({
-      id: 'onboard.extract_ner_links',
-      job: 'extract-ner',
-      params: {},
-      severity: 'high',
-      est_seconds: 600,
-      est_usd_cost: 0,
-      rationale: `Entity link coverage at ${pct}%; NER extraction lifts typed-link density`,
-      status: 'remediable',
-    }));
+    remediations.push(
+      makeRemediationStep({
+        id: "onboard.extract_ner_links",
+        job: "extract-ner",
+        params: {},
+        severity: "high",
+        est_seconds: 600,
+        est_usd_cost: 0,
+        rationale: `Entity link coverage at ${pct}%; NER extraction lifts typed-link density`,
+        status: "remediable",
+      })
+    );
   }
   return {
-    check: { name: 'entity_link_coverage', status, message },
+    check: { name: "entity_link_coverage", status, message },
     remediations,
   };
 }
@@ -208,28 +221,30 @@ export async function checkEntityLinkCoverage(
  *
  * Same TABLESAMPLE policy as entity_link_coverage for big brains.
  */
-export async function checkTimelineCoverage(
-  engine: BrainEngine,
-): Promise<OnboardCheckResult> {
+export async function checkTimelineCoverage(engine: BrainEngine): Promise<OnboardCheckResult> {
   const totalEntities = await safeCount(
     engine,
     `SELECT COUNT(*) AS count FROM pages
        WHERE type IN ('person', 'company', 'organization', 'entity')
-         AND deleted_at IS NULL`,
+         AND deleted_at IS NULL`
   );
 
   if (totalEntities === 0) {
     return {
-      check: { name: 'timeline_coverage', status: 'ok', message: 'No entity pages — coverage check vacuous' },
+      check: {
+        name: "timeline_coverage",
+        status: "ok",
+        message: "No entity pages — coverage check vacuous",
+      },
       remediations: [],
     };
   }
 
-  const useSample = engine.kind === 'postgres' && totalEntities > 50_000;
+  const useSample = engine.kind === "postgres" && totalEntities > 50_000;
   const samplePct = useSample
     ? Math.max(2.0, Math.min(100.0, (5000.0 / totalEntities) * 100))
     : 100;
-  const sampleClause = useSample ? `TABLESAMPLE BERNOULLI (${samplePct.toFixed(2)})` : '';
+  const sampleClause = useSample ? `TABLESAMPLE BERNOULLI (${samplePct.toFixed(2)})` : "";
 
   const withTimelineCount = await safeCount(
     engine,
@@ -238,7 +253,7 @@ export async function checkTimelineCoverage(
        WHERE p.type IN ('person', 'company', 'organization', 'entity')
          AND p.deleted_at IS NULL
          AND EXISTS (SELECT 1 FROM timeline_entries t WHERE t.page_id = p.id)
-     ) sub`,
+     ) sub`
   );
   const sampleSize = useSample
     ? Math.max(1, Math.round(totalEntities * (samplePct / 100)))
@@ -248,10 +263,10 @@ export async function checkTimelineCoverage(
   const ci = Math.sqrt((coverage * (1 - coverage)) / Math.max(1, sampleSize));
   const pct = Math.round(coverage * 100);
   const ciPct = (ci * 100).toFixed(1);
-  const sampleNote = useSample ? ` (sampled ${samplePct.toFixed(1)}%)` : '';
+  const sampleNote = useSample ? ` (sampled ${samplePct.toFixed(1)}%)` : "";
 
   const remediations: RemediationStep[] = [];
-  let status: 'ok' | 'warn' | 'fail' = 'ok';
+  let status: "ok" | "warn" | "fail" = "ok";
   let message: string;
 
   // v0.41.18.0: warn-only, never fail. Same posture as entity_link_coverage —
@@ -260,34 +275,38 @@ export async function checkTimelineCoverage(
   if (coverage >= 0.9) {
     message = `Coverage ${pct}% ± ${ciPct}%${sampleNote}`;
   } else if (coverage >= 0.7) {
-    status = 'warn';
+    status = "warn";
     message = `Coverage ${pct}% ± ${ciPct}% (target 90%)${sampleNote}`;
-    remediations.push(makeRemediationStep({
-      id: 'onboard.extract_timeline_from_meetings',
-      job: 'extract-timeline-from-meetings',
-      params: {},
-      severity: 'medium',
-      est_seconds: 240,
-      est_usd_cost: 0,
-      rationale: `Timeline coverage at ${pct}%; meeting-derived entries lift it`,
-      status: 'remediable',
-    }));
+    remediations.push(
+      makeRemediationStep({
+        id: "onboard.extract_timeline_from_meetings",
+        job: "extract-timeline-from-meetings",
+        params: {},
+        severity: "medium",
+        est_seconds: 240,
+        est_usd_cost: 0,
+        rationale: `Timeline coverage at ${pct}%; meeting-derived entries lift it`,
+        status: "remediable",
+      })
+    );
   } else {
-    status = 'warn';
+    status = "warn";
     message = `Coverage ${pct}% ± ${ciPct}% (target 90%)${sampleNote}`;
-    remediations.push(makeRemediationStep({
-      id: 'onboard.extract_timeline_from_meetings',
-      job: 'extract-timeline-from-meetings',
-      params: {},
-      severity: 'high',
-      est_seconds: 480,
-      est_usd_cost: 0,
-      rationale: `Timeline coverage at ${pct}%; meeting-derived entries lift it`,
-      status: 'remediable',
-    }));
+    remediations.push(
+      makeRemediationStep({
+        id: "onboard.extract_timeline_from_meetings",
+        job: "extract-timeline-from-meetings",
+        params: {},
+        severity: "high",
+        est_seconds: 480,
+        est_usd_cost: 0,
+        rationale: `Timeline coverage at ${pct}%; meeting-derived entries lift it`,
+        status: "remediable",
+      })
+    );
   }
   return {
-    check: { name: 'timeline_coverage', status, message },
+    check: { name: "timeline_coverage", status, message },
     remediations,
   };
 }
@@ -299,51 +318,48 @@ export async function checkTimelineCoverage(
  * `takes.bootstrap_enabled` config is true. Otherwise the check shows
  * a status + hint, but no autopilot-eligible remediation.
  */
-export async function checkTakesCount(
-  engine: BrainEngine,
-): Promise<OnboardCheckResult> {
-  const takesCount = await safeCount(
-    engine,
-    `SELECT COUNT(*) AS count FROM takes`,
-  );
+export async function checkTakesCount(engine: BrainEngine): Promise<OnboardCheckResult> {
+  const takesCount = await safeCount(engine, `SELECT COUNT(*) AS count FROM takes`);
 
   let bootstrapEnabled = false;
   try {
-    const cfg = await engine.getConfig('takes.bootstrap_enabled');
-    bootstrapEnabled = cfg === 'true' || cfg === '1';
+    const cfg = await engine.getConfig("takes.bootstrap_enabled");
+    bootstrapEnabled = cfg === "true" || cfg === "1";
   } catch {
     bootstrapEnabled = false;
   }
 
   const remediations: RemediationStep[] = [];
-  let status: 'ok' | 'warn' | 'fail' = 'ok';
+  let status: "ok" | "warn" | "fail" = "ok";
   let message: string;
 
   if (takesCount >= 100) {
     message = `${takesCount} takes (calibration ready)`;
   } else if (takesCount === 0) {
-    status = 'warn';
+    status = "warn";
     if (bootstrapEnabled) {
       message = `0 takes (bootstrap eligible — gbrain takes extract --from-pages)`;
-      remediations.push(makeRemediationStep({
-        id: 'onboard.takes_bootstrap',
-        job: 'extract-takes-from-pages',
-        protected: true,
-        params: {},
-        severity: 'medium',
-        est_seconds: 1800,
-        est_usd_cost: 5.00,
-        rationale: '0 takes; LLM-bearing extraction over concept/atom/lore pages',
-        status: 'remediable',
-      }));
+      remediations.push(
+        makeRemediationStep({
+          id: "onboard.takes_bootstrap",
+          job: "extract-takes-from-pages",
+          protected: true,
+          params: {},
+          severity: "medium",
+          est_seconds: 1800,
+          est_usd_cost: 5.0,
+          rationale: "0 takes; LLM-bearing extraction over concept/atom/lore pages",
+          status: "remediable",
+        })
+      );
     } else {
-      message = '0 takes (takes.bootstrap_enabled is false; opt in to enable)';
+      message = "0 takes (takes.bootstrap_enabled is false; opt in to enable)";
     }
   } else {
     message = `${takesCount} takes (calibration usable; >100 ideal)`;
   }
   return {
-    check: { name: 'takes_count', status, message },
+    check: { name: "takes_count", status, message },
     remediations,
   };
 }
@@ -356,9 +372,7 @@ export async function checkTakesCount(
  * partial-results fallthrough. Each individual safeCount() returns 0
  * on throw so a single check failure doesn't break the aggregate.
  */
-export async function runAllOnboardChecks(
-  engine: BrainEngine,
-): Promise<OnboardCheckResult[]> {
+export async function runAllOnboardChecks(engine: BrainEngine): Promise<OnboardCheckResult[]> {
   return Promise.all([
     checkEmbedStaleness(engine),
     checkEntityLinkCoverage(engine),
@@ -381,23 +395,22 @@ export async function runAllOnboardChecks(
  * declared successor of gbrain-base@1.x. Emits a manual_only RemediationStep
  * (D17) targeting the unify-types Minion handler.
  */
-export async function checkPackUpgradeAvailable(
-  engine: BrainEngine,
-): Promise<OnboardCheckResult> {
+export async function checkPackUpgradeAvailable(engine: BrainEngine): Promise<OnboardCheckResult> {
   try {
-    const { loadActivePack, findPackSuccessors } = await import('../schema-pack/load-active.ts');
+    const { loadActivePack, findPackSuccessors } = await import("../schema-pack/load-active.ts");
     // Read the engine's DB-side schema_pack so a post-unify flip is visible
     // here even before the file-plane config catches up. Falls through to
     // file-plane/env/default resolution when unset.
     let dbConfig: string | undefined;
     try {
-      dbConfig = (await engine.getConfig('schema_pack')) ?? undefined;
-    } catch { /* engine.config may not exist on very old brains */ }
-    const active = await loadActivePack({ cfg: null, remote: false, dbConfig })
-      .catch(() => null);
+      dbConfig = (await engine.getConfig("schema_pack")) ?? undefined;
+    } catch {
+      /* engine.config may not exist on very old brains */
+    }
+    const active = await loadActivePack({ cfg: null, remote: false, dbConfig }).catch(() => null);
     if (!active) {
       return {
-        check: { name: 'pack_upgrade_available', status: 'ok', message: 'No active pack' },
+        check: { name: "pack_upgrade_available", status: "ok", message: "No active pack" },
         remediations: [],
       };
     }
@@ -405,8 +418,8 @@ export async function checkPackUpgradeAvailable(
     if (successors.length === 0) {
       return {
         check: {
-          name: 'pack_upgrade_available',
-          status: 'ok',
+          name: "pack_upgrade_available",
+          status: "ok",
           message: `Active pack ${active.identity} is current (no successor declared)`,
         },
         remediations: [],
@@ -415,35 +428,35 @@ export async function checkPackUpgradeAvailable(
     const successor = successors[0];
     return {
       check: {
-        name: 'pack_upgrade_available',
-        status: 'warn',
+        name: "pack_upgrade_available",
+        status: "warn",
         message:
           `Active pack: ${active.identity}. Successor available: ${successor.identity}. ` +
           `Preview: \`gbrain onboard --check --explain\``,
       },
       remediations: [
         makeRemediationStep({
-          id: 'onboard.pack_upgrade_' + successor.manifest.name,
-          job: 'unify-types',
+          id: "onboard.pack_upgrade_" + successor.manifest.name,
+          job: "unify-types",
           params: { target_pack: successor.manifest.name },
-          severity: 'medium',
-          est_seconds: 600,  // ~10min on 186K-page brain (production proxy)
-          est_usd_cost: 0,   // pure SQL; no LLM spend
-          protected: true,   // PROTECTED handler + manual_only via render allowlist
+          severity: "medium",
+          est_seconds: 600, // ~10min on 186K-page brain (production proxy)
+          est_usd_cost: 0, // pure SQL; no LLM spend
+          protected: true, // PROTECTED handler + manual_only via render allowlist
           rationale:
             `Pack upgrade ${active.manifest.name} → ${successor.manifest.name}; ` +
             `collapses redundant page types into the new canonical taxonomy. ` +
             `Reversible via 72h soft-delete TTL on alias/link pages + ` +
             `frontmatter.legacy_type preservation on retyped pages.`,
-          status: 'remediable',
+          status: "remediable",
         }),
       ],
     };
   } catch (e) {
     return {
       check: {
-        name: 'pack_upgrade_available',
-        status: 'ok',
+        name: "pack_upgrade_available",
+        status: "ok",
         message: `Check skipped: ${(e as Error).message}`,
       },
       remediations: [],
@@ -457,46 +470,45 @@ export async function checkPackUpgradeAvailable(
  * positives on custom packs (compares to actual pack declaration count,
  * not a hardcoded threshold).
  */
-export async function checkTypeProliferation(
-  engine: BrainEngine,
-): Promise<OnboardCheckResult> {
-  let declared = 15;  // fallback to gbrain-base-v2 default if pack unavailable
+export async function checkTypeProliferation(engine: BrainEngine): Promise<OnboardCheckResult> {
+  let declared = 15; // fallback to gbrain-base-v2 default if pack unavailable
   try {
-    const { loadActivePack } = await import('../schema-pack/load-active.ts');
+    const { loadActivePack } = await import("../schema-pack/load-active.ts");
     let dbConfig: string | undefined;
     try {
-      dbConfig = (await engine.getConfig('schema_pack')) ?? undefined;
-    } catch { /* tolerate pre-config brains */ }
-    const active = await loadActivePack({ cfg: null, remote: false, dbConfig })
-      .catch(() => null);
+      dbConfig = (await engine.getConfig("schema_pack")) ?? undefined;
+    } catch {
+      /* tolerate pre-config brains */
+    }
+    const active = await loadActivePack({ cfg: null, remote: false, dbConfig }).catch(() => null);
     if (active) declared = active.manifest.page_types.length;
   } catch {
     // Use fallback.
   }
   const n = await safeCount(
     engine,
-    `SELECT COUNT(DISTINCT type) AS count FROM pages WHERE deleted_at IS NULL AND type IS NOT NULL`,
+    `SELECT COUNT(DISTINCT type) AS count FROM pages WHERE deleted_at IS NULL AND type IS NOT NULL`
   );
   const warn = declared + 5;
   const fail = declared * 2;
   if (n > fail) {
     return {
       check: {
-        name: 'type_proliferation',
-        status: 'fail',
+        name: "type_proliferation",
+        status: "fail",
         message:
           `${n} distinct page types (pack declares ${declared}). ` +
           `Run \`gbrain onboard --check --explain\` to preview a pack upgrade ` +
           `or define a custom pack with mapping_rules.`,
       },
-      remediations: [],  // pack_upgrade_available check emits the actionable step
+      remediations: [], // pack_upgrade_available check emits the actionable step
     };
   }
   if (n > warn) {
     return {
       check: {
-        name: 'type_proliferation',
-        status: 'warn',
+        name: "type_proliferation",
+        status: "warn",
         message: `${n} distinct page types vs ${declared} declared in pack — consider unification.`,
       },
       remediations: [],
@@ -504,8 +516,8 @@ export async function checkTypeProliferation(
   }
   return {
     check: {
-      name: 'type_proliferation',
-      status: 'ok',
+      name: "type_proliferation",
+      status: "ok",
       message: `${n} distinct typed values (pack declares ${declared})`,
     },
     remediations: [],
@@ -525,9 +537,7 @@ export async function checkTypeProliferation(
  * via the `isUndefinedTableError` fallthrough inherent in safeCount's
  * catch-all (returns 0 on any SQL error).
  */
-export async function checkDanglingAliases(
-  engine: BrainEngine,
-): Promise<OnboardCheckResult> {
+export async function checkDanglingAliases(engine: BrainEngine): Promise<OnboardCheckResult> {
   const n = await safeCount(
     engine,
     `SELECT COUNT(*) AS count FROM slug_aliases sa
@@ -535,24 +545,24 @@ export async function checkDanglingAliases(
        ON p.slug = sa.canonical_slug
       AND p.source_id = sa.source_id
       AND p.deleted_at IS NULL
-     WHERE p.id IS NULL`,
+     WHERE p.id IS NULL`
   );
   if (n > 0) {
     return {
       check: {
-        name: 'dangling_aliases',
-        status: 'warn',
+        name: "dangling_aliases",
+        status: "warn",
         message:
           `${n} alias rows point at deleted canonicals. Safe GC (source-scoped): ` +
           `\`DELETE FROM slug_aliases sa WHERE NOT EXISTS (SELECT 1 FROM pages p ` +
           `WHERE p.slug = sa.canonical_slug AND p.source_id = sa.source_id ` +
           `AND p.deleted_at IS NULL);\``,
       },
-      remediations: [],  // v0.42: surface-only; auto-GC v0.43+
+      remediations: [], // v0.42: surface-only; auto-GC v0.43+
     };
   }
   return {
-    check: { name: 'dangling_aliases', status: 'ok', message: 'No dangling aliases' },
+    check: { name: "dangling_aliases", status: "ok", message: "No dangling aliases" },
     remediations: [],
   };
 }

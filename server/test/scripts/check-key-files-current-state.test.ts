@@ -43,7 +43,7 @@ function seedClean() {
   writeDoc("CLAUDE.md", "# CLAUDE.md\n\norientation only\n");
   writeDoc(
     "docs/architecture/KEY_FILES.md",
-    "# Key files\n\n- `src/core/db.ts` — connection management. Pinned by `test/db.test.ts`.\n",
+    "# Key files\n\n- `src/core/db.ts` — connection management. Pinned by `test/db.test.ts`.\n"
   );
   writeDoc("docs/architecture/thin-client.md", "# Thin-client\n\nrouting seam\n");
   writeDoc("docs/TESTING.md", "# Testing\n\ntiers\n");
@@ -61,7 +61,7 @@ describe("check-key-files-current-state.sh", () => {
     seedClean();
     writeDoc(
       "docs/architecture/KEY_FILES.md",
-      "# Key files\n\n- `src/core/db.ts` — connection mgmt. **v0.41.2 (#9):** added pool reconnect.\n",
+      "# Key files\n\n- `src/core/db.ts` — connection mgmt. **v0.41.2 (#9):** added pool reconnect.\n"
     );
     const r = run();
     expect(r.status).toBe(1);
@@ -73,7 +73,7 @@ describe("check-key-files-current-state.sh", () => {
     seedClean();
     writeDoc(
       "docs/architecture/KEY_FILES.md",
-      "# Key files\n\n- `src/core/db.ts` — requires pgvector 0.7; on Postgres 11+ the ADD COLUMN is metadata-only.\n",
+      "# Key files\n\n- `src/core/db.ts` — requires pgvector 0.7; on Postgres 11+ the ADD COLUMN is metadata-only.\n"
     );
     const r = run();
     expect(r.status).toBe(0);
@@ -98,7 +98,7 @@ describe("check-key-files-current-state.sh", () => {
     seedClean();
     writeDoc(
       "docs/TESTING.md",
-      "# Testing\n\nThe tier set, then v0.26.7 added the parallel loop (pre-fix it was serial).\n",
+      "# Testing\n\nThe tier set, then v0.26.7 added the parallel loop (pre-fix it was serial).\n"
     );
     const r = run();
     expect(r.status).toBe(0); // warn, not fail
@@ -107,7 +107,10 @@ describe("check-key-files-current-state.sh", () => {
 
   it("catches the marker in any of the three reference docs (thin-client)", () => {
     seedClean();
-    writeDoc("docs/architecture/thin-client.md", "# Thin-client\n\n**v0.36.3:** added cross-modal.\n");
+    writeDoc(
+      "docs/architecture/thin-client.md",
+      "# Thin-client\n\n**v0.36.3:** added cross-modal.\n"
+    );
     expect(run().status).toBe(1);
   });
 });

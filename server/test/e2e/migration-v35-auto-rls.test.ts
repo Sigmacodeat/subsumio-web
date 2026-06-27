@@ -14,22 +14,29 @@
  * Run: DATABASE_URL=... bun test test/e2e/migration-v35-auto-rls.test.ts
  */
 
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
-import { hasDatabase, setupDB, teardownDB, getConn, getEngine, runMigrationsUpTo } from './helpers.ts';
-import { MIGRATIONS, LATEST_VERSION } from '../../src/core/migrate.ts';
+import { describe, test, expect, beforeAll, afterAll } from "bun:test";
+import {
+  hasDatabase,
+  setupDB,
+  teardownDB,
+  getConn,
+  getEngine,
+  runMigrationsUpTo,
+} from "./helpers.ts";
+import { MIGRATIONS, LATEST_VERSION } from "../../src/core/migrate.ts";
 
 const skip = !hasDatabase();
 const describeE2E = skip ? describe.skip : describe;
 
 if (skip) {
-  console.log('Skipping auto-RLS E2E tests (DATABASE_URL not set)');
+  console.log("Skipping auto-RLS E2E tests (DATABASE_URL not set)");
 }
 
 // Migration v35 lives at index 34 (0-based) in MIGRATIONS.
-const v35 = MIGRATIONS.find(m => m.version === 35);
-const v35Sql = (v35?.sqlFor as any)?.postgres ?? '';
+const v35 = MIGRATIONS.find((m) => m.version === 35);
+const v35Sql = (v35?.sqlFor as any)?.postgres ?? "";
 
-describeE2E('migration v35: auto_rls_event_trigger', () => {
+describeE2E("migration v35: auto_rls_event_trigger", () => {
   beforeAll(async () => {
     await setupDB();
     // setupDB() runs db.initSchema() (SCHEMA_SQL only, no migrations).
@@ -51,7 +58,7 @@ describeE2E('migration v35: auto_rls_event_trigger', () => {
     await teardownDB();
   });
 
-  test('event trigger exists', async () => {
+  test("event trigger exists", async () => {
     const conn = getConn();
     const triggers = await conn`
       SELECT evtname FROM pg_event_trigger
@@ -60,7 +67,7 @@ describeE2E('migration v35: auto_rls_event_trigger', () => {
     expect(triggers.length).toBe(1);
   });
 
-  test('new tables automatically get RLS enabled (CREATE TABLE)', async () => {
+  test("new tables automatically get RLS enabled (CREATE TABLE)", async () => {
     const conn = getConn();
     await conn`CREATE TABLE _test_auto_rls_check (id serial PRIMARY KEY, val text)`;
 
@@ -72,7 +79,7 @@ describeE2E('migration v35: auto_rls_event_trigger', () => {
     expect(result[0].rowsecurity).toBe(true);
   });
 
-  test('auto_enable_rls function exists', async () => {
+  test("auto_enable_rls function exists", async () => {
     const conn = getConn();
     const funcs = await conn`
       SELECT proname FROM pg_proc
@@ -81,7 +88,7 @@ describeE2E('migration v35: auto_rls_event_trigger', () => {
     expect(funcs.length).toBe(1);
   });
 
-  test('FORCE RLS is NOT applied (D1: ENABLE only)', async () => {
+  test("FORCE RLS is NOT applied (D1: ENABLE only)", async () => {
     // pg_class.relforcerowsecurity reflects FORCE; rowsecurity reflects ENABLE.
     // v35 enables only — operators or future migrations can opt FORCE in
     // explicitly per table if defense-in-depth is desired.
@@ -94,7 +101,7 @@ describeE2E('migration v35: auto_rls_event_trigger', () => {
     expect(result[0].relforcerowsecurity).toBe(false);
   });
 
-  test('CREATE TABLE AS triggers auto-RLS (D6)', async () => {
+  test("CREATE TABLE AS triggers auto-RLS (D6)", async () => {
     // CTAS is a distinct command_tag in Postgres ('CREATE TABLE AS'). The
     // trigger's WHEN TAG list covers it explicitly.
     const conn = getConn();
@@ -108,7 +115,7 @@ describeE2E('migration v35: auto_rls_event_trigger', () => {
     expect(result[0].rowsecurity).toBe(true);
   });
 
-  test('SELECT INTO triggers auto-RLS (D6)', async () => {
+  test("SELECT INTO triggers auto-RLS (D6)", async () => {
     // SELECT INTO is the older synonym for CTAS. Postgres tags it 'SELECT INTO'.
     const conn = getConn();
     await conn`SELECT 1 AS id, 'world'::text AS val INTO _test_select_into`;
@@ -121,7 +128,7 @@ describeE2E('migration v35: auto_rls_event_trigger', () => {
     expect(result[0].rowsecurity).toBe(true);
   });
 
-  test('non-public schemas are not touched (D2)', async () => {
+  test("non-public schemas are not touched (D2)", async () => {
     // Build a private schema and a table inside. The trigger filters
     // schema_name = 'public' so this table should remain RLS-off.
     const conn = getConn();
@@ -137,7 +144,7 @@ describeE2E('migration v35: auto_rls_event_trigger', () => {
     expect(result[0].relrowsecurity).toBe(false);
   });
 
-  test('replay idempotency: re-running migration leaves exactly one trigger', async () => {
+  test("replay idempotency: re-running migration leaves exactly one trigger", async () => {
     const conn = getConn();
     expect(v35Sql.length).toBeGreaterThan(0);
     // Re-execute the entire v35 SQL. The DROP EVENT TRIGGER IF EXISTS +
@@ -155,7 +162,7 @@ describeE2E('migration v35: auto_rls_event_trigger', () => {
     expect(funcs.length).toBe(1);
   });
 
-  test('backfill enables RLS on pre-existing public.* tables', async () => {
+  test("backfill enables RLS on pre-existing public.* tables", async () => {
     const conn = getConn();
     // Temporarily drop the trigger so we can create a table WITHOUT RLS,
     // simulating a pre-v35 row.
@@ -189,7 +196,7 @@ describeE2E('migration v35: auto_rls_event_trigger', () => {
     }
   });
 
-  test('backfill respects GBRAIN:RLS_EXEMPT comment (matches doctor regex)', async () => {
+  test("backfill respects GBRAIN:RLS_EXEMPT comment (matches doctor regex)", async () => {
     const conn = getConn();
     await conn`DROP EVENT TRIGGER IF EXISTS auto_rls_on_create_table`;
     try {
@@ -216,7 +223,7 @@ describeE2E('migration v35: auto_rls_event_trigger', () => {
     }
   });
 
-  test('backfill quotes mixed-case identifiers safely (%I.%I)', async () => {
+  test("backfill quotes mixed-case identifiers safely (%I.%I)", async () => {
     const conn = getConn();
     await conn`DROP EVENT TRIGGER IF EXISTS auto_rls_on_create_table`;
     try {
@@ -245,7 +252,7 @@ describeE2E('migration v35: auto_rls_event_trigger', () => {
     }
   });
 
-  test('regression guard: trigger function body does NOT contain EXCEPTION WHEN OTHERS', async () => {
+  test("regression guard: trigger function body does NOT contain EXCEPTION WHEN OTHERS", async () => {
     // Codex correctly identified that wrapping the per-table EXECUTE in
     // BEGIN…EXCEPTION WHEN OTHERS… would convert a transactional rollback
     // (loud) into a silent permissive default (quiet). Pin that by reading
@@ -256,6 +263,6 @@ describeE2E('migration v35: auto_rls_event_trigger', () => {
     `;
     expect(rows.length).toBe(1);
     const body = rows[0].prosrc as string;
-    expect(body.toUpperCase()).not.toContain('EXCEPTION WHEN OTHERS');
+    expect(body.toUpperCase()).not.toContain("EXCEPTION WHEN OTHERS");
   });
 });

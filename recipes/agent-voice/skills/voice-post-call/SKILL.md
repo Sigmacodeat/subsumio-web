@@ -20,7 +20,7 @@ writes_to:
 
 > **Convention:** see [conventions/quality.md](../conventions/quality.md) for citation rules + back-link enforcement.
 >
-> **Convention:** see [_brain-filing-rules.md](../_brain-filing-rules.md) for filing decision protocol.
+> **Convention:** see [\_brain-filing-rules.md](../_brain-filing-rules.md) for filing decision protocol.
 
 ## Iron Law
 
@@ -81,17 +81,19 @@ created: 2026-05-17
 > Brief 3-5 sentence summary of what was discussed and any decisions made.
 
 ## Summary
+
 [Agent-authored 3-5 sentence summary covering topics, decisions, action items.]
 
 ## Transcript
 
 > [Verbatim per-turn transcript with speaker labels and timestamps. Pure quote
-> — do not paraphrase. Block-quoted because the exact wording matters more
-> than a cleaned-up version.]
+> > — do not paraphrase. Block-quoted because the exact wording matters more
+> > than a cleaned-up version.]
 
 🔊 [Audio](file:///tmp/calls/2026-05-17-1029-venus.webm)
 
 ## Entities mentioned
+
 - [Person](people/<slug>.md)
 - [Company](companies/<slug>.md)
 
@@ -150,13 +152,14 @@ audio_url: "<file:// or signed URL>"
 > <Summary>
 
 ## Summary
+
 <body>
 
 ## Transcript
 
 > <verbatim>
 
-🔊 [Audio](<url>)
+🔊 [Audio](url)
 
 ## Timeline
 

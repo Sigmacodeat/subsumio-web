@@ -10,7 +10,7 @@
  *   gbrain eval prune --older-than 1h --dry-run
  */
 
-import type { BrainEngine } from '../core/engine.ts';
+import type { BrainEngine } from "../core/engine.ts";
 
 interface PruneOpts {
   help?: boolean;
@@ -39,11 +39,11 @@ function parseArgs(args: string[]): PruneOpts {
     const arg = args[i]!;
     const next = args[i + 1];
     switch (arg) {
-      case '--help':
-      case '-h':
+      case "--help":
+      case "-h":
         opts.help = true;
         break;
-      case '--older-than': {
+      case "--older-than": {
         if (!next) break;
         const ms = parseDurationToMs(next);
         if (ms === null) {
@@ -54,7 +54,7 @@ function parseArgs(args: string[]): PruneOpts {
         i++;
         break;
       }
-      case '--dry-run':
+      case "--dry-run":
         opts.dryRun = true;
         break;
     }
@@ -87,7 +87,7 @@ export async function runEvalPrune(engine: BrainEngine, args: string[]): Promise
     return;
   }
   if (!opts.olderThanMs) {
-    console.error('Error: --older-than is required\n');
+    console.error("Error: --older-than is required\n");
     printHelp();
     process.exit(1);
   }
@@ -102,10 +102,12 @@ export async function runEvalPrune(engine: BrainEngine, args: string[]): Promise
       since: new Date(0),
       limit: 100_000,
     });
-    const wouldDelete = rows.filter(r => new Date(r.created_at) < cutoff).length;
-    console.log(`[dry-run] would delete ${wouldDelete} row(s) created before ${cutoff.toISOString()}`);
+    const wouldDelete = rows.filter((r) => new Date(r.created_at) < cutoff).length;
+    console.log(
+      `[dry-run] would delete ${wouldDelete} row(s) created before ${cutoff.toISOString()}`
+    );
     if (rows.length === 100_000) {
-      console.log('[dry-run] (count may be undercounted — the scan hit the 100k row limit)');
+      console.log("[dry-run] (count may be undercounted — the scan hit the 100k row limit)");
     }
     return;
   }

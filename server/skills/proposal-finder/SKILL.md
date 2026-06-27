@@ -35,6 +35,7 @@ mutating: false
 ## Contract
 
 This skill guarantees:
+
 1. Matches are ranked relevant past projects/proposals/deliverables with sources.
 2. Each match states what is reusable and what was learned.
 3. Gaps are flagged (e.g. no post-mortem, confidential client).
@@ -55,7 +56,7 @@ project's learnings (→ project-retro) or draft a new scope (→ engagement-sco
 ## Output Format
 
 ```
-## Reuse Search — "[opportunity]" 
+## Reuse Search — "[opportunity]"
 
 ### Matches (ranked)
 1. [Project/Proposal] ([year]) — reusable: [assets] — learning: [...] (source)
@@ -72,5 +73,6 @@ project's learnings (→ project-retro) or draft a new scope (→ engagement-sco
 - ❌ Claiming fit; rank relevance, let the human decide.
 
 ## Error Handling
+
 - No matches → say so plainly; suggest adjacent areas searched.
 - Sparse memory → state coverage; recommend importing the archive.

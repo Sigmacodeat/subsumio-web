@@ -25,14 +25,14 @@
  * PGLite in-memory — no DATABASE_URL required. Canonical R3+R4 pattern.
  */
 
-import { describe, test, expect, beforeAll, afterAll, beforeEach } from 'bun:test';
-import { tmpdir } from 'node:os';
-import { mkdtempSync, rmSync, existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { join } from 'node:path';
-import { PGLiteEngine } from '../../src/core/pglite-engine.ts';
-import { resetPgliteState } from '../helpers/reset-pglite.ts';
-import { validateSourceId } from '../../src/core/utils.ts';
-import { extractTakesFromDb } from '../../src/core/cycle/extract-takes.ts';
+import { describe, test, expect, beforeAll, afterAll, beforeEach } from "bun:test";
+import { tmpdir } from "node:os";
+import { mkdtempSync, rmSync, existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { join } from "node:path";
+import { PGLiteEngine } from "../../src/core/pglite-engine.ts";
+import { resetPgliteState } from "../helpers/reset-pglite.ts";
+import { validateSourceId } from "../../src/core/utils.ts";
+import { extractTakesFromDb } from "../../src/core/cycle/extract-takes.ts";
 
 let engine: PGLiteEngine;
 
@@ -52,53 +52,73 @@ beforeEach(async () => {
   await engine.executeRaw(
     `INSERT INTO sources (id, name, config)
        VALUES ('media-corpus', 'media-corpus', '{}'::jsonb)
-       ON CONFLICT (id) DO NOTHING`,
+       ON CONFLICT (id) DO NOTHING`
   );
   // Overlapping-slug seed.
-  await engine.putPage('people/alice', {
-    type: 'person', title: 'Alice (default)',
-    compiled_truth: 'Default-source alice page.',
-  }, { sourceId: 'default' });
-  await engine.putPage('people/alice', {
-    type: 'person', title: 'Alice (media-corpus)',
-    compiled_truth: 'Media-corpus alice page.',
-  }, { sourceId: 'media-corpus' });
+  await engine.putPage(
+    "people/alice",
+    {
+      type: "person",
+      title: "Alice (default)",
+      compiled_truth: "Default-source alice page.",
+    },
+    { sourceId: "default" }
+  );
+  await engine.putPage(
+    "people/alice",
+    {
+      type: "person",
+      title: "Alice (media-corpus)",
+      compiled_truth: "Media-corpus alice page.",
+    },
+    { sourceId: "media-corpus" }
+  );
   // Distinct slugs per source.
-  await engine.putPage('concepts/widget', {
-    type: 'concept', title: 'Widget',
-    compiled_truth: 'Default-source-only widget.',
-  }, { sourceId: 'default' });
-  await engine.putPage('media/x/post-123', {
-    type: 'media', title: 'Post 123',
-    compiled_truth: 'Media-corpus-only post.',
-  }, { sourceId: 'media-corpus' });
+  await engine.putPage(
+    "concepts/widget",
+    {
+      type: "concept",
+      title: "Widget",
+      compiled_truth: "Default-source-only widget.",
+    },
+    { sourceId: "default" }
+  );
+  await engine.putPage(
+    "media/x/post-123",
+    {
+      type: "media",
+      title: "Post 123",
+      compiled_truth: "Media-corpus-only post.",
+    },
+    { sourceId: "media-corpus" }
+  );
 });
 
-describe('multi-source bug class', () => {
-  test('listAllPageRefs returns one row per (slug, source_id), ordered (F11)', async () => {
+describe("multi-source bug class", () => {
+  test("listAllPageRefs returns one row per (slug, source_id), ordered (F11)", async () => {
     const refs = await engine.listAllPageRefs();
     // 4 rows: alice@default, alice@media-corpus, widget@default, post-123@media-corpus
     expect(refs.length).toBe(4);
     // Sorted by (source_id, slug)
-    const ordered = refs.map(r => `${r.source_id}::${r.slug}`);
+    const ordered = refs.map((r) => `${r.source_id}::${r.slug}`);
     expect(ordered).toEqual([
-      'default::concepts/widget',
-      'default::people/alice',
-      'media-corpus::media/x/post-123',
-      'media-corpus::people/alice',
+      "default::concepts/widget",
+      "default::people/alice",
+      "media-corpus::media/x/post-123",
+      "media-corpus::people/alice",
     ]);
   });
 
-  test('getPage with sourceId picks the right (source, slug) row', async () => {
-    const aliceDefault = await engine.getPage('people/alice', { sourceId: 'default' });
-    const aliceMedia = await engine.getPage('people/alice', { sourceId: 'media-corpus' });
-    expect(aliceDefault?.title).toBe('Alice (default)');
-    expect(aliceMedia?.title).toBe('Alice (media-corpus)');
-    expect(aliceDefault?.source_id).toBe('default');
-    expect(aliceMedia?.source_id).toBe('media-corpus');
+  test("getPage with sourceId picks the right (source, slug) row", async () => {
+    const aliceDefault = await engine.getPage("people/alice", { sourceId: "default" });
+    const aliceMedia = await engine.getPage("people/alice", { sourceId: "media-corpus" });
+    expect(aliceDefault?.title).toBe("Alice (default)");
+    expect(aliceMedia?.title).toBe("Alice (media-corpus)");
+    expect(aliceDefault?.source_id).toBe("default");
+    expect(aliceMedia?.source_id).toBe("media-corpus");
   });
 
-  test('extract-takes processes both alice pages independently', async () => {
+  test("extract-takes processes both alice pages independently", async () => {
     // Re-seed with takes fences so extract-takes has something to find.
     // Fence markers come from src/core/takes-fence.ts (`<!--- gbrain:takes:begin -->`).
     const TAKES_BODY = `<!--- gbrain:takes:begin -->
@@ -106,14 +126,24 @@ describe('multi-source bug class', () => {
 | --- | --- | --- | --- | --- | --- | --- |
 | 1 | Alice founded the thing | fact | garry | 0.9 | 2024-01-01 |  |
 <!--- gbrain:takes:end -->`;
-    await engine.putPage('people/alice', {
-      type: 'person', title: 'Alice (default)',
-      compiled_truth: 'Default alice.\n' + TAKES_BODY,
-    }, { sourceId: 'default' });
-    await engine.putPage('people/alice', {
-      type: 'person', title: 'Alice (media-corpus)',
-      compiled_truth: 'Media alice.\n' + TAKES_BODY,
-    }, { sourceId: 'media-corpus' });
+    await engine.putPage(
+      "people/alice",
+      {
+        type: "person",
+        title: "Alice (default)",
+        compiled_truth: "Default alice.\n" + TAKES_BODY,
+      },
+      { sourceId: "default" }
+    );
+    await engine.putPage(
+      "people/alice",
+      {
+        type: "person",
+        title: "Alice (media-corpus)",
+        compiled_truth: "Media alice.\n" + TAKES_BODY,
+      },
+      { sourceId: "media-corpus" }
+    );
 
     const result = await extractTakesFromDb(engine, {});
     // Pre-fix: only one of the two alice rows had takes extracted because
@@ -123,39 +153,39 @@ describe('multi-source bug class', () => {
     expect(result.takesUpserted).toBe(2);
   });
 
-  test('listPages filters correctly with PageFilters.sourceId', async () => {
-    const onlyDefault = await engine.listPages({ sourceId: 'default', limit: 100 });
-    const onlyMedia = await engine.listPages({ sourceId: 'media-corpus', limit: 100 });
+  test("listPages filters correctly with PageFilters.sourceId", async () => {
+    const onlyDefault = await engine.listPages({ sourceId: "default", limit: 100 });
+    const onlyMedia = await engine.listPages({ sourceId: "media-corpus", limit: 100 });
     expect(onlyDefault.length).toBe(2);
     expect(onlyMedia.length).toBe(2);
-    for (const p of onlyDefault) expect(p.source_id).toBe('default');
-    for (const p of onlyMedia) expect(p.source_id).toBe('media-corpus');
+    for (const p of onlyDefault) expect(p.source_id).toBe("default");
+    for (const p of onlyMedia) expect(p.source_id).toBe("media-corpus");
   });
 
-  test('addLinksBatch with from/to_source_id targets the right rows (F4)', async () => {
+  test("addLinksBatch with from/to_source_id targets the right rows (F4)", async () => {
     // Link alice@media-corpus → post-123@media-corpus (in-source link).
     const inserted = await engine.addLinksBatch([
       {
-        from_slug: 'people/alice',
-        to_slug: 'media/x/post-123',
-        link_type: 'mentions',
-        link_source: 'markdown',
-        from_source_id: 'media-corpus',
-        to_source_id: 'media-corpus',
+        from_slug: "people/alice",
+        to_slug: "media/x/post-123",
+        link_type: "mentions",
+        link_source: "markdown",
+        from_source_id: "media-corpus",
+        to_source_id: "media-corpus",
       },
     ]);
     expect(inserted).toBe(1);
 
-    const links = await engine.getLinks('people/alice', { sourceId: 'media-corpus' });
+    const links = await engine.getLinks("people/alice", { sourceId: "media-corpus" });
     expect(links.length).toBe(1);
-    expect(links[0].to_slug).toBe('media/x/post-123');
+    expect(links[0].to_slug).toBe("media/x/post-123");
 
     // alice@default should have NO links — they're scoped to media-corpus.
-    const defaultLinks = await engine.getLinks('people/alice', { sourceId: 'default' });
+    const defaultLinks = await engine.getLinks("people/alice", { sourceId: "default" });
     expect(defaultLinks.length).toBe(0);
   });
 
-  test('validateSourceId rejects path traversal (F6)', () => {
+  test("validateSourceId rejects path traversal (F6)", () => {
     // v0.38 (codex P1-D + eng E2): regex TIGHTENED from permissive
     // ^[a-z0-9_-]+$ to strict kebab ^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$.
     // Underscores no longer allowed at the path-safety gate (matches
@@ -164,56 +194,56 @@ describe('multi-source bug class', () => {
     // rejected set. Path-traversal rejection unchanged.
     //
     // Allowed (strict kebab):
-    expect(() => validateSourceId('default')).not.toThrow();
-    expect(() => validateSourceId('media-corpus')).not.toThrow();
-    expect(() => validateSourceId('jarvis-memory')).not.toThrow();
-    expect(() => validateSourceId('abc123')).not.toThrow();
-    expect(() => validateSourceId('a')).not.toThrow();
+    expect(() => validateSourceId("default")).not.toThrow();
+    expect(() => validateSourceId("media-corpus")).not.toThrow();
+    expect(() => validateSourceId("jarvis-memory")).not.toThrow();
+    expect(() => validateSourceId("abc123")).not.toThrow();
+    expect(() => validateSourceId("a")).not.toThrow();
     // Rejected — path traversal / unsafe chars:
-    expect(() => validateSourceId('..')).toThrow();
-    expect(() => validateSourceId('../etc')).toThrow();
-    expect(() => validateSourceId('foo/bar')).toThrow();
-    expect(() => validateSourceId('foo bar')).toThrow();
-    expect(() => validateSourceId('Default')).toThrow(); // uppercase
-    expect(() => validateSourceId('.hidden')).toThrow();
-    expect(() => validateSourceId('')).toThrow();
+    expect(() => validateSourceId("..")).toThrow();
+    expect(() => validateSourceId("../etc")).toThrow();
+    expect(() => validateSourceId("foo/bar")).toThrow();
+    expect(() => validateSourceId("foo bar")).toThrow();
+    expect(() => validateSourceId("Default")).toThrow(); // uppercase
+    expect(() => validateSourceId(".hidden")).toThrow();
+    expect(() => validateSourceId("")).toThrow();
     // Rejected — strict regex additions (v0.38):
-    expect(() => validateSourceId('jarvis_memory')).toThrow(); // underscores
-    expect(() => validateSourceId('snake_case')).toThrow();
-    expect(() => validateSourceId('-leading')).toThrow();      // edge hyphen
-    expect(() => validateSourceId('trailing-')).toThrow();
-    const tooLong = 'a' + 'b'.repeat(31) + 'c'; // 33 chars
+    expect(() => validateSourceId("jarvis_memory")).toThrow(); // underscores
+    expect(() => validateSourceId("snake_case")).toThrow();
+    expect(() => validateSourceId("-leading")).toThrow(); // edge hyphen
+    expect(() => validateSourceId("trailing-")).toThrow();
+    const tooLong = "a" + "b".repeat(31) + "c"; // 33 chars
     expect(() => validateSourceId(tooLong)).toThrow();
   });
 
-  test('reverse-write disk layout uses .sources/<id>/<slug>.md for non-default (F6)', () => {
+  test("reverse-write disk layout uses .sources/<id>/<slug>.md for non-default (F6)", () => {
     // Pure-function test of the disk-path computation embedded in
     // reverseWriteRefs (patterns.ts + synthesize.ts). We don't drive the
     // full dream cycle here — that requires LLM + subagent infra. Instead
     // we replicate the path computation and verify the file layout matches
     // what the production code would write.
-    const tmpDir = mkdtempSync(join(tmpdir(), 'gbrain-multi-source-disk-'));
+    const tmpDir = mkdtempSync(join(tmpdir(), "gbrain-multi-source-disk-"));
     try {
       const computePath = (source_id: string, slug: string): string =>
-        source_id === 'default'
+        source_id === "default"
           ? join(tmpDir, `${slug}.md`)
-          : join(tmpDir, '.sources', source_id, `${slug}.md`);
+          : join(tmpDir, ".sources", source_id, `${slug}.md`);
 
-      const defaultPath = computePath('default', 'people/alice');
-      const mediaPath = computePath('media-corpus', 'people/alice');
+      const defaultPath = computePath("default", "people/alice");
+      const mediaPath = computePath("media-corpus", "people/alice");
 
       // The two paths must NOT collide.
       expect(defaultPath).not.toBe(mediaPath);
-      expect(mediaPath).toContain('.sources/media-corpus/');
+      expect(mediaPath).toContain(".sources/media-corpus/");
 
       // Actually write to both paths to prove disk separation.
-      mkdirSync(join(tmpDir, 'people'), { recursive: true });
-      mkdirSync(join(tmpDir, '.sources', 'media-corpus', 'people'), { recursive: true });
-      writeFileSync(defaultPath, 'default alice');
-      writeFileSync(mediaPath, 'media-corpus alice');
+      mkdirSync(join(tmpDir, "people"), { recursive: true });
+      mkdirSync(join(tmpDir, ".sources", "media-corpus", "people"), { recursive: true });
+      writeFileSync(defaultPath, "default alice");
+      writeFileSync(mediaPath, "media-corpus alice");
 
-      expect(readFileSync(defaultPath, 'utf8')).toBe('default alice');
-      expect(readFileSync(mediaPath, 'utf8')).toBe('media-corpus alice');
+      expect(readFileSync(defaultPath, "utf8")).toBe("default alice");
+      expect(readFileSync(mediaPath, "utf8")).toBe("media-corpus alice");
       expect(existsSync(defaultPath)).toBe(true);
       expect(existsSync(mediaPath)).toBe(true);
     } finally {

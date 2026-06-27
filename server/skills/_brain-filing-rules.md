@@ -14,14 +14,14 @@ not the source, not the skill that's running.
 
 ## Common Misfiling Patterns -- DO NOT DO THESE
 
-| Wrong | Right | Why |
-|-------|-------|-----|
-| Analysis of a topic -> `sources/` | -> appropriate subject directory | sources/ is for raw data only |
-| Article about a person -> `sources/` | -> `people/` | Primary subject is a person |
-| Meeting-derived company info -> `meetings/` only | -> ALSO update `companies/` | Entity propagation is mandatory |
-| Research about a company -> `sources/` | -> `companies/` | Primary subject is a company |
-| Reusable framework/thesis -> `sources/` | -> `concepts/` | It's a mental model |
-| Tweet thread about policy -> `media/` | -> `civic/` or `concepts/` | media/ is for content ops |
+| Wrong                                            | Right                            | Why                             |
+| ------------------------------------------------ | -------------------------------- | ------------------------------- |
+| Analysis of a topic -> `sources/`                | -> appropriate subject directory | sources/ is for raw data only   |
+| Article about a person -> `sources/`             | -> `people/`                     | Primary subject is a person     |
+| Meeting-derived company info -> `meetings/` only | -> ALSO update `companies/`      | Entity propagation is mandatory |
+| Research about a company -> `sources/`           | -> `companies/`                  | Primary subject is a company    |
+| Reusable framework/thesis -> `sources/`          | -> `concepts/`                   | It's a mental model             |
+| Tweet thread about policy -> `media/`            | -> `civic/` or `concepts/`       | media/ is for content ops       |
 
 ## Sanctioned exception: synthesis output is sui generis
 
@@ -44,6 +44,7 @@ one-of-one, sui generis to a single source.
 ## What `sources/` Is Actually For
 
 `sources/` is ONLY for:
+
 - Bulk data imports (API dumps, CSV exports, snapshots)
 - Raw data that feeds multiple brain pages (e.g., a guest export, contact sync)
 - Periodic captures (quarterly snapshots, sync exports)
@@ -54,6 +55,7 @@ issue), it does NOT go in sources/. Period.
 ## Notability Gate
 
 Not everything deserves a brain page. Before creating a new entity page:
+
 - **People:** Will you interact with them again? Are they relevant to your work?
 - **Companies:** Are they relevant to your work or interests?
 - **Concepts:** Is this a reusable mental model worth referencing later?
@@ -67,6 +69,7 @@ FROM that entity's page TO the page mentioning them. This is bidirectional:
 the new page links to the entity, AND the entity's page links back.
 
 Format for back-links (append to Timeline or See Also):
+
 ```
 - **YYYY-MM-DD** | Referenced in [page title](path/to/page.md) -- brief context
 ```
@@ -78,11 +81,13 @@ An unlinked mention is a broken brain. The graph is the intelligence.
 Every fact written to a brain page must carry an inline `[Source: ...]` citation.
 
 Three formats:
+
 - **Direct attribution:** `[Source: User, {context}, YYYY-MM-DD]`
 - **API/external:** `[Source: {provider}, YYYY-MM-DD]` or `[Source: {publication}, {URL}]`
 - **Synthesis:** `[Source: compiled from {list of sources}]`
 
 Source precedence (highest to lowest):
+
 1. User's direct statements (highest authority)
 2. Compiled truth (pre-existing brain synthesis)
 3. Timeline entries (raw evidence)
@@ -96,6 +101,7 @@ silently pick one.
 Every ingested item should have its raw source preserved for provenance.
 
 **Size routing (automatic via `gbrain files upload-raw`):**
+
 - **< 100 MB text/PDF**: stays in the brain repo (git-tracked) in a `.raw/`
   sidecar directory alongside the brain page
 - **>= 100 MB OR media files** (video, audio, images): uploaded to cloud
@@ -104,12 +110,15 @@ Every ingested item should have its raw source preserved for provenance.
   with retry) for reliability.
 
 **Upload command:**
+
 ```bash
 gbrain files upload-raw <file> --page <page-slug> --type <type>
 ```
+
 Returns JSON: `{storage: "git"}` for small files, `{storage: "supabase", storagePath, reference}` for cloud.
 
 **The `.redirect.yaml` pointer format:**
+
 ```yaml
 target: supabase://brain-files/page-slug/filename.mp4
 bucket: brain-files
@@ -123,6 +132,7 @@ type: transcript
 ```
 
 **Accessing stored files:**
+
 ```bash
 gbrain files signed-url <storage-path>    # Generate 1-hour signed URL
 gbrain files restore <dir>                # Download back to local
@@ -138,15 +148,16 @@ The `synthesize` and `patterns` phases of `gbrain dream` write to a
 `dream_synthesize_paths.globs` array. Editing that JSON is the ONLY way
 to add a new directory the synthesis subagent may write to:
 
-| Output type | Slug pattern | What goes here |
-|-------------|--------------|----------------|
-| Reflection | `wiki/personal/reflections/YYYY-MM-DD-<topic>-<hash[:6]>` | Self-knowledge, emotional processing, pattern recognition. Verbatim quotes from the user, with analysis. |
-| Original idea | `wiki/originals/ideas/YYYY-MM-DD-<idea>-<hash[:6]>` | New frames, theses, mental models, "conceptive ideologist" outputs. Capture the user's exact phrasing — that's the artifact. |
-| People enrichment | `wiki/people/<existing-slug>` | Timeline entries appended to existing people pages from session mentions. Stub pages for new substantive people. |
-| Pattern | `wiki/personal/patterns/<theme>` | Cross-session theme detected across ≥3 reflections. Highest-leverage output: a pattern can span 25 years if reflections reference dated content. |
-| Cycle summary | `dream-cycle-summaries/YYYY-MM-DD` | Index of every page produced by one dream cycle. Auto-written deterministically by the orchestrator. |
+| Output type       | Slug pattern                                              | What goes here                                                                                                                                   |
+| ----------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Reflection        | `wiki/personal/reflections/YYYY-MM-DD-<topic>-<hash[:6]>` | Self-knowledge, emotional processing, pattern recognition. Verbatim quotes from the user, with analysis.                                         |
+| Original idea     | `wiki/originals/ideas/YYYY-MM-DD-<idea>-<hash[:6]>`       | New frames, theses, mental models, "conceptive ideologist" outputs. Capture the user's exact phrasing — that's the artifact.                     |
+| People enrichment | `wiki/people/<existing-slug>`                             | Timeline entries appended to existing people pages from session mentions. Stub pages for new substantive people.                                 |
+| Pattern           | `wiki/personal/patterns/<theme>`                          | Cross-session theme detected across ≥3 reflections. Highest-leverage output: a pattern can span 25 years if reflections reference dated content. |
+| Cycle summary     | `dream-cycle-summaries/YYYY-MM-DD`                        | Index of every page produced by one dream cycle. Auto-written deterministically by the orchestrator.                                             |
 
 **Iron Law for synthesize output:**
+
 1. Quote the user verbatim. Do not paraphrase memorable phrasings.
 2. Cross-reference compulsively: every new page MUST link to existing brain content.
 3. Slug discipline: lowercase alphanumeric and hyphens only, slash-separated. NO underscores, NO file extensions.
@@ -178,6 +189,7 @@ examples lives in `docs/takes-vs-facts.md`.
    query.
 
 **Holder format (enforced as a parser warning in v0.32, error in v0.33+):**
+
 - `world` (consensus fact, no individual claimant)
 - `brain` (AI-inferred, holder genuinely ambiguous)
 - `people/<slug>` (individual's stated belief)

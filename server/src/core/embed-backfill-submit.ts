@@ -33,19 +33,16 @@
  * Returns a tagged-union status so callers can render the right user signal
  * (`gbrain sources status`, webhook response body, sync completion banner).
  */
-import type { BrainEngine } from './engine.ts';
-import { MinionQueue } from './minions/queue.ts';
+import type { BrainEngine } from "./engine.ts";
+import { MinionQueue } from "./minions/queue.ts";
 
-export const COOLDOWN_CONFIG_KEY = 'embed.backfill_cooldown_min';
-export const SPEND_CAP_CONFIG_KEY = 'embed.backfill_max_usd_per_source_24h';
+export const COOLDOWN_CONFIG_KEY = "embed.backfill_cooldown_min";
+export const SPEND_CAP_CONFIG_KEY = "embed.backfill_max_usd_per_source_24h";
 
 const DEFAULT_COOLDOWN_MIN = 10;
 const DEFAULT_SPEND_CAP_USD = 25;
 
-export type SubmitEmbedBackfillStatus =
-  | 'submitted'
-  | 'cooldown'
-  | 'spend_capped';
+export type SubmitEmbedBackfillStatus = "submitted" | "cooldown" | "spend_capped";
 
 export interface SubmitEmbedBackfillResult {
   status: SubmitEmbedBackfillStatus;
@@ -89,10 +86,7 @@ export interface SubmitEmbedBackfillOpts {
  *
  * A precise rolling-spend tracker is filed as a v0.41 TODO.
  */
-async function defaultSpend24hForSource(
-  engine: BrainEngine,
-  sourceId: string,
-): Promise<number> {
+async function defaultSpend24hForSource(engine: BrainEngine, sourceId: string): Promise<number> {
   // Conservative proxy: count jobs that completed (or are running) in the
   // 24h window. Each is treated as worth `DEFAULT_SPEND_CAP_USD / 25` ($1)
   // toward the cap — i.e. 25 jobs in 24h saturate the default cap.
@@ -103,7 +97,7 @@ async function defaultSpend24hForSource(
         AND data->>'sourceId' = $1
         AND status IN ('active', 'completed')
         AND created_at > NOW() - INTERVAL '24 hours'`,
-    [sourceId],
+    [sourceId]
   );
   const jobCount = rows[0]?.n ?? 0;
   return jobCount * 1; // $1 / job placeholder; configurable in a later wave.
@@ -113,11 +107,7 @@ async function defaultSpend24hForSource(
  * Look up an integer-valued config key with sane defaults.
  * Returns `def` on missing / NaN / non-positive.
  */
-async function readIntConfig(
-  engine: BrainEngine,
-  key: string,
-  def: number,
-): Promise<number> {
+async function readIntConfig(engine: BrainEngine, key: string, def: number): Promise<number> {
   const raw = await engine.getConfig(key);
   if (raw === null || raw === undefined) return def;
   const n = Number(raw);
@@ -127,7 +117,7 @@ async function readIntConfig(
 export async function submitEmbedBackfill(
   engine: BrainEngine,
   sourceId: string,
-  opts: SubmitEmbedBackfillOpts,
+  opts: SubmitEmbedBackfillOpts
 ): Promise<SubmitEmbedBackfillResult> {
   const now = opts.nowMs ?? Date.now();
   const cooldownMin =
@@ -150,13 +140,13 @@ export async function submitEmbedBackfill(
       WHERE name = 'embed-backfill'
         AND data->>'sourceId' = $1
       ORDER BY id DESC LIMIT 1`,
-    [sourceId],
+    [sourceId]
   );
 
   if (lastJob[0]) {
-    if (lastJob[0].status === 'active' || lastJob[0].status === 'waiting') {
+    if (lastJob[0].status === "active" || lastJob[0].status === "waiting") {
       // Active or waiting: no cooldown-remaining number (would be misleading).
-      return { status: 'cooldown' };
+      return { status: "cooldown" };
     }
     if (lastJob[0].finished_at) {
       const finishedMs = new Date(lastJob[0].finished_at).getTime();
@@ -164,7 +154,7 @@ export async function submitEmbedBackfill(
       const cooldownMs = cooldownMin * 60 * 1000;
       if (ageMs < cooldownMs) {
         return {
-          status: 'cooldown',
+          status: "cooldown",
           cooldownRemainingSeconds: Math.ceil((cooldownMs - ageMs) / 1000),
         };
       }
@@ -176,7 +166,7 @@ export async function submitEmbedBackfill(
   const spend24h = await spend24hFn(engine, sourceId);
   if (spend24h >= spendCap) {
     return {
-      status: 'spend_capped',
+      status: "spend_capped",
       spend24hUsd: spend24h,
       spendCapUsd: spendCap,
     };
@@ -185,16 +175,16 @@ export async function submitEmbedBackfill(
   // ── Submission ────────────────────────────────────────────────
   const queue = new MinionQueue(engine);
   const job = await queue.add(
-    'embed-backfill',
+    "embed-backfill",
     { sourceId, batchSize: 500, reason: opts.reason },
     {
       priority: opts.priority ?? 5,
       idempotency_key: `embed-backfill:${sourceId}:${bucketize(now, 5 * 60_000)}`,
       maxWaiting: 1,
-    },
+    }
   );
 
-  return { status: 'submitted', jobId: job.id };
+  return { status: "submitted", jobId: job.id };
 }
 
 /** Round timestamp down to the nearest `bucketMs` boundary. */

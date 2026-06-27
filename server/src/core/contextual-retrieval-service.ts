@@ -39,10 +39,10 @@
  * command) pass no hooks and rely on the gateway's own rate-limit retry.
  */
 
-import { createHash } from 'crypto';
-import * as fs from 'node:fs';
-import { embedBatch } from './embedding.ts';
-import { resolveContextualRetrievalMode } from './contextual-retrieval-resolver.ts';
+import { createHash } from "crypto";
+import * as fs from "node:fs";
+import { embedBatch } from "./embedding.ts";
+import { resolveContextualRetrievalMode } from "./contextual-retrieval-resolver.ts";
 import {
   buildContextualPrefix,
   extractFirstTwoSentences,
@@ -50,19 +50,16 @@ import {
   modeRequiresWrapper,
   sanitizeTitle,
   wrapChunkForEmbedding,
-} from './embedding-context.ts';
+} from "./embedding-context.ts";
 import {
   generatePerChunkSynopsis,
   SYNOPSIS_PROMPT_VERSION,
   type GeneratePerChunkSynopsisResult,
-} from './page-summary.ts';
-import {
-  logSynopsisFailure,
-  type SynopsisFailureKind,
-} from './audit-synopsis.ts';
-import type { BrainEngine } from './engine.ts';
-import type { ChunkInput, CRMode, Page } from './types.ts';
-import type { SourceRow } from './sources-ops.ts';
+} from "./page-summary.ts";
+import { logSynopsisFailure, type SynopsisFailureKind } from "./audit-synopsis.ts";
+import type { BrainEngine } from "./engine.ts";
+import type { ChunkInput, CRMode, Page } from "./types.ts";
+import type { SourceRow } from "./sources-ops.ts";
 
 /**
  * v3 = chunks embed with optional contextual retrieval wrapper. The
@@ -84,10 +81,10 @@ function getEmbeddingModelTag(): string {
   // gateway hasn't been configured (test paths).
   try {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { getEmbeddingModelName } = require('./ai/gateway.ts');
-    return String(getEmbeddingModelName() ?? 'unknown');
+    const { getEmbeddingModelName } = require("./ai/gateway.ts");
+    return String(getEmbeddingModelName() ?? "unknown");
   } catch {
-    return 'unknown';
+    return "unknown";
   }
 }
 
@@ -100,21 +97,18 @@ function getEmbeddingModelTag(): string {
  * Pure function — `embedding_dimensions` and `embedding_column` stay in
  * the existing KNOBS_HASH_VERSION space per A6 in the eng-review pass.
  */
-export function computeCorpusGeneration(args: {
-  crMode: CRMode;
-  haikuModel: string;
-}): string {
-  return createHash('sha256')
+export function computeCorpusGeneration(args: { crMode: CRMode; haikuModel: string }): string {
+  return createHash("sha256")
     .update(args.crMode)
-    .update('|')
+    .update("|")
     .update(String(SYNOPSIS_PROMPT_VERSION))
-    .update('|')
+    .update("|")
     .update(args.haikuModel)
-    .update('|')
+    .update("|")
     .update(String(TITLE_WRAPPER_VERSION))
-    .update('|')
+    .update("|")
     .update(getEmbeddingModelTag())
-    .digest('hex')
+    .digest("hex")
     .slice(0, 16);
 }
 
@@ -124,7 +118,7 @@ export function computeCorpusGeneration(args: {
  * content edit, frontmatter change, fallback chain different source).
  */
 export function computeSourceTextHash(sourceText: string): string {
-  return createHash('sha256').update(sourceText).digest('hex').slice(0, 16);
+  return createHash("sha256").update(sourceText).digest("hex").slice(0, 16);
 }
 
 /**
@@ -141,17 +135,17 @@ export function computeSourceTextHash(sourceText: string): string {
  */
 export type ReembedPageResult =
   | {
-      kind: 'success';
+      kind: "success";
       mode_applied: CRMode;
       chunks_embedded: number;
       corpus_generation: string;
     }
   | {
-      kind: 'skipped';
-      reason: 'mode_none' | 'no_chunks' | 'page_missing' | 'soft_deleted';
+      kind: "skipped";
+      reason: "mode_none" | "no_chunks" | "page_missing" | "soft_deleted";
     }
   | {
-      kind: 'page_fallback';
+      kind: "page_fallback";
       mode_attempted: CRMode;
       mode_applied: CRMode;
       chunks_embedded: number;
@@ -159,13 +153,13 @@ export type ReembedPageResult =
       fallback_kind: SynopsisFailureKind;
     }
   | {
-      kind: 'transient_error';
-      cause: SynopsisFailureKind | 'embed' | 'db';
+      kind: "transient_error";
+      cause: SynopsisFailureKind | "embed" | "db";
       detail: string;
     }
   | {
-      kind: 'permanent_error';
-      cause: SynopsisFailureKind | 'embed' | 'db';
+      kind: "permanent_error";
+      cause: SynopsisFailureKind | "embed" | "db";
       detail: string;
     };
 
@@ -200,22 +194,22 @@ export interface ReembedPageArgs {
   releaseSynopsisLease?: () => Promise<void>;
 }
 
-const DEFAULT_HAIKU_MODEL = 'anthropic:claude-haiku-4-5-20251001';
+const DEFAULT_HAIKU_MODEL = "anthropic:claude-haiku-4-5-20251001";
 
 /**
  * Re-embed one page through the active CR mode. Implements the D26 P0-2
  * two-phase build pattern.
  */
 export async function reembedPageWithContextualRetrieval(
-  args: ReembedPageArgs,
+  args: ReembedPageArgs
 ): Promise<ReembedPageResult> {
   // ── Load page + source + chunks ────────────────────────────────────
   const page = await args.engine.getPage(args.pageSlug, { sourceId: args.sourceId });
   if (!page) {
-    return { kind: 'skipped', reason: 'page_missing' };
+    return { kind: "skipped", reason: "page_missing" };
   }
   if (page.deleted_at != null) {
-    return { kind: 'skipped', reason: 'soft_deleted' };
+    return { kind: "skipped", reason: "soft_deleted" };
   }
 
   const source = await loadSourceRow(args.engine, args.sourceId);
@@ -235,14 +229,14 @@ export async function reembedPageWithContextualRetrieval(
   // 'none' mode skips wrapping entirely. Still stamp the column to record
   // the page is up-to-date relative to current global state — prevents
   // the reindex sweep from re-walking pages that are already aligned.
-  if (resolution.mode === 'none') {
+  if (resolution.mode === "none") {
     await args.engine.updatePageContextualRetrievalState(
       args.pageSlug,
       args.sourceId,
-      'none',
-      null,
+      "none",
+      null
     );
-    return { kind: 'skipped', reason: 'mode_none' };
+    return { kind: "skipped", reason: "mode_none" };
   }
 
   const chunks = await args.engine.getChunks(args.pageSlug, { sourceId: args.sourceId });
@@ -253,9 +247,12 @@ export async function reembedPageWithContextualRetrieval(
       args.pageSlug,
       args.sourceId,
       resolution.mode,
-      computeCorpusGeneration({ crMode: resolution.mode, haikuModel: args.haikuModel ?? DEFAULT_HAIKU_MODEL }),
+      computeCorpusGeneration({
+        crMode: resolution.mode,
+        haikuModel: args.haikuModel ?? DEFAULT_HAIKU_MODEL,
+      })
     );
-    return { kind: 'skipped', reason: 'no_chunks' };
+    return { kind: "skipped", reason: "no_chunks" };
   }
 
   // ── PHASE 1: in-memory build (no DB writes) ────────────────────────
@@ -278,7 +275,7 @@ export async function reembedPageWithContextualRetrieval(
       haikuModel,
     });
 
-    if (phase1.kind === 'success') {
+    if (phase1.kind === "success") {
       const corpus_generation = computeCorpusGeneration({
         crMode: attemptMode,
         haikuModel,
@@ -294,17 +291,17 @@ export async function reembedPageWithContextualRetrieval(
             args.pageSlug,
             args.sourceId,
             attemptMode,
-            corpus_generation,
+            corpus_generation
           );
         });
       } catch (err) {
         const detail = err instanceof Error ? err.message : String(err);
-        return { kind: 'transient_error', cause: 'db', detail };
+        return { kind: "transient_error", cause: "db", detail };
       }
 
       if (fallbackReason != null) {
         return {
-          kind: 'page_fallback',
+          kind: "page_fallback",
           mode_attempted: resolution.mode,
           mode_applied: attemptMode,
           chunks_embedded: phase1.embeddedChunks.length,
@@ -313,7 +310,7 @@ export async function reembedPageWithContextualRetrieval(
         };
       }
       return {
-        kind: 'success',
+        kind: "success",
         mode_applied: attemptMode,
         chunks_embedded: phase1.embeddedChunks.length,
         corpus_generation,
@@ -321,27 +318,27 @@ export async function reembedPageWithContextualRetrieval(
     }
 
     // PHASE 1 failed. Decide whether to fall back or surface.
-    if (phase1.kind === 'page_level_fallback_requested') {
-      if (attemptMode === 'title') {
+    if (phase1.kind === "page_level_fallback_requested") {
+      if (attemptMode === "title") {
         // Already at the lowest non-none tier; can't fall back further.
         // Stamp as 'none' and treat as permanent so doctor flags.
         return {
-          kind: 'permanent_error',
+          kind: "permanent_error",
           cause: phase1.cause,
-          detail: 'Even title-only tier failed; pages_summary call surfaced unrecoverable error.',
+          detail: "Even title-only tier failed; pages_summary call surfaced unrecoverable error.",
         };
       }
       // Restart PHASE 1 at the lower tier. fallbackReason captures the
       // original failure kind for the result envelope.
       fallbackReason = phase1.cause;
-      attemptMode = 'title';
+      attemptMode = "title";
       continue;
     }
 
     // Transient (rate_limit / timeout / network / provider_5xx) or auth
     // failure — caller decides retry policy.
     return {
-      kind: phase1.kind === 'transient' ? 'transient_error' : 'permanent_error',
+      kind: phase1.kind === "transient" ? "transient_error" : "permanent_error",
       cause: phase1.cause,
       detail: phase1.detail,
     };
@@ -351,21 +348,21 @@ export async function reembedPageWithContextualRetrieval(
 // ── Internal helpers ────────────────────────────────────────────────
 
 interface Phase1Success {
-  kind: 'success';
+  kind: "success";
   embeddedChunks: ChunkInput[];
 }
 interface Phase1FallbackRequest {
-  kind: 'page_level_fallback_requested';
+  kind: "page_level_fallback_requested";
   cause: SynopsisFailureKind;
 }
 interface Phase1Transient {
-  kind: 'transient';
-  cause: SynopsisFailureKind | 'embed';
+  kind: "transient";
+  cause: SynopsisFailureKind | "embed";
   detail: string;
 }
 interface Phase1Permanent {
-  kind: 'permanent';
-  cause: SynopsisFailureKind | 'embed';
+  kind: "permanent";
+  cause: SynopsisFailureKind | "embed";
   detail: string;
 }
 type Phase1Result = Phase1Success | Phase1FallbackRequest | Phase1Transient | Phase1Permanent;
@@ -384,7 +381,7 @@ async function tryBuildPhase1(opts: {
   // per-chunk with the chunk-specific Haiku synopsis.
   const safeTitle = sanitizeTitle(page.title);
 
-  if (attemptMode === 'title' || !modeRequiresHaiku(attemptMode)) {
+  if (attemptMode === "title" || !modeRequiresHaiku(attemptMode)) {
     // Title-only path. No Haiku calls; pure string concat.
     // Use compiled_truth first sentences as a free pseudo-summary when
     // the title tier wants slightly more context — but per D2 the
@@ -394,13 +391,13 @@ async function tryBuildPhase1(opts: {
     const wrappedTexts = chunks.map((c) =>
       modeRequiresWrapper(attemptMode)
         ? wrapChunkForEmbedding(c.chunk_text, prefix, c.chunk_source)
-        : c.chunk_text,
+        : c.chunk_text
     );
 
     try {
       const embeddings = await embedBatch(wrappedTexts, { abortSignal: args.abortSignal });
       return {
-        kind: 'success',
+        kind: "success",
         embeddedChunks: chunks.map((c, i) => ({
           ...c,
           chunk_text: c.chunk_text, // canonical, NOT the wrapped string (D20-T1)
@@ -424,7 +421,7 @@ async function tryBuildPhase1(opts: {
     const c = chunks[i];
 
     // Code chunks always bypass the wrapper (D20-T4) — pass through.
-    if (c.chunk_source === 'fenced_code') {
+    if (c.chunk_source === "fenced_code") {
       wrappedTexts.push(c.chunk_text);
       continue;
     }
@@ -458,11 +455,9 @@ async function tryBuildPhase1(opts: {
       }
     }
 
-    if (synopsisResult.kind === 'success') {
+    if (synopsisResult.kind === "success") {
       const prefix = buildContextualPrefix(safeTitle, synopsisResult.synopsis);
-      wrappedTexts.push(
-        wrapChunkForEmbedding(c.chunk_text, prefix, c.chunk_source),
-      );
+      wrappedTexts.push(wrapChunkForEmbedding(c.chunk_text, prefix, c.chunk_source));
       continue;
     }
 
@@ -473,23 +468,23 @@ async function tryBuildPhase1(opts: {
     //   source_missing → walked into fallback already; would be 'malformed'
     //     from generatePerChunkSynopsis if we ever propagated it here
     if (
-      synopsisResult.kind === 'refusal' ||
-      synopsisResult.kind === 'empty' ||
-      synopsisResult.kind === 'malformed'
+      synopsisResult.kind === "refusal" ||
+      synopsisResult.kind === "empty" ||
+      synopsisResult.kind === "malformed"
     ) {
-      return { kind: 'page_level_fallback_requested', cause: synopsisResult.kind };
+      return { kind: "page_level_fallback_requested", cause: synopsisResult.kind };
     }
-    if (synopsisResult.kind === 'auth_failure') {
+    if (synopsisResult.kind === "auth_failure") {
       return {
-        kind: 'permanent',
+        kind: "permanent",
         cause: synopsisResult.kind,
-        detail: synopsisResult.detail ?? 'auth failure',
+        detail: synopsisResult.detail ?? "auth failure",
       };
     }
     return {
-      kind: 'transient',
+      kind: "transient",
       cause: synopsisResult.kind,
-      detail: synopsisResult.detail ?? 'transient',
+      detail: synopsisResult.detail ?? "transient",
     };
   }
 
@@ -497,7 +492,7 @@ async function tryBuildPhase1(opts: {
   try {
     const embeddings = await embedBatch(wrappedTexts, { abortSignal: args.abortSignal });
     return {
-      kind: 'success',
+      kind: "success",
       embeddedChunks: chunks.map((c, i) => ({
         ...c,
         chunk_text: c.chunk_text, // canonical (D20-T1)
@@ -532,9 +527,9 @@ function readSourceTextWithFallback(page: Page, chunks: ChunkInput[]): string {
 
   // Step 2: chunk-concat (in-memory).
   return chunks
-    .filter((c) => c.chunk_source !== 'image_asset')
+    .filter((c) => c.chunk_source !== "image_asset")
     .map((c) => c.chunk_text)
-    .join('\n\n');
+    .join("\n\n");
 }
 
 async function loadSourceRow(engine: BrainEngine, sourceId: string): Promise<SourceRow> {
@@ -542,7 +537,7 @@ async function loadSourceRow(engine: BrainEngine, sourceId: string): Promise<Sou
     `SELECT id, name, local_path, last_commit, last_sync_at, config, created_at,
             contextual_retrieval_mode, trust_frontmatter_overrides
      FROM sources WHERE id = $1`,
-    [sourceId],
+    [sourceId]
   );
   if (rows.length === 0) {
     throw new Error(`Source not found: ${sourceId}`);
@@ -553,17 +548,17 @@ async function loadSourceRow(engine: BrainEngine, sourceId: string): Promise<Sou
 function classifyEmbedError(err: unknown, detail: string): Phase1Transient | Phase1Permanent {
   const e = err as { status?: number; code?: string; name?: string };
   if (e.status === 401 || e.status === 403) {
-    return { kind: 'permanent', cause: 'embed', detail };
+    return { kind: "permanent", cause: "embed", detail };
   }
   if (
     e.status === 429 ||
     (e.status != null && e.status >= 500 && e.status < 600) ||
-    e.name === 'AbortError' ||
+    e.name === "AbortError" ||
     /timeout|network|fetch/i.test(detail)
   ) {
-    return { kind: 'transient', cause: 'embed', detail };
+    return { kind: "transient", cause: "embed", detail };
   }
-  return { kind: 'transient', cause: 'embed', detail };
+  return { kind: "transient", cause: "embed", detail };
 }
 
 /**
@@ -581,9 +576,9 @@ export function expectedModeForPageSourceOnly(args: {
   globalMode: CRMode;
   killSwitchDisabled?: boolean;
 }): CRMode {
-  if (args.killSwitchDisabled) return 'none';
+  if (args.killSwitchDisabled) return "none";
   const sm = args.source.contextual_retrieval_mode;
-  if (sm === 'none' || sm === 'title' || sm === 'per_chunk_synopsis') {
+  if (sm === "none" || sm === "title" || sm === "per_chunk_synopsis") {
     return sm;
   }
   return args.globalMode;

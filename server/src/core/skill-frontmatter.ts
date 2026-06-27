@@ -51,7 +51,7 @@ export interface ParsedFrontmatter {
    * value `'exempt'` (no quotes, lowercase, snake_case key) populates this.
    * Anything else is a typo and goes into `brain_first_typo`.
    */
-  brain_first?: 'exempt';
+  brain_first?: "exempt";
   /**
    * Surfaces near-miss declarations for the doctor typo hint. Examples
    * the typo detector catches:
@@ -67,7 +67,7 @@ export interface ParsedFrontmatter {
     /** Original value as written by the author. */
     value: string;
     /** Why this isn't the canonical form. */
-    reason: 'noncanonical_key' | 'quoted_value' | 'unknown_value' | 'capitalized_value';
+    reason: "noncanonical_key" | "quoted_value" | "unknown_value" | "capitalized_value";
   };
 }
 
@@ -93,15 +93,15 @@ export function parseSkillFrontmatter(content: string): ParsedFrontmatter | null
 
   // --- writes_pages / mutating (booleans) ---
   const wpMatch = raw.match(/^writes_pages:\s*(true|false)\s*$/m);
-  if (wpMatch) out.writes_pages = wpMatch[1] === 'true';
+  if (wpMatch) out.writes_pages = wpMatch[1] === "true";
 
   const mutMatch = raw.match(/^mutating:\s*(true|false)\s*$/m);
-  if (mutMatch) out.mutating = mutMatch[1] === 'true';
+  if (mutMatch) out.mutating = mutMatch[1] === "true";
 
   // --- writes_to / tools / triggers (arrays, inline or block) ---
-  out.writes_to = parseArrayField(raw, 'writes_to');
-  out.tools = parseArrayField(raw, 'tools');
-  out.triggers = parseArrayField(raw, 'triggers');
+  out.writes_to = parseArrayField(raw, "writes_to");
+  out.tools = parseArrayField(raw, "tools");
+  out.triggers = parseArrayField(raw, "triggers");
 
   // --- brain_first (strict canonical) ---
   parseBrainFirst(raw, out);
@@ -128,23 +128,28 @@ export function parseSkillFrontmatter(content: string): ParsedFrontmatter | null
  */
 function parseArrayField(raw: string, field: string): string[] | undefined {
   // Inline form: `field: [a, b, c]` or `field: []`
-  const inlineRe = new RegExp(`^${field}:\\s*\\[([^\\]]*)\\]\\s*$`, 'm');
+  const inlineRe = new RegExp(`^${field}:\\s*\\[([^\\]]*)\\]\\s*$`, "m");
   const inlineMatch = raw.match(inlineRe);
   if (inlineMatch) {
     const inner = inlineMatch[1].trim();
     if (inner.length === 0) return [];
     return inner
-      .split(',')
-      .map(s => s.trim().replace(/^["']|["']$/g, ''))
+      .split(",")
+      .map((s) => s.trim().replace(/^["']|["']$/g, ""))
       .filter(Boolean);
   }
   // Block form: `field:` + indented `- value` lines on subsequent lines.
-  const blockRe = new RegExp(`^${field}:\\s*\\n((?:[ \\t]+-[ \\t]+[^\\n]+\\n?)+)`, 'm');
+  const blockRe = new RegExp(`^${field}:\\s*\\n((?:[ \\t]+-[ \\t]+[^\\n]+\\n?)+)`, "m");
   const blockMatch = raw.match(blockRe);
   if (blockMatch) {
     return blockMatch[1]
-      .split('\n')
-      .map(l => l.replace(/^[ \t]+-[ \t]+/, '').replace(/^["']|["']$/g, '').trim())
+      .split("\n")
+      .map((l) =>
+        l
+          .replace(/^[ \t]+-[ \t]+/, "")
+          .replace(/^["']|["']$/g, "")
+          .trim()
+      )
       .filter(Boolean);
   }
   return undefined;
@@ -174,41 +179,41 @@ function parseBrainFirst(raw: string, out: ParsedFrontmatter): void {
   const valueRaw = typoMatch[2];
 
   // Canonical key + canonical value?
-  if (key === 'brain_first' && valueRaw === 'exempt') {
-    out.brain_first = 'exempt';
+  if (key === "brain_first" && valueRaw === "exempt") {
+    out.brain_first = "exempt";
     return;
   }
 
   // Key is wrong (case or separator).
-  if (key !== 'brain_first') {
+  if (key !== "brain_first") {
     out.brain_first_typo = {
       key,
       value: valueRaw,
-      reason: 'noncanonical_key',
+      reason: "noncanonical_key",
     };
     return;
   }
 
   // Key is canonical; value is wrong. Classify the value.
   // Strip outer quotes for comparison so we can detect quoted variants.
-  const unquoted = valueRaw.replace(/^["']|["']$/g, '');
+  const unquoted = valueRaw.replace(/^["']|["']$/g, "");
   const wasQuoted = unquoted !== valueRaw;
 
-  if (wasQuoted && unquoted === 'exempt') {
+  if (wasQuoted && unquoted === "exempt") {
     out.brain_first_typo = {
       key,
       value: valueRaw,
-      reason: 'quoted_value',
+      reason: "quoted_value",
     };
     return;
   }
 
-  if (unquoted.toLowerCase() === 'exempt') {
+  if (unquoted.toLowerCase() === "exempt") {
     // Capitalized: `Exempt` or `EXEMPT`
     out.brain_first_typo = {
       key,
       value: valueRaw,
-      reason: 'capitalized_value',
+      reason: "capitalized_value",
     };
     return;
   }
@@ -219,7 +224,7 @@ function parseBrainFirst(raw: string, out: ParsedFrontmatter): void {
   out.brain_first_typo = {
     key,
     value: valueRaw,
-    reason: 'unknown_value',
+    reason: "unknown_value",
   };
 }
 
@@ -228,16 +233,18 @@ function parseBrainFirst(raw: string, out: ParsedFrontmatter): void {
  * Returns null when typo is undefined. The doctor message and the
  * stderr typo warning both consume this so phrasing stays consistent.
  */
-export function formatBrainFirstTypoHint(typo: ParsedFrontmatter['brain_first_typo']): string | null {
+export function formatBrainFirstTypoHint(
+  typo: ParsedFrontmatter["brain_first_typo"]
+): string | null {
   if (!typo) return null;
   switch (typo.reason) {
-    case 'noncanonical_key':
+    case "noncanonical_key":
       return `Found '${typo.key}: ${typo.value}' — did you mean 'brain_first: exempt'? (snake_case key required)`;
-    case 'quoted_value':
+    case "quoted_value":
       return `Found 'brain_first: ${typo.value}' — drop the quotes: 'brain_first: exempt'`;
-    case 'capitalized_value':
+    case "capitalized_value":
       return `Found 'brain_first: ${typo.value}' — value must be lowercase: 'brain_first: exempt'`;
-    case 'unknown_value':
+    case "unknown_value":
       return `Found 'brain_first: ${typo.value}' — v0.36 ships only 'brain_first: exempt' (declarative opt-out)`;
   }
 }

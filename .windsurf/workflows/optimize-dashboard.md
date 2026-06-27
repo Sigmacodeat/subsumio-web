@@ -5,6 +5,7 @@ description: Optimiere Dashboard / Kanzlei-OS UI nach Agency-Level Standards
 # Dashboard / Kanzlei-OS Optimization
 
 ## Scope
+
 - `src/app/dashboard/` — 51 Dashboard-Seiten (Akten, Fristen, Brain, Graph, etc.)
 - `src/app/dashboard/layout.tsx` — Sidebar Navigation, Brain Status, Theme
 - `src/components/dashboard/` — Dashboard-spezifische Komponenten (command-palette, etc.)
@@ -13,6 +14,7 @@ description: Optimiere Dashboard / Kanzlei-OS UI nach Agency-Level Standards
 - `src/components/legal/` — Legal-spezifische UI-Komponenten
 
 ## Navigation-Sektionen (aus layout.tsx)
+
 1. **Gehirn**: Übersicht, Assistant, Query, Agenten, Freigaben, Brain, Graph, Upload, RAG-Eval
 2. **Akten & Fristen**: Akten, Kontakte, Verträge, Vault, Fristen, Gegner, Mandanten-Portal
 3. **Recherche**: Legal Research, Rechtsprechung, Normen, Urteile-Sync, Kollisionsprüfung, Massen-Review, Monitoring
@@ -20,6 +22,7 @@ description: Optimiere Dashboard / Kanzlei-OS UI nach Agency-Level Standards
 5. **Daten & Integration**: Konnektoren, WhatsApp, Kanzlei-Import, beA, E-Mail, Kalender, Compliance, etc.
 
 ## Kontext laden
+
 1. Lese `src/app/dashboard/layout.tsx` für Navigation & State
 2. Lese `src/app/dashboard/page.tsx` für Dashboard-Übersicht
 3. Lese `src/components/ui/` für verfügbare UI-Komponenten
@@ -30,6 +33,7 @@ description: Optimiere Dashboard / Kanzlei-OS UI nach Agency-Level Standards
 8. Lese `src/lib/industry-theme.ts` für Industry-spezifische Themes
 
 ## Optimierungs-Checkliste
+
 - [ ] **UX-Flow**: Jede Seite hat klaren Purpose, Empty State, Loading State, Error State
 - [ ] **CRUD komplett**: Create, Read, Update, Delete für jede Entität
 - [ ] **Data Tables**: Sortierung, Filterung, Pagination, Bulk-Actions
@@ -44,6 +48,7 @@ description: Optimiere Dashboard / Kanzlei-OS UI nach Agency-Level Standards
 - [ ] **GoBD**: Verfahrensdoku-Panel, Audit-Trail, Integritäts-Checks
 
 ## Test-Befehle
+
 ```bash
 # Playwright E2E
 npx playwright test tests/e2e-playwright/
@@ -59,6 +64,7 @@ npx tsc --noEmit
 ```
 
 ## Agency-Level Standards
+
 - **Sidebar**: Gruppierte Navigation (wie vorhanden), Collapsible, Active-Indicator, Badge-Counts
 - **Command Palette**: Cmd+K, fuzzy search, alle Seiten erreichbar
 - **Data Tables**: Virtualized bei >100 Rows, Column-Resize, Export-Button

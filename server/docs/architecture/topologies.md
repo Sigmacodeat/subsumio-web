@@ -98,13 +98,13 @@ instead of a local DB connection:
 
 ```jsonc
 {
-  "engine": "postgres",  // ignored — never used
+  "engine": "postgres", // ignored — never used
   "remote_mcp": {
     "issuer_url": "https://brain-host.local:3001",
-    "mcp_url":    "https://brain-host.local:3001/mcp",
+    "mcp_url": "https://brain-host.local:3001/mcp",
     "oauth_client_id": "neuromancer-...",
-    "oauth_client_secret": "..."  // or set GBRAIN_REMOTE_CLIENT_SECRET
-  }
+    "oauth_client_secret": "...", // or set GBRAIN_REMOTE_CLIENT_SECRET
+  },
 }
 ```
 
@@ -167,9 +167,9 @@ Example for Claude Desktop's `~/.config/claude/claude_desktop_config.json`:
     "gbrain": {
       "type": "url",
       "url": "https://brain-host.local:3001/mcp",
-      "headers": { "Authorization": "Bearer <client_secret>" }
-    }
-  }
+      "headers": { "Authorization": "Bearer <client_secret>" },
+    },
+  },
 }
 ```
 
@@ -346,14 +346,14 @@ different ports). For Claude Desktop:
     "gbrain_artifacts": {
       "type": "url",
       "url": "http://localhost:3000/mcp",
-      "headers": { "Authorization": "Bearer <token-A>" }
+      "headers": { "Authorization": "Bearer <token-A>" },
     },
     "gbrain_code": {
       "type": "url",
       "url": "http://localhost:3001/mcp",
-      "headers": { "Authorization": "Bearer <token-B>" }
-    }
-  }
+      "headers": { "Authorization": "Bearer <token-B>" },
+    },
+  },
 }
 ```
 

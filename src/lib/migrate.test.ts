@@ -67,7 +67,8 @@ describe("applyMigration", () => {
   });
 
   test("rolls back on error", async () => {
-    const clientQuery = vi.fn()
+    const clientQuery = vi
+      .fn()
       .mockResolvedValueOnce({}) // BEGIN
       .mockRejectedValueOnce(new Error("SQL syntax error")); // SQL fails
     mockConnect.mockReturnValueOnce({
@@ -106,9 +107,7 @@ describe("runMigrations", () => {
     const clientQuery = vi.fn().mockResolvedValue({});
     mockConnect.mockReturnValueOnce({ query: clientQuery, release: vi.fn() });
 
-    await runMigrations([
-      { id: 1, name: "first", sql: "SELECT 1" },
-    ]);
+    await runMigrations([{ id: 1, name: "first", sql: "SELECT 1" }]);
 
     expect(clientQuery.mock.calls.some((c) => c[0] === "SELECT 1")).toBe(true);
   });

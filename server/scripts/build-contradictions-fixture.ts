@@ -33,19 +33,19 @@
  * NO labels, redacts, writes JSONL. Operator labels manually later.
  */
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
-import { dirname } from 'node:path';
-import { createInterface } from 'node:readline/promises';
-import { stdin as input, stdout as output } from 'node:process';
-import { loadConfig, toEngineConfig } from '../src/core/config.ts';
-import { createEngine } from '../src/core/engine-factory.ts';
-import { connectWithRetry } from '../src/core/db.ts';
-import type { BrainEngine } from '../src/core/engine.ts';
-import { runContradictionProbe } from '../src/core/eval-contradictions/runner.ts';
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
+import { dirname } from "node:path";
+import { createInterface } from "node:readline/promises";
+import { stdin as input, stdout as output } from "node:process";
+import { loadConfig, toEngineConfig } from "../src/core/config.ts";
+import { createEngine } from "../src/core/engine-factory.ts";
+import { connectWithRetry } from "../src/core/db.ts";
+import type { BrainEngine } from "../src/core/engine.ts";
+import { runContradictionProbe } from "../src/core/eval-contradictions/runner.ts";
 
 async function connectLocalEngine(): Promise<BrainEngine> {
   const cfg = loadConfig();
-  if (!cfg) throw new Error('No brain configured. Run `gbrain init` first.');
+  if (!cfg) throw new Error("No brain configured. Run `gbrain init` first.");
   const engineCfg = toEngineConfig(cfg);
   const engine = await createEngine(engineCfg);
   await connectWithRetry(engine, engineCfg, { noRetry: false });
@@ -56,8 +56,8 @@ import {
   isCleanForCommit,
   redactSlug,
   redactText,
-} from '../src/core/eval-contradictions/fixture-redact.ts';
-import type { ContradictionPair, Severity } from '../src/core/eval-contradictions/types.ts';
+} from "../src/core/eval-contradictions/fixture-redact.ts";
+import type { ContradictionPair, Severity } from "../src/core/eval-contradictions/types.ts";
 
 interface ParsedFlags {
   queriesFile?: string;
@@ -72,9 +72,9 @@ interface ParsedFlags {
 function parseFlags(argv: string[]): ParsedFlags {
   const f: ParsedFlags = {
     topK: 5,
-    judge: 'anthropic:claude-haiku-4-5',
+    judge: "anthropic:claude-haiku-4-5",
     maxPairs: 50,
-    output: 'test/fixtures/contradictions-eval-gold.jsonl',
+    output: "test/fixtures/contradictions-eval-gold.jsonl",
     nonInteractive: false,
     help: false,
   };
@@ -85,13 +85,13 @@ function parseFlags(argv: string[]): ParsedFlags {
       if (v === undefined) throw new Error(`flag ${a} requires a value`);
       return v;
     };
-    if (a === '--help' || a === '-h') f.help = true;
-    else if (a === '--queries-file') f.queriesFile = next();
-    else if (a === '--top-k') f.topK = Number.parseInt(next(), 10);
-    else if (a === '--judge') f.judge = next();
-    else if (a === '--max-pairs') f.maxPairs = Number.parseInt(next(), 10);
-    else if (a === '--output') f.output = next();
-    else if (a === '--non-interactive') f.nonInteractive = true;
+    if (a === "--help" || a === "-h") f.help = true;
+    else if (a === "--queries-file") f.queriesFile = next();
+    else if (a === "--top-k") f.topK = Number.parseInt(next(), 10);
+    else if (a === "--judge") f.judge = next();
+    else if (a === "--max-pairs") f.maxPairs = Number.parseInt(next(), 10);
+    else if (a === "--output") f.output = next();
+    else if (a === "--non-interactive") f.nonInteractive = true;
     else throw new Error(`unknown flag: ${a}`);
   }
   return f;
@@ -116,15 +116,15 @@ MUST resolve manually before commit. Audit log printed to stderr.
 }
 
 function readQueriesFile(path: string): string[] {
-  const raw = readFileSync(path, 'utf8');
+  const raw = readFileSync(path, "utf8");
   const out: string[] = [];
   for (const line of raw.split(/\r?\n/)) {
     const trimmed = line.trim();
     if (!trimmed) continue;
-    if (trimmed.startsWith('{')) {
+    if (trimmed.startsWith("{")) {
       try {
         const parsed = JSON.parse(trimmed) as { query?: string };
-        if (typeof parsed.query === 'string' && parsed.query.length > 0) {
+        if (typeof parsed.query === "string" && parsed.query.length > 0) {
           out.push(parsed.query);
         }
       } catch {
@@ -137,25 +137,32 @@ function readQueriesFile(path: string): string[] {
   return out;
 }
 
-async function promptLabel(rl: ReturnType<typeof createInterface>, pair: ContradictionPair): Promise<{
+async function promptLabel(
+  rl: ReturnType<typeof createInterface>,
+  pair: ContradictionPair
+): Promise<{
   contradicts: boolean;
   severity: Severity;
   axis: string;
   skip: boolean;
 }> {
   process.stderr.write(`\n--- Pair ---\n`);
-  process.stderr.write(`A (${pair.a.slug}): ${pair.a.text.slice(0, 240)}${pair.a.text.length > 240 ? '…' : ''}\n`);
-  process.stderr.write(`B (${pair.b.slug}): ${pair.b.text.slice(0, 240)}${pair.b.text.length > 240 ? '…' : ''}\n`);
-  const ans = (await rl.question('Contradiction? [y/n/s skip]: ')).trim().toLowerCase();
-  if (ans === 's' || ans === 'skip') {
-    return { contradicts: false, severity: 'low', axis: '', skip: true };
+  process.stderr.write(
+    `A (${pair.a.slug}): ${pair.a.text.slice(0, 240)}${pair.a.text.length > 240 ? "…" : ""}\n`
+  );
+  process.stderr.write(
+    `B (${pair.b.slug}): ${pair.b.text.slice(0, 240)}${pair.b.text.length > 240 ? "…" : ""}\n`
+  );
+  const ans = (await rl.question("Contradiction? [y/n/s skip]: ")).trim().toLowerCase();
+  if (ans === "s" || ans === "skip") {
+    return { contradicts: false, severity: "low", axis: "", skip: true };
   }
-  if (ans !== 'y' && ans !== 'yes') {
-    return { contradicts: false, severity: 'low', axis: '', skip: false };
+  if (ans !== "y" && ans !== "yes") {
+    return { contradicts: false, severity: "low", axis: "", skip: false };
   }
-  let sev = (await rl.question('Severity [low/medium/high, default low]: ')).trim().toLowerCase();
-  if (sev !== 'low' && sev !== 'medium' && sev !== 'high') sev = 'low';
-  const axis = (await rl.question('One-line axis: ')).trim();
+  let sev = (await rl.question("Severity [low/medium/high, default low]: ")).trim().toLowerCase();
+  if (sev !== "low" && sev !== "medium" && sev !== "high") sev = "low";
+  const axis = (await rl.question("One-line axis: ")).trim();
   return { contradicts: true, severity: sev as Severity, axis, skip: false };
 }
 
@@ -186,7 +193,9 @@ async function main(): Promise<void> {
   }
 
   process.stderr.write(`Building gold fixture against the local brain.\n`);
-  process.stderr.write(`Queries: ${queries.length}  Top-K: ${flags.topK}  Max pairs: ${flags.maxPairs}\n`);
+  process.stderr.write(
+    `Queries: ${queries.length}  Top-K: ${flags.topK}  Max pairs: ${flags.maxPairs}\n`
+  );
   process.stderr.write(`Output: ${flags.output}\n\n`);
 
   const engine = await connectLocalEngine();
@@ -208,13 +217,37 @@ async function main(): Promise<void> {
       // Hijack the judge to collect pairs without spending tokens.
       judgeFn: async (input) => {
         candidatePairs.push({
-          kind: 'cross_slug_chunks',  // best-effort label; runner emits both kinds
-          a: { slug: input.a.slug, chunk_id: 0, take_id: null, source_tier: 'curated', holder: input.a.holder ?? null, text: input.a.text, effective_date: null, effective_date_source: null },
-          b: { slug: input.b.slug, chunk_id: 0, take_id: null, source_tier: 'curated', holder: input.b.holder ?? null, text: input.b.text, effective_date: null, effective_date_source: null },
+          kind: "cross_slug_chunks", // best-effort label; runner emits both kinds
+          a: {
+            slug: input.a.slug,
+            chunk_id: 0,
+            take_id: null,
+            source_tier: "curated",
+            holder: input.a.holder ?? null,
+            text: input.a.text,
+            effective_date: null,
+            effective_date_source: null,
+          },
+          b: {
+            slug: input.b.slug,
+            chunk_id: 0,
+            take_id: null,
+            source_tier: "curated",
+            holder: input.b.holder ?? null,
+            text: input.b.text,
+            effective_date: null,
+            effective_date_source: null,
+          },
           combined_score: 0,
         });
         return {
-          verdict: { verdict: 'no_contradiction' as const, severity: 'low' as const, axis: '', confidence: 0, resolution_kind: null },
+          verdict: {
+            verdict: "no_contradiction" as const,
+            severity: "low" as const,
+            axis: "",
+            confidence: 0,
+            resolution_kind: null,
+          },
           usage: { inputTokens: 0, outputTokens: 0 },
         };
       },
@@ -240,7 +273,7 @@ async function main(): Promise<void> {
       process.stderr.write(`\n[${i + 1}/${capped.length}]`);
       let label: { contradicts: boolean; severity: Severity; axis: string; skip: boolean };
       if (flags.nonInteractive) {
-        label = { contradicts: false, severity: 'low', axis: '', skip: false };
+        label = { contradicts: false, severity: "low", axis: "", skip: false };
       } else {
         label = await promptLabel(rl, pair);
         if (label.skip) continue;
@@ -258,7 +291,7 @@ async function main(): Promise<void> {
         severity: label.severity,
         axis: redactText(session, label.axis),
         // Query gets redacted too, in case it referenced real names.
-        query_redacted: '',  // candidatePairs don't carry the query; populated by future iteration
+        query_redacted: "", // candidatePairs don't carry the query; populated by future iteration
         a: redactedA,
         b: redactedB,
       });
@@ -280,9 +313,16 @@ async function main(): Promise<void> {
     for (const row of labeled) {
       const cleanA = isCleanForCommit(row.a.text) && isCleanForCommit(row.a.slug);
       const cleanB = isCleanForCommit(row.b.text) && isCleanForCommit(row.b.slug);
-      const sentinel = !cleanA || !cleanB ? '  [REDACT?]' : '';
+      const sentinel = !cleanA || !cleanB ? "  [REDACT?]" : "";
       if (sentinel) flagged++;
-      out.push(JSON.stringify({ ...row, ...(sentinel ? { _operator_review: 'REDACTION INCOMPLETE — fix manually before commit' } : {}) }));
+      out.push(
+        JSON.stringify({
+          ...row,
+          ...(sentinel
+            ? { _operator_review: "REDACTION INCOMPLETE — fix manually before commit" }
+            : {}),
+        })
+      );
     }
 
     // Ensure output dir exists, then write.
@@ -290,13 +330,17 @@ async function main(): Promise<void> {
     if (existsSync(flags.output)) {
       process.stderr.write(`\nWARN: ${flags.output} already exists. Overwriting.\n`);
     }
-    writeFileSync(flags.output, out.join('\n') + '\n');
+    writeFileSync(flags.output, out.join("\n") + "\n");
     process.stderr.write(`\nWrote ${labeled.length} labeled pairs to ${flags.output}.\n`);
     if (flagged > 0) {
-      process.stderr.write(`*** ${flagged} pair(s) flagged with [REDACT?] — review before commit ***\n`);
+      process.stderr.write(
+        `*** ${flagged} pair(s) flagged with [REDACT?] — review before commit ***\n`
+      );
       process.exit(1);
     }
-    process.stderr.write(`OK — pre-commit safety pass. Inspect the file once more before committing.\n`);
+    process.stderr.write(
+      `OK — pre-commit safety pass. Inspect the file once more before committing.\n`
+    );
   } finally {
     await engine.disconnect();
   }

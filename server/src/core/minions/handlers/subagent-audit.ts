@@ -17,14 +17,14 @@
  * for container deploys with a read-only $HOME.
  */
 
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import { resolveAuditDir } from './shell-audit.ts';
+import * as fs from "node:fs";
+import * as path from "node:path";
+import { resolveAuditDir } from "./shell-audit.ts";
 
 export interface SubagentSubmissionEvent {
   ts: string;
-  type: 'submission';
-  caller: 'cli' | 'mcp' | 'worker';
+  type: "submission";
+  caller: "cli" | "mcp" | "worker";
   remote: boolean;
   job_id: number;
   parent_job_id?: number | null;
@@ -35,9 +35,15 @@ export interface SubagentSubmissionEvent {
 
 export interface SubagentHeartbeatEvent {
   ts: string;
-  type: 'heartbeat';
+  type: "heartbeat";
   job_id: number;
-  event: 'llm_call_started' | 'llm_call_completed' | 'tool_called' | 'tool_result' | 'tool_failed' | 'user_inbox_message_consumed';
+  event:
+    | "llm_call_started"
+    | "llm_call_completed"
+    | "tool_called"
+    | "tool_result"
+    | "tool_failed"
+    | "user_inbox_message_consumed";
   turn_idx?: number;
   /** Tool name for tool_* events. Never the input — that may contain secrets. */
   tool_name?: string;
@@ -65,7 +71,7 @@ export function computeSubagentAuditFilename(now: Date = new Date()): string {
   const firstThursdayDayNum = (firstThursday.getUTCDay() + 6) % 7;
   firstThursday.setUTCDate(firstThursday.getUTCDate() - firstThursdayDayNum + 3);
   const weekNum = Math.round((d.getTime() - firstThursday.getTime()) / (7 * 86400000)) + 1;
-  const ww = String(weekNum).padStart(2, '0');
+  const ww = String(weekNum).padStart(2, "0");
   return `subagent-jobs-${isoYear}-W${ww}.jsonl`;
 }
 
@@ -73,24 +79,24 @@ export function computeSubagentAuditFilename(now: Date = new Date()): string {
 function append(event: SubagentAuditEvent): void {
   const dir = resolveAuditDir();
   const file = path.join(dir, computeSubagentAuditFilename());
-  const line = JSON.stringify(event) + '\n';
+  const line = JSON.stringify(event) + "\n";
   try {
     fs.mkdirSync(dir, { recursive: true });
-    fs.appendFileSync(file, line, { encoding: 'utf8' });
+    fs.appendFileSync(file, line, { encoding: "utf8" });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     process.stderr.write(`[subagent-audit] write failed (${msg}); job continues\n`);
   }
 }
 
-export function logSubagentSubmission(event: Omit<SubagentSubmissionEvent, 'ts' | 'type'>): void {
-  append({ ...event, ts: new Date().toISOString(), type: 'submission' });
+export function logSubagentSubmission(event: Omit<SubagentSubmissionEvent, "ts" | "type">): void {
+  append({ ...event, ts: new Date().toISOString(), type: "submission" });
 }
 
-export function logSubagentHeartbeat(event: Omit<SubagentHeartbeatEvent, 'ts' | 'type'>): void {
+export function logSubagentHeartbeat(event: Omit<SubagentHeartbeatEvent, "ts" | "type">): void {
   // Defensive: trim error text to avoid accidentally writing huge stack traces.
   const trimmed = event.error ? { ...event, error: event.error.slice(0, 200) } : event;
-  append({ ...trimmed, ts: new Date().toISOString(), type: 'heartbeat' });
+  append({ ...trimmed, ts: new Date().toISOString(), type: "heartbeat" });
 }
 
 /**
@@ -99,7 +105,10 @@ export function logSubagentHeartbeat(event: Omit<SubagentHeartbeatEvent, 'ts' | 
  *
  * `sinceIso` (if present) filters to events with ts >= sinceIso.
  */
-export function readSubagentAuditForJob(jobId: number, opts: { sinceIso?: string } = {}): SubagentAuditEvent[] {
+export function readSubagentAuditForJob(
+  jobId: number,
+  opts: { sinceIso?: string } = {}
+): SubagentAuditEvent[] {
   const dir = resolveAuditDir();
   if (!fs.existsSync(dir)) return [];
 
@@ -114,11 +123,11 @@ export function readSubagentAuditForJob(jobId: number, opts: { sinceIso?: string
     if (!fs.existsSync(file)) continue;
     let raw: string;
     try {
-      raw = fs.readFileSync(file, 'utf8');
+      raw = fs.readFileSync(file, "utf8");
     } catch {
       continue;
     }
-    for (const line of raw.split('\n')) {
+    for (const line of raw.split("\n")) {
       if (!line) continue;
       let ev: SubagentAuditEvent;
       try {

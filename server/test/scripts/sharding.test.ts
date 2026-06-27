@@ -47,18 +47,12 @@ describe("partition — happy path", () => {
       ["c.test.ts", 50],
       ["d.test.ts", 50],
     ]);
-    const out = partition(
-      ["a.test.ts", "b.test.ts", "c.test.ts", "d.test.ts"],
-      weights,
-      2,
-    );
+    const out = partition(["a.test.ts", "b.test.ts", "c.test.ts", "d.test.ts"], weights, 2);
     expect(out.length).toBe(2);
     // LPT assigns 100→s0, 100→s1, 50→s0 (now 150), 50→s1 (now 150).
     // Wait: 100→s0 (s0=100), 100→s1 (s1=100), tie → s0 gets 50 (s0=150),
     // then s1 gets 50 (s1=150). Balanced.
-    const totals = out.map((s) =>
-      s.reduce((acc, f) => acc + (weights.get(f) ?? 0), 0),
-    );
+    const totals = out.map((s) => s.reduce((acc, f) => acc + (weights.get(f) ?? 0), 0));
     expect(totals[0]).toBe(150);
     expect(totals[1]).toBe(150);
   });
@@ -72,11 +66,7 @@ describe("partition — happy path", () => {
       ["small1.test.ts", 10],
       ["small2.test.ts", 10],
     ]);
-    const out = partition(
-      ["big.test.ts", "small1.test.ts", "small2.test.ts"],
-      weights,
-      2,
-    );
+    const out = partition(["big.test.ts", "small1.test.ts", "small2.test.ts"], weights, 2);
     expect(out[0]).toEqual(["big.test.ts"]);
     expect(out[1]?.sort()).toEqual(["small1.test.ts", "small2.test.ts"]);
   });
@@ -93,9 +83,7 @@ describe("partition — fallback semantics", () => {
     // Effective weights: a=100, b=50, c=75, d=75. LPT: 100→s0, 75→s1 (c),
     // 75→s1 (d, ties broken alpha)... actually: 100→s0=100, 75→s1=75,
     // 75→s1 vs s0 → s1=150, 50→s0=150. Balanced 150/150.
-    const totalsEffective = out.map((s) =>
-      s.reduce((acc, f) => acc + (weights.get(f) ?? 75), 0),
-    );
+    const totalsEffective = out.map((s) => s.reduce((acc, f) => acc + (weights.get(f) ?? 75), 0));
     expect(totalsEffective[0]).toBe(totalsEffective[1]);
   });
 
@@ -125,9 +113,7 @@ describe("partition — fallback semantics", () => {
 describe("partition — invariants", () => {
   it("every input file lands in exactly one shard (full coverage)", () => {
     const files = Array.from({ length: 25 }, (_, i) => `f${i}.test.ts`);
-    const weights: WeightMap = new Map(
-      files.map((f, i) => [f, (i % 5) * 10 + 5]),
-    );
+    const weights: WeightMap = new Map(files.map((f, i) => [f, (i % 5) * 10 + 5]));
     const out = partition(files, weights, 4);
     const seen: string[] = [];
     for (const shard of out) seen.push(...shard);
@@ -171,12 +157,8 @@ describe("partition — invariants", () => {
   });
 
   it("invalid fallbackWeight throws RangeError", () => {
-    expect(() =>
-      partition(["a"], new Map(), 2, { fallbackWeight: -1 }),
-    ).toThrow(RangeError);
-    expect(() =>
-      partition(["a"], new Map(), 2, { fallbackWeight: NaN }),
-    ).toThrow(RangeError);
+    expect(() => partition(["a"], new Map(), 2, { fallbackWeight: -1 })).toThrow(RangeError);
+    expect(() => partition(["a"], new Map(), 2, { fallbackWeight: NaN })).toThrow(RangeError);
   });
 });
 

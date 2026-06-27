@@ -564,12 +564,12 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
               {t.badge}
             </div>
             <ClipReveal delay={0.1} duration={0.7} direction="up">
-            <h1 className="mb-6 text-[clamp(2.5rem,10vw,3.75rem)] leading-[1.08] font-black tracking-tight text-balance [color:var(--mk-text)] md:text-6xl">
-              {t.h1a}
-              <span className="sr-only"> </span>
-              <br />
-              <span className="gradient-text glow-text">{t.h1b}</span>
-            </h1>
+              <h1 className="mb-6 text-[clamp(2.5rem,10vw,3.75rem)] leading-[1.08] font-black tracking-tight text-balance [color:var(--mk-text)] md:text-6xl">
+                {t.h1a}
+                <span className="sr-only"> </span>
+                <br />
+                <span className="gradient-text glow-text">{t.h1b}</span>
+              </h1>
             </ClipReveal>
             <p className="mx-auto mb-8 max-w-xl text-lg leading-relaxed [color:var(--mk-text-muted)] md:text-xl lg:mx-0">
               {t.sub}
@@ -826,7 +826,7 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
                 transition={{ duration: 0.35, delay: (i % 3) * 0.08 }}
                 className="group rounded-2xl text-left transition-all"
               >
-                <GlowCard className="h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-all [background:var(--mk-surface)] hover:-translate-y-1 hover:[background:var(--mk-hover)] hover:brand-border">
+                <GlowCard className="hover:brand-border h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-all [background:var(--mk-surface)] hover:-translate-y-1 hover:[background:var(--mk-hover)]">
                   <div className="brand-soft brand-border mb-4 flex h-11 w-11 items-center justify-center rounded-xl border transition-transform group-hover:scale-110">
                     {Icon && <Icon size={20} className="brand-text" />}
                   </div>

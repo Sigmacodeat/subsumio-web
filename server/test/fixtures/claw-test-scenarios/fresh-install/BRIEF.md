@@ -18,12 +18,13 @@ gbrain friction log --severity {confused|error|blocker|nit} --phase <which-step>
 ```
 
 Severity guide:
+
 - `blocker` — couldn't proceed at all
 - `error` — command failed unexpectedly
 - `confused` — docs said one thing, the tool did another, or a step felt unclear
 - `nit` — minor polish opportunity
 
-If something *just worked* and was nicer than expected, log a delight too:
+If something _just worked_ and was nicer than expected, log a delight too:
 
 ```
 gbrain friction log --kind delight --phase <step> --message "<what-was-nice>"

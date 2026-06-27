@@ -8,23 +8,33 @@
  *   await queue.prune({ olderThan: new Date(Date.now() - 30 * 86400000) });
  */
 
-import type { BrainEngine } from '../engine.ts';
+import type { BrainEngine } from "../engine.ts";
 import type {
-  MinionJob, MinionJobInput, MinionJobStatus, InboxMessage, TokenUpdate,
-  MinionQueueOpts, ChildDoneMessage, Attachment, AttachmentInput,
-} from './types.ts';
-import { rowToMinionJob, rowToInboxMessage, rowToAttachment } from './types.ts';
-import { validateAttachment } from './attachments.ts';
-import { isProtectedJobName } from './protected-names.ts';
-import { defaultTimeoutMsFor } from './handler-timeouts.ts';
+  MinionJob,
+  MinionJobInput,
+  MinionJobStatus,
+  InboxMessage,
+  TokenUpdate,
+  MinionQueueOpts,
+  ChildDoneMessage,
+  Attachment,
+  AttachmentInput,
+} from "./types.ts";
+import { rowToMinionJob, rowToInboxMessage, rowToAttachment } from "./types.ts";
+import { validateAttachment } from "./attachments.ts";
+import { isProtectedJobName } from "./protected-names.ts";
+import { defaultTimeoutMsFor } from "./handler-timeouts.ts";
 import {
-  withRetry, BULK_RETRY_OPTS, resolveBulkRetryOpts, computeNextDelay,
+  withRetry,
+  BULK_RETRY_OPTS,
+  resolveBulkRetryOpts,
+  computeNextDelay,
   isRetryableConnError,
-} from '../retry.ts';
+} from "../retry.ts";
 import {
   logBatchRetry as auditLogBatchRetry,
   logBatchExhausted as auditLogBatchExhausted,
-} from '../audit/batch-retry-audit.ts';
+} from "../audit/batch-retry-audit.ts";
 
 /** Options for opting into protected-job-name submission. Passed as a separate
  *  4th arg to `MinionQueue.add()` (NOT folded into `opts`) so user-spread
@@ -40,21 +50,24 @@ const MIGRATION_VERSION = 7;
 const DEFAULT_MAX_SPAWN_DEPTH = 5;
 const DEFAULT_MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024; // 5 MiB
 
-const TERMINAL_STATUSES = ['completed', 'failed', 'dead', 'cancelled'] as const;
+const TERMINAL_STATUSES = ["completed", "failed", "dead", "cancelled"] as const;
 
 export class MinionQueue {
   readonly maxSpawnDepth: number;
   readonly maxAttachmentBytes: number;
 
-  constructor(private engine: BrainEngine, opts: MinionQueueOpts = {}) {
+  constructor(
+    private engine: BrainEngine,
+    opts: MinionQueueOpts = {}
+  ) {
     this.maxSpawnDepth = opts.maxSpawnDepth ?? DEFAULT_MAX_SPAWN_DEPTH;
     this.maxAttachmentBytes = opts.maxAttachmentBytes ?? DEFAULT_MAX_ATTACHMENT_BYTES;
   }
 
   /** Verify minion_jobs table exists (migration v5+). Call before first operation. */
   async ensureSchema(): Promise<void> {
-    const ver = await this.engine.getConfig('version');
-    const current = parseInt(ver || '1', 10);
+    const ver = await this.engine.getConfig("version");
+    const current = parseInt(ver || "1", 10);
     if (current < MIGRATION_VERSION) {
       throw new Error(
         `minion_jobs table not found (schema version ${current}, need ${MIGRATION_VERSION}). Run 'gbrain init' to apply migrations.`
@@ -78,19 +91,19 @@ export class MinionQueue {
     name: string,
     data?: Record<string, unknown>,
     opts?: Partial<MinionJobInput>,
-    trusted?: TrustedSubmitOpts,
+    trusted?: TrustedSubmitOpts
   ): Promise<MinionJob> {
     // Normalize first so the protected-name check and the insert use the same
     // canonical form. Without the trim-before-check, `queue.add(' shell ', ...)`
     // would evade the guard and insert a job literally named 'shell'.
-    const jobName = (name || '').trim();
+    const jobName = (name || "").trim();
     if (jobName.length === 0) {
-      throw new Error('Job name cannot be empty');
+      throw new Error("Job name cannot be empty");
     }
     if (isProtectedJobName(jobName) && !trusted?.allowProtectedSubmit) {
       throw new Error(
         `protected job name '${jobName}' requires CLI or operation-local submitter ` +
-        `(pass {allowProtectedSubmit: true} as the 4th arg to MinionQueue.add)`,
+          `(pass {allowProtectedSubmit: true} as the 4th arg to MinionQueue.add)`
       );
     }
     // v0.38 (S1.7 + D6) — capability-based gate replaces the v0.31.12 Anthropic
@@ -98,24 +111,24 @@ export class MinionQueue {
     // provider with native tool calling works. Only refuse-at-submit when
     // the requested model literally cannot run a tool loop. The handler
     // (`subagent.ts`) does a defense-in-depth check at dispatch time too.
-    if (jobName === 'subagent' && data && typeof data === 'object') {
+    if (jobName === "subagent" && data && typeof data === "object") {
       const submittedModel = (data as { model?: unknown }).model;
-      if (typeof submittedModel === 'string' && submittedModel.length > 0) {
-        const { classifyCapabilities } = await import('../ai/capabilities.ts');
+      if (typeof submittedModel === "string" && submittedModel.length > 0) {
+        const { classifyCapabilities } = await import("../ai/capabilities.ts");
         const verdict = classifyCapabilities(submittedModel);
-        if (verdict === 'unusable:no_tools') {
+        if (verdict === "unusable:no_tools") {
           throw new Error(
             `subagent job rejected: data.model "${submittedModel}" lacks native tool calling. ` +
-            `The subagent loop dispatches brain ops via tool calls — without tool support the loop has no way to run. ` +
-            `Pick a provider that supports tools (anthropic, openai, google, openrouter, litellm-proxy, deepseek, groq, together, azure-openai).`,
+              `The subagent loop dispatches brain ops via tool calls — without tool support the loop has no way to run. ` +
+              `Pick a provider that supports tools (anthropic, openai, google, openrouter, litellm-proxy, deepseek, groq, together, azure-openai).`
           );
         }
-        if (verdict === 'unknown') {
+        if (verdict === "unknown") {
           throw new Error(
             `subagent job rejected: data.model "${submittedModel}" references an unknown provider. ` +
-            `Use format provider:model where provider matches a recipe in src/core/ai/recipes/. ` +
-            `Known providers: anthropic, openai, google, openrouter, litellm-proxy, ollama, llama-server, ` +
-            `together, azure-openai, deepseek, groq, dashscope, minimax, zhipu, voyage, zeroentropyai.`,
+              `Use format provider:model where provider matches a recipe in src/core/ai/recipes/. ` +
+              `Known providers: anthropic, openai, google, openrouter, litellm-proxy, ollama, llama-server, ` +
+              `together, azure-openai, deepseek, groq, dashscope, minimax, zhipu, voyage, zeroentropyai.`
           );
         }
         // 'degraded:no_caching' and 'degraded:no_parallel' pass through — the
@@ -125,7 +138,7 @@ export class MinionQueue {
     }
     await this.ensureSchema();
 
-    const childStatus: MinionJobStatus = opts?.delay ? 'delayed' : 'waiting';
+    const childStatus: MinionJobStatus = opts?.delay ? "delayed" : "waiting";
     const delayUntil = opts?.delay ? new Date(Date.now() + opts.delay) : null;
     const maxSpawnDepth = opts?.max_spawn_depth ?? this.maxSpawnDepth;
 
@@ -162,7 +175,7 @@ export class MinionQueue {
       // pg_advisory_xact_lock, so this works on both engines without branching.
       if (opts?.maxWaiting !== undefined) {
         const maxWaiting = Math.max(1, Math.floor(opts.maxWaiting));
-        const backpressureQueue = opts?.queue ?? 'default';
+        const backpressureQueue = opts?.queue ?? "default";
         await tx.executeRaw(
           `SELECT pg_advisory_xact_lock(hashtext('minion_maxwaiting:' || $1 || ':' || $2))`,
           [jobName, backpressureQueue]
@@ -173,7 +186,7 @@ export class MinionQueue {
            WHERE name = $1 AND queue = $2 AND status = 'waiting'`,
           [jobName, backpressureQueue]
         );
-        const waitingCount = parseInt(waitingCountRows[0]?.count ?? '0', 10);
+        const waitingCount = parseInt(waitingCountRows[0]?.count ?? "0", 10);
         if (waitingCount >= maxWaiting) {
           const existingWaiting = await tx.executeRaw<Record<string, unknown>>(
             `SELECT * FROM minion_jobs
@@ -185,7 +198,7 @@ export class MinionQueue {
           if (existingWaiting.length > 0) {
             const coalesced = rowToMinionJob(existingWaiting[0]);
             try {
-              const { logBackpressureCoalesce } = await import('./backpressure-audit.ts');
+              const { logBackpressureCoalesce } = await import("./backpressure-audit.ts");
               logBackpressureCoalesce({
                 queue: backpressureQueue,
                 name: jobName,
@@ -193,7 +206,9 @@ export class MinionQueue {
                 max_waiting: maxWaiting,
                 returned_job_id: coalesced.id,
               });
-            } catch { /* audit failures never block submission */ }
+            } catch {
+              /* audit failures never block submission */
+            }
             return coalesced;
           }
         }
@@ -222,9 +237,11 @@ export class MinionQueue {
              WHERE parent_job_id = $1 AND status NOT IN ('completed','failed','dead','cancelled')`,
             [opts.parent_job_id]
           );
-          const live = parseInt(countRows[0]?.count ?? '0', 10);
+          const live = parseInt(countRows[0]?.count ?? "0", 10);
           if (live >= parent.max_children) {
-            throw new Error(`parent ${opts.parent_job_id} already has ${live} live children (max_children=${parent.max_children})`);
+            throw new Error(
+              `parent ${opts.parent_job_id} already has ${live} live children (max_children=${parent.max_children})`
+            );
           }
         }
       }
@@ -266,17 +283,17 @@ export class MinionQueue {
 
       const params: unknown[] = [
         jobName,
-        opts?.queue ?? 'default',
+        opts?.queue ?? "default",
         childStatus,
         opts?.priority ?? 0,
         data ?? {},
         opts?.max_attempts ?? 3,
-        opts?.backoff_type ?? 'exponential',
+        opts?.backoff_type ?? "exponential",
         opts?.backoff_delay ?? 1000,
         opts?.backoff_jitter ?? 0.2,
         delayUntil?.toISOString() ?? null,
         opts?.parent_job_id ?? null,
-        opts?.on_child_fail ?? 'fail_parent',
+        opts?.on_child_fail ?? "fail_parent",
         depth,
         opts?.max_children ?? null,
         // #1737: long handlers (subagent, embed-backfill, autopilot-cycle) get a
@@ -301,7 +318,9 @@ export class MinionQueue {
           [opts.idempotency_key]
         );
         if (existing.length === 0) {
-          throw new Error(`idempotency_key ${opts.idempotency_key} insert returned no row and no existing row found`);
+          throw new Error(
+            `idempotency_key ${opts.idempotency_key} insert returned no row and no existing row found`
+          );
         }
         return rowToMinionJob(existing[0]);
       }
@@ -325,7 +344,7 @@ export class MinionQueue {
   /** Get a job by ID. Returns null if not found. */
   async getJob(id: number): Promise<MinionJob | null> {
     const rows = await this.engine.executeRaw<Record<string, unknown>>(
-      'SELECT * FROM minion_jobs WHERE id = $1',
+      "SELECT * FROM minion_jobs WHERE id = $1",
       [id]
     );
     return rows.length > 0 ? rowToMinionJob(rows[0]) : null;
@@ -356,7 +375,7 @@ export class MinionQueue {
       params.push(opts.name);
     }
 
-    const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+    const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
     const limit = opts?.limit ?? 50;
     const offset = opts?.offset ?? 0;
 
@@ -433,12 +452,12 @@ export class MinionQueue {
         if (parentJobId == null) continue;
         parentIds.add(parentJobId);
         const childDone: ChildDoneMessage = {
-          type: 'child_done',
+          type: "child_done",
           child_id: childId,
           job_name: name,
           result: null,
-          outcome: 'cancelled',
-          error: 'cancelled',
+          outcome: "cancelled",
+          error: "cancelled",
         };
         await tx.executeRaw(
           `INSERT INTO minion_inbox (job_id, sender, payload)
@@ -466,7 +485,7 @@ export class MinionQueue {
         );
       }
 
-      const root = rows.find(r => (r.id as number) === id);
+      const root = rows.find((r) => (r.id as number) === id);
       return root ? rowToMinionJob(root) : null;
     });
   }
@@ -486,7 +505,7 @@ export class MinionQueue {
 
   /** Prune old jobs in terminal statuses. Returns count of deleted rows. */
   async prune(opts?: { olderThan?: Date; status?: MinionJobStatus[] }): Promise<number> {
-    const statuses = opts?.status ?? ['completed', 'dead', 'cancelled'];
+    const statuses = opts?.status ?? ["completed", "dead", "cancelled"];
     const olderThan = opts?.olderThan ?? new Date(Date.now() - 30 * 86400000);
 
     const rows = await this.engine.executeRaw<{ count: string }>(
@@ -498,13 +517,20 @@ export class MinionQueue {
        SELECT count(*)::text as count FROM pruned`,
       [statuses, olderThan.toISOString()]
     );
-    return parseInt(rows[0]?.count ?? '0', 10);
+    return parseInt(rows[0]?.count ?? "0", 10);
   }
 
   /** Get job statistics. */
   async getStats(opts?: { since?: Date; queue?: string }): Promise<{
     by_status: Record<string, number>;
-    by_type: Array<{ name: string; total: number; completed: number; failed: number; dead: number; avg_duration_ms: number | null }>;
+    by_type: Array<{
+      name: string;
+      total: number;
+      completed: number;
+      failed: number;
+      dead: number;
+      avg_duration_ms: number | null;
+    }>;
     queue_health: { waiting: number; active: number; stalled: number };
     /**
      * issue #1801 — QUEUE-SCOPED wedge signature for the `jobs stats` WEDGED
@@ -523,7 +549,7 @@ export class MinionQueue {
     };
   }> {
     const since = opts?.since ?? new Date(Date.now() - 86400000);
-    const wedgeQueue = opts?.queue ?? 'default';
+    const wedgeQueue = opts?.queue ?? "default";
 
     // Status counts
     const statusRows = await this.engine.executeRaw<{ status: string; count: string }>(
@@ -544,7 +570,7 @@ export class MinionQueue {
        GROUP BY name ORDER BY total DESC`,
       [since.toISOString()]
     );
-    const by_type = typeRows.map(r => ({
+    const by_type = typeRows.map((r) => ({
       name: r.name as string,
       total: parseInt(r.total as string, 10),
       completed: parseInt(r.completed as string, 10),
@@ -557,7 +583,7 @@ export class MinionQueue {
     const stalledRows = await this.engine.executeRaw<{ count: string }>(
       `SELECT count(*)::text as count FROM minion_jobs WHERE status = 'active' AND lock_until < now()`
     );
-    const stalled = parseInt(stalledRows[0]?.count ?? '0', 10);
+    const stalled = parseInt(stalledRows[0]?.count ?? "0", 10);
 
     // issue #1801 — queue-scoped wedge signature (one query, one queue).
     const wedgeRows = await this.engine.executeRaw<{
@@ -571,23 +597,23 @@ export class MinionQueue {
          max(updated_at) FILTER (WHERE status = 'completed')::text AS last_completed
        FROM minion_jobs
        WHERE queue = $1`,
-      [wedgeQueue],
+      [wedgeQueue]
     );
-    const wr = wedgeRows[0] ?? { active_healthy: '0', waiting: '0', last_completed: null };
+    const wr = wedgeRows[0] ?? { active_healthy: "0", waiting: "0", last_completed: null };
     const wedgeLastCompleted = wr.last_completed ? new Date(wr.last_completed) : null;
 
     return {
       by_status,
       by_type,
       queue_health: {
-        waiting: by_status['waiting'] ?? 0,
-        active: by_status['active'] ?? 0,
+        waiting: by_status["waiting"] ?? 0,
+        active: by_status["active"] ?? 0,
         stalled,
       },
       wedge: {
         queue: wedgeQueue,
-        active_healthy: parseInt(wr.active_healthy ?? '0', 10),
-        waiting: parseInt(wr.waiting ?? '0', 10),
+        active_healthy: parseInt(wr.active_healthy ?? "0", 10),
+        waiting: parseInt(wr.waiting ?? "0", 10),
         last_completed_at: wr.last_completed,
         minutes_since_completion: wedgeLastCompleted
           ? Math.round((Date.now() - wedgeLastCompleted.getTime()) / 60_000)
@@ -602,7 +628,12 @@ export class MinionQueue {
    * Sets timeout_at = now() + timeout_ms when the job has a per-job deadline,
    * so handleTimeouts() can dead-letter expired jobs without rereading timeout_ms.
    */
-  async claim(lockToken: string, lockDurationMs: number, queue: string, registeredNames: string[]): Promise<MinionJob | null> {
+  async claim(
+    lockToken: string,
+    lockDurationMs: number,
+    queue: string,
+    registeredNames: string[]
+  ): Promise<MinionJob | null> {
     if (registeredNames.length === 0) return null;
 
     // Direct (session-mode) pool: claim opens the lock that renewLock then
@@ -672,12 +703,12 @@ export class MinionQueue {
         if (parentJobId == null) continue;
         parentIds.add(parentJobId);
         const childDone: ChildDoneMessage = {
-          type: 'child_done',
+          type: "child_done",
           child_id: r.id as number,
           job_name: r.name as string,
           result: null,
-          outcome: 'timeout',
-          error: 'timeout exceeded',
+          outcome: "timeout",
+          error: "timeout exceeded",
         };
         await tx.executeRaw(
           `INSERT INTO minion_inbox (job_id, sender, payload)
@@ -745,12 +776,12 @@ export class MinionQueue {
         if (parentJobId == null) continue;
         parentIds.add(parentJobId);
         const childDone: ChildDoneMessage = {
-          type: 'child_done',
+          type: "child_done",
           child_id: r.id as number,
           job_name: r.name as string,
           result: null,
-          outcome: 'timeout',
-          error: 'wall-clock timeout exceeded',
+          outcome: "timeout",
+          error: "wall-clock timeout exceeded",
         };
         await tx.executeRaw(
           `INSERT INTO minion_inbox (job_id, sender, payload)
@@ -795,7 +826,11 @@ export class MinionQueue {
    * died between completeJob and worker's prior post-call resolveParent,
    * stranding the parent in waiting-children forever.
    */
-  async completeJob(id: number, lockToken: string, result?: Record<string, unknown>): Promise<MinionJob | null> {
+  async completeJob(
+    id: number,
+    lockToken: string,
+    result?: Record<string, unknown>
+  ): Promise<MinionJob | null> {
     return this.engine.transaction(async (tx) => {
       // Peek at parent_job_id before the UPDATE so we can lock the parent row
       // FIRST. Without this SELECT FOR UPDATE, two siblings completing
@@ -808,10 +843,7 @@ export class MinionQueue {
       );
       const parentId = peek[0]?.parent_job_id ?? null;
       if (parentId) {
-        await tx.executeRaw(
-          `SELECT id FROM minion_jobs WHERE id = $1 FOR UPDATE`,
-          [parentId]
-        );
+        await tx.executeRaw(`SELECT id FROM minion_jobs WHERE id = $1 FOR UPDATE`, [parentId]);
       }
 
       const rows = await tx.executeRaw<Record<string, unknown>>(
@@ -827,7 +859,11 @@ export class MinionQueue {
 
       if (completed.parent_job_id) {
         // Roll up token counts. Guarded against parent already being terminal.
-        if (completed.tokens_input > 0 || completed.tokens_output > 0 || completed.tokens_cache_read > 0) {
+        if (
+          completed.tokens_input > 0 ||
+          completed.tokens_output > 0 ||
+          completed.tokens_cache_read > 0
+        ) {
           await tx.executeRaw(
             `UPDATE minion_jobs SET
               tokens_input = tokens_input + $1,
@@ -835,7 +871,12 @@ export class MinionQueue {
               tokens_cache_read = tokens_cache_read + $3,
               updated_at = now()
              WHERE id = $4 AND status NOT IN ('completed', 'failed', 'dead', 'cancelled')`,
-            [completed.tokens_input, completed.tokens_output, completed.tokens_cache_read, completed.parent_job_id]
+            [
+              completed.tokens_input,
+              completed.tokens_output,
+              completed.tokens_cache_read,
+              completed.parent_job_id,
+            ]
           );
         }
 
@@ -843,11 +884,11 @@ export class MinionQueue {
         // was deleted or hit a terminal state mid-flight (no FK violation, no
         // contradiction with the token rollup guard).
         const childDone: ChildDoneMessage = {
-          type: 'child_done',
+          type: "child_done",
           child_id: completed.id,
           job_name: completed.name,
           result: result ?? null,
-          outcome: 'complete',
+          outcome: "complete",
         };
         await tx.executeRaw(
           `INSERT INTO minion_inbox (job_id, sender, payload)
@@ -879,10 +920,7 @@ export class MinionQueue {
       // The child_done we just inserted lives in the *parent's* inbox row,
       // so it survives the child cascade-delete.
       if (completed.remove_on_complete) {
-        await tx.executeRaw(
-          `DELETE FROM minion_jobs WHERE id = $1`,
-          [completed.id]
-        );
+        await tx.executeRaw(`DELETE FROM minion_jobs WHERE id = $1`, [completed.id]);
       }
 
       return completed;
@@ -907,7 +945,7 @@ export class MinionQueue {
     id: number,
     lockToken: string,
     errorText: string,
-    newStatus: 'delayed' | 'failed' | 'dead',
+    newStatus: "delayed" | "failed" | "dead",
     backoffMs?: number
   ): Promise<MinionJob | null> {
     return this.engine.transaction(async (tx) => {
@@ -919,10 +957,7 @@ export class MinionQueue {
       );
       const parentId = peek[0]?.parent_job_id ?? null;
       if (parentId) {
-        await tx.executeRaw(
-          `SELECT id FROM minion_jobs WHERE id = $1 FOR UPDATE`,
-          [parentId]
-        );
+        await tx.executeRaw(`SELECT id FROM minion_jobs WHERE id = $1 FOR UPDATE`, [parentId]);
       }
 
       const rows = await tx.executeRaw<Record<string, unknown>>(
@@ -939,7 +974,7 @@ export class MinionQueue {
       if (rows.length === 0) return null;
 
       const failed = rowToMinionJob(rows[0]);
-      const terminal = newStatus === 'failed' || newStatus === 'dead';
+      const terminal = newStatus === "failed" || newStatus === "dead";
 
       // Parent hook on terminal failure.
       if (terminal && failed.parent_job_id) {
@@ -949,11 +984,11 @@ export class MinionQueue {
         // the fail_parent UPDATE run first, this inbox row would be dropped
         // for aggregator-style parents that still want to count it (codex).
         const childDone: ChildDoneMessage = {
-          type: 'child_done',
+          type: "child_done",
           child_id: failed.id,
           job_name: failed.name,
           result: null,
-          outcome: newStatus === 'dead' ? 'dead' : 'failed',
+          outcome: newStatus === "dead" ? "dead" : "failed",
           error: errorText,
         };
         await tx.executeRaw(
@@ -966,14 +1001,14 @@ export class MinionQueue {
           [failed.parent_job_id, childDone]
         );
 
-        if (failed.on_child_fail === 'fail_parent') {
+        if (failed.on_child_fail === "fail_parent") {
           await tx.executeRaw(
             `UPDATE minion_jobs SET status = 'failed',
               error_text = $1, finished_at = now(), updated_at = now()
              WHERE id = $2 AND status = 'waiting-children'`,
             [`child job ${failed.id} failed: ${errorText}`, failed.parent_job_id]
           );
-        } else if (failed.on_child_fail === 'remove_dep') {
+        } else if (failed.on_child_fail === "remove_dep") {
           await tx.executeRaw(
             `UPDATE minion_jobs SET parent_job_id = NULL, updated_at = now() WHERE id = $1`,
             [failed.id]
@@ -1013,10 +1048,7 @@ export class MinionQueue {
 
       // remove_on_fail cleanup AFTER parent hook.
       if (terminal && failed.remove_on_fail) {
-        await tx.executeRaw(
-          `DELETE FROM minion_jobs WHERE id = $1`,
-          [failed.id]
-        );
+        await tx.executeRaw(`DELETE FROM minion_jobs WHERE id = $1`, [failed.id]);
       }
 
       return failed;
@@ -1051,7 +1083,7 @@ export class MinionQueue {
     id: number,
     lockToken: string,
     errorText: string,
-    backoffMs: number,
+    backoffMs: number
   ): Promise<MinionJob | null> {
     const rows = await this.engine.executeRaw<Record<string, unknown>>(
       `UPDATE minion_jobs SET
@@ -1062,7 +1094,7 @@ export class MinionQueue {
         lock_token = NULL, lock_until = NULL, updated_at = now()
        WHERE id = $3 AND status = 'active' AND lock_token = $4
        RETURNING *`,
-      [errorText, backoffMs, id, lockToken],
+      [errorText, backoffMs, id, lockToken]
     );
     if (rows.length === 0) return null;
     return rowToMinionJob(rows[0]);
@@ -1115,29 +1147,38 @@ export class MinionQueue {
         delayMs: opts.delayMs,
         delayMaxMs: opts.delayMaxMs,
         jitter: BULK_RETRY_OPTS.jitter,
-        auditSite: 'minion-lock',
+        auditSite: "minion-lock",
         onRetry: (attempt, err) => {
-          const delay = computeNextDelay(attempt - 1, prevDelay, opts.delayMs, opts.delayMaxMs, BULK_RETRY_OPTS.jitter);
+          const delay = computeNextDelay(
+            attempt - 1,
+            prevDelay,
+            opts.delayMs,
+            opts.delayMaxMs,
+            BULK_RETRY_OPTS.jitter
+          );
           prevDelay = delay;
-          auditLogBatchRetry('minion-lock', 1, attempt, delay, err);
+          auditLogBatchRetry("minion-lock", 1, attempt, delay, err);
         },
         reconnect: reconnect ? () => reconnect.call(this.engine) : undefined,
       });
     } catch (err) {
-      if (err instanceof Error && err.name === 'RetryAbortError') throw err;
-      if (isRetryableConnError(err)) auditLogBatchExhausted('minion-lock', 1, opts.maxRetries + 1, err);
+      if (err instanceof Error && err.name === "RetryAbortError") throw err;
+      if (isRetryableConnError(err))
+        auditLogBatchExhausted("minion-lock", 1, opts.maxRetries + 1, err);
       throw err;
     }
   }
 
   /** Promote delayed jobs whose delay_until has passed. Returns promoted jobs. */
   async promoteDelayed(): Promise<MinionJob[]> {
-    const rows = await this.lockRetry(() => this.engine.executeRaw<Record<string, unknown>>(
-      `UPDATE minion_jobs SET status = 'waiting', delay_until = NULL,
+    const rows = await this.lockRetry(() =>
+      this.engine.executeRaw<Record<string, unknown>>(
+        `UPDATE minion_jobs SET status = 'waiting', delay_until = NULL,
         lock_token = NULL, lock_until = NULL, updated_at = now()
        WHERE status = 'delayed' AND delay_until <= now()
        RETURNING *`
-    ));
+      )
+    );
     return rows.map(rowToMinionJob);
   }
 
@@ -1173,7 +1214,7 @@ export class MinionQueue {
     const dead: MinionJob[] = [];
     for (const r of rows) {
       const job = rowToMinionJob(r);
-      if (r.action === 'requeued') requeued.push(job);
+      if (r.action === "requeued") requeued.push(job);
       else dead.push(job);
     }
     return { requeued, dead };
@@ -1202,7 +1243,11 @@ export class MinionQueue {
   }
 
   /** Fail the parent when a child fails with fail_parent policy. */
-  async failParent(parentId: number, childId: number, errorText: string): Promise<MinionJob | null> {
+  async failParent(
+    parentId: number,
+    childId: number,
+    errorText: string
+  ): Promise<MinionJob | null> {
     const rows = await this.engine.executeRaw<Record<string, unknown>>(
       `UPDATE minion_jobs SET status = 'failed',
         error_text = $1, finished_at = now(), updated_at = now()
@@ -1243,10 +1288,10 @@ export class MinionQueue {
     // Validate job exists and is in a messageable state
     const job = await this.getJob(jobId);
     if (!job) return null;
-    if (['completed', 'dead', 'cancelled', 'failed'].includes(job.status)) return null;
+    if (["completed", "dead", "cancelled", "failed"].includes(job.status)) return null;
 
     // Sender validation: must be parent job ID or 'admin'
-    if (sender !== 'admin' && sender !== String(job.parent_job_id)) {
+    if (sender !== "admin" && sender !== String(job.parent_job_id)) {
       return null;
     }
 
@@ -1296,11 +1341,9 @@ export class MinionQueue {
   async replayJob(id: number, dataOverrides?: Record<string, unknown>): Promise<MinionJob | null> {
     const source = await this.getJob(id);
     if (!source) return null;
-    if (!['completed', 'failed', 'dead'].includes(source.status)) return null;
+    if (!["completed", "failed", "dead"].includes(source.status)) return null;
 
-    const data = dataOverrides
-      ? { ...source.data, ...dataOverrides }
-      : source.data;
+    const data = dataOverrides ? { ...source.data, ...dataOverrides } : source.data;
 
     return this.add(source.name, data, {
       queue: source.queue,
@@ -1341,7 +1384,7 @@ export class MinionQueue {
     if (lockCheck.length === 0) return [];
 
     const params: unknown[] = [parentId];
-    let sinceClause = '';
+    let sinceClause = "";
     if (opts?.since) {
       sinceClause = ` AND sent_at > $2::timestamptz`;
       params.push(opts.since.toISOString());
@@ -1354,8 +1397,8 @@ export class MinionQueue {
       params
     );
 
-    return rows.map(r => {
-      const p = typeof r.payload === 'string' ? JSON.parse(r.payload) : r.payload;
+    return rows.map((r) => {
+      const p = typeof r.payload === "string" ? JSON.parse(r.payload) : r.payload;
       return p as ChildDoneMessage;
     });
   }
@@ -1384,7 +1427,7 @@ export class MinionQueue {
       `SELECT filename FROM minion_attachments WHERE job_id = $1`,
       [jobId]
     );
-    const existingFilenames = new Set(existingRows.map(r => r.filename));
+    const existingFilenames = new Set(existingRows.map((r) => r.filename));
 
     const result = validateAttachment(input, {
       maxBytes: this.maxAttachmentBytes,
@@ -1420,7 +1463,10 @@ export class MinionQueue {
    * Fetch a single attachment with bytes. Returns null if not found.
    * The bytes are returned as a Buffer (Uint8Array under the hood).
    */
-  async getAttachment(jobId: number, filename: string): Promise<{ meta: Attachment; bytes: Buffer } | null> {
+  async getAttachment(
+    jobId: number,
+    filename: string
+  ): Promise<{ meta: Attachment; bytes: Buffer } | null> {
     const rows = await this.engine.executeRaw<Record<string, unknown>>(
       `SELECT id, job_id, filename, content_type, storage_uri, size_bytes, sha256, created_at, content
        FROM minion_attachments

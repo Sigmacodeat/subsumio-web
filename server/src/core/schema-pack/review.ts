@@ -10,12 +10,12 @@
 // this EXPLICIT: every output starts with "Disk-derived candidates from
 // current brain state" so users understand what they're reviewing.
 
-import type { BrainEngine } from '../engine.ts';
-import { runDetect } from './detect.ts';
-import { loadActivePack } from './load-active.ts';
-import { loadConfig, gbrainPath, configPath } from '../config.ts';
-import { existsSync, writeFileSync, mkdirSync, appendFileSync } from 'node:fs';
-import { dirname } from 'node:path';
+import type { BrainEngine } from "../engine.ts";
+import { runDetect } from "./detect.ts";
+import { loadActivePack } from "./load-active.ts";
+import { loadConfig, gbrainPath, configPath } from "../config.ts";
+import { existsSync, writeFileSync, mkdirSync, appendFileSync } from "node:fs";
+import { dirname } from "node:path";
 
 export interface ReviewCandidatesOpts {
   sourceId?: string;
@@ -38,13 +38,13 @@ export interface ReviewCandidatesResult {
 
 export async function runReviewCandidates(
   engine: BrainEngine,
-  opts: ReviewCandidatesOpts = {},
+  opts: ReviewCandidatesOpts = {}
 ): Promise<ReviewCandidatesResult> {
-  const sourceId = opts.sourceId ?? 'default';
+  const sourceId = opts.sourceId ?? "default";
   const detected = await runDetect(engine, { sourceId });
   const cfg = loadConfig();
   let activeTypeNames = new Set<string>();
-  let activePackName = 'gbrain-base';
+  let activePackName = "gbrain-base";
   try {
     const pack = await loadActivePack({ cfg, remote: false, sourceId });
     activePackName = pack.manifest.name;
@@ -64,7 +64,9 @@ export async function runReviewCandidates(
 
   let applied: string | null = null;
   if (opts.applySlug) {
-    const match = candidates.find((c) => c.prefix === opts.applySlug || c.suggested_type === opts.applySlug);
+    const match = candidates.find(
+      (c) => c.prefix === opts.applySlug || c.suggested_type === opts.applySlug
+    );
     if (!match) {
       throw new Error(`--apply target not found in current candidate set: ${opts.applySlug}`);
     }
@@ -72,26 +74,35 @@ export async function runReviewCandidates(
     // For v0.39.0.0 the simplest correct path is: write a delta file under
     // ~/.gbrain/schema-pack-deltas/<active>-<timestamp>.json so users can
     // review + merge into their pack via `gbrain schema edit`.
-    const deltaDir = gbrainPath('schema-pack-deltas');
+    const deltaDir = gbrainPath("schema-pack-deltas");
     mkdirSync(deltaDir, { recursive: true });
-    const ts = new Date().toISOString().replace(/[:.]/g, '-');
+    const ts = new Date().toISOString().replace(/[:.]/g, "-");
     const deltaPath = `${deltaDir}/${activePackName}-${ts}.json`;
-    writeFileSync(deltaPath, JSON.stringify({
-      schema_version: 1,
-      active_pack: activePackName,
-      added_at: new Date().toISOString(),
-      delta: {
-        page_types: [{
-          name: match.suggested_type,
-          primitive: 'entity',
-          path_prefixes: [match.prefix],
-          aliases: [],
-          extractable: false,
-          expert_routing: false,
-        }],
-      },
-      source_id: sourceId,
-    }, null, 2));
+    writeFileSync(
+      deltaPath,
+      JSON.stringify(
+        {
+          schema_version: 1,
+          active_pack: activePackName,
+          added_at: new Date().toISOString(),
+          delta: {
+            page_types: [
+              {
+                name: match.suggested_type,
+                primitive: "entity",
+                path_prefixes: [match.prefix],
+                aliases: [],
+                extractable: false,
+                expert_routing: false,
+              },
+            ],
+          },
+          source_id: sourceId,
+        },
+        null,
+        2
+      )
+    );
     applied = deltaPath;
   }
 
@@ -112,9 +123,9 @@ export interface ReviewOrphansResult {
 
 export async function runReviewOrphans(
   engine: BrainEngine,
-  opts: ReviewOrphansOpts = {},
+  opts: ReviewOrphansOpts = {}
 ): Promise<ReviewOrphansResult> {
-  const sourceId = opts.sourceId ?? 'default';
+  const sourceId = opts.sourceId ?? "default";
   const rows = await engine.executeRaw<{ slug: string; source_id: string }>(
     `SELECT slug, source_id FROM pages
      WHERE source_id = $1
@@ -122,7 +133,7 @@ export async function runReviewOrphans(
        AND (type IS NULL OR type = '')
      ORDER BY slug
      LIMIT 1000`,
-    [sourceId],
+    [sourceId]
   );
   return {
     orphans: rows.map((r) => ({ slug: r.slug, source_id: r.source_id })),

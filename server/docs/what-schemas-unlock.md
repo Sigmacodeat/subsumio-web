@@ -117,8 +117,15 @@ You approve once. The agent calls `schema_apply_mutations` over MCP with a batch
 {
   "pack": "mine",
   "mutations": [
-    {"op": "add_type", "name": "yc-w24-company", "primitive": "entity", "prefix": "companies/yc-w24/", "extractable": true, "expert_routing": true},
-    {"op": "add_alias", "type": "yc-w24-company", "alias": "company"}
+    {
+      "op": "add_type",
+      "name": "yc-w24-company",
+      "primitive": "entity",
+      "prefix": "companies/yc-w24/",
+      "extractable": true,
+      "expert_routing": true
+    },
+    { "op": "add_alias", "type": "yc-w24-company", "alias": "company" }
   ]
 }
 ```

@@ -26,7 +26,7 @@ describe("useBrainSelector", () => {
 
   test("starts with loading=true and empty brains", () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response(JSON.stringify({ brains: [] }), { status: 200 }),
+      new Response(JSON.stringify({ brains: [] }), { status: 200 })
     );
     const { result } = renderHook(() => useBrainSelector());
     expect(result.current.loading).toBe(true);
@@ -40,7 +40,7 @@ describe("useBrainSelector", () => {
       { name: "Brain 2", slug: "brain-2", source: "src-2", engine: "pglite" },
     ];
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response(JSON.stringify({ brains: mockBrains }), { status: 200 }),
+      new Response(JSON.stringify({ brains: mockBrains }), { status: 200 })
     );
     const { result } = renderHook(() => useBrainSelector());
 
@@ -58,7 +58,7 @@ describe("useBrainSelector", () => {
       { name: "Brain 1", slug: "brain-1", source: "src-1", engine: "pglite" },
     ];
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response(JSON.stringify({ brains: mockBrains }), { status: 200 }),
+      new Response(JSON.stringify({ brains: mockBrains }), { status: 200 })
     );
     const { result } = renderHook(() => useBrainSelector());
 
@@ -76,7 +76,7 @@ describe("useBrainSelector", () => {
     ];
     localStorage.setItem("subsumio:active_brain", "brain-2");
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response(JSON.stringify({ brains: mockBrains }), { status: 200 }),
+      new Response(JSON.stringify({ brains: mockBrains }), { status: 200 })
     );
     const { result } = renderHook(() => useBrainSelector());
 
@@ -102,9 +102,7 @@ describe("useBrainSelector", () => {
   });
 
   test("falls back to default brain on non-OK response", async () => {
-    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response("error", { status: 500 }),
-    );
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response("error", { status: 500 }));
     const { result } = renderHook(() => useBrainSelector());
 
     await act(async () => {
@@ -132,7 +130,7 @@ describe("useBrainSelector", () => {
       { name: "Brain 2", slug: "brain-2", source: "src-2", engine: "pglite" },
     ];
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response(JSON.stringify({ brains: mockBrains }), { status: 200 }),
+      new Response(JSON.stringify({ brains: mockBrains }), { status: 200 })
     );
     const { result } = renderHook(() => useBrainSelector());
 

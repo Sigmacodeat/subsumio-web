@@ -17,10 +17,15 @@
  * for tokenmax and `false` for conservative/balanced.
  */
 
-import { createHash } from 'crypto';
-import type { SearchResult } from '../types.ts';
-import { rerank as gatewayRerank, RerankError, type RerankInput, type RerankResult } from '../ai/gateway.ts';
-import { logRerankFailure, type RerankFailureReason } from '../rerank-audit.ts';
+import { createHash } from "crypto";
+import type { SearchResult } from "../types.ts";
+import {
+  rerank as gatewayRerank,
+  RerankError,
+  type RerankInput,
+  type RerankResult,
+} from "../ai/gateway.ts";
+import { logRerankFailure, type RerankFailureReason } from "../rerank-audit.ts";
 
 export interface RerankerOpts {
   enabled: boolean;
@@ -41,7 +46,7 @@ export interface RerankerOpts {
 
 /** SHA-256 prefix (8 chars) of the query text for privacy-preserving audit. */
 function hashQuery(query: string): string {
-  return createHash('sha256').update(query, 'utf8').digest('hex').slice(0, 8);
+  return createHash("sha256").update(query, "utf8").digest("hex").slice(0, 8);
 }
 
 /**
@@ -58,7 +63,7 @@ function hashQuery(query: string): string {
 export async function applyReranker(
   query: string,
   results: SearchResult[],
-  opts: RerankerOpts,
+  opts: RerankerOpts
 ): Promise<SearchResult[]> {
   if (!opts.enabled || results.length === 0) return results;
   // No documents to rerank when topNIn=0 — pass through (defensive; mode
@@ -71,7 +76,7 @@ export async function applyReranker(
   // Document text — chunk_text is the matched span. Fall back to title if
   // empty (shouldn't happen in practice; defensive). Empty docs would
   // confuse the reranker, but we still send them — the upstream model decides.
-  const documents = head.map(r => r.chunk_text || r.title || '');
+  const documents = head.map((r) => r.chunk_text || r.title || "");
 
   let reranked: RerankResult[];
   try {
@@ -83,12 +88,11 @@ export async function applyReranker(
       ...(opts.model ? { model: opts.model } : {}),
     });
   } catch (err) {
-    const reason: RerankFailureReason =
-      err instanceof RerankError ? err.reason : 'unknown';
+    const reason: RerankFailureReason = err instanceof RerankError ? err.reason : "unknown";
     const errorSummary = err instanceof Error ? err.message : String(err);
     try {
       logRerankFailure({
-        model: opts.model ?? 'unknown',
+        model: opts.model ?? "unknown",
         reason,
         query_hash: hashQuery(query),
         doc_count: documents.length,
@@ -132,7 +136,5 @@ export async function applyReranker(
   }
 
   const combined = [...reorderedHead, ...tail];
-  return opts.topNOut !== null && opts.topNOut > 0
-    ? combined.slice(0, opts.topNOut)
-    : combined;
+  return opts.topNOut !== null && opts.topNOut > 0 ? combined.slice(0, opts.topNOut) : combined;
 }

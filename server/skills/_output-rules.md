@@ -34,6 +34,7 @@ Don't clean up grammar. The language IS the insight.
 ## Title Quality
 
 Page titles should be:
+
 - Descriptive enough to identify the page from a search result
 - Short enough to scan in a list (under 60 characters)
 - NOT sentences ("Meeting with Pedro" not "Meeting with Pedro about the new deal structure")

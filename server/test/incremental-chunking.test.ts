@@ -12,9 +12,9 @@
  * only the changed chunk.
  */
 
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
-import { PGLiteEngine } from '../src/core/pglite-engine.ts';
-import { importCodeFile } from '../src/core/import-file.ts';
+import { describe, test, expect, beforeAll, afterAll } from "bun:test";
+import { PGLiteEngine } from "../src/core/pglite-engine.ts";
+import { importCodeFile } from "../src/core/import-file.ts";
 
 let engine: PGLiteEngine;
 
@@ -28,9 +28,9 @@ afterAll(async () => {
   await engine.disconnect();
 });
 
-describe('importCodeFile — incremental chunking', () => {
-  test('re-importing same content skips embedding entirely', async () => {
-    const filePath = 'src/test/pure-same.ts';
+describe("importCodeFile — incremental chunking", () => {
+  test("re-importing same content skips embedding entirely", async () => {
+    const filePath = "src/test/pure-same.ts";
     const src = `export function unchanged() {
   let sum = 0;
   for (let i = 0; i < 100; i++) { sum += i; }
@@ -41,15 +41,15 @@ describe('importCodeFile — incremental chunking', () => {
 
     // First import: embedding disabled so we just check the shape.
     const r1 = await importCodeFile(engine, filePath, src, { noEmbed: true });
-    expect(r1.status).toBe('imported');
+    expect(r1.status).toBe("imported");
     // Second import with identical content: content_hash matches, skipped.
     const r2 = await importCodeFile(engine, filePath, src, { noEmbed: true });
-    expect(r2.status).toBe('skipped');
+    expect(r2.status).toBe("skipped");
     expect(r2.chunks).toBe(0);
   });
 
-  test('editing one function preserves unchanged chunks in DB', async () => {
-    const filePath = 'src/test/mixed-edit.ts';
+  test("editing one function preserves unchanged chunks in DB", async () => {
+    const filePath = "src/test/mixed-edit.ts";
     // Each function needs to be large enough that small-sibling merging
     // doesn't collapse them into one chunk (threshold is 40% of
     // chunkSizeTokens default 300 = 120 tokens per chunk).
@@ -92,33 +92,36 @@ export function gamma(p: number[], q: number[], r: number[]): number {
   return sum / (p.length + q.length + r.length);
 }`;
     await importCodeFile(engine, filePath, srcV1, { noEmbed: true });
-    const v1Slug = 'src-test-mixed-edit-ts';
+    const v1Slug = "src-test-mixed-edit-ts";
     const chunksV1 = await engine.getChunks(v1Slug);
     expect(chunksV1.length).toBeGreaterThan(0);
 
     // Edit ONLY beta's inner constants — alpha and gamma chunks remain identical.
-    const srcV2 = srcV1.replace('v * 2; }\n  for (const v of y) { sum += v * 4', 'v * 2; }\n  for (const v of y) { sum += v * 7');
+    const srcV2 = srcV1.replace(
+      "v * 2; }\n  for (const v of y) { sum += v * 4",
+      "v * 2; }\n  for (const v of y) { sum += v * 7"
+    );
     await importCodeFile(engine, filePath, srcV2, { noEmbed: true });
     const chunksV2 = await engine.getChunks(v1Slug);
     expect(chunksV2.length).toBe(chunksV1.length);
 
     // The chunk containing "alpha" should be byte-identical between v1 and v2.
-    const alphaV1 = chunksV1.find(c => c.chunk_text.includes('alpha'));
-    const alphaV2 = chunksV2.find(c => c.chunk_text.includes('alpha'));
+    const alphaV1 = chunksV1.find((c) => c.chunk_text.includes("alpha"));
+    const alphaV2 = chunksV2.find((c) => c.chunk_text.includes("alpha"));
     expect(alphaV1).toBeDefined();
     expect(alphaV2).toBeDefined();
     expect(alphaV2!.chunk_text).toBe(alphaV1!.chunk_text);
 
     // The beta chunk should have changed text.
-    const betaV1 = chunksV1.find(c => c.chunk_text.includes('function beta'));
-    const betaV2 = chunksV2.find(c => c.chunk_text.includes('function beta'));
+    const betaV1 = chunksV1.find((c) => c.chunk_text.includes("function beta"));
+    const betaV2 = chunksV2.find((c) => c.chunk_text.includes("function beta"));
     expect(betaV1).toBeDefined();
     expect(betaV2).toBeDefined();
     expect(betaV2!.chunk_text).not.toBe(betaV1!.chunk_text);
   });
 
-  test('new file import embeds all chunks (nothing to reuse)', async () => {
-    const filePath = 'src/test/fresh.ts';
+  test("new file import embeds all chunks (nothing to reuse)", async () => {
+    const filePath = "src/test/fresh.ts";
     const src = `export function only() {
   let x = 0;
   for (let i = 0; i < 100; i++) { x += i; }
@@ -127,7 +130,7 @@ export function gamma(p: number[], q: number[], r: number[]): number {
   return x;
 }`;
     const r = await importCodeFile(engine, filePath, src, { noEmbed: true });
-    expect(r.status).toBe('imported');
+    expect(r.status).toBe("imported");
     expect(r.chunks).toBeGreaterThan(0);
   });
 });

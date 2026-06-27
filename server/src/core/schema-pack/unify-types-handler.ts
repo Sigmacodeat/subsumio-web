@@ -28,15 +28,20 @@
 // this module exports `runUnifyTypes` as a pure function consuming
 // OperationContext, and jobs.ts wires it.
 
-import type { OperationContext } from '../operations.ts';
-import { runRetypeCore, type RetypeRule, UNKNOWN_TYPE_SENTINEL, ORIGINAL_TYPE_SENTINEL } from './retype.ts';
-import { runPageToLinkCore, type PageToLinkRule } from './page-to-link.ts';
-import { runPageToAliasCore, type PageToAliasRule } from './page-to-alias.ts';
-import { loadActivePack } from './load-active.ts';
-import { runStatsCore } from './stats.ts';
-import { runSyncCore } from './sync.ts';
-import { tryAcquireDbLock, type DbLockHandle } from '../db-lock.ts';
-import type { PackMappingRule } from './manifest-v1.ts';
+import type { OperationContext } from "../operations.ts";
+import {
+  runRetypeCore,
+  type RetypeRule,
+  UNKNOWN_TYPE_SENTINEL,
+  ORIGINAL_TYPE_SENTINEL,
+} from "./retype.ts";
+import { runPageToLinkCore, type PageToLinkRule } from "./page-to-link.ts";
+import { runPageToAliasCore, type PageToAliasRule } from "./page-to-alias.ts";
+import { loadActivePack } from "./load-active.ts";
+import { runStatsCore } from "./stats.ts";
+import { runSyncCore } from "./sync.ts";
+import { tryAcquireDbLock, type DbLockHandle } from "../db-lock.ts";
+import type { PackMappingRule } from "./manifest-v1.ts";
 
 export interface UnifyTypesInput {
   /** The pack name to upgrade TO (e.g. 'gbrain-base-v2'). */
@@ -78,7 +83,7 @@ export interface UnifyTypesResult {
  */
 export async function runUnifyTypes(
   ctx: OperationContext,
-  input: UnifyTypesInput,
+  input: UnifyTypesInput
 ): Promise<UnifyTypesResult> {
   const apply = input.apply === true;
   const sourceId = input.sourceId;
@@ -96,7 +101,7 @@ export async function runUnifyTypes(
   if (!targetPack.manifest.mapping_rules || targetPack.manifest.mapping_rules.length === 0) {
     throw new Error(
       `[unify-types] target pack '${input.target_pack}' has no mapping_rules; ` +
-      `nothing to unify. Did you mean a different pack?`,
+        `nothing to unify. Did you mean a different pack?`
     );
   }
 
@@ -108,7 +113,7 @@ export async function runUnifyTypes(
   };
   onProgress(
     `[unify-types] pre-state: ${stats_before.total_pages} pages, ` +
-    `${stats_before.distinct_types} distinct types`,
+      `${stats_before.distinct_types} distinct types`
   );
 
   // Pack identity capture
@@ -118,11 +123,11 @@ export async function runUnifyTypes(
   // 3. Acquire db-lock
   let lockHandle: DbLockHandle | null = null;
   if (apply) {
-    lockHandle = await tryAcquireDbLock(ctx.engine, 'gbrain-unify', 60);
+    lockHandle = await tryAcquireDbLock(ctx.engine, "gbrain-unify", 60);
     if (lockHandle === null) {
       throw new Error(
         `[unify-types] could not acquire gbrain-unify db-lock (held by another process). ` +
-        `Wait for the other unify run to complete (lock TTL: 60min).`,
+          `Wait for the other unify run to complete (lock TTL: 60min).`
       );
     }
     onProgress(`[unify-types] gbrain-unify lock acquired`);
@@ -135,7 +140,7 @@ export async function runUnifyTypes(
     const pageToLinkRules: PageToLinkRule[] = [];
     const pageToAliasRules: PageToAliasRule[] = [];
     for (const rule of targetPack.manifest.mapping_rules as PackMappingRule[]) {
-      if (rule.kind === 'retype') {
+      if (rule.kind === "retype") {
         if (rule.from_type === UNKNOWN_TYPE_SENTINEL) {
           if (catchAllRule) {
             warnings.push(`Multiple catch-all retype rules declared; last one wins.`);
@@ -154,7 +159,7 @@ export async function runUnifyTypes(
             path_filter: rule.path_filter,
           });
         }
-      } else if (rule.kind === 'page_to_link') {
+      } else if (rule.kind === "page_to_link") {
         pageToLinkRules.push({
           from_type: rule.from_type,
           link_type: rule.link_type,
@@ -163,7 +168,7 @@ export async function runUnifyTypes(
           inverse: rule.inverse,
           preserve_notes: rule.preserve_notes,
         });
-      } else if (rule.kind === 'page_to_alias') {
+      } else if (rule.kind === "page_to_alias") {
         pageToAliasRules.push({
           from_type: rule.from_type,
           canonical_from: rule.canonical_from,
@@ -175,9 +180,10 @@ export async function runUnifyTypes(
 
     // 4a. Explicit retype rules
     onProgress(`[unify-types] phase: retype-explicit (${explicitRetypeRules.length} rules)`);
-    const retypeExplicit = explicitRetypeRules.length === 0
-      ? { total_would_apply: 0, total_applied: 0 }
-      : await runRetypeCore(ctx, { rules: explicitRetypeRules, apply, sourceId });
+    const retypeExplicit =
+      explicitRetypeRules.length === 0
+        ? { total_would_apply: 0, total_applied: 0 }
+        : await runRetypeCore(ctx, { rules: explicitRetypeRules, apply, sourceId });
 
     // 4b. Catch-all expansion: query for distinct types NOT in pack page_types
     //     AND NOT the target of any explicit retype rule AND NOT a page_to_link
@@ -187,9 +193,7 @@ export async function runUnifyTypes(
     let retypeCatchAll = { synthesized_rules: 0, total_would_apply: 0, total_applied: 0 };
     if (catchAllRule) {
       const declaredTypes = new Set(targetPack.manifest.page_types.map((pt) => pt.name));
-      const explicitTargets = new Set(
-        explicitRetypeRules.map((r) => r.from_type),
-      );
+      const explicitTargets = new Set(explicitRetypeRules.map((r) => r.from_type));
       // Also exclude page_to_link + page_to_alias source types — those pages
       // are claimed by their dedicated phases (4c + 4d). Without this, the
       // catch-all retypes them to `note` BEFORE the alias/link phases can
@@ -203,25 +207,27 @@ export async function runUnifyTypes(
       const params = sourceId ? [sourceId] : [];
       const rows = await ctx.engine.executeRaw<{ type: string }>(
         `SELECT DISTINCT type FROM pages ${where} ORDER BY type`,
-        params,
+        params
       );
       const unknownTypes = rows
         .map((r) => r.type)
-        .filter((t) => !declaredTypes.has(t)
-          && !explicitTargets.has(t)
-          && !pageToLinkTargets.has(t)
-          && !pageToAliasTargets.has(t));
+        .filter(
+          (t) =>
+            !declaredTypes.has(t) &&
+            !explicitTargets.has(t) &&
+            !pageToLinkTargets.has(t) &&
+            !pageToAliasTargets.has(t)
+        );
       onProgress(
-        `[unify-types] phase: retype-catch-all (${unknownTypes.length} synthesized rules)`,
+        `[unify-types] phase: retype-catch-all (${unknownTypes.length} synthesized rules)`
       );
       if (unknownTypes.length > 0) {
         const synthesized: RetypeRule[] = unknownTypes.map((ut) => ({
           from_type: ut,
           to_type: catchAllRule!.to_type,
-          subtype_field: (catchAllRule!.subtype_field ?? 'legacy_type') as RetypeRule['subtype_field'],
-          subtype: catchAllRule!.subtype === ORIGINAL_TYPE_SENTINEL
-            ? ut
-            : catchAllRule!.subtype,
+          subtype_field: (catchAllRule!.subtype_field ??
+            "legacy_type") as RetypeRule["subtype_field"],
+          subtype: catchAllRule!.subtype === ORIGINAL_TYPE_SENTINEL ? ut : catchAllRule!.subtype,
         }));
         const result = await runRetypeCore(ctx, { rules: synthesized, apply, sourceId });
         retypeCatchAll = {
@@ -234,15 +240,17 @@ export async function runUnifyTypes(
 
     // 4c. page_to_link rules
     onProgress(`[unify-types] phase: page-to-link (${pageToLinkRules.length} rules)`);
-    const pageToLink = pageToLinkRules.length === 0
-      ? { total_would_convert: 0, total_converted: 0 }
-      : await runPageToLinkCore(ctx, { rules: pageToLinkRules, apply, sourceId });
+    const pageToLink =
+      pageToLinkRules.length === 0
+        ? { total_would_convert: 0, total_converted: 0 }
+        : await runPageToLinkCore(ctx, { rules: pageToLinkRules, apply, sourceId });
 
     // 4d. page_to_alias rules
     onProgress(`[unify-types] phase: page-to-alias (${pageToAliasRules.length} rules)`);
-    const pageToAlias = pageToAliasRules.length === 0
-      ? { total_would_alias: 0, total_aliased: 0 }
-      : await runPageToAliasCore(ctx, { rules: pageToAliasRules, apply, sourceId });
+    const pageToAlias =
+      pageToAliasRules.length === 0
+        ? { total_would_alias: 0, total_aliased: 0 }
+        : await runPageToAliasCore(ctx, { rules: pageToAliasRules, apply, sourceId });
 
     // 5. Final sync — typing residual UNTYPED rows by path prefix.
     onProgress(`[unify-types] phase: final-sync (path-prefix typing for untyped rows)`);
@@ -259,16 +267,16 @@ export async function runUnifyTypes(
       //     callers that read from ~/.gbrain/config.json (homeConfig tier).
       // Without the file-plane write the local CLI loadActivePack callers
       // wouldn't see the flip and pack_upgrade_available would keep firing.
-      await ctx.engine.setConfig('schema_pack', input.target_pack);
+      await ctx.engine.setConfig("schema_pack", input.target_pack);
       try {
-        const { loadConfigFileOnly, saveConfig } = await import('../config.ts');
+        const { loadConfigFileOnly, saveConfig } = await import("../config.ts");
         const existing = loadConfigFileOnly() ?? ({} as Record<string, unknown>);
         saveConfig({ ...existing, schema_pack: input.target_pack } as never);
       } catch (e) {
         warnings.push(
           `Active-pack flip wrote to DB but file-plane saveConfig failed: ` +
-          `${(e as Error).message}. Run \`gbrain schema use ${input.target_pack}\` ` +
-          `manually to ensure local CLI sees the flip.`,
+            `${(e as Error).message}. Run \`gbrain schema use ${input.target_pack}\` ` +
+            `manually to ensure local CLI sees the flip.`
         );
       }
       active_pack_flipped = true;
@@ -277,7 +285,9 @@ export async function runUnifyTypes(
         remote: false,
       });
       pack_identity_after = activeAfter.identity;
-      onProgress(`[unify-types] active pack flipped: ${pack_identity_before} → ${pack_identity_after}`);
+      onProgress(
+        `[unify-types] active pack flipped: ${pack_identity_before} → ${pack_identity_after}`
+      );
     }
 
     // 7. Verify
@@ -290,19 +300,19 @@ export async function runUnifyTypes(
     if (apply && stats_after.distinct_types > expected) {
       warnings.push(
         `Post-unify distinct types (${stats_after.distinct_types}) exceeds pack declared ` +
-        `(${targetPack.manifest.page_types.length}) + safety margin (5). ` +
-        `Some types may not be covered by the catch-all rule; review with ` +
-        `\`gbrain schema stats\`.`,
+          `(${targetPack.manifest.page_types.length}) + safety margin (5). ` +
+          `Some types may not be covered by the catch-all rule; review with ` +
+          `\`gbrain schema stats\`.`
       );
     }
 
     // 8. Celebration summary
     if (apply) {
       const summaryLines = [
-        '',
-        '═══════════════════════════════════════════════════════════',
+        "",
+        "═══════════════════════════════════════════════════════════",
         `  ${input.target_pack} migration complete`,
-        '═══════════════════════════════════════════════════════════',
+        "═══════════════════════════════════════════════════════════",
         `  Before: ${stats_before.distinct_types} distinct page types`,
         `  After:  ${stats_after.distinct_types} distinct types`,
         ``,
@@ -312,8 +322,8 @@ export async function runUnifyTypes(
         `  Page→alias:          ${pageToAlias.total_aliased} aliased`,
         `  Final sync:          ${finalSync.total_applied} residual untyped typed`,
         `  Active pack:         ${pack_identity_after}`,
-        '═══════════════════════════════════════════════════════════',
-        '',
+        "═══════════════════════════════════════════════════════════",
+        "",
       ];
       for (const line of summaryLines) onProgress(line);
     }
@@ -363,7 +373,7 @@ export async function runUnifyTypes(
       } catch (e) {
         onProgress(
           `[unify-types] WARNING: lock release failed (${(e as Error).message}); ` +
-          `will release automatically via TTL.`,
+            `will release automatically via TTL.`
         );
       }
     }

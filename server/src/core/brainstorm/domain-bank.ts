@@ -37,9 +37,9 @@
  * citation badges so users see how far each collision actually traveled.
  */
 
-import type { BrainEngine } from '../engine.ts';
-import type { DomainBankRow } from '../types.ts';
-import { INJECTION_PATTERNS } from '../think/sanitize.ts';
+import type { BrainEngine } from "../engine.ts";
+import type { DomainBankRow } from "../types.ts";
+import { INJECTION_PATTERNS } from "../think/sanitize.ts";
 
 /** Default 1-hour TTL for the prefix-enumeration cache (D3). */
 export const PREFIX_CACHE_TTL_MS = 60 * 60 * 1000;
@@ -110,7 +110,7 @@ export interface FarPage {
   /** When this page was last surfaced by a user-facing op. Null = never retrieved (LSD's prized signal). */
   last_retrieved_at: Date | null;
   /** Which sampling strategy produced this page. */
-  source: 'prefix-stratified' | 'corpus-sample';
+  source: "prefix-stratified" | "corpus-sample";
 }
 
 /** Top-level orchestrator return. */
@@ -138,7 +138,7 @@ interface PrefixCacheEntry {
 function prefixCacheKey(sourceId: string | undefined): string {
   // Source-scoped per codex round 2 #7. Federated/mounted brains MUST use
   // the per-source key to avoid serving prefixes from a foreign source.
-  return `brainstorm.domain_bank.prefixes:${sourceId ?? 'default'}`;
+  return `brainstorm.domain_bank.prefixes:${sourceId ?? "default"}`;
 }
 
 /**
@@ -164,10 +164,10 @@ async function readPrefixCache(
     return null;
   }
   if (
-    typeof parsed !== 'object'
-    || parsed === null
-    || !Array.isArray((parsed as PrefixCacheEntry).prefixes)
-    || typeof (parsed as PrefixCacheEntry).cached_at !== 'number'
+    typeof parsed !== "object" ||
+    parsed === null ||
+    !Array.isArray((parsed as PrefixCacheEntry).prefixes) ||
+    typeof (parsed as PrefixCacheEntry).cached_at !== "number"
   ) {
     return null;
   }
@@ -175,7 +175,7 @@ async function readPrefixCache(
   if (Date.now() - entry.cached_at > ttlMs) return null;
   // Type-narrow: every entry must be a string.
   for (const p of entry.prefixes) {
-    if (typeof p !== 'string') return null;
+    if (typeof p !== "string") return null;
   }
   return entry.prefixes;
 }
@@ -225,7 +225,7 @@ export async function enumeratePrefixes(
   );
   return rows
     .map((r) => r.prefix)
-    .filter((p): p is string => typeof p === 'string' && p.length > 0);
+    .filter((p): p is string => typeof p === "string" && p.length > 0);
 }
 
 // ---------------------------------------------------------------------------
@@ -245,7 +245,7 @@ function sanitizeFarContent(raw: string): string {
     }
   }
   if (text.length > FAR_CONTENT_LENGTH_CAP) {
-    text = text.slice(0, FAR_CONTENT_LENGTH_CAP - 3) + '...';
+    text = text.slice(0, FAR_CONTENT_LENGTH_CAP - 3) + "...";
   }
   return text;
 }
@@ -271,7 +271,9 @@ export function normalizedCosineDistance(a: Float32Array, b: Float32Array): numb
   if (a.length !== b.length) {
     throw new Error(`normalizedCosineDistance: dim mismatch (${a.length} vs ${b.length})`);
   }
-  let dot = 0, na = 0, nb = 0;
+  let dot = 0,
+    na = 0,
+    nb = 0;
   for (let i = 0; i < a.length; i++) {
     dot += a[i] * b[i];
     na += a[i] * a[i];
@@ -322,10 +324,7 @@ function distanceFromClosest(
  * we still return an empty result with `short_of_target=true`. The CLI
  * surfaces the paste-ready hint ("Brain has <K+M pages; try gbrain import").
  */
-export async function fetchFar(
-  engine: BrainEngine,
-  opts: FetchFarOpts
-): Promise<FetchFarResult> {
+export async function fetchFar(engine: BrainEngine, opts: FetchFarOpts): Promise<FetchFarResult> {
   const m = opts.m;
   if (m <= 0) {
     return {
@@ -405,10 +404,7 @@ export async function fetchFar(
   let usedFallback = false;
   if (primaryRows.length < m) {
     const need = m - primaryRows.length;
-    const excludeForFallback = [
-      ...closeSlugs,
-      ...primaryRows.map((r) => r.slug),
-    ];
+    const excludeForFallback = [...closeSlugs, ...primaryRows.map((r) => r.slug)];
     fallbackRows = await engine.listCorpusSample({
       n: need,
       excludeSlugs: excludeForFallback,
@@ -419,19 +415,19 @@ export async function fetchFar(
   }
 
   // ---- Step 5: hydrate embeddings for distance calc ----
-  const allRows: Array<{ row: DomainBankRow; src: 'prefix-stratified' | 'corpus-sample' }> = [
-    ...primaryRows.map((row) => ({ row, src: 'prefix-stratified' as const })),
-    ...fallbackRows.map((row) => ({ row, src: 'corpus-sample' as const })),
+  const allRows: Array<{ row: DomainBankRow; src: "prefix-stratified" | "corpus-sample" }> = [
+    ...primaryRows.map((row) => ({ row, src: "prefix-stratified" as const })),
+    ...fallbackRows.map((row) => ({ row, src: "corpus-sample" as const })),
   ];
 
   // Build the chunk-id list for one batched embedding lookup. Skip rows
   // without a representative chunk (no embedded content).
   const closeChunkIds = opts.closeSet
     .map((c) => c.representative_chunk_id)
-    .filter((id): id is number => typeof id === 'number');
+    .filter((id): id is number => typeof id === "number");
   const farChunkIds = allRows
     .map((r) => r.row.representative_chunk_id)
-    .filter((id): id is number => typeof id === 'number');
+    .filter((id): id is number => typeof id === "number");
   const chunkIds = [...new Set([...closeChunkIds, ...farChunkIds])];
   let embeddings: Map<number, Float32Array> = new Map();
   if (chunkIds.length > 0) {
@@ -444,9 +440,10 @@ export async function fetchFar(
 
   // ---- Step 6: build FarPage results with normalized distance ----
   const allPages: FarPage[] = allRows.map(({ row, src }) => {
-    const farEmbed = row.representative_chunk_id != null
-      ? embeddings.get(row.representative_chunk_id) ?? null
-      : null;
+    const farEmbed =
+      row.representative_chunk_id != null
+        ? (embeddings.get(row.representative_chunk_id) ?? null)
+        : null;
     const distance_score = distanceFromClosest(farEmbed, refEmbeds, opts.questionEmbedding);
     return {
       slug: row.slug,

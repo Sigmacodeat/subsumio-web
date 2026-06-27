@@ -26,11 +26,11 @@
  *            created it and we trust the gazetteer presence.
  */
 
-import type { BrainEngine } from './engine.ts';
-import { stripCodeBlocks } from './link-extraction.ts';
+import type { BrainEngine } from "./engine.ts";
+import { stripCodeBlocks } from "./link-extraction.ts";
 
 /** D2: hardcoded entity types for v1. Pack-aware extension is TODO-1. */
-export const LINKABLE_ENTITY_TYPES = ['person', 'company', 'organization', 'entity'] as const;
+export const LINKABLE_ENTITY_TYPES = ["person", "company", "organization", "entity"] as const;
 
 /**
  * Minimum title length for gazetteer inclusion. Filters out 2-3 char names
@@ -51,7 +51,16 @@ const MIN_NAME_LENGTH = 4;
  * not override gazetteer presence. The list only suppresses entries
  * that would NOT otherwise be in the gazetteer.
  */
-const DEFAULT_IGNORE_LIST = ['Apple', 'Amazon', 'Square', 'Stripe', 'Box', 'Meta', 'Target', 'Oracle'];
+const DEFAULT_IGNORE_LIST = [
+  "Apple",
+  "Amazon",
+  "Square",
+  "Stripe",
+  "Box",
+  "Meta",
+  "Target",
+  "Oracle",
+];
 
 export interface GazetteerEntry {
   /** Canonical page slug (e.g. `companies/acme-corp`). */
@@ -118,9 +127,9 @@ export interface FindMentionsOpts {
 const TOKEN_RE = /[a-zA-Z0-9]+/g;
 
 interface ScannedToken {
-  text: string;       // lowercase
-  offset: number;     // index in source
-  length: number;     // original length (for span tracking)
+  text: string; // lowercase
+  offset: number; // index in source
+  length: number; // original length (for span tracking)
 }
 
 function tokenizeForScan(text: string): ScannedToken[] {
@@ -154,15 +163,19 @@ function tokenizeTitle(title: string): string[] {
  */
 export async function buildGazetteer(
   engine: BrainEngine,
-  opts: BuildGazetteerOpts = {},
+  opts: BuildGazetteerOpts = {}
 ): Promise<Gazetteer> {
-  const typeList = LINKABLE_ENTITY_TYPES.map(t => `'${t}'`).join(', ');
-  const rows = await engine.executeRaw<{ slug: string; source_id: string | null; title: string | null }>(
+  const typeList = LINKABLE_ENTITY_TYPES.map((t) => `'${t}'`).join(", ");
+  const rows = await engine.executeRaw<{
+    slug: string;
+    source_id: string | null;
+    title: string | null;
+  }>(
     `SELECT slug, source_id, title
      FROM pages
      WHERE type IN (${typeList})
        AND deleted_at IS NULL`,
-    [],
+    []
   );
 
   // Pre-build the existing-slug Set so the ignore-list rule can check
@@ -184,7 +197,7 @@ export async function buildGazetteer(
 
     const entry: GazetteerEntry = {
       slug: row.slug,
-      source_id: row.source_id ?? 'default',
+      source_id: row.source_id ?? "default",
       title: row.title,
       tokens,
     };
@@ -229,7 +242,7 @@ export async function buildGazetteer(
 export function findMentionedEntities(
   text: string,
   gazetteer: Gazetteer,
-  opts: FindMentionsOpts,
+  opts: FindMentionsOpts
 ): Mention[] {
   if (!text || gazetteer.size === 0) return [];
   const stripped = stripCodeBlocks(text);

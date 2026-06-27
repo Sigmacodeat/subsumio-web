@@ -1,6 +1,5 @@
 # Credential Gateway (ClawVisor / Hermes)
 
-
 Three integrations that make the agent real. Without these, the brain is a static
 database. With them, it's alive.
 
@@ -49,4 +48,4 @@ in the gateway config. Hermes's scheduled automations can run the same EA workfl
 
 ---
 
-*Part of the [GBrain Skillpack](../GBRAIN_SKILLPACK.md). See also: [Getting Data In](README.md)*
+_Part of the [GBrain Skillpack](../GBRAIN_SKILLPACK.md). See also: [Getting Data In](README.md)_

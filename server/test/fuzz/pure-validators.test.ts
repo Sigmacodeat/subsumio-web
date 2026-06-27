@@ -29,20 +29,20 @@
  * bun:test assertion.
  */
 
-import { describe, test } from 'bun:test';
-import fc from 'fast-check';
+import { describe, test } from "bun:test";
+import fc from "fast-check";
 
-import { escapeLikePattern } from '../../src/core/cjk.ts';
-import { parseFactsFence } from '../../src/core/facts-fence.ts';
+import { escapeLikePattern } from "../../src/core/cjk.ts";
+import { parseFactsFence } from "../../src/core/facts-fence.ts";
 
 const NUM_RUNS = 1000;
 
-describe('pure-validator fuzz (purity-guarded set)', () => {
-  test('escapeLikePattern: returns a string on any input, never throws', () => {
+describe("pure-validator fuzz (purity-guarded set)", () => {
+  test("escapeLikePattern: returns a string on any input, never throws", () => {
     fc.assert(
       fc.property(fc.string(), (input) => {
         const out = escapeLikePattern(input);
-        if (typeof out !== 'string') {
+        if (typeof out !== "string") {
           throw new Error(`escapeLikePattern returned non-string: ${typeof out}`);
         }
         // Contract: every `%`, `_`, and `\` in input becomes `\%`, `\_`, `\\`
@@ -51,43 +51,43 @@ describe('pure-validator fuzz (purity-guarded set)', () => {
         // some form). Fast-check's value is the broad input space, not a
         // precise contract — that's covered by unit tests in src/core.
       }),
-      { numRuns: NUM_RUNS },
+      { numRuns: NUM_RUNS }
     );
   });
 
-  test('parseFactsFence: returns a parse result on any input, never throws', () => {
+  test("parseFactsFence: returns a parse result on any input, never throws", () => {
     fc.assert(
       fc.property(fc.string(), (input) => {
         const out = parseFactsFence(input);
         if (out === undefined || out === null) {
-          throw new Error('parseFactsFence returned null/undefined');
+          throw new Error("parseFactsFence returned null/undefined");
         }
         // FactsFenceParseResult is a typed shape; for fuzz we just verify
         // the function doesn't throw and produces a non-null result.
       }),
-      { numRuns: NUM_RUNS },
+      { numRuns: NUM_RUNS }
     );
   });
 
   // Fence-shaped inputs: stress the row-parser with malformed pipe-delimited
   // lines, which is the realistic adversarial input shape (user-supplied
   // markdown that almost looks like a fence row).
-  test('parseFactsFence: stress with malformed pipe-delimited input', () => {
+  test("parseFactsFence: stress with malformed pipe-delimited input", () => {
     const fenceShaped = fc.oneof(
-      fc.constant('| claim | actor | since | until |'),
-      fc.constant('| | | | |'),
+      fc.constant("| claim | actor | since | until |"),
+      fc.constant("| | | | |"),
       fc.string().map((s) => `| ${s} |`),
       fc.string().map((s) => `| ${s} | ${s} |`),
-      fc.tuple(fc.string(), fc.string(), fc.string()).map(([a, b, c]) => `| ${a} | ${b} | ${c} |`),
+      fc.tuple(fc.string(), fc.string(), fc.string()).map(([a, b, c]) => `| ${a} | ${b} | ${c} |`)
     );
     fc.assert(
       fc.property(fenceShaped, (input) => {
         const out = parseFactsFence(input);
         if (out === undefined || out === null) {
-          throw new Error('parseFactsFence returned null/undefined on fence-shaped input');
+          throw new Error("parseFactsFence returned null/undefined on fence-shaped input");
         }
       }),
-      { numRuns: 500 },
+      { numRuns: 500 }
     );
   });
 });

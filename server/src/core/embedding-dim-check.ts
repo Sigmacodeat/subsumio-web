@@ -13,12 +13,12 @@
  * `embeddingMismatchMessage`) plus a pointer to `docs/embedding-migrations.md`.
  */
 
-import type { BrainEngine } from './engine.ts';
-import { PGVECTOR_HNSW_VECTOR_MAX_DIMS } from './vector-index.ts';
-import { gbrainPath } from './config.ts';
-import { resolveRecipe } from './ai/model-resolver.ts';
-import type { Recipe } from './ai/types.ts';
-import { AIConfigError } from './ai/errors.ts';
+import type { BrainEngine } from "./engine.ts";
+import { PGVECTOR_HNSW_VECTOR_MAX_DIMS } from "./vector-index.ts";
+import { gbrainPath } from "./config.ts";
+import { resolveRecipe } from "./ai/model-resolver.ts";
+import type { Recipe } from "./ai/types.ts";
+import { AIConfigError } from "./ai/errors.ts";
 import {
   supportsVoyageOutputDimension,
   isValidVoyageOutputDim,
@@ -29,7 +29,7 @@ import {
   isOpenAITextEmbedding3Model,
   isValidOpenAITextEmbedding3Dim,
   maxOpenAITextEmbedding3Dim,
-} from './ai/dims.ts';
+} from "./ai/dims.ts";
 
 /**
  * pgvector supports vector(N) columns up to 16000 dimensions. HNSW indexing
@@ -59,18 +59,18 @@ export const PGVECTOR_COLUMN_MAX_DIMS = 16000;
 export class EmbeddingDisabledError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'EmbeddingDisabledError';
+    this.name = "EmbeddingDisabledError";
   }
 }
 
 export function assertEmbeddingEnabled(cfg: { embedding_disabled?: boolean } | null): void {
   if (cfg?.embedding_disabled) {
     throw new EmbeddingDisabledError(
-      'This brain was initialized with `--no-embedding` (deferred setup).\n' +
-      'Configure an embedding provider before running embed / import:\n' +
-      '  gbrain config set embedding_model <provider>:<model>\n' +
-      '  gbrain config set embedding_dimensions <N>\n' +
-      '  gbrain init --force --embedding-model <provider>:<model>   # re-init to size schema\n',
+      "This brain was initialized with `--no-embedding` (deferred setup).\n" +
+        "Configure an embedding provider before running embed / import:\n" +
+        "  gbrain config set embedding_model <provider>:<model>\n" +
+        "  gbrain config set embedding_dimensions <N>\n" +
+        "  gbrain init --force --embedding-model <provider>:<model>   # re-init to size schema\n"
     );
   }
 }
@@ -98,7 +98,7 @@ export async function readContentChunksEmbeddingDim(engine: BrainEngine): Promis
        WHERE table_schema = 'public'
          AND table_name = 'content_chunks'
          AND column_name = 'embedding'
-     ) AS exists`,
+     ) AS exists`
   );
   const exists = !!existsRows?.[0]?.exists;
   if (!exists) return { exists: false, dims: null };
@@ -113,7 +113,7 @@ export async function readContentChunksEmbeddingDim(engine: BrainEngine): Promis
       WHERE n.nspname = 'public'
         AND c.relname = 'content_chunks'
         AND a.attname = 'embedding'
-        AND NOT a.attisdropped`,
+        AND NOT a.attisdropped`
   );
   const formatted = formatRows?.[0]?.formatted ?? null;
   if (!formatted) return { exists: true, dims: null };
@@ -145,14 +145,14 @@ export interface EmbeddingMismatchOpts {
   currentDims: number;
   requestedDims: number;
   requestedModel?: string;
-  source?: 'init' | 'doctor' | 'embed';
+  source?: "init" | "doctor" | "embed";
   /**
    * PGLite vs Postgres branching. Required so the recipe matches the
    * brain's actual engine. Pre-v0.37 default was 'postgres' (the SQL
    * recipe), which produced the wrong recipe for the default install
    * on PGLite.
    */
-  engineKind: 'pglite' | 'postgres';
+  engineKind: "pglite" | "postgres";
   /**
    * Active PGLite database path. Used only for the PGLite branch; if
    * omitted, falls back to the default `gbrainPath('brain.pglite')`.
@@ -164,18 +164,19 @@ export interface EmbeddingMismatchOpts {
 
 export function embeddingMismatchMessage(opts: EmbeddingMismatchOpts): string {
   const { currentDims, requestedDims, requestedModel, source, engineKind, databasePath } = opts;
-  const header = source === 'doctor'
-    ? `Embedding dimension mismatch detected.`
-    : `Refusing to silently re-template existing brain.`;
+  const header =
+    source === "doctor"
+      ? `Embedding dimension mismatch detected.`
+      : `Refusing to silently re-template existing brain.`;
 
-  if (engineKind === 'pglite') {
-    const activePath = databasePath ?? gbrainPath('brain.pglite');
-    const modelArg = requestedModel ? ` --embedding-model ${requestedModel}` : '';
+  if (engineKind === "pglite") {
+    const activePath = databasePath ?? gbrainPath("brain.pglite");
+    const modelArg = requestedModel ? ` --embedding-model ${requestedModel}` : "";
     const lines = [
       header,
       ``,
       `  Existing column: vector(${currentDims})`,
-      `  Requested:       vector(${requestedDims})${requestedModel ? `  (${requestedModel})` : ''}`,
+      `  Requested:       vector(${requestedDims})${requestedModel ? `  (${requestedModel})` : ""}`,
       ``,
       `Switching dims is destructive: it drops every embedding in your brain.`,
       `PGLite cannot ALTER vector column types (pgvector ships as embedded WASM,`,
@@ -194,7 +195,7 @@ export function embeddingMismatchMessage(opts: EmbeddingMismatchOpts): string {
       ``,
       `Full guide: docs/embedding-migrations.md`,
     ];
-    return lines.join('\n');
+    return lines.join("\n");
   }
 
   // Postgres branch — preserve the existing SQL recipe.
@@ -203,12 +204,12 @@ export function embeddingMismatchMessage(opts: EmbeddingMismatchOpts): string {
     ? `CREATE INDEX IF NOT EXISTS idx_chunks_embedding\n  ON content_chunks USING hnsw (embedding vector_cosine_ops);`
     : `-- Skip reindex. dims=${requestedDims} exceeds pgvector's HNSW cap of ${PGVECTOR_HNSW_VECTOR_MAX_DIMS};\n-- searchVector falls back to exact scan.`;
 
-  const modelArg = requestedModel ? ` --embedding-model ${requestedModel}` : '';
+  const modelArg = requestedModel ? ` --embedding-model ${requestedModel}` : "";
   const lines = [
     header,
     ``,
     `  Existing column: vector(${currentDims})`,
-    `  Requested:       vector(${requestedDims})${requestedModel ? `  (${requestedModel})` : ''}`,
+    `  Requested:       vector(${requestedDims})${requestedModel ? `  (${requestedModel})` : ""}`,
     ``,
     `Switching dims is destructive: it drops every embedding in your brain and`,
     `requires a full re-embed (potentially hours and $1-100 in API calls).`,
@@ -219,7 +220,7 @@ export function embeddingMismatchMessage(opts: EmbeddingMismatchOpts): string {
     `  DROP INDEX IF EXISTS idx_chunks_embedding;`,
     `  ALTER TABLE content_chunks ALTER COLUMN embedding TYPE vector(${requestedDims});`,
     `  UPDATE content_chunks SET embedding = NULL, embedded_at = NULL;`,
-    `  ${reindexLine.split('\n').join('\n  ')}`,
+    `  ${reindexLine.split("\n").join("\n  ")}`,
     `  COMMIT;`,
     ``,
     `Then re-init config (file plane is canonical post-v0.37):`,
@@ -228,7 +229,7 @@ export function embeddingMismatchMessage(opts: EmbeddingMismatchOpts): string {
     ``,
     `Full guide: docs/embedding-migrations.md`,
   ];
-  return lines.join('\n');
+  return lines.join("\n");
 }
 
 // ============================================================================
@@ -270,7 +271,9 @@ export interface ResolveSchemaEmbeddingDimOpts {
  *     `dims_options` list (Matryoshka providers). Otherwise reject — the
  *     user picked a model that doesn't support custom dims.
  */
-export function resolveSchemaEmbeddingDim(opts: ResolveSchemaEmbeddingDimOpts): ResolveSchemaDimResult {
+export function resolveSchemaEmbeddingDim(
+  opts: ResolveSchemaEmbeddingDimOpts
+): ResolveSchemaDimResult {
   try {
     const { recipe, parsed } = resolveRecipe(opts.embedding_model);
     const tp = recipe.touchpoints.embedding;
@@ -282,7 +285,13 @@ export function resolveSchemaEmbeddingDim(opts: ResolveSchemaEmbeddingDimOpts): 
           `Pick a recipe with an embedding touchpoint (gbrain providers list).`,
       };
     }
-    return validateDimAgainstTouchpoint(parsed.modelId, recipe, tp.default_dims, tp.dims_options, opts.embedding_dimensions);
+    return validateDimAgainstTouchpoint(
+      parsed.modelId,
+      recipe,
+      tp.default_dims,
+      tp.dims_options,
+      opts.embedding_dimensions
+    );
   } catch (err) {
     return { ok: false, error: err instanceof AIConfigError ? err.message : String(err) };
   }
@@ -303,7 +312,9 @@ export interface ResolveSchemaMultimodalDimOpts {
  * `multimodal_models` allow-list (some recipes like Voyage mix text-only
  * and multimodal models in one embedding touchpoint).
  */
-export function resolveSchemaMultimodalDim(opts: ResolveSchemaMultimodalDimOpts): ResolveSchemaDimResult {
+export function resolveSchemaMultimodalDim(
+  opts: ResolveSchemaMultimodalDimOpts
+): ResolveSchemaDimResult {
   try {
     const { recipe, parsed } = resolveRecipe(opts.embedding_multimodal_model);
     const tp = recipe.touchpoints.embedding;
@@ -329,11 +340,17 @@ export function resolveSchemaMultimodalDim(opts: ResolveSchemaMultimodalDimOpts)
         ok: false,
         error:
           `Model "${parsed.modelId}" is not in provider "${recipe.id}"'s multimodal allow-list ` +
-          `(allowed: ${tp.multimodal_models.join(', ')}). ` +
+          `(allowed: ${tp.multimodal_models.join(", ")}). ` +
           `Pick a multimodal-capable model from this provider.`,
       };
     }
-    return validateDimAgainstTouchpoint(parsed.modelId, recipe, tp.default_dims, tp.dims_options, opts.embedding_multimodal_dimensions);
+    return validateDimAgainstTouchpoint(
+      parsed.modelId,
+      recipe,
+      tp.default_dims,
+      tp.dims_options,
+      opts.embedding_multimodal_dimensions
+    );
   } catch (err) {
     return { ok: false, error: err instanceof AIConfigError ? err.message : String(err) };
   }
@@ -362,7 +379,7 @@ function validateDimAgainstTouchpoint(
   recipe: Recipe,
   defaultDims: number,
   dimsOptions: number[] | undefined,
-  requestedDims: number | undefined,
+  requestedDims: number | undefined
 ): ResolveSchemaDimResult {
   const dim = requestedDims ?? defaultDims;
 
@@ -407,45 +424,44 @@ function isCustomDimValidForProvider(
   recipe: Recipe,
   modelId: string,
   requestedDims: number,
-  dimsOptions: number[] | undefined,
+  dimsOptions: number[] | undefined
 ): CustomDimCheck {
   // Tier 1: recipe-declared dims_options.
   if (dimsOptions && dimsOptions.length > 0) {
-    if (dimsOptions.includes(requestedDims)) return { valid: true, error: '' };
+    if (dimsOptions.includes(requestedDims)) return { valid: true, error: "" };
     return {
       valid: false,
       error:
         `Provider "${recipe.id}" model "${modelId}" rejects custom dimensions ${requestedDims} ` +
-        `(allowed: ${dimsOptions.join(', ')}).`,
+        `(allowed: ${dimsOptions.join(", ")}).`,
     };
   }
 
   // Tier 2: provider-specific Matryoshka allow-lists.
-  if (recipe.id === 'voyage' && supportsVoyageOutputDimension(modelId)) {
-    if (isValidVoyageOutputDim(requestedDims)) return { valid: true, error: '' };
+  if (recipe.id === "voyage" && supportsVoyageOutputDimension(modelId)) {
+    if (isValidVoyageOutputDim(requestedDims)) return { valid: true, error: "" };
     return {
       valid: false,
       error:
         `Voyage model "${modelId}" rejects custom dimensions ${requestedDims} ` +
-        `(allowed: ${VOYAGE_VALID_OUTPUT_DIMS.join(', ')}).`,
+        `(allowed: ${VOYAGE_VALID_OUTPUT_DIMS.join(", ")}).`,
     };
   }
-  if (recipe.id === 'zeroentropyai' && supportsZeroEntropyDimension(modelId)) {
-    if (isValidZeroEntropyDim(requestedDims)) return { valid: true, error: '' };
+  if (recipe.id === "zeroentropyai" && supportsZeroEntropyDimension(modelId)) {
+    if (isValidZeroEntropyDim(requestedDims)) return { valid: true, error: "" };
     return {
       valid: false,
       error:
         `ZeroEntropy model "${modelId}" does not support custom dimensions ${requestedDims} ` +
-        `(allowed: ${ZEROENTROPY_VALID_DIMS.join(', ')}).`,
+        `(allowed: ${ZEROENTROPY_VALID_DIMS.join(", ")}).`,
     };
   }
-  if (recipe.id === 'openai' && isOpenAITextEmbedding3Model(modelId)) {
-    if (isValidOpenAITextEmbedding3Dim(modelId, requestedDims)) return { valid: true, error: '' };
+  if (recipe.id === "openai" && isOpenAITextEmbedding3Model(modelId)) {
+    if (isValidOpenAITextEmbedding3Dim(modelId, requestedDims)) return { valid: true, error: "" };
     const maxDim = maxOpenAITextEmbedding3Dim(modelId);
     return {
       valid: false,
-      error:
-        `OpenAI ${modelId} accepts dimensions 1..${maxDim}, got ${requestedDims}.`,
+      error: `OpenAI ${modelId} accepts dimensions 1..${maxDim}, got ${requestedDims}.`,
     };
   }
 
@@ -490,7 +506,7 @@ export interface FactsColumnDimResult {
   /** Parsed dim from format_type, or null when the column doesn't exist. */
   dims: number | null;
   /** Column type — `halfvec` (pgvector >=0.7) or `vector` (older). */
-  columnType: 'halfvec' | 'vector' | null;
+  columnType: "halfvec" | "vector" | null;
 }
 
 /**
@@ -511,7 +527,7 @@ export async function readFactsEmbeddingDim(engine: BrainEngine): Promise<FactsC
        WHERE table_schema = 'public'
          AND table_name = 'facts'
          AND column_name = 'embedding'
-     ) AS exists`,
+     ) AS exists`
   );
   const exists = !!existsRows?.[0]?.exists;
   if (!exists) return { exists: false, dims: null, columnType: null };
@@ -524,7 +540,7 @@ export async function readFactsEmbeddingDim(engine: BrainEngine): Promise<FactsC
       WHERE n.nspname = 'public'
         AND c.relname = 'facts'
         AND a.attname = 'embedding'
-        AND NOT a.attisdropped`,
+        AND NOT a.attisdropped`
   );
   const formatted = formatRows?.[0]?.formatted ?? null;
   if (!formatted) return { exists: true, dims: null, columnType: null };
@@ -535,26 +551,26 @@ export async function readFactsEmbeddingDim(engine: BrainEngine): Promise<FactsC
   // contains "vec" as a substring).
   const halfMatch = formatted.match(/halfvec\((\d+)\)/i);
   if (halfMatch) {
-    return { exists: true, dims: parseInt(halfMatch[1], 10), columnType: 'halfvec' };
+    return { exists: true, dims: parseInt(halfMatch[1], 10), columnType: "halfvec" };
   }
   const vecMatch = formatted.match(/vector\((\d+)\)/i);
   if (vecMatch) {
-    return { exists: true, dims: parseInt(vecMatch[1], 10), columnType: 'vector' };
+    return { exists: true, dims: parseInt(vecMatch[1], 10), columnType: "vector" };
   }
   return { exists: true, dims: null, columnType: null };
 }
 
 /** Tagged error thrown by `assertFactsEmbeddingDimMatchesConfig` on drift. */
 export class FactsEmbeddingDimMismatchError extends Error {
-  readonly tag = 'FACTS_EMBEDDING_DIM_MISMATCH' as const;
+  readonly tag = "FACTS_EMBEDDING_DIM_MISMATCH" as const;
   constructor(
     message: string,
     public readonly columnDims: number,
     public readonly configuredDims: number,
-    public readonly columnType: 'halfvec' | 'vector',
+    public readonly columnType: "halfvec" | "vector"
   ) {
     super(message);
-    this.name = 'FactsEmbeddingDimMismatchError';
+    this.name = "FactsEmbeddingDimMismatchError";
   }
 }
 
@@ -569,10 +585,11 @@ export class FactsEmbeddingDimMismatchError extends Error {
 export function buildFactsAlterRecipe(
   columnDims: number,
   configuredDims: number,
-  columnType: 'halfvec' | 'vector',
+  columnType: "halfvec" | "vector"
 ): string {
-  const opclass = columnType === 'halfvec' ? 'halfvec_cosine_ops' : 'vector_cosine_ops';
-  const targetType = columnType === 'halfvec' ? `halfvec(${configuredDims})` : `vector(${configuredDims})`;
+  const opclass = columnType === "halfvec" ? "halfvec_cosine_ops" : "vector_cosine_ops";
+  const targetType =
+    columnType === "halfvec" ? `halfvec(${configuredDims})` : `vector(${configuredDims})`;
   return [
     `-- ALTER ${columnType}(${columnDims}) → ${columnType}(${configuredDims}) on indexed column.`,
     `-- HOLD a maintenance window: this rewrites every row's embedding.`,
@@ -583,7 +600,7 @@ export function buildFactsAlterRecipe(
     `CREATE INDEX idx_facts_embedding_hnsw`,
     `  ON facts USING hnsw (embedding ${opclass})`,
     `  WHERE embedding IS NOT NULL AND expired_at IS NULL;`,
-  ].join('\n');
+  ].join("\n");
 }
 
 /**
@@ -594,7 +611,10 @@ export function buildFactsAlterRecipe(
  * engine connection in the same process re-probes. Test seam below
  * clears the cache between cases.
  */
-const _factsDimCheckCache = new WeakMap<BrainEngine, { ok: true } | { err: FactsEmbeddingDimMismatchError }>();
+const _factsDimCheckCache = new WeakMap<
+  BrainEngine,
+  { ok: true } | { err: FactsEmbeddingDimMismatchError }
+>();
 
 /** Test seam: clear the per-process facts-dim cache. */
 export function _resetFactsDimCheckCacheForTest(): void {
@@ -627,14 +647,14 @@ export function _resetFactsDimCheckCacheForTest(): void {
 export async function assertFactsEmbeddingDimMatchesConfig(engine: BrainEngine): Promise<void> {
   const cached = _factsDimCheckCache.get(engine);
   if (cached) {
-    if ('err' in cached) throw cached.err;
+    if ("err" in cached) throw cached.err;
     return;
   }
 
   // PGLite + non-Postgres engines: skip. (PGLite ships a single
   // pgvector version; the column and config are wired together at
   // initSchema time, so the bug class doesn't apply.)
-  if (engine.kind !== 'postgres') {
+  if (engine.kind !== "postgres") {
     _factsDimCheckCache.set(engine, { ok: true });
     return;
   }
@@ -654,7 +674,7 @@ export async function assertFactsEmbeddingDimMatchesConfig(engine: BrainEngine):
   try {
     // Lazy-import to avoid the gateway pulling in at module-load
     // time (matters for tests that mock the gateway).
-    const { getEmbeddingDimensions } = await import('./ai/gateway.ts');
+    const { getEmbeddingDimensions } = await import("./ai/gateway.ts");
     configuredDims = getEmbeddingDimensions();
   } catch {
     // Gateway not configured (rare; usually means the brain hasn't
@@ -679,13 +699,8 @@ export async function assertFactsEmbeddingDimMatchesConfig(engine: BrainEngine):
     recipe,
     ``,
     `Or run \`gbrain doctor --json\` for the full diagnostic + fix surface.`,
-  ].join('\n');
-  const err = new FactsEmbeddingDimMismatchError(
-    message,
-    col.dims,
-    configuredDims,
-    col.columnType,
-  );
+  ].join("\n");
+  const err = new FactsEmbeddingDimMismatchError(message, col.dims, configuredDims, col.columnType);
   _factsDimCheckCache.set(engine, { err });
   throw err;
 }

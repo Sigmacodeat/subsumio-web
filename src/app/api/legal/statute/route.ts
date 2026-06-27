@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 import path from "node:path";
 import { promises as fs } from "node:fs";
@@ -14,34 +13,61 @@ const statuteQuerySchema = z.object({
 });
 
 /** All statutes available in the bundled law-corpus. */
-const CORPUS_META: Record<string, { jurisdiction: "at" | "de" | "ch"; label: string; file: string }> = {
+const CORPUS_META: Record<
+  string,
+  { jurisdiction: "at" | "de" | "ch"; label: string; file: string }
+> = {
   // Austria
-  abgb:    { jurisdiction: "at", label: "ABGB — Allgemeines bürgerliches Gesetzbuch (AT)", file: "at/abgb.md" },
-  ahg:     { jurisdiction: "at", label: "AHG — Amtshaftungsgesetz (AT)", file: "at/ahg.md" },
-  bao:     { jurisdiction: "at", label: "BAO — Bundesabgabenordnung (AT)", file: "at/bao.md" },
-  eo:      { jurisdiction: "at", label: "EO — Exekutionsordnung (AT)", file: "at/eo.md" },
-  stgb_at: { jurisdiction: "at", label: "StGB (AT) — Strafgesetzbuch Österreich", file: "at/stgb-at.md" },
-  stpo_at: { jurisdiction: "at", label: "StPO (AT) — Strafprozessordnung Österreich", file: "at/stpo-at.md" },
-  ugb:     { jurisdiction: "at", label: "UGB — Unternehmensgesetzbuch (AT)", file: "at/ugb.md" },
-  zpo_at:  { jurisdiction: "at", label: "ZPO (AT) — Zivilprozessordnung Österreich", file: "at/zpo-at.md" },
+  abgb: {
+    jurisdiction: "at",
+    label: "ABGB — Allgemeines bürgerliches Gesetzbuch (AT)",
+    file: "at/abgb.md",
+  },
+  ahg: { jurisdiction: "at", label: "AHG — Amtshaftungsgesetz (AT)", file: "at/ahg.md" },
+  bao: { jurisdiction: "at", label: "BAO — Bundesabgabenordnung (AT)", file: "at/bao.md" },
+  eo: { jurisdiction: "at", label: "EO — Exekutionsordnung (AT)", file: "at/eo.md" },
+  stgb_at: {
+    jurisdiction: "at",
+    label: "StGB (AT) — Strafgesetzbuch Österreich",
+    file: "at/stgb-at.md",
+  },
+  stpo_at: {
+    jurisdiction: "at",
+    label: "StPO (AT) — Strafprozessordnung Österreich",
+    file: "at/stpo-at.md",
+  },
+  ugb: { jurisdiction: "at", label: "UGB — Unternehmensgesetzbuch (AT)", file: "at/ugb.md" },
+  zpo_at: {
+    jurisdiction: "at",
+    label: "ZPO (AT) — Zivilprozessordnung Österreich",
+    file: "at/zpo-at.md",
+  },
   // Germany
-  ao:      { jurisdiction: "de", label: "AO — Abgabenordnung (DE)", file: "de/ao.md" },
-  bgb:     { jurisdiction: "de", label: "BGB — Bürgerliches Gesetzbuch (DE)", file: "de/bgb.md" },
-  estg:    { jurisdiction: "de", label: "EStG — Einkommensteuergesetz (DE)", file: "de/estg.md" },
-  famfg:   { jurisdiction: "de", label: "FamFG — Familienverfahrensgesetz (DE)", file: "de/famfg.md" },
-  gg:      { jurisdiction: "de", label: "GG — Grundgesetz (DE)", file: "de/gg.md" },
-  gmbhg:   { jurisdiction: "de", label: "GmbHG — GmbH-Gesetz (DE)", file: "de/gmbhg.md" },
-  hgb:     { jurisdiction: "de", label: "HGB — Handelsgesetzbuch (DE)", file: "de/hgb.md" },
-  inso:    { jurisdiction: "de", label: "InsO — Insolvenzordnung (DE)", file: "de/inso.md" },
-  stgb:    { jurisdiction: "de", label: "StGB — Strafgesetzbuch (DE)", file: "de/stgb.md" },
-  stpo:    { jurisdiction: "de", label: "StPO — Strafprozessordnung (DE)", file: "de/stpo.md" },
-  ustg:    { jurisdiction: "de", label: "UStG — Umsatzsteuergesetz (DE)", file: "de/ustg.md" },
-  uwg:     { jurisdiction: "de", label: "UWG — Gesetz gegen unlauteren Wettbewerb (DE)", file: "de/uwg.md" },
-  zpo:     { jurisdiction: "de", label: "ZPO — Zivilprozessordnung (DE)", file: "de/zpo.md" },
+  ao: { jurisdiction: "de", label: "AO — Abgabenordnung (DE)", file: "de/ao.md" },
+  bgb: { jurisdiction: "de", label: "BGB — Bürgerliches Gesetzbuch (DE)", file: "de/bgb.md" },
+  estg: { jurisdiction: "de", label: "EStG — Einkommensteuergesetz (DE)", file: "de/estg.md" },
+  famfg: {
+    jurisdiction: "de",
+    label: "FamFG — Familienverfahrensgesetz (DE)",
+    file: "de/famfg.md",
+  },
+  gg: { jurisdiction: "de", label: "GG — Grundgesetz (DE)", file: "de/gg.md" },
+  gmbhg: { jurisdiction: "de", label: "GmbHG — GmbH-Gesetz (DE)", file: "de/gmbhg.md" },
+  hgb: { jurisdiction: "de", label: "HGB — Handelsgesetzbuch (DE)", file: "de/hgb.md" },
+  inso: { jurisdiction: "de", label: "InsO — Insolvenzordnung (DE)", file: "de/inso.md" },
+  stgb: { jurisdiction: "de", label: "StGB — Strafgesetzbuch (DE)", file: "de/stgb.md" },
+  stpo: { jurisdiction: "de", label: "StPO — Strafprozessordnung (DE)", file: "de/stpo.md" },
+  ustg: { jurisdiction: "de", label: "UStG — Umsatzsteuergesetz (DE)", file: "de/ustg.md" },
+  uwg: {
+    jurisdiction: "de",
+    label: "UWG — Gesetz gegen unlauteren Wettbewerb (DE)",
+    file: "de/uwg.md",
+  },
+  zpo: { jurisdiction: "de", label: "ZPO — Zivilprozessordnung (DE)", file: "de/zpo.md" },
   // Switzerland
-  or:      { jurisdiction: "ch", label: "OR — Obligationenrecht (CH)", file: "ch/or.md" },
+  or: { jurisdiction: "ch", label: "OR — Obligationenrecht (CH)", file: "ch/or.md" },
   stgb_ch: { jurisdiction: "ch", label: "StGB (CH) — Strafgesetzbuch Schweiz", file: "ch/stgb.md" },
-  zgb:     { jurisdiction: "ch", label: "ZGB — Zivilgesetzbuch (CH)", file: "ch/zgb.md" },
+  zgb: { jurisdiction: "ch", label: "ZGB — Zivilgesetzbuch (CH)", file: "ch/zgb.md" },
 };
 
 const CORPUS_DIR = path.join(process.cwd(), "law-corpus");
@@ -54,7 +80,7 @@ const CORPUS_SPLIT_DIR = path.join(process.cwd(), "law-corpus-split");
  */
 async function loadSplitPage(
   meta: (typeof CORPUS_META)[string],
-  paragraph: string,
+  paragraph: string
 ): Promise<string | null> {
   const abbr = meta.label.match(/^([A-ZÄÖÜ][A-Za-zÄÖÜäöüß_]+)/)?.[1] || "";
   if (!abbr) return null;
@@ -76,7 +102,7 @@ async function loadSplitPage(
 async function searchStatute(
   fileKey: string,
   query: string,
-  paragraph?: string,
+  paragraph?: string
 ): Promise<{ excerpt: string; paragraphHit?: string }[]> {
   const meta = CORPUS_META[fileKey];
   if (!meta) return [];
@@ -86,10 +112,12 @@ async function searchStatute(
     const splitContent = await loadSplitPage(meta, paragraph);
     if (splitContent) {
       const paraNum = paragraph.replace(/^§\s*/, "").trim();
-      return [{
-        excerpt: splitContent.slice(0, 1500).trim(),
-        paragraphHit: `§ ${paraNum}`,
-      }];
+      return [
+        {
+          excerpt: splitContent.slice(0, 1500).trim(),
+          paragraphHit: `§ ${paraNum}`,
+        },
+      ];
     }
   }
 
@@ -206,7 +234,11 @@ export const GET = createHandler(
       return apiError("unknown_statute", `Unknown statute: ${code}`, 400, { available });
     }
     if (!paragraph && !q) {
-      return apiError("paragraph_or_q_required", "?code=bgb&paragraph=433 or ?code=bgb&q=Kaufvertrag", 400);
+      return apiError(
+        "paragraph_or_q_required",
+        "?code=bgb&paragraph=433 or ?code=bgb&q=Kaufvertrag",
+        400
+      );
     }
 
     const hits = await searchStatute(code, q || paragraph, paragraph || undefined);
@@ -222,5 +254,5 @@ export const GET = createHandler(
       results: hits,
       total: hits.length,
     });
-  },
+  }
 );

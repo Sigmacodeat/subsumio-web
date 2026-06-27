@@ -22,16 +22,16 @@
  *   legitimately mount the same remote brain under two local clones.
  */
 
-import { readFileSync, existsSync } from 'fs';
-import { join, resolve } from 'path';
-import { homedir } from 'os';
-import type { BrainEngine } from './engine.ts';
-import type { EngineConfig } from './types.ts';
-import { GBrainError } from './types.ts';
-import { loadConfig, type GBrainConfig } from './config.ts';
+import { readFileSync, existsSync } from "fs";
+import { join, resolve } from "path";
+import { homedir } from "os";
+import type { BrainEngine } from "./engine.ts";
+import type { EngineConfig } from "./types.ts";
+import { GBrainError } from "./types.ts";
+import { loadConfig, type GBrainConfig } from "./config.ts";
 
 /** Host brain id. Reserved — users cannot create a mount with this id. */
-export const HOST_BRAIN_ID = 'host';
+export const HOST_BRAIN_ID = "host";
 
 /** Brain id regex. Alphanumeric + dashes, 1-32 chars. No edge dashes. */
 const BRAIN_ID_RE = /^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$/;
@@ -46,7 +46,7 @@ const BRAIN_ID_RE = /^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$/;
 function getMountsPath(): string {
   const override = process.env.GBRAIN_MOUNTS_PATH;
   if (override) return override;
-  return join(homedir(), '.gbrain', 'mounts.json');
+  return join(homedir(), ".gbrain", "mounts.json");
 }
 
 /**
@@ -63,7 +63,7 @@ export interface MountEntry {
   /** Absolute local path to the mount's git clone (for skills + handlers). */
   path: string;
   /** Engine kind. Required for direct transport. */
-  engine: 'postgres' | 'pglite';
+  engine: "postgres" | "pglite";
   /** Postgres connection URL (if engine=postgres). */
   database_url?: string;
   /** PGLite data-directory path (if engine=pglite). */
@@ -109,8 +109,8 @@ export class DuplicateMountPathError extends GBrainError {
     super(
       `Duplicate mount path: "${path}"`,
       `Mount "${existingId}" already uses this path. Cannot register "${attemptedId}" at the same location.`,
-      'Use a different local clone path, or remove the existing mount first: ' +
-        `gbrain mounts remove ${existingId}`,
+      "Use a different local clone path, or remove the existing mount first: " +
+        `gbrain mounts remove ${existingId}`
     );
   }
 }
@@ -118,36 +118,36 @@ export class DuplicateMountPathError extends GBrainError {
 /** Error thrown when a caller requests an unknown or disabled brain id. */
 export class UnknownBrainError extends GBrainError {
   constructor(id: string, available: string[]) {
-    const list = available.length > 0 ? available.join(', ') : '(none registered)';
+    const list = available.length > 0 ? available.join(", ") : "(none registered)";
     super(
       `Unknown brain: "${id}"`,
       `No enabled mount with id "${id}" found. Available brain ids: ${list}`,
-      `Run 'gbrain mounts list' to see registered mounts. Add a new mount with 'gbrain mounts add ${id} --path <path> --db-url <url>'.`,
+      `Run 'gbrain mounts list' to see registered mounts. Add a new mount with 'gbrain mounts add ${id} --path <path> --db-url <url>'.`
     );
   }
 }
 
 /** Validate a mount id (and optionally the alias). Throws with actionable msg. */
-export function validateMountId(id: unknown, fieldLabel = 'mount id'): string {
-  if (typeof id !== 'string' || id.length === 0) {
+export function validateMountId(id: unknown, fieldLabel = "mount id"): string {
+  if (typeof id !== "string" || id.length === 0) {
     throw new GBrainError(
       `Invalid ${fieldLabel}`,
       `${fieldLabel} must be a non-empty string`,
-      'Use a kebab-case id like "yc-media" or "garrys-list"',
+      'Use a kebab-case id like "yc-media" or "garrys-list"'
     );
   }
   if (id === HOST_BRAIN_ID) {
     throw new GBrainError(
       `Reserved ${fieldLabel}: "${HOST_BRAIN_ID}"`,
       `"${HOST_BRAIN_ID}" is the host brain id and cannot be used for a mount`,
-      'Choose a different id',
+      "Choose a different id"
     );
   }
   if (!BRAIN_ID_RE.test(id)) {
     throw new GBrainError(
       `Invalid ${fieldLabel}: "${id}"`,
       `${fieldLabel} must match [a-z0-9-]{1,32}, start+end alphanumeric, interior dashes allowed`,
-      'Use a kebab-case id like "yc-media"',
+      'Use a kebab-case id like "yc-media"'
     );
   }
   return id;
@@ -162,12 +162,12 @@ export function loadMounts(mountsPath: string = getMountsPath()): MountEntry[] {
 
   let raw: string;
   try {
-    raw = readFileSync(mountsPath, 'utf-8');
+    raw = readFileSync(mountsPath, "utf-8");
   } catch (e) {
     throw new GBrainError(
       `Cannot read ${mountsPath}`,
       e instanceof Error ? e.message : String(e),
-      `Check file permissions (expected 0600) and re-run`,
+      `Check file permissions (expected 0600) and re-run`
     );
   }
 
@@ -178,15 +178,15 @@ export function loadMounts(mountsPath: string = getMountsPath()): MountEntry[] {
     throw new GBrainError(
       `Malformed mounts.json`,
       e instanceof Error ? e.message : String(e),
-      `Fix the JSON syntax at ${mountsPath} or remove it and re-add mounts via 'gbrain mounts add'`,
+      `Fix the JSON syntax at ${mountsPath} or remove it and re-add mounts via 'gbrain mounts add'`
     );
   }
 
-  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
     throw new GBrainError(
       `mounts.json must be a JSON object`,
-      `Got: ${Array.isArray(parsed) ? 'array' : typeof parsed}`,
-      `Expected { version: 1, mounts: [...] }`,
+      `Got: ${Array.isArray(parsed) ? "array" : typeof parsed}`,
+      `Expected { version: 1, mounts: [...] }`
     );
   }
 
@@ -195,7 +195,7 @@ export function loadMounts(mountsPath: string = getMountsPath()): MountEntry[] {
     throw new GBrainError(
       `Unsupported mounts.json version: ${file.version}`,
       `This gbrain binary supports version 1`,
-      `Upgrade gbrain or regenerate mounts.json`,
+      `Upgrade gbrain or regenerate mounts.json`
     );
   }
 
@@ -203,7 +203,7 @@ export function loadMounts(mountsPath: string = getMountsPath()): MountEntry[] {
     throw new GBrainError(
       `mounts.json: "mounts" must be an array`,
       `Got: ${typeof file.mounts}`,
-      `Expected { version: 1, mounts: [...] }`,
+      `Expected { version: 1, mounts: [...] }`
     );
   }
 
@@ -213,11 +213,11 @@ export function loadMounts(mountsPath: string = getMountsPath()): MountEntry[] {
 
   for (let i = 0; i < file.mounts.length; i++) {
     const entry = file.mounts[i] as Partial<MountEntry> | undefined;
-    if (!entry || typeof entry !== 'object') {
+    if (!entry || typeof entry !== "object") {
       throw new GBrainError(
         `mounts.json: entry ${i} must be an object`,
         `Got: ${typeof entry}`,
-        `Each entry shape: { id, path, engine, db_url|database_path, enabled? }`,
+        `Each entry shape: { id, path, engine, db_url|database_path, enabled? }`
       );
     }
     const id = validateMountId(entry.id, `mounts[${i}].id`);
@@ -225,16 +225,16 @@ export function loadMounts(mountsPath: string = getMountsPath()): MountEntry[] {
       throw new GBrainError(
         `mounts.json: duplicate id "${id}"`,
         `Two mounts share the id "${id}" (only one entry permitted per id)`,
-        `Remove one of the entries or rename it`,
+        `Remove one of the entries or rename it`
       );
     }
     seenIds.add(id);
 
-    if (typeof entry.path !== 'string' || entry.path.length === 0) {
+    if (typeof entry.path !== "string" || entry.path.length === 0) {
       throw new GBrainError(
         `mounts[${i}] "${id}": path is required`,
         `path must be a non-empty absolute filesystem path`,
-        `Add "path": "/absolute/path/to/${id}" to this mount entry`,
+        `Add "path": "/absolute/path/to/${id}" to this mount entry`
       );
     }
     const resolvedPath = resolve(entry.path);
@@ -244,26 +244,26 @@ export function loadMounts(mountsPath: string = getMountsPath()): MountEntry[] {
     }
     seenPaths.set(resolvedPath, id);
 
-    if (entry.engine !== 'postgres' && entry.engine !== 'pglite') {
+    if (entry.engine !== "postgres" && entry.engine !== "pglite") {
       throw new GBrainError(
         `mounts[${i}] "${id}": engine must be "postgres" or "pglite"`,
         `Got: ${JSON.stringify(entry.engine)}`,
-        `Set "engine": "pglite" for a local embedded DB or "postgres" for Supabase/self-hosted`,
+        `Set "engine": "pglite" for a local embedded DB or "postgres" for Supabase/self-hosted`
       );
     }
 
-    if (entry.engine === 'postgres' && !entry.database_url) {
+    if (entry.engine === "postgres" && !entry.database_url) {
       throw new GBrainError(
         `mounts[${i}] "${id}": postgres mount requires database_url`,
         `database_url is missing`,
-        `Add "database_url": "postgresql://..." or use engine: "pglite"`,
+        `Add "database_url": "postgresql://..." or use engine: "pglite"`
       );
     }
-    if (entry.engine === 'pglite' && !entry.database_path && !entry.database_url) {
+    if (entry.engine === "pglite" && !entry.database_path && !entry.database_url) {
       throw new GBrainError(
         `mounts[${i}] "${id}": pglite mount requires database_path (or database_url)`,
         `Both database_path and database_url are missing`,
-        `Add "database_path": "/path/to/${id}/.pglite"`,
+        `Add "database_path": "/path/to/${id}/.pglite"`
       );
     }
     if (entry.alias !== undefined) {
@@ -386,23 +386,23 @@ export class BrainRegistry {
   /** Disconnect every initialized engine. Safe to call repeatedly. */
   async disconnectAll(): Promise<void> {
     const handles = [this.hostHandle, ...Array.from(this.handles.values())].filter(
-      (h): h is BrainHandle => h != null,
+      (h): h is BrainHandle => h != null
     );
     this.hostHandle = null;
     this.handles.clear();
-    await Promise.allSettled(handles.map(h => h.engine.disconnect()));
+    await Promise.allSettled(handles.map((h) => h.engine.disconnect()));
   }
 
   private async initHostBrain(): Promise<BrainHandle> {
     const config = loadConfig();
     if (!config) {
       throw new GBrainError(
-        'No host brain configured',
-        '~/.gbrain/config.json is missing and GBRAIN_DATABASE_URL is unset',
-        "Run 'gbrain init' to configure the host brain",
+        "No host brain configured",
+        "~/.gbrain/config.json is missing and GBRAIN_DATABASE_URL is unset",
+        "Run 'gbrain init' to configure the host brain"
       );
     }
-    const { createEngine } = await import('./engine-factory.ts');
+    const { createEngine } = await import("./engine-factory.ts");
     const engineConfig: EngineConfig = {
       engine: config.engine,
       database_url: config.database_url,
@@ -414,7 +414,7 @@ export class BrainRegistry {
   }
 
   private async initMountBrain(mount: MountEntry): Promise<BrainHandle> {
-    const { createEngine } = await import('./engine-factory.ts');
+    const { createEngine } = await import("./engine-factory.ts");
     const engineConfig = mountToEngineConfig(mount);
     const engine = await createEngine(engineConfig);
     // Mounts MUST use per-instance connection pools, never the module

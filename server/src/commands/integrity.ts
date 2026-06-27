@@ -24,30 +24,30 @@
  * are not revisited.
  */
 
-import { appendFileSync, existsSync, readFileSync, mkdirSync, writeFileSync } from 'fs';
-import { dirname } from 'path';
+import { appendFileSync, existsSync, readFileSync, mkdirSync, writeFileSync } from "fs";
+import { dirname } from "path";
 
-import { loadConfig, toEngineConfig, gbrainPath } from '../core/config.ts';
-import { createEngine } from '../core/engine-factory.ts';
-import type { BrainEngine } from '../core/engine.ts';
-import * as db from '../core/db.ts';
-import { BrainWriter } from '../core/output/writer.ts';
+import { loadConfig, toEngineConfig, gbrainPath } from "../core/config.ts";
+import { createEngine } from "../core/engine-factory.ts";
+import type { BrainEngine } from "../core/engine.ts";
+import * as db from "../core/db.ts";
+import { BrainWriter } from "../core/output/writer.ts";
 import {
   getDefaultRegistry,
   type ResolverContext,
   type ResolverResult,
-} from '../core/resolvers/index.ts';
-import { registerBuiltinResolvers } from './resolvers.ts';
-import { tweetCitation } from '../core/output/scaffold.ts';
+} from "../core/resolvers/index.ts";
+import { registerBuiltinResolvers } from "./resolvers.ts";
+import { tweetCitation } from "../core/output/scaffold.ts";
 
 // ---------------------------------------------------------------------------
 // Paths
 // ---------------------------------------------------------------------------
 
 // Lazy: GBRAIN_HOME may be set after module load.
-const getReviewFile = () => gbrainPath('integrity-review.md');
-const getLogFile = () => gbrainPath('integrity.log.jsonl');
-const getProgressFile = () => gbrainPath('integrity-progress.jsonl');
+const getReviewFile = () => gbrainPath("integrity-review.md");
+const getLogFile = () => gbrainPath("integrity.log.jsonl");
+const getProgressFile = () => gbrainPath("integrity-progress.jsonl");
 
 // ---------------------------------------------------------------------------
 // Bare-tweet detection
@@ -82,18 +82,18 @@ export interface BareTweetHit {
 
 export function findBareTweetHits(compiledTruth: string, slug: string): BareTweetHit[] {
   const hits: BareTweetHit[] = [];
-  const lines = compiledTruth.split('\n');
+  const lines = compiledTruth.split("\n");
   let insideFence = false;
-  let fenceMarker = '';
+  let fenceMarker = "";
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     if (insideFence) {
       if (line.startsWith(fenceMarker)) insideFence = false;
       continue;
     }
-    if (line.startsWith('```') || line.startsWith('~~~')) {
+    if (line.startsWith("```") || line.startsWith("~~~")) {
       insideFence = true;
-      fenceMarker = line.startsWith('```') ? '```' : '~~~';
+      fenceMarker = line.startsWith("```") ? "```" : "~~~";
       continue;
     }
     // If the line already contains a tweet URL, it's cited — skip
@@ -123,18 +123,18 @@ export interface ExternalLinkHit {
 
 export function findExternalLinks(compiledTruth: string, slug: string): ExternalLinkHit[] {
   const hits: ExternalLinkHit[] = [];
-  const lines = compiledTruth.split('\n');
+  const lines = compiledTruth.split("\n");
   let insideFence = false;
-  let fenceMarker = '';
+  let fenceMarker = "";
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     if (insideFence) {
       if (line.startsWith(fenceMarker)) insideFence = false;
       continue;
     }
-    if (line.startsWith('```') || line.startsWith('~~~')) {
+    if (line.startsWith("```") || line.startsWith("~~~")) {
       insideFence = true;
-      fenceMarker = line.startsWith('```') ? '```' : '~~~';
+      fenceMarker = line.startsWith("```") ? "```" : "~~~";
       continue;
     }
     MD_LINK_EXTERNAL_RE.lastIndex = 0;
@@ -152,15 +152,15 @@ export function findExternalLinks(compiledTruth: string, slug: string): External
 
 interface ProgressEntry {
   slug: string;
-  status: 'repaired' | 'reviewed' | 'skipped' | 'error';
+  status: "repaired" | "reviewed" | "skipped" | "error";
   timestamp: string;
 }
 
 function loadProgress(): Set<string> {
   if (!existsSync(getProgressFile())) return new Set();
   const seen = new Set<string>();
-  const content = readFileSync(getProgressFile(), 'utf-8');
-  for (const line of content.split('\n')) {
+  const content = readFileSync(getProgressFile(), "utf-8");
+  for (const line of content.split("\n")) {
     if (!line.trim()) continue;
     try {
       const entry = JSON.parse(line) as ProgressEntry;
@@ -174,11 +174,11 @@ function loadProgress(): Set<string> {
 
 function appendProgress(entry: ProgressEntry): void {
   ensureDir(getProgressFile());
-  appendFileSync(getProgressFile(), JSON.stringify(entry) + '\n', 'utf-8');
+  appendFileSync(getProgressFile(), JSON.stringify(entry) + "\n", "utf-8");
 }
 
 function clearProgress(): void {
-  if (existsSync(getProgressFile())) writeFileSync(getProgressFile(), '', 'utf-8');
+  if (existsSync(getProgressFile())) writeFileSync(getProgressFile(), "", "utf-8");
 }
 
 function ensureDir(path: string): void {
@@ -193,26 +193,26 @@ function ensureDir(path: string): void {
 export async function runIntegrity(args: string[]): Promise<void> {
   const sub = args[0];
 
-  if (!sub || sub === '--help' || sub === '-h') {
+  if (!sub || sub === "--help" || sub === "-h") {
     printHelp();
     return;
   }
 
-  if (sub === 'check') {
+  if (sub === "check") {
     await cmdCheck(args.slice(1));
     return;
   }
-  if (sub === 'auto') {
+  if (sub === "auto") {
     await cmdAuto(args.slice(1));
     return;
   }
-  if (sub === 'review') {
+  if (sub === "review") {
     cmdReview();
     return;
   }
-  if (sub === 'reset-progress') {
+  if (sub === "reset-progress") {
     clearProgress();
-    console.log('Cleared progress log:', getProgressFile());
+    console.log("Cleared progress log:", getProgressFile());
     return;
   }
 
@@ -226,20 +226,26 @@ export async function runIntegrity(args: string[]): Promise<void> {
 // ---------------------------------------------------------------------------
 
 async function cmdCheck(args: string[]): Promise<void> {
-  const jsonMode = args.includes('--json');
-  const limit = extractIntFlag(args, '--limit') ?? Infinity;
-  const typeFilter = extractFlag(args, '--type');
+  const jsonMode = args.includes("--json");
+  const limit = extractIntFlag(args, "--limit") ?? Infinity;
+  const typeFilter = extractFlag(args, "--type");
 
   const engine = await connect();
   try {
     const res = await scanIntegrity(engine, { limit, typeFilter });
 
     if (jsonMode) {
-      console.log(JSON.stringify({
-        pagesScanned: res.pagesScanned,
-        bareTweetHits: res.bareHits,
-        externalLinkCount: res.externalHits.length,
-      }, null, 2));
+      console.log(
+        JSON.stringify(
+          {
+            pagesScanned: res.pagesScanned,
+            bareTweetHits: res.bareHits,
+            externalLinkCount: res.externalHits.length,
+          },
+          null,
+          2
+        )
+      );
       return;
     }
 
@@ -247,9 +253,9 @@ async function cmdCheck(args: string[]): Promise<void> {
     console.log(`Bare-tweet phrases: ${res.bareHits.length}`);
     console.log(`External links (for optional dead-link check): ${res.externalHits.length}`);
     if (res.topPages.length > 0) {
-      console.log('\nTop 10 pages with bare-tweet references:');
+      console.log("\nTop 10 pages with bare-tweet references:");
       for (const { slug, count } of res.topPages) {
-        console.log(`  ${slug}: ${count} hit${count === 1 ? '' : 's'}`);
+        console.log(`  ${slug}: ${count} hit${count === 1 ? "" : "s"}`);
       }
     }
   } finally {
@@ -291,7 +297,7 @@ export interface IntegrityScanResult {
  */
 export async function scanIntegrity(
   engine: BrainEngine,
-  opts: IntegrityScanOptions = {},
+  opts: IntegrityScanOptions = {}
 ): Promise<IntegrityScanResult> {
   const { limit = Infinity, typeFilter, batchLoad = true } = opts;
 
@@ -300,7 +306,7 @@ export async function scanIntegrity(
   // timeout on transaction-mode pooling. Postgres-only: PGLite has no
   // postgres.js connection, so the gate keeps the GBRAIN_DEBUG fallback
   // log clean for real Postgres errors instead of expected PGLite skips.
-  if (batchLoad && limit !== Infinity && engine.kind === 'postgres') {
+  if (batchLoad && limit !== Infinity && engine.kind === "postgres") {
     try {
       return await scanIntegrityBatch(limit, typeFilter);
     } catch (err) {
@@ -309,8 +315,8 @@ export async function scanIntegrity(
       // fallback. Quiet by default since the fallback is harmless.
       if (process.env.GBRAIN_DEBUG) {
         console.error(
-          '[integrity] batch path failed, falling back to sequential:',
-          err instanceof Error ? err.message : err,
+          "[integrity] batch path failed, falling back to sequential:",
+          err instanceof Error ? err.message : err
         );
       }
     }
@@ -319,8 +325,8 @@ export async function scanIntegrity(
   // v0.32.8: listAllPageRefs replaces getAllSlugs+getPage N+1 pattern that
   // silently defaulted to source_id='default' for non-default-source pages.
   // Now we enumerate (slug, source_id) pairs and thread sourceId to getPage.
-  const allRefs = (await engine.listAllPageRefs()).sort((a, b) =>
-    a.slug.localeCompare(b.slug) || a.source_id.localeCompare(b.source_id)
+  const allRefs = (await engine.listAllPageRefs()).sort(
+    (a, b) => a.slug.localeCompare(b.slug) || a.source_id.localeCompare(b.source_id)
   );
 
   const bareHits: BareTweetHit[] = [];
@@ -355,10 +361,10 @@ export async function scanIntegrity(
  */
 async function scanIntegrityBatch(
   limit: number,
-  typeFilter?: string,
+  typeFilter?: string
 ): Promise<IntegrityScanResult> {
   const sql = db.getConnection();
-  const typeCondition = typeFilter ? sql`AND slug LIKE ${typeFilter + '/%'}` : sql``;
+  const typeCondition = typeFilter ? sql`AND slug LIKE ${typeFilter + "/%"}` : sql``;
   // Boolean validate is the documented contract; stringly-typed 'false' (quoted
   // YAML) diverges from the sequential path's strict === false check. Intentional
   // — gbrain lint should reject stringly-typed validate at write time.
@@ -402,16 +408,16 @@ async function scanIntegrityBatch(
 // ---------------------------------------------------------------------------
 
 async function cmdAuto(args: string[]): Promise<void> {
-  const dryRun = args.includes('--dry-run');
-  const confidenceThreshold = extractFloatFlag(args, '--confidence') ?? 0.8;
-  const reviewLower = extractFloatFlag(args, '--review-lower') ?? 0.5;
-  const limit = extractIntFlag(args, '--limit') ?? Infinity;
-  const skipTweet = args.includes('--skip-bare-tweet');
-  const skipUrls = args.includes('--skip-urls');
-  const resume = !args.includes('--fresh');
+  const dryRun = args.includes("--dry-run");
+  const confidenceThreshold = extractFloatFlag(args, "--confidence") ?? 0.8;
+  const reviewLower = extractFloatFlag(args, "--review-lower") ?? 0.5;
+  const limit = extractIntFlag(args, "--limit") ?? Infinity;
+  const skipTweet = args.includes("--skip-bare-tweet");
+  const skipUrls = args.includes("--skip-urls");
+  const resume = !args.includes("--fresh");
 
   if (confidenceThreshold < reviewLower) {
-    console.error('--confidence must be >= --review-lower');
+    console.error("--confidence must be >= --review-lower");
     process.exit(1);
   }
 
@@ -420,7 +426,7 @@ async function cmdAuto(args: string[]): Promise<void> {
   const engine = await connect();
   const registry = getDefaultRegistry();
   registerBuiltinResolvers(registry);
-  const writer = new BrainWriter(engine, { strictMode: 'off' });
+  const writer = new BrainWriter(engine, { strictMode: "off" });
 
   const ctx: ResolverContext = {
     engine,
@@ -442,19 +448,19 @@ async function cmdAuto(args: string[]): Promise<void> {
   let bucketErr = 0;
   let pagesProcessed = 0;
 
-  const { createProgress } = await import('../core/progress.ts');
-  const { getCliOptions, cliOptsToProgressOptions } = await import('../core/cli-options.ts');
+  const { createProgress } = await import("../core/progress.ts");
+  const { getCliOptions, cliOptsToProgressOptions } = await import("../core/cli-options.ts");
   const progress = createProgress(cliOptsToProgressOptions(getCliOptions()));
 
   try {
     // v0.32.8: listAllPageRefs enumerates (slug, source_id) pairs so we
     // can thread sourceId to getPage. Pre-fix this defaulted to 'default'
     // and silently skipped non-default-source pages.
-    const allRefs = (await engine.listAllPageRefs()).sort((a, b) =>
-      a.slug.localeCompare(b.slug) || a.source_id.localeCompare(b.source_id)
+    const allRefs = (await engine.listAllPageRefs()).sort(
+      (a, b) => a.slug.localeCompare(b.slug) || a.source_id.localeCompare(b.source_id)
     );
-    const toScan = allRefs.filter(r => !seen.has(r.slug));
-    progress.start('integrity.auto', toScan.length);
+    const toScan = allRefs.filter((r) => !seen.has(r.slug));
+    progress.start("integrity.auto", toScan.length);
     for (const { slug, source_id } of allRefs) {
       if (pagesProcessed >= limit) break;
       if (seen.has(slug)) continue;
@@ -472,53 +478,79 @@ async function cmdAuto(args: string[]): Promise<void> {
         if (hits.length > 0 && handle) {
           for (const hit of hits) {
             try {
-              const result = await registry.resolve<{ handle: string; keywords: string }, {
-                url?: string; tweet_id?: string; text?: string; created_at?: string;
-                candidates: Array<{ tweet_id: string; text: string; created_at: string; score: number; url: string }>;
-              }>(
-                'x_handle_to_tweet',
-                { handle, keywords: hit.rawLine.slice(0, 150) },
-                ctx,
-              );
-              if (result.confidence >= confidenceThreshold && result.value.url && result.value.tweet_id && result.value.created_at) {
+              const result = await registry.resolve<
+                { handle: string; keywords: string },
+                {
+                  url?: string;
+                  tweet_id?: string;
+                  text?: string;
+                  created_at?: string;
+                  candidates: Array<{
+                    tweet_id: string;
+                    text: string;
+                    created_at: string;
+                    score: number;
+                    url: string;
+                  }>;
+                }
+              >("x_handle_to_tweet", { handle, keywords: hit.rawLine.slice(0, 150) }, ctx);
+              if (
+                result.confidence >= confidenceThreshold &&
+                result.value.url &&
+                result.value.tweet_id &&
+                result.value.created_at
+              ) {
                 await repairBareTweet({
-                  writer, slug, hit, result, handle, dryRun,
+                  writer,
+                  slug,
+                  hit,
+                  result,
+                  handle,
+                  dryRun,
                 });
                 bucketAuto++;
                 // Dry-run must NOT persist 'repaired' — the follow-on real
                 // run needs to revisit these slugs and actually write.
                 if (!dryRun) {
-                  appendProgress({ slug, status: 'repaired', timestamp: new Date().toISOString() });
+                  appendProgress({ slug, status: "repaired", timestamp: new Date().toISOString() });
                 }
               } else if (result.confidence >= reviewLower) {
                 appendReview({ slug, hit, result, handle });
                 bucketReview++;
                 if (!dryRun) {
-                  appendProgress({ slug, status: 'reviewed', timestamp: new Date().toISOString() });
+                  appendProgress({ slug, status: "reviewed", timestamp: new Date().toISOString() });
                 }
               } else {
-                logSkip({ slug, hit, reason: `confidence ${result.confidence.toFixed(2)} below threshold ${reviewLower}` });
+                logSkip({
+                  slug,
+                  hit,
+                  reason: `confidence ${result.confidence.toFixed(2)} below threshold ${reviewLower}`,
+                });
                 bucketSkip++;
                 if (!dryRun) {
-                  appendProgress({ slug, status: 'skipped', timestamp: new Date().toISOString() });
+                  appendProgress({ slug, status: "skipped", timestamp: new Date().toISOString() });
                 }
               }
             } catch (e) {
               bucketErr++;
-              logSkip({ slug, hit, reason: `resolver error: ${e instanceof Error ? e.message : String(e)}` });
+              logSkip({
+                slug,
+                hit,
+                reason: `resolver error: ${e instanceof Error ? e.message : String(e)}`,
+              });
               if (!dryRun) {
-                appendProgress({ slug, status: 'error', timestamp: new Date().toISOString() });
+                appendProgress({ slug, status: "error", timestamp: new Date().toISOString() });
               }
             }
           }
         } else if (hits.length > 0 && !handle) {
           // Can't repair without a handle; log once per page
           for (const hit of hits) {
-            logSkip({ slug, hit, reason: 'no x_handle in frontmatter to search from' });
+            logSkip({ slug, hit, reason: "no x_handle in frontmatter to search from" });
           }
           bucketSkip += hits.length;
           if (!dryRun) {
-            appendProgress({ slug, status: 'skipped', timestamp: new Date().toISOString() });
+            appendProgress({ slug, status: "skipped", timestamp: new Date().toISOString() });
           }
         }
       }
@@ -533,12 +565,12 @@ async function cmdAuto(args: string[]): Promise<void> {
             const result = await registry.resolve<
               { url: string },
               { reachable: boolean; status?: number; reason?: string }
-            >('url_reachable', { url: hit.url }, ctx);
+            >("url_reachable", { url: hit.url }, ctx);
             if (!result.value.reachable) {
               logSkip({
                 slug,
-                hit: { slug, line: hit.line, rawLine: hit.url, phrase: 'dead-link' },
-                reason: `dead link: ${result.value.reason ?? 'unknown'}`,
+                hit: { slug, line: hit.line, rawLine: hit.url, phrase: "dead-link" },
+                reason: `dead link: ${result.value.reason ?? "unknown"}`,
               });
               bucketReview++;
             }
@@ -552,8 +584,8 @@ async function cmdAuto(args: string[]): Promise<void> {
     progress.finish();
 
     // Summary
-    console.log('');
-    console.log(`=== integrity auto summary${dryRun ? ' (DRY RUN)' : ''} ===`);
+    console.log("");
+    console.log(`=== integrity auto summary${dryRun ? " (DRY RUN)" : ""} ===`);
     console.log(`Pages processed: ${pagesProcessed}`);
     console.log(`Auto-repaired (≥${confidenceThreshold}): ${bucketAuto}`);
     console.log(`Review queue (≥${reviewLower} <${confidenceThreshold}): ${bucketReview}`);
@@ -576,7 +608,7 @@ function cmdReview(): void {
     console.log(`No review queue yet. Run: gbrain integrity auto --confidence 0.8`);
     return;
   }
-  const content = readFileSync(getReviewFile(), 'utf-8');
+  const content = readFileSync(getReviewFile(), "utf-8");
   const count = (content.match(/^## /gm) ?? []).length;
   console.log(`Review queue: ${getReviewFile()}`);
   console.log(`Entries: ${count}`);
@@ -613,33 +645,40 @@ async function repairBareTweet(args: RepairArgs): Promise<void> {
   // Read current, append citation to the flagged line, write back through
   // BrainWriter so the transaction is atomic and the writer's grandfather
   // opt-out can be cleared if validators pass post-repair.
-  const current = await (args.writer as unknown as { engine: BrainEngine })['engine']?.getPage?.(slug);
+  const current = await (args.writer as unknown as { engine: BrainEngine })["engine"]?.getPage?.(
+    slug
+  );
   // fall back: use a direct engine handle via writer's internal ref is ugly;
   // instead, use writer.transaction and read/write inside
-  await writer.transaction(async (tx) => {
-    // We can't read inside a transaction without engine access; set-wise,
-    // we fetch via the outer engine reference captured on the writer.
-    // Simpler: perform a read outside via setCompiledTruth which already
-    // handles "page not found" + merges with existing content server-side.
-    // However BrainWriter.setCompiledTruth requires the new body — we need
-    // to read first. Do the read here via the engine on the tx's context
-    // (the tx uses the same engine instance).
-    //
-    // Workaround: use setFrontmatterField + appendTimeline pattern. We
-    // leave the bare phrase alone and append a timeline entry with the
-    // citation. That's honest — we're adding evidence, not rewriting
-    // prose. Pages with `validate: false` in frontmatter stay flagged
-    // until a more thorough repair pass removes the bare phrase.
-    await tx.appendTimeline(slug, {
-      date: dateISO,
-      source: 'gbrain integrity --auto',
-      summary: `Bare-tweet reference repaired (line ${hit.line}): "${truncate(hit.rawLine, 80)}"`,
-      detail: cite,
-    });
-  }, {
-    config: {}, logger: { info: () => {}, warn: () => {}, error: () => {} },
-    requestId: 'integrity-repair', remote: false,
-  });
+  await writer.transaction(
+    async (tx) => {
+      // We can't read inside a transaction without engine access; set-wise,
+      // we fetch via the outer engine reference captured on the writer.
+      // Simpler: perform a read outside via setCompiledTruth which already
+      // handles "page not found" + merges with existing content server-side.
+      // However BrainWriter.setCompiledTruth requires the new body — we need
+      // to read first. Do the read here via the engine on the tx's context
+      // (the tx uses the same engine instance).
+      //
+      // Workaround: use setFrontmatterField + appendTimeline pattern. We
+      // leave the bare phrase alone and append a timeline entry with the
+      // citation. That's honest — we're adding evidence, not rewriting
+      // prose. Pages with `validate: false` in frontmatter stay flagged
+      // until a more thorough repair pass removes the bare phrase.
+      await tx.appendTimeline(slug, {
+        date: dateISO,
+        source: "gbrain integrity --auto",
+        summary: `Bare-tweet reference repaired (line ${hit.line}): "${truncate(hit.rawLine, 80)}"`,
+        detail: cite,
+      });
+    },
+    {
+      config: {},
+      logger: { info: () => {}, warn: () => {}, error: () => {} },
+      requestId: "integrity-repair",
+      remote: false,
+    }
+  );
 
   console.log(`repaired ${slug}:${hit.line} → ${cite}`);
   // Silence unused var from earlier refactor
@@ -655,7 +694,13 @@ interface ReviewArgs {
   hit: BareTweetHit;
   result: ResolverResult<{
     url?: string;
-    candidates: Array<{ tweet_id: string; text: string; created_at: string; score: number; url: string }>;
+    candidates: Array<{
+      tweet_id: string;
+      text: string;
+      created_at: string;
+      score: number;
+      url: string;
+    }>;
   }>;
   handle: string;
 }
@@ -670,15 +715,23 @@ function appendReview(args: ReviewArgs): void {
     `Phrase: \`${hit.rawLine}\``,
     ``,
     `Candidates:`,
-    ...result.value.candidates.slice(0, 5).map((c, i) => `  ${i + 1}. ${c.url} — "${truncate(c.text, 80)}" (score ${c.score.toFixed(2)})`),
+    ...result.value.candidates
+      .slice(0, 5)
+      .map(
+        (c, i) => `  ${i + 1}. ${c.url} — "${truncate(c.text, 80)}" (score ${c.score.toFixed(2)})`
+      ),
     ``,
-    '---',
-    '',
-  ].join('\n');
-  appendFileSync(getReviewFile(), block, 'utf-8');
+    "---",
+    "",
+  ].join("\n");
+  appendFileSync(getReviewFile(), block, "utf-8");
 }
 
-interface SkipArgs { slug: string; hit: BareTweetHit; reason: string }
+interface SkipArgs {
+  slug: string;
+  hit: BareTweetHit;
+  reason: string;
+}
 function logSkip(args: SkipArgs): void {
   ensureDir(getLogFile());
   const entry = {
@@ -689,20 +742,22 @@ function logSkip(args: SkipArgs): void {
     raw: args.hit.rawLine.slice(0, 200),
     reason: args.reason,
   };
-  appendFileSync(getLogFile(), JSON.stringify(entry) + '\n', 'utf-8');
+  appendFileSync(getLogFile(), JSON.stringify(entry) + "\n", "utf-8");
 }
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-export function extractXHandleFromFrontmatter(fm: Record<string, unknown> | undefined): string | null {
+export function extractXHandleFromFrontmatter(
+  fm: Record<string, unknown> | undefined
+): string | null {
   if (!fm) return null;
-  const keys = ['x_handle', 'twitter', 'twitter_handle', 'x'];
+  const keys = ["x_handle", "twitter", "twitter_handle", "x"];
   for (const k of keys) {
     const v = fm[k];
-    if (typeof v === 'string' && v.trim().length > 0) {
-      return v.trim().replace(/^@/, '');
+    if (typeof v === "string" && v.trim().length > 0) {
+      return v.trim().replace(/^@/, "");
     }
   }
   return null;
@@ -711,7 +766,7 @@ export function extractXHandleFromFrontmatter(fm: Record<string, unknown> | unde
 async function connect(): Promise<BrainEngine> {
   const config = loadConfig();
   if (!config) {
-    console.error('No brain configured. Run: gbrain init');
+    console.error("No brain configured. Run: gbrain init");
     process.exit(1);
   }
   const engine = await createEngine(toEngineConfig(config));
@@ -720,10 +775,10 @@ async function connect(): Promise<BrainEngine> {
 }
 
 function extractFlag(args: string[], flag: string): string | undefined {
-  const idx = args.findIndex(a => a === flag || a.startsWith(`${flag}=`));
+  const idx = args.findIndex((a) => a === flag || a.startsWith(`${flag}=`));
   if (idx === -1) return undefined;
   const arg = args[idx];
-  if (arg.includes('=')) return arg.slice(arg.indexOf('=') + 1);
+  if (arg.includes("=")) return arg.slice(arg.indexOf("=") + 1);
   return args[idx + 1];
 }
 
@@ -742,7 +797,7 @@ function extractFloatFlag(args: string[], flag: string): number | undefined {
 }
 
 function truncate(s: string, n: number): string {
-  return s.length <= n ? s : s.slice(0, n - 3) + '...';
+  return s.length <= n ? s : s.slice(0, n - 3) + "...";
 }
 
 function printHelp(): void {

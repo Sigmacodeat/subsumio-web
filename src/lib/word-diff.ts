@@ -73,14 +73,15 @@ export function diffWords(original: string, revised: string): DiffResult {
 }
 
 export function buildAcceptedText(
-  clauses: { original: string; revised: string; accepted?: boolean }[],
+  clauses: { original: string; revised: string; accepted?: boolean }[]
 ): string {
-  return clauses
-    .map((c) => (c.accepted ? c.revised : c.original))
-    .join("\n\n");
+  return clauses.map((c) => (c.accepted ? c.revised : c.original)).join("\n\n");
 }
 
-export function diffStats(original: string, revised: string): {
+export function diffStats(
+  original: string,
+  revised: string
+): {
   additions: number;
   removals: number;
   unchanged: number;

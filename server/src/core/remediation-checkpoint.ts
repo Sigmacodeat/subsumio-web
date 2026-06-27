@@ -15,10 +15,18 @@
  * sidecar failed.
  */
 
-import { mkdirSync, writeFileSync, readFileSync, readdirSync, statSync, existsSync, unlinkSync } from 'node:fs';
-import { join } from 'node:path';
-import { createHash } from 'node:crypto';
-import { gbrainPath } from './config.ts';
+import {
+  mkdirSync,
+  writeFileSync,
+  readFileSync,
+  readdirSync,
+  statSync,
+  existsSync,
+  unlinkSync,
+} from "node:fs";
+import { join } from "node:path";
+import { createHash } from "node:crypto";
+import { gbrainPath } from "./config.ts";
 
 export interface RemediationCheckpoint {
   schema_version: 1;
@@ -34,7 +42,7 @@ export interface RemediationCheckpoint {
     job_id?: number | null;
   }>;
   aborted_at: string;
-  abort_reason: 'budget_exhausted' | 'manual' | 'error';
+  abort_reason: "budget_exhausted" | "manual" | "error";
   budget_snapshot?: {
     spent: number;
     cap: number;
@@ -44,12 +52,12 @@ export interface RemediationCheckpoint {
 }
 
 function checkpointDir(): string {
-  return gbrainPath('remediation');
+  return gbrainPath("remediation");
 }
 
 export function computePlanHash(recommendationIds: string[]): string {
   const sorted = [...recommendationIds].sort();
-  const sha = createHash('sha256').update(JSON.stringify(sorted)).digest('hex');
+  const sha = createHash("sha256").update(JSON.stringify(sorted)).digest("hex");
   return sha.slice(0, 16);
 }
 
@@ -64,7 +72,7 @@ export function saveRemediationCheckpoint(cp: RemediationCheckpoint): void {
     const tmp = `${path}.tmp`;
     writeFileSync(tmp, JSON.stringify(cp, null, 2));
     // Atomic rename via fs.renameSync — Node guarantees POSIX atomicity on same-fs renames.
-    const { renameSync } = require('node:fs') as typeof import('node:fs');
+    const { renameSync } = require("node:fs") as typeof import("node:fs");
     renameSync(tmp, path);
   } catch (err) {
     process.stderr.write(`[remediate] checkpoint write failed: ${String(err)}\n`);
@@ -75,10 +83,12 @@ export function loadRemediationCheckpoint(planHash: string): RemediationCheckpoi
   const path = checkpointPath(planHash);
   if (!existsSync(path)) return null;
   try {
-    const raw = readFileSync(path, 'utf-8');
+    const raw = readFileSync(path, "utf-8");
     const parsed = JSON.parse(raw) as RemediationCheckpoint;
     if (parsed.schema_version !== 1) {
-      process.stderr.write(`[remediate] checkpoint ${planHash} has schema_version ${parsed.schema_version}; ignoring.\n`);
+      process.stderr.write(
+        `[remediate] checkpoint ${planHash} has schema_version ${parsed.schema_version}; ignoring.\n`
+      );
       return null;
     }
     return parsed;
@@ -93,13 +103,13 @@ export function listRemediationCheckpoints(): Array<{ plan_hash: string; mtime: 
   const dir = checkpointDir();
   if (!existsSync(dir)) return [];
   try {
-    const entries = readdirSync(dir).filter((f) => f.endsWith('.json'));
+    const entries = readdirSync(dir).filter((f) => f.endsWith(".json"));
     return entries
       .map((f) => {
         try {
           const path = join(dir, f);
           const m = statSync(path).mtimeMs;
-          return { plan_hash: f.replace(/\.json$/, ''), mtime: m };
+          return { plan_hash: f.replace(/\.json$/, ""), mtime: m };
         } catch {
           return null;
         }

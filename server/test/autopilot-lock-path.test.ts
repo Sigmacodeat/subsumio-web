@@ -13,36 +13,36 @@
  * in a unit test.
  */
 
-import { describe, test, expect } from 'bun:test';
-import { withEnv } from './helpers/with-env.ts';
-import { mkdtempSync } from 'fs';
-import { tmpdir } from 'os';
-import { join } from 'path';
-import { gbrainPath } from '../src/core/config.ts';
+import { describe, test, expect } from "bun:test";
+import { withEnv } from "./helpers/with-env.ts";
+import { mkdtempSync } from "fs";
+import { tmpdir } from "os";
+import { join } from "path";
+import { gbrainPath } from "../src/core/config.ts";
 
-describe('autopilot lock path scoped to GBRAIN_HOME (#1226)', () => {
-  test('one GBRAIN_HOME produces one canonical lock path', async () => {
-    const home = mkdtempSync(join(tmpdir(), 'gbrain-autopilot-lock-'));
+describe("autopilot lock path scoped to GBRAIN_HOME (#1226)", () => {
+  test("one GBRAIN_HOME produces one canonical lock path", async () => {
+    const home = mkdtempSync(join(tmpdir(), "gbrain-autopilot-lock-"));
     await withEnv({ GBRAIN_HOME: home }, async () => {
-      const lockPath = gbrainPath('autopilot.lock');
+      const lockPath = gbrainPath("autopilot.lock");
       // Lockfile MUST live inside the per-brain GBRAIN_HOME, not under
       // process.env.HOME — that was the pre-fix bug.
       expect(lockPath.startsWith(home)).toBe(true);
-      expect(lockPath.endsWith('autopilot.lock')).toBe(true);
+      expect(lockPath.endsWith("autopilot.lock")).toBe(true);
     });
   });
 
-  test('two GBRAIN_HOME values produce two distinct lockfiles', async () => {
-    const homeA = mkdtempSync(join(tmpdir(), 'gbrain-autopilot-A-'));
-    const homeB = mkdtempSync(join(tmpdir(), 'gbrain-autopilot-B-'));
+  test("two GBRAIN_HOME values produce two distinct lockfiles", async () => {
+    const homeA = mkdtempSync(join(tmpdir(), "gbrain-autopilot-A-"));
+    const homeB = mkdtempSync(join(tmpdir(), "gbrain-autopilot-B-"));
 
-    let lockA = '';
-    let lockB = '';
+    let lockA = "";
+    let lockB = "";
     await withEnv({ GBRAIN_HOME: homeA }, async () => {
-      lockA = gbrainPath('autopilot.lock');
+      lockA = gbrainPath("autopilot.lock");
     });
     await withEnv({ GBRAIN_HOME: homeB }, async () => {
-      lockB = gbrainPath('autopilot.lock');
+      lockB = gbrainPath("autopilot.lock");
     });
 
     // The contract that prevents two brains from silently colliding:
@@ -52,16 +52,16 @@ describe('autopilot lock path scoped to GBRAIN_HOME (#1226)', () => {
     expect(lockB.startsWith(homeB)).toBe(true);
   });
 
-  test('default (no GBRAIN_HOME override) still produces a valid path', async () => {
+  test("default (no GBRAIN_HOME override) still produces a valid path", async () => {
     // When GBRAIN_HOME is unset, gbrainPath falls through to its
     // default (`~/.gbrain`). The path must still exist as a string
     // and end with the expected filename — we don't assert the exact
     // home dir since that varies by environment.
     await withEnv({ GBRAIN_HOME: undefined }, async () => {
-      const lockPath = gbrainPath('autopilot.lock');
-      expect(typeof lockPath).toBe('string');
-      expect(lockPath.endsWith('autopilot.lock')).toBe(true);
-      expect(lockPath.length).toBeGreaterThan('autopilot.lock'.length);
+      const lockPath = gbrainPath("autopilot.lock");
+      expect(typeof lockPath).toBe("string");
+      expect(lockPath.endsWith("autopilot.lock")).toBe(true);
+      expect(lockPath.length).toBeGreaterThan("autopilot.lock".length);
     });
   });
 });

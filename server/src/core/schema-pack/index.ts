@@ -21,19 +21,16 @@ export {
   AGGREGATOR_KINDS,
   type AggregatorKind,
   type CalibrationDomain,
-} from './manifest-v1.ts';
+} from "./manifest-v1.ts";
 
-export {
-  getPrimitiveDefaults,
-  type PrimitiveDefaults,
-} from './primitives.ts';
+export { getPrimitiveDefaults, type PrimitiveDefaults } from "./primitives.ts";
 
 export {
   loadPackFromFile,
   loadPackFromString,
   parseYamlMini,
   SchemaPackLoaderError,
-} from './loader.ts';
+} from "./loader.ts";
 
 export {
   ALIAS_CLOSURE_MAX_DEPTH,
@@ -43,13 +40,13 @@ export {
   buildAliasGraph,
   expandClosure,
   computeAliasClosureHash,
-} from './closure.ts';
+} from "./closure.ts";
 
 export {
   type SourceClosureBinding,
   buildPerSourceBindings,
   buildSourceClosureCte,
-} from './per-source.ts';
+} from "./per-source.ts";
 
 export {
   type CandidateAuditRecord,
@@ -59,7 +56,7 @@ export {
   computeCandidateAuditPath,
   logCandidate,
   readRecentCandidates,
-} from './candidate-audit.ts';
+} from "./candidate-audit.ts";
 
 export {
   LINK_EXTRACTION_TOTAL_BUDGET_MS,
@@ -68,7 +65,7 @@ export {
   PageBudgetExceededError,
   PageRegexBudget,
   runRegexBounded,
-} from './redos-guard.ts';
+} from "./redos-guard.ts";
 
 export {
   EXTENDS_DEPTH_WARN,
@@ -86,7 +83,7 @@ export {
   _resetPackCacheForTests,
   _cacheSizeForTests,
   _cacheNamesForTests,
-} from './registry.ts';
+} from "./registry.ts";
 
 export {
   loadActivePack,
@@ -95,23 +92,17 @@ export {
   _resetPackLocatorForTests,
   type LoadActivePackInput,
   type PackLocator,
-} from './load-active.ts';
+} from "./load-active.ts";
 
 export {
   SchemaPackTrustGateError,
   validateSchemaPackTrustGate,
   loadActivePackForOp,
-} from './op-trust-gate.ts';
+} from "./op-trust-gate.ts";
 
-export {
-  inferLinkTypeFromPack,
-  frontmatterLinkTypeFromPack,
-} from './link-inference.ts';
+export { inferLinkTypeFromPack, frontmatterLinkTypeFromPack } from "./link-inference.ts";
 
-export {
-  expertTypesFromPack,
-  expertTypesFromPackOrThrow,
-} from './expert-types.ts';
+export { expertTypesFromPack, expertTypesFromPackOrThrow } from "./expert-types.ts";
 
 export {
   extractableTypesFromPack,
@@ -119,15 +110,12 @@ export {
   getExtractableSpec,
   isExtractableType,
   refuseVerifierPathInV042,
-} from './extractable.ts';
+} from "./extractable.ts";
 
-export {
-  enrichableTypesFromPack,
-  rubricNameForType,
-} from './enrichable.ts';
+export { enrichableTypesFromPack, rubricNameForType } from "./enrichable.ts";
 
 // v0.40.6.0 Schema Cathedral v3 surface:
-export { loadActivePackBestEffort } from './best-effort.ts';
+export { loadActivePackBestEffort } from "./best-effort.ts";
 
 export {
   type MutationOp,
@@ -142,7 +130,7 @@ export {
   logMutationFailure,
   readRecentMutations,
   summarizeMutations,
-} from './mutate-audit.ts';
+} from "./mutate-audit.ts";
 
 export {
   DEFAULT_LOCK_TTL_MS,
@@ -154,7 +142,7 @@ export {
   isLockStale,
   acquirePackLock,
   withPackLock,
-} from './pack-lock.ts';
+} from "./pack-lock.ts";
 
 export {
   type PackFileFormat,
@@ -178,9 +166,9 @@ export {
   removeLinkTypeFromPack,
   setExtractableOnType,
   setExpertRoutingOnType,
-} from './mutate.ts';
+} from "./mutate.ts";
 
-export { invalidateQueryCache } from './query-cache-invalidator.ts';
+export { invalidateQueryCache } from "./query-cache-invalidator.ts";
 
 export {
   type StatsOpts,
@@ -189,14 +177,9 @@ export {
   type TypeStats,
   type DeadPrefixHint,
   runStatsCore,
-} from './stats.ts';
+} from "./stats.ts";
 
-export {
-  type SyncOpts,
-  type SyncResult,
-  type PerPrefixResult,
-  runSyncCore,
-} from './sync.ts';
+export { type SyncOpts, type SyncResult, type PerPrefixResult, runSyncCore } from "./sync.ts";
 
 export {
   type LintIssue,
@@ -208,4 +191,4 @@ export {
   FILE_PLANE_LINT_RULES,
   runAllLintRules,
   runFilePlaneLintRules,
-} from './lint-rules.ts';
+} from "./lint-rules.ts";

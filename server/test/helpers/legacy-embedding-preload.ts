@@ -18,11 +18,11 @@
  * `configureGateway()` explicitly in their own beforeAll, which
  * overwrites this preload.
  */
-import { configureGateway, getEmbeddingDimensions } from '../../src/core/ai/gateway.ts';
-import { beforeEach } from 'bun:test';
+import { configureGateway, getEmbeddingDimensions } from "../../src/core/ai/gateway.ts";
+import { beforeEach } from "bun:test";
 
 const LEGACY_CONFIG = {
-  embedding_model: 'openai:text-embedding-3-large',
+  embedding_model: "openai:text-embedding-3-large",
   embedding_dimensions: 1536,
 } as const;
 
@@ -34,8 +34,8 @@ function applyLegacy() {
   });
 }
 
-if (process.env.GBRAIN_DEBUG_PRELOAD === '1') {
-  console.error('[legacy-embedding-preload] applying OpenAI/1536');
+if (process.env.GBRAIN_DEBUG_PRELOAD === "1") {
+  console.error("[legacy-embedding-preload] applying OpenAI/1536");
 }
 
 // Initial application — covers tests that don't reset the gateway.

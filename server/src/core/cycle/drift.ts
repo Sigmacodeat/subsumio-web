@@ -15,10 +15,10 @@
  *   gbrain config set dream.drift.lookback_days 30
  */
 
-import type { BrainEngine } from '../engine.ts';
-import { BudgetMeter } from './budget-meter.ts';
-import { resolveModel } from '../model-config.ts';
-import type { DreamPhaseResult } from './auto-think.ts';
+import type { BrainEngine } from "../engine.ts";
+import { BudgetMeter } from "./budget-meter.ts";
+import { resolveModel } from "../model-config.ts";
+import type { DreamPhaseResult } from "./auto-think.ts";
 
 export interface DriftPhaseOpts {
   brainDir?: string;
@@ -35,15 +35,15 @@ export interface DriftConfig {
 }
 
 async function loadDriftConfig(engine: BrainEngine): Promise<DriftConfig> {
-  const enabledStr = await engine.getConfig('dream.drift.enabled');
-  const lookbackStr = await engine.getConfig('dream.drift.lookback_days');
-  const budgetStr = await engine.getConfig('dream.drift.budget');
-  const autoStr = await engine.getConfig('dream.drift.auto_update');
+  const enabledStr = await engine.getConfig("dream.drift.enabled");
+  const lookbackStr = await engine.getConfig("dream.drift.lookback_days");
+  const budgetStr = await engine.getConfig("dream.drift.budget");
+  const autoStr = await engine.getConfig("dream.drift.auto_update");
   return {
-    enabled: enabledStr === 'true',
+    enabled: enabledStr === "true",
     lookbackDays: lookbackStr ? Math.max(1, parseInt(lookbackStr, 10) || 30) : 30,
     budgetUsd: budgetStr ? Math.max(0, parseFloat(budgetStr) || 1.0) : 1.0,
-    autoUpdate: autoStr === 'true',
+    autoUpdate: autoStr === "true",
   };
 }
 
@@ -64,16 +64,21 @@ interface DriftCandidate {
  */
 async function findDriftCandidates(
   engine: BrainEngine,
-  lookbackDays: number,
+  lookbackDays: number
 ): Promise<DriftCandidate[]> {
   const cutoffMs = Date.now() - lookbackDays * 86_400_000;
   const cutoffIso = new Date(cutoffMs).toISOString().slice(0, 10);
   // Only consider takes with weight in the "soft" middle band (0.3..0.85)
   // — facts (1.0) don't drift, very-low hunches (<0.3) aren't actionable yet.
   const rows = await engine.executeRaw<{
-    take_id: number; page_slug: string; row_num: number;
-    claim: string; weight: number; recent_evidence: number;
-  }>(`
+    take_id: number;
+    page_slug: string;
+    row_num: number;
+    claim: string;
+    weight: number;
+    recent_evidence: number;
+  }>(
+    `
     SELECT t.id AS take_id, p.slug AS page_slug, t.row_num,
            t.claim, t.weight,
            (SELECT count(*)::int FROM timeline_entries te
@@ -87,10 +92,12 @@ async function findDriftCandidates(
       AND t.resolved_at IS NULL
     ORDER BY recent_evidence DESC, t.weight DESC
     LIMIT 200
-  `, [cutoffIso]);
+  `,
+    [cutoffIso]
+  );
   return rows
-    .filter(r => Number(r.recent_evidence) >= 1)
-    .map(r => ({
+    .filter((r) => Number(r.recent_evidence) >= 1)
+    .map((r) => ({
       takeId: Number(r.take_id),
       pageSlug: String(r.page_slug),
       rowNum: Number(r.row_num),
@@ -101,25 +108,25 @@ async function findDriftCandidates(
 }
 
 function skipped(_reason: string, detail: string): DreamPhaseResult {
-  return { name: 'drift', status: 'skipped', detail, duration_ms: 0 };
+  return { name: "drift", status: "skipped", detail, duration_ms: 0 };
 }
 
 export async function runPhaseDrift(
   engine: BrainEngine,
-  opts: DriftPhaseOpts,
+  opts: DriftPhaseOpts
 ): Promise<DreamPhaseResult> {
   const start = Date.now();
   const config = await loadDriftConfig(engine);
   if (!config.enabled) {
-    return skipped('not_configured', 'dream.drift.enabled is false');
+    return skipped("not_configured", "dream.drift.enabled is false");
   }
 
   const candidates = await findDriftCandidates(engine, config.lookbackDays);
   if (candidates.length === 0) {
     return {
-      name: 'drift',
-      status: 'complete',
-      detail: 'no candidates: no soft-band takes with recent timeline evidence',
+      name: "drift",
+      status: "complete",
+      detail: "no candidates: no soft-band takes with recent timeline evidence",
       totals: { candidates: 0 },
       duration_ms: Date.now() - start,
     };
@@ -129,26 +136,27 @@ export async function runPhaseDrift(
   // surface the candidates — the meter call is a no-op when we don't actually
   // submit, but resolveModel sets the right pricing key when v0.29 ships.
   const modelId = await resolveModel(engine, {
-    configKey: 'models.drift',
-    deprecatedConfigKey: 'dream.drift.model',
-    tier: 'reasoning',
-    fallback: 'sonnet',
+    configKey: "models.drift",
+    deprecatedConfigKey: "dream.drift.model",
+    tier: "reasoning",
+    fallback: "sonnet",
   });
   const meter = new BudgetMeter({
     budgetUsd: config.budgetUsd,
-    phase: 'drift',
+    phase: "drift",
     auditPath: opts.auditPath,
   });
 
   // v0.28 scaffold: write a candidate report. v0.29 wires LLM-driven weight
   // adjustment through autoUpdate. modelId + meter are wired now so the
   // ledger captures the gate state even when we don't submit.
-  void modelId; void meter;
+  void modelId;
+  void meter;
 
   if (opts.dryRun) {
     return {
-      name: 'drift',
-      status: 'skipped',
+      name: "drift",
+      status: "skipped",
       detail: `dry-run: ${candidates.length} candidates would be evaluated`,
       totals: { candidates: candidates.length },
       duration_ms: Date.now() - start,
@@ -156,8 +164,8 @@ export async function runPhaseDrift(
   }
 
   return {
-    name: 'drift',
-    status: 'complete',
+    name: "drift",
+    status: "complete",
     detail: `surfaced ${candidates.length} drift candidates (LLM judge: v0.29 follow-up). autoUpdate=${config.autoUpdate}`,
     totals: { candidates: candidates.length },
     duration_ms: Date.now() - start,

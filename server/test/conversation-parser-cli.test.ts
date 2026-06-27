@@ -10,12 +10,12 @@
  * Pure-function tests; no engine, no DB.
  */
 
-import { describe, expect, test, beforeEach, afterEach } from 'bun:test';
-import { mkdtempSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { runConversationParser } from '../src/commands/conversation-parser.ts';
-import { BUILTIN_PATTERNS } from '../src/core/conversation-parser/builtins.ts';
+import { describe, expect, test, beforeEach, afterEach } from "bun:test";
+import { mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { runConversationParser } from "../src/commands/conversation-parser.ts";
+import { BUILTIN_PATTERNS } from "../src/core/conversation-parser/builtins.ts";
 
 // Capture process.stdout.write + process.stderr.write + process.exit.
 function captureStdio() {
@@ -26,11 +26,11 @@ function captureStdio() {
   const origErr = process.stderr.write.bind(process.stderr);
   const origExit = process.exit.bind(process);
   process.stdout.write = ((chunk: string | Uint8Array) => {
-    out.push(typeof chunk === 'string' ? chunk : Buffer.from(chunk).toString());
+    out.push(typeof chunk === "string" ? chunk : Buffer.from(chunk).toString());
     return true;
   }) as typeof process.stdout.write;
   process.stderr.write = ((chunk: string | Uint8Array) => {
-    err.push(typeof chunk === 'string' ? chunk : Buffer.from(chunk).toString());
+    err.push(typeof chunk === "string" ? chunk : Buffer.from(chunk).toString());
     return true;
   }) as typeof process.stderr.write;
   // process.exit throws to short-circuit; tests catch and inspect.
@@ -50,59 +50,59 @@ function captureStdio() {
   };
 }
 
-describe('runConversationParser — help', () => {
-  test('--help prints usage', async () => {
+describe("runConversationParser — help", () => {
+  test("--help prints usage", async () => {
     const cap = captureStdio();
     try {
-      await runConversationParser(null, ['--help']);
+      await runConversationParser(null, ["--help"]);
     } finally {
       cap.restore();
     }
-    const text = cap.out.join('');
-    expect(text).toContain('Usage: gbrain conversation-parser');
-    expect(text).toContain('scan');
-    expect(text).toContain('list-builtins');
-    expect(text).toContain('validate');
+    const text = cap.out.join("");
+    expect(text).toContain("Usage: gbrain conversation-parser");
+    expect(text).toContain("scan");
+    expect(text).toContain("list-builtins");
+    expect(text).toContain("validate");
   });
 
-  test('no subcommand prints help', async () => {
+  test("no subcommand prints help", async () => {
     const cap = captureStdio();
     try {
       await runConversationParser(null, []);
     } finally {
       cap.restore();
     }
-    expect(cap.out.join('')).toContain('Usage: gbrain conversation-parser');
+    expect(cap.out.join("")).toContain("Usage: gbrain conversation-parser");
   });
 });
 
-describe('runConversationParser — list-builtins', () => {
-  test('human output includes all 12 pattern ids', async () => {
+describe("runConversationParser — list-builtins", () => {
+  test("human output includes all 12 pattern ids", async () => {
     const cap = captureStdio();
     try {
-      await runConversationParser(null, ['list-builtins']);
+      await runConversationParser(null, ["list-builtins"]);
     } finally {
       cap.restore();
     }
-    const text = cap.out.join('');
+    const text = cap.out.join("");
     for (const pattern of BUILTIN_PATTERNS) {
       expect(text).toContain(pattern.id);
     }
     expect(text).toContain(`${BUILTIN_PATTERNS.length} built-in patterns`);
   });
 
-  test('--json output is stable schema', async () => {
+  test("--json output is stable schema", async () => {
     const cap = captureStdio();
     try {
-      await runConversationParser(null, ['list-builtins', '--json']);
+      await runConversationParser(null, ["list-builtins", "--json"]);
     } finally {
       cap.restore();
     }
-    const json = JSON.parse(cap.out.join('').trim());
+    const json = JSON.parse(cap.out.join("").trim());
     expect(json.schema_version).toBe(1);
     expect(json.total).toBe(BUILTIN_PATTERNS.length);
     expect(json.patterns).toHaveLength(BUILTIN_PATTERNS.length);
-    expect(json.patterns[0].id).toBe('imessage-slack');
+    expect(json.patterns[0].id).toBe("imessage-slack");
     expect(json.patterns[0].date_source).toBeDefined();
     expect(json.patterns[0].time_format).toBeDefined();
     expect(json.patterns[0].timezone_policy).toBeDefined();
@@ -110,57 +110,54 @@ describe('runConversationParser — list-builtins', () => {
   });
 });
 
-describe('runConversationParser — validate', () => {
-  test('emits deferred notice (v0.42+ scope)', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'cv-parser-cli-'));
-    const path = join(dir, 'pattern.json');
-    writeFileSync(path, '{}');
+describe("runConversationParser — validate", () => {
+  test("emits deferred notice (v0.42+ scope)", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "cv-parser-cli-"));
+    const path = join(dir, "pattern.json");
+    writeFileSync(path, "{}");
     const cap = captureStdio();
     try {
-      await runConversationParser(null, ['validate', path]);
+      await runConversationParser(null, ["validate", path]);
     } finally {
       cap.restore();
     }
-    expect(cap.out.join('')).toContain('deferred to v0.42+');
+    expect(cap.out.join("")).toContain("deferred to v0.42+");
   });
 
-  test('--json validate emits structured deferred envelope', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'cv-parser-cli-'));
-    const path = join(dir, 'pattern.json');
-    writeFileSync(path, '{}');
+  test("--json validate emits structured deferred envelope", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "cv-parser-cli-"));
+    const path = join(dir, "pattern.json");
+    writeFileSync(path, "{}");
     const cap = captureStdio();
     try {
-      await runConversationParser(null, ['validate', path, '--json']);
+      await runConversationParser(null, ["validate", path, "--json"]);
     } finally {
       cap.restore();
     }
-    const json = JSON.parse(cap.out.join('').trim());
+    const json = JSON.parse(cap.out.join("").trim());
     expect(json.schema_version).toBe(1);
-    expect(json.status).toBe('deferred');
-    expect(json.todo_ref).toContain('v0.41.16.0');
+    expect(json.status).toBe("deferred");
+    expect(json.todo_ref).toContain("v0.41.16.0");
   });
 
-  test('exits 2 on missing file path', async () => {
+  test("exits 2 on missing file path", async () => {
     const cap = captureStdio();
     try {
-      await runConversationParser(null, ['validate']);
+      await runConversationParser(null, ["validate"]);
     } catch (e) {
-      expect((e as Error).message).toBe('PROCESS_EXIT:2');
+      expect((e as Error).message).toBe("PROCESS_EXIT:2");
     } finally {
       cap.restore();
     }
     expect(cap.getExitCode()).toBe(2);
   });
 
-  test('exits 2 on nonexistent file', async () => {
+  test("exits 2 on nonexistent file", async () => {
     const cap = captureStdio();
     try {
-      await runConversationParser(null, [
-        'validate',
-        '/nonexistent/path.json',
-      ]);
+      await runConversationParser(null, ["validate", "/nonexistent/path.json"]);
     } catch (e) {
-      expect((e as Error).message).toBe('PROCESS_EXIT:2');
+      expect((e as Error).message).toBe("PROCESS_EXIT:2");
     } finally {
       cap.restore();
     }
@@ -168,13 +165,13 @@ describe('runConversationParser — validate', () => {
   });
 });
 
-describe('runConversationParser — scan', () => {
-  test('exits 2 when engine is null (scan requires brain)', async () => {
+describe("runConversationParser — scan", () => {
+  test("exits 2 when engine is null (scan requires brain)", async () => {
     const cap = captureStdio();
     try {
-      await runConversationParser(null, ['scan', 'some-slug']);
+      await runConversationParser(null, ["scan", "some-slug"]);
     } catch (e) {
-      expect((e as Error).message).toBe('PROCESS_EXIT:2');
+      expect((e as Error).message).toBe("PROCESS_EXIT:2");
     } finally {
       cap.restore();
     }
@@ -182,16 +179,16 @@ describe('runConversationParser — scan', () => {
   });
 });
 
-describe('runConversationParser — unknown subcommand', () => {
-  test('exits 2 with hint', async () => {
+describe("runConversationParser — unknown subcommand", () => {
+  test("exits 2 with hint", async () => {
     const cap = captureStdio();
     try {
-      await runConversationParser(null, ['bogus-cmd']);
+      await runConversationParser(null, ["bogus-cmd"]);
     } catch (e) {
-      expect((e as Error).message).toBe('PROCESS_EXIT:2');
+      expect((e as Error).message).toBe("PROCESS_EXIT:2");
     } finally {
       cap.restore();
     }
-    expect(cap.err.join('')).toContain('unknown subcommand');
+    expect(cap.err.join("")).toContain("unknown subcommand");
   });
 });

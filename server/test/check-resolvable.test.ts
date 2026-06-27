@@ -91,12 +91,12 @@ describe("parseResolverEntries", () => {
     const content = `- **flight-tracker**: track my flight | flight status | when does my flight land`;
     const entries = parseResolverEntries(content);
     expect(entries.length).toBe(3);
-    expect(entries.map(e => e.trigger)).toEqual([
+    expect(entries.map((e) => e.trigger)).toEqual([
       "track my flight",
       "flight status",
       "when does my flight land",
     ]);
-    expect(entries.every(e => e.skillPath === "skills/flight-tracker/SKILL.md")).toBe(true);
+    expect(entries.every((e) => e.skillPath === "skills/flight-tracker/SKILL.md")).toBe(true);
   });
 
   test("[list] plain-name fallback (no bold markers)", () => {
@@ -133,14 +133,14 @@ describe("parseResolverEntries", () => {
     const content = `- **foo-skill**: bar | ... | baz`;
     const entries = parseResolverEntries(content);
     expect(entries.length).toBe(2);
-    expect(entries.map(e => e.trigger)).toEqual(["bar", "baz"]);
+    expect(entries.map((e) => e.trigger)).toEqual(["bar", "baz"]);
   });
 
   test("[list] empty pipe segments are dropped", () => {
     const content = `- **foo-skill**: bar | | baz`;
     const entries = parseResolverEntries(content);
     expect(entries.length).toBe(2);
-    expect(entries.map(e => e.trigger)).toEqual(["bar", "baz"]);
+    expect(entries.map((e) => e.trigger)).toEqual(["bar", "baz"]);
   });
 
   test("[mixed] table and list rows in the same file", () => {
@@ -205,9 +205,9 @@ describe("checkResolvable — real skills directory", () => {
   });
 
   test("all manifest skills are reachable from RESOLVER.md", () => {
-    const unreachableIssues = report.issues.filter(i => i.type === "unreachable");
+    const unreachableIssues = report.issues.filter((i) => i.type === "unreachable");
     if (unreachableIssues.length > 0) {
-      const names = unreachableIssues.map(i => i.skill).join(", ");
+      const names = unreachableIssues.map((i) => i.skill).join(", ");
       console.warn(`Unreachable skills: ${names}`);
     }
     // Currently expect all 24 skills to be reachable
@@ -215,12 +215,12 @@ describe("checkResolvable — real skills directory", () => {
   });
 
   test("no missing files referenced by RESOLVER.md", () => {
-    const missingFiles = report.issues.filter(i => i.type === "missing_file");
+    const missingFiles = report.issues.filter((i) => i.type === "missing_file");
     expect(missingFiles.length).toBe(0);
   });
 
   test("no orphan triggers (in resolver but not manifest)", () => {
-    const orphans = report.issues.filter(i => i.type === "orphan_trigger");
+    const orphans = report.issues.filter((i) => i.type === "orphan_trigger");
     expect(orphans.length).toBe(0);
   });
 
@@ -230,15 +230,15 @@ describe("checkResolvable — real skills directory", () => {
       // Action should mention a file or a specific fix
       expect(
         issue.action.includes("RESOLVER.md") ||
-        issue.action.includes("SKILL.md") ||
-        issue.action.includes("manifest") ||
-        issue.action.includes("conventions/")
+          issue.action.includes("SKILL.md") ||
+          issue.action.includes("manifest") ||
+          issue.action.includes("conventions/")
       ).toBe(true);
     }
   });
 
   test("unreachable issues have structured fix objects", () => {
-    const unreachable = report.issues.filter(i => i.type === "unreachable");
+    const unreachable = report.issues.filter((i) => i.type === "unreachable");
     for (const issue of unreachable) {
       expect(issue.fix).toBeDefined();
       expect(issue.fix!.type).toBe("add_trigger");
@@ -247,7 +247,7 @@ describe("checkResolvable — real skills directory", () => {
   });
 
   test("whitelisted skills (ingest, signal-detector, brain-ops) don't trigger MECE overlap", () => {
-    const overlaps = report.issues.filter(i => i.type === "mece_overlap");
+    const overlaps = report.issues.filter((i) => i.type === "mece_overlap");
     for (const issue of overlaps) {
       // The skill field lists the overlapping skills
       expect(issue.skill).not.toContain("signal-detector");
@@ -268,11 +268,14 @@ function makeSkillsFixture(files: Record<string, string>): string {
   const dir = mkdtempSync(join(tmpdir(), "gbrain-dry-"));
   // Minimal RESOLVER.md and manifest.json so checkResolvable doesn't bail.
   const skillNames = Object.keys(files);
-  const resolverRows = skillNames.map(n => `| "${n}" | \`skills/${n}/SKILL.md\` |`).join("\n");
-  writeFileSync(join(dir, "RESOLVER.md"), `## Test\n| Trigger | Skill |\n|-----|-----|\n${resolverRows}\n`);
+  const resolverRows = skillNames.map((n) => `| "${n}" | \`skills/${n}/SKILL.md\` |`).join("\n");
+  writeFileSync(
+    join(dir, "RESOLVER.md"),
+    `## Test\n| Trigger | Skill |\n|-----|-----|\n${resolverRows}\n`
+  );
   writeFileSync(
     join(dir, "manifest.json"),
-    JSON.stringify({ skills: skillNames.map(n => ({ name: n, path: `${n}/SKILL.md` })) }, null, 2)
+    JSON.stringify({ skills: skillNames.map((n) => ({ name: n, path: `${n}/SKILL.md` })) }, null, 2)
   );
   for (const [name, body] of Object.entries(files)) {
     mkdirSync(join(dir, name), { recursive: true });
@@ -307,9 +310,7 @@ describe("extractDelegationTargets", () => {
   });
 
   test("ignores backticks pointing outside known delegation targets", () => {
-    const refs = extractDelegationTargets(
-      "See `skills/random/README.md` for unrelated notes.\n"
-    );
+    const refs = extractDelegationTargets("See `skills/random/README.md` for unrelated notes.\n");
     expect(refs).toHaveLength(0);
   });
 
@@ -328,7 +329,7 @@ describe("DRY detection — checkResolvable", () => {
       bad: "# BadSkill\n\nCheck the notability gate every time.\n",
     });
     const report = checkResolvable(dir);
-    const dry = report.issues.filter(i => i.type === "dry_violation");
+    const dry = report.issues.filter((i) => i.type === "dry_violation");
     expect(dry).toHaveLength(1);
     expect(dry[0].skill).toBe("bad");
   });
@@ -338,7 +339,7 @@ describe("DRY detection — checkResolvable", () => {
       good: `# GoodSkill\n\n> **Convention:** See \`skills/conventions/quality.md\` for rules.\n\nCheck the notability gate.\n`,
     });
     const report = checkResolvable(dir);
-    const dry = report.issues.filter(i => i.type === "dry_violation");
+    const dry = report.issues.filter((i) => i.type === "dry_violation");
     expect(dry).toHaveLength(0);
   });
 
@@ -347,7 +348,7 @@ describe("DRY detection — checkResolvable", () => {
       good: `# GoodSkill\n\n> **Filing rule:** Read \`skills/_brain-filing-rules.md\`.\n\nCheck the notability gate.\n`,
     });
     const report = checkResolvable(dir);
-    const dry = report.issues.filter(i => i.type === "dry_violation");
+    const dry = report.issues.filter((i) => i.type === "dry_violation");
     expect(dry).toHaveLength(0);
   });
 
@@ -357,7 +358,7 @@ describe("DRY detection — checkResolvable", () => {
       distant: `> **Convention:** See \`skills/conventions/quality.md\`.\n\n${filler}\n\nCheck the notability gate now.\n`,
     });
     const report = checkResolvable(dir);
-    const dry = report.issues.filter(i => i.type === "dry_violation");
+    const dry = report.issues.filter((i) => i.type === "dry_violation");
     expect(dry).toHaveLength(1);
   });
 
@@ -367,7 +368,7 @@ describe("DRY detection — checkResolvable", () => {
       near: `> **Convention:** See \`skills/conventions/quality.md\`.\n\n${filler}\n\nCheck the notability gate now.\n`,
     });
     const report = checkResolvable(dir);
-    const dry = report.issues.filter(i => i.type === "dry_violation");
+    const dry = report.issues.filter((i) => i.type === "dry_violation");
     expect(dry).toHaveLength(0);
   });
 
@@ -377,7 +378,7 @@ describe("DRY detection — checkResolvable", () => {
       filing: `> **Filing rule:** Read \`skills/_brain-filing-rules.md\`.\n\n## Iron Law: Back-Linking (MANDATORY)\n`,
     });
     const report = checkResolvable(dir);
-    const dry = report.issues.filter(i => i.type === "dry_violation");
+    const dry = report.issues.filter((i) => i.type === "dry_violation");
     expect(dry.length).toBeGreaterThanOrEqual(1);
   });
 });
@@ -403,8 +404,8 @@ describe("v0.22.4 regression — actual repo skills/ has 0 errors", () => {
     // the skill's frontmatter `triggers:` so the realistic fixture
     // intent contains a trigger substring.
     const report = checkResolvable(SKILLS_DIR);
-    const errors = report.issues.filter(i => i.severity === "error");
-    const warnings = report.issues.filter(i => i.severity === "warning");
+    const errors = report.issues.filter((i) => i.severity === "error");
+    const warnings = report.issues.filter((i) => i.severity === "warning");
     expect(errors).toEqual([]);
     expect(warnings).toEqual([]);
   });
@@ -416,4 +417,3 @@ function afterEachCleanup(fn: () => void) {
   const { afterEach } = require("bun:test");
   afterEach(fn);
 }
-

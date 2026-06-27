@@ -17,9 +17,9 @@
  * function recovers slugs from both.
  */
 
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
-import { PGLiteEngine } from '../src/core/pglite-engine.ts';
-import { __testing } from '../src/core/cycle/synthesize.ts';
+import { describe, test, expect, beforeAll, afterAll } from "bun:test";
+import { PGLiteEngine } from "../src/core/pglite-engine.ts";
+import { __testing } from "../src/core/cycle/synthesize.ts";
 
 const { collectChildPutPageSlugs } = __testing;
 
@@ -47,60 +47,60 @@ afterAll(async () => {
   await engine.disconnect();
 });
 
-describe('C6: collectChildPutPageSlugs survives double-encoded jsonb (#745)', () => {
-  test('recovers slug from properly-stored jsonb object (post-fix)', async () => {
+describe("C6: collectChildPutPageSlugs survives double-encoded jsonb (#745)", () => {
+  test("recovers slug from properly-stored jsonb object (post-fix)", async () => {
     const db = (engine as any).db;
     // Use raw SQL with jsonb literal to ensure object shape, not string shape.
     await db.query(
       `INSERT INTO subagent_tool_executions (job_id, message_idx, tool_use_id, tool_name, status, input)
        VALUES (1001, 0, 'tool_a', 'brain_put_page', 'complete', $1::jsonb)`,
-      [JSON.stringify({ slug: 'wiki/agents/test/normal-shape', body: 'hi' })],
+      [JSON.stringify({ slug: "wiki/agents/test/normal-shape", body: "hi" })]
     );
     const refs = await collectChildPutPageSlugs(engine as any, [1001], new Map());
-    expect(refs.map((r: { slug: string }) => r.slug)).toContain('wiki/agents/test/normal-shape');
+    expect(refs.map((r: { slug: string }) => r.slug)).toContain("wiki/agents/test/normal-shape");
   });
 
-  test('recovers slug from DOUBLE-ENCODED jsonb string (#745 fix)', async () => {
+  test("recovers slug from DOUBLE-ENCODED jsonb string (#745 fix)", async () => {
     const db = (engine as any).db;
     // Construct double-encoded shape: input column contains a jsonb STRING
     // (jsonb_typeof='string') whose VALUE is the JSON-encoded object.
     // This is the bug-shape pre-#745: writing JSON.stringify of the object
     // into a jsonb column produced jsonb_typeof='string', not 'object'.
     const doubleEncoded = JSON.stringify(
-      JSON.stringify({ slug: 'wiki/agents/test/double-encoded', body: 'hi' }),
+      JSON.stringify({ slug: "wiki/agents/test/double-encoded", body: "hi" })
     );
     await db.query(
       `INSERT INTO subagent_tool_executions (job_id, message_idx, tool_use_id, tool_name, status, input)
        VALUES (1002, 0, 'tool_b', 'brain_put_page', 'complete', $1::jsonb)`,
-      [doubleEncoded],
+      [doubleEncoded]
     );
 
     // Sanity check: confirm the row IS double-encoded (jsonb_typeof='string').
     const probe = await db.query(
-      `SELECT jsonb_typeof(input) AS t FROM subagent_tool_executions WHERE job_id=1002`,
+      `SELECT jsonb_typeof(input) AS t FROM subagent_tool_executions WHERE job_id=1002`
     );
-    expect(probe.rows[0].t).toBe('string');
+    expect(probe.rows[0].t).toBe("string");
 
     const refs = await collectChildPutPageSlugs(engine as any, [1002], new Map());
-    expect(refs.map((r: { slug: string }) => r.slug)).toContain('wiki/agents/test/double-encoded');
+    expect(refs.map((r: { slug: string }) => r.slug)).toContain("wiki/agents/test/double-encoded");
   });
 
-  test('handles MIXED inputs: returns slugs from both shapes in one query', async () => {
+  test("handles MIXED inputs: returns slugs from both shapes in one query", async () => {
     const refs = await collectChildPutPageSlugs(engine as any, [1001, 1002], new Map());
     const slugs = refs.map((r: { slug: string }) => r.slug);
-    expect(slugs).toContain('wiki/agents/test/normal-shape');
-    expect(slugs).toContain('wiki/agents/test/double-encoded');
+    expect(slugs).toContain("wiki/agents/test/normal-shape");
+    expect(slugs).toContain("wiki/agents/test/double-encoded");
   });
 
-  test('skips rows without a slug field gracefully (no throw)', async () => {
+  test("skips rows without a slug field gracefully (no throw)", async () => {
     const db = (engine as any).db;
     await db.query(
       `INSERT INTO subagent_tool_executions (job_id, message_idx, tool_use_id, tool_name, status, input)
        VALUES (1003, 0, 'tool_c', 'brain_put_page', 'complete', $1::jsonb)`,
-      [JSON.stringify({ unrelated: 'no-slug' })],
+      [JSON.stringify({ unrelated: "no-slug" })]
     );
     const refs = await collectChildPutPageSlugs(engine as any, [1003], new Map());
     // Function silently drops rows whose slug resolves to null/empty.
-    expect(refs.map((r: { slug: string }) => r.slug)).not.toContain('no-slug');
+    expect(refs.map((r: { slug: string }) => r.slug)).not.toContain("no-slug");
   });
 });

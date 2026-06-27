@@ -28,10 +28,10 @@ export const QRELS_FILE_SCHEMA_VERSION = 1 as const;
 
 /** Defaults when neither qrels-file nor CLI flags set them. */
 export const DEFAULT_QRELS_THRESHOLDS = {
-  recall_at_k: 0.70,
-  first_relevant_hit: 0.60,
+  recall_at_k: 0.7,
+  first_relevant_hit: 0.6,
   /** Lower default because exact top-1 is harder than any-relevant top-1. */
-  expected_top1: 0.50,
+  expected_top1: 0.5,
   /** k for recall@k unless overridden by CLI. */
   k: 10,
 } as const;
@@ -60,9 +60,12 @@ export interface QrelsFile {
 }
 
 export class QrelsParseError extends Error {
-  constructor(message: string, public readonly entryIndex?: number) {
+  constructor(
+    message: string,
+    public readonly entryIndex?: number
+  ) {
     super(message);
-    this.name = 'QrelsParseError';
+    this.name = "QrelsParseError";
   }
 }
 
@@ -86,19 +89,21 @@ export function parseQrelsFile(content: string): QrelsFile {
   try {
     parsed = JSON.parse(content);
   } catch (err) {
-    throw new QrelsParseError(`Malformed JSON: ${err instanceof Error ? err.message : String(err)}`);
+    throw new QrelsParseError(
+      `Malformed JSON: ${err instanceof Error ? err.message : String(err)}`
+    );
   }
 
-  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
     throw new QrelsParseError(
-      'Qrels file must be a JSON object (got array or non-object). Expected shape: {"schema_version":1,"queries":[...]}',
+      'Qrels file must be a JSON object (got array or non-object). Expected shape: {"schema_version":1,"queries":[...]}'
     );
   }
 
   const file = parsed as Partial<QrelsFile> & { queries?: unknown };
   if (file.schema_version !== QRELS_FILE_SCHEMA_VERSION) {
     throw new QrelsParseError(
-      `Unsupported schema_version ${file.schema_version} (this gbrain build expects ${QRELS_FILE_SCHEMA_VERSION})`,
+      `Unsupported schema_version ${file.schema_version} (this gbrain build expects ${QRELS_FILE_SCHEMA_VERSION})`
     );
   }
   if (!Array.isArray(file.queries)) {
@@ -111,13 +116,13 @@ export function parseQrelsFile(content: string): QrelsFile {
   const queries: QrelsEntry[] = [];
   for (let i = 0; i < file.queries.length; i++) {
     const raw = file.queries[i];
-    if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
+    if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
       throw new QrelsParseError(`Entry ${i} is not a JSON object`, i);
     }
     const entry = raw as unknown as Record<string, unknown>;
 
-    const query_id = typeof entry.query_id === 'string' ? entry.query_id : `entry-${i}`;
-    if (typeof entry.query !== 'string' || entry.query.trim() === '') {
+    const query_id = typeof entry.query_id === "string" ? entry.query_id : `entry-${i}`;
+    if (typeof entry.query !== "string" || entry.query.trim() === "") {
       throw new QrelsParseError(`Entry ${i} (${query_id}) missing or empty "query"`, i);
     }
 
@@ -125,32 +130,32 @@ export function parseQrelsFile(content: string): QrelsFile {
     let relevant: SourceSlugRef[];
     if (Array.isArray(entry.relevant)) {
       relevant = entry.relevant.map((r, j) => {
-        if (typeof r !== 'object' || r === null) {
+        if (typeof r !== "object" || r === null) {
           throw new QrelsParseError(`Entry ${i} (${query_id}) relevant[${j}] is not an object`, i);
         }
         const ref = r as Record<string, unknown>;
-        if (typeof ref.source_id !== 'string' || typeof ref.slug !== 'string') {
+        if (typeof ref.source_id !== "string" || typeof ref.slug !== "string") {
           throw new QrelsParseError(
             `Entry ${i} (${query_id}) relevant[${j}] missing source_id or slug`,
-            i,
+            i
           );
         }
         return { source_id: ref.source_id, slug: ref.slug };
       });
     } else if (Array.isArray(entry.relevant_slugs)) {
       relevant = entry.relevant_slugs.map((slug, j) => {
-        if (typeof slug !== 'string') {
+        if (typeof slug !== "string") {
           throw new QrelsParseError(
             `Entry ${i} (${query_id}) relevant_slugs[${j}] is not a string`,
-            i,
+            i
           );
         }
-        return { source_id: 'default', slug };
+        return { source_id: "default", slug };
       });
     } else {
       throw new QrelsParseError(
         `Entry ${i} (${query_id}) missing "relevant" or "relevant_slugs"`,
-        i,
+        i
       );
     }
     if (relevant.length === 0) {
@@ -161,25 +166,25 @@ export function parseQrelsFile(content: string): QrelsFile {
     let expected_top1: SourceSlugRef | undefined;
     if (entry.expected_top1 !== undefined) {
       const e = entry.expected_top1;
-      if (typeof e !== 'object' || e === null) {
+      if (typeof e !== "object" || e === null) {
         throw new QrelsParseError(`Entry ${i} (${query_id}) expected_top1 is not an object`, i);
       }
       const ref = e as Record<string, unknown>;
-      if (typeof ref.source_id !== 'string' || typeof ref.slug !== 'string') {
+      if (typeof ref.source_id !== "string" || typeof ref.slug !== "string") {
         throw new QrelsParseError(
           `Entry ${i} (${query_id}) expected_top1 missing source_id or slug`,
-          i,
+          i
         );
       }
       expected_top1 = { source_id: ref.source_id, slug: ref.slug };
-    } else if (typeof entry.first_relevant_slug === 'string') {
-      expected_top1 = { source_id: 'default', slug: entry.first_relevant_slug };
+    } else if (typeof entry.first_relevant_slug === "string") {
+      expected_top1 = { source_id: "default", slug: entry.first_relevant_slug };
     }
 
     const out: QrelsEntry = { query_id, query: entry.query, relevant };
     if (expected_top1) out.expected_top1 = expected_top1;
-    if (typeof entry.label === 'string') out.label = entry.label;
-    if (typeof entry.embedding_dim === 'number') out.embedding_dim = entry.embedding_dim;
+    if (typeof entry.label === "string") out.label = entry.label;
+    if (typeof entry.embedding_dim === "number") out.embedding_dim = entry.embedding_dim;
     // The cast is safe: we built `out` from validated fields. The pass-through
     // shape may carry additional unknown keys we want to surface to consumers
     // (back-compat with the existing fixture's `query_id`, `embedding_dim`).
@@ -189,7 +194,7 @@ export function parseQrelsFile(content: string): QrelsFile {
   return {
     schema_version: QRELS_FILE_SCHEMA_VERSION,
     queries,
-    ...(typeof file._description === 'string' ? { _description: file._description } : {}),
+    ...(typeof file._description === "string" ? { _description: file._description } : {}),
   };
 }
 

@@ -187,7 +187,13 @@ describe("computeDueDate", () => {
   });
 
   test("14-day deadline ending on Saturday rolls to Monday", () => {
-    const rule: DeadlineRule = { key: "test", label: "Test", law: "Test", days: 14, description: "Test" };
+    const rule: DeadlineRule = {
+      key: "test",
+      label: "Test",
+      law: "Test",
+      days: 14,
+      description: "Test",
+    };
     // June 20 2026 is a Saturday → 14 days from June 6 = June 20 (Sat) → roll to June 22 (Mon)
     const result = computeDueDate(rule, "2026-06-06", "BY");
     expect(result.rolledForward).toBe(true);
@@ -204,7 +210,13 @@ describe("computeDueDate", () => {
   });
 
   test("1-month deadline with month-end clamping", () => {
-    const rule: DeadlineRule = { key: "test", label: "Test", law: "Test", months: 1, description: "Test" };
+    const rule: DeadlineRule = {
+      key: "test",
+      label: "Test",
+      law: "Test",
+      months: 1,
+      description: "Test",
+    };
     const result = computeDueDate(rule, "2026-01-31");
     // Jan 31 + 1 month = Feb 28 (clamped). Feb 28 2026 is a Saturday → rolls to Mar 2
     expect(result.dueDate).toBe("2026-03-02");
@@ -223,14 +235,26 @@ describe("computeDueDate", () => {
   });
 
   test("note warns when no state given", () => {
-    const rule: DeadlineRule = { key: "test", label: "Test", law: "Test", days: 14, description: "Test" };
+    const rule: DeadlineRule = {
+      key: "test",
+      label: "Test",
+      law: "Test",
+      days: 14,
+      description: "Test",
+    };
     const result = computeDueDate(rule, "2026-06-01");
     expect(result.note).toContain("Feiertage");
   });
 
   test("holiday name in result when ending on holiday", () => {
     // Jan 1 2026 is New Year (Thursday) — a holiday in all states
-    const rule: DeadlineRule = { key: "test", label: "Test", law: "Test", days: 0, description: "Test" };
+    const rule: DeadlineRule = {
+      key: "test",
+      label: "Test",
+      law: "Test",
+      days: 0,
+      description: "Test",
+    };
     const result = computeDueDate(rule, "2026-01-01", "BY");
     expect(result.holidayName).toBeDefined();
     expect(result.rolledForward).toBe(true);
@@ -298,30 +322,30 @@ describe("Swiss holidays (publicHolidays with Canton)", () => {
 
   test("Sechseläuten (ZH) — third Monday in April", () => {
     const h = publicHolidays(2026, "ZH");
-    const sechseläuten = Array.from(h.values()).find(v => v === "Sechseläuten");
+    const sechseläuten = Array.from(h.values()).find((v) => v === "Sechseläuten");
     expect(sechseläuten).toBeDefined();
     // Not in BE
     const hBE = publicHolidays(2026, "BE");
-    expect(Array.from(hBE.values()).some(v => v === "Sechseläuten")).toBe(false);
+    expect(Array.from(hBE.values()).some((v) => v === "Sechseläuten")).toBe(false);
   });
 
   test("Näfelser Fahrt (GL) — first Thursday in April", () => {
     const h = publicHolidays(2026, "GL");
-    const näfelser = Array.from(h.values()).find(v => v === "Näfelser Fahrt");
+    const näfelser = Array.from(h.values()).find((v) => v === "Näfelser Fahrt");
     expect(näfelser).toBeDefined();
   });
 });
 
 describe("computeDueDate with Swiss canton", () => {
   test("CH Berufung (30 days) with ZH holidays", () => {
-    const rule = DEADLINE_RULES.find(r => r.key === "ch-zpo-berufung")!;
+    const rule = DEADLINE_RULES.find((r) => r.key === "ch-zpo-berufung")!;
     const result = computeDueDate(rule, "2026-06-01", "ZH");
     expect(result.dueDate).toBe("2026-07-01"); // 30 days from June 1
     expect(result.note).toContain("Art. 311 ZPO");
   });
 
   test("CH OR Verjährung (10 years)", () => {
-    const rule = DEADLINE_RULES.find(r => r.key === "ch-or-verjaehrung")!;
+    const rule = DEADLINE_RULES.find((r) => r.key === "ch-or-verjaehrung")!;
     const result = computeDueDate(rule, "2026-06-15", "ZH");
     // Verjährungsfristen (noRoll=true) enden am exakten Kalendertag — kein Roll-Forward
     expect(result.dueDate).toBe("2036-06-15");
@@ -330,7 +354,13 @@ describe("computeDueDate with Swiss canton", () => {
 
   test("CH deadline ending on Bundesfeiertag rolls forward", () => {
     // Aug 1 2026 is a Saturday — Bundesfeiertag + weekend
-    const rule: DeadlineRule = { key: "test", label: "Test", law: "Test", days: 0, description: "Test" };
+    const rule: DeadlineRule = {
+      key: "test",
+      label: "Test",
+      law: "Test",
+      days: 0,
+      description: "Test",
+    };
     const result = computeDueDate(rule, "2026-08-01", "ZH");
     expect(result.rolledForward).toBe(true);
     expect(result.holidayName).toBe("Bundesfeiertag");
@@ -529,7 +559,13 @@ describe("computeDueDate — additional rules", () => {
 
 describe("computeDueDate — year boundary and leap year", () => {
   test("14-day deadline crossing year boundary", () => {
-    const rule: DeadlineRule = { key: "test", label: "Test", law: "Test", days: 14, description: "Test" };
+    const rule: DeadlineRule = {
+      key: "test",
+      label: "Test",
+      law: "Test",
+      days: 14,
+      description: "Test",
+    };
     const result = computeDueDate(rule, "2026-12-20");
     // Dec 20 + 14 days = Jan 3 2027 (Sunday) → rolls to Jan 4 (Monday)
     expect(result.dueDate).toBe("2027-01-04");
@@ -537,21 +573,41 @@ describe("computeDueDate — year boundary and leap year", () => {
   });
 
   test("1-month deadline from Dec 15 to Jan 15", () => {
-    const rule: DeadlineRule = { key: "test", label: "Test", law: "Test", months: 1, description: "Test" };
+    const rule: DeadlineRule = {
+      key: "test",
+      label: "Test",
+      law: "Test",
+      months: 1,
+      description: "Test",
+    };
     const result = computeDueDate(rule, "2026-12-15");
     // Jan 15 2027 is a Friday — no roll
     expect(result.dueDate).toBe("2027-01-15");
   });
 
   test("3-year deadline from Feb 29 2024 (leap year) → Feb 28 2027", () => {
-    const rule: DeadlineRule = { key: "test", label: "Test", law: "Test", years: 3, noRoll: true, description: "Test" };
+    const rule: DeadlineRule = {
+      key: "test",
+      label: "Test",
+      law: "Test",
+      years: 3,
+      noRoll: true,
+      description: "Test",
+    };
     const result = computeDueDate(rule, "2024-02-29");
     // 2027 is not a leap year, so Feb 29 + 3 years = Feb 28 (clamped)
     expect(result.dueDate).toBe("2027-02-28");
   });
 
   test("1-year deadline from Feb 29 2024 → Feb 28 2025", () => {
-    const rule: DeadlineRule = { key: "test", label: "Test", law: "Test", years: 1, noRoll: true, description: "Test" };
+    const rule: DeadlineRule = {
+      key: "test",
+      label: "Test",
+      law: "Test",
+      years: 1,
+      noRoll: true,
+      description: "Test",
+    };
     const result = computeDueDate(rule, "2024-02-29");
     expect(result.dueDate).toBe("2025-02-28");
   });
@@ -757,7 +813,13 @@ describe("German federal-state holidays — detailed", () => {
 describe("computeDueDate with AT state", () => {
   test("14-day deadline ending on AT Nationalfeiertag rolls forward", () => {
     // Oct 26 2026 is AT Nationalfeiertag (Monday). 14 days from Oct 12 = Oct 26.
-    const rule: DeadlineRule = { key: "test", label: "Test", law: "Test", days: 14, description: "Test" };
+    const rule: DeadlineRule = {
+      key: "test",
+      label: "Test",
+      law: "Test",
+      days: 14,
+      description: "Test",
+    };
     const result = computeDueDate(rule, "2026-10-12", "AT");
     expect(result.rolledForward).toBe(true);
     expect(result.holidayName).toBe("Nationalfeiertag");

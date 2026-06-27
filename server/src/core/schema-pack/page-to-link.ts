@@ -22,11 +22,11 @@
 // existing dead-link detector surfaces them. The alias-table-as-resolver
 // principle is for page-to-alias only.
 
-import type { BrainEngine, LinkBatchInput } from '../engine.ts';
-import type { OperationContext } from '../operations.ts';
-import { parseMarkdown } from '../markdown.ts';
-import { loadActivePackBestEffort } from './best-effort.ts';
-import type { PackResolverSpec } from './manifest-v1.ts';
+import type { BrainEngine, LinkBatchInput } from "../engine.ts";
+import type { OperationContext } from "../operations.ts";
+import { parseMarkdown } from "../markdown.ts";
+import { loadActivePackBestEffort } from "./best-effort.ts";
+import type { PackResolverSpec } from "./manifest-v1.ts";
 
 export interface PageToLinkRule {
   from_type: string;
@@ -62,7 +62,7 @@ export interface PerPageToLinkResult {
   soft_deleted: number;
   unresolved: Array<{
     slug: string;
-    reason: 'no_source' | 'no_target' | 'cycle' | 'parse_failed';
+    reason: "no_source" | "no_target" | "cycle" | "parse_failed";
   }>;
 }
 
@@ -81,20 +81,20 @@ export interface PageToLinkResult {
  */
 function resolveSlug(
   spec: PackResolverSpec,
-  page: { slug: string; compiled_truth: string; frontmatter: Record<string, unknown> },
+  page: { slug: string; compiled_truth: string; frontmatter: Record<string, unknown> }
 ): string | undefined {
-  if (spec === 'slug') return page.slug;
-  if (spec === 'body_excerpt') {
+  if (spec === "slug") return page.slug;
+  if (spec === "body_excerpt") {
     // Not a slug resolver per se; used by page-to-alias for `notes_from`.
     // Treating as undefined here keeps the resolver narrow.
     return undefined;
   }
-  if (spec === 'frontmatter') {
+  if (spec === "frontmatter") {
     // Generic frontmatter resolver — defer to caller's per-rule field
     // configuration (covered by the object form below).
     return undefined;
   }
-  if (spec === 'body_first_link') {
+  if (spec === "body_first_link") {
     // Match the first [[wikilink]] or [text](slug) form in the body.
     const wiki = page.compiled_truth.match(/\[\[([^\]\|]+)/);
     if (wiki?.[1]) return wiki[1].trim();
@@ -102,9 +102,9 @@ function resolveSlug(
     if (md?.[1]) return md[1].trim();
     return undefined;
   }
-  if (typeof spec === 'object' && spec !== null && 'frontmatter_field' in spec) {
+  if (typeof spec === "object" && spec !== null && "frontmatter_field" in spec) {
     const val = page.frontmatter[spec.frontmatter_field];
-    if (typeof val === 'string') return val.trim();
+    if (typeof val === "string") return val.trim();
     return undefined;
   }
   return undefined;
@@ -116,7 +116,7 @@ function resolveSlug(
  */
 export async function runPageToLinkCore(
   ctx: OperationContext,
-  opts: PageToLinkOpts,
+  opts: PageToLinkOpts
 ): Promise<PageToLinkResult> {
   const apply = opts.apply === true;
   const limit = Math.max(1, Math.min(50000, opts.perRuleLimit ?? 5000));
@@ -141,11 +141,11 @@ export async function runPageToLinkCore(
       frontmatter: Record<string, unknown> | string | null;
     }>(
       `SELECT slug, compiled_truth, frontmatter FROM pages ${where} ORDER BY slug LIMIT ${limit}`,
-      params,
+      params
     );
     const would_convert = rows.length;
     const sample_slugs = rows.slice(0, 10).map((r) => r.slug);
-    const unresolved: PerPageToLinkResult['unresolved'] = [];
+    const unresolved: PerPageToLinkResult["unresolved"] = [];
     let converted = 0;
     let soft_deleted = 0;
 
@@ -156,40 +156,40 @@ export async function runPageToLinkCore(
       for (const r of rows) {
         // Parse frontmatter from JSONB (Postgres) or string (PGLite/raw).
         let fm: Record<string, unknown> = {};
-        if (r.frontmatter && typeof r.frontmatter === 'object') {
+        if (r.frontmatter && typeof r.frontmatter === "object") {
           fm = r.frontmatter as Record<string, unknown>;
-        } else if (typeof r.frontmatter === 'string') {
+        } else if (typeof r.frontmatter === "string") {
           try {
             fm = JSON.parse(r.frontmatter);
           } catch {
             // Some engines/rows store as YAML in compiled_truth header. We
             // can fall through to parseMarkdown for a fuller parse.
             try {
-              const parsed = parseMarkdown(`---\n${r.frontmatter}\n---\n${r.compiled_truth ?? ''}`);
+              const parsed = parseMarkdown(`---\n${r.frontmatter}\n---\n${r.compiled_truth ?? ""}`);
               fm = parsed.frontmatter;
             } catch {
-              unresolved.push({ slug: r.slug, reason: 'parse_failed' });
+              unresolved.push({ slug: r.slug, reason: "parse_failed" });
               continue;
             }
           }
         }
         const pageView = {
           slug: r.slug,
-          compiled_truth: r.compiled_truth ?? '',
+          compiled_truth: r.compiled_truth ?? "",
           frontmatter: fm,
         };
         const sourceSlug = resolveSlug(rule.source_slug_from, pageView);
         const targetSlug = resolveSlug(rule.target_slug_from, pageView);
         if (!sourceSlug) {
-          unresolved.push({ slug: r.slug, reason: 'no_source' });
+          unresolved.push({ slug: r.slug, reason: "no_source" });
           continue;
         }
         if (!targetSlug) {
-          unresolved.push({ slug: r.slug, reason: 'no_target' });
+          unresolved.push({ slug: r.slug, reason: "no_target" });
           continue;
         }
         if (sourceSlug === targetSlug) {
-          unresolved.push({ slug: r.slug, reason: 'cycle' });
+          unresolved.push({ slug: r.slug, reason: "cycle" });
           continue;
         }
         linksBuffer.push({
@@ -197,9 +197,9 @@ export async function runPageToLinkCore(
           to_slug: targetSlug,
           link_type: rule.link_type,
           context: rule.preserve_notes ? r.compiled_truth.slice(0, 240) : undefined,
-          link_source: 'manual',
-          from_source_id: sourceId ?? 'default',
-          to_source_id: sourceId ?? 'default',
+          link_source: "manual",
+          from_source_id: sourceId ?? "default",
+          to_source_id: sourceId ?? "default",
         });
         pagesToSoftDelete.push(r.slug);
       }

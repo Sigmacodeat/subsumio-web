@@ -16,10 +16,10 @@
  *   - getApiRateLimit(): return the service's rate limit config
  */
 
-import { readFile, writeFile, mkdir } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { homedir } from 'node:os';
+import { readFile, writeFile, mkdir } from "node:fs/promises";
+import { existsSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { homedir } from "node:os";
 import {
   type IngestionEvent,
   type IngestionSource,
@@ -28,7 +28,7 @@ import {
   type IngestionSourceMode,
   type IngestionContentType,
   computeContentHash,
-} from '../types.ts';
+} from "../types.ts";
 
 /** Stored per-connector state in ~/.gbrain/connectors/ */
 export interface ConnectorState {
@@ -93,7 +93,7 @@ class TokenBucket {
   private lastRefill: number;
   constructor(
     private capacity: number,
-    private refillRatePerMs: number,
+    private refillRatePerMs: number
   ) {
     this.tokens = capacity;
     this.lastRefill = Date.now();
@@ -128,11 +128,11 @@ export abstract class BaseConnector implements IngestionSource {
   /** Subclass MUST call super() with its service name. */
   constructor(
     public readonly service: string,
-    protected _config: ConnectorConfig,
+    protected _config: ConnectorConfig
   ) {
     this.id = _config.filters?.id ? `${service}-${_config.filters.id}` : service;
     this.kind = `connector:${service}`;
-    this.mode = _config.mode ?? 'trickle';
+    this.mode = _config.mode ?? "trickle";
     // Default: 100 requests per 100s (Google's default). Subclass override via getApiRateLimit().
     const { capacity = 100, windowMs = 100_000 } = this.getApiRateLimit();
     this._bucket = new TokenBucket(capacity, capacity / windowMs);
@@ -165,10 +165,10 @@ export abstract class BaseConnector implements IngestionSource {
     this._running = true;
 
     // Load persisted state (token + cursor).
-    this._state = await this._loadState() ?? {
+    this._state = (await this._loadState()) ?? {
       connector_id: this.id,
       service: this.service,
-      access_token: '',
+      access_token: "",
     };
 
     // Ensure token is valid before first sync.
@@ -188,11 +188,13 @@ export abstract class BaseConnector implements IngestionSource {
     await this._syncOnce();
 
     // Schedule periodic delta sync.
-    const interval = (this._config.poll_interval_ms ?? 300_000);
+    const interval = this._config.poll_interval_ms ?? 300_000;
     this._interval = setInterval(() => {
       if (!this._running) return;
       this._syncOnce().catch((err) => {
-        ctx.logger.error(`[${this.id}] Sync error: ${err instanceof Error ? err.message : String(err)}`);
+        ctx.logger.error(
+          `[${this.id}] Sync error: ${err instanceof Error ? err.message : String(err)}`
+        );
       });
     }, interval);
 
@@ -208,17 +210,19 @@ export abstract class BaseConnector implements IngestionSource {
     if (this.unregisterWebhook) {
       try {
         await this.unregisterWebhook();
-      } catch { /* non-fatal */ }
+      } catch {
+        /* non-fatal */
+      }
     }
     this._ctx?.logger.info(`[${this.id}] Connector stopped`);
   }
 
   async healthCheck(): Promise<IngestionSourceHealth> {
-    if (!this._running) return { status: 'fail', message: 'not running' };
-    if (!this._state) return { status: 'warn', message: 'state not loaded' };
+    if (!this._running) return { status: "fail", message: "not running" };
+    if (!this._state) return { status: "warn", message: "state not loaded" };
     const tokenStale = this._state.token_expires_at && Date.now() > this._state.token_expires_at;
-    if (tokenStale) return { status: 'warn', message: 'token expired or nearing expiry' };
-    return { status: 'ok' };
+    if (tokenStale) return { status: "warn", message: "token expired or nearing expiry" };
+    return { status: "ok" };
   }
 
   // ── Sync orchestration ───────────────────────────────────────────────
@@ -246,10 +250,10 @@ export abstract class BaseConnector implements IngestionSource {
     }
     // Ensure state is loaded (needed when sync() is called without prior start()).
     if (!this._state) {
-      this._state = await this._loadState() ?? {
+      this._state = (await this._loadState()) ?? {
         connector_id: this.id,
         service: this.service,
-        access_token: '',
+        access_token: "",
       };
     }
     // _syncOnce checks _running; temporarily set it for one-shot sync.
@@ -270,7 +274,7 @@ export abstract class BaseConnector implements IngestionSource {
 
     let cursor = this._state?.sync_cursor;
     let batchCount = 0;
-    const maxBatches = this._config.mode === 'migration' ? 1000 : 10;
+    const maxBatches = this._config.mode === "migration" ? 1000 : 10;
 
     while (this._running && batchCount < maxBatches) {
       // Rate limit before API call.
@@ -280,7 +284,9 @@ export abstract class BaseConnector implements IngestionSource {
       try {
         result = await this._withRetry(() => this.fetchDelta(cursor));
       } catch (err) {
-        this._ctx.logger.error(`[${this.id}] fetchDelta failed after retries: ${err instanceof Error ? err.message : String(err)}`);
+        this._ctx.logger.error(
+          `[${this.id}] fetchDelta failed after retries: ${err instanceof Error ? err.message : String(err)}`
+        );
         break;
       }
 
@@ -292,7 +298,9 @@ export abstract class BaseConnector implements IngestionSource {
           const event = await this.toIngestionEvent(item);
           this._ctx.emit(event);
         } catch (err) {
-          this._ctx.logger.warn(`[${this.id}] Event conversion failed: ${err instanceof Error ? err.message : String(err)}`);
+          this._ctx.logger.warn(
+            `[${this.id}] Event conversion failed: ${err instanceof Error ? err.message : String(err)}`
+          );
         }
       }
 
@@ -316,23 +324,30 @@ export abstract class BaseConnector implements IngestionSource {
 
   private async _ensureTokenValid(): Promise<void> {
     if (!this._state) return;
-    const nearingExpiry = this._state.token_expires_at && Date.now() > this._state.token_expires_at - 60_000;
+    const nearingExpiry =
+      this._state.token_expires_at && Date.now() > this._state.token_expires_at - 60_000;
     if (nearingExpiry && this._state.refresh_token) {
       try {
         await this.refreshToken();
       } catch (err) {
-        this._ctx?.logger.error(`[${this.id}] Token refresh failed: ${err instanceof Error ? err.message : String(err)}`);
+        this._ctx?.logger.error(
+          `[${this.id}] Token refresh failed: ${err instanceof Error ? err.message : String(err)}`
+        );
       }
     }
   }
 
   protected getAccessToken(): string {
-    if (!this._state) return '';
-    if (this._state.token_expires_at && Date.now() > this._state.token_expires_at) return '';
-    return this._state.access_token ?? '';
+    if (!this._state) return "";
+    if (this._state.token_expires_at && Date.now() > this._state.token_expires_at) return "";
+    return this._state.access_token ?? "";
   }
 
-  protected updateTokens(accessToken: string, refreshToken?: string, expiresInSeconds?: number): void {
+  protected updateTokens(
+    accessToken: string,
+    refreshToken?: string,
+    expiresInSeconds?: number
+  ): void {
     if (!this._state) {
       this._state = {
         connector_id: this.id,
@@ -344,7 +359,9 @@ export abstract class BaseConnector implements IngestionSource {
     }
     if (refreshToken) this._state.refresh_token = refreshToken;
     if (expiresInSeconds) this._state.token_expires_at = Date.now() + expiresInSeconds * 1000;
-    this._saveState(this._state).catch(() => { /* non-fatal */ });
+    this._saveState(this._state).catch(() => {
+      /* non-fatal */
+    });
   }
 
   // ── Retry logic ──────────────────────────────────────────────────────
@@ -366,14 +383,14 @@ export abstract class BaseConnector implements IngestionSource {
   // ── State persistence ────────────────────────────────────────────────
 
   private _statePath(): string {
-    return join(homedir(), '.gbrain', 'connectors', `${this.service}.json`);
+    return join(homedir(), ".gbrain", "connectors", `${this.service}.json`);
   }
 
   protected async _loadState(): Promise<ConnectorState | undefined> {
     const path = this._statePath();
     if (!existsSync(path)) return undefined;
     try {
-      const raw = await readFile(path, 'utf-8');
+      const raw = await readFile(path, "utf-8");
       const parsed = JSON.parse(raw) as ConnectorState;
       // Merge with constructor config (constructor wins for credentials).
       if (this._config.api_key) parsed.access_token = this._config.api_key;
@@ -394,14 +411,22 @@ export abstract class BaseConnector implements IngestionSource {
   /** Detect content type from file extension or mime type. */
   protected detectContentType(filename: string, mime?: string): IngestionContentType {
     const lower = filename.toLowerCase();
-    if (mime?.startsWith('text/html') || lower.endsWith('.html') || lower.endsWith('.htm')) return 'text/html';
-    if (mime?.startsWith('text/') || lower.endsWith('.md') || lower.endsWith('.txt') || lower.endsWith('.markdown')) return 'text/markdown';
-    if (mime?.startsWith('application/pdf') || lower.endsWith('.pdf')) return 'application/pdf';
-    if (mime?.startsWith('image/') || /\.(png|jpg|jpeg|gif|webp|svg)$/.test(lower)) return 'image/*';
-    if (mime?.startsWith('audio/') || /\.(mp3|wav|ogg|m4a|aac)$/.test(lower)) return 'audio/*';
-    if (mime?.startsWith('video/') || /\.(mp4|mov|avi|mkv|webm)$/.test(lower)) return 'video/*';
-    if (mime?.startsWith('application/json') || lower.endsWith('.json')) return 'application/json';
-    return 'unknown';
+    if (mime?.startsWith("text/html") || lower.endsWith(".html") || lower.endsWith(".htm"))
+      return "text/html";
+    if (
+      mime?.startsWith("text/") ||
+      lower.endsWith(".md") ||
+      lower.endsWith(".txt") ||
+      lower.endsWith(".markdown")
+    )
+      return "text/markdown";
+    if (mime?.startsWith("application/pdf") || lower.endsWith(".pdf")) return "application/pdf";
+    if (mime?.startsWith("image/") || /\.(png|jpg|jpeg|gif|webp|svg)$/.test(lower))
+      return "image/*";
+    if (mime?.startsWith("audio/") || /\.(mp3|wav|ogg|m4a|aac)$/.test(lower)) return "audio/*";
+    if (mime?.startsWith("video/") || /\.(mp4|mov|avi|mkv|webm)$/.test(lower)) return "video/*";
+    if (mime?.startsWith("application/json") || lower.endsWith(".json")) return "application/json";
+    return "unknown";
   }
 
   /** Compute a stable content hash for dedup. */

@@ -1,28 +1,28 @@
-import { writeFileSync, mkdirSync, existsSync } from 'fs';
-import { join, dirname } from 'path';
-import type { BrainEngine } from '../core/engine.ts';
-import { serializeMarkdown } from '../core/markdown.ts';
-import { createProgress } from '../core/progress.ts';
-import { getCliOptions, cliOptsToProgressOptions } from '../core/cli-options.ts';
-import { loadStorageConfig, isDbOnly } from '../core/storage-config.ts';
-import { getDefaultSourcePath } from '../core/source-resolver.ts';
-import type { PageType } from '../core/types.ts';
+import { writeFileSync, mkdirSync, existsSync } from "fs";
+import { join, dirname } from "path";
+import type { BrainEngine } from "../core/engine.ts";
+import { serializeMarkdown } from "../core/markdown.ts";
+import { createProgress } from "../core/progress.ts";
+import { getCliOptions, cliOptsToProgressOptions } from "../core/cli-options.ts";
+import { loadStorageConfig, isDbOnly } from "../core/storage-config.ts";
+import { getDefaultSourcePath } from "../core/source-resolver.ts";
+import type { PageType } from "../core/types.ts";
 
 export async function runExport(engine: BrainEngine, args: string[]) {
-  const dirIdx = args.indexOf('--dir');
-  const outDir = dirIdx !== -1 ? args[dirIdx + 1] : './export';
+  const dirIdx = args.indexOf("--dir");
+  const outDir = dirIdx !== -1 ? args[dirIdx + 1] : "./export";
 
-  const repoIdx = args.indexOf('--repo');
+  const repoIdx = args.indexOf("--repo");
   const explicitRepoPath = repoIdx !== -1 ? args[repoIdx + 1] : null;
 
-  const typeIdx = args.indexOf('--type');
+  const typeIdx = args.indexOf("--type");
   const typeFilter = typeIdx !== -1 ? (args[typeIdx + 1] as string) : undefined;
 
-  const slugPrefixIdx = args.indexOf('--slug-prefix');
+  const slugPrefixIdx = args.indexOf("--slug-prefix");
   const slugPrefix = slugPrefixIdx !== -1 ? args[slugPrefixIdx + 1] : undefined;
 
-  const restoreOnly = args.includes('--restore-only');
-  const obsidianGraph = args.includes('--obsidian-graph');
+  const restoreOnly = args.includes("--restore-only");
+  const obsidianGraph = args.includes("--obsidian-graph");
 
   // Resolution chain (D5): explicit --repo → typed sources.getDefault() →
   // hard-error for restore-only paths (never fall through to cwd).
@@ -35,7 +35,7 @@ export async function runExport(engine: BrainEngine, args: string[]) {
       console.error(
         `Error: gbrain export --restore-only requires --repo <path> or a configured\n` +
           `default source with a local_path. Run \`gbrain sources list\` to inspect\n` +
-          `sources, or pass --repo explicitly.`,
+          `sources, or pass --repo explicitly.`
       );
       process.exit(1);
     }
@@ -54,18 +54,18 @@ export async function runExport(engine: BrainEngine, args: string[]) {
       `Error: gbrain export --restore-only requires a storage tiering config\n` +
         `(gbrain.yml with a "storage:" section) at ${repoPath}/gbrain.yml.\n` +
         `Without it, there's nothing to scope the restore to.\n` +
-        `Run \`gbrain storage status\` to inspect the current configuration.`,
+        `Run \`gbrain storage status\` to inspect the current configuration.`
     );
     process.exit(1);
   }
-  
+
   // Build filters. slugPrefix is engine-side (Issue #13) — no in-memory
   // post-filter, no full-table load.
-  const filters: import('../core/types.ts').PageFilters = { limit: 100000 };
+  const filters: import("../core/types.ts").PageFilters = { limit: 100000 };
   if (typeFilter) filters.type = typeFilter;
   if (slugPrefix) filters.slugPrefix = slugPrefix;
 
-  let pages: import('../core/types.ts').Page[];
+  let pages: import("../core/types.ts").Page[];
 
   // Restore-only path: query each db_only directory with slugPrefix instead
   // of loading every page in the brain. On a 200K-page brain where 95% is
@@ -75,11 +75,13 @@ export async function runExport(engine: BrainEngine, args: string[]) {
     const seen = new Set<string>();
     pages = [];
     for (const dir of storageConfig.db_only) {
-      const tierFilters: import('../core/types.ts').PageFilters = {
+      const tierFilters: import("../core/types.ts").PageFilters = {
         ...filters,
         slugPrefix: filters.slugPrefix
           ? // If user passed --slug-prefix, only include tier dirs that start with it.
-            (dir.startsWith(filters.slugPrefix) ? dir : undefined)
+            dir.startsWith(filters.slugPrefix)
+            ? dir
+            : undefined
           : dir,
       };
       if (!tierFilters.slugPrefix) continue;
@@ -88,7 +90,7 @@ export async function runExport(engine: BrainEngine, args: string[]) {
         if (seen.has(p.slug)) continue;
         seen.add(p.slug);
         if (!isDbOnly(p.slug, storageConfig)) continue; // belt-and-suspenders
-        const filePath = join(repoPath, p.slug + '.md');
+        const filePath = join(repoPath, p.slug + ".md");
         if (existsSync(filePath)) continue;
         pages.push(p);
       }
@@ -109,36 +111,35 @@ export async function runExport(engine: BrainEngine, args: string[]) {
 
   // Progress on stderr so stdout stays clean for scripts parsing counts.
   const progress = createProgress(cliOptsToProgressOptions(getCliOptions()));
-  progress.start('export.pages', pages.length);
+  progress.start("export.pages", pages.length);
 
   let exported = 0;
 
   for (const page of pages) {
     const tags = await engine.getTags(page.slug);
-    const md = serializeMarkdown(
-      page.frontmatter,
-      page.compiled_truth,
-      page.timeline,
-      { type: page.type, title: page.title, tags },
-    );
+    const md = serializeMarkdown(page.frontmatter, page.compiled_truth, page.timeline, {
+      type: page.type,
+      title: page.title,
+      tags,
+    });
 
-    const filePath = join(outDir, page.slug + '.md');
+    const filePath = join(outDir, page.slug + ".md");
     mkdirSync(dirname(filePath), { recursive: true });
     writeFileSync(filePath, md);
 
     // Export raw data as sidecar JSON
     const rawData = await engine.getRawData(page.slug);
     if (rawData.length > 0) {
-      const slugParts = page.slug.split('/');
-      const rawDir = join(outDir, ...slugParts.slice(0, -1), '.raw');
+      const slugParts = page.slug.split("/");
+      const rawDir = join(outDir, ...slugParts.slice(0, -1), ".raw");
       mkdirSync(rawDir, { recursive: true });
-      const rawPath = join(rawDir, slugParts[slugParts.length - 1] + '.json');
+      const rawPath = join(rawDir, slugParts[slugParts.length - 1] + ".json");
 
       const rawObj: Record<string, unknown> = {};
       for (const rd of rawData) {
         rawObj[rd.source] = rd.data;
       }
-      writeFileSync(rawPath, JSON.stringify(rawObj, null, 2) + '\n');
+      writeFileSync(rawPath, JSON.stringify(rawObj, null, 2) + "\n");
     }
 
     exported++;
@@ -159,8 +160,8 @@ export async function runExport(engine: BrainEngine, args: string[]) {
 // via community plugins (e.g. "Graph Analysis", "Juggl").
 async function exportObsidianGraph(
   engine: BrainEngine,
-  pages: import('../core/types.ts').Page[],
-  outDir: string,
+  pages: import("../core/types.ts").Page[],
+  outDir: string
 ) {
   const nodeSet = new Map<string, { id: string; type: string; title: string }>();
   const links: { source: string; target: string; link_type: string }[] = [];
@@ -171,7 +172,7 @@ async function exportObsidianGraph(
     for (const l of pageLinks) {
       links.push({ source: l.from_slug, target: l.to_slug, link_type: l.link_type });
       if (!nodeSet.has(l.to_slug)) {
-        nodeSet.set(l.to_slug, { id: l.to_slug, type: 'unknown', title: l.to_slug });
+        nodeSet.set(l.to_slug, { id: l.to_slug, type: "unknown", title: l.to_slug });
       }
     }
   }
@@ -180,11 +181,11 @@ async function exportObsidianGraph(
     nodes: Array.from(nodeSet.values()),
     links,
     generated_at: new Date().toISOString(),
-    source: 'gbrain-obsidian-export',
+    source: "gbrain-obsidian-export",
   };
 
   mkdirSync(outDir, { recursive: true });
-  const outPath = join(outDir, 'obsidian-graph.json');
-  writeFileSync(outPath, JSON.stringify(graph, null, 2) + '\n');
+  const outPath = join(outDir, "obsidian-graph.json");
+  writeFileSync(outPath, JSON.stringify(graph, null, 2) + "\n");
   console.log(`Exported Obsidian graph: ${nodeSet.size} nodes, ${links.length} links → ${outPath}`);
 }

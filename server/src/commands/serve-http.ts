@@ -864,24 +864,29 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
   // POST /admin/api/issue-magic-link — agent-callable mint endpoint.
   // Auth: Authorization: Bearer <bootstrapToken>. Returns one-time nonce.
   // Rate-limited to slow brute-force attempts against the bootstrap token.
-  app.post("/admin/api/issue-magic-link", adminAuthRateLimiter, express.json(), (req: Request, res: Response) => {
-    const auth = (req.headers.authorization || "") as string;
-    const m = auth.match(/^Bearer\s+(\S+)$/i);
-    if (!m) {
-      res.status(401).json({ error: "Authorization: Bearer <bootstrap-token> required" });
-      return;
+  app.post(
+    "/admin/api/issue-magic-link",
+    adminAuthRateLimiter,
+    express.json(),
+    (req: Request, res: Response) => {
+      const auth = (req.headers.authorization || "") as string;
+      const m = auth.match(/^Bearer\s+(\S+)$/i);
+      if (!m) {
+        res.status(401).json({ error: "Authorization: Bearer <bootstrap-token> required" });
+        return;
+      }
+      const tokenHash = createHash("sha256").update(m[1]).digest("hex");
+      if (!safeHexEqual(tokenHash, bootstrapHash)) {
+        res.status(401).json({ error: "Invalid bootstrap token" });
+        return;
+      }
+      pruneExpiredNonces();
+      const nonce = randomBytes(32).toString("hex");
+      magicLinkNonces.set(nonce, Date.now() + NONCE_TTL_MS);
+      const baseUrl = publicUrl || `http://localhost:${port}`;
+      res.json({ url: `${baseUrl}/admin/auth/${nonce}`, expires_in: NONCE_TTL_MS / 1000 });
     }
-    const tokenHash = createHash("sha256").update(m[1]).digest("hex");
-    if (!safeHexEqual(tokenHash, bootstrapHash)) {
-      res.status(401).json({ error: "Invalid bootstrap token" });
-      return;
-    }
-    pruneExpiredNonces();
-    const nonce = randomBytes(32).toString("hex");
-    magicLinkNonces.set(nonce, Date.now() + NONCE_TTL_MS);
-    const baseUrl = publicUrl || `http://localhost:${port}`;
-    res.json({ url: `${baseUrl}/admin/auth/${nonce}`, expires_in: NONCE_TTL_MS / 1000 });
-  });
+  );
 
   // GET /admin/auth/:nonce — single-use magic link redemption.
   // Browser hits it, server validates the nonce (exists + unconsumed +

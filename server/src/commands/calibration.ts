@@ -18,11 +18,11 @@
  * brains source-isolated per the v0.34.1 discipline.
  */
 
-import type { BrainEngine } from '../core/engine.ts';
-import { runPhaseCalibrationProfile } from '../core/cycle/calibration-profile.ts';
-import { sourceScopeOpts, type OperationContext } from '../core/operations.ts';
-import type { GBrainConfig } from '../core/config.ts';
-import { GBrainError } from '../core/types.ts';
+import type { BrainEngine } from "../core/engine.ts";
+import { runPhaseCalibrationProfile } from "../core/cycle/calibration-profile.ts";
+import { sourceScopeOpts, type OperationContext } from "../core/operations.ts";
+import type { GBrainConfig } from "../core/config.ts";
+import { GBrainError } from "../core/types.ts";
 
 export interface CalibrationProfileRow {
   id: number;
@@ -46,7 +46,7 @@ export interface CalibrationProfileRow {
 /** Source-scoped read of the latest profile row for a holder. */
 export async function getLatestProfile(
   engine: BrainEngine,
-  opts: { holder: string; sourceId?: string; sourceIds?: string[] },
+  opts: { holder: string; sourceId?: string; sourceIds?: string[] }
 ): Promise<CalibrationProfileRow | null> {
   let sql = `SELECT id, source_id, holder, wave_version, generated_at, published,
             total_resolved, brier, accuracy, partial_rate, grade_completion,
@@ -83,28 +83,31 @@ export function formatProfileText(profile: CalibrationProfileRow | null, holder:
   const lines: string[] = [];
   const generatedLocal = new Date(profile.generated_at).toLocaleString();
   lines.push(`Calibration profile — holder: ${profile.holder}, source: ${profile.source_id}`);
-  lines.push(`Generated: ${generatedLocal}  ${profile.published ? '(published to mounts)' : ''}`);
+  lines.push(`Generated: ${generatedLocal}  ${profile.published ? "(published to mounts)" : ""}`);
   if (profile.grade_completion < 0.9) {
-    lines.push(`Note: built on ${(profile.grade_completion * 100).toFixed(0)}% graded — partial completion this cycle.`);
+    lines.push(
+      `Note: built on ${(profile.grade_completion * 100).toFixed(0)}% graded — partial completion this cycle.`
+    );
   }
   if (!profile.voice_gate_passed) {
     lines.push(`Note: voice gate fell back to template (${profile.voice_gate_attempts} attempts).`);
   }
-  lines.push('');
+  lines.push("");
   lines.push(`Resolved: ${profile.total_resolved} takes`);
   if (profile.brier !== null) lines.push(`Brier:    ${profile.brier.toFixed(3)} (lower is better)`);
   if (profile.accuracy !== null) lines.push(`Accuracy: ${(profile.accuracy * 100).toFixed(1)}%`);
-  if (profile.partial_rate !== null) lines.push(`Partial:  ${(profile.partial_rate * 100).toFixed(1)}%`);
-  lines.push('');
-  lines.push('Pattern statements:');
+  if (profile.partial_rate !== null)
+    lines.push(`Partial:  ${(profile.partial_rate * 100).toFixed(1)}%`);
+  lines.push("");
+  lines.push("Pattern statements:");
   for (const p of profile.pattern_statements) {
     lines.push(`  • ${p}`);
   }
   if (profile.active_bias_tags.length > 0) {
-    lines.push('');
-    lines.push(`Active bias tags: ${profile.active_bias_tags.join(', ')}`);
+    lines.push("");
+    lines.push(`Active bias tags: ${profile.active_bias_tags.join(", ")}`);
   }
-  return lines.join('\n');
+  return lines.join("\n");
 }
 
 /** Build an OperationContext shape suitable for the cycle phase from a CLI engine. */
@@ -132,18 +135,18 @@ function parseArgs(args: string[]): { sub?: string; opts: RunCalibrationArgs } {
   let sub: string | undefined;
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
-    if (a === 'ab-report') {
+    if (a === "ab-report") {
       opts.abReport = true;
       continue;
     }
-    if (!a?.startsWith('--') && !sub) {
+    if (!a?.startsWith("--") && !sub) {
       sub = a;
       continue;
     }
-    if (a === '--holder') opts.holder = args[++i];
-    else if (a === '--json') opts.json = true;
-    else if (a === '--regenerate') opts.regenerate = true;
-    else if (a === '--undo-wave') opts.undoWave = args[++i];
+    if (a === "--holder") opts.holder = args[++i];
+    else if (a === "--json") opts.json = true;
+    else if (a === "--regenerate") opts.regenerate = true;
+    else if (a === "--undo-wave") opts.undoWave = args[++i];
   }
   return { sub, opts };
 }
@@ -155,19 +158,19 @@ function parseArgs(args: string[]): { sub?: string; opts: RunCalibrationArgs } {
 export async function runCalibration(
   engine: BrainEngine,
   args: string[],
-  config: GBrainConfig,
+  config: GBrainConfig
 ): Promise<void> {
   const { opts } = parseArgs(args);
-  const holder = opts.holder ?? 'garry';
-  const sourceId = 'default';
+  const holder = opts.holder ?? "garry";
+  const sourceId = "default";
 
   if (opts.undoWave) {
     // T17 / D18 CDX-3 — reverse the wave's mutations on canonical state.
-    const { undoWave } = await import('../core/calibration/undo-wave.ts');
-    const scrubGstack = args.includes('--scrub-gstack');
-    const dryRun = args.includes('--dry-run');
+    const { undoWave } = await import("../core/calibration/undo-wave.ts");
+    const scrubGstack = args.includes("--scrub-gstack");
+    const dryRun = args.includes("--dry-run");
     process.stderr.write(
-      `[calibration] ${dryRun ? '[dry-run] ' : ''}reversing wave ${opts.undoWave}...\n`,
+      `[calibration] ${dryRun ? "[dry-run] " : ""}reversing wave ${opts.undoWave}...\n`
     );
     const result = await undoWave(engine, {
       waveVersion: opts.undoWave,
@@ -175,19 +178,19 @@ export async function runCalibration(
       scrubGstack,
     });
     if (opts.json) {
-      process.stdout.write(JSON.stringify(result, null, 2) + '\n');
+      process.stdout.write(JSON.stringify(result, null, 2) + "\n");
     } else {
-      const verb = dryRun ? 'would revert' : 'reverted';
+      const verb = dryRun ? "would revert" : "reverted";
       process.stdout.write(
         `${verb}:\n` +
           `  ${result.resolutions_reverted} take resolutions\n` +
           `  ${result.profiles_deleted} calibration profile(s)\n` +
           `  ${result.nudges_purged} nudge log row(s)\n` +
-          `  ${result.grade_cache_unapplied} grade-cache rows marked unapplied\n`,
+          `  ${result.grade_cache_unapplied} grade-cache rows marked unapplied\n`
       );
       if (result.gstack_scrub_attempted) {
         if (result.warnings.length > 0) {
-          process.stdout.write(`  gstack scrub: failed (${result.warnings.join('; ')})\n`);
+          process.stdout.write(`  gstack scrub: failed (${result.warnings.join("; ")})\n`);
         } else {
           process.stdout.write(`  gstack scrub: ok\n`);
         }
@@ -198,14 +201,14 @@ export async function runCalibration(
 
   if (opts.abReport) {
     // T18 / D19 — A/B harness report.
-    const { buildAbReport, formatAbReport } = await import('../core/calibration/think-ab.ts');
-    const daysArg = args[args.indexOf('--days') + 1];
+    const { buildAbReport, formatAbReport } = await import("../core/calibration/think-ab.ts");
+    const daysArg = args[args.indexOf("--days") + 1];
     const days = daysArg ? Math.max(1, parseInt(daysArg, 10) || 30) : 30;
     const report = await buildAbReport(engine, { days });
     if (opts.json) {
-      process.stdout.write(JSON.stringify(report, null, 2) + '\n');
+      process.stdout.write(JSON.stringify(report, null, 2) + "\n");
     } else {
-      process.stdout.write(formatAbReport(report, days) + '\n');
+      process.stdout.write(formatAbReport(report, days) + "\n");
     }
     return;
   }
@@ -214,8 +217,10 @@ export async function runCalibration(
     process.stderr.write(`[calibration] regenerating profile for holder=${holder}...\n`);
     const ctx = ctxFromCli(engine, config, sourceId);
     const result = await runPhaseCalibrationProfile(ctx, { holder });
-    if (result.status === 'fail') {
-      process.stderr.write(`[calibration] regenerate failed: ${result.error?.message ?? 'unknown'}\n`);
+    if (result.status === "fail") {
+      process.stderr.write(
+        `[calibration] regenerate failed: ${result.error?.message ?? "unknown"}\n`
+      );
       process.exit(1);
     }
     process.stderr.write(`[calibration] ${result.summary}\n`);
@@ -224,11 +229,11 @@ export async function runCalibration(
   const profile = await getLatestProfile(engine, { holder, sourceId });
 
   if (opts.json) {
-    process.stdout.write(JSON.stringify(profile, null, 2) + '\n');
+    process.stdout.write(JSON.stringify(profile, null, 2) + "\n");
     return;
   }
 
-  process.stdout.write(formatProfileText(profile, holder) + '\n');
+  process.stdout.write(formatProfileText(profile, holder) + "\n");
 }
 
 /**
@@ -238,14 +243,14 @@ export async function runCalibration(
  */
 export async function getCalibrationProfileOp(
   ctx: OperationContext,
-  params: { holder?: string },
+  params: { holder?: string }
 ): Promise<CalibrationProfileRow | null> {
-  const holder = params.holder ?? 'garry';
-  if (typeof holder !== 'string' || holder.length === 0) {
+  const holder = params.holder ?? "garry";
+  if (typeof holder !== "string" || holder.length === 0) {
     throw new GBrainError(
-      'INVALID_HOLDER',
-      'get_calibration_profile.holder must be a non-empty string',
-      'pass holder="<slug>" or omit to default to "garry"',
+      "INVALID_HOLDER",
+      "get_calibration_profile.holder must be a non-empty string",
+      'pass holder="<slug>" or omit to default to "garry"'
     );
   }
   const scope = sourceScopeOpts(ctx);

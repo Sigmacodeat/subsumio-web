@@ -25,11 +25,11 @@
 export async function pMapAllSettled<T, R>(
   items: readonly T[],
   concurrency: number,
-  fn: (item: T, index: number) => Promise<R>,
+  fn: (item: T, index: number) => Promise<R>
 ): Promise<Array<PromiseSettledResult<R>>> {
   if (!Number.isInteger(concurrency) || concurrency < 1) {
     throw new TypeError(
-      `pMapAllSettled: concurrency must be a positive integer, got ${concurrency}`,
+      `pMapAllSettled: concurrency must be a positive integer, got ${concurrency}`
     );
   }
   if (items.length === 0) return [];
@@ -46,9 +46,9 @@ export async function pMapAllSettled<T, R>(
       if (i >= items.length) return;
       try {
         const value = await fn(items[i], i);
-        results[i] = { status: 'fulfilled', value };
+        results[i] = { status: "fulfilled", value };
       } catch (err) {
-        results[i] = { status: 'rejected', reason: err };
+        results[i] = { status: "rejected", reason: err };
       }
     }
   }

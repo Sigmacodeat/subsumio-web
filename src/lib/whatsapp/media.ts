@@ -39,9 +39,7 @@ function maxBytes(): number {
 }
 
 function storageDir(): string {
-  return (
-    env("WHATSAPP_MEDIA_STORAGE_DIR") || path.join(process.cwd(), ".data", "whatsapp-media")
-  );
+  return env("WHATSAPP_MEDIA_STORAGE_DIR") || path.join(process.cwd(), ".data", "whatsapp-media");
 }
 
 function extensionFromMime(mimeType: string, fallback = "bin"): string {
@@ -103,7 +101,10 @@ export async function downloadAndStoreWhatsAppMedia(
     );
 
   const res = await withRetry(() =>
-    fetch(downloadUrl, { headers: { Authorization: `Bearer ${token}` }, signal: externalFetchTimeout(30_000) })
+    fetch(downloadUrl, {
+      headers: { Authorization: `Bearer ${token}` },
+      signal: externalFetchTimeout(30_000),
+    })
   );
   if (!res.ok) {
     const error = await res.text().catch(() => "");

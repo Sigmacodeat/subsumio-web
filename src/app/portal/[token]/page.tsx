@@ -91,7 +91,9 @@ export default function PortalPage() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch(`/api/portal/verify?token=${encodeURIComponent(token)}`);
+        const res = await fetch(`/api/portal/verify?token=${encodeURIComponent(token)}`, {
+          signal: AbortSignal.timeout(15_000),
+        });
         const verifyData = await res.json();
         if (!res.ok) {
           setError(
@@ -121,7 +123,8 @@ export default function PortalPage() {
   async function loadMessages(caseSlug: string) {
     try {
       const res = await fetch(
-        `/api/portal/messages?token=${encodeURIComponent(token)}&caseSlug=${encodeURIComponent(caseSlug)}`
+        `/api/portal/messages?token=${encodeURIComponent(token)}&caseSlug=${encodeURIComponent(caseSlug)}`,
+        { signal: AbortSignal.timeout(15_000) }
       );
       if (!res.ok) return;
       const data = await res.json();
@@ -136,7 +139,9 @@ export default function PortalPage() {
 
   async function loadDocumentRequests() {
     try {
-      const res = await fetch(`/api/portal/document-requests?token=${encodeURIComponent(token)}`);
+      const res = await fetch(`/api/portal/document-requests?token=${encodeURIComponent(token)}`, {
+        signal: AbortSignal.timeout(15_000),
+      });
       if (!res.ok) return;
       const data = await res.json();
       setDocumentRequests(data.requests || []);
@@ -156,6 +161,7 @@ export default function PortalPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, message: newMessage.trim() }),
+        signal: AbortSignal.timeout(15_000),
       });
       if (res.ok) {
         setNewMessage("");
@@ -174,7 +180,9 @@ export default function PortalPage() {
   async function loadCase() {
     setLoadingCase(true);
     try {
-      const res = await fetch(`/api/portal/case?token=${encodeURIComponent(token)}`);
+      const res = await fetch(`/api/portal/case?token=${encodeURIComponent(token)}`, {
+        signal: AbortSignal.timeout(15_000),
+      });
       const data = await res.json();
       if (!res.ok) {
         setError(
@@ -236,7 +244,7 @@ export default function PortalPage() {
       formData.append("file", file);
       if (requestSlug) formData.append("document_request_slug", requestSlug);
       if (itemKey) formData.append("item_key", itemKey);
-      const res = await fetch("/api/portal/upload", { method: "POST", body: formData });
+      const res = await fetch("/api/portal/upload", { method: "POST", body: formData, signal: AbortSignal.timeout(120_000) });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         setUploadError(data.message || "Upload fehlgeschlagen. Bitte versuchen Sie es erneut.");

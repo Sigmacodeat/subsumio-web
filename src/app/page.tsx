@@ -1,6 +1,12 @@
 import type { Metadata } from "next";
 import LandingPage from "@/components/marketing/landing";
-import { JsonLd, organizationLd, softwareApplicationLd, faqPageLd, howToLd } from "@/components/seo/jsonld";
+import {
+  JsonLd,
+  organizationLd,
+  softwareApplicationLd,
+  faqPageLd,
+  howToLd,
+} from "@/components/seo/jsonld";
 import { LANDING } from "@/content/site";
 
 export const metadata: Metadata = {

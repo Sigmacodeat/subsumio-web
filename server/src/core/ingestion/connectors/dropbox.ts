@@ -13,11 +13,11 @@
  *   gbrain connector sync dropbox
  */
 
-import { BaseConnector, type ConnectorConfig, type ConnectorItem } from './base.ts';
-import type { IngestionEvent } from '../types.ts';
+import { BaseConnector, type ConnectorConfig, type ConnectorItem } from "./base.ts";
+import type { IngestionEvent } from "../types.ts";
 
-const DROPBOX_API_BASE = 'https://api.dropboxapi.com/2';
-const DROPBOX_CONTENT_BASE = 'https://content.dropboxapi.com/2';
+const DROPBOX_API_BASE = "https://api.dropboxapi.com/2";
+const DROPBOX_CONTENT_BASE = "https://content.dropboxapi.com/2";
 
 interface DropboxFile {
   id: string;
@@ -31,7 +31,7 @@ interface DropboxFile {
 }
 
 interface DropboxFolderEntry {
-  '.tag': 'file' | 'folder';
+  ".tag": "file" | "folder";
   id: string;
   name: string;
   path_display?: string;
@@ -44,7 +44,7 @@ interface DropboxFolderEntry {
 
 export class DropboxConnector extends BaseConnector {
   constructor(config: ConnectorConfig = {}) {
-    super('dropbox', config);
+    super("dropbox", config);
   }
 
   getApiRateLimit() {
@@ -59,9 +59,12 @@ export class DropboxConnector extends BaseConnector {
 
   async fetchDelta(cursor?: string): Promise<{ items: ConnectorItem[]; nextCursor?: string }> {
     const token = this.getAccessToken();
-    if (!token) throw new Error('Dropbox access token missing. Run: gbrain connector add dropbox --api-key XXX');
+    if (!token)
+      throw new Error(
+        "Dropbox access token missing. Run: gbrain connector add dropbox --api-key XXX"
+      );
 
-    const folderPath = (this._config.filters?.folder as string) ?? '';
+    const folderPath = (this._config.filters?.folder as string) ?? "";
 
     let entries: DropboxFolderEntry[] = [];
     let nextCursor: string | undefined;
@@ -69,10 +72,10 @@ export class DropboxConnector extends BaseConnector {
     if (!cursor) {
       // Initial sync: list_folder.
       const res = await fetch(`${DROPBOX_API_BASE}/files/list_folder`, {
-        method: 'POST',
+        method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           path: folderPath,
@@ -89,16 +92,20 @@ export class DropboxConnector extends BaseConnector {
         throw new Error(`Dropbox list_folder failed: ${res.status} ${err}`);
       }
 
-      const data = await res.json() as { entries: DropboxFolderEntry[]; cursor: string; has_more: boolean };
+      const data = (await res.json()) as {
+        entries: DropboxFolderEntry[];
+        cursor: string;
+        has_more: boolean;
+      };
       entries = data.entries;
       nextCursor = data.cursor;
     } else {
       // Delta sync: list_folder/continue.
       const res = await fetch(`${DROPBOX_API_BASE}/files/list_folder/continue`, {
-        method: 'POST',
+        method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ cursor }),
       });
@@ -106,28 +113,32 @@ export class DropboxConnector extends BaseConnector {
       if (!res.ok) {
         const err = await res.text();
         // Cursor expired → reset and start over.
-        if (err.includes('invalid_cursor') || res.status === 409) {
+        if (err.includes("invalid_cursor") || res.status === 409) {
           return this.fetchDelta(undefined);
         }
         throw new Error(`Dropbox list_folder/continue failed: ${res.status} ${err}`);
       }
 
-      const data = await res.json() as { entries: DropboxFolderEntry[]; cursor: string; has_more: boolean };
+      const data = (await res.json()) as {
+        entries: DropboxFolderEntry[];
+        cursor: string;
+        has_more: boolean;
+      };
       entries = data.entries;
       nextCursor = data.cursor;
     }
 
     const items: ConnectorItem[] = [];
     for (const entry of entries) {
-      if (entry['.tag'] !== 'file') continue;
+      if (entry[".tag"] !== "file") continue;
 
       items.push({
         id: entry.id,
-        title: entry.name ?? 'untitled',
+        title: entry.name ?? "untitled",
         modified_at: entry.server_modified ?? new Date().toISOString(),
-        content: entry.path_lower ?? entry.path_display ?? '',
-        content_type: this.detectContentType(entry.name ?? '', 'unknown'),
-        url: `https://www.dropbox.com/home${entry.path_lower ?? ''}`,
+        content: entry.path_lower ?? entry.path_display ?? "",
+        content_type: this.detectContentType(entry.name ?? "", "unknown"),
+        url: `https://www.dropbox.com/home${entry.path_lower ?? ""}`,
         metadata: {
           path: entry.path_display,
           path_lower: entry.path_lower,
@@ -142,29 +153,29 @@ export class DropboxConnector extends BaseConnector {
 
   async toIngestionEvent(item: ConnectorItem): Promise<IngestionEvent> {
     const token = this.getAccessToken();
-    if (!token) throw new Error('Dropbox token missing');
+    if (!token) throw new Error("Dropbox token missing");
 
     // Download file content via content-download endpoint.
     const path = item.content; // stored path_lower in content field
     const res = await fetch(`${DROPBOX_CONTENT_BASE}/files/download`, {
-      method: 'POST',
+      method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
-        'Dropbox-API-Arg': JSON.stringify({ path }),
+        "Dropbox-API-Arg": JSON.stringify({ path }),
       },
     });
 
     if (!res.ok) throw new Error(`Dropbox download failed: ${res.status}`);
 
-    const mime = item.content_type ?? 'unknown';
+    const mime = item.content_type ?? "unknown";
     let content: string;
 
-    if (mime.startsWith('text/')) {
+    if (mime.startsWith("text/")) {
       content = await res.text();
     } else {
       // Binary: base64 encode for document/image/audio/video processors.
       const buf = Buffer.from(await res.arrayBuffer());
-      content = buf.toString('base64');
+      content = buf.toString("base64");
     }
 
     return {
@@ -172,7 +183,7 @@ export class DropboxConnector extends BaseConnector {
       source_kind: this.kind,
       source_uri: item.url ?? `dropbox://${item.id}`,
       received_at: new Date().toISOString(),
-      content_type: this.detectContentType(item.title ?? '', mime),
+      content_type: this.detectContentType(item.title ?? "", mime),
       content,
       content_hash: this.hashContent(content),
       metadata: {

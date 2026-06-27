@@ -20,7 +20,7 @@
 // the hardcoded DEFAULT_TYPES = ['person', 'company'] — which gbrain-
 // base also declares, so behavior is preserved.
 
-import type { SchemaPackManifest } from './manifest-v1.ts';
+import type { SchemaPackManifest } from "./manifest-v1.ts";
 
 /**
  * Extract the list of pack-declared types with expert_routing: true,
@@ -32,12 +32,8 @@ import type { SchemaPackManifest } from './manifest-v1.ts';
  * For gbrain-base, this returns ['person', 'company'] (the pre-v0.38
  * hardcoded defaults). Custom packs override freely.
  */
-export function expertTypesFromPack(
-  pack: Pick<SchemaPackManifest, 'page_types'>,
-): string[] {
-  return pack.page_types
-    .filter(pt => pt.expert_routing === true)
-    .map(pt => pt.name);
+export function expertTypesFromPack(pack: Pick<SchemaPackManifest, "page_types">): string[] {
+  return pack.page_types.filter((pt) => pt.expert_routing === true).map((pt) => pt.name);
 }
 
 /**
@@ -47,15 +43,15 @@ export function expertTypesFromPack(
  * zero results.
  */
 export function expertTypesFromPackOrThrow(
-  pack: Pick<SchemaPackManifest, 'name' | 'page_types'>,
+  pack: Pick<SchemaPackManifest, "name" | "page_types">
 ): string[] {
   const types = expertTypesFromPack(pack);
   if (types.length === 0) {
     throw new Error(
       `active schema pack "${pack.name}" declares no types with ` +
-      `expert_routing: true. \`gbrain whoknows\` and \`find_experts\` ` +
-      `cannot route queries. Edit the pack manifest to mark at least one ` +
-      `page_type as expert_routing: true, or switch packs.`,
+        `expert_routing: true. \`gbrain whoknows\` and \`find_experts\` ` +
+        `cannot route queries. Edit the pack manifest to mark at least one ` +
+        `page_type as expert_routing: true, or switch packs.`
     );
   }
   return types;

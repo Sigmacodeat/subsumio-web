@@ -14,10 +14,10 @@
  * provider / env variable is touched.
  */
 
-import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
-import { mkdtempSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { describe, test, expect, beforeEach, afterEach } from "bun:test";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import {
   chat,
   withBudgetTracker,
@@ -25,19 +25,19 @@ import {
   __setChatTransportForTests,
   type ChatOpts,
   type ChatResult,
-} from '../../../src/core/ai/gateway.ts';
+} from "../../../src/core/ai/gateway.ts";
 import {
   BudgetTracker,
   BudgetExhausted,
   _resetBudgetTrackerWarningsForTest,
-} from '../../../src/core/budget/budget-tracker.ts';
+} from "../../../src/core/budget/budget-tracker.ts";
 
 let tmp: string;
 let auditPath: string;
 
 beforeEach(() => {
-  tmp = mkdtempSync(join(tmpdir(), 'gbrain-gw-budget-'));
-  auditPath = join(tmp, 'budget.jsonl');
+  tmp = mkdtempSync(join(tmpdir(), "gbrain-gw-budget-"));
+  auditPath = join(tmp, "budget.jsonl");
   _resetBudgetTrackerWarningsForTest();
 });
 
@@ -51,11 +51,11 @@ function fakeChatTransport(usage = { input_tokens: 100, output_tokens: 50 }) {
   const fn = async (_opts: ChatOpts): Promise<ChatResult> => {
     calls++;
     return {
-      text: 'ok',
-      blocks: [{ type: 'text', text: 'ok' }],
-      stopReason: 'end',
-      model: 'claude-haiku-4-5-20251001',
-      providerId: 'anthropic',
+      text: "ok",
+      blocks: [{ type: "text", text: "ok" }],
+      stopReason: "end",
+      model: "claude-haiku-4-5-20251001",
+      providerId: "anthropic",
       usage: {
         input_tokens: usage.input_tokens,
         output_tokens: usage.output_tokens,
@@ -64,12 +64,16 @@ function fakeChatTransport(usage = { input_tokens: 100, output_tokens: 50 }) {
       },
     };
   };
-  return Object.assign(fn, { get calls() { return calls; } });
+  return Object.assign(fn, {
+    get calls() {
+      return calls;
+    },
+  });
 }
 
-describe('withBudgetTracker — scope semantics', () => {
-  test('chat() inside scope auto-composes the tracker', async () => {
-    const tracker = new BudgetTracker({ maxCostUsd: 1.0, label: 'test-gw', auditPath });
+describe("withBudgetTracker — scope semantics", () => {
+  test("chat() inside scope auto-composes the tracker", async () => {
+    const tracker = new BudgetTracker({ maxCostUsd: 1.0, label: "test-gw", auditPath });
     const transport = fakeChatTransport({ input_tokens: 1000, output_tokens: 500 });
     __setChatTransportForTests(transport);
 
@@ -78,9 +82,9 @@ describe('withBudgetTracker — scope semantics', () => {
     await withBudgetTracker(tracker, async () => {
       expect(getCurrentBudgetTracker()).toBe(tracker);
       await chat({
-        model: 'claude-haiku-4-5-20251001',
-        system: 'sys',
-        messages: [{ role: 'user', content: 'hi' }],
+        model: "claude-haiku-4-5-20251001",
+        system: "sys",
+        messages: [{ role: "user", content: "hi" }],
       });
     });
 
@@ -90,21 +94,25 @@ describe('withBudgetTracker — scope semantics', () => {
     expect(tracker.snapshot().callsRecorded).toBe(1);
   });
 
-  test('chat() OUTSIDE any scope is a budget no-op (back-compat)', async () => {
+  test("chat() OUTSIDE any scope is a budget no-op (back-compat)", async () => {
     const transport = fakeChatTransport();
     __setChatTransportForTests(transport);
     // No withBudgetTracker wrapper — current behavior preserved.
     await chat({
-      model: 'claude-haiku-4-5-20251001',
-      messages: [{ role: 'user', content: 'hi' }],
+      model: "claude-haiku-4-5-20251001",
+      messages: [{ role: "user", content: "hi" }],
     });
     // No tracker; nothing to assert other than "no throw".
     expect(getCurrentBudgetTracker()).toBeNull();
   });
 
-  test('nested scopes restore outer tracker on exit', async () => {
-    const outer = new BudgetTracker({ maxCostUsd: 1.0, label: 'outer', auditPath });
-    const inner = new BudgetTracker({ maxCostUsd: 1.0, label: 'inner', auditPath: join(tmp, 'inner.jsonl') });
+  test("nested scopes restore outer tracker on exit", async () => {
+    const outer = new BudgetTracker({ maxCostUsd: 1.0, label: "outer", auditPath });
+    const inner = new BudgetTracker({
+      maxCostUsd: 1.0,
+      label: "inner",
+      auditPath: join(tmp, "inner.jsonl"),
+    });
 
     await withBudgetTracker(outer, async () => {
       expect(getCurrentBudgetTracker()).toBe(outer);
@@ -116,8 +124,8 @@ describe('withBudgetTracker — scope semantics', () => {
     expect(getCurrentBudgetTracker()).toBeNull();
   });
 
-  test('over-cap chat call throws BudgetExhausted via reserve()', async () => {
-    const tracker = new BudgetTracker({ maxCostUsd: 0.001, label: 'tight', auditPath });
+  test("over-cap chat call throws BudgetExhausted via reserve()", async () => {
+    const tracker = new BudgetTracker({ maxCostUsd: 0.001, label: "tight", auditPath });
     const transport = fakeChatTransport();
     __setChatTransportForTests(transport);
 
@@ -126,8 +134,8 @@ describe('withBudgetTracker — scope semantics', () => {
       try {
         await chat({
           // Opus 4.7 with high maxTokens → projected cost > $0.001
-          model: 'claude-opus-4-7',
-          messages: [{ role: 'user', content: 'a'.repeat(40_000) }],
+          model: "claude-opus-4-7",
+          messages: [{ role: "user", content: "a".repeat(40_000) }],
           maxTokens: 4096,
         });
       } catch (err) {
@@ -136,14 +144,14 @@ describe('withBudgetTracker — scope semantics', () => {
     });
 
     expect(caught).toBeInstanceOf(BudgetExhausted);
-    expect((caught as BudgetExhausted).reason).toBe('cost');
+    expect((caught as BudgetExhausted).reason).toBe("cost");
     // The transport should NOT have been called — reserve() fired first.
     expect(transport.calls).toBe(0);
   });
 
-  test('TX1 mid-run: cumulative > cap throws via record() after the call', async () => {
+  test("TX1 mid-run: cumulative > cap throws via record() after the call", async () => {
     // Reserve passes (small input estimate); record() over-shoots cap.
-    const tracker = new BudgetTracker({ maxCostUsd: 0.005, label: 'tx1', auditPath });
+    const tracker = new BudgetTracker({ maxCostUsd: 0.005, label: "tx1", auditPath });
     // Mock transport reports huge actual usage
     const transport = fakeChatTransport({ input_tokens: 1_000_000, output_tokens: 1_000_000 });
     __setChatTransportForTests(transport);
@@ -153,8 +161,8 @@ describe('withBudgetTracker — scope semantics', () => {
     await withBudgetTracker(tracker, async () => {
       // First call — record() throws internally but is suppressed.
       await chat({
-        model: 'claude-haiku-4-5-20251001',
-        messages: [{ role: 'user', content: 'short' }],
+        model: "claude-haiku-4-5-20251001",
+        messages: [{ role: "user", content: "short" }],
         maxTokens: 100,
       });
       expect(tracker.totalSpent).toBeGreaterThan(0.005);
@@ -163,32 +171,42 @@ describe('withBudgetTracker — scope semantics', () => {
       let caught: unknown = null;
       try {
         await chat({
-          model: 'claude-haiku-4-5-20251001',
-          messages: [{ role: 'user', content: 'short' }],
+          model: "claude-haiku-4-5-20251001",
+          messages: [{ role: "user", content: "short" }],
           maxTokens: 100,
         });
       } catch (err) {
         caught = err;
       }
       expect(caught).toBeInstanceOf(BudgetExhausted);
-      expect((caught as BudgetExhausted).reason).toBe('cost');
+      expect((caught as BudgetExhausted).reason).toBe("cost");
     });
   });
 });
 
-describe('AsyncLocalStorage isolation', () => {
-  test('parallel withBudgetTracker scopes do not bleed trackers', async () => {
-    const t1 = new BudgetTracker({ maxCostUsd: 1.0, label: 'parallel-1', auditPath });
-    const t2 = new BudgetTracker({ maxCostUsd: 1.0, label: 'parallel-2', auditPath: join(tmp, 'p2.jsonl') });
+describe("AsyncLocalStorage isolation", () => {
+  test("parallel withBudgetTracker scopes do not bleed trackers", async () => {
+    const t1 = new BudgetTracker({ maxCostUsd: 1.0, label: "parallel-1", auditPath });
+    const t2 = new BudgetTracker({
+      maxCostUsd: 1.0,
+      label: "parallel-2",
+      auditPath: join(tmp, "p2.jsonl"),
+    });
     const transport = fakeChatTransport({ input_tokens: 1000, output_tokens: 500 });
     __setChatTransportForTests(transport);
 
     await Promise.all([
       withBudgetTracker(t1, async () => {
-        await chat({ model: 'claude-haiku-4-5-20251001', messages: [{ role: 'user', content: 'a' }] });
+        await chat({
+          model: "claude-haiku-4-5-20251001",
+          messages: [{ role: "user", content: "a" }],
+        });
       }),
       withBudgetTracker(t2, async () => {
-        await chat({ model: 'claude-haiku-4-5-20251001', messages: [{ role: 'user', content: 'b' }] });
+        await chat({
+          model: "claude-haiku-4-5-20251001",
+          messages: [{ role: "user", content: "b" }],
+        });
       }),
     ]);
 

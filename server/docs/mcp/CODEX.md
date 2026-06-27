@@ -36,7 +36,7 @@ codex mcp add gbrain --url https://YOUR-DOMAIN.ngrok.app/mcp \
   --bearer-token-env-var GBRAIN_REMOTE_TOKEN
 ```
 
-Codex stores the env-var *name* (`GBRAIN_REMOTE_TOKEN`), not the token itself, and
+Codex stores the env-var _name_ (`GBRAIN_REMOTE_TOKEN`), not the token itself, and
 reads the value when it launches the MCP server. Add the `export` line to your
 `~/.zshrc` / `~/.bashrc` so it's set in every session.
 

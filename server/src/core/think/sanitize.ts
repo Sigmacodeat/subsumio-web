@@ -21,34 +21,70 @@
 // Existing think/take consumers keep working unchanged.
 export const INJECTION_PATTERNS: Array<{ name: string; rx: RegExp; replacement: string }> = [
   // System / instruction overrides
-  { name: 'ignore-prior',     rx: /ignore\s+(?:all\s+)?(?:prior|previous|above|earlier)\s+(?:instructions?|prompts?|messages?)/gi, replacement: '[redacted]' },
-  { name: 'forget-everything', rx: /forget\s+(?:everything|all\s+(?:of\s+)?the\s+above)/gi, replacement: '[redacted]' },
-  { name: 'disregard',        rx: /disregard\s+(?:all\s+)?(?:prior|previous|above|earlier)\s+(?:instructions?|prompts?)/gi, replacement: '[redacted]' },
-  { name: 'new-instructions', rx: /(?:new|updated|revised)\s+instructions?:/gi, replacement: '[redacted]:' },
-  { name: 'system-prompt',    rx: /system\s*:\s*(?:you\s+are|you\s+must|never|always)/gi, replacement: '[redacted]' },
-  { name: 'role-jailbreak',   rx: /you\s+are\s+(?:now|actually|really)\s+(?:a|an)\s+\w+/gi, replacement: '[redacted]' },
-  { name: 'do-anything-now',  rx: /\b(?:DAN|do\s+anything\s+now|developer\s+mode\s+enabled?)\b/gi, replacement: '[redacted]' },
+  {
+    name: "ignore-prior",
+    rx: /ignore\s+(?:all\s+)?(?:prior|previous|above|earlier)\s+(?:instructions?|prompts?|messages?)/gi,
+    replacement: "[redacted]",
+  },
+  {
+    name: "forget-everything",
+    rx: /forget\s+(?:everything|all\s+(?:of\s+)?the\s+above)/gi,
+    replacement: "[redacted]",
+  },
+  {
+    name: "disregard",
+    rx: /disregard\s+(?:all\s+)?(?:prior|previous|above|earlier)\s+(?:instructions?|prompts?)/gi,
+    replacement: "[redacted]",
+  },
+  {
+    name: "new-instructions",
+    rx: /(?:new|updated|revised)\s+instructions?:/gi,
+    replacement: "[redacted]:",
+  },
+  {
+    name: "system-prompt",
+    rx: /system\s*:\s*(?:you\s+are|you\s+must|never|always)/gi,
+    replacement: "[redacted]",
+  },
+  {
+    name: "role-jailbreak",
+    rx: /you\s+are\s+(?:now|actually|really)\s+(?:a|an)\s+\w+/gi,
+    replacement: "[redacted]",
+  },
+  {
+    name: "do-anything-now",
+    rx: /\b(?:DAN|do\s+anything\s+now|developer\s+mode\s+enabled?)\b/gi,
+    replacement: "[redacted]",
+  },
   // Tag injection — try to close the structural <take> wrapper
-  { name: 'close-take',       rx: /<\s*\/\s*take\s*>/gi, replacement: '&lt;/take&gt;' },
-  { name: 'open-system',      rx: /<\s*system\s*>/gi, replacement: '&lt;system&gt;' },
-  { name: 'open-instructions', rx: /<\s*instructions?\s*>/gi, replacement: '&lt;instructions&gt;' },
+  { name: "close-take", rx: /<\s*\/\s*take\s*>/gi, replacement: "&lt;/take&gt;" },
+  { name: "open-system", rx: /<\s*system\s*>/gi, replacement: "&lt;system&gt;" },
+  { name: "open-instructions", rx: /<\s*instructions?\s*>/gi, replacement: "&lt;instructions&gt;" },
   // v0.40.2.0 — close + open coverage for the new <trajectory> wrapper used
   // by formatTrajectoryBlock. Extracted fact text can be attacker-controlled
   // (e.g. an LLM-extracted claim from a session containing `</trajectory>` to
   // break out of the data envelope and inject instructions). Per Codex
   // Problem 10 the prior pattern set only covered <take>/<system>/<instructions>;
   // this extension closes the new XML surface.
-  { name: 'close-trajectory', rx: /<\s*\/\s*trajectory\s*>/gi, replacement: '&lt;/trajectory&gt;' },
-  { name: 'open-trajectory',  rx: /<\s*trajectory\b[^>]*>/gi, replacement: '&lt;trajectory&gt;' },
+  { name: "close-trajectory", rx: /<\s*\/\s*trajectory\s*>/gi, replacement: "&lt;/trajectory&gt;" },
+  { name: "open-trajectory", rx: /<\s*trajectory\b[^>]*>/gi, replacement: "&lt;trajectory&gt;" },
   // Generic XML attribute-injection inside take/trajectory blocks: an extracted
   // value containing `entity="evil"` would otherwise inject a new attribute
   // on the wrapping tag if a naive renderer concatenated raw text.
-  { name: 'xml-attr-inject',  rx: /\s+(entity|metric|event_type|kind)\s*=\s*"[^"]*"/gi, replacement: ' [redacted-attr]' },
+  {
+    name: "xml-attr-inject",
+    rx: /\s+(entity|metric|event_type|kind)\s*=\s*"[^"]*"/gi,
+    replacement: " [redacted-attr]",
+  },
   // Output exfiltration
-  { name: 'print-system',     rx: /(?:print|output|reveal|show)\s+(?:your\s+)?(?:system\s+prompt|instructions?|hidden)/gi, replacement: '[redacted]' },
-  { name: 'verbatim',         rx: /(?:repeat|echo)\s+(?:back|verbatim)/gi, replacement: '[redacted]' },
+  {
+    name: "print-system",
+    rx: /(?:print|output|reveal|show)\s+(?:your\s+)?(?:system\s+prompt|instructions?|hidden)/gi,
+    replacement: "[redacted]",
+  },
+  { name: "verbatim", rx: /(?:repeat|echo)\s+(?:back|verbatim)/gi, replacement: "[redacted]" },
   // Code-execution-style hooks
-  { name: 'eval-shell',       rx: /\b(?:eval|exec|system|shell)\s*\(/gi, replacement: '[redacted](' },
+  { name: "eval-shell", rx: /\b(?:eval|exec|system|shell)\s*\(/gi, replacement: "[redacted](" },
 ];
 
 /**
@@ -67,8 +103,8 @@ export function sanitizeTakeForPrompt(claim: string): { text: string; matched: s
   // Final safety: cap absurdly long claims to keep one bad row from hogging
   // the prompt budget. 500 chars is far longer than any natural take.
   if (text.length > 500) {
-    text = text.slice(0, 497) + '...';
-    matched.push('length-cap');
+    text = text.slice(0, 497) + "...";
+    matched.push("length-cap");
   }
   return { text, matched };
 }
@@ -89,7 +125,10 @@ export interface TakeForPrompt {
   since_date?: string | null;
 }
 
-export function renderTakesBlock(takes: TakeForPrompt[]): { rendered: string; sanitizedCount: number } {
+export function renderTakesBlock(takes: TakeForPrompt[]): {
+  rendered: string;
+  sanitizedCount: number;
+} {
   const lines: string[] = [];
   let sanitizedCount = 0;
   for (const t of takes) {
@@ -98,9 +137,7 @@ export function renderTakesBlock(takes: TakeForPrompt[]): { rendered: string; sa
     const meta = [`kind=${t.kind}`, `who=${t.holder}`, `weight=${t.weight.toFixed(2)}`];
     if (t.since_date) meta.push(`since=${t.since_date}`);
     if (t.source) meta.push(`source="${String(t.source).replace(/"/g, '\\"').slice(0, 80)}"`);
-    lines.push(
-      `<take id="${t.page_slug}#${t.row_num}" ${meta.join(' ')}>\n${text}\n</take>`,
-    );
+    lines.push(`<take id="${t.page_slug}#${t.row_num}" ${meta.join(" ")}>\n${text}\n</take>`);
   }
-  return { rendered: lines.join('\n\n'), sanitizedCount };
+  return { rendered: lines.join("\n\n"), sanitizedCount };
 }

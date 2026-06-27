@@ -15,14 +15,14 @@
  * on top via Minions. Read-only lookups do not pay queue latency.
  */
 
-import type { BrainEngine } from '../engine.ts';
-import type { StorageBackend } from '../storage.ts';
+import type { BrainEngine } from "../engine.ts";
+import type { StorageBackend } from "../storage.ts";
 
 // ---------------------------------------------------------------------------
 // Cost tiers
 // ---------------------------------------------------------------------------
 
-export type ResolverCost = 'free' | 'rate-limited' | 'paid';
+export type ResolverCost = "free" | "rate-limited" | "paid";
 
 // ---------------------------------------------------------------------------
 // Result
@@ -135,24 +135,24 @@ export interface Resolver<I, O> {
 // ---------------------------------------------------------------------------
 
 export type ResolverErrorCode =
-  | 'not_found'       // registry.get on unknown id
-  | 'already_registered'
-  | 'unavailable'     // available() returned false
-  | 'timeout'
-  | 'rate_limited'
-  | 'auth'            // API rejected credentials
-  | 'schema'          // malformed response / schema validation failed
-  | 'aborted'         // AbortSignal fired
-  | 'upstream';       // generic upstream failure (network, 5xx)
+  | "not_found" // registry.get on unknown id
+  | "already_registered"
+  | "unavailable" // available() returned false
+  | "timeout"
+  | "rate_limited"
+  | "auth" // API rejected credentials
+  | "schema" // malformed response / schema validation failed
+  | "aborted" // AbortSignal fired
+  | "upstream"; // generic upstream failure (network, 5xx)
 
 export class ResolverError extends Error {
   constructor(
     public code: ResolverErrorCode,
     message: string,
     public resolverId?: string,
-    public cause?: unknown,
+    public cause?: unknown
   ) {
     super(message);
-    this.name = 'ResolverError';
+    this.name = "ResolverError";
   }
 }

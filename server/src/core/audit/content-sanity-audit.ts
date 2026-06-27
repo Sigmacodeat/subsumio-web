@@ -35,16 +35,16 @@
  * (catches "this source keeps producing the same junk").
  */
 
-import { createAuditWriter, computeIsoWeekFilename } from './audit-writer.ts';
-import type { ContentSanityResult } from '../content-sanity.ts';
+import { createAuditWriter, computeIsoWeekFilename } from "./audit-writer.ts";
+import type { ContentSanityResult } from "../content-sanity.ts";
 
 export type ContentSanityEventType =
-  | 'hard_block'   // legacy alias for the reject path (pre-v0.42)
-  | 'quarantine'   // junk → hidden, page landed with quarantine marker
-  | 'reject'       // junk → thrown (junk_disposition: reject)
-  | 'flag'         // fuzzy markup-heavy or oversize → content_flag, stays searchable
-  | 'soft_block'   // oversize → embed_skip
-  | 'warn';
+  | "hard_block" // legacy alias for the reject path (pre-v0.42)
+  | "quarantine" // junk → hidden, page landed with quarantine marker
+  | "reject" // junk → thrown (junk_disposition: reject)
+  | "flag" // fuzzy markup-heavy or oversize → content_flag, stays searchable
+  | "soft_block" // oversize → embed_skip
+  | "warn";
 
 export interface ContentSanityAuditEvent {
   ts: string;
@@ -74,14 +74,14 @@ export interface ContentSanityAuditEvent {
 
 /** Filename matches the audit-writer's ISO-week convention. */
 export function computeContentSanityAuditFilename(now: Date = new Date()): string {
-  return computeIsoWeekFilename('content-sanity', now);
+  return computeIsoWeekFilename("content-sanity", now);
 }
 
 const writer = createAuditWriter<ContentSanityAuditEvent>({
-  featureName: 'content-sanity',
-  errorLabel: 'gbrain',
-  errorMessagePrefix: 'content-sanity audit ',
-  errorTrailer: '; import continues',
+  featureName: "content-sanity",
+  errorLabel: "gbrain",
+  errorMessagePrefix: "content-sanity audit ",
+  errorTrailer: "; import continues",
 });
 
 /** Classify an assessor result into the audit event type. The same
@@ -95,19 +95,16 @@ const writer = createAuditWriter<ContentSanityAuditEvent>({
 // branch and passed via `opts.disposition`. A caller that forgets to pass
 // `disposition` on a quarantine/flag would mis-classify it as legacy
 // `hard_block`/`soft_block`; all current callers (import-file.ts) pass it.
-function classifyEventType(
-  result: ContentSanityResult,
-  bypass: boolean,
-): ContentSanityEventType {
+function classifyEventType(result: ContentSanityResult, bypass: boolean): ContentSanityEventType {
   if (bypass) {
     // Kill-switch override always logs as warn since the page lands.
     // Hard-block + bypass = "would have blocked but operator
     // overrode"; soft-block + bypass = same idea.
-    return 'warn';
+    return "warn";
   }
-  if (result.shouldHardBlock) return 'hard_block';
-  if (result.shouldSkipEmbed) return 'soft_block';
-  return 'warn';
+  if (result.shouldHardBlock) return "hard_block";
+  if (result.shouldSkipEmbed) return "soft_block";
+  return "warn";
 }
 
 /**
@@ -122,16 +119,14 @@ export function logContentSanityAssessment(
   slug: string,
   sourceId: string,
   result: ContentSanityResult,
-  opts: { bypass?: boolean; disposition?: ContentSanityEventType } = {},
+  opts: { bypass?: boolean; disposition?: ContentSanityEventType } = {}
 ): void {
   const bypass = opts.bypass ?? false;
   // Codex #10: when the caller knows the resolved disposition (quarantine
   // vs reject vs flag — decided AFTER assessment), it passes it explicitly
   // so the event is accurate, not inferred. Bypass still forces 'warn'
   // (the page landed regardless).
-  const event_type = bypass
-    ? 'warn'
-    : (opts.disposition ?? classifyEventType(result, bypass));
+  const event_type = bypass ? "warn" : (opts.disposition ?? classifyEventType(result, bypass));
   // Skip rows that don't say anything: bytes under warn threshold AND
   // no patterns matched AND no bypass. The assessor result's reasons
   // array is empty in that case; we don't want every ingest of a
@@ -156,7 +151,7 @@ export function logContentSanityAssessment(
  *  files so a window straddling Monday-midnight stays covered. */
 export function readRecentContentSanityEvents(
   days = 7,
-  now: Date = new Date(),
+  now: Date = new Date()
 ): ContentSanityAuditEvent[] {
   return writer.readRecent(days, now);
 }
@@ -180,7 +175,7 @@ export interface ContentSanitySummary {
 }
 
 export function summarizeContentSanityEvents(
-  events: ReadonlyArray<ContentSanityAuditEvent>,
+  events: ReadonlyArray<ContentSanityAuditEvent>
 ): ContentSanitySummary {
   const by_type = {
     hard_block: 0,

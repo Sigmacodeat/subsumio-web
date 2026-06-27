@@ -25,23 +25,23 @@
  * balloon the diff. D10 is filed as a follow-up TODO.
  */
 
-import type { BrainEngine } from '../core/engine.ts';
-import { tryAcquireDbLock } from '../core/db-lock.ts';
-import type { DbLockHandle } from '../core/db-lock.ts';
-import { sqlQueryForEngine } from '../core/sql-query.ts';
-import { embedMultimodalSafe } from '../core/ai/gateway.ts';
-import { createProgress } from '../core/progress.ts';
-import { getCliOptions, cliOptsToProgressOptions } from '../core/cli-options.ts';
-import { gbrainPath } from '../core/config.ts';
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
-import { dirname } from 'node:path';
+import type { BrainEngine } from "../core/engine.ts";
+import { tryAcquireDbLock } from "../core/db-lock.ts";
+import type { DbLockHandle } from "../core/db-lock.ts";
+import { sqlQueryForEngine } from "../core/sql-query.ts";
+import { embedMultimodalSafe } from "../core/ai/gateway.ts";
+import { createProgress } from "../core/progress.ts";
+import { getCliOptions, cliOptsToProgressOptions } from "../core/cli-options.ts";
+import { gbrainPath } from "../core/config.ts";
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
+import { dirname } from "node:path";
 // v0.41.15.0 (T9, D9): per-chunk UPDATE workers within each batch.
-import { runSlidingPool } from '../core/worker-pool.ts';
-import { resolveWorkersWithClamp } from '../core/sync-concurrency.ts';
+import { runSlidingPool } from "../core/worker-pool.ts";
+import { resolveWorkersWithClamp } from "../core/sync-concurrency.ts";
 
-const LOCK_ID = 'gbrain-reindex-multimodal';
+const LOCK_ID = "gbrain-reindex-multimodal";
 const BATCH_SIZE = 32; // Voyage cap
-const CHECKPOINT_FILE = 'reindex-multimodal-checkpoint.json';
+const CHECKPOINT_FILE = "reindex-multimodal-checkpoint.json";
 
 export interface ReindexMultimodalOpts {
   limit?: number;
@@ -76,10 +76,10 @@ export interface ReindexMultimodalResult {
  */
 export async function runReindexMultimodal(
   engine: BrainEngine,
-  opts: ReindexMultimodalOpts,
+  opts: ReindexMultimodalOpts
 ): Promise<ReindexMultimodalResult> {
   const progress = createProgress(cliOptsToProgressOptions(getCliOptions()));
-  progress.start('reindex_multimodal', 0);
+  progress.start("reindex_multimodal", 0);
 
   // T11 (D12): preflight the multimodal model+dim before any DB work.
   // Mirrors T6's text-side preflight contract: if the configured multimodal
@@ -87,11 +87,11 @@ export async function runReindexMultimodal(
   // here with a paste-ready hint rather than mid-reindex with a vector(N)
   // INSERT error.
   try {
-    const { loadConfig } = await import('../core/config.ts');
+    const { loadConfig } = await import("../core/config.ts");
     const cfg = loadConfig();
     const multimodalModel = cfg?.embedding_multimodal_model;
     if (multimodalModel) {
-      const { resolveSchemaMultimodalDim } = await import('../core/embedding-dim-check.ts');
+      const { resolveSchemaMultimodalDim } = await import("../core/embedding-dim-check.ts");
       const pre = resolveSchemaMultimodalDim({
         embedding_multimodal_model: multimodalModel,
       });
@@ -99,7 +99,7 @@ export async function runReindexMultimodal(
         progress.finish();
         throw new Error(
           `Refusing to reindex: ${pre.error}\n` +
-          `Fix with \`gbrain config set embedding_multimodal_model <provider>:<model>\`.`,
+            `Fix with \`gbrain config set embedding_multimodal_model <provider>:<model>\`.`
         );
       }
     }
@@ -116,18 +116,19 @@ export async function runReindexMultimodal(
     FROM content_chunks
     WHERE embedding_multimodal IS NULL
   `;
-  const pendingBefore = parseInt(String(pendingRows[0]?.count ?? '0'), 10);
+  const pendingBefore = parseInt(String(pendingRows[0]?.count ?? "0"), 10);
 
   // Cost estimate (Voyage multimodal-3 is $0.18 / 1M tokens; ~3.5 chars/token).
   // We estimate based on chunk_text length per row. Cheap two-stat probe.
-  const statsRows = pendingBefore > 0
-    ? await sql`
+  const statsRows =
+    pendingBefore > 0
+      ? await sql`
       SELECT COALESCE(SUM(LENGTH(chunk_text)), 0)::text AS chars
       FROM content_chunks
       WHERE embedding_multimodal IS NULL
     `
-    : [{ chars: '0' }];
-  const totalChars = parseInt(String(statsRows[0]?.chars ?? '0'), 10);
+      : [{ chars: "0" }];
+  const totalChars = parseInt(String(statsRows[0]?.chars ?? "0"), 10);
   const estimatedTokens = totalChars / 3.5;
   const costUsdEstimate = (estimatedTokens / 1_000_000) * 0.18;
 
@@ -171,10 +172,10 @@ export async function runReindexMultimodal(
   }
 
   // GBRAIN_NO_REEMBED bypass (CI / cron / opt-out).
-  if (process.env.GBRAIN_NO_REEMBED === '1') {
+  if (process.env.GBRAIN_NO_REEMBED === "1") {
     process.stderr.write(
       `[reindex-multimodal] skipping: GBRAIN_NO_REEMBED=1. ` +
-      `Pending: ${pendingBefore} chunks (~$${costUsdEstimate.toFixed(2)}).\n`,
+        `Pending: ${pendingBefore} chunks (~$${costUsdEstimate.toFixed(2)}).\n`
     );
     progress.finish();
     return {
@@ -191,11 +192,11 @@ export async function runReindexMultimodal(
   // Cost grace window (TTY only; non-TTY auto-proceeds for CI / cron).
   // Skip if --yes was passed.
   if (!opts.yes && process.stdout.isTTY && process.stdin.isTTY) {
-    const minutes = Math.ceil((pendingBefore / BATCH_SIZE) * 0.5 / 60); // ~0.5s per batch
+    const minutes = Math.ceil(((pendingBefore / BATCH_SIZE) * 0.5) / 60); // ~0.5s per batch
     process.stderr.write(
       `Will re-embed ~${pendingBefore} chunks via voyage:voyage-multimodal-3, ` +
-      `est. ~$${costUsdEstimate.toFixed(2)}, ~${minutes}min. ` +
-      `Press Ctrl-C within 10s to abort.\n`,
+        `est. ~$${costUsdEstimate.toFixed(2)}, ~${minutes}min. ` +
+        `Press Ctrl-C within 10s to abort.\n`
     );
     await new Promise<void>((resolve) => setTimeout(resolve, 10_000));
   }
@@ -207,7 +208,7 @@ export async function runReindexMultimodal(
     progress.finish();
     throw new Error(
       `LOCK_HELD: another gbrain-reindex-multimodal process is already running. ` +
-      `If the prior run crashed, the lock auto-releases after its TTL (6h).`,
+        `If the prior run crashed, the lock auto-releases after its TTL (6h).`
     );
   }
 
@@ -224,9 +225,7 @@ export async function runReindexMultimodal(
       if (opts.limit && processed >= opts.limit) break;
 
       // Fetch next batch of pending chunks.
-      const batchSize = opts.limit
-        ? Math.min(BATCH_SIZE, opts.limit - processed)
-        : BATCH_SIZE;
+      const batchSize = opts.limit ? Math.min(BATCH_SIZE, opts.limit - processed) : BATCH_SIZE;
       const rows = await sql`
         SELECT id::text AS id, chunk_text
         FROM content_chunks
@@ -237,10 +236,12 @@ export async function runReindexMultimodal(
       `;
       if (rows.length === 0) break;
 
-      const items = rows.map(r => ({
-        id: parseInt(String(r.id), 10),
-        text: String(r.chunk_text ?? ''),
-      })).filter(r => !completedIds.has(r.id));
+      const items = rows
+        .map((r) => ({
+          id: parseInt(String(r.id), 10),
+          text: String(r.chunk_text ?? ""),
+        }))
+        .filter((r) => !completedIds.has(r.id));
 
       if (items.length === 0) {
         lastId = parseInt(String(rows[rows.length - 1].id), 10);
@@ -252,8 +253,8 @@ export async function runReindexMultimodal(
       // failed for the next run to retry.
       if (!opts.noEmbed) {
         const result = await embedMultimodalSafe(
-          items.map(it => ({ kind: 'text' as const, text: it.text })),
-          { inputType: 'document' },
+          items.map((it) => ({ kind: "text" as const, text: it.text })),
+          { inputType: "document" }
         );
         // v0.41.15.0 (T9): per-chunk UPDATE loop wrapped in the sliding
         // pool. JS single-threaded event loop makes reembedded++ /
@@ -263,8 +264,8 @@ export async function runReindexMultimodal(
         const writersResolved = resolveWorkersWithClamp(
           engine,
           opts.workers,
-          'reindex-multimodal',
-          items.length,
+          "reindex-multimodal",
+          items.length
         );
         await runSlidingPool({
           items,
@@ -273,7 +274,7 @@ export async function runReindexMultimodal(
           onItem: async (item, i) => {
             const vec = result.embeddings[i];
             if (vec) {
-              const vecLiteral = `[${Array.from(vec).join(',')}]`;
+              const vecLiteral = `[${Array.from(vec).join(",")}]`;
               await sql`
                 UPDATE content_chunks
                 SET embedding_multimodal = ${vecLiteral}::vector
@@ -304,23 +305,23 @@ export async function runReindexMultimodal(
     FROM content_chunks
     WHERE embedding_multimodal IS NULL
   `;
-  const pendingAfter = parseInt(String(pendingAfterRows[0]?.count ?? '0'), 10);
+  const pendingAfter = parseInt(String(pendingAfterRows[0]?.count ?? "0"), 10);
   let unifiedFlagPrompted = false;
 
   if (pendingAfter === 0 && reembedded > 0) {
-    const currentFlag = await engine.getConfig('search.unified_multimodal').catch(() => null);
-    if (currentFlag !== 'true' && currentFlag !== '1') {
+    const currentFlag = await engine.getConfig("search.unified_multimodal").catch(() => null);
+    if (currentFlag !== "true" && currentFlag !== "1") {
       if (process.stdout.isTTY) {
         process.stderr.write(
           `\n[reindex-multimodal] Coverage now 100%. ` +
-          `Run \`gbrain config set search.unified_multimodal true\` to route all queries ` +
-          `through the unified column.\n`,
+            `Run \`gbrain config set search.unified_multimodal true\` to route all queries ` +
+            `through the unified column.\n`
         );
         unifiedFlagPrompted = true;
       } else {
         process.stderr.write(
           `[reindex-multimodal] Coverage now 100%. ` +
-          `gbrain config set search.unified_multimodal true\n`,
+            `gbrain config set search.unified_multimodal true\n`
         );
         unifiedFlagPrompted = true;
       }
@@ -329,7 +330,11 @@ export async function runReindexMultimodal(
 
   // Clear checkpoint on full completion.
   if (pendingAfter === 0) {
-    try { writeFileSync(checkpointPath, '{}\n'); } catch { /* ignore */ }
+    try {
+      writeFileSync(checkpointPath, "{}\n");
+    } catch {
+      /* ignore */
+    }
   }
 
   return {
@@ -346,9 +351,9 @@ export async function runReindexMultimodal(
 function loadCheckpoint(path: string): Set<number> {
   try {
     if (!existsSync(path)) return new Set();
-    const raw = readFileSync(path, 'utf-8');
+    const raw = readFileSync(path, "utf-8");
     const data = JSON.parse(raw) as { completedIds?: number[] };
-    return new Set((data.completedIds ?? []).filter(n => Number.isFinite(n)));
+    return new Set((data.completedIds ?? []).filter((n) => Number.isFinite(n)));
   } catch {
     return new Set();
   }

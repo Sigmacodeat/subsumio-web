@@ -29,13 +29,13 @@
  * `LLMClient` interface).
  */
 
-import { createHash } from 'node:crypto';
-import { chat as gatewayChat, type ChatOpts, type ChatResult } from '../ai/gateway.ts';
-import { resolveRecipe } from '../ai/model-resolver.ts';
-import { AIConfigError } from '../ai/errors.ts';
-import { normalizeModelId } from '../model-id.ts';
-import { hasAnthropicKey } from '../ai/anthropic-key.ts';
-import type { BrainEngine } from '../engine.ts';
+import { createHash } from "node:crypto";
+import { chat as gatewayChat, type ChatOpts, type ChatResult } from "../ai/gateway.ts";
+import { resolveRecipe } from "../ai/model-resolver.ts";
+import { AIConfigError } from "../ai/errors.ts";
+import { normalizeModelId } from "../model-id.ts";
+import { hasAnthropicKey } from "../ai/anthropic-key.ts";
+import type { BrainEngine } from "../engine.ts";
 
 /**
  * Test-seam transport. Real callers pass undefined → `gatewayChat`.
@@ -43,7 +43,7 @@ import type { BrainEngine } from '../engine.ts';
  */
 export type ChatTransport = (opts: ChatOpts) => Promise<ChatResult>;
 
-export type CallShape = 'polish' | 'fallback';
+export type CallShape = "polish" | "fallback";
 
 /**
  * Per-process LLM result cache. Key:
@@ -75,7 +75,7 @@ export function _resetLlmCacheForTests(): void {
 
 /** Content-hash cache key. */
 function cacheKey(shape: CallShape, modelId: string, content: string): string {
-  const hash = createHash('sha256').update(content).digest('hex');
+  const hash = createHash("sha256").update(content).digest("hex");
   return `${shape}:${modelId}:${hash}`;
 }
 
@@ -104,7 +104,7 @@ export function probeLlmAvailability(modelStr: string): string | null {
     if (e instanceof AIConfigError) return null;
     throw e;
   }
-  if (providerId === 'anthropic' && !hasAnthropicKey()) return null;
+  if (providerId === "anthropic" && !hasAnthropicKey()) return null;
   return normalized;
 }
 
@@ -152,9 +152,7 @@ export interface RunLlmCallOpts<TOutput> {
   chatTransport?: ChatTransport;
 }
 
-export async function runLlmCall<TOutput>(
-  opts: RunLlmCallOpts<TOutput>,
-): Promise<TOutput | null> {
+export async function runLlmCall<TOutput>(opts: RunLlmCallOpts<TOutput>): Promise<TOutput | null> {
   const modelStr = probeLlmAvailability(opts.modelStr);
   if (modelStr === null) {
     // Once-per-process warn: future calls in this process won't pay
@@ -196,7 +194,7 @@ export async function runLlmCall<TOutput>(
     result = await transport({
       model: modelStr,
       system: opts.system,
-      messages: [{ role: 'user', content: opts.content }],
+      messages: [{ role: "user", content: opts.content }],
       maxTokens: opts.maxTokens ?? 4000,
       abortSignal: opts.signal,
     });
@@ -240,14 +238,14 @@ async function readDbCache<T>(engine: BrainEngine, key: string): Promise<T | nul
     `SELECT value_json FROM conversation_parser_llm_cache
        WHERE content_sha256 = $1 AND model_id = $2 AND call_shape = $3
        LIMIT 1`,
-    [contentSha, model, shape],
+    [contentSha, model, shape]
   );
   if (!Array.isArray(rows) || rows.length === 0) return null;
   const row = rows[0] as { value_json: unknown };
   // Postgres returns JSONB as parsed object; PGLite returns same.
   // Defensively handle string-shaped rows from older DB writes (the
   // v0.12.0 double-encode bug class).
-  if (typeof row.value_json === 'string') {
+  if (typeof row.value_json === "string") {
     try {
       return JSON.parse(row.value_json) as T;
     } catch {
@@ -262,7 +260,7 @@ async function writeDbCache<T>(
   key: string,
   shape: CallShape,
   modelStr: string,
-  value: T,
+  value: T
 ): Promise<void> {
   const [, , contentSha] = splitCacheKey(key);
   if (!contentSha) return;
@@ -274,15 +272,15 @@ async function writeDbCache<T>(
        (content_sha256, model_id, call_shape, value_json)
      VALUES ($1, $2, $3, $4::jsonb)
      ON CONFLICT (content_sha256, model_id, call_shape) DO NOTHING`,
-    [contentSha, modelStr, shape, JSON.stringify(value)],
+    [contentSha, modelStr, shape, JSON.stringify(value)]
   );
 }
 
 function splitCacheKey(key: string): [string?, string?, string?] {
   // shape:model:sha — model can contain `:` (e.g. anthropic:claude-haiku),
   // so split at the FIRST and LAST colon.
-  const firstColon = key.indexOf(':');
-  const lastColon = key.lastIndexOf(':');
+  const firstColon = key.indexOf(":");
+  const lastColon = key.lastIndexOf(":");
   if (firstColon < 0 || lastColon <= firstColon) return [];
   const shape = key.slice(0, firstColon);
   const model = key.slice(firstColon + 1, lastColon);
@@ -305,13 +303,13 @@ function splitCacheKey(key: string): [string?, string?, string?] {
  * null upstream).
  */
 export function parseLlmJson<T>(raw: string, opts: { array?: boolean } = {}): T | null {
-  if (typeof raw !== 'string' || !raw.trim()) return null;
+  if (typeof raw !== "string" || !raw.trim()) return null;
   const fenceMatch = raw.match(/```(?:json)?\s*\n?([\s\S]*?)```/i);
   const cleaned = (fenceMatch ? fenceMatch[1] : raw).trim();
   try {
     const direct = JSON.parse(cleaned);
     if (opts.array && Array.isArray(direct)) return direct as T;
-    if (!opts.array && direct !== null && typeof direct === 'object') return direct as T;
+    if (!opts.array && direct !== null && typeof direct === "object") return direct as T;
   } catch {
     // fall through
   }
@@ -321,7 +319,7 @@ export function parseLlmJson<T>(raw: string, opts: { array?: boolean } = {}): T 
     try {
       const second = JSON.parse(match[0]);
       if (opts.array && Array.isArray(second)) return second as T;
-      if (!opts.array && second !== null && typeof second === 'object') return second as T;
+      if (!opts.array && second !== null && typeof second === "object") return second as T;
     } catch {
       // fall through
     }

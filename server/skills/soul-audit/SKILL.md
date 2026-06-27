@@ -27,6 +27,7 @@ ships pre-filled content. The templates in `templates/` are scaffolds, not defau
 ## Contract
 
 This skill guarantees:
+
 - SOUL.md generated from user's description of agent identity, vibe, mission
 - USER.md generated from user's self-description (role, projects, key people)
 - ACCESS_POLICY.md generated with configurable access tiers
@@ -37,36 +38,44 @@ This skill guarantees:
 ## Phases
 
 ### Phase 1: Identity Interview
+
 Ask: "What is this agent to you? Research partner? Executive assistant? Thinking partner? All of the above?"
 Generate: SOUL.md identity section.
 
 ### Phase 2: Vibe Calibration
+
 Show 3-4 communication style examples:
+
 - **Formal:** "I've prepared a comprehensive analysis of the situation..."
 - **Direct:** "Here's what's happening. Three things matter."
 - **Technical:** "The root cause is in the connection pooling. Here's the fix."
 - **Casual:** "Yeah so basically the thing is broken because X. Easy fix."
-Ask which feels right. Generate: SOUL.md vibe + communication style sections.
+  Ask which feels right. Generate: SOUL.md vibe + communication style sections.
 
 ### Phase 3: Mission Mapping
+
 Ask: "What are your top 3-5 goals? What are you trying to accomplish?"
 Generate: SOUL.md mission + operating principles sections.
 
 ### Phase 4: User Profile
+
 Ask: "Tell me about yourself. What do you do? What are you working on? Who are the key people in your world?"
 Generate: USER.md with role, projects, key people, communication preferences.
 
 ### Phase 5: Boundaries
+
 Ask: "Who should have access to your brain? Are there people who should see some but not all? Anyone to keep out entirely?"
 Generate: ACCESS_POLICY.md with 4 tiers (Full/Work/Family/None).
 
 ### Phase 6: Operational Cadence
+
 Ask: "How often should the agent check in? Morning briefing? End of day summary? What recurring jobs do you want?"
 Generate: HEARTBEAT.md with operational cadence.
 
 ## Default Mode (Skip Soul-Audit)
 
 If the user skips soul-audit on first boot:
+
 - Install `templates/SOUL.md.template` as SOUL.md (minimal: "knowledge-first agent with persistent memory")
 - Install `templates/USER.md.template` as USER.md (auto-populate name/email from git config)
 - Install `templates/ACCESS_POLICY.md.template` as ACCESS_POLICY.md (owner-only access)

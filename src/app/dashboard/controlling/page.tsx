@@ -76,13 +76,16 @@ export default function ControllingPage() {
 
         if (!cancelled) setStats(Array.from(lawyerMap.values()));
       } catch (e) {
-        if (!cancelled) setLoadError(e instanceof Error ? e.message : "Daten konnten nicht geladen werden.");
+        if (!cancelled)
+          setLoadError(e instanceof Error ? e.message : "Daten konnten nicht geladen werden.");
       } finally {
         if (!cancelled) setLoading(false);
       }
     }
     load();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [period]);
 
   const totalRevenue = stats.reduce((s, l) => s + l.totalRevenue, 0);

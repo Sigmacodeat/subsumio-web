@@ -1,6 +1,6 @@
-import { describe, test, expect } from 'bun:test';
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { describe, test, expect } from "bun:test";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
 /**
  * v0.40.x — `gbrain models doctor` embedding reachability probe.
@@ -18,8 +18,8 @@ import { join } from 'node:path';
  *
  * Source-text assertions, same convention as test/v0_37_gap_fill.serial.test.ts.
  */
-describe('models doctor — embedding reachability probe (v0.40.x)', () => {
-  const src = readFileSync(join(__dirname, '..', 'src', 'commands', 'models.ts'), 'utf-8');
+describe("models doctor — embedding reachability probe (v0.40.x)", () => {
+  const src = readFileSync(join(__dirname, "..", "src", "commands", "models.ts"), "utf-8");
 
   test("ProbeResult.touchpoint declares 'embedding_reachability' (codex #7)", () => {
     expect(src).toContain("'embedding_reachability'");
@@ -27,24 +27,24 @@ describe('models doctor — embedding reachability probe (v0.40.x)', () => {
     expect(src).toContain("'embedding_config'");
   });
 
-  test('probeEmbeddingReachability uses embed() with inputType query + abort signal (codex #6)', () => {
-    const fnIdx = src.indexOf('async function probeEmbeddingReachability');
+  test("probeEmbeddingReachability uses embed() with inputType query + abort signal (codex #6)", () => {
+    const fnIdx = src.indexOf("async function probeEmbeddingReachability");
     expect(fnIdx).toBeGreaterThan(0);
     const slice = src.slice(fnIdx, fnIdx + 1500);
-    expect(slice).toContain('embed([');
+    expect(slice).toContain("embed([");
     expect(slice).toContain("inputType: 'query'");
-    expect(slice).toContain('abortSignal');
+    expect(slice).toContain("abortSignal");
     // Must NOT use embedQuery (no abort signal support — codex #6).
-    expect(slice).not.toContain('embedQuery(');
+    expect(slice).not.toContain("embedQuery(");
   });
 
-  test('runModels gates embedding reachability on config-probe ok (codex #8)', () => {
-    const runIdx = src.indexOf('export async function runModels');
+  test("runModels gates embedding reachability on config-probe ok (codex #8)", () => {
+    const runIdx = src.indexOf("export async function runModels");
     expect(runIdx).toBeGreaterThan(0);
     const slice = src.slice(runIdx);
     // The config probe result is captured and the reachability call is gated
     // on its status === 'ok' before firing.
-    expect(slice).toContain('const embeddingConfig = await probeEmbeddingConfig()');
+    expect(slice).toContain("const embeddingConfig = await probeEmbeddingConfig()");
     expect(slice).toMatch(/embeddingConfig\.status === 'ok'[\s\S]*probeEmbeddingReachability\(\)/);
   });
 });

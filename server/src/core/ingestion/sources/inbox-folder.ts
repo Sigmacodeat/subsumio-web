@@ -38,17 +38,17 @@
  *     anything special.
  */
 
-import { watch, type FSWatcher, type ChokidarOptions } from 'chokidar';
-import { mkdir, rename, readFile, stat, lstat } from 'node:fs/promises';
-import { existsSync, statSync } from 'node:fs';
-import { resolve, basename, join, dirname, extname } from 'node:path';
+import { watch, type FSWatcher, type ChokidarOptions } from "chokidar";
+import { mkdir, rename, readFile, stat, lstat } from "node:fs/promises";
+import { existsSync, statSync } from "node:fs";
+import { resolve, basename, join, dirname, extname } from "node:path";
 import {
   computeContentHash,
   type IngestionContentType,
   type IngestionEvent,
   type IngestionSource,
   type IngestionSourceContext,
-} from '../types.ts';
+} from "../types.ts";
 
 const DEFAULT_DEBOUNCE_MS = 500;
 const DEFAULT_STABILITY_MS = 1000;
@@ -75,47 +75,47 @@ export interface InboxFolderSourceOpts {
 function detectContentType(filename: string): IngestionContentType {
   const ext = extname(filename).toLowerCase();
   switch (ext) {
-    case '.md':
-    case '.markdown':
-      return 'text/markdown';
-    case '.txt':
-      return 'text/plain';
-    case '.html':
-    case '.htm':
-      return 'text/html';
-    case '.json':
-      return 'application/json';
-    case '.pdf':
-      return 'application/pdf';
-    case '.png':
-    case '.jpg':
-    case '.jpeg':
-    case '.webp':
-    case '.gif':
-    case '.bmp':
-    case '.tiff':
-      return 'image/*';
-    case '.mp3':
-    case '.m4a':
-    case '.wav':
-    case '.ogg':
-    case '.flac':
-      return 'audio/*';
-    case '.mp4':
-    case '.mov':
-    case '.webm':
-    case '.mkv':
-      return 'video/*';
+    case ".md":
+    case ".markdown":
+      return "text/markdown";
+    case ".txt":
+      return "text/plain";
+    case ".html":
+    case ".htm":
+      return "text/html";
+    case ".json":
+      return "application/json";
+    case ".pdf":
+      return "application/pdf";
+    case ".png":
+    case ".jpg":
+    case ".jpeg":
+    case ".webp":
+    case ".gif":
+    case ".bmp":
+    case ".tiff":
+      return "image/*";
+    case ".mp3":
+    case ".m4a":
+    case ".wav":
+    case ".ogg":
+    case ".flac":
+      return "audio/*";
+    case ".mp4":
+    case ".mov":
+    case ".webm":
+    case ".mkv":
+      return "video/*";
     default:
-      return 'unknown';
+      return "unknown";
   }
 }
 
 /** Format a UTC date as YYYY-MM-DD for the archive subdir. */
 function archiveDateFolder(d: Date): string {
   const y = d.getUTCFullYear();
-  const m = String(d.getUTCMonth() + 1).padStart(2, '0');
-  const day = String(d.getUTCDate()).padStart(2, '0');
+  const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(d.getUTCDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
 }
 
@@ -138,13 +138,13 @@ function uniqueArchivePath(dir: string, filename: string): string {
 }
 
 export function createInboxFolderSource(opts: InboxFolderSourceOpts): IngestionSource {
-  if (!opts.inboxDir || typeof opts.inboxDir !== 'string') {
-    throw new Error('InboxFolderSource: inboxDir is required (typical: ~/.gbrain/inbox)');
+  if (!opts.inboxDir || typeof opts.inboxDir !== "string") {
+    throw new Error("InboxFolderSource: inboxDir is required (typical: ~/.gbrain/inbox)");
   }
-  const id = opts.id ?? 'inbox-folder';
-  const kind = 'inbox-folder';
+  const id = opts.id ?? "inbox-folder";
+  const kind = "inbox-folder";
   const inboxDirAbs = resolve(opts.inboxDir);
-  const archiveSubdir = opts.archiveSubdir ?? '.archived';
+  const archiveSubdir = opts.archiveSubdir ?? ".archived";
   const archiveDirAbs = join(inboxDirAbs, archiveSubdir);
   const archiveAfterEmit = opts.archiveAfterEmit ?? true;
   const awaitStabilityMs = opts.awaitStabilityMs ?? DEFAULT_STABILITY_MS;
@@ -156,7 +156,7 @@ export function createInboxFolderSource(opts: InboxFolderSourceOpts): IngestionS
   const pending: Map<string, NodeJS.Timeout> = new Map();
 
   function isUnderArchive(absPath: string): boolean {
-    return absPath.startsWith(archiveDirAbs + '/') || absPath === archiveDirAbs;
+    return absPath.startsWith(archiveDirAbs + "/") || absPath === archiveDirAbs;
   }
 
   async function handleAdd(absPath: string, ctx: IngestionSourceContext): Promise<void> {
@@ -168,7 +168,7 @@ export function createInboxFolderSource(opts: InboxFolderSourceOpts): IngestionS
       info = await lstat(absPath);
     } catch (err) {
       ctx.logger.warn(
-        `inbox-folder: failed to lstat ${absPath}: ${err instanceof Error ? err.message : String(err)}`,
+        `inbox-folder: failed to lstat ${absPath}: ${err instanceof Error ? err.message : String(err)}`
       );
       return;
     }
@@ -189,17 +189,20 @@ export function createInboxFolderSource(opts: InboxFolderSourceOpts): IngestionS
     // and let the daemon's processor pipeline handle extraction. Path-only
     // emit for binary keeps the daemon's hot path lean — a 200MB video
     // shouldn't be read into memory just to compute content_hash.
-    const isText = contentType === 'text/markdown' || contentType === 'text/plain' ||
-                   contentType === 'text/html' || contentType === 'application/json';
+    const isText =
+      contentType === "text/markdown" ||
+      contentType === "text/plain" ||
+      contentType === "text/html" ||
+      contentType === "application/json";
 
     let content: string;
     let contentHashSource: string;
     if (isText) {
       try {
-        content = await readFile(absPath, 'utf8');
+        content = await readFile(absPath, "utf8");
       } catch (err) {
         ctx.logger.warn(
-          `inbox-folder: failed to read ${absPath}: ${err instanceof Error ? err.message : String(err)}`,
+          `inbox-folder: failed to read ${absPath}: ${err instanceof Error ? err.message : String(err)}`
         );
         return;
       }
@@ -243,7 +246,7 @@ export function createInboxFolderSource(opts: InboxFolderSourceOpts): IngestionS
         await rename(absPath, dest);
       } catch (err) {
         ctx.logger.warn(
-          `inbox-folder: failed to archive ${absPath}: ${err instanceof Error ? err.message : String(err)}`,
+          `inbox-folder: failed to archive ${absPath}: ${err instanceof Error ? err.message : String(err)}`
         );
       }
     }
@@ -256,7 +259,7 @@ export function createInboxFolderSource(opts: InboxFolderSourceOpts): IngestionS
       pending.delete(absPath);
       void handleAdd(absPath, ctx);
     }, debounceMs);
-    if (typeof (timer as { unref?: () => void }).unref === 'function') {
+    if (typeof (timer as { unref?: () => void }).unref === "function") {
       (timer as { unref?: () => void }).unref!();
     }
     pending.set(absPath, timer);
@@ -279,7 +282,7 @@ export function createInboxFolderSource(opts: InboxFolderSourceOpts): IngestionS
           ctx.logger.warn(
             `inbox-folder: ${inboxDirAbs} is world-writable. Any unprivileged ` +
               `process on this host can plant content. Tighten with: ` +
-              `chmod 700 ${inboxDirAbs}`,
+              `chmod 700 ${inboxDirAbs}`
           );
         }
       } catch (_err) {
@@ -304,30 +307,30 @@ export function createInboxFolderSource(opts: InboxFolderSourceOpts): IngestionS
       const w = factory(inboxDirAbs, chokidarOpts);
       watcher = w;
 
-      w.on('error', (err: unknown) => {
+      w.on("error", (err: unknown) => {
         const msg = err instanceof Error ? err.message : String(err);
         ctx.logger.warn(`inbox-folder: chokidar error: ${msg}`);
       });
 
-      w.on('add', (path: string) => {
+      w.on("add", (path: string) => {
         if (isUnderArchive(path)) return; // belt + suspenders
         scheduleHandle(path, ctx);
       });
 
-      ctx.abortSignal.addEventListener('abort', () => {
+      ctx.abortSignal.addEventListener("abort", () => {
         for (const timer of pending.values()) clearTimeout(timer);
         pending.clear();
       });
 
       await new Promise<void>((resolveReady, rejectReady) => {
         let settled = false;
-        w.once('ready', () => {
+        w.once("ready", () => {
           if (settled) return;
           settled = true;
           ctx.logger.info(`inbox-folder: ready, watching ${inboxDirAbs}`);
           resolveReady();
         });
-        w.once('error', (err: unknown) => {
+        w.once("error", (err: unknown) => {
           if (settled) return;
           settled = true;
           rejectReady(err instanceof Error ? err : new Error(String(err)));
@@ -335,9 +338,11 @@ export function createInboxFolderSource(opts: InboxFolderSourceOpts): IngestionS
         const safetyTimer = setTimeout(() => {
           if (settled) return;
           settled = true;
-          rejectReady(new Error(`inbox-folder: chokidar did not emit 'ready' within 30s for ${inboxDirAbs}`));
+          rejectReady(
+            new Error(`inbox-folder: chokidar did not emit 'ready' within 30s for ${inboxDirAbs}`)
+          );
         }, 30_000);
-        if (typeof (safetyTimer as { unref?: () => void }).unref === 'function') {
+        if (typeof (safetyTimer as { unref?: () => void }).unref === "function") {
           (safetyTimer as { unref?: () => void }).unref!();
         }
       });
@@ -353,8 +358,8 @@ export function createInboxFolderSource(opts: InboxFolderSourceOpts): IngestionS
     },
 
     async healthCheck() {
-      if (!watcher) return { status: 'fail', message: 'watcher not initialized' };
-      return { status: 'ok' };
+      if (!watcher) return { status: "fail", message: "watcher not initialized" };
+      return { status: "ok" };
     },
   };
 }

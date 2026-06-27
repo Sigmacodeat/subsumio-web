@@ -13,9 +13,9 @@
  * 'operator' if unset — never hardcoded to a real name.
  */
 
-import { randomBytes } from 'node:crypto';
+import { randomBytes } from "node:crypto";
 
-const DEFAULT_IDENTITY = process.env.OPERATOR_IDENTITY || 'operator';
+const DEFAULT_IDENTITY = process.env.OPERATOR_IDENTITY || "operator";
 
 export class SessionManager {
   constructor() {
@@ -25,7 +25,7 @@ export class SessionManager {
   }
 
   create() {
-    const id = 'vs_' + randomBytes(16).toString('hex');
+    const id = "vs_" + randomBytes(16).toString("hex");
     this.sessions.set(id, {
       authCode: null,
       authenticated: false,
@@ -70,14 +70,14 @@ export class SessionManager {
 
   verify(code) {
     const s = this.getCurrent();
-    if (!s || !s.authCode) return { verified: false, reason: 'No code sent' };
-    const digits = String(code || '').replace(/\D/g, '');
+    if (!s || !s.authCode) return { verified: false, reason: "No code sent" };
+    const digits = String(code || "").replace(/\D/g, "");
     if (digits === s.authCode) {
       s.authenticated = true;
       s.identity = DEFAULT_IDENTITY;
       return { verified: true };
     }
-    return { verified: false, reason: 'Code does not match' };
+    return { verified: false, reason: "Code does not match" };
   }
 
   preAuthenticate(identity) {
@@ -123,7 +123,7 @@ export class TokenManager {
   }
 
   generate(identity = DEFAULT_IDENTITY, hours = 1) {
-    const token = randomBytes(32).toString('hex');
+    const token = randomBytes(32).toString("hex");
     const expires = Date.now() + (hours !== undefined ? hours : 1) * 3600000;
     this.tokens.set(token, { expires, identity });
     this._cleanup();
@@ -151,7 +151,7 @@ export class TokenManager {
 
 export class LogicalSession {
   constructor() {
-    this.id = 'vl_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+    this.id = "vl_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6);
     this.startTime = Date.now();
     this.reconnects = 0;
     this.notified = false;
@@ -169,25 +169,46 @@ export class LogicalSession {
  * Compute a 0-10 call quality rating from transcript + duration + reconnect count.
  * Used for post-call summaries; not user-facing.
  */
-export function calculateRating(transcript, duration, reconnects = 0, identity = '') {
+export function calculateRating(transcript, duration, reconnects = 0, identity = "") {
   let rating = 7;
   const issues = [];
 
-  if (duration < 15) { rating -= 2; issues.push('too short'); }
-  if (duration < 5) { rating -= 1; issues.push('extremely short'); }
-  if (reconnects > 0) { rating -= 1; issues.push(`${reconnects} reconnect(s)`); }
-  if (reconnects > 3) { rating -= 1; issues.push('excessive reconnects'); }
-  if (identity === 'unverified' && duration > 30) { rating -= 1; issues.push('unverified'); }
-  if (transcript.length <= 2) { rating -= 2; issues.push('minimal conversation'); }
+  if (duration < 15) {
+    rating -= 2;
+    issues.push("too short");
+  }
+  if (duration < 5) {
+    rating -= 1;
+    issues.push("extremely short");
+  }
+  if (reconnects > 0) {
+    rating -= 1;
+    issues.push(`${reconnects} reconnect(s)`);
+  }
+  if (reconnects > 3) {
+    rating -= 1;
+    issues.push("excessive reconnects");
+  }
+  if (identity === "unverified" && duration > 30) {
+    rating -= 1;
+    issues.push("unverified");
+  }
+  if (transcript.length <= 2) {
+    rating -= 2;
+    issues.push("minimal conversation");
+  }
 
-  const hadReconnect = transcript.some((t) => t.text?.includes('Reconnecting'));
-  if (hadReconnect) { rating -= 1; issues.push('connection dropped'); }
+  const hadReconnect = transcript.some((t) => t.text?.includes("Reconnecting"));
+  if (hadReconnect) {
+    rating -= 1;
+    issues.push("connection dropped");
+  }
 
   return { rating: Math.max(0, Math.min(10, rating)), issues };
 }
 
 export function ratingEmoji(score) {
-  return score >= 8 ? '⭐' : score >= 5 ? '🟡' : '🔴';
+  return score >= 8 ? "⭐" : score >= 5 ? "🟡" : "🔴";
 }
 
 // ── Auth tool gating ──────────────────────────────────────
@@ -196,8 +217,8 @@ export function ratingEmoji(score) {
 // vendored prompt + bridge code, and they intentionally name no specific
 // upstream agent. The canonical source of "is this tool callable?" is
 // `dispatchTool()` in `tools.mjs`, which always wins.
-const AUTH_REQUIRED = new Set(['log_to_brain', 'set_reminder', 'send_message']);
-const AUTH_FREE = new Set(['send_auth_code', 'verify_code', 'take_message']);
+const AUTH_REQUIRED = new Set(["log_to_brain", "set_reminder", "send_message"]);
+const AUTH_FREE = new Set(["send_auth_code", "verify_code", "take_message"]);
 
 export function requiresAuth(toolName) {
   return AUTH_REQUIRED.has(toolName);

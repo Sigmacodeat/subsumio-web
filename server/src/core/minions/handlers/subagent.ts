@@ -24,42 +24,41 @@
  * as P2 items in the plan file.
  */
 
-import Anthropic from '@anthropic-ai/sdk';
-import type { MinionJobContext, MinionJob } from '../types.ts';
-import { UnrecoverableError } from '../types.ts';
+import Anthropic from "@anthropic-ai/sdk";
+import type { MinionJobContext, MinionJob } from "../types.ts";
+import { UnrecoverableError } from "../types.ts";
 import type {
   ContentBlock,
   SubagentHandlerData,
   SubagentResult,
   SubagentStopReason,
   ToolDef,
-} from '../types.ts';
-import type { BrainEngine } from '../../engine.ts';
-import type { GBrainConfig } from '../../config.ts';
-import { loadConfig } from '../../config.ts';
-import { buildBrainTools, filterAllowedTools } from '../tools/brain-allowlist.ts';
-import {
-  acquireLease,
-  releaseLease,
-  renewLeaseWithBackoff,
-} from '../rate-leases.ts';
-import {
-  logSubagentSubmission,
-  logSubagentHeartbeat,
-} from './subagent-audit.ts';
-import { resolveModel, isAnthropicProvider, TIER_DEFAULTS } from '../../model-config.ts';
-import { buildSystemPrompt, DEFAULT_SUBAGENT_SYSTEM } from '../system-prompt.ts';
-import { toolLoop as gatewayToolLoop } from '../../ai/gateway.ts';
-import type { ChatToolDef, ChatMessage, ChatBlock, ChatResult, ToolHandler } from '../../ai/gateway.ts';
-import { classifyCapabilities } from '../../ai/capabilities.ts';
-import { randomUUIDv7 } from 'bun';
-import { resolveSpecialist } from '../specialist-defs.ts';
+} from "../types.ts";
+import type { BrainEngine } from "../../engine.ts";
+import type { GBrainConfig } from "../../config.ts";
+import { loadConfig } from "../../config.ts";
+import { buildBrainTools, filterAllowedTools } from "../tools/brain-allowlist.ts";
+import { acquireLease, releaseLease, renewLeaseWithBackoff } from "../rate-leases.ts";
+import { logSubagentSubmission, logSubagentHeartbeat } from "./subagent-audit.ts";
+import { resolveModel, isAnthropicProvider, TIER_DEFAULTS } from "../../model-config.ts";
+import { buildSystemPrompt, DEFAULT_SUBAGENT_SYSTEM } from "../system-prompt.ts";
+import { toolLoop as gatewayToolLoop } from "../../ai/gateway.ts";
+import type {
+  ChatToolDef,
+  ChatMessage,
+  ChatBlock,
+  ChatResult,
+  ToolHandler,
+} from "../../ai/gateway.ts";
+import { classifyCapabilities } from "../../ai/capabilities.ts";
+import { randomUUIDv7 } from "bun";
+import { resolveSpecialist } from "../specialist-defs.ts";
 
 // ── Defaults ────────────────────────────────────────────────
 
-const DEFAULT_MODEL = 'claude-sonnet-4-6';
+const DEFAULT_MODEL = "claude-sonnet-4-6";
 const DEFAULT_MAX_TURNS = 20;
-const DEFAULT_RATE_KEY = 'anthropic:messages';
+const DEFAULT_RATE_KEY = "anthropic:messages";
 
 /**
  * Resolve the rate-lease cap from the env var.
@@ -76,12 +75,12 @@ const DEFAULT_RATE_KEY = 'anthropic:messages';
  */
 export function resolveLeaseCap(raw: string | undefined): number {
   if (raw === undefined) return 32;
-  if (raw === 'unlimited' || raw === 'none') return Number.POSITIVE_INFINITY;
+  if (raw === "unlimited" || raw === "none") return Number.POSITIVE_INFINITY;
   const n = Number(raw);
   if (Number.isFinite(n) && n > 0) return n;
   throw new Error(
     `GBRAIN_ANTHROPIC_MAX_INFLIGHT="${raw}" is invalid. ` +
-    `Use a positive integer, "unlimited" (or "none"), or omit for default 32.`,
+      `Use a positive integer, "unlimited" (or "none"), or omit for default 32.`
   );
 }
 const DEFAULT_MAX_CONCURRENT = resolveLeaseCap(process.env.GBRAIN_ANTHROPIC_MAX_INFLIGHT);
@@ -98,7 +97,10 @@ const DEFAULT_SYSTEM = DEFAULT_SUBAGENT_SYSTEM;
  * structurally; tests can substitute a mock without the SDK import.
  */
 export interface MessagesClient {
-  create(params: Anthropic.MessageCreateParamsNonStreaming, opts?: { signal?: AbortSignal }): Promise<Anthropic.Message>;
+  create(
+    params: Anthropic.MessageCreateParamsNonStreaming,
+    opts?: { signal?: AbortSignal }
+  ): Promise<Anthropic.Message>;
 }
 
 export interface SubagentDeps {
@@ -132,7 +134,7 @@ export interface SubagentDeps {
 
 interface PersistedMessage {
   message_idx: number;
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   content_blocks: ContentBlock[];
   tokens_in: number | null;
   tokens_out: number | null;
@@ -146,7 +148,7 @@ interface PersistedToolExec {
   tool_use_id: string;
   tool_name: string;
   input: unknown;
-  status: 'pending' | 'complete' | 'failed';
+  status: "pending" | "complete" | "failed";
   output: unknown;
   error: string | null;
 }
@@ -168,15 +170,15 @@ export function makeSubagentHandler(deps: SubagentDeps) {
   // site (subagent.ts invokes client.create(...) with client === sdk.messages).
   const makeAnthropic = deps.makeAnthropic ?? (() => new Anthropic());
   const client: MessagesClient = deps.client ?? makeAnthropic().messages;
-  const config = deps.config ?? loadConfig() ?? ({ engine: 'postgres' } as GBrainConfig);
+  const config = deps.config ?? loadConfig() ?? ({ engine: "postgres" } as GBrainConfig);
   const rateLeaseKey = deps.rateLeaseKey ?? DEFAULT_RATE_KEY;
   const maxConcurrent = deps.maxConcurrent ?? DEFAULT_MAX_CONCURRENT;
   const leaseTtlMs = deps.leaseTtlMs ?? DEFAULT_LEASE_TTL_MS;
 
   return async function subagentHandler(ctx: MinionJobContext): Promise<SubagentResult> {
     const data = (ctx.data ?? {}) as unknown as SubagentHandlerData;
-    if (!data.prompt || typeof data.prompt !== 'string') {
-      throw new Error('subagent job data.prompt is required (string)');
+    if (!data.prompt || typeof data.prompt !== "string") {
+      throw new Error("subagent job data.prompt is required (string)");
     }
 
     // v0.43 — Specialist subagent definition resolution.
@@ -215,25 +217,26 @@ export function makeSubagentHandler(deps: SubagentDeps) {
     // invocations and any code path that bypasses the queue's capability check.
     if (data.model) {
       const verdict = classifyCapabilities(data.model);
-      if (verdict === 'unusable:no_tools') {
+      if (verdict === "unusable:no_tools") {
         throw new Error(
           `subagent job rejected: data.model "${data.model}" lacks native tool calling. ` +
-          `The subagent loop dispatches brain ops via tool calls — without tool support the loop has no way to run.`,
+            `The subagent loop dispatches brain ops via tool calls — without tool support the loop has no way to run.`
         );
       }
-      if (verdict === 'unknown') {
+      if (verdict === "unknown") {
         throw new Error(
           `subagent job rejected: data.model "${data.model}" references an unknown provider. ` +
-          `Use format provider:model where provider matches a recipe in src/core/ai/recipes/.`,
+            `Use format provider:model where provider matches a recipe in src/core/ai/recipes/.`
         );
       }
     }
-    const model = data.model
-      ?? await resolveModel(engine, {
-        tier: 'subagent',
-        configKey: 'models.subagent',
+    const model =
+      data.model ??
+      (await resolveModel(engine, {
+        tier: "subagent",
+        configKey: "models.subagent",
         fallback: TIER_DEFAULTS.subagent,
-      });
+      }));
     const maxTurns = data.max_turns ?? DEFAULT_MAX_TURNS;
     // v0.41 Approach C: systemPrompt is now built AFTER toolDefs (a few
     // lines below) so the renderer can splice a tool-usage preamble
@@ -245,15 +248,16 @@ export function makeSubagentHandler(deps: SubagentDeps) {
     // route ALL subagent jobs through gateway.toolLoop() (works for every
     // provider in src/core/ai/recipes/). When OFF, route through the legacy
     // Anthropic-direct path AND refuse non-Anthropic models loudly.
-    const useGatewayLoopRaw = await engine.getConfig('agent.use_gateway_loop').catch(() => null);
-    const useGatewayLoop = typeof useGatewayLoopRaw === 'string' &&
-      (useGatewayLoopRaw === 'true' || useGatewayLoopRaw === '1');
+    const useGatewayLoopRaw = await engine.getConfig("agent.use_gateway_loop").catch(() => null);
+    const useGatewayLoop =
+      typeof useGatewayLoopRaw === "string" &&
+      (useGatewayLoopRaw === "true" || useGatewayLoopRaw === "1");
     if (!useGatewayLoop && !isAnthropicProvider(model)) {
       throw new Error(
         `subagent job: resolved model "${model}" is non-Anthropic but agent.use_gateway_loop is not enabled. ` +
-        `Enable the gateway-native loop to run on this provider: ` +
-        `\`gbrain config set agent.use_gateway_loop true\`. ` +
-        `Or use an Anthropic model (e.g. anthropic:claude-sonnet-4-6).`,
+          `Enable the gateway-native loop to run on this provider: ` +
+          `\`gbrain config set agent.use_gateway_loop true\`. ` +
+          `Or use an Anthropic model (e.g. anthropic:claude-sonnet-4-6).`
       );
     }
 
@@ -263,19 +267,23 @@ export function makeSubagentHandler(deps: SubagentDeps) {
     // allow-list — flows through buildBrainTools → the put_page schema
     // description AND the OperationContext, so the model's tool schema and
     // the server-side check stay in sync).
-    const registry = deps.toolRegistry ?? buildBrainTools({
-      subagentId: ctx.id,
-      engine,
-      config,
-      brainId: data.brain_id,
-      allowedSlugPrefixes: data.allowed_slug_prefixes,
-      // v0.43 multi-tenant: tenant jobs (web-api stamp, supervisor-propagated)
-      // scope every brain tool to the tenant's source.
-      sourceId: typeof data._source_id === 'string' && data._source_id ? data._source_id : undefined,
-    });
-    const toolDefs = data.allowed_tools && data.allowed_tools.length > 0
-      ? filterAllowedTools(registry, data.allowed_tools)
-      : registry;
+    const registry =
+      deps.toolRegistry ??
+      buildBrainTools({
+        subagentId: ctx.id,
+        engine,
+        config,
+        brainId: data.brain_id,
+        allowedSlugPrefixes: data.allowed_slug_prefixes,
+        // v0.43 multi-tenant: tenant jobs (web-api stamp, supervisor-propagated)
+        // scope every brain tool to the tenant's source.
+        sourceId:
+          typeof data._source_id === "string" && data._source_id ? data._source_id : undefined,
+      });
+    const toolDefs =
+      data.allowed_tools && data.allowed_tools.length > 0
+        ? filterAllowedTools(registry, data.allowed_tools)
+        : registry;
 
     // v0.41 Approach C: render the final system prompt now that toolDefs
     // is known. Splices a deterministic tool-usage preamble listing each
@@ -285,12 +293,12 @@ export function makeSubagentHandler(deps: SubagentDeps) {
     });
 
     logSubagentSubmission({
-      caller: 'worker',
+      caller: "worker",
       remote: true,
       job_id: ctx.id,
       model,
       tools_count: toolDefs.length,
-      allowed_tools: toolDefs.map(t => t.name),
+      allowed_tools: toolDefs.map((t) => t.name),
     });
 
     // v0.38 S1.5 — gateway path. Route here when the feature flag is on.
@@ -309,20 +317,21 @@ export function makeSubagentHandler(deps: SubagentDeps) {
     // ── Load prior state (replay) ───────────────────────────
     const priorMessages = await loadPriorMessages(engine, ctx.id);
     const priorTools = await loadPriorTools(engine, ctx.id);
-    const priorToolByUseId = new Map(priorTools.map(t => [t.tool_use_id, t]));
+    const priorToolByUseId = new Map(priorTools.map((t) => [t.tool_use_id, t]));
 
     // Rebuild the Anthropic messages array from persisted rows.
-    const anthroMessages: Anthropic.MessageParam[] = priorMessages.length > 0
-      ? priorMessages.map(m => ({ role: m.role, content: m.content_blocks as any }))
-      : [{ role: 'user', content: data.prompt }];
+    const anthroMessages: Anthropic.MessageParam[] =
+      priorMessages.length > 0
+        ? priorMessages.map((m) => ({ role: m.role, content: m.content_blocks as any }))
+        : [{ role: "user", content: data.prompt }];
 
     // If we had no prior messages, persist the seed user message.
     let nextMessageIdx = priorMessages.length;
     if (priorMessages.length === 0) {
       await persistMessage(engine, ctx.id, {
         message_idx: 0,
-        role: 'user',
-        content_blocks: [{ type: 'text', text: data.prompt }],
+        role: "user",
+        content_blocks: [{ type: "text", text: data.prompt }],
         tokens_in: null,
         tokens_out: null,
         tokens_cache_read: null,
@@ -342,7 +351,7 @@ export function makeSubagentHandler(deps: SubagentDeps) {
     }
 
     // Count assistant messages already persisted toward max_turns.
-    let assistantTurns = priorMessages.filter(m => m.role === 'assistant').length;
+    let assistantTurns = priorMessages.filter((m) => m.role === "assistant").length;
 
     // ── Replay reconciliation ───────────────────────────────
     //
@@ -358,22 +367,27 @@ export function makeSubagentHandler(deps: SubagentDeps) {
     // being already committed. Return immediately with the persisted
     // text as finalText. Mirrors the live-loop terminal logic below.
     const last = priorMessages[priorMessages.length - 1];
-    if (last && last.role === 'assistant') {
+    if (last && last.role === "assistant") {
       const pendingToolUses = last.content_blocks.filter(
-        (b): b is { type: 'tool_use'; id: string; name: string; input: unknown } & Record<string, unknown> =>
-          b.type === 'tool_use',
+        (
+          b
+        ): b is { type: "tool_use"; id: string; name: string; input: unknown } & Record<
+          string,
+          unknown
+        > => b.type === "tool_use"
       );
       if (pendingToolUses.length === 0) {
         const finalText = last.content_blocks
-          .filter((b): b is { type: 'text'; text: string } & Record<string, unknown> =>
-            b.type === 'text' && typeof (b as { text?: unknown }).text === 'string',
+          .filter(
+            (b): b is { type: "text"; text: string } & Record<string, unknown> =>
+              b.type === "text" && typeof (b as { text?: unknown }).text === "string"
           )
-          .map(b => b.text)
-          .join('\n');
+          .map((b) => b.text)
+          .join("\n");
         return {
           result: finalText,
           turns_count: assistantTurns,
-          stop_reason: 'end_turn',
+          stop_reason: "end_turn",
           tokens: tokenTotals,
         };
       }
@@ -381,55 +395,85 @@ export function makeSubagentHandler(deps: SubagentDeps) {
         const synthesizedResults: ContentBlock[] = [];
         for (const use of pendingToolUses) {
           const prior = priorToolByUseId.get(use.id);
-          if (prior?.status === 'complete') {
+          if (prior?.status === "complete") {
             synthesizedResults.push({
-              type: 'tool_result',
+              type: "tool_result",
               tool_use_id: use.id,
               content: asStringIfNotObject(prior.output),
             } as ContentBlock);
             continue;
           }
-          if (prior?.status === 'failed') {
+          if (prior?.status === "failed") {
             synthesizedResults.push({
-              type: 'tool_result',
+              type: "tool_result",
               tool_use_id: use.id,
-              content: prior.error ?? 'tool failed',
+              content: prior.error ?? "tool failed",
               is_error: true,
             } as ContentBlock);
             continue;
           }
           // pending or no row yet — try to dispatch.
-          const toolDef = toolDefs.find(t => t.name === use.name);
+          const toolDef = toolDefs.find((t) => t.name === use.name);
           if (!toolDef) {
             await persistToolExecFailed(
-              engine, ctx.id, last.message_idx, use.id, use.name, use.input,
-              `tool "${use.name}" is not in the registry for this subagent`,
+              engine,
+              ctx.id,
+              last.message_idx,
+              use.id,
+              use.name,
+              use.input,
+              `tool "${use.name}" is not in the registry for this subagent`
             );
             synthesizedResults.push({
-              type: 'tool_result', tool_use_id: use.id,
-              content: `tool "${use.name}" is not available`, is_error: true,
+              type: "tool_result",
+              tool_use_id: use.id,
+              content: `tool "${use.name}" is not available`,
+              is_error: true,
             } as ContentBlock);
             continue;
           }
-          if (prior?.status === 'pending' && !toolDef.idempotent) {
-            throw new Error(`non-idempotent tool "${use.name}" pending on resume; cannot safely re-run`);
+          if (prior?.status === "pending" && !toolDef.idempotent) {
+            throw new Error(
+              `non-idempotent tool "${use.name}" pending on resume; cannot safely re-run`
+            );
           }
-          await persistToolExecPending(engine, ctx.id, last.message_idx, use.id, use.name, use.input);
+          await persistToolExecPending(
+            engine,
+            ctx.id,
+            last.message_idx,
+            use.id,
+            use.name,
+            use.input
+          );
           try {
             const output = await toolDef.execute(use.input, {
-              engine, jobId: ctx.id, remote: true, signal: ctx.signal,
+              engine,
+              jobId: ctx.id,
+              remote: true,
+              signal: ctx.signal,
             });
             await persistToolExecComplete(engine, ctx.id, use.id, output);
             synthesizedResults.push({
-              type: 'tool_result', tool_use_id: use.id,
+              type: "tool_result",
+              tool_use_id: use.id,
               content: asStringIfNotObject(output),
             } as ContentBlock);
           } catch (e) {
             const errText = e instanceof Error ? (e.stack ?? e.message) : String(e);
-            await persistToolExecFailed(engine, ctx.id, last.message_idx, use.id, use.name, use.input, errText);
+            await persistToolExecFailed(
+              engine,
+              ctx.id,
+              last.message_idx,
+              use.id,
+              use.name,
+              use.input,
+              errText
+            );
             synthesizedResults.push({
-              type: 'tool_result', tool_use_id: use.id,
-              content: errText, is_error: true,
+              type: "tool_result",
+              tool_use_id: use.id,
+              content: errText,
+              is_error: true,
             } as ContentBlock);
           }
         }
@@ -437,11 +481,15 @@ export function makeSubagentHandler(deps: SubagentDeps) {
         const userIdx = nextMessageIdx++;
         await persistMessage(engine, ctx.id, {
           message_idx: userIdx,
-          role: 'user',
+          role: "user",
           content_blocks: synthesizedResults,
-          tokens_in: null, tokens_out: null, tokens_cache_read: null, tokens_cache_create: null, model: null,
+          tokens_in: null,
+          tokens_out: null,
+          tokens_cache_read: null,
+          tokens_cache_create: null,
+          model: null,
         });
-        anthroMessages.push({ role: 'user', content: synthesizedResults as any });
+        anthroMessages.push({ role: "user", content: synthesizedResults as any });
       }
     }
 
@@ -453,13 +501,13 @@ export function makeSubagentHandler(deps: SubagentDeps) {
       const messages = await ctx.readInbox();
       let added = 0;
       for (const m of messages) {
-        if (m.sender !== 'user') continue;
-        const text = typeof m.payload === 'string' ? m.payload : JSON.stringify(m.payload);
-        const userBlock: Anthropic.TextBlock = { type: 'text', text };
-        anthroMessages.push({ role: 'user', content: [userBlock] });
+        if (m.sender !== "user") continue;
+        const text = typeof m.payload === "string" ? m.payload : JSON.stringify(m.payload);
+        const userBlock: Anthropic.TextBlock = { type: "text", text };
+        anthroMessages.push({ role: "user", content: [userBlock] });
         await persistMessage(engine, ctx.id, {
           message_idx: nextMessageIdx++,
-          role: 'user',
+          role: "user",
           content_blocks: [userBlock as unknown as ContentBlock],
           tokens_in: null,
           tokens_out: null,
@@ -471,7 +519,7 @@ export function makeSubagentHandler(deps: SubagentDeps) {
         // Log for audit trail.
         logSubagentHeartbeat({
           job_id: ctx.id,
-          event: 'user_inbox_message_consumed',
+          event: "user_inbox_message_consumed",
           message_id: m.id,
           sender: m.sender,
         });
@@ -484,17 +532,17 @@ export function makeSubagentHandler(deps: SubagentDeps) {
     await drainUserInbox();
 
     // ── Main loop ───────────────────────────────────────────
-    let stopReason: SubagentStopReason = 'error';
-    let finalText = '';
+    let stopReason: SubagentStopReason = "error";
+    let finalText = "";
 
     while (true) {
       if (assistantTurns >= maxTurns) {
-        stopReason = 'max_turns';
+        stopReason = "max_turns";
         break;
       }
       if (ctx.signal.aborted || ctx.shutdownSignal.aborted) {
-        stopReason = 'error';
-        throw new Error('subagent aborted before turn');
+        stopReason = "error";
+        throw new Error("subagent aborted before turn");
       }
 
       // Check inbox again at the start of every turn — user may have
@@ -527,7 +575,9 @@ export function makeSubagentHandler(deps: SubagentDeps) {
       // ordering is load-bearing: a budget throw must NOT consume a
       // lease slot, because the lease is the rate-limit pacer for the
       // entire fleet.
-      const lease = await acquireLease(engine, rateLeaseKey, ctx.id, maxConcurrent, { ttlMs: leaseTtlMs });
+      const lease = await acquireLease(engine, rateLeaseKey, ctx.id, maxConcurrent, {
+        ttlMs: leaseTtlMs,
+      });
       if (!lease.acquired) {
         // No slots — treat as a renewable error so the worker re-claims
         // the job later. Don't fail terminally.
@@ -537,7 +587,7 @@ export function makeSubagentHandler(deps: SubagentDeps) {
       let assistantMsg: Anthropic.Message;
       const turnIdx = assistantTurns;
       const t0 = Date.now();
-      logSubagentHeartbeat({ job_id: ctx.id, event: 'llm_call_started', turn_idx: turnIdx });
+      logSubagentHeartbeat({ job_id: ctx.id, event: "llm_call_started", turn_idx: turnIdx });
 
       // Renewal is short-lived; for single-call turns the initial TTL
       // covers the whole request. A mid-call renewal loop would add
@@ -550,7 +600,7 @@ export function makeSubagentHandler(deps: SubagentDeps) {
           model: stripProviderPrefix(model),
           max_tokens: 4096,
           system: [
-            { type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } },
+            { type: "text", text: systemPrompt, cache_control: { type: "ephemeral" } },
           ] as any,
           messages: anthroMessages,
           ...(toolDefs.length > 0
@@ -563,7 +613,7 @@ export function makeSubagentHandler(deps: SubagentDeps) {
                   };
                   // Cache only the last tool def — Anthropic treats cache_control
                   // as "cache everything up to and including this block".
-                  if (i === toolDefs.length - 1) def.cache_control = { type: 'ephemeral' };
+                  if (i === toolDefs.length - 1) def.cache_control = { type: "ephemeral" };
                   return def;
                 }),
               }
@@ -604,7 +654,7 @@ export function makeSubagentHandler(deps: SubagentDeps) {
 
       logSubagentHeartbeat({
         job_id: ctx.id,
-        event: 'llm_call_completed',
+        event: "llm_call_completed",
         turn_idx: turnIdx,
         ms_elapsed: ms,
         tokens: { in: inTokens, out: outTokens, cache_read: cacheRead, cache_create: cacheCreate },
@@ -624,7 +674,7 @@ export function makeSubagentHandler(deps: SubagentDeps) {
       const assistantIdx = nextMessageIdx++;
       await persistMessage(engine, ctx.id, {
         message_idx: assistantIdx,
-        role: 'assistant',
+        role: "assistant",
         content_blocks: blocks,
         tokens_in: inTokens,
         tokens_out: outTokens,
@@ -632,21 +682,25 @@ export function makeSubagentHandler(deps: SubagentDeps) {
         tokens_cache_create: cacheCreate,
         model,
       });
-      anthroMessages.push({ role: 'assistant', content: blocks as any });
+      anthroMessages.push({ role: "assistant", content: blocks as any });
       assistantTurns++;
 
       // 4. Collect tool_use blocks. If none, we're done.
       const toolUses = blocks.filter(
-        (b): b is { type: 'tool_use'; id: string; name: string; input: unknown } & Record<string, unknown> =>
-          b.type === 'tool_use',
+        (
+          b
+        ): b is { type: "tool_use"; id: string; name: string; input: unknown } & Record<
+          string,
+          unknown
+        > => b.type === "tool_use"
       );
       if (toolUses.length === 0) {
-        stopReason = 'end_turn';
+        stopReason = "end_turn";
         // Concatenate text blocks as the final answer.
         finalText = blocks
-          .filter(b => b.type === 'text' && typeof b.text === 'string')
-          .map(b => b.text as string)
-          .join('\n');
+          .filter((b) => b.type === "text" && typeof b.text === "string")
+          .map((b) => b.text as string)
+          .join("\n");
         break;
       }
 
@@ -654,30 +708,35 @@ export function makeSubagentHandler(deps: SubagentDeps) {
       const toolResults: ContentBlock[] = [];
       for (const use of toolUses) {
         if (ctx.signal.aborted || ctx.shutdownSignal.aborted) {
-          throw new Error('subagent aborted during tool dispatch');
+          throw new Error("subagent aborted during tool dispatch");
         }
 
         const toolName = use.name;
-        const toolDef = toolDefs.find(t => t.name === toolName);
+        const toolDef = toolDefs.find((t) => t.name === toolName);
         if (!toolDef) {
           // Model called a tool we didn't expose. Mark execution failed
           // with a clear error and feed the error back in the next turn.
           await persistToolExecFailed(
-            engine, ctx.id, assistantIdx, use.id, toolName, use.input,
-            `tool "${toolName}" is not in the registry for this subagent`,
+            engine,
+            ctx.id,
+            assistantIdx,
+            use.id,
+            toolName,
+            use.input,
+            `tool "${toolName}" is not in the registry for this subagent`
           );
           toolResults.push({
-            type: 'tool_result',
+            type: "tool_result",
             tool_use_id: use.id,
             content: `tool "${toolName}" is not available`,
             is_error: true,
           } as ContentBlock);
           logSubagentHeartbeat({
             job_id: ctx.id,
-            event: 'tool_failed',
+            event: "tool_failed",
             turn_idx: turnIdx,
             tool_name: toolName,
-            error: 'not in registry',
+            error: "not in registry",
           });
           continue;
         }
@@ -685,31 +744,38 @@ export function makeSubagentHandler(deps: SubagentDeps) {
         // Replay: if we already have a row for this tool_use_id, trust it
         // unless status='pending' and the tool is idempotent (re-run).
         const prior = priorToolByUseId.get(use.id);
-        if (prior && prior.status === 'complete') {
+        if (prior && prior.status === "complete") {
           toolResults.push({
-            type: 'tool_result',
+            type: "tool_result",
             tool_use_id: use.id,
             content: asStringIfNotObject(prior.output),
           } as ContentBlock);
           continue;
         }
-        if (prior && prior.status === 'failed') {
+        if (prior && prior.status === "failed") {
           toolResults.push({
-            type: 'tool_result',
+            type: "tool_result",
             tool_use_id: use.id,
-            content: prior.error ?? 'tool failed',
+            content: prior.error ?? "tool failed",
             is_error: true,
           } as ContentBlock);
           continue;
         }
-        if (prior && prior.status === 'pending' && !toolDef.idempotent) {
+        if (prior && prior.status === "pending" && !toolDef.idempotent) {
           // Non-idempotent and we don't know the outcome — fail the job.
-          throw new Error(`non-idempotent tool "${toolName}" pending on resume; cannot safely re-run`);
+          throw new Error(
+            `non-idempotent tool "${toolName}" pending on resume; cannot safely re-run`
+          );
         }
 
         // Fresh or idempotent-replay dispatch.
         await persistToolExecPending(engine, ctx.id, assistantIdx, use.id, toolName, use.input);
-        logSubagentHeartbeat({ job_id: ctx.id, event: 'tool_called', turn_idx: turnIdx, tool_name: toolName });
+        logSubagentHeartbeat({
+          job_id: ctx.id,
+          event: "tool_called",
+          turn_idx: turnIdx,
+          tool_name: toolName,
+        });
 
         const toolStart = Date.now();
         try {
@@ -722,31 +788,37 @@ export function makeSubagentHandler(deps: SubagentDeps) {
           await persistToolExecComplete(engine, ctx.id, use.id, output);
           logSubagentHeartbeat({
             job_id: ctx.id,
-            event: 'tool_result',
+            event: "tool_result",
             turn_idx: turnIdx,
             tool_name: toolName,
             ms_elapsed: Date.now() - toolStart,
           });
           toolResults.push({
-            type: 'tool_result',
+            type: "tool_result",
             tool_use_id: use.id,
             content: asStringIfNotObject(output),
           } as ContentBlock);
         } catch (e) {
-          const errText = e instanceof Error
-            ? (e.stack ?? e.message)
-            : String(e);
-          await persistToolExecFailed(engine, ctx.id, assistantIdx, use.id, toolName, use.input, errText);
+          const errText = e instanceof Error ? (e.stack ?? e.message) : String(e);
+          await persistToolExecFailed(
+            engine,
+            ctx.id,
+            assistantIdx,
+            use.id,
+            toolName,
+            use.input,
+            errText
+          );
           logSubagentHeartbeat({
             job_id: ctx.id,
-            event: 'tool_failed',
+            event: "tool_failed",
             turn_idx: turnIdx,
             tool_name: toolName,
             ms_elapsed: Date.now() - toolStart,
             error: errText,
           });
           toolResults.push({
-            type: 'tool_result',
+            type: "tool_result",
             tool_use_id: use.id,
             content: errText,
             is_error: true,
@@ -759,7 +831,7 @@ export function makeSubagentHandler(deps: SubagentDeps) {
       const userIdx = nextMessageIdx++;
       await persistMessage(engine, ctx.id, {
         message_idx: userIdx,
-        role: 'user',
+        role: "user",
         content_blocks: toolResults,
         tokens_in: null,
         tokens_out: null,
@@ -767,7 +839,7 @@ export function makeSubagentHandler(deps: SubagentDeps) {
         tokens_cache_create: null,
         model: null,
       });
-      anthroMessages.push({ role: 'user', content: toolResults as any });
+      anthroMessages.push({ role: "user", content: toolResults as any });
     }
 
     return {
@@ -810,7 +882,7 @@ async function runSubagentViaGateway(args: GatewayRunArgs): Promise<SubagentResu
 
   // Map ToolDef → ChatToolDef (gateway shape). The gateway's chat() bridges
   // this to provider-specific tool definitions via the Vercel AI SDK.
-  const chatTools: ChatToolDef[] = toolDefs.map(t => ({
+  const chatTools: ChatToolDef[] = toolDefs.map((t) => ({
     name: t.name,
     description: t.description,
     inputSchema: t.input_schema as Record<string, unknown>,
@@ -836,7 +908,10 @@ async function runSubagentViaGateway(args: GatewayRunArgs): Promise<SubagentResu
   // Load prior state (replay support via D5 shim for legacy v1 rows).
   const priorMessages = await loadPriorMessages(engine, ctx.id);
   const priorTools = await loadPriorToolsV2(engine, ctx.id);
-  const priorToolsByStableKey = new Map<string, { status: 'pending' | 'complete' | 'failed'; output?: unknown; error?: string }>();
+  const priorToolsByStableKey = new Map<
+    string,
+    { status: "pending" | "complete" | "failed"; output?: unknown; error?: string }
+  >();
   for (const row of priorTools) {
     priorToolsByStableKey.set(row.stableKey, {
       status: row.status,
@@ -848,23 +923,22 @@ async function runSubagentViaGateway(args: GatewayRunArgs): Promise<SubagentResu
   // Convert prior Anthropic-shape messages → ChatMessage with ChatBlock content.
   // v1 rows store Anthropic content blocks ({type:'tool_use'|'tool_result'|...});
   // we adapt them to ChatBlock shape (type: 'tool-call' | 'tool-result' | 'text').
-  const priorChatMessages: ChatMessage[] = priorMessages.map(m => ({
-    role: m.role as 'user' | 'assistant',
+  const priorChatMessages: ChatMessage[] = priorMessages.map((m) => ({
+    role: m.role as "user" | "assistant",
     content: adaptContentBlocksToChatBlocks(m.content_blocks),
   }));
 
   // Initial seed message if no prior state.
-  const initialMessages: ChatMessage[] = priorChatMessages.length === 0
-    ? [{ role: 'user', content: data.prompt }]
-    : [];
+  const initialMessages: ChatMessage[] =
+    priorChatMessages.length === 0 ? [{ role: "user", content: data.prompt }] : [];
 
   // Persist seed user message at idx 0 if fresh start.
   let nextMessageIdx = priorChatMessages.length;
   if (nextMessageIdx === 0) {
     await persistMessage(engine, ctx.id, {
       message_idx: 0,
-      role: 'user',
-      content_blocks: [{ type: 'text', text: data.prompt }] as ContentBlock[],
+      role: "user",
+      content_blocks: [{ type: "text", text: data.prompt }] as ContentBlock[],
       tokens_in: null,
       tokens_out: null,
       tokens_cache_read: null,
@@ -876,7 +950,7 @@ async function runSubagentViaGateway(args: GatewayRunArgs): Promise<SubagentResu
 
   // Capability detection drives cache_control injection.
   const verdict = classifyCapabilities(model);
-  const cacheSystem = verdict === 'ok' || verdict === 'degraded:no_parallel';
+  const cacheSystem = verdict === "ok" || verdict === "degraded:no_parallel";
 
   // Heartbeat bridge.
   const heartbeat = (event: string, payload: Record<string, unknown>) => {
@@ -908,7 +982,7 @@ async function runSubagentViaGateway(args: GatewayRunArgs): Promise<SubagentResu
     replayState: {
       priorMessages: priorChatMessages,
       priorTools: priorToolsByStableKey,
-      nextTurnIdx: priorChatMessages.filter(m => m.role === 'assistant').length,
+      nextTurnIdx: priorChatMessages.filter((m) => m.role === "assistant").length,
       nextMessageIdx,
     },
     onAssistantTurn: async (turnIdx, messageIdx, blocks, usage, modelStr) => {
@@ -917,7 +991,7 @@ async function runSubagentViaGateway(args: GatewayRunArgs): Promise<SubagentResu
       // contract; the D5 shim handles legacy reads from v1 rows.
       await persistMessage(engine, ctx.id, {
         message_idx: messageIdx,
-        role: 'assistant',
+        role: "assistant",
         content_blocks: blocks as unknown as ContentBlock[],
         tokens_in: usage.input_tokens,
         tokens_out: usage.output_tokens,
@@ -930,7 +1004,7 @@ async function runSubagentViaGateway(args: GatewayRunArgs): Promise<SubagentResu
         output: usage.output_tokens,
         cache_read: usage.cache_read_tokens,
       });
-      heartbeat('llm_call_completed', { turn_idx: turnIdx, tokens: usage });
+      heartbeat("llm_call_completed", { turn_idx: turnIdx, tokens: usage });
     },
     onToolCallStart: async (turnIdx, messageIdx, ordinal, toolName, input, providerToolCallId) => {
       // CRITICAL — read back the canonical gbrain_tool_use_id from RETURNING,
@@ -950,10 +1024,19 @@ async function runSubagentViaGateway(args: GatewayRunArgs): Promise<SubagentResu
          ON CONFLICT (job_id, message_idx, ordinal) DO UPDATE
            SET status = subagent_tool_executions.status
          RETURNING gbrain_tool_use_id::text AS gbrain_tool_use_id`,
-        [ctx.id, messageIdx, providerToolCallId, toolName, JSON.stringify(input ?? null), ordinal, candidateId, recipeIdFromModel(model)],
+        [
+          ctx.id,
+          messageIdx,
+          providerToolCallId,
+          toolName,
+          JSON.stringify(input ?? null),
+          ordinal,
+          candidateId,
+          recipeIdFromModel(model),
+        ]
       );
       const gbrainToolUseId = rows[0]?.gbrain_tool_use_id ?? candidateId;
-      heartbeat('tool_called', { turn_idx: turnIdx, tool_name: toolName });
+      heartbeat("tool_called", { turn_idx: turnIdx, tool_name: toolName });
       return { gbrainToolUseId };
     },
     onToolCallComplete: async (gbrainToolUseId, output) => {
@@ -961,7 +1044,7 @@ async function runSubagentViaGateway(args: GatewayRunArgs): Promise<SubagentResu
         `UPDATE subagent_tool_executions
            SET status = 'complete', output = $1::jsonb, ended_at = now()
          WHERE gbrain_tool_use_id::text = $2`,
-        [JSON.stringify(output ?? null), gbrainToolUseId],
+        [JSON.stringify(output ?? null), gbrainToolUseId]
       );
     },
     onToolCallFailed: async (gbrainToolUseId, errorMsg) => {
@@ -969,7 +1052,7 @@ async function runSubagentViaGateway(args: GatewayRunArgs): Promise<SubagentResu
         `UPDATE subagent_tool_executions
            SET status = 'failed', error = $1, ended_at = now()
          WHERE gbrain_tool_use_id::text = $2`,
-        [errorMsg, gbrainToolUseId],
+        [errorMsg, gbrainToolUseId]
       );
     },
     onHeartbeat: heartbeat,
@@ -977,17 +1060,18 @@ async function runSubagentViaGateway(args: GatewayRunArgs): Promise<SubagentResu
 
   // Map gateway stop reason to SubagentStopReason. SubagentStopReason has
   // {end_turn, max_turns, refusal, error}; aborted maps to error.
-  const stopReason: SubagentStopReason = result.stopReason === 'end'
-    ? 'end_turn'
-    : result.stopReason === 'max_turns'
-      ? 'max_turns'
-      : result.stopReason === 'refusal'
-        ? 'refusal'
-        : result.stopReason === 'content_filter'
-          ? 'refusal'
-          : result.stopReason === 'aborted'
-            ? 'error'
-            : 'end_turn';
+  const stopReason: SubagentStopReason =
+    result.stopReason === "end"
+      ? "end_turn"
+      : result.stopReason === "max_turns"
+        ? "max_turns"
+        : result.stopReason === "refusal"
+          ? "refusal"
+          : result.stopReason === "content_filter"
+            ? "refusal"
+            : result.stopReason === "aborted"
+              ? "error"
+              : "end_turn";
 
   return {
     result: result.finalText,
@@ -1003,8 +1087,8 @@ async function runSubagentViaGateway(args: GatewayRunArgs): Promise<SubagentResu
 }
 
 function recipeIdFromModel(modelString: string): string {
-  const idx = modelString.indexOf(':');
-  return idx > 0 ? modelString.slice(0, idx) : 'anthropic';
+  const idx = modelString.indexOf(":");
+  return idx > 0 ? modelString.slice(0, idx) : "anthropic";
 }
 
 /**
@@ -1025,7 +1109,7 @@ function recipeIdFromModel(modelString: string): string {
  * because those readers want the provider info.
  */
 export function stripProviderPrefix(modelString: string): string {
-  const idx = modelString.indexOf(':');
+  const idx = modelString.indexOf(":");
   return idx > 0 ? modelString.slice(idx + 1) : modelString;
 }
 
@@ -1035,45 +1119,49 @@ export function stripProviderPrefix(modelString: string): string {
  * (the JSONB column accepts both shapes; v2 writes carry the new vocabulary).
  */
 function adaptContentBlocksToChatBlocks(blocks: unknown): ChatBlock[] | string {
-  if (typeof blocks === 'string') return blocks;
+  if (typeof blocks === "string") return blocks;
   if (!Array.isArray(blocks)) return [];
   const out: ChatBlock[] = [];
   for (const b of blocks) {
-    if (!b || typeof b !== 'object') continue;
+    if (!b || typeof b !== "object") continue;
     const block = b as Record<string, unknown>;
     const t = block.type;
-    if (t === 'text' && typeof block.text === 'string') {
-      out.push({ type: 'text', text: block.text });
-    } else if (t === 'tool_use' && typeof block.id === 'string' && typeof block.name === 'string') {
+    if (t === "text" && typeof block.text === "string") {
+      out.push({ type: "text", text: block.text });
+    } else if (t === "tool_use" && typeof block.id === "string" && typeof block.name === "string") {
       // v1 Anthropic shape
       out.push({
-        type: 'tool-call',
+        type: "tool-call",
         toolCallId: block.id,
         toolName: block.name,
         input: block.input ?? {},
       });
-    } else if (t === 'tool-call' && typeof block.toolCallId === 'string' && typeof block.toolName === 'string') {
+    } else if (
+      t === "tool-call" &&
+      typeof block.toolCallId === "string" &&
+      typeof block.toolName === "string"
+    ) {
       // v2 gateway shape (re-read of own writes)
       out.push({
-        type: 'tool-call',
+        type: "tool-call",
         toolCallId: block.toolCallId,
         toolName: block.toolName,
         input: block.input ?? {},
       });
-    } else if (t === 'tool_result' && typeof block.tool_use_id === 'string') {
+    } else if (t === "tool_result" && typeof block.tool_use_id === "string") {
       // v1 Anthropic shape — tool result block (no toolName in v1; synthesize)
       out.push({
-        type: 'tool-result',
+        type: "tool-result",
         toolCallId: block.tool_use_id,
-        toolName: '__legacy__',
+        toolName: "__legacy__",
         output: block.content ?? null,
         isError: block.is_error === true,
       });
-    } else if (t === 'tool-result' && typeof block.toolCallId === 'string') {
+    } else if (t === "tool-result" && typeof block.toolCallId === "string") {
       out.push({
-        type: 'tool-result',
+        type: "tool-result",
         toolCallId: block.toolCallId,
-        toolName: typeof block.toolName === 'string' ? block.toolName : '__legacy__',
+        toolName: typeof block.toolName === "string" ? block.toolName : "__legacy__",
         output: block.output ?? null,
         isError: block.isError === true,
       });
@@ -1084,7 +1172,7 @@ function adaptContentBlocksToChatBlocks(blocks: unknown): ChatBlock[] | string {
 
 interface PriorToolV2Row {
   stableKey: string;
-  status: 'pending' | 'complete' | 'failed';
+  status: "pending" | "complete" | "failed";
   output: unknown;
   error: string | null;
 }
@@ -1107,19 +1195,19 @@ async function loadPriorToolsV2(engine: BrainEngine, jobId: number): Promise<Pri
        FROM subagent_tool_executions
       WHERE job_id = $1
       ORDER BY message_idx, COALESCE(ordinal, 0), id`,
-    [jobId],
+    [jobId]
   );
-  return rows.map(r => {
+  return rows.map((r) => {
     const gbrainId = r.gbrain_tool_use_id as string | null;
     const stableKey = gbrainId
       ? gbrainId
-      // D5 legacy shim: derive a stable key from (job, msg_idx, tool_name, tool_use_id).
-      // Pre-v81 rows don't have ordinal; the provider tool_use_id is stable
-      // within a single Anthropic turn so it's safe as a fallback hash input.
-      : `legacy:${jobId}:${r.message_idx}:${r.tool_use_id}:${r.tool_name}`;
+      : // D5 legacy shim: derive a stable key from (job, msg_idx, tool_name, tool_use_id).
+        // Pre-v81 rows don't have ordinal; the provider tool_use_id is stable
+        // within a single Anthropic turn so it's safe as a fallback hash input.
+        `legacy:${jobId}:${r.message_idx}:${r.tool_use_id}:${r.tool_name}`;
     return {
       stableKey,
-      status: r.status as 'pending' | 'complete' | 'failed',
+      status: r.status as "pending" | "complete" | "failed",
       output: r.output,
       error: (r.error as string | null) ?? null,
     };
@@ -1135,12 +1223,12 @@ async function loadPriorMessages(engine: BrainEngine, jobId: number): Promise<Pe
        FROM subagent_messages
       WHERE job_id = $1
       ORDER BY message_idx ASC`,
-    [jobId],
+    [jobId]
   );
-  return rows.map(r => ({
+  return rows.map((r) => ({
     message_idx: r.message_idx as number,
-    role: r.role as 'user' | 'assistant',
-    content_blocks: (typeof r.content_blocks === 'string'
+    role: r.role as "user" | "assistant",
+    content_blocks: (typeof r.content_blocks === "string"
       ? JSON.parse(r.content_blocks as string)
       : r.content_blocks) as ContentBlock[],
     tokens_in: (r.tokens_in as number) ?? null,
@@ -1156,22 +1244,25 @@ async function loadPriorTools(engine: BrainEngine, jobId: number): Promise<Persi
     `SELECT message_idx, tool_use_id, tool_name, input, status, output, error
        FROM subagent_tool_executions
       WHERE job_id = $1`,
-    [jobId],
+    [jobId]
   );
-  return rows.map(r => ({
+  return rows.map((r) => ({
     message_idx: r.message_idx as number,
     tool_use_id: r.tool_use_id as string,
     tool_name: r.tool_name as string,
-    input: typeof r.input === 'string' ? JSON.parse(r.input) : r.input,
-    status: r.status as 'pending' | 'complete' | 'failed',
-    output: r.output == null
-      ? null
-      : (typeof r.output === 'string' ? JSON.parse(r.output) : r.output),
+    input: typeof r.input === "string" ? JSON.parse(r.input) : r.input,
+    status: r.status as "pending" | "complete" | "failed",
+    output:
+      r.output == null ? null : typeof r.output === "string" ? JSON.parse(r.output) : r.output,
     error: (r.error as string) ?? null,
   }));
 }
 
-async function persistMessage(engine: BrainEngine, jobId: number, msg: PersistedMessage): Promise<void> {
+async function persistMessage(
+  engine: BrainEngine,
+  jobId: number,
+  msg: PersistedMessage
+): Promise<void> {
   await engine.executeRaw(
     `INSERT INTO subagent_messages (job_id, message_idx, role, content_blocks,
         tokens_in, tokens_out, tokens_cache_read, tokens_cache_create, model)
@@ -1187,7 +1278,7 @@ async function persistMessage(engine: BrainEngine, jobId: number, msg: Persisted
       msg.tokens_cache_read,
       msg.tokens_cache_create,
       msg.model,
-    ],
+    ]
   );
 }
 
@@ -1197,17 +1288,17 @@ async function persistToolExecPending(
   messageIdx: number,
   toolUseId: string,
   toolName: string,
-  input: unknown,
+  input: unknown
 ): Promise<void> {
   // Serialize to JSON string for the ::jsonb cast. When `input` is already a
   // string (e.g. pre-serialized), avoid double-encoding which produces a jsonb
   // scalar string instead of a jsonb object — breaking `input->>'key'` lookups.
-  const jsonStr = typeof input === 'string' ? input : JSON.stringify(input);
+  const jsonStr = typeof input === "string" ? input : JSON.stringify(input);
   await engine.executeRaw(
     `INSERT INTO subagent_tool_executions (job_id, message_idx, tool_use_id, tool_name, input, status)
      VALUES ($1, $2, $3, $4, $5::jsonb, 'pending')
      ON CONFLICT (job_id, tool_use_id) DO NOTHING`,
-    [jobId, messageIdx, toolUseId, toolName, jsonStr],
+    [jobId, messageIdx, toolUseId, toolName, jsonStr]
   );
 }
 
@@ -1215,13 +1306,13 @@ async function persistToolExecComplete(
   engine: BrainEngine,
   jobId: number,
   toolUseId: string,
-  output: unknown,
+  output: unknown
 ): Promise<void> {
   await engine.executeRaw(
     `UPDATE subagent_tool_executions
         SET status = 'complete', output = $3::jsonb, ended_at = now()
       WHERE job_id = $1 AND tool_use_id = $2`,
-    [jobId, toolUseId, typeof output === 'string' ? output : JSON.stringify(output)],
+    [jobId, toolUseId, typeof output === "string" ? output : JSON.stringify(output)]
   );
 }
 
@@ -1232,7 +1323,7 @@ async function persistToolExecFailed(
   toolUseId: string,
   toolName: string,
   input: unknown,
-  error: string,
+  error: string
 ): Promise<void> {
   // INSERT-or-UPDATE to failed — covers both "no pending row yet" (tool
   // rejected upfront) and "pending row exists" (tool threw mid-execute).
@@ -1241,14 +1332,21 @@ async function persistToolExecFailed(
      VALUES ($1, $2, $3, $4, $5::jsonb, 'failed', $6, now())
      ON CONFLICT (job_id, tool_use_id) DO UPDATE
        SET status = 'failed', error = EXCLUDED.error, ended_at = now()`,
-    [jobId, messageIdx, toolUseId, toolName, typeof input === 'string' ? input : JSON.stringify(input), error],
+    [
+      jobId,
+      messageIdx,
+      toolUseId,
+      toolName,
+      typeof input === "string" ? input : JSON.stringify(input),
+      error,
+    ]
   );
 }
 
 // ── Internal: helpers ───────────────────────────────────────
 
 function asStringIfNotObject(value: unknown): string {
-  if (typeof value === 'string') return value;
+  if (typeof value === "string") return value;
   try {
     return JSON.stringify(value);
   } catch {
@@ -1263,13 +1361,13 @@ function asStringIfNotObject(value: unknown): string {
 function mergeSignals(a: AbortSignal, b: AbortSignal): AbortSignal {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const anyFn = (AbortSignal as any).any;
-  if (typeof anyFn === 'function') return anyFn([a, b]) as AbortSignal;
+  if (typeof anyFn === "function") return anyFn([a, b]) as AbortSignal;
   // Manual merge.
   const ac = new AbortController();
   if (a.aborted || b.aborted) ac.abort();
   else {
-    a.addEventListener('abort', () => ac.abort(), { once: true });
-    b.addEventListener('abort', () => ac.abort(), { once: true });
+    a.addEventListener("abort", () => ac.abort(), { once: true });
+    b.addEventListener("abort", () => ac.abort(), { once: true });
   }
   return ac.signal;
 }
@@ -1280,9 +1378,13 @@ function mergeSignals(a: AbortSignal, b: AbortSignal): AbortSignal {
  * backoff, no terminal fail.
  */
 export class RateLeaseUnavailableError extends Error {
-  constructor(public key: string, public active: number, public max: number) {
+  constructor(
+    public key: string,
+    public active: number,
+    public max: number
+  ) {
     super(`rate lease "${key}" full (${active}/${max})`);
-    this.name = 'RateLeaseUnavailableError';
+    this.name = "RateLeaseUnavailableError";
   }
 }
 
@@ -1305,7 +1407,7 @@ export function isPromptTooLongError(err: unknown): boolean {
   // Walk both `.message` and `.error?.message` shapes.
   const msg = (err as { message?: unknown })?.message;
   const inner = (err as { error?: { message?: unknown } })?.error?.message;
-  const candidates = [msg, inner].filter((s): s is string => typeof s === 'string');
+  const candidates = [msg, inner].filter((s): s is string => typeof s === "string");
   for (const c of candidates) {
     if (/prompt is too long/i.test(c)) return true;
   }
@@ -1315,7 +1417,7 @@ export function isPromptTooLongError(err: unknown): boolean {
   // 400s could be transient (e.g., malformed JSON from a test stub).
   const status = (err as { status?: unknown })?.status;
   const errType = (err as { error?: { type?: unknown } })?.error?.type;
-  if (status === 400 && (errType === 'invalid_request_error' || errType === 'request_too_large')) {
+  if (status === 400 && (errType === "invalid_request_error" || errType === "request_too_large")) {
     for (const c of candidates) {
       if (/too long|exceed|maximum/i.test(c)) return true;
     }

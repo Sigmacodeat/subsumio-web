@@ -30,23 +30,23 @@ rows for edge-shaped pages.
 
 ## The 14 canonical types (+ `note` catch-all)
 
-| Type | Primitive | What it holds | Examples |
-|------|-----------|---------------|----------|
-| `person` | entity | People | Founders, partners, individuals |
-| `company` | entity | Companies, products, orgs (subtype-distinguished) | Companies, YC-companies, products |
-| `media` | media | Articles, videos, essays, books, podcasts (subtype-distinguished) | Substack posts, YouTube videos, books |
-| `tweet` | media | Twitter posts (single/bundle/stub subtype) | Single tweets, threads, bundles |
-| `social-digest` | temporal | Period-grouped social summaries (daily/monthly) | X account daily digests |
-| `analysis` | media | Research + competitive intel | Market analysis, pricing analysis |
-| `atom` | annotation | Knowledge units (extraction/manual/lore subtype) | Extracted facts, manual notes, lore |
-| `concept` | concept | Ideas + reference pages | Wiki concepts |
-| `source` | media | Transcripts, references | Interview transcripts |
-| `deal` | temporal | Investment deals | Term sheets, investments |
-| `email` | temporal | Email threads | Email correspondence |
-| `slack` | temporal | Slack messages + threads | Slack conversations |
-| `writing` | media | Original writing | Drafts, essays in progress |
-| `project` | concept | Initiatives, workstreams | Internal projects |
-| `note` | concept | **Catch-all** for one-offs (legacy_type preserved) | Memos, anecdotes, insights, etc. |
+| Type            | Primitive  | What it holds                                                     | Examples                              |
+| --------------- | ---------- | ----------------------------------------------------------------- | ------------------------------------- |
+| `person`        | entity     | People                                                            | Founders, partners, individuals       |
+| `company`       | entity     | Companies, products, orgs (subtype-distinguished)                 | Companies, YC-companies, products     |
+| `media`         | media      | Articles, videos, essays, books, podcasts (subtype-distinguished) | Substack posts, YouTube videos, books |
+| `tweet`         | media      | Twitter posts (single/bundle/stub subtype)                        | Single tweets, threads, bundles       |
+| `social-digest` | temporal   | Period-grouped social summaries (daily/monthly)                   | X account daily digests               |
+| `analysis`      | media      | Research + competitive intel                                      | Market analysis, pricing analysis     |
+| `atom`          | annotation | Knowledge units (extraction/manual/lore subtype)                  | Extracted facts, manual notes, lore   |
+| `concept`       | concept    | Ideas + reference pages                                           | Wiki concepts                         |
+| `source`        | media      | Transcripts, references                                           | Interview transcripts                 |
+| `deal`          | temporal   | Investment deals                                                  | Term sheets, investments              |
+| `email`         | temporal   | Email threads                                                     | Email correspondence                  |
+| `slack`         | temporal   | Slack messages + threads                                          | Slack conversations                   |
+| `writing`       | media      | Original writing                                                  | Drafts, essays in progress            |
+| `project`       | concept    | Initiatives, workstreams                                          | Internal projects                     |
+| `note`          | concept    | **Catch-all** for one-offs (legacy_type preserved)                | Memos, anecdotes, insights, etc.      |
 
 15 types total (14 canonical + `note`). The catch-all retype rule
 binds any uncovered legacy type to `note` with
@@ -54,13 +54,13 @@ binds any uncovered legacy type to `note` with
 
 ## Subtypes (declared in frontmatter post-unify)
 
-| Canonical | Subtype field | Values |
-|-----------|---------------|--------|
-| `company` | `subtype` | `company` / `product` / `org` |
-| `media` | `subtype` | `video` / `article` / `essay` / `book` / `podcast` / `blog` |
-| `tweet` | `subtype` | `single` / `bundle` / `stub` |
-| `social-digest` | `subtype` | `daily` / `monthly` |
-| `atom` | `subtype` | `extraction` / `manual` / `lore` |
+| Canonical       | Subtype field | Values                                                      |
+| --------------- | ------------- | ----------------------------------------------------------- |
+| `company`       | `subtype`     | `company` / `product` / `org`                               |
+| `media`         | `subtype`     | `video` / `article` / `essay` / `book` / `podcast` / `blog` |
+| `tweet`         | `subtype`     | `single` / `bundle` / `stub`                                |
+| `social-digest` | `subtype`     | `daily` / `monthly`                                         |
+| `atom`          | `subtype`     | `extraction` / `manual` / `lore`                            |
 
 `subtype_field` for retype rules is restricted to an allowlist:
 `{subtype, legacy_type, origin, format, kind, period, domain}`. This
@@ -105,12 +105,12 @@ gbrain onboard --check                         # pack_upgrade_available cleared
 
 Every primitive ships with a documented rollback:
 
-| Operation | Rollback |
-|-----------|----------|
-| Retype | `frontmatter.legacy_type = <original>` preserved on every page (D8). One SQL UPDATE restores types: `UPDATE pages SET type = frontmatter->>'legacy_type' WHERE frontmatter ? 'legacy_type'`. |
-| Page-to-link | Source page soft-deleted with 72h TTL. `gbrain pages restore <slug>` within 72h. Link row stays harmless if source restored. |
-| Page-to-alias | Source page soft-deleted with 72h TTL. `gbrain pages restore <slug>` within 72h. Alias row stays harmless (or `DELETE FROM slug_aliases WHERE alias_slug = <slug>` to clean up). |
-| Active-pack flip | `gbrain schema use gbrain-base` reverses the flip. |
+| Operation        | Rollback                                                                                                                                                                                     |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Retype           | `frontmatter.legacy_type = <original>` preserved on every page (D8). One SQL UPDATE restores types: `UPDATE pages SET type = frontmatter->>'legacy_type' WHERE frontmatter ? 'legacy_type'`. |
+| Page-to-link     | Source page soft-deleted with 72h TTL. `gbrain pages restore <slug>` within 72h. Link row stays harmless if source restored.                                                                 |
+| Page-to-alias    | Source page soft-deleted with 72h TTL. `gbrain pages restore <slug>` within 72h. Alias row stays harmless (or `DELETE FROM slug_aliases WHERE alias_slug = <slug>` to clean up).             |
+| Active-pack flip | `gbrain schema use gbrain-base` reverses the flip.                                                                                                                                           |
 
 ## What if my brain doesn't fit?
 
@@ -127,7 +127,7 @@ For brains with substantial custom types that deserve their own canonical
 2. Edit your fork to add page_types + mapping_rules covering your
    custom domain.
 3. Target your fork: `gbrain jobs submit unify-types --allow-protected
-   --params '{"target_pack":"my-pack"}'`
+--params '{"target_pack":"my-pack"}'`
 
 Your fork can also declare `migration_from: {pack: gbrain-base-v2,
 version: "1.x"}` to register itself as a successor — future agents

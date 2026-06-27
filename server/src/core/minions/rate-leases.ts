@@ -16,7 +16,7 @@
  * stale leases. Mid-call renewal bumps expires_at in-place.
  */
 
-import type { BrainEngine } from '../engine.ts';
+import type { BrainEngine } from "../engine.ts";
 
 /**
  * Acquisition result. If `acquired=false`, the caller should back off and
@@ -69,7 +69,7 @@ export async function acquireLease(
   key: string,
   ownerJobId: number,
   maxConcurrent: number,
-  opts: AcquireOpts = {},
+  opts: AcquireOpts = {}
 ): Promise<LeaseAcquireResult> {
   const ttlMs = opts.ttlMs ?? DEFAULT_TTL_MS;
   const lockKey = hashKey(key);
@@ -80,16 +80,15 @@ export async function acquireLease(
     await tx.executeRaw(`SELECT pg_advisory_xact_lock($1::bigint)`, [lockKey.toString()]);
 
     // Pre-prune stale leases for this key.
-    await tx.executeRaw(
-      `DELETE FROM subagent_rate_leases WHERE key = $1 AND expires_at <= now()`,
-      [key],
-    );
+    await tx.executeRaw(`DELETE FROM subagent_rate_leases WHERE key = $1 AND expires_at <= now()`, [
+      key,
+    ]);
 
     const countRows = await tx.executeRaw<{ count: string | number }>(
       `SELECT count(*)::text AS count FROM subagent_rate_leases WHERE key = $1`,
-      [key],
+      [key]
     );
-    const activeCount = parseInt(String(countRows[0]?.count ?? '0'), 10);
+    const activeCount = parseInt(String(countRows[0]?.count ?? "0"), 10);
 
     if (activeCount >= maxConcurrent) {
       return { acquired: false, activeCount, maxConcurrent };
@@ -99,7 +98,7 @@ export async function acquireLease(
       `INSERT INTO subagent_rate_leases (key, owner_job_id, expires_at)
        VALUES ($1, $2, now() + ($3::double precision * interval '1 millisecond'))
        RETURNING id`,
-      [key, ownerJobId, ttlMs],
+      [key, ownerJobId, ttlMs]
     );
     const leaseId = rows[0]!.id;
     return { acquired: true, leaseId, activeCount: activeCount + 1, maxConcurrent };
@@ -111,13 +110,17 @@ export async function acquireLease(
  * exists (was renewed), false if it was pruned (caller must re-acquire or
  * abort).
  */
-export async function renewLease(engine: BrainEngine, leaseId: number, ttlMs = DEFAULT_TTL_MS): Promise<boolean> {
+export async function renewLease(
+  engine: BrainEngine,
+  leaseId: number,
+  ttlMs = DEFAULT_TTL_MS
+): Promise<boolean> {
   const rows = await engine.executeRaw<{ id: number }>(
     `UPDATE subagent_rate_leases
      SET expires_at = now() + ($2::double precision * interval '1 millisecond')
      WHERE id = $1
      RETURNING id`,
-    [leaseId, ttlMs],
+    [leaseId, ttlMs]
   );
   return rows.length > 0;
 }
@@ -136,10 +139,14 @@ export async function releaseLease(engine: BrainEngine, leaseId: number): Promis
  * failure the caller must abort with a renewable error so the worker
  * re-claims the job.
  */
-export async function renewLeaseWithBackoff(engine: BrainEngine, leaseId: number, ttlMs = DEFAULT_TTL_MS): Promise<boolean> {
+export async function renewLeaseWithBackoff(
+  engine: BrainEngine,
+  leaseId: number,
+  ttlMs = DEFAULT_TTL_MS
+): Promise<boolean> {
   const delays = [0, 250, 500, 1000]; // first attempt immediate, then 250/500/1000
   for (const delay of delays) {
-    if (delay > 0) await new Promise(r => setTimeout(r, delay));
+    if (delay > 0) await new Promise((r) => setTimeout(r, delay));
     try {
       if (await renewLease(engine, leaseId, ttlMs)) return true;
       // Lease is gone (pruned). No point retrying — caller must abort.

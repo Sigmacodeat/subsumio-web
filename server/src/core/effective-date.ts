@@ -29,7 +29,7 @@
  * Pure function. No DB. Tested in test/effective-date.test.ts.
  */
 
-import type { EffectiveDateSource } from './types.ts';
+import type { EffectiveDateSource } from "./types.ts";
 
 export interface EffectiveDateResult {
   date: Date | null;
@@ -55,7 +55,7 @@ export interface ComputeEffectiveDateOpts {
  * filename-first prefixes, but the daily/ + meetings/ defaults are stable
  * enough that hardcoding is correct.
  */
-const FILENAME_FIRST_PREFIXES = ['daily/', 'meetings/'];
+const FILENAME_FIRST_PREFIXES = ["daily/", "meetings/"];
 
 const MIN_DATE_MS = Date.UTC(1990, 0, 1);
 const FILENAME_DATE_RE = /^(\d{4}-\d{2}-\d{2})/;
@@ -73,14 +73,14 @@ export function parseDateLoose(value: unknown): Date | null {
   if (value instanceof Date) {
     return Number.isFinite(value.getTime()) ? value : null;
   }
-  if (typeof value === 'string') {
+  if (typeof value === "string") {
     const trimmed = value.trim();
-    if (trimmed === '') return null;
+    if (trimmed === "") return null;
     const ms = Date.parse(trimmed);
     if (!Number.isFinite(ms)) return null;
     return new Date(ms);
   }
-  if (typeof value === 'number') {
+  if (typeof value === "number") {
     // Plausibility: numbers are usually ms since epoch but YAML can yield
     // bare integers (year? month? day?) — accept only if the resulting Date
     // falls inside the valid window. validateInRange catches the rest.
@@ -130,16 +130,16 @@ export function computeEffectiveDate(opts: ComputeEffectiveDateOpts): EffectiveD
   // (daily/, meetings/) the filename moves to the head of the chain.
   const candidates: Array<{ date: Date | null; source: EffectiveDateSource }> = filenameFirst
     ? [
-        { date: filenameDate, source: 'filename' },
-        { date: fmEvent, source: 'event_date' },
-        { date: fmDate, source: 'date' },
-        { date: fmPublished, source: 'published' },
+        { date: filenameDate, source: "filename" },
+        { date: fmEvent, source: "event_date" },
+        { date: fmDate, source: "date" },
+        { date: fmPublished, source: "published" },
       ]
     : [
-        { date: fmEvent, source: 'event_date' },
-        { date: fmDate, source: 'date' },
-        { date: fmPublished, source: 'published' },
-        { date: filenameDate, source: 'filename' },
+        { date: fmEvent, source: "event_date" },
+        { date: fmDate, source: "date" },
+        { date: fmPublished, source: "published" },
+        { date: filenameDate, source: "filename" },
       ];
 
   for (const c of candidates) {
@@ -150,9 +150,9 @@ export function computeEffectiveDate(opts: ComputeEffectiveDateOpts): EffectiveD
   // non-null by the schema; the validation here is defensive against bad
   // test fixtures.
   const upd = validateInRange(updatedAt);
-  if (upd !== null) return { date: upd, source: 'fallback' };
+  if (upd !== null) return { date: upd, source: "fallback" };
   const cre = validateInRange(createdAt);
-  if (cre !== null) return { date: cre, source: 'fallback' };
+  if (cre !== null) return { date: cre, source: "fallback" };
 
   return { date: null, source: null };
 }

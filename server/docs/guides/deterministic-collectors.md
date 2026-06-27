@@ -88,13 +88,13 @@ scripts/email-collector/
 
 ### Where the Pattern Applies
 
-| Signal Source | Collector Generates | LLM Adds |
-|--------------|-------------------|----------|
-| **Email** | Gmail links, sender metadata, signature detection | Urgency classification, enrichment, reply drafts |
+| Signal Source | Collector Generates                                 | LLM Adds                                               |
+| ------------- | --------------------------------------------------- | ------------------------------------------------------ |
+| **Email**     | Gmail links, sender metadata, signature detection   | Urgency classification, enrichment, reply drafts       |
 | **X/Twitter** | Tweet links, engagement metrics, deletion detection | Sentiment analysis, narrative detection, content ideas |
-| **Calendar** | Event links, attendee lists, conflict detection | Prep briefings, meeting context from brain |
-| **Slack** | Channel links, thread links, mention detection | Priority classification, action item extraction |
-| **GitHub** | PR/issue links, diff stats, CI status | Code review context, priority assessment |
+| **Calendar**  | Event links, attendee lists, conflict detection     | Prep briefings, meeting context from brain             |
+| **Slack**     | Channel links, thread links, mention detection      | Priority classification, action item extraction        |
+| **GitHub**    | PR/issue links, diff stats, CI status               | Code review context, priority assessment               |
 
 ### The Principle
 
@@ -143,4 +143,4 @@ the same pass.
 
 ---
 
-*Part of the [GBrain Skillpack](../GBRAIN_SKILLPACK.md).*
+_Part of the [GBrain Skillpack](../GBRAIN_SKILLPACK.md)._

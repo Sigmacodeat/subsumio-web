@@ -23,9 +23,9 @@
  * embedding similarity. See `[CDX-4]` in the plan.
  */
 
-import { createHash } from 'crypto';
-import { CR_MODES, type CRMode } from '../types.ts';
-import { getRecipe } from '../ai/recipes/index.ts';
+import { createHash } from "crypto";
+import { CR_MODES, type CRMode } from "../types.ts";
+import { getRecipe } from "../ai/recipes/index.ts";
 
 /**
  * Look up the `reranker.default_timeout_ms` declared by the resolved
@@ -46,18 +46,18 @@ import { getRecipe } from '../ai/recipes/index.ts';
  */
 function lookupRerankerRecipeDefaultTimeout(modelStr: string | undefined): number | undefined {
   if (!modelStr) return undefined;
-  const colon = modelStr.indexOf(':');
+  const colon = modelStr.indexOf(":");
   const providerId = colon === -1 ? modelStr : modelStr.slice(0, colon);
   const recipe = getRecipe(providerId);
   return recipe?.touchpoints?.reranker?.default_timeout_ms;
 }
 
-export type SearchMode = 'conservative' | 'balanced' | 'tokenmax';
+export type SearchMode = "conservative" | "balanced" | "tokenmax";
 
 export const SEARCH_MODES: ReadonlyArray<SearchMode> = Object.freeze([
-  'conservative',
-  'balanced',
-  'tokenmax',
+  "conservative",
+  "balanced",
+  "tokenmax",
 ]);
 
 /**
@@ -294,7 +294,7 @@ export const MODE_BUNDLES: Readonly<Record<SearchMode, Readonly<ModeBundle>>> = 
     // v0.35.0.0+: reranker off — conservative is cost-sensitive; reranker
     // spend doesn't fit the tier's value prop.
     reranker_enabled: false,
-    reranker_model: 'zeroentropyai:zerank-2',
+    reranker_model: "zeroentropyai:zerank-2",
     reranker_top_n_in: 30,
     reranker_top_n_out: null,
     reranker_timeout_ms: 5000,
@@ -316,7 +316,7 @@ export const MODE_BUNDLES: Readonly<Record<SearchMode, Readonly<ModeBundle>>> = 
     // useful for power users via per-call SearchOpts.graph_signals = true.
     graph_signals: false,
     // v0.40.3.0 contextual retrieval — none for conservative (minimum surface).
-    contextual_retrieval: 'none' as CRMode,
+    contextual_retrieval: "none" as CRMode,
     contextual_retrieval_disabled: false,
     // v0.42.3.0 — autocut OFF: conservative has no reranker, so no trustworthy
     // cliff signal exists (autocut would no-op). Explicit for clarity.
@@ -344,7 +344,7 @@ export const MODE_BUNDLES: Readonly<Record<SearchMode, Readonly<ModeBundle>>> = 
     // return input order unchanged. Opt out with
     // `gbrain config set search.reranker.enabled false`.
     reranker_enabled: true,
-    reranker_model: 'zeroentropyai:zerank-2',
+    reranker_model: "zeroentropyai:zerank-2",
     // v0.42.3.0 D4: topNIn = searchLimit (25) so the cross-encoder scores
     // every result the limit slice will return — no unscored tail for autocut
     // to wrongly drop (Codex #2). Was 30; tracking searchLimit is the
@@ -375,7 +375,7 @@ export const MODE_BUNDLES: Readonly<Record<SearchMode, Readonly<ModeBundle>>> = 
     // v0.40.3.0 contextual retrieval — title-only for balanced (free at
     // runtime; pure string concat, no Haiku). Default mode for most users
     // per the cost-tier philosophy.
-    contextual_retrieval: 'title' as CRMode,
+    contextual_retrieval: "title" as CRMode,
     contextual_retrieval_disabled: false,
     // v0.42.3.0 — autocut ON (reranker fires; cliff signal is trustworthy).
     autocut: true,
@@ -399,7 +399,7 @@ export const MODE_BUNDLES: Readonly<Record<SearchMode, Readonly<ModeBundle>>> = 
     // their fee. ~$0.0003/query at this shape; rounding error vs the
     // tier's $700/mo @ Opus pairing per CLAUDE.md cost matrix.
     reranker_enabled: true,
-    reranker_model: 'zeroentropyai:zerank-2',
+    reranker_model: "zeroentropyai:zerank-2",
     // v0.42.3.0 D4: topNIn = searchLimit (50) so every returned result is
     // cross-encoder scored — closes the Codex #2 recall gap where autocut
     // would drop the deliberately-preserved un-reranked tail (results 31-50).
@@ -427,7 +427,7 @@ export const MODE_BUNDLES: Readonly<Record<SearchMode, Readonly<ModeBundle>>> = 
     // v0.40.3.0 contextual retrieval — per-chunk Haiku synopsis for tokenmax
     // (Anthropic's published method). One-time backfill cost ~$5-50 for a
     // 10K-page brain; documented in the post-upgrade cost prompt.
-    contextual_retrieval: 'per_chunk_synopsis' as CRMode,
+    contextual_retrieval: "per_chunk_synopsis" as CRMode,
     contextual_retrieval_disabled: false,
     // v0.42.3.0 — autocut ON.
     autocut: true,
@@ -438,10 +438,10 @@ export const MODE_BUNDLES: Readonly<Record<SearchMode, Readonly<ModeBundle>>> = 
   }),
 });
 
-export const DEFAULT_SEARCH_MODE: SearchMode = 'balanced';
+export const DEFAULT_SEARCH_MODE: SearchMode = "balanced";
 
 export function isSearchMode(x: unknown): x is SearchMode {
-  return typeof x === 'string' && (SEARCH_MODES as ReadonlyArray<string>).includes(x);
+  return typeof x === "string" && (SEARCH_MODES as ReadonlyArray<string>).includes(x);
 }
 
 /**
@@ -569,7 +569,7 @@ export interface ResolvedSearchKnobs extends ModeBundle {
 }
 
 export function resolveSearchMode(input: ResolveSearchModeInput): ResolvedSearchKnobs {
-  const requested = typeof input.mode === 'string' ? input.mode.trim().toLowerCase() : '';
+  const requested = typeof input.mode === "string" ? input.mode.trim().toLowerCase() : "";
   const valid = isSearchMode(requested);
   const resolved_mode: SearchMode = valid ? (requested as SearchMode) : DEFAULT_SEARCH_MODE;
   const bundle = MODE_BUNDLES[resolved_mode];
@@ -589,7 +589,7 @@ export function resolveSearchMode(input: ResolveSearchModeInput): ResolvedSearch
   // their cold-start headroom without forcing users to discover the
   // `search.reranker.timeout_ms` config key.
   // Precedence: per-call > config override > recipe.touchpoints.reranker.default_timeout_ms > mode bundle.
-  const resolvedRerankerModel = pick('reranker_model');
+  const resolvedRerankerModel = pick("reranker_model");
   const pickRerankerTimeoutMs = (): number => {
     if (pc.reranker_timeout_ms !== undefined) return pc.reranker_timeout_ms;
     if (ov.reranker_timeout_ms !== undefined) return ov.reranker_timeout_ms;
@@ -599,40 +599,40 @@ export function resolveSearchMode(input: ResolveSearchModeInput): ResolvedSearch
   };
 
   return {
-    cache_enabled: pick('cache_enabled'),
-    cache_similarity_threshold: pick('cache_similarity_threshold'),
-    cache_ttl_seconds: pick('cache_ttl_seconds'),
-    intentWeighting: pick('intentWeighting'),
-    tokenBudget: pick('tokenBudget'),
-    expansion: pick('expansion'),
-    searchLimit: pick('searchLimit'),
-    reranker_enabled: pick('reranker_enabled'),
+    cache_enabled: pick("cache_enabled"),
+    cache_similarity_threshold: pick("cache_similarity_threshold"),
+    cache_ttl_seconds: pick("cache_ttl_seconds"),
+    intentWeighting: pick("intentWeighting"),
+    tokenBudget: pick("tokenBudget"),
+    expansion: pick("expansion"),
+    searchLimit: pick("searchLimit"),
+    reranker_enabled: pick("reranker_enabled"),
     reranker_model: resolvedRerankerModel,
-    reranker_top_n_in: pick('reranker_top_n_in'),
-    reranker_top_n_out: pick('reranker_top_n_out'),
+    reranker_top_n_in: pick("reranker_top_n_in"),
+    reranker_top_n_out: pick("reranker_top_n_out"),
     reranker_timeout_ms: pickRerankerTimeoutMs(),
     // v0.35.6.0 — floor-ratio resolved via the same pick chain.
-    floor_ratio: pick('floor_ratio'),
-    title_boost: pick('title_boost'),
+    floor_ratio: pick("floor_ratio"),
+    title_boost: pick("title_boost"),
     // v0.36 cross-modal knobs
-    cross_modal_both_text_weight: pick('cross_modal_both_text_weight'),
-    cross_modal_both_image_weight: pick('cross_modal_both_image_weight'),
-    image_query_text_refinement_weight: pick('image_query_text_refinement_weight'),
-    image_query_image_refinement_weight: pick('image_query_image_refinement_weight'),
-    unified_multimodal: pick('unified_multimodal'),
-    unified_multimodal_only: pick('unified_multimodal_only'),
-    cross_modal_llm_intent: pick('cross_modal_llm_intent'),
+    cross_modal_both_text_weight: pick("cross_modal_both_text_weight"),
+    cross_modal_both_image_weight: pick("cross_modal_both_image_weight"),
+    image_query_text_refinement_weight: pick("image_query_text_refinement_weight"),
+    image_query_image_refinement_weight: pick("image_query_image_refinement_weight"),
+    unified_multimodal: pick("unified_multimodal"),
+    unified_multimodal_only: pick("unified_multimodal_only"),
+    cross_modal_llm_intent: pick("cross_modal_llm_intent"),
     // v0.40.4
-    graph_signals: pick('graph_signals'),
+    graph_signals: pick("graph_signals"),
     // v0.40.3.0 contextual retrieval — resolved via the same pick chain.
-    contextual_retrieval: pick('contextual_retrieval'),
-    contextual_retrieval_disabled: pick('contextual_retrieval_disabled'),
+    contextual_retrieval: pick("contextual_retrieval"),
+    contextual_retrieval_disabled: pick("contextual_retrieval_disabled"),
     // v0.42.3.0 — autocut resolved via the same pick chain.
-    autocut: pick('autocut'),
-    autocut_jump: pick('autocut_jump'),
+    autocut: pick("autocut"),
+    autocut_jump: pick("autocut_jump"),
     // v0.43 — relational recall resolved via the same pick chain.
-    relationalRetrieval: pick('relationalRetrieval'),
-    relational_retrieval_depth: pick('relational_retrieval_depth'),
+    relationalRetrieval: pick("relationalRetrieval"),
+    relational_retrieval_depth: pick("relational_retrieval_depth"),
     resolved_mode,
     mode_valid: valid,
   };
@@ -643,7 +643,7 @@ export function resolveSearchMode(input: ResolveSearchModeInput): ResolvedSearch
  * Tells the user where each resolved value came from so override drift
  * is legible. Mirrors `gbrain models` (v0.31.12) attribution shape.
  */
-export type KnobSource = 'per-call' | 'override' | 'mode' | 'fallback';
+export type KnobSource = "per-call" | "override" | "mode" | "fallback";
 
 export interface ResolvedKnobAttribution {
   knob: keyof ModeBundle;
@@ -656,20 +656,35 @@ export interface ResolvedKnobAttribution {
 export function attributeKnob<K extends keyof ModeBundle>(
   knob: K,
   input: ResolveSearchModeInput,
-  resolved: ResolvedSearchKnobs,
+  resolved: ResolvedSearchKnobs
 ): ResolvedKnobAttribution {
   const pc = input.perCall ?? {};
   const ov = input.overrides ?? {};
   if (pc[knob] !== undefined) {
-    return { knob, value: resolved[knob], source: 'per-call', source_detail: 'SearchOpts' };
+    return { knob, value: resolved[knob], source: "per-call", source_detail: "SearchOpts" };
   }
   if (ov[knob] !== undefined) {
-    return { knob, value: resolved[knob], source: 'override', source_detail: `config: search.${knob}` };
+    return {
+      knob,
+      value: resolved[knob],
+      source: "override",
+      source_detail: `config: search.${knob}`,
+    };
   }
   if (resolved.mode_valid) {
-    return { knob, value: resolved[knob], source: 'mode', source_detail: `mode: ${resolved.resolved_mode}` };
+    return {
+      knob,
+      value: resolved[knob],
+      source: "mode",
+      source_detail: `mode: ${resolved.resolved_mode}`,
+    };
   }
-  return { knob, value: resolved[knob], source: 'fallback', source_detail: `mode: ${DEFAULT_SEARCH_MODE} (default — search.mode unset)` };
+  return {
+    knob,
+    value: resolved[knob],
+    source: "fallback",
+    source_detail: `mode: ${DEFAULT_SEARCH_MODE} (default — search.mode unset)`,
+  };
 }
 
 /**
@@ -769,10 +784,7 @@ export interface KnobsHashContext {
   schemaPackVersion?: string;
 }
 
-export function knobsHash(
-  knobs: ResolvedSearchKnobs,
-  ctx?: KnobsHashContext,
-): string {
+export function knobsHash(knobs: ResolvedSearchKnobs, ctx?: KnobsHashContext): string {
   // Fixed-order key list. Adding a knob here REQUIRES bumping
   // KNOBS_HASH_VERSION and is a breaking change for any persisted cache.
   const parts = [
@@ -782,14 +794,14 @@ export function knobsHash(
     `sim=${knobs.cache_similarity_threshold.toFixed(4)}`,
     `ttl=${knobs.cache_ttl_seconds}`,
     `iw=${knobs.intentWeighting ? 1 : 0}`,
-    `tb=${knobs.tokenBudget ?? 'none'}`,
+    `tb=${knobs.tokenBudget ?? "none"}`,
     `exp=${knobs.expansion ? 1 : 0}`,
     `lim=${knobs.searchLimit}`,
     // v=2 additions (append-only).
     `rr=${knobs.reranker_enabled ? 1 : 0}`,
     `rrm=${knobs.reranker_model}`,
     `rri=${knobs.reranker_top_n_in}`,
-    `rro=${knobs.reranker_top_n_out ?? 'none'}`,
+    `rro=${knobs.reranker_top_n_out ?? "none"}`,
     `rrt=${knobs.reranker_timeout_ms}`,
     // v=3 additions (append-only). Both contributions landed under v=3:
     //
@@ -802,7 +814,7 @@ export function knobsHash(
     //     NEVER be served from a cache row that ran against `embedding`
     //     — they sit in different vector spaces. ctx is optional so
     //     unrelated callers fall back to the default-column hash.
-    `fr=${knobs.floor_ratio === undefined ? 'none' : knobs.floor_ratio.toFixed(4)}`,
+    `fr=${knobs.floor_ratio === undefined ? "none" : knobs.floor_ratio.toFixed(4)}`,
     // v=3 cross-modal additions (append-only).
     `cmbt=${knobs.cross_modal_both_text_weight.toFixed(2)}`,
     `cmbi=${knobs.cross_modal_both_image_weight.toFixed(2)}`,
@@ -814,8 +826,8 @@ export function knobsHash(
     // v=3 column + provider additions (D8 / CDX-2): cross-column +
     // cross-provider cache isolation. A query against `embedding_voyage`
     // must never be served from a row that ran against `embedding`.
-    `col=${ctx?.embeddingColumn ?? 'embedding'}`,
-    `prov=${ctx?.embeddingModel ?? 'default'}`,
+    `col=${ctx?.embeddingColumn ?? "embedding"}`,
+    `prov=${ctx?.embeddingModel ?? "default"}`,
     // v=4 additions (append-only).
     //   graph_signals (v0.40.4): graph-on write must not be served to a
     //     graph-off lookup.
@@ -824,8 +836,8 @@ export function knobsHash(
     //     resolved type `researcher` against pack A cannot be served
     //     from a row that resolved against pack B.
     `gs=${knobs.graph_signals ? 1 : 0}`,
-    `pack=${ctx?.schemaPack ?? 'none'}`,
-    `pver=${ctx?.schemaPackVersion ?? 'none'}`,
+    `pack=${ctx?.schemaPack ?? "none"}`,
+    `pver=${ctx?.schemaPackVersion ?? "none"}`,
     // v=5 contextual retrieval additions (v0.40.3.0, per D8 sequencing
     // behind salem's pending v=4 graph signals). A query against a brain
     // on tokenmax (per-chunk synopsis) must NEVER be served from a cache
@@ -835,7 +847,7 @@ export function knobsHash(
     `cr=${knobs.contextual_retrieval}`,
     `crd=${knobs.contextual_retrieval_disabled ? 1 : 0}`,
     // v=7 addition (append-only) — T2 title-phrase boost (retrieval-maxpool).
-    `tib=${knobs.title_boost === undefined ? 'none' : knobs.title_boost.toFixed(4)}`,
+    `tib=${knobs.title_boost === undefined ? "none" : knobs.title_boost.toFixed(4)}`,
     // v=8 additions (v0.42.3.0, append-only): autocut. An autocut-on write
     // (trimmed result set) must not be served to an autocut-off lookup, and a
     // sensitivity change (jumpRatio) shifts where the cut lands. Conservative
@@ -855,9 +867,9 @@ export function knobsHash(
     `rel=${knobs.relationalRetrieval ? 1 : 0}`,
     `reld=${knobs.relational_retrieval_depth ?? 2}`,
   ];
-  const h = createHash('sha256');
-  h.update(parts.join('|'));
-  return h.digest('hex').slice(0, 16);
+  const h = createHash("sha256");
+  h.update(parts.join("|"));
+  return h.digest("hex").slice(0, 16);
 }
 
 /**
@@ -869,54 +881,54 @@ export function knobsHash(
  * map appear. Falsy/missing keys fall through to the mode bundle default.
  */
 export function loadOverridesFromConfig(
-  configMap: Record<string, string | undefined>,
+  configMap: Record<string, string | undefined>
 ): SearchKeyOverrides {
   const out: SearchKeyOverrides = {};
   const get = (k: string): string | undefined => configMap[k];
 
-  const ce = get('search.cache.enabled');
+  const ce = get("search.cache.enabled");
   if (ce !== undefined) {
-    out.cache_enabled = ce === '1' || ce.toLowerCase() === 'true';
+    out.cache_enabled = ce === "1" || ce.toLowerCase() === "true";
   }
-  const st = get('search.cache.similarity_threshold');
+  const st = get("search.cache.similarity_threshold");
   if (st !== undefined) {
     const n = parseFloat(st);
     if (Number.isFinite(n) && n > 0 && n <= 1) out.cache_similarity_threshold = n;
   }
-  const tt = get('search.cache.ttl_seconds');
+  const tt = get("search.cache.ttl_seconds");
   if (tt !== undefined) {
     const n = parseInt(tt, 10);
     if (Number.isFinite(n) && n > 0) out.cache_ttl_seconds = n;
   }
-  const iw = get('search.intentWeighting');
+  const iw = get("search.intentWeighting");
   if (iw !== undefined) {
-    out.intentWeighting = iw === '1' || iw.toLowerCase() === 'true';
+    out.intentWeighting = iw === "1" || iw.toLowerCase() === "true";
   }
-  const tb = get('search.tokenBudget');
+  const tb = get("search.tokenBudget");
   if (tb !== undefined) {
     const n = parseInt(tb, 10);
     if (Number.isFinite(n) && n > 0) out.tokenBudget = n;
   }
-  const ex = get('search.expansion');
+  const ex = get("search.expansion");
   if (ex !== undefined) {
-    out.expansion = ex === '1' || ex.toLowerCase() === 'true';
+    out.expansion = ex === "1" || ex.toLowerCase() === "true";
   }
-  const sl = get('search.searchLimit');
+  const sl = get("search.searchLimit");
   if (sl !== undefined) {
     const n = parseInt(sl, 10);
     if (Number.isFinite(n) && n > 0) out.searchLimit = n;
   }
 
   // v0.35.0.0+ reranker overrides
-  const re = get('search.reranker.enabled');
+  const re = get("search.reranker.enabled");
   if (re !== undefined) {
-    out.reranker_enabled = re === '1' || re.toLowerCase() === 'true';
+    out.reranker_enabled = re === "1" || re.toLowerCase() === "true";
   }
-  const rm = get('search.reranker.model');
+  const rm = get("search.reranker.model");
   if (rm !== undefined && rm.trim().length > 0) {
     out.reranker_model = rm.trim();
   }
-  const ri = get('search.reranker.top_n_in');
+  const ri = get("search.reranker.top_n_in");
   if (ri !== undefined) {
     const n = parseInt(ri, 10);
     if (Number.isFinite(n) && n > 0) out.reranker_top_n_in = n;
@@ -925,17 +937,17 @@ export function loadOverridesFromConfig(
   //   key absent → undefined → fall through to mode bundle
   //   'null' / 'none' / '' → explicit null (no truncate)
   //   positive integer → that number
-  const ro = get('search.reranker.top_n_out');
+  const ro = get("search.reranker.top_n_out");
   if (ro !== undefined) {
     const trimmed = ro.trim().toLowerCase();
-    if (trimmed === '' || trimmed === 'null' || trimmed === 'none') {
+    if (trimmed === "" || trimmed === "null" || trimmed === "none") {
       out.reranker_top_n_out = null;
     } else {
       const n = parseInt(trimmed, 10);
       if (Number.isFinite(n) && n > 0) out.reranker_top_n_out = n;
     }
   }
-  const rt = get('search.reranker.timeout_ms');
+  const rt = get("search.reranker.timeout_ms");
   if (rt !== undefined) {
     const n = parseInt(rt, 10);
     if (Number.isFinite(n) && n > 0) out.reranker_timeout_ms = n;
@@ -945,7 +957,7 @@ export function loadOverridesFromConfig(
   // outside that range silently fall through (no override applied). The
   // runtime computeFloorThreshold also guards against out-of-range so a
   // malformed value never gates anything — defense in depth.
-  const fr = get('search.floor_ratio');
+  const fr = get("search.floor_ratio");
   if (fr !== undefined) {
     const n = parseFloat(fr);
     if (Number.isFinite(n) && n >= 0 && n <= 1) out.floor_ratio = n;
@@ -953,80 +965,80 @@ export function loadOverridesFromConfig(
 
   // T2 — title-phrase boost factor. >= 1.0 (1.0 disables). Bounded sanity cap
   // at 5.0 so a fat-fingered config can't make a title hit dominate everything.
-  const tib = get('search.title_boost');
+  const tib = get("search.title_boost");
   if (tib !== undefined) {
     const n = parseFloat(tib);
     if (Number.isFinite(n) && n >= 1.0 && n <= 5.0) out.title_boost = n;
   }
 
   // v0.36 cross-modal overrides (D3 registry)
-  const cmbt = get('search.cross_modal.both_mode_text_weight');
+  const cmbt = get("search.cross_modal.both_mode_text_weight");
   if (cmbt !== undefined) {
     const n = parseFloat(cmbt);
     if (Number.isFinite(n) && n >= 0) out.cross_modal_both_text_weight = n;
   }
-  const cmbi = get('search.cross_modal.both_mode_image_weight');
+  const cmbi = get("search.cross_modal.both_mode_image_weight");
   if (cmbi !== undefined) {
     const n = parseFloat(cmbi);
     if (Number.isFinite(n) && n >= 0) out.cross_modal_both_image_weight = n;
   }
-  const iqt = get('search.image_query.text_refinement_weight');
+  const iqt = get("search.image_query.text_refinement_weight");
   if (iqt !== undefined) {
     const n = parseFloat(iqt);
     if (Number.isFinite(n) && n >= 0) out.image_query_text_refinement_weight = n;
   }
-  const iqi = get('search.image_query.image_refinement_weight');
+  const iqi = get("search.image_query.image_refinement_weight");
   if (iqi !== undefined) {
     const n = parseFloat(iqi);
     if (Number.isFinite(n) && n >= 0) out.image_query_image_refinement_weight = n;
   }
-  const um = get('search.unified_multimodal');
+  const um = get("search.unified_multimodal");
   if (um !== undefined) {
-    out.unified_multimodal = um === '1' || um.toLowerCase() === 'true';
+    out.unified_multimodal = um === "1" || um.toLowerCase() === "true";
   }
-  const umo = get('search.unified_multimodal_only');
+  const umo = get("search.unified_multimodal_only");
   if (umo !== undefined) {
-    out.unified_multimodal_only = umo === '1' || umo.toLowerCase() === 'true';
+    out.unified_multimodal_only = umo === "1" || umo.toLowerCase() === "true";
   }
-  const lli = get('search.cross_modal.llm_intent');
+  const lli = get("search.cross_modal.llm_intent");
   if (lli !== undefined) {
-    out.cross_modal_llm_intent = lli === '1' || lli.toLowerCase() === 'true';
+    out.cross_modal_llm_intent = lli === "1" || lli.toLowerCase() === "true";
   }
   // v0.40.3.0 contextual retrieval. tier override + soft kill switch.
-  const cr = get('search.contextual_retrieval');
+  const cr = get("search.contextual_retrieval");
   if (cr !== undefined && (CR_MODES as readonly string[]).includes(cr.trim().toLowerCase())) {
     out.contextual_retrieval = cr.trim().toLowerCase() as CRMode;
   }
-  const crd = get('search.contextual_retrieval_disabled');
+  const crd = get("search.contextual_retrieval_disabled");
   if (crd !== undefined) {
-    out.contextual_retrieval_disabled = crd === '1' || crd.toLowerCase() === 'true';
+    out.contextual_retrieval_disabled = crd === "1" || crd.toLowerCase() === "true";
   }
 
   // v0.40.4 — graph_signals
-  const gs = get('search.graph_signals');
+  const gs = get("search.graph_signals");
   if (gs !== undefined) {
-    out.graph_signals = gs === '1' || gs.toLowerCase() === 'true';
+    out.graph_signals = gs === "1" || gs.toLowerCase() === "true";
   }
 
   // v0.42.3.0 — autocut. `search.autocut` is the master toggle (the ceiling
   // override agents use to force the full top-K); `search.autocut_jump` tunes
   // sensitivity (clamped to (0, 1] — out-of-range falls through to the bundle).
-  const ac = get('search.autocut');
+  const ac = get("search.autocut");
   if (ac !== undefined) {
-    out.autocut = ac === '1' || ac.toLowerCase() === 'true';
+    out.autocut = ac === "1" || ac.toLowerCase() === "true";
   }
-  const acj = get('search.autocut_jump');
+  const acj = get("search.autocut_jump");
   if (acj !== undefined) {
     const n = parseFloat(acj);
     if (Number.isFinite(n) && n > 0 && n <= 1) out.autocut_jump = n;
   }
 
   // v0.43 — relational recall arm.
-  const rel = get('search.relational_retrieval');
+  const rel = get("search.relational_retrieval");
   if (rel !== undefined) {
-    out.relationalRetrieval = rel === '1' || rel.toLowerCase() === 'true';
+    out.relationalRetrieval = rel === "1" || rel.toLowerCase() === "true";
   }
-  const reld = get('search.relational_retrieval_depth');
+  const reld = get("search.relational_retrieval_depth");
   if (reld !== undefined) {
     const n = parseInt(reld, 10);
     if (Number.isFinite(n) && n >= 1 && n <= 3) out.relational_retrieval_depth = n;
@@ -1037,43 +1049,43 @@ export function loadOverridesFromConfig(
 
 /** The full list of config keys this module reads. Used by `gbrain search modes --reset`. */
 export const SEARCH_MODE_CONFIG_KEYS: ReadonlyArray<string> = Object.freeze([
-  'search.cache.enabled',
-  'search.cache.similarity_threshold',
-  'search.cache.ttl_seconds',
-  'search.intentWeighting',
-  'search.tokenBudget',
-  'search.expansion',
-  'search.searchLimit',
+  "search.cache.enabled",
+  "search.cache.similarity_threshold",
+  "search.cache.ttl_seconds",
+  "search.intentWeighting",
+  "search.tokenBudget",
+  "search.expansion",
+  "search.searchLimit",
   // v0.35.0.0+ reranker keys
-  'search.reranker.enabled',
-  'search.reranker.model',
-  'search.reranker.top_n_in',
-  'search.reranker.top_n_out',
-  'search.reranker.timeout_ms',
+  "search.reranker.enabled",
+  "search.reranker.model",
+  "search.reranker.top_n_in",
+  "search.reranker.top_n_out",
+  "search.reranker.timeout_ms",
   // v0.35.6.0 — floor-ratio gate
-  'search.floor_ratio',
-  'search.title_boost',
+  "search.floor_ratio",
+  "search.title_boost",
   // v0.36 cross-modal keys (D3)
-  'search.cross_modal.both_mode_text_weight',
-  'search.cross_modal.both_mode_image_weight',
-  'search.image_query.text_refinement_weight',
-  'search.image_query.image_refinement_weight',
-  'search.unified_multimodal',
-  'search.unified_multimodal_only',
-  'search.cross_modal.llm_intent',
+  "search.cross_modal.both_mode_text_weight",
+  "search.cross_modal.both_mode_image_weight",
+  "search.image_query.text_refinement_weight",
+  "search.image_query.image_refinement_weight",
+  "search.unified_multimodal",
+  "search.unified_multimodal_only",
+  "search.cross_modal.llm_intent",
   // v0.40.4 graph signals
-  'search.graph_signals',
+  "search.graph_signals",
   // v0.40.3.0 contextual retrieval — tier override + soft kill switch.
   // Per-mode default lives in the bundle; this key lets power users
   // override at the per-key level without flipping the global mode.
-  'search.contextual_retrieval',
-  'search.contextual_retrieval_disabled',
+  "search.contextual_retrieval",
+  "search.contextual_retrieval_disabled",
   // v0.42.3.0 autocut
-  'search.autocut',
+  "search.autocut",
   // v0.43 relational recall
-  'search.relational_retrieval',
-  'search.relational_retrieval_depth',
-  'search.autocut_jump',
+  "search.relational_retrieval",
+  "search.relational_retrieval_depth",
+  "search.autocut_jump",
 ]);
 
 /**
@@ -1081,7 +1093,7 @@ export const SEARCH_MODE_CONFIG_KEYS: ReadonlyArray<string> = Object.freeze([
  * because `--reset` clears OVERRIDES (the per-knob keys) but should NOT clear
  * the operator's mode choice.
  */
-export const SEARCH_MODE_KEY = 'search.mode';
+export const SEARCH_MODE_KEY = "search.mode";
 
 /**
  * Load the live mode config (mode + per-key overrides) from the brain engine.
@@ -1093,9 +1105,9 @@ export const SEARCH_MODE_KEY = 'search.mode';
  * config table predates v0.32.3 and may not exist on very old brains, so
  * silent fallback is the right shape.
  */
-export async function loadSearchModeConfig(
-  engine: { getConfig(key: string): Promise<string | null> },
-): Promise<ResolveSearchModeInput> {
+export async function loadSearchModeConfig(engine: {
+  getConfig(key: string): Promise<string | null>;
+}): Promise<ResolveSearchModeInput> {
   const safeGet = async (k: string): Promise<string | undefined> => {
     try {
       const v = await engine.getConfig(k);
@@ -1104,7 +1116,7 @@ export async function loadSearchModeConfig(
       // treated as "not set" so it falls through to the mode-bundle default,
       // matching the behavior of a missing key. Without this, downstream
       // parsing (e.g. ce.toLowerCase()) crashes on a non-string.
-      return typeof v === 'string' ? v : undefined;
+      return typeof v === "string" ? v : undefined;
     } catch {
       return undefined;
     }
@@ -1125,4 +1137,3 @@ export async function loadSearchModeConfig(
     overrides: loadOverridesFromConfig(configMap),
   };
 }
-

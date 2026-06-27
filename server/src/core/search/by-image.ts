@@ -26,13 +26,13 @@
  * test/e2e/source-isolation-image.test.ts (4 cases).
  */
 
-import type { BrainEngine } from '../engine.ts';
-import type { SearchOpts, SearchResult } from '../types.ts';
-import { effectiveRrfK } from './intent-weights.ts';
-import { rrfFusionWeighted, RRF_K } from './hybrid.ts';
-import { dedupResults } from './dedup.ts';
-import { embedQueryMultimodal, embedQueryMultimodalImage } from '../ai/gateway.ts';
-import { loadSearchModeConfig, resolveSearchMode } from './mode.ts';
+import type { BrainEngine } from "../engine.ts";
+import type { SearchOpts, SearchResult } from "../types.ts";
+import { effectiveRrfK } from "./intent-weights.ts";
+import { rrfFusionWeighted, RRF_K } from "./hybrid.ts";
+import { dedupResults } from "./dedup.ts";
+import { embedQueryMultimodal, embedQueryMultimodalImage } from "../ai/gateway.ts";
+import { loadSearchModeConfig, resolveSearchMode } from "./mode.ts";
 
 export interface SearchByImageOpts extends SearchOpts {
   /** Optional text refinement; runs hybrid intersect via weighted RRF (D13). */
@@ -49,7 +49,7 @@ export interface SearchByImageOpts extends SearchOpts {
 export async function searchByImage(
   engine: BrainEngine,
   input: { base64: string; mime: string },
-  opts: SearchByImageOpts = {},
+  opts: SearchByImageOpts = {}
 ): Promise<SearchResult[]> {
   // Resolve mode bundle once at entry — picks up cross-modal RRF weights
   // (D13 image_query_text_refinement_weight / image_query_image_refinement_weight)
@@ -66,7 +66,7 @@ export async function searchByImage(
   // routing slots in here once src/core/types.ts widens
   // SearchOpts.embeddingColumn to include 'embedding_multimodal' (Commit 3
   // schema migration + type widening).
-  const imageColumn: 'embedding_image' = 'embedding_image';
+  const imageColumn: "embedding_image" = "embedding_image";
 
   const baseSearchOpts: SearchOpts = {
     limit: Math.min(limit * 2, 100),
@@ -85,7 +85,7 @@ export async function searchByImage(
   const imageList = await engine.searchVector(imageEmbedding, imageOpts);
   // Tag rows with modality so downstream consumers can distinguish in 'both' results.
   for (const r of imageList) {
-    r.modality = r.modality ?? 'image';
+    r.modality = r.modality ?? "image";
   }
 
   // D13: if caller provided a text refinement query, run the text branch too
@@ -103,7 +103,7 @@ export async function searchByImage(
     // space to query.
     const textList = await engine.searchVector(textEmbedding, textOpts);
     for (const r of textList) {
-      r.modality = r.modality ?? 'image';
+      r.modality = r.modality ?? "image";
     }
 
     // Weighted RRF merge: image branch has higher default weight (0.6 vs 0.4)
@@ -117,7 +117,7 @@ export async function searchByImage(
         { list: imageList, k: imageK },
         { list: textList, k: textK },
       ],
-      true, // apply boost
+      true // apply boost
     );
     fused.sort((a, b) => b.score - a.score);
     return dedupResults(fused).slice(offset, offset + limit);

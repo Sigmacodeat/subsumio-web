@@ -5,35 +5,35 @@
  * write is the same lock-pin / disconnect-race class as the other sinks. These
  * tests pin the bounded drain (`awaitPendingEvalCaptures`).
  */
-import { describe, test, expect, afterEach } from 'bun:test';
+import { describe, test, expect, afterEach } from "bun:test";
 import {
   captureEvalCandidate,
   awaitPendingEvalCaptures,
   _resetPendingEvalCapturesForTests,
   type CaptureContext,
-} from '../src/core/eval-capture.ts';
-import type { BrainEngine } from '../src/core/engine.ts';
-import type { SearchResult } from '../src/core/types.ts';
+} from "../src/core/eval-capture.ts";
+import type { BrainEngine } from "../src/core/engine.ts";
+import type { SearchResult } from "../src/core/types.ts";
 
 function makeCtx(): CaptureContext {
   const result: SearchResult = {
-    slug: 'people/alice-example',
+    slug: "people/alice-example",
     page_id: 1,
-    title: 'Alice Example',
-    type: 'person',
-    chunk_text: '…',
-    chunk_source: 'compiled_truth',
+    title: "Alice Example",
+    type: "person",
+    chunk_text: "…",
+    chunk_source: "compiled_truth",
     chunk_id: 42,
     chunk_index: 0,
     score: 0.9,
     stale: false,
-    source_id: 'default',
+    source_id: "default",
   };
   return {
-    tool_name: 'query',
-    query: 'who is alice',
+    tool_name: "query",
+    query: "who is alice",
     results: [result],
-    meta: { vector_enabled: true, detail_resolved: 'medium', expansion_applied: false },
+    meta: { vector_enabled: true, detail_resolved: "medium", expansion_applied: false },
     latency_ms: 1,
     remote: false,
     expand_enabled: false,
@@ -45,13 +45,13 @@ function makeCtx(): CaptureContext {
 
 afterEach(() => _resetPendingEvalCapturesForTests());
 
-describe('awaitPendingEvalCaptures', () => {
-  test('empty set drains instantly', async () => {
+describe("awaitPendingEvalCaptures", () => {
+  test("empty set drains instantly", async () => {
     const r = await awaitPendingEvalCaptures(50);
     expect(r.unfinished).toBe(0);
   });
 
-  test('drains a settled capture to unfinished:0', async () => {
+  test("drains a settled capture to unfinished:0", async () => {
     const engine = {
       logEvalCandidate: async () => 1,
       logEvalCaptureFailure: async () => {},
@@ -61,7 +61,7 @@ describe('awaitPendingEvalCaptures', () => {
     expect(r.unfinished).toBe(0);
   });
 
-  test('a hanging capture is bounded by the timeout (not a hang)', async () => {
+  test("a hanging capture is bounded by the timeout (not a hang)", async () => {
     const engine = {
       // Never resolves — simulates a wedged DB write.
       logEvalCandidate: () => new Promise<number>(() => {}),

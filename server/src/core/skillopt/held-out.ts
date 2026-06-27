@@ -25,15 +25,15 @@
  * checks, or `kind: 'llm'` if the user wants a real-judge signal.
  */
 
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import type { BrainEngine } from '../engine.ts';
-import { loadBenchmark } from './benchmark.ts';
-import { D_SEL_MIN_SIZE } from './types.ts';
-import type { BenchmarkTask } from './types.ts';
-import { scoreSkillOnTasks } from './validate-gate.ts';
+import * as fs from "node:fs";
+import * as path from "node:path";
+import type { BrainEngine } from "../engine.ts";
+import { loadBenchmark } from "./benchmark.ts";
+import { D_SEL_MIN_SIZE } from "./types.ts";
+import type { BenchmarkTask } from "./types.ts";
+import { scoreSkillOnTasks } from "./validate-gate.ts";
 
-const CAPTURE_CONFIG_KEY = 'skillopt.capture_enabled';
+const CAPTURE_CONFIG_KEY = "skillopt.capture_enabled";
 
 /**
  * Minimum held-out task count required to gate a BUNDLED-skill mutation. A
@@ -45,8 +45,8 @@ const CAPTURE_CONFIG_KEY = 'skillopt.capture_enabled';
 export const MIN_HELD_OUT_SIZE = D_SEL_MIN_SIZE;
 
 export function capturesDir(): string {
-  const home = process.env.GBRAIN_HOME ?? process.env.HOME ?? '';
-  return path.join(home, '.gbrain', 'skillopt-captures');
+  const home = process.env.GBRAIN_HOME ?? process.env.HOME ?? "";
+  return path.join(home, ".gbrain", "skillopt-captures");
 }
 
 export function capturePath(skillName: string, runId: string): string {
@@ -57,7 +57,7 @@ export function capturePath(skillName: string, runId: string): string {
 export async function isCaptureEnabled(engine: BrainEngine): Promise<boolean> {
   try {
     const v = await engine.getConfig(CAPTURE_CONFIG_KEY);
-    return v === 'true';
+    return v === "true";
   } catch {
     return false;
   }
@@ -70,7 +70,7 @@ export interface CapturedRollout {
   final_text: string;
   tool_calls: Array<{ name: string; failed?: boolean }>;
   /** Optional user-supplied label for whether this rollout was "good". */
-  label?: 'good' | 'bad' | null;
+  label?: "good" | "bad" | null;
 }
 
 /**
@@ -81,10 +81,12 @@ export function appendCapture(skillName: string, runId: string, row: CapturedRol
   const file = capturePath(skillName, runId);
   try {
     fs.mkdirSync(path.dirname(file), { recursive: true });
-    fs.appendFileSync(file, JSON.stringify(row) + '\n', 'utf8');
+    fs.appendFileSync(file, JSON.stringify(row) + "\n", "utf8");
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    process.stderr.write(`[skillopt-capture] write failed for ${skillName} (${msg}); capture skipped\n`);
+    process.stderr.write(
+      `[skillopt-capture] write failed for ${skillName} (${msg}); capture skipped\n`
+    );
   }
 }
 
@@ -140,8 +142,14 @@ export async function runHeldOutGate(opts: HeldOutGateOpts): Promise<HeldOutGate
     judgeModel: opts.judgeModel,
     ...(opts.abortSignal ? { abortSignal: opts.abortSignal } : {}),
   };
-  const baselineScore = await scoreSkillOnTasks({ ...scoreOpts, skillText: opts.baselineSkillText });
-  const candidateScore = await scoreSkillOnTasks({ ...scoreOpts, skillText: opts.candidateSkillText });
+  const baselineScore = await scoreSkillOnTasks({
+    ...scoreOpts,
+    skillText: opts.baselineSkillText,
+  });
+  const candidateScore = await scoreSkillOnTasks({
+    ...scoreOpts,
+    skillText: opts.candidateSkillText,
+  });
 
   return {
     baselineScore,

@@ -21,7 +21,7 @@ export const Circle: Story = {
 
 export const Card: Story = {
   render: () => (
-    <div className="space-y-2 w-80">
+    <div className="w-80 space-y-2">
       <Skeleton className="h-4 w-full" />
       <Skeleton className="h-4 w-3/4" />
       <Skeleton className="h-20 w-full" />

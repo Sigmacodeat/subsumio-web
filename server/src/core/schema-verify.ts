@@ -13,8 +13,8 @@
  * Called at the end of initSchema(), after all migrations complete.
  */
 
-import { SCHEMA_SQL } from './schema-embedded.ts';
-import type { BrainEngine } from './engine.ts';
+import { SCHEMA_SQL } from "./schema-embedded.ts";
+import type { BrainEngine } from "./engine.ts";
 
 /** A column expected to exist in the database. */
 export interface ExpectedColumn {
@@ -40,10 +40,10 @@ export function parseExpectedColumns(): ExpectedColumn[] {
   // Match CREATE TABLE IF NOT EXISTS <name> ( ... );
   const tableRegex = /CREATE\s+TABLE\s+IF\s+NOT\s+EXISTS\s+(\w+)\s*\(([\s\S]*?)\);/gi;
 
-  const SQL_KEYWORDS = new Set(['constraint', 'unique', 'check', 'primary', 'foreign', 'exclude']);
+  const SQL_KEYWORDS = new Set(["constraint", "unique", "check", "primary", "foreign", "exclude"]);
 
   function processLine(tableName: string, line: string) {
-    line = line.trim().replace(/,\s*$/, '');
+    line = line.trim().replace(/,\s*$/, "");
     if (!line) return;
 
     // Skip CONSTRAINT, UNIQUE, CHECK, PRIMARY KEY lines
@@ -67,29 +67,29 @@ export function parseExpectedColumns(): ExpectedColumn[] {
     const tableName = match[1];
     const body = match[2];
 
-    const lines = body.split('\n');
-    let currentLine = '';
+    const lines = body.split("\n");
+    let currentLine = "";
 
     for (const rawLine of lines) {
       const trimmed = rawLine.trim();
 
       // Skip empty lines and comments
-      if (!trimmed || trimmed.startsWith('--')) {
+      if (!trimmed || trimmed.startsWith("--")) {
         // If we have accumulated content and hit a blank/comment line,
         // the accumulated content is a complete line
         if (currentLine.trim()) {
           processLine(tableName, currentLine);
-          currentLine = '';
+          currentLine = "";
         }
         continue;
       }
 
-      currentLine += ' ' + trimmed;
+      currentLine += " " + trimmed;
 
       // If line ends with comma, it's a complete column definition
-      if (trimmed.endsWith(',')) {
+      if (trimmed.endsWith(",")) {
         processLine(tableName, currentLine);
-        currentLine = '';
+        currentLine = "";
       }
     }
 
@@ -102,13 +102,14 @@ export function parseExpectedColumns(): ExpectedColumn[] {
   // Also parse ALTER TABLE ... ADD COLUMN IF NOT EXISTS statements.
   // These are used for columns added outside CREATE TABLE blocks
   // (e.g., pages.search_vector, files.source_id).
-  const alterRegex = /ALTER\s+TABLE\s+(\w+)\s+ADD\s+COLUMN\s+IF\s+NOT\s+EXISTS\s+(\w+)\s+([^;,]+)/gi;
+  const alterRegex =
+    /ALTER\s+TABLE\s+(\w+)\s+ADD\s+COLUMN\s+IF\s+NOT\s+EXISTS\s+(\w+)\s+([^;,]+)/gi;
   let alterMatch: RegExpExecArray | null;
-  const seen = new Set(results.map(r => `${r.table}.${r.column}`));
+  const seen = new Set(results.map((r) => `${r.table}.${r.column}`));
   while ((alterMatch = alterRegex.exec(SCHEMA_SQL)) !== null) {
     const table = alterMatch[1];
     const column = alterMatch[2].toLowerCase();
-    const definition = alterMatch[3].trim().replace(/,\s*$/, '');
+    const definition = alterMatch[3].trim().replace(/,\s*$/, "");
     const key = `${table}.${column}`;
     if (!seen.has(key)) {
       seen.add(key);
@@ -130,19 +131,19 @@ export function simplifyColumnDef(definition: string): string {
   let def = definition;
 
   // Remove REFERENCES ... (with optional ON DELETE/UPDATE clauses)
-  def = def.replace(/REFERENCES\s+\w+\([^)]*\)(\s+ON\s+(DELETE|UPDATE)\s+\w+(\s+\w+)?)*\s*/gi, '');
+  def = def.replace(/REFERENCES\s+\w+\([^)]*\)(\s+ON\s+(DELETE|UPDATE)\s+\w+(\s+\w+)?)*\s*/gi, "");
 
   // Remove CHECK constraints (handle nested parens)
-  def = def.replace(/CHECK\s*\((?:[^()]*|\([^()]*\))*\)/gi, '');
+  def = def.replace(/CHECK\s*\((?:[^()]*|\([^()]*\))*\)/gi, "");
 
   // Remove inline UNIQUE
-  def = def.replace(/\bUNIQUE\b/gi, '');
+  def = def.replace(/\bUNIQUE\b/gi, "");
 
   // Remove trailing commas and whitespace
-  def = def.replace(/,\s*$/, '').trim();
+  def = def.replace(/,\s*$/, "").trim();
 
   // Collapse multiple spaces
-  def = def.replace(/\s+/g, ' ').trim();
+  def = def.replace(/\s+/g, " ").trim();
 
   return def;
 }
@@ -173,7 +174,7 @@ async function getActualTables(engine: BrainEngine): Promise<Set<string>> {
      FROM information_schema.tables
      WHERE table_schema = 'public' AND table_type = 'BASE TABLE'`
   );
-  return new Set(rows.map(r => r.table_name));
+  return new Set(rows.map((r) => r.table_name));
 }
 
 export interface VerifyResult {
@@ -235,7 +236,7 @@ export async function verifySchema(engine: BrainEngine): Promise<VerifyResult> {
   for (const m of result.missing) {
     console.warn(`  ${m.table}.${m.column}`);
   }
-  console.warn('  Attempting self-heal via ALTER TABLE ADD COLUMN...\n');
+  console.warn("  Attempting self-heal via ALTER TABLE ADD COLUMN...\n");
 
   // Build a map from table.column -> definition for self-healing
   const defMap = new Map<string, string>();
@@ -247,7 +248,7 @@ export async function verifySchema(engine: BrainEngine): Promise<VerifyResult> {
   for (const m of result.missing) {
     const rawDef = defMap.get(`${m.table}.${m.column}`);
     if (!rawDef) {
-      result.failed.push({ ...m, error: 'No definition found in schema' });
+      result.failed.push({ ...m, error: "No definition found in schema" });
       continue;
     }
 
@@ -266,15 +267,17 @@ export async function verifySchema(engine: BrainEngine): Promise<VerifyResult> {
   }
 
   if (result.healed.length > 0) {
-    console.log(`\n  Schema self-heal: ${result.healed.length}/${result.missing.length} column(s) recovered.`);
+    console.log(
+      `\n  Schema self-heal: ${result.healed.length}/${result.missing.length} column(s) recovered.`
+    );
   }
 
   if (result.failed.length > 0) {
-    const failList = result.failed.map(f => `${f.table}.${f.column}: ${f.error}`).join('\n  ');
+    const failList = result.failed.map((f) => `${f.table}.${f.column}: ${f.error}`).join("\n  ");
     throw new Error(
       `Schema verification failed: ${result.failed.length} column(s) could not be added:\n  ${failList}\n` +
-      'This usually means PgBouncer transaction-mode silently dropped ALTER TABLE statements.\n' +
-      'Fix: connect directly to Postgres (not through PgBouncer) and run: gbrain apply-migrations --yes'
+        "This usually means PgBouncer transaction-mode silently dropped ALTER TABLE statements.\n" +
+        "Fix: connect directly to Postgres (not through PgBouncer) and run: gbrain apply-migrations --yes"
     );
   }
 

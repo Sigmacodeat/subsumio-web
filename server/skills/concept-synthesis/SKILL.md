@@ -20,7 +20,7 @@ writes_to:
 > **Convention:** see [conventions/quality.md](../conventions/quality.md) for
 > back-link enforcement and quote-fidelity requirements.
 >
-> **Convention:** see [_brain-filing-rules.md](../_brain-filing-rules.md) —
+> **Convention:** see [\_brain-filing-rules.md](../_brain-filing-rules.md) —
 > output files under `concepts/` per the primary-subject rule.
 
 ## What this solves
@@ -128,17 +128,19 @@ the user's worldview, why it matters. Third-person analytical voice.]
 
 ## Evolution
 
-| Period | Expression | Signal |
-|--------|-----------|--------|
+| Period  | Expression           | Signal                       |
+| ------- | -------------------- | ---------------------------- |
 | YYYY-MM | "First articulation" | First use — aspiration frame |
-| YYYY-MM | "Sharpening" | Anti-pattern emerges |
-| YYYY-MM | "Peak form" | Cleanest expression |
+| YYYY-MM | "Sharpening"         | Anti-pattern emerges         |
+| YYYY-MM | "Peak form"          | Cleanest expression          |
 
 ## Related Concepts
+
 - [sibling concept](sibling-concept.md) — relationship description
 - [sibling concept](sibling-concept.md) — relationship description
 
 ## Timeline
+
 [Full timeline with deduped entries, quotes, source links]
 ```
 
@@ -166,22 +168,28 @@ mention_count: 1
 # Intellectual Universe
 
 ## Canon (T1) — N concepts
+
 The permanent intellectual fingerprint. Ideas that recur across years.
 
 ### [Cluster Name]
+
 - [concept-slug](concept-slug.md) — one-line characterization
 - ...
 
 ### [Other Cluster]
+
 - ...
 
 ## Developing (T2) — N concepts
+
 Sharpening. Might become canon.
 
 ## Speculative (T3) — N concepts
+
 Testing in public.
 
 ## Stats
+
 - Total concepts: N
 - T1 Canon: N
 - T2 Developing: N
@@ -194,11 +202,13 @@ Testing in public.
 ## Quality gates
 
 ### Dedup quality
+
 - No two concept pages should be "the same idea in different words."
 - Aliases preserved in frontmatter for search.
 - Run `gbrain query "type:concept"` and spot-check the count reduction.
 
 ### Tier quality
+
 - T1 should feel like "yes, that IS one of my recurring frameworks" —
   recognizable, recurring, sharp.
 - T2 should feel like "I'm working on this; it's getting clearer."
@@ -206,6 +216,7 @@ Testing in public.
 - No concept should be T4 with > 3 months span.
 
 ### Synthesis quality
+
 - Captures evolution, not just repetition.
 - Uses verbatim quotes, not paraphrase.
 - Links to related concepts (markdown links, not wiki-links).
@@ -237,7 +248,6 @@ This is heavy work. Run on a cadence, not on every signal:
 - `skills/signal-detector/SKILL.md` — creates raw concept stubs from text channels
 - `skills/voice-note-ingest/SKILL.md` — same for audio channels
 - `skills/idea-ingest/SKILL.md` — same for links / articles
-
 
 ## Contract
 

@@ -18,21 +18,29 @@
  * across the suite).
  */
 
-import { describe, test as testRaw, expect, beforeAll, afterAll } from 'bun:test';
-import { mkdtempSync, rmSync, readFileSync, existsSync } from 'fs';
-import { join } from 'path';
-import { tmpdir } from 'os';
+import { describe, test as testRaw, expect, beforeAll, afterAll } from "bun:test";
+import { mkdtempSync, rmSync, readFileSync, existsSync } from "fs";
+import { join } from "path";
+import { tmpdir } from "os";
 
 function test(name: string, fn: () => void | Promise<unknown>): void {
   testRaw(name, fn, 120000);
 }
 
-const CLI = join(__dirname, '..', '..', 'src', 'cli.ts');
+const CLI = join(__dirname, "..", "..", "src", "cli.ts");
 const DATABASE_URL = process.env.DATABASE_URL;
 
-interface RunResult { exitCode: number; stdout: string; stderr: string; }
+interface RunResult {
+  exitCode: number;
+  stdout: string;
+  stderr: string;
+}
 
-async function spawn(args: string[], home: string, extraEnv: Record<string, string | undefined> = {}): Promise<RunResult> {
+async function spawn(
+  args: string[],
+  home: string,
+  extraEnv: Record<string, string | undefined> = {}
+): Promise<RunResult> {
   const env: Record<string, string> = {};
   for (const [k, v] of Object.entries(process.env)) {
     if (v !== undefined) env[k] = v;
@@ -44,11 +52,11 @@ async function spawn(args: string[], home: string, extraEnv: Record<string, stri
     else env[k] = v;
   }
   const proc = Bun.spawn({
-    cmd: ['bun', 'run', CLI, ...args],
+    cmd: ["bun", "run", CLI, ...args],
     env,
-    stdin: 'ignore',
-    stdout: 'pipe',
-    stderr: 'pipe',
+    stdin: "ignore",
+    stdout: "pipe",
+    stderr: "pipe",
   });
   const [stdout, stderr, exitCode] = await Promise.all([
     new Response(proc.stdout).text(),
@@ -62,23 +70,26 @@ async function spawn(args: string[], home: string, extraEnv: Record<string, stri
 // E2E tests in this directory.
 const describeWhen = DATABASE_URL ? describe : describe.skip;
 
-describeWhen('thin-client end-to-end (requires DATABASE_URL)', () => {
-  let hostHome: string;          // GBRAIN_HOME for the host (with local engine)
-  let clientHome: string;        // GBRAIN_HOME for the thin client (no engine)
+describeWhen("thin-client end-to-end (requires DATABASE_URL)", () => {
+  let hostHome: string; // GBRAIN_HOME for the host (with local engine)
+  let clientHome: string; // GBRAIN_HOME for the thin client (no engine)
   let serverProc: ReturnType<typeof Bun.spawn> | null = null;
   let serverPort: number;
   let clientId: string;
   let clientSecret: string;
 
   beforeAll(async () => {
-    hostHome = mkdtempSync(join(tmpdir(), 'gbrain-thin-host-'));
-    clientHome = mkdtempSync(join(tmpdir(), 'gbrain-thin-client-'));
+    hostHome = mkdtempSync(join(tmpdir(), "gbrain-thin-host-"));
+    clientHome = mkdtempSync(join(tmpdir(), "gbrain-thin-client-"));
 
     // 1. Init host with a real Postgres. `--no-embedding` defers embedding
     //    setup (v0.37.10.0+ requires an explicit embedding provider OR the
     //    deferral flag); thin-client tests exercise the routing surface, not
     //    embedding, so no provider is needed.
-    const init = await spawn(['init', '--non-interactive', '--no-embedding', '--url', DATABASE_URL!], hostHome);
+    const init = await spawn(
+      ["init", "--non-interactive", "--no-embedding", "--url", DATABASE_URL!],
+      hostHome
+    );
     if (init.exitCode !== 0) throw new Error(`host init failed: ${init.stderr || init.stdout}`);
 
     // 2. Pick a random free port for serve --http.
@@ -91,31 +102,43 @@ describeWhen('thin-client end-to-end (requires DATABASE_URL)', () => {
     }
     env.GBRAIN_HOME = hostHome;
     serverProc = Bun.spawn({
-      cmd: ['bun', 'run', CLI, 'serve', '--http', '--port', String(serverPort)],
+      cmd: ["bun", "run", CLI, "serve", "--http", "--port", String(serverPort)],
       env,
-      stdin: 'ignore',
-      stdout: 'pipe',
-      stderr: 'pipe',
+      stdin: "ignore",
+      stdout: "pipe",
+      stderr: "pipe",
     });
 
     // Wait for the server to be ready (poll the discovery endpoint).
     const deadline = Date.now() + 20_000;
     while (Date.now() < deadline) {
       try {
-        const res = await fetch(`http://127.0.0.1:${serverPort}/.well-known/oauth-authorization-server`, {
-          signal: AbortSignal.timeout(500),
-        });
+        const res = await fetch(
+          `http://127.0.0.1:${serverPort}/.well-known/oauth-authorization-server`,
+          {
+            signal: AbortSignal.timeout(500),
+          }
+        );
         if (res.ok) break;
-      } catch { /* retry */ }
-      await new Promise(r => setTimeout(r, 250));
+      } catch {
+        /* retry */
+      }
+      await new Promise((r) => setTimeout(r, 250));
     }
 
     // 4. Register a client with read,write,admin scope.
-    const reg = await spawn([
-      'auth', 'register-client', 'thin-client-test',
-      '--grant-types', 'client_credentials',
-      '--scopes', 'read write admin',
-    ], hostHome);
+    const reg = await spawn(
+      [
+        "auth",
+        "register-client",
+        "thin-client-test",
+        "--grant-types",
+        "client_credentials",
+        "--scopes",
+        "read write admin",
+      ],
+      hostHome
+    );
     if (reg.exitCode !== 0) throw new Error(`register-client failed: ${reg.stderr || reg.stdout}`);
     const parsed = parseRegisterClientOutput(reg.stdout);
     clientId = parsed.clientId;
@@ -132,53 +155,78 @@ describeWhen('thin-client end-to-end (requires DATABASE_URL)', () => {
     const idMatch = out.match(/Client ID:\s*(\S+)/);
     const secretMatch = out.match(/Client Secret:\s*(\S+)/);
     return {
-      clientId: idMatch?.[1] ?? '',
-      clientSecret: secretMatch?.[1] ?? '',
+      clientId: idMatch?.[1] ?? "",
+      clientSecret: secretMatch?.[1] ?? "",
     };
   }
 
   afterAll(async () => {
     if (serverProc) {
-      try { serverProc.kill(); } catch { /* best-effort */ }
-      try { await serverProc.exited; } catch { /* ignore */ }
+      try {
+        serverProc.kill();
+      } catch {
+        /* best-effort */
+      }
+      try {
+        await serverProc.exited;
+      } catch {
+        /* ignore */
+      }
     }
-    try { rmSync(hostHome, { recursive: true, force: true }); } catch { /* best-effort */ }
-    try { rmSync(clientHome, { recursive: true, force: true }); } catch { /* best-effort */ }
+    try {
+      rmSync(hostHome, { recursive: true, force: true });
+    } catch {
+      /* best-effort */
+    }
+    try {
+      rmSync(clientHome, { recursive: true, force: true });
+    } catch {
+      /* best-effort */
+    }
   });
 
-  test('init --mcp-only succeeds against the live host', async () => {
-    const r = await spawn([
-      'init', '--mcp-only', '--json',
-      '--issuer-url', `http://127.0.0.1:${serverPort}`,
-      '--mcp-url', `http://127.0.0.1:${serverPort}/mcp`,
-      '--oauth-client-id', clientId,
-      '--oauth-client-secret', clientSecret,
-    ], clientHome);
+  test("init --mcp-only succeeds against the live host", async () => {
+    const r = await spawn(
+      [
+        "init",
+        "--mcp-only",
+        "--json",
+        "--issuer-url",
+        `http://127.0.0.1:${serverPort}`,
+        "--mcp-url",
+        `http://127.0.0.1:${serverPort}/mcp`,
+        "--oauth-client-id",
+        clientId,
+        "--oauth-client-secret",
+        clientSecret,
+      ],
+      clientHome
+    );
     expect(r.exitCode).toBe(0);
-    const cfgPath = join(clientHome, '.gbrain', 'config.json');
+    const cfgPath = join(clientHome, ".gbrain", "config.json");
     expect(existsSync(cfgPath)).toBe(true);
-    const cfg = JSON.parse(readFileSync(cfgPath, 'utf-8'));
+    const cfg = JSON.parse(readFileSync(cfgPath, "utf-8"));
     expect(cfg.remote_mcp.oauth_client_id).toBe(clientId);
     // No PGLite file
-    expect(existsSync(join(clientHome, '.gbrain', 'brain.pglite'))).toBe(false);
+    expect(existsSync(join(clientHome, ".gbrain", "brain.pglite"))).toBe(false);
   });
 
-  test('doctor reports mode: thin-client with all checks green', async () => {
-    const r = await spawn(['doctor', '--json'], clientHome);
+  test("doctor reports mode: thin-client with all checks green", async () => {
+    const r = await spawn(["doctor", "--json"], clientHome);
     expect(r.exitCode).toBe(0);
     const report = JSON.parse(r.stdout.trim());
-    expect(report.mode).toBe('thin-client');
-    expect(report.status).toBe('ok');
+    expect(report.mode).toBe("thin-client");
+    expect(report.status).toBe("ok");
     const checkNames = report.checks.map((c: { name: string }) => c.name);
-    expect(checkNames).toContain('config_integrity');
-    expect(checkNames).toContain('oauth_discovery');
-    expect(checkNames).toContain('oauth_token');
-    expect(checkNames).toContain('mcp_smoke');
-    expect(report.oauth_scope).toContain('admin');
+    expect(checkNames).toContain("config_integrity");
+    expect(checkNames).toContain("oauth_discovery");
+    expect(checkNames).toContain("oauth_token");
+    expect(checkNames).toContain("mcp_smoke");
+    expect(report.oauth_scope).toContain("admin");
   });
 
-  test('sync is refused with canonical thin-client error', async () => {
-    const r = await spawn(['sync'], clientHome);
+  test("sync is refused with canonical thin-client error", async () => {
+    const r = await spawn(["sync"], clientHome);
     expect(r.exitCode).toBe(1);
     // refuseThinClient() emits "(thin-client of <mcp_url>)" with the hyphenated
     // form. Allow either spelling so a future format tweak doesn't false-fail.
@@ -186,35 +234,39 @@ describeWhen('thin-client end-to-end (requires DATABASE_URL)', () => {
     expect(r.stderr).toContain(`http://127.0.0.1:${serverPort}/mcp`);
   });
 
-  test('re-running init refuses without --force', async () => {
-    const r = await spawn(['init', '--non-interactive', '--pglite', '--json'], clientHome);
+  test("re-running init refuses without --force", async () => {
+    const r = await spawn(["init", "--non-interactive", "--pglite", "--json"], clientHome);
     expect(r.exitCode).toBe(1);
-    const parsed = JSON.parse(r.stdout.trim().split('\n').pop()!);
-    expect(parsed.reason).toBe('thin_client_config_present');
+    const parsed = JSON.parse(r.stdout.trim().split("\n").pop()!);
+    expect(parsed.reason).toBe("thin_client_config_present");
   });
 
   // ─── Tier B: gbrain remote ping + remote doctor ───
 
-  test('gbrain remote doctor returns the host DoctorReport', async () => {
-    const r = await spawn(['remote', 'doctor', '--json'], clientHome);
+  test("gbrain remote doctor returns the host DoctorReport", async () => {
+    const r = await spawn(["remote", "doctor", "--json"], clientHome);
     // Exit code reflects the host brain's health. On an empty fresh brain
     // brain_score is 0, so status is 'unhealthy' and exit is 1. That's
     // legitimate doctor output, not a transport failure. What this test
     // pins is the round-trip + JSON shape.
     const report = JSON.parse(r.stdout.trim());
     expect(report.schema_version).toBe(2);
-    expect(['healthy', 'warnings', 'unhealthy']).toContain(report.status);
+    expect(["healthy", "warnings", "unhealthy"]).toContain(report.status);
     const names = report.checks.map((c: { name: string }) => c.name);
-    expect(names).toContain('connection');
-    expect(names).toContain('schema_version');
-    expect(names).toContain('brain_score');
-    expect(names).toContain('queue_health');
+    expect(names).toContain("connection");
+    expect(names).toContain("schema_version");
+    expect(names).toContain("brain_score");
+    expect(names).toContain("queue_health");
     // Host is fresh + connected, so connection check is OK.
-    const conn = report.checks.find((c: { name: string; status: string }) => c.name === 'connection');
-    expect(conn.status).toBe('ok');
+    const conn = report.checks.find(
+      (c: { name: string; status: string }) => c.name === "connection"
+    );
+    expect(conn.status).toBe("ok");
     // Schema version is at LATEST_VERSION on a fresh init.
-    const sv = report.checks.find((c: { name: string; status: string }) => c.name === 'schema_version');
-    expect(sv.status).toBe('ok');
+    const sv = report.checks.find(
+      (c: { name: string; status: string }) => c.name === "schema_version"
+    );
+    expect(sv.status).toBe("ok");
   });
 
   // Skipped: the test fixture is structurally incompatible with what this
@@ -239,56 +291,77 @@ describeWhen('thin-client end-to-end (requires DATABASE_URL)', () => {
   // dispatch) is exercised by the doctor + low-scope tests in this file
   // and by the entire serve-http-oauth.test.ts suite, so coverage of the
   // protocol is not lost while this test sits skipped.
-  testRaw.skip('gbrain remote ping triggers autopilot-cycle and returns terminal state', async () => {
-    const r = await spawn(['remote', 'ping', '--json', '--timeout', '5s'], clientHome);
-    expect(r.stdout.length).toBeGreaterThan(0);
-    const parsed = JSON.parse(r.stdout.trim());
-    expect(parsed).toHaveProperty('job_id');
-    expect(parsed.job_id).toBeGreaterThan(0);
-    if (parsed.status === 'success') {
-      expect(parsed.state).toBe('completed');
-    } else {
-      expect(['failed', 'dead', 'cancelled', 'timeout']).toContain(parsed.reason ?? parsed.state);
+  testRaw.skip(
+    "gbrain remote ping triggers autopilot-cycle and returns terminal state",
+    async () => {
+      const r = await spawn(["remote", "ping", "--json", "--timeout", "5s"], clientHome);
+      expect(r.stdout.length).toBeGreaterThan(0);
+      const parsed = JSON.parse(r.stdout.trim());
+      expect(parsed).toHaveProperty("job_id");
+      expect(parsed.job_id).toBeGreaterThan(0);
+      if (parsed.status === "success") {
+        expect(parsed.state).toBe("completed");
+      } else {
+        expect(["failed", "dead", "cancelled", "timeout"]).toContain(parsed.reason ?? parsed.state);
+      }
     }
-  });
+  );
 
-  test('client without admin scope cannot call run_doctor', async () => {
+  test("client without admin scope cannot call run_doctor", async () => {
     // Register a separate client with read+write only (no admin) and verify
     // that gbrain remote doctor surfaces an auth-error message. This is the
     // codex review #7 regression guard — the verification flow MUST require
     // admin scope.
-    const reg = await spawn([
-      'auth', 'register-client', 'thin-client-readwrite',
-      '--grant-types', 'client_credentials',
-      '--scopes', 'read write',
-    ], hostHome);
+    const reg = await spawn(
+      [
+        "auth",
+        "register-client",
+        "thin-client-readwrite",
+        "--grant-types",
+        "client_credentials",
+        "--scopes",
+        "read write",
+      ],
+      hostHome
+    );
     if (reg.exitCode !== 0) throw new Error(`register-client failed: ${reg.stderr || reg.stdout}`);
     const parsed = parseRegisterClientOutput(reg.stdout);
     const lowScopeId = parsed.clientId;
     const lowScopeSecret = parsed.clientSecret;
 
     // Spin up a separate clientHome for the lower-scope client
-    const lowScopeHome = mkdtempSync(join(tmpdir(), 'gbrain-thin-client-lowscope-'));
+    const lowScopeHome = mkdtempSync(join(tmpdir(), "gbrain-thin-client-lowscope-"));
     try {
-      const init = await spawn([
-        'init', '--mcp-only', '--json',
-        '--issuer-url', `http://127.0.0.1:${serverPort}`,
-        '--mcp-url', `http://127.0.0.1:${serverPort}/mcp`,
-        '--oauth-client-id', lowScopeId,
-        '--oauth-client-secret', lowScopeSecret,
-      ], lowScopeHome);
+      const init = await spawn(
+        [
+          "init",
+          "--mcp-only",
+          "--json",
+          "--issuer-url",
+          `http://127.0.0.1:${serverPort}`,
+          "--mcp-url",
+          `http://127.0.0.1:${serverPort}/mcp`,
+          "--oauth-client-id",
+          lowScopeId,
+          "--oauth-client-secret",
+          lowScopeSecret,
+        ],
+        lowScopeHome
+      );
       if (init.exitCode !== 0) {
-        throw new Error(`low-scope init exit=${init.exitCode}\nstdout:${init.stdout}\nstderr:${init.stderr}`);
+        throw new Error(
+          `low-scope init exit=${init.exitCode}\nstdout:${init.stdout}\nstderr:${init.stderr}`
+        );
       }
       expect(init.exitCode).toBe(0);
 
-      const r = await spawn(['remote', 'doctor', '--json'], lowScopeHome);
+      const r = await spawn(["remote", "doctor", "--json"], lowScopeHome);
       expect(r.exitCode).toBe(1);
       const err = JSON.parse(r.stdout.trim());
-      expect(err.status).toBe('error');
+      expect(err.status).toBe("error");
       // Either the SDK 401 path or our auth_after_refresh wrap is fine —
       // the test pins "this fails because admin scope is missing".
-      expect(['auth', 'auth_after_refresh', 'tool_error']).toContain(err.reason);
+      expect(["auth", "auth_after_refresh", "tool_error"]).toContain(err.reason);
     } finally {
       rmSync(lowScopeHome, { recursive: true, force: true });
     }

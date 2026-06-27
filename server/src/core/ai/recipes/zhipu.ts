@@ -1,4 +1,4 @@
-import type { Recipe } from '../types.ts';
+import type { Recipe } from "../types.ts";
 
 /**
  * Zhipu AI (智谱AI) BigModel Open Platform. OpenAI-compatible /embeddings
@@ -15,18 +15,18 @@ import type { Recipe } from '../types.ts';
  * Reference: https://open.bigmodel.cn/
  */
 export const zhipu: Recipe = {
-  id: 'zhipu',
-  name: 'Zhipu AI (智谱AI BigModel)',
-  tier: 'openai-compat',
-  implementation: 'openai-compatible',
-  base_url_default: 'https://open.bigmodel.cn/api/paas/v4',
+  id: "zhipu",
+  name: "Zhipu AI (智谱AI BigModel)",
+  tier: "openai-compat",
+  implementation: "openai-compatible",
+  base_url_default: "https://open.bigmodel.cn/api/paas/v4",
   auth_env: {
-    required: ['ZHIPUAI_API_KEY'],
-    setup_url: 'https://open.bigmodel.cn/',
+    required: ["ZHIPUAI_API_KEY"],
+    setup_url: "https://open.bigmodel.cn/",
   },
   touchpoints: {
     embedding: {
-      models: ['embedding-3', 'embedding-2'],
+      models: ["embedding-3", "embedding-2"],
       default_dims: 1024,
       // 2048 exposed but breaks HNSW (exact-scan fallback). 1024/512/256
       // stay HNSW-compatible.
@@ -35,6 +35,5 @@ export const zhipu: Recipe = {
       chars_per_token: 2,
     },
   },
-  setup_hint:
-    'Get an API key at https://open.bigmodel.cn/, then `export ZHIPUAI_API_KEY=...`',
+  setup_hint: "Get an API key at https://open.bigmodel.cn/, then `export ZHIPUAI_API_KEY=...`",
 };

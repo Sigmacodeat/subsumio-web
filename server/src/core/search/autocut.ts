@@ -49,7 +49,7 @@ export const DEFAULT_AUTOCUT: AutocutConfig = Object.freeze({
 export interface AutocutDecision {
   applied: boolean;
   /** 'rerank' when a real cliff was cut; 'none' when no cut (no signal / no cliff). */
-  signal: 'rerank' | 'none';
+  signal: "rerank" | "none";
   /** Number of items kept (the cut point). */
   cut: number;
   kept: number;
@@ -65,18 +65,20 @@ export type AutocutInput = boolean | Partial<AutocutConfig> | undefined;
  *  Out-of-range values are IGNORED (left unset) so they fall through to the
  *  mode bundle / module default — mirrors loadOverridesFromConfig. */
 export function autocutFromConfig(
-  cfg: Record<string, unknown> | null | undefined,
+  cfg: Record<string, unknown> | null | undefined
 ): Partial<AutocutConfig> {
   const search = (cfg?.search ?? {}) as Record<string, unknown>;
   const out: Partial<AutocutConfig> = {};
-  if (typeof search.autocut === 'boolean') out.enabled = search.autocut;
+  if (typeof search.autocut === "boolean") out.enabled = search.autocut;
   if (search.autocut_jump !== undefined) {
-    const n = typeof search.autocut_jump === 'number' ? search.autocut_jump : Number.NaN;
+    const n = typeof search.autocut_jump === "number" ? search.autocut_jump : Number.NaN;
     if (Number.isFinite(n) && n > 0 && n <= 1) out.jumpRatio = n;
   }
   if (search.autocut_min_keep !== undefined) {
     const n =
-      typeof search.autocut_min_keep === 'number' ? Math.floor(search.autocut_min_keep) : Number.NaN;
+      typeof search.autocut_min_keep === "number"
+        ? Math.floor(search.autocut_min_keep)
+        : Number.NaN;
     if (Number.isFinite(n) && n >= 1) out.minKeep = n;
   }
   return out;
@@ -85,7 +87,7 @@ export function autocutFromConfig(
 /** Merge defaults → config-plane → per-call into a concrete config. */
 export function resolveAutocut(
   perCall: AutocutInput,
-  fromConfig?: Partial<AutocutConfig>,
+  fromConfig?: Partial<AutocutConfig>
 ): AutocutConfig {
   const base: AutocutConfig = { ...DEFAULT_AUTOCUT, ...(fromConfig ?? {}) };
   if (perCall === undefined) return base;
@@ -103,7 +105,7 @@ function noOp<T>(results: T[]): { kept: T[]; decision: AutocutDecision } {
     kept: results,
     decision: {
       applied: false,
-      signal: 'none',
+      signal: "none",
       cut: results.length,
       kept: results.length,
       total: results.length,
@@ -143,7 +145,7 @@ export function applyAutocut<T>(
    * after the reranker ran, which therefore has no `rerank_score`. Without this,
    * autocut would drop the alias-injected page when it cuts on the scored set.
    */
-  preserve?: (r: T) => boolean,
+  preserve?: (r: T) => boolean
 ): { kept: T[]; decision: AutocutDecision } {
   if (!cfg.enabled || results.length < 2) return noOp(results);
 
@@ -153,7 +155,7 @@ export function applyAutocut<T>(
   const scores: number[] = [];
   for (const r of results) {
     const s = scoreOf(r);
-    if (typeof s === 'number' && Number.isFinite(s)) scores.push(s);
+    if (typeof s === "number" && Number.isFinite(s)) scores.push(s);
   }
   if (scores.length < 2) return noOp(results);
 
@@ -183,7 +185,7 @@ export function applyAutocut<T>(
       kept: results,
       decision: {
         applied: false,
-        signal: 'none',
+        signal: "none",
         cut: results.length,
         kept: results.length,
         total: results.length,
@@ -200,7 +202,7 @@ export function applyAutocut<T>(
   const kept = results.filter((r) => {
     if (preserve?.(r)) return true;
     const s = scoreOf(r);
-    return typeof s === 'number' && Number.isFinite(s) && s >= threshold;
+    return typeof s === "number" && Number.isFinite(s) && s >= threshold;
   });
 
   // Failsafe: a degenerate threshold could in theory keep 0 (it cannot here, since
@@ -211,7 +213,7 @@ export function applyAutocut<T>(
     kept,
     decision: {
       applied: kept.length < results.length,
-      signal: kept.length < results.length ? 'rerank' : 'none',
+      signal: kept.length < results.length ? "rerank" : "none",
       cut: kept.length,
       kept: kept.length,
       total: results.length,

@@ -80,7 +80,8 @@ describe("Encryption-at-Rest for Sensitive Auth Fields", () => {
   });
 
   it("DocuSign access token: encrypt → store → decrypt roundtrip", async () => {
-    const docusignToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJkb2N1c2lnbi11c2VyIn0.signature";
+    const docusignToken =
+      "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJkb2N1c2lnbi11c2VyIn0.signature";
     const encrypted = await encrypt(docusignToken);
     expect(encrypted).not.toBe(docusignToken);
     const decrypted = await decrypt(encrypted);
@@ -205,4 +206,3 @@ describe("Encryption Production Guard", () => {
     expect(result.name).not.toBe("test");
   });
 });
-

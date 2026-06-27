@@ -9,7 +9,7 @@
  * mock.module. Lives in the parallel fast loop.
  */
 
-import { describe, test, expect } from 'bun:test';
+import { describe, test, expect } from "bun:test";
 import {
   runSlidingPool,
   runWithLimit,
@@ -17,10 +17,10 @@ import {
   MUST_ABORT_ERROR_TAGS,
   type PoolFailure,
   type SettledItem,
-} from '../src/core/worker-pool.ts';
+} from "../src/core/worker-pool.ts";
 
-describe('runSlidingPool — basic shape', () => {
-  test('empty items returns zeroed result without invoking onItem', async () => {
+describe("runSlidingPool — basic shape", () => {
+  test("empty items returns zeroed result without invoking onItem", async () => {
     let calls = 0;
     const r = await runSlidingPool({
       items: [],
@@ -36,7 +36,7 @@ describe('runSlidingPool — basic shape', () => {
     expect(calls).toBe(0);
   });
 
-  test('N=1 processes items sequentially in order', async () => {
+  test("N=1 processes items sequentially in order", async () => {
     const order: number[] = [];
     const r = await runSlidingPool({
       items: [1, 2, 3, 4, 5],
@@ -49,7 +49,7 @@ describe('runSlidingPool — basic shape', () => {
     expect(order).toEqual([1, 2, 3, 4, 5]);
   });
 
-  test('N>items clamps to items count (no extra workers spawned)', async () => {
+  test("N>items clamps to items count (no extra workers spawned)", async () => {
     const workerSlots = new Set<number>();
     const r = await runSlidingPool({
       items: [1, 2, 3],
@@ -65,7 +65,7 @@ describe('runSlidingPool — basic shape', () => {
     }
   });
 
-  test('every item is claimed exactly once under N concurrent workers', async () => {
+  test("every item is claimed exactly once under N concurrent workers", async () => {
     const seen = new Map<number, number>(); // item -> claim count
     const items = Array.from({ length: 200 }, (_, i) => i);
     await runSlidingPool({
@@ -83,8 +83,8 @@ describe('runSlidingPool — basic shape', () => {
   });
 });
 
-describe('runSlidingPool — atomic claim invariant (D5)', () => {
-  test('200 items × 32 workers: every idx visited exactly once', async () => {
+describe("runSlidingPool — atomic claim invariant (D5)", () => {
+  test("200 items × 32 workers: every idx visited exactly once", async () => {
     // The atomicity invariant — `const idx = nextIdx++` is a single
     // synchronous statement — means no two workers ever read the same idx.
     // We assert this directly: build a counter of every idx the pool dispatched
@@ -104,8 +104,8 @@ describe('runSlidingPool — atomic claim invariant (D5)', () => {
   });
 });
 
-describe('runSlidingPool — abort semantics (D11/D12 signal composition)', () => {
-  test('signal aborted before pool starts → returns immediately, no items claimed', async () => {
+describe("runSlidingPool — abort semantics (D11/D12 signal composition)", () => {
+  test("signal aborted before pool starts → returns immediately, no items claimed", async () => {
     const ctl = new AbortController();
     ctl.abort();
     let calls = 0;
@@ -122,7 +122,7 @@ describe('runSlidingPool — abort semantics (D11/D12 signal composition)', () =
     expect(r.aborted).toBe(true);
   });
 
-  test('signal aborted mid-pool → in-flight items finish, new claims stop', async () => {
+  test("signal aborted mid-pool → in-flight items finish, new claims stop", async () => {
     const ctl = new AbortController();
     const items = Array.from({ length: 50 }, (_, i) => i);
     let processed = 0;
@@ -143,7 +143,7 @@ describe('runSlidingPool — abort semantics (D11/D12 signal composition)', () =
     expect(r.aborted).toBe(true);
   });
 
-  test('signal removeEventListener called on completion (no leak)', async () => {
+  test("signal removeEventListener called on completion (no leak)", async () => {
     // Defensive: the helper attaches an abort listener for D13's local-abort
     // composition. It must remove it on completion. Smoke-test by running
     // many pools against one signal and asserting the signal still works
@@ -175,8 +175,8 @@ describe('runSlidingPool — abort semantics (D11/D12 signal composition)', () =
   });
 });
 
-describe('runSlidingPool — onProgress callback', () => {
-  test('fires exactly `processed` times in monotonically increasing order', async () => {
+describe("runSlidingPool — onProgress callback", () => {
+  test("fires exactly `processed` times in monotonically increasing order", async () => {
     const dones: number[] = [];
     const items = Array.from({ length: 20 }, (_, i) => i);
     await runSlidingPool({
@@ -198,13 +198,13 @@ describe('runSlidingPool — onProgress callback', () => {
     expect(dones[dones.length - 1]).toBe(20);
   });
 
-  test('onProgress NOT fired for errored items (only successful processed)', async () => {
+  test("onProgress NOT fired for errored items (only successful processed)", async () => {
     let progressCalls = 0;
     const r = await runSlidingPool({
       items: [1, 2, 3, 4, 5],
       workers: 1,
       onItem: async (item) => {
-        if (item === 3) throw new Error('boom');
+        if (item === 3) throw new Error("boom");
       },
       onProgress: () => {
         progressCalls++;
@@ -216,7 +216,7 @@ describe('runSlidingPool — onProgress callback', () => {
   });
 });
 
-describe('runSlidingPool — onError semantics (D7)', () => {
+describe("runSlidingPool — onError semantics (D7)", () => {
   test("default 'continue' policy captures all failures", async () => {
     const r = await runSlidingPool({
       items: [1, 2, 3, 4, 5],
@@ -237,10 +237,10 @@ describe('runSlidingPool — onError semantics (D7)', () => {
     const r = await runSlidingPool({
       items: [1, 2, 3, 4, 5],
       workers: 1,
-      onError: 'abort',
+      onError: "abort",
       onItem: async (item) => {
         calls++;
-        if (item === 2) throw new Error('boom');
+        if (item === 2) throw new Error("boom");
       },
     });
     expect(calls).toBeLessThanOrEqual(2);
@@ -253,11 +253,11 @@ describe('runSlidingPool — onError semantics (D7)', () => {
       items: [1, 2, 3, 4, 5],
       workers: 1,
       onError: (err) => {
-        return (err as Error).message.includes('fatal') ? 'abort' : 'continue';
+        return (err as Error).message.includes("fatal") ? "abort" : "continue";
       },
       onItem: async (item) => {
-        if (item === 2) throw new Error('soft');
-        if (item === 4) throw new Error('fatal');
+        if (item === 2) throw new Error("soft");
+        if (item === 4) throw new Error("fatal");
       },
     });
     expect(r.aborted).toBe(true);
@@ -267,8 +267,8 @@ describe('runSlidingPool — onError semantics (D7)', () => {
   });
 });
 
-describe('runSlidingPool — failures[] shape (codex #10)', () => {
-  test('failures store idx + label, NOT full item', async () => {
+describe("runSlidingPool — failures[] shape (codex #10)", () => {
+  test("failures store idx + label, NOT full item", async () => {
     interface Page {
       slug: string;
       bigBuffer: number[];
@@ -282,40 +282,40 @@ describe('runSlidingPool — failures[] shape (codex #10)', () => {
       workers: 1,
       failureLabel: (p) => p.slug,
       onItem: async () => {
-        throw new Error('boom');
+        throw new Error("boom");
       },
     });
     expect(r.failures.length).toBe(5);
     for (const f of r.failures) {
-      expect(typeof f.label).toBe('string');
+      expect(typeof f.label).toBe("string");
       expect(f.label).toMatch(/^page-/);
-      expect(typeof f.idx).toBe('number');
+      expect(typeof f.idx).toBe("number");
       // No `item` field on PoolFailure — codex #10 explicit shape.
       // (TypeScript would already reject `f.item`; runtime check defensive.)
       expect((f as PoolFailure & { item?: unknown }).item).toBeUndefined();
     }
   });
 
-  test('default failureLabel uses String(item)', async () => {
+  test("default failureLabel uses String(item)", async () => {
     const r = await runSlidingPool({
-      items: ['a', 'b', 'c'],
+      items: ["a", "b", "c"],
       workers: 1,
       onItem: async () => {
-        throw new Error('boom');
+        throw new Error("boom");
       },
     });
-    expect(r.failures.map((f) => f.label)).toEqual(['a', 'b', 'c']);
+    expect(r.failures.map((f) => f.label)).toEqual(["a", "b", "c"]);
   });
 });
 
-describe('runSlidingPool — BudgetExhausted bypass (D13)', () => {
-  test('BudgetExhausted-tagged error aborts pool regardless of onError continue', async () => {
+describe("runSlidingPool — BudgetExhausted bypass (D13)", () => {
+  test("BudgetExhausted-tagged error aborts pool regardless of onError continue", async () => {
     // Synthetic BudgetExhausted shape — tag-only match, no class import needed.
     class FakeBudgetExhausted extends Error {
-      readonly tag = 'BUDGET_EXHAUSTED' as const;
+      readonly tag = "BUDGET_EXHAUSTED" as const;
       constructor() {
-        super('cap exhausted');
-        this.name = 'BudgetExhausted';
+        super("cap exhausted");
+        this.name = "BudgetExhausted";
       }
     }
     let calls = 0;
@@ -324,7 +324,7 @@ describe('runSlidingPool — BudgetExhausted bypass (D13)', () => {
       await runSlidingPool({
         items: [1, 2, 3, 4, 5],
         workers: 1,
-        onError: 'continue', // would normally swallow
+        onError: "continue", // would normally swallow
         onItem: async (item) => {
           calls++;
           if (item === 2) throw new FakeBudgetExhausted();
@@ -332,15 +332,15 @@ describe('runSlidingPool — BudgetExhausted bypass (D13)', () => {
       });
     } catch (e) {
       threw = true;
-      expect((e as FakeBudgetExhausted).tag).toBe('BUDGET_EXHAUSTED');
+      expect((e as FakeBudgetExhausted).tag).toBe("BUDGET_EXHAUSTED");
     }
     expect(threw).toBe(true);
     expect(calls).toBeLessThanOrEqual(2);
   });
 
-  test('BudgetExhausted from one worker propagates abort to in-flight peers via signal', async () => {
+  test("BudgetExhausted from one worker propagates abort to in-flight peers via signal", async () => {
     class FakeBudgetExhausted extends Error {
-      readonly tag = 'BUDGET_EXHAUSTED' as const;
+      readonly tag = "BUDGET_EXHAUSTED" as const;
     }
     let aborted = 0;
     let total = 0;
@@ -360,7 +360,7 @@ describe('runSlidingPool — BudgetExhausted bypass (D13)', () => {
       });
     } catch (e) {
       threw = true;
-      expect((e as FakeBudgetExhausted).tag).toBe('BUDGET_EXHAUSTED');
+      expect((e as FakeBudgetExhausted).tag).toBe("BUDGET_EXHAUSTED");
     }
     expect(threw).toBe(true);
     expect(total).toBeLessThan(100);
@@ -369,28 +369,28 @@ describe('runSlidingPool — BudgetExhausted bypass (D13)', () => {
     expect(aborted).toBe(0);
   });
 
-  test('isMustAbortError + MUST_ABORT_ERROR_TAGS exposed and stable', () => {
-    expect(MUST_ABORT_ERROR_TAGS.has('BUDGET_EXHAUSTED')).toBe(true);
-    expect(isMustAbortError({ tag: 'BUDGET_EXHAUSTED' })).toBe(true);
-    expect(isMustAbortError({ tag: 'something-else' })).toBe(false);
-    expect(isMustAbortError(new Error('plain'))).toBe(false);
+  test("isMustAbortError + MUST_ABORT_ERROR_TAGS exposed and stable", () => {
+    expect(MUST_ABORT_ERROR_TAGS.has("BUDGET_EXHAUSTED")).toBe(true);
+    expect(isMustAbortError({ tag: "BUDGET_EXHAUSTED" })).toBe(true);
+    expect(isMustAbortError({ tag: "something-else" })).toBe(false);
+    expect(isMustAbortError(new Error("plain"))).toBe(false);
     expect(isMustAbortError(null)).toBe(false);
     expect(isMustAbortError(undefined)).toBe(false);
-    expect(isMustAbortError('string')).toBe(false);
+    expect(isMustAbortError("string")).toBe(false);
   });
 });
 
-describe('runWithLimit — bounded semaphore', () => {
-  test('empty input returns empty array', async () => {
+describe("runWithLimit — bounded semaphore", () => {
+  test("empty input returns empty array", async () => {
     const out = await runWithLimit({
       items: [],
       limit: 4,
-      fn: async () => 'never',
+      fn: async () => "never",
     });
     expect(out).toEqual([]);
   });
 
-  test('preserves per-item ordering in returned array regardless of completion order', async () => {
+  test("preserves per-item ordering in returned array regardless of completion order", async () => {
     const out = await runWithLimit({
       items: [10, 5, 20, 1, 100, 2],
       limit: 4,
@@ -405,18 +405,18 @@ describe('runWithLimit — bounded semaphore', () => {
       expect(out[i].idx).toBe(i);
       if (out[i].ok) {
         expect((out[i] as Extract<SettledItem<number>, { ok: true }>).value).toBe(
-          [10, 5, 20, 1, 100, 2][i] * 2,
+          [10, 5, 20, 1, 100, 2][i] * 2
         );
       }
     }
   });
 
-  test('captures per-item errors without throwing', async () => {
+  test("captures per-item errors without throwing", async () => {
     const out = await runWithLimit({
       items: [1, 2, 3, 4, 5],
       limit: 2,
       fn: async (item) => {
-        if (item === 3) throw new Error('boom');
+        if (item === 3) throw new Error("boom");
         return item;
       },
     });
@@ -424,12 +424,12 @@ describe('runWithLimit — bounded semaphore', () => {
     expect(out[0].ok).toBe(true);
     expect(out[2].ok).toBe(false);
     if (!out[2].ok) {
-      expect((out[2].error as Error).message).toBe('boom');
+      expect((out[2].error as Error).message).toBe("boom");
     }
     expect(out[4].ok).toBe(true);
   });
 
-  test('signal short-circuits remaining claims', async () => {
+  test("signal short-circuits remaining claims", async () => {
     const ctl = new AbortController();
     const out = await runWithLimit({
       items: Array.from({ length: 50 }, (_, i) => i),
@@ -447,8 +447,8 @@ describe('runWithLimit — bounded semaphore', () => {
   });
 });
 
-describe('runSlidingPool — worker slot index passed to onItem', () => {
-  test('workerIdx is 0..N-1 across all calls', async () => {
+describe("runSlidingPool — worker slot index passed to onItem", () => {
+  test("workerIdx is 0..N-1 across all calls", async () => {
     const slotsSeen = new Set<number>();
     await runSlidingPool({
       items: Array.from({ length: 100 }, (_, i) => i),

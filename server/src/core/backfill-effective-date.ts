@@ -25,12 +25,12 @@
  * rows behave the same as fresh imports for those prefixes.
  */
 
-import type { BrainEngine } from './engine.ts';
-import { computeEffectiveDate } from './effective-date.ts';
-import type { EffectiveDateSource } from './types.ts';
+import type { BrainEngine } from "./engine.ts";
+import { computeEffectiveDate } from "./effective-date.ts";
+import type { EffectiveDateSource } from "./types.ts";
 
 const BATCH_SIZE = 1000;
-const CHECKPOINT_KEY = 'backfill.effective_date.last_id';
+const CHECKPOINT_KEY = "backfill.effective_date.last_id";
 
 export interface BackfillOpts {
   /** Limit total rows touched (testing). Undefined = no cap. */
@@ -40,7 +40,12 @@ export interface BackfillOpts {
   /** Don't write; report what would happen. */
   dryRun?: boolean;
   /** Per-batch progress callback. */
-  onBatch?: (info: { batch: number; lastId: number; rowsTouched: number; cumulative: number }) => void;
+  onBatch?: (info: {
+    batch: number;
+    lastId: number;
+    rowsTouched: number;
+    cumulative: number;
+  }) => void;
   /**
    * Optional slug-prefix filter (e.g. 'meetings/') so the CLI command can
    * scope to a subset. Undefined = no filter.
@@ -79,11 +84,14 @@ interface PageRow {
 
 function parseFrontmatter(raw: unknown): Record<string, unknown> {
   if (raw == null) return {};
-  if (typeof raw === 'string') {
-    try { return JSON.parse(raw) as Record<string, unknown>; }
-    catch { return {}; }
+  if (typeof raw === "string") {
+    try {
+      return JSON.parse(raw) as Record<string, unknown>;
+    } catch {
+      return {};
+    }
   }
-  if (typeof raw === 'object') return raw as Record<string, unknown>;
+  if (typeof raw === "object") return raw as Record<string, unknown>;
   return {};
 }
 
@@ -92,7 +100,7 @@ async function getCheckpoint(engine: BrainEngine, fresh: boolean): Promise<numbe
   try {
     const rows = await engine.executeRaw<{ value: string }>(
       `SELECT value FROM config WHERE key = $1 LIMIT 1`,
-      [CHECKPOINT_KEY],
+      [CHECKPOINT_KEY]
     );
     if (rows.length === 0) return 0;
     const n = Number(rows[0].value);
@@ -107,7 +115,7 @@ async function setCheckpoint(engine: BrainEngine, lastId: number): Promise<void>
     await engine.executeRaw(
       `INSERT INTO config (key, value) VALUES ($1, $2)
          ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
-      [CHECKPOINT_KEY, String(lastId)],
+      [CHECKPOINT_KEY, String(lastId)]
     );
   } catch {
     // Best effort. Failure to checkpoint just means re-walk on next run;
@@ -125,10 +133,10 @@ async function clearCheckpoint(engine: BrainEngine): Promise<void> {
 
 export async function backfillEffectiveDate(
   engine: BrainEngine,
-  opts: BackfillOpts = {},
+  opts: BackfillOpts = {}
 ): Promise<BackfillResult> {
   const start = Date.now();
-  const slugPrefix = opts.slugPrefix?.replace(/[\\%_]/g, (c) => '\\' + c) ?? null;
+  const slugPrefix = opts.slugPrefix?.replace(/[\\%_]/g, (c) => "\\" + c) ?? null;
 
   let lastId = await getCheckpoint(engine, opts.fresh ?? false);
   let examined = 0;
@@ -139,22 +147,18 @@ export async function backfillEffectiveDate(
   // Per-engine statement_timeout boost. Postgres can wedge on a slow
   // batch otherwise; PGLite ignores SET LOCAL outside transactions but
   // doesn't have the timeout problem in the first place (single writer).
-  const isPostgres = engine.kind === 'postgres';
+  const isPostgres = engine.kind === "postgres";
 
   while (true) {
     if (opts.maxRows && examined >= opts.maxRows) break;
 
-    const limit = opts.maxRows
-      ? Math.min(BATCH_SIZE, opts.maxRows - examined)
-      : BATCH_SIZE;
+    const limit = opts.maxRows ? Math.min(BATCH_SIZE, opts.maxRows - examined) : BATCH_SIZE;
 
     // Keyset pagination: WHERE id > last_id ORDER BY id LIMIT N. Single-direction
     // walk; safe under concurrent inserts (new rows show up at the tail).
-    const slugFilter = slugPrefix
-      ? `AND slug LIKE $2 ESCAPE '\\\\'`
-      : '';
+    const slugFilter = slugPrefix ? `AND slug LIKE $2 ESCAPE '\\\\'` : "";
     const params: unknown[] = [lastId];
-    if (slugPrefix) params.push(slugPrefix + '%');
+    if (slugPrefix) params.push(slugPrefix + "%");
     params.push(limit);
     const limitParam = `$${params.length}`;
 
@@ -164,7 +168,7 @@ export async function backfillEffectiveDate(
          WHERE id > $1 ${slugFilter}
          ORDER BY id
          LIMIT ${limitParam}`,
-      params,
+      params
     );
 
     if (rows.length === 0) break;
@@ -185,8 +189,8 @@ export async function backfillEffectiveDate(
 
         for (const r of rows) {
           const fm = parseFrontmatter(r.frontmatter);
-          const filename = r.import_filename
-            || (r.slug.includes('/') ? r.slug.split('/').pop()! : r.slug);
+          const filename =
+            r.import_filename || (r.slug.includes("/") ? r.slug.split("/").pop()! : r.slug);
           const computed = computeEffectiveDate({
             slug: r.slug,
             frontmatter: fm,
@@ -206,18 +210,18 @@ export async function backfillEffectiveDate(
 
           await tx.executeRaw(
             `UPDATE pages SET effective_date = $1::timestamptz, effective_date_source = $2 WHERE id = $3`,
-            [computed.date ? computed.date.toISOString() : null, computed.source, r.id],
+            [computed.date ? computed.date.toISOString() : null, computed.source, r.id]
           );
           touched++;
-          if (computed.source === 'fallback') fallback++;
+          if (computed.source === "fallback") fallback++;
         }
       });
     } else {
       // Dry run: still count what WOULD change.
       for (const r of rows) {
         const fm = parseFrontmatter(r.frontmatter);
-        const filename = r.import_filename
-          || (r.slug.includes('/') ? r.slug.split('/').pop()! : r.slug);
+        const filename =
+          r.import_filename || (r.slug.includes("/") ? r.slug.split("/").pop()! : r.slug);
         const computed = computeEffectiveDate({
           slug: r.slug,
           frontmatter: fm,
@@ -227,10 +231,13 @@ export async function backfillEffectiveDate(
         });
         const existingMs = r.effective_date ? new Date(r.effective_date).getTime() : null;
         const computedMs = computed.date ? computed.date.getTime() : null;
-        if (existingMs !== computedMs || (r.effective_date_source ?? null) !== (computed.source ?? null)) {
+        if (
+          existingMs !== computedMs ||
+          (r.effective_date_source ?? null) !== (computed.source ?? null)
+        ) {
           touched++;
         }
-        if (computed.source === 'fallback') fallback++;
+        if (computed.source === "fallback") fallback++;
       }
     }
 

@@ -125,7 +125,6 @@ function escapeHtmlLines(text: string): string {
   return escapeHtml(text).replace(/\n/g, "<br>");
 }
 
-
 export default function InvoicingPage() {
   const confirm = useConfirm();
   const { t, lang } = useLang();

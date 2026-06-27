@@ -56,7 +56,7 @@ export class StructuredAgentError extends Error {
   readonly envelope: StructuredError;
 
   constructor(envelope: StructuredError) {
-    const hintSuffix = envelope.hint ? ` (${envelope.hint})` : '';
+    const hintSuffix = envelope.hint ? ` (${envelope.hint})` : "";
     super(`${envelope.class}: ${envelope.message}${hintSuffix}`);
     this.name = envelope.class;
     this.envelope = envelope;
@@ -80,14 +80,14 @@ export function serializeError(value: unknown): StructuredError {
   if (value instanceof StructuredAgentError) return value.envelope;
   if (value instanceof Error) {
     return buildError({
-      class: value.name || 'Error',
-      code: 'unknown',
+      class: value.name || "Error",
+      code: "unknown",
       message: value.message,
     });
   }
   return buildError({
-    class: 'Error',
-    code: 'unknown',
+    class: "Error",
+    code: "unknown",
     message: String(value),
   });
 }

@@ -34,7 +34,7 @@ This skill is invoked by the host agent's resolver when the operator's voice or 
 
 ### Summoning Mars into a topic (#1851)
 
-To call Mars *from inside* a specific conversation topic, mint a per-topic call link by adding `topicId` (a strict slug, `^[a-z0-9][a-z0-9-]*$`) and an optional `topicName`:
+To call Mars _from inside_ a specific conversation topic, mint a per-topic call link by adding `topicId` (a strict slug, `^[a-z0-9][a-z0-9-]*$`) and an optional `topicName`:
 
 ```
 /call?persona=mars&topicId=real-estate&topicName=Real%20Estate
@@ -45,6 +45,7 @@ Mars boots already knowing the topic's recent conversation. Only the `topicId` c
 ## Mode detection (inside the persona)
 
 Mars detects mode from conversational signals:
+
 - **SOLO MODE** (default): one speaker (the operator), introspective topics, "what am I thinking" framing.
 - **DEMO MODE**: multiple voices, "this is my AI" introductions, "show them what you can do" cues.
 
@@ -53,6 +54,7 @@ The persona prompt (`services/voice-agent/code/lib/personas/mars.mjs`) carries t
 ## Solo-mode tool posture
 
 Mars uses tools SPARINGLY in solo mode. The right tools are:
+
 - `search_brain` (find related concepts/people/meetings to deepen the reflection)
 - `read_brain_page` (read a specific page aloud when the operator says "tell me about X")
 - `read_article` (summarize a link the operator shared)
@@ -62,6 +64,7 @@ Calendar, tasks, email tools are DELIBERATELY ABSENT from Mars's solo-mode usage
 ## Demo-mode tool posture
 
 Mars uses tools AGGRESSIVELY in demo mode:
+
 - Search the brain for people/companies the operator introduces
 - Pull current events via `web_search` (when wired)
 - Cross-reference what the operator is saying against the brain in near-real-time

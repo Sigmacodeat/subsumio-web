@@ -12,15 +12,15 @@
  * Each batch of BATCH_SIZE (200) chunks is its own transaction; the
  * caller can Ctrl-C at any time and re-run safely.
  */
-import type { BrainEngine } from '../core/engine.ts';
-import { resolveSymbolEdgesIncremental } from '../core/chunkers/symbol-resolver.ts';
-import { resolveSourceId } from '../core/source-resolver.ts';
+import type { BrainEngine } from "../core/engine.ts";
+import { resolveSymbolEdgesIncremental } from "../core/chunkers/symbol-resolver.ts";
+import { resolveSourceId } from "../core/source-resolver.ts";
 // v0.41.15.0 (T8, D9): --workers N for cross-source parallelism under
 // `--all-sources`. Intra-source parallelism (inside the
 // resolveSymbolEdgesIncremental batch loop) stays serial in v0.41.15.0
 // — that's a deeper symbol-resolver rewrite filed as a follow-up.
-import { runSlidingPool } from '../core/worker-pool.ts';
-import { parseWorkers, resolveWorkersWithClamp } from '../core/sync-concurrency.ts';
+import { runSlidingPool } from "../core/worker-pool.ts";
+import { parseWorkers, resolveWorkersWithClamp } from "../core/sync-concurrency.ts";
 
 interface BackfillOpts {
   source?: string;
@@ -35,17 +35,17 @@ function parseFlags(args: string[]): BackfillOpts {
   const opts: BackfillOpts = {};
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
-    if (a === '--source') {
+    if (a === "--source") {
       opts.source = args[++i];
-    } else if (a === '--all-sources') {
+    } else if (a === "--all-sources") {
       opts.allSources = true;
-    } else if (a === '--max-chunks') {
-      opts.maxChunks = parseInt(args[++i] ?? '', 10);
-    } else if (a === '--json') {
+    } else if (a === "--max-chunks") {
+      opts.maxChunks = parseInt(args[++i] ?? "", 10);
+    } else if (a === "--json") {
       opts.json = true;
-    } else if (a === '--workers' || a === '--concurrency') {
+    } else if (a === "--workers" || a === "--concurrency") {
       opts.workers = parseWorkers(args[++i]);
-    } else if (a === '--help' || a === '-h') {
+    } else if (a === "--help" || a === "-h") {
       // help printed by caller
     }
   }
@@ -65,12 +65,12 @@ function printHelp(): void {
       `  --workers N       parallel per-source workers under --all-sources (default 1).\n` +
       `                    PGLite clamps to 1 (single-writer); intra-source batch\n` +
       `                    parallelism stays serial in v0.41.15.0.\n` +
-      `  --json            emit JSON result on stdout\n`,
+      `  --json            emit JSON result on stdout\n`
   );
 }
 
 export async function runEdgesBackfill(engine: BrainEngine, args: string[]): Promise<void> {
-  if (args.includes('--help') || args.includes('-h')) {
+  if (args.includes("--help") || args.includes("-h")) {
     printHelp();
     return;
   }
@@ -82,17 +82,17 @@ export async function runEdgesBackfill(engine: BrainEngine, args: string[]): Pro
     try {
       const rows = await engine.executeRaw<{ id: string }>(
         `SELECT id FROM sources WHERE archived = false ORDER BY id`,
-        [],
+        []
       );
       sourceIds = rows.map((r) => r.id);
-      if (sourceIds.length === 0) sourceIds = ['default'];
+      if (sourceIds.length === 0) sourceIds = ["default"];
     } catch {
-      sourceIds = ['default'];
+      sourceIds = ["default"];
     }
   } else if (opts.source) {
     sourceIds = [opts.source];
   } else {
-    sourceIds = [await resolveSourceId(engine, null).catch(() => 'default')];
+    sourceIds = [await resolveSourceId(engine, null).catch(() => "default")];
   }
 
   // v0.41.15.0 (T8): pre-allocate the summary array so concurrent
@@ -100,12 +100,20 @@ export async function runEdgesBackfill(engine: BrainEngine, args: string[]): Pro
   // in JS). Preserves output ordering against sourceIds regardless of
   // completion order. The push-based pre-T8 code would interleave under
   // workers > 1.
-  const summary: { source_id: string; chunks_walked: number; edges_resolved: number; edges_ambiguous: number; edges_unmatched: number; batches: number; ms: number }[] = new Array(sourceIds.length);
+  const summary: {
+    source_id: string;
+    chunks_walked: number;
+    edges_resolved: number;
+    edges_ambiguous: number;
+    edges_unmatched: number;
+    batches: number;
+    ms: number;
+  }[] = new Array(sourceIds.length);
   const workersResolved = resolveWorkersWithClamp(
     engine,
     opts.workers,
-    'edges-backfill',
-    sourceIds.length,
+    "edges-backfill",
+    sourceIds.length
   );
 
   await runSlidingPool({
@@ -132,7 +140,7 @@ export async function runEdgesBackfill(engine: BrainEngine, args: string[]): Pro
         };
         if (!opts.json) {
           process.stderr.write(
-            `[edges-backfill] source=${sourceId} done: ${stats.chunks_walked} chunks walked, ${stats.edges_resolved} resolved, ${stats.edges_ambiguous} ambiguous, ${stats.edges_unmatched} unmatched, ${stats.ms}ms\n`,
+            `[edges-backfill] source=${sourceId} done: ${stats.chunks_walked} chunks walked, ${stats.edges_resolved} resolved, ${stats.edges_ambiguous} ambiguous, ${stats.edges_unmatched} unmatched, ${stats.ms}ms\n`
           );
         }
       } catch (err) {
@@ -152,6 +160,6 @@ export async function runEdgesBackfill(engine: BrainEngine, args: string[]): Pro
   });
 
   if (opts.json) {
-    process.stdout.write(JSON.stringify({ schema_version: 1, summary }, null, 2) + '\n');
+    process.stdout.write(JSON.stringify({ schema_version: 1, summary }, null, 2) + "\n");
   }
 }

@@ -33,13 +33,13 @@
  *   }
  */
 
-import { readFileSync } from 'node:fs';
-import { platform } from 'node:os';
+import { readFileSync } from "node:fs";
+import { platform } from "node:os";
 
 interface Result {
   ok: boolean;
   platform: string;
-  measurement_path: 'proc' | 'fallback';
+  measurement_path: "proc" | "fallback";
   queries_run: number;
   peak_rss_kb: number;
   elapsed_ms: number;
@@ -50,18 +50,18 @@ interface Result {
 
 function readProcRss(): number | null {
   try {
-    const status = readFileSync('/proc/self/status', 'utf8');
+    const status = readFileSync("/proc/self/status", "utf8");
     let anon = 0;
     let shmem = 0;
     let found = false;
-    for (const line of status.split('\n')) {
-      if (line.startsWith('RssAnon:')) {
+    for (const line of status.split("\n")) {
+      if (line.startsWith("RssAnon:")) {
         const m = line.match(/(\d+)/);
         if (m) {
           anon = parseInt(m[1]!, 10);
           found = true;
         }
-      } else if (line.startsWith('RssShmem:')) {
+      } else if (line.startsWith("RssShmem:")) {
         const m = line.match(/(\d+)/);
         if (m) {
           shmem = parseInt(m[1]!, 10);
@@ -80,9 +80,9 @@ function readFallbackRss(): number {
 }
 
 function generatePage(i: number): { slug: string; title: string; body: string } {
-  const pad = String(i).padStart(5, '0');
-  const next1 = String(i + 1).padStart(5, '0');
-  const next7 = String(i + 7).padStart(5, '0');
+  const pad = String(i).padStart(5, "0");
+  const next1 = String(i + 1).padStart(5, "0");
+  const next7 = String(i + 7).padStart(5, "0");
   // Deterministic body — stable across runs so measurement compares apples to
   // apples. ~500 chars; realistic for the workload.
   const body =
@@ -107,12 +107,12 @@ function generatePage(i: number): { slug: string; title: string; body: string } 
 async function main(): Promise<void> {
   const t0 = Date.now();
   const plat = platform();
-  const linuxProcWorks = plat === 'linux' && readProcRss() !== null;
-  const measurementPath: 'proc' | 'fallback' = linuxProcWorks ? 'proc' : 'fallback';
+  const linuxProcWorks = plat === "linux" && readProcRss() !== null;
+  const measurementPath: "proc" | "fallback" = linuxProcWorks ? "proc" : "fallback";
   const readRss = linuxProcWorks ? () => readProcRss() ?? 0 : readFallbackRss;
 
-  const PAGES = parseInt(process.env.BRAIN_PAGES ?? '1000', 10);
-  const QUERIES = parseInt(process.env.NUM_QUERIES ?? '100', 10);
+  const PAGES = parseInt(process.env.BRAIN_PAGES ?? "1000", 10);
+  const QUERIES = parseInt(process.env.NUM_QUERIES ?? "100", 10);
 
   let peakRss = 0;
   let pollTimer: ReturnType<typeof setInterval> | null = null;
@@ -134,8 +134,8 @@ async function main(): Promise<void> {
     startPolling();
 
     // Lazy imports so PGLite WASM cold-start is counted in the peak.
-    const { PGLiteEngine } = await import('../../src/core/pglite-engine.ts');
-    const { hybridSearch } = await import('../../src/core/search/hybrid.ts');
+    const { PGLiteEngine } = await import("../../src/core/pglite-engine.ts");
+    const { hybridSearch } = await import("../../src/core/search/hybrid.ts");
 
     const engine = new PGLiteEngine();
     await engine.connect({});
@@ -148,28 +148,40 @@ async function main(): Promise<void> {
     for (let i = 0; i < PAGES; i += 1) {
       const page = generatePage(i);
       await engine.putPage(page.slug, {
-        type: 'note',
+        type: "note",
         title: page.title,
         compiled_truth: page.body,
-        timeline: '',
-        frontmatter: { synthetic: true, tags: ['synthetic', 'rss-fixture'] },
+        timeline: "",
+        frontmatter: { synthetic: true, tags: ["synthetic", "rss-fixture"] },
       });
       if (i > 0 && i % 500 === 0) {
         process.stderr.write(`[_measure_rss_workload] inserted ${i}\n`);
       }
     }
 
-    const pageCountRows = await engine.executeRaw('SELECT count(*)::int AS c FROM pages', []);
+    const pageCountRows = await engine.executeRaw("SELECT count(*)::int AS c FROM pages", []);
     const brainPageCount =
-      pageCountRows && pageCountRows[0] && typeof (pageCountRows[0] as { c: number }).c === 'number'
+      pageCountRows && pageCountRows[0] && typeof (pageCountRows[0] as { c: number }).c === "number"
         ? (pageCountRows[0] as { c: number }).c
         : 0;
 
     process.stderr.write(`[_measure_rss_workload] running ${QUERIES} queries...\n`);
     const queries = [
-      'synthetic page', 'lorem ipsum', 'consequat', 'voluptatem', 'aspernatur',
-      'magna aliqua', 'reprehenderit', 'commodo', 'inventore', 'architecto',
-      'page 100', 'page 500', 'rss-fixture', 'section 1', 'section 2',
+      "synthetic page",
+      "lorem ipsum",
+      "consequat",
+      "voluptatem",
+      "aspernatur",
+      "magna aliqua",
+      "reprehenderit",
+      "commodo",
+      "inventore",
+      "architecto",
+      "page 100",
+      "page 500",
+      "rss-fixture",
+      "section 1",
+      "section 2",
     ];
     let queriesRun = 0;
     for (let i = 0; i < QUERIES; i += 1) {
@@ -194,8 +206,8 @@ async function main(): Promise<void> {
       peak_rss_kb: peakRss,
       elapsed_ms: Date.now() - t0,
       brain_page_count: brainPageCount,
-      ...(measurementPath === 'fallback'
-        ? { note: 'macOS/non-Linux fallback path (VmRSS, mmap-inflated)' }
+      ...(measurementPath === "fallback"
+        ? { note: "macOS/non-Linux fallback path (VmRSS, mmap-inflated)" }
         : {}),
     };
   } catch (err) {
@@ -213,7 +225,7 @@ async function main(): Promise<void> {
     stopPolling();
   }
 
-  process.stdout.write(JSON.stringify(result) + '\n');
+  process.stdout.write(JSON.stringify(result) + "\n");
   process.exit(result.ok ? 0 : 1);
 }
 

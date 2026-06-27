@@ -19,11 +19,11 @@
  * parent's brainId instead of re-running this resolver.
  */
 
-import { readFileSync, existsSync } from 'fs';
-import { join, dirname, resolve } from 'path';
-import { HOST_BRAIN_ID, loadMounts, validateMountId, type MountEntry } from './brain-registry.ts';
+import { readFileSync, existsSync } from "fs";
+import { join, dirname, resolve } from "path";
+import { HOST_BRAIN_ID, loadMounts, validateMountId, type MountEntry } from "./brain-registry.ts";
 
-const DOTFILE = '.gbrain-mount';
+const DOTFILE = ".gbrain-mount";
 /** Same regex as brain-registry. Kept in sync. */
 const BRAIN_ID_RE = /^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$/;
 
@@ -38,7 +38,7 @@ function readDotfileWalk(startDir: string): string | null {
     const candidate = join(dir, DOTFILE);
     if (existsSync(candidate)) {
       try {
-        const content = readFileSync(candidate, 'utf8').trim().split('\n')[0].trim();
+        const content = readFileSync(candidate, "utf8").trim().split("\n")[0].trim();
         if (content === HOST_BRAIN_ID) return content;
         if (BRAIN_ID_RE.test(content)) return content;
       } catch {
@@ -59,7 +59,7 @@ function longestPathPrefixMount(mounts: MountEntry[], cwd: string): MountEntry |
   for (const m of mounts) {
     if (m.enabled === false) continue;
     const p = resolve(m.path);
-    if (cwdResolved === p || cwdResolved.startsWith(p + '/')) {
+    if (cwdResolved === p || cwdResolved.startsWith(p + "/")) {
       if (!best || p.length > best.pathLen) {
         best = { mount: m, pathLen: p.length };
       }
@@ -85,12 +85,12 @@ function longestPathPrefixMount(mounts: MountEntry[], cwd: string): MountEntry |
 export function resolveBrainId(
   explicit: string | null | undefined,
   cwd: string = process.cwd(),
-  mountsLoader: () => MountEntry[] = loadMounts,
+  mountsLoader: () => MountEntry[] = loadMounts
 ): string {
   // 1. Explicit flag wins.
   if (explicit) {
     if (explicit === HOST_BRAIN_ID) return HOST_BRAIN_ID;
-    validateMountId(explicit, '--brain value');
+    validateMountId(explicit, "--brain value");
     return explicit;
   }
 
@@ -98,7 +98,7 @@ export function resolveBrainId(
   const env = process.env.GBRAIN_BRAIN_ID;
   if (env && env.length > 0) {
     if (env === HOST_BRAIN_ID) return HOST_BRAIN_ID;
-    validateMountId(env, 'GBRAIN_BRAIN_ID');
+    validateMountId(env, "GBRAIN_BRAIN_ID");
     return env;
   }
 

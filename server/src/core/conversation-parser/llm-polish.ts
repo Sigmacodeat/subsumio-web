@@ -20,10 +20,10 @@
  * polish-of-Discord on the same body produce different cache rows.
  */
 
-import { runLlmCall, parseLlmJson, type ChatTransport } from './llm-base.ts';
-import type { BrainEngine } from '../engine.ts';
-import { getCurrentBudgetTracker } from '../ai/gateway.ts';
-import type { MatchedMessage } from './types.ts';
+import { runLlmCall, parseLlmJson, type ChatTransport } from "./llm-base.ts";
+import type { BrainEngine } from "../engine.ts";
+import { getCurrentBudgetTracker } from "../ai/gateway.ts";
+import type { MatchedMessage } from "./types.ts";
 
 const POLISH_HEADROOM_USD = 0.1;
 
@@ -54,7 +54,7 @@ Output ONLY the JSON object. No prose, no fences.`;
 interface PolishOps {
   merge_indices: number[][];
   drop_indices: number[];
-  edits: Array<{ index: number; field: 'speaker' | 'text'; value: string }>;
+  edits: Array<{ index: number; field: "speaker" | "text"; value: string }>;
 }
 
 export interface RunLlmPolishOpts {
@@ -85,12 +85,10 @@ export interface RunLlmPolishOpts {
  * Returns the polish delta as the second tuple element so callers
  * (orchestrator → ParseResult) can surface it for debug.
  */
-export async function runLlmPolish(
-  opts: RunLlmPolishOpts,
-): Promise<{
+export async function runLlmPolish(opts: RunLlmPolishOpts): Promise<{
   messages: MatchedMessage[];
   delta: { merged: number; dropped: number; edits: number };
-  skipped?: 'headroom' | 'provider' | 'parse_failed';
+  skipped?: "headroom" | "provider" | "parse_failed";
 }> {
   // Headroom guard.
   const tracker = getCurrentBudgetTracker();
@@ -103,7 +101,7 @@ export async function runLlmPolish(
       return {
         messages: opts.messages,
         delta: { merged: 0, dropped: 0, edits: 0 },
-        skipped: 'headroom',
+        skipped: "headroom",
       };
     }
   }
@@ -115,7 +113,7 @@ export async function runLlmPolish(
   const promptContent = `BODY:\n${opts.body}\n\nPARSED:\n${JSON.stringify(opts.messages, null, 2)}`;
 
   const ops = await runLlmCall<PolishOps>({
-    shape: 'polish',
+    shape: "polish",
     modelStr: opts.modelStr,
     content: cacheContent,
     system: POLISH_SYSTEM_PROMPT,
@@ -157,7 +155,7 @@ export async function runLlmPolish(
     return {
       messages: opts.messages,
       delta: { merged: 0, dropped: 0, edits: 0 },
-      skipped: 'provider',
+      skipped: "provider",
     };
   }
 
@@ -175,7 +173,7 @@ export async function runLlmPolish(
  */
 export function applyPolish(
   messages: MatchedMessage[],
-  ops: PolishOps,
+  ops: PolishOps
 ): {
   messages: MatchedMessage[];
   delta: { merged: number; dropped: number; edits: number };
@@ -213,9 +211,9 @@ export function applyPolish(
     if (!Number.isInteger(edit.index) || edit.index < 0) continue;
     const outIdx = idxMap.get(edit.index);
     if (outIdx === undefined) continue;
-    if (edit.field === 'speaker' && typeof edit.value === 'string') {
+    if (edit.field === "speaker" && typeof edit.value === "string") {
       out[outIdx].speaker = edit.value;
-    } else if (edit.field === 'text' && typeof edit.value === 'string') {
+    } else if (edit.field === "text" && typeof edit.value === "string") {
       out[outIdx].text = edit.value;
     }
   }

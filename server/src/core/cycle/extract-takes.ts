@@ -19,17 +19,17 @@
  * v0.22.12 classifier path (extension follow-up — not blocking v0.28).
  */
 
-import { readFileSync } from 'node:fs';
-import { join, relative, sep } from 'node:path';
-import type { BrainEngine, TakeBatchInput } from '../engine.ts';
-import { parseTakesFence, type ParsedTake } from '../takes-fence.ts';
-import { walkMarkdownFiles } from '../../commands/extract.ts';
+import { readFileSync } from "node:fs";
+import { join, relative, sep } from "node:path";
+import type { BrainEngine, TakeBatchInput } from "../engine.ts";
+import { parseTakesFence, type ParsedTake } from "../takes-fence.ts";
+import { walkMarkdownFiles } from "../../commands/extract.ts";
 
 export interface ExtractTakesOpts {
   /** Brain repo root. Required for source='fs'. */
   repoPath?: string;
   /** Source: 'fs' walks markdown files; 'db' iterates engine pages. Default 'fs'. */
-  source?: 'fs' | 'db';
+  source?: "fs" | "db";
   /**
    * Optional incremental list of slugs to re-extract (used by sync→extract
    * pipe). Empty/undefined = full walk.
@@ -72,7 +72,7 @@ export interface ExtractTakesResult {
 async function getPageIdForSlug(engine: BrainEngine, slug: string): Promise<number | null> {
   const rows = await engine.executeRaw<{ id: number }>(
     `SELECT id FROM pages WHERE slug = $1 LIMIT 1`,
-    [slug],
+    [slug]
   );
   return rows[0]?.id ?? null;
 }
@@ -99,7 +99,7 @@ async function flushBatch(
   engine: BrainEngine,
   buffer: TakeBatchInput[],
   result: ExtractTakesResult,
-  dryRun: boolean,
+  dryRun: boolean
 ): Promise<void> {
   if (buffer.length === 0) return;
   if (dryRun) {
@@ -117,10 +117,14 @@ async function flushBatch(
  */
 export async function extractTakesFromFs(
   engine: BrainEngine,
-  opts: { repoPath: string; slugs?: string[]; dryRun?: boolean; rebuild?: boolean },
+  opts: { repoPath: string; slugs?: string[]; dryRun?: boolean; rebuild?: boolean }
 ): Promise<ExtractTakesResult> {
   const result: ExtractTakesResult = {
-    pagesScanned: 0, pagesWithTakes: 0, takesUpserted: 0, warnings: [], failedFiles: [],
+    pagesScanned: 0,
+    pagesWithTakes: 0,
+    takesUpserted: 0,
+    warnings: [],
+    failedFiles: [],
   };
   const dryRun = opts.dryRun ?? false;
   const slugFilter = opts.slugs && opts.slugs.length > 0 ? new Set(opts.slugs) : null;
@@ -129,13 +133,13 @@ export async function extractTakesFromFs(
   const buffer: TakeBatchInput[] = [];
 
   for (const { path, relPath } of files) {
-    const slug = relPath.replace(/\.md$/, '').split(sep).join('/');
+    const slug = relPath.replace(/\.md$/, "").split(sep).join("/");
     if (slugFilter && !slugFilter.has(slug)) continue;
     result.pagesScanned++;
 
     let body: string;
     try {
-      body = readFileSync(path, 'utf-8');
+      body = readFileSync(path, "utf-8");
     } catch (e) {
       result.warnings.push(`TAKES_FILE_READ_FAILED: ${relPath}: ${(e as Error).message}`);
       continue;
@@ -145,7 +149,7 @@ export async function extractTakesFromFs(
     if (warnings.length) {
       for (const w of warnings) {
         result.warnings.push(`${slug}: ${w}`);
-        if (w.startsWith('TAKES_HOLDER_INVALID')) {
+        if (w.startsWith("TAKES_HOLDER_INVALID")) {
           result.failedFiles.push({ path: relPath, error: w });
         }
       }
@@ -154,7 +158,9 @@ export async function extractTakesFromFs(
 
     const pageId = await getPageIdForSlug(engine, slug);
     if (pageId === null) {
-      result.warnings.push(`TAKES_PAGE_NOT_IN_DB: slug=${slug} has takes fence but no page row; run 'gbrain sync' first`);
+      result.warnings.push(
+        `TAKES_PAGE_NOT_IN_DB: slug=${slug} has takes fence but no page row; run 'gbrain sync' first`
+      );
       continue;
     }
 
@@ -185,30 +191,35 @@ export async function extractTakesFromFs(
  */
 export async function extractTakesFromDb(
   engine: BrainEngine,
-  opts: { slugs?: string[]; dryRun?: boolean; rebuild?: boolean } = {},
+  opts: { slugs?: string[]; dryRun?: boolean; rebuild?: boolean } = {}
 ): Promise<ExtractTakesResult> {
   const result: ExtractTakesResult = {
-    pagesScanned: 0, pagesWithTakes: 0, takesUpserted: 0, warnings: [], failedFiles: [],
+    pagesScanned: 0,
+    pagesWithTakes: 0,
+    takesUpserted: 0,
+    warnings: [],
+    failedFiles: [],
   };
   const dryRun = opts.dryRun ?? false;
   // v0.32.8: when caller supplies bare slugs, default sourceId='default'
   // (back-compat with pre-v0.32.8 callers). When no slugs supplied, enumerate
   // every (slug, source_id) pair across all sources.
-  const refs: Array<{ slug: string; source_id: string }> = opts.slugs && opts.slugs.length > 0
-    ? opts.slugs.map(slug => ({ slug, source_id: 'default' }))
-    : await engine.listAllPageRefs();
+  const refs: Array<{ slug: string; source_id: string }> =
+    opts.slugs && opts.slugs.length > 0
+      ? opts.slugs.map((slug) => ({ slug, source_id: "default" }))
+      : await engine.listAllPageRefs();
   const buffer: TakeBatchInput[] = [];
 
   for (const { slug, source_id } of refs) {
     result.pagesScanned++;
     const page = await engine.getPage(slug, { sourceId: source_id });
     if (!page) continue;
-    const body = `${page.compiled_truth ?? ''}\n${page.timeline ?? ''}`;
+    const body = `${page.compiled_truth ?? ""}\n${page.timeline ?? ""}`;
     const { takes, warnings } = parseTakesFence(body);
     if (warnings.length) {
       for (const w of warnings) {
         result.warnings.push(`${slug}: ${w}`);
-        if (w.startsWith('TAKES_HOLDER_INVALID')) {
+        if (w.startsWith("TAKES_HOLDER_INVALID")) {
           // DB-source path: no on-disk file path, use slug as the failedFiles
           // identifier. recordSyncFailures' dedup-by-(path, commit, error)
           // works the same against slug-shaped paths.
@@ -235,11 +246,11 @@ export async function extractTakesFromDb(
 /** Single-entry dispatch for `gbrain extract takes` and the v0_28_0 orchestrator. */
 export async function extractTakes(
   engine: BrainEngine,
-  opts: ExtractTakesOpts,
+  opts: ExtractTakesOpts
 ): Promise<ExtractTakesResult> {
-  const source = opts.source ?? (opts.repoPath ? 'fs' : 'db');
-  if (source === 'fs') {
-    if (!opts.repoPath) throw new Error('extractTakes: source=fs requires repoPath');
+  const source = opts.source ?? (opts.repoPath ? "fs" : "db");
+  if (source === "fs") {
+    if (!opts.repoPath) throw new Error("extractTakes: source=fs requires repoPath");
     return extractTakesFromFs(engine, {
       repoPath: opts.repoPath,
       slugs: opts.slugs,

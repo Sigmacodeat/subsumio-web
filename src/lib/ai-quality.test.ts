@@ -75,10 +75,12 @@ describe("computeCitationQuality", () => {
   });
 
   test("computes rates correctly for mixed citations", () => {
-    const result = computeCitationQuality(makeGrounding({
-      citations_verified: 8,
-      citations_unverified: 2,
-    }));
+    const result = computeCitationQuality(
+      makeGrounding({
+        citations_verified: 8,
+        citations_unverified: 2,
+      })
+    );
     expect(result.total_citations).toBe(10);
     expect(result.verified_citations).toBe(8);
     expect(result.unverified_citations).toBe(2);
@@ -88,29 +90,35 @@ describe("computeCitationQuality", () => {
   });
 
   test("returns perfect rate when all citations verified", () => {
-    const result = computeCitationQuality(makeGrounding({
-      citations_verified: 10,
-      citations_unverified: 0,
-    }));
+    const result = computeCitationQuality(
+      makeGrounding({
+        citations_verified: 10,
+        citations_unverified: 0,
+      })
+    );
     expect(result.citation_verification_rate).toBe(1);
     expect(result.false_citation_rate).toBe(0);
   });
 
   test("returns zero rate when no citations verified", () => {
-    const result = computeCitationQuality(makeGrounding({
-      citations_verified: 0,
-      citations_unverified: 5,
-    }));
+    const result = computeCitationQuality(
+      makeGrounding({
+        citations_verified: 0,
+        citations_unverified: 5,
+      })
+    );
     expect(result.citation_verification_rate).toBe(0);
     expect(result.false_citation_rate).toBe(1);
   });
 
   test("handles zero total citations (verified=0, unverified=0) with perfect rate", () => {
-    const result = computeCitationQuality(makeGrounding({
-      citations_verified: 0,
-      citations_unverified: 0,
-      corpus_checked: true,
-    }));
+    const result = computeCitationQuality(
+      makeGrounding({
+        citations_verified: 0,
+        citations_unverified: 0,
+        corpus_checked: true,
+      })
+    );
     expect(result.total_citations).toBe(0);
     expect(result.citation_verification_rate).toBe(1);
     expect(result.false_citation_rate).toBe(0);
@@ -169,7 +177,8 @@ describe("computeClaimQuality", () => {
   });
 
   test("unsupported_claim_rate is between 0 and 1", () => {
-    const text = "Der Käufer muss abnehmen gem. § 433 BGB. Der Verkäufer muss liefern. Die Frist gilt ab Zustellung.";
+    const text =
+      "Der Käufer muss abnehmen gem. § 433 BGB. Der Verkäufer muss liefern. Die Frist gilt ab Zustellung.";
     const result = computeClaimQuality(text, null);
     expect(result.unsupported_claim_rate).toBeGreaterThanOrEqual(0);
     expect(result.unsupported_claim_rate).toBeLessThanOrEqual(1);
@@ -187,11 +196,16 @@ describe("computeClaimQuality", () => {
 describe("computeDeadlineQuality", () => {
   test("perfect match: all detected match expected", () => {
     const detected: DetectedDeadline[] = [
-      { type: "berufung", description: "Berufung", date: "2026-07-01", confidence: "high", sourceSnippet: "test", matchedRule: "r1" },
+      {
+        type: "berufung",
+        description: "Berufung",
+        date: "2026-07-01",
+        confidence: "high",
+        sourceSnippet: "test",
+        matchedRule: "r1",
+      },
     ];
-    const expected: ExpectedDeadline[] = [
-      { type: "berufung", date: "2026-07-01" },
-    ];
+    const expected: ExpectedDeadline[] = [{ type: "berufung", date: "2026-07-01" }];
     const result = computeDeadlineQuality(detected, expected);
     expect(result.correct).toBe(1);
     expect(result.false_positives).toBe(0);
@@ -203,11 +217,16 @@ describe("computeDeadlineQuality", () => {
 
   test("no match: completely different", () => {
     const detected: DetectedDeadline[] = [
-      { type: "revision", description: "Revision", date: "2026-08-01", confidence: "high", sourceSnippet: "test", matchedRule: "r1" },
+      {
+        type: "revision",
+        description: "Revision",
+        date: "2026-08-01",
+        confidence: "high",
+        sourceSnippet: "test",
+        matchedRule: "r1",
+      },
     ];
-    const expected: ExpectedDeadline[] = [
-      { type: "berufung", date: "2026-07-01" },
-    ];
+    const expected: ExpectedDeadline[] = [{ type: "berufung", date: "2026-07-01" }];
     const result = computeDeadlineQuality(detected, expected);
     expect(result.correct).toBe(0);
     expect(result.false_positives).toBe(1);
@@ -219,8 +238,22 @@ describe("computeDeadlineQuality", () => {
 
   test("partial match: 2 of 3 correct", () => {
     const detected: DetectedDeadline[] = [
-      { type: "berufung", description: "a", date: "2026-07-01", confidence: "high", sourceSnippet: "test", matchedRule: "r1" },
-      { type: "revision", description: "b", date: "2026-08-01", confidence: "high", sourceSnippet: "test", matchedRule: "r2" },
+      {
+        type: "berufung",
+        description: "a",
+        date: "2026-07-01",
+        confidence: "high",
+        sourceSnippet: "test",
+        matchedRule: "r1",
+      },
+      {
+        type: "revision",
+        description: "b",
+        date: "2026-08-01",
+        confidence: "high",
+        sourceSnippet: "test",
+        matchedRule: "r2",
+      },
     ];
     const expected: ExpectedDeadline[] = [
       { type: "berufung", date: "2026-07-01" },
@@ -246,7 +279,14 @@ describe("computeDeadlineQuality", () => {
 
   test("all detected are false positives (no expected)", () => {
     const detected: DetectedDeadline[] = [
-      { type: "berufung", description: "a", date: "2026-07-01", confidence: "high", sourceSnippet: "test", matchedRule: "r1" },
+      {
+        type: "berufung",
+        description: "a",
+        date: "2026-07-01",
+        confidence: "high",
+        sourceSnippet: "test",
+        matchedRule: "r1",
+      },
     ];
     const result = computeDeadlineQuality(detected, []);
     expect(result.correct).toBe(0);
@@ -257,9 +297,7 @@ describe("computeDeadlineQuality", () => {
   });
 
   test("all expected are false negatives (nothing detected)", () => {
-    const expected: ExpectedDeadline[] = [
-      { type: "berufung", date: "2026-07-01" },
-    ];
+    const expected: ExpectedDeadline[] = [{ type: "berufung", date: "2026-07-01" }];
     const result = computeDeadlineQuality([], expected);
     expect(result.correct).toBe(0);
     expect(result.false_positives).toBe(0);
@@ -270,23 +308,40 @@ describe("computeDeadlineQuality", () => {
 
   test("uses daysFromNow when date is not set", () => {
     const detected: DetectedDeadline[] = [
-      { type: "frist", description: "a", daysFromNow: 14, confidence: "high", sourceSnippet: "test", matchedRule: "r1" },
+      {
+        type: "frist",
+        description: "a",
+        daysFromNow: 14,
+        confidence: "high",
+        sourceSnippet: "test",
+        matchedRule: "r1",
+      },
     ];
-    const expected: ExpectedDeadline[] = [
-      { type: "frist", daysFromNow: 14 },
-    ];
+    const expected: ExpectedDeadline[] = [{ type: "frist", daysFromNow: 14 }];
     const result = computeDeadlineQuality(detected, expected);
     expect(result.correct).toBe(1);
   });
 
   test("deduplicates by type:date key", () => {
     const detected: DetectedDeadline[] = [
-      { type: "berufung", description: "a", date: "2026-07-01", confidence: "high", sourceSnippet: "test", matchedRule: "r1" },
-      { type: "berufung", description: "b", date: "2026-07-01", confidence: "medium", sourceSnippet: "test", matchedRule: "r1" },
+      {
+        type: "berufung",
+        description: "a",
+        date: "2026-07-01",
+        confidence: "high",
+        sourceSnippet: "test",
+        matchedRule: "r1",
+      },
+      {
+        type: "berufung",
+        description: "b",
+        date: "2026-07-01",
+        confidence: "medium",
+        sourceSnippet: "test",
+        matchedRule: "r1",
+      },
     ];
-    const expected: ExpectedDeadline[] = [
-      { type: "berufung", date: "2026-07-01" },
-    ];
+    const expected: ExpectedDeadline[] = [{ type: "berufung", date: "2026-07-01" }];
     const result = computeDeadlineQuality(detected, expected);
     // Set deduplication: 1 unique detected key, 1 expected key, 1 correct
     expect(result.correct).toBe(1);
@@ -299,12 +354,8 @@ describe("computeDeadlineQuality", () => {
 
 describe("computeContractIssueQuality", () => {
   test("perfect match", () => {
-    const detected: DetectedContractIssue[] = [
-      { clause_type: "liability", risk_level: "high" },
-    ];
-    const expected: ExpectedContractIssue[] = [
-      { clause_type: "liability", risk_level: "high" },
-    ];
+    const detected: DetectedContractIssue[] = [{ clause_type: "liability", risk_level: "high" }];
+    const expected: ExpectedContractIssue[] = [{ clause_type: "liability", risk_level: "high" }];
     const result = computeContractIssueQuality(detected, expected);
     expect(result.correct).toBe(1);
     expect(result.precision).toBe(1);
@@ -313,12 +364,8 @@ describe("computeContractIssueQuality", () => {
   });
 
   test("no match", () => {
-    const detected: DetectedContractIssue[] = [
-      { clause_type: "payment", risk_level: "medium" },
-    ];
-    const expected: ExpectedContractIssue[] = [
-      { clause_type: "liability", risk_level: "high" },
-    ];
+    const detected: DetectedContractIssue[] = [{ clause_type: "payment", risk_level: "medium" }];
+    const expected: ExpectedContractIssue[] = [{ clause_type: "liability", risk_level: "high" }];
     const result = computeContractIssueQuality(detected, expected);
     expect(result.correct).toBe(0);
     expect(result.precision).toBe(0);
@@ -352,12 +399,8 @@ describe("computeContractIssueQuality", () => {
   });
 
   test("risk_level mismatch means no match", () => {
-    const detected: DetectedContractIssue[] = [
-      { clause_type: "liability", risk_level: "low" },
-    ];
-    const expected: ExpectedContractIssue[] = [
-      { clause_type: "liability", risk_level: "high" },
-    ];
+    const detected: DetectedContractIssue[] = [{ clause_type: "liability", risk_level: "low" }];
+    const expected: ExpectedContractIssue[] = [{ clause_type: "liability", risk_level: "high" }];
     const result = computeContractIssueQuality(detected, expected);
     expect(result.correct).toBe(0);
   });
@@ -429,7 +472,14 @@ describe("computeQualityReport", () => {
       answerText: "Der Käufer muss abnehmen ohne Grundlage und ohne Zitat.",
       grounding: makeGrounding({ citations_verified: 0, citations_unverified: 10 }),
       detectedDeadlines: [
-        { type: "wrong", description: "wrong", date: "2026-12-31", confidence: "medium", sourceSnippet: "test", matchedRule: "r1" },
+        {
+          type: "wrong",
+          description: "wrong",
+          date: "2026-12-31",
+          confidence: "medium",
+          sourceSnippet: "test",
+          matchedRule: "r1",
+        },
       ],
       expectedDeadlines: [{ type: "right", date: "2026-01-01" }],
       detectedContractIssues: [{ clause_type: "wrong", risk_level: "high" }],

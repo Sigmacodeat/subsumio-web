@@ -9,7 +9,9 @@ test.describe("2FA Flow (E2E)", () => {
     await page.locator('input[name="email"]').fill(email);
     await page.locator('input[name="password"]').fill("2FATest123!");
     await page.locator('form button[type="submit"]').click();
-    await page.waitForFunction(() => window.location.pathname === "/dashboard", { timeout: 45_000 });
+    await page.waitForFunction(() => window.location.pathname === "/dashboard", {
+      timeout: 45_000,
+    });
 
     // Get CSRF token
     const csrfToken = await page.evaluate(() => {

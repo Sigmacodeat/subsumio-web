@@ -6,17 +6,25 @@
  */
 
 export type MigrationStatus =
-  | "planning"      // In Planung
-  | "mapping"       // Feld-Mapping wird definiert
-  | "dry_run"       // Dry Run läuft
-  | "validated"     // Validiert, bereit für Cutover
-  | "importing"     // Import läuft
-  | "delta_import"  // Delta-Import läuft
-  | "completed"     // Abgeschlossen
-  | "failed"        // Fehlgeschlagen
-  | "cancelled";    // Abgebrochen
+  | "planning" // In Planung
+  | "mapping" // Feld-Mapping wird definiert
+  | "dry_run" // Dry Run läuft
+  | "validated" // Validiert, bereit für Cutover
+  | "importing" // Import läuft
+  | "delta_import" // Delta-Import läuft
+  | "completed" // Abgeschlossen
+  | "failed" // Fehlgeschlagen
+  | "cancelled"; // Abgebrochen
 
-export type SourceSystem = "datev" | "beA" | "excel" | "word" | "pdf" | "csv" | "other_dms" | "custom";
+export type SourceSystem =
+  | "datev"
+  | "beA"
+  | "excel"
+  | "word"
+  | "pdf"
+  | "csv"
+  | "other_dms"
+  | "custom";
 export type MappingStatus = "auto_mapped" | "manual_mapped" | "unmapped" | "ignored";
 
 export interface FieldMapping {
@@ -124,9 +132,7 @@ export function createMigrationProject(params: {
     created_by: params.created_by,
     created_at: now,
     updated_at: now,
-    audit_entries: [
-      { timestamp: now, actor: params.created_by, action: "created" },
-    ],
+    audit_entries: [{ timestamp: now, actor: params.created_by, action: "created" }],
   };
 }
 
@@ -138,46 +144,105 @@ export function addMigrationAudit(
   action: string,
   details?: string,
   previousStatus?: MigrationStatus,
-  newStatus?: MigrationStatus,
+  newStatus?: MigrationStatus
 ): MigrationProject {
   return {
     ...project,
     updated_at: new Date().toISOString(),
     audit_entries: [
       ...project.audit_entries,
-      { timestamp: new Date().toISOString(), actor, action, details, previous_status: previousStatus, new_status: newStatus },
+      {
+        timestamp: new Date().toISOString(),
+        actor,
+        action,
+        details,
+        previous_status: previousStatus,
+        new_status: newStatus,
+      },
     ],
   };
 }
 
 export function startMapping(project: MigrationProject, actor: string): MigrationProject {
-  const updated = addMigrationAudit(project, actor, "start_mapping", undefined, project.status, "mapping");
+  const updated = addMigrationAudit(
+    project,
+    actor,
+    "start_mapping",
+    undefined,
+    project.status,
+    "mapping"
+  );
   return { ...updated, status: "mapping" };
 }
 
-export function setFieldMappings(project: MigrationProject, mappings: FieldMapping[], actor: string): MigrationProject {
-  const updated = addMigrationAudit(project, actor, "set_mappings", `${mappings.length} mappings defined`);
+export function setFieldMappings(
+  project: MigrationProject,
+  mappings: FieldMapping[],
+  actor: string
+): MigrationProject {
+  const updated = addMigrationAudit(
+    project,
+    actor,
+    "set_mappings",
+    `${mappings.length} mappings defined`
+  );
   return { ...updated, field_mappings: mappings };
 }
 
-export function runDryRun(project: MigrationProject, result: DryRunResult, actor: string): MigrationProject {
-  const updated = addMigrationAudit(project, actor, "dry_run", `success rate: ${result.stats.success_rate}%`, project.status, "dry_run");
+export function runDryRun(
+  project: MigrationProject,
+  result: DryRunResult,
+  actor: string
+): MigrationProject {
+  const updated = addMigrationAudit(
+    project,
+    actor,
+    "dry_run",
+    `success rate: ${result.stats.success_rate}%`,
+    project.status,
+    "dry_run"
+  );
   return { ...updated, status: "dry_run", dry_run_result: result };
 }
 
 export function validateMigration(project: MigrationProject, actor: string): MigrationProject {
-  const updated = addMigrationAudit(project, actor, "validate", undefined, project.status, "validated");
+  const updated = addMigrationAudit(
+    project,
+    actor,
+    "validate",
+    undefined,
+    project.status,
+    "validated"
+  );
   return { ...updated, status: "validated" };
 }
 
 export function startImport(project: MigrationProject, actor: string): MigrationProject {
-  const updated = addMigrationAudit(project, actor, "start_import", undefined, project.status, "importing");
+  const updated = addMigrationAudit(
+    project,
+    actor,
+    "start_import",
+    undefined,
+    project.status,
+    "importing"
+  );
   return { ...updated, status: "importing", actual_cutover_date: new Date().toISOString() };
 }
 
-export function runDeltaImport(project: MigrationProject, stats: MigrationStats, actor: string): MigrationProject {
+export function runDeltaImport(
+  project: MigrationProject,
+  stats: MigrationStats,
+  actor: string
+): MigrationProject {
   const now = new Date().toISOString();
-  const updated = addMigrationAudit(project, actor, "delta_import", `${stats.processed_records} records`, project.status, "delta_import");
+  const updated = addMigrationAudit(
+    project,
+    actor,
+    "delta_import",
+    `${stats.processed_records} records`,
+    project.status,
+    "delta_import"
+  );
   return {
     ...updated,
     status: "delta_import",
@@ -186,12 +251,27 @@ export function runDeltaImport(project: MigrationProject, stats: MigrationStats,
   };
 }
 
-export function completeMigration(project: MigrationProject, report: CutoverReport, actor: string): MigrationProject {
-  const updated = addMigrationAudit(project, actor, "complete", report.summary, project.status, "completed");
+export function completeMigration(
+  project: MigrationProject,
+  report: CutoverReport,
+  actor: string
+): MigrationProject {
+  const updated = addMigrationAudit(
+    project,
+    actor,
+    "complete",
+    report.summary,
+    project.status,
+    "completed"
+  );
   return { ...updated, status: "completed", cutover_report: report };
 }
 
-export function failMigration(project: MigrationProject, reason: string, actor: string): MigrationProject {
+export function failMigration(
+  project: MigrationProject,
+  reason: string,
+  actor: string
+): MigrationProject {
   const updated = addMigrationAudit(project, actor, "fail", reason, project.status, "failed");
   return { ...updated, status: "failed" };
 }
@@ -222,7 +302,9 @@ export function validateMigrationProject(project: MigrationProject): MigrationVa
   }
 
   if (project.dry_run_result && project.dry_run_result.stats.error_rate > 10) {
-    warnings.push(`Dry run error rate is ${project.dry_run_result.stats.error_rate}% — consider fixing before import`);
+    warnings.push(
+      `Dry run error rate is ${project.dry_run_result.stats.error_rate}% — consider fixing before import`
+    );
   }
 
   if (project.status === "completed" && !project.cutover_report) {

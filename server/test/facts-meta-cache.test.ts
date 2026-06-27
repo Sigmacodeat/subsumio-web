@@ -11,15 +11,15 @@
  *     angle — the in-process cache directly).
  */
 
-import { describe, test, expect, beforeAll, afterAll, beforeEach } from 'bun:test';
-import { PGLiteEngine } from '../src/core/pglite-engine.ts';
+import { describe, test, expect, beforeAll, afterAll, beforeEach } from "bun:test";
+import { PGLiteEngine } from "../src/core/pglite-engine.ts";
 import {
   getBrainHotMemoryMeta,
   bumpHotMemoryCache,
   __resetHotMemoryCacheForTests,
-} from '../src/core/facts/meta-hook.ts';
-import type { OperationContext } from '../src/core/operations.ts';
-import type { GBrainConfig } from '../src/core/config.ts';
+} from "../src/core/facts/meta-hook.ts";
+import type { OperationContext } from "../src/core/operations.ts";
+import type { GBrainConfig } from "../src/core/config.ts";
 
 let engine: PGLiteEngine;
 
@@ -44,19 +44,25 @@ function ctx(overrides: Partial<OperationContext> = {}): OperationContext {
     logger: { info: () => {}, warn: () => {}, error: () => {} },
     dryRun: false,
     remote: false,
-    sourceId: 'default',
+    sourceId: "default",
     ...overrides,
   };
 }
 
-describe('meta-hook cache', () => {
-  test('cache hit returns the same payload without re-querying', async () => {
+describe("meta-hook cache", () => {
+  test("cache hit returns the same payload without re-querying", async () => {
     await engine.insertFact(
-      { fact: 'cache test fact', kind: 'fact', entity_slug: 'cache-test', visibility: 'world', source: 'test' },
-      { source_id: 'default' },
+      {
+        fact: "cache test fact",
+        kind: "fact",
+        entity_slug: "cache-test",
+        visibility: "world",
+        source: "test",
+      },
+      { source_id: "default" }
     );
 
-    const first = await getBrainHotMemoryMeta('get_stats', ctx());
+    const first = await getBrainHotMemoryMeta("get_stats", ctx());
     expect(first?.brain_hot_memory).toBeDefined();
     const firstFacts = (first!.brain_hot_memory as { facts: { id: number }[] }).facts;
     const firstCount = firstFacts.length;
@@ -64,67 +70,113 @@ describe('meta-hook cache', () => {
     // Insert another fact — but cache hit short-circuits so the new one
     // doesn't surface until we bump.
     await engine.insertFact(
-      { fact: 'second fact (post-cache)', kind: 'fact', entity_slug: 'cache-test', visibility: 'world', source: 'test' },
-      { source_id: 'default' },
+      {
+        fact: "second fact (post-cache)",
+        kind: "fact",
+        entity_slug: "cache-test",
+        visibility: "world",
+        source: "test",
+      },
+      { source_id: "default" }
     );
-    const second = await getBrainHotMemoryMeta('get_stats', ctx());
+    const second = await getBrainHotMemoryMeta("get_stats", ctx());
     const secondFacts = (second!.brain_hot_memory as { facts: { id: number }[] }).facts;
     expect(secondFacts.length).toBe(firstCount);
   });
 
-  test('bumpHotMemoryCache forces a fresh query on next call', async () => {
+  test("bumpHotMemoryCache forces a fresh query on next call", async () => {
     await engine.insertFact(
-      { fact: 'bump-test seed', kind: 'fact', entity_slug: 'bump', visibility: 'world', source: 'test' },
-      { source_id: 'default' },
+      {
+        fact: "bump-test seed",
+        kind: "fact",
+        entity_slug: "bump",
+        visibility: "world",
+        source: "test",
+      },
+      { source_id: "default" }
     );
-    const first = await getBrainHotMemoryMeta('get_stats', ctx());
+    const first = await getBrainHotMemoryMeta("get_stats", ctx());
     const firstCount = (first!.brain_hot_memory as { facts: unknown[] }).facts.length;
     await engine.insertFact(
-      { fact: 'bump-test post-bump', kind: 'fact', entity_slug: 'bump', visibility: 'world', source: 'test' },
-      { source_id: 'default' },
+      {
+        fact: "bump-test post-bump",
+        kind: "fact",
+        entity_slug: "bump",
+        visibility: "world",
+        source: "test",
+      },
+      { source_id: "default" }
     );
-    bumpHotMemoryCache('default', null);
-    const second = await getBrainHotMemoryMeta('get_stats', ctx());
+    bumpHotMemoryCache("default", null);
+    const second = await getBrainHotMemoryMeta("get_stats", ctx());
     const secondCount = (second!.brain_hot_memory as { facts: unknown[] }).facts.length;
     expect(secondCount).toBeGreaterThan(firstCount);
   });
 
-  test('bumpHotMemoryCache for one (source, session) does not affect another', async () => {
+  test("bumpHotMemoryCache for one (source, session) does not affect another", async () => {
     // Seed and warm caches for two sessions of the same source.
     await engine.insertFact(
-      { fact: 'sess-A fact', kind: 'fact', entity_slug: 'multi-sess', visibility: 'world', source: 'test', source_session: 'sess-A' },
-      { source_id: 'default' },
+      {
+        fact: "sess-A fact",
+        kind: "fact",
+        entity_slug: "multi-sess",
+        visibility: "world",
+        source: "test",
+        source_session: "sess-A",
+      },
+      { source_id: "default" }
     );
     await engine.insertFact(
-      { fact: 'sess-B fact', kind: 'fact', entity_slug: 'multi-sess', visibility: 'world', source: 'test', source_session: 'sess-B' },
-      { source_id: 'default' },
+      {
+        fact: "sess-B fact",
+        kind: "fact",
+        entity_slug: "multi-sess",
+        visibility: "world",
+        source: "test",
+        source_session: "sess-B",
+      },
+      { source_id: "default" }
     );
     // Note: the helper uses ctx.source_session via the exotic accessor;
     // since OperationContext doesn't formally carry it, call with a forged
     // shape via overrides.
     const ctxA = ctx({}) as OperationContext & { source_session?: string };
-    ctxA.source_session = 'sess-A';
+    ctxA.source_session = "sess-A";
     const ctxB = ctx({}) as OperationContext & { source_session?: string };
-    ctxB.source_session = 'sess-B';
-    const a1 = await getBrainHotMemoryMeta('get_stats', ctxA);
-    const b1 = await getBrainHotMemoryMeta('get_stats', ctxB);
+    ctxB.source_session = "sess-B";
+    const a1 = await getBrainHotMemoryMeta("get_stats", ctxA);
+    const b1 = await getBrainHotMemoryMeta("get_stats", ctxB);
     const a1Count = (a1?.brain_hot_memory as { facts: unknown[] } | undefined)?.facts.length ?? 0;
     const b1Count = (b1?.brain_hot_memory as { facts: unknown[] } | undefined)?.facts.length ?? 0;
 
     // Bump only sess-A; sess-B's cache stays warm.
-    bumpHotMemoryCache('default', 'sess-A');
+    bumpHotMemoryCache("default", "sess-A");
 
     // Add a fact to each session; only sess-A's next call should reflect it.
     await engine.insertFact(
-      { fact: 'sess-A fact 2', kind: 'fact', entity_slug: 'multi-sess', visibility: 'world', source: 'test', source_session: 'sess-A' },
-      { source_id: 'default' },
+      {
+        fact: "sess-A fact 2",
+        kind: "fact",
+        entity_slug: "multi-sess",
+        visibility: "world",
+        source: "test",
+        source_session: "sess-A",
+      },
+      { source_id: "default" }
     );
     await engine.insertFact(
-      { fact: 'sess-B fact 2', kind: 'fact', entity_slug: 'multi-sess', visibility: 'world', source: 'test', source_session: 'sess-B' },
-      { source_id: 'default' },
+      {
+        fact: "sess-B fact 2",
+        kind: "fact",
+        entity_slug: "multi-sess",
+        visibility: "world",
+        source: "test",
+        source_session: "sess-B",
+      },
+      { source_id: "default" }
     );
-    const a2 = await getBrainHotMemoryMeta('get_stats', ctxA);
-    const b2 = await getBrainHotMemoryMeta('get_stats', ctxB);
+    const a2 = await getBrainHotMemoryMeta("get_stats", ctxA);
+    const b2 = await getBrainHotMemoryMeta("get_stats", ctxB);
     const a2Count = (a2?.brain_hot_memory as { facts: unknown[] } | undefined)?.facts.length ?? 0;
     const b2Count = (b2?.brain_hot_memory as { facts: unknown[] } | undefined)?.facts.length ?? 0;
 
@@ -134,21 +186,27 @@ describe('meta-hook cache', () => {
     expect(b2Count).toBe(b1Count);
   });
 
-  test('skipped on facts-self ops (recall, extract_facts, forget_fact)', async () => {
-    expect(await getBrainHotMemoryMeta('recall', ctx())).toBeUndefined();
-    expect(await getBrainHotMemoryMeta('extract_facts', ctx())).toBeUndefined();
-    expect(await getBrainHotMemoryMeta('forget_fact', ctx())).toBeUndefined();
+  test("skipped on facts-self ops (recall, extract_facts, forget_fact)", async () => {
+    expect(await getBrainHotMemoryMeta("recall", ctx())).toBeUndefined();
+    expect(await getBrainHotMemoryMeta("extract_facts", ctx())).toBeUndefined();
+    expect(await getBrainHotMemoryMeta("forget_fact", ctx())).toBeUndefined();
   });
 
-  test('different allow-lists produce distinct cache entries', async () => {
+  test("different allow-lists produce distinct cache entries", async () => {
     await engine.insertFact(
-      { fact: 'alpha fact for cache', kind: 'fact', entity_slug: 'allow-cache', visibility: 'world', source: 'test' },
-      { source_id: 'default' },
+      {
+        fact: "alpha fact for cache",
+        kind: "fact",
+        entity_slug: "allow-cache",
+        visibility: "world",
+        source: "test",
+      },
+      { source_id: "default" }
     );
     const ctxNoList = ctx();
-    const ctxWithList = ctx({ takesHoldersAllowList: ['world', 'self'] });
-    const r1 = await getBrainHotMemoryMeta('get_stats', ctxNoList);
-    const r2 = await getBrainHotMemoryMeta('get_stats', ctxWithList);
+    const ctxWithList = ctx({ takesHoldersAllowList: ["world", "self"] });
+    const r1 = await getBrainHotMemoryMeta("get_stats", ctxNoList);
+    const r2 = await getBrainHotMemoryMeta("get_stats", ctxWithList);
     // Both compute their own entries — neither should error, both have
     // the same world-visible fact in this hermetic case.
     expect(r1?.brain_hot_memory).toBeDefined();

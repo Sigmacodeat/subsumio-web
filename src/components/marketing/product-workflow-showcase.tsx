@@ -118,173 +118,173 @@ export default function ProductWorkflowShowcase({
 
         <motion.div style={{ y: yPanel }} className="relative">
           <MagneticCard lift={6} tilt={1.5} className="relative">
-          <div className="brand-glow-bg absolute -inset-6 rounded-full blur-3xl" />
-          <div
-            data-tone="slate"
-            className="relative overflow-hidden rounded-2xl border [border-color:var(--mk-border-strong)] shadow-2xl shadow-black/20 [background:var(--mk-bg)]"
-          >
-            <GuidedCursor
-              x={["63%", "35%", "74%", "58%"]}
-              y={["24%", "45%", "53%", "82%"]}
-              label={UI_STRINGS[lang].followContext}
-              className="hidden md:flex"
-              duration={7.2}
-            />
-            <div className="flex items-center justify-between border-b [border-color:var(--mk-border)] px-4 py-3 [background:var(--mk-surface)]">
-              <div className="terminal-dots flex items-center gap-2">
-                <span className="terminal-dot-red" />
-                <span className="terminal-dot-amber" />
-                <span className="terminal-dot-green" />
-              </div>
-              <div className="font-mono text-xs [color:var(--mk-text-subtle)]">
-                {brand} workspace
-              </div>
-            </div>
-
-            <div className="grid min-h-[470px] md:grid-cols-[180px_1fr]">
-              <div className="hidden border-r [border-color:var(--mk-border)] p-4 [background:var(--mk-bg)] md:block">
-                <div className="mb-6 flex items-center gap-2">
-                  <Brain size={17} className="brand-text" />
-                  <span className="text-sm font-bold [color:var(--mk-text)]">{brand}</span>
+            <div className="brand-glow-bg absolute -inset-6 rounded-full blur-3xl" />
+            <div
+              data-tone="slate"
+              className="relative overflow-hidden rounded-2xl border [border-color:var(--mk-border-strong)] shadow-2xl shadow-black/20 [background:var(--mk-bg)]"
+            >
+              <GuidedCursor
+                x={["63%", "35%", "74%", "58%"]}
+                y={["24%", "45%", "53%", "82%"]}
+                label={UI_STRINGS[lang].followContext}
+                className="hidden md:flex"
+                duration={7.2}
+              />
+              <div className="flex items-center justify-between border-b [border-color:var(--mk-border)] px-4 py-3 [background:var(--mk-surface)]">
+                <div className="terminal-dots flex items-center gap-2">
+                  <span className="terminal-dot-red" />
+                  <span className="terminal-dot-amber" />
+                  <span className="terminal-dot-green" />
                 </div>
-                {["Inbox", "Graph", "Answers", "Audit"].map((item, i) => (
-                  <div
-                    key={item}
-                    className={`mb-2 rounded-lg px-3 py-2 text-xs ${i === 1 ? "brand-soft brand-text" : "[color:var(--mk-text-muted)]"}`}
-                  >
-                    {item}
+                <div className="font-mono text-xs [color:var(--mk-text-subtle)]">
+                  {brand} workspace
+                </div>
+              </div>
+
+              <div className="grid min-h-[470px] md:grid-cols-[180px_1fr]">
+                <div className="hidden border-r [border-color:var(--mk-border)] p-4 [background:var(--mk-bg)] md:block">
+                  <div className="mb-6 flex items-center gap-2">
+                    <Brain size={17} className="brand-text" />
+                    <span className="text-sm font-bold [color:var(--mk-text)]">{brand}</span>
                   </div>
-                ))}
-              </div>
-
-              <div className="relative p-4 md:p-6">
-                <motion.div
-                  animate={reduced ? undefined : { scale: [1, 1.012, 1] }}
-                  transition={{ duration: 3.8, repeat: Infinity, ease: "easeInOut" }}
-                  className="mb-5 flex items-center gap-3 rounded-xl border [border-color:var(--mk-border)] px-4 py-3 [background:var(--mk-surface)]"
-                >
-                  <Search size={16} className="brand-text" />
-                  <span className="text-sm [color:var(--mk-text)]">{c.query}</span>
-                  <CheckCircle2 size={16} className="ml-auto [color:var(--brand-secondary)]" />
-                </motion.div>
-
-                <div className="grid gap-4 lg:grid-cols-[1fr_0.9fr]">
-                  <motion.div style={{ y: yCards }} className="space-y-3">
-                    {[
-                      { icon: FileText, label: c.sourceA, tone: "brand-soft" },
-                      {
-                        icon: MessageSquare,
-                        label: c.sourceB,
-                        tone: "bg-cyan-500/10 border-cyan-500/20",
-                      },
-                      {
-                        icon: ShieldCheck,
-                        label: c.sourceC,
-                        tone: "bg-[var(--brand-secondary)]/10 border-[var(--brand-secondary)]/20",
-                      },
-                    ].map((source, i) => {
-                      const Icon = source.icon;
-                      return (
-                        <motion.div
-                          key={source.label}
-                          initial={{ opacity: 0, x: -14 }}
-                          whileInView={{ opacity: 1, x: 0 }}
-                          viewport={{ once: true, amount: 0.4 }}
-                          transition={{ duration: 0.35, delay: i * 0.08 }}
-                          className={`rounded-xl border ${source.tone} p-4`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <Icon size={17} className="brand-text" />
-                            <span className="text-sm font-medium [color:var(--mk-text)]">
-                              {source.label}
-                            </span>
-                            <CheckCircle2
-                              size={16}
-                              className="ml-auto text-[var(--brand-secondary)]"
-                            />
-                          </div>
-                          <div className="mt-3 h-1.5 overflow-hidden rounded-full [background:var(--mk-border)]">
-                            <motion.div
-                              initial={{ width: "20%" }}
-                              whileInView={{ width: `${72 + i * 8}%` }}
-                              viewport={{ once: true }}
-                              transition={{ duration: 0.8, delay: 0.2 + i * 0.1 }}
-                              className="brand-bg h-full"
-                            />
-                          </div>
-                        </motion.div>
-                      );
-                    })}
-                  </motion.div>
-
-                  <motion.div
-                    style={{ y: yGraph }}
-                    className="min-h-[250px] rounded-xl border [border-color:var(--mk-border)] p-4 [background:var(--mk-bg)]"
-                  >
-                    <div className="mb-4 flex items-center gap-2">
-                      <GitBranch size={16} className="brand-text" />
-                      <span className="text-sm font-semibold [color:var(--mk-text)]">
-                        {c.graph}
-                      </span>
+                  {["Inbox", "Graph", "Answers", "Audit"].map((item, i) => (
+                    <div
+                      key={item}
+                      className={`mb-2 rounded-lg px-3 py-2 text-xs ${i === 1 ? "brand-soft brand-text" : "[color:var(--mk-text-muted)]"}`}
+                    >
+                      {item}
                     </div>
-                    <div className="relative h-44">
-                      {[
-                        ["left-4 top-8", "Matter"],
-                        ["left-28 top-2", "Person"],
-                        ["right-8 top-16", "Doc"],
-                        ["left-20 bottom-4", "Risk"],
-                        ["right-16 bottom-8", "Task"],
-                      ].map(([pos, label], i) => (
-                        <motion.div
-                          key={label}
-                          initial={{ scale: 0.8, opacity: 0 }}
-                          whileInView={{ scale: 1, opacity: 1 }}
-                          viewport={{ once: true }}
-                          transition={{ duration: 0.35, delay: 0.12 * i }}
-                          className={`absolute ${pos} brand-border rounded-full border px-3 py-2 text-xs [color:var(--mk-text)] shadow-lg [background:var(--mk-surface)]`}
-                        >
-                          {label}
-                        </motion.div>
-                      ))}
-                      <div className="absolute inset-6 rounded-full border border-dashed border-[var(--brand-primary)]/25" />
-                      <div className="brand-bg absolute inset-x-12 top-20 h-px opacity-50" />
-                      <div className="brand-bg absolute top-12 left-24 h-24 w-px rotate-45 opacity-40" />
-                    </div>
-                  </motion.div>
+                  ))}
                 </div>
 
-                <motion.div
-                  initial={{ opacity: 0, y: 14 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  animate={reduced ? undefined : { scale: [1, 1.014, 1] }}
-                  viewport={{ once: true, amount: 0.35 }}
-                  transition={{
-                    opacity: { duration: 0.45, delay: 0.25 },
-                    y: { duration: 0.45, delay: 0.25 },
-                    scale: { duration: 4.2, repeat: Infinity, ease: "easeInOut" },
-                  }}
-                  className="brand-border mt-4 rounded-xl border p-4 [background:var(--mk-surface)]"
-                >
-                  <div className="flex items-start gap-3">
-                    <Brain size={18} className="brand-text mt-0.5" />
-                    <div>
-                      <p className="mb-1 text-sm font-semibold [color:var(--mk-text)]">
-                        {c.answer}
-                      </p>
-                      <div className="flex flex-wrap gap-2 text-xs">
-                        <span className="brand-soft brand-text rounded-full px-2 py-1">
-                          {c.risk}
-                        </span>
-                        <span className="rounded-full px-2 py-1 [color:var(--mk-text-muted)] [background:var(--mk-border)]">
-                          {c.route}
+                <div className="relative p-4 md:p-6">
+                  <motion.div
+                    animate={reduced ? undefined : { scale: [1, 1.012, 1] }}
+                    transition={{ duration: 3.8, repeat: Infinity, ease: "easeInOut" }}
+                    className="mb-5 flex items-center gap-3 rounded-xl border [border-color:var(--mk-border)] px-4 py-3 [background:var(--mk-surface)]"
+                  >
+                    <Search size={16} className="brand-text" />
+                    <span className="text-sm [color:var(--mk-text)]">{c.query}</span>
+                    <CheckCircle2 size={16} className="ml-auto [color:var(--brand-secondary)]" />
+                  </motion.div>
+
+                  <div className="grid gap-4 lg:grid-cols-[1fr_0.9fr]">
+                    <motion.div style={{ y: yCards }} className="space-y-3">
+                      {[
+                        { icon: FileText, label: c.sourceA, tone: "brand-soft" },
+                        {
+                          icon: MessageSquare,
+                          label: c.sourceB,
+                          tone: "bg-cyan-500/10 border-cyan-500/20",
+                        },
+                        {
+                          icon: ShieldCheck,
+                          label: c.sourceC,
+                          tone: "bg-[var(--brand-secondary)]/10 border-[var(--brand-secondary)]/20",
+                        },
+                      ].map((source, i) => {
+                        const Icon = source.icon;
+                        return (
+                          <motion.div
+                            key={source.label}
+                            initial={{ opacity: 0, x: -14 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            viewport={{ once: true, amount: 0.4 }}
+                            transition={{ duration: 0.35, delay: i * 0.08 }}
+                            className={`rounded-xl border ${source.tone} p-4`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <Icon size={17} className="brand-text" />
+                              <span className="text-sm font-medium [color:var(--mk-text)]">
+                                {source.label}
+                              </span>
+                              <CheckCircle2
+                                size={16}
+                                className="ml-auto text-[var(--brand-secondary)]"
+                              />
+                            </div>
+                            <div className="mt-3 h-1.5 overflow-hidden rounded-full [background:var(--mk-border)]">
+                              <motion.div
+                                initial={{ width: "20%" }}
+                                whileInView={{ width: `${72 + i * 8}%` }}
+                                viewport={{ once: true }}
+                                transition={{ duration: 0.8, delay: 0.2 + i * 0.1 }}
+                                className="brand-bg h-full"
+                              />
+                            </div>
+                          </motion.div>
+                        );
+                      })}
+                    </motion.div>
+
+                    <motion.div
+                      style={{ y: yGraph }}
+                      className="min-h-[250px] rounded-xl border [border-color:var(--mk-border)] p-4 [background:var(--mk-bg)]"
+                    >
+                      <div className="mb-4 flex items-center gap-2">
+                        <GitBranch size={16} className="brand-text" />
+                        <span className="text-sm font-semibold [color:var(--mk-text)]">
+                          {c.graph}
                         </span>
                       </div>
-                    </div>
+                      <div className="relative h-44">
+                        {[
+                          ["left-4 top-8", "Matter"],
+                          ["left-28 top-2", "Person"],
+                          ["right-8 top-16", "Doc"],
+                          ["left-20 bottom-4", "Risk"],
+                          ["right-16 bottom-8", "Task"],
+                        ].map(([pos, label], i) => (
+                          <motion.div
+                            key={label}
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            whileInView={{ scale: 1, opacity: 1 }}
+                            viewport={{ once: true }}
+                            transition={{ duration: 0.35, delay: 0.12 * i }}
+                            className={`absolute ${pos} brand-border rounded-full border px-3 py-2 text-xs [color:var(--mk-text)] shadow-lg [background:var(--mk-surface)]`}
+                          >
+                            {label}
+                          </motion.div>
+                        ))}
+                        <div className="absolute inset-6 rounded-full border border-dashed border-[var(--brand-primary)]/25" />
+                        <div className="brand-bg absolute inset-x-12 top-20 h-px opacity-50" />
+                        <div className="brand-bg absolute top-12 left-24 h-24 w-px rotate-45 opacity-40" />
+                      </div>
+                    </motion.div>
                   </div>
-                </motion.div>
+
+                  <motion.div
+                    initial={{ opacity: 0, y: 14 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    animate={reduced ? undefined : { scale: [1, 1.014, 1] }}
+                    viewport={{ once: true, amount: 0.35 }}
+                    transition={{
+                      opacity: { duration: 0.45, delay: 0.25 },
+                      y: { duration: 0.45, delay: 0.25 },
+                      scale: { duration: 4.2, repeat: Infinity, ease: "easeInOut" },
+                    }}
+                    className="brand-border mt-4 rounded-xl border p-4 [background:var(--mk-surface)]"
+                  >
+                    <div className="flex items-start gap-3">
+                      <Brain size={18} className="brand-text mt-0.5" />
+                      <div>
+                        <p className="mb-1 text-sm font-semibold [color:var(--mk-text)]">
+                          {c.answer}
+                        </p>
+                        <div className="flex flex-wrap gap-2 text-xs">
+                          <span className="brand-soft brand-text rounded-full px-2 py-1">
+                            {c.risk}
+                          </span>
+                          <span className="rounded-full px-2 py-1 [color:var(--mk-text-muted)] [background:var(--mk-border)]">
+                            {c.route}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                </div>
               </div>
             </div>
-          </div>
           </MagneticCard>
         </motion.div>
       </div>

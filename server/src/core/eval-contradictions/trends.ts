@@ -6,9 +6,9 @@
  * suspected-contradictions trend`. Pure data structures — no LLM or filesystem.
  */
 
-import type { BrainEngine } from '../engine.ts';
-import type { ProbeReport, SourceTierBreakdown } from './types.ts';
-export type { ProbeReport, SourceTierBreakdown } from './types.ts';
+import type { BrainEngine } from "../engine.ts";
+import type { ProbeReport, SourceTierBreakdown } from "./types.ts";
+export type { ProbeReport, SourceTierBreakdown } from "./types.ts";
 
 export interface TrendRow {
   run_id: string;
@@ -31,7 +31,7 @@ export interface TrendRow {
 export async function writeRunRow(
   engine: BrainEngine,
   report: ProbeReport,
-  durationMs: number,
+  durationMs: number
 ): Promise<boolean> {
   return engine.writeContradictionsRun({
     run_id: report.run_id,
@@ -65,7 +65,12 @@ export async function loadTrend(engine: BrainEngine, days: number): Promise<Tren
     judge_errors_total: r.judge_errors_total,
     cost_usd_total: r.cost_usd_total,
     duration_ms: r.duration_ms,
-    source_tier_breakdown: (r.source_tier_breakdown ?? { curated_vs_curated: 0, curated_vs_bulk: 0, bulk_vs_bulk: 0, other: 0 }) as unknown as SourceTierBreakdown,
+    source_tier_breakdown: (r.source_tier_breakdown ?? {
+      curated_vs_curated: 0,
+      curated_vs_bulk: 0,
+      bulk_vs_bulk: 0,
+      other: 0,
+    }) as unknown as SourceTierBreakdown,
     report_json: r.report_json as unknown as ProbeReport,
   }));
 }
@@ -77,22 +82,27 @@ export async function loadTrend(engine: BrainEngine, days: number): Promise<Tren
  */
 export function renderTrendChart(rows: readonly TrendRow[]): string {
   if (rows.length === 0) {
-    return 'No contradiction-probe runs in this window. Run `gbrain eval suspected-contradictions` to populate.';
+    return "No contradiction-probe runs in this window. Run `gbrain eval suspected-contradictions` to populate.";
   }
   const max = Math.max(1, ...rows.map((r) => r.total_contradictions_flagged));
   const barWidth = 30;
   const lines: string[] = [];
-  lines.push('Date         Model               Q  WithCx  Flag  CI95           Bar');
-  lines.push('-----------  ------------------  -  ------  ----  -------------  ' + '-'.repeat(barWidth));
+  lines.push("Date         Model               Q  WithCx  Flag  CI95           Bar");
+  lines.push(
+    "-----------  ------------------  -  ------  ----  -------------  " + "-".repeat(barWidth)
+  );
   for (const r of rows) {
     const date = r.ran_at.slice(0, 10);
-    const model = r.judge_model.split(':').pop()!.slice(0, 18).padEnd(18);
+    const model = r.judge_model.split(":").pop()!.slice(0, 18).padEnd(18);
     const q = String(r.queries_evaluated).padStart(2);
     const withCx = String(r.queries_with_contradiction).padStart(6);
     const flag = String(r.total_contradictions_flagged).padStart(4);
-    const ci = `${(r.wilson_ci_lower * 100).toFixed(0).padStart(2)}-${(r.wilson_ci_upper * 100).toFixed(0).padStart(2)}%`.padEnd(13);
+    const ci =
+      `${(r.wilson_ci_lower * 100).toFixed(0).padStart(2)}-${(r.wilson_ci_upper * 100).toFixed(0).padStart(2)}%`.padEnd(
+        13
+      );
     const fill = Math.round((r.total_contradictions_flagged / max) * barWidth);
-    const bar = '#'.repeat(fill) + '.'.repeat(barWidth - fill);
+    const bar = "#".repeat(fill) + ".".repeat(barWidth - fill);
     lines.push(`${date}   ${model}  ${q}  ${withCx}  ${flag}  ${ci}  ${bar}`);
   }
   // v0.34 / Lane A2: append the per-verdict breakdown from the most recent
@@ -102,7 +112,7 @@ export function renderTrendChart(rows: readonly TrendRow[]): string {
   const latest = rows[0];
   if (latest && latest.report_json && latest.report_json.verdict_breakdown) {
     const b = latest.report_json.verdict_breakdown;
-    lines.push('');
+    lines.push("");
     lines.push(`Latest run verdict breakdown (${latest.ran_at.slice(0, 10)}):`);
     lines.push(`  contradiction:         ${b.contradiction}`);
     lines.push(`  temporal_supersession: ${b.temporal_supersession}`);
@@ -111,8 +121,8 @@ export function renderTrendChart(rows: readonly TrendRow[]): string {
     lines.push(`  negation_artifact:     ${b.negation_artifact}`);
     lines.push(`  no_contradiction:      ${b.no_contradiction}`);
   } else if (latest) {
-    lines.push('');
+    lines.push("");
     lines.push(`Latest run verdict breakdown: (no breakdown — predates v0.34 prompt_version=2)`);
   }
-  return lines.join('\n');
+  return lines.join("\n");
 }

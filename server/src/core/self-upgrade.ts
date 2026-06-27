@@ -26,11 +26,26 @@
  * local DB, so all state is file-based under `~/.gbrain/` (honors GBRAIN_HOME).
  */
 
-import { closeSync, mkdirSync, openSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { gbrainPath } from './config.ts';
-import { acquirePackLock, type PackLockOpts } from './schema-pack/pack-lock.ts';
-import { isMinorOrMajorBump, isValidVersionString, parseSemver, semverGt, semverLte } from './semver.ts';
+import {
+  closeSync,
+  mkdirSync,
+  openSync,
+  readFileSync,
+  renameSync,
+  statSync,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs";
+import { dirname, join } from "node:path";
+import { gbrainPath } from "./config.ts";
+import { acquirePackLock, type PackLockOpts } from "./schema-pack/pack-lock.ts";
+import {
+  isMinorOrMajorBump,
+  isValidVersionString,
+  parseSemver,
+  semverGt,
+  semverLte,
+} from "./semver.ts";
 
 // ── Constants ───────────────────────────────────────────────────────────────
 
@@ -52,9 +67,9 @@ export const SNOOZE_DURATIONS_MS = [
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
-export type SelfUpgradeMode = 'auto' | 'notify' | 'off';
+export type SelfUpgradeMode = "auto" | "notify" | "off";
 
-export type SelfUpgradeChannel = 'invocation' | 'autopilot';
+export type SelfUpgradeChannel = "invocation" | "autopilot";
 
 /**
  * The decision outcome. `apply` = silently run the upgrade (autopilot/auto
@@ -62,16 +77,16 @@ export type SelfUpgradeChannel = 'invocation' | 'autopilot';
  * no-op with a named reason (for the audit trail + doctor).
  */
 export type SelfUpgradeAction =
-  | 'off'
-  | 'not_behind'
-  | 'downgrade_or_yanked'
-  | 'known_bad'
-  | 'throttled'
-  | 'busy'
-  | 'outside_quiet_hours'
-  | 'unsupported_install'
-  | 'notify'
-  | 'apply';
+  | "off"
+  | "not_behind"
+  | "downgrade_or_yanked"
+  | "known_bad"
+  | "throttled"
+  | "busy"
+  | "outside_quiet_hours"
+  | "unsupported_install"
+  | "notify"
+  | "apply";
 
 export interface SelfUpgradeDecision {
   action: SelfUpgradeAction;
@@ -99,7 +114,7 @@ export interface DecideSelfUpgradeInputs {
   snoozed?: boolean;
 }
 
-export type MarkerKind = 'up_to_date' | 'upgrade_available';
+export type MarkerKind = "up_to_date" | "upgrade_available";
 
 export interface UpdateMarker {
   kind: MarkerKind;
@@ -126,58 +141,74 @@ export interface SnoozeRecord {
 export function decideSelfUpgrade(inp: DecideSelfUpgradeInputs): SelfUpgradeDecision {
   const base = { current: inp.currentVersion, latest: inp.latestVersion };
 
-  if (inp.mode === 'off') {
-    return { action: 'off', reason: 'self_upgrade.mode=off', ...base };
+  if (inp.mode === "off") {
+    return { action: "off", reason: "self_upgrade.mode=off", ...base };
   }
 
   if (!inp.latestVersion || !isValidVersionString(inp.latestVersion)) {
-    return { action: 'not_behind', reason: 'latest version unknown or invalid', ...base };
+    return { action: "not_behind", reason: "latest version unknown or invalid", ...base };
   }
 
   const cur = parseSemver(inp.currentVersion);
   const lat = parseSemver(inp.latestVersion);
   if (!cur || !lat) {
-    return { action: 'not_behind', reason: 'unparseable version', ...base };
+    return { action: "not_behind", reason: "unparseable version", ...base };
   }
 
   if (semverLte(lat, cur)) {
     // Equal → up to date; strictly-less → a downgrade / yanked release. Never act.
     if (semverGt(cur, lat)) {
-      return { action: 'downgrade_or_yanked', reason: `latest ${inp.latestVersion} < current ${inp.currentVersion}`, ...base };
+      return {
+        action: "downgrade_or_yanked",
+        reason: `latest ${inp.latestVersion} < current ${inp.currentVersion}`,
+        ...base,
+      };
     }
-    return { action: 'not_behind', reason: 'already current', ...base };
+    return { action: "not_behind", reason: "already current", ...base };
   }
 
   if (!isMinorOrMajorBump(inp.currentVersion, inp.latestVersion)) {
-    return { action: 'not_behind', reason: 'patch/micro bump only (ignored)', ...base };
+    return { action: "not_behind", reason: "patch/micro bump only (ignored)", ...base };
   }
 
   if (inp.failedVersions.includes(inp.latestVersion)) {
-    return { action: 'known_bad', reason: `${inp.latestVersion} previously failed; not retrying`, ...base };
+    return {
+      action: "known_bad",
+      reason: `${inp.latestVersion} previously failed; not retrying`,
+      ...base,
+    };
   }
 
   // Genuinely behind by a minor/major bump and not known-bad.
-  if (inp.channel === 'invocation') {
+  if (inp.channel === "invocation") {
     if (inp.snoozed) {
-      return { action: 'throttled', reason: 'snoozed for this version', ...base };
+      return { action: "throttled", reason: "snoozed for this version", ...base };
     }
-    return { action: 'notify', reason: `update available: ${inp.currentVersion} -> ${inp.latestVersion}`, ...base };
+    return {
+      action: "notify",
+      reason: `update available: ${inp.currentVersion} -> ${inp.latestVersion}`,
+      ...base,
+    };
   }
 
   // autopilot channel (silent auto)
   if (inp.throttledByInterval) {
-    return { action: 'throttled', reason: 'auto-check ran within 24h', ...base };
+    return { action: "throttled", reason: "auto-check ran within 24h", ...base };
   }
   if (!inp.idle) {
-    return { action: 'busy', reason: 'brain not idle', ...base };
+    return { action: "busy", reason: "brain not idle", ...base };
   }
   if (!inp.inQuietHours) {
-    return { action: 'outside_quiet_hours', reason: 'outside quiet hours', ...base };
+    return { action: "outside_quiet_hours", reason: "outside quiet hours", ...base };
   }
   if (!inp.canSelfUpdate) {
-    return { action: 'unsupported_install', reason: 'install method cannot self-update', ...base };
+    return { action: "unsupported_install", reason: "install method cannot self-update", ...base };
   }
-  return { action: 'apply', reason: `auto-upgrading ${inp.currentVersion} -> ${inp.latestVersion}`, ...base };
+  return {
+    action: "apply",
+    reason: `auto-upgrading ${inp.currentVersion} -> ${inp.latestVersion}`,
+    ...base,
+  };
 }
 
 /**
@@ -191,15 +222,17 @@ export function decideSelfUpgrade(inp: DecideSelfUpgradeInputs): SelfUpgradeDeci
 export function canSelfUpdate(
   installMethod: string,
   platform: NodeJS.Platform = process.platform,
-  arch: NodeJS.Architecture = process.arch,
+  arch: NodeJS.Architecture = process.arch
 ): boolean {
   switch (installMethod) {
-    case 'bun':
-    case 'bun-link':
-    case 'clawhub':
+    case "bun":
+    case "bun-link":
+    case "clawhub":
       return true;
-    case 'binary':
-      return (platform === 'darwin' && arch === 'arm64') || (platform === 'linux' && arch === 'x64');
+    case "binary":
+      return (
+        (platform === "darwin" && arch === "arm64") || (platform === "linux" && arch === "x64")
+      );
     default:
       return false;
   }
@@ -209,7 +242,7 @@ export function canSelfUpdate(
 
 /** Serialize a marker line. The cache file content IS this string. */
 export function formatMarker(m: UpdateMarker): string {
-  if (m.kind === 'upgrade_available' && m.latest) {
+  if (m.kind === "upgrade_available" && m.latest) {
     return `UPGRADE_AVAILABLE ${m.current} ${m.latest}`;
   }
   return `UP_TO_DATE ${m.current}`;
@@ -222,16 +255,16 @@ export function formatMarker(m: UpdateMarker): string {
  */
 export function parseMarker(line: string): UpdateMarker | null {
   const parts = line.trim().split(/\s+/);
-  if (parts[0] === 'UP_TO_DATE' && parts.length === 2 && isValidVersionString(parts[1])) {
-    return { kind: 'up_to_date', current: parts[1] };
+  if (parts[0] === "UP_TO_DATE" && parts.length === 2 && isValidVersionString(parts[1])) {
+    return { kind: "up_to_date", current: parts[1] };
   }
   if (
-    parts[0] === 'UPGRADE_AVAILABLE' &&
+    parts[0] === "UPGRADE_AVAILABLE" &&
     parts.length === 3 &&
     isValidVersionString(parts[1]) &&
     isValidVersionString(parts[2])
   ) {
-    return { kind: 'upgrade_available', current: parts[1], latest: parts[2] };
+    return { kind: "upgrade_available", current: parts[1], latest: parts[2] };
   }
   return null;
 }
@@ -239,15 +272,15 @@ export function parseMarker(line: string): UpdateMarker | null {
 // ── State file paths ────────────────────────────────────────────────────────
 
 export function updateCachePath(): string {
-  return gbrainPath('last-update-check');
+  return gbrainPath("last-update-check");
 }
 
 export function snoozePath(): string {
-  return gbrainPath('update-snoozed');
+  return gbrainPath("update-snoozed");
 }
 
 export function justUpgradedPath(): string {
-  return gbrainPath('just-upgraded-from');
+  return gbrainPath("just-upgraded-from");
 }
 
 /**
@@ -258,7 +291,7 @@ export function justUpgradedPath(): string {
  */
 export function writeJustUpgraded(fromVersion: string): void {
   try {
-    atomicWrite(justUpgradedPath(), fromVersion + '\n');
+    atomicWrite(justUpgradedPath(), fromVersion + "\n");
   } catch {
     /* best-effort confirmation */
   }
@@ -266,7 +299,7 @@ export function writeJustUpgraded(fromVersion: string): void {
 
 /** Directory for the self-upgrade + refresh single-flight locks. */
 export function locksDir(): string {
-  return gbrainPath('.locks');
+  return gbrainPath(".locks");
 }
 
 // ── Cache (untrusted local state: atomic write, strict parse, mtime-TTL) ─────
@@ -281,7 +314,7 @@ function atomicWrite(path: string, content: string): void {
   const dir = dirname(path);
   mkdirSync(dir, { recursive: true });
   const tmp = `${path}.tmp.${process.pid}.${_tmpCounter++}`;
-  const fd = openSync(tmp, 'w', 0o600);
+  const fd = openSync(tmp, "w", 0o600);
   try {
     writeFileSync(fd, content);
   } finally {
@@ -296,7 +329,7 @@ export function readUpdateCache(): CacheEntry | null {
   let content: string;
   let mtimeMs: number;
   try {
-    content = readFileSync(path, 'utf8');
+    content = readFileSync(path, "utf8");
     mtimeMs = statSync(path).mtimeMs;
   } catch {
     return null;
@@ -309,7 +342,7 @@ export function readUpdateCache(): CacheEntry | null {
 /** Atomically write the cache (marker line, 0600). Best-effort: throws only on
  * truly unexpected fs errors (callers in the detached refresh swallow). */
 export function writeUpdateCache(marker: UpdateMarker): void {
-  atomicWrite(updateCachePath(), formatMarker(marker) + '\n');
+  atomicWrite(updateCachePath(), formatMarker(marker) + "\n");
 }
 
 /** Clear the cache (e.g. after a successful upgrade) so the next run re-checks. */
@@ -322,7 +355,10 @@ export function clearUpdateCache(): void {
 }
 
 export function isCacheFresh(entry: CacheEntry, now: number): boolean {
-  const ttl = entry.marker.kind === 'upgrade_available' ? CACHE_TTL_UPGRADE_AVAILABLE_MS : CACHE_TTL_UP_TO_DATE_MS;
+  const ttl =
+    entry.marker.kind === "upgrade_available"
+      ? CACHE_TTL_UPGRADE_AVAILABLE_MS
+      : CACHE_TTL_UP_TO_DATE_MS;
   return now - entry.mtimeMs < ttl;
 }
 
@@ -331,7 +367,7 @@ export function isCacheFresh(entry: CacheEntry, now: number): boolean {
 export function readSnooze(): SnoozeRecord | null {
   let content: string;
   try {
-    content = readFileSync(snoozePath(), 'utf8');
+    content = readFileSync(snoozePath(), "utf8");
   } catch {
     return null;
   }
@@ -340,7 +376,12 @@ export function readSnooze(): SnoozeRecord | null {
   const version = parts[0];
   const level = Number(parts[1]);
   const ts = Number(parts[2]);
-  if (!isValidVersionString(version) || !Number.isInteger(level) || level < 1 || !Number.isFinite(ts)) {
+  if (
+    !isValidVersionString(version) ||
+    !Number.isInteger(level) ||
+    level < 1 ||
+    !Number.isFinite(ts)
+  ) {
     return null;
   }
   return { version, level, ts };
@@ -354,7 +395,11 @@ export function snoozeDurationMs(level: number): number {
 
 /** True iff an unexpired snooze covers `latestVersion`. A snooze for a
  * different (older) version never suppresses a newer one (version-reset). */
-export function isSnoozeActive(snooze: SnoozeRecord | null, latestVersion: string, now: number): boolean {
+export function isSnoozeActive(
+  snooze: SnoozeRecord | null,
+  latestVersion: string,
+  now: number
+): boolean {
   if (!snooze) return false;
   if (snooze.version !== latestVersion) return false;
   return now - snooze.ts < snoozeDurationMs(snooze.level);
@@ -391,9 +436,11 @@ export function clearSnooze(): void {
  * success (caller must release it), or null if another process holds it.
  * Separate from the upgrade mutex.
  */
-export function tryAcquireRefreshLock(opts?: Pick<PackLockOpts, 'now' | 'isPidAlive'>): string | null {
+export function tryAcquireRefreshLock(
+  opts?: Pick<PackLockOpts, "now" | "isPidAlive">
+): string | null {
   try {
-    const { lockPath } = acquirePackLock('update-refresh', {
+    const { lockPath } = acquirePackLock("update-refresh", {
       lockDir: locksDir(),
       ttlMs: 30_000,
       ...opts,
@@ -425,7 +472,7 @@ export interface SelfUpgradeState {
   last_applied_version?: string;
 }
 
-export type BreadcrumbTransition = 'applied' | 'failed' | null;
+export type BreadcrumbTransition = "applied" | "failed" | null;
 
 /**
  * Reconcile the pre-swap breadcrumb at daemon boot (the post-swap "doctor gate"
@@ -443,7 +490,7 @@ export type BreadcrumbTransition = 'applied' | 'failed' | null;
  */
 export function reconcileBreadcrumb(
   su: SelfUpgradeState | undefined,
-  currentVersion: string,
+  currentVersion: string
 ): { state: SelfUpgradeState; transition: BreadcrumbTransition } {
   const state: SelfUpgradeState = { ...(su ?? {}) };
   const attempting = state.attempting_version;
@@ -452,20 +499,20 @@ export function reconcileBreadcrumb(
   if (attempting === currentVersion) {
     delete state.attempting_version;
     state.last_applied_version = currentVersion;
-    return { state, transition: 'applied' };
+    return { state, transition: "applied" };
   }
 
   const failed = new Set(state.failed_versions ?? []);
   failed.add(attempting);
   state.failed_versions = [...failed];
   delete state.attempting_version;
-  return { state, transition: 'failed' };
+  return { state, transition: "failed" };
 }
 
 // ── Mode resolution (file plane; no DB on the hot path) ──────────────────────
 
 function normalizeMode(raw: unknown): SelfUpgradeMode | null {
-  if (raw === 'auto' || raw === 'notify' || raw === 'off') return raw;
+  if (raw === "auto" || raw === "notify" || raw === "off") return raw;
   return null;
 }
 
@@ -476,11 +523,11 @@ function normalizeMode(raw: unknown): SelfUpgradeMode | null {
  * escape hatch.
  */
 export function resolveSelfUpgradeMode(
-  cfg: { self_upgrade?: { mode?: string } } | null | undefined,
+  cfg: { self_upgrade?: { mode?: string } } | null | undefined
 ): SelfUpgradeMode {
   const env = normalizeMode(process.env.GBRAIN_SELF_UPGRADE_MODE);
   if (env) return env;
   const fromCfg = normalizeMode(cfg?.self_upgrade?.mode);
   if (fromCfg) return fromCfg;
-  return 'notify';
+  return "notify";
 }

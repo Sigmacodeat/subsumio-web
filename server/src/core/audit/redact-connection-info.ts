@@ -37,21 +37,21 @@ const PATTERNS: ReadonlyArray<RedactPattern> = [
   // postgres:// and postgresql:// URLs. Includes user:pass@host:port/db
   // shapes plus query-string variants. Terminator is whitespace or
   // common JSON/markdown delimiters.
-  { kind: 'pg_url', re: /postgres(?:ql)?:\/\/[^\s"'>)]+/gi },
+  { kind: "pg_url", re: /postgres(?:ql)?:\/\/[^\s"'>)]+/gi },
 
   // password=secret OR pwd=secret. Both Postgres conninfo forms in
   // common use. Value terminates at whitespace, quote, or & (for
   // URL-form query strings already-matched-above as `pg_url`).
-  { kind: 'password', re: /(?:password|pwd)\s*=\s*[^\s"'&)]+/gi },
+  { kind: "password", re: /(?:password|pwd)\s*=\s*[^\s"'&)]+/gi },
 
   // user=postgres. Allow lead-by-whitespace OR start-of-string so
   // `user=` isn't false-matched inside arbitrary words like
   // `superuser=...` (which isn't a real conninfo key but defends
   // against future ambiguity).
-  { kind: 'user', re: /(?:^|\s)user\s*=\s*[^\s"'&)]+/gi },
+  { kind: "user", re: /(?:^|\s)user\s*=\s*[^\s"'&)]+/gi },
 
   // host=db.example.com. Same lead-anchor rule as `user`.
-  { kind: 'host', re: /(?:^|\s)host\s*=\s*[^\s"'&)]+/gi },
+  { kind: "host", re: /(?:^|\s)host\s*=\s*[^\s"'&)]+/gi },
 
   // IPv4 octet pattern. The negative-lookbehind / negative-lookahead
   // for `[\w.@-]` is the load-bearing false-positive defense:
@@ -64,7 +64,7 @@ const PATTERNS: ReadonlyArray<RedactPattern> = [
   // The exclusion characters cover the common version-string contexts
   // (word chars, dots, @, -) while leaving whitespace + brackets +
   // parens + commas as legitimate IP delimiters.
-  { kind: 'ipv4', re: /(?<![\w.@-])(?:\d{1,3}\.){3}\d{1,3}(?![\w.@-])/g },
+  { kind: "ipv4", re: /(?<![\w.@-])(?:\d{1,3}\.){3}\d{1,3}(?![\w.@-])/g },
 ];
 
 /**
@@ -78,7 +78,7 @@ const PATTERNS: ReadonlyArray<RedactPattern> = [
  * // → 'FATAL: <REDACTED:password> <REDACTED:user>'
  */
 export function redactConnectionInfo(text: string): string {
-  if (typeof text !== 'string' || text.length === 0) return text;
+  if (typeof text !== "string" || text.length === 0) return text;
   let out = text;
   for (const { kind, re } of PATTERNS) {
     // Reset lastIndex on each pattern because /g regexes mutate state

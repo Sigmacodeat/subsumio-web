@@ -1,9 +1,11 @@
 # Executive Assistant Pattern
 
 ## Goal
+
 Email triage, meeting prep, and scheduling powered by brain context -- so every interaction is informed by the full history of the relationship.
 
 ## What the User Gets
+
 Without this: the agent triages email mechanically ("you have 12 unread"), preps for meetings with generic LinkedIn bios, and schedules without relationship context. With this: the agent knows who every sender is before reading their email, surfaces shared history before every meeting, and nudges scheduling based on relationship temperature and open threads.
 
 ## Implementation
@@ -106,4 +108,5 @@ on schedule_request(meeting):
 5. Send a test email from someone with a brain page. Confirm the triage response references their relationship context, not just the email content.
 
 ---
-*Part of the [GBrain Skillpack](../GBRAIN_SKILLPACK.md).*
+
+_Part of the [GBrain Skillpack](../GBRAIN_SKILLPACK.md)._

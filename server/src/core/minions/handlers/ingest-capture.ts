@@ -29,15 +29,15 @@
  * pages to canonical homes later.
  */
 
-import type { MinionJobContext } from '../types.ts';
-import type { BrainEngine } from '../../engine.ts';
-import type { IngestionEvent } from '../../ingestion/types.ts';
-import { validateIngestionEvent } from '../../ingestion/types.ts';
-import { importFromContent } from '../../import-file.ts';
+import type { MinionJobContext } from "../types.ts";
+import type { BrainEngine } from "../../engine.ts";
+import type { IngestionEvent } from "../../ingestion/types.ts";
+import { validateIngestionEvent } from "../../ingestion/types.ts";
+import { importFromContent } from "../../import-file.ts";
 
 export interface IngestCaptureResult {
   slug: string;
-  status: 'imported' | 'skipped' | 'error';
+  status: "imported" | "skipped" | "error";
   chunks: number;
   untrusted_payload: boolean;
   source_kind: string;
@@ -47,8 +47,8 @@ export interface IngestCaptureResult {
 /** Builds the default slug for an event when the caller didn't provide one. */
 export function defaultSlugForEvent(event: IngestionEvent, now: Date = new Date()): string {
   const y = now.getUTCFullYear();
-  const m = String(now.getUTCMonth() + 1).padStart(2, '0');
-  const d = String(now.getUTCDate()).padStart(2, '0');
+  const m = String(now.getUTCMonth() + 1).padStart(2, "0");
+  const d = String(now.getUTCDate()).padStart(2, "0");
   const hashPrefix = event.content_hash.slice(0, 6);
   return `inbox/${y}-${m}-${d}-${hashPrefix}`;
 }
@@ -58,7 +58,7 @@ export function makeIngestCaptureHandler(engine: BrainEngine) {
     const data = job.data as { event?: unknown; slug?: unknown };
     const event = data.event as IngestionEvent | undefined;
     if (!event) {
-      throw new Error('ingest_capture: job.data.event is required');
+      throw new Error("ingest_capture: job.data.event is required");
     }
     const validationErr = validateIngestionEvent(event);
     if (validationErr) {
@@ -67,11 +67,11 @@ export function makeIngestCaptureHandler(engine: BrainEngine) {
 
     // Slug resolution.
     let slug: string;
-    if (typeof data.slug === 'string' && data.slug.length > 0) {
+    if (typeof data.slug === "string" && data.slug.length > 0) {
       slug = data.slug;
     } else if (
       event.metadata &&
-      typeof (event.metadata as Record<string, unknown>).slug === 'string'
+      typeof (event.metadata as Record<string, unknown>).slug === "string"
     ) {
       slug = (event.metadata as Record<string, unknown>).slug as string;
     } else {
@@ -88,11 +88,11 @@ export function makeIngestCaptureHandler(engine: BrainEngine) {
     // the content-type processor pipeline transforms. The v1 wave lands
     // the text path; processors arrive in subsequent commits.
     const isText =
-      event.content_type === 'text/markdown' ||
-      event.content_type === 'text/plain' ||
-      event.content_type === 'text/html' ||
-      event.content_type === 'application/json' ||
-      event.content_type === 'unknown';
+      event.content_type === "text/markdown" ||
+      event.content_type === "text/plain" ||
+      event.content_type === "text/html" ||
+      event.content_type === "application/json" ||
+      event.content_type === "unknown";
 
     if (!isText) {
       // Binary content without a processor would land as a path-string
@@ -103,7 +103,7 @@ export function makeIngestCaptureHandler(engine: BrainEngine) {
         `ingest_capture: content_type '${event.content_type}' requires a content-type ` +
           `processor that is not yet installed. Install a processor skillpack ` +
           `(e.g. gbrain-audio-transcribe, gbrain-image-ocr) or pre-extract the ` +
-          `content to text/markdown before emitting.`,
+          `content to text/markdown before emitting.`
       );
     }
 

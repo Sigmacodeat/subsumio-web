@@ -29,18 +29,18 @@
  *   cycle.enrich_thin.model                  (configured chat model)
  */
 
-import type { BrainEngine } from '../engine.ts';
-import type { PageType } from '../types.ts';
-import { BudgetExhausted } from '../budget/budget-tracker.ts';
-import { isAvailable } from '../ai/gateway.ts';
-import { listSources } from '../sources-ops.ts';
+import type { BrainEngine } from "../engine.ts";
+import type { PageType } from "../types.ts";
+import { BudgetExhausted } from "../budget/budget-tracker.ts";
+import { isAvailable } from "../ai/gateway.ts";
+import { listSources } from "../sources-ops.ts";
 import {
   runEnrichCore,
   DEFAULT_TYPES,
   ENRICH_ORDERS,
   type EnrichOrder,
   type EnrichResult,
-} from '../../commands/enrich.ts';
+} from "../../commands/enrich.ts";
 
 export interface EnrichThinPhaseOpts {
   dryRun?: boolean;
@@ -48,21 +48,21 @@ export interface EnrichThinPhaseOpts {
 }
 
 export interface EnrichThinPhaseResult {
-  phase: 'enrich_thin';
-  status: 'ok' | 'warn' | 'fail' | 'skipped';
+  phase: "enrich_thin";
+  status: "ok" | "warn" | "fail" | "skipped";
   duration_ms: number;
   summary: string;
   details: Record<string, unknown>;
 }
 
-const CFG_PREFIX = 'cycle.enrich_thin';
+const CFG_PREFIX = "cycle.enrich_thin";
 
 interface ResolvedConfig {
   enabled: boolean;
-  maxCostUsd: number;          // per source per tick
-  maxTotalCostUsd: number;     // brain-wide per tick
+  maxCostUsd: number; // per source per tick
+  maxTotalCostUsd: number; // brain-wide per tick
   maxTotalWalltimeMin: number; // brain-wide per tick
-  maxPagesPerTick: number;     // per source per tick
+  maxPagesPerTick: number; // per source per tick
   types: PageType[];
   order: EnrichOrder;
   workers: number;
@@ -71,23 +71,32 @@ interface ResolvedConfig {
 
 async function loadCfg(engine: BrainEngine): Promise<ResolvedConfig> {
   const get = (k: string) => engine.getConfig(`${CFG_PREFIX}.${k}`);
-  const [enabled, maxCost, maxTotalCost, maxTotalWall, maxPages, typesRaw, orderRaw, workersRaw, model] =
-    await Promise.all([
-      get('enabled'),
-      get('max_cost_usd'),
-      get('max_total_cost_usd'),
-      get('max_total_walltime_min'),
-      get('max_pages_per_tick'),
-      get('types'),
-      get('order'),
-      get('workers'),
-      get('model'),
-    ]);
+  const [
+    enabled,
+    maxCost,
+    maxTotalCost,
+    maxTotalWall,
+    maxPages,
+    typesRaw,
+    orderRaw,
+    workersRaw,
+    model,
+  ] = await Promise.all([
+    get("enabled"),
+    get("max_cost_usd"),
+    get("max_total_cost_usd"),
+    get("max_total_walltime_min"),
+    get("max_pages_per_tick"),
+    get("types"),
+    get("order"),
+    get("workers"),
+    get("model"),
+  ]);
 
   const enabledFlag = (() => {
     if (enabled == null) return false;
     const v = enabled.trim().toLowerCase();
-    return !['false', '0', 'no', 'off', ''].includes(v);
+    return !["false", "0", "no", "off", ""].includes(v);
   })();
 
   const parseFloatOrDefault = (raw: string | null, fallback: number): number => {
@@ -106,7 +115,7 @@ async function loadCfg(engine: BrainEngine): Promise<ResolvedConfig> {
     try {
       const parsed = JSON.parse(typesRaw);
       if (Array.isArray(parsed)) {
-        const filtered = parsed.filter((t): t is string => typeof t === 'string' && t.length > 0);
+        const filtered = parsed.filter((t): t is string => typeof t === "string" && t.length > 0);
         if (filtered.length > 0) types = filtered as PageType[];
       }
     } catch {
@@ -117,7 +126,7 @@ async function loadCfg(engine: BrainEngine): Promise<ResolvedConfig> {
   const order: EnrichOrder =
     orderRaw && (ENRICH_ORDERS as readonly string[]).includes(orderRaw.trim())
       ? (orderRaw.trim() as EnrichOrder)
-      : 'inbound-links';
+      : "inbound-links";
 
   return {
     enabled: enabledFlag,
@@ -134,19 +143,19 @@ async function loadCfg(engine: BrainEngine): Promise<ResolvedConfig> {
 
 export async function runPhaseEnrichThin(
   engine: BrainEngine,
-  opts: EnrichThinPhaseOpts = {},
+  opts: EnrichThinPhaseOpts = {}
 ): Promise<EnrichThinPhaseResult> {
   const cfg = await loadCfg(engine);
 
   if (!cfg.enabled) {
     return {
-      phase: 'enrich_thin',
-      status: 'skipped',
+      phase: "enrich_thin",
+      status: "skipped",
       duration_ms: 0,
-      summary: 'cycle.enrich_thin.enabled=false (default OFF)',
+      summary: "cycle.enrich_thin.enabled=false (default OFF)",
       details: {
-        reason: 'disabled',
-        enable_hint: 'gbrain config set cycle.enrich_thin.enabled true',
+        reason: "disabled",
+        enable_hint: "gbrain config set cycle.enrich_thin.enabled true",
       },
     };
   }
@@ -155,13 +164,13 @@ export async function runPhaseEnrichThin(
 
   // Chat gateway required for synthesis (dry-run skips the LLM but still needs
   // the candidate query; allow dry-run without a gateway).
-  if (!opts.dryRun && !isAvailable('chat')) {
+  if (!opts.dryRun && !isAvailable("chat")) {
     return {
-      phase: 'enrich_thin',
-      status: 'skipped',
+      phase: "enrich_thin",
+      status: "skipped",
       duration_ms: Date.now() - startedAt,
-      summary: 'no chat gateway configured',
-      details: { reason: 'no_chat_gateway' },
+      summary: "no chat gateway configured",
+      details: { reason: "no_chat_gateway" },
     };
   }
 
@@ -169,10 +178,10 @@ export async function runPhaseEnrichThin(
   const sources = await listSources(engine);
   if (sources.length === 0) {
     return {
-      phase: 'enrich_thin',
-      status: 'ok',
+      phase: "enrich_thin",
+      status: "ok",
       duration_ms: Date.now() - startedAt,
-      summary: 'no sources to process',
+      summary: "no sources to process",
       details: { sources_count: 0 },
     };
   }
@@ -189,7 +198,7 @@ export async function runPhaseEnrichThin(
   let totalSpent = 0;
 
   for (const src of sources) {
-    if (opts.signal?.aborted) throw new Error('aborted'); // propagates; cycle handles
+    if (opts.signal?.aborted) throw new Error("aborted"); // propagates; cycle handles
     if (Date.now() - startedAt > maxTotalWalltimeMs) {
       skippedByBrainWideWalltime++;
       continue;
@@ -198,16 +207,20 @@ export async function runPhaseEnrichThin(
     if (remainingBrainWide <= 0) break; // brain-wide cap reached
     const perSourceCap = Math.min(cfg.maxCostUsd, remainingBrainWide);
     try {
-      const r = await runEnrichCore(engine, {
-        sourceId: src.id,
-        types: cfg.types,
-        order: cfg.order,
-        limit: cfg.maxPagesPerTick,
-        workers: cfg.workers,
-        model: cfg.model,
-        dryRun: opts.dryRun,
-        maxCostUsd: perSourceCap,
-      }, opts.signal);
+      const r = await runEnrichCore(
+        engine,
+        {
+          sourceId: src.id,
+          types: cfg.types,
+          order: cfg.order,
+          limit: cfg.maxPagesPerTick,
+          workers: cfg.workers,
+          model: cfg.model,
+          dryRun: opts.dryRun,
+          maxCostUsd: perSourceCap,
+        },
+        opts.signal
+      );
       perSourceResults[src.id] = r;
       totalSpent += r.spent_usd ?? 0;
       // r.budget_exhausted here means THIS source hit perSourceCap. Only stop the
@@ -239,11 +252,11 @@ export async function runPhaseEnrichThin(
   }
 
   const anyError = Object.values(perSourceResults).some((r) => r.error);
-  const status = anyError ? 'warn' : 'ok';
+  const status = anyError ? "warn" : "ok";
   const summary = `${totals.enriched} page(s) enriched across ${totals.sources_processed}/${sources.length} sources, ~$${totalSpent.toFixed(4)} spent`;
 
   return {
-    phase: 'enrich_thin',
+    phase: "enrich_thin",
     status,
     duration_ms: Date.now() - startedAt,
     summary,

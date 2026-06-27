@@ -18,8 +18,8 @@
 //
 // Best-effort throughout: spend telemetry MUST NOT fail the user's call.
 
-import type { BrainEngine } from './engine.ts';
-import { recordSpend } from './spend-log.ts';
+import type { BrainEngine } from "./engine.ts";
+import { recordSpend } from "./spend-log.ts";
 
 export interface MinionJobLike {
   id: number;
@@ -32,10 +32,10 @@ export interface MinionJobLike {
  * those bypass the per-client spend cap.
  */
 export function getJobClientId(job: MinionJobLike): string | undefined {
-  if (!job.data || typeof job.data !== 'object') return undefined;
+  if (!job.data || typeof job.data !== "object") return undefined;
   const data = job.data as Record<string, unknown>;
   const cid = data.client_id;
-  return typeof cid === 'string' && cid.length > 0 ? cid : undefined;
+  return typeof cid === "string" && cid.length > 0 ? cid : undefined;
 }
 
 /**
@@ -57,7 +57,7 @@ export async function recordMinionJobSpend(
     provider?: string;
     model?: string;
     tokenName?: string;
-  },
+  }
 ): Promise<void> {
   const clientId = getJobClientId(job);
   await recordSpend(engine, {

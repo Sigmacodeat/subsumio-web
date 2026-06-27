@@ -10,10 +10,12 @@ const uploadDocumentSchema = z.object({
   file_type: z.string().min(1),
   file_size: z.number().positive(),
   storage_path: z.string().min(1),
-  metadata: z.object({
-    whatsapp_message_id: z.string().optional(),
-    client_portal_upload: z.boolean().optional(),
-  }).optional(),
+  metadata: z
+    .object({
+      whatsapp_message_id: z.string().optional(),
+      client_portal_upload: z.boolean().optional(),
+    })
+    .optional(),
 });
 
 export const GET = createHandler(

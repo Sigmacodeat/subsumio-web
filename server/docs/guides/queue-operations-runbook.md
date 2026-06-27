@@ -18,7 +18,7 @@ gbrain doctor --json | jq '.checks[] | select(.name == "queue_health")'
 
 ## The worker is alive but wedged (dead pool)
 
-The nastiest stall: the worker process is *running* (passes `ps` / `kill -0` /
+The nastiest stall: the worker process is _running_ (passes `ps` / `kill -0` /
 container health), but its DB connection died (common behind a transaction
 pooler) and never came back, so it claims no jobs and finishes nothing. Jobs
 pile up with **0 active**. Liveness checks all pass; nothing crashes.

@@ -18,8 +18,8 @@
  *     etc. are tracked by the brain but not via slugs.
  */
 
-import { readdirSync, statSync, type Stats, type Dirent } from 'fs';
-import { join } from 'path';
+import { readdirSync, statSync, type Stats, type Dirent } from "fs";
+import { join } from "path";
 
 export interface DiskFileEntry {
   size: number;
@@ -53,7 +53,7 @@ export function walkBrainRepo(repoPath: string): Map<string, DiskFileEntry> {
 
     for (const entry of entries) {
       // Skip dot-directories (.git, .gbrain, .vscode, etc) and node_modules.
-      if (entry.name.startsWith('.') || entry.name === 'node_modules') continue;
+      if (entry.name.startsWith(".") || entry.name === "node_modules") continue;
       const childPath = join(dirPath, entry.name);
 
       if (entry.isDirectory()) {
@@ -62,7 +62,7 @@ export function walkBrainRepo(repoPath: string): Map<string, DiskFileEntry> {
       }
 
       if (!entry.isFile()) continue;
-      if (!entry.name.endsWith('.md')) continue;
+      if (!entry.name.endsWith(".md")) continue;
 
       let stats: Stats;
       try {
@@ -78,6 +78,6 @@ export function walkBrainRepo(repoPath: string): Map<string, DiskFileEntry> {
     }
   }
 
-  recurse(repoPath, '');
+  recurse(repoPath, "");
   return result;
 }

@@ -35,35 +35,27 @@
  * safe).
  */
 
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import { createHash } from 'node:crypto';
+import * as fs from "node:fs";
+import * as path from "node:path";
+import { createHash } from "node:crypto";
 
-import type { BrainEngine } from '../engine.ts';
-import type { Page } from '../types.ts';
-import {
-  resolvePhantomCanonical,
-  findPrefixCandidates,
-} from '../entities/resolve.ts';
+import type { BrainEngine } from "../engine.ts";
+import type { Page } from "../types.ts";
+import { resolvePhantomCanonical, findPrefixCandidates } from "../entities/resolve.ts";
 import {
   parseFactsFence,
   renderFactsTable,
   FACTS_FENCE_BEGIN,
   FACTS_FENCE_END,
   type ParsedFact,
-} from '../facts-fence.ts';
-import { parseMarkdown, splitBody, serializeMarkdown } from '../markdown.ts';
-import { tryAcquireDbLock, syncLockId, type DbLockHandle } from '../db-lock.ts';
-import { isAborted } from '../abort-check.ts';
-import { logPhantomEvent, type PhantomOutcome } from '../facts/phantom-audit.ts';
+} from "../facts-fence.ts";
+import { parseMarkdown, splitBody, serializeMarkdown } from "../markdown.ts";
+import { tryAcquireDbLock, syncLockId, type DbLockHandle } from "../db-lock.ts";
+import { isAborted } from "../abort-check.ts";
+import { logPhantomEvent, type PhantomOutcome } from "../facts/phantom-audit.ts";
 
 /** Tagged-union outcome of a single phantom-redirect attempt. */
-export type RedirectOutcome =
-  | 'not_phantom'
-  | 'redirected'
-  | 'ambiguous'
-  | 'drift'
-  | 'no_canonical';
+export type RedirectOutcome = "not_phantom" | "redirected" | "ambiguous" | "drift" | "no_canonical";
 
 /** Result envelope for the single-phantom handler. */
 export interface RedirectResult {
@@ -133,28 +125,27 @@ export function emptyPhantomPassResult(): PhantomPassResult {
  * still gates as empty residue.
  */
 export function stripFenceAndFrontmatterAndLeadingH1(body: string): string {
-  if (!body) return '';
+  if (!body) return "";
   let working = body;
 
   // 1. Strip the entire `## Facts\n\n<fence>...<fence>` block. We grab
   //    the `## Facts` heading too (with surrounding blank lines) so the
   //    section header doesn't count as residue.
   const beginIdx = working.indexOf(FACTS_FENCE_BEGIN);
-  const endIdx = beginIdx >= 0
-    ? working.indexOf(FACTS_FENCE_END, beginIdx + FACTS_FENCE_BEGIN.length)
-    : -1;
+  const endIdx =
+    beginIdx >= 0 ? working.indexOf(FACTS_FENCE_END, beginIdx + FACTS_FENCE_BEGIN.length) : -1;
   if (beginIdx !== -1 && endIdx !== -1) {
     // Walk backward from beginIdx to swallow a leading `## Facts\n\n`
     // (or `## facts\n\n` — case-insensitive markdown headings).
     let headingStart = beginIdx;
     // Skip whitespace-only lines before the marker.
-    while (headingStart > 0 && working[headingStart - 1] !== '\n') headingStart--;
+    while (headingStart > 0 && working[headingStart - 1] !== "\n") headingStart--;
     // Walk back over the blank line(s).
     while (headingStart > 0) {
       const prevLineEnd = headingStart - 1;
-      const prevLineStart = working.lastIndexOf('\n', prevLineEnd - 1) + 1;
+      const prevLineStart = working.lastIndexOf("\n", prevLineEnd - 1) + 1;
       const prevLine = working.slice(prevLineStart, prevLineEnd);
-      if (prevLine.trim() === '') {
+      if (prevLine.trim() === "") {
         headingStart = prevLineStart;
         continue;
       }
@@ -163,13 +154,12 @@ export function stripFenceAndFrontmatterAndLeadingH1(body: string): string {
       }
       break;
     }
-    working = working.slice(0, headingStart)
-      + working.slice(endIdx + FACTS_FENCE_END.length);
+    working = working.slice(0, headingStart) + working.slice(endIdx + FACTS_FENCE_END.length);
   }
 
   // 2. Strip the leading H1 (` # text\n` at the very top — phantom stubs
   //    open with `# <slug>`).
-  working = working.replace(/^\s*#\s+[^\n]*\n?/, '');
+  working = working.replace(/^\s*#\s+[^\n]*\n?/, "");
 
   // 3. Whitespace-trim. Empty (or only whitespace) is the gate.
   return working.trim();
@@ -188,16 +178,18 @@ function computePageContentHash(parsed: {
   frontmatter: Record<string, unknown>;
   tags: string[];
 }): string {
-  return createHash('sha256')
-    .update(JSON.stringify({
-      title: parsed.title,
-      type: parsed.type,
-      compiled_truth: parsed.compiled_truth,
-      timeline: parsed.timeline,
-      frontmatter: parsed.frontmatter,
-      tags: [...parsed.tags].sort(),
-    }))
-    .digest('hex');
+  return createHash("sha256")
+    .update(
+      JSON.stringify({
+        title: parsed.title,
+        type: parsed.type,
+        compiled_truth: parsed.compiled_truth,
+        timeline: parsed.timeline,
+        frontmatter: parsed.frontmatter,
+        tags: [...parsed.tags].sort(),
+      })
+    )
+    .digest("hex");
 }
 
 /**
@@ -207,7 +199,7 @@ function computePageContentHash(parsed: {
 async function acquireLockWithRetry(
   engine: BrainEngine,
   lockId: string,
-  signal?: AbortSignal,
+  signal?: AbortSignal
 ): Promise<DbLockHandle | null> {
   const deadline = Date.now() + LOCK_TOTAL_TIMEOUT_MS;
   let handle = await tryAcquireDbLock(engine, lockId, LOCK_TTL_MINUTES);
@@ -233,10 +225,10 @@ async function acquireLockWithRetry(
  */
 function appendPhantomFenceRowsToCanonical(
   canonicalPath: string,
-  phantomFacts: ParsedFact[],
+  phantomFacts: ParsedFact[]
 ): number {
   if (phantomFacts.length === 0) return 0;
-  const body = fs.readFileSync(canonicalPath, 'utf-8');
+  const body = fs.readFileSync(canonicalPath, "utf-8");
   const { facts: existingFacts } = parseFactsFence(body);
 
   // Dedup key combines claim + valid_from. We deliberately do NOT include
@@ -244,17 +236,14 @@ function appendPhantomFenceRowsToCanonical(
   // present at canonical doesn't get duplicated even if the strike-through
   // state differs between phantom and canonical (the operator can
   // reconcile manually after redirect).
-  const existingKeys = new Set(
-    existingFacts.map((f) => `${f.claim}|${f.validFrom ?? ''}`),
-  );
-  let nextRowNum = existingFacts.length > 0
-    ? Math.max(...existingFacts.map((f) => f.rowNum)) + 1
-    : 1;
+  const existingKeys = new Set(existingFacts.map((f) => `${f.claim}|${f.validFrom ?? ""}`));
+  let nextRowNum =
+    existingFacts.length > 0 ? Math.max(...existingFacts.map((f) => f.rowNum)) + 1 : 1;
 
   let appended = 0;
   const merged: ParsedFact[] = [...existingFacts];
   for (const pf of phantomFacts) {
-    const key = `${pf.claim}|${pf.validFrom ?? ''}`;
+    const key = `${pf.claim}|${pf.validFrom ?? ""}`;
     if (existingKeys.has(key)) continue;
     merged.push({ ...pf, rowNum: nextRowNum });
     existingKeys.add(key);
@@ -271,18 +260,18 @@ function appendPhantomFenceRowsToCanonical(
   if (beginIdx !== -1 && endIdx !== -1) {
     newBody = body.slice(0, beginIdx) + newFence + body.slice(endIdx + FACTS_FENCE_END.length);
   } else {
-    const sep = body.endsWith('\n') ? '\n' : '\n\n';
+    const sep = body.endsWith("\n") ? "\n" : "\n\n";
     newBody = `${body}${sep}## Facts\n\n${newFence}\n`;
   }
 
   // Atomic write: .tmp first, parse-validate, rename.
   const tmpPath = `${canonicalPath}.tmp`;
-  fs.writeFileSync(tmpPath, newBody, 'utf-8');
+  fs.writeFileSync(tmpPath, newBody, "utf-8");
   const reparsed = parseFactsFence(newBody);
   if (reparsed.warnings.length > 0) {
     // Leave .tmp as quarantine evidence; do NOT rename.
     throw new Error(
-      `phantom-redirect: rendered fence failed re-parse: ${reparsed.warnings.join('; ')}`,
+      `phantom-redirect: rendered fence failed re-parse: ${reparsed.warnings.join("; ")}`
     );
   }
   fs.renameSync(tmpPath, canonicalPath);
@@ -300,13 +289,13 @@ function fenceDbDrift(page: Page, brainDir: string): boolean {
   const phantomPath = path.join(brainDir, `${page.slug}.md`);
   if (!fs.existsSync(phantomPath)) return false;
 
-  const dbBody = page.compiled_truth ?? '';
+  const dbBody = page.compiled_truth ?? "";
   const dbParse = parseFactsFence(dbBody);
-  const dbKeys = new Set(dbParse.facts.map((f) => `${f.claim}|${f.validFrom ?? ''}`));
+  const dbKeys = new Set(dbParse.facts.map((f) => `${f.claim}|${f.validFrom ?? ""}`));
 
   let diskBody: string;
   try {
-    diskBody = fs.readFileSync(phantomPath, 'utf-8');
+    diskBody = fs.readFileSync(phantomPath, "utf-8");
   } catch {
     // File vanished between exists check and read — treat as DB-only,
     // no drift.
@@ -323,7 +312,7 @@ function fenceDbDrift(page: Page, brainDir: string): boolean {
     return true;
   }
   const diskParse = parseFactsFence(diskCompiled);
-  const diskKeys = new Set(diskParse.facts.map((f) => `${f.claim}|${f.validFrom ?? ''}`));
+  const diskKeys = new Set(diskParse.facts.map((f) => `${f.claim}|${f.validFrom ?? ""}`));
 
   if (dbKeys.size !== diskKeys.size) return true;
   for (const k of dbKeys) {
@@ -341,7 +330,7 @@ async function materializeCanonicalToDisk(
   engine: BrainEngine,
   canonicalSlug: string,
   sourceId: string,
-  canonicalPath: string,
+  canonicalPath: string
 ): Promise<void> {
   if (fs.existsSync(canonicalPath)) return;
   const canonicalPage = await engine.getPage(canonicalSlug, { sourceId });
@@ -349,29 +338,28 @@ async function materializeCanonicalToDisk(
     // Canonical doesn't exist in DB either. Materialize a minimal stub
     // so the subsequent fence append has somewhere to land.
     fs.mkdirSync(path.dirname(canonicalPath), { recursive: true });
-    const titleFromSlug = canonicalSlug.split('/').pop() ?? canonicalSlug;
-    const stubBody = serializeMarkdown(
-      {},
-      `# ${titleFromSlug}\n`,
-      '',
-      { type: 'concept', title: titleFromSlug, tags: [] },
-    );
-    fs.writeFileSync(canonicalPath, stubBody, 'utf-8');
+    const titleFromSlug = canonicalSlug.split("/").pop() ?? canonicalSlug;
+    const stubBody = serializeMarkdown({}, `# ${titleFromSlug}\n`, "", {
+      type: "concept",
+      title: titleFromSlug,
+      tags: [],
+    });
+    fs.writeFileSync(canonicalPath, stubBody, "utf-8");
     return;
   }
   const tags = await engine.getTags(canonicalSlug, { sourceId });
   const body = serializeMarkdown(
     canonicalPage.frontmatter ?? {},
-    canonicalPage.compiled_truth ?? '',
-    canonicalPage.timeline ?? '',
+    canonicalPage.compiled_truth ?? "",
+    canonicalPage.timeline ?? "",
     {
       type: canonicalPage.type,
       title: canonicalPage.title,
       tags,
-    },
+    }
   );
   fs.mkdirSync(path.dirname(canonicalPath), { recursive: true });
-  fs.writeFileSync(canonicalPath, body, 'utf-8');
+  fs.writeFileSync(canonicalPath, body, "utf-8");
 }
 
 /**
@@ -383,22 +371,22 @@ export async function tryRedirectPhantom(
   page: Page,
   sourceId: string,
   brainDir: string,
-  dryRun: boolean,
+  dryRun: boolean
 ): Promise<RedirectResult> {
   // Predicate (D2): unprefixed AND alive (deleted_at filter done by caller).
-  if (page.slug.includes('/')) return { outcome: 'not_phantom' };
+  if (page.slug.includes("/")) return { outcome: "not_phantom" };
 
   // A3 + codex #2: strict zero-residue body-shape gate. Real top-level
   // pages have prose; phantoms have only the stub-shape `# slug` + maybe
   // a facts fence.
-  const residue = stripFenceAndFrontmatterAndLeadingH1(page.compiled_truth ?? '');
+  const residue = stripFenceAndFrontmatterAndLeadingH1(page.compiled_truth ?? "");
   if (residue.length > 0) {
     logPhantomEvent({
       phantom_slug: page.slug,
-      outcome: 'not_phantom_has_residue',
+      outcome: "not_phantom_has_residue",
       source_id: sourceId,
     });
-    return { outcome: 'not_phantom' };
+    return { outcome: "not_phantom" };
   }
 
   // Codex #1: phantom-specific resolver bypasses exact-self-match.
@@ -406,10 +394,10 @@ export async function tryRedirectPhantom(
   if (!canonical) {
     logPhantomEvent({
       phantom_slug: page.slug,
-      outcome: 'no_canonical',
+      outcome: "no_canonical",
       source_id: sourceId,
     });
-    return { outcome: 'no_canonical' };
+    return { outcome: "no_canonical" };
   }
 
   // D5 + codex #11: standalone ambiguity query.
@@ -417,25 +405,25 @@ export async function tryRedirectPhantom(
   if (candidates.length > 1) {
     logPhantomEvent({
       phantom_slug: page.slug,
-      outcome: 'ambiguous',
+      outcome: "ambiguous",
       candidates,
       source_id: sourceId,
     });
-    return { outcome: 'ambiguous', canonical };
+    return { outcome: "ambiguous", canonical };
   }
 
   // Round 27/29/30: bi-directional drift check.
   if (fenceDbDrift(page, brainDir)) {
     logPhantomEvent({
       phantom_slug: page.slug,
-      outcome: 'drift',
+      outcome: "drift",
       source_id: sourceId,
     });
-    return { outcome: 'drift', canonical };
+    return { outcome: "drift", canonical };
   }
 
   // D10: dry-run preview — no FS / DB / audit writes.
-  if (dryRun) return { outcome: 'redirected', canonical };
+  if (dryRun) return { outcome: "redirected", canonical };
 
   // ─── Commit phase (codex #3/#4/#6/#7) ─────────────────────────────
   const canonicalPath = path.join(brainDir, `${canonical}.md`);
@@ -444,14 +432,14 @@ export async function tryRedirectPhantom(
   // Disk-side first: parse phantom's fence and append to canonical's
   // disk fence (dedup-guarded). If this throws, no DB state has moved
   // and the cycle can retry next run.
-  const phantomFence = parseFactsFence(page.compiled_truth ?? '');
+  const phantomFence = parseFactsFence(page.compiled_truth ?? "");
   appendPhantomFenceRowsToCanonical(canonicalPath, phantomFence.facts);
 
   // Codex #7: refresh canonical's compiled_truth + content_hash so the
   // next `gbrain sync` sees the canonical as unchanged. We re-parse the
   // disk body and recompute the hash with the same shape import-file
   // uses, so the idempotency check round-trips byte-for-byte.
-  const newCanonicalBody = fs.readFileSync(canonicalPath, 'utf-8');
+  const newCanonicalBody = fs.readFileSync(canonicalPath, "utf-8");
   const reparsed = parseMarkdown(newCanonicalBody, `${canonical}.md`);
   const canonicalTags = await engine.getTags(canonical, { sourceId });
   const newContentHash = computePageContentHash({
@@ -467,7 +455,7 @@ export async function tryRedirectPhantom(
     sourceId,
     reparsed.compiled_truth,
     reparsed.timeline,
-    newContentHash,
+    newContentHash
   );
 
   // Codex #3/#4/#12: lossless DB migration. Re-runs return migrated=0.
@@ -493,10 +481,10 @@ export async function tryRedirectPhantom(
       // is logged but doesn't unwind the redirect — the next sync will
       // notice the dangling .md and soft-delete-on-disk-miss it.
       const code = (err as NodeJS.ErrnoException).code;
-      if (code !== 'ENOENT') {
+      if (code !== "ENOENT") {
         const msg = err instanceof Error ? err.message : String(err);
         process.stderr.write(
-          `[gbrain] phantom-redirect: unlink ${phantomPath} failed (${msg}); cycle continues\n`,
+          `[gbrain] phantom-redirect: unlink ${phantomPath} failed (${msg}); cycle continues\n`
         );
       }
     }
@@ -505,11 +493,11 @@ export async function tryRedirectPhantom(
   logPhantomEvent({
     phantom_slug: page.slug,
     canonical_slug: canonical,
-    outcome: 'redirected',
+    outcome: "redirected",
     fact_count: migrated.migrated,
     source_id: sourceId,
   });
-  return { outcome: 'redirected', canonical };
+  return { outcome: "redirected", canonical };
 }
 
 /**
@@ -523,12 +511,12 @@ export async function runPhantomRedirectPass(
   brainDir: string,
   sourceId: string,
   dryRun: boolean,
-  signal?: AbortSignal,
+  signal?: AbortSignal
 ): Promise<PhantomPassResult> {
   const result = emptyPhantomPassResult();
   const limitRaw = process.env.GBRAIN_PHANTOM_REDIRECT_LIMIT;
   const limit = (() => {
-    if (limitRaw === undefined || limitRaw === '') return DEFAULT_PHANTOM_LIMIT;
+    if (limitRaw === undefined || limitRaw === "") return DEFAULT_PHANTOM_LIMIT;
     const n = parseInt(limitRaw, 10);
     return Number.isFinite(n) && n > 0 ? n : DEFAULT_PHANTOM_LIMIT;
   })();
@@ -539,7 +527,7 @@ export async function runPhantomRedirectPass(
   // source sync still serialize; cross-source parallel sync proceeds unblocked.
   const lock = await acquireLockWithRetry(engine, syncLockId(sourceId), signal);
   if (!lock) {
-    logPhantomEvent({ outcome: 'pass_skipped_lock_busy', source_id: sourceId });
+    logPhantomEvent({ outcome: "pass_skipped_lock_busy", source_id: sourceId });
     result.lock_busy = true;
     return result;
   }
@@ -554,7 +542,7 @@ export async function runPhantomRedirectPass(
          AND slug NOT LIKE '%/%'
        ORDER BY slug ASC
        LIMIT $2`,
-      [sourceId, limit + 1],
+      [sourceId, limit + 1]
     );
     result.more_pending = rows.length > limit;
 
@@ -575,15 +563,15 @@ export async function runPhantomRedirectPass(
         process.stderr.write(`[gbrain] phantom-redirect: ${slug} failed (${msg}); skipping\n`);
         logPhantomEvent({
           phantom_slug: slug,
-          outcome: 'drift',
+          outcome: "drift",
           source_id: sourceId,
           reason: `exception: ${msg.slice(0, 200)}`,
         });
-        redirectResult = { outcome: 'drift' };
+        redirectResult = { outcome: "drift" };
       }
 
       switch (redirectResult.outcome) {
-        case 'redirected':
+        case "redirected":
           result.redirected += 1;
           // Track the canonical so the main reconcile loop can pick it up
           // (scenario B fix: phantom had only-on-disk fence; canonical's
@@ -592,10 +580,18 @@ export async function runPhantomRedirectPass(
             touchedSet.add(redirectResult.canonical);
           }
           break;
-        case 'ambiguous':    result.ambiguous += 1; break;
-        case 'drift':        result.skipped_drift += 1; break;
-        case 'no_canonical': result.no_canonical += 1; break;
-        case 'not_phantom':  result.not_phantom += 1; break;
+        case "ambiguous":
+          result.ambiguous += 1;
+          break;
+        case "drift":
+          result.skipped_drift += 1;
+          break;
+        case "no_canonical":
+          result.no_canonical += 1;
+          break;
+        case "not_phantom":
+          result.not_phantom += 1;
+          break;
       }
     }
     result.touched_canonicals = Array.from(touchedSet).sort();

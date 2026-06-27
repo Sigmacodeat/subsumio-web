@@ -115,6 +115,7 @@ Original:
 20 Minuten Telefonat Müller wegen Vergleich zu Akt 24/018
 
 Parsed:
+
 - intent: time_entry
 - case: legal/cases/24-018-mueller
 - minutes: 20
@@ -173,7 +174,14 @@ LLM/Parser klassifiziert:
 
 ```ts
 type LegalChatIntent =
-  | { kind: "time_entry"; caseRef: string; minutes: number; description: string; activityType?: string; billable?: boolean }
+  | {
+      kind: "time_entry";
+      caseRef: string;
+      minutes: number;
+      description: string;
+      activityType?: string;
+      billable?: boolean;
+    }
   | { kind: "case_note"; caseRef: string; note: string; visibility: "internal" | "client" }
   | { kind: "task"; caseRef?: string; title: string; dueDate?: string }
   | { kind: "deadline"; caseRef: string; title: string; dueDate: string; law?: string }

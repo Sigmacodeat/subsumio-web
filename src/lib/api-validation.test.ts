@@ -107,7 +107,11 @@ describe("loginSchema", () => {
   });
 
   test("accepts optional remember flag", () => {
-    const result = loginSchema.safeParse({ email: "test@example.com", password: "secret", remember: true });
+    const result = loginSchema.safeParse({
+      email: "test@example.com",
+      password: "secret",
+      remember: true,
+    });
     expect(result.success).toBe(true);
   });
 
@@ -255,7 +259,9 @@ describe("uploadSchema", () => {
   });
 
   test("accepts optional contentType", () => {
-    expect(uploadSchema.safeParse({ filename: "test.pdf", contentType: "application/pdf" }).success).toBe(true);
+    expect(
+      uploadSchema.safeParse({ filename: "test.pdf", contentType: "application/pdf" }).success
+    ).toBe(true);
   });
 
   test("rejects empty filename", () => {

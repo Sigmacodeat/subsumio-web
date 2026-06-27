@@ -15,15 +15,15 @@
 //     dispatch (no silent dedup drop)
 //   - Same two emits from trickle-mode source: second is dedup hit (silent)
 
-import { describe, test, expect, beforeEach } from 'bun:test';
-import { IngestionDaemon } from '../../src/core/ingestion/daemon.ts';
+import { describe, test, expect, beforeEach } from "bun:test";
+import { IngestionDaemon } from "../../src/core/ingestion/daemon.ts";
 import type {
   IngestionSource,
   IngestionSourceContext,
   IngestionEvent,
   IngestionSourceMode,
-} from '../../src/core/ingestion/types.ts';
-import { computeContentHash } from '../../src/core/ingestion/types.ts';
+} from "../../src/core/ingestion/types.ts";
+import { computeContentHash } from "../../src/core/ingestion/types.ts";
 
 // Stub source that emits whatever we tell it to. Captures the context so
 // tests can drive emit() directly from outside.
@@ -32,7 +32,7 @@ class StubSource implements IngestionSource {
   constructor(
     readonly id: string,
     readonly kind: string,
-    readonly mode?: IngestionSourceMode,
+    readonly mode?: IngestionSourceMode
   ) {}
   async start(ctx: IngestionSourceContext): Promise<void> {
     this.ctx = ctx;
@@ -43,13 +43,13 @@ class StubSource implements IngestionSource {
 }
 
 function makeEvent(overrides: Partial<IngestionEvent> = {}): IngestionEvent {
-  const content = overrides.content ?? 'hello world';
+  const content = overrides.content ?? "hello world";
   return {
-    source_id: 'stub-1',
-    source_kind: 'test-source',
-    source_uri: 'test://event-1',
+    source_id: "stub-1",
+    source_kind: "test-source",
+    source_uri: "test://event-1",
     received_at: new Date().toISOString(),
-    content_type: 'text/markdown',
+    content_type: "text/markdown",
     content,
     content_hash: overrides.content_hash ?? computeContentHash(content),
     ...overrides,
@@ -63,52 +63,54 @@ async function tick(): Promise<void> {
   await Promise.resolve();
 }
 
-describe('v0.41 T2: IngestionSource.mode discriminator', () => {
-  test('mode is optional in interface (back-compat with v0.38 sources)', () => {
+describe("v0.41 T2: IngestionSource.mode discriminator", () => {
+  test("mode is optional in interface (back-compat with v0.38 sources)", () => {
     // Compile-time test: a source without `mode` field is valid.
     const trickle: IngestionSource = {
-      id: 'no-mode',
-      kind: 'test-source',
+      id: "no-mode",
+      kind: "test-source",
       async start() {},
       async stop() {},
     };
     expect(trickle.mode).toBeUndefined();
   });
 
-  test('mode accepts trickle | migration string literals', () => {
+  test("mode accepts trickle | migration string literals", () => {
     const trickle: IngestionSource = {
-      id: 's1',
-      kind: 'test',
-      mode: 'trickle',
+      id: "s1",
+      kind: "test",
+      mode: "trickle",
       async start() {},
       async stop() {},
     };
     const migration: IngestionSource = {
-      id: 's2',
-      kind: 'test',
-      mode: 'migration',
+      id: "s2",
+      kind: "test",
+      mode: "migration",
       async start() {},
       async stop() {},
     };
-    expect(trickle.mode).toBe('trickle');
-    expect(migration.mode).toBe('migration');
+    expect(trickle.mode).toBe("trickle");
+    expect(migration.mode).toBe("migration");
   });
 });
 
-describe('v0.41 T2: daemon handleEmit branches on source.mode', () => {
+describe("v0.41 T2: daemon handleEmit branches on source.mode", () => {
   let dispatched: IngestionEvent[];
-  let dispatch: (event: IngestionEvent) => Promise<{ kind: 'queued' } | { kind: 'failed'; error: string }>;
+  let dispatch: (
+    event: IngestionEvent
+  ) => Promise<{ kind: "queued" } | { kind: "failed"; error: string }>;
 
   beforeEach(() => {
     dispatched = [];
     dispatch = async (event) => {
       dispatched.push(event);
-      return { kind: 'queued' as const };
+      return { kind: "queued" as const };
     };
   });
 
-  test('trickle-mode source: duplicate content_hash within 24h window → second silent-dropped', async () => {
-    const source = new StubSource('trickle-1', 'test-source', 'trickle');
+  test("trickle-mode source: duplicate content_hash within 24h window → second silent-dropped", async () => {
+    const source = new StubSource("trickle-1", "test-source", "trickle");
     const daemon = new IngestionDaemon({
       engine: {} as never,
       logger: { info: () => {}, warn: () => {}, error: () => {} },
@@ -117,7 +119,7 @@ describe('v0.41 T2: daemon handleEmit branches on source.mode', () => {
     daemon.register({ source });
     await daemon.start();
 
-    const event = makeEvent({ content: 'shared content' });
+    const event = makeEvent({ content: "shared content" });
     source.ctx!.emit(event);
     await tick();
     source.ctx!.emit(event); // identical content_hash
@@ -127,8 +129,8 @@ describe('v0.41 T2: daemon handleEmit branches on source.mode', () => {
     await daemon.stop();
   });
 
-  test('migration-mode source: duplicate content_hash within 24h window → BOTH dispatch', async () => {
-    const source = new StubSource('migration-1', 'test-source', 'migration');
+  test("migration-mode source: duplicate content_hash within 24h window → BOTH dispatch", async () => {
+    const source = new StubSource("migration-1", "test-source", "migration");
     const daemon = new IngestionDaemon({
       engine: {} as never,
       logger: { info: () => {}, warn: () => {}, error: () => {} },
@@ -137,7 +139,7 @@ describe('v0.41 T2: daemon handleEmit branches on source.mode', () => {
     daemon.register({ source });
     await daemon.start();
 
-    const event = makeEvent({ content: 'shared content' });
+    const event = makeEvent({ content: "shared content" });
     source.ctx!.emit(event);
     await tick();
     source.ctx!.emit(event); // identical content_hash — should still dispatch
@@ -147,10 +149,10 @@ describe('v0.41 T2: daemon handleEmit branches on source.mode', () => {
     await daemon.stop();
   });
 
-  test('source without mode field defaults to trickle (v0.38 back-compat)', async () => {
+  test("source without mode field defaults to trickle (v0.38 back-compat)", async () => {
     const source: IngestionSource = {
-      id: 'no-mode-1',
-      kind: 'test-source',
+      id: "no-mode-1",
+      kind: "test-source",
       async start(ctx) {
         (source as { _ctx?: IngestionSourceContext })._ctx = ctx;
       },
@@ -165,7 +167,7 @@ describe('v0.41 T2: daemon handleEmit branches on source.mode', () => {
     await daemon.start();
 
     const ctx = (source as { _ctx?: IngestionSourceContext })._ctx!;
-    const event = makeEvent({ content: 'default-mode test' });
+    const event = makeEvent({ content: "default-mode test" });
     ctx.emit(event);
     await tick();
     ctx.emit(event); // identical content_hash — trickle defaults dedup it
@@ -175,8 +177,8 @@ describe('v0.41 T2: daemon handleEmit branches on source.mode', () => {
     await daemon.stop();
   });
 
-  test('migration-mode source: validation still runs (malformed event still dropped)', async () => {
-    const source = new StubSource('migration-2', 'test-source', 'migration');
+  test("migration-mode source: validation still runs (malformed event still dropped)", async () => {
+    const source = new StubSource("migration-2", "test-source", "migration");
     const daemon = new IngestionDaemon({
       engine: {} as never,
       logger: { info: () => {}, warn: () => {}, error: () => {} },
@@ -186,16 +188,16 @@ describe('v0.41 T2: daemon handleEmit branches on source.mode', () => {
     await daemon.start();
 
     // Malformed: content_hash isn't 64 hex chars
-    source.ctx!.emit(makeEvent({ content_hash: 'not-a-real-sha256' }));
+    source.ctx!.emit(makeEvent({ content_hash: "not-a-real-sha256" }));
     await tick();
 
     expect(dispatched.length).toBe(0);
     await daemon.stop();
   });
 
-  test('mixed dual source: trickle dedups own stream, migration does not', async () => {
-    const trickle = new StubSource('trickle-mixed', 'test-source', 'trickle');
-    const migration = new StubSource('migration-mixed', 'test-source-2', 'migration');
+  test("mixed dual source: trickle dedups own stream, migration does not", async () => {
+    const trickle = new StubSource("trickle-mixed", "test-source", "trickle");
+    const migration = new StubSource("migration-mixed", "test-source-2", "migration");
     const daemon = new IngestionDaemon({
       engine: {} as never,
       logger: { info: () => {}, warn: () => {}, error: () => {} },
@@ -205,8 +207,8 @@ describe('v0.41 T2: daemon handleEmit branches on source.mode', () => {
     daemon.register({ source: migration });
     await daemon.start();
 
-    const e1 = makeEvent({ content: 'mixed-1' });
-    const e2 = makeEvent({ content: 'mixed-2' });
+    const e1 = makeEvent({ content: "mixed-1" });
+    const e2 = makeEvent({ content: "mixed-2" });
 
     // Trickle: same hash twice → 1 dispatched
     trickle.ctx!.emit(e1);

@@ -16,7 +16,7 @@ writes_to:
 
 # book-mirror — Personalized Chapter-by-Chapter Book Analysis
 
-> **Convention:** see [_brain-filing-rules.md](../_brain-filing-rules.md) for the
+> **Convention:** see [\_brain-filing-rules.md](../_brain-filing-rules.md) for the
 > sanctioned `media/<format>/<slug>` exception this skill files under.
 >
 > **Convention:** see [conventions/quality.md](../conventions/quality.md) for
@@ -284,8 +284,8 @@ The **left column** should:
 
 The **right column** should:
 
-- Use the reader's *actual quoted words* from the context pack.
-- Reference *specific* dates, situations, people by name.
+- Use the reader's _actual quoted words_ from the context pack.
+- Reference _specific_ dates, situations, people by name.
 - Read like a therapist who knows the reader is leaving notes in the margins.
 - Be plain about direct hits ("This is exactly the [name a real situation]").
 - Be honest about misses ("This chapter is less directly relevant
@@ -328,7 +328,6 @@ where the book's framing breaks down for this specific reader.
   problem-lens instead of personalizing to the whole reader.
 - `skills/article-enrichment/SKILL.md` — same shape applied to articles
   rather than books.
-
 
 ## Contract
 

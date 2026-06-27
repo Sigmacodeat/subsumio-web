@@ -26,12 +26,7 @@
  * ConnectionError is retryable; ConfigError and NotFoundError are not.
  */
 
-export type EngineErrorKind =
-  | 'query'
-  | 'schema'
-  | 'config'
-  | 'connection'
-  | 'not_found';
+export type EngineErrorKind = "query" | "schema" | "config" | "connection" | "not_found";
 
 export class EngineError extends Error {
   readonly kind: EngineErrorKind;
@@ -43,10 +38,10 @@ export class EngineError extends Error {
   constructor(
     kind: EngineErrorKind,
     message: string,
-    opts: { retryable?: boolean; fix?: string; cause?: unknown } = {},
+    opts: { retryable?: boolean; fix?: string; cause?: unknown } = {}
   ) {
     super(message);
-    this.name = 'EngineError';
+    this.name = "EngineError";
     this.kind = kind;
     this.retryable = opts.retryable ?? false;
     if (opts.fix) this.fix = opts.fix;
@@ -59,40 +54,40 @@ export class EngineError extends Error {
 /** SQL execution failure: syntax error, constraint violation, statement timeout. */
 export class QueryError extends EngineError {
   constructor(message: string, opts: { fix?: string; cause?: unknown } = {}) {
-    super('query', message, { retryable: false, ...opts });
-    this.name = 'QueryError';
+    super("query", message, { retryable: false, ...opts });
+    this.name = "QueryError";
   }
 }
 
 /** Schema mismatch: missing column, index, or migration drift. */
 export class SchemaError extends EngineError {
   constructor(message: string, opts: { fix?: string; cause?: unknown } = {}) {
-    super('schema', message, { retryable: false, ...opts });
-    this.name = 'SchemaError';
+    super("schema", message, { retryable: false, ...opts });
+    this.name = "SchemaError";
   }
 }
 
 /** Bad configuration: invalid dimensions, missing URL, bad pool size. */
 export class ConfigError extends EngineError {
   constructor(message: string, opts: { fix?: string; cause?: unknown } = {}) {
-    super('config', message, { retryable: false, ...opts });
-    this.name = 'ConfigError';
+    super("config", message, { retryable: false, ...opts });
+    this.name = "ConfigError";
   }
 }
 
 /** Connection-level failure: pool exhausted, socket reaped, auth failure. */
 export class ConnectionError extends EngineError {
   constructor(message: string, opts: { fix?: string; cause?: unknown } = {}) {
-    super('connection', message, { retryable: true, ...opts });
-    this.name = 'ConnectionError';
+    super("connection", message, { retryable: true, ...opts });
+    this.name = "ConnectionError";
   }
 }
 
 /** Entity not found: page, tag, file, version, etc. */
 export class NotFoundError extends EngineError {
   constructor(message: string, opts: { fix?: string; cause?: unknown } = {}) {
-    super('not_found', message, { retryable: false, ...opts });
-    this.name = 'NotFoundError';
+    super("not_found", message, { retryable: false, ...opts });
+    this.name = "NotFoundError";
   }
 }
 

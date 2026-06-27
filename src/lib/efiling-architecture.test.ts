@@ -284,7 +284,9 @@ describe("eFiling — Helpers", () => {
 
   it("canRetry checks retry conditions", () => {
     expect(canRetry(createTestPackage({ status: "failed", retry_count: 0 }))).toBe(true);
-    expect(canRetry(createTestPackage({ status: "failed", retry_count: 3, max_retries: 3 }))).toBe(false);
+    expect(canRetry(createTestPackage({ status: "failed", retry_count: 3, max_retries: 3 }))).toBe(
+      false
+    );
     expect(canRetry(createTestPackage({ status: "sent" }))).toBe(false);
   });
 

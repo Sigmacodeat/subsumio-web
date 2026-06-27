@@ -52,7 +52,7 @@ export const GET = createHandler(
   async (ctx) => {
     const identities = await getWhatsAppIdentityStore().listByOrg(ctx.user.orgId || ctx.brainId);
     return Response.json({ identities: identities.map(publicIdentity) });
-  },
+  }
 );
 
 export const POST = createHandler(
@@ -63,7 +63,12 @@ export const POST = createHandler(
     audit: (ctx, body) => ({
       action: "settings.update" as const,
       entityType: "whatsapp_identity",
-      details: { role: body.role, status: body.status, phoneLast4: body.phone.slice(-4), by: ctx.user.email },
+      details: {
+        role: body.role,
+        status: body.status,
+        phoneLast4: body.phone.slice(-4),
+        by: ctx.user.email,
+      },
     }),
   },
   async (ctx, body) => {
@@ -72,7 +77,11 @@ export const POST = createHandler(
     const store = getWhatsAppIdentityStore();
     const existing = await store.getByPhoneHash(hash);
     if (existing && existing.orgId !== (ctx.user.orgId || ctx.brainId)) {
-      return apiError("phone_already_bound", "Diese WhatsApp-Nummer ist bereits einer anderen Kanzlei zugeordnet.", 409);
+      return apiError(
+        "phone_already_bound",
+        "Diese WhatsApp-Nummer ist bereits einer anderen Kanzlei zugeordnet.",
+        409
+      );
     }
     const now = new Date().toISOString();
     const identity: WhatsAppIdentity = {
@@ -93,8 +102,11 @@ export const POST = createHandler(
     const saved = existing
       ? await store.update(existing.id, identity)
       : await store.create(identity);
-    return Response.json({ identity: publicIdentity(saved ?? identity) }, { status: existing ? 200 : 201 });
-  },
+    return Response.json(
+      { identity: publicIdentity(saved ?? identity) },
+      { status: existing ? 200 : 201 }
+    );
+  }
 );
 
 export const PATCH = createHandler(
@@ -122,7 +134,7 @@ export const PATCH = createHandler(
       matterScope: body.matter_scope,
     });
     return Response.json({ identity: updated ? publicIdentity(updated) : null });
-  },
+  }
 );
 
 export const DELETE = createHandler(
@@ -145,5 +157,5 @@ export const DELETE = createHandler(
     }
     await store.delete(body.id);
     return Response.json({ ok: true });
-  },
+  }
 );

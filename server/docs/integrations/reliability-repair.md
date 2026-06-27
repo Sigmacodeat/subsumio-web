@@ -9,7 +9,7 @@ command for the mechanically fixable class. PGLite users are not affected.
 
 **JSONB double-encode.** Four write sites used
 `${JSON.stringify(x)}::jsonb` with postgres.js, which stored a JSONB
-*string literal* instead of an object. `frontmatter ->> 'key'` returns NULL;
+_string literal_ instead of an object. `frontmatter ->> 'key'` returns NULL;
 GIN indexes are ineffective. Affected: `pages.frontmatter`,
 `raw_data.data`, `ingest_log.pages_updated`, `files.metadata`.
 

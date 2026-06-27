@@ -13,11 +13,11 @@
  * Run: bun test test/e2e/minions-shell-pglite.test.ts
  */
 
-import { describe, test, expect, beforeAll, afterAll, beforeEach } from 'bun:test';
-import { PGLiteEngine } from '../../src/core/pglite-engine.ts';
-import { MinionQueue } from '../../src/core/minions/queue.ts';
-import { MinionWorker } from '../../src/core/minions/worker.ts';
-import { registerBuiltinHandlers } from '../../src/commands/jobs.ts';
+import { describe, test, expect, beforeAll, afterAll, beforeEach } from "bun:test";
+import { PGLiteEngine } from "../../src/core/pglite-engine.ts";
+import { MinionQueue } from "../../src/core/minions/queue.ts";
+import { MinionWorker } from "../../src/core/minions/worker.ts";
+import { registerBuiltinHandlers } from "../../src/commands/jobs.ts";
 
 let engine: PGLiteEngine;
 let originalAllowShellJobs: string | undefined;
@@ -26,11 +26,13 @@ async function waitTerminal(queue: MinionQueue, id: number, timeoutMs = 15000): 
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     const j = await queue.getJob(id);
-    if (j && ['completed', 'failed', 'dead', 'cancelled'].includes(j.status)) return j.status;
+    if (j && ["completed", "failed", "dead", "cancelled"].includes(j.status)) return j.status;
     await new Promise((r) => setTimeout(r, 50));
   }
   const j = await queue.getJob(id);
-  throw new Error(`job ${id} did not reach terminal state in ${timeoutMs}ms; last status=${j?.status}`);
+  throw new Error(
+    `job ${id} did not reach terminal state in ${timeoutMs}ms; last status=${j?.status}`
+  );
 }
 
 beforeAll(async () => {
@@ -38,7 +40,7 @@ beforeAll(async () => {
   // Mirror the real --follow path by setting the env var; restore on cleanup
   // so other tests see their original environment.
   originalAllowShellJobs = process.env.GBRAIN_ALLOW_SHELL_JOBS;
-  process.env.GBRAIN_ALLOW_SHELL_JOBS = '1';
+  process.env.GBRAIN_ALLOW_SHELL_JOBS = "1";
 
   engine = new PGLiteEngine();
   await engine.connect({}); // in-memory PGLite
@@ -54,39 +56,41 @@ afterAll(async () => {
   }
 });
 
-describe('E2E: Minions shell handler on PGLite (--follow inline path)', () => {
+describe("E2E: Minions shell handler on PGLite (--follow inline path)", () => {
   // Mirror the Postgres sibling's per-test reset. The engine is shared across
   // both tests via beforeAll; without this, completed jobs from one test leak
   // into minion_jobs and future test additions hit order-dependency.
   beforeEach(async () => {
     const db = (engine as any).db;
-    await db.exec(`DELETE FROM minion_attachments; DELETE FROM minion_inbox; DELETE FROM minion_jobs;`);
+    await db.exec(
+      `DELETE FROM minion_attachments; DELETE FROM minion_inbox; DELETE FROM minion_jobs;`
+    );
   });
 
-  test('submit → worker registered via registerBuiltinHandlers → shell runs → completes', async () => {
+  test("submit → worker registered via registerBuiltinHandlers → shell runs → completes", async () => {
     const queue = new MinionQueue(engine);
     const job = await queue.add(
-      'shell',
-      { cmd: 'echo hello', cwd: '/tmp' },
+      "shell",
+      { cmd: "echo hello", cwd: "/tmp" },
       {},
-      { allowProtectedSubmit: true },
+      { allowProtectedSubmit: true }
     );
-    expect(job.name).toBe('shell');
-    expect(job.status).toBe('waiting');
+    expect(job.name).toBe("shell");
+    expect(job.status).toBe("waiting");
 
     // This is the exact dispatch path --follow takes (src/commands/jobs.ts:207).
     // Gates shell on GBRAIN_ALLOW_SHELL_JOBS=1 (set in beforeAll above).
     const worker = new MinionWorker(engine, { pollInterval: 100, lockDuration: 30000 });
     await registerBuiltinHandlers(worker, engine);
-    expect(worker.registeredNames).toContain('shell');
+    expect(worker.registeredNames).toContain("shell");
 
     const runPromise = worker.start();
     try {
       const status = await waitTerminal(queue, job.id, 20000);
-      expect(status).toBe('completed');
+      expect(status).toBe("completed");
       const final = await queue.getJob(job.id);
       expect((final!.result as any).exit_code).toBe(0);
-      expect((final!.result as any).stdout_tail).toBe('hello\n');
+      expect((final!.result as any).stdout_tail).toBe("hello\n");
     } finally {
       worker.stop();
       await runPromise;
@@ -101,16 +105,19 @@ describe('E2E: Minions shell handler on PGLite (--follow inline path)', () => {
     //   1. The child env carries GBRAIN_DATABASE_URL with the resolved value.
     //   2. The persisted row's `data.inherit` is ["database_url"] (names only).
     //   3. The persisted row JSON does NOT contain the URL substring anywhere.
-    const { writeFileSync, mkdirSync, rmSync, existsSync } = await import('node:fs');
-    const { join } = await import('node:path');
-    const { tmpdir } = await import('node:os');
+    const { writeFileSync, mkdirSync, rmSync, existsSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    const { tmpdir } = await import("node:os");
 
-    const tmpHome = join(tmpdir(), `gbrain-inh-${Date.now()}-${Math.random().toString(36).slice(2)}`);
-    mkdirSync(join(tmpHome, '.gbrain'), { recursive: true });
-    const testDbUrl = 'postgresql://test:T0P_5ECR3T@localhost:5432/inherit_e2e_db';
+    const tmpHome = join(
+      tmpdir(),
+      `gbrain-inh-${Date.now()}-${Math.random().toString(36).slice(2)}`
+    );
+    mkdirSync(join(tmpHome, ".gbrain"), { recursive: true });
+    const testDbUrl = "postgresql://test:T0P_5ECR3T@localhost:5432/inherit_e2e_db";
     writeFileSync(
-      join(tmpHome, '.gbrain', 'config.json'),
-      JSON.stringify({ engine: 'postgres', database_url: testDbUrl }) + '\n',
+      join(tmpHome, ".gbrain", "config.json"),
+      JSON.stringify({ engine: "postgres", database_url: testDbUrl }) + "\n"
     );
 
     const savedHome = process.env.GBRAIN_HOME;
@@ -127,21 +134,21 @@ describe('E2E: Minions shell handler on PGLite (--follow inline path)', () => {
     try {
       const queue = new MinionQueue(engine);
       const job = await queue.add(
-        'shell',
+        "shell",
         // `printenv` reflects the child env to stdout — proves the inherited
         // secret reached the child without us having to leak it via the test.
-        { cmd: 'printenv GBRAIN_DATABASE_URL', cwd: '/tmp', inherit: ['database_url'] },
+        { cmd: "printenv GBRAIN_DATABASE_URL", cwd: "/tmp", inherit: ["database_url"] },
         {},
-        { allowProtectedSubmit: true },
+        { allowProtectedSubmit: true }
       );
 
       // T7 regression assertion: the persisted row carries names only, NEVER values.
       const persisted = await queue.getJob(job.id);
-      expect((persisted!.data as Record<string, unknown>).inherit).toEqual(['database_url']);
+      expect((persisted!.data as Record<string, unknown>).inherit).toEqual(["database_url"]);
       // T1 + T7 negative-shape: the URL substring must not appear ANYWHERE in
       // the persisted row's data JSON. Pinpoint the load-bearing R1 invariant.
       const rowJson = JSON.stringify(persisted!.data);
-      expect(rowJson).not.toContain('T0P_5ECR3T');
+      expect(rowJson).not.toContain("T0P_5ECR3T");
       expect(rowJson).not.toContain(testDbUrl);
 
       const worker = new MinionWorker(engine, { pollInterval: 100, lockDuration: 30000 });
@@ -149,10 +156,10 @@ describe('E2E: Minions shell handler on PGLite (--follow inline path)', () => {
       const runPromise = worker.start();
       try {
         const status = await waitTerminal(queue, job.id, 20000);
-        expect(status).toBe('completed');
+        expect(status).toBe("completed");
         const final = await queue.getJob(job.id);
         // The child saw GBRAIN_DATABASE_URL = the configured URL.
-        expect((final!.result as Record<string, unknown>).stdout_tail).toBe(testDbUrl + '\n');
+        expect((final!.result as Record<string, unknown>).stdout_tail).toBe(testDbUrl + "\n");
       } finally {
         worker.stop();
         await runPromise;
@@ -173,20 +180,23 @@ describe('E2E: Minions shell handler on PGLite (--follow inline path)', () => {
     // name, not a closed enum. Same single-uid trust model — the agent
     // decides what to pass. This test exercises the non-database_url path
     // to prove the mechanism is genuinely free-form.
-    const { writeFileSync, mkdirSync, rmSync, existsSync } = await import('node:fs');
-    const { join } = await import('node:path');
-    const { tmpdir } = await import('node:os');
+    const { writeFileSync, mkdirSync, rmSync, existsSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    const { tmpdir } = await import("node:os");
 
-    const tmpHome = join(tmpdir(), `gbrain-anth-${Date.now()}-${Math.random().toString(36).slice(2)}`);
-    mkdirSync(join(tmpHome, '.gbrain'), { recursive: true });
-    const fakeKey = 'sk-ant-test-FAKE-KEY-FOR-E2E';
+    const tmpHome = join(
+      tmpdir(),
+      `gbrain-anth-${Date.now()}-${Math.random().toString(36).slice(2)}`
+    );
+    mkdirSync(join(tmpHome, ".gbrain"), { recursive: true });
+    const fakeKey = "sk-ant-test-FAKE-KEY-FOR-E2E";
     writeFileSync(
-      join(tmpHome, '.gbrain', 'config.json'),
+      join(tmpHome, ".gbrain", "config.json"),
       JSON.stringify({
-        engine: 'postgres',
-        database_url: 'postgresql://x:y@h/d',
+        engine: "postgres",
+        database_url: "postgresql://x:y@h/d",
         anthropic_api_key: fakeKey,
-      }) + '\n',
+      }) + "\n"
     );
 
     const savedHome = process.env.GBRAIN_HOME;
@@ -197,27 +207,27 @@ describe('E2E: Minions shell handler on PGLite (--follow inline path)', () => {
     try {
       const queue = new MinionQueue(engine);
       const job = await queue.add(
-        'shell',
-        { cmd: 'printenv ANTHROPIC_API_KEY', cwd: '/tmp', inherit: ['anthropic_api_key'] },
+        "shell",
+        { cmd: "printenv ANTHROPIC_API_KEY", cwd: "/tmp", inherit: ["anthropic_api_key"] },
         {},
-        { allowProtectedSubmit: true },
+        { allowProtectedSubmit: true }
       );
 
       // Row carries name only — not value.
       const persisted = await queue.getJob(job.id);
-      expect((persisted!.data as Record<string, unknown>).inherit).toEqual(['anthropic_api_key']);
+      expect((persisted!.data as Record<string, unknown>).inherit).toEqual(["anthropic_api_key"]);
       const rowJson = JSON.stringify(persisted!.data);
-      expect(rowJson).not.toContain('sk-ant-test-FAKE-KEY-FOR-E2E');
+      expect(rowJson).not.toContain("sk-ant-test-FAKE-KEY-FOR-E2E");
 
       const worker = new MinionWorker(engine, { pollInterval: 100, lockDuration: 30000 });
       await registerBuiltinHandlers(worker, engine);
       const runPromise = worker.start();
       try {
         const status = await waitTerminal(queue, job.id, 20000);
-        expect(status).toBe('completed');
+        expect(status).toBe("completed");
         const final = await queue.getJob(job.id);
         // Child saw ANTHROPIC_API_KEY = configured key (derived env-name from snake_case)
-        expect((final!.result as Record<string, unknown>).stdout_tail).toBe(fakeKey + '\n');
+        expect((final!.result as Record<string, unknown>).stdout_tail).toBe(fakeKey + "\n");
       } finally {
         worker.stop();
         await runPromise;
@@ -231,26 +241,29 @@ describe('E2E: Minions shell handler on PGLite (--follow inline path)', () => {
     }
   }, 30000);
 
-  test('v0.36.5.0: redact_secrets:true scrubs inherit values from stdout_tail', async () => {
+  test("v0.36.5.0: redact_secrets:true scrubs inherit values from stdout_tail", async () => {
     // Honest defense for the documented output-side leakage: when the script
     // echoes the inherited value, redact_secrets:true ensures the persisted
     // result.stdout_tail carries the <REDACTED:name> token instead of the
     // plaintext value. The agent opts in per-job; default is false (back-compat).
-    const { writeFileSync, mkdirSync, rmSync, existsSync } = await import('node:fs');
-    const { join } = await import('node:path');
-    const { tmpdir } = await import('node:os');
+    const { writeFileSync, mkdirSync, rmSync, existsSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    const { tmpdir } = await import("node:os");
 
-    const tmpHome = join(tmpdir(), `gbrain-redact-${Date.now()}-${Math.random().toString(36).slice(2)}`);
-    mkdirSync(join(tmpHome, '.gbrain'), { recursive: true });
-    const fakeKey = 'sk-ant-FAKE-REDACT-E2E';
-    const fakeUrl = 'postgresql://user:R3DACT_ME@host:5432/redactdb';
+    const tmpHome = join(
+      tmpdir(),
+      `gbrain-redact-${Date.now()}-${Math.random().toString(36).slice(2)}`
+    );
+    mkdirSync(join(tmpHome, ".gbrain"), { recursive: true });
+    const fakeKey = "sk-ant-FAKE-REDACT-E2E";
+    const fakeUrl = "postgresql://user:R3DACT_ME@host:5432/redactdb";
     writeFileSync(
-      join(tmpHome, '.gbrain', 'config.json'),
+      join(tmpHome, ".gbrain", "config.json"),
       JSON.stringify({
-        engine: 'postgres',
+        engine: "postgres",
         database_url: fakeUrl,
         anthropic_api_key: fakeKey,
-      }) + '\n',
+      }) + "\n"
     );
 
     const savedHome = process.env.GBRAIN_HOME;
@@ -264,15 +277,15 @@ describe('E2E: Minions shell handler on PGLite (--follow inline path)', () => {
     try {
       const queue = new MinionQueue(engine);
       const job = await queue.add(
-        'shell',
+        "shell",
         {
-          cmd: 'printenv GBRAIN_DATABASE_URL && printenv ANTHROPIC_API_KEY',
-          cwd: '/tmp',
-          inherit: ['database_url', 'anthropic_api_key'],
+          cmd: "printenv GBRAIN_DATABASE_URL && printenv ANTHROPIC_API_KEY",
+          cwd: "/tmp",
+          inherit: ["database_url", "anthropic_api_key"],
           redact_secrets: true,
         },
         {},
-        { allowProtectedSubmit: true },
+        { allowProtectedSubmit: true }
       );
 
       const worker = new MinionWorker(engine, { pollInterval: 100, lockDuration: 30000 });
@@ -280,16 +293,16 @@ describe('E2E: Minions shell handler on PGLite (--follow inline path)', () => {
       const runPromise = worker.start();
       try {
         const status = await waitTerminal(queue, job.id, 20000);
-        expect(status).toBe('completed');
+        expect(status).toBe("completed");
         const final = await queue.getJob(job.id);
         const stdoutTail = (final!.result as Record<string, unknown>).stdout_tail as string;
         // The actual values must NOT appear in the persisted row.
-        expect(stdoutTail).not.toContain('R3DACT_ME');
+        expect(stdoutTail).not.toContain("R3DACT_ME");
         expect(stdoutTail).not.toContain(fakeUrl);
         expect(stdoutTail).not.toContain(fakeKey);
         // Redaction tokens point at WHICH inherit name was scrubbed.
-        expect(stdoutTail).toContain('<REDACTED:database_url>');
-        expect(stdoutTail).toContain('<REDACTED:anthropic_api_key>');
+        expect(stdoutTail).toContain("<REDACTED:database_url>");
+        expect(stdoutTail).toContain("<REDACTED:anthropic_api_key>");
       } finally {
         worker.stop();
         await runPromise;
@@ -305,21 +318,24 @@ describe('E2E: Minions shell handler on PGLite (--follow inline path)', () => {
     }
   }, 30000);
 
-  test('v0.36.5.0: redact_secrets:false (default) does NOT scrub — back-compat', async () => {
+  test("v0.36.5.0: redact_secrets:false (default) does NOT scrub — back-compat", async () => {
     // The previous tests already prove default behavior (no scrubbing) by
     // asserting stdout_tail equals the literal URL when redact_secrets is
     // absent. This case is the explicit-false twin: passing false should
     // be identical to omitting.
-    const { writeFileSync, mkdirSync, rmSync, existsSync } = await import('node:fs');
-    const { join } = await import('node:path');
-    const { tmpdir } = await import('node:os');
+    const { writeFileSync, mkdirSync, rmSync, existsSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    const { tmpdir } = await import("node:os");
 
-    const tmpHome = join(tmpdir(), `gbrain-rd-off-${Date.now()}-${Math.random().toString(36).slice(2)}`);
-    mkdirSync(join(tmpHome, '.gbrain'), { recursive: true });
-    const fakeUrl = 'postgresql://u:NO_REDACT@h:5432/nrdb';
+    const tmpHome = join(
+      tmpdir(),
+      `gbrain-rd-off-${Date.now()}-${Math.random().toString(36).slice(2)}`
+    );
+    mkdirSync(join(tmpHome, ".gbrain"), { recursive: true });
+    const fakeUrl = "postgresql://u:NO_REDACT@h:5432/nrdb";
     writeFileSync(
-      join(tmpHome, '.gbrain', 'config.json'),
-      JSON.stringify({ engine: 'postgres', database_url: fakeUrl }) + '\n',
+      join(tmpHome, ".gbrain", "config.json"),
+      JSON.stringify({ engine: "postgres", database_url: fakeUrl }) + "\n"
     );
 
     const savedHome = process.env.GBRAIN_HOME;
@@ -332,15 +348,15 @@ describe('E2E: Minions shell handler on PGLite (--follow inline path)', () => {
     try {
       const queue = new MinionQueue(engine);
       const job = await queue.add(
-        'shell',
+        "shell",
         {
-          cmd: 'printenv GBRAIN_DATABASE_URL',
-          cwd: '/tmp',
-          inherit: ['database_url'],
+          cmd: "printenv GBRAIN_DATABASE_URL",
+          cwd: "/tmp",
+          inherit: ["database_url"],
           redact_secrets: false,
         },
         {},
-        { allowProtectedSubmit: true },
+        { allowProtectedSubmit: true }
       );
 
       const worker = new MinionWorker(engine, { pollInterval: 100, lockDuration: 30000 });
@@ -348,13 +364,13 @@ describe('E2E: Minions shell handler on PGLite (--follow inline path)', () => {
       const runPromise = worker.start();
       try {
         const status = await waitTerminal(queue, job.id, 20000);
-        expect(status).toBe('completed');
+        expect(status).toBe("completed");
         const final = await queue.getJob(job.id);
         const stdoutTail = (final!.result as Record<string, unknown>).stdout_tail as string;
         // Plaintext URL DOES appear when redact is off — back-compat with
         // earlier inherit:["database_url"] tests in this file.
-        expect(stdoutTail).toBe(fakeUrl + '\n');
-        expect(stdoutTail).not.toContain('<REDACTED:');
+        expect(stdoutTail).toBe(fakeUrl + "\n");
+        expect(stdoutTail).not.toContain("<REDACTED:");
       } finally {
         worker.stop();
         await runPromise;
@@ -370,18 +386,18 @@ describe('E2E: Minions shell handler on PGLite (--follow inline path)', () => {
     }
   }, 30000);
 
-  test('GBRAIN_ALLOW_SHELL_JOBS unset → shellHandler rejects at execution time', async () => {
+  test("GBRAIN_ALLOW_SHELL_JOBS unset → shellHandler rejects at execution time", async () => {
     // v0.20.3+: shell handler is always registered (so claimed jobs emit a clear
     // rejection log), but the runtime env guard lives inside the handler itself.
     // Prove the guard rejects when the env var is unset.
-    const { shellHandler } = await import('../../src/core/minions/handlers/shell.ts');
+    const { shellHandler } = await import("../../src/core/minions/handlers/shell.ts");
     const saved = process.env.GBRAIN_ALLOW_SHELL_JOBS;
     delete process.env.GBRAIN_ALLOW_SHELL_JOBS;
     try {
       const ctx: any = {
         id: 1,
-        name: 'shell',
-        data: { cmd: 'echo hi', cwd: '/tmp' },
+        name: "shell",
+        data: { cmd: "echo hi", cwd: "/tmp" },
         attempt: 1,
         engine,
       };

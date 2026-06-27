@@ -37,7 +37,7 @@ export interface SSEEventCallback {
  */
 export async function consumeSSEStream(
   body: ReadableStream<Uint8Array>,
-  onEvent: SSEEventCallback,
+  onEvent: SSEEventCallback
 ): Promise<void> {
   const reader = body.getReader();
   const decoder = new TextDecoder();
@@ -99,7 +99,7 @@ export function handleDataLine(raw: string, onEvent: SSEEventCallback): void {
  */
 export async function collectSSEChunks(
   body: ReadableStream<Uint8Array>,
-  onChunk?: (chunk: string) => void,
+  onChunk?: (chunk: string) => void
 ): Promise<string> {
   let answer = "";
   await consumeSSEStream(body, (data, parsed) => {

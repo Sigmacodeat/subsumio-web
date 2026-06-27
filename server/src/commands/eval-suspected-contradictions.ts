@@ -28,26 +28,20 @@
  *     exclusive sources OR empty capture table with hint
  */
 
-import { readFileSync } from 'node:fs';
-import type { BrainEngine } from '../core/engine.ts';
-import { resolveModel } from '../core/model-config.ts';
-import {
-  PreFlightBudgetError,
-  runContradictionProbe,
-} from '../core/eval-contradictions/runner.ts';
-import { loadTrend, renderTrendChart, writeRunRow } from '../core/eval-contradictions/trends.ts';
+import { readFileSync } from "node:fs";
+import type { BrainEngine } from "../core/engine.ts";
+import { resolveModel } from "../core/model-config.ts";
+import { PreFlightBudgetError, runContradictionProbe } from "../core/eval-contradictions/runner.ts";
+import { loadTrend, renderTrendChart, writeRunRow } from "../core/eval-contradictions/trends.ts";
 import {
   bucketBySeverity,
   compareSeverityDesc,
-} from '../core/eval-contradictions/severity-classify.ts';
-import { maybePromptForCostBeforeProbe } from '../core/eval-contradictions/cost-prompt.ts';
-import type {
-  ContradictionFinding,
-  Severity,
-} from '../core/eval-contradictions/types.ts';
+} from "../core/eval-contradictions/severity-classify.ts";
+import { maybePromptForCostBeforeProbe } from "../core/eval-contradictions/cost-prompt.ts";
+import type { ContradictionFinding, Severity } from "../core/eval-contradictions/types.ts";
 
 interface ParsedFlags {
-  sub: 'run' | 'trend' | 'review';
+  sub: "run" | "trend" | "review";
   // run flags
   queriesFile?: string;
   query?: string;
@@ -70,7 +64,7 @@ interface ParsedFlags {
   budgetUsdExplicit: boolean;
   output?: string;
   maxPairChars: number;
-  sampling: 'deterministic' | 'score-first';
+  sampling: "deterministic" | "score-first";
   noCache: boolean;
   refreshCache: boolean;
   json: boolean;
@@ -86,12 +80,12 @@ interface ParsedFlags {
 
 export function parseFlags(args: string[]): ParsedFlags {
   // Sub-subcommand: first positional that doesn't start with --
-  let sub: 'run' | 'trend' | 'review' = 'run';
+  let sub: "run" | "trend" | "review" = "run";
   const rest: string[] = [];
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
-    if (i === 0 && !a.startsWith('--')) {
-      if (a === 'run' || a === 'trend' || a === 'review') {
+    if (i === 0 && !a.startsWith("--")) {
+      if (a === "run" || a === "trend" || a === "review") {
         sub = a;
         continue;
       }
@@ -107,7 +101,7 @@ export function parseFlags(args: string[]): ParsedFlags {
     budgetUsd: isTty ? 5 : 1,
     budgetUsdExplicit: false,
     maxPairChars: 1500,
-    sampling: 'deterministic',
+    sampling: "deterministic",
     noCache: false,
     refreshCache: false,
     json: false,
@@ -122,37 +116,37 @@ export function parseFlags(args: string[]): ParsedFlags {
       if (v === undefined) throw new Error(`flag ${arg} requires a value`);
       return v;
     };
-    if (arg === '--help' || arg === '-h') f.help = true;
-    else if (arg === '--queries-file') f.queriesFile = next();
-    else if (arg === '--query') f.query = next();
-    else if (arg === '--from-capture') f.fromCapture = true;
-    else if (arg === '--top-k') f.topK = Number.parseInt(next(), 10);
-    else if (arg === '--judge') f.judge = next();
-    else if (arg === '--limit') f.limit = Number.parseInt(next(), 10);
-    else if (arg === '--budget-usd') { f.budgetUsd = Number.parseFloat(next()); f.budgetUsdExplicit = true; }
-    else if (arg === '--output') f.output = next();
-    else if (arg === '--max-pair-chars') f.maxPairChars = Number.parseInt(next(), 10);
-    else if (arg === '--sampling') {
+    if (arg === "--help" || arg === "-h") f.help = true;
+    else if (arg === "--queries-file") f.queriesFile = next();
+    else if (arg === "--query") f.query = next();
+    else if (arg === "--from-capture") f.fromCapture = true;
+    else if (arg === "--top-k") f.topK = Number.parseInt(next(), 10);
+    else if (arg === "--judge") f.judge = next();
+    else if (arg === "--limit") f.limit = Number.parseInt(next(), 10);
+    else if (arg === "--budget-usd") {
+      f.budgetUsd = Number.parseFloat(next());
+      f.budgetUsdExplicit = true;
+    } else if (arg === "--output") f.output = next();
+    else if (arg === "--max-pair-chars") f.maxPairChars = Number.parseInt(next(), 10);
+    else if (arg === "--sampling") {
       const v = next();
-      if (v !== 'deterministic' && v !== 'score-first') {
-        throw new Error('--sampling must be deterministic|score-first');
+      if (v !== "deterministic" && v !== "score-first") {
+        throw new Error("--sampling must be deterministic|score-first");
       }
       f.sampling = v;
-    }
-    else if (arg === '--no-cache') f.noCache = true;
-    else if (arg === '--refresh-cache') f.refreshCache = true;
-    else if (arg === '--json') f.json = true;
-    else if (arg === '--yes' || arg === '-y') f.yes = true;
-    else if (arg === '--days') f.days = Number.parseInt(next(), 10);
-    else if (arg === '--severity') {
+    } else if (arg === "--no-cache") f.noCache = true;
+    else if (arg === "--refresh-cache") f.refreshCache = true;
+    else if (arg === "--json") f.json = true;
+    else if (arg === "--yes" || arg === "-y") f.yes = true;
+    else if (arg === "--days") f.days = Number.parseInt(next(), 10);
+    else if (arg === "--severity") {
       const v = next();
       // v0.34 / Lane A2: 'info' joins the rank as a valid severity.
-      if (v !== 'info' && v !== 'low' && v !== 'medium' && v !== 'high') {
-        throw new Error('--severity must be info|low|medium|high');
+      if (v !== "info" && v !== "low" && v !== "medium" && v !== "high") {
+        throw new Error("--severity must be info|low|medium|high");
       }
       f.severity = v;
-    }
-    else if (arg === '--since') f.since = next();
+    } else if (arg === "--since") f.since = next();
     else {
       throw new Error(`unknown flag: ${arg}`);
     }
@@ -192,15 +186,15 @@ Cost guardrails:
 
 /** Read --queries-file as JSONL or plain-text-one-query-per-line. */
 function readQueriesFile(path: string): string[] {
-  const raw = readFileSync(path, 'utf8');
+  const raw = readFileSync(path, "utf8");
   const queries: string[] = [];
   for (const line of raw.split(/\r?\n/)) {
     const trimmed = line.trim();
     if (!trimmed) continue;
-    if (trimmed.startsWith('{')) {
+    if (trimmed.startsWith("{")) {
       try {
         const parsed = JSON.parse(trimmed) as { query?: string };
-        if (typeof parsed.query === 'string' && parsed.query.length > 0) {
+        if (typeof parsed.query === "string" && parsed.query.length > 0) {
           queries.push(parsed.query);
         }
       } catch {
@@ -217,14 +211,14 @@ function readQueriesFile(path: string): string[] {
 async function loadFromCapture(engine: BrainEngine, limit?: number): Promise<string[]> {
   const rows = await engine.executeRaw<{ query: string }>(
     `SELECT query FROM eval_candidates WHERE query IS NOT NULL ORDER BY id DESC LIMIT $1`,
-    [limit ?? 100],
+    [limit ?? 100]
   );
   if (!rows || rows.length === 0) {
     console.error(
       `--from-capture: no rows in eval_candidates. Captures are off by default in v0.25.0+.\n` +
         `Enable with:\n` +
         `  export GBRAIN_CONTRIBUTOR_MODE=1\n` +
-        `or set 'eval.capture: true' in your gbrain config. Re-run queries to populate, then try again.`,
+        `or set 'eval.capture: true' in your gbrain config. Re-run queries to populate, then try again.`
     );
     process.exit(2);
   }
@@ -239,9 +233,7 @@ function exclusiveOneOf(...flags: Array<unknown>): boolean {
 
 async function runRun(engine: BrainEngine, f: ParsedFlags): Promise<void> {
   if (!exclusiveOneOf(f.queriesFile, f.query, f.fromCapture)) {
-    console.error(
-      `Must pass exactly one of: --queries-file FILE, --query "...", --from-capture.`,
-    );
+    console.error(`Must pass exactly one of: --queries-file FILE, --query "...", --from-capture.`);
     process.exit(2);
   }
 
@@ -250,12 +242,12 @@ async function runRun(engine: BrainEngine, f: ParsedFlags): Promise<void> {
   else if (f.query) queries = [f.query];
   else if (f.fromCapture) queries = await loadFromCapture(engine, f.limit);
 
-  if (typeof f.limit === 'number' && f.limit > 0) {
+  if (typeof f.limit === "number" && f.limit > 0) {
     queries = queries.slice(0, f.limit);
   }
 
   if (queries.length === 0) {
-    console.error('No queries to evaluate.');
+    console.error("No queries to evaluate.");
     process.exit(1);
   }
 
@@ -265,19 +257,20 @@ async function runRun(engine: BrainEngine, f: ParsedFlags): Promise<void> {
   // flag still wins as the highest-precedence override.
   const judgeModel = await resolveModel(engine, {
     cliFlag: f.judge,
-    configKey: 'models.eval.contradictions_judge',
-    tier: 'utility',
-    envVar: 'GBRAIN_CONTRADICTIONS_JUDGE_MODEL',
-    fallback: 'anthropic:claude-haiku-4-5',
+    configKey: "models.eval.contradictions_judge",
+    tier: "utility",
+    envVar: "GBRAIN_CONTRADICTIONS_JUDGE_MODEL",
+    fallback: "anthropic:claude-haiku-4-5",
   });
 
   // #1784: annotate the budget when it's the silent non-TTY default ($1) so the
   // 5-vs-1 difference isn't a surprise to pipe / cron / subagent callers.
-  const budgetSuffix = (process.stdout.isTTY !== true && !f.budgetUsdExplicit)
-    ? ' (non-interactive default; --budget-usd N to raise)'
-    : '';
+  const budgetSuffix =
+    process.stdout.isTTY !== true && !f.budgetUsdExplicit
+      ? " (non-interactive default; --budget-usd N to raise)"
+      : "";
   console.error(
-    `Contradiction probe: ${queries.length} queries, top-${f.topK}, judge=${judgeModel}, budget=$${f.budgetUsd.toFixed(2)}${budgetSuffix}.`,
+    `Contradiction probe: ${queries.length} queries, top-${f.topK}, judge=${judgeModel}, budget=$${f.budgetUsd.toFixed(2)}${budgetSuffix}.`
   );
 
   // v0.34 / Lane C: cost-estimate prompt — TTY-only Ctrl-C window before
@@ -290,8 +283,8 @@ async function runRun(engine: BrainEngine, f: ParsedFlags): Promise<void> {
     judgeModel,
     yesOverride: f.yes,
   });
-  if (promptResult.kind === 'abort') {
-    process.exit(0);  // intentional Ctrl-C — not an error
+  if (promptResult.kind === "abort") {
+    process.exit(0); // intentional Ctrl-C — not an error
   }
 
   // Refresh-cache: sweep before run so the cache misses on this pass.
@@ -321,11 +314,19 @@ async function runRun(engine: BrainEngine, f: ParsedFlags): Promise<void> {
     const pct = (n: number) => (n * 100).toFixed(0);
     const lines: string[] = [];
     lines.push(``);
-    lines.push(`Results: ${r.queries_evaluated} queries, top-${r.top_k} each, judge=${r.judge_model}`);
-    lines.push(`  Queries with >=1 contradiction: ${r.queries_with_contradiction} / ${r.queries_evaluated} (${pct(r.queries_with_contradiction / Math.max(1, r.queries_evaluated))}%)`);
+    lines.push(
+      `Results: ${r.queries_evaluated} queries, top-${r.top_k} each, judge=${r.judge_model}`
+    );
+    lines.push(
+      `  Queries with >=1 contradiction: ${r.queries_with_contradiction} / ${r.queries_evaluated} (${pct(r.queries_with_contradiction / Math.max(1, r.queries_evaluated))}%)`
+    );
     // v0.34 / Lane A2: broader finding count alongside the strict contradiction count.
-    lines.push(`  Queries with >=1 finding (any verdict): ${r.queries_with_any_finding} / ${r.queries_evaluated}`);
-    lines.push(`  Wilson CI 95%: ${pct(r.calibration.wilson_ci_95.lower)}–${pct(r.calibration.wilson_ci_95.upper)}%`);
+    lines.push(
+      `  Queries with >=1 finding (any verdict): ${r.queries_with_any_finding} / ${r.queries_evaluated}`
+    );
+    lines.push(
+      `  Wilson CI 95%: ${pct(r.calibration.wilson_ci_95.lower)}–${pct(r.calibration.wilson_ci_95.upper)}%`
+    );
     if (r.calibration.small_sample_note) {
       lines.push(`  Note: ${r.calibration.small_sample_note}`);
     }
@@ -340,14 +341,20 @@ async function runRun(engine: BrainEngine, f: ParsedFlags): Promise<void> {
     lines.push(`    temporal_evolution:    ${vb.temporal_evolution}`);
     lines.push(`    negation_artifact:     ${vb.negation_artifact}`);
     lines.push(`    no_contradiction:      ${vb.no_contradiction}`);
-    lines.push(`  Judge errors: ${r.judge_errors.total} (parse_fail=${r.judge_errors.parse_fail} timeout=${r.judge_errors.timeout} http_5xx=${r.judge_errors.http_5xx} refusal=${r.judge_errors.refusal})`);
-    lines.push(`  Cache: ${r.cache.hits} hits / ${r.cache.misses} misses (${pct(r.cache.hit_rate)}% hit-rate)`);
+    lines.push(
+      `  Judge errors: ${r.judge_errors.total} (parse_fail=${r.judge_errors.parse_fail} timeout=${r.judge_errors.timeout} http_5xx=${r.judge_errors.http_5xx} refusal=${r.judge_errors.refusal})`
+    );
+    lines.push(
+      `  Cache: ${r.cache.hits} hits / ${r.cache.misses} misses (${pct(r.cache.hit_rate)}% hit-rate)`
+    );
     lines.push(`  Source-tier breakdown:`);
     lines.push(`    curated_vs_curated: ${r.source_tier_breakdown.curated_vs_curated}`);
     lines.push(`    curated_vs_bulk:    ${r.source_tier_breakdown.curated_vs_bulk}`);
     lines.push(`    bulk_vs_bulk:       ${r.source_tier_breakdown.bulk_vs_bulk}`);
     lines.push(`    other:              ${r.source_tier_breakdown.other}`);
-    lines.push(`  Cost: $${r.cost_usd.total.toFixed(4)} (judge $${r.cost_usd.judge.toFixed(4)} + embedding $${r.cost_usd.embedding.toFixed(6)})`);
+    lines.push(
+      `  Cost: $${r.cost_usd.total.toFixed(4)} (judge $${r.cost_usd.judge.toFixed(4)} + embedding $${r.cost_usd.embedding.toFixed(6)})`
+    );
     lines.push(`  Duration: ${r.duration_ms}ms`);
     if (r.hot_pages.length > 0) {
       lines.push(`  Hot pages:`);
@@ -358,10 +365,10 @@ async function runRun(engine: BrainEngine, f: ParsedFlags): Promise<void> {
     if (out.capHitMidRun) {
       lines.push(`  *** budget cap hit mid-run; report is partial ***`);
     }
-    console.error(lines.join('\n'));
+    console.error(lines.join("\n"));
 
     if (f.output) {
-      const { writeFileSync } = await import('node:fs');
+      const { writeFileSync } = await import("node:fs");
       writeFileSync(f.output, JSON.stringify(r, null, 2));
       console.error(`Details: ${f.output}`);
     }
@@ -395,26 +402,26 @@ async function runTrend(engine: BrainEngine, f: ParsedFlags): Promise<void> {
 async function runReview(engine: BrainEngine, f: ParsedFlags): Promise<void> {
   const rows = await loadTrend(engine, 90);
   if (rows.length === 0) {
-    console.error('No probe runs in the last 90 days. Run the probe first.');
+    console.error("No probe runs in the last 90 days. Run the probe first.");
     process.exit(1);
   }
   const latest = rows[0];
   const report = latest.report_json;
   if (!report || !report.per_query) {
-    console.error('Latest run has no findings to review.');
+    console.error("Latest run has no findings to review.");
     return;
   }
   const allFindings: ContradictionFinding[] = report.per_query.flatMap((q) => q.contradictions);
   const filtered = f.severity ? allFindings.filter((c) => c.severity === f.severity) : allFindings;
   if (filtered.length === 0) {
-    console.error(`No findings${f.severity ? ` at severity=${f.severity}` : ''}.`);
+    console.error(`No findings${f.severity ? ` at severity=${f.severity}` : ""}.`);
     return;
   }
   filtered.sort((a, b) => compareSeverityDesc(a.severity, b.severity));
   const buckets = bucketBySeverity(filtered);
   // v0.34 / Lane A2: 'info' is the lowest severity bucket; iterate
   // high → medium → low → info so the report lands worst-first.
-  for (const sev of ['high', 'medium', 'low', 'info'] as const) {
+  for (const sev of ["high", "medium", "low", "info"] as const) {
     const items = buckets[sev];
     if (items.length === 0) continue;
     console.error(`\n${sev.toUpperCase()} severity (${items.length}):`);
@@ -430,7 +437,7 @@ async function runReview(engine: BrainEngine, f: ParsedFlags): Promise<void> {
 
 export async function runEvalSuspectedContradictions(
   engine: BrainEngine,
-  args: string[],
+  args: string[]
 ): Promise<void> {
   let flags: ParsedFlags;
   try {
@@ -444,7 +451,7 @@ export async function runEvalSuspectedContradictions(
     printHelp();
     return;
   }
-  if (flags.sub === 'run') return runRun(engine, flags);
-  if (flags.sub === 'trend') return runTrend(engine, flags);
-  if (flags.sub === 'review') return runReview(engine, flags);
+  if (flags.sub === "run") return runRun(engine, flags);
+  if (flags.sub === "trend") return runTrend(engine, flags);
+  if (flags.sub === "review") return runReview(engine, flags);
 }

@@ -27,9 +27,9 @@
  *     conservative for v1.
  */
 
-import { readFile } from 'node:fs/promises';
-import { isAbsolute } from 'node:path';
-import { SSRFError, fetchWithSSRFGuard } from '../ssrf-validate.ts';
+import { readFile } from "node:fs/promises";
+import { isAbsolute } from "node:path";
+import { SSRFError, fetchWithSSRFGuard } from "../ssrf-validate.ts";
 
 /** Max bytes for input image. Configurable via `search.image_query.max_bytes`. */
 export const DEFAULT_IMAGE_MAX_BYTES = 10 * 1024 * 1024;
@@ -50,19 +50,19 @@ export class ImageLoadError extends Error {
   readonly code: ImageLoadErrorCode;
   constructor(code: ImageLoadErrorCode, message: string) {
     super(message);
-    this.name = 'ImageLoadError';
+    this.name = "ImageLoadError";
     this.code = code;
   }
 }
 
 export type ImageLoadErrorCode =
-  | 'INVALID_FORMAT'
-  | 'OVERSIZED'
-  | 'INVALID_URL'
-  | 'FETCH_FAILED'
-  | 'TIMEOUT'
-  | 'SSRF_BLOCKED'
-  | 'NOT_FOUND';
+  | "INVALID_FORMAT"
+  | "OVERSIZED"
+  | "INVALID_URL"
+  | "FETCH_FAILED"
+  | "TIMEOUT"
+  | "SSRF_BLOCKED"
+  | "NOT_FOUND";
 
 export interface ImageLoadOpts {
   /** Override the default max-bytes cap. Defaults to DEFAULT_IMAGE_MAX_BYTES. */
@@ -81,27 +81,31 @@ export interface ImageLoadOpts {
  */
 export async function loadImageInput(
   input: string,
-  opts: ImageLoadOpts = {},
+  opts: ImageLoadOpts = {}
 ): Promise<LoadedImage> {
-  if (typeof input !== 'string' || input.length === 0) {
-    throw new ImageLoadError('INVALID_URL', 'Image input must be a non-empty string');
+  if (typeof input !== "string" || input.length === 0) {
+    throw new ImageLoadError("INVALID_URL", "Image input must be a non-empty string");
   }
   const maxBytes = opts.maxBytes ?? DEFAULT_IMAGE_MAX_BYTES;
 
   // Branch on input shape.
-  if (input.startsWith('data:')) {
+  if (input.startsWith("data:")) {
     return loadDataUri(input, maxBytes);
   }
-  if (input.startsWith('http://') || input.startsWith('https://')) {
-    return loadHttpUrl(input, { maxBytes, timeoutMs: opts.timeoutMs ?? 5000, maxRedirects: opts.maxRedirects ?? 3 });
+  if (input.startsWith("http://") || input.startsWith("https://")) {
+    return loadHttpUrl(input, {
+      maxBytes,
+      timeoutMs: opts.timeoutMs ?? 5000,
+      maxRedirects: opts.maxRedirects ?? 3,
+    });
   }
-  if (input.startsWith('file://') || isAbsolute(input)) {
-    const path = input.startsWith('file://') ? input.slice(7) : input;
+  if (input.startsWith("file://") || isAbsolute(input)) {
+    const path = input.startsWith("file://") ? input.slice(7) : input;
     return loadLocalPath(path, maxBytes);
   }
   throw new ImageLoadError(
-    'INVALID_URL',
-    `Unsupported image input shape: expected data: URI, http(s):// URL, file:// URI, or absolute path. Got: ${input.slice(0, 60)}`,
+    "INVALID_URL",
+    `Unsupported image input shape: expected data: URI, http(s):// URL, file:// URI, or absolute path. Got: ${input.slice(0, 60)}`
   );
 }
 
@@ -111,15 +115,15 @@ async function loadLocalPath(path: string, maxBytes: number): Promise<LoadedImag
     bytes = await readFile(path);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    if (msg.includes('ENOENT')) {
-      throw new ImageLoadError('NOT_FOUND', `File not found: ${path}`);
+    if (msg.includes("ENOENT")) {
+      throw new ImageLoadError("NOT_FOUND", `File not found: ${path}`);
     }
-    throw new ImageLoadError('FETCH_FAILED', `Failed to read ${path}: ${msg}`);
+    throw new ImageLoadError("FETCH_FAILED", `Failed to read ${path}: ${msg}`);
   }
   if (bytes.length > maxBytes) {
     throw new ImageLoadError(
-      'OVERSIZED',
-      `Image at ${path} is ${bytes.length} bytes; cap is ${maxBytes}`,
+      "OVERSIZED",
+      `Image at ${path} is ${bytes.length} bytes; cap is ${maxBytes}`
     );
   }
   const contentType = sniffContentType(bytes);
@@ -130,23 +134,26 @@ function loadDataUri(input: string, maxBytes: number): LoadedImage {
   // data:image/png;base64,<bytes>
   const match = input.match(/^data:([^;]+);base64,(.+)$/);
   if (!match) {
-    throw new ImageLoadError('INVALID_FORMAT', 'data: URI must be in `data:<mime>;base64,<bytes>` form');
+    throw new ImageLoadError(
+      "INVALID_FORMAT",
+      "data: URI must be in `data:<mime>;base64,<bytes>` form"
+    );
   }
   const declaredMime = match[1].toLowerCase();
   const b64 = match[2];
   let bytes: Buffer;
   try {
-    bytes = Buffer.from(b64, 'base64');
+    bytes = Buffer.from(b64, "base64");
   } catch (err) {
     throw new ImageLoadError(
-      'INVALID_FORMAT',
-      `Failed to decode base64: ${err instanceof Error ? err.message : String(err)}`,
+      "INVALID_FORMAT",
+      `Failed to decode base64: ${err instanceof Error ? err.message : String(err)}`
     );
   }
   if (bytes.length > maxBytes) {
     throw new ImageLoadError(
-      'OVERSIZED',
-      `Decoded image is ${bytes.length} bytes; cap is ${maxBytes}`,
+      "OVERSIZED",
+      `Decoded image is ${bytes.length} bytes; cap is ${maxBytes}`
     );
   }
   const sniffed = sniffContentType(bytes);
@@ -161,7 +168,7 @@ function loadDataUri(input: string, maxBytes: number): LoadedImage {
 
 async function loadHttpUrl(
   url: string,
-  opts: { maxBytes: number; timeoutMs: number; maxRedirects: number },
+  opts: { maxBytes: number; timeoutMs: number; maxRedirects: number }
 ): Promise<LoadedImage> {
   let res: Response;
   try {
@@ -171,28 +178,28 @@ async function loadHttpUrl(
     });
   } catch (err) {
     if (err instanceof SSRFError) {
-      throw new ImageLoadError('SSRF_BLOCKED', `SSRF: ${err.message}`);
+      throw new ImageLoadError("SSRF_BLOCKED", `SSRF: ${err.message}`);
     }
     const msg = err instanceof Error ? err.message : String(err);
-    if (msg.includes('abort')) {
-      throw new ImageLoadError('TIMEOUT', `Fetch timeout (${opts.timeoutMs}ms): ${url}`);
+    if (msg.includes("abort")) {
+      throw new ImageLoadError("TIMEOUT", `Fetch timeout (${opts.timeoutMs}ms): ${url}`);
     }
-    throw new ImageLoadError('FETCH_FAILED', `Fetch failed: ${msg}`);
+    throw new ImageLoadError("FETCH_FAILED", `Fetch failed: ${msg}`);
   }
   if (!res.ok) {
     throw new ImageLoadError(
-      'FETCH_FAILED',
-      `Fetch returned HTTP ${res.status}: ${res.statusText || ''}`,
+      "FETCH_FAILED",
+      `Fetch returned HTTP ${res.status}: ${res.statusText || ""}`
     );
   }
   // Pre-flight: reject oversized responses before reading the body.
-  const contentLengthHeader = res.headers.get('content-length');
+  const contentLengthHeader = res.headers.get("content-length");
   if (contentLengthHeader) {
     const declared = parseInt(contentLengthHeader, 10);
     if (Number.isFinite(declared) && declared > opts.maxBytes) {
       throw new ImageLoadError(
-        'OVERSIZED',
-        `Response Content-Length ${declared} exceeds cap ${opts.maxBytes}`,
+        "OVERSIZED",
+        `Response Content-Length ${declared} exceeds cap ${opts.maxBytes}`
       );
     }
   }
@@ -201,8 +208,8 @@ async function loadHttpUrl(
   const bytes = Buffer.from(arrayBuf);
   if (bytes.length > opts.maxBytes) {
     throw new ImageLoadError(
-      'OVERSIZED',
-      `Response body is ${bytes.length} bytes; cap is ${opts.maxBytes} (lying Content-Length?)`,
+      "OVERSIZED",
+      `Response body is ${bytes.length} bytes; cap is ${opts.maxBytes} (lying Content-Length?)`
     );
   }
   const contentType = sniffContentType(bytes);
@@ -219,22 +226,38 @@ async function loadHttpUrl(
  * Throws `ImageLoadError` with `code: 'INVALID_FORMAT'` for anything else.
  */
 function sniffContentType(bytes: Buffer): string {
-  if (bytes.length >= 8 &&
-      bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47 &&
-      bytes[4] === 0x0D && bytes[5] === 0x0A && bytes[6] === 0x1A && bytes[7] === 0x0A) {
-    return 'image/png';
+  if (
+    bytes.length >= 8 &&
+    bytes[0] === 0x89 &&
+    bytes[1] === 0x50 &&
+    bytes[2] === 0x4e &&
+    bytes[3] === 0x47 &&
+    bytes[4] === 0x0d &&
+    bytes[5] === 0x0a &&
+    bytes[6] === 0x1a &&
+    bytes[7] === 0x0a
+  ) {
+    return "image/png";
   }
-  if (bytes.length >= 3 && bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF) {
-    return 'image/jpeg';
+  if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
+    return "image/jpeg";
   }
-  if (bytes.length >= 12 &&
-      bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46 &&
-      bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50) {
-    return 'image/webp';
+  if (
+    bytes.length >= 12 &&
+    bytes[0] === 0x52 &&
+    bytes[1] === 0x49 &&
+    bytes[2] === 0x46 &&
+    bytes[3] === 0x46 &&
+    bytes[8] === 0x57 &&
+    bytes[9] === 0x45 &&
+    bytes[10] === 0x42 &&
+    bytes[11] === 0x50
+  ) {
+    return "image/webp";
   }
   throw new ImageLoadError(
-    'INVALID_FORMAT',
-    `Unsupported image format. Magic bytes: ${bytes.subarray(0, Math.min(12, bytes.length)).toString('hex')}. Accepted: PNG, JPEG, WebP.`,
+    "INVALID_FORMAT",
+    `Unsupported image format. Magic bytes: ${bytes.subarray(0, Math.min(12, bytes.length)).toString("hex")}. Accepted: PNG, JPEG, WebP.`
   );
 }
 
@@ -242,6 +265,6 @@ function finalize(bytes: Buffer, contentType: string): LoadedImage {
   return {
     contentType,
     bytes,
-    base64: bytes.toString('base64'),
+    base64: bytes.toString("base64"),
   };
 }

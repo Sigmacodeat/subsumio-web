@@ -16,8 +16,8 @@
  *   gbrain connector sync jira
  */
 
-import { BaseConnector, type ConnectorConfig, type ConnectorItem } from './base.ts';
-import type { IngestionEvent } from '../types.ts';
+import { BaseConnector, type ConnectorConfig, type ConnectorItem } from "./base.ts";
+import type { IngestionEvent } from "../types.ts";
 
 interface JiraIssue {
   id: string;
@@ -35,13 +35,15 @@ interface JiraIssue {
     priority?: { name: string };
     labels?: string[];
     project?: { key: string; name: string };
-    comment?: { comments: Array<{ body?: string; author?: { displayName: string }; created: string }> };
+    comment?: {
+      comments: Array<{ body?: string; author?: { displayName: string }; created: string }>;
+    };
   };
 }
 
 export class JiraConnector extends BaseConnector {
   constructor(config: ConnectorConfig = {}) {
-    super('jira', config);
+    super("jira", config);
   }
 
   getApiRateLimit() {
@@ -54,14 +56,18 @@ export class JiraConnector extends BaseConnector {
 
   async fetchDelta(cursor?: string): Promise<{ items: ConnectorItem[]; nextCursor?: string }> {
     const creds = this.getAccessToken();
-    if (!creds) throw new Error('Jira credentials missing. Run: gbrain connector add jira --api-key EMAIL:TOKEN --base-url https://your-domain.atlassian.net');
+    if (!creds)
+      throw new Error(
+        "Jira credentials missing. Run: gbrain connector add jira --api-key EMAIL:TOKEN --base-url https://your-domain.atlassian.net"
+      );
 
-    const baseUrl = (this._config.base_url as string) ?? '';
-    if (!baseUrl) throw new Error('Jira base_url missing. Pass --base-url https://your-domain.atlassian.net');
+    const baseUrl = (this._config.base_url as string) ?? "";
+    if (!baseUrl)
+      throw new Error("Jira base_url missing. Pass --base-url https://your-domain.atlassian.net");
 
     // Parse email:token from access token field.
-    const [email, token] = creds.includes(':') ? creds.split(':') : ['', creds];
-    const auth = Buffer.from(`${email}:${token}`).toString('base64');
+    const [email, token] = creds.includes(":") ? creds.split(":") : ["", creds];
+    const auth = Buffer.from(`${email}:${token}`).toString("base64");
 
     const projectFilter = (this._config.filters?.projects as string[]) ?? [];
     const issueTypeFilter = (this._config.filters?.issue_types as string[]) ?? [];
@@ -71,27 +77,30 @@ export class JiraConnector extends BaseConnector {
     const lastUpdated = cursor ?? new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
     // Build JQL.
-    let jql = `updated >= "${lastUpdated.replace('T', ' ').slice(0, 19)}"`;
+    let jql = `updated >= "${lastUpdated.replace("T", " ").slice(0, 19)}"`;
     if (projectFilter.length > 0) {
-      jql += ` AND project IN (${projectFilter.map((p) => `"${p}"`).join(',')})`;
+      jql += ` AND project IN (${projectFilter.map((p) => `"${p}"`).join(",")})`;
     }
     if (issueTypeFilter.length > 0) {
-      jql += ` AND issuetype IN (${issueTypeFilter.map((t) => `"${t}"`).join(',')})`;
+      jql += ` AND issuetype IN (${issueTypeFilter.map((t) => `"${t}"`).join(",")})`;
     }
     if (labelFilter.length > 0) {
-      jql += ` AND labels IN (${labelFilter.map((l) => `"${l}"`).join(',')})`;
+      jql += ` AND labels IN (${labelFilter.map((l) => `"${l}"`).join(",")})`;
     }
-    jql += ' ORDER BY updated ASC';
+    jql += " ORDER BY updated ASC";
 
     const url = new URL(`${baseUrl}/rest/api/2/search`);
-    url.searchParams.set('jql', jql);
-    url.searchParams.set('maxResults', String(this._config.batch_size ?? 50));
-    url.searchParams.set('fields', 'summary,description,created,updated,status,assignee,reporter,issuetype,priority,labels,project,comment');
+    url.searchParams.set("jql", jql);
+    url.searchParams.set("maxResults", String(this._config.batch_size ?? 50));
+    url.searchParams.set(
+      "fields",
+      "summary,description,created,updated,status,assignee,reporter,issuetype,priority,labels,project,comment"
+    );
 
     const res = await fetch(url.toString(), {
       headers: {
         Authorization: `Basic ${auth}`,
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
     });
 
@@ -100,7 +109,7 @@ export class JiraConnector extends BaseConnector {
       throw new Error(`Jira search failed: ${res.status} ${err}`);
     }
 
-    const data = await res.json() as { issues: JiraIssue[]; total: number };
+    const data = (await res.json()) as { issues: JiraIssue[]; total: number };
     const issues = data.issues ?? [];
 
     const items: ConnectorItem[] = [];
@@ -114,25 +123,29 @@ export class JiraConnector extends BaseConnector {
       const content = [
         `# ${issue.key}: ${f.summary}`,
         ``,
-        `- **Type:** ${f.issuetype?.name ?? 'Unknown'}`,
-        `- **Status:** ${f.status?.name ?? 'Unknown'}`,
-        `- **Priority:** ${f.priority?.name ?? 'None'}`,
-        f.assignee ? `- **Assignee:** ${f.assignee.displayName}` : '',
-        f.reporter ? `- **Reporter:** ${f.reporter.displayName}` : '',
-        f.labels?.length ? `- **Labels:** ${f.labels.join(', ')}` : '',
-        f.project ? `- **Project:** ${f.project.name} (${f.project.key})` : '',
+        `- **Type:** ${f.issuetype?.name ?? "Unknown"}`,
+        `- **Status:** ${f.status?.name ?? "Unknown"}`,
+        `- **Priority:** ${f.priority?.name ?? "None"}`,
+        f.assignee ? `- **Assignee:** ${f.assignee.displayName}` : "",
+        f.reporter ? `- **Reporter:** ${f.reporter.displayName}` : "",
+        f.labels?.length ? `- **Labels:** ${f.labels.join(", ")}` : "",
+        f.project ? `- **Project:** ${f.project.name} (${f.project.key})` : "",
         ``,
-        desc ? `## Description\n${desc}` : '',
-        comments.length > 0 ? `## Comments (${comments.length})` : '',
-        ...comments.map((c) => `**${c.author?.displayName ?? 'Unknown'}** (${c.created}):\n${c.body ?? ''}`),
-      ].filter(Boolean).join('\n\n');
+        desc ? `## Description\n${desc}` : "",
+        comments.length > 0 ? `## Comments (${comments.length})` : "",
+        ...comments.map(
+          (c) => `**${c.author?.displayName ?? "Unknown"}** (${c.created}):\n${c.body ?? ""}`
+        ),
+      ]
+        .filter(Boolean)
+        .join("\n\n");
 
       items.push({
         id: issue.id,
         title: `${issue.key}: ${f.summary}`,
         modified_at: f.updated,
         content,
-        content_type: 'text/markdown',
+        content_type: "text/markdown",
         url: `${baseUrl}/browse/${issue.key}`,
         metadata: {
           jira_key: issue.key,
@@ -160,7 +173,7 @@ export class JiraConnector extends BaseConnector {
       source_kind: this.kind,
       source_uri: item.url ?? `jira://${item.id}`,
       received_at: new Date().toISOString(),
-      content_type: 'text/markdown',
+      content_type: "text/markdown",
       content: item.content,
       content_hash: this.hashContent(item.content),
       metadata: item.metadata,
@@ -170,10 +183,10 @@ export class JiraConnector extends BaseConnector {
   // ── Helpers ───────────────────────────────────────────────────────
 
   private _extractDescription(desc: unknown): string {
-    if (!desc) return '';
-    if (typeof desc === 'string') return desc;
+    if (!desc) return "";
+    if (typeof desc === "string") return desc;
     // Atlassian Document Format (ADF) — extract text from nested content.
-    if (typeof desc === 'object' && desc !== null) {
+    if (typeof desc === "object" && desc !== null) {
       const obj = desc as Record<string, unknown>;
       const content = obj.content as Array<Record<string, unknown>> | undefined;
       if (content) {
@@ -181,13 +194,13 @@ export class JiraConnector extends BaseConnector {
           .map((block) => {
             const blockContent = block.content as Array<{ text?: string }> | undefined;
             if (blockContent) {
-              return blockContent.map((c) => c.text ?? '').join('');
+              return blockContent.map((c) => c.text ?? "").join("");
             }
-            return '';
+            return "";
           })
-          .join('\n');
+          .join("\n");
       }
     }
-    return '';
+    return "";
   }
 }

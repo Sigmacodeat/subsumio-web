@@ -29,9 +29,9 @@
  *   - Linux + macOS only (POSIX-only; tini/SIGCHLD don't exist on Windows)
  */
 
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
-import { spawn, execSync, type ChildProcess } from 'child_process';
-import { hasDatabase, setupDB, teardownDB } from './helpers.ts';
+import { describe, test, expect, beforeAll, afterAll } from "bun:test";
+import { spawn, execSync, type ChildProcess } from "child_process";
+import { hasDatabase, setupDB, teardownDB } from "./helpers.ts";
 
 // v0.41 known fragility: when a migration version bump lands (e.g. v92→v93),
 // this test's submit/get subprocess pair races with the spawned worker's
@@ -44,19 +44,19 @@ import { hasDatabase, setupDB, teardownDB } from './helpers.ts';
 // v0.42+: rework the test to use a dedicated DB or one shared engine.
 // Skip-gate honored when GBRAIN_E2E_SKIP_ZOMBIE_REAPING=1 (opt-in for CI).
 const skipReason: string | null = !hasDatabase()
-  ? 'DATABASE_URL not set'
-  : process.platform === 'win32'
-    ? 'POSIX-only (tini/SIGCHLD)'
-    : process.env.GBRAIN_E2E_SKIP_ZOMBIE_REAPING === '1'
-      ? 'opt-out via GBRAIN_E2E_SKIP_ZOMBIE_REAPING=1 (v0.41 migration-bump fragility)'
+  ? "DATABASE_URL not set"
+  : process.platform === "win32"
+    ? "POSIX-only (tini/SIGCHLD)"
+    : process.env.GBRAIN_E2E_SKIP_ZOMBIE_REAPING === "1"
+      ? "opt-out via GBRAIN_E2E_SKIP_ZOMBIE_REAPING=1 (v0.41 migration-bump fragility)"
       : null;
 
 const describeE2E = skipReason ? describe.skip : describe;
 if (skipReason) console.log(`Skipping E2E zombie-reaping tests (${skipReason})`);
 
-describeE2E('SIGCHLD handler reaps shell-job children (real binary)', () => {
+describeE2E("SIGCHLD handler reaps shell-job children (real binary)", () => {
   let workerProc: ChildProcess | null = null;
-  let workerStderr = '';
+  let workerStderr = "";
   let submittedJobIds: number[] = [];
 
   beforeAll(async () => {
@@ -76,97 +76,101 @@ describeE2E('SIGCHLD handler reaps shell-job children (real binary)', () => {
     // Forward DATABASE_URL explicitly so the subprocess can't fall through to
     // any config-file-derived default (PGLite at $HOME/.gbrain/...) under
     // run-e2e.sh's tmpdir HOME isolation, where the config file is absent.
-    workerProc = spawn(
-      'bun',
-      ['run', 'src/cli.ts', 'jobs', 'work', '--concurrency', '1'],
-      {
-        cwd: process.cwd(),
-        env: {
-          ...process.env,
-          GBRAIN_ALLOW_SHELL_JOBS: '1',
-          DATABASE_URL: process.env.DATABASE_URL ?? '',
-        },
-        stdio: ['ignore', 'pipe', 'pipe'],
+    workerProc = spawn("bun", ["run", "src/cli.ts", "jobs", "work", "--concurrency", "1"], {
+      cwd: process.cwd(),
+      env: {
+        ...process.env,
+        GBRAIN_ALLOW_SHELL_JOBS: "1",
+        DATABASE_URL: process.env.DATABASE_URL ?? "",
       },
-    );
+      stdio: ["ignore", "pipe", "pipe"],
+    });
 
-    workerProc.stderr?.on('data', (d: Buffer) => { workerStderr += d.toString(); });
-    let workerStdout = '';
-    workerProc.stdout?.on('data', (d: Buffer) => { workerStdout += d.toString(); });
+    workerProc.stderr?.on("data", (d: Buffer) => {
+      workerStderr += d.toString();
+    });
+    let workerStdout = "";
+    workerProc.stdout?.on("data", (d: Buffer) => {
+      workerStdout += d.toString();
+    });
 
     // Wait for "Minion worker started" or similar readiness signal.
     let ready = false;
     for (let i = 0; i < 60; i++) {
       const combined = workerStdout + workerStderr;
-      if (/worker.*(started|polling|registered)/i.test(combined)
-          || /handlers/i.test(combined)
-          || combined.length > 500) { // worker has logged enough that it's clearly running
+      if (
+        /worker.*(started|polling|registered)/i.test(combined) ||
+        /handlers/i.test(combined) ||
+        combined.length > 500
+      ) {
+        // worker has logged enough that it's clearly running
         // Probe by submitting a no-op job; if that succeeds the worker is up.
         // Heuristic: any output beyond startup banner indicates ready.
         ready = true;
         break;
       }
-      await new Promise(r => setTimeout(r, 250));
+      await new Promise((r) => setTimeout(r, 250));
     }
     // Even if we don't see a clear "started" line, give the worker 1 more second
     // for the queue claim loop to spin up before the first test runs.
-    await new Promise(r => setTimeout(r, 1000));
+    await new Promise((r) => setTimeout(r, 1000));
     if (!ready) {
       // Don't throw — proceed and let the test's actual assertion catch issues.
       // eslint-disable-next-line no-console
-      console.warn('[zombie-reaping E2E] worker readiness not detected; continuing anyway. stderr tail:\n', workerStderr.slice(-500));
+      console.warn(
+        "[zombie-reaping E2E] worker readiness not detected; continuing anyway. stderr tail:\n",
+        workerStderr.slice(-500)
+      );
     }
   }, 30_000);
 
   afterAll(async () => {
     if (workerProc && !workerProc.killed) {
-      workerProc.kill('SIGTERM');
-      await new Promise(r => setTimeout(r, 1500));
-      if (!workerProc.killed) workerProc.kill('SIGKILL');
+      workerProc.kill("SIGTERM");
+      await new Promise((r) => setTimeout(r, 1500));
+      if (!workerProc.killed) workerProc.kill("SIGKILL");
     }
     // Best-effort cleanup of any submitted jobs to keep the queue clean
     // for subsequent test runs.
     for (const id of submittedJobIds) {
       try {
-        execSync(`bun run src/cli.ts jobs delete ${id}`,
-          {
-            cwd: process.cwd(),
-            encoding: 'utf8',
-            env: {
-              ...process.env,
-              DATABASE_URL: process.env.DATABASE_URL ?? '',
-            },
-            stdio: 'pipe',
-          });
-      } catch { /* best effort */ }
+        execSync(`bun run src/cli.ts jobs delete ${id}`, {
+          cwd: process.cwd(),
+          encoding: "utf8",
+          env: {
+            ...process.env,
+            DATABASE_URL: process.env.DATABASE_URL ?? "",
+          },
+          stdio: "pipe",
+        });
+      } catch {
+        /* best effort */
+      }
     }
   }, 30_000);
 
-  test('shell-job child does NOT linger as a zombie (Z state) after exit', async () => {
+  test("shell-job child does NOT linger as a zombie (Z state) after exit", async () => {
     // Submit a shell job that sleeps briefly then exits 0. Worker spawns
     // /bin/sh as a child; without the SIGCHLD handler the sh process would
     // sit in the PID table as a zombie until the worker process itself dies.
-    const params = JSON.stringify({ cmd: 'sleep 0.2', cwd: '/tmp' });
-    let submitOut = '';
+    const params = JSON.stringify({ cmd: "sleep 0.2", cwd: "/tmp" });
+    let submitOut = "";
     try {
-      submitOut = execSync(
-        `bun run src/cli.ts jobs submit shell --params '${params}'`,
-        {
-          cwd: process.cwd(),
-          encoding: 'utf8',
-          // GBRAIN_ALLOW_SHELL_JOBS=1 also gates the CLI submit path, not
-          // just the worker that executes the job.
-          env: {
-            ...process.env,
-            GBRAIN_ALLOW_SHELL_JOBS: '1',
-            DATABASE_URL: process.env.DATABASE_URL ?? '',
-          },
+      submitOut = execSync(`bun run src/cli.ts jobs submit shell --params '${params}'`, {
+        cwd: process.cwd(),
+        encoding: "utf8",
+        // GBRAIN_ALLOW_SHELL_JOBS=1 also gates the CLI submit path, not
+        // just the worker that executes the job.
+        env: {
+          ...process.env,
+          GBRAIN_ALLOW_SHELL_JOBS: "1",
+          DATABASE_URL: process.env.DATABASE_URL ?? "",
         },
-      );
+      });
     } catch (e: unknown) {
       const err = e as { stdout?: Buffer; stderr?: Buffer };
       throw new Error(
-        `jobs submit failed:\n${err.stderr?.toString() ?? ''}\n${err.stdout?.toString() ?? ''}`,
+        `jobs submit failed:\n${err.stderr?.toString() ?? ""}\n${err.stdout?.toString() ?? ""}`
       );
     }
     // Without --follow, `jobs submit` prints the full job as JSON on stdout.
@@ -177,7 +181,7 @@ describeE2E('SIGCHLD handler reaps shell-job children (real binary)', () => {
     } catch {
       throw new Error(`Could not parse jobs submit output as JSON:\n${submitOut.slice(0, 500)}`);
     }
-    expect(typeof jobId).toBe('number');
+    expect(typeof jobId).toBe("number");
     submittedJobIds.push(jobId);
 
     // Poll `jobs get` until status COMPLETED (≤ 10s) and parse the Result
@@ -185,52 +189,53 @@ describeE2E('SIGCHLD handler reaps shell-job children (real binary)', () => {
     let resultObj: { pid?: number; exit_code?: number } | null = null;
     const deadline = Date.now() + 10_000;
     while (Date.now() < deadline) {
-      const out = execSync(
-        `bun run src/cli.ts jobs get ${jobId}`,
-        {
-          cwd: process.cwd(),
-          encoding: 'utf8',
-          env: {
-            ...process.env,
-            DATABASE_URL: process.env.DATABASE_URL ?? '',
-          },
+      const out = execSync(`bun run src/cli.ts jobs get ${jobId}`, {
+        cwd: process.cwd(),
+        encoding: "utf8",
+        env: {
+          ...process.env,
+          DATABASE_URL: process.env.DATABASE_URL ?? "",
         },
-      );
+      });
       if (/COMPLETED/i.test(out)) {
         const m = out.match(/Result:\s+({.*})/);
         if (m) {
-          try { resultObj = JSON.parse(m[1]); } catch { /* try again */ }
+          try {
+            resultObj = JSON.parse(m[1]);
+          } catch {
+            /* try again */
+          }
         }
         if (resultObj) break;
       }
-      await new Promise(r => setTimeout(r, 250));
+      await new Promise((r) => setTimeout(r, 250));
     }
 
     if (!resultObj) {
       throw new Error(
-        `Job ${jobId} did not complete within 10s. Worker stderr tail:\n${workerStderr.slice(-1000)}`,
+        `Job ${jobId} did not complete within 10s. Worker stderr tail:\n${workerStderr.slice(-1000)}`
       );
     }
 
     expect(resultObj.exit_code).toBe(0);
-    expect(typeof resultObj.pid).toBe('number');
+    expect(typeof resultObj.pid).toBe("number");
     const childPid = resultObj.pid as number;
 
     // Give SIGCHLD a chance to fire and the worker to reap. The shell
     // process exited at submit + ~200ms; we poll the next ~500ms.
-    await new Promise(r => setTimeout(r, 300));
+    await new Promise((r) => setTimeout(r, 300));
 
     // ps -o stat= -p PID prints the stat column with no header. Empty
     // output means the process is gone (reaped or never existed). 'Z'
     // means it's lingering as a zombie — this would prove the SIGCHLD
     // handler regressed.
-    let psOut = '';
+    let psOut = "";
     try {
-      psOut = execSync(`ps -o stat= -p ${childPid}`, { encoding: 'utf8' }).trim();
+      psOut = execSync(`ps -o stat= -p ${childPid}`, { encoding: "utf8" }).trim();
     } catch {
       // ps exits non-zero when no matching process. That's the GOOD case
       // (process reaped, no PID entry). Treat as empty.
-      psOut = '';
+      psOut = "";
     }
 
     expect(psOut).not.toMatch(/^Z/);

@@ -37,6 +37,7 @@ flows through in both directions.
 ## Contract
 
 This skill guarantees:
+
 - Brain is checked BEFORE any external API call (brain-first lookup)
 - Every inbound signal triggers the READ → ENRICH → WRITE loop
 - Every outbound response checks brain for relevant context
@@ -114,6 +115,7 @@ ingest event.
 - Data shared → delegate to appropriate skill
 
 **Rules:**
+
 - Never interrupt the conversation to do enrichment
 - Spawn sub-agents for anything that would slow down the response
 - Never announce "I'm enriching the brain" — just do it silently
@@ -133,6 +135,7 @@ citation MUST include the source id: `[source-id:slug]`. Example:
 > this came from.
 
 Rules:
+
 - The key is `sources.id` (immutable), never `sources.name` (mutable display).
 - Single-source brains still write `[default:slug]` OR may omit the prefix
   for backward compat.

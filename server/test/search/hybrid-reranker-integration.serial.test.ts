@@ -17,16 +17,16 @@
  * gateway.rerank.
  */
 
-import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
-import { PGLiteEngine } from '../../src/core/pglite-engine.ts';
-import { hybridSearch } from '../../src/core/search/hybrid.ts';
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import { PGLiteEngine } from "../../src/core/pglite-engine.ts";
+import { hybridSearch } from "../../src/core/search/hybrid.ts";
 import {
   configureGateway,
   resetGateway,
   __setEmbedTransportForTests,
-} from '../../src/core/ai/gateway.ts';
-import type { PageInput, SearchOpts } from '../../src/core/types.ts';
-import type { RerankInput, RerankResult } from '../../src/core/ai/gateway.ts';
+} from "../../src/core/ai/gateway.ts";
+import type { PageInput, SearchOpts } from "../../src/core/types.ts";
+import type { RerankInput, RerankResult } from "../../src/core/ai/gateway.ts";
 
 let engine: PGLiteEngine;
 
@@ -34,9 +34,12 @@ const DIMS = 1536; // gateway default embedding dim
 const FAKE_EMB = Array.from({ length: DIMS }, (_, j) => (j === 0 ? 1 : 0.01));
 
 function stubEmbeddings(): void {
-  __setEmbedTransportForTests(async (args: any) => ({
-    embeddings: args.values.map(() => FAKE_EMB),
-  }) as any);
+  __setEmbedTransportForTests(
+    async (args: any) =>
+      ({
+        embeddings: args.values.map(() => FAKE_EMB),
+      }) as any
+  );
 }
 
 beforeAll(async () => {
@@ -51,15 +54,31 @@ beforeAll(async () => {
   // so keyword search has rows to find without needing the full
   // chunker + embed pipeline.
   const pages: Array<[string, PageInput, string]> = [
-    ['notes/alpha', { type: 'note', title: 'Alpha Note', compiled_truth: 'alpha keyword content one' }, 'alpha keyword content one chunk'],
-    ['notes/beta',  { type: 'note', title: 'Beta Note',  compiled_truth: 'alpha keyword content two' }, 'alpha keyword content two chunk'],
-    ['notes/gamma', { type: 'note', title: 'Gamma Note', compiled_truth: 'alpha keyword content three' }, 'alpha keyword content three chunk'],
-    ['notes/delta', { type: 'note', title: 'Delta Note', compiled_truth: 'alpha keyword content four' }, 'alpha keyword content four chunk'],
+    [
+      "notes/alpha",
+      { type: "note", title: "Alpha Note", compiled_truth: "alpha keyword content one" },
+      "alpha keyword content one chunk",
+    ],
+    [
+      "notes/beta",
+      { type: "note", title: "Beta Note", compiled_truth: "alpha keyword content two" },
+      "alpha keyword content two chunk",
+    ],
+    [
+      "notes/gamma",
+      { type: "note", title: "Gamma Note", compiled_truth: "alpha keyword content three" },
+      "alpha keyword content three chunk",
+    ],
+    [
+      "notes/delta",
+      { type: "note", title: "Delta Note", compiled_truth: "alpha keyword content four" },
+      "alpha keyword content four chunk",
+    ],
   ];
   for (const [slug, page, chunkText] of pages) {
     await engine.putPage(slug, page);
     await engine.upsertChunks(slug, [
-      { chunk_index: 0, chunk_text: chunkText, chunk_source: 'compiled_truth' },
+      { chunk_index: 0, chunk_text: chunkText, chunk_source: "compiled_truth" },
     ]);
   }
 
@@ -74,9 +93,9 @@ beforeAll(async () => {
   // keyword-only branch is skipped and the main path runs RRF + dedup +
   // reranker + budget.
   configureGateway({
-    embedding_model: 'openai:text-embedding-3-large',
+    embedding_model: "openai:text-embedding-3-large",
     embedding_dimensions: DIMS,
-    env: { OPENAI_API_KEY: 'sk-test' },
+    env: { OPENAI_API_KEY: "sk-test" },
   });
   stubEmbeddings();
 });
@@ -87,8 +106,8 @@ afterAll(async () => {
   await engine.disconnect();
 });
 
-describe('hybridSearch — reranker disabled (pass-through)', () => {
-  test('opts.reranker undefined: reranker does NOT fire', async () => {
+describe("hybridSearch — reranker disabled (pass-through)", () => {
+  test("opts.reranker undefined: reranker does NOT fire", async () => {
     let called = 0;
     const opts: SearchOpts = {
       limit: 10,
@@ -96,17 +115,20 @@ describe('hybridSearch — reranker disabled (pass-through)', () => {
         enabled: false,
         topNIn: 30,
         topNOut: null,
-        rerankerFn: async () => { called++; return []; },
+        rerankerFn: async () => {
+          called++;
+          return [];
+        },
       },
     };
-    const out = await hybridSearch(engine, 'alpha', opts);
+    const out = await hybridSearch(engine, "alpha", opts);
     expect(out.length).toBeGreaterThan(0);
     expect(called).toBe(0);
   });
 });
 
-describe('hybridSearch — reranker enabled (reorder)', () => {
-  test('rerankerFn receives a non-empty document list', async () => {
+describe("hybridSearch — reranker enabled (reorder)", () => {
+  test("rerankerFn receives a non-empty document list", async () => {
     let receivedDocs: string[] = [];
     const opts: SearchOpts = {
       limit: 10,
@@ -120,13 +142,13 @@ describe('hybridSearch — reranker enabled (reorder)', () => {
         },
       },
     };
-    const out = await hybridSearch(engine, 'alpha keyword', opts);
+    const out = await hybridSearch(engine, "alpha keyword", opts);
     expect(out.length).toBeGreaterThan(0);
     expect(receivedDocs.length).toBeGreaterThan(0);
     expect(receivedDocs.length).toBe(out.length); // when topNIn >= pool, all sent
   });
 
-  test('rerankerFn output controls final order (reverse the RRF order)', async () => {
+  test("rerankerFn output controls final order (reverse the RRF order)", async () => {
     let originalOrder: string[] = [];
     const opts: SearchOpts = {
       limit: 10,
@@ -144,25 +166,25 @@ describe('hybridSearch — reranker enabled (reorder)', () => {
       },
     };
     // First run: collect the original RRF order (rerankerFn off).
-    const baseline = await hybridSearch(engine, 'alpha keyword', {
+    const baseline = await hybridSearch(engine, "alpha keyword", {
       ...opts,
       reranker: { ...opts.reranker!, enabled: false },
     });
-    originalOrder = baseline.map(r => r.slug);
+    originalOrder = baseline.map((r) => r.slug);
 
     // Second run: reranker reverses.
-    const reranked = await hybridSearch(engine, 'alpha keyword', opts);
-    const rerankedOrder = reranked.map(r => r.slug);
+    const reranked = await hybridSearch(engine, "alpha keyword", opts);
+    const rerankedOrder = reranked.map((r) => r.slug);
 
     expect(rerankedOrder).toEqual([...originalOrder].reverse());
   });
 
-  test('un-reranked tail preserves RRF order (topNIn=2 with N candidates)', async () => {
+  test("un-reranked tail preserves RRF order (topNIn=2 with N candidates)", async () => {
     // First baseline. PGLite's hybrid path + dedup may collapse some
     // chunks; we need at least 3 candidates (2 reranked head + 1
     // preserved tail) for this assertion to be meaningful.
-    const baseline = await hybridSearch(engine, 'alpha keyword', { limit: 10 });
-    const baselineOrder = baseline.map(r => r.slug);
+    const baseline = await hybridSearch(engine, "alpha keyword", { limit: 10 });
+    const baselineOrder = baseline.map((r) => r.slug);
     expect(baselineOrder.length).toBeGreaterThanOrEqual(3);
 
     // Now rerank only the top 2 (swap them); the tail (indices 2..N-1)
@@ -172,7 +194,7 @@ describe('hybridSearch — reranker enabled (reorder)', () => {
     // dropping the un-scored tail. This test isolates RERANKER tail mechanics,
     // so disable autocut here — in real balanced mode top_n_in = searchLimit
     // (D4), so topNIn < pool with an un-scored tail never happens by default.
-    const reranked = await hybridSearch(engine, 'alpha keyword', {
+    const reranked = await hybridSearch(engine, "alpha keyword", {
       limit: 10,
       autocut: false,
       reranker: {
@@ -185,7 +207,7 @@ describe('hybridSearch — reranker enabled (reorder)', () => {
         ],
       },
     });
-    const rerankedOrder = reranked.map(r => r.slug);
+    const rerankedOrder = reranked.map((r) => r.slug);
 
     // Head reordered: positions 0 and 1 swapped.
     expect(rerankedOrder[0]).toBe(baselineOrder[1]);
@@ -194,7 +216,7 @@ describe('hybridSearch — reranker enabled (reorder)', () => {
     expect(rerankedOrder.slice(2)).toEqual(baselineOrder.slice(2));
   });
 
-  test('rerank score stamps onto results', async () => {
+  test("rerank score stamps onto results", async () => {
     const opts: SearchOpts = {
       limit: 10,
       reranker: {
@@ -205,26 +227,28 @@ describe('hybridSearch — reranker enabled (reorder)', () => {
           input.documents.map((_, i) => ({ index: i, relevanceScore: 0.5 - i * 0.05 })),
       },
     };
-    const out = await hybridSearch(engine, 'alpha keyword', opts);
+    const out = await hybridSearch(engine, "alpha keyword", opts);
     expect(out.length).toBeGreaterThan(0);
     // First result has the highest reranker score (0.5).
     expect((out[0] as any).rerank_score).toBe(0.5);
   });
 });
 
-describe('hybridSearch — fail-open contract end-to-end', () => {
-  test('rerankerFn throws → results still come back (RRF order preserved)', async () => {
-    const baseline = await hybridSearch(engine, 'alpha keyword', { limit: 10 });
-    const reranked = await hybridSearch(engine, 'alpha keyword', {
+describe("hybridSearch — fail-open contract end-to-end", () => {
+  test("rerankerFn throws → results still come back (RRF order preserved)", async () => {
+    const baseline = await hybridSearch(engine, "alpha keyword", { limit: 10 });
+    const reranked = await hybridSearch(engine, "alpha keyword", {
       limit: 10,
       reranker: {
         enabled: true,
         topNIn: 30,
         topNOut: null,
-        rerankerFn: async () => { throw new Error('upstream down'); },
+        rerankerFn: async () => {
+          throw new Error("upstream down");
+        },
       },
     });
     // Same items, same order — applyReranker fail-open.
-    expect(reranked.map(r => r.slug)).toEqual(baseline.map(r => r.slug));
+    expect(reranked.map((r) => r.slug)).toEqual(baseline.map((r) => r.slug));
   });
 });

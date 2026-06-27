@@ -40,12 +40,8 @@ function makeInvoiceData(overrides: Partial<InvoicePdfData> = {}): InvoicePdfDat
     client: "Max Mustermann",
     date: "2024-06-01",
     dueDate: "2024-06-15",
-    items: [
-      { description: "Beratung", date: "2024-05-30", hours: 2.5, rate: 200, amount: 500 },
-    ],
-    expenses: [
-      { description: "Gerichtskosten", date: "2024-05-28", amount: 50 },
-    ],
+    items: [{ description: "Beratung", date: "2024-05-30", hours: 2.5, rate: 200, amount: 500 }],
+    expenses: [{ description: "Gerichtskosten", date: "2024-05-28", amount: 50 }],
     subtotal: 500,
     expenseTotal: 50,
     advancePayment: 0,

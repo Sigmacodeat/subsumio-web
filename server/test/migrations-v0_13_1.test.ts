@@ -13,31 +13,31 @@
  * in test/apply-migrations.test.ts.
  */
 
-import { describe, test, expect, beforeEach, afterAll } from 'bun:test';
-import { tmpdir } from 'os';
-import { mkdtempSync, rmSync, existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
-import { join } from 'path';
+import { describe, test, expect, beforeEach, afterAll } from "bun:test";
+import { tmpdir } from "os";
+import { mkdtempSync, rmSync, existsSync, readFileSync, writeFileSync, mkdirSync } from "fs";
+import { join } from "path";
 
-import { migrations, getMigration } from '../src/commands/migrations/index.ts';
-import { v0_13_1 } from '../src/commands/migrations/v0_13_1.ts';
+import { migrations, getMigration } from "../src/commands/migrations/index.ts";
+import { v0_13_1 } from "../src/commands/migrations/v0_13_1.ts";
 
 // ---------------------------------------------------------------------------
 // Registry shape
 // ---------------------------------------------------------------------------
 
-describe('migrations registry', () => {
-  test('v0.13.1 is registered', () => {
-    const m = getMigration('0.13.1');
+describe("migrations registry", () => {
+  test("v0.13.1 is registered", () => {
+    const m = getMigration("0.13.1");
     expect(m).not.toBeNull();
-    expect(m?.version).toBe('0.13.1');
+    expect(m?.version).toBe("0.13.1");
   });
 
-  test('v0.13.1 is listed in semver order after v0.12.0', () => {
-    const versions = migrations.map(m => m.version);
-    expect(versions.indexOf('0.13.1')).toBeGreaterThan(versions.indexOf('0.12.0'));
+  test("v0.13.1 is listed in semver order after v0.12.0", () => {
+    const versions = migrations.map((m) => m.version);
+    expect(versions.indexOf("0.13.1")).toBeGreaterThan(versions.indexOf("0.12.0"));
   });
 
-  test('v0.13.1 feature pitch has headline + description', () => {
+  test("v0.13.1 feature pitch has headline + description", () => {
     expect(v0_13_1.featurePitch.headline.length).toBeGreaterThan(10);
     expect(v0_13_1.featurePitch.description?.length).toBeGreaterThan(20);
   });
@@ -58,12 +58,12 @@ describe('migrations registry', () => {
 // frontmatter") and the per-page frontmatter preservation logic in the
 // setFrontmatterField test.
 
-describe('v0_13_1 orchestrator — dry-run path', () => {
+describe("v0_13_1 orchestrator — dry-run path", () => {
   const ORIG_HOME = process.env.HOME;
   let tmpHome: string;
 
   beforeEach(() => {
-    tmpHome = mkdtempSync(join(tmpdir(), 'v0_13_1-'));
+    tmpHome = mkdtempSync(join(tmpdir(), "v0_13_1-"));
     process.env.HOME = tmpHome;
   });
 
@@ -71,11 +71,15 @@ describe('v0_13_1 orchestrator — dry-run path', () => {
     process.env.HOME = ORIG_HOME;
   });
 
-  test('dryRun skips the connect phase', async () => {
-    const result = await v0_13_1.orchestrator({ yes: true, dryRun: true, noAutopilotInstall: true });
-    const connectPhase = result.phases.find(p => p.name === 'connect');
-    expect(connectPhase?.status).toBe('skipped');
-    expect(connectPhase?.detail).toBe('dry-run');
+  test("dryRun skips the connect phase", async () => {
+    const result = await v0_13_1.orchestrator({
+      yes: true,
+      dryRun: true,
+      noAutopilotInstall: true,
+    });
+    const connectPhase = result.phases.find((p) => p.name === "connect");
+    expect(connectPhase?.status).toBe("skipped");
+    expect(connectPhase?.detail).toBe("dry-run");
 
     rmSync(tmpHome, { recursive: true, force: true });
   });

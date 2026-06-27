@@ -28,48 +28,44 @@
  * extensible from the override.
  */
 
-import { existsSync, readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
-import { callGbrainOp } from './gbrain-client.mjs';
+import { existsSync, readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
+import { callGbrainOp } from "./gbrain-client.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // Default read-only allow-list. KEEP IN SYNC with tests/unit/tools-allowlist.test.mjs.
 export const READ_ONLY_OPS = Object.freeze([
-  'search',
-  'query',
-  'get_page',
-  'list_pages',
-  'find_experts',
-  'get_recent_salience',
-  'get_recent_transcripts',
-  'read_article',
+  "search",
+  "query",
+  "get_page",
+  "list_pages",
+  "find_experts",
+  "get_recent_salience",
+  "get_recent_transcripts",
+  "read_article",
 ]);
 
 // Optional ops the operator MAY opt in to via tools-allowlist.local.json.
 // These are write-shaped but bounded: a reminder, a brain-log, an enrich
 // nudge. Crucially: not put_page (no arbitrary brain edits), not submit_job
 // (no shell), not file_upload, not delete_page.
-export const OPTIONAL_OPS = Object.freeze([
-  'set_reminder',
-  'log_to_brain',
-  'enrich_request',
-]);
+export const OPTIONAL_OPS = Object.freeze(["set_reminder", "log_to_brain", "enrich_request"]);
 
 // Permanent denylist — never extendable via override, regardless of what the
 // override file says. These cross the trust boundary in ways that would
 // allow a prompt-injection attack to escalate to RCE or arbitrary write.
 export const DENYLIST = Object.freeze([
-  'put_page',
-  'submit_job',
-  'file_upload',
-  'delete_page',
-  'file_url',
-  'sync_brain',
-  'apply_migrations',
-  'work',
-  'shell',
+  "put_page",
+  "submit_job",
+  "file_upload",
+  "delete_page",
+  "file_url",
+  "sync_brain",
+  "apply_migrations",
+  "work",
+  "shell",
 ]);
 
 /**
@@ -84,13 +80,13 @@ export function getEffectiveAllowlist({ forceReload = false } = {}) {
   if (_effective && !forceReload) return _effective;
 
   const allowed = new Set(READ_ONLY_OPS);
-  const overridePath = join(__dirname, 'tools-allowlist.local.json');
+  const overridePath = join(__dirname, "tools-allowlist.local.json");
   if (existsSync(overridePath)) {
     try {
-      const override = JSON.parse(readFileSync(overridePath, 'utf8'));
+      const override = JSON.parse(readFileSync(overridePath, "utf8"));
       if (Array.isArray(override?.extend)) {
         for (const name of override.extend) {
-          if (typeof name !== 'string') continue;
+          if (typeof name !== "string") continue;
           if (DENYLIST.includes(name)) {
             console.warn(`[tools] ignoring denylisted op in override: ${name}`);
             continue;
@@ -122,7 +118,7 @@ export function rejectedToolResult(opName, reason) {
       code: reason,
       op: opName,
       message:
-        reason === 'denylisted'
+        reason === "denylisted"
           ? `Tool "${opName}" is permanently disabled in voice agents. Use a different surface.`
           : `Tool "${opName}" is not in the voice agent's allow-list. The operator can opt in via tools-allowlist.local.json if appropriate.`,
     },
@@ -139,12 +135,12 @@ export async function dispatchTool(opName, params, { forceReload = false } = {})
   // Denylist check first — even if someone added it to the allow-list,
   // denylisted ops are never callable from voice.
   if (DENYLIST.includes(opName)) {
-    return rejectedToolResult(opName, 'denylisted');
+    return rejectedToolResult(opName, "denylisted");
   }
 
   const allowlist = getEffectiveAllowlist({ forceReload });
   if (!allowlist.includes(opName)) {
-    return rejectedToolResult(opName, 'not_in_allowlist');
+    return rejectedToolResult(opName, "not_in_allowlist");
   }
 
   // Allow-listed — call gbrain MCP.
@@ -154,7 +150,7 @@ export async function dispatchTool(opName, params, { forceReload = false } = {})
   } catch (err) {
     return {
       error: {
-        code: 'mcp_error',
+        code: "mcp_error",
         op: opName,
         message: err?.message || String(err),
       },

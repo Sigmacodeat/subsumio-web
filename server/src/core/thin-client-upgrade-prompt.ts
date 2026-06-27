@@ -19,14 +19,24 @@
  * - D8 — Only prompt on minor/major drift; patch drift silent.
  */
 
-import { existsSync, readFileSync, writeFileSync, renameSync, openSync, closeSync, unlinkSync, statSync, mkdirSync } from 'fs';
-import { dirname } from 'path';
-import { execSync, execFileSync } from 'child_process';
-import { compareVersions } from '../commands/migrations/index.ts';
-import { gbrainPath } from './config.ts';
-import type { GBrainConfig } from './config.ts';
-import { promptLineStderr } from './cli-util.ts';
-import type { CliOptions } from './cli-options.ts';
+import {
+  existsSync,
+  readFileSync,
+  writeFileSync,
+  renameSync,
+  openSync,
+  closeSync,
+  unlinkSync,
+  statSync,
+  mkdirSync,
+} from "fs";
+import { dirname } from "path";
+import { execSync, execFileSync } from "child_process";
+import { compareVersions } from "../commands/migrations/index.ts";
+import { gbrainPath } from "./config.ts";
+import type { GBrainConfig } from "./config.ts";
+import { promptLineStderr } from "./cli-util.ts";
+import type { CliOptions } from "./cli-options.ts";
 
 // Structural shape of the banner identity payload. Defined here (not imported
 // from src/cli.ts) to avoid a circular import; cli.ts's BrainIdentity is
@@ -45,8 +55,8 @@ export interface BrainIdentityShape {
  * else fails closed.
  */
 function isValidSemverLike(v: string): boolean {
-  if (typeof v !== 'string' || v.length === 0) return false;
-  const parts = v.split('.');
+  if (typeof v !== "string" || v.length === 0) return false;
+  const parts = v.split(".");
   if (parts.length < 3 || parts.length > 4) return false;
   for (const p of parts) {
     if (p.length === 0) return false;
@@ -71,22 +81,22 @@ export function safeCompare(a: string, b: string): -1 | 0 | 1 | null {
  * versions are equal (or local is ahead). Used by D8 to gate the prompt on
  * minor/major drift only.
  */
-export function driftLevel(local: string, remote: string): 'major' | 'minor' | 'patch' | 'none' {
-  if (!isValidSemverLike(local) || !isValidSemverLike(remote)) return 'none';
+export function driftLevel(local: string, remote: string): "major" | "minor" | "patch" | "none" {
+  if (!isValidSemverLike(local) || !isValidSemverLike(remote)) return "none";
   const cmp = compareVersions(local, remote);
-  if (cmp >= 0) return 'none';
-  const la = local.split('.').map(n => parseInt(n, 10) || 0);
-  const ra = remote.split('.').map(n => parseInt(n, 10) || 0);
-  if ((la[0] ?? 0) !== (ra[0] ?? 0)) return 'major';
-  if ((la[1] ?? 0) !== (ra[1] ?? 0)) return 'minor';
-  return 'patch';
+  if (cmp >= 0) return "none";
+  const la = local.split(".").map((n) => parseInt(n, 10) || 0);
+  const ra = remote.split(".").map((n) => parseInt(n, 10) || 0);
+  if ((la[0] ?? 0) !== (ra[0] ?? 0)) return "major";
+  if ((la[1] ?? 0) !== (ra[1] ?? 0)) return "minor";
+  return "patch";
 }
 
 // ============================================================================
 // State file
 // ============================================================================
 
-export type LastResponse = 'yes' | 'no' | 'failed';
+export type LastResponse = "yes" | "no" | "failed";
 
 export interface PromptStateEntry {
   last_prompted_remote_version: string;
@@ -100,7 +110,7 @@ export interface PromptState {
 }
 
 function statePath(): string {
-  return gbrainPath('upgrade-prompt-state.json');
+  return gbrainPath("upgrade-prompt-state.json");
 }
 
 /**
@@ -113,11 +123,12 @@ function statePath(): string {
  * future caller that destructures fields (which would crash on undefined).
  */
 function isValidPromptStateEntry(value: unknown): value is PromptStateEntry {
-  if (!value || typeof value !== 'object') return false;
+  if (!value || typeof value !== "object") return false;
   const e = value as Record<string, unknown>;
-  if (typeof e.last_prompted_remote_version !== 'string') return false;
-  if (typeof e.last_prompted_at_iso !== 'string') return false;
-  if (e.last_response !== 'yes' && e.last_response !== 'no' && e.last_response !== 'failed') return false;
+  if (typeof e.last_prompted_remote_version !== "string") return false;
+  if (typeof e.last_prompted_at_iso !== "string") return false;
+  if (e.last_response !== "yes" && e.last_response !== "no" && e.last_response !== "failed")
+    return false;
   return true;
 }
 
@@ -125,13 +136,13 @@ export function loadPromptState(): PromptState {
   const path = statePath();
   if (!existsSync(path)) return { schema_version: 1, entries: {} };
   try {
-    const raw = readFileSync(path, 'utf-8');
+    const raw = readFileSync(path, "utf-8");
     const parsed = JSON.parse(raw);
     if (
       !parsed ||
-      typeof parsed !== 'object' ||
+      typeof parsed !== "object" ||
       parsed.schema_version !== 1 ||
-      typeof parsed.entries !== 'object' ||
+      typeof parsed.entries !== "object" ||
       parsed.entries === null
     ) {
       return { schema_version: 1, entries: {} };
@@ -140,7 +151,7 @@ export function loadPromptState(): PromptState {
     // bad neighbor in the same file MUST NOT poison the good entries.
     const validatedEntries: Record<string, PromptStateEntry> = {};
     for (const [key, entry] of Object.entries(parsed.entries as Record<string, unknown>)) {
-      if (typeof key !== 'string' || key.length === 0) continue;
+      if (typeof key !== "string" || key.length === 0) continue;
       if (isValidPromptStateEntry(entry)) validatedEntries[key] = entry;
     }
     return { schema_version: 1, entries: validatedEntries };
@@ -164,14 +175,18 @@ export function savePromptState(state: PromptState): void {
 }
 
 function ensureDir(path: string): void {
-  try { mkdirSync(path, { recursive: true }); } catch { /* race: another process created it; fine */ }
+  try {
+    mkdirSync(path, { recursive: true });
+  } catch {
+    /* race: another process created it; fine */
+  }
 }
 
 // ============================================================================
 // Lockfile (D2)
 // ============================================================================
 
-const LOCK_FILENAME = 'upgrade-prompt.lock';
+const LOCK_FILENAME = "upgrade-prompt.lock";
 const STALE_LOCK_MS = 60_000;
 
 export interface PromptLock {
@@ -192,27 +207,41 @@ export function acquirePromptLock(): PromptLock | null {
   ensureDir(dirname(path));
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
-      const fd = openSync(path, 'wx+');
+      const fd = openSync(path, "wx+");
       let released = false;
       return {
         release(): void {
           if (released) return;
           released = true;
-          try { closeSync(fd); } catch { /* ignore */ }
-          try { unlinkSync(path); } catch { /* ignore */ }
+          try {
+            closeSync(fd);
+          } catch {
+            /* ignore */
+          }
+          try {
+            unlinkSync(path);
+          } catch {
+            /* ignore */
+          }
         },
       };
     } catch (e) {
       const code = (e as NodeJS.ErrnoException).code;
-      if (code !== 'EEXIST') return null;
+      if (code !== "EEXIST") return null;
       // EEXIST — check staleness
       try {
         const st = statSync(path);
         if (Date.now() - st.mtimeMs > STALE_LOCK_MS) {
-          try { unlinkSync(path); } catch { /* ignore */ }
+          try {
+            unlinkSync(path);
+          } catch {
+            /* ignore */
+          }
           continue; // retry openSync
         }
-      } catch { /* stat failed, give up */ }
+      } catch {
+        /* stat failed, give up */
+      }
       return null;
     }
   }
@@ -234,30 +263,30 @@ export interface DecisionInput {
   bannerIsSuppressed: boolean;
 }
 
-export type Decision = { kind: 'prompt'; level: 'major' | 'minor' } | { kind: 'noop' };
+export type Decision = { kind: "prompt"; level: "major" | "minor" } | { kind: "noop" };
 
 export function decideAction(input: DecisionInput): Decision {
   const cmp = safeCompare(input.localVersion, input.remoteVersion);
-  if (cmp === null || cmp >= 0) return { kind: 'noop' };
+  if (cmp === null || cmp >= 0) return { kind: "noop" };
 
   const level = driftLevel(input.localVersion, input.remoteVersion);
   // D8 — patch drift silent.
-  if (level === 'patch' || level === 'none') return { kind: 'noop' };
+  if (level === "patch" || level === "none") return { kind: "noop" };
 
   // D7 — banner suppressed = upgrade affordance silent.
-  if (input.bannerIsSuppressed) return { kind: 'noop' };
+  if (input.bannerIsSuppressed) return { kind: "noop" };
 
   // D6 — both TTY gates.
-  if (!input.stdinIsTty || !input.stdoutIsTty) return { kind: 'noop' };
+  if (!input.stdinIsTty || !input.stdoutIsTty) return { kind: "noop" };
 
   const entry = input.state.entries[input.mcpUrl];
   if (entry && entry.last_prompted_remote_version === input.remoteVersion) {
-    if (entry.last_response === 'no') return { kind: 'noop' };
-    if (entry.last_response === 'yes') return { kind: 'noop' };
+    if (entry.last_response === "no") return { kind: "noop" };
+    if (entry.last_response === "yes") return { kind: "noop" };
     // 'failed' → fall through and re-prompt.
   }
 
-  return { kind: 'prompt', level };
+  return { kind: "prompt", level };
 }
 
 // ============================================================================
@@ -272,12 +301,15 @@ export function _setVerifierForTest(fn: Verifier | null): void {
   _verifier = fn ?? defaultVerifyUpgradeAdvanced;
 }
 
-function defaultVerifyUpgradeAdvanced(remoteVersion: string): { advanced: boolean; newVersion: string | null } {
+function defaultVerifyUpgradeAdvanced(remoteVersion: string): {
+  advanced: boolean;
+  newVersion: string | null;
+} {
   try {
     // Spawn `gbrain --version` as a fresh subprocess so we read the NEW binary
     // the upgrade just installed (not the old VERSION constant baked into the
     // currently-running process). Output shape: "gbrain X.Y.Z" or just "X.Y.Z".
-    const out = execFileSync('gbrain', ['--version'], { encoding: 'utf-8', timeout: 10_000 });
+    const out = execFileSync("gbrain", ["--version"], { encoding: "utf-8", timeout: 10_000 });
     const match = out.trim().match(/(\d+\.\d+\.\d+(?:\.\d+)?)/);
     if (!match) return { advanced: false, newVersion: null };
     const newVersion = match[1];
@@ -313,7 +345,7 @@ export function _setPromptReaderForTest(fn: PromptReader | null): void {
 export type UpgradeRunner = () => void;
 
 function defaultRunUpgrade(): void {
-  execSync('gbrain upgrade', { stdio: 'inherit' });
+  execSync("gbrain upgrade", { stdio: "inherit" });
 }
 
 let _upgradeRunner: UpgradeRunner = defaultRunUpgrade;
@@ -365,11 +397,11 @@ export async function maybePromptForUpgrade(
   identity: BrainIdentityShape,
   cliOpts: CliOptions,
   bannerIsSuppressed: boolean,
-  deps: PromptDeps = {},
+  deps: PromptDeps = {}
 ): Promise<void> {
-  const localVersion = deps.localVersion ?? (await import('../version.ts')).VERSION;
+  const localVersion = deps.localVersion ?? (await import("../version.ts")).VERSION;
   const exitFn = deps.exit ?? ((code: number) => process.exit(code));
-  const log = deps.log ?? ((msg: string) => process.stderr.write(msg + '\n'));
+  const log = deps.log ?? ((msg: string) => process.stderr.write(msg + "\n"));
 
   const mcpUrl = cfg.remote_mcp?.mcp_url;
   if (!mcpUrl) return;
@@ -392,14 +424,14 @@ export async function maybePromptForUpgrade(
     bannerIsSuppressed,
   });
 
-  if (decision.kind === 'noop') return;
+  if (decision.kind === "noop") return;
 
   // Acquire lock. EEXIST → sibling owns the prompt, no-op silently.
   const lock = acquirePromptLock();
   if (!lock) return;
 
   try {
-    const levelWord = decision.level === 'major' ? 'major' : 'minor';
+    const levelWord = decision.level === "major" ? "major" : "minor";
     const promptText =
       `Remote brain is on v${identity.version} (you're on v${localVersion}). This is a ${levelWord} upgrade.\n` +
       `Upgrade local CLI now? [Y/n] `;
@@ -410,24 +442,24 @@ export async function maybePromptForUpgrade(
     // the prompt, remove it. Exit 130 matches the existing `network/aborted`
     // exit code in the dispatcher's catch block.
     const onPromptSigint = () => exitFn(130);
-    process.on('SIGINT', onPromptSigint);
+    process.on("SIGINT", onPromptSigint);
     let rawAnswer: string | null;
     try {
       rawAnswer = await _promptReader(promptText);
     } finally {
-      process.off('SIGINT', onPromptSigint);
+      process.off("SIGINT", onPromptSigint);
     }
     // Null = stdin EOF or timeout. Silent decline, no state write — a transient
     // closure (terminal hangup, /dev/null pipe past TTY check) must not lock
     // out future prompts for this version. The caller's command continues.
     if (rawAnswer === null) return;
     const answer = rawAnswer.toLowerCase();
-    const accepted = answer === '' || answer === 'y' || answer === 'yes';
+    const accepted = answer === "" || answer === "y" || answer === "yes";
 
     const nowIso = new Date().toISOString();
 
     if (!accepted) {
-      writeStateBestEffort(state, mcpUrl, identity.version, 'no', nowIso);
+      writeStateBestEffort(state, mcpUrl, identity.version, "no", nowIso);
       return; // caller continues with the original command
     }
 
@@ -443,7 +475,7 @@ export async function maybePromptForUpgrade(
     }
 
     if (upgradeThrew) {
-      writeStateBestEffort(state, mcpUrl, identity.version, 'failed', nowIso);
+      writeStateBestEffort(state, mcpUrl, identity.version, "failed", nowIso);
       log(`[upgrade failed: ${upgradeError}]`);
       exitFn(1);
       return;
@@ -452,17 +484,17 @@ export async function maybePromptForUpgrade(
     // D5 — verify the binary actually advanced.
     const result = _verifier(identity.version);
     if (!result.advanced) {
-      writeStateBestEffort(state, mcpUrl, identity.version, 'failed', nowIso);
+      writeStateBestEffort(state, mcpUrl, identity.version, "failed", nowIso);
       log(
         `gbrain upgrade did not actually advance the binary` +
-        (result.newVersion ? ` (still on v${result.newVersion})` : '') +
-        `. See the output above for manual steps.`,
+          (result.newVersion ? ` (still on v${result.newVersion})` : "") +
+          `. See the output above for manual steps.`
       );
       exitFn(1);
       return;
     }
 
-    writeStateBestEffort(state, mcpUrl, identity.version, 'yes', nowIso);
+    writeStateBestEffort(state, mcpUrl, identity.version, "yes", nowIso);
     log(`Upgrade complete. Re-run your command to use v${result.newVersion ?? identity.version}.`);
     exitFn(0);
   } finally {
@@ -475,7 +507,7 @@ function writeStateBestEffort(
   mcpUrl: string,
   remoteVersion: string,
   response: LastResponse,
-  iso: string,
+  iso: string
 ): void {
   try {
     const next: PromptState = {

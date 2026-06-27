@@ -68,7 +68,8 @@ describe("extractStatuteCitations", () => {
   });
 
   it("includes context around the citation", () => {
-    const text = "Wie bereits erörtert, regelt § 433 BGB die Pflichten des Verkäufers beim Kaufvertrag.";
+    const text =
+      "Wie bereits erörtert, regelt § 433 BGB die Pflichten des Verkäufers beim Kaufvertrag.";
     const result = extractStatuteCitations(text);
     expect(result).toHaveLength(1);
     expect(result[0].context).toContain("433");
@@ -125,17 +126,16 @@ describe("groundRedlineCitations", () => {
 
   it("includes summary text in citation extraction", async () => {
     vi.mocked(fs.readFile).mockRejectedValue(new Error("ENOENT"));
-    const redlines = [
-      { legal_basis: "", reason: "Keine spezifische Norm" },
-    ];
-    const result = await groundRedlineCitations(redlines, "Zusammenfassung: § 433 BGB regelt den Kaufvertrag.");
+    const redlines = [{ legal_basis: "", reason: "Keine spezifische Norm" }];
+    const result = await groundRedlineCitations(
+      redlines,
+      "Zusammenfassung: § 433 BGB regelt den Kaufvertrag."
+    );
     expect(result.grounded_citations.length).toBeGreaterThanOrEqual(1);
   });
 
   it("returns empty grounding for redlines without statute references", async () => {
-    const redlines = [
-      { legal_basis: "", reason: "Allgemeine Klauseländerung" },
-    ];
+    const redlines = [{ legal_basis: "", reason: "Allgemeine Klauseländerung" }];
     const result = await groundRedlineCitations(redlines, "Keine spezifischen Normen genannt.");
     expect(result.citations_verified).toBe(0);
     expect(result.citations_unverified).toBe(0);
@@ -270,9 +270,7 @@ describe("extractTextFromJsonResponse", () => {
 
   it("extracts text from redlines with legal_basis and reason", () => {
     const obj = {
-      redlines: [
-        { legal_basis: "§ 922 ABGB", reason: "Gewährleistung" },
-      ],
+      redlines: [{ legal_basis: "§ 922 ABGB", reason: "Gewährleistung" }],
     };
     const parts = extractTextFromJsonResponse(obj);
     expect(parts.length).toBeGreaterThanOrEqual(2);
@@ -316,9 +314,7 @@ describe("groundJsonResponse", () => {
   it("grounds citations from array fields", async () => {
     vi.mocked(fs.readFile).mockRejectedValue(new Error("ENOENT"));
     const obj = {
-      risks: [
-        { description: "Risiko nach § 999 NONEXISTENT", mitigation: "Prüfung" },
-      ],
+      risks: [{ description: "Risiko nach § 999 NONEXISTENT", mitigation: "Prüfung" }],
     };
     const result = await groundJsonResponse(obj);
     expect(result.corpus_checked).toBe(true);

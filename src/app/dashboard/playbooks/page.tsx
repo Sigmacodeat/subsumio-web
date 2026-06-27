@@ -610,10 +610,7 @@ function PlaybookEditor(props: {
           <Label className="text-xs font-medium text-[color:var(--ds-text-muted)]">
             {t("playbooks.field_jurisdiction")}
           </Label>
-          <Select
-            value={props.jurisdiction}
-            onValueChange={props.onJurisdictionChange}
-          >
+          <Select value={props.jurisdiction} onValueChange={props.onJurisdictionChange}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>

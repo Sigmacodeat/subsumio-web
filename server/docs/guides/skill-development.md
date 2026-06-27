@@ -22,6 +22,7 @@ is system failure.
 
 **Step 1: Concept the Process.**
 Describe what needs to happen in plain language:
+
 - What's the input? What's the output? What triggers it?
 - What data sources does it touch?
 - How often should it run?
@@ -29,28 +30,33 @@ Describe what needs to happen in plain language:
 **Step 2: Run Manually for 3-10 Items.**
 Actually do the work by hand on a small batch. This is the prototype phase.
 Do NOT write a SKILL.md yet. Just do the work and observe:
+
 - What does the output actually look like?
 - What edge cases appear?
 - What quality bar is right?
 
 **Step 3: Evaluate Output.**
 Show the user the results. Get feedback.
+
 - Does output look good? Is quality right?
 - Did you miss anything? Over-engineer?
 - Revise the process based on what you learned.
 
 **Step 4: Codify into a Skill.**
 Write the SKILL.md. Either:
+
 - **New skill** -- genuinely new capability
 - **Add to existing skill** -- variation of something that exists (parameterize it)
 
 The skill must be:
+
 - **Durable** -- works tomorrow, next week, next month without manual intervention
 - **MECE** -- doesn't overlap with other skills (see below)
 - **Parameterized** -- handles variations through parameters, not separate skills
 
 **Step 5: Add to Cron (if recurring).**
 If the process should run automatically:
+
 - Add to existing cron job if it fits naturally
 - Create new cron job if it has a distinct scheduling concern
 - Monitor the first 2-3 automated runs for quality
@@ -59,20 +65,21 @@ If the process should run automatically:
 ### MECE Discipline
 
 Skills should be **Mutually Exclusive, Collectively Exhaustive**:
+
 - Each entity type has exactly ONE owner skill
 - Each signal source has exactly ONE owner skill
 - Two skills creating the same brain page = MECE violation
 
 **Example ownership (no overlap):**
 
-| Signal Source | Owner Skill | Creates |
-|--------------|-------------|---------|
-| Meeting transcripts | meeting-ingestion | brain/meetings/ pages |
-| Email messages | executive-assistant | brain/people/ timeline entries |
-| X/Twitter posts | x-collector | brain/media/ pages |
-| Person enrichment | enrich | brain/people/ compiled truth |
-| Calendar events | calendar-sync | brain/daily/calendar/ pages |
-| Video/podcast content | media-ingest | brain/media/ pages |
+| Signal Source         | Owner Skill         | Creates                        |
+| --------------------- | ------------------- | ------------------------------ |
+| Meeting transcripts   | meeting-ingestion   | brain/meetings/ pages          |
+| Email messages        | executive-assistant | brain/people/ timeline entries |
+| X/Twitter posts       | x-collector         | brain/media/ pages             |
+| Person enrichment     | enrich              | brain/people/ compiled truth   |
+| Calendar events       | calendar-sync       | brain/daily/calendar/ pages    |
+| Video/podcast content | media-ingest        | brain/media/ pages             |
 
 ### Quality Bar Checklist
 
@@ -128,4 +135,4 @@ A skill is ready when:
 
 ---
 
-*Part of the [GBrain Skillpack](../GBRAIN_SKILLPACK.md).*
+_Part of the [GBrain Skillpack](../GBRAIN_SKILLPACK.md)._

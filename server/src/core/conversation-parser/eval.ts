@@ -21,8 +21,8 @@
  *   }
  */
 
-import { parseConversation } from './parse.ts';
-import type { Page } from '../types.ts';
+import { parseConversation } from "./parse.ts";
+import type { Page } from "../types.ts";
 
 export interface ConversationFixture {
   fixture_id: string;
@@ -70,7 +70,7 @@ export interface EvalReport {
  */
 export function scoreFixture(
   fixture: ConversationFixture,
-  opts: { minRecall?: number; noLlm?: boolean } = {},
+  opts: { minRecall?: number; noLlm?: boolean } = {}
 ): FixtureScore {
   const minRecall = opts.minRecall ?? 0.9;
   const page = {
@@ -85,18 +85,15 @@ export function scoreFixture(
 
   const messages_parsed = result.messages.length;
   const expected_messages = fixture.expected_messages;
-  const recall =
-    expected_messages > 0 ? messages_parsed / expected_messages : 1;
+  const recall = expected_messages > 0 ? messages_parsed / expected_messages : 1;
 
   const expectedParticipantsSet = new Set(fixture.expected_participants);
   const actualParticipantsSet = new Set(result.messages.map((m) => m.speaker));
   const intersection = [...expectedParticipantsSet].filter((p) =>
-    actualParticipantsSet.has(p),
+    actualParticipantsSet.has(p)
   ).length;
   const participants_recall =
-    expectedParticipantsSet.size > 0
-      ? intersection / expectedParticipantsSet.size
-      : 1;
+    expectedParticipantsSet.size > 0 ? intersection / expectedParticipantsSet.size : 1;
 
   const reasons: string[] = [];
   let passed = true;
@@ -105,29 +102,23 @@ export function scoreFixture(
   if (fixture.pattern === null) {
     if (messages_parsed > 0) {
       passed = false;
-      reasons.push(
-        `adversarial fixture: expected 0 messages, parser returned ${messages_parsed}`,
-      );
+      reasons.push(`adversarial fixture: expected 0 messages, parser returned ${messages_parsed}`);
     }
   } else {
     // Positive fixture: must hit expected pattern + recall.
     if (result.matched_pattern_id !== fixture.pattern) {
       passed = false;
       reasons.push(
-        `expected pattern '${fixture.pattern}', got '${result.matched_pattern_id ?? 'no_match'}'`,
+        `expected pattern '${fixture.pattern}', got '${result.matched_pattern_id ?? "no_match"}'`
       );
     }
     if (recall < minRecall) {
       passed = false;
-      reasons.push(
-        `recall ${recall.toFixed(2)} < floor ${minRecall.toFixed(2)}`,
-      );
+      reasons.push(`recall ${recall.toFixed(2)} < floor ${minRecall.toFixed(2)}`);
     }
     if (participants_recall < 1.0) {
       passed = false;
-      reasons.push(
-        `participants_recall ${participants_recall.toFixed(2)} < 1.0`,
-      );
+      reasons.push(`participants_recall ${participants_recall.toFixed(2)} < 1.0`);
     }
   }
 
@@ -148,25 +139,20 @@ export function scoreFixture(
  * Aggregate per-fixture scores into a stable JSON envelope for CI
  * gating + human reports.
  */
-export function aggregateScores(
-  scores: FixtureScore[],
-): EvalReport {
+export function aggregateScores(scores: FixtureScore[]): EvalReport {
   const total_fixtures = scores.length;
   const passed = scores.filter((s) => s.passed).length;
   const failed = total_fixtures - passed;
   const recall_mean =
-    total_fixtures > 0
-      ? scores.reduce((acc, s) => acc + s.recall, 0) / total_fixtures
-      : 0;
+    total_fixtures > 0 ? scores.reduce((acc, s) => acc + s.recall, 0) / total_fixtures : 0;
   const participants_recall_mean =
     total_fixtures > 0
-      ? scores.reduce((acc, s) => acc + s.participants_recall, 0) /
-        total_fixtures
+      ? scores.reduce((acc, s) => acc + s.participants_recall, 0) / total_fixtures
       : 0;
 
   const pattern_coverage: Record<string, number> = {};
   for (const s of scores) {
-    const id = s.matched_pattern_id ?? '_no_match';
+    const id = s.matched_pattern_id ?? "_no_match";
     pattern_coverage[id] = (pattern_coverage[id] ?? 0) + 1;
   }
 
@@ -194,13 +180,13 @@ export function parseFixtureJsonl(content: string): ConversationFixture[] {
   const lines = content.split(/\r?\n/);
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
-    if (!line || line.startsWith('#')) continue;
+    if (!line || line.startsWith("#")) continue;
     let parsed: unknown;
     try {
       parsed = JSON.parse(line);
     } catch (err) {
       throw new Error(
-        `[conversation-parser eval] malformed JSON on line ${i + 1}: ${(err as Error).message}`,
+        `[conversation-parser eval] malformed JSON on line ${i + 1}: ${(err as Error).message}`
       );
     }
     out.push(parsed as ConversationFixture);

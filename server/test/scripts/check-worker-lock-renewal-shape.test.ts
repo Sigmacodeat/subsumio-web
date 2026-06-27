@@ -15,20 +15,20 @@
  * per-test tempfiles.
  */
 
-import { describe, it, expect, afterEach } from 'bun:test';
-import { spawnSync } from 'child_process';
-import { mkdtempSync, writeFileSync, rmSync } from 'fs';
-import { tmpdir } from 'os';
-import { join, resolve } from 'path';
+import { describe, it, expect, afterEach } from "bun:test";
+import { spawnSync } from "child_process";
+import { mkdtempSync, writeFileSync, rmSync } from "fs";
+import { tmpdir } from "os";
+import { join, resolve } from "path";
 
-const REPO_ROOT = resolve(import.meta.dir, '..', '..');
-const GUARD_SH = resolve(REPO_ROOT, 'scripts/check-worker-lock-renewal-shape.sh');
+const REPO_ROOT = resolve(import.meta.dir, "..", "..");
+const GUARD_SH = resolve(REPO_ROOT, "scripts/check-worker-lock-renewal-shape.sh");
 
 const tmpDirs: string[] = [];
 function makeTempWorker(contents: string): string {
-  const d = mkdtempSync(join(tmpdir(), 'lock-renewal-shape-'));
+  const d = mkdtempSync(join(tmpdir(), "lock-renewal-shape-"));
   tmpDirs.push(d);
-  const file = join(d, 'worker.ts');
+  const file = join(d, "worker.ts");
   writeFileSync(file, contents);
   return file;
 }
@@ -37,14 +37,18 @@ afterEach(() => {
   while (tmpDirs.length > 0) {
     const d = tmpDirs.pop();
     if (d) {
-      try { rmSync(d, { recursive: true, force: true }); } catch { /* best-effort */ }
+      try {
+        rmSync(d, { recursive: true, force: true });
+      } catch {
+        /* best-effort */
+      }
     }
   }
 });
 
 function runGuard(targetPath: string): { status: number; stdout: string; stderr: string } {
-  const r = spawnSync('bash', [GUARD_SH], {
-    encoding: 'utf-8',
+  const r = spawnSync("bash", [GUARD_SH], {
+    encoding: "utf-8",
     env: { ...process.env, GBRAIN_LOCK_RENEWAL_SHAPE_TARGET: targetPath },
   });
   return { status: r.status ?? -1, stdout: r.stdout, stderr: r.stderr };
@@ -115,38 +119,38 @@ class MinionWorker {
 }
 `;
 
-describe('check-worker-lock-renewal-shape.sh', () => {
-  it('case 1 — good shape exits 0', () => {
+describe("check-worker-lock-renewal-shape.sh", () => {
+  it("case 1 — good shape exits 0", () => {
     const file = makeTempWorker(GOOD_SHAPE);
     const r = runGuard(file);
     expect(r.status).toBe(0);
-    expect(r.stdout).toContain('lock-renewal shape OK');
+    expect(r.stdout).toContain("lock-renewal shape OK");
   });
 
-  it('case 2 — bug pattern (lockTimer = setInterval(async ...)) exits 1', () => {
+  it("case 2 — bug pattern (lockTimer = setInterval(async ...)) exits 1", () => {
     const file = makeTempWorker(BUG_PATTERN);
     const r = runGuard(file);
     expect(r.status).toBe(1);
-    expect(r.stdout + r.stderr).toContain('v0.41.22.1 bug pattern');
+    expect(r.stdout + r.stderr).toContain("v0.41.22.1 bug pattern");
   });
 
-  it('case 3 — missing runLockRenewalTick call site exits 1', () => {
+  it("case 3 — missing runLockRenewalTick call site exits 1", () => {
     const file = makeTempWorker(MISSING_CALL_SITE);
     const r = runGuard(file);
     expect(r.status).toBe(1);
-    expect(r.stdout + r.stderr).toContain('runLockRenewalTick');
+    expect(r.stdout + r.stderr).toContain("runLockRenewalTick");
   });
 
-  it('case 4 — unrelated setInterval(async ...) elsewhere is NOT flagged (codex C13 scope)', () => {
+  it("case 4 — unrelated setInterval(async ...) elsewhere is NOT flagged (codex C13 scope)", () => {
     const file = makeTempWorker(FALSE_POSITIVE_NAMED_REF);
     const r = runGuard(file);
     expect(r.status).toBe(0);
-    expect(r.stdout).toContain('lock-renewal shape OK');
+    expect(r.stdout).toContain("lock-renewal shape OK");
   });
 
-  it('case 5 — missing target file emits clear error', () => {
-    const r = runGuard('/nonexistent/path/to/worker.ts');
+  it("case 5 — missing target file emits clear error", () => {
+    const r = runGuard("/nonexistent/path/to/worker.ts");
     expect(r.status).toBe(1);
-    expect(r.stdout + r.stderr).toContain('not found');
+    expect(r.stdout + r.stderr).toContain("not found");
   });
 });

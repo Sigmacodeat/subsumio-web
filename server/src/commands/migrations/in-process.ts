@@ -21,10 +21,10 @@
  * `getaddrinfo ENOTFOUND` line instead of the bare `Command failed: ...`.
  */
 
-import { execSync } from 'child_process';
+import { execSync } from "child_process";
 
-import { loadConfig, toEngineConfig } from '../../core/config.ts';
-import { createEngine } from '../../core/engine-factory.ts';
+import { loadConfig, toEngineConfig } from "../../core/config.ts";
+import { createEngine } from "../../core/engine-factory.ts";
 
 /** Default wall-clock guard for in-process initSchema. Matches the 600s cap
  *  the old `execSync('gbrain init --migrate-only', { timeout: 600_000 })` used,
@@ -45,7 +45,7 @@ export interface MigrateOnlyResult {
 export class MigrateOnlyError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'MigrateOnlyError';
+    this.name = "MigrateOnlyError";
   }
 }
 
@@ -56,18 +56,20 @@ export class MigrateOnlyError extends Error {
  * a no-op when already at head). Throws `MigrateOnlyError` on no-config or
  * timeout so callers report a failed phase rather than hanging.
  */
-export async function runMigrateOnlyCore(opts?: { timeoutMs?: number }): Promise<MigrateOnlyResult> {
+export async function runMigrateOnlyCore(opts?: {
+  timeoutMs?: number;
+}): Promise<MigrateOnlyResult> {
   const config = loadConfig();
   if (!config) {
     throw new MigrateOnlyError(
-      'No brain configured. Run `gbrain init` (interactive) or `gbrain init --pglite` / `gbrain init --supabase` first.',
+      "No brain configured. Run `gbrain init` (interactive) or `gbrain init --pglite` / `gbrain init --supabase` first."
     );
   }
 
   // configureGateway BEFORE initSchema (init.ts B.3): a schema bump on a brain
   // whose file config is missing embedding fields must not fall through to
   // stale hardcoded fallbacks. loadConfig already merged env; propagate it.
-  const { configureGateway } = await import('../../core/ai/gateway.ts');
+  const { configureGateway } = await import("../../core/ai/gateway.ts");
   configureGateway({
     embedding_model: config.embedding_model,
     embedding_dimensions: config.embedding_dimensions,
@@ -83,10 +85,14 @@ export async function runMigrateOnlyCore(opts?: { timeoutMs?: number }): Promise
     await withTimeout(
       engine.initSchema(),
       timeoutMs,
-      `schema init timed out after ${Math.round(timeoutMs / 1000)}s`,
+      `schema init timed out after ${Math.round(timeoutMs / 1000)}s`
     );
   } finally {
-    try { await engine.disconnect(); } catch { /* best-effort */ }
+    try {
+      await engine.disconnect();
+    } catch {
+      /* best-effort */
+    }
   }
 
   return { engine: config.engine };
@@ -106,19 +112,21 @@ export async function runMigrateOnlyCore(opts?: { timeoutMs?: number }): Promise
 export function runGbrainSubprocess(cmd: string, opts?: { timeoutMs?: number }): string {
   try {
     const out = execSync(cmd, {
-      stdio: ['inherit', 'pipe', 'pipe'],
+      stdio: ["inherit", "pipe", "pipe"],
       timeout: opts?.timeoutMs ?? MIGRATE_ONLY_TIMEOUT_MS,
       env: process.env,
       maxBuffer: SUBPROCESS_MAX_BUFFER,
-      encoding: 'utf-8',
+      encoding: "utf-8",
     });
-    return typeof out === 'string' ? out : '';
+    return typeof out === "string" ? out : "";
   } catch (e: unknown) {
     const err = e as { message?: string; stderr?: Buffer | string };
     const stderrRaw = err?.stderr
-      ? (Buffer.isBuffer(err.stderr) ? err.stderr.toString('utf-8') : String(err.stderr))
-      : '';
-    const tail = stderrRaw.split('\n').filter(Boolean).slice(-10).join('\n');
+      ? Buffer.isBuffer(err.stderr)
+        ? err.stderr.toString("utf-8")
+        : String(err.stderr)
+      : "";
+    const tail = stderrRaw.split("\n").filter(Boolean).slice(-10).join("\n");
     const base = err?.message ?? String(e);
     throw new Error(tail ? `${base}\n--- child stderr (tail) ---\n${tail}` : base);
   }

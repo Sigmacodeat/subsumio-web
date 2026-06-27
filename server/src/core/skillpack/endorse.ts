@@ -14,9 +14,9 @@
  * handles user-facing argv parsing + git invocations.
  */
 
-import { execFileSync } from 'child_process';
-import { existsSync, readFileSync, renameSync, writeFileSync } from 'fs';
-import { join } from 'path';
+import { execFileSync } from "child_process";
+import { existsSync, readFileSync, renameSync, writeFileSync } from "fs";
+import { join } from "path";
 
 import {
   ENDORSEMENTS_SCHEMA_VERSION,
@@ -26,7 +26,7 @@ import {
   validateRegistryCatalog,
   type EndorsementsFile,
   type RegistryTier,
-} from './registry-schema.ts';
+} from "./registry-schema.ts";
 
 export interface EndorseOptions {
   /** Absolute path to a clone of the registry repo. */
@@ -44,7 +44,7 @@ export interface EndorseOptions {
 }
 
 export interface EndorseResult {
-  schema_version: 'skillpack-endorse-v1';
+  schema_version: "skillpack-endorse-v1";
   pack_name: string;
   prior_tier: RegistryTier | null;
   new_tier: RegistryTier;
@@ -55,38 +55,38 @@ export interface EndorseResult {
 }
 
 export type EndorseErrorCode =
-  | 'not_a_registry_repo'
-  | 'pack_not_in_catalog'
-  | 'git_commit_failed'
-  | 'git_push_failed';
+  | "not_a_registry_repo"
+  | "pack_not_in_catalog"
+  | "git_commit_failed"
+  | "git_push_failed";
 
 export class EndorseError extends Error {
   constructor(
     message: string,
-    public code: EndorseErrorCode,
+    public code: EndorseErrorCode
   ) {
     super(message);
-    this.name = 'EndorseError';
+    this.name = "EndorseError";
   }
 }
 
 /** Verify the directory looks like a skillpack-registry repo. */
 function assertRegistryRepo(root: string): void {
-  const reg = join(root, 'registry.json');
+  const reg = join(root, "registry.json");
   if (!existsSync(reg)) {
     throw new EndorseError(
       `${root} does not look like a skillpack-registry repo (no registry.json at root)`,
-      'not_a_registry_repo',
+      "not_a_registry_repo"
     );
   }
   try {
-    const raw = JSON.parse(readFileSync(reg, 'utf-8'));
+    const raw = JSON.parse(readFileSync(reg, "utf-8"));
     validateRegistryCatalog(raw);
   } catch (err) {
     if (err instanceof RegistrySchemaError) {
       throw new EndorseError(
         `${root}/registry.json is malformed: ${err.message}`,
-        'not_a_registry_repo',
+        "not_a_registry_repo"
       );
     }
     throw err;
@@ -95,11 +95,11 @@ function assertRegistryRepo(root: string): void {
 
 /** Stable JSON.stringify with sorted keys at every depth. */
 function stableStringify(value: unknown, indent = 2): string {
-  return JSON.stringify(value, sortReplacer, indent) + '\n';
+  return JSON.stringify(value, sortReplacer, indent) + "\n";
 }
 
 function sortReplacer(_key: string, val: unknown): unknown {
-  if (val === null || typeof val !== 'object' || Array.isArray(val)) return val;
+  if (val === null || typeof val !== "object" || Array.isArray(val)) return val;
   const sorted: Record<string, unknown> = {};
   for (const k of Object.keys(val as Record<string, unknown>).sort()) {
     sorted[k] = (val as Record<string, unknown>)[k];
@@ -112,7 +112,7 @@ export function applyEndorsement(
   current: EndorsementsFile,
   packName: string,
   tier: RegistryTier,
-  note?: string,
+  note?: string
 ): { next: EndorsementsFile; prior_tier: RegistryTier | null } {
   const prior = current.endorsements[packName]?.tier ?? null;
   const next: EndorsementsFile = {
@@ -138,30 +138,32 @@ export function runEndorse(opts: EndorseOptions): EndorseResult {
   assertRegistryRepo(opts.registryRepoRoot);
 
   // Catalog membership check.
-  const catalogRaw = JSON.parse(readFileSync(join(opts.registryRepoRoot, 'registry.json'), 'utf-8'));
+  const catalogRaw = JSON.parse(
+    readFileSync(join(opts.registryRepoRoot, "registry.json"), "utf-8")
+  );
   const catalog = validateRegistryCatalog(catalogRaw);
   if (!catalog.skillpacks.some((e) => e.name === opts.packName)) {
     throw new EndorseError(
       `pack "${opts.packName}" is not in registry.json — endorse requires a catalog entry first`,
-      'pack_not_in_catalog',
+      "pack_not_in_catalog"
     );
   }
 
   // Endorsements file (may be missing on a fresh registry).
-  const endPath = join(opts.registryRepoRoot, 'endorsements.json');
+  const endPath = join(opts.registryRepoRoot, "endorsements.json");
   let current: EndorsementsFile;
   if (existsSync(endPath)) {
-    current = validateEndorsementsFile(JSON.parse(readFileSync(endPath, 'utf-8')));
+    current = validateEndorsementsFile(JSON.parse(readFileSync(endPath, "utf-8")));
   } else {
     current = { schema_version: ENDORSEMENTS_SCHEMA_VERSION, endorsements: {} };
   }
 
-  const tier = opts.tier ?? 'endorsed';
+  const tier = opts.tier ?? "endorsed";
   const { next, prior_tier } = applyEndorsement(current, opts.packName, tier, opts.note);
 
   if (opts.dryRun) {
     return {
-      schema_version: 'skillpack-endorse-v1',
+      schema_version: "skillpack-endorse-v1",
       pack_name: opts.packName,
       prior_tier,
       new_tier: tier,
@@ -173,48 +175,42 @@ export function runEndorse(opts: EndorseOptions): EndorseResult {
   }
 
   // Atomic write via .tmp + rename.
-  const tmp = endPath + '.tmp';
+  const tmp = endPath + ".tmp";
   writeFileSync(tmp, stableStringify(next));
   renameSync(tmp, endPath);
 
   // git stage + commit.
   let commitSha: string | null = null;
   try {
-    execFileSync('git', ['-C', opts.registryRepoRoot, 'add', 'endorsements.json'], {
-      encoding: 'utf-8',
+    execFileSync("git", ["-C", opts.registryRepoRoot, "add", "endorsements.json"], {
+      encoding: "utf-8",
     });
     execFileSync(
-      'git',
-      ['-C', opts.registryRepoRoot, 'commit', '-m', `endorse: ${opts.packName} -> ${tier}`],
-      { encoding: 'utf-8' },
+      "git",
+      ["-C", opts.registryRepoRoot, "commit", "-m", `endorse: ${opts.packName} -> ${tier}`],
+      { encoding: "utf-8" }
     );
-    commitSha = execFileSync('git', ['-C', opts.registryRepoRoot, 'rev-parse', '--short', 'HEAD'], {
-      encoding: 'utf-8',
+    commitSha = execFileSync("git", ["-C", opts.registryRepoRoot, "rev-parse", "--short", "HEAD"], {
+      encoding: "utf-8",
     }).trim();
   } catch (err) {
-    throw new EndorseError(
-      `git commit failed: ${(err as Error).message}`,
-      'git_commit_failed',
-    );
+    throw new EndorseError(`git commit failed: ${(err as Error).message}`, "git_commit_failed");
   }
 
   let pushed = false;
   if (opts.push) {
     try {
-      execFileSync('git', ['-C', opts.registryRepoRoot, 'push', 'origin', 'HEAD'], {
-        encoding: 'utf-8',
+      execFileSync("git", ["-C", opts.registryRepoRoot, "push", "origin", "HEAD"], {
+        encoding: "utf-8",
       });
       pushed = true;
     } catch (err) {
-      throw new EndorseError(
-        `git push failed: ${(err as Error).message}`,
-        'git_push_failed',
-      );
+      throw new EndorseError(`git push failed: ${(err as Error).message}`, "git_push_failed");
     }
   }
 
   return {
-    schema_version: 'skillpack-endorse-v1',
+    schema_version: "skillpack-endorse-v1",
     pack_name: opts.packName,
     prior_tier,
     new_tier: tier,

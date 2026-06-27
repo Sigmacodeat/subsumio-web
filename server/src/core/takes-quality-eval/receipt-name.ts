@@ -14,9 +14,9 @@
  * the same content for grep workflows + replay-without-DB (codex review
  * #10 brain-routing).
  */
-import { createHash } from 'node:crypto';
-import { gbrainPath } from '../config.ts';
-import { join } from 'node:path';
+import { createHash } from "node:crypto";
+import { gbrainPath } from "../config.ts";
+import { join } from "node:path";
 
 export interface ReceiptIdentity {
   corpus_sha8: string;
@@ -27,7 +27,7 @@ export interface ReceiptIdentity {
 
 /** Stable 8-char fingerprint over the joined corpus content. */
 export function corpusSha8(takesText: string): string {
-  return createHash('sha256').update(takesText).digest('hex').slice(0, 8);
+  return createHash("sha256").update(takesText).digest("hex").slice(0, 8);
 }
 
 /**
@@ -37,7 +37,7 @@ export function corpusSha8(takesText: string): string {
  */
 export function modelSetSha8(modelIds: readonly string[]): string {
   const canonical = JSON.stringify([...modelIds].sort());
-  return createHash('sha256').update(canonical).digest('hex').slice(0, 8);
+  return createHash("sha256").update(canonical).digest("hex").slice(0, 8);
 }
 
 /** Build the receipt filename (no path, no extension stripping). */
@@ -47,14 +47,14 @@ export function buildReceiptFilename(id: ReceiptIdentity): string {
 
 /** Full disk path under ~/.gbrain/eval-receipts/<filename>. */
 export function buildReceiptPath(id: ReceiptIdentity): string {
-  return join(gbrainPath('eval-receipts'), buildReceiptFilename(id));
+  return join(gbrainPath("eval-receipts"), buildReceiptFilename(id));
 }
 
 /** Strip the receipt directory + extension to recover identity components. */
 export function parseReceiptFilename(filename: string): ReceiptIdentity | null {
   // Example: takes-quality-abcd1234-abcd1234-abcd1234-abcd1234.json
   const m = filename.match(
-    /^takes-quality-([0-9a-f]{8})-([0-9a-f]{8})-([0-9a-f]{8})-([0-9a-f]{8})\.json$/,
+    /^takes-quality-([0-9a-f]{8})-([0-9a-f]{8})-([0-9a-f]{8})-([0-9a-f]{8})\.json$/
   );
   if (!m) return null;
   return {

@@ -28,30 +28,30 @@
  * renewLock-shaped SQL only; everything else passes through.
  */
 
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
-import * as fs from 'fs';
-import * as os from 'os';
-import * as path from 'path';
-import { PGLiteEngine } from '../src/core/pglite-engine.ts';
-import { MinionWorker } from '../src/core/minions/worker.ts';
-import { MinionQueue } from '../src/core/minions/queue.ts';
-import { readRecentLockRenewalEvents } from '../src/core/audit/lock-renewal-audit.ts';
+import { describe, test, expect, beforeAll, afterAll } from "bun:test";
+import * as fs from "fs";
+import * as os from "os";
+import * as path from "path";
+import { PGLiteEngine } from "../src/core/pglite-engine.ts";
+import { MinionWorker } from "../src/core/minions/worker.ts";
+import { MinionQueue } from "../src/core/minions/queue.ts";
+import { readRecentLockRenewalEvents } from "../src/core/audit/lock-renewal-audit.ts";
 
 // Module-level audit dir + env mutation. withEnv's restore semantics
 // race with the worker's setInterval callbacks (audit writes can land
 // AFTER withEnv exits, under the wrong env). Persistent module-level
 // is the deterministic fix.
-const auditDir = fs.mkdtempSync(path.join(os.tmpdir(), 'lr-e2e-'));
+const auditDir = fs.mkdtempSync(path.join(os.tmpdir(), "lr-e2e-"));
 const PRIOR_AUDIT_DIR = process.env.GBRAIN_AUDIT_DIR;
 process.env.GBRAIN_AUDIT_DIR = auditDir;
 
 let engine: PGLiteEngine;
 let queue: MinionQueue;
-let originalExecuteRaw: PGLiteEngine['executeRaw'];
+let originalExecuteRaw: PGLiteEngine["executeRaw"];
 
 beforeAll(async () => {
   engine = new PGLiteEngine();
-  await engine.connect({ database_url: '' });
+  await engine.connect({ database_url: "" });
   await engine.initSchema();
   queue = new MinionQueue(engine);
   originalExecuteRaw = engine.executeRaw.bind(engine);
@@ -59,7 +59,11 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await engine.disconnect();
-  try { fs.rmSync(auditDir, { recursive: true, force: true }); } catch { /* */ }
+  try {
+    fs.rmSync(auditDir, { recursive: true, force: true });
+  } catch {
+    /* */
+  }
   if (PRIOR_AUDIT_DIR === undefined) {
     delete process.env.GBRAIN_AUDIT_DIR;
   } else {
@@ -67,27 +71,27 @@ afterAll(async () => {
   }
 });
 
-describe('H: gold-standard regression — worker survives renewLock throws', () => {
-  test('the v0.41.22.1 production crash class no longer crashes the worker', async () => {
-    await engine.executeRaw('DELETE FROM minion_jobs');
-    await queue.add('long-runner', {});
+describe("H: gold-standard regression — worker survives renewLock throws", () => {
+  test("the v0.41.22.1 production crash class no longer crashes the worker", async () => {
+    await engine.executeRaw("DELETE FROM minion_jobs");
+    await queue.add("long-runner", {});
 
     // Wrap executeRaw to inject renewLock failures. The renewLock SQL
     // shape (`UPDATE minion_jobs SET lock_until = now() + ...`) is narrow
     // enough to skip claim / completeJob / failJob / etc.
     let throwsRemaining = 50;
     let renewLockCallCount = 0;
-    (engine as { executeRaw: PGLiteEngine['executeRaw'] }).executeRaw = async (
+    (engine as { executeRaw: PGLiteEngine["executeRaw"] }).executeRaw = async (
       sql: string,
       params?: unknown[],
-      opts?: { signal?: AbortSignal },
+      opts?: { signal?: AbortSignal }
     ) => {
-      const isRenewLock = sql.includes('SET lock_until = now()') && sql.includes('lock_token');
+      const isRenewLock = sql.includes("SET lock_until = now()") && sql.includes("lock_token");
       if (isRenewLock) {
         renewLockCallCount++;
         if (throwsRemaining > 0) {
           throwsRemaining--;
-          throw new Error('simulated PgBouncer connection drop');
+          throw new Error("simulated PgBouncer connection drop");
         }
       }
       return originalExecuteRaw(sql, params, opts);
@@ -105,7 +109,7 @@ describe('H: gold-standard regression — worker survives renewLock throws', () 
     let handlerEntered = false;
     let handlerAbortObserved = false;
     let abortReason: string | null = null;
-    worker.register('long-runner', async (ctx) => {
+    worker.register("long-runner", async (ctx) => {
       handlerEntered = true;
       const start = Date.now();
       while (!ctx.signal.aborted && Date.now() - start < 4000) {
@@ -113,9 +117,10 @@ describe('H: gold-standard regression — worker survives renewLock throws', () 
       }
       handlerAbortObserved = ctx.signal.aborted;
       if (ctx.signal.aborted) {
-        abortReason = ctx.signal.reason instanceof Error
-          ? ctx.signal.reason.message
-          : String(ctx.signal.reason);
+        abortReason =
+          ctx.signal.reason instanceof Error
+            ? ctx.signal.reason.message
+            : String(ctx.signal.reason);
       }
     });
 
@@ -127,7 +132,7 @@ describe('H: gold-standard regression — worker survives renewLock throws', () 
     const rejectionListener = (reason: unknown) => {
       unhandledRejectionFired = reason;
     };
-    process.on('unhandledRejection', rejectionListener);
+    process.on("unhandledRejection", rejectionListener);
 
     const p = worker.start();
     try {
@@ -148,7 +153,7 @@ describe('H: gold-standard regression — worker survives renewLock throws', () 
       // The preceding `handlerAbortObserved` assertion guarantees we
       // entered the if-aborted branch where abortReason was assigned;
       // cast via unknown to satisfy the overload.
-      expect(abortReason as unknown as string).toBe('lock-renewal-failed');
+      expect(abortReason as unknown as string).toBe("lock-renewal-failed");
 
       // renewLock was actually called multiple times (sanity check
       // that the fault injection fired).
@@ -158,15 +163,15 @@ describe('H: gold-standard regression — worker survives renewLock throws', () 
       // and `gave_up` (time-based deadline tripped) MUST both appear.
       const audit = readRecentLockRenewalEvents(48);
       expect(audit.events.length).toBeGreaterThan(0);
-      const failures = audit.events.filter((e) => e.outcome === 'failure');
-      const gaveUp = audit.events.filter((e) => e.outcome === 'gave_up');
+      const failures = audit.events.filter((e) => e.outcome === "failure");
+      const gaveUp = audit.events.filter((e) => e.outcome === "gave_up");
       expect(failures.length).toBeGreaterThan(0);
       expect(gaveUp.length).toBeGreaterThan(0);
       // The error message survived through the redactor + truncator.
       expect(gaveUp[0].error_message_summary).toMatch(/simulated PgBouncer/);
     } finally {
-      process.off('unhandledRejection', rejectionListener);
-      (engine as { executeRaw: PGLiteEngine['executeRaw'] }).executeRaw = originalExecuteRaw;
+      process.off("unhandledRejection", rejectionListener);
+      (engine as { executeRaw: PGLiteEngine["executeRaw"] }).executeRaw = originalExecuteRaw;
       worker.stop();
       await Promise.race([p, new Promise((r) => setTimeout(r, 2000))]);
     }

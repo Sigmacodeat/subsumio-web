@@ -22,7 +22,9 @@ import type { FeedbackStats } from "@/lib/retrieval-feedback";
 
 // ── Fixtures ──────────────────────────────────────────────────────────
 
-function makeSuperbrainSummary(overrides: Partial<SuperbrainEvalSummary> = {}): SuperbrainEvalSummary {
+function makeSuperbrainSummary(
+  overrides: Partial<SuperbrainEvalSummary> = {}
+): SuperbrainEvalSummary {
   return {
     total: 9,
     passed: 8,
@@ -351,7 +353,7 @@ describe("Eval Harness Reuse — Result Builders", () => {
       "functional_area",
       "Functional Area Resolver",
       "Routing accuracy",
-      { accuracy: 0.92, total: 100 },
+      { accuracy: 0.92, total: 100 }
     );
     expect(result.harness_id).toBe("functional_area");
     expect(result.status).toBe("pass");
@@ -364,7 +366,7 @@ describe("Eval Harness Reuse — Result Builders", () => {
       "Legal RAG",
       "Legal RAG eval",
       { precision: 0.4 },
-      ["precision below threshold"],
+      ["precision below threshold"]
     );
     expect(result.status).toBe("warn");
     expect(result.breaches).toBeDefined();

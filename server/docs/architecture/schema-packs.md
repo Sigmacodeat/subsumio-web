@@ -74,15 +74,15 @@ to deprecate any that stay <5% usage.
 When the engine decides "which pack is active for this query?", it walks
 this chain top-down. First match wins.
 
-| Tier | Source | Notes |
-|------|--------|-------|
-| 1 | Per-call `schema_pack` opt | CLI only (`ctx.remote === false`); MCP rejected. |
-| 2 | `GBRAIN_SCHEMA_PACK` env | Process-scope override. |
-| 3 | Per-source DB config key `schema_pack:source:<id>` | New in v0.38. |
-| 4 | Brain-wide DB config key `schema_pack` | |
-| 5 | `gbrain.yml schema:` section | Repo-checked. |
-| 6 | `~/.gbrain/config.json` `schema_pack` field | What `gbrain schema use` writes. |
-| 7 | Default: `gbrain-base` | Always present. |
+| Tier | Source                                             | Notes                                            |
+| ---- | -------------------------------------------------- | ------------------------------------------------ |
+| 1    | Per-call `schema_pack` opt                         | CLI only (`ctx.remote === false`); MCP rejected. |
+| 2    | `GBRAIN_SCHEMA_PACK` env                           | Process-scope override.                          |
+| 3    | Per-source DB config key `schema_pack:source:<id>` | New in v0.38.                                    |
+| 4    | Brain-wide DB config key `schema_pack`             |                                                  |
+| 5    | `gbrain.yml schema:` section                       | Repo-checked.                                    |
+| 6    | `~/.gbrain/config.json` `schema_pack` field        | What `gbrain schema use` writes.                 |
+| 7    | Default: `gbrain-base`                             | Always present.                                  |
 
 ## How the agent uses the active pack
 
@@ -93,7 +93,7 @@ Every read + write path consults the active pack at runtime:
   threaded, falls back to the legacy hardcoded `inferType()` so the
   byte-for-byte parity gate stays green.
 - **`whoknows` / `find_experts`** scopes candidates to `expert_routing:
-  true` types in the active pack.
+true` types in the active pack.
 - **`extract_facts`** runs only on `extractable: true` types.
 - **`enrichment-service`** routes person/company enrichment based on the
   pack's primitive declarations.
@@ -110,8 +110,8 @@ brain looks unfamiliar — the default `gbrain-base` pack expects
 
 1. **Import warn (T7):** the end of `gbrain import` prints
    `[schema] X of Y pages (Z%) have no type matching the active schema
-   pack. Run gbrain schema detect to propose a pack matching your
-   content shape.`
+pack. Run gbrain schema detect to propose a pack matching your
+content shape.`
 2. **`gbrain doctor` schema_pack_consistency check** keeps surfacing
    the warning persistently after the import session ends.
 
@@ -145,7 +145,7 @@ api_version: gbrain-schema-pack-v1
 name: my-pack
 version: 0.0.1
 gbrain_min_version: 0.39.0
-extends: gbrain-base   # inherits everything from base; add overrides below
+extends: gbrain-base # inherits everything from base; add overrides below
 description: |
   My personal pack.
 

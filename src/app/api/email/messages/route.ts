@@ -17,17 +17,20 @@ const messagesQuerySchema = z.object({
   unreadOnly: z.coerce.boolean().optional(),
 });
 
-const messagePostSchema = z.object({
-  subject: z.string().trim().min(1, "subject_required").max(500),
-  text: z.string().trim().max(100_000).optional(),
-  html: z.string().trim().max(500_000).optional(),
-  to: z.union([z.string(), z.array(z.string())]).optional(),
-  cc: z.union([z.string(), z.array(z.string())]).optional(),
-  bcc: z.union([z.string(), z.array(z.string())]).optional(),
-  replyToMessageId: z.string().max(200).optional(),
-}).passthrough().refine((data) => data.text || data.html, {
-  message: "body_required",
-});
+const messagePostSchema = z
+  .object({
+    subject: z.string().trim().min(1, "subject_required").max(500),
+    text: z.string().trim().max(100_000).optional(),
+    html: z.string().trim().max(500_000).optional(),
+    to: z.union([z.string(), z.array(z.string())]).optional(),
+    cc: z.union([z.string(), z.array(z.string())]).optional(),
+    bcc: z.union([z.string(), z.array(z.string())]).optional(),
+    replyToMessageId: z.string().max(200).optional(),
+  })
+  .passthrough()
+  .refine((data) => data.text || data.html, {
+    message: "body_required",
+  });
 
 export const GET = createHandler(
   {

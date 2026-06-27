@@ -23,8 +23,8 @@
  * downside is documented in the methodology doc.
  */
 
-import type { BrainEngine } from '../engine.ts';
-import type { HybridSearchMeta } from '../types.ts';
+import type { BrainEngine } from "../engine.ts";
+import type { HybridSearchMeta } from "../types.ts";
 
 interface Bucket {
   date: string;
@@ -40,9 +40,9 @@ interface Bucket {
   // sum/count derive the mean; 3 coarse buckets give a distribution shape.
   sum_rank1_score: number;
   count_rank1: number;
-  rank1_lt_solid: number;  // base_score < 0.6
-  rank1_solid: number;     // 0.6 <= base_score < 0.85
-  rank1_high: number;      // base_score >= 0.85
+  rank1_lt_solid: number; // base_score < 0.6
+  rank1_solid: number; // 0.6 <= base_score < 0.85
+  rank1_high: number; // base_score >= 0.85
 }
 
 // T7 — coarse rank-1 score bands (mirror evidence.ts SOLID/HIGH floors).
@@ -80,10 +80,15 @@ class TelemetryWriter {
    * immediately after bumping the in-memory bucket. Flush is async +
    * fire-and-forget.
    */
-  record(meta: HybridSearchMeta, opts: { results_count: number; tokens_estimate?: number; rank1_score?: number } = { results_count: 0 }): void {
+  record(
+    meta: HybridSearchMeta,
+    opts: { results_count: number; tokens_estimate?: number; rank1_score?: number } = {
+      results_count: 0,
+    }
+  ): void {
     const date = nowDate();
-    const mode = meta.mode ?? 'unset';
-    const intent = meta.intent ?? 'unset';
+    const mode = meta.mode ?? "unset";
+    const intent = meta.intent ?? "unset";
     const key = `${date}::${mode}::${intent}`;
 
     let b = this.buckets.get(key);
@@ -111,11 +116,11 @@ class TelemetryWriter {
     b.sum_results += Math.max(0, Math.floor(opts.results_count));
     b.sum_tokens += Math.max(0, Math.floor(opts.tokens_estimate ?? meta.token_budget?.used ?? 0));
     b.sum_budget_dropped += Math.max(0, Math.floor(meta.token_budget?.dropped ?? 0));
-    if (meta.cache?.status === 'hit') b.cache_hit += 1;
-    if (meta.cache?.status === 'miss') b.cache_miss += 1;
+    if (meta.cache?.status === "hit") b.cache_hit += 1;
+    if (meta.cache?.status === "miss") b.cache_miss += 1;
     // T7 — rank-1 base_score drift signal. Only counts queries that returned
     // a result (rank1_score present + finite).
-    if (typeof opts.rank1_score === 'number' && Number.isFinite(opts.rank1_score)) {
+    if (typeof opts.rank1_score === "number" && Number.isFinite(opts.rank1_score)) {
       const s = opts.rank1_score;
       b.sum_rank1_score += s;
       b.count_rank1 += 1;
@@ -126,7 +131,9 @@ class TelemetryWriter {
 
     this.pendingCount += 1;
     if (this.pendingCount >= FLUSH_THRESHOLD_CALLS) {
-      void this.flush().catch(() => { /* swallow */ });
+      void this.flush().catch(() => {
+        /* swallow */
+      });
     }
   }
 
@@ -171,8 +178,22 @@ class TelemetryWriter {
                  rank1_solid = search_telemetry.rank1_solid + EXCLUDED.rank1_solid,
                  rank1_high = search_telemetry.rank1_high + EXCLUDED.rank1_high,
                  last_seen = now()`,
-              [b.date, b.mode, b.intent, b.count, b.sum_results, b.sum_tokens, b.sum_budget_dropped, b.cache_hit, b.cache_miss,
-               b.sum_rank1_score, b.count_rank1, b.rank1_lt_solid, b.rank1_solid, b.rank1_high],
+              [
+                b.date,
+                b.mode,
+                b.intent,
+                b.count,
+                b.sum_results,
+                b.sum_tokens,
+                b.sum_budget_dropped,
+                b.cache_hit,
+                b.cache_miss,
+                b.sum_rank1_score,
+                b.count_rank1,
+                b.rank1_lt_solid,
+                b.rank1_solid,
+                b.rank1_high,
+              ]
             );
           } catch {
             // swallow — telemetry write must never break the hot path.
@@ -209,10 +230,12 @@ class TelemetryWriter {
   private ensureTimer(): void {
     if (this.timer) return;
     this.timer = setInterval(() => {
-      void this.flush().catch(() => { /* swallow */ });
+      void this.flush().catch(() => {
+        /* swallow */
+      });
     }, FLUSH_INTERVAL_MS);
     // Unref so the timer doesn't keep the process alive on its own.
-    if (typeof this.timer.unref === 'function') this.timer.unref();
+    if (typeof this.timer.unref === "function") this.timer.unref();
   }
 
   private ensureExitHook(): void {
@@ -244,7 +267,9 @@ class TelemetryWriter {
   // test harness's _resetTelemetryWriterForTest doesn't need to know about
   // the exit-hook decision.
   flushOnExitForTest(): Promise<void> {
-    return this.flush().catch(() => { /* swallow */ });
+    return this.flush().catch(() => {
+      /* swallow */
+    });
   }
 }
 
@@ -263,7 +288,9 @@ export function getTelemetryWriter(): TelemetryWriter {
 export function recordSearchTelemetry(
   engine: BrainEngine,
   meta: HybridSearchMeta,
-  opts: { results_count: number; tokens_estimate?: number; rank1_score?: number } = { results_count: 0 },
+  opts: { results_count: number; tokens_estimate?: number; rank1_score?: number } = {
+    results_count: 0,
+  }
 ): void {
   try {
     const w = getTelemetryWriter();
@@ -300,7 +327,7 @@ export interface StatsWindow {
 
 export async function readSearchStats(
   engine: BrainEngine,
-  opts: { days?: number } = {},
+  opts: { days?: number } = {}
 ): Promise<StatsWindow> {
   const days = Math.max(1, Math.min(365, opts.days ?? 7));
   const cutoffDate = new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10);
@@ -340,7 +367,7 @@ export async function readSearchStats(
        FROM search_telemetry
        WHERE date >= $1
        GROUP BY mode, intent`,
-      [cutoffDate],
+      [cutoffDate]
     );
 
     let total_calls = 0;

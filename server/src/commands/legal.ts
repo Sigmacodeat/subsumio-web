@@ -23,20 +23,13 @@ import { loadConfig, toEngineConfig } from "../core/config.ts";
 import { createEngine } from "../core/engine-factory.ts";
 import type { BrainEngine } from "../core/engine.ts";
 import { embedQuery } from "../core/embedding.ts";
-import {
-  LegalEntityRepository,
-  LegalCaseRepository,
-} from "../core/legal/repository.ts";
+import { LegalEntityRepository, LegalCaseRepository } from "../core/legal/repository.ts";
 import type {
   LegalEntityCreateInput,
   LegalCaseCreateInput,
   LegalCase,
 } from "../core/legal/types.ts";
-import {
-  detectPII,
-  buildPlaceholders,
-  anonymizeFacts,
-} from "../core/legal/anonymizer.ts";
+import { detectPII, buildPlaceholders, anonymizeFacts } from "../core/legal/anonymizer.ts";
 
 const HELP = `
 gbrain legal — Legal Brain for case and entity management
@@ -105,38 +98,28 @@ function parseFlags(args: string[]): ParsedFlags {
     else if (a === "--type" && i + 1 < args.length) out.type = args[++i];
     else if (a === "--name" && i + 1 < args.length) out.name = args[++i];
     else if (a === "--areas" && i + 1 < args.length) out.areas = args[++i];
-    else if (a === "--specializations" && i + 1 < args.length)
-      out.specializations = args[++i];
-    else if (a === "--jurisdiction" && i + 1 < args.length)
-      out.jurisdiction = args[++i];
+    else if (a === "--specializations" && i + 1 < args.length) out.specializations = args[++i];
+    else if (a === "--jurisdiction" && i + 1 < args.length) out.jurisdiction = args[++i];
     else if (a === "--level" && i + 1 < args.length) out.level = args[++i];
     else if (a === "--notes" && i + 1 < args.length) out.notes = args[++i];
     else if (a === "--tags" && i + 1 < args.length) out.tags = args[++i];
-    else if (a === "--limit" && i + 1 < args.length)
-      out.limit = parseInt(args[++i], 10);
-    else if (a === "--offset" && i + 1 < args.length)
-      out.offset = parseInt(args[++i], 10);
+    else if (a === "--limit" && i + 1 < args.length) out.limit = parseInt(args[++i], 10);
+    else if (a === "--offset" && i + 1 < args.length) out.offset = parseInt(args[++i], 10);
     else if (a === "--title" && i + 1 < args.length) out.title = args[++i];
     else if (a === "--area" && i + 1 < args.length) out.area = args[++i];
     else if (a === "--sub-area" && i + 1 < args.length) out.subArea = args[++i];
-    else if (a === "--opponent" && i + 1 < args.length)
-      out.opponent = args[++i];
+    else if (a === "--opponent" && i + 1 < args.length) out.opponent = args[++i];
     else if (a === "--lawyer" && i + 1 < args.length) out.lawyer = args[++i];
     else if (a === "--court" && i + 1 < args.length) out.court = args[++i];
     else if (a === "--client" && i + 1 < args.length) out.client = args[++i];
-    else if (a === "--priority" && i + 1 < args.length)
-      out.priority = args[++i];
+    else if (a === "--priority" && i + 1 < args.length) out.priority = args[++i];
     else if (a === "--status" && i + 1 < args.length) out.status = args[++i];
     else if (a === "--facts" && i + 1 < args.length) out.facts = args[++i];
     else if (a === "--claims" && i + 1 < args.length) out.claims = args[++i];
-    else if (a === "--defenses" && i + 1 < args.length)
-      out.defenses = args[++i];
-    else if (a === "--value-min" && i + 1 < args.length)
-      out.valueMin = parseFloat(args[++i]);
-    else if (a === "--value-max" && i + 1 < args.length)
-      out.valueMax = parseFloat(args[++i]);
-    else if (a === "--currency" && i + 1 < args.length)
-      out.currency = args[++i];
+    else if (a === "--defenses" && i + 1 < args.length) out.defenses = args[++i];
+    else if (a === "--value-min" && i + 1 < args.length) out.valueMin = parseFloat(args[++i]);
+    else if (a === "--value-max" && i + 1 < args.length) out.valueMax = parseFloat(args[++i]);
+    else if (a === "--currency" && i + 1 < args.length) out.currency = args[++i];
     else if (!a.startsWith("-")) out._.push(a);
   }
   return out;
@@ -147,19 +130,13 @@ function printJson(data: unknown) {
 }
 
 function printTable(headers: string[], rows: string[][]) {
-  const widths = headers.map((h, i) =>
-    Math.max(h.length, ...rows.map((r) => (r[i] || "").length)),
-  );
+  const widths = headers.map((h, i) => Math.max(h.length, ...rows.map((r) => (r[i] || "").length)));
   const line = widths.map((w) => "-".repeat(w + 2)).join("+");
-  const headerRow = headers
-    .map((h, i) => ` ${h.padEnd(widths[i])} `)
-    .join("|");
+  const headerRow = headers.map((h, i) => ` ${h.padEnd(widths[i])} `).join("|");
   console.log(headerRow);
   console.log(line);
   for (const row of rows) {
-    console.log(
-      row.map((c, i) => ` ${c.padEnd(widths[i])} `).join("|"),
-    );
+    console.log(row.map((c, i) => ` ${c.padEnd(widths[i])} `).join("|"));
   }
 }
 
@@ -209,7 +186,7 @@ export async function runLegalCli(args: string[]): Promise<void> {
 async function handleEntity(
   repo: LegalEntityRepository,
   action: string,
-  flags: ParsedFlags,
+  flags: ParsedFlags
 ): Promise<void> {
   switch (action) {
     case "create": {
@@ -257,7 +234,7 @@ async function handleEntity(
             e.legalAreas.slice(0, 2).join(", ") || "-",
             e.jurisdiction || "-",
             String(e.anonymizedCaseCount),
-          ]),
+          ])
         );
       }
       break;
@@ -282,7 +259,9 @@ async function handleEntity(
         console.log(`Areas:       ${entity.legalAreas.join(", ") || "-"}`);
         console.log(`Specs:       ${entity.specializations.join(", ") || "-"}`);
         console.log(`Jurisdiction: ${entity.jurisdiction || "-"} (${entity.jurisdictionLevel})`);
-        console.log(`Win Rate:    ${entity.winRate !== undefined ? `${(entity.winRate * 100).toFixed(1)}%` : "-"}`);
+        console.log(
+          `Win Rate:    ${entity.winRate !== undefined ? `${(entity.winRate * 100).toFixed(1)}%` : "-"}`
+        );
         console.log(`Cases:       ${entity.anonymizedCaseCount}`);
         console.log(`Tags:        ${entity.tags.join(", ") || "-"}`);
         console.log(`Notes:\n${entity.notes || "-"}`);
@@ -342,7 +321,7 @@ async function handleCase(
   caseRepo: LegalCaseRepository,
   entityRepo: LegalEntityRepository,
   action: string,
-  flags: ParsedFlags,
+  flags: ParsedFlags
 ): Promise<void> {
   switch (action) {
     case "create": {
@@ -379,7 +358,10 @@ async function handleCase(
         courtId: flags.court,
         clientId: flags.client,
         facts,
-        claims: flags.claims?.split("\n").map((s) => s.trim()).filter(Boolean),
+        claims: flags.claims
+          ?.split("\n")
+          .map((s) => s.trim())
+          .filter(Boolean),
         defenses: flags.defenses
           ?.split("\n")
           .map((s) => s.trim())
@@ -427,7 +409,7 @@ async function handleCase(
             c.status,
             c.priority,
             c.opponentId.slice(0, 20),
-          ]),
+          ])
         );
       }
       break;
@@ -449,7 +431,9 @@ async function handleCase(
         console.log(`ID:           ${legalCase.id}`);
         console.log(`Case #:       ${legalCase.caseNumber}`);
         console.log(`Title:        ${legalCase.displayTitle}`);
-        console.log(`Area:         ${legalCase.legalArea}${legalCase.subArea ? ` — ${legalCase.subArea}` : ""}`);
+        console.log(
+          `Area:         ${legalCase.legalArea}${legalCase.subArea ? ` — ${legalCase.subArea}` : ""}`
+        );
         console.log(`Status:       ${legalCase.status}`);
         console.log(`Priority:     ${legalCase.priority}`);
         console.log(`Opponent:     ${legalCase.opponentId}`);
@@ -482,8 +466,16 @@ async function handleCase(
       if (flags.priority) updates.priority = flags.priority as any;
       if (flags.title) updates.displayTitle = flags.title;
       if (flags.facts) updates.facts = flags.facts;
-      if (flags.claims) updates.claims = flags.claims.split("\n").map((s) => s.trim()).filter(Boolean);
-      if (flags.defenses) updates.defenses = flags.defenses.split("\n").map((s) => s.trim()).filter(Boolean);
+      if (flags.claims)
+        updates.claims = flags.claims
+          .split("\n")
+          .map((s) => s.trim())
+          .filter(Boolean);
+      if (flags.defenses)
+        updates.defenses = flags.defenses
+          .split("\n")
+          .map((s) => s.trim())
+          .filter(Boolean);
 
       const updated = await caseRepo.update(id, updates);
       if (!updated) {
@@ -530,12 +522,28 @@ async function handleCase(
           "Mediation with neutral third party",
         ],
         risks: [
-          { description: "Opponent has strong precedent on their side", probability: "medium" as const, impact: "high" as const },
-          { description: "Evidence may be challenged as hearsay", probability: "low" as const, impact: "medium" as const },
+          {
+            description: "Opponent has strong precedent on their side",
+            probability: "medium" as const,
+            impact: "high" as const,
+          },
+          {
+            description: "Evidence may be challenged as hearsay",
+            probability: "low" as const,
+            impact: "medium" as const,
+          },
         ],
         opportunities: [
-          { description: "Procedural error in opponent's filing", probability: "medium" as const, impact: "high" as const },
-          { description: "Witness willing to testify", probability: "high" as const, impact: "medium" as const },
+          {
+            description: "Procedural error in opponent's filing",
+            probability: "medium" as const,
+            impact: "high" as const,
+          },
+          {
+            description: "Witness willing to testify",
+            probability: "high" as const,
+            impact: "medium" as const,
+          },
         ],
         recommendedApproach: "litigation" as const,
         confidence: 0.65,
@@ -575,14 +583,8 @@ async function handleCase(
         factualChance: 0.55,
         evidentiaryChance: 0.48,
         proceduralChance: 0.65,
-        riskFactors: [
-          "Limited documentary evidence",
-          "Opponent has home-court advantage",
-        ],
-        successFactors: [
-          "Strong legal basis in statute",
-          "Procedural timing advantage",
-        ],
+        riskFactors: ["Limited documentary evidence", "Opponent has home-court advantage"],
+        successFactors: ["Strong legal basis in statute", "Procedural timing advantage"],
         comparableCases: [],
         recommendedNextSteps: [
           "Gather additional documentary evidence",
@@ -621,7 +623,7 @@ async function handleCase(
 async function handleOpponent(
   repo: LegalEntityRepository,
   _action: string,
-  flags: ParsedFlags,
+  flags: ParsedFlags
 ): Promise<void> {
   const name = flags._[1];
   if (!name) {
@@ -631,7 +633,7 @@ async function handleOpponent(
 
   // Find or create opponent entity
   let opponent = (await repo.list({ type: "opponent", limit: 100 })).find(
-    (e) => e.displayName.toLowerCase() === name.toLowerCase(),
+    (e) => e.displayName.toLowerCase() === name.toLowerCase()
   );
 
   if (!opponent) {
@@ -647,7 +649,10 @@ async function handleOpponent(
     generatedAt: new Date().toISOString(),
     winRateVsUs: 0.42,
     commonStrategies: ["Delay tactics", "Motion to dismiss on technical grounds"],
-    weaknesses: ["Poor preparation for evidentiary hearings", "Overreliance on settlement pressure"],
+    weaknesses: [
+      "Poor preparation for evidentiary hearings",
+      "Overreliance on settlement pressure",
+    ],
     strengths: ["Strong appellate record", "Deep bench of associates"],
     settlementBehavior: "moderate" as const,
     averageSettlementTime: "4-6 months",
@@ -746,7 +751,7 @@ async function handlePrecedent(flags: ParsedFlags): Promise<void> {
      FROM pages
      WHERE slug = ANY($1::text[])
        AND deleted_at IS NULL`,
-    [slugs],
+    [slugs]
   );
 
   const queryLower = query.toLowerCase();

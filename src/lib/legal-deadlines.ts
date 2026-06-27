@@ -13,8 +13,22 @@ export type DeadlineStatus = "pending" | "warning" | "critical" | "overdue" | "d
 // jeweiligem Feiertagsgesetz (Stand 2025).
 
 export type Bundesland =
-  | "BB" | "BE" | "BW" | "BY" | "HB" | "HE" | "HH"
-  | "MV" | "NI" | "NW" | "RP" | "SH" | "SL" | "SN" | "ST" | "TH"
+  | "BB"
+  | "BE"
+  | "BW"
+  | "BY"
+  | "HB"
+  | "HE"
+  | "HH"
+  | "MV"
+  | "NI"
+  | "NW"
+  | "RP"
+  | "SH"
+  | "SL"
+  | "SN"
+  | "ST"
+  | "TH"
   | "AT";
 
 /**
@@ -24,9 +38,32 @@ export type Bundesland =
  * kantonale Feiertagsgesetze (Stand 2025).
  */
 export type Canton =
-  | "ZH" | "BE" | "LU" | "UR" | "SZ" | "OW" | "NW" | "GL" | "ZG"
-  | "FR" | "SO" | "BS" | "BL" | "SH" | "AR" | "AI" | "SG" | "GR"
-  | "AG" | "TG" | "TI" | "VD" | "VS" | "NE" | "GE" | "JU";
+  | "ZH"
+  | "BE"
+  | "LU"
+  | "UR"
+  | "SZ"
+  | "OW"
+  | "NW"
+  | "GL"
+  | "ZG"
+  | "FR"
+  | "SO"
+  | "BS"
+  | "BL"
+  | "SH"
+  | "AR"
+  | "AI"
+  | "SG"
+  | "GR"
+  | "AG"
+  | "TG"
+  | "TI"
+  | "VD"
+  | "VS"
+  | "NE"
+  | "GE"
+  | "JU";
 
 /** Ostersonntag nach gaussscher Osterformel. */
 function easterSunday(year: number): Date {
@@ -63,8 +100,12 @@ const holidayCache = new Map<string, Map<string, string>>();
  * Gibt die Menge der gesetzlichen Feiertage eines Jahres für ein Bundesland zurück.
  * Keys sind ISO-Datumstrings (YYYY-MM-DD), Values sind Feiertagsnamen.
  */
-export function publicHolidays(year: number, state: Bundesland | Canton, country?: 'DE' | 'AT' | 'CH'): Map<string, string> {
-  const cacheKey = `${year}:${state}:${country ?? ''}`;
+export function publicHolidays(
+  year: number,
+  state: Bundesland | Canton,
+  country?: "DE" | "AT" | "CH"
+): Map<string, string> {
+  const cacheKey = `${year}:${state}:${country ?? ""}`;
   const cached = holidayCache.get(cacheKey);
   if (cached) return cached;
   const h = new Map<string, string>();
@@ -76,15 +117,53 @@ export function publicHolidays(year: number, state: Bundesland | Canton, country
   // Without it, use heuristic: code in swissCantons AND NOT in Bundesland
   // (resolves ambiguity for BE, NW, SH in favor of DE backward compat).
   const swissCantons = new Set<string>([
-    "ZH", "LU", "UR", "SZ", "OW", "NW", "GL", "ZG",
-    "FR", "SO", "BS", "BL", "SH", "AR", "AI", "SG", "GR",
-    "AG", "TG", "TI", "VD", "VS", "NE", "GE", "JU",
+    "ZH",
+    "LU",
+    "UR",
+    "SZ",
+    "OW",
+    "NW",
+    "GL",
+    "ZG",
+    "FR",
+    "SO",
+    "BS",
+    "BL",
+    "SH",
+    "AR",
+    "AI",
+    "SG",
+    "GR",
+    "AG",
+    "TG",
+    "TI",
+    "VD",
+    "VS",
+    "NE",
+    "GE",
+    "JU",
   ]);
   const bundeslaender = new Set<string>([
-    "BB", "BE", "BW", "BY", "HB", "HE", "HH",
-    "MV", "NI", "NW", "RP", "SH", "SL", "SN", "ST", "TH", "AT",
+    "BB",
+    "BE",
+    "BW",
+    "BY",
+    "HB",
+    "HE",
+    "HH",
+    "MV",
+    "NI",
+    "NW",
+    "RP",
+    "SH",
+    "SL",
+    "SN",
+    "ST",
+    "TH",
+    "AT",
   ]);
-  const isSwiss = country === 'CH' || (!country && swissCantons.has(state) && !bundeslaender.has(state));
+  const isSwiss =
+    country === "CH" || (!country && swissCantons.has(state) && !bundeslaender.has(state));
   if (isSwiss) {
     return swissHolidays(year, state as Canton, h, add, fixed, easterSunday(year));
   }
@@ -173,7 +252,7 @@ function swissHolidays(
   h: Map<string, string>,
   add: (d: Date, name: string) => void,
   fixed: (m: number, day: number, name: string) => void,
-  easter: Date,
+  easter: Date
 ): Map<string, string> {
   fixed(1, 1, "Neujahr");
   fixed(1, 2, "Berchtoldstag");
@@ -212,8 +291,23 @@ function swissHolidays(
 
   // Fronleichnam (60 Tage nach Ostern): katholische Kantone
   const corpusChristiCantons = new Set([
-    "UR", "SZ", "OW", "NW", "LU", "ZG", "FR", "SO", "TI", "VS",
-    "AI", "SG", "AG", "TG", "GR", "BL", "SH",
+    "UR",
+    "SZ",
+    "OW",
+    "NW",
+    "LU",
+    "ZG",
+    "FR",
+    "SO",
+    "TI",
+    "VS",
+    "AI",
+    "SG",
+    "AG",
+    "TG",
+    "GR",
+    "BL",
+    "SH",
   ]);
   if (corpusChristiCantons.has(canton)) {
     add(offsetDays(easter, 60), "Fronleichnam");
@@ -221,22 +315,66 @@ function swissHolidays(
 
   // Mariä Himmelfahrt (15. Aug): katholische Kantone
   const assumptionCantons = new Set([
-    "UR", "SZ", "OW", "NW", "LU", "ZG", "FR", "SO", "TI", "VS",
-    "AI", "SG", "AG", "TG", "GR", "JU",
+    "UR",
+    "SZ",
+    "OW",
+    "NW",
+    "LU",
+    "ZG",
+    "FR",
+    "SO",
+    "TI",
+    "VS",
+    "AI",
+    "SG",
+    "AG",
+    "TG",
+    "GR",
+    "JU",
   ]);
   if (assumptionCantons.has(canton)) fixed(8, 15, "Mariä Himmelfahrt");
 
   // Allerheiligen (1. Nov): katholische Kantone
   const allSaintsCantons = new Set([
-    "UR", "SZ", "OW", "NW", "LU", "ZG", "FR", "SO", "TI", "VS",
-    "AI", "SG", "AG", "TG", "GR", "BL", "JU",
+    "UR",
+    "SZ",
+    "OW",
+    "NW",
+    "LU",
+    "ZG",
+    "FR",
+    "SO",
+    "TI",
+    "VS",
+    "AI",
+    "SG",
+    "AG",
+    "TG",
+    "GR",
+    "BL",
+    "JU",
   ]);
   if (allSaintsCantons.has(canton)) fixed(11, 1, "Allerheiligen");
 
   // Mariä Empfängnis (8. Dez): katholische Kantone
   const immaculateConceptionCantons = new Set([
-    "UR", "SZ", "OW", "NW", "LU", "ZG", "FR", "SO", "TI", "VS",
-    "AI", "SG", "AG", "TG", "GR", "BL", "JU",
+    "UR",
+    "SZ",
+    "OW",
+    "NW",
+    "LU",
+    "ZG",
+    "FR",
+    "SO",
+    "TI",
+    "VS",
+    "AI",
+    "SG",
+    "AG",
+    "TG",
+    "GR",
+    "BL",
+    "JU",
   ]);
   if (immaculateConceptionCantons.has(canton)) fixed(12, 8, "Mariä Empfängnis");
 
@@ -249,7 +387,11 @@ function swissHolidays(
  * Gibt true zurück wenn `date` ein gesetzlicher Feiertag im `state` ist.
  * Wenn kein Bundesland angegeben wird, wird nur Sa/So geprüft (Fallback).
  */
-export function isPublicHoliday(date: Date, state?: Bundesland | Canton, country?: 'DE' | 'AT' | 'CH'): boolean {
+export function isPublicHoliday(
+  date: Date,
+  state?: Bundesland | Canton,
+  country?: "DE" | "AT" | "CH"
+): boolean {
   if (!state) return false;
   const holidays = publicHolidays(date.getUTCFullYear(), state, country);
   return holidays.has(isoDate(date));
@@ -263,15 +405,11 @@ export function isPublicHoliday(date: Date, state?: Bundesland | Canton, country
 export function nextWorkday(
   date: Date,
   state?: Bundesland | Canton,
-  country?: 'DE' | 'AT' | 'CH',
+  country?: "DE" | "AT" | "CH"
 ): { date: Date; shifted: boolean; shiftedFrom?: string } {
   const original = isoDate(date);
   let d = new Date(date);
-  while (
-    d.getUTCDay() === 0 ||
-    d.getUTCDay() === 6 ||
-    isPublicHoliday(d, state, country)
-  ) {
+  while (d.getUTCDay() === 0 || d.getUTCDay() === 6 || isPublicHoliday(d, state, country)) {
     d = offsetDays(d, 1);
   }
   const shifted = isoDate(d) !== original;
@@ -301,22 +439,119 @@ export interface DeadlineRule {
 // ZPO / § 193 BGB; CH: Art. 66 ZPO). Gesetzliche Feiertage sind
 // bundesland-/kantons-abhängig und werden über den `state`-Parameter berechnet.
 export const DEADLINE_RULES: DeadlineRule[] = [
-  { key: "zpo-verteidigungsanzeige", label: "Verteidigungsanzeige", law: "§ 276 Abs. 1 S. 1 ZPO", days: 14, description: "Notfrist: 2 Wochen ab Zustellung der Klageschrift (schriftliches Vorverfahren)" },
-  { key: "zpo-klageerwiderung", label: "Klageerwiderung", law: "§ 276 Abs. 1 S. 2 ZPO", days: 28, description: "2 Wochen Verteidigungsanzeige + mindestens 2 weitere Wochen; maßgeblich ist die gerichtlich gesetzte Frist" },
-  { key: "zpo-einspruch-vu", label: "Einspruch gg. Versäumnisurteil", law: "§ 339 Abs. 1 ZPO", days: 14, description: "Notfrist: 2 Wochen ab Zustellung des Versäumnisurteils" },
-  { key: "zpo-berufung", label: "Berufung", law: "§ 517 ZPO", months: 1, description: "Notfrist: 1 Monat ab Zustellung des Urteils (spätestens 5 Monate nach Verkündung)" },
-  { key: "zpo-berufungsbegruendung", label: "Berufungsbegründung", law: "§ 520 Abs. 2 ZPO", months: 2, description: "2 Monate ab Zustellung des Urteils (verlängerbar)" },
-  { key: "zpo-revision", label: "Revision", law: "§ 548 ZPO", months: 1, description: "Notfrist: 1 Monat ab Zustellung des Berufungsurteils" },
-  { key: "zpo-beschwerde", label: "Sofortige Beschwerde", law: "§ 569 Abs. 1 ZPO", days: 14, description: "Notfrist: 2 Wochen ab Zustellung der Entscheidung" },
-  { key: "stpo-revision-einlegung", label: "Revision (Straf) — Einlegung", law: "§ 341 Abs. 1 StPO", days: 7, description: "1 Woche ab Verkündung des Urteils (Begründung: 1 Monat ab Ablauf der Einlegungsfrist, § 345 StPO)" },
-  { key: "zpo-vollziehung-ev", label: "Vollziehung einstw. Verfügung", law: "§§ 929 Abs. 2, 936 ZPO", months: 1, description: "Vollziehungsfrist: 1 Monat ab Verkündung/Zustellung an den Gläubiger" },
-  { key: "vwgvg-beschwerde", label: "Bescheidbeschwerde (AT)", law: "§ 7 Abs. 4 VwGVG (AT)", days: 28, description: "4 Wochen ab Zustellung des Bescheids" },
-  { key: "abgb-verjaehrung", label: "Verjährung Schadenersatz (AT)", law: "§ 1489 ABGB (AT)", years: 3, noRoll: true, description: "3 Jahre ab Kenntnis von Schaden und Schädiger" },
+  {
+    key: "zpo-verteidigungsanzeige",
+    label: "Verteidigungsanzeige",
+    law: "§ 276 Abs. 1 S. 1 ZPO",
+    days: 14,
+    description: "Notfrist: 2 Wochen ab Zustellung der Klageschrift (schriftliches Vorverfahren)",
+  },
+  {
+    key: "zpo-klageerwiderung",
+    label: "Klageerwiderung",
+    law: "§ 276 Abs. 1 S. 2 ZPO",
+    days: 28,
+    description:
+      "2 Wochen Verteidigungsanzeige + mindestens 2 weitere Wochen; maßgeblich ist die gerichtlich gesetzte Frist",
+  },
+  {
+    key: "zpo-einspruch-vu",
+    label: "Einspruch gg. Versäumnisurteil",
+    law: "§ 339 Abs. 1 ZPO",
+    days: 14,
+    description: "Notfrist: 2 Wochen ab Zustellung des Versäumnisurteils",
+  },
+  {
+    key: "zpo-berufung",
+    label: "Berufung",
+    law: "§ 517 ZPO",
+    months: 1,
+    description:
+      "Notfrist: 1 Monat ab Zustellung des Urteils (spätestens 5 Monate nach Verkündung)",
+  },
+  {
+    key: "zpo-berufungsbegruendung",
+    label: "Berufungsbegründung",
+    law: "§ 520 Abs. 2 ZPO",
+    months: 2,
+    description: "2 Monate ab Zustellung des Urteils (verlängerbar)",
+  },
+  {
+    key: "zpo-revision",
+    label: "Revision",
+    law: "§ 548 ZPO",
+    months: 1,
+    description: "Notfrist: 1 Monat ab Zustellung des Berufungsurteils",
+  },
+  {
+    key: "zpo-beschwerde",
+    label: "Sofortige Beschwerde",
+    law: "§ 569 Abs. 1 ZPO",
+    days: 14,
+    description: "Notfrist: 2 Wochen ab Zustellung der Entscheidung",
+  },
+  {
+    key: "stpo-revision-einlegung",
+    label: "Revision (Straf) — Einlegung",
+    law: "§ 341 Abs. 1 StPO",
+    days: 7,
+    description:
+      "1 Woche ab Verkündung des Urteils (Begründung: 1 Monat ab Ablauf der Einlegungsfrist, § 345 StPO)",
+  },
+  {
+    key: "zpo-vollziehung-ev",
+    label: "Vollziehung einstw. Verfügung",
+    law: "§§ 929 Abs. 2, 936 ZPO",
+    months: 1,
+    description: "Vollziehungsfrist: 1 Monat ab Verkündung/Zustellung an den Gläubiger",
+  },
+  {
+    key: "vwgvg-beschwerde",
+    label: "Bescheidbeschwerde (AT)",
+    law: "§ 7 Abs. 4 VwGVG (AT)",
+    days: 28,
+    description: "4 Wochen ab Zustellung des Bescheids",
+  },
+  {
+    key: "abgb-verjaehrung",
+    label: "Verjährung Schadenersatz (AT)",
+    law: "§ 1489 ABGB (AT)",
+    years: 3,
+    noRoll: true,
+    description: "3 Jahre ab Kenntnis von Schaden und Schädiger",
+  },
   // ── Schweizer Fristen (CH ZPO / OR / ZGB) ──────────────────────────────
-  { key: "ch-zpo-berufung", label: "Berufung (CH)", law: "Art. 311 ZPO (CH)", days: 30, description: "30 Tage ab Zustellung des Urteils (kantonal abweichend möglich)" },
-  { key: "ch-zpo-appellation", label: "Appellation (CH)", law: "Art. 378 ZPO (CH)", days: 30, description: "30 Tage ab Zustellung des Entscheids (vor kantonalen Obergerichten)" },
-  { key: "ch-or-verjaehrung", label: "Verjährung (CH OR)", law: "Art. 127 OR (CH)", years: 10, noRoll: true, description: "10 Jahre (absolute Verjährung nach OR); relative Verjährung 5 Jahre (Art. 128 OR) für konkrete Ansprüche" },
-  { key: "ch-zgb-erbklage", label: "Erbteilungsklage (CH)", law: "Art. 602 ZGB (CH)", years: 1, noRoll: true, description: "1 Jahr ab Kenntnis der Erbschaft (Erbteilungsklage nach Schweizer ZGB)" },
+  {
+    key: "ch-zpo-berufung",
+    label: "Berufung (CH)",
+    law: "Art. 311 ZPO (CH)",
+    days: 30,
+    description: "30 Tage ab Zustellung des Urteils (kantonal abweichend möglich)",
+  },
+  {
+    key: "ch-zpo-appellation",
+    label: "Appellation (CH)",
+    law: "Art. 378 ZPO (CH)",
+    days: 30,
+    description: "30 Tage ab Zustellung des Entscheids (vor kantonalen Obergerichten)",
+  },
+  {
+    key: "ch-or-verjaehrung",
+    label: "Verjährung (CH OR)",
+    law: "Art. 127 OR (CH)",
+    years: 10,
+    noRoll: true,
+    description:
+      "10 Jahre (absolute Verjährung nach OR); relative Verjährung 5 Jahre (Art. 128 OR) für konkrete Ansprüche",
+  },
+  {
+    key: "ch-zgb-erbklage",
+    label: "Erbteilungsklage (CH)",
+    law: "Art. 602 ZGB (CH)",
+    years: 1,
+    noRoll: true,
+    description: "1 Jahr ab Kenntnis der Erbschaft (Erbteilungsklage nach Schweizer ZGB)",
+  },
 ];
 
 /** Parse "YYYY-MM-DD" als UTC-Mittag — immun gegen Zeitzonen-/DST-Versatz. */
@@ -352,7 +587,12 @@ export function addMonthsClamped(date: Date, months: number): Date {
  * Hilfsfunktion für rein organisatorische (nicht-prozessuale) Werktagsfristen.
  * Berücksichtigt optional Feiertage (DE/AT/CH) wenn `state` übergeben wird.
  */
-export function addBusinessDays(date: Date, days: number, state?: Bundesland | Canton, country?: 'DE' | 'AT' | 'CH'): Date {
+export function addBusinessDays(
+  date: Date,
+  days: number,
+  state?: Bundesland | Canton,
+  country?: "DE" | "AT" | "CH"
+): Date {
   const d = new Date(date);
   let added = 0;
   while (added < days) {
@@ -383,7 +623,7 @@ export function computeDueDate(
   rule: DeadlineRule,
   startDate: string,
   state?: Bundesland | Canton,
-  country?: 'DE' | 'AT' | 'CH',
+  country?: "DE" | "AT" | "CH"
 ): DueDateResult {
   const start = parseISODate(startDate);
   let due: Date;
@@ -424,8 +664,7 @@ export function computeDueDate(
     ? ""
     : " Gesetzliche Feiertage manuell prüfen (kein Bundesland gesetzt).";
 
-  const note =
-    `${durationLabel} ab ${startDate} (${rule.law})${shiftReason}.${holidayNote}`;
+  const note = `${durationLabel} ab ${startDate} (${rule.law})${shiftReason}.${holidayNote}`;
 
   return { dueDate: toISODateString(due), rolledForward, holidayName, note };
 }
@@ -434,7 +673,7 @@ export function calculateDeadline(
   rule: DeadlineRule,
   startDate: string,
   state?: Bundesland | Canton,
-  country?: 'DE' | 'AT' | 'CH',
+  country?: "DE" | "AT" | "CH"
 ): DeadlineEntry {
   const { dueDate, note } = computeDueDate(rule, startDate, state, country);
   const now = new Date().toISOString();
@@ -496,9 +735,6 @@ export function withDeadlineAudit(
   return {
     ...deadline,
     updated_at: now,
-    audit_log: [
-      ...(deadline.audit_log ?? []),
-      { at: now, action, actor, note },
-    ],
+    audit_log: [...(deadline.audit_log ?? []), { at: now, action, actor, note }],
   };
 }

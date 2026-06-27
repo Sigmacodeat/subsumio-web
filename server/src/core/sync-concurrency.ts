@@ -11,7 +11,7 @@
  *
  * v0.22.13 — extracted as part of the parallel-sync hardening (PR #490).
  */
-import type { BrainEngine } from './engine.ts';
+import type { BrainEngine } from "./engine.ts";
 
 /** Threshold above which auto-concurrency fires for incremental sync paths. */
 export const AUTO_CONCURRENCY_FILE_THRESHOLD = 100;
@@ -64,16 +64,10 @@ export const DEFAULT_PARALLEL_SOURCES = 4;
  * when the worker count is > 1. It only applies to the auto path; explicit
  * --workers bypasses the floor entirely (per Q1 in PR #490).
  */
-export function autoConcurrency(
-  engine: BrainEngine,
-  fileCount: number,
-  override?: number,
-): number {
-  if (engine.kind === 'pglite') return 1;
+export function autoConcurrency(engine: BrainEngine, fileCount: number, override?: number): number {
+  if (engine.kind === "pglite") return 1;
   if (override !== undefined) return Math.max(1, override);
-  return fileCount > AUTO_CONCURRENCY_FILE_THRESHOLD
-    ? DEFAULT_PARALLEL_WORKERS
-    : 1;
+  return fileCount > AUTO_CONCURRENCY_FILE_THRESHOLD ? DEFAULT_PARALLEL_WORKERS : 1;
 }
 
 /**
@@ -84,11 +78,7 @@ export function autoConcurrency(
  *     respect them even on small diffs — Q1 in PR #490)
  *   - workers > 1 + auto path → parallel only when fileCount > PARALLEL_FILE_FLOOR
  */
-export function shouldRunParallel(
-  workers: number,
-  fileCount: number,
-  explicit: boolean,
-): boolean {
+export function shouldRunParallel(workers: number, fileCount: number, explicit: boolean): boolean {
   if (workers <= 1) return false;
   if (explicit) return true;
   return fileCount > PARALLEL_FILE_FLOOR;
@@ -114,9 +104,7 @@ export function parseWorkers(s: string | undefined): number | undefined {
   if (s === undefined) return undefined;
   const n = parseInt(s, 10);
   if (!Number.isFinite(n) || n < 1 || String(n) !== s.trim()) {
-    throw new Error(
-      `--workers must be a positive integer, got: ${JSON.stringify(s)}`,
-    );
+    throw new Error(`--workers must be a positive integer, got: ${JSON.stringify(s)}`);
   }
   return n;
 }
@@ -145,19 +133,17 @@ export function parseDurationSeconds(s: string | undefined, flagName: string): n
   const m = trimmed.match(/^(\d+)([smh]?)$/);
   if (!m) {
     throw new Error(
-      `${flagName} must be a positive integer with optional s/m/h suffix (e.g. 60, 60s, 10m, 1h), got: ${JSON.stringify(s)}`,
+      `${flagName} must be a positive integer with optional s/m/h suffix (e.g. 60, 60s, 10m, 1h), got: ${JSON.stringify(s)}`
     );
   }
   const n = parseInt(m[1], 10);
   if (!Number.isFinite(n) || n < 1) {
-    throw new Error(
-      `${flagName} must be a positive integer, got: ${JSON.stringify(s)}`,
-    );
+    throw new Error(`${flagName} must be a positive integer, got: ${JSON.stringify(s)}`);
   }
-  const unit = m[2] || 's';
-  if (unit === 's') return n;
-  if (unit === 'm') return n * 60;
-  if (unit === 'h') return n * 3600;
+  const unit = m[2] || "s";
+  if (unit === "s") return n;
+  if (unit === "m") return n * 60;
+  if (unit === "h") return n * 3600;
   // Defensive: regex already rejects other units; this line is unreachable.
   throw new Error(`${flagName}: unsupported unit "${unit}"`);
 }
@@ -196,7 +182,7 @@ export function resolveMaxConnections(): number | undefined {
  */
 export function clampWorkersForConnectionBudget(
   workers: number,
-  opts: { maxConnections?: number; parentPool: number; perWorkerPool: number },
+  opts: { maxConnections?: number; parentPool: number; perWorkerPool: number }
 ): { workers: number; clamped: boolean } {
   const { maxConnections, parentPool, perWorkerPool } = opts;
   if (maxConnections === undefined || perWorkerPool <= 0) {
@@ -228,7 +214,7 @@ export interface WorkersWithClampResult {
    * Reason the wrapper picked `workers`. Used by tests + stderr-line
    * shape; one of: 'pglite_clamp' | 'override' | 'auto' | 'default'.
    */
-  reason: 'pglite_clamp' | 'override' | 'auto' | 'default';
+  reason: "pglite_clamp" | "override" | "auto" | "default";
 }
 
 /**
@@ -285,9 +271,9 @@ export function resolveWorkersWithClamp(
   engine: BrainEngine,
   override: number | undefined,
   commandName: string,
-  fileCount: number,
+  fileCount: number
 ): WorkersWithClampResult {
-  if (engine.kind === 'pglite') {
+  if (engine.kind === "pglite") {
     if (override !== undefined && override > 1) {
       const key = `${commandName}:${override}`;
       if (!_warnedClampKeys.has(key)) {
@@ -295,29 +281,29 @@ export function resolveWorkersWithClamp(
         // eslint-disable-next-line no-console
         console.error(
           `[${commandName}] workers=${override} requested, clamped to 1 on PGLite ` +
-            '(single-writer engine; use Postgres for parallel writes)',
+            "(single-writer engine; use Postgres for parallel writes)"
         );
       }
       return {
         workers: 1,
         wasClamped: true,
         requested: override,
-        reason: 'pglite_clamp',
+        reason: "pglite_clamp",
       };
     }
     return {
       workers: 1,
       wasClamped: false,
       requested: override,
-      reason: override !== undefined ? 'override' : 'default',
+      reason: override !== undefined ? "override" : "default",
     };
   }
 
   // Postgres path: defer to existing autoConcurrency for the rule set.
   const workers = autoConcurrency(engine, fileCount, override);
-  let reason: WorkersWithClampResult['reason'];
-  if (override !== undefined) reason = 'override';
-  else if (fileCount > AUTO_CONCURRENCY_FILE_THRESHOLD) reason = 'auto';
-  else reason = 'default';
+  let reason: WorkersWithClampResult["reason"];
+  if (override !== undefined) reason = "override";
+  else if (fileCount > AUTO_CONCURRENCY_FILE_THRESHOLD) reason = "auto";
+  else reason = "default";
   return { workers, wasClamped: false, requested: override, reason };
 }

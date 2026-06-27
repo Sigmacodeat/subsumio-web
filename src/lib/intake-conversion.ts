@@ -26,13 +26,15 @@ export interface ConvertedCasePage {
 }
 
 function safeSlugPart(input: string): string {
-  return input
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 80) || "intake";
+  return (
+    input
+      .toLowerCase()
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "")
+      .slice(0, 80) || "intake"
+  );
 }
 
 function inferTitle(intake: IntakeConversionInput): string {
@@ -59,7 +61,9 @@ export function buildCaseFromIntake(
   const contentParts = [
     "## Intake",
     fm.summary,
-    missingDocs.length ? `\n## Fehlende Unterlagen\n${missingDocs.map((doc) => `- ${doc}`).join("\n")}` : "",
+    missingDocs.length
+      ? `\n## Fehlende Unterlagen\n${missingDocs.map((doc) => `- ${doc}`).join("\n")}`
+      : "",
   ].filter(Boolean);
 
   return {
@@ -92,13 +96,15 @@ export function buildCaseFromIntake(
       time_entries: [],
       expenses: [],
       communications: fm.source_event_slug
-        ? [{
-            id: `intake-${at.getTime()}`,
-            channel: fm.source,
-            direction: "incoming",
-            summary: fm.summary,
-            timestamp: fm.created_at,
-          }]
+        ? [
+            {
+              id: `intake-${at.getTime()}`,
+              channel: fm.source,
+              direction: "incoming",
+              summary: fm.summary,
+              timestamp: fm.created_at,
+            },
+          ]
         : [],
       version: 0,
       converted_from_intake_at: at.toISOString(),

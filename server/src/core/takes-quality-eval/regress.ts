@@ -10,9 +10,9 @@
  * If they differ, regress reports the inputs are dissimilar (informational
  * — caller decides whether to treat as a failure).
  */
-import type { TakesQualityReceipt } from './receipt.ts';
-import type { RubricDimension } from './rubric.ts';
-import { RUBRIC_DIMENSIONS } from './rubric.ts';
+import type { TakesQualityReceipt } from "./receipt.ts";
+import type { RubricDimension } from "./rubric.ts";
+import { RUBRIC_DIMENSIONS } from "./rubric.ts";
 
 export interface RegressionDelta {
   /** Per-dim mean delta (current − prior). Negative = regression. */
@@ -39,13 +39,15 @@ export interface RegressOpts {
 export function compareReceipts(
   current: TakesQualityReceipt,
   prior: TakesQualityReceipt,
-  opts: RegressOpts = {},
+  opts: RegressOpts = {}
 ): RegressionDelta {
   const threshold = opts.threshold ?? 0.5;
 
   const inputDiffs: string[] = [];
   if (current.corpus.corpus_sha8 !== prior.corpus.corpus_sha8) {
-    inputDiffs.push(`corpus_sha8 differs (${prior.corpus.corpus_sha8} → ${current.corpus.corpus_sha8})`);
+    inputDiffs.push(
+      `corpus_sha8 differs (${prior.corpus.corpus_sha8} → ${current.corpus.corpus_sha8})`
+    );
   }
   if (current.prompt_sha8 !== prior.prompt_sha8) {
     inputDiffs.push(`prompt_sha8 differs (${prior.prompt_sha8} → ${current.prompt_sha8})`);
@@ -76,9 +78,9 @@ export function compareReceipts(
     .filter(([, d]) => (d ?? 0) < -threshold)
     .map(([k, d]) => `${k}=${d}`);
   const summary = regressed
-    ? `REGRESSION: overall ${overall_delta >= 0 ? '+' : ''}${overall_delta}` +
-      (failingDims.length > 0 ? `; failing dims: ${failingDims.join(', ')}` : '')
-    : `OK: overall ${overall_delta >= 0 ? '+' : ''}${overall_delta} (no dim regressed past ${threshold})`;
+    ? `REGRESSION: overall ${overall_delta >= 0 ? "+" : ""}${overall_delta}` +
+      (failingDims.length > 0 ? `; failing dims: ${failingDims.join(", ")}` : "")
+    : `OK: overall ${overall_delta >= 0 ? "+" : ""}${overall_delta} (no dim regressed past ${threshold})`;
 
   return {
     dim_deltas,

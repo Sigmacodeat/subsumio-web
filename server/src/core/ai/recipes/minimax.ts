@@ -1,4 +1,4 @@
-import type { Recipe } from '../types.ts';
+import type { Recipe } from "../types.ts";
 
 /**
  * MiniMax (海螺AI). OpenAI-compatible /embeddings endpoint at
@@ -16,22 +16,22 @@ import type { Recipe } from '../types.ts';
  * Reference: https://www.minimaxi.com/document/guides/embeddings
  */
 export const minimax: Recipe = {
-  id: 'minimax',
-  name: 'MiniMax (海螺AI)',
-  tier: 'openai-compat',
-  implementation: 'openai-compatible',
-  base_url_default: 'https://api.minimaxi.com/v1',
+  id: "minimax",
+  name: "MiniMax (海螺AI)",
+  tier: "openai-compat",
+  implementation: "openai-compatible",
+  base_url_default: "https://api.minimaxi.com/v1",
   auth_env: {
-    required: ['MINIMAX_API_KEY'],
-    optional: ['MINIMAX_GROUP_ID'],
-    setup_url: 'https://www.minimaxi.com/document/guides/embeddings',
+    required: ["MINIMAX_API_KEY"],
+    optional: ["MINIMAX_GROUP_ID"],
+    setup_url: "https://www.minimaxi.com/document/guides/embeddings",
   },
   touchpoints: {
     embedding: {
-      models: ['embo-01'],
+      models: ["embo-01"],
       default_dims: 1536,
       cost_per_1m_tokens_usd: 0.07,
-      price_last_verified: '2026-05-09',
+      price_last_verified: "2026-05-09",
       // MiniMax docs don't publish a hard batch-token cap; declare a
       // conservative 4096-token budget so the gateway pre-splits before
       // hitting whatever undocumented server-side limit exists. Recursive
@@ -39,6 +39,5 @@ export const minimax: Recipe = {
       max_batch_tokens: 4096,
     },
   },
-  setup_hint:
-    'Get an API key at https://www.minimaxi.com, then `export MINIMAX_API_KEY=...`',
+  setup_hint: "Get an API key at https://www.minimaxi.com, then `export MINIMAX_API_KEY=...`",
 };

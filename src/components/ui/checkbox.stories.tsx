@@ -21,7 +21,9 @@ export const WithLabel: Story = {
   render: () => (
     <div className="flex items-center gap-2">
       <Checkbox id="terms" />
-      <label htmlFor="terms" className="text-sm">Akzeptieren</label>
+      <label htmlFor="terms" className="text-sm">
+        Akzeptieren
+      </label>
     </div>
   ),
 };

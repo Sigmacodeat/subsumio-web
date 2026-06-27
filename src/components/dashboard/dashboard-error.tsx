@@ -17,9 +17,7 @@ export function DashboardError({ error, reset, moduleKey }: DashboardErrorProps)
   useEffect(() => {
     console.error(`[dashboard error${moduleKey ? `:${moduleKey}` : ""}]`, error);
     if (process.env.NODE_ENV === "production") {
-      import("@sentry/nextjs")
-        .then((Sentry) => Sentry.captureException(error))
-        .catch(() => {});
+      import("@sentry/nextjs").then((Sentry) => Sentry.captureException(error)).catch(() => {});
     }
   }, [error, moduleKey]);
 

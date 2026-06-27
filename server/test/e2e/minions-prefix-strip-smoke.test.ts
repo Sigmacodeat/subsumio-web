@@ -10,11 +10,14 @@
  * "claude-sonnet-4-6" cleanly.
  */
 
-import { describe, test, expect, beforeAll, afterAll, beforeEach } from 'bun:test';
-import { PGLiteEngine } from '../../src/core/pglite-engine.ts';
-import { MinionQueue } from '../../src/core/minions/queue.ts';
-import { makeSubagentHandler, type MessagesClient } from '../../src/core/minions/handlers/subagent.ts';
-import type Anthropic from '@anthropic-ai/sdk';
+import { describe, test, expect, beforeAll, afterAll, beforeEach } from "bun:test";
+import { PGLiteEngine } from "../../src/core/pglite-engine.ts";
+import { MinionQueue } from "../../src/core/minions/queue.ts";
+import {
+  makeSubagentHandler,
+  type MessagesClient,
+} from "../../src/core/minions/handlers/subagent.ts";
+import type Anthropic from "@anthropic-ai/sdk";
 
 let engine: PGLiteEngine;
 let queue: MinionQueue;
@@ -31,42 +34,45 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  await engine.executeRaw('DELETE FROM subagent_messages');
-  await engine.executeRaw('DELETE FROM subagent_tool_executions');
-  await engine.executeRaw('DELETE FROM subagent_rate_leases');
-  await engine.executeRaw('DELETE FROM minion_jobs');
+  await engine.executeRaw("DELETE FROM subagent_messages");
+  await engine.executeRaw("DELETE FROM subagent_tool_executions");
+  await engine.executeRaw("DELETE FROM subagent_rate_leases");
+  await engine.executeRaw("DELETE FROM minion_jobs");
 }, 30_000);
 
-describe('v0.41 Bug 3 — E2E prefix strip at Anthropic call site', () => {
-  test('qualified provider:model strips to bare model_id at SDK call', async () => {
+describe("v0.41 Bug 3 — E2E prefix strip at Anthropic call site", () => {
+  test("qualified provider:model strips to bare model_id at SDK call", async () => {
     const calls: Anthropic.MessageCreateParamsNonStreaming[] = [];
     const client: MessagesClient = {
       async create(params) {
         calls.push(params);
         return {
-          content: [{ type: 'text', text: 'ok' }],
-          stop_reason: 'end_turn',
+          content: [{ type: "text", text: "ok" }],
+          stop_reason: "end_turn",
           usage: { input_tokens: 1, output_tokens: 1 },
-          role: 'assistant',
+          role: "assistant",
         } as unknown as Anthropic.Message;
       },
     };
     const handler = makeSubagentHandler({
-      engine, client, toolRegistry: [], maxConcurrent: 100,
-      rateLeaseKey: 'k_e2e_prefix',
+      engine,
+      client,
+      toolRegistry: [],
+      maxConcurrent: 100,
+      rateLeaseKey: "k_e2e_prefix",
     });
 
     // Submit with qualified model — the field-report case.
     const job = await queue.add(
-      'subagent',
-      { prompt: 'hi', model: 'anthropic:claude-sonnet-4-6' },
+      "subagent",
+      { prompt: "hi", model: "anthropic:claude-sonnet-4-6" },
       {},
-      { allowProtectedSubmit: true },
+      { allowProtectedSubmit: true }
     );
     // Drive the handler directly (worker not needed for one-shot test).
     const ctx = {
       id: job.id,
-      data: { prompt: 'hi', model: 'anthropic:claude-sonnet-4-6' },
+      data: { prompt: "hi", model: "anthropic:claude-sonnet-4-6" },
       signal: new AbortController().signal,
       shutdownSignal: new AbortController().signal,
       readInbox: async () => [],
@@ -77,7 +83,7 @@ describe('v0.41 Bug 3 — E2E prefix strip at Anthropic call site', () => {
 
     expect(calls.length).toBe(1);
     // The SDK MUST receive the bare model id (no `anthropic:` prefix).
-    expect(calls[0]!.model).toBe('claude-sonnet-4-6');
-    expect(calls[0]!.model).not.toContain(':');
+    expect(calls[0]!.model).toBe("claude-sonnet-4-6");
+    expect(calls[0]!.model).not.toContain(":");
   });
 });

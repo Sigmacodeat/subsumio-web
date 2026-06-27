@@ -42,7 +42,10 @@ const DEFAULT_WEIGHTS_PATH = resolve(REPO_ROOT, "scripts/test-weights.json");
 export type WeightMap = Map<string, number>;
 
 export class WeightsLoadError extends Error {
-  constructor(public readonly path: string, public readonly cause: unknown) {
+  constructor(
+    public readonly path: string,
+    public readonly cause: unknown
+  ) {
     super(`failed to load weights from ${path}: ${cause}`);
     this.name = "WeightsLoadError";
   }
@@ -75,7 +78,7 @@ export function loadWeights(path: string = DEFAULT_WEIGHTS_PATH): WeightMap {
     if (typeof v !== "number" || !Number.isFinite(v) || v < 0) {
       throw new WeightsLoadError(
         path,
-        `value for "${k}" must be a non-negative finite number, got ${JSON.stringify(v)}`,
+        `value for "${k}" must be a non-negative finite number, got ${JSON.stringify(v)}`
       );
     }
     out.set(k, v);
@@ -91,9 +94,7 @@ export function computeMedian(values: number[]): number {
   if (values.length === 0) return 0;
   const sorted = [...values].sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
-  return sorted.length % 2 === 0
-    ? (sorted[mid - 1]! + sorted[mid]!) / 2
-    : sorted[mid]!;
+  return sorted.length % 2 === 0 ? (sorted[mid - 1]! + sorted[mid]!) / 2 : sorted[mid]!;
 }
 
 export interface PartitionOpts {
@@ -125,7 +126,7 @@ export function partition(
   files: string[],
   weights: WeightMap,
   n: number,
-  opts: PartitionOpts = {},
+  opts: PartitionOpts = {}
 ): string[][] {
   if (!Number.isInteger(n) || n <= 0) {
     throw new RangeError(`shard count must be a positive integer, got ${n}`);
@@ -139,7 +140,7 @@ export function partition(
   if (opts.fallbackWeight !== undefined) {
     if (!Number.isFinite(opts.fallbackWeight) || opts.fallbackWeight < 0) {
       throw new RangeError(
-        `fallbackWeight must be non-negative finite, got ${opts.fallbackWeight}`,
+        `fallbackWeight must be non-negative finite, got ${opts.fallbackWeight}`
       );
     }
     fallback = opts.fallbackWeight;
@@ -189,9 +190,7 @@ export function partition(
  */
 export function imbalanceRatio(shards: string[][], weights: WeightMap, fallback: number): number {
   if (shards.length === 0) return 1;
-  const totals = shards.map((s) =>
-    s.reduce((sum, f) => sum + (weights.get(f) ?? fallback), 0),
-  );
+  const totals = shards.map((s) => s.reduce((sum, f) => sum + (weights.get(f) ?? fallback), 0));
   const max = Math.max(...totals);
   const min = Math.min(...totals);
   if (min === 0) return max === 0 ? 1 : Infinity;
@@ -227,7 +226,7 @@ async function main(): Promise<number> {
   const total = Number.parseInt(argv[1]!, 10);
   if (!Number.isInteger(idx) || !Number.isInteger(total) || idx < 1 || total < 1 || idx > total) {
     console.error(
-      `error: shard index ${argv[0]} / total ${argv[1]} invalid (need 1 <= index <= total, both ints)`,
+      `error: shard index ${argv[0]} / total ${argv[1]} invalid (need 1 <= index <= total, both ints)`
     );
     return 2;
   }

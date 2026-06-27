@@ -1,6 +1,6 @@
-import type { BrainEngine } from '../core/engine.ts';
-import { handleToolCall } from '../mcp/server.ts';
-import { resolveSourceId } from '../core/source-resolver.ts';
+import type { BrainEngine } from "../core/engine.ts";
+import { handleToolCall } from "../mcp/server.ts";
+import { resolveSourceId } from "../core/source-resolver.ts";
 
 /**
  * `gbrain call <tool> <json>` — trusted local op-dispatch surface.
@@ -19,18 +19,18 @@ export async function runCall(engine: BrainEngine, args: string[]) {
   const rest: string[] = [];
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
-    if (a === '--source') {
+    if (a === "--source") {
       const next = args[i + 1];
-      if (!next || next.startsWith('--')) {
-        console.error('--source requires an id (e.g. --source jarvis-memory)');
+      if (!next || next.startsWith("--")) {
+        console.error("--source requires an id (e.g. --source jarvis-memory)");
         process.exit(1);
       }
       explicitSource = next;
       i++;
       continue;
     }
-    if (a.startsWith('--source=')) {
-      explicitSource = a.slice('--source='.length);
+    if (a.startsWith("--source=")) {
+      explicitSource = a.slice("--source=".length);
       continue;
     }
     rest.push(a);

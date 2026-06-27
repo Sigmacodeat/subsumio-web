@@ -14,9 +14,7 @@
       "jobs_dead": 0,
       "wall_clock_ms": 1,
       "total_cost_usd": 0,
-      "lease_cap_history": [
-        8
-      ],
+      "lease_cap_history": [8],
       "bounces": 0,
       "upstream_429s": 0
     },
@@ -27,9 +25,7 @@
       "jobs_dead": 0,
       "wall_clock_ms": 0,
       "total_cost_usd": 0,
-      "lease_cap_history": [
-        8
-      ],
+      "lease_cap_history": [8],
       "bounces": 0,
       "upstream_429s": 0
     }

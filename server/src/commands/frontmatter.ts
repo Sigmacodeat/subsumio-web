@@ -15,12 +15,12 @@
  * validate. Pass an explicit path to validate a non-source-registered tree.
  */
 
-import { readFileSync, writeFileSync, existsSync, lstatSync, readdirSync } from 'fs';
-import { join, relative, resolve } from 'path';
-import type { BrainEngine } from '../core/engine.ts';
-import { loadConfig, toEngineConfig } from '../core/config.ts';
-import { createEngine } from '../core/engine-factory.ts';
-import { parseMarkdown, type ParseValidationCode } from '../core/markdown.ts';
+import { readFileSync, writeFileSync, existsSync, lstatSync, readdirSync } from "fs";
+import { join, relative, resolve } from "path";
+import type { BrainEngine } from "../core/engine.ts";
+import { loadConfig, toEngineConfig } from "../core/config.ts";
+import { createEngine } from "../core/engine-factory.ts";
+import { parseMarkdown, type ParseValidationCode } from "../core/markdown.ts";
 import {
   autoFixFrontmatter,
   createFrontmatterBackup,
@@ -28,22 +28,22 @@ import {
   scanBrainSources,
   type AuditReport,
   type AuditFix,
-} from '../core/brain-writer.ts';
-import { isSyncable, pruneDir, slugifyPath } from '../core/sync.ts';
+} from "../core/brain-writer.ts";
+import { isSyncable, pruneDir, slugifyPath } from "../core/sync.ts";
 
 export async function runFrontmatter(args: string[]): Promise<void> {
   const sub = args[0];
-  if (!sub || sub === '--help' || sub === '-h') {
+  if (!sub || sub === "--help" || sub === "-h") {
     printHelp();
     return;
   }
   const rest = args.slice(1);
 
-  if (sub === 'validate') {
+  if (sub === "validate") {
     await runValidate(rest);
     return;
   }
-  if (sub === 'audit') {
+  if (sub === "audit") {
     const engine = await connectEngineForAudit();
     try {
       await runAudit(engine, rest);
@@ -52,12 +52,12 @@ export async function runFrontmatter(args: string[]): Promise<void> {
     }
     return;
   }
-  if (sub === 'generate') {
+  if (sub === "generate") {
     await runGenerate(rest);
     return;
   }
-  if (sub === 'install-hook') {
-    const { runFrontmatterInstallHook } = await import('./frontmatter-install-hook.ts');
+  if (sub === "install-hook") {
+    const { runFrontmatterInstallHook } = await import("./frontmatter-install-hook.ts");
     await runFrontmatterInstallHook(rest);
     return;
   }
@@ -69,7 +69,7 @@ export async function runFrontmatter(args: string[]): Promise<void> {
 async function connectEngineForAudit(): Promise<BrainEngine> {
   const config = loadConfig();
   if (!config) {
-    throw new Error('No brain configured. Run: gbrain init');
+    throw new Error("No brain configured. Run: gbrain init");
   }
   const engineConfig = toEngineConfig(config);
   const engine = await createEngine(engineConfig);
@@ -157,13 +157,13 @@ async function runValidate(rest: string[]): Promise<void> {
   const flags: ValidateFlags = { json: false, fix: false, dryRun: false };
   let target: string | null = null;
   for (const a of rest) {
-    if (a === '--json') flags.json = true;
-    else if (a === '--fix') flags.fix = true;
-    else if (a === '--dry-run') flags.dryRun = true;
-    else if (!a.startsWith('--')) target = a;
+    if (a === "--json") flags.json = true;
+    else if (a === "--fix") flags.fix = true;
+    else if (a === "--dry-run") flags.dryRun = true;
+    else if (!a.startsWith("--")) target = a;
   }
   if (!target) {
-    console.error('error: gbrain frontmatter validate requires a <path> argument');
+    console.error("error: gbrain frontmatter validate requires a <path> argument");
     process.exitCode = 1;
     return;
   }
@@ -180,21 +180,24 @@ async function runValidate(rest: string[]): Promise<void> {
   const backupRunId = makeFrontmatterBackupRunId();
 
   for (const file of files) {
-    const content = readFileSync(file, 'utf8');
+    const content = readFileSync(file, "utf8");
     const expectedSlug = slugifyPath(relative(resolve(target), file) || file);
     const parsed = parseMarkdown(content, file, { validate: true, expectedSlug });
     const errs = parsed.errors ?? [];
     const result: FileValidation = {
       path: file,
-      errors: errs.map(e => ({ code: e.code, message: e.message, line: e.line })),
+      errors: errs.map((e) => ({ code: e.code, message: e.message, line: e.line })),
     };
 
     if (flags.fix && errs.length > 0) {
       const { content: fixed, fixes } = autoFixFrontmatter(content, { filePath: file });
       result.fixesApplied = fixes;
       if (fixes.length > 0 && !flags.dryRun) {
-        result.backupPath = createFrontmatterBackup(file, { sourcePath: resolved, runId: backupRunId });
-        writeFileSync(file, fixed, 'utf8');
+        result.backupPath = createFrontmatterBackup(file, {
+          sourcePath: resolved,
+          runId: backupRunId,
+        });
+        writeFileSync(file, fixed, "utf8");
       }
     }
 
@@ -202,8 +205,8 @@ async function runValidate(rest: string[]): Promise<void> {
   }
 
   const totalErrors = results.reduce((n, r) => n + r.errors.length, 0);
-  const filesWithErrors = results.filter(r => r.errors.length > 0).length;
-  const filesFixed = results.filter(r => (r.fixesApplied?.length ?? 0) > 0).length;
+  const filesWithErrors = results.filter((r) => r.errors.length > 0).length;
+  const filesFixed = results.filter((r) => (r.fixesApplied?.length ?? 0) > 0).length;
 
   if (flags.json) {
     const envelope = {
@@ -221,23 +224,27 @@ async function runValidate(rest: string[]): Promise<void> {
     if (totalErrors === 0) {
       console.log(`OK — ${files.length} file(s) scanned, no frontmatter issues`);
     } else {
-      console.log(`Found ${totalErrors} issue(s) across ${filesWithErrors} file(s) (scanned ${files.length})`);
+      console.log(
+        `Found ${totalErrors} issue(s) across ${filesWithErrors} file(s) (scanned ${files.length})`
+      );
       for (const r of results) {
         if (r.errors.length === 0) continue;
         console.log(`\n${r.path}`);
         for (const e of r.errors) {
-          const lineHint = e.line !== undefined ? `:${e.line}` : '';
+          const lineHint = e.line !== undefined ? `:${e.line}` : "";
           console.log(`  [${e.code}]${lineHint} ${e.message}`);
         }
         if (r.fixesApplied && r.fixesApplied.length > 0) {
-          const verb = flags.dryRun ? 'would fix' : 'fixed';
+          const verb = flags.dryRun ? "would fix" : "fixed";
           for (const f of r.fixesApplied) {
             console.log(`  ${verb}: ${f.description}`);
           }
         }
       }
       if (flags.fix && !flags.dryRun) {
-        console.log(`\nWrote centralized backups for ${filesFixed} file(s) under ~/.gbrain/backups/frontmatter/.`);
+        console.log(
+          `\nWrote centralized backups for ${filesFixed} file(s) under ~/.gbrain/backups/frontmatter/.`
+        );
       }
     }
   }
@@ -263,10 +270,7 @@ async function runValidate(rest: string[]): Promise<void> {
  * don't pass it; the regression suite uses it to assert descent-time
  * pruning directly.
  */
-export function collectFiles(
-  target: string,
-  visitDir?: (dirPath: string) => void,
-): string[] {
+export function collectFiles(target: string, visitDir?: (dirPath: string) => void): string[] {
   const st = lstatSync(target);
   if (st.isFile()) {
     return [target];
@@ -299,7 +303,7 @@ export function collectFiles(
         stack.push(full);
       } else if (entryStat.isFile()) {
         const rel = relative(target, full);
-        if (isSyncable(rel, { strategy: 'markdown' })) {
+        if (isSyncable(rel, { strategy: "markdown" })) {
           out.push(full);
         }
       }
@@ -317,9 +321,9 @@ async function runAudit(engine: BrainEngine, rest: string[]): Promise<void> {
   let sourceId: string | undefined;
   for (let i = 0; i < rest.length; i++) {
     const a = rest[i];
-    if (a === '--json') json = true;
-    else if (a === '--source') sourceId = rest[++i];
-    else if (a.startsWith('--source=')) sourceId = a.slice('--source='.length);
+    if (a === "--json") json = true;
+    else if (a === "--source") sourceId = rest[++i];
+    else if (a.startsWith("--source=")) sourceId = a.slice("--source=".length);
   }
 
   const report = await scanBrainSources(engine, { sourceId });
@@ -334,17 +338,21 @@ async function runAudit(engine: BrainEngine, rest: string[]): Promise<void> {
 
 function printAuditHumanReport(report: AuditReport): void {
   if (report.per_source.length === 0) {
-    console.log('No registered sources to audit. Run `gbrain sources list` to inspect.');
+    console.log("No registered sources to audit. Run `gbrain sources list` to inspect.");
     return;
   }
-  console.log(`Frontmatter audit — ${report.total} malformed issue(s) across ${report.per_source.length} source(s) (scanned at ${report.scanned_at})`);
+  console.log(
+    `Frontmatter audit — ${report.total} malformed issue(s) across ${report.per_source.length} source(s) (scanned at ${report.scanned_at})`
+  );
   if (report.ignored_missing_open) {
-    console.log(`Missing frontmatter ignored: ${report.ignored_missing_open} file(s). Use \`frontmatter validate\` for strict per-file checks or \`frontmatter generate\` to add meaningful metadata.`);
+    console.log(
+      `Missing frontmatter ignored: ${report.ignored_missing_open} file(s). Use \`frontmatter validate\` for strict per-file checks or \`frontmatter generate\` to add meaningful metadata.`
+    );
   }
   for (const src of report.per_source) {
     console.log(`\n[${src.source_id}] ${src.source_path}`);
     if (src.total === 0) {
-      console.log('  clean');
+      console.log("  clean");
       continue;
     }
     console.log(`  ${src.total} issue(s)`);
@@ -354,7 +362,7 @@ function printAuditHumanReport(report: AuditReport): void {
     if (src.sample.length > 0) {
       console.log(`  sample:`);
       for (const s of src.sample.slice(0, 5)) {
-        console.log(`    ${s.path} — ${s.codes.join(', ')}`);
+        console.log(`    ${s.path} — ${s.codes.join(", ")}`);
       }
       if (src.sample.length > 5) console.log(`    (+ ${src.sample.length - 5} more)`);
     }
@@ -369,22 +377,24 @@ function printAuditHumanReport(report: AuditReport): void {
 // ---------------------------------------------------------------------------
 
 async function runGenerate(args: string[]): Promise<void> {
-  const targetPath = args.find(a => !a.startsWith('-'));
-  const doFix = args.includes('--fix');
-  const dryRun = args.includes('--dry-run');
-  const jsonOut = args.includes('--json');
-  const includeCatchAll = args.includes('--include-catch-all') || args.includes('--allow-catch-all');
+  const targetPath = args.find((a) => !a.startsWith("-"));
+  const doFix = args.includes("--fix");
+  const dryRun = args.includes("--dry-run");
+  const jsonOut = args.includes("--json");
+  const includeCatchAll =
+    args.includes("--include-catch-all") || args.includes("--allow-catch-all");
 
   if (!targetPath) {
-    console.error('error: gbrain frontmatter generate requires a <path> argument');
-    console.error('usage: gbrain frontmatter generate <path> [--fix] [--dry-run] [--json]');
+    console.error("error: gbrain frontmatter generate requires a <path> argument");
+    console.error("usage: gbrain frontmatter generate <path> [--fix] [--dry-run] [--json]");
     process.exitCode = 1;
     return;
   }
 
-  const { inferFrontmatter, serializeFrontmatter } = await import('../core/frontmatter-inference.ts');
-  const { resolve, relative, join, basename } = await import('path');
-  const { readFileSync, writeFileSync, statSync, lstatSync } = await import('fs');
+  const { inferFrontmatter, serializeFrontmatter } =
+    await import("../core/frontmatter-inference.ts");
+  const { resolve, relative, join, basename } = await import("path");
+  const { readFileSync, writeFileSync, statSync, lstatSync } = await import("fs");
 
   const rootPath = resolve(targetPath);
   const isDir = statSync(rootPath).isDirectory();
@@ -396,11 +406,11 @@ async function runGenerate(args: string[]): Promise<void> {
     let candidate = rootPath;
     for (let i = 0; i < 10; i++) {
       try {
-        statSync(join(candidate, '.git'));
+        statSync(join(candidate, ".git"));
         brainRoot = candidate;
         break;
       } catch {
-        const parent = resolve(candidate, '..');
+        const parent = resolve(candidate, "..");
         if (parent === candidate) break;
         candidate = parent;
       }
@@ -425,20 +435,28 @@ async function runGenerate(args: string[]): Promise<void> {
 
   function processFile(absPath: string, relPath: string) {
     scanned++;
-    if (!isSyncable(relPath, { strategy: 'markdown' })) return;
+    if (!isSyncable(relPath, { strategy: "markdown" })) return;
 
     // Skip symlinks
-    try { if (lstatSync(absPath).isSymbolicLink()) return; } catch { return; }
+    try {
+      if (lstatSync(absPath).isSymbolicLink()) return;
+    } catch {
+      return;
+    }
 
     let content: string;
-    try { content = readFileSync(absPath, 'utf-8'); } catch { return; }
+    try {
+      content = readFileSync(absPath, "utf-8");
+    } catch {
+      return;
+    }
 
     const inferred = inferFrontmatter(relPath, content);
     if (inferred.skipped) {
       skipped++;
       return;
     }
-    if (!includeCatchAll && inferred.matchedRule === '(default)') {
+    if (!includeCatchAll && inferred.matchedRule === "(default)") {
       skippedCatchAll++;
       return;
     }
@@ -449,15 +467,15 @@ async function runGenerate(args: string[]): Promise<void> {
       type: inferred.type,
       title: inferred.title,
       date: inferred.date,
-      rule: inferred.matchedRule || '(default)',
+      rule: inferred.matchedRule || "(default)",
     });
 
     if (doFix && !dryRun) {
       const fm = serializeFrontmatter(inferred);
-      const newContent = fm + '\n' + content;
+      const newContent = fm + "\n" + content;
       // Safety: write a centralized backup first.
       createFrontmatterBackup(absPath, { sourcePath: brainRoot, runId: backupRunId });
-      writeFileSync(absPath, newContent, 'utf-8');
+      writeFileSync(absPath, newContent, "utf-8");
       written++;
     }
   }
@@ -473,26 +491,34 @@ async function runGenerate(args: string[]): Promise<void> {
 
   // Output
   if (jsonOut) {
-    console.log(JSON.stringify({
-      scanned,
-      skipped,
-      skippedCatchAll,
-      generated,
-      written,
-      dryRun: !doFix || dryRun,
-      results: results.slice(0, 100), // Cap JSON output
-      totalResults: results.length,
-    }, null, 2));
+    console.log(
+      JSON.stringify(
+        {
+          scanned,
+          skipped,
+          skippedCatchAll,
+          generated,
+          written,
+          dryRun: !doFix || dryRun,
+          results: results.slice(0, 100), // Cap JSON output
+          totalResults: results.length,
+        },
+        null,
+        2
+      )
+    );
     return;
   }
 
   // Human-readable output
-  const mode = doFix && !dryRun ? 'WRITE' : 'DRY-RUN';
+  const mode = doFix && !dryRun ? "WRITE" : "DRY-RUN";
   console.log(`\nFrontmatter generation (${mode})`);
   console.log(`  Scanned: ${scanned} files`);
   console.log(`  Already have frontmatter: ${skipped}`);
   if (skippedCatchAll > 0) {
-    console.log(`  Skipped catch-all/unknown: ${skippedCatchAll} (pass --include-catch-all to write type: note)`);
+    console.log(
+      `  Skipped catch-all/unknown: ${skippedCatchAll} (pass --include-catch-all to write type: note)`
+    );
   }
   console.log(`  Would generate: ${generated}`);
   if (doFix && !dryRun) {
@@ -516,7 +542,9 @@ async function runGenerate(args: string[]): Promise<void> {
     console.log(`\n  Examples:`);
     for (const r of results.slice(0, 10)) {
       console.log(`    ${r.path}`);
-      console.log(`      → type: ${r.type}, title: "${r.title}"${r.date ? `, date: ${r.date}` : ''} [rule: ${r.rule}]`);
+      console.log(
+        `      → type: ${r.type}, title: "${r.title}"${r.date ? `, date: ${r.date}` : ""} [rule: ${r.rule}]`
+      );
     }
     if (results.length > 10) {
       console.log(`    ... and ${results.length - 10} more`);

@@ -17,7 +17,10 @@ export const GET = createHandler(
   },
   async (ctx, _body, _query, req) => {
     try {
-      const res = await fetch(`${ENGINE_URL}/api/agents`, { headers: ctx.headers, signal: AbortSignal.timeout(10_000) });
+      const res = await fetch(`${ENGINE_URL}/api/agents`, {
+        headers: ctx.headers,
+        signal: AbortSignal.timeout(10_000),
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       const jobs: Record<string, unknown>[] = data.jobs ?? [];
@@ -52,7 +55,7 @@ export const POST = createHandler(
         method: "POST",
         headers: { "Content-Type": "application/json", ...ctx.headers },
         body: JSON.stringify(body),
-      signal: AbortSignal.timeout(15_000),
+        signal: AbortSignal.timeout(15_000),
       });
 
       if (!upstream.ok) {

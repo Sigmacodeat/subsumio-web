@@ -3,7 +3,7 @@
  * jurisdiction and parties, optionally seeded by a brain template. Generative,
  * so it carries the AI-draft banner and is always attorney-review-required.
  */
-import type { BrainEngine } from '../engine.ts';
+import type { BrainEngine } from "../engine.ts";
 import {
   type LegalLLM,
   asStringArray,
@@ -12,7 +12,7 @@ import {
   jurisdictionLabel,
   loadPageText,
   tryParseJSON,
-} from './llm-util.ts';
+} from "./llm-util.ts";
 
 export interface ContractDraft {
   title: string;
@@ -24,11 +24,11 @@ export interface ContractDraft {
 
 export interface ContractDraftOpts {
   type: string;
-  jurisdiction: 'at' | 'de' | 'ch';
+  jurisdiction: "at" | "de" | "ch";
   parties: { a: string; b: string };
   instructions?: string;
   template_slug?: string;
-  language?: 'de' | 'en';
+  language?: "de" | "en";
   sourceId?: string;
   sourceIds?: string[];
   llm?: LegalLLM;
@@ -37,13 +37,14 @@ export interface ContractDraftOpts {
 function buildSystem(
   type: string,
   jurisdiction: string,
-  language: 'de' | 'en',
-  hasTemplate: boolean,
+  language: "de" | "en",
+  hasTemplate: boolean
 ): string {
-  const langHint = language === 'en' ? 'Verfasse den Vertrag auf Englisch.' : 'Verfasse den Vertrag auf Deutsch.';
+  const langHint =
+    language === "en" ? "Verfasse den Vertrag auf Englisch." : "Verfasse den Vertrag auf Deutsch.";
   const tplHint = hasTemplate
-    ? 'Orientiere dich an der mitgelieferten Vorlage und passe sie an.'
-    : 'Verwende eine marktübliche, vollständige Klauselstruktur.';
+    ? "Orientiere dich an der mitgelieferten Vorlage und passe sie an."
+    : "Verwende eine marktübliche, vollständige Klauselstruktur.";
   return `Du bist ein juristischer Vertragsentwurfs-Assistent (Recht: ${jurisdictionLabel(jurisdiction)}).
 Erstelle einen Entwurf für einen Vertrag vom Typ "${type}". ${tplHint} ${langHint}
 Achte auf die zwingenden Anforderungen der gewählten Rechtsordnung. Lasse Platzhalter [in eckigen Klammern]
@@ -57,26 +58,28 @@ Gib NUR ein JSON-Objekt zurück:
 Dies ist ein KI-Entwurf und ersetzt keine anwaltliche Prüfung und Freigabe.`;
 }
 
-const AI_BANNER_DE = '> ⚠️ KI-Entwurf — anwaltlich zu prüfen und freizugeben (EU AI Act Art. 50). Erstellt mit Subsumio.';
-const AI_BANNER_EN = '> ⚠️ AI draft — attorney review and approval required (EU AI Act Art. 50). Generated with Subsumio.';
+const AI_BANNER_DE =
+  "> ⚠️ KI-Entwurf — anwaltlich zu prüfen und freizugeben (EU AI Act Art. 50). Erstellt mit Subsumio.";
+const AI_BANNER_EN =
+  "> ⚠️ AI draft — attorney review and approval required (EU AI Act Art. 50). Generated with Subsumio.";
 
 export async function draftContract(
   engine: BrainEngine,
-  opts: ContractDraftOpts,
+  opts: ContractDraftOpts
 ): Promise<ContractDraft> {
   const warnings: string[] = [];
-  const language = opts.language ?? 'de';
+  const language = opts.language ?? "de";
 
   const empty: ContractDraft = {
-    title: '',
-    contract_markdown: '',
+    title: "",
+    contract_markdown: "",
     clauses: [],
     attorney_review_required: true,
     warnings,
   };
 
   // Optional template seed from the brain.
-  let template = '';
+  let template = "";
   if (opts.template_slug) {
     const tpl = await loadPageText(engine, opts.template_slug, {
       ...(opts.sourceId !== undefined ? { sourceId: opts.sourceId } : {}),
@@ -88,7 +91,7 @@ export async function draftContract(
 
   const llm = opts.llm ?? (await defaultLegalLLM());
   if (!llm) {
-    warnings.push('NO_LLM_AVAILABLE');
+    warnings.push("NO_LLM_AVAILABLE");
     return empty;
   }
 
@@ -106,26 +109,26 @@ export async function draftContract(
   try {
     raw = await llm({
       system: buildSystem(opts.type, opts.jurisdiction, language, Boolean(template)),
-      user: userParts.join('\n\n'),
+      user: userParts.join("\n\n"),
       maxTokens: 6000,
     });
   } catch (e) {
-    warnings.push(`LLM_CALL_FAILED: ${e instanceof Error ? e.message : 'unknown'}`);
+    warnings.push(`LLM_CALL_FAILED: ${e instanceof Error ? e.message : "unknown"}`);
     return empty;
   }
 
   const parsed = tryParseJSON(raw);
   if (!parsed) {
-    warnings.push('LLM_OUTPUT_NOT_JSON');
+    warnings.push("LLM_OUTPUT_NOT_JSON");
     return empty;
   }
 
-  const banner = language === 'en' ? AI_BANNER_EN : AI_BANNER_DE;
-  const body = typeof parsed.contract_markdown === 'string' ? parsed.contract_markdown : '';
+  const banner = language === "en" ? AI_BANNER_EN : AI_BANNER_DE;
+  const body = typeof parsed.contract_markdown === "string" ? parsed.contract_markdown : "";
 
   return {
-    title: typeof parsed.title === 'string' ? parsed.title : opts.type,
-    contract_markdown: body ? `${banner}\n\n${body}` : '',
+    title: typeof parsed.title === "string" ? parsed.title : opts.type,
+    contract_markdown: body ? `${banner}\n\n${body}` : "",
     clauses: asStringArray(parsed.clauses),
     attorney_review_required: true,
     warnings,

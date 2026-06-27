@@ -20,8 +20,8 @@
  * an unavailable cost estimate; same precedent as cross-modal-eval.
  */
 
-import { ANTHROPIC_PRICING } from '../anthropic-pricing.ts';
-import { splitProviderModelId } from '../model-id.ts';
+import { ANTHROPIC_PRICING } from "../anthropic-pricing.ts";
+import { splitProviderModelId } from "../model-id.ts";
 
 export interface RecentJobStats {
   /** How many jobs informed this window. 0 → cold start. */
@@ -127,18 +127,23 @@ export function projectBatch(input: ProjectBatchInput): BatchProjection {
   // start or no stddev → ±30% blanket.
   const costBand = stats.stddev_cost_usd
     ? job_count * stats.stddev_cost_usd * 1.96
-    : totalCostUsd * 0.30;
-  const durationBand = totalDurationMs * 0.30;
+    : totalCostUsd * 0.3;
+  const durationBand = totalDurationMs * 0.3;
 
   // Raise-cap hint when lease cap is the binding constraint. If raising
   // the cap by 4x would meaningfully shrink wall-clock, suggest it.
   let raise_cap_hint: string | undefined;
-  if (stats.lease_headroom !== undefined && stats.lease_headroom <= 0.1 && current_lease_cap < 128) {
+  if (
+    stats.lease_headroom !== undefined &&
+    stats.lease_headroom <= 0.1 &&
+    current_lease_cap < 128
+  ) {
     const suggestedCap = Math.min(current_lease_cap * 4, 128);
-    const projectedFasterMs = Math.ceil((job_count / Math.min(suggestedCap, stats.effective_concurrency)) * meanLatencyMs);
+    const projectedFasterMs = Math.ceil(
+      (job_count / Math.min(suggestedCap, stats.effective_concurrency)) * meanLatencyMs
+    );
     if (projectedFasterMs < totalDurationMs * 0.75) {
-      raise_cap_hint =
-        `raise GBRAIN_ANTHROPIC_MAX_INFLIGHT to ${suggestedCap} to finish in ~${Math.ceil(projectedFasterMs / 60_000)}min`;
+      raise_cap_hint = `raise GBRAIN_ANTHROPIC_MAX_INFLIGHT to ${suggestedCap} to finish in ~${Math.ceil(projectedFasterMs / 60_000)}min`;
     }
   }
 
@@ -167,8 +172,8 @@ export function formatProjection(p: BatchProjection): string {
   }
   const dollars = (p.total_cost_usd ?? 0).toFixed(2);
   const dollarsBand = (p.cost_band_usd ?? 0).toFixed(2);
-  const coldNote = p.cold_start ? ' (no history; estimate is a wide guess)' : '';
-  const hint = p.raise_cap_hint ? ` — ${p.raise_cap_hint}` : '';
+  const coldNote = p.cold_start ? " (no history; estimate is a wide guess)" : "";
+  const hint = p.raise_cap_hint ? ` — ${p.raise_cap_hint}` : "";
   return `[batch] est cost ~$${dollars} (±$${dollarsBand}), est duration ~${mins}min (±${minsBand}min) at concurrency=${p.effective_concurrency}${coldNote}${hint}`;
 }
 
@@ -178,8 +183,8 @@ export function formatProjection(p: BatchProjection): string {
  * matching the plan's spec.
  */
 export function shouldPromptAtThreshold(p: BatchProjection): boolean {
-  const usdThreshold = Number(process.env.GBRAIN_BATCH_PROMPT_THRESHOLD_USD ?? '5');
-  const minThreshold = Number(process.env.GBRAIN_BATCH_PROMPT_THRESHOLD_MIN ?? '30');
+  const usdThreshold = Number(process.env.GBRAIN_BATCH_PROMPT_THRESHOLD_USD ?? "5");
+  const minThreshold = Number(process.env.GBRAIN_BATCH_PROMPT_THRESHOLD_MIN ?? "30");
   const usdOverThreshold = (p.total_cost_usd ?? 0) >= usdThreshold;
   const minutesOverThreshold = p.total_duration_ms >= minThreshold * 60_000;
   return usdOverThreshold || minutesOverThreshold;

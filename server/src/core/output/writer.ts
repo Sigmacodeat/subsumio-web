@@ -17,16 +17,16 @@
  * a bad citation or dangling back-link never lands on disk.
  */
 
-import type { BrainEngine } from '../engine.ts';
-import type { PageType, TimelineInput } from '../types.ts';
-import type { ResolverContext } from '../resolvers/interface.ts';
-import { SlugRegistry } from './slug-registry.ts';
+import type { BrainEngine } from "../engine.ts";
+import type { PageType, TimelineInput } from "../types.ts";
+import type { ResolverContext } from "../resolvers/interface.ts";
+import { SlugRegistry } from "./slug-registry.ts";
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-export type StrictMode = 'strict' | 'lint' | 'off';
+export type StrictMode = "strict" | "lint" | "off";
 
 export interface BrainWriterOptions {
   /**
@@ -52,7 +52,7 @@ export interface EntityInput {
 export interface ValidationFinding {
   slug: string;
   validator: string;
-  severity: 'error' | 'warning';
+  severity: "error" | "warning";
   line?: number;
   message: string;
 }
@@ -67,12 +67,12 @@ export interface ValidationReport {
 
 export class WriteError extends Error {
   constructor(
-    public code: 'validation_failed' | 'invalid_input' | 'slug_collision' | 'unknown',
+    public code: "validation_failed" | "invalid_input" | "slug_collision" | "unknown",
     message: string,
-    public findings?: ValidationFinding[],
+    public findings?: ValidationFinding[]
   ) {
     super(message);
-    this.name = 'WriteError';
+    this.name = "WriteError";
   }
 }
 
@@ -123,14 +123,17 @@ class WriteTxImpl implements WriteTx {
 
   constructor(
     private engine: BrainEngine,
-    public readonly context: ResolverContext,
+    public readonly context: ResolverContext
   ) {
     this.slugRegistry = new SlugRegistry(engine);
   }
 
   async createEntity(input: EntityInput): Promise<string> {
     if (!input.desiredSlug || !input.displayName || !input.type) {
-      throw new WriteError('invalid_input', 'createEntity requires desiredSlug, displayName, and type');
+      throw new WriteError(
+        "invalid_input",
+        "createEntity requires desiredSlug, displayName, and type"
+      );
     }
     // Cross-process TOCTOU guard: take a transaction-scoped advisory lock
     // keyed on the desired slug prefix so two putPage('people/alice') calls
@@ -138,10 +141,9 @@ class WriteTxImpl implements WriteTx {
     // slugRegistry.create() then observes the first's write and disambiguates.
     // PGLite is single-process so this is a harmless no-op there.
     try {
-      await this.engine.executeRaw(
-        `SELECT pg_advisory_xact_lock(hashtext($1)::bigint)`,
-        [input.desiredSlug],
-      );
+      await this.engine.executeRaw(`SELECT pg_advisory_xact_lock(hashtext($1)::bigint)`, [
+        input.desiredSlug,
+      ]);
     } catch {
       // Some engines/test doubles may not support advisory locks. Fall
       // through — within-process collisions are still caught by the existing
@@ -157,7 +159,7 @@ class WriteTxImpl implements WriteTx {
       type: input.type,
       title: input.displayName,
       compiled_truth: input.compiledTruth,
-      timeline: input.timeline ?? '',
+      timeline: input.timeline ?? "",
       frontmatter: input.frontmatter ?? {},
     });
     this.touchedSlugs.add(slug);
@@ -171,7 +173,8 @@ class WriteTxImpl implements WriteTx {
 
   async setCompiledTruth(slug: string, body: string): Promise<void> {
     const existing = await this.engine.getPage(slug);
-    if (!existing) throw new WriteError('invalid_input', `setCompiledTruth: page not found: ${slug}`);
+    if (!existing)
+      throw new WriteError("invalid_input", `setCompiledTruth: page not found: ${slug}`);
     await this.engine.putPage(slug, {
       type: existing.type,
       title: existing.title,
@@ -184,7 +187,8 @@ class WriteTxImpl implements WriteTx {
 
   async setFrontmatterField(slug: string, key: string, value: unknown): Promise<void> {
     const existing = await this.engine.getPage(slug);
-    if (!existing) throw new WriteError('invalid_input', `setFrontmatterField: page not found: ${slug}`);
+    if (!existing)
+      throw new WriteError("invalid_input", `setFrontmatterField: page not found: ${slug}`);
     const nextFm = { ...existing.frontmatter, [key]: value };
     await this.engine.putPage(slug, {
       type: existing.type,
@@ -206,7 +210,7 @@ class WriteTxImpl implements WriteTx {
     // Reverse back-link — both directions inside the same outer transaction.
     // Uses 'backlink' label on the reverse if no linkType was specified so
     // the reverse is distinguishable from the forward semantic type.
-    await this.engine.addLink(to, from, context, linkType ? `${linkType}_back` : 'backlink'); // gbrain-allow-direct-insert: BrainWriter synthesize-phase reverse back-link in the same transaction as the forward addLink above
+    await this.engine.addLink(to, from, context, linkType ? `${linkType}_back` : "backlink"); // gbrain-allow-direct-insert: BrainWriter synthesize-phase reverse back-link in the same transaction as the forward addLink above
     this.touchedSlugs.add(from);
     this.touchedSlugs.add(to);
   }
@@ -222,9 +226,9 @@ export class BrainWriter {
 
   constructor(
     private engine: BrainEngine,
-    opts: BrainWriterOptions = {},
+    opts: BrainWriterOptions = {}
   ) {
-    this.strictMode = opts.strictMode ?? 'lint';
+    this.strictMode = opts.strictMode ?? "lint";
   }
 
   register(validator: PageValidator): void {
@@ -237,7 +241,10 @@ export class BrainWriter {
    * Validators never run against pages with `validate: false` frontmatter
    * (grandfathered pages opt out until `gbrain integrity` repairs them).
    */
-  async transaction<T>(fn: (tx: WriteTx) => Promise<T>, ctx: ResolverContext): Promise<{ result: T; report: ValidationReport }> {
+  async transaction<T>(
+    fn: (tx: WriteTx) => Promise<T>,
+    ctx: ResolverContext
+  ): Promise<{ result: T; report: ValidationReport }> {
     const strict = this.strictMode;
     const validators = this.validators;
 
@@ -248,12 +255,16 @@ export class BrainWriter {
       const result = await fn(tx);
 
       // Validators run before the outer transaction commits.
-      if (strict !== 'off') {
+      if (strict !== "off") {
         report = await runValidators(txEngine, validators, tx.touchedSlugs);
         // `ctx.logger.info` would be nice but keep validator behavior uniform
         // regardless of strict/lint mode. Caller inspects the report.
-        if (strict === 'strict' && report.errorCount > 0) {
-          throw new WriteError('validation_failed', `BrainWriter: ${report.errorCount} validator error(s) — transaction rolled back`, report.findings);
+        if (strict === "strict" && report.errorCount > 0) {
+          throw new WriteError(
+            "validation_failed",
+            `BrainWriter: ${report.errorCount} validator error(s) — transaction rolled back`,
+            report.findings
+          );
         }
       }
 
@@ -269,7 +280,7 @@ export class BrainWriter {
   }
 
   get registeredValidators(): string[] {
-    return this.validators.map(v => v.id);
+    return this.validators.map((v) => v.id);
   }
 }
 
@@ -280,7 +291,7 @@ export class BrainWriter {
 async function runValidators(
   engine: BrainEngine,
   validators: PageValidator[],
-  touchedSlugs: Set<string>,
+  touchedSlugs: Set<string>
 ): Promise<ValidationReport> {
   const findings: ValidationFinding[] = [];
 
@@ -306,8 +317,8 @@ async function runValidators(
     }
   }
 
-  const errorCount = findings.filter(f => f.severity === 'error').length;
-  const warningCount = findings.filter(f => f.severity === 'warning').length;
+  const errorCount = findings.filter((f) => f.severity === "error").length;
+  const warningCount = findings.filter((f) => f.severity === "warning").length;
 
   return {
     findings,
@@ -325,6 +336,6 @@ function emptyReport(): ValidationReport {
 // Public surface
 // ---------------------------------------------------------------------------
 
-export { SlugRegistry } from './slug-registry.ts';
-export type { CreateSlugInput, CreatedSlug } from './slug-registry.ts';
-export * from './scaffold.ts';
+export { SlugRegistry } from "./slug-registry.ts";
+export type { CreateSlugInput, CreatedSlug } from "./slug-registry.ts";
+export * from "./scaffold.ts";

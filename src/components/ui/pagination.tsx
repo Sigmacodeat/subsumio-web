@@ -19,7 +19,7 @@ export function Pagination({ currentPage, totalPages, onPageChange, className }:
       <button
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage <= 1}
-        className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] hover:bg-[color:var(--ds-surface-2)] disabled:opacity-50 disabled:pointer-events-none"
+        className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] hover:bg-[color:var(--ds-surface-2)] disabled:pointer-events-none disabled:opacity-50"
       >
         <ChevronLeft className="h-4 w-4" />
       </button>
@@ -47,7 +47,7 @@ export function Pagination({ currentPage, totalPages, onPageChange, className }:
       <button
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage >= totalPages}
-        className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] hover:bg-[color:var(--ds-surface-2)] disabled:opacity-50 disabled:pointer-events-none"
+        className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] hover:bg-[color:var(--ds-surface-2)] disabled:pointer-events-none disabled:opacity-50"
       >
         <ChevronRight className="h-4 w-4" />
       </button>
@@ -58,6 +58,7 @@ export function Pagination({ currentPage, totalPages, onPageChange, className }:
 function getPageNumbers(current: number, total: number): (number | "ellipsis")[] {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
   if (current <= 4) return [1, 2, 3, 4, 5, "ellipsis", total];
-  if (current >= total - 3) return [1, "ellipsis", total - 4, total - 3, total - 2, total - 1, total];
+  if (current >= total - 3)
+    return [1, "ellipsis", total - 4, total - 3, total - 2, total - 1, total];
   return [1, "ellipsis", current - 1, current, current + 1, "ellipsis", total];
 }

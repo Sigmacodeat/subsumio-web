@@ -1,4 +1,4 @@
-import type { Recipe } from '../types.ts';
+import type { Recipe } from "../types.ts";
 
 /**
  * ZeroEntropy ships two specialized small models that target the two weakest
@@ -29,18 +29,18 @@ import type { Recipe } from '../types.ts';
  * `touchpoints.reranker` declares the model allowlist and 5MB payload cap.
  */
 export const zeroentropyai: Recipe = {
-  id: 'zeroentropyai',
-  name: 'ZeroEntropy',
-  tier: 'openai-compat',
-  implementation: 'openai-compatible',
-  base_url_default: 'https://api.zeroentropy.dev/v1',
+  id: "zeroentropyai",
+  name: "ZeroEntropy",
+  tier: "openai-compat",
+  implementation: "openai-compatible",
+  base_url_default: "https://api.zeroentropy.dev/v1",
   auth_env: {
-    required: ['ZEROENTROPY_API_KEY'],
-    setup_url: 'https://dashboard.zeroentropy.dev',
+    required: ["ZEROENTROPY_API_KEY"],
+    setup_url: "https://dashboard.zeroentropy.dev",
   },
   touchpoints: {
     embedding: {
-      models: ['zembed-1'],
+      models: ["zembed-1"],
       default_dims: 2560,
       // ZE rate-limits free tier at 500KB/min input; max payload 5MB/request.
       // Pre-split budget = 120K tokens × 0.5 safety × 1 char/token ≈ 60K chars
@@ -50,18 +50,18 @@ export const zeroentropyai: Recipe = {
       safety_factor: 0.5,
       supports_multimodal: false,
       cost_per_1m_tokens_usd: 0.05,
-      price_last_verified: '2026-05-14',
+      price_last_verified: "2026-05-14",
     },
     reranker: {
-      models: ['zerank-2', 'zerank-1', 'zerank-1-small'],
-      default_model: 'zerank-2',
+      models: ["zerank-2", "zerank-1", "zerank-1-small"],
+      default_model: "zerank-2",
       cost_per_1m_tokens_usd: 0.025,
-      price_last_verified: '2026-05-14',
+      price_last_verified: "2026-05-14",
       // ZE enforces 5MB per /v1/models/rerank request. gateway.rerank()
       // pre-flights the body size and fails open (no throw to caller).
       max_payload_bytes: 5_000_000,
     },
   },
   setup_hint:
-    'Get an API key at https://dashboard.zeroentropy.dev, then `export ZEROENTROPY_API_KEY=...`',
+    "Get an API key at https://dashboard.zeroentropy.dev, then `export ZEROENTROPY_API_KEY=...`",
 };

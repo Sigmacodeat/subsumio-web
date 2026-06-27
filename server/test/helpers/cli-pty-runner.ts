@@ -24,17 +24,17 @@
  * existing test/cli.test.ts pattern.
  */
 
-import * as fs from 'fs';
+import * as fs from "fs";
 
 // ── ANSI / TTY helpers ──────────────────────────────────────
 
 /** Strip ANSI escapes for pattern-matching against visible text. */
 export function stripAnsi(s: string): string {
   return s
-    .replace(/\x1b\[[\d;]*[a-zA-Z]/g, '')
-    .replace(/\x1b\][^\x07\x1b]*(\x07|\x1b\\)/g, '')
-    .replace(/\x1b[()][AB012]/g, '')
-    .replace(/\x1b[78=>]/g, '');
+    .replace(/\x1b\[[\d;]*[a-zA-Z]/g, "")
+    .replace(/\x1b\][^\x07\x1b]*(\x07|\x1b\\)/g, "")
+    .replace(/\x1b[()][AB012]/g, "")
+    .replace(/\x1b[78=>]/g, "");
 }
 
 /** Detect a numbered AskUserQuestion-shaped option list with cursor. */
@@ -61,22 +61,20 @@ export function isNumberedOptionListVisible(visible: string): boolean {
  * sequential 1.., 2.., ... block — to avoid matching `1. Read the
  * file` prose). Otherwise returns indices in ascending order.
  */
-export function parseNumberedOptions(
-  visible: string,
-): Array<{ index: number; label: string }> {
+export function parseNumberedOptions(visible: string): Array<{ index: number; label: string }> {
   const tail = visible.length > 4096 ? visible.slice(-4096) : visible;
   // `\s*` after `.` (not `\s+`) because stripAnsi removes TTY cursor-
   // positioning escapes that render as spaces — `1. Option` may come
   // through as `1.Option`.
   const optionRe = /^[\s❯]*([1-9])\.\s*(\S.*?)\s*$/;
-  const lines = tail.split('\n');
+  const lines = tail.split("\n");
 
   // Anchor on the LAST `❯<spaces>1.` line. Box-layout AUQs render
   // cursor mid-line after dividers + headers + prompt text on the same
   // logical line — the unanchored pattern catches those.
   let cursorLineIdx = -1;
   for (let i = lines.length - 1; i >= 0; i--) {
-    if (/❯\s*1\./.test(lines[i] ?? '')) {
+    if (/❯\s*1\./.test(lines[i] ?? "")) {
       cursorLineIdx = i;
       break;
     }
@@ -85,7 +83,7 @@ export function parseNumberedOptions(
   // the last `1.` line.
   if (cursorLineIdx < 0) {
     for (let i = lines.length - 1; i >= 0; i--) {
-      if (/^(?:\s*|\s*❯\s+)1\./.test(lines[i] ?? '')) {
+      if (/^(?:\s*|\s*❯\s+)1\./.test(lines[i] ?? "")) {
         cursorLineIdx = i;
         break;
       }
@@ -97,12 +95,12 @@ export function parseNumberedOptions(
   const seenIndices = new Set<number>();
 
   // Cursor line: option 1 may be inline after box dividers + header.
-  const cursorLine = lines[cursorLineIdx] ?? '';
+  const cursorLine = lines[cursorLineIdx] ?? "";
   const cursorInlineRe = /❯\s*([1-9])\.\s*(\S.*?)\s*$/;
   const inlineMatch = cursorInlineRe.exec(cursorLine);
   if (inlineMatch) {
     const idx = Number(inlineMatch[1]);
-    const label = (inlineMatch[2] ?? '').trim();
+    const label = (inlineMatch[2] ?? "").trim();
     if (label.length > 0 && !seenIndices.has(idx)) {
       seenIndices.add(idx);
       found.push({ index: idx, label });
@@ -111,7 +109,7 @@ export function parseNumberedOptions(
     const startMatch = optionRe.exec(cursorLine);
     if (startMatch) {
       const idx = Number(startMatch[1]);
-      const label = (startMatch[2] ?? '').trim();
+      const label = (startMatch[2] ?? "").trim();
       if (label.length > 0 && !seenIndices.has(idx)) {
         seenIndices.add(idx);
         found.push({ index: idx, label });
@@ -121,10 +119,10 @@ export function parseNumberedOptions(
 
   // Subsequent lines: standard start-of-line option parsing.
   for (let i = cursorLineIdx + 1; i < lines.length; i++) {
-    const m = optionRe.exec(lines[i] ?? '');
+    const m = optionRe.exec(lines[i] ?? "");
     if (!m) continue;
     const idx = Number(m[1]);
-    const label = (m[2] ?? '').trim();
+    const label = (m[2] ?? "").trim();
     if (seenIndices.has(idx)) continue;
     if (label.length === 0) continue;
     seenIndices.add(idx);
@@ -149,19 +147,17 @@ export function parseNumberedOptions(
  * to detect "is this AUQ the same as the last poll, or has the agent
  * advanced to a new one?"
  */
-export function optionsSignature(
-  opts: Array<{ index: number; label: string }>,
-): string {
+export function optionsSignature(opts: Array<{ index: number; label: string }>): string {
   return [...opts]
     .sort((a, b) => a.index - b.index)
     .map((o) => `${o.index}:${o.label}`)
-    .join('|');
+    .join("|");
 }
 
 /** Detect a workspace-trust dialog (claude / openclaw render this on first
  * use of a new directory). */
 export function isTrustDialogVisible(visible: string): boolean {
-  return visible.includes('trust this folder');
+  return visible.includes("trust this folder");
 }
 
 // ── binary resolution ──────────────────────────────────────
@@ -176,7 +172,7 @@ export function resolveBinary(name: string, override?: string): string | null {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const which = (Bun as any).which?.(name);
   if (which) return which;
-  const home = process.env.HOME ?? '';
+  const home = process.env.HOME ?? "";
   const candidates = [
     `/opt/homebrew/bin/${name}`,
     `/usr/local/bin/${name}`,
@@ -221,7 +217,7 @@ export interface PtySession {
   /** Send raw bytes to PTY stdin. Newlines = `\r` in TTY world. */
   send(data: string): void;
   /** Send a key by name. */
-  sendKey(key: 'Enter' | 'Up' | 'Down' | 'Esc' | 'Tab' | 'ShiftTab' | 'CtrlC'): void;
+  sendKey(key: "Enter" | "Up" | "Down" | "Esc" | "Tab" | "ShiftTab" | "CtrlC"): void;
   /** Raw accumulated stdout (with ANSI). For forensics. */
   rawOutput(): string;
   /** ANSI-stripped session output for pattern matching. */
@@ -243,12 +239,12 @@ export interface PtySession {
    */
   waitForAny(
     patterns: Array<RegExp | string>,
-    opts?: { timeoutMs?: number; pollMs?: number; since?: number },
+    opts?: { timeoutMs?: number; pollMs?: number; since?: number }
   ): Promise<{ matched: RegExp | string; index: number }>;
   /** Convenience: single-pattern wait. */
   waitFor(
     pattern: RegExp | string,
-    opts?: { timeoutMs?: number; pollMs?: number; since?: number },
+    opts?: { timeoutMs?: number; pollMs?: number; since?: number }
   ): Promise<void>;
   /** Subprocess pid (for debug). */
   pid(): number | undefined;
@@ -274,14 +270,12 @@ export async function launchPty(opts: PtyOptions): Promise<PtySession> {
   let binary = opts.binary;
   if (!binary) {
     if (args.length === 0) {
-      throw new Error(
-        'launchPty: pass a `binary` option, or `args[0]` as the binary name.',
-      );
+      throw new Error("launchPty: pass a `binary` option, or `args[0]` as the binary name.");
     }
     const resolved = resolveBinary(args[0]!);
     if (!resolved) {
       throw new Error(
-        `launchPty: could not resolve "${args[0]}" on PATH. Set the binary location explicitly via the \`binary\` option, or install it.`,
+        `launchPty: could not resolve "${args[0]}" on PATH. Set the binary location explicitly via the \`binary\` option, or install it.`
       );
     }
     binary = resolved;
@@ -294,7 +288,7 @@ export async function launchPty(opts: PtyOptions): Promise<PtySession> {
   const timeoutMs = opts.timeoutMs ?? 240_000;
   const autoTrust = opts.autoTrust ?? true;
 
-  let buffer = '';
+  let buffer = "";
   let exited = false;
   let exitCodeCaptured: number | null = null;
 
@@ -304,7 +298,7 @@ export async function launchPty(opts: PtyOptions): Promise<PtySession> {
       cols,
       rows,
       data(_t: unknown, chunk: Buffer) {
-        buffer += chunk.toString('utf-8');
+        buffer += chunk.toString("utf-8");
       },
     },
     cwd,
@@ -313,7 +307,7 @@ export async function launchPty(opts: PtyOptions): Promise<PtySession> {
 
   // Track exit so waitForAny can fail fast if the subprocess crashes.
   let exitedPromise: Promise<void> = Promise.resolve();
-  if (proc.exited && typeof proc.exited.then === 'function') {
+  if (proc.exited && typeof proc.exited.then === "function") {
     exitedPromise = proc.exited
       .then((code: number | null) => {
         exitCodeCaptured = code;
@@ -328,7 +322,7 @@ export async function launchPty(opts: PtyOptions): Promise<PtySession> {
   // kills the subprocess eventually so CI doesn't hang forever.
   const wallTimer = setTimeout(() => {
     try {
-      proc.kill?.('SIGKILL');
+      proc.kill?.("SIGKILL");
     } catch {
       /* ignore */
     }
@@ -346,7 +340,7 @@ export async function launchPty(opts: PtyOptions): Promise<PtySession> {
       if (isTrustDialogVisible(visible)) {
         trustHandled = true;
         try {
-          proc.terminal?.write?.('1\r');
+          proc.terminal?.write?.("1\r");
         } catch {
           /* ignore */
         }
@@ -366,18 +360,18 @@ export async function launchPty(opts: PtyOptions): Promise<PtySession> {
     }
   }
 
-  type Key = Parameters<PtySession['sendKey']>[0];
+  type Key = Parameters<PtySession["sendKey"]>[0];
   function sendKey(key: Key): void {
     const map: Record<string, string> = {
-      Enter: '\r',
-      Up: '\x1b[A',
-      Down: '\x1b[B',
-      Esc: '\x1b',
-      Tab: '\t',
-      ShiftTab: '\x1b[Z',
-      CtrlC: '\x03',
+      Enter: "\r",
+      Up: "\x1b[A",
+      Down: "\x1b[B",
+      Esc: "\x1b",
+      Tab: "\t",
+      ShiftTab: "\x1b[Z",
+      CtrlC: "\x03",
     };
-    send(map[key] ?? '');
+    send(map[key] ?? "");
   }
 
   let lastMark = 0;
@@ -392,7 +386,7 @@ export async function launchPty(opts: PtyOptions): Promise<PtySession> {
 
   async function waitForAny(
     patterns: Array<RegExp | string>,
-    waitOpts?: { timeoutMs?: number; pollMs?: number; since?: number },
+    waitOpts?: { timeoutMs?: number; pollMs?: number; since?: number }
   ): Promise<{ matched: RegExp | string; index: number }> {
     const wTimeout = waitOpts?.timeoutMs ?? 60_000;
     const poll = waitOpts?.pollMs ?? 250;
@@ -402,15 +396,13 @@ export async function launchPty(opts: PtyOptions): Promise<PtySession> {
       if (exited) {
         throw new Error(
           `subprocess exited (code=${exitCodeCaptured}) before any pattern matched. ` +
-            `Last visible:\n${stripAnsi(buffer).slice(-2000)}`,
+            `Last visible:\n${stripAnsi(buffer).slice(-2000)}`
         );
       }
-      const visible =
-        since !== undefined ? stripAnsi(buffer.slice(since)) : stripAnsi(buffer);
+      const visible = since !== undefined ? stripAnsi(buffer.slice(since)) : stripAnsi(buffer);
       for (let i = 0; i < patterns.length; i++) {
         const p = patterns[i]!;
-        const matchIdx =
-          typeof p === 'string' ? visible.indexOf(p) : visible.search(p);
+        const matchIdx = typeof p === "string" ? visible.indexOf(p) : visible.search(p);
         if (matchIdx >= 0) {
           return { matched: p, index: matchIdx };
         }
@@ -419,18 +411,18 @@ export async function launchPty(opts: PtyOptions): Promise<PtySession> {
     }
     throw new Error(
       `Timed out after ${wTimeout}ms waiting for any of: ${patterns
-        .map((p) => (typeof p === 'string' ? JSON.stringify(p) : p.source))
-        .join(', ')}\nLast visible (since=${since ?? 'all'}):\n${
+        .map((p) => (typeof p === "string" ? JSON.stringify(p) : p.source))
+        .join(", ")}\nLast visible (since=${since ?? "all"}):\n${
         since !== undefined
           ? stripAnsi(buffer.slice(since)).slice(-2000)
           : stripAnsi(buffer).slice(-2000)
-      }`,
+      }`
     );
   }
 
   async function waitFor(
     pattern: RegExp | string,
-    waitOpts?: { timeoutMs?: number; pollMs?: number; since?: number },
+    waitOpts?: { timeoutMs?: number; pollMs?: number; since?: number }
   ): Promise<void> {
     await waitForAny([pattern], waitOpts);
   }
@@ -441,14 +433,14 @@ export async function launchPty(opts: PtyOptions): Promise<PtySession> {
     if (trustWatcher) clearInterval(trustWatcher);
     if (exited) return;
     try {
-      proc.kill?.('SIGINT');
+      proc.kill?.("SIGINT");
     } catch {
       /* ignore */
     }
     await Promise.race([exitedPromise, Bun.sleep(2000)]);
     if (!exited) {
       try {
-        proc.kill?.('SIGKILL');
+        proc.kill?.("SIGKILL");
       } catch {
         /* ignore */
       }

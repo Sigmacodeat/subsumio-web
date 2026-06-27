@@ -80,22 +80,16 @@ describe("createIdempotencyStore — additional edge cases", () => {
   });
 
   it("supports custom primary key column name", async () => {
-    const store = createIdempotencyStore(
-      "test_idem_custom_pk",
-      [],
-      { primaryKeyColumn: "webhook_id" },
-    );
+    const store = createIdempotencyStore("test_idem_custom_pk", [], {
+      primaryKeyColumn: "webhook_id",
+    });
     await store.markProcessed("wh_123");
     expect(await store.isProcessed("wh_123")).toBe(true);
     expect(await store.isProcessed("wh_456")).toBe(false);
   });
 
   it("evicts expired entries when maxInMemory is exceeded", async () => {
-    const store = createIdempotencyStore(
-      "test_idem_evict",
-      [],
-      { maxInMemory: 3, ttlMs: 5 },
-    );
+    const store = createIdempotencyStore("test_idem_evict", [], { maxInMemory: 3, ttlMs: 5 });
     // Fill beyond maxInMemory with short TTL
     for (let i = 0; i < 5; i++) {
       await store.markProcessed(`evt_evict_${i}`);

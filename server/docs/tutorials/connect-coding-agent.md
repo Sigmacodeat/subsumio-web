@@ -101,8 +101,8 @@ in Codex's config file. Keep that variable exported in your shell profile.
 
 ### A4. Verify
 
-In the agent: *"Call get_brain_identity, then search my brain for [a topic you
-know is in there]."* You should get your own pages back. Done.
+In the agent: _"Call get_brain_identity, then search my brain for [a topic you
+know is in there]."_ You should get your own pages back. Done.
 
 Full per-client detail: [Claude Code](../mcp/CLAUDE_CODE.md),
 [Codex](../mcp/CODEX.md), [Perplexity](../mcp/PERPLEXITY.md).
@@ -153,7 +153,7 @@ That's the whole wire-up. No token, no URL, no tunnel. The agent spawns
 
 ### B4. Verify
 
-In the agent: *"search my brain for PGLite"* (or whatever you just captured). You
+In the agent: _"search my brain for PGLite"_ (or whatever you just captured). You
 get the page back. The same brain is now query-able from the CLI
 (`gbrain query "..."`) and from your agent.
 
@@ -193,22 +193,22 @@ any coding agent with GBrain connected:
 
 **1. Brain-first lookup (never ask what you can retrieve).** The single highest-
 value habit. Before the agent asks you "which repo?" or "who owns this?", it
-searches. Try: *"What did we decide about the auth rewrite?"* and watch it pull
+searches. Try: _"What did we decide about the auth rewrite?"_ and watch it pull
 the decision page instead of asking you to re-explain.
 
 **2. Ambient capture (your brain as a side effect of working).** Don't make
-saving a separate chore. Tell the agent: *"As we work, capture any decision or
-new idea to the brain without interrupting."* After a month of this, you have
+saving a separate chore. Tell the agent: _"As we work, capture any decision or
+new idea to the brain without interrupting."_ After a month of this, you have
 hundreds of linked pages and patterns you didn't know were there.
 
-**3. Briefing from your brain (not from the internet).** *"What do I need to know
-before my 2pm with the Acme team?"* pulls your meeting history, the people,
+**3. Briefing from your brain (not from the internet).** _"What do I need to know
+before my 2pm with the Acme team?"_ pulls your meeting history, the people,
 what's still open, what the brain doesn't know yet. The agent does your prep
 because it read your context. (`query` gives you the synthesized answer with
 citations; this is the example on the [README](../../README.md).)
 
-**4. whoknows (expertise routing).** *"Who do I know who's shipped a rate
-limiter in Postgres?"* The `find_experts` tool ranks people in your brain by
+**4. whoknows (expertise routing).** _"Who do I know who's shipped a rate
+limiter in Postgres?"_ The `find_experts` tool ranks people in your brain by
 relevance + recency. Useful the moment your brain has more than a handful of
 people in it.
 
@@ -219,13 +219,13 @@ habits to build. Your agent stops being amnesiac.
 
 ## Troubleshooting
 
-| Symptom | Cause | Fix |
-|---|---|---|
-| Agent "can't reach the brain" (Path A) | `gbrain serve --http` bound to loopback | Restart with `--bind 0.0.0.0` |
-| `list_skills` returns nothing / errors | Skill publishing OFF on the host | `gbrain config set mcp.publish_skills true` |
-| Token rejected on first call | Wrong/expired token | Re-mint with `gbrain auth create`; `--install` smoke-tests it for you |
-| `unknown tool: capture` | `capture` is CLI-only, not an MCP tool | Use `put_page` over MCP; `capture` only on the CLI |
-| Empty results (Path B) | Brain has nothing in it yet | `gbrain import ~/notes/` or `gbrain capture "..."` |
+| Symptom                                | Cause                                   | Fix                                                                   |
+| -------------------------------------- | --------------------------------------- | --------------------------------------------------------------------- |
+| Agent "can't reach the brain" (Path A) | `gbrain serve --http` bound to loopback | Restart with `--bind 0.0.0.0`                                         |
+| `list_skills` returns nothing / errors | Skill publishing OFF on the host        | `gbrain config set mcp.publish_skills true`                           |
+| Token rejected on first call           | Wrong/expired token                     | Re-mint with `gbrain auth create`; `--install` smoke-tests it for you |
+| `unknown tool: capture`                | `capture` is CLI-only, not an MCP tool  | Use `put_page` over MCP; `capture` only on the CLI                    |
+| Empty results (Path B)                 | Brain has nothing in it yet             | `gbrain import ~/notes/` or `gbrain capture "..."`                    |
 
 ## Next steps
 

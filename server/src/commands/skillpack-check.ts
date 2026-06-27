@@ -16,9 +16,9 @@
  *   2 — Could not determine (missing binary / crashed).
  */
 
-import { execFileSync } from 'child_process';
-import { VERSION } from '../version.ts';
-import { getCliOptions } from '../core/cli-options.ts';
+import { execFileSync } from "child_process";
+import { VERSION } from "../version.ts";
+import { getCliOptions } from "../core/cli-options.ts";
 
 /**
  * Resolve the gbrain binary + args for spawning subcommands from
@@ -28,23 +28,23 @@ import { getCliOptions } from '../core/cli-options.ts';
  *   - Anything else: fall back to `which gbrain` on $PATH.
  */
 function gbrainSpawn(): { cmd: string; prefix: string[] } {
-  const arg1 = process.argv[1] ?? '';
-  if (arg1.endsWith('/gbrain') || arg1.endsWith('\\gbrain.exe')) {
+  const arg1 = process.argv[1] ?? "";
+  if (arg1.endsWith("/gbrain") || arg1.endsWith("\\gbrain.exe")) {
     return { cmd: arg1, prefix: [] };
   }
-  if (arg1.endsWith('.ts') || arg1.endsWith('.mjs') || arg1.endsWith('.js')) {
-    return { cmd: 'bun', prefix: ['run', arg1] };
+  if (arg1.endsWith(".ts") || arg1.endsWith(".mjs") || arg1.endsWith(".js")) {
+    return { cmd: "bun", prefix: ["run", arg1] };
   }
-  const execPath = process.execPath ?? '';
-  if (execPath.endsWith('/gbrain') || execPath.endsWith('\\gbrain.exe')) {
+  const execPath = process.execPath ?? "";
+  if (execPath.endsWith("/gbrain") || execPath.endsWith("\\gbrain.exe")) {
     return { cmd: execPath, prefix: [] };
   }
-  return { cmd: 'gbrain', prefix: [] };
+  return { cmd: "gbrain", prefix: [] };
 }
 
 interface DoctorCheck {
   name: string;
-  status: 'ok' | 'warn' | 'fail';
+  status: "ok" | "warn" | "fail";
   message: string;
   issues?: unknown[];
 }
@@ -58,27 +58,31 @@ interface SkillpackReport {
   /** Every recommended action the user/agent should take. */
   actions: string[];
   /** Full doctor output, machine-readable. */
-  doctor: {
-    exit_code: number;
-    checks: DoctorCheck[];
-  } | { error: string };
+  doctor:
+    | {
+        exit_code: number;
+        checks: DoctorCheck[];
+      }
+    | { error: string };
   /** apply-migrations --list output, parsed. */
-  migrations: {
-    pending_count: number;
-    partial_count: number;
-    applied_count: number;
-    stdout: string;
-  } | { error: string };
+  migrations:
+    | {
+        pending_count: number;
+        partial_count: number;
+        applied_count: number;
+        stdout: string;
+      }
+    | { error: string };
 }
 
-function runDoctor(): SkillpackReport['doctor'] {
+function runDoctor(): SkillpackReport["doctor"] {
   const { cmd, prefix } = gbrainSpawn();
   try {
     // --fast avoids DB dependency; the filesystem half-migration checks
     // we care about most run in the fast path.
-    const stdout = execFileSync(cmd, [...prefix, 'doctor', '--fast', '--json'], {
-      encoding: 'utf-8',
-      stdio: ['ignore', 'pipe', 'ignore'],
+    const stdout = execFileSync(cmd, [...prefix, "doctor", "--fast", "--json"], {
+      encoding: "utf-8",
+      stdio: ["ignore", "pipe", "ignore"],
       env: process.env,
     });
     // doctor emits a JSON object on success; on FAIL it exits non-zero
@@ -87,7 +91,7 @@ function runDoctor(): SkillpackReport['doctor'] {
     return { exit_code: 0, checks: parsed.checks };
   } catch (err: any) {
     // execFileSync throws on non-zero exit; stdout is still on the error.
-    const stdout = err.stdout?.toString?.() ?? '';
+    const stdout = err.stdout?.toString?.() ?? "";
     try {
       const parsed = JSON.parse(stdout) as { checks: DoctorCheck[] };
       return { exit_code: err.status ?? 1, checks: parsed.checks };
@@ -97,12 +101,12 @@ function runDoctor(): SkillpackReport['doctor'] {
   }
 }
 
-function runMigrationsList(): SkillpackReport['migrations'] {
+function runMigrationsList(): SkillpackReport["migrations"] {
   const { cmd, prefix } = gbrainSpawn();
   try {
-    const stdout = execFileSync(cmd, [...prefix, 'apply-migrations', '--list'], {
-      encoding: 'utf-8',
-      stdio: ['ignore', 'pipe', 'ignore'],
+    const stdout = execFileSync(cmd, [...prefix, "apply-migrations", "--list"], {
+      encoding: "utf-8",
+      stdio: ["ignore", "pipe", "ignore"],
       env: process.env,
     });
 
@@ -114,17 +118,17 @@ function runMigrationsList(): SkillpackReport['migrations'] {
     //     applied  0.11.0    ...
     //     pending  0.11.1    ...
     //     partial  0.10.0    ...
-    const lines = stdout.split('\n');
+    const lines = stdout.split("\n");
     let applied = 0;
     let pending = 0;
     let partial = 0;
     for (const line of lines) {
       const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith('Status') || trimmed.startsWith('---')) continue;
+      if (!trimmed || trimmed.startsWith("Status") || trimmed.startsWith("---")) continue;
       const first = trimmed.split(/\s+/)[0];
-      if (first === 'applied') applied++;
-      else if (first === 'pending') pending++;
-      else if (first === 'partial') partial++;
+      if (first === "applied") applied++;
+      else if (first === "pending") pending++;
+      else if (first === "partial") partial++;
     }
     return { applied_count: applied, pending_count: pending, partial_count: partial, stdout };
   } catch (err: any) {
@@ -140,9 +144,9 @@ function buildReport(): SkillpackReport {
   let healthy = true;
 
   // Gather actions from doctor failures.
-  if ('checks' in doctor) {
+  if ("checks" in doctor) {
     for (const check of doctor.checks) {
-      if (check.status === 'fail') {
+      if (check.status === "fail") {
         healthy = false;
         // Extract remediation command from check message if it follows
         // the `... Run: <cmd>` convention. Otherwise include the whole
@@ -150,7 +154,7 @@ function buildReport(): SkillpackReport {
         const runMatch = check.message.match(/Run:\s*(.+)$/);
         if (runMatch) actions.push(runMatch[1].trim());
         else actions.push(`[${check.name}] ${check.message}`);
-      } else if (check.status === 'warn') {
+      } else if (check.status === "warn") {
         // Warnings don't fail the report but surface as informational
         // actions the agent can decide about.
         const runMatch = check.message.match(/Run:\s*(.+)$/);
@@ -159,23 +163,23 @@ function buildReport(): SkillpackReport {
     }
   } else {
     healthy = false;
-    actions.push('Investigate doctor failure: ' + doctor.error);
+    actions.push("Investigate doctor failure: " + doctor.error);
   }
 
   // Gather actions from pending/partial migrations.
-  if ('applied_count' in migrations) {
+  if ("applied_count" in migrations) {
     if (migrations.partial_count > 0 || migrations.pending_count > 0) {
       healthy = false;
-      const action = 'gbrain apply-migrations --yes';
+      const action = "gbrain apply-migrations --yes";
       if (!actions.includes(action)) actions.unshift(action);
     }
   } else {
     healthy = false;
-    actions.push('Investigate apply-migrations failure: ' + migrations.error);
+    actions.push("Investigate apply-migrations failure: " + migrations.error);
   }
 
   const summary = healthy
-    ? 'gbrain skillpack healthy'
+    ? "gbrain skillpack healthy"
     : `gbrain skillpack needs attention: ${actions.length} action(s) — ${actions[0]}`;
 
   return {
@@ -190,7 +194,7 @@ function buildReport(): SkillpackReport {
 }
 
 export async function runSkillpackCheck(args: string[]): Promise<void> {
-  if (args.includes('--help') || args.includes('-h')) {
+  if (args.includes("--help") || args.includes("-h")) {
     console.log(`gbrain skillpack-check — agent-readable health report.
 
 Wraps doctor + apply-migrations --list into one JSON blob.
@@ -214,7 +218,7 @@ Exit codes:
   // --quiet is parsed as a global flag in src/cli.ts (and stripped from argv
   // before reaching here); honor it via the CliOptions singleton.
   const quiet = getCliOptions().quiet;
-  const strict = args.includes('--strict');
+  const strict = args.includes("--strict");
   const report = buildReport();
 
   if (!quiet) {
@@ -222,7 +226,7 @@ Exit codes:
   }
 
   // Crash-detection always trumps strict/informational toggles.
-  if ('error' in report.doctor || 'error' in report.migrations) {
+  if ("error" in report.doctor || "error" in report.migrations) {
     process.exit(2);
   }
 
@@ -254,9 +258,9 @@ function isSkillpackCheckSubcommand(): boolean {
   // Walk to find the first non-flag arg.
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
-    if (a === 'skillpack') return true;
-    if (a === 'skillpack-check') return false;
-    if (a && !a.startsWith('--')) return false;
+    if (a === "skillpack") return true;
+    if (a === "skillpack-check") return false;
+    if (a && !a.startsWith("--")) return false;
   }
   return false;
 }

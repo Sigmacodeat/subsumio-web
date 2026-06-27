@@ -16,7 +16,12 @@ function ConfirmDemo() {
   return (
     <Button
       onClick={async () => {
-        const ok = await confirm({ title: "Löschen?", message: "Möchten Sie diesen Eintrag wirklich löschen?", confirmLabel: "Löschen", variant: "danger" });
+        const ok = await confirm({
+          title: "Löschen?",
+          message: "Möchten Sie diesen Eintrag wirklich löschen?",
+          confirmLabel: "Löschen",
+          variant: "danger",
+        });
         alert(ok ? "Bestätigt" : "Abgebrochen");
       }}
     >

@@ -9,8 +9,8 @@ function Card({ className, glass, glow, ...props }: CardProps) {
   return (
     <div
       className={cn(
-        "rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] card-shadow transition-all duration-200 hover:card-shadow-hover hover:border-[color:var(--ds-border-strong)]",
-        glass && "backdrop-blur-md bg-[color:var(--ds-surface)]/80",
+        "card-shadow hover:card-shadow-hover rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] transition-all duration-200 hover:border-[color:var(--ds-border-strong)]",
+        glass && "bg-[color:var(--ds-surface)]/80 backdrop-blur-md",
         glow && "shadow-lg shadow-[color:var(--brand-primary)]/10",
         className
       )}
@@ -20,18 +20,13 @@ function Card({ className, glass, glow, ...props }: CardProps) {
 }
 
 function CardHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return (
-    <div
-      className={cn("flex flex-col gap-1 p-6 pb-4", className)}
-      {...props}
-    />
-  );
+  return <div className={cn("flex flex-col gap-1 p-6 pb-4", className)} {...props} />;
 }
 
 function CardTitle({ className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
     <h3
-      className={cn("text-base font-semibold text-[color:var(--ds-text)] leading-tight", className)}
+      className={cn("text-base leading-tight font-semibold text-[color:var(--ds-text)]", className)}
       {...props}
     />
   );
@@ -40,23 +35,21 @@ function CardTitle({ className, ...props }: React.HTMLAttributes<HTMLHeadingElem
 function CardDescription({ className, ...props }: React.HTMLAttributes<HTMLParagraphElement>) {
   return (
     <p
-      className={cn("text-sm text-[color:var(--ds-text-muted)] leading-relaxed", className)}
+      className={cn("text-sm leading-relaxed text-[color:var(--ds-text-muted)]", className)}
       {...props}
     />
   );
 }
 
 function CardContent({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return (
-    <div className={cn("p-6 pt-0", className)} {...props} />
-  );
+  return <div className={cn("p-6 pt-0", className)} {...props} />;
 }
 
 function CardFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={cn(
-        "flex items-center gap-2 p-6 pt-4 border-t border-[color:var(--ds-border)]",
+        "flex items-center gap-2 border-t border-[color:var(--ds-border)] p-6 pt-4",
         className
       )}
       {...props}

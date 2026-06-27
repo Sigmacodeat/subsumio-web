@@ -110,7 +110,7 @@ const EXACT_THRESHOLD = 0.95;
  */
 export function checkContactConflict(
   newContact: ContactRef,
-  existingContacts: ContactRef[],
+  existingContacts: ContactRef[]
 ): ConflictCheckResult {
   const hits: ConflictHit[] = [];
 
@@ -125,8 +125,8 @@ export function checkContactConflict(
 
     if (sim >= EXACT_THRESHOLD) {
       const isRollenKonflikt =
-        newContact.role === "client" && existing.role === "opponent" ||
-        newContact.role === "opponent" && existing.role === "client";
+        (newContact.role === "client" && existing.role === "opponent") ||
+        (newContact.role === "opponent" && existing.role === "client");
 
       hits.push({
         contact: existing,
@@ -154,9 +154,10 @@ export function checkContactConflict(
   }
 
   const hasCritical = hits.some(
-    (h) => h.matchType === "exact" &&
+    (h) =>
+      h.matchType === "exact" &&
       ((newContact.role === "client" && h.contact.role === "opponent") ||
-       (newContact.role === "opponent" && h.contact.role === "client")),
+        (newContact.role === "opponent" && h.contact.role === "client"))
   );
 
   const hasHits = hits.length > 0;

@@ -59,35 +59,36 @@ status + paste-ready fix for every failure.
 
 ### Core dimensions (5; must all pass to publish at any tier)
 
-| # | Name | Description | Auto-fixable |
-|---|------|-------------|--------------|
-| 1 | `manifest_valid` | skillpack.json passes the v1 schema validator | no |
-| 2 | `skills_have_skill_md` | every listed skill has SKILL.md with valid frontmatter (name, description, triggers) | no |
-| 3 | `routing_evals_present` | every skill has routing-eval.jsonl with >= 5 intents | yes |
-| 4 | `skills_have_unique_triggers` | no two skills in this pack share an exact trigger phrase (MECE) | no |
-| 5 | `changelog_present_and_current` | CHANGELOG.md present and contains an entry for the current version | yes |
+| #   | Name                            | Description                                                                          | Auto-fixable |
+| --- | ------------------------------- | ------------------------------------------------------------------------------------ | ------------ |
+| 1   | `manifest_valid`                | skillpack.json passes the v1 schema validator                                        | no           |
+| 2   | `skills_have_skill_md`          | every listed skill has SKILL.md with valid frontmatter (name, description, triggers) | no           |
+| 3   | `routing_evals_present`         | every skill has routing-eval.jsonl with >= 5 intents                                 | yes          |
+| 4   | `skills_have_unique_triggers`   | no two skills in this pack share an exact trigger phrase (MECE)                      | no           |
+| 5   | `changelog_present_and_current` | CHANGELOG.md present and contains an entry for the current version                   | yes          |
 
 ### Quality badges (5; earn for tier eligibility)
 
-| # | Name | Description | Auto-fixable |
-|---|------|-------------|--------------|
-| 6 | `unit_tests_present` | pack declares unit_tests[] with at least one matching test file | yes |
-| 7 | `e2e_tests_present` | pack declares e2e_tests[] with at least one matching test file | yes |
-| 8 | `llm_eval_present` | pack declares llm_evals[] with >= 1 file containing >= 3 cases | yes |
-| 9 | `bootstrap_runbook_present` | pack declares runbooks.bootstrap and the file is non-empty | yes |
-| 10 | `license_present` | LICENSE file exists at the pack root (informational badge) | yes |
+| #   | Name                        | Description                                                     | Auto-fixable |
+| --- | --------------------------- | --------------------------------------------------------------- | ------------ |
+| 6   | `unit_tests_present`        | pack declares unit_tests[] with at least one matching test file | yes          |
+| 7   | `e2e_tests_present`         | pack declares e2e_tests[] with at least one matching test file  | yes          |
+| 8   | `llm_eval_present`          | pack declares llm_evals[] with >= 1 file containing >= 3 cases  | yes          |
+| 9   | `bootstrap_runbook_present` | pack declares runbooks.bootstrap and the file is non-empty      | yes          |
+| 10  | `license_present`           | LICENSE file exists at the pack root (informational badge)      | yes          |
 
 _Generated from `src/core/skillpack/rubric.ts` by `bun run scripts/build-skillpack-anatomy.ts`._
 
 <!-- END auto-generated:rubric -->
+
 ## Tier eligibility
 
-| Tier | Requirement |
-|------|-------------|
-| `endorsed` | All 5 core + all 5 badges, plus Garry's `endorsements.json` overlay in the registry repo |
-| `community` | All 5 core + >= 3 of 5 badges. Default tier on PR merge. |
-| `experimental` | All 5 core + < 3 badges |
-| `blocked` | Any core dimension fails |
+| Tier           | Requirement                                                                              |
+| -------------- | ---------------------------------------------------------------------------------------- |
+| `endorsed`     | All 5 core + all 5 badges, plus Garry's `endorsements.json` overlay in the registry repo |
+| `community`    | All 5 core + >= 3 of 5 badges. Default tier on PR merge.                                 |
+| `experimental` | All 5 core + < 3 badges                                                                  |
+| `blocked`      | Any core dimension fails                                                                 |
 
 ## CLI reference (third-party path)
 

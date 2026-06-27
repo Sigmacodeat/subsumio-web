@@ -10,7 +10,7 @@
  *   5. Merge candidates between split points
  */
 
-import { chunkText as recursiveChunk, type TextChunk } from './recursive.ts';
+import { chunkText as recursiveChunk, type TextChunk } from "./recursive.ts";
 
 const CANDIDATE_SIZE = 128; // words per pre-split candidate
 const MAX_RETRIES = 3;
@@ -22,10 +22,7 @@ export interface LlmChunkOptions {
   askLlm?: (prompt: string) => Promise<string>;
 }
 
-export async function chunkTextLlm(
-  text: string,
-  opts: LlmChunkOptions,
-): Promise<TextChunk[]> {
+export async function chunkTextLlm(text: string, opts: LlmChunkOptions): Promise<TextChunk[]> {
   const chunkSize = opts.chunkSize || 300;
   const chunkOverlap = opts.chunkOverlap || 50;
   const askLlm = opts.askLlm;
@@ -59,7 +56,7 @@ export async function chunkTextLlm(
 
 async function findSplitPoints(
   candidates: TextChunk[],
-  askLlm: (prompt: string) => Promise<string>,
+  askLlm: (prompt: string) => Promise<string>
 ): Promise<number[]> {
   const splitPoints: number[] = [];
   let pos = 0;
@@ -87,12 +84,12 @@ async function findSplitPoints(
 async function askForSplit(
   window: TextChunk[],
   offset: number,
-  askLlm: (prompt: string) => Promise<string>,
+  askLlm: (prompt: string) => Promise<string>
 ): Promise<number | null> {
   // Format candidates as numbered items
   const numbered = window
-    .map((c, i) => `[${offset + i}] ${c.text.slice(0, 200)}${c.text.length > 200 ? '...' : ''}`)
-    .join('\n\n');
+    .map((c, i) => `[${offset + i}] ${c.text.slice(0, 200)}${c.text.length > 200 ? "..." : ""}`)
+    .join("\n\n");
 
   const prompt = `You are analyzing a document that has been split into numbered segments. Your job is to find where the FIRST major topic shift occurs.
 
@@ -119,13 +116,9 @@ Respond with only a number or NONE. Nothing else.`;
   return null;
 }
 
-function parseSplitResponse(
-  response: string,
-  minId: number,
-  maxId: number,
-): number | null {
+function parseSplitResponse(response: string, minId: number, maxId: number): number | null {
   const trimmed = response.trim().toUpperCase();
-  if (trimmed === 'NONE') return null;
+  if (trimmed === "NONE") return null;
 
   const num = parseInt(trimmed, 10);
   if (isNaN(num)) return null;
@@ -139,7 +132,7 @@ function parseSplitResponse(
 
 function mergeAtSplits(candidates: TextChunk[], splitPoints: number[]): string[] {
   if (splitPoints.length === 0) {
-    return [candidates.map(c => c.text).join(' ')];
+    return [candidates.map((c) => c.text).join(" ")];
   }
 
   const result: string[] = [];
@@ -148,7 +141,7 @@ function mergeAtSplits(candidates: TextChunk[], splitPoints: number[]): string[]
   for (const split of splitPoints) {
     const group = candidates.slice(start, split);
     if (group.length > 0) {
-      result.push(group.map(c => c.text).join(' '));
+      result.push(group.map((c) => c.text).join(" "));
     }
     start = split;
   }
@@ -156,8 +149,8 @@ function mergeAtSplits(candidates: TextChunk[], splitPoints: number[]): string[]
   // Last group
   const remaining = candidates.slice(start);
   if (remaining.length > 0) {
-    result.push(remaining.map(c => c.text).join(' '));
+    result.push(remaining.map((c) => c.text).join(" "));
   }
 
-  return result.filter(t => t.trim().length > 0);
+  return result.filter((t) => t.trim().length > 0);
 }

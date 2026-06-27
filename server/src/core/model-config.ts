@@ -20,10 +20,10 @@
  * AND lose to new-key config when both are set.
  */
 
-import type { BrainEngine } from './engine.ts';
-import { splitProviderModelId } from './model-id.ts';
+import type { BrainEngine } from "./engine.ts";
+import { splitProviderModelId } from "./model-id.ts";
 
-export type ModelTier = 'utility' | 'reasoning' | 'deep' | 'subagent';
+export type ModelTier = "utility" | "reasoning" | "deep" | "subagent";
 
 export interface ResolveModelOpts {
   /** CLI flag value (e.g. `--model opus` → 'opus'). Highest precedence. */
@@ -55,11 +55,11 @@ export interface ResolveModelOpts {
  *  cause `resolveRecipe()` to throw "unknown provider" and the queue rejects
  *  the submit. */
 export const DEFAULT_ALIASES: Record<string, string> = {
-  opus:   'anthropic:claude-opus-4-7',
-  sonnet: 'anthropic:claude-sonnet-4-6',
-  haiku:  'anthropic:claude-haiku-4-5-20251001',
-  gemini: 'google:gemini-3-pro',
-  gpt:    'openai:gpt-5',
+  opus: "anthropic:claude-opus-4-7",
+  sonnet: "anthropic:claude-sonnet-4-6",
+  haiku: "anthropic:claude-haiku-4-5-20251001",
+  gemini: "google:gemini-3-pro",
+  gpt: "openai:gpt-5",
 };
 
 /**
@@ -72,10 +72,10 @@ export const DEFAULT_ALIASES: Record<string, string> = {
  * Users override via `gbrain config set models.tier.<tier> <model>`.
  */
 export const TIER_DEFAULTS: Record<ModelTier, string> = {
-  utility:   'anthropic:claude-haiku-4-5-20251001',
-  reasoning: 'anthropic:claude-sonnet-4-6',
-  deep:      'anthropic:claude-opus-4-7',
-  subagent:  'anthropic:claude-sonnet-4-6',
+  utility: "anthropic:claude-haiku-4-5-20251001",
+  reasoning: "anthropic:claude-sonnet-4-6",
+  deep: "anthropic:claude-opus-4-7",
+  subagent: "anthropic:claude-sonnet-4-6",
 };
 
 /**
@@ -96,12 +96,12 @@ export function isAnthropicProvider(modelString: string): boolean {
   // form → subagent guard bypass → silent fallback to TIER_DEFAULTS.
   const { provider, model } = splitProviderModelId(modelString);
   if (provider !== null) {
-    return provider.trim().toLowerCase() === 'anthropic';
+    return provider.trim().toLowerCase() === "anthropic";
   }
   // Bare model id (no separator): known Anthropic models start with `claude-`.
   // Conservative: we'd rather warn-on-Anthropic-typo than silently route
   // gpt-5 to the subagent loop.
-  return model.toLowerCase().startsWith('claude-');
+  return model.toLowerCase().startsWith("claude-");
 }
 
 const _subagentTierWarningsEmitted = new Set<string>();
@@ -116,11 +116,11 @@ function emitDeprecationWarning(oldKey: string, newKey: string, ignored: boolean
   if (ignored) {
     process.stderr.write(
       `[models] deprecated config "${oldKey}" ignored; "${newKey}" is set and wins. ` +
-      `Remove "${oldKey}" from your config in v0.30.\n`,
+        `Remove "${oldKey}" from your config in v0.30.\n`
     );
   } else {
     process.stderr.write(
-      `[models] deprecated config "${oldKey}" honored; rename to "${newKey}" before v0.30.\n`,
+      `[models] deprecated config "${oldKey}" honored; rename to "${newKey}" before v0.30.\n`
     );
   }
 }
@@ -132,9 +132,9 @@ function emitDeprecationWarning(oldKey: string, newKey: string, ignored: boolean
  */
 export async function resolveModel(
   engine: BrainEngine | null,
-  opts: ResolveModelOpts,
+  opts: ResolveModelOpts
 ): Promise<string> {
-  const envVar = opts.envVar ?? 'GBRAIN_MODEL';
+  const envVar = opts.envVar ?? "GBRAIN_MODEL";
 
   // 1. CLI flag wins
   if (opts.cliFlag && opts.cliFlag.trim()) {
@@ -161,16 +161,20 @@ export async function resolveModel(
     if (opts.deprecatedConfigKey) {
       const v = await engine.getConfig(opts.deprecatedConfigKey);
       if (v && v.trim()) {
-        emitDeprecationWarning(opts.deprecatedConfigKey, opts.configKey ?? '<no replacement>', /*ignored=*/ false);
+        emitDeprecationWarning(
+          opts.deprecatedConfigKey,
+          opts.configKey ?? "<no replacement>",
+          /*ignored=*/ false
+        );
         return await resolveAlias(engine, v.trim());
       }
     }
 
     // 4. Global default
-    const def = await engine.getConfig('models.default');
+    const def = await engine.getConfig("models.default");
     if (def && def.trim()) {
       const resolved = await resolveAlias(engine, def.trim());
-      return enforceSubagentCapable(resolved, opts.tier, 'models.default');
+      return enforceSubagentCapable(resolved, opts.tier, "models.default");
     }
 
     // 5. Tier override (v0.31.12)
@@ -228,20 +232,29 @@ export async function resolveModel(
  * Once-per-(source, model) warn seam preserved from v0.31.12 (same Set, same
  * suppression key) so doctor + first-call surfaces don't double-warn.
  */
-function enforceSubagentCapable(resolved: string, tier: ModelTier | undefined, source: string): string {
-  if (tier !== 'subagent') return resolved;
+function enforceSubagentCapable(
+  resolved: string,
+  tier: ModelTier | undefined,
+  source: string
+): string {
+  if (tier !== "subagent") return resolved;
 
   // Lazy import keeps capabilities.ts out of model-config's eager-load surface
   // (capabilities → model-resolver → recipes; this would create a cycle if
   // model-config itself were imported by recipes, which it isn't, but
   // defensive against future drift).
-  let verdict: 'ok' | 'degraded:no_caching' | 'degraded:no_parallel' | 'unusable:no_tools' | 'unknown';
+  let verdict:
+    | "ok"
+    | "degraded:no_caching"
+    | "degraded:no_parallel"
+    | "unusable:no_tools"
+    | "unknown";
   try {
     // Synchronous-style import via require shim isn't available in ESM; the
     // helper is pure, so a synchronous static import is fine here. Pulling
     // from capabilities.ts directly:
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const cap = require('./ai/capabilities.ts') as typeof import('./ai/capabilities.ts');
+    const cap = require("./ai/capabilities.ts") as typeof import("./ai/capabilities.ts");
     verdict = cap.classifyCapabilities(resolved);
   } catch {
     // If the import fails (e.g. malformed recipe registry during boot), be
@@ -251,28 +264,29 @@ function enforceSubagentCapable(resolved: string, tier: ModelTier | undefined, s
   }
 
   const key = `${source}:${resolved}`;
-  if (verdict === 'unusable:no_tools' || verdict === 'unknown') {
+  if (verdict === "unusable:no_tools" || verdict === "unknown") {
     if (!_subagentTierWarningsEmitted.has(key)) {
       _subagentTierWarningsEmitted.add(key);
-      const reason = verdict === 'unusable:no_tools'
-        ? `lacks tool-calling support`
-        : `is an unrecognized provider`;
+      const reason =
+        verdict === "unusable:no_tools"
+          ? `lacks tool-calling support`
+          : `is an unrecognized provider`;
       process.stderr.write(
         `[models] tier.subagent resolved to "${resolved}" via "${source}", which ${reason}. ` +
-        `The subagent tool loop cannot run on this model — falling back to ${TIER_DEFAULTS.subagent}. ` +
-        `Fix: gbrain config set models.tier.subagent <provider>:<model-with-tools>\n`,
+          `The subagent tool loop cannot run on this model — falling back to ${TIER_DEFAULTS.subagent}. ` +
+          `Fix: gbrain config set models.tier.subagent <provider>:<model-with-tools>\n`
       );
     }
     return TIER_DEFAULTS.subagent;
   }
 
-  if (verdict === 'degraded:no_caching') {
+  if (verdict === "degraded:no_caching") {
     if (!_subagentTierWarningsEmitted.has(key)) {
       _subagentTierWarningsEmitted.add(key);
       process.stderr.write(
         `[models] tier.subagent resolved to "${resolved}" via "${source}" — provider does not support prompt caching. ` +
-        `The loop will run hot (cost scales linearly with conversation length). ` +
-        `For lower cost on long loops, set models.tier.subagent to an Anthropic model.\n`,
+          `The loop will run hot (cost scales linearly with conversation length). ` +
+          `For lower cost on long loops, set models.tier.subagent to an Anthropic model.\n`
       );
     }
   }
@@ -286,7 +300,11 @@ function enforceSubagentCapable(resolved: string, tier: ModelTier | undefined, s
  * callers (extensions, plugins) that imported it. New code MUST call
  * `enforceSubagentCapable` instead.
  */
-function enforceSubagentAnthropic(resolved: string, tier: ModelTier | undefined, source: string): string {
+function enforceSubagentAnthropic(
+  resolved: string,
+  tier: ModelTier | undefined,
+  source: string
+): string {
   return enforceSubagentCapable(resolved, tier, source);
 }
 // Keep `enforceSubagentAnthropic` available for back-compat consumers that
@@ -305,7 +323,7 @@ void enforceSubagentAnthropic;
 export async function resolveAlias(
   engine: BrainEngine | null,
   name: string,
-  depth = 0,
+  depth = 0
 ): Promise<string> {
   if (depth > 2) return name; // cycle break
   if (engine) {

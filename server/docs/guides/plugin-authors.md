@@ -82,7 +82,7 @@ expect it.
 ## `gbrain.plugin.json`
 
 | field            | type   | required | notes                                                              |
-|------------------|--------|----------|--------------------------------------------------------------------|
+| ---------------- | ------ | -------- | ------------------------------------------------------------------ |
 | `name`           | string | yes      | Human-readable plugin id. Shows up in warnings and collision logs. |
 | `version`        | string | yes      | Your plugin's semver. Informational.                               |
 | `plugin_version` | string | yes      | Contract lock. Must equal `"gbrain-plugin-v1"` for v0.15.          |
@@ -96,12 +96,12 @@ frontmatter controls runtime behavior.
 
 Recognized frontmatter fields:
 
-| field           | type     | required | notes                                                                                   |
-|-----------------|----------|----------|-----------------------------------------------------------------------------------------|
-| `name`          | string   | no       | Subagent identifier used as `--subagent-def`. Defaults to the file basename.            |
-| `model`         | string   | no       | Anthropic model id. Defaults to the handler default (sonnet).                           |
-| `max_turns`     | number   | no       | Cap on assistant turns. Defaults to 20.                                                 |
-| `allowed_tools` | string[] | no       | Whitelist of tool names. Must subset the derived brain registry. Rejected on mismatch.  |
+| field           | type     | required | notes                                                                                  |
+| --------------- | -------- | -------- | -------------------------------------------------------------------------------------- |
+| `name`          | string   | no       | Subagent identifier used as `--subagent-def`. Defaults to the file basename.           |
+| `model`         | string   | no       | Anthropic model id. Defaults to the handler default (sonnet).                          |
+| `max_turns`     | number   | no       | Cap on assistant turns. Defaults to 20.                                                |
+| `allowed_tools` | string[] | no       | Whitelist of tool names. Must subset the derived brain registry. Rejected on mismatch. |
 
 Unknown frontmatter fields are preserved but ignored by the handler. v0.16
 may consume more of them.

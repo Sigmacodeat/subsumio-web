@@ -12,12 +12,12 @@
  * MCP-surface contract.
  */
 
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
-import { operations, operationsByName } from '../src/core/operations.ts';
-import { FIND_EXPERTS_DESCRIPTION } from '../src/core/operations-descriptions.ts';
-import { PGLiteEngine } from '../src/core/pglite-engine.ts';
-import type { OperationContext } from '../src/core/operations.ts';
-import type { ChunkInput } from '../src/core/types.ts';
+import { describe, test, expect, beforeAll, afterAll } from "bun:test";
+import { operations, operationsByName } from "../src/core/operations.ts";
+import { FIND_EXPERTS_DESCRIPTION } from "../src/core/operations-descriptions.ts";
+import { PGLiteEngine } from "../src/core/pglite-engine.ts";
+import type { OperationContext } from "../src/core/operations.ts";
+import type { ChunkInput } from "../src/core/types.ts";
 
 let engine: PGLiteEngine;
 let schemaDim: number;
@@ -41,20 +41,20 @@ beforeAll(async () => {
   // DEFAULT_EMBEDDING_DIMENSIONS=1280 fallback). Either way, the seed
   // embedding's dim must match the column's dim, so we ask the column.
   const dimRows = await engine.executeRaw<{ atttypmod: number }>(
-    "SELECT atttypmod FROM pg_attribute WHERE attrelid = 'content_chunks'::regclass AND attname = 'embedding'",
+    "SELECT atttypmod FROM pg_attribute WHERE attrelid = 'content_chunks'::regclass AND attname = 'embedding'"
   );
   schemaDim = dimRows[0]?.atttypmod ?? 1280;
 
-  await engine.putPage('wiki/people/expert', {
-    type: 'person',
-    title: 'Expert',
-    compiled_truth: 'Expert is the authority on widgets.',
+  await engine.putPage("wiki/people/expert", {
+    type: "person",
+    title: "Expert",
+    compiled_truth: "Expert is the authority on widgets.",
   });
-  await engine.upsertChunks('wiki/people/expert', [
+  await engine.upsertChunks("wiki/people/expert", [
     {
       chunk_index: 0,
-      chunk_text: 'Expert is the authority on widgets.',
-      chunk_source: 'compiled_truth',
+      chunk_text: "Expert is the authority on widgets.",
+      chunk_source: "compiled_truth",
       embedding: basisEmbedding(7, schemaDim),
       token_count: 10,
     } as ChunkInput,
@@ -65,47 +65,47 @@ afterAll(async () => {
   await engine.disconnect();
 });
 
-describe('find_experts — op declaration', () => {
-  test('registered in the operations array', () => {
-    const op = operations.find((o) => o.name === 'find_experts');
+describe("find_experts — op declaration", () => {
+  test("registered in the operations array", () => {
+    const op = operations.find((o) => o.name === "find_experts");
     expect(op).toBeDefined();
   });
 
-  test('findable via operationsByName', () => {
-    expect(operationsByName['find_experts']).toBeDefined();
-    expect(operationsByName['find_experts'].name).toBe('find_experts');
+  test("findable via operationsByName", () => {
+    expect(operationsByName["find_experts"]).toBeDefined();
+    expect(operationsByName["find_experts"].name).toBe("find_experts");
   });
 
-  test('scope is read; localOnly is false (HTTP-MCP accessible)', () => {
-    const op = operationsByName['find_experts'];
-    expect(op.scope).toBe('read');
+  test("scope is read; localOnly is false (HTTP-MCP accessible)", () => {
+    const op = operationsByName["find_experts"];
+    expect(op.scope).toBe("read");
     // localOnly defaults to undefined/false; explicit truthy would block HTTP MCP.
     expect(op.localOnly).not.toBe(true);
   });
 
-  test('declares the documented params (topic / limit / explain)', () => {
-    const op = operationsByName['find_experts'];
+  test("declares the documented params (topic / limit / explain)", () => {
+    const op = operationsByName["find_experts"];
     expect(op.params).toBeDefined();
     expect(op.params.topic).toBeDefined();
-    expect(op.params.topic.type).toBe('string');
+    expect(op.params.topic.type).toBe("string");
     expect(op.params.limit).toBeDefined();
-    expect(op.params.limit.type).toBe('number');
+    expect(op.params.limit.type).toBe("number");
     expect(op.params.explain).toBeDefined();
-    expect(op.params.explain.type).toBe('boolean');
+    expect(op.params.explain.type).toBe("boolean");
   });
 
   test('cliHints.name is "whoknows"', () => {
-    const op = operationsByName['find_experts'];
-    expect(op.cliHints?.name).toBe('whoknows');
+    const op = operationsByName["find_experts"];
+    expect(op.cliHints?.name).toBe("whoknows");
   });
 
-  test('description text is non-trivial and references the use case', () => {
+  test("description text is non-trivial and references the use case", () => {
     expect(FIND_EXPERTS_DESCRIPTION.length).toBeGreaterThan(60);
     expect(FIND_EXPERTS_DESCRIPTION).toMatch(/expert|knows|topic|routing/i);
   });
 });
 
-describe('find_experts — handler behavior', () => {
+describe("find_experts — handler behavior", () => {
   function makeCtx(): OperationContext {
     // Minimal local-only context; the handler doesn't consult auth or
     // remote on a read-scoped read-only call (handler validates topic
@@ -120,30 +120,30 @@ describe('find_experts — handler behavior', () => {
     } as unknown as OperationContext;
   }
 
-  test('rejects empty topic with invalid_params', async () => {
-    const op = operationsByName['find_experts'];
-    await expect(op.handler(makeCtx(), { topic: '' })).rejects.toThrow(/topic/);
+  test("rejects empty topic with invalid_params", async () => {
+    const op = operationsByName["find_experts"];
+    await expect(op.handler(makeCtx(), { topic: "" })).rejects.toThrow(/topic/);
   });
 
-  test('rejects whitespace-only topic with invalid_params', async () => {
-    const op = operationsByName['find_experts'];
-    await expect(op.handler(makeCtx(), { topic: '   ' })).rejects.toThrow(/topic/);
+  test("rejects whitespace-only topic with invalid_params", async () => {
+    const op = operationsByName["find_experts"];
+    await expect(op.handler(makeCtx(), { topic: "   " })).rejects.toThrow(/topic/);
   });
 
-  test('rejects missing topic (undefined) with invalid_params', async () => {
-    const op = operationsByName['find_experts'];
+  test("rejects missing topic (undefined) with invalid_params", async () => {
+    const op = operationsByName["find_experts"];
     await expect(op.handler(makeCtx(), {})).rejects.toThrow(/topic/);
   });
 
-  test('handler returns an array on valid topic', async () => {
-    const op = operationsByName['find_experts'];
-    const result = (await op.handler(makeCtx(), { topic: 'widgets' })) as unknown[];
+  test("handler returns an array on valid topic", async () => {
+    const op = operationsByName["find_experts"];
+    const result = (await op.handler(makeCtx(), { topic: "widgets" })) as unknown[];
     expect(Array.isArray(result)).toBe(true);
   });
 
-  test('handler honors limit parameter', async () => {
-    const op = operationsByName['find_experts'];
-    const result = (await op.handler(makeCtx(), { topic: 'widgets', limit: 1 })) as unknown[];
+  test("handler honors limit parameter", async () => {
+    const op = operationsByName["find_experts"];
+    const result = (await op.handler(makeCtx(), { topic: "widgets", limit: 1 })) as unknown[];
     expect(Array.isArray(result)).toBe(true);
     expect(result.length).toBeLessThanOrEqual(1);
   });

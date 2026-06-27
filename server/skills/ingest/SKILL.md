@@ -120,6 +120,7 @@ SUBJECT, not by format (see `skills/_brain-filing-rules.md`).
 **Input:** URL shared by user, or article mentioned in conversation.
 
 **Process:**
+
 1. Fetch content (`web_fetch` or equivalent)
 2. Extract: title, author, publication, date, full text
 3. Summarize: executive summary + key arguments (not a rehash)
@@ -136,6 +137,7 @@ about a company -> `companies/`, reusable framework -> `concepts/`, raw data -> 
 **Input:** URL (YouTube, podcast, etc.) or local audio/video file.
 
 **Process:**
+
 1. Get transcript -- speaker-diarized if possible (services like Diarize.io provide
    speaker-labeled, word-level timing)
 2. **Save raw transcript** (both JSON and human-readable TXT)
@@ -148,6 +150,7 @@ about a company -> `companies/`, reusable framework -> `concepts/`, raw data -> 
 **Write to:** `media/videos/` or `media/podcasts/` with back-links to all entities.
 
 **Quality bar:**
+
 - Compelling headline (not "This video discusses...")
 - Executive summary that makes you want to watch/listen
 - Key Ideas as actual insights, not topic labels
@@ -159,6 +162,7 @@ about a company -> `companies/`, reusable framework -> `concepts/`, raw data -> 
 **Input:** File path or URL.
 
 **Process:**
+
 1. Extract text (OCR if scanned/image PDF)
 2. **Save raw source** for provenance
 3. Summarize: executive summary + key sections + notable data
@@ -172,6 +176,7 @@ about a company -> `companies/`, reusable framework -> `concepts/`, raw data -> 
 **Input:** Image file.
 
 **Process:**
+
 1. Analyze content (OCR for text-heavy images, description for photos)
 2. If tweet screenshot: extract text, author, date, route to social media workflow
 3. If article screenshot: extract text, route to article workflow
@@ -184,6 +189,7 @@ about a company -> `companies/`, reusable framework -> `concepts/`, raw data -> 
 **Input:** Transcript from meeting recording service, or manual notes.
 
 **Process:**
+
 1. Pull full transcript (source of truth -- AI summaries are medium-low trust)
 2. **Save raw transcript** for provenance
 3. Write meeting page with YOUR analysis above the line, raw transcript below
@@ -196,6 +202,7 @@ about a company -> `companies/`, reusable framework -> `concepts/`, raw data -> 
 **Write to:** `meetings/YYYY-MM-DD-short-description.md`
 
 **What makes a good meeting page:**
+
 - Reveals the real crux, not a bullet dump
 - Connects to existing brain pages (people, companies, deals)
 - Flags what changed (status, decisions, new info)
@@ -207,6 +214,7 @@ about a company -> `companies/`, reusable framework -> `concepts/`, raw data -> 
 **Input:** Tweet, thread, or social media post.
 
 **Process:**
+
 1. Fetch full content (thread, quote tweets, context)
 2. If images present: OCR via vision model for full text extraction
 3. Summarize: what's being said, why it matters, who's involved
@@ -221,6 +229,7 @@ if the post is primarily about a person/company.
 Every ingested item must have its raw source preserved for provenance.
 
 **Use `gbrain files upload-raw` for automatic size routing:**
+
 ```bash
 gbrain files upload-raw <file> --page <page-slug> --type <type>
 ```
@@ -230,6 +239,7 @@ gbrain files upload-raw <file> --page <page-slug> --type <type>
   via TUS resumable upload, `.redirect.yaml` pointer left in the brain repo
 
 The `.redirect.yaml` pointer format:
+
 ```yaml
 target: supabase://brain-files/page-slug/filename.mp4
 bucket: brain-files
@@ -243,6 +253,7 @@ type: transcript
 ```
 
 **Accessing stored files:**
+
 - `gbrain files signed-url <storage-path>` -- generate 1-hour signed URL for viewing/sharing
 - `gbrain files restore <dir>` -- download back to local from cloud storage
 

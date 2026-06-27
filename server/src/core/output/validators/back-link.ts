@@ -16,10 +16,10 @@
  * enforcer at write time; this is defense-in-depth.
  */
 
-import type { PageValidator, PageValidationContext, ValidationFinding } from '../writer.ts';
+import type { PageValidator, PageValidationContext, ValidationFinding } from "../writer.ts";
 
 export const backLinkValidator: PageValidator = {
-  id: 'back-link',
+  id: "back-link",
 
   async validate(ctx: PageValidationContext): Promise<ValidationFinding[]> {
     const findings: ValidationFinding[] = [];
@@ -35,12 +35,12 @@ export const backLinkValidator: PageValidator = {
 
     for (const target of uniqueTargets) {
       const targetOutbound = await ctx.engine.getLinks(target);
-      const hasReverse = targetOutbound.some(l => l.to_slug === ctx.slug);
+      const hasReverse = targetOutbound.some((l) => l.to_slug === ctx.slug);
       if (!hasReverse) {
         findings.push({
           slug: ctx.slug,
-          validator: 'back-link',
-          severity: 'warning',
+          validator: "back-link",
+          severity: "warning",
           message: `Outbound link to ${target} has no back-link (${target} does not reference ${ctx.slug}). runAutoLink should reconcile this on next put_page; flag for inspection.`,
         });
       }

@@ -28,8 +28,8 @@
  * separate JSON formatter needed.
  */
 
-import type { SearchResult, HybridSearchMeta } from '../types.ts';
-import type { AutocutDecision } from './autocut.ts';
+import type { SearchResult, HybridSearchMeta } from "../types.ts";
+import type { AutocutDecision } from "./autocut.ts";
 
 /**
  * Format a single result with per-stage attribution. Returns a string
@@ -38,7 +38,7 @@ import type { AutocutDecision } from './autocut.ts';
  */
 export function formatResultExplain(
   result: SearchResult,
-  rank: number,  // 1-based for human display
+  rank: number // 1-based for human display
 ): string {
   const lines: string[] = [];
   lines.push(`${rank}. ${result.slug} (score=${fmt(result.score)})`);
@@ -69,23 +69,25 @@ export function formatResultExplain(
   }
   if (result.graph_adjacency_boost !== undefined) {
     anyBoost = true;
-    const hits = result.graph_adjacency_hits ?? '?';
+    const hits = result.graph_adjacency_hits ?? "?";
     lines.push(`   + adjacency ×${fmt(result.graph_adjacency_boost)} (hits=${hits})`);
   }
   if (result.graph_cross_source_boost !== undefined) {
     anyBoost = true;
-    const cs = result.graph_cross_source_hits ?? '?';
+    const cs = result.graph_cross_source_hits ?? "?";
     lines.push(`   + cross_source ×${fmt(result.graph_cross_source_boost)} (other_sources=${cs})`);
   }
   if (result.session_demote_factor !== undefined) {
     anyBoost = true;
-    const prefix = result.graph_session_prefix ?? '?';
+    const prefix = result.graph_session_prefix ?? "?";
     lines.push(`   - session_demote ×${fmt(result.session_demote_factor)} (prefix=${prefix})`);
   }
   if (result.reranker_delta !== undefined && result.reranker_delta !== 0) {
     anyBoost = true;
-    const arrow = result.reranker_delta > 0 ? '↑' : '↓';
-    lines.push(`   ${arrow} reranker rank ${result.reranker_delta > 0 ? '+' : ''}${result.reranker_delta}`);
+    const arrow = result.reranker_delta > 0 ? "↑" : "↓";
+    lines.push(
+      `   ${arrow} reranker rank ${result.reranker_delta > 0 ? "+" : ""}${result.reranker_delta}`
+    );
   }
   // v0.42.3.0 — show the cross-encoder rerank score (the signal autocut cuts
   // on). Surfacing it per result makes the autocut cliff legible: every kept
@@ -100,7 +102,7 @@ export function formatResultExplain(
   }
 
   lines.push(`   = final ${fmt(result.score)}`);
-  return lines.join('\n');
+  return lines.join("\n");
 }
 
 /**
@@ -120,12 +122,9 @@ export function formatAutocutSummary(decision: AutocutDecision | undefined): str
  * the formatter handles enumeration. Returns a single string (multi-line
  * with trailing newline so callers can `process.stdout.write(out)`).
  */
-export function formatResultsExplain(
-  results: SearchResult[],
-  meta?: HybridSearchMeta,
-): string {
-  if (results.length === 0) return 'No results.\n';
-  const body = results.map((r, i) => formatResultExplain(r, i + 1)).join('\n\n') + '\n';
+export function formatResultsExplain(results: SearchResult[], meta?: HybridSearchMeta): string {
+  if (results.length === 0) return "No results.\n";
+  const body = results.map((r, i) => formatResultExplain(r, i + 1)).join("\n\n") + "\n";
   // v0.42.3.0 — prepend the autocut summary when meta carries a decision.
   const autocutLine = formatAutocutSummary(meta?.autocut);
   return autocutLine ? `${autocutLine}\n\n${body}` : body;
@@ -139,5 +138,5 @@ export function formatResultsExplain(
 function fmt(n: number): string {
   if (!Number.isFinite(n)) return String(n);
   // 4 decimals, then trim trailing zeros and an optional trailing dot.
-  return n.toFixed(4).replace(/\.?0+$/, '');
+  return n.toFixed(4).replace(/\.?0+$/, "");
 }

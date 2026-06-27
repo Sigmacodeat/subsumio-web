@@ -6,6 +6,7 @@ the skillpack) merges with the fat parent AGENTS.md (compact list, the
 real dispatcher).
 
 ## Skills routed from the workspace
+
 - **adversary-tracking**: track adversaries | competitive intel
 - **civic-intelligence**: civic check | local news brief
 - **book-mirror**: mirror a chapter | personalize this book

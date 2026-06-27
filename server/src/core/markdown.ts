@@ -1,18 +1,18 @@
-import matter from 'gray-matter';
-import { safeLoad as yamlSafeLoad } from 'js-yaml';
-import type { Page, PageType } from './types.ts';
-import { slugifyPath } from './sync.ts';
-import { stripCodeBlocks } from './link-extraction.ts';
+import matter from "gray-matter";
+import { safeLoad as yamlSafeLoad } from "js-yaml";
+import type { Page, PageType } from "./types.ts";
+import { slugifyPath } from "./sync.ts";
+import { stripCodeBlocks } from "./link-extraction.ts";
 
 export type ParseValidationCode =
-  | 'MISSING_OPEN'
-  | 'MISSING_CLOSE'
-  | 'YAML_PARSE'
-  | 'SLUG_MISMATCH'
-  | 'NULL_BYTES'
-  | 'NESTED_QUOTES'
-  | 'NON_STRING_FIELD'
-  | 'EMPTY_FRONTMATTER';
+  | "MISSING_OPEN"
+  | "MISSING_CLOSE"
+  | "YAML_PARSE"
+  | "SLUG_MISMATCH"
+  | "NULL_BYTES"
+  | "NESTED_QUOTES"
+  | "NON_STRING_FIELD"
+  | "EMPTY_FRONTMATTER";
 
 export interface ParseValidationError {
   code: ParseValidationCode;
@@ -36,7 +36,9 @@ export interface ParseOpts {
    * Callers thread this from `loadActivePack(ctx)` once per command —
    * NEVER per file inside sync, per codex perf finding #7.
    */
-  activePack?: { page_types: ReadonlyArray<{ name: string; path_prefixes: ReadonlyArray<string> }> };
+  activePack?: {
+    page_types: ReadonlyArray<{ name: string; path_prefixes: ReadonlyArray<string> }>;
+  };
 }
 
 export interface ParsedMarkdown {
@@ -65,7 +67,7 @@ export interface ParsedMarkdown {
  * renders a timezone-dependent long form. Everything else uses `String()`.
  */
 export function coerceFrontmatterString(v: unknown): string {
-  if (v == null) return '';
+  if (v == null) return "";
   if (v instanceof Date) return v.toISOString().slice(0, 10);
   return String(v);
 }
@@ -94,7 +96,7 @@ export function coerceFrontmatterString(v: unknown): string {
 export function parseMarkdown(
   content: string,
   filePath?: string,
-  opts?: ParseOpts,
+  opts?: ParseOpts
 ): ParsedMarkdown {
   const errors: ParseValidationError[] = [];
 
@@ -133,9 +135,9 @@ export function parseMarkdown(
   // coerceFrontmatterString turns a scalar/date into a usable string (a date slug
   // `2024-06-01` is legitimate); the NON_STRING_FIELD lint finding below still
   // surfaces the un-quoted field so it can be cleaned up.
-  const type = coerceFrontmatterString(frontmatter.type) || (
-    opts?.activePack ? inferTypeFromPack(filePath, opts.activePack) : inferType(filePath)
-  );
+  const type =
+    coerceFrontmatterString(frontmatter.type) ||
+    (opts?.activePack ? inferTypeFromPack(filePath, opts.activePack) : inferType(filePath));
   const title = coerceFrontmatterString(frontmatter.title).trim() || inferTitle(filePath);
   const frontmatterTags = extractTags(frontmatter);
   const inlineTags = extractInlineTags(body);
@@ -178,21 +180,21 @@ function collectValidationErrors(
     yamlParseError: Error | null;
     expectedSlug?: string;
     parsedFrontmatter: Record<string, unknown>;
-  },
+  }
 ): void {
   // 1. NULL_BYTES — binary corruption indicator.
-  const nullIdx = content.indexOf('\x00');
+  const nullIdx = content.indexOf("\x00");
   if (nullIdx >= 0) {
-    const line = content.slice(0, nullIdx).split('\n').length;
+    const line = content.slice(0, nullIdx).split("\n").length;
     errors.push({
-      code: 'NULL_BYTES',
-      message: 'Content contains null bytes (likely binary corruption)',
+      code: "NULL_BYTES",
+      message: "Content contains null bytes (likely binary corruption)",
       line,
     });
   }
 
   // 2. MISSING_OPEN — first non-empty line must be `---`.
-  const lines = content.split('\n');
+  const lines = content.split("\n");
   let firstNonEmpty = -1;
   for (let i = 0; i < lines.length; i++) {
     if (lines[i].trim().length > 0) {
@@ -203,16 +205,16 @@ function collectValidationErrors(
   if (firstNonEmpty === -1) {
     // Empty file: treat as MISSING_OPEN. Don't run other structural checks.
     errors.push({
-      code: 'MISSING_OPEN',
-      message: 'File is empty or whitespace-only; expected frontmatter starting with ---',
+      code: "MISSING_OPEN",
+      message: "File is empty or whitespace-only; expected frontmatter starting with ---",
       line: 1,
     });
     return;
   }
-  if (lines[firstNonEmpty].trim() !== '---') {
+  if (lines[firstNonEmpty].trim() !== "---") {
     errors.push({
-      code: 'MISSING_OPEN',
-      message: 'Frontmatter must start with --- on the first non-empty line',
+      code: "MISSING_OPEN",
+      message: "Frontmatter must start with --- on the first non-empty line",
       line: firstNonEmpty + 1,
     });
     // Without an opener we can't reason about MISSING_CLOSE / EMPTY_FRONTMATTER
@@ -227,7 +229,7 @@ function collectValidationErrors(
   let headingBeforeClose = -1;
   for (let i = firstNonEmpty + 1; i < lines.length; i++) {
     const t = lines[i].trim();
-    if (t === '---') {
+    if (t === "---") {
       closeLine = i;
       break;
     }
@@ -237,29 +239,32 @@ function collectValidationErrors(
   }
   if (closeLine === -1) {
     errors.push({
-      code: 'MISSING_CLOSE',
+      code: "MISSING_CLOSE",
       message:
         headingBeforeClose >= 0
           ? `No closing --- before heading at line ${headingBeforeClose + 1}`
-          : 'No closing --- delimiter found',
+          : "No closing --- delimiter found",
       line: headingBeforeClose >= 0 ? headingBeforeClose + 1 : firstNonEmpty + 1,
     });
     return;
   }
   if (headingBeforeClose >= 0 && headingBeforeClose < closeLine) {
     errors.push({
-      code: 'MISSING_CLOSE',
+      code: "MISSING_CLOSE",
       message: `Heading at line ${headingBeforeClose + 1} found inside frontmatter zone (closing --- comes after)`,
       line: headingBeforeClose + 1,
     });
   }
 
   // 4. EMPTY_FRONTMATTER — open and close present but nothing meaningful between.
-  const fmBody = lines.slice(firstNonEmpty + 1, closeLine).join('\n').trim();
+  const fmBody = lines
+    .slice(firstNonEmpty + 1, closeLine)
+    .join("\n")
+    .trim();
   if (fmBody.length === 0) {
     errors.push({
-      code: 'EMPTY_FRONTMATTER',
-      message: 'Frontmatter block is empty',
+      code: "EMPTY_FRONTMATTER",
+      message: "Frontmatter block is empty",
       line: firstNonEmpty + 1,
     });
   }
@@ -280,7 +285,7 @@ function collectValidationErrors(
     const value = m[1];
     let count = 0;
     for (let j = 0; j < value.length; j++) {
-      if (value[j] === '"' && (j === 0 || value[j - 1] !== '\\')) count++;
+      if (value[j] === '"' && (j === 0 || value[j - 1] !== "\\")) count++;
     }
     if (count < 3) continue;
 
@@ -297,8 +302,8 @@ function collectValidationErrors(
 
     if (!isValidYaml) {
       errors.push({
-        code: 'NESTED_QUOTES',
-        message: 'Nested double quotes in YAML value (use single quotes for the outer)',
+        code: "NESTED_QUOTES",
+        message: "Nested double quotes in YAML value (use single quotes for the outer)",
         line: i + 1,
       });
     }
@@ -307,18 +312,18 @@ function collectValidationErrors(
   // 6. YAML_PARSE — gray-matter threw.
   if (ctx.yamlParseError) {
     errors.push({
-      code: 'YAML_PARSE',
+      code: "YAML_PARSE",
       message: `YAML parse failed: ${ctx.yamlParseError.message}`,
       line: firstNonEmpty + 1,
     });
   }
 
   // 7. SLUG_MISMATCH — only when expectedSlug was provided and a slug field exists.
-  if (ctx.expectedSlug && typeof ctx.parsedFrontmatter.slug === 'string') {
+  if (ctx.expectedSlug && typeof ctx.parsedFrontmatter.slug === "string") {
     const declared = ctx.parsedFrontmatter.slug as string;
     if (declared !== ctx.expectedSlug) {
       errors.push({
-        code: 'SLUG_MISMATCH',
+        code: "SLUG_MISMATCH",
         message: `Frontmatter slug "${declared}" does not match path-derived slug "${ctx.expectedSlug}"`,
       });
     }
@@ -329,11 +334,11 @@ function collectValidationErrors(
   //    string and falls back to inference for type/slug, but lint surfaces the
   //    malformed frontmatter so it gets fixed rather than silently rewritten.
   //    Pre-fix the slug validator above `typeof`-skipped these, hiding them.
-  for (const field of ['title', 'type', 'slug'] as const) {
+  for (const field of ["title", "type", "slug"] as const) {
     const v = ctx.parsedFrontmatter[field];
-    if (v != null && typeof v !== 'string') {
+    if (v != null && typeof v !== "string") {
       errors.push({
-        code: 'NON_STRING_FIELD',
+        code: "NON_STRING_FIELD",
         message: `Frontmatter "${field}" should be a string but is ${typeof v} (${JSON.stringify(v)}); quote the value (e.g. ${field}: "${String(v)}").`,
       });
     }
@@ -354,15 +359,15 @@ function collectValidationErrors(
  * Treating bare `---` as a separator caused 83% content truncation on wiki corpora.
  */
 export function splitBody(body: string): { compiled_truth: string; timeline: string } {
-  const lines = body.split('\n');
+  const lines = body.split("\n");
   const splitIndex = findTimelineSplitIndex(lines);
 
   if (splitIndex === -1) {
-    return { compiled_truth: body, timeline: '' };
+    return { compiled_truth: body, timeline: "" };
   }
 
-  const compiled_truth = lines.slice(0, splitIndex).join('\n');
-  const timeline = lines.slice(splitIndex + 1).join('\n');
+  const compiled_truth = lines.slice(0, splitIndex).join("\n");
+  const timeline = lines.slice(splitIndex + 1).join("\n");
   return { compiled_truth, timeline };
 }
 
@@ -370,16 +375,16 @@ function findTimelineSplitIndex(lines: string[]): number {
   for (let i = 0; i < lines.length; i++) {
     const trimmed = lines[i].trim();
 
-    if (trimmed === '<!-- timeline -->' || trimmed === '<!--timeline-->') {
+    if (trimmed === "<!-- timeline -->" || trimmed === "<!--timeline-->") {
       return i;
     }
 
-    if (trimmed === '--- timeline ---' || /^---\s+timeline\s+---$/i.test(trimmed)) {
+    if (trimmed === "--- timeline ---" || /^---\s+timeline\s+---$/i.test(trimmed)) {
       return i;
     }
 
-    if (trimmed === '---') {
-      const beforeContent = lines.slice(0, i).join('\n').trim();
+    if (trimmed === "---") {
+      const beforeContent = lines.slice(0, i).join("\n").trim();
       if (beforeContent.length === 0) continue;
 
       for (let j = i + 1; j < lines.length; j++) {
@@ -401,7 +406,7 @@ export function serializeMarkdown(
   frontmatter: Record<string, unknown>,
   compiled_truth: string,
   timeline: string,
-  meta: { type: PageType; title: string; tags: string[] },
+  meta: { type: PageType; title: string; tags: string[] }
 ): string {
   // Build full frontmatter including type, title, tags
   const fullFrontmatter: Record<string, unknown> = {
@@ -413,14 +418,14 @@ export function serializeMarkdown(
     fullFrontmatter.tags = meta.tags;
   }
 
-  const yamlContent = matter.stringify('', fullFrontmatter).trim();
+  const yamlContent = matter.stringify("", fullFrontmatter).trim();
 
   let body = compiled_truth;
   if (timeline) {
-    body += '\n\n<!-- timeline -->\n\n' + timeline;
+    body += "\n\n<!-- timeline -->\n\n" + timeline;
   }
 
-  return yamlContent + '\n\n' + body + '\n';
+  return yamlContent + "\n\n" + body + "\n";
 }
 
 // v0.38 T7a (Phase B): inferType is now pack-aware.
@@ -454,25 +459,25 @@ export function serializeMarkdown(
  * than ancestor directories).
  */
 const GBRAIN_BASE_PATH_PREFIXES: ReadonlyArray<{ prefixes: string[]; type: PageType }> = [
-  { prefixes: ['/writing/'], type: 'writing' },
-  { prefixes: ['/wiki/analysis/'], type: 'analysis' },
-  { prefixes: ['/wiki/guides/', '/wiki/guide/'], type: 'guide' },
-  { prefixes: ['/wiki/hardware/'], type: 'hardware' },
-  { prefixes: ['/wiki/architecture/'], type: 'architecture' },
-  { prefixes: ['/wiki/concepts/', '/wiki/concept/'], type: 'concept' },
-  { prefixes: ['/people/', '/person/'], type: 'person' },
-  { prefixes: ['/companies/', '/company/'], type: 'company' },
-  { prefixes: ['/deals/', '/deal/'], type: 'deal' },
-  { prefixes: ['/yc/'], type: 'yc' },
-  { prefixes: ['/civic/'], type: 'civic' },
-  { prefixes: ['/projects/', '/project/'], type: 'project' },
-  { prefixes: ['/sources/', '/source/'], type: 'source' },
-  { prefixes: ['/media/'], type: 'media' },
-  { prefixes: ['/emails/', '/email/'], type: 'email' },
-  { prefixes: ['/slack/'], type: 'slack' },
-  { prefixes: ['/cal/', '/calendar/'], type: 'calendar-event' },
-  { prefixes: ['/notes/', '/note/'], type: 'note' },
-  { prefixes: ['/meetings/', '/meeting/'], type: 'meeting' },
+  { prefixes: ["/writing/"], type: "writing" },
+  { prefixes: ["/wiki/analysis/"], type: "analysis" },
+  { prefixes: ["/wiki/guides/", "/wiki/guide/"], type: "guide" },
+  { prefixes: ["/wiki/hardware/"], type: "hardware" },
+  { prefixes: ["/wiki/architecture/"], type: "architecture" },
+  { prefixes: ["/wiki/concepts/", "/wiki/concept/"], type: "concept" },
+  { prefixes: ["/people/", "/person/"], type: "person" },
+  { prefixes: ["/companies/", "/company/"], type: "company" },
+  { prefixes: ["/deals/", "/deal/"], type: "deal" },
+  { prefixes: ["/yc/"], type: "yc" },
+  { prefixes: ["/civic/"], type: "civic" },
+  { prefixes: ["/projects/", "/project/"], type: "project" },
+  { prefixes: ["/sources/", "/source/"], type: "source" },
+  { prefixes: ["/media/"], type: "media" },
+  { prefixes: ["/emails/", "/email/"], type: "email" },
+  { prefixes: ["/slack/"], type: "slack" },
+  { prefixes: ["/cal/", "/calendar/"], type: "calendar-event" },
+  { prefixes: ["/notes/", "/note/"], type: "note" },
+  { prefixes: ["/meetings/", "/meeting/"], type: "meeting" },
 ];
 
 function inferType(filePath?: string): PageType {
@@ -496,23 +501,23 @@ function inferType(filePath?: string): PageType {
  */
 export function inferTypeFromPack(
   filePath: string | undefined,
-  pack: { page_types: ReadonlyArray<{ name: string; path_prefixes: ReadonlyArray<string> }> },
+  pack: { page_types: ReadonlyArray<{ name: string; path_prefixes: ReadonlyArray<string> }> }
 ): PageType {
-  if (!filePath) return 'concept';
+  if (!filePath) return "concept";
   // Empty pack → fall back to gbrain-base hardcoded defaults.
   if (pack.page_types.length === 0) {
     return inferTypeWithPrefixes(filePath, GBRAIN_BASE_PATH_PREFIXES);
   }
-  const lower = ('/' + filePath).toLowerCase();
+  const lower = ("/" + filePath).toLowerCase();
   for (const pt of pack.page_types) {
     for (const prefix of pt.path_prefixes) {
-      const needle = prefix.startsWith('/') ? prefix.toLowerCase() : '/' + prefix.toLowerCase();
+      const needle = prefix.startsWith("/") ? prefix.toLowerCase() : "/" + prefix.toLowerCase();
       if (lower.includes(needle)) {
         return pt.name;
       }
     }
   }
-  return 'concept';
+  return "concept";
 }
 
 /**
@@ -535,34 +540,44 @@ export function inferTypeFromPack(
  */
 export function inferTypeAndSubtypeFromPack(
   filePath: string | undefined,
-  pack: { page_types: ReadonlyArray<{
-    name: string;
-    path_prefixes: ReadonlyArray<string>;
-    subtypes?: ReadonlyArray<{
+  pack: {
+    page_types: ReadonlyArray<{
       name: string;
-      when: { path_pattern?: string; frontmatter_field?: string; frontmatter_value?: unknown };
+      path_prefixes: ReadonlyArray<string>;
+      subtypes?: ReadonlyArray<{
+        name: string;
+        when: { path_pattern?: string; frontmatter_field?: string; frontmatter_value?: unknown };
+      }>;
     }>;
-  }> },
-  frontmatter?: Record<string, unknown>,
+  },
+  frontmatter?: Record<string, unknown>
 ): { type: PageType; subtype?: string } {
-  if (!filePath) return { type: 'concept' };
+  if (!filePath) return { type: "concept" };
   // Empty pack → legacy fallback; no subtype info available.
   if (pack.page_types.length === 0) {
     return { type: inferTypeWithPrefixes(filePath, GBRAIN_BASE_PATH_PREFIXES) };
   }
-  const lower = ('/' + filePath).toLowerCase();
+  const lower = ("/" + filePath).toLowerCase();
   // Stage 1: prefix-match wins (same as inferTypeFromPack)
-  let matchedType: { name: string; subtypes?: ReadonlyArray<{ name: string; when: { path_pattern?: string; frontmatter_field?: string; frontmatter_value?: unknown } }> } | undefined;
+  let matchedType:
+    | {
+        name: string;
+        subtypes?: ReadonlyArray<{
+          name: string;
+          when: { path_pattern?: string; frontmatter_field?: string; frontmatter_value?: unknown };
+        }>;
+      }
+    | undefined;
   outer: for (const pt of pack.page_types) {
     for (const prefix of pt.path_prefixes) {
-      const needle = prefix.startsWith('/') ? prefix.toLowerCase() : '/' + prefix.toLowerCase();
+      const needle = prefix.startsWith("/") ? prefix.toLowerCase() : "/" + prefix.toLowerCase();
       if (lower.includes(needle)) {
         matchedType = pt;
         break outer;
       }
     }
   }
-  if (!matchedType) return { type: 'concept' };
+  if (!matchedType) return { type: "concept" };
   const typeName = matchedType.name as PageType;
   // Stage 2: subtype rule resolution (if any declared)
   const subtypes = matchedType.subtypes ?? [];
@@ -594,29 +609,29 @@ export function inferTypeAndSubtypeFromPack(
 
 function inferTypeWithPrefixes(
   filePath: string | undefined,
-  table: ReadonlyArray<{ prefixes: ReadonlyArray<string>; type: PageType }>,
+  table: ReadonlyArray<{ prefixes: ReadonlyArray<string>; type: PageType }>
 ): PageType {
-  if (!filePath) return 'concept';
-  const lower = ('/' + filePath).toLowerCase();
+  if (!filePath) return "concept";
+  const lower = ("/" + filePath).toLowerCase();
   for (const row of table) {
     for (const p of row.prefixes) {
       if (lower.includes(p)) return row.type;
     }
   }
-  return 'concept';
+  return "concept";
 }
 
 function inferTitle(filePath?: string): string {
-  if (!filePath) return 'Untitled';
+  if (!filePath) return "Untitled";
 
   // Extract filename without extension, convert dashes/underscores to spaces
-  const parts = filePath.split('/');
-  const filename = parts[parts.length - 1]?.replace(/\.md$/i, '') || 'Untitled';
-  return filename.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  const parts = filePath.split("/");
+  const filename = parts[parts.length - 1]?.replace(/\.md$/i, "") || "Untitled";
+  return filename.replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 function inferSlug(filePath?: string): string {
-  if (!filePath) return 'untitled';
+  if (!filePath) return "untitled";
   return slugifyPath(filePath);
 }
 
@@ -624,7 +639,11 @@ function extractTags(frontmatter: Record<string, unknown>): string[] {
   const tags = frontmatter.tags;
   if (!tags) return [];
   if (Array.isArray(tags)) return tags.map(String);
-  if (typeof tags === 'string') return tags.split(',').map(t => t.trim()).filter(Boolean);
+  if (typeof tags === "string")
+    return tags
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean);
   return [];
 }
 
@@ -636,13 +655,13 @@ function extractTags(frontmatter: Record<string, unknown>): string[] {
 export function extractInlineTags(content: string): string[] {
   const stripped = stripCodeBlocks(content);
   // Remove URLs so # inside URLs doesn't match.
-  const noUrls = stripped.replace(/https?:\/\/[^\s)]+/g, ' ');
+  const noUrls = stripped.replace(/https?:\/\/[^\s)]+/g, " ");
   const tagRe = /#([a-zA-Z0-9_\-/]+)/g;
   const found = new Set<string>();
   let match: RegExpExecArray | null;
   while ((match = tagRe.exec(noUrls)) !== null) {
-    const tag = match[1]!.toLowerCase().replace(/\/$/, ''); // trim trailing slash
-    if (tag && !tag.includes('//') && !/^\d+$/.test(tag)) {
+    const tag = match[1]!.toLowerCase().replace(/\/$/, ""); // trim trailing slash
+    if (tag && !tag.includes("//") && !/^\d+$/.test(tag)) {
       found.add(tag);
     }
   }
@@ -657,7 +676,7 @@ export function extractAliases(frontmatter: Record<string, unknown>): string[] {
   const aliases = frontmatter.aliases;
   if (!aliases) return [];
   if (Array.isArray(aliases)) return aliases.map(String).filter(Boolean);
-  if (typeof aliases === 'string') return [aliases];
+  if (typeof aliases === "string") return [aliases];
   return [];
 }
 
@@ -670,7 +689,7 @@ export function extractAliases(frontmatter: Record<string, unknown>): string[] {
 // stamps. This extract is the single source of truth.
 // ---------------------------------------------------------------------------
 
-import { join } from 'node:path';
+import { join } from "node:path";
 
 /** Options for serializePageToMarkdown. */
 export interface SerializePageOpts {
@@ -699,22 +718,17 @@ export interface SerializePageOpts {
 export function serializePageToMarkdown(
   page: Page,
   tags: string[],
-  opts: SerializePageOpts = {},
+  opts: SerializePageOpts = {}
 ): string {
   const frontmatter: Record<string, unknown> = {
     ...((page.frontmatter ?? {}) as Record<string, unknown>),
     ...(opts.frontmatterOverrides ?? {}),
   };
-  return serializeMarkdown(
-    frontmatter,
-    page.compiled_truth ?? '',
-    page.timeline ?? '',
-    {
-      type: (page.type as PageType) ?? 'note',
-      title: page.title ?? '',
-      tags,
-    },
-  );
+  return serializeMarkdown(frontmatter, page.compiled_truth ?? "", page.timeline ?? "", {
+    type: (page.type as PageType) ?? "note",
+    title: page.title ?? "",
+    tags,
+  });
 }
 
 /**
@@ -731,12 +745,8 @@ export function serializePageToMarkdown(
  * traversal attacks via `validateSourceId` (src/core/utils.ts) BEFORE
  * passing it here. This helper does the filename math only.
  */
-export function resolvePageFilePath(
-  brainDir: string,
-  slug: string,
-  sourceId: string,
-): string {
-  return sourceId === 'default'
+export function resolvePageFilePath(brainDir: string, slug: string, sourceId: string): string {
+  return sourceId === "default"
     ? join(brainDir, `${slug}.md`)
-    : join(brainDir, '.sources', sourceId, `${slug}.md`);
+    : join(brainDir, ".sources", sourceId, `${slug}.md`);
 }

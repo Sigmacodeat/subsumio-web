@@ -90,9 +90,15 @@ export default function CostCalculatorPage() {
     let cancelled = false;
     api.brain
       .listPages({ type: "legal_case", limit: 200 })
-      .then((pages) => { if (!cancelled) setCases(pages); })
-      .catch(() => { if (!cancelled) setCases([]); });
-    return () => { cancelled = true; };
+      .then((pages) => {
+        if (!cancelled) setCases(pages);
+      })
+      .catch(() => {
+        if (!cancelled) setCases([]);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   async function saveToCase() {
@@ -239,10 +245,7 @@ export default function CostCalculatorPage() {
             <Label className="text-xs text-[color:var(--ds-text-muted)]">
               {t("cost_calc.link_case")}
             </Label>
-            <Select
-              value={selectedCaseSlug}
-              onValueChange={setSelectedCaseSlug}
-            >
+            <Select value={selectedCaseSlug} onValueChange={setSelectedCaseSlug}>
               <SelectTrigger>
                 <SelectValue placeholder={t("cost_calc.no_case")} />
               </SelectTrigger>

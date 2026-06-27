@@ -318,7 +318,11 @@ export function QueueRow({
   );
 }
 
-export function DeadlineList({ items }: { items: ReturnType<typeof useKanzleiCockpitData>["deadlines"] }) {
+export function DeadlineList({
+  items,
+}: {
+  items: ReturnType<typeof useKanzleiCockpitData>["deadlines"];
+}) {
   const { t, lang } = useLang();
   return (
     <QueuePanel
@@ -506,9 +510,21 @@ export function ActiveCasesList({ cases }: { cases: DashboardPageLike[] }) {
 export function QuickActions() {
   const { t } = useLang();
   const actions = [
-    { href: "#", event: "subsumio:create-case", icon: Briefcase, label: t("cockpit.action_case"), isButton: true },
+    {
+      href: "#",
+      event: "subsumio:create-case",
+      icon: Briefcase,
+      label: t("cockpit.action_case"),
+      isButton: true,
+    },
     { href: "/dashboard/kollisionspruefung", icon: Scale, label: t("cockpit.action_conflict") },
-    { href: "#", event: "subsumio:create-deadline", icon: CalendarClock, label: t("cockpit.action_deadline"), isButton: true },
+    {
+      href: "#",
+      event: "subsumio:create-deadline",
+      icon: CalendarClock,
+      label: t("cockpit.action_deadline"),
+      isButton: true,
+    },
     { href: "/dashboard/intake", icon: Inbox, label: t("cockpit.action_intake") },
     { href: "/dashboard/drafting", icon: PenTool, label: t("cockpit.action_draft") },
     { href: "/dashboard/upload", icon: Upload, label: t("cockpit.action_upload") },

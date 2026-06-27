@@ -68,31 +68,32 @@ gbrain eval export --tool query | jq -c 'select(.latency_ms > 500)'
 Every exported row has this shape. Field order in JSON output is not
 guaranteed; consumers MUST key by name, not position.
 
-| Field | Type | Notes |
-|---|---|---|
-| `schema_version` | number | Always `1` on v1 rows. Forward-compat gate. |
-| `id` | number | Autoincrement primary key. Stable across exports. |
-| `tool_name` | `"query"` \| `"search"` | Which MCP operation captured this row. |
-| `query` | string | **Already PII-scrubbed** by `scrubPii` unless `eval.scrub_pii: false`. Emails / phones / SSN / Luhn-verified credit cards / JWTs / bearer tokens replaced with `[REDACTED]`. Max length 50KB (CHECK-enforced). |
-| `retrieved_slugs` | string[] | Deduplicated slugs that came back in `SearchResult[]`. |
-| `retrieved_chunk_ids` | number[] | Every chunk id in result order (duplicates preserved — one per hit). |
-| `source_ids` | string[] | Distinct `sources.id` values across the result set (v0.18 multi-source). Empty for pre-v0.18 rows that lacked the column. |
-| `expand_enabled` | boolean \| null | Whether the caller **requested** Haiku expansion. `null` for `search` (no expansion concept). |
-| `detail` | `"low"` \| `"medium"` \| `"high"` \| null | Detail level the caller **requested**. `null` when omitted. |
-| `detail_resolved` | `"low"` \| `"medium"` \| `"high"` \| null | What `hybridSearch` **actually used** after auto-detect. `null` when neither caller nor heuristic classified. |
-| `vector_enabled` | boolean | True iff vector search actually ran. `false` when `OPENAI_API_KEY` was missing or the embed call failed. **Replay MUST respect this** — rows with `false` only exercised the keyword path. |
-| `expansion_applied` | boolean | True iff Haiku expansion actually produced variants (not just "was requested"). |
-| `latency_ms` | number | Wall-clock duration of the op handler (includes capture itself — negligible since it's fire-and-forget). |
-| `remote` | boolean | `true` for MCP callers (untrusted), `false` for local CLI. Partitions "real agent traffic" from "operator probing." |
-| `job_id` | number \| null | `OperationContext.jobId` when the caller was a subagent tool-bridge. Null for MCP + CLI. |
-| `subagent_id` | number \| null | `OperationContext.subagentId` for subagent-owned runs. |
-| `created_at` | string (ISO 8601) | UTC timestamp of insert. |
+| Field                 | Type                                      | Notes                                                                                                                                                                                                          |
+| --------------------- | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `schema_version`      | number                                    | Always `1` on v1 rows. Forward-compat gate.                                                                                                                                                                    |
+| `id`                  | number                                    | Autoincrement primary key. Stable across exports.                                                                                                                                                              |
+| `tool_name`           | `"query"` \| `"search"`                   | Which MCP operation captured this row.                                                                                                                                                                         |
+| `query`               | string                                    | **Already PII-scrubbed** by `scrubPii` unless `eval.scrub_pii: false`. Emails / phones / SSN / Luhn-verified credit cards / JWTs / bearer tokens replaced with `[REDACTED]`. Max length 50KB (CHECK-enforced). |
+| `retrieved_slugs`     | string[]                                  | Deduplicated slugs that came back in `SearchResult[]`.                                                                                                                                                         |
+| `retrieved_chunk_ids` | number[]                                  | Every chunk id in result order (duplicates preserved — one per hit).                                                                                                                                           |
+| `source_ids`          | string[]                                  | Distinct `sources.id` values across the result set (v0.18 multi-source). Empty for pre-v0.18 rows that lacked the column.                                                                                      |
+| `expand_enabled`      | boolean \| null                           | Whether the caller **requested** Haiku expansion. `null` for `search` (no expansion concept).                                                                                                                  |
+| `detail`              | `"low"` \| `"medium"` \| `"high"` \| null | Detail level the caller **requested**. `null` when omitted.                                                                                                                                                    |
+| `detail_resolved`     | `"low"` \| `"medium"` \| `"high"` \| null | What `hybridSearch` **actually used** after auto-detect. `null` when neither caller nor heuristic classified.                                                                                                  |
+| `vector_enabled`      | boolean                                   | True iff vector search actually ran. `false` when `OPENAI_API_KEY` was missing or the embed call failed. **Replay MUST respect this** — rows with `false` only exercised the keyword path.                     |
+| `expansion_applied`   | boolean                                   | True iff Haiku expansion actually produced variants (not just "was requested").                                                                                                                                |
+| `latency_ms`          | number                                    | Wall-clock duration of the op handler (includes capture itself — negligible since it's fire-and-forget).                                                                                                       |
+| `remote`              | boolean                                   | `true` for MCP callers (untrusted), `false` for local CLI. Partitions "real agent traffic" from "operator probing."                                                                                            |
+| `job_id`              | number \| null                            | `OperationContext.jobId` when the caller was a subagent tool-bridge. Null for MCP + CLI.                                                                                                                       |
+| `subagent_id`         | number \| null                            | `OperationContext.subagentId` for subagent-owned runs.                                                                                                                                                         |
+| `created_at`          | string (ISO 8601)                         | UTC timestamp of insert.                                                                                                                                                                                       |
 
 ## Ordering + determinism
 
 `listEvalCandidates` orders by `created_at DESC, id DESC`. Same-
 millisecond inserts tie on `created_at`; `id DESC` is the stable
 tiebreaker. Replay tools can consume rows in order and assume:
+
 - no duplicate rows across calls with non-overlapping `--since` windows
 - no missed rows across calls that chain `--since` windows (window end
   of run 1 is the strict upper bound, not a soft cursor)
