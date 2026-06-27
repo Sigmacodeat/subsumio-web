@@ -25,42 +25,7 @@ for the hosted SaaS.
 
 ---
 
-## Option A — Railway (easiest)
-
-1. **New project → Deploy from GitHub repo** → pick this repo, set **Root
-   Directory = `server`** (so `server/railway.json` + `server/Dockerfile` apply).
-2. **Add a Postgres plugin** (New → Database → PostgreSQL). Railway injects
-   `DATABASE_URL` automatically. (Enable the `vector` extension once: open the
-   Postgres shell → `CREATE EXTENSION IF NOT EXISTS vector;` — the engine
-   migrations create the rest.)
-3. **Variables** (Settings → Variables):
-   ```
-   SUBSUMIO_WEB_API_KEY=<openssl rand -hex 32>
-   SUBSUMIO_REQUIRE_TENANT=true
-   SUBSUMIO_HTTP_TRUST_PROXY=true
-   SUBSUMIO_HTTP_CORS_ORIGIN=https://subsum.io
-   OPENAI_API_KEY=<your key>          # or VOYAGE_API_KEY
-   ```
-   (`PORT` and `DATABASE_URL` are injected by Railway — don't set them.)
-4. Deploy. Railway builds the Dockerfile, runs migrations via the entrypoint,
-   and health-checks `/health`. Copy the public URL, e.g.
-   `https://subsumio-engine-production.up.railway.app`.
-
-## Option B — Fly.io
-
-```bash
-cd server
-fly launch --no-deploy            # uses fly.toml; creates the app + volume
-fly secrets set \
-  SUBSUMIO_WEB_API_KEY=$(openssl rand -hex 32) \
-  SUBSUMIO_REQUIRE_TENANT=true \
-  OPENAI_API_KEY=<your key> \
-  DATABASE_URL=<postgres url>      # omit to use the embedded PGLite volume
-fly deploy
-fly status                        # note the https://<app>.fly.dev URL
-```
-
-## Option C — Hetzner (EU, recommended for Subsumio)
+## Option A — Hetzner (EU, empfohlen für Subsumio)
 
 Single EU box running Next.js web + Postgres+pgvector + engine+worker + Caddy
 (auto-HTTPS), fully scripted. EU/Germany data residency is the legal
@@ -77,7 +42,7 @@ SSH_KEY=<your hcloud ssh key name> bash provision.sh   # creates firewall + serv
 # → point DNS, ssh in, cp .env.example .env, edit, docker compose up -d --build
 ```
 
-## Option D — any Docker host / VPS
+## Option B — any Docker host / VPS
 
 ```bash
 cd server

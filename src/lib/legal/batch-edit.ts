@@ -14,7 +14,7 @@
  * - API-Endpoint für Frontend
  */
 
-import { ENGINE_URL } from "@/lib/engine";
+import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 
 export type BatchOperationType =
   | "replace_text" // Text ersetzen in compiled_truth
@@ -201,11 +201,19 @@ async function executeOnPage(
       if (dryRun) {
         return { slug, success: true, changes_made: 1, preview: "Would delete this page" };
       }
-      const delRes = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(slug)}`, {
-        method: "DELETE",
-        headers: authHeaders,
-        signal: AbortSignal.timeout(10_000),
-      });
+      // No engine DELETE route — soft-delete by tombstoning via merge-update.
+      const delRes = await enginePatchPage(
+        authHeaders,
+        {
+          slug,
+          frontmatter: {
+            status: "tombstoned",
+            tombstoned_at: new Date().toISOString(),
+            tombstone_reason: "batch_delete",
+          },
+        },
+        { timeoutMs: 10_000 }
+      );
       return {
         slug,
         success: delRes.ok,

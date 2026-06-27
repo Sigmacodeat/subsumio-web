@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
+import { ENGINE_URL, engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
 import {
   isWebhookProcessed,
   markWebhookProcessed,
@@ -115,18 +115,18 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
           : [];
       const page = results[0] as { slug: string } | undefined;
       if (page) {
-        const patchRes = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(page.slug)}`, {
-          method: "PATCH",
-          headers: { ...headers, "Content-Type": "application/json" },
-          body: JSON.stringify({
+        const patchRes = await enginePatchPage(
+          headers,
+          {
+            slug: page.slug,
             frontmatter: {
               docusign_status: mapped,
               docusign_updated_at: new Date().toISOString(),
               ...(status === "completed" ? { signed_at: new Date().toISOString() } : {}),
             },
-          }),
-          signal: AbortSignal.timeout(15_000),
-        });
+          },
+          { timeoutMs: 15_000 }
+        );
         updated = patchRes.ok;
       }
     }

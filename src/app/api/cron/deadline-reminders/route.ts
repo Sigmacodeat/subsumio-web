@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
+import { ENGINE_URL, engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
 import { loadKanzleiSettings } from "@/lib/kanzlei-settings";
 import nodemailer from "nodemailer";
 import { createCronHandler } from "@/lib/api-handler";
@@ -47,40 +47,13 @@ async function updatePageDeadlines(
   fm: Record<string, unknown>
 ): Promise<void> {
   const headers = engineHeadersForBrain(brainId);
-  // C1: If-Match optimistic locking with retry on 409.
-  // Use PATCH via /api/pages/{slug} (not POST) because the POST handler
-  // in pages/route.ts doesn't forward If-Match to the engine.
-  const encodedSlug = slug.split("/").map(encodeURIComponent).join("/");
-  for (let attempt = 0; attempt < 3; attempt++) {
-    try {
-      // GET current version
-      const getRes = await fetch(`${ENGINE_URL}/api/pages/${encodedSlug}`, {
-        headers,
-        signal: AbortSignal.timeout(30_000),
-      });
-      if (!getRes.ok) return;
-      const page = (await getRes.json()) as { frontmatter?: { version?: number } };
-      const currentVersion = page.frontmatter?.version ?? 0;
-
-      const patchRes = await fetch(`${ENGINE_URL}/api/pages/${encodedSlug}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          "If-Match": String(currentVersion),
-          ...headers,
-        },
-        body: JSON.stringify({ frontmatter: fm, merge: true }),
-        signal: AbortSignal.timeout(30_000),
-      });
-      if (patchRes.status === 409 && attempt < 2) {
-        // Version conflict — retry with fresh version
-        continue;
-      }
-      return;
-    } catch {
-      // Einzelne Update-Fehler dürfen Cron nicht abbrechen
-      return;
-    }
+  // The engine has no PATCH/If-Match route — merge-update overlays just the
+  // frontmatter keys we send. Cron reminder-state writes are idempotent
+  // (reminder_sent flags), so last-writer-wins is fine here.
+  try {
+    await enginePatchPage(headers, { slug, frontmatter: fm }, { timeoutMs: 30_000 });
+  } catch {
+    // Einzelne Update-Fehler dürfen Cron nicht abbrechen
   }
 }
 

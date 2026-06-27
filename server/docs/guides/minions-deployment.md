@@ -83,15 +83,14 @@ is distinct from the concurrency / inflight cap and composes with it.
 
 ### Which supervisor when?
 
-The supervisor solves in-process crash recovery. Platform-level
-supervision (systemd, Fly, Render) handles host-level failures. You
-usually want both.
+The supervisor solves in-process crash recovery. OS/container-level
+supervision handles host-level failures. You usually want both.
 
-| Environment                                     | Recommendation                                                                                                                                                                                                                  |
-| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Container (Fly / Railway / Render / Heroku)** | `gbrain jobs supervisor` runs as PID 1. The platform restarts the container on OOM / host loss; supervisor restarts the worker on crash. See [Fly.io](#flyio) / [Render / Railway / Heroku](#render--railway--heroku).          |
-| **Linux VM with systemd**                       | Two-layer recommended: systemd supervises `gbrain jobs supervisor`, which in turn supervises `gbrain jobs work`. Buys you automatic restart on reboot (systemd) plus fast crash recovery (supervisor). See [systemd](#systemd). |
-| **Dev laptop / macOS**                          | `gbrain jobs supervisor` in a terminal. Ctrl-C stops it. No system-level setup needed.                                                                                                                                          |
+| Environment                    | Recommendation                                                                                                                                                                                                                         |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Docker / Hetzner**           | `gbrain jobs supervisor` runs as PID 1 inside the container. Docker/Compose restarts the container on host failure; supervisor restarts the worker on in-process crash. See the [systemd](#deployment-systemd) snippet for the VM layer. |
+| **Linux VM with systemd**      | Two-layer recommended: systemd supervises `gbrain jobs supervisor`, which in turn supervises `gbrain jobs work`. Buys you automatic restart on reboot (systemd) plus fast crash recovery (supervisor). See [systemd](#deployment-systemd). |
+| **Dev laptop / macOS**         | `gbrain jobs supervisor` in a terminal. Ctrl-C stops it. No system-level setup needed.                                                                                                                                                 |
 
 ### Variables used in this guide
 
@@ -187,27 +186,20 @@ and `ReadWritePaths=$GBRAIN_WORKSPACE,$HOME/.gbrain` (for the PID file and
 audit log). `LimitNOFILE=65535` covers Bun + Postgres pool + concurrent
 LLM subagent calls without hitting the default 1024 cap.
 
-## Deployment: Fly.io
+## Deployment: Docker / Hetzner
+
+The engine's `docker-entrypoint.sh` starts `gbrain serve --http --with-worker`,
+which runs the supervisor in-process. No extra config needed — just set
+`DATABASE_URL` + `GBRAIN_ALLOW_SHELL_JOBS=1` in `server/deploy/hetzner/.env`
+and `docker compose up -d`.
+
+For the Hetzner full-stack (web + engine + Postgres + Caddy):
 
 ```bash
-# Merge the [processes] block from fly.toml.partial into your fly.toml.
-cat docs/guides/minions-deployment-snippets/fly.toml.partial >> fly.toml
-# Review + edit as needed.
-
-# Set secrets (Fly handles restart on crash).
-fly secrets set DATABASE_URL='postgres://…' GBRAIN_ALLOW_SHELL_JOBS=1
+cd server/deploy/hetzner
+# Edit .env (copy from .env.example)
+docker compose up -d --build
 ```
-
-The `[processes]` block runs `gbrain jobs supervisor` as PID 1. Fly
-restarts the container on host failure; the supervisor restarts the
-worker on in-process crash.
-
-## Deployment: Render / Railway / Heroku
-
-Drop [`Procfile`](./minions-deployment-snippets/Procfile) at the repo
-root. The shipped Procfile calls `gbrain jobs supervisor`. Set
-`DATABASE_URL` + optional `GBRAIN_ALLOW_SHELL_JOBS=1` via the platform's
-env UI or CLI.
 
 ## Deployment: inline `--follow` (no persistent worker)
 
@@ -351,9 +343,8 @@ sudo rm /etc/systemd/system/gbrain-worker.service /etc/gbrain.env
 sudo systemctl daemon-reload
 ```
 
-**Fly / Render / Railway:** delete the `worker` process from `fly.toml`
-/ `Procfile` and redeploy. Secrets set via `fly secrets` persist until
-`fly secrets unset`.
+**Docker / Hetzner:** remove `GBRAIN_ALLOW_SHELL_JOBS=1` from `.env`,
+then `docker compose up -d engine` to restart without the flag.
 
 **Inline `--follow`:** remove the cron entry. Nothing else to clean up
 — temporary workers exit with their jobs.

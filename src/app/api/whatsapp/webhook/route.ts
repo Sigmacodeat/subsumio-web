@@ -13,7 +13,7 @@ import { resolveSenderIdentity } from "@/lib/whatsapp/identity";
 import { getWhatsAppWindowStore } from "@/lib/whatsapp/window-store";
 import { orchestrateWhatsAppMessage } from "@/lib/whatsapp-kanzlei-os/orchestrator";
 import { buildWhatsAppMessageBody } from "@/lib/whatsapp-event-bus";
-import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
+import { ENGINE_URL, engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
 import { logAudit } from "@/lib/audit";
 import { createWebhookHandler, createPublicHandler } from "@/lib/api-handler";
 import type { ActionType } from "@/lib/approval";
@@ -224,23 +224,19 @@ async function updateApprovalStatus(
   decidedBy: string,
   rejectReason?: string
 ): Promise<boolean> {
-  const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(actionSlug)}`, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-      ...engineHeadersForBrain(brainId),
-    },
-    body: JSON.stringify({
+  const res = await enginePatchPage(
+    engineHeadersForBrain(brainId),
+    {
+      slug: actionSlug,
       frontmatter: {
         status,
         decided_at: new Date().toISOString(),
         decided_by: decidedBy,
         ...(status === "rejected" && rejectReason ? { reject_reason: rejectReason } : {}),
       },
-      merge: true,
-    }),
-    signal: AbortSignal.timeout(15_000),
-  });
+    },
+    { timeoutMs: 15_000 }
+  );
   return res.ok;
 }
 
@@ -280,12 +276,7 @@ function executionDepsForBrain(brainId: string) {
       frontmatter?: Record<string, unknown>;
     }) => {
       const { slug, ...patch } = page;
-      const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(slug)}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json", ...headers },
-        body: JSON.stringify({ ...patch, merge: true }),
-        signal: AbortSignal.timeout(15_000),
-      });
+      const res = await enginePatchPage(headers, { slug, ...patch }, { timeoutMs: 15_000 });
       if (!res.ok) throw new Error(`approval_effect_update_failed:${res.status}`);
       return { slug, success: true };
     },

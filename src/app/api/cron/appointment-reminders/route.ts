@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
+import { engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
 import { createCronHandler } from "@/lib/api-handler";
 import { fetchPages, getRecipientsByBrain } from "@/lib/cron-utils";
 import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
@@ -10,29 +10,17 @@ export const dynamic = "force-dynamic";
 
 async function updateAppointmentReminderSent(brainId: string, slug: string): Promise<void> {
   const headers = engineHeadersForBrain(brainId);
-  const encodedSlug = slug.split("/").map(encodeURIComponent).join("/");
   try {
-    const getRes = await fetch(`${ENGINE_URL}/api/pages/${encodedSlug}`, {
+    // Engine merge-update (no PATCH/If-Match route). Setting the reminder flag is
+    // idempotent, so last-writer-wins is acceptable.
+    await enginePatchPage(
       headers,
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (!getRes.ok) return;
-    const page = (await getRes.json()) as { frontmatter?: { version?: number } };
-    const currentVersion = page.frontmatter?.version ?? 0;
-
-    await fetch(`${ENGINE_URL}/api/pages/${encodedSlug}`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        "If-Match": String(currentVersion),
-        ...headers,
-      },
-      body: JSON.stringify({
+      {
+        slug,
         frontmatter: { reminder_sent: true, reminder_sent_at: new Date().toISOString() },
-        merge: true,
-      }),
-      signal: AbortSignal.timeout(30_000),
-    });
+      },
+      { timeoutMs: 30_000 }
+    );
   } catch {
     // Non-blocking
   }

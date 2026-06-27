@@ -77,12 +77,24 @@ export const POST = createHandler(
         typeof formData.get("source") === "string"
           ? (formData.get("source") as string)
           : "documents";
+      const ALLOWED_SOURCES = new Set([
+        "documents",
+        "kanzleiwissen",
+        "wiki",
+        "meetings",
+        "people",
+        "companies",
+        "ideas",
+        "legal_case",
+        "legal",
+      ]);
+      const source = ALLOWED_SOURCES.has(sourceRaw) ? sourceRaw : "documents";
 
       // Legal document sources require a case association (§ 43e BRAO, GoBD).
       // Knowledge sources (wiki, meetings, ideas, people, companies) are exempt
       // — they are brain-wide reference material, not case-specific documents.
       const LEGAL_SOURCES = new Set(["documents", "legal_case", "legal"]);
-      const requiresCase = LEGAL_SOURCES.has(sourceRaw);
+      const requiresCase = LEGAL_SOURCES.has(source);
 
       if (requiresCase && !caseSlugStr) {
         return apiError(
@@ -115,7 +127,7 @@ export const POST = createHandler(
       );
       const title = formData.get("title");
       if (typeof title === "string") cleanForm.append("title", title);
-      cleanForm.append("source", sourceRaw);
+      cleanForm.append("source", source);
       const tags = formData.get("tags");
       if (typeof tags === "string") cleanForm.append("tags", tags);
       if (caseSlugStr) cleanForm.append("case_slug", caseSlugStr);

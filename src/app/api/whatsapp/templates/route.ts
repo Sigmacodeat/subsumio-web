@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createHandler } from "@/lib/api-handler";
-import { ENGINE_URL } from "@/lib/engine";
+import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 import { randomUUID } from "node:crypto";
 
 export const dynamic = "force-dynamic";
@@ -127,21 +127,18 @@ export const PATCH = createHandler(
     if (!getRes.ok) return Response.json({ error: "not_found" }, { status: 404 });
     const existing = (await getRes.json()) as TemplatePage;
     const fm = existing.frontmatter ?? {};
-    const patchRes = await fetchEngine(ctx.brainId, ctx.headers, `/api/pages/${encodedSlug}`, {
-      method: "PATCH",
-      headers: { "If-Match": String((fm as { version?: number }).version ?? 0) },
-      body: JSON.stringify({
-        frontmatter: {
-          ...fm,
-          name: body.name ?? String(fm.name ?? ""),
-          language: body.language ?? String(fm.language ?? "de"),
-          category: body.category ?? String(fm.category ?? "UTILITY"),
-          body: body.body ?? String(fm.body ?? ""),
-          status: body.status ?? String(fm.status ?? "draft"),
-          updated_at: new Date().toISOString(),
-        },
-        merge: true,
-      }),
+    // Engine merge-update (no PATCH/If-Match route). merge:true overlays just
+    // these keys onto the existing frontmatter.
+    const patchRes = await enginePatchPage(ctx.headers, {
+      slug: body.slug,
+      frontmatter: {
+        name: body.name ?? String(fm.name ?? ""),
+        language: body.language ?? String(fm.language ?? "de"),
+        category: body.category ?? String(fm.category ?? "UTILITY"),
+        body: body.body ?? String(fm.body ?? ""),
+        status: body.status ?? String(fm.status ?? "draft"),
+        updated_at: new Date().toISOString(),
+      },
     });
     if (!patchRes.ok) {
       const err = await patchRes.text().catch(() => "");
@@ -164,9 +161,14 @@ export const DELETE = createHandler(
     }),
   },
   async (ctx, body) => {
-    const encodedSlug = body.slug.split("/").map(encodeURIComponent).join("/");
-    await fetchEngine(ctx.brainId, ctx.headers, `/api/pages/${encodedSlug}`, {
-      method: "DELETE",
+    // No engine DELETE route — soft-delete by tombstoning via merge-update.
+    await enginePatchPage(ctx.headers, {
+      slug: body.slug,
+      frontmatter: {
+        status: "tombstoned",
+        tombstoned_at: new Date().toISOString(),
+        tombstone_reason: "manual_delete",
+      },
     });
     return Response.json({ ok: true });
   }

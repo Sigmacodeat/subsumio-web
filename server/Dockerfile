@@ -5,8 +5,8 @@
 # the TypeScript directly — no compile step, and the bundled skills/ + schema
 # packs ship in the image.
 #
-# Build context is the server/ directory. Deploy via Railway (railway.json),
-# Fly (fly.toml), or any Docker host. See docs/DEPLOY_ENGINE.md.
+# Build context is the server/ directory. Deploy on Hetzner via
+# deploy/hetzner/docker-compose.yml, or any Docker host. See docs/DEPLOY_ENGINE.md.
 
 FROM oven/bun:1
 

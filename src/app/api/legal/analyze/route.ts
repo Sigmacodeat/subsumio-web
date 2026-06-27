@@ -117,6 +117,12 @@ export const POST = createHandler(
     quota: "queries",
     body: analyzeSchema,
     maxDuration: 120,
+    // The post-upload pipeline (upload/route.ts → runAnalysisWithTracking)
+    // fires this endpoint server-to-server with x-internal-secret and the
+    // target brain in body.brain_id. Without allowInternal the call has no
+    // session/CSRF token and is rejected at the CSRF gate (HTTP 403), so the
+    // isInternal branch below was dead code and auto-analysis never ran.
+    allowInternal: true,
   },
   async (ctx, body, _query, _req) => {
     const isInternal = ctx.brainId === "internal";

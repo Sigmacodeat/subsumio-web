@@ -148,6 +148,26 @@ function isWebhookCsrfExempt(pathname: string): boolean {
   });
 }
 
+/**
+ * Server-to-server calls (e.g. the post-upload pipeline firing
+ * /api/legal/analyze) authenticate with the shared SUBSUMIO_INTERNAL_SECRET,
+ * not a browser session — so they carry no CSRF cookie/header and must be
+ * exempt from the double-submit check. We only exempt when the presented
+ * secret MATCHES the configured one (timing-safe), so a forged header without
+ * the secret still hits the CSRF wall. Mirrors createHandler's allowInternal
+ * bypass, which runs one layer deeper.
+ */
+function hasValidInternalSecret(req: NextRequest): boolean {
+  const presented = req.headers.get("x-internal-secret");
+  const expected = process.env.SUBSUMIO_INTERNAL_SECRET;
+  if (!expected || !presented || presented.length !== expected.length) return false;
+  let diff = 0;
+  for (let i = 0; i < presented.length; i++) {
+    diff |= presented.charCodeAt(i) ^ expected.charCodeAt(i);
+  }
+  return diff === 0;
+}
+
 // Language preference cookie set when user explicitly switches language.
 // Prevents the browser-language redirect from overriding an explicit choice.
 const LANG_PREF_COOKIE = "sb_lang";
@@ -229,7 +249,8 @@ export async function middleware(req: NextRequest) {
       pathname.startsWith("/api/cron/") ||
       pathname.startsWith("/api/portal/") ||
       API_CSRF_EXEMPT_PATHS.has(pathname) ||
-      isWebhookCsrfExempt(pathname);
+      isWebhookCsrfExempt(pathname) ||
+      hasValidInternalSecret(req);
 
     if (!isExempt) {
       const cookieToken = req.cookies.get(CSRF_COOKIE_NAME)?.value;

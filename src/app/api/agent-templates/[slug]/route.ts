@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ENGINE_URL } from "@/lib/engine";
+import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 import { createHandler, apiError, apiNotFound } from "@/lib/api-handler";
 
 function buildSlug(slug: string): string | null {
@@ -19,9 +19,9 @@ const updateSchema = z
     steps: z
       .array(
         z.object({
-          id: z.string().min(1),
-          specialist: z.string().min(1),
-          prompt: z.string().min(1),
+          id: z.string().min(1).max(100),
+          specialist: z.string().min(1).max(100),
+          prompt: z.string().min(1).max(10_000),
           depends_on: z.number().int().min(0).optional(),
         })
       )
@@ -154,11 +154,19 @@ export const DELETE = createHandler(
     if (!slug) return apiError("invalid_slug", "Ungültiger Slug", 400);
 
     try {
-      const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(slug)}`, {
-        method: "DELETE",
-        headers: ctx.headers,
-        signal: AbortSignal.timeout(10_000),
-      });
+      // No engine DELETE route — soft-delete by tombstoning via merge-update.
+      const res = await enginePatchPage(
+        ctx.headers,
+        {
+          slug,
+          frontmatter: {
+            status: "tombstoned",
+            tombstoned_at: new Date().toISOString(),
+            tombstone_reason: "manual_delete",
+          },
+        },
+        { timeoutMs: 10_000 }
+      );
       if (res.status === 404) return apiNotFound("Agent-Template");
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return Response.json({ success: true });

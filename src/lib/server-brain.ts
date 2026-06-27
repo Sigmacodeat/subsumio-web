@@ -93,8 +93,19 @@ export function createServerBrainClient(headers: Record<string, string>): Server
     },
 
     deletePage(slug) {
-      return engineJson<{ success?: boolean }>(headers, `/api/pages/${encodeSlug(slug)}`, {
-        method: "DELETE",
+      // The engine has no DELETE route — soft-delete by tombstoning via the
+      // merge-update POST (same path updatePage uses).
+      return engineJson<{ success?: boolean }>(headers, "/api/pages", {
+        method: "POST",
+        body: JSON.stringify({
+          slug,
+          frontmatter: {
+            status: "tombstoned",
+            tombstoned_at: new Date().toISOString(),
+            tombstone_reason: "manual_delete",
+          },
+          merge: true,
+        }),
       });
     },
 

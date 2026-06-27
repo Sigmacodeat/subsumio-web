@@ -18,9 +18,9 @@ const createSchema = z
     steps: z
       .array(
         z.object({
-          id: z.string().min(1),
-          specialist: z.string().min(1),
-          prompt: z.string().min(1),
+          id: z.string().min(1).max(100),
+          specialist: z.string().min(1).max(100),
+          prompt: z.string().min(1).max(10_000),
           depends_on: z.number().int().min(0).optional(),
         })
       )
