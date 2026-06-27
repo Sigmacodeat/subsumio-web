@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifySessionCore, SESSION_COOKIE } from "@/lib/auth/session-core";
 import { generateCsrfToken, CSRF_COOKIE_NAME, CSRF_HEADER_NAME } from "@/lib/csrf";
 import { env } from "@/lib/env";
+import { hasValidInternalSecret } from "@/lib/auth/internal";
 
 // --- CSP nonce generation ---
 function generateCspNonce(): string {
@@ -157,16 +158,7 @@ function isWebhookCsrfExempt(pathname: string): boolean {
  * the secret still hits the CSRF wall. Mirrors createHandler's allowInternal
  * bypass, which runs one layer deeper.
  */
-function hasValidInternalSecret(req: NextRequest): boolean {
-  const presented = req.headers.get("x-internal-secret");
-  const expected = process.env.SUBSUMIO_INTERNAL_SECRET;
-  if (!expected || !presented || presented.length !== expected.length) return false;
-  let diff = 0;
-  for (let i = 0; i < presented.length; i++) {
-    diff |= presented.charCodeAt(i) ^ expected.charCodeAt(i);
-  }
-  return diff === 0;
-}
+// hasValidInternalSecret is imported at the top of this file from @/lib/auth/internal.
 
 // Language preference cookie set when user explicitly switches language.
 // Prevents the browser-language redirect from overriding an explicit choice.

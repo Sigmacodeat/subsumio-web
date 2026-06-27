@@ -1423,6 +1423,39 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         }
 
         const page = await engine.getPage(slug, { sourceId: tenantSource });
+
+        // ── Post-upload callback to web app ──────────────────────────────
+        // Fire reconcileCaseDocuments + contradiction probe on the web app
+        // so direct uploads get the same bookkeeping as same-origin uploads.
+        // Non-blocking: we send the response first, then fire the callback.
+        const webUrl = process.env.SUBSUMIO_WEB_URL?.replace(/\/$/, "");
+        const internalSecret = process.env.SUBSUMIO_INTERNAL_SECRET;
+        if (webUrl && internalSecret) {
+          setImmediate(() => {
+            fetch(`${webUrl}/api/internal/post-upload`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "x-internal-secret": internalSecret,
+              },
+              body: JSON.stringify({
+                doc_slug: slug,
+                case_slug: caseSlug || undefined,
+                brain_id: tenantSource,
+                doc_title: page?.title ?? title ?? slug.split("/").pop() ?? slug,
+                doc_size: file.data.byteLength,
+                uploaded_at: new Date().toISOString(),
+              }),
+              signal: AbortSignal.timeout(60_000),
+            }).catch((err) => {
+              console.error(
+                "[direct-upload] post-upload callback failed (non-fatal):",
+                err instanceof Error ? err.message : String(err)
+              );
+            });
+          });
+        }
+
         res.json({
           ok: true,
           slug,
