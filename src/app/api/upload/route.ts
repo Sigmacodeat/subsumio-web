@@ -343,13 +343,12 @@ async function triggerContradictionProbe(
   caseSlug: string
 ): Promise<void> {
   try {
-    await fetch(`${origin}/api/cron/contradiction-probe`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-internal-secret": internalSecret,
-      },
-      body: JSON.stringify({ case_slug: caseSlug }),
+    // Probe endpoint is GET-only (cron); pass case_slug as query param for tracing.
+    const url = new URL(`${origin}/api/cron/contradiction-probe`);
+    url.searchParams.set("case_slug", caseSlug);
+    await fetch(url.toString(), {
+      method: "GET",
+      headers: { "x-internal-secret": internalSecret },
       signal: AbortSignal.timeout(30_000),
     });
   } catch (err) {
