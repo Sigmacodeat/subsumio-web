@@ -2,7 +2,7 @@
 // Genutzt von /api/legal/judgements-search (interaktiv) UND vom Cron
 // /api/cron/case-law (proaktives Monitoring).
 
-import { withRetry } from "@/lib/retry";
+import { withRetry, externalFetchTimeout } from "@/lib/retry";
 
 import { JudgementsSearchError } from "@/lib/errors";
 
@@ -47,7 +47,7 @@ export async function searchRisOgd(opts: {
   risUrl.searchParams.set("DokumenteProSeite", pageSize);
   risUrl.searchParams.set("Seitennummer", String((opts.page ?? 0) + 1));
 
-  const res = await withRetry(() => fetch(risUrl.toString(), { headers: { Accept: "application/json" }, next: { revalidate: 3600 } }));
+  const res = await withRetry(() => fetch(risUrl.toString(), { headers: { Accept: "application/json" }, next: { revalidate: 3600 }, signal: externalFetchTimeout(15_000) }));
   if (!res.ok) throw new JudgementsSearchError(`RIS-OGD ${res.status}`, { code: "RIS_OGD_FETCH_FAILED", details: { status: res.status, url: risUrl.toString() } });
 
   const data = (await res.json()) as Record<string, unknown>;
@@ -97,7 +97,7 @@ export async function searchOpenLegalData(opts: {
   url.searchParams.set("page_size", String(limit));
   if ((opts.page ?? 0) > 0) url.searchParams.set("page", String((opts.page ?? 0) + 1));
 
-  const res = await withRetry(() => fetch(url.toString(), { headers: { Accept: "application/json" }, next: { revalidate: 3600 } }));
+  const res = await withRetry(() => fetch(url.toString(), { headers: { Accept: "application/json" }, next: { revalidate: 3600 }, signal: externalFetchTimeout(15_000) }));
   if (!res.ok) throw new JudgementsSearchError(`openlegaldata ${res.status}`, { code: "OPENLEGALDATA_FETCH_FAILED", details: { status: res.status, url: url.toString() } });
 
   const data = (await res.json()) as { results?: Array<Record<string, unknown>> };
@@ -132,7 +132,7 @@ export async function searchOpenCaseLaw(opts: {
   url.searchParams.set("limit", String(limit));
   if ((opts.page ?? 0) > 0) url.searchParams.set("offset", String((opts.page ?? 0) * limit));
 
-  const res = await withRetry(() => fetch(url.toString(), { headers: { Accept: "application/json" }, next: { revalidate: 3600 } }));
+  const res = await withRetry(() => fetch(url.toString(), { headers: { Accept: "application/json" }, next: { revalidate: 3600 }, signal: externalFetchTimeout(15_000) }));
   if (!res.ok) throw new JudgementsSearchError(`OpenCaseLaw ${res.status}`, { code: "OPENCASELAW_FETCH_FAILED", details: { status: res.status, url: url.toString() } });
 
   const data = (await res.json()) as { results?: Array<Record<string, unknown>> };

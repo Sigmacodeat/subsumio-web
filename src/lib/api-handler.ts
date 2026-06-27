@@ -98,6 +98,8 @@ export interface HandlerOptions<
   cors?: boolean;
   /** Cache-Control max-age for GET responses (seconds). */
   cacheMaxAge?: number;
+  /** Custom auth guard function. If provided, replaces default session auth. */
+  customAuth?: (req: NextRequest) => Response | { context: Record<string, unknown> };
   /** Audit spec — logged after successful handler execution. */
   audit?: (
     ctx: HandlerContext,
@@ -266,11 +268,60 @@ export function createHandler<
       }
     }
 
-    // 2. Auth + RBAC + Rate-limit + Quota (skip if internal)
+    // 2. Auth + RBAC + Rate-limit + Quota (skip if internal, custom auth, or public)
     let ctx: EngineContext;
     let isApiKeyAuth = false;
+    let customContext: Record<string, unknown> | null = null;
+    
     if (internalContext) {
       ctx = internalContext;
+    } else if (options.customAuth) {
+      // Use custom auth guard (e.g., SCIM Bearer token)
+      const customResult = options.customAuth(req);
+      if (customResult instanceof Response) {
+        return withCorsHeaders(customResult, options.cors ?? false);
+      }
+      customContext = customResult.context;
+      // For custom auth, we don't have a full EngineContext, so create a minimal one
+      ctx = {
+        brainId: (customContext.brainId as string) || "custom",
+        plan: "enterprise",
+        user: {
+          id: "custom",
+          email: "custom@subsumio",
+          name: "Custom Auth",
+          passwordHash: "",
+          role: "admin",
+          plan: "enterprise",
+          locale: "de",
+          referralCode: "",
+          referredBy: null,
+          brainId: (customContext.brainId as string) || "custom",
+          stripeCustomerId: null,
+        } as EngineContext["user"],
+        headers: {},
+        ...customContext,
+      } as EngineContext & Record<string, unknown>;
+    } else if (options.public) {
+      // Public route — no auth required, create a minimal context
+      ctx = {
+        brainId: "public",
+        plan: "free",
+        user: {
+          id: "anonymous",
+          email: "anonymous@subsumio",
+          name: "Anonymous",
+          passwordHash: "",
+          role: "assistant",
+          plan: "free",
+          locale: "de",
+          referralCode: "",
+          referredBy: null,
+          brainId: "public",
+          stripeCustomerId: null,
+        } as EngineContext["user"],
+        headers: {},
+      } as EngineContext;
     } else {
       const authCtx = await requireEngineContext(
         req,
@@ -292,8 +343,8 @@ export function createHandler<
       }
     }
 
-    // 3. CSRF (state-changing methods only, skip for internal and API key auth)
-    if (!internalContext && !isApiKeyAuth) {
+    // 3. CSRF (state-changing methods only, skip for internal, API key, and custom auth)
+    if (!internalContext && !isApiKeyAuth && !customContext) {
       const csrfError = checkCsrf(req, options.skipCsrf ?? false);
       if (csrfError) return withCorsHeaders(csrfError, options.cors ?? false);
     }
@@ -368,61 +419,41 @@ export function createPublicHandler<
     rateLimitMax?: number;
     rateLimitWindowMs?: number;
   },
-  handler: (req: NextRequest, body: ValidatedBody<B>, query: ValidatedQuery<Q>) => Promise<Response>
-): (req: NextRequest) => Promise<Response> {
-  return async (req: NextRequest) => {
-    // CORS preflight
-    const corsResponse = handleCors(req, options.cors ?? false);
-    if (corsResponse) return corsResponse;
+  handler: (
+    req: NextRequest,
+    body: ValidatedBody<B>,
+    query: ValidatedQuery<Q>,
+    extra: { params?: Promise<Record<string, unknown>> }
+  ) => Promise<Response>
+): (req: NextRequest, routeContext?: { params?: Promise<Record<string, unknown>> }) => Promise<Response> {
+  return createHandler(
+    { ...options, action: "public" as any, public: true },
+    async (ctx, body, query, req) => handler(req, body, query, { params: (req as any).params })
+  );
+}
 
-    // Rate limiting (per-IP for public routes)
-    if (options.rateLimitKey) {
-      const { hit } = await import("@/lib/auth/rate-limit");
-      const key = options.rateLimitKey(req);
-      const max = options.rateLimitMax ?? 20;
-      const windowMs = options.rateLimitWindowMs ?? 60_000;
-      const result = await hit(key, max, windowMs);
-      if (!result.ok) return apiRateLimited(result.retryAfterSeconds);
-    }
-
-    // CSRF for state-changing methods
-    const csrfError = checkCsrf(req, options.skipCsrf ?? false);
-    if (csrfError) return withCorsHeaders(csrfError, options.cors ?? false);
-
-    // Validation
-    let body: ValidatedBody<B> = undefined as ValidatedBody<B>;
-    let query: ValidatedQuery<Q> = undefined as ValidatedQuery<Q>;
-
-    if (options.body && isStateChanging(req.method)) {
-      const result = await parseAndValidateBody(options.body, req);
-      if ("error" in result) return withCorsHeaders(result.error, options.cors ?? false);
-      body = result.data as ValidatedBody<B>;
-    }
-
-    if (options.query && req.method === "GET") {
-      const result = await parseAndValidateQuery(options.query, req);
-      if ("error" in result) return withCorsHeaders(result.error, options.cors ?? false);
-      query = result.data as ValidatedQuery<Q>;
-    }
-
-    // Handler
-    let response: Response;
-    try {
-      response = await handler(req, body, query);
-    } catch (err) {
-      if (isAppError(err)) {
-        response = apiError(err.code, err.message, err.statusCode, err.details);
-      } else {
-        console.error(
-          "[api-handler] uncaught error in public handler:",
-          err instanceof Error ? err.message : String(err)
-        );
-        response = apiError("internal_error", "An unexpected error occurred", 500);
-      }
-    }
-
-    return withCorsHeaders(response, options.cors ?? false);
-  };
+/**
+ * Handler for SCIM routes with custom Bearer token auth.
+ * Skips CSRF, uses custom auth guard, applies validation and CORS.
+ */
+export function createScimHandler<
+  B extends z.ZodTypeAny | undefined = undefined,
+  Q extends z.ZodTypeAny | undefined = undefined,
+>(
+  options: Omit<HandlerOptions<B, Q>, "action" | "public" | "skipCsrf"> & {
+    customAuth: (req: NextRequest) => Response | { context: Record<string, unknown> };
+  },
+  handler: (
+    ctx: Record<string, unknown>,
+    body: ValidatedBody<B>,
+    query: ValidatedQuery<Q>,
+    extra: { params?: Promise<Record<string, unknown>> }
+  ) => Promise<Response>
+): (req: NextRequest, routeContext: { params: Promise<Record<string, unknown>> }) => Promise<Response> {
+  return createHandler(
+    { ...options, action: "scim" as any, skipCsrf: true, customAuth: options.customAuth },
+    async (ctx, body, query, req) => handler(ctx as unknown as Record<string, unknown>, body, query, { params: (req as any).params })
+  );
 }
 
 /**

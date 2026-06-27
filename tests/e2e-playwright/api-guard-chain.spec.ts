@@ -79,11 +79,11 @@ test.describe("API Guard-Chain (E2E)", () => {
     }
   });
 
-  test("5. Rate limit on auth endpoint (6 wrong logins → 429)", async ({ request }) => {
+  test("5. Rate limit on auth endpoint (multiple wrong logins → 429)", async ({ request }) => {
     const email = `ratelimit-${Date.now()}@subsumio.local`;
     let got429 = false;
 
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 15; i++) {
       const res = await request.post("/api/auth/login", {
         data: { email, password: "wrong" },
       });
@@ -95,8 +95,7 @@ test.describe("API Guard-Chain (E2E)", () => {
       }
     }
 
-    // Rate limiting may or may not kick in depending on config,
-    // but we verify the endpoint responds appropriately
-    expect(got429 || true).toBe(true); // soft assertion — documents behavior
+    // Rate limiting should kick in within 15 attempts
+    expect(got429).toBe(true);
   });
 });

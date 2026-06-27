@@ -1,4 +1,4 @@
-import { withRetry } from "@/lib/retry";
+import { withRetry, externalFetchTimeout } from "@/lib/retry";
 import { logger } from "@/lib/logger";
 import { env } from "@/lib/env";
 import type {
@@ -37,6 +37,7 @@ async function postToGraph(
         "Content-Type": "application/json",
       },
       body: JSON.stringify(body),
+      signal: externalFetchTimeout(),
     })
   );
 }
@@ -188,6 +189,7 @@ export async function uploadWhatsAppMedia(
           Authorization: `Bearer ${creds.token}`,
         },
         body: formData,
+        signal: externalFetchTimeout(30_000),
       }
     )
   );

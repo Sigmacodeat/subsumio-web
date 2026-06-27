@@ -9,7 +9,7 @@
  * initial screen data are needed.
  */
 
-import { withRetry } from "@/lib/retry";
+import { withRetry, externalFetchTimeout } from "@/lib/retry";
 
 function graphVersion(): string {
   return process.env.WHATSAPP_GRAPH_VERSION || "v20.0";
@@ -79,6 +79,7 @@ export async function sendWhatsAppFlow(opts: SendFlowOptions): Promise<{ message
           type: "interactive",
           interactive,
         }),
+        signal: externalFetchTimeout(),
       }
     )
   );

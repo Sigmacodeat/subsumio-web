@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { withRetry } from "@/lib/retry";
+import { withRetry, externalFetchTimeout } from "@/lib/retry";
 import { scanFile } from "@/lib/virus-scan";
 import { env } from "@/lib/env";
 import type { WhatsAppMediaMessage } from "./types";
@@ -76,6 +76,7 @@ async function getMediaUrl(mediaId: string): Promise<MediaUrlResponse> {
       `https://graph.facebook.com/${graphVersion()}/${encodeURIComponent(mediaId)}${qs ? `?${qs}` : ""}`,
       {
         headers: { Authorization: `Bearer ${token}` },
+        signal: externalFetchTimeout(),
       }
     )
   );
@@ -102,7 +103,7 @@ export async function downloadAndStoreWhatsAppMedia(
     );
 
   const res = await withRetry(() =>
-    fetch(downloadUrl, { headers: { Authorization: `Bearer ${token}` } })
+    fetch(downloadUrl, { headers: { Authorization: `Bearer ${token}` }, signal: externalFetchTimeout(30_000) })
   );
   if (!res.ok) {
     const error = await res.text().catch(() => "");

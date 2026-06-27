@@ -5,6 +5,7 @@ import { describe, test, expect, vi, beforeEach } from "vitest";
 // Mock withRetry to pass through
 vi.mock("@/lib/retry", () => ({
   withRetry: vi.fn((fn: () => Promise<unknown>) => fn()),
+  externalFetchTimeout: vi.fn((ms: number) => AbortSignal.timeout(ms)),
 }));
 
 vi.mock("@/lib/errors", () => ({

@@ -9,7 +9,7 @@
  * and logs a warning — the audio file is still stored in the vault.
  */
 
-import { withRetry } from "@/lib/retry";
+import { withRetry, externalFetchTimeout } from "@/lib/retry";
 import { logger } from "@/lib/logger";
 import type { StoredWhatsAppMedia } from "./media";
 
@@ -75,6 +75,7 @@ export async function transcribeVoiceMessage(
           Authorization: `Bearer ${openaiKey}`,
         },
         body: formData,
+        signal: externalFetchTimeout(60_000),
       })
     );
 

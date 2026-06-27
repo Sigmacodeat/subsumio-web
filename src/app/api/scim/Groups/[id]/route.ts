@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import { createScimHandler } from "@/lib/api-handler";
 import {
   requireScimAuth,
   scimError,
@@ -9,140 +9,168 @@ import {
   type SCIMPatchRequest,
   type SCIMPatchOperation,
 } from "@/lib/scim";
+import { groups, getGroupForOrg, type StoredScimGroup } from "@/lib/scim-groups";
+import { z } from "zod";
 
 export const dynamic = "force-dynamic";
 
-// Import the shared groups map from the shared module
-import { groups, getGroupForOrg, type StoredScimGroup } from "@/lib/scim-groups";
+const updateGroupSchema = z.object({
+  schemas: z.array(z.string()),
+  displayName: z.string().optional(),
+  externalId: z.string().optional(),
+  id: z.string().optional(),
+  members: z.array(z.any()).optional(),
+});
 
-interface RouteParams {
-  params: Promise<{ id: string }>;
-}
+const patchRequestSchema = z.object({
+  schemas: z.array(z.string()),
+  Operations: z.array(z.object({
+    op: z.string(),
+    path: z.string().optional(),
+    value: z.any().optional(),
+  })).optional(),
+});
 
 /**
  * GET /api/scim/Groups/:id
  */
-export async function GET(req: NextRequest, { params }: RouteParams) {
-  const auth = requireScimAuth(req);
-  if (auth instanceof Response) return auth;
-  const { orgId } = auth;
+export const GET = createScimHandler(
+  {
+    customAuth: (req) => {
+      const auth = requireScimAuth(req);
+      if (auth instanceof Response) return auth;
+      return { context: { orgId: auth.orgId } };
+    },
+  },
+  async (ctx, _body, _query, extra) => {
+    const orgId = (ctx as Record<string, unknown>).orgId as string;
+    const params = await (extra.params || Promise.resolve({}));
+    const { id } = params as { id: string };
+    const group = getGroupForOrg(id, orgId);
 
-  const { id } = await params;
-  const group = getGroupForOrg(id, orgId);
+    if (!group) {
+      return scimError(404, `Group ${id} not found`);
+    }
 
-  if (!group) {
-    return scimError(404, `Group ${id} not found`);
+    return scimResponse(group);
   }
-
-  return scimResponse(group);
-}
+);
 
 /**
  * PUT /api/scim/Groups/:id
  * Replace group attributes.
  */
-export async function PUT(req: NextRequest, { params }: RouteParams) {
-  const auth = requireScimAuth(req);
-  if (auth instanceof Response) return auth;
-  const { orgId } = auth;
-
-  const { id } = await params;
-  const existing = getGroupForOrg(id, orgId);
-
-  if (!existing) {
-    return scimError(404, `Group ${id} not found`);
-  }
-
-  let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
-    return scimError(400, "Request body is not valid JSON");
-  }
-
-  const scimGroup = body as SCIMGroup;
-
-  if (!scimGroup.schemas?.includes(SCIM_SCHEMA_GROUP)) {
-    return scimError(400, "Missing or invalid schemas");
-  }
-
-  const updated: StoredScimGroup = {
-    ...scimGroup,
-    id,
-    schemas: [SCIM_SCHEMA_GROUP],
-    meta: {
-      resourceType: "Group",
-      created: existing.meta?.created,
-      lastModified: new Date().toISOString(),
+export const PUT = createScimHandler(
+  {
+    body: updateGroupSchema,
+    customAuth: (req) => {
+      const auth = requireScimAuth(req);
+      if (auth instanceof Response) return auth;
+      return { context: { orgId: auth.orgId } };
     },
-    _orgId: orgId,
-  };
+  },
+  async (ctx, body, _query, extra) => {
+    const orgId = (ctx as Record<string, unknown>).orgId as string;
+    const params = await (extra.params || Promise.resolve({}));
+    const { id } = params as { id: string };
+    const existing = getGroupForOrg(id, orgId);
 
-  groups.set(id, updated);
-  return scimResponse(updated);
-}
+    if (!existing) {
+      return scimError(404, `Group ${id} not found`);
+    }
+
+    const scimGroup = body as SCIMGroup;
+
+    if (!scimGroup.schemas?.includes(SCIM_SCHEMA_GROUP)) {
+      return scimError(400, "Missing or invalid schemas");
+    }
+
+    const updated: StoredScimGroup = {
+      ...scimGroup,
+      id,
+      schemas: [SCIM_SCHEMA_GROUP],
+      meta: {
+        resourceType: "Group",
+        created: existing.meta?.created,
+        lastModified: new Date().toISOString(),
+      },
+      _orgId: orgId,
+    };
+
+    groups.set(id, updated);
+    return scimResponse(updated);
+  }
+);
 
 /**
  * PATCH /api/scim/Groups/:id
  */
-export async function PATCH(req: NextRequest, { params }: RouteParams) {
-  const auth = requireScimAuth(req);
-  if (auth instanceof Response) return auth;
-  const { orgId } = auth;
+export const PATCH = createScimHandler(
+  {
+    body: patchRequestSchema,
+    customAuth: (req) => {
+      const auth = requireScimAuth(req);
+      if (auth instanceof Response) return auth;
+      return { context: { orgId: auth.orgId } };
+    },
+  },
+  async (ctx, body, _query, extra) => {
+    const orgId = (ctx as Record<string, unknown>).orgId as string;
+    const params = await (extra.params || Promise.resolve({}));
+    const { id } = params as { id: string };
+    const existing = getGroupForOrg(id, orgId);
 
-  const { id } = await params;
-  const existing = getGroupForOrg(id, orgId);
+    if (!existing) {
+      return scimError(404, `Group ${id} not found`);
+    }
 
-  if (!existing) {
-    return scimError(404, `Group ${id} not found`);
+    const patchReq = body as SCIMPatchRequest;
+
+    if (!patchReq.schemas?.includes(SCIM_SCHEMA_PATCH_OP)) {
+      return scimError(400, "Missing or invalid schemas for PATCH");
+    }
+
+    const updated: StoredScimGroup = { ...existing };
+
+    for (const op of patchReq.Operations || []) {
+      applyGroupPatch(updated, op);
+    }
+
+    updated.meta = {
+      resourceType: "Group",
+      created: updated.meta?.created,
+      lastModified: new Date().toISOString(),
+    };
+
+    groups.set(id, updated);
+    return scimResponse(updated);
   }
-
-  let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
-    return scimError(400, "Request body is not valid JSON");
-  }
-
-  const patchReq = body as SCIMPatchRequest;
-
-  if (!patchReq.schemas?.includes(SCIM_SCHEMA_PATCH_OP)) {
-    return scimError(400, "Missing or invalid schemas for PATCH");
-  }
-
-  const updated: StoredScimGroup = { ...existing };
-
-  for (const op of patchReq.Operations || []) {
-    applyGroupPatch(updated, op);
-  }
-
-  updated.meta = {
-    resourceType: "Group",
-    created: updated.meta?.created,
-    lastModified: new Date().toISOString(),
-  };
-
-  groups.set(id, updated);
-  return scimResponse(updated);
-}
+);
 
 /**
  * DELETE /api/scim/Groups/:id
  */
-export async function DELETE(req: NextRequest, { params }: RouteParams) {
-  const auth = requireScimAuth(req);
-  if (auth instanceof Response) return auth;
-  const { orgId } = auth;
+export const DELETE = createScimHandler(
+  {
+    customAuth: (req) => {
+      const auth = requireScimAuth(req);
+      if (auth instanceof Response) return auth;
+      return { context: { orgId: auth.orgId } };
+    },
+  },
+  async (ctx, _body, _query, extra) => {
+    const orgId = (ctx as Record<string, unknown>).orgId as string;
+    const params = await (extra.params || Promise.resolve({}));
+    const { id } = params as { id: string };
 
-  const { id } = await params;
+    if (!getGroupForOrg(id, orgId)) {
+      return scimError(404, `Group ${id} not found`);
+    }
 
-  if (!getGroupForOrg(id, orgId)) {
-    return scimError(404, `Group ${id} not found`);
+    groups.delete(id);
+    return new Response(null, { status: 204 });
   }
-
-  groups.delete(id);
-  return new Response(null, { status: 204 });
-}
+);
 
 function applyGroupPatch(group: SCIMGroup, op: SCIMPatchOperation): void {
   const path = op.path || "";

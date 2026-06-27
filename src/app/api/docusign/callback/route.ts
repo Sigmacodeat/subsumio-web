@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { getStore } from "@/lib/auth/store";
 import { createHandler, apiError } from "@/lib/api-handler";
+import { externalFetchTimeout } from "@/lib/retry";
 
 const callbackQuerySchema = z.object({
   code: z.string().optional(),
@@ -39,6 +40,7 @@ export const GET = createHandler(
         client_secret: secret,
         redirect_uri: redirectUri,
       }),
+      signal: externalFetchTimeout(),
     });
     const data = (await tokenRes.json().catch(() => ({}))) as {
       access_token?: string;
