@@ -206,26 +206,47 @@ export const POST = createHandler(
       text = text.slice(0, MAX_CHARS) + "\n\n[... document truncated for analysis]";
     }
 
-    // 3. AI analysis via engine /api/think
+    // 3. AI analysis
+    // Route A (preferred): engine has its own /api/legal/analyze that takes a
+    // slug, runs the full analyzeDocument pipeline, and returns JSON directly.
+    // Route B (fallback): if no slug (inline text supplied), use /api/think with
+    // the correct `query` field \u2014 NOT `prompt` \u2014 and collect the SSE stream.
     let parsed: Record<string, unknown>;
     try {
-      const thinkRes = await fetch(`${ENGINE_URL}/api/think`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...engineHeaders },
-        body: JSON.stringify({
-          prompt: buildAnalysisPrompt(text, jurisdiction),
-          mode: "json",
-          max_tokens: 4000,
+      if (documentSlug) {
+        // Route A \u2014 engine-native analyze (JSON response, no SSE)
+        const analyzeRes = await fetch(`${ENGINE_URL}/api/legal/analyze`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...engineHeaders },
+          body: JSON.stringify({ slug: documentSlug }),
           signal: AbortSignal.timeout(300_000),
-        }),
-      });
-
-      if (!thinkRes.ok) {
-        throw new Error(`Engine think ${thinkRes.status}`);
+        });
+        if (!analyzeRes.ok) throw new Error(`Engine legal/analyze ${analyzeRes.status}`);
+        parsed = (await analyzeRes.json()) as Record<string, unknown>;
+      } else {
+        // Route B \u2014 /api/think for inline text. Engine expects `query`, streams SSE.
+        const thinkRes = await fetch(`${ENGINE_URL}/api/think`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...engineHeaders },
+          body: JSON.stringify({
+            query: buildAnalysisPrompt(text, jurisdiction),
+            mode: "balanced",
+          }),
+          signal: AbortSignal.timeout(300_000),
+        });
+        if (!thinkRes.ok) throw new Error(`Engine think ${thinkRes.status}`);
+        // Collect SSE chunks: data: {"chunk":"..."} ... data: [DONE]
+        const raw = await thinkRes.text();
+        let answer = "";
+        for (const line of raw.split("\n")) {
+          if (!line.startsWith("data: ") || line === "data: [DONE]") continue;
+          try {
+            const evt = JSON.parse(line.slice(6)) as { chunk?: string };
+            if (evt.chunk) answer += evt.chunk;
+          } catch { /* skip malformed lines */ }
+        }
+        parsed = safeParseJson(answer || "{}");
       }
-
-      const thinkData = (await thinkRes.json()) as { answer?: string };
-      parsed = safeParseJson(thinkData.answer || "{}");
     } catch (err) {
       console.error("[analyze] AI step failed:", err instanceof Error ? err.message : String(err));
       const empty = buildEmptyResult("Analyse fehlgeschlagen \u2014 Engine nicht verf\u00fcgbar.");

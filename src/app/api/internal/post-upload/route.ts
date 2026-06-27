@@ -62,10 +62,12 @@ export async function POST(req: NextRequest) {
   const headers = engineHeadersForBrain(brain_id);
   const origin = new URL(req.url).origin;
   const internalSecret = env("SUBSUMIO_INTERNAL_SECRET") ?? "";
+  // Contradiction probe uses createCronHandler → requires Bearer auth
+  const cronSecret = env("CRON_SECRET") ?? "";
 
   const results: Record<string, string> = {};
 
-  // 1. Reconcile case documents array
+  // 1. Reconcile case documents array (synchronous — caller waits for this)
   if (case_slug) {
     try {
       await reconcileCaseDocuments(headers, case_slug, {
@@ -84,33 +86,43 @@ export async function POST(req: NextRequest) {
       results.reconcile = `failed: ${msg}`;
     }
 
-    // 2. Trigger contradiction probe (fire-and-forget)
-    void (async () => {
-      try {
-        const url = new URL(`${origin}/api/cron/contradiction-probe`);
-        url.searchParams.set("case_slug", case_slug);
-        await fetch(url.toString(), {
-          method: "GET",
-          headers: { "x-internal-secret": internalSecret },
-          signal: AbortSignal.timeout(30_000),
-        });
-      } catch (err) {
-        console.error(
-          "[post-upload] contradiction probe failed (non-fatal):",
-          err instanceof Error ? err.message : String(err)
-        );
-      }
-    })();
-    results.contradiction_probe = "triggered";
+    // 2. Contradiction probe — fire-and-forget, uses Bearer CRON_SECRET
+    if (cronSecret) {
+      void (async () => {
+        try {
+          const url = new URL(`${origin}/api/cron/contradiction-probe`);
+          url.searchParams.set("case_slug", case_slug);
+          const probeRes = await fetch(url.toString(), {
+            method: "GET",
+            headers: { Authorization: `Bearer ${cronSecret}` },
+            signal: AbortSignal.timeout(30_000),
+          });
+          if (!probeRes.ok) {
+            console.error(
+              `[post-upload] contradiction probe HTTP ${probeRes.status} for ${case_slug}`
+            );
+          }
+        } catch (err) {
+          console.error(
+            "[post-upload] contradiction probe failed (non-fatal):",
+            err instanceof Error ? err.message : String(err)
+          );
+        }
+      })();
+      results.contradiction_probe = "triggered";
+    } else {
+      results.contradiction_probe = "skipped_no_cron_secret";
+    }
   }
 
-  // 3. Trigger legal analysis for small documents that weren't split
-  //    (the engine only auto-starts the pipeline for large split docs).
-  //    We fire a lightweight analysis job via the web-app's analyze route.
+  // 3. Legal analysis for this document — fire-and-forget
+  //    Uses engine's /api/legal/analyze directly (JSON, not SSE).
+  //    The engine route takes `slug` and handles small docs correctly.
+  //    The web-app analyze route also works here via x-internal-secret.
   if (internalSecret) {
     void (async () => {
       try {
-        await fetch(`${origin}/api/legal/analyze`, {
+        const analyzeRes = await fetch(`${origin}/api/legal/analyze`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -119,6 +131,11 @@ export async function POST(req: NextRequest) {
           body: JSON.stringify({ document_slug: doc_slug, brain_id }),
           signal: AbortSignal.timeout(300_000),
         });
+        if (!analyzeRes.ok) {
+          console.error(
+            `[post-upload] legal analyze HTTP ${analyzeRes.status} for ${doc_slug}`
+          );
+        }
       } catch (err) {
         console.error(
           "[post-upload] legal analyze failed (non-fatal):",

@@ -1321,6 +1321,33 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
                 opCtx.config.storage
               );
               const beaPage = await engine.getPage(beaSlug, { sourceId: tenantSource });
+              const beaWebUrl = process.env.SUBSUMIO_WEB_URL?.replace(/\/$/, "");
+              const beaInternalSecret = process.env.SUBSUMIO_INTERNAL_SECRET;
+              if (beaWebUrl && beaInternalSecret) {
+                setImmediate(() => {
+                  fetch(`${beaWebUrl}/api/internal/post-upload`, {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                      "x-internal-secret": beaInternalSecret,
+                    },
+                    body: JSON.stringify({
+                      doc_slug: beaSlug,
+                      case_slug: payload.case_slug?.trim() || fields.case_slug?.trim() || undefined,
+                      brain_id: tenantSource,
+                      doc_title: beaPage?.title ?? item.title,
+                      doc_size: file.data.byteLength,
+                      uploaded_at: new Date().toISOString(),
+                    }),
+                    signal: AbortSignal.timeout(60_000),
+                  }).catch((err) => {
+                    console.error(
+                      "[direct-upload] beA post-upload callback failed (non-fatal):",
+                      err instanceof Error ? err.message : String(err)
+                    );
+                  });
+                });
+              }
               res.json({
                 slug: beaSlug,
                 title: beaPage?.title ?? item.title,
