@@ -46,6 +46,9 @@ async function submitAndWait(
       name: "rundown",
       role: "planning",
       force_specialists: ["legal-analyst", "legal-deadline-extractor"],
+      // Hard budget cap: aborts the entire tree once $0.50 is spent.
+      // Prevents runaway subagent spawning from burning through credits.
+      budget_remaining_cents: 50,
     }),
     signal: AbortSignal.timeout(30_000),
   });
