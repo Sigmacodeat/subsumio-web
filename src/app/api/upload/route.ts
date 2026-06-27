@@ -207,6 +207,11 @@ export const POST = createHandler(
               docSlug,
               ctx.brainId
             );
+            // Fire contradiction probe for the case immediately after upload —
+            // don't wait for the nightly cron batch. Non-blocking, best-effort.
+            if (caseSlugStr) {
+              void triggerContradictionProbe(req.nextUrl.origin, internalSecret, caseSlugStr);
+            }
           }
           // Determine final status: 207 if any sub-operation failed (reconciliation
           // or GoBD persistence), otherwise the upstream status.
@@ -332,6 +337,29 @@ async function patchDocFrontmatter(
  * frontmatter. Replaces the old 4-level nested .catch(() => {}) chain.
  * All errors are logged; the document frontmatter reflects the final state.
  */
+async function triggerContradictionProbe(
+  origin: string,
+  internalSecret: string,
+  caseSlug: string
+): Promise<void> {
+  try {
+    await fetch(`${origin}/api/cron/contradiction-probe`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-internal-secret": internalSecret,
+      },
+      body: JSON.stringify({ case_slug: caseSlug }),
+      signal: AbortSignal.timeout(30_000),
+    });
+  } catch (err) {
+    console.error(
+      "[upload] contradiction probe failed (non-fatal):",
+      err instanceof Error ? err.message : String(err)
+    );
+  }
+}
+
 async function runAnalysisWithTracking(
   headers: Record<string, string>,
   origin: string,
@@ -368,6 +396,7 @@ async function runAnalysisWithTracking(
       analysis_status: "failed",
       analysis_error: analysisError,
       analysis_failed_at: new Date().toISOString(),
+      analysis_retry_count: 0,
     });
   }
 }
