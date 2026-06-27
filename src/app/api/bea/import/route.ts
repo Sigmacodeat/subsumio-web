@@ -5,6 +5,7 @@ import { buildBeaImportBundle, parseBeaXmlBatch } from "@/lib/bea-import";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 120;
 
 const beaFileSchema = z.object({
   filename: z.string().min(1).max(240),

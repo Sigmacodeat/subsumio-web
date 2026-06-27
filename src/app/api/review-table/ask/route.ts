@@ -2,6 +2,8 @@ import { z } from "zod";
 import { createHandler } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
 
+export const maxDuration = 60;
+
 const postSchema = z.object({
   case_slug: z.string().optional(),
   table_title: z.string().optional(),

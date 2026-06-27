@@ -7,6 +7,7 @@ import { groundAnswerCitations, emptyGroundingMetadata } from "@/lib/citation-ga
 import { sanitizeUserInput } from "@/lib/prompt-sanitizer";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 120;
 
 const aiDeadlinesSchema = z.object({
   text: z.string().min(1, "text_required").max(50_000, "text_too_long"),

@@ -291,9 +291,9 @@ export function getOrgStore(): OrgStore {
 
 const AUTH_DB_URL =
   env("SUBSUMIO_AUTH_DATABASE_URL") ||
-  process.env.DATABASE_URL ||
-  process.env.POSTGRES_URL ||
-  process.env.POSTGRES_PRISMA_URL;
+  env("DATABASE_URL") ||
+  env("POSTGRES_URL") ||
+  env("POSTGRES_PRISMA_URL");
 
 declare global {
   var __subsumioAuthPool: Pool | undefined;
@@ -321,7 +321,7 @@ function authPool(): Pool {
       config.ssl = { rejectUnauthorized: true };
     } else if (AUTH_DB_URL.includes("sslmode=require")) {
       config.ssl = { rejectUnauthorized: false };
-    } else if (process.env.NODE_ENV === "production") {
+    } else if (env("NODE_ENV") === "production") {
       config.ssl = { rejectUnauthorized: true };
     }
     globalThis.__subsumioAuthPool = new Pool(config);
@@ -606,7 +606,7 @@ export function getSharedPgPool(): Pool | null {
 
 function createUserStore(): UserStore {
   if (AUTH_DB_URL) return new PostgresUserStore();
-  if (process.env.NODE_ENV === "production") {
+  if (env("NODE_ENV") === "production") {
     throw new AuthError(
       "Production auth requires SUBSUMIO_AUTH_DATABASE_URL, DATABASE_URL, POSTGRES_URL, or POSTGRES_PRISMA_URL.",
       { code: "AUTH_DB_URL_MISSING" }
@@ -617,7 +617,7 @@ function createUserStore(): UserStore {
 
 function createOrgStore(): OrgStore {
   if (AUTH_DB_URL) return new PostgresOrgStore();
-  if (process.env.NODE_ENV === "production") {
+  if (env("NODE_ENV") === "production") {
     throw new AuthError(
       "Production org storage requires SUBSUMIO_AUTH_DATABASE_URL, DATABASE_URL, POSTGRES_URL, or POSTGRES_PRISMA_URL.",
       { code: "AUTH_DB_URL_MISSING" }

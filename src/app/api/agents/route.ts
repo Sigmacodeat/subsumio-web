@@ -2,6 +2,8 @@ import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError } from "@/lib/api-handler";
 
+export const maxDuration = 300;
+
 const agentsPostSchema = z
   .object({
     prompt: z.string().min(1, "prompt_required").max(10_000, "prompt_too_long"),

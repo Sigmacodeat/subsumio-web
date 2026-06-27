@@ -2,6 +2,7 @@ import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { syncFromWorkOS, saveSyncStatus, isWorkosDirectorySyncConfigured } from "@/lib/scim";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 /**
  * POST /api/scim/sync

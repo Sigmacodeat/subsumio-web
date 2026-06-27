@@ -15,18 +15,35 @@ import { orchestrateWhatsAppMessage } from "@/lib/whatsapp-kanzlei-os/orchestrat
 import { buildWhatsAppMessageBody } from "@/lib/whatsapp-event-bus";
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import { logAudit } from "@/lib/audit";
-import { createWebhookHandler } from "@/lib/api-handler";
+import { createWebhookHandler, createPublicHandler } from "@/lib/api-handler";
 import type { ActionType } from "@/lib/approval";
 import type { BrainPage } from "@/lib/types";
+import { z } from "zod";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-export async function GET(req: NextRequest) {
-  const result = verifyWebhookChallenge(new URL(req.url).searchParams);
-  if (!result.ok) return Response.json({ error: result.error }, { status: result.status });
-  return new Response(result.challenge, { status: 200, headers: { "Content-Type": "text/plain" } });
-}
+const webhookChallengeSchema = z.object({
+  "hub.mode": z.string(),
+  "hub.challenge": z.string(),
+  "hub.verify_token": z.string(),
+});
+
+export const GET = createPublicHandler(
+  {
+    query: webhookChallengeSchema,
+  },
+  async (_req, _body, query) => {
+    const { "hub.mode": mode, "hub.challenge": challenge, "hub.verify_token": verifyToken } = query;
+    const searchParams = new URLSearchParams();
+    searchParams.set("hub.mode", mode);
+    searchParams.set("hub.challenge", challenge);
+    searchParams.set("hub.verify_token", verifyToken);
+    const result = verifyWebhookChallenge(searchParams);
+    if (!result.ok) return Response.json({ error: result.error }, { status: result.status });
+    return new Response(result.challenge, { status: 200, headers: { "Content-Type": "text/plain" } });
+  }
+);
 
 export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => {
   const rawBody = await req.text();

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Save, UserX, CheckCircle2, AlertTriangle } from "lucide-react";
-import { PlanBadge } from "@/components/admin/admin-stat-card";
+import { csrfFetch } from "@/lib/csrf";
 import type { PublicUser } from "@/lib/auth/store";
 
 interface UserDetailFormProps {
@@ -21,9 +21,9 @@ export function UserDetailForm({ user }: UserDetailFormProps) {
     setSaving(true);
     setNotice(null);
     try {
-      const res = await fetch(`/api/admin/users/${user.id}`, {
+      const res = await csrfFetch(`/api/admin/users/${user.id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json", "x-csrf-token": getCsrf() },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ plan, role }),
       });
       const data = await res.json();
@@ -44,9 +44,8 @@ export function UserDetailForm({ user }: UserDetailFormProps) {
     setSaving(true);
     setNotice(null);
     try {
-      const res = await fetch(`/api/admin/users/${user.id}`, {
+      const res = await csrfFetch(`/api/admin/users/${user.id}`, {
         method: "DELETE",
-        headers: { "x-csrf-token": getCsrf() },
       });
       const data = await res.json();
       if (res.ok) {
@@ -59,11 +58,6 @@ export function UserDetailForm({ user }: UserDetailFormProps) {
       setNotice({ type: "error", msg: "Netzwerkfehler" });
     }
     setSaving(false);
-  }
-
-  function getCsrf(): string {
-    const match = document.cookie.match(/csrf-token=([^;]+)/);
-    return match?.[1] ?? "";
   }
 
   return (

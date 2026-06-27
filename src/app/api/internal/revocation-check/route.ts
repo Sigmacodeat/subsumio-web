@@ -1,8 +1,13 @@
-import { NextRequest, NextResponse } from "next/server";
+import { createPublicHandler } from "@/lib/api-handler";
 import { getMinRevocationVersion } from "@/lib/auth/revocation-store";
-import { hit, clientIp } from "@/lib/auth/rate-limit";
+import { clientIp } from "@/lib/auth/rate-limit";
+import { z } from "zod";
 
 const UID_PATTERN = /^[a-zA-Z0-9_-]{1,128}$/;
+
+const revocationCheckSchema = z.object({
+  uid: z.string().min(1).max(128).regex(UID_PATTERN),
+});
 
 /**
  * GET /api/internal/revocation-check?uid=<userId>
@@ -17,27 +22,23 @@ const UID_PATTERN = /^[a-zA-Z0-9_-]{1,128}$/;
  *
  * Rate-limited to prevent abuse and user-enumeration oracles.
  */
-export async function GET(req: NextRequest) {
-  const ip = clientIp(req.headers);
-  const ipLimit = await hit(`revocation-check:ip:${ip}`, 120, 60_000);
-  if (!ipLimit.ok) {
-    return NextResponse.json(
-      { error: "rate_limited" },
-      { status: 429, headers: { "Retry-After": String(ipLimit.retryAfterSeconds) } }
-    );
-  }
+export const GET = createPublicHandler(
+  {
+    query: revocationCheckSchema,
+    rateLimitKey: (req) => `revocation-check:ip:${clientIp(req.headers)}`,
+    rateLimitMax: 120,
+    rateLimitWindowMs: 60_000,
+  },
+  async (_req, _body, query) => {
+    const { uid } = query;
 
-  const uid = req.nextUrl.searchParams.get("uid");
-  if (!uid || uid.length > 128 || !UID_PATTERN.test(uid)) {
-    return NextResponse.json({ error: "invalid_uid" }, { status: 400 });
+    try {
+      const minVersion = await getMinRevocationVersion(uid);
+      return Response.json({ minVersion });
+    } catch (err) {
+      console.error("[revocation-check] error:", err instanceof Error ? err.message : String(err));
+      // Fail-open: return 0 so sessions remain valid if the store is unreachable
+      return Response.json({ minVersion: 0 });
+    }
   }
-
-  try {
-    const minVersion = await getMinRevocationVersion(uid);
-    return NextResponse.json({ minVersion });
-  } catch (err) {
-    console.error("[revocation-check] error:", err instanceof Error ? err.message : String(err));
-    // Fail-open: return 0 so sessions remain valid if the store is unreachable
-    return NextResponse.json({ minVersion: 0 });
-  }
-}
+);

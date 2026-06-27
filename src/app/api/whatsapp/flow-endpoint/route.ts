@@ -12,7 +12,7 @@
  * - WHATSAPP_FLOW_PRIVATE_KEY_PEM: RSA private key in PEM format
  */
 
-import { NextRequest } from "next/server";
+import { createPublicHandler, apiError } from "@/lib/api-handler";
 import {
   decryptFlowRequest,
   encryptFlowResponse,
@@ -20,12 +20,19 @@ import {
 } from "@/lib/whatsapp/flow-crypto";
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import { randomUUID } from "node:crypto";
-import { hit, clientIp } from "@/lib/auth/rate-limit";
+import { clientIp } from "@/lib/auth/rate-limit";
 import { sanitizeObjectStrings } from "@/lib/prompt-sanitizer";
 import { logAudit } from "@/lib/audit";
+import { z } from "zod";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
+
+const flowRequestSchema = z.object({
+  encrypted_aes_key: z.string(),
+  encrypted_flow_data: z.string(),
+  initial_vector: z.string(),
+});
 
 const BRAIN_ID_PATTERN = /^[a-zA-Z0-9_-]{1,128}$/;
 const MAX_FIELD_LENGTH = 500;
@@ -264,113 +271,102 @@ async function handleAppointmentBooking(
 
 // ── Route Handler ──────────────────────────────────────────────────────────
 
-export async function POST(req: NextRequest) {
-  // Rate limiting: 30 requests per minute per IP (WhatsApp Flows are interactive, not high-volume)
-  const ip = clientIp(req.headers);
-  const ipLimit = await hit(`whatsapp-flow:ip:${ip}`, 30, 60_000);
-  if (!ipLimit.ok) {
-    return Response.json(
-      { error: "rate_limited" },
-      { status: 429, headers: { "Retry-After": String(ipLimit.retryAfterSeconds) } }
-    );
-  }
+export const POST = createPublicHandler(
+  {
+    body: flowRequestSchema,
+    rateLimitKey: (req) => `whatsapp-flow:ip:${clientIp(req.headers)}`,
+    rateLimitMax: 30,
+    rateLimitWindowMs: 60_000,
+  },
+  async (_req, body) => {
+    const { encrypted_aes_key, encrypted_flow_data, initial_vector } = body;
 
-  let body: { encrypted_aes_key: string; encrypted_flow_data: string; initial_vector: string };
-  try {
-    body = (await req.json()) as {
-      encrypted_aes_key: string;
-      encrypted_flow_data: string;
-      initial_vector: string;
-    };
-  } catch {
-    return Response.json({ error: "invalid_json" }, { status: 400 });
-  }
+    const decrypted = decryptFlowRequest({
+      encrypted_aes_key,
+      encrypted_flow_data,
+      initial_vector,
+    });
+    if ("error" in decrypted) {
+      return apiError("decryption_failed", "Failed to decrypt flow request", 500);
+    }
 
-  if (!body.encrypted_aes_key || !body.encrypted_flow_data || !body.initial_vector) {
-    return Response.json({ error: "missing_encrypted_fields" }, { status: 400 });
-  }
+    const { request, aesKey, iv } = decrypted;
+    // flow_token format: "case_intake:brain_abc123" or "appointment:brain_abc123"
+    // The second segment is the brainId.
+    //
+    // Security: WHATSAPP_DEFAULT_BRAIN_ID is the only trusted source for the
+    // brainId. The flow_token is user-visible metadata round-tripped through
+    // WhatsApp and must NOT be trusted for tenant routing — a crafted token
+    // could target another tenant's brain. If the env var is unset, reject
+    // rather than falling back to the untrusted token.
+    const tokenParts = request.flow_token?.split(":") ?? [];
+    const rawBrainId = process.env.WHATSAPP_DEFAULT_BRAIN_ID || "";
 
-  const decrypted = decryptFlowRequest(body);
-  if ("error" in decrypted) {
-    return Response.json({ error: decrypted.error }, { status: 500 });
-  }
+    if (!rawBrainId || !BRAIN_ID_PATTERN.test(rawBrainId)) {
+      return apiError("flow_endpoint_not_configured", "Flow endpoint not configured", 503);
+    }
+    const brainId = rawBrainId;
 
-  const { request, aesKey, iv } = decrypted;
-  // flow_token format: "case_intake:brain_abc123" or "appointment:brain_abc123"
-  // The second segment is the brainId.
-  //
-  // Security: WHATSAPP_DEFAULT_BRAIN_ID is the only trusted source for the
-  // brainId. The flow_token is user-visible metadata round-tripped through
-  // WhatsApp and must NOT be trusted for tenant routing — a crafted token
-  // could target another tenant's brain. If the env var is unset, reject
-  // rather than falling back to the untrusted token.
-  const tokenParts = request.flow_token?.split(":") ?? [];
-  const rawBrainId = process.env.WHATSAPP_DEFAULT_BRAIN_ID || "";
+    // Determine which flow this is based on the flow_token prefix
+    const flowType = tokenParts[0] === "appointment" ? "appointment_booking" : "case_intake";
 
-  if (!rawBrainId || !BRAIN_ID_PATTERN.test(rawBrainId)) {
-    return Response.json({ error: "flow_endpoint_not_configured" }, { status: 503 });
-  }
-  const brainId = rawBrainId;
+    // Handle INIT action — return the first screen with initial data
+    if (request.action === "INIT") {
+      const initialResponse: FlowEndpointResponse = {
+        version: "3.0",
+        screen: flowType === "appointment_booking" ? "DATE_SELECT" : "INTAKE_FORM",
+        data: flowType === "case_intake" ? { legal_areas: LEGAL_AREAS } : {},
+      };
+      const encryptedResponse = encryptFlowResponse(initialResponse, aesKey, iv);
+      return new Response(encryptedResponse, {
+        status: 200,
+        headers: { "Content-Type": "text/plain" },
+      });
+    }
 
-  // Determine which flow this is based on the flow_token prefix
-  const flowType = tokenParts[0] === "appointment" ? "appointment_booking" : "case_intake";
+    let result: FlowHandlerResult;
 
-  // Handle INIT action — return the first screen with initial data
-  if (request.action === "INIT") {
-    const initialResponse: FlowEndpointResponse = {
+    try {
+      if (flowType === "case_intake") {
+        result = await handleCaseIntake(
+          String(request.data.action || request.action),
+          request.data,
+          request.flow_token,
+          brainId
+        );
+      } else if (flowType === "appointment_booking") {
+        result = await handleAppointmentBooking(
+          String(request.data.action || request.action),
+          request.data,
+          request.flow_token,
+          brainId
+        );
+      } else {
+        result = { screen: "INTAKE_FORM", data: { legal_areas: LEGAL_AREAS } };
+      }
+    } catch (err) {
+      console.error(
+        "[whatsapp/flow] handler error:",
+        err instanceof Error ? err.message : String(err)
+      );
+      result = {
+        screen: request.screen,
+        data: { ...request.data, error: "processing_failed" },
+      };
+    }
+
+    const response: FlowEndpointResponse = {
       version: "3.0",
-      screen: flowType === "appointment_booking" ? "DATE_SELECT" : "INTAKE_FORM",
-      data: flowType === "case_intake" ? { legal_areas: LEGAL_AREAS } : {},
+      screen: result.screen,
+      data: result.data,
+      ...(result.extension_message ? { extension_message: result.extension_message } : {}),
     };
-    const encryptedResponse = encryptFlowResponse(initialResponse, aesKey, iv);
+
+    const encryptedResponse = encryptFlowResponse(response, aesKey, iv);
+
     return new Response(encryptedResponse, {
       status: 200,
       headers: { "Content-Type": "text/plain" },
     });
   }
-
-  let result: FlowHandlerResult;
-
-  try {
-    if (flowType === "case_intake") {
-      result = await handleCaseIntake(
-        String(request.data.action || request.action),
-        request.data,
-        request.flow_token,
-        brainId
-      );
-    } else if (flowType === "appointment_booking") {
-      result = await handleAppointmentBooking(
-        String(request.data.action || request.action),
-        request.data,
-        request.flow_token,
-        brainId
-      );
-    } else {
-      result = { screen: "INTAKE_FORM", data: { legal_areas: LEGAL_AREAS } };
-    }
-  } catch (err) {
-    console.error(
-      "[whatsapp/flow] handler error:",
-      err instanceof Error ? err.message : String(err)
-    );
-    result = {
-      screen: request.screen,
-      data: { ...request.data, error: "processing_failed" },
-    };
-  }
-
-  const response: FlowEndpointResponse = {
-    version: "3.0",
-    screen: result.screen,
-    data: result.data,
-    ...(result.extension_message ? { extension_message: result.extension_message } : {}),
-  };
-
-  const encryptedResponse = encryptFlowResponse(response, aesKey, iv);
-
-  return new Response(encryptedResponse, {
-    status: 200,
-    headers: { "Content-Type": "text/plain" },
-  });
-}
+);

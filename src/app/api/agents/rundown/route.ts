@@ -1,6 +1,8 @@
 import { createHandler, apiError } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
 
+export const maxDuration = 300;
+
 /**
  * POST /api/agents/rundown — Trigger the daily Rundown agent.
  *

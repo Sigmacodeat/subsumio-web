@@ -17,10 +17,12 @@ import { withRetry, externalFetchTimeout } from "@/lib/retry";
 import { DocusignError, AuthError } from "@/lib/errors";
 import { createIdempotencyStore } from "@/lib/idempotency";
 
-const BASE = process.env.DOCUSIGN_BASE_URL || "https://demo.docusign.net/restapi/v2.1";
-const IK = process.env.DOCUSIGN_INTEGRATION_KEY || "";
-const SECRET = process.env.DOCUSIGN_SECRET_KEY || "";
-const ACCOUNT = process.env.DOCUSIGN_ACCOUNT_ID || "";
+import { env } from "@/lib/env";
+
+const BASE = env("DOCUSIGN_BASE_URL") || "https://demo.docusign.net/restapi/v2.1";
+const IK = env("DOCUSIGN_INTEGRATION_KEY") || "";
+const SECRET = env("DOCUSIGN_SECRET_KEY") || "";
+const ACCOUNT = env("DOCUSIGN_ACCOUNT_ID") || "";
 
 export interface EnvelopeRequest {
   emailSubject: string;
@@ -109,7 +111,7 @@ async function getServiceAccessToken(): Promise<string> {
 }
 
 async function buildJwt(): Promise<string> {
-  const privateKeyB64 = process.env.DOCUSIGN_PRIVATE_KEY;
+  const privateKeyB64 = env("DOCUSIGN_PRIVATE_KEY");
   if (!privateKeyB64) {
     throw new DocusignError("Docusign JWT requires DOCUSIGN_PRIVATE_KEY (base64-encoded PEM).", {
       code: "DOCUSIGN_PRIVATE_KEY_MISSING",

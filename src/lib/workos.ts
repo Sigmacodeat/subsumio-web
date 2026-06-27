@@ -11,8 +11,10 @@
 import { externalFetchTimeout } from "@/lib/retry";
 
 const API_BASE = "https://api.workos.com";
-const API_KEY = process.env.WORKOS_API_KEY || "";
-const CLIENT_ID = process.env.WORKOS_CLIENT_ID || "";
+import { env } from "@/lib/env";
+
+const API_KEY = env("WORKOS_API_KEY") || "";
+const CLIENT_ID = env("WORKOS_CLIENT_ID") || "";
 
 export interface WorkOSProfile {
   id: string;

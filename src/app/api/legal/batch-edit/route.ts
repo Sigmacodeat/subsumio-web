@@ -2,6 +2,8 @@ import { z } from "zod";
 import { createHandler } from "@/lib/api-handler";
 import { executeBatch, type BatchOperation } from "@/lib/legal/batch-edit";
 
+export const maxDuration = 300;
+
 const postSchema = z.object({
   type: z.enum([
     "replace_text",
@@ -11,7 +13,7 @@ const postSchema = z.object({
     "delete_pages",
     "change_type",
   ]),
-  slugs: z.array(z.string().min(1)).min(1).max(500),
+  slugs: z.array(z.string().min(1)).min(1).max(100),
   find: z.string().optional(),
   replace: z.string().optional(),
   tag: z.string().optional(),

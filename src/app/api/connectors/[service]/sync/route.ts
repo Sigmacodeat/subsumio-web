@@ -4,6 +4,7 @@ import { createHandler, apiError } from "@/lib/api-handler";
 import { getConnectorByEngineService } from "@/lib/connector-coverage";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 120;
 
 export const POST = createHandler(
   {

@@ -3,6 +3,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { withRetry } from "@/lib/retry";
 import { scanFile } from "@/lib/virus-scan";
+import { env } from "@/lib/env";
 import type { WhatsAppMediaMessage } from "./types";
 
 export interface StoredWhatsAppMedia {
@@ -29,17 +30,17 @@ interface MediaUrlResponse {
 const DEFAULT_MAX_BYTES = 25 * 1024 * 1024;
 
 function graphVersion(): string {
-  return process.env.WHATSAPP_GRAPH_VERSION || "v20.0";
+  return env("WHATSAPP_GRAPH_VERSION") || "v20.0";
 }
 
 function maxBytes(): number {
-  const raw = Number(process.env.WHATSAPP_MEDIA_MAX_BYTES);
+  const raw = Number(env("WHATSAPP_MEDIA_MAX_BYTES"));
   return Number.isFinite(raw) && raw > 0 ? raw : DEFAULT_MAX_BYTES;
 }
 
 function storageDir(): string {
   return (
-    process.env.WHATSAPP_MEDIA_STORAGE_DIR || path.join(process.cwd(), ".data", "whatsapp-media")
+    env("WHATSAPP_MEDIA_STORAGE_DIR") || path.join(process.cwd(), ".data", "whatsapp-media")
   );
 }
 
@@ -64,8 +65,8 @@ function safeFilename(input: string): string {
 }
 
 async function getMediaUrl(mediaId: string): Promise<MediaUrlResponse> {
-  const token = process.env.WHATSAPP_ACCESS_TOKEN;
-  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+  const token = env("WHATSAPP_ACCESS_TOKEN");
+  const phoneNumberId = env("WHATSAPP_PHONE_NUMBER_ID");
   if (!token) throw new Error("WHATSAPP_ACCESS_TOKEN fehlt.");
   const params = new URLSearchParams();
   if (phoneNumberId) params.set("phone_number_id", phoneNumberId);
@@ -88,7 +89,7 @@ async function getMediaUrl(mediaId: string): Promise<MediaUrlResponse> {
 export async function downloadAndStoreWhatsAppMedia(
   message: WhatsAppMediaMessage
 ): Promise<StoredWhatsAppMedia> {
-  const token = process.env.WHATSAPP_ACCESS_TOKEN;
+  const token = env("WHATSAPP_ACCESS_TOKEN");
   if (!token) throw new Error("WHATSAPP_ACCESS_TOKEN fehlt.");
 
   const meta = await getMediaUrl(message.mediaId);

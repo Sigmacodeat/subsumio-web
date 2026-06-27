@@ -216,7 +216,7 @@ export default function ScimSettingsPage() {
   const [showBearerToken, setShowBearerToken] = useState(false);
 
   const userRole = meQuery.data?.user?.role ?? "lawyer";
-  const status = statusQuery.data?.data as SyncStatus | undefined;
+  const status = statusQuery.data?.data;
   const isLoading = statusQuery.isLoading;
   const isSyncing = syncMutation.isPending;
 

@@ -2,6 +2,8 @@ import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError } from "@/lib/api-handler";
 
+export const maxDuration = 300;
+
 const validActions = new Set(["pause", "resume", "cancel", "replay", "inbox"]);
 
 const inboxSchema = z.object({

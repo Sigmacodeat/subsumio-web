@@ -9,6 +9,8 @@ import {
   evaluateReleaseGate,
 } from "@/lib/release-gate";
 
+export const maxDuration = 120;
+
 export const POST = createHandler(
   {
     action: "admin.*",

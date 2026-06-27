@@ -3,6 +3,8 @@ import { createServerBrainClient } from "@/lib/server-brain";
 import { caseFrontmatter } from "@/lib/legal-types";
 import { createHandler, apiError } from "@/lib/api-handler";
 
+export const maxDuration = 60;
+
 const emailImportSchema = z.object({
   subject: z.string().min(1, "subject_required"),
   from: z.string().min(1, "from_required"),

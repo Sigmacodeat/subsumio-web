@@ -3,6 +3,8 @@ import { getConnector } from "@/lib/dms";
 import { recordQuota } from "@/lib/engine";
 import { createHandler, apiError } from "@/lib/api-handler";
 
+export const maxDuration = 60;
+
 const dmsImportSchema = z.object({
   documentId: z.string().min(1, "document_id_required"),
 });

@@ -2,6 +2,7 @@ import { createHandler } from "@/lib/api-handler";
 import { getStore } from "@/lib/auth/store";
 import { revokeAllSessions } from "@/lib/auth/session";
 import { verifyPassword } from "@/lib/auth/password";
+import { hit } from "@/lib/auth/rate-limit";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -22,6 +23,14 @@ export const POST = createHandler(
     }),
   },
   async (ctx, body) => {
+    const rl = await hit(`2fa:disable:${ctx.user.id}`, 5, 5 * 60 * 1000);
+    if (!rl.ok) {
+      return Response.json(
+        { error: "rate_limited", message: "Zu viele Versuche. Bitte später versuchen." },
+        { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } },
+      );
+    }
+
     const store = getStore();
     const user = await store.getById(ctx.user.id);
     if (!user) return Response.json({ error: "user_not_found" }, { status: 404 });

@@ -78,5 +78,14 @@ export async function csrfFetch(input: string | URL, init?: RequestInit): Promis
   // Default 30s timeout; caller can override by passing their own signal
   const signal = init?.signal ?? AbortSignal.timeout(30_000);
 
-  return fetch(input, { ...init, headers, signal });
+  const res = await fetch(input, { ...init, headers, signal });
+
+  // Redirect to login on 401 in browser — same behavior as apiGet
+  if (res.status === 401 && typeof window !== "undefined") {
+    const loginUrl = new URL("/login", window.location.origin);
+    loginUrl.searchParams.set("next", window.location.pathname);
+    window.location.href = loginUrl.toString();
+  }
+
+  return res;
 }

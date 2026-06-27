@@ -35,7 +35,7 @@ export async function apiGet<T>(path: string): Promise<T> {
   try {
     return JSON.parse(text) as T;
   } catch {
-    throw new ApiGetError(res.status, text, path);
+    throw new ApiGetError(res.status, `Invalid JSON response: ${text.slice(0, 200)}`, path);
   }
 }
 

@@ -3,6 +3,8 @@ import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError, apiNotFound } from "@/lib/api-handler";
 import { sanitizeUserInput } from "@/lib/prompt-sanitizer";
 
+export const maxDuration = 300;
+
 const runSchema = z
   .object({
     input: z.string().max(10_000, "input_too_long").optional(),
