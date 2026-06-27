@@ -9,7 +9,7 @@
 import { describe, test, expect } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
-import { safeHexEqual } from '../src/core/timing-safe.ts';
+import { safeHexEqual, safeStringEqual } from '../src/core/timing-safe.ts';
 
 describe('safeHexEqual behavior', () => {
   test('returns true for identical hex strings', () => {
@@ -41,6 +41,30 @@ describe('safeHexEqual behavior', () => {
   });
 });
 
+describe('safeStringEqual behavior', () => {
+  test('returns true for identical strings', () => {
+    expect(safeStringEqual('sub_api_key_123', 'sub_api_key_123')).toBe(true);
+  });
+
+  test('returns false for distinct strings of the same length', () => {
+    expect(safeStringEqual('sub_api_key_123', 'sub_api_key_124')).toBe(false);
+  });
+
+  test('returns false on length mismatch (does NOT throw)', () => {
+    expect(safeStringEqual('short', 'longer-key')).toBe(false);
+    expect(safeStringEqual('', 'x')).toBe(false);
+  });
+
+  test('empty strings compare equal', () => {
+    expect(safeStringEqual('', '')).toBe(true);
+  });
+
+  test('treats multi-byte UTF-8 as bytes', () => {
+    expect(safeStringEqual('Müller', 'Müller')).toBe(true);
+    expect(safeStringEqual('Müller', 'Muller')).toBe(false);
+  });
+});
+
 describe('extraction contract', () => {
   test('IRON-RULE: serve-http.ts imports safeHexEqual from timing-safe.ts (not redefined)', () => {
     const src = readFileSync('src/commands/serve-http.ts', 'utf8');
@@ -48,5 +72,11 @@ describe('extraction contract', () => {
     expect(src).toMatch(/import\s*\{[^}]*\bsafeHexEqual\b[^}]*\}\s*from\s*['"]\.\.\/core\/timing-safe\.ts['"]/);
     // Must NOT redefine the function inside the file
     expect(src).not.toMatch(/function\s+safeHexEqual\s*\(/);
+  });
+
+  test('IRON-RULE: web-api.ts imports safeStringEqual from timing-safe.ts (not redefined)', () => {
+    const src = readFileSync('src/commands/web-api.ts', 'utf8');
+    expect(src).toMatch(/import\s*\{[^}]*\bsafeStringEqual\b[^}]*\}\s*from\s*['"]\.\.\/core\/timing-safe\.ts['"]/);
+    expect(src).not.toMatch(/function\s+safeStringEqual\s*\(/);
   });
 });

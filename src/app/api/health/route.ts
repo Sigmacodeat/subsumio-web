@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import { createPublicHandler } from "@/lib/api-handler";
 
 export const dynamic = "force-dynamic";
 
@@ -13,12 +13,17 @@ export const dynamic = "force-dynamic";
  * Used by load-balancers and uptime monitors that need to know the
  * process is alive, not whether every dependency is healthy.
  */
-export async function GET(_req: NextRequest) {
-  return Response.json(
-    {
-      status: "ok",
-      timestamp: new Date().toISOString(),
-    },
-    { status: 200 }
-  );
-}
+export const GET = createPublicHandler(
+  {
+    cacheMaxAge: 0, // Health checks should not be cached
+  },
+  async () => {
+    return Response.json(
+      {
+        status: "ok",
+        timestamp: new Date().toISOString(),
+      },
+      { status: 200 }
+    );
+  }
+);

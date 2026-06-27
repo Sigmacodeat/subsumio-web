@@ -426,7 +426,7 @@ export function TermsContent({ home, lang = "de" }: { home: string; lang?: Lang 
         <H2>§ 10 Final provisions</H2>
         <p>
           (1) German law applies, excluding the UN Convention on Contracts for the International
-          Sale of Goods (CISG). (2) Exclusive venue for merchants is [Provider's seat]. (3)
+          Sale of Goods (CISG). (2) Exclusive venue for merchants is [Provider&apos;s seat]. (3)
           Severability clause. (4) Changes are communicated with reasonable notice and deemed
           accepted if the Customer does not object; the significance of silence is separately
           pointed out.

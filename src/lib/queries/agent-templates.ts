@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { csrfFetch } from "@/lib/csrf";
+import { apiGet } from "@/lib/queries/settings";
 
 export interface AgentStep {
   id: string;
@@ -103,10 +104,8 @@ export function useAgentTemplates(search?: string) {
     queryFn: async () => {
       const params = new URLSearchParams();
       if (search) params.set("search", search);
-      const res = await fetch(`/api/agent-templates?${params.toString()}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      return (data.templates ?? []) as AgentTemplate[];
+      const data = await apiGet<{ templates?: AgentTemplate[] }>(`/api/agent-templates?${params.toString()}`);
+      return (data?.templates ?? []) as AgentTemplate[];
     },
   });
 }

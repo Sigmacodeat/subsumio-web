@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
-
+import { NextResponse } from "next/server";
+import { createPublicHandler } from "@/lib/api-handler";
 import {
   logTrackingEvent,
   extractClientIp,
@@ -9,9 +9,16 @@ import {
   detectForward,
   verifyUrlSignature,
 } from "@/lib/email/tracking";
-import { hit, clientIp } from "@/lib/auth/rate-limit";
+import { clientIp } from "@/lib/auth/rate-limit";
+import { z } from "zod";
 
 export const dynamic = "force-dynamic";
+
+const clickTrackSchema = z.object({
+  l: z.string().optional(),
+  u: z.string(),
+  s: z.string(),
+});
 
 /**
  * Click-tracking redirect endpoint.
@@ -27,92 +34,85 @@ export const dynamic = "force-dynamic";
  *
  * Always redirects, even if logging fails — the user must reach their destination.
  */
-export async function GET(
-  req: NextRequest,
-  { params }: { params: Promise<{ trackingId: string }> }
-) {
-  const { trackingId } = await params;
+export const GET = createPublicHandler(
+  {
+    query: clickTrackSchema,
+    rateLimitKey: (req) => `email-track-click:ip:${clientIp(req.headers)}`,
+    rateLimitMax: 60,
+    rateLimitWindowMs: 60_000,
+  },
+  async (req, _body, query) => {
+    const url = new URL(req.url);
+    const pathParts = url.pathname.split("/");
+    const trackingId = pathParts[pathParts.indexOf("c") + 1] ?? "";
+    const { l: linkId, u: encodedUrl, s: signature } = query;
 
-  // Rate limiting: 60 clicks per minute per IP
-  const ip = clientIp(req.headers);
-  const ipLimit = await hit(`email-track-click:ip:${ip}`, 60, 60_000);
-  if (!ipLimit.ok) {
-    return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL || "https://subsum.eu"}/`,
-      { status: 302 }
-    );
-  }
-
-  const searchParams = req.nextUrl.searchParams;
-  const linkId = searchParams.get("l") ?? undefined;
-  const encodedUrl = searchParams.get("u") ?? "";
-  const signature = searchParams.get("s") ?? "";
-
-  // Verify HMAC signature to prevent open redirect attacks
-  if (!encodedUrl || !signature || !verifyUrlSignature(encodedUrl, signature)) {
-    return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL || "https://subsum.eu"}/`,
-      { status: 302 }
-    );
-  }
-
-  // Decode the original URL
-  let targetUrl: string;
-  try {
-    targetUrl = Buffer.from(encodedUrl, "base64url").toString("utf8");
-  } catch {
-    targetUrl = "/";
-  }
-
-  // Safety: only redirect to http/https URLs, never to file:// or javascript:
-  if (!/^https?:\/\//i.test(targetUrl)) {
-    targetUrl = "/";
-  }
-
-  // Fire-and-forget tracking — never block the redirect
-  void (async () => {
-    try {
-      const ip = extractClientIp(req.headers);
-      const userAgent = req.headers.get("user-agent") ?? null;
-      const messageId = await getMessageIdByTrackingId(trackingId);
-
-      let geo = { country: null as string | null, city: null as string | null };
-      if (ip) {
-        geo = await lookupGeoIp(ip);
-      }
-
-      // Forward detection
-      let isForward = false;
-      const firstOpen = await getFirstOpenEvent(trackingId);
-      if (firstOpen) {
-        isForward = detectForward(firstOpen, ip ?? "", geo, userAgent);
-      }
-
-      await logTrackingEvent({
-        messageId: messageId ?? undefined,
-        trackingId,
-        eventType: "clicked",
-        linkId,
-        targetUrl,
-        ipAddress: ip ?? undefined,
-        userAgent: userAgent ?? undefined,
-        geoCountry: geo.country ?? undefined,
-        geoCity: geo.city ?? undefined,
-        isForward,
-        raw: { source: "click_redirect" },
-      });
-    } catch (err) {
-      console.error(
-        `[email-tracking] click redirect logging failed: ${err instanceof Error ? err.message : String(err)}`
+    // Verify HMAC signature to prevent open redirect attacks
+    if (!encodedUrl || !signature || !verifyUrlSignature(encodedUrl, signature)) {
+      return NextResponse.redirect(
+        `${process.env.NEXT_PUBLIC_APP_URL || "https://subsum.eu"}/`,
+        { status: 302 }
       );
     }
-  })();
 
-  // Redirect immediately
-  return NextResponse.redirect(targetUrl, {
-    status: 302,
-    headers: {
-      "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
-    },
-  });
-}
+    // Decode the original URL
+    let targetUrl: string;
+    try {
+      targetUrl = Buffer.from(encodedUrl, "base64url").toString("utf8");
+    } catch {
+      targetUrl = "/";
+    }
+
+    // Safety: only redirect to http/https URLs, never to file:// or javascript:
+    if (!/^https?:\/\//i.test(targetUrl)) {
+      targetUrl = "/";
+    }
+
+    // Fire-and-forget tracking — never block the redirect
+    void (async () => {
+      try {
+        const ip = extractClientIp(req.headers);
+        const userAgent = req.headers.get("user-agent") ?? null;
+        const messageId = await getMessageIdByTrackingId(trackingId);
+
+        let geo = { country: null as string | null, city: null as string | null };
+        if (ip) {
+          geo = await lookupGeoIp(ip);
+        }
+
+        // Forward detection
+        let isForward = false;
+        const firstOpen = await getFirstOpenEvent(trackingId);
+        if (firstOpen) {
+          isForward = detectForward(firstOpen, ip ?? "", geo, userAgent);
+        }
+
+        await logTrackingEvent({
+          messageId: messageId ?? undefined,
+          trackingId,
+          eventType: "clicked",
+          linkId,
+          targetUrl,
+          ipAddress: ip ?? undefined,
+          userAgent: userAgent ?? undefined,
+          geoCountry: geo.country ?? undefined,
+          geoCity: geo.city ?? undefined,
+          isForward,
+          raw: { source: "click_redirect" },
+        });
+      } catch (err) {
+        console.error(
+          `[email-tracking] click redirect logging failed: ${err instanceof Error ? err.message : String(err)}`
+        );
+      }
+    })();
+
+    // Redirect immediately
+    return NextResponse.redirect(targetUrl, {
+      status: 302,
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+      },
+    });
+  }
+);

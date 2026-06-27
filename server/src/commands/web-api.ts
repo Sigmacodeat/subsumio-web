@@ -12,6 +12,7 @@ import { readdirSync, readFileSync, statSync } from "fs";
 import { join, dirname, extname } from "path";
 import { fileURLToPath } from "url";
 import { createHmac, timingSafeEqual as cryptoTimingSafeEqual } from "crypto";
+import { safeStringEqual } from "../core/timing-safe.ts";
 import type { BrainEngine } from "../core/engine.ts";
 import { dispatchToolCall, buildOperationContext } from "../mcp/dispatch.ts";
 import { importFromContent, ocrImageBuffer } from "../core/import-file.ts";
@@ -151,7 +152,7 @@ function requireWebApiKey(apiKey: string | undefined) {
       (req.headers["x-subsumio-api-key"] as string | undefined) ??
       (req.headers["x-sigmabrain-api-key"] as string | undefined) ??
       req.headers.authorization?.match(/^Bearer\s+(\S+)$/i)?.[1];
-    if (header !== apiKey) {
+    if (!header || !safeStringEqual(header, apiKey)) {
       res.status(401).json({ error: "unauthorized", message: "Invalid or missing API key" });
       return;
     }

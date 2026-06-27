@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import { createPublicHandler } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
 import { env } from "@/lib/env";
 
@@ -21,151 +21,156 @@ export const dynamic = "force-dynamic";
  * traffic-routing decisions. Does NOT require authentication —
  * kept public but returns no sensitive data.
  */
-export async function GET(_req: NextRequest) {
-  const start = Date.now();
-  const checks: Record<
-    string,
-    { status: "ok" | "degraded" | "down"; latencyMs?: number; detail?: string }
-  > = {};
+export const GET = createPublicHandler(
+  {
+    cacheMaxAge: 0, // Readiness checks should not be cached
+  },
+  async () => {
+    const start = Date.now();
+    const checks: Record<
+      string,
+      { status: "ok" | "degraded" | "down"; latencyMs?: number; detail?: string }
+    > = {};
 
-  // 1. Engine (Subsumio) — critical
-  const engineStart = Date.now();
-  try {
-    const apiKey = env("SUBSUMIO_WEB_API_KEY");
-    const headers: Record<string, string> = {};
-    if (apiKey) headers["x-subsumio-api-key"] = apiKey;
-
-    // Use first real user's brainId as tenant header (Hetzner has REQUIRE_TENANT=true)
+    // 1. Engine (Subsumio) — critical
+    const engineStart = Date.now();
     try {
-      const { getStore } = await import("@/lib/auth/store");
-      const users = await getStore().list();
-      if (Array.isArray(users) && users.length > 0 && users[0].brainId) {
-        headers["x-subsumio-source"] = users[0].brainId;
-      }
-    } catch {}
+      const apiKey = env("SUBSUMIO_WEB_API_KEY");
+      const headers: Record<string, string> = {};
+      if (apiKey) headers["x-subsumio-api-key"] = apiKey;
 
-    const res = await fetch(`${ENGINE_URL}/api/stats`, {
-      headers,
-      signal: AbortSignal.timeout(4_000),
-    });
-    if (res.ok) {
-      checks.engine = { status: "ok", latencyMs: Date.now() - engineStart };
-    } else if (res.status === 400) {
-      // 400 likely means SUBSUMIO_REQUIRE_TENANT=true but no tenant header
-      // was available (e.g. fresh install with no users yet). Fall back to
-      // /health which doesn't require tenant — if that passes, the engine
-      // is alive and the 400 is just the tenant gate, not a real outage.
+      // Use first real user's brainId as tenant header (Hetzner has REQUIRE_TENANT=true)
       try {
-        const healthRes = await fetch(`${ENGINE_URL}/health`, {
-          signal: AbortSignal.timeout(4_000),
-        });
-        checks.engine = healthRes.ok
-          ? { status: "ok", latencyMs: Date.now() - engineStart }
-          : {
-              status: "down",
-              latencyMs: Date.now() - engineStart,
-              detail: `Engine /health returned ${healthRes.status}`,
-            };
-      } catch {
+        const { getStore } = await import("@/lib/auth/store");
+        const users = await getStore().list();
+        if (Array.isArray(users) && users.length > 0 && users[0].brainId) {
+          headers["x-subsumio-source"] = users[0].brainId;
+        }
+      } catch {}
+
+      const res = await fetch(`${ENGINE_URL}/api/stats`, {
+        headers,
+        signal: AbortSignal.timeout(4_000),
+      });
+      if (res.ok) {
+        checks.engine = { status: "ok", latencyMs: Date.now() - engineStart };
+      } else if (res.status === 400) {
+        // 400 likely means SUBSUMIO_REQUIRE_TENANT=true but no tenant header
+        // was available (e.g. fresh install with no users yet). Fall back to
+        // /health which doesn't require tenant — if that passes, the engine
+        // is alive and the 400 is just the tenant gate, not a real outage.
+        try {
+          const healthRes = await fetch(`${ENGINE_URL}/health`, {
+            signal: AbortSignal.timeout(4_000),
+          });
+          checks.engine = healthRes.ok
+            ? { status: "ok", latencyMs: Date.now() - engineStart }
+            : {
+                status: "down",
+                latencyMs: Date.now() - engineStart,
+                detail: `Engine /health returned ${healthRes.status}`,
+              };
+        } catch {
+          checks.engine = {
+            status: "down",
+            latencyMs: Date.now() - engineStart,
+            detail: `Engine returned 400 and /health unreachable`,
+          };
+        }
+      } else {
         checks.engine = {
           status: "down",
           latencyMs: Date.now() - engineStart,
-          detail: `Engine returned 400 and /health unreachable`,
+          detail: `Engine returned ${res.status}`,
         };
       }
-    } else {
+    } catch (err) {
       checks.engine = {
         status: "down",
         latencyMs: Date.now() - engineStart,
-        detail: `Engine returned ${res.status}`,
+        detail: err instanceof Error ? err.message : "unreachable",
       };
     }
-  } catch (err) {
-    checks.engine = {
-      status: "down",
-      latencyMs: Date.now() - engineStart,
-      detail: err instanceof Error ? err.message : "unreachable",
-    };
-  }
 
-  // 2. Auth store — critical
-  const authStart = Date.now();
-  try {
-    const { getStore } = await import("@/lib/auth/store");
-    const users = await getStore().list();
-    checks.auth = {
-      status: Array.isArray(users) ? "ok" : "degraded",
-      latencyMs: Date.now() - authStart,
-    };
-  } catch (err) {
-    checks.auth = {
-      status: "down",
-      latencyMs: Date.now() - authStart,
-      detail: err instanceof Error ? err.message : "store unavailable",
-    };
-  }
+    // 2. Auth store — critical
+    const authStart = Date.now();
+    try {
+      const { getStore } = await import("@/lib/auth/store");
+      const users = await getStore().list();
+      checks.auth = {
+        status: Array.isArray(users) ? "ok" : "degraded",
+        latencyMs: Date.now() - authStart,
+      };
+    } catch (err) {
+      checks.auth = {
+        status: "down",
+        latencyMs: Date.now() - authStart,
+        detail: err instanceof Error ? err.message : "store unavailable",
+      };
+    }
 
-  // 3. Critical env vars
-  const missingCritical: string[] = [];
-  if (!env("AUTH_SECRET")) missingCritical.push("AUTH_SECRET");
-  if (!env("SUBSUMIO_API_URL")) missingCritical.push("SUBSUMIO_API_URL");
-  if (!env("SUBSUMIO_WEB_API_KEY")) missingCritical.push("SUBSUMIO_WEB_API_KEY");
+    // 3. Critical env vars
+    const missingCritical: string[] = [];
+    if (!env("AUTH_SECRET")) missingCritical.push("AUTH_SECRET");
+    if (!env("SUBSUMIO_API_URL")) missingCritical.push("SUBSUMIO_API_URL");
+    if (!env("SUBSUMIO_WEB_API_KEY")) missingCritical.push("SUBSUMIO_WEB_API_KEY");
 
-  checks.config =
-    missingCritical.length === 0
-      ? { status: "ok" }
-      : { status: "down", detail: `Missing: ${missingCritical.join(", ")}` };
-
-  // 4. Optional services — degraded, not down
-  checks.stripe = process.env.STRIPE_SECRET_KEY
-    ? { status: "ok" }
-    : { status: "degraded", detail: "STRIPE_SECRET_KEY not set" };
-
-  checks.sentry =
-    process.env.NEXT_PUBLIC_SENTRY_DSN || process.env.SENTRY_DSN
-      ? { status: "ok" }
-      : { status: "degraded", detail: "SENTRY_DSN not set" };
-
-  checks.email = process.env.RESEND_API_KEY
-    ? { status: "ok" }
-    : { status: "degraded", detail: "RESEND_API_KEY not set" };
-
-  // 5. OCR — enabled by default (agency quality)
-  checks.ocr = { status: "ok" };
-
-  // 6. SMTP — degraded (not down) when not configured (in-app notification fallback active)
-  try {
-    const { loadKanzleiSettings } = await import("@/lib/kanzlei-settings");
-    const smtpSettings = await loadKanzleiSettings();
-    checks.smtp =
-      smtpSettings.smtpHost && smtpSettings.smtpUser && smtpSettings.smtpPassword
+    checks.config =
+      missingCritical.length === 0
         ? { status: "ok" }
-        : {
-            status: "degraded",
-            detail:
-              "SMTP not configured — deadline reminders fall back to in-app notifications only",
-          };
-  } catch {
-    checks.smtp = {
-      status: "degraded",
-      detail: "Kanzlei settings unavailable — SMTP status unknown",
-    };
+        : { status: "down", detail: `Missing: ${missingCritical.join(", ")}` };
+
+    // 4. Optional services — degraded, not down
+    checks.stripe = process.env.STRIPE_SECRET_KEY
+      ? { status: "ok" }
+      : { status: "degraded", detail: "STRIPE_SECRET_KEY not set" };
+
+    checks.sentry =
+      process.env.NEXT_PUBLIC_SENTRY_DSN || process.env.SENTRY_DSN
+        ? { status: "ok" }
+        : { status: "degraded", detail: "SENTRY_DSN not set" };
+
+    checks.email = process.env.RESEND_API_KEY
+      ? { status: "ok" }
+      : { status: "degraded", detail: "RESEND_API_KEY not set" };
+
+    // 5. OCR — enabled by default (agency quality)
+    checks.ocr = { status: "ok" };
+
+    // 6. SMTP — degraded (not down) when not configured (in-app notification fallback active)
+    try {
+      const { loadKanzleiSettings } = await import("@/lib/kanzlei-settings");
+      const smtpSettings = await loadKanzleiSettings();
+      checks.smtp =
+        smtpSettings.smtpHost && smtpSettings.smtpUser && smtpSettings.smtpPassword
+          ? { status: "ok" }
+          : {
+              status: "degraded",
+              detail:
+                "SMTP not configured — deadline reminders fall back to in-app notifications only",
+            };
+    } catch {
+      checks.smtp = {
+        status: "degraded",
+        detail: "Kanzlei settings unavailable — SMTP status unknown",
+      };
+    }
+
+    // Determine overall status: critical checks (engine, auth, config) must be ok
+    const criticalKeys = ["engine", "auth", "config"];
+    const anyCriticalDown = criticalKeys.some((k) => checks[k]?.status === "down");
+    const allOk = Object.values(checks).every((c) => c.status === "ok");
+
+    const status = anyCriticalDown ? 503 : 200;
+    const overall = anyCriticalDown ? "down" : allOk ? "ok" : "degraded";
+
+    return Response.json(
+      {
+        status: overall,
+        durationMs: Date.now() - start,
+        checks,
+      },
+      { status }
+    );
   }
-
-  // Determine overall status: critical checks (engine, auth, config) must be ok
-  const criticalKeys = ["engine", "auth", "config"];
-  const anyCriticalDown = criticalKeys.some((k) => checks[k]?.status === "down");
-  const allOk = Object.values(checks).every((c) => c.status === "ok");
-
-  const status = anyCriticalDown ? 503 : 200;
-  const overall = anyCriticalDown ? "down" : allOk ? "ok" : "degraded";
-
-  return Response.json(
-    {
-      status: overall,
-      durationMs: Date.now() - start,
-      checks,
-    },
-    { status }
-  );
-}
+);

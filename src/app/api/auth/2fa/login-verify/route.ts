@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getStore, toPublic } from "@/lib/auth/store";
 import { signSession, SESSION_COOKIE, SESSION_TTL_SECONDS } from "@/lib/auth/session";
 import { verifyActionToken, bindFragment } from "@/lib/auth/tokens";
 import { verifyTOTP } from "@/lib/totp";
 import { verifyBackupCode } from "@/lib/auth/backup-codes";
-import { clientIp } from "@/lib/auth/rate-limit";
+import { clientIp, hit } from "@/lib/auth/rate-limit";
 import { logAudit } from "@/lib/audit";
 import { createPublicHandler, apiError } from "@/lib/api-handler";
 import { z } from "zod";
@@ -24,8 +24,8 @@ const loginVerifySchema = z.object({
 export const POST = createPublicHandler(
   {
     body: loginVerifySchema,
-    rateLimitKey: (_req) => `2fa:login`, // Per-user rate limiting handled in handler
-    rateLimitMax: 5,
+    rateLimitKey: (req) => `2fa:login:ip:${clientIp(req.headers)}`,
+    rateLimitMax: 20,
     rateLimitWindowMs: 5 * 60 * 1000,
   },
   async (req, body) => {
@@ -48,6 +48,15 @@ export const POST = createPublicHandler(
     const expectedBind = await bindFragment(user.id + user.passwordHash);
     if (payload.bind !== expectedBind) {
       return apiError("invalid_challenge", "Invalid challenge token", 401);
+    }
+
+    // Per-user rate limit: 5 attempts per 5 minutes (brute-force protection)
+    const userRl = await hit(`2fa:login:user:${user.id}`, 5, 5 * 60 * 1000);
+    if (!userRl.ok) {
+      return Response.json(
+        { error: "rate_limited", message: "Zu viele 2FA-Versuche. Bitte später versuchen." },
+        { status: 429, headers: { "Retry-After": String(userRl.retryAfterSeconds) } },
+      );
     }
 
     // Try TOTP first, then backup codes as fallback

@@ -84,6 +84,14 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   }
 
   if (!res.ok) {
+    // Session expired → redirect to login (browser only)
+    if (res.status === 401 && typeof window !== "undefined") {
+      const loginUrl = new URL("/login", window.location.origin);
+      loginUrl.searchParams.set("next", window.location.pathname);
+      window.location.href = loginUrl.toString();
+      throw new ApiRequestError("Session expired — redirecting to login", 401, "session_expired");
+    }
+
     const error = await res.text().catch(() => "");
     if (error) {
       try {

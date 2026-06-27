@@ -15,7 +15,7 @@ export class ApiGetError extends Error {
   }
 }
 
-async function apiGet<T>(path: string): Promise<T> {
+export async function apiGet<T>(path: string): Promise<T> {
   const res = await fetch(path, { signal: AbortSignal.timeout(30_000) });
 
   if (res.status === 401 && typeof window !== "undefined") {

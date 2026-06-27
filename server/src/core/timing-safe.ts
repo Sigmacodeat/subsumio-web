@@ -32,3 +32,21 @@ export function safeHexEqual(a: string, b: string): boolean {
   if (a.length !== b.length) return false;
   return timingSafeEqual(Buffer.from(a, 'hex'), Buffer.from(b, 'hex'));
 }
+
+/**
+ * True iff `a` and `b` are equal-length strings with the same UTF-8 bytes.
+ * False on length mismatch (does NOT throw).
+ *
+ * Constant-time over the byte compare. Length mismatch short-circuits,
+ * which is acceptable because the length of a well-known secret format is
+ * not a secret (e.g. gbrain_ prefix + 64 hex chars).
+ *
+ * Use this for API keys and other bearer tokens where the input is a
+ * plain string, not hex-encoded bytes.
+ */
+export function safeStringEqual(a: string, b: string): boolean {
+  const aBuf = Buffer.from(a, 'utf8');
+  const bBuf = Buffer.from(b, 'utf8');
+  if (aBuf.length !== bBuf.length) return false;
+  return timingSafeEqual(aBuf, bBuf);
+}

@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { csrfFetch } from "@/lib/csrf";
+import { apiGet } from "@/lib/queries/settings";
 
 export type AgentStatus =
   | "waiting"
@@ -139,10 +140,8 @@ export function useAgents() {
   return useQuery<AgentJob[]>({
     queryKey: ["agents"],
     queryFn: async () => {
-      const res = await fetch("/api/agents", { signal: AbortSignal.timeout(30_000) });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      if (!data.jobs || data.jobs.length === 0) return [];
+      const data = await apiGet<{ jobs?: Record<string, unknown>[] }>("/api/agents");
+      if (!data?.jobs || data.jobs.length === 0) return [];
       return data.jobs.map(mapJob);
     },
     refetchInterval: (query) => {
@@ -157,10 +156,8 @@ export function useAgentInbox(jobId: number, enabled: boolean) {
   return useQuery<InboxMessage[]>({
     queryKey: ["agents", jobId, "inbox"],
     queryFn: async () => {
-      const res = await fetch(`/api/agents/${jobId}/inbox`, { signal: AbortSignal.timeout(30_000) });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      return (data.messages ?? []) as InboxMessage[];
+      const data = await apiGet<{ messages?: InboxMessage[] }>(`/api/agents/${jobId}/inbox`);
+      return (data?.messages ?? []) as InboxMessage[];
     },
     enabled,
     refetchInterval: enabled ? 3000 : false,
@@ -255,10 +252,8 @@ export function useRundown() {
   return useQuery<AgentJob[]>({
     queryKey: ["agents", "rundown"],
     queryFn: async () => {
-      const res = await fetch("/api/agents?filter=rundown", { signal: AbortSignal.timeout(30_000) });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      if (!data.jobs) return [];
+      const data = await apiGet<{ jobs?: Record<string, unknown>[] }>("/api/agents?filter=rundown");
+      if (!data?.jobs) return [];
       return data.jobs.map(mapJob);
     },
     refetchInterval: (query) => {

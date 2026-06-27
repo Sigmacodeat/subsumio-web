@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getAuthorizationUrl, isConfigured } from "@/lib/workos";
 import { createPublicHandler } from "@/lib/api-handler";
 import { z } from "zod";

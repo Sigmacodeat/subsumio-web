@@ -107,8 +107,8 @@ export const POST = createHandler(
         type: "intake_request",
         content: intake.content,
         frontmatter: intake.frontmatter,
-      signal: AbortSignal.timeout(15_000),
       }),
+      signal: AbortSignal.timeout(15_000),
     });
     if (!res.ok)
       return apiError("intake_create_failed", "Intake konnte nicht erstellt werden", 502);
@@ -154,8 +154,8 @@ export const PATCH = createHandler(
         frontmatter: patch,
         ...(body.summary ? { content: body.summary } : {}),
         merge: true,
-      signal: AbortSignal.timeout(15_000),
       }),
+      signal: AbortSignal.timeout(15_000),
     });
     if (!res.ok)
       return apiError("intake_update_failed", "Intake konnte nicht aktualisiert werden", 502);

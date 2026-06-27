@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { csrfFetch } from "@/lib/csrf";
+import { apiGet } from "@/lib/queries/settings";
 
 export interface SyncStatus {
   lastSyncAt: string | null;
@@ -25,11 +26,7 @@ export interface SyncStatus {
 export function useScimStatus() {
   return useQuery({
     queryKey: ["scim", "status"],
-    queryFn: async () => {
-      const res = await fetch("/api/scim/status", { signal: AbortSignal.timeout(30_000) });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return res.json();
-    },
+    queryFn: () => apiGet<{ data: SyncStatus }>("/api/scim/status"),
     staleTime: 30 * 1000,
   });
 }

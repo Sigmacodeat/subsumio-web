@@ -77,8 +77,8 @@ export const POST = createHandler(
           converted_case_slug: casePage.slug,
           updated_at: now,
         },
-      signal: AbortSignal.timeout(15_000),
       }),
+      signal: AbortSignal.timeout(15_000),
     });
     if (!updateRes.ok) return apiError("intake_update_failed", "Akte erstellt, Intake aber nicht aktualisiert", 502);
 

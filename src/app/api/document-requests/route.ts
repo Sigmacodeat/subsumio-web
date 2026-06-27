@@ -133,8 +133,8 @@ export const POST = createHandler(
         type: "document_request",
         content: request.content,
         frontmatter: request.frontmatter,
-      signal: AbortSignal.timeout(15_000),
       }),
+      signal: AbortSignal.timeout(15_000),
     });
     if (!res.ok)
       return apiError(

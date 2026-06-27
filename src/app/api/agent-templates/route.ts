@@ -139,8 +139,8 @@ export const POST = createHandler(
           content: body.prompt_template,
           type: "agent_template",
           frontmatter,
-        signal: AbortSignal.timeout(15_000),
         }),
+        signal: AbortSignal.timeout(15_000),
       });
 
       if (!res.ok) {
