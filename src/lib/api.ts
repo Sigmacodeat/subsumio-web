@@ -394,6 +394,32 @@ export const api = {
       });
     },
 
+    /** Deep Analysis: narrativer Gesamt-Report über alle ausgewählten Vault-Dokumente. */
+    async deepAnalysis(input: {
+      slugs: string[];
+      prompt?: string;
+      jurisdiction?: "at" | "de" | "ch" | "all";
+    }): Promise<{
+      executive_summary: string;
+      document_count: number;
+      findings: Array<{
+        theme: string;
+        description: string;
+        risk_level: "low" | "medium" | "high" | "critical";
+        affected_documents: string[];
+        citations: Array<{ slug: string; title: string; quote: string }>;
+      }>;
+      cross_document_patterns: string[];
+      overall_risk: "low" | "medium" | "high" | "critical";
+      warnings: string[];
+      attorney_review_required: true;
+    }> {
+      return request("/api/legal/deep-analysis", {
+        method: "POST",
+        body: JSON.stringify(input),
+      });
+    },
+
     /** Contract redlining: streams AI-generated redline suggestions. */
     async contractRedline(input: {
       original_text: string;
@@ -456,6 +482,98 @@ export const api = {
       });
 
       return { redline };
+    },
+
+    /** Contradictions check: cross-check documents in a case for conflicting data. */
+    async contradictionsCheck(caseSlug: string): Promise<{
+      contradictions: Array<{
+        doc_a_slug: string;
+        doc_b_slug: string;
+        field: string;
+        value_a: string;
+        value_b: string;
+        severity: "high" | "medium" | "low";
+        description: string;
+      }>;
+      documents_checked: number;
+      checked_at: string;
+    }> {
+      return request("/api/legal/contradictions", {
+        method: "POST",
+        body: JSON.stringify({ case_slug: caseSlug }),
+      });
+    },
+
+    /** Contradiction probe: fetch semantic contradiction findings from GBrain's nightly probe. */
+    async contradictionProbe(caseSlug: string): Promise<{
+      findings: Array<{
+        chunk_a: string;
+        chunk_b: string;
+        severity: "high" | "medium" | "low" | "info";
+        axis: string | null;
+        explanation: string;
+        slug: string;
+      }>;
+      total: number;
+      last_run: string | null;
+      probe_available: boolean;
+    }> {
+      const params = new URLSearchParams({ case_slug: caseSlug });
+      return request(`/api/legal/contradiction-probe?${params.toString()}`);
+    },
+
+    /** Submit retrieval feedback (thumbs up/down on search results). */
+    async submitRetrievalFeedback(input: {
+      query: string;
+      result_slug: string;
+      result_title?: string;
+      feedback_type: "relevant" | "irrelevant" | "outdated" | "wrong";
+      severity?: "low" | "medium" | "high";
+      comment?: string;
+      rank_position?: number;
+      result_score?: number;
+    }): Promise<{ id: string; created_at: string }> {
+      return request("/api/legal/retrieval-feedback", {
+        method: "POST",
+        body: JSON.stringify(input),
+      });
+    },
+
+    /** Case strategy: generate a strategic recommendation for a case. */
+    async caseStrategy(
+      caseSlug: string,
+      opts?: {
+        jurisdiction?: "at" | "de" | "ch" | "all";
+        language?: "de" | "en";
+      }
+    ): Promise<{
+      summary: string;
+      recommended: string;
+      recommendedApproach: string;
+      risks: Array<{
+        description: string;
+        probability: "high" | "medium" | "low";
+        impact: "high" | "medium" | "low";
+        mitigation: string;
+      }>;
+      next_steps: string[];
+      cost_estimate?: {
+        min: number;
+        max: number;
+        currency: string;
+        basis: string;
+      };
+      success_probability: number;
+      generatedAt: string;
+    }> {
+      return request("/api/legal/case-strategy", {
+        method: "POST",
+        body: JSON.stringify({
+          case_slug: caseSlug,
+          jurisdiction: opts?.jurisdiction ?? "all",
+          language: opts?.language ?? "de",
+        }),
+      });
     },
 
     playbooks: {

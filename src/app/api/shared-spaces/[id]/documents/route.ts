@@ -6,10 +6,10 @@ import { ENGINE_URL } from "@/lib/engine";
 export const maxDuration = 60;
 
 const uploadDocumentSchema = z.object({
-  file_name: z.string().min(1),
-  file_type: z.string().min(1),
+  file_name: z.string().min(1).max(300),
+  file_type: z.string().min(1).max(100),
   file_size: z.number().positive(),
-  storage_path: z.string().min(1),
+  storage_path: z.string().min(1).max(500),
   metadata: z
     .object({
       whatsapp_message_id: z.string().optional(),

@@ -64,10 +64,11 @@ function getTestEmail() {
 }
 
 test.describe("Accessibility (axe-core)", () => {
-  test("public pages have no critical a11y violations", async ({ page }) => {
-    for (const url of PUBLIC_PAGES) {
+  for (const url of PUBLIC_PAGES) {
+    test(`${url} has no critical a11y violations`, async ({ page }) => {
       await page.goto(url, { waitUntil: "load" });
       await page.waitForLoadState("networkidle");
+      await page.waitForTimeout(1_000);
       const accessibilityScanResults = await new AxeBuilder({ page })
         .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
         .analyze();
@@ -75,8 +76,8 @@ test.describe("Accessibility (axe-core)", () => {
         (v) => v.impact === "critical" || v.impact === "serious"
       );
       expect(critical).toHaveLength(0);
-    }
-  });
+    });
+  }
 
   test.describe("dashboard pages", () => {
     test.beforeAll(async ({ browser }) => {
@@ -103,7 +104,13 @@ test.describe("Accessibility (axe-core)", () => {
         const page = await context.newPage();
         try {
           await page.goto(route, { waitUntil: "load" });
-          await page.waitForLoadState("networkidle");
+          await expect(page.locator('meta[http-equiv="refresh"]')).toHaveCount(0, {
+            timeout: 5_000,
+          });
+          // Dashboard pages keep realtime/SSE connections open, so networkidle
+          // is not a valid readiness signal here.
+          await expect(page.locator("#main-content")).toBeVisible();
+          await page.waitForTimeout(1_000);
           const accessibilityScanResults = await new AxeBuilder({ page })
             .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
             .analyze();

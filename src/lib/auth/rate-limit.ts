@@ -20,7 +20,14 @@ interface Window {
   resetAt: number; // epoch ms
 }
 
-const windows = new Map<string, Window>();
+declare global {
+  // Next.js can instantiate the same dependency in separate route bundles and
+  // during Fast Refresh. Keep the per-process fallback truly process-wide so
+  // route-bundle reloads cannot reset brute-force counters.
+  var __subsumioRateLimitWindows: Map<string, Window> | undefined;
+}
+
+const windows = (globalThis.__subsumioRateLimitWindows ??= new Map<string, Window>());
 import { env } from "@/lib/env";
 
 const DATA_DIR = env("SUBSUMIO_DATA_DIR") || path.join(process.cwd(), ".data");

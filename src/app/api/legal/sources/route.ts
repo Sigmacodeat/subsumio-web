@@ -62,7 +62,7 @@ export const GET = createHandler(
 );
 
 const refreshSchema = z.object({
-  source_id: z.string().min(1),
+  source_id: z.string().min(1).max(200),
 });
 
 export const POST = createHandler(

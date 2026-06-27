@@ -8,8 +8,10 @@
 # ── 03:30 UTC (05:30 CEST) — Judgements sync ──
 30 3 * * *     curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/judgements-sync || true
 
-# ── 05:00 UTC (07:00 CEST) — Daily Rundown agent (AI Kanzlei-Briefing) ──
-0 5 * * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/rundown || true
+# ── DISABLED: Daily Rundown agent — was spawning 666 Claude subagents (~$5/day).
+# The deterministic daily-briefing cron at 06:30 UTC covers the same need at $0.
+# Re-enable manually only with budget_remaining_cents set in the route.
+# 0 5 * * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/rundown || true
 
 # ── 06:00 UTC (08:00 CEST) — Daily deadlines digest ──
 0 6 * * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/deadlines || true
@@ -29,8 +31,25 @@
 # ── 02:00 UTC (04:00 CEST) — Nightly case scanner ──
 0 2 * * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/case-scanner || true
 
+# ── 02:30 UTC (04:30 CEST) — Dream cycle (brain maintenance) ──
+# Runs extract_facts, consolidate, synthesize, embed — keeps the brain's
+# structured fact index fresh for contradiction detection and semantic search.
+# Has its own BudgetMeter; cost is bounded by phase config.
+30 2 * * *     curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/dream-cycle || true
+
+# ── 03:00 UTC (05:00 CEST) — Contradiction probe ──
+# Runs eval suspected-contradictions with Haiku judge (~$0.50/day budget cap).
+# Results stored in eval_contradictions_runs; find_contradictions tool reads them.
+# Runs AFTER dream-cycle so the brain's fact index is fresh.
+0 3 * * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/contradiction-probe || true
+
 # ── 08:00 UTC (10:00 CEST) — Retention policy check ──
 0 8 * * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/retention || true
 
 # ── Every hour — Appointment reminders ──
 0 * * * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/appointment-reminders || true
+
+# ── Every hour — Analysis retry (Dead Letter Queue) ──
+# Retries failed document analyses with exponential backoff (1h → 4h → 16h).
+# Max 3 retries, then marks as permanently_failed.
+30 * * * *     curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/analysis-retry || true

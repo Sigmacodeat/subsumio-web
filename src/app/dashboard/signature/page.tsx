@@ -197,7 +197,7 @@ export default function SignaturePage() {
                 href="https://developers.docusign.com/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-indigo-600 hover:underline"
+                className="text-indigo-600 underline underline-offset-2"
               >
                 Docusign
               </a>{" "}

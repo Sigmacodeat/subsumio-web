@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/dialog";
 import { api } from "@/lib/api";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { EvalGateWidget } from "@/components/legal/EvalGateWidget";
 import { useLang } from "@/lib/use-lang";
 import type { TFunc } from "@/content/dashboard";
 import {
@@ -1057,6 +1058,9 @@ export default function MonitoringPage() {
                 </p>
               </div>
             </div>
+
+            {/* Eval Gate */}
+            <EvalGateWidget />
 
             {legacyKeywords.length > 0 && (
               <div className="space-y-3 rounded-xl border border-amber-500/20 bg-amber-500/5 p-5">

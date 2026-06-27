@@ -8,12 +8,12 @@ import { generateBackupCodes, hashBackupCodes } from "@/lib/auth/backup-codes";
 export const dynamic = "force-dynamic";
 
 const verify2faSchema = z.object({
-  token: z.string().min(1),
+  token: z.string().min(1).max(10),
 });
 
 export const POST = createHandler(
   {
-    action: "settings.write",
+    action: "auth.2fa",
     body: verify2faSchema,
     audit: (ctx) => ({
       action: "settings.update",

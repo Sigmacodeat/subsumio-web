@@ -51,6 +51,9 @@ export type AuditAction =
   | "legal.rvg"
   | "legal.statute"
   | "legal.playbook"
+  | "legal.contradictions"
+  | "legal.retrieval_feedback"
+  | "legal.strategy"
   | "settings.update"
   | "billing.upgrade"
   | "onboarding.complete"
@@ -125,6 +128,9 @@ const ACTION_LABELS: Record<string, string> = {
   "legal.playbook": "Playbook geändert",
   "legal.tabular": "Tabellarische Prüfung",
   "legal.statute": "Gesetzessuche",
+  "legal.contradictions": "Widerspruchsprüfung",
+  "legal.retrieval_feedback": "Retrieval-Feedback",
+  "legal.strategy": "Strategie generiert",
   "settings.update": "Einstellungen geändert",
   "billing.upgrade": "Plan geändert",
   "onboarding.complete": "Onboarding abgeschlossen",

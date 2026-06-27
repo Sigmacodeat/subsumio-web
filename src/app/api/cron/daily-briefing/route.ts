@@ -5,6 +5,7 @@ import {
   fetchPendingApprovals,
   fetchRecentCaseActivity,
   fetchRecentDocuments,
+  fetchContradictions,
   getRecipientsByBrain,
   createDailyDedup,
 } from "@/lib/cron-utils";
@@ -16,6 +17,7 @@ import {
   type BriefingApproval,
   type BriefingCaseActivity,
   type BriefingDocument,
+  type BriefingContradiction,
 } from "@/lib/whatsapp/daily-briefing";
 import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
 import { sendMail, isMailConfigured } from "@/lib/mail";
@@ -119,6 +121,7 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
   let empty = 0;
   let emailed = 0;
   const errors: string[] = [];
+  const emailedBrains = new Set<string>();
 
   for (const sender of senders) {
     try {
@@ -137,11 +140,12 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
       const pages = batch["legal_case"] ?? [];
       const standaloneDeadlinePages = batch["legal_deadline"] ?? [];
 
-      // Fetch pending approvals, recent case activity, new documents (deterministic, $0)
-      const [approvalPages, recentCases, recentDocs] = await Promise.all([
+      // Fetch pending approvals, recent case activity, new documents, contradictions (deterministic, $0)
+      const [approvalPages, recentCases, recentDocs, contradictionsRaw] = await Promise.all([
         fetchPendingApprovals(sender.brainId),
         fetchRecentCaseActivity(sender.brainId),
         fetchRecentDocuments(sender.brainId),
+        fetchContradictions(sender.brainId, 10),
       ]);
 
       const approvals: BriefingApproval[] = approvalPages.map((p) => {
@@ -196,6 +200,15 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
         created_at: String(p.created_at ?? new Date().toISOString()),
       }));
 
+      const contradictions: BriefingContradiction[] = contradictionsRaw.map((c) => ({
+        case_slug: c.case_slug,
+        severity: c.severity,
+        chunk_a: c.chunk_a,
+        chunk_b: c.chunk_b,
+        explanation: c.explanation,
+        detected_at: c.detected_at,
+      }));
+
       const baseText = buildDailyBriefing({
         anwaltName: sender.name,
         cases,
@@ -204,6 +217,7 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
         pendingApprovals: approvals,
         caseActivity,
         newDocuments,
+        contradictions,
       });
       if (!baseText) {
         empty++;
@@ -233,8 +247,9 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
       if (result.sent) sent++;
       else blocked++;
 
-      // Email delivery — same content as WhatsApp, sent to all brain recipients
-      if (mailOn) {
+      // Email delivery — once per brain (not per sender), sent to all brain recipients
+      if (mailOn && !emailedBrains.has(sender.brainId)) {
+        emailedBrains.add(sender.brainId);
         const recipients = recipientsByBrain.get(sender.brainId) ?? [];
         const emails = recipients.map((u) => u.email).filter((e): e is string => Boolean(e));
         if (emails.length > 0) {

@@ -32,6 +32,56 @@ import { resolveSpecialist } from "../specialist-defs.ts";
 import { parseMarkdown } from "../../markdown.ts";
 import { groundQuotes, normalizeForMatch, tryParseJSON } from "../../legal/llm-util.ts";
 import { BudgetTracker, BudgetExhausted } from "../../budget/budget-tracker.ts";
+import { classifyLegalDocument, legalDocTypeLabel } from "../../legal/doc-classifier.ts";
+
+// ── Facts Fence Builder ─────────────────────────────────────
+// Generates a ## Facts fence compatible with GBrain's parseFactsFence.
+// The extract_facts cycle phase reads these fences and reconciles them
+// into the facts DB index, enabling semantic contradiction detection.
+
+interface FactRow {
+  claim: string;
+  kind?: string;
+  confidence?: string;
+  visibility?: string;
+  notability?: string;
+  valid_from?: string;
+  valid_until?: string;
+  source?: string;
+  context?: string;
+}
+
+function buildFactsFence(rows: FactRow[]): string {
+  if (rows.length === 0) return "";
+  const lines: string[] = [];
+  lines.push("## Facts");
+  lines.push("");
+  lines.push("<!--- gbrain:facts:begin -->");
+  lines.push(
+    "| # | claim | kind | confidence | visibility | notability | valid_from | valid_until | source | context |"
+  );
+  lines.push(
+    "|---|-------|------|------------|------------|------------|------------|-------------|--------|---------|"
+  );
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i]!;
+    const cells = [
+      String(i + 1),
+      r.claim ?? "",
+      r.kind ?? "fact",
+      r.confidence ?? "1.0",
+      r.visibility ?? "world",
+      r.notability ?? "medium",
+      r.valid_from ?? "",
+      r.valid_until ?? "",
+      r.source ?? "",
+      r.context ?? "",
+    ];
+    lines.push(`| ${cells.join(" | ")} |`);
+  }
+  lines.push("<!--- gbrain:facts:end -->");
+  return lines.join("\n");
+}
 
 export interface LegalPipelineData {
   case_slug: string;
@@ -203,6 +253,44 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
     // ── Load all sub-page texts (haystack for validation) ────
     const allTexts = await loadAllSubPages(engine, data.part_slugs, sourceStamp);
     const allText = allTexts.join("\n\n");
+
+    // ── Layer 0: Semantic document classification (heuristic, $0) ──
+    // Classify each sub-page and stamp frontmatter with doc_type.
+    // Enables filtered search ("only witness statements") and targeted
+    // contradiction detection ("compare all medical reports").
+    if (shouldRunLayer(1)) {
+      for (let i = 0; i < data.part_slugs.length; i++) {
+        const partSlug = data.part_slugs[i]!;
+        const partText = allTexts[i] ?? "";
+        if (!partText) continue;
+        const classification = classifyLegalDocument(partText);
+        try {
+          const existing = await engine.getPage(partSlug);
+          if (existing) {
+            const fm = (existing.frontmatter ?? {}) as Record<string, unknown>;
+            if (!fm.doc_type || fm.doc_type === "legal_document") {
+              await engine.putPage(
+                partSlug,
+                {
+                  type: existing.type,
+                  title: existing.title,
+                  compiled_truth: existing.compiled_truth ?? "",
+                  frontmatter: {
+                    ...fm,
+                    doc_type: classification.type,
+                    doc_type_label: legalDocTypeLabel(classification.type),
+                    doc_type_confidence: classification.confidence.toFixed(2),
+                  },
+                },
+                { sourceId: sourceStamp }
+              );
+            }
+          }
+        } catch {
+          // Classification is best-effort — don't fail the pipeline if a page can't be updated
+        }
+      }
+    }
 
     try {
       // ── Layer 1: ON-Scanner (with retry on validation fail) ───
@@ -1309,6 +1397,36 @@ async function writeEntityPages(
         lines.push(`- **${k}**: ${String(v)}`);
       }
     }
+    // Facts fence: structured facts for extract_facts cycle phase
+    const factRows: FactRow[] = [
+      {
+        claim: `Rolle im Fall: ${e.role}`,
+        kind: "fact",
+        confidence: "1.0",
+        visibility: "world",
+        notability: "high",
+        source: `ON ${e.on_references.join(", ")}`,
+        context: caseSlug,
+      },
+      ...(e.aliases.length > 0
+        ? [
+            {
+              claim: `Auch bekannt als: ${e.aliases.join(", ")}`,
+              kind: "fact",
+              confidence: "1.0",
+              visibility: "world",
+              notability: "medium",
+              source: `ON ${e.on_references.join(", ")}`,
+              context: caseSlug,
+            },
+          ]
+        : []),
+    ];
+    const factsFence = buildFactsFence(factRows);
+    if (factsFence) {
+      lines.push("");
+      lines.push(factsFence);
+    }
     const md = lines.join("\n");
     const parsed = parseMarkdown(md);
     await engine.putPage(
@@ -1333,7 +1451,72 @@ async function writeForensicReportPage(
   report: ForensicReport,
   sourceId?: string
 ): Promise<void> {
-  const md = `---\ntitle: "Forensischer Bericht — ${caseSlug}"\ntype: forensic_report\ncase_ref: ${caseSlug}\nstatus: draft\ncritic_score: 0\n---\n\n${JSON.stringify(report, null, 2)}`;
+  const lines: string[] = [];
+  lines.push("---");
+  lines.push(`title: "Forensischer Bericht — ${caseSlug}"`);
+  lines.push(`type: forensic_report`);
+  lines.push(`case_ref: ${caseSlug}`);
+  lines.push(`status: draft`);
+  lines.push(`critic_score: 0`);
+  lines.push("---");
+  lines.push("");
+  lines.push("## Bericht");
+  lines.push("");
+  lines.push("```json");
+  lines.push(JSON.stringify(report, null, 2));
+  lines.push("```");
+
+  // Facts fence: forensic findings as structured facts
+  const factRows: FactRow[] = [];
+  for (const item of report.chronologie ?? []) {
+    const datum = String(item.datum ?? "");
+    const ereignis = String(item.ereignis ?? "");
+    const on = String(item.on ?? "");
+    if (ereignis) {
+      factRows.push({
+        claim: `Chronologie: ${ereignis}${datum ? ` (${datum})` : ""}`,
+        kind: "fact",
+        confidence: "0.9",
+        notability: "high",
+        source: on ? `ON ${on}` : "forensic-report",
+        context: caseSlug,
+      });
+    }
+  }
+  for (const item of report.unterlassene_massnahmen ?? []) {
+    const massnahme = String(item.massnahme ?? "");
+    if (massnahme) {
+      factRows.push({
+        claim: `Unterlassene Maßnahme: ${massnahme}`,
+        kind: "fact",
+        confidence: "0.85",
+        notability: "high",
+        source: String(item.beantragt_on ?? "forensic-report"),
+        context: caseSlug,
+      });
+    }
+  }
+  for (const item of report.amtshaftungspunkte ?? []) {
+    const punkt = String(item.punkt ?? "");
+    const paragraph = String(item.paragraph ?? "");
+    if (punkt) {
+      factRows.push({
+        claim: `Amtshaftung: ${punkt}${paragraph ? ` (${paragraph})` : ""}`,
+        kind: "fact",
+        confidence: "0.85",
+        notability: "high",
+        source: String(item.on ?? "forensic-report"),
+        context: caseSlug,
+      });
+    }
+  }
+  const factsFence = buildFactsFence(factRows);
+  if (factsFence) {
+    lines.push("");
+    lines.push(factsFence);
+  }
+
+  const md = lines.join("\n");
   const parsed = parseMarkdown(md);
   await engine.putPage(
     slug,
@@ -1369,6 +1552,20 @@ async function writeDamageTablePage(
     lines.push(
       `| ${e.position} | ${e.topf} | ${e.betrag} ${e.waehrung} | ${e.beleg_on} | ${e.status} | ${e.begruendung} |`
     );
+  }
+  // Facts fence: damage positions as structured facts
+  const factRows: FactRow[] = entries.map((e) => ({
+    claim: `Schadensposition: ${e.position} — ${e.betrag} ${e.waehrung} (${e.topf}, Status: ${e.status})`,
+    kind: "fact",
+    confidence: e.status === "EISEN" ? "0.95" : e.status === "STARK" ? "0.8" : "0.6",
+    notability: "high",
+    source: e.beleg_on,
+    context: caseSlug,
+  }));
+  const factsFence = buildFactsFence(factRows);
+  if (factsFence) {
+    lines.push("");
+    lines.push(factsFence);
   }
   const md = lines.join("\n");
   const parsed = parseMarkdown(md);
@@ -1406,6 +1603,22 @@ async function writeDeadlineCalendarPage(
     lines.push(
       `| ${e.datum} | ${e.ampel} | ${e.frist} | ${e.rechtsgrundlage ?? ""} | ${e.folge_bei_versaeumnis} | ${e.beleg_on} |`
     );
+  }
+  // Facts fence: deadlines as structured facts
+  const factRows: FactRow[] = entries.map((e) => ({
+    claim: `Frist: ${e.frist} am ${e.datum} — ${e.folge_bei_versaeumnis}`,
+    kind: "fact",
+    confidence: "1.0",
+    notability: e.ampel === "rot" ? "high" : e.ampel === "gelb" ? "medium" : "low",
+    valid_from: "",
+    valid_until: e.datum,
+    source: e.beleg_on,
+    context: caseSlug,
+  }));
+  const factsFence = buildFactsFence(factRows);
+  if (factsFence) {
+    lines.push("");
+    lines.push(factsFence);
   }
   const md = lines.join("\n");
   const parsed = parseMarkdown(md);

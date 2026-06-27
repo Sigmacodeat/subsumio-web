@@ -138,7 +138,12 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
                 body: emailBody,
                 type: "billing_dunning",
               }),
-            }).catch(() => {}); // fire-and-forget
+            }).catch((err) =>
+              console.warn(
+                "[stripe-webhook] dunning notification failed:",
+                err instanceof Error ? err.message : err
+              )
+            ); // fire-and-forget
           } catch {
             /* non-fatal */
           }
@@ -182,7 +187,12 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
                   body: emailBody,
                   type: "billing_reactivated",
                 }),
-              }).catch(() => {});
+              }).catch((err) =>
+                console.warn(
+                  "[stripe-webhook] reactivation notification failed:",
+                  err instanceof Error ? err.message : err
+                )
+              );
             } catch {
               /* non-fatal */
             }

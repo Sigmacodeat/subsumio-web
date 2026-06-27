@@ -7,12 +7,12 @@ import type { AuditSpec } from "@/lib/api-handler";
 export const maxDuration = 30;
 
 const documentToSpaceSchema = z.object({
-  whatsapp_message_id: z.string().min(1),
-  shared_space_id: z.string().min(1).optional(),
-  file_name: z.string().min(1),
-  file_type: z.string().min(1),
+  whatsapp_message_id: z.string().min(1).max(200),
+  shared_space_id: z.string().min(1).max(200).optional(),
+  file_name: z.string().min(1).max(300),
+  file_type: z.string().min(1).max(100),
   file_size: z.number().positive(),
-  storage_path: z.string().min(1),
+  storage_path: z.string().min(1).max(500),
 });
 
 export const POST = createHandler(

@@ -65,10 +65,11 @@ Regeln:
 - Bewerte Stärken und Schwächen des Falls strukturiert.
 - Nutze get_page, um frühere Fälle der Kanzlei zu lesen und Muster zu erkennen.
 - Nutze traverse_graph, um Beziehungen zwischen Gerichten, Gegnern und Ergebnissen zu erkunden.
+- Nutze find_contradictions, um bekannte Widersprüche im Fall zu finden (Zeuge A vs Zeuge B, Kläger vs Beklagter).
 - Gib IMMER eine "Konfidenz" an (hoch/mittel/niedrig) für jede Bewertung.
 - Nenne konkrete Daten: Erfolgsquoten, Settlement-Bereiche, Zeitrahmen.
 - Formuliere neutral — keine Rechtsberatung. Endet mit: "Diese Bewertung ersetzt keine anwaltliche Prüfung."`,
-    allowedTools: LEGAL_BRAIN_TOOLS,
+    allowedTools: [...LEGAL_BRAIN_TOOLS, "find_contradictions"],
     maxTurns: 20,
     model: "anthropic:claude-sonnet-4-6",
   },
@@ -138,8 +139,9 @@ AGENTIC SEARCH (iterativ):
 - Wenn ein Zitat nicht im Originalakt gefunden wird: issue mit severity "critical" und "ZITAT HALLUZINIERT".
 - Suche iterativ: bei unklarer Stelle im Akt, nutze search mit Stichworten aus dem Zitat
   um die Originalstelle zu finden. Wenn nach 2 Iterationen nicht gefunden → halluziniert.
-- Nutze traverse_graph um Querverweise zwischen Output-Pages zu prüfen (ON-Tabelle ↔ Forensic Report).`,
-    allowedTools: [...LEGAL_BRAIN_TOOLS, "perplexity_research"],
+- Nutze traverse_graph um Querverweise zwischen Output-Pages zu prüfen (ON-Tabelle ↔ Forensic Report).
+- Nutze find_contradictions, um bekannte Widersprüche im Fall zu finden und als Issues zu markieren.`,
+    allowedTools: [...LEGAL_BRAIN_TOOLS, "find_contradictions", "perplexity_research"],
     maxTurns: 20,
     model: "anthropic:claude-opus-4-7",
   },

@@ -33,6 +33,7 @@ import type { BrainEngine } from "../../engine.ts";
 import { MinionQueue } from "../queue.ts";
 import { resolveSpecialist } from "../specialist-defs.ts";
 import { parseMarkdown } from "../../markdown.ts";
+import { inheritBudgetOwner } from "../budget-tracker.ts";
 
 export interface SupervisorHandlerData {
   prompt: string;
@@ -200,6 +201,11 @@ export function makeSupervisorHandler(opts: { engine: BrainEngine }) {
           },
           { allowProtectedSubmit: true }
         );
+        // Propagate budget ownership from supervisor to child so
+        // reserveBudget() in the subagent turn loop can deduct from
+        // the owner's budget_remaining_cents. Without this, children
+        // have budget_owner_job_id = NULL and bypass the cap silently.
+        await inheritBudgetOwner(engine, child.id, ctx.id);
         waveChildIds.push(child.id);
         childIdToStep.set(child.id, stepIdx);
         launched++;

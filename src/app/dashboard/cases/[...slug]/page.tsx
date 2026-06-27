@@ -47,6 +47,7 @@ import {
   RotateCcw,
   CloudUpload,
   Activity,
+  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -65,11 +66,13 @@ import type { BrainPage, SearchResult } from "@/lib/types";
 import type { DashboardKey } from "@/content/dashboard";
 import { CitationLink, parseCitations } from "@/components/legal/CitationLink";
 import CommentThread from "@/components/legal/CommentThread";
+import { RetrievalFeedbackButtons } from "@/components/legal/RetrievalFeedbackButtons";
 import {
   ContactCreateDialog,
   type ContactCreateResult,
 } from "@/components/legal/ContactCreateDialog";
 import { CaseOverviewWidgets } from "@/components/legal/CaseOverviewWidgets";
+import { PipelinePanel } from "@/components/legal/PipelinePanel";
 import {
   checkInternalConflict,
   type ContactRef,
@@ -159,6 +162,7 @@ export interface CaseDetail {
   deadlines: DeadlineEntry[];
   suggestedDeadlines?: SuggestedDeadline[];
   suggestedParties?: SuggestedParty[];
+  contradictions?: ContradictionFinding[];
   portalEnabled: boolean;
   portalNote?: string;
   auditLog?: AuditLogEntry[];
@@ -183,6 +187,16 @@ interface SuggestedParty {
   confirmed: boolean;
 }
 
+interface ContradictionFinding {
+  doc_a_slug: string;
+  doc_b_slug: string;
+  field: string;
+  value_a: string;
+  value_b: string;
+  severity: "high" | "medium" | "low";
+  description: string;
+}
+
 const STATUS_CONFIG: Record<
   string,
   { labelKey: string; icon: React.ElementType; color: StatusColor }
@@ -202,6 +216,8 @@ const WORKSPACE_TABS_DE: Array<{ key: string; label: string; icon: React.Element
   { key: "documents", label: "Dokumente", icon: FolderOpen },
   { key: "deadlines_tasks", label: "Fristen", icon: CalendarClock },
   { key: "evidence", label: "Belege", icon: ShieldAlert },
+  { key: "contradictions", label: "Widersprüche", icon: AlertTriangle },
+  { key: "pipeline", label: "Pipeline", icon: Activity },
   { key: "strategy", label: "KI", icon: Sparkles },
   { key: "billing", label: "Abrechnung", icon: Receipt },
   { key: "activity", label: "Verlauf", icon: Activity },
@@ -212,6 +228,8 @@ const WORKSPACE_TABS_EN: Array<{ key: string; label: string; icon: React.Element
   { key: "documents", label: "Documents", icon: FolderOpen },
   { key: "deadlines_tasks", label: "Deadlines", icon: CalendarClock },
   { key: "evidence", label: "Evidence", icon: ShieldAlert },
+  { key: "contradictions", label: "Contradictions", icon: AlertTriangle },
+  { key: "pipeline", label: "Pipeline", icon: Activity },
   { key: "strategy", label: "AI", icon: Sparkles },
   { key: "billing", label: "Billing", icon: Receipt },
   { key: "activity", label: "Activity", icon: Activity },
@@ -259,6 +277,9 @@ function parseCaseDetail(page: BrainPage): CaseDetail {
     deadlines: fm.deadlines || [],
     suggestedDeadlines: (fm.suggested_deadlines || []) as SuggestedDeadline[],
     suggestedParties: (fm.suggested_parties || []) as SuggestedParty[],
+    contradictions: (Array.isArray(fm.contradictions)
+      ? fm.contradictions
+      : []) as ContradictionFinding[],
     portalEnabled: fm.portal_enabled || false,
     portalNote: fm.portal_note || undefined,
     auditLog: (fm.audit_log || []) as AuditLogEntry[],
@@ -370,6 +391,19 @@ export default function CaseDetailPage() {
   const [linkSearchResults, setLinkSearchResults] = useState<SearchResult[]>([]);
   const [linkSearching, setLinkSearching] = useState(false);
   const [portalUrl, setPortalUrl] = useState<string | null>(null);
+  const [probeFindings, setProbeFindings] = useState<
+    Array<{
+      chunk_a: string;
+      chunk_b: string;
+      severity: "high" | "medium" | "low" | "info";
+      axis: string | null;
+      explanation: string;
+      slug: string;
+    }>
+  >([]);
+  const [probeLoading, setProbeLoading] = useState(false);
+  const [probeLastRun, setProbeLastRun] = useState<string | null>(null);
+  const [probeAvailable, setProbeAvailable] = useState(false);
   const [generatingPortal, setGeneratingPortal] = useState(false);
   const [userRole, setUserRole] = useState<string>("lawyer");
   const [currentUserName, setCurrentUserName] = useState<string>("System");
@@ -452,6 +486,9 @@ export default function CaseDetailPage() {
     }>
   >([]);
   const [aiEvidenceLoading, setAiEvidenceLoading] = useState(false);
+
+  // P3: Strategy generation loading state
+  const [strategyLoading, setStrategyLoading] = useState(false);
 
   // RHF forms
   const deadlineForm = useForm<DeadlineFormData>({
@@ -786,7 +823,12 @@ export default function CaseDetailPage() {
             })
           );
         })
-        .catch(() => {});
+        .catch((err) =>
+          console.warn(
+            "[case] Failed to reload parties on focus:",
+            err instanceof Error ? err.message : err
+          )
+        );
     };
     window.addEventListener("focus", onFocus);
     return () => window.removeEventListener("focus", onFocus);
@@ -940,6 +982,34 @@ export default function CaseDetailPage() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, caseData?.documents.length]);
+
+  // Fetch semantic contradiction probe findings when contradictions tab is active
+  useEffect(() => {
+    if (!caseData || activeTab !== "contradictions") return;
+    let cancelled = false;
+    setProbeLoading(true);
+    (async () => {
+      try {
+        const result = await api.legal.contradictionProbe(caseData.slug);
+        if (!cancelled) {
+          setProbeFindings(result.findings);
+          setProbeLastRun(result.last_run);
+          setProbeAvailable(result.probe_available);
+        }
+      } catch {
+        if (!cancelled) {
+          setProbeFindings([]);
+          setProbeAvailable(false);
+        }
+      } finally {
+        if (!cancelled) setProbeLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, caseData?.slug]);
 
   // P3.1/P3.5: Multi-file upload with progress + client-side validation
   async function handleMultiUpload(files: File[]) {
@@ -1482,7 +1552,21 @@ export default function CaseDetailPage() {
     extraction_status?: string;
     ocr_status?: string;
     extraction_unverified?: boolean;
+    analysis_status?: string;
   }) {
+    // Analysis status takes priority — if analysis failed or is retrying,
+    // that's the most actionable signal for the user.
+    const as = doc.analysis_status;
+    if (as === "failed")
+      return { key: "analysis_failed", color: "bg-red-500/10 border-red-500/20 text-red-600" };
+    if (as === "retrying")
+      return { key: "analysis_retrying", color: "bg-blue-500/10 border-blue-500/20 text-blue-600" };
+    if (as === "permanently_failed")
+      return {
+        key: "analysis_permanently_failed",
+        color: "bg-red-500/10 border-red-500/20 text-red-600",
+      };
+
     const es = doc.extraction_status;
     if (es === "confirmed" || (es === "text_layer" && !doc.extraction_unverified))
       return {
@@ -2519,28 +2603,118 @@ export default function CaseDetailPage() {
             )}
 
             {/* Strategy */}
-            {caseData.strategy && (
-              <div className="brand-border brand-soft rounded-xl border p-4">
-                <h3 className="brand-text mb-2 text-sm font-semibold">
-                  {t("cases.detail_strategy")}
-                </h3>
-                <p className="mb-3 text-sm text-[color:var(--ds-text-muted)]">
-                  {caseData.strategy.recommended}
+            <div className="brand-border brand-soft rounded-xl border p-4">
+              <div className="mb-2 flex items-center justify-between">
+                <h3 className="brand-text text-sm font-semibold">{t("cases.detail_strategy")}</h3>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  disabled={caseData?.status === "archived" || strategyLoading}
+                  onClick={async () => {
+                    if (!caseData) return;
+                    setStrategyLoading(true);
+                    try {
+                      const result = await api.legal.caseStrategy(caseData.slug);
+                      setCaseData({
+                        ...caseData,
+                        strategy: {
+                          summary: result.summary,
+                          recommended: result.recommended,
+                          recommendedApproach: result.recommendedApproach,
+                          risks: result.risks.map((r) => ({
+                            description: r.description,
+                            probability: r.probability,
+                            impact: r.impact,
+                          })),
+                          generatedAt: result.generatedAt,
+                        },
+                      });
+                    } catch (err) {
+                      setSaveError(
+                        err instanceof Error ? err.message : "Strategie-Generierung fehlgeschlagen"
+                      );
+                    } finally {
+                      setStrategyLoading(false);
+                    }
+                  }}
+                  className="text-xs"
+                >
+                  {strategyLoading ? (
+                    <Loader2 size={12} className="animate-spin" />
+                  ) : (
+                    <Sparkles size={12} />
+                  )}
+                  {caseData?.strategy ? "Neu generieren" : "Strategie generieren"}
+                </Button>
+              </div>
+              {caseData?.strategy ? (
+                <>
+                  <p className="mb-3 text-sm text-[color:var(--ds-text-muted)]">
+                    {caseData.strategy.recommended}
+                  </p>
+                  {caseData.strategy.recommendedApproach && (
+                    <p className="mb-3 text-xs text-[color:var(--ds-text-muted)]">
+                      {caseData.strategy.recommendedApproach}
+                    </p>
+                  )}
+                  {caseData.strategy.risks && caseData.strategy.risks.length > 0 && (
+                    <div className="mt-3">
+                      <h4 className="mb-1 text-xs font-semibold text-red-600">
+                        {t("cases.detail_risks")}
+                      </h4>
+                      <ul className="space-y-1">
+                        {(caseData.strategy.risks ?? []).map((r, i) => (
+                          <li key={i} className="text-xs text-[color:var(--ds-text-muted)]">
+                            • {r.description} ({r.probability} / {r.impact})
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p className="text-sm text-[color:var(--ds-text-muted)]">
+                  Noch keine Strategie generiert. Klicken Sie auf &ldquo;Strategie generieren&rdquo;
+                  für eine KI-gestützte Empfehlung.
                 </p>
-                {caseData.strategy.risks && caseData.strategy.risks.length > 0 && (
-                  <div className="mt-3">
-                    <h4 className="mb-1 text-xs font-semibold text-red-600">
-                      {t("cases.detail_risks")}
-                    </h4>
-                    <ul className="space-y-1">
-                      {(caseData.strategy.risks ?? []).map((r, i) => (
-                        <li key={i} className="text-xs text-[color:var(--ds-text-muted)]">
-                          • {r.description} ({r.probability} / {r.impact})
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+              )}
+            </div>
+
+            {/* Contradictions */}
+            {caseData.contradictions && caseData.contradictions.length > 0 && (
+              <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">
+                <div className="mb-2 flex items-center gap-2">
+                  <AlertTriangle size={14} className="text-amber-600" />
+                  <h3 className="text-sm font-semibold text-amber-700">
+                    Widersprüche erkannt ({caseData.contradictions.length})
+                  </h3>
+                </div>
+                <div className="space-y-2">
+                  {caseData.contradictions.map((c, i) => (
+                    <div
+                      key={i}
+                      className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3"
+                    >
+                      <div className="mb-1 flex items-center gap-2">
+                        <Badge
+                          variant={c.severity === "high" ? "danger" : "warning"}
+                          className="text-[10px]"
+                        >
+                          {c.severity}
+                        </Badge>
+                        <span className="text-xs font-medium text-[color:var(--ds-text)]">
+                          {c.field}
+                        </span>
+                      </div>
+                      <p className="text-xs text-[color:var(--ds-text-muted)]">{c.description}</p>
+                      <div className="mt-2 flex items-center gap-2 text-[11px] text-[color:var(--ds-text-muted)]">
+                        <span className="truncate">{c.value_a}</span>
+                        <span className="shrink-0 text-amber-600">vs</span>
+                        <span className="truncate">{c.value_b}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
@@ -2921,6 +3095,15 @@ export default function CaseDetailPage() {
                   <option value="Korrespondenz">Korrespondenz</option>
                   <option value="Vertrag">Vertrag</option>
                   <option value="Sonstiges">Sonstiges</option>
+                  <option value="witness_statement">Zeugenaussage</option>
+                  <option value="expert_report">Gutachten</option>
+                  <option value="medical_report">Arztbericht</option>
+                  <option value="court_order">Gerichtsbeschluss</option>
+                  <option value="court_judgment">Urteil</option>
+                  <option value="pleading">Schriftsatz (KI)</option>
+                  <option value="invoice">Rechnung</option>
+                  <option value="police_report">Ermittlungsakte</option>
+                  <option value="financial_record">Finanzunterlage</option>
                 </select>
               </div>
               <Button
@@ -3066,7 +3249,12 @@ export default function CaseDetailPage() {
             ) : (
               <div className="space-y-2">
                 {caseData.documents
-                  .filter((d) => docTypeFilter === "all" || d.kind === docTypeFilter)
+                  .filter(
+                    (d) =>
+                      docTypeFilter === "all" ||
+                      d.kind === docTypeFilter ||
+                      d.doc_type === docTypeFilter
+                  )
                   .map((doc) => (
                     <div
                       key={doc.id}
@@ -3083,6 +3271,18 @@ export default function CaseDetailPage() {
                               {doc.kind}
                             </Badge>
                           )}
+                          {doc.doc_type_label &&
+                            doc.doc_type &&
+                            doc.doc_type !== "legal_document" && (
+                              <Badge variant="info" className="shrink-0 text-[10px]">
+                                {doc.doc_type_label}
+                              </Badge>
+                            )}
+                          {doc.privileged && (
+                            <Badge variant="warning" className="shrink-0 text-[10px]">
+                              {lang === "en" ? "Privileged" : "Privilegiert"}
+                            </Badge>
+                          )}
                           {(() => {
                             const ps = docProcessingStatus(doc);
                             const labelMap: Record<string, string> = {
@@ -3093,6 +3293,9 @@ export default function CaseDetailPage() {
                               ocr_needed: t("cases.detail_doc_status_ocr_needed"),
                               text_layer: t("cases.detail_doc_status_text_layer"),
                               uploaded: t("cases.detail_doc_status_uploaded"),
+                              analysis_failed: "Analyse fehlgeschlagen",
+                              analysis_retrying: "Analyse wird wiederholt",
+                              analysis_permanently_failed: "Analyse dauerhaft fehlgeschlagen",
                             };
                             return (
                               <span
@@ -4569,6 +4772,178 @@ export default function CaseDetailPage() {
           </div>
         )}
 
+        {activeTab === "contradictions" && (
+          <div className="max-w-3xl space-y-4">
+            {/* Semantic contradiction probe findings */}
+            <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle size={16} className="text-[color:var(--ds-text-secondary)]" />
+                  <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+                    {lang === "en" ? "Semantic Contradictions" : "Semantische Widersprüche"}
+                  </h3>
+                </div>
+                {probeLastRun && (
+                  <span className="text-xs text-[color:var(--ds-text-secondary)]">
+                    {lang === "en" ? "Last probe:" : "Letzter Scan:"}{" "}
+                    {new Date(probeLastRun).toLocaleDateString(lang === "en" ? "en-US" : "de-DE", {
+                      day: "2-digit",
+                      month: "short",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                )}
+              </div>
+
+              {probeLoading ? (
+                <div className="flex items-center gap-2 py-4 text-sm text-[color:var(--ds-text-secondary)]">
+                  <Loader2 size={14} className="animate-spin" />
+                  {lang === "en"
+                    ? "Loading contradiction findings..."
+                    : "Widersprüche werden geladen..."}
+                </div>
+              ) : probeFindings.length > 0 ? (
+                <div className="space-y-2">
+                  {probeFindings.map((f, i) => (
+                    <div
+                      key={i}
+                      className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] p-3"
+                    >
+                      <div className="mb-2 flex items-center gap-2">
+                        <Badge
+                          variant={
+                            f.severity === "high"
+                              ? "danger"
+                              : f.severity === "medium"
+                                ? "warning"
+                                : f.severity === "low"
+                                  ? "info"
+                                  : "default"
+                          }
+                        >
+                          {f.severity.toUpperCase()}
+                        </Badge>
+                        {f.axis && (
+                          <span className="text-xs text-[color:var(--ds-text-secondary)]">
+                            {f.axis}
+                          </span>
+                        )}
+                      </div>
+                      <div className="space-y-1.5 text-sm">
+                        <div>
+                          <span className="font-medium text-[color:var(--ds-text)]">A: </span>
+                          <span className="text-[color:var(--ds-text-secondary)]">
+                            {f.chunk_a.slice(0, 200)}
+                            {f.chunk_a.length > 200 ? "..." : ""}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-[color:var(--ds-text)]">B: </span>
+                          <span className="text-[color:var(--ds-text-secondary)]">
+                            {f.chunk_b.slice(0, 200)}
+                            {f.chunk_b.length > 200 ? "..." : ""}
+                          </span>
+                        </div>
+                        {f.explanation && (
+                          <div className="pt-1 text-xs text-[color:var(--ds-text-secondary)] italic">
+                            {f.explanation}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : probeAvailable ? (
+                <div className="py-4 text-center text-sm text-[color:var(--ds-text-secondary)]">
+                  {lang === "en"
+                    ? "No contradictions found in the latest probe."
+                    : "Keine Widersprüche im letzten Scan gefunden."}
+                </div>
+              ) : (
+                <div className="py-4 text-center text-sm text-[color:var(--ds-text-secondary)]">
+                  {lang === "en"
+                    ? "No contradiction probe has run yet. The nightly probe scans for semantic contradictions automatically."
+                    : "Es wurde noch kein Widerspruchs-Scan durchgeführt. Der nächtliche Scan sucht automatisch nach semantischen Widersprüchen."}
+                </div>
+              )}
+            </div>
+
+            {/* Structured contradictions from frontmatter (field-level) */}
+            {caseData && caseData.contradictions && caseData.contradictions.length > 0 && (
+              <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <ListChecks size={16} className="text-[color:var(--ds-text-secondary)]" />
+                    <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+                      {lang === "en" ? "Field-Level Contradictions" : "Feld-Ebene Widersprüche"}
+                    </h3>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    disabled={caseData.status === "archived"}
+                    onClick={async () => {
+                      try {
+                        await api.legal.contradictionsCheck(caseData.slug);
+                        window.location.reload();
+                      } catch (err) {
+                        setSaveError(
+                          err instanceof Error ? err.message : "Widerspruchsprüfung fehlgeschlagen"
+                        );
+                      }
+                    }}
+                    className="text-xs"
+                  >
+                    <RefreshCw size={12} />
+                    {lang === "en" ? "Re-check" : "Neu prüfen"}
+                  </Button>
+                </div>
+                <div className="space-y-2">
+                  {caseData.contradictions.map((c, i) => (
+                    <div
+                      key={i}
+                      className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] p-3"
+                    >
+                      <div className="mb-2 flex items-center gap-2">
+                        <Badge
+                          variant={
+                            c.severity === "high"
+                              ? "danger"
+                              : c.severity === "medium"
+                                ? "warning"
+                                : "info"
+                          }
+                        >
+                          {c.severity.toUpperCase()}
+                        </Badge>
+                        <span className="font-mono text-xs text-[color:var(--ds-text-secondary)]">
+                          {c.field}
+                        </span>
+                      </div>
+                      <div className="space-y-1 text-sm">
+                        <div>
+                          <span className="font-medium text-[color:var(--ds-text)]">A: </span>
+                          <span className="text-[color:var(--ds-text-secondary)]">{c.value_a}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-[color:var(--ds-text)]">B: </span>
+                          <span className="text-[color:var(--ds-text-secondary)]">{c.value_b}</span>
+                        </div>
+                        {c.description && (
+                          <div className="pt-1 text-xs text-[color:var(--ds-text-secondary)] italic">
+                            {c.description}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {activeTab === "billing" && (
           <div className="max-w-3xl space-y-4">
             <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
@@ -4927,6 +5302,25 @@ export default function CaseDetailPage() {
           </div>
         )}
 
+        {activeTab === "pipeline" && (
+          <div className="max-w-4xl space-y-4">
+            <Suspense
+              fallback={
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-[color:var(--ds-text-muted)]" />
+                </div>
+              }
+            >
+              <PipelinePanel
+                caseSlug={caseData.slug}
+                caseTitle={caseData.title}
+                kanzleiName={caseData.ownLawyerName}
+                recipientName={caseData.opponentName ?? undefined}
+              />
+            </Suspense>
+          </div>
+        )}
+
         {activeTab === "strategy" && (
           <div className="max-w-3xl space-y-4">
             <Suspense
@@ -5021,6 +5415,13 @@ export default function CaseDetailPage() {
                 </div>
                 <div className="text-sm leading-relaxed whitespace-pre-wrap text-[color:var(--ds-text)]">
                   {queryResult}
+                </div>
+                <div className="flex items-center justify-end pt-1">
+                  <RetrievalFeedbackButtons
+                    query={query}
+                    resultSlug={caseData?.slug ?? "ai-answer"}
+                    resultTitle={t("cases.detail_query_ai_answer")}
+                  />
                 </div>
               </div>
             )}

@@ -1,8 +1,18 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { QrCode, KeyRound, CheckCircle2, AlertTriangle, Loader2, Trash2 } from "lucide-react";
+import {
+  QrCode,
+  KeyRound,
+  CheckCircle2,
+  AlertTriangle,
+  Loader2,
+  Trash2,
+  Shield,
+  Globe,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useMe, use2FASetup, use2FAVerify, use2FADisable, use2FAQrCode } from "@/lib/queries/auth";
 import { loadKanzleiSettings } from "@/lib/kanzlei-settings";
 import { PageHeader } from "@/components/dashboard/page-header";
@@ -19,6 +29,10 @@ export default function SecuritySettingsPage() {
   const [orgRequires2FA, setOrgRequires2FA] = useState(false);
   const [showDisableDialog, setShowDisableDialog] = useState(false);
   const [disablePassword, setDisablePassword] = useState("");
+  const [ipAllowlist, setIpAllowlist] = useState<string[]>([]);
+  const [ipAllowlistEnabled, setIpAllowlistEnabled] = useState(false);
+  const [ipAllowlistNote, setIpAllowlistNote] = useState("");
+  const [ipAllowlistLoading, setIpAllowlistLoading] = useState(true);
 
   const meQuery = useMe();
   const setupMutation = use2FASetup();
@@ -31,7 +45,25 @@ export default function SecuritySettingsPage() {
   useEffect(() => {
     loadKanzleiSettings()
       .then((s) => setOrgRequires2FA(s.require2FA ?? false))
-      .catch(() => {});
+      .catch((err) =>
+        console.warn(
+          "[security] Failed to load 2FA settings:",
+          err instanceof Error ? err.message : err
+        )
+      );
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/admin/ip-allowlist")
+      .then((r) => r.json())
+      .then((data) => {
+        const d = data.data ?? data;
+        setIpAllowlist(d.entries ?? []);
+        setIpAllowlistEnabled(d.enabled ?? false);
+        setIpAllowlistNote(d.note ?? "");
+      })
+      .catch(() => {})
+      .finally(() => setIpAllowlistLoading(false));
   }, []);
 
   async function startSetup() {
@@ -286,6 +318,63 @@ export default function SecuritySettingsPage() {
           )}
         </div>
       )}
+
+      {/* IP Allowlist Section */}
+      <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
+        <div className="flex items-center gap-2">
+          <Globe size={16} className="text-[color:var(--ds-text-muted)]" />
+          <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">IP Allowlist</h3>
+          {ipAllowlistEnabled ? (
+            <Badge variant="default" className="text-xs">
+              Active
+            </Badge>
+          ) : (
+            <Badge variant="default" className="text-xs text-[color:var(--ds-text-muted)]">
+              Inactive
+            </Badge>
+          )}
+        </div>
+
+        {ipAllowlistLoading ? (
+          <div className="flex items-center gap-2 text-xs text-[color:var(--ds-text-muted)]">
+            <Loader2 size={12} className="animate-spin" />
+            Loading...
+          </div>
+        ) : (
+          <>
+            <p className="text-xs text-[color:var(--ds-text-muted)]">{ipAllowlistNote}</p>
+
+            {ipAllowlist.length > 0 ? (
+              <div className="space-y-1.5">
+                {ipAllowlist.map((entry) => (
+                  <div
+                    key={entry}
+                    className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-3 py-2"
+                  >
+                    <Shield size={12} className="text-emerald-600" />
+                    <span className="font-mono text-xs text-[color:var(--ds-text)]">{entry}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-3 py-3 text-xs text-[color:var(--ds-text-muted)]">
+                No IPs configured. Set{" "}
+                <code className="rounded bg-[color:var(--ds-surface)] px-1 py-0.5 font-mono">
+                  SUBSUMIO_IP_ALLOWLIST
+                </code>{" "}
+                environment variable to enable.
+              </div>
+            )}
+
+            <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-[11px] text-amber-700">
+              Configure via environment variable:
+              <pre className="mt-1 font-mono text-[10px] whitespace-pre-wrap">
+                SUBSUMIO_IP_ALLOWLIST=10.0.0.0/8,192.168.1.100\nSUBSUMIO_TRUSTED_PROXY_HOPS=1
+              </pre>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }

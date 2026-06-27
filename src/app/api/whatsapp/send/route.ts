@@ -31,24 +31,27 @@ const sendSchema = z
     // template
     template: z
       .object({
-        name: z.string().min(1),
-        language: z.object({ code: z.string().min(1) }),
+        name: z.string().min(1).max(200),
+        language: z.object({ code: z.string().min(1).max(10) }),
         components: z
           .array(
             z.object({
               type: z.enum(["header", "body", "button"]),
-              sub_type: z.string().optional(),
-              index: z.string().optional(),
-              parameters: z.array(
-                z
-                  .object({
-                    type: z.enum(["text", "currency", "date_time", "image", "document", "video"]),
-                    text: z.string().optional(),
-                  })
-                  .passthrough()
-              ),
+              sub_type: z.string().max(50).optional(),
+              index: z.string().max(10).optional(),
+              parameters: z
+                .array(
+                  z
+                    .object({
+                      type: z.enum(["text", "currency", "date_time", "image", "document", "video"]),
+                      text: z.string().max(1000).optional(),
+                    })
+                    .passthrough()
+                )
+                .max(50),
             })
           )
+          .max(20)
           .optional(),
       })
       .optional(),
@@ -57,10 +60,10 @@ const sendSchema = z
     interactive: z
       .object({
         type: z.enum(["button", "list"]),
-        body: z.object({ text: z.string() }),
+        body: z.object({ text: z.string().max(4000) }),
         action: z.record(z.unknown()),
-        header: z.object({ type: z.literal("text"), text: z.string() }).optional(),
-        footer: z.object({ text: z.string() }).optional(),
+        header: z.object({ type: z.literal("text"), text: z.string().max(1000) }).optional(),
+        footer: z.object({ text: z.string().max(1000) }).optional(),
       })
       .passthrough()
       .optional(),
@@ -69,7 +72,7 @@ const sendSchema = z
     media: z
       .object({
         type: z.enum(["image", "document", "audio", "video", "sticker"]),
-        mediaId: z.string().optional(),
+        mediaId: z.string().max(200).optional(),
         link: z.string().url().optional(),
         caption: z.string().max(1024).optional(),
         filename: z.string().max(240).optional(),
@@ -79,9 +82,9 @@ const sendSchema = z
     // flow
     flow: z
       .object({
-        flowToken: z.string().min(1),
-        flowName: z.string().optional(),
-        flowId: z.string().optional(),
+        flowToken: z.string().min(1).max(200),
+        flowName: z.string().max(200).optional(),
+        flowId: z.string().max(200).optional(),
         flowCta: z.string().min(1).max(20),
         headerText: z.string().max(60).optional(),
         bodyText: z.string().min(1).max(1024),

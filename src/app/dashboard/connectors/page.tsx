@@ -20,6 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { api, type ConnectorStatus } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { getCoverageMatrix, type ConnectorCoverageEntry } from "@/lib/connector-coverage";
 
 const CONNECTOR_ICONS: Record<string, React.ElementType> = {
   "google-drive": Folder,
@@ -57,6 +58,7 @@ export default function ConnectorsPage() {
   const [toggling, setToggling] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showCoverage, setShowCoverage] = useState(false);
 
   async function loadConnectors() {
     setLoading(true);
@@ -300,6 +302,172 @@ export default function ConnectorsPage() {
             <span className="text-[color:var(--ds-text-muted)]">subsumio connector list</span>
           </div>
         </div>
+      </div>
+
+      {/* Coverage Matrix Toggle */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
+          {lang === "en" ? "Connector Coverage Matrix" : "Connector-Coverage-Matrix"}
+        </h2>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowCoverage(!showCoverage)}
+          className="text-xs"
+        >
+          {showCoverage
+            ? lang === "en"
+              ? "Hide"
+              : "Ausblenden"
+            : lang === "en"
+              ? "Show"
+              : "Anzeigen"}
+        </Button>
+      </div>
+
+      {showCoverage && <CoverageMatrix />}
+    </div>
+  );
+}
+
+function CoverageMatrix() {
+  const { lang } = useLang();
+  const matrix = getCoverageMatrix();
+
+  const statusColors: Record<string, string> = {
+    available: "text-emerald-600",
+    beta: "text-amber-600",
+    planned: "text-[color:var(--ds-text-muted)]",
+    not_applicable: "text-[color:var(--ds-text-subtle)]",
+  };
+
+  const statusLabels: Record<string, string> = {
+    available: lang === "en" ? "Available" : "Verfügbar",
+    beta: "Beta",
+    planned: lang === "en" ? "Planned" : "Geplant",
+    not_applicable: lang === "en" ? "N/A" : "N/A",
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Summary stats */}
+      <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+        <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
+          <div className="text-lg font-bold text-[color:var(--ds-text)]">{matrix.total}</div>
+          <div className="text-[10px] text-[color:var(--ds-text-muted)]">
+            {lang === "en" ? "Total" : "Gesamt"}
+          </div>
+        </div>
+        <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
+          <div className="text-lg font-bold text-emerald-600">{matrix.available_count}</div>
+          <div className="text-[10px] text-[color:var(--ds-text-muted)]">
+            {lang === "en" ? "Available" : "Verfügbar"}
+          </div>
+        </div>
+        <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
+          <div className="text-lg font-bold text-amber-600">{matrix.beta_count}</div>
+          <div className="text-[10px] text-[color:var(--ds-text-muted)]">Beta</div>
+        </div>
+        <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
+          <div className="text-lg font-bold text-[color:var(--ds-text-muted)]">
+            {matrix.planned_count}
+          </div>
+          <div className="text-[10px] text-[color:var(--ds-text-muted)]">
+            {lang === "en" ? "Planned" : "Geplant"}
+          </div>
+        </div>
+      </div>
+
+      {/* Coverage gaps */}
+      {matrix.coverage_gaps.length > 0 && (
+        <div className="space-y-2 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
+          <div className="flex items-center gap-2">
+            <AlertTriangle size={14} className="text-amber-600" />
+            <h3 className="text-xs font-semibold text-amber-600">
+              {lang === "en" ? "Coverage Gaps" : "Coverage-Lücken"}
+            </h3>
+          </div>
+          {matrix.coverage_gaps.map((gap, i) => (
+            <div key={i} className="flex items-start gap-2 text-xs text-amber-700">
+              <Badge
+                variant={
+                  gap.severity === "high"
+                    ? "danger"
+                    : gap.severity === "medium"
+                      ? "warning"
+                      : "default"
+                }
+                className="shrink-0 text-[10px]"
+              >
+                {gap.severity}
+              </Badge>
+              <span>{gap.description}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Matrix table */}
+      <div className="overflow-x-auto rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="border-b border-[color:var(--ds-border)] text-left text-[color:var(--ds-text-muted)]">
+              <th className="px-3 py-2 font-medium">{lang === "en" ? "Connector" : "Konnektor"}</th>
+              <th className="px-3 py-2 font-medium">{lang === "en" ? "Status" : "Status"}</th>
+              <th className="px-3 py-2 font-medium">{lang === "en" ? "Sync" : "Sync"}</th>
+              <th className="px-3 py-2 font-medium">Auth</th>
+              <th className="px-3 py-2 font-medium">GoBD</th>
+              <th className="px-3 py-2 font-medium">DSGVO</th>
+              <th className="px-3 py-2 font-medium">{lang === "en" ? "Matter" : "Akten"}</th>
+              <th className="px-3 py-2 font-medium">{lang === "en" ? "Push" : "Push"}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {matrix.connectors.map((c: ConnectorCoverageEntry) => (
+              <tr key={c.id} className="border-b border-[color:var(--ds-border)] last:border-0">
+                <td className="px-3 py-2">
+                  <div className="font-medium text-[color:var(--ds-text)]">{c.name}</div>
+                  <div className="text-[10px] text-[color:var(--ds-text-subtle)]">{c.category}</div>
+                </td>
+                <td className="px-3 py-2">
+                  <span className={cn("font-medium", statusColors[c.status])}>
+                    {statusLabels[c.status]}
+                  </span>
+                </td>
+                <td className="px-3 py-2 text-[color:var(--ds-text-muted)]">{c.sync_mode}</td>
+                <td className="px-3 py-2 text-[color:var(--ds-text-muted)]">{c.auth_method}</td>
+                <td className="px-3 py-2">
+                  {c.gobd_relevant ? (
+                    <CheckCircle2 size={12} className="text-emerald-600" />
+                  ) : (
+                    <span className="text-[color:var(--ds-text-subtle)]">—</span>
+                  )}
+                </td>
+                <td className="px-3 py-2">
+                  {c.gdpr_relevant ? (
+                    <CheckCircle2 size={12} className="text-emerald-600" />
+                  ) : (
+                    <span className="text-[color:var(--ds-text-subtle)]">—</span>
+                  )}
+                </td>
+                <td className="px-3 py-2">
+                  {c.matter_scope ? (
+                    <CheckCircle2 size={12} className="text-emerald-600" />
+                  ) : (
+                    <span className="text-[color:var(--ds-text-subtle)]">—</span>
+                  )}
+                </td>
+                <td className="px-3 py-2">
+                  {c.push_notifications ? (
+                    <CheckCircle2 size={12} className="text-emerald-600" />
+                  ) : (
+                    <span className="text-[color:var(--ds-text-subtle)]">—</span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );

@@ -49,7 +49,9 @@ export function useWidgetPrefs() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ widgets }),
-      }).catch(() => {});
+      }).catch((err) =>
+        console.warn("[widget-prefs] Failed to persist:", err instanceof Error ? err.message : err)
+      );
     }, 400);
   }, []);
 
@@ -71,7 +73,12 @@ export function useWidgetPrefs() {
           writeLocal(merged);
         }
       })
-      .catch(() => {})
+      .catch((err) =>
+        console.warn(
+          "[widget-prefs] Failed to load from server:",
+          err instanceof Error ? err.message : err
+        )
+      )
       .finally(() => setLoaded(true));
 
     const onChange = () => {

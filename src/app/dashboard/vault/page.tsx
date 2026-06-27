@@ -24,6 +24,7 @@ import {
   RotateCcw,
   Languages,
   FileSignature,
+  Sparkles,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -155,6 +156,25 @@ export default function VaultPage() {
   const [selectedSlugs, setSelectedSlugs] = useState<Set<string>>(new Set());
   const [showReview, setShowReview] = useState(false);
   const [reviewResult, setReviewResult] = useState<TabularReviewResponse | null>(null);
+  const [showDeepAnalysis, setShowDeepAnalysis] = useState(false);
+  const [deepAnalysisLoading, setDeepAnalysisLoading] = useState(false);
+  const [deepAnalysisPrompt, setDeepAnalysisPrompt] = useState("");
+  const [deepAnalysisResult, setDeepAnalysisResult] = useState<{
+    executive_summary: string;
+    document_count: number;
+    findings: Array<{
+      theme: string;
+      description: string;
+      risk_level: "low" | "medium" | "high" | "critical";
+      affected_documents: string[];
+      citations: Array<{ slug: string; title: string; quote: string }>;
+    }>;
+    cross_document_patterns: string[];
+    overall_risk: "low" | "medium" | "high" | "critical";
+    warnings: string[];
+    attorney_review_required: true;
+  } | null>(null);
+  const [deepAnalysisError, setDeepAnalysisError] = useState<string | null>(null);
 
   const reviewForm = useDashboardForm({
     schema: vaultReviewSchema,
@@ -346,13 +366,23 @@ export default function VaultPage() {
         ]}
         actions={
           selectedSlugs.size > 0 ? (
-            <Button
-              variant="secondary"
-              className="gap-2 border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
-              onClick={() => setShowReview(!showReview)}
-            >
-              <Table2 size={14} /> {t("vault.bulk_review_count")} ({selectedSlugs.size})
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="secondary"
+                className="gap-2 border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
+                onClick={() => setShowReview(!showReview)}
+              >
+                <Table2 size={14} /> {t("vault.bulk_review_count")} ({selectedSlugs.size})
+              </Button>
+              <Button
+                variant="glow"
+                className="gap-2"
+                onClick={() => setShowDeepAnalysis(!showDeepAnalysis)}
+              >
+                <Sparkles size={14} /> {lang === "en" ? "Deep Analysis" : "Tiefenanalyse"} (
+                {selectedSlugs.size})
+              </Button>
+            </div>
           ) : undefined
         }
       />
@@ -559,6 +589,235 @@ export default function VaultPage() {
             </div>
           )}
         </form>
+      )}
+
+      {/* Deep Analysis Panel */}
+      {showDeepAnalysis && (
+        <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
+          <div className="flex items-center justify-between">
+            <h3 className="flex items-center gap-2 text-sm font-semibold text-[color:var(--ds-text)]">
+              <Sparkles size={16} className="brand-text" />
+              {lang === "en" ? "Deep Analysis" : "Tiefenanalyse"}
+              <span className="text-xs font-normal text-[color:var(--ds-text-muted)]">
+                ({selectedSlugs.size} {lang === "en" ? "documents" : "Dokumente"})
+              </span>
+            </h3>
+            <button
+              type="button"
+              onClick={() => {
+                setShowDeepAnalysis(false);
+                setDeepAnalysisResult(null);
+                setDeepAnalysisError(null);
+              }}
+              className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+            >
+              <X size={16} />
+            </button>
+          </div>
+
+          {deepAnalysisError && (
+            <div className="flex items-center gap-2 text-xs text-red-600">
+              <AlertTriangle size={14} /> {deepAnalysisError}
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+              {lang === "en" ? "Analysis prompt (optional)" : "Analyse-Prompt (optional)"}
+            </label>
+            <Input
+              value={deepAnalysisPrompt}
+              onChange={(e) => setDeepAnalysisPrompt(e.target.value)}
+              placeholder={
+                lang === "en"
+                  ? "e.g. Identify liability risks and compliance gaps across these documents"
+                  : "z.B. Identifiziere Haftungsrisiken und Compliance-Lücken über alle Dokumente"
+              }
+            />
+            <p className="text-[10px] text-[color:var(--ds-text-subtle)]">
+              {lang === "en"
+                ? "Generates a narrative report with cross-document insights, themes, and risks — every claim grounded with verbatim citations."
+                : "Generiert einen narrativen Bericht mit übergreifenden Erkenntnissen, Themen und Risiken — jeder Anspruch mit wörtlichen Zitaten belegt."}
+            </p>
+          </div>
+
+          <Button
+            onClick={async () => {
+              if (selectedSlugs.size === 0) return;
+              setDeepAnalysisLoading(true);
+              setDeepAnalysisError(null);
+              setDeepAnalysisResult(null);
+              try {
+                const result = await api.legal.deepAnalysis({
+                  slugs: Array.from(selectedSlugs),
+                  prompt: deepAnalysisPrompt || undefined,
+                });
+                setDeepAnalysisResult(result);
+              } catch (e) {
+                setDeepAnalysisError(
+                  e instanceof Error ? e.message : "Deep Analysis fehlgeschlagen"
+                );
+              } finally {
+                setDeepAnalysisLoading(false);
+              }
+            }}
+            disabled={deepAnalysisLoading || selectedSlugs.size === 0}
+            className="gap-2"
+          >
+            {deepAnalysisLoading ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <Sparkles size={14} />
+            )}
+            {deepAnalysisLoading
+              ? lang === "en"
+                ? "Analyzing..."
+                : "Analysiere..."
+              : lang === "en"
+                ? "Run Deep Analysis"
+                : "Tiefenanalyse starten"}
+          </Button>
+
+          {deepAnalysisResult && (
+            <div className="space-y-4">
+              {/* Warnings */}
+              {deepAnalysisResult.warnings.length > 0 && (
+                <div className="space-y-1 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
+                  {deepAnalysisResult.warnings.map((w, i) => (
+                    <div key={i} className="flex items-center gap-1.5 text-[11px] text-amber-700">
+                      <AlertTriangle size={10} /> {w}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Overall risk badge */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+                  {lang === "en" ? "Overall Risk" : "Gesamtrisiko"}:
+                </span>
+                <Badge
+                  variant={
+                    deepAnalysisResult.overall_risk === "critical"
+                      ? "danger"
+                      : deepAnalysisResult.overall_risk === "high"
+                        ? "danger"
+                        : deepAnalysisResult.overall_risk === "medium"
+                          ? "warning"
+                          : "default"
+                  }
+                  className="text-xs"
+                >
+                  {deepAnalysisResult.overall_risk}
+                </Badge>
+                <span className="text-[10px] text-[color:var(--ds-text-subtle)]">
+                  {deepAnalysisResult.document_count}{" "}
+                  {lang === "en" ? "documents analyzed" : "Dokumente analysiert"}
+                </span>
+              </div>
+
+              {/* Executive summary */}
+              {deepAnalysisResult.executive_summary && (
+                <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] p-3">
+                  <h4 className="mb-1 text-xs font-semibold text-[color:var(--ds-text)]">
+                    {lang === "en" ? "Executive Summary" : "Zusammenfassung"}
+                  </h4>
+                  <p className="text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
+                    {deepAnalysisResult.executive_summary}
+                  </p>
+                </div>
+              )}
+
+              {/* Findings */}
+              {deepAnalysisResult.findings.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="text-xs font-semibold text-[color:var(--ds-text)]">
+                    {lang === "en" ? "Findings" : "Ergebnisse"}
+                  </h4>
+                  {deepAnalysisResult.findings.map((f, i) => (
+                    <div
+                      key={i}
+                      className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3"
+                    >
+                      <div className="mb-1 flex items-center gap-2">
+                        <Badge
+                          variant={
+                            f.risk_level === "critical" || f.risk_level === "high"
+                              ? "danger"
+                              : f.risk_level === "medium"
+                                ? "warning"
+                                : "default"
+                          }
+                          className="text-[10px]"
+                        >
+                          {f.risk_level}
+                        </Badge>
+                        <span className="text-xs font-medium text-[color:var(--ds-text)]">
+                          {f.theme}
+                        </span>
+                      </div>
+                      <p className="mb-2 text-xs text-[color:var(--ds-text-muted)]">
+                        {f.description}
+                      </p>
+                      {f.affected_documents.length > 0 && (
+                        <div className="mb-1 flex flex-wrap gap-1">
+                          {f.affected_documents.map((d) => (
+                            <Badge key={d} variant="default" className="text-[10px]">
+                              {d}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                      {f.citations.length > 0 && (
+                        <div className="mt-1 space-y-1">
+                          {f.citations.slice(0, 3).map((c, j) => (
+                            <div
+                              key={j}
+                              className="flex items-start gap-1 text-[10px] text-[color:var(--ds-text-subtle)]"
+                            >
+                              <span className="brand-text">»</span>
+                              <span className="italic">{c.quote}</span>
+                              <span className="shrink-0">— {c.title}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Cross-document patterns */}
+              {deepAnalysisResult.cross_document_patterns.length > 0 && (
+                <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] p-3">
+                  <h4 className="mb-1 text-xs font-semibold text-[color:var(--ds-text)]">
+                    {lang === "en" ? "Cross-Document Patterns" : "Übergreifende Muster"}
+                  </h4>
+                  <ul className="space-y-1">
+                    {deepAnalysisResult.cross_document_patterns.map((p, i) => (
+                      <li
+                        key={i}
+                        className="flex items-start gap-1.5 text-xs text-[color:var(--ds-text-muted)]"
+                      >
+                        <span className="brand-text mt-0.5">•</span>
+                        {p}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Attorney review notice */}
+              {deepAnalysisResult.attorney_review_required && (
+                <p className="text-[10px] text-[color:var(--ds-text-subtle)]">
+                  {lang === "en"
+                    ? "⚠ This automated analysis does not replace attorney review."
+                    : "⚠ Diese automatisierte Analyse ersetzt keine anwaltliche Prüfung."}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
       )}
 
       <div className="flex flex-col items-stretch gap-3 md:flex-row md:items-center">

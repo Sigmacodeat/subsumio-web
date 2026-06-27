@@ -1,1 +1,9 @@
+# Gitleaks pre-commit scan (fast, staged files only)
+if command -v gitleaks >/dev/null 2>&1; then
+  gitleaks protect --staged --redact --no-banner --config=.gitleaks.toml || {
+    echo "⚠️  gitleaks detected potential secrets in staged files. Aborting commit."
+    echo "   Review the findings above or run: gitleaks protect --staged --no-banner --verbose"
+    exit 1
+  }
+fi
 bun run lint-staged

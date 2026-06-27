@@ -14,113 +14,121 @@ import {
   ChevronRight,
   ExternalLink,
 } from "lucide-react";
+import { useLang } from "@/lib/use-lang";
+import type { DashboardKey } from "@/content/dashboard";
 
 interface ConformityItem {
   id: string;
   article: string;
-  requirement: string;
+  reqKey: string;
   status: "compliant" | "partial" | "pending" | "not_started";
   evidence?: string;
-  note?: string;
+  noteKey?: string;
 }
 
 const CONFORMITY_ITEMS: ConformityItem[] = [
   {
     id: "art11",
     article: "Art. 11 EU AI Act",
-    requirement: "Technische Dokumentation",
+    reqKey: "aiact.req.art11",
     status: "partial",
     evidence: "CLAUDE.md, AUDIT.md, docs/PRODUCT_CAPABILITIES.md",
-    note: "Vollständige Annex IV-konforme Dokumentation in Erstellung",
+    noteKey: "aiact.note.art11",
   },
   {
     id: "art13",
     article: "Art. 13 EU AI Act",
-    requirement: "Transparenz und Informationspflicht gegenüber Nutzern",
+    reqKey: "aiact.req.art13",
     status: "compliant",
     evidence: "AIActConformityBanner-Komponente in allen Legal-AI-Outputs",
-    note: "Jede KI-Ausgabe ist als solche gekennzeichnet",
+    noteKey: "aiact.note.art13",
   },
   {
     id: "art14",
     article: "Art. 14 EU AI Act",
-    requirement: "Menschliche Aufsicht (Human Oversight)",
+    reqKey: "aiact.req.art14",
     status: "compliant",
     evidence: "Human-Review-Gate in Legal-Routes, Citation-Gate, Release-Gate",
-    note: "Alle kritischen KI-Outputs erfordern menschliche Bestätigung",
+    noteKey: "aiact.note.art14",
   },
   {
     id: "art15",
     article: "Art. 15 EU AI Act",
-    requirement: "Genauigkeit, Robustheit und Cybersicherheit",
+    reqKey: "aiact.req.art15",
     status: "partial",
     evidence: "RAG-Eval, Brain-Quality-Eval, Citation-Gate, Security-Headers",
-    note: "Formales Accuracy-Benchmarking gegen Branchenstandard ausstehend",
+    noteKey: "aiact.note.art15",
   },
   {
     id: "art52",
     article: "Art. 52 EU AI Act",
-    requirement: "Transparenzpflichten für bestimmte KI-Systeme",
+    reqKey: "aiact.req.art52",
     status: "compliant",
     evidence: "AI-Notice in allen User-facing KI-Outputs",
-    note: "Nutzer werden bei jeder KI-Interaktion informiert",
+    noteKey: "aiact.note.art52",
   },
   {
     id: "art9",
     article: "Art. 9 EU AI Act",
-    requirement: "Risikomanagementsystem",
+    reqKey: "aiact.req.art9",
     status: "pending",
-    note: "Formales Risikomanagement-ISMS in Aufbau (Vanta/ISO 27001)",
+    noteKey: "aiact.note.art9",
   },
   {
     id: "art17",
     article: "Art. 17 EU AI Act",
-    requirement: "Qualitätsmanagementsystem",
+    reqKey: "aiact.req.art17",
     status: "partial",
     evidence: "CI/CD, E2E-Tests, RAG-Eval, Release-Gates",
-    note: "ISO 42001-konformes QMS in Aufbau",
+    noteKey: "aiact.note.art17",
   },
   {
     id: "art26",
     article: "Art. 26 EU AI Act",
-    requirement: "Pflichten der Betreiber von Hochrisiko-KI-Systemen",
+    reqKey: "aiact.req.art26",
     status: "partial",
-    note: "Betreiber-Dokumentation und Meldepflichten werden implementiert",
+    noteKey: "aiact.note.art26",
   },
 ];
 
-const STATUS_CONFIG = {
-  compliant: {
-    icon: CheckCircle,
-    color: "#22c55e",
-    label: "Konform",
-    bg: "#22c55e15",
-    border: "#22c55e30",
-  },
-  partial: {
-    icon: AlertTriangle,
-    color: "#f59e0b",
-    label: "Teilweise",
-    bg: "#f59e0b15",
-    border: "#f59e0b30",
-  },
-  pending: {
-    icon: AlertTriangle,
-    color: "#6366f1",
-    label: "In Arbeit",
-    bg: "#6366f115",
-    border: "#6366f130",
-  },
-  not_started: {
-    icon: XCircle,
-    color: "#ef4444",
-    label: "Ausstehend",
-    bg: "#ef444415",
-    border: "#ef444430",
-  },
-};
+type TFunc = (key: DashboardKey) => string;
+
+function getStatusConfig(t: TFunc) {
+  return {
+    compliant: {
+      icon: CheckCircle,
+      color: "#22c55e",
+      label: t("aiact.status_compliant"),
+      bg: "#22c55e15",
+      border: "#22c55e30",
+    },
+    partial: {
+      icon: AlertTriangle,
+      color: "#f59e0b",
+      label: t("aiact.status_partial"),
+      bg: "#f59e0b15",
+      border: "#f59e0b30",
+    },
+    pending: {
+      icon: AlertTriangle,
+      color: "#6366f1",
+      label: t("aiact.status_pending"),
+      bg: "#6366f115",
+      border: "#6366f130",
+    },
+    not_started: {
+      icon: XCircle,
+      color: "#ef4444",
+      label: t("aiact.status_not_started"),
+      bg: "#ef444415",
+      border: "#ef444430",
+    },
+  } as const;
+}
 
 export default function AIActConformityPage() {
+  const { t } = useLang();
+  const STATUS_CONFIG = getStatusConfig(t);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const toggle = (id: string) => {
@@ -145,16 +153,9 @@ export default function AIActConformityPage() {
       <div style={{ marginBottom: 24 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
           <ShieldCheck size={22} style={{ color: "#6366f1" }} />
-          <h1 style={{ fontSize: 20, fontWeight: 700, color: "#e8e8f0" }}>
-            EU AI Act — Konformitätserklärung
-          </h1>
+          <h1 style={{ fontSize: 20, fontWeight: 700, color: "#e8e8f0" }}>{t("aiact.title")}</h1>
         </div>
-        <p style={{ fontSize: 13, color: "#8a8aa8", lineHeight: 1.6 }}>
-          Subsumio ist als KI-gestütztes Rechtsinformationssystem gemäß EU AI Act (VO 2024/1689)
-          potenziell als Hochrisiko-KI nach Annex III Nr. 8 (Rechtspflege und demokratische
-          Prozesse) einzustufen. Diese Seite dokumentiert den aktuellen Konformitätsstatus und die
-          laufenden Maßnahmen zur vollständigen Compliance.
-        </p>
+        <p style={{ fontSize: 13, color: "#8a8aa8", lineHeight: 1.6 }}>{t("aiact.intro")}</p>
         <div
           style={{
             marginTop: 8,
@@ -166,13 +167,12 @@ export default function AIActConformityPage() {
             color: "#fbbf24",
           }}
         >
-          <strong>Hinweis:</strong> Der EU AI Act ist ab August 2026 für Hochrisiko-Systeme
-          vollständig anwendbar. Dieses Dokument wird laufend aktualisiert.
+          <strong>{t("aiact.notice")}</strong>
         </div>
       </div>
 
       {/* Status Overview */}
-      <Section title="Konformitäts-Übersicht" icon={<Info size={15} />}>
+      <Section title={t("aiact.section_overview")} icon={<Info size={15} />}>
         <div
           style={{
             display: "grid",
@@ -181,9 +181,9 @@ export default function AIActConformityPage() {
             marginBottom: 16,
           }}
         >
-          <StatCard value={compliantCount} label="Konform" color="#22c55e" />
-          <StatCard value={partialCount} label="Teilweise" color="#f59e0b" />
-          <StatCard value={pendingCount} label="Ausstehend" color="#6366f1" />
+          <StatCard value={compliantCount} label={t("aiact.stat_compliant")} color="#22c55e" />
+          <StatCard value={partialCount} label={t("aiact.stat_partial")} color="#f59e0b" />
+          <StatCard value={pendingCount} label={t("aiact.stat_pending")} color="#6366f1" />
         </div>
         <div style={{ background: "#0d0d1a", borderRadius: 6, height: 8, overflow: "hidden" }}>
           <div
@@ -196,59 +196,35 @@ export default function AIActConformityPage() {
       </Section>
 
       {/* Classification */}
-      <Section title="1. System-Klassifizierung" icon={<FileText size={15} />}>
+      <Section title={t("aiact.section_classification")} icon={<FileText size={15} />}>
         <p style={{ fontSize: 12, color: "#a0a0c0", lineHeight: 1.6, marginBottom: 12 }}>
-          Subsumio unterstützt Rechtsanwältinnen und Rechtsanwälte bei der Analyse von Verträgen,
-          Recherche von Rechtsprechung, Fristüberwachung und Erstellung von Schriftsätzen. Nach
-          Annex III Nr. 8 EU AI Act gelten KI-Systeme als Hochrisiko, wenn sie für die Rechtspflege
-          eingesetzt werden und die Auslegung von Sachverhalten und Gesetzen oder die Anwendung des
-          Rechts auf konkrete Sachverhalte unterstützen.
+          {t("aiact.class_intro")}
         </p>
         <div style={{ display: "grid", gap: 8 }}>
-          <ClassificationRow label="Annex III Kategorie" value="Nr. 8 — Rechtspflege" />
-          <ClassificationRow label="Risikoniveau" value="Potenziell Hochrisiko (in Prüfung)" />
-          <ClassificationRow label="Anwendungsbereich" value="DACH-Rechtsraum (AT, DE, CH, EU)" />
           <ClassificationRow
-            label="Zielgruppe"
-            value="Zugelassene Rechtsanwältinnen und Rechtsanwälte"
+            label={t("aiact.class_category")}
+            value={t("aiact.class_category_val")}
           />
+          <ClassificationRow label={t("aiact.class_risk")} value={t("aiact.class_risk_val")} />
+          <ClassificationRow label={t("aiact.class_scope")} value={t("aiact.class_scope_val")} />
+          <ClassificationRow label={t("aiact.class_target")} value={t("aiact.class_target_val")} />
           <ClassificationRow
-            label="Keine Entscheidungsautonomie"
-            value="Alle Ausgaben sind Entscheidungsunterstützung, kein Ersatz für menschliches Urteil"
+            label={t("aiact.class_no_autonomy")}
+            value={t("aiact.class_no_autonomy_val")}
           />
         </div>
       </Section>
 
       {/* Technical Documentation */}
-      <Section title="2. Technische Dokumentation (Art. 11)" icon={<FileText size={15} />}>
+      <Section title={t("aiact.section_tech_doc")} icon={<FileText size={15} />}>
         <div style={{ display: "grid", gap: 6 }}>
           {[
-            {
-              label: "Allgemeine Systembeschreibung",
-              done: true,
-              where: "CLAUDE.md, docs/PRODUCT_CAPABILITIES.md",
-            },
-            { label: "Trainingsdata-Beschreibung", done: false, where: "In Erstellung" },
-            {
-              label: "Validierungs- und Testverfahren",
-              done: true,
-              where: "RAG-Eval, BrainBench, E2E-Tests (1.515 Testdateien)",
-            },
-            {
-              label: "Leistungsmetriken und -grenzen",
-              done: true,
-              where: "docs/eval/SEARCH_MODE_METHODOLOGY.md, METRIC_GLOSSARY.md",
-            },
-            {
-              label: "Risikomanagement-Dokumentation",
-              done: false,
-              where: "Vanta/ISO 27001 in Aufbau",
-            },
-            {
-              label: "Annex IV-konforme Vollständige Dokumentation",
-              done: false,
-              where: "Geplant Q3 2026",
-            },
+            { label: t("aiact.tech_doc.1"), done: true, where: t("aiact.tech_doc.1.where") },
+            { label: t("aiact.tech_doc.2"), done: false, where: t("aiact.tech_doc.2.where") },
+            { label: t("aiact.tech_doc.3"), done: true, where: t("aiact.tech_doc.3.where") },
+            { label: t("aiact.tech_doc.4"), done: true, where: t("aiact.tech_doc.4.where") },
+            { label: t("aiact.tech_doc.5"), done: false, where: t("aiact.tech_doc.5.where") },
+            { label: t("aiact.tech_doc.6"), done: false, where: t("aiact.tech_doc.6.where") },
           ].map((item) => (
             <div
               key={item.label}
@@ -278,42 +254,41 @@ export default function AIActConformityPage() {
       </Section>
 
       {/* Human Oversight */}
-      <Section title="3. Menschliche Aufsicht (Art. 14)" icon={<Eye size={15} />}>
+      <Section title={t("aiact.section_oversight")} icon={<Eye size={15} />}>
         <p style={{ fontSize: 12, color: "#a0a0c0", lineHeight: 1.6, marginBottom: 12 }}>
-          Subsumio implementiert mehrere technische und organisatorische Maßnahmen zur
-          Sicherstellung menschlicher Aufsicht über alle KI-gestützten Entscheidungen:
+          {t("aiact.oversight_intro")}
         </p>
         <div style={{ display: "grid", gap: 8 }}>
           {[
             {
               title: "Citation-Gate",
-              desc: "Alle Legal-AI-Outputs enthalten zwingend Quellenangaben mit Zitaten aus dem Kanzlei-Brain — keine unkontrollierten Halluzinationen",
-              status: "✅ Implementiert",
+              desc: t("aiact.oversight.citation.desc"),
+              status: t("aiact.implemented"),
             },
             {
               title: "Human Review Queue",
-              desc: "Kritische KI-Ausgaben können für menschliche Überprüfung markiert und in die Review-Queue eskaliert werden",
-              status: "✅ Implementiert",
+              desc: t("aiact.oversight.review.desc"),
+              status: t("aiact.implemented"),
             },
             {
               title: "AI-Notice in Outputs",
-              desc: "Jede KI-generierte Ausgabe ist für den Nutzer klar als solche erkennbar (AIActConformityBanner)",
-              status: "✅ Implementiert",
+              desc: t("aiact.oversight.notice.desc"),
+              status: t("aiact.implemented"),
             },
             {
               title: "Release-Gate",
-              desc: "Neue Modell-Versionen und AI-Features werden gegen definierte Qualitäts-Gates geprüft bevor sie live gehen",
-              status: "✅ Implementiert",
+              desc: t("aiact.oversight.release.desc"),
+              status: t("aiact.implemented"),
             },
             {
               title: "Audit-Trail",
-              desc: "Jede KI-Interaktion wird mit Nutzer, Zeitstempel und Kontext im Audit-Log erfasst",
-              status: "✅ Implementiert",
+              desc: t("aiact.oversight.audit.desc"),
+              status: t("aiact.implemented"),
             },
             {
               title: "Ethical-Wall",
-              desc: "AI-Provider-Richtlinien (EU-only Modelle, opt-out von Training) sind konfigurierbar pro Organisation",
-              status: "✅ Implementiert",
+              desc: t("aiact.oversight.ethical.desc"),
+              status: t("aiact.implemented"),
             },
           ].map((item) => (
             <div
@@ -346,10 +321,9 @@ export default function AIActConformityPage() {
       </Section>
 
       {/* Transparency */}
-      <Section title="4. Transparenz (Art. 52)" icon={<Users size={15} />}>
+      <Section title={t("aiact.section_transparency")} icon={<Users size={15} />}>
         <p style={{ fontSize: 12, color: "#a0a0c0", lineHeight: 1.6, marginBottom: 12 }}>
-          Art. 52 EU AI Act verpflichtet zu eindeutiger Kennzeichnung KI-generierter Inhalte.
-          Subsumio implementiert dies durch:
+          {t("aiact.transparency_intro")}
         </p>
         <div
           style={{
@@ -361,7 +335,7 @@ export default function AIActConformityPage() {
           }}
         >
           <div style={{ fontSize: 12, fontWeight: 600, color: "#a0a0f8", marginBottom: 4 }}>
-            Beispiel-Banner (alle Legal-AI-Outputs):
+            {t("aiact.banner_example")}
           </div>
           <div
             style={{
@@ -376,24 +350,16 @@ export default function AIActConformityPage() {
             }}
           >
             <ShieldCheck size={12} style={{ color: "#6366f1" }} />
-            KI-Analyse (Vertragsanalyse) — EU AI Act konform · Menschliche Überprüfung empfohlen
+            {t("aiact.banner_text")}
           </div>
         </div>
         <div style={{ fontSize: 12, color: "#a0a0c0", lineHeight: 1.6 }}>
-          Die Komponente{" "}
-          <code
-            style={{ background: "#1e1e3a", padding: "1px 4px", borderRadius: 3, fontSize: 11 }}
-          >
-            AIActConformityBanner
-          </code>{" "}
-          ist in allen Legal-AI-Routes als Standard eingebettet. Nutzer können den Banner ausklappen
-          und erhalten Informationen zu System, Verwendungszweck und Möglichkeiten der menschlichen
-          Überprüfung.
+          {t("aiact.transparency_desc")}
         </div>
       </Section>
 
       {/* Conformity Status Detail */}
-      <Section title="5. Anforderungs-Status im Detail" icon={<ShieldCheck size={15} />}>
+      <Section title={t("aiact.section_detail")} icon={<ShieldCheck size={15} />}>
         <div style={{ display: "grid", gap: 8 }}>
           {CONFORMITY_ITEMS.map((item) => {
             const cfg = STATUS_CONFIG[item.status];
@@ -423,7 +389,7 @@ export default function AIActConformityPage() {
                       {item.article}
                     </span>
                     <span style={{ fontSize: 12, color: "#e0e0e8", fontWeight: 500 }}>
-                      {item.requirement}
+                      {t(item.reqKey as DashboardKey)}
                     </span>
                   </div>
                   <span style={{ fontSize: 11, color: cfg.color, fontWeight: 600, marginRight: 4 }}>
@@ -454,12 +420,12 @@ export default function AIActConformityPage() {
                             marginBottom: 2,
                           }}
                         >
-                          Nachweis
+                          {t("aiact.evidence")}
                         </div>
                         <div style={{ fontSize: 12, color: "#c0c0d8" }}>{item.evidence}</div>
                       </div>
                     )}
-                    {item.note && (
+                    {item.noteKey && (
                       <div>
                         <div
                           style={{
@@ -470,9 +436,11 @@ export default function AIActConformityPage() {
                             marginBottom: 2,
                           }}
                         >
-                          Hinweis
+                          {t("aiact.note_label")}
                         </div>
-                        <div style={{ fontSize: 12, color: "#a0a0c0" }}>{item.note}</div>
+                        <div style={{ fontSize: 12, color: "#a0a0c0" }}>
+                          {t(item.noteKey as DashboardKey)}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -484,34 +452,33 @@ export default function AIActConformityPage() {
       </Section>
 
       {/* Certification Roadmap Link */}
-      <Section title="6. Zertifizierungs-Roadmap" icon={<ShieldCheck size={15} />}>
+      <Section title={t("aiact.section_roadmap")} icon={<ShieldCheck size={15} />}>
         <p style={{ fontSize: 12, color: "#a0a0c0", lineHeight: 1.6, marginBottom: 12 }}>
-          Für eine vollständige EU AI Act-Konformität und den Nachweis gegenüber Kanzlei-Kunden sind
-          folgende Zertifizierungen in Vorbereitung:
+          {t("aiact.roadmap_intro")}
         </p>
         <div style={{ display: "grid", gap: 8 }}>
           {[
             {
               cert: "SOC 2 Type II",
-              status: "Vanta-Onboarding geplant Juli 2026",
+              status: t("aiact.cert.soc2.status"),
               eta: "Q2 2027",
               color: "#6366f1",
             },
             {
               cert: "ISO 27001:2022",
-              status: "TÜV Rheinland Angebotsanfrage in Vorbereitung",
+              status: t("aiact.cert.iso27001.status"),
               eta: "Q3 2027",
               color: "#6366f1",
             },
             {
               cert: "ISO 42001:2023 (AI Management)",
-              status: "Parallel zu ISO 27001",
+              status: t("aiact.cert.iso42001.status"),
               eta: "Q3 2027",
               color: "#6366f1",
             },
             {
               cert: "DSGVO-Konformitätserklärung",
-              status: "Teilweise vorhanden, vollständige Erklärung in Erstellung",
+              status: t("aiact.cert.gdpr.status"),
               eta: "Q4 2026",
               color: "#f59e0b",
             },
@@ -552,7 +519,7 @@ export default function AIActConformityPage() {
               textDecoration: "none",
             }}
           >
-            <ExternalLink size={12} /> Vollständige Zertifizierungs-Roadmap
+            <ExternalLink size={12} /> {t("aiact.roadmap_link")}
           </a>
         </div>
       </Section>
@@ -569,7 +536,7 @@ export default function AIActConformityPage() {
           color: "#6a6a8a",
         }}
       >
-        Letzte Aktualisierung: Juni 2026 · Verantwortlich: Subsumio GmbH · Fragen zur Compliance:{" "}
+        {t("aiact.footer")}{" "}
         <a href="mailto:compliance@subsum.io" style={{ color: "#6366f1" }}>
           compliance@subsum.io
         </a>

@@ -961,16 +961,15 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
       <motion.aside
         initial={false}
         animate={{
-          x: open ? 0 : "100%",
+          width: open ? panelWidth : 0,
           opacity: open ? 1 : 0.98,
         }}
         transition={panelTransition}
         className={cn(
-          "dashboard-panel-surface fixed inset-y-0 right-0 z-40 hidden min-w-0 overflow-hidden border-l border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] md:block",
+          "dashboard-panel-surface fixed inset-y-0 right-0 z-40 hidden min-w-0 overflow-hidden border-l border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] md:relative md:inset-auto md:block md:shrink-0",
           isResizing ? "transition-none" : "will-change-[transform,opacity]",
           className
         )}
-        style={{ width: panelWidth }}
         aria-label={t("copilot.title")}
         {...(!open ? { inert: true } : {})}
       >

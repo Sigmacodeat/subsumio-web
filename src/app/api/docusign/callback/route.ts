@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { NextResponse } from "next/server";
 import { getStore } from "@/lib/auth/store";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { externalFetchTimeout } from "@/lib/retry";
@@ -39,7 +40,6 @@ export const GET = createHandler(
         403
       );
     }
-
     const ik = env("DOCUSIGN_INTEGRATION_KEY");
     const secret = env("DOCUSIGN_SECRET_KEY");
     if (!ik || !secret) {
@@ -86,6 +86,14 @@ export const GET = createHandler(
       docusignTokenExpiresAt: new Date(Date.now() + data.expires_in * 1000).toISOString(),
     });
 
-    return Response.json({ ok: true, connected: true });
+    const res = NextResponse.json({ ok: true, connected: true });
+    res.cookies.set(DOCUSIGN_OAUTH_STATE_COOKIE, "", {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: env("NODE_ENV") === "production",
+      maxAge: 0,
+      path: "/api/docusign/callback",
+    });
+    return res;
   }
 );

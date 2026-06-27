@@ -61,7 +61,14 @@ export async function verifyApiKey(
   if (apiKey) headers["x-subsumio-api-key"] = apiKey;
 
   // Fire-and-forget: update lastUsedAt
-  store.update(match.id, { lastUsedAt: new Date().toISOString() }).catch(() => {});
+  store
+    .update(match.id, { lastUsedAt: new Date().toISOString() })
+    .catch((err) =>
+      console.warn(
+        "[api-key-auth] Failed to update lastUsedAt:",
+        err instanceof Error ? err.message : err
+      )
+    );
 
   return {
     ctx: { headers, brainId, plan, user },

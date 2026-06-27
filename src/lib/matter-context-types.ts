@@ -81,6 +81,13 @@ export interface MatterDocumentSummary {
   extraction_status?: ExtractionStatus;
   extraction_method?: ExtractionMethod;
   extraction_unverified?: boolean;
+  analysis_status?:
+    | "completed"
+    | "failed"
+    | "retrying"
+    | "permanently_failed"
+    | "processing"
+    | "pending";
 }
 
 export interface MatterActivityEntry {
@@ -268,8 +275,22 @@ export interface RetrievalExplanation {
   chunk_info?: {
     page?: number;
     snippet?: string;
+    char_offset_start?: number;
+    char_offset_end?: number;
   };
   permission_filtered: boolean;
+}
+
+export interface PassageCitation {
+  slug: string;
+  title: string;
+  quote: string;
+  confidence: number;
+  case_slug?: string;
+  chunk_index?: number;
+  page_number?: number;
+  char_offset_start?: number;
+  char_offset_end?: number;
 }
 
 export interface ExplainedSearchResult {

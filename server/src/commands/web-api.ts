@@ -46,6 +46,18 @@ export interface WebApiOptions {
   requireTenant?: boolean;
 }
 
+/** Resolve fail-closed SaaS tenant mode from the explicit option or env.
+ * SUBSUMIO_REQUIRE_TENANT is the canonical deployment variable; the GBRAIN and
+ * SIGMABRAIN names remain supported for existing self-hosted installations. */
+export function tenantModeRequired(options: Pick<WebApiOptions, "requireTenant"> = {}): boolean {
+  return (
+    options.requireTenant ??
+    (process.env.SUBSUMIO_REQUIRE_TENANT === "true" ||
+      process.env.GBRAIN_REQUIRE_TENANT === "true" ||
+      process.env.SIGMABRAIN_REQUIRE_TENANT === "true")
+  );
+}
+
 /**
  * P0-SECR-002: Express Request augmentation for the verified matter scope.
  * Every /api request gets `matterScope` attached by the middleware below.
@@ -893,44 +905,164 @@ async function invokeOp(
 }
 
 /**
- * Batch-fetch page titles for a set of citation slugs so citation pills in
- * the UI show the real page title instead of the slug path.
+ * Batch-fetch page titles + chunk-level passage data for a set of citation
+ * slugs so citation pills in the UI show the real page title, a text snippet
+ * from the actual chunk, and — for PDF documents — the page number in the
+ * source PDF.
+ *
+ * Passage grounding (Harvey-parity): every citation carries the exact text
+ * excerpt the LLM saw, plus a page_number when the source document was a
+ * paginated PDF. The page number is derived from the `###***###` separator
+ * pattern that extract-document.ts inserts between PDF pages.
  */
 async function enrichCitations(
   engine: BrainEngine,
-  citations: Array<{ page_slug: string }>,
+  citations: Array<{ page_slug: string; row_num?: number | null }>,
   sourceId: string,
   allowedSources?: string[]
 ): Promise<
-  Array<{ slug: string; title: string; quote: string; confidence: number; case_slug?: string }>
+  Array<{
+    slug: string;
+    title: string;
+    quote: string;
+    confidence: number;
+    case_slug?: string;
+    chunk_index?: number;
+    page_number?: number;
+    char_offset_start?: number;
+    char_offset_end?: number;
+  }>
 > {
   if (citations.length === 0) return [];
   const slugs = [...new Set(citations.map((c) => c.page_slug))];
   // Match the federated read scope used for retrieval, so a cited statute page
   // in a shared source (law-at) resolves its title too — not just tenant pages.
   const scopes = allowedSources && allowedSources.length > 0 ? allowedSources : [sourceId];
-  const rows = await engine
-    .executeRaw<{ slug: string; title: string; case_slug?: string }>(
-      `SELECT slug, title, frontmatter->>'case_slug' AS case_slug FROM pages WHERE slug = ANY($1::text[])
+
+  // Fetch page metadata (title, case_slug, frontmatter pages count, compiled_truth for page-derivation)
+  const pageRows = await engine
+    .executeRaw<{
+      slug: string;
+      title: string;
+      case_slug?: string;
+      page_count?: number;
+      compiled_truth?: string;
+    }>(
+      `SELECT slug, title,
+              frontmatter->>'case_slug' AS case_slug,
+              (frontmatter->>'pages')::int AS page_count,
+              compiled_truth
+       FROM pages WHERE slug = ANY($1::text[])
        AND deleted_at IS NULL
        AND ($2::text[] @> ARRAY['default'] OR source_id = ANY($2::text[]))`,
       [slugs, scopes]
     )
-    .catch(() => [] as Array<{ slug: string; title: string; case_slug?: string }>);
-  const titleMap = new Map(rows.map((r) => [r.slug, r.title]));
+    .catch(
+      () =>
+        [] as Array<{
+          slug: string;
+          title: string;
+          case_slug?: string;
+          page_count?: number;
+          compiled_truth?: string;
+        }>
+    );
+
+  const titleMap = new Map(pageRows.map((r) => [r.slug, r.title]));
   const caseSlugMap = new Map<string, string>();
-  for (const row of rows) {
+  const pageCountMap = new Map<string, number>();
+  const truthMap = new Map<string, string>();
+  for (const row of pageRows) {
     if (typeof row.case_slug === "string" && row.case_slug.length > 0) {
       caseSlugMap.set(row.slug, row.case_slug);
     }
+    if (typeof row.page_count === "number" && row.page_count > 0) {
+      pageCountMap.set(row.slug, row.page_count);
+    }
+    if (typeof row.compiled_truth === "string" && row.compiled_truth.length > 0) {
+      truthMap.set(row.slug, row.compiled_truth);
+    }
   }
-  return citations.map((c) => ({
-    slug: c.page_slug,
-    title: titleMap.get(c.page_slug) ?? c.page_slug.split("/").pop() ?? c.page_slug,
-    quote: "",
-    confidence: 0.85,
-    ...(caseSlugMap.has(c.page_slug) ? { case_slug: caseSlugMap.get(c.page_slug)! } : {}),
-  }));
+
+  // Fetch the best-matching chunk for each cited page so we have a real
+  // text excerpt (passage) rather than an empty quote. We pick the chunk
+  // with the highest chunk_index (closest to the cited passage) or chunk 0
+  // as fallback. For take citations (row_num set), we don't have a chunk
+  // equivalent — the quote comes from the take claim itself.
+  const chunkRows = await engine
+    .executeRaw<{
+      page_slug: string;
+      chunk_index: number;
+      chunk_text: string;
+    }>(
+      `SELECT p.slug AS page_slug, cc.chunk_index, cc.chunk_text
+       FROM content_chunks cc
+       JOIN pages p ON p.id = cc.page_id
+       WHERE p.slug = ANY($1::text[])
+         AND p.deleted_at IS NULL
+         AND ($2::text[] @> ARRAY['default'] OR p.source_id = ANY($2::text[]))
+       ORDER BY p.slug, cc.chunk_index`,
+      [slugs, scopes]
+    )
+    .catch(() => [] as Array<{ page_slug: string; chunk_index: number; chunk_text: string }>);
+
+  // Build a map: slug → best chunk (first chunk = most representative)
+  const chunkMap = new Map<string, { chunk_index: number; chunk_text: string }>();
+  for (const cr of chunkRows) {
+    if (!chunkMap.has(cr.page_slug)) {
+      chunkMap.set(cr.page_slug, { chunk_index: cr.chunk_index, chunk_text: cr.chunk_text });
+    }
+  }
+
+  return citations.map((c) => {
+    const slug = c.page_slug;
+    const title = titleMap.get(slug) ?? slug.split("/").pop() ?? slug;
+    const chunk = chunkMap.get(slug);
+    const truth = truthMap.get(slug);
+    const pageCount = pageCountMap.get(slug);
+
+    // Derive page_number from the chunk_text position within the compiled_truth.
+    // The PDF extractor inserts `###***###` between pages. By counting how many
+    // separators appear before the chunk_text's position in the full document,
+    // we can determine which PDF page this chunk came from.
+    let pageNumber: number | undefined;
+    let charOffsetStart: number | undefined;
+    let charOffsetEnd: number | undefined;
+    let quote = "";
+
+    if (chunk) {
+      // Use up to 200 chars of the chunk as the passage quote
+      quote = chunk.chunk_text.slice(0, 200).trim();
+
+      if (truth && chunk.chunk_text.length > 20) {
+        const offset = truth.indexOf(chunk.chunk_text.slice(0, 50));
+        if (offset >= 0) {
+          charOffsetStart = offset;
+          charOffsetEnd = offset + chunk.chunk_text.length;
+
+          // Count page separators before this offset to derive page number
+          if (pageCount && pageCount > 1) {
+            const PAGE_SEP = "###***###";
+            const before = truth.slice(0, offset);
+            const sepCount = before.split(PAGE_SEP).length - 1;
+            pageNumber = sepCount + 1; // 1-based page number
+          }
+        }
+      }
+    }
+
+    return {
+      slug,
+      title,
+      quote,
+      confidence: chunk ? 0.9 : 0.7,
+      ...(caseSlugMap.has(slug) ? { case_slug: caseSlugMap.get(slug)! } : {}),
+      ...(chunk ? { chunk_index: chunk.chunk_index } : {}),
+      ...(pageNumber !== undefined ? { page_number: pageNumber } : {}),
+      ...(charOffsetStart !== undefined ? { char_offset_start: charOffsetStart } : {}),
+      ...(charOffsetEnd !== undefined ? { char_offset_end: charOffsetEnd } : {}),
+    };
+  });
 }
 
 // ── Direct-to-Engine Upload Token ──────────────────────────────────────
@@ -1028,10 +1160,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     process.env.GBRAIN_WEB_API_KEY ??
     process.env.SIGMABRAIN_WEB_API_KEY;
   const guard = requireWebApiKey(apiKey);
-  const requireTenant =
-    options.requireTenant ??
-    (process.env.GBRAIN_REQUIRE_TENANT === "true" ||
-      process.env.SIGMABRAIN_REQUIRE_TENANT === "true");
+  const requireTenant = tenantModeRequired(options);
   const config = loadConfig() || { engine: "pglite" as const };
   const ctx = (req: Request) =>
     buildOperationContext(engine, {}, { remote: false, sourceId: requestSourceId(req) });
@@ -1329,7 +1458,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       }
       next();
     });
-    console.error("[web-api] fail-closed tenant mode active (GBRAIN_REQUIRE_TENANT)");
+    console.error("[web-api] fail-closed tenant mode active");
   }
 
   // P0-SECR-002: attach verified matter scope to every request. Invalid
@@ -2910,6 +3039,82 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
   );
 
   // ============================================================
+  // v0.44 — Legal Agent Pipeline Trigger API
+  // ============================================================
+  // Exposes MinionQueue.add("legal-pipeline", ...) via HTTP so the
+  // Next.js web app can trigger the 6-layer pipeline from the dashboard.
+  // The upload flow already triggers it in-process (lines ~1401, ~2993);
+  // this endpoint covers the manual-trigger and resume-from-layer cases.
+
+  app.post(
+    "/api/legal-pipeline/trigger",
+    express.json({ limit: "1mb" }),
+    async (req: Request, res: Response) => {
+      try {
+        const body = req.body as Record<string, unknown>;
+        const caseSlug = String(body.case_slug ?? "");
+        if (!caseSlug) {
+          res.status(400).json({ error: "missing_case_slug", message: "case_slug is required" });
+          return;
+        }
+
+        // If part_slugs not provided, fetch from case page frontmatter
+        let partSlugs = Array.isArray(body.part_slugs)
+          ? (body.part_slugs as string[]).filter((s) => typeof s === "string" && s.length > 0)
+          : [];
+
+        if (partSlugs.length === 0 && !body.resume_from_layer) {
+          const sourceId = requestSourceId(req);
+          const casePage = await engine.getPage(
+            caseSlug,
+            sourceId !== "default" ? { sourceId } : undefined
+          );
+          if (casePage) {
+            const fm = (casePage.frontmatter ?? {}) as Record<string, unknown>;
+            const documents = (fm.documents as Array<Record<string, unknown>>) ?? [];
+            partSlugs = documents.map((d) => String(d.slug ?? "")).filter(Boolean);
+          }
+        }
+
+        if (partSlugs.length === 0 && !body.resume_from_layer) {
+          res.status(400).json({
+            error: "no_documents",
+            message: "No part_slugs provided and case has no documents.",
+          });
+          return;
+        }
+
+        const pipelineData: Record<string, unknown> = {
+          case_slug: caseSlug,
+          part_slugs: partSlugs,
+          _source_id: requestSourceId(req),
+        };
+
+        if (typeof body.resume_from_layer === "number" && body.resume_from_layer >= 3) {
+          pipelineData.resume_from_layer = body.resume_from_layer;
+        }
+
+        if (
+          body.manual_overrides &&
+          typeof body.manual_overrides === "object" &&
+          !Array.isArray(body.manual_overrides)
+        ) {
+          pipelineData.manual_overrides = body.manual_overrides;
+        }
+
+        const queue = new MinionQueue(engine);
+        const job = await queue.add("legal-pipeline", pipelineData);
+
+        res.json({ success: true, job_id: job.id, status: "queued" });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error("[legal-pipeline/trigger] error:", msg);
+        res.status(500).json({ error: "trigger_failed", message: msg });
+      }
+    }
+  );
+
+  // ============================================================
   // v0.43 — Agent DAG API
   // ============================================================
   //
@@ -3183,6 +3388,14 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         if (body.skip_critic) data.skip_critic = true;
         if (Array.isArray(body.force_specialists)) data.force_specialists = body.force_specialists;
 
+        // Pass through budget_remaining_cents (in cents) so the supervisor
+        // handler can enforce it via setOwnerBudget. Without this, the cap
+        // sent by callers (e.g. cron/rundown) was silently ignored.
+        const budgetCents =
+          typeof body.budget_remaining_cents === "number" && body.budget_remaining_cents > 0
+            ? body.budget_remaining_cents
+            : undefined;
+
         const job = await queue.add(
           "supervisor",
           data,
@@ -3191,6 +3404,13 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           },
           { allowProtectedSubmit: true }
         );
+
+        // Set the spendable balance on the owner job row so subagent
+        // reserveBudget() calls will actually check against it.
+        if (budgetCents !== undefined) {
+          const { setOwnerBudget } = await import("../core/minions/budget-tracker.ts");
+          await setOwnerBudget(engine, job.id, budgetCents / 100);
+        }
 
         res.json({ success: true, jobId: job.id });
       } catch (e) {
@@ -4093,6 +4313,38 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     } catch (e) {
       const msg = e instanceof Error ? e.message : "unknown";
       res.status(500).json({ error: "dream_failed", message: msg });
+    }
+  });
+
+  app.post("/api/admin/contradiction-probe", async (req: Request, res: Response) => {
+    try {
+      const { runEvalSuspectedContradictions } =
+        await import("../commands/eval-suspected-contradictions.ts");
+      const body = (req.body ?? {}) as {
+        budget_usd?: number;
+        top_k?: number;
+        limit?: number;
+        doc_type?: string;
+      };
+      const args = [
+        "run",
+        "--json",
+        "--yes",
+        "--budget-usd",
+        String(body.budget_usd ?? 0.5),
+        "--top-k",
+        String(body.top_k ?? 5),
+        "--limit",
+        String(body.limit ?? 20),
+      ];
+      if (body.doc_type) {
+        args.push("--doc-type", body.doc_type);
+      }
+      await runEvalSuspectedContradictions(engine, args);
+      res.json({ status: "ok", message: "contradiction probe completed" });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "unknown";
+      res.status(500).json({ error: "contradiction_probe_failed", message: msg });
     }
   });
 

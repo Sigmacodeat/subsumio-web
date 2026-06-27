@@ -76,6 +76,8 @@ interface ParsedFlags {
   since?: string;
   // help
   help: boolean;
+  /** v0.41: scope probe to pages with this doc_type in frontmatter. */
+  docType?: string;
 }
 
 export function parseFlags(args: string[]): ParsedFlags {
@@ -147,6 +149,7 @@ export function parseFlags(args: string[]): ParsedFlags {
       }
       f.severity = v;
     } else if (arg === "--since") f.since = next();
+    else if (arg === "--doc-type") f.docType = next();
     else {
       throw new Error(`unknown flag: ${arg}`);
     }
@@ -157,7 +160,7 @@ export function parseFlags(args: string[]): ParsedFlags {
 function printHelp(): void {
   console.error(`Usage:
   gbrain eval suspected-contradictions [run]
-    [--queries-file FILE.jsonl | --query "..." | --from-capture]
+    [--queries-file FILE.jsonl | --query "..." | --from-capture | --doc-type TYPE]
     [--top-k N=5] [--judge MODEL]   (default routes via resolveModel →
                                      models.eval.contradictions_judge →
                                      utility-tier (Haiku) fallback)
@@ -232,8 +235,10 @@ function exclusiveOneOf(...flags: Array<unknown>): boolean {
 }
 
 async function runRun(engine: BrainEngine, f: ParsedFlags): Promise<void> {
-  if (!exclusiveOneOf(f.queriesFile, f.query, f.fromCapture)) {
-    console.error(`Must pass exactly one of: --queries-file FILE, --query "...", --from-capture.`);
+  if (!exclusiveOneOf(f.queriesFile, f.query, f.fromCapture, f.docType)) {
+    console.error(
+      `Must pass exactly one of: --queries-file FILE, --query "...", --from-capture, --doc-type TYPE.`
+    );
     process.exit(2);
   }
 
@@ -241,6 +246,30 @@ async function runRun(engine: BrainEngine, f: ParsedFlags): Promise<void> {
   if (f.queriesFile) queries = readQueriesFile(f.queriesFile);
   else if (f.query) queries = [f.query];
   else if (f.fromCapture) queries = await loadFromCapture(engine, f.limit);
+
+  // v0.41: When --doc-type is set, generate queries from pages with that doc_type.
+  // This scopes the probe to only compare chunks from documents of a specific
+  // semantic type (e.g. "medical_report" vs "medical_report").
+  if (f.docType) {
+    const docTypeQueries = await engine.executeRaw<{ compiled_truth: string }>(
+      `SELECT compiled_truth FROM pages
+       WHERE deleted_at IS NULL
+         AND frontmatter->>'doc_type' = $1
+       ORDER BY updated_at DESC
+       LIMIT $2`,
+      [f.docType, f.limit ?? 50]
+    );
+    if (docTypeQueries && docTypeQueries.length > 0) {
+      // Use first 200 chars of each page as a query — the probe will retrieve
+      // similar chunks and judge them for contradictions
+      queries = docTypeQueries
+        .map((r) => (r.compiled_truth ?? "").replace(/\s+/g, " ").trim().slice(0, 200))
+        .filter((q) => q.length > 20);
+      console.error(
+        `Doc-type scoping: ${queries.length} queries from pages with doc_type=${f.docType}`
+      );
+    }
+  }
 
   if (typeof f.limit === "number" && f.limit > 0) {
     queries = queries.slice(0, f.limit);

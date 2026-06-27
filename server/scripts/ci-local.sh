@@ -66,8 +66,8 @@ if [ "$DIFF" = "1" ]; then
       if ! command -v gitleaks >/dev/null 2>&1; then
         echo "[ci-local] WARN: gitleaks not installed; skipping. brew install gitleaks." >&2
       else
-        gitleaks dir . --redact --no-banner
-        gitleaks git . --redact --no-banner --log-opts="origin/master..HEAD"
+        gitleaks dir . --redact --no-banner --config=.gitleaks.toml
+        gitleaks git . --redact --no-banner --config=.gitleaks.toml --log-opts="origin/master..HEAD"
       fi
       echo "[ci-local] Doc-only fast-path complete. No code paths exercised."
       trap - EXIT
@@ -121,8 +121,8 @@ fi
 #   1. Working-tree files (catch uncommitted secrets sitting in files)
 #   2. Branch commits vs origin/master (catch secrets committed on this branch)
 # Full-history scan is ~4 min on this repo's 3700+ commits; not useful pre-push.
-gitleaks dir . --redact --no-banner
-gitleaks git . --redact --no-banner --log-opts="origin/master..HEAD"
+gitleaks dir . --redact --no-banner --config=.gitleaks.toml
+gitleaks git . --redact --no-banner --config=.gitleaks.toml --log-opts="origin/master..HEAD"
 
 # Step 1: pull. Refreshes pgvector + oven/bun:1 (both are `image:` not `build:`).
 if [ "$NO_PULL" = "0" ]; then

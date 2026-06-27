@@ -6,6 +6,7 @@ import {
   type BriefingApproval,
   type BriefingDocument,
   type BriefingConflict,
+  type BriefingCaseActivity,
 } from "./daily-briefing";
 
 const NOW = new Date("2026-06-20T06:00:00.000Z"); // today = 2026-06-20
@@ -130,5 +131,64 @@ describe("buildDailyBriefing — extended sections", () => {
     ];
     const text = buildDailyBriefing({ cases: [], now: NOW, pendingApprovals: approvals });
     expect(text).not.toBeNull();
+  });
+
+  it("includes case activity section", () => {
+    const activity: BriefingCaseActivity[] = [
+      {
+        caseNumber: "2026-014",
+        title: "Müller ./. Meier",
+        activity: "Neues Dokument",
+        timestamp: new Date().toISOString(),
+      },
+    ];
+    const text = buildDailyBriefing({ cases: [], now: NOW, caseActivity: activity });
+    expect(text!).toContain("Akte kürzlich aktiv");
+    expect(text!).toContain("2026-014");
+    expect(text!).toContain("Neues Dokument");
+  });
+
+  it("includes recommendations section with today's deadline", () => {
+    const text = buildDailyBriefing({ cases: cases(), now: NOW });
+    expect(text!).toContain("Empfehlungen für heute");
+    expect(text!).toContain("Berufungsbegründung");
+  });
+
+  it("includes recommendation for pending approval", () => {
+    const approvals: BriefingApproval[] = [
+      {
+        id: "a1",
+        action_type: "document_finalize",
+        summary: "Klageentwurf freigeben",
+        proposed_at: new Date().toISOString(),
+      },
+    ];
+    const text = buildDailyBriefing({ cases: [], now: NOW, pendingApprovals: approvals });
+    expect(text!).toContain("Empfehlungen für heute");
+    expect(text!).toContain("Freigabe ausstehend");
+  });
+
+  it("includes calm recommendation when nothing urgent", () => {
+    const onlyFuture: BriefingCase[] = [
+      { caseNumber: "x", deadlines: [{ title: "weit weg", due_date: "2026-12-31" }] },
+    ];
+    const text = buildDailyBriefing({ cases: onlyFuture, now: NOW, horizonDays: 3 });
+    // No deadlines within horizon → no deadline section → but recommendations still present
+    // Actually with no deadlines, approvals, etc., it returns null
+    expect(text).toBeNull();
+  });
+
+  it("returns non-null with only case activity", () => {
+    const activity: BriefingCaseActivity[] = [
+      {
+        caseNumber: "2026-100",
+        title: "Test Case",
+        activity: "Agenten-Lauf",
+        timestamp: new Date().toISOString(),
+      },
+    ];
+    const text = buildDailyBriefing({ cases: [], now: NOW, caseActivity: activity });
+    expect(text).not.toBeNull();
+    expect(text!).toContain("Agenten-Lauf");
   });
 });

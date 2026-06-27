@@ -97,10 +97,12 @@ test.describe("2FA Rate Limiting (E2E)", () => {
 
     // Send 25 requests with fake challenge tokens
     let got429 = false;
+    const statuses: number[] = [];
     for (let i = 0; i < 25; i++) {
       const res = await request.post("/api/auth/2fa/login-verify", {
         data: { challengeToken: "fake_token", token: "123456" },
       });
+      statuses.push(res.status());
 
       if (res.status() === 429) {
         got429 = true;
@@ -111,7 +113,7 @@ test.describe("2FA Rate Limiting (E2E)", () => {
     }
 
     // Per-IP rate limit (20/5min) should kick in
-    expect(got429).toBe(true);
+    expect(got429, `statuses: ${statuses.join(",")}`).toBe(true);
   });
 
   test("3. 2FA disable — rate limited after 5 wrong passwords", async ({ page }) => {
@@ -123,11 +125,13 @@ test.describe("2FA Rate Limiting (E2E)", () => {
     // 2FA is not enabled, so we'll get 400 (2fa_not_enabled) before rate limit
     // But the rate limiter runs before the 2FA check
     let got429 = false;
+    const statuses: number[] = [];
     for (let i = 0; i < 7; i++) {
       const res = await page.context().request.post("/api/auth/2fa/disable", {
         data: { password: `wrong_password_${i}` },
         headers: { "x-csrf-token": csrfToken! },
       });
+      statuses.push(res.status());
 
       if (res.status() === 429) {
         got429 = true;
@@ -139,6 +143,6 @@ test.describe("2FA Rate Limiting (E2E)", () => {
       expect([400, 403]).toContain(res.status());
     }
 
-    expect(got429).toBe(true);
+    expect(got429, `statuses: ${statuses.join(",")}`).toBe(true);
   });
 });

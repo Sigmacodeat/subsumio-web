@@ -96,6 +96,7 @@ export default function TabularReviewPage() {
             <select
               value={docType}
               onChange={(e) => setDocType(e.target.value)}
+              aria-label={t("tabular.doc_type")}
               className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
             >
               {DOC_TYPES.map((dt) => (
@@ -115,6 +116,7 @@ export default function TabularReviewPage() {
               max={50}
               value={limit}
               onChange={(e) => setLimit(Math.min(Math.max(1, Number(e.target.value) || 1), 50))}
+              aria-label={t("tabular.max_docs")}
               className="w-24 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
             />
           </div>
@@ -135,6 +137,7 @@ export default function TabularReviewPage() {
               {questions.length > 1 && (
                 <button
                   onClick={() => removeQuestion(i)}
+                  aria-label={`Frage ${i + 1} entfernen`}
                   className="p-2 text-[color:var(--ds-text-muted)] hover:text-red-600"
                 >
                   <X size={15} />

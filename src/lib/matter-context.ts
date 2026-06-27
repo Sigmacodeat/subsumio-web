@@ -722,6 +722,10 @@ async function fetchCaseDocumentsBySlug(
         source: typeof fm.source_format === "string" ? fm.source_format : "upload",
         ocr_status: inferOcrStatusFromFrontmatter(fm),
         extraction_status: inferExtractionStatusFromFrontmatter(fm),
+        analysis_status:
+          typeof fm.analysis_status === "string"
+            ? (fm.analysis_status as MatterDocumentSummary["analysis_status"])
+            : undefined,
       };
     });
   } catch {
@@ -1282,16 +1286,94 @@ export function buildPermissionSummary(
 function areContradictory(a: string, b: string): boolean {
   const aLower = a.toLowerCase();
   const bLower = b.toLowerCase();
+
+  // 1. Direct negation pairs (expanded from 4 to 15+)
   const negationPairs = [
     ["nicht", ""],
     ["bestreitet", "zugestanden"],
     ["leugnet", "eingestanden"],
     ["abweisung", "antrag"],
+    ["abgelehnt", "angenommen"],
+    ["verweigert", "akzeptiert"],
+    ["kein", ""],
+    ["niemals", "immer"],
+    ["nie", "schon"],
+    ["keine", ""],
+    ["widerspricht", "bestätigt"],
+    ["strittig", "unstrittig"],
+    ["umstritten", "eingeräumt"],
+    ["nicht wahr", "wahr"],
+    ["falsch", "richtig"],
+    ["unrichtig", "zutreffend"],
+    ["bestritten", "eingeräumt"],
+    ["in Abrede", "eingestanden"],
+    ["nicht der Fall", "der Fall"],
   ];
   for (const [neg, pos] of negationPairs) {
     if (aLower.includes(neg) && bLower.includes(pos)) return true;
     if (bLower.includes(neg) && aLower.includes(pos)) return true;
   }
+
+  // 2. Antonym detection — common legal antonym pairs
+  const antonymPairs = [
+    ["gezahlt", "nicht gezahlt"],
+    ["erfüllt", "nicht erfüllt"],
+    ["vorhanden", "nicht vorhanden"],
+    ["verschuldet", "nicht verschuldet"],
+    ["haftbar", "nicht haftbar"],
+    ["schuldig", "nicht schuldig"],
+    ["zulässig", "unzulässig"],
+    ["begründet", "unbegründet"],
+    ["rechtens", "nicht rechtens"],
+    ["gültig", "ungültig"],
+    ["wirksam", "unwirksam"],
+    ["verbindlich", "unverbindlich"],
+    ["pflicht", "keine pflicht"],
+    ["anspruch", "kein anspruch"],
+    ["schaden", "kein schaden"],
+    ["verschulden", "kein verschulden"],
+    ["ursache", "keine ursache"],
+    ["kausal", "nicht kausal"],
+  ];
+  for (const [pos, neg] of antonymPairs) {
+    if (aLower.includes(pos) && bLower.includes(neg)) return true;
+    if (bLower.includes(pos) && aLower.includes(neg)) return true;
+    if (aLower.includes(neg) && bLower.includes(pos)) return true;
+    if (bLower.includes(neg) && aLower.includes(pos)) return true;
+  }
+
+  // 3. Semantic overlap with opposing stance
+  // If both strings share significant token overlap but one has a negation
+  // marker, they likely contradict.
+  const negationMarkers = [
+    "nicht",
+    "kein",
+    "keine",
+    "niemals",
+    "nie",
+    "bestreitet",
+    "leugnet",
+    "verneint",
+    "strittig",
+    "umstritten",
+    "abgelehnt",
+    "verweigert",
+    "widerspricht",
+  ];
+  const aTokens = new Set(aLower.split(/\s+/).filter((t) => t.length > 3));
+  const bTokens = new Set(bLower.split(/\s+/).filter((t) => t.length > 3));
+  let overlap = 0;
+  for (const t of aTokens) {
+    if (bTokens.has(t)) overlap++;
+  }
+  const overlapRatio = overlap / Math.max(aTokens.size, bTokens.size, 1);
+  if (overlapRatio > 0.3) {
+    const aHasNeg = negationMarkers.some((m) => aLower.includes(m));
+    const bHasNeg = negationMarkers.some((m) => bLower.includes(m));
+    // If they overlap significantly but exactly one has a negation marker
+    if (aHasNeg !== bHasNeg) return true;
+  }
+
   return false;
 }
 

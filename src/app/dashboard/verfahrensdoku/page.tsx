@@ -175,7 +175,12 @@ export default function VerfahrensdokuPage() {
           verantwortlich: dokuForm.getValues("verantwortlich") || (s.anwaltName ?? ""),
         });
       })
-      .catch(() => {});
+      .catch((err) =>
+        console.warn(
+          "[verfahrensdoku] Failed to load kanzlei settings:",
+          err instanceof Error ? err.message : err
+        )
+      );
     api.brain
       .getPage(DOC_SLUG)
       .then((p) => {
@@ -189,7 +194,12 @@ export default function VerfahrensdokuPage() {
           });
         }
       })
-      .catch(() => {});
+      .catch((err) =>
+        console.warn(
+          "[verfahrensdoku] Failed to load verfahrensdoku page:",
+          err instanceof Error ? err.message : err
+        )
+      );
     return () => {
       cancelled = true;
     };
@@ -404,7 +414,11 @@ export default function VerfahrensdokuPage() {
               {t("verfahrensdoku.preview_title")} (Markdown)
             </span>
           </div>
-          <pre className="max-h-[70vh] overflow-y-auto font-mono text-xs leading-relaxed whitespace-pre-wrap text-[color:var(--ds-text-muted)]">
+          <pre
+            className="max-h-[70vh] overflow-y-auto font-mono text-xs leading-relaxed whitespace-pre-wrap text-[color:var(--ds-text-muted)]"
+            tabIndex={0}
+            aria-label={t("verfahrensdoku.preview_title")}
+          >
             {markdown}
           </pre>
         </div>

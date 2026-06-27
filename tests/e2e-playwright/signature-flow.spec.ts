@@ -13,7 +13,7 @@ import { test, expect } from "@playwright/test";
 
 let testCounter = 0;
 const TEST_USER = {
-  password: "SigTest123!",
+  password: "SigTest1234!",
   name: "Sig Tester",
 };
 
@@ -68,10 +68,16 @@ test.describe("Signature Flow", () => {
 
   test("docusign webhook without signature → rejected", async ({ request }) => {
     const res = await request.post("/api/docusign/webhook", {
-      data: { event: "envelope-completed" },
+      data: {
+        event: "envelope-completed",
+        eventId: "unsigned-test-event",
+        data: {
+          envelopeId: "unsigned-test-envelope",
+          envelopeSummary: { status: "completed" },
+        },
+      },
     });
-    // Should require auth or valid signature
-    expect([401, 403, 400]).toContain(res.status());
+    expect(res.status()).toBe(401);
   });
 
   test("docusign status requires auth", async ({ request }) => {

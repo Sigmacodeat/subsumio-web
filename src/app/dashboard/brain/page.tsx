@@ -22,6 +22,7 @@ import {
   Scale,
   Landmark,
 } from "lucide-react";
+import { RetrievalFeedbackButtons } from "@/components/legal/RetrievalFeedbackButtons";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -325,7 +326,7 @@ export default function BrainPage() {
             </div>
           ) : (
             <div className="space-y-2">
-              {displayed.map((page) => {
+              {displayed.map((page, pageIndex) => {
                 const TypeIcon = typeIconMap[page.type] || FileText;
                 const tags = "tags" in page ? page.tags : [];
                 return (
@@ -389,6 +390,15 @@ export default function BrainPage() {
                         </div>
                       )}
                     </div>
+                    {searchResults !== null && (
+                      <RetrievalFeedbackButtons
+                        query={query}
+                        resultSlug={page.slug}
+                        resultTitle={page.title}
+                        rankPosition={pageIndex + 1}
+                        className="mr-2 shrink-0"
+                      />
+                    )}
                     <ChevronRight
                       size={16}
                       className="group-hover:brand-text shrink-0 text-[color:var(--ds-text-subtle)] transition-colors"

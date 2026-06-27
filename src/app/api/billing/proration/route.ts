@@ -16,7 +16,7 @@ import { z } from "zod";
 const STRIPE_SECRET = process.env.STRIPE_SECRET_KEY ?? "";
 
 const planChangeSchema = z.object({
-  newPriceId: z.string().min(1),
+  newPriceId: z.string().min(1).max(200),
   quantity: z.number().int().min(1).optional().default(1),
 });
 

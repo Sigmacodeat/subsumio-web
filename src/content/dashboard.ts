@@ -5289,7 +5289,533 @@ export const D = {
     en: "Secure long-term archiving beyond retention period (§ 147 AO)",
   },
 
-  // ── Cases detail page strings ──
+  // ── AI Act conformity page strings ──
+  "aiact.title": {
+    de: "EU AI Act — Konformitätserklärung",
+    en: "EU AI Act — Conformity Statement",
+  },
+  "aiact.intro": {
+    de: "Subsumio ist als KI-gestütztes Rechtsinformationssystem gemäß EU AI Act (VO 2024/1689) potenziell als Hochrisiko-KI nach Annex III Nr. 8 (Rechtspflege und demokratische Prozesse) einzustufen. Diese Seite dokumentiert den aktuellen Konformitätsstatus und die laufenden Maßnahmen zur vollständigen Compliance.",
+    en: "Subsumio is an AI-powered legal information system under the EU AI Act (Reg. 2024/1689) potentially classified as high-risk AI under Annex III No. 8 (justice and democratic processes). This page documents the current conformity status and ongoing measures toward full compliance.",
+  },
+  "aiact.notice": {
+    de: "Hinweis: Der EU AI Act ist ab August 2026 für Hochrisiko-Systeme vollständig anwendbar. Dieses Dokument wird laufend aktualisiert.",
+    en: "Notice: The EU AI Act becomes fully applicable to high-risk systems from August 2026. This document is continuously updated.",
+  },
+  "aiact.section_overview": { de: "Konformitäts-Übersicht", en: "Conformity Overview" },
+  "aiact.section_classification": {
+    de: "1. System-Klassifizierung",
+    en: "1. System Classification",
+  },
+  "aiact.section_tech_doc": {
+    de: "2. Technische Dokumentation (Art. 11)",
+    en: "2. Technical Documentation (Art. 11)",
+  },
+  "aiact.section_oversight": {
+    de: "3. Menschliche Aufsicht (Art. 14)",
+    en: "3. Human Oversight (Art. 14)",
+  },
+  "aiact.section_transparency": { de: "4. Transparenz (Art. 52)", en: "4. Transparency (Art. 52)" },
+  "aiact.section_detail": {
+    de: "5. Anforderungs-Status im Detail",
+    en: "5. Requirement Status in Detail",
+  },
+  "aiact.section_roadmap": { de: "6. Zertifizierungs-Roadmap", en: "6. Certification Roadmap" },
+  "aiact.stat_compliant": { de: "Konform", en: "Compliant" },
+  "aiact.stat_partial": { de: "Teilweise", en: "Partial" },
+  "aiact.stat_pending": { de: "Ausstehend", en: "Pending" },
+  "aiact.status_compliant": { de: "Konform", en: "Compliant" },
+  "aiact.status_partial": { de: "Teilweise", en: "Partial" },
+  "aiact.status_pending": { de: "In Arbeit", en: "In progress" },
+  "aiact.status_not_started": { de: "Ausstehend", en: "Not started" },
+  "aiact.evidence": { de: "Nachweis", en: "Evidence" },
+  "aiact.note_label": { de: "Hinweis", en: "Note" },
+  "aiact.class_intro": {
+    de: "Subsumio unterstützt Rechtsanwältinnen und Rechtsanwälte bei der Analyse von Verträgen, Recherche von Rechtsprechung, Fristüberwachung und Erstellung von Schriftsätzen. Nach Annex III Nr. 8 EU AI Act gelten KI-Systeme als Hochrisiko, wenn sie für die Rechtspflege eingesetzt werden und die Auslegung von Sachverhalten und Gesetzen oder die Anwendung des Rechts auf konkrete Sachverhalte unterstützen.",
+    en: "Subsumio supports lawyers in contract analysis, legal research, deadline monitoring, and legal document drafting. Under Annex III No. 8 EU AI Act, AI systems are classified as high-risk when used in the administration of justice and supporting the interpretation of facts and laws or the application of law to specific cases.",
+  },
+  "aiact.class_category": { de: "Annex III Kategorie", en: "Annex III Category" },
+  "aiact.class_category_val": { de: "Nr. 8 — Rechtspflege", en: "No. 8 — Justice" },
+  "aiact.class_risk": { de: "Risikoniveau", en: "Risk level" },
+  "aiact.class_risk_val": {
+    de: "Potenziell Hochrisiko (in Prüfung)",
+    en: "Potentially high-risk (under review)",
+  },
+  "aiact.class_scope": { de: "Anwendungsbereich", en: "Scope" },
+  "aiact.class_scope_val": {
+    de: "DACH-Rechtsraum (AT, DE, CH, EU)",
+    en: "DACH legal area (AT, DE, CH, EU)",
+  },
+  "aiact.class_target": { de: "Zielgruppe", en: "Target audience" },
+  "aiact.class_target_val": {
+    de: "Zugelassene Rechtsanwältinnen und Rechtsanwälte",
+    en: "Licensed attorneys",
+  },
+  "aiact.class_no_autonomy": { de: "Keine Entscheidungsautonomie", en: "No decision autonomy" },
+  "aiact.class_no_autonomy_val": {
+    de: "Alle Ausgaben sind Entscheidungsunterstützung, kein Ersatz für menschliches Urteil",
+    en: "All outputs are decision support, not a replacement for human judgment",
+  },
+  "aiact.oversight_intro": {
+    de: "Subsumio implementiert mehrere technische und organisatorische Maßnahmen zur Sicherstellung menschlicher Aufsicht über alle KI-gestützten Entscheidungen:",
+    en: "Subsumio implements several technical and organisational measures to ensure human oversight over all AI-supported decisions:",
+  },
+  "aiact.oversight.citation.desc": {
+    de: "Alle Legal-AI-Outputs enthalten zwingend Quellenangaben mit Zitaten aus dem Kanzlei-Brain — keine unkontrollierten Halluzinationen",
+    en: "All legal AI outputs mandatorily include source citations from the firm brain — no uncontrolled hallucinations",
+  },
+  "aiact.oversight.review.desc": {
+    de: "Kritische KI-Ausgaben können für menschliche Überprüfung markiert und in die Review-Queue eskaliert werden",
+    en: "Critical AI outputs can be flagged for human review and escalated to the review queue",
+  },
+  "aiact.oversight.notice.desc": {
+    de: "Jede KI-generierte Ausgabe ist für den Nutzer klar als solche erkennbar (AIActConformityBanner)",
+    en: "Every AI-generated output is clearly identifiable as such to the user (AIActConformityBanner)",
+  },
+  "aiact.oversight.release.desc": {
+    de: "Neue Modell-Versionen und AI-Features werden gegen definierte Qualitäts-Gates geprüft bevor sie live gehen",
+    en: "New model versions and AI features are tested against defined quality gates before going live",
+  },
+  "aiact.oversight.audit.desc": {
+    de: "Jede KI-Interaktion wird mit Nutzer, Zeitstempel und Kontext im Audit-Log erfasst",
+    en: "Every AI interaction is recorded with user, timestamp, and context in the audit log",
+  },
+  "aiact.oversight.ethical.desc": {
+    de: "AI-Provider-Richtlinien (EU-only Modelle, opt-out von Training) sind konfigurierbar pro Organisation",
+    en: "AI provider policies (EU-only models, training opt-out) are configurable per organisation",
+  },
+  "aiact.implemented": { de: "✅ Implementiert", en: "✅ Implemented" },
+  "aiact.transparency_intro": {
+    de: "Art. 52 EU AI Act verpflichtet zu eindeutiger Kennzeichnung KI-generierter Inhalte. Subsumio implementiert dies durch:",
+    en: "Art. 52 EU AI Act requires clear labelling of AI-generated content. Subsumio implements this through:",
+  },
+  "aiact.banner_example": {
+    de: "Beispiel-Banner (alle Legal-AI-Outputs):",
+    en: "Example banner (all legal AI outputs):",
+  },
+  "aiact.banner_text": {
+    de: "KI-Analyse (Vertragsanalyse) — EU AI Act konform · Menschliche Überprüfung empfohlen",
+    en: "AI analysis (contract analysis) — EU AI Act compliant · Human review recommended",
+  },
+  "aiact.transparency_desc": {
+    de: "Die Komponente AIActConformityBanner ist in allen Legal-AI-Routes als Standard eingebettet. Nutzer können den Banner ausklappen und erhalten Informationen zu System, Verwendungszweck und Möglichkeiten der menschlichen Überprüfung.",
+    en: "The AIActConformityBanner component is embedded as standard in all legal AI routes. Users can expand the banner to receive information about the system, purpose, and human oversight options.",
+  },
+  "aiact.roadmap_intro": {
+    de: "Für eine vollständige EU AI Act-Konformität und den Nachweis gegenüber Kanzlei-Kunden sind folgende Zertifizierungen in Vorbereitung:",
+    en: "For full EU AI Act conformity and evidence to law firm clients, the following certifications are in preparation:",
+  },
+  "aiact.roadmap_link": {
+    de: "Vollständige Zertifizierungs-Roadmap",
+    en: "Full certification roadmap",
+  },
+  "aiact.footer": {
+    de: "Letzte Aktualisierung: Juni 2026 · Verantwortlich: Subsumio GmbH · Fragen zur Compliance:",
+    en: "Last updated: June 2026 · Responsible: Subsumio GmbH · Compliance questions:",
+  },
+  "aiact.req.art11": { de: "Technische Dokumentation", en: "Technical documentation" },
+  "aiact.req.art13": {
+    de: "Transparenz und Informationspflicht gegenüber Nutzern",
+    en: "Transparency and information obligations to users",
+  },
+  "aiact.req.art14": { de: "Menschliche Aufsicht (Human Oversight)", en: "Human oversight" },
+  "aiact.req.art15": {
+    de: "Genauigkeit, Robustheit und Cybersicherheit",
+    en: "Accuracy, robustness and cybersecurity",
+  },
+  "aiact.req.art52": {
+    de: "Transparenzpflichten für bestimmte KI-Systeme",
+    en: "Transparency obligations for certain AI systems",
+  },
+  "aiact.req.art9": { de: "Risikomanagementsystem", en: "Risk management system" },
+  "aiact.req.art17": { de: "Qualitätsmanagementsystem", en: "Quality management system" },
+  "aiact.req.art26": {
+    de: "Pflichten der Betreiber von Hochrisiko-KI-Systemen",
+    en: "Obligations of deployers of high-risk AI systems",
+  },
+  "aiact.note.art11": {
+    de: "Vollständige Annex IV-konforme Dokumentation in Erstellung",
+    en: "Full Annex IV-compliant documentation in preparation",
+  },
+  "aiact.note.art13": {
+    de: "Jede KI-Ausgabe ist als solche gekennzeichnet",
+    en: "Every AI output is labelled as such",
+  },
+  "aiact.note.art14": {
+    de: "Alle kritischen KI-Outputs erfordern menschliche Bestätigung",
+    en: "All critical AI outputs require human confirmation",
+  },
+  "aiact.note.art15": {
+    de: "Formales Accuracy-Benchmarking gegen Branchenstandard ausstehend",
+    en: "Formal accuracy benchmarking against industry standard pending",
+  },
+  "aiact.note.art52": {
+    de: "Nutzer werden bei jeder KI-Interaktion informiert",
+    en: "Users are informed at every AI interaction",
+  },
+  "aiact.note.art9": {
+    de: "Formales Risikomanagement-ISMS in Aufbau (Vanta/ISO 27001)",
+    en: "Formal risk management ISMS being established (Vanta/ISO 27001)",
+  },
+  "aiact.note.art17": {
+    de: "ISO 42001-konformes QMS in Aufbau",
+    en: "ISO 42001-compliant QMS being established",
+  },
+  "aiact.note.art26": {
+    de: "Betreiber-Dokumentation und Meldepflichten werden implementiert",
+    en: "Deployer documentation and reporting obligations being implemented",
+  },
+  "aiact.tech_doc.1": { de: "Allgemeine Systembeschreibung", en: "General system description" },
+  "aiact.tech_doc.2": { de: "Trainingsdata-Beschreibung", en: "Training data description" },
+  "aiact.tech_doc.3": {
+    de: "Validierungs- und Testverfahren",
+    en: "Validation and testing procedures",
+  },
+  "aiact.tech_doc.4": {
+    de: "Leistungsmetriken und -grenzen",
+    en: "Performance metrics and limits",
+  },
+  "aiact.tech_doc.5": { de: "Risikomanagement-Dokumentation", en: "Risk management documentation" },
+  "aiact.tech_doc.6": {
+    de: "Annex IV-konforme Vollständige Dokumentation",
+    en: "Annex IV-compliant full documentation",
+  },
+  "aiact.tech_doc.1.where": {
+    de: "CLAUDE.md, docs/PRODUCT_CAPABILITIES.md",
+    en: "CLAUDE.md, docs/PRODUCT_CAPABILITIES.md",
+  },
+  "aiact.tech_doc.2.where": { de: "In Erstellung", en: "In preparation" },
+  "aiact.tech_doc.3.where": {
+    de: "RAG-Eval, BrainBench, E2E-Tests (1.515 Testdateien)",
+    en: "RAG-Eval, BrainBench, E2E tests (1,515 test files)",
+  },
+  "aiact.tech_doc.4.where": {
+    de: "docs/eval/SEARCH_MODE_METHODOLOGY.md, METRIC_GLOSSARY.md",
+    en: "docs/eval/SEARCH_MODE_METHODOLOGY.md, METRIC_GLOSSARY.md",
+  },
+  "aiact.tech_doc.5.where": {
+    de: "Vanta/ISO 27001 in Aufbau",
+    en: "Vanta/ISO 27001 being established",
+  },
+  "aiact.tech_doc.6.where": { de: "Geplant Q3 2026", en: "Planned Q3 2026" },
+  "aiact.cert.soc2.status": {
+    de: "Vanta-Onboarding geplant Juli 2026",
+    en: "Vanta onboarding planned July 2026",
+  },
+  "aiact.cert.iso27001.status": {
+    de: "TÜV Rheinland Angebotsanfrage in Vorbereitung",
+    en: "TÜV Rheinland quote request in preparation",
+  },
+  "aiact.cert.iso42001.status": { de: "Parallel zu ISO 27001", en: "In parallel with ISO 27001" },
+  "aiact.cert.gdpr.status": {
+    de: "Teilweise vorhanden, vollständige Erklärung in Erstellung",
+    en: "Partially available, full statement in preparation",
+  },
+
+  // ── Import-Kanzlei page strings ──
+  "importkanz.error_no_data": {
+    de: "Datei enthält keine Datenzeilen.",
+    en: "File contains no data rows.",
+  },
+  "importkanz.info": {
+    de: "Exportiere die Aktenliste deiner Kanzleisoftware als CSV (RA-MICRO, Advoware und DATEV Anwalt können das) und lade sie hier hoch. Die Spalten werden automatisch zugeordnet — prüfe die Zuordnung, bevor du importierst. Umlaute falsch? Datei als UTF-8 neu speichern. Es werden nur Stammdaten übernommen, keine Dokumente.",
+    en: "Export the case list from your practice management software as CSV (RA-MICRO, Advoware and DATEV Anwalt support this) and upload it here. Columns are auto-mapped — review the mapping before importing. Encoding issues? Re-save as UTF-8. Only master data is imported, no documents.",
+  },
+  "importkanz.choose_file": {
+    de: "CSV-Datei wählen oder hierher ziehen",
+    en: "Choose CSV file or drag here",
+  },
+  "importkanz.rows_detected": {
+    de: "Zeilen erkannt · andere Datei wählen",
+    en: "rows detected · choose different file",
+  },
+  "importkanz.dry_run_desc": {
+    de: "Prüft Zuordnung und schätzt die Fehlerquote, ohne Akten anzulegen.",
+    en: "Validates mapping and estimates error rate without creating cases.",
+  },
+  "importkanz.dry_run_start": { de: "Dry Run starten", en: "Start dry run" },
+  "importkanz.dry_run_checking": { de: "Prüfe…", en: "Checking…" },
+  "importkanz.dry_run_ready": { de: "Bereit für Import.", en: "Ready for import." },
+  "importkanz.dry_run_error": {
+    de: "Fehlerquote zu hoch — Zuordnung prüfen und Dry Run wiederholen.",
+    en: "Error rate too high — check mapping and retry dry run.",
+  },
+  "importkanz.need_dry_run": {
+    de: "Erst Dry Run mit niedriger Fehlerquote ausführen.",
+    en: "Run dry run with low error rate first.",
+  },
+  "importkanz.field.client_name": { de: "Mandant", en: "Client" },
+  "importkanz.field.title": { de: "Bezeichnung / Rubrum", en: "Title / Rubrum" },
+  "importkanz.field.case_number": { de: "Aktenzeichen", en: "Case number" },
+  "importkanz.field.opponent_name": { de: "Gegner", en: "Opponent" },
+  "importkanz.field.legal_area": { de: "Rechtsgebiet", en: "Practice area" },
+  "importkanz.field.court_name": { de: "Gericht", en: "Court" },
+  "importkanz.field.own_lawyer_name": { de: "Sachbearbeiter", en: "Lead lawyer" },
+  "importkanz.field.status": { de: "Status", en: "Status" },
+
+  // ── Contracts page strings ──
+  "contracts.title": { de: "Vertrags-Intelligenz", en: "Contract Intelligence" },
+  "contracts.description": {
+    de: "KI-gestützte Vertragsanalyse, Risikobewertung und Massen-Review",
+    en: "AI-powered contract analysis, risk assessment and bulk review",
+  },
+  "contracts.breadcrumb": { de: "Vertrags-Intelligenz", en: "Contract Intelligence" },
+  "contracts.status_draft": { de: "Entwurf", en: "Draft" },
+  "contracts.status_reviewed": { de: "Geprüft", en: "Reviewed" },
+  "contracts.status_approved": { de: "Freigegeben", en: "Approved" },
+  "contracts.status_signed": { de: "Unterzeichnet", en: "Signed" },
+  "contracts.bulk_review_title": {
+    de: "Massen-Review über alle Verträge",
+    en: "Bulk review across all contracts",
+  },
+  "contracts.add_question": { de: "+ Frage hinzufügen", en: "+ Add question" },
+  "contracts.search_placeholder": { de: "Verträge suchen…", en: "Search contracts…" },
+  "contracts.count_label": { de: "Verträge", en: "Contracts" },
+  "contracts.empty_title": { de: "Keine Verträge gefunden", en: "No contracts found" },
+  "contracts.empty_no_contracts": {
+    de: "Lege deinen ersten Vertrag an über den „Vertrag anlegen“-Button oben.",
+    en: 'Create your first contract using the "New contract" button above.',
+  },
+  "contracts.empty_adjust_search": { de: "Passe deine Suche an.", en: "Adjust your search." },
+  "contracts.error_cloud_unreachable": {
+    de: "Cloud-Brain gerade nicht erreichbar. Es werden zwischengespeicherte Verträge angezeigt.",
+    en: "Cloud brain currently unavailable. Showing cached contracts.",
+  },
+  "contracts.error_load": {
+    de: "Verträge konnten nicht geladen werden.",
+    en: "Contracts could not be loaded.",
+  },
+
+  // ── Audit page strings ──
+  "audit.title": { de: "Audit-Log", en: "Audit Log" },
+  "audit.description": {
+    de: "Vollständige Nachvollziehbarkeit aller Aktionen im Kanzlei-Workspace — GoBD-konform protokolliert.",
+    en: "Full traceability of all actions in the firm workspace — GoBD-compliant logging.",
+  },
+  "audit.breadcrumb": { de: "Audit-Log", en: "Audit Log" },
+  "audit.search_placeholder": {
+    de: "Audit-Log durchsuchen — Aktion, Entität, Benutzer, Details…",
+    en: "Search audit log — action, entity, user, details…",
+  },
+  "audit.reset": { de: "Zurücksetzen", en: "Reset" },
+  "audit.entity_type": { de: "Entitätstyp", en: "Entity type" },
+  "audit.entries_count": { de: "Einträge", en: "entries" },
+  "audit.total_count": { de: "gesamt", en: "total" },
+  "audit.empty_title": { de: "Keine Audit-Einträge gefunden", en: "No audit entries found" },
+  "audit.empty_filtered": {
+    de: "Mit den aktuellen Filtern wurden keine Einträge gefunden. Versuche die Filter anzupassen.",
+    en: "No entries found with current filters. Try adjusting the filters.",
+  },
+  "audit.empty_no_data": {
+    de: "Audit-Logs werden automatisch erstellt, sobald Aktionen im Dashboard ausgeführt werden.",
+    en: "Audit logs are created automatically when actions are performed in the dashboard.",
+  },
+  "audit.reset_filters": { de: "Filter zurücksetzen", en: "Reset filters" },
+  "audit.col_time": { de: "Zeitpunkt", en: "Timestamp" },
+  "audit.col_action": { de: "Aktion", en: "Action" },
+  "audit.col_entity": { de: "Entität", en: "Entity" },
+  "audit.col_user": { de: "Benutzer", en: "User" },
+  "audit.col_details": { de: "Details", en: "Details" },
+  "audit.prev_page": { de: "Zurück", en: "Previous" },
+
+  // ── Cost calculator page strings ──
+  "costcalc.estimate_label": {
+    de: "Kostenschätzung",
+    en: "Cost estimate",
+  },
+
+  // ── Portfolio Insights page strings ──
+  "pi.empty_title": { de: "Keine Verträge im Portfolio", en: "No contracts in portfolio" },
+  "pi.empty_desc": {
+    de: "Laden Sie Verträge in den Vault hoch und analysieren Sie diese, um Portfolio-Insights zu erhalten.",
+    en: "Upload contracts to the vault and analyze them to get portfolio insights.",
+  },
+  "pi.summary": { de: "Verträge", en: "contracts" },
+  "pi.summary_analyzed": { de: "analysiert", en: "analyzed" },
+  "pi.summary_stand": { de: "Stand:", en: "as of:" },
+  "pi.stat_total": { de: "Gesamtverträge", en: "Total contracts" },
+  "pi.stat_obligations": { de: "Offene Obliegenheiten", en: "Open obligations" },
+  "pi.stat_overdue": { de: "überfällig", en: "overdue" },
+  "pi.clause_freq": { de: "Klausel-Häufigkeiten", en: "Clause Frequencies" },
+  "pi.clause_empty": {
+    de: "Keine Klausel-Daten verfügbar. Analysieren Sie Verträge mit der KI-Analyse.",
+    en: "No clause data available. Analyze contracts with AI analysis.",
+  },
+  "pi.outliers_empty": {
+    de: "Keine Outlier erkannt. Alle Verträge liegen im Normbereich.",
+    en: "No outliers detected. All contracts are within normal range.",
+  },
+  "pi.trend_contracts": { de: "Verträge", en: "Contracts" },
+
+  // ── Workflow Builder page strings ──
+  "builder.back": { de: "Zurück", en: "Back" },
+  "builder.depends_on": { de: "Hängt ab von", en: "Depends on" },
+  "builder.delete_step": { de: "Step löschen", en: "Delete step" },
+  "builder.step.risk": { de: "Risiko prüfen", en: "Check risk" },
+  "builder.step.translate": { de: "Übersetzen", en: "Translate" },
+  "builder.step.review": { de: "Manuell prüfen", en: "Manual review" },
+  "builder.step.analyze": { de: "Analysieren", en: "Analyze" },
+  "builder.step.summarize": { de: "Zusammenfassen", en: "Summarize" },
+  "builder.step.draft": { de: "Entwurf erstellen", en: "Create draft" },
+  "builder.step.webhook": { de: "Webhook senden", en: "Send webhook" },
+  "builder.step.email": { de: "Email senden", en: "Send email" },
+  "builder.step.obligation": { de: "Pflichten extrahieren", en: "Extract obligations" },
+  "builder.step.redline": { de: "Redline", en: "Redline" },
+
+  // ── Team page strings ──
+  "team.error_self_invite": {
+    de: "Du bist schon drin — dich selbst einzuladen geht nicht.",
+    en: "You're already in — you can't invite yourself.",
+  },
+  "team.error_already_member": {
+    de: "Diese Person ist bereits Mitglied.",
+    en: "This person is already a member.",
+  },
+  "team.error_invalid_email": {
+    de: "Bitte gib eine gültige E-Mail-Adresse ein.",
+    en: "Please enter a valid email address.",
+  },
+  "team.error_owner_remove_members": {
+    de: "Als Inhaber zuerst alle Mitglieder entfernen — dann löst sich das Team auf.",
+    en: "As owner, remove all members first — then the team will dissolve.",
+  },
+  "team.error_owner_cannot_remove": {
+    de: "Der Inhaber kann sich nicht selbst entfernen.",
+    en: "The owner cannot remove themselves.",
+  },
+  "team.error_rate_limited": {
+    de: "Zu viele Versuche — bitte kurz warten.",
+    en: "Too many attempts — please wait briefly.",
+  },
+  "team.error_generic": {
+    de: "Etwas ist schiefgelaufen. Bitte versuch es erneut.",
+    en: "Something went wrong. Please try again.",
+  },
+  "team.error_already_in_org": {
+    de: "Du bist bereits in einem Team.",
+    en: "You are already in a team.",
+  },
+  "team.error_invalid_name": {
+    de: "Bitte gib einen Team-Namen mit 2–80 Zeichen ein.",
+    en: "Please enter a team name with 2–80 characters.",
+  },
+  "team.error_owner_only": {
+    de: "Nur der Team-Inhaber kann das.",
+    en: "Only the team owner can do that.",
+  },
+  "team.loading": { de: "Lade Team…", en: "Loading team…" },
+  "team.create_title": { de: "Team erstellen", en: "Create team" },
+  "team.create_notice": {
+    de: "Team erstellt — lade jetzt Mitglieder ein.",
+    en: "Team created — invite members now.",
+  },
+  "team.description": {
+    de: "Ein gemeinsames Brain für euer ganzes Team — Mitglieder sehen und füttern dasselbe Wissen.",
+    en: "A shared brain for your entire team — members see and feed the same knowledge.",
+  },
+  "team.create_desc": {
+    de: "Erstelle ein Team-Brain und lade Kolleginnen und Kollegen ein. Die Plätze richten sich nach deinem Plan (Free/Pro: 1 · Team: 5 · Enterprise: 25). Dein persönliches Brain bleibt unangetastet — das Team bekommt ein eigenes.",
+    en: "Create a team brain and invite colleagues. Seats depend on your plan (Free/Pro: 1 · Team: 5 · Enterprise: 25). Your personal brain stays untouched — the team gets its own.",
+  },
+  "team.invite_sent": {
+    de: "Einladung verschickt — Link ist 7 Tage gültig.",
+    en: "Invitation sent — link is valid for 7 days.",
+  },
+  "team.leave_owner_desc": {
+    de: "Als Inhaber: erst alle Mitglieder entfernen, dann löst Verlassen das Team auf.",
+    en: "As owner: remove all members first, then leaving will dissolve the team.",
+  },
+  "team.leave_member_desc": {
+    de: "Du arbeitest danach wieder in deinem persönlichen Brain.",
+    en: "You will then work in your personal brain again.",
+  },
+
+  // ── SCIM page strings ──
+  "scim.no_sync": {
+    de: "Noch keine Synchronisation durchgeführt.",
+    en: "No synchronization performed yet.",
+  },
+  "scim.errors_count": {
+    de: "Fehler während der Synchronisation",
+    en: "errors during synchronization",
+  },
+  "scim.title": { de: "SCIM Directory Sync", en: "SCIM Directory Sync" },
+  "scim.description": {
+    de: "Zugriffsverwaltung über Identity Provider",
+    en: "Access management via Identity Provider",
+  },
+  "scim.description_full": {
+    de: "Automatische Benutzerbereitstellung über Identity Provider (WorkOS)",
+    en: "Automatic user provisioning via Identity Provider (WorkOS)",
+  },
+  "scim.access_denied": { de: "Zugriff verweigert", en: "Access denied" },
+  "scim.admin_only": {
+    de: "Nur Administratoren können SCIM konfigurieren.",
+    en: "Only administrators can configure SCIM.",
+  },
+  "scim.back_to_settings": { de: "← Zurück zu Einstellungen", en: "← Back to Settings" },
+  "scim.breadcrumb_settings": { de: "Einstellungen", en: "Settings" },
+  "scim.breadcrumb_scim": { de: "SCIM", en: "SCIM" },
+  "scim.configured": {
+    de: "WORKOS_API_KEY und WORKOS_DIRECTORY_ID konfiguriert",
+    en: "WORKOS_API_KEY and WORKOS_DIRECTORY_ID configured",
+  },
+  "scim.not_configured": {
+    de: "Setze WORKOS_API_KEY und WORKOS_DIRECTORY_ID für automatische Synchronisation",
+    en: "Set WORKOS_API_KEY and WORKOS_DIRECTORY_ID for automatic synchronization",
+  },
+  "scim.feature_auto_update": {
+    de: "Auto-Update: Änderungen an Namen, E-Mail oder Rollen werden synchronisiert.",
+    en: "Auto-update: changes to names, email or roles are synchronized.",
+  },
+  "scim.feature_auto_deprovision": {
+    de: "Auto-Deprovisioning: Gelöschte Benutzer werden deaktiviert (nicht gelöscht) — für Audit-Trail.",
+    en: "Auto-deprovisioning: deleted users are deactivated (not deleted) — for audit trail.",
+  },
+  "scim.last_sync": { de: "Letzte Synchronisation:", en: "Last synchronization:" },
+  "scim.sync_success": {
+    de: "Synchronisation erfolgreich abgeschlossen.",
+    en: "Synchronization completed successfully.",
+  },
+  "scim.sync_syncing": { de: "Synchronisiere…", en: "Syncing…" },
+  "scim.sync_manual": { de: "Manuelle Sync", en: "Manual sync" },
+  "scim.loading_status": { de: "Lade Status…", en: "Loading status…" },
+  "scim.endpoint_status": {
+    de: "SCIM-Endpoint und WorkOS Directory Sync Status",
+    en: "SCIM endpoint and WorkOS Directory Sync status",
+  },
+  "scim.bearer_configured": {
+    de: "Token konfiguriert — SCIM-Endpoints sind aktiv",
+    en: "Token configured — SCIM endpoints are active",
+  },
+  "scim.bearer_not_configured": {
+    de: "Setze SCIM_BEARER_TOKENS (orgId:token je Mandant) in den Umgebungsvariablen",
+    en: "Set SCIM_BEARER_TOKENS (orgId:token per tenant) in environment variables",
+  },
+  "scim.workos_setup": { de: "WorkOS Setup", en: "WorkOS Setup" },
+  "scim.workos_setup_desc": {
+    de: "Konfiguriere diese Werte im WorkOS Dashboard unter Directory Sync",
+    en: "Configure these values in the WorkOS Dashboard under Directory Sync",
+  },
+  "scim.token_hide": { de: "Token verbergen", en: "Hide token" },
+  "scim.token_show": { de: "Token anzeigen", en: "Show token" },
+  "scim.sync_log": { de: "Synchronisations-Log", en: "Sync Log" },
+  "scim.sync_log_desc": {
+    de: "Letzte Sync-Ergebnisse und Fehler",
+    en: "Latest sync results and errors",
+  },
+  "scim.how_it_works": {
+    de: "Wie funktioniert SCIM Directory Sync?",
+    en: "How does SCIM Directory Sync work?",
+  },
+  "scim.feature_auto_provision": {
+    de: "Auto-Provisioning: Neue Benutzer im IdP werden automatisch in Subsumio erstellt.",
+    en: "Auto-provisioning: new users in IdP are automatically created in Subsumio.",
+  },
+  "scim.feature_group_sync": {
+    de: "Gruppen-Sync: AD/LDAP-Gruppen werden als SCIM-Gruppen abgebildet.",
+    en: "Group sync: AD/LDAP groups are mapped as SCIM groups.",
+  },
   "casesdetail.error_save": {
     de: "Speichern fehlgeschlagen — Änderungen sind nur lokal sichtbar.",
     en: "Save failed — changes are only visible locally.",
@@ -5351,14 +5877,20 @@ export const D = {
   "casesdetail.link_existing": { de: "Vorhandenes verknüpfen", en: "Link existing" },
   "casesdetail.link_document": { de: "Dokument verknüpfen", en: "Link document" },
   "casesdetail.searching": { de: "Suche läuft…", en: "Searching…" },
-  "casesdetail.search_placeholder": { de: "Suche nach Titel oder Schlagwort…", en: "Search by title or keyword…" },
+  "casesdetail.search_placeholder": {
+    de: "Suche nach Titel oder Schlagwort…",
+    en: "Search by title or keyword…",
+  },
   "casesdetail.link_failed": { de: "Verknüpfung fehlgeschlagen", en: "Linking failed" },
   "casesdetail.already_linked": { de: "verknüpft", en: "linked" },
   "casesdetail.doc_empty_desc": {
     de: "Upload, WhatsApp-Eingang oder Verknüpfung legt Dokumente direkt in dieser Akte ab.",
     en: "Upload, WhatsApp receipt, or linking places documents directly in this case.",
   },
-  "casesdetail.ai_deadlines": { de: "KI-extrahierte Fristenvorschläge", en: "AI-extracted deadline suggestions" },
+  "casesdetail.ai_deadlines": {
+    de: "KI-extrahierte Fristenvorschläge",
+    en: "AI-extracted deadline suggestions",
+  },
   "casesdetail.accept": { de: "Übernehmen", en: "Accept" },
   "casesdetail.reject": { de: "Ablehnen", en: "Reject" },
 

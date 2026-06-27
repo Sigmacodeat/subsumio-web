@@ -4,6 +4,7 @@ import { getStore, buildNewUser } from "@/lib/auth/store";
 import { createSession, SESSION_COOKIE } from "@/lib/auth/session";
 import { createPublicHandler, apiError } from "@/lib/api-handler";
 import { env } from "@/lib/env";
+import { timingSafeCompare } from "@/lib/crypto-utils";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -36,10 +37,11 @@ export const GET = createPublicHandler(
       return apiError("code_required", "Code required", 400);
     }
 
-    // CSRF protection: validate state against the cookie set during SSO initiation
+    // CSRF protection: validate state against the httpOnly cookie set during SSO initiation.
+    // Timing-safe comparison prevents oracle attacks on the state value.
     const jar = await cookies();
-    const stateCookie = jar.get(SSO_STATE_COOKIE)?.value;
-    if (!state || !stateCookie || state !== stateCookie) {
+    const stateCookie = jar.get(SSO_STATE_COOKIE)?.value ?? "";
+    if (!state || !stateCookie || !timingSafeCompare(state, stateCookie)) {
       return apiError("sso_state_mismatch", "SSO state mismatch", 403);
     }
     // Clear the state cookie — single use

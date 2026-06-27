@@ -8,12 +8,12 @@ import { z } from "zod";
 export const dynamic = "force-dynamic";
 
 const disableSchema = z.object({
-  password: z.string().min(1),
+  password: z.string().min(1).max(1000),
 });
 
 export const POST = createHandler(
   {
-    action: "settings.write",
+    action: "auth.2fa",
     body: disableSchema,
     audit: (ctx) => ({
       action: "settings.update",

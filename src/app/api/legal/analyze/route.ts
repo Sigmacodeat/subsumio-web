@@ -3,6 +3,7 @@ import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 import { createHandler } from "@/lib/api-handler";
 import { apiError } from "@/lib/api-response";
 import { sanitizeUserInput } from "@/lib/prompt-sanitizer";
+import { env } from "@/lib/env";
 import { groundCitations } from "@/lib/legal-grounding";
 import { searchJudgements, type JudgementHit } from "@/lib/judgements";
 import type { RawCitation } from "@/lib/types";
@@ -50,6 +51,11 @@ function buildEmptyResult(reason: string): Record<string, unknown> {
     action_items: [],
     summary: reason,
     language: "de",
+    privilege: {
+      is_privileged: false,
+      privilege_type: "none",
+      privilege_basis: "Keine Analyse durchgeführt",
+    },
   };
 }
 
@@ -87,6 +93,10 @@ Extrahiere:
 7. action_items: N\u00e4chste konkrete Schritte f\u00fcr den Anwalt
 8. summary: 2-3 pr\u00e4zise S\u00e4tze
 9. language: de | en | other
+10. privilege: Pr\u00fcfe ob das Dokument dem anwaltlichen Geheimnisschutz unterliegt
+    - is_privileged: true wenn es sich um anwaltliche Kommunikation, Mandatsbriefe, interne Notizen, oder Dokumente mit anwaltlicher Stellungnahme handelt
+    - privilege_type: "attorney_client" | "work_product" | "settlement_negotiation" | "none"
+    - privilege_basis: Kurze Begr\u00fcndung warum privilegiert oder nicht
 
 Hinweis: Nach deiner Analyse wird automatisch nach relevanten Gerichtsentscheidungen (OGH, BGH, BFH, EuGH) gesucht. Deine zitierten Normen und Risiko-Beschreibungen werden als Suchkriterien verwendet — formuliere sie präzise.
 
@@ -100,7 +110,12 @@ Antworte JETZT mit reinem JSON:
   "risks": [{"severity":"high|medium|low","description":"string","mitigation":"string"}],
   "action_items": ["string"],
   "summary": "string",
-  "language": "string"
+  "language": "string",
+  "privilege": {
+    "is_privileged": false,
+    "privilege_type": "none",
+    "privilege_basis": "string"
+  }
 }`;
 }
 
@@ -259,9 +274,18 @@ export const POST = createHandler(
           const docFrontmatter: Record<string, unknown> = {
             auto_analysis: parsed,
             analyzed_at: new Date().toISOString(),
+            analysis_status: "completed",
+            analysis_retry_count: 0,
           };
           if (docType && docType !== "unknown") {
             docFrontmatter.document_type = docType;
+          }
+          if (parsed.privilege && typeof parsed.privilege === "object") {
+            const priv = parsed.privilege as { is_privileged?: boolean; privilege_type?: string };
+            if (priv.is_privileged) {
+              docFrontmatter.privileged = true;
+              docFrontmatter.privilege_type = priv.privilege_type ?? "attorney_client";
+            }
           }
           await enginePatchPage(
             engineHeaders,
@@ -378,6 +402,29 @@ export const POST = createHandler(
             `[analyze] failed to write suggested deadlines to case ${documentCaseSlug}:`,
             err instanceof Error ? err.message : String(err)
           );
+        }
+      })();
+    }
+
+    // P1: Trigger contradictions check after analysis — fire-and-forget.
+    // Cross-checks all documents in the case for conflicting parties, dates, facts.
+    if (documentCaseSlug) {
+      void (async () => {
+        try {
+          const internalSecret = env("SUBSUMIO_INTERNAL_SECRET");
+          if (!internalSecret) return;
+          await fetch(`http://localhost:3000/api/legal/contradictions`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-internal-secret": internalSecret,
+              "x-subsumio-source": ctx.brainId,
+            },
+            body: JSON.stringify({ case_slug: documentCaseSlug }),
+            signal: AbortSignal.timeout(60_000),
+          });
+        } catch {
+          // Best-effort — contradictions check failure must not block analysis response
         }
       })();
     }

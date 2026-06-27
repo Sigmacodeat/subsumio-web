@@ -4,8 +4,7 @@ test.describe("Auth Flow", () => {
   test("login page renders", async ({ page }) => {
     await page.goto("/de/login", { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle");
-    // The CTA button contains "Anmelden" plus an arrow icon
-    await expect(page.locator('button:has-text("Anmelden")')).toBeVisible();
+    await expect(page.getByRole("main").getByRole("button", { name: "Anmelden" })).toBeVisible();
     await expect(page.locator('input[name="email"]')).toBeVisible();
     await expect(page.locator('input[name="password"]')).toBeVisible();
   });

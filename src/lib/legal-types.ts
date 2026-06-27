@@ -92,10 +92,23 @@ export interface DocumentEntry {
   slug?: string;
   source?: string;
   kind?: string;
+  doc_type?: string;
+  doc_type_label?: string;
   extraction_status?: string;
   ocr_status?: string;
   extraction_method?: string;
   extraction_unverified?: boolean;
+  analysis_status?:
+    | "completed"
+    | "failed"
+    | "retrying"
+    | "permanently_failed"
+    | "processing"
+    | "pending";
+  analysis_error?: string;
+  analysis_retry_count?: number;
+  privileged?: boolean;
+  privilege_type?: string;
 }
 
 export interface EvidenceEntry {
@@ -221,6 +234,18 @@ export interface CaseFrontmatter {
   restored_at?: string;
   /** Optimistic locking version — incremented on every update */
   version?: number;
+  /** P1: Cross-document contradictions detected by /api/legal/contradictions */
+  contradictions?: Array<{
+    doc_a_slug: string;
+    doc_b_slug: string;
+    field: string;
+    value_a: string;
+    value_b: string;
+    severity: "high" | "medium" | "low";
+    description: string;
+  }>;
+  contradictions_checked_at?: string;
+  contradiction_count?: number;
 }
 
 export interface InvoiceExpenseEntry {

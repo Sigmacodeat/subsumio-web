@@ -8,7 +8,7 @@ const PENDING_TTL_MS = 10 * 60 * 1000; // 10 minutes
 
 export const POST = createHandler(
   {
-    action: "settings.write",
+    action: "auth.2fa",
     audit: (ctx) => ({
       action: "settings.update",
       entityType: "user",

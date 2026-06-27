@@ -66,8 +66,9 @@ test.describe("Invoicing CRUD Flow", () => {
     await expect(page.getByRole("heading", { name: /Rechnung|Invoice/i })).toBeVisible({
       timeout: 10_000,
     });
-    // Should have a create button
-    await expect(page.locator('button:has-text("Neu"), a:has-text("Neu")').first()).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: /rechnung erstellen|create invoice/i }).first()
+    ).toBeVisible();
   });
 
   test("create case → add time entry → create invoice via API", async ({ page }) => {
@@ -116,7 +117,7 @@ test.describe("Invoicing CRUD Flow", () => {
     const timeListRes = await apiRequest.get(`/api/time?case_slug=${encodeURIComponent(caseSlug)}`);
     expect(timeListRes.status()).toBe(200);
     const timeData = await timeListRes.json();
-    expect(timeData.entries?.length ?? 0).toBeGreaterThan(0);
+    expect(timeData.data?.entries?.length ?? 0).toBeGreaterThan(0);
 
     // 4. Create invoice
     const invoiceSlug = `invoice/inv-${Date.now()}`;
@@ -203,22 +204,22 @@ test.describe("Invoicing CRUD Flow", () => {
     });
     expect(createRes.status()).toBe(201);
     const created = await createRes.json();
-    expect(created.entry).toBeTruthy();
-    expect(created.entry.minutes).toBe(30);
+    expect(created.data?.entry).toBeTruthy();
+    expect(created.data.entry.minutes).toBe(30);
 
     // List time entries
     const listRes = await apiRequest.get(`/api/time?case_slug=${encodeURIComponent(caseSlug)}`);
     expect(listRes.status()).toBe(200);
     const listData = await listRes.json();
-    expect(listData.entries?.length ?? 0).toBeGreaterThan(0);
+    expect(listData.data?.entries?.length ?? 0).toBeGreaterThan(0);
 
     // Billing summary
     const summaryRes = await apiRequest.get("/api/time/billing-summary");
     expect(summaryRes.status()).toBe(200);
     const summary = await summaryRes.json();
-    expect(summary.total_unbilled_entries).toBeDefined();
-    expect(summary.total_unbilled_amount).toBeDefined();
-    expect(summary.by_case).toBeDefined();
+    expect(summary.data?.total_unbilled_entries).toBeDefined();
+    expect(summary.data?.total_unbilled_amount).toBeDefined();
+    expect(summary.data?.by_case).toBeDefined();
   });
 
   test("mark time entries as billed", async ({ page }) => {
@@ -257,7 +258,7 @@ test.describe("Invoicing CRUD Flow", () => {
     });
     expect(timeRes.status()).toBe(201);
     const timeData = await timeRes.json();
-    const entryId = timeData.entry.id;
+    const entryId = timeData.data.entry.id;
 
     // Mark as billed
     const markRes = await apiRequest.post("/api/time/mark-billed", {
@@ -270,6 +271,6 @@ test.describe("Invoicing CRUD Flow", () => {
     });
     expect(markRes.status()).toBe(200);
     const markData = await markRes.json();
-    expect(markData.updated).toBe(1);
+    expect(markData.data?.updated).toBe(1);
   });
 });

@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useLang } from "@/lib/use-lang";
+import { useLang, type TFunc } from "@/lib/use-lang";
 import { useUnsavedChanges } from "@/lib/use-unsaved-changes";
 import {
   ShieldCheck,
@@ -75,11 +75,11 @@ const STATUS_COLORS: Record<string, string> = {
   signed: "bg-blue-500/10 border-blue-500/20 text-blue-600",
 };
 
-const STATUS_LABELS: Record<string, string> = {
-  draft: "Entwurf",
-  reviewed: "Geprüft",
-  approved: "Freigegeben",
-  signed: "Unterzeichnet",
+const STATUS_LABELS: Record<string, (t: TFunc) => string> = {
+  draft: (t) => t("contracts.status_draft"),
+  reviewed: (t) => t("contracts.status_reviewed"),
+  approved: (t) => t("contracts.status_approved"),
+  signed: (t) => t("contracts.status_signed"),
 };
 
 function HubLink({
@@ -154,17 +154,7 @@ export default function ContractsPage() {
 
   useUnsavedChanges(editingSlug !== null);
 
-  useEffect(() => {
-    loadContracts();
-  }, []);
-
-  useEffect(() => {
-    const handler = () => setQuickCreateOpen(true);
-    window.addEventListener("subsumio:create-contract", handler);
-    return () => window.removeEventListener("subsumio:create-contract", handler);
-  }, []);
-
-  async function loadContracts() {
+  const loadContracts = useCallback(async () => {
     setLoading(true);
     setLoadError(null);
     try {
@@ -176,16 +166,24 @@ export default function ContractsPage() {
       const cached = await getCache<ContractItem[]>(OFFLINE_KEYS.contracts);
       if (cached) {
         setContracts(cached);
-        setLoadError(
-          "Cloud-Brain gerade nicht erreichbar. Es werden zwischengespeicherte Verträge angezeigt."
-        );
+        setLoadError(t("contracts.error_cloud_unreachable"));
       } else {
-        setLoadError(err instanceof Error ? err.message : "Verträge konnten nicht geladen werden.");
+        setLoadError(err instanceof Error ? err.message : t("contracts.error_load"));
       }
     } finally {
       setLoading(false);
     }
-  }
+  }, [t]);
+
+  useEffect(() => {
+    loadContracts();
+  }, [loadContracts]);
+
+  useEffect(() => {
+    const handler = () => setQuickCreateOpen(true);
+    window.addEventListener("subsumio:create-contract", handler);
+    return () => window.removeEventListener("subsumio:create-contract", handler);
+  }, []);
 
   const filtered = useMemo(() => {
     if (!query.trim()) return contracts;
@@ -338,11 +336,11 @@ export default function ContractsPage() {
   return (
     <div className="mx-auto max-w-[1400px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
-        title="Vertrags-Intelligenz"
-        description="KI-gestützte Vertragsanalyse, Risikobewertung und Massen-Review"
+        title={t("contracts.title")}
+        description={t("contracts.description")}
         breadcrumbs={[
-          { label: "Übersicht", href: "/dashboard" },
-          { label: "Vertrags-Intelligenz" },
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("contracts.breadcrumb") },
         ]}
         actions={
           <>
@@ -385,7 +383,7 @@ export default function ContractsPage() {
         <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
-              Massen-Review über alle Verträge
+              {t("contracts.bulk_review_title")}
             </h3>
             <button
               onClick={() => setShowReview(false)}
@@ -420,7 +418,7 @@ export default function ContractsPage() {
                 onClick={() => setReviewQuestions((qs) => [...qs, ""])}
                 className="brand-text text-xs hover:underline"
               >
-                + Frage hinzufügen
+                {t("contracts.add_question")}
               </button>
             )}
           </div>
@@ -512,7 +510,7 @@ export default function ContractsPage() {
       )}
 
       <SearchBar
-        placeholder="Verträge suchen…"
+        placeholder={t("contracts.search_placeholder")}
         onSearch={setQuery}
         onClear={() => setQuery("")}
         className="max-w-md"
@@ -541,7 +539,9 @@ export default function ContractsPage() {
             </div>
             <div>
               <p className="text-lg font-bold text-[color:var(--ds-text)]">{contracts.length}</p>
-              <p className="text-xs text-[color:var(--ds-text-muted)]">Verträge</p>
+              <p className="text-xs text-[color:var(--ds-text-muted)]">
+                {t("contracts.count_label")}
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
@@ -601,12 +601,12 @@ export default function ContractsPage() {
             <FileText size={26} className="text-[color:var(--ds-text-subtle)]" />
           </div>
           <h3 className="text-sm font-semibold tracking-tight text-[color:var(--ds-text)]">
-            Keine Verträge gefunden
+            {t("contracts.empty_title")}
           </h3>
           <p className="mt-2 max-w-sm text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
             {contracts.length === 0
-              ? "Lege deinen ersten Vertrag an über den „Vertrag anlegen“-Button oben."
-              : "Passe deine Suche an."}
+              ? t("contracts.empty_no_contracts")
+              : t("contracts.empty_adjust_search")}
           </p>
         </div>
       ) : (
@@ -657,9 +657,9 @@ export default function ContractsPage() {
                       onChange={(e) => setEditStatus(e.target.value as ContractItem["status"])}
                       className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                     >
-                      {Object.entries(STATUS_LABELS).map(([key, label]) => (
+                      {Object.entries(STATUS_LABELS).map(([key, labelFn]) => (
                         <option key={key} value={key}>
-                          {label}
+                          {labelFn(t)}
                         </option>
                       ))}
                     </select>
@@ -707,7 +707,7 @@ export default function ContractsPage() {
                         variant="default"
                         className={`border text-xs ${STATUS_COLORS[contract.status || "draft"]}`}
                       >
-                        {STATUS_LABELS[contract.status || "draft"]}
+                        {STATUS_LABELS[contract.status || "draft"](t)}
                       </Badge>
                     </div>
                     {contract.parties && (

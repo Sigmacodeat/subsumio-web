@@ -53,10 +53,8 @@ test.describe("Client Portal Flow", () => {
   });
 
   test("portal verify endpoint rejects invalid token", async ({ request }) => {
-    const res = await request.post("/api/portal/verify", {
-      data: { token: "invalid-token-12345" },
-    });
-    expect([400, 401, 403, 404]).toContain(res.status());
+    const res = await request.get("/api/portal/verify?token=invalid-token-12345");
+    expect(res.status()).toBe(403);
   });
 
   test("portal case endpoint rejects unauthenticated", async ({ request }) => {
@@ -65,15 +63,22 @@ test.describe("Client Portal Flow", () => {
   });
 
   test("portal messages endpoint rejects invalid token", async ({ request }) => {
-    const res = await request.get("/api/portal/messages?token=invalid");
-    expect([401, 403, 404]).toContain(res.status());
+    const res = await request.get("/api/portal/messages?token=invalid&caseSlug=cases/test");
+    expect(res.status()).toBe(403);
   });
 
   test("portal upload rejects invalid token", async ({ request }) => {
     const res = await request.post("/api/portal/upload", {
-      data: { token: "invalid", fileName: "test.pdf" },
+      multipart: {
+        token: "invalid",
+        file: {
+          name: "test.pdf",
+          mimeType: "application/pdf",
+          buffer: Buffer.from("invalid portal upload"),
+        },
+      },
     });
-    expect([401, 403, 404]).toContain(res.status());
+    expect(res.status()).toBe(403);
   });
 
   test("portal revoke requires auth", async ({ request }) => {

@@ -284,7 +284,12 @@ export default function WhatsAppDashboardPage() {
             },
           })
         )
-        .catch(() => {});
+        .catch((err) =>
+          console.warn(
+            "[whatsapp] Failed to mark analysis as failed:",
+            err instanceof Error ? err.message : err
+          )
+        );
 
       await reload();
     } catch (err) {

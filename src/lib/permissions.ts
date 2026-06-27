@@ -77,6 +77,9 @@ export type RouteAction =
   | "legal.playbook"
   | "legal.rvg"
   | "legal.statute"
+  | "legal.contradictions"
+  | "legal.retrieval_feedback"
+  | "legal.strategy"
   | "team.role_change"
   | "billing.read"
   | "billing.write"
@@ -146,6 +149,9 @@ const ACTION_ROLES: Record<RouteAction, KanzleiRole[]> = {
   "admin.*": ["admin"],
   "admin.user_update": ["admin"],
   "admin.user_deactivate": ["admin"],
+  "legal.contradictions": ["admin", "lawyer"],
+  "legal.retrieval_feedback": ["admin", "lawyer", "assistant"],
+  "legal.strategy": ["admin", "lawyer"],
 };
 
 /** Prüft, ob ein User eine Aktion ausführen darf. */
@@ -208,6 +214,9 @@ export function auditActionFor(routeAction: RouteAction): AuditAction {
     "legal.playbook": "legal.playbook",
     "legal.rvg": "legal.rvg",
     "legal.statute": "legal.statute",
+    "legal.contradictions": "legal.contradictions",
+    "legal.retrieval_feedback": "legal.retrieval_feedback",
+    "legal.strategy": "legal.strategy",
     "team.role_change": "team.role_change",
     "billing.read": "billing.upgrade",
     "billing.write": "billing.upgrade",

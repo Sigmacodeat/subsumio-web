@@ -1,8 +1,10 @@
 import { z } from "zod";
 import { sanitizeUserInput } from "@/lib/prompt-sanitizer";
 import { ENGINE_URL } from "@/lib/engine";
-import { createHandler, apiError } from "@/lib/api-handler";
+import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
 import { calculateRvg } from "@/lib/rvg";
+import { isToolAvailable, getToolList, type ToolConditionContext } from "@/lib/agent-conditionals";
+import { sendMailboxMessage, buildMailDraft } from "@/lib/email/mailbox";
 
 // ── Tool Schemas ──────────────────────────────────────────────────────
 
@@ -44,6 +46,7 @@ const ALLOWED_DASHBOARD_ROUTES = new Set([
   "/dashboard/data-export",
   "/dashboard/datev-export",
   "/dashboard/deadlines",
+  "/dashboard/deep-analysis",
   "/dashboard/document-requests",
   "/dashboard/drafting",
   "/dashboard/email-import",
@@ -114,40 +117,40 @@ const searchKnowledgeSchema = z.object({
 });
 
 const createCaseSchema = z.object({
-  title: z.string().min(1),
-  client_name: z.string().optional(),
-  opponent_name: z.string().optional(),
-  case_type: z.string().optional(),
+  title: z.string().min(1).max(300),
+  client_name: z.string().max(200).optional(),
+  opponent_name: z.string().max(200).optional(),
+  case_type: z.string().max(100).optional(),
 });
 
 const caseSummarySchema = z.object({
-  case_slug: z.string().min(1),
+  case_slug: z.string().min(1).max(200),
 });
 
 const emailDraftSchema = z.object({
-  case_slug: z.string().optional(),
-  recipient: z.string().optional(),
-  subject: z.string().min(1),
+  case_slug: z.string().max(200).optional(),
+  recipient: z.string().max(500).optional(),
+  subject: z.string().min(1).max(500),
   tone: z.enum(["formal", "neutral", "urgent"]).default("formal"),
   key_points: z.array(z.string().max(500)).max(20).default([]),
 });
 
 const deadlineExtractSchema = z.object({
-  document_slug: z.string().min(1),
+  document_slug: z.string().min(1).max(200),
 });
 
 const documentSummarySchema = z.object({
-  document_slug: z.string().min(1),
+  document_slug: z.string().min(1).max(200),
   max_points: z.number().min(3).max(20).default(8),
 });
 
 const conflictCheckSchema = z.object({
-  name: z.string().min(1),
+  name: z.string().min(1).max(500),
 });
 
 const timeEntrySchema = z.object({
-  case_slug: z.string().min(1),
-  description: z.string().min(1),
+  case_slug: z.string().min(1).max(200),
+  description: z.string().min(1).max(2000),
   hours: z.number().min(0.1).max(24).optional(),
   activity_type: z
     .enum(["research", "drafting", "review", "meeting", "correspondence", "other"])
@@ -155,18 +158,18 @@ const timeEntrySchema = z.object({
 });
 
 const clientUpdateSchema = z.object({
-  case_slug: z.string().min(1),
+  case_slug: z.string().min(1).max(200),
   update_type: z.enum(["status", "deadline", "next_steps", "summary"]).default("status"),
 });
 
 const meetingTasksSchema = z.object({
-  notes: z.string().min(1),
-  case_slug: z.string().optional(),
+  notes: z.string().min(1).max(10_000),
+  case_slug: z.string().max(200).optional(),
 });
 
 const intakeCreateSchema = z.object({
-  client_name: z.string().min(1),
-  matter_type: z.string().min(1),
+  client_name: z.string().min(1).max(200),
+  matter_type: z.string().min(1).max(200),
   jurisdiction: z.enum(["de", "at", "ch"]).default("de"),
   urgency: z.enum(["low", "medium", "high", "critical"]).default("medium"),
   conflict_check: z.boolean().default(true),
@@ -179,8 +182,8 @@ const rvgCalculateSchema = z.object({
 });
 
 const documentRequestCreateSchema = z.object({
-  case_slug: z.string().min(1),
-  items: z.array(z.string().min(1).max(160)).optional(),
+  case_slug: z.string().min(1).max(200),
+  items: z.array(z.string().min(1).max(160)).max(50).optional(),
   message_draft: z.string().max(5000).optional(),
   channel: z.enum(["whatsapp", "portal", "email", "manual"]).default("portal"),
 });
@@ -214,6 +217,20 @@ const tabularReviewToolSchema = z.object({
   case_slug: z.string().optional(),
 });
 
+const deepAnalysisToolSchema = z.object({
+  slugs: z.array(z.string().min(1)).min(1).max(25),
+  prompt: z.string().max(2000).optional(),
+  jurisdiction: z.enum(["at", "de", "ch", "all"]).default("all"),
+});
+
+const sendEmailToolSchema = z.object({
+  to: z.union([z.string().max(500), z.array(z.string().max(500)).max(50)]),
+  subject: z.string().min(1).max(500),
+  text: z.string().min(1).max(100_000),
+  cc: z.union([z.string().max(500), z.array(z.string().max(500)).max(50)]).optional(),
+  case_slug: z.string().max(200).optional(),
+});
+
 const toolSchema = z.object({
   tool: z.enum([
     "navigate",
@@ -236,6 +253,8 @@ const toolSchema = z.object({
     "translate_text",
     "obligation_extract",
     "tabular_review",
+    "deep_analysis",
+    "send_email",
   ]),
   params: z.record(z.unknown()).default({}),
 });
@@ -1257,6 +1276,138 @@ async function executeTabularReview(
   };
 }
 
+async function executeDeepAnalysis(
+  ctx: { headers: Record<string, string> },
+  params: z.infer<typeof deepAnalysisToolSchema>
+): Promise<ToolResponse> {
+  try {
+    const res = await fetch(`${ENGINE_URL}/api/legal/deep-analysis`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...ctx.headers },
+      body: JSON.stringify({
+        slugs: params.slugs,
+        prompt: params.prompt,
+        jurisdiction: params.jurisdiction,
+      }),
+      signal: AbortSignal.timeout(120_000),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = (await res.json()) as { summary?: string; findings?: unknown[] };
+    return {
+      success: true,
+      data,
+      display: {
+        kind: "summary",
+        title: "Tiefenanalyse abgeschlossen",
+        message: data.summary?.slice(0, 400) ?? "Analyse durchgeführt",
+        items: params.slugs.map((s) => ({
+          label: "Dokument",
+          value: s,
+          href: `/dashboard/brain/${encodeURIComponent(s)}`,
+        })),
+      },
+    };
+  } catch (_err) {
+    return {
+      success: false,
+      error: "Deep analysis failed",
+      display: {
+        kind: "summary",
+        title: "Tiefenanalyse fehlgeschlagen",
+        message: "Engine nicht erreichbar",
+      },
+    };
+  }
+}
+
+async function executeSendEmail(
+  ctx: { headers: Record<string, string>; user: { id: string; role: string; brainId: string } },
+  params: z.infer<typeof sendEmailToolSchema>
+): Promise<ToolResponse> {
+  try {
+    const safeSubject = sanitizeUserInput(params.subject);
+    const safeText = sanitizeUserInput(params.text);
+    const recipients = Array.isArray(params.to) ? params.to : [params.to];
+    const ccRecipients = params.cc
+      ? Array.isArray(params.cc)
+        ? params.cc
+        : [params.cc]
+      : undefined;
+
+    const draft = buildMailDraft({
+      to: recipients.length === 1 ? recipients[0] : recipients,
+      cc: ccRecipients,
+      subject: safeSubject,
+      text: safeText,
+    });
+    const message = await sendMailboxMessage(
+      {
+        id: ctx.user.id,
+        role: ctx.user.role as "admin" | "lawyer" | "assistant" | "client_viewer",
+        brainId: ctx.user.brainId,
+      },
+      draft
+    );
+    const sent = message.status === "sent";
+
+    return {
+      success: true,
+      data: { messageId: message.id, status: message.status },
+      display: {
+        kind: "confirmation",
+        title: sent ? "E-Mail gesendet" : "E-Mail in Warteschlange",
+        message: sent
+          ? `E-Mail an ${recipients.join(", ")} wurde versendet.`
+          : "E-Mail-Provider nicht konfiguriert — Inhalt wurde protokolliert.",
+        items: [
+          { label: "Betreff", value: safeSubject },
+          { label: "Empfänger", value: recipients.join(", ") },
+          ...(ccRecipients ? [{ label: "CC", value: ccRecipients.join(", ") }] : []),
+          ...(params.case_slug
+            ? [
+                {
+                  label: "Akte",
+                  value: params.case_slug,
+                  href: `/dashboard/cases/${params.case_slug.replace(/^cases\//, "")}`,
+                },
+              ]
+            : []),
+        ],
+      },
+    };
+  } catch (err) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Send failed",
+      display: {
+        kind: "confirmation",
+        title: "E-Mail-Versand fehlgeschlagen",
+        message: err instanceof Error ? err.message : "Unbekannter Fehler",
+      },
+    };
+  }
+}
+
+// ── GET: List available tools for current user (Agent Conditionals) ──
+
+export const GET = createHandler(
+  {
+    action: "copilot.tool",
+    rateTier: "standard",
+  },
+  async (ctx) => {
+    const condCtx: ToolConditionContext = {
+      role: ctx.user.role,
+      features: {
+        deepAnalysis: true,
+        precedentSearch: true,
+      },
+    };
+    const tools = getToolList(condCtx);
+    return apiSuccess({ tools, total: tools.length });
+  }
+);
+
 // ── Route Handler ─────────────────────────────────────────────────────
 
 export const POST = createHandler(
@@ -1272,6 +1423,21 @@ export const POST = createHandler(
     }),
   },
   async (ctx, body, _query, _req) => {
+    // Agent Conditionals: check tool availability before execution
+    const condCtx: ToolConditionContext = {
+      role: ctx.user.role,
+      features: {
+        deepAnalysis: true,
+        precedentSearch: true,
+      },
+    };
+    if (!isToolAvailable(body.tool, condCtx)) {
+      return apiError(
+        "forbidden",
+        `Tool "${body.tool}" is not available for your role or context`,
+        403
+      );
+    }
     try {
       let result: ToolResponse;
       switch (body.tool) {
@@ -1373,6 +1539,16 @@ export const POST = createHandler(
         case "tabular_review": {
           const params = tabularReviewToolSchema.parse(body.params);
           result = await executeTabularReview(ctx, params);
+          break;
+        }
+        case "deep_analysis": {
+          const params = deepAnalysisToolSchema.parse(body.params);
+          result = await executeDeepAnalysis(ctx, params);
+          break;
+        }
+        case "send_email": {
+          const params = sendEmailToolSchema.parse(body.params);
+          result = await executeSendEmail(ctx, params);
           break;
         }
         default:

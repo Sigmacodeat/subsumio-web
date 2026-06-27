@@ -818,7 +818,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                           ? "border-[color:var(--ds-border-hover)] bg-[color:var(--ds-surface-2)] shadow-sm"
                           : sectionActive
                             ? "brand-border brand-soft bg-[color:var(--ds-surface)]"
-                            : "opacity-[0.86] hover:bg-[color:var(--ds-hover)] hover:opacity-100"
+                            : "hover:bg-[color:var(--ds-hover)]"
                       )}
                     >
                       <button

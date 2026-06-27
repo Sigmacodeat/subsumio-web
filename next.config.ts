@@ -47,21 +47,15 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  serverActions: {
-    bodySizeLimit: "1gb",
-  },
   experimental: {
     reactCompiler: false,
-    // Next.js 15.5+ added an internal proxy layer with its own body size
-    // limit, separate from serverActions.bodySizeLimit. Without this, large
-    // uploads (e.g. 171 MB PDFs) have their binary data silently dropped —
-    // file metadata is preserved but content becomes 0 bytes.
-    // Both must be set to match serverActions.bodySizeLimit.
-    proxyClientMaxBodySize: "1gb",
-    // Middleware matches /api/upload, so its body size limit also applies.
+    // In Next 15.5 these options both live under `experimental`. The web upload
+    // route is matched by middleware, while Server Actions use their own limit.
+    serverActions: {
+      bodySizeLimit: "1gb",
+    },
     middlewareClientMaxBodySize: "1gb",
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } as any,
+  },
   serverExternalPackages: ["pg", "isomorphic-dompurify", "ioredis"],
   webpack: (config) => {
     config.resolve = config.resolve || {};

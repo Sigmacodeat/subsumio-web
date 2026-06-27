@@ -2,7 +2,7 @@ import { z } from "zod";
 import { createHandler } from "@/lib/api-handler";
 
 const postSchema = z.object({
-  specialist: z.string().min(1),
+  specialist: z.string().min(1).max(100),
   leave_one_out: z.boolean().optional(),
   threshold: z.number().min(0).max(1).optional(),
 });

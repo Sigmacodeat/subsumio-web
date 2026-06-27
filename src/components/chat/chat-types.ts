@@ -8,6 +8,12 @@ export interface ChatCitation {
   slug: string;
   title: string;
   quote?: string;
+  confidence?: number;
+  case_slug?: string;
+  chunk_index?: number;
+  page_number?: number;
+  char_offset_start?: number;
+  char_offset_end?: number;
 }
 
 export interface ChatMessage {
@@ -48,13 +54,15 @@ export type ToolType =
   | "precedent_search"
   | "translate_text"
   | "obligation_extract"
-  | "tabular_review";
+  | "tabular_review"
+  | "send_email";
 
 export const DESTRUCTIVE_TOOLS: ReadonlySet<ToolType> = new Set([
   "create_case",
   "intake_create",
   "time_entry",
   "document_request_create",
+  "send_email",
 ]);
 
 export interface ToolCall {

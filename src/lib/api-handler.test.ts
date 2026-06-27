@@ -2,7 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { NextRequest } from "next/server";
 import { NextRequest as NextRequestImpl } from "next/server";
-import { createHandler, createCronHandler } from "./api-handler";
+import { createHandler, createCronHandler, createPublicHandler } from "./api-handler";
 import { AppError } from "./errors";
 import { z } from "zod";
 
@@ -54,6 +54,10 @@ vi.mock("./auth/api-key-auth", () => ({
   verifyApiKey: vi.fn(() => null),
 }));
 
+vi.mock("./auth/rate-limit", () => ({
+  hit: vi.fn(async () => ({ ok: true, retryAfterSeconds: 0 })),
+}));
+
 vi.mock("./csrf", async () => {
   return {
     CSRF_COOKIE_NAME: "sb_csrf",
@@ -75,6 +79,7 @@ vi.mock("./csrf", async () => {
 import { requireEngineContext } from "./engine";
 import { logAudit } from "./audit";
 import { validateCsrf } from "./csrf";
+import { hit } from "./auth/rate-limit";
 
 // ── Helpers ────────────────────────────────────────────────────────────
 
@@ -130,6 +135,38 @@ beforeEach(() => {
   // Reset default mock implementations
   vi.mocked(requireEngineContext).mockReset();
   vi.mocked(requireEngineContext).mockResolvedValue(mockCtx() as any);
+  vi.mocked(hit).mockReset();
+  vi.mocked(hit).mockResolvedValue({ ok: true, retryAfterSeconds: 0 });
+});
+
+describe("createPublicHandler", () => {
+  it("accepts an exempt public POST without a pre-existing CSRF cookie", async () => {
+    const handler = createPublicHandler(
+      { body: z.object({ email: z.string().email() }) },
+      async () => Response.json({ ok: true }, { status: 201 })
+    );
+
+    const res = await handler(makeMockRequest("POST", { email: "test@example.com" }));
+    expect(res.status).toBe(201);
+    expect(validateCsrf).not.toHaveBeenCalled();
+  });
+
+  it("enforces its declared public rate limit", async () => {
+    vi.mocked(hit).mockResolvedValueOnce({ ok: false, retryAfterSeconds: 42 });
+    const handler = createPublicHandler(
+      {
+        rateLimitKey: () => "signup:ip:test",
+        rateLimitMax: 5,
+        rateLimitWindowMs: 60_000,
+      },
+      async () => Response.json({ ok: true })
+    );
+
+    const res = await handler(makeMockRequest("POST", { email: "test@example.com" }));
+    expect(res.status).toBe(429);
+    expect(res.headers.get("Retry-After")).toBe("42");
+    expect(hit).toHaveBeenCalledWith("signup:ip:test", 5, 60_000);
+  });
 });
 
 // ── Tests ──────────────────────────────────────────────────────────────

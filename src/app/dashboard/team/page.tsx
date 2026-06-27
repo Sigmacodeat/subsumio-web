@@ -38,23 +38,28 @@ interface OrgState {
   isOwner?: boolean;
 }
 
-const ERRORS: Record<string, string> = {
-  already_in_org: "Du bist bereits in einem Team.",
-  invalid_name: "Bitte gib einen Team-Namen mit 2–80 Zeichen ein.",
-  owner_only: "Nur der Team-Inhaber kann das.",
-  self_invite: "Du bist schon drin — dich selbst einzuladen geht nicht.",
+const ERROR_KEYS: Record<string, string> = {
+  already_in_org: "team.error_already_in_org",
+  invalid_name: "team.error_invalid_name",
+  owner_only: "team.error_owner_only",
+  self_invite: "team.error_self_invite",
   no_seats_left: "__TEAM_SEAT_LIMIT__",
-  already_member: "Diese Person ist bereits Mitglied.",
-  invalid_email: "Bitte gib eine gültige E-Mail-Adresse ein.",
-  owner_must_remove_members_first:
-    "Als Inhaber zuerst alle Mitglieder entfernen — dann löst sich das Team auf.",
-  owner_cannot_remove_self: "Der Inhaber kann sich nicht selbst entfernen.",
-  rate_limited: "Zu viele Versuche — bitte kurz warten.",
-  generic: "Etwas ist schiefgelaufen. Bitte versuch es erneut.",
+  already_member: "team.error_already_member",
+  invalid_email: "team.error_invalid_email",
+  owner_must_remove_members_first: "team.error_owner_remove_members",
+  owner_cannot_remove_self: "team.error_owner_cannot_remove",
+  rate_limited: "team.error_rate_limited",
+  generic: "team.error_generic",
 };
 
-function errMsg(code?: string): string {
-  return ERRORS[code ?? ""] ?? ERRORS.generic;
+function errMsg(
+  t: (key: import("@/content/dashboard").DashboardKey) => string,
+  code?: string
+): string {
+  const key = ERROR_KEYS[code ?? ""] ?? ERROR_KEYS.generic;
+  return key === "__TEAM_SEAT_LIMIT__"
+    ? "__TEAM_SEAT_LIMIT__"
+    : t(key as import("@/content/dashboard").DashboardKey);
 }
 
 export default function TeamPage() {
@@ -80,14 +85,14 @@ export default function TeamPage() {
     leaveMutation.isPending;
 
   function handleErr(err: unknown) {
-    const raw = err instanceof Error ? errMsg(err.message) : ERRORS.generic;
+    const raw = err instanceof Error ? errMsg(t, err.message) : errMsg(t);
     setError(raw === "__TEAM_SEAT_LIMIT__" ? t("team.seat_limit_reached") : raw);
   }
 
   if (loading) {
     return (
       <div className="flex items-center gap-2 p-6 text-sm text-[color:var(--ds-text-muted)]">
-        <Loader2 size={14} className="animate-spin" aria-hidden /> Lade Team…
+        <Loader2 size={14} className="animate-spin" aria-hidden /> {t("team.loading")}
       </div>
     );
   }
@@ -95,9 +100,12 @@ export default function TeamPage() {
   return (
     <div className="mx-auto max-w-[900px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
-        title="Team"
-        description="Ein gemeinsames Brain für euer ganzes Team — Mitglieder sehen und füttern dasselbe Wissen."
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Team" }]}
+        title={t("nav.team")}
+        description={t("team.description")}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("nav.team") },
+        ]}
       />
 
       {error && (
@@ -133,13 +141,11 @@ export default function TeamPage() {
             <div className="flex items-center gap-2.5">
               <Users size={18} className="brand-text" aria-hidden />
               <h2 className="text-base font-semibold text-[color:var(--ds-text)]">
-                Team erstellen
+                {t("team.create_title")}
               </h2>
             </div>
             <p className="text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
-              Erstelle ein Team-Brain und lade Kolleginnen und Kollegen ein. Die Plätze richten sich
-              nach deinem Plan (Free/Pro: 1 · Team: 5 · Enterprise: 25). Dein persönliches Brain
-              bleibt unangetastet — das Team bekommt ein eigenes.
+              {t("team.create_desc")}
             </p>
             <form
               className="flex flex-col gap-3 sm:flex-row"
@@ -149,7 +155,7 @@ export default function TeamPage() {
                 setNotice(null);
                 try {
                   await createOrgMutation.mutateAsync(orgName);
-                  setNotice("Team erstellt — lade jetzt Mitglieder ein.");
+                  setNotice(t("team.create_notice"));
                   setOrgName("");
                 } catch (err) {
                   handleErr(err);
@@ -249,7 +255,7 @@ export default function TeamPage() {
                     setDevJoinUrl(null);
                     try {
                       const data = await inviteMutation.mutateAsync(inviteEmail);
-                      setNotice("Einladung verschickt — Link ist 7 Tage gültig.");
+                      setNotice(t("team.invite_sent"));
                       if (data?.devJoinUrl) setDevJoinUrl(data.devJoinUrl);
                       setInviteEmail("");
                     } catch (err) {
@@ -282,9 +288,7 @@ export default function TeamPage() {
                   Team verlassen
                 </h3>
                 <p className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
-                  {state.isOwner
-                    ? "Als Inhaber: erst alle Mitglieder entfernen, dann löst Verlassen das Team auf."
-                    : "Du arbeitest danach wieder in deinem persönlichen Brain."}
+                  {state.isOwner ? t("team.leave_owner_desc") : t("team.leave_member_desc")}
                 </p>
               </div>
               <Button

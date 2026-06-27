@@ -68,6 +68,10 @@ export const BRAIN_TOOL_ALLOWLIST: ReadonlySet<string> = new Set([
   // The cycle synthesize phase already calls discoverTranscripts directly.
   "get_recent_salience",
   "find_anomalies",
+  // v0.32.6 — Contradiction probe surface (read-only). Reads pre-computed
+  // eval_contradictions_runs results. The agent can surface known
+  // contradictions without triggering a new probe run.
+  "find_contradictions",
 ]);
 
 /**
@@ -110,6 +114,8 @@ export const BRAIN_TOOL_USAGE_HINTS: Readonly<Record<string, string>> = {
     'Read pages ranked by emotional + activity salience over a recency window. Use for "what\'s been on my mind lately".',
   find_anomalies:
     'Read cohort-level activity outliers (e.g. tag-cohort or type-cohort with unusual recent volume). Use for "what\'s unusual lately".',
+  find_contradictions:
+    'Read suspected contradictions from the latest probe run (chunk-pairs flagged by the judge). Use when the user asks "what\'s inconsistent" or to check for conflicting statements in a case.',
 };
 
 /** Matches Anthropic's tool-name constraint. No dots. */

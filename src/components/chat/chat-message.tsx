@@ -163,10 +163,19 @@ function ChatMessageBubbleInner({
                       className="hover:brand-text hover:brand-border inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-[border-color,background-color,color] duration-200"
                       target="_blank"
                       rel="noopener noreferrer"
-                      title={c.title}
+                      title={
+                        c.quote
+                          ? `"${c.quote.slice(0, 120)}${c.quote.length > 120 ? "…" : ""}"`
+                          : c.title
+                      }
                     >
                       <FileText size={9} />
                       {c.title}
+                      {c.page_number && (
+                        <span className="ml-0.5 rounded bg-[color:var(--ds-surface-3)] px-1 py-0.5 text-[10px] font-medium text-[color:var(--ds-text-subtle)]">
+                          S. {c.page_number}
+                        </span>
+                      )}
                     </a>
                     <button
                       onClick={async (e) => {

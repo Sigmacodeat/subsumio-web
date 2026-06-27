@@ -16,6 +16,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useApiQuery } from "@/lib/use-api-query";
+import { useLang } from "@/lib/use-lang";
 
 interface ClauseFrequency {
   clause_type: string;
@@ -83,6 +84,7 @@ const severityIcon: Record<string, typeof AlertTriangle> = {
 };
 
 export default function PortfolioInsightsPage() {
+  const { t, lang } = useLang();
   const {
     data,
     loading,
@@ -120,11 +122,8 @@ export default function PortfolioInsightsPage() {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4">
         <FileText className="text-muted-foreground h-12 w-12" />
-        <h2 className="text-xl font-semibold">Keine Verträge im Portfolio</h2>
-        <p className="text-muted-foreground max-w-md text-center">
-          Laden Sie Verträge in den Vault hoch und analysieren Sie diese, um Portfolio-Insights zu
-          erhalten.
-        </p>
+        <h2 className="text-xl font-semibold">{t("pi.empty_title")}</h2>
+        <p className="text-muted-foreground max-w-md text-center">{t("pi.empty_desc")}</p>
       </div>
     );
   }
@@ -144,8 +143,9 @@ export default function PortfolioInsightsPage() {
             Contract Portfolio Insights
           </h1>
           <p className="text-muted-foreground mt-1 text-sm">
-            {data.total_contracts} Verträge · {data.analyzed_contracts} analysiert · Stand:{" "}
-            {new Date(data.generated_at).toLocaleString("de-DE")}
+            {data.total_contracts} {t("pi.summary")} · {data.analyzed_contracts}{" "}
+            {t("pi.summary_analyzed")} · {t("pi.summary_stand")}{" "}
+            {new Date(data.generated_at).toLocaleString(lang === "en" ? "en-GB" : "de-DE")}
           </p>
         </div>
         <Button onClick={load} variant="outline" size="sm">
@@ -174,7 +174,7 @@ export default function PortfolioInsightsPage() {
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-muted-foreground text-sm">Gesamtverträge</p>
+              <p className="text-muted-foreground text-sm">{t("pi.stat_total")}</p>
               <p className="text-2xl font-bold">{data.total_contracts}</p>
             </div>
             <FileText className="h-8 w-8 text-blue-500" />
@@ -192,10 +192,12 @@ export default function PortfolioInsightsPage() {
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-muted-foreground text-sm">Offene Obliegenheiten</p>
+              <p className="text-muted-foreground text-sm">{t("pi.stat_obligations")}</p>
               <p className="text-2xl font-bold">{data.obligation_summary.total}</p>
               {data.obligation_summary.overdue > 0 && (
-                <p className="text-xs text-red-600">{data.obligation_summary.overdue} überfällig</p>
+                <p className="text-xs text-red-600">
+                  {data.obligation_summary.overdue} {t("pi.stat_overdue")}
+                </p>
               )}
             </div>
             <Clock className="h-8 w-8 text-orange-500" />
@@ -245,12 +247,10 @@ export default function PortfolioInsightsPage() {
         <Card className="p-6">
           <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
             <BarChart3 className="h-5 w-5" />
-            Klausel-Häufigkeiten
+            {t("pi.clause_freq")}
           </h2>
           {data.clause_frequencies.length === 0 ? (
-            <p className="text-muted-foreground text-sm">
-              Keine Klausel-Daten verfügbar. Analysieren Sie Verträge mit der KI-Analyse.
-            </p>
+            <p className="text-muted-foreground text-sm">{t("pi.clause_empty")}</p>
           ) : (
             <div className="space-y-2">
               {data.clause_frequencies.slice(0, 10).map((c, i) => (
@@ -283,9 +283,7 @@ export default function PortfolioInsightsPage() {
             Outlier-Provisionen
           </h2>
           {data.outlier_provisions.length === 0 ? (
-            <p className="text-muted-foreground text-sm">
-              Keine Outlier erkannt. Alle Verträge liegen im Normbereich.
-            </p>
+            <p className="text-muted-foreground text-sm">{t("pi.outliers_empty")}</p>
           ) : (
             <div className="max-h-96 space-y-3 overflow-y-auto">
               {data.outlier_provisions.slice(0, 15).map((o, i) => {
@@ -327,14 +325,14 @@ export default function PortfolioInsightsPage() {
             Vertrags-Trends
           </h2>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
-            {data.trends.map((t, i) => (
+            {data.trends.map((trend, i) => (
               <div key={i} className="rounded-lg border p-3 text-center">
-                <p className="text-muted-foreground text-xs">{t.period}</p>
-                <p className="mt-1 text-xl font-bold">{t.contract_count}</p>
-                <p className="text-muted-foreground text-xs">Verträge</p>
-                {t.avg_risk_score > 0 && (
+                <p className="text-muted-foreground text-xs">{trend.period}</p>
+                <p className="mt-1 text-xl font-bold">{trend.contract_count}</p>
+                <p className="text-muted-foreground text-xs">{t("pi.trend_contracts")}</p>
+                {trend.avg_risk_score > 0 && (
                   <Badge variant="default" className="mt-1 text-xs">
-                    Ø {t.avg_risk_score}
+                    Ø {trend.avg_risk_score}
                   </Badge>
                 )}
               </div>

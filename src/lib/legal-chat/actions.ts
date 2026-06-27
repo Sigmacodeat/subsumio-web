@@ -1002,7 +1002,12 @@ async function queueWhatsAppDocumentAnalysis(brainId: string, documentSlug: stri
         analysis_error: err instanceof Error ? err.message : "analysis_request_failed",
       },
       merge: true,
-    }).catch(() => {});
+    }).catch((err) =>
+      console.warn(
+        "[legal-chat] Failed to mark analysis as failed:",
+        err instanceof Error ? err.message : err
+      )
+    );
   }
 }
 

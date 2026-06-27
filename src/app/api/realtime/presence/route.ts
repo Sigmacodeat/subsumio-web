@@ -3,7 +3,7 @@ import { broadcastSseEvent } from "@/lib/realtime-bus";
 import { z } from "zod";
 
 const presenceSchema = z.object({
-  page: z.string().min(1),
+  page: z.string().min(1).max(500),
   action: z.enum(["join", "leave", "heartbeat"]).optional(),
   /** Optional cursor position for co-editing awareness */
   cursor: z.object({ x: z.number(), y: z.number() }).optional(),
@@ -67,18 +67,24 @@ const memoryPresenceStore: PresenceStore = {
 
 let redisStore: PresenceStore | null = null;
 
+type OptionalRedisModule = { default?: unknown; Redis?: unknown };
+
+// Keep the optional dependency out of webpack/turbopack's static graph. A
+// literal `import("ioredis")` makes Turbopack fail route compilation when Redis
+// is intentionally not installed, even though this branch is disabled without
+// REDIS_URL.
+const importOptionalServerModule = new Function("specifier", "return import(specifier)") as (
+  specifier: string
+) => Promise<unknown>;
+
 async function getRedisStore(): Promise<PresenceStore | null> {
   if (redisStore) return redisStore;
   const redisUrl = process.env.REDIS_URL;
   if (!redisUrl) return null;
 
   try {
-    // Dynamic import — ioredis optional dependency
-    // @ts-expect-error — ioredis is an optional peer dependency, not installed by default
-    const ioredis = await import("ioredis");
-    const Redis =
-      (ioredis as { default?: unknown; Redis?: unknown }).default ??
-      (ioredis as { Redis?: unknown }).Redis;
+    const ioredis = (await importOptionalServerModule("ioredis")) as OptionalRedisModule;
+    const Redis = ioredis.default ?? ioredis.Redis;
     const client = new (Redis as new (
       url: string,
       opts?: Record<string, unknown>

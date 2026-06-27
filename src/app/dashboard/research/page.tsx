@@ -238,6 +238,7 @@ export default function ResearchPage() {
           <select
             value={jurisdiction}
             onChange={(e) => setJurisdiction(e.target.value)}
+            aria-label="Rechtsordnung"
             className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
           >
             <option value="de">🇩🇪 Deutschland</option>

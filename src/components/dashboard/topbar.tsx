@@ -248,7 +248,12 @@ export function Topbar({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ deadlines }),
-      }).catch(() => {});
+      }).catch((err) =>
+        console.warn(
+          "[topbar] Failed to sync deadline notifications:",
+          err instanceof Error ? err.message : err
+        )
+      );
     }
   }, [deadlinesQuery.data]);
 

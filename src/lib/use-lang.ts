@@ -85,7 +85,12 @@ export function useLang(): { lang: Lang; t: TFunc; setLang: (lang: Lang) => void
         body: JSON.stringify({ locale: newLang }),
       })
         .then(() => qc.invalidateQueries({ queryKey: ["auth", "me"] }))
-        .catch(() => {});
+        .catch((err) =>
+          console.warn(
+            "[use-lang] Failed to persist locale:",
+            err instanceof Error ? err.message : err
+          )
+        );
     },
     [qc]
   );

@@ -1,0 +1,108 @@
+# Gitleaks configuration for Subsumio
+# Extends default rules with project-specific secret patterns.
+# https://github.com/gitleaks/gitleaks/blob/master/config/gitleaks.toml
+
+[extend]
+# Start from the default gitleaks ruleset
+useDefault = true
+
+# ── Subsumio-specific secret patterns ──────────────────────────────────
+
+[[rules]]
+id = "subsumio-auth-secret"
+description = "SUBSUMIO_AUTH_SECRET exposed in source"
+regex = '''SUBSUMIO_AUTH_SECRET\s*[:=]\s*["']([^"']{32,})["']'''
+tags = ["subsumio", "secret", "high"]
+
+[[rules]]
+id = "subsumio-encryption-key"
+description = "SUBSUMIO_ENCRYPTION_KEY exposed in source"
+regex = '''SUBSUMIO_ENCRYPTION_KEY\s*[:=]\s*["']([^"']{32,})["']'''
+tags = ["subsumio", "secret", "high"]
+
+[[rules]]
+id = "subsumio-internal-secret"
+description = "SUBSUMIO_INTERNAL_SECRET exposed in source"
+regex = '''SUBSUMIO_INTERNAL_SECRET\s*[:=]\s*["']([^"']{16,})["']'''
+tags = ["subsumio", "secret", "high"]
+
+[[rules]]
+id = "subsumio-web-api-key"
+description = "SUBSUMIO_WEB_API_KEY exposed in source"
+regex = '''SUBSUMIO_WEB_API_KEY\s*[:=]\s*["']([^"']{16,})["']'''
+tags = ["subsumio", "secret", "high"]
+
+[[rules]]
+id = "subsumio-cron-secret"
+description = "CRON_SECRET exposed in source"
+regex = '''CRON_SECRET\s*[:=]\s*["']([^"']{8,})["']'''
+tags = ["subsumio", "secret", "medium"]
+
+[[rules]]
+id = "workos-api-key"
+description = "WORKOS_API_KEY exposed in source"
+regex = '''WORKOS_API_KEY\s*[:=]\s*["']([^"']{16,})["']'''
+tags = ["subsumio", "secret", "high"]
+
+[[rules]]
+id = "scim-bearer-token"
+description = "SCIM_BEARER_TOKEN exposed in source"
+regex = '''SCIM_BEARER_TOKEN\s*[:=]\s*["']([^"']{16,})["']'''
+tags = ["subsumio", "secret", "high"]
+
+[[rules]]
+id = "upstash-redis-token"
+description = "UPSTASH_REDIS_REST_TOKEN exposed in source"
+regex = '''UPSTASH_REDIS_REST_TOKEN\s*[:=]\s*["']([^"']{16,})["']'''
+tags = ["subsumio", "secret", "high"]
+
+[[rules]]
+id = "subsumio-server-password"
+description = "Server root password in source"
+regex = '''Subsumio2026!Secure'''
+tags = ["subsumio", "secret", "critical"]
+
+# ── Allowlist: false-positive paths ────────────────────────────────────
+
+[allowlist]
+description = "Allowlisted paths — gitignored, docs, tests, legal corpus, build artifacts"
+paths = [
+  # Docs
+  '''docs/.*\.md''',
+  '''README\.md''',
+  '''SECURITY\.md''',
+  # Tests
+  '''.*\.test\.ts''',
+  '''.*\.test\.tsx''',
+  '''.*\.spec\.ts''',
+  # Scripts
+  '''scripts/.*\.sh''',
+  # Env example files (not real .env.local)
+  '''\.env\.example''',
+  '''\.env\.local\.example''',
+  # Gitignored local env files (scanned by gitleaks dir but never committed)
+  '''\.env\.local''',
+  '''server/\.env''',
+  # Build artifacts (gitignored, auto-generated)
+  '''\.next/.*''',
+  # Claude/IDE local settings (gitignored)
+  '''\.claude/.*''',
+  # Legal corpus — contains statutory text with "key" patterns, not secrets
+  '''law-corpus/.*''',
+  '''law-corpus-split/.*''',
+  '''tmp-legal-repo/.*''',
+  # Server schema files — contain SQL column definitions, not secrets
+  '''server/src/core/pglite-schema\.ts''',
+  '''server/src/core/schema-embedded\.ts''',
+  '''server/src/core/link-extraction\.ts''',
+  '''server/src/schema\.sql''',
+]
+
+# Allowlist specific regex patterns that are not real secrets
+regexes = [
+  # Placeholder values in documentation
+  '''subsumio-dev-encryption-key-32chars!''',
+  # Test values
+  '''test-cron-secret''',
+  '''sk_live_test_''',
+]

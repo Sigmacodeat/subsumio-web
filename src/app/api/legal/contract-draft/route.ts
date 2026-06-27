@@ -4,14 +4,14 @@ import { createEngineProxy } from "@/lib/api-handler";
 export const maxDuration = 300;
 
 const contractDraftSchema = z.object({
-  type: z.string().min(1, "type_required"),
+  type: z.string().min(1, "type_required").max(100),
   jurisdiction: z.enum(["at", "de", "ch"]),
   parties: z.object({
-    a: z.string().min(1),
-    b: z.string().min(1),
+    a: z.string().min(1).max(300),
+    b: z.string().min(1).max(300),
   }),
   instructions: z.string().max(5000).optional().default(""),
-  template_slug: z.string().optional(),
+  template_slug: z.string().max(200).optional(),
   language: z.enum(["de", "en"]).default("de"),
 });
 

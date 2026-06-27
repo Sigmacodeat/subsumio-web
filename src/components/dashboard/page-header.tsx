@@ -1,5 +1,6 @@
 "use client";
 
+import { Fragment } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import {
@@ -46,23 +47,25 @@ export function PageHeader({
       {normalizedBreadcrumbs && normalizedBreadcrumbs.length > 0 && (
         <Breadcrumb className="mb-3 text-xs">
           {normalizedBreadcrumbs.map((item, i) => (
-            <BreadcrumbItem key={item.label}>
+            <Fragment key={item.label}>
               {i > 0 && <BreadcrumbSeparator />}
-              {item.href ? (
-                <BreadcrumbLink asChild>
-                  <Link
-                    href={item.href}
-                    className="transition-colors hover:text-[color:var(--ds-text)]"
-                  >
-                    {item.label}
-                  </Link>
-                </BreadcrumbLink>
-              ) : (
-                <BreadcrumbLink>
-                  <span className="font-medium text-[color:var(--ds-text)]">{item.label}</span>
-                </BreadcrumbLink>
-              )}
-            </BreadcrumbItem>
+              <BreadcrumbItem>
+                {item.href ? (
+                  <BreadcrumbLink asChild>
+                    <Link
+                      href={item.href}
+                      className="transition-colors hover:text-[color:var(--ds-text)]"
+                    >
+                      {item.label}
+                    </Link>
+                  </BreadcrumbLink>
+                ) : (
+                  <BreadcrumbLink>
+                    <span className="font-medium text-[color:var(--ds-text)]">{item.label}</span>
+                  </BreadcrumbLink>
+                )}
+              </BreadcrumbItem>
+            </Fragment>
           ))}
         </Breadcrumb>
       )}

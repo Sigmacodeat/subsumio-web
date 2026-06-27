@@ -110,7 +110,7 @@ export default function CostCalculatorPage() {
       const fm = caseFrontmatter(page);
       const entry: ExpenseEntry = {
         id: `cost-calc-${Date.now()}`,
-        description: `Kostenschätzung (${result.jurisdiction === "de" ? "RVG" : "RATG"}) — Streitwert ${result.streitwert.toLocaleString(lang === "en" ? "en-GB" : "de-DE")} €`,
+        description: `${t("costcalc.estimate_label")} (${result.jurisdiction === "de" ? "RVG" : "RATG"}) — ${result.streitwert.toLocaleString(lang === "en" ? "en-GB" : "de-DE")} €`,
         date: new Date().toISOString(),
         amount: result.total,
         billable: false,

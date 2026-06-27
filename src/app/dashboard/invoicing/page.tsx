@@ -145,7 +145,12 @@ export default function InvoicingPage() {
   useEffect(() => {
     loadKanzleiSettings()
       .then(setKanzlei)
-      .catch(() => {});
+      .catch((err) =>
+        console.warn(
+          "[invoicing] Failed to load kanzlei settings:",
+          err instanceof Error ? err.message : err
+        )
+      );
     loadAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

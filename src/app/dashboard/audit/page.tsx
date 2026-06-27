@@ -133,7 +133,7 @@ function formatRelative(ts: string): string {
 }
 
 export default function AuditLogPage() {
-  const { lang } = useLang();
+  const { t, lang } = useLang();
   const [search, setSearch] = useState("");
   const [filterAction, setFilterAction] = useState("");
   const [filterEntityType, setFilterEntityType] = useState("");
@@ -227,9 +227,12 @@ export default function AuditLogPage() {
   return (
     <div className="mx-auto max-w-[1600px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
-        title="Audit-Log"
-        description="Vollständige Nachvollziehbarkeit aller Aktionen im Kanzlei-Workspace — GoBD-konform protokolliert."
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Audit-Log" }]}
+        title={t("audit.title")}
+        description={t("audit.description")}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("audit.breadcrumb") },
+        ]}
         actions={
           <div className="flex items-center gap-2">
             <Button
@@ -283,7 +286,7 @@ export default function AuditLogPage() {
               setSearch(e.target.value);
               setPage(0);
             }}
-            placeholder="Audit-Log durchsuchen — Aktion, Entität, Benutzer, Details…"
+            placeholder={t("audit.search_placeholder")}
             className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-2.5 pr-3 pl-10 text-sm text-[color:var(--ds-text)] transition-colors placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-1 focus:ring-[color:var(--brand-primary)] focus:outline-none"
           />
           {search && (
@@ -307,7 +310,7 @@ export default function AuditLogPage() {
                 onClick={resetFilters}
                 className="text-xs text-[color:var(--ds-text-subtle)] transition-colors hover:text-[color:var(--ds-text)]"
               >
-                Zurücksetzen
+                {t("audit.reset")}
               </button>
             )}
           </div>
@@ -334,7 +337,7 @@ export default function AuditLogPage() {
             </div>
             <div>
               <label className="mb-1.5 block text-xs font-medium text-[color:var(--ds-text-muted)]">
-                Entitätstyp
+                {t("audit.entity_type")}
               </label>
               <select
                 value={filterEntityType}
@@ -398,9 +401,13 @@ export default function AuditLogPage() {
 
       {/* Stats bar */}
       <div className="mb-4 flex items-center gap-4 text-xs text-[color:var(--ds-text-muted)]">
-        <span>{filtered.length} Einträge</span>
+        <span>
+          {filtered.length} {t("audit.entries_count")}
+        </span>
         {filtered.length !== entries.length && (
-          <span className="text-[color:var(--ds-text-subtle)]">({entries.length} gesamt)</span>
+          <span className="text-[color:var(--ds-text-subtle)]">
+            ({entries.length} {t("audit.total_count")})
+          </span>
         )}
         {totalPages > 1 && (
           <span>
@@ -428,16 +435,14 @@ export default function AuditLogPage() {
         <div className="flex flex-col items-center justify-center gap-3 py-24">
           <Shield size={40} className="text-[color:var(--ds-text-subtle)]" />
           <p className="text-sm font-medium text-[color:var(--ds-text-muted)]">
-            Keine Audit-Einträge gefunden
+            {t("audit.empty_title")}
           </p>
           <p className="max-w-md text-center text-xs text-[color:var(--ds-text-subtle)]">
-            {search || activeFilterCount > 0
-              ? "Mit den aktuellen Filtern wurden keine Einträge gefunden. Versuche die Filter anzupassen."
-              : "Audit-Logs werden automatisch erstellt, sobald Aktionen im Dashboard ausgeführt werden."}
+            {search || activeFilterCount > 0 ? t("audit.empty_filtered") : t("audit.empty_no_data")}
           </p>
           {(search || activeFilterCount > 0) && (
             <Button variant="outline" size="sm" onClick={resetFilters} className="mt-2">
-              Filter zurücksetzen
+              {t("audit.reset_filters")}
             </Button>
           )}
         </div>
@@ -449,11 +454,15 @@ export default function AuditLogPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-[color:var(--ds-border)] text-left text-xs tracking-wider text-[color:var(--ds-text-subtle)] uppercase">
-                    <th className="px-4 py-3 font-medium">Zeitpunkt</th>
-                    <th className="px-4 py-3 font-medium">Aktion</th>
-                    <th className="px-4 py-3 font-medium">Entität</th>
-                    <th className="hidden px-4 py-3 font-medium md:table-cell">Benutzer</th>
-                    <th className="hidden px-4 py-3 font-medium lg:table-cell">Details</th>
+                    <th className="px-4 py-3 font-medium">{t("audit.col_time")}</th>
+                    <th className="px-4 py-3 font-medium">{t("audit.col_action")}</th>
+                    <th className="px-4 py-3 font-medium">{t("audit.col_entity")}</th>
+                    <th className="hidden px-4 py-3 font-medium md:table-cell">
+                      {t("audit.col_user")}
+                    </th>
+                    <th className="hidden px-4 py-3 font-medium lg:table-cell">
+                      {t("audit.col_details")}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -545,7 +554,7 @@ export default function AuditLogPage() {
                   disabled={page === 0}
                   className="gap-1"
                 >
-                  <ChevronLeft size={14} /> Zurück
+                  <ChevronLeft size={14} /> {t("audit.prev_page")}
                 </Button>
                 <span className="px-2 text-xs text-[color:var(--ds-text-muted)]">
                   {page + 1} / {totalPages}
@@ -633,7 +642,7 @@ export default function AuditLogPage() {
 
               <div>
                 <label className="text-xs font-medium tracking-wider text-[color:var(--ds-text-subtle)] uppercase">
-                  Entität
+                  {t("audit.col_entity")}
                 </label>
                 <div className="mt-1 space-y-1">
                   <p className="text-sm text-[color:var(--ds-text)]">

@@ -20,6 +20,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { csrfFetch } from "@/lib/csrf";
 import Link2 from "next/link";
+import { useLang } from "@/lib/use-lang";
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -55,71 +56,77 @@ type StepType =
 
 const STEP_TYPES: {
   type: StepType;
-  label: string;
+  labelKey: string;
   icon: React.ReactNode;
   color: string;
   prompt: string;
 }[] = [
   {
     type: "analyze",
-    label: "Analysieren",
+    labelKey: "builder.step.analyze",
     icon: <FileText size={14} />,
     color: "#6366f1",
     prompt: "Analysiere den folgenden Text aus rechtlicher Sicht:",
   },
   {
     type: "summarize",
-    label: "Zusammenfassen",
+    labelKey: "builder.step.summarize",
     icon: <Edit3 size={14} />,
     color: "#8b5cf6",
     prompt: "Fasse den folgenden juristischen Text zusammen:",
   },
   {
     type: "draft",
-    label: "Entwurf erstellen",
+    labelKey: "builder.step.draft",
     icon: <FileText size={14} />,
     color: "#06b6d4",
     prompt: "Erstelle einen Vertragsentwurf basierend auf:",
   },
   {
     type: "risk",
-    label: "Risiko prüfen",
+    labelKey: "builder.step.risk",
     icon: <AlertTriangle size={14} />,
     color: "#f59e0b",
     prompt: "Identifiziere rechtliche Risiken in:",
   },
   {
     type: "translate",
-    label: "Übersetzen",
+    labelKey: "builder.step.translate",
     icon: <Globe size={14} />,
     color: "#10b981",
     prompt: "Übersetze den folgenden juristischen Text ins Deutsche:",
   },
   {
     type: "review",
-    label: "Manuell prüfen",
+    labelKey: "builder.step.review",
     icon: <Eye size={14} />,
     color: "#ec4899",
     prompt: "Menschliche Überprüfung erforderlich",
   },
   {
     type: "webhook",
-    label: "Webhook senden",
+    labelKey: "builder.step.webhook",
     icon: <Zap size={14} />,
     color: "#f97316",
     prompt: "",
   },
-  { type: "email", label: "Email senden", icon: <Mail size={14} />, color: "#3b82f6", prompt: "" },
+  {
+    type: "email",
+    labelKey: "builder.step.email",
+    icon: <Mail size={14} />,
+    color: "#3b82f6",
+    prompt: "",
+  },
   {
     type: "obligation",
-    label: "Pflichten extrahieren",
+    labelKey: "builder.step.obligation",
     icon: <CheckCircle size={14} />,
     color: "#22c55e",
     prompt: "Extrahiere alle Pflichten und Fristen aus:",
   },
   {
     type: "redline",
-    label: "Redline",
+    labelKey: "builder.step.redline",
     icon: <Edit3 size={14} />,
     color: "#ef4444",
     prompt: "Erstelle einen Redline für den folgenden Vertrag:",
@@ -135,6 +142,7 @@ const uid = () => Math.random().toString(36).slice(2, 8);
 // ── Main Component ────────────────────────────────────────────────────
 
 export default function WorkflowBuilderPage() {
+  const { t } = useLang();
   const [meta, setMeta] = useState<WorkflowMeta>({ name: "Neuer Workflow", description: "" });
   const [steps, setSteps] = useState<WorkflowStep[]>([]);
   const [selectedStep, setSelectedStep] = useState<string | null>(null);
@@ -155,7 +163,7 @@ export default function WorkflowBuilderPage() {
       const newStep: WorkflowStep = {
         id: uid(),
         type,
-        label: cfg.label,
+        label: t(cfg.labelKey as import("@/content/dashboard").DashboardKey),
         prompt: cfg.prompt,
         x: 80 + (steps.length % 3) * 200,
         y: 80 + Math.floor(steps.length / 3) * 150,
@@ -163,7 +171,7 @@ export default function WorkflowBuilderPage() {
       setSteps((prev) => [...prev, newStep]);
       setSelectedStep(newStep.id);
     },
-    [steps.length]
+    [steps.length, t]
   );
 
   const deleteStep = useCallback(
@@ -316,7 +324,7 @@ export default function WorkflowBuilderPage() {
       >
         <Link2 href="/dashboard/workflows">
           <Button variant="ghost" size="sm" style={{ gap: 4 }}>
-            <ArrowLeft size={14} /> Zurück
+            <ArrowLeft size={14} /> {t("builder.back")}
           </Button>
         </Link2>
         <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 10 }}>
@@ -407,7 +415,7 @@ export default function WorkflowBuilderPage() {
               onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#1e1e3a")}
             >
               <span style={{ color: s.color }}>{s.icon}</span>
-              <span>{s.label}</span>
+              <span>{t(s.labelKey as import("@/content/dashboard").DashboardKey)}</span>
               <Plus size={11} style={{ marginLeft: "auto", opacity: 0.5 }} />
             </button>
           ))}
@@ -667,7 +675,7 @@ export default function WorkflowBuilderPage() {
                   marginBottom: 4,
                 }}
               >
-                Hängt ab von
+                {t("builder.depends_on")}
               </label>
               <select
                 value={selected.dependsOn ?? ""}
@@ -745,7 +753,7 @@ export default function WorkflowBuilderPage() {
                 gap: 5,
               }}
             >
-              <Trash2 size={12} /> Step löschen
+              <Trash2 size={12} /> {t("builder.delete_step")}
             </button>
           </div>
         )}

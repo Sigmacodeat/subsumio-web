@@ -19,7 +19,7 @@ const updateGroupSchema = z.object({
   displayName: z.string().optional(),
   externalId: z.string().optional(),
   id: z.string().optional(),
-  members: z.array(z.any()).optional(),
+  members: z.array(z.any()).max(1000).optional(),
 });
 
 const patchRequestSchema = z.object({
@@ -32,6 +32,7 @@ const patchRequestSchema = z.object({
         value: z.any().optional(),
       })
     )
+    .max(100)
     .optional(),
 });
 

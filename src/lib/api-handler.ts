@@ -60,6 +60,7 @@ import { validateCronAuth } from "@/lib/cron-auth";
 import { timingSafeCompare } from "@/lib/crypto-utils";
 import { env } from "@/lib/env";
 import { verifyApiKey } from "@/lib/auth/api-key-auth";
+import { hit } from "@/lib/auth/rate-limit";
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -422,7 +423,9 @@ export function createHandler<
 
 /**
  * Lightweight handler for public routes (no auth, no RBAC).
- * Still applies CSRF, validation, CORS, and rate-limiting.
+ * Public routes cannot depend on a pre-existing CSRF cookie, so CSRF defaults
+ * off here; middleware still enforces it for paths that are not explicitly
+ * exempt. Optional IP/token rate limiting is applied before domain execution.
  */
 export function createPublicHandler<
   B extends z.ZodTypeAny | undefined = undefined,
@@ -440,12 +443,45 @@ export function createPublicHandler<
     extra: { params?: Promise<Record<string, unknown>> }
   ) => Promise<Response>
 ): (req: NextRequest, routeContext: RouteContext) => Promise<Response> {
+  const {
+    rateLimitKey,
+    rateLimitMax = 20,
+    rateLimitWindowMs = 60_000,
+    ...handlerOptions
+  } = options;
+
   return createHandler(
-    { ...options, action: "public" as RouteAction, public: true },
-    async (ctx, body, query, req) =>
-      handler(req, body, query, {
+    {
+      ...handlerOptions,
+      action: "public" as RouteAction,
+      public: true,
+      skipCsrf: handlerOptions.skipCsrf ?? true,
+    },
+    async (_ctx, body, query, req) => {
+      if (rateLimitKey) {
+        const rate = await hit(rateLimitKey(req), rateLimitMax, rateLimitWindowMs);
+        if (!rate.ok) {
+          return new Response(
+            JSON.stringify({
+              error: "rate_limited",
+              message: "Too many requests. Please try again later.",
+              retry_after: rate.retryAfterSeconds,
+            }),
+            {
+              status: 429,
+              headers: {
+                "Content-Type": "application/json",
+                "Retry-After": String(rate.retryAfterSeconds),
+              },
+            }
+          );
+        }
+      }
+
+      return handler(req, body, query, {
         params: (req as unknown as { params?: Promise<Record<string, unknown>> }).params,
-      })
+      });
+    }
   );
 }
 

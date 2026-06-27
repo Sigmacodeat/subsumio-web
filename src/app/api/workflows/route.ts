@@ -62,9 +62,9 @@ export const GET = createHandler(
 // ── POST: Start a new workflow ─────────────────────────────────────────
 
 const startSchema = z.object({
-  template_id: z.string().min(1),
-  prompt: z.string().optional(),
-  case_slug: z.string().optional(),
+  template_id: z.string().min(1).max(200),
+  prompt: z.string().max(10_000).optional(),
+  case_slug: z.string().max(200).optional(),
 });
 
 export const POST = createHandler(
@@ -140,11 +140,11 @@ export const POST = createHandler(
 // ── PATCH: Advance a workflow step ─────────────────────────────────────
 
 const patchSchema = z.object({
-  slug: z.string().min(1),
-  step_id: z.string().min(1),
+  slug: z.string().min(1).max(200),
+  step_id: z.string().min(1).max(200),
   new_status: z.enum(["pending", "running", "approved", "rejected", "skipped"]),
-  agent_action_slug: z.string().optional(),
-  error: z.string().optional(),
+  agent_action_slug: z.string().max(200).optional(),
+  error: z.string().max(5000).optional(),
 });
 
 export const PATCH = createHandler(

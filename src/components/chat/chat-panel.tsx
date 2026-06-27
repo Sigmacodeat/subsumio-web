@@ -140,6 +140,18 @@ const TOOL_RULES: ToolDetectionRule[] = [
     }),
   },
   {
+    pattern:
+      /\[TOOL:send_email\s+to="([^"]+)"\s+subject="([^"]+)"(?:\s+text="([^"]*)")?(?:\s+case_slug="([^"]+)")?\]/i,
+    tool: "send_email",
+    label: "chat.tool.send_email",
+    extractParams: (m) => ({
+      to: m[1],
+      subject: m[2],
+      text: m[3] || "",
+      case_slug: m[4] || undefined,
+    }),
+  },
+  {
     pattern: /\[TOOL:deadline_extract\s+document_slug="([^"]+)"\]/i,
     tool: "deadline_extract",
     label: "chat.tool.deadline_extract",
@@ -286,6 +298,7 @@ function detectToolCalls(
   // Tools that benefit from automatic matter-scoping
   const MATTER_SCOPED_TOOLS = new Set([
     "email_draft",
+    "send_email",
     "client_update",
     "time_entry",
     "case_summary",
@@ -1576,7 +1589,12 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
                 const fm = caseFrontmatter(page as BrainPage);
                 if (fm.jurisdiction) setJurisdiction(fm.jurisdiction as Jurisdiction);
               })
-              .catch(() => {});
+              .catch((err) =>
+                console.warn(
+                  "[chat] Failed to load case jurisdiction:",
+                  err instanceof Error ? err.message : err
+                )
+              );
           }
         }}
         onClear={handleClear}

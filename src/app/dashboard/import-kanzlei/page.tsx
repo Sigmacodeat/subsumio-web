@@ -32,52 +32,66 @@ import {
 } from "@/lib/migration-project";
 
 // Zielfelder einer Akte (Teilmenge von CaseFrontmatter). Aktenlisten-Exporte
-// aus RA-MICRO, Advoware und DATEV Anwalt sind CSV — der Import mappt die
+// aus RA-MICRO, Advoware und DATEV Anwalt sind CSV — der Import mapmt die
 // Spalten auf diese Felder. Ehrlich: kein proprietärer Parser, sondern ein
 // generischer CSV-Import mit Spalten-Zuordnung, der mit jedem dieser Exporte
 // funktioniert.
-const FIELDS = [
-  {
-    key: "title",
-    label: "Bezeichnung / Rubrum",
-    required: true,
-    guess: /(rubrum|bezeichnung|kurzbez|betreff|sache|gegenstand|kurzrubrum)/i,
-  },
-  {
-    key: "case_number",
-    label: "Aktenzeichen",
-    required: false,
-    guess: /(aktenz|akten-?nr|az\b|aktennummer|registernummer)/i,
-  },
-  {
-    key: "client_name",
-    label: "Mandant",
-    required: false,
-    guess: /(mandant|auftraggeber|kläger|klient)/i,
-  },
-  {
-    key: "opponent_name",
-    label: "Gegner",
-    required: false,
-    guess: /(gegner|gegenseite|beklagt|gegenpartei)/i,
-  },
-  {
-    key: "legal_area",
-    label: "Rechtsgebiet",
-    required: false,
-    guess: /(rechtsgebiet|sachgebiet|referat|fachgebiet)/i,
-  },
-  { key: "court_name", label: "Gericht", required: false, guess: /(gericht|instanz)/i },
-  {
-    key: "own_lawyer_name",
-    label: "Sachbearbeiter",
-    required: false,
-    guess: /(sachbearb|anwalt|bearbeiter|dezernent|sb\b)/i,
-  },
-  { key: "status", label: "Status", required: false, guess: /(status|stand|zustand)/i },
-] as const;
+type TFunc = (key: import("@/content/dashboard").DashboardKey) => string;
 
-type FieldKey = (typeof FIELDS)[number]["key"];
+function getFields(t: TFunc) {
+  return [
+    {
+      key: "title",
+      label: t("importkanz.field.title"),
+      required: true,
+      guess: /(rubrum|bezeichnung|kurzbez|betreff|sache|gegenstand|kurzrubrum)/i,
+    },
+    {
+      key: "case_number",
+      label: t("importkanz.field.case_number"),
+      required: false,
+      guess: /(aktenz|akten-?nr|az\b|aktennummer|registernummer)/i,
+    },
+    {
+      key: "client_name",
+      label: t("importkanz.field.client_name"),
+      required: false,
+      guess: /(mandant|auftraggeber|kläger|klient)/i,
+    },
+    {
+      key: "opponent_name",
+      label: t("importkanz.field.opponent_name"),
+      required: false,
+      guess: /(gegner|gegenseite|beklagt|gegenpartei)/i,
+    },
+    {
+      key: "legal_area",
+      label: t("importkanz.field.legal_area"),
+      required: false,
+      guess: /(rechtsgebiet|sachgebiet|referat|fachgebiet)/i,
+    },
+    {
+      key: "court_name",
+      label: t("importkanz.field.court_name"),
+      required: false,
+      guess: /(gericht|instanz)/i,
+    },
+    {
+      key: "own_lawyer_name",
+      label: t("importkanz.field.own_lawyer_name"),
+      required: false,
+      guess: /(sachbearb|anwalt|bearbeiter|dezernent|sb\b)/i,
+    },
+    {
+      key: "status",
+      label: t("importkanz.field.status"),
+      required: false,
+      guess: /(status|stand|zustand)/i,
+    },
+  ] as const;
+}
+
+type FieldKey = ReturnType<typeof getFields>[number]["key"];
 
 /** Generischer CSV/Delimited-Parser: erkennt ; oder , und behandelt "…"-Quotes. */
 function parseDelimited(text: string): string[][] {
@@ -128,6 +142,7 @@ function slugify(s: string): string {
 
 export default function ImportKanzleiPage() {
   const { t } = useLang();
+  const FIELDS = getFields(t);
   const [headers, setHeaders] = useState<string[]>([]);
   const [rows, setRows] = useState<string[][]>([]);
   const [mapping, setMapping] = useState<Record<FieldKey, number>>({} as Record<FieldKey, number>);
@@ -208,7 +223,7 @@ export default function ImportKanzleiPage() {
       try {
         const parsed = parseDelimited(String(reader.result));
         if (parsed.length < 2) {
-          setError("Datei enthält keine Datenzeilen.");
+          setError(t("importkanz.error_no_data"));
           return;
         }
         const head = parsed[0].map((h) => h.trim());
@@ -357,13 +372,7 @@ export default function ImportKanzleiPage() {
         role="note"
       >
         <Info size={16} className="mt-0.5 shrink-0 text-blue-600" aria-hidden="true" />
-        <p className="text-xs leading-relaxed text-blue-700/90">
-          Exportiere die Aktenliste deiner Kanzleisoftware als <strong>CSV</strong> (RA-MICRO,
-          Advoware und DATEV Anwalt können das) und lade sie hier hoch. Die Spalten werden
-          automatisch zugeordnet —<strong> prüfe die Zuordnung</strong>, bevor du importierst.
-          Umlaute falsch? Datei als UTF-8 neu speichern. Es werden nur Stammdaten übernommen, keine
-          Dokumente.
-        </p>
+        <p className="text-xs leading-relaxed text-blue-700/90">{t("importkanz.info")}</p>
       </div>
 
       {/* Upload */}
@@ -377,11 +386,11 @@ export default function ImportKanzleiPage() {
       >
         <UploadCloud size={28} className="text-blue-600" aria-hidden="true" />
         <span className="text-sm text-[color:var(--ds-text)]">
-          {fileName || "CSV-Datei wählen oder hierher ziehen"}
+          {fileName || t("importkanz.choose_file")}
         </span>
         {headers.length > 0 && (
           <span className="text-xs text-[color:var(--ds-text-muted)]">
-            {rows.length} Zeilen erkannt · andere Datei wählen
+            {rows.length} {t("importkanz.rows_detected")}
           </span>
         )}
         <input
@@ -478,7 +487,7 @@ export default function ImportKanzleiPage() {
               Dry Run
             </h2>
             <p className="text-xs text-[color:var(--ds-text-muted)]">
-              Prüft Zuordnung und schätzt die Fehlerquote, ohne Akten anzulegen.
+              {t("importkanz.dry_run_desc")}
             </p>
             <Button
               variant="secondary"
@@ -491,7 +500,7 @@ export default function ImportKanzleiPage() {
               ) : (
                 <FlaskConical size={14} />
               )}
-              {dryRunning ? "Prüfe…" : "Dry Run starten"}
+              {dryRunning ? t("importkanz.dry_run_checking") : t("importkanz.dry_run_start")}
             </Button>
             {project?.dry_run_result && (
               <div className="space-y-1 text-xs text-[color:var(--ds-text-muted)]">
@@ -506,12 +515,10 @@ export default function ImportKanzleiPage() {
                 ))}
                 {dryRunOk ? (
                   <p className="flex items-center gap-1.5 text-emerald-600">
-                    <CheckCircle2 size={11} aria-hidden="true" /> Bereit für Import.
+                    <CheckCircle2 size={11} aria-hidden="true" /> {t("importkanz.dry_run_ready")}
                   </p>
                 ) : (
-                  <p className="text-red-600">
-                    Fehlerquote zu hoch — Zuordnung prüfen und Dry Run wiederholen.
-                  </p>
+                  <p className="text-red-600">{t("importkanz.dry_run_error")}</p>
                 )}
               </div>
             )}
@@ -534,7 +541,7 @@ export default function ImportKanzleiPage() {
             </Button>
             {!canImport && !importing && (
               <span className="text-xs text-[color:var(--ds-text-muted)]">
-                Erst Dry Run mit niedriger Fehlerquote ausführen.
+                {t("importkanz.need_dry_run")}
               </span>
             )}
             {result && (

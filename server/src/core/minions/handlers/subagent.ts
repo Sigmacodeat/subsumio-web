@@ -27,6 +27,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { MinionJobContext, MinionJob } from "../types.ts";
 import { UnrecoverableError } from "../types.ts";
+import { reserveBudget } from "../budget-tracker.ts";
 import type {
   ContentBlock,
   SubagentHandlerData,
@@ -548,6 +549,29 @@ export function makeSubagentHandler(deps: SubagentDeps) {
       // Check inbox again at the start of every turn — user may have
       // sent steering messages while we were executing tools.
       await drainUserInbox();
+
+      // 0. Budget gate — check owner's budget_remaining_cents BEFORE
+      //    acquiring a rate lease. If the budget owner (supervisor) has
+      //    a remaining balance set, deduct a per-turn estimate. Throws
+      //    BudgetExhausted when the owner is out of money, which aborts
+      //    the subagent cleanly without consuming a lease slot.
+      //
+      //    Conservative estimate: 5 cents/turn covers a typical Sonnet
+      //    tool-use turn (~4K input, ~1K output with cache reads).
+      //    Over-estimating is safe — unused reservation stays on owner.
+      const TURN_COST_ESTIMATE_CENTS = 5;
+      const reservation = await reserveBudget(engine, ctx.id, TURN_COST_ESTIMATE_CENTS);
+      if (reservation.kind === "exhausted") {
+        // Owner is out of budget — abort cleanly. The supervisor's
+        // on_child_fail: "continue" policy means this child failure
+        // doesn't kill the whole tree; remaining children also hit
+        // the gate and abort in turn.
+        stopReason = "error";
+        throw new Error(
+          `budget exhausted: balance ${reservation.balance_at_attempt} cents, needed ${reservation.requested_cents}`
+        );
+      }
+      // no_budget or owner_deleted → proceed without budget gating
 
       // 1. Acquire rate lease for the outbound call.
       //

@@ -4,8 +4,8 @@ import { createEngineProxy } from "@/lib/api-handler";
 export const maxDuration = 120;
 
 const autoPlaybookSchema = z.object({
-  contract_slug: z.string().min(1),
-  playbook_slug: z.string().optional(),
+  contract_slug: z.string().min(1).max(200),
+  playbook_slug: z.string().max(200).optional(),
   auto_apply: z.boolean().default(false),
 });
 

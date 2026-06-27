@@ -32,7 +32,7 @@ export const GET = createHandler(
 );
 
 const postSchema = z.object({
-  permission: z.string().min(1),
+  permission: z.string().min(1).max(200),
 });
 
 export const POST = createHandler(

@@ -54,7 +54,14 @@ export function BrainQualityPanel({ className }: BrainQualityPanelProps) {
           <Brain size={16} className="brand-text" />
           <span className="text-sm font-semibold text-[color:var(--ds-text)]">Brain Qualität</span>
         </div>
-        <Button variant="ghost" size="sm" onClick={refetch} className="h-7 px-2" disabled={loading}>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={refetch}
+          className="h-7 px-2"
+          disabled={loading}
+          aria-label={lang === "de" ? "Brain-Qualität aktualisieren" : "Refresh brain quality"}
+        >
           {loading ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
         </Button>
       </div>

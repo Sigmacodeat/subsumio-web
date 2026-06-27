@@ -33,11 +33,11 @@ export const GET = createHandler(
 );
 
 const postSchema = z.object({
-  id: z.string().min(1),
-  name: z.string().min(1),
-  description: z.string().optional(),
-  tone: z.string().optional(),
-  formality: z.string().optional(),
+  id: z.string().min(1).max(100),
+  name: z.string().min(1).max(200),
+  description: z.string().max(1000).optional(),
+  tone: z.string().max(100).optional(),
+  formality: z.string().max(100).optional(),
   sentenceLength: z.string().optional(),
   customInstructions: z.string().optional(),
 });

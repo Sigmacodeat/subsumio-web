@@ -30,7 +30,20 @@ export const POST = createHandler(
       const BATCH_SIZE = 5;
       for (let i = 0; i < pages.length; i += BATCH_SIZE) {
         const batch = pages.slice(i, i + BATCH_SIZE);
-        await Promise.all(batch.map((p) => brain.deletePage(p.slug).catch(() => {})));
+        await Promise.all(
+          batch.map((p) =>
+            brain
+              .deletePage(p.slug)
+              .catch((err) =>
+                console.warn(
+                  "[gdpr] Failed to delete page",
+                  p.slug,
+                  "during data deletion:",
+                  err instanceof Error ? err.message : err
+                )
+              )
+          )
+        );
       }
     } catch {
       // Brain may not be available
@@ -38,7 +51,20 @@ export const POST = createHandler(
 
     const apiKeyStore = getApiKeyStore();
     const apiKeys = await apiKeyStore.listByOwner(ctx.user.id);
-    await Promise.all(apiKeys.map((k) => apiKeyStore.delete(k.id).catch(() => {})));
+    await Promise.all(
+      apiKeys.map((k) =>
+        apiKeyStore
+          .delete(k.id)
+          .catch((err) =>
+            console.warn(
+              "[gdpr] Failed to delete API key",
+              k.id,
+              "during data deletion:",
+              err instanceof Error ? err.message : err
+            )
+          )
+      )
+    );
 
     await revokeAllSessions(ctx.user.id);
 

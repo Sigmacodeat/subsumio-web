@@ -21,7 +21,7 @@ export const maxDuration = 30;
 // ── GET: List annotations for a contract ──────────────────────────────
 
 const getSchema = z.object({
-  contract_slug: z.string().min(1),
+  contract_slug: z.string().min(1).max(200),
 });
 
 export const GET = createHandler(
@@ -72,7 +72,7 @@ export const GET = createHandler(
 // ── POST: Create a new clause annotation ──────────────────────────────
 
 const postSchema = z.object({
-  contract_slug: z.string().min(1),
+  contract_slug: z.string().min(1).max(200),
   clause_type: z.enum([
     "nda",
     "employment",
@@ -168,7 +168,7 @@ export const POST = createHandler(
 // ── PATCH: Update review status ───────────────────────────────────────
 
 const patchSchema = z.object({
-  slug: z.string().min(1),
+  slug: z.string().min(1).max(200),
   status: z.enum(["approved", "rejected"]),
   reject_reason: z.string().max(1000).optional(),
 });

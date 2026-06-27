@@ -113,7 +113,7 @@ function CopyableField({
 }
 
 function SyncLogView({ status }: { status: SyncStatus }) {
-  const { lang } = useLang();
+  const { t, lang } = useLang();
   const result = status.lastSyncResult;
   if (!result && !status.lastSyncAt) {
     return (
@@ -121,9 +121,7 @@ function SyncLogView({ status }: { status: SyncStatus }) {
         <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[color:var(--ds-surface-2)]">
           <Clock size={22} className="text-[color:var(--ds-border-strong)]" />
         </div>
-        <p className="text-sm text-[color:var(--ds-text-muted)]">
-          Noch keine Synchronisation durchgeführt.
-        </p>
+        <p className="text-sm text-[color:var(--ds-text-muted)]">{t("scim.no_sync")}</p>
       </div>
     );
   }
@@ -133,7 +131,7 @@ function SyncLogView({ status }: { status: SyncStatus }) {
       {status.lastSyncAt && (
         <div className="flex items-center gap-2 text-sm text-[color:var(--ds-text-muted)]">
           <Clock size={14} />
-          Letzte Synchronisation:{" "}
+          {t("scim.last_sync")}{" "}
           <span className="font-medium text-[color:var(--ds-text)]">
             {new Date(status.lastSyncAt).toLocaleString(lang === "en" ? "en-GB" : "de-DE")}
           </span>
@@ -174,7 +172,7 @@ function SyncLogView({ status }: { status: SyncStatus }) {
               <div className="mb-2 flex items-center gap-2">
                 <AlertTriangle size={14} className="shrink-0 text-red-600" />
                 <p className="text-sm font-medium text-red-600">
-                  {result.errors.length} Fehler während der Synchronisation
+                  {result.errors.length} {t("scim.errors_count")}
                 </p>
               </div>
               <ul className="max-h-40 space-y-1 overflow-y-auto">
@@ -190,7 +188,7 @@ function SyncLogView({ status }: { status: SyncStatus }) {
           {result.errors.length === 0 && (
             <div className="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3">
               <CheckCircle2 size={14} className="shrink-0 text-emerald-600" />
-              <p className="text-sm text-emerald-600">Synchronisation erfolgreich abgeschlossen.</p>
+              <p className="text-sm text-emerald-600">{t("scim.sync_success")}</p>
             </div>
           )}
 
@@ -224,22 +222,19 @@ export default function ScimSettingsPage() {
   if (userRole !== "admin") {
     return (
       <div className="mx-auto max-w-[1000px] space-y-6 p-4 md:p-6 lg:p-8">
-        <PageHeader
-          title="SCIM Directory Sync"
-          description="Zugriffsverwaltung über Identity Provider"
-        />
+        <PageHeader title={t("scim.title")} description={t("scim.description")} />
         <Card>
           <div className="p-10 text-center">
             <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-red-500/10">
               <XCircle size={22} className="text-red-600" />
             </div>
-            <p className="text-sm font-medium text-[color:var(--ds-text)]">Zugriff verweigert</p>
-            <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-              Nur Administratoren können SCIM konfigurieren.
+            <p className="text-sm font-medium text-[color:var(--ds-text)]">
+              {t("scim.access_denied")}
             </p>
+            <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">{t("scim.admin_only")}</p>
             <Link href="/dashboard/settings" className="mt-4 inline-block">
               <Button variant="outline" size="sm">
-                ← Zurück zu Einstellungen
+                {t("scim.back_to_settings")}
               </Button>
             </Link>
           </div>
@@ -255,9 +250,12 @@ export default function ScimSettingsPage() {
   return (
     <div className="mx-auto max-w-[1000px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
-        title="SCIM Directory Sync"
-        description="Automatische Benutzerbereitstellung über Identity Provider (WorkOS)"
-        breadcrumbs={[{ label: "Einstellungen", href: "/dashboard/settings" }, { label: "SCIM" }]}
+        title={t("scim.title")}
+        description={t("scim.description_full")}
+        breadcrumbs={[
+          { label: t("scim.breadcrumb_settings"), href: "/dashboard/settings" },
+          { label: t("scim.breadcrumb_scim") },
+        ]}
         actions={
           <Button
             variant="glow"
@@ -267,7 +265,7 @@ export default function ScimSettingsPage() {
             className="shrink-0"
           >
             <RefreshCw size={15} className={cn(isSyncing && "animate-spin")} />
-            {isSyncing ? "Synchronisiere…" : "Manuelle Sync"}
+            {isSyncing ? t("scim.sync_syncing") : t("scim.sync_manual")}
           </Button>
         }
       />
@@ -280,7 +278,9 @@ export default function ScimSettingsPage() {
               size={20}
               className="mx-auto animate-spin text-[color:var(--ds-text-muted)]"
             />
-            <p className="mt-2 text-sm text-[color:var(--ds-text-muted)]">Lade Status…</p>
+            <p className="mt-2 text-sm text-[color:var(--ds-text-muted)]">
+              {t("scim.loading_status")}
+            </p>
           </div>
         </Card>
       ) : (
@@ -318,7 +318,7 @@ export default function ScimSettingsPage() {
             <div className="border-b border-[color:var(--ds-border)] p-6">
               <h2 className="text-base font-semibold text-[color:var(--ds-text)]">Konfiguration</h2>
               <p className="mt-1 text-sm text-[color:var(--ds-text-muted)]">
-                SCIM-Endpoint und WorkOS Directory Sync Status
+                {t("scim.endpoint_status")}
               </p>
             </div>
             <div className="px-6">
@@ -327,18 +327,14 @@ export default function ScimSettingsPage() {
                 configured={bearerTokenConfigured}
                 detail={
                   bearerTokenConfigured
-                    ? "Token konfiguriert — SCIM-Endpoints sind aktiv"
-                    : "Setze SCIM_BEARER_TOKENS (orgId:token je Mandant) in den Umgebungsvariablen"
+                    ? t("scim.bearer_configured")
+                    : t("scim.bearer_not_configured")
                 }
               />
               <ConfigRow
                 label="WorkOS Directory Sync"
                 configured={workosConfigured}
-                detail={
-                  workosConfigured
-                    ? "WORKOS_API_KEY und WORKOS_DIRECTORY_ID konfiguriert"
-                    : "Setze WORKOS_API_KEY und WORKOS_DIRECTORY_ID für automatische Synchronisation"
-                }
+                detail={workosConfigured ? t("scim.configured") : t("scim.not_configured")}
               />
             </div>
           </Card>
@@ -346,9 +342,11 @@ export default function ScimSettingsPage() {
           {/* SCIM Endpoint Configuration Guide */}
           <Card>
             <div className="border-b border-[color:var(--ds-border)] p-6">
-              <h2 className="text-base font-semibold text-[color:var(--ds-text)]">WorkOS Setup</h2>
+              <h2 className="text-base font-semibold text-[color:var(--ds-text)]">
+                {t("scim.workos_setup")}
+              </h2>
               <p className="mt-1 text-sm text-[color:var(--ds-text-muted)]">
-                Konfiguriere diese Werte im WorkOS Dashboard unter Directory Sync
+                {t("scim.workos_setup_desc")}
               </p>
             </div>
             <div className="px-6">
@@ -371,7 +369,7 @@ export default function ScimSettingsPage() {
                   onClick={() => setShowBearerToken(!showBearerToken)}
                   className="brand-text text-xs hover:underline"
                 >
-                  {showBearerToken ? "Token verbergen" : "Token anzeigen"}
+                  {showBearerToken ? t("scim.token_hide") : t("scim.token_show")}
                 </button>
               </div>
               <div className="border-t border-[color:var(--ds-border)] py-3">
@@ -393,10 +391,10 @@ export default function ScimSettingsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-base font-semibold text-[color:var(--ds-text)]">
-                    Synchronisations-Log
+                    {t("scim.sync_log")}
                   </h2>
                   <p className="mt-1 text-sm text-[color:var(--ds-text-muted)]">
-                    Letzte Sync-Ergebnisse und Fehler
+                    {t("scim.sync_log_desc")}
                   </p>
                 </div>
                 {status?.lastSyncAt && (
@@ -416,29 +414,29 @@ export default function ScimSettingsPage() {
           <Card>
             <div className="border-b border-[color:var(--ds-border)] p-6">
               <h2 className="text-base font-semibold text-[color:var(--ds-text)]">
-                Wie funktioniert SCIM Directory Sync?
+                {t("scim.how_it_works")}
               </h2>
             </div>
             <div className="space-y-3 px-6 py-4">
               {[
                 {
                   icon: UserPlus,
-                  text: "Auto-Provisioning: Neue Benutzer im IdP werden automatisch in Subsumio erstellt.",
+                  text: t("scim.feature_auto_provision"),
                   color: "text-emerald-600",
                 },
                 {
                   icon: UserCheck,
-                  text: "Auto-Update: Änderungen an Namen, E-Mail oder Rollen werden synchronisiert.",
+                  text: t("scim.feature_auto_update"),
                   color: "text-blue-600",
                 },
                 {
                   icon: UserMinus,
-                  text: "Auto-Deprovisioning: Gelöschte Benutzer werden deaktiviert (nicht gelöscht) — für Audit-Trail.",
+                  text: t("scim.feature_auto_deprovision"),
                   color: "text-amber-600",
                 },
                 {
                   icon: FolderTree,
-                  text: "Gruppen-Sync: AD/LDAP-Gruppen werden als SCIM-Gruppen abgebildet.",
+                  text: t("scim.feature_group_sync"),
                   color: "text-purple-600",
                 },
               ].map((item, i) => {

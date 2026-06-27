@@ -64,7 +64,6 @@ export const GET = createHandler(
     action: "brain.read",
     rateTier: "standard",
     query: pagesQuerySchema,
-    cacheMaxAge: 15,
   },
   async (ctx, _body, query, _req) => {
     const params = new URLSearchParams();

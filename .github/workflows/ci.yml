@@ -43,6 +43,28 @@ jobs:
       - run: bun install
       - run: bun run typecheck || npx tsc --noEmit
 
+  bundle-size:
+    name: Bundle Size Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+      - run: bun run build
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+      - name: Check bundle sizes
+        run: |
+          # Verify no JS chunk exceeds 500KB (uncompressed)
+          LARGE_FILES=$(find .next/static/chunks -name "*.js" -size +500k 2>/dev/null || true)
+          if [ -n "$LARGE_FILES" ]; then
+            echo "⚠️ Large JS chunks detected (>500KB):"
+            echo "$LARGE_FILES"
+            # Warning only — don't fail the gate for large chunks
+            # but surface for visibility
+          fi
+          echo "✓ Bundle size check complete"
+
   test:
     runs-on: ubuntu-latest
     steps:
@@ -104,12 +126,19 @@ jobs:
         run: bun run release-gate:eval
 
   security-scan:
-    name: Security Scan (Snyk)
+    name: Security Scan (Snyk + bun audit)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
       - run: bun install
+      - name: bun audit (frontend)
+        run: bun audit --audit-level=high
+        continue-on-error: false
+      - name: bun audit (server)
+        working-directory: server
+        run: bun audit --audit-level=high
+        continue-on-error: false
       - uses: snyk/actions/node@master
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
@@ -197,6 +226,7 @@ jobs:
         format-check,
         build,
         typecheck,
+        bundle-size,
         test,
         check-resolvable,
         e2e,
@@ -215,6 +245,7 @@ jobs:
                 "${{ needs.format-check.result }}" != "success" || \
                 "${{ needs.build.result }}" != "success" || \
                 "${{ needs.typecheck.result }}" != "success" || \
+                "${{ needs.bundle-size.result }}" != "success" || \
                 "${{ needs.test.result }}" != "success" || \
                 "${{ needs.check-resolvable.result }}" != "success" || \
                 "${{ needs.e2e.result }}" != "success" || \

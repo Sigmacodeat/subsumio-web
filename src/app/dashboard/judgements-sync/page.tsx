@@ -240,6 +240,7 @@ export default function JudgementsSyncPage() {
               href={src.url}
               target="_blank"
               rel="noopener noreferrer"
+              aria-label={`${src.name} API öffnen`}
               className="hover:brand-text shrink-0 text-[color:var(--ds-text-muted)] transition-colors"
             >
               <Globe size={14} />
