@@ -772,7 +772,7 @@ function matterScopeMiddleware(apiKey: string | undefined) {
  * the caller's source, and attaches the group UUIDs to req.aclGroups.
  * "all" = no ACL filtering (admin or no groups configured).
  */
-function aclGroupsMiddleware(engine: BrainEngine) {
+export function aclGroupsMiddleware(engine: BrainEngine) {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       // Admin role bypasses ACL filtering
@@ -809,11 +809,16 @@ function aclGroupsMiddleware(engine: BrainEngine) {
       const groupIds = await getUserGroups(engine, payload.userId, sourceId);
       req.aclGroups = groupIds.length > 0 ? groupIds : "all";
       next();
-    } catch {
-      // Fail-open: if ACL resolution fails, don't block the request.
-      // The matter-scope middleware already provides the primary isolation.
-      req.aclGroups = "all";
-      next();
+    } catch (e) {
+      // Fail-closed: if ACL resolution fails, do NOT widen to "all".
+      // Treating a broken ACL lookup as "no ACL filtering" would expose
+      // restricted pages when the database is unreachable or the lookup throws.
+      // The matter-scope middleware provides matter isolation, but ACL is a
+      // separate document-level gate and must fail closed.
+      const msg = e instanceof Error ? e.message : "acl_resolution_failed";
+      console.error(`[aclGroupsMiddleware] ACL resolution failed: ${msg}`);
+      res.status(500).json({ error: "acl_resolution_failed", message: "Document access control could not be resolved." });
+      return;
     }
   };
 }

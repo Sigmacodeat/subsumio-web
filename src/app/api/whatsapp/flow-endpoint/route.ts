@@ -297,13 +297,18 @@ export async function POST(req: NextRequest) {
 
   const { request, aesKey, iv } = decrypted;
   // flow_token format: "case_intake:brain_abc123" or "appointment:brain_abc123"
-  // The second segment is the brainId
+  // The second segment is the brainId.
+  //
+  // Security: WHATSAPP_DEFAULT_BRAIN_ID is the only trusted source for the
+  // brainId. The flow_token is user-visible metadata round-tripped through
+  // WhatsApp and must NOT be trusted for tenant routing — a crafted token
+  // could target another tenant's brain. If the env var is unset, reject
+  // rather than falling back to the untrusted token.
   const tokenParts = request.flow_token?.split(":") ?? [];
-  const rawBrainId = process.env.WHATSAPP_DEFAULT_BRAIN_ID || tokenParts[1] || "";
+  const rawBrainId = process.env.WHATSAPP_DEFAULT_BRAIN_ID || "";
 
-  // Validate brainId to prevent cross-tenant injection via crafted flow_token
   if (!rawBrainId || !BRAIN_ID_PATTERN.test(rawBrainId)) {
-    return Response.json({ error: "invalid_flow_token" }, { status: 400 });
+    return Response.json({ error: "flow_endpoint_not_configured" }, { status: 503 });
   }
   const brainId = rawBrainId;
 

@@ -3,11 +3,40 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { csrfFetch } from "@/lib/csrf";
 
+export class ApiGetError extends Error {
+  constructor(
+    public readonly status: number,
+    public readonly body: string,
+    public readonly path: string,
+  ) {
+    const snippet = body.slice(0, 200);
+    super(`HTTP ${status} on ${path}: ${snippet}`);
+    this.name = "ApiGetError";
+  }
+}
+
 async function apiGet<T>(path: string): Promise<T> {
   const res = await fetch(path, { signal: AbortSignal.timeout(30_000) });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+  if (res.status === 401 && typeof window !== "undefined") {
+    const loginUrl = new URL("/login", window.location.origin);
+    loginUrl.searchParams.set("next", window.location.pathname);
+    window.location.href = loginUrl.toString();
+    throw new ApiGetError(401, "redirected to login", path);
+  }
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new ApiGetError(res.status, body, path);
+  }
+
   const text = await res.text();
-  return (text ? JSON.parse(text) : null) as T;
+  if (!text) return null as T;
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    throw new ApiGetError(res.status, text, path);
+  }
 }
 
 // ── API Keys ──
@@ -121,10 +150,14 @@ export function useOrg() {
   });
 }
 
+interface OrgUpdateInput {
+  modelPolicy: "any" | "eu_only";
+}
+
 export function useUpdateOrg() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: Record<string, unknown>) =>
+    mutationFn: (input: OrgUpdateInput) =>
       csrfFetch("/api/org", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -208,10 +241,16 @@ export function useSettingsApiKeys() {
   });
 }
 
+interface SettingsApiKeysInput {
+  openaiKey?: string;
+  anthropicKey?: string;
+  zeroEntropyKey?: string;
+}
+
 export function useSaveSettingsApiKeys() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: Record<string, unknown>) =>
+    mutationFn: (data: SettingsApiKeysInput) =>
       csrfFetch("/api/settings/api-keys", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

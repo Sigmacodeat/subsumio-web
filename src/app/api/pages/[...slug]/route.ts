@@ -216,36 +216,43 @@ export const PATCH = createHandler(
                 caseSlugForms.has((d.frontmatter ?? {}).case_slug as string) &&
                 (d.frontmatter ?? {}).status === "tombstoned"
             );
-            const untombstones = await Promise.all(
-              tombstoned.map(async (doc) => {
-                try {
-                  const untombstoneRes = await fetch(
-                    `${ENGINE_URL}/api/pages/${encodeURIComponent(doc.slug)}`,
-                    {
-                      method: "PATCH",
-                      headers: { "Content-Type": "application/json", ...ctx.headers },
-                      body: JSON.stringify({
-                        frontmatter: {
-                          status: "active",
-                          tombstoned_at: null,
-                          tombstone_reason: null,
-                        },
-                        merge: true,
-                      }),
-                    }
-                  );
-                  return untombstoneRes.ok
-                    ? { slug: doc.slug, ok: true as const }
-                    : { slug: doc.slug, ok: false as const, status: untombstoneRes.status };
-                } catch (err) {
-                  return {
-                    slug: doc.slug,
-                    ok: false as const,
-                    error: err instanceof Error ? err.message : String(err),
-                  };
-                }
-              })
-            );
+            const UNTOMBSTONE_BATCH = 5;
+            const untombstones: Array<{ slug: string; ok: boolean; status?: number; error?: string }> = [];
+            for (let i = 0; i < tombstoned.length; i += UNTOMBSTONE_BATCH) {
+              const batch = tombstoned.slice(i, i + UNTOMBSTONE_BATCH);
+              const batchResults = await Promise.all(
+                batch.map(async (doc) => {
+                  try {
+                    const untombstoneRes = await fetch(
+                      `${ENGINE_URL}/api/pages/${encodeURIComponent(doc.slug)}`,
+                      {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json", ...ctx.headers },
+                        body: JSON.stringify({
+                          frontmatter: {
+                            status: "active",
+                            tombstoned_at: null,
+                            tombstone_reason: null,
+                          },
+                          merge: true,
+                        }),
+                        signal: AbortSignal.timeout(15_000),
+                      }
+                    );
+                    return untombstoneRes.ok
+                      ? { slug: doc.slug, ok: true as const }
+                      : { slug: doc.slug, ok: false as const, status: untombstoneRes.status };
+                  } catch (err) {
+                    return {
+                      slug: doc.slug,
+                      ok: false as const,
+                      error: err instanceof Error ? err.message : String(err),
+                    };
+                  }
+                })
+              );
+              untombstones.push(...batchResults);
+            }
             const failed = untombstones
               .filter((r) => !r.ok)
               .map(({ slug, status, error }) => ({ slug, status, error }));
@@ -491,36 +498,43 @@ export const DELETE = createHandler(
             const matched = allDocs.filter((d) =>
               caseSlugForms.has((d.frontmatter ?? {}).case_slug as string)
             );
-            const tombstones = await Promise.all(
-              matched.map(async (doc) => {
-                try {
-                  const tombstoneRes = await fetch(
-                    `${ENGINE_URL}/api/pages/${encodeURIComponent(doc.slug)}`,
-                    {
-                      method: "PATCH",
-                      headers: { "Content-Type": "application/json", ...ctx.headers },
-                      body: JSON.stringify({
-                        frontmatter: {
-                          status: "tombstoned",
-                          tombstoned_at: new Date().toISOString(),
-                          tombstone_reason: "case_archived",
-                        },
-                        merge: true,
-                      }),
-                    }
-                  );
-                  return tombstoneRes.ok
-                    ? { slug: doc.slug, ok: true as const }
-                    : { slug: doc.slug, ok: false as const, status: tombstoneRes.status };
-                } catch (err) {
-                  return {
-                    slug: doc.slug,
-                    ok: false as const,
-                    error: err instanceof Error ? err.message : String(err),
-                  };
-                }
-              })
-            );
+            const TOMBSTONE_BATCH = 5;
+            const tombstones: Array<{ slug: string; ok: boolean; status?: number; error?: string }> = [];
+            for (let i = 0; i < matched.length; i += TOMBSTONE_BATCH) {
+              const batch = matched.slice(i, i + TOMBSTONE_BATCH);
+              const batchResults = await Promise.all(
+                batch.map(async (doc) => {
+                  try {
+                    const tombstoneRes = await fetch(
+                      `${ENGINE_URL}/api/pages/${encodeURIComponent(doc.slug)}`,
+                      {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json", ...ctx.headers },
+                        body: JSON.stringify({
+                          frontmatter: {
+                            status: "tombstoned",
+                            tombstoned_at: new Date().toISOString(),
+                            tombstone_reason: "case_archived",
+                          },
+                          merge: true,
+                        }),
+                        signal: AbortSignal.timeout(15_000),
+                      }
+                    );
+                    return tombstoneRes.ok
+                      ? { slug: doc.slug, ok: true as const }
+                      : { slug: doc.slug, ok: false as const, status: tombstoneRes.status };
+                  } catch (err) {
+                    return {
+                      slug: doc.slug,
+                      ok: false as const,
+                      error: err instanceof Error ? err.message : String(err),
+                    };
+                  }
+                })
+              );
+              tombstones.push(...batchResults);
+            }
             const failed = tombstones
               .filter((result) => !result.ok)
               .map(({ slug, status, error }) => ({ slug, status, error }));

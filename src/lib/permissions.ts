@@ -39,6 +39,15 @@ export const PERMISSIONS = {
 
 /** API-Route-Level Actions für RBAC + Audit */
 export type RouteAction =
+  | "auth.login" // POST /api/auth/login
+  | "auth.signup" // POST /api/auth/signup
+  | "auth.register" // POST /api/auth/register
+  | "auth.logout" // POST /api/auth/logout
+  | "auth.forgot" // POST /api/auth/forgot
+  | "auth.reset" // POST /api/auth/reset
+  | "auth.verify" // GET /api/auth/verify
+  | "auth.2fa" // POST /api/auth/2fa/*
+  | "auth.sso" // GET /api/auth/sso/*
   | "brain.read" // GET /api/stats, /api/pages, /api/search, /api/graph
   | "brain.write" // POST /api/pages, /api/upload
   | "brain.delete" // DELETE /api/pages/:slug
@@ -84,6 +93,16 @@ export type RouteAction =
   | "admin.user_deactivate"; // nur admin
 
 const ACTION_ROLES: Record<RouteAction, KanzleiRole[]> = {
+  // Auth endpoints are public (no auth required), but we still declare them for audit consistency
+  "auth.login": ["admin", "lawyer", "assistant", "client_viewer"],
+  "auth.signup": ["admin", "lawyer", "assistant", "client_viewer"],
+  "auth.register": ["admin", "lawyer", "assistant", "client_viewer"],
+  "auth.logout": ["admin", "lawyer", "assistant", "client_viewer"],
+  "auth.forgot": ["admin", "lawyer", "assistant", "client_viewer"],
+  "auth.reset": ["admin", "lawyer", "assistant", "client_viewer"],
+  "auth.verify": ["admin", "lawyer", "assistant", "client_viewer"],
+  "auth.2fa": ["admin", "lawyer", "assistant", "client_viewer"],
+  "auth.sso": ["admin", "lawyer", "assistant", "client_viewer"],
   "brain.read": ["admin", "lawyer", "assistant", "client_viewer"],
   "brain.write": ["admin", "lawyer", "assistant"],
   "brain.delete": ["admin", "lawyer"],
@@ -151,6 +170,15 @@ export function forbidden(action?: string): Response {
 /** AuditAction-Mapping für Route-Action → Audit-Action (für server-seitiges Logging). */
 export function auditActionFor(routeAction: RouteAction): AuditAction {
   const map: Record<RouteAction, AuditAction> = {
+    "auth.login": "user.login",
+    "auth.signup": "user.signup",
+    "auth.register": "user.signup",
+    "auth.logout": "user.logout",
+    "auth.forgot": "settings.update",
+    "auth.reset": "settings.update",
+    "auth.verify": "settings.update",
+    "auth.2fa": "settings.update",
+    "auth.sso": "settings.update",
     "brain.read": "case.view",
     "brain.write": "case.create",
     "brain.delete": "document.delete",
