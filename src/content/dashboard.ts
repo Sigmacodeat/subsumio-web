@@ -1586,6 +1586,7 @@ export const D = {
   },
   "aria.compliance_area": { de: "Compliance-Bereich", en: "Compliance area" },
   "aria.checklist_loading": { de: "Checkliste wird geladen", en: "Checklist is loading" },
+  "aria.status": { de: "Status", en: "Status" },
   "aria.owner": { de: "Inhaber", en: "Owner" },
 
   // ── Cases detail page ──
@@ -3308,20 +3309,56 @@ export const D = {
     de: "Maximum für diesen Upload-Kanal:",
     en: "Maximum for this upload channel:",
   },
-  "upload.err_unsupported_type": { de: "Dateityp wird nicht unterstützt.", en: "File type is not supported." },
+  "upload.err_unsupported_type": {
+    de: "Dateityp wird nicht unterstützt.",
+    en: "File type is not supported.",
+  },
   "upload.err_rejected": { de: "Datei wurde abgelehnt.", en: "File was rejected." },
   "upload.source_kanzleiwissen": { de: "Kanzleiwissen", en: "Firm knowledge" },
-  "upload.source_kanzleiwissen_desc": { de: "Playbooks, Vorlagen, Präzedenzfälle, interne Standards", en: "Playbooks, templates, precedents, internal standards" },
+  "upload.source_kanzleiwissen_desc": {
+    de: "Playbooks, Vorlagen, Präzedenzfälle, interne Standards",
+    en: "Playbooks, templates, precedents, internal standards",
+  },
   "upload.source_wiki": { de: "Kanzlei-Wiki", en: "Firm wiki" },
-  "upload.source_wiki_desc": { de: "Allgemeines Wissen, FAQs, Handbücher", en: "General knowledge, FAQs, manuals" },
+  "upload.source_wiki_desc": {
+    de: "Allgemeines Wissen, FAQs, Handbücher",
+    en: "General knowledge, FAQs, manuals",
+  },
   "upload.source_meetings": { de: "Besprechungen", en: "Meetings" },
   "upload.source_meetings_desc": { de: "Team-Meetings, Notizen", en: "Team meetings, notes" },
   "upload.source_people": { de: "Kontakte", en: "Contacts" },
-  "upload.source_people_desc": { de: "Mandanten, Gegenseite, Experten", en: "Clients, opposing party, experts" },
+  "upload.source_people_desc": {
+    de: "Mandanten, Gegenseite, Experten",
+    en: "Clients, opposing party, experts",
+  },
   "upload.source_companies": { de: "Unternehmen", en: "Companies" },
-  "upload.source_companies_desc": { de: "Firmen, Behörden, Institutionen", en: "Companies, authorities, institutions" },
+  "upload.source_companies_desc": {
+    de: "Firmen, Behörden, Institutionen",
+    en: "Companies, authorities, institutions",
+  },
   "upload.source_ideas": { de: "Ideen", en: "Ideas" },
-  "upload.source_ideas_desc": { de: "Strategien, Verbesserungsvorschläge", en: "Strategies, improvement suggestions" },
+  "upload.source_ideas_desc": {
+    de: "Strategien, Verbesserungsvorschläge",
+    en: "Strategies, improvement suggestions",
+  },
+  "upload.mode_case_desc": {
+    de: "Fallbezogene Dokumente mit Ethical-Wall-Isolation. Pflicht-Zuordnung zu einer Akte.",
+    en: "Case-related documents with ethical-wall isolation. Mandatory assignment to a case.",
+  },
+  "upload.mode_knowledge_desc": {
+    de: "Firmenweites Wissen: Präzedenzfälle, Vorlagen, Playbooks. Der Assistent konsolidiert automatisch aus Akten.",
+    en: "Firm-wide knowledge: precedents, templates, playbooks. The assistant consolidates automatically from cases.",
+  },
+  "upload.knowledge_area_label": { de: "Wissensbereich", en: "Knowledge area" },
+  "upload.knowledge_area_hint": {
+    de: "Der Assistent konsolidiert automatisch Wissen aus allen Akten in diese Bereiche. Präzedenzfälle und Muster werden über den",
+    en: "The assistant automatically consolidates knowledge from all cases into these areas. Precedents and patterns are extracted via the",
+  },
+  "upload.knowledge_area_hint_2": {
+    de: "— ohne manuellen Aufwand.",
+    en: "— without manual effort.",
+  },
+  "upload.consolidate_cycle": { de: "Consolidate-Cycle", en: "Consolidate Cycle" },
 
   // ── Contacts page ──
   "contacts.role_client": { de: "Mandant", en: "Client" },
@@ -4752,6 +4789,58 @@ export const D = {
   "casesnew.template.criminal_desc": { de: "Wirtschaftsstrafrecht", en: "White-collar crime" },
   "casesnew.template.corporate": { de: "Gesellschaft", en: "Corporate" },
   "casesnew.template.corporate_desc": { de: "Gesellschafterstreit", en: "Shareholder dispute" },
+  "casesnew.status.open": { de: "Offen", en: "Open" },
+  "casesnew.status.pending": { de: "Anhängig", en: "Pending" },
+  "casesnew.status.settled": { de: "Erledigt", en: "Settled" },
+  "casesnew.status.won": { de: "Gewonnen", en: "Won" },
+  "casesnew.status.lost": { de: "Verloren", en: "Lost" },
+  "casesnew.status.appealed": { de: "Berufung", en: "Appealed" },
+  "casesnew.status.dormant": { de: "Ruhend", en: "Dormant" },
+  "casesnew.section_facts": { de: "Sachverhalt", en: "Facts" },
+  "casesnew.conflict_found": {
+    de: "Die folgenden Treffer wurden gefunden. Die Akte wurde nicht angelegt.",
+    en: "The following matches were found. The case was not created.",
+  },
+  "casesnew.waiver_label": {
+    de: "Konflikt übersteuern (Waiver)",
+    en: "Override conflict (Waiver)",
+  },
+  "casesnew.waiver_desc": {
+    de: "Wenn der Konflikt geprüft und vertretbar ist, gib einen Grund ein. Dies wird auditiert.",
+    en: "If the conflict has been reviewed and is acceptable, enter a reason. This will be audited.",
+  },
+  "casesnew.waiver_placeholder": {
+    de: "z.B. Mandant hat zugestimmt, kein echter Konflikt…",
+    en: "e.g. Client has consented, no real conflict…",
+  },
+  "casesnew.waiver_entered": {
+    de: "✓ Waiver-Grund eingegeben — Akte kann mit Audit-Spur erstellt werden.",
+    en: "✓ Waiver reason entered — case can be created with audit trail.",
+  },
+  "casesnew.waiver_missing": {
+    de: "Ohne Waiver-Grund wird die Akte nicht angelegt.",
+    en: "Without a waiver reason, the case will not be created.",
+  },
+  "casesnew.contact_link": { de: "Kontakt verknüpfen…", en: "Link contact…" },
+  "casesnew.client_placeholder": { de: "Name des Mandanten", en: "Client name" },
+  "casesnew.opponent_placeholder": { de: "Name der Gegenseite", en: "Opponent name" },
+  "casesnew.court_placeholder": { de: "z.B. LG Wien", en: "e.g. Regional Court Vienna" },
+  "casesnew.lawyer_placeholder": { de: "Name des Anwalts", en: "Lawyer name" },
+  "casesnew.label_lawyer": { de: "Zuständiger Anwalt", en: "Responsible attorney" },
+  "casesnew.section_tags": { de: "Tags", en: "Tags" },
+  "casesnew.tags_placeholder": {
+    de: "Komma-getrennte Tags: z.B. Vertragsbruch, Schadensersatz",
+    en: "Comma-separated tags: e.g. breach of contract, damages",
+  },
+  "casesnew.portal_label": {
+    de: "Für Mandantenportal-Vorschau freigeben",
+    en: "Enable for client portal preview",
+  },
+  "casesnew.portal_desc": {
+    de: "Nur freigegebene Akten erscheinen in der Portal-Vorschau. Ein echter Mandantenlogin bleibt ein separates Deployment.",
+    en: "Only shared cases appear in the portal preview. A real client login remains a separate deployment.",
+  },
+  "casesnew.btn_create_short": { de: "Akte erstellen", en: "Create case" },
 
   // ── Case detail widgets ──
   "cases.widget.status": { de: "Status", en: "Status" },
@@ -4909,7 +4998,10 @@ export const D = {
   "research.btn_save_brain": { de: "Als Brain-Page speichern", en: "Save as Brain Page" },
   "research.session_history": { de: "Sitzungs-Verlauf", en: "Session History" },
   "research.saved_loading": { de: "Lade…", en: "Loading…" },
-  "research.saved_empty_title": { de: "Noch keine Recherchen gespeichert.", en: "No research saved yet." },
+  "research.saved_empty_title": {
+    de: "Noch keine Recherchen gespeichert.",
+    en: "No research saved yet.",
+  },
   "research.saved_empty_desc": {
     de: "Starte eine neue Recherche und speichere das Ergebnis.",
     en: "Start a new research and save the result.",
@@ -4934,8 +5026,8 @@ export const D = {
     en: "Research precisely the following legal question considering",
   },
   "research.prompt_suffix": {
-    de: "-Rechts (Gesetze, Rechtsprechung, Literatur). Zitiere immer mit §, Absatz und Gesetzesabkürzung. Gib am Ende an: \"Diese Information ersetzt keine anwaltliche Prüfung.\"",
-    en: " law (statutes, case law, literature). Always cite with §, paragraph and statute abbreviation. End with: \"This information does not replace legal advice.\"",
+    de: '-Rechts (Gesetze, Rechtsprechung, Literatur). Zitiere immer mit §, Absatz und Gesetzesabkürzung. Gib am Ende an: "Diese Information ersetzt keine anwaltliche Prüfung."',
+    en: ' law (statutes, case law, literature). Always cite with §, paragraph and statute abbreviation. End with: "This information does not replace legal advice."',
   },
 
   // ── Drafting page strings ──
@@ -4950,6 +5042,45 @@ export const D = {
     de: "Akten konnten nicht geladen werden",
     en: "Cases could not be loaded",
   },
+  "drafting.title": { de: "Schriftsatz-Generator", en: "Legal Document Generator" },
+  "drafting.description": {
+    de: "Schriftsätze und Gutachten mit KI-Unterstützung erstellen",
+    en: "Create legal documents and expert opinions with AI assistance",
+  },
+  "drafting.breadcrumb": { de: "Schriftsatz-Generator", en: "Legal Document Generator" },
+  "drafting.label_klaeger": { de: "Kläger / Absender", en: "Plaintiff / Sender" },
+  "drafting.label_beklagter": { de: "Beklagter / Empfänger", en: "Defendant / Recipient" },
+  "drafting.label_link_case": { de: "Mit Akte verknüpfen", en: "Link to case" },
+  "drafting.label_title": { de: "Titel", en: "Title" },
+  "drafting.label_facts": { de: "Sachverhalt", en: "Facts" },
+  "drafting.label_legal_basis": { de: "Rechtsgrundlage", en: "Legal basis" },
+  "drafting.btn_generate": { de: "Entwurf generieren", en: "Generate draft" },
+  "drafting.btn_generating": { de: "Generiert…", en: "Generating…" },
+  "drafting.btn_copy": { de: "Kopieren", en: "Copy" },
+  "drafting.btn_copied": { de: "Kopiert!", en: "Copied!" },
+  "drafting.btn_docx": { de: "Als DOCX exportieren", en: "Export as DOCX" },
+  "drafting.btn_doc": { de: "Als DOC exportieren", en: "Export as DOC" },
+  "drafting.btn_save": { de: "Im Brain speichern", en: "Save to brain" },
+  "drafting.btn_submit_approval": { de: "Zur Freigabe einreichen", en: "Submit for approval" },
+  "drafting.saved_default": { de: "Entwurf", en: "Draft" },
+  "drafting.saved_msg": { de: "Gespeichert", en: "Saved" },
+  "drafting.approval_msg": {
+    de: "Zur Freigabe eingereicht — sichtbar im Menü unter Freigaben.",
+    en: "Submitted for approval — visible in the Approvals menu.",
+  },
+  "drafting.tpl.klage": { de: "Klage", en: "Lawsuit" },
+  "drafting.tpl.klageerwiderung": { de: "Klageerwiderung", en: "Statement of defense" },
+  "drafting.tpl.berufung": { de: "Berufung", en: "Appeal" },
+  "drafting.tpl.beschwerde": { de: "Beschwerde", en: "Complaint" },
+  "drafting.tpl.mahnung": { de: "Mahnung", en: "Demand letter" },
+  "drafting.tpl.antragschrift": { de: "Antragschrift", en: "Petition" },
+  "drafting.tpl.einstweilige": { de: "Einstw. Verfügung", en: "Interlocutory injunction" },
+  "drafting.tpl.vergleich": { de: "Vergleichsvertrag", en: "Settlement agreement" },
+  "drafting.tpl.vollstreckung": { de: "Vollstreckung", en: "Enforcement" },
+  "drafting.tpl.beweisantrag": { de: "Beweisantrag", en: "Motion for evidence" },
+  "drafting.tpl.gutachten": { de: "Gutachten", en: "Expert opinion" },
+  "drafting.tpl.stellungnahme": { de: "Stellungnahme", en: "Statement" },
+  "drafting.tpl.widerruf": { de: "Widerruf", en: "Revocation" },
 
   // ── Workflows page strings ──
   "workflows.status_active": { de: "Aktiv", en: "Active" },
@@ -5005,12 +5136,231 @@ export const D = {
     de: "Speichern fehlgeschlagen — Änderung ist nur lokal sichtbar.",
     en: "Save failed — changes are only visible locally.",
   },
+  "compliance.title": { de: "Compliance-Selbstauskunft", en: "Compliance self-assessment" },
+  "compliance.description": {
+    de: "DSGVO-, GwG- & GoBD-Checkliste für die Kanzlei — Status pro Punkt selbst pflegen",
+    en: "GDPR, AML & GoBD checklist for the firm — manage status per item",
+  },
+  "compliance.breadcrumb": { de: "Compliance", en: "Compliance" },
+  "compliance.disclaimer": {
+    de: "Diese Checkliste ist eine Selbsteinschätzung und wird im Brain gespeichert. Sie ersetzt keine Datenschutz-Beratung und keine automatische Prüfung. Klicke auf einen Punkt, um den Status zu ändern (OK → Offen → Fehlt).",
+    en: "This checklist is a self-assessment and is stored in the brain. It does not replace privacy advice or automated auditing. Click an item to change its status (OK → Open → Missing).",
+  },
+  "compliance.status_ok": { de: "OK", en: "OK" },
+  "compliance.status_warn": { de: "Offen", en: "Open" },
+  "compliance.status_fail": { de: "Fehlt", en: "Missing" },
+  "compliance.saving": { de: "Speichert…", en: "Saving…" },
+  "compliance.aria_change": {
+    de: "Klicken zum Ändern.",
+    en: "Click to change.",
+  },
+  "compliance.cat.legal_basis": { de: "Rechtsgrundlage", en: "Legal basis" },
+  "compliance.cat.data_subjects": { de: "Betroffenenrechte", en: "Data subject rights" },
+  "compliance.cat.documentation": { de: "Dokumentation", en: "Documentation" },
+  "compliance.cat.technical": { de: "Technisch", en: "Technical" },
+  "compliance.cat.organisational": { de: "Organisatorisch", en: "Organisational" },
+  "compliance.cat.identification": { de: "Identifizierung", en: "Identification" },
+  "compliance.cat.screening": { de: "Screening", en: "Screening" },
+  "compliance.cat.immutability": { de: "Unveränderbarkeit", en: "Immutability" },
+  "compliance.cat.traceability": { de: "Nachvollziehbarkeit", en: "Traceability" },
+  "compliance.cat.control": { de: "Kontrolle", en: "Control" },
+  "compliance.dsgvo.1.label": { de: "Rechtsgrundlage dokumentiert", en: "Legal basis documented" },
+  "compliance.dsgvo.1.desc": {
+    de: "Für jede Verarbeitung ist eine Rechtsgrundlage nach Art. 6 DSGVO festgelegt",
+    en: "A legal basis under Art. 6 GDPR is defined for each processing operation",
+  },
+  "compliance.dsgvo.2.label": { de: "Einwilligungen nachweisbar", en: "Consents verifiable" },
+  "compliance.dsgvo.2.desc": {
+    de: "Einwilligungen sind dokumentiert und widerrufbar (Art. 7 DSGVO)",
+    en: "Consents are documented and revocable (Art. 7 GDPR)",
+  },
+  "compliance.dsgvo.3.label": { de: "Auskunftsverfahren", en: "Access procedure" },
+  "compliance.dsgvo.3.desc": {
+    de: "Verfahren für Betroffenenanfragen (Art. 15 DSGVO)",
+    en: "Procedure for data subject requests (Art. 15 GDPR)",
+  },
+  "compliance.dsgvo.4.label": { de: "Löschungsverfahren", en: "Erasure procedure" },
+  "compliance.dsgvo.4.desc": {
+    de: "Verfahren für Löschungsanfragen (Art. 17 DSGVO)",
+    en: "Procedure for erasure requests (Art. 17 GDPR)",
+  },
+  "compliance.dsgvo.5.label": {
+    de: "Verzeichnis der Verarbeitungstätigkeiten",
+    en: "Record of processing activities",
+  },
+  "compliance.dsgvo.5.desc": {
+    de: "Art. 30 DSGVO — Verarbeitungsverzeichnis geführt",
+    en: "Art. 30 GDPR — processing register maintained",
+  },
+  "compliance.dsgvo.6.label": {
+    de: "Datenschutz-Folgenabschätzung",
+    en: "Data protection impact assessment",
+  },
+  "compliance.dsgvo.6.desc": {
+    de: "DSFA bei risikoreichen Verarbeitungen (Art. 35 DSGVO)",
+    en: "DPIA for high-risk processing (Art. 35 GDPR)",
+  },
+  "compliance.dsgvo.7.label": { de: "Pseudonymisierung", en: "Pseudonymisation" },
+  "compliance.dsgvo.7.desc": {
+    de: "Technische Maßnahmen zur Pseudonymisierung (Art. 32 DSGVO)",
+    en: "Technical measures for pseudonymisation (Art. 32 GDPR)",
+  },
+  "compliance.dsgvo.8.label": { de: "Verschlüsselung", en: "Encryption" },
+  "compliance.dsgvo.8.desc": {
+    de: "Verschlüsselung personenbezogener Daten (Art. 32 DSGVO)",
+    en: "Encryption of personal data (Art. 32 GDPR)",
+  },
+  "compliance.dsgvo.9.label": { de: "Auftragsverarbeitung", en: "Processor agreements" },
+  "compliance.dsgvo.9.desc": {
+    de: "Verträge mit Auftragsverarbeitern (Art. 28 DSGVO)",
+    en: "Contracts with processors (Art. 28 GDPR)",
+  },
+  "compliance.dsgvo.10.label": { de: "Schulung der Mitarbeiter", en: "Staff training" },
+  "compliance.dsgvo.10.desc": {
+    de: "Regelmäßige Datenschutz-Schulung",
+    en: "Regular data protection training",
+  },
+  "compliance.gwg.1.label": { de: "Mandantenidentifizierung", en: "Client identification" },
+  "compliance.gwg.1.desc": {
+    de: "Identitätsprüfung neuer Mandanten (§ 11 GwG)",
+    en: "Identity verification of new clients (§ 11 AML Act)",
+  },
+  "compliance.gwg.2.label": { de: "Wirtschaftlicher Eigentümer", en: "Beneficial owner" },
+  "compliance.gwg.2.desc": {
+    de: "Ermittlung des wirtschaftlichen Eigentümers (§ 3 GwG)",
+    en: "Identification of beneficial owner (§ 3 AML Act)",
+  },
+  "compliance.gwg.3.label": { de: "Sanktionslistenprüfung", en: "Sanctions list screening" },
+  "compliance.gwg.3.desc": {
+    de: "Prüfung gegen EU-Sanktionslisten",
+    en: "Screening against EU sanctions lists",
+  },
+  "compliance.gwg.4.label": { de: "PEP-Prüfung", en: "PEP screening" },
+  "compliance.gwg.4.desc": {
+    de: "Politically Exposed Persons Screening (§ 15 GwG)",
+    en: "Politically Exposed Persons screening (§ 15 AML Act)",
+  },
+  "compliance.gwg.5.label": { de: "Verdachtsanzeigen", en: "Suspicious activity reports" },
+  "compliance.gwg.5.desc": {
+    de: "Verfahren für Verdachtsmeldungen nach § 43 GwG",
+    en: "Procedure for suspicious reports under § 43 AML Act",
+  },
+  "compliance.gwg.6.label": { de: "Aufbewahrungspflicht", en: "Retention obligation" },
+  "compliance.gwg.6.desc": {
+    de: "Aufbewahrung von Identifikationsunterlagen (§ 8 GwG)",
+    en: "Retention of identification documents (§ 8 AML Act)",
+  },
+  "compliance.gobd.1.label": {
+    de: "Belege unveränderbar gespeichert",
+    en: "Receipts stored immutably",
+  },
+  "compliance.gobd.1.desc": {
+    de: "Nachträgliche Änderungen ausgeschlossen oder protokolliert; Belege tragen einen Inhalts-Hash (§ 146 Abs. 4 AO, GoBD Rz. 107 ff.)",
+    en: "Subsequent changes excluded or logged; receipts carry a content hash (§ 146(4) AO, GoBD Rz. 107 ff.)",
+  },
+  "compliance.gobd.2.label": { de: "Lesbarkeit", en: "Readability" },
+  "compliance.gobd.2.desc": {
+    de: "Belege sind maschinell lesbar und auswertbar (GoBD Rz. 118 ff.)",
+    en: "Receipts are machine-readable and evaluable (GoBD Rz. 118 ff.)",
+  },
+  "compliance.gobd.3.label": { de: "Vollständigkeit", en: "Completeness" },
+  "compliance.gobd.3.desc": {
+    de: "Alle geschäftsmäßig relevanten Belege erfasst (GoBD Rz. 120 ff.)",
+    en: "All business-relevant receipts captured (GoBD Rz. 120 ff.)",
+  },
+  "compliance.gobd.4.label": { de: "Verfahrensdokumentation", en: "Procedure documentation" },
+  "compliance.gobd.4.desc": {
+    de: "Verfahrensdokumentation beschreibt den DV-gestützten Ablage- und Buchungsprozess (GoBD Rz. 151 ff.)",
+    en: "Procedure documentation describes the IT-supported filing and booking process (GoBD Rz. 151 ff.)",
+  },
+  "compliance.gobd.5.label": { de: "Zugriffskontrolle", en: "Access control" },
+  "compliance.gobd.5.desc": {
+    de: "Zugriffsrechte und Authentifizierung geregelt (GoBD Rz. 104 ff.)",
+    en: "Access rights and authentication regulated (GoBD Rz. 104 ff.)",
+  },
+  "compliance.gobd.6.label": { de: "Internes Kontrollsystem", en: "Internal control system" },
+  "compliance.gobd.6.desc": {
+    de: "IKS zur Sicherung der Ordnungsmäßigkeit eingerichtet (GoBD Rz. 100 ff.)",
+    en: "ICS established to ensure properness (GoBD Rz. 100 ff.)",
+  },
+  "compliance.gobd.7.label": { de: "Archivierung", en: "Archiving" },
+  "compliance.gobd.7.desc": {
+    de: "Sichere Langzeitarchivierung über die Aufbewahrungsfrist (§ 147 AO)",
+    en: "Secure long-term archiving beyond retention period (§ 147 AO)",
+  },
 
   // ── Cases detail page strings ──
   "casesdetail.error_save": {
     de: "Speichern fehlgeschlagen — Änderungen sind nur lokal sichtbar.",
     en: "Save failed — changes are only visible locally.",
   },
+  "casesdetail.upload.queued": { de: "Wartet", en: "Queued" },
+  "casesdetail.upload.preparing": { de: "Initialisiert", en: "Initializing" },
+  "casesdetail.upload.uploading": { de: "Überträgt", en: "Uploading" },
+  "casesdetail.upload.processing": { de: "Prüft & indexiert", en: "Checking & indexing" },
+  "casesdetail.upload.done": { de: "Fertig", en: "Done" },
+  "casesdetail.upload.error": { de: "Fehler", en: "Error" },
+  "casesdetail.upload.err_format": {
+    de: "Format wird nicht unterstützt. Erlaubt: PDF, DOCX, EML, JPG, PNG",
+    en: "Format not supported. Allowed: PDF, DOCX, EML, JPG, PNG",
+  },
+  "casesdetail.upload.err_too_large": {
+    de: "ist zu groß. Maximum für diesen Upload-Kanal:",
+    en: "is too large. Maximum for this upload channel:",
+  },
+  "casesdetail.upload.offline_queued": {
+    de: "Datei(en) in Offline-Warteschlange — wird automatisch synchronisiert wenn die Verbindung zurückkehrt.",
+    en: "file(s) in offline queue — will auto-sync when connection returns.",
+  },
+  "casesdetail.upload.in_progress": { de: "Upload läuft", en: "Upload in progress" },
+  "casesdetail.upload.files_label": { de: "Dateien", en: "files" },
+  "casesdetail.upload.server_processing": {
+    de: "Datei übertragen · Server prüft, speichert Original und indexiert",
+    en: "File transferred · server checks, stores original and indexes",
+  },
+  "casesdetail.upload.offline_mode": {
+    de: "Offline-Modus: Uploads werden erst beim erneuten Verbinden möglich.",
+    en: "Offline mode: uploads will be available when reconnected.",
+  },
+  "casesdetail.upload.offline_queue": {
+    de: "Offline-Upload(s) in Warteschlange",
+    en: "pending offline upload(s)",
+  },
+  "casesdetail.upload.syncing": { de: "Synchronisierung läuft…", en: "syncing…" },
+  "casesdetail.archived_msg": {
+    de: "Akte ist archiviert — zuerst wiederherstellen, um Änderungen zu speichern.",
+    en: "Case is archived — restore it first to make changes.",
+  },
+  "casesdetail.archived_upload_msg": {
+    de: "Akte ist archiviert — zuerst wiederherstellen, um Dokumente hochzuladen.",
+    en: "Case is archived — restore it first to upload documents.",
+  },
+  "casesdetail.archived_query_msg": {
+    de: "Akte ist archiviert — zuerst wiederherstellen, um Fragen zu stellen.",
+    en: "Case is archived — restore it first to ask questions.",
+  },
+  "casesdetail.conflict_warning": {
+    de: "Akte wurde von einem anderen Nutzer geändert — bitte neu laden.",
+    en: "Case was modified by another user — please reload.",
+  },
+  "casesdetail.ai_parties": {
+    de: "KI-extrahierte Parteien-Vorschläge",
+    en: "AI-extracted party suggestions",
+  },
+  "casesdetail.status_change": { de: "Statusänderung", en: "Status Change" },
+  "casesdetail.link_existing": { de: "Vorhandenes verknüpfen", en: "Link existing" },
+  "casesdetail.link_document": { de: "Dokument verknüpfen", en: "Link document" },
+  "casesdetail.searching": { de: "Suche läuft…", en: "Searching…" },
+  "casesdetail.search_placeholder": { de: "Suche nach Titel oder Schlagwort…", en: "Search by title or keyword…" },
+  "casesdetail.link_failed": { de: "Verknüpfung fehlgeschlagen", en: "Linking failed" },
+  "casesdetail.already_linked": { de: "verknüpft", en: "linked" },
+  "casesdetail.doc_empty_desc": {
+    de: "Upload, WhatsApp-Eingang oder Verknüpfung legt Dokumente direkt in dieser Akte ab.",
+    en: "Upload, WhatsApp receipt, or linking places documents directly in this case.",
+  },
+  "casesdetail.ai_deadlines": { de: "KI-extrahierte Fristenvorschläge", en: "AI-extracted deadline suggestions" },
+  "casesdetail.accept": { de: "Übernehmen", en: "Accept" },
+  "casesdetail.reject": { de: "Ablehnen", en: "Reject" },
 
   // ── Process Strategy page strings ──
   "processstrategy.none_recorded": { de: "Keine erfasst", en: "None recorded" },

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ENGINE_URL } from "@/lib/engine";
+import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 import { createHandler } from "@/lib/api-handler";
 import { apiError } from "@/lib/api-response";
 import { sanitizeUserInput } from "@/lib/prompt-sanitizer";
@@ -245,25 +245,23 @@ export const POST = createHandler(
         try {
           const docType =
             typeof parsed.document_type === "string" ? parsed.document_type : undefined;
-          const docPatch: Record<string, unknown> = {
-            meta: {
-              auto_analysis: parsed,
-              analyzed_at: new Date().toISOString(),
-            },
-            // merge:true is critical — without it the engine may replace the
-            // entire frontmatter and wipe case_slug/assignment_status/extraction
-            // metadata on the document, detaching it from its case.
-            merge: true,
+          // The engine persists data only from `frontmatter` on a merge-update
+          // (a top-level `meta` key is ignored), so the analysis result must
+          // live in frontmatter. merge:true (added by enginePatchPage) overlays
+          // just these keys, so case_slug/assignment_status/extraction metadata
+          // on the document are preserved.
+          const docFrontmatter: Record<string, unknown> = {
+            auto_analysis: parsed,
+            analyzed_at: new Date().toISOString(),
           };
           if (docType && docType !== "unknown") {
-            docPatch.frontmatter = { document_type: docType };
+            docFrontmatter.document_type = docType;
           }
-          await fetch(`${ENGINE_URL}/api/pages/${encodeSlugPath(documentSlug)}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json", ...engineHeaders },
-            body: JSON.stringify(docPatch),
-            signal: AbortSignal.timeout(300_000),
-          });
+          await enginePatchPage(
+            engineHeaders,
+            { slug: documentSlug, frontmatter: docFrontmatter },
+            { timeoutMs: 300_000 }
+          );
         } catch (err) {
           console.error(
             `[analyze] failed to persist analysis for ${documentSlug}:`,
@@ -343,68 +341,31 @@ export const POST = createHandler(
               return true;
             });
 
-          // C2 FIX: If-Match retry loop — re-fetch version on 409 conflict
-          // to prevent lost writeback when case was concurrently modified.
-          for (let attempt = 0; attempt < 3; attempt++) {
-            try {
-              const retryCaseRes =
-                attempt === 0
-                  ? caseRes
-                  : await fetch(`${ENGINE_URL}/api/pages/${encodedCaseSlug}`, {
-                      headers: engineHeaders,
-                      signal: AbortSignal.timeout(300_000),
-                    });
-              if (!retryCaseRes.ok) break;
-              const retryCasePage =
-                attempt === 0
-                  ? casePage
-                  : ((await retryCaseRes.json()) as { frontmatter?: Record<string, unknown> });
-              const retryFm = (retryCasePage.frontmatter ?? {}) as Record<string, unknown>;
-              const retryVersion = (retryFm.version as number | undefined) ?? 0;
-
-              // Rebuild patchBody with fresh frontmatter + version
-              const retryPatchBody: Record<string, unknown> = {
-                frontmatter: {
-                  ...retryFm,
-                  ...(suggestedDeadlines.length > 0
-                    ? {
-                        suggested_deadlines: [
-                          ...(Array.isArray(retryFm.suggested_deadlines)
-                            ? retryFm.suggested_deadlines
-                            : []),
-                          ...suggestedDeadlines,
-                        ],
-                      }
-                    : {}),
-                  ...(suggestedParties.length > 0
-                    ? {
-                        suggested_parties: [
-                          ...(Array.isArray(retryFm.suggested_parties)
-                            ? retryFm.suggested_parties
-                            : []),
-                          ...suggestedParties,
-                        ],
-                      }
-                    : {}),
-                },
-                merge: true,
-              };
-
-              const patchRes = await fetch(`${ENGINE_URL}/api/pages/${encodedCaseSlug}`, {
-                method: "PATCH",
-                headers: {
-                  "Content-Type": "application/json",
-                  "If-Match": String(retryVersion),
-                  ...engineHeaders,
-                },
-                body: JSON.stringify(retryPatchBody),
-                signal: AbortSignal.timeout(300_000),
-              });
-              if (patchRes.status === 409 && attempt < 2) continue;
-              break;
-            } catch {
-              break;
-            }
+          // Append the freshly suggested deadlines/parties to whatever the case
+          // already has. The engine has no optimistic locking (no PATCH/If-Match),
+          // so this is a single read-modify-write off the `caseFm` read above;
+          // merge:true overlays only the two arrays we send and leaves the rest
+          // of the case frontmatter intact. Dedup above keeps re-analysis
+          // idempotent against the existing entries.
+          const mergedFrontmatter: Record<string, unknown> = {};
+          if (suggestedDeadlines.length > 0) {
+            mergedFrontmatter.suggested_deadlines = [
+              ...(Array.isArray(caseFm.suggested_deadlines) ? caseFm.suggested_deadlines : []),
+              ...suggestedDeadlines,
+            ];
+          }
+          if (suggestedParties.length > 0) {
+            mergedFrontmatter.suggested_parties = [
+              ...(Array.isArray(caseFm.suggested_parties) ? caseFm.suggested_parties : []),
+              ...suggestedParties,
+            ];
+          }
+          if (Object.keys(mergedFrontmatter).length > 0) {
+            await enginePatchPage(
+              engineHeaders,
+              { slug: documentCaseSlug, frontmatter: mergedFrontmatter },
+              { timeoutMs: 300_000 }
+            );
           }
         } catch (err) {
           console.error(

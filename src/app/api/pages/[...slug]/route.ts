@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ENGINE_URL } from "@/lib/engine";
+import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 import { createHandler, apiError, apiNotFound } from "@/lib/api-handler";
 import { logAudit } from "@/lib/audit";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
@@ -60,10 +60,12 @@ export const PATCH = createHandler(
     },
   },
   async (ctx, body, _query, req) => {
-    const path = buildPath(
-      (await (req as unknown as { params: Promise<{ slug: string[] }> }).params).slug
-    );
+    const slugArr = (await (req as unknown as { params: Promise<{ slug: string[] }> }).params).slug;
+    const path = buildPath(slugArr);
     if (!path) return apiError("invalid_slug", "Invalid slug", 400);
+    // The engine's merge-update takes the RAW (unencoded) slug in the body;
+    // `path` (URL-encoded) is only for the GET/read side.
+    const rawSlug = slugArr.join("/");
 
     // Optimistic locking: if client sends If-Match header, verify version
     const ifMatch = req.headers.get("if-match");
@@ -95,7 +97,7 @@ export const PATCH = createHandler(
     }
 
     // Increment version on update
-    const patchBody: Record<string, unknown> = { ...body, slug: path };
+    const patchBody: Record<string, unknown> = { ...body, slug: rawSlug };
 
     // Server-side guard: block modifications to archived cases unless it's a restore
     if (patchBody.frontmatter) {
@@ -160,12 +162,11 @@ export const PATCH = createHandler(
     }
 
     try {
-      const res = await fetch(`${ENGINE_URL}/api/pages/${path}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json", ...ctx.headers },
-        body: JSON.stringify(patchBody),
-        signal: AbortSignal.timeout(15_000),
-      });
+      const res = await enginePatchPage(
+        ctx.headers,
+        patchBody as { slug: string } & Record<string, unknown>,
+        { timeoutMs: 15_000 }
+      );
       if (res.status === 404) return apiNotFound("not_found");
       if (!res.ok) {
         const payload = await res.json().catch(() => ({}));
@@ -228,21 +229,17 @@ export const PATCH = createHandler(
               const batchResults = await Promise.all(
                 batch.map(async (doc) => {
                   try {
-                    const untombstoneRes = await fetch(
-                      `${ENGINE_URL}/api/pages/${encodeURIComponent(doc.slug)}`,
+                    const untombstoneRes = await enginePatchPage(
+                      ctx.headers,
                       {
-                        method: "PATCH",
-                        headers: { "Content-Type": "application/json", ...ctx.headers },
-                        body: JSON.stringify({
-                          frontmatter: {
-                            status: "active",
-                            tombstoned_at: null,
-                            tombstone_reason: null,
-                          },
-                          merge: true,
-                        }),
-                        signal: AbortSignal.timeout(15_000),
-                      }
+                        slug: doc.slug,
+                        frontmatter: {
+                          status: "active",
+                          tombstoned_at: null,
+                          tombstone_reason: null,
+                        },
+                      },
+                      { timeoutMs: 15_000 }
                     );
                     return untombstoneRes.ok
                       ? { slug: doc.slug, ok: true as const }
@@ -413,7 +410,6 @@ export const DELETE = createHandler(
       // `type` is a top-level page field (set on POST), not frontmatter.
       // Fall back to fm.type for engine versions that mirror it into frontmatter.
       const pageType = casePage.type ?? (fm.type as string | undefined);
-      const currentVersion = (fm.version as number) || 0;
 
       // Guard: already archived — return 409 to prevent double-archive
       if (pageType === "legal_case" && fm.status === "archived") {
@@ -451,15 +447,12 @@ export const DELETE = createHandler(
           },
         ];
 
-        // 2. Archive the case (soft-delete)
-        const archiveRes = await fetch(`${ENGINE_URL}/api/pages/${path}`, {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            "If-Match": String(currentVersion),
-            ...ctx.headers,
-          },
-          body: JSON.stringify({
+        // 2. Archive the case (soft-delete). The engine has no PATCH/If-Match;
+        //    merge-update overlays just these keys (status guarded above).
+        const archiveRes = await enginePatchPage(
+          ctx.headers,
+          {
+            slug: decodedSlug,
             frontmatter: {
               status: "archived",
               archived_at: new Date().toISOString(),
@@ -467,11 +460,11 @@ export const DELETE = createHandler(
               portal_enabled: false,
               timeline_events: archiveTimeline,
             },
-            merge: true,
-          }),
-          signal: AbortSignal.timeout(15_000),
-        });
-        if (!archiveRes.ok) throw new Error(`Archive PATCH failed: HTTP ${archiveRes.status}`);
+          },
+          { timeoutMs: 15_000 }
+        );
+        if (!archiveRes.ok)
+          throw new Error(`Archive merge-update failed: HTTP ${archiveRes.status}`);
 
         // 3. Tombstone all documents whose frontmatter case_slug matches this case.
         //    NOTE: the engine does NOT filter by case_slug query param — it returns
@@ -515,21 +508,17 @@ export const DELETE = createHandler(
               const batchResults = await Promise.all(
                 batch.map(async (doc) => {
                   try {
-                    const tombstoneRes = await fetch(
-                      `${ENGINE_URL}/api/pages/${encodeURIComponent(doc.slug)}`,
+                    const tombstoneRes = await enginePatchPage(
+                      ctx.headers,
                       {
-                        method: "PATCH",
-                        headers: { "Content-Type": "application/json", ...ctx.headers },
-                        body: JSON.stringify({
-                          frontmatter: {
-                            status: "tombstoned",
-                            tombstoned_at: new Date().toISOString(),
-                            tombstone_reason: "case_archived",
-                          },
-                          merge: true,
-                        }),
-                        signal: AbortSignal.timeout(15_000),
-                      }
+                        slug: doc.slug,
+                        frontmatter: {
+                          status: "tombstoned",
+                          tombstoned_at: new Date().toISOString(),
+                          tombstone_reason: "case_archived",
+                        },
+                      },
+                      { timeoutMs: 15_000 }
                     );
                     return tombstoneRes.ok
                       ? { slug: doc.slug, ok: true as const }
@@ -568,12 +557,22 @@ export const DELETE = createHandler(
           };
         }
       } else {
-        // Non-case pages: hard delete as before
-        const delRes = await fetch(`${ENGINE_URL}/api/pages/${path}`, {
-          method: "DELETE",
-          headers: ctx.headers,
-          signal: AbortSignal.timeout(10_000),
-        });
+        // Non-case pages: the engine exposes no DELETE route, so soft-delete by
+        // tombstoning via merge-update (the document then drops out of every
+        // case_slug-scoped listing, which filters `status !== "tombstoned"`).
+        const delRes = await enginePatchPage(
+          ctx.headers,
+          {
+            slug: decodedSlug,
+            frontmatter: {
+              status: "tombstoned",
+              tombstoned_at: new Date().toISOString(),
+              tombstone_reason: "manual_delete",
+              assignment_status: "unassigned",
+            },
+          },
+          { timeoutMs: 10_000 }
+        );
         if (delRes.status === 404) return apiNotFound("not_found");
         if (!delRes.ok) throw new Error(`HTTP ${delRes.status}`);
       }

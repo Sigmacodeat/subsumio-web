@@ -29,102 +29,105 @@ import { draftingSchema, type DraftingFormData } from "@/lib/schemas/drafting";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { csrfFetch } from "@/lib/csrf";
 
-const TEMPLATES = [
-  {
-    key: "klage",
-    label: "Klage",
+const TEMPLATE_KEYS = [
+  "klage",
+  "klageerwiderung",
+  "berufung",
+  "beschwerde",
+  "mahnung",
+  "antragschrift",
+  "einstweilige",
+  "vergleich",
+  "vollstreckung",
+  "beweisantrag",
+  "gutachten",
+  "stellungnahme",
+  "widerruf",
+] as const;
+
+const TEMPLATE_META: Record<
+  string,
+  { icon: typeof Scale; prompt: (data: Record<string, string>) => string }
+> = {
+  klage: {
     icon: Scale,
-    prompt: (data: Record<string, string>) =>
+    prompt: (data) =>
       `Entwirf eine Klageschrift für den Rechtsstreit: ${data.title}. Kläger: ${data.klaeger}, Beklagter: ${data.beklagter}. Streitgegenstand: ${data.facts}. Rechtsgrundlage: ${data.legalBasis}.`,
   },
-  {
-    key: "klageerwiderung",
-    label: "Klageerwiderung",
+  klageerwiderung: {
     icon: Scale,
-    prompt: (data: Record<string, string>) =>
+    prompt: (data) =>
       `Entwirf eine Klageerwiderung für den Rechtsstreit: ${data.title}. Beklagter: ${data.beklagter}, Kläger: ${data.klaeger}. Verteidigung: ${data.facts}. Rechtsgrundlage: ${data.legalBasis}.`,
   },
-  {
-    key: "berufung",
-    label: "Berufung",
+  berufung: {
     icon: Scale,
-    prompt: (data: Record<string, string>) =>
+    prompt: (data) =>
       `Entwirf eine Berufungsschrift für den Rechtsstreit: ${data.title}. Berufungsführer: ${data.klaeger}, Berufungsgegner: ${data.beklagter}. Sachverhalt: ${data.facts}. Rechtsgrundlage: ${data.legalBasis}.`,
   },
-  {
-    key: "beschwerde",
-    label: "Beschwerde",
+  beschwerde: {
     icon: Scale,
-    prompt: (data: Record<string, string>) =>
+    prompt: (data) =>
       `Entwirf eine Beschwerdeschrift für: ${data.title}. Beschwerdeführer: ${data.klaeger}, Beschwerdegegner: ${data.beklagter}. Sachverhalt: ${data.facts}. Rechtsgrundlage: ${data.legalBasis}.`,
   },
-  {
-    key: "mahnung",
-    label: "Mahnung",
+  mahnung: {
     icon: PenTool,
-    prompt: (data: Record<string, string>) =>
+    prompt: (data) =>
       `Entwirf eine Mahnung/Schreiben für: ${data.title}. Empfänger: ${data.beklagter}, Absender: ${data.klaeger}. Sachverhalt: ${data.facts}. Forderung: ${data.legalBasis}.`,
   },
-  {
-    key: "antragschrift",
-    label: "Antragschrift",
+  antragschrift: {
     icon: FileText,
-    prompt: (data: Record<string, string>) =>
+    prompt: (data) =>
       `Entwirf eine Antragschrift für: ${data.title}. Antragsteller: ${data.klaeger}, Antragsgegner: ${data.beklagter}. Sachverhalt: ${data.facts}. Rechtsgrundlage: ${data.legalBasis}.`,
   },
-  {
-    key: "einstweilige",
-    label: "Einstw. Verfügung",
+  einstweilige: {
     icon: FileText,
-    prompt: (data: Record<string, string>) =>
+    prompt: (data) =>
       `Entwirf einen Antrag auf einstweilige Verfügung für: ${data.title}. Antragsteller: ${data.klaeger}, Antragsgegner: ${data.beklagter}. Sachverhalt: ${data.facts}. Rechtsgrundlage: ${data.legalBasis}.`,
   },
-  {
-    key: "vergleich",
-    label: "Vergleichsvertrag",
+  vergleich: {
     icon: FileText,
-    prompt: (data: Record<string, string>) =>
+    prompt: (data) =>
       `Entwirf einen Vergleichsvertrag für den Rechtsstreit: ${data.title}. Partei A: ${data.klaeger}, Partei B: ${data.beklagter}. Streitgegenstand: ${data.facts}.`,
   },
-  {
-    key: "vollstreckung",
-    label: "Vollstreckung",
+  vollstreckung: {
     icon: FileText,
-    prompt: (data: Record<string, string>) =>
+    prompt: (data) =>
       `Entwirf einen Antrag auf Erlass eines Vollstreckungsbescheids für: ${data.title}. Gläubiger: ${data.klaeger}, Schuldner: ${data.beklagter}. Forderung: ${data.facts}. Rechtsgrundlage: ${data.legalBasis}.`,
   },
-  {
-    key: "beweisantrag",
-    label: "Beweisantrag",
+  beweisantrag: {
     icon: FileText,
-    prompt: (data: Record<string, string>) =>
+    prompt: (data) =>
       `Entwirf einen Beweisantrag für den Rechtsstreit: ${data.title}. Antragsteller: ${data.klaeger}. Zu beweisende Tatsachen: ${data.facts}. Rechtsgrundlage: ${data.legalBasis}.`,
   },
-  {
-    key: "gutachten",
-    label: "Rechtsgutachten",
+  gutachten: {
     icon: BookOpen,
-    prompt: (data: Record<string, string>) =>
+    prompt: (data) =>
       `Entwirf ein Rechtsgutachten im Gutachtenstil zu: ${data.title}. Sachverhalt: ${data.facts}. Rechtsfrage: ${data.legalBasis}.`,
   },
-  {
-    key: "stellungnahme",
-    label: "Stellungnahme",
+  stellungnahme: {
     icon: BookOpen,
-    prompt: (data: Record<string, string>) =>
+    prompt: (data) =>
       `Entwirf eine Stellungnahme für: ${data.title}. Von: ${data.klaeger}, Gegenüber: ${data.beklagter}. Sachverhalt: ${data.facts}. Rechtsgrundlage: ${data.legalBasis}.`,
   },
-  {
-    key: "widerruf",
-    label: "Widerruf",
+  widerruf: {
     icon: PenTool,
-    prompt: (data: Record<string, string>) =>
+    prompt: (data) =>
       `Entwirf einen Widerruf/Rücktritt für: ${data.title}. Von: ${data.klaeger}, Gegenüber: ${data.beklagter}. Sachverhalt: ${data.facts}. Rechtsgrundlage: ${data.legalBasis}.`,
   },
-];
+};
+
+function getTemplates(t: (key: import("@/content/dashboard").DashboardKey) => string) {
+  return TEMPLATE_KEYS.map((key) => ({
+    key,
+    label: t(`drafting.tpl.${key}` as import("@/content/dashboard").DashboardKey),
+    icon: TEMPLATE_META[key].icon,
+    prompt: TEMPLATE_META[key].prompt,
+  }));
+}
 
 export default function DraftingPage() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
+  const TEMPLATES = getTemplates(t);
   const [selectedTemplate, setSelectedTemplate] = useState<string>("klage");
   const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState<string | null>(null);
@@ -221,7 +224,7 @@ export default function DraftingPage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${template.label}_${(formData.title || "Entwurf").slice(0, 40).replace(/[^a-zA-Z0-9äöüß]/g, "_")}.docx`;
+      a.download = `${template.label}_${(formData.title || t("drafting.saved_default")).slice(0, 40).replace(/[^a-zA-Z0-9äöüß]/g, "_")}.docx`;
       a.click();
       URL.revokeObjectURL(url);
       setDocxReady(true);
@@ -229,7 +232,7 @@ export default function DraftingPage() {
     } catch (err) {
       console.error("docx export failed:", err);
       // Fallback: old HTML method
-      const escTitle = (formData.title || "Entwurf")
+      const escTitle = (formData.title || t("drafting.saved_default"))
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;");
@@ -238,7 +241,7 @@ export default function DraftingPage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${template.label}_${(formData.title || "Entwurf").slice(0, 40).replace(/[^a-zA-Z0-9äöüß]/g, "_")}.doc`;
+      a.download = `${template.label}_${(formData.title || t("drafting.saved_default")).slice(0, 40).replace(/[^a-zA-Z0-9äöüß]/g, "_")}.doc`;
       a.click();
       URL.revokeObjectURL(url);
       setDocxReady(true);
@@ -260,7 +263,7 @@ export default function DraftingPage() {
       const slug = `legal/drafts/${now.toISOString().split("T")[0]}-${template.key}-${safeTitle || now.getTime()}`;
       await api.brain.createPage({
         slug,
-        title: `${template.label}: ${current.title || "Entwurf"}`,
+        title: `${template.label}: ${current.title || t("drafting.saved_default")}`,
         type: "legal_document",
         content: text,
         frontmatter: {
@@ -303,7 +306,11 @@ export default function DraftingPage() {
       setDraftSaved(slug);
       return slug;
     } catch (e) {
-      setDraftSaved(e instanceof Error ? `Fehler: ${e.message}` : t("drafting.error_save"));
+      setDraftSaved(
+        e instanceof Error
+          ? `${lang === "de" ? "Fehler" : "Error"}: ${e.message}`
+          : t("drafting.error_save")
+      );
       return null;
     } finally {
       setSavingDraft(false);
@@ -342,7 +349,11 @@ export default function DraftingPage() {
           // Best-effort cleanup — draft may remain as orphan
         }
       }
-      setDraftSaved(e instanceof Error ? `Fehler: ${e.message}` : t("drafting.error_submit"));
+      setDraftSaved(
+        e instanceof Error
+          ? `${lang === "de" ? "Fehler" : "Error"}: ${e.message}`
+          : t("drafting.error_submit")
+      );
     } finally {
       setSubmitting(false);
     }
@@ -351,11 +362,11 @@ export default function DraftingPage() {
   return (
     <div className="mx-auto max-w-[1000px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
-        title="Schriftsatz-Generator"
-        description="Schriftsätze und Gutachten mit KI-Unterstützung erstellen"
+        title={t("drafting.title")}
+        description={t("drafting.description")}
         breadcrumbs={[
-          { label: "Übersicht", href: "/dashboard" },
-          { label: "Schriftsatz-Generator" },
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("drafting.breadcrumb") },
         ]}
       />
 
@@ -427,7 +438,7 @@ export default function DraftingPage() {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="mb-1.5 block text-xs text-[color:var(--ds-text-muted)]">
-              Kläger / Absender
+              {t("drafting.label_klaeger")}
             </label>
             <Input
               {...register("klaeger")}
@@ -438,7 +449,7 @@ export default function DraftingPage() {
           </div>
           <div>
             <label className="mb-1.5 block text-xs text-[color:var(--ds-text-muted)]">
-              Beklagter / Empfänger
+              {t("drafting.label_beklagter")}
             </label>
             <Input
               {...register("beklagter")}
@@ -465,7 +476,7 @@ export default function DraftingPage() {
         </div>
         <div>
           <label className="mb-1.5 block text-xs text-[color:var(--ds-text-muted)]">
-            Mit Akte verknüpfen
+            {t("drafting.label_link_case")}
           </label>
           <select
             {...register("selectedCaseSlug")}
@@ -492,7 +503,9 @@ export default function DraftingPage() {
           disabled={!canGenerate || generating}
         >
           {generating ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
-          {template.label} generieren
+          {generating
+            ? t("drafting.btn_generating")
+            : `${template.label} ${lang === "de" ? "generieren" : "generate"}`}
         </Button>
       </form>
 
@@ -501,7 +514,7 @@ export default function DraftingPage() {
         <div className="brand-border brand-soft space-y-3 rounded-xl border p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="brand-text text-xs font-medium">Entwurf</span>
+              <span className="brand-text text-xs font-medium">{t("drafting.saved_default")}</span>
               <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-700">
                 {AI_BADGE_LABEL}
               </span>
@@ -511,28 +524,28 @@ export default function DraftingPage() {
                 onClick={() => saveDraftToBrain(result)}
                 disabled={savingDraft || submitting}
                 className="flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)] transition-colors hover:text-emerald-600 disabled:opacity-60"
-                title="Entwurf im Brain speichern"
+                title={t("drafting.btn_save")}
               >
                 {savingDraft ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-                Speichern
+                {t("drafting.btn_save")}
               </button>
               <button
                 onClick={() => submitForApproval(result)}
                 disabled={savingDraft || submitting}
                 className="hover:brand-text flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)] transition-colors disabled:opacity-60"
-                title="Entwurf einem zweiten Bearbeiter zur Freigabe vorlegen (Vier-Augen-Prinzip)"
+                title={t("drafting.btn_submit_approval")}
               >
                 {submitting ? (
                   <Loader2 size={14} className="animate-spin" />
                 ) : (
                   <UserCheck size={14} />
                 )}
-                Zur Freigabe
+                {t("drafting.btn_submit_approval")}
               </button>
               <button
                 onClick={() => downloadDocx(result)}
                 className="flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)] transition-colors hover:text-blue-600"
-                title="Als Word-Dokument herunterladen"
+                title={t("drafting.btn_docx")}
               >
                 {docxReady ? (
                   <Check size={14} className="text-emerald-600" />
@@ -544,8 +557,8 @@ export default function DraftingPage() {
               <button
                 onClick={() => copyToClipboard(result)}
                 className="text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text-muted)]"
-                title="In Zwischenablage kopieren"
-                aria-label="In Zwischenablage kopieren"
+                title={t("drafting.btn_copy")}
+                aria-label={t("drafting.btn_copy")}
               >
                 {copied ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
               </button>
@@ -561,18 +574,18 @@ export default function DraftingPage() {
             <p
               className={cn(
                 "text-xs",
-                draftSaved.startsWith("Fehler:")
+                draftSaved.startsWith(lang === "de" ? "Fehler" : "Error")
                   ? "text-red-600"
                   : draftSaved.startsWith("approval:")
                     ? "brand-text"
                     : "text-emerald-600"
               )}
             >
-              {draftSaved.startsWith("Fehler:")
+              {draftSaved.startsWith(lang === "de" ? "Fehler" : "Error")
                 ? draftSaved
                 : draftSaved.startsWith("approval:")
-                  ? "Zur Freigabe eingereicht — sichtbar im Menü unter Freigaben."
-                  : `Gespeichert: ${draftSaved}`}
+                  ? t("drafting.approval_msg")
+                  : `${t("drafting.saved_msg")}: ${draftSaved}`}
             </p>
           )}
         </div>

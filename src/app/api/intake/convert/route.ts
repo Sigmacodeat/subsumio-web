@@ -60,7 +60,8 @@ export const POST = createHandler(
     });
     if (!createRes.ok) {
       const message = await createRes.text().catch(() => "");
-      return apiError("case_create_failed", message || "Akte konnte nicht erstellt werden", 502);
+      console.error("[intake/convert] case create failed:", createRes.status, message);
+      return apiError("case_create_failed", "Akte konnte nicht erstellt werden", 502);
     }
 
     const now = new Date().toISOString();

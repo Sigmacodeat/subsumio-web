@@ -55,6 +55,8 @@ export const GET = createHandler(
       const message = err instanceof Error ? err.message : String(err);
       const status = message === "mailbox_database_not_configured" ? 503 : 500;
       console.error("[email] failed to list messages:", message);
+      if (status === 500)
+        return apiError("internal_error", "Nachrichten konnten nicht geladen werden", 500);
       return apiError(message, message, status);
     }
   }
@@ -80,6 +82,8 @@ export const POST = createHandler(
             ? 400
             : 500;
       console.error("[email] failed to send message:", message);
+      if (status === 500)
+        return apiError("internal_error", "E-Mail konnte nicht gesendet werden", 500);
       return apiError(message, message, status);
     }
   }

@@ -120,7 +120,13 @@ export default function ResearchPage() {
       };
       setSessions((s) => [session, ...s]);
     } catch (err) {
-      setError(err instanceof Error ? err.message : lang === "de" ? "Recherche fehlgeschlagen." : "Research failed.");
+      setError(
+        err instanceof Error
+          ? err.message
+          : lang === "de"
+            ? "Recherche fehlgeschlagen."
+            : "Research failed."
+      );
     } finally {
       setLoading(false);
     }
@@ -172,7 +178,9 @@ export default function ResearchPage() {
       await api.legal.judgementsSync({ jurisdiction: jurisdiction as "at" | "de" | "all", query });
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : lang === "de" ? "Sync fehlgeschlagen." : "Sync failed.");
+      setError(
+        err instanceof Error ? err.message : lang === "de" ? "Sync fehlgeschlagen." : "Sync failed."
+      );
     } finally {
       setLoading(false);
     }
@@ -280,7 +288,9 @@ export default function ResearchPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Scale size={16} className="brand-text" />
-              <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">{t("research.result_title")}</h3>
+              <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+                {t("research.result_title")}
+              </h3>
               <Badge
                 variant="default"
                 className="brand-border brand-soft brand-text border text-xs"
@@ -353,7 +363,9 @@ export default function ResearchPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Scale size={16} className="brand-text" />
-                  <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">{t("research.result_title")}</h3>
+                  <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+                    {t("research.result_title")}
+                  </h3>
                   <Badge
                     variant="default"
                     className="brand-border brand-soft brand-text border text-xs"
@@ -472,7 +484,9 @@ export default function ResearchPage() {
           </div>
 
           {savedLoading ? (
-            <div className="py-8 text-center text-[color:var(--ds-text-muted)]">{t("research.saved_loading")}</div>
+            <div className="py-8 text-center text-[color:var(--ds-text-muted)]">
+              {t("research.saved_loading")}
+            </div>
           ) : savedPages.length === 0 ? (
             <div className="space-y-3 py-16 text-center">
               <FolderOpen size={40} className="mx-auto text-[color:var(--ds-border)]" />

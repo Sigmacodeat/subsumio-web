@@ -31,168 +31,169 @@ interface ComplianceCheck {
   description: string;
 }
 
-// Die Checklisten-DEFINITION ist statisch (Art./§-Katalog). Der STATUS jeder
-// Position ist eine Selbsteinschätzung der Kanzlei — er wird pro Brain auf
-// der Seite `legal/compliance/selbstauskunft` persistiert, nicht simuliert.
-const DSGVO_CHECKS: ComplianceCheck[] = [
-  {
-    id: "dsgvo-1",
-    category: "Rechtsgrundlage",
-    label: "Rechtsgrundlage dokumentiert",
-    description: "Für jede Verarbeitung ist eine Rechtsgrundlage nach Art. 6 DSGVO festgelegt",
-  },
-  {
-    id: "dsgvo-2",
-    category: "Rechtsgrundlage",
-    label: "Einwilligungen nachweisbar",
-    description: "Einwilligungen sind dokumentiert und widerrufbar (Art. 7 DSGVO)",
-  },
-  {
-    id: "dsgvo-3",
-    category: "Betroffenenrechte",
-    label: "Auskunftsverfahren",
-    description: "Verfahren für Betroffenenanfragen (Art. 15 DSGVO)",
-  },
-  {
-    id: "dsgvo-4",
-    category: "Betroffenenrechte",
-    label: "Löschungsverfahren",
-    description: "Verfahren für Löschungsanfragen (Art. 17 DSGVO)",
-  },
-  {
-    id: "dsgvo-5",
-    category: "Dokumentation",
-    label: "Verzeichnis der Verarbeitungstätigkeiten",
-    description: "Art. 30 DSGVO — Verarbeitungsverzeichnis geführt",
-  },
-  {
-    id: "dsgvo-6",
-    category: "Dokumentation",
-    label: "Datenschutz-Folgenabschätzung",
-    description: "DSFA bei risikoreichen Verarbeitungen (Art. 35 DSGVO)",
-  },
-  {
-    id: "dsgvo-7",
-    category: "Technisch",
-    label: "Pseudonymisierung",
-    description: "Technische Maßnahmen zur Pseudonymisierung (Art. 32 DSGVO)",
-  },
-  {
-    id: "dsgvo-8",
-    category: "Technisch",
-    label: "Verschlüsselung",
-    description: "Verschlüsselung personenbezogener Daten (Art. 32 DSGVO)",
-  },
-  {
-    id: "dsgvo-9",
-    category: "Organisatorisch",
-    label: "Zugriffskontrolle",
-    description: "Berechtigungskonzept implementiert",
-  },
-  {
-    id: "dsgvo-10",
-    category: "Organisatorisch",
-    label: "Schulung der Mitarbeiter",
-    description: "Regelmäßige Datenschutz-Schulung",
-  },
-];
+type TFunc = (key: import("@/content/dashboard").DashboardKey) => string;
 
-const GWG_CHECKS: ComplianceCheck[] = [
-  {
-    id: "gwg-1",
-    category: "Identifizierung",
-    label: "Mandantenidentifizierung",
-    description: "Identitätsprüfung neuer Mandanten (§ 11 GwG)",
-  },
-  {
-    id: "gwg-2",
-    category: "Identifizierung",
-    label: "Wirtschaftlicher Eigentümer",
-    description: "Ermittlung des wirtschaftlichen Eigentümers (§ 3 GwG)",
-  },
-  {
-    id: "gwg-3",
-    category: "Screening",
-    label: "Sanktionslistenprüfung",
-    description: "Prüfung gegen EU-Sanktionslisten",
-  },
-  {
-    id: "gwg-4",
-    category: "Screening",
-    label: "PEP-Prüfung",
-    description: "Politically Exposed Persons Screening (§ 15 GwG)",
-  },
-  {
-    id: "gwg-5",
-    category: "Dokumentation",
-    label: "Verdachtsanzeigen",
-    description: "Verfahren für Verdachtsmeldungen nach § 43 GwG",
-  },
-  {
-    id: "gwg-6",
-    category: "Dokumentation",
-    label: "Aufbewahrungspflichten",
-    description: "Unterlagen werden 5 Jahre aufbewahrt (§ 8 GwG)",
-  },
-];
+function getDsgvoChecks(t: TFunc): ComplianceCheck[] {
+  return [
+    {
+      id: "dsgvo-1",
+      category: t("compliance.cat.legal_basis"),
+      label: t("compliance.dsgvo.1.label"),
+      description: t("compliance.dsgvo.1.desc"),
+    },
+    {
+      id: "dsgvo-2",
+      category: t("compliance.cat.legal_basis"),
+      label: t("compliance.dsgvo.2.label"),
+      description: t("compliance.dsgvo.2.desc"),
+    },
+    {
+      id: "dsgvo-3",
+      category: t("compliance.cat.data_subjects"),
+      label: t("compliance.dsgvo.3.label"),
+      description: t("compliance.dsgvo.3.desc"),
+    },
+    {
+      id: "dsgvo-4",
+      category: t("compliance.cat.data_subjects"),
+      label: t("compliance.dsgvo.4.label"),
+      description: t("compliance.dsgvo.4.desc"),
+    },
+    {
+      id: "dsgvo-5",
+      category: t("compliance.cat.documentation"),
+      label: t("compliance.dsgvo.5.label"),
+      description: t("compliance.dsgvo.5.desc"),
+    },
+    {
+      id: "dsgvo-6",
+      category: t("compliance.cat.documentation"),
+      label: t("compliance.dsgvo.6.label"),
+      description: t("compliance.dsgvo.6.desc"),
+    },
+    {
+      id: "dsgvo-7",
+      category: t("compliance.cat.technical"),
+      label: t("compliance.dsgvo.7.label"),
+      description: t("compliance.dsgvo.7.desc"),
+    },
+    {
+      id: "dsgvo-8",
+      category: t("compliance.cat.technical"),
+      label: t("compliance.dsgvo.8.label"),
+      description: t("compliance.dsgvo.8.desc"),
+    },
+    {
+      id: "dsgvo-9",
+      category: t("compliance.cat.organisational"),
+      label: t("compliance.dsgvo.9.label"),
+      description: t("compliance.dsgvo.9.desc"),
+    },
+    {
+      id: "dsgvo-10",
+      category: t("compliance.cat.organisational"),
+      label: t("compliance.dsgvo.10.label"),
+      description: t("compliance.dsgvo.10.desc"),
+    },
+  ];
+}
 
-// GoBD-Checkliste für die Steuer-Vertikale. Die Engine liefert mit gobd.ts
-// bereits Bausteine (Aufbewahrungsfrist-Stempel + Hash-Manipulations-Evidenz auf
-// Belegen); volle Konformität verlangt zusätzlich diese organisatorischen Punkte
-// + Verfahrensdokumentation + Prüfer-Abnahme. Status ist Selbsteinschätzung.
-const GOBD_CHECKS: ComplianceCheck[] = [
-  {
-    id: "gobd-1",
-    category: "Unveränderbarkeit",
-    label: "Belege unveränderbar gespeichert",
-    description:
-      "Nachträgliche Änderungen ausgeschlossen oder protokolliert; Belege tragen einen Inhalts-Hash (§ 146 Abs. 4 AO, GoBD Rz. 107 ff.)",
-  },
-  {
-    id: "gobd-2",
-    category: "Aufbewahrung",
-    label: "10-Jahre-Aufbewahrung",
-    description:
-      "Buchungsbelege werden 10 Jahre aufbewahrt; Frist je Beleg vermerkt (§ 147 Abs. 3 AO)",
-  },
-  {
-    id: "gobd-3",
-    category: "Nachvollziehbarkeit",
-    label: "Belegfunktion & Nachvollziehbarkeit",
-    description: "Jede Buchung ist durch einen Beleg nachvollziehbar (GoBD Rz. 36 ff.)",
-  },
-  {
-    id: "gobd-4",
-    category: "Dokumentation",
-    label: "Verfahrensdokumentation",
-    description:
-      "Verfahrensdokumentation beschreibt den DV-gestützten Ablage- und Buchungsprozess (GoBD Rz. 151 ff.)",
-  },
-  {
-    id: "gobd-5",
-    category: "Auswertbarkeit",
-    label: "Maschinelle Auswertbarkeit",
-    description:
-      "Steuerlich relevante Daten sind maschinell auswertbar/exportierbar — z. B. DATEV-Export (GoBD Rz. 126 ff.)",
-  },
-  {
-    id: "gobd-6",
-    category: "Kontrolle",
-    label: "Internes Kontrollsystem",
-    description: "IKS zur Sicherung der Ordnungsmäßigkeit eingerichtet (GoBD Rz. 100 ff.)",
-  },
-  {
-    id: "gobd-7",
-    category: "Sicherheit",
-    label: "Datensicherheit & Zugriffsschutz",
-    description: "Schutz vor Verlust und unberechtigtem Zugriff (GoBD Rz. 103 ff.)",
-  },
-];
+function getGwgChecks(t: TFunc): ComplianceCheck[] {
+  return [
+    {
+      id: "gwg-1",
+      category: t("compliance.cat.identification"),
+      label: t("compliance.gwg.1.label"),
+      description: t("compliance.gwg.1.desc"),
+    },
+    {
+      id: "gwg-2",
+      category: t("compliance.cat.identification"),
+      label: t("compliance.gwg.2.label"),
+      description: t("compliance.gwg.2.desc"),
+    },
+    {
+      id: "gwg-3",
+      category: t("compliance.cat.screening"),
+      label: t("compliance.gwg.3.label"),
+      description: t("compliance.gwg.3.desc"),
+    },
+    {
+      id: "gwg-4",
+      category: t("compliance.cat.screening"),
+      label: t("compliance.gwg.4.label"),
+      description: t("compliance.gwg.4.desc"),
+    },
+    {
+      id: "gwg-5",
+      category: t("compliance.cat.documentation"),
+      label: t("compliance.gwg.5.label"),
+      description: t("compliance.gwg.5.desc"),
+    },
+    {
+      id: "gwg-6",
+      category: t("compliance.cat.documentation"),
+      label: t("compliance.gwg.6.label"),
+      description: t("compliance.gwg.6.desc"),
+    },
+  ];
+}
+
+function getGobdChecks(t: TFunc): ComplianceCheck[] {
+  return [
+    {
+      id: "gobd-1",
+      category: t("compliance.cat.immutability"),
+      label: t("compliance.gobd.1.label"),
+      description: t("compliance.gobd.1.desc"),
+    },
+    {
+      id: "gobd-2",
+      category: t("compliance.cat.traceability"),
+      label: t("compliance.gobd.2.label"),
+      description: t("compliance.gobd.2.desc"),
+    },
+    {
+      id: "gobd-3",
+      category: t("compliance.cat.traceability"),
+      label: t("compliance.gobd.3.label"),
+      description: t("compliance.gobd.3.desc"),
+    },
+    {
+      id: "gobd-4",
+      category: t("compliance.cat.documentation"),
+      label: t("compliance.gobd.4.label"),
+      description: t("compliance.gobd.4.desc"),
+    },
+    {
+      id: "gobd-5",
+      category: t("compliance.cat.control"),
+      label: t("compliance.gobd.5.label"),
+      description: t("compliance.gobd.5.desc"),
+    },
+    {
+      id: "gobd-6",
+      category: t("compliance.cat.control"),
+      label: t("compliance.gobd.6.label"),
+      description: t("compliance.gobd.6.desc"),
+    },
+    {
+      id: "gobd-7",
+      category: t("compliance.cat.documentation"),
+      label: t("compliance.gobd.7.label"),
+      description: t("compliance.gobd.7.desc"),
+    },
+  ];
+}
 
 const STATE_SLUG = "legal/compliance/selbstauskunft";
 const STATUS_CYCLE: CheckStatus[] = ["ok", "warn", "fail"];
 
-const STATUS_LABEL: Record<CheckStatus, string> = { ok: "OK", warn: "Offen", fail: "Fehlt" };
+const STATUS_LABEL: Record<CheckStatus, (t: TFunc) => string> = {
+  ok: (t) => t("compliance.status_ok"),
+  warn: (t) => t("compliance.status_warn"),
+  fail: (t) => t("compliance.status_fail"),
+};
 
 export default function CompliancePage() {
   const { t } = useLang();
@@ -257,7 +258,11 @@ export default function CompliancePage() {
   }
 
   const checks =
-    activeTab === "dsgvo" ? DSGVO_CHECKS : activeTab === "gwg" ? GWG_CHECKS : GOBD_CHECKS;
+    activeTab === "dsgvo"
+      ? getDsgvoChecks(t)
+      : activeTab === "gwg"
+        ? getGwgChecks(t)
+        : getGobdChecks(t);
   const statusOf = (c: ComplianceCheck): CheckStatus => statuses[c.id] ?? "warn";
   const okCount = checks.filter((c) => statusOf(c) === "ok").length;
   const warnCount = checks.filter((c) => statusOf(c) === "warn").length;
@@ -266,9 +271,12 @@ export default function CompliancePage() {
   return (
     <div className="mx-auto max-w-[1000px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
-        title="Compliance-Selbstauskunft"
-        description="DSGVO-, GwG- & GoBD-Checkliste für die Kanzlei — Status pro Punkt selbst pflegen"
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Compliance" }]}
+        title={t("compliance.title")}
+        description={t("compliance.description")}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("compliance.breadcrumb") },
+        ]}
       />
 
       <div className="grid gap-2 sm:grid-cols-4">
@@ -292,11 +300,7 @@ export default function CompliancePage() {
         role="note"
       >
         <Info size={16} className="mt-0.5 shrink-0 text-amber-600" aria-hidden="true" />
-        <p className="text-xs leading-relaxed text-amber-600">
-          Diese Checkliste ist eine <strong>Selbsteinschätzung</strong> und wird im Brain
-          gespeichert. Sie ersetzt keine Datenschutz-Beratung und keine automatische Prüfung. Klicke
-          auf einen Punkt, um den Status zu ändern (OK → Offen → Fehlt).
-        </p>
+        <p className="text-xs leading-relaxed text-amber-600">{t("compliance.disclaimer")}</p>
       </div>
 
       {/* Tabs */}
@@ -349,15 +353,21 @@ export default function CompliancePage() {
       <div className="grid grid-cols-3 gap-3">
         <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-center">
           <div className="text-xl font-bold text-emerald-600">{okCount}</div>
-          <div className="text-xs text-[color:var(--ds-text-muted)]">OK</div>
+          <div className="text-xs text-[color:var(--ds-text-muted)]">
+            {t("compliance.status_ok")}
+          </div>
         </div>
         <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 text-center">
           <div className="text-xl font-bold text-amber-600">{warnCount}</div>
-          <div className="text-xs text-[color:var(--ds-text-muted)]">Offen</div>
+          <div className="text-xs text-[color:var(--ds-text-muted)]">
+            {t("compliance.status_warn")}
+          </div>
         </div>
         <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-3 text-center">
           <div className="text-xl font-bold text-red-600">{failCount}</div>
-          <div className="text-xs text-[color:var(--ds-text-muted)]">Fehlt</div>
+          <div className="text-xs text-[color:var(--ds-text-muted)]">
+            {t("compliance.status_fail")}
+          </div>
         </div>
       </div>
 
@@ -365,7 +375,8 @@ export default function CompliancePage() {
       <div aria-live="polite" className="min-h-5 text-xs">
         {saving && (
           <span className="inline-flex items-center gap-1.5 text-[color:var(--ds-text-muted)]">
-            <Loader2 size={12} className="animate-spin" aria-hidden="true" /> Speichert…
+            <Loader2 size={12} className="animate-spin" aria-hidden="true" />{" "}
+            {t("compliance.saving")}
           </span>
         )}
         {saveError && <span className="text-red-600">{saveError}</span>}
@@ -388,7 +399,7 @@ export default function CompliancePage() {
               <button
                 key={check.id}
                 onClick={() => cycleStatus(check.id)}
-                aria-label={`${check.label} — Status: ${STATUS_LABEL[status]}. Klicken zum Ändern.`}
+                aria-label={`${check.label} — ${t("aria.status")}: ${STATUS_LABEL[status](t)}. ${t("compliance.aria_change")}`}
                 className={cn(
                   "flex w-full items-start gap-3 rounded-xl border px-4 py-3 text-left transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
                   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--brand-primary)]",
@@ -424,7 +435,7 @@ export default function CompliancePage() {
                             : "border-red-500/20 bg-red-500/10 text-red-600"
                       )}
                     >
-                      {STATUS_LABEL[status]}
+                      {STATUS_LABEL[status](t)}
                     </Badge>
                   </div>
                   <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">

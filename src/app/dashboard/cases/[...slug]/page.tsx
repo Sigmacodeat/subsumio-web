@@ -713,11 +713,7 @@ export default function CaseDetailPage() {
   async function confirmSuggestedDeadline(index: number, confirmed: boolean) {
     if (!caseData?.suggestedDeadlines) return;
     if (caseData.status === "archived") {
-      setSaveError(
-        lang === "en"
-          ? "Case is archived — restore it first to make changes."
-          : "Akte ist archiviert — zuerst wiederherstellen, um Änderungen zu speichern."
-      );
+      setSaveError(t("casesdetail.archived_msg"));
       return;
     }
     const updated = caseData.suggestedDeadlines.map((sd, i) =>
@@ -746,11 +742,7 @@ export default function CaseDetailPage() {
   async function confirmSuggestedParty(index: number, confirmed: boolean) {
     if (!caseData?.suggestedParties) return;
     if (caseData.status === "archived") {
-      setSaveError(
-        lang === "en"
-          ? "Case is archived — restore it first to make changes."
-          : "Akte ist archiviert — zuerst wiederherstellen, um Änderungen zu speichern."
-      );
+      setSaveError(t("casesdetail.archived_msg"));
       return;
     }
     const updated = caseData.suggestedParties.map((sp, i) =>
@@ -953,11 +945,7 @@ export default function CaseDetailPage() {
   async function handleMultiUpload(files: File[]) {
     if (!caseData) return;
     if (caseData.status === "archived") {
-      setUploadError(
-        lang === "en"
-          ? "Case is archived — restore it first to upload documents."
-          : "Akte ist archiviert — zuerst wiederherstellen, um Dokumente hochzuladen."
-      );
+      setUploadError(t("casesdetail.archived_upload_msg"));
       return;
     }
     setUploadError(null);
@@ -985,12 +973,12 @@ export default function CaseDetailPage() {
     for (const file of files) {
       const ext = file.name.toLowerCase().match(/\.([a-z0-9]+)$/)?.[0] ?? "";
       if (!ACCEPTED_EXTS.includes(ext)) {
-        setUploadError(`Format .${ext} wird nicht unterstützt. Erlaubt: PDF, DOCX, EML, JPG, PNG`);
+        setUploadError(`.${ext} ${t("casesdetail.upload.err_format")}`);
         continue;
       }
       if (file.size > MAX_SIZE) {
         setUploadError(
-          `${file.name} ist zu groß (${formatUploadBytes(file.size)}). Maximum für diesen Upload-Kanal: ${formatUploadBytes(DIRECT_UPLOAD_MAX_SIZE)}.`
+          `${file.name} ${t("casesdetail.upload.err_too_large")} ${formatUploadBytes(DIRECT_UPLOAD_MAX_SIZE)}.`
         );
         continue;
       }
@@ -1017,9 +1005,7 @@ export default function CaseDetailPage() {
           },
         });
       }
-      setUploadError(
-        `${validFiles.length} Datei(en) in Offline-Warteschlange — wird automatisch synchronisiert wenn die Verbindung zurückkehrt.`
-      );
+      setUploadError(`${validFiles.length} ${t("casesdetail.upload.offline_queued")}`);
       return;
     }
 
@@ -1194,11 +1180,7 @@ export default function CaseDetailPage() {
   async function saveCaseUpdate(updates: Partial<CaseDetail>) {
     if (!caseData) return;
     if (caseData.status === "archived") {
-      setSaveError(
-        lang === "en"
-          ? "Case is archived — restore it first to make changes."
-          : "Akte ist archiviert — zuerst wiederherstellen, um Änderungen zu speichern."
-      );
+      setSaveError(t("casesdetail.archived_msg"));
       return;
     }
     if (conflictWarning) {
@@ -1298,12 +1280,7 @@ export default function CaseDetailPage() {
         }
         if (res.status === 403) {
           const data = await res.json().catch(() => ({}));
-          setSaveError(
-            data.message ||
-              (lang === "en"
-                ? "Case is archived — restore it first to make changes."
-                : "Akte ist archiviert — zuerst wiederherstellen, um Änderungen zu speichern.")
-          );
+          setSaveError(data.message || t("casesdetail.archived_msg"));
           void refreshCaseData();
           return;
         }
@@ -1420,11 +1397,7 @@ export default function CaseDetailPage() {
               : "Sie haben keine Berechtigung, diese Akte wiederherzustellen.",
         });
       } else if (res.status === 409) {
-        setConflictWarning(
-          lang === "en"
-            ? "Case was modified by another user — please reload."
-            : "Akte wurde von einem anderen Nutzer geändert — bitte neu laden."
-        );
+        setConflictWarning(t("casesdetail.conflict_warning"));
       } else {
         addToast({
           type: "error",
@@ -1446,11 +1419,7 @@ export default function CaseDetailPage() {
   async function handleQuery() {
     if (!query.trim() || !caseData) return;
     if (caseData.status === "archived") {
-      setQueryResult(
-        lang === "en"
-          ? "Case is archived — restore it first to ask questions."
-          : "Akte ist archiviert — zuerst wiederherstellen, um Fragen zu stellen."
-      );
+      setQueryResult(t("casesdetail.archived_query_msg"));
       return;
     }
     setQueryLoading(true);
@@ -1565,17 +1534,17 @@ export default function CaseDetailPage() {
   ) {
     switch (status) {
       case "queued":
-        return "Wartet";
+        return t("casesdetail.upload.queued");
       case "preparing":
-        return "Initialisiert";
+        return t("casesdetail.upload.preparing");
       case "uploading":
-        return "Überträgt";
+        return t("casesdetail.upload.uploading");
       case "processing":
-        return "Prüft & indexiert";
+        return t("casesdetail.upload.processing");
       case "done":
-        return "Fertig";
+        return t("casesdetail.upload.done");
       case "error":
-        return "Fehler";
+        return t("casesdetail.upload.error");
     }
   }
 
@@ -2208,7 +2177,7 @@ export default function CaseDetailPage() {
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-xs font-semibold text-[color:var(--ds-text)]">
                     <Sparkles size={12} className="text-amber-500" />
-                    KI-extrahierte Parteien-Vorschläge
+                    {t("casesdetail.ai_parties")}
                   </div>
                   {caseData.suggestedParties
                     .filter((sp) => !sp.confirmed)
@@ -2653,7 +2622,7 @@ export default function CaseDetailPage() {
                       </div>
                       {ev.type === "status_change" && (
                         <span className="rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-1.5 py-0.5 text-[10px] font-medium text-[color:var(--ds-text-muted)]">
-                          {lang === "en" ? "Status Change" : "Statusänderung"}
+                          {lang === "en" ? "Status Change" : t("casesdetail.status_change")}
                         </span>
                       )}
                     </div>
@@ -2764,7 +2733,7 @@ export default function CaseDetailPage() {
               </p>
               {!isOnline() && (
                 <p className="mt-2 text-xs text-amber-600">
-                  Offline-Modus: Uploads werden erst beim erneuten Verbinden möglich.
+                  {t("casesdetail.upload.offline_mode")}
                 </p>
               )}
               <label className="mt-3 inline-block cursor-pointer">
@@ -2806,10 +2775,11 @@ export default function CaseDetailPage() {
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="min-w-0">
                     <div className="text-sm font-semibold text-[color:var(--ds-text)]">
-                      Upload läuft
+                      {t("casesdetail.upload.in_progress")}
                     </div>
                     <div className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
-                      {uploadStats.completedFiles}/{uploadStats.totalFiles} Dateien ·{" "}
+                      {uploadStats.completedFiles}/{uploadStats.totalFiles}{" "}
+                      {t("casesdetail.upload.files_label")} ·{" "}
                       {formatUploadBytes(uploadStats.uploadedBytes)} von{" "}
                       {formatUploadBytes(uploadStats.totalBytes)}
                       {uploadStats.failedFiles > 0 ? ` · ${uploadStats.failedFiles} Fehler` : ""}
@@ -2864,9 +2834,7 @@ export default function CaseDetailPage() {
                             Verbindung wird vorbereitet · {formatUploadBytes(item.fileSize)}
                           </span>
                         ) : item.status === "processing" ? (
-                          <span>
-                            Datei übertragen · Server prüft, speichert Original und indexiert
-                          </span>
+                          <span>{t("casesdetail.upload.server_processing")}</span>
                         ) : (
                           <span>
                             {formatUploadBytes(
@@ -2930,10 +2898,8 @@ export default function CaseDetailPage() {
                   {offlinePendingCount}{" "}
                   {lang === "en"
                     ? "pending offline upload(s)"
-                    : "Offline-Upload(s) in Warteschlange"}
-                  {offlineSyncing
-                    ? ` — ${lang === "en" ? "syncing…" : "Synchronisierung läuft…"}`
-                    : ""}
+                    : t("casesdetail.upload.offline_queue")}
+                  {offlineSyncing ? ` — ${t("casesdetail.upload.syncing")}` : ""}
                 </span>
               </div>
             )}
@@ -2964,7 +2930,7 @@ export default function CaseDetailPage() {
                 disabled={caseData?.status === "archived"}
                 className="gap-1.5 text-xs"
               >
-                <Network size={13} /> Vorhandenes verknüpfen
+                <Network size={13} /> {t("casesdetail.link_existing")}
               </Button>
             </div>
 
@@ -2974,7 +2940,7 @@ export default function CaseDetailPage() {
                 <div className="w-full max-w-lg rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-6 shadow-xl">
                   <div className="mb-4 flex items-center justify-between">
                     <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
-                      Dokument verknüpfen
+                      {t("casesdetail.link_document")}
                     </h3>
                     <button
                       onClick={() => setShowLinkDialog(false)}
@@ -3001,12 +2967,14 @@ export default function CaseDetailPage() {
                         setLinkSearchResults([]);
                       }
                     }}
-                    placeholder="Suche nach Titel oder Schlagwort…"
+                    placeholder={t("casesdetail.search_placeholder")}
                     className="mb-3 w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                     autoFocus
                   />
                   {linkSearching && (
-                    <p className="text-xs text-[color:var(--ds-text-muted)]">Suche läuft…</p>
+                    <p className="text-xs text-[color:var(--ds-text-muted)]">
+                      {t("casesdetail.searching")}
+                    </p>
                   )}
                   {!linkSearching && linkSearchResults.length > 0 && (
                     <div className="max-h-64 space-y-1.5 overflow-y-auto">
@@ -3042,7 +3010,7 @@ export default function CaseDetailPage() {
                                 setLinkSearchResults([]);
                               } catch (err) {
                                 setUploadError(
-                                  err instanceof Error ? err.message : "Verknüpfung fehlgeschlagen"
+                                  err instanceof Error ? err.message : t("casesdetail.link_failed")
                                 );
                               }
                             }}
@@ -3066,7 +3034,7 @@ export default function CaseDetailPage() {
                             </div>
                             {alreadyLinked && (
                               <Badge variant="default" className="shrink-0 text-xs">
-                                verknüpft
+                                {t("casesdetail.already_linked")}
                               </Badge>
                             )}
                           </button>
@@ -3092,7 +3060,7 @@ export default function CaseDetailPage() {
                   {t("cases.detail_doc_empty")}
                 </p>
                 <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-                  Upload, WhatsApp-Eingang oder Verknüpfung legt Dokumente direkt in dieser Akte ab.
+                  {t("casesdetail.doc_empty_desc")}
                 </p>
               </div>
             ) : (
@@ -3495,7 +3463,7 @@ export default function CaseDetailPage() {
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-sm font-semibold text-[color:var(--ds-text)]">
                   <Sparkles size={14} className="text-amber-500" />
-                  KI-extrahierte Fristenvorschläge
+                  {t("casesdetail.ai_deadlines")}
                 </div>
                 {caseData.suggestedDeadlines
                   .filter((sd) => !sd.confirmed)
@@ -3539,7 +3507,7 @@ export default function CaseDetailPage() {
                             await confirmSuggestedDeadline(i, true);
                           }}
                         >
-                          <Check size={12} /> Übernehmen
+                          <Check size={12} /> {t("casesdetail.accept")}
                         </Button>
                         <Button
                           variant="ghost"
@@ -3548,7 +3516,7 @@ export default function CaseDetailPage() {
                           className="text-xs text-[color:var(--ds-text-muted)] hover:text-red-600"
                           onClick={() => confirmSuggestedDeadline(i, false)}
                         >
-                          <X size={12} /> Ablehnen
+                          <X size={12} /> {t("casesdetail.reject")}
                         </Button>
                       </div>
                     </div>

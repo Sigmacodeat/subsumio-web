@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ENGINE_URL } from "@/lib/engine";
+import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 
 function decodedSlug(raw: string): string | null {
@@ -90,18 +90,13 @@ export const PATCH = createHandler(
     if (body.contract_types !== undefined) frontmatter.contract_types = body.contract_types;
     if (body.rules !== undefined) frontmatter.rules = body.rules;
 
-    const payload: Record<string, unknown> = { slug, merge: true };
+    const payload: { slug: string } & Record<string, unknown> = { slug };
     if (body.title !== undefined) payload.title = body.title;
     if (body.description !== undefined) payload.content = body.description;
     if (Object.keys(frontmatter).length > 0) payload.frontmatter = frontmatter;
 
     try {
-      const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(slug)}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json", ...ctx.headers },
-        body: JSON.stringify(payload),
-        signal: AbortSignal.timeout(30_000),
-      });
+      const res = await enginePatchPage(ctx.headers, payload, { timeoutMs: 30_000 });
       if (res.status === 404) return apiError("not_found", "Playbook nicht gefunden", 404);
       if (!res.ok) {
         const errPayload = await res.json().catch(() => ({}));
@@ -138,11 +133,19 @@ export const DELETE = createHandler(
     if (!slug) return apiError("invalid_slug", "Ungültiger Slug", 400);
 
     try {
-      const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(slug)}`, {
-        method: "DELETE",
-        headers: ctx.headers,
-        signal: AbortSignal.timeout(30_000),
-      });
+      // No engine DELETE route — soft-delete by tombstoning via merge-update.
+      const res = await enginePatchPage(
+        ctx.headers,
+        {
+          slug,
+          frontmatter: {
+            status: "tombstoned",
+            tombstoned_at: new Date().toISOString(),
+            tombstone_reason: "manual_delete",
+          },
+        },
+        { timeoutMs: 30_000 }
+      );
       if (res.status === 404) return apiError("not_found", "Playbook nicht gefunden", 404);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return apiSuccess({ ok: true });

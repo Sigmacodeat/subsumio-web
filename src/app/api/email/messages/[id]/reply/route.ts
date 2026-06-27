@@ -39,6 +39,8 @@ export const POST = createHandler(
             ? 400
             : 500;
       console.error("[email] failed to send reply:", message);
+      if (status === 500)
+        return apiError("internal_error", "Antwort konnte nicht gesendet werden", 500);
       return apiError(message, message, status);
     }
   }

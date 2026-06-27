@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ENGINE_URL } from "@/lib/engine";
+import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 import { logAudit } from "@/lib/audit";
 import { createHandler, apiError } from "@/lib/api-handler";
 
@@ -75,12 +75,11 @@ export const PATCH = createHandler(
     }
 
     try {
-      const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(slug)}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json", ...ctx.headers },
-        body: JSON.stringify({ ...body, slug }),
-        signal: AbortSignal.timeout(15_000),
-      });
+      // Invoice fields arrive flat (e.g. `status`); they belong in the page
+      // frontmatter on the engine's merge-update. `_allow_status_override` is a
+      // control flag for the guard above and must not be persisted.
+      const { _allow_status_override: _drop, ...frontmatter } = body as Record<string, unknown>;
+      const res = await enginePatchPage(ctx.headers, { slug, frontmatter }, { timeoutMs: 15_000 });
       if (res.status === 404) return apiError("not_found", "Rechnung nicht gefunden", 404);
       if (!res.ok) {
         const payload = await res.json().catch(() => ({}));
@@ -133,11 +132,20 @@ export const DELETE = createHandler(
     }
 
     try {
-      const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(slug)}`, {
-        method: "DELETE",
-        headers: ctx.headers,
-        signal: AbortSignal.timeout(10_000),
-      });
+      // No engine DELETE route — soft-delete the draft by tombstoning via
+      // merge-update so it drops out of active invoice listings.
+      const res = await enginePatchPage(
+        ctx.headers,
+        {
+          slug,
+          frontmatter: {
+            status: "tombstoned",
+            tombstoned_at: new Date().toISOString(),
+            tombstone_reason: "manual_delete",
+          },
+        },
+        { timeoutMs: 10_000 }
+      );
       if (res.status === 404) return apiError("not_found", "Rechnung nicht gefunden", 404);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       void logAudit("invoice.delete", "invoice", { entityId: slug });

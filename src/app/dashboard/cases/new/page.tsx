@@ -30,29 +30,35 @@ import {
   type ConflictCheckResult,
 } from "@/lib/contact-conflict";
 
-const STATUS_OPTIONS = [
-  { value: "open", label: "Offen" },
-  { value: "pending", label: "Anhängig" },
-  { value: "settled", label: "Erledigt" },
-  { value: "won", label: "Gewonnen" },
-  { value: "lost", label: "Verloren" },
-  { value: "appealed", label: "Berufung" },
-  { value: "dormant", label: "Ruhend" },
-] as const;
+function getStatusOptions(t: (key: import("@/content/dashboard").DashboardKey) => string) {
+  return [
+    { value: "open", label: t("casesnew.status.open") },
+    { value: "pending", label: t("casesnew.status.pending") },
+    { value: "settled", label: t("casesnew.status.settled") },
+    { value: "won", label: t("casesnew.status.won") },
+    { value: "lost", label: t("casesnew.status.lost") },
+    { value: "appealed", label: t("casesnew.status.appealed") },
+    { value: "dormant", label: t("casesnew.status.dormant") },
+  ] as const;
+}
 
-const PRIORITY_OPTIONS = [
-  { value: "low", label: "Niedrig" },
-  { value: "medium", label: "Mittel" },
-  { value: "high", label: "Hoch" },
-  { value: "critical", label: "Kritisch" },
-] as const;
+function getPriorityOptions(t: (key: import("@/content/dashboard").DashboardKey) => string) {
+  return [
+    { value: "low", label: t("casesnew.prio.low") },
+    { value: "medium", label: t("casesnew.prio.medium") },
+    { value: "high", label: t("casesnew.prio.high") },
+    { value: "critical", label: t("casesnew.prio.critical") },
+  ] as const;
+}
 
-const JURISDICTION_OPTIONS = [
-  { value: "de", label: "Deutschland" },
-  { value: "at", label: "Österreich" },
-  { value: "ch", label: "Schweiz" },
-  { value: "eu", label: "EU" },
-] as const;
+function getJurisdictionOptions(t: (key: import("@/content/dashboard").DashboardKey) => string) {
+  return [
+    { value: "de", label: t("casesnew.juris.de") },
+    { value: "at", label: t("casesnew.juris.at") },
+    { value: "ch", label: t("casesnew.juris.ch") },
+    { value: "eu", label: t("casesnew.juris.eu") },
+  ] as const;
+}
 
 const LEGAL_AREA_SUGGESTIONS = [
   "Zivilrecht",
@@ -159,8 +165,11 @@ function ContactSelect({ id, label, value, options, onChange, disabled }: Contac
 }
 
 export default function NewCasePage() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const router = useRouter();
+  const STATUS_OPTIONS = getStatusOptions(t);
+  const PRIORITY_OPTIONS = getPriorityOptions(t);
+  const JURISDICTION_OPTIONS = getJurisdictionOptions(t);
   const [contacts, setContacts] = useState<ContactOption[]>([]);
   const [conflictResult, setConflictResult] = useState<ConflictCheckResult | null>(null);
   const [serverConflict, setServerConflict] = useState<{
@@ -378,9 +387,7 @@ export default function NewCasePage() {
             <ShieldAlert size={16} className="mt-0.5 shrink-0" />
             <div className="space-y-1">
               <p className="font-semibold">{t("casesnew.section_conflict")}</p>
-              <p className="text-xs opacity-90">
-                Die folgenden Treffer wurden gefunden. Die Akte wurde nicht angelegt.
-              </p>
+              <p className="text-xs opacity-90">{t("casesnew.conflict_found")}</p>
             </div>
           </div>
           <ul className="ml-6 space-y-0.5 text-xs">
@@ -393,22 +400,19 @@ export default function NewCasePage() {
           </ul>
           <div className="space-y-1.5 border-t border-red-500/20 pt-2.5">
             <Label htmlFor="waiver-reason" className="text-xs font-semibold">
-              Konflikt übersteuern (Waiver)
+              {t("casesnew.waiver_label")}
             </Label>
-            <p className="text-xs opacity-80">
-              Wenn der Konflikt geprüft und vertretbar ist, gib einen Grund ein. Dies wird
-              auditiert.
-            </p>
+            <p className="text-xs opacity-80">{t("casesnew.waiver_desc")}</p>
             <Input
               id="waiver-reason"
               value={waiverReason}
               onChange={(e) => setWaiverReason(e.target.value)}
-              placeholder="z.B. Mandant hat zugestimmt, kein echter Konflikt…"
+              placeholder={t("casesnew.waiver_placeholder")}
             />
             <p className="text-xs opacity-70">
               {waiverReason.trim().length > 0
-                ? "✓ Waiver-Grund eingegeben — Akte kann mit Audit-Spur erstellt werden."
-                : "Ohne Waiver-Grund wird die Akte nicht angelegt."}
+                ? t("casesnew.waiver_entered")
+                : t("casesnew.waiver_missing")}
             </p>
           </div>
         </div>
@@ -449,7 +453,7 @@ export default function NewCasePage() {
 
           <div>
             <Label htmlFor="case-title" className="mb-1.5 block text-xs">
-              Titel *
+              {t("casesnew.label_title")} *
             </Label>
             <Input
               id="case-title"
@@ -464,13 +468,13 @@ export default function NewCasePage() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label htmlFor="case-number" className="mb-1.5 block text-xs">
-                Aktenzeichen
+                {t("casesnew.label_case_number")}
               </Label>
               <Input id="case-number" {...register("caseNumber")} placeholder="z.B. 2026-001" />
             </div>
             <div>
               <Label htmlFor="case-status" className="mb-1.5 block text-xs">
-                Status
+                {t("cases.widget.status")}
               </Label>
               <Select
                 value={status}
@@ -493,7 +497,7 @@ export default function NewCasePage() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label htmlFor="case-legal-area" className="mb-1.5 block text-xs">
-                Rechtsgebiet
+                {t("casesnew.label_area")}
               </Label>
               <Input
                 id="case-legal-area"
@@ -552,7 +556,7 @@ export default function NewCasePage() {
 
           <div>
             <Label htmlFor="case-priority" className="mb-1.5 block text-xs">
-              Priorität
+              {t("casesnew.label_priority")}
             </Label>
             <Select
               value={priority}
@@ -575,13 +579,13 @@ export default function NewCasePage() {
         {/* Parties */}
         <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
           <h2 className="text-xs font-semibold tracking-wide text-[color:var(--ds-text-muted)] uppercase">
-            Beteiligte
+            {t("casesnew.section_parties")}
           </h2>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label htmlFor="case-client" className="mb-1.5 block text-xs">
-                Mandant
+                {t("casesnew.label_client")}
               </Label>
               <Input
                 id="case-client"
@@ -590,11 +594,11 @@ export default function NewCasePage() {
                     if (clientSlug) setValue("clientSlug", "");
                   },
                 })}
-                placeholder="Name des Mandanten"
+                placeholder={t("casesnew.client_placeholder")}
               />
               <ContactSelect
                 id="case-client-select"
-                label="Kontakt verknüpfen…"
+                label={t("casesnew.contact_link")}
                 value={clientSlug ?? ""}
                 options={clients}
                 onChange={(slug) => applyContact(slug, "client")}
@@ -603,7 +607,7 @@ export default function NewCasePage() {
             </div>
             <div>
               <Label htmlFor="case-opponent" className="mb-1.5 block text-xs">
-                Gegner
+                {t("casesnew.label_opponent")}
               </Label>
               <Input
                 id="case-opponent"
@@ -612,11 +616,11 @@ export default function NewCasePage() {
                     if (opponentSlug) setValue("opponentSlug", "");
                   },
                 })}
-                placeholder="Name der Gegenseite"
+                placeholder={t("casesnew.opponent_placeholder")}
               />
               <ContactSelect
                 id="case-opponent-select"
-                label="Kontakt verknüpfen…"
+                label={t("casesnew.contact_link")}
                 value={opponentSlug ?? ""}
                 options={opponents}
                 onChange={(slug) => applyContact(slug, "opponent")}
@@ -628,7 +632,7 @@ export default function NewCasePage() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label htmlFor="case-court" className="mb-1.5 block text-xs">
-                Gericht
+                {t("casesnew.label_court")}
               </Label>
               <Input
                 id="case-court"
@@ -637,11 +641,11 @@ export default function NewCasePage() {
                     if (courtSlug) setValue("courtSlug", "");
                   },
                 })}
-                placeholder="z.B. LG Wien"
+                placeholder={t("casesnew.court_placeholder")}
               />
               <ContactSelect
                 id="case-court-select"
-                label="Kontakt verknüpfen…"
+                label={t("casesnew.contact_link")}
                 value={courtSlug ?? ""}
                 options={courts}
                 onChange={(slug) => applyContact(slug, "court")}
@@ -650,7 +654,7 @@ export default function NewCasePage() {
             </div>
             <div>
               <Label htmlFor="case-lawyer" className="mb-1.5 block text-xs">
-                Zuständiger Anwalt
+                {t("casesnew.label_lawyer")}
               </Label>
               <Input
                 id="case-lawyer"
@@ -659,11 +663,11 @@ export default function NewCasePage() {
                     if (lawyerSlug) setValue("lawyerSlug", "");
                   },
                 })}
-                placeholder="Name des Anwalts"
+                placeholder={t("casesnew.lawyer_placeholder")}
               />
               <ContactSelect
                 id="case-lawyer-select"
-                label="Kontakt verknüpfen…"
+                label={t("casesnew.contact_link")}
                 value={lawyerSlug ?? ""}
                 options={lawyers}
                 onChange={(slug) => applyContact(slug, "lawyer")}
@@ -676,13 +680,13 @@ export default function NewCasePage() {
         {/* Facts */}
         <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
           <h2 className="text-xs font-semibold tracking-wide text-[color:var(--ds-text-muted)] uppercase">
-            Sachverhalt
+            {t("casesnew.section_facts")}
           </h2>
           <textarea
             id="case-facts"
             {...register("facts")}
             rows={6}
-            placeholder="Beschreibe den Sachverhalt…"
+            placeholder={lang === "de" ? "Beschreibe den Sachverhalt…" : "Describe the case facts…"}
             className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm leading-relaxed text-[color:var(--ds-text)] transition-colors duration-150 placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:ring-1 focus:ring-[color:var(--brand-primary)]/20 focus:outline-none"
           />
         </div>
@@ -690,12 +694,12 @@ export default function NewCasePage() {
         {/* Tags */}
         <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
           <h2 className="text-xs font-semibold tracking-wide text-[color:var(--ds-text-muted)] uppercase">
-            Tags
+            {t("casesnew.section_tags")}
           </h2>
           <Input
             id="case-tags"
             {...register("tags")}
-            placeholder="Komma-getrennte Tags: z.B. Vertragsbruch, Schadensersatz"
+            placeholder={t("casesnew.tags_placeholder")}
           />
         </div>
 
@@ -709,11 +713,10 @@ export default function NewCasePage() {
             />
             <span>
               <span className="block text-sm font-semibold text-[color:var(--ds-text)]">
-                Für Mandantenportal-Vorschau freigeben
+                {t("casesnew.portal_label")}
               </span>
               <span className="mt-0.5 block text-xs text-[color:var(--ds-text-muted)]">
-                Nur freigegebene Akten erscheinen in der Portal-Vorschau. Ein echter Mandantenlogin
-                bleibt ein separates Deployment.
+                {t("casesnew.portal_desc")}
               </span>
             </span>
           </label>
@@ -727,7 +730,7 @@ export default function NewCasePage() {
               variant="ghost"
               className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
             >
-              Abbrechen
+              {t("casesnew.btn_cancel")}
             </Button>
           </Link>
           <Button
@@ -741,7 +744,7 @@ export default function NewCasePage() {
             ) : (
               <Plus size={16} />
             )}
-            Akte erstellen
+            {t("casesnew.btn_create_short")}
           </Button>
         </div>
       </form>

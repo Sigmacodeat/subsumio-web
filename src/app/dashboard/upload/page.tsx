@@ -118,9 +118,17 @@ function getKnowledgeSources(t: (key: import("@/content/dashboard").DashboardKey
       desc: t("upload.source_kanzleiwissen_desc"),
     },
     { value: "wiki", label: t("upload.source_wiki"), desc: t("upload.source_wiki_desc") },
-    { value: "meetings", label: t("upload.source_meetings"), desc: t("upload.source_meetings_desc") },
+    {
+      value: "meetings",
+      label: t("upload.source_meetings"),
+      desc: t("upload.source_meetings_desc"),
+    },
     { value: "people", label: t("upload.source_people"), desc: t("upload.source_people_desc") },
-    { value: "companies", label: t("upload.source_companies"), desc: t("upload.source_companies_desc") },
+    {
+      value: "companies",
+      label: t("upload.source_companies"),
+      desc: t("upload.source_companies_desc"),
+    },
     { value: "ideas", label: t("upload.source_ideas"), desc: t("upload.source_ideas_desc") },
   ];
 }
@@ -250,10 +258,10 @@ function UploadPageInner() {
         const tooLarge = errors.some((err) => err.code === "file-too-large");
         const unsupported = errors.some((err) => err.code === "file-invalid-type");
         const reason = tooLarge
-          ? `Datei zu groß (${formatBytes(file.size)}). Maximum für diesen Upload-Kanal: ${formatBytes(DIRECT_UPLOAD_MAX_SIZE)}.`
+          ? `${t("upload.err_too_large")} (${formatBytes(file.size)}). ${t("upload.err_max_channel")} ${formatBytes(DIRECT_UPLOAD_MAX_SIZE)}.`
           : unsupported
-            ? "Dateityp wird nicht unterstützt."
-            : errors[0]?.message || "Datei wurde abgelehnt.";
+            ? t("upload.err_unsupported_type")
+            : errors[0]?.message || t("upload.err_rejected");
         return {
           id: crypto.randomUUID(),
           file,
@@ -517,12 +525,12 @@ function UploadPageInner() {
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <span className="text-sm font-semibold text-[color:var(--ds-text)]">
-                Dokument zu Akte
+                {t("upload.mode_case")}
               </span>
               <Lock size={11} className="text-[color:var(--ds-text-subtle)]" />
             </div>
             <p className="mt-1 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
-              Fallbezogene Dokumente mit Ethical-Wall-Isolation. Pflicht-Zuordnung zu einer Akte.
+              {t("upload.mode_case_desc")}
             </p>
           </div>
         </button>
@@ -547,8 +555,7 @@ function UploadPageInner() {
               <BookOpen size={11} className="text-[color:var(--ds-text-subtle)]" />
             </div>
             <p className="mt-1 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
-              Firmenweites Wissen: Präzedenzfälle, Vorlagen, Playbooks. Der Assistent konsolidiert
-              automatisch aus Akten.
+              {t("upload.mode_knowledge_desc")}
             </p>
           </div>
         </button>
@@ -605,7 +612,7 @@ function UploadPageInner() {
             className="mb-2 flex items-center gap-2 text-[0.6875rem] font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase"
           >
             <BookOpen size={13} />
-            Wissensbereich
+            {t("upload.knowledge_area_label")}
           </Label>
           <Select value={source} onValueChange={setSource}>
             <SelectTrigger id="upload-source" className="w-full">
@@ -622,10 +629,11 @@ function UploadPageInner() {
           <div className="mt-3 flex items-start gap-2 rounded-lg bg-[color:var(--ds-surface-2)] p-3 text-xs text-[color:var(--ds-text-muted)]">
             <Info size={13} className="mt-0.5 shrink-0 text-[color:var(--brand-primary)]" />
             <span>
-              Der Assistent konsolidiert automatisch Wissen aus allen Akten in diese Bereiche.
-              Präzedenzfälle und Muster werden über den{" "}
-              <strong className="text-[color:var(--ds-text)]">Consolidate-Cycle</strong> extrahiert
-              — ohne manuellen Aufwand.
+              {t("upload.knowledge_area_hint")}{" "}
+              <strong className="text-[color:var(--ds-text)]">
+                {t("upload.consolidate_cycle")}
+              </strong>{" "}
+              {t("upload.knowledge_area_hint_2")}
             </span>
           </div>
         </div>

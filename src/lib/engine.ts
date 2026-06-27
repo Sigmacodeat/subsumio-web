@@ -163,6 +163,50 @@ export function engineHeadersForBrainWithMatterScope(
   return headers;
 }
 
+/**
+ * Merge-update a page's frontmatter (and optionally content/title/type) on the
+ * engine.
+ *
+ * The engine exposes ONLY `GET` + `POST` on `/api/pages` — there is NO `PATCH`
+ * and NO `DELETE` route. A partial update is `POST /api/pages` with
+ * `merge:true`: the engine loads the existing page, overlays the provided
+ * frontmatter keys, and keeps the body/title/type when omitted. This helper is
+ * the single correct way for server routes to patch a page. The previous
+ * `PATCH ${ENGINE_URL}/api/pages/{slug}` calls hit a non-existent route and
+ * 404'd silently, so every frontmatter writeback (case reconciliation, analysis
+ * status, archive/restore cascades) was a no-op.
+ *
+ * Semantics worth knowing:
+ *  - Pass a frontmatter key with value `null` to REMOVE it — the engine drops
+ *    `null`/`undefined` keys on merge.
+ *  - There is NO optimistic locking (no If-Match / version CAS). Callers that
+ *    need to read-modify-write an array do a plain read then this write;
+ *    concurrent writers race last-writer-wins. Keep such arrays as SECONDARY
+ *    truth (the authoritative link is the `case_slug` stamp on the document).
+ *  - `slug` goes in the BODY (unencoded) — do NOT URL-encode it.
+ *
+ * Returns the raw `Response` so callers can branch on status; throws only on
+ * network/timeout failure (same contract as a bare `fetch`).
+ */
+export async function enginePatchPage(
+  headers: Record<string, string>,
+  body: {
+    slug: string;
+    frontmatter?: Record<string, unknown>;
+    content?: string;
+    title?: string;
+    type?: string;
+  } & Record<string, unknown>,
+  opts?: { timeoutMs?: number }
+): Promise<Response> {
+  return fetch(`${ENGINE_URL}/api/pages`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...headers },
+    body: JSON.stringify({ ...body, merge: true }),
+    signal: AbortSignal.timeout(opts?.timeoutMs ?? 30_000),
+  });
+}
+
 // ── Hardened wrappers (RBAC + Rate Limit + Quota) ─────────────────────────
 
 export type GuardedContext = EngineContext;

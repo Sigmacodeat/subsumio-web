@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { createHandler } from "@/lib/api-handler";
 import { apiError, apiSuccess } from "@/lib/api-response";
-import { ENGINE_URL } from "@/lib/engine";
+import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 import type { AuditSpec } from "@/lib/api-handler";
 import type { NextRequest } from "next/server";
 
@@ -64,12 +64,14 @@ export const PATCH = createHandler(
   async (ctx, body, _query, req) => {
     const id = await getIdFromParams(req);
 
-    const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(id)}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json", ...ctx.headers },
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(15_000),
-    });
+    // Engine merge-update: `title` is a first-class page field; the remaining
+    // editable attributes live in the page frontmatter.
+    const { title, ...frontmatter } = body;
+    const res = await enginePatchPage(
+      ctx.headers,
+      { slug: id, ...(title ? { title } : {}), frontmatter },
+      { timeoutMs: 15_000 }
+    );
 
     if (!res.ok) {
       return apiError("space_update_failed", `Engine ${res.status}`, res.status);
@@ -94,11 +96,20 @@ export const DELETE = createHandler(
   async (ctx, _body, _query, req) => {
     const id = await getIdFromParams(req);
 
-    const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(id)}`, {
-      method: "DELETE",
-      headers: ctx.headers,
-      signal: AbortSignal.timeout(15_000),
-    });
+    // The engine has no DELETE route — soft-delete by tombstoning via
+    // merge-update so the space drops out of active listings.
+    const res = await enginePatchPage(
+      ctx.headers,
+      {
+        slug: id,
+        frontmatter: {
+          status: "tombstoned",
+          tombstoned_at: new Date().toISOString(),
+          tombstone_reason: "manual_delete",
+        },
+      },
+      { timeoutMs: 15_000 }
+    );
 
     if (!res.ok) {
       return apiError("space_delete_failed", `Engine ${res.status}`, res.status);

@@ -103,7 +103,8 @@ export const POST = createHandler(
     });
     if (!res.ok) {
       const err = await res.text().catch(() => "");
-      return Response.json({ error: err || "engine_error" }, { status: 502 });
+      console.error("[whatsapp/templates] create failed:", res.status, err);
+      return Response.json({ error: "engine_error" }, { status: 502 });
     }
     return Response.json({ slug, name: body.name, status: "draft" });
   }
@@ -144,7 +145,8 @@ export const PATCH = createHandler(
     });
     if (!patchRes.ok) {
       const err = await patchRes.text().catch(() => "");
-      return Response.json({ error: err || "engine_error" }, { status: 502 });
+      console.error("[whatsapp/templates] patch failed:", patchRes.status, err);
+      return Response.json({ error: "engine_error" }, { status: 502 });
     }
     return Response.json({ ok: true });
   }

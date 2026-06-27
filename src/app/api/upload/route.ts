@@ -1,4 +1,4 @@
-import { ENGINE_URL } from "@/lib/engine";
+import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 import { scanUploadWithDuplicateCheck } from "@/lib/upload-pipeline";
 import { createHandler, apiError, recordQuota } from "@/lib/api-handler";
 import { env } from "@/lib/env";
@@ -243,8 +243,14 @@ export const POST = createHandler(
 /**
  * P1.2/P0-1: After a successful upload, add the document to the case's frontmatter
  * documents array. Fetches the current case page, appends the new document
- * (deduplicated by slug), and PATCHes the case with optimistic locking (If-Match).
- * Retries up to 3 times on 409 version conflict to handle concurrent uploads.
+ * (deduplicated by slug), and writes it back via the engine's merge-update.
+ *
+ * The engine has no PATCH/If-Match route, so there is no optimistic locking:
+ * concurrent uploads to the SAME case race last-writer-wins on this array.
+ * That's acceptable because the array is SECONDARY truth — the authoritative
+ * case↔document link is the `case_slug` stamp on the document page, which
+ * matter-context uses for discovery. Dedup-by-slug keeps retried uploads
+ * idempotent.
  */
 async function reconcileCaseDocuments(
   headers: Record<string, string>,
@@ -260,45 +266,27 @@ async function reconcileCaseDocuments(
   }
 ): Promise<void> {
   const encodedSlug = caseSlug.split("/").map(encodeURIComponent).join("/");
-  const MAX_RETRIES = 3;
 
-  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-    const getRes = await fetch(`${ENGINE_URL}/api/pages/${encodedSlug}`, {
-      headers,
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (!getRes.ok) throw new Error(`case_fetch_failed_${getRes.status}`);
-    const casePage = (await getRes.json()) as {
-      frontmatter?: Record<string, unknown>;
-    };
-    const fm = (casePage.frontmatter ?? {}) as Record<string, unknown>;
-    const currentVersion = (fm.version as number | undefined) ?? 0;
-    const existingDocs = Array.isArray(fm.documents) ? fm.documents : [];
-    if (existingDocs.some((d) => (d as Record<string, unknown>).slug === docEntry.slug)) return;
-    const updatedDocs = [...existingDocs, docEntry];
+  const getRes = await fetch(`${ENGINE_URL}/api/pages/${encodedSlug}`, {
+    headers,
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (!getRes.ok) throw new Error(`case_fetch_failed_${getRes.status}`);
+  const casePage = (await getRes.json()) as {
+    frontmatter?: Record<string, unknown>;
+  };
+  const fm = (casePage.frontmatter ?? {}) as Record<string, unknown>;
+  const existingDocs = Array.isArray(fm.documents) ? fm.documents : [];
+  if (existingDocs.some((d) => (d as Record<string, unknown>).slug === docEntry.slug)) return;
+  const updatedDocs = [...existingDocs, docEntry];
 
-    const patchRes = await fetch(`${ENGINE_URL}/api/pages/${encodedSlug}`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        "If-Match": String(currentVersion),
-        ...headers,
-      },
-      body: JSON.stringify({
-        frontmatter: { ...fm, documents: updatedDocs },
-        merge: true,
-      }),
-      signal: AbortSignal.timeout(30_000),
-    });
-
-    if (patchRes.ok) return;
-    if (patchRes.status === 409 && attempt < MAX_RETRIES - 1) {
-      // Version conflict — another writer updated the case. Retry with fresh state.
-      continue;
-    }
-    throw new Error(`case_patch_failed_${patchRes.status}`);
-  }
-  throw new Error("case_patch_conflict_retries_exhausted");
+  // merge:true overlays only the keys we send, so passing just `documents`
+  // leaves the rest of the case frontmatter untouched.
+  const patchRes = await enginePatchPage(headers, {
+    slug: caseSlug,
+    frontmatter: { documents: updatedDocs },
+  });
+  if (!patchRes.ok) throw new Error(`case_patch_failed_${patchRes.status}`);
 }
 
 /**
@@ -312,12 +300,7 @@ async function patchDocFrontmatter(
   frontmatter: Record<string, unknown>
 ): Promise<boolean> {
   try {
-    const res = await fetch(`${ENGINE_URL}/api/pages/${encodeSlug(docSlug)}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json", ...headers },
-      body: JSON.stringify({ frontmatter, merge: true }),
-      signal: AbortSignal.timeout(30_000),
-    });
+    const res = await enginePatchPage(headers, { slug: docSlug, frontmatter });
     if (!res.ok) {
       console.error(`[upload] frontmatter patch failed for ${docSlug}: HTTP ${res.status}`);
       return false;
