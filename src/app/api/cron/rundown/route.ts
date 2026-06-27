@@ -131,6 +131,15 @@ Strukturiere als:
 Sei präzise und kurz. Verweise auf Akten-Slugs wo möglich.`;
 
 export const GET = createCronHandler(async (_req: NextRequest): Promise<Response> => {
+  if (env("ENABLE_RUNDOWN_CRON") !== "true") {
+    console.log("[cron/rundown] DISABLED — set ENABLE_RUNDOWN_CRON=true to re-enable. Use daily-briefing cron instead ($0 vs ~$5/day).");
+    return Response.json({
+      ok: false,
+      disabled: true,
+      reason: "Rundown cron disabled — use /api/cron/daily-briefing instead. Set ENABLE_RUNDOWN_CRON=true to override.",
+    });
+  }
+
   const recipientsByBrain = await getRecipientsByBrain();
   const brainIds = new Set(recipientsByBrain.keys());
   const senders = loadAllowedSenders();

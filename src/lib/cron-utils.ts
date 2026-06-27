@@ -13,6 +13,8 @@ export interface EnginePage {
   title: string;
   type?: string;
   frontmatter?: Record<string, unknown>;
+  updated_at?: string;
+  created_at?: string;
 }
 
 /**
@@ -108,4 +110,87 @@ export function createDailyDedup(tableName: string) {
     );
     return rowCount === 0;
   };
+}
+
+/**
+ * Fetch pending agent_action pages from the engine.
+ * These are approvals awaiting the lawyer's decision.
+ * Returns [] on any error.
+ */
+export async function fetchPendingApprovals(
+  brainId: string,
+  limit = 50
+): Promise<EnginePage[]> {
+  try {
+    const res = await fetch(
+      `${ENGINE_URL}/api/pages?type=agent_action&limit=${limit}`,
+      {
+        headers: engineHeadersForBrain(brainId),
+        signal: AbortSignal.timeout(15_000),
+      }
+    );
+    if (!res.ok) return [];
+    const data = (await res.json()) as unknown;
+    if (!Array.isArray(data)) return [];
+    return (data as EnginePage[]).filter((p) => {
+      const fm = p.frontmatter ?? {};
+      return fm.status === "pending";
+    });
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Fetch legal_case pages that were updated in the last 24 hours.
+ * Returns [] on any error.
+ */
+export async function fetchRecentCaseActivity(
+  brainId: string,
+  limit = 20
+): Promise<EnginePage[]> {
+  try {
+    const res = await fetch(
+      `${ENGINE_URL}/api/pages?type=legal_case&limit=${limit}`,
+      {
+        headers: engineHeadersForBrain(brainId),
+        signal: AbortSignal.timeout(15_000),
+      }
+    );
+    if (!res.ok) return [];
+    const data = (await res.json()) as unknown;
+    if (!Array.isArray(data)) return [];
+    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    return (data as EnginePage[]).filter((p) => {
+      const updated = p.updated_at ?? p.frontmatter?.updated_at as string | undefined;
+      return updated && updated >= cutoff;
+    });
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchRecentDocuments(
+  brainId: string,
+  limit = 20
+): Promise<EnginePage[]> {
+  try {
+    const res = await fetch(
+      `${ENGINE_URL}/api/pages?type=document&limit=${limit}`,
+      {
+        headers: engineHeadersForBrain(brainId),
+        signal: AbortSignal.timeout(15_000),
+      }
+    );
+    if (!res.ok) return [];
+    const data = (await res.json()) as unknown;
+    if (!Array.isArray(data)) return [];
+    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    return (data as EnginePage[]).filter((p) => {
+      const created = p.created_at ?? (p.frontmatter?.created_at as string | undefined);
+      return created && created >= cutoff;
+    });
+  } catch {
+    return [];
+  }
 }

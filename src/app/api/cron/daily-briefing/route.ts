@@ -1,15 +1,80 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createCronHandler } from "@/lib/api-handler";
-import { batchFetchPages, createDailyDedup } from "@/lib/cron-utils";
+import {
+  batchFetchPages,
+  fetchPendingApprovals,
+  fetchRecentCaseActivity,
+  fetchRecentDocuments,
+  getRecipientsByBrain,
+  createDailyDedup,
+} from "@/lib/cron-utils";
 import { loadAllowedSenders, phoneHash } from "@/lib/whatsapp/verify";
 import {
   buildDailyBriefing,
   BRIEFING_DEDUP_TABLE,
   type BriefingCase,
+  type BriefingApproval,
+  type BriefingCaseActivity,
+  type BriefingDocument,
 } from "@/lib/whatsapp/daily-briefing";
 import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
+import { sendMail, isMailConfigured } from "@/lib/mail";
 import { env } from "@/lib/env";
 import type { QuietHours } from "@/lib/whatsapp/outbound-gate";
+
+// One GPT-4o-mini call to sharpen the "Empfehlungen für heute" section.
+// Input: structured briefing data (already computed, $0). Output: 3-5 German sentences.
+// Cost: ~$0.001/day. Falls back silently to deterministic recommendations on any error.
+async function enrichRecommendationsWithAI(
+  baseText: string,
+  context: { deadlineCount: number; approvalCount: number; docCount: number; activityCount: number }
+): Promise<string> {
+  const apiKey = env("OPENAI_API_KEY");
+  if (!apiKey) return baseText;
+
+  const systemPrompt = `Du bist ein erfahrener Kanzleiassistent. Gib 3-5 präzise, priorisierte Handlungsempfehlungen für den heutigen Arbeitstag auf Basis der strukturierten Kanzleidaten. Deutsch, kurz, actionable. Keine Wiederholung von Fakten die im Briefing schon stehen.`;
+  const userPrompt = `Kanzlei-Daten heute:
+- Fristen in 7 Tagen: ${context.deadlineCount}
+- Offene Freigaben: ${context.approvalCount}
+- Neue Dokumente (24h): ${context.docCount}
+- Aktive Akten (24h): ${context.activityCount}
+
+Bestehende Empfehlungen (deterministisch):
+${baseText.split("🎯 Empfehlungen für heute:")[1]?.split("\n\n")[0] ?? "–"}
+
+Verbessere die Empfehlungen: priorisiere klarer, erkenne Muster (z.B. viele Fristen + keine Fortschritte = Kapazitätsproblem), formuliere konkrete nächste Schritte.`;
+
+  try {
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        max_tokens: 300,
+        temperature: 0.3,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+      }),
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!res.ok) return baseText;
+    const data = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
+    const improved = data.choices?.[0]?.message?.content?.trim();
+    if (!improved) return baseText;
+    // Replace the recommendations block in the existing text
+    const marker = "🎯 Empfehlungen für heute:";
+    const idx = baseText.indexOf(marker);
+    if (idx === -1) return baseText + `\n\n${marker}\n${improved}`;
+    const afterMarker = baseText.indexOf("\n\n", idx + marker.length);
+    const before = baseText.slice(0, idx);
+    const after = afterMarker !== -1 ? baseText.slice(afterMarker) : "";
+    return `${before}${marker}\n${improved}${after}`;
+  } catch {
+    return baseText;
+  }
+}
 
 export const dynamic = "force-dynamic";
 
@@ -46,10 +111,13 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
   const senders = loadAllowedSenders().filter((s) => s.role !== "assistant");
   const briefingTemplate = env("WHATSAPP_BRIEFING_TEMPLATE");
   const quietHours = quietHoursFromEnv(now);
+  const mailOn = isMailConfigured();
+  const recipientsByBrain = await getRecipientsByBrain();
 
   let sent = 0;
   let blocked = 0;
   let empty = 0;
+  let emailed = 0;
   const errors: string[] = [];
 
   for (const sender of senders) {
@@ -68,6 +136,35 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
       const batch = await batchFetchPages(sender.brainId, ["legal_case", "legal_deadline"], 1000);
       const pages = batch["legal_case"] ?? [];
       const standaloneDeadlinePages = batch["legal_deadline"] ?? [];
+
+      // Fetch pending approvals, recent case activity, new documents (deterministic, $0)
+      const [approvalPages, recentCases, recentDocs] = await Promise.all([
+        fetchPendingApprovals(sender.brainId),
+        fetchRecentCaseActivity(sender.brainId),
+        fetchRecentDocuments(sender.brainId),
+      ]);
+
+      const approvals: BriefingApproval[] = approvalPages.map((p) => {
+        const fm = p.frontmatter ?? {};
+        return {
+          id: p.slug,
+          action_type: String(fm.action_type ?? fm.type ?? "unknown"),
+          summary: String(fm.summary ?? fm.title ?? p.title ?? "Aktion freigeben"),
+          case_slug: fm.case_slug ? String(fm.case_slug) : undefined,
+          proposed_at: String(fm.proposed_at ?? fm.created_at ?? new Date().toISOString()),
+        };
+      });
+
+      const caseActivity: BriefingCaseActivity[] = recentCases.map((p) => {
+        const fm = p.frontmatter ?? {};
+        return {
+          caseNumber: String(fm.case_number ?? p.slug),
+          title: String(fm.title ?? p.title ?? ""),
+          activity: "Aktualisiert",
+          timestamp: String(p.updated_at ?? fm.updated_at ?? new Date().toISOString()),
+        };
+      });
+
       const cases: BriefingCase[] = pages.map((p) => {
         const fm = p.frontmatter ?? {};
         return {
@@ -92,11 +189,34 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
         });
       }
 
-      const text = buildDailyBriefing({ anwaltName: sender.name, cases, now });
-      if (!text) {
+      const newDocuments: BriefingDocument[] = recentDocs.map((p) => ({
+        id: p.slug,
+        title: String(p.title ?? p.slug),
+        case_slug: p.frontmatter?.case_slug ? String(p.frontmatter.case_slug) : undefined,
+        created_at: String(p.created_at ?? new Date().toISOString()),
+      }));
+
+      const baseText = buildDailyBriefing({
+        anwaltName: sender.name,
+        cases,
+        now,
+        horizonDays: 7,
+        pendingApprovals: approvals,
+        caseActivity,
+        newDocuments,
+      });
+      if (!baseText) {
         empty++;
         continue;
       }
+
+      // Optional: one GPT-4o-mini call to sharpen recommendations (~$0.001, silent fallback)
+      const text = await enrichRecommendationsWithAI(baseText, {
+        deadlineCount: cases.reduce((n, c) => n + c.deadlines.length, 0),
+        approvalCount: approvals.length,
+        docCount: newDocuments.length,
+        activityCount: caseActivity.length,
+      });
 
       const result = await sendProactiveMessage({
         to: sender.phone,
@@ -112,6 +232,25 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
 
       if (result.sent) sent++;
       else blocked++;
+
+      // Email delivery — same content as WhatsApp, sent to all brain recipients
+      if (mailOn) {
+        const recipients = recipientsByBrain.get(sender.brainId) ?? [];
+        const emails = recipients.map((u) => u.email).filter((e): e is string => Boolean(e));
+        if (emails.length > 0) {
+          const subject = `Subsumio Briefing — ${now.toLocaleDateString("de-DE", { weekday: "long", day: "2-digit", month: "long" })}`;
+          try {
+            const mailResult = await sendMail({
+              to: emails,
+              subject,
+              text,
+            });
+            if (mailResult.sent) emailed++;
+          } catch (err) {
+            errors.push(`email: ${err instanceof Error ? err.message : String(err)}`);
+          }
+        }
+      }
     } catch (err) {
       errors.push(String(err instanceof Error ? err.message : err));
     }
@@ -123,6 +262,7 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
     sent,
     blocked,
     empty,
+    emailed,
     errors: errors.length > 0 ? errors : undefined,
   });
 });
