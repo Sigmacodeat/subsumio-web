@@ -2,6 +2,8 @@ import { z } from "zod";
 import { createHandler } from "@/lib/api-handler";
 import { buildChronology, exportChronologyMarkdown } from "@/lib/legal/chronology-builder";
 
+export const maxDuration = 60;
+
 const postSchema = z.object({
   case_slug: z.string().min(1),
   forensic_report: z.unknown().optional(),

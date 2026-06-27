@@ -126,9 +126,7 @@ async function seedCorpus(fix: QrelFixture): Promise<void> {
  * and recall@10. Pure data: returns the two metrics so the gate logic stays
  * separate from the measurement logic.
  */
-async function measureGate(
-  fix: QrelFixture
-): Promise<{
+async function measureGate(fix: QrelFixture): Promise<{
   top1Rate: number;
   recallAt10: number;
   perQuery: Array<{ id: string; top1Match: boolean; recall: number }>;

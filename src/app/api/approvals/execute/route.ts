@@ -5,6 +5,7 @@ import { executeApprovedAction } from "@/lib/approval-execution";
 import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 const executeSchema = z.object({
   id: z.string().min(1, "id_required"),

@@ -5,6 +5,8 @@ import nodemailer from "nodemailer";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { generateTrackingId, injectTracking, logTrackingEvent } from "@/lib/email/tracking";
 
+export const maxDuration = 60;
+
 const sendSchema = z.object({
   invoiceSlug: z.string().min(1, "invoiceSlug_required"),
   toEmail: z.string().optional(),

@@ -167,9 +167,7 @@ export async function writeDocumentRequest(
   return { slug: request.slug };
 }
 
-export function documentRequestFromPage(
-  page: BrainPage
-): {
+export function documentRequestFromPage(page: BrainPage): {
   slug: string;
   title: string;
   frontmatter: DocumentRequestFrontmatter;

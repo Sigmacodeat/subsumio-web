@@ -244,7 +244,11 @@ export default function PortalPage() {
       formData.append("file", file);
       if (requestSlug) formData.append("document_request_slug", requestSlug);
       if (itemKey) formData.append("item_key", itemKey);
-      const res = await fetch("/api/portal/upload", { method: "POST", body: formData, signal: AbortSignal.timeout(120_000) });
+      const res = await fetch("/api/portal/upload", {
+        method: "POST",
+        body: formData,
+        signal: AbortSignal.timeout(120_000),
+      });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         setUploadError(data.message || "Upload fehlgeschlagen. Bitte versuchen Sie es erneut.");

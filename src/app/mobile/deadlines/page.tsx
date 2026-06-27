@@ -42,7 +42,9 @@ export default function MobileDeadlinesPage() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch("/api/legal/ai-deadlines?limit=100", { signal: AbortSignal.timeout(15_000) });
+        const res = await fetch("/api/legal/ai-deadlines?limit=100", {
+          signal: AbortSignal.timeout(15_000),
+        });
         if (res.ok) {
           const data = (await res.json()) as { deadlines?: Deadline[]; results?: Deadline[] };
           setDeadlines(data.deadlines ?? data.results ?? []);

@@ -87,6 +87,7 @@ created: 2026-05-17
 ## Transcript
 
 > [Verbatim per-turn transcript with speaker labels and timestamps. Pure quote
+>
 > > — do not paraphrase. Block-quoted because the exact wording matters more
 > > than a cleaned-up version.]
 

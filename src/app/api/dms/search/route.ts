@@ -3,9 +3,10 @@ import { getConnector } from "@/lib/dms";
 import { createHandler, apiError } from "@/lib/api-handler";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 30;
 
 const dmsSearchSchema = z.object({
-  q: z.string().default(""),
+  q: z.string().max(500).default(""),
   limit: z
     .string()
     .transform((v) => Math.min(parseInt(v, 10) || 20, 100))

@@ -924,9 +924,7 @@ async function synthesizeWithLlm(
   return text;
 }
 
-function parseChildDone(
-  payload: unknown
-): {
+function parseChildDone(payload: unknown): {
   child_id: number;
   outcome: string;
   result: unknown;

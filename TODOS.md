@@ -794,37 +794,26 @@ false; }); })`.
   ship-and-validate-matchers-first discipline.
   - **What:** new operator command for soft-deleting pre-existing
     scraper-junk pages whose titles match the expanded
-    `BUILT_IN_JUNK_PATTERNS`. Full spec preserved:
-    - Signature: `gbrain pages audit-junk-titles [--source <id>]
-[--dry-run|--apply] [--confirm-destructive] [--json]`
-    - Default `--dry-run`. Prints `{pattern_name: count, sample_slugs}`.
-    - `--apply` requires `--confirm-destructive` when match count
-      exceeds `DESTRUCTIVE_THRESHOLD` (reuse v0.26.5 constant).
-    - `--source <id>` scopes; without it, audits all non-archived
-      sources (filter via `listAllSources().filter(s => !s.archived)`).
-    - Soft-delete via existing `engine.softDeletePage(slug, sourceId)`.
-    - Audit JSONL via `logContentSanityEvent` with event kind
-      `junk_title_soft_deleted`.
-    - Idempotent.
-    - **Hybrid SQL+JS scanner**: pure
-      `buildJunkTitleSqlClause(patterns)` +
-      `scanForJunkTitles(rows, patterns)`. SQL pre-filter avoids
-      streaming all rows over the wire (perf rationale: even seq-scan
-      ILIKE beats JS regex per-row via the postgres driver).
-    - **`cleanup_safe: boolean` flag** per JunkPattern (codex C-13):
-      only patterns flagged `cleanup_safe: true` are eligible for
-      destructive cleanup. Stops future matcher widening from
-      automatically expanding destructive scope. Initial allowlist:
-      `cloudflare_attention_required`, `cloudflare_just_a_moment`,
-      `cloudflare_ray_id`, `access_denied`, `captcha_required`,
-      `error_page_title` (only the literal-numeric parts; the new
-      word-titles get `cleanup_safe: false` until the matcher proves
-      itself further), `cloudflare_challenge_title`.
-    - New doctor check `scraper_junk_pages_legacy` (separate from
-      `content_sanity_audit_recent` per codex C-5 — audit-log reader
-      vs live DB scan are different concerns).
-    - Tests: `test/pages-audit-junk-titles.test.ts` (hermetic PGLite),
-      `test/doctor.test.ts` extension.
+    `BUILT_IN_JUNK_PATTERNS`. Full spec preserved: - Signature: `gbrain pages audit-junk-titles [--source <id>]
+[--dry-run|--apply] [--confirm-destructive] [--json]` - Default `--dry-run`. Prints `{pattern_name: count, sample_slugs}`. - `--apply` requires `--confirm-destructive` when match count
+    exceeds `DESTRUCTIVE_THRESHOLD` (reuse v0.26.5 constant). - `--source <id>` scopes; without it, audits all non-archived
+    sources (filter via `listAllSources().filter(s => !s.archived)`). - Soft-delete via existing `engine.softDeletePage(slug, sourceId)`. - Audit JSONL via `logContentSanityEvent` with event kind
+    `junk_title_soft_deleted`. - Idempotent. - **Hybrid SQL+JS scanner**: pure
+    `buildJunkTitleSqlClause(patterns)` +
+    `scanForJunkTitles(rows, patterns)`. SQL pre-filter avoids
+    streaming all rows over the wire (perf rationale: even seq-scan
+    ILIKE beats JS regex per-row via the postgres driver). - **`cleanup_safe: boolean` flag** per JunkPattern (codex C-13):
+    only patterns flagged `cleanup_safe: true` are eligible for
+    destructive cleanup. Stops future matcher widening from
+    automatically expanding destructive scope. Initial allowlist:
+    `cloudflare_attention_required`, `cloudflare_just_a_moment`,
+    `cloudflare_ray_id`, `access_denied`, `captcha_required`,
+    `error_page_title` (only the literal-numeric parts; the new
+    word-titles get `cleanup_safe: false` until the matcher proves
+    itself further), `cloudflare_challenge_title`. - New doctor check `scraper_junk_pages_legacy` (separate from
+    `content_sanity_audit_recent` per codex C-5 — audit-log reader
+    vs live DB scan are different concerns). - Tests: `test/pages-audit-junk-titles.test.ts` (hermetic PGLite),
+    `test/doctor.test.ts` extension.
   - **Why:** ingest gate alone leaves 200+ existing junk pages
     inflating page counts; this command closes the data-debt gap.
   - **Pros:** finishes the cleanup story.

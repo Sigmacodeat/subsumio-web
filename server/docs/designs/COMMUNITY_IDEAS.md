@@ -219,8 +219,8 @@ triage report) and should be treated as a coordinated design, not piecemeal merg
 - **Clamp remote source overrides** (#1372, @jlfetter1) — **OPEN, high, SECURITY.** A
   remote MCP caller can pass `source_id` (or `__all__`) to `query`/`get_page` to read
   sources outside their OAuth `allowedSources` — the param bypasses `sourceScopeOpts`
-  (CWE-285). Clamp to token claims, fail-closed. **#1394 (get_page source_id) must land
-  _with_ this clamp, not before it.**
+  (CWE-285). Clamp to token claims, fail-closed. **#1394 (get*page source_id) must land
+  \_with* this clamp, not before it.**
 - **Read-side prefix/federation enforcement** (#1860 @choomz, #1790 @colin-atlas,
   #470 @AdityaRajeshGadgil, #1508 @tim404x) — **OPEN, high.** `bound_slug_prefixes` is
   enforced on write but not read; exact `get_page` uses scalar `ctx.sourceId` while fuzzy

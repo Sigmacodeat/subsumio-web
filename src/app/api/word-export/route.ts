@@ -3,10 +3,12 @@ import { createHandler } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
 import { generateDocx } from "@/lib/docx-export";
 
+export const maxDuration = 60;
+
 const postSchema = z.object({
   slug: z.string().optional(),
   title: z.string().optional(),
-  markdown: z.string().optional(),
+  markdown: z.string().max(500_000).optional(),
   formData: z.record(z.unknown()).optional(),
 });
 
