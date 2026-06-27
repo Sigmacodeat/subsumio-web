@@ -102,7 +102,7 @@ export const DOWNLOAD: Record<Lang, DownloadContent> = {
     ],
     ctaTitle: "Install now. Use it in your next hearing.",
     ctaSub: "Set up in under five minutes. First cited answer the same day — on whatever device is in your hand.",
-    ctaButton: "Get started",
+    ctaButton: "Request a demo",
   },
   de: {
     metaTitle: "Download — Subsumio auf jedem Gerät",
@@ -179,6 +179,6 @@ export const DOWNLOAD: Record<Lang, DownloadContent> = {
     ctaTitle: "Jetzt installieren. In der nächsten Verhandlung nutzen.",
     ctaSub:
       "In unter fünf Minuten eingerichtet. Erste belegte Antwort am selben Tag — auf dem Gerät, das gerade in deiner Hand liegt.",
-    ctaButton: "Jetzt starten",
+    ctaButton: "Demo anfragen",
   },
 };

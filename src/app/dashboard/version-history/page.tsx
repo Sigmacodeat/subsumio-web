@@ -56,8 +56,8 @@ export default function VersionHistoryPage() {
     try {
       const [pageData, auditData] = await Promise.all([
         api.brain.getPage(slug.trim()).catch(() => null),
-        fetch("/api/audit?entityType=page&limit=200")
-          .then((r) => r.json())
+        fetch("/api/audit?entityType=page&limit=200", { signal: AbortSignal.timeout(30_000) })
+          .then((r) => (r.ok ? r.json() : { entries: [] }))
           .catch(() => ({ entries: [] })),
       ]);
 

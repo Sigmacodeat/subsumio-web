@@ -28,6 +28,7 @@ export const GET = createHandler(
     try {
       const res = await fetch(`${ENGINE_URL}/api/pages?type=workflow&limit=200`, {
         headers: engineHeadersForBrain(ctx.brainId),
+      signal: AbortSignal.timeout(10_000),
       });
 
       let workflows: WorkflowInstance[] = [];
@@ -106,6 +107,7 @@ export const POST = createHandler(
           type: "workflow",
           content: prompt,
           frontmatter,
+        signal: AbortSignal.timeout(15_000),
         }),
       });
 
@@ -157,6 +159,7 @@ export const PATCH = createHandler(
       const path = body.slug.split("/").map(encodeURIComponent).join("/");
       const res = await fetch(`${ENGINE_URL}/api/pages/${path}`, {
         headers: engineHeadersForBrain(ctx.brainId),
+      signal: AbortSignal.timeout(10_000),
       });
 
       if (!res.ok) {
@@ -211,6 +214,7 @@ export const PATCH = createHandler(
           slug: body.slug,
           title: instance.title,
           frontmatter: updatedFrontmatter,
+        signal: AbortSignal.timeout(15_000),
         }),
       });
 

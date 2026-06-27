@@ -106,8 +106,7 @@ export default function ResearchPage() {
       setCurrentAnswer(result.answer);
       setCurrentCitations(result.citations || []);
       setCurrentGaps(result.gaps || []);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const g = (result as any)._grounding || (result as any).grounding;
+      const g = result._grounding;
       if (g) setCurrentGrounding(g);
 
       const session: ResearchSession = {

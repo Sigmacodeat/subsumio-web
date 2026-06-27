@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getMinRevocationVersion } from "@/lib/auth/revocation-store";
+import { hit, clientIp } from "@/lib/auth/rate-limit";
+
+const UID_PATTERN = /^[a-zA-Z0-9_-]{1,128}$/;
 
 /**
  * GET /api/internal/revocation-check?uid=<userId>
@@ -11,17 +14,23 @@ import { getMinRevocationVersion } from "@/lib/auth/revocation-store";
  * This endpoint is intentionally unauthenticated — it only reveals a
  * numeric version counter, not any user data. The edge middleware
  * calls this on a 60-second cache to limit revocation latency.
+ *
+ * Rate-limited to prevent abuse and user-enumeration oracles.
  */
 export async function GET(req: NextRequest) {
-  const uid = req.nextUrl.searchParams.get("uid");
-  if (!uid || uid.length > 200) {
-    return NextResponse.json({ error: "invalid_uid" }, { status: 400 });
+  const ip = clientIp(req.headers);
+  const ipLimit = await hit(`revocation-check:ip:${ip}`, 120, 60_000);
+  if (!ipLimit.ok) {
+    return NextResponse.json(
+      { error: "rate_limited" },
+      { status: 429, headers: { "Retry-After": String(ipLimit.retryAfterSeconds) } }
+    );
   }
 
-  // Prevent self-amplification: the edge verifier calls this endpoint,
-  // which itself might trigger session-core. But this route uses
-  // revocation-store directly (Node runtime), not session-core, so
-  // there's no circular dependency.
+  const uid = req.nextUrl.searchParams.get("uid");
+  if (!uid || uid.length > 128 || !UID_PATTERN.test(uid)) {
+    return NextResponse.json({ error: "invalid_uid" }, { status: 400 });
+  }
 
   try {
     const minVersion = await getMinRevocationVersion(uid);

@@ -25,6 +25,7 @@ const planChangeSchema = z.object({
 async function stripeGet<T>(path: string): Promise<T> {
   const res = await fetch(`https://api.stripe.com/v1${path}`, {
     headers: { Authorization: `Bearer ${STRIPE_SECRET}` },
+    signal: AbortSignal.timeout(30_000),
   });
   if (!res.ok) {
     const err = (await res.json()) as { error?: { message?: string } };
@@ -43,6 +44,7 @@ async function stripePost<T>(path: string, body: Record<string, unknown>): Promi
       "Content-Type": "application/x-www-form-urlencoded",
     },
     body: params.toString(),
+    signal: AbortSignal.timeout(30_000),
   });
   if (!res.ok) {
     const err = (await res.json()) as { error?: { message?: string } };

@@ -8,13 +8,22 @@ import { styleForIndustry } from "@/lib/industry-theme";
 import { CommandPalette } from "@/components/dashboard/command-palette";
 import { KeyboardShortcuts } from "@/components/dashboard/keyboard-shortcuts";
 import { DashboardGuide } from "@/components/dashboard/dashboard-guide";
-import { CopilotSidebar } from "@/components/chat/copilot-sidebar";
-import { CaseQuickCreateDialog } from "@/components/legal/CaseQuickCreateDialog";
-import { DeadlineQuickCreateDialog } from "@/components/legal/DeadlineQuickCreateDialog";
-import { InvoiceQuickCreateDialog } from "@/components/legal/InvoiceQuickCreateDialog";
-import { SignatureQuickCreateDialog } from "@/components/legal/SignatureQuickCreateDialog";
-import { ClauseQuickCreateDialog } from "@/components/legal/ClauseQuickCreateDialog";
-import { ContractQuickCreateDialog } from "@/components/legal/ContractQuickCreateDialog";
+import dynamic from "next/dynamic";
+
+const CaseQuickCreateDialog = dynamic(() =>
+  import("@/components/legal/CaseQuickCreateDialog").then((m) => m.CaseQuickCreateDialog));
+const DeadlineQuickCreateDialog = dynamic(() =>
+  import("@/components/legal/DeadlineQuickCreateDialog").then((m) => m.DeadlineQuickCreateDialog));
+const InvoiceQuickCreateDialog = dynamic(() =>
+  import("@/components/legal/InvoiceQuickCreateDialog").then((m) => m.InvoiceQuickCreateDialog));
+const SignatureQuickCreateDialog = dynamic(() =>
+  import("@/components/legal/SignatureQuickCreateDialog").then((m) => m.SignatureQuickCreateDialog));
+const ClauseQuickCreateDialog = dynamic(() =>
+  import("@/components/legal/ClauseQuickCreateDialog").then((m) => m.ClauseQuickCreateDialog));
+const ContractQuickCreateDialog = dynamic(() =>
+  import("@/components/legal/ContractQuickCreateDialog").then((m) => m.ContractQuickCreateDialog));
+const CopilotSidebar = dynamic(() =>
+  import("@/components/chat/copilot-sidebar").then((m) => m.CopilotSidebar), { ssr: false });
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { Topbar, type Theme } from "@/components/dashboard/topbar";
 import { MobileTabBar } from "@/components/dashboard/mobile-tab-bar";

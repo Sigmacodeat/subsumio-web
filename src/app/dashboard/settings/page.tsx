@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { useUnsavedChanges } from "@/lib/use-unsaved-changes";
@@ -152,6 +152,14 @@ function Field({
 }
 
 export default function SettingsPage() {
+  return (
+    <Suspense fallback={<div className="p-6" />}>
+      <SettingsPageInner />
+    </Suspense>
+  );
+}
+
+function SettingsPageInner() {
   const { t, lang, setLang } = useLang();
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState(() => {
@@ -174,7 +182,7 @@ export default function SettingsPage() {
   // Role & team
   const [userRole, setUserRole] = useState<string>("lawyer");
   const [teamMembers, setTeamMembers] = useState<
-    Array<{ id: string; name: string; email: string; role: string }>
+    Array<{ id: string; name: string | null; email: string; role: string }>
   >([]);
 
   const meQuery = useMe();
@@ -936,7 +944,7 @@ export default function SettingsPage() {
                   <div className="flex items-center gap-3">
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)]">
                       <span className="text-xs font-semibold text-[color:var(--ds-text-muted)]">
-                        {member.name.charAt(0).toUpperCase()}
+                        {(member.name ?? "?").charAt(0).toUpperCase()}
                       </span>
                     </div>
                     <div>

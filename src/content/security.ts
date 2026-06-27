@@ -154,7 +154,7 @@ export const SECURITY: Record<Lang, SecurityContent> = {
     ctaTitle: "Bring your data protection officer.",
     ctaSub:
       "We speak their language. Hosted with a DPA, or self-hosted so the question never arises.",
-    ctaButton: "Talk to us",
+    ctaButton: "Request a demo",
   },
   de: {
     metaTitle: "Subsumio Sicherheit — DSGVO-konforme KI-Kanzleisoftware, EU-Cloud oder On-Premise",
@@ -277,6 +277,6 @@ export const SECURITY: Record<Lang, SecurityContent> = {
     ctaTitle: "Bring deinen Datenschutzbeauftragten mit.",
     ctaSub:
       "Wir sprechen seine Sprache. Gehostet mit AVV — oder self-hosted, sodass sich die Frage gar nicht stellt.",
-    ctaButton: "Sprich mit uns",
+    ctaButton: "Demo anfragen",
   },
 };

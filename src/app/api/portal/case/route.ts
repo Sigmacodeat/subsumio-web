@@ -33,6 +33,7 @@ export const GET = createPublicHandler(
 
     const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(payload.case_slug)}`, {
       headers: engineHeadersForBrain(payload.brain_id),
+      signal: AbortSignal.timeout(10_000),
     });
     if (!res.ok) {
       return apiError(

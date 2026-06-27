@@ -32,8 +32,12 @@ import { useConfirm } from "@/components/ui/confirm-dialog";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { SearchBar } from "@/components/dashboard/search-bar";
 import { RotateCcw, GitCompare } from "lucide-react";
-import { ContractRedlineViewer } from "@/components/contract-redline-viewer";
-import { ContractQuickCreateDialog } from "@/components/legal/ContractQuickCreateDialog";
+import dynamic from "next/dynamic";
+
+const ContractRedlineViewer = dynamic(() =>
+  import("@/components/contract-redline-viewer").then((m) => m.ContractRedlineViewer));
+const ContractQuickCreateDialog = dynamic(() =>
+  import("@/components/legal/ContractQuickCreateDialog").then((m) => m.ContractQuickCreateDialog));
 
 interface ContractItem {
   slug: string;

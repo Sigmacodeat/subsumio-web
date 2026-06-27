@@ -27,8 +27,7 @@ export function useDashboardForm<T extends Record<string, unknown>>({
   onSubmit,
 }: UseDashboardFormOptions<T>): UseDashboardFormResult<T> {
   const form = useForm<T>({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(schema as any),
+    resolver: zodResolver(schema as never),
     defaultValues,
   });
 

@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
   }
 
   await store.update(user.id, { passwordHash: await hashPassword(password) });
-  revokeAllSessions(user.id);
+  await revokeAllSessions(user.id);
   void logAudit("settings.update", "password_reset", { entityId: user.id });
   return NextResponse.json({ ok: true });
 }

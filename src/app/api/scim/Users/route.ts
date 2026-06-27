@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
   const filter = searchParams.get("filter") || undefined;
 
   const store = getStore();
-  const allUsers = (await store.list()).filter((u) => u.orgId === orgId);
+  const allUsers = await store.listByOrg(orgId);
 
   // Map to SCIM and filter out non-SCIM users if no filter is given
   // (SCIM endpoints should return all users when queried by IdP)

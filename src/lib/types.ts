@@ -1,3 +1,5 @@
+import type { GroundingMetadata } from "@/lib/citation-gate";
+
 export interface BrainPage {
   slug: string;
   title: string;
@@ -45,6 +47,7 @@ export interface QueryResponse {
   tokens_used?: number;
   latency_ms?: number;
   mode?: "conservative" | "balanced" | "tokenmax";
+  _grounding?: GroundingMetadata;
 }
 
 export interface Citation {

@@ -29,6 +29,7 @@ export const POST = createHandler(
         case_slug: body.case_slug,
         resume_from_layer: body.resume_from_layer ?? 3,
       }),
+      signal: AbortSignal.timeout(30_000),
     });
 
     if (!res.ok) {

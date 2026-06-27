@@ -96,6 +96,10 @@ export interface UserStore {
   getByEmail(email: string): Promise<User | null>;
   getByReferralCode(code: string): Promise<User | null>;
   getByScimExternalId(externalId: string): Promise<User | null>;
+  /** Find a user by their Stripe customer ID — avoids full-table scan in billing webhooks. */
+  getByStripeCustomerId(customerId: string): Promise<User | null>;
+  /** List users in a specific org — pushes the filter to SQL instead of JS. */
+  listByOrg(orgId: string): Promise<User[]>;
   create(user: User): Promise<User>;
   update(id: string, patch: Partial<User>): Promise<User | null>;
   list(): Promise<User[]>;
@@ -183,6 +187,12 @@ class FileUserStore implements UserStore {
   }
   async getByScimExternalId(externalId: string) {
     return (await this.load()).find((u) => u.scimExternalId === externalId) ?? null;
+  }
+  async getByStripeCustomerId(customerId: string) {
+    return (await this.load()).find((u) => u.stripeCustomerId === customerId) ?? null;
+  }
+  async listByOrg(orgId: string) {
+    return (await this.load()).filter((u) => u.orgId === orgId);
   }
   async create(user: User) {
     const users = await this.load();
@@ -348,6 +358,9 @@ function ensureSchema(): Promise<void> {
         "CREATE INDEX IF NOT EXISTS subsumio_users_org_id_idx ON subsumio_users ((data->>'orgId'))"
       );
       await pool.query(
+        "CREATE INDEX IF NOT EXISTS subsumio_users_stripe_customer_id_idx ON subsumio_users ((data->>'stripeCustomerId'))"
+      );
+      await pool.query(
         "CREATE INDEX IF NOT EXISTS subsumio_orgs_owner_id_idx ON subsumio_orgs (owner_id)"
       );
     })();
@@ -431,39 +444,72 @@ class PostgresUserStore implements UserStore {
   }
 
   async update(id: string, patch: Partial<User>) {
-    const current = await this.getById(id);
-    if (!current) return null;
-    const next: User = {
-      ...current,
-      ...patch,
-      id: current.id,
-      email: (patch.email ?? current.email).trim().toLowerCase(),
-    };
-    const encrypted = await encryptUser(next);
     const pool = await this.ready();
-    await pool.query(
-      `UPDATE subsumio_users
-          SET email = $2,
-              referral_code = $3,
-              password_hash = $4,
-              data = $5::jsonb,
-              updated_at = now()
-        WHERE id = $1`,
-      [
-        id,
-        encrypted.email,
-        encrypted.referralCode,
-        encrypted.passwordHash,
-        JSON.stringify(encrypted),
-      ]
-    );
-    return next;
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      const { rows } = await client.query<{ data: User }>(
+        "SELECT data FROM subsumio_users WHERE id = $1 FOR UPDATE",
+        [id]
+      );
+      if (!rows[0]) {
+        await client.query("ROLLBACK");
+        return null;
+      }
+      const current = await rowToUserDecrypted(rows[0]);
+      const next: User = {
+        ...current,
+        ...patch,
+        id: current.id,
+        email: (patch.email ?? current.email).trim().toLowerCase(),
+      };
+      const encrypted = await encryptUser(next);
+      await client.query(
+        `UPDATE subsumio_users
+            SET email = $2,
+                referral_code = $3,
+                password_hash = $4,
+                data = $5::jsonb,
+                updated_at = now()
+          WHERE id = $1`,
+        [
+          id,
+          encrypted.email,
+          encrypted.referralCode,
+          encrypted.passwordHash,
+          JSON.stringify(encrypted),
+        ]
+      );
+      await client.query("COMMIT");
+      return next;
+    } catch (err) {
+      await client.query("ROLLBACK").catch(() => {});
+      throw err;
+    } finally {
+      client.release();
+    }
   }
 
   async list() {
     const pool = await this.ready();
     const { rows } = await pool.query<{ data: User }>(
       "SELECT data FROM subsumio_users ORDER BY created_at ASC"
+    );
+    return Promise.all(rows.map(rowToUserDecrypted));
+  }
+  async getByStripeCustomerId(customerId: string) {
+    const pool = await this.ready();
+    const { rows } = await pool.query<{ data: User }>(
+      "SELECT data FROM subsumio_users WHERE data->>'stripeCustomerId' = $1 LIMIT 1",
+      [customerId]
+    );
+    return rows[0] ? await rowToUserDecrypted(rows[0]) : null;
+  }
+  async listByOrg(orgId: string) {
+    const pool = await this.ready();
+    const { rows } = await pool.query<{ data: User }>(
+      "SELECT data FROM subsumio_users WHERE data->>'orgId' = $1 ORDER BY created_at ASC",
+      [orgId]
     );
     return Promise.all(rows.map(rowToUserDecrypted));
   }
@@ -503,19 +549,36 @@ class PostgresOrgStore implements OrgStore {
   }
 
   async update(id: string, patch: Partial<Org>) {
-    const current = await this.getById(id);
-    if (!current) return null;
-    const next: Org = { ...current, ...patch, id: current.id };
     const pool = await this.ready();
-    await pool.query(
-      `UPDATE subsumio_orgs
-          SET owner_id = $2,
-              data = $3::jsonb,
-              updated_at = now()
-        WHERE id = $1`,
-      [id, next.ownerId, JSON.stringify(next)]
-    );
-    return next;
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      const { rows } = await client.query<{ data: Org }>(
+        "SELECT data FROM subsumio_orgs WHERE id = $1 FOR UPDATE",
+        [id]
+      );
+      if (!rows[0]) {
+        await client.query("ROLLBACK");
+        return null;
+      }
+      const current = rowToOrg(rows[0]);
+      const next: Org = { ...current, ...patch, id: current.id };
+      await client.query(
+        `UPDATE subsumio_orgs
+            SET owner_id = $2,
+                data = $3::jsonb,
+                updated_at = now()
+          WHERE id = $1`,
+        [id, next.ownerId, JSON.stringify(next)]
+      );
+      await client.query("COMMIT");
+      return next;
+    } catch (err) {
+      await client.query("ROLLBACK").catch(() => {});
+      throw err;
+    } finally {
+      client.release();
+    }
   }
 
   async delete(id: string) {
@@ -618,7 +681,7 @@ export async function buildNewUser(opts: {
   };
 }
 
-/** Public projection — never leaks secrets (password hash, 2FA secrets, OAuth tokens, backup codes). */
+/** Public projection — never leaks secrets (password hash, 2FA secrets, OAuth tokens, backup codes, API keys). */
 export type PublicUser = Omit<
   User,
   | "passwordHash"
@@ -628,6 +691,9 @@ export type PublicUser = Omit<
   | "docusignAccessToken"
   | "docusignRefreshToken"
   | "docusignTokenExpiresAt"
+  | "openaiKey"
+  | "anthropicKey"
+  | "zeroEntropyKey"
 >;
 export function toPublic(user: User): PublicUser {
   const {
@@ -638,6 +704,9 @@ export function toPublic(user: User): PublicUser {
     docusignAccessToken: _dat,
     docusignRefreshToken: _drt,
     docusignTokenExpiresAt: _dte,
+    openaiKey: _oak,
+    anthropicKey: _aak,
+    zeroEntropyKey: _zek,
     ...pub
   } = user;
   void _ph;
@@ -647,5 +716,8 @@ export function toPublic(user: User): PublicUser {
   void _dat;
   void _drt;
   void _dte;
+  void _oak;
+  void _aak;
+  void _zek;
   return pub;
 }

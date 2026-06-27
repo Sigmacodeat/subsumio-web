@@ -32,6 +32,7 @@ async function triggerCaseScanner(
         evidence_threshold: 1,
         max_cases: 50,
       }),
+      signal: AbortSignal.timeout(30_000),
     });
     if (!res.ok) {
       const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;

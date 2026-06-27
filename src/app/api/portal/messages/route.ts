@@ -34,6 +34,7 @@ export const GET = createPublicHandler(
     try {
       const res = await fetch(`${ENGINE_URL}/api/pages?type=portal_message&limit=100`, {
         headers: engineHeadersForBrain(payload.brain_id),
+        signal: AbortSignal.timeout(10_000),
       });
       if (!res.ok) return apiError("load_failed", "Nachrichten konnten nicht geladen werden", 502);
       const data = await res.json();

@@ -163,8 +163,10 @@ export default function VerfahrensdokuPage() {
   };
 
   useEffect(() => {
+    let cancelled = false;
     loadKanzleiSettings()
       .then((s) => {
+        if (cancelled) return;
         dokuForm.reset({
           ...dokuForm.getValues(),
           kanzleiName: s.kanzleiName ?? "",
@@ -174,10 +176,10 @@ export default function VerfahrensdokuPage() {
         });
       })
       .catch(() => {});
-    // Bereits gespeicherten Entwurf laden, falls vorhanden.
     api.brain
       .getPage(DOC_SLUG)
       .then((p) => {
+        if (cancelled) return;
         const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
         const stored = fm.verfahrensdoku_input;
         if (stored && typeof stored === "object") {
@@ -188,6 +190,7 @@ export default function VerfahrensdokuPage() {
         }
       })
       .catch(() => {});
+    return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

@@ -26,6 +26,7 @@ import {
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
 import { cn } from "@/lib/utils";
+import { csrfFetch } from "@/lib/csrf";
 
 interface WhatsAppTemplate {
   slug: string;
@@ -69,7 +70,7 @@ export default function WhatsAppTemplatesPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/whatsapp/templates");
+      const res = await csrfFetch("/api/whatsapp/templates");
       if (!res.ok) throw new Error("Failed to load templates");
       const data = await res.json();
       setTemplates(data.templates ?? []);
@@ -87,7 +88,7 @@ export default function WhatsAppTemplatesPage() {
   async function createTemplate() {
     if (!newTemplate.name.trim() || !newTemplate.body.trim()) return;
     try {
-      const res = await fetch("/api/whatsapp/templates", {
+      const res = await csrfFetch("/api/whatsapp/templates", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newTemplate),
@@ -104,7 +105,7 @@ export default function WhatsAppTemplatesPage() {
   async function updateTemplate() {
     if (!editing) return;
     try {
-      const res = await fetch("/api/whatsapp/templates", {
+      const res = await csrfFetch("/api/whatsapp/templates", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(editing),
@@ -120,7 +121,7 @@ export default function WhatsAppTemplatesPage() {
   async function deleteTemplate(slug: string) {
     if (!confirm(t("wamplates.confirm_delete"))) return;
     try {
-      await fetch("/api/whatsapp/templates", {
+      await csrfFetch("/api/whatsapp/templates", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ slug }),

@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
 import {
   Brain,
   Database,
@@ -18,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { csrfFetch } from "@/lib/csrf";
 import type { BrainQualitySummary } from "@/lib/matter-context-types";
 import { useLang } from "@/lib/use-lang";
+import { useApiQuery } from "@/lib/use-api-query";
 
 interface BrainQualityPanelProps {
   className?: string;
@@ -25,29 +25,14 @@ interface BrainQualityPanelProps {
 
 export function BrainQualityPanel({ className }: BrainQualityPanelProps) {
   const { lang } = useLang();
-  const [summary, setSummary] = useState<BrainQualitySummary | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
+  const { data: summary, loading, error, refetch } = useApiQuery<BrainQualitySummary>(
+    async () => {
       const res = await csrfFetch("/api/brain-quality", { method: "GET" });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = (await res.json()) as BrainQualitySummary;
-      setSummary(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Unbekannter Fehler");
-      setSummary(null);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
+      return (await res.json()) as BrainQualitySummary;
+    },
+    []
+  );
 
   const score = summary ? Math.round(summary.coverage_score * 100) : 0;
   const scoreColor =
@@ -67,7 +52,7 @@ export function BrainQualityPanel({ className }: BrainQualityPanelProps) {
           <Brain size={16} className="brand-text" />
           <span className="text-sm font-semibold text-[color:var(--ds-text)]">Brain Qualität</span>
         </div>
-        <Button variant="ghost" size="sm" onClick={load} className="h-7 px-2" disabled={loading}>
+        <Button variant="ghost" size="sm" onClick={refetch} className="h-7 px-2" disabled={loading}>
           {loading ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
         </Button>
       </div>

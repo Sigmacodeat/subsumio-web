@@ -105,9 +105,12 @@ function NormsPageInner() {
     let cancelled = false;
     (async () => {
       try {
-        // Search for norm pages in the brain
-        const pages = await api.brain.search(initialSearchQuery || "§ Gesetz", 50);
+        const [pages, lawPages] = await Promise.all([
+          api.brain.search(initialSearchQuery || "§ Gesetz", 50),
+          api.brain.listPages({ limit: LAW_PAGES_LIMIT }),
+        ]);
         if (cancelled) return;
+        setCapped(lawPages.length >= LAW_PAGES_LIMIT);
 
         const items: NormItem[] = [];
         for (const page of pages) {
@@ -136,8 +139,6 @@ function NormsPageInner() {
         }
 
         // Also check all pages for statutes
-        const lawPages = await api.brain.listPages({ limit: LAW_PAGES_LIMIT });
-        setCapped(lawPages.length >= LAW_PAGES_LIMIT);
         for (const page of lawPages) {
           const isLawPage =
             page.slug.startsWith("law-corpus/") ||

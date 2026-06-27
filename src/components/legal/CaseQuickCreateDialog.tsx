@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useDialogFetch } from "@/lib/use-dialog-fetch";
 import {
   Dialog,
   DialogContent,
@@ -102,8 +103,6 @@ export function CaseQuickCreateDialog({
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [createAnother, setCreateAnother] = useState(false);
-  const [contacts, setContacts] = useState<ContactOption[]>([]);
-  const [loadingContacts, setLoadingContacts] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
 
   const templates: Template[] = useMemo(
@@ -168,33 +167,20 @@ export function CaseQuickCreateDialog({
     []
   );
 
-  useEffect(() => {
-    if (!open) return;
-    let cancelled = false;
-    setLoadingContacts(true);
-    api.brain
-      .listPages({ type: "legal_contact", limit: 500 })
-      .then((pages) => {
-        if (cancelled) return;
-        setContacts(
-          pages.map((p: BrainPage) => {
-            const fm = (p.frontmatter ?? {}) as ContactFrontmatter;
-            return {
-              slug: p.slug,
-              name: fm.name || p.title,
-              role: fm.role || "other",
-            };
-          })
-        );
-      })
-      .catch(() => {
-        if (!cancelled) setContacts([]);
-      })
-      .finally(() => setLoadingContacts(false));
-    return () => {
-      cancelled = true;
-    };
-  }, [open]);
+  const { data: contacts, loading: loadingContacts } = useDialogFetch<ContactOption[]>(
+    open,
+    async () => {
+      const pages = await api.brain.listPages({ type: "legal_contact", limit: 500 });
+      return pages.map((p: BrainPage) => {
+        const fm = (p.frontmatter ?? {}) as ContactFrontmatter;
+        return {
+          slug: p.slug,
+          name: fm.name || p.title,
+          role: fm.role || "other",
+        };
+      });
+    },
+  );
 
   useEffect(() => {
     const newSuggestion = suggestCaseFromTitle(title, lang);
@@ -207,8 +193,8 @@ export function CaseQuickCreateDialog({
     else if (newSuggestion?.jurisdiction) setJurisdiction(newSuggestion.jurisdiction ?? "de");
   }, [title, lang]);
 
-  const clients = useMemo(() => contacts.filter((c) => c.role === "client"), [contacts]);
-  const opponents = useMemo(() => contacts.filter((c) => c.role === "opponent"), [contacts]);
+  const clients = useMemo(() => (contacts ?? []).filter((c) => c.role === "client"), [contacts]);
+  const opponents = useMemo(() => (contacts ?? []).filter((c) => c.role === "opponent"), [contacts]);
 
   const applyTemplate = useCallback(
     (templateId: string) => {

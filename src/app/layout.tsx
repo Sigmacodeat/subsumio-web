@@ -32,11 +32,11 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Subsumio — AI Legal Workspace for DACH Law Firms",
+    default: "Subsumio — AI Legal Software for Law Firms in AT · DE · CH",
     template: "%s — Subsumio",
   },
   description:
-    "Subsumio is legal software for matters, deadlines, documents, research and cited AI answers — built for law firms in Austria, Germany and Switzerland.",
+    "Subsumio is AI legal software for law firms in Austria, Germany and Switzerland: matter management, deadline tracking per ZPO/BGB/ABGB, cited AI answers with page-level sources, DATEV export, conflict check. GDPR-ready, EU cloud or self-hosted.",
   keywords: [
     // Cluster A: Kanzleisoftware
     "Kanzleisoftware",
@@ -45,6 +45,7 @@ export const metadata: Metadata = {
     "Kanzleisoftware DSGVO",
     "Kanzleisoftware Österreich",
     "Kanzleisoftware Schweiz",
+    "Kanzleisoftware Deutschland",
     "Anwaltssoftware",
     "Anwaltssoftware KI",
     "Kanzleisoftware selbst hosten",
@@ -52,6 +53,8 @@ export const metadata: Metadata = {
     "Fristenverwaltung Kanzlei",
     "Fristenmanagement Software",
     "Fristenberechnung ZPO",
+    "Fristenberechnung BGB",
+    "Fristenberechnung ABGB",
     "Fristenkontrolle Anwalt",
     // Cluster C: KI Legal
     "KI Anwaltskanzlei",
@@ -62,26 +65,32 @@ export const metadata: Metadata = {
     "KI Aktenverwaltung",
     "KI Dokumentenmanagement Kanzlei",
     "Legal Research AI",
+    "AI legal research",
     // Cluster D: DACH-spezifisch
     "DATEV Kanzlei",
+    "ADATEV",
     "beA Anbindung",
     "RVG Abrechnung Software",
     "AVV Kanzleisoftware",
     "On-Premise Kanzleisoftware",
+    "Kollisionsprüfung BRAO",
+    "§ 203 StGB Berufsgeheimnis",
     // Cluster E: EN
     "AI legal software",
     "self-hosted legal software",
     "GDPR legal software",
     "cited AI answers",
     "law firm software Europe",
+    "legal AI DACH",
+    "law firm deadline tracking",
     // Brand
     "Subsumio",
   ],
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://subsum.eu"),
   openGraph: {
-    title: "Subsumio — AI Legal Workspace for DACH Law Firms",
+    title: "Subsumio — AI Legal Software for DACH Law Firms",
     description:
-      "Matter management, deadlines, document vault, legal research and cited AI answers for law firms.",
+      "Matter management, deadline tracking per ZPO/BGB/ABGB, cited AI answers with page-level sources, DATEV export and conflict check for law firms in AT, DE and CH.",
     type: "website",
     siteName: "Subsumio",
     images: [
@@ -89,14 +98,14 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Subsumio — AI Legal Workspace for DACH Law Firms",
+        alt: "Subsumio — AI Legal Software for Law Firms in AT, DE and CH",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Subsumio — AI Legal Workspace for DACH Law Firms",
-    description: "Legal software for matters, deadlines, documents and cited AI answers.",
+    title: "Subsumio — AI Legal Software for DACH Law Firms",
+    description: "AI legal software for law firms in AT, DE and CH: matters, deadlines, cited answers, DATEV export, conflict check.",
     images: ["/og-image.png"],
   },
   icons: {

@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import type { Chronology, ChronologyEntry } from "@/lib/legal/chronology-builder";
 import { exportChronologyMarkdown } from "@/lib/legal/chronology-builder";
+import { csrfFetch } from "@/lib/csrf";
 
 const CATEGORY_ICONS: Record<string, typeof Calendar> = {
   procedure: Gavel,
@@ -101,7 +102,7 @@ export function ChronologyTimeline({ chronology }: ChronologyTimelineProps) {
   const handleExportWord = async () => {
     const md = exportChronologyMarkdown(chronology);
     try {
-      const res = await fetch("/api/word-export", {
+      const res = await csrfFetch("/api/word-export", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

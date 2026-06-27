@@ -220,9 +220,9 @@ export default function EngineAPMPage() {
     setLoading(true);
     try {
       const [statsRes, healthRes, quotaRes] = await Promise.allSettled([
-        fetch("/api/brain/stats").then((r) => (r.ok ? r.json() : null)),
-        fetch("/api/brain/health").then((r) => (r.ok ? r.json() : null)),
-        fetch("/api/usage/quota").then((r) => (r.ok ? r.json() : null)),
+        fetch("/api/brain/stats", { signal: AbortSignal.timeout(30_000) }).then((r) => (r.ok ? r.json() : null)),
+        fetch("/api/brain/health", { signal: AbortSignal.timeout(30_000) }).then((r) => (r.ok ? r.json() : null)),
+        fetch("/api/usage/quota", { signal: AbortSignal.timeout(30_000) }).then((r) => (r.ok ? r.json() : null)),
       ]);
 
       if (statsRes.status === "fulfilled" && statsRes.value) {

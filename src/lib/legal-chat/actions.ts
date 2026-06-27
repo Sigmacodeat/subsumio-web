@@ -13,6 +13,7 @@ import { logAudit } from "@/lib/audit";
 import { naturalWhatsAppReply } from "@/lib/whatsapp-natural-chat";
 import { calculateRvg } from "@/lib/rvg";
 import { calculateDeadline, DEADLINE_RULES, type Bundesland } from "@/lib/legal-deadlines";
+import { collectSSEChunks } from "@/lib/sse-stream";
 
 interface ChatContext {
   sender: WhatsAppIdentity;
@@ -109,6 +110,7 @@ async function engineRequest<T>(
       ...headers,
       ...(init?.headers ?? {}),
     },
+    signal: init?.signal ?? AbortSignal.timeout(30_000),
   });
   if (!res.ok) {
     const error = await res.text().catch(() => "");
@@ -129,6 +131,20 @@ async function listPages(brainId: string, type: string, limit = 200): Promise<Br
     `/api/pages?type=${encodeURIComponent(type)}&limit=${limit}`
   );
   return Array.isArray(result) ? result : [];
+}
+
+async function batchListPages(
+  brainId: string,
+  types: string[],
+  limit = 200
+): Promise<Record<string, BrainPage[]>> {
+  const entries = await Promise.all(
+    types.map(async (type) => [
+      type,
+      await listPages(brainId, type, limit).catch(() => [] as BrainPage[]),
+    ] as const)
+  );
+  return Object.fromEntries(entries);
 }
 
 async function getPage(brainId: string, slug: string): Promise<BrainPage> {
@@ -1891,6 +1907,7 @@ async function think(
       ...headers,
     },
     body: JSON.stringify({ query, mode: "conservative" }),
+    signal: AbortSignal.timeout(60_000),
   });
   if (!res.ok) throw new Error(`Brain-Q&A fehlgeschlagen: HTTP ${res.status}`);
   const contentType = res.headers.get("Content-Type") || "";
@@ -1899,26 +1916,7 @@ async function think(
     return data.answer || "Keine Antwort erhalten.";
   }
   if (!res.body) return "Keine Antwort erhalten.";
-  const reader = res.body.getReader();
-  const decoder = new TextDecoder();
-  let answer = "";
-  let buffer = "";
-  const handle = (data: string) => {
-    if (data === "[DONE]") return;
-    try {
-      const parsed = JSON.parse(data) as { chunk?: string };
-      if (typeof parsed.chunk === "string") answer += parsed.chunk;
-    } catch {}
-  };
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split("\n");
-    buffer = lines.pop() || "";
-    for (const line of lines) if (line.startsWith("data: ")) handle(line.slice(6));
-  }
-  if (buffer.startsWith("data: ")) handle(buffer.slice(6));
+  const answer = await collectSSEChunks(res.body);
   return answer.trim() || "Keine Antwort erhalten.";
 }
 
@@ -2274,6 +2272,7 @@ export async function processIntent(ctx: ChatContext, intent: ParsedIntent): Pro
           ...engineHeadersForBrainWithMatterScope(ctx.sender.brainId, ctx.sender.matterScope),
         },
         body: JSON.stringify({ name: intent.name, caseRef: intent.caseRef }),
+        signal: AbortSignal.timeout(15_000),
       });
       if (!res.ok) throw new Error(`Conflict-Check HTTP ${res.status}`);
       const data = (await res.json().catch(() => ({}))) as {
@@ -2573,11 +2572,10 @@ export async function processIntent(ctx: ChatContext, intent: ParsedIntent): Pro
   }
 
   if (intent.kind === "bea_status") {
-    const [drafts, messages, filings] = await Promise.all([
-      listPages(ctx.sender.brainId, "bea_draft", 20).catch(() => []),
-      listPages(ctx.sender.brainId, "bea_message", 20).catch(() => []),
-      listPages(ctx.sender.brainId, "filing_package", 20).catch(() => []),
-    ]);
+    const batch = await batchListPages(ctx.sender.brainId, ["bea_draft", "bea_message", "filing_package"], 20);
+    const drafts = batch["bea_draft"] ?? [];
+    const messages = batch["bea_message"] ?? [];
+    const filings = batch["filing_package"] ?? [];
     const draftRows = drafts.slice(0, 5).map((page) => {
       const front = fm(page);
       return `• Entwurf: ${str(front.subject) || page.title} -> ${str(front.recipient) || "Empfänger offen"} [${str(front.status) || "draft"}]`;
@@ -2608,10 +2606,9 @@ export async function processIntent(ctx: ChatContext, intent: ParsedIntent): Pro
   }
 
   if (intent.kind === "datev_status") {
-    const [cases, invoices] = await Promise.all([
-      listPages(ctx.sender.brainId, "legal_case", 200).catch(() => []),
-      listPages(ctx.sender.brainId, "invoice", 100).catch(() => []),
-    ]);
+    const batch = await batchListPages(ctx.sender.brainId, ["legal_case", "invoice"], 200);
+    const cases = batch["legal_case"] ?? [];
+    const invoices = batch["invoice"] ?? [];
     let exportEntries = 0;
     let exportAmount = 0;
     for (const page of cases) {

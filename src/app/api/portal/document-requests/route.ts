@@ -45,6 +45,7 @@ export const GET = createPublicHandler(
 
     const res = await fetch(`${ENGINE_URL}/api/pages?type=document_request&limit=200`, {
       headers: engineHeadersForBrain(payload.brain_id),
+      signal: AbortSignal.timeout(10_000),
     });
     if (!res.ok) {
       return apiError(

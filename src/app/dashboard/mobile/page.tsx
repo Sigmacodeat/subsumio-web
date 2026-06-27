@@ -25,10 +25,13 @@ export default function MobilePage() {
   const [photo, setPhoto] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
     detectCapabilities().then((c) => {
+      if (cancelled) return;
       setCaps(c);
       setLoading(false);
     });
+    return () => { cancelled = true; };
   }, []);
 
   async function handlePush() {

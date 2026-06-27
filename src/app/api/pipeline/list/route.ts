@@ -1,6 +1,8 @@
 import { createHandler } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
 
+export const maxDuration = 30;
+
 export const GET = createHandler(
   {
     action: "brain.read",

@@ -5,6 +5,7 @@ export const GET = createHandler(
   {
     action: "brain.read",
     rateTier: "standard",
+    cacheMaxAge: 300,
   },
   async (_ctx, _body, _query, _req) => {
     const matrix = getCoverageMatrix();

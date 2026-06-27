@@ -31,8 +31,8 @@ export function softwareApplicationLd(lang: Lang) {
     operatingSystem: "Web, Self-hosted",
     description:
       lang === "de"
-        ? "KI-Kanzleisoftware für Rechtsanwälte in Österreich, Deutschland und der Schweiz: eine belegte Antwort statt zehn Dokumente — aus euren Akten, Mails, Fristen und Schriftsätzen. On-Premise oder EU-Cloud."
-        : "AI legal software for law firms in Austria, Germany and Switzerland: one cited answer instead of ten documents — from your matters, emails, deadlines and pleadings. Self-hosted or EU cloud.",
+        ? "KI-Kanzleisoftware für Rechtsanwälte in Österreich, Deutschland und der Schweiz: Aktenverwaltung, Fristenkontrolle nach ZPO/BGB/ABGB, belegte KI-Antworten mit Fundstellen, DATEV-Export, Kollisionsprüfung. On-Premise oder EU-Cloud."
+        : "AI legal software for law firms in Austria, Germany and Switzerland: matter management, deadline tracking per ZPO/BGB/ABGB, cited AI answers with page-level sources, DATEV export, conflict check. Self-hosted or EU cloud.",
     offers: [
       {
         "@type": "Offer",

@@ -26,6 +26,7 @@ export const GET = createHandler(
     try {
       const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(slug)}`, {
         headers: ctx.headers,
+      signal: AbortSignal.timeout(10_000),
       });
       if (res.status === 404) return apiError("not_found", "Rechnung nicht gefunden", 404);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -78,6 +79,7 @@ export const PATCH = createHandler(
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...ctx.headers },
         body: JSON.stringify({ ...body, slug }),
+      signal: AbortSignal.timeout(15_000),
       });
       if (res.status === 404) return apiError("not_found", "Rechnung nicht gefunden", 404);
       if (!res.ok) {
@@ -115,6 +117,7 @@ export const DELETE = createHandler(
     try {
       const checkRes = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(slug)}`, {
         headers: ctx.headers,
+      signal: AbortSignal.timeout(10_000),
       });
       if (checkRes.status === 404) return apiError("not_found", "Rechnung nicht gefunden", 404);
       if (checkRes.ok) {
@@ -133,6 +136,7 @@ export const DELETE = createHandler(
       const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(slug)}`, {
         method: "DELETE",
         headers: ctx.headers,
+      signal: AbortSignal.timeout(10_000),
       });
       if (res.status === 404) return apiError("not_found", "Rechnung nicht gefunden", 404);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);

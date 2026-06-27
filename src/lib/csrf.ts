@@ -75,5 +75,8 @@ export async function csrfFetch(input: string | URL, init?: RequestInit): Promis
     }
   }
 
-  return fetch(input, { ...init, headers });
+  // Default 30s timeout; caller can override by passing their own signal
+  const signal = init?.signal ?? AbortSignal.timeout(30_000);
+
+  return fetch(input, { ...init, headers, signal });
 }

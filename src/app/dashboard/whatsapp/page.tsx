@@ -100,26 +100,27 @@ export default function WhatsAppDashboardPage() {
     setLoading(true);
     setError(null);
     try {
-      const [
-        statusRes,
-        eventPages,
-        approvalPages,
-        intakePages,
-        requestPages,
-        timePages,
-        docPages,
-        casePages,
-      ] = await Promise.all([
+      const BATCH_TYPES = [
+        "conversation_event",
+        "agent_action",
+        "intake_request",
+        "document_request",
+        "time_entry",
+        "legal_document",
+        "legal_case",
+      ] as const;
+      const [statusRes, batch] = await Promise.all([
         api.whatsapp.status().catch(() => null),
-        api.brain.listPages({ type: "conversation_event", limit: 100 }).catch(() => []),
-        api.brain.listPages({ type: "agent_action", limit: 100 }).catch(() => []),
-        api.brain.listPages({ type: "intake_request", limit: 100 }).catch(() => []),
-        api.brain.listPages({ type: "document_request", limit: 100 }).catch(() => []),
-        api.brain.listPages({ type: "time_entry", limit: 100 }).catch(() => []),
-        api.brain.listPages({ type: "legal_document", limit: 200 }).catch(() => []),
-        api.brain.listPages({ type: "legal_case", limit: 200 }).catch(() => []),
+        api.brain.batchListPages([...BATCH_TYPES], 200).catch(() => ({} as Record<string, BrainPage[]>)),
       ]);
       setStatus(statusRes);
+      const eventPages = batch["conversation_event"] ?? [];
+      const approvalPages = batch["agent_action"] ?? [];
+      const intakePages = batch["intake_request"] ?? [];
+      const requestPages = batch["document_request"] ?? [];
+      const timePages = batch["time_entry"] ?? [];
+      const docPages = batch["legal_document"] ?? [];
+      const casePages = batch["legal_case"] ?? [];
       setEvents(eventPages.filter((page) => front(page).channel === "whatsapp"));
       setApprovals(
         approvalPages.filter((page) =>

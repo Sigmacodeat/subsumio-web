@@ -20,7 +20,7 @@ async function validateCaseSlug(
   caseSlug: string
 ): Promise<boolean> {
   try {
-    const res = await fetch(`${ENGINE_URL}/api/pages/${encodeSlug(caseSlug)}`, { headers });
+    const res = await fetch(`${ENGINE_URL}/api/pages/${encodeSlug(caseSlug)}`, { headers, signal: AbortSignal.timeout(10_000) });
     if (!res.ok) return false;
     const page = (await res.json()) as { type?: string };
     return page.type === "legal_case";
@@ -260,7 +260,7 @@ async function reconcileCaseDocuments(
   const MAX_RETRIES = 3;
 
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-    const getRes = await fetch(`${ENGINE_URL}/api/pages/${encodedSlug}`, { headers });
+    const getRes = await fetch(`${ENGINE_URL}/api/pages/${encodedSlug}`, { headers, signal: AbortSignal.timeout(10_000) });
     if (!getRes.ok) throw new Error(`case_fetch_failed_${getRes.status}`);
     const casePage = (await getRes.json()) as {
       frontmatter?: Record<string, unknown>;
@@ -282,6 +282,7 @@ async function reconcileCaseDocuments(
         frontmatter: { ...fm, documents: updatedDocs },
         merge: true,
       }),
+      signal: AbortSignal.timeout(30_000),
     });
 
     if (patchRes.ok) return;

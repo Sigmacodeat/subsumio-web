@@ -9,6 +9,7 @@ export const GET = createEngineProxy({
   body: z.object({}).passthrough(),
   quota: undefined,
   label: "portfolio-insights",
+  cacheMaxAge: 120,
   transformBody: (_b) => ({}),
   audit: (_ctx, _b) => ({
     action: "legal.deep_analysis" as const,

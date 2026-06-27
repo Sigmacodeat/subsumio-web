@@ -86,11 +86,10 @@ export default function CalendarExportPage() {
 
   async function loadEvents() {
     try {
-      const [pages, casePages, appointmentPages] = await Promise.all([
-        api.brain.listPages({ type: "legal_deadline", limit: 200 }),
-        api.brain.listPages({ type: "legal_case", limit: 200 }).catch(() => [] as BrainPage[]),
-        api.brain.listPages({ type: "appointment", limit: 200 }).catch(() => [] as BrainPage[]),
-      ]);
+      const batch = await api.brain.batchListPages(["legal_deadline", "legal_case", "appointment"], 200);
+      const pages = batch["legal_deadline"] ?? [];
+      const casePages = batch["legal_case"] ?? [];
+      const appointmentPages = batch["appointment"] ?? [];
       const loaded: CalendarEvent[] = pages.map((p) => {
         const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
         return {

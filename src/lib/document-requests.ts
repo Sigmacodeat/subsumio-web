@@ -146,6 +146,7 @@ export async function writeDocumentRequest(
       frontmatter: request.frontmatter,
       merge: true,
     }),
+    signal: AbortSignal.timeout(15_000),
   });
 
   if (!res.ok) {

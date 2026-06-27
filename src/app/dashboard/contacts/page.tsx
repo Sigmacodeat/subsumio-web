@@ -176,10 +176,9 @@ export default function ContactsPage() {
     setLoading(true);
     setLoadError(null);
     try {
-      const [contactPages, casePages] = await Promise.all([
-        api.brain.listPages({ type: "legal_contact", limit: 200 }),
-        api.brain.listPages({ type: "legal_case", limit: 200 }).catch(() => [] as BrainPage[]),
-      ]);
+      const batch = await api.brain.batchListPages(["legal_contact", "legal_case"], 200);
+      const contactPages = batch["legal_contact"] ?? [];
+      const casePages = batch["legal_case"] ?? [];
       const nextContacts = contactPages.map(parseContact);
       setContacts(nextContacts);
       setCases(casePages);

@@ -13,6 +13,7 @@
 
 import { useState, useCallback } from "react";
 import { ChevronDown, ChevronRight, Flag, MessageSquare, Loader2 } from "lucide-react";
+import { csrfFetch } from "@/lib/csrf";
 
 export interface ReviewCell {
   value: string;
@@ -66,7 +67,7 @@ export function ReviewTable({ data, caseSlug }: ReviewTableProps) {
     setAskLoading(true);
     setAskResponse(null);
     try {
-      const res = await fetch("/api/review-table/ask", {
+      const res = await csrfFetch("/api/review-table/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

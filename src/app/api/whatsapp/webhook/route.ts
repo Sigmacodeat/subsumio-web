@@ -158,6 +158,7 @@ async function processMessageStatuses(statuses: WhatsAppMessageStatus[]): Promis
           },
           merge: true,
         }),
+        signal: AbortSignal.timeout(15_000),
       });
     } catch (err) {
       console.error(
@@ -174,6 +175,7 @@ async function listPendingApprovals(
 ): Promise<Array<{ action_slug: string; action_type: ActionType }>> {
   const res = await fetch(`${ENGINE_URL}/api/pages?type=agent_action&limit=100`, {
     headers: engineHeadersForBrain(brainId),
+  signal: AbortSignal.timeout(15_000),
   });
   if (!res.ok) return [];
   const data = await res.json().catch(() => ({}));
@@ -217,6 +219,7 @@ async function updateApprovalStatus(
       },
       merge: true,
     }),
+    signal: AbortSignal.timeout(15_000),
   });
   return res.ok;
 }
@@ -226,7 +229,7 @@ function executionDepsForBrain(brainId: string) {
   return {
     brainId,
     getPage: async (slug: string): Promise<BrainPage> => {
-      const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(slug)}`, { headers });
+      const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(slug)}`, { headers, signal: AbortSignal.timeout(10_000) });
       if (!res.ok) throw new Error(`approval_page_not_found:${res.status}`);
       return (await res.json()) as BrainPage;
     },
@@ -241,6 +244,7 @@ function executionDepsForBrain(brainId: string) {
         method: "POST",
         headers: { "Content-Type": "application/json", ...headers },
         body: JSON.stringify(page),
+        signal: AbortSignal.timeout(15_000),
       });
       if (!res.ok) throw new Error(`approval_effect_create_failed:${res.status}`);
       return { slug: page.slug };
@@ -257,6 +261,7 @@ function executionDepsForBrain(brainId: string) {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...headers },
         body: JSON.stringify({ ...patch, merge: true }),
+      signal: AbortSignal.timeout(15_000),
       });
       if (!res.ok) throw new Error(`approval_effect_update_failed:${res.status}`);
       return { slug, success: true };

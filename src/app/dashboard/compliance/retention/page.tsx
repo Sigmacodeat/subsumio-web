@@ -31,9 +31,11 @@ export default function RetentionPage() {
   const [deleting, setDeleting] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
     async function load() {
       try {
         const pages = await api.brain.listPages({ type: "legal_case", limit: 500 });
+        if (cancelled) return;
         const now = new Date();
         const mapped: RetentionCase[] = pages.map((p) => {
           const fm = p.frontmatter as Record<string, unknown>;
@@ -55,13 +57,15 @@ export default function RetentionPage() {
             action,
           };
         });
-        setCases(mapped.sort((a, b) => b.yearsSinceClosure - a.yearsSinceClosure));
+        if (!cancelled) setCases(mapped.sort((a, b) => b.yearsSinceClosure - a.yearsSinceClosure));
       } catch (e) {
-        setLoadError(e instanceof Error ? e.message : t("retention.error_load"));
+        if (!cancelled) setLoadError(e instanceof Error ? e.message : t("retention.error_load"));
       }
-      setLoading(false);
+      if (!cancelled) setLoading(false);
     }
     load();
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const toReview = cases.filter((c) => c.action === "review");

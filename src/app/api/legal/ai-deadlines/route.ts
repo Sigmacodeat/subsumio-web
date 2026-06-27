@@ -52,6 +52,7 @@ export const POST = createHandler(
                   matched_rule: d.matchedRule,
                   ai_confidence: d.confidence,
                 },
+              signal: AbortSignal.timeout(30_000),
               }),
             });
             createdSlugs.push(slug);

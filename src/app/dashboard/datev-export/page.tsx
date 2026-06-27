@@ -35,69 +35,72 @@ export default function DatevExportPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
-    loadEntries();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  async function loadEntries() {
-    setLoading(true);
-    setLoadError(null);
-    try {
-      const [pages, loadedSettings] = await Promise.all([
-        api.brain.listPages({ type: "legal_case", limit: 200 }),
-        loadKanzleiSettings(),
-      ]);
-      setSettings(loadedSettings);
-      const loaded: ExportEntry[] = [];
-      for (const page of pages) {
-        const fm = caseFrontmatter(page);
-        const te = fm.time_entries || [];
-        const expenses = fm.expenses || [];
-        const caseNum = fm.case_number || page.slug;
-        const client = fm.client_name || t("datev.unknown_client");
-        const area = fm.legal_area || t("datev.general_area");
-        for (const e of te) {
-          if (e.billable === false || e.billed !== true) continue;
-          const rate = e.rate || parseInt(loadedSettings.stundensatz || "200", 10);
-          const hours = (e.minutes || 0) / 60;
-          loaded.push({
-            id: `${page.slug}-${e.id}`,
-            date: e.date ? e.date.split("T")[0] : new Date().toISOString().split("T")[0],
-            caseNumber: caseNum,
-            description: e.description || "",
-            hours,
-            rate,
-            amount: Math.round(hours * rate * 100) / 100,
-            client,
-            legalArea: area,
-            invoiceNumber: e.invoice_number,
-            kind: "time",
-          });
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      setLoadError(null);
+      try {
+        const [pages, loadedSettings] = await Promise.all([
+          api.brain.listPages({ type: "legal_case", limit: 200 }),
+          loadKanzleiSettings(),
+        ]);
+        if (cancelled) return;
+        setSettings(loadedSettings);
+        const loaded: ExportEntry[] = [];
+        for (const page of pages) {
+          const fm = caseFrontmatter(page);
+          const te = fm.time_entries || [];
+          const expenses = fm.expenses || [];
+          const caseNum = fm.case_number || page.slug;
+          const client = fm.client_name || t("datev.unknown_client");
+          const area = fm.legal_area || t("datev.general_area");
+          for (const e of te) {
+            if (e.billable === false || e.billed !== true) continue;
+            const rate = e.rate || parseInt(loadedSettings.stundensatz || "200", 10);
+            const hours = (e.minutes || 0) / 60;
+            loaded.push({
+              id: `${page.slug}-${e.id}`,
+              date: e.date ? e.date.split("T")[0] : new Date().toISOString().split("T")[0],
+              caseNumber: caseNum,
+              description: e.description || "",
+              hours,
+              rate,
+              amount: Math.round(hours * rate * 100) / 100,
+              client,
+              legalArea: area,
+              invoiceNumber: e.invoice_number,
+              kind: "time",
+            });
+          }
+          for (const e of expenses) {
+            if (e.billable === false || e.billed !== true) continue;
+            loaded.push({
+              id: `${page.slug}-expense-${e.id}`,
+              date: e.date ? e.date.split("T")[0] : new Date().toISOString().split("T")[0],
+              caseNumber: caseNum,
+              description: e.description || t("datev.expense"),
+              rate: 0,
+              amount: e.amount || 0,
+              client,
+              legalArea: area,
+              invoiceNumber: e.invoice_number,
+              kind: "expense",
+            });
+          }
         }
-        for (const e of expenses) {
-          if (e.billable === false || e.billed !== true) continue;
-          loaded.push({
-            id: `${page.slug}-expense-${e.id}`,
-            date: e.date ? e.date.split("T")[0] : new Date().toISOString().split("T")[0],
-            caseNumber: caseNum,
-            description: e.description || t("datev.expense"),
-            rate: 0,
-            amount: e.amount || 0,
-            client,
-            legalArea: area,
-            invoiceNumber: e.invoice_number,
-            kind: "expense",
-          });
+        if (!cancelled) setEntries(loaded);
+      } catch (err) {
+        if (!cancelled) {
+          setEntries([]);
+          setLoadError(err instanceof Error ? err.message : t("datev.error_load"));
         }
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-      setEntries(loaded);
-    } catch (err) {
-      setEntries([]);
-      setLoadError(err instanceof Error ? err.message : t("datev.error_load"));
-    } finally {
-      setLoading(false);
-    }
-  }
+    })();
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const totalHours = entries.reduce((s, e) => s + (e.hours ?? 0), 0);
   const totalAmount = entries.reduce((s, e) => s + e.amount, 0);

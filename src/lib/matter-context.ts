@@ -537,6 +537,7 @@ export async function explainRetrieval(
 
     const res = await fetch(`${engineUrl}/api/search?${params.toString()}`, {
       headers: engineHeaders,
+      signal: AbortSignal.timeout(15_000),
     });
     if (!res.ok) return [];
 
@@ -584,7 +585,7 @@ export async function buildBrainQualitySummary(
   };
 
   try {
-    const res = await fetch(`${engineUrl}/api/stats`, { headers: engineHeaders });
+    const res = await fetch(`${engineUrl}/api/stats`, { headers: engineHeaders, signal: AbortSignal.timeout(10_000) });
     if (res.ok) {
       stats = (await res.json()) as EngineStatsResponse;
     }
@@ -650,7 +651,7 @@ async function fetchEnginePage(
 ): Promise<EnginePageResponse | null> {
   try {
     const encodedSlug = slug.split("/").map(encodeURIComponent).join("/");
-    const res = await fetch(`${engineUrl}/api/pages/${encodedSlug}`, { headers });
+    const res = await fetch(`${engineUrl}/api/pages/${encodedSlug}`, { headers, signal: AbortSignal.timeout(10_000) });
     if (!res.ok) return null;
     return (await res.json()) as EnginePageResponse;
   } catch {
@@ -666,7 +667,7 @@ async function fetchEnginePagesByType(
 ): Promise<EnginePageResponse[]> {
   try {
     const params = new URLSearchParams({ type, limit: String(limit) });
-    const res = await fetch(`${engineUrl}/api/pages?${params.toString()}`, { headers });
+    const res = await fetch(`${engineUrl}/api/pages?${params.toString()}`, { headers, signal: AbortSignal.timeout(15_000) });
     if (!res.ok) return [];
     const data = await res.json();
     if (Array.isArray(data)) return data as EnginePageResponse[];
@@ -869,7 +870,7 @@ async function fetchContact(
 } | null> {
   try {
     const encodedSlug = slug.split("/").map(encodeURIComponent).join("/");
-    const res = await fetch(`${engineUrl}/api/pages/${encodedSlug}`, { headers });
+    const res = await fetch(`${engineUrl}/api/pages/${encodedSlug}`, { headers, signal: AbortSignal.timeout(10_000) });
     if (!res.ok) return null;
     const page = (await res.json()) as EnginePageResponse;
     const fm = (page.frontmatter ?? {}) as Record<string, string | undefined>;

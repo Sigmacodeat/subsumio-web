@@ -34,7 +34,6 @@ import {
   type TimeEntry,
 } from "@/lib/legal-types";
 import { loadKanzleiSettings, type KanzleiSettings } from "@/lib/kanzlei-settings";
-import { generateInvoicePdf } from "@/lib/invoice-pdf";
 import { OFFLINE_KEYS, enqueueMutation, getCache, isOnline, setCache } from "@/lib/offline-store";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { PageHeader } from "@/components/dashboard/page-header";
@@ -162,10 +161,9 @@ export default function InvoicingPage() {
   async function loadAll() {
     setLoading(true);
     try {
-      const [invoicePages, casePages] = await Promise.all([
-        api.brain.listPages({ type: "invoice", limit: 200 }).catch(() => [] as BrainPage[]),
-        api.brain.listPages({ type: "legal_case", limit: 200 }).catch(() => [] as BrainPage[]),
-      ]);
+      const batch = await api.brain.batchListPages(["invoice", "legal_case"], 200);
+      const invoicePages = batch["invoice"] ?? [];
+      const casePages = batch["legal_case"] ?? [];
       const loadedInvoices: Invoice[] = invoicePages.map((p) => {
         const fm = invoiceFrontmatter(p);
         return {
@@ -455,6 +453,7 @@ export default function InvoicingPage() {
 
   async function downloadPdf(inv: Invoice) {
     const settings = kanzlei ?? (await loadKanzleiSettings());
+    const { generateInvoicePdf } = await import("@/lib/invoice-pdf");
     const pdf = generateInvoicePdf({
       number: inv.number,
       client: inv.client,

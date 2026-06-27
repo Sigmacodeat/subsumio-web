@@ -12,11 +12,12 @@
  * existing pattern used by audit, quota, and mailbox modules.
  */
 
-import { randomUUID, createHash } from "node:crypto";
+import { randomUUID, createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { getSharedPgPool } from "@/lib/auth/store";
 import { createSchemaInit } from "@/lib/schema-init";
 import { siteUrl } from "@/lib/mail";
 import { logger } from "@/lib/logger";
+import { getAuthSecret } from "@/lib/auth/session-core";
 
 const log = logger("email-tracking");
 
@@ -110,6 +111,21 @@ export function generateLinkId(): string {
   return `lnk_${randomUUID().replace(/-/g, "").slice(0, 16)}`;
 }
 
+function signUrl(encodedUrl: string): string {
+  const secret = getAuthSecret();
+  return createHmac("sha256", secret).update(encodedUrl).digest("base64url");
+}
+
+export function verifyUrlSignature(encodedUrl: string, signature: string): boolean {
+  const expected = signUrl(encodedUrl);
+  if (signature.length !== expected.length) return false;
+  try {
+    return timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
+  } catch {
+    return false;
+  }
+}
+
 // ── HTML injection ────────────────────────────────────────────────────
 
 /**
@@ -139,7 +155,8 @@ export function injectTracking(html: string, trackingId: string): string {
     }
     const linkId = generateLinkId();
     const encoded = Buffer.from(url).toString("base64url");
-    const trackedUrl = `${trackingBase}/c/${trackingId}?l=${linkId}&u=${encoded}`;
+    const sig = signUrl(encoded);
+    const trackedUrl = `${trackingBase}/c/${trackingId}?l=${linkId}&u=${encoded}&s=${sig}`;
     return `href="${trackedUrl}"`;
   });
 

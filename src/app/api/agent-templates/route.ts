@@ -56,6 +56,7 @@ export const GET = createHandler(
       const params = new URLSearchParams({ type: "agent_template", limit: "200" });
       const res = await fetch(`${ENGINE_URL}/api/pages?${params.toString()}`, {
         headers: ctx.headers,
+      signal: AbortSignal.timeout(10_000),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
@@ -138,6 +139,7 @@ export const POST = createHandler(
           content: body.prompt_template,
           type: "agent_template",
           frontmatter,
+        signal: AbortSignal.timeout(15_000),
         }),
       });
 

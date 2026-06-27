@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useDialogFetch } from "@/lib/use-dialog-fetch";
 import {
   Dialog,
   DialogContent,
@@ -43,7 +44,6 @@ export function SignatureQuickCreateDialog({
   const { t, lang } = useLang();
   const { addToast } = useToast();
   const [saving, setSaving] = useState(false);
-  const [drafts, setDrafts] = useState<BrainPage[]>([]);
 
   const sigForm = useForm<SignatureRequestFormData>({
     resolver: zodResolver(signatureRequestSchema) as never,
@@ -63,19 +63,12 @@ export function SignatureQuickCreateDialog({
     if (!open) resetForm();
   }, [open, resetForm]);
 
-  useEffect(() => {
-    if (!open) return;
-    let cancelled = false;
-    api.brain
-      .listPages({ type: "legal_document", limit: 100 })
-      .then((pages) => {
-        if (!cancelled) setDrafts(pages);
-      })
-      .catch(() => {
-        if (!cancelled) setDrafts([]);
-      });
-    return () => { cancelled = true; };
-  }, [open]);
+  const { data: drafts } = useDialogFetch<BrainPage[]>(
+    open,
+    async () => {
+      return await api.brain.listPages({ type: "legal_document", limit: 100 });
+    },
+  );
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -137,7 +130,7 @@ export function SignatureQuickCreateDialog({
 
           <div className="flex-1 space-y-5 overflow-y-auto px-6 py-2">
             {/* Draft selector */}
-            {drafts.length > 0 && (
+            {(drafts ?? []).length > 0 && (
               <div className="space-y-1.5">
                 <Label htmlFor="quick-sig-draft" className="text-xs">
                   {t("signature.quick_select_draft" as DashboardKey)}
@@ -145,7 +138,7 @@ export function SignatureQuickCreateDialog({
                 <Select
                   value=""
                   onValueChange={(v) => {
-                    const draft = drafts.find((d) => d.slug === v);
+                    const draft = (drafts ?? []).find((d) => d.slug === v);
                     if (draft) sigForm.setValue("documentName", draft.title);
                   }}
                 >
@@ -153,7 +146,7 @@ export function SignatureQuickCreateDialog({
                     <SelectValue placeholder={t("signature.quick_manual" as DashboardKey)} />
                   </SelectTrigger>
                   <SelectContent>
-                    {drafts.map((d) => (
+                    {(drafts ?? []).map((d) => (
                       <SelectItem key={d.slug} value={d.slug}>
                         {d.title}
                       </SelectItem>

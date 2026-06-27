@@ -33,6 +33,7 @@ export const GET = createPublicHandler(
     try {
       const res = await fetch(`${ENGINE_URL}/api/search?q=${encodeURIComponent(q)}&limit=4`, {
         headers: engineHeadersForBrain(DEMO_BRAIN),
+        signal: AbortSignal.timeout(10_000),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();

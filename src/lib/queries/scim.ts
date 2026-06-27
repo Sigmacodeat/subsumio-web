@@ -25,8 +25,11 @@ export interface SyncStatus {
 export function useScimStatus() {
   return useQuery({
     queryKey: ["scim", "status"],
-    queryFn: () =>
-      fetch("/api/scim/status").then((r) => r.json()),
+    queryFn: async () => {
+      const res = await fetch("/api/scim/status", { signal: AbortSignal.timeout(30_000) });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json();
+    },
     staleTime: 30 * 1000,
   });
 }

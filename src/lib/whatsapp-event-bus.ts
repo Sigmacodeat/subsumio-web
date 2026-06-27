@@ -85,6 +85,9 @@ export interface NotificationHandler {
 
 // ── Event Bus ─────────────────────────────────────────────────────────
 
+const MAX_EVENTS = 500;
+const MAX_AUDIT_LOG = 1000;
+
 export class NotificationEventBus {
   private handlers: Map<NotificationChannel, NotificationHandler> = new Map();
   private events: Map<string, NotificationEvent> = new Map();
@@ -114,6 +117,7 @@ export class NotificationEventBus {
         recipients: event.recipient_user_ids.length,
       },
     });
+    this.evictOldEvents();
   }
 
   async dispatch(eventId: string): Promise<NotificationEvent | null> {
@@ -177,6 +181,20 @@ export class NotificationEventBus {
   clearDispatched(): void {
     for (const [id, event] of this.events) {
       if (event.dispatched) this.events.delete(id);
+    }
+  }
+
+  private evictOldEvents(): void {
+    if (this.events.size > MAX_EVENTS) {
+      const toDelete = this.events.size - MAX_EVENTS;
+      let deleted = 0;
+      for (const id of this.events.keys()) {
+        if (deleted++ >= toDelete) break;
+        this.events.delete(id);
+      }
+    }
+    if (this.auditLog.length > MAX_AUDIT_LOG) {
+      this.auditLog.splice(0, this.auditLog.length - MAX_AUDIT_LOG);
     }
   }
 

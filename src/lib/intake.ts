@@ -119,6 +119,7 @@ export async function writeIntakeRequest(
       frontmatter: intake.frontmatter,
       merge: true,
     }),
+    signal: AbortSignal.timeout(15_000),
   });
 
   if (!res.ok) {

@@ -56,6 +56,7 @@ export const POST = createHandler(
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body: params.toString(),
+      signal: AbortSignal.timeout(30_000),
     });
 
     const data = (await resp.json().catch(() => ({}))) as {

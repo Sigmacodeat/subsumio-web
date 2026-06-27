@@ -15,18 +15,16 @@ export const POST = createHandler(
     audit: (ctx, body) => ({
       action: "settings.update" as const,
       entityType: "device",
-      entityId: (body as { deviceId?: string }).deviceId || "unknown",
-      details: { platform: (body as { platform: string }).platform },
+      entityId: body.deviceId || "unknown",
+      details: { platform: body.platform },
     }),
   },
   async (ctx, body) => {
-    const { token, platform, deviceId } = body;
+    const { platform, deviceId } = body;
 
-    // Store push token in user metadata for later use.
-    // In production, this would write to a dedicated push_tokens table.
-    console.log(
-      `[push-register] user=${ctx.user.id} platform=${platform} device=${deviceId ?? "n/a"} token=${token.slice(0, 12)}…`
-    );
+    if (process.env.NODE_ENV !== "production") {
+      console.debug(`[push-register] user=${ctx.user.id} platform=${platform} device=${deviceId ?? "n/a"}`);
+    }
 
     return Response.json({ ok: true, registered: true });
   }
@@ -39,7 +37,9 @@ export const DELETE = createHandler(
     body: z.object({ token: z.string().min(10) }),
   },
   async (ctx, body) => {
-    console.log(`[push-unregister] user=${ctx.user.id} token=${body.token.slice(0, 12)}…`);
+    if (process.env.NODE_ENV !== "production") {
+      console.debug(`[push-unregister] user=${ctx.user.id}`);
+    }
     return Response.json({ ok: true, unregistered: true });
   }
 );

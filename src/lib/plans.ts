@@ -9,7 +9,7 @@
 import type { Plan } from "@/lib/auth/store";
 
 export interface PlanLimits {
-  /** Max pages in the brain (pricing: Pro = 25,000). */
+  /** Max pages in the brain (free=200, pro=50k, team=200k, enterprise=1M). */
   pages: number;
   /** Fair-use queries (think + search) per calendar month. */
   queriesPerMonth: number;

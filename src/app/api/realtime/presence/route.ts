@@ -46,7 +46,10 @@ const memoryPresenceStore: PresenceStore = {
   },
   async delete(page, orgId, userId) {
     const key = `${orgId}:${page}`;
-    inMemoryStore.get(key)?.delete(userId);
+    const pageMap = inMemoryStore.get(key);
+    if (!pageMap) return;
+    pageMap.delete(userId);
+    if (pageMap.size === 0) inMemoryStore.delete(key);
   },
   async pruneStale(orgId) {
     const cutoff = Date.now() - 120_000; // 2 minutes
@@ -55,6 +58,7 @@ const memoryPresenceStore: PresenceStore = {
       for (const [userId, entry] of pageMap) {
         if (new Date(entry.lastHeartbeat).getTime() < cutoff) pageMap.delete(userId);
       }
+      if (pageMap.size === 0) inMemoryStore.delete(key);
     }
   },
 };

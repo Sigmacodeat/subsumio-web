@@ -56,7 +56,7 @@ interface NavContent {
 export const NAV: Record<Lang, NavContent> = {
   en: {
     signIn: "Sign in",
-    cta: "Get started",
+    cta: "Request a demo",
     pricingLabel: "Pricing",
     pricingHref: "/pricing",
     sections: [
@@ -163,7 +163,7 @@ export const NAV: Record<Lang, NavContent> = {
   },
   de: {
     signIn: "Anmelden",
-    cta: "Jetzt starten",
+    cta: "Demo anfragen",
     pricingLabel: "Preise",
     pricingHref: "/pricing",
     sections: [
@@ -260,7 +260,7 @@ export const NAV: Record<Lang, NavContent> = {
           {
             label: "Kontakt",
             href: "/contact",
-            description: "Sprich mit unserem Team",
+            description: "Kontakt zum Team",
             icon: "Mail",
           },
           {
@@ -277,7 +277,7 @@ export const NAV: Record<Lang, NavContent> = {
 
 export const FOOTER = {
   en: {
-    tagline: "The brain your firm never had.",
+    tagline: "The memory layer for your law firm.",
     columns: [
       {
         title: "Platform",
@@ -326,7 +326,7 @@ export const FOOTER = {
     note: "Your data, your keys. Self-hosted on your hardware or our EU cloud — GDPR-ready, end-to-end encrypted, zero training on your data.",
   },
   de: {
-    tagline: "Das KI-Gehirn für deine Kanzlei.",
+    tagline: "Das Kanzlei-Gedächtnis, das nie vergisst.",
     columns: [
       {
         title: "Plattform",
@@ -403,14 +403,14 @@ export const PRICING: Record<
     sub: "Per seat, billed annually. Your firm's brain on infrastructure you control — EU-hosted or on-premise.",
     tiers: [
       {
-        id: "community",
+        id: "free",
         name: "Community",
         price: "€0",
         period: "forever",
         blurb: "For solo lawyers exploring AI-assisted case work. Free forever, no credit card required.",
         features: [
           "Self-hosted — your server, your keys",
-          "50 AI queries/mo included",
+          "100 AI queries/mo included",
           "5 GB local storage",
           "Case Q&A with page-level citations",
           "Deadline tracking (ZPO/BGB/ABGB)",
@@ -480,7 +480,7 @@ export const PRICING: Record<
           "Dedicated CSM & integration help",
           "Overage: €0.35/query · €0.15/WA msg",
         ],
-        cta: "Talk to us",
+        cta: "Request a demo",
         href: "mailto:hello@subsum.eu",
       },
     ],
@@ -492,14 +492,14 @@ export const PRICING: Record<
     sub: "Pro Nutzer, jährliche Abrechnung. Dein Kanzleiwissen auf Infrastruktur, die du kontrollierst — EU-gehostet oder On-Premise.",
     tiers: [
       {
-        id: "community",
+        id: "free",
         name: "Community",
         price: "0 €",
         period: "für immer",
         blurb: "Für Einzelanwälte, die KI-gestützte Aktenarbeit erkunden. Kostenlos für immer, keine Kreditkarte nötig.",
         features: [
           "Self-hosted — dein Server, deine Keys",
-          "50 KI-Anfragen/Mon. inklusive",
+          "100 KI-Anfragen/Mon. inklusive",
           "5 GB lokaler Speicher",
           "Akten-Q&A mit seitengenauen Zitaten",
           "Fristenverwaltung (ZPO/BGB/ABGB)",
@@ -522,7 +522,7 @@ export const PRICING: Record<
           "1.000 KI-Anfragen/Nutzer/Mon. inklusive",
           "75 GB Cloud-Speicher pro Nutzer",
           "300 WhatsApp-Nachrichten/Mon. inklusive",
-          "Nächtliche Konsolidierung: Duplikate, Zitate, Widersprüche",
+          "Dream Cycle: Deduplizierung, Zitate, Widersprüche",
           "Live-Verbrauchsanzeige — transparente Mehrkosten",
           "Priorisierter Support",
           "Mehrverbrauch: 0,45 €/Anfrage · 0,25 €/WA",
@@ -572,7 +572,7 @@ export const PRICING: Record<
           "Dedizierter CSM & Integrationshilfe",
           "Mehrverbrauch: 0,35 €/Anfrage · 0,15 €/WA",
         ],
-        cta: "Sprich mit uns",
+        cta: "Demo anfragen",
         href: "mailto:hello@subsum.eu",
       },
     ],
@@ -644,11 +644,11 @@ export const PRICING_FAQ: Record<Lang, { title: string; items: { q: string; a: s
 
 export const LANDING = {
   en: {
-    badge: "AI legal software",
+    badge: "AI legal software for AT · DE · CH",
     h1a: "Every matter,",
     h1b: "one cited answer.",
-    sub: "Subsumio turns matters, deadlines, emails and documents into cited answers you can trust — AI legal software built for law firms in AT, DE and CH.",
-    ctaPrimary: "Get started",
+    sub: "Subsumio is AI legal software for law firms in Austria, Germany and Switzerland. Matters, deadlines, emails and documents become cited answers — with page-level sources, not hallucinations.",
+    ctaPrimary: "Request a demo",
     ctaSecondary: "See it live",
     demo: {
       windowTitle: "subsumio — ask",
@@ -667,32 +667,32 @@ export const LANDING = {
     },
     stats: [
       { value: "97.9%", label: "Recall@5 — retrieval benchmark" },
-      { value: "72", label: "API endpoints, fully documented" },
       { value: "3", label: "jurisdictions — AT · DE · CH" },
       { value: "0", label: "client-data leaks, by design" },
+      { value: "14", label: "days full trial — no credit card" },
     ],
     statsNote: "Not a chat wrapper — engine-class retrieval where every AI answer cites its exact source.",
     featuresTitle: "Built for law firms. Not adapted for them.",
     featuresSub:
-      "From deadline control to contradiction detection — every answer cited, every deadline tracked, no hallucinations.",
+      "From deadline control per ZPO/BGB/ABGB to contradiction detection in pleadings — every answer cited, every deadline tracked, no hallucinations.",
     features: [
       {
         icon: "Brain",
         color: "violet",
         title: "Answers with citations",
-        desc: "Every AI answer cites the exact pages it comes from. Verify in one click before anything goes into a brief — no hallucinated references.",
+        desc: "Every AI answer cites the exact pages it comes from. Verify in one click before anything goes into a brief — no hallucinated references, no black box.",
       },
       {
         icon: "CalendarClock",
         color: "amber",
         title: "Deadlines, automatically",
-        desc: "Statutory and appeal deadlines computed per ZPO/BGB/ABGB with correct month arithmetic and weekend roll-forward. A daily email digest flags what's critical.",
+        desc: "Statutory and appeal deadlines computed per ZPO/BGB/ABGB with correct month arithmetic and weekend roll-forward. A daily email digest flags what's critical before the deadline expires.",
       },
       {
         icon: "MessageSquare",
         color: "emerald",
         title: "WhatsApp copilot",
-        desc: "Book time, file documents, send voice notes from your phone. Everything lands in the right matter — confirmation-gated, nothing reaches the file unseen.",
+        desc: "Book time, file documents, send voice notes from your phone. Everything lands in the right matter — confirmation-gated, nothing reaches the file unseen. GoBD-compliant.",
       },
       {
         icon: "ShieldAlert",
@@ -725,19 +725,19 @@ export const LANDING = {
         step: "02",
         icon: "Network",
         title: "It understands",
-        desc: "On every write, typed edges — people, deadlines, relationships — are extracted as a legal knowledge graph. No extra LLM calls.",
+        desc: "On every write, typed edges — people, deadlines, relationships — are extracted as a legal knowledge graph. No extra LLM calls, no manual data entry.",
       },
       {
         step: "03",
         icon: "Search",
         title: "Ask",
-        desc: "Plain-language questions. Hybrid retrieval across vector, keyword and graph finds the decisive passages.",
+        desc: "Plain-language questions. Hybrid retrieval across vector, keyword and graph finds the decisive passages — across all matters and pleadings.",
       },
       {
         step: "04",
         icon: "Brain",
         title: "Cited answer",
-        desc: "A synthesized answer with page-level citations — plus an honest note on what the file is still missing.",
+        desc: "A synthesized answer with page-level citations — plus an honest note on what the file is still missing. The gap analysis surfaces open risks before they become problems.",
       },
     ],
     scenariosTitle: "Real workflows",
@@ -745,26 +745,26 @@ export const LANDING = {
     scenarios: [
       {
         role: "Incoming post",
-        text: "Upload the day's mail and a scanned contract, then ask: “Which deadlines does this trigger?” — every statutory date is calculated per ZPO/BGB/ABGB, calendared and linked to the matter.",
+        text: "Upload the day's mail and a scanned contract, then ask: “Which deadlines does this trigger?” — every statutory date is calculated per ZPO/BGB/ABGB, calendared and linked to the matter. Manual deadline book eliminated.",
       },
       {
         role: "Trial prep",
-        text: "Send a voice note and a PDF by WhatsApp with a matter reference, book 20 minutes, then ask: “Where do the opposing party's statements contradict each other?” — the Dream Cycle finds it across filings, exhibits and protocols.",
+        text: "Send a voice note and a PDF by WhatsApp with a matter reference, book 20 minutes, then ask: “Where do the opposing party's statements contradict each other?” — Subsumio finds contradictions across filings, exhibits and protocols in seconds.",
       },
       {
         role: "Onboarding a new associate",
-        text: "Index five years of matters and pleadings. The new associate asks: “Have we argued something like this before?” — and finds the 2023 brief in seconds, with page-level citations.",
+        text: "Index five years of matters and pleadings. The new associate asks: “Have we argued something like this before?” — and finds the 2023 brief in seconds, with page-level citations. Onboarding from weeks to days.",
       },
     ],
     faqTitle: "Questions, answered",
     faq: [
       {
         q: "How is this different from Notion AI, Glean or a vector database?",
-        a: "Those return documents or chunks. Subsumio returns a synthesized answer with citations, walks a typed knowledge graph for relationship questions (“who invested in X?”), and tells you what it doesn't know — the gap analysis is the part that changes how you work.",
+        a: "Those return documents or chunks. Subsumio returns a synthesized answer with page-level citations, walks a typed knowledge graph for relationship questions (“who invested in X?”), and tells you what it doesn't know — the gap analysis is the part that changes how you work.",
       },
       {
         q: "Where does my data live?",
-        a: "Your choice. Self-host the engine on your own hardware, or use our managed EU cloud. Enterprise plans support on-prem and a signed DPA.",
+        a: "Your choice. Self-host the engine on your own hardware, or use our managed EU cloud. Enterprise plans support on-prem and a signed DPA. Client data never leaves the EU.",
       },
       {
         q: "Do I need API keys or a server?",
@@ -772,24 +772,28 @@ export const LANDING = {
       },
       {
         q: "What happens when I hit my plan limits?",
-        a: "You see usage live in the dashboard and we ask before anything changes. No surprise bills, no silent throttling.",
+        a: "You see usage live in the dashboard and we ask before anything changes. No surprise bills, no silent throttling. Overages billed at transparent per-unit rates.",
       },
       {
         q: "Do you train on our data?",
         a: "Never. Your knowledge is yours alone — never used to train shared models. Self-hosted, nothing leaves your building; on our EU cloud it stays encrypted and isolated per customer.",
       },
+      {
+        q: "Is Subsumio compatible with § 203 StGB and professional secrecy obligations?",
+        a: "Yes. The architecture is designed for confidentiality holders: no third party processes client data without explicit release. On-premise keeps data processing entirely within your firm. In the EU cloud, processing is encrypted and isolated per customer.",
+      },
     ],
-    ctaTitle: "Your matters deserve better.",
-    ctaSub: "Three minutes to first cited answer. No credit card.",
-    ctaButton: "Get started with Subsumio",
+    ctaTitle: "Your firm. Structured and queryable.",
+    ctaSub: "14-day full trial. No credit card. No IT overhead.",
+    ctaButton: "Request a demo",
   },
   de: {
-    badge: "KI-Kanzleisoftware",
+    badge: "KI-Kanzleisoftware für AT · DE · CH",
     h1a: "Jede Akte,",
     h1b: "eine belegte Antwort.",
-    sub: "Subsumio bringt Akten, Fristen, Mails und Dokumente in eine KI-Kanzleisoftware — jede Antwort mit Quellenangabe, keine Halluzination. Gebaut für Kanzleien in AT, DE und CH.",
-    ctaPrimary: "Jetzt starten",
-    ctaSecondary: "Demo ansehen",
+    sub: "Subsumio ist die KI-Kanzleisoftware für Rechtsanwälte in Österreich, Deutschland und der Schweiz. Akten, Fristen, Mails und Dokumente werden zu belegten Antworten — mit Fundstellen, nicht mit Halluzinationen.",
+    ctaPrimary: "Demo vereinbaren",
+    ctaSecondary: "Live-Demo ansehen",
     demo: {
       windowTitle: "subsumio — fragen",
       you: "Du",
@@ -807,121 +811,125 @@ export const LANDING = {
     },
     stats: [
       { value: "97,9 %", label: "Recall@5 — Retrieval-Benchmark" },
-      { value: "72", label: "API-Endpunkte, voll dokumentiert" },
       { value: "3", label: "Jurisdiktionen — AT · DE · CH" },
       { value: "0", label: "bekannte Mandantendaten-Leaks" },
+      { value: "14", label: "Tage volle Testversion — keine Kreditkarte" },
     ],
-    statsNote: "Kein Chat-Wrapper. Engine-Klasse Retrieval — jede KI-Antwort nennt die exakte Quellenangabe.",
+    statsNote: "Kein Chat-Wrapper. Engine-Klasse Retrieval — jede KI-Antwort nennt die exakte Fundstelle.",
     featuresTitle: "Für Kanzleien gebaut. Nicht nachträglich angepasst.",
     featuresSub:
-      "Von Fristenkontrolle bis Widerspruchserkennung — jede Antwort belegt, jede Frist im Blick, keine Halluzination.",
+      "Von Fristenkontrolle nach ZPO/BGB/ABGB bis Widerspruchserkennung in Schriftsätzen — jede Antwort mit Fundstellen, jede Frist überwacht, keine Halluzination.",
     features: [
       {
         icon: "Brain",
         color: "violet",
         title: "Antworten mit Fundstellen",
-        desc: "Jede KI-Antwort zitiert die exakten Fundstellen. Ein Klick zur Verifikation, bevor etwas in den Schriftsatz geht — keine halluzinierten Quellen mehr.",
+        desc: "Jede KI-Antwort zitiert die exakten Fundstellen aus deinen Akten. Ein Klick zur Verifikation, bevor etwas in den Schriftsatz geht — keine halluzinierten Quellen, keine Blackbox.",
       },
       {
         icon: "CalendarClock",
         color: "amber",
-        title: "Fristen, automatisch",
-        desc: "Notfristen und Berufungsfristen nach ZPO/BGB/ABGB mit korrekter Monatsarithmetik und Wochenend-Verschiebung. Täglicher E-Mail-Digest für kritische Fristen.",
+        title: "Fristen automatisch berechnet",
+        desc: "Notfristen und Berufungsfristen nach ZPO, BGB und ABGB — mit korrekter Monatsarithmetik, Wochenend- und Feiertagsverschiebung. Täglicher E-Mail-Digest markiert kritische Fristen vor Fristablauf.",
       },
       {
         icon: "MessageSquare",
         color: "emerald",
-        title: "WhatsApp-Copilot",
-        desc: "Zeiten buchen, Dokumente ablegen, Sprachnotizen vom Handy. Alles landet in der richtigen Akte — bestätigungspflichtig, nichts erreicht die Akte ungesehen.",
+        title: "WhatsApp-Copilot für die Kanzlei",
+        desc: "Zeiten buchen, Dokumente ablegen, Sprachnotizen vom Handy. Alles landet in der richtigen Akte — bestätigungspflichtig, nichts erreicht die Akte ungesehen. GoBD-konform dokumentiert.",
       },
       {
         icon: "ShieldAlert",
         color: "rose",
-        title: "Kollisionsprüfung (§ 43a BRAO / § 10 RAO / BGFA)",
+        title: "Kollisionsprüfung nach § 43a BRAO, § 10 RAO, BGFA",
         desc: "Jeder neue Mandant oder Gegner wird serverseitig gegen den gesamten Aktenbestand geprüft — Konflikte werden gemeldet, bevor das Mandat angenommen wird. Deckt § 43a BRAO (DE), § 10 RAO (AT) und BGFA (CH) ab.",
       },
       {
         icon: "Calculator",
         color: "blue",
-        title: "Zeiten, Auslagen, Rechnungen & DATEV",
-        desc: "Minuten nach Anwalt und Tätigkeit buchen, abrechenbare Auslagen erfassen, Rechnungen aus offener Arbeit erstellen, DATEV-ready exportieren (DE) bzw. ADATEV (AT).",
+        title: "Zeiten, Auslagen, Rechnungen und DATEV",
+        desc: "Minuten nach Anwalt und Tätigkeit buchen, abrechenbare Auslagen erfassen, Rechnungen aus offener Arbeit erstellen. DATEV-Export (DE) und ADATEV (AT) in einem Klick.",
       },
       {
         icon: "Shield",
         color: "violet",
-        title: "On-Premise oder EU-Cloud",
-        desc: "Die vollständige Engine auf eigener Kanzlei-Infrastruktur — oder verwaltete EU-Cloud mit AVV. Mandantendaten bleiben unter deiner Kontrolle.",
+        title: "On-Premise oder EU-Cloud mit AVV",
+        desc: "Die vollständige Engine auf eigener Kanzlei-Infrastruktur mit eigenen Schlüsseln — oder verwaltete EU-Cloud mit AVV. Mandantendaten verlassen niemals deine Kontrolle.",
       },
     ],
-    howTitle: "So funktioniert's: vom Dokument zur belegten Antwort",
+    howTitle: "So funktioniert Subsumio: vom Dokument zur belegten Antwort",
     how: [
       {
         step: "01",
         icon: "Database",
-        title: "Füttern",
-        desc: "Akten, Mails, PDFs, Sprachnotizen, WhatsApp. Subsumio zerlegt, vektorisiert und indiziert automatisch. OCR holt Text auch aus Scans.",
+        title: "Dokumente einpflegen",
+        desc: "Akten, Mails, PDFs, Sprachnotizen, WhatsApp-Nachrichten. Subsumio zerlegt, vektorisiert und indiziert automatisch — OCR extrahiert Text auch aus gescannten Dokumenten.",
       },
       {
         step: "02",
         icon: "Network",
-        title: "Strukturieren",
-        desc: "Bei jedem Speichern erkennt die Engine Personen, Fristen und Beziehungen und baut daraus einen juristischen Wissensgraphen. Ohne manuelle Datenpflege.",
+        title: "Wissensgraph aufbauen",
+        desc: "Bei jedem Speichern erkennt die Engine Personen, Fristen und Beziehungen und baut daraus einen juristischen Wissensgraphen. Vollautomatisch, ohne manuelle Datenpflege.",
       },
       {
         step: "03",
         icon: "Search",
-        title: "Fragen",
-        desc: "Fragen in normaler Sprache. Hybrid-Suche aus Vektor, Stichwort und Graph findet die entscheidenden Stellen.",
+        title: "In normaler Sprache fragen",
+        desc: "Fragen in Alltagssprache. Hybride Suche aus Vektor, Stichwort und Graph findet die entscheidenden Passagen — über alle Akten und Schriftsätze hinweg.",
       },
       {
         step: "04",
         icon: "Brain",
-        title: "Belegte Antwort",
-        desc: "Synthetisierte Antwort mit seitengenauen Zitaten — plus ehrlicher Hinweis, was in der Akte noch fehlt.",
+        title: "Belegte Antwort erhalten",
+        desc: "Eine synthetisierte Antwort mit seitengenauen Zitaten — plus ehrlicher Hinweis, was in der Akte noch fehlt. Die Gap-Analyse zeigt offene Risiken, bevor sie zu Problemen werden.",
       },
     ],
     scenariosTitle: "Kanzlei-Workflows aus der Praxis",
-    scenariosSub: "Echte Abläufe aus dem Produkt — drei Szenarien, die jeder Anwalt kennt.",
+    scenariosSub: "Drei Abläufe aus dem Produkt, die jeder Anwalt sofort erkennt.",
     scenarios: [
       {
         role: "Eingangspost",
-        text: "Die Tagespost und einen gescannten Vertrag hochladen, dann fragen: „Welche Fristen löst das aus?“ — jedes gesetzliche Datum wird nach ZPO/BGB/ABGB berechnet, im Kalender eingetragen und mit der Akte verknüpft.",
+        text: "Tagespost und einen gescannten Vertrag hochladen, dann fragen: „Welche Fristen löst das aus?“ — jedes gesetzliche Datum wird nach ZPO/BGB/ABGB berechnet, im Kalender eingetragen und mit der Akte verknüpft. Manual Fristenbuch entfällt.",
       },
       {
         role: "Verhandlungsvorbereitung",
-        text: "Sprachnotiz und PDF per WhatsApp mit Aktenzeichen schicken, 20 Minuten buchen, dann fragen: „Wo widersprechen sich die Schriftsätze der Gegenseite?“ — der Dream Cycle findet es über Schriftsätze, Anlagen und Protokolle hinweg.",
+        text: "Sprachnotiz und PDF per WhatsApp mit Aktenzeichen schicken, 20 Minuten buchen, dann fragen: „Wo widersprechen sich die Schriftsätze der Gegenseite?“ — Subsumio findet Widersprüche über Schriftsätze, Anlagen und Protokolle hinweg in Sekunden.",
       },
       {
-        role: "Neuer Mitarbeiter",
-        text: "Fünf Jahre Akten und Schriftsätze indexieren. Der neue Mitarbeiter fragt: „Haben wir schon mal so etwas argumentiert?“ — und findet den Schriftsatz von 2023 in Sekunden, mit seitengenauen Zitaten.",
+        role: "Mitarbeiter-Onboarding",
+        text: "Fünf Jahre Akten und Schriftsätze indexieren. Der neue Mitarbeiter fragt: „Haben wir schon mal so etwas argumentiert?“ — und findet den Schriftsatz von 2023 in Sekunden, mit seitengenauen Zitaten. Einarbeitungszeit von Wochen auf Tage.",
       },
     ],
-    faqTitle: "Fragen, beantwortet",
+    faqTitle: "Häufige Fragen — klar beantwortet",
     faq: [
       {
-        q: "Was unterscheidet das von Notion AI, Glean oder einer Vektor-Datenbank?",
-        a: "Die liefern Dokumente oder Chunks. Subsumio liefert eine synthetisierte Antwort mit Zitaten, läuft für Beziehungsfragen („wer hat in X investiert?“) über einen typisierten Wissensgraphen und sagt dir, was es nicht weiß — die Gap-Analyse verändert, wie du arbeitest.",
+        q: "Was unterscheidet Subsumio von Notion AI, Glean oder einer Vektor-Datenbank?",
+        a: "Notion AI, Glean und Vektor-Datenbanken liefern Dokumente oder Textabschnitte. Subsumio liefert eine synthetisierte Antwort mit seitengenauen Zitaten, nutzt für Beziehungsfragen einen typisierten Wissensgraphen und gibt eine Gap-Analyse — es zeigt explizit, was in der Akte fehlt. Das ist der Unterschied zwischen „irgendwo steht etwas“ und „hier steht die Antwort, und hier fehlt noch etwas“.",
       },
       {
-        q: "Wo liegen meine Daten?",
-        a: "Deine Wahl. Self-hoste die Engine auf eigener Hardware oder nutze unsere verwaltete EU-Cloud. Enterprise-Pläne unterstützen On-Prem und einen AVV.",
+        q: "Wo liegen meine Kanzleidaten?",
+        a: "Sie haben die Wahl: Self-Hosting der Engine auf eigener Hardware mit eigenen Schlüsseln oder unsere verwaltete EU-Cloud mit AVV. Enterprise-Pläne unterstützen On-Premise-Deployment und einen unterzeichneten AVV. Mandantendaten verlassen in keinem Fall die EU.",
       },
       {
-        q: "Brauche ich API-Keys oder einen Server?",
-        a: "Nein. Bei gehosteten Plänen ist Subsumio vollständig verwaltet: keine API-Keys, keine eigene Infrastruktur. Enterprise-On-Premise läuft auf eigener Hardware mit eigenen Schlüsseln.",
+        q: "Brauche ich API-Keys oder eigene Server-Infrastruktur?",
+        a: "Nein. Bei gehosteten Plänen ist Subsumio vollständig verwaltet — keine API-Keys, keine eigene Infrastruktur, keine IT-Ressourcen nötig. Enterprise-On-Premise läuft auf eigener Hardware mit eigenen Schlüsseln.",
       },
       {
         q: "Was passiert, wenn ich an Plan-Limits stoße?",
-        a: "Du siehst den Verbrauch live im Dashboard, und wir fragen, bevor sich etwas ändert. Keine Überraschungsrechnung, kein stilles Drosseln.",
+        a: "Der Verbrauch ist live im Dashboard sichtbar. Wir fragen, bevor sich etwas ändert — keine Überraschungsrechnungen, kein stilles Drosseln. Mehrverbrauch wird zu transparenten Einheitspreisen abgerechnet.",
       },
       {
-        q: "Trainiert ihr auf meinen Daten?",
-        a: "Niemals. Dein Kanzleiwissen gehört allein dir und wird nicht zum Training geteilter Modelle genutzt. On-Premise bleibt alles auf deiner Infrastruktur; in der EU-Cloud wird es verschlüsselt und mandantensepariert verarbeitet.",
+        q: "Trainiert Subsumio auf meinen Kanzleidaten?",
+        a: "Niemals. Ihr Kanzleiwissen gehört allein Ihnen und wird nicht zum Training geteilter Modelle genutzt. On-Premise bleibt alles auf Ihrer Infrastruktur. In der EU-Cloud wird es verschlüsselt und mandantensepariert verarbeitet — keine andere Kanzlei hat Zugriff.",
+      },
+      {
+        q: "Ist Subsumio mit § 203 StGB und Berufsgeheimnis-Pflichten vereinbar?",
+        a: "Ja. Die Architektur ist für Berufsgeheimnisträger konzipiert: Kein Dritter verarbeitet Mandantendaten ohne ausdrückliche Freigabe. On-Premise bleibt die Datenverarbeitung vollständig innerhalb der Kanzlei. In der EU-Cloud erfolgt die Verarbeitung verschlüsselt und mandantensepariert.",
       },
     ],
-    ctaTitle: "Deine Kanzlei. Endlich abfragbar.",
-    ctaSub: "Drei Minuten bis zur ersten belegten Antwort. Keine Kreditkarte.",
-    ctaButton: "Mit Subsumio starten",
+    ctaTitle: "Ihre Kanzlei. Strukturiert abfragbar.",
+    ctaSub: "14 Tage volle Testversion. Keine Kreditkarte. Kein IT-Aufwand.",
+    ctaButton: "Demo vereinbaren",
   },
 } as const;
 
@@ -938,7 +946,7 @@ export const UI_STRINGS: Record<Lang, Record<string, string>> = {
     euHosted: "EU-hosted or self-hosted",
     liveDemoAria: "Live demo",
     inActionBadge: "In action",
-    dashboardTitle: "Attach a file. Ask. Cited answer.",
+    dashboardTitle: "Attach a file. Ask. Get a cited answer.",
     dashboardSub:
       "Bring files in via upload, Google Drive or your practice software — then ask in chat, with page-level sources.",
     seeFullPricing: "See full pricing details",
@@ -1020,7 +1028,7 @@ export const UI_STRINGS: Record<Lang, Record<string, string>> = {
     gapWarning: "⚠ Gap: Thu 2pm has no notes",
     worksOffline: "Works offline",
     installNow: "Install Subsumio now",
-    getStarted: "Get started",
+    getStarted: "Request a demo",
     seeFeatures: "See features",
     pushNotifications: "Push notifications",
     biometricUnlock: "Biometric unlock",
@@ -1034,9 +1042,9 @@ export const UI_STRINGS: Record<Lang, Record<string, string>> = {
     euHosted: "EU-gehostet oder On-Premise",
     liveDemoAria: "Live-Demo",
     inActionBadge: "In Aktion",
-    dashboardTitle: "Datei anhängen. Fragen. Zitierte Antwort.",
+    dashboardTitle: "Datei anhängen. Fragen. Belegte Antwort.",
     dashboardSub:
-      "Dateien per Upload, Google Drive oder Anwaltssoftware in die Wissensbasis — dann im Chat fragen, mit seitengenauen Quellen.",
+      "Dateien per Upload, Google Drive oder Anwaltssoftware in die Wissensbasis — dann im Chat fragen, mit seitengenauen Fundstellen.",
     seeFullPricing: "Alle Preisdetails ansehen",
     gdprReady: "DSGVO-konform",
     professionalSecrecy: "Berufsgeheimnis per Architektur",
@@ -1116,7 +1124,7 @@ export const UI_STRINGS: Record<Lang, Record<string, string>> = {
     gapWarning: "⚠ Lücke: Do 14 Uhr ohne Notiz",
     worksOffline: "Funktioniert offline",
     installNow: "Subsumio jetzt installieren",
-    getStarted: "Jetzt starten",
+    getStarted: "Demo anfragen",
     seeFeatures: "Features ansehen",
     pushNotifications: "Push-Benachrichtigungen",
     biometricUnlock: "Biometrische Entsperrung",

@@ -3,7 +3,16 @@ import { z } from "zod";
 import { buildMailDraft, getMailMessage, sendMailboxMessage } from "@/lib/email/mailbox";
 import { createHandler, apiError } from "@/lib/api-handler";
 
-const replySchema = z.object({}).passthrough();
+const replySchema = z.object({
+  subject: z.string().trim().min(1, "subject_required").max(500),
+  text: z.string().trim().max(100_000).optional(),
+  html: z.string().trim().max(500_000).optional(),
+  to: z.union([z.string(), z.array(z.string())]).optional(),
+  cc: z.union([z.string(), z.array(z.string())]).optional(),
+  bcc: z.union([z.string(), z.array(z.string())]).optional(),
+}).passthrough().refine((data) => data.text || data.html, {
+  message: "body_required",
+});
 
 export const POST = createHandler(
   {

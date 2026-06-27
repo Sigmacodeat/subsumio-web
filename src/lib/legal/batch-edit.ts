@@ -107,6 +107,7 @@ async function executeOnPage(
   // Fetch the page
   const fetchRes = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(slug)}`, {
     headers: { ...authHeaders, "Content-Type": "application/json" },
+    signal: AbortSignal.timeout(10_000),
   });
   if (!fetchRes.ok) {
     return { slug, success: false, error: `Fetch failed: ${fetchRes.status}` };
@@ -203,6 +204,7 @@ async function executeOnPage(
       const delRes = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(slug)}`, {
         method: "DELETE",
         headers: authHeaders,
+        signal: AbortSignal.timeout(10_000),
       });
       return {
         slug,
@@ -246,6 +248,7 @@ async function executeOnPage(
     method: "PUT",
     headers: { ...authHeaders, "Content-Type": "application/json" },
     body: JSON.stringify(updateBody),
+    signal: AbortSignal.timeout(10_000),
   });
 
   return {

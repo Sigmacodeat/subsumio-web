@@ -49,6 +49,7 @@ export const POST = createHandler(
           role: "planning",
           force_specialists: ["legal-analyst", "legal-deadline-extractor"],
         }),
+        signal: AbortSignal.timeout(15_000),
       });
 
       if (!res.ok) {

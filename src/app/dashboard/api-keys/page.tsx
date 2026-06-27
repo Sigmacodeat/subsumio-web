@@ -5,20 +5,10 @@ import { Plus, Trash2, Copy, CheckCircle2, AlertTriangle, Loader2 } from "lucide
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { useApiKeys, useCreateApiKey, useDeleteApiKey } from "@/lib/queries/settings";
+import { useApiKeys, useCreateApiKey, useDeleteApiKey, type ApiKey } from "@/lib/queries/settings";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
 
-interface ApiKey {
-  id: string;
-  name: string;
-  prefix: string;
-  scopes: string[];
-  active: boolean;
-  createdAt: string;
-  lastUsedAt?: string;
-  createdBy?: string;
-}
 
 export default function ApiKeysPage() {
   const { t, lang } = useLang();

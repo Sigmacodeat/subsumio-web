@@ -91,6 +91,7 @@ Beende die Antwort mit: "Diese Information ersetzt keine anwaltliche Prüfung."`
         brain_id: ctx.brainId,
         model: "anthropic:claude-sonnet-4-6",
         max_turns: 5,
+      signal: AbortSignal.timeout(15_000),
       }),
     });
 

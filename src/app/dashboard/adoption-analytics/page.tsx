@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import {
   BarChart3,
   Loader2,
@@ -19,6 +19,7 @@ import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
+import { useApiQuery } from "@/lib/use-api-query";
 
 interface UserUsage {
   user_id: string;
@@ -124,29 +125,16 @@ function formatRelative(iso: string): string {
 
 export default function AdoptionAnalyticsPage() {
   const { t: _t } = useLang();
-  const [data, setData] = useState<AdoptionAnalytics | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [daysBack, setDaysBack] = useState(30);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch(`/api/analytics/adoption?daysBack=${daysBack}`);
+  const { data, loading, error, refetch: load } = useApiQuery<AdoptionAnalytics>(
+    async () => {
+      const res = await fetch(`/api/analytics/adoption?daysBack=${daysBack}`, { signal: AbortSignal.timeout(30_000) });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = (await res.json()) as AdoptionAnalytics;
-      setData(json);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Unbekannter Fehler");
-    } finally {
-      setLoading(false);
-    }
-  }, [daysBack]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
+      return (await res.json()) as AdoptionAnalytics;
+    },
+    [daysBack]
+  );
 
   const maxRequests =
     data && data.usage_trends.length > 0

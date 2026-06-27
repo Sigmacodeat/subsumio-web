@@ -1,5 +1,12 @@
+import { z } from "zod";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
+
+const permissionPostSchema = z.object({
+  slug: z.string().min(1).max(512),
+  group_id: z.string().min(1).max(200),
+  permission: z.enum(["read", "write"]).default("read"),
+});
 
 export const GET = createHandler(
   {
@@ -10,11 +17,12 @@ export const GET = createHandler(
   async (ctx, _body, _query, req) => {
     try {
       const slug = req.url.split("/").pop();
-      if (!slug) {
+      if (!slug || slug.length > 512) {
         return apiError("slug_required", "Slug fehlt", 400);
       }
       const res = await fetch(`${ENGINE_URL}/api/acls/permissions/${encodeURIComponent(slug)}`, {
         headers: ctx.headers,
+      signal: AbortSignal.timeout(10_000),
       });
       if (!res.ok) {
         return apiError("acl_fetch_failed", `Engine returned ${res.status}`, res.status);
@@ -35,23 +43,23 @@ export const POST = createHandler(
   {
     action: "settings.write",
     rateTier: "standard",
+    body: permissionPostSchema,
+    audit: (_ctx, body) => ({
+      action: "acl.set_permission" as const,
+      entityType: "acl_permission",
+      details: { slug: body.slug, groupId: body.group_id, permission: body.permission },
+    }),
   },
   async (ctx, body, _query, _req) => {
     try {
-      const b = body as Record<string, unknown> | undefined;
-      const slug = b?.slug;
-      const groupId = b?.group_id;
-      const permission = b?.permission;
-      if (typeof slug !== "string" || typeof groupId !== "string") {
-        return apiError("slug_and_group_id_required", "Slug und Gruppen-ID sind erforderlich", 400);
-      }
       const res = await fetch(`${ENGINE_URL}/api/acls/permissions`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...ctx.headers },
         body: JSON.stringify({
-          slug,
-          group_id: groupId,
-          permission: permission === "write" ? "write" : "read",
+          slug: body.slug,
+          group_id: body.group_id,
+          permission: body.permission,
+        signal: AbortSignal.timeout(15_000),
         }),
       });
       if (!res.ok) {

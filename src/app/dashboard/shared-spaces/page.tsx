@@ -21,6 +21,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { csrfFetch } from "@/lib/csrf";
 import type { SharedSpace, SpaceMember, SpaceResource } from "@/lib/shared-spaces";
 
 const roleBadge: Record<string, string> = {
@@ -56,7 +57,7 @@ export default function SharedSpacesPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/shared-spaces");
+      const res = await csrfFetch("/api/shared-spaces");
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
       setSpaces(Array.isArray(json.data) ? json.data : []);
@@ -80,7 +81,7 @@ export default function SharedSpacesPage() {
   const handleCreate = async (title: string, description: string) => {
     setCreating(true);
     try {
-      const res = await fetch("/api/shared-spaces", {
+      const res = await csrfFetch("/api/shared-spaces", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title, description }),

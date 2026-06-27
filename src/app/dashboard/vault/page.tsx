@@ -178,8 +178,7 @@ export default function VaultPage() {
   });
 
   const { fields, append, remove } = useFieldArray({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    control: reviewForm.form.control as any,
+    control: reviewForm.form.control as never,
     name: "questions",
   });
 

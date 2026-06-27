@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { csrfFetch } from "@/lib/csrf";
 import Link2 from "next/link";
 
 // ── Types ─────────────────────────────────────────────────────────────
@@ -277,7 +278,7 @@ export default function WorkflowBuilderPage() {
           }))
           .filter((s) => s !== null),
       };
-      const res = await fetch("/api/agent-templates", {
+      const res = await csrfFetch("/api/agent-templates", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

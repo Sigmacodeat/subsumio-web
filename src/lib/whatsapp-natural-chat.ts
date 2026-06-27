@@ -7,6 +7,7 @@ import { parseIntent, processIntent } from "@/lib/legal-chat/actions";
 import type { BrainPage } from "@/lib/types";
 import type { WhatsAppIdentity } from "@/lib/whatsapp/types";
 import { phoneHash } from "@/lib/whatsapp/verify";
+import { collectSSEChunks } from "@/lib/sse-stream";
 
 interface NaturalChatContext {
   sender: WhatsAppIdentity;
@@ -102,6 +103,7 @@ async function engineRequest<T>(
       ...headers,
       ...(init?.headers ?? {}),
     },
+    signal: init?.signal ?? AbortSignal.timeout(30_000),
   });
   if (!res.ok) {
     const error = await res.text().catch(() => "");
@@ -273,6 +275,7 @@ async function think(
       ...headers,
     },
     body: JSON.stringify({ query, mode: "balanced" }),
+    signal: AbortSignal.timeout(60_000),
   });
   if (!res.ok) throw new Error(`Brain-Q&A fehlgeschlagen: HTTP ${res.status}`);
   const contentType = res.headers.get("Content-Type") || "";
@@ -281,26 +284,7 @@ async function think(
     return data.answer || "Keine Antwort erhalten.";
   }
   if (!res.body) return "Keine Antwort erhalten.";
-  const reader = res.body.getReader();
-  const decoder = new TextDecoder();
-  let answer = "";
-  let buffer = "";
-  const handle = (data: string) => {
-    if (data === "[DONE]") return;
-    try {
-      const parsed = JSON.parse(data) as { chunk?: string };
-      if (typeof parsed.chunk === "string") answer += parsed.chunk;
-    } catch {}
-  };
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split("\n");
-    buffer = lines.pop() || "";
-    for (const line of lines) if (line.startsWith("data: ")) handle(line.slice(6));
-  }
-  if (buffer.startsWith("data: ")) handle(buffer.slice(6));
+  const answer = await collectSSEChunks(res.body);
   return answer.trim() || "Keine Antwort erhalten.";
 }
 

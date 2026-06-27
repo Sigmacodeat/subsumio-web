@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createCronHandler } from "@/lib/api-handler";
-import { fetchPages, createDailyDedup } from "@/lib/cron-utils";
+import { batchFetchPages, createDailyDedup } from "@/lib/cron-utils";
 import { loadAllowedSenders, phoneHash } from "@/lib/whatsapp/verify";
 import {
   buildDailyBriefing,
@@ -64,7 +64,9 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
       // legal_deadline pages, the same second source cron/deadlines.ts
       // reads — a deadline tracked as its own page (not embedded in a
       // case's frontmatter.deadlines[]) was invisible to the briefing.
-      const pages = await fetchPages(sender.brainId, "legal_case", 1000);
+      const batch = await batchFetchPages(sender.brainId, ["legal_case", "legal_deadline"], 1000);
+      const pages = batch["legal_case"] ?? [];
+      const standaloneDeadlinePages = batch["legal_deadline"] ?? [];
       const cases: BriefingCase[] = pages.map((p) => {
         const fm = p.frontmatter ?? {};
         return {
@@ -74,7 +76,6 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
         };
       });
 
-      const standaloneDeadlinePages = await fetchPages(sender.brainId, "legal_deadline", 200);
       if (standaloneDeadlinePages.length > 0) {
         cases.push({
           caseNumber: "—",

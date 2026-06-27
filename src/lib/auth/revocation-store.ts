@@ -39,21 +39,23 @@ export async function getMinRevocationVersion(userId: string): Promise<number> {
 
 /** Invalidate all sessions for a user (e.g. after password change). */
 export async function revokeAllSessions(userId: string): Promise<void> {
-  const current = await getMinRevocationVersion(userId);
-  const next = current + 1;
-  revokedVersions.set(userId, next);
-
   const pool = getSharedPgPool();
-  if (!pool) return;
+  if (!pool) {
+    const current = revokedVersions.get(userId) ?? 0;
+    revokedVersions.set(userId, current + 1);
+    return;
+  }
   await ensureRevocationSchema();
   try {
-    await pool.query(
+    const { rows } = await pool.query<{ min_version: number }>(
       `INSERT INTO subsumio_session_revocations (user_id, min_version, updated_at)
-       VALUES ($1, $2, now())
+       VALUES ($1, 1, now())
        ON CONFLICT (user_id)
-       DO UPDATE SET min_version = $2, updated_at = now()`,
-      [userId, next],
+       DO UPDATE SET min_version = subsumio_session_revocations.min_version + 1, updated_at = now()
+       RETURNING min_version`,
+      [userId],
     );
+    revokedVersions.set(userId, rows[0]?.min_version ?? 1);
   } catch (err) {
     console.error(`[revocation] failed to persist for ${userId}:`, err instanceof Error ? err.message : String(err));
   }

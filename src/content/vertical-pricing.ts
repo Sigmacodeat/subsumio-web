@@ -37,7 +37,7 @@ export const VERTICAL_PRICING: Record<Lang, Partial<Record<string, VerticalPrici
           href: "/signup",
         },
         {
-          id: "solo",
+          id: "pro",
           name: "Professional",
           price: "€890",
           period: "/seat/mo",
@@ -57,7 +57,7 @@ export const VERTICAL_PRICING: Record<Lang, Partial<Record<string, VerticalPrici
           href: "/signup",
         },
         {
-          id: "kanzlei",
+          id: "team",
           name: "Kanzlei",
           price: "€1,290",
           period: "/seat/mo",
@@ -93,7 +93,7 @@ export const VERTICAL_PRICING: Record<Lang, Partial<Record<string, VerticalPrici
             "Dedicated CSM · custom retention & storage",
             "Overage: €0.35/query · €0.15/WA msg",
           ],
-          cta: "Talk to us",
+          cta: "Request a demo",
           href: "mailto:hello@subsum.eu",
         },
       ],
@@ -124,7 +124,7 @@ export const VERTICAL_PRICING: Record<Lang, Partial<Record<string, VerticalPrici
           href: "/signup",
         },
         {
-          id: "solo",
+          id: "pro",
           name: "Professional",
           price: "890 €",
           period: "/Seat/Mon.",
@@ -144,7 +144,7 @@ export const VERTICAL_PRICING: Record<Lang, Partial<Record<string, VerticalPrici
           href: "/signup",
         },
         {
-          id: "kanzlei",
+          id: "team",
           name: "Kanzlei",
           price: "1.290 €",
           period: "/Seat/Mon.",
@@ -180,7 +180,7 @@ export const VERTICAL_PRICING: Record<Lang, Partial<Record<string, VerticalPrici
             "Dedizierter CSM · individuelle Aufbewahrung & Speicher",
             "Mehrverbrauch: 0,35 €/Anfrage · 0,15 €/WA",
           ],
-          cta: "Kontakt aufnehmen",
+          cta: "Demo anfragen",
           href: "mailto:hello@subsum.eu",
         },
       ],

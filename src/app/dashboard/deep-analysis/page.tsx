@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { csrfFetch } from "@/lib/csrf";
 
 interface DeepAnalysisCitation {
   slug: string;
@@ -77,7 +78,7 @@ export default function DeepAnalysisPage() {
     setError(null);
     setReport(null);
     try {
-      const res = await fetch("/api/legal/deep-analysis", {
+      const res = await csrfFetch("/api/legal/deep-analysis", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

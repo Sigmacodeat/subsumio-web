@@ -54,8 +54,16 @@ import {
   QuickActions,
   QueuePanel,
 } from "./widget-dashboard";
-import { KanzleiInsights } from "./kanzlei-insights";
+import dynamic from "next/dynamic";
 import { RundownWidget } from "./rundown-widget";
+
+const KanzleiInsights = dynamic(() => import("./kanzlei-insights").then((m) => m.KanzleiInsights), {
+  loading: () => (
+    <div className="flex h-48 items-center justify-center text-sm text-[color:var(--ds-text-muted)]">
+      Laden…
+    </div>
+  ),
+});
 
 function SortableWidget({
   id,

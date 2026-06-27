@@ -7,7 +7,9 @@ import {
   getMessageIdByTrackingId,
   getFirstOpenEvent,
   detectForward,
+  verifyUrlSignature,
 } from "@/lib/email/tracking";
+import { hit, clientIp } from "@/lib/auth/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -30,16 +32,35 @@ export async function GET(
   { params }: { params: Promise<{ trackingId: string }> }
 ) {
   const { trackingId } = await params;
+
+  // Rate limiting: 60 clicks per minute per IP
+  const ip = clientIp(req.headers);
+  const ipLimit = await hit(`email-track-click:ip:${ip}`, 60, 60_000);
+  if (!ipLimit.ok) {
+    return NextResponse.redirect(
+      `${process.env.NEXT_PUBLIC_APP_URL || "https://subsum.eu"}/`,
+      { status: 302 }
+    );
+  }
+
   const searchParams = req.nextUrl.searchParams;
   const linkId = searchParams.get("l") ?? undefined;
   const encodedUrl = searchParams.get("u") ?? "";
+  const signature = searchParams.get("s") ?? "";
+
+  // Verify HMAC signature to prevent open redirect attacks
+  if (!encodedUrl || !signature || !verifyUrlSignature(encodedUrl, signature)) {
+    return NextResponse.redirect(
+      `${process.env.NEXT_PUBLIC_APP_URL || "https://subsum.eu"}/`,
+      { status: 302 }
+    );
+  }
 
   // Decode the original URL
   let targetUrl: string;
   try {
     targetUrl = Buffer.from(encodedUrl, "base64url").toString("utf8");
   } catch {
-    // If decoding fails, redirect to the site root
     targetUrl = "/";
   }
 

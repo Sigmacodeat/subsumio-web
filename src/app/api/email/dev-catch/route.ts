@@ -87,7 +87,9 @@ export async function POST(req: NextRequest) {
   };
 
   await persist(email);
-  console.log(`[dev-catch] email received: ${email.subject} from ${email.fromEmail}`);
+  if (process.env.NODE_ENV !== "production") {
+    console.debug(`[dev-catch] email received: ${email.id}`);
+  }
 
   return NextResponse.json({ ok: true, id: email.id });
 }

@@ -622,10 +622,9 @@ export default function MonitoringPage() {
     setLoading(true);
     setError(null);
     try {
-      const [monitorPages, alertPages] = await Promise.all([
-        api.brain.listPages({ type: "regulatory_monitor", limit: 200 }),
-        api.brain.listPages({ type: "regulatory_alert", limit: 200 }),
-      ]);
+      const batch = await api.brain.batchListPages(["regulatory_monitor", "regulatory_alert"], 200);
+      const monitorPages = batch["regulatory_monitor"] ?? [];
+      const alertPages = batch["regulatory_alert"] ?? [];
 
       const parsedMonitors = monitorPages
         .map((p) => frontmatterToMonitor(p))

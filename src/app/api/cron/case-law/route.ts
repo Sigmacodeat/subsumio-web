@@ -31,6 +31,7 @@ async function readWatchlist(brainId: string): Promise<WatchTerm[]> {
   try {
     const res = await fetch(`${ENGINE_URL}/api/pages/${WATCHLIST_SLUG}`, {
       headers: engineHeadersForBrain(brainId),
+    signal: AbortSignal.timeout(30_000),
     });
     if (!res.ok) return [];
     const page = (await res.json()) as { frontmatter?: Record<string, unknown> };
@@ -85,6 +86,7 @@ async function persistHitsAsPages(brainId: string, hits: JudgementHit[]) {
             fetched_at: new Date().toISOString(),
           },
         }),
+        signal: AbortSignal.timeout(30_000),
       });
     } catch {
       // Einzelne Fehler dürfen den Cron nicht abbrechen

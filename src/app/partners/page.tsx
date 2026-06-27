@@ -5,7 +5,7 @@ import { JsonLd, breadcrumbLd } from "@/components/seo/jsonld";
 export const metadata: Metadata = {
   title: "Subsumio Partner Program — earn 30% lifetime recurring commission",
   description:
-    "Refer law firms to Subsumio and earn 30% recurring commission for the lifetime of each paying client. Three tracks: affiliate, customer referral, and certified partner.",
+    "Refer law firms to Subsumio and earn 30% recurring commission for the lifetime of each paying client. Three tracks: affiliate, customer referral, and certified partner. AI legal software for AT, DE and CH.",
   alternates: { canonical: "/partners", languages: { en: "/partners", de: "/de/partners" } },
   openGraph: {
     title: "Subsumio Partner Program — earn 30% lifetime recurring commission",

@@ -43,6 +43,7 @@ async function checkLegalCaseConflicts(
       method: "POST",
       headers: { "Content-Type": "application/json", ...headers },
       body: JSON.stringify({ name }),
+      signal: AbortSignal.timeout(15_000),
     });
     if (!checkRes.ok) {
       throw new Error(`Conflict check failed: HTTP ${checkRes.status}`);
@@ -156,6 +157,7 @@ export const POST = createHandler(
         method: "POST",
         headers: { "Content-Type": "application/json", ...ctx.headers },
         body: JSON.stringify(body),
+        signal: AbortSignal.timeout(15_000),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       void recordQuota(ctx, "pages");

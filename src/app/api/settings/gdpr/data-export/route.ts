@@ -6,6 +6,8 @@ import { logAudit } from "@/lib/audit";
 import { createServerBrainClient } from "@/lib/server-brain";
 import { createHandler, apiError } from "@/lib/api-handler";
 
+export const maxDuration = 120;
+
 export const GET = createHandler(
   {
     action: "settings.read",

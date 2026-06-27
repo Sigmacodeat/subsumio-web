@@ -5,12 +5,12 @@ import { JsonLd, breadcrumbLd } from "@/components/seo/jsonld";
 export const metadata: Metadata = {
   title: "About Subsumio — AI legal software built in Austria for DACH law firms",
   description:
-    "Subsumio is built in Austria for law firms in AT, DE and CH. Our mission: cited AI answers for legal work, with confidentiality by architecture — EU cloud or self-hosted.",
+    "Subsumio is built in Austria for law firms in AT, DE and CH. Our mission: cited AI answers for legal work, with confidentiality by architecture — EU cloud or self-hosted. No training on client data.",
   alternates: { canonical: "/about", languages: { en: "/about", de: "/de/about" } },
   openGraph: {
     title: "About Subsumio — AI legal software built in Austria for DACH law firms",
     description:
-      "Subsumio is built in Austria for law firms in AT, DE and CH. Our mission: cited AI answers for legal work, with confidentiality by architecture.",
+      "Subsumio is built in Austria for law firms in AT, DE and CH. Cited AI answers for legal work, with confidentiality by architecture — EU cloud or self-hosted.",
     url: "/about",
     type: "website",
   },

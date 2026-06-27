@@ -33,7 +33,6 @@ import {
   Ban as SpamIcon,
   Trash2 as TrashIcon,
 } from "lucide-react";
-import { sanitizeHtml, plaintextToHtml } from "@/lib/sanitize-html";
 import { csrfFetch } from "@/lib/csrf";
 import { useLang } from "@/lib/use-lang";
 import type { Lang } from "@/content/site";
@@ -753,15 +752,26 @@ function MessageDetail({
     else setViewMode("html");
   }, [message.id, message.html, message.text]);
 
-  const htmlContent = useMemo(() => {
-    if (viewMode === "text") {
-      return message.text ? plaintextToHtml(message.text) : "";
-    }
-    return message.html
-      ? sanitizeHtml(message.html)
-      : message.text
-        ? plaintextToHtml(message.text)
-        : "";
+  const [htmlContent, setHtmlContent] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { sanitizeHtml, plaintextToHtml } = await import("@/lib/sanitize-html");
+      if (cancelled) return;
+      if (viewMode === "text") {
+        setHtmlContent(message.text ? plaintextToHtml(message.text) : "");
+        return;
+      }
+      setHtmlContent(
+        message.html
+          ? sanitizeHtml(message.html)
+          : message.text
+            ? plaintextToHtml(message.text)
+            : ""
+      );
+    })();
+    return () => { cancelled = true; };
   }, [viewMode, message.html, message.text]);
 
   return (

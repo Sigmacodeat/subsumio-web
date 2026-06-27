@@ -5,6 +5,11 @@ export const DELETE = createHandler(
   {
     action: "settings.write",
     rateTier: "standard",
+    audit: (_ctx, _body, _query) => ({
+      action: "acl.delete_group" as const,
+      entityType: "acl_group",
+      details: {},
+    }),
   },
   async (ctx, _body, _query, req) => {
     try {
@@ -15,6 +20,7 @@ export const DELETE = createHandler(
       const res = await fetch(`${ENGINE_URL}/api/acls/groups/${encodeURIComponent(groupId)}`, {
         method: "DELETE",
         headers: ctx.headers,
+      signal: AbortSignal.timeout(10_000),
       });
       if (!res.ok) {
         return apiError("acl_delete_failed", `Engine returned ${res.status}`, res.status);

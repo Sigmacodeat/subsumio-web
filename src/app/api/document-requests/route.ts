@@ -70,6 +70,7 @@ export const GET = createHandler(
     const limit = Math.min(Number.parseInt(query.limit || "100", 10) || 100, 250);
     const res = await fetch(`${ENGINE_URL}/api/pages?type=document_request&limit=${limit}`, {
       headers: ctx.headers,
+    signal: AbortSignal.timeout(10_000),
     });
     if (!res.ok)
       return apiError(
@@ -132,6 +133,7 @@ export const POST = createHandler(
         type: "document_request",
         content: request.content,
         frontmatter: request.frontmatter,
+      signal: AbortSignal.timeout(15_000),
       }),
     });
     if (!res.ok)
@@ -195,6 +197,7 @@ export const PATCH = createHandler(
         frontmatter: patch,
         ...(body.message_draft ? { content: body.message_draft } : {}),
         merge: true,
+      signal: AbortSignal.timeout(15_000),
       }),
     });
     if (!res.ok)

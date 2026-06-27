@@ -35,6 +35,7 @@ function pagesFrom(data: unknown): BrainPage[] {
 async function getPage(brainId: string, slug: string): Promise<BrainPage | null> {
   const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(slug)}`, {
     headers: engineHeadersForBrain(brainId),
+    signal: AbortSignal.timeout(10_000),
   });
   if (!res.ok) return null;
   return (await res.json()) as BrainPage;
@@ -54,6 +55,7 @@ async function updatePage(
     method: "POST",
     headers: { "Content-Type": "application/json", ...engineHeadersForBrain(brainId) },
     body: JSON.stringify({ ...input, merge: true }),
+    signal: AbortSignal.timeout(15_000),
   });
   return res.ok;
 }
@@ -77,6 +79,7 @@ async function findOpenDocumentRequest(
 
   const res = await fetch(`${ENGINE_URL}/api/pages?type=document_request&limit=200`, {
     headers: engineHeadersForBrain(brainId),
+    signal: AbortSignal.timeout(10_000),
   });
   if (!res.ok) return null;
 

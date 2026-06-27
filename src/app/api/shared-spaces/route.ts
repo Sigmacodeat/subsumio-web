@@ -68,6 +68,7 @@ export const POST = createHandler(
       method: "POST",
       headers: { "Content-Type": "application/json", ...ctx.headers },
       body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(15_000),
     });
 
     if (!res.ok) {
@@ -92,6 +93,7 @@ export const GET = createHandler(
 
     const res = await fetch(`${ENGINE_URL}/api/pages?${params}`, {
       headers: ctx.headers,
+      signal: AbortSignal.timeout(10_000),
     });
 
     if (!res.ok) {

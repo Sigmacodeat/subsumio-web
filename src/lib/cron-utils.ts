@@ -22,6 +22,7 @@ export async function fetchPages(brainId: string, type: string, limit: number): 
   try {
     const res = await fetch(`${ENGINE_URL}/api/pages?type=${encodeURIComponent(type)}&limit=${limit}`, {
       headers: engineHeadersForBrain(brainId),
+      signal: AbortSignal.timeout(15_000),
     });
     if (!res.ok) return [];
     const data = (await res.json()) as unknown;
@@ -32,18 +33,39 @@ export async function fetchPages(brainId: string, type: string, limit: number): 
 }
 
 /**
+ * Fetch pages of multiple types in parallel. Returns a map keyed by type.
+ * Each type fetch is independent — a failure for one type returns [] for that key.
+ */
+export async function batchFetchPages(
+  brainId: string,
+  types: string[],
+  limit: number
+): Promise<Record<string, EnginePage[]>> {
+  const entries = await Promise.all(
+    types.map(async (type) => [type, await fetchPages(brainId, type, limit)] as const)
+  );
+  return Object.fromEntries(entries);
+}
+
+/**
  * Build a brainId → User[] mapping from the user store.
  * Org members share the org's brain. Used by all cron routes.
  */
 export async function getRecipientsByBrain(): Promise<Map<string, User[]>> {
   const users = await getStore().list();
   const orgStore = getOrgStore();
+  const orgCache = new Map<string, string>();
   const recipientsByBrain = new Map<string, User[]>();
   for (const user of users) {
     let brainId = user.brainId;
     if (user.orgId) {
-      const org = await orgStore.getById(user.orgId);
-      if (org) brainId = org.brainId;
+      let cachedBrainId = orgCache.get(user.orgId);
+      if (!cachedBrainId) {
+        const org = await orgStore.getById(user.orgId);
+        cachedBrainId = org?.brainId;
+        if (cachedBrainId) orgCache.set(user.orgId, cachedBrainId);
+      }
+      if (cachedBrainId) brainId = cachedBrainId;
     }
     const list = recipientsByBrain.get(brainId) ?? [];
     list.push(user);

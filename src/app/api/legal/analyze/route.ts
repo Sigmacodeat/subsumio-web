@@ -144,6 +144,7 @@ export const POST = createHandler(
       try {
         const pageRes = await fetch(`${ENGINE_URL}/api/pages/${encodeSlugPath(documentSlug)}`, {
           headers: engineHeaders,
+        signal: AbortSignal.timeout(300_000),
         });
         if (pageRes.ok) {
           const page = (await pageRes.json()) as {
@@ -194,6 +195,7 @@ export const POST = createHandler(
           prompt: buildAnalysisPrompt(text, jurisdiction),
           mode: "json",
           max_tokens: 4000,
+        signal: AbortSignal.timeout(300_000),
         }),
       });
 
@@ -260,6 +262,7 @@ export const POST = createHandler(
             method: "PATCH",
             headers: { "Content-Type": "application/json", ...engineHeaders },
             body: JSON.stringify(docPatch),
+          signal: AbortSignal.timeout(300_000),
           });
         } catch (err) {
           console.error(
@@ -286,6 +289,7 @@ export const POST = createHandler(
           const encodedCaseSlug = documentCaseSlug.split("/").map(encodeURIComponent).join("/");
           const caseRes = await fetch(`${ENGINE_URL}/api/pages/${encodedCaseSlug}`, {
             headers: engineHeaders,
+          signal: AbortSignal.timeout(300_000),
           });
           if (!caseRes.ok) return;
           const casePage = (await caseRes.json()) as {
@@ -348,6 +352,7 @@ export const POST = createHandler(
                   ? caseRes
                   : await fetch(`${ENGINE_URL}/api/pages/${encodedCaseSlug}`, {
                       headers: engineHeaders,
+                    signal: AbortSignal.timeout(300_000),
                     });
               if (!retryCaseRes.ok) break;
               const retryCasePage =
@@ -393,6 +398,7 @@ export const POST = createHandler(
                   ...engineHeaders,
                 },
                 body: JSON.stringify(retryPatchBody),
+              signal: AbortSignal.timeout(300_000),
               });
               if (patchRes.status === 409 && attempt < 2) continue;
               break;

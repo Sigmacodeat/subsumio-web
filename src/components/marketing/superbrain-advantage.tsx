@@ -21,18 +21,18 @@ const copy = {
   en: {
     eyebrow: "The Subsumio engine",
     title: "Not another chatbot. The memory layer your firm runs on.",
-    sub: "Most assistants only answer one prompt. Subsumio builds a durable, permission-aware knowledge base over your own work: files, messages, meetings, entities, decisions and open loops.",
+    sub: "Most assistants answer one prompt and forget. Subsumio builds a durable, permission-aware knowledge base over your own work: files, messages, meetings, entities, deadlines and open risks — then answers with citations.",
     center: "Your firm knowledge base",
     proof: [
       {
         icon: Database,
         title: "Own data first",
-        desc: "Answers come from your matters, clients, deals and documents, not generic web guesses.",
+        desc: "Answers come from your matters, clients and documents — not generic web guesses.",
       },
       {
         icon: GitBranch,
         title: "Graph memory",
-        desc: "People, companies, files, deadlines and promises stay connected as reusable context.",
+        desc: "People, companies, files, deadlines and relationships stay connected as reusable context.",
       },
       {
         icon: FileSearch,
@@ -68,18 +68,18 @@ const copy = {
   de: {
     eyebrow: "Die Subsumio-Engine",
     title: "Kein weiterer Chatbot. Die Gedächtnisschicht, auf der deine Kanzlei läuft.",
-    sub: "Die meisten Assistenten beantworten nur einen Prompt. Subsumio baut eine dauerhafte, rechtebewusste Wissensbasis über deine eigene Arbeit: Dateien, Nachrichten, Termine, Entitäten, Entscheidungen und offene Punkte.",
+    sub: "Die meisten Assistenten beantworten einen Prompt und vergessen. Subsumio baut eine dauerhafte, rechtebewusste Wissensbasis über deine eigene Arbeit: Dateien, Nachrichten, Termine, Entitäten, Fristen und offene Risiken — und antwortet mit Fundstellen.",
     center: "Deine Kanzlei-Wissensbasis",
     proof: [
       {
         icon: Database,
         title: "Eigene Daten zuerst",
-        desc: "Antworten kommen aus deinen Akten, Mandanten, Deals und Dokumenten, nicht aus generischen Web-Vermutungen.",
+        desc: "Antworten kommen aus deinen Akten, Mandanten und Dokumenten — nicht aus generischen Web-Vermutungen.",
       },
       {
         icon: GitBranch,
         title: "Graph-Gedächtnis",
-        desc: "Personen, Firmen, Dateien, Fristen und Zusagen bleiben als wiederverwendbarer Kontext verbunden.",
+        desc: "Personen, Firmen, Dateien, Fristen und Beziehungen bleiben als wiederverwendbarer Kontext verbunden.",
       },
       {
         icon: FileSearch,

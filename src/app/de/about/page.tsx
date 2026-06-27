@@ -5,12 +5,12 @@ import { JsonLd, breadcrumbLd } from "@/components/seo/jsonld";
 export const metadata: Metadata = {
   title: "Über Subsumio — KI-Kanzleisoftware aus Österreich für AT · DE · CH",
   description:
-    "Subsumio wird in Österreich für Kanzleien in AT, DE und CH gebaut. Unsere Mission: belegte KI-Antworten für Rechtsarbeit, mit Vertraulichkeit per Architektur — EU-Cloud oder On-Premise.",
+    "Subsumio wird in Österreich für Kanzleien in AT, DE und CH gebaut. Unsere Mission: belegte KI-Antworten für Rechtsarbeit, mit Vertraulichkeit per Architektur — EU-Cloud oder On-Premise. Kein Training mit Mandantendaten.",
   alternates: { canonical: "/de/about", languages: { en: "/about", de: "/de/about" } },
   openGraph: {
     title: "Über Subsumio — KI-Kanzleisoftware aus Österreich für AT · DE · CH",
     description:
-      "Subsumio wird in Österreich für Kanzleien in AT, DE und CH gebaut. Unsere Mission: belegte KI-Antworten für Rechtsarbeit, mit Vertraulichkeit per Architektur.",
+      "Subsumio wird in Österreich für Kanzleien in AT, DE und CH gebaut. Belegte KI-Antworten für Rechtsarbeit, mit Vertraulichkeit per Architektur — EU-Cloud oder On-Premise.",
     url: "/de/about",
     type: "website",
   },

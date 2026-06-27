@@ -16,6 +16,7 @@ export function useBrainStats() {
     // mid-session never clears from the UI until the user navigates away
     // and back. 30s matches the cadence of other dashboard polling.
     refetchInterval: 30_000,
+    staleTime: 30_000,
   });
 }
 

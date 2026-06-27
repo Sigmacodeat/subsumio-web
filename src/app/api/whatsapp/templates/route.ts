@@ -23,6 +23,7 @@ async function fetchEngine(
   const res = await fetch(`${ENGINE_URL}${path}`, {
     ...init,
     headers: { "Content-Type": "application/json", ...headers, ...(init?.headers ?? {}) },
+  signal: AbortSignal.timeout(15_000),
   });
   return res;
 }

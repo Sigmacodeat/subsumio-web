@@ -52,6 +52,7 @@ export const GET = createHandler(
     try {
       const res = await fetch(`${ENGINE_URL}/api/pages?${params.toString()}`, {
         headers: ctx.headers,
+      signal: AbortSignal.timeout(30_000),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const pages = await res.json();
@@ -113,6 +114,7 @@ export const POST = createHandler(
         method: "POST",
         headers: { "Content-Type": "application/json", ...ctx.headers },
         body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(30_000),
       });
       if (!res.ok) {
         const errPayload = await res.json().catch(() => ({}));

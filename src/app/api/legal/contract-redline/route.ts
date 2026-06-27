@@ -48,6 +48,7 @@ export const POST = createHandler(
         method: "POST",
         headers: { "Content-Type": "application/json", ...ctx.headers },
         body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(300_000),
       });
 
       if (!upstream.ok) {

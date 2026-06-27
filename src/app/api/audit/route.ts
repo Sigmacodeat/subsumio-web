@@ -23,6 +23,7 @@ export const GET = createHandler(
     try {
       const res = await fetch(`${ENGINE_URL}/api/pages?type=audit_log&limit=${query.limit}`, {
         headers: ctx.headers,
+      signal: AbortSignal.timeout(10_000),
       });
 
       if (!res.ok) {

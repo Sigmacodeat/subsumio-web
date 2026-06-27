@@ -27,6 +27,7 @@ import type { BrainPage } from "@/lib/types";
 import { useDashboardForm } from "@/lib/hooks/use-dashboard-form";
 import { draftingSchema, type DraftingFormData } from "@/lib/schemas/drafting";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { csrfFetch } from "@/lib/csrf";
 
 const TEMPLATES = [
   {
@@ -133,6 +134,7 @@ export default function DraftingPage() {
   const [submitting, setSubmitting] = useState(false);
   const [draftSaved, setDraftSaved] = useState<string | null>(null);
   const [cases, setCases] = useState<BrainPage[]>([]);
+  const [casesError, setCasesError] = useState(false);
 
   const template = TEMPLATES.find((t) => t.key === selectedTemplate)!;
 
@@ -176,10 +178,12 @@ export default function DraftingPage() {
   useUnsavedChanges(f.formState.isDirty);
 
   useEffect(() => {
+    let cancelled = false;
     api.brain
       .listPages({ type: "legal_case", limit: 200 })
-      .then((pages) => setCases(pages))
-      .catch(() => setCases([]));
+      .then((pages) => { if (!cancelled) setCases(pages); })
+      .catch(() => { if (!cancelled) setCasesError(true); });
+    return () => { cancelled = true; };
   }, []);
 
   const canGenerate = (formData.title || "").trim() && (formData.facts || "").trim();
@@ -194,7 +198,7 @@ export default function DraftingPage() {
     setDocxReady(false);
     try {
       const draftSlug = draftSaved ?? null;
-      const res = await fetch("/api/word-export", {
+      const res = await csrfFetch("/api/word-export", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -461,7 +465,7 @@ export default function DraftingPage() {
             {...register("selectedCaseSlug")}
             className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
           >
-            <option value="">Keine Akte</option>
+            <option value="">{casesError ? t("drafting.cases_load_error") : t("drafting.no_case")}</option>
             {cases.map((c) => {
               const fm = caseFrontmatter(c);
               return (

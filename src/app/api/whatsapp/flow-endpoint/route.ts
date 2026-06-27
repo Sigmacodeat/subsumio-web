@@ -20,9 +20,15 @@ import {
 } from "@/lib/whatsapp/flow-crypto";
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import { randomUUID } from "node:crypto";
+import { hit, clientIp } from "@/lib/auth/rate-limit";
+import { sanitizeObjectStrings } from "@/lib/prompt-sanitizer";
+import { logAudit } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
+
+const BRAIN_ID_PATTERN = /^[a-zA-Z0-9_-]{1,128}$/;
+const MAX_FIELD_LENGTH = 500;
 
 // ── Static data for dropdowns ──────────────────────────────────────────────
 
@@ -93,13 +99,31 @@ async function handleCaseIntake(
     case "create_case": {
       // Create the case in the brain
       const caseNumber = String(
-        data.case_number || `2026-${String(Math.floor(Math.random() * 999) + 1).padStart(3, "0")}`
+        data.case_number || `2026-${randomUUID().slice(0, 8).toUpperCase()}`
       );
       const caseSlug = `legal/cases/${caseNumber}`;
-      const clientName = String(data.client_name || "Unbekannt");
-      const opponentName = String(data.opponent_name || "");
-      const legalAreaId = String(data.legal_area || "civil");
-      const description = String(data.description || "");
+      const clientName = String(data.client_name || "Unbekannt").slice(0, MAX_FIELD_LENGTH);
+      const opponentName = String(data.opponent_name || "").slice(0, MAX_FIELD_LENGTH);
+      const legalAreaId = String(data.legal_area || "civil").slice(0, 50);
+      const description = String(data.description || "").slice(0, 5000);
+
+      const pagePayload = sanitizeObjectStrings({
+        slug: caseSlug,
+        title: `${clientName} vs. ${opponentName || "—"}`,
+        type: "legal_case",
+        content: `## Sachverhalt\n\n${description}\n\n## Parteien\n\n**Mandant:** ${clientName}\n**Gegner:** ${opponentName || "noch unbekannt"}\n\n## Rechtsgebiet\n\n${LEGAL_AREA_MAP[legalAreaId] || legalAreaId}`,
+        frontmatter: {
+          type: "legal_case",
+          case_number: caseNumber,
+          client_name: clientName,
+          opponent_name: opponentName,
+          legal_area: legalAreaId,
+          legal_area_label: LEGAL_AREA_MAP[legalAreaId] || legalAreaId,
+          status: "intake",
+          created_via: "whatsapp_flow",
+          created_at: new Date().toISOString(),
+        },
+      });
 
       try {
         await fetch(`${ENGINE_URL}/api/pages`, {
@@ -108,23 +132,12 @@ async function handleCaseIntake(
             "Content-Type": "application/json",
             ...engineHeadersForBrain(brainId),
           },
-          body: JSON.stringify({
-            slug: caseSlug,
-            title: `${clientName} vs. ${opponentName || "—"}`,
-            type: "legal_case",
-            content: `## Sachverhalt\n\n${description}\n\n## Parteien\n\n**Mandant:** ${clientName}\n**Gegner:** ${opponentName || "noch unbekannt"}\n\n## Rechtsgebiet\n\n${LEGAL_AREA_MAP[legalAreaId] || legalAreaId}`,
-            frontmatter: {
-              type: "legal_case",
-              case_number: caseNumber,
-              client_name: clientName,
-              opponent_name: opponentName,
-              legal_area: legalAreaId,
-              legal_area_label: LEGAL_AREA_MAP[legalAreaId] || legalAreaId,
-              status: "intake",
-              created_via: "whatsapp_flow",
-              created_at: new Date().toISOString(),
-            },
-          }),
+          body: JSON.stringify(pagePayload),
+          signal: AbortSignal.timeout(15_000),
+        });
+        void logAudit("whatsapp.flow_case_created", "legal_case", {
+          entityId: caseSlug,
+          details: { brainId, caseNumber, legalArea: legalAreaId },
         });
       } catch (err) {
         console.error(
@@ -185,12 +198,28 @@ async function handleAppointmentBooking(
       };
     }
     case "book_appointment": {
-      const appointmentDate = String(data.appointment_date || "");
-      const appointmentTime = String(data.appointment_time || "");
-      const topic = String(data.topic || "Allgemeine Beratung");
+      const appointmentDate = String(data.appointment_date || "").slice(0, 20);
+      const appointmentTime = String(data.appointment_time || "").slice(0, 20);
+      const topic = String(data.topic || "Allgemeine Beratung").slice(0, MAX_FIELD_LENGTH);
       const appointmentId = randomUUID();
 
-      // Store appointment in brain
+      const apptPayload = sanitizeObjectStrings({
+        slug: `legal/appointments/${appointmentId}`,
+        title: `Termin: ${appointmentDate} ${appointmentTime} — ${topic}`,
+        type: "appointment",
+        content: `## Termin\n\n**Datum:** ${appointmentDate}\n**Uhrzeit:** ${appointmentTime}\n**Thema:** ${topic}\n**Quelle:** WhatsApp Flow\n\n### Erinnerung\n\n24h vor dem Termin wird eine Erinnerung gesendet.`,
+        frontmatter: {
+          type: "appointment",
+          appointment_id: appointmentId,
+          date: appointmentDate,
+          time: appointmentTime,
+          topic,
+          status: "confirmed",
+          created_via: "whatsapp_flow",
+          created_at: new Date().toISOString(),
+        },
+      });
+
       try {
         await fetch(`${ENGINE_URL}/api/pages`, {
           method: "POST",
@@ -198,22 +227,12 @@ async function handleAppointmentBooking(
             "Content-Type": "application/json",
             ...engineHeadersForBrain(brainId),
           },
-          body: JSON.stringify({
-            slug: `legal/appointments/${appointmentId}`,
-            title: `Termin: ${appointmentDate} ${appointmentTime} — ${topic}`,
-            type: "appointment",
-            content: `## Termin\n\n**Datum:** ${appointmentDate}\n**Uhrzeit:** ${appointmentTime}\n**Thema:** ${topic}\n**Quelle:** WhatsApp Flow\n\n### Erinnerung\n\n24h vor dem Termin wird eine Erinnerung gesendet.`,
-            frontmatter: {
-              type: "appointment",
-              appointment_id: appointmentId,
-              date: appointmentDate,
-              time: appointmentTime,
-              topic,
-              status: "confirmed",
-              created_via: "whatsapp_flow",
-              created_at: new Date().toISOString(),
-            },
-          }),
+          body: JSON.stringify(apptPayload),
+          signal: AbortSignal.timeout(15_000),
+        });
+        void logAudit("whatsapp.flow_appointment_booked", "appointment", {
+          entityId: appointmentId,
+          details: { brainId, date: appointmentDate, time: appointmentTime },
         });
       } catch (err) {
         console.error(
@@ -246,6 +265,16 @@ async function handleAppointmentBooking(
 // ── Route Handler ──────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
+  // Rate limiting: 30 requests per minute per IP (WhatsApp Flows are interactive, not high-volume)
+  const ip = clientIp(req.headers);
+  const ipLimit = await hit(`whatsapp-flow:ip:${ip}`, 30, 60_000);
+  if (!ipLimit.ok) {
+    return Response.json(
+      { error: "rate_limited" },
+      { status: 429, headers: { "Retry-After": String(ipLimit.retryAfterSeconds) } }
+    );
+  }
+
   let body: { encrypted_aes_key: string; encrypted_flow_data: string; initial_vector: string };
   try {
     body = (await req.json()) as {
@@ -270,11 +299,13 @@ export async function POST(req: NextRequest) {
   // flow_token format: "case_intake:brain_abc123" or "appointment:brain_abc123"
   // The second segment is the brainId
   const tokenParts = request.flow_token?.split(":") ?? [];
-  const brainId = process.env.WHATSAPP_DEFAULT_BRAIN_ID || tokenParts[1] || "";
+  const rawBrainId = process.env.WHATSAPP_DEFAULT_BRAIN_ID || tokenParts[1] || "";
 
-  console.log(
-    `[whatsapp/flow] screen=${request.screen} action=${request.action} flow_token=${request.flow_token?.slice(0, 20)}...`
-  );
+  // Validate brainId to prevent cross-tenant injection via crafted flow_token
+  if (!rawBrainId || !BRAIN_ID_PATTERN.test(rawBrainId)) {
+    return Response.json({ error: "invalid_flow_token" }, { status: 400 });
+  }
+  const brainId = rawBrainId;
 
   // Determine which flow this is based on the flow_token prefix
   const flowType = tokenParts[0] === "appointment" ? "appointment_booking" : "case_intake";

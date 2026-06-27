@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Shield,
   Search,
@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 import { auditLabel, type AuditEntry } from "@/lib/audit-labels";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
+import { useApiQuery } from "@/lib/use-api-query";
 import type { Lang } from "@/content/site";
 
 const PAGE_SIZE = 25;
@@ -133,9 +134,6 @@ function formatRelative(ts: string): string {
 
 export default function AuditLogPage() {
   const { lang } = useLang();
-  const [entries, setEntries] = useState<AuditEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [filterAction, setFilterAction] = useState("");
   const [filterEntityType, setFilterEntityType] = useState("");
@@ -145,31 +143,22 @@ export default function AuditLogPage() {
   const [selectedEntry, setSelectedEntry] = useState<AuditEntry | null>(null);
   const [showFilters, setShowFilters] = useState(false);
 
-  const loadEntries = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
+  const { data: auditData, loading, error, refetch: loadEntries } = useApiQuery<{ entries: AuditEntry[] }>(
+    async () => {
       const params = new URLSearchParams();
       if (filterAction) params.set("action", filterAction);
       if (filterEntityType) params.set("entityType", filterEntityType);
       if (filterFrom) params.set("from", filterFrom);
       if (filterTo) params.set("to", filterTo);
       params.set("limit", "500");
-      const res = await fetch(`/api/audit?${params.toString()}`);
+      const res = await fetch(`/api/audit?${params.toString()}`, { signal: AbortSignal.timeout(30_000) });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = (await res.json()) as { entries: AuditEntry[] };
-      setEntries(data.entries || []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Unbekannter Fehler");
-      setEntries([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [filterAction, filterEntityType, filterFrom, filterTo]);
+      return (await res.json()) as { entries: AuditEntry[] };
+    },
+    [filterAction, filterEntityType, filterFrom, filterTo]
+  );
 
-  useEffect(() => {
-    loadEntries();
-  }, [loadEntries]);
+  const entries = useMemo(() => auditData?.entries ?? [], [auditData]);
 
   const filtered = useMemo(() => {
     const s = search.toLowerCase();

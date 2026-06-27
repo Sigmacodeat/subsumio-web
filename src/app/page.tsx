@@ -6,12 +6,12 @@ import { LANDING } from "@/content/site";
 export const metadata: Metadata = {
   title: "Subsumio — AI Legal Software for Law Firms | AT · DE · CH",
   description:
-    "AI legal software for DACH law firms: matter management, deadline tracking, cited AI answers, DATEV export. GDPR-ready, EU cloud or self-hosted. Every answer cites its source — no hallucinations.",
+    "AI legal software for DACH law firms: matter management, deadline tracking per ZPO/BGB/ABGB, cited AI answers with page-level sources, DATEV export, conflict check. GDPR-ready, EU cloud or self-hosted.",
   alternates: { canonical: "/", languages: { en: "/", de: "/de" } },
   openGraph: {
     title: "Subsumio — AI Legal Software for Law Firms | AT · DE · CH",
     description:
-      "Matter management, deadline tracking and cited AI answers for law firms in Austria, Germany and Switzerland. GDPR-ready, EU cloud or on-premise.",
+      "Matter management, deadline tracking and cited AI answers for law firms in Austria, Germany and Switzerland. GDPR-ready, EU cloud or on-premise. Every answer cites its source.",
     url: "/",
     type: "website",
   },

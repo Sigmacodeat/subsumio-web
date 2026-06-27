@@ -225,7 +225,7 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
     ],
     ctaTitle: "Ready to see it in your firm?",
     ctaSub: "Up and running in minutes. First cited answer the same day.",
-    ctaButton: "Get started",
+    ctaButton: "Request a demo",
     faqTitle: "Questions, answered",
     faq: [
       {
@@ -247,9 +247,9 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
     ],
   },
   de: {
-    metaTitle: "Subsumio Features — KI-Kanzleisoftware Funktionen für Anwälte",
+    metaTitle: "Subsumio Features — KI-Kanzleisoftware Funktionen für Rechtsanwälte",
     metaDesc:
-      "Belegte KI-Antworten, selbstverdrahtender Wissensgraph, Hybrid-Retrieval, Dream Cycle, WhatsApp-Copilot. Jede Funktion steckt im Produkt — keine Halluzination, jede Antwort mit Quellenangabe.",
+      "Belegte KI-Antworten mit Fundstellen, selbstverdrahtender Wissensgraph, Hybrid-Retrieval, Dream Cycle, WhatsApp-Copilot. Jede Funktion steckt im Produkt — keine Halluzination, jede Antwort mit Quellenangabe.",
     badge: "Alle Funktionen im Überblick",
     h1a: "Alles, was es kann.",
     h1b: "Nichts versteckt.",
@@ -442,7 +442,7 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
     ],
     ctaTitle: "Bereit, es in deiner Kanzlei zu sehen?",
     ctaSub: "In Minuten startklar. Erste belegte Antwort am selben Tag.",
-    ctaButton: "Jetzt starten",
+    ctaButton: "Demo anfragen",
     faqTitle: "Fragen, beantwortet",
     faq: [
       {

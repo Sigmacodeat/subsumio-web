@@ -9,6 +9,7 @@ import {
   getFirstOpenEvent,
   detectForward,
 } from "@/lib/email/tracking";
+import { hit, clientIp } from "@/lib/auth/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +29,16 @@ export async function GET(
   { params }: { params: Promise<{ trackingId: string }> }
 ) {
   const { trackingId } = await params;
+
+  // Rate limiting: 60 opens per minute per IP (email clients may pre-fetch)
+  const ip = clientIp(req.headers);
+  const ipLimit = await hit(`email-track-open:ip:${ip}`, 60, 60_000);
+  if (!ipLimit.ok) {
+    return new NextResponse(new Uint8Array(getTrackingPixel()), {
+      status: 200,
+      headers: { "Content-Type": "image/png" },
+    });
+  }
 
   // Strip .png suffix if present in the URL
   const cleanTrackingId = trackingId.replace(/\.png$/i, "");

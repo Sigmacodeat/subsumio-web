@@ -170,7 +170,7 @@ export function AclSettings() {
                       className="flex-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-1.5 text-sm text-[color:var(--ds-text)]"
                     >
                       <option value="">Mitglied auswählen…</option>
-                      {teamMembers.map((m: { id: string; name: string; email: string }) => (
+                      {teamMembers.map((m) => (
                         <option key={m.id} value={m.id}>
                           {m.name} ({m.email})
                         </option>
@@ -200,7 +200,7 @@ export function AclSettings() {
                     <div className="space-y-1">
                       {members.map((m) => {
                         const teamMember = teamMembers.find(
-                          (tm: { id: string; name: string; email: string }) => tm.id === m.user_id
+                          (tm) => tm.id === m.user_id
                         );
                         return (
                           <div

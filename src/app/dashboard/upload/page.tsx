@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLang } from "@/lib/use-lang";
 import { useDropzone } from "react-dropzone";
@@ -124,6 +124,14 @@ const KNOWLEDGE_SOURCES = [
 ];
 
 export default function UploadPage() {
+  return (
+    <Suspense fallback={<div className="p-6" />}>
+      <UploadPageInner />
+    </Suspense>
+  );
+}
+
+function UploadPageInner() {
   const router = useRouter();
   const { t } = useLang();
   const [files, setFiles] = useState<UploadFile[]>([]);
@@ -150,16 +158,19 @@ export default function UploadPage() {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
     (async () => {
       try {
         const pages = await api.brain.listPages({ type: "legal_case", limit: 200 });
+        if (cancelled) return;
         setCases(pages);
       } catch {
-        setCases([]);
+        if (!cancelled) setCases([]);
       } finally {
-        setCasesLoading(false);
+        if (!cancelled) setCasesLoading(false);
       }
     })();
+    return () => { cancelled = true; };
   }, []);
 
   const addFiles = useCallback(

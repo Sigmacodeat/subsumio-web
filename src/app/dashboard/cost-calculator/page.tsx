@@ -87,10 +87,12 @@ export default function CostCalculatorPage() {
   const [saveNotice, setSaveNotice] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
     api.brain
       .listPages({ type: "legal_case", limit: 200 })
-      .then(setCases)
-      .catch(() => setCases([]));
+      .then((pages) => { if (!cancelled) setCases(pages); })
+      .catch(() => { if (!cancelled) setCases([]); });
+    return () => { cancelled = true; };
   }, []);
 
   async function saveToCase() {

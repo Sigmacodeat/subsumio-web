@@ -56,6 +56,7 @@ export const GET = createHandler(
     const limit = Math.min(Number.parseInt(query.limit || "100", 10) || 100, 250);
     const res = await fetch(`${ENGINE_URL}/api/pages?type=intake_request&limit=${limit}`, {
       headers: ctx.headers,
+    signal: AbortSignal.timeout(10_000),
     });
     if (!res.ok) return apiError("intake_list_failed", "Intakes konnten nicht geladen werden", 502);
 
@@ -106,6 +107,7 @@ export const POST = createHandler(
         type: "intake_request",
         content: intake.content,
         frontmatter: intake.frontmatter,
+      signal: AbortSignal.timeout(15_000),
       }),
     });
     if (!res.ok)
@@ -152,6 +154,7 @@ export const PATCH = createHandler(
         frontmatter: patch,
         ...(body.summary ? { content: body.summary } : {}),
         merge: true,
+      signal: AbortSignal.timeout(15_000),
       }),
     });
     if (!res.ok)

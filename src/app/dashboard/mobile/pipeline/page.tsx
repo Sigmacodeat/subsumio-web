@@ -29,6 +29,7 @@ import {
   Download,
 } from "lucide-react";
 import { useLang } from "@/lib/use-lang";
+import { csrfFetch } from "@/lib/csrf";
 
 interface PipelineLayerState {
   status: "pending" | "running" | "completed" | "failed" | "skipped";
@@ -83,7 +84,7 @@ export default function MobilePipelinePage() {
 
   const loadPipelines = useCallback(async () => {
     try {
-      const res = await fetch("/api/pipeline/list", {
+      const res = await csrfFetch("/api/pipeline/list", {
         headers: { "Content-Type": "application/json" },
       });
       if (res.ok) {
@@ -112,7 +113,7 @@ export default function MobilePipelinePage() {
     setOutputLoading(true);
     setOutputView(null);
     try {
-      const res = await fetch(`/api/pages/${encodeURIComponent(slug)}`);
+      const res = await fetch(`/api/pages/${encodeURIComponent(slug)}`, { signal: AbortSignal.timeout(30_000) });
       if (res.ok) {
         const page = await res.json();
         setOutputView({ slug, content: String(page.compiled_truth ?? page.content ?? "") });
@@ -127,7 +128,7 @@ export default function MobilePipelinePage() {
   const resumePipeline = useCallback(
     async (caseSlug: string) => {
       try {
-        const res = await fetch("/api/pipeline/resume", {
+        const res = await csrfFetch("/api/pipeline/resume", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ case_slug: caseSlug, resume_from_layer: 3 }),

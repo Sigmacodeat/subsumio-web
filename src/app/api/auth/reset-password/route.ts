@@ -1,10 +1,20 @@
+import { NextRequest, NextResponse } from "next/server";
 import { getStore } from "@/lib/auth/store";
 import { hashPassword } from "@/lib/auth/password";
 import { verifyActionToken, bindFragment } from "@/lib/auth/tokens";
 import { passwordSchema } from "@/lib/api-validation";
 import { revokeAllSessions } from "@/lib/auth/session";
+import { hit, clientIp } from "@/lib/auth/rate-limit";
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  const ipLimit = await hit(`reset-password:ip:${clientIp(req.headers)}`, 10, 15 * 60_000);
+  if (!ipLimit.ok) {
+    return NextResponse.json(
+      { error: "rate_limited" },
+      { status: 429, headers: { "Retry-After": String(ipLimit.retryAfterSeconds) } },
+    );
+  }
+
   try {
     const { token, password: rawPassword } = await req.json();
     const passwordResult = passwordSchema.safeParse(rawPassword);

@@ -159,11 +159,10 @@ export function InvoiceQuickCreateDialog({
     setLoadingCases(true);
     (async () => {
       try {
-        const [invoicePages, casePages] = await Promise.all([
-          api.brain.listPages({ type: "invoice", limit: 200 }).catch(() => [] as BrainPage[]),
-          api.brain.listPages({ type: "legal_case", limit: 200 }).catch(() => [] as BrainPage[]),
-        ]);
+        const batch = await api.brain.batchListPages(["invoice", "legal_case"], 200);
         if (cancelled) return;
+        const invoicePages = batch["invoice"] ?? [];
+        const casePages = batch["legal_case"] ?? [];
         const loadedInvoices: Invoice[] = invoicePages.map((p) => {
           const fm = invoiceFrontmatter(p);
           return {

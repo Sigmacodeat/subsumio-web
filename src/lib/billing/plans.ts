@@ -42,47 +42,51 @@ export interface BillingPlanDisplay {
   highlight?: boolean;
 }
 
+// Display copy shown on the in-app billing page (/dashboard/billing).
+// Must stay in sync with the canonical plan limits (src/lib/plans.ts PLAN_LIMITS)
+// and the marketing copy (src/content/site.ts PRICING).
 export const BILLING_PLANS_DISPLAY: BillingPlanDisplay[] = [
   {
     id: "free",
-    name: "Free",
+    name: "Community",
     price: "0 €",
     features: [
-      "200 Seiten",
-      "1 GB Dateispeicher",
-      "100 Queries/Monat",
-      "1 Brain",
+      "Self-hosted — dein Server, deine Keys",
+      "100 KI-Anfragen/Mon. inklusive",
+      "5 GB lokaler Speicher",
+      "Akten-Q&A mit seitengenauen Zitaten",
+      "Fristenverwaltung (ZPO/BGB/ABGB)",
       "Community-Support",
     ],
   },
   {
     id: "pro",
     name: "Pro",
-    price: "890 €/Monat",
+    price: "890 €/Nutzer/Mon.",
     features: [
-      "1.000 Assistenten-Anfragen/Mon. inklusive",
-      "75 GB Cloud-Speicher",
+      "Voll verwaltet — keine API-Keys nötig",
+      "1.000 KI-Anfragen/Nutzer/Mon. inklusive",
+      "75 GB Cloud-Speicher pro Nutzer",
       "300 WhatsApp-Nachrichten/Mon. inklusive",
-      "Fair-Use WhatsApp- & Dokumenten-Import",
-      "24/7 Dream Cycle (Dedupe, Zitate, Widersprüche)",
+      "Dream Cycle: Deduplizierung, Zitate, Widersprüche",
       "Live-Verbrauchsanzeige — transparente Mehrkosten",
-      "Mehrverbrauch: 0,45 €/Anfrage · 0,25 €/WA",
       "Priorisierter Support",
+      "Mehrverbrauch: 0,45 €/Anfrage · 0,25 €/WA",
     ],
     highlight: true,
   },
   {
     id: "team",
     name: "Team",
-    price: "1.290 €/Seat/Monat",
+    price: "1.290 €/Nutzer/Mon.",
     features: [
       "Alles aus Pro",
-      "Geteiltes Firmen-Gedächtnis",
-      "4.000 Assistenten-Anfragen/Seat/Mon. inklusive",
-      "200 GB Cloud-Speicher pro Seat",
+      "Geteiltes Kanzleiwissen",
+      "4.000 KI-Anfragen/Nutzer/Mon. inklusive",
+      "200 GB Cloud-Speicher pro Nutzer",
       "1.000 WhatsApp-Nachrichten/Mon. inklusive",
-      "Zugriff pro Nutzer gescoped — fuzz-getestet, null Leaks",
-      "Admin & Nutzungs-Analytics",
+      "Rollenbasierte Zugriffe pro Akte und Nutzer",
+      "Admin- und Nutzungsanalyse",
       "Onboarding-Session inklusive",
       "Mehrverbrauch: 0,40 €/Anfrage · 0,20 €/WA",
     ],

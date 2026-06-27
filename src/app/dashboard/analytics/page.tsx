@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Users,
   Activity,
@@ -16,6 +16,7 @@ import {
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useApiQuery } from "@/lib/use-api-query";
 
 interface UserUsage {
   user_id: string;
@@ -71,29 +72,16 @@ const trendColor: Record<string, string> = {
 };
 
 export default function AdoptionAnalyticsPage() {
-  const [data, setData] = useState<AdoptionAnalytics | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [daysBack, setDaysBack] = useState(30);
 
-  const load = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch(`/api/analytics/adoption?daysBack=${daysBack}`);
+  const { data, loading, error, refetch } = useApiQuery<AdoptionAnalytics>(
+    async () => {
+      const res = await fetch(`/api/analytics/adoption?daysBack=${daysBack}`, { signal: AbortSignal.timeout(30_000) });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
-      setData(json);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Unbekannter Fehler");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    load();
-  }, [daysBack]);
+      return (await res.json()) as AdoptionAnalytics;
+    },
+    [daysBack]
+  );
 
   if (loading) {
     return (
@@ -108,7 +96,7 @@ export default function AdoptionAnalyticsPage() {
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4">
         <AlertCircle className="text-destructive h-12 w-12" />
         <p className="text-muted-foreground">Fehler beim Laden der Analytics: {error}</p>
-        <Button onClick={load} variant="outline">
+        <Button onClick={refetch} variant="outline">
           Erneut versuchen
         </Button>
       </div>

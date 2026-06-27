@@ -10,7 +10,7 @@ export const GET = createHandler(
   },
   async (ctx, _body, _query, _req) => {
     try {
-      const upstream = await fetch(`${ENGINE_URL}/api/connectors`, { headers: ctx.headers });
+      const upstream = await fetch(`${ENGINE_URL}/api/connectors`, { headers: ctx.headers, signal: AbortSignal.timeout(10_000) });
       if (!upstream.ok) {
         return Response.json({ error: `Engine returned ${upstream.status}`, connectors: [] }, { status: upstream.status });
       }

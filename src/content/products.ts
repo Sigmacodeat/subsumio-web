@@ -23,10 +23,10 @@ export const PRODUCTS: Record<Lang, Record<ProductSlug, ProductContent>> = {
       industry: "legal",
       name: "Subsumio",
       claim: "The law firm's brain.",
-      poweredBy: "Legal software for AT · DE · CH",
-      metaTitle: "Subsumio — Law firm software AT · DE · CH",
+      poweredBy: "AI legal software for AT · DE · CH",
+      metaTitle: "Subsumio — AI Legal Software for Law Firms in AT · DE · CH",
       metaDesc:
-        "AI legal software for law firms in Austria, Germany and Switzerland: case files, deadlines per ZPO/BGB/ABGB, cited AI answers. GDPR-compliant, EU-hosted or self-hosted.",
+        "AI legal software for law firms in Austria, Germany and Switzerland: matter management, deadline tracking per ZPO/BGB/ABGB, cited AI answers with page-level sources, DATEV export, conflict check. GDPR-ready, EU cloud or self-hosted.",
     },
   },
   de: {
@@ -35,11 +35,11 @@ export const PRODUCTS: Record<Lang, Record<ProductSlug, ProductContent>> = {
       vertical: "legal",
       industry: "legal",
       name: "Subsumio",
-      claim: "Das Kanzlei-Gehirn.",
-      poweredBy: "Kanzleisoftware für AT · DE · CH",
-      metaTitle: "Subsumio — Kanzleisoftware AT · DE · CH",
+      claim: "Das Kanzlei-Gedächtnis.",
+      poweredBy: "KI-Kanzleisoftware für AT · DE · CH",
+      metaTitle: "Subsumio — KI-Kanzleisoftware für Rechtsanwälte | AT · DE · CH",
       metaDesc:
-        "KI-Kanzleisoftware für Rechtsanwälte in Österreich, Deutschland und der Schweiz: Akten verwalten, Fristen nach ZPO/ABGB/ZGB, KI-Analysen mit Zitaten. DSGVO-konform, EU-gehostet oder On-Premise.",
+        "KI-Kanzleisoftware für Kanzleien in Österreich, Deutschland und der Schweiz: Aktenverwaltung, Fristenkontrolle nach ZPO/BGB/ABGB, belegte KI-Antworten mit Fundstellen, DATEV-Export, Kollisionsprüfung. DSGVO-konform, EU-Cloud oder On-Premise.",
     },
   },
 };

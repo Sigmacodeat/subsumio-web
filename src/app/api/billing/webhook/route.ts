@@ -128,8 +128,7 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
       if (userId) {
         await store.update(userId, { plan: resolvedPlan as Plan });
       } else if (customerId) {
-        const users = await store.list();
-        const user = users.find((u) => u.stripeCustomerId === customerId);
+        const user = await store.getByStripeCustomerId(customerId);
         if (user) await store.update(user.id, { plan: resolvedPlan as Plan });
       }
       break;
@@ -138,8 +137,7 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
       // Downgrade by Stripe customer id.
       const customerId = typeof obj.customer === "string" ? obj.customer : null;
       if (customerId) {
-        const users = await store.list();
-        const user = users.find((u) => u.stripeCustomerId === customerId);
+        const user = await store.getByStripeCustomerId(customerId);
         if (user) await store.update(user.id, { plan: "free" });
       }
       break;
@@ -157,8 +155,7 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
         : null;
 
       if (customerId) {
-        const users = await store.list();
-        const user = users.find((u) => u.stripeCustomerId === customerId);
+        const user = await store.getByStripeCustomerId(customerId);
         if (user) {
           const dunningState = await incrementFailure(user.id, nextRetryAt);
           await applyDunningToPlan(user.id, dunningState);
@@ -199,8 +196,7 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
       // Reset dunning state after successful payment
       const customerId = typeof obj.customer === "string" ? obj.customer : null;
       if (customerId) {
-        const users = await store.list();
-        const user = users.find((u) => u.stripeCustomerId === customerId);
+        const user = await store.getByStripeCustomerId(customerId);
         if (user) {
           await resetFailure(user.id);
           // Reactivate if suspended/past_due

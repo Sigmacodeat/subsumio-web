@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, lazy, Suspense } from "react";
 import { useLang } from "@/lib/use-lang";
 import { useUnsavedChanges } from "@/lib/use-unsaved-changes";
 import { recordMatterVisit } from "@/lib/use-recent-matters";
@@ -65,7 +65,6 @@ import type { BrainPage, SearchResult } from "@/lib/types";
 import type { DashboardKey } from "@/content/dashboard";
 import { CitationLink, parseCitations } from "@/components/legal/CitationLink";
 import CommentThread from "@/components/legal/CommentThread";
-import { MatterContextPanel } from "@/components/legal/MatterContextPanel";
 import {
   ContactCreateDialog,
   type ContactCreateResult,
@@ -77,7 +76,8 @@ import {
   type ConflictCheckResult,
 } from "@/lib/contact-conflict";
 import { cn } from "@/lib/utils";
-import { ChatPanel } from "@/components/chat/chat-panel";
+const ChatPanel = lazy(() => import("@/components/chat/chat-panel").then((m) => ({ default: m.ChatPanel })));
+const MatterContextPanel = lazy(() => import("@/components/legal/MatterContextPanel").then((m) => ({ default: m.MatterContextPanel })));
 import {
   STATUS_TEXT,
   STATUS_BG,
@@ -636,13 +636,12 @@ export default function CaseDetailPage() {
     (async () => {
       setContactsLoading(true);
       try {
-        const [page, allContacts, allDeadlinePages] = await Promise.all([
+        const [page, batch] = await Promise.all([
           api.brain.getPage(slug),
-          api.brain.listPages({ type: "legal_contact", limit: 200 }).catch(() => [] as BrainPage[]),
-          api.brain
-            .listPages({ type: "legal_deadline", limit: 300 })
-            .catch(() => [] as BrainPage[]),
+          api.brain.batchListPages(["legal_contact", "legal_deadline"], 300).catch(() => ({} as Record<string, BrainPage[]>)),
         ]);
+        const allContacts = batch["legal_contact"] ?? [];
+        const allDeadlinePages = batch["legal_deadline"] ?? [];
         if (!cancelled) {
           const detail = parseCaseDetail(page);
           const mergedDeadlines = mergeCaseDeadlines(detail, allDeadlinePages);
@@ -4976,8 +4975,11 @@ export default function CaseDetailPage() {
 
         {activeTab === "strategy" && (
           <div className="max-w-3xl space-y-4">
-            <MatterContextPanel caseSlug={caseData.slug} defaultOpen={true} />
+            <Suspense fallback={<div className="flex items-center justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-[color:var(--ds-text-muted)]" /></div>}>
+              <MatterContextPanel caseSlug={caseData.slug} defaultOpen={true} />
+            </Suspense>
             <div className="h-[500px]">
+              <Suspense fallback={<div className="flex items-center justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-[color:var(--ds-text-muted)]" /></div>}>
               <ChatPanel
                 context={{ type: "case", caseSlug: caseData.slug }}
                 features={{
@@ -4996,6 +4998,7 @@ export default function CaseDetailPage() {
                 className="h-full"
                 title={`${t("cases.detail_chat_title")}: ${caseData.title}`}
               />
+              </Suspense>
             </div>
           </div>
         )}

@@ -130,11 +130,13 @@ export default function DeadlinesPage() {
     setLoading(true);
     setLoadError(null);
     try {
-      const [deadlinePages, casePages, appointmentPages] = await Promise.all([
-        api.brain.listPages({ type: "legal_deadline", limit: 300 }).catch(() => []),
-        api.brain.listPages({ type: "legal_case", limit: 200 }),
-        api.brain.listPages({ type: "appointment", limit: 200 }).catch(() => []),
-      ]);
+      const batch = await api.brain.batchListPages(
+        ["legal_deadline", "legal_case", "appointment"],
+        300
+      );
+      const deadlinePages = batch["legal_deadline"] ?? [];
+      const casePages = batch["legal_case"] ?? [];
+      const appointmentPages = batch["appointment"] ?? [];
       const items: DeadlineItem[] = [];
 
       for (const page of deadlinePages) {

@@ -186,6 +186,7 @@ export const GET = createHandler(
     action: "legal.statute",
     rateTier: "standard",
     query: statuteQuerySchema,
+    cacheMaxAge: 600,
   },
   async (_ctx, _body, query, _req) => {
     const code = (query.code ?? "").toLowerCase();

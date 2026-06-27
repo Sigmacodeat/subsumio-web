@@ -46,6 +46,7 @@ async function submitAndWait(
       role: "planning",
       force_specialists: ["legal-analyst", "legal-deadline-extractor"],
     }),
+    signal: AbortSignal.timeout(30_000),
   });
 
   if (!submitRes.ok) {
@@ -62,7 +63,7 @@ async function submitAndWait(
   while (Date.now() < deadline) {
     await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
 
-    const statusRes = await fetch(`${ENGINE_URL}/api/agents/${jobId}`, { headers });
+    const statusRes = await fetch(`${ENGINE_URL}/api/agents/${jobId}`, { headers, signal: AbortSignal.timeout(10_000) });
     if (!statusRes.ok) continue;
 
     const job = await statusRes.json();

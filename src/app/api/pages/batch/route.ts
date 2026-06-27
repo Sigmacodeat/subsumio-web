@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
-import { createHandler, apiError } from "@/lib/api-handler";
+import { createHandler } from "@/lib/api-handler";
 
 const batchSchema = z.object({
   slugs: z.array(z.string().min(1).max(512)).min(1).max(100),
@@ -26,6 +26,7 @@ export const POST = createHandler(
           const path = slug.split("/").map(encodeURIComponent).join("/");
           const res = await fetch(`${ENGINE_URL}/api/pages/${path}`, {
             headers: ctx.headers,
+            signal: AbortSignal.timeout(10_000),
           });
           if (res.ok) {
             results[slug] = await res.json();

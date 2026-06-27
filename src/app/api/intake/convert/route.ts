@@ -36,6 +36,7 @@ export const POST = createHandler(
   async (ctx, body) => {
     const getRes = await fetch(`${ENGINE_URL}/api/pages/${encodeSlug(body.slug)}`, {
       headers: ctx.headers,
+    signal: AbortSignal.timeout(10_000),
     });
     if (!getRes.ok) return apiError("intake_not_found", "Intake konnte nicht geladen werden", 404);
 
@@ -55,6 +56,7 @@ export const POST = createHandler(
       method: "POST",
       headers: { "Content-Type": "application/json", ...ctx.headers },
       body: JSON.stringify(casePage),
+    signal: AbortSignal.timeout(15_000),
     });
     if (!createRes.ok) {
       const message = await createRes.text().catch(() => "");
@@ -75,6 +77,7 @@ export const POST = createHandler(
           converted_case_slug: casePage.slug,
           updated_at: now,
         },
+      signal: AbortSignal.timeout(15_000),
       }),
     });
     if (!updateRes.ok) return apiError("intake_update_failed", "Akte erstellt, Intake aber nicht aktualisiert", 502);

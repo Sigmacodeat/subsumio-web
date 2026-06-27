@@ -25,6 +25,7 @@ const seatChangeSchema = z.object({
 async function stripeGet<T>(path: string): Promise<T> {
   const res = await fetch(`https://api.stripe.com/v1${path}`, {
     headers: { Authorization: `Bearer ${STRIPE_SECRET}` },
+    signal: AbortSignal.timeout(30_000),
   });
   if (!res.ok) {
     const err = (await res.json()) as { error?: { message?: string } };
@@ -51,6 +52,7 @@ async function stripePost<T>(path: string, body: Record<string, unknown>): Promi
       "Content-Type": "application/x-www-form-urlencoded",
     },
     body: params.toString(),
+    signal: AbortSignal.timeout(30_000),
   });
   if (!res.ok) {
     const err = (await res.json()) as { error?: { message?: string } };
@@ -71,8 +73,7 @@ export const GET = createHandler(
     if (!user) return apiError("user_not_found", "User not found", 404);
 
     // Get members: users in the same org
-    const allUsers = await store.list();
-    const members = allUsers.filter((u) => u.orgId === ctx.user.orgId);
+    const members = await store.listByOrg(ctx.user.orgId ?? "");
     const usedSeats = members.length;
 
     // Get subscription from Stripe for seat count and price
@@ -146,8 +147,7 @@ export const POST = createHandler(
       return apiError("no_stripe_customer", "No Stripe customer ID found", 400);
 
     // Validate: can't reduce below current member count
-    const allUsers = await store.list();
-    const members = allUsers.filter((u) => u.orgId === ctx.user.orgId);
+    const members = await store.listByOrg(ctx.user.orgId ?? "");
     const usedSeats = members.length;
     if (quantity < usedSeats) {
       return apiError(

@@ -215,7 +215,7 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
       ],
       ctaTitle: "Your practice. Your brain.",
       ctaSub: "Three minutes to first cited answer. No credit card, no server, no IT.",
-      ctaButton: "Get started",
+      ctaButton: "Request a demo",
     },
     "in-house": {
       slug: "in-house",
@@ -294,7 +294,7 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
       ctaTitle: "Give your legal team an answer machine.",
       ctaSub:
         "Start with one contract portfolio as a pilot. No data needs to leave your infrastructure.",
-      ctaButton: "Talk to us",
+      ctaButton: "Request a demo",
     },
     "mid-sized": {
       slug: "mid-sized",
@@ -372,7 +372,7 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
       ],
       ctaTitle: "Compete with the big firms.",
       ctaSub: "Start with one team as a pilot. See the impact in a week.",
-      ctaButton: "Get started",
+      ctaButton: "Request a demo",
     },
   },
   de: {
@@ -545,7 +545,7 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
       ],
       ctaTitle: "Deine Praxis. Dein Brain.",
       ctaSub: "Drei Minuten bis zur ersten belegten Antwort. Keine Kreditkarte, kein Server, keine IT.",
-      ctaButton: "Jetzt starten",
+      ctaButton: "Demo anfragen",
     },
     "in-house": {
       slug: "in-house",
@@ -624,7 +624,7 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
       ctaTitle: "Gib deinem Rechtsteam eine Antwortmaschine.",
       ctaSub:
         "Starte mit einem Vertragsportfolio als Pilot. Keine Daten müssen deine Infrastruktur verlassen.",
-      ctaButton: "Sprich mit uns",
+      ctaButton: "Demo anfragen",
     },
     "mid-sized": {
       slug: "mid-sized",
@@ -702,7 +702,7 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
       ],
       ctaTitle: "Konkurriere mit den Großkanzleien.",
       ctaSub: "Starte mit einem Team als Pilot. Sieh die Wirkung in einer Woche.",
-      ctaButton: "Jetzt starten",
+      ctaButton: "Demo anfragen",
     },
   },
 };

@@ -53,14 +53,11 @@ export default function ReviewQueuePage() {
     setLoading(true);
     setError(null);
     try {
+      const batch = await api.brain.batchListPages(REVIEWABLE_TYPES, 100);
       const all: BrainPage[] = [];
       for (const type of REVIEWABLE_TYPES) {
-        try {
-          const result = await api.brain.listPages({ type, limit: 100 });
-          all.push(...result);
-        } catch {
-          /* skip type if it fails */
-        }
+        const pages = batch[type];
+        if (pages) all.push(...pages);
       }
       setPages(all);
     } catch (e) {

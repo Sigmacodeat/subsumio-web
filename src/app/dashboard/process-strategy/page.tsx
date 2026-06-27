@@ -76,6 +76,7 @@ export default function ProcessStrategyPage() {
   const [_generatingStrategy, _setGeneratingStrategy] = useState(false);
   const [generatingDrafts, setGeneratingDrafts] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [casesError, setCasesError] = useState<string | null>(null);
   const [strategy, setStrategy] = useState<StrategyResult | null>(null);
   const [drafts, setDrafts] = useState<DraftSuggestion[]>([]);
   const [analysisText, setAnalysisText] = useState("");
@@ -107,7 +108,10 @@ export default function ProcessStrategyPage() {
         });
         setCases(mapped);
       })
-      .catch(() => setCases([]))
+      .catch((e) => {
+        setCases([]);
+        setCasesError(e instanceof Error ? e.message : t("strategy.error_load_cases"));
+      })
       .finally(() => setLoadingCases(false));
   }, []);
 
@@ -361,6 +365,11 @@ Erstelle 2-3 Schriftsatz-Entwürfe im JSON-Format als Array:
             <div className="py-8 text-center text-sm text-[color:var(--ds-text-muted)]">
               <Loader2 size={20} className="mx-auto mb-2 animate-spin" />
               {t("strategy.loading_cases")}
+            </div>
+          ) : casesError ? (
+            <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-700">
+              <AlertTriangle size={16} />
+              {casesError}
             </div>
           ) : cases.length === 0 ? (
             <div className="py-8 text-center text-sm text-[color:var(--ds-text-muted)]">

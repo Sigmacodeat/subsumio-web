@@ -26,6 +26,7 @@ export const GET = createHandler(
       const encodedSlug = caseSlug.split("/").map(encodeURIComponent).join("/");
       const res = await fetch(`${ENGINE_URL}/api/pages/${encodedSlug}`, {
         headers: engineHeadersForBrain(ctx.brainId),
+        signal: AbortSignal.timeout(10_000),
       });
       if (res.ok) {
         const page = (await res.json()) as { frontmatter?: Record<string, unknown> };

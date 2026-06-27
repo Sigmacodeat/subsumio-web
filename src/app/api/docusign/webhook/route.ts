@@ -7,6 +7,8 @@ import {
 } from "@/lib/docusign";
 import { createWebhookHandler } from "@/lib/api-handler";
 
+export const maxDuration = 30;
+
 export const dynamic = "force-dynamic";
 
 /**
@@ -102,7 +104,7 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
     const headers = engineHeadersForBrain(brainId);
     const searchRes = await fetch(
       `${ENGINE_URL}/api/search?q=${encodeURIComponent(`docusign_envelope_id:${envelopeId}`)}`,
-      { headers }
+      { headers, signal: AbortSignal.timeout(15_000) }
     );
     if (searchRes.ok) {
       const raw = await searchRes.json();
@@ -123,6 +125,7 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
               ...(status === "completed" ? { signed_at: new Date().toISOString() } : {}),
             },
           }),
+          signal: AbortSignal.timeout(15_000),
         });
         updated = patchRes.ok;
       }

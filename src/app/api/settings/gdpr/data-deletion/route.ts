@@ -7,6 +7,8 @@ import { logAudit } from "@/lib/audit";
 import { createServerBrainClient } from "@/lib/server-brain";
 import { createHandler, apiError } from "@/lib/api-handler";
 
+export const maxDuration = 120;
+
 const deletionSchema = z.object({
   confirm: z.literal("DELETE_MY_ACCOUNT"),
 });
@@ -25,7 +27,11 @@ export const POST = createHandler(
     try {
       const brain = createServerBrainClient(ctx.headers);
       const pages = await brain.listPages({ limit: 10000 });
-      await Promise.all(pages.map((p) => brain.deletePage(p.slug).catch(() => {})));
+      const BATCH_SIZE = 5;
+      for (let i = 0; i < pages.length; i += BATCH_SIZE) {
+        const batch = pages.slice(i, i + BATCH_SIZE);
+        await Promise.all(batch.map((p) => brain.deletePage(p.slug).catch(() => {})));
+      }
     } catch {
       // Brain may not be available
     }

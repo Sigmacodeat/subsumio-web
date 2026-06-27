@@ -628,7 +628,7 @@ export async function syncFromWorkOS(orgId: string): Promise<SyncResult> {
     const store = getStore();
 
     // Get all existing SCIM users (this org only) to detect deprovisioning
-    const allUsers = (await store.list()).filter((u) => u.orgId === orgId);
+    const allUsers = await store.listByOrg(orgId);
     const scimUserExternalIds = new Set(
       allUsers.filter((u) => u.scimExternalId).map((u) => u.scimExternalId as string)
     );

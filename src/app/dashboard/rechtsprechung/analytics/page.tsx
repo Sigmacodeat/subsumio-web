@@ -215,11 +215,12 @@ export default function LitigationAnalyticsPage() {
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
+    let cancelled = false;
     (async () => {
-      setLoading(true);
+      if (!cancelled) setLoading(true);
       try {
-        // Pull all court decisions from the brain
         const pages = await api.brain.search("court_decision Urteil Beschluss Entscheidung", 200);
+        if (cancelled) return;
         const all = parseDecisions(pages as unknown as StoredDecision[]).filter(
           (d) => d.court !== "Unbekannt" || d.legalArea !== "Allgemein"
         );
@@ -227,9 +228,10 @@ export default function LitigationAnalyticsPage() {
       } catch (err) {
         console.error("[analytics] load error:", err);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     })();
+    return () => { cancelled = true; };
   }, []);
 
   // ── Filtered set ──────────────────────────────────────────────────

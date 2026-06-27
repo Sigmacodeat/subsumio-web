@@ -1,7 +1,14 @@
+import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError } from "@/lib/api-handler";
 
 const validActions = new Set(["pause", "resume", "cancel", "replay", "inbox"]);
+
+const inboxSchema = z.object({
+  message: z.string().min(1).max(8000).optional(),
+  content: z.string().max(8000).optional(),
+  query: z.string().max(4000).optional(),
+}).passthrough();
 
 export const GET = createHandler(
   {
@@ -17,7 +24,7 @@ export const GET = createHandler(
     const path = sub === "inbox" ? `${id}/inbox` : id;
 
     try {
-      const res = await fetch(`${ENGINE_URL}/api/agents/${path}`, { headers: ctx.headers });
+      const res = await fetch(`${ENGINE_URL}/api/agents/${path}`, { headers: ctx.headers, signal: AbortSignal.timeout(10_000) });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return Response.json(await res.json());
     } catch (err) {
@@ -48,7 +55,12 @@ export const POST = createHandler(
       let body: Record<string, unknown> | undefined;
       if (isInbox) {
         try {
-          body = await req.json();
+          const raw = await req.json();
+          const parsed = inboxSchema.safeParse(raw);
+          if (!parsed.success) {
+            return apiError("invalid_body", "Ungültiger Request-Body", 400);
+          }
+          body = parsed.data;
         } catch {
           return apiError("invalid_json", "Ungültiger JSON-Body", 400);
         }
@@ -58,6 +70,7 @@ export const POST = createHandler(
         method: "POST",
         headers: isInbox ? { "Content-Type": "application/json", ...ctx.headers } : ctx.headers,
         ...(isInbox && body ? { body: JSON.stringify(body) } : {}),
+      signal: AbortSignal.timeout(15_000),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return Response.json(await res.json());

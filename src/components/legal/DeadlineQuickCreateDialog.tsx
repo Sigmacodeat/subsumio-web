@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useDialogFetch } from "@/lib/use-dialog-fetch";
 import {
   Dialog,
   DialogContent,
@@ -67,34 +68,19 @@ export function DeadlineQuickCreateDialog({
   const [ruleKey, setRuleKey] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [createAnother, setCreateAnother] = useState(false);
-  const [cases, setCases] = useState<CaseOption[]>([]);
-  const [loadingCases, setLoadingCases] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [calcPreview, setCalcPreview] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!open) return;
-    let cancelled = false;
-    setLoadingCases(true);
-    api.brain
-      .listPages({ type: "legal_case", limit: 200 })
-      .then((pages) => {
-        if (cancelled) return;
-        setCases(
-          pages.map((p: BrainPage) => ({
-            slug: p.slug,
-            title: p.title || p.slug,
-          }))
-        );
-      })
-      .catch(() => {
-        if (!cancelled) setCases([]);
-      })
-      .finally(() => setLoadingCases(false));
-    return () => {
-      cancelled = true;
-    };
-  }, [open]);
+  const { data: cases, loading: loadingCases } = useDialogFetch<CaseOption[]>(
+    open,
+    async () => {
+      const pages = await api.brain.listPages({ type: "legal_case", limit: 200 });
+      return pages.map((p: BrainPage) => ({
+        slug: p.slug,
+        title: p.title || p.slug,
+      }));
+    },
+  );
 
   useEffect(() => {
     if (!ruleKey) {
@@ -130,7 +116,7 @@ export function DeadlineQuickCreateDialog({
     if (!description.trim() || !date) return;
     setSubmitting(true);
 
-    const selectedCase = cases.find((c) => c.slug === caseSlug);
+    const selectedCase = (cases ?? []).find((c) => c.slug === caseSlug);
     const rule = DEADLINE_RULES.find((r) => r.key === ruleKey);
     const now = new Date();
     const titlePart = description
@@ -266,7 +252,7 @@ export function DeadlineQuickCreateDialog({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">{t("deadlines.no_case" as DashboardKey)}</SelectItem>
-                  {cases.map((c) => (
+                  {(cases ?? []).map((c) => (
                     <SelectItem key={c.slug} value={c.slug}>
                       {c.title}
                     </SelectItem>

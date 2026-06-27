@@ -25,6 +25,7 @@ export const POST = createHandler(
       method: "POST",
       headers: { "Content-Type": "application/json", ...ctx.headers },
       body: JSON.stringify({ case_slug: body.case_slug }),
+      signal: AbortSignal.timeout(30_000),
     });
 
     if (!res.ok) {

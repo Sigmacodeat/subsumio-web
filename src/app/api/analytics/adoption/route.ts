@@ -9,6 +9,7 @@ export const GET = createEngineProxy({
   body: z.object({}).passthrough(),
   quota: undefined,
   label: "adoption-analytics",
+  cacheMaxAge: 300,
   transformBody: (_b) => ({}),
   audit: (_ctx, _b) => ({
     action: "settings.update" as const,

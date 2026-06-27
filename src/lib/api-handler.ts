@@ -575,6 +575,8 @@ export function createEngineProxy<B extends z.ZodTypeAny>(options: {
   /** Transform the validated body before sending to the engine. */
   transformBody?: (body: z.infer<B>) => Record<string, unknown>;
   audit?: (ctx: HandlerContext, body: z.infer<B>) => AuditSpec | AuditSpec[];
+  /** Cache-Control max-age for GET responses (seconds). */
+  cacheMaxAge?: number;
 }): (req: NextRequest) => Promise<Response> {
   const label = options.label ?? options.enginePath;
   return createHandler(
@@ -584,6 +586,7 @@ export function createEngineProxy<B extends z.ZodTypeAny>(options: {
       quota: options.quota,
       body: options.body,
       audit: options.audit,
+      cacheMaxAge: options.cacheMaxAge,
     },
     async (ctx, body, _query, _req) => {
       const rawPayload = options.transformBody

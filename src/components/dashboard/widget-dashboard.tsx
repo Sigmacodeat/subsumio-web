@@ -27,7 +27,15 @@ import { useLang } from "@/lib/use-lang";
 import type { Lang } from "@/content/site";
 import type { BrainPage, BrainStats, RecentQuery } from "@/lib/types";
 import { StaggerContainer, StaggerItem } from "@/components/marketing/motion-system";
-import { KanzleiInsights } from "./kanzlei-insights";
+import dynamic from "next/dynamic";
+
+const KanzleiInsights = dynamic(() => import("./kanzlei-insights").then((m) => m.KanzleiInsights), {
+  loading: () => (
+    <div className="flex h-48 items-center justify-center text-sm text-[color:var(--ds-text-muted)]">
+      Laden…
+    </div>
+  ),
+});
 
 type DashboardPageLike = BrainPage & {
   frontmatter?: Record<string, unknown>;

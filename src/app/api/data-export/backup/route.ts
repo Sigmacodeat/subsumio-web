@@ -1,6 +1,8 @@
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError } from "@/lib/api-handler";
 
+export const maxDuration = 60;
+
 export const GET = createHandler(
   {
     action: "admin.*",

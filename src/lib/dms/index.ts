@@ -137,6 +137,7 @@ export async function importToBrainCommon(
         imported_at: new Date().toISOString(),
       },
     }),
+    signal: AbortSignal.timeout(15_000),
   });
 
   return { slug, success: pageRes.ok };

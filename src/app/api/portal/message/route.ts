@@ -48,6 +48,7 @@ export const POST = createPublicHandler(
             created_at: new Date().toISOString(),
           },
         }),
+        signal: AbortSignal.timeout(15_000),
       });
       if (!res.ok) return apiError("save_failed", "Nachricht konnte nicht gespeichert werden", 502);
       return Response.json({ ok: true });

@@ -46,6 +46,7 @@ async function engineJson<T>(
       ...headers,
       ...(options?.headers as Record<string, string> | undefined),
     },
+    signal: options?.signal ?? AbortSignal.timeout(10_000),
   });
 
   if (!res.ok) {

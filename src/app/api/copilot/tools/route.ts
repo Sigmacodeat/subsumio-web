@@ -331,6 +331,7 @@ async function executeSearchDeadlines(
     if (params.case_slug) params_url.set("q", params.case_slug);
     const res = await fetch(`${ENGINE_URL}/api/pages?${params_url.toString()}`, {
       headers: ctx.headers,
+    signal: AbortSignal.timeout(30_000),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const pages = (await res.json()) as Array<{
@@ -453,6 +454,7 @@ async function executeCreateCase(
       method: "POST",
       headers: { "Content-Type": "application/json", ...ctx.headers },
       body: JSON.stringify(body),
+    signal: AbortSignal.timeout(30_000),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const result = (await res.json()) as { slug: string };
@@ -487,6 +489,7 @@ async function executeCaseSummary(
     const path = params.case_slug.split("/").map(encodeURIComponent).join("/");
     const res = await fetch(`${ENGINE_URL}/api/pages/${path}`, {
       headers: ctx.headers,
+    signal: AbortSignal.timeout(30_000),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const page = (await res.json()) as {
@@ -534,7 +537,7 @@ async function executeEmailDraft(
     let caseContext = "";
     if (params.case_slug) {
       const path = params.case_slug.split("/").map(encodeURIComponent).join("/");
-      const res = await fetch(`${ENGINE_URL}/api/pages/${path}`, { headers: ctx.headers });
+      const res = await fetch(`${ENGINE_URL}/api/pages/${path}`, { headers: ctx.headers, signal: AbortSignal.timeout(10_000) });
       if (res.ok) {
         const page = (await res.json()) as { title: string; frontmatter?: Record<string, unknown> };
         const fm = page.frontmatter ?? {};
@@ -562,6 +565,7 @@ async function executeEmailDraft(
       method: "POST",
       headers: { "Content-Type": "application/json", ...ctx.headers },
       body: JSON.stringify(draftBody),
+    signal: AbortSignal.timeout(30_000),
     });
 
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -600,7 +604,7 @@ async function executeDeadlineExtract(
 ): Promise<ToolResponse> {
   try {
     const path = params.document_slug.split("/").map(encodeURIComponent).join("/");
-    const res = await fetch(`${ENGINE_URL}/api/pages/${path}`, { headers: ctx.headers });
+    const res = await fetch(`${ENGINE_URL}/api/pages/${path}`, { headers: ctx.headers, signal: AbortSignal.timeout(10_000) });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const page = (await res.json()) as {
       slug: string;
@@ -615,6 +619,7 @@ async function executeDeadlineExtract(
       body: JSON.stringify({
         query: `Analysiere das folgende Dokument und extrahiere alle Fristen, Termine und Deadlines. Gib jedes als strukturierten Eintrag zurück (Datum, Art, Beschreibung):\n\n${sanitizeUserInput(page.content.slice(0, 8000))}`,
         mode: "balanced",
+      signal: AbortSignal.timeout(30_000),
       }),
     });
 
@@ -658,7 +663,7 @@ async function executeDocumentSummary(
 ): Promise<ToolResponse> {
   try {
     const path = params.document_slug.split("/").map(encodeURIComponent).join("/");
-    const res = await fetch(`${ENGINE_URL}/api/pages/${path}`, { headers: ctx.headers });
+    const res = await fetch(`${ENGINE_URL}/api/pages/${path}`, { headers: ctx.headers, signal: AbortSignal.timeout(10_000) });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const page = (await res.json()) as { slug: string; title: string; content: string };
 
@@ -668,6 +673,7 @@ async function executeDocumentSummary(
       body: JSON.stringify({
         query: `Fasse das folgende Dokument in ${params.max_points} Key Points zusammen. Identifiziere kritische Klauseln, Risiken und Handlungsbedarf:\n\n${sanitizeUserInput(page.content.slice(0, 10000))}`,
         mode: "balanced",
+      signal: AbortSignal.timeout(30_000),
       }),
     });
 
@@ -715,6 +721,7 @@ async function executeConflictCheck(
       method: "POST",
       headers: { "Content-Type": "application/json", ...ctx.headers },
       body: JSON.stringify({ name: safeName }),
+    signal: AbortSignal.timeout(30_000),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = (await res.json()) as {
@@ -761,7 +768,7 @@ async function executeTimeEntry(
   try {
     const safeDescription = sanitizeUserInput(params.description);
     const path = params.case_slug.split("/").map(encodeURIComponent).join("/");
-    const caseRes = await fetch(`${ENGINE_URL}/api/pages/${path}`, { headers: ctx.headers });
+    const caseRes = await fetch(`${ENGINE_URL}/api/pages/${path}`, { headers: ctx.headers, signal: AbortSignal.timeout(10_000) });
     let caseTitle = params.case_slug;
     if (caseRes.ok) {
       const caseData = (await caseRes.json()) as { title: string };
@@ -787,6 +794,7 @@ async function executeTimeEntry(
       method: "POST",
       headers: { "Content-Type": "application/json", ...ctx.headers },
       body: JSON.stringify(entry),
+    signal: AbortSignal.timeout(30_000),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
@@ -827,7 +835,7 @@ async function executeClientUpdate(
 ): Promise<ToolResponse> {
   try {
     const path = params.case_slug.split("/").map(encodeURIComponent).join("/");
-    const res = await fetch(`${ENGINE_URL}/api/pages/${path}`, { headers: ctx.headers });
+    const res = await fetch(`${ENGINE_URL}/api/pages/${path}`, { headers: ctx.headers, signal: AbortSignal.timeout(10_000) });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const page = (await res.json()) as {
       title: string;
@@ -852,6 +860,7 @@ async function executeClientUpdate(
       body: JSON.stringify({
         query: `${updateTypeMap[params.update_type]}\n\nAKTE: ${sanitizeUserInput(page.title)}\nMandant: ${sanitizeUserInput(String(fm.client_name ?? "—"))}\n\nDokumentinhalt:\n${sanitizeUserInput(page.content.slice(0, 6000))}`,
         mode: "balanced",
+      signal: AbortSignal.timeout(30_000),
       }),
     });
 
@@ -901,6 +910,7 @@ async function executeMeetingTasks(
       body: JSON.stringify({
         query: `Analysiere die folgenden Besprechungsnotizen und extrahiere:\n1. Aufgaben (Task) mit Assignee und Due Date falls erwähnt\n2. Entscheidungen\n3. Offene Fragen\n\nFormat als strukturierte Liste.\n\nNotizen:\n${sanitizeUserInput(params.notes.slice(0, 6000))}`,
         mode: "balanced",
+      signal: AbortSignal.timeout(30_000),
       }),
     });
 
@@ -957,6 +967,7 @@ async function executeIntakeCreate(
           method: "POST",
           headers: { "Content-Type": "application/json", ...ctx.headers },
           body: JSON.stringify({ name: safeClientName }),
+        signal: AbortSignal.timeout(30_000),
         });
         if (conflictRes.ok) {
           const conflictData = (await conflictRes.json()) as {
@@ -1002,6 +1013,7 @@ async function executeIntakeCreate(
       method: "POST",
       headers: { "Content-Type": "application/json", ...ctx.headers },
       body: JSON.stringify(body),
+    signal: AbortSignal.timeout(30_000),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const result = (await res.json()) as { slug: string };
@@ -1091,6 +1103,7 @@ async function executeDocumentRequestCreate(
         created_at: new Date().toISOString(),
       },
     }),
+    signal: AbortSignal.timeout(30_000),
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return {
@@ -1121,6 +1134,7 @@ async function executePrecedentSearch(
     method: "POST",
     headers: { "Content-Type": "application/json", ...ctx.headers },
     body: JSON.stringify({ ...params, query: sanitizeUserInput(params.query), limit: 10 }),
+  signal: AbortSignal.timeout(30_000),
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data = (await res.json()) as { results?: Array<Record<string, unknown>> };
@@ -1154,6 +1168,7 @@ async function executeTranslateText(
       legal_terminology: true,
       preserve_formatting: true,
     }),
+    signal: AbortSignal.timeout(30_000),
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data = (await res.json()) as { translated_text?: string; translation?: string };
@@ -1183,6 +1198,7 @@ async function executeObligationExtract(
       ...params,
       text: params.text ? sanitizeUserInput(params.text) : undefined,
     }),
+    signal: AbortSignal.timeout(30_000),
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data = (await res.json()) as { obligations?: Array<Record<string, unknown>> };
@@ -1210,6 +1226,7 @@ async function executeTabularReview(
     method: "POST",
     headers: { "Content-Type": "application/json", ...ctx.headers },
     body: JSON.stringify(params),
+  signal: AbortSignal.timeout(30_000),
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data = await res.json();

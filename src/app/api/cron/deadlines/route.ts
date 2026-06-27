@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { sendMail } from "@/lib/mail";
 import { computeDeadlineStatus } from "@/lib/legal-deadlines";
 import { createCronHandler } from "@/lib/api-handler";
-import { fetchPages, getRecipientsByBrain, createDailyDedup } from "@/lib/cron-utils";
+import { batchFetchPages, getRecipientsByBrain, createDailyDedup } from "@/lib/cron-utils";
 import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
 import { loadAllowedSenders } from "@/lib/whatsapp/verify";
 import type { WhatsAppTemplateMessage } from "@/lib/whatsapp/types";
@@ -44,8 +44,11 @@ function classify(dueDate: string, doneFlag: unknown): DeadlineItem["status"] | 
 async function collectDeadlines(brainId: string): Promise<DeadlineItem[]> {
   const items: DeadlineItem[] = [];
 
+  const batch = await batchFetchPages(brainId, ["legal_case", "legal_deadline"], 200);
+  const cases = batch["legal_case"] ?? [];
+  const deadlinePages = batch["legal_deadline"] ?? [];
+
   // 1. Fristen aus Akten-Frontmattern (legal_case → frontmatter.deadlines[])
-  const cases = await fetchPages(brainId, "legal_case", 200);
   for (const page of cases) {
     const fm = page.frontmatter ?? {};
     const deadlines = Array.isArray(fm.deadlines) ? fm.deadlines : [];
@@ -67,7 +70,6 @@ async function collectDeadlines(brainId: string): Promise<DeadlineItem[]> {
   }
 
   // 2. Eigenständige legal_deadline-Seiten
-  const deadlinePages = await fetchPages(brainId, "legal_deadline", 100);
   for (const page of deadlinePages) {
     const fm = page.frontmatter ?? {};
     const dueDate = String(fm.due_date ?? fm.date ?? fm.deadline_date ?? "");

@@ -66,7 +66,9 @@ export const POST = createPublicHandler(
     }
 
     // Log and return success (processing is async)
-    console.log(`[webhook] received ${event}`);
+    if (process.env.NODE_ENV !== "production") {
+      console.debug(`[webhook] received ${event}`);
+    }
     if (eventId) await idempotency.markProcessed(eventId, event);
     return NextResponse.json({
       success: true,

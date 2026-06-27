@@ -22,10 +22,13 @@ export default function ChatAnalyticsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
     getChatStats().then((s) => {
+      if (cancelled) return;
       setStats(s);
       setLoading(false);
     });
+    return () => { cancelled = true; };
   }, []);
 
   if (loading) {

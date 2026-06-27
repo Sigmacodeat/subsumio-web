@@ -34,6 +34,7 @@ export const GET = createHandler(
     try {
       const res = await fetch(`${ENGINE_URL}/api/pages?type=clause_annotation&limit=500`, {
         headers: engineHeadersForBrain(ctx.brainId),
+      signal: AbortSignal.timeout(10_000),
       });
 
       let annotations: ClauseAnnotation[] = [];
@@ -136,6 +137,7 @@ export const POST = createHandler(
           content: body.clause_excerpt,
           frontmatter,
         }),
+        signal: AbortSignal.timeout(15_000),
       });
 
       if (!res.ok) {
@@ -182,6 +184,7 @@ export const PATCH = createHandler(
       const path = body.slug.split("/").map(encodeURIComponent).join("/");
       const res = await fetch(`${ENGINE_URL}/api/pages/${path}`, {
         headers: engineHeadersForBrain(ctx.brainId),
+      signal: AbortSignal.timeout(10_000),
       });
 
       if (!res.ok) {
@@ -221,6 +224,7 @@ export const PATCH = createHandler(
           title: annotation.title,
           frontmatter: updatedFrontmatter,
         }),
+        signal: AbortSignal.timeout(15_000),
       });
 
       if (!updateRes.ok) {

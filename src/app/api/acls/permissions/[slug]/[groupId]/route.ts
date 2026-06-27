@@ -5,6 +5,11 @@ export const DELETE = createHandler(
   {
     action: "settings.write",
     rateTier: "standard",
+    audit: (_ctx, _body, _query) => ({
+      action: "acl.remove_permission" as const,
+      entityType: "acl_permission",
+      details: {},
+    }),
   },
   async (ctx, _body, _query, req) => {
     try {

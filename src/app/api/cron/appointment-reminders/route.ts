@@ -12,7 +12,7 @@ async function updateAppointmentReminderSent(brainId: string, slug: string): Pro
   const headers = engineHeadersForBrain(brainId);
   const encodedSlug = slug.split("/").map(encodeURIComponent).join("/");
   try {
-    const getRes = await fetch(`${ENGINE_URL}/api/pages/${encodedSlug}`, { headers });
+    const getRes = await fetch(`${ENGINE_URL}/api/pages/${encodedSlug}`, { headers, signal: AbortSignal.timeout(10_000) });
     if (!getRes.ok) return;
     const page = (await getRes.json()) as { frontmatter?: { version?: number } };
     const currentVersion = page.frontmatter?.version ?? 0;
@@ -28,6 +28,7 @@ async function updateAppointmentReminderSent(brainId: string, slug: string): Pro
         frontmatter: { reminder_sent: true, reminder_sent_at: new Date().toISOString() },
         merge: true,
       }),
+      signal: AbortSignal.timeout(30_000),
     });
   } catch {
     // Non-blocking

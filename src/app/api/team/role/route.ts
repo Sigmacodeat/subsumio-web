@@ -40,9 +40,9 @@ const handler = createHandler(
     }
 
     if (targetUser.id === ctx.user.id && targetUser.role === "admin" && body.role !== "admin") {
-      const allUsers = await store.list();
-      const adminCount = allUsers.filter(
-        (u) => u.role === "admin" && (!ctx.user.orgId || u.orgId === ctx.user.orgId),
+      const orgMembers = ctx.user.orgId ? await store.listByOrg(ctx.user.orgId) : await store.list();
+      const adminCount = orgMembers.filter(
+        (u) => u.role === "admin"
       ).length;
       if (adminCount <= 1) {
         return apiError("last_admin_cannot_change_role", "Letzter Admin kann nicht degradiert werden", 409);

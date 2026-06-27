@@ -1,8 +1,16 @@
+import { z } from "zod";
 import { createHandler } from "@/lib/api-handler";
 import { createHmac } from "node:crypto";
 import { env } from "@/lib/env";
 
 export const maxDuration = 10;
+
+const uploadTokenSchema = z.object({
+  source: z.string().min(1).max(50).default("documents"),
+  case_slug: z.string().min(1).max(300).optional(),
+  title: z.string().max(500).optional(),
+  tags: z.string().max(500).optional(),
+});
 
 interface UploadTokenPayload {
   brain_id: string;
@@ -28,13 +36,14 @@ export const POST = createHandler(
     action: "brain.write",
     rateTier: "standard",
     skipCsrf: false,
+    body: uploadTokenSchema,
   },
   async (ctx, body) => {
-    const b = (body ?? {}) as Record<string, unknown>;
-    const source = typeof b.source === "string" ? b.source : "documents";
-    const caseSlug = typeof b.case_slug === "string" ? b.case_slug : undefined;
-    const title = typeof b.title === "string" ? b.title : undefined;
-    const tags = typeof b.tags === "string" ? b.tags : undefined;
+    const b = body as z.infer<typeof uploadTokenSchema>;
+    const source = b.source;
+    const caseSlug = b.case_slug;
+    const title = b.title;
+    const tags = b.tags;
 
     const payload: UploadTokenPayload = {
       brain_id: ctx.brainId,
@@ -58,7 +67,7 @@ export const POST = createHandler(
         expires_in: 600,
         ...(engineUrl ? { engine_url: engineUrl } : {}),
       });
-    } catch (err) {
+    } catch {
       return Response.json(
         { error: "token_sign_failed", message: "Upload token could not be issued." },
         { status: 500 }

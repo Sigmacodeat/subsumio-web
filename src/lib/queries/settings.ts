@@ -3,12 +3,34 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { csrfFetch } from "@/lib/csrf";
 
+async function apiGet<T>(path: string): Promise<T> {
+  const res = await fetch(path, { signal: AbortSignal.timeout(30_000) });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const text = await res.text();
+  return (text ? JSON.parse(text) : null) as T;
+}
+
 // ── API Keys ──
+
+export interface ApiKey {
+  id: string;
+  name: string;
+  prefix: string;
+  scopes: string[];
+  active: boolean;
+  createdAt: string;
+  lastUsedAt?: string;
+  createdBy?: string;
+}
+
+interface ApiKeyResponse {
+  keys: ApiKey[];
+}
 
 export function useApiKeys() {
   return useQuery({
     queryKey: ["settings", "api-keys"],
-    queryFn: () => fetch("/api/api-keys").then((r) => r.json()),
+    queryFn: () => apiGet<ApiKeyResponse>("/api/api-keys"),
   });
 }
 
@@ -36,10 +58,22 @@ export function useDeleteApiKey() {
 
 // ── Team ──
 
+interface TeamMember {
+  id: string;
+  name: string | null;
+  email: string;
+  role: string;
+  createdAt: string;
+}
+
+interface TeamResponse {
+  members: TeamMember[];
+}
+
 export function useTeam() {
   return useQuery({
     queryKey: ["team"],
-    queryFn: () => fetch("/api/team").then((r) => r.json()),
+    queryFn: () => apiGet<TeamResponse>("/api/team"),
   });
 }
 
@@ -83,7 +117,7 @@ export function useUpdateTeamRole() {
 export function useOrg() {
   return useQuery({
     queryKey: ["org"],
-    queryFn: () => fetch("/api/org").then((r) => r.json()),
+    queryFn: () => apiGet("/api/org"),
   });
 }
 
@@ -152,7 +186,7 @@ export function useLeaveOrg() {
 export function useUsage() {
   return useQuery({
     queryKey: ["usage"],
-    queryFn: () => fetch("/api/usage").then((r) => r.json()),
+    queryFn: () => apiGet("/api/usage"),
   });
 }
 
@@ -161,7 +195,7 @@ export function useUsage() {
 export function useDataExportBackup() {
   return useQuery({
     queryKey: ["data-export", "backup"],
-    queryFn: () => fetch("/api/data-export/backup").then((r) => r.json()),
+    queryFn: () => apiGet("/api/data-export/backup"),
   });
 }
 
@@ -170,7 +204,7 @@ export function useDataExportBackup() {
 export function useSettingsApiKeys() {
   return useQuery({
     queryKey: ["settings", "engine-api-keys"],
-    queryFn: () => fetch("/api/settings/api-keys").then((r) => (r.ok ? r.json() : null)),
+    queryFn: () => apiGet<{ ok: boolean; openaiKey?: string; anthropicKey?: string; zeroEntropyKey?: string } | null>("/api/settings/api-keys"),
   });
 }
 
@@ -240,9 +274,7 @@ export function useModelPreference() {
   return useQuery({
     queryKey: ["settings", "model"],
     queryFn: () =>
-      fetch("/api/settings/model").then((r) => r.json()) as Promise<{
-        data: ModelPreferenceResponse;
-      }>,
+      apiGet<{ data: ModelPreferenceResponse }>("/api/settings/model"),
   });
 }
 
@@ -287,7 +319,7 @@ export interface AclPagePermission {
 export function useAclGroups() {
   return useQuery({
     queryKey: ["acls", "groups"],
-    queryFn: () => fetch("/api/acls/groups").then((r) => r.json()) as Promise<AclGroup[]>,
+    queryFn: () => apiGet<AclGroup[]>("/api/acls/groups"),
   });
 }
 
@@ -320,9 +352,7 @@ export function useAclGroupMembers(groupId: string | undefined) {
     queryKey: ["acls", "groups", groupId, "members"],
     enabled: !!groupId,
     queryFn: () =>
-      fetch(`/api/acls/groups/${encodeURIComponent(groupId!)}/members`).then((r) =>
-        r.json()
-      ) as Promise<AclGroupMember[]>,
+      apiGet<AclGroupMember[]>(`/api/acls/groups/${encodeURIComponent(groupId!)}/members`),
   });
 }
 
@@ -358,9 +388,7 @@ export function usePagePermissions(slug: string | undefined) {
     queryKey: ["acls", "permissions", slug],
     enabled: !!slug,
     queryFn: () =>
-      fetch(`/api/acls/permissions/${encodeURIComponent(slug!)}`).then((r) => r.json()) as Promise<
-        AclPagePermission[]
-      >,
+      apiGet<AclPagePermission[]>(`/api/acls/permissions/${encodeURIComponent(slug!)}`),
   });
 }
 

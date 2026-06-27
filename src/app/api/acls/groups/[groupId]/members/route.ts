@@ -1,5 +1,10 @@
+import { z } from "zod";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
+
+const addMemberSchema = z.object({
+  user_id: z.string().min(1).max(200),
+});
 
 export const GET = createHandler(
   {
@@ -39,6 +44,12 @@ export const POST = createHandler(
   {
     action: "settings.write",
     rateTier: "standard",
+    body: addMemberSchema,
+    audit: (_ctx, body, _query) => ({
+      action: "acl.add_member" as const,
+      entityType: "acl_group",
+      details: { userId: body.user_id },
+    }),
   },
   async (ctx, body, _query, req) => {
     try {
@@ -47,16 +58,12 @@ export const POST = createHandler(
       if (!groupId) {
         return apiError("group_id_required", "Gruppen-ID fehlt", 400);
       }
-      const userId = (body as Record<string, unknown> | undefined)?.user_id;
-      if (typeof userId !== "string" || !userId.trim()) {
-        return apiError("user_id_required", "Benutzer-ID ist erforderlich", 400);
-      }
       const res = await fetch(
         `${ENGINE_URL}/api/acls/groups/${encodeURIComponent(groupId)}/members`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json", ...ctx.headers },
-          body: JSON.stringify({ user_id: userId.trim() }),
+          body: JSON.stringify({ user_id: body.user_id }),
         }
       );
       if (!res.ok) {

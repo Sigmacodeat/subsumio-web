@@ -284,6 +284,40 @@ describe("FileUserStore (dev mode)", () => {
     expect(all.some((u) => u.id === "test-list-2")).toBe(true);
   });
 
+  test("listByOrg returns only users in the specified org", async () => {
+    const store = getStore();
+    await store.create(makeUser({ id: "test-org-a", email: "orga@test.com", orgId: "org-1" }));
+    await store.create(makeUser({ id: "test-org-b", email: "orgb@test.com", orgId: "org-1" }));
+    await store.create(makeUser({ id: "test-org-c", email: "orgc@test.com", orgId: "org-2" }));
+    const org1Members = await store.listByOrg("org-1");
+    expect(org1Members.length).toBeGreaterThanOrEqual(2);
+    expect(org1Members.every((u) => u.orgId === "org-1")).toBe(true);
+    const org2Members = await store.listByOrg("org-2");
+    expect(org2Members.every((u) => u.orgId === "org-2")).toBe(true);
+  });
+
+  test("listByOrg returns empty array for unknown org", async () => {
+    const store = getStore();
+    const members = await store.listByOrg("nonexistent-org");
+    expect(members).toEqual([]);
+  });
+
+  test("getByStripeCustomerId finds user by stripe customer id", async () => {
+    const store = getStore();
+    await store.create(
+      makeUser({ id: "test-stripe-1", email: "stripe1@test.com", stripeCustomerId: "cus_test123" })
+    );
+    const user = await store.getByStripeCustomerId("cus_test123");
+    expect(user).not.toBeNull();
+    expect(user?.id).toBe("test-stripe-1");
+  });
+
+  test("getByStripeCustomerId returns null for unknown customer id", async () => {
+    const store = getStore();
+    const user = await store.getByStripeCustomerId("cus_nonexistent");
+    expect(user).toBeNull();
+  });
+
   test("countReferrals counts users with matching referredBy", async () => {
     const store = getStore();
     await store.create(

@@ -19,6 +19,7 @@ import {
   detectForward,
   getTrackingPixel,
   extractClientIp,
+  verifyUrlSignature,
   type TrackingEvent,
 } from "./tracking";
 
@@ -65,6 +66,7 @@ describe("injectTracking", () => {
     const result = injectTracking(html, "trk_test789");
     expect(result).toContain("http://localhost:3000/api/email/track/c/trk_test789?l=lnk_");
     expect(result).toContain("&u=");
+    expect(result).toContain("&s=");
     expect(result).not.toContain('href="https://example.com/page"');
   });
 
@@ -231,6 +233,36 @@ describe("detectForward", () => {
     expect(
       detectForward(firstOpen, "5.6.7.8", { country: "DE", city: "Munich" }, "Mozilla/5.0")
     ).toBe(true);
+  });
+});
+
+describe("verifyUrlSignature", () => {
+  test("valid signature is accepted", () => {
+    const html = '<p><a href="https://example.com/page">Click here</a></p>';
+    const result = injectTracking(html, "trk_sig_test");
+    const match = result.match(/&u=([^&]+)&s=([^"&]+)/);
+    expect(match).not.toBeNull();
+    const [, encoded, sig] = match!;
+    expect(verifyUrlSignature(encoded, sig)).toBe(true);
+  });
+
+  test("tampered URL is rejected", () => {
+    const html = '<p><a href="https://example.com/page">Click here</a></p>';
+    const result = injectTracking(html, "trk_tamper_test");
+    const match = result.match(/&u=([^&]+)&s=([^"&]+)/);
+    expect(match).not.toBeNull();
+    const [, , sig] = match!;
+    const tamperedEncoded = Buffer.from("https://evil.com").toString("base64url");
+    expect(verifyUrlSignature(tamperedEncoded, sig)).toBe(false);
+  });
+
+  test("tampered signature is rejected", () => {
+    const html = '<p><a href="https://example.com/page">Click here</a></p>';
+    const result = injectTracking(html, "trk_sig_tamper");
+    const match = result.match(/&u=([^&]+)&s=([^"&]+)/);
+    expect(match).not.toBeNull();
+    const [, encoded] = match!;
+    expect(verifyUrlSignature(encoded, "invalid_signature")).toBe(false);
   });
 });
 

@@ -4,14 +4,14 @@ import { JsonLd, organizationLd, softwareApplicationLd, faqPageLd, howToLd } fro
 import { LANDING } from "@/content/site";
 
 export const metadata: Metadata = {
-  title: "Subsumio — KI-Kanzleisoftware für Anwälte in AT · DE · CH",
+  title: "Subsumio — KI-Kanzleisoftware für Rechtsanwälte | AT · DE · CH",
   description:
-    "KI-Kanzleisoftware für Aktenverwaltung, Fristenkontrolle, DATEV-Export und belegte KI-Antworten mit Fundstellen. DSGVO-konform, EU-Cloud oder On-Premise. Keine KI-Halluzination — jede Antwort mit Quellenangabe.",
+    "KI-Kanzleisoftware für Kanzleien in Österreich, Deutschland und der Schweiz: Aktenverwaltung, Fristenkontrolle nach ZPO/BGB/ABGB, belegte KI-Antworten mit Fundstellen, DATEV-Export, Kollisionsprüfung. DSGVO-konform, EU-Cloud oder On-Premise.",
   alternates: { canonical: "/de", languages: { en: "/", de: "/de" } },
   openGraph: {
-    title: "Subsumio — KI-Kanzleisoftware für Anwälte in AT · DE · CH",
+    title: "Subsumio — KI-Kanzleisoftware für Rechtsanwälte | AT · DE · CH",
     description:
-      "Aktenverwaltung, Fristenkontrolle und belegte KI-Antworten für Kanzleien in Österreich, Deutschland und der Schweiz. DSGVO-konform, EU-Cloud oder On-Premise.",
+      "Aktenverwaltung, Fristenkontrolle und belegte KI-Antworten für Kanzleien in Österreich, Deutschland und der Schweiz. DSGVO-konform, EU-Cloud oder On-Premise. Jede Antwort mit Fundstelle.",
     url: "/de",
     type: "website",
   },

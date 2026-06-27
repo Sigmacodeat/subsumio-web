@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useLang } from "@/lib/use-lang";
+import { useApiQuery } from "@/lib/use-api-query";
 import type { TFunc } from "@/content/dashboard";
 import {
   Database,
@@ -311,43 +312,32 @@ function StatsBar({ registry, t }: { registry: SourceRegistryResponse; t: TFunc 
 
 export default function SourcesPage() {
   const { t } = useLang();
-  const [registry, setRegistry] = useState<SourceRegistryResponse | null>(null);
-  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [refreshError, setRefreshError] = useState<string | null>(null);
 
   // Filters
   const [jurisdictionFilter, setJurisdictionFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
-  const loadSources = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
+  const { data: registryData, loading, error, refetch: loadSources } = useApiQuery<SourceRegistryResponse>(
+    async () => {
       const params: Record<string, string> = {};
       if (jurisdictionFilter !== "all") params.jurisdiction = jurisdictionFilter;
       if (typeFilter !== "all") params.type = typeFilter;
       if (statusFilter !== "all") params.status = statusFilter;
-      const res = await api.sources.list(params);
-      setRegistry(res);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : t("sources.error_load"));
-      setRegistry(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [jurisdictionFilter, typeFilter, statusFilter, t]);
+      return api.sources.list(params);
+    },
+    [jurisdictionFilter, typeFilter, statusFilter]
+  );
 
-  useEffect(() => {
-    loadSources();
-  }, [loadSources]);
+  const registry = registryData;
 
   async function handleRefresh(sourceId: string) {
     setRefreshing(sourceId);
     setMessage(null);
-    setError(null);
+    setRefreshError(null);
     try {
       const result = await api.sources.refresh(sourceId);
       setMessage(
@@ -355,7 +345,7 @@ export default function SourcesPage() {
       );
       await loadSources();
     } catch (e) {
-      setError(e instanceof Error ? e.message : t("sources.sync_failed"));
+      setRefreshError(e instanceof Error ? e.message : t("sources.sync_failed"));
     } finally {
       setRefreshing(null);
     }
@@ -418,10 +408,10 @@ export default function SourcesPage() {
           {message}
         </div>
       )}
-      {error && (
+      {(error || refreshError) && (
         <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-600">
           <XCircle size={16} className="shrink-0" />
-          {error}
+          {error || refreshError}
         </div>
       )}
 

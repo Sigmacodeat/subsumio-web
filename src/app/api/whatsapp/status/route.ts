@@ -6,6 +6,7 @@ export const GET = createHandler(
   {
     action: "settings.read",
     rateTier: "standard",
+    cacheMaxAge: 30,
   },
   async (ctx, _body, _query, _req) => {
     const allowed = loadAllowedSenders();

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import {
   Brain,
@@ -32,6 +32,7 @@ import { Button } from "@/components/ui/button";
 import { motion, useDashboardMotion } from "@/components/dashboard/motion";
 import { csrfFetch } from "@/lib/csrf";
 import { statusLabel, type ExtractionStatus } from "@/lib/extraction-status";
+import { useApiQuery } from "@/lib/use-api-query";
 import type {
   MatterContextBundle,
   MatterParty,
@@ -56,36 +57,19 @@ export function MatterContextPanel({
   defaultOpen = true,
 }: MatterContextPanelProps) {
   const [open, setOpen] = useState(defaultOpen);
-  const [bundle, setBundle] = useState<MatterContextBundle | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const { panelTransition } = useDashboardMotion();
 
-  const loadContext = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
+  const { data: bundle, loading, error, refetch: loadContext } = useApiQuery<MatterContextBundle>(
+    async () => {
       const res = await csrfFetch(`/api/matter-context/${encodeURIComponent(caseSlug)}`, {
         method: "GET",
       });
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
-      }
-      const data = (await res.json()) as MatterContextBundle;
-      setBundle(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Unbekannter Fehler");
-      setBundle(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [caseSlug]);
-
-  useEffect(() => {
-    if (open && !bundle && !loading) {
-      void loadContext();
-    }
-  }, [open, bundle, loading, loadContext]);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return (await res.json()) as MatterContextBundle;
+    },
+    [caseSlug],
+    { enabled: open }
+  );
 
   const criticalGaps = bundle?.gaps.filter((g) => g.severity === "critical") ?? [];
   const _highGaps = bundle?.gaps.filter((g) => g.severity === "high") ?? [];

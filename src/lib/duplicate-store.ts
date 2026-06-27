@@ -22,6 +22,7 @@ export function brainDuplicateStore(headers: Record<string, string>): DuplicateS
       try {
         const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(slug)}`, {
           headers,
+          signal: AbortSignal.timeout(10_000),
         });
         if (!res.ok) return null;
         const page = (await res.json()) as {
@@ -45,6 +46,7 @@ export function brainDuplicateStore(headers: Record<string, string>): DuplicateS
         body: JSON.stringify({
           content: `---\ntitle: ${JSON.stringify(`Duplicate hash for ${name}`)}\ntype: system\noriginal_slug: ${JSON.stringify(slug)}\noriginal_name: ${JSON.stringify(name)}\nhash: ${JSON.stringify(sha256)}\n---\n\nSystem record: duplicate-detection hash for uploaded file.\n`,
         }),
+        signal: AbortSignal.timeout(10_000),
       });
     },
   };

@@ -42,7 +42,7 @@ export const POST = createHandler(
     const store = getStore();
     const owner = await store.getById(org.ownerId);
     const seats = limitsFor(owner?.plan ?? "free").seats;
-    const members = (await store.list()).filter((u) => u.orgId === org.id);
+    const members = await store.listByOrg(org.id);
     if (members.length >= seats) {
       return apiError("no_seats_left", "Keine freien Plätze", 409);
     }

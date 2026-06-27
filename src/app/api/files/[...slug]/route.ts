@@ -43,6 +43,7 @@ export const GET = createHandler(
     try {
       const res = await fetch(`${ENGINE_URL}/api/files/${path}`, {
         headers: ctx.headers,
+      signal: AbortSignal.timeout(30_000),
       });
       if (res.status === 404) return apiNotFound("not_found");
       if (!res.ok) throw new Error(`HTTP ${res.status}`);

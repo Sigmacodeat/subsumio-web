@@ -29,9 +29,11 @@ export default function ControllingPage() {
   const [period, setPeriod] = useState<"month" | "quarter" | "year">("month");
 
   useEffect(() => {
+    let cancelled = false;
     async function load() {
       try {
         const pages = await api.brain.listPages({ type: "legal_case", limit: CASES_LIMIT });
+        if (cancelled) return;
         setCapped(pages.length >= CASES_LIMIT);
         const lawyerMap = new Map<string, LawyerStats>();
 
@@ -72,14 +74,15 @@ export default function ControllingPage() {
           });
         });
 
-        setStats(Array.from(lawyerMap.values()));
+        if (!cancelled) setStats(Array.from(lawyerMap.values()));
       } catch (e) {
-        setLoadError(e instanceof Error ? e.message : "Daten konnten nicht geladen werden.");
+        if (!cancelled) setLoadError(e instanceof Error ? e.message : "Daten konnten nicht geladen werden.");
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
     load();
+    return () => { cancelled = true; };
   }, [period]);
 
   const totalRevenue = stats.reduce((s, l) => s + l.totalRevenue, 0);

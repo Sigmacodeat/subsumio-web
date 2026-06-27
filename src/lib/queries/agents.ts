@@ -139,7 +139,7 @@ export function useAgents() {
   return useQuery<AgentJob[]>({
     queryKey: ["agents"],
     queryFn: async () => {
-      const res = await fetch("/api/agents");
+      const res = await fetch("/api/agents", { signal: AbortSignal.timeout(30_000) });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       if (!data.jobs || data.jobs.length === 0) return [];
@@ -157,7 +157,7 @@ export function useAgentInbox(jobId: number, enabled: boolean) {
   return useQuery<InboxMessage[]>({
     queryKey: ["agents", jobId, "inbox"],
     queryFn: async () => {
-      const res = await fetch(`/api/agents/${jobId}/inbox`);
+      const res = await fetch(`/api/agents/${jobId}/inbox`, { signal: AbortSignal.timeout(30_000) });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       return (data.messages ?? []) as InboxMessage[];
@@ -255,7 +255,7 @@ export function useRundown() {
   return useQuery<AgentJob[]>({
     queryKey: ["agents", "rundown"],
     queryFn: async () => {
-      const res = await fetch("/api/agents?filter=rundown");
+      const res = await fetch("/api/agents?filter=rundown", { signal: AbortSignal.timeout(30_000) });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       if (!data.jobs) return [];

@@ -79,10 +79,17 @@ export type AuditAction =
   | "whatsapp.outbound_sent"
   | "whatsapp.outbound_blocked"
   | "whatsapp.briefing_feedback"
+  | "whatsapp.flow_case_created"
+  | "whatsapp.flow_appointment_booked"
   | "feedback.submit"
   | "time.auto_extract"
   | "admin.user_update"
-  | "admin.user_deactivate";
+  | "admin.user_deactivate"
+  | "acl.add_member"
+  | "acl.remove_member"
+  | "acl.delete_group"
+  | "acl.set_permission"
+  | "acl.remove_permission";
 
 const ACTION_LABELS: Record<string, string> = {
   "user.login": "Login",
@@ -141,6 +148,8 @@ const ACTION_LABELS: Record<string, string> = {
   "whatsapp.outbound_sent": "WhatsApp proaktiv gesendet",
   "whatsapp.outbound_blocked": "WhatsApp-Versand geblockt",
   "whatsapp.briefing_feedback": "WhatsApp-Briefing-Feedback",
+  "whatsapp.flow_case_created": "WhatsApp-Flow: Akte angelegt",
+  "whatsapp.flow_appointment_booked": "WhatsApp-Flow: Termin gebucht",
   "time.auto_extract": "KI-Zeiterfassung generiert",
   "feedback.submit": "Retrieval-Feedback",
   "admin.user_update": "Admin: Benutzer aktualisiert",

@@ -1,9 +1,18 @@
 "use client";
 
+import { Suspense } from "react";
 import { ChatPanel } from "@/components/chat/chat-panel";
 import { useSearchParams } from "next/navigation";
 
 export default function ChatPage() {
+  return (
+    <Suspense fallback={<div className="p-6" />}>
+      <ChatPageInner />
+    </Suspense>
+  );
+}
+
+function ChatPageInner() {
   const searchParams = useSearchParams();
   const caseSlug = searchParams.get("case") ?? undefined;
   const pageSlug = searchParams.get("page") ?? undefined;

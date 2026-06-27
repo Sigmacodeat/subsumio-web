@@ -22,6 +22,7 @@ import type {
 import type { SourceRegistryResponse } from "./source-registry";
 import type { QueryMode } from "./matter-context-types";
 import { csrfFetch, getCsrfToken } from "./csrf";
+import { consumeSSEStream } from "./sse-stream";
 
 // Browser: same-origin Next.js proxy (/api/*). Server: direct engine URL.
 import { env } from "@/lib/env";
@@ -68,10 +69,19 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     ...(options?.headers as Record<string, string> | undefined),
   };
 
-  const res = await csrfFetch(`${BASE_URL}${path}`, {
-    ...options,
-    headers,
-  });
+  let res: Response;
+  try {
+    res = await csrfFetch(`${BASE_URL}${path}`, {
+      ...options,
+      headers,
+      signal: options?.signal ?? AbortSignal.timeout(30_000),
+    });
+  } catch (err) {
+    if (err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError")) {
+      throw new ApiRequestError("Anfrage timeout — Server nicht erreichbar", 408, "request_timeout");
+    }
+    throw err;
+  }
 
   if (!res.ok) {
     const error = await res.text().catch(() => "");
@@ -134,6 +144,14 @@ export const api = {
       if (options?.q) params.set("q", options.q);
       if (options?.cursor) params.set("cursor", options.cursor);
       return request(`/api/pages?${params.toString()}`);
+    },
+
+    batchListPages(types: string[], limit = 100): Promise<Record<string, BrainPage[]>> {
+      if (types.length === 0) return Promise.resolve({});
+      return request<{ results: Record<string, BrainPage[]>; errors: string[] }>(
+        "/api/pages/batch-list",
+        { method: "POST", body: JSON.stringify({ types, limit }) }
+      ).then((r) => r.results);
     },
 
     createPage(page: {
@@ -238,45 +256,21 @@ export const api = {
       const result: QueryResponse = { answer: "", citations: [], gaps: [], mode };
       if (!res.body) return result;
 
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-
-      const handleEvent = (data: string) => {
+      await consumeSSEStream(res.body, (data, parsed) => {
         if (data === "[DONE]") return;
-        try {
-          const parsed = JSON.parse(data);
-          if (typeof parsed.chunk === "string") {
-            result.answer += parsed.chunk;
-            options.onChunk?.(parsed.chunk);
-          }
-          if (Array.isArray(parsed.citations)) result.citations = parsed.citations;
-          if (Array.isArray(parsed.gaps)) result.gaps = parsed.gaps;
-          if (typeof parsed.tokens_used === "number") result.tokens_used = parsed.tokens_used;
-          if (typeof parsed.latency_ms === "number") result.latency_ms = parsed.latency_ms;
-        } catch (e) {
-          console.debug("[api.think] malformed SSE data:", data.slice(0, 100), e);
+        if (!parsed) {
+          console.debug("[api.think] malformed SSE data:", data.slice(0, 100));
+          return;
         }
-      };
-
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          buffer += decoder.decode(value, { stream: true });
-
-          const lines = buffer.split("\n");
-          buffer = lines.pop() || "";
-          for (const line of lines) {
-            if (line.startsWith("data: ")) handleEvent(line.slice(6));
-          }
+        if (typeof parsed.chunk === "string") {
+          result.answer += parsed.chunk;
+          options.onChunk?.(parsed.chunk);
         }
-        if (buffer.startsWith("data: ")) handleEvent(buffer.slice(6));
-      } catch (err) {
-        // AbortError or read failure — cancel the reader to release the stream
-        await reader.cancel().catch(() => {});
-        throw err;
-      }
+        if (Array.isArray(parsed.citations)) result.citations = parsed.citations;
+        if (Array.isArray(parsed.gaps)) result.gaps = parsed.gaps;
+        if (typeof parsed.tokens_used === "number") result.tokens_used = parsed.tokens_used;
+        if (typeof parsed.latency_ms === "number") result.latency_ms = parsed.latency_ms;
+      });
 
       return result;
     },
@@ -440,35 +434,17 @@ export const api = {
       let redline = "";
       if (!res.body) return { redline };
 
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-
-      const handleEvent = (data: string) => {
+      await consumeSSEStream(res.body, (data, parsed) => {
         if (data === "[DONE]") return;
-        try {
-          const parsed = JSON.parse(data);
-          if (typeof parsed.chunk === "string") {
-            redline += parsed.chunk;
-            input.onChunk?.(parsed.chunk);
-          }
-        } catch {
+        if (parsed && typeof parsed.chunk === "string") {
+          redline += parsed.chunk;
+          input.onChunk?.(parsed.chunk);
+        } else if (!parsed) {
+          // Non-JSON payload — append raw
           redline += data;
           input.onChunk?.(data);
         }
-      };
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() || "";
-        for (const line of lines) {
-          if (line.startsWith("data: ")) handleEvent(line.slice(6));
-        }
-      }
-      if (buffer.startsWith("data: ")) handleEvent(buffer.slice(6));
+      });
 
       return { redline };
     },
