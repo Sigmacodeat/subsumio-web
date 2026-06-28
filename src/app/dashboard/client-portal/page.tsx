@@ -336,15 +336,16 @@ export default function ClientPortalPage() {
                     {t("client_portal.documents")}
                   </Button>
                 </Link>
-                <Button
-                  variant="secondary"
-                  disabled
+                <div
+                  className="flex flex-1 cursor-not-allowed items-center justify-center gap-1.5 rounded-lg border border-dashed border-[color:var(--ds-border)] bg-transparent px-3 py-2 text-xs text-[color:var(--ds-text-muted)]"
                   title={t("client_portal.msg_disabled")}
-                  className="flex-1 border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text-muted)] disabled:opacity-60"
                 >
-                  <MessageSquare size={12} className="mr-1.5" />
+                  <MessageSquare size={12} />
                   {t("client_portal.message")}
-                </Button>
+                  <span className="ml-1 rounded bg-[color:var(--ds-hover)] px-1.5 py-0.5 text-[10px] font-medium">
+                    {t("client_portal.coming_soon")}
+                  </span>
+                </div>
               </div>
             </div>
           ))}

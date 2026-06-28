@@ -74,6 +74,7 @@ export function generateDatevCsv(
     datevBeraterNr?: string;
     datevMandantenNr?: string;
     ustId?: string;
+    country?: string;
   } | null,
   periodFrom: string,
   periodTo: string
@@ -83,6 +84,10 @@ export function generateDatevCsv(
   const beraterNr = settings?.datevBeraterNr || "";
   const mandantenNr = settings?.datevMandantenNr || "";
   const ustId = settings?.ustId || "";
+
+  // P2-2: Dynamic MwSt based on country — AT=20%, DE=19%, CH=0% (reverse charge), default=19%
+  const country = (settings?.country || "DE").toUpperCase();
+  const vatRate = country === "AT" ? 0.2 : country === "CH" ? 0.0 : 0.19;
 
   const lines = [
     DATEV_CSV_HEADER,
@@ -95,7 +100,7 @@ export function generateDatevCsv(
         const kostenstelle = AREA_CODES[e.legalArea] || "1100";
         const beleg = e.invoiceNumber || e.caseNumber;
         const konto = e.kind === "time" ? konten.honorarKonto : konten.auslagenKonto;
-        const steuer = steuerKennzeichen(0.19);
+        const steuer = steuerKennzeichen(vatRate);
         return [
           ustId,
           date,

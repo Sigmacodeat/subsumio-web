@@ -21,6 +21,7 @@ import { ModelSelector } from "@/components/dashboard/model-selector";
 import { QUERY_MODE_LABELS, type QueryMode } from "@/lib/matter-context-types";
 import { UPLOAD_ACCEPT_ATTRIBUTE } from "@/lib/upload-formats";
 import { maxUploadSizeFor } from "@/lib/upload-validation";
+import { VoiceToPromptButton } from "@/components/dashboard/voice-to-prompt-button";
 
 interface ChatInputProps {
   onSend: (text: string, attachments?: Array<{ name: string; slug: string }>) => void;
@@ -364,6 +365,15 @@ export function ChatInput({
               />
             </>
           )}
+
+          {/* Voice-to-Prompt button */}
+          <VoiceToPromptButton
+            onTranscript={(text) => {
+              setText((prev) => (prev ? prev + " " : "") + text);
+              textareaRef.current?.focus();
+            }}
+            className="shrink-0"
+          />
 
           {/* Textarea */}
           <textarea

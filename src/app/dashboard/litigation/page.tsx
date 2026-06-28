@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { api } from "@/lib/api";
 import { useLang } from "@/lib/use-lang";
-import { createT, type DashboardKey } from "@/content/dashboard";
+import type { DashboardKey } from "@/content/dashboard";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -98,8 +98,7 @@ const STEP_STATUS_COLORS: Record<StepStatus, string> = {
 };
 
 export default function LitigationFlowPage() {
-  const { lang } = useLang();
-  const t = createT(lang);
+  const { t, lang } = useLang();
 
   const [matters, setMatters] = useState<Matter[]>([]);
   const [loading, setLoading] = useState(true);

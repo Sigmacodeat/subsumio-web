@@ -48,6 +48,7 @@ export const POST = createHandler(
                   case_slug: body.caseSlug,
                   due_date: dueDate,
                   status: "pending",
+                  review_status: "unreviewed",
                   source: "ai_detected",
                   matched_rule: d.matchedRule,
                   ai_confidence: d.confidence,

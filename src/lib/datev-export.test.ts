@@ -644,3 +644,44 @@ describe("generateDatevCsv — Spaltenanzahl konsistent", () => {
     expect(headerFields).toHaveLength(14);
   });
 });
+
+describe("generateDatevCsv — Dynamische MwSt nach Land (P2-2)", () => {
+  test("DE (default) → Steuerkennzeichen '19'", () => {
+    const csv = generateDatevCsv([sampleEntries[0]], sampleSettings, "2026-01-01", "2026-12-31");
+    const row = csv.split("\n")[1];
+    expect(row).toContain(";19;");
+  });
+
+  test("AT → Steuerkennzeichen '20'", () => {
+    const csv = generateDatevCsv(
+      [sampleEntries[0]],
+      { ...sampleSettings, country: "AT" },
+      "2026-01-01",
+      "2026-12-31"
+    );
+    const row = csv.split("\n")[1];
+    expect(row).toContain(";20;");
+  });
+
+  test("CH → Steuerkennzeichen '0' (reverse charge)", () => {
+    const csv = generateDatevCsv(
+      [sampleEntries[0]],
+      { ...sampleSettings, country: "CH" },
+      "2026-01-01",
+      "2026-12-31"
+    );
+    const row = csv.split("\n")[1];
+    expect(row).toContain(";0;");
+  });
+
+  test("Keine country-Angabe → Default DE 19%", () => {
+    const csv = generateDatevCsv(
+      [sampleEntries[0]],
+      { ...sampleSettings, country: undefined },
+      "2026-01-01",
+      "2026-12-31"
+    );
+    const row = csv.split("\n")[1];
+    expect(row).toContain(";19;");
+  });
+});

@@ -29,6 +29,7 @@ const approvalsPostSchema = z.object({
     "client_message_send",
     "document_request_send",
     "deadline_confirm",
+    "time_entry_approval",
   ]),
   summary: z.string().min(1, "summary_required").max(500),
   target_slug: z.string().optional(),

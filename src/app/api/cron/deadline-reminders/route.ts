@@ -7,6 +7,10 @@ import type { BrainPage } from "@/lib/types";
 import { getRecipientsByBrain } from "@/lib/cron-utils";
 import { generateTrackingId, injectTracking, logTrackingEvent } from "@/lib/email/tracking";
 import { createDeadlineNotification } from "@/lib/comments";
+import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
+import { getWhatsAppIdentityStore } from "@/lib/whatsapp/identity-store";
+import { normalizePhone } from "@/lib/whatsapp/types";
+import { sendPushToUser } from "@/lib/push-send";
 
 export const dynamic = "force-dynamic";
 
@@ -91,6 +95,7 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
 
   // Brain → Empfänger
   const recipientsByBrain = await getRecipientsByBrain();
+  const identityStore = getWhatsAppIdentityStore();
 
   let brainsChecked = 0;
   let totalSent = 0;
@@ -101,7 +106,29 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
     const pages = await listCasePages(brainId);
     if (pages.length === 0) continue;
 
-    const toEmail = recipients[0]?.email ?? settings.smtpUser;
+    // P3-3: Send email to ALL recipients, not just the first one
+    const emailRecipients = recipients.map((r) => r.email).filter((e): e is string => !!e);
+    const toEmails =
+      emailRecipients.length > 0 ? emailRecipients.join(", ") : (settings.smtpUser ?? "");
+
+    // P3-1: Collect WhatsApp identities for this brain's orgs
+    const orgIds = new Set<string>();
+    for (const recipient of recipients) {
+      if (recipient.orgId) orgIds.add(recipient.orgId);
+    }
+    const allIdentities: Array<{ userId: string; phone: string }> = [];
+    for (const orgId of orgIds) {
+      try {
+        const identities = await identityStore.listByOrg(orgId);
+        for (const id of identities) {
+          if (id.phone && id.userId) {
+            allIdentities.push({ userId: id.userId, phone: id.phone });
+          }
+        }
+      } catch {
+        // Non-blocking
+      }
+    }
 
     for (const page of pages) {
       const fm = page.frontmatter ?? {};
@@ -138,17 +165,47 @@ ${due.map(({ d, dd, stage }) => `<li><strong>${esc(d.title ?? "Frist")}</strong>
       try {
         let notificationSent = false;
 
-        // B2: Send email only when SMTP is configured
-        if (transporter && toEmail) {
-          await transporter.sendMail({ from: fromAddr, to: toEmail, subject, html });
+        // B2: Send email only when SMTP is configured — to ALL recipients
+        if (transporter && toEmails) {
+          await transporter.sendMail({ from: fromAddr, to: toEmails, subject, html });
           notificationSent = true;
 
           // Log tracking event for the outbound email
           void logTrackingEvent({
             trackingId,
             eventType: "delivered",
-            raw: { source: "smtp", route: "deadline-reminders", recipient: toEmail },
+            raw: { source: "smtp", route: "deadline-reminders", recipients: toEmails },
           });
+        }
+
+        // P3-1: Send WhatsApp reminder to all recipients with a linked identity
+        const waBodyLines = [
+          "⚖️ Fristen-Erinnerung:",
+          ...due.map(
+            ({ d, dd, stage }) => `• ${d.title ?? "Frist"} — ${dd} (${stageLabel(stage)})`
+          ),
+          `Akte: ${fm.case_number ?? page.slug}`,
+          "",
+          "Bitte rechtzeitig prüfen.",
+        ];
+        const waBody = waBodyLines.join("\n");
+        for (const recipient of recipients) {
+          const identityEntry = allIdentities.find((id) => id.userId === recipient.id);
+          if (!identityEntry) continue;
+          try {
+            await sendProactiveMessage({
+              to: normalizePhone(identityEntry.phone),
+              brainId,
+              scope: "deadline_alert",
+              freeform: waBody,
+              urgent: true,
+            });
+            notificationSent = true;
+          } catch (err) {
+            errors.push(
+              `WhatsApp deadline reminder failed for ${recipient.id}: ${err instanceof Error ? err.message : String(err)}`
+            );
+          }
         }
 
         // B2: Always create in-app notifications (dual-channel when SMTP is on, fallback when off)
@@ -166,6 +223,22 @@ ${due.map(({ d, dd, stage }) => `<li><strong>${esc(d.title ?? "Frist")}</strong>
             });
           }
           notificationSent = true;
+        }
+
+        // P1-4: Send push notification to all recipients with registered devices
+        const pushTitle = `⚖️ Frist: ${due[0].d.title ?? "Frist"} ${stageLabel(due[0].stage)}`;
+        const pushBody = `Akte ${fm.case_number ?? page.slug} — ${due.length} Frist(en) anstehend`;
+        for (const recipient of recipients) {
+          try {
+            const pushed = await sendPushToUser(recipient.id, {
+              title: pushTitle,
+              body: pushBody,
+              data: { case_slug: page.slug, type: "deadline_reminder" },
+            });
+            if (pushed > 0) notificationSent = true;
+          } catch {
+            // Non-blocking
+          }
         }
 
         // FIX: Only mark stages as sent when at least one notification

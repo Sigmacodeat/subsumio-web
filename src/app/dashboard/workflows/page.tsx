@@ -66,6 +66,7 @@ const actionIcons: Record<ActionType, typeof FileText> = {
   client_message_send: Send,
   document_request_send: FileText,
   deadline_confirm: CalendarClock,
+  time_entry_approval: Clock,
 };
 
 const stepStatusIcons: Record<StepStatus, typeof CheckCircle2> = {

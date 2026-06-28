@@ -520,6 +520,42 @@ export const DEADLINE_RULES: DeadlineRule[] = [
     noRoll: true,
     description: "3 Jahre ab Kenntnis von Schaden und Schädiger",
   },
+  // ── Österreichische Fristen (§ 5 JN, AT ZPO, AVG, BAO) ────────────────
+  {
+    key: "at-jn-berufung",
+    label: "Berufung (AT § 5 JN)",
+    law: "§ 5 Abs. 1 JN (AT)",
+    days: 28,
+    description: "4 Wochen ab Zustellung des Ersturteils (Jurisdiktionsnorm)",
+  },
+  {
+    key: "at-jn-revision",
+    label: "Revision (AT § 5 JN)",
+    law: "§ 5 Abs. 1 JN iVm § 502 ZPO (AT)",
+    days: 28,
+    description: "4 Wochen ab Zustellung des Berufungsurteils (außerordentliches Rechtsmittel)",
+  },
+  {
+    key: "at-avg-einwendung",
+    label: "Einwendung (AT AVG)",
+    law: "§ 43 Abs. 2 AVG (AT)",
+    days: 14,
+    description: "2 Wochen ab Zustellung des Bescheids (Verwaltungsverfahrensgesetz)",
+  },
+  {
+    key: "at-bao-beschwerde",
+    label: "Beschwerde (AT BAO)",
+    law: "§ 245 BAO (AT)",
+    days: 28,
+    description: "4 Wochen ab Zustellung des Bescheids (Bundesabgabenordnung)",
+  },
+  {
+    key: "at-eke-einspruch",
+    label: "Einspruch Exekutionsbeschluss (AT)",
+    law: "§ 39 EO (AT)",
+    days: 14,
+    description: "2 Wochen ab Zustellung des Exekutionsbeschlusses (Exekutionsordnung)",
+  },
   // ── Schweizer Fristen (CH ZPO / OR / ZGB) ──────────────────────────────
   {
     key: "ch-zpo-berufung",
@@ -551,6 +587,35 @@ export const DEADLINE_RULES: DeadlineRule[] = [
     years: 1,
     noRoll: true,
     description: "1 Jahr ab Kenntnis der Erbschaft (Erbteilungsklage nach Schweizer ZGB)",
+  },
+  {
+    key: "ch-zpo-beschwerde",
+    label: "Beschwerde (CH)",
+    law: "Art. 319 ZPO (CH)",
+    days: 30,
+    description: "30 Tage ab Zustellung des Entscheids (kantonal abweichend möglich)",
+  },
+  {
+    key: "ch-zpo-revision",
+    label: "Revision (CH)",
+    law: "Art. 328 ZPO (CH)",
+    days: 30,
+    description: "30 Tage ab Entdeckung des Revisionsgrunds (außerordentliches Rechtsmittel)",
+  },
+  {
+    key: "ch-kant-einspruch",
+    label: "Kantonale Einspruchsfrist (CH)",
+    law: "Kantonales Prozessrecht (CH)",
+    days: 10,
+    description:
+      "Kantonale Einspruchsfrist gegen Verfügungen/Vorentscheide (10 Tage Standard; kantonal abweichend, z.B. ZH 20 Tage, BE 10 Tage)",
+  },
+  {
+    key: "ch-vvg-beschwerde",
+    label: "Verwaltungsgerichtliche Beschwerde (CH)",
+    law: "Art. 46 VwVG (CH)",
+    days: 30,
+    description: "30 Tage ab Zustellung des Verfügungsentscheids (Verwaltungsverfahrensgesetz)",
   },
 ];
 

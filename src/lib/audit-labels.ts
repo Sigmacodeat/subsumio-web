@@ -99,6 +99,8 @@ export type AuditAction =
   | "acl.remove_permission"
   | "dms.push"
   | "space.update"
+  | "email.send"
+  | "docusign.send"
   | "space.delete"
   | "whatsapp.document_to_space"
   | "litigation.create"

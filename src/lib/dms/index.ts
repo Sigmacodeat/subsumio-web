@@ -164,6 +164,8 @@ export async function getConnector(): Promise<DMSConnector | null> {
       return (await import("./netdocuments")).netDocumentsConnector;
     case "sharepoint":
       return (await import("./sharepoint")).sharePointConnector;
+    case "box":
+      return (await import("./box")).boxConnector;
     default:
       return null;
   }

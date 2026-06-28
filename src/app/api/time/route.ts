@@ -51,6 +51,7 @@ const timePatchSchema = z
     mark_billed: z.boolean().optional(),
     entry_ids: z.array(z.string().min(1)).optional(),
     invoice_number: z.string().min(1).optional(),
+    approval_status: z.enum(["pending", "approved", "rejected"]).optional(),
   })
   .passthrough();
 

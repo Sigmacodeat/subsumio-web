@@ -20,7 +20,8 @@ export type ActionType =
   | "invoice_create"
   | "client_message_send"
   | "document_request_send"
-  | "deadline_confirm";
+  | "deadline_confirm"
+  | "time_entry_approval";
 
 export type ApprovalStatus = "pending" | "approved" | "rejected";
 
@@ -64,6 +65,7 @@ export const REQUIRES_APPROVAL: ReadonlySet<ActionType> = new Set<ActionType>([
   "invoice_create",
   "client_message_send",
   "document_request_send",
+  "time_entry_approval",
 ]);
 
 export function requiresApproval(type: ActionType): boolean {
@@ -81,6 +83,7 @@ export const ACTION_LABELS: Record<ActionType, string> = {
   invoice_create: "Rechnung erstellen",
   client_message_send: "Mandantennachricht senden",
   document_request_send: "Dokumentenanfrage senden",
+  time_entry_approval: "Zeiteintrag freigeben",
 };
 
 /**

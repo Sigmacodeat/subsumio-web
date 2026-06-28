@@ -49,6 +49,7 @@ import {
   Activity,
   RefreshCw,
   Lock,
+  Mail,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -79,6 +80,8 @@ import {
 } from "@/components/legal/ContactCreateDialog";
 import { CaseOverviewWidgets } from "@/components/legal/CaseOverviewWidgets";
 import { PipelinePanel } from "@/components/legal/PipelinePanel";
+import { EmailComposeDialog } from "@/components/legal/EmailComposeDialog";
+import { DocuSignSendDialog } from "@/components/legal/DocuSignSendDialog";
 import {
   checkInternalConflict,
   type ContactRef,
@@ -423,6 +426,8 @@ export default function CaseDetailPage() {
   const [conflictWarning, setConflictWarning] = useState<string | null>(null);
   const [statusError, setStatusError] = useState<string | null>(null);
   const [showStatusDialog, setShowStatusDialog] = useState(false);
+  const [showEmailDialog, setShowEmailDialog] = useState(false);
+  const [showDocuSignDialog, setShowDocuSignDialog] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<CaseStatus | null>(null);
 
   // IDE-style folder import (Chromium File System Access API), feature-detected.
@@ -1974,6 +1979,22 @@ export default function CaseDetailPage() {
               >
                 <ChevronRight size={14} />
                 {t("cases.detail_btn_status_change")}
+              </Button>
+              <Button
+                variant="secondary"
+                className="gap-2 border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-sm text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
+                onClick={() => setShowEmailDialog(true)}
+              >
+                <Mail size={14} />
+                {t("email.compose_title")}
+              </Button>
+              <Button
+                variant="secondary"
+                className="gap-2 border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-sm text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
+                onClick={() => setShowDocuSignDialog(true)}
+              >
+                <PenTool size={14} />
+                {t("docusign.send_title")}
               </Button>
               <Button
                 variant="secondary"
@@ -5435,6 +5456,31 @@ export default function CaseDetailPage() {
           </div>
         )}
       </div>
+
+      {showEmailDialog && (
+        <EmailComposeDialog
+          open={showEmailDialog}
+          onOpenChange={setShowEmailDialog}
+          caseSlug={caseData?.slug}
+          caseNumber={caseData?.caseNumber}
+        />
+      )}
+
+      {showDocuSignDialog && (
+        <DocuSignSendDialog
+          open={showDocuSignDialog}
+          onOpenChange={setShowDocuSignDialog}
+          caseSlug={caseData?.slug}
+          caseTitle={caseData?.title}
+          documents={
+            caseData?.documents?.map((d) => ({
+              name: d.name || "Dokument",
+              slug: d.slug || "",
+              url: d.url,
+            })) ?? []
+          }
+        />
+      )}
     </div>
   );
 }

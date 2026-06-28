@@ -1,5 +1,6 @@
 import { createHandler } from "@/lib/api-handler";
 import { z } from "zod";
+import { registerPushToken, unregisterPushToken } from "@/lib/push-token-store";
 
 const registerSchema = z.object({
   token: z.string().min(10),
@@ -20,11 +21,13 @@ export const POST = createHandler(
     }),
   },
   async (ctx, body) => {
-    const { platform, deviceId } = body;
+    const { token, platform, deviceId } = body;
+
+    await registerPushToken(ctx.user.id, token, platform, deviceId);
 
     if (process.env.NODE_ENV !== "production") {
       console.debug(
-        `[push-register] user=${ctx.user.id} platform=${platform} device=${deviceId ?? "n/a"}`
+        `[push-register] user=${ctx.user.id} platform=${platform} device=${deviceId ?? "n/a"} token=${token.slice(0, 8)}…`
       );
     }
 
@@ -38,7 +41,9 @@ export const DELETE = createHandler(
     rateTier: "standard",
     body: z.object({ token: z.string().min(10) }),
   },
-  async (ctx, _body) => {
+  async (ctx, body) => {
+    await unregisterPushToken(ctx.user.id, body.token);
+
     if (process.env.NODE_ENV !== "production") {
       console.debug(`[push-unregister] user=${ctx.user.id}`);
     }

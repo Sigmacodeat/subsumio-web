@@ -5,6 +5,9 @@ import { fetchPages, getRecipientsByBrain } from "@/lib/cron-utils";
 import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
 import { getWhatsAppIdentityStore } from "@/lib/whatsapp/identity-store";
 import { normalizePhone } from "@/lib/whatsapp/types";
+import { loadKanzleiSettings } from "@/lib/kanzlei-settings";
+import nodemailer from "nodemailer";
+import { generateTrackingId, injectTracking, logTrackingEvent } from "@/lib/email/tracking";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +33,17 @@ export const GET = createCronHandler(async () => {
   const now = new Date();
   const recipientsByBrain = await getRecipientsByBrain();
   const identityStore = getWhatsAppIdentityStore();
+  const settings = await loadKanzleiSettings();
+  const smtpConfigured = !!(settings.smtpHost && settings.smtpUser && settings.smtpPassword);
+  const transporter = smtpConfigured
+    ? nodemailer.createTransport({
+        host: settings.smtpHost!,
+        port: parseInt(settings.smtpPort ?? "587", 10),
+        secure: settings.smtpSecure ?? false,
+        auth: { user: settings.smtpUser!, pass: settings.smtpPassword! },
+      })
+    : null;
+  const fromAddr = settings.emailFrom ?? settings.smtpUser ?? "noreply@subsumio.local";
 
   let brainsChecked = 0;
   let totalSent = 0;
@@ -90,6 +104,41 @@ export const GET = createCronHandler(async () => {
         }
       }
 
+      // P3-10: Send email reminder to all recipients with an email address
+      if (transporter) {
+        for (const recipient of recipients) {
+          if (!recipient.email) continue;
+          const trackingId = generateTrackingId();
+          const esc = (s: unknown) =>
+            String(s).replace(
+              /[&<>"']/g,
+              (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!
+            );
+          const rawHtml = `<p>Sehr geehrte/r ${esc(settings.anwaltName || "Anwalt")},</p>
+<p>${esc(messageBody.replace(/\n/g, "<br>"))}</p>
+<p>Subsumio Kanzlei-OS</p>`;
+          const html = injectTracking(rawHtml, trackingId);
+          try {
+            await transporter.sendMail({
+              from: fromAddr,
+              to: recipient.email,
+              subject: `📅 Termin-Erinnerung: ${title} — ${date}`,
+              html,
+            });
+            totalSent++;
+            void logTrackingEvent({
+              trackingId,
+              eventType: "delivered",
+              raw: { source: "smtp", route: "appointment-reminders", recipient: recipient.email },
+            });
+          } catch (err) {
+            errors.push(
+              `Failed to send email reminder to ${recipient.email}: ${err instanceof Error ? err.message : String(err)}`
+            );
+          }
+        }
+      }
+
       // Send WhatsApp reminder to each recipient with a linked identity
       for (const recipient of recipients) {
         const identityEntry = allIdentities.find((id) => id.userId === recipient.id);
@@ -120,6 +169,7 @@ export const GET = createCronHandler(async () => {
     ok: true,
     brains_checked: brainsChecked,
     sent: totalSent,
+    smtp_configured: smtpConfigured,
     errors: errors.length > 0 ? errors : undefined,
   });
 });

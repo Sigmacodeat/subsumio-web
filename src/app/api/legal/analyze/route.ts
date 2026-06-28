@@ -446,6 +446,43 @@ export const POST = createHandler(
               { timeoutMs: 300_000 }
             );
           }
+
+          // P3-4: Auto-create legal_deadline pages for high-confidence suggested deadlines
+          // so they appear in the deadline review queue with review_status: "unreviewed".
+          // Only deadlines with a valid due_date and urgency "high" or "critical" are auto-created.
+          for (const sd of suggestedDeadlines) {
+            if (!sd.due_date || (sd.urgency !== "high" && sd.urgency !== "critical")) continue;
+            try {
+              const dlSlug = `legal/deadlines/${sd.due_date.replace(/[^0-9-]/g, "")}-${sd.title
+                .toLowerCase()
+                .replace(/[^a-z0-9äöüß]+/g, "-")
+                .replace(/^-|-$/g, "")
+                .slice(0, 48)}-${Date.now().toString(36)}`;
+              await fetch(`${ENGINE_URL}/api/pages`, {
+                method: "POST",
+                headers: { ...engineHeaders, "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  slug: dlSlug,
+                  title: sd.title,
+                  type: "legal_deadline",
+                  content: `Automatisch aus KI-Dokumentanalyse erstellt.\n\nQuelle: ${sd.source}\nBelegstelle: ${sd.source_quote}`,
+                  frontmatter: {
+                    type: "legal_deadline",
+                    case_slug: documentCaseSlug,
+                    due_date: sd.due_date,
+                    status: "pending",
+                    review_status: "unreviewed",
+                    source: "ai_document_analysis",
+                    urgency: sd.urgency,
+                    ai_confidence: "high",
+                  },
+                }),
+                signal: AbortSignal.timeout(15_000),
+              });
+            } catch {
+              // Non-blocking — einzelne Fehler nicht abbrechen
+            }
+          }
         } catch (err) {
           console.error(
             `[analyze] failed to write suggested deadlines to case ${documentCaseSlug}:`,

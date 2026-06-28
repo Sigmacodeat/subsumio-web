@@ -734,6 +734,124 @@ export const api = {
         return request(`/api/legal/litigation/${path}`, { method: "DELETE" });
       },
     },
+
+    reviewSets: {
+      list(options?: { caseSlug?: string; status?: string; limit?: number }): Promise<BrainPage[]> {
+        const params = new URLSearchParams();
+        if (options?.limit) params.set("limit", String(options.limit));
+        if (options?.caseSlug) params.set("caseSlug", options.caseSlug);
+        if (options?.status) params.set("status", options.status);
+        const qs = params.toString();
+        return request(`/api/legal/review-sets${qs ? `?${qs}` : ""}`);
+      },
+
+      get(slug: string): Promise<BrainPage> {
+        const path = slug.split("/").map(encodeURIComponent).join("/");
+        return request(`/api/legal/review-sets/${path}`);
+      },
+
+      create(input: {
+        title: string;
+        caseSlug?: string;
+        caseTitle?: string;
+        description?: string;
+        criteria?: Record<string, unknown>;
+        production?: Record<string, unknown>;
+      }): Promise<{ slug: string }> {
+        return request("/api/legal/review-sets", {
+          method: "POST",
+          body: JSON.stringify(input),
+        });
+      },
+
+      update(
+        slug: string,
+        input: Record<string, unknown>
+      ): Promise<{ slug: string; success: boolean }> {
+        const path = slug.split("/").map(encodeURIComponent).join("/");
+        return request(`/api/legal/review-sets/${path}`, {
+          method: "PATCH",
+          body: JSON.stringify(input),
+        });
+      },
+
+      delete(slug: string): Promise<{ ok: boolean }> {
+        const path = slug.split("/").map(encodeURIComponent).join("/");
+        return request(`/api/legal/review-sets/${path}`, { method: "DELETE" });
+      },
+    },
+
+    trustAccounts: {
+      list(options?: {
+        matterSlug?: string;
+        status?: string;
+        limit?: number;
+      }): Promise<BrainPage[]> {
+        const params = new URLSearchParams();
+        if (options?.limit) params.set("limit", String(options.limit));
+        if (options?.matterSlug) params.set("matterSlug", options.matterSlug);
+        if (options?.status) params.set("status", options.status);
+        const qs = params.toString();
+        return request(`/api/legal/trust-accounts${qs ? `?${qs}` : ""}`);
+      },
+
+      get(slug: string): Promise<BrainPage> {
+        const path = slug.split("/").map(encodeURIComponent).join("/");
+        return request(`/api/legal/trust-accounts/${path}`);
+      },
+
+      create(input: {
+        accountName: string;
+        accountNumber: string;
+        bankName?: string;
+        iban?: string;
+        bic?: string;
+        currency?: string;
+        openingBalance?: number;
+        matterSlug?: string;
+        matterTitle?: string;
+        clientName?: string;
+      }): Promise<{ slug: string }> {
+        return request("/api/legal/trust-accounts", {
+          method: "POST",
+          body: JSON.stringify(input),
+        });
+      },
+
+      update(
+        slug: string,
+        input: Record<string, unknown>
+      ): Promise<{ slug: string; success: boolean }> {
+        const path = slug.split("/").map(encodeURIComponent).join("/");
+        return request(`/api/legal/trust-accounts/${path}`, {
+          method: "PATCH",
+          body: JSON.stringify(input),
+        });
+      },
+
+      addTransaction(
+        slug: string,
+        input: {
+          type: string;
+          amount: number;
+          description: string;
+          date?: string;
+          matterSlug?: string;
+          reference?: string;
+        }
+      ): Promise<{ transaction: Record<string, unknown> }> {
+        const path = slug.split("/").map(encodeURIComponent).join("/");
+        return request(`/api/legal/trust-accounts/${path}`, {
+          method: "POST",
+          body: JSON.stringify(input),
+        });
+      },
+
+      delete(slug: string): Promise<{ ok: boolean }> {
+        const path = slug.split("/").map(encodeURIComponent).join("/");
+        return request(`/api/legal/trust-accounts/${path}`, { method: "DELETE" });
+      },
+    },
   },
 
   whatsapp: {
