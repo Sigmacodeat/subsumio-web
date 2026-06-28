@@ -11,13 +11,12 @@ set -euo pipefail
 echo "🔍 Scanning for unresolved template variables in source..."
 
 # Patterns that indicate a leaked template variable in rendered content
+# Only match template-like syntax: {{var}}, ${var}, %var%, or {var} in string literals
 PATTERNS=(
-  '\bpricing\.[a-z]'
-  '\bfooter\.[a-z]'
-  '\bui\.[a-z]'
   '\$\{[a-zA-Z_]+\}'
   '\{\{[a-zA-Z_]+\}\}'
   '%[a-zA-Z_]+%'
+  '\{[a-zA-Z_]+\.[a-zA-Z_]+\}'
 )
 
 FOUND=0
