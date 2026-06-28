@@ -43,7 +43,7 @@ export default function PartnersPage({ lang }: { lang: Lang }) {
             {t.badge}
           </span>
           <ClipReveal delay={0.1} duration={0.7} direction="up">
-            <h1 className="mb-6 text-[clamp(2.35rem,10.5vw,3.75rem)] leading-[1.08] font-black tracking-tight text-balance [color:var(--mk-text)] md:text-6xl">
+            <h1 className="mb-6 text-[clamp(2.5rem,10vw,3.75rem)] leading-[1.08] font-black tracking-tight text-balance [color:var(--mk-text)] md:text-6xl">
               {t.h1a}
               <span className="sr-only"> </span>
               <br />
@@ -66,7 +66,7 @@ export default function PartnersPage({ lang }: { lang: Lang }) {
                 <GlowCard
                   glowColor={tier.highlight ? "var(--brand-tertiary)" : "var(--brand-primary)"}
                   intensity={tier.highlight ? 0.22 : 0.12}
-                  className={`relative flex h-full flex-col rounded-2xl border p-7 transition-all duration-200 ${
+                  className={`relative flex h-full flex-col rounded-2xl border p-6 transition-all duration-200 ${
                     tier.highlight
                       ? "border-[color:var(--brand-tertiary)]/40 bg-gradient-to-b from-[color:var(--brand-tertiary)]/10 to-[var(--mk-surface)] shadow-xl shadow-[color:var(--brand-tertiary)]/10"
                       : "[border-color:var(--mk-border)] [background:var(--mk-surface)] hover:[border-color:var(--mk-border-strong)]"

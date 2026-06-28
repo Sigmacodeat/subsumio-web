@@ -165,7 +165,7 @@ function ContactSelect({ id, label, value, options, onChange, disabled }: Contac
 }
 
 export default function NewCasePage() {
-  const { t, lang } = useLang();
+  const { t } = useLang();
   const router = useRouter();
   const STATUS_OPTIONS = getStatusOptions(t);
   const PRIORITY_OPTIONS = getPriorityOptions(t);
@@ -686,7 +686,7 @@ export default function NewCasePage() {
             id="case-facts"
             {...register("facts")}
             rows={6}
-            placeholder={lang === "de" ? "Beschreibe den Sachverhalt…" : "Describe the case facts…"}
+            placeholder={t("cases.new.placeholder_facts")}
             className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm leading-relaxed text-[color:var(--ds-text)] transition-colors duration-150 placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:ring-1 focus:ring-[color:var(--brand-primary)]/20 focus:outline-none"
           />
         </div>

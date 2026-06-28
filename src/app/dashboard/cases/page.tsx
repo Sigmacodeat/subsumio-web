@@ -652,7 +652,7 @@ export default function CasesPage() {
   ];
 
   return (
-    <div className="mx-auto max-w-[1600px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div data-tour="cases-list" className="mx-auto max-w-[1600px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("cases.title")}
         description={`${cases.length} ${t("cases.count")}`}

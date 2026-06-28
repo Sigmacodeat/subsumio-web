@@ -66,6 +66,7 @@ export const D = {
   "nav.obligation_tracking": { de: "Obligation Tracking", en: "Obligation Tracking" },
   "nav.case_scanner": { de: "Akten-Scanner", en: "Case Scanner" },
   "nav.clause_library": { de: "Klausel-Bibliothek", en: "Clause Library" },
+  "nav.templates": { de: "Vorlagen", en: "Templates" },
   "nav.review_queue": { de: "Freigaben", en: "Approvals" },
   "nav.version_history": { de: "Versionshistorie", en: "Version History" },
   "nav.monitoring": { de: "Monitoring", en: "Monitoring" },
@@ -469,6 +470,10 @@ export const D = {
   "cases.title": { de: "Akten", en: "Cases" },
   "cases.count": { de: "Akten in der Wissensbasis", en: "cases in knowledge base" },
   "cases.new": { de: "Neue Akte", en: "New case" },
+  "cases.new.placeholder_facts": {
+    de: "Beschreibe den Sachverhalt…",
+    en: "Describe the case facts…",
+  },
   "cases.all": { de: "Alle", en: "All" },
   "cases.search": { de: "Akten suchen…", en: "Search cases…" },
   "cases.error_offline": {
@@ -3732,6 +3737,16 @@ export const D = {
   "chat.streaming.synthesize": { de: "Antwort wird erstellt…", en: "Building answer…" },
   "chat.streaming.verify": { de: "Quellen werden geprüft…", en: "Checking sources…" },
   "chat.done": { de: "Fertig", en: "Done" },
+  "chat.typing": { de: "Copilot schreibt…", en: "Copilot is typing…" },
+  "chat.follow_ups": { de: "Das könnte dich auch interessieren", en: "You might also want to ask" },
+  "chat.follow_up.more_details": { de: "Mehr Details dazu", en: "More details on this" },
+  "chat.follow_up.related": { de: "Verwandte Rechtsfrage", en: "Related legal question" },
+  "chat.follow_up.next_steps": {
+    de: "Was sind die nächsten Schritte?",
+    en: "What are the next steps?",
+  },
+  "chat.follow_up.deadlines": { de: "Gibt es Fristen dazu?", en: "Are there related deadlines?" },
+  "chat.follow_up.email": { de: "Als E-Mail entwerfen", en: "Draft as email" },
 
   // ── Chat: loading skeleton ──
   "chat.loading_aria": { de: "Antwort wird geladen", en: "Loading response" },
@@ -5030,6 +5045,16 @@ export const D = {
     en: ' law (statutes, case law, literature). Always cite with §, paragraph and statute abbreviation. End with: "This information does not replace legal advice."',
   },
 
+  "research.phase_preparing": { de: "Recherche wird vorbereitet …", en: "Preparing research …" },
+  "research.phase_planning": { de: "Supervisor plant Recherche …", en: "Supervisor planning …" },
+  "research.error_timeout": {
+    de: "Zeitlimit überschritten (5 min).",
+    en: "Timed out after 5 minutes.",
+  },
+  "research.error_failed": { de: "Recherche fehlgeschlagen.", en: "Research failed." },
+  "research.title_prefix": { de: "Recherche", en: "Research" },
+  "research.error_sync": { de: "Sync fehlgeschlagen.", en: "Sync failed." },
+
   // ── Drafting page strings ──
   "drafting.error_generate": {
     de: "Fehler bei der Generierung. Bitte versuche es erneut.",
@@ -5081,6 +5106,58 @@ export const D = {
   "drafting.tpl.gutachten": { de: "Gutachten", en: "Expert opinion" },
   "drafting.tpl.stellungnahme": { de: "Stellungnahme", en: "Statement" },
   "drafting.tpl.widerruf": { de: "Widerruf", en: "Revocation" },
+  "drafting.error_prefix": { de: "Fehler", en: "Error" },
+  "drafting.btn_generate_suffix": { de: "generieren", en: "generate" },
+
+  // ── Template Library page ──
+  "templates.title": { de: "Vorlagen-Bibliothek", en: "Template Library" },
+  "templates.description": {
+    de: "Vorgefertigte und eigene Dokument-Vorlagen für Schriftsätze, Gutachten und Verträge.",
+    en: "Pre-built and custom document templates for pleadings, opinions, and contracts.",
+  },
+  "templates.search": { de: "Vorlagen durchsuchen…", en: "Search templates…" },
+  "templates.btn_new": { de: "Neue Vorlage", en: "New Template" },
+  "templates.empty_title": { de: "Keine Vorlagen gefunden", en: "No templates found" },
+  "templates.empty_desc": {
+    de: "Erstelle deine erste Vorlage oder durchsuche die vorgefertigten Vorlagen.",
+    en: "Create your first template or browse the pre-built templates.",
+  },
+  "templates.err_load": {
+    de: "Vorlagen konnten nicht geladen werden",
+    en: "Failed to load templates",
+  },
+  "templates.label_category": { de: "Kategorie", en: "Category" },
+  "templates.label_jurisdiction": { de: "Rechtsraum", en: "Jurisdiction" },
+  "templates.label_title": { de: "Titel", en: "Title" },
+  "templates.label_body": { de: "Vorlagen-Text", en: "Template Body" },
+  "templates.label_description": { de: "Beschreibung", en: "Description" },
+  "templates.label_variables": { de: "Variablen", en: "Variables" },
+  "templates.btn_save": { de: "Speichern", en: "Save" },
+  "templates.btn_cancel": { de: "Abbrechen", en: "Cancel" },
+  "templates.btn_copy": { de: "Kopieren", en: "Copy" },
+  "templates.btn_copied": { de: "Kopiert!", en: "Copied!" },
+  "templates.btn_edit": { de: "Bearbeiten", en: "Edit" },
+  "templates.btn_delete": { de: "Löschen", en: "Delete" },
+  "templates.btn_use": { de: "Verwenden", en: "Use" },
+  "templates.confirm_delete_title": { de: "Vorlage löschen", en: "Delete template" },
+  "templates.confirm_delete_msg": {
+    de: "Möchtest du diese Vorlage wirklich löschen?",
+    en: "Do you really want to delete this template?",
+  },
+  "templates.toast_saved": { de: "Vorlage gespeichert", en: "Template saved" },
+  "templates.toast_deleted": { de: "Vorlage gelöscht", en: "Template deleted" },
+  "templates.toast_error": { de: "Fehler", en: "Error" },
+  "templates.cat_pleading": { de: "Schriftsatz", en: "Pleading" },
+  "templates.cat_contract": { de: "Vertrag", en: "Contract" },
+  "templates.cat_opinion": { de: "Gutachten", en: "Opinion" },
+  "templates.cat_correspondence": { de: "Korrespondenz", en: "Correspondence" },
+  "templates.cat_general": { de: "Allgemein", en: "General" },
+  "templates.var_key": { de: "Schlüssel", en: "Key" },
+  "templates.var_label": { de: "Bezeichnung", en: "Label" },
+  "templates.var_required": { de: "Pflichtfeld", en: "Required" },
+  "templates.var_add": { de: "Variable hinzufügen", en: "Add variable" },
+  "templates.all_categories": { de: "Alle Kategorien", en: "All categories" },
+  "templates.all_jurisdictions": { de: "Alle Rechtsräume", en: "All jurisdictions" },
 
   // ── Workflows page strings ──
   "workflows.status_active": { de: "Aktiv", en: "Active" },

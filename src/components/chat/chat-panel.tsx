@@ -14,14 +14,20 @@ import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { useLang } from "@/lib/use-lang";
+import { useMe } from "@/lib/queries/auth";
 import { buildSafePrompt } from "@/lib/prompt-sanitizer";
-import { buildPromptContext, processStreamingChunk } from "@/components/chat/system-prompt";
+import {
+  buildPromptContext,
+  processStreamingChunk,
+  type UserContext,
+} from "@/components/chat/system-prompt";
 import { type QueryMode } from "@/lib/matter-context-types";
 import type { BrainPage } from "@/lib/types";
 import { caseFrontmatter } from "@/lib/legal-types";
 import {
   DEFAULT_FEATURES,
   DEFAULT_EXAMPLE_QUERIES,
+  DEFAULT_EXAMPLE_QUERIES_EN,
   type ChatMessage,
   type ChatSession,
   type ChatFeatures,
@@ -50,7 +56,7 @@ import { ChatHeader } from "@/components/chat/chat-header";
 import { ChatInput } from "@/components/chat/chat-input";
 import { ChatMessageBubble } from "@/components/chat/chat-message";
 import { ChatEmptyState } from "@/components/chat/chat-empty-state";
-import { ChatStreamingIndicator } from "@/components/chat/chat-streaming-indicator";
+import type { TFunc } from "@/content/dashboard";
 
 interface ChatPanelProps {
   context?: {
@@ -438,6 +444,95 @@ export interface ChatPanelHandle {
   ) => void;
 }
 
+function SuggestedFollowUps({
+  lastMessage,
+  onSelect,
+  t,
+  lang,
+}: {
+  lastMessage: ChatMessage;
+  onSelect: (query: string) => void;
+  t: TFunc;
+  lang: string;
+}) {
+  const isEn = lang === "en";
+  const suggestions = useMemo(() => {
+    const content = lastMessage.content.toLowerCase();
+    const chips: Array<{ label: string; query: string }> = [];
+
+    // Context-aware suggestions based on content
+    if (content.includes("frist") || content.includes("deadline")) {
+      chips.push({
+        label: t("chat.follow_up.deadlines"),
+        query: isEn ? "Are there open deadlines related to this?" : "Gibt es dazu offene Fristen?",
+      });
+    }
+    if (content.includes("akte") || content.includes("case") || content.includes("mandant")) {
+      chips.push({
+        label: t("chat.follow_up.next_steps"),
+        query: isEn
+          ? "What are the next steps in this case?"
+          : "Was sind die nächsten Schritte in dieser Akte?",
+      });
+    }
+    if (
+      content.includes("vertrag") ||
+      content.includes("contract") ||
+      content.includes("klausel")
+    ) {
+      chips.push({
+        label: t("chat.follow_up.related"),
+        query: isEn ? "Are there related legal questions?" : "Gibt es verwandte Rechtsfragen dazu?",
+      });
+    }
+    if (lastMessage.citations && lastMessage.citations.length > 0) {
+      chips.push({
+        label: t("chat.follow_up.more_details"),
+        query: isEn
+          ? "Can you support this with further sources?"
+          : "Kannst du das mit weiteren Quellen belegen?",
+      });
+    }
+
+    // Always offer email draft and more details
+    if (chips.length < 3) {
+      chips.push({
+        label: t("chat.follow_up.more_details"),
+        query: isEn
+          ? "Can you explain this in more detail?"
+          : "Kannst du das detaillierter erklären?",
+      });
+    }
+    chips.push({
+      label: t("chat.follow_up.email"),
+      query: isEn ? "Draft an email about this." : "Entwerfe eine E-Mail dazu.",
+    });
+
+    return chips.slice(0, 4);
+  }, [lastMessage, t, isEn]);
+
+  if (suggestions.length === 0) return null;
+
+  return (
+    <div className="px-4 py-2">
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="text-[10px] font-medium text-[color:var(--ds-text-subtle)]">
+          {t("chat.follow_ups")}
+        </span>
+        {suggestions.map((s, i) => (
+          <button
+            key={i}
+            onClick={() => onSelect(s.query)}
+            className="rounded-full border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1 text-[11px] text-[color:var(--ds-text-muted)] transition-[border-color,background-color,color] duration-200 hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.97]"
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function ChatPanel(
   {
     context = { type: "global" },
@@ -452,8 +547,20 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
 ) {
   const { t, lang } = useLang();
   const confirm = useConfirm();
+  const meQuery = useMe();
 
   const resolvedFeatures = useMemo(() => ({ ...DEFAULT_FEATURES, ...features }), [features]);
+
+  // Build user context for personalized AI responses
+  const userContext = useMemo<UserContext | undefined>(() => {
+    const user = meQuery.data?.user;
+    if (!user) return undefined;
+    return {
+      name: user.name as string | undefined,
+      role: user.role as string | undefined,
+      preferredLanguage: (user.locale as "de" | "en" | undefined) ?? (lang === "en" ? "en" : "de"),
+    };
+  }, [meQuery.data?.user, lang]);
 
   // State
   const [messages, setMessagesState] = useState<ChatMessage[]>([]);
@@ -662,6 +769,10 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       }
 
       // Build prompt via shared context builder
+      // Pass conversation history (all messages before the current user+assistant pair)
+      const historyForPrompt = messagesRef.current
+        .slice(0, -2)
+        .filter((m) => !m.error && m.content.trim().length > 0);
       const { systemPrompt, userInput } = await buildPromptContext({
         jurisdiction,
         selectedCaseSlug,
@@ -676,6 +787,8 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           const page = await api.brain.getPage(slug);
           return page.content || "";
         },
+        userContext,
+        conversationHistory: historyForPrompt,
       });
       const prompt = buildSafePrompt(systemPrompt, userInput);
 
@@ -805,6 +918,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       t,
       isStreaming,
       setMessages,
+      userContext,
     ]
   );
 
@@ -1189,6 +1303,10 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       }
 
       // Rebuild prompt via shared context builder
+      // Pass conversation history (all messages before the user message being regenerated)
+      const regenHistory = currentMsgs
+        .slice(0, idx - 1 >= 0 ? idx - 1 : 0)
+        .filter((m) => !m.error && m.content.trim().length > 0);
       const { systemPrompt: regenSystemPrompt, userInput: regenUserInput } =
         await buildPromptContext({
           jurisdiction,
@@ -1204,6 +1322,8 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
             const page = await api.brain.getPage(slug);
             return page.content || "";
           },
+          userContext,
+          conversationHistory: regenHistory,
         });
       const prompt = buildSafePrompt(regenSystemPrompt, regenUserInput);
 
@@ -1325,6 +1445,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       t,
       isStreaming,
       setMessages,
+      userContext,
     ]
   );
 
@@ -1520,6 +1641,15 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
   const exampleQueries = useMemo(() => {
     if (context.type === "case" && selectedCaseSlug) {
       const caseTitle = cases.find((c) => c.slug === selectedCaseSlug)?.title ?? selectedCaseSlug;
+      if (lang === "en") {
+        return [
+          `What is the current status of case ${caseTitle}?`,
+          "Which deadlines are open in this case?",
+          "Which documents are missing in this case?",
+          "Are there any contradictions in the case notes?",
+          "Summarize the communication with the client.",
+        ];
+      }
       return [
         `Was ist der aktuelle Stand der Akte ${caseTitle}?`,
         "Welche Fristen sind in dieser Akte offen?",
@@ -1528,8 +1658,8 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
         "Fasse die Kommunikation mit dem Mandanten zusammen.",
       ];
     }
-    return DEFAULT_EXAMPLE_QUERIES;
-  }, [context.type, selectedCaseSlug, cases]);
+    return lang === "en" ? DEFAULT_EXAMPLE_QUERIES_EN : DEFAULT_EXAMPLE_QUERIES;
+  }, [context.type, selectedCaseSlug, cases, lang]);
 
   const contextLabel = useMemo(() => {
     if (context.type === "case" && selectedCaseSlug) {
@@ -1634,6 +1764,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
             onExampleClick={(q) => handleSend(q)}
             exampleQueries={exampleQueries}
             contextLabel={contextLabel}
+            userName={userContext?.name}
           />
         ) : (
           <div className="py-2">
@@ -1678,7 +1809,31 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
             {isStreaming &&
               messages.length > 0 &&
               messages[messages.length - 1].role === "assistant" &&
-              !messages[messages.length - 1].content && <ChatStreamingIndicator />}
+              !messages[messages.length - 1].content && (
+                <div className="px-4 py-1.5 text-[11px] text-[color:var(--ds-text-muted)]">
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="inline-flex items-center gap-0.5">
+                      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-current opacity-60" />
+                      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-current opacity-40 [animation-delay:150ms]" />
+                      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-current opacity-20 [animation-delay:300ms]" />
+                    </span>
+                    {t("chat.typing")}
+                  </span>
+                </div>
+              )}
+            {/* Suggested follow-ups after last AI message */}
+            {!isStreaming &&
+              messages.length > 0 &&
+              messages[messages.length - 1].role === "assistant" &&
+              !messages[messages.length - 1].error &&
+              messages[messages.length - 1].content.trim().length > 0 && (
+                <SuggestedFollowUps
+                  lastMessage={messages[messages.length - 1]}
+                  onSelect={(q) => handleSend(q)}
+                  t={t}
+                  lang={lang}
+                />
+              )}
             <div ref={messagesEndRef} />
           </div>
         )}

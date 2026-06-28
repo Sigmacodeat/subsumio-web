@@ -3,6 +3,20 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 import type { ComponentProps, ReactNode } from "react";
 import { Sidebar } from "./sidebar";
 
+// jsdom doesn't implement matchMedia — mock it for use-media-query hook
+if (typeof window !== "undefined" && !window.matchMedia) {
+  window.matchMedia = (query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: () => {},
+    removeListener: () => {},
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    dispatchEvent: () => false,
+  });
+}
+
 let pathname = "/dashboard";
 
 vi.mock("next/navigation", () => ({

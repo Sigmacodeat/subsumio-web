@@ -177,6 +177,31 @@ export async function fetchRecentDocuments(brainId: string, limit = 20): Promise
   }
 }
 
+/**
+ * Fetch executed contracts that have not yet been processed by the auto-playbook cron.
+ * Returns the count of pending contracts for dashboard badge display.
+ */
+export async function fetchPendingPlaybookUpdates(
+  brainId: string,
+  limit = 50
+): Promise<EnginePage[]> {
+  try {
+    const res = await fetch(`${ENGINE_URL}/api/pages?type=legal_contract&limit=${limit}`, {
+      headers: engineHeadersForBrain(brainId),
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!res.ok) return [];
+    const data = (await res.json()) as unknown;
+    if (!Array.isArray(data)) return [];
+    return (data as EnginePage[]).filter((p) => {
+      const fm = p.frontmatter ?? {};
+      return fm.status === "executed" && !fm.playbook_processed;
+    });
+  } catch {
+    return [];
+  }
+}
+
 export interface ContradictionFinding {
   case_slug: string;
   severity: "high" | "medium" | "low" | "info";

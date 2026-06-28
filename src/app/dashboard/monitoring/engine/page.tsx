@@ -51,6 +51,17 @@ interface QuotaUsage {
   resetAt: string;
 }
 
+interface QueueHealth {
+  waiting: number;
+  active: number;
+  stalled: number;
+  deadTotal: number;
+  outboxExhausted: number | null;
+  docsFailed: number | null;
+  wedgeMinutes: number | null;
+  engineReachable: boolean;
+}
+
 // ── Mock helpers (filled from real API when available) ────────────────
 
 function emptySearchStats(): SearchStats {
@@ -190,6 +201,7 @@ export default function EngineAPMPage() {
   const [searchStats, setSearchStats] = useState<SearchStats | null>(null);
   const [health, setHealth] = useState<BrainHealth | null>(null);
   const [quota, setQuota] = useState<QuotaUsage | null>(null);
+  const [queueHealth, setQueueHealth] = useState<QueueHealth | null>(null);
   const [loading, setLoading] = useState(true);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const [autoRefresh, setAutoRefresh] = useState(true);
@@ -197,7 +209,7 @@ export default function EngineAPMPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [statsRes, healthRes, quotaRes] = await Promise.allSettled([
+      const [statsRes, healthRes, quotaRes, queueRes] = await Promise.allSettled([
         fetch("/api/brain/stats", { signal: AbortSignal.timeout(30_000) }).then((r) =>
           r.ok ? r.json() : null
         ),
@@ -207,7 +219,30 @@ export default function EngineAPMPage() {
         fetch("/api/usage/quota", { signal: AbortSignal.timeout(30_000) }).then((r) =>
           r.ok ? r.json() : null
         ),
+        fetch("/api/admin/queue-health", { signal: AbortSignal.timeout(30_000) }).then((r) =>
+          r.ok ? r.json() : null
+        ),
       ]);
+
+      if (queueRes.status === "fulfilled" && queueRes.value) {
+        const d = queueRes.value as {
+          queue_health?: { waiting?: number; active?: number; stalled?: number };
+          by_type?: Array<{ dead?: number }>;
+          wedge?: { minutes_since_completion?: number | null } | null;
+          dead_letter?: { outbox_exhausted?: number | null; docs_failed?: number | null };
+          engine_reachable?: boolean;
+        };
+        setQueueHealth({
+          waiting: d.queue_health?.waiting ?? 0,
+          active: d.queue_health?.active ?? 0,
+          stalled: d.queue_health?.stalled ?? 0,
+          deadTotal: (d.by_type ?? []).reduce((s, t) => s + (t.dead ?? 0), 0),
+          outboxExhausted: d.dead_letter?.outbox_exhausted ?? null,
+          docsFailed: d.dead_letter?.docs_failed ?? null,
+          wedgeMinutes: d.wedge?.minutes_since_completion ?? null,
+          engineReachable: d.engine_reachable ?? false,
+        });
+      }
 
       if (statsRes.status === "fulfilled" && statsRes.value) {
         const d = statsRes.value;
@@ -549,6 +584,122 @@ export default function EngineAPMPage() {
                       : "—"}
                   </span>
                 ),
+              },
+            ].map((row) => (
+              <div
+                key={row.label}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  padding: "7px 0",
+                  borderBottom: "1px solid #1a1a30",
+                  fontSize: 12,
+                }}
+              >
+                <span style={{ color: "#8a8aa8" }}>{row.label}</span>
+                {row.value}
+              </div>
+            ))}
+          </div>
+
+          {/* Pipeline / Job-Queue + DLQ */}
+          <div
+            style={{
+              background: "#0d0d1a",
+              border: "1px solid #1e1e3a",
+              borderRadius: 10,
+              padding: 16,
+            }}
+          >
+            <div
+              style={{
+                fontSize: 12,
+                fontWeight: 600,
+                color: "#c0c0d8",
+                marginBottom: 14,
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              <Database size={14} style={{ color: "#a855f7" }} /> Pipeline & Dead-Letter
+            </div>
+
+            {[
+              {
+                label: "Wartende Jobs",
+                value: (
+                  <span
+                    style={{
+                      fontWeight: 600,
+                      color: (queueHealth?.waiting ?? 0) > 100 ? "#f59e0b" : "#22c55e",
+                    }}
+                  >
+                    {queueHealth?.waiting ?? 0}
+                  </span>
+                ),
+              },
+              {
+                label: "Aktive Jobs",
+                value: <span style={{ color: "#8a8aa8" }}>{queueHealth?.active ?? 0}</span>,
+              },
+              {
+                label: "Dead-lettered Jobs",
+                value: (
+                  <span
+                    style={{
+                      fontWeight: 600,
+                      color: (queueHealth?.deadTotal ?? 0) > 0 ? "#ef4444" : "#22c55e",
+                    }}
+                  >
+                    {queueHealth?.deadTotal ?? 0}
+                  </span>
+                ),
+              },
+              {
+                label: "Post-Upload-Tasks erschöpft",
+                value: (
+                  <span
+                    style={{
+                      fontWeight: 600,
+                      color: (queueHealth?.outboxExhausted ?? 0) > 0 ? "#ef4444" : "#22c55e",
+                    }}
+                  >
+                    {queueHealth?.outboxExhausted ?? "—"}
+                  </span>
+                ),
+              },
+              {
+                label: "Dokumente fehlgeschlagen",
+                value: (
+                  <span
+                    style={{
+                      fontWeight: 600,
+                      color: (queueHealth?.docsFailed ?? 0) > 0 ? "#f59e0b" : "#22c55e",
+                    }}
+                  >
+                    {queueHealth?.docsFailed ?? "—"}
+                  </span>
+                ),
+              },
+              {
+                label: "Min. seit letztem Abschluss",
+                value: (
+                  <span
+                    style={{
+                      color: (queueHealth?.wedgeMinutes ?? 0) > 30 ? "#f59e0b" : "#8a8aa8",
+                    }}
+                  >
+                    {queueHealth?.wedgeMinutes != null
+                      ? `${Math.round(queueHealth.wedgeMinutes)} min`
+                      : "—"}
+                  </span>
+                ),
+              },
+              {
+                label: "Engine erreichbar",
+                value: <StatusDot status={queueHealth?.engineReachable ? "healthy" : "loading"} />,
               },
             ].map((row) => (
               <div

@@ -120,7 +120,7 @@ export default function ProductWorkflowShowcase({
           <MagneticCard lift={6} tilt={1.5} className="relative">
             <div className="brand-glow-bg absolute -inset-6 rounded-full blur-3xl" />
             <div
-              data-tone="slate"
+              data-tone="dashboard"
               className="relative overflow-hidden rounded-2xl border [border-color:var(--mk-border-strong)] shadow-2xl shadow-black/20 [background:var(--mk-bg)]"
             >
               <GuidedCursor
@@ -130,14 +130,16 @@ export default function ProductWorkflowShowcase({
                 className="hidden md:flex"
                 duration={7.2}
               />
-              <div className="flex items-center justify-between border-b [border-color:var(--mk-border)] px-4 py-3 [background:var(--mk-surface)]">
-                <div className="terminal-dots flex items-center gap-2">
-                  <span className="terminal-dot-red" />
-                  <span className="terminal-dot-amber" />
-                  <span className="terminal-dot-green" />
+              <div className="flex items-center gap-3 border-b [border-color:var(--mk-border)] px-4 py-2.5 [background:var(--mk-surface)]">
+                <div className="flex items-center gap-2">
+                  <div className="brand-bg flex h-6 w-6 shrink-0 items-center justify-center rounded-md">
+                    <Brain size={13} className="text-white" />
+                  </div>
+                  <span className="text-xs font-semibold [color:var(--mk-text)]">{brand}</span>
                 </div>
-                <div className="font-mono text-xs [color:var(--mk-text-subtle)]">
-                  {brand} workspace
+                <div className="flex flex-1 items-center gap-2 rounded-lg border [border-color:var(--mk-border)] px-2.5 py-1.5 [background:var(--mk-bg)]">
+                  <Search size={13} className="[color:var(--mk-text-subtle)]" />
+                  <span className="text-xs [color:var(--mk-text-subtle)]">{c.query}</span>
                 </div>
               </div>
 
@@ -145,9 +147,9 @@ export default function ProductWorkflowShowcase({
                 <div className="hidden border-r [border-color:var(--mk-border)] p-4 [background:var(--mk-bg)] md:block">
                   <div className="mb-6 flex items-center gap-2">
                     <Brain size={17} className="brand-text" />
-                    <span className="text-sm font-bold [color:var(--mk-text)]">{brand}</span>
+                    <span className="text-sm font-semibold [color:var(--mk-text)]">{brand}</span>
                   </div>
-                  {["Inbox", "Graph", "Answers", "Audit"].map((item, i) => (
+                  {["Overview", "Akten", "Fristen", "Intake", "Chat"].map((item, i) => (
                     <div
                       key={item}
                       className={`mb-2 rounded-lg px-3 py-2 text-xs ${i === 1 ? "brand-soft brand-text" : "[color:var(--mk-text-muted)]"}`}

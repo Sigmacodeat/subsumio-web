@@ -90,7 +90,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://subsum.eu"),
   alternates: {
     canonical: "/",
-    languages: { "de-DE": "/", "de-AT": "/at", "de-CH": "/ch", en: "/en" },
+    languages: { "de-DE": "/", "de-AT": "/at", "de-CH": "/ch", en: "/en", "x-default": "/" },
   },
   openGraph: {
     title: "Subsumio — KI-Kanzleisoftware für DACH-Rechtsanwälte",
@@ -179,6 +179,9 @@ export default async function RootLayout({
       style={{ colorScheme: "light dark" }}
       suppressHydrationWarning
     >
+      <head>
+        <meta httpEquiv="content-language" content="de-DE, de-AT, de-CH, en" />
+      </head>
       <body
         className="noise min-h-full [color:var(--color-light-text)] antialiased [background:var(--color-light-bg)]"
         suppressHydrationWarning

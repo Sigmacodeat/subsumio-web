@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import ContactPage from "@/components/marketing/contact-page";
-import { JsonLd, breadcrumbLd } from "@/components/seo/jsonld";
+import { JsonLd, localBusinessLd, breadcrumbLd } from "@/components/seo/jsonld";
 
 export const metadata: Metadata = {
   title: "Kontakt — Subsumio KI-Kanzleisoftware",
@@ -27,6 +27,7 @@ export const metadata: Metadata = {
 export default function Page() {
   return (
     <>
+      <JsonLd data={localBusinessLd()} />
       <JsonLd
         data={breadcrumbLd([
           { name: "Subsumio", url: "/de" },

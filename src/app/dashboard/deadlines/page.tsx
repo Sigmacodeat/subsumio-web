@@ -553,7 +553,10 @@ export default function DeadlinesPage() {
   ];
 
   return (
-    <div className="mx-auto max-w-[1400px] space-y-6 p-4 md:p-6 lg:p-8">
+    <div
+      data-tour="deadlines-widget"
+      className="mx-auto max-w-[1400px] space-y-6 p-4 md:p-6 lg:p-8"
+    >
       <PageHeader
         title={t("deadlines.title")}
         description={`${deadlines.length} ${t("deadlines.count")}`}

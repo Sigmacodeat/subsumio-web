@@ -1,4 +1,4 @@
-import { type Lang } from "./site";
+import { type Lang, applyReplacements, AT_REPLACEMENTS } from "./site";
 
 export interface DocFeature {
   icon: string;
@@ -992,5 +992,7 @@ const EN: DocsContent = {
 };
 
 export function getDocs(lang: Lang): DocsContent {
-  return lang === "en" ? EN : DE;
+  if (lang === "en") return EN;
+  if (lang === "at") return applyReplacements(DE, AT_REPLACEMENTS);
+  return DE;
 }

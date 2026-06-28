@@ -1,4 +1,4 @@
-import { type Lang, deepMerge } from "./site";
+import { type Lang, deepMerge, applyReplacements, AT_REPLACEMENTS } from "./site";
 
 export interface SolutionContent {
   slug: string;
@@ -52,8 +52,7 @@ export const SOLUTION_CROSS_LINKS: Record<
 const _solutionsDe = {
   "law-firms": {
     slug: "law-firms",
-    metaTitle:
-      "Subsumio für Kanzleien — KI-Kanzleisoftware mit belegten Antworten & Fristenkontrolle",
+    metaTitle: "Subsumio für Kanzleien — KI-Kanzleisoftware mit Fundstellen",
     metaDesc:
       "Gemeinsames Kanzlei-Brain, automatische Fristenkontrolle, KI-Analysen mit Zitaten, Kollisionsprüfung und WhatsApp-Copilot — DSGVO-konform, EU-gehostet oder self-hosted.",
     badge: "Für etablierte Kanzleien",
@@ -79,7 +78,7 @@ const _solutionsDe = {
     features: [
       {
         icon: "Brain",
-        title: "Gemeinsames Kanzlei-Gedächtnis",
+        title: "Gemeinsames Kanzlei-Brain",
         desc: "Jede Akte, jeder Schriftsatz, jede Mail und Frist indiziert und von jedem Anwalt der Kanzlei abfragbar. Neue Mitarbeiter sind in Minuten statt Monaten eingearbeitet.",
       },
       {
@@ -386,7 +385,7 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
   en: {
     "law-firms": {
       slug: "law-firms",
-      metaTitle: "Subsumio for Law Firms — AI legal software with cited answers & deadline control",
+      metaTitle: "Subsumio for Law Firms — AI legal software with citations",
       metaDesc:
         "Shared case brain, automated deadline control, AI analysis with citations, conflict checks and WhatsApp copilot — GDPR-ready, EU-hosted or self-hosted for DACH law firms.",
       badge: "For established law firms",
@@ -713,6 +712,6 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
     },
   },
   de: _solutionsDe,
-  at: _solutionsDe,
+  at: applyReplacements(_solutionsDe, AT_REPLACEMENTS),
   ch: _solutionsDe,
 };

@@ -1,14 +1,16 @@
 import type { Metadata } from "next";
 import PartnersPage from "@/components/marketing/partners-page";
 import { JsonLd, breadcrumbLd } from "@/components/seo/jsonld";
+import { keywordsFor } from "@/lib/seo-keywords";
 
 export const metadata: Metadata = {
-  title: "Subsumio Partnerprogramm — 30 % lebenslange Provision auf Empfehlungen",
+  title: "Subsumio Partnerprogramm — 30 % lebenslange Provision",
   description:
     "Kanzleien zu Subsumio empfehlen und 30 % wiederkehrende Provision über die Laufzeit jedes zahlenden Mandanten erhalten. Drei Tracks: Affiliate, Kunden-Referral und zertifizierter Partner. KI-Kanzleisoftware für AT, DE und CH.",
+  keywords: keywordsFor("partners"),
   alternates: { canonical: "/partners", languages: { de: "/partners", en: "/en/partners" } },
   openGraph: {
-    title: "Subsumio Partnerprogramm — 30 % lebenslange Provision auf Empfehlungen",
+    title: "Subsumio Partnerprogramm — 30 % lebenslange Provision",
     description:
       "Kanzleien zu Subsumio empfehlen und 30 % wiederkehrende Provision über die Laufzeit jedes zahlenden Mandanten erhalten. Drei Tracks: Affiliate, Kunden-Referral und zertifizierter Partner.",
     url: "/partners",

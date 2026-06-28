@@ -130,7 +130,7 @@ describe("setDashboardLang", () => {
 
   test("sets document.documentElement.lang", () => {
     setDashboardLang("de");
-    expect(document.documentElement.lang).toBe("de");
+    expect(document.documentElement.lang).toBe("de-DE");
   });
 
   test("handles 'en'", () => {
@@ -142,13 +142,13 @@ describe("setDashboardLang", () => {
   test("handles 'de'", () => {
     setDashboardLang("de");
     expect(localStorage.getItem("dashboard-lang")).toBe("de");
-    expect(document.documentElement.lang).toBe("de");
+    expect(document.documentElement.lang).toBe("de-DE");
   });
 
   test("overwrites previous value", () => {
     setDashboardLang("en");
     setDashboardLang("de");
     expect(localStorage.getItem("dashboard-lang")).toBe("de");
-    expect(document.documentElement.lang).toBe("de");
+    expect(document.documentElement.lang).toBe("de-DE");
   });
 });

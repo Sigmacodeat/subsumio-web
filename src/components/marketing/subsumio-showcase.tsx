@@ -1,8 +1,8 @@
 "use client";
 
 // Subsumio premium showcase — the agency-level presentation of the law-firm
-// product: a WhatsApp-Copilot spotlight (the winning USP) and a bento-style
-// feature grid that surfaces every capability without a flat wall of cards.
+// product: a WhatsApp-Copilot spotlight (an optional convenience channel) and a
+// bento-style feature grid that surfaces every capability without a flat wall of cards.
 // Content is sourced from VERTICALS[lang].legal so copy stays single-source +
 // SEO-indexable; this file owns only the presentation + motion.
 
@@ -14,7 +14,7 @@ import type { Lang } from "@/content/site";
 import { GradientMesh } from "./motion-system";
 
 const _deShowcase = {
-  waEyebrow: "Das stärkste Argument",
+  waEyebrow: "Komfort-Kanal für unterwegs",
   waTitle: "Subsumio-Copilot — direkt in WhatsApp",
   waSub:
     "Zeit buchen, Belege ablegen, Akten befragen — vom Handy, ohne App-Wechsel, ohne Schulung. Der Copilot versteht die Akte und legt alles bestätigungspflichtig ins Brain.",
@@ -65,7 +65,7 @@ const COPY = {
   at: _deShowcase,
   ch: _deShowcase,
   en: {
-    waEyebrow: "The standout advantage",
+    waEyebrow: "Convenience on the go",
     waTitle: "Subsumio Copilot — right inside WhatsApp",
     waSub:
       "Book time, file documents, query matters — from your phone, no app switch, no training. The copilot understands the matter and files everything for confirmation in the brain.",
@@ -207,7 +207,7 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
   );
 }
 
-/** WhatsApp-Copilot spotlight — the winning USP. Always a DARK spotlight band
+/** WhatsApp-Copilot spotlight — an optional convenience channel. Always a DARK spotlight band
  *  (pins data-tone="dark"); reused on the homepage teaser and the /whatsapp
  *  deep-dive page. */
 export function WhatsAppSpotlight({ lang, children }: { lang: Lang; children?: React.ReactNode }) {

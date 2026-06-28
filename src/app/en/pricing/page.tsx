@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import PricingPage from "@/components/marketing/pricing-page";
-import { JsonLd, softwareApplicationLd } from "@/components/seo/jsonld";
+import { JsonLd, softwareApplicationLd, breadcrumbLd } from "@/components/seo/jsonld";
 import { PRICING } from "@/content/site";
 
 export const metadata: Metadata = {
-  title: "Subsumio Pricing — AI legal software from €890/seat/mo | No lock-in",
+  title: "Subsumio Pricing — AI legal software from €890/seat",
   description:
     "Transparent per-seat pricing for AI legal software. Hosted plans from €890/seat/mo billed annually — EU cloud or self-hosted, 14-day full trial, no surprise bills, no vendor lock-in. DATEV export, conflict check, deadline tracking included.",
   alternates: {
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: "Subsumio Pricing — AI legal software from €890/seat/mo | No lock-in",
+    title: "Subsumio Pricing — AI legal software from €890/seat",
     description:
       "Transparent per-seat pricing for AI legal software. Hosted plans from €890/seat/mo — EU cloud or self-hosted, 14-day full trial, no surprise bills.",
     url: "/en/pricing",
@@ -54,6 +54,12 @@ export default function Page() {
             },
           ],
         }}
+      />
+      <JsonLd
+        data={breadcrumbLd([
+          { name: "Subsumio", url: "/en" },
+          { name: "Pricing", url: "/en/pricing" },
+        ])}
       />
       <PricingPage lang="en" />
     </>

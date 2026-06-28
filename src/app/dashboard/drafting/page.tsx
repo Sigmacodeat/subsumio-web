@@ -126,7 +126,7 @@ function getTemplates(t: (key: import("@/content/dashboard").DashboardKey) => st
 }
 
 export default function DraftingPage() {
-  const { t, lang } = useLang();
+  const { t } = useLang();
   const TEMPLATES = getTemplates(t);
   const [selectedTemplate, setSelectedTemplate] = useState<string>("klage");
   const [generating, setGenerating] = useState(false);
@@ -308,7 +308,7 @@ export default function DraftingPage() {
     } catch (e) {
       setDraftSaved(
         e instanceof Error
-          ? `${lang === "de" ? "Fehler" : "Error"}: ${e.message}`
+          ? `${t("drafting.error_prefix")}: ${e.message}`
           : t("drafting.error_save")
       );
       return null;
@@ -351,7 +351,7 @@ export default function DraftingPage() {
       }
       setDraftSaved(
         e instanceof Error
-          ? `${lang === "de" ? "Fehler" : "Error"}: ${e.message}`
+          ? `${t("drafting.error_prefix")}: ${e.message}`
           : t("drafting.error_submit")
       );
     } finally {
@@ -505,7 +505,7 @@ export default function DraftingPage() {
           {generating ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
           {generating
             ? t("drafting.btn_generating")
-            : `${template.label} ${lang === "de" ? "generieren" : "generate"}`}
+            : `${template.label} ${t("drafting.btn_generate_suffix")}`}
         </Button>
       </form>
 
@@ -574,14 +574,14 @@ export default function DraftingPage() {
             <p
               className={cn(
                 "text-xs",
-                draftSaved.startsWith(lang === "de" ? "Fehler" : "Error")
+                draftSaved.startsWith(t("drafting.error_prefix"))
                   ? "text-red-600"
                   : draftSaved.startsWith("approval:")
                     ? "brand-text"
                     : "text-emerald-600"
               )}
             >
-              {draftSaved.startsWith(lang === "de" ? "Fehler" : "Error")
+              {draftSaved.startsWith(t("drafting.error_prefix"))
                 ? draftSaved
                 : draftSaved.startsWith("approval:")
                   ? t("drafting.approval_msg")

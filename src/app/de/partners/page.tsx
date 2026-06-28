@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import PartnersPage from "@/components/marketing/partners-page";
-import { JsonLd, breadcrumbLd } from "@/components/seo/jsonld";
+import { JsonLd, organizationLd, breadcrumbLd } from "@/components/seo/jsonld";
 
 export const metadata: Metadata = {
-  title: "Subsumio Partnerprogramm — 30 % lebenslange Provision auf Empfehlungen",
+  title: "Subsumio Partnerprogramm — 30 % lebenslange Provision",
   description:
     "Kanzleien zu Subsumio empfehlen und 30 % wiederkehrende Provision über die Laufzeit jedes zahlenden Mandanten erhalten. Drei Tracks: Affiliate, Kunden-Referral und zertifizierter Partner. KI-Kanzleisoftware für AT, DE und CH.",
   alternates: {
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: "Subsumio Partnerprogramm — 30 % lebenslange Provision auf Empfehlungen",
+    title: "Subsumio Partnerprogramm — 30 % lebenslange Provision",
     description:
       "Kanzleien zu Subsumio empfehlen und 30 % wiederkehrende Provision über die Laufzeit jedes zahlenden Mandanten erhalten. Drei Tracks: Affiliate, Kunden-Referral und zertifizierter Partner.",
     url: "/de/partners",
@@ -27,6 +27,7 @@ export const metadata: Metadata = {
 export default function Page() {
   return (
     <>
+      <JsonLd data={organizationLd()} />
       <JsonLd
         data={breadcrumbLd([
           { name: "Subsumio", url: "/de" },

@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import ContactPage from "@/components/marketing/contact-page";
 import { JsonLd, breadcrumbLd } from "@/components/seo/jsonld";
+import { keywordsFor } from "@/lib/seo-keywords";
 
 export const metadata: Metadata = {
   title: "Kontakt — Subsumio KI-Kanzleisoftware",
   description:
     "Fragen zu Subsumio, Self-Hosting, Enterprise oder Partnerschaften? Unser Team antwortet innerhalb eines Werktages — auch zu DSGVO, AVV, Berufsgeheimnis (§ 203 StGB) und technisch-organisatorischen Maßnahmen.",
+  keywords: keywordsFor("contact"),
   alternates: { canonical: "/contact", languages: { de: "/contact", en: "/en/contact" } },
   openGraph: {
     title: "Kontakt — Subsumio KI-Kanzleisoftware",

@@ -12,7 +12,7 @@ const buttonVariants = cva(
         primary:
           "bg-[color:var(--brand-primary)] text-white shadow-sm transition-[background-color,box-shadow] duration-200 hover:bg-[color:var(--brand-primary-hover)] hover:shadow-md active:bg-[color:var(--brand-primary-hover)]",
         secondary:
-          "border border-[color:var(--mk-border)] bg-transparent text-[color:var(--mk-text-muted)] hover:border-[color:var(--mk-border-strong)] hover:bg-[color:var(--mk-surface-2)] hover:text-[color:var(--mk-text)]",
+          "border border-[color:var(--mk-border)] bg-transparent text-[color:var(--mk-text)] hover:border-[color:var(--mk-border-strong)] hover:bg-[color:var(--mk-surface-2)] hover:text-[color:var(--mk-text)]",
         ghost:
           "bg-transparent text-[color:var(--mk-text-muted)] hover:bg-[color:var(--mk-surface-2)] hover:text-[color:var(--mk-text)]",
         danger:

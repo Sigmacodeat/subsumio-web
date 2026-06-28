@@ -29,8 +29,19 @@ describe("resolveSpecialist", () => {
     expect(def).not.toBeNull();
     expect(def!.allowedTools).toContain("query");
     expect(def!.allowedTools).toContain("search");
-    expect(def!.allowedTools).toContain("perplexity_research");
+    // perplexity_research is NOT a registered tool; including it makes
+    // filterAllowedTools throw and crashes the specialist. It must stay out
+    // until a real web/RIS tool is implemented. (Guarded broadly below.)
+    expect(def!.allowedTools).not.toContain("perplexity_research");
     expect(def!.maxTurns).toBe(25);
+  });
+
+  it("no specialist references the unimplemented perplexity_research tool", () => {
+    // filterAllowedTools throws on any unknown tool name, which would crash the
+    // specialist mid-run. Guard every specialist so a stray re-add is caught here.
+    for (const def of EMBEDDED_SPECIALISTS) {
+      expect(def.allowedTools ?? []).not.toContain("perplexity_research");
+    }
   });
 
   it("legal-critic has brain tools but no put_page", () => {

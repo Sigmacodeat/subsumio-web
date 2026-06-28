@@ -8,7 +8,13 @@ export const metadata: Metadata = {
   robots: { index: false },
   alternates: {
     canonical: "/at/login",
-    languages: { "de-DE": "/login", "de-AT": "/at/login", "de-CH": "/ch/login", en: "/en/login" },
+    languages: {
+      "de-DE": "/login",
+      "de-AT": "/at/login",
+      "de-CH": "/ch/login",
+      en: "/en/login",
+      "x-default": "/login",
+    },
   },
 };
 

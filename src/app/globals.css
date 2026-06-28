@@ -24,13 +24,13 @@
      Matches the dashboard light theme (#f5f6f9 family) so the marketing
      site and the app shell feel like one product. */
   --color-light-bg: #eef0f4;
-  --color-light-surface: #f5f6fa;
-  --color-light-surface-2: #e8eaf0;
+  --color-light-surface: #e8ebf2;
+  --color-light-surface-2: #e2e5ec;
   --color-light-border: #d4d7e0;
   --color-light-border-strong: #b0b4c8;
   --color-light-text: #0f0f1a;
   --color-light-text-muted: #555668;
-  --color-light-text-subtle: #6c6e7a;
+  --color-light-text-subtle: #636572; /* bumped from #6c6e7a (4.43:1 fail on #eef0f4) → 4.6:1 (AA ✓) */
   /* Deliberate, accessible signal accents (text-on-light shades).
      Tuned for the cool-gray backgrounds above. */
   --signal-blue: #1e40af;
@@ -201,19 +201,19 @@
   --mk-border-strong: #3a3a6a; /* emphasised borders           */
   --mk-text: #e8e8f0; /* primary text                 */
   --mk-text-muted: #8888aa; /* secondary text               */
-  --mk-text-subtle: #7878a0; /* tertiary labels              */
+  --mk-text-subtle: #8282a6; /* bumped from #7878a0 → 4.6:1 on #0d0d1a (AA ✓) */
   --mk-card-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
 }
 
 /* Marketing tone scopes. All verified WCAG-AA (≥ 4.5:1) for body + muted + subtle.
-   LIGHT (on #f7f8fa surface): text #0f0f1a 17.5:1, muted #555668 6.6:1, subtle #6c6e7a 4.8:1.
-   SLATE (on #1e293b surface): text #f8fafc 15.6:1, muted #94a3b8 7.6:1, subtle #7a8ca6 5.8:1.
-   DARK  (on #0d0d1a surface): text #e8e8f0 15.6:1, muted #8888aa 5.6:1, subtle #8282a6 4.6:1. */
+   LIGHT (on #eef0f4 bg / #e8ebf2 surface): text #0f0f1a 17.5:1, muted #555668 6.6:1, subtle #636572 4.6:1.
+   SLATE (on #0f172a bg / #1e293b surface): text #f8fafc 15.6:1, muted #94a3b8 7.6:1, subtle #7a8ca6 5.8:1.
+   DARK  (on #06060f bg / #0d0d1a surface): text #e8e8f0 15.6:1, muted #8888aa 5.6:1, subtle #8282a6 4.6:1. */
 [data-tone="light"] {
   --mk-bg: #eef0f4;
-  --mk-surface: #f5f6fa;
-  --mk-surface-2: #e8eaf0;
-  --mk-hover: #e2e5ec;
+  --mk-surface: #e8ebf2; /* darkened from #f5f6fa for stronger band separation vs --mk-bg */
+  --mk-surface-2: #e2e5ec;
+  --mk-hover: #dde1ea;
   --mk-border: #d4d7e0;
   --mk-border-strong: #b0b4c8;
   --mk-text: #0f0f1a;
@@ -253,6 +253,48 @@
   --mk-text-subtle: #8282a6; /* bumped from #7878a0 → 4.6:1 on #0d0d1a (AA ✓) */
   --mk-card-shadow: 0 8px 30px rgba(0, 0, 0, 0.4), 0 1px 0 rgba(255, 255, 255, 0.04) inset;
   --brand-text: #60a5fa; /* blue-400, 6.5:1 on #06060f (AA ✓) */
+  color-scheme: dark;
+}
+
+/* DASHBOARD tone — maps --mk-* to the authenticated dashboard's --ds-* dark
+   palette so marketing dashboard mockups match the real product visually.
+   Uses the exact same values as [data-app="dashboard"][data-theme="dark"].
+   WCAG-AA verified on #090b10: text 15.1:1, muted 6.1:1, subtle 4.6:1. */
+[data-tone="dashboard"] {
+  --mk-bg: #090b10;
+  --mk-surface: #11151c;
+  --mk-surface-2: #171d27;
+  --mk-hover: #202838;
+  --mk-border: #242b38;
+  --mk-border-strong: #3a4558;
+  --mk-text: #eef1f5;
+  --mk-text-muted: #9aa5b8;
+  --mk-text-subtle: #8792a6;
+  --mk-card-shadow: 0 8px 30px rgba(0, 0, 0, 0.4), 0 1px 0 rgba(255, 255, 255, 0.025) inset;
+  --brand-primary: #3a6db5;
+  --brand-primary-hover: #4a7dc5;
+  --brand-secondary: #60a5fa;
+  --brand-tertiary: #a78bfa;
+  --brand-glow: rgba(58, 109, 181, 0.12);
+  --brand-gradient-from: #3b82f6;
+  --brand-gradient-via: #6366f1;
+  --brand-gradient-to: #4f46e5;
+  --brand-text: #60a5fa;
+  --accent-premium: #a78bfa;
+  --accent-premium-soft: rgba(167, 139, 250, 0.1);
+  --accent-premium-border: rgba(167, 139, 250, 0.22);
+  --card-shadow: 0 1px 0 rgba(255, 255, 255, 0.025) inset, 0 12px 34px rgba(0, 0, 0, 0.18);
+  --card-shadow-hover: 0 1px 0 rgba(255, 255, 255, 0.035) inset, 0 18px 48px rgba(0, 0, 0, 0.24);
+  --card-shadow-elevated: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 24px 72px rgba(0, 0, 0, 0.34);
+  --signal-amber: #e6b24e;
+  --signal-rose: #e3a18f;
+  --signal-green: #6fc9a6;
+  --signal-amber-bg: rgba(230, 178, 78, 0.1);
+  --signal-amber-border: rgba(230, 178, 78, 0.2);
+  --signal-rose-bg: rgba(227, 161, 143, 0.1);
+  --signal-rose-border: rgba(227, 161, 143, 0.22);
+  --signal-green-bg: rgba(111, 201, 166, 0.1);
+  --signal-green-border: rgba(111, 201, 166, 0.2);
   color-scheme: dark;
 }
 
@@ -1594,7 +1636,12 @@ pre {
 
 /* Animated gradient text — for hero taglines */
 .gradient-text-animated {
-  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 52%, #a78bfa 100%);
+  background: linear-gradient(
+    135deg,
+    var(--brand-secondary) 0%,
+    var(--brand-gradient-via) 52%,
+    var(--brand-tertiary) 100%
+  );
   background-size: 200% 200%;
   animation: gradient-border-spin 5s ease infinite;
   -webkit-background-clip: text;
@@ -1603,7 +1650,12 @@ pre {
 }
 
 .hero-gradient-text {
-  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 52%, #6366f1 100%);
+  background: linear-gradient(
+    135deg,
+    var(--brand-gradient-from) 0%,
+    var(--brand-gradient-via) 52%,
+    var(--brand-gradient-to) 100%
+  );
   background-size: 200% 200%;
   animation: gradient-border-spin 5s ease infinite;
   -webkit-background-clip: text;

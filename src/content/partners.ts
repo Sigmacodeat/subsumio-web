@@ -1,6 +1,6 @@
 // Partner program page — affiliate, in-product referral, vertical partners. EN + DE.
 
-import { type Lang, deepMerge } from "./site";
+import { type Lang, deepMerge, applyReplacements, AT_REPLACEMENTS } from "./site";
 
 export interface PartnersContent {
   metaTitle: string;
@@ -257,6 +257,6 @@ export const PARTNERS: Record<Lang, PartnersContent> = {
     ctaButton: "Apply now",
   },
   de: _dePartners,
-  at: _dePartners,
+  at: applyReplacements(_dePartners, AT_REPLACEMENTS),
   ch: _dePartners,
 };

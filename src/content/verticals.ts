@@ -1,6 +1,6 @@
 // Subsumio legal funnel content. EN + DE.
 
-import { type Lang, deepMerge } from "./site";
+import { type Lang, deepMerge, applyReplacements, AT_REPLACEMENTS } from "./site";
 
 export interface VerticalContent {
   slug: string;
@@ -305,6 +305,6 @@ export const VERTICALS: Record<Lang, Record<VerticalSlug, VerticalContent>> = {
     },
   },
   de: _verticalsDe,
-  at: _verticalsDe,
+  at: applyReplacements(_verticalsDe, AT_REPLACEMENTS),
   ch: _verticalsDe,
 };

@@ -118,6 +118,8 @@ const ACCENT_TILE = {
     amber: "text-amber-700 bg-amber-50 border-amber-200",
     rose: "text-rose-700 bg-rose-50 border-rose-200",
     purple: "text-purple-700 bg-purple-50 border-purple-200",
+    orange: "text-orange-700 bg-orange-50 border-orange-200",
+    gray: "text-gray-700 bg-gray-50 border-gray-200",
   },
   slate: {
     violet: "brand-text brand-soft brand-border",
@@ -135,9 +137,17 @@ const ACCENT_TILE = {
     rose: "text-rose-400 bg-rose-500/10 border-rose-500/20",
     purple: "text-purple-400 bg-purple-500/10 border-purple-500/20",
   },
+  dashboard: {
+    violet: "brand-text brand-soft brand-border",
+    blue: "text-blue-400 bg-blue-500/10 border-blue-500/20",
+    emerald: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
+    amber: "text-amber-400 bg-amber-500/10 border-amber-500/20",
+    rose: "text-rose-400 bg-rose-500/10 border-rose-500/20",
+    purple: "text-purple-400 bg-purple-500/10 border-purple-500/20",
+  },
 } as const;
 
-export type Tone = "light" | "slate" | "dark";
+export type Tone = "light" | "slate" | "dark" | "dashboard";
 
 export function accentTile(color: string, tone: Tone = "light"): string {
   const map = ACCENT_TILE[tone];
@@ -261,7 +271,7 @@ const NAV_LINK_FOCUS =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--mk-surface)]";
 const NAV_LINK_BORDER = "border border-transparent";
 const NAV_LINK_INACTIVE =
-  "[color:var(--mk-text-muted)] hover:[color:var(--brand-primary)] hover:[background:var(--mk-hover)]";
+  "[color:var(--mk-text-muted)] hover:[color:var(--brand-text)] hover:[background:var(--mk-hover)]";
 const NAV_LINK_ACTIVE =
   "[color:var(--brand-text)] [background:color-mix(in_srgb,var(--brand-primary)_10%,var(--mk-hover))] font-medium [border-color:color-mix(in_srgb,var(--brand-primary)_20%,var(--mk-border))]";
 
@@ -527,7 +537,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                 aria-label="Language"
                 aria-haspopup="true"
               >
-                <Globe size={12} /> {lang.toUpperCase()}
+                <Globe size={12} /> {JURISDICTION_LABEL[lang]}
                 <ChevronDown size={10} className="opacity-50" />
               </button>
               <div className="invisible absolute top-full right-0 z-50 pt-1 opacity-0 transition-all duration-150 group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
@@ -739,8 +749,8 @@ export function MarketingFooter({ lang }: { lang: Lang }) {
             </div>
             <p className="mb-4 text-sm [color:var(--mk-text-muted)]">
               {lang === "en"
-                ? "The memory layer for your law firm — built for AT, DE and CH."
-                : "Das Kanzlei-Gedächtnis, das nie vergisst — für AT, DE und CH."}
+                ? "The firm brain that never forgets — built for AT, DE and CH."
+                : "Das Kanzlei-Brain, das nie vergisst — für AT, DE und CH."}
             </p>
             <p className="max-w-xs text-xs leading-relaxed [color:var(--mk-text-subtle)]">
               {footer.note}

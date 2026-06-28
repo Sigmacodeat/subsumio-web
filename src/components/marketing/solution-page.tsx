@@ -110,11 +110,11 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
                 transition={{ duration: 0.45, delay: i * 0.08, ease: EASE.out }}
               >
                 <GlowCard
-                  glowColor="#be123c"
+                  glowColor="var(--signal-rose)"
                   intensity={0.1}
                   className="h-full rounded-2xl border border-rose-200/40 bg-rose-50/30 p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg dark:border-rose-500/10 dark:bg-rose-500/5"
                 >
-                  <AlertCircle size={20} className="mb-3 text-rose-500" />
+                  <AlertCircle size={20} className="mb-3 [color:var(--signal-rose)]" />
                   <h3 className="mb-2 text-base font-semibold [color:var(--mk-text)]">
                     {pain.title}
                   </h3>

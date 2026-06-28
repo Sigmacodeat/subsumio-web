@@ -35,6 +35,7 @@ const CopilotSidebar = dynamic(
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { Topbar, type Theme } from "@/components/dashboard/topbar";
 import { MobileTabBar } from "@/components/dashboard/mobile-tab-bar";
+import { TourProvider, useAutoStartTour } from "@/components/dashboard/guided-tour";
 import { motion, useDashboardMotion } from "@/components/dashboard/motion";
 import { useBrainStats } from "@/lib/queries/brain";
 import { useMe } from "@/lib/queries/auth";
@@ -63,6 +64,14 @@ function useTheme(): [Theme, () => void] {
 }
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <TourProvider>
+      <DashboardLayoutInner>{children}</DashboardLayoutInner>
+    </TourProvider>
+  );
+}
+
+function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [theme, toggleTheme] = useTheme();
@@ -105,6 +114,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const onboardingCompleted = meQuery.data?.user?.onboardingCompletedAt;
   const isOnboardingPage = pathname === "/dashboard/onboarding";
+
+  // Auto-start guided tour on first dashboard visit after onboarding
+  useAutoStartTour(onboardingCompleted);
 
   useEffect(() => {
     if (meQuery.isLoading || !meQuery.data?.user) return;

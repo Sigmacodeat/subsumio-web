@@ -61,9 +61,9 @@ export default function SecurityPage({ lang }: { lang: Lang }) {
                 key={pillar.title}
                 className="rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
               >
-                <GlowCard className="h-full rounded-2xl border [border-color:var(--mk-border)] p-7 [background:var(--mk-surface)]">
+                <GlowCard className="h-full rounded-2xl border [border-color:var(--mk-border)] p-6 [background:var(--mk-surface)]">
                   <Icon size={22} className="brand-text mb-4" />
-                  <h2 className="mb-2 text-base font-bold [color:var(--mk-text)]">
+                  <h2 className="mb-2 text-base font-semibold [color:var(--mk-text)]">
                     {pillar.title}
                   </h2>
                   <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">
@@ -86,9 +86,9 @@ export default function SecurityPage({ lang }: { lang: Lang }) {
             {t.hostingOptions.map((opt) => (
               <StaggerItem
                 key={opt.title}
-                className="rounded-2xl border [border-color:var(--mk-border)] p-7 [background:var(--mk-surface)]"
+                className="rounded-2xl border [border-color:var(--mk-border)] p-6 [background:var(--mk-surface)]"
               >
-                <h3 className="mb-4 text-base font-bold [color:var(--mk-text)]">{opt.title}</h3>
+                <h3 className="mb-4 text-base font-semibold [color:var(--mk-text)]">{opt.title}</h3>
                 <ul className="space-y-2.5">
                   {opt.points.map((point, i) => (
                     <li
@@ -149,7 +149,7 @@ export default function SecurityPage({ lang }: { lang: Lang }) {
       <section className="relative z-10 px-4 py-12 sm:px-6 lg:px-8">
         <Reveal
           variant="up"
-          className="mx-auto max-w-4xl rounded-2xl border border-amber-500/20 bg-amber-500/[0.04] p-7"
+          className="mx-auto max-w-4xl rounded-2xl border [border-color:var(--signal-amber-border)] p-7 [background:var(--signal-amber-bg)]"
         >
           <h2 className="mb-2 text-lg font-bold [color:var(--signal-amber)]">{t.roadmapTitle}</h2>
           <p className="mb-4 text-sm leading-relaxed [color:var(--mk-text-muted)]">

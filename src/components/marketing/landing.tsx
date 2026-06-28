@@ -16,6 +16,8 @@ import LiveDemo from "./live-demo";
 import DashboardReel from "./dashboard-reel";
 import SuperbrainAdvantage from "./superbrain-advantage";
 import TrustBand from "./trust-band";
+import { TestimonialsSection } from "./testimonials";
+import { useHeroVariant, HERO_VARIANTS } from "@/lib/ab-test";
 import AudienceTabs from "./audience-tabs";
 import { SectionHeading, ICONS, accentTile } from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
@@ -90,6 +92,10 @@ export default function LandingPage({ lang }: { lang: Lang }) {
   const pricing = PRICING[lang];
   const ui = UI_STRINGS[lang];
   const reduce = useReducedMotion();
+  const heroVariant = useHeroVariant();
+  const heroText = HERO_VARIANTS[heroVariant][lang === "en" ? "en" : "de"];
+  const h1a = heroText.h1a;
+  const h1b = heroText.h1b;
 
   return (
     <>
@@ -109,14 +115,14 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 className="absolute inset-0"
                 style={{
                   background:
-                    "radial-gradient(ellipse 80% 50% at 30% 20%, color-mix(in srgb, var(--brand-primary) 5%, transparent), transparent 70%)",
+                    "radial-gradient(ellipse 80% 50% at 30% 20%, color-mix(in srgb, var(--brand-primary) 9%, transparent), transparent 70%)",
                 }}
               />
               <div
                 className="absolute inset-0"
                 style={{
                   background:
-                    "radial-gradient(ellipse 60% 40% at 70% 80%, color-mix(in srgb, var(--brand-secondary) 4%, transparent), transparent 70%)",
+                    "radial-gradient(ellipse 60% 40% at 70% 80%, color-mix(in srgb, var(--brand-secondary) 8%, transparent), transparent 70%)",
                 }}
               />
             </div>
@@ -155,27 +161,32 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 >
                   {reduce ? (
                     <>
-                      {t.h1a}
+                      {h1a}
                       <br />
-                      <span className="hero-gradient-text whitespace-nowrap">{t.h1b}</span>
+                      <span className="hero-gradient-text whitespace-nowrap">{h1b}</span>
                     </>
                   ) : (
                     <>
-                      {t.h1a.split(" ").map((word, i) => (
+                      {h1a.split(" ").map((word, i) => (
                         <motion.span key={i} className="inline-block" variants={h1Word}>
                           {word}
-                          {i < t.h1a.split(" ").length - 1 ? " " : ""}
+                          {i < h1a.split(" ").length - 1 ? " " : ""}
                         </motion.span>
                       ))}
                       <span className="sr-only"> </span>
                       <br />
                       <motion.span className="hero-gradient-text inline-block" variants={h1Word}>
-                        {t.h1b}
+                        {h1b}
                       </motion.span>
                     </>
                   )}
                 </motion.h1>
               </motion.div>
+              {"h1Keyword" in t && (t as { h1Keyword?: string }).h1Keyword && (
+                <p className="mt-3 text-sm font-medium text-[color:var(--mk-text-subtle)]">
+                  {(t as { h1Keyword: string }).h1Keyword}
+                </p>
+              )}
               <motion.div variants={heroItem}>
                 <p className="mx-auto mb-12 max-w-3xl text-lg leading-normal [color:var(--mk-text-muted)] md:text-xl">
                   {t.sub}
@@ -216,7 +227,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                       variants={trustItem}
                     >
                       <span
-                        className="h-1.5 w-1.5 rounded-full bg-emerald-500"
+                        className="h-1.5 w-1.5 rounded-full bg-[color:var(--signal-green)]"
                         aria-hidden="true"
                       />
                       {label}
@@ -235,9 +246,9 @@ export default function LandingPage({ lang }: { lang: Lang }) {
               role="region"
               aria-label={ui.liveDemoAria}
             >
-              {/* Pin the demo mockup to slate so it keeps its terminal look
-                without a harsh black-to-light contrast jump. */}
-              <div data-tone="slate">
+              {/* Pin the demo mockup to the dashboard tone so it matches
+                the real product's color palette exactly. */}
+              <div data-tone="dashboard">
                 <LiveDemo lang={lang} {...t.demo} />
               </div>
             </motion.div>
@@ -262,7 +273,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 const isNumeric = !isNaN(num) && num > 0;
                 return (
                   <StaggerItem key={stat.label}>
-                    <p className="mb-1 text-3xl font-black [color:var(--signal-blue)]">
+                    <p className="mb-1 text-3xl font-black [color:var(--brand-text)]">
                       {isNumeric ? (
                         <AnimatedCounter
                           to={num}
@@ -283,6 +294,37 @@ export default function LandingPage({ lang }: { lang: Lang }) {
           </div>
         </motion.section>
 
+        {/* Pain — problem hook before solution */}
+        {"pains" in t && t.pains && (
+          <motion.section
+            {...reveal}
+            data-tone="light"
+            className="relative z-10 px-4 py-20 sm:px-6 lg:px-8"
+          >
+            <div className="mx-auto max-w-5xl">
+              <SectionHeading
+                title={(t as { painTitle: string }).painTitle}
+                sub={(t as { painSub: string }).painSub}
+              />
+              <StaggerContainer
+                className="mt-10 grid grid-cols-1 gap-5 md:grid-cols-2"
+                stagger={0.08}
+              >
+                {(t as { pains: { value: string; label: string }[] }).pains.map((p) => (
+                  <StaggerItem key={p.label}>
+                    <div className="flex items-start gap-4 rounded-xl border [border-color:var(--mk-border)] p-5 [background:var(--mk-surface)]">
+                      <p className="text-2xl font-black [color:var(--brand-text)]">{p.value}</p>
+                      <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">
+                        {p.label}
+                      </p>
+                    </div>
+                  </StaggerItem>
+                ))}
+              </StaggerContainer>
+            </div>
+          </motion.section>
+        )}
+
         <SuperbrainAdvantage lang={lang} />
 
         {/* Dashboard in action — light section with dark mockup spotlight */}
@@ -299,7 +341,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
           </motion.div>
           <motion.div {...reveal}>
             <MagneticCard lift={8} tilt={2} className="rounded-2xl">
-              <div data-tone="slate">
+              <div data-tone="dashboard">
                 <DashboardReel lang={lang} />
               </div>
             </MagneticCard>
@@ -350,7 +392,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
 
         {/* Use cases — real workflows, not fake testimonials */}
         <section
-          data-tone="light"
+          data-tone="slate"
           className="relative z-10 border-y [border-color:var(--mk-border)] px-4 py-24 [background:var(--mk-surface)] sm:px-6 lg:px-8"
         >
           <div className="mx-auto max-w-7xl">
@@ -365,9 +407,9 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={viewport}
                   transition={{ duration: 0.4, delay: i * 0.08 }}
-                  className="rounded-xl border [border-color:var(--mk-border)] p-6 [box-shadow:var(--mk-card-shadow)] [background:var(--mk-bg)]"
+                  className="rounded-2xl border [border-color:var(--mk-border)] p-6 [box-shadow:var(--mk-card-shadow)] [background:var(--mk-bg)]"
                 >
-                  <p className="mb-3 text-xs font-semibold tracking-wider text-[var(--signal-blue)] uppercase">
+                  <p className="mb-3 text-xs font-semibold tracking-wider [color:var(--brand-text)] uppercase">
                     {s.role}
                   </p>
                   <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">{s.text}</p>
@@ -399,15 +441,15 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 return (
                   <StaggerItem key={item.step}>
                     <GlowCard
-                      className="h-full rounded-xl border [border-color:var(--mk-border)] p-6 transition-all duration-300 [background:var(--mk-bg)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-lg"
+                      className="h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-all duration-300 [background:var(--mk-bg)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-lg"
                       style={{ boxShadow: "var(--mk-card-shadow)" } as React.CSSProperties}
                     >
                       <div className="mb-4 flex items-center gap-3">
                         <span className="font-mono text-xs [color:var(--mk-text-subtle)]">
                           {item.step}
                         </span>
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--signal-blue)]/20 bg-[var(--signal-blue)]/10">
-                          {Icon && <Icon size={15} className="text-[var(--signal-blue)]" />}
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--brand-text)]/20 bg-[var(--brand-text)]/10">
+                          {Icon && <Icon size={15} className="[color:var(--brand-text)]" />}
                         </div>
                       </div>
                       <h3 className="mb-2 text-base font-semibold [color:var(--mk-text)]">
@@ -427,6 +469,9 @@ export default function LandingPage({ lang }: { lang: Lang }) {
         {/* Trust band — light section (the serious counterpoint, primes pricing) */}
         <TrustBand lang={lang} />
 
+        {/* Testimonials — social proof from real lawyers */}
+        <TestimonialsSection />
+
         {/* Pricing */}
         <section
           id="pricing"
@@ -442,6 +487,64 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                   {ui.seeFullPricing} <ArrowRight size={16} />
                 </Button>
               </Link>
+            </div>
+          </motion.div>
+        </section>
+
+        {/* Comparison table — Subsumio vs. other AI tools */}
+        <section data-tone="slate" className="relative z-10 px-4 py-24 sm:px-6 lg:px-8">
+          <motion.div {...reveal} className="mx-auto max-w-5xl">
+            <SectionHeading title={t.comparisonTitle} sub={t.comparisonSub} />
+            <div className="overflow-x-auto">
+              <table className="mt-10 w-full border-collapse text-sm">
+                <thead>
+                  <tr className="border-b border-[color:var(--mk-border)]">
+                    <th className="py-3 pr-4 text-left font-semibold text-[color:var(--mk-text)]">
+                      {lang === "en" ? "Feature" : "Feature"}
+                    </th>
+                    <th className="px-4 py-3 text-left font-semibold text-[color:var(--brand-text)]">
+                      Subsumio
+                    </th>
+                    <th className="py-3 pl-4 text-left font-semibold text-[color:var(--mk-text-subtle)]">
+                      {lang === "en" ? "Other AI tools" : "Andere KI-Tools"}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {t.comparison.map((row, i) => (
+                    <motion.tr
+                      key={row.feature}
+                      initial={{ opacity: 0, y: 10 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.3, delay: i * 0.05 }}
+                      className="border-b border-[color:var(--mk-border)] last:border-0"
+                    >
+                      <td className="py-4 pr-4 font-medium text-[color:var(--mk-text)]">
+                        {row.feature}
+                      </td>
+                      <td className="px-4 py-4 text-[color:var(--mk-text-muted)]">
+                        <span className="inline-flex items-start gap-2">
+                          <span
+                            className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[color:var(--signal-green)]"
+                            aria-hidden
+                          />
+                          {row.subsumio}
+                        </span>
+                      </td>
+                      <td className="py-4 pl-4 text-[color:var(--mk-text-subtle)]">
+                        <span className="inline-flex items-start gap-2">
+                          <span
+                            className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[color:var(--mk-text-subtle)] opacity-40"
+                            aria-hidden
+                          />
+                          {row.others}
+                        </span>
+                      </td>
+                    </motion.tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </motion.div>
         </section>
@@ -480,18 +583,31 @@ export default function LandingPage({ lang }: { lang: Lang }) {
           </MagneticButton>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs [color:var(--mk-text-subtle)]">
             <span className="inline-flex items-center gap-1.5">
-              <span className="h-1 w-1 rounded-full bg-emerald-500" />
+              <span className="h-1 w-1 rounded-full bg-[color:var(--signal-green)]" />
               {ui.noCreditCard}
             </span>
             <span className="inline-flex items-center gap-1.5">
-              <span className="h-1 w-1 rounded-full bg-emerald-500" />
+              <span className="h-1 w-1 rounded-full bg-[color:var(--signal-green)]" />
               {ui.gdprReady}
             </span>
             <span className="inline-flex items-center gap-1.5">
-              <span className="h-1 w-1 rounded-full bg-emerald-500" />
+              <span className="h-1 w-1 rounded-full bg-[color:var(--signal-green)]" />
               {ui.professionalSecrecy}
             </span>
           </div>
+          {t.relatedLinks && (
+            <nav className="mt-10 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm">
+              {t.relatedLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="text-[color:var(--mk-text-subtle)] underline decoration-[color:var(--mk-border)] underline-offset-4 transition-colors hover:text-[color:var(--mk-text)] hover:decoration-[color:var(--brand-text)]"
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </nav>
+          )}
         </motion.section>
       </div>
     </>

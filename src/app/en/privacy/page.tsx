@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { PrivacyContent } from "@/components/legal/legal-content";
 
 export const metadata: Metadata = {
+  robots: { index: false },
   title: "Privacy Policy",
   description:
     "How Subsumio handles data: GDPR compliance, encryption, EU data residency, and your rights.",

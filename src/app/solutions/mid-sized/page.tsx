@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { SolutionPage } from "@/components/marketing/solution-page";
 import { SOLUTIONS } from "@/content/solutions";
-import { JsonLd, organizationLd, breadcrumbLd } from "@/components/seo/jsonld";
+import { JsonLd, organizationLd, breadcrumbLd, serviceLd } from "@/components/seo/jsonld";
 
 const content = SOLUTIONS.de["mid-sized"];
 
@@ -24,6 +24,15 @@ export default function Page() {
   return (
     <>
       <JsonLd data={organizationLd()} />
+      <JsonLd
+        data={serviceLd({
+          name: content.metaTitle,
+          description: content.metaDesc,
+          url: "/solutions/mid-sized",
+          lang: "de",
+          audience: "Mittelständische Kanzleien",
+        })}
+      />
       <JsonLd
         data={breadcrumbLd([
           { name: "Subsumio", url: "/" },

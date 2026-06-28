@@ -3,12 +3,13 @@
 import { MessageSquareText, Search, FileText, Scale, ArrowUpRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
-import { DEFAULT_EXAMPLE_QUERIES } from "@/components/chat/chat-types";
+import { DEFAULT_EXAMPLE_QUERIES, DEFAULT_EXAMPLE_QUERIES_EN } from "@/components/chat/chat-types";
 
 interface ChatEmptyStateProps {
   onExampleClick: (query: string) => void;
   exampleQueries?: string[];
   contextLabel?: string;
+  userName?: string;
   className?: string;
 }
 
@@ -16,10 +17,12 @@ export function ChatEmptyState({
   onExampleClick,
   exampleQueries,
   contextLabel,
+  userName,
   className,
 }: ChatEmptyStateProps) {
-  const { t } = useLang();
-  const queries = exampleQueries ?? DEFAULT_EXAMPLE_QUERIES;
+  const { t, lang } = useLang();
+  const queries =
+    exampleQueries ?? (lang === "en" ? DEFAULT_EXAMPLE_QUERIES_EN : DEFAULT_EXAMPLE_QUERIES);
 
   const icons = [Search, Scale, FileText, Search];
 
@@ -34,10 +37,18 @@ export function ChatEmptyState({
         <MessageSquareText size={22} className="text-[color:var(--ds-text-muted)]" />
       </div>
       <h3 className="font-display text-lg font-semibold tracking-tight text-[color:var(--ds-text)]">
-        {t("chat.empty_title")}
+        {userName
+          ? lang === "en"
+            ? `Hello, ${userName}`
+            : `Guten Tag, ${userName}`
+          : t("chat.empty_title")}
       </h3>
       <p className="mt-1.5 max-w-sm text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
-        {t("chat.empty_desc")}
+        {userName
+          ? lang === "en"
+            ? "How can I help you today?"
+            : "Womit kann ich Ihnen heute helfen?"
+          : t("chat.empty_desc")}
         {contextLabel && (
           <>
             {" "}

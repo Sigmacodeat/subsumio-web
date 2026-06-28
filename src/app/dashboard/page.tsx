@@ -172,6 +172,7 @@ export default function DashboardPage() {
                   <Button
                     size="sm"
                     variant="glow"
+                    data-tour="quick-create"
                     onClick={() => window.dispatchEvent(new CustomEvent("subsumio:create-case"))}
                   >
                     <Briefcase size={14} /> {t("cockpit.action_case")}

@@ -114,25 +114,55 @@ Ohne Zahlen ist „Harvey-Qualität" eine Behauptung.
 - **Akzeptanz:** Ein Kommando produziert eine Zahlentabelle; Regressionen fallen
   im Diff auf.
 
-## Phase 5 — Observability der Pipeline
+## Phase 5 — Observability der Pipeline — TEILWEISE FERTIG
 
-- [ ] Metriken: Queue-Tiefe, Extraktions-Latenz p50/p95, Failure-Rate, OCR-Rate,
-      Dead-Letter-Anzahl.
-- [ ] Dead-Letter sichtbar + manuell neu-anstoßbar (analog `analysis-retry`).
-- [ ] Alarm/Log bei wachsender Queue oder steigender Failure-Rate.
-- **Akzeptanz:** Bei einem Extraktions-Stau ist Ursache in <5 min aus den
+Umgesetzt:
+
+- [x] Engine `GET /api/jobs/health` — Queue-Tiefe (waiting/active/stalled),
+      per-Typ failed/dead + avg_duration_ms, Wedge-Signal, DLQ-Zählungen
+      (post_upload_task erschöpft + Dokumente mit fehlgeschlagener
+      Extraktion/Analyse). Baut auf `MinionQueue.getStats()`.
+- [x] Web-Proxy `GET /api/admin/queue-health` (brain.read-gated, graceful bei
+      Engine-down).
+- [x] Monitoring-Panel „Pipeline & Dead-Letter" auf `/dashboard/monitoring/engine`.
+- [x] Alert-Cron `GET /api/cron/queue-alert` (alle 5 min) → Mail an
+      `QUEUE_ALERT_EMAIL` bei Dead-Letters / Wedge / Backlog / erschöpften Tasks.
+      Schwellwerte env-tunbar (`QUEUE_ALERT_*`).
+
+Offen:
+
+- [ ] Extraktions-Latenz **p50/p95** (heute nur avg_duration_ms pro Typ) + OCR-Rate.
+- [ ] DLQ aus dem Dashboard **manuell neu anstoßen** (heute nur Anzeige; Retry
+      läuft über die `*-retry`/drain-Crons).
+- [ ] Deploy-Verifikation: Alarm feuert real (Mail) + Panel zeigt Live-Zahlen.
+- **Akzeptanz:** Bei einem Extraktions-Stau ist die Ursache in <5 min aus den
   Metriken ablesbar.
 
 ## Phase 6 — Beweissichere Ablage und Disaster Recovery (P0)
 
-- [ ] Originale clientseitig oder per Storage-KMS mit tenantbezogenen Schlüsseln
-      verschlüsseln; Key-Rotation und Wiederherstellung testen. Eine vorhandene
-      App-Encryption-Variable ist kein Beweis für verschlüsselte Binärdateien.
+**Backup/Restore — umsetzungsfertiger Plan: [BACKUP-RESTORE-PLAN.md](BACKUP-RESTORE-PLAN.md)**
+(restic → verschlüsselter Offsite-Bucket, Retention, automatisierte
+Restore-Verifikation, RPO 24 h / RTO < 1 h, Infra-vs-Code-Trennung, Restore-Drill).
+Umsetzung sobald du Offsite-Bucket + Keys + restic-Passwort bereitstellst.
+
+- [x] **Code fertig + unit-getestet:** Originale at-rest verschlüsselt via
+      Envelope-Encryption (`src/core/file-encryption.ts`: per-File AES-256-GCM-DEK,
+      gewrappt von einem KEK; `EncryptedStorage`-Decorator um JEDES Backend, in
+      `createStorage` verdrahtet). Key-**Rotation** über key-id + retired-keys.
+      Rückwärtskompatibel (Legacy-Klartext bleibt lesbar), fail-closed bei
+      Fehlkonfiguration, presigned-Uploads deaktiviert (würden Klartext schreiben).
+      9 Krypto-Unit-Tests grün (Roundtrip, Rotation, Tamper, Decorator). Aktiv via
+      `SUBSUMIO_STORAGE_ENCRYPTION_KEY`. **Offen:** Key produktiv setzen + (optional)
+      Alt-Dateien per Hintergrund-Reencrypt nachziehen.
 - [ ] Versionierte, immutable Object-Storage-Retention/Object-Lock-Policy plus
       definierte Lösch-/Legal-Hold-Regeln einführen.
-- [ ] Automatisches verschlüsseltes Offsite-Backup für PostgreSQL **und**
-      Originalobjekte; Restore-Drill mindestens quartalsweise. Das Deploy-Backup
-      auf derselben VM ist nur ein Rollback-Punkt, kein Disaster-Recovery.
+- [x] **Code fertig (Deploy-Gate):** Automatisches verschlüsseltes Offsite-Backup
+      für PostgreSQL **und** Originalobjekte via restic — `backup`-Service in
+      `docker-compose.yml`, `backup/run.sh` (täglich), `backup/verify.sh`
+      (wöchentliche Restore-Verifikation in Wegwerf-DB), `backup/restore.sh`
+      (Runbook), `.env.example` + README. Credential-frei, inert bis `BACKUP_*`
+      gesetzt. **Offen:** du legst Hetzner-Object-Storage-Bucket + Keys +
+      restic-Passwort an, deployst, und führst den Restore-Drill einmal aus.
 - [ ] Hash-/Chain-of-custody-Ledger für Upload, Scan, Transformation, OCR und
       Export; periodischer Integritäts-Sweep.
 - **Akzeptanz:** Verlust der ganzen Hetzner-VM wird in einer isolierten Umgebung
@@ -156,8 +186,12 @@ Ohne Zahlen ist „Harvey-Qualität" eine Behauptung.
 
 - [ ] PST-Nachrichten als einzelne Dokumente mit stabilen IDs und Attachment-
       Beziehungen importieren, nicht nur als zusammengeführten Text.
-- [ ] Seiten-/Absatz-/Tabellen-/Slide-Provenienz als strukturierte Chunk-Metadaten
-      speichern. Separator-Zählen reicht für belastbare Gerichtszitate nicht.
+- [~] Seiten-/Absatz-/Tabellen-/Slide-Provenienz als strukturierte Chunk-Metadaten
+  speichern. **Kern fertig + unit-getestet:** `src/core/citation-provenance.ts`
+  (parst die `--- Page N ---`-Marker → Offset/Passage → Seite, 8 Tests grün).
+  Verdrahtung (Schema-Spalte → Chunker → Query-Op → UI-Badge) + Bounding-Box +
+  PDF-Viewer im umsetzungsfertigen Plan: [CITATION-PROVENANCE-PLAN.md](CITATION-PROVENANCE-PLAN.md).
+  Engine-Parity-kritisch → Stufe A vor Live gegen echte Engine verifizieren.
 - [ ] OCR-Resultate um Bounding Boxes, Confidence und Seitenrotation ergänzen;
       fehlgeschlagene Einzel-Seiten gezielt erneut verarbeiten.
 - [ ] Review-Layer für `partial`/niedrige OCR-Confidence und passwortgeschützte

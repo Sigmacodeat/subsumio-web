@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import PricingPage from "@/components/marketing/pricing-page";
-import { JsonLd, softwareApplicationLd } from "@/components/seo/jsonld";
+import { JsonLd, softwareApplicationLd, breadcrumbLd } from "@/components/seo/jsonld";
 import { PRICING } from "@/content/site";
 
 export const metadata: Metadata = {
-  title: "Subsumio Preise — KI-Kanzleisoftware ab 890 €/Nutzer/Mon. | Kein Lock-in",
+  title: "Subsumio Preise — KI-Kanzleisoftware ab 890 €/Nutzer",
   description:
     "Transparente Preise pro Nutzer für KI-Kanzleisoftware. Gehostete Pläne ab 890 €/Nutzer/Mon. jährlich — EU-Cloud oder On-Premise, 14 Tage volle Testversion, keine Überraschungsrechnung, kein Lock-in. DATEV-Export, Kollisionsprüfung, Fristenkontrolle inklusive.",
   alternates: {
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: "Subsumio Preise — KI-Kanzleisoftware ab 890 €/Nutzer/Mon. | Kein Lock-in",
+    title: "Subsumio Preise — KI-Kanzleisoftware ab 890 €/Nutzer",
     description:
       "Transparente Preise pro Nutzer für KI-Kanzleisoftware. Gehostete Pläne ab 890 €/Nutzer/Mon. — EU-Cloud oder On-Premise, 14 Tage volle Testversion, keine Überraschungsrechnung.",
     url: "/de/pricing",
@@ -54,6 +54,12 @@ export default function Page() {
             },
           ],
         }}
+      />
+      <JsonLd
+        data={breadcrumbLd([
+          { name: "Subsumio", url: "/de" },
+          { name: "Preise", url: "/de/pricing" },
+        ])}
       />
       <PricingPage lang="de" />
     </>

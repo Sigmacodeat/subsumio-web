@@ -37,9 +37,12 @@ const COPY = {
       switchCta: "Sign in",
     },
     email: "Email",
+    emailPlaceholder: "kanzlei@beispiel.at",
     password: "Password",
     passwordHint: "At least 8 characters",
+    passwordPlaceholder: "••••••••",
     name: "Name",
+    namePlaceholder: "Dr. Anna Müller",
     errors: {
       invalid_credentials: "Email or password is incorrect.",
       email_taken: "An account with this email already exists.",
@@ -67,9 +70,12 @@ const COPY = {
       switchCta: "Anmelden",
     },
     email: "E-Mail",
+    emailPlaceholder: "kanzlei@beispiel.at",
     password: "Passwort",
     passwordHint: "Mindestens 8 Zeichen",
+    passwordPlaceholder: "••••••••",
     name: "Name",
+    namePlaceholder: "Dr. Anna Müller",
     errors: {
       invalid_credentials: "E-Mail oder Passwort ist falsch.",
       email_taken: "Ein Konto mit dieser E-Mail existiert bereits.",
@@ -204,6 +210,7 @@ function AuthFormInner({ mode, lang }: { mode: "login" | "signup"; lang: Lang })
                     name="name"
                     autoComplete="name"
                     required
+                    placeholder={t.namePlaceholder}
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     className="focus:brand-border/60 w-full rounded-lg border [border-color:var(--mk-border)] py-2.5 pr-3 pl-9 text-sm [color:var(--mk-text)] [background:var(--mk-surface-2)] placeholder:text-[color:var(--mk-text-subtle)] focus:outline-none"
@@ -226,6 +233,7 @@ function AuthFormInner({ mode, lang }: { mode: "login" | "signup"; lang: Lang })
                   name="email"
                   autoComplete="email"
                   required
+                  placeholder={t.emailPlaceholder}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full rounded-lg border [border-color:var(--mk-border)] py-2.5 pr-3 pl-9 text-sm [color:var(--mk-text)] [background:var(--mk-surface-2)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-[var(--brand-primary)] focus:outline-none"
@@ -248,6 +256,7 @@ function AuthFormInner({ mode, lang }: { mode: "login" | "signup"; lang: Lang })
                   autoComplete={mode === "signup" ? "new-password" : "current-password"}
                   required
                   minLength={8}
+                  placeholder={t.passwordPlaceholder}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full rounded-lg border [border-color:var(--mk-border)] py-2.5 pr-3 pl-9 text-sm [color:var(--mk-text)] [background:var(--mk-surface-2)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-[var(--brand-primary)] focus:outline-none"

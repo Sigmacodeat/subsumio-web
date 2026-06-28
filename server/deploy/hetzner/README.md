@@ -62,11 +62,40 @@ curl https://api.subsum.io/health             # → 200
 ## Day-2
 
 - Update: `git pull && docker compose up -d --build`
-- Backups: `docker compose exec db pg_dump -U subsumio subsumio > backup.sql` (cron it)
 - Logs: `docker compose logs -f web engine`
 - The engine auto-applies schema migrations on every boot (idempotent).
 - ClamAV is reachable only on the private Compose network. Virus signatures persist in
   `clamav-data`; no scanner port is published on the host.
+
+## Backup & disaster recovery
+
+Encrypted offsite backups run in the `backup` service (restic). Full design +
+RPO/RTO in [`docs/BACKUP-RESTORE-PLAN.md`](../../../docs/BACKUP-RESTORE-PLAN.md).
+
+**Enable:** create a Hetzner Object Storage bucket (a _different_ location than
+this VM; turn on versioning/object-lock), then set `BACKUP_*` in `.env` (see
+`.env.example`). Generate the repo password with `openssl rand -base64 48` and
+**store it offline** — without it the backups can't be decrypted.
+
+- Daily 01:00 UTC: `backup/run.sh` — `pg_dump` + original files → encrypted restic
+  snapshot, retention (7d/4w/6m), integrity check.
+- Weekly Sun 03:00 UTC: `backup/verify.sh` — restores the latest snapshot into a
+  throwaway DB and asserts it's non-empty (proves backups are _restorable_).
+  Emails `QUEUE_ALERT_EMAIL` on failure.
+- First run: `docker compose up -d backup` then `docker compose logs -f backup`
+  and confirm `restic snapshots` lists a snapshot.
+- **Restore drill (do this once):**
+  ```sh
+  docker compose run --rm \
+    -e TARGET_DATABASE_URL='postgres://subsumio:PASS@db:5432/subsumio_staging' \
+    backup /backup/restore.sh        # add a snapshot id to pin a point in time
+  ```
+  Restore into a _staging_ DB first, verify login + open a client document,
+  measure RTO. Never restore blind over the live DB.
+
+**Storage Box (SFTP) instead of Object Storage:** mount an SSH key into the
+`backup` service and add the host to `known_hosts`, then use the
+`sftp:u123456@…your-storagebox.de:/restic` repo form from `.env.example`.
 
 ## Large uploads
 

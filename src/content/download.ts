@@ -75,9 +75,9 @@ const _deDownload: DownloadContent = {
       ],
     },
   ],
-  storesTitle: "App Store & Google Play",
+  storesTitle: "App Store & Google Play (Beta)",
   storesSub:
-    "Native Apps sind in Vorbereitung — auf derselben Codebase via Capacitor, mit Push-Benachrichtigungen, biometrischer Entsperrung und einer „An Subsumio senden“-Share-Extension.",
+    "Native Apps sind in Vorbereitung — auf derselben Codebase via Capacitor, mit Push-Benachrichtigungen, biometrischer Entsperrung und einer „An Subsumio senden“-Share-Extension. Aktuell Beta — Store-Verfügbarkeit folgt auf den Cloud-Launch.",
   storesNote:
     "Die Store-Verfügbarkeit folgt auf den Cloud-Launch (Apple verlangt für das Review einen vollständigen Account-Flow). Installiere heute die Web-App oben — es ist dasselbe Produkt, dein Konto zieht mit um.",
   faqTitle: "Fragen zur Installation",
@@ -154,9 +154,9 @@ export const DOWNLOAD: Record<Lang, DownloadContent> = {
         ],
       },
     ],
-    storesTitle: "App Store & Google Play",
+    storesTitle: "App Store & Google Play (Beta)",
     storesSub:
-      "Native apps are in preparation — built on the same codebase via Capacitor, with push notifications, biometric unlock and a “Send to Subsumio” share extension.",
+      "Native apps are in preparation — built on the same codebase via Capacitor, with push notifications, biometric unlock and a “Send to Subsumio” share extension. Currently in beta — store availability follows the hosted-cloud launch.",
     storesNote:
       "Store availability follows the hosted-cloud launch (Apple requires a full account flow for review). Install the web app above today — it's the same product, and your account carries over.",
     faqTitle: "Install questions",

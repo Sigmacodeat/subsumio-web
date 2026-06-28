@@ -5,6 +5,7 @@ const BASE = process.env.NEXT_PUBLIC_SITE_URL || "https://subsum.eu";
 // Every public marketing route, EN + DE + AT + CH, with hreflang alternates.
 const PAGES = [
   "",
+  "/de",
   "/features",
   "/pricing",
   "/security",
@@ -19,6 +20,12 @@ const PAGES = [
   "/solutions/solo",
   "/solutions/in-house",
   "/solutions/mid-sized",
+  "/benchmark-methodology",
+  "/blog",
+  "/cities",
+  "/cities/wien",
+  "/cities/berlin",
+  "/cities/zuerich",
 ];
 
 // hreflang locale codes for each route prefix
@@ -34,6 +41,22 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const entries: MetadataRoute.Sitemap = [];
 
   for (const page of PAGES) {
+    // /de is the DE landing page — only one URL, no locale prefix variants
+    if (page === "/de") {
+      const deAlternates: Record<string, string> = {};
+      for (const loc of LOCALES) {
+        deAlternates[loc.lang] = loc.lang === "de-DE" ? `${BASE}/` : `${BASE}${loc.prefix}`;
+      }
+      entries.push({
+        url: `${BASE}/de`,
+        lastModified: now,
+        changeFrequency: "weekly",
+        priority: 0.8,
+        alternates: { languages: deAlternates },
+      });
+      continue;
+    }
+
     const base = page === "" ? "/" : page;
 
     // Build hreflang alternates for all locales

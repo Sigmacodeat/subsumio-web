@@ -1,0 +1,8 @@
+# Subsumio offsite-backup schedule — run by supercronic inside the `backup`
+# container (which has restic + postgresql-client). Times are UTC.
+
+# ── 01:00 UTC — Daily encrypted offsite backup (pg_dump + files → restic) ──
+0 1 * * *      sh /backup/run.sh
+
+# ── 03:00 UTC Sundays — Restore verification (restore latest into a throwaway DB) ──
+0 3 * * 0      sh /backup/verify.sh

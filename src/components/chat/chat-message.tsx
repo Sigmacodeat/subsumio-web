@@ -19,7 +19,12 @@ import { renderMarkdown } from "@/lib/markdown";
 import { useLang } from "@/lib/use-lang";
 import { AIBadge, GroundingStatus } from "@/components/legal/CitationLink";
 import { CitationBadgesInline } from "@/components/legal/CitationPanel";
-import { GAP_ICONS, GAP_LABELS, type ChatMessage } from "@/components/chat/chat-types";
+import {
+  GAP_ICONS,
+  GAP_LABELS,
+  GAP_LABELS_EN,
+  type ChatMessage,
+} from "@/components/chat/chat-types";
 import { ToolCallBubble } from "@/components/chat/tool-call-bubble";
 
 interface ChatMessageBubbleProps {
@@ -210,7 +215,8 @@ function ChatMessageBubbleInner({
                   {message.gaps!.map((gap, i) => {
                     const gapType = parseGapType(gap);
                     const icon = gapType ? GAP_ICONS[gapType] : "⚠";
-                    const label = gapType ? GAP_LABELS[gapType] : null;
+                    const labels = lang === "en" ? GAP_LABELS_EN : GAP_LABELS;
+                    const label = gapType ? labels[gapType] : null;
                     return (
                       <li
                         key={i}

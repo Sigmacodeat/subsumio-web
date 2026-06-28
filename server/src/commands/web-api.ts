@@ -2147,6 +2147,62 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
   // Subsumio R3: resolve document-level ACL groups for every /api request.
   app.use("/api", aclGroupsMiddleware(engine));
 
+  // Observability + DLQ surface for the ingestion/agent pipeline. Returns the
+  // minion-queue stats (depth, per-type failed/dead, wedge signal) plus the
+  // outbox dead-letter signals (post_upload_task exhausted + docs whose
+  // extraction/analysis terminally failed). Consumed by the web monitoring
+  // panel and the queue-alert cron. Brain-global; admin/ops view only.
+  app.get("/api/jobs/health", async (_req: Request, res: Response) => {
+    try {
+      const { MinionQueue } = await import("../core/minions/queue.ts");
+      const queue = new MinionQueue(engine);
+      const stats = await queue.getStats();
+
+      // Outbox DLQ counts (pages, not minion_jobs). Guarded: a JSONB-shape
+      // difference must degrade to null, never 500 the whole health endpoint.
+      let outbox_exhausted: number | null = null;
+      let docs_failed: number | null = null;
+      try {
+        const [row] = await engine.executeRaw<{ n: string }>(
+          `SELECT count(*)::text AS n FROM pages
+             WHERE type = 'post_upload_task' AND deleted_at IS NULL
+               AND frontmatter->>'status' = 'exhausted'`
+        );
+        outbox_exhausted = row ? parseInt(row.n, 10) : 0;
+      } catch (e) {
+        console.error(
+          "[jobs/health] outbox_exhausted query failed:",
+          e instanceof Error ? e.message : String(e)
+        );
+      }
+      try {
+        const [row] = await engine.executeRaw<{ n: string }>(
+          `SELECT count(*)::text AS n FROM pages
+             WHERE deleted_at IS NULL
+               AND (frontmatter->>'extraction_status' = 'failed'
+                    OR frontmatter->>'analysis_status' IN ('failed','permanently_failed'))`
+        );
+        docs_failed = row ? parseInt(row.n, 10) : 0;
+      } catch (e) {
+        console.error(
+          "[jobs/health] docs_failed query failed:",
+          e instanceof Error ? e.message : String(e)
+        );
+      }
+
+      res.json({
+        ...stats,
+        dead_letter: { outbox_exhausted, docs_failed },
+        generated_at: new Date().toISOString(),
+      });
+    } catch (e) {
+      res.status(500).json({
+        error: "jobs_health_failed",
+        message: e instanceof Error ? e.message : String(e),
+      });
+    }
+  });
+
   app.get("/api/stats", async (req: Request, res: Response) => {
     try {
       const sourceId = requestSourceId(req);

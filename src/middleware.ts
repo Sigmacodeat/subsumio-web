@@ -201,27 +201,54 @@ export async function middleware(req: NextRequest) {
     return applyCsp(NextResponse.redirect(dashboard));
   }
 
+  // --- Canonical domain: redirect /de/ and /de to / (DE is default, no prefix) ---
+  // Prevents duplicate content between /de/* and /* for SEO.
+  if (pathname === "/de" || pathname.startsWith("/de/")) {
+    const canonical = req.nextUrl.clone();
+    canonical.pathname = pathname === "/de" ? "/" : pathname.slice(3); // strip "/de"
+    return applyCsp(NextResponse.redirect(canonical, { status: 301 }));
+  }
+
   // --- Browser language detection: redirect non-German speakers to /en ---
   // Only on the root path, only for GET requests.
   // Skipped when the user has explicitly set a language preference (sb_lang cookie).
+  // Googlebot and other crawlers typically send no Accept-Language or "*",
+  // so they get DE content at root (SEO primary = DE for DACH market).
   if (pathname === "/" && method === "GET") {
     const langPref = req.cookies.get(LANG_PREF_COOKIE)?.value;
     if (langPref !== "de") {
       const acceptLang = req.headers.get("accept-language") ?? "";
-      // Primary language tag only (before first comma), strip quality weight
-      const primaryLang = acceptLang.split(",")[0]?.split(";")[0]?.trim().toLowerCase() ?? "";
-      const isGerman =
-        primaryLang === "de" ||
-        primaryLang.startsWith("de-") ||
-        // Fallback: any de-* among top languages (handles de,en-US;q=0.9)
-        acceptLang
-          .split(",")
-          .slice(0, 3)
-          .some((s) => s.trim().toLowerCase().startsWith("de"));
-      if (!isGerman) {
-        const enUrl = req.nextUrl.clone();
-        enUrl.pathname = "/en";
-        return applyCsp(NextResponse.redirect(enUrl, { status: 302 }));
+      // No Accept-Language or wildcard → serve DE (SEO primary)
+      if (!acceptLang || acceptLang.trim() === "*") {
+        // Fall through — serve DE content at root
+      } else {
+        const primaryLang = acceptLang.split(",")[0]?.split(";")[0]?.trim().toLowerCase() ?? "";
+        const isGerman =
+          primaryLang === "de" ||
+          primaryLang.startsWith("de-") ||
+          // Fallback: any de-* among top languages (handles de,en-US;q=0.9)
+          acceptLang
+            .split(",")
+            .slice(0, 3)
+            .some((s) => s.trim().toLowerCase().startsWith("de"));
+        if (!isGerman) {
+          const enUrl = req.nextUrl.clone();
+          enUrl.pathname = "/en";
+          return applyCsp(NextResponse.redirect(enUrl, { status: 302 }));
+        }
+        // Redirect Austrian and Swiss German speakers to their locale
+        if (langPref !== "at" && langPref !== "ch") {
+          if (primaryLang === "de-at" || primaryLang.startsWith("de-at")) {
+            const atUrl = req.nextUrl.clone();
+            atUrl.pathname = "/at";
+            return applyCsp(NextResponse.redirect(atUrl, { status: 302 }));
+          }
+          if (primaryLang === "de-ch" || primaryLang.startsWith("de-ch")) {
+            const chUrl = req.nextUrl.clone();
+            chUrl.pathname = "/ch";
+            return applyCsp(NextResponse.redirect(chUrl, { status: 302 }));
+          }
+        }
       }
     }
   }

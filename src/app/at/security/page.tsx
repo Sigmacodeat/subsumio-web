@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import SecurityPage from "@/components/marketing/security-page";
 import { SECURITY } from "@/content/security";
-import { JsonLd, faqPageLd } from "@/components/seo/jsonld";
+import { JsonLd, organizationLd, faqPageLd, breadcrumbLd } from "@/components/seo/jsonld";
 
 export const metadata: Metadata = {
   title: SECURITY.at.metaTitle,
@@ -26,7 +26,14 @@ export const metadata: Metadata = {
 export default function Page() {
   return (
     <>
+      <JsonLd data={organizationLd()} />
       <JsonLd data={faqPageLd(SECURITY.at.faq)} />
+      <JsonLd
+        data={breadcrumbLd([
+          { name: "Subsumio", url: "/at" },
+          { name: "Sicherheit", url: "/at/security" },
+        ])}
+      />
       <SecurityPage lang="at" />
     </>
   );

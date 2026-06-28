@@ -630,6 +630,63 @@ export const api = {
         return request(`/api/legal/playbooks/${path}`, { method: "DELETE" });
       },
     },
+
+    templates: {
+      list(options?: {
+        limit?: number;
+        category?: string;
+        jurisdiction?: string;
+      }): Promise<BrainPage[]> {
+        const params = new URLSearchParams();
+        if (options?.limit) params.set("limit", String(options.limit));
+        if (options?.category) params.set("category", options.category);
+        if (options?.jurisdiction) params.set("jurisdiction", options.jurisdiction);
+        const qs = params.toString();
+        return request(`/api/legal/templates${qs ? `?${qs}` : ""}`);
+      },
+
+      get(slug: string): Promise<BrainPage> {
+        const path = slug.split("/").map(encodeURIComponent).join("/");
+        return request(`/api/legal/templates/${path}`);
+      },
+
+      create(input: {
+        title: string;
+        category: string;
+        jurisdiction: string;
+        description?: string;
+        body: string;
+        variables?: Array<{ key: string; label: string; required: boolean }>;
+      }): Promise<{ slug: string }> {
+        return request("/api/legal/templates", {
+          method: "POST",
+          body: JSON.stringify(input),
+        });
+      },
+
+      update(
+        slug: string,
+        input: {
+          title?: string;
+          category?: string;
+          jurisdiction?: string;
+          description?: string;
+          body?: string;
+          variables?: Array<{ key: string; label: string; required: boolean }>;
+        }
+      ): Promise<{ slug: string; success: boolean }> {
+        const path = slug.split("/").map(encodeURIComponent).join("/");
+        return request(`/api/legal/templates/${path}`, {
+          method: "PATCH",
+          body: JSON.stringify(input),
+        });
+      },
+
+      delete(slug: string): Promise<{ ok: boolean }> {
+        const path = slug.split("/").map(encodeURIComponent).join("/");
+        return request(`/api/legal/templates/${path}`, { method: "DELETE" });
+      },
+    },
   },
 
   whatsapp: {

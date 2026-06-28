@@ -817,10 +817,33 @@ export function makeSubagentHandler(deps: SubagentDeps) {
             tool_name: toolName,
             ms_elapsed: Date.now() - toolStart,
           });
+
+          // GAP-04: Iterative Agentic Search — if brain_search returned
+          // sparse results, append a refinement hint to encourage the LLM
+          // to try alternative terms in the next turn.
+          let resultContent = asStringIfNotObject(output);
+          if (
+            toolName === "brain_search" &&
+            typeof output === "object" &&
+            output !== null &&
+            !Array.isArray(output) &&
+            "result_count" in output
+          ) {
+            const count = (output as { result_count?: number }).result_count;
+            if (typeof count === "number" && count < 3) {
+              const related = (output as { related_concepts?: string[] }).related_concepts;
+              const hint =
+                related && related.length > 0
+                  ? `\n\n[HINT] Only ${count} results found. Consider refining your search using these related terms: ${related.join(", ")}. You can also try synonyms, alternative legal terminology, or English keywords.`
+                  : `\n\n[HINT] Only ${count} results found. Consider refining your search with synonyms, alternative legal terminology, or English keywords.`;
+              resultContent = resultContent + hint;
+            }
+          }
+
           toolResults.push({
             type: "tool_result",
             tool_use_id: use.id,
-            content: asStringIfNotObject(output),
+            content: resultContent,
           } as ContentBlock);
         } catch (e) {
           const errText = e instanceof Error ? (e.stack ?? e.message) : String(e);

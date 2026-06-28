@@ -1,0 +1,40 @@
+{
+  "ci": {
+    "collect": {
+      "url": [
+        "http://localhost:3000/",
+        "http://localhost:3000/pricing",
+        "http://localhost:3000/features",
+        "http://localhost:3000/security",
+        "http://localhost:3000/blog",
+        "http://localhost:3000/solutions/law-firms",
+        "http://localhost:3000/benchmark-methodology",
+        "http://localhost:3000/docs",
+        "http://localhost:3000/cities",
+        "http://localhost:3000/cities/wien"
+      ],
+      "numberOfRuns": 1,
+      "startServerCommand": "bun run start",
+      "startServerReadyPattern": "Ready in|started server|Local:",
+      "startServerReadyTimeout": 30000
+    },
+    "assert": {
+      "assertions": {
+        "categories:performance": ["warn", { "minScore": 0.85 }],
+        "categories:seo": ["error", { "minScore": 0.95 }],
+        "categories:accessibility": ["warn", { "minScore": 0.9 }],
+        "categories:best-practices": ["warn", { "minScore": 0.9 }],
+        "largest-contentful-paint": ["warn", { "maxNumericValue": 2500 }],
+        "cumulative-layout-shift": ["warn", { "maxNumericValue": 0.1 }],
+        "total-blocking-time": ["warn", { "maxNumericValue": 300 }],
+        "first-contentful-paint": ["warn", { "maxNumericValue": 2000 }],
+        "uses-responsive-images": "off",
+        "csp-xss": "off"
+      }
+    },
+    "upload": {
+      "target": "temporary-public-storage",
+      "reportFilenamePattern": "lighthouse-%%PATHNAME%%-%%DATETIME%%-report"
+    }
+  }
+}

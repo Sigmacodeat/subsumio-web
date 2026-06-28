@@ -54,6 +54,78 @@ import {
   GET_SKILL_DESCRIPTION,
 } from "./operations-descriptions.ts";
 
+// --- Iterative Agentic Search helpers (GAP-04) ---
+
+/**
+ * Derive alternative search terms from the original query and result titles.
+ * Helps the LLM refine its search when initial results are sparse.
+ * Returns up to 8 related concepts extracted from result titles + query tokens.
+ */
+function deriveRelatedConcepts(query: string, results: SearchResult[]): string[] {
+  const concepts = new Set<string>();
+
+  // Extract significant tokens from the query itself (skip stopwords)
+  const queryTokens = query
+    .toLowerCase()
+    .split(/[\s,.;:!?()[\]{}"'\/\\]+/)
+    .filter((t) => t.length > 2 && !STOPWORDS.has(t));
+  for (const token of queryTokens) concepts.add(token);
+
+  // Extract significant tokens from result titles
+  for (const r of results.slice(0, 10)) {
+    const title = (r.title ?? r.slug ?? "").toLowerCase();
+    const tokens = title
+      .split(/[\s,.;:!?()[\]{}"'\/\\-]+/)
+      .filter((t) => t.length > 2 && !STOPWORDS.has(t));
+    for (const token of tokens) {
+      if (!queryTokens.includes(token)) {
+        concepts.add(token);
+      }
+    }
+  }
+
+  return [...concepts].slice(0, 8);
+}
+
+const STOPWORDS = new Set([
+  "der",
+  "die",
+  "das",
+  "ein",
+  "eine",
+  "und",
+  "oder",
+  "aber",
+  "nicht",
+  "ist",
+  "sind",
+  "war",
+  "waren",
+  "sein",
+  "mit",
+  "von",
+  "zu",
+  "auf",
+  "the",
+  "and",
+  "or",
+  "but",
+  "not",
+  "for",
+  "with",
+  "from",
+  "that",
+  "this",
+  "was",
+  "were",
+  "are",
+  "have",
+  "has",
+  "had",
+  "will",
+  "would",
+]);
+
 // --- Types ---
 
 /**
@@ -1739,6 +1811,11 @@ const search: Operation = {
       type: "string",
       description: "Search mode (conservative|balanced|tokenmax). Local callers only.",
     },
+    refine_query: {
+      type: "boolean",
+      description:
+        "When true, the response includes 'related_concepts' — alternative search terms the caller can use for a follow-up search iteration. Use when initial results are sparse.",
+    },
   },
   handler: async (ctx, p) => {
     const startedAt = Date.now();
@@ -1756,6 +1833,7 @@ const search: Operation = {
     // hybrid `search` contract (privacy/cost: no query text to an embedding
     // provider). Defaults to cheap-hybrid (D4/D15).
     const keywordOnly = (await ctx.engine.getConfig("search.mcp_keyword_only")) === "true";
+    const wantRefine = p.refine_query === true;
 
     if (keywordOnly) {
       const raw = await ctx.engine.searchKeyword(queryText, { limit, offset, ...scope });
@@ -1773,7 +1851,19 @@ const search: Operation = {
       // Subsumio P0-SECR-002: Filter by verified matter scope
       const scoped = matterScopeFilter(results, ctx);
       // Subsumio R3: Filter by document-level ACLs
-      return aclFilter(scoped, ctx);
+      const finalResults = await aclFilter(scoped, ctx);
+      if (wantRefine) {
+        return {
+          results: finalResults,
+          related_concepts: deriveRelatedConcepts(queryText, finalResults),
+          result_count: finalResults.length,
+          hint:
+            finalResults.length < 3
+              ? "Few results — try refining your query with synonyms, alternative legal terms, or English keywords."
+              : undefined,
+        };
+      }
+      return finalResults;
     }
 
     // Cheap-hybrid (D4/D15): full vector+keyword+RRF+pool+title+alias, but
@@ -1798,7 +1888,19 @@ const search: Operation = {
     // Subsumio P0-SECR-002: Filter by verified matter scope
     const scoped = matterScopeFilter(results, ctx);
     // Subsumio R3: Filter by document-level ACLs
-    return aclFilter(scoped, ctx);
+    const finalResults = await aclFilter(scoped, ctx);
+    if (wantRefine) {
+      return {
+        results: finalResults,
+        related_concepts: deriveRelatedConcepts(queryText, finalResults),
+        result_count: finalResults.length,
+        hint:
+          finalResults.length < 3
+            ? "Few results — try refining your query with synonyms, alternative legal terms, or English keywords."
+            : undefined,
+      };
+    }
+    return finalResults;
   },
   scope: "read",
   cliHints: { name: "search", positional: ["query"] },

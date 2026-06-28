@@ -80,10 +80,12 @@ export default function PricingPage({ lang }: { lang: Lang }) {
                 className="rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
               >
                 <GlowCard className="h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-colors [background:var(--mk-surface)] hover:[border-color:var(--mk-border-strong)]">
-                  <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl border border-emerald-500/20 bg-emerald-500/10 transition-transform duration-300 hover:scale-110">
+                  <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl border [border-color:var(--signal-green-border)] transition-transform duration-300 [background:var(--signal-green-bg)] hover:scale-110">
                     <Check size={18} className="[color:var(--signal-green)]" />
                   </div>
-                  <h3 className="mb-2 text-base font-bold [color:var(--mk-text)]">{prop.title}</h3>
+                  <h3 className="mb-2 text-base font-semibold [color:var(--mk-text)]">
+                    {prop.title}
+                  </h3>
                   <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">
                     {prop.desc}
                   </p>

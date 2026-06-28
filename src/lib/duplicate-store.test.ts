@@ -10,17 +10,19 @@ function createFakeFetch(pages: Record<string, PageResponse>) {
   ) => {
     const urlObj = new URL(url, "http://localhost");
     const path = urlObj.pathname;
-    const match = path.match(/\/api\/pages\/(.+)$/);
-    if (!match) return new Response(JSON.stringify({ error: "not found" }), { status: 404 });
-    const slug = decodeURIComponent(match[1]!);
-    if (init?.method === "POST") {
-      const body = JSON.parse(init.body ?? "{}") as { content?: string };
+    // Handle POST to /api/pages (create/update page — used by record())
+    if (init?.method === "POST" && path === "/api/pages") {
+      const body = JSON.parse(init.body ?? "{}") as { slug?: string; content?: string };
+      const slug = body.slug ?? "";
       const content = body.content ?? "";
       const originalSlug = content.match(/original_slug: "([^"]+)"/)?.[1];
       const originalName = content.match(/original_name: "([^"]+)"/)?.[1];
       pages[slug] = { frontmatter: { original_slug: originalSlug, original_name: originalName } };
       return new Response(JSON.stringify({ success: true }), { status: 200 });
     }
+    const match = path.match(/\/api\/pages\/(.+)$/);
+    if (!match) return new Response(JSON.stringify({ error: "not found" }), { status: 404 });
+    const slug = decodeURIComponent(match[1]!);
     const page = pages[slug];
     if (!page) return new Response(JSON.stringify({ error: "not found" }), { status: 404 });
     return new Response(JSON.stringify(page), { status: 200 });

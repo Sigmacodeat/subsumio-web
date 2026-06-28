@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 import { useLang } from "@/lib/use-lang";
 import { motion, useDashboardMotion } from "@/components/dashboard/motion";
-import { CHAT_TEMPLATES, type ChatTemplate } from "@/components/chat/chat-types";
+import { CHAT_TEMPLATES, CHAT_TEMPLATES_EN, type ChatTemplate } from "@/components/chat/chat-types";
 import { ModelSelector } from "@/components/dashboard/model-selector";
 import { QUERY_MODE_LABELS, type QueryMode } from "@/lib/matter-context-types";
 import { UPLOAD_ACCEPT_ATTRIBUTE } from "@/lib/upload-formats";
@@ -65,6 +65,7 @@ export function ChatInput({
   const modeRef = useRef<HTMLDivElement>(null);
   const { t, lang } = useLang();
   const { popoverTransition, popoverInitial, popoverAnimate, popoverExit } = useDashboardMotion();
+  const templates = lang === "en" ? CHAT_TEMPLATES_EN : CHAT_TEMPLATES;
 
   const charCount = text.length;
   const nearLimit = charCount > 45_000;
@@ -317,7 +318,7 @@ export function ChatInput({
                     {t("chat.input.templates")}
                   </div>
                   <div className="max-h-64 overflow-y-auto p-1">
-                    {CHAT_TEMPLATES.map((tpl: ChatTemplate) => (
+                    {templates.map((tpl: ChatTemplate) => (
                       <button
                         key={tpl.id}
                         onClick={() => {

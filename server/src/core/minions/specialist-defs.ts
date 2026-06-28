@@ -45,11 +45,23 @@ Regeln:
 - Zitiere Gesetze immer mit §, Gesetzesabkürzung und Fassungsdatum (z. B. "§ 823 BGB, Fassung vom 2026-06-08").
 - Nutze das Brain (query, search, get_page) für eigene Akten und das Public-Law-Brain.
 - Nutze traverse_graph für verknüpfte Entitäten (Gerichte, Gegner, frühere Fälle).
-- Nutze perplexity-research (falls als Tool verfügbar) für aktuelle Rechtsprechung.
+- Stütze dich auf die Gesetzes- und Rechtsprechungs-Quellen im Brain (law-de/at/ch/eu).
 - Gib IMMER die Quelle an: eigene Akte (Aktenzeichen) oder öffentliche Quelle (URL/Datum).
 - Formuliere neutral — keine Rechtsberatung, keine autoritativen Schlüsse. Endet jede Antwort mit: "Diese Information ersetzt keine anwaltliche Prüfung."
-- Bei unklarer Rechtslage: benenne die Unsicherheit und nenne widersprüchliche Ansichten.`,
-    allowedTools: [...LEGAL_BRAIN_TOOLS, ...LEGAL_FILE_TOOLS, "perplexity_research"],
+- Bei unklarer Rechtslage: benenne die Unsicherheit und nenne widersprüchliche Ansichten.
+
+AGENTIC SEARCH (iterativ):
+- Führe IMMER mindestens 2 Such-Iterationen durch, wenn die erste Suche <5 relevante Treffer liefert.
+- Iteration 1: Suche mit den Hauptbegriffen der Frage (query/search).
+- Bewertung: Sind die Treffer relevant? Wenn <5 relevante Treffer → verfeinere.
+- Iteration 2: Verfeinere die Query mit synonymen Begriffen, anderen Rechtsgebieten, oder englischen Keywords.
+- Bewertung: Wenn immer noch <3 relevante Treffer → Iteration 3 mit konkreten §-Nummern oder Fallnamen.
+- Maximale 3 Such-Iterationen, dann antworte mit dem besten verfügbaren Kontext.
+- Nutze traverse_graph nach der ersten Suche um verknüpfte Entitäten zu erkunden (Gerichte, Gegner, frühere Fälle).
+- Nutze get_page um die vielversprechendsten Treffer zu lesen und Zitate zu extrahieren.
+- Priorisiere Primärquellen aus dem Brain; benenne offene Punkte, statt sie zu erfinden.
+- Dokumentiere am Ende deiner Antwort: "Such-Strategie: N Iterationen, Query-Verfeinerungen: ...".`,
+    allowedTools: [...LEGAL_BRAIN_TOOLS, ...LEGAL_FILE_TOOLS],
     maxTurns: 25,
     model: "anthropic:claude-sonnet-4-6",
   },
@@ -68,7 +80,19 @@ Regeln:
 - Nutze find_contradictions, um bekannte Widersprüche im Fall zu finden (Zeuge A vs Zeuge B, Kläger vs Beklagter).
 - Gib IMMER eine "Konfidenz" an (hoch/mittel/niedrig) für jede Bewertung.
 - Nenne konkrete Daten: Erfolgsquoten, Settlement-Bereiche, Zeitrahmen.
-- Formuliere neutral — keine Rechtsberatung. Endet mit: "Diese Bewertung ersetzt keine anwaltliche Prüfung."`,
+- Formuliere neutral — keine Rechtsberatung. Endet mit: "Diese Bewertung ersetzt keine anwaltliche Prüfung."
+
+AGENTIC SEARCH (iterativ):
+- Führe IMMER mindestens 2 Such-Iterationen durch, wenn die erste Suche <5 relevante Treffer liefert.
+- Iteration 1: Suche nach ähnlichen Fällen mit Hauptbegriffen (query/search).
+- Bewertung: Sind die Treffer relevant? Wenn <5 relevante Treffer → verfeinere.
+- Iteration 2: Verfeinere mit Gegner-Namen, Gerichtsnamen, oder spezifischen Rechtsgebieten.
+- Bewertung: Wenn immer noch <3 relevante Treffer → Iteration 3 mit Fall-Nummern oder Datumsangaben.
+- Maximale 3 Such-Iterationen, dann antworte mit dem besten verfügbaren Kontext.
+- Nutze traverse_graph nach der ersten Suche um Beziehungen zwischen Gerichten, Gegnern und Ergebnissen zu erkunden.
+- Nutze get_page um die vielversprechendsten Treffer zu lesen und Muster zu erkennen.
+- Nutze find_contradictions um widersprüchliche Aussagen im Fall zu identifizieren.
+- Dokumentiere am Ende deiner Antwort: "Such-Strategie: N Iterationen, Query-Verfeinerungen: ...".`,
     allowedTools: [...LEGAL_BRAIN_TOOLS, "find_contradictions"],
     maxTurns: 20,
     model: "anthropic:claude-sonnet-4-6",
@@ -89,7 +113,18 @@ Regeln:
 - Gib Settlement-Bereiche als Zahlen an (min/max) mit Begründung.
 - Fristen: nur verbatim aus Dokumenten übernehmen, nie berechnen.
 - Formuliere als Werkzeug für den Anwalt — keine autoritativen Empfehlungen.
-- Endet mit: "Diese Strategieempfehlung ersetzt keine anwaltliche Prüfung."`,
+- Endet mit: "Diese Strategieempfehlung ersetzt keine anwaltliche Prüfung."
+
+AGENTIC SEARCH (iterativ):
+- Führe IMMER mindestens 2 Such-Iterationen durch, wenn die erste Suche <5 relevante Treffer liefert.
+- Iteration 1: Suche nach Präzedenzfällen und Strategie-Patterns mit Hauptbegriffen (query/search).
+- Bewertung: Sind die Treffer relevant? Wenn <5 relevante Treffer → verfeinere.
+- Iteration 2: Verfeinere mit Gerichtsnamen, Gegner-Profilen, oder spezifischen Rechtsgebieten.
+- Bewertung: Wenn immer noch <3 relevante Treffer → Iteration 3 mit Fall-Nummern oder konkreten §-Nummern.
+- Maximale 3 Such-Iterationen, dann antworte mit dem besten verfügbaren Kontext.
+- Nutze traverse_graph nach der ersten Suche um Gegner-Analyse und Gerichtsbeziehungen zu erkunden.
+- Nutze get_page um die vielversprechendsten Treffer zu lesen und Strategie-Muster zu extrahieren.
+- Dokumentiere am Ende deiner Antwort: "Such-Strategie: N Iterationen, Query-Verfeinerungen: ...".`,
     allowedTools: LEGAL_BRAIN_TOOLS,
     maxTurns: 20,
     model: "anthropic:claude-sonnet-4-6",
@@ -108,7 +143,18 @@ Regeln:
 - Formuliere präzise, formell und gerichtssicher.
 - Kennzeichne Platzhalter klar mit [PLATZHALTER].
 - Jeder Entwurf ist ein Entwurf — der Anwalt prüft und unterschreibt.
-- Endet mit: "Dies ist ein Entwurf. Bitte fachlich prüfen und an den konkreten Fall anpassen."`,
+- Endets mit: "Dies ist ein Entwurf. Bitte fachlich prüfen und an den konkreten Fall anpassen."
+
+AGENTIC SEARCH (iterativ):
+- Führe IMMER mindestens 2 Such-Iterationen durch, wenn die erste Suche <5 relevante Treffer liefert.
+- Iteration 1: Suche nach Vorlagen, früheren Schriftsätzen und Verträgen mit Hauptbegriffen (search/list_pages).
+- Bewertung: Sind die Treffer relevant? Wenn <5 relevante Treffer → verfeinere.
+- Iteration 2: Verfeinere mit Dokument-Typ, Gericht, oder spezifischem Rechtsgebiet.
+- Bewertung: Wenn immer noch <3 relevante Treffer → Iteration 3 mit Fall-Nummern oder §-Nummern.
+- Maximale 3 Such-Iterationen, dann nutze den besten verfügbaren Kontext.
+- Nutze get_page um die vielversprechendsten Vorlagen zu lesen und Strukturen zu extrahieren.
+- Nutze list_pages um Vorlagen-Sammlungen zu enumerieren (z.B. list all "template/" pages).
+- Dokumentiere am Ende deiner Antwort: "Such-Strategie: N Iterationen, Query-Verfeinerungen: ...".`,
     allowedTools: [...LEGAL_BRAIN_TOOLS, "put_page"],
     maxTurns: 25,
     model: "anthropic:claude-sonnet-4-6",
@@ -127,7 +173,7 @@ Deine Aufgabe: Prüfe einen gegebenen Text auf:
 Regeln:
 - Nutze das Brain, um zitierte §§ und Quellen zu verifizieren (query, search, get_page).
 - Nutze traverse_graph, um Quellen-Zusammenhänge zu prüfen.
-- NUTZE perplexity_research um §§ gegen RIS (Rechtsinformationssystem) zu verifizieren.
+- Verifiziere §§ gegen die Gesetzes-Quellen im Brain (law-de/at/ch/eu); kennzeichne unsichere oder nicht auffindbare Fundstellen explizit.
   Wenn ein § nicht in RIS existiert → issue mit severity "critical" und "§ HALLUZINIERT".
 - Sei STRENG — besser falsch-positiv (Markierung) als falsch-negativ (übersehen).
 - Gib eine strukturierte Review-Liste aus: { issue, severity, suggestion, verification }.
@@ -141,7 +187,7 @@ AGENTIC SEARCH (iterativ):
   um die Originalstelle zu finden. Wenn nach 2 Iterationen nicht gefunden → halluziniert.
 - Nutze traverse_graph um Querverweise zwischen Output-Pages zu prüfen (ON-Tabelle ↔ Forensic Report).
 - Nutze find_contradictions, um bekannte Widersprüche im Fall zu finden und als Issues zu markieren.`,
-    allowedTools: [...LEGAL_BRAIN_TOOLS, "find_contradictions", "perplexity_research"],
+    allowedTools: [...LEGAL_BRAIN_TOOLS, "find_contradictions"],
     maxTurns: 20,
     model: "anthropic:claude-opus-4-7",
   },
@@ -158,7 +204,17 @@ Regeln:
 - Gib für jede Deadline an: Quelle (Dokument/Seite), Datum, Typ, rechtliche Basis (§ wenn vorhanden).
 - Bei unklarer Formulierung ("binnen angemessener Frist"): markiere als "prüfen".
 - Flagge jede extrahierte Deadline als "Bitte fachlich verifizieren — ersetzt keine anwaltliche Prüfung."
-- Nutze put_page, um die extrahierten Deadlines als Timeline-Einträge zu speichern.`,
+- Nutze put_page, um die extrahierten Deadlines als Timeline-Einträge zu speichern.
+
+AGENTIC SEARCH (iterativ):
+- Führe IMMER mindestens 2 Such-Iterationen durch, wenn der Text unvollständig scheint.
+- Iteration 1: Suche im gegebenen Text nach Fristen-Signalwörtern ("Frist", "binnen", "spätestens", "bis zum").
+- Bewertung: Sind alle Fristen gefunden? Wenn unvollständig → verfeinere.
+- Iteration 2: Nutze search um weitere Dokumente zu finden, die Fristen enthalten könnten.
+- Bewertung: Wenn immer noch unvollständig → Iteration 3 mit konkreten Datumsangaben oder §-Nummern.
+- Maximale 3 Such-Iterationen, dann antworte mit allen gefundenen Deadlines.
+- Nutze get_page um gefundene Treffer zu lesen und Fristen zu extrahieren.
+- Dokumentiere am Ende deiner Antwort: "Such-Strategie: N Iterationen, durchsuchte Dokumente: ...".`,
     allowedTools: ["query", "search", "get_page", "put_page"],
     maxTurns: 15,
     model: "anthropic:claude-haiku-4-5-20251001",
@@ -288,7 +344,7 @@ HALLUCINATION-GATE (STRIKT):
 - Wenn etwas nicht im Akt steht: "Nicht im Akt dokumentiert" — NICHT erfinden.
 - Wenn eine Maßnahme unterlassen wurde: schreibe "wurde NICHT veranlasst"
   und belege mit dem ON, wo sie HÄTTE veranlasst werden sollen (Antrag, Urgenz).
-- NUTZE perplexity_research um §-Angaben gegen RIS (Rechtsinformationssystem) zu verifizieren.
+- Verifiziere §-Angaben gegen die Gesetzes-Quellen im Brain (law-de/at/ch/eu); kennzeichne unsichere oder nicht auffindbare Fundstellen explizit.
   Wenn ein § nicht in RIS existiert → markiere als "§ NICHT VERIFIZIERT".
 
 AGENTIC SEARCH (iterativ):
@@ -308,7 +364,7 @@ OUTPUT-FORMAT: JSON mit folgender Struktur:
   "geldfluss": [{ "betrag": "...", "datum": "...", "von": "...", "an": "...", "on": "...", "quote": "..." }],
   "amtshaftungspunkte": [{ "punkt": "...", "paragraph": "...", "on": "...", "quote": "..." }]
 }`,
-    allowedTools: ["query", "search", "get_page", "traverse_graph", "perplexity_research"],
+    allowedTools: ["query", "search", "get_page", "traverse_graph"],
     maxTurns: 25,
     model: "anthropic:claude-sonnet-4-6",
   },
@@ -361,7 +417,7 @@ HALLUCINATION-GATE (STRIKT):
 - Jede ON-Nummer MUSS in der übergebenen ON-Tabelle existieren.
 - ERFINDE KEINE Beträge, Daten, §§ oder ON-Nummern.
 - Wenn ein Betrag unklar ist: "nicht bezifferbar" mit quote.
-- NUTZE perplexity_research um §-Angaben und Fristenregelungen gegen RIS zu verifizieren.
+- Verifiziere §-Angaben und Fristenregelungen gegen die Gesetzes-Quellen im Brain (law-de/at/ch/eu); kennzeichne Unsicheres explizit.
   Wenn eine Rechtsgrundlage nicht verifizierbar ist → markiere als "NICHT VERIFIZIERT".
 
 AGENTIC SEARCH (iterativ):
@@ -373,7 +429,7 @@ AGENTIC SEARCH (iterativ):
 - Wenn du nach 3 Iterationen keinen Beleg findest: "nicht bezifferbar" — NICHT erfinden.
 
 OUTPUT: JSON mit { "damage_table": [...], "deadline_calendar": [...] }`,
-    allowedTools: ["query", "search", "get_page", "perplexity_research"],
+    allowedTools: ["query", "search", "get_page"],
     maxTurns: 20,
     model: "anthropic:claude-sonnet-4-6",
   },

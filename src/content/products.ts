@@ -21,7 +21,7 @@ const _deProducts: Record<ProductSlug, ProductContent> = {
     vertical: "legal",
     industry: "legal",
     name: "Subsumio",
-    claim: "Das Kanzlei-Gedächtnis.",
+    claim: "Das Kanzlei-Brain.",
     poweredBy: "KI-Kanzleisoftware für AT · DE · CH",
     metaTitle: "Subsumio — KI-Kanzleisoftware für Rechtsanwälte | AT · DE · CH",
     metaDesc:

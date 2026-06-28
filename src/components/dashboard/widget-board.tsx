@@ -406,7 +406,7 @@ export function WidgetBoard() {
   const activeMeta = activeId ? getWidgetMeta(activeId) : null;
 
   return (
-    <div className="space-y-4">
+    <div data-tour="stats-overview" className="space-y-4">
       {showDegraded && (
         <div className="rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-4 py-3">
           <div className="flex items-start gap-3">

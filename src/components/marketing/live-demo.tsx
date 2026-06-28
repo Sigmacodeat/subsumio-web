@@ -106,15 +106,13 @@ export default function LiveDemo({
       role="region"
       aria-label={UI_STRINGS[lang].liveDemoRegion}
     >
-      {/* window bar */}
-      <div className="flex items-center gap-2 border-b [border-color:var(--mk-border)] px-4 py-3 [background:var(--mk-bg)]">
-        <div className="terminal-dots flex items-center gap-2">
-          <span className="terminal-dot-red" />
-          <span className="terminal-dot-amber" />
-          <span className="terminal-dot-green" />
-        </div>
-        <div className="ml-4 flex-1 font-mono text-xs [color:var(--mk-text)] opacity-60">
-          {windowTitle}
+      {/* top bar — matches real dashboard topbar */}
+      <div className="flex items-center gap-3 border-b [border-color:var(--mk-border)] px-4 py-2.5 [background:var(--mk-surface)]">
+        <div className="flex items-center gap-2">
+          <div className="brand-bg flex h-6 w-6 shrink-0 items-center justify-center rounded-md">
+            <SubsumioMark size={14} />
+          </div>
+          <span className="text-xs font-semibold [color:var(--mk-text)]">{windowTitle}</span>
         </div>
       </div>
 

@@ -33,7 +33,7 @@ export interface SecurityContent {
 }
 
 const _securityDe = {
-  metaTitle: "Subsumio Sicherheit — DSGVO-konforme KI-Kanzleisoftware, EU-Cloud oder On-Premise",
+  metaTitle: "Subsumio Sicherheit — DSGVO-KI für Kanzleien",
   metaDesc:
     "Volle Engine self-hosted auf deiner Hardware oder EU-Cloud mit AVV. Kein Training mit Mandantendaten, Zugriff pro Nutzer fuzz-getestet auf null Leaks. Ehrlich über das, was wir haben — und was auf der Roadmap steht.",
   badge: "Sicherheit & Datenschutz",
@@ -149,6 +149,10 @@ const _securityDe = {
       q: "Ist Self-Hosting unsicherer als eure Cloud?",
       a: "Es ist dieselbe Engine. Sicherheitsrelevantes Verhalten — Scoping, Trust-Boundaries, Isolation — ist identisch und test-gepinnt. Der Unterschied ist, wer sie betreibt: du statt wir.",
     },
+    {
+      q: "Wie verträgt sich der WhatsApp-Copilot mit § 203 StGB?",
+      a: "WhatsApp ist ein optionaler Komfort-Kanal, kein Kernbestandteil. Der Copilot nutzt die Meta Business API mit Auftragsverarbeitungsvertrag (AVV). Für sensibelste Akteninhalte empfehlen wir die native Mobile-App oder Self-Hosting. Der Copilot ist so gebaut, dass jede Aktion bestätigungspflichtig ist — nichts landet ungesehen in der Akte. Kanzleien, die WhatsApp nicht nutzen möchten, verlieren keine Kernfunktionalität.",
+    },
   ],
   ctaTitle: "Bring deinen Datenschutzbeauftragten mit.",
   ctaSub:
@@ -158,7 +162,7 @@ const _securityDe = {
 
 export const SECURITY: Record<Lang, SecurityContent> = {
   en: {
-    metaTitle: "Subsumio Security — GDPR-compliant AI legal software, EU cloud or self-hosted",
+    metaTitle: "Subsumio Security — GDPR-compliant AI for law firms",
     metaDesc:
       "Self-host the full engine on your hardware, or use EU cloud with DPA. No training on client data, per-user scoped access fuzz-tested for zero leaks. Honest about what we have and what's on the roadmap.",
     badge: "Security & data protection",
@@ -273,6 +277,10 @@ export const SECURITY: Record<Lang, SecurityContent> = {
       {
         q: "Is self-hosting less secure than your cloud?",
         a: "It's the same engine. Security-relevant behavior — scoping, trust boundaries, isolation — is identical and test-pinned. The difference is who operates it: you, instead of us.",
+      },
+      {
+        q: "How does the WhatsApp Copilot align with § 203 StGB?",
+        a: "WhatsApp is an optional convenience channel, not a core component. The Copilot uses the Meta Business API with a Data Processing Agreement (DPA). For the most sensitive matter content, we recommend the native mobile app or self-hosting. The Copilot is built so every action requires confirmation — nothing reaches the matter unseen. Firms that choose not to use WhatsApp lose no core functionality.",
       },
     ],
     ctaTitle: "Bring your data protection officer.",

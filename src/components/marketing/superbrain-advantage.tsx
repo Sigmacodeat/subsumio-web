@@ -20,9 +20,9 @@ import { GradientMesh } from "./motion-system";
 const copy = {
   en: {
     eyebrow: "The Subsumio engine",
-    title: "Not another chatbot. The memory layer your firm runs on.",
+    title: "Not another chatbot. The firm brain your practice runs on.",
     sub: "Most assistants answer one prompt and forget. Subsumio builds a durable, permission-aware knowledge base over your own work: files, messages, meetings, entities, deadlines and open risks — then answers with citations.",
-    center: "Your firm knowledge base",
+    center: "Your firm brain",
     proof: [
       {
         icon: Database,
@@ -178,7 +178,7 @@ export default function SuperbrainAdvantage({ lang }: { lang: Lang }) {
             className="absolute inset-8 rounded-full border border-dashed border-[var(--brand-primary)]/20"
           />
           <div
-            data-tone="slate"
+            data-tone="dashboard"
             className="relative min-h-[560px] overflow-hidden rounded-2xl border [border-color:var(--mk-border-strong)] shadow-2xl shadow-black/20 [background:var(--mk-bg)]"
           >
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_42%,var(--brand-glow),transparent_42%)]" />
@@ -191,7 +191,7 @@ export default function SuperbrainAdvantage({ lang }: { lang: Lang }) {
                 className="brand-soft-strong brand-border-strong absolute top-1/2 left-1/2 flex h-40 w-40 -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center rounded-full border text-center"
               >
                 <Brain size={34} className="brand-text mb-3" />
-                <span className="text-sm font-bold [color:var(--mk-text)]">{t.center}</span>
+                <span className="text-sm font-semibold [color:var(--mk-text)]">{t.center}</span>
                 <span className="mt-1 text-xs [color:var(--mk-text-muted)]">
                   {lang !== "en" ? "abfragbar · belegt · isoliert" : "queryable · cited · scoped"}
                 </span>
@@ -219,7 +219,9 @@ export default function SuperbrainAdvantage({ lang }: { lang: Lang }) {
             <div className="relative border-t [border-color:var(--mk-border)] p-5 md:p-6">
               <div className="mb-4 flex items-center gap-2">
                 <Database size={16} className="brand-text" />
-                <h3 className="text-sm font-bold [color:var(--mk-text)]">{t.capabilityTitle}</h3>
+                <h3 className="text-sm font-semibold [color:var(--mk-text)]">
+                  {t.capabilityTitle}
+                </h3>
               </div>
               <div className="space-y-3">
                 {t.capabilities.map((row, i) => {

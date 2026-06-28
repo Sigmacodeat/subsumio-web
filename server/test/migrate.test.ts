@@ -634,7 +634,10 @@ describe("migrate v14 — pages_updated_at_index (handler-based, engine-aware)",
   test("v14 handler source contains CONCURRENTLY + invalid-index cleanup for Postgres branch", async () => {
     const { readFileSync } = await import("fs");
     const src = readFileSync("src/core/migrate.ts", "utf-8");
-    const v14Start = src.indexOf("name: 'pages_updated_at_index'");
+    // Quote-agnostic anchor: first occurrence is the migration's name field
+    // (the comment mention appears later), so this survives single/double-quote
+    // reformatting by the linter.
+    const v14Start = src.indexOf("pages_updated_at_index");
     expect(v14Start).toBeGreaterThan(-1);
     const v14Block = src.slice(v14Start, v14Start + 3000);
     expect(v14Block).toContain("pg_index");
@@ -746,7 +749,8 @@ describe("migrate v66 — embed_stale_partial_index (D6)", () => {
   test("v66 handler source: CONCURRENTLY + invalid-index cleanup on Postgres branch", async () => {
     const { readFileSync } = await import("fs");
     const src = readFileSync("src/core/migrate.ts", "utf-8");
-    const v66Start = src.indexOf("name: 'embed_stale_partial_index'");
+    // Quote-agnostic anchor (see v14 test above).
+    const v66Start = src.indexOf("embed_stale_partial_index");
     expect(v66Start).toBeGreaterThan(-1);
     const v66Block = src.slice(v66Start, v66Start + 3000);
     expect(v66Block).toContain("pg_index");

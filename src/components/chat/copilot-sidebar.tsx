@@ -66,88 +66,115 @@ const QUICK_ACTION_ICONS: Record<QuickAction["icon"], typeof MessageSquareText> 
 
 const ROUTE_PATTERNS: Array<{
   pattern: RegExp;
-  context: (match: RegExpMatchArray, t: TFunc) => RouteContext;
+  context: (match: RegExpMatchArray, t: TFunc, lang: Lang) => RouteContext;
 }> = [
   {
     pattern: /^\/dashboard\/cases(?:\/(.+))?$/,
-    context: (m, t) => ({
-      type: m[1] ? "case" : "global",
-      caseSlug: m[1] ? `cases/${m[1]}` : undefined,
-      label: m[1] ? `${t("copilot.ctx.case_prefix")} ${m[1]}` : t("copilot.ctx.cases"),
-      quickActions: m[1]
-        ? [
-            {
-              label: t("copilot.qa.case_deadlines"),
-              query: `Welche Fristen sind in der Akte ${m[1]} offen?`,
-              icon: "deadline",
-            },
-            {
-              label: t("copilot.qa.case_summary"),
-              query: `Fasse den aktuellen Stand der Akte ${m[1]} zusammen.`,
-              icon: "case",
-            },
-            {
-              label: t("copilot.qa.case_missing_docs"),
-              query: `Welche Dokumente fehlen in der Akte ${m[1]}?`,
-              icon: "search",
-            },
-          ]
-        : [
-            {
-              label: t("copilot.qa.open_deadlines"),
-              query: "Zeige mir alle offenen Fristen across alle Akten.",
-              icon: "deadline",
-            },
-            {
-              label: t("copilot.qa.high_effort_cases"),
-              query: "Welche Akten haben den höchsten Aufwand in diesem Quartal?",
-              icon: "case",
-            },
-          ],
-    }),
+    context: (m, t, lang) => {
+      const isEn = lang === "en";
+      return {
+        type: m[1] ? "case" : "global",
+        caseSlug: m[1] ? `cases/${m[1]}` : undefined,
+        label: m[1] ? `${t("copilot.ctx.case_prefix")} ${m[1]}` : t("copilot.ctx.cases"),
+        quickActions: m[1]
+          ? [
+              {
+                label: t("copilot.qa.case_deadlines"),
+                query: isEn
+                  ? `Which deadlines are open in case ${m[1]}?`
+                  : `Welche Fristen sind in der Akte ${m[1]} offen?`,
+                icon: "deadline",
+              },
+              {
+                label: t("copilot.qa.case_summary"),
+                query: isEn
+                  ? `Summarize the current status of case ${m[1]}.`
+                  : `Fasse den aktuellen Stand der Akte ${m[1]} zusammen.`,
+                icon: "case",
+              },
+              {
+                label: t("copilot.qa.case_missing_docs"),
+                query: isEn
+                  ? `Which documents are missing in case ${m[1]}?`
+                  : `Welche Dokumente fehlen in der Akte ${m[1]}?`,
+                icon: "search",
+              },
+            ]
+          : [
+              {
+                label: t("copilot.qa.open_deadlines"),
+                query: isEn
+                  ? "Show me all open deadlines across all cases."
+                  : "Zeige mir alle offenen Fristen über alle Akten.",
+                icon: "deadline",
+              },
+              {
+                label: t("copilot.qa.high_effort_cases"),
+                query: isEn
+                  ? "Which cases have the highest effort this quarter?"
+                  : "Welche Akten haben den höchsten Aufwand in diesem Quartal?",
+                icon: "case",
+              },
+            ],
+      };
+    },
   },
   {
     pattern: /^\/dashboard\/deadlines$/,
-    context: (_m, t) => ({
-      type: "global",
-      label: t("copilot.ctx.deadlines"),
-      quickActions: [
-        {
-          label: t("copilot.qa.deadlines_this_week"),
-          query: "Welche Fristen fallen diese Woche an?",
-          icon: "deadline",
-        },
-        {
-          label: t("copilot.qa.deadlines_overdue"),
-          query: "Gibt es überfällige Fristen? Welche sind am kritischsten?",
-          icon: "deadline",
-        },
-        {
-          label: t("copilot.qa.deadline_export"),
-          href: "/dashboard/calendar-export",
-          icon: "generic",
-        },
-      ],
-    }),
+    context: (_m, t, lang) => {
+      const isEn = lang === "en";
+      return {
+        type: "global",
+        label: t("copilot.ctx.deadlines"),
+        quickActions: [
+          {
+            label: t("copilot.qa.deadlines_this_week"),
+            query: isEn
+              ? "Which deadlines are due this week?"
+              : "Welche Fristen fallen diese Woche an?",
+            icon: "deadline",
+          },
+          {
+            label: t("copilot.qa.deadlines_overdue"),
+            query: isEn
+              ? "Are there any overdue deadlines? Which are most critical?"
+              : "Gibt es überfällige Fristen? Welche sind am kritischsten?",
+            icon: "deadline",
+          },
+          {
+            label: t("copilot.qa.deadline_export"),
+            href: "/dashboard/calendar-export",
+            icon: "generic",
+          },
+        ],
+      };
+    },
   },
   {
     pattern: /^\/dashboard\/intake$/,
-    context: (_m, t) => ({
-      type: "global",
-      label: t("copilot.ctx.intake"),
-      quickActions: [
-        {
-          label: t("copilot.qa.intake_convert"),
-          query: "Welche Intake-Anfragen sollten als nächstes in Akten überführt werden?",
-          icon: "case",
-        },
-        {
-          label: t("copilot.qa.intake_missing_docs"),
-          query: "Welche Unterlagen fehlen in den offenen Intake-Anfragen?",
-          icon: "search",
-        },
-      ],
-    }),
+    context: (_m, t, lang) => {
+      const isEn = lang === "en";
+      return {
+        type: "global",
+        label: t("copilot.ctx.intake"),
+        quickActions: [
+          {
+            label: t("copilot.qa.intake_convert"),
+            query: isEn
+              ? "Which intake requests should be converted to cases next?"
+              : "Welche Intake-Anfragen sollten als nächstes in Akten überführt werden?",
+            icon: "case",
+          },
+          {
+            label: t("copilot.qa.intake_missing_docs"),
+            query: isEn
+              ? "Which documents are missing in the open intake requests?"
+              : "Welche Unterlagen fehlen in den offenen Intake-Anfragen?",
+            icon: "search",
+          },
+        ],
+      };
+    },
   },
   {
     pattern: /^\/dashboard\/contacts$/,
@@ -170,41 +197,55 @@ const ROUTE_PATTERNS: Array<{
   },
   {
     pattern: /^\/dashboard\/bea$/,
-    context: (_m, t) => ({
-      type: "global",
-      label: t("copilot.ctx.bea"),
-      quickActions: [
-        {
-          label: t("copilot.qa.bea_deadlines"),
-          query: "Welche beA-Eingänge können Fristen auslösen?",
-          icon: "deadline",
-        },
-        {
-          label: t("copilot.qa.bea_draft"),
-          query: "Entwirf eine beA-Antwort anhand des aktuellen Aktenkontexts.",
-          icon: "draft",
-        },
-      ],
-    }),
+    context: (_m, t, lang) => {
+      const isEn = lang === "en";
+      return {
+        type: "global",
+        label: t("copilot.ctx.bea"),
+        quickActions: [
+          {
+            label: t("copilot.qa.bea_deadlines"),
+            query: isEn
+              ? "Which beA incoming messages could trigger deadlines?"
+              : "Welche beA-Eingänge können Fristen auslösen?",
+            icon: "deadline",
+          },
+          {
+            label: t("copilot.qa.bea_draft"),
+            query: isEn
+              ? "Draft a beA response based on the current case context."
+              : "Entwirf eine beA-Antwort anhand des aktuellen Aktenkontexts.",
+            icon: "draft",
+          },
+        ],
+      };
+    },
   },
   {
     pattern: /^\/dashboard\/research$/,
-    context: (_m, t) => ({
-      type: "global",
-      label: t("copilot.ctx.research"),
-      quickActions: [
-        {
-          label: t("copilot.qa.research_bgb"),
-          query: "Was gibt es Neues in der Rechtsprechung zum BGB?",
-          icon: "research",
-        },
-        {
-          label: t("copilot.qa.research_eugh"),
-          query: "Welche EuGH-Urteile wurden diese Woche veröffentlicht?",
-          icon: "research",
-        },
-      ],
-    }),
+    context: (_m, t, lang) => {
+      const isEn = lang === "en";
+      return {
+        type: "global",
+        label: t("copilot.ctx.research"),
+        quickActions: [
+          {
+            label: t("copilot.qa.research_bgb"),
+            query: isEn
+              ? "What's new in BGB case law?"
+              : "Was gibt es Neues in der Rechtsprechung zum BGB?",
+            icon: "research",
+          },
+          {
+            label: t("copilot.qa.research_eugh"),
+            query: isEn
+              ? "Which CJEU rulings were published this week?"
+              : "Welche EuGH-Urteile wurden diese Woche veröffentlicht?",
+            icon: "research",
+          },
+        ],
+      };
+    },
   },
   {
     pattern: /^\/dashboard\/vault$/,
@@ -227,99 +268,126 @@ const ROUTE_PATTERNS: Array<{
   },
   {
     pattern: /^\/dashboard\/drafting$/,
-    context: (_m, t) => ({
-      type: "global",
-      label: t("copilot.ctx.drafting"),
-      quickActions: [
-        {
-          label: t("copilot.qa.draft_klage"),
-          query: "Hilf mir, einen Klageentwurf zu verfassen.",
-          icon: "draft",
-        },
-        {
-          label: t("copilot.qa.draft_berufung"),
-          query: "Wie strukturiere ich eine Berufungsbegründung?",
-          icon: "draft",
-        },
-      ],
-    }),
+    context: (_m, t, lang) => {
+      const isEn = lang === "en";
+      return {
+        type: "global",
+        label: t("copilot.ctx.drafting"),
+        quickActions: [
+          {
+            label: t("copilot.qa.draft_klage"),
+            query: isEn ? "Help me draft a lawsuit." : "Hilf mir, einen Klageentwurf zu verfassen.",
+            icon: "draft",
+          },
+          {
+            label: t("copilot.qa.draft_berufung"),
+            query: isEn
+              ? "How should I structure an appeal brief?"
+              : "Wie strukturiere ich eine Berufungsbegründung?",
+            icon: "draft",
+          },
+        ],
+      };
+    },
   },
   {
     pattern: /^\/dashboard\/invoicing$/,
-    context: (_m, t) => ({
-      type: "global",
-      label: t("copilot.ctx.invoicing"),
-      quickActions: [
-        {
-          label: t("copilot.qa.rvg_calculate"),
-          query: "Berechne RVG-Gebühren für einen Streitwert von 10.000 EUR.",
-          icon: "generic",
-        },
-        {
-          label: t("copilot.qa.datev_export"),
-          href: "/dashboard/datev-export",
-          icon: "generic",
-        },
-      ],
-    }),
+    context: (_m, t, lang) => {
+      const isEn = lang === "en";
+      return {
+        type: "global",
+        label: t("copilot.ctx.invoicing"),
+        quickActions: [
+          {
+            label: t("copilot.qa.rvg_calculate"),
+            query: isEn
+              ? "Calculate RVG fees for a dispute value of 10,000 EUR."
+              : "Berechne RVG-Gebühren für einen Streitwert von 10.000 EUR.",
+            icon: "generic",
+          },
+          {
+            label: t("copilot.qa.datev_export"),
+            href: "/dashboard/datev-export",
+            icon: "generic",
+          },
+        ],
+      };
+    },
   },
   {
     pattern: /^\/dashboard\/brain(?:\/(.+))?$/,
-    context: (m, t) => ({
-      type: m[1] ? "brain_page" : "global",
-      pageSlug: m[1],
-      label: m[1] ? `${t("copilot.ctx.page_prefix")} ${m[1]}` : t("copilot.ctx.brain"),
-      quickActions: [
-        {
-          label: t("copilot.qa.brain_gaps"),
-          query: "Welche Wissenslücken gibt es in der Datenbank?",
-          icon: "search",
-        },
-        {
-          label: t("copilot.qa.brain_updates"),
-          query: "Was wurden die letzten Änderungen in der Wissensdatenbank?",
-          icon: "search",
-        },
-      ],
-    }),
+    context: (m, t, lang) => {
+      const isEn = lang === "en";
+      return {
+        type: m[1] ? "brain_page" : "global",
+        pageSlug: m[1],
+        label: m[1] ? `${t("copilot.ctx.page_prefix")} ${m[1]}` : t("copilot.ctx.brain"),
+        quickActions: [
+          {
+            label: t("copilot.qa.brain_gaps"),
+            query: isEn
+              ? "What knowledge gaps exist in the database?"
+              : "Welche Wissenslücken gibt es in der Datenbank?",
+            icon: "search",
+          },
+          {
+            label: t("copilot.qa.brain_updates"),
+            query: isEn
+              ? "What were the latest changes in the knowledge base?"
+              : "Was wurden die letzten Änderungen in der Wissensdatenbank?",
+            icon: "search",
+          },
+        ],
+      };
+    },
   },
   {
     pattern: /^\/dashboard\/contracts$/,
-    context: (_m, t) => ({
-      type: "global",
-      label: t("copilot.ctx.contracts"),
-      quickActions: [
-        {
-          label: t("copilot.qa.contract_analysis"),
-          query: "Wie analysiere ich einen Vertrag auf Risiken?",
-          icon: "case",
-        },
-        {
-          label: t("copilot.qa.clause_library"),
-          href: "/dashboard/clause-library",
-          icon: "generic",
-        },
-      ],
-    }),
+    context: (_m, t, lang) => {
+      const isEn = lang === "en";
+      return {
+        type: "global",
+        label: t("copilot.ctx.contracts"),
+        quickActions: [
+          {
+            label: t("copilot.qa.contract_analysis"),
+            query: isEn
+              ? "How do I analyze a contract for risks?"
+              : "Wie analysiere ich einen Vertrag auf Risiken?",
+            icon: "case",
+          },
+          {
+            label: t("copilot.qa.clause_library"),
+            href: "/dashboard/clause-library",
+            icon: "generic",
+          },
+        ],
+      };
+    },
   },
   {
     pattern: /^\/dashboard\/compliance$/,
-    context: (_m, t) => ({
-      type: "global",
-      label: t("copilot.ctx.compliance"),
-      quickActions: [
-        {
-          label: t("copilot.qa.gdpr_check"),
-          query: "Was sind die wichtigsten DSGVO-Compliance-Punkte für eine Kanzlei?",
-          icon: "research",
-        },
-        {
-          label: t("copilot.qa.retention_periods"),
-          href: "/dashboard/compliance/retention",
-          icon: "generic",
-        },
-      ],
-    }),
+    context: (_m, t, lang) => {
+      const isEn = lang === "en";
+      return {
+        type: "global",
+        label: t("copilot.ctx.compliance"),
+        quickActions: [
+          {
+            label: t("copilot.qa.gdpr_check"),
+            query: isEn
+              ? "What are the key GDPR compliance points for a law firm?"
+              : "Was sind die wichtigsten DSGVO-Compliance-Punkte für eine Kanzlei?",
+            icon: "research",
+          },
+          {
+            label: t("copilot.qa.retention_periods"),
+            href: "/dashboard/compliance/retention",
+            icon: "generic",
+          },
+        ],
+      };
+    },
   },
 ];
 
@@ -425,10 +493,11 @@ function ActivityFeedPanel({ lang }: { lang: Lang }) {
   );
 }
 
-function resolveRouteContext(pathname: string, t: TFunc): RouteContext {
+function resolveRouteContext(pathname: string, t: TFunc, lang: Lang): RouteContext {
+  const isEn = lang === "en";
   for (const { pattern, context } of ROUTE_PATTERNS) {
     const match = pathname.match(pattern);
-    if (match) return context(match, t);
+    if (match) return context(match, t, lang);
   }
   return {
     type: "global",
@@ -436,17 +505,23 @@ function resolveRouteContext(pathname: string, t: TFunc): RouteContext {
     quickActions: [
       {
         label: t("copilot.qa.case_overview"),
-        query: "Gib mir eine Übersicht über alle aktiven Akten.",
+        query: isEn
+          ? "Give me an overview of all active cases."
+          : "Gib mir eine Übersicht über alle aktiven Akten.",
         icon: "case",
       },
       {
         label: t("copilot.qa.open_deadlines_urgent"),
-        query: "Welche Fristen sind aktuell am dringendsten?",
+        query: isEn
+          ? "Which deadlines are most urgent right now?"
+          : "Welche Fristen sind aktuell am dringendsten?",
         icon: "deadline",
       },
       {
         label: t("copilot.qa.firm_stats"),
-        query: "Wie performt die Kanzlei in diesem Quartal?",
+        query: isEn
+          ? "How is the firm performing this quarter?"
+          : "Wie performt die Kanzlei in diesem Quartal?",
         icon: "search",
       },
     ],
@@ -700,13 +775,18 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
             t("copilot.alert.deadline");
           const days = n.data?.daysRemaining as number | undefined;
 
+          const isEn = lang === "en";
           return {
             label: isOverdue
-              ? `${t("copilot.alert.overdue_prefix")} ${title}${days !== undefined ? ` (${Math.abs(days)}T)` : ""}`
-              : `${t("copilot.alert.deadline_prefix")} ${title}${days !== undefined ? ` (in ${days}T)` : ""}`,
+              ? `${t("copilot.alert.overdue_prefix")} ${title}${days !== undefined ? ` (${Math.abs(days)}${isEn ? "d" : "T"})` : ""}`
+              : `${t("copilot.alert.deadline_prefix")} ${title}${days !== undefined ? ` (in ${days}${isEn ? "d" : "T"})` : ""}`,
             query: isOverdue
-              ? `Die Frist "${title}" ist überfällig. Was muss ich tun?`
-              : `Welche Details gibt es zur Frist "${title}"?`,
+              ? isEn
+                ? `The deadline "${title}" is overdue. What do I need to do?`
+                : `Die Frist "${title}" ist überfällig. Was muss ich tun?`
+              : isEn
+                ? `What are the details for deadline "${title}"?`
+                : `Welche Details gibt es zur Frist "${title}"?`,
             severity: isOverdue ? ("urgent" as const) : ("warning" as const),
           };
         });
@@ -722,9 +802,9 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
     return () => {
       cancelled = true;
     };
-  }, [open, mobileOpen, pathname, t]);
+  }, [open, mobileOpen, pathname, t, lang]);
 
-  const routeContext = useMemo(() => resolveRouteContext(pathname, t), [pathname, t]);
+  const routeContext = useMemo(() => resolveRouteContext(pathname, t, lang), [pathname, t, lang]);
 
   // Keyboard shortcut: Cmd+J toggles on desktop and switches to chat mode, opens on mobile
   useEffect(() => {
@@ -981,6 +1061,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
 
       {/* ── Desktop: Persistent collapsible side panel ── */}
       <motion.aside
+        data-tour="copilot-panel"
         initial={false}
         animate={{
           width: open ? panelWidth : 0,

@@ -232,7 +232,7 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
                 <GlowCard
                   glowColor="var(--signal-blue)"
                   intensity={0.12}
-                  className="flex h-full flex-col rounded-2xl border [border-color:var(--mk-border)] p-7 transition-all [background:var(--mk-surface)] hover:-translate-y-1 hover:border-[var(--brand-primary)]/40 hover:[background:var(--mk-hover)]"
+                  className="flex h-full flex-col rounded-2xl border [border-color:var(--mk-border)] p-6 transition-all [background:var(--mk-surface)] hover:-translate-y-1 hover:border-[var(--brand-primary)]/40 hover:[background:var(--mk-hover)]"
                 >
                   <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl border border-[var(--signal-blue)]/20 bg-[var(--signal-blue)]/10 transition-transform duration-300 hover:scale-110">
                     <Icon size={22} className="text-[var(--signal-blue)]" />

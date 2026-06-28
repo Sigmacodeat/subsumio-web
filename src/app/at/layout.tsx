@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     "Subsumio ist die KI-Kanzleisoftware für Rechtsanwälte in Österreich: Aktenverwaltung, Fristenkontrolle nach ZPO/ABGB, belegte KI-Antworten mit Fundstellen, ADATEV-Export, Kollisionsprüfung nach § 10 RAO. DSGVO-konform, EU-Cloud oder On-Premise.",
   alternates: {
     canonical: "/at",
-    languages: { "de-DE": "/", "de-AT": "/at", "de-CH": "/ch", en: "/en" },
+    languages: { "de-DE": "/", "de-AT": "/at", "de-CH": "/ch", en: "/en", "x-default": "/" },
   },
 };
 

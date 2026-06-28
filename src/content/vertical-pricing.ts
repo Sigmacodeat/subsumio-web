@@ -60,7 +60,7 @@ const _deVp: Partial<Record<string, VerticalPricing>> = {
         name: "Kanzlei",
         price: "1.290 €",
         period: "/Seat/Mon.",
-        blurb: "Ein gemeinsames Kanzlei-Gehirn, pro Anwalt gescoped. Ab 5 Seats.",
+        blurb: "Ein gemeinsames Kanzlei-Brain, pro Anwalt gescoped. Ab 5 Seats.",
         features: [
           "Alles aus Professional",
           "4.000 KI-Anfragen/Seat/Mon. · 200 GB/Seat",

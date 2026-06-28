@@ -157,7 +157,7 @@ export default function VerticalPage({
             {/* The live demo is a dark spotlight floating on the slate hero */}
             <div
               id="demo"
-              data-tone="dark"
+              data-tone="dashboard"
               className="mx-auto max-w-3xl scroll-mt-24 rounded-2xl shadow-[0_0_60px_rgba(56,189,248,0.12)] ring-1 ring-white/[0.08]"
             >
               <LiveDemo lang={lang} {...t.demo} />
@@ -166,7 +166,7 @@ export default function VerticalPage({
         </div>
       </Section>
 
-      {/* WhatsApp-Copilot — the winning USP, front-loaded as a dark spotlight (Subsumio only) */}
+      {/* WhatsApp-Copilot — an optional convenience channel, presented as a dark spotlight (Subsumio only) */}
       {isSubsumio && (
         <WhatsAppSpotlight lang={lang}>
           <Link
@@ -204,7 +204,7 @@ export default function VerticalPage({
                 className="rounded-2xl border [border-color:var(--mk-border)] p-6 [background:var(--mk-surface)]"
                 style={{ boxShadow: "var(--mk-card-shadow)" }}
               >
-                <AlertCircle size={18} className="mb-4 text-amber-600" />
+                <AlertCircle size={18} className="mb-4 [color:var(--signal-amber)]" />
                 <h3 className="mb-2 text-base font-semibold [color:var(--mk-text)]">
                   {pain.title}
                 </h3>
@@ -279,7 +279,7 @@ export default function VerticalPage({
                     viewport={{ once: true, margin: "-60px" }}
                     transition={{ duration: 0.4, delay: (i % 2) * 0.1 }}
                     whileHover={{ y: -4 }}
-                    className="flex gap-5 rounded-xl border [border-color:var(--mk-border)] p-7 transition-colors [background:var(--mk-surface)] hover:[border-color:var(--mk-border-strong)]"
+                    className="flex gap-5 rounded-2xl border [border-color:var(--mk-border)] p-6 transition-colors [background:var(--mk-surface)] hover:[border-color:var(--mk-border-strong)]"
                     style={{ boxShadow: "var(--mk-card-shadow)" }}
                   >
                     <div className="brand-soft brand-border flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border">

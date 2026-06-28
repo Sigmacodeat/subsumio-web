@@ -158,6 +158,47 @@ services:
         supercronic /etc/crontab
       "
 
+  # Encrypted offsite backup + restore-verification (restic → Hetzner Object
+  # Storage / Storage Box). Daily pg_dump + original files; weekly restore drill.
+  # Inert until the BACKUP_* vars are set in .env — the stack runs fine without
+  # them (the service just logs that the repo isn't configured and idles).
+  backup:
+    image: alpine:3.20
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # restic repo + encryption key (offline-stored password!)
+      RESTIC_REPOSITORY: ${BACKUP_RESTIC_REPOSITORY:-}
+      RESTIC_PASSWORD: ${BACKUP_RESTIC_PASSWORD:-}
+      # s3: repos (Hetzner Object Storage / R2 / S3)
+      AWS_ACCESS_KEY_ID: ${BACKUP_S3_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${BACKUP_S3_SECRET_ACCESS_KEY:-}
+      # Postgres connection (same network as db)
+      PGHOST: db
+      PGUSER: ${POSTGRES_USER:-subsumio}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: ${POSTGRES_DB:-subsumio}
+      # Alert channel (reused from the queue-alert watchdog)
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      MAIL_FROM: ${MAIL_FROM:-Subsumio <hello@subsum.io>}
+      QUEUE_ALERT_EMAIL: ${QUEUE_ALERT_EMAIL:-}
+    volumes:
+      # Original files — only needed when STORAGE_BACKEND=local. Harmless if s3.
+      - engine-data:/data:ro
+      - ./backup:/backup:ro
+    entrypoint: >
+      sh -c "
+        apk add --no-cache restic postgresql16-client curl supercronic ca-certificates &&
+        if [ -z \"$RESTIC_REPOSITORY\" ]; then
+          echo '[backup] BACKUP_RESTIC_REPOSITORY not set — backup disabled, idling.' ;
+          while true; do sleep 86400; done ;
+        else
+          supercronic /backup/crontab ;
+        fi
+      "
+
 volumes:
   db-data:
   engine-data:

@@ -99,7 +99,6 @@ function GraphHero({ lang }: { lang: Lang }) {
               cy={n.y}
               r={n.r}
               fill="url(#nodeGlow)"
-              stroke="#1d4ed8"
               strokeWidth={1.4}
               initial={{ scale: 0.72, opacity: 0.42 }}
               animate={n.pulse ? { scale: [1, 1.18, 1], opacity: 1 } : { scale: 1, opacity: 1 }}
@@ -116,15 +115,22 @@ function GraphHero({ lang }: { lang: Lang }) {
                     }
                   : { duration: 0.4, delay: 0.6 + i * 0.07, type: "spring", stiffness: 200 }
               }
-              style={{ transformBox: "fill-box", transformOrigin: "center" }}
+              style={{
+                stroke: "var(--brand-text)",
+                transformBox: "fill-box",
+                transformOrigin: "center",
+              }}
             />
             {n.label && (
               <motion.text
                 x={n.x}
                 y={n.y - n.r - 7}
                 textAnchor="middle"
-                className="fill-[#334155]"
-                style={{ fontSize: 10, fontFamily: "var(--font-jetbrains), monospace" }}
+                style={{
+                  fontSize: 10,
+                  fontFamily: "var(--font-jetbrains), monospace",
+                  fill: "var(--mk-text-muted)",
+                }}
                 initial={{ opacity: 0.35 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.4, delay: 0.9 + i * 0.07 }}
@@ -284,7 +290,7 @@ function HowItWorks({ lang }: { lang: Lang }) {
                 </span>
               </div>
               <div className="text-center">
-                <h3 className="mb-2 text-base font-bold [color:var(--mk-text)]">{s.title}</h3>
+                <h3 className="mb-2 text-base font-semibold [color:var(--mk-text)]">{s.title}</h3>
                 <p className="mb-3 text-sm leading-relaxed [color:var(--mk-text-muted)]">
                   {s.desc}
                 </p>
@@ -359,9 +365,11 @@ function FeatureCommandCenter({ lang }: { lang: Lang }) {
   }, [panels.length, reduce]);
 
   const toneClass: Record<string, string> = {
-    amber: "border-amber-500/20 bg-amber-500/10 text-amber-500",
-    blue: "border-sky-500/20 bg-sky-500/10 text-sky-500",
-    green: "border-emerald-500/20 bg-emerald-500/10 text-emerald-500",
+    amber:
+      "[border-color:color-mix(in_srgb,var(--signal-amber)_22%,transparent)] [background:color-mix(in_srgb,var(--signal-amber)_10%,transparent)] [color:var(--signal-amber)]",
+    blue: "[border-color:color-mix(in_srgb,var(--brand-text)_22%,transparent)] [background:color-mix(in_srgb,var(--brand-text)_10%,transparent)] [color:var(--brand-text)]",
+    green:
+      "[border-color:color-mix(in_srgb,var(--signal-green)_22%,transparent)] [background:color-mix(in_srgb,var(--signal-green)_10%,transparent)] [color:var(--signal-green)]",
   };
   const cursorTargets = [
     {
@@ -411,6 +419,7 @@ function FeatureCommandCenter({ lang }: { lang: Lang }) {
           viewport={viewport}
           transition={{ duration: 0.45 }}
           className="relative overflow-hidden rounded-2xl border [border-color:var(--mk-border)] shadow-2xl shadow-black/15 [background:var(--mk-bg)]"
+          data-tone="dashboard"
         >
           <GuidedCursor {...cursorTargets[step]} className="hidden md:flex" />
           <div className="flex items-center justify-between border-b [border-color:var(--mk-border)] px-4 py-3 [background:var(--mk-surface)]">
@@ -494,7 +503,7 @@ function FeatureCommandCenter({ lang }: { lang: Lang }) {
                   transition={{ duration: 0.25 }}
                 >
                   <p className="brand-text mb-2 text-xs font-semibold">{panels[step].label}</p>
-                  <h3 className="mb-2 text-lg font-bold [color:var(--mk-text)]">
+                  <h3 className="mb-2 text-lg font-semibold [color:var(--mk-text)]">
                     {panels[step].title}
                   </h3>
                   <p className="mb-4 text-sm leading-relaxed [color:var(--mk-text-muted)]">
@@ -836,7 +845,9 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
                   <div className="brand-soft brand-border mb-4 flex h-11 w-11 items-center justify-center rounded-xl border transition-transform group-hover:scale-110">
                     {Icon && <Icon size={20} className="brand-text" />}
                   </div>
-                  <h3 className="mb-1.5 text-base font-bold [color:var(--mk-text)]">{c.title}</h3>
+                  <h3 className="mb-1.5 text-base font-semibold [color:var(--mk-text)]">
+                    {c.title}
+                  </h3>
                   <p className="line-clamp-3 text-sm leading-relaxed [color:var(--mk-text-muted)]">
                     {c.intro}
                   </p>

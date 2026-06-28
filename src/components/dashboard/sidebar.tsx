@@ -180,6 +180,7 @@ export const ALL_NAV_ITEMS: NavItem[] = [
   { href: "/dashboard/upload", icon: FileUp, labelKey: "nav.upload" },
   { href: "/dashboard/analyze", icon: FileSearch, labelKey: "nav.analyze" },
   { href: "/dashboard/clause-library", icon: Library, labelKey: "nav.clause_library" },
+  { href: "/dashboard/templates", icon: FileText, labelKey: "nav.templates" },
   {
     href: "/dashboard/obligation-tracking",
     icon: ClipboardCheck,
@@ -259,6 +260,7 @@ export const PREFERRED_SECTION_BY_HREF: Array<{ href: string; section: Dashboard
   { href: "/dashboard/analyze", section: "nav.section.documents_drafting" },
   { href: "/dashboard/contracts", section: "nav.section.documents_drafting" },
   { href: "/dashboard/clause-library", section: "nav.section.documents_drafting" },
+  { href: "/dashboard/templates", section: "nav.section.documents_drafting" },
   { href: "/dashboard/tabular-review", section: "nav.section.documents_drafting" },
   { href: "/dashboard/obligation-tracking", section: "nav.section.documents_drafting" },
   { href: "/dashboard/translate", section: "nav.section.documents_drafting" },
@@ -505,6 +507,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
   return (
     <motion.aside
       ref={ref}
+      data-tour="sidebar"
       initial={false}
       animate={{
         width: sidebarWidth,

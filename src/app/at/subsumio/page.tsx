@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   description: product.metaDesc,
   alternates: {
     canonical,
-    languages: { "de-DE": "/", "de-AT": "/at", "de-CH": "/ch", en: "/en" },
+    languages: { "de-DE": "/", "de-AT": "/at", "de-CH": "/ch", en: "/en", "x-default": "/" },
   },
   openGraph: {
     title: product.metaTitle,

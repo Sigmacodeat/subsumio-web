@@ -10,8 +10,11 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
   Brain,
-  FolderOpen,
+  LayoutDashboard,
+  Briefcase,
   CalendarClock,
+  MessageSquareText,
+  Inbox,
   Send,
   FileText,
   MessageSquare,
@@ -20,6 +23,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   ChevronRight,
+  Zap,
 } from "lucide-react";
 import type { Lang } from "@/content/site";
 import { UI_STRINGS } from "@/content/site";
@@ -93,10 +97,11 @@ const _deBranches: ViewContent = {
 const BRANCHES: Record<string, Branch> = {
   legal: {
     sidebar: [
-      { icon: Brain, label: "Brain" },
-      { icon: FolderOpen, label: "Akten" },
+      { icon: LayoutDashboard, label: "Overview" },
+      { icon: Briefcase, label: "Akten" },
       { icon: CalendarClock, label: "Fristen" },
-      { icon: FileText, label: "Schriftsätze" },
+      { icon: Inbox, label: "Intake" },
+      { icon: MessageSquareText, label: "Chat" },
     ],
     views: {
       de: _deBranches,
@@ -164,11 +169,23 @@ const BRANCHES: Record<string, Branch> = {
 };
 
 const STATUS_COLORS: Record<string, { text: string; bg: string }> = {
-  amber: { text: "#fbbf24", bg: "rgba(251,191,36,0.12)" },
-  blue: { text: "#60a5fa", bg: "rgba(96,165,250,0.12)" },
-  rose: { text: "#fb7185", bg: "rgba(251,113,133,0.12)" },
-  violet: { text: "#c084fc", bg: "rgba(192,132,252,0.12)" },
-  green: { text: "#34d399", bg: "rgba(52,211,153,0.12)" },
+  amber: {
+    text: "var(--signal-amber)",
+    bg: "color-mix(in srgb, var(--signal-amber) 12%, transparent)",
+  },
+  blue: { text: "var(--brand-text)", bg: "color-mix(in srgb, var(--brand-text) 12%, transparent)" },
+  rose: {
+    text: "var(--signal-rose)",
+    bg: "color-mix(in srgb, var(--signal-rose) 12%, transparent)",
+  },
+  violet: {
+    text: "var(--brand-tertiary)",
+    bg: "color-mix(in srgb, var(--brand-tertiary) 12%, transparent)",
+  },
+  green: {
+    text: "var(--signal-green)",
+    bg: "color-mix(in srgb, var(--signal-green) 12%, transparent)",
+  },
 };
 
 const VIEW_DURATION = 3200;
@@ -220,8 +237,8 @@ export default function DashboardReel({
 
   const sidebarLabels =
     lang !== "en"
-      ? ["Brain", "Akten", "Fristen", "Schriftsätze"]
-      : ["Brain", "Matters", "Deadlines", "Filings"];
+      ? ["Overview", "Akten", "Fristen", "Intake", "Chat"]
+      : ["Overview", "Matters", "Deadlines", "Intake", "Chat"];
   const cursorTarget =
     view === 0
       ? {
@@ -246,20 +263,27 @@ export default function DashboardReel({
       className={`relative overflow-hidden rounded-2xl border [border-color:var(--mk-border)] shadow-2xl shadow-black/20 [background:var(--mk-bg)] ${className}`}
     >
       <GuidedCursor {...cursorTarget} className="hidden sm:flex" />
-      {/* window bar */}
-      <div className="flex items-center gap-2 border-b [border-color:var(--mk-border)] px-4 py-3 [background:var(--mk-surface)]">
-        <div className="terminal-dots flex items-center gap-2">
-          <span className="terminal-dot-red" />
-          <span className="terminal-dot-amber" />
-          <span className="terminal-dot-green" />
+      {/* top bar — matches real dashboard topbar structure */}
+      <div className="flex items-center gap-3 border-b [border-color:var(--mk-border)] px-4 py-2.5 [background:var(--mk-surface)]">
+        <div className="flex items-center gap-2">
+          <div className="brand-bg flex h-6 w-6 shrink-0 items-center justify-center rounded-md">
+            <Brain size={13} className="text-white" />
+          </div>
+          <span className="text-xs font-semibold [color:var(--mk-text)]">{brand}</span>
         </div>
-        <div className="ml-3 flex-1 font-mono text-xs [color:var(--mk-text-subtle)]">
-          {brand} — dashboard
+        <div className="flex flex-1 items-center gap-2 rounded-lg border [border-color:var(--mk-border)] px-2.5 py-1.5 [background:var(--mk-bg)]">
+          <Search size={13} className="[color:var(--mk-text-subtle)]" />
+          <span className="text-xs [color:var(--mk-text-subtle)]">
+            {UI_STRINGS[lang].searchPlaceholder}
+          </span>
         </div>
-        <span className="brand-text text-xs font-medium">live</span>
+        <div className="flex items-center gap-1.5 text-xs [color:var(--mk-text-subtle)]">
+          <Clock size={11} />
+          {UI_STRINGS[lang].timeLabel}
+        </div>
       </div>
 
-      <div className="grid h-[480px] grid-cols-[160px_1fr]">
+      <div className="grid h-[480px] grid-cols-[180px_1fr]">
         {/* sidebar */}
         <div className="hidden flex-col gap-1 border-r [border-color:var(--mk-border)] p-3 [background:var(--mk-surface-2)] sm:flex">
           {/* firm header */}
@@ -279,7 +303,8 @@ export default function DashboardReel({
           {sidebar.map((item, i) => {
             const Icon = item.icon;
             const isActive =
-              (view === 0 && i === 1) || (view === 1 && i === 0) || (view === 2 && i === 2);
+              (view === 0 && i === 1) || (view === 1 && i === 4) || (view === 2 && i === 2);
+            // view 0: Akten (i=1), view 1: Chat/Brain (i=4), view 2: Fristen (i=2)
             return (
               <div
                 key={i}
@@ -295,34 +320,24 @@ export default function DashboardReel({
               </div>
             );
           })}
-          {/* usage at bottom */}
-          <div className="mt-auto border-t [border-color:var(--mk-border)] pt-3">
-            <div className="mb-1 text-xs [color:var(--mk-text-subtle)]">Assistenten-Anfragen</div>
-            <div className="flex items-center gap-1.5">
-              <div className="h-1.5 flex-1 overflow-hidden rounded-full [background:var(--mk-surface)]">
-                <div className="brand-bg h-full rounded-full" style={{ width: "42%" }} />
+          {/* brain status — matches real dashboard sidebar brain card */}
+          <div className="mt-auto rounded-lg border [border-color:var(--mk-border)] bg-[var(--mk-surface)] px-2.5 py-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium [color:var(--mk-text-subtle)]">Brain</span>
+              <div className="flex items-center gap-1.5">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full [background:var(--signal-green)]" />
+                <span className="text-xs font-medium [color:var(--mk-text-muted)]">Active</span>
               </div>
-              <span className="font-mono text-xs [color:var(--mk-text-muted)]">42%</span>
+            </div>
+            <div className="mt-1 flex items-center gap-1 font-mono text-xs [color:var(--mk-text-subtle)] tabular-nums">
+              <Zap size={10} className="shrink-0" />
+              <span>1,247 pages · 89 entities</span>
             </div>
           </div>
         </div>
 
         {/* main content area */}
         <div className="relative flex flex-col overflow-hidden">
-          {/* top bar */}
-          <div className="flex items-center gap-3 border-b [border-color:var(--mk-border)] px-4 py-2.5 [background:var(--mk-surface)]">
-            <div className="flex flex-1 items-center gap-2 rounded-lg border [border-color:var(--mk-border)] px-2.5 py-1.5 [background:var(--mk-bg)]">
-              <Search size={13} className="[color:var(--mk-text-subtle)]" />
-              <span className="text-xs [color:var(--mk-text-subtle)]">
-                {UI_STRINGS[lang].searchPlaceholder}
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5 text-xs [color:var(--mk-text-subtle)]">
-              <Clock size={11} />
-              {UI_STRINGS[lang].timeLabel}
-            </div>
-          </div>
-
           {/* view content */}
           <div className="flex-1 overflow-hidden p-4">
             <AnimatePresence mode="wait">
@@ -330,14 +345,14 @@ export default function DashboardReel({
               {view === 0 && (
                 <motion.div
                   key="matters"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3 }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.25, ease: [0.45, 0, 0.55, 1] }}
                   className="space-y-2"
                 >
                   <div className="mb-3 flex items-center justify-between">
-                    <h3 className="text-sm font-bold [color:var(--mk-text)]">
+                    <h3 className="text-sm font-semibold [color:var(--mk-text)]">
                       {UI_STRINGS[lang].mattersLabel}
                     </h3>
                     <span className="text-xs [color:var(--mk-text-subtle)]">
@@ -385,15 +400,15 @@ export default function DashboardReel({
               {view === 1 && (
                 <motion.div
                   key="brain"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3 }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.25, ease: [0.45, 0, 0.55, 1] }}
                   className="flex h-full flex-col"
                 >
                   <div className="mb-3 flex items-center gap-2">
                     <Brain size={15} className="brand-text" />
-                    <h3 className="text-sm font-bold [color:var(--mk-text)]">Brain</h3>
+                    <h3 className="text-sm font-semibold [color:var(--mk-text)]">Brain</h3>
                   </div>
                   <div className="flex-1 space-y-3 overflow-hidden">
                     {brainPhase > 0 && (
@@ -462,17 +477,17 @@ export default function DashboardReel({
               {view === 2 && (
                 <motion.div
                   key="deadlines"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3 }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.25, ease: [0.45, 0, 0.55, 1] }}
                   className="space-y-2"
                 >
                   <div className="mb-3 flex items-center justify-between">
-                    <h3 className="text-sm font-bold [color:var(--mk-text)]">
+                    <h3 className="text-sm font-semibold [color:var(--mk-text)]">
                       {UI_STRINGS[lang].deadlinesLabel}
                     </h3>
-                    <span className="text-xs font-medium text-rose-400">
+                    <span className="text-xs font-medium [color:var(--signal-rose)]">
                       {v.deadlines.filter((d) => d.urgent).length} {UI_STRINGS[lang].urgentLabel}
                     </span>
                   </div>
@@ -484,17 +499,19 @@ export default function DashboardReel({
                       transition={{ delay: i * 0.08 }}
                       className={`flex items-center gap-3 rounded-lg border px-3 py-2.5 ${
                         d.urgent
-                          ? "border-rose-500/20 [background:rgba(251,113,133,0.06)]"
+                          ? "[border-color:color-mix(in_srgb,var(--signal-rose)_22%,transparent)] [background:color-mix(in_srgb,var(--signal-rose)_6%,transparent)]"
                           : "[border-color:var(--mk-border)] [background:var(--mk-surface)]"
                       }`}
                     >
                       <div
                         className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
-                          d.urgent ? "bg-rose-500/10" : "[background:var(--mk-surface-2)]"
+                          d.urgent
+                            ? "[background:color-mix(in_srgb,var(--signal-rose)_10%,transparent)]"
+                            : "[background:var(--mk-surface-2)]"
                         }`}
                       >
                         {d.urgent ? (
-                          <AlertTriangle size={14} className="text-rose-400" />
+                          <AlertTriangle size={14} style={{ color: "var(--signal-rose)" }} />
                         ) : (
                           <CheckCircle2 size={14} className="[color:var(--mk-text-subtle)]" />
                         )}
@@ -508,7 +525,7 @@ export default function DashboardReel({
                         </p>
                       </div>
                       <span
-                        className={`font-mono text-xs font-medium ${d.urgent ? "text-rose-400" : "[color:var(--mk-text-muted)]"}`}
+                        className={`font-mono text-xs font-medium ${d.urgent ? "[color:var(--signal-rose)]" : "[color:var(--mk-text-muted)]"}`}
                       >
                         {d.date}
                       </span>

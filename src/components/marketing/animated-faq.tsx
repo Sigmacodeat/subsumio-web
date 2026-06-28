@@ -5,7 +5,7 @@
 // Single-open: opening one item closes the previous one smoothly.
 
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 
 export function AnimatedFaqList({
@@ -53,25 +53,21 @@ export function AnimatedFaqList({
                 </motion.span>
               </button>
 
-              <AnimatePresence initial={false}>
-                {isOpen && (
-                  <motion.div
-                    key="body"
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.28, ease: [0.25, 0.1, 0.25, 1] }}
-                    style={{ overflow: "hidden" }}
-                  >
-                    <p
-                      className="px-5 pb-5 text-sm leading-relaxed"
-                      style={{ color: "var(--mk-text-muted)" }}
-                    >
-                      {item.a}
-                    </p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              <motion.div
+                key="body"
+                initial={false}
+                animate={{ height: isOpen ? "auto" : 0, opacity: isOpen ? 1 : 0 }}
+                transition={{ duration: 0.28, ease: [0.25, 0.1, 0.25, 1] }}
+                style={{ overflow: "hidden" }}
+                aria-hidden={!isOpen}
+              >
+                <p
+                  className="px-5 pb-5 text-sm leading-relaxed"
+                  style={{ color: "var(--mk-text-muted)" }}
+                >
+                  {item.a}
+                </p>
+              </motion.div>
             </div>
           </motion.div>
         );

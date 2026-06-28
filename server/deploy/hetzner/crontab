@@ -46,6 +46,12 @@
 # ── 08:00 UTC (10:00 CEST) — Retention policy check ──
 0 8 * * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/retention || true
 
+# ── 09:00 UTC (11:00 CEST) — Auto-playbook update ──
+# Scans all executed contracts (frontmatter.status=executed) and updates
+# playbooks with negotiated clause positions. Stages by default (auto_apply=false);
+# pass ?auto_apply=true to auto-apply without manual approval.
+0 9 * * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/auto-playbook || true
+
 # ── Every hour — Appointment reminders ──
 0 * * * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/appointment-reminders || true
 
@@ -58,3 +64,8 @@
 # Drains the persistent post_upload_task outbox: analysis, contradiction probe,
 # case reconciliation. Tasks survive container restarts; retried with backoff.
 */2 * * * *    curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/post-upload-drain || true
+
+# ── Every 5 minutes — Pipeline queue-health watchdog ──
+# Pulls /api/jobs/health; emails QUEUE_ALERT_EMAIL on dead-letters, a wedged
+# queue, backlog spikes, or piled-up outbox failures. Thresholds are env-tunable.
+*/5 * * * *    curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/queue-alert || true

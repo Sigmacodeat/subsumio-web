@@ -400,7 +400,10 @@ export function Topbar({
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (
-    <header className="flex h-11 shrink-0 items-center justify-between border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 pt-[env(safe-area-inset-top)] shadow-[0_1px_3px_-1px_rgba(0,0,0,0.04)] md:h-12 md:px-6 lg:px-8">
+    <header
+      data-tour="topbar"
+      className="flex h-11 shrink-0 items-center justify-between border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 pt-[env(safe-area-inset-top)] shadow-[0_1px_3px_-1px_rgba(0,0,0,0.04)] md:h-12 md:px-6 lg:px-8"
+    >
       <div className="flex max-w-xs min-w-0 flex-1 items-center gap-3 md:max-w-sm lg:max-w-lg">
         <button
           onClick={mobileOpen ? onMobileMenuClose : onMobileMenuOpen}
@@ -410,7 +413,11 @@ export function Topbar({
         >
           {mobileOpen ? <X size={18} /> : <Menu size={18} />}
         </button>
-        <div className="group relative hidden flex-1 sm:block" ref={searchRef}>
+        <div
+          data-tour="command-palette-hint"
+          className="group relative hidden flex-1 sm:block"
+          ref={searchRef}
+        >
           <Search
             size={16}
             className="absolute top-1/2 left-3 z-10 -translate-y-1/2 text-[color:var(--ds-text-subtle)]"
@@ -664,6 +671,7 @@ export function Topbar({
       <div className="flex shrink-0 items-center gap-2 max-md:hidden">
         <button
           onClick={onCopilotToggle}
+          data-tour="copilot-toggle"
           aria-label={copilotOpen ? "Copilot schließen" : "Copilot öffnen"}
           title={copilotOpen ? "Copilot schließen (Cmd+J)" : "Copilot öffnen (Cmd+J)"}
           aria-pressed={copilotOpen}

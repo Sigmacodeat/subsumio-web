@@ -68,7 +68,7 @@ export function PricingGrid({ lang }: { lang: Lang }) {
               }`}
             >
               <div
-                className={`relative flex h-full flex-col rounded-2xl border p-7 ${
+                className={`relative flex h-full flex-col rounded-2xl border p-6 ${
                   tier.highlight
                     ? "border-transparent"
                     : "[border-color:var(--mk-border)] [background:var(--mk-surface)] hover:[border-color:var(--mk-border-strong)]"
@@ -102,7 +102,7 @@ export function PricingGrid({ lang }: { lang: Lang }) {
                       {displayPrice}
                     </span>
                     <span
-                      className={`text-xs ${tier.highlight ? "text-white/50" : "[color:var(--mk-text-muted)]"}`}
+                      className={`text-xs ${tier.highlight ? "text-white/60" : "[color:var(--mk-text-muted)]"}`}
                     >
                       {displayPeriod}
                     </span>
@@ -121,7 +121,7 @@ export function PricingGrid({ lang }: { lang: Lang }) {
                     >
                       <Check
                         size={13}
-                        className={`mt-0.5 shrink-0 ${tier.highlight ? "text-[#60a5fa]" : "brand-text"}`}
+                        className={`mt-0.5 shrink-0 ${tier.highlight ? "[color:var(--brand-text)]" : "brand-text"}`}
                       />
                       {f}
                     </li>

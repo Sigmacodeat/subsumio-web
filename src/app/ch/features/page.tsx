@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import FeaturesPage from "@/components/marketing/features-page";
 import { FEATURES_PAGE } from "@/content/features";
-import { JsonLd, softwareApplicationLd } from "@/components/seo/jsonld";
+import { JsonLd, softwareApplicationLd, faqPageLd, breadcrumbLd } from "@/components/seo/jsonld";
 
 export const metadata: Metadata = {
   title: FEATURES_PAGE.ch.metaTitle,
@@ -27,6 +27,13 @@ export default function Page() {
   return (
     <>
       <JsonLd data={softwareApplicationLd("ch")} />
+      <JsonLd data={faqPageLd(FEATURES_PAGE.ch.faq)} />
+      <JsonLd
+        data={breadcrumbLd([
+          { name: "Subsumio", url: "/ch" },
+          { name: "Features", url: "/ch/features" },
+        ])}
+      />
       <FeaturesPage lang="ch" />
     </>
   );

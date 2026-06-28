@@ -123,7 +123,7 @@ function CtaClose({
 
 const _deSubpages = {
   whatsapp: {
-    eyebrow: "Das stärkste Argument",
+    eyebrow: "Komfort-Kanal für unterwegs",
     title: "Die Kanzlei",
     claim: "in der Hosentasche.",
     sub: "Zeit buchen, Belege ablegen, Akten befragen — vom Handy, ohne App-Wechsel, ohne Schulung. Der Copilot versteht die Akte und legt alles bestätigungspflichtig ins Brain.",
@@ -140,7 +140,7 @@ const COPY = {
   ch: _deSubpages,
   en: {
     whatsapp: {
-      eyebrow: "The standout advantage",
+      eyebrow: "Convenience on the go",
       title: "The firm",
       claim: "in your pocket.",
       sub: "Book time, file documents, query matters — from your phone, no app switch, no training. The copilot understands the matter and files everything for confirmation.",

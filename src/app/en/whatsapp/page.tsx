@@ -3,7 +3,7 @@ import { WhatsAppPage } from "@/components/marketing/subsumio-subpages";
 import { JsonLd, organizationLd, breadcrumbLd } from "@/components/seo/jsonld";
 
 export const metadata: Metadata = {
-  title: "Subsumio WhatsApp Copilot — book time, file documents, query cases from your phone",
+  title: "Subsumio WhatsApp Copilot — legal work from your phone",
   description:
     "Book time, file documents, query cases from WhatsApp — no app switch, no training required. The copilot understands your case file and files everything confirmation-gated, nothing unreviewed. GoBD-compliant.",
   alternates: {
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: "Subsumio WhatsApp Copilot — book time, file documents, query cases from your phone",
+    title: "Subsumio WhatsApp Copilot — legal work from your phone",
     description:
       "Book time, file documents, query cases from WhatsApp — no app switch, no training required. Confirmation-gated, nothing unreviewed. GoBD-compliant.",
     url: "/en/whatsapp",

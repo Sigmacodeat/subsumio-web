@@ -57,9 +57,23 @@ export interface StorageConfig {
 }
 
 /**
- * Create a StorageBackend from config.
+ * Create a StorageBackend from config. When at-rest encryption is configured
+ * (SUBSUMIO_STORAGE_ENCRYPTION_KEY set), the chosen backend is transparently
+ * wrapped so files are encrypted on write and decrypted on read — regardless of
+ * backend (local disk OR s3/r2). Without a key, behaviour is unchanged.
  */
 export async function createStorage(config: StorageConfig): Promise<StorageBackend> {
+  const backend = await createRawStorage(config);
+  const { loadKeyring } = await import("./file-encryption.ts");
+  const keyring = loadKeyring();
+  if (keyring) {
+    const { EncryptedStorage } = await import("./storage/encrypted.ts");
+    return new EncryptedStorage(backend, keyring);
+  }
+  return backend;
+}
+
+async function createRawStorage(config: StorageConfig): Promise<StorageBackend> {
   switch (config.backend) {
     case "s3": {
       const { S3Storage } = await import("./storage/s3.ts");

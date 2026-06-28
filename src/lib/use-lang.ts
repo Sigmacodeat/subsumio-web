@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Lang } from "@/content/site";
+import { HREFLANG } from "@/content/site";
 import { createT, type TFunc } from "@/content/dashboard";
 export type { TFunc };
 import { useMe } from "@/lib/queries/auth";
@@ -110,6 +111,6 @@ export function setDashboardLang(lang: Lang) {
     localStorage.setItem("dashboard-lang", lang);
   } catch {}
   if (typeof document !== "undefined") {
-    document.documentElement.lang = lang;
+    document.documentElement.lang = HREFLANG[lang] || lang;
   }
 }

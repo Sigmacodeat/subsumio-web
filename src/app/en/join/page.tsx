@@ -9,7 +9,13 @@ export const metadata: Metadata = {
   robots: { index: false },
   alternates: {
     canonical: "/en/join",
-    languages: { "de-DE": "/join", "de-AT": "/at/join", "de-CH": "/ch/join", en: "/en/join" },
+    languages: {
+      "de-DE": "/join",
+      "de-AT": "/at/join",
+      "de-CH": "/ch/join",
+      en: "/en/join",
+      "x-default": "/join",
+    },
   },
 };
 

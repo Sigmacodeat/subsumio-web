@@ -206,12 +206,38 @@ export const GAP_LABELS: Record<string, string> = {
   ethical_wall_violation: "Ethical Wall Verletzung",
 };
 
+export const GAP_LABELS_EN: Record<string, string> = {
+  missing_document: "Missing document",
+  missing_deadline: "Missing deadline",
+  missing_power_of_attorney: "Missing power of attorney",
+  missing_attachment: "Missing attachment",
+  missing_deadline_confirmation: "Missing deadline confirmation",
+  unclear_opponent: "Unclear opponent",
+  unreviewed_document: "Unreviewed document",
+  contradictory_facts: "Contradictory facts",
+  stale_knowledge_asset: "Stale knowledge asset",
+  missing_client_info: "Missing client information",
+  engine_unreachable: "Engine unreachable",
+  incomplete_coverage: "Incomplete coverage",
+  missing_communication_log: "Missing communication log",
+  unprivileged_communication: "Unprivileged communication",
+  ethical_wall_violation: "Ethical wall violation",
+};
+
 export const DEFAULT_EXAMPLE_QUERIES: string[] = [
   "Welche Fristen und offenen Aufgaben sind heute kritisch?",
   "Fasse eine Akte mit Risiken, Belegen und nächsten Schritten zusammen.",
   "Prüfe ein Dokument auf Fristen, Anlagen und Widersprüche.",
   "Erstelle ein Mandantenupdate aus dem aktuellen Aktenstand.",
   "Welche Unterlagen oder Signaturen fehlen noch?",
+];
+
+export const DEFAULT_EXAMPLE_QUERIES_EN: string[] = [
+  "Which deadlines and open tasks are critical today?",
+  "Summarize a case with risks, citations, and next steps.",
+  "Check a document for deadlines, attachments, and contradictions.",
+  "Create a client update from the current case status.",
+  "Which documents or signatures are still missing?",
 ];
 
 export interface ChatTemplate {
@@ -274,6 +300,62 @@ export const CHAT_TEMPLATES: ChatTemplate[] = [
     id: "tpl-allgemein-erklärung",
     label: "Rechtsbegriff erklären",
     template: "Erkläre den folgenden Rechtsbegriff verständlich und mit Beispielen: ",
+    category: "allgemein",
+  },
+];
+
+export const CHAT_TEMPLATES_EN: ChatTemplate[] = [
+  {
+    id: "tpl-recherche-rechtslage",
+    label: "Research legal situation",
+    template:
+      "Please research the current legal situation on the following topic and cite the relevant statutes: ",
+    category: "recherche",
+  },
+  {
+    id: "tpl-drafting-klage",
+    label: "Draft a lawsuit",
+    template:
+      "Draft a lawsuit with the following details:\n- Court: \n- Plaintiff: \n- Defendant: \n- Subject matter: ",
+    category: "drafting",
+  },
+  {
+    id: "tpl-fristen-berechnen",
+    label: "Calculate deadline",
+    template:
+      "Calculate the deadline for the following and state the last day:\n- Start date: \n- Duration: ",
+    category: "fristen",
+  },
+  {
+    id: "tpl-aktenanalyse-zusammenfassung",
+    label: "Case summary",
+    template: "Summarize the key facts, parties, and open questions from this case: ",
+    category: "aktenanalyse",
+  },
+  {
+    id: "tpl-aktenanalyse-risiken",
+    label: "Risk analysis",
+    template:
+      "Analyze the risks in this case: What procedural, substantive, and strategic risks exist? ",
+    category: "aktenanalyse",
+  },
+  {
+    id: "tpl-recherche-präzedenzfälle",
+    label: "Search precedents",
+    template: "Search for relevant precedents and rulings on the following matter: ",
+    category: "recherche",
+  },
+  {
+    id: "tpl-drafting-vertrag",
+    label: "Draft contract",
+    template:
+      "Draft a contract for the following agreement:\n- Contract type: \n- Parties: \n- Key terms: ",
+    category: "drafting",
+  },
+  {
+    id: "tpl-allgemein-erklärung",
+    label: "Explain legal term",
+    template: "Explain the following legal term in plain language with examples: ",
     category: "allgemein",
   },
 ];

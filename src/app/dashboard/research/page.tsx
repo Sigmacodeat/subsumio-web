@@ -97,7 +97,7 @@ export default function ResearchPage() {
     setCurrentGaps([]);
     setCurrentGrounding(null);
     setResearchJobId(null);
-    setResearchPhase(lang === "de" ? "Recherche wird vorbereitet …" : "Preparing research …");
+    setResearchPhase(t("research.phase_preparing"));
 
     try {
       // Submit to Supervisor agent pipeline for deep, multi-step research.
@@ -112,7 +112,7 @@ export default function ResearchPage() {
       const submitData = (await submitRes.json()) as { jobId: number };
       const jobId = submitData.jobId;
       setResearchJobId(jobId);
-      setResearchPhase(lang === "de" ? "Supervisor plant Recherche …" : "Supervisor planning …");
+      setResearchPhase(t("research.phase_planning"));
 
       // Poll until done
       const POLL_INTERVAL = 3000;
@@ -122,11 +122,7 @@ export default function ResearchPage() {
       await new Promise<void>((resolve, reject) => {
         const poll = async () => {
           if (Date.now() - started > MAX_WAIT_MS) {
-            reject(
-              new Error(
-                lang === "de" ? "Zeitlimit überschritten (5 min)." : "Timed out after 5 minutes."
-              )
-            );
+            reject(new Error(t("research.error_timeout")));
             return;
           }
           try {
@@ -153,12 +149,7 @@ export default function ResearchPage() {
               setResearchPhase("");
               resolve();
             } else if (job.status === "failed" || job.status === "dead") {
-              reject(
-                new Error(
-                  job.error_text ??
-                    (lang === "de" ? "Recherche fehlgeschlagen." : "Research failed.")
-                )
-              );
+              reject(new Error(job.error_text ?? t("research.error_failed")));
             } else {
               setTimeout(poll, POLL_INTERVAL);
             }
@@ -181,13 +172,7 @@ export default function ResearchPage() {
       setSessions((s) => [session, ...s]);
     } catch (err) {
       setResearchPhase("");
-      setError(
-        err instanceof Error
-          ? err.message
-          : lang === "de"
-            ? "Recherche fehlgeschlagen."
-            : "Research failed."
-      );
+      setError(err instanceof Error ? err.message : t("research.error_failed"));
     } finally {
       setLoading(false);
     }
@@ -202,7 +187,7 @@ export default function ResearchPage() {
         .slice(0, 40)}-${Date.now()}`;
       const payload = {
         slug,
-        title: `${lang === "de" ? "Recherche" : "Research"}: ${query.slice(0, 80)}`,
+        title: `${t("research.title_prefix")}: ${query.slice(0, 80)}`,
         type: "legal_research",
         content: currentAnswer,
         frontmatter: {
@@ -239,9 +224,7 @@ export default function ResearchPage() {
       await api.legal.judgementsSync({ jurisdiction: jurisdiction as "at" | "de" | "all", query });
       setError(null);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : lang === "de" ? "Sync fehlgeschlagen." : "Sync failed."
-      );
+      setError(err instanceof Error ? err.message : t("research.error_sync"));
     } finally {
       setLoading(false);
     }

@@ -82,6 +82,7 @@ describe("createEngineProxy citationGate", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(fs.readFile).mockRejectedValue(new Error("ENOENT"));
+    global.fetch = mockFetch as unknown as typeof fetch;
   });
 
   afterEach(() => {

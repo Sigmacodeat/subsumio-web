@@ -4,9 +4,10 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence } from "framer-motion";
-import { BookOpen, CheckCircle2, LifeBuoy, Mail, Route, X } from "lucide-react";
+import { BookOpen, CheckCircle2, LifeBuoy, Mail, Route, X, Sparkles } from "lucide-react";
 import { useLang } from "@/lib/use-lang";
 import { motion, useDashboardMotion } from "@/components/dashboard/motion";
+import { useTour } from "@/components/dashboard/guided-tour";
 
 interface DashboardGuideProps {
   open: boolean;
@@ -61,6 +62,7 @@ export function DashboardGuide({ open, onClose }: DashboardGuideProps) {
   const pathname = usePathname();
   const { t } = useLang();
   const { reduceMotion, panelTransition } = useDashboardMotion();
+  const { restartTour } = useTour();
 
   useEffect(() => {
     if (!open) return;
@@ -203,6 +205,16 @@ export function DashboardGuide({ open, onClose }: DashboardGuideProps) {
             </div>
 
             <div className="border-t border-[color:var(--ds-border)] p-4">
+              <button
+                onClick={() => {
+                  restartTour();
+                  onClose();
+                }}
+                className="mb-2 flex w-full items-center justify-center gap-2 rounded-lg border border-[color:var(--brand-primary)]/30 bg-[color:var(--brand-primary)]/5 px-3 py-2.5 text-sm font-medium text-[color:var(--ds-text)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--brand-primary)]/10 active:scale-95"
+              >
+                <Sparkles size={15} className="brand-text" />
+                Tour erneut starten
+              </button>
               <a
                 href="mailto:support@subsumio.com"
                 className="flex items-center justify-center gap-2 rounded-lg border border-[color:var(--ds-border)] px-3 py-2.5 text-sm font-medium text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95"

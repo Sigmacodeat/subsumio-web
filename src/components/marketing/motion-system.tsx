@@ -462,34 +462,41 @@ export function GuidedCursor({ x, y, label, className = "", duration = 6.5 }: Gu
       style={{
         left: Array.isArray(x) ? x[0] : x,
         top: Array.isArray(y) ? y[0] : y,
-        filter: "drop-shadow(0 12px 22px rgba(0,0,0,0.28))",
+        filter: "drop-shadow(0 8px 18px rgba(0,0,0,0.22))",
       }}
       animate={{
         left: x,
         top: y,
-        scale: isPath ? [1, 0.98, 1.04, 1] : [1, 0.94, 1],
+        scale: isPath ? [1, 1, 0.92, 1.06, 1, 1] : [1, 0.94, 1],
       }}
       transition={
         isPath
-          ? { duration, repeat: Infinity, repeatDelay: 0.7, ease: "easeInOut" }
+          ? {
+              duration,
+              repeat: Infinity,
+              repeatDelay: 0.5,
+              ease: [0.45, 0, 0.55, 1],
+              scale: { duration, repeat: Infinity, repeatDelay: 0.5, ease: [0.45, 0, 0.55, 1] },
+            }
           : {
-              left: { type: "spring", stiffness: 120, damping: 22 },
-              top: { type: "spring", stiffness: 120, damping: 22 },
-              scale: { duration: 1.2, repeat: Infinity, ease: "easeInOut" },
+              left: { type: "spring", stiffness: 100, damping: 18, mass: 0.8 },
+              top: { type: "spring", stiffness: 100, damping: 18, mass: 0.8 },
+              scale: { duration: 1.4, repeat: Infinity, ease: [0.45, 0, 0.55, 1] },
             }
       }
     >
       <span
         className="relative mt-0.5 block h-5 w-4"
         style={{
-          background: "linear-gradient(145deg, #ffffff, #dbeafe)",
+          background:
+            "linear-gradient(145deg, var(--mk-text), color-mix(in srgb, var(--brand-text) 40%, var(--mk-text)))",
           clipPath: "polygon(0 0, 100% 48%, 58% 58%, 78% 100%, 55% 100%, 38% 64%, 0 84%)",
         }}
       >
-        <span className="absolute inset-0 rounded-sm border border-white/70" />
+        <span className="absolute inset-0 rounded-sm border border-white/40" />
       </span>
       {label && (
-        <span className="rounded-full border border-white/10 px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap text-white backdrop-blur-md [background:rgba(15,23,42,0.78)]">
+        <span className="rounded-full border border-white/10 px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap text-white backdrop-blur-md [background:color-mix(in_srgb,var(--mk-surface)_85%,transparent)]">
           {label}
         </span>
       )}

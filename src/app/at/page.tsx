@@ -10,15 +10,15 @@ import {
 import { LANDING } from "@/content/site";
 
 export const metadata: Metadata = {
-  title: "Subsumio — KI-Kanzleisoftware für Rechtsanwälte in Österreich | AT · DE · CH",
+  title: "Subsumio — KI-Kanzleisoftware für Österreich",
   description:
     "KI-Kanzleisoftware für Kanzleien in Österreich: Aktenverwaltung, Fristenkontrolle nach ZPO/ABGB, belegte KI-Antworten mit Fundstellen, ADATEV-Export, Kollisionsprüfung nach § 10 RAO. DSGVO-konform, EU-Cloud oder On-Premise.",
   alternates: {
     canonical: "/at",
-    languages: { "de-DE": "/", "de-AT": "/at", "de-CH": "/ch", en: "/en" },
+    languages: { "de-DE": "/", "de-AT": "/at", "de-CH": "/ch", en: "/en", "x-default": "/" },
   },
   openGraph: {
-    title: "Subsumio — KI-Kanzleisoftware für Rechtsanwälte in Österreich | AT · DE · CH",
+    title: "Subsumio — KI-Kanzleisoftware für Österreich",
     description:
       "Aktenverwaltung, Fristenkontrolle und belegte KI-Antworten für Kanzleien in Österreich. DSGVO-konform, EU-Cloud oder On-Premise. Jede Antwort mit Fundstelle.",
     url: "/at",
