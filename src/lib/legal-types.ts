@@ -69,6 +69,8 @@ export interface TimeEntry {
   started_at?: string;
   ended_at?: string;
   note?: string;
+  /** P3-2: Approval status for time entries — null = no approval needed, "pending" = submitted for approval, "approved" = confirmed, "rejected" = declined */
+  approval_status?: "pending" | "approved" | "rejected" | null;
 }
 
 export interface ExpenseEntry {

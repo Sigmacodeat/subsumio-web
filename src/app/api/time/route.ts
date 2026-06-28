@@ -244,6 +244,7 @@ export const PATCH = createHandler(
       "lawyer",
       "activity_type",
       "invoice_number",
+      "approval_status",
     ];
     for (const key of allowed) {
       if (body[key] !== undefined) {

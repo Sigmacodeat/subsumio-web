@@ -21,6 +21,7 @@ const ALL_ACTION_TYPES: ActionType[] = [
   "client_message_send",
   "document_request_send",
   "deadline_confirm",
+  "time_entry_approval",
 ];
 
 // ── REQUIRES_APPROVAL ───────────────────────────────────────────────────

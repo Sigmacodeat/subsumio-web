@@ -852,6 +852,68 @@ export const api = {
         return request(`/api/legal/trust-accounts/${path}`, { method: "DELETE" });
       },
     },
+
+    analytics: {
+      list(options?: {
+        court?: string;
+        judge?: string;
+        outcome?: string;
+        procedureType?: string;
+        limit?: number;
+      }): Promise<BrainPage[]> {
+        const params = new URLSearchParams();
+        if (options?.limit) params.set("limit", String(options.limit));
+        if (options?.court) params.set("court", options.court);
+        if (options?.judge) params.set("judge", options.judge);
+        if (options?.outcome) params.set("outcome", options.outcome);
+        if (options?.procedureType) params.set("procedureType", options.procedureType);
+        const qs = params.toString();
+        return request(`/api/legal/analytics${qs ? `?${qs}` : ""}`);
+      },
+
+      get(slug: string): Promise<BrainPage> {
+        const path = slug.split("/").map(encodeURIComponent).join("/");
+        return request(`/api/legal/analytics/${path}`);
+      },
+
+      create(input: {
+        caseSlug: string;
+        caseTitle: string;
+        caseNumber?: string;
+        court: string;
+        courtLevel?: string;
+        judge?: string;
+        procedureType?: string;
+        outcome?: string;
+        amountInDispute?: number;
+        amountAwarded?: number;
+        startDate?: string;
+        endDate?: string;
+        lawyerHours?: number;
+        notes?: string;
+      }): Promise<{ slug: string }> {
+        return request("/api/legal/analytics", {
+          method: "POST",
+          body: JSON.stringify(input),
+        });
+      },
+
+      update(
+        slug: string,
+        input: Record<string, unknown>
+      ): Promise<{ slug: string; success: boolean }> {
+        const path = slug.split("/").map(encodeURIComponent).join("/");
+        return request(`/api/legal/analytics/${path}`, {
+          method: "PATCH",
+          body: JSON.stringify(input),
+        });
+      },
+
+      delete(slug: string): Promise<{ ok: boolean }> {
+        const path = slug.split("/").map(encodeURIComponent).join("/");
+        return request(`/api/legal/analytics/${path}`, { method: "DELETE" });
+      },
+    },
   },
 
   whatsapp: {
