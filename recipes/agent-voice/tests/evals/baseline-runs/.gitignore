@@ -1,4 +1,0 @@
-# Live eval receipts may carry residual brain content from the operator's
-# real personas. Never commit them.
-*.json
-!canonical/
