@@ -3,6 +3,11 @@
 > Ehrliche Bestandsaufnahme + priorisierte Liste. Wer diese Liste abarbeitet,
 > erreicht echte Agentur-/Harvey-Niveau-Ingestion. Stand: 2026-06-28.
 >
+> **Produktionsstand:** Commit `ac135335fd`, live auf Hetzner am 2026-06-28.
+> Normaler und Direct-Upload wurden live durch Scanner → Originalablage →
+> Extraktion → semantische Bereitschaft getestet; EICAR wurde mit HTTP 422
+> abgewiesen und die Test-Tenants anschließend vollständig gelöscht.
+>
 > **Leitprinzip:** Vorhandenes nutzen, nichts doppelt bauen. Die Engine hat
 > bereits eine reife Job-Queue (`server/src/core/minions/queue.ts` mit
 > Backpressure, Leases, Budget-Meter, Progress) und eine definierte
@@ -22,15 +27,15 @@
 
 ---
 
-## Phase 0 — Aktuellen Stand shippen (sofort)
+## Phase 0 — Aktuellen Stand shippen — ERLEDIGT
 
-Der jetzige Code ist weder committed noch deployed. Er ist bereits wertvoll und
-darf nicht auf die großen Phasen warten.
-
-- [ ] `/ship` ausführen (VERSION-Bump, CHANGELOG, document-release, Review).
-- [ ] Hetzner-Deploy verifizieren (Container baut — lokal lief Docker nie).
-- [ ] Smoke-Test des vollen Upload-Pfads gegen Live (Direct-Upload → Outbox →
-      Drain-Cron → analyze/contradiction).
+- [x] Code committed und auf `main` gepusht.
+- [x] Hetzner-Images für Engine und Web gebaut; DB, Engine, Web, Caddy, Cron und
+      ClamAV gesund.
+- [x] Normaler und Direct-Upload live getestet; Original persistiert,
+      `extraction_status=ready`, `embedding_status=ready`, Outbox persistent.
+- [x] EICAR live blockiert; ClamAV-Limits an das 500-MB-Produktlimit angepasst.
+- [x] PostgreSQL- und Engine-Dateivolumen-Backup vor dem Deploy erstellt.
 - **Akzeptanz:** Live-Upload erzeugt sichtbar einen Outbox-Task, der Drain-Cron
   arbeitet ihn ab, Analyse erscheint am Dokument.
 
@@ -63,10 +68,10 @@ Umgesetzt (Schwellwert-Hybrid):
       Worker-Kill mid-extraction → Job re-leased & abgeschlossen. **Lokal nicht
       testbar (kein Docker) — Gate vor produktivem Vertrauen.**
 
-Folge-Notizen: Passwort-geschützte _große_ Dateien zeigen den Prompt nicht mehr
-sofort (Fehler entsteht im Worker) → `extraction_error_code: password_required`
-für Phase 3. Post-Upload-Tasks (analyze/contradiction) laufen über die Outbox mit
-Retry-Backoff, was die Ordering gegenüber der async-Extraktion natürlich löst.
+Passwortgeschützte Dateien werden bewusst synchron und request-scoped
+verarbeitet, damit das Kennwort niemals in der persistenten Job-Queue landet.
+Post-Upload-Tasks (analyze/contradiction) laufen über die Outbox mit
+Retry-Backoff und warten auf Extraktions- und Embedding-Bereitschaft.
 
 ## Phase 2 — Streaming-Upload (kein RAM-Buffering) — GEPLANT (Deploy-Gate)
 
@@ -79,7 +84,8 @@ nicht durchgelassen) nur unter echter Last testbar ist.
 — betroffene Dateien, Signaturen, Temp-File-Lifecycle, Env-Flag-Rollout
 (`SUBSUMIO_STREAMING_UPLOAD`), Unit-Test-Set (vorab) + Last/EICAR-Gate (Deploy).
 
-- [ ] Umsetzung erst mit Deploy-Zugang (Last- + Sicherheitstest sind das Gate).
+- [ ] Umsetzung hinter Rollout-Flag; Last- + Sicherheitstest auf einem Hetzner-
+      Staging-Klon sind das Gate (nicht direkt auf der Produktions-VM).
 - **Akzeptanz:** 10 parallele 500-MB-Uploads bringen den Container nicht über ein
   festes Speicher-Budget; RSS bleibt flach; EICAR im Stream wird abgelehnt.
 
@@ -116,6 +122,64 @@ Ohne Zahlen ist „Harvey-Qualität" eine Behauptung.
 - [ ] Alarm/Log bei wachsender Queue oder steigender Failure-Rate.
 - **Akzeptanz:** Bei einem Extraktions-Stau ist Ursache in <5 min aus den
   Metriken ablesbar.
+
+## Phase 6 — Beweissichere Ablage und Disaster Recovery (P0)
+
+- [ ] Originale clientseitig oder per Storage-KMS mit tenantbezogenen Schlüsseln
+      verschlüsseln; Key-Rotation und Wiederherstellung testen. Eine vorhandene
+      App-Encryption-Variable ist kein Beweis für verschlüsselte Binärdateien.
+- [ ] Versionierte, immutable Object-Storage-Retention/Object-Lock-Policy plus
+      definierte Lösch-/Legal-Hold-Regeln einführen.
+- [ ] Automatisches verschlüsseltes Offsite-Backup für PostgreSQL **und**
+      Originalobjekte; Restore-Drill mindestens quartalsweise. Das Deploy-Backup
+      auf derselben VM ist nur ein Rollback-Punkt, kein Disaster-Recovery.
+- [ ] Hash-/Chain-of-custody-Ledger für Upload, Scan, Transformation, OCR und
+      Export; periodischer Integritäts-Sweep.
+- **Akzeptanz:** Verlust der ganzen Hetzner-VM wird in einer isolierten Umgebung
+  innerhalb dokumentierter RPO/RTO vollständig wiederhergestellt.
+
+## Phase 7 — ADVOKAT als echtes SaaS-DMS-Connector-Modell (P0)
+
+- [x] Read-only Export/SMB-Bridge, ZIP-Schutz, Scan, Originalpersistenz,
+      Extraktion und Embedding sind implementiert.
+- [ ] Connector-Instanzen tenantbezogen modellieren. Der heutige Daemon ist
+      installationsweit und kann deshalb in einer Multi-Tenant-Produktivumgebung
+      nicht sicher über das Dashboard aktiviert werden.
+- [ ] Pro Kanzlei Credential-/Mount-Referenz, Cursor, Delta-Sync, Löschungen,
+      Umbenennungen, Retry/DLQ und nachvollziehbaren Sync-Status speichern.
+- [ ] ADVOKAT-Partnervertrag/API oder signierten lokalen Windows-Agenten bauen;
+      SMB/Export-Watching allein ist keine vollwertige bidirektionale Integration.
+- **Akzeptanz:** Zwei Testkanzleien synchronisieren parallel ohne Cross-Tenant-
+  Sichtbarkeit; Rename/Delete/Retry und Reconnect sind E2E belegt.
+
+## Phase 8 — Extraktions- und Zitiergenauigkeit (P1)
+
+- [ ] PST-Nachrichten als einzelne Dokumente mit stabilen IDs und Attachment-
+      Beziehungen importieren, nicht nur als zusammengeführten Text.
+- [ ] Seiten-/Absatz-/Tabellen-/Slide-Provenienz als strukturierte Chunk-Metadaten
+      speichern. Separator-Zählen reicht für belastbare Gerichtszitate nicht.
+- [ ] OCR-Resultate um Bounding Boxes, Confidence und Seitenrotation ergänzen;
+      fehlgeschlagene Einzel-Seiten gezielt erneut verarbeiten.
+- [ ] Review-Layer für `partial`/niedrige OCR-Confidence und passwortgeschützte
+      Dokumente mit Retry-UI.
+- [ ] ZIP-Manifeste und Parent/Child-Beziehungen dauerhaft speichern; partielle
+      Fehler pro Archivdatei sichtbar machen.
+- **Akzeptanz:** Zitat trifft im Benchmark Seite und Passage; jede abgeleitete
+  Aussage ist zum Originalobjekt und Transformationsschritt rückverfolgbar.
+
+## Phase 9 — Betriebsreife und externe Abhängigkeiten (P1)
+
+- [ ] Upstash Redis produktiv konfigurieren oder Rate-Limiting bewusst auf einen
+      hochverfügbaren eigenen Store umstellen; aktuell meldet Web die Variablen
+      als fehlend.
+- [ ] LLM-Credit-/Provider-Failover und Circuit Breaker: aktuell scheitern ältere
+      Subagent-Jobs bei erschöpftem Anthropic-Guthaben.
+- [ ] Tool-Verträge für Supervisor-Jobs versionieren; vorhandene Jobs referenzieren
+      teils ein nicht registriertes Research-Tool.
+- [ ] Container-Ressourcen begrenzen, Build/Runtime trennen und Swap/Monitoring
+      als Infrastructure-as-Code verwalten.
+- [ ] Presigned-Upload erst nach persistenter Session-/Nonce-Ablage und Lasttest
+      aktivieren; bis dahin bleibt er zurecht fail-closed deaktiviert.
 
 ---
 
