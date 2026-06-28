@@ -687,6 +687,53 @@ export const api = {
         return request(`/api/legal/templates/${path}`, { method: "DELETE" });
       },
     },
+
+    litigation: {
+      list(options?: { caseSlug?: string; phase?: string; limit?: number }): Promise<BrainPage[]> {
+        const params = new URLSearchParams();
+        if (options?.limit) params.set("limit", String(options.limit));
+        if (options?.caseSlug) params.set("caseSlug", options.caseSlug);
+        if (options?.phase) params.set("phase", options.phase);
+        const qs = params.toString();
+        return request(`/api/legal/litigation${qs ? `?${qs}` : ""}`);
+      },
+
+      get(slug: string): Promise<BrainPage> {
+        const path = slug.split("/").map(encodeURIComponent).join("/");
+        return request(`/api/legal/litigation/${path}`);
+      },
+
+      create(input: {
+        caseSlug: string;
+        caseTitle: string;
+        phase?: string;
+        court?: string;
+        courtFileNumber?: string;
+        instance?: string;
+        steps?: Array<Record<string, unknown>>;
+      }): Promise<{ slug: string }> {
+        return request("/api/legal/litigation", {
+          method: "POST",
+          body: JSON.stringify(input),
+        });
+      },
+
+      update(
+        slug: string,
+        input: Record<string, unknown>
+      ): Promise<{ slug: string; success: boolean }> {
+        const path = slug.split("/").map(encodeURIComponent).join("/");
+        return request(`/api/legal/litigation/${path}`, {
+          method: "PATCH",
+          body: JSON.stringify(input),
+        });
+      },
+
+      delete(slug: string): Promise<{ ok: boolean }> {
+        const path = slug.split("/").map(encodeURIComponent).join("/");
+        return request(`/api/legal/litigation/${path}`, { method: "DELETE" });
+      },
+    },
   },
 
   whatsapp: {

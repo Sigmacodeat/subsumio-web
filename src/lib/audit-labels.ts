@@ -100,7 +100,12 @@ export type AuditAction =
   | "dms.push"
   | "space.update"
   | "space.delete"
-  | "whatsapp.document_to_space";
+  | "whatsapp.document_to_space"
+  | "litigation.create"
+  | "litigation.update"
+  | "litigation.delete"
+  | "litigation.phase_advance"
+  | "litigation.step_update";
 
 const ACTION_LABELS: Record<string, string> = {
   "user.login": "Login",
@@ -176,6 +181,11 @@ const ACTION_LABELS: Record<string, string> = {
   "space.update": "Shared Space aktualisiert",
   "space.delete": "Shared Space gelöscht",
   "whatsapp.document_to_space": "WhatsApp-Dokument zugeordnet",
+  "litigation.create": "Verfahren angelegt",
+  "litigation.update": "Verfahren aktualisiert",
+  "litigation.delete": "Verfahren gelöscht",
+  "litigation.phase_advance": "Phase gewechselt",
+  "litigation.step_update": "Schritt aktualisiert",
 };
 
 export function auditLabel(action: string): string {

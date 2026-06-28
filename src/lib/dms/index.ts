@@ -162,6 +162,8 @@ export async function getConnector(): Promise<DMSConnector | null> {
       return (await import("./imanager")).iManageConnector;
     case "netdocuments":
       return (await import("./netdocuments")).netDocumentsConnector;
+    case "sharepoint":
+      return (await import("./sharepoint")).sharePointConnector;
     default:
       return null;
   }

@@ -11,7 +11,7 @@ import {
   aggregateRatingLd,
   videoObjectLd,
 } from "@/components/seo/jsonld";
-import { TESTIMONIALS } from "@/components/marketing/testimonials";
+import { TESTIMONIALS } from "@/components/marketing/testimonials-data";
 import { LANDING } from "@/content/site";
 
 export const metadata: Metadata = {

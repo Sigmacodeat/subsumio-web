@@ -181,6 +181,7 @@ export const ALL_NAV_ITEMS: NavItem[] = [
   { href: "/dashboard/analyze", icon: FileSearch, labelKey: "nav.analyze" },
   { href: "/dashboard/clause-library", icon: Library, labelKey: "nav.clause_library" },
   { href: "/dashboard/templates", icon: FileText, labelKey: "nav.templates" },
+  { href: "/dashboard/litigation", icon: Gavel, labelKey: "nav.litigation" },
   {
     href: "/dashboard/obligation-tracking",
     icon: ClipboardCheck,
@@ -261,6 +262,7 @@ export const PREFERRED_SECTION_BY_HREF: Array<{ href: string; section: Dashboard
   { href: "/dashboard/contracts", section: "nav.section.documents_drafting" },
   { href: "/dashboard/clause-library", section: "nav.section.documents_drafting" },
   { href: "/dashboard/templates", section: "nav.section.documents_drafting" },
+  { href: "/dashboard/litigation", section: "nav.section.documents_drafting" },
   { href: "/dashboard/tabular-review", section: "nav.section.documents_drafting" },
   { href: "/dashboard/obligation-tracking", section: "nav.section.documents_drafting" },
   { href: "/dashboard/translate", section: "nav.section.documents_drafting" },
