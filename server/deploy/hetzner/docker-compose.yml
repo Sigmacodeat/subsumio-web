@@ -16,6 +16,13 @@ services:
   clamav:
     image: clamav/clamav:stable
     restart: unless-stopped
+    environment:
+      # Keep ClamAV's INSTREAM ceiling aligned with the application's 500 MB
+      # document limit. The image default is only 100 MB and otherwise causes
+      # valid large uploads to fail closed as "scanner unavailable".
+      CLAMD_CONF_StreamMaxLength: "524288000"
+      CLAMD_CONF_MaxFileSize: "524288000"
+      CLAMD_CONF_MaxScanSize: "1073741824"
     volumes:
       - clamav-data:/var/lib/clamav
     healthcheck:
