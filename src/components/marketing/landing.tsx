@@ -86,7 +86,7 @@ const trustItem: Variants = {
 };
 
 export default function LandingPage({ lang }: { lang: Lang }) {
-  const t = LANDING[lang];
+  const t = (LANDING as Record<string, typeof LANDING.de>)[lang] ?? LANDING.de;
   const pricing = PRICING[lang];
   const ui = UI_STRINGS[lang];
   const reduce = useReducedMotion();

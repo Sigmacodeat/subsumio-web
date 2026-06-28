@@ -53,7 +53,7 @@ import {
 } from "node:fs";
 import { join, relative, dirname } from "node:path";
 import { homedir } from "node:os";
-import matter from "gray-matter";
+import matter from "../../yaml-matter.ts";
 import { computeContentHash } from "../types.ts";
 import type {
   IngestionSource,

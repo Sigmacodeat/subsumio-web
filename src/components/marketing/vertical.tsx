@@ -33,7 +33,7 @@ function SignatureBand({ industry, lang }: { industry: string; lang: Lang }) {
   if (!profile) return null;
 
   const signature = profile.signature;
-  const locale = lang === "de" ? "de" : "en";
+  const locale = lang !== "en" ? "de" : "en";
 
   return (
     <section className="relative z-10 px-6 pb-20">
@@ -135,10 +135,10 @@ export default function VerticalPage({
               <a href={isSubsumio ? "#pricing" : "#demo"}>
                 <Button size="xl" variant="ghost" className="min-w-[200px]">
                   {isSubsumio
-                    ? lang === "de"
+                    ? lang !== "en"
                       ? "Preise ansehen"
                       : "See pricing"
-                    : lang === "de"
+                    : lang !== "en"
                       ? "Live ansehen"
                       : "See it live"}{" "}
                   <ArrowRight size={18} />
@@ -147,10 +147,10 @@ export default function VerticalPage({
             </div>
             <p className="mb-4 text-xs [color:var(--mk-text-subtle)]">
               {isSubsumio
-                ? lang === "de"
+                ? lang !== "en"
                   ? "14 Tage Reverse Trial · 14 Tage Geld-zurück-Garantie · Keine Kreditkarte erforderlich"
                   : "14-day reverse trial · 14-day money-back guarantee · No credit card required"
-                : lang === "de"
+                : lang !== "en"
                   ? "Self-hosted · EU-Cloud · DSGVO-konform · § 203 StGB im Blick"
                   : "Self-hosted · EU cloud · GDPR-ready · professional secrecy by design"}
             </p>
@@ -225,7 +225,7 @@ export default function VerticalPage({
               badge={UI_STRINGS[lang].capabilitiesBadge}
               title={t.featuresTitle}
               sub={
-                lang === "de"
+                lang !== "en"
                   ? "Von Fristenkontrolle bis Widerspruchserkennung — alles auf deiner Infrastruktur, jede Antwort mit Fundstelle."
                   : "From deadline control to contradiction detection — all on your infrastructure, every answer cited."
               }

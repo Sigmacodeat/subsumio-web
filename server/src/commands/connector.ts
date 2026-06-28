@@ -53,6 +53,7 @@ Add options (per service):
     --api-key <key>
 
   Universal filters:
+    --watch-dir <path>             Local read-only import folder (beA / ADVOKAT)
     --filters <json>               e.g. '{"labels":["INBOX"]}'
     --poll-interval <ms>           Polling interval in ms (default: 300000)
     --mode <trickle|migration>     Sync mode (default: trickle)
@@ -82,9 +83,10 @@ function flagsToConfig(flags: Record<string, string>): ConnectorConfig {
   if (flags.redirect_uri) config.redirect_uri = flags.redirect_uri;
   if (flags.poll_interval) config.poll_interval_ms = parseInt(flags.poll_interval, 10);
   if (flags.mode) config.mode = flags.mode as "trickle" | "migration";
+  if (flags.watch_dir) config.filters = { ...(config.filters ?? {}), watch_dir: flags.watch_dir };
   if (flags.filters) {
     try {
-      config.filters = JSON.parse(flags.filters);
+      config.filters = { ...(config.filters ?? {}), ...JSON.parse(flags.filters) };
     } catch {
       console.error("Invalid --filters JSON");
       process.exit(1);

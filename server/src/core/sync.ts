@@ -186,9 +186,12 @@ export function isImageFilePath(path: string): boolean {
     lower.endsWith(".jpeg") ||
     lower.endsWith(".gif") ||
     lower.endsWith(".webp") ||
+    lower.endsWith(".tif") ||
+    lower.endsWith(".tiff") ||
     lower.endsWith(".heic") ||
     lower.endsWith(".heif") ||
-    lower.endsWith(".avif")
+    lower.endsWith(".avif") ||
+    lower.endsWith(".bmp")
   );
 }
 

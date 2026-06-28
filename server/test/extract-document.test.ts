@@ -1,11 +1,13 @@
 import { describe, test, expect, beforeAll, afterAll } from "bun:test";
-import { writeFileSync, mkdirSync, rmSync } from "fs";
+import { writeFileSync, mkdirSync, rmSync, chmodSync } from "fs";
 import { join } from "path";
 import {
   isDocumentFilePath,
   extractDocumentText,
   synthesizeDocumentMarkdown,
   SUPPORTED_DOCUMENT_EXTS,
+  PasswordRequiredError,
+  InvalidDocumentPasswordError,
 } from "../src/core/extract-document.ts";
 import { importFile } from "../src/core/import-file.ts";
 import type { BrainEngine } from "../src/core/engine.ts";
@@ -45,6 +47,23 @@ trailer<</Root 1 0 R>>`,
   );
 }
 
+function annotatedPdfFixture(): Buffer {
+  return Buffer.from(
+    `%PDF-1.4
+1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj
+2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj
+3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]/Contents 4 0 R/Resources<</Font<</F1 5 0 R>>>>/Annots[6 0 R]>>endobj
+4 0 obj<</Length 58>>stream
+BT /F1 24 Tf 72 720 Td (Vertrag mit Kommentar und Redline) Tj ET
+endstream
+endobj
+5 0 obj<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>endobj
+6 0 obj<</Type/Annot/Subtype/Text/Rect[72 700 100 730]/Contents(Haftung pruefen)/T(alice-example)/M(D:20260601120000Z)>>endobj
+trailer<</Root 1 0 R>>`,
+    "latin1"
+  );
+}
+
 /** Minimal docx built from the three required OOXML parts. */
 async function docxFixture(text: string): Promise<Buffer> {
   const JSZip = (await import("jszip")).default;
@@ -61,6 +80,29 @@ async function docxFixture(text: string): Promise<Buffer> {
     "word/document.xml",
     `<?xml version="1.0"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:r><w:t>${text}</w:t></w:r></w:p></w:body></w:document>`
   );
+  return zip.generateAsync({ type: "nodebuffer" });
+}
+
+async function reviewedDocxFixture(): Promise<Buffer> {
+  const JSZip = (await import("jszip")).default;
+  const zip = new JSZip();
+  zip.file(
+    "[Content_Types].xml",
+    `<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/comments.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.comments+xml"/></Types>`
+  );
+  zip.file(
+    "_rels/.rels",
+    `<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`
+  );
+  zip.file(
+    "word/document.xml",
+    `<?xml version="1.0"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:r><w:t>Alt </w:t></w:r><w:del w:id="1" w:author="alice-example" w:date="2026-06-01T10:00:00Z"><w:r><w:delText>Klausel A</w:delText></w:r></w:del><w:ins w:id="2" w:author="alice-example" w:date="2026-06-01T10:01:00Z"><w:r><w:t>Klausel B</w:t></w:r></w:ins></w:p></w:body></w:document>`
+  );
+  zip.file(
+    "word/comments.xml",
+    `<?xml version="1.0"?><w:comments xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:comment w:id="0" w:author="alice-example" w:date="2026-06-01T10:02:00Z"><w:p><w:r><w:t>Haftung prüfen</w:t></w:r></w:p></w:comment></w:comments>`
+  );
+  zip.file("word/media/image1.png", Buffer.from([0x89, 0x50, 0x4e, 0x47, 1, 2, 3]));
   return zip.generateAsync({ type: "nodebuffer" });
 }
 
@@ -156,10 +198,72 @@ describe("extractDocumentText", () => {
     expect(out.warnings.some((w) => w.startsWith("pdf_text_layer_sparse"))).toBe(true);
   });
 
+  test("pdf: preserves review annotations with page provenance", async () => {
+    const out = await extractDocumentText(annotatedPdfFixture(), ".pdf");
+    expect(out.text).toContain("PDF-Kommentare / Redlines");
+    expect(out.text).toContain("Seite 1 · Text");
+    expect(out.text).toContain("Haftung pruefen");
+    expect(out.frontmatter.annotations_count).toBe(1);
+  });
+
   test("docx: extracts paragraph text", async () => {
     const out = await extractDocumentText(await docxFixture("Mandantengespräch Notiz"), ".docx");
     expect(out.text).toContain("Mandantengespräch Notiz");
     expect(out.frontmatter.source_format).toBe("docx");
+  });
+
+  test("docm: parses OOXML without executing embedded macros", async () => {
+    const JSZip = (await import("jszip")).default;
+    const zip = await JSZip.loadAsync(await docxFixture("Makrovertrag"));
+    zip.file("word/vbaProject.bin", Buffer.from("macro-bytes-never-executed"));
+    const out = await extractDocumentText(await zip.generateAsync({ type: "nodebuffer" }), ".docm");
+    expect(out.text).toContain("Makrovertrag");
+    expect(out.frontmatter.source_format).toBe("docm");
+    expect(out.frontmatter.macros_present).toBe("true");
+    expect(out.warnings.some((warning) => warning.startsWith("office_macros_present"))).toBe(true);
+  });
+
+  test("docx: preserves comments and tracked redlines", async () => {
+    const out = await extractDocumentText(await reviewedDocxFixture(), ".docx");
+    expect(out.text).toContain("Änderungsverfolgung / Redline");
+    expect(out.text).toContain("Gelöscht:** Klausel A");
+    expect(out.text).toContain("Eingefügt:** Klausel B");
+    expect(out.text).toContain("Word-Kommentare");
+    expect(out.text).toContain("Haftung prüfen");
+    expect(out.frontmatter.comments_count).toBe(1);
+    expect(out.frontmatter.tracked_changes_count).toBe(2);
+    expect(out.frontmatter.redline_detected).toBe("true");
+  });
+
+  test("docx: OCRs embedded visuals with provenance", async () => {
+    const out = await extractDocumentText(await reviewedDocxFixture(), ".docx", {
+      ocrImage: async (_data, extension) => `Diagrammtext aus ${extension}`,
+    });
+    expect(out.text).toContain("Visueller Inhalt: word/media/image1.png");
+    expect(out.text).toContain("Diagrammtext aus .png");
+    expect(out.frontmatter.embedded_images_count).toBe(1);
+    expect(out.frontmatter.visual_ocr_count).toBe(1);
+  });
+
+  test("docx: requires and validates a password without persisting it", async () => {
+    const imported = await import("officecrypto-tool");
+    const officeCrypto = (
+      "default" in imported ? imported.default : imported
+    ) as typeof import("officecrypto-tool");
+    const encrypted = officeCrypto.encrypt(await docxFixture("Vertraulicher Vertrag"), {
+      password: "Correct-Horse-2026",
+    });
+    await expect(extractDocumentText(encrypted, ".docx")).rejects.toBeInstanceOf(
+      PasswordRequiredError
+    );
+    await expect(
+      extractDocumentText(encrypted, ".docx", { password: "falsch" })
+    ).rejects.toBeInstanceOf(InvalidDocumentPasswordError);
+    const out = await extractDocumentText(encrypted, ".docx", {
+      password: "Correct-Horse-2026",
+    });
+    expect(out.text).toContain("Vertraulicher Vertrag");
+    expect(JSON.stringify(out.frontmatter)).not.toContain("Correct-Horse-2026");
   });
 
   test("eml: extracts headers, body, subject-title and date", async () => {
@@ -171,11 +275,74 @@ describe("extractDocumentText", () => {
     expect(out.frontmatter.date).toBe("2026-06-01");
   });
 
+  test("eml: extracts supported attachments into searchable text", async () => {
+    const raw = [
+      "From: Alice Example <alice@example.com>",
+      "To: Bob Example <bob@example.com>",
+      "Subject: Akte mit Anlage",
+      "MIME-Version: 1.0",
+      'Content-Type: multipart/mixed; boundary="case-boundary"',
+      "",
+      "--case-boundary",
+      "Content-Type: text/plain; charset=utf-8",
+      "",
+      "Anbei die Forderungsliste.",
+      "--case-boundary",
+      'Content-Type: text/csv; name="forderungen.csv"',
+      'Content-Disposition: attachment; filename="forderungen.csv"',
+      "Content-Transfer-Encoding: base64",
+      "",
+      Buffer.from("Position,Betrag\nHonorar,1200\n").toString("base64"),
+      "--case-boundary--",
+      "",
+    ].join("\r\n");
+    const out = await extractDocumentText(Buffer.from(raw), ".eml");
+    expect(out.text).toContain("## Attachment: forderungen.csv");
+    expect(out.text).toContain('A2="Honorar"');
+    expect(out.text).toContain('B2="1200"');
+    expect(out.frontmatter.attachment_count).toBe(1);
+  });
+
+  test("pst: converts messages through readpst and the EML pipeline", async () => {
+    const binDir = join(TMP, "fake-pst-bin");
+    mkdirSync(binDir, { recursive: true });
+    const fakeReadPst = join(binDir, "readpst");
+    writeFileSync(
+      fakeReadPst,
+      `#!/bin/sh
+out=""
+while [ "$#" -gt 0 ]; do
+  if [ "$1" = "-o" ]; then shift; out="$1"; fi
+  shift
+done
+mkdir -p "$out/Inbox"
+printf 'From: alice-example@example.invalid\r\nTo: bob-example@example.invalid\r\nSubject: PST Test\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nPST Nachricht erfolgreich extrahiert.\r\n' > "$out/Inbox/1.eml"
+`,
+      { mode: 0o700 }
+    );
+    chmodSync(fakeReadPst, 0o700);
+    const previousPath = process.env.PATH;
+    process.env.PATH = `${binDir}:${previousPath ?? ""}`;
+    try {
+      const out = await extractDocumentText(Buffer.from("!BDN-test-pst"), ".pst", {
+        filename: "mailbox.pst",
+      });
+      expect(out.text).toContain("PST-Nachricht: Inbox/1.eml");
+      expect(out.text).toContain("PST Nachricht erfolgreich extrahiert");
+      expect(out.frontmatter.messages_total).toBe(1);
+      expect(out.frontmatter.messages_processed).toBe(1);
+    } finally {
+      process.env.PATH = previousPath;
+    }
+  });
+
   test("csv: passes text through", async () => {
     const out = await extractDocumentText(Buffer.from("a,b\n1,2\n"), ".csv", {
       filename: "data.csv",
     });
-    expect(out.text).toBe("a,b\n1,2");
+    expect(out.text).toContain("## Sheet:");
+    expect(out.text).toContain('A1="a"');
+    expect(out.text).toContain('B2="2"');
     expect(out.frontmatter.source_format).toBe("csv");
     expect(out.frontmatter.title).toBe("data.csv");
   });
@@ -183,8 +350,48 @@ describe("extractDocumentText", () => {
   test("xlsx: one section per sheet, as CSV", async () => {
     const out = await extractDocumentText(await xlsxFixture(), ".xlsx");
     expect(out.text).toContain("## Sheet: Q1");
-    expect(out.text).toContain("widget-co,12000");
+    expect(out.text).toContain('A2="widget-co"');
+    expect(out.text).toContain('B2="12000"');
     expect(out.frontmatter.sheets).toBe(1);
+  });
+
+  test("xls: extracts a legacy workbook with sheet provenance", async () => {
+    const XLSX = await import("xlsx");
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(
+      wb,
+      XLSX.utils.aoa_to_sheet([
+        ["Akte", "Wert"],
+        ["A-1", 42],
+      ]),
+      "Daten"
+    );
+    const buf = XLSX.write(wb, { type: "buffer", bookType: "xls" }) as Buffer;
+    const out = await extractDocumentText(buf, ".xls");
+    expect(out.text).toContain("## Sheet: Daten");
+    expect(out.text).toContain('A2="A-1"');
+    expect(out.text).toContain('B2="42"');
+    expect(out.frontmatter.source_format).toBe("xls");
+  });
+
+  test("rtf: extracts paragraphs and tabs", async () => {
+    const out = await extractDocumentText(
+      Buffer.from(String.raw`{\rtf1\ansi Vertrag\par Frist\tab 14 Tage}`),
+      ".rtf"
+    );
+    expect(out.text).toContain("Vertrag\nFrist\t14 Tage");
+    expect(out.frontmatter.source_format).toBe("rtf");
+  });
+
+  test("pptx: preserves slide provenance", async () => {
+    const JSZip = (await import("jszip")).default;
+    const zip = new JSZip();
+    zip.file("ppt/slides/slide1.xml", "<p:sld><a:t>Klageantrag</a:t></p:sld>");
+    zip.file("ppt/slides/slide2.xml", "<p:sld><a:t>Beweisangebot</a:t></p:sld>");
+    const out = await extractDocumentText(await zip.generateAsync({ type: "nodebuffer" }), ".pptx");
+    expect(out.text).toContain("## Slide 1\n\nKlageantrag");
+    expect(out.text).toContain("## Slide 2\n\nBeweisangebot");
+    expect(out.frontmatter.slides).toBe(2);
   });
 
   test("unsupported extension throws", async () => {

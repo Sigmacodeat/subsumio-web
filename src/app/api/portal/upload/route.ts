@@ -1,7 +1,8 @@
-import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
+import { ENGINE_URL, engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
 import { apiError, createPublicHandler } from "@/lib/api-handler";
 import { clientIp } from "@/lib/auth/rate-limit";
-import { scanUpload } from "@/lib/upload-pipeline";
+import { scanUploadWithDuplicateCheck } from "@/lib/upload-pipeline";
+import { brainDuplicateStore } from "@/lib/duplicate-store";
 import { verifyPortalToken } from "@/lib/portal-token";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 import {
@@ -18,6 +19,7 @@ import {
   fulfillDocumentRequestItems,
 } from "@/lib/portal-fulfillment";
 import type { BrainPage } from "@/lib/types";
+import { enqueueAllPostUploadTasks } from "@/lib/post-upload-outbox";
 
 export const dynamic = "force-dynamic";
 
@@ -117,6 +119,10 @@ export const POST = createPublicHandler(
     const file = formData.get("file");
     const documentRequestSlug = formData.get("document_request_slug");
     const itemKey = formData.get("item_key");
+    const password = formData.get("password");
+    if (typeof password === "string" && password.length > 255) {
+      return apiError("document_password_too_long", "Dokumentkennwort ist zu lang.", 400);
+    }
 
     const payload = await verifyPortalToken(typeof token === "string" ? token : null);
     if (!payload) {
@@ -130,7 +136,8 @@ export const POST = createPublicHandler(
       );
     }
 
-    const scan = await scanUpload(file);
+    const duplicateStore = brainDuplicateStore(engineHeadersForBrain(payload.brain_id));
+    const scan = await scanUploadWithDuplicateCheck(file, duplicateStore);
     if (!scan.ok) {
       return Response.json({ error: scan.error, message: scan.message }, { status: scan.status });
     }
@@ -153,6 +160,7 @@ export const POST = createPublicHandler(
     uploadForm.append("source", "portal");
     uploadForm.append("tags", JSON.stringify([payload.case_slug, "portal"]));
     uploadForm.append("case_slug", payload.case_slug);
+    if (typeof password === "string" && password) uploadForm.append("password", password);
 
     const upstream = await fetch(`${ENGINE_URL}/api/upload`, {
       method: "POST",
@@ -265,6 +273,50 @@ export const POST = createPublicHandler(
         "Akte konnte nach dem Upload nicht aktualisiert werden",
         502
       );
+
+    // Portal uploads must enter the exact same durable analysis pipeline as
+    // authenticated dashboard uploads.
+    const pendingPatch = await enginePatchPage(engineHeadersForBrain(payload.brain_id), {
+      slug: upload.slug,
+      frontmatter: {
+        analysis_status: "pending",
+        analysis_queued_at: now,
+      },
+    });
+    if (!pendingPatch.ok) {
+      return apiError(
+        "analysis_queue_status_failed",
+        "Analyse-Status konnte nicht gespeichert werden",
+        502
+      );
+    }
+    try {
+      await enqueueAllPostUploadTasks({
+        doc_slug: upload.slug,
+        case_slug: payload.case_slug,
+        brain_id: payload.brain_id,
+        doc_title: upload.title || scan.cleanName,
+        doc_size: scan.buffer.byteLength,
+        uploaded_at: now,
+      });
+    } catch (err) {
+      await enginePatchPage(engineHeadersForBrain(payload.brain_id), {
+        slug: upload.slug,
+        frontmatter: {
+          analysis_status: "failed",
+          analysis_error:
+            `outbox_enqueue_failed: ${err instanceof Error ? err.message : String(err)}`.slice(
+              0,
+              500
+            ),
+        },
+      });
+      return apiError(
+        "post_upload_queue_failed",
+        "Dokument gespeichert, Folgeanalyse konnte aber nicht eingeplant werden",
+        503
+      );
+    }
 
     broadcastSseEvent(payload.brain_id, "portal.document_uploaded", {
       caseSlug: payload.case_slug,

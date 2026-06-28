@@ -48,12 +48,18 @@ import {
   CloudUpload,
   Activity,
   RefreshCw,
+  Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toast";
 import { api } from "@/lib/api";
-import { DIRECT_UPLOAD_MAX_SIZE } from "@/lib/upload-validation";
+import { maxUploadSizeFor } from "@/lib/upload-validation";
+import {
+  isSupportedUploadName,
+  UPLOAD_ACCEPT_ATTRIBUTE,
+  UPLOAD_FOLDER_ACCEPT_RE,
+} from "@/lib/upload-formats";
 import { runUploadPool } from "@/lib/upload-queue";
 import { csrfFetch } from "@/lib/csrf";
 import { useMe } from "@/lib/queries/auth";
@@ -79,6 +85,11 @@ import {
   type ConflictCheckResult,
 } from "@/lib/contact-conflict";
 import { cn } from "@/lib/utils";
+import { PresignedUploader } from "@/components/presigned-uploader";
+import {
+  uploadFiles as presignedUploadFiles,
+  type UploadProgress as PresignedProgress,
+} from "@/lib/presigned-upload";
 const ChatPanel = lazy(() =>
   import("@/components/chat/chat-panel").then((m) => ({ default: m.ChatPanel }))
 );
@@ -371,6 +382,7 @@ export default function CaseDetailPage() {
   const [copied, setCopied] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [documentPassword, setDocumentPassword] = useState("");
   const [uploadQueue, setUploadQueue] = useState<
     Array<{
       id: string;
@@ -1020,35 +1032,17 @@ export default function CaseDetailPage() {
     }
     setUploadError(null);
 
-    const ACCEPTED_EXTS = [
-      ".pdf",
-      ".docx",
-      ".doc",
-      ".eml",
-      ".jpg",
-      ".jpeg",
-      ".png",
-      ".heic",
-      ".avif",
-      ".tif",
-      ".tiff",
-      ".txt",
-      ".rtf",
-      ".html",
-      ".htm",
-    ];
-    const MAX_SIZE = DIRECT_UPLOAD_MAX_SIZE;
-
     const validFiles: File[] = [];
     for (const file of files) {
       const ext = file.name.toLowerCase().match(/\.([a-z0-9]+)$/)?.[0] ?? "";
-      if (!ACCEPTED_EXTS.includes(ext)) {
-        setUploadError(`.${ext} ${t("casesdetail.upload.err_format")}`);
+      if (!isSupportedUploadName(file.name)) {
+        setUploadError(`${ext || file.name} ${t("casesdetail.upload.err_format")}`);
         continue;
       }
-      if (file.size > MAX_SIZE) {
+      const maxSize = maxUploadSizeFor(file.name, file.type);
+      if (file.size > maxSize) {
         setUploadError(
-          `${file.name} ${t("casesdetail.upload.err_too_large")} ${formatUploadBytes(DIRECT_UPLOAD_MAX_SIZE)}.`
+          `${file.name} ${t("casesdetail.upload.err_too_large")} ${formatUploadBytes(maxSize)}.`
         );
         continue;
       }
@@ -1058,6 +1052,12 @@ export default function CaseDetailPage() {
     if (validFiles.length === 0) return;
 
     if (!isOnline()) {
+      if (documentPassword) {
+        setUploadError(
+          "Passwortgeschützte Dokumente können aus Sicherheitsgründen nicht offline gespeichert werden."
+        );
+        return;
+      }
       // C2: Enqueue files in IndexedDB instead of rejecting — they'll sync
       // automatically when the connection is restored.
       for (const file of validFiles) {
@@ -1091,123 +1091,84 @@ export default function CaseDetailPage() {
     }));
     setUploadQueue((prev) => [...prev, ...queueItems]);
 
-    // Staggered upload: large files run max 2 at once, small files fill idle
-    // slots. Direct-upload/self-hosted deployments can raise the browser limit
-    // without piling transfers up in memory.
-    const poolItems = validFiles.map((file, i) => ({
-      file,
-      queueId: queueItems[i].id,
-      size: file.size,
-    }));
-    await runUploadPool(poolItems, async ({ file, queueId }) => {
-      try {
+    // Presigned URL upload flow: direct-to-storage with adaptive concurrency.
+    // Falls back to streaming PUT for local storage deployments.
+    const fileMap = new Map<string, string>();
+    validFiles.forEach((f, i) => fileMap.set(f.name, queueItems[i].id));
+
+    const results = await presignedUploadFiles(validFiles, {
+      caseSlug: caseData.slug,
+      source: "legal_case",
+      password: documentPassword || undefined,
+      onProgress: (p: PresignedProgress) => {
+        const qId = fileMap.get(p.filename);
+        if (!qId) return;
+        const now = Date.now();
+        setUploadQueue((prev) =>
+          prev.map((q) => {
+            if (q.id !== qId) return q;
+            const startedAt = q.startedAt ?? now;
+            const elapsedSeconds = Math.max(0.25, (now - startedAt) / 1000);
+            const uploadedBytes =
+              p.phase === "uploading" || p.phase === "confirming" || p.phase === "done"
+                ? p.totalBytes
+                : p.uploadedBytes;
+            const speedBps =
+              p.phase === "uploading" && uploadedBytes > 0
+                ? uploadedBytes / elapsedSeconds
+                : q.speedBps;
+            const etaSeconds =
+              speedBps && p.phase === "uploading"
+                ? Math.max(0, (p.totalBytes - uploadedBytes) / speedBps)
+                : undefined;
+            return {
+              ...q,
+              status:
+                p.phase === "done"
+                  ? "done"
+                  : p.phase === "error"
+                    ? "error"
+                    : p.phase === "confirming"
+                      ? "processing"
+                      : p.phase === "uploading"
+                        ? "uploading"
+                        : "preparing",
+              progress: p.percent,
+              uploadedBytes,
+              speedBps,
+              etaSeconds,
+            };
+          })
+        );
+      },
+    });
+
+    // Process results
+    for (const r of results) {
+      const qId = fileMap.get(r.file.name);
+      if (!qId) continue;
+      if (r.error) {
         setUploadQueue((prev) =>
           prev.map((q) =>
-            q.id === queueId
-              ? {
-                  ...q,
-                  status: "preparing",
-                  progress: 0,
-                  uploadedBytes: 0,
-                  startedAt: Date.now(),
-                  speedBps: undefined,
-                  etaSeconds: undefined,
-                }
-              : q
+            q.id === qId ? { ...q, status: "error", progress: 0, error: r.error } : q
           )
         );
-
-        await api.upload.file(
-          file,
-          {
-            title: file.name,
-            source: "legal_case",
-            tags: [caseData.slug],
-            case_slug: caseData.slug,
-          },
-          (percent, transfer) => {
-            const phase = transfer?.phase;
-            const uploadedBytes = Math.min(
-              file.size,
-              transfer?.loaded ?? Math.round((file.size * percent) / 100)
-            );
-            const nextPercent =
-              phase === "server_processing"
-                ? 96
-                : uploadedBytes > 0
-                  ? Math.max(1, Math.min(95, Math.round(percent)))
-                  : 0;
-            const now = Date.now();
-            setUploadQueue((prev) =>
-              prev.map((q) =>
-                q.id === queueId
-                  ? (() => {
-                      const startedAt = q.startedAt ?? now;
-                      const elapsedSeconds = Math.max(0.25, (now - startedAt) / 1000);
-                      const speedBps =
-                        phase === "uploading" && uploadedBytes > 0
-                          ? uploadedBytes / elapsedSeconds
-                          : q.speedBps;
-                      const etaSeconds =
-                        speedBps && phase === "uploading"
-                          ? Math.max(0, (file.size - uploadedBytes) / speedBps)
-                          : undefined;
-                      return {
-                        ...q,
-                        status:
-                          phase === "server_processing"
-                            ? "processing"
-                            : phase === "uploading"
-                              ? "uploading"
-                              : "preparing",
-                        progress: nextPercent,
-                        uploadedBytes,
-                        speedBps,
-                        etaSeconds,
-                      };
-                    })()
-                  : q
-              )
-            );
-          }
-        );
-
+      } else {
         setUploadQueue((prev) =>
           prev.map((q) =>
-            q.id === queueId
-              ? { ...q, status: "processing", progress: 96, uploadedBytes: file.size }
-              : q
+            q.id === qId ? { ...q, status: "done", progress: 100, uploadedBytes: r.file.size } : q
           )
         );
-
-        // P0-1: Server-side reconcileCaseDocuments is the single writer for the documents array.
-        // Refresh from engine to get the authoritative state instead of writing from the client.
-        await refreshCaseData();
-
-        setUploadQueue((prev) =>
-          prev.map((q) =>
-            q.id === queueId ? { ...q, status: "done", progress: 100, uploadedBytes: file.size } : q
-          )
-        );
-
         // Remove from queue after 2s
         setTimeout(() => {
-          setUploadQueue((prev) => prev.filter((q) => q.id !== queueId));
+          setUploadQueue((prev) => prev.filter((q) => q.id !== qId));
         }, 2000);
-      } catch (err) {
-        setUploadQueue((prev) =>
-          prev.map((q) =>
-            q.id === queueId
-              ? {
-                  ...q,
-                  status: "error",
-                  error: err instanceof Error ? err.message : "Upload fehlgeschlagen",
-                }
-              : q
-          )
-        );
       }
-    });
+    }
+
+    // Refresh case data to pick up new documents
+    await refreshCaseData();
+    setDocumentPassword("");
   }
 
   // IDE-style "ganzen Ordner einlesen": recursively walk a chosen folder and feed
@@ -1221,7 +1182,6 @@ export default function CaseDetailPage() {
     const picker = (window as unknown as { showDirectoryPicker?: () => Promise<FsHandle> })
       .showDirectoryPicker;
     if (!picker || !caseData) return;
-    const ACCEPT_RE = /\.(pdf|docx?|eml|jpe?g|png|heic|avif|tiff?|txt|rtf|html?)$/i;
     try {
       setScanningFolder(true);
       const dir = await picker();
@@ -1231,7 +1191,8 @@ export default function CaseDetailPage() {
         for await (const entry of handle.values()) {
           if (entry.kind === "file" && entry.getFile) {
             const f = await entry.getFile();
-            if (ACCEPT_RE.test(f.name) && f.size <= DIRECT_UPLOAD_MAX_SIZE) out.push(f);
+            if (UPLOAD_FOLDER_ACCEPT_RE.test(f.name) && f.size <= maxUploadSizeFor(f.name, f.type))
+              out.push(f);
           } else if (entry.kind === "directory") {
             await walk(entry, depth + 1);
           }
@@ -1550,6 +1511,7 @@ export default function CaseDetailPage() {
 
   function docProcessingStatus(doc: {
     extraction_status?: string;
+    extraction_error_code?: string;
     ocr_status?: string;
     extraction_unverified?: boolean;
     analysis_status?: string;
@@ -1568,6 +1530,23 @@ export default function CaseDetailPage() {
       };
 
     const es = doc.extraction_status;
+    // Terminal extraction failure (incl. the async extract-document worker's
+    // machine-readable error codes). Without this, a failed extraction fell
+    // through to the gray "uploaded" badge — silently hiding the failure.
+    if (es === "failed" || es === "error") {
+      const code = doc.extraction_error_code;
+      if (code === "password_required" || code === "invalid_document_password")
+        return {
+          key: "extraction_password",
+          color: "bg-amber-500/10 border-amber-500/20 text-amber-600",
+        };
+      if (code === "unsupported_format")
+        return {
+          key: "extraction_unsupported",
+          color: "bg-red-500/10 border-red-500/20 text-red-600",
+        };
+      return { key: "extraction_failed", color: "bg-red-500/10 border-red-500/20 text-red-600" };
+    }
     if (es === "confirmed" || (es === "text_layer" && !doc.extraction_unverified))
       return {
         key: "confirmed",
@@ -2902,8 +2881,8 @@ export default function CaseDetailPage() {
                 Dokumente hochladen oder hier ablegen
               </p>
               <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-                PDF, DOCX, EML, JPG, PNG · max. {formatUploadBytes(DIRECT_UPLOAD_MAX_SIZE)} pro
-                Datei · wird automatisch dieser Akte zugeordnet
+                PDF, Office/iWork, E-Mail/PST, ZIP, Bild, Audio oder Text · bis 500 MB (Tabellen 20
+                MB) · wird automatisch dieser Akte zugeordnet
               </p>
               {!isOnline() && (
                 <p className="mt-2 text-xs text-amber-600">
@@ -2913,6 +2892,7 @@ export default function CaseDetailPage() {
               <label className="mt-3 inline-block cursor-pointer">
                 <input
                   type="file"
+                  accept={UPLOAD_ACCEPT_ATTRIBUTE}
                   multiple
                   className="hidden"
                   onChange={(e) => {
@@ -2927,6 +2907,25 @@ export default function CaseDetailPage() {
                   <Plus size={14} /> {t("cases.detail_doc_upload")}
                 </span>
               </label>
+              <div className="mx-auto mt-3 max-w-sm text-left">
+                <label
+                  htmlFor="case-upload-document-password"
+                  className="mb-1 flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)]"
+                >
+                  <Lock size={11} /> Dokumentkennwort (optional, wird nicht gespeichert)
+                </label>
+                <input
+                  id="case-upload-document-password"
+                  type="password"
+                  autoComplete="off"
+                  maxLength={255}
+                  value={documentPassword}
+                  onChange={(event) => setDocumentPassword(event.target.value)}
+                  onClick={(event) => event.stopPropagation()}
+                  disabled={!isOnline()}
+                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)] outline-none"
+                />
+              </div>
               {folderApi && (
                 <button
                   type="button"
@@ -3296,6 +3295,14 @@ export default function CaseDetailPage() {
                               analysis_failed: "Analyse fehlgeschlagen",
                               analysis_retrying: "Analyse wird wiederholt",
                               analysis_permanently_failed: "Analyse dauerhaft fehlgeschlagen",
+                              extraction_failed:
+                                lang === "en" ? "Extraction failed" : "Extraktion fehlgeschlagen",
+                              extraction_password:
+                                lang === "en"
+                                  ? "Password required — re-upload"
+                                  : "Passwort nötig — neu hochladen",
+                              extraction_unsupported:
+                                lang === "en" ? "Unsupported format" : "Format nicht unterstützt",
                             };
                             return (
                               <span

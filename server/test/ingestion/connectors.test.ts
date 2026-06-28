@@ -193,6 +193,7 @@ describe("ConnectorManager", () => {
     expect(SUPPORTED_CONNECTORS).toContain("dropbox");
     expect(SUPPORTED_CONNECTORS).toContain("asana");
     expect(SUPPORTED_CONNECTORS).toContain("jira");
+    expect(SUPPORTED_CONNECTORS).toContain("advokat-import");
   });
 
   test("add persists connector state", async () => {

@@ -2,10 +2,10 @@
 # APP_DOMAIN and ENGINE_DOMAIN must have DNS A-records pointing at this box
 # BEFORE first boot — Caddy provisions Let's Encrypt certificates on demand.
 #
-# Body limit matches MAX_UPLOAD_BYTES (1 GB).
+# Body limit includes multipart overhead above the 500 MB file limit.
 (common) {
 	request_body {
-		max_size 1073741824
+		max_size 536870912
 	}
 }
 

@@ -34,6 +34,7 @@ import {
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 import { DIRECT_UPLOAD_MAX_SIZE } from "@/lib/upload-validation";
+import { UPLOAD_ACCEPT, UPLOAD_FOLDER_ACCEPT_RE } from "@/lib/upload-formats";
 import { runUploadPool } from "@/lib/upload-queue";
 import { inferUploadRouting, type KnownCase } from "@/lib/upload-routing";
 import { isOnline, enqueueFileUpload } from "@/lib/offline-store";
@@ -61,27 +62,14 @@ interface UploadFile {
   gobdStamped?: boolean;
   /** Engine reported the original file bytes were NOT persisted (GoBD risk). */
   persistWarning?: string;
+  /** Parser/OCR completed only partially or failed; original remains stored. */
+  extractionWarning?: string;
   /** Per-file bulk-rule overrides; fall back to the batch-wide defaults. */
   overrides?: FileOverrides;
   /** Auto-routing suggestion derived from the filename (informational). */
   routingHint?: string;
 }
 
-// Aligned with the server-side allowlist in upload-validation.ts (ALLOWED_MIME_TYPES).
-const ACCEPTED_TYPES = {
-  "text/markdown": [".md"],
-  "text/plain": [".txt"],
-  "application/pdf": [".pdf"],
-  "application/json": [".json"],
-  "application/msword": [".doc"],
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [".docx"],
-  "application/rtf": [".rtf"],
-  "text/html": [".html", ".htm"],
-  "image/png": [".png"],
-  "image/jpeg": [".jpg", ".jpeg"],
-  "image/tiff": [".tif", ".tiff"],
-};
-const FOLDER_ACCEPT_RE = /\.(md|txt|pdf|json|docx?|rtf|html?|png|jpe?g|tiff?)$/i;
 const FOLDER_MAX_BYTES = DIRECT_UPLOAD_MAX_SIZE;
 
 function FileIcon({ name }: { name: string }) {
@@ -151,6 +139,7 @@ function UploadPageInner() {
   );
   const [source, setSource] = useState("kanzleiwissen");
   const [tags, setTags] = useState("");
+  const [documentPassword, setDocumentPassword] = useState("");
   const [cases, setCases] = useState<BrainPage[]>([]);
   const [selectedCaseSlug, setSelectedCaseSlug] = useState("");
   const [casesLoading, setCasesLoading] = useState(true);
@@ -273,7 +262,7 @@ function UploadPageInner() {
       });
       setFiles((prev) => [...prev, ...rejectedFiles]);
     },
-    accept: ACCEPTED_TYPES,
+    accept: UPLOAD_ACCEPT,
     maxSize: DIRECT_UPLOAD_MAX_SIZE,
   });
 
@@ -301,7 +290,7 @@ function UploadPageInner() {
         for await (const entry of handle.values()) {
           if (entry.kind === "file" && entry.getFile) {
             const f = await entry.getFile();
-            if (FOLDER_ACCEPT_RE.test(f.name) && f.size <= FOLDER_MAX_BYTES) out.push(f);
+            if (UPLOAD_FOLDER_ACCEPT_RE.test(f.name) && f.size <= FOLDER_MAX_BYTES) out.push(f);
           } else if (entry.kind === "directory") {
             await walk(entry, depth + 1);
           }
@@ -371,6 +360,7 @@ function UploadPageInner() {
             source: fileSource,
             tags: fileTags.length > 0 ? fileTags : undefined,
             case_slug: fileCaseSlug,
+            password: documentPassword || undefined,
           },
           (progress, transfer) => {
             const phase = transfer?.phase;
@@ -449,18 +439,33 @@ function UploadPageInner() {
             ? ((result as { persist_error?: string }).persist_error ??
               "Originaldatei nicht gespeichert")
             : undefined;
+        const extractionStatus = result.extraction_status;
+        const extractionWarning =
+          extractionStatus === "failed"
+            ? result.extraction_warnings ||
+              "Kein durchsuchbarer Text extrahiert; Originaldatei wurde gespeichert."
+            : extractionStatus === "partial"
+              ? result.extraction_warnings || "Dokument wurde nur teilweise extrahiert."
+              : result.extraction_warnings;
+        const pipelineWarning =
+          result.post_upload_queued === false
+            ? "Dokument gespeichert, automatische Analyse konnte aber nicht eingeplant werden."
+            : undefined;
 
         setFiles((prev) =>
           prev.map((f) =>
             f.id === uploadFile.id
               ? {
                   ...f,
-                  status: "done",
+                  status: extractionStatus === "failed" ? "error" : "done",
                   progress: 100,
                   uploadedBytes: f.file.size,
                   slug: result.slug,
                   gobdStamped,
                   persistWarning,
+                  extractionWarning:
+                    [extractionWarning, pipelineWarning].filter(Boolean).join(" ") || undefined,
+                  error: extractionStatus === "failed" ? extractionWarning : undefined,
                 }
               : f
           )
@@ -479,6 +484,7 @@ function UploadPageInner() {
         );
       }
     });
+    setDocumentPassword("");
   };
 
   const pendingCount = files.filter((f) => f.status === "pending").length;
@@ -654,6 +660,30 @@ function UploadPageInner() {
           onChange={(e) => setTags(e.target.value)}
           placeholder={t("upload.tags_placeholder")}
         />
+      </div>
+
+      {/* Optionales Kennwort wird nur für die laufende Extraktion übertragen. */}
+      <div>
+        <Label
+          htmlFor="upload-document-password"
+          className="mb-2 flex items-center gap-2 text-[0.6875rem] font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase"
+        >
+          <Lock size={13} /> Dokumentkennwort (optional)
+        </Label>
+        <Input
+          id="upload-document-password"
+          type="password"
+          autoComplete="off"
+          maxLength={255}
+          value={documentPassword}
+          onChange={(event) => setDocumentPassword(event.target.value)}
+          placeholder="Nur für passwortgeschützte PDF-/Office-Dateien"
+          disabled={!isOnline()}
+        />
+        <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
+          Das Kennwort wird nur im Arbeitsspeicher zum Entschlüsseln verwendet und nicht
+          gespeichert.
+        </p>
       </div>
 
       {/* GoBD-Belegstempel (opt-in) */}
@@ -885,6 +915,11 @@ function UploadPageInner() {
                           <AlertCircle size={11} />
                           GoBD-Warnung: Original nicht gespeichert ({f.persistWarning})
                         </span>
+                      )}
+                      {f.extractionWarning && (
+                        <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
+                          Extraktionshinweis: {f.extractionWarning}
+                        </p>
                       )}
                     </span>
                   )}

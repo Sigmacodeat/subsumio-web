@@ -6,7 +6,10 @@ export const metadata: Metadata = {
   title: "Subsumio Docs — AI legal software handbook",
   description:
     "Product handbook for Subsumio: matters, deadlines, documents, cited AI answers, security, integrations and the dashboard workflows behind them.",
-  alternates: { canonical: "/en/docs", languages: { de: "/docs", en: "/en/docs" } },
+  alternates: {
+    canonical: "/en/docs",
+    languages: { "de-DE": "/docs", "de-AT": "/at/docs", "de-CH": "/ch/docs", en: "/en/docs" },
+  },
   openGraph: {
     title: "Subsumio Docs — AI legal software handbook",
     description:

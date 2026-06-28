@@ -17,10 +17,17 @@ import {
   Calculator,
   FileSpreadsheet,
   BarChart3,
+  MoreVertical,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 import { api } from "@/lib/api";
 import { csrfFetch } from "@/lib/csrf";
 import { useMe } from "@/lib/queries/auth";
@@ -647,7 +654,7 @@ export default function InvoicingPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
           <div className="text-xs text-[color:var(--ds-text-muted)]">{t("inv.outstanding")}</div>
           <div className="text-xl font-bold text-amber-600">
@@ -734,11 +741,11 @@ export default function InvoicingPage() {
             return (
               <div
                 key={inv.id}
-                className="flex items-center gap-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)]"
+                className="flex items-center gap-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-3 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] sm:gap-4 sm:px-4"
               >
                 <div
                   className={cn(
-                    "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg",
+                    "hidden h-10 w-10 shrink-0 items-center justify-center rounded-lg sm:flex",
                     STATUS_BG[status.color]
                   )}
                   aria-hidden="true"
@@ -746,7 +753,7 @@ export default function InvoicingPage() {
                   <StatusIcon size={18} className={STATUS_TEXT[status.color]} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                     <span className="text-sm font-medium text-[color:var(--ds-text)]">
                       {inv.number}
                     </span>
@@ -774,14 +781,15 @@ export default function InvoicingPage() {
                   </div>
                 </div>
                 <div className="shrink-0 text-right">
-                  <div className="text-sm font-bold text-[color:var(--ds-text)]">
+                  <div className="text-xs font-bold text-[color:var(--ds-text)] sm:text-sm">
                     {inv.total.toFixed(2)} €
                   </div>
-                  <div className="text-xs text-[color:var(--ds-text-muted)]">
+                  <div className="hidden text-xs text-[color:var(--ds-text-muted)] sm:block">
                     {t("inv.incl_vat")}
                   </div>
                 </div>
-                <div className="flex shrink-0 items-center gap-1">
+                {/* Desktop action buttons */}
+                <div className="hidden shrink-0 items-center gap-1 sm:flex">
                   <button
                     onClick={() => void printInvoice(inv)}
                     className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-emerald-500/10 hover:text-emerald-600"
@@ -853,6 +861,95 @@ export default function InvoicingPage() {
                       <Trash2 size={14} />
                     </button>
                   )}
+                </div>
+
+                {/* Mobile action dropdown */}
+                <div className="shrink-0 sm:hidden">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                        aria-label="Aktionen"
+                      >
+                        <MoreVertical size={16} />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48">
+                      <DropdownMenuItem
+                        onClick={() => void printInvoice(inv)}
+                        className="gap-2 text-xs"
+                      >
+                        <Printer size={13} />
+                        {t("inv.print")}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => void downloadPdf(inv)}
+                        className="gap-2 text-xs"
+                      >
+                        <FileText size={13} />
+                        {t("inv.download_pdf")}
+                      </DropdownMenuItem>
+                      {(userRole === "admin" ||
+                        userRole === "lawyer" ||
+                        userRole === "assistant") && (
+                        <DropdownMenuItem
+                          onClick={() => void sendInvoiceEmail(inv)}
+                          className="gap-2 text-xs"
+                        >
+                          <Mail size={13} />
+                          {t("inv.send_email")}
+                        </DropdownMenuItem>
+                      )}
+                      {inv.status === "draft" && (
+                        <DropdownMenuItem
+                          onClick={() => updateStatus(inv, "sent")}
+                          className="gap-2 text-xs"
+                        >
+                          <Send size={13} />
+                          {t("inv.mark_sent")}
+                        </DropdownMenuItem>
+                      )}
+                      {inv.status === "sent" && (
+                        <DropdownMenuItem
+                          onClick={() => updateStatus(inv, "paid")}
+                          className="gap-2 text-xs"
+                        >
+                          <CheckCircle2 size={13} />
+                          {t("inv.mark_paid")}
+                        </DropdownMenuItem>
+                      )}
+                      {inv.status !== "paid" &&
+                        inv.status !== "cancelled" &&
+                        (userRole === "admin" || userRole === "lawyer") && (
+                          <DropdownMenuItem
+                            onClick={() => updateStatus(inv, "cancelled")}
+                            className="gap-2 text-xs text-red-600 focus:text-red-700"
+                          >
+                            <XCircle size={13} />
+                            {t("inv.cancel_invoice")}
+                          </DropdownMenuItem>
+                        )}
+                      {(inv.status === "sent" || inv.status === "overdue") &&
+                        (userRole === "admin" || userRole === "lawyer") && (
+                          <DropdownMenuItem
+                            onClick={() => void sendReminder(inv)}
+                            className="gap-2 text-xs"
+                          >
+                            <AlertTriangle size={13} />
+                            {t("inv.send_reminder")}
+                          </DropdownMenuItem>
+                        )}
+                      {(userRole === "admin" || userRole === "lawyer") && (
+                        <DropdownMenuItem
+                          onClick={() => deleteInvoice(inv)}
+                          className="gap-2 text-xs text-red-600 focus:text-red-700"
+                        >
+                          <Trash2 size={13} />
+                          {t("inv.delete")}
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
             );

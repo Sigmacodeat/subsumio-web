@@ -33,6 +33,7 @@ import { useLang } from "@/lib/use-lang";
 import { api } from "@/lib/api";
 import { csrfFetch } from "@/lib/csrf";
 import { normalizeKanzleiSettings, saveKanzleiSettings } from "@/lib/kanzlei-settings";
+import { UPLOAD_ACCEPT_ATTRIBUTE } from "@/lib/upload-formats";
 
 type Step =
   | "welcome"
@@ -736,7 +737,7 @@ export default function OnboardingPage() {
                       ref={fileInputRef}
                       type="file"
                       className="hidden"
-                      accept=".pdf,.docx,.md,.txt"
+                      accept={UPLOAD_ACCEPT_ATTRIBUTE}
                       onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (file) void handleFile(file);

@@ -7,7 +7,15 @@ export const metadata: Metadata = {
   title: "Subsumio Pricing — AI legal software from €890/seat/mo | No lock-in",
   description:
     "Transparent per-seat pricing for AI legal software. Hosted plans from €890/seat/mo billed annually — EU cloud or self-hosted, 14-day full trial, no surprise bills, no vendor lock-in. DATEV export, conflict check, deadline tracking included.",
-  alternates: { canonical: "/en/pricing", languages: { de: "/pricing", en: "/en/pricing" } },
+  alternates: {
+    canonical: "/en/pricing",
+    languages: {
+      "de-DE": "/pricing",
+      "de-AT": "/at/pricing",
+      "de-CH": "/ch/pricing",
+      en: "/en/pricing",
+    },
+  },
   openGraph: {
     title: "Subsumio Pricing — AI legal software from €890/seat/mo | No lock-in",
     description:

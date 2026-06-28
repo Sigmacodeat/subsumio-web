@@ -232,7 +232,8 @@ export abstract class BaseConnector implements IngestionSource {
    * and by the daemon's periodic timer. Creates a minimal IngestionSourceContext
    * with a no-op logger if none exists (e.g. CLI trigger before daemon start).
    */
-  async sync(): Promise<void> {
+  async sync(ctx?: IngestionSourceContext): Promise<void> {
+    if (ctx) this._ctx = ctx;
     if (!this._ctx) {
       // CLI-triggered sync without daemon context: create a minimal one.
       const noopLogger = {

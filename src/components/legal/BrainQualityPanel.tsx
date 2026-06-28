@@ -60,7 +60,7 @@ export function BrainQualityPanel({ className }: BrainQualityPanelProps) {
           onClick={refetch}
           className="h-7 px-2"
           disabled={loading}
-          aria-label={lang === "de" ? "Brain-Qualität aktualisieren" : "Refresh brain quality"}
+          aria-label={lang !== "en" ? "Brain-Qualität aktualisieren" : "Refresh brain quality"}
         >
           {loading ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
         </Button>

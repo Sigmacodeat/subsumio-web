@@ -6,7 +6,10 @@ import JoinForm from "@/components/auth/join-form";
 export const metadata: Metadata = {
   title: "Team beitreten",
   robots: { index: false },
-  alternates: { canonical: "/de/join", languages: { en: "/join", de: "/de/join" } },
+  alternates: {
+    canonical: "/join",
+    languages: { "de-DE": "/join", "de-AT": "/at/join", "de-CH": "/ch/join", en: "/en/join" },
+  },
 };
 
 // Einladungs-Landingpage. Nicht angemeldet → zuerst zur Registrierung,

@@ -9,8 +9,13 @@ export const metadata: Metadata = {
   title: content.metaTitle,
   description: content.metaDesc,
   alternates: {
-    canonical: "/de/solutions/in-house",
-    languages: { en: "/solutions/in-house", de: "/de/solutions/in-house" },
+    canonical: "/solutions/in-house",
+    languages: {
+      "de-DE": "/solutions/in-house",
+      "de-AT": "/at/solutions/in-house",
+      "de-CH": "/ch/solutions/in-house",
+      en: "/en/solutions/in-house",
+    },
   },
   openGraph: {
     title: content.metaTitle,

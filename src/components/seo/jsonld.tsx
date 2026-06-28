@@ -30,9 +30,9 @@ export function softwareApplicationLd(lang: Lang) {
     applicationCategory: "BusinessApplication",
     operatingSystem: "Web, Self-hosted",
     description:
-      lang === "de"
-        ? "KI-Kanzleisoftware für Rechtsanwälte in Österreich, Deutschland und der Schweiz: Aktenverwaltung, Fristenkontrolle nach ZPO/BGB/ABGB, belegte KI-Antworten mit Fundstellen, DATEV-Export, Kollisionsprüfung. On-Premise oder EU-Cloud."
-        : "AI legal software for law firms in Austria, Germany and Switzerland: matter management, deadline tracking per ZPO/BGB/ABGB, cited AI answers with page-level sources, DATEV export, conflict check. Self-hosted or EU cloud.",
+      lang === "en"
+        ? "AI legal software for law firms in Austria, Germany and Switzerland: matter management, deadline tracking per ZPO/BGB/ABGB, cited AI answers with page-level sources, DATEV export, conflict check. Self-hosted or EU cloud."
+        : "KI-Kanzleisoftware für Rechtsanwälte in Österreich, Deutschland und der Schweiz: Aktenverwaltung, Fristenkontrolle nach ZPO/BGB/ABGB, belegte KI-Antworten mit Fundstellen, DATEV-Export, Kollisionsprüfung. On-Premise oder EU-Cloud.",
     offers: [
       {
         "@type": "Offer",
@@ -49,7 +49,7 @@ export function softwareApplicationLd(lang: Lang) {
           "@type": "UnitPriceSpecification",
           price: "290",
           priceCurrency: "EUR",
-          unitText: lang === "de" ? "pro Nutzer und Monat" : "per seat per month",
+          unitText: lang === "en" ? "per seat per month" : "pro Nutzer und Monat",
         },
       },
     ],
@@ -108,13 +108,13 @@ export function howToLd(steps: readonly { title: string; desc: string }[], lang:
     "@context": "https://schema.org",
     "@type": "HowTo",
     name:
-      lang === "de"
-        ? "So funktioniert Subsumio: vom Dokument zur belegten Antwort"
-        : "How Subsumio works: from document to cited answer",
+      lang === "en"
+        ? "How Subsumio works: from document to cited answer"
+        : "So funktioniert Subsumio: vom Dokument zur belegten Antwort",
     description:
-      lang === "de"
-        ? "Vier Schritte von der Frage zur belegten KI-Antwort mit Fundstellen."
-        : "Four steps from question to cited AI answer with page-level citations.",
+      lang === "en"
+        ? "Four steps from question to cited AI answer with page-level citations."
+        : "Vier Schritte von der Frage zur belegten KI-Antwort mit Fundstellen.",
     step: steps.map((step, i) => ({
       "@type": "HowToStep",
       position: i + 1,

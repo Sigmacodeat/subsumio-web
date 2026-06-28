@@ -6,7 +6,15 @@ import { JsonLd, breadcrumbLd } from "@/components/seo/jsonld";
 export const metadata: Metadata = {
   title: DOWNLOAD.de.metaTitle,
   description: DOWNLOAD.de.metaDesc,
-  alternates: { canonical: "/de/download", languages: { en: "/download", de: "/de/download" } },
+  alternates: {
+    canonical: "/download",
+    languages: {
+      "de-DE": "/download",
+      "de-AT": "/at/download",
+      "de-CH": "/ch/download",
+      en: "/en/download",
+    },
+  },
   openGraph: {
     title: DOWNLOAD.de.metaTitle,
     description: DOWNLOAD.de.metaDesc,

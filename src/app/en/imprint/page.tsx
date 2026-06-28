@@ -5,7 +5,15 @@ export const metadata: Metadata = {
   title: "Imprint",
   description:
     "Legal notice and operator information for Subsumio — the AI legal workspace for DACH law firms.",
-  alternates: { canonical: "/en/imprint", languages: { de: "/imprint", en: "/en/imprint" } },
+  alternates: {
+    canonical: "/en/imprint",
+    languages: {
+      "de-DE": "/imprint",
+      "de-AT": "/at/imprint",
+      "de-CH": "/ch/imprint",
+      en: "/en/imprint",
+    },
+  },
   openGraph: {
     title: "Imprint — Subsumio",
     description:

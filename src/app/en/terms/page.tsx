@@ -5,7 +5,10 @@ export const metadata: Metadata = {
   title: "Terms of Service",
   description:
     "Terms of Service for Subsumio — usage rights, obligations, and limitations for the AI legal workspace.",
-  alternates: { canonical: "/en/terms", languages: { de: "/terms", en: "/en/terms" } },
+  alternates: {
+    canonical: "/en/terms",
+    languages: { "de-DE": "/terms", "de-AT": "/at/terms", "de-CH": "/ch/terms", en: "/en/terms" },
+  },
   openGraph: {
     title: "Terms of Service — Subsumio",
     description:

@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { caseFrontmatter } from "@/lib/legal-types";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
+import { UPLOAD_ACCEPT_ATTRIBUTE } from "@/lib/upload-formats";
 
 interface PortalCase {
   slug: string;
@@ -85,6 +86,7 @@ export default function PortalPage() {
   const [uploadingKey, setUploadingKey] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadMessage, setUploadMessage] = useState<string | null>(null);
+  const [documentPassword, setDocumentPassword] = useState("");
   const [documentRequests, setDocumentRequests] = useState<PortalDocumentRequest[]>([]);
 
   useEffect(() => {
@@ -242,12 +244,13 @@ export default function PortalPage() {
       const formData = new FormData();
       formData.append("token", token);
       formData.append("file", file);
+      if (documentPassword) formData.append("password", documentPassword);
       if (requestSlug) formData.append("document_request_slug", requestSlug);
       if (itemKey) formData.append("item_key", itemKey);
       const res = await fetch("/api/portal/upload", {
         method: "POST",
         body: formData,
-        signal: AbortSignal.timeout(120_000),
+        signal: AbortSignal.timeout(600_000),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -259,6 +262,7 @@ export default function PortalPage() {
           ? "Dokument hochgeladen. Die Dokumentenanfrage ist vollständig erfüllt."
           : "Dokument hochgeladen und an die Akte übermittelt."
       );
+      setDocumentPassword("");
       await loadCase();
       await loadDocumentRequests();
     } catch (err) {
@@ -447,6 +451,7 @@ export default function PortalPage() {
                         <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-violet-500">
                           <input
                             type="file"
+                            accept={UPLOAD_ACCEPT_ATTRIBUTE}
                             className="hidden"
                             disabled={uploading}
                             onChange={(e) => {
@@ -477,6 +482,7 @@ export default function PortalPage() {
             <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-violet-600 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-violet-500 disabled:opacity-50">
               <input
                 type="file"
+                accept={UPLOAD_ACCEPT_ATTRIBUTE}
                 className="hidden"
                 disabled={uploading}
                 onChange={(e) => {
@@ -488,6 +494,25 @@ export default function PortalPage() {
               {uploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
               {uploading ? "Lädt…" : "Hochladen"}
             </label>
+          </div>
+          <div>
+            <label
+              htmlFor="portal-document-password"
+              className="mb-1 block text-xs [color:var(--mk-text-subtle)]"
+            >
+              Dokumentkennwort (nur falls geschützt)
+            </label>
+            <input
+              id="portal-document-password"
+              type="password"
+              autoComplete="off"
+              maxLength={255}
+              value={documentPassword}
+              onChange={(event) => setDocumentPassword(event.target.value)}
+              disabled={uploading}
+              className="w-full rounded-lg border [border-color:var(--mk-border)] px-3 py-2 text-sm [color:var(--mk-text)] outline-none [background:var(--mk-surface-2)]"
+              placeholder="Wird nicht gespeichert"
+            />
           </div>
           {uploadError && (
             <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-200">

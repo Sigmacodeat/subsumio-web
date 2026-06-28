@@ -1,5 +1,6 @@
-import matter from "gray-matter";
-import { safeLoad as yamlSafeLoad } from "js-yaml";
+import matter from "./yaml-matter.ts";
+// js-yaml v4 removed `safeLoad`; `load` is safe-by-default and replaces it.
+import { load as yamlSafeLoad } from "js-yaml";
 import type { Page, PageType } from "./types.ts";
 import { slugifyPath } from "./sync.ts";
 import { stripCodeBlocks } from "./link-extraction.ts";

@@ -6,7 +6,15 @@ export const metadata: Metadata = {
   title: "Subsumio WhatsApp Copilot — book time, file documents, query cases from your phone",
   description:
     "Book time, file documents, query cases from WhatsApp — no app switch, no training required. The copilot understands your case file and files everything confirmation-gated, nothing unreviewed. GoBD-compliant.",
-  alternates: { canonical: "/en/whatsapp", languages: { de: "/whatsapp", en: "/en/whatsapp" } },
+  alternates: {
+    canonical: "/en/whatsapp",
+    languages: {
+      "de-DE": "/whatsapp",
+      "de-AT": "/at/whatsapp",
+      "de-CH": "/ch/whatsapp",
+      en: "/en/whatsapp",
+    },
+  },
   openGraph: {
     title: "Subsumio WhatsApp Copilot — book time, file documents, query cases from your phone",
     description:

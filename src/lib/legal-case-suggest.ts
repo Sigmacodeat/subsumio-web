@@ -1,3 +1,5 @@
+import type { Lang } from "@/content/site";
+
 export interface CaseSuggestion {
   legalArea?: string;
   subArea?: string;
@@ -141,10 +143,7 @@ const KEYWORD_RULES: Array<{
   },
 ];
 
-export function suggestCaseFromTitle(
-  title: string,
-  lang: "de" | "en" = "de"
-): CaseSuggestion | null {
+export function suggestCaseFromTitle(title: string, lang: Lang = "de"): CaseSuggestion | null {
   if (!title || title.trim().length < 3) return null;
   const normalized = title.toLowerCase();
 

@@ -477,6 +477,8 @@ function DocumentRow({ doc }: { doc: MatterDocumentSummary }) {
     ocr_complete: <CheckCircle2 size={11} className="text-emerald-500" />,
     ocr_failed: <XCircle size={11} className="text-red-500" />,
     ready: <CheckCircle2 size={11} className="text-emerald-500" />,
+    partial: <AlertTriangle size={11} className="text-amber-500" />,
+    failed: <XCircle size={11} className="text-red-500" />,
     error: <XCircle size={11} className="text-red-500" />,
   };
   const ocrIcons: Record<string, React.ReactNode> = {

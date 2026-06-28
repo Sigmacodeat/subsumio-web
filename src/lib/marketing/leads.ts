@@ -5,12 +5,13 @@ import { sendMail } from "@/lib/mail";
 import { getSharedPgPool } from "@/lib/auth/store";
 import { createSchemaInit } from "@/lib/schema-init";
 import { externalFetchTimeout } from "@/lib/retry";
+import type { Lang } from "@/content/site";
 
 export type LeadScore = "low" | "medium" | "high" | "enterprise";
 
 export interface MarketingLeadInput {
   email: string;
-  lang: "en" | "de";
+  lang: Lang;
   path: string;
   industry: string | null;
   product: string;

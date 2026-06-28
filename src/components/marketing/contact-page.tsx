@@ -8,6 +8,47 @@ import { p, type Lang } from "@/content/site";
 import { Section, SectionHeading } from "./chrome";
 import { GlowCard, ClipReveal, MagneticButton, EASE } from "./motion-system";
 
+const _deContact = {
+  badge: "Kontakt",
+  h1a: "Sprich mit unserem Team.",
+  h1b: "Wir sprechen deine Sprache.",
+  sub: "Fragen zu Subsumio, Self-Hosting, Enterprise-Plänen oder Partnerschaften? Erreich uns — wir antworten innerhalb eines Werktages.",
+  channelsTitle: "So erreichst du uns",
+  channels: [
+    {
+      icon: "Mail",
+      title: "E-Mail",
+      value: "hello@subsum.eu",
+      desc: "Allgemeine Fragen, Verkauf, Partnerschaften. Wir antworten innerhalb eines Werktages.",
+      href: "mailto:hello@subsum.eu",
+    },
+    {
+      icon: "MessageSquare",
+      title: "WhatsApp",
+      value: "+43 …",
+      desc: "Kurze Fragen? Schreib uns auf WhatsApp — wir sind während der Geschäftszeiten da.",
+      href: "https://wa.me/43",
+    },
+    {
+      icon: "FileText",
+      title: "Datenschutz",
+      value: "dsb@subsum.eu",
+      desc: "Für deinen Datenschutzbeauftragten — AVV, technische-organisatorische Maßnahmen.",
+      href: "mailto:dsb@subsum.eu",
+    },
+  ],
+  formTitle: "Schreib uns eine Nachricht",
+  formName: "Dein Name",
+  formEmail: "Deine E-Mail",
+  formFirm: "Kanzleiname",
+  formMessage: "Deine Nachricht",
+  formSubmit: "Nachricht senden",
+  formNote: "Wir melden uns innerhalb eines Werktages. Kein Spam, niemals.",
+  ctaTitle: "Lieber erst ausprobieren?",
+  ctaSub: "Starte einen 14-Tage-Reverse-Trial — voller Zugriff, keine Kreditkarte.",
+  ctaButton: "Jetzt starten",
+} as const;
+
 const CONTENT = {
   en: {
     badge: "Contact",
@@ -49,52 +90,15 @@ const CONTENT = {
     ctaSub: "Start a 14-day reverse trial — full access, no credit card.",
     ctaButton: "Get started",
   },
-  de: {
-    badge: "Kontakt",
-    h1a: "Sprich mit unserem Team.",
-    h1b: "Wir sprechen deine Sprache.",
-    sub: "Fragen zu Subsumio, Self-Hosting, Enterprise-Plänen oder Partnerschaften? Erreich uns — wir antworten innerhalb eines Werktages.",
-    channelsTitle: "So erreichst du uns",
-    channels: [
-      {
-        icon: "Mail",
-        title: "E-Mail",
-        value: "hello@subsum.eu",
-        desc: "Allgemeine Fragen, Verkauf, Partnerschaften. Wir antworten innerhalb eines Werktages.",
-        href: "mailto:hello@subsum.eu",
-      },
-      {
-        icon: "MessageSquare",
-        title: "WhatsApp",
-        value: "+43 …",
-        desc: "Kurze Fragen? Schreib uns auf WhatsApp — wir sind während der Geschäftszeiten da.",
-        href: "https://wa.me/43",
-      },
-      {
-        icon: "FileText",
-        title: "Datenschutz",
-        value: "dsb@subsum.eu",
-        desc: "Für deinen Datenschutzbeauftragten — AVV, technische-organisatorische Maßnahmen.",
-        href: "mailto:dsb@subsum.eu",
-      },
-    ],
-    formTitle: "Schreib uns eine Nachricht",
-    formName: "Dein Name",
-    formEmail: "Deine E-Mail",
-    formFirm: "Kanzleiname",
-    formMessage: "Deine Nachricht",
-    formSubmit: "Nachricht senden",
-    formNote: "Wir melden uns innerhalb eines Werktages. Kein Spam, niemals.",
-    ctaTitle: "Lieber erst ausprobieren?",
-    ctaSub: "Starte einen 14-Tage-Reverse-Trial — voller Zugriff, keine Kreditkarte.",
-    ctaButton: "Jetzt starten",
-  },
+  de: _deContact,
+  at: _deContact,
+  ch: _deContact,
 };
 
 const ICON_MAP = { Mail, MessageSquare, FileText };
 
 export default function ContactPage({ lang }: { lang: Lang }) {
-  const c = CONTENT[lang];
+  const c = (CONTENT as unknown as Record<string, typeof CONTENT.de>)[lang] ?? CONTENT.de;
   return (
     <>
       <Section tone="light" className="px-4 pt-20 pb-16 sm:px-6 lg:px-8">

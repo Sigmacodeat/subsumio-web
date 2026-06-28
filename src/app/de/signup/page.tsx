@@ -6,7 +6,15 @@ export const metadata: Metadata = {
   description:
     "Subsumio kostenlos starten: KI-Kanzleisoftware für Akten, Fristen, Dokumente und belegte Antworten ohne Kreditkarte testen.",
   robots: { index: false },
-  alternates: { canonical: "/de/signup", languages: { en: "/signup", de: "/de/signup" } },
+  alternates: {
+    canonical: "/signup",
+    languages: {
+      "de-DE": "/signup",
+      "de-AT": "/at/signup",
+      "de-CH": "/ch/signup",
+      en: "/en/signup",
+    },
+  },
 };
 
 export default function Page() {

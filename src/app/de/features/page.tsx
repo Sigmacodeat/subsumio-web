@@ -6,7 +6,15 @@ import { JsonLd, softwareApplicationLd } from "@/components/seo/jsonld";
 export const metadata: Metadata = {
   title: FEATURES_PAGE.de.metaTitle,
   description: FEATURES_PAGE.de.metaDesc,
-  alternates: { canonical: "/de/features", languages: { en: "/features", de: "/de/features" } },
+  alternates: {
+    canonical: "/features",
+    languages: {
+      "de-DE": "/features",
+      "de-AT": "/at/features",
+      "de-CH": "/ch/features",
+      en: "/en/features",
+    },
+  },
   openGraph: {
     title: FEATURES_PAGE.de.metaTitle,
     description: FEATURES_PAGE.de.metaDesc,

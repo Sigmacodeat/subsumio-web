@@ -5,7 +5,8 @@ import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
-import { getDocs, type Lang } from "@/content/docs";
+import { getDocs } from "@/content/docs";
+import { type Lang } from "@/content/site";
 import { p, UI_STRINGS } from "@/content/site";
 import { ICONS } from "./chrome";
 import DashboardReel from "./dashboard-reel";
@@ -57,7 +58,7 @@ function FeatureCard({
 
 function DocsProof({ lang }: { lang: Lang }) {
   const items =
-    lang === "de"
+    lang !== "en"
       ? [
           {
             icon: "FolderOpen",

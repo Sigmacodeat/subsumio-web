@@ -2,7 +2,7 @@
 // HONESTY RULE: only claims the engine/tests actually back. No SOC 2 / ISO
 // claims (we don't hold them — say so and show the roadmap instead).
 
-import type { Lang } from "./site";
+import { type Lang, deepMerge } from "./site";
 
 export interface SecurityContent {
   metaTitle: string;
@@ -31,6 +31,130 @@ export interface SecurityContent {
   ctaSub: string;
   ctaButton: string;
 }
+
+const _securityDe = {
+  metaTitle: "Subsumio Sicherheit — DSGVO-konforme KI-Kanzleisoftware, EU-Cloud oder On-Premise",
+  metaDesc:
+    "Volle Engine self-hosted auf deiner Hardware oder EU-Cloud mit AVV. Kein Training mit Mandantendaten, Zugriff pro Nutzer fuzz-getestet auf null Leaks. Ehrlich über das, was wir haben — und was auf der Roadmap steht.",
+  badge: "Sicherheit & Datenschutz",
+  h1a: "Deine Daten sind der Wert des Produkts.",
+  h1b: "Deshalb bleiben sie unter deiner Kontrolle.",
+  sub: "Subsumio ist für Berufe gebaut, in denen Verschwiegenheit Gesetz ist, nicht Präferenz: Kanzleien in der DACH-Region. Hier ist die Architektur — und eine ehrliche Liste dessen, was noch in Arbeit ist.",
+  pillars: [
+    {
+      icon: "Shield",
+      title: "Self-Hosting, vollständig",
+      desc: "Die komplette Engine läuft auf deiner Hardware — das volle Produkt, nichts zurückgehalten. Mandantendaten erreichen überhaupt keinen Dritten, und deine IT kontrolliert jedes System, das deine Akten berührt.",
+    },
+    {
+      icon: "Layers",
+      title: "Isolation, fuzz-getestet",
+      desc: "Zugriff pro Nutzer und pro Quelle wird auf jedem Lesepfad erzwungen und auf null Cross-Tenant-Leaks fuzz-getestet. Ein Nutzer sieht seinen Scope — nie den eines anderen.",
+    },
+    {
+      icon: "Lock",
+      title: "Kein Training mit deinen Daten",
+      desc: "Deine Inhalte trainieren weder unsere noch fremde Modelle. Synthese-Calls gehen an den LLM-Provider, den du konfigurierst; Self-Hosted-Setups wählen eigene Endpunkte oder Gateways.",
+    },
+    {
+      icon: "Eye",
+      title: "Auditierbar per Architektur",
+      desc: "Deterministische Zitate in jeder Antwort, Request-Logging, und eine Trust-Boundary, die jeden Remote-Aufrufer standardmäßig als nicht vertrauenswürdig behandelt — prüft exakt, woher jede Aussage stammt.",
+    },
+  ],
+  hostingTitle: "Zwei Betriebsarten",
+  hostingSub: "Beide lassen dir die Kontrolle. Wähle nach deiner Compliance-Lage.",
+  hostingOptions: [
+    {
+      title: "Self-hosted / On-Premise (Enterprise)",
+      points: [
+        "Deine Hardware, deine Jurisdiktion, deine Keys",
+        "Kein Dritter verarbeitet Mandantendaten — relevant für § 203 StGB (DE) / § 9 RAO (AT) / Art. 321 StGB (CH): keine mitwirkende Person",
+        "Die komplette Engine, auditierbar, auf deiner Infrastruktur",
+        "Updates und Backups verwaltest du selbst",
+      ],
+    },
+    {
+      title: "Verwaltete EU-Cloud (Pro/Team/Enterprise)",
+      points: [
+        "EU-Hosting mit Auftragsverarbeitungsvertrag (AVV, Art. 28 DSGVO)",
+        "Verschwiegenheitsverpflichtung nach § 203 Abs. 4 StGB (DE) / § 9 RAO (AT) / Art. 321 StGB (CH) für Berufsgeheimnisträger verfügbar",
+        "Verschlüsselung bei Übertragung und Speicherung",
+        "Löschanfragen an einer Stelle erledigt",
+      ],
+    },
+  ],
+  complianceTitle: "Was wir heute haben",
+  complianceItems: [
+    {
+      title: "DSGVO-konforme Verarbeitung",
+      desc: "AVV für gehostete Pläne, EU-Datenstandort, dokumentierte Subprozessoren, Löschung auf Anfrage. Self-Hosted-Deployments verarbeiten auf unserer Seite gar nichts.",
+    },
+    {
+      title: "Berufsgeheimnisschutz (§ 203 StGB / § 9 RAO / Art. 321 StGB)",
+      desc: "Self-Hosting heißt: kein Dritter ist beteiligt — die sauberste Antwort auf die Verschwiegenheitspflicht in DE (§ 203 StGB, § 43e BRAO), AT (§ 9 RAO) und CH (Art. 321 StGB), ganz ohne mitwirkende Person. Gehostete Pläne ergänzen die AVV um eine vertragliche Verschwiegenheitsverpflichtung nach § 43e BRAO / § 203 Abs. 4 StGB (DE) und entsprechenden Regelungen in AT/CH.",
+    },
+    {
+      title: "Eingebaute Anonymisierung vor der Cloud",
+      desc: "Ein Klick schwärzt Mandantennamen, IBANs, Aktenzeichen und Kontaktdaten aus jedem Text, bevor er geteilt oder an ein Cloud-LLM gegeben wird — mit Re-Identifikations-Mapping, das nur der Berechtigte behält. Muster-basiert offline; Namens-Erkennung optional per LLM.",
+    },
+    {
+      title: "Getestete Isolation",
+      desc: "Multi-Tenant-Scoping wird in der Engine erzwungen und über jeden Lesepfad mit Fuzz-Tests gepinnt — keine Dashboard-Checkbox.",
+    },
+  ],
+  aiActTitle: "EU AI Act — wo wir stehen",
+  aiActText:
+    "Die Transparenzpflichten des AI Act (Art. 50) und die meisten Hochrisiko-Pflichten gelten ab dem 2. August 2026. Unsere ehrliche Position vor diesem Stichtag:",
+  aiActItems: [
+    {
+      title: "KI-Output ist gekennzeichnet (Art. 50)",
+      desc: "Jeder KI-generierte Entwurf und jede KI-Antwort ist als KI-generiert markiert — sichtbar in der App und als maschinenlesbares Kennzeichen auf der API-Antwort und in gespeicherten Dokumenten. Ein Mensch zeichnet ab; die Maschine gibt sich nie als Urheber aus.",
+    },
+    {
+      title: "Menschliche Aufsicht, immer",
+      desc: "Subsumio entwirft und schlägt vor — es reicht nichts ein, bucht nichts und versendet nichts von selbst. Eine qualifizierte Fachkraft prüft und gibt jeden Output frei: der vom Act geforderte Human-in-the-Loop für Hochrisiko-Nutzung.",
+    },
+    {
+      title: "Risiko-Einstufung, dokumentiert",
+      desc: "Wir prüfen jedes Feature gegen Annex III, statt zu vermuten. Anwaltsunterstützung allein ist i. d. R. nicht hochrisiko; wo ein Feature Fristen oder Rechtsfolgen berührt, dokumentieren wir die Einstufung und führen das Audit-Log.",
+    },
+  ],
+  roadmapTitle: "Was wir noch nicht haben — ehrlich",
+  roadmapText:
+    "Wir sagen es lieber hier, als dass du es im Einkauf herausfindest. In Arbeit, in dieser Reihenfolge:",
+  roadmapItems: [
+    "SOC 2 / ISO 27001-Zertifizierung — noch nicht vorhanden; Audit-Roadmap parallel zum Enterprise-Rollout geplant. Self-Hosting macht die Frage für viele Käufer gegenstandslos.",
+    "SSO/SAML für gehostete Team-Pläne (Self-Hosted-Deployments können die Engine heute hinter die eigene Auth legen).",
+    "Berechtigungs-Vererbung aus Quellsystemen für Konnektor-Inhalte in geteilten Brains — bis dahin dokumentieren wir Konnektoren für Einzel-Nutzer-Brains.",
+  ],
+  disclosureTitle: "Responsible Disclosure",
+  disclosureText:
+    "Schwachstelle gefunden? E-Mail an security@subsum.eu. Wir bestätigen den Eingang innerhalb von 48 Stunden, halten dich auf dem Laufenden und nennen Researcher auf Wunsch namentlich. Bitte nicht gegen Systeme mit echten Kundendaten testen — hoste stattdessen eine Kopie selbst auf eigener Hardware.",
+  faqTitle: "Sicherheitsfragen, klar beantwortet",
+  faq: [
+    {
+      q: "Wo genau liegen meine Daten?",
+      a: "Self-hosted: auf deinen Maschinen, Punkt. Gehostet: in EU-Rechenzentren, Standort im AVV benannt. Synthese-Anfragen gehen an den für deinen Plan konfigurierten LLM-Provider — Enterprise-Setups können über EU-Endpunkte oder ein eigenes Gateway routen.",
+    },
+    {
+      q: "Können Subsumio-Mitarbeiter mein Brain lesen?",
+      a: "Self-hosted: nein, strukturell — es gibt keinen Zugriffspfad. Gehostet: Zugriff ist auf protokollierte Break-Glass-Betriebsprozeduren beschränkt und durch AVV plus Verschwiegenheitsverpflichtung gedeckt. Wir durchstöbern keine Kundeninhalte, und deine Inhalte trainieren keine Modelle.",
+    },
+    {
+      q: "Was passiert mit meinen Daten, wenn ich kündige?",
+      a: "Export jederzeit (der Export der Engine ist ein vollwertiger Befehl, kein Support-Ticket). Gehostete Daten werden zum Vertragsende gemäß AVV gelöscht. Self-hosted: sie waren nie bei uns.",
+    },
+    {
+      q: "Ist Self-Hosting unsicherer als eure Cloud?",
+      a: "Es ist dieselbe Engine. Sicherheitsrelevantes Verhalten — Scoping, Trust-Boundaries, Isolation — ist identisch und test-gepinnt. Der Unterschied ist, wer sie betreibt: du statt wir.",
+    },
+  ],
+  ctaTitle: "Bring deinen Datenschutzbeauftragten mit.",
+  ctaSub:
+    "Wir sprechen seine Sprache. Gehostet mit AVV — oder self-hosted, sodass sich die Frage gar nicht stellt.",
+  ctaButton: "Demo anfragen",
+};
 
 export const SECURITY: Record<Lang, SecurityContent> = {
   en: {
@@ -156,127 +280,25 @@ export const SECURITY: Record<Lang, SecurityContent> = {
       "We speak their language. Hosted with a DPA, or self-hosted so the question never arises.",
     ctaButton: "Request a demo",
   },
-  de: {
-    metaTitle: "Subsumio Sicherheit — DSGVO-konforme KI-Kanzleisoftware, EU-Cloud oder On-Premise",
+  de: _securityDe,
+  at: deepMerge(_securityDe, {
     metaDesc:
-      "Volle Engine self-hosted auf deiner Hardware oder EU-Cloud mit AVV. Kein Training mit Mandantendaten, Zugriff pro Nutzer fuzz-getestet auf null Leaks. Ehrlich über das, was wir haben — und was auf der Roadmap steht.",
-    badge: "Sicherheit & Datenschutz",
-    h1a: "Deine Daten sind der Wert des Produkts.",
-    h1b: "Deshalb bleiben sie unter deiner Kontrolle.",
+      "Volle Engine self-hosted auf Ihrer Hardware oder EU-Cloud mit AVV. Kein Training mit Mandantendaten, Zugriff pro Nutzer fuzz-getestet auf null Leaks. Ehrlich über das, was wir haben — und was auf der Roadmap steht.",
+    h1a: "Ihre Daten sind der Wert des Produkts.",
+    h1b: "Deshalb bleiben sie unter Ihrer Kontrolle.",
     sub: "Subsumio ist für Berufe gebaut, in denen Verschwiegenheit Gesetz ist, nicht Präferenz: Kanzleien in der DACH-Region. Hier ist die Architektur — und eine ehrliche Liste dessen, was noch in Arbeit ist.",
-    pillars: [
-      {
-        icon: "Shield",
-        title: "Self-Hosting, vollständig",
-        desc: "Die komplette Engine läuft auf deiner Hardware — das volle Produkt, nichts zurückgehalten. Mandantendaten erreichen überhaupt keinen Dritten, und deine IT kontrolliert jedes System, das deine Akten berührt.",
-      },
-      {
-        icon: "Layers",
-        title: "Isolation, fuzz-getestet",
-        desc: "Zugriff pro Nutzer und pro Quelle wird auf jedem Lesepfad erzwungen und auf null Cross-Tenant-Leaks fuzz-getestet. Ein Nutzer sieht seinen Scope — nie den eines anderen.",
-      },
-      {
-        icon: "Lock",
-        title: "Kein Training mit deinen Daten",
-        desc: "Deine Inhalte trainieren weder unsere noch fremde Modelle. Synthese-Calls gehen an den LLM-Provider, den du konfigurierst; Self-Hosted-Setups wählen eigene Endpunkte oder Gateways.",
-      },
-      {
-        icon: "Eye",
-        title: "Auditierbar per Architektur",
-        desc: "Deterministische Zitate in jeder Antwort, Request-Logging, und eine Trust-Boundary, die jeden Remote-Aufrufer standardmäßig als nicht vertrauenswürdig behandelt — prüft exakt, woher jede Aussage stammt.",
-      },
-    ],
-    hostingTitle: "Zwei Betriebsarten",
-    hostingSub: "Beide lassen dir die Kontrolle. Wähle nach deiner Compliance-Lage.",
-    hostingOptions: [
-      {
-        title: "Self-hosted / On-Premise (Enterprise)",
-        points: [
-          "Deine Hardware, deine Jurisdiktion, deine Keys",
-          "Kein Dritter verarbeitet Mandantendaten — relevant für § 203 StGB (DE) / § 9 RAO (AT) / Art. 321 StGB (CH): keine mitwirkende Person",
-          "Die komplette Engine, auditierbar, auf deiner Infrastruktur",
-          "Updates und Backups verwaltest du selbst",
-        ],
-      },
-      {
-        title: "Verwaltete EU-Cloud (Pro/Team/Enterprise)",
-        points: [
-          "EU-Hosting mit Auftragsverarbeitungsvertrag (AVV, Art. 28 DSGVO)",
-          "Verschwiegenheitsverpflichtung nach § 203 Abs. 4 StGB (DE) / § 9 RAO (AT) / Art. 321 StGB (CH) für Berufsgeheimnisträger verfügbar",
-          "Verschlüsselung bei Übertragung und Speicherung",
-          "Löschanfragen an einer Stelle erledigt",
-        ],
-      },
-    ],
-    complianceTitle: "Was wir heute haben",
-    complianceItems: [
-      {
-        title: "DSGVO-konforme Verarbeitung",
-        desc: "AVV für gehostete Pläne, EU-Datenstandort, dokumentierte Subprozessoren, Löschung auf Anfrage. Self-Hosted-Deployments verarbeiten auf unserer Seite gar nichts.",
-      },
-      {
-        title: "Berufsgeheimnisschutz (§ 203 StGB / § 9 RAO / Art. 321 StGB)",
-        desc: "Self-Hosting heißt: kein Dritter ist beteiligt — die sauberste Antwort auf die Verschwiegenheitspflicht in DE (§ 203 StGB, § 43e BRAO), AT (§ 9 RAO) und CH (Art. 321 StGB), ganz ohne mitwirkende Person. Gehostete Pläne ergänzen die AVV um eine vertragliche Verschwiegenheitsverpflichtung nach § 43e BRAO / § 203 Abs. 4 StGB (DE) und entsprechenden Regelungen in AT/CH.",
-      },
-      {
-        title: "Eingebaute Anonymisierung vor der Cloud",
-        desc: "Ein Klick schwärzt Mandantennamen, IBANs, Aktenzeichen und Kontaktdaten aus jedem Text, bevor er geteilt oder an ein Cloud-LLM gegeben wird — mit Re-Identifikations-Mapping, das nur der Berechtigte behält. Muster-basiert offline; Namens-Erkennung optional per LLM.",
-      },
-      {
-        title: "Getestete Isolation",
-        desc: "Multi-Tenant-Scoping wird in der Engine erzwungen und über jeden Lesepfad mit Fuzz-Tests gepinnt — keine Dashboard-Checkbox.",
-      },
-    ],
-    aiActTitle: "EU AI Act — wo wir stehen",
-    aiActText:
-      "Die Transparenzpflichten des AI Act (Art. 50) und die meisten Hochrisiko-Pflichten gelten ab dem 2. August 2026. Unsere ehrliche Position vor diesem Stichtag:",
-    aiActItems: [
-      {
-        title: "KI-Output ist gekennzeichnet (Art. 50)",
-        desc: "Jeder KI-generierte Entwurf und jede KI-Antwort ist als KI-generiert markiert — sichtbar in der App und als maschinenlesbares Kennzeichen auf der API-Antwort und in gespeicherten Dokumenten. Ein Mensch zeichnet ab; die Maschine gibt sich nie als Urheber aus.",
-      },
-      {
-        title: "Menschliche Aufsicht, immer",
-        desc: "Subsumio entwirft und schlägt vor — es reicht nichts ein, bucht nichts und versendet nichts von selbst. Eine qualifizierte Fachkraft prüft und gibt jeden Output frei: der vom Act geforderte Human-in-the-Loop für Hochrisiko-Nutzung.",
-      },
-      {
-        title: "Risiko-Einstufung, dokumentiert",
-        desc: "Wir prüfen jedes Feature gegen Annex III, statt zu vermuten. Anwaltsunterstützung allein ist i. d. R. nicht hochrisiko; wo ein Feature Fristen oder Rechtsfolgen berührt, dokumentieren wir die Einstufung und führen das Audit-Log.",
-      },
-    ],
-    roadmapTitle: "Was wir noch nicht haben — ehrlich",
-    roadmapText:
-      "Wir sagen es lieber hier, als dass du es im Einkauf herausfindest. In Arbeit, in dieser Reihenfolge:",
-    roadmapItems: [
-      "SOC 2 / ISO 27001-Zertifizierung — noch nicht vorhanden; Audit-Roadmap parallel zum Enterprise-Rollout geplant. Self-Hosting macht die Frage für viele Käufer gegenstandslos.",
-      "SSO/SAML für gehostete Team-Pläne (Self-Hosted-Deployments können die Engine heute hinter die eigene Auth legen).",
-      "Berechtigungs-Vererbung aus Quellsystemen für Konnektor-Inhalte in geteilten Brains — bis dahin dokumentieren wir Konnektoren für Einzel-Nutzer-Brains.",
-    ],
-    disclosureTitle: "Responsible Disclosure",
-    disclosureText:
-      "Schwachstelle gefunden? E-Mail an security@subsum.eu. Wir bestätigen den Eingang innerhalb von 48 Stunden, halten dich auf dem Laufenden und nennen Researcher auf Wunsch namentlich. Bitte nicht gegen Systeme mit echten Kundendaten testen — hoste stattdessen eine Kopie selbst auf eigener Hardware.",
-    faqTitle: "Sicherheitsfragen, klar beantwortet",
-    faq: [
-      {
-        q: "Wo genau liegen meine Daten?",
-        a: "Self-hosted: auf deinen Maschinen, Punkt. Gehostet: in EU-Rechenzentren, Standort im AVV benannt. Synthese-Anfragen gehen an den für deinen Plan konfigurierten LLM-Provider — Enterprise-Setups können über EU-Endpunkte oder ein eigenes Gateway routen.",
-      },
-      {
-        q: "Können Subsumio-Mitarbeiter mein Brain lesen?",
-        a: "Self-hosted: nein, strukturell — es gibt keinen Zugriffspfad. Gehostet: Zugriff ist auf protokollierte Break-Glass-Betriebsprozeduren beschränkt und durch AVV plus Verschwiegenheitsverpflichtung gedeckt. Wir durchstöbern keine Kundeninhalte, und deine Inhalte trainieren keine Modelle.",
-      },
-      {
-        q: "Was passiert mit meinen Daten, wenn ich kündige?",
-        a: "Export jederzeit (der Export der Engine ist ein vollwertiger Befehl, kein Support-Ticket). Gehostete Daten werden zum Vertragsende gemäß AVV gelöscht. Self-hosted: sie waren nie bei uns.",
-      },
-      {
-        q: "Ist Self-Hosting unsicherer als eure Cloud?",
-        a: "Es ist dieselbe Engine. Sicherheitsrelevantes Verhalten — Scoping, Trust-Boundaries, Isolation — ist identisch und test-gepinnt. Der Unterschied ist, wer sie betreibt: du statt wir.",
-      },
-    ],
-    ctaTitle: "Bring deinen Datenschutzbeauftragten mit.",
+    ctaTitle: "Bringen Sie Ihren Datenschutzbeauftragten mit.",
     ctaSub:
       "Wir sprechen seine Sprache. Gehostet mit AVV — oder self-hosted, sodass sich die Frage gar nicht stellt.",
-    ctaButton: "Demo anfragen",
-  },
+  }),
+  ch: deepMerge(_securityDe, {
+    metaDesc:
+      "Volle Engine self-hosted auf Ihrer Hardware oder EU-Cloud mit AVV. Kein Training mit Mandantendaten, Zugriff pro Nutzer fuzz-getestet auf null Leaks. Ehrlich über das, was wir haben — und was auf der Roadmap steht.",
+    h1a: "Ihre Daten sind der Wert des Produkts.",
+    h1b: "Deshalb bleiben sie unter Ihrer Kontrolle.",
+    sub: "Subsumio ist für Berufe gebaut, in denen Verschwiegenheit Gesetz ist, nicht Präferenz: Kanzleien in der DACH-Region. Hier ist die Architektur — und eine ehrliche Liste dessen, was noch in Arbeit ist.",
+    ctaTitle: "Bringen Sie Ihren Datenschutzbeauftragten mit.",
+    ctaSub:
+      "Wir sprechen seine Sprache. Gehostet mit AVV — oder self-hosted, sodass sich die Frage gar nicht stellt.",
+  }),
 };

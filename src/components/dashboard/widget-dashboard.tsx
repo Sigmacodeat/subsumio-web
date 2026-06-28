@@ -680,9 +680,9 @@ export function HeutePanel({
       )}
 
       {lead && (
-        <div className="mt-3 flex items-center gap-2 border-t border-[color:var(--ds-border)] pt-3">
+        <div className="mt-3 flex min-w-0 items-center gap-2 border-t border-[color:var(--ds-border)] pt-3">
           <Sparkles size={13} className="shrink-0 text-[color:var(--brand-primary)]" />
-          <p className="text-[13px] text-[color:var(--ds-text-muted)]">
+          <p className="min-w-0 truncate text-[13px] text-[color:var(--ds-text-muted)]">
             {leadDue && <span className="font-medium text-[color:var(--ds-text)]">{leadDue}</span>}
             {" · "}
             <Link

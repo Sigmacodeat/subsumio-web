@@ -6,7 +6,15 @@ export const metadata: Metadata = {
   title: "Kontakt — Subsumio KI-Kanzleisoftware",
   description:
     "Fragen zu Subsumio, Self-Hosting, Enterprise oder Partnerschaften? Unser Team antwortet innerhalb eines Werktages — auch zu DSGVO, AVV, Berufsgeheimnis (§ 203 StGB) und technisch-organisatorischen Maßnahmen.",
-  alternates: { canonical: "/de/contact", languages: { en: "/contact", de: "/de/contact" } },
+  alternates: {
+    canonical: "/contact",
+    languages: {
+      "de-DE": "/contact",
+      "de-AT": "/at/contact",
+      "de-CH": "/ch/contact",
+      en: "/en/contact",
+    },
+  },
   openGraph: {
     title: "Kontakt — Subsumio KI-Kanzleisoftware",
     description:

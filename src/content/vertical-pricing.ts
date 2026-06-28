@@ -1,7 +1,7 @@
 // Subsumio pricing. Signup deep-links carry ?industry=legal so the product
 // provisions the legal workspace.
 
-import type { Lang, PricingTier } from "./site";
+import { type Lang, type PricingTier, deepMerge } from "./site";
 
 export interface VerticalPricing {
   title: string;
@@ -11,6 +11,94 @@ export interface VerticalPricing {
 
 // industry key (signupIndustry) → bespoke pricing. Only verticals with a real
 // override live here; everything else uses the global PRICING.
+const _deVp: Partial<Record<string, VerticalPricing>> = {
+  legal: {
+    title: "Preise für Kanzleien",
+    sub: "Pro Seat, jährliche Abrechnung. Akten-Synthese, WhatsApp-Copilot und Compliance-Infrastruktur — auf EU-Infrastruktur, die du kontrollierst.",
+    tiers: [
+      {
+        id: "starter",
+        name: "Starter",
+        price: "399 €",
+        period: "/Seat/Mon.",
+        blurb:
+          "Für Einzelanwälte, die KI-gestützte Aktenarbeit erkunden. Monatlich kündbar. Bis 2 Seats.",
+        features: [
+          "Verwaltetes EU-Hosting — keine API-Keys",
+          "Akten-Q&A mit seitengenauen Zitaten",
+          "200 KI-Anfragen/Mon. · 15 GB",
+          "50 WhatsApp-Nachrichten/Mon.",
+          "ZPO-Fristen + Kollisionsprüfung (§ 43a BRAO / § 10 RAO / BGFA)",
+          "E-Mail-Support",
+          "Mehrverbrauch: 0,55 €/Anfrage · 0,30 €/WA",
+        ],
+        cta: "Starter testen",
+        href: "/signup",
+      },
+      {
+        id: "pro",
+        name: "Professional",
+        price: "890 €",
+        period: "/Seat/Mon.",
+        blurb: "Einzel- und Kleinkanzleien bis 4 Seats. Das volle Akten-Gehirn, voll verwaltet.",
+        features: [
+          "Verwaltetes EU-Hosting — keine API-Keys",
+          "Akten-Q&A mit seitengenauen Zitaten",
+          "1.000 KI-Anfragen/Seat/Mon. · 75 GB/Seat",
+          "300 WhatsApp-Nachrichten/Mon. (Kanzleigesamt)",
+          "WhatsApp-Akten-Copilot + Sprachnotizen",
+          "ZPO/BGB/ABGB-Fristen + Kollisionsprüfung (§ 43a BRAO / § 10 RAO / BGFA)",
+          "beA-Eingang · RVG/BRAG-Rechner",
+          "Priorisierter Support",
+          "Mehrverbrauch: 0,45 €/Anfrage · 0,25 €/WA",
+        ],
+        cta: "Professional starten",
+        href: "/signup",
+      },
+      {
+        id: "team",
+        name: "Kanzlei",
+        price: "1.290 €",
+        period: "/Seat/Mon.",
+        blurb: "Ein gemeinsames Kanzlei-Gehirn, pro Anwalt gescoped. Ab 5 Seats.",
+        features: [
+          "Alles aus Professional",
+          "4.000 KI-Anfragen/Seat/Mon. · 200 GB/Seat",
+          "1.000 WhatsApp-Nachrichten/Mon. (Kanzleigesamt)",
+          "Geteiltes Akten-Gedächtnis + kanzleiweite Kollisionsprüfung",
+          "Zeiterfassung, Auslagen, Rechnungen & DATEV-Export",
+          "Vier-Augen-Freigabe + vollständiger Audit-Trail",
+          "Onboarding & dedizierter Support",
+          "Mehrverbrauch: 0,40 €/Anfrage · 0,20 €/WA",
+        ],
+        cta: "Kanzlei starten",
+        href: "/signup",
+        highlight: true,
+      },
+      {
+        id: "ent",
+        name: "Enterprise",
+        price: "ab 1.890 €",
+        period: "/Seat/Mon.",
+        blurb: "Compliance-Grade, auf deiner Infrastruktur oder EU-Cloud. Ab 20 Seats.",
+        features: [
+          "15.000 KI-Anfragen/Seat/Mon. (Fair Use darüber)",
+          "5.000 WhatsApp-Nachrichten/Seat/Mon.",
+          "500 GB Speicher/Seat",
+          "EU-Cloud oder On-Premise-Deployment",
+          "AVV, SLA, SSO/SAML",
+          "DMS / RA-MICRO / Advoware-Import",
+          "Maximaler Recall-Modus",
+          "Dedizierter CSM · individuelle Aufbewahrung & Speicher",
+          "Mehrverbrauch: 0,35 €/Anfrage · 0,15 €/WA",
+        ],
+        cta: "Demo anfragen",
+        href: "mailto:hello@subsum.eu",
+      },
+    ],
+  },
+};
+
 export const VERTICAL_PRICING: Record<Lang, Partial<Record<string, VerticalPricing>>> = {
   en: {
     legal: {
@@ -99,76 +187,48 @@ export const VERTICAL_PRICING: Record<Lang, Partial<Record<string, VerticalPrici
       ],
     },
   },
-  de: {
+  de: _deVp,
+  at: deepMerge(_deVp, {
     legal: {
-      title: "Preise für Kanzleien",
-      sub: "Pro Seat, jährliche Abrechnung. Akten-Synthese, WhatsApp-Copilot und Compliance-Infrastruktur — auf EU-Infrastruktur, die du kontrollierst.",
+      sub: "Pro Seat, jährliche Abrechnung. Akten-Synthese, WhatsApp-Copilot und Compliance-Infrastruktur — auf EU-Infrastruktur, die Sie kontrollieren.",
       tiers: [
         {
-          id: "starter",
-          name: "Starter",
-          price: "399 €",
-          period: "/Seat/Mon.",
-          blurb:
-            "Für Einzelanwälte, die KI-gestützte Aktenarbeit erkunden. Monatlich kündbar. Bis 2 Seats.",
           features: [
             "Verwaltetes EU-Hosting — keine API-Keys",
             "Akten-Q&A mit seitengenauen Zitaten",
             "200 KI-Anfragen/Mon. · 15 GB",
             "50 WhatsApp-Nachrichten/Mon.",
-            "ZPO-Fristen + Kollisionsprüfung (§ 43a BRAO / § 10 RAO / BGFA)",
+            "ZPO-Fristen + Kollisionsprüfung (§ 10 RAO / § 43a BRAO / BGFA)",
             "E-Mail-Support",
             "Mehrverbrauch: 0,55 €/Anfrage · 0,30 €/WA",
           ],
-          cta: "Starter testen",
-          href: "/signup",
         },
         {
-          id: "pro",
-          name: "Professional",
-          price: "890 €",
-          period: "/Seat/Mon.",
-          blurb: "Einzel- und Kleinkanzleien bis 4 Seats. Das volle Akten-Gehirn, voll verwaltet.",
           features: [
             "Verwaltetes EU-Hosting — keine API-Keys",
             "Akten-Q&A mit seitengenauen Zitaten",
             "1.000 KI-Anfragen/Seat/Mon. · 75 GB/Seat",
             "300 WhatsApp-Nachrichten/Mon. (Kanzleigesamt)",
             "WhatsApp-Akten-Copilot + Sprachnotizen",
-            "ZPO/BGB/ABGB-Fristen + Kollisionsprüfung (§ 43a BRAO / § 10 RAO / BGFA)",
+            "ZPO/ABGB-Fristen + Kollisionsprüfung (§ 10 RAO / § 43a BRAO / BGFA)",
             "beA-Eingang · RVG/BRAG-Rechner",
             "Priorisierter Support",
             "Mehrverbrauch: 0,45 €/Anfrage · 0,25 €/WA",
           ],
-          cta: "Professional starten",
-          href: "/signup",
         },
         {
-          id: "team",
-          name: "Kanzlei",
-          price: "1.290 €",
-          period: "/Seat/Mon.",
-          blurb: "Ein gemeinsames Kanzlei-Gehirn, pro Anwalt gescoped. Ab 5 Seats.",
           features: [
             "Alles aus Professional",
             "4.000 KI-Anfragen/Seat/Mon. · 200 GB/Seat",
             "1.000 WhatsApp-Nachrichten/Mon. (Kanzleigesamt)",
             "Geteiltes Akten-Gedächtnis + kanzleiweite Kollisionsprüfung",
-            "Zeiterfassung, Auslagen, Rechnungen & DATEV-Export",
+            "Zeiterfassung, Auslagen, Rechnungen & ADATEV-Export",
             "Vier-Augen-Freigabe + vollständiger Audit-Trail",
             "Onboarding & dedizierter Support",
             "Mehrverbrauch: 0,40 €/Anfrage · 0,20 €/WA",
           ],
-          cta: "Kanzlei starten",
-          href: "/signup",
-          highlight: true,
         },
         {
-          id: "ent",
-          name: "Enterprise",
-          price: "ab 1.890 €",
-          period: "/Seat/Mon.",
-          blurb: "Compliance-Grade, auf deiner Infrastruktur oder EU-Cloud. Ab 20 Seats.",
           features: [
             "15.000 KI-Anfragen/Seat/Mon. (Fair Use darüber)",
             "5.000 WhatsApp-Nachrichten/Seat/Mon.",
@@ -180,12 +240,66 @@ export const VERTICAL_PRICING: Record<Lang, Partial<Record<string, VerticalPrici
             "Dedizierter CSM · individuelle Aufbewahrung & Speicher",
             "Mehrverbrauch: 0,35 €/Anfrage · 0,15 €/WA",
           ],
-          cta: "Demo anfragen",
-          href: "mailto:hello@subsum.eu",
         },
       ],
     },
-  },
+  }),
+  ch: deepMerge(_deVp, {
+    legal: {
+      sub: "Pro Seat, jährliche Abrechnung. Akten-Synthese, WhatsApp-Copilot und Compliance-Infrastruktur — auf EU-Infrastruktur, die Sie kontrollieren.",
+      tiers: [
+        {
+          features: [
+            "Verwaltetes EU-Hosting — keine API-Keys",
+            "Akten-Q&A mit seitengenauen Zitaten",
+            "200 KI-Anfragen/Mon. · 15 GB",
+            "50 WhatsApp-Nachrichten/Mon.",
+            "ZPO/ZGB-Fristen + Kollisionsprüfung (BGFA / § 43a BRAO / § 10 RAO)",
+            "E-Mail-Support",
+            "Mehrverbrauch: 0,55 CHF/Anfrage · 0,30 CHF/WA",
+          ],
+        },
+        {
+          features: [
+            "Verwaltetes EU-Hosting — keine API-Keys",
+            "Akten-Q&A mit seitengenauen Zitaten",
+            "1.000 KI-Anfragen/Seat/Mon. · 75 GB/Seat",
+            "300 WhatsApp-Nachrichten/Mon. (Kanzleigesamt)",
+            "WhatsApp-Akten-Copilot + Sprachnotizen",
+            "ZPO/ZGB-Fristen + Kollisionsprüfung (BGFA / § 43a BRAO / § 10 RAO)",
+            "beA-Eingang · RVG/BRAG-Rechner",
+            "Priorisierter Support",
+            "Mehrverbrauch: 0,45 CHF/Anfrage · 0,25 CHF/WA",
+          ],
+        },
+        {
+          features: [
+            "Alles aus Professional",
+            "4.000 KI-Anfragen/Seat/Mon. · 200 GB/Seat",
+            "1.000 WhatsApp-Nachrichten/Mon. (Kanzleigesamt)",
+            "Geteiltes Akten-Gedächtnis + kanzleiweite Kollisionsprüfung",
+            "Zeiterfassung, Auslagen, Rechnungen & DATEV-Export",
+            "Vier-Augen-Freigabe + vollständiger Audit-Trail",
+            "Onboarding & dedizierter Support",
+            "Mehrverbrauch: 0,40 CHF/Anfrage · 0,20 CHF/WA",
+          ],
+        },
+        {
+          features: [
+            "15.000 KI-Anfragen/Seat/Mon. (Fair Use darüber)",
+            "5.000 WhatsApp-Nachrichten/Seat/Mon.",
+            "500 GB Speicher/Seat",
+            "EU-Cloud oder On-Premise-Deployment",
+            "AVV, SLA, SSO/SAML",
+            "DMS / RA-MICRO / Advoware-Import",
+            "Maximaler Recall-Modus",
+            "Dedizierter CSM · individuelle Aufbewahrung & Speicher",
+            "Mehrverbrauch: 0,35 CHF/Anfrage · 0,15 CHF/WA",
+          ],
+        },
+      ],
+    },
+  }),
 };
 
 export function pricingForIndustry(

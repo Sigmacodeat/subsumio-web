@@ -13,7 +13,10 @@ export const metadata: Metadata = {
   title: "Subsumio — KI-Kanzleisoftware für Rechtsanwälte | AT · DE · CH",
   description:
     "KI-Kanzleisoftware für Kanzleien in Österreich, Deutschland und der Schweiz: Aktenverwaltung, Fristenkontrolle nach ZPO/BGB/ABGB, belegte KI-Antworten mit Fundstellen, DATEV-Export, Kollisionsprüfung. DSGVO-konform, EU-Cloud oder On-Premise.",
-  alternates: { canonical: "/de", languages: { en: "/", de: "/de" } },
+  alternates: {
+    canonical: "/",
+    languages: { "de-DE": "/", "de-AT": "/at", "de-CH": "/ch", en: "/en" },
+  },
   openGraph: {
     title: "Subsumio — KI-Kanzleisoftware für Rechtsanwälte | AT · DE · CH",
     description:

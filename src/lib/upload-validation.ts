@@ -3,6 +3,7 @@
  */
 
 import { env } from "@/lib/env";
+import { SUPPORTED_UPLOAD_MIME_TYPES, isSupportedUploadName } from "@/lib/upload-formats";
 
 /**
  * Upload size limits. Agency-level deployments (Hetzner self-hosted, no platform
@@ -17,8 +18,9 @@ function resolveLimit(key: string, fallback: number): number {
   return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : fallback;
 }
 
-export const MAX_FILE_SIZE = resolveLimit("MAX_UPLOAD_BYTES", 1024 * 1024 * 1024); // 1 GB
+export const MAX_FILE_SIZE = resolveLimit("MAX_UPLOAD_BYTES", 500 * 1024 * 1024); // 500 MB
 export const MAX_IMAGE_SIZE = resolveLimit("MAX_IMAGE_BYTES", 200 * 1024 * 1024); // 200 MB
+export const MAX_TABULAR_SIZE = resolveLimit("MAX_TABULAR_UPLOAD_BYTES", 20 * 1024 * 1024); // 20 MB
 
 // Browser uploads POST through the web app's /api/upload route. In the documented
 // Hetzner/self-hosted deployment the web upload limit is 1 GB; if the web app is
@@ -31,23 +33,12 @@ export const DIRECT_UPLOAD_MAX_SIZE =
     ? Math.floor(directUploadParsed)
     : MAX_FILE_SIZE;
 
-const IMAGE_MIME_TYPES = new Set(["image/png", "image/jpeg", "image/tiff"]);
+const IMAGE_MIME_TYPES = new Set(
+  [...SUPPORTED_UPLOAD_MIME_TYPES].filter((mime) => mime.startsWith("image/"))
+);
+const TABULAR_EXTENSIONS = new Set([".csv", ".tsv", ".xls", ".xlsx", ".xlsm", ".ods", ".numbers"]);
 
-export const ALLOWED_MIME_TYPES = new Set([
-  "application/pdf",
-  "text/markdown",
-  "text/plain",
-  "text/html",
-  "application/msword",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  "application/vnd.oasis.opendocument.text",
-  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  "application/vnd.oasis.opendocument.spreadsheet",
-  "application/rtf",
-  "image/png",
-  "image/jpeg",
-  "image/tiff",
-]);
+export const ALLOWED_MIME_TYPES = SUPPORTED_UPLOAD_MIME_TYPES;
 
 export type UploadValidation =
   | { ok: true; file: File }
@@ -58,15 +49,28 @@ export type UploadValidation =
       allowed?: string[];
     };
 
+export function maxUploadSizeFor(name: string, mimeType: string): number {
+  const extension = name.toLowerCase().match(/\.[^.]+$/)?.[0] ?? "";
+  return TABULAR_EXTENSIONS.has(extension)
+    ? MAX_TABULAR_SIZE
+    : IMAGE_MIME_TYPES.has(mimeType)
+      ? MAX_IMAGE_SIZE
+      : MAX_FILE_SIZE;
+}
+
 export function validateUpload(file: unknown): UploadValidation {
   if (!(file instanceof File)) {
     return { ok: false, error: "file_required" };
   }
-  const maxForType = IMAGE_MIME_TYPES.has(file.type) ? MAX_IMAGE_SIZE : MAX_FILE_SIZE;
+  const maxForType = maxUploadSizeFor(file.name, file.type);
   if (file.size > maxForType) {
     return { ok: false, error: "file_too_large", maxSize: maxForType };
   }
-  if (!ALLOWED_MIME_TYPES.has(file.type)) {
+  // Browsers frequently report an empty/generic MIME for .msg, iWork and old
+  // Office files. Require a supported extension AND either a known MIME or a
+  // generic/empty one; the byte scanner and engine parser remain authoritative.
+  const genericMime = !file.type || file.type === "application/octet-stream";
+  if (!isSupportedUploadName(file.name) || (!genericMime && !ALLOWED_MIME_TYPES.has(file.type))) {
     return { ok: false, error: "unsupported_file_type", allowed: Array.from(ALLOWED_MIME_TYPES) };
   }
   return { ok: true, file };

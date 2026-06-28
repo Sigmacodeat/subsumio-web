@@ -84,7 +84,7 @@ const COPY = {
 } as const;
 
 function AuthFormInner({ mode, lang }: { mode: "login" | "signup"; lang: Lang }) {
-  const t = COPY[lang];
+  const t = (COPY as unknown as Record<string, typeof COPY.de>)[lang] ?? COPY.de;
   const m = t[mode];
   const router = useRouter();
   const params = useSearchParams();
@@ -263,7 +263,7 @@ function AuthFormInner({ mode, lang }: { mode: "login" | "signup"; lang: Lang })
                   href={p(lang, "/forgot")}
                   className="mt-1.5 inline-block text-xs text-[var(--brand-primary)] hover:underline"
                 >
-                  {lang === "de" ? "Passwort vergessen?" : "Forgot password?"}
+                  {lang !== "en" ? "Passwort vergessen?" : "Forgot password?"}
                 </Link>
               )}
             </label>
@@ -293,7 +293,7 @@ function AuthFormInner({ mode, lang }: { mode: "login" | "signup"; lang: Lang })
                 </div>
                 <div className="relative flex justify-center text-xs">
                   <span className="px-2 [color:var(--mk-text-subtle)] [background:var(--mk-surface-2)]">
-                    {lang === "de" ? "oder" : "or"}
+                    {lang !== "en" ? "oder" : "or"}
                   </span>
                 </div>
               </div>
@@ -336,7 +336,7 @@ function AuthFormInner({ mode, lang }: { mode: "login" | "signup"; lang: Lang })
               </div>
               {ssoLoading && (
                 <p className="mt-2 text-center text-xs [color:var(--mk-text-subtle)]">
-                  {lang === "de" ? "Weiterleitung zum Anbieter..." : "Redirecting to provider..."}
+                  {lang !== "en" ? "Weiterleitung zum Anbieter..." : "Redirecting to provider..."}
                 </p>
               )}
             </div>

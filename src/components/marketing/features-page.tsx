@@ -29,6 +29,8 @@ type GNode = { x: number; y: number; label?: string; r: number; pulse?: boolean 
 
 const NODE_LABELS: Record<Lang, string[]> = {
   de: ["Akte", "Mandant", "Gegner", "Frist", "Schriftsatz", "Urteil", "Honorar"],
+  at: ["Akte", "Mandant", "Gegner", "Frist", "Schriftsatz", "Urteil", "Honorar"],
+  ch: ["Akte", "Mandant", "Gegner", "Frist", "Schriftsatz", "Urteil", "Honorar"],
   en: ["Matter", "Client", "Opposing party", "Deadline", "Brief", "Ruling", "Invoice"],
 };
 
@@ -169,37 +171,41 @@ function CountUp({ to, decimals = 0 }: { to: number; decimals?: number }) {
 
 // --- "How it works" pipeline (sequential reveal + animated connector) ----
 
+const _deHow = {
+  title: "So funktioniert's — vom Dokument zur belegten Antwort",
+  sub: "Vier Schritte. Kein Tagging, keine Datenpflege — die Wissensbasis strukturiert sich automatisch.",
+  steps: [
+    {
+      icon: "Database",
+      title: "Füttern",
+      desc: "Akten, Mails, PDFs, Sprachnotizen, WhatsApp — per Ordner, Upload oder Copilot. OCR holt Text auch aus Scans.",
+      tag: "Upload · OCR · Copilot",
+    },
+    {
+      icon: "Network",
+      title: "Verstehen",
+      desc: "Bei jedem Speichervorgang erkennt die Engine Personen, Fristen und Beziehungen als juristischen Wissensgraph.",
+      tag: "Entitäten · Graph · Embeddings",
+    },
+    {
+      icon: "Search",
+      title: "Fragen",
+      desc: "Frag in normaler Sprache. Hybrid-Suche aus Vektor, Stichwort und Graph findet die entscheidenden Stellen.",
+      tag: "Hybrid-Suche · Reranking",
+    },
+    {
+      icon: "Brain",
+      title: "Belegte Antwort",
+      desc: "Synthetisierte Antwort mit seitengenauen Zitaten — plus ehrlicher Hinweis, was in der Akte noch fehlt.",
+      tag: "Zitate · Lückenanalyse",
+    },
+  ],
+} as const;
+
 const HOW = {
-  de: {
-    title: "So funktioniert's — vom Dokument zur belegten Antwort",
-    sub: "Vier Schritte. Kein Tagging, keine Datenpflege — die Wissensbasis strukturiert sich automatisch.",
-    steps: [
-      {
-        icon: "Database",
-        title: "Füttern",
-        desc: "Akten, Mails, PDFs, Sprachnotizen, WhatsApp — per Ordner, Upload oder Copilot. OCR holt Text auch aus Scans.",
-        tag: "Upload · OCR · Copilot",
-      },
-      {
-        icon: "Network",
-        title: "Verstehen",
-        desc: "Bei jedem Speichervorgang erkennt die Engine Personen, Fristen und Beziehungen als juristischen Wissensgraph.",
-        tag: "Entitäten · Graph · Embeddings",
-      },
-      {
-        icon: "Search",
-        title: "Fragen",
-        desc: "Frag in normaler Sprache. Hybrid-Suche aus Vektor, Stichwort und Graph findet die entscheidenden Stellen.",
-        tag: "Hybrid-Suche · Reranking",
-      },
-      {
-        icon: "Brain",
-        title: "Belegte Antwort",
-        desc: "Synthetisierte Antwort mit seitengenauen Zitaten — plus ehrlicher Hinweis, was in der Akte noch fehlt.",
-        tag: "Zitate · Lückenanalyse",
-      },
-    ],
-  },
+  de: _deHow,
+  at: _deHow,
+  ch: _deHow,
   en: {
     title: "How it works — from document to a cited answer",
     sub: "Four steps. No tagging, no data entry — the brain wires itself.",
@@ -233,7 +239,7 @@ const HOW = {
 } as const;
 
 function HowItWorks({ lang }: { lang: Lang }) {
-  const h = HOW[lang];
+  const h = (HOW as unknown as Record<string, typeof HOW.de>)[lang] ?? HOW.de;
   return (
     <section className="relative z-10 mx-auto max-w-6xl px-4 pb-24 sm:px-6 lg:px-8">
       <motion.div
@@ -298,7 +304,7 @@ function FeatureCommandCenter({ lang }: { lang: Lang }) {
   const [step, setStep] = useState(0);
   const reduce = useReducedMotion();
   const panels =
-    lang === "de"
+    lang !== "en"
       ? [
           {
             icon: "FolderOpen",
@@ -388,12 +394,12 @@ function FeatureCommandCenter({ lang }: { lang: Lang }) {
             {UI_STRINGS[lang].inDashboard}
           </p>
           <h2 className="mb-4 text-3xl leading-tight font-black text-balance [color:var(--mk-text)] md:text-4xl">
-            {lang === "de"
+            {lang !== "en"
               ? "Jede Funktion läuft als Kanzlei-Workflow."
               : "Features run as a legal workflow."}
           </h2>
           <p className="max-w-xl text-base leading-relaxed [color:var(--mk-text-muted)]">
-            {lang === "de"
+            {lang !== "en"
               ? "Akte, Copilot, Frist, Quelle und Freigabe greifen ineinander. Deshalb beschreibt Subsumio jede Funktion im Kontext der Oberfläche, in der Anwälte sie wirklich benutzen."
               : "Matter, copilot, deadline, source and approval work together. That is why Subsumio describes every capability in the dashboard context lawyers actually use."}
           </p>
@@ -495,7 +501,7 @@ function FeatureCommandCenter({ lang }: { lang: Lang }) {
                     {panels[step].sub}
                   </p>
                   <div className="space-y-2">
-                    {(lang === "de"
+                    {(lang !== "en"
                       ? ["Quelle geprüft", "Berechtigung aktiv", "Nächster Schritt vorbereitet"]
                       : ["Source verified", "Permission active", "Next step prepared"]
                     ).map((line, i) => (

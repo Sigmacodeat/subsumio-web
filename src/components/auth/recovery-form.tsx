@@ -73,7 +73,7 @@ const COPY = {
 } as const;
 
 export default function RecoveryForm({ mode, lang }: { mode: "forgot" | "reset"; lang: Lang }) {
-  const t = COPY[lang];
+  const t = (COPY as unknown as Record<string, typeof COPY.de>)[lang] ?? COPY.de;
   const m = t[mode];
 
   const [email, setEmail] = useState("");
@@ -89,7 +89,9 @@ export default function RecoveryForm({ mode, lang }: { mode: "forgot" | "reset";
     setError(null);
 
     if (mode === "reset" && password !== confirm) {
-      setError(COPY[lang].reset.confirmMismatch);
+      setError(
+        ((COPY as unknown as Record<string, typeof COPY.de>)[lang] ?? COPY.de).reset.confirmMismatch
+      );
       return;
     }
 
@@ -141,7 +143,12 @@ export default function RecoveryForm({ mode, lang }: { mode: "forgot" | "reset";
               </div>
               {devResetUrl && (
                 <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
-                  <p className="mb-2 text-xs text-amber-300">{COPY[lang].forgot.devNote}</p>
+                  <p className="mb-2 text-xs text-amber-300">
+                    {
+                      ((COPY as unknown as Record<string, typeof COPY.de>)[lang] ?? COPY.de).forgot
+                        .devNote
+                    }
+                  </p>
                   <a
                     href={devResetUrl}
                     className="text-xs break-all text-[var(--brand-primary)] hover:underline"
@@ -154,7 +161,10 @@ export default function RecoveryForm({ mode, lang }: { mode: "forgot" | "reset";
                 href={p(lang, "/login")}
                 className="inline-flex items-center gap-1.5 text-sm text-[var(--brand-primary)] hover:underline"
               >
-                {mode === "reset" ? COPY[lang].reset.toLogin : t.backToLogin}{" "}
+                {mode === "reset"
+                  ? ((COPY as unknown as Record<string, typeof COPY.de>)[lang] ?? COPY.de).reset
+                      .toLogin
+                  : t.backToLogin}{" "}
                 <ArrowRight size={13} />
               </Link>
             </div>

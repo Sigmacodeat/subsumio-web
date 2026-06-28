@@ -14,6 +14,49 @@ import {
   GradientMesh,
 } from "./motion-system";
 
+const _deAbout = {
+  badge: "Über Subsumio",
+  h1a: "Aus Österreich",
+  h1b: "für DACH-Kanzleien.",
+  sub: "Subsumio ist die Kanzleisoftware mit Assistent, gebaut für die Verschwiegenheit, Präzision und regulatorischen Anforderungen von Kanzleien in Österreich, Deutschland und der Schweiz.",
+  missionTitle: "Unsere Mission",
+  missionText:
+    "Jeder Kanzlei eine Wissensbasis geben, die nie vergisst — jede Akte, Frist und Schriftsatz indiziert und abfragbar, mit Zitaten, die du überprüfen kannst, bevor du dich darauf verlässt. Auf Infrastruktur, die du kontrollierst — nicht auf fremder Cloud.",
+  valuesTitle: "Woran wir glauben",
+  values: [
+    {
+      icon: "Shield",
+      title: "Vertraulichkeit per Architektur",
+      desc: "Mandantendaten sind heilig. Self-hosted oder EU-gehostet, verschlüsselt und isoliert — nie zum Training geteilter Modelle, nie außerhalb deiner Kontrolle.",
+    },
+    {
+      icon: "Brain",
+      title: "Zitate, nicht Halluzinationen",
+      desc: "Jede Antwort des Assistenten nennt ihre Quelle. Anwälte verifizieren mit einem Klick. Keine halluzinierten Referenzen, keine Black-Box-Outputs.",
+    },
+    {
+      icon: "Globe",
+      title: "DACH-first, nicht US-first",
+      desc: "Gebaut für ZPO, BGB, ABGB, beA, DATEV. Wir verstehen die DACH-Rechtslandschaft, weil wir darin leben.",
+    },
+    {
+      icon: "Heart",
+      title: "Für Anwälte gemacht",
+      desc: "Tools, die deine Anwälte täglich nutzen — WhatsApp-Copilot, Sprachnotizen, mobil. Nicht ein weiteres System, das sie meiden.",
+    },
+  ],
+  statsTitle: "In Zahlen",
+  stats: [
+    { value: "14.713", label: "Gesetzesparagraphen, zitierbar" },
+    { value: "3", label: "Jurisdiktionen — AT · DE · CH" },
+    { value: "97,9 %", label: "Recall@5 Retrieval-Benchmark" },
+    { value: "0", label: "Mandantendaten-Leaks — garantiert" },
+  ],
+  ctaTitle: "Sprich mit uns",
+  ctaSub: "Ob Einzelanwalt oder Managing Partner — wir freuen uns, von dir zu hören.",
+  ctaButton: "Kontakt aufnehmen",
+} as const;
+
 const CONTENT = {
   en: {
     badge: "About Subsumio",
@@ -57,54 +100,15 @@ const CONTENT = {
     ctaSub: "Whether you're a solo lawyer or managing partner — we'd love to hear from you.",
     ctaButton: "Get in touch",
   },
-  de: {
-    badge: "Über Subsumio",
-    h1a: "Aus Österreich",
-    h1b: "für DACH-Kanzleien.",
-    sub: "Subsumio ist die Kanzleisoftware mit Assistent, gebaut für die Verschwiegenheit, Präzision und regulatorischen Anforderungen von Kanzleien in Österreich, Deutschland und der Schweiz.",
-    missionTitle: "Unsere Mission",
-    missionText:
-      "Jeder Kanzlei eine Wissensbasis geben, die nie vergisst — jede Akte, Frist und Schriftsatz indiziert und abfragbar, mit Zitaten, die du überprüfen kannst, bevor du dich darauf verlässt. Auf Infrastruktur, die du kontrollierst — nicht auf fremder Cloud.",
-    valuesTitle: "Woran wir glauben",
-    values: [
-      {
-        icon: "Shield",
-        title: "Vertraulichkeit per Architektur",
-        desc: "Mandantendaten sind heilig. Self-hosted oder EU-gehostet, verschlüsselt und isoliert — nie zum Training geteilter Modelle, nie außerhalb deiner Kontrolle.",
-      },
-      {
-        icon: "Brain",
-        title: "Zitate, nicht Halluzinationen",
-        desc: "Jede Antwort des Assistenten nennt ihre Quelle. Anwälte verifizieren mit einem Klick. Keine halluzinierten Referenzen, keine Black-Box-Outputs.",
-      },
-      {
-        icon: "Globe",
-        title: "DACH-first, nicht US-first",
-        desc: "Gebaut für ZPO, BGB, ABGB, beA, DATEV. Wir verstehen die DACH-Rechtslandschaft, weil wir darin leben.",
-      },
-      {
-        icon: "Heart",
-        title: "Für Anwälte gemacht",
-        desc: "Tools, die deine Anwälte täglich nutzen — WhatsApp-Copilot, Sprachnotizen, mobil. Nicht ein weiteres System, das sie meiden.",
-      },
-    ],
-    statsTitle: "In Zahlen",
-    stats: [
-      { value: "14.713", label: "Gesetzesparagraphen, zitierbar" },
-      { value: "3", label: "Jurisdiktionen — AT · DE · CH" },
-      { value: "97,9 %", label: "Recall@5 Retrieval-Benchmark" },
-      { value: "0", label: "Mandantendaten-Leaks — garantiert" },
-    ],
-    ctaTitle: "Sprich mit uns",
-    ctaSub: "Ob Einzelanwalt oder Managing Partner — wir freuen uns, von dir zu hören.",
-    ctaButton: "Kontakt aufnehmen",
-  },
+  de: _deAbout,
+  at: _deAbout,
+  ch: _deAbout,
 };
 
 const ICON_MAP = { Shield, Brain, Globe, Heart };
 
 export default function AboutPage({ lang }: { lang: Lang }) {
-  const c = CONTENT[lang];
+  const c = (CONTENT as unknown as Record<string, typeof CONTENT.de>)[lang] ?? CONTENT.de;
   return (
     <>
       <Section tone="light" className="px-4 pt-20 pb-16 sm:px-6 lg:px-8">

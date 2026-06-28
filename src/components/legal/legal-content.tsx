@@ -6,6 +6,22 @@ import type { Lang } from "@/content/site";
 // `lang` selects the language version. Drafts: professionally complete,
 // but have a lawyer review before launch.
 
+const _deLegal = {
+  backLink: "← Subsumio",
+  seeAlso: "Siehe auch:",
+  privacy: "Datenschutz",
+  terms: "AGB",
+  imprint: "Impressum",
+  draftNotice:
+    "Entwurf — fachlich vollständig, vor Launch anwaltlich final prüfen. Felder in [eckigen Klammern] ausfüllen.",
+  imprintTitle: "Impressum",
+  imprintSubtitle: "Angaben gemäß § 5 DDG (DE) bzw. § 5 ECG (AT), Art. 3 UWG (CH)",
+  privacyTitle: "Datenschutzerklärung",
+  privacySubtitle: "Stand: Juni 2026",
+  termsTitle: "Allgemeine Geschäftsbedingungen",
+  termsSubtitle: "Stand: Juni 2026 · gilt für den gehosteten Subsumio-Dienst",
+} as const;
+
 const T = {
   en: {
     backLink: "← Subsumio",
@@ -22,21 +38,9 @@ const T = {
     termsTitle: "Terms of Service",
     termsSubtitle: "As of June 2026 · applies to the hosted Subsumio service",
   },
-  de: {
-    backLink: "← Subsumio",
-    seeAlso: "Siehe auch:",
-    privacy: "Datenschutz",
-    terms: "AGB",
-    imprint: "Impressum",
-    draftNotice:
-      "Entwurf — fachlich vollständig, vor Launch anwaltlich final prüfen. Felder in [eckigen Klammern] ausfüllen.",
-    imprintTitle: "Impressum",
-    imprintSubtitle: "Angaben gemäß § 5 DDG (DE) bzw. § 5 ECG (AT), Art. 3 UWG (CH)",
-    privacyTitle: "Datenschutzerklärung",
-    privacySubtitle: "Stand: Juni 2026",
-    termsTitle: "Allgemeine Geschäftsbedingungen",
-    termsSubtitle: "Stand: Juni 2026 · gilt für den gehosteten Subsumio-Dienst",
-  },
+  de: _deLegal,
+  at: _deLegal,
+  ch: _deLegal,
 } as const;
 
 function Shell({
@@ -52,7 +56,7 @@ function Shell({
   lang: Lang;
   children: React.ReactNode;
 }) {
-  const t = T[lang];
+  const t = (T as unknown as Record<string, typeof T.de>)[lang] ?? T.de;
   return (
     <div data-tone="light" className="min-h-screen px-6 py-16 [background:var(--mk-bg)]">
       <div className="mx-auto max-w-2xl">
@@ -90,7 +94,7 @@ function LegalLinks({
   exclude: "privacy" | "terms" | "imprint";
   lang: Lang;
 }) {
-  const t = T[lang];
+  const t = (T as unknown as Record<string, typeof T.de>)[lang] ?? T.de;
   const links = [
     { key: "privacy" as const, href: `${home === "/" ? "" : home}/privacy`, label: t.privacy },
     { key: "terms" as const, href: `${home === "/" ? "" : home}/terms`, label: t.terms },
@@ -112,7 +116,7 @@ function LegalLinks({
 }
 
 export function ImprintContent({ home, lang = "de" }: { home: string; lang?: Lang }) {
-  const t = T[lang];
+  const t = (T as unknown as Record<string, typeof T.de>)[lang] ?? T.de;
   if (lang === "en") {
     return (
       <Shell home={home} lang={lang} title={t.imprintTitle} subtitle={t.imprintSubtitle}>
@@ -193,7 +197,7 @@ export function ImprintContent({ home, lang = "de" }: { home: string; lang?: Lan
 }
 
 export function PrivacyContent({ home, lang = "de" }: { home: string; lang?: Lang }) {
-  const t = T[lang];
+  const t = (T as unknown as Record<string, typeof T.de>)[lang] ?? T.de;
   if (lang === "en") {
     return (
       <Shell home={home} lang={lang} title={t.privacyTitle} subtitle={t.privacySubtitle}>
@@ -432,7 +436,7 @@ export function PrivacyContent({ home, lang = "de" }: { home: string; lang?: Lan
 }
 
 export function TermsContent({ home, lang = "de" }: { home: string; lang?: Lang }) {
-  const t = T[lang];
+  const t = (T as unknown as Record<string, typeof T.de>)[lang] ?? T.de;
   if (lang === "en") {
     return (
       <Shell home={home} lang={lang} title={t.termsTitle} subtitle={t.termsSubtitle}>

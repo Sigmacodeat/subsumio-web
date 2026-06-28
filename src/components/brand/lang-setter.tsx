@@ -6,7 +6,14 @@ import { useEffect } from "react";
 export default function LangSetter() {
   const pathname = usePathname();
   useEffect(() => {
-    document.documentElement.lang = pathname.startsWith("/en") ? "en" : "de";
+    const lang = pathname.startsWith("/en")
+      ? "en"
+      : pathname.startsWith("/at")
+        ? "de-AT"
+        : pathname.startsWith("/ch")
+          ? "de-CH"
+          : "de";
+    document.documentElement.lang = lang;
   }, [pathname]);
   return null;
 }

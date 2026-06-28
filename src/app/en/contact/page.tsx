@@ -6,7 +6,15 @@ export const metadata: Metadata = {
   title: "Contact Subsumio — talk to our team",
   description:
     "Questions about Subsumio, self-hosting, enterprise or partnerships? Reach our team about AI legal software, DSGVO compliance, AVV, professional secrecy and partner programs. Reply within one business day.",
-  alternates: { canonical: "/en/contact", languages: { de: "/contact", en: "/en/contact" } },
+  alternates: {
+    canonical: "/en/contact",
+    languages: {
+      "de-DE": "/contact",
+      "de-AT": "/at/contact",
+      "de-CH": "/ch/contact",
+      en: "/en/contact",
+    },
+  },
   openGraph: {
     title: "Contact Subsumio — talk to our team",
     description:

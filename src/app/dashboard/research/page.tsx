@@ -57,6 +57,9 @@ export default function ResearchPage() {
   const [savedLoading, setSavedLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"new" | "saved">("new");
   const [savedSearch, setSavedSearch] = useState("");
+  // Supervisor job tracking
+  const [researchJobId, setResearchJobId] = useState<number | null>(null);
+  const [researchPhase, setResearchPhase] = useState<string>("");
   const [savedJurisdiction, setSavedJurisdiction] = useState<"all" | "at" | "de" | "ch" | "eu">(
     "all"
   );
@@ -93,33 +96,91 @@ export default function ResearchPage() {
     setCurrentCitations([]);
     setCurrentGaps([]);
     setCurrentGrounding(null);
+    setResearchJobId(null);
+    setResearchPhase(lang === "de" ? "Recherche wird vorbereitet …" : "Preparing research …");
 
     try {
-      const prompt = `${t("research.prompt_prefix")} ${jurisdiction.toUpperCase()}${t("research.prompt_suffix")}\n\n${lang === "de" ? "RECHTSFRAGE" : "LEGAL QUESTION"}: ${query}`;
-      const result = await api.query.think(prompt, {
-        mode: "balanced",
-        queryMode: "conservative",
-        onChunk: (chunk) => {
-          setCurrentAnswer((prev) => prev + chunk);
-        },
+      // Submit to Supervisor agent pipeline for deep, multi-step research.
+      // Falls back to one-shot think if the supervisor endpoint is unavailable.
+      const submitRes = await fetch("/api/legal/research", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: query, jurisdiction, budget_cents: 200 }),
       });
-      setCurrentAnswer(result.answer);
-      setCurrentCitations(result.citations || []);
-      setCurrentGaps(result.gaps || []);
-      const g = result._grounding;
-      if (g) setCurrentGrounding(g);
+
+      if (!submitRes.ok) throw new Error(`submit failed: ${submitRes.status}`);
+      const submitData = (await submitRes.json()) as { jobId: number };
+      const jobId = submitData.jobId;
+      setResearchJobId(jobId);
+      setResearchPhase(lang === "de" ? "Supervisor plant Recherche …" : "Supervisor planning …");
+
+      // Poll until done
+      const POLL_INTERVAL = 3000;
+      const MAX_WAIT_MS = 5 * 60 * 1000; // 5 min
+      const started = Date.now();
+
+      await new Promise<void>((resolve, reject) => {
+        const poll = async () => {
+          if (Date.now() - started > MAX_WAIT_MS) {
+            reject(
+              new Error(
+                lang === "de" ? "Zeitlimit überschritten (5 min)." : "Timed out after 5 minutes."
+              )
+            );
+            return;
+          }
+          try {
+            const statusRes = await fetch(`/api/agents/${jobId}`);
+            if (!statusRes.ok) {
+              setTimeout(poll, POLL_INTERVAL);
+              return;
+            }
+            const job = (await statusRes.json()) as {
+              status: string;
+              result?: { answer?: string; output?: string; text?: string };
+              progress?: { phase?: string; step?: string; message?: string };
+              error_text?: string;
+            };
+
+            // Update phase label from progress
+            const phase = job.progress?.phase ?? job.progress?.message ?? job.progress?.step;
+            if (phase) setResearchPhase(phase);
+
+            if (job.status === "completed") {
+              // Extract answer from result
+              const raw = job.result?.answer ?? job.result?.output ?? job.result?.text ?? "";
+              setCurrentAnswer(typeof raw === "string" ? raw : JSON.stringify(raw, null, 2));
+              setResearchPhase("");
+              resolve();
+            } else if (job.status === "failed" || job.status === "dead") {
+              reject(
+                new Error(
+                  job.error_text ??
+                    (lang === "de" ? "Recherche fehlgeschlagen." : "Research failed.")
+                )
+              );
+            } else {
+              setTimeout(poll, POLL_INTERVAL);
+            }
+          } catch {
+            setTimeout(poll, POLL_INTERVAL);
+          }
+        };
+        setTimeout(poll, POLL_INTERVAL);
+      });
 
       const session: ResearchSession = {
         id: crypto.randomUUID(),
         query,
-        answer: result.answer,
-        citations: result.citations || [],
-        gaps: result.gaps || [],
+        answer: currentAnswer,
+        citations: currentCitations,
+        gaps: currentGaps,
         jurisdiction,
         createdAt: new Date().toISOString(),
       };
       setSessions((s) => [session, ...s]);
     } catch (err) {
+      setResearchPhase("");
       setError(
         err instanceof Error
           ? err.message
@@ -276,6 +337,15 @@ export default function ResearchPage() {
             <Landmark size={14} /> {t("research.btn_judgements_sync")}
           </Button>
         </div>
+        {loading && researchPhase && (
+          <div className="flex items-center gap-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-4 py-3 text-sm text-[color:var(--ds-muted)]">
+            <Loader2 size={13} className="shrink-0 animate-spin text-[color:var(--brand)]" />
+            <span>{researchPhase}</span>
+            {researchJobId && (
+              <span className="ml-auto font-mono text-xs opacity-50">Job #{researchJobId}</span>
+            )}
+          </div>
+        )}
         {error && (
           <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-700">
             {error}

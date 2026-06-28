@@ -1,11 +1,12 @@
 import { z } from "zod";
-import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
+import { ENGINE_URL, enginePatchPage, engineHeadersForBrain } from "@/lib/engine";
 import { createHandler, apiError } from "@/lib/api-handler";
 
 export const maxDuration = 120;
 
 const contradictionsSchema = z.object({
   case_slug: z.string().min(1, "case_slug_required"),
+  brain_id: z.string().min(1).max(200).optional(),
 });
 
 interface DocumentAnalysis {
@@ -45,11 +46,14 @@ export const POST = createHandler(
     }),
   },
   async (ctx, body, _query, _req) => {
+    const isInternal = ctx.brainId === "internal";
+    const engineHeaders =
+      isInternal && body.brain_id ? engineHeadersForBrain(body.brain_id) : ctx.headers;
     // Fetch all documents for this case from the engine
     let caseDocs: DocumentAnalysis[] = [];
     try {
       const res = await fetch(`${ENGINE_URL}/api/pages?type=document&limit=200`, {
-        headers: ctx.headers,
+        headers: engineHeaders,
         signal: AbortSignal.timeout(30_000),
       });
       if (!res.ok) return apiError("engine_error", `Engine returned ${res.status}`, res.status);
@@ -178,7 +182,7 @@ export const POST = createHandler(
     };
     try {
       await enginePatchPage(
-        ctx.headers,
+        engineHeaders,
         {
           slug: body.case_slug,
           frontmatter: fmUpdate,

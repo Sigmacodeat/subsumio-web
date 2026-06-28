@@ -121,19 +121,23 @@ function CtaClose({
 
 // --- Copy ------------------------------------------------------------------
 
-const COPY = {
-  de: {
-    whatsapp: {
-      eyebrow: "Das stärkste Argument",
-      title: "Die Kanzlei",
-      claim: "in der Hosentasche.",
-      sub: "Zeit buchen, Belege ablegen, Akten befragen — vom Handy, ohne App-Wechsel, ohne Schulung. Der Copilot versteht die Akte und legt alles bestätigungspflichtig ins Brain.",
-      flowsTitle: "Drei Handgriffe, die jeder Anwalt sofort versteht",
-      ctaTitle: "Vom ersten Tag produktiv.",
-      ctaSub: "Keine neue App, keine Schulung — die Nummer einspeichern und loslegen.",
-      ctaLabel: "Copilot ausprobieren",
-    },
+const _deSubpages = {
+  whatsapp: {
+    eyebrow: "Das stärkste Argument",
+    title: "Die Kanzlei",
+    claim: "in der Hosentasche.",
+    sub: "Zeit buchen, Belege ablegen, Akten befragen — vom Handy, ohne App-Wechsel, ohne Schulung. Der Copilot versteht die Akte und legt alles bestätigungspflichtig ins Brain.",
+    flowsTitle: "Drei Handgriffe, die jeder Anwalt sofort versteht",
+    ctaTitle: "Vom ersten Tag produktiv.",
+    ctaSub: "Keine neue App, keine Schulung — die Nummer einspeichern und loslegen.",
+    ctaLabel: "Copilot ausprobieren",
   },
+} as const;
+
+const COPY = {
+  de: _deSubpages,
+  at: _deSubpages,
+  ch: _deSubpages,
   en: {
     whatsapp: {
       eyebrow: "The standout advantage",
@@ -151,7 +155,7 @@ const COPY = {
 // --- Pages -----------------------------------------------------------------
 
 export function WhatsAppPage({ lang }: { lang: Lang }) {
-  const c = COPY[lang].whatsapp;
+  const c = ((COPY as unknown as Record<string, typeof COPY.de>)[lang] ?? COPY.de).whatsapp;
   const signup = p(lang, "/signup?industry=legal");
   const ui = UI_STRINGS[lang];
   const flows = [
@@ -211,7 +215,7 @@ export function WhatsAppPage({ lang }: { lang: Lang }) {
           </div>
           <p className="mx-auto mt-8 inline-flex w-full max-w-2xl items-center justify-center gap-2 text-center text-sm [color:var(--mk-text-subtle)]">
             <MessageSquare size={14} className="brand-text shrink-0" />
-            {lang === "de"
+            {lang !== "en"
               ? "Alles bestätigungspflichtig — nichts landet ungesehen in der Akte."
               : "Everything confirmation-gated — nothing reaches the matter unseen."}
           </p>

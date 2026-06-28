@@ -71,6 +71,10 @@ export const PROTECTED_JOB_NAMES: ReadonlySet<string> = new Set([
   // Same trust posture as supervisor — MCP/OAuth callers can't trigger
   // an automated 32-call pipeline that costs ~$15/akt.
   "legal-pipeline",
+  // Async arm of the upload pipeline. Only the trusted upload route submits it
+  // (with allowProtectedSubmit) after persisting the original bytes; an
+  // MCP/OAuth caller must not be able to queue arbitrary extraction work.
+  "extract-document",
 ]);
 
 /** Check a job name against the protected set. Normalizes whitespace first. */

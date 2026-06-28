@@ -13,53 +13,57 @@ import { VERTICALS } from "@/content/verticals";
 import type { Lang } from "@/content/site";
 import { GradientMesh } from "./motion-system";
 
+const _deShowcase = {
+  waEyebrow: "Das stärkste Argument",
+  waTitle: "Subsumio-Copilot — direkt in WhatsApp",
+  waSub:
+    "Zeit buchen, Belege ablegen, Akten befragen — vom Handy, ohne App-Wechsel, ohne Schulung. Der Copilot versteht die Akte und legt alles bestätigungspflichtig ins Brain.",
+  waPoints: [
+    {
+      icon: Clock,
+      t: "Zeit & Auslagen in Sekunden",
+      d: '"Zeit 0,5h Akte Müller, Telefonat" → erfasst, der Akte zugeordnet, ein Tipp zum Bestätigen.',
+    },
+    {
+      icon: Paperclip,
+      t: "Beleg-Foto → richtige Akte",
+      d: "Dokument oder Foto mit Akten-Kürzel in der Caption landet revisionssicher im Vault.",
+    },
+    {
+      icon: Mic,
+      t: "Sprachnotiz unterwegs",
+      d: "Diktat nach dem Termin — transkribiert und der Akte angehängt, bevor du im Büro bist.",
+    },
+  ],
+  phoneHeader: "Subsumio-Copilot",
+  phoneStatus: "online",
+  chat: [
+    { from: "user", text: "Zeit 0,5h Akte Müller, Telefonat Gegenseite" },
+    {
+      from: "bot",
+      text: "✓ Zeitbuchung 0,5 h · Akte Müller · Telefonat\nBestätigen?",
+      chips: ["Bestätigen", "Ändern"],
+    },
+    {
+      from: "user",
+      text: "Frage: Wo widersprechen sich die Aussagen der Gegenseite?",
+      file: "Schriftsatz_Gegenseite.pdf",
+    },
+    {
+      from: "bot",
+      text: "3 Widersprüche gefunden — mit Fundstellen (S. 14, B7, Protokoll K.). Antwort in der Akte abgelegt.",
+    },
+  ],
+  bentoEyebrow: "Alle Funktionen",
+  bentoTitle: "Alles, was die Kanzlei braucht — in einem Gehirn",
+  bentoSub:
+    "Self-hosted oder EU-Cloud. Jede Antwort mit Fundstelle. Jede Funktion auf deiner Infrastruktur.",
+} as const;
+
 const COPY = {
-  de: {
-    waEyebrow: "Das stärkste Argument",
-    waTitle: "Subsumio-Copilot — direkt in WhatsApp",
-    waSub:
-      "Zeit buchen, Belege ablegen, Akten befragen — vom Handy, ohne App-Wechsel, ohne Schulung. Der Copilot versteht die Akte und legt alles bestätigungspflichtig ins Brain.",
-    waPoints: [
-      {
-        icon: Clock,
-        t: "Zeit & Auslagen in Sekunden",
-        d: '"Zeit 0,5h Akte Müller, Telefonat" → erfasst, der Akte zugeordnet, ein Tipp zum Bestätigen.',
-      },
-      {
-        icon: Paperclip,
-        t: "Beleg-Foto → richtige Akte",
-        d: "Dokument oder Foto mit Akten-Kürzel in der Caption landet revisionssicher im Vault.",
-      },
-      {
-        icon: Mic,
-        t: "Sprachnotiz unterwegs",
-        d: "Diktat nach dem Termin — transkribiert und der Akte angehängt, bevor du im Büro bist.",
-      },
-    ],
-    phoneHeader: "Subsumio-Copilot",
-    phoneStatus: "online",
-    chat: [
-      { from: "user", text: "Zeit 0,5h Akte Müller, Telefonat Gegenseite" },
-      {
-        from: "bot",
-        text: "✓ Zeitbuchung 0,5 h · Akte Müller · Telefonat\nBestätigen?",
-        chips: ["Bestätigen", "Ändern"],
-      },
-      {
-        from: "user",
-        text: "Frage: Wo widersprechen sich die Aussagen der Gegenseite?",
-        file: "Schriftsatz_Gegenseite.pdf",
-      },
-      {
-        from: "bot",
-        text: "3 Widersprüche gefunden — mit Fundstellen (S. 14, B7, Protokoll K.). Antwort in der Akte abgelegt.",
-      },
-    ],
-    bentoEyebrow: "Alle Funktionen",
-    bentoTitle: "Alles, was die Kanzlei braucht — in einem Gehirn",
-    bentoSub:
-      "Self-hosted oder EU-Cloud. Jede Antwort mit Fundstelle. Jede Funktion auf deiner Infrastruktur.",
-  },
+  de: _deShowcase,
+  at: _deShowcase,
+  ch: _deShowcase,
   en: {
     waEyebrow: "The standout advantage",
     waTitle: "Subsumio Copilot — right inside WhatsApp",
@@ -121,7 +125,7 @@ const reveal = (i: number) => ({
 
 export function PhoneCopilot({ lang }: { lang: Lang }) {
   const reduce = useReducedMotion();
-  const c = COPY[lang];
+  const c = (COPY as unknown as Record<string, typeof COPY.de>)[lang] ?? COPY.de;
   return (
     // Always-dark device mock: pin data-tone="dark" so --mk-* inside resolves
     // dark even when the phone sits on a light page.
@@ -207,7 +211,7 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
  *  (pins data-tone="dark"); reused on the homepage teaser and the /whatsapp
  *  deep-dive page. */
 export function WhatsAppSpotlight({ lang, children }: { lang: Lang; children?: React.ReactNode }) {
-  const c = COPY[lang];
+  const c = (COPY as unknown as Record<string, typeof COPY.de>)[lang] ?? COPY.de;
 
   return (
     <section
@@ -259,7 +263,7 @@ export function WhatsAppSpotlight({ lang, children }: { lang: Lang; children?: R
 /** Bento feature grid — every capability. Tone-flexible: inherits the
  *  surrounding section tone (place inside a <Section tone=…>). */
 export function FeatureBento({ lang }: { lang: Lang }) {
-  const c = COPY[lang];
+  const c = (COPY as unknown as Record<string, typeof COPY.de>)[lang] ?? COPY.de;
   const features = VERTICALS[lang].legal.features;
   return (
     <div className="relative z-10 mx-auto max-w-6xl px-4 py-28 sm:px-6 lg:px-8">

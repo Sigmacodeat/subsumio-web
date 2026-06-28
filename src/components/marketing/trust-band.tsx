@@ -11,38 +11,42 @@ import type { Lang } from "@/content/site";
 import { profileForIndustry } from "@/lib/industry-pack";
 import { GlowCard, EASE } from "./motion-system";
 
+const _deTrustCopy = {
+  eyebrow: "Gebaut für vertrauliche Arbeit",
+  title: "Seriös, sicher, nachvollziehbar",
+  sub: "{brand} ist für Berufe gebaut, in denen Verschwiegenheit Gesetz ist — nicht Präferenz.",
+  pillars: [
+    {
+      icon: ShieldCheck,
+      signal: "blue",
+      t: "Self-hosted oder EU-Cloud",
+      d: "Deine Hardware oder EU-Hosting mit AVV. Mandantendaten verlassen die EU nicht.",
+    },
+    {
+      icon: Lock,
+      signal: "green",
+      t: "Kein Training auf deinen Daten",
+      d: "Dein Wissen trainiert nie geteilte Modelle. Niemals.",
+    },
+    {
+      icon: Quote,
+      signal: "blue",
+      t: "Jede Antwort belegt",
+      d: "Seitengenaue Zitate — prüfbar in einem Klick, bevor etwas in den Schriftsatz geht.",
+    },
+    {
+      icon: ScrollText,
+      signal: "amber",
+      t: "§ 203 StGB im Blick",
+      d: "Architektur für Berufsgeheimnisträger — kein Dritter verarbeitet Mandantendaten.",
+    },
+  ],
+} as const;
+
 const COPY = {
-  de: {
-    eyebrow: "Gebaut für vertrauliche Arbeit",
-    title: "Seriös, sicher, nachvollziehbar",
-    sub: "{brand} ist für Berufe gebaut, in denen Verschwiegenheit Gesetz ist — nicht Präferenz.",
-    pillars: [
-      {
-        icon: ShieldCheck,
-        signal: "blue",
-        t: "Self-hosted oder EU-Cloud",
-        d: "Deine Hardware oder EU-Hosting mit AVV. Mandantendaten verlassen die EU nicht.",
-      },
-      {
-        icon: Lock,
-        signal: "green",
-        t: "Kein Training auf deinen Daten",
-        d: "Dein Wissen trainiert nie geteilte Modelle. Niemals.",
-      },
-      {
-        icon: Quote,
-        signal: "blue",
-        t: "Jede Antwort belegt",
-        d: "Seitengenaue Zitate — prüfbar in einem Klick, bevor etwas in den Schriftsatz geht.",
-      },
-      {
-        icon: ScrollText,
-        signal: "amber",
-        t: "§ 203 StGB im Blick",
-        d: "Architektur für Berufsgeheimnisträger — kein Dritter verarbeitet Mandantendaten.",
-      },
-    ],
-  },
+  de: _deTrustCopy,
+  at: _deTrustCopy,
+  ch: _deTrustCopy,
   en: {
     eyebrow: "Built for confidential work",
     title: "Serious, secure, verifiable",
@@ -83,7 +87,7 @@ const SIGNAL: Record<string, { text: string; bg: string; ring: string }> = {
 };
 
 export default function TrustBand({ lang, industry }: { lang: Lang; industry?: string }) {
-  const c = COPY[lang];
+  const c = (COPY as unknown as Record<string, typeof COPY.de>)[lang] ?? COPY.de;
   const brand = profileForIndustry(industry)?.brand ?? "Subsumio";
   const sub = c.sub.replace("{brand}", brand);
   return (

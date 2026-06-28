@@ -9,7 +9,7 @@ import {
   existsSync,
 } from "fs";
 import { join } from "path";
-import { importFile, importFromContent } from "../src/core/import-file.ts";
+import { importFile, importFromContent, MAX_FILE_SIZE } from "../src/core/import-file.ts";
 import type { BrainEngine } from "../src/core/engine.ts";
 import { MARKDOWN_CHUNKER_VERSION } from "../src/core/chunkers/recursive.ts";
 
@@ -89,9 +89,9 @@ This is the compiled truth.
     expect(chunkCall).toBeTruthy();
   });
 
-  test("skips files larger than MAX_FILE_SIZE (5MB)", async () => {
+  test("skips files larger than MAX_FILE_SIZE", async () => {
     const filePath = join(TMP, "big-file.md");
-    const bigContent = "---\ntitle: Big\n---\n" + "x".repeat(5_100_000);
+    const bigContent = "---\ntitle: Big\n---\n" + "x".repeat(MAX_FILE_SIZE + 100_000);
     writeFileSync(filePath, bigContent);
 
     const engine = mockEngine();
@@ -400,7 +400,7 @@ Content to chunk but not embed.
     // must trigger BEFORE parseMarkdown / chunkText / embedBatch — if it doesn't,
     // an authenticated attacker can force the owner to pay for embedding a
     // multi-megabyte string.
-    const bigContent = "---\ntitle: Big\n---\n" + "x".repeat(5_100_000);
+    const bigContent = "---\ntitle: Big\n---\n" + "x".repeat(MAX_FILE_SIZE + 100_000);
 
     const engine = mockEngine();
     const result = await importFromContent(engine, "big-slug", bigContent, { noEmbed: true });
@@ -413,10 +413,11 @@ Content to chunk but not embed.
   });
 
   test("uses UTF-8 byte length, not JS string length, for the size check", async () => {
-    // 2.6M 4-byte codepoints = ~10.4 MB UTF-8 but only 2.6M JS UTF-16 code units.
-    // A length-based check would let this through; a byteLength check catches it.
+    // Enough 4-byte codepoints to exceed MAX_FILE_SIZE in UTF-8 bytes while
+    // staying ~half that in JS UTF-16 code units. A length-based check would let
+    // this through; a byteLength check catches it.
     const fourByteChar = "\u{1F600}"; // emoji, 4 bytes in UTF-8
-    const bigContent = fourByteChar.repeat(2_600_000);
+    const bigContent = fourByteChar.repeat(Math.ceil(MAX_FILE_SIZE / 4) + 1000);
 
     const engine = mockEngine();
     const result = await importFromContent(engine, "emoji-slug", bigContent, { noEmbed: true });

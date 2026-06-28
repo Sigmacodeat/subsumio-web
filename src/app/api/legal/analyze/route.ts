@@ -142,6 +142,7 @@ export const POST = createHandler(
   async (ctx, body, _query, _req) => {
     const isInternal = ctx.brainId === "internal";
     let engineHeaders: Record<string, string> = ctx.headers;
+    let targetBrainId = ctx.brainId;
 
     const documentSlug = typeof body.document_slug === "string" ? body.document_slug.trim() : "";
     const jurisdiction =
@@ -153,6 +154,7 @@ export const POST = createHandler(
     if (isInternal) {
       const brainId = typeof body.brain_id === "string" ? body.brain_id : "";
       if (brainId) {
+        targetBrainId = brainId;
         engineHeaders = { ...engineHeaders, "x-subsumio-source": brainId };
       }
     }
@@ -243,12 +245,30 @@ export const POST = createHandler(
           try {
             const evt = JSON.parse(line.slice(6)) as { chunk?: string };
             if (evt.chunk) answer += evt.chunk;
-          } catch { /* skip malformed lines */ }
+          } catch {
+            /* skip malformed lines */
+          }
         }
         parsed = safeParseJson(answer || "{}");
       }
     } catch (err) {
       console.error("[analyze] AI step failed:", err instanceof Error ? err.message : String(err));
+      if (documentSlug) {
+        try {
+          const failedPatch = await enginePatchPage(engineHeaders, {
+            slug: documentSlug,
+            frontmatter: {
+              analysis_status: "failed",
+              analysis_failed_at: new Date().toISOString(),
+              analysis_error: (err instanceof Error ? err.message : String(err)).slice(0, 500),
+            },
+          });
+          if (!failedPatch.ok)
+            console.error(`[analyze] failed to persist failure status: HTTP ${failedPatch.status}`);
+        } catch (patchErr) {
+          console.error("[analyze] failed to persist failure status:", patchErr);
+        }
+      }
       const empty = buildEmptyResult("Analyse fehlgeschlagen \u2014 Engine nicht verf\u00fcgbar.");
       empty._warnings = [...warnings, "ai_analysis_failed"];
       empty._degraded = true;
@@ -278,48 +298,56 @@ export const POST = createHandler(
       parsed.suggested_precedents = suggestedPrecedents;
     }
 
-    // 6. Store analysis results (best-effort, non-blocking)
+    // 6. Store analysis results before acknowledging success. The outbox may
+    // only mark this task done after the result is durably visible.
     // P0-3: Stamp document_type into the document's frontmatter (not just meta)
     // P0-2: Write suggested_deadlines into the CASE frontmatter so the
     //       deadline-reminder cron and the UI can pick them up.
     if (documentSlug) {
-      void (async () => {
-        try {
-          const docType =
-            typeof parsed.document_type === "string" ? parsed.document_type : undefined;
-          // The engine persists data only from `frontmatter` on a merge-update
-          // (a top-level `meta` key is ignored), so the analysis result must
-          // live in frontmatter. merge:true (added by enginePatchPage) overlays
-          // just these keys, so case_slug/assignment_status/extraction metadata
-          // on the document are preserved.
-          const docFrontmatter: Record<string, unknown> = {
-            auto_analysis: parsed,
-            analyzed_at: new Date().toISOString(),
-            analysis_status: "completed",
-            analysis_retry_count: 0,
-          };
-          if (docType && docType !== "unknown") {
-            docFrontmatter.document_type = docType;
-          }
-          if (parsed.privilege && typeof parsed.privilege === "object") {
-            const priv = parsed.privilege as { is_privileged?: boolean; privilege_type?: string };
-            if (priv.is_privileged) {
-              docFrontmatter.privileged = true;
-              docFrontmatter.privilege_type = priv.privilege_type ?? "attorney_client";
-            }
-          }
-          await enginePatchPage(
-            engineHeaders,
-            { slug: documentSlug, frontmatter: docFrontmatter },
-            { timeoutMs: 300_000 }
-          );
-        } catch (err) {
-          console.error(
-            `[analyze] failed to persist analysis for ${documentSlug}:`,
-            err instanceof Error ? err.message : String(err)
-          );
+      try {
+        const docType = typeof parsed.document_type === "string" ? parsed.document_type : undefined;
+        // The engine persists data only from `frontmatter` on a merge-update
+        // (a top-level `meta` key is ignored), so the analysis result must
+        // live in frontmatter. merge:true (added by enginePatchPage) overlays
+        // just these keys, so case_slug/assignment_status/extraction metadata
+        // on the document are preserved.
+        const docFrontmatter: Record<string, unknown> = {
+          auto_analysis: parsed,
+          analyzed_at: new Date().toISOString(),
+          analysis_status: "completed",
+          analysis_retry_count: 0,
+        };
+        if (docType && docType !== "unknown") {
+          docFrontmatter.document_type = docType;
         }
-      })();
+        if (parsed.privilege && typeof parsed.privilege === "object") {
+          const priv = parsed.privilege as { is_privileged?: boolean; privilege_type?: string };
+          if (priv.is_privileged) {
+            docFrontmatter.privileged = true;
+            docFrontmatter.privilege_type = priv.privilege_type ?? "attorney_client";
+          }
+        }
+        const docPatch = await enginePatchPage(
+          engineHeaders,
+          { slug: documentSlug, frontmatter: docFrontmatter },
+          { timeoutMs: 300_000 }
+        );
+        if (!docPatch.ok)
+          throw new Error(`HTTP ${docPatch.status}: ${(await docPatch.text()).slice(0, 300)}`);
+      } catch (err) {
+        console.error(
+          `[analyze] failed to persist analysis for ${documentSlug}:`,
+          err instanceof Error ? err.message : String(err)
+        );
+        return Response.json(
+          {
+            ...parsed,
+            error: "analysis_persistence_failed",
+            _warnings: [...warnings, "analysis_persistence_failed"],
+          },
+          { status: 503 }
+        );
+      }
     }
 
     // P0-2: Write suggested deadlines + parties to the case frontmatter
@@ -439,9 +467,8 @@ export const POST = createHandler(
             headers: {
               "Content-Type": "application/json",
               "x-internal-secret": internalSecret,
-              "x-subsumio-source": ctx.brainId,
             },
-            body: JSON.stringify({ case_slug: documentCaseSlug }),
+            body: JSON.stringify({ case_slug: documentCaseSlug, brain_id: targetBrainId }),
             signal: AbortSignal.timeout(60_000),
           });
         } catch {

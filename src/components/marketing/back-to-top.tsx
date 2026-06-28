@@ -6,9 +6,9 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowUp } from "lucide-react";
-import { UI_STRINGS } from "@/content/site";
+import { UI_STRINGS, type Lang } from "@/content/site";
 
-export default function BackToTop({ lang = "en" }: { lang?: "en" | "de" }) {
+export default function BackToTop({ lang = "en" }: { lang?: Lang }) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {

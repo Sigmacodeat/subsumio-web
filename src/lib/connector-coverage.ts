@@ -443,6 +443,44 @@ export const CONNECTOR_COVERAGE_MATRIX: ConnectorCoverageEntry[] = [
     ],
   },
 
+  // ── ADVOKAT ─────────────────────────────────────────────────────────
+  {
+    id: "advokat-import",
+    name: "ADVOKAT Kanzleisoftware",
+    category: "local_folder",
+    status: "available",
+    engine_service: "advokat-import",
+    dms_provider: null,
+    content_types: [
+      "application/pdf",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "text/plain",
+      "text/xml",
+      "image/*",
+      "unknown",
+    ],
+    sync_mode: "delta",
+    auth_method: "file_watch",
+    rate_limit: { capacity: 1_000, window_ms: 1_000 },
+    tenant_isolated: true,
+    matter_scope: true,
+    gobd_relevant: true,
+    gdpr_relevant: true,
+    push_notifications: false,
+    full_text_search: false,
+    version_history: true,
+    setup_difficulty: "medium",
+    required_config: ["filters.watch_dir"],
+    optional_config: ["poll_interval_ms", "batch_size"],
+    description:
+      "ADVOKAT Local Bridge — synchronisiert einen read-only Export- oder Dokumentenordner automatisch und ordnet den ersten Ordnernamen als Aktenreferenz zu.",
+    limitations: [
+      "Keine öffentliche ADVOKAT-REST-API: benötigt einen gemounteten Export-/Dokumentenordner oder eine Partner-Bridge",
+      "Stammdaten, Fristen, Leistungen und Rückschreiben benötigen die offizielle ADVOKAT-Schnittstellendokumentation",
+    ],
+  },
+
   // ── Local Folders ────────────────────────────────────────────────────
   {
     id: "local-folder",

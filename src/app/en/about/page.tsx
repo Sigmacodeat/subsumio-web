@@ -6,7 +6,10 @@ export const metadata: Metadata = {
   title: "About Subsumio — AI legal software built in Austria for DACH law firms",
   description:
     "Subsumio is built in Austria for law firms in AT, DE and CH. Our mission: cited AI answers for legal work, with confidentiality by architecture — EU cloud or self-hosted. No training on client data.",
-  alternates: { canonical: "/en/about", languages: { de: "/about", en: "/en/about" } },
+  alternates: {
+    canonical: "/en/about",
+    languages: { "de-DE": "/about", "de-AT": "/at/about", "de-CH": "/ch/about", en: "/en/about" },
+  },
   openGraph: {
     title: "About Subsumio — AI legal software built in Austria for DACH law firms",
     description:

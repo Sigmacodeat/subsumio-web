@@ -80,6 +80,7 @@ export type RouteAction =
   | "legal.contradictions"
   | "legal.retrieval_feedback"
   | "legal.strategy"
+  | "legal.research"
   | "team.role_change"
   | "billing.read"
   | "billing.write"
@@ -152,6 +153,7 @@ const ACTION_ROLES: Record<RouteAction, KanzleiRole[]> = {
   "legal.contradictions": ["admin", "lawyer"],
   "legal.retrieval_feedback": ["admin", "lawyer", "assistant"],
   "legal.strategy": ["admin", "lawyer"],
+  "legal.research": ["admin", "lawyer"],
 };
 
 /** Prüft, ob ein User eine Aktion ausführen darf. */
@@ -217,6 +219,7 @@ export function auditActionFor(routeAction: RouteAction): AuditAction {
     "legal.contradictions": "legal.contradictions",
     "legal.retrieval_feedback": "legal.retrieval_feedback",
     "legal.strategy": "legal.strategy",
+    "legal.research": "legal.research",
     "team.role_change": "team.role_change",
     "billing.read": "billing.upgrade",
     "billing.write": "billing.upgrade",

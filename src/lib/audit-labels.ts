@@ -27,6 +27,9 @@ export type AuditAction =
   | "document.upload"
   | "document.download"
   | "document.delete"
+  | "document.presign"
+  | "document.confirm"
+  | "document.presign_batch"
   | "deadline.create"
   | "deadline.update"
   | "deadline.delete"
@@ -54,6 +57,7 @@ export type AuditAction =
   | "legal.contradictions"
   | "legal.retrieval_feedback"
   | "legal.strategy"
+  | "legal.research"
   | "settings.update"
   | "billing.upgrade"
   | "onboarding.complete"
@@ -115,6 +119,9 @@ const ACTION_LABELS: Record<string, string> = {
   "document.upload": "Dokument hochgeladen",
   "document.download": "Dokument heruntergeladen",
   "document.delete": "Dokument gelöscht",
+  "document.presign": "Upload vorbereitet (Presigned URL)",
+  "document.confirm": "Upload bestätigt und verarbeitet",
+  "document.presign_batch": "Batch-Upload vorbereitet",
   "deadline.create": "Frist erstellt",
   "deadline.update": "Frist aktualisiert",
   "deadline.delete": "Frist gelöscht",
@@ -131,6 +138,7 @@ const ACTION_LABELS: Record<string, string> = {
   "legal.contradictions": "Widerspruchsprüfung",
   "legal.retrieval_feedback": "Retrieval-Feedback",
   "legal.strategy": "Strategie generiert",
+  "legal.research": "Deep Research gestartet",
   "settings.update": "Einstellungen geändert",
   "billing.upgrade": "Plan geändert",
   "onboarding.complete": "Onboarding abgeschlossen",

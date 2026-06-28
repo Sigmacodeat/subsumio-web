@@ -6,7 +6,10 @@ export const metadata: Metadata = {
   description:
     "Sign in to Subsumio to work with matters, documents, deadlines, cited AI answers and your legal dashboard.",
   robots: { index: false },
-  alternates: { canonical: "/en/login", languages: { de: "/login", en: "/en/login" } },
+  alternates: {
+    canonical: "/en/login",
+    languages: { "de-DE": "/login", "de-AT": "/at/login", "de-CH": "/ch/login", en: "/en/login" },
+  },
 };
 
 export default function Page() {

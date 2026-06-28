@@ -4,8 +4,8 @@ import { getStore } from "@/lib/auth/store";
 import { getApiKeyStore } from "@/lib/api-key-store";
 import { revokeAllSessions, SESSION_COOKIE } from "@/lib/auth/session";
 import { logAudit } from "@/lib/audit";
-import { createServerBrainClient } from "@/lib/server-brain";
 import { createHandler, apiError } from "@/lib/api-handler";
+import { ENGINE_URL } from "@/lib/engine";
 
 export const maxDuration = 120;
 
@@ -24,29 +24,24 @@ export const POST = createHandler(
     const user = await store.getById(ctx.user.id);
     if (!user) return apiError("user_not_found", "User not found", 404);
 
-    try {
-      const brain = createServerBrainClient(ctx.headers);
-      const pages = await brain.listPages({ limit: 10000 });
-      const BATCH_SIZE = 5;
-      for (let i = 0; i < pages.length; i += BATCH_SIZE) {
-        const batch = pages.slice(i, i + BATCH_SIZE);
-        await Promise.all(
-          batch.map((p) =>
-            brain
-              .deletePage(p.slug)
-              .catch((err) =>
-                console.warn(
-                  "[gdpr] Failed to delete page",
-                  p.slug,
-                  "during data deletion:",
-                  err instanceof Error ? err.message : err
-                )
-              )
-          )
+    // A member account does not own the organisation's shared source. Erasing
+    // it here would delete every colleague's matters. Personal sources, on the
+    // other hand, must fail closed: anonymisation only happens after the engine
+    // confirms that originals and derived pages were irreversibly removed.
+    if (!user.orgId) {
+      const purge = await fetch(`${ENGINE_URL}/api/source-data`, {
+        method: "DELETE",
+        headers: ctx.headers,
+        signal: AbortSignal.timeout(120_000),
+      });
+      if (!purge.ok) {
+        const detail = await purge.text().catch(() => "");
+        return apiError(
+          "data_purge_failed",
+          `Account data could not be fully erased (${purge.status})${detail ? `: ${detail.slice(0, 200)}` : ""}`,
+          503
         );
       }
-    } catch {
-      // Brain may not be available
     }
 
     const apiKeyStore = getApiKeyStore();

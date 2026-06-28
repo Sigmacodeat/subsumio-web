@@ -10,7 +10,12 @@ export const metadata: Metadata = {
   description: content.metaDesc,
   alternates: {
     canonical: "/en/solutions/mid-sized",
-    languages: { de: "/solutions/mid-sized", en: "/en/solutions/mid-sized" },
+    languages: {
+      "de-DE": "/solutions/mid-sized",
+      "de-AT": "/at/solutions/mid-sized",
+      "de-CH": "/ch/solutions/mid-sized",
+      en: "/en/solutions/mid-sized",
+    },
   },
   openGraph: {
     title: content.metaTitle,

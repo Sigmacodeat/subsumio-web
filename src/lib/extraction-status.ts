@@ -22,9 +22,16 @@ export type ExtractionStatus =
   | "ocr_complete"
   | "ocr_failed"
   | "ready"
+  | "partial"
+  | "failed"
   | "error";
 
-export type ExtractionMethod = "text_layer" | "ocr_vision" | "none";
+export type ExtractionMethod =
+  | "text_layer"
+  | "native_parser"
+  | "ocr_vision"
+  | "audio_transcription"
+  | "none";
 
 export interface ExtractionMetadata {
   status: ExtractionStatus;
@@ -48,7 +55,9 @@ const VALID_TRANSITIONS: Record<ExtractionStatus, ExtractionStatus[]> = {
   ocr_processing: ["ocr_complete", "ocr_failed", "error"],
   ocr_complete: ["ready", "ocr_needed"],
   ocr_failed: ["ocr_needed", "error"],
-  ready: ["ocr_needed"],
+  ready: ["ocr_needed", "partial"],
+  partial: ["processing", "ocr_needed", "ready", "failed", "error"],
+  failed: ["processing", "ocr_needed", "error"],
   error: [],
 };
 
@@ -64,7 +73,7 @@ export function transition(current: ExtractionStatus, next: ExtractionStatus): E
 }
 
 export function isTerminal(status: ExtractionStatus): boolean {
-  return status === "ready" || status === "error";
+  return status === "ready" || status === "partial" || status === "failed" || status === "error";
 }
 
 export function isOcrRequired(status: ExtractionStatus): boolean {
@@ -76,7 +85,7 @@ export function isReady(status: ExtractionStatus): boolean {
 }
 
 export function isFailed(status: ExtractionStatus): boolean {
-  return status === "error" || status === "ocr_failed";
+  return status === "error" || status === "failed" || status === "ocr_failed";
 }
 
 const IMAGE_EXTENSIONS = [
@@ -224,6 +233,8 @@ const STATUS_LABELS: Record<ExtractionStatus, string> = {
   ocr_complete: "OCR abgeschlossen",
   ocr_failed: "OCR fehlgeschlagen",
   ready: "Bereit",
+  partial: "Teilweise extrahiert",
+  failed: "Extraktion fehlgeschlagen",
   error: "Fehler",
 };
 
@@ -240,6 +251,8 @@ const STATUS_COLORS: Record<ExtractionStatus, string> = {
   ocr_complete: "bg-green-100 text-green-800",
   ocr_failed: "bg-red-100 text-red-800",
   ready: "bg-green-100 text-green-800",
+  partial: "bg-amber-100 text-amber-800",
+  failed: "bg-red-100 text-red-800",
   error: "bg-red-100 text-red-800",
 };
 

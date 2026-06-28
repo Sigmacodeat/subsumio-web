@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     "Subsumio is AI legal software for law firms in Austria, Germany and Switzerland: matter management, deadline tracking per ZPO/BGB/ABGB, cited AI answers with page-level sources, DATEV export, conflict check. GDPR-ready, EU cloud or self-hosted.",
   alternates: {
     canonical: "/en",
-    languages: { de: "/", en: "/en" },
+    languages: { "de-DE": "/", "de-AT": "/at", "de-CH": "/ch", en: "/en" },
   },
 };
 

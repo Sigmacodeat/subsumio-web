@@ -232,7 +232,7 @@ export interface ImportResult {
   flag_reason?: "markup_heavy" | "oversized";
 }
 
-const MAX_FILE_SIZE = 50_000_000; // 50MB — supports large legal document extractions
+export const MAX_FILE_SIZE = 50_000_000; // 50MB — supports large legal document extractions
 
 /**
  * Import content from a string. Core pipeline:
@@ -1411,6 +1411,8 @@ export const SUPPORTED_IMAGE_EXTS = [
   ".jpeg",
   ".gif",
   ".webp",
+  ".tif",
+  ".tiff",
   ".heic",
   ".heif",
   ".avif",
@@ -1513,6 +1515,24 @@ export function pLimit(concurrency: number) {
  * through unchanged.
  */
 async function decodeIfNeeded(ext: string, buf: Buffer): Promise<{ buf: Buffer; mime: string }> {
+  if (ext === ".tif" || ext === ".tiff" || ext === ".bmp") {
+    const proc = Bun.spawn(["gm", "convert", `${ext.slice(1)}:-`, "png:-"], {
+      stdin: "pipe",
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+    proc.stdin.write(buf);
+    proc.stdin.end();
+    const [exitCode, png, stderr] = await Promise.all([
+      proc.exited,
+      new Response(proc.stdout).arrayBuffer(),
+      new Response(proc.stderr).text(),
+    ]);
+    if (exitCode !== 0 || png.byteLength === 0) {
+      throw new Error(`TIFF decode failed${stderr.trim() ? `: ${stderr.trim()}` : ""}`);
+    }
+    return { buf: Buffer.from(png), mime: "image/png" };
+  }
   if (ext === ".heic" || ext === ".heif") {
     // heic-decode bundles libheif via base64 — works in bun --compile
     // out of the box. Returns RGBA pixel buffer + dims.
@@ -1567,6 +1587,8 @@ async function decodeIfNeeded(ext: string, buf: Buffer): Promise<{ buf: Buffer; 
     ".jpeg": "image/jpeg",
     ".gif": "image/gif",
     ".webp": "image/webp",
+    ".tif": "image/tiff",
+    ".tiff": "image/tiff",
   };
   return { buf, mime: mimeMap[ext] ?? "application/octet-stream" };
 }

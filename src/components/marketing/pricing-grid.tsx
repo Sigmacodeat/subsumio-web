@@ -15,7 +15,7 @@ type Billing = "annual" | "monthly";
 export function PricingGrid({ lang }: { lang: Lang }) {
   const pricing = PRICING[lang];
   const [billing, setBilling] = useState<Billing>("annual");
-  const isDE = lang === "de";
+  const isDE = lang !== "en";
 
   return (
     <>

@@ -1,5 +1,7 @@
 // Subsumio-only brand routing. This codebase serves only subsum.eu.
 
+import type { Lang } from "@/content/site";
+
 export type SiteBrand = "subsumio";
 
 const DEFAULT_SUBSUMIO_HOSTS = [
@@ -38,7 +40,7 @@ export function isExternalUrl(url: string): boolean {
 }
 
 /** Canonical URL for the Subsumio page in a given language. */
-export function subsumioCanonical(lang: "en" | "de"): string {
+export function subsumioCanonical(lang: Lang): string {
   if (isExternalUrl(SUBSUMIO_SITE_URL)) {
     const root = SUBSUMIO_SITE_URL.replace(/\/$/, "");
     return lang === "en" ? `${root}/en` : root;

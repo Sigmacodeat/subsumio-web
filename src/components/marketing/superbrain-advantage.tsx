@@ -122,7 +122,7 @@ const orbitNodes = [
 ];
 
 export default function SuperbrainAdvantage({ lang }: { lang: Lang }) {
-  const t = copy[lang === "de" ? "de" : "en"];
+  const t = copy[lang !== "en" ? "de" : "en"];
   const reduced = useReducedMotion();
 
   return (
@@ -193,7 +193,7 @@ export default function SuperbrainAdvantage({ lang }: { lang: Lang }) {
                 <Brain size={34} className="brand-text mb-3" />
                 <span className="text-sm font-bold [color:var(--mk-text)]">{t.center}</span>
                 <span className="mt-1 text-xs [color:var(--mk-text-muted)]">
-                  {lang === "de" ? "abfragbar · belegt · isoliert" : "queryable · cited · scoped"}
+                  {lang !== "en" ? "abfragbar · belegt · isoliert" : "queryable · cited · scoped"}
                 </span>
               </motion.div>
               {orbitNodes.map((node, i) => {

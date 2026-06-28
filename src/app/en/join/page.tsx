@@ -7,7 +7,10 @@ export const metadata: Metadata = {
   title: "Join team",
   description: "Accept your Subsumio team invitation and join your firm's secure legal workspace.",
   robots: { index: false },
-  alternates: { canonical: "/en/join", languages: { de: "/join", en: "/en/join" } },
+  alternates: {
+    canonical: "/en/join",
+    languages: { "de-DE": "/join", "de-AT": "/at/join", "de-CH": "/ch/join", en: "/en/join" },
+  },
 };
 
 // Invite landing page. Not signed in → through signup first, then back here

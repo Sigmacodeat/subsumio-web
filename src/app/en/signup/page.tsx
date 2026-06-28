@@ -6,7 +6,15 @@ export const metadata: Metadata = {
   description:
     "Start Subsumio for free and test AI legal software for matters, deadlines, documents and cited answers without a credit card.",
   robots: { index: false },
-  alternates: { canonical: "/en/signup", languages: { de: "/signup", en: "/en/signup" } },
+  alternates: {
+    canonical: "/en/signup",
+    languages: {
+      "de-DE": "/signup",
+      "de-AT": "/at/signup",
+      "de-CH": "/ch/signup",
+      en: "/en/signup",
+    },
+  },
 };
 
 export default function Page() {

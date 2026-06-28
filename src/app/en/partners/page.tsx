@@ -6,7 +6,15 @@ export const metadata: Metadata = {
   title: "Subsumio Partner Program — earn 30% lifetime recurring commission",
   description:
     "Refer law firms to Subsumio and earn 30% recurring commission for the lifetime of each paying client. Three tracks: affiliate, customer referral, and certified partner. AI legal software for AT, DE and CH.",
-  alternates: { canonical: "/en/partners", languages: { de: "/partners", en: "/en/partners" } },
+  alternates: {
+    canonical: "/en/partners",
+    languages: {
+      "de-DE": "/partners",
+      "de-AT": "/at/partners",
+      "de-CH": "/ch/partners",
+      en: "/en/partners",
+    },
+  },
   openGraph: {
     title: "Subsumio Partner Program — earn 30% lifetime recurring commission",
     description:

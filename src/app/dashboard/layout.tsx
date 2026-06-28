@@ -38,6 +38,7 @@ import { MobileTabBar } from "@/components/dashboard/mobile-tab-bar";
 import { motion, useDashboardMotion } from "@/components/dashboard/motion";
 import { useBrainStats } from "@/lib/queries/brain";
 import { useMe } from "@/lib/queries/auth";
+import { useIsMediumScreen } from "@/lib/use-media-query";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
 
@@ -71,12 +72,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [guideOpen, setGuideOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [copilotOpen, setCopilotOpen] = useState(true);
+  const isMediumScreen = useIsMediumScreen();
   const [globalQuickCreateOpen, setGlobalQuickCreateOpen] = useState(false);
   const [globalDeadlineCreateOpen, setGlobalDeadlineCreateOpen] = useState(false);
   const [globalInvoiceCreateOpen, setGlobalInvoiceCreateOpen] = useState(false);
   const [globalSignatureCreateOpen, setGlobalSignatureCreateOpen] = useState(false);
   const [globalClauseCreateOpen, setGlobalClauseCreateOpen] = useState(false);
   const [globalContractCreateOpen, setGlobalContractCreateOpen] = useState(false);
+
+  // Auto-collapse sidebar when copilot opens on medium screens to maximize content space
+  useEffect(() => {
+    if (isMediumScreen && copilotOpen) {
+      setCollapsed(true);
+    }
+  }, [isMediumScreen, copilotOpen]);
 
   // Persist copilot panel state
   useEffect(() => {
@@ -120,19 +129,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   // Body-scroll-lock when mobile drawer, copilot drawer, command palette or guide is open
   useEffect(() => {
-    if (
-      mobileOpen ||
-      cmdOpen ||
-      guideOpen ||
-      shortcutsOpen ||
-      (copilotOpen && typeof window !== "undefined" && window.innerWidth < 768)
-    ) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
+    const checkOverlay = () => {
+      const copilotMobileOpen =
+        copilotOpen && typeof window !== "undefined" && window.innerWidth < 768;
+      const anyOverlayOpen =
+        mobileOpen || cmdOpen || guideOpen || shortcutsOpen || copilotMobileOpen;
+      document.body.style.overflow = anyOverlayOpen ? "hidden" : "";
+      document.body.dataset.overlay = anyOverlayOpen ? "open" : "closed";
+    };
+    checkOverlay();
+    window.addEventListener("resize", checkOverlay);
     return () => {
+      window.removeEventListener("resize", checkOverlay);
       document.body.style.overflow = "";
+      document.body.dataset.overlay = "closed";
     };
   }, [mobileOpen, cmdOpen, guideOpen, shortcutsOpen, copilotOpen]);
 

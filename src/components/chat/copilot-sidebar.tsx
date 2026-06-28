@@ -27,6 +27,7 @@ import { csrfFetch } from "@/lib/csrf";
 import { useIsMobile } from "@/lib/use-media-query";
 import { useResizable } from "@/lib/use-resizable";
 import { useLang, type TFunc } from "@/lib/use-lang";
+import type { Lang } from "@/content/site";
 import { ChatPanel, type ChatPanelHandle } from "@/components/chat/chat-panel";
 import { motion, useDashboardMotion } from "@/components/dashboard/motion";
 import type { ChatContextType } from "@/components/chat/chat-types";
@@ -330,7 +331,7 @@ interface ActivityItem {
   created_at: string;
 }
 
-function ActivityFeedPanel({ lang }: { lang: "de" | "en" }) {
+function ActivityFeedPanel({ lang }: { lang: Lang }) {
   const [items, setItems] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -606,12 +607,26 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
     handleMouseDown: handleResizeStart,
     setWidth: setPanelWidth,
   } = useResizable({
-    minWidth: 320,
+    minWidth: 280,
     maxWidth: 560,
-    initialWidth: 360,
+    initialWidth: typeof window !== "undefined" && window.innerWidth < 1024 ? 300 : 360,
     storageKey: "subsumio-copilot-width",
     side: "right",
   });
+
+  // Re-evaluate panel width on orientation change (portrait ↔ landscape)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleOrientationChange = () => {
+      const maxW = window.innerWidth < 1024 ? 300 : 360;
+      setPanelWidth((w) => {
+        if (w <= maxW) return w;
+        return Math.min(w, maxW);
+      });
+    };
+    window.addEventListener("orientationchange", handleOrientationChange);
+    return () => window.removeEventListener("orientationchange", handleOrientationChange);
+  }, [setPanelWidth]);
 
   // Sync `open` prop with mobile drawer — when toggled on mobile, open the drawer
   useEffect(() => {
@@ -728,7 +743,12 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
         }
       }
       if (e.key === "Escape") {
-        if (mobileOpen) setMobileOpen(false);
+        if (mobileOpen) {
+          setMobileOpen(false);
+          if (open) onToggle();
+        } else if (open && !isMobile) {
+          onToggle();
+        }
       }
     }
     window.addEventListener("keydown", handleKey);
@@ -780,7 +800,9 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
       }
     }
     document.addEventListener("keydown", handleTabKey);
-    return () => document.removeEventListener("keydown", handleTabKey);
+    return () => {
+      document.removeEventListener("keydown", handleTabKey);
+    };
   }, [mobileOpen]);
 
   const handleQuickAction = useCallback(
@@ -840,7 +862,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
         aria-modal={mobileOpen ? "true" : undefined}
         {...(!mobileOpen ? { inert: true } : {})}
       >
-        <div className="flex h-full flex-col bg-[color:var(--ds-surface)] pt-[env(safe-area-inset-top)] shadow-2xl">
+        <div className="flex h-full flex-col bg-[color:var(--ds-surface)] pt-[env(safe-area-inset-top)] pb-[calc(3.75rem+env(safe-area-inset-bottom))] shadow-2xl">
           {/* Mobile header bar — premium segmented tabs */}
           <div className="flex items-center justify-between border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2.5">
             <div className="flex min-w-0 items-center gap-2.5">
@@ -962,12 +984,12 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
         initial={false}
         animate={{
           width: open ? panelWidth : 0,
-          opacity: open ? 1 : 0.98,
+          opacity: open ? 1 : 0,
         }}
         transition={panelTransition}
         className={cn(
-          "dashboard-panel-surface fixed inset-y-0 right-0 z-40 hidden min-w-0 overflow-hidden border-l border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] md:relative md:inset-auto md:block md:shrink-0",
-          isResizing ? "transition-none" : "will-change-[transform,opacity]",
+          "dashboard-panel-surface fixed inset-y-0 right-0 z-40 hidden min-w-0 overflow-hidden border-l border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] pt-[env(safe-area-inset-top)] md:relative md:inset-auto md:block md:shrink-0",
+          isResizing ? "transition-none" : "will-change-[width,opacity]",
           className
         )}
         aria-label={t("copilot.title")}
@@ -982,7 +1004,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
               if (e.key === "ArrowLeft") {
                 e.preventDefault();
                 setPanelWidth((w) => {
-                  const nw = Math.max(320, w - 24);
+                  const nw = Math.max(280, w - 24);
                   try {
                     localStorage.setItem("subsumio-copilot-width", String(nw));
                   } catch {}
@@ -1010,7 +1032,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
             aria-label={t("copilot.resize")}
             tabIndex={0}
             aria-valuenow={panelWidth}
-            aria-valuemin={320}
+            aria-valuemin={280}
             aria-valuemax={600}
           />
         )}
@@ -1179,7 +1201,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
         onClick={onToggle}
         initial={false}
         animate={{
-          x: open ? 56 : 0,
+          x: open ? panelWidth + 20 : 0,
           opacity: open ? 0 : 1,
           scale: open ? 0.96 : 1,
         }}

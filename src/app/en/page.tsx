@@ -13,7 +13,10 @@ export const metadata: Metadata = {
   title: "Subsumio — AI Legal Software for Law Firms | AT · DE · CH",
   description:
     "AI legal software for DACH law firms: matter management, deadline tracking per ZPO/BGB/ABGB, cited AI answers with page-level sources, DATEV export, conflict check. GDPR-ready, EU cloud or self-hosted.",
-  alternates: { canonical: "/en", languages: { de: "/", en: "/en" } },
+  alternates: {
+    canonical: "/en",
+    languages: { "de-DE": "/", "de-AT": "/at", "de-CH": "/ch", en: "/en" },
+  },
   openGraph: {
     title: "Subsumio — AI Legal Software for Law Firms | AT · DE · CH",
     description:

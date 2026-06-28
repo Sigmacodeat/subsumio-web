@@ -400,7 +400,7 @@ export function Topbar({
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (
-    <header className="flex h-12 shrink-0 items-center justify-between border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 pt-[env(safe-area-inset-top)] shadow-[0_1px_3px_-1px_rgba(0,0,0,0.04)] md:px-6 lg:px-8">
+    <header className="flex h-11 shrink-0 items-center justify-between border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 pt-[env(safe-area-inset-top)] shadow-[0_1px_3px_-1px_rgba(0,0,0,0.04)] md:h-12 md:px-6 lg:px-8">
       <div className="flex max-w-xs min-w-0 flex-1 items-center gap-3 md:max-w-sm lg:max-w-lg">
         <button
           onClick={mobileOpen ? onMobileMenuClose : onMobileMenuOpen}
@@ -538,8 +538,130 @@ export function Topbar({
           <Search size={18} />
         </button>
       </div>
+      {/* Notification bell — visible on all screen sizes */}
+      <div className="relative shrink-0" ref={notifRef}>
+        <button
+          onClick={() => setNotifOpen(!notifOpen)}
+          aria-label={
+            unreadCount > 0
+              ? `${t("topbar.notifications")} — ${unreadCount} ${t("topbar.unread_count")}`
+              : t("topbar.notifications")
+          }
+          aria-expanded={notifOpen}
+          aria-haspopup="menu"
+          className="relative flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
+        >
+          <Bell size={16} />
+          {unreadCount > 0 && (
+            <span
+              className="absolute top-1.5 right-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[color:var(--ds-danger-text)] px-1 text-xs leading-none font-bold text-white ring-2 ring-[var(--ds-surface)]"
+              aria-hidden
+            >
+              {unreadCount > 9 ? "9+" : unreadCount}
+            </span>
+          )}
+        </button>
+        <AnimatePresence initial={false}>
+          {notifOpen && (
+            <motion.div
+              className="card-shadow-elevated absolute top-12 right-0 z-50 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
+              role="menu"
+              aria-label={t("topbar.notifications")}
+              initial={popoverInitial}
+              animate={popoverAnimate}
+              exit={popoverExit}
+              transition={popoverTransition}
+            >
+              <div className="flex items-center justify-between border-b border-[color:var(--ds-border)] px-4 py-3.5">
+                <span className="text-sm font-semibold text-[color:var(--ds-text)]">
+                  {t("topbar.notifications")}
+                </span>
+                <div className="flex items-center gap-2">
+                  {unreadCount > 0 && (
+                    <button
+                      onClick={markAllRead}
+                      disabled={loadingNotifs}
+                      className="brand-text text-xs transition-opacity hover:opacity-80 disabled:opacity-50"
+                    >
+                      {t("topbar.mark_all_read")}
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setNotifOpen(false)}
+                    className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                    aria-label={t("topbar.close")}
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+              </div>
+              <div className="max-h-80 space-y-1.5 overflow-y-auto p-2">
+                {notifications.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-10 text-center">
+                    <Bell
+                      size={20}
+                      className="mb-3 text-[color:var(--ds-border-strong)]"
+                      aria-hidden
+                    />
+                    <p className="text-xs text-[color:var(--ds-text-muted)]">
+                      {t("topbar.no_notifications")}
+                    </p>
+                  </div>
+                ) : (
+                  notifications.map((n) => (
+                    <div
+                      key={n.id}
+                      role="menuitem"
+                      tabIndex={0}
+                      className={`rounded-lg border p-3 focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none ${n.type === "deadline" ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]" : n.type === "dream" ? "brand-border brand-soft" : n.type === "mention" ? "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)]" : n.type === "reply" ? "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)]" : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"}`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <div className="text-xs leading-snug font-medium text-[color:var(--ds-text)]">
+                            {n.title}
+                          </div>
+                          <div className="mt-1 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
+                            {n.message}
+                          </div>
+                        </div>
+                        {!n.read && (
+                          <button
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              if (n.id.startsWith("dl-")) {
+                                // Inline deadline notification — mark locally
+                                setReadInlineIds((prev) => new Set(prev).add(n.id));
+                                return;
+                              }
+                              try {
+                                await csrfFetch("/api/notifications", {
+                                  method: "PATCH",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ id: n.id }),
+                                });
+                                setApiNotifications((prev) =>
+                                  prev.map((item) =>
+                                    item.id === n.id ? { ...item, read: true } : item
+                                  )
+                                );
+                              } catch {}
+                            }}
+                            className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-[color:var(--ds-text-subtle)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
+                            aria-label={t("topbar.mark_read")}
+                          >
+                            <Check size={12} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
       <div className="flex shrink-0 items-center gap-2 max-md:hidden">
-        {/* Copilot toggle */}
         <button
           onClick={onCopilotToggle}
           aria-label={copilotOpen ? "Copilot schließen" : "Copilot öffnen"}
@@ -570,128 +692,6 @@ export function Topbar({
         >
           {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
         </button>
-        <div className="relative max-md:hidden" ref={notifRef}>
-          <button
-            onClick={() => setNotifOpen(!notifOpen)}
-            aria-label={
-              unreadCount > 0
-                ? `${t("topbar.notifications")} — ${unreadCount} ${t("topbar.unread_count")}`
-                : t("topbar.notifications")
-            }
-            aria-expanded={notifOpen}
-            aria-haspopup="menu"
-            className="relative flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
-          >
-            <Bell size={16} />
-            {unreadCount > 0 && (
-              <span
-                className="absolute top-1.5 right-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[color:var(--ds-danger-text)] px-1 text-xs leading-none font-bold text-white ring-2 ring-[var(--ds-surface)]"
-                aria-hidden
-              >
-                {unreadCount > 9 ? "9+" : unreadCount}
-              </span>
-            )}
-          </button>
-          <AnimatePresence initial={false}>
-            {notifOpen && (
-              <motion.div
-                className="card-shadow-elevated absolute top-12 right-0 z-50 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
-                role="menu"
-                aria-label={t("topbar.notifications")}
-                initial={popoverInitial}
-                animate={popoverAnimate}
-                exit={popoverExit}
-                transition={popoverTransition}
-              >
-                <div className="flex items-center justify-between border-b border-[color:var(--ds-border)] px-4 py-3.5">
-                  <span className="text-sm font-semibold text-[color:var(--ds-text)]">
-                    {t("topbar.notifications")}
-                  </span>
-                  <div className="flex items-center gap-2">
-                    {unreadCount > 0 && (
-                      <button
-                        onClick={markAllRead}
-                        disabled={loadingNotifs}
-                        className="brand-text text-xs transition-opacity hover:opacity-80 disabled:opacity-50"
-                      >
-                        {t("topbar.mark_all_read")}
-                      </button>
-                    )}
-                    <button
-                      onClick={() => setNotifOpen(false)}
-                      className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-                      aria-label={t("topbar.close")}
-                    >
-                      <X size={18} />
-                    </button>
-                  </div>
-                </div>
-                <div className="max-h-80 space-y-1.5 overflow-y-auto p-2">
-                  {notifications.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-10 text-center">
-                      <Bell
-                        size={20}
-                        className="mb-3 text-[color:var(--ds-border-strong)]"
-                        aria-hidden
-                      />
-                      <p className="text-xs text-[color:var(--ds-text-muted)]">
-                        {t("topbar.no_notifications")}
-                      </p>
-                    </div>
-                  ) : (
-                    notifications.map((n) => (
-                      <div
-                        key={n.id}
-                        role="menuitem"
-                        tabIndex={0}
-                        className={`rounded-lg border p-3 focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none ${n.type === "deadline" ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]" : n.type === "dream" ? "brand-border brand-soft" : n.type === "mention" ? "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)]" : n.type === "reply" ? "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)]" : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"}`}
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0 flex-1">
-                            <div className="text-xs leading-snug font-medium text-[color:var(--ds-text)]">
-                              {n.title}
-                            </div>
-                            <div className="mt-1 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
-                              {n.message}
-                            </div>
-                          </div>
-                          {!n.read && (
-                            <button
-                              onClick={async (e) => {
-                                e.stopPropagation();
-                                if (n.id.startsWith("dl-")) {
-                                  // Inline deadline notification — mark locally
-                                  setReadInlineIds((prev) => new Set(prev).add(n.id));
-                                  return;
-                                }
-                                try {
-                                  await csrfFetch("/api/notifications", {
-                                    method: "PATCH",
-                                    headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify({ id: n.id }),
-                                  });
-                                  setApiNotifications((prev) =>
-                                    prev.map((item) =>
-                                      item.id === n.id ? { ...item, read: true } : item
-                                    )
-                                  );
-                                } catch {}
-                              }}
-                              className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-[color:var(--ds-text-subtle)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
-                              aria-label={t("topbar.mark_read")}
-                            >
-                              <Check size={12} />
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
         <div className="hidden md:block">
           <BrainSelector />
         </div>
@@ -783,11 +783,11 @@ export function Topbar({
                         }}
                         className={cn(
                           "flex-1 rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[var(--ds-ease-smooth)]",
-                          lang === "de"
+                          lang !== "en"
                             ? "brand-soft brand-text brand-border"
                             : "border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)] hover:text-[color:var(--ds-text)]"
                         )}
-                        aria-pressed={lang === "de"}
+                        aria-pressed={lang !== "en"}
                       >
                         DE
                       </button>

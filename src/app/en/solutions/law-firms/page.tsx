@@ -10,7 +10,12 @@ export const metadata: Metadata = {
   description: content.metaDesc,
   alternates: {
     canonical: "/en/solutions/law-firms",
-    languages: { de: "/solutions/law-firms", en: "/en/solutions/law-firms" },
+    languages: {
+      "de-DE": "/solutions/law-firms",
+      "de-AT": "/at/solutions/law-firms",
+      "de-CH": "/ch/solutions/law-firms",
+      en: "/en/solutions/law-firms",
+    },
   },
   openGraph: {
     title: content.metaTitle,

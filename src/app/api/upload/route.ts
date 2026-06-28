@@ -5,6 +5,7 @@ import { env } from "@/lib/env";
 import { inferInitialExtractionStatus, createInitialMetadata } from "@/lib/extraction-status";
 import { brainDuplicateStore } from "@/lib/duplicate-store";
 import { MAX_FILE_SIZE } from "@/lib/upload-validation";
+import { enqueueAllPostUploadTasks } from "@/lib/post-upload-outbox";
 
 // Hetzner/self-hosted agency uploads can be scanned + proxied synchronously up
 // to MAX_FILE_SIZE. If this route runs behind a stricter web host/proxy, that
@@ -50,7 +51,7 @@ export const POST = createHandler(
     if (contentLength > MAX_FILE_SIZE) {
       return apiError(
         "file_too_large",
-        `Datei überschreitet das Limit von ${Math.round(MAX_FILE_SIZE / 1024 / 1024 / 1024)} GB.`,
+        `Datei überschreitet das Limit von ${Math.round(MAX_FILE_SIZE / 1024 / 1024)} MB.`,
         413
       );
     }
@@ -85,6 +86,7 @@ export const POST = createHandler(
         "people",
         "companies",
         "ideas",
+        "chat",
         "legal_case",
         "legal",
       ]);
@@ -131,6 +133,11 @@ export const POST = createHandler(
       const tags = formData.get("tags");
       if (typeof tags === "string") cleanForm.append("tags", tags);
       if (caseSlugStr) cleanForm.append("case_slug", caseSlugStr);
+      const password = formData.get("password");
+      if (typeof password === "string" && password.length > 255) {
+        return apiError("document_password_too_long", "Dokumentkennwort ist zu lang.", 400);
+      }
+      if (typeof password === "string" && password) cleanForm.append("password", password);
 
       const upstream = await fetch(`${ENGINE_URL}/api/upload`, {
         method: "POST",
@@ -159,10 +166,22 @@ export const POST = createHandler(
             title?: string;
             original_persisted?: boolean;
             persist_error?: string;
+            extraction_status?: string;
+            extraction_method?: string;
+            extraction_warnings?: string;
           };
           // Record the file hash so identical future uploads are detected as duplicates.
+          // Best-effort: a failed recording is logged but doesn't fail the upload —
+          // the engine-side hash dedup (storedDuplicate) remains as safety net.
           if (uploadResult.slug) {
-            void duplicateStore.record(result.sha256, uploadResult.slug, result.cleanName);
+            duplicateStore
+              .record(result.sha256, uploadResult.slug, result.cleanName)
+              .catch((err) => {
+                console.error(
+                  "[upload] duplicate hash recording failed (non-fatal, engine dedup remains):",
+                  err instanceof Error ? err.message : String(err)
+                );
+              });
           }
 
           let reconciliation:
@@ -189,40 +208,56 @@ export const POST = createHandler(
             }
           }
           let analysisStatus: "pending" | "queued" | "failed" = "pending";
-          const internalSecret = env("SUBSUMIO_INTERNAL_SECRET");
-          if (internalSecret && uploadResult.slug) {
+          if (uploadResult.slug) {
             const docSlug = uploadResult.slug;
             analysisStatus = "queued";
-            // Set analysis_status on the document frontmatter so the cockpit
-            // can surface documents with pending/failed analysis.
-            void patchDocFrontmatter(ctx.headers, docSlug, {
+            // Mark analysis pending on the document so the cockpit can surface it.
+            const pendingPatched = await patchDocFrontmatter(ctx.headers, docSlug, {
               analysis_status: "pending",
               analysis_queued_at: new Date().toISOString(),
             });
-            // Fire analysis and track outcome on the document.
-            void runAnalysisWithTracking(
-              ctx.headers,
-              req.nextUrl.origin,
-              internalSecret,
-              docSlug,
-              ctx.brainId
-            );
-            // Fire contradiction probe for the case immediately after upload —
-            // don't wait for the nightly cron batch. Non-blocking, best-effort.
-            if (caseSlugStr) {
-              void triggerContradictionProbe(req.nextUrl.origin, internalSecret, caseSlugStr);
+            if (!pendingPatched) analysisStatus = "failed";
+            // Enqueue analysis + contradiction probe to the persistent outbox.
+            // The drain cron (/api/cron/post-upload-drain, every 2 min) picks these
+            // up with retry-backoff so tasks survive container restarts.
+            try {
+              await enqueueAllPostUploadTasks({
+                doc_slug: docSlug,
+                case_slug: caseSlugStr || undefined,
+                brain_id: ctx.brainId,
+                doc_title: uploadResult.title ?? result.cleanName,
+                doc_size: result.buffer.byteLength,
+                uploaded_at: new Date().toISOString(),
+              });
+            } catch (err) {
+              analysisStatus = "failed";
+              console.error(
+                "[upload] outbox enqueue failed:",
+                err instanceof Error ? err.message : String(err)
+              );
+              await patchDocFrontmatter(ctx.headers, docSlug, {
+                analysis_status: "failed",
+                analysis_error:
+                  `outbox_enqueue_failed: ${err instanceof Error ? err.message : String(err)}`.slice(
+                    0,
+                    500
+                  ),
+              });
             }
           }
           // Determine final status: 207 if any sub-operation failed (reconciliation
           // or GoBD persistence), otherwise the upstream status.
           const hasPartialFailure =
             (reconciliation.attempted && !reconciliation.ok) ||
-            uploadResult.original_persisted === false;
+            uploadResult.original_persisted === false ||
+            analysisStatus === "failed";
           return Response.json(
             {
               ...uploadResult,
-              extraction_status: initialStatus,
+              extraction_status: uploadResult.extraction_status ?? initialStatus,
               extraction_metadata: initialMeta,
+              extraction_method: uploadResult.extraction_method,
+              extraction_warnings: uploadResult.extraction_warnings,
               case_reconciliation: reconciliation,
               analysis_status: analysisStatus,
             },
@@ -337,65 +372,3 @@ async function patchDocFrontmatter(
  * frontmatter. Replaces the old 4-level nested .catch(() => {}) chain.
  * All errors are logged; the document frontmatter reflects the final state.
  */
-async function triggerContradictionProbe(
-  origin: string,
-  internalSecret: string,
-  caseSlug: string
-): Promise<void> {
-  try {
-    // Probe endpoint is GET-only (cron); pass case_slug as query param for tracing.
-    const url = new URL(`${origin}/api/cron/contradiction-probe`);
-    url.searchParams.set("case_slug", caseSlug);
-    await fetch(url.toString(), {
-      method: "GET",
-      headers: { "x-internal-secret": internalSecret },
-      signal: AbortSignal.timeout(30_000),
-    });
-  } catch (err) {
-    console.error(
-      "[upload] contradiction probe failed (non-fatal):",
-      err instanceof Error ? err.message : String(err)
-    );
-  }
-}
-
-async function runAnalysisWithTracking(
-  headers: Record<string, string>,
-  origin: string,
-  internalSecret: string,
-  docSlug: string,
-  brainId: string
-): Promise<void> {
-  let analysisError: string | null = null;
-
-  try {
-    const res = await fetch(`${origin}/api/legal/analyze`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-internal-secret": internalSecret,
-      },
-      body: JSON.stringify({
-        document_slug: docSlug,
-        brain_id: brainId,
-      }),
-      signal: AbortSignal.timeout(300_000),
-    });
-    if (!res.ok) {
-      analysisError = `HTTP ${res.status}`;
-      console.error(`[upload] analysis failed for ${docSlug}: ${analysisError}`);
-    }
-  } catch (err) {
-    analysisError = err instanceof Error ? err.message : "fetch_error";
-    console.error(`[upload] analysis error for ${docSlug}:`, analysisError);
-  }
-
-  if (analysisError) {
-    await patchDocFrontmatter(headers, docSlug, {
-      analysis_status: "failed",
-      analysis_error: analysisError,
-      analysis_failed_at: new Date().toISOString(),
-      analysis_retry_count: 0,
-    });
-  }
-}

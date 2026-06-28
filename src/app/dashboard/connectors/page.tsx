@@ -16,6 +16,7 @@ import {
   Folder,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { api, type ConnectorStatus } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -34,6 +35,7 @@ const CONNECTOR_ICONS: Record<string, React.ElementType> = {
   jira: FileText,
   "legal-judgements": Landmark,
   "bea-import": FileText,
+  "advokat-import": Folder,
 };
 
 const CONNECTOR_LABELS: Record<string, string> = {
@@ -48,6 +50,7 @@ const CONNECTOR_LABELS: Record<string, string> = {
   jira: "Jira",
   "legal-judgements": "Rechtsprechung",
   "bea-import": "beA Import",
+  "advokat-import": "ADVOKAT Import",
 };
 
 export default function ConnectorsPage() {
@@ -59,6 +62,8 @@ export default function ConnectorsPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showCoverage, setShowCoverage] = useState(false);
+  const [advokatPath, setAdvokatPath] = useState("/imports/advokat");
+  const [configuringAdvokat, setConfiguringAdvokat] = useState(false);
 
   async function loadConnectors() {
     setLoading(true);
@@ -109,6 +114,24 @@ export default function ConnectorsPage() {
       );
     } finally {
       setToggling(null);
+    }
+  }
+
+  async function configureAdvokat() {
+    setConfiguringAdvokat(true);
+    setMessage(null);
+    setError(null);
+    try {
+      await api.connectors.configureFolder("advokat-import", {
+        watch_dir: advokatPath,
+        poll_interval_ms: 60_000,
+      });
+      setMessage("ADVOKAT-Bridge eingerichtet. Der Ordner wird jede Minute synchronisiert.");
+      await loadConnectors();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "ADVOKAT-Bridge konnte nicht eingerichtet werden.");
+    } finally {
+      setConfiguringAdvokat(false);
     }
   }
 
@@ -275,6 +298,34 @@ export default function ConnectorsPage() {
         </div>
       )}
 
+      <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+        <div>
+          <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
+            ADVOKAT Local Bridge
+          </h2>
+          <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
+            Read-only Export- oder Dokumentenordner vom ADVOKAT-Server einbinden. Der erste
+            Unterordner wird als Aktenreferenz verwendet.
+          </p>
+        </div>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Input
+            value={advokatPath}
+            onChange={(event) => setAdvokatPath(event.target.value)}
+            placeholder="/imports/advokat"
+            aria-label="ADVOKAT Importordner"
+          />
+          <Button
+            type="button"
+            onClick={configureAdvokat}
+            disabled={!advokatPath.trim() || configuringAdvokat}
+          >
+            {configuringAdvokat ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            Verbinden
+          </Button>
+        </div>
+      </div>
+
       {/* CLI reference */}
       <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
         <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">CLI-Kommandos</h2>
@@ -283,6 +334,12 @@ export default function ConnectorsPage() {
             <span className="brand-text">$</span>
             <span className="text-[color:var(--ds-text-muted)]">
               subsumio connector add legal-judgements --query &quot;Haftung&quot; --jurisdiction at
+            </span>
+          </div>
+          <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2">
+            <span className="brand-text">$</span>
+            <span className="text-[color:var(--ds-text-muted)]">
+              subsumio connector add advokat-import --watch-dir /imports/advokat
             </span>
           </div>
           <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2">

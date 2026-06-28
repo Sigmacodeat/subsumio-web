@@ -19,6 +19,8 @@ import { motion, useDashboardMotion } from "@/components/dashboard/motion";
 import { CHAT_TEMPLATES, type ChatTemplate } from "@/components/chat/chat-types";
 import { ModelSelector } from "@/components/dashboard/model-selector";
 import { QUERY_MODE_LABELS, type QueryMode } from "@/lib/matter-context-types";
+import { UPLOAD_ACCEPT_ATTRIBUTE } from "@/lib/upload-formats";
+import { maxUploadSizeFor } from "@/lib/upload-validation";
 
 interface ChatInputProps {
   onSend: (text: string, attachments?: Array<{ name: string; slug: string }>) => void;
@@ -137,7 +139,7 @@ export function ChatInput({
       if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
-    const oversized = files.filter((f) => f.size > 10 * 1024 * 1024);
+    const oversized = files.filter((file) => file.size > maxUploadSizeFor(file.name, file.type));
     if (oversized.length > 0) {
       setUploadError(t("chat.input.file_too_large"));
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -357,7 +359,7 @@ export function ChatInput({
                 multiple
                 className="hidden"
                 onChange={handleFileSelect}
-                accept=".pdf,.doc,.docx,.txt,.md,.eml,.msg"
+                accept={UPLOAD_ACCEPT_ATTRIBUTE}
               />
             </>
           )}

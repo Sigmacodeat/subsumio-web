@@ -29,7 +29,7 @@ function makeFile(content: string, name = "test.pdf", type = "application/pdf"):
 
 function makeBigFile(sizeMB: number, name: string, type: string): File {
   // Fake the reported size rather than allocating it — validation rejects on
-  // `file.size` before ever reading the bytes, and allocating ~1 GB in a unit
+  // `file.size` before ever reading the bytes, and allocating hundreds of MB in a unit
   // test would be wasteful/flaky.
   const file = new File(["x"], name, { type });
   Object.defineProperty(file, "size", { value: sizeMB * 1024 * 1024 });
@@ -72,8 +72,8 @@ describe("scanUpload", () => {
     }
   });
 
-  it("rejects oversized file (> 1 GB limit)", async () => {
-    const big = makeBigFile(1025, "big.pdf", "application/pdf"); // > 1 GB
+  it("rejects oversized file (> 500 MB limit)", async () => {
+    const big = makeBigFile(501, "big.pdf", "application/pdf");
     const result = await scanUpload(big);
     expect(result.ok).toBe(false);
     if (!result.ok) {
@@ -103,7 +103,7 @@ describe("scanUpload", () => {
   });
 
   it("sanitizes filename with path traversal", async () => {
-    const file = makeFile("content", "../../../etc/passwd", "application/pdf");
+    const file = makeFile("content", "../../../etc/passwd.pdf", "application/pdf");
     const result = await scanUpload(file);
     expect(result.ok).toBe(true);
     if (result.ok) {
@@ -368,7 +368,7 @@ describe("scanUploadWithDuplicateCheck", () => {
 
   it("still rejects oversized files before duplicate check", async () => {
     const store = makeMemoryStore();
-    const big = makeBigFile(1025, "huge.pdf", "application/pdf"); // > 1 GB
+    const big = makeBigFile(501, "huge.pdf", "application/pdf");
     const result = await scanUploadWithDuplicateCheck(big, store);
     expect(result.ok).toBe(false);
     if (!result.ok) {

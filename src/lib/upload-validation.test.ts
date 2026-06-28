@@ -23,7 +23,7 @@ describe("validateUpload", () => {
   });
 
   test("rejects oversized file", () => {
-    // Fake the size rather than allocating MAX_FILE_SIZE (1 GB) of real memory.
+    // Fake the size rather than allocating MAX_FILE_SIZE of real memory.
     const file = new File(["x"], "huge.pdf", { type: "application/pdf" });
     Object.defineProperty(file, "size", { value: MAX_FILE_SIZE + 1 });
     const result = validateUpload(file);
@@ -34,23 +34,33 @@ describe("validateUpload", () => {
     }
   });
 
-  test("accepts a large file up to the 1 GB limit", () => {
+  test("accepts a large document up to the 500 MB limit", () => {
     const file = new File(["x"], "scan.pdf", { type: "application/pdf" });
     Object.defineProperty(file, "size", { value: MAX_FILE_SIZE });
-    expect(MAX_FILE_SIZE).toBe(1024 * 1024 * 1024);
+    expect(MAX_FILE_SIZE).toBe(500 * 1024 * 1024);
     const result = validateUpload(file);
     expect(result.ok).toBe(true);
   });
 
+  test("enforces the 20 MB tabular limit", () => {
+    const file = new File(["x"], "evidence.xlsx", {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+    Object.defineProperty(file, "size", { value: 20 * 1024 * 1024 + 1 });
+    const result = validateUpload(file);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.maxSize).toBe(20 * 1024 * 1024);
+  });
+
   test("rejects unsupported MIME type", () => {
-    const file = new File(["x"], "image.gif", { type: "image/gif" });
+    const file = new File(["x"], "payload.exe", { type: "application/x-msdownload" });
     const result = validateUpload(file);
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error).toBe("unsupported_file_type");
       expect(result.allowed).toContain("application/pdf");
       expect(result.allowed).toContain("text/markdown");
-      expect(result.allowed).not.toContain("image/gif");
+      expect(result.allowed).not.toContain("application/x-msdownload");
     }
   });
 
@@ -61,6 +71,27 @@ describe("validateUpload", () => {
     const result = validateUpload(file);
     expect(result.ok).toBe(true);
     if (result.ok) expect(result.file).toBe(file);
+  });
+
+  test.each([
+    ["akte.zip", "application/zip"],
+    ["mail.msg", "application/octet-stream"],
+    ["archive.pst", "application/vnd.ms-outlook"],
+    ["contract.docm", "application/vnd.ms-word.document.macroEnabled.12"],
+    ["evidence.xlsm", "application/vnd.ms-excel.sheet.macroEnabled.12"],
+    ["hearing.pptm", "application/vnd.ms-powerpoint.presentation.macroEnabled.12"],
+    ["table.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"],
+    ["slides.pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation"],
+    ["brief.pages", "application/vnd.apple.pages"],
+    ["recording.mp3", "audio/mpeg"],
+  ])("accepts supported legal-office format %s", (name, type) => {
+    expect(validateUpload(new File(["x"], name, { type })).ok).toBe(true);
+  });
+
+  test("rejects a known MIME hidden behind an unsupported extension", () => {
+    expect(validateUpload(new File(["x"], "payload.exe", { type: "application/pdf" })).ok).toBe(
+      false
+    );
   });
 });
 

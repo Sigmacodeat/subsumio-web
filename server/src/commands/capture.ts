@@ -31,7 +31,7 @@
  */
 
 import { readFileSync } from "node:fs";
-import matter from "gray-matter";
+import matter, { type GrayMatterFile } from "../core/yaml-matter.ts";
 import type { BrainEngine } from "../core/engine.ts";
 import { loadConfig, isThinClient } from "../core/config.ts";
 import { callRemoteTool, unpackToolResult, RemoteMcpError } from "../core/mcp-client.ts";
@@ -281,7 +281,7 @@ export function mergeCaptureFrontmatter(rawBody: string, opts: RunOpts): string 
   }
 
   // Existing frontmatter: parse, merge user-wins, re-emit as a SINGLE block.
-  let parsed: matter.GrayMatterFile<string>;
+  let parsed: GrayMatterFile<string>;
   try {
     parsed = matter(rawBody);
   } catch (e) {

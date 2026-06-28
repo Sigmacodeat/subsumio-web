@@ -95,6 +95,7 @@ export interface DocumentEntry {
   doc_type?: string;
   doc_type_label?: string;
   extraction_status?: string;
+  extraction_error_code?: string;
   ocr_status?: string;
   extraction_method?: string;
   extraction_unverified?: boolean;

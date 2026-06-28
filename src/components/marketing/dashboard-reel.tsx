@@ -34,8 +34,61 @@ interface ViewContent {
 
 interface Branch {
   sidebar: { icon: typeof Brain; label: string }[];
-  views: Record<Lang, ViewContent>;
+  views: Partial<Record<Lang, ViewContent>>;
 }
+
+const _deBranches: ViewContent = {
+  matters: [
+    {
+      id: "AZ-2026-041",
+      title: "Bauer ./. Hofer GmbH",
+      client: "Bauer M.",
+      status: "Verhandlung",
+      statusColor: "amber",
+    },
+    {
+      id: "AZ-2026-038",
+      title: "Schwarz Erbrecht",
+      client: "Fam. Schwarz",
+      status: "Aktiv",
+      statusColor: "blue",
+    },
+    {
+      id: "AZ-2026-035",
+      title: "Müller Arbeitsrecht",
+      client: "Müller K.",
+      status: "Klage",
+      statusColor: "rose",
+    },
+    {
+      id: "AZ-2026-031",
+      title: "Reichmann Mietrecht",
+      client: "Reichmann W.",
+      status: "Gutachten",
+      statusColor: "violet",
+    },
+    {
+      id: "AZ-2025-098",
+      title: "Klein ./. Versicherung",
+      client: "Klein S.",
+      status: "Abgeschlossen",
+      statusColor: "green",
+    },
+  ],
+  brain: {
+    question: "Was ist in der Akte Bauer noch offen — mit Fundstellen?",
+    file: "Akte_Bauer-Hofer.pdf",
+    answer:
+      "3 offene Punkte: Frist Klageerwiderung (12.07.), fehlende Vollmacht, Zeugenliste unvollständig.",
+    sources: ["akten/bauer-hofer", "fristen/2026-07", "schriftsatz/klageerwiderung"],
+  },
+  deadlines: [
+    { date: "12.07.", title: "Klageerwiderung Bauer", matter: "AZ-2026-041", urgent: true },
+    { date: "18.07.", title: "Berufungsfrist Müller", matter: "AZ-2026-035", urgent: true },
+    { date: "25.07.", title: "Gutachten Klein", matter: "AZ-2026-031", urgent: false },
+    { date: "01.08.", title: "Replik Schwarz", matter: "AZ-2026-038", urgent: false },
+  ],
+} as const;
 
 const BRANCHES: Record<string, Branch> = {
   legal: {
@@ -46,58 +99,9 @@ const BRANCHES: Record<string, Branch> = {
       { icon: FileText, label: "Schriftsätze" },
     ],
     views: {
-      de: {
-        matters: [
-          {
-            id: "AZ-2026-041",
-            title: "Bauer ./. Hofer GmbH",
-            client: "Bauer M.",
-            status: "Verhandlung",
-            statusColor: "amber",
-          },
-          {
-            id: "AZ-2026-038",
-            title: "Schwarz Erbrecht",
-            client: "Fam. Schwarz",
-            status: "Aktiv",
-            statusColor: "blue",
-          },
-          {
-            id: "AZ-2026-035",
-            title: "Müller Arbeitsrecht",
-            client: "Müller K.",
-            status: "Klage",
-            statusColor: "rose",
-          },
-          {
-            id: "AZ-2026-031",
-            title: "Reichmann Mietrecht",
-            client: "Reichmann W.",
-            status: "Gutachten",
-            statusColor: "violet",
-          },
-          {
-            id: "AZ-2025-098",
-            title: "Klein ./. Versicherung",
-            client: "Klein S.",
-            status: "Abgeschlossen",
-            statusColor: "green",
-          },
-        ],
-        brain: {
-          question: "Was ist in der Akte Bauer noch offen — mit Fundstellen?",
-          file: "Akte_Bauer-Hofer.pdf",
-          answer:
-            "3 offene Punkte: Frist Klageerwiderung (12.07.), fehlende Vollmacht, Zeugenliste unvollständig.",
-          sources: ["akten/bauer-hofer", "fristen/2026-07", "schriftsatz/klageerwiderung"],
-        },
-        deadlines: [
-          { date: "12.07.", title: "Klageerwiderung Bauer", matter: "AZ-2026-041", urgent: true },
-          { date: "18.07.", title: "Berufungsfrist Müller", matter: "AZ-2026-035", urgent: true },
-          { date: "25.07.", title: "Gutachten Klein", matter: "AZ-2026-031", urgent: false },
-          { date: "01.08.", title: "Replik Schwarz", matter: "AZ-2026-038", urgent: false },
-        ],
-      },
+      de: _deBranches,
+      at: _deBranches,
+      ch: _deBranches,
       en: {
         matters: [
           {
@@ -181,7 +185,7 @@ export default function DashboardReel({
 }) {
   const reduce = useReducedMotion();
   const branch = BRANCHES[industry] ?? BRANCHES.legal;
-  const v = branch.views[lang];
+  const v = branch.views[lang] ?? branch.views.de!;
   const sidebar = branch.sidebar;
   const brand = (profileForIndustry(industry)?.brand ?? "Subsumio").toLowerCase();
   const [view, setView] = useState(reduce ? 1 : 0);
@@ -215,7 +219,7 @@ export default function DashboardReel({
   }, [view, reduce, v.brain.question]);
 
   const sidebarLabels =
-    lang === "de"
+    lang !== "en"
       ? ["Brain", "Akten", "Fristen", "Schriftsätze"]
       : ["Brain", "Matters", "Deadlines", "Filings"];
   const cursorTarget =

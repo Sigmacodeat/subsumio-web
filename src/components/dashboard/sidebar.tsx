@@ -64,6 +64,7 @@ import { motion, useDashboardMotion } from "@/components/dashboard/motion";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
 import { useNetworkStatus } from "@/lib/use-offline-sync";
 import { useLang } from "@/lib/use-lang";
+import { useIsDesktop } from "@/lib/use-media-query";
 import type { DashboardKey } from "@/content/dashboard";
 
 type NavItem = {
@@ -404,6 +405,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
   const [searchQuery, setSearchQuery] = useState("");
   const [openSections, setOpenSections] = useState<DashboardKey[]>([]);
   const [isDesktop, setIsDesktop] = useState(false);
+  const isDesktopMQ = useIsDesktop();
   const { t, lang } = useLang();
   const { panelTransition: sidebarPanelTransition } = useDashboardMotion();
   const sidebarShellTransition = sidebarPanelTransition;
@@ -459,20 +461,8 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
   );
 
   useEffect(() => {
-    if (typeof window.matchMedia !== "function") {
-      setIsDesktop(false);
-      return;
-    }
-    const media = window.matchMedia("(min-width: 768px)");
-    const syncDesktop = () => setIsDesktop(media.matches);
-    syncDesktop();
-    if (typeof media.addEventListener === "function") {
-      media.addEventListener("change", syncDesktop);
-      return () => media.removeEventListener("change", syncDesktop);
-    }
-    media.addListener(syncDesktop);
-    return () => media.removeListener(syncDesktop);
-  }, []);
+    setIsDesktop(isDesktopMQ);
+  }, [isDesktopMQ]);
 
   useEffect(() => {
     if (searchQuery.trim()) return;

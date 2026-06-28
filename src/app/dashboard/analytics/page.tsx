@@ -106,17 +106,17 @@ export default function AdoptionAnalyticsPage() {
 
   return (
     <div className="mx-auto max-w-[1600px] space-y-6 p-4 md:p-6 lg:p-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="flex items-center gap-2 text-2xl font-bold">
-            <BarChart3 className="h-6 w-6" />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="flex items-center gap-2 text-xl font-bold md:text-2xl">
+            <BarChart3 className="h-5 w-5 shrink-0 md:h-6 md:w-6" />
             Adoption Analytics
           </h1>
           <p className="text-muted-foreground mt-1 text-sm">
             Stand: {new Date(data.generated_at).toLocaleString("de-DE")}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
           {[7, 30, 90, 180].map((d) => (
             <Button
               key={d}
@@ -146,7 +146,7 @@ export default function AdoptionAnalyticsPage() {
       )}
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
@@ -204,7 +204,7 @@ export default function AdoptionAnalyticsPage() {
                     key={i}
                     className="flex items-center justify-between border-b py-2 last:border-0"
                   >
-                    <div className="flex-1">
+                    <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium capitalize">{f.feature}</p>
                       <p className="text-muted-foreground text-xs">
                         {f.unique_users} eindeutige Nutzer
@@ -260,7 +260,7 @@ export default function AdoptionAnalyticsPage() {
       {data.usage_trends.length > 0 && (
         <Card className="p-6">
           <h2 className="mb-4 text-lg font-semibold">Nutzungs-Trends</h2>
-          <div className="grid grid-cols-7 gap-1 md:grid-cols-14 lg:grid-cols-30">
+          <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-7 md:grid-cols-14 lg:grid-cols-30">
             {data.usage_trends
               .slice(0, 30)
               .reverse()
@@ -277,7 +277,7 @@ export default function AdoptionAnalyticsPage() {
                       className="w-full rounded-t bg-blue-500 transition-all hover:bg-blue-600"
                       style={{ height: `${height}px` }}
                     />
-                    <span className="text-muted-foreground text-[8px]">
+                    <span className="text-muted-foreground text-[10px]">
                       {new Date(t.date).toLocaleDateString("de-DE", { day: "numeric" })}
                     </span>
                   </div>

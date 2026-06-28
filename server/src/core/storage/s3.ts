@@ -6,7 +6,8 @@ import {
   HeadObjectCommand,
   ListObjectsV2Command,
 } from "@aws-sdk/client-s3";
-import type { StorageBackend, StorageConfig } from "../storage.ts";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner"; // installed via @aws-sdk/client-s3 peer
+import type { StorageBackend, StorageConfig, PresignedUploadResult } from "../storage.ts";
 
 /**
  * S3-compatible storage — works with AWS S3, Cloudflare R2, MinIO, etc.
@@ -119,5 +120,27 @@ export class S3Storage implements StorageBackend {
     } catch {
       return null;
     }
+  }
+
+  async createPresignedUpload(
+    path: string,
+    opts: { contentType: string; expiresIn?: number }
+  ): Promise<PresignedUploadResult | null> {
+    const expiresIn = opts.expiresIn ?? 600; // 10 min default
+    const command = new PutObjectCommand({
+      Bucket: this.bucket,
+      Key: path,
+      ContentType: opts.contentType,
+    });
+    const url = await getSignedUrl(this.client, command, { expiresIn });
+    return {
+      url,
+      method: "PUT",
+      headers: {
+        "Content-Type": opts.contentType,
+      },
+      storagePath: path,
+      expiresAt: Date.now() + expiresIn * 1000,
+    };
   }
 }

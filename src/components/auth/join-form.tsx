@@ -64,7 +64,7 @@ export default function JoinForm({
   myEmail: string;
   lang: Lang;
 }) {
-  const t = COPY[lang];
+  const t = (COPY as unknown as Record<string, typeof COPY.de>)[lang] ?? COPY.de;
   const [error, setError] = useState<string | null>(
     !token || !org || !email ? t.errors.invalid_or_expired_invite : null
   );

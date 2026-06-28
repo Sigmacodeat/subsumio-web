@@ -187,6 +187,21 @@ export async function embedStaleForSource(
           token_count: c.token_count || Math.ceil(c.chunk_text.length / 4),
         }));
         await engine.upsertChunks(slug, merged, { sourceId: keySourceId });
+        await engine.executeRaw(
+          `UPDATE pages
+              SET frontmatter = COALESCE(frontmatter, '{}'::jsonb) || $1::jsonb,
+                  updated_at = now()
+            WHERE source_id = $2 AND slug = $3`,
+          [
+            {
+              embedding_status: "ready",
+              embedding_completed_at: new Date().toISOString(),
+              embedding_error: null,
+            },
+            keySourceId,
+            slug,
+          ]
+        );
         // v0.41.31: stamp provenance only when EVERY chunk was stale (fully
         // re-embedded this pass) — a partially-stale page keeps preserved
         // chunks of unknown provenance, so don't claim current. After the

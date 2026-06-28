@@ -13,6 +13,19 @@
 # can issue TLS.
 
 services:
+  clamav:
+    image: clamav/clamav:stable
+    restart: unless-stopped
+    volumes:
+      - clamav-data:/var/lib/clamav
+    healthcheck:
+      test: ["CMD-SHELL", "clamdscan --ping 1 >/dev/null 2>&1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 120s
+    # clamd stays on the private compose network; no host port is published.
+
   db:
     image: pgvector/pgvector:pg16
     restart: unless-stopped
@@ -40,10 +53,17 @@ services:
       PORT: "3131"
       SUBSUMIO_HOME: /data
       GBRAIN_HOME: /data # legacy alias for engine internals
+      CLAMAV_HOST: clamav:3310
+      SUBSUMIO_PRESIGNED_UPLOAD_ENABLED: ${SUBSUMIO_PRESIGNED_UPLOAD_ENABLED:-false}
     volumes:
       - engine-data:/data # uploaded files / vault on durable volume
+      # Read-only ADVOKAT export/document mirror. Point the host side at an
+      # SMB/CIFS mount or scheduled ADVOKAT export directory.
+      - ${ADVOKAT_IMPORT_HOST_PATH:-./imports/advokat}:/imports/advokat:ro
     depends_on:
       db:
+        condition: service_healthy
+      clamav:
         condition: service_healthy
     healthcheck:
       test:
@@ -63,7 +83,7 @@ services:
       args:
         NEXT_PUBLIC_APP_URL: "https://${APP_DOMAIN:?set APP_DOMAIN in .env}"
         NEXT_PUBLIC_SITE_URL: "https://${APP_DOMAIN:?set APP_DOMAIN in .env}"
-        NEXT_PUBLIC_DIRECT_UPLOAD_MAX_BYTES: "${NEXT_PUBLIC_DIRECT_UPLOAD_MAX_BYTES:-1073741824}"
+        NEXT_PUBLIC_DIRECT_UPLOAD_MAX_BYTES: "${NEXT_PUBLIC_DIRECT_UPLOAD_MAX_BYTES:-524288000}"
         NEXT_PUBLIC_ENGINE_URL: "https://${ENGINE_DOMAIN:?set ENGINE_DOMAIN in .env}"
     restart: unless-stopped
     env_file: .env
@@ -77,8 +97,9 @@ services:
       NEXT_PUBLIC_SITE_URL: "https://${APP_DOMAIN:?set APP_DOMAIN in .env}"
       SUBSUMIO_AUTH_DATABASE_URL: postgres://${POSTGRES_USER:-subsumio}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-subsumio}?sslmode=disable
       DATABASE_URL: postgres://${POSTGRES_USER:-subsumio}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-subsumio}?sslmode=disable
-      MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-1073741824}
-      NEXT_PUBLIC_DIRECT_UPLOAD_MAX_BYTES: ${NEXT_PUBLIC_DIRECT_UPLOAD_MAX_BYTES:-1073741824}
+      MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-524288000}
+      MAX_TABULAR_UPLOAD_BYTES: ${MAX_TABULAR_UPLOAD_BYTES:-20971520}
+      NEXT_PUBLIC_DIRECT_UPLOAD_MAX_BYTES: ${NEXT_PUBLIC_DIRECT_UPLOAD_MAX_BYTES:-524288000}
       NEXT_PUBLIC_ENGINE_URL: "https://${ENGINE_DOMAIN:?set ENGINE_DOMAIN in .env}"
     depends_on:
       db:
@@ -133,5 +154,6 @@ services:
 volumes:
   db-data:
   engine-data:
+  clamav-data:
   caddy-data:
   caddy-config:

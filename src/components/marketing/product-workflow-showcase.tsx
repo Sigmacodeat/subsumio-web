@@ -51,7 +51,7 @@ const copy = {
 } as const;
 
 function locale(lang: Lang) {
-  return lang === "de" ? "de" : "en";
+  return lang !== "en" ? "de" : "en";
 }
 
 export default function ProductWorkflowShowcase({

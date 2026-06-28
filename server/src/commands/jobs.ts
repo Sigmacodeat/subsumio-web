@@ -1899,7 +1899,16 @@ export async function registerBuiltinHandlers(
   const { makeLegalPipelineHandler } = await import("../core/minions/handlers/legal-pipeline.ts");
   worker.register("legal-pipeline", makeLegalPipelineHandler({ engine }));
 
-  process.stderr.write("[minion worker] subagent + supervisor + legal-pipeline handlers enabled\n");
+  // Async arm of the upload pipeline: large uploads (≥ SUBSUMIO_ASYNC_EXTRACT_MIN_BYTES)
+  // persist their bytes + a `processing` stub, then enqueue `extract-document`
+  // so the heavy parse/OCR/import runs here instead of blocking the request.
+  const { makeExtractDocumentHandler } =
+    await import("../core/minions/handlers/extract-document.ts");
+  worker.register("extract-document", makeExtractDocumentHandler({ engine }));
+
+  process.stderr.write(
+    "[minion worker] subagent + supervisor + legal-pipeline + extract-document handlers enabled\n"
+  );
 
   // ============================================================
   // v0.38 ingestion substrate — ingest_capture handler. Receives

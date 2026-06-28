@@ -10,6 +10,10 @@ import { ENGINE_URL } from "@/lib/engine";
 
 const HASH_PREFIX = "system/hash/";
 
+function encodeSlug(slug: string): string {
+  return slug.split("/").map(encodeURIComponent).join("/");
+}
+
 export interface DuplicateStore {
   lookup: (sha256: string) => Promise<{ slug: string; name: string } | null>;
   record: (sha256: string, slug: string, name: string) => Promise<void>;
@@ -20,7 +24,7 @@ export function brainDuplicateStore(headers: Record<string, string>): DuplicateS
     async lookup(sha256: string) {
       const slug = `${HASH_PREFIX}${sha256}`;
       try {
-        const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(slug)}`, {
+        const res = await fetch(`${ENGINE_URL}/api/pages/${encodeSlug(slug)}`, {
           headers,
           signal: AbortSignal.timeout(10_000),
         });
@@ -40,14 +44,16 @@ export function brainDuplicateStore(headers: Record<string, string>): DuplicateS
     },
     async record(sha256: string, slug: string, name: string) {
       const hashSlug = `${HASH_PREFIX}${sha256}`;
-      await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(hashSlug)}`, {
+      const res = await fetch(`${ENGINE_URL}/api/pages`, {
         method: "POST",
         headers: { ...headers, "Content-Type": "application/json" },
         body: JSON.stringify({
+          slug: hashSlug,
           content: `---\ntitle: ${JSON.stringify(`Duplicate hash for ${name}`)}\ntype: system\noriginal_slug: ${JSON.stringify(slug)}\noriginal_name: ${JSON.stringify(name)}\nhash: ${JSON.stringify(sha256)}\n---\n\nSystem record: duplicate-detection hash for uploaded file.\n`,
         }),
         signal: AbortSignal.timeout(10_000),
       });
+      if (!res.ok) throw new Error(`duplicate_hash_record_failed_${res.status}`);
     },
   };
 }

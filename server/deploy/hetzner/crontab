@@ -53,3 +53,8 @@
 # Retries failed document analyses with exponential backoff (1h → 4h → 16h).
 # Max 3 retries, then marks as permanently_failed.
 30 * * * *     curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/analysis-retry || true
+
+# ── Every 2 minutes — Post-upload task drain ──
+# Drains the persistent post_upload_task outbox: analysis, contradiction probe,
+# case reconciliation. Tasks survive container restarts; retried with backoff.
+*/2 * * * *    curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/post-upload-drain || true

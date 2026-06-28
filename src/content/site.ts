@@ -1,12 +1,69 @@
-// Subsumio — central bilingual content system.
-// DE is the default locale (DACH market), EN lives under /en.
+// Subsumio — central DACH-localized content system.
+// DE (Germany) is the default locale at "/", AT lives under "/at/",
+// CH under "/ch/", EN under "/en".
 // One source of truth: layouts render from these objects, never duplicate copy in JSX.
-// To add a new language: add it to SUPPORTED_LANGS, DEFAULT_LANG stays "de",
-// create /{lang}/* route folder, and add {lang} keys to all content objects below.
+// AT and CH are generated from DE via deepMerge() with jurisdiction-specific overrides
+// (legal references, professional titles, fee systems, currency).
+// To add a new language: add it to SUPPORTED_LANGS, create /{lang}/* route folder,
+// and add {lang} keys to all content objects below.
 
-export const SUPPORTED_LANGS = ["de", "en"] as const;
+export const SUPPORTED_LANGS = ["de", "at", "ch", "en"] as const;
 export type Lang = (typeof SUPPORTED_LANGS)[number];
 export const DEFAULT_LANG: Lang = "de";
+
+/** DACH German locales (share the same language, differ in jurisdiction). */
+export const DACH_LANGS = ["de", "at", "ch"] as const;
+export type DachLang = (typeof DACH_LANGS)[number];
+
+/** hreflang locale code for each Lang. */
+export const HREFLANG: Record<Lang, string> = {
+  de: "de-DE",
+  at: "de-AT",
+  ch: "de-CH",
+  en: "en",
+};
+
+/** Human-readable jurisdiction label for each DACH lang. */
+export const JURISDICTION_LABEL: Record<Lang, string> = {
+  de: "Deutschland",
+  at: "Österreich",
+  ch: "Schweiz",
+  en: "International",
+};
+
+/**
+ * Deep-merge a DE base object with jurisdiction-specific overrides.
+ * Arrays and primitives are replaced wholesale; nested objects are merged recursively.
+ * This avoids duplicating 500+ lines of DE content for AT/CH — only the fields
+ * that differ (legal references, titles, currency) are specified in overrides.
+ */
+export type DeepPartial<T> = T extends object ? { [K in keyof T]?: DeepPartial<T[K]> } : T;
+
+export function deepMerge<T>(base: T, overrides: DeepPartial<T> | undefined): T {
+  if (!overrides) return base;
+  if (typeof base !== "object" || base === null || Array.isArray(base)) {
+    return (overrides as T) ?? base;
+  }
+  const result = { ...base } as Record<string, unknown>;
+  for (const key of Object.keys(overrides)) {
+    const ov = (overrides as Record<string, unknown>)[key];
+    if (ov === undefined) continue;
+    const bv = (result as Record<string, unknown>)[key];
+    if (
+      typeof bv === "object" &&
+      bv !== null &&
+      !Array.isArray(bv) &&
+      typeof ov === "object" &&
+      ov !== null &&
+      !Array.isArray(ov)
+    ) {
+      result[key] = deepMerge(bv, ov as Partial<typeof bv>);
+    } else {
+      result[key] = ov;
+    }
+  }
+  return result as T;
+}
 
 // Öffentliche Repo-URL der Open-Source-Engine. EINE Stelle zum Ändern —
 // per NEXT_PUBLIC_ENGINE_REPO_URL überschreibbar. Auf den eigenen
@@ -21,15 +78,40 @@ export function p(lang: Lang, path: string): string {
   return path === "" || path === "/" ? `/${lang}` : `/${lang}${path}`;
 }
 
-/** The same page in the other language (for the language switcher). */
+/** Strip the locale prefix from a pathname, returning the bare path. */
+export function stripLangPrefix(pathname: string): string {
+  for (const l of SUPPORTED_LANGS) {
+    if (l === DEFAULT_LANG) continue;
+    if (pathname === `/${l}` || pathname === `/${l}/`) return "/";
+    if (pathname.startsWith(`/${l}/`)) return pathname.slice(l.length + 1); // keep leading /
+  }
+  return pathname;
+}
+
+/** The same page in another language (for the language switcher). */
 export function altPath(lang: Lang, pathname: string): string {
+  // Default: switch to EN (preserving existing behaviour)
   if (lang === DEFAULT_LANG) {
-    // Currently on default (de) — switch to en
     return pathname === "/" ? "/en" : `/en${pathname}`;
   }
-  // Currently on non-default (en) — switch to de (root)
-  const stripped = pathname.replace(/^\/en/, "");
+  // Non-default: switch to DE (root)
+  const stripped = stripLangPrefix(pathname);
   return stripped === "" ? "/" : stripped;
+}
+
+/** All language alternates for a given pathname, excluding the current lang.
+ * Used by the language switcher dropdown and hreflang link tags. */
+export function allAltPaths(
+  lang: Lang,
+  pathname: string
+): { lang: Lang; href: string; label: string; hreflang: string }[] {
+  const base = stripLangPrefix(pathname);
+  return SUPPORTED_LANGS.filter((l) => l !== lang).map((l) => ({
+    lang: l,
+    href: p(l, base),
+    label: JURISDICTION_LABEL[l],
+    hreflang: HREFLANG[l],
+  }));
 }
 
 // ---------------------------------------------------------------------------
@@ -60,6 +142,122 @@ interface NavContent {
   pricingHref: string;
   sections: readonly NavSection[];
 }
+
+// --- NAV: DE base, AT/CH overrides (nav labels are identical, only
+//     jurisdiction-specific descriptions differ) ---------------------------
+
+const _navDe: NavContent = {
+  signIn: "Anmelden",
+  cta: "Demo anfragen",
+  pricingLabel: "Preise",
+  pricingHref: "/pricing",
+  sections: [
+    {
+      label: "Plattform",
+      items: [
+        {
+          label: "Übersicht",
+          href: "/subsumio",
+          description: "KI-Kanzleisoftware — belegte Antworten, keine Halluzination",
+          icon: "Layers",
+        },
+        {
+          label: "Features",
+          href: "/features",
+          description: "Alle Funktionen auf einen Blick",
+          icon: "Zap",
+        },
+        {
+          label: "Sicherheit",
+          href: "/security",
+          description: "Deine Daten, deine Keys, deine Jurisdiktion",
+          icon: "ShieldCheck",
+        },
+        {
+          label: "WhatsApp-Copilot",
+          href: "/whatsapp",
+          description: "Zeiten buchen, Dokumente vom Handy",
+          icon: "MessageSquare",
+        },
+        {
+          label: "Download",
+          href: "/download",
+          description: "iOS, Android, Desktop-Apps",
+          icon: "Download",
+        },
+      ],
+    },
+    {
+      label: "Lösungen",
+      items: [
+        {
+          label: "Für Kanzleien",
+          href: "/solutions/law-firms",
+          description: "Volle Power für etablierte Kanzleien",
+          icon: "Landmark",
+        },
+        {
+          label: "Für Einzelanwälte",
+          href: "/solutions/solo",
+          description: "Ein Nutzer, volle Kanzlei-KI, kein IT-Aufwand",
+          icon: "User",
+        },
+        {
+          label: "Für Justiziariate",
+          href: "/solutions/in-house",
+          description: "Legal Ops mit nachvollziehbarer Wissensbasis",
+          icon: "Building2",
+        },
+        {
+          label: "Für mittelständische Kanzleien",
+          href: "/solutions/mid-sized",
+          description: "Schlanke Teams, überproportionale Wirkung",
+          icon: "Users",
+        },
+      ],
+    },
+    {
+      label: "Ressourcen",
+      items: [
+        {
+          label: "Dokumentation",
+          href: "/docs",
+          description: "Guides, API-Referenz, Setup-Hilfe",
+          icon: "FileText",
+        },
+        {
+          label: "Partnerprogramm",
+          href: "/partners",
+          description: "Kunden empfehlen, 30 % wiederkehrend",
+          icon: "Handshake",
+        },
+      ],
+    },
+    {
+      label: "Unternehmen",
+      items: [
+        {
+          label: "Über uns",
+          href: "/about",
+          description: "Aus Österreich für DACH-Kanzleien",
+          icon: "Info",
+        },
+        {
+          label: "Kontakt",
+          href: "/contact",
+          description: "Kontakt zum Team",
+          icon: "Mail",
+        },
+        {
+          label: "Impressum",
+          href: "/imprint",
+          description: "Anbieterinfo und rechtliche Angaben",
+          icon: "FileText",
+        },
+      ],
+    },
+  ],
+};
 
 export const NAV: Record<Lang, NavContent> = {
   en: {
@@ -169,11 +367,9 @@ export const NAV: Record<Lang, NavContent> = {
       },
     ],
   },
-  de: {
-    signIn: "Anmelden",
-    cta: "Demo anfragen",
-    pricingLabel: "Preise",
-    pricingHref: "/pricing",
+  de: _navDe,
+  at: deepMerge(_navDe, {
+    // AT: nav labels are identical to DE; only the "Über uns" description differs
     sections: [
       {
         label: "Plattform",
@@ -265,12 +461,7 @@ export const NAV: Record<Lang, NavContent> = {
             description: "Aus Österreich für DACH-Kanzleien",
             icon: "Info",
           },
-          {
-            label: "Kontakt",
-            href: "/contact",
-            description: "Kontakt zum Team",
-            icon: "Mail",
-          },
+          { label: "Kontakt", href: "/contact", description: "Kontakt zum Team", icon: "Mail" },
           {
             label: "Impressum",
             href: "/imprint",
@@ -280,10 +471,21 @@ export const NAV: Record<Lang, NavContent> = {
         ],
       },
     ],
-  },
+  }),
+  ch: deepMerge(_navDe, {
+    // CH: nav labels identical to DE; "Über uns" description stays the same
+    // (Subsumio is built in Austria, serving all DACH)
+  }),
 };
 
-export const FOOTER = {
+export const FOOTER: Record<
+  Lang,
+  {
+    tagline: string;
+    columns: { title: string; links: { label: string; href: string; external?: boolean }[] }[];
+    note: string;
+  }
+> = {
   en: {
     tagline: "The memory layer for your law firm.",
     columns: [
@@ -382,7 +584,105 @@ export const FOOTER = {
     ],
     note: "Deine Daten. Deine Schlüssel. On-Premise auf eigener Hardware oder EU-Cloud — DSGVO-konform, Ende-zu-Ende verschlüsselt, kein Training auf deinen Daten.",
   },
-} as const;
+  at: {
+    tagline: "Das Kanzlei-Gedächtnis, das nie vergisst.",
+    columns: [
+      {
+        title: "Plattform",
+        links: [
+          { label: "Übersicht", href: "/subsumio" },
+          { label: "Features", href: "/features" },
+          { label: "Sicherheit", href: "/security" },
+          { label: "WhatsApp-Copilot", href: "/whatsapp" },
+          { label: "Preise", href: "/pricing" },
+          { label: "Download", href: "/download" },
+        ],
+      },
+      {
+        title: "Lösungen",
+        links: [
+          { label: "Für Kanzleien", href: "/solutions/law-firms" },
+          { label: "Für Einzelanwälte", href: "/solutions/solo" },
+          { label: "Für Justiziariate", href: "/solutions/in-house" },
+          { label: "Für Mittelständische", href: "/solutions/mid-sized" },
+        ],
+      },
+      {
+        title: "Ressourcen",
+        links: [
+          { label: "Dokumentation", href: "/docs" },
+          { label: "Partnerprogramm", href: "/partners" },
+          { label: "Dashboard", href: "/dashboard", external: false },
+        ],
+      },
+      {
+        title: "Unternehmen",
+        links: [
+          { label: "Über uns", href: "/about" },
+          { label: "Kontakt", href: "/contact" },
+          { label: "Impressum", href: "/imprint" },
+        ],
+      },
+      {
+        title: "Rechtliches",
+        links: [
+          { label: "AGB", href: "/terms" },
+          { label: "Datenschutz", href: "/privacy" },
+        ],
+      },
+    ],
+    note: "Ihre Daten. Ihre Schlüssel. On-Premise auf eigener Hardware oder EU-Cloud — DSGVO-konform, Ende-zu-Ende verschlüsselt, kein Training auf Ihren Daten.",
+  },
+  ch: {
+    tagline: "Das Kanzlei-Gedächtnis, das nie vergisst.",
+    columns: [
+      {
+        title: "Plattform",
+        links: [
+          { label: "Übersicht", href: "/subsumio" },
+          { label: "Features", href: "/features" },
+          { label: "Sicherheit", href: "/security" },
+          { label: "WhatsApp-Copilot", href: "/whatsapp" },
+          { label: "Preise", href: "/pricing" },
+          { label: "Download", href: "/download" },
+        ],
+      },
+      {
+        title: "Lösungen",
+        links: [
+          { label: "Für Kanzleien", href: "/solutions/law-firms" },
+          { label: "Für Einzelanwälte", href: "/solutions/solo" },
+          { label: "Für Justiziariate", href: "/solutions/in-house" },
+          { label: "Für Mittelständische", href: "/solutions/mid-sized" },
+        ],
+      },
+      {
+        title: "Ressourcen",
+        links: [
+          { label: "Dokumentation", href: "/docs" },
+          { label: "Partnerprogramm", href: "/partners" },
+          { label: "Dashboard", href: "/dashboard", external: false },
+        ],
+      },
+      {
+        title: "Unternehmen",
+        links: [
+          { label: "Über uns", href: "/about" },
+          { label: "Kontakt", href: "/contact" },
+          { label: "Impressum", href: "/imprint" },
+        ],
+      },
+      {
+        title: "Rechtliches",
+        links: [
+          { label: "AGB", href: "/terms" },
+          { label: "Datenschutz", href: "/privacy" },
+        ],
+      },
+    ],
+    note: "Ihre Daten. Ihre Schlüssel. On-Premise auf eigener Hardware oder EU-Cloud — DSGVO-konform, Ende-zu-Ende verschlüsselt, kein Training auf Ihren Daten.",
+  },
+};
 
 // ---------------------------------------------------------------------------
 // Pricing (single source of truth — used by landing teaser + /pricing page)
@@ -500,7 +800,7 @@ export const PRICING: Record<
   },
   de: {
     title: "Kanzleisoftware Preise — pro Nutzer, kein Lock-in",
-    sub: "Pro Nutzer, jährliche Abrechnung. Dein Kanzleiwissen auf Infrastruktur, die du kontrollierst — EU-gehostet oder On-Premise.",
+    sub: "Pro Nutzer, jährliche Abrechnung. Ihr Kanzleiwissen auf Infrastruktur, die Sie kontrollieren — EU-gehostet oder On-Premise.",
     tiers: [
       {
         id: "free",
@@ -510,7 +810,7 @@ export const PRICING: Record<
         blurb:
           "Für Einzelanwälte, die KI-gestützte Aktenarbeit erkunden. Kostenlos für immer, keine Kreditkarte nötig.",
         features: [
-          "Self-hosted — dein Server, deine Keys",
+          "Self-hosted — Ihr Server, Ihre Keys",
           "100 KI-Anfragen/Mon. inklusive",
           "5 GB lokaler Speicher",
           "Akten-Q&A mit seitengenauen Zitaten",
@@ -572,7 +872,7 @@ export const PRICING: Record<
         price: "ab 1.890 €",
         period: "/Nutzer/Mon.",
         blurb:
-          "Compliance-Klasse für regulierte Kanzleien. Ab 20 Nutzern, auf deiner Infrastruktur oder in der EU-Cloud.",
+          "Compliance-Klasse für regulierte Kanzleien. Ab 20 Nutzern, auf Ihrer Infrastruktur oder in der EU-Cloud.",
         features: [
           "15.000 KI-Anfragen/Nutzer/Mon. (Fair Use darüber)",
           "5.000 WhatsApp-Nachrichten/Nutzer/Mon.",
@@ -590,6 +890,192 @@ export const PRICING: Record<
     ],
     footnote:
       "Jahreszahlung −20 %. KI-Anfragen und Speicher-Kontingente sind je Plan inklusive. Mehrverbrauch wird zu transparenten Einheitspreisen am Monatsende abgerechnet — keine Überraschungsrechnung, kein stilles Drosseln. Zusatzpakete: 500 Anfragen für 199 €, 1.500 für 499 €, 5.000 für 1.499 €.",
+  },
+  at: {
+    title: "Kanzleisoftware Preise — pro Nutzer, kein Lock-in",
+    sub: "Pro Nutzer, jährliche Abrechnung. Ihr Kanzleiwissen auf Infrastruktur, die Sie kontrollieren — EU-gehostet oder On-Premise.",
+    tiers: [
+      {
+        id: "free",
+        name: "Community",
+        price: "0 €",
+        period: "für immer",
+        blurb:
+          "Für Einzelanwälte, die KI-gestützte Aktenarbeit erkunden. Kostenlos für immer, keine Kreditkarte nötig.",
+        features: [
+          "Self-hosted — Ihr Server, Ihre Keys",
+          "100 KI-Anfragen/Mon. inklusive",
+          "5 GB lokaler Speicher",
+          "Akten-Q&A mit seitengenauen Zitaten",
+          "Fristenverwaltung (ZPO/ABGB)",
+          "Community-Support",
+        ],
+        cta: "Kostenlos starten",
+        href: "/signup",
+      },
+      {
+        id: "pro",
+        name: "Pro",
+        price: "890 €",
+        priceMonthly: "1.113 €",
+        period: "/Nutzer/Mon.",
+        periodMonthly: "/Nutzer/Mon.",
+        blurb:
+          "Für Anwälte, die es sich nicht leisten können, etwas zu übersehen. Jahreszahlung spart 20 %.",
+        features: [
+          "Voll verwaltet — keine API-Keys nötig",
+          "1.000 KI-Anfragen/Nutzer/Mon. inklusive",
+          "75 GB Cloud-Speicher pro Nutzer",
+          "300 WhatsApp-Nachrichten/Mon. inklusive",
+          "Dream Cycle: Deduplizierung, Zitate, Widersprüche",
+          "Live-Verbrauchsanzeige — transparente Mehrkosten",
+          "Priorisierter Support",
+          "Mehrverbrauch: 0,45 €/Anfrage · 0,25 €/WA",
+        ],
+        cta: "Pro starten",
+        href: "/signup",
+        highlight: true,
+      },
+      {
+        id: "team",
+        name: "Team",
+        price: "1.290 €",
+        priceMonthly: "1.613 €",
+        period: "/Nutzer/Mon.",
+        periodMonthly: "/Nutzer/Mon.",
+        blurb:
+          "Ein gemeinsames Brain — jede Akte jedes Anwalts, gemeinsam abfragbar. Ab 5 Nutzern. Jahreszahlung spart 20 %.",
+        features: [
+          "Alles aus Pro",
+          "Geteiltes Kanzleiwissen",
+          "4.000 KI-Anfragen/Nutzer/Mon. inklusive",
+          "200 GB Cloud-Speicher pro Nutzer",
+          "1.000 WhatsApp-Nachrichten/Mon. inklusive",
+          "Rollenbasierte Zugriffe pro Akte und Nutzer",
+          "Admin- und Nutzungsanalyse",
+          "Onboarding-Session inklusive",
+          "Mehrverbrauch: 0,40 €/Anfrage · 0,20 €/WA",
+        ],
+        cta: "Team starten",
+        href: "/signup",
+      },
+      {
+        id: "ent",
+        name: "Enterprise",
+        price: "ab 1.890 €",
+        period: "/Nutzer/Mon.",
+        blurb:
+          "Compliance-Klasse für regulierte Kanzleien. Ab 20 Nutzern, auf Ihrer Infrastruktur oder in der EU-Cloud.",
+        features: [
+          "15.000 KI-Anfragen/Nutzer/Mon. (Fair Use darüber)",
+          "5.000 WhatsApp-Nachrichten/Nutzer/Mon.",
+          "500 GB Speicher pro Nutzer",
+          "EU-Cloud, S3-kompatibler Objektspeicher oder On-Prem",
+          "Individuelle Aufbewahrungsrichtlinie",
+          "AVV, SLA, SSO/SAML",
+          "Maximum-Recall-Suchmodus",
+          "Dedizierter CSM & Integrationshilfe",
+          "Mehrverbrauch: 0,35 €/Anfrage · 0,15 €/WA",
+        ],
+        cta: "Demo anfragen",
+        href: "mailto:hello@subsum.eu",
+      },
+    ],
+    footnote:
+      "Jahreszahlung −20 %. KI-Anfragen und Speicher-Kontingente sind je Plan inklusive. Mehrverbrauch wird zu transparenten Einheitspreisen am Monatsende abgerechnet — keine Überraschungsrechnung, kein stilles Drosseln. Zusatzpakete: 500 Anfragen für 199 €, 1.500 für 499 €, 5.000 für 1.499 €.",
+  },
+  ch: {
+    title: "Kanzleisoftware Preise — pro Nutzer, kein Lock-in",
+    sub: "Pro Nutzer, jährliche Abrechnung. Ihr Kanzleiwissen auf Infrastruktur, die Sie kontrollieren — EU-gehostet oder On-Premise.",
+    tiers: [
+      {
+        id: "free",
+        name: "Community",
+        price: "CHF 0",
+        period: "für immer",
+        blurb:
+          "Für Einzelanwälte, die KI-gestützte Aktenarbeit erkunden. Kostenlos für immer, keine Kreditkarte nötig.",
+        features: [
+          "Self-hosted — Ihr Server, Ihre Keys",
+          "100 KI-Anfragen/Mon. inklusive",
+          "5 GB lokaler Speicher",
+          "Akten-Q&A mit seitengenauen Zitaten",
+          "Fristenverwaltung (ZPO/OR/ZGB)",
+          "Community-Support",
+        ],
+        cta: "Kostenlos starten",
+        href: "/signup",
+      },
+      {
+        id: "pro",
+        name: "Pro",
+        price: "CHF 890",
+        priceMonthly: "CHF 1'113",
+        period: "/Nutzer/Mon.",
+        periodMonthly: "/Nutzer/Mon.",
+        blurb:
+          "Für Anwälte, die es sich nicht leisten können, etwas zu übersehen. Jahreszahlung spart 20 %.",
+        features: [
+          "Voll verwaltet — keine API-Keys nötig",
+          "1.000 KI-Anfragen/Nutzer/Mon. inklusive",
+          "75 GB Cloud-Speicher pro Nutzer",
+          "300 WhatsApp-Nachrichten/Mon. inklusive",
+          "Dream Cycle: Deduplizierung, Zitate, Widersprüche",
+          "Live-Verbrauchsanzeige — transparente Mehrkosten",
+          "Priorisierter Support",
+          "Mehrverbrauch: CHF 0.45/Anfrage · CHF 0.25/WA",
+        ],
+        cta: "Pro starten",
+        href: "/signup",
+        highlight: true,
+      },
+      {
+        id: "team",
+        name: "Team",
+        price: "CHF 1'290",
+        priceMonthly: "CHF 1'613",
+        period: "/Nutzer/Mon.",
+        periodMonthly: "/Nutzer/Mon.",
+        blurb:
+          "Ein gemeinsames Brain — jede Akte jedes Anwalts, gemeinsam abfragbar. Ab 5 Nutzern. Jahreszahlung spart 20 %.",
+        features: [
+          "Alles aus Pro",
+          "Geteiltes Kanzleiwissen",
+          "4.000 KI-Anfragen/Nutzer/Mon. inklusive",
+          "200 GB Cloud-Speicher pro Nutzer",
+          "1.000 WhatsApp-Nachrichten/Mon. inklusive",
+          "Rollenbasierte Zugriffe pro Akte und Nutzer",
+          "Admin- und Nutzungsanalyse",
+          "Onboarding-Session inklusive",
+          "Mehrverbrauch: CHF 0.40/Anfrage · CHF 0.20/WA",
+        ],
+        cta: "Team starten",
+        href: "/signup",
+      },
+      {
+        id: "ent",
+        name: "Enterprise",
+        price: "ab CHF 1'890",
+        period: "/Nutzer/Mon.",
+        blurb:
+          "Compliance-Klasse für regulierte Kanzleien. Ab 20 Nutzern, auf Ihrer Infrastruktur oder in der EU-Cloud.",
+        features: [
+          "15.000 KI-Anfragen/Nutzer/Mon. (Fair Use darüber)",
+          "5.000 WhatsApp-Nachrichten/Nutzer/Mon.",
+          "500 GB Speicher pro Nutzer",
+          "EU-Cloud, S3-kompatibler Objektspeicher oder On-Prem",
+          "Individuelle Aufbewahrungsrichtlinie",
+          "AVV, SLA, SSO/SAML",
+          "Maximum-Recall-Suchmodus",
+          "Dedizierter CSM & Integrationshilfe",
+          "Mehrverbrauch: CHF 0.35/Anfrage · CHF 0.15/WA",
+        ],
+        cta: "Demo anfragen",
+        href: "mailto:hello@subsum.eu",
+      },
+    ],
+    footnote:
+      "Jahreszahlung −20 %. KI-Anfragen und Speicher-Kontingente sind je Plan inklusive. Mehrverbrauch wird zu transparenten Einheitspreisen am Monatsende abgerechnet — keine Überraschungsrechnung, kein stilles Drosseln. Zusatzpakete: 500 Anfragen für CHF 199, 1'500 für CHF 499, 5'000 für CHF 1'499.",
   },
 };
 
@@ -628,7 +1114,7 @@ export const PRICING_FAQ: Record<Lang, { title: string; items: { q: string; a: s
     items: [
       {
         q: "Gibt es eine kostenlose Testversion?",
-        a: "Ja. Jeder gehostete Plan startet mit einem 14-Tage-Reverse-Trial — voller Zugriff, keine Kreditkarte. Wenn Subsumio nicht das Richtige für dich ist, kündige innerhalb von 14 Tagen für eine volle Rückerstattung.",
+        a: "Ja. Jeder gehostete Plan startet mit einem 14-Tage-Reverse-Trial — voller Zugriff, keine Kreditkarte. Wenn Subsumio nicht das Richtige für Sie ist, kündigen Sie innerhalb von 14 Tagen für eine volle Rückerstattung.",
       },
       {
         q: "Kann ich jederzeit den Plan wechseln?",
@@ -636,15 +1122,65 @@ export const PRICING_FAQ: Record<Lang, { title: string; items: { q: string; a: s
       },
       {
         q: "Wie funktioniert die jährliche Abrechnung?",
-        a: "Jahreszahlung gibt dir 20% Rabatt auf den Monatspreis. Du wirst einmal pro Jahr pro Nutzer abgerechnet. Monatsabrechnung ist verfügbar, wenn du mehr Flexibilität möchtest.",
+        a: "Jahreszahlung gibt Ihnen 20% Rabatt auf den Monatspreis. Sie werden einmal pro Jahr pro Nutzer abgerechnet. Monatsabrechnung ist verfügbar, wenn Sie mehr Flexibilität möchten.",
       },
       {
         q: "Was passiert mit meinen Daten bei Kündigung?",
-        a: "Du kannst jederzeit alles exportieren. Nach Kündigung werden deine Daten 30 Tage aufbewahrt, dann dauerhaft gelöscht — oder du kannst sofortige Löschung beantragen.",
+        a: "Sie können jederzeit alles exportieren. Nach Kündigung werden Ihre Daten 30 Tage aufbewahrt, dann dauerhaft gelöscht — oder Sie können sofortige Löschung beantragen.",
       },
       {
         q: "Gibt es versteckte Gebühren?",
-        a: "Nein. Mehrverbrauch wird zu transparenten Einheitspreisen abgerechnet, die im Dashboard sichtbar sind. Du siehst den Verbrauch live und wir fragen, bevor sich etwas ändert.",
+        a: "Nein. Mehrverbrauch wird zu transparenten Einheitspreisen abgerechnet, die im Dashboard sichtbar sind. Sie sehen den Verbrauch live und wir fragen, bevor sich etwas ändert.",
+      },
+    ],
+  },
+  at: {
+    title: "Preisfragen",
+    items: [
+      {
+        q: "Gibt es eine kostenlose Testversion?",
+        a: "Ja. Jeder gehostete Plan startet mit einem 14-Tage-Reverse-Trial — voller Zugriff, keine Kreditkarte. Wenn Subsumio nicht das Richtige für Sie ist, kündigen Sie innerhalb von 14 Tagen für eine volle Rückerstattung.",
+      },
+      {
+        q: "Kann ich jederzeit den Plan wechseln?",
+        a: "Ja. Upgrade oder Downgrade aus dem Dashboard jederzeit möglich. Änderungen werden zum nächsten Abrechnungszeitraum wirksam — keine Strafgebühren, kein Lock-in.",
+      },
+      {
+        q: "Wie funktioniert die jährliche Abrechnung?",
+        a: "Jahreszahlung gibt Ihnen 20% Rabatt auf den Monatspreis. Sie werden einmal pro Jahr pro Nutzer abgerechnet. Monatsabrechnung ist verfügbar, wenn Sie mehr Flexibilität möchten.",
+      },
+      {
+        q: "Was passiert mit meinen Daten bei Kündigung?",
+        a: "Sie können jederzeit alles exportieren. Nach Kündigung werden Ihre Daten 30 Tage aufbewahrt, dann dauerhaft gelöscht — oder Sie können sofortige Löschung beantragen.",
+      },
+      {
+        q: "Gibt es versteckte Gebühren?",
+        a: "Nein. Mehrverbrauch wird zu transparenten Einheitspreisen abgerechnet, die im Dashboard sichtbar sind. Sie sehen den Verbrauch live und wir fragen, bevor sich etwas ändert.",
+      },
+    ],
+  },
+  ch: {
+    title: "Preisfragen",
+    items: [
+      {
+        q: "Gibt es eine kostenlose Testversion?",
+        a: "Ja. Jeder gehostete Plan startet mit einem 14-Tage-Reverse-Trial — voller Zugriff, keine Kreditkarte. Wenn Subsumio nicht das Richtige für Sie ist, kündigen Sie innerhalb von 14 Tagen für eine volle Rückerstattung.",
+      },
+      {
+        q: "Kann ich jederzeit den Plan wechseln?",
+        a: "Ja. Upgrade oder Downgrade aus dem Dashboard jederzeit möglich. Änderungen werden zum nächsten Abrechnungszeitraum wirksam — keine Strafgebühren, kein Lock-in.",
+      },
+      {
+        q: "Wie funktioniert die jährliche Abrechnung?",
+        a: "Jahreszahlung gibt Ihnen 20% Rabatt auf den Monatspreis. Sie werden einmal pro Jahr pro Nutzer abgerechnet. Monatsabrechnung ist verfügbar, wenn Sie mehr Flexibilität möchten.",
+      },
+      {
+        q: "Was passiert mit meinen Daten bei Kündigung?",
+        a: "Sie können jederzeit alles exportieren. Nach Kündigung werden Ihre Daten 30 Tage aufbewahrt, dann dauerhaft gelöscht — oder Sie können sofortige Löschung beantragen.",
+      },
+      {
+        q: "Gibt es versteckte Gebühren?",
+        a: "Nein. Mehrverbrauch wird zu transparenten Einheitspreisen abgerechnet, die im Dashboard sichtbar sind. Sie sehen den Verbrauch live und wir fragen, bevor sich etwas ändert.",
       },
     ],
   },
@@ -653,6 +1189,250 @@ export const PRICING_FAQ: Record<Lang, { title: string; items: { q: string; a: s
 // ---------------------------------------------------------------------------
 // Landing page
 // ---------------------------------------------------------------------------
+
+/**
+ * Recursively apply string replacements to all string values in an object.
+ * Used to create AT/CH landing variants from DE base without duplicating
+ * 300+ lines — only the jurisdiction-specific terms are replaced.
+ */
+function applyReplacements<T>(obj: T, replacements: Record<string, string>): T {
+  if (typeof obj === "string") {
+    let result: string = obj as string;
+    for (const [from, to] of Object.entries(replacements)) {
+      result = result.split(from).join(to);
+    }
+    return result as unknown as T;
+  }
+  if (Array.isArray(obj)) {
+    return obj.map((item) => applyReplacements(item, replacements)) as unknown as T;
+  }
+  if (typeof obj === "object" && obj !== null) {
+    const result: Record<string, unknown> = {};
+    for (const key of Object.keys(obj as Record<string, unknown>)) {
+      result[key] = applyReplacements((obj as Record<string, unknown>)[key], replacements);
+    }
+    return result as unknown as T;
+  }
+  return obj;
+}
+
+/** AT-specific string replacements applied to DE base content. */
+const AT_REPLACEMENTS: Record<string, string> = {
+  "ZPO/BGB/ABGB": "ZPO/ABGB",
+  "ZPO, BGB und ABGB": "ZPO und ABGB",
+  "§ 43a BRAO, § 10 RAO, BGFA": "§ 10 RAO und BGFA",
+  "§ 43a BRAO (DE), § 10 RAO (AT) und BGFA (CH)": "§ 10 RAO (AT) und BGFA (CH)",
+  "§ 203 StGB": "§ 9 RAO",
+  "DATEV-Export (DE) und ADATEV (AT)": "ADATEV-Export",
+  "DATEV-Export (DE) oder ADATEV (AT)": "ADATEV-Export",
+  "und DATEV": "und ADATEV",
+  "für AT · DE · CH": "für Österreich",
+  "deine Akten": "Ihre Akten",
+  "deine Kontrolle": "Ihre Kontrolle",
+  "deine Anwälte": "Ihre Anwälte",
+  "deine Keys": "Ihre Keys",
+  "deine Daten": "Ihre Daten",
+  "deine Hardware": "Ihre Hardware",
+  "deiner Infrastruktur": "Ihrer Infrastruktur",
+  "deiner Kanzlei": "Ihrer Kanzlei",
+  "dein Server": "Ihr Server",
+  "dein Kanzleiwissen": "Ihr Kanzleiwissen",
+  "du kontrollierst": "Sie kontrollieren",
+  "Du wirst": "Sie werden",
+  "Du kannst": "Sie können",
+  "deine Kanzlei": "Ihre Kanzlei",
+  "deinen Daten": "Ihren Daten",
+  "deiner Arbeit": "Ihrer Arbeit",
+  "dein Brain": "Ihr Brain",
+  "dir ": "Ihnen ",
+  "dich ": "Sie ",
+  deine: "Ihre",
+  deiner: "Ihrer",
+  dir: "Ihnen",
+};
+
+/** CH-specific string replacements applied to DE base content. */
+const CH_REPLACEMENTS: Record<string, string> = {
+  "ZPO/BGB/ABGB": "ZPO/OR/ZGB",
+  "ZPO, BGB und ABGB": "ZPO, OR und ZGB",
+  "§ 43a BRAO, § 10 RAO, BGFA": "BGFA",
+  "§ 43a BRAO (DE), § 10 RAO (AT) und BGFA (CH)": "BGFA (CH), § 43a BRAO (DE) und § 10 RAO (AT)",
+  "§ 203 StGB": "Art. 321 StGB",
+  "DATEV-Export (DE) und ADATEV (AT)": "Swissdec-Export",
+  "DATEV-Export (DE) oder ADATEV (AT)": "Swissdec-Export",
+  "und DATEV": "und Swissdec",
+  "für AT · DE · CH": "für die Schweiz",
+  "Landesgericht Wien": "Bezirksgericht Zürich",
+  "84.000 €": "CHF 84'000",
+  "deine Akten": "Ihre Akten",
+  "deine Kontrolle": "Ihre Kontrolle",
+  "deine Anwälte": "Ihre Anwälte",
+  "deine Keys": "Ihre Keys",
+  "deine Daten": "Ihre Daten",
+  "deine Hardware": "Ihre Hardware",
+  "deiner Infrastruktur": "Ihrer Infrastruktur",
+  "deiner Kanzlei": "Ihrer Kanzlei",
+  "dein Server": "Ihr Server",
+  "dein Kanzleiwissen": "Ihr Kanzleiwissen",
+  "du kontrollierst": "Sie kontrollieren",
+  "Du wirst": "Sie werden",
+  "Du kannst": "Sie können",
+  "deine Kanzlei": "Ihre Kanzlei",
+  "deinen Daten": "Ihren Daten",
+  "deiner Arbeit": "Ihrer Arbeit",
+  "dein Brain": "Ihr Brain",
+  "dir ": "Ihnen ",
+  "dich ": "Sie ",
+  deine: "Ihre",
+  deiner: "Ihrer",
+  dir: "Ihnen",
+};
+
+const _landingDe = {
+  badge: "KI-Kanzleisoftware für AT · DE · CH",
+  h1a: "Jede Akte,",
+  h1b: "eine belegte Antwort.",
+  sub: "Subsumio ist die KI-Kanzleisoftware für Rechtsanwälte in Österreich, Deutschland und der Schweiz. Akten, Fristen, Mails und Dokumente werden zu belegten Antworten — mit Fundstellen, nicht mit Halluzinationen.",
+  ctaPrimary: "Demo vereinbaren",
+  ctaSecondary: "Live-Demo ansehen",
+  demo: {
+    windowTitle: "subsumio — fragen",
+    you: "Sie",
+    q: "Was muss ich vor der Verhandlung Bauer morgen wissen?",
+    a: `Akte Bauer ./. Hofer GmbH — Vertragsbruch, 84.000 €. Landesgericht Wien, Abt. 12. Verhandlung morgen, 09:30.
+
+**3 offene Punkte:**
+1. Replik heute fällig — entworfen, noch nicht eingebracht
+2. Gutachten von Dr. Klein fehlt noch (angefordert 3. März)
+3. Mandant hat den vorgeschlagenen Vergleichsrahmen nicht bestätigt
+
+⚠️ Frist: Die Replik ist eine Notfrist — Einbringung endet um Mitternacht. Zum Gutachten seit 3. März nichts Neues — nachfassen.`,
+    sourcesLabel: "Quellen:",
+    sources: ["akten/bauer-hofer", "fristen/replik", "dokumente/gutachten-klein"],
+  },
+  stats: [
+    { value: "97,9 %", label: "Recall@5 — Retrieval-Benchmark" },
+    { value: "3", label: "Jurisdiktionen — AT · DE · CH" },
+    { value: "0", label: "bekannte Mandantendaten-Leaks" },
+    { value: "14", label: "Tage volle Testversion — keine Kreditkarte" },
+  ],
+  statsNote:
+    "Kein Chat-Wrapper. Engine-Klasse Retrieval — jede KI-Antwort nennt die exakte Fundstelle.",
+  featuresTitle: "Für Kanzleien gebaut. Nicht nachträglich angepasst.",
+  featuresSub:
+    "Von Fristenkontrolle nach ZPO/BGB/ABGB bis Widerspruchserkennung in Schriftsätzen — jede Antwort mit Fundstellen, jede Frist überwacht, keine Halluzination.",
+  features: [
+    {
+      icon: "Brain",
+      color: "violet",
+      title: "Antworten mit Fundstellen",
+      desc: "Jede KI-Antwort zitiert die exakten Fundstellen aus Ihren Akten. Ein Klick zur Verifikation, bevor etwas in den Schriftsatz geht — keine halluzinierten Quellen, keine Blackbox.",
+    },
+    {
+      icon: "CalendarClock",
+      color: "amber",
+      title: "Fristen automatisch berechnet",
+      desc: "Notfristen und Berufungsfristen nach ZPO, BGB und ABGB — mit korrekter Monatsarithmetik, Wochenend- und Feiertagsverschiebung. Täglicher E-Mail-Digest markiert kritische Fristen vor Fristablauf.",
+    },
+    {
+      icon: "MessageSquare",
+      color: "emerald",
+      title: "WhatsApp-Copilot für die Kanzlei",
+      desc: "Zeiten buchen, Dokumente ablegen, Sprachnotizen vom Handy. Alles landet in der richtigen Akte — bestätigungspflichtig, nichts erreicht die Akte ungesehen. GoBD-konform dokumentiert.",
+    },
+    {
+      icon: "ShieldAlert",
+      color: "rose",
+      title: "Kollisionsprüfung nach § 43a BRAO, § 10 RAO, BGFA",
+      desc: "Jeder neue Mandant oder Gegner wird serverseitig gegen den gesamten Aktenbestand geprüft — Konflikte werden gemeldet, bevor das Mandat angenommen wird. Deckt § 43a BRAO (DE), § 10 RAO (AT) und BGFA (CH) ab.",
+    },
+    {
+      icon: "Calculator",
+      color: "blue",
+      title: "Zeiten, Auslagen, Rechnungen und DATEV",
+      desc: "Minuten nach Anwalt und Tätigkeit buchen, abrechenbare Auslagen erfassen, Rechnungen aus offener Arbeit erstellen. DATEV-Export (DE) und ADATEV (AT) in einem Klick.",
+    },
+    {
+      icon: "Shield",
+      color: "violet",
+      title: "On-Premise oder EU-Cloud mit AVV",
+      desc: "Die vollständige Engine auf eigener Kanzlei-Infrastruktur mit eigenen Schlüsseln — oder verwaltete EU-Cloud mit AVV. Mandantendaten verlassen niemals Ihre Kontrolle.",
+    },
+  ],
+  howTitle: "So funktioniert Subsumio: vom Dokument zur belegten Antwort",
+  how: [
+    {
+      step: "01",
+      icon: "Database",
+      title: "Dokumente einpflegen",
+      desc: "Akten, Mails, PDFs, Sprachnotizen, WhatsApp-Nachrichten. Subsumio zerlegt, vektorisiert und indiziert automatisch — OCR extrahiert Text auch aus gescannten Dokumenten.",
+    },
+    {
+      step: "02",
+      icon: "Network",
+      title: "Wissensgraph aufbauen",
+      desc: "Bei jedem Speichern erkennt die Engine Personen, Fristen und Beziehungen und baut daraus einen juristischen Wissensgraphen. Vollautomatisch, ohne manuelle Datenpflege.",
+    },
+    {
+      step: "03",
+      icon: "Search",
+      title: "In normaler Sprache fragen",
+      desc: "Fragen in Alltagssprache. Hybride Suche aus Vektor, Stichwort und Graph findet die entscheidenden Passagen — über alle Akten und Schriftsätze hinweg.",
+    },
+    {
+      step: "04",
+      icon: "Brain",
+      title: "Belegte Antwort erhalten",
+      desc: "Eine synthetisierte Antwort mit seitengenauen Zitaten — plus ehrlicher Hinweis, was in der Akte noch fehlt. Die Gap-Analyse zeigt offene Risiken, bevor sie zu Problemen werden.",
+    },
+  ],
+  scenariosTitle: "Kanzlei-Workflows aus der Praxis",
+  scenariosSub: "Drei Abläufe aus dem Produkt, die jeder Anwalt sofort erkennt.",
+  scenarios: [
+    {
+      role: "Eingangspost",
+      text: "Tagespost und einen gescannten Vertrag hochladen, dann fragen: „Welche Fristen löst das aus?“ — jedes gesetzliche Datum wird nach ZPO/BGB/ABGB berechnet, im Kalender eingetragen und mit der Akte verknüpft. Manual Fristenbuch entfällt.",
+    },
+    {
+      role: "Verhandlungsvorbereitung",
+      text: "Sprachnotiz und PDF per WhatsApp mit Aktenzeichen schicken, 20 Minuten buchen, dann fragen: „Wo widersprechen sich die Schriftsätze der Gegenseite?“ — Subsumio findet Widersprüche über Schriftsätze, Anlagen und Protokolle hinweg in Sekunden.",
+    },
+    {
+      role: "Mitarbeiter-Onboarding",
+      text: "Fünf Jahre Akten und Schriftsätze indexieren. Der neue Mitarbeiter fragt: „Haben wir schon mal so etwas argumentiert?“ — und findet den Schriftsatz von 2023 in Sekunden, mit seitengenauen Zitaten. Einarbeitungszeit von Wochen auf Tage.",
+    },
+  ],
+  faqTitle: "Häufige Fragen — klar beantwortet",
+  faq: [
+    {
+      q: "Was unterscheidet Subsumio von Notion AI, Glean oder einer Vektor-Datenbank?",
+      a: `Notion AI, Glean und Vektor-Datenbanken liefern Dokumente oder Textabschnitte. Subsumio liefert eine synthetisierte Antwort mit seitengenauen Zitaten, nutzt für Beziehungsfragen einen typisierten Wissensgraphen und gibt eine Gap-Analyse — es zeigt explizit, was in der Akte fehlt. Das ist der Unterschied zwischen \u201Eirgendwo steht etwas\u201C und \u201Ehier steht die Antwort, und hier fehlt noch etwas\u201C.`,
+    },
+    {
+      q: "Wo liegen meine Kanzleidaten?",
+      a: "Sie haben die Wahl: Self-Hosting der Engine auf eigener Hardware mit eigenen Schlüsseln oder unsere verwaltete EU-Cloud mit AVV. Enterprise-Pläne unterstützen On-Premise-Deployment und einen unterzeichneten AVV. Mandantendaten verlassen in keinem Fall die EU.",
+    },
+    {
+      q: "Brauche ich API-Keys oder eigene Server-Infrastruktur?",
+      a: "Nein. Bei gehosteten Plänen ist Subsumio vollständig verwaltet — keine API-Keys, keine eigene Infrastruktur, keine IT-Ressourcen nötig. Enterprise-On-Premise läuft auf eigener Hardware mit eigenen Schlüsseln.",
+    },
+    {
+      q: "Was passiert, wenn ich an Plan-Limits stoße?",
+      a: "Der Verbrauch ist live im Dashboard sichtbar. Wir fragen, bevor sich etwas ändert — keine Überraschungsrechnungen, kein stilles Drosseln. Mehrverbrauch wird zu transparenten Einheitspreisen abgerechnet.",
+    },
+    {
+      q: "Trainiert Subsumio auf meinen Kanzleidaten?",
+      a: "Niemals. Ihr Kanzleiwissen gehört allein Ihnen und wird nicht zum Training geteilter Modelle genutzt. On-Premise bleibt alles auf Ihrer Infrastruktur. In der EU-Cloud wird es verschlüsselt und mandantensepariert verarbeitet — keine andere Kanzlei hat Zugriff.",
+    },
+    {
+      q: "Ist Subsumio mit § 203 StGB und Berufsgeheimnis-Pflichten vereinbar?",
+      a: "Ja. Die Architektur ist für Berufsgeheimnisträger konzipiert: Kein Dritter verarbeitet Mandantendaten ohne ausdrückliche Freigabe. On-Premise bleibt die Datenverarbeitung vollständig innerhalb der Kanzlei. In der EU-Cloud erfolgt die Verarbeitung verschlüsselt und mandantensepariert.",
+    },
+  ],
+  ctaTitle: "Ihre Kanzlei. Strukturiert abfragbar.",
+  ctaSub: "14 Tage volle Testversion. Keine Kreditkarte. Kein IT-Aufwand.",
+  ctaButton: "Demo vereinbaren",
+};
 
 export const LANDING = {
   en: {
@@ -758,22 +1538,22 @@ export const LANDING = {
     scenarios: [
       {
         role: "Incoming post",
-        text: "Upload the day's mail and a scanned contract, then ask: “Which deadlines does this trigger?” — every statutory date is calculated per ZPO/BGB/ABGB, calendared and linked to the matter. Manual deadline book eliminated.",
+        text: "Upload the day's mail and a scanned contract, then ask: 'Which deadlines does this trigger?' — every statutory date is calculated per ZPO/BGB/ABGB, calendared and linked to the matter. Manual deadline book eliminated.",
       },
       {
         role: "Trial prep",
-        text: "Send a voice note and a PDF by WhatsApp with a matter reference, book 20 minutes, then ask: “Where do the opposing party's statements contradict each other?” — Subsumio finds contradictions across filings, exhibits and protocols in seconds.",
+        text: "Send a voice note and a PDF by WhatsApp with a matter reference, book 20 minutes, then ask: 'Where do the opposing party's statements contradict each other?' — Subsumio finds contradictions across filings, exhibits and protocols in seconds.",
       },
       {
         role: "Onboarding a new associate",
-        text: "Index five years of matters and pleadings. The new associate asks: “Have we argued something like this before?” — and finds the 2023 brief in seconds, with page-level citations. Onboarding from weeks to days.",
+        text: "Index five years of matters and pleadings. The new associate asks: 'Have we argued something like this before?' — and finds the 2023 brief in seconds, with page-level citations. Onboarding from weeks to days.",
       },
     ],
     faqTitle: "Questions, answered",
     faq: [
       {
         q: "How is this different from Notion AI, Glean or a vector database?",
-        a: "Those return documents or chunks. Subsumio returns a synthesized answer with page-level citations, walks a typed knowledge graph for relationship questions (“who invested in X?”), and tells you what it doesn't know — the gap analysis is the part that changes how you work.",
+        a: 'Those return documents or chunks. Subsumio returns a synthesized answer with page-level citations, walks a typed knowledge graph for relationship questions ("who invested in X?"), and tells you what it doesn\'t know — the gap analysis is the part that changes how you work.',
       },
       {
         q: "Where does my data live?",
@@ -800,157 +1580,112 @@ export const LANDING = {
     ctaSub: "14-day full trial. No credit card. No IT overhead.",
     ctaButton: "Request a demo",
   },
-  de: {
-    badge: "KI-Kanzleisoftware für AT · DE · CH",
-    h1a: "Jede Akte,",
-    h1b: "eine belegte Antwort.",
-    sub: "Subsumio ist die KI-Kanzleisoftware für Rechtsanwälte in Österreich, Deutschland und der Schweiz. Akten, Fristen, Mails und Dokumente werden zu belegten Antworten — mit Fundstellen, nicht mit Halluzinationen.",
-    ctaPrimary: "Demo vereinbaren",
-    ctaSecondary: "Live-Demo ansehen",
-    demo: {
-      windowTitle: "subsumio — fragen",
-      you: "Du",
-      q: "Was muss ich vor der Verhandlung Bauer morgen wissen?",
-      a: `Akte Bauer ./. Hofer GmbH — Vertragsbruch, 84.000 €. Landesgericht Wien, Abt. 12. Verhandlung morgen, 09:30.
-
-**3 offene Punkte:**
-1. Replik heute fällig — entworfen, noch nicht eingebracht
-2. Gutachten von Dr. Klein fehlt noch (angefordert 3. März)
-3. Mandant hat den vorgeschlagenen Vergleichsrahmen nicht bestätigt
-
-⚠️ Frist: Die Replik ist eine Notfrist — Einbringung endet um Mitternacht. Zum Gutachten seit 3. März nichts Neues — nachfassen.`,
-      sourcesLabel: "Quellen:",
-      sources: ["akten/bauer-hofer", "fristen/replik", "dokumente/gutachten-klein"],
-    },
-    stats: [
-      { value: "97,9 %", label: "Recall@5 — Retrieval-Benchmark" },
-      { value: "3", label: "Jurisdiktionen — AT · DE · CH" },
-      { value: "0", label: "bekannte Mandantendaten-Leaks" },
-      { value: "14", label: "Tage volle Testversion — keine Kreditkarte" },
-    ],
-    statsNote:
-      "Kein Chat-Wrapper. Engine-Klasse Retrieval — jede KI-Antwort nennt die exakte Fundstelle.",
-    featuresTitle: "Für Kanzleien gebaut. Nicht nachträglich angepasst.",
-    featuresSub:
-      "Von Fristenkontrolle nach ZPO/BGB/ABGB bis Widerspruchserkennung in Schriftsätzen — jede Antwort mit Fundstellen, jede Frist überwacht, keine Halluzination.",
-    features: [
-      {
-        icon: "Brain",
-        color: "violet",
-        title: "Antworten mit Fundstellen",
-        desc: "Jede KI-Antwort zitiert die exakten Fundstellen aus deinen Akten. Ein Klick zur Verifikation, bevor etwas in den Schriftsatz geht — keine halluzinierten Quellen, keine Blackbox.",
-      },
-      {
-        icon: "CalendarClock",
-        color: "amber",
-        title: "Fristen automatisch berechnet",
-        desc: "Notfristen und Berufungsfristen nach ZPO, BGB und ABGB — mit korrekter Monatsarithmetik, Wochenend- und Feiertagsverschiebung. Täglicher E-Mail-Digest markiert kritische Fristen vor Fristablauf.",
-      },
-      {
-        icon: "MessageSquare",
-        color: "emerald",
-        title: "WhatsApp-Copilot für die Kanzlei",
-        desc: "Zeiten buchen, Dokumente ablegen, Sprachnotizen vom Handy. Alles landet in der richtigen Akte — bestätigungspflichtig, nichts erreicht die Akte ungesehen. GoBD-konform dokumentiert.",
-      },
-      {
-        icon: "ShieldAlert",
-        color: "rose",
-        title: "Kollisionsprüfung nach § 43a BRAO, § 10 RAO, BGFA",
-        desc: "Jeder neue Mandant oder Gegner wird serverseitig gegen den gesamten Aktenbestand geprüft — Konflikte werden gemeldet, bevor das Mandat angenommen wird. Deckt § 43a BRAO (DE), § 10 RAO (AT) und BGFA (CH) ab.",
-      },
-      {
-        icon: "Calculator",
-        color: "blue",
-        title: "Zeiten, Auslagen, Rechnungen und DATEV",
-        desc: "Minuten nach Anwalt und Tätigkeit buchen, abrechenbare Auslagen erfassen, Rechnungen aus offener Arbeit erstellen. DATEV-Export (DE) und ADATEV (AT) in einem Klick.",
-      },
-      {
-        icon: "Shield",
-        color: "violet",
-        title: "On-Premise oder EU-Cloud mit AVV",
-        desc: "Die vollständige Engine auf eigener Kanzlei-Infrastruktur mit eigenen Schlüsseln — oder verwaltete EU-Cloud mit AVV. Mandantendaten verlassen niemals deine Kontrolle.",
-      },
-    ],
-    howTitle: "So funktioniert Subsumio: vom Dokument zur belegten Antwort",
-    how: [
-      {
-        step: "01",
-        icon: "Database",
-        title: "Dokumente einpflegen",
-        desc: "Akten, Mails, PDFs, Sprachnotizen, WhatsApp-Nachrichten. Subsumio zerlegt, vektorisiert und indiziert automatisch — OCR extrahiert Text auch aus gescannten Dokumenten.",
-      },
-      {
-        step: "02",
-        icon: "Network",
-        title: "Wissensgraph aufbauen",
-        desc: "Bei jedem Speichern erkennt die Engine Personen, Fristen und Beziehungen und baut daraus einen juristischen Wissensgraphen. Vollautomatisch, ohne manuelle Datenpflege.",
-      },
-      {
-        step: "03",
-        icon: "Search",
-        title: "In normaler Sprache fragen",
-        desc: "Fragen in Alltagssprache. Hybride Suche aus Vektor, Stichwort und Graph findet die entscheidenden Passagen — über alle Akten und Schriftsätze hinweg.",
-      },
-      {
-        step: "04",
-        icon: "Brain",
-        title: "Belegte Antwort erhalten",
-        desc: "Eine synthetisierte Antwort mit seitengenauen Zitaten — plus ehrlicher Hinweis, was in der Akte noch fehlt. Die Gap-Analyse zeigt offene Risiken, bevor sie zu Problemen werden.",
-      },
-    ],
-    scenariosTitle: "Kanzlei-Workflows aus der Praxis",
-    scenariosSub: "Drei Abläufe aus dem Produkt, die jeder Anwalt sofort erkennt.",
-    scenarios: [
-      {
-        role: "Eingangspost",
-        text: "Tagespost und einen gescannten Vertrag hochladen, dann fragen: „Welche Fristen löst das aus?“ — jedes gesetzliche Datum wird nach ZPO/BGB/ABGB berechnet, im Kalender eingetragen und mit der Akte verknüpft. Manual Fristenbuch entfällt.",
-      },
-      {
-        role: "Verhandlungsvorbereitung",
-        text: "Sprachnotiz und PDF per WhatsApp mit Aktenzeichen schicken, 20 Minuten buchen, dann fragen: „Wo widersprechen sich die Schriftsätze der Gegenseite?“ — Subsumio findet Widersprüche über Schriftsätze, Anlagen und Protokolle hinweg in Sekunden.",
-      },
-      {
-        role: "Mitarbeiter-Onboarding",
-        text: "Fünf Jahre Akten und Schriftsätze indexieren. Der neue Mitarbeiter fragt: „Haben wir schon mal so etwas argumentiert?“ — und findet den Schriftsatz von 2023 in Sekunden, mit seitengenauen Zitaten. Einarbeitungszeit von Wochen auf Tage.",
-      },
-    ],
-    faqTitle: "Häufige Fragen — klar beantwortet",
-    faq: [
-      {
-        q: "Was unterscheidet Subsumio von Notion AI, Glean oder einer Vektor-Datenbank?",
-        a: "Notion AI, Glean und Vektor-Datenbanken liefern Dokumente oder Textabschnitte. Subsumio liefert eine synthetisierte Antwort mit seitengenauen Zitaten, nutzt für Beziehungsfragen einen typisierten Wissensgraphen und gibt eine Gap-Analyse — es zeigt explizit, was in der Akte fehlt. Das ist der Unterschied zwischen „irgendwo steht etwas“ und „hier steht die Antwort, und hier fehlt noch etwas“.",
-      },
-      {
-        q: "Wo liegen meine Kanzleidaten?",
-        a: "Sie haben die Wahl: Self-Hosting der Engine auf eigener Hardware mit eigenen Schlüsseln oder unsere verwaltete EU-Cloud mit AVV. Enterprise-Pläne unterstützen On-Premise-Deployment und einen unterzeichneten AVV. Mandantendaten verlassen in keinem Fall die EU.",
-      },
-      {
-        q: "Brauche ich API-Keys oder eigene Server-Infrastruktur?",
-        a: "Nein. Bei gehosteten Plänen ist Subsumio vollständig verwaltet — keine API-Keys, keine eigene Infrastruktur, keine IT-Ressourcen nötig. Enterprise-On-Premise läuft auf eigener Hardware mit eigenen Schlüsseln.",
-      },
-      {
-        q: "Was passiert, wenn ich an Plan-Limits stoße?",
-        a: "Der Verbrauch ist live im Dashboard sichtbar. Wir fragen, bevor sich etwas ändert — keine Überraschungsrechnungen, kein stilles Drosseln. Mehrverbrauch wird zu transparenten Einheitspreisen abgerechnet.",
-      },
-      {
-        q: "Trainiert Subsumio auf meinen Kanzleidaten?",
-        a: "Niemals. Ihr Kanzleiwissen gehört allein Ihnen und wird nicht zum Training geteilter Modelle genutzt. On-Premise bleibt alles auf Ihrer Infrastruktur. In der EU-Cloud wird es verschlüsselt und mandantensepariert verarbeitet — keine andere Kanzlei hat Zugriff.",
-      },
-      {
-        q: "Ist Subsumio mit § 203 StGB und Berufsgeheimnis-Pflichten vereinbar?",
-        a: "Ja. Die Architektur ist für Berufsgeheimnisträger konzipiert: Kein Dritter verarbeitet Mandantendaten ohne ausdrückliche Freigabe. On-Premise bleibt die Datenverarbeitung vollständig innerhalb der Kanzlei. In der EU-Cloud erfolgt die Verarbeitung verschlüsselt und mandantensepariert.",
-      },
-    ],
-    ctaTitle: "Ihre Kanzlei. Strukturiert abfragbar.",
-    ctaSub: "14 Tage volle Testversion. Keine Kreditkarte. Kein IT-Aufwand.",
-    ctaButton: "Demo vereinbaren",
-  },
-} as const;
+  de: _landingDe,
+  at: applyReplacements(JSON.parse(JSON.stringify(_landingDe)), AT_REPLACEMENTS),
+  ch: applyReplacements(JSON.parse(JSON.stringify(_landingDe)), CH_REPLACEMENTS),
+};
 
 // ---------------------------------------------------------------------------
 // UI_STRINGS — shared bilingual strings used across marketing components.
 // Single source of truth for inline labels, badges, aria-labels, CTAs.
 // ---------------------------------------------------------------------------
+
+const _uiStringsDe: Record<string, string> = {
+  // Landing — trust signals
+  noCreditCard: "Keine Kreditkarte",
+  threeMinAnswer: "3 Min. zur ersten belegten Antwort",
+  euHosted: "EU-gehostet oder On-Premise",
+  liveDemoAria: "Live-Demo",
+  inActionBadge: "In Aktion",
+  dashboardTitle: "Datei anhängen. Fragen. Belegte Antwort.",
+  dashboardSub:
+    "Dateien per Upload, Google Drive oder Anwaltssoftware in die Wissensbasis — dann im Chat fragen, mit seitengenauen Fundstellen.",
+  seeFullPricing: "Alle Preisdetails ansehen",
+  gdprReady: "DSGVO-konform",
+  professionalSecrecy: "Berufsgeheimnis per Architektur",
+  // Pricing page
+  transparentFair: "Transparent & fair",
+  noGamesTitle: "Keine Spielchen bei den Preisen",
+  noGamesSub: "Kein Kleingedrucktes, keine Überraschungen auf der Rechnung.",
+  stillQuestions: "Noch Fragen?",
+  writeUs: "Schreiben Sie uns — wir antworten persönlich.",
+  startFree: "Kostenlos starten",
+  // Solution page
+  seePlatform: "Plattform ansehen",
+  questionsAnswered: "Fragen, beantwortet",
+  notQuiteRight: "Nicht ganz das Richtige für Sie?",
+  // Audience tabs
+  seeSolution: "Lösung ansehen",
+  // Subsumio subpages
+  backToOverview: "Zur Übersicht",
+  timeExpenses: "Zeit & Auslagen in Sekunden",
+  timeExpensesDesc:
+    "„Zeit 0,5h Akte Müller, Telefonat“ → erfasst, der Akte zugeordnet, ein Tipp zum Bestätigen.",
+  receiptPhoto: "Beleg-Foto → richtige Akte",
+  receiptPhotoDesc:
+    "Dokument oder Foto mit Akten-Kürzel in der Caption landet revisionssicher im Vault.",
+  voiceNote: "Sprachnotiz unterwegs",
+  voiceNoteDesc:
+    "Diktat nach dem Termin — transkribiert und der Akte angehängt, bevor Sie im Büro sind.",
+  // Docs page
+  dashboardNotDatasheet: "Dashboard statt Datenblatt",
+  docsTitle: "Jede Beschreibung zeigt auf einen echten Kanzlei-Workflow.",
+  docsSub:
+    "Die Docs sind nicht als rohe API-Liste gedacht. Sie erklären, welche Funktion im Dashboard sichtbar ist, welchen Kanzlei-Prozess sie verbessert und welche Sicherheitsannahme dahintersteht.",
+  // Back to top
+  backToTopAria: "Zurück nach oben",
+  // Product workflow showcase
+  followContext: "Kontext folgen",
+  // Chrome / nav
+  menuAria: "Menü",
+  readInGerman: "Auf Deutsch lesen",
+  readInEnglish: "Read in English",
+  // Branch pricing
+  pricingBadge: "Preise",
+  mostPopular: "Beliebteste Wahl",
+  fullPricingFaq: "Alle Preise & FAQ",
+  // Dashboard reel
+  openMatter: "Akte öffnen",
+  sendQuestion: "Frage senden",
+  checkDeadline: "Frist prüfen",
+  searchPlaceholder: "Suchen…",
+  timeLabel: "09:42",
+  mattersLabel: "Akten",
+  mattersCount: "Akten",
+  deadlinesLabel: "Fristen",
+  urgentLabel: "dringend",
+  // Vertical page
+  signatureLabel: "Stärken",
+  strengthsLabel: "Stärken",
+  capabilitiesBadge: "Funktionen",
+  seeAllCapabilities: "Alle Funktionen ansehen",
+  whatsappDetail: "WhatsApp-Copilot im Detail",
+  securityDetail: "Sicherheit & DSGVO im Detail",
+  // Live demo
+  liveDemoRegion: "Live-Demo",
+  // Features page
+  matterLabel: "Akte",
+  copilotLabel: "Copilot",
+  reviewLabel: "Freigabe",
+  inDashboard: "Im Dashboard",
+  commandCenter: "Command Center",
+  liveMatterContext: "Live-Aktenkontext",
+  verifiableLabel: "prüfbar",
+  exploreSecurity: "Sicherheit ansehen",
+  exploreLabel: "Ansehen",
+  // Partners page
+  // Download page
+  askYourBrain: "Fragen Sie Ihr Brain…",
+  gapWarning: "⚠ Lücke: Do 14 Uhr ohne Notiz",
+  worksOffline: "Funktioniert offline",
+  installNow: "Subsumio jetzt installieren",
+  getStarted: "Demo anfragen",
+  seeFeatures: "Features ansehen",
+  pushNotifications: "Push-Benachrichtigungen",
+  biometricUnlock: "Biometrische Entsperrung",
+  sendToSubsumio: "„An Subsumio senden“",
+  comingSoonTo: "Bald im",
+};
 
 export const UI_STRINGS: Record<Lang, Record<string, string>> = {
   en: {
@@ -1049,108 +1784,34 @@ export const UI_STRINGS: Record<Lang, Record<string, string>> = {
     sendToSubsumio: "“Send to Subsumio”",
     comingSoonTo: "Coming soon to",
   },
-  de: {
-    // Landing — trust signals
-    noCreditCard: "Keine Kreditkarte",
-    threeMinAnswer: "3 Min. zur ersten belegten Antwort",
-    euHosted: "EU-gehostet oder On-Premise",
-    liveDemoAria: "Live-Demo",
-    inActionBadge: "In Aktion",
-    dashboardTitle: "Datei anhängen. Fragen. Belegte Antwort.",
-    dashboardSub:
-      "Dateien per Upload, Google Drive oder Anwaltssoftware in die Wissensbasis — dann im Chat fragen, mit seitengenauen Fundstellen.",
-    seeFullPricing: "Alle Preisdetails ansehen",
-    gdprReady: "DSGVO-konform",
-    professionalSecrecy: "Berufsgeheimnis per Architektur",
-    // Pricing page
-    transparentFair: "Transparent & fair",
-    noGamesTitle: "Keine Spielchen bei den Preisen",
-    noGamesSub: "Kein Kleingedrucktes, keine Überraschungen auf der Rechnung.",
-    stillQuestions: "Noch Fragen?",
-    writeUs: "Schreib uns — wir antworten persönlich.",
-    startFree: "Kostenlos starten",
-    // Solution page
-    seePlatform: "Plattform ansehen",
-    questionsAnswered: "Fragen, beantwortet",
-    notQuiteRight: "Nicht ganz das Richtige für dich?",
-    // Audience tabs
-    seeSolution: "Lösung ansehen",
-    // Subsumio subpages
-    backToOverview: "Zur Übersicht",
-    timeExpenses: "Zeit & Auslagen in Sekunden",
-    timeExpensesDesc:
-      "„Zeit 0,5h Akte Müller, Telefonat“ → erfasst, der Akte zugeordnet, ein Tipp zum Bestätigen.",
-    receiptPhoto: "Beleg-Foto → richtige Akte",
-    receiptPhotoDesc:
-      "Dokument oder Foto mit Akten-Kürzel in der Caption landet revisionssicher im Vault.",
-    voiceNote: "Sprachnotiz unterwegs",
-    voiceNoteDesc:
-      "Diktat nach dem Termin — transkribiert und der Akte angehängt, bevor du im Büro bist.",
-    // Docs page
-    dashboardNotDatasheet: "Dashboard statt Datenblatt",
-    docsTitle: "Jede Beschreibung zeigt auf einen echten Kanzlei-Workflow.",
-    docsSub:
-      "Die Docs sind nicht als rohe API-Liste gedacht. Sie erklären, welche Funktion im Dashboard sichtbar ist, welchen Kanzlei-Prozess sie verbessert und welche Sicherheitsannahme dahintersteht.",
-    // Back to top
-    backToTopAria: "Zurück nach oben",
-    // Product workflow showcase
-    followContext: "Kontext folgen",
-    // Chrome / nav
-    menuAria: "Menü",
-    readInGerman: "Auf Deutsch lesen",
-    readInEnglish: "Read in English",
-    // Branch pricing
-    pricingBadge: "Preise",
-    mostPopular: "Beliebteste Wahl",
-    fullPricingFaq: "Alle Preise & FAQ",
-    // Dashboard reel
-    openMatter: "Akte öffnen",
-    sendQuestion: "Frage senden",
-    checkDeadline: "Frist prüfen",
-    searchPlaceholder: "Suchen…",
-    timeLabel: "09:42",
-    mattersLabel: "Akten",
-    mattersCount: "Akten",
-    deadlinesLabel: "Fristen",
-    urgentLabel: "dringend",
-    // Vertical page
-    signatureLabel: "Stärken",
-    strengthsLabel: "Stärken",
-    capabilitiesBadge: "Funktionen",
-    seeAllCapabilities: "Alle Funktionen ansehen",
-    whatsappDetail: "WhatsApp-Copilot im Detail",
-    securityDetail: "Sicherheit & DSGVO im Detail",
-    // Live demo
-    liveDemoRegion: "Live-Demo",
-    // Features page
-    matterLabel: "Akte",
-    copilotLabel: "Copilot",
-    reviewLabel: "Freigabe",
-    inDashboard: "Im Dashboard",
-    commandCenter: "Command Center",
-    liveMatterContext: "Live-Aktenkontext",
-    verifiableLabel: "prüfbar",
-    exploreSecurity: "Sicherheit ansehen",
-    exploreLabel: "Ansehen",
-    // Partners page
-    // Download page
-    askYourBrain: "Frag dein Brain…",
-    gapWarning: "⚠ Lücke: Do 14 Uhr ohne Notiz",
-    worksOffline: "Funktioniert offline",
-    installNow: "Subsumio jetzt installieren",
-    getStarted: "Demo anfragen",
-    seeFeatures: "Features ansehen",
-    pushNotifications: "Push-Benachrichtigungen",
-    biometricUnlock: "Biometrische Entsperrung",
-    sendToSubsumio: "„An Subsumio senden“",
-    comingSoonTo: "Bald im",
-  },
+  de: _uiStringsDe,
+  at: _uiStringsDe,
+  ch: _uiStringsDe,
 };
 
 // ---------------------------------------------------------------------------
 // VALUE_PROPS — pricing page value propositions (bilingual).
 // Used by pricing-page.tsx. Moved here for single-source-of-truth.
 // ---------------------------------------------------------------------------
+
+const _valuePropsDe = [
+  {
+    title: "Keine versteckten Kosten",
+    desc: "Was auf der Preisliste steht, das zahlen Sie. Keine Überraschungen bei der Rechnung.",
+  },
+  {
+    title: "Self-hosted oder Cloud",
+    desc: "Sie entscheiden, wo Ihre Daten liegen. EU-Cloud oder auf eigener Hardware.",
+  },
+  {
+    title: "Open-Source Engine",
+    desc: "Die Engine ist Open Source. Kein Vendor Lock-in, volle Kontrolle.",
+  },
+  {
+    title: "Kostenlos starten",
+    desc: "Der Community-Plan ist kostenlos. Upgrade jederzeit, Downgrade auch.",
+  },
+];
 
 export const VALUE_PROPS: Record<Lang, { title: string; desc: string }[]> = {
   en: [
@@ -1171,22 +1832,7 @@ export const VALUE_PROPS: Record<Lang, { title: string; desc: string }[]> = {
       desc: "The Community plan is free. Upgrade anytime, downgrade too.",
     },
   ],
-  de: [
-    {
-      title: "Keine versteckten Kosten",
-      desc: "Was auf der Preisliste steht, zahlst du. Keine Überraschungen bei der Rechnung.",
-    },
-    {
-      title: "Self-hosted oder Cloud",
-      desc: "Du entscheidest, wo deine Daten liegen. EU-Cloud oder auf eigener Hardware.",
-    },
-    {
-      title: "Open-Source Engine",
-      desc: "Die Engine ist Open Source. Kein Vendor Lock-in, volle Kontrolle.",
-    },
-    {
-      title: "Kostenlos starten",
-      desc: "Der Community-Plan ist kostenlos. Upgrade jederzeit, downgrade auch.",
-    },
-  ],
+  de: _valuePropsDe,
+  at: _valuePropsDe,
+  ch: _valuePropsDe,
 };

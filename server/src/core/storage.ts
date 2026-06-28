@@ -5,6 +5,19 @@
  * the backend (Supabase Storage or S3/R2/MinIO), gbrain doesn't care.
  */
 
+export interface PresignedUploadResult {
+  /** The presigned URL the client PUTs to. */
+  url: string;
+  /** HTTP method the client should use (PUT for S3, POST for some providers). */
+  method: "PUT" | "POST";
+  /** Headers the client must send (Content-Type, etc.). */
+  headers: Record<string, string>;
+  /** Storage path the object will land at — needed for confirm step. */
+  storagePath: string;
+  /** Unix ms timestamp when the presigned URL expires. */
+  expiresAt: number;
+}
+
 export interface StorageBackend {
   upload(path: string, data: Buffer, mime?: string): Promise<void>;
   download(path: string): Promise<Buffer>;
@@ -12,6 +25,20 @@ export interface StorageBackend {
   exists(path: string): Promise<boolean>;
   list(prefix: string): Promise<string[]>;
   getUrl(path: string): Promise<string>;
+
+  /**
+   * Generate a presigned URL for direct-to-storage upload. The client PUTs
+   * the raw file bytes directly to the storage provider (S3/R2/MinIO),
+   * bypassing the application server entirely — eliminating RAM pressure
+   * from large uploads.
+   *
+   * Returns null when the backend doesn't support presigned URLs (local
+   * storage); callers fall back to the streaming multipart path.
+   */
+  createPresignedUpload?(
+    path: string,
+    opts: { contentType: string; expiresIn?: number }
+  ): Promise<PresignedUploadResult | null>;
 }
 
 export interface StorageConfig {

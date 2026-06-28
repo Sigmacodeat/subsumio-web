@@ -11,6 +11,7 @@ import { ToastProvider } from "@/components/ui/toast";
 import { ConfirmProvider } from "@/components/ui/confirm-dialog";
 import { QueryProvider } from "@/components/providers/query-provider";
 import MarketingShell from "@/components/marketing/marketing-shell";
+import type { Lang } from "@/content/site";
 import "./globals.css";
 
 export const dynamic = "force-dynamic";
@@ -89,7 +90,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://subsum.eu"),
   alternates: {
     canonical: "/",
-    languages: { de: "/", en: "/en" },
+    languages: { "de-DE": "/", "de-AT": "/at", "de-CH": "/ch", en: "/en" },
   },
   openGraph: {
     title: "Subsumio — KI-Kanzleisoftware für DACH-Rechtsanwälte",
@@ -129,7 +130,10 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#06060f",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#06060f" },
+  ],
   colorScheme: "light dark",
   viewportFit: "cover",
 };
@@ -141,7 +145,13 @@ export default async function RootLayout({
 }>) {
   const headersList = await headers();
   const pathname = headersList.get("x-pathname") || "/";
-  const lang = pathname.startsWith("/en") ? "en" : "de";
+  const lang: Lang = pathname.startsWith("/en")
+    ? "en"
+    : pathname.startsWith("/at")
+      ? "at"
+      : pathname.startsWith("/ch")
+        ? "ch"
+        : "de";
   // Dashboard and portal render their own <main> landmark; wrap other routes here.
   const hasOwnMain = pathname.startsWith("/dashboard") || pathname.startsWith("/portal");
 

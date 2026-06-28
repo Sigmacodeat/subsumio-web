@@ -38,6 +38,9 @@ export const HANDLER_DEFAULT_TIMEOUT_MS: Readonly<Record<string, number>> = {
   // v0.44 — legal-pipeline: 6 layers × Map-Reduce over 35+ sub-pages.
   // Can exceed 30min for large case files (2021 pages, 179MB PDF).
   "legal-pipeline": SIXTY_MIN_MS,
+  // Async document extraction (parse + OCR + split/import). A 500MB scanned
+  // PDF needing per-page OCR is the worst case — allow up to 60 min.
+  "extract-document": SIXTY_MIN_MS,
 };
 
 /**

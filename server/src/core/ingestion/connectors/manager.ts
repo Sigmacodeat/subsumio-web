@@ -26,6 +26,7 @@ import { JiraConnector } from "./jira.ts";
 import { LegalJudgementsConnector } from "./legal-judgements.ts";
 import { SwissJudgementsConnector } from "./swiss-judgements.ts";
 import { BeaImportConnector } from "./bea-import.ts";
+import { AdvokatImportConnector } from "./advokat-import.ts";
 import {
   MicrosoftOneDriveConnector,
   MicrosoftOutlookConnector,
@@ -53,6 +54,7 @@ export const CONNECTOR_REGISTRY: Record<string, new (cfg: ConnectorConfig) => Ba
   "legal-judgements": LegalJudgementsConnector,
   "swiss-judgements": SwissJudgementsConnector,
   "bea-import": BeaImportConnector,
+  "advokat-import": AdvokatImportConnector,
   "ms365-outlook": MicrosoftOutlookConnector,
   "ms365-onedrive": MicrosoftOneDriveConnector,
   "ms365-sharepoint": MicrosoftSharePointConnector,
@@ -174,7 +176,7 @@ export class ConnectorManager {
   async syncOne(service: string, ctx: IngestionSourceContext): Promise<void> {
     const connector = this.connectors.get(service);
     if (!connector) throw new Error(`Connector not running: ${service}`);
-    await connector.sync();
+    await connector.sync(ctx);
     // Persist last_sync_at into state file.
     const statePath = join(this.baseDir ?? homedir(), ".gbrain", "connectors", `${service}.json`);
     if (existsSync(statePath)) {

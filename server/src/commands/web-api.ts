@@ -8,10 +8,15 @@
 
 import express from "express";
 import type { Application, Request, Response, NextFunction } from "express";
-import { readdirSync, readFileSync, statSync } from "fs";
-import { join, dirname, extname } from "path";
+import { readdirSync, readFileSync, statSync, realpathSync } from "fs";
+import { join, dirname, extname, basename } from "path";
 import { fileURLToPath } from "url";
-import { createHmac, timingSafeEqual as cryptoTimingSafeEqual } from "crypto";
+import {
+  createHash,
+  createHmac,
+  randomUUID,
+  timingSafeEqual as cryptoTimingSafeEqual,
+} from "crypto";
 import { safeStringEqual } from "../core/timing-safe.ts";
 import type { BrainEngine } from "../core/engine.ts";
 import { dispatchToolCall, buildOperationContext } from "../mcp/dispatch.ts";
@@ -21,6 +26,8 @@ import {
   synthesizeDocumentMarkdown,
   isDocumentFilePath,
   withUnverifiedBanner,
+  PasswordRequiredError,
+  InvalidDocumentPasswordError,
 } from "../core/extract-document.ts";
 import { slugifySegment, isImageFilePath } from "../core/sync.ts";
 import { loadConfig } from "../core/config.ts";
@@ -32,6 +39,13 @@ import {
 } from "../core/engine-errors.ts";
 import type { ThinkResult } from "../core/think/index.ts";
 import { MinionQueue } from "../core/minions/queue.ts";
+import {
+  readSafeZipEntries,
+  type ArchiveBudget,
+  ArchiveSafetyError,
+} from "../core/archive-upload.ts";
+import { inspectUploadBytes } from "../core/upload-security.ts";
+import { FILE_MIME_TYPES } from "../core/file-store.ts";
 
 export interface WebApiOptions {
   /** When set, require matching X-Subsumio-Api-Key or Authorization: Bearer header. */
@@ -44,6 +58,79 @@ export interface WebApiOptions {
    * Enable via GBRAIN_REQUIRE_TENANT=true (or SUBSUMIO_REQUIRE_TENANT).
    */
   requireTenant?: boolean;
+}
+
+/** MIME defense shared by both multipart upload routes. Extension-specific
+ * parsing remains authoritative because browsers use octet-stream for MSG and
+ * iWork files. */
+const ALLOWED_ENGINE_UPLOAD_MIMES = new Set([
+  "application/pdf",
+  "application/zip",
+  "application/x-zip-compressed",
+  "text/markdown",
+  "text/plain",
+  "text/html",
+  "text/csv",
+  "text/tab-separated-values",
+  "text/xml",
+  "application/json",
+  "application/xml",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-word.document.macroenabled.12",
+  "application/rtf",
+  "application/vnd.oasis.opendocument.text",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.ms-excel.sheet.macroenabled.12",
+  "application/vnd.oasis.opendocument.spreadsheet",
+  "application/vnd.ms-powerpoint",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  "application/vnd.ms-powerpoint.presentation.macroenabled.12",
+  "application/vnd.oasis.opendocument.presentation",
+  "message/rfc822",
+  "application/vnd.ms-outlook",
+  "application/x-pst",
+  "image/png",
+  "image/jpeg",
+  "image/tiff",
+  "image/gif",
+  "image/webp",
+  "image/heic",
+  "image/heif",
+  "image/avif",
+  "image/bmp",
+  "audio/mpeg",
+  "audio/wav",
+  "audio/x-wav",
+  "audio/mp4",
+  "audio/ogg",
+  "audio/flac",
+  "application/vnd.apple.pages",
+  "application/vnd.apple.keynote",
+  "application/vnd.apple.numbers",
+  "application/x-iwork-pages-sffpages",
+  "application/x-iwork-keynote-sffkey",
+  "application/x-iwork-numbers-sffnumbers",
+  "application/octet-stream",
+]);
+
+const TEXT_UPLOAD_EXTS = new Set([".md", ".txt", ".html", ".htm", ".json", ".xml"]);
+const ARCHIVE_UPLOAD_EXTS = new Set([".zip"]);
+
+function isSupportedUploadFilename(filename: string): boolean {
+  return (
+    TEXT_UPLOAD_EXTS.has(extname(filename).toLowerCase()) ||
+    ARCHIVE_UPLOAD_EXTS.has(extname(filename).toLowerCase()) ||
+    isDocumentFilePath(filename) ||
+    isImageFilePath(filename)
+  );
+}
+
+function isSafeUploadFilename(filename: string): boolean {
+  if (!filename || filename.length > 255 || filename.includes("\0")) return false;
+  const slashNormalized = filename.replace(/\\/g, "/");
+  return basename(slashNormalized) === slashNormalized && !slashNormalized.includes("/");
 }
 
 /** Resolve fail-closed SaaS tenant mode from the explicit option or env.
@@ -73,6 +160,7 @@ declare global {
        * string[] = only pages accessible to these group UUIDs.
        */
       aclGroups?: string[] | "all";
+      uploadTokenPayload?: UploadTokenPayload;
     }
   }
 }
@@ -102,7 +190,7 @@ function storageConfigFromEnv(): import("../core/storage.ts").StorageConfig | un
 
 /**
  * Max accepted upload size for the web /api/upload endpoint. Agency-level
- * deployments (self-hosted, no platform body cap) default to 1 GB. Override with
+ * deployments default to a 512 MB multipart envelope for 500 MB files. Override with
  * GBRAIN_MAX_UPLOAD_BYTES. The body is buffered once (parseMultipart works on
  * Buffer views, not copies), and the web client staggers large uploads (1-2 at a
  * time), so peak RAM stays ~one file in flight.
@@ -110,7 +198,47 @@ function storageConfigFromEnv(): import("../core/storage.ts").StorageConfig | un
 function maxUploadBytes(): number {
   const raw = process.env.GBRAIN_MAX_UPLOAD_BYTES;
   const parsed = raw ? Number(raw) : NaN;
-  return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : 1024 * 1024 * 1024;
+  // Includes small multipart overhead above the advertised 500 MB file cap.
+  return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : 512 * 1024 * 1024;
+}
+
+/**
+ * Files at or above this size extract ASYNCHRONOUSLY via the `extract-document`
+ * minion job instead of blocking the upload request — the request returns
+ * immediately with `extraction_status: "processing"` and the in-process worker
+ * does the heavy parse/OCR/import. Smaller files stay synchronous (instant
+ * result, no polling). Set `SUBSUMIO_ASYNC_EXTRACT_MIN_BYTES=0` to force every
+ * upload async. Default: 15 MB.
+ */
+function asyncExtractMinBytes(): number {
+  const raw = process.env.SUBSUMIO_ASYNC_EXTRACT_MIN_BYTES;
+  const parsed = raw !== undefined ? Number(raw) : NaN;
+  return Number.isFinite(parsed) && parsed >= 0 ? Math.floor(parsed) : 15 * 1024 * 1024;
+}
+
+function maxBytesForUpload(filename: string): number {
+  const ext = extname(filename).toLowerCase();
+  if ([".csv", ".tsv", ".xls", ".xlsx", ".xlsm", ".ods", ".numbers"].includes(ext)) {
+    return 20 * 1024 * 1024;
+  }
+  if (
+    [
+      ".png",
+      ".jpg",
+      ".jpeg",
+      ".tif",
+      ".tiff",
+      ".gif",
+      ".webp",
+      ".heic",
+      ".heif",
+      ".avif",
+      ".bmp",
+    ].includes(ext)
+  ) {
+    return 200 * 1024 * 1024;
+  }
+  return 500 * 1024 * 1024;
 }
 
 /**
@@ -123,33 +251,52 @@ function maxUploadBytes(): number {
 interface PersistResult {
   ok: boolean;
   error?: string;
+  storage_path?: string;
 }
 
 async function persistUploadBytes(
   file: { filename: string; data: Buffer; mimeType?: string },
   pageSlug: string,
   sourceId: string,
-  storageConfig: unknown
+  storageConfig: unknown,
+  zone?: "unscanned" | "clean" | "quarantined"
 ): Promise<PersistResult> {
   try {
     const { persistFileBuffer } = await import("../core/file-store.ts");
     // Prefer caller-supplied config (from ctx.config.storage), then fall back
     // to env-var-driven S3 config (R2_ACCESS_KEY_ID etc.), then local disk.
     const effectiveConfig = storageConfig ?? storageConfigFromEnv();
-    await persistFileBuffer({
+    const result = await persistFileBuffer({
       data: file.data,
       filename: file.filename,
       pageSlug,
       mimeType: file.mimeType,
       sourceId,
       storageConfig: effectiveConfig,
+      zone,
     });
-    return { ok: true };
+    return { ok: true, storage_path: result.storage_path };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error(`[web-api] original-file persistence failed for ${pageSlug}: ${msg}`);
     return { ok: false, error: msg };
   }
+}
+
+async function storedDuplicate(
+  data: Buffer,
+  sourceId: string
+): Promise<{ page_slug: string | null; filename: string } | null> {
+  const { findStoredUploadByHash } = await import("../core/file-store.ts");
+  return findStoredUploadByHash(data, sourceId);
+}
+
+async function versionUploadSlug(slug: string, data: Buffer, sourceId: string): Promise<string> {
+  const { findStoredUploadForPage } = await import("../core/file-store.ts");
+  const existing = await findStoredUploadForPage(slug, sourceId);
+  if (!existing) return slug;
+  const hash = createHash("sha256").update(data).digest("hex").slice(0, 10);
+  return `${slug}-${hash}`;
 }
 
 interface ParsedMultipart {
@@ -254,35 +401,13 @@ function slugFromUpload(source: string, filename: string, title?: string): strin
   return `${src}/${base || "untitled"}`;
 }
 
-/**
- * Office/binary formats a law firm sends that we do NOT yet extract. Reading
- * them as UTF-8 stored mojibake garbage as a "document" (silent corruption).
- * Reject cleanly with an actionable message instead. Native extraction for
- * these (Outlook .msg, multi-page .tiff scans, legacy .doc) is a tracked
- * follow-up — it needs decoder deps verified against `bun build --compile`.
- */
-const UNSUPPORTED_UPLOAD_EXTS = new Set([
-  ".msg",
-  ".tiff",
-  ".tif",
-  ".doc",
-  ".ppt",
-  ".pptx",
-  ".odt",
-  ".ods",
-  ".odp",
-  ".rtf",
-  ".pages",
-  ".key",
-  ".numbers",
-  ".zip",
-  ".rar",
-  ".7z",
-]);
+/** Archives are intentionally not accepted: recursively unpacking untrusted
+ * input requires separate entry-count, depth and expanded-byte quotas. */
+const UNSUPPORTED_UPLOAD_EXTS = new Set([".rar", ".7z"]);
 
 /** Thrown for a file we recognize but can't ingest yet; the route maps it to a
- *  400 with the actionable message rather than a generic 500. */
-class UnsupportedUploadError extends Error {}
+ *  415 with the actionable message rather than a generic 500. */
+export class UnsupportedUploadError extends Error {}
 
 /** Heuristic binary sniff: a NUL byte in the first 8 KB means it isn't text.
  *  Guards the UTF-8 fallback from storing garbage for unknown binary types. */
@@ -292,19 +417,90 @@ function looksBinary(data: Buffer): boolean {
   return false;
 }
 
-async function buildMarkdownFromUpload(
+export async function buildMarkdownFromUpload(
   engine: BrainEngine,
   filename: string,
   data: Buffer,
   title?: string,
-  extraFrontmatter: Record<string, unknown> = {}
+  extraFrontmatter: Record<string, unknown> = {},
+  archiveContext?: { depth: number; budget: ArchiveBudget; password?: string }
 ): Promise<string> {
   const lower = filename.toLowerCase();
   const ext = lower.includes(".") ? lower.slice(lower.lastIndexOf(".")) : "";
   const t = title ?? filename.replace(/\.[^.]+$/, "");
 
+  if (ext === ".zip") {
+    const depth = archiveContext?.depth ?? 0;
+    const budget = archiveContext?.budget ?? { entries: 0, expandedBytes: 0 };
+    let archive;
+    try {
+      archive = await readSafeZipEntries(data, { depth, budget });
+    } catch (error) {
+      if (error instanceof ArchiveSafetyError) throw new UnsupportedUploadError(error.message);
+      throw error;
+    }
+
+    const sections: string[] = [];
+    const skipped: string[] = [];
+    for (const entry of archive.entries) {
+      if (!isSupportedUploadFilename(entry.name)) {
+        skipped.push(entry.name);
+        continue;
+      }
+      try {
+        const inner = await buildMarkdownFromUpload(
+          engine,
+          entry.name,
+          entry.data,
+          undefined,
+          { source_archive: filename, archive_entry: entry.name },
+          { depth: depth + 1, budget, password: archiveContext?.password }
+        );
+        sections.push(`## Archivdatei: ${entry.name}\n\n${stripMarkdownFrontmatter(inner)}`);
+      } catch (error) {
+        if (error instanceof UnsupportedUploadError) {
+          skipped.push(`${entry.name} (${error.message})`);
+          continue;
+        }
+        throw error;
+      }
+    }
+    if (sections.length === 0) {
+      throw new UnsupportedUploadError("Das ZIP enthält keine unterstützten, lesbaren Dateien.");
+    }
+    if (skipped.length > 0) {
+      sections.push(
+        `## Übersprungene Archivdateien\n\n${skipped.map((name) => `- ${name}`).join("\n")}`
+      );
+    }
+    return withUploadFrontmatter(sections.join("\n\n"), {
+      title: t,
+      type: "document_archive",
+      source_format: "zip",
+      archive_entries: archive.entries.length,
+      archive_processed: sections.length - (skipped.length > 0 ? 1 : 0),
+      archive_skipped: skipped.length,
+      ...extraFrontmatter,
+    });
+  }
+
   if (isDocumentFilePath(filename)) {
-    const extracted = await extractDocumentText(data, ext, { filename });
+    let extracted;
+    try {
+      extracted = await extractDocumentText(data, ext, {
+        filename,
+        password: archiveContext?.password,
+        ocrImage: async (image, imageExtension) =>
+          (await ocrImageBuffer(engine, image, imageExtension)).text,
+      });
+    } catch (error) {
+      if (error instanceof PasswordRequiredError || error instanceof InvalidDocumentPasswordError) {
+        throw error;
+      }
+      throw new UnsupportedUploadError(
+        `Die Datei ${filename} konnte nicht extrahiert werden: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
     if (title) extracted.frontmatter.title = title;
     Object.assign(extracted.frontmatter, extraFrontmatter);
     return synthesizeDocumentMarkdown(filename, extracted);
@@ -321,6 +517,8 @@ async function buildMarkdownFromUpload(
         title: t,
         type: "image",
         extraction_method: "ocr_vision",
+        extraction_status: "ready",
+        extraction_char_count: text.length,
         extraction_unverified: "true",
         ...extraFrontmatter,
       });
@@ -328,14 +526,27 @@ async function buildMarkdownFromUpload(
     // OCR off/unavailable/empty: store an honest placeholder, never garbage.
     return withUploadFrontmatter(
       "> ⚠️ Bild gespeichert, aber kein Text erkannt (OCR deaktiviert oder kein lesbarer Text). Inhalt ist nicht durchsuchbar — ggf. als PDF mit Textebene erneut hochladen.\n",
-      { title: t, type: "image", ...extraFrontmatter }
+      {
+        title: t,
+        type: "image",
+        extraction_method: "none",
+        extraction_status: "failed",
+        extraction_error: "OCR lieferte keinen durchsuchbaren Text.",
+        ...extraFrontmatter,
+      }
     );
   }
 
   if (ext === ".json") {
     const parsed = JSON.parse(data.toString("utf8"));
     const body = "```json\n" + JSON.stringify(parsed, null, 2) + "\n```";
-    return withUploadFrontmatter(body, { title: t, type: "document", ...extraFrontmatter });
+    return withUploadFrontmatter(body, {
+      title: t,
+      type: "document",
+      extraction_method: "native_parser",
+      extraction_status: "ready",
+      ...extraFrontmatter,
+    });
   }
 
   if (UNSUPPORTED_UPLOAD_EXTS.has(ext)) {
@@ -355,7 +566,18 @@ async function buildMarkdownFromUpload(
         `(Foto/Scan als JPG/PNG/HEIC wird per OCR ausgelesen).`
     );
   }
-  return withUploadFrontmatter(`${text}\n`, { title: t, type: "document", ...extraFrontmatter });
+  return withUploadFrontmatter(`${text}\n`, {
+    title: t,
+    type: "document",
+    extraction_method: "native_parser",
+    extraction_status: text.trim() ? "ready" : "failed",
+    extraction_char_count: text.length,
+    ...extraFrontmatter,
+  });
+}
+
+function stripMarkdownFrontmatter(markdown: string): string {
+  return markdown.replace(/^---\n[\s\S]*?\n---\n*/, "").trim();
 }
 
 // ── Large Document Splitting ───────────────────────────────────────────
@@ -433,7 +655,7 @@ function splitExtractedText(text: string, baseSlug: string, baseTitle: string): 
  * its own chunks + embeddings. A parent index page is created that links
  * all parts and contains a summary. Returns the parent slug.
  */
-async function splitAndImportLargeDocument(
+export async function splitAndImportLargeDocument(
   engine: BrainEngine,
   slug: string,
   title: string,
@@ -447,6 +669,19 @@ async function splitAndImportLargeDocument(
 ): Promise<{ parentSlug: string; partSlugs: string[] }> {
   // Extract body from markdown (strip frontmatter)
   const closeIdx = markdown.indexOf("\n---", 3);
+  let extractedFrontmatter: Record<string, unknown> = {};
+  if (markdown.startsWith("---") && closeIdx !== -1) {
+    try {
+      const { load } = await import("js-yaml");
+      const parsed = load(markdown.slice(3, closeIdx).trim());
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        extractedFrontmatter = parsed as Record<string, unknown>;
+      }
+    } catch {
+      // The import below remains authoritative and will surface malformed YAML.
+    }
+  }
+  const effectiveFrontmatter = { ...frontmatter, ...extractedFrontmatter };
   const body =
     closeIdx === -1 ? markdown : markdown.slice(closeIdx + "\n---".length).replace(/^\s*\n/, "");
 
@@ -466,9 +701,9 @@ async function splitAndImportLargeDocument(
   const partSlugs: string[] = [];
   for (const part of parts) {
     const partFrontmatter: Record<string, unknown> = {
-      ...frontmatter,
+      ...effectiveFrontmatter,
       title: part.title,
-      type: "document",
+      type: effectiveFrontmatter.type ?? "document",
       part_of: slug,
       part_index: part.partIndex,
       part_total: part.partTotal,
@@ -487,9 +722,9 @@ async function splitAndImportLargeDocument(
   // Create parent index page with links to all parts
   const indexBody = parts.map((p) => `- [[${p.slug}|${p.title}]]`).join("\n");
   const parentFrontmatter: Record<string, unknown> = {
-    ...frontmatter,
+    ...effectiveFrontmatter,
     title,
-    type: "document",
+    type: effectiveFrontmatter.type ?? "document",
     is_split_parent: true,
     part_count: parts.length,
   };
@@ -506,6 +741,176 @@ async function splitAndImportLargeDocument(
   });
 
   return { parentSlug: slug, partSlugs };
+}
+
+/**
+ * Shared extraction + import orchestrator. Turns an uploaded file into
+ * searchable brain pages: extract → markdown → split/import → stamp case_slug →
+ * tag → auto-trigger legal-pipeline for split docs.
+ *
+ * Used by BOTH the synchronous /api/upload path (small files) and the async
+ * `extract-document` minion handler (large files), so both paths produce
+ * identical results. Does NOT persist the original bytes — the caller owns that
+ * (the async path persists BEFORE queueing so the worker can read them back).
+ */
+export async function runExtractionAndImport(
+  engine: BrainEngine,
+  params: {
+    slug: string;
+    filename: string;
+    data: Buffer;
+    title?: string;
+    tagList?: string[];
+    caseSlug?: string;
+    uploadFrontmatter: Record<string, unknown>;
+    tenantSource: string;
+    noEmbed: boolean;
+    password?: string;
+    matterScope?: string[] | "all";
+    aclGroups?: string[] | "all";
+  }
+): Promise<{ partSlugs: string[] }> {
+  const {
+    slug,
+    filename,
+    data,
+    title,
+    tagList = [],
+    caseSlug,
+    uploadFrontmatter,
+    tenantSource,
+    noEmbed,
+    password,
+    matterScope,
+    aclGroups,
+  } = params;
+
+  const markdown = await buildMarkdownFromUpload(engine, filename, data, title, uploadFrontmatter, {
+    depth: 0,
+    budget: { entries: 0, expandedBytes: 0 },
+    password,
+  });
+
+  const { partSlugs } = await splitAndImportLargeDocument(
+    engine,
+    slug,
+    title ?? filename.replace(/\.[^.]+$/, ""),
+    markdown,
+    uploadFrontmatter,
+    { noEmbed, sourceId: tenantSource, filename }
+  );
+
+  // Stamp case_slug on parent + all parts (defense-in-depth; best effort).
+  if (caseSlug) {
+    for (const s of [slug, ...partSlugs]) {
+      try {
+        await invokeOp(
+          engine,
+          "put_page",
+          {
+            slug: s,
+            frontmatter: { case_slug: caseSlug, assignment_status: "assigned" },
+            merge: true,
+          },
+          tenantSource,
+          undefined,
+          matterScope,
+          aclGroups
+        );
+      } catch {
+        /* enrichment — the document is imported, stamping is best effort */
+      }
+    }
+  }
+
+  // Apply tags to parent + all parts (best effort).
+  if (tagList.length > 0) {
+    for (const s of [slug, ...partSlugs]) {
+      for (const tag of tagList) {
+        try {
+          await invokeOp(
+            engine,
+            "add_tag",
+            { slug: s, tag },
+            tenantSource,
+            undefined,
+            matterScope,
+            aclGroups
+          );
+        } catch {
+          /* best effort */
+        }
+      }
+    }
+  }
+
+  // Extraction readiness and semantic readiness are separate invariants. A
+  // document without vectors may be keyword-searchable, but it is not ready for
+  // semantic retrieval. Stamp every split part and the parent explicitly.
+  for (const s of [slug, ...partSlugs]) {
+    await invokeOp(
+      engine,
+      "put_page",
+      {
+        slug: s,
+        frontmatter: {
+          embedding_status: noEmbed ? "pending" : "ready",
+          ...(noEmbed
+            ? { embedding_pending_since: new Date().toISOString() }
+            : {
+                embedding_completed_at: new Date().toISOString(),
+              }),
+        },
+        merge: true,
+      },
+      tenantSource,
+      undefined,
+      matterScope,
+      aclGroups
+    );
+  }
+
+  if (noEmbed) {
+    try {
+      const queue = new MinionQueue(engine);
+      await queue.add(
+        "embed-backfill",
+        { sourceId: tenantSource, reason: `post_upload:${slug}` },
+        { timeout_ms: 30 * 60 * 1000, max_attempts: 3 },
+        { allowProtectedSubmit: true }
+      );
+    } catch (embeddingQueueError) {
+      console.error(
+        `[web-api] embedding backfill enqueue failed for ${slug}: ${embeddingQueueError instanceof Error ? embeddingQueueError.message : String(embeddingQueueError)}`
+      );
+    }
+  }
+
+  // Auto-trigger the 6-layer legal pipeline for split (large) documents.
+  if (partSlugs.length > 0) {
+    try {
+      const { MinionQueue } = await import("../core/minions/queue.ts");
+      const queue = new MinionQueue(engine);
+      await queue.add(
+        "legal-pipeline",
+        {
+          case_slug: slug,
+          part_slugs: partSlugs,
+          ...(tenantSource !== "default" ? { source_id: tenantSource } : {}),
+          trigger: "post_upload",
+        },
+        { timeout_ms: 60 * 60 * 1000, max_attempts: 1 },
+        { allowProtectedSubmit: true }
+      );
+    } catch (pipelineErr) {
+      console.error(
+        `[web-api] legal-pipeline auto-trigger failed for ${slug}: ` +
+          (pipelineErr instanceof Error ? pipelineErr.message : String(pipelineErr))
+      );
+    }
+  }
+
+  return { partSlugs };
 }
 
 function cleanFrontmatter(input: Record<string, unknown>): Record<string, unknown> {
@@ -527,6 +932,46 @@ async function withUploadFrontmatter(
 ): Promise<string> {
   const yamlBlock = await dumpFrontmatter(frontmatter);
   return `---\n${yamlBlock}\n---\n\n${body}`;
+}
+
+type EnginePostUploadTaskType = "reconcile_case" | "analyze" | "contradiction";
+
+async function persistEnginePostUploadTasks(
+  engine: BrainEngine,
+  sourceId: string,
+  input: {
+    doc_slug: string;
+    case_slug?: string;
+    brain_id: string;
+    doc_title?: string;
+    doc_size?: number;
+    uploaded_at: string;
+  }
+): Promise<void> {
+  const taskTypes: EnginePostUploadTaskType[] = ["analyze"];
+  if (input.case_slug) taskTypes.push("reconcile_case", "contradiction");
+  await Promise.all(
+    taskTypes.map(async (taskType) => {
+      const safe = input.doc_slug.replace(/[^a-z0-9-]/gi, "-").slice(0, 48);
+      const hash = createHash("sha256").update(input.doc_slug).digest("hex").slice(0, 16);
+      const slug = `legal/post-upload-tasks/${taskType}/${safe}-${hash}`;
+      const markdown = await withUploadFrontmatter("", {
+        title: `Post-upload: ${taskType} for ${input.doc_slug}`,
+        type: "post_upload_task",
+        ...input,
+        task_type: taskType,
+        attempts: 0,
+        next_attempt_at: new Date().toISOString(),
+        status: "pending",
+      });
+      await importFromContent(engine, slug, markdown, {
+        noEmbed: true,
+        sourceId,
+        source_kind: "post_upload_outbox",
+        source_uri: `subsumio-outbox:${slug}`,
+      });
+    })
+  );
 }
 
 async function mergeUploadFrontmatter(
@@ -866,7 +1311,7 @@ function readSourcesFor(req: Request): string[] | undefined {
   return [...new Set([own, ...SHARED_READ_SOURCES])];
 }
 
-async function invokeOp(
+export async function invokeOp(
   engine: BrainEngine,
   name: string,
   params: Record<string, unknown>,
@@ -1082,6 +1527,10 @@ interface UploadTokenPayload {
   source: string;
   title?: string;
   tags?: string;
+  filename: string;
+  size: number;
+  mime_type?: string;
+  password_hash?: string;
   exp: number; // Unix seconds
 }
 
@@ -1109,6 +1558,15 @@ function verifyUploadToken(token: string): UploadTokenPayload | null {
   try {
     const payload = JSON.parse(Buffer.from(b64, "base64url").toString()) as UploadTokenPayload;
     if (Date.now() / 1000 > payload.exp) return null;
+    if (
+      !payload.brain_id ||
+      !payload.user_id ||
+      !payload.source ||
+      !payload.filename ||
+      !Number.isSafeInteger(payload.size) ||
+      payload.size <= 0
+    )
+      return null;
     return payload;
   } catch {
     return null;
@@ -1190,12 +1648,41 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
   // run the API key middleware on this route.
   app.post(
     "/api/direct-upload",
+    (req: Request, res: Response, next: NextFunction) => {
+      const token = req.headers["x-upload-token"] as string | undefined;
+      const payload = verifyUploadToken(token ?? "");
+      if (!payload) {
+        res.status(401).json({
+          error: "invalid_upload_token",
+          message: "Upload token is missing, expired, or invalid.",
+        });
+        return;
+      }
+      const fileLimit = maxBytesForUpload(payload.filename);
+      if (payload.size > fileLimit || payload.size > maxUploadBytes()) {
+        res.status(413).json({
+          error: "file_too_large_for_format",
+          message: `Datei überschreitet das Formatlimit von ${Math.round(fileLimit / 1024 / 1024)} MB.`,
+        });
+        return;
+      }
+      const declaredLength = Number(req.headers["content-length"] ?? 0);
+      if (Number.isFinite(declaredLength) && declaredLength > maxUploadBytes()) {
+        res.status(413).json({ error: "upload_transport_limit_exceeded" });
+        return;
+      }
+      if (Number.isFinite(declaredLength) && declaredLength > payload.size + 1024 * 1024) {
+        res.status(400).json({ error: "upload_token_size_mismatch" });
+        return;
+      }
+      req.uploadTokenPayload = payload;
+      next();
+    },
     express.raw({ type: () => true, limit: maxUploadBytes() }),
     async (req: Request, res: Response) => {
       try {
-        // Validate upload token
-        const token = req.headers["x-upload-token"] as string | undefined;
-        const payload = verifyUploadToken(token ?? "");
+        // Token was validated before express.raw allocated the request body.
+        const payload = req.uploadTokenPayload;
         if (!payload) {
           res.status(401).json({
             error: "invalid_upload_token",
@@ -1209,7 +1696,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         if (declaredLength > maxUploadBytes()) {
           res.status(413).json({
             error: "file_too_large",
-            message: `Datei überschreitet das Limit von ${Math.round(maxUploadBytes() / 1024 / 1024 / 1024)} GB.`,
+            message: `Upload überschreitet das Transportlimit von ${Math.round(maxUploadBytes() / 1024 / 1024)} MB.`,
           });
           return;
         }
@@ -1223,33 +1710,64 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           res.status(400).json({ error: "empty_body" });
           return;
         }
-
         const { fields, file } = parseMultipart(req.body, contentType);
         if (!file) {
           res.status(400).json({ error: "missing_file" });
           return;
         }
+        if ((fields.password?.length ?? 0) > 255) {
+          res.status(400).json({ error: "document_password_too_long" });
+          return;
+        }
+        const fileLimit = maxBytesForUpload(file.filename);
+        if (file.data.byteLength > fileLimit) {
+          res.status(413).json({
+            error: "file_too_large_for_format",
+            message: `Datei überschreitet das Formatlimit von ${Math.round(fileLimit / 1024 / 1024)} MB.`,
+          });
+          return;
+        }
+
+        if (file.filename !== payload.filename || file.data.byteLength !== payload.size) {
+          res.status(400).json({
+            error: "upload_token_file_mismatch",
+            message: "Upload-Token gehört zu einer anderen Datei.",
+          });
+          return;
+        }
+        if (payload.mime_type && file.mimeType && payload.mime_type !== file.mimeType) {
+          res.status(400).json({
+            error: "upload_token_mime_mismatch",
+            message: "MIME-Typ stimmt nicht mit dem Upload-Token überein.",
+          });
+          return;
+        }
+        const suppliedPassword = fields.password || undefined;
+        const suppliedPasswordHash = suppliedPassword
+          ? createHash("sha256").update(suppliedPassword).digest("hex")
+          : undefined;
+        if (payload.password_hash !== suppliedPasswordHash) {
+          res.status(400).json({
+            error: "upload_token_password_mismatch",
+            message: "Das Dokumentkennwort stimmt nicht mit dem Upload-Token überein.",
+          });
+          return;
+        }
+
+        if (!isSafeUploadFilename(file.filename)) {
+          res.status(400).json({ error: "invalid_filename", message: "Ungültiger Dateiname." });
+          return;
+        }
+        if (!isSupportedUploadFilename(file.filename)) {
+          res.status(415).json({
+            error: "unsupported_file_type",
+            message: `Das Dateiformat von ${file.filename} wird nicht unterstützt.`,
+          });
+          return;
+        }
 
         // MIME-type allowlist (same as regular upload)
-        const ALLOWED_ENGINE_MIMES = new Set([
-          "application/pdf",
-          "text/markdown",
-          "text/plain",
-          "text/html",
-          "application/msword",
-          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-          "application/vnd.oasis.opendocument.text",
-          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-          "application/vnd.oasis.opendocument.spreadsheet",
-          "application/rtf",
-          "image/png",
-          "image/jpeg",
-          "image/tiff",
-          "application/json",
-          "application/xml",
-          "application/octet-stream",
-        ]);
-        if (file.mimeType && !ALLOWED_ENGINE_MIMES.has(file.mimeType)) {
+        if (file.mimeType && !ALLOWED_ENGINE_UPLOAD_MIMES.has(file.mimeType.toLowerCase())) {
           res.status(415).json({
             error: "unsupported_file_type",
             message: `Dateityp ${file.mimeType} ist nicht erlaubt.`,
@@ -1257,9 +1775,18 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           return;
         }
 
+        const security = await inspectUploadBytes(file.filename, file.data);
+        if (!security.ok) {
+          res.status(security.code === "scanner_unavailable" ? 503 : 422).json({
+            error: security.code,
+            message: security.message,
+          });
+          return;
+        }
+
         // Use token payload for routing
-        const source = payload.source || fields.source || "documents";
-        const title = payload.title || fields.title || undefined;
+        const source = payload.source;
+        const title = payload.title || undefined;
 
         let tagList: string[] = [];
         if (payload.tags) {
@@ -1268,21 +1795,6 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
             tagList = Array.isArray(parsed) ? parsed.map(String) : [];
           } catch {
             tagList = [];
-          }
-        } else if (fields.tags) {
-          try {
-            const parsed = JSON.parse(fields.tags);
-            tagList = Array.isArray(parsed)
-              ? parsed.map(String)
-              : fields.tags
-                  .split(",")
-                  .map((t) => t.trim())
-                  .filter(Boolean);
-          } catch {
-            tagList = fields.tags
-              .split(",")
-              .map((t) => t.trim())
-              .filter(Boolean);
           }
         }
 
@@ -1295,6 +1807,16 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
 
         const opCtx = buildOperationContext(engine, {}, { remote: false, sourceId: tenantSource });
 
+        const duplicate = await storedDuplicate(file.data, tenantSource);
+        if (duplicate) {
+          res.status(409).json({
+            error: "duplicate_file",
+            message: `Datei bereits vorhanden: ${duplicate.filename}`,
+            existing_slug: duplicate.page_slug,
+          });
+          return;
+        }
+
         // beA-Export (XML)
         if (file.filename.toLowerCase().endsWith(".xml")) {
           try {
@@ -1304,9 +1826,10 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
             const item = connector.parseBeaXmlContent(file.data.toString("utf8"), file.filename);
             if (item) {
               const event = await connector.toIngestionEvent(item);
-              const beaSlug =
+              let beaSlug =
                 String((event.metadata as Record<string, unknown> | undefined)?.slug ?? "") ||
                 slugFromUpload(source, file.filename, title);
+              beaSlug = await versionUploadSlug(beaSlug, file.data, tenantSource);
               await importFromContent(engine, beaSlug, event.content, {
                 noEmbed,
                 sourceId: tenantSource,
@@ -1318,9 +1841,35 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
                 file,
                 beaSlug,
                 tenantSource,
-                opCtx.config.storage
+                opCtx.config.storage,
+                "clean"
               );
+              if (!persistRes.ok) {
+                res.status(500).json({
+                  error: "persist_failed",
+                  message: "Originaldatei konnte nicht dauerhaft gespeichert werden.",
+                  persist_error: persistRes.error,
+                });
+                return;
+              }
               const beaPage = await engine.getPage(beaSlug, { sourceId: tenantSource });
+              let postUploadQueued = true;
+              try {
+                await persistEnginePostUploadTasks(engine, tenantSource, {
+                  doc_slug: beaSlug,
+                  case_slug: payload.case_slug?.trim() || undefined,
+                  brain_id: tenantSource,
+                  doc_title: beaPage?.title ?? item.title,
+                  doc_size: file.data.byteLength,
+                  uploaded_at: new Date().toISOString(),
+                });
+              } catch (queueError) {
+                postUploadQueued = false;
+                console.error(
+                  "[direct-upload] failed to persist beA post-upload tasks:",
+                  queueError
+                );
+              }
               const beaWebUrl = process.env.SUBSUMIO_WEB_URL?.replace(/\/$/, "");
               const beaInternalSecret = process.env.SUBSUMIO_INTERNAL_SECRET;
               if (beaWebUrl && beaInternalSecret) {
@@ -1333,25 +1882,33 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
                     },
                     body: JSON.stringify({
                       doc_slug: beaSlug,
-                      case_slug: payload.case_slug?.trim() || fields.case_slug?.trim() || undefined,
+                      case_slug: payload.case_slug?.trim() || undefined,
                       brain_id: tenantSource,
                       doc_title: beaPage?.title ?? item.title,
                       doc_size: file.data.byteLength,
                       uploaded_at: new Date().toISOString(),
                     }),
                     signal: AbortSignal.timeout(60_000),
-                  }).catch((err) => {
-                    console.error(
-                      "[direct-upload] beA post-upload callback failed (non-fatal):",
-                      err instanceof Error ? err.message : String(err)
-                    );
-                  });
+                  })
+                    .then(async (callbackRes) => {
+                      if (!callbackRes.ok)
+                        throw new Error(
+                          `HTTP ${callbackRes.status}: ${(await callbackRes.text()).slice(0, 300)}`
+                        );
+                    })
+                    .catch((err) => {
+                      console.error(
+                        "[direct-upload] beA post-upload callback failed (non-fatal):",
+                        err instanceof Error ? err.message : String(err)
+                      );
+                    });
                 });
               }
               res.json({
                 slug: beaSlug,
                 title: beaPage?.title ?? item.title,
                 original_persisted: persistRes.ok,
+                post_upload_queued: postUploadQueued,
                 ...(persistRes.ok ? {} : { persist_error: persistRes.error }),
               });
               return;
@@ -1363,8 +1920,9 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           }
         }
 
-        const slug = slugFromUpload(source, file.filename, title);
-        const caseSlug = payload.case_slug?.trim() || fields.case_slug?.trim();
+        let slug = slugFromUpload(source, file.filename, title);
+        slug = await versionUploadSlug(slug, file.data, tenantSource);
+        const caseSlug = payload.case_slug?.trim();
 
         const uploadFrontmatter: Record<string, unknown> = {
           source: "upload",
@@ -1373,83 +1931,113 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           upload_source: "direct",
           ...(caseSlug ? { case_slug: caseSlug, assignment_status: "assigned" } : {}),
         };
-        const markdown = await buildMarkdownFromUpload(
-          engine,
-          file.filename,
-          file.data,
-          title,
-          uploadFrontmatter
-        );
+        // Never persist a document password in Minion job JSON. Password-bearing
+        // uploads are processed in the request and the secret dies with it.
+        const asyncExtract = file.data.byteLength >= asyncExtractMinBytes() && !suppliedPassword;
 
-        const { parentSlug, partSlugs } = await splitAndImportLargeDocument(
-          engine,
+        // Persist original bytes (GoBD § 147 AO). For the async path this MUST
+        // happen before queueing so the extract-document worker can read the
+        // bytes back from durable storage.
+        const persistRes = await persistUploadBytes(
+          file,
           slug,
-          title ?? file.filename.replace(/\.[^.]+$/, ""),
-          markdown,
-          uploadFrontmatter,
-          { noEmbed, sourceId: tenantSource, filename: file.filename }
+          tenantSource,
+          opCtx.config.storage,
+          "clean"
         );
 
-        // Persist original bytes (GoBD § 147 AO)
-        const persistRes = await persistUploadBytes(file, slug, tenantSource, opCtx.config.storage);
-
-        // Stamp case_slug via invokeOp (same as regular upload route)
-        if (caseSlug) {
-          try {
-            await invokeOp(
-              engine,
-              "put_page",
-              {
-                slug,
-                frontmatter: { case_slug: caseSlug, assignment_status: "assigned" },
-                merge: true,
-              },
-              tenantSource
-            );
-          } catch {
-            /* best effort — the document is imported, stamping is enrichment */
-          }
+        if (!persistRes.ok) {
+          res.status(500).json({
+            error: "persist_failed",
+            message: "Originaldatei konnte nicht dauerhaft gespeichert werden.",
+            persist_error: persistRes.error,
+          });
+          return;
         }
 
-        // Tag the page (and all parts if split)
-        const allSlugs = [slug, ...partSlugs];
-        if (tagList.length > 0) {
-          for (const s of allSlugs) {
-            for (const tag of tagList) {
-              try {
-                await invokeOp(engine, "add_tag", { slug: s, tag }, tenantSource);
-              } catch {
-                /* best effort */
-              }
-            }
+        let partSlugs: string[] = [];
+        if (asyncExtract) {
+          if (!persistRes.ok) {
+            res.status(500).json({
+              error: "persist_failed",
+              message:
+                "Originaldatei konnte nicht gespeichert werden; Extraktion wurde nicht eingereiht.",
+              persist_error: persistRes.error,
+            });
+            return;
           }
-        }
-
-        // ── v0.44: Auto-trigger Legal Agent Pipeline for large documents ──
-        if (partSlugs.length > 0) {
-          try {
-            const { MinionQueue } = await import("../core/minions/queue.ts");
-            const queue = new MinionQueue(engine);
-            await queue.add(
-              "legal-pipeline",
-              {
-                case_slug: slug,
-                part_slugs: partSlugs,
-                ...(tenantSource !== "default" ? { source_id: tenantSource } : {}),
-                trigger: "post_upload",
+          // Stub page so the document is visible as `processing` immediately.
+          // The extract-document worker overwrites it with the extracted
+          // content (and the terminal extraction_status) on completion.
+          await invokeOp(
+            engine,
+            "put_page",
+            {
+              slug,
+              title: title ?? file.filename.replace(/\.[^.]+$/, ""),
+              content: "> ⏳ Dokument wird verarbeitet … Extraktion läuft im Hintergrund.\n",
+              frontmatter: {
+                ...uploadFrontmatter,
+                type: uploadFrontmatter.type ?? "document",
+                extraction_status: "processing",
+                extraction_queued_at: new Date().toISOString(),
+                upload_size: file.data.byteLength,
               },
-              { timeout_ms: 60 * 60 * 1000, max_attempts: 1 },
-              { allowProtectedSubmit: true }
-            );
-          } catch (pipelineErr) {
-            console.error(
-              `[web-api] legal-pipeline auto-trigger failed for ${slug}: ` +
-                (pipelineErr instanceof Error ? pipelineErr.message : String(pipelineErr))
-            );
-          }
+              merge: false,
+            },
+            tenantSource
+          );
+
+          const { MinionQueue } = await import("../core/minions/queue.ts");
+          const queue = new MinionQueue(engine);
+          await queue.add(
+            "extract-document",
+            {
+              slug,
+              filename: file.filename,
+              title,
+              tags: tagList,
+              case_slug: caseSlug || undefined,
+              source_id: tenantSource,
+              no_embed: noEmbed,
+              password: suppliedPassword,
+              upload_frontmatter: uploadFrontmatter,
+            },
+            { timeout_ms: 60 * 60 * 1000, max_attempts: 3 },
+            { allowProtectedSubmit: true }
+          );
+        } else {
+          const result = await runExtractionAndImport(engine, {
+            slug,
+            filename: file.filename,
+            data: file.data,
+            title,
+            tagList,
+            caseSlug: caseSlug || undefined,
+            uploadFrontmatter,
+            tenantSource,
+            noEmbed,
+            password: suppliedPassword,
+          });
+          partSlugs = result.partSlugs;
         }
 
         const page = await engine.getPage(slug, { sourceId: tenantSource });
+
+        let postUploadQueued = true;
+        try {
+          await persistEnginePostUploadTasks(engine, tenantSource, {
+            doc_slug: slug,
+            case_slug: caseSlug || undefined,
+            brain_id: tenantSource,
+            doc_title: page?.title ?? title ?? slug.split("/").pop() ?? slug,
+            doc_size: file.data.byteLength,
+            uploaded_at: new Date().toISOString(),
+          });
+        } catch (queueError) {
+          postUploadQueued = false;
+          console.error("[direct-upload] failed to persist post-upload tasks:", queueError);
+        }
 
         // ── Post-upload callback to web app ──────────────────────────────
         // Fire reconcileCaseDocuments + contradiction probe on the web app
@@ -1474,12 +2062,19 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
                 uploaded_at: new Date().toISOString(),
               }),
               signal: AbortSignal.timeout(60_000),
-            }).catch((err) => {
-              console.error(
-                "[direct-upload] post-upload callback failed (non-fatal):",
-                err instanceof Error ? err.message : String(err)
-              );
-            });
+            })
+              .then(async (callbackRes) => {
+                if (!callbackRes.ok)
+                  throw new Error(
+                    `HTTP ${callbackRes.status}: ${(await callbackRes.text()).slice(0, 300)}`
+                  );
+              })
+              .catch((err) => {
+                console.error(
+                  "[direct-upload] post-upload callback failed (non-fatal):",
+                  err instanceof Error ? err.message : String(err)
+                );
+              });
           });
         }
 
@@ -1488,6 +2083,13 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           slug,
           title: page?.title ?? title ?? slug.split("/").pop() ?? slug,
           original_persisted: persistRes.ok,
+          post_upload_queued: postUploadQueued,
+          // async=true → extraction runs in the worker; the client should poll
+          // GET the page's extraction_status until it leaves "processing".
+          async: asyncExtract,
+          extraction_status: page?.frontmatter?.extraction_status,
+          extraction_method: page?.frontmatter?.extraction_method,
+          extraction_warnings: page?.frontmatter?.extraction_warnings,
           ...(partSlugs.length > 0
             ? { split: true, part_count: partSlugs.length, part_slugs: partSlugs }
             : {}),
@@ -1495,6 +2097,27 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         });
       } catch (err) {
         console.error("[direct-upload] error:", err instanceof Error ? err.message : String(err));
+        if (err instanceof UnsupportedUploadError) {
+          res.status(415).json({ error: "unsupported_format", message: err.message });
+          return;
+        }
+        if (err instanceof PasswordRequiredError) {
+          res.status(422).json({
+            error: "password_required",
+            format: err.format,
+            message:
+              "Die Datei ist passwortgeschützt. Bitte Kennwort eingeben und erneut hochladen.",
+          });
+          return;
+        }
+        if (err instanceof InvalidDocumentPasswordError) {
+          res.status(422).json({
+            error: "invalid_document_password",
+            format: err.format,
+            message: "Das Dokumentkennwort ist falsch.",
+          });
+          return;
+        }
         res.status(500).json({ error: "upload_failed", message: "Upload fehlgeschlagen." });
       }
     }
@@ -2366,6 +2989,49 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     }
   });
 
+  // Irreversible binary purge for GDPR/account-erasure workflows. Normal page
+  // deletion stays recoverable; only an authenticated explicit DELETE reaches
+  // this endpoint.
+  app.delete("/api/files/{*slug}", async (req: Request, res: Response) => {
+    try {
+      const slugParam = req.params.slug;
+      const slug = Array.isArray(slugParam) ? slugParam.join("/") : String(slugParam ?? "");
+      if (!slug) {
+        res.status(400).json({ error: "missing_slug" });
+        return;
+      }
+      const sourceId = requestSourceId(req);
+      const pageForScope = await engine.getPage(slug, { sourceId, includeDeleted: true });
+      assertMatterScope(req.matterScope, slug, readCaseSlug(pageForScope));
+      const { purgeStoredFilesForPage } = await import("../core/file-store.ts");
+      const deleted = await purgeStoredFilesForPage(slug, sourceId, ctx(req).config.storage);
+      res.json({ ok: true, deleted });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "unknown";
+      const status = e instanceof EngineNotFoundError ? 404 : 500;
+      res.status(status).json({ error: "file_purge_failed", message: msg });
+    }
+  });
+
+  // Tenant-wide irreversible erasure. This deliberately lives behind the
+  // normal API-key/source middleware and is used only for personal-account
+  // deletion; organisation data is never erased when a member leaves.
+  app.delete("/api/source-data", async (req: Request, res: Response) => {
+    try {
+      const sourceId = requestSourceId(req);
+      const { purgeStoredFilesForSource } = await import("../core/file-store.ts");
+      const originalsDeleted = await purgeStoredFilesForSource(sourceId, ctx(req).config.storage);
+      const result = await engine.executeRaw<{ id: number }>(
+        "DELETE FROM pages WHERE source_id = $1 RETURNING id",
+        [sourceId]
+      );
+      res.json({ ok: true, originals_deleted: originalsDeleted, pages_deleted: result.length });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "unknown";
+      res.status(500).json({ error: "source_data_purge_failed", message: msg });
+    }
+  });
+
   // DSGVO Art. 20 (Datenübertragbarkeit): vollständiger Export aller Seiten
   // der Tenant-Source inkl. Volltext + Frontmatter + Tags. Streng auf die
   // anfragende Source gescopt — auch im lokalen 'default'-Modus.
@@ -2838,7 +3504,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         if (declaredLength > maxUploadBytes()) {
           res.status(413).json({
             error: "file_too_large",
-            message: `Datei überschreitet das Limit von ${Math.round(maxUploadBytes() / 1024 / 1024 / 1024)} GB.`,
+            message: `Upload überschreitet das Transportlimit von ${Math.round(maxUploadBytes() / 1024 / 1024)} MB.`,
           });
           return;
         }
@@ -2858,32 +3524,47 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           res.status(400).json({ error: "missing_file" });
           return;
         }
+        if ((fields.password?.length ?? 0) > 255) {
+          res.status(400).json({ error: "document_password_too_long" });
+          return;
+        }
+        const fileLimit = maxBytesForUpload(file.filename);
+        if (file.data.byteLength > fileLimit) {
+          res.status(413).json({
+            error: "file_too_large_for_format",
+            message: `Datei überschreitet das Formatlimit von ${Math.round(fileLimit / 1024 / 1024)} MB.`,
+          });
+          return;
+        }
+
+        if (!isSafeUploadFilename(file.filename)) {
+          res.status(400).json({ error: "invalid_filename", message: "Ungültiger Dateiname." });
+          return;
+        }
+        if (!isSupportedUploadFilename(file.filename)) {
+          res.status(415).json({
+            error: "unsupported_file_type",
+            message: `Das Dateiformat von ${file.filename} wird nicht unterstützt.`,
+          });
+          return;
+        }
 
         // Defense-in-depth: validate MIME type on the engine side too, so a
         // direct caller bypassing the web layer can't inject arbitrary MIME
         // types. Aligned with the web-layer allowlist in upload-validation.ts.
-        const ALLOWED_ENGINE_MIMES = new Set([
-          "application/pdf",
-          "text/markdown",
-          "text/plain",
-          "text/html",
-          "application/msword",
-          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-          "application/vnd.oasis.opendocument.text",
-          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-          "application/vnd.oasis.opendocument.spreadsheet",
-          "application/rtf",
-          "image/png",
-          "image/jpeg",
-          "image/tiff",
-          "application/json",
-          "application/xml",
-          "application/octet-stream",
-        ]);
-        if (file.mimeType && !ALLOWED_ENGINE_MIMES.has(file.mimeType)) {
+        if (file.mimeType && !ALLOWED_ENGINE_UPLOAD_MIMES.has(file.mimeType.toLowerCase())) {
           res.status(415).json({
             error: "unsupported_file_type",
             message: `Dateityp ${file.mimeType} ist nicht erlaubt.`,
+          });
+          return;
+        }
+
+        const security = await inspectUploadBytes(file.filename, file.data);
+        if (!security.ok) {
+          res.status(security.code === "scanner_unavailable" ? 503 : 422).json({
+            error: security.code,
+            message: security.message,
           });
           return;
         }
@@ -2912,6 +3593,16 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         const tenantSource = opCtx.sourceId ?? "default";
         await ensureSource(tenantSource);
 
+        const duplicate = await storedDuplicate(file.data, tenantSource);
+        if (duplicate) {
+          res.status(409).json({
+            error: "duplicate_file",
+            message: `Datei bereits vorhanden: ${duplicate.filename}`,
+            existing_slug: duplicate.page_slug,
+          });
+          return;
+        }
+
         // Same embedding posture as put_page: skip embedding when no
         // provider is configured instead of failing the whole upload.
         const { isAvailable } = await import("../core/ai/gateway.ts");
@@ -2929,9 +3620,10 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
             const item = connector.parseBeaXmlContent(file.data.toString("utf8"), file.filename);
             if (item) {
               const event = await connector.toIngestionEvent(item);
-              const beaSlug =
+              let beaSlug =
                 String((event.metadata as Record<string, unknown> | undefined)?.slug ?? "") ||
                 slugFromUpload(source, file.filename, title);
+              beaSlug = await versionUploadSlug(beaSlug, file.data, tenantSource);
               await importFromContent(engine, beaSlug, event.content, {
                 noEmbed,
                 sourceId: tenantSource,
@@ -2943,8 +3635,17 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
                 file,
                 beaSlug,
                 tenantSource,
-                opCtx.config.storage
+                opCtx.config.storage,
+                "clean"
               );
+              if (!persistRes.ok) {
+                res.status(500).json({
+                  error: "persist_failed",
+                  message: "Originaldatei konnte nicht dauerhaft gespeichert werden.",
+                  persist_error: persistRes.error,
+                });
+                return;
+              }
               assertMatterScope(req.matterScope, beaSlug);
               const beaPage = await engine.getPage(beaSlug, { sourceId: opCtx.sourceId });
               res.json({
@@ -2963,7 +3664,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           }
         }
 
-        const slug = slugFromUpload(source, file.filename, title);
+        let slug = slugFromUpload(source, file.filename, title);
+        slug = await versionUploadSlug(slug, file.data, tenantSource);
 
         // P0-SECR-002: case uploads require the caller to be scoped to the target case.
         const caseSlug = fields.case_slug?.trim();
@@ -2974,104 +3676,101 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           source_format: extname(file.filename).replace(/^\./, "").toLowerCase() || undefined,
           ...(caseSlug ? { case_slug: caseSlug, assignment_status: "assigned" } : {}),
         };
-        const markdown = await buildMarkdownFromUpload(
-          engine,
-          file.filename,
-          file.data,
-          title,
-          uploadFrontmatter
-        );
+        // Passwords are request-scoped secrets and must never be serialized into
+        // the persistent Minion queue. Process encrypted documents synchronously.
+        const asyncExtract = file.data.byteLength >= asyncExtractMinBytes() && !fields.password;
 
-        const { parentSlug, partSlugs } = await splitAndImportLargeDocument(
-          engine,
+        // Persist the ORIGINAL bytes via the binary-storage SSOT (§ 147 AO /
+        // GoBD). For the async path this MUST happen before queueing so the
+        // extract-document worker can read them back.
+        const persistRes = await persistUploadBytes(
+          file,
           slug,
-          title ?? file.filename.replace(/\.[^.]+$/, ""),
-          markdown,
-          uploadFrontmatter,
-          { noEmbed, sourceId: tenantSource, filename: file.filename }
+          tenantSource,
+          opCtx.config.storage,
+          "clean"
         );
 
-        // Persist the ORIGINAL bytes via the binary-storage SSOT so the document
-        // can be downloaded unaltered later (§ 147 AO / GoBD). Best-effort: the
-        // extracted markdown is the searchable record; byte retention is additive.
-        // The result is surfaced in the response so the caller knows if the
-        // original was retained — a silent GoBD loss is a compliance violation.
-        const persistRes = await persistUploadBytes(file, slug, tenantSource, opCtx.config.storage);
-
-        // Defense-in-depth: case_slug is already part of the initial markdown
-        // import above. This merge keeps older engine versions/routes aligned
-        // if they imported before atomic upload frontmatter existed.
-        if (caseSlug) {
-          for (const s of [slug, ...partSlugs]) {
-            try {
-              await invokeOp(
-                engine,
-                "put_page",
-                {
-                  slug: s,
-                  frontmatter: { case_slug: caseSlug, assignment_status: "assigned" },
-                  merge: true,
-                },
-                tenantSource,
-                undefined,
-                req.matterScope ?? "all",
-                req.aclGroups ?? "all"
-              );
-            } catch {
-              /* best effort — the document is imported, stamping is enrichment */
-            }
-          }
+        if (!persistRes.ok) {
+          res.status(500).json({
+            error: "persist_failed",
+            message: "Originaldatei konnte nicht dauerhaft gespeichert werden.",
+            persist_error: persistRes.error,
+          });
+          return;
         }
 
-        // Tag the page (and all parts if split)
-        const allSlugs = [slug, ...partSlugs];
-        if (tagList.length > 0) {
-          for (const s of allSlugs) {
-            for (const tag of tagList) {
-              try {
-                await invokeOp(
-                  engine,
-                  "add_tag",
-                  { slug: s, tag },
-                  tenantSource,
-                  undefined,
-                  req.matterScope ?? "all",
-                  req.aclGroups ?? "all"
-                );
-              } catch {
-                /* best effort */
-              }
-            }
+        let partSlugs: string[] = [];
+        if (asyncExtract) {
+          if (!persistRes.ok) {
+            res.status(500).json({
+              error: "persist_failed",
+              message:
+                "Originaldatei konnte nicht gespeichert werden; Extraktion wurde nicht eingereiht.",
+              persist_error: persistRes.error,
+            });
+            return;
           }
-        }
-
-        // ── v0.44: Auto-trigger Legal Agent Pipeline for large documents ──
-        // When a document is split into parts (large PDF), automatically
-        // submit a legal-pipeline job to process the case file through the
-        // 6-layer agent pipeline (ON-Scanner → Entity → Forensic → Damage
-        // → Drafter → Critic). Best-effort: if queue submission fails, the
-        // upload itself still succeeds.
-        if (partSlugs.length > 0) {
-          try {
-            const { MinionQueue } = await import("../core/minions/queue.ts");
-            const queue = new MinionQueue(engine);
-            await queue.add(
-              "legal-pipeline",
-              {
-                case_slug: slug,
-                part_slugs: partSlugs,
-                ...(tenantSource !== "default" ? { source_id: tenantSource } : {}),
-                trigger: "post_upload",
+          // Stub page so the document is visible as `processing` immediately;
+          // the extract-document worker overwrites it on completion.
+          await invokeOp(
+            engine,
+            "put_page",
+            {
+              slug,
+              title: title ?? file.filename.replace(/\.[^.]+$/, ""),
+              content: "> ⏳ Dokument wird verarbeitet … Extraktion läuft im Hintergrund.\n",
+              frontmatter: {
+                ...uploadFrontmatter,
+                type: uploadFrontmatter.type ?? "document",
+                extraction_status: "processing",
+                extraction_queued_at: new Date().toISOString(),
+                upload_size: file.data.byteLength,
               },
-              { timeout_ms: 60 * 60 * 1000, max_attempts: 1 },
-              { allowProtectedSubmit: true }
-            );
-          } catch (pipelineErr) {
-            console.error(
-              `[web-api] legal-pipeline auto-trigger failed for ${slug}: ` +
-                (pipelineErr instanceof Error ? pipelineErr.message : String(pipelineErr))
-            );
-          }
+              merge: false,
+            },
+            tenantSource,
+            undefined,
+            req.matterScope ?? "all",
+            req.aclGroups ?? "all"
+          );
+
+          const { MinionQueue } = await import("../core/minions/queue.ts");
+          const queue = new MinionQueue(engine);
+          await queue.add(
+            "extract-document",
+            {
+              slug,
+              filename: file.filename,
+              title,
+              tags: tagList,
+              case_slug: caseSlug || undefined,
+              source_id: tenantSource,
+              no_embed: noEmbed,
+              password: fields.password || undefined,
+              upload_frontmatter: uploadFrontmatter,
+              matter_scope: req.matterScope ?? "all",
+              acl_groups: req.aclGroups ?? "all",
+            },
+            { timeout_ms: 60 * 60 * 1000, max_attempts: 3 },
+            { allowProtectedSubmit: true }
+          );
+        } else {
+          const result = await runExtractionAndImport(engine, {
+            slug,
+            filename: file.filename,
+            data: file.data,
+            title,
+            tagList,
+            caseSlug: caseSlug || undefined,
+            uploadFrontmatter,
+            tenantSource,
+            noEmbed,
+            password: fields.password || undefined,
+            matterScope: req.matterScope ?? "all",
+            aclGroups: req.aclGroups ?? "all",
+          });
+          partSlugs = result.partSlugs;
         }
 
         assertMatterScope(req.matterScope, slug);
@@ -3080,6 +3779,11 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           slug,
           title: page?.title ?? title ?? slug.split("/").pop() ?? slug,
           original_persisted: persistRes.ok,
+          // async=true → extraction runs in the worker; poll extraction_status.
+          async: asyncExtract,
+          extraction_status: page?.frontmatter?.extraction_status,
+          extraction_method: page?.frontmatter?.extraction_method,
+          extraction_warnings: page?.frontmatter?.extraction_warnings,
           ...(partSlugs.length > 0
             ? { split: true, part_count: partSlugs.length, part_slugs: partSlugs }
             : {}),
@@ -3093,7 +3797,844 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           res.status(415).json({ error: "unsupported_format", message: msg });
           return;
         }
+        if (e instanceof PasswordRequiredError) {
+          res.status(422).json({
+            error: "password_required",
+            format: e.format,
+            message:
+              "Die Datei ist passwortgeschützt. Bitte Kennwort eingeben und erneut hochladen.",
+          });
+          return;
+        }
+        if (e instanceof InvalidDocumentPasswordError) {
+          res.status(422).json({
+            error: "invalid_document_password",
+            format: e.format,
+            message: "Das Dokumentkennwort ist falsch.",
+          });
+          return;
+        }
         res.status(500).json({ error: "upload_failed", message: msg });
+      }
+    }
+  );
+
+  // ============================================================
+  // Presigned URL Upload — direct-to-storage flow for large files
+  // ============================================================
+  // Eliminates RAM pressure from large uploads by letting the client
+  // PUT directly to S3/R2/MinIO. Three-step flow:
+  //   1. POST /api/upload/presign → presigned URL + upload_token
+  //   2. Client PUTs file bytes directly to storage provider
+  //   3. POST /api/upload/confirm → engine downloads, scans, extracts
+  //
+  // For local storage (no presigned URL support), the presign endpoint
+  // returns a fallback streaming endpoint URL so the client can still
+  // upload via multipart to the engine.
+
+  // In-memory upload-token store. Tracks pending presigned uploads so
+  // the confirm step can validate the caller and retrieve metadata.
+  // Tokens expire after 1 hour (matching the presigned URL default).
+  interface PendingUpload {
+    token: string;
+    storagePath: string;
+    filename: string;
+    mimeType: string;
+    expectedSize: number;
+    sourceId: string;
+    caseSlug?: string;
+    title?: string;
+    tags?: string[];
+    password?: string;
+    createdAt: number;
+    expiresAt: number;
+  }
+  const pendingUploads = new Map<string, PendingUpload>();
+  const UPLOAD_TOKEN_TTL_MS = 60 * 60 * 1000; // 1 hour
+
+  // Cleanup expired tokens every 5 minutes
+  setInterval(
+    () => {
+      const now = Date.now();
+      for (const [token, entry] of pendingUploads) {
+        if (now > entry.expiresAt) pendingUploads.delete(token);
+      }
+    },
+    5 * 60 * 1000
+  ).unref?.();
+
+  app.post(
+    "/api/upload/presign",
+    express.json({ limit: "1mb" }),
+    async (req: Request, res: Response) => {
+      try {
+        if (process.env.SUBSUMIO_PRESIGNED_UPLOAD_ENABLED !== "true") {
+          res.status(503).json({
+            error: "presigned_upload_disabled",
+            message:
+              "Presigned Upload ist bis zur persistenten Session-/Streaming-Abnahme deaktiviert.",
+          });
+          return;
+        }
+        const body = req.body as Record<string, unknown>;
+        const filename = String(body.filename ?? "");
+        const expectedSize = Number(body.size);
+        if (!filename) {
+          res.status(400).json({ error: "missing_filename", message: "filename is required" });
+          return;
+        }
+        if (!isSafeUploadFilename(filename)) {
+          res.status(400).json({ error: "invalid_filename", message: "Ungültiger Dateiname." });
+          return;
+        }
+        if (!isSupportedUploadFilename(filename)) {
+          res.status(415).json({
+            error: "unsupported_file_type",
+            message: `Das Dateiformat von ${filename} wird nicht unterstützt.`,
+          });
+          return;
+        }
+        const maxForFormat = maxBytesForUpload(filename);
+        if (
+          !Number.isSafeInteger(expectedSize) ||
+          expectedSize <= 0 ||
+          expectedSize > maxForFormat
+        ) {
+          res.status(413).json({
+            error: "file_too_large_for_format",
+            message: `Datei überschreitet das Formatlimit von ${Math.round(maxForFormat / 1024 / 1024)} MB oder die Größe fehlt.`,
+          });
+          return;
+        }
+
+        const opCtx = ctx(req);
+        const tenantSource = opCtx.sourceId ?? "default";
+        const caseSlug = body.case_slug ? String(body.case_slug).trim() : undefined;
+        if (caseSlug) assertMatterScope(req.matterScope, caseSlug);
+
+        const mimeType =
+          String(body.content_type ?? "") ||
+          FILE_MIME_TYPES[extname(filename).toLowerCase()] ||
+          "application/octet-stream";
+
+        // Validate MIME against allowlist
+        if (mimeType && !ALLOWED_ENGINE_UPLOAD_MIMES.has(mimeType.toLowerCase())) {
+          res.status(415).json({
+            error: "unsupported_file_type",
+            message: `Dateityp ${mimeType} ist nicht erlaubt.`,
+          });
+          return;
+        }
+
+        const title = body.title ? String(body.title) : undefined;
+        const tagList = Array.isArray(body.tags) ? (body.tags as string[]).map(String) : [];
+        const password = body.password ? String(body.password) : undefined;
+        if (password && password.length > 255) {
+          res.status(400).json({ error: "document_password_too_long" });
+          return;
+        }
+
+        // Generate storage path (same convention as persistFileBuffer)
+        const { createHash } = await import("crypto");
+        const tenantKey = `tenant-${createHash("sha256").update(tenantSource).digest("hex").slice(0, 20)}`;
+        const slug = slugFromUpload(String(body.source ?? "documents"), filename, title);
+        const storagePath = `unscanned/${tenantKey}/${slug}/${randomUUID()}/${filename}`;
+
+        // Resolve storage config
+        const storageConfig = opCtx.config.storage ?? storageConfigFromEnv();
+        if (!storageConfig) {
+          res.status(500).json({
+            error: "no_storage_configured",
+            message: "Storage backend is not configured. Set R2_* env vars or config.storage.",
+          });
+          return;
+        }
+
+        const { createStorage } = await import("../core/storage.ts");
+        const storage = await createStorage(storageConfig as any);
+
+        // Check if backend supports presigned URLs
+        if (!storage.createPresignedUpload) {
+          // Fallback: return a streaming upload URL for local storage
+          const token = createHash("sha256")
+            .update(`${storagePath}:${Date.now()}:${Math.random()}`)
+            .digest("hex");
+          pendingUploads.set(token, {
+            token,
+            storagePath,
+            filename,
+            mimeType,
+            expectedSize,
+            sourceId: tenantSource,
+            caseSlug,
+            title,
+            tags: tagList,
+            password,
+            createdAt: Date.now(),
+            expiresAt: Date.now() + UPLOAD_TOKEN_TTL_MS,
+          });
+          res.json({
+            mode: "streaming",
+            upload_url: `/api/upload/stream/${token}`,
+            upload_token: token,
+            filename,
+            content_type: mimeType,
+            expires_at: Date.now() + UPLOAD_TOKEN_TTL_MS,
+          });
+          return;
+        }
+
+        const presigned = await storage.createPresignedUpload(storagePath, {
+          contentType: mimeType,
+          expiresIn: 600, // 10 min
+        });
+        if (!presigned) {
+          res.status(500).json({
+            error: "presign_failed",
+            message: "Storage backend could not generate a presigned URL.",
+          });
+          return;
+        }
+
+        const token = createHash("sha256")
+          .update(`${storagePath}:${Date.now()}:${Math.random()}`)
+          .digest("hex");
+        pendingUploads.set(token, {
+          token,
+          storagePath: presigned.storagePath,
+          filename,
+          mimeType,
+          expectedSize,
+          sourceId: tenantSource,
+          caseSlug,
+          title,
+          tags: tagList,
+          password,
+          createdAt: Date.now(),
+          expiresAt: Date.now() + UPLOAD_TOKEN_TTL_MS,
+        });
+
+        res.json({
+          mode: "presigned",
+          url: presigned.url,
+          method: presigned.method,
+          headers: presigned.headers,
+          upload_token: token,
+          filename,
+          content_type: mimeType,
+          storage_path: presigned.storagePath,
+          expires_at: presigned.expiresAt,
+        });
+      } catch (e) {
+        res.status(500).json({
+          error: "presign_failed",
+          message: e instanceof Error ? e.message : "unknown",
+        });
+      }
+    }
+  );
+
+  // Streaming fallback for local storage — accepts raw body PUT
+  app.put(
+    "/api/upload/stream/:token",
+    express.raw({ type: () => true, limit: maxUploadBytes() }),
+    async (req: Request, res: Response) => {
+      try {
+        const token = String(req.params.token ?? "");
+        const pending = pendingUploads.get(token);
+        if (!pending || Date.now() > pending.expiresAt) {
+          res
+            .status(410)
+            .json({ error: "upload_token_expired", message: "Upload-Token abgelaufen." });
+          return;
+        }
+        if (!Buffer.isBuffer(req.body)) {
+          res.status(400).json({ error: "empty_body" });
+          return;
+        }
+        if (req.body.byteLength !== pending.expectedSize) {
+          res.status(422).json({ error: "uploaded_size_mismatch" });
+          return;
+        }
+        const fileLimit = maxBytesForUpload(pending.filename);
+        if (req.body.byteLength > fileLimit) {
+          res.status(413).json({
+            error: "file_too_large_for_format",
+            message: `Datei überschreitet das Formatlimit von ${Math.round(fileLimit / 1024 / 1024)} MB.`,
+          });
+          return;
+        }
+
+        // Persist bytes to storage
+        const opCtx = ctx(req);
+        const storageConfig = opCtx.config.storage ?? storageConfigFromEnv();
+        if (storageConfig) {
+          const { createStorage } = await import("../core/storage.ts");
+          const storage = await createStorage(storageConfig as any);
+          await storage.upload(pending.storagePath, req.body, pending.mimeType);
+        }
+        res.json({ ok: true, bytes: req.body.byteLength });
+      } catch (e) {
+        res.status(500).json({
+          error: "stream_upload_failed",
+          message: e instanceof Error ? e.message : "unknown",
+        });
+      }
+    }
+  );
+
+  // Confirm: download from storage, scan, extract, import
+  // Supports SSE streaming when client sends Accept: text/event-stream.
+  // Falls back to plain JSON for standard clients.
+  app.post(
+    "/api/upload/confirm",
+    express.json({ limit: "1mb" }),
+    async (req: Request, res: Response) => {
+      const wantsSse = String(req.headers["accept"] ?? "").includes("text/event-stream");
+
+      // SSE helper: sends an event to the client if SSE mode is active
+      const sseSend = (event: string, data: Record<string, unknown>) => {
+        if (!wantsSse) return;
+        try {
+          res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+        } catch {
+          /* client disconnected */
+        }
+      };
+
+      if (wantsSse) {
+        res.writeHead(200, {
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache, no-transform",
+          Connection: "keep-alive",
+          "X-Accel-Buffering": "no",
+        });
+      }
+
+      try {
+        const body = req.body as Record<string, unknown>;
+        const token = String(body.upload_token ?? "");
+        const pending = pendingUploads.get(token);
+        if (!pending || Date.now() > pending.expiresAt) {
+          if (wantsSse) {
+            sseSend("error", {
+              error: "upload_token_expired",
+              message: "Upload-Token abgelaufen.",
+            });
+            res.end();
+            return;
+          }
+          res
+            .status(410)
+            .json({ error: "upload_token_expired", message: "Upload-Token abgelaufen." });
+          return;
+        }
+
+        const opCtx = ctx(req);
+        if (pending.sourceId !== (opCtx.sourceId ?? "default")) {
+          if (wantsSse) {
+            sseSend("error", { error: "token_tenant_mismatch" });
+            res.end();
+            return;
+          }
+          res.status(403).json({ error: "token_tenant_mismatch" });
+          return;
+        }
+
+        // Download from storage
+        const storageConfig = opCtx.config.storage ?? storageConfigFromEnv();
+        if (!storageConfig) {
+          if (wantsSse) {
+            sseSend("error", { error: "no_storage_configured" });
+            res.end();
+          } else res.status(500).json({ error: "no_storage_configured" });
+          return;
+        }
+        const { createStorage } = await import("../core/storage.ts");
+        const storage = await createStorage(storageConfig as any);
+
+        sseSend("progress", { phase: "downloading", filename: pending.filename });
+
+        // Verify the file actually landed in storage
+        const exists = await storage.exists(pending.storagePath);
+        if (!exists) {
+          if (wantsSse) {
+            sseSend("error", {
+              error: "file_not_uploaded",
+              message: "Die Datei wurde noch nicht zum Storage hochgeladen.",
+            });
+            res.end();
+          } else
+            res
+              .status(422)
+              .json({
+                error: "file_not_uploaded",
+                message:
+                  "Die Datei wurde noch nicht zum Storage hochgeladen. Bitte zuerst den Upload abschließen.",
+              });
+          return;
+        }
+
+        const data = await storage.download(pending.storagePath);
+        if (data.byteLength !== pending.expectedSize) {
+          try {
+            await storage.delete(pending.storagePath);
+          } catch {}
+          pendingUploads.delete(token);
+          if (wantsSse) {
+            sseSend("error", { error: "uploaded_size_mismatch" });
+            res.end();
+          } else {
+            res.status(422).json({ error: "uploaded_size_mismatch" });
+          }
+          return;
+        }
+
+        sseSend("progress", {
+          phase: "scanning",
+          filename: pending.filename,
+          bytes: data.byteLength,
+        });
+
+        // Security scan (same as direct upload path)
+        const security = await inspectUploadBytes(pending.filename, data);
+        if (!security.ok) {
+          // Move to quarantined zone for audit retention (not deleted)
+          const { moveFileZone } = await import("../core/file-store.ts");
+          const basePath = pending.storagePath.replace(/^unscanned\//, "");
+          try {
+            await moveFileZone("unscanned", "quarantined", basePath, storageConfig);
+          } catch {}
+          if (wantsSse) {
+            sseSend("error", { error: security.code, message: security.message });
+            res.end();
+          } else
+            res
+              .status(security.code === "scanner_unavailable" ? 503 : 422)
+              .json({ error: security.code, message: security.message });
+          return;
+        }
+
+        // Hash-based dedup
+        const duplicate = await storedDuplicate(data, pending.sourceId);
+        if (duplicate) {
+          try {
+            await storage.delete(pending.storagePath);
+          } catch {}
+          pendingUploads.delete(token);
+          if (wantsSse) {
+            sseSend("error", {
+              error: "duplicate_file",
+              message: `Datei bereits vorhanden: ${duplicate.filename}`,
+              existing_slug: duplicate.page_slug,
+            });
+            res.end();
+          } else
+            res
+              .status(409)
+              .json({
+                error: "duplicate_file",
+                message: `Datei bereits vorhanden: ${duplicate.filename}`,
+                existing_slug: duplicate.page_slug,
+              });
+          return;
+        }
+
+        sseSend("progress", { phase: "extracting", filename: pending.filename });
+
+        // Embedding availability check
+        const { isAvailable } = await import("../core/ai/gateway.ts");
+        const noEmbed = !isAvailable("embedding");
+
+        const slug = slugFromUpload(
+          String(body.source ?? "documents"),
+          pending.filename,
+          pending.title
+        );
+        const versionedSlug = await versionUploadSlug(slug, data, pending.sourceId);
+
+        const uploadFrontmatter: Record<string, unknown> = {
+          source: "upload",
+          source_format: extname(pending.filename).replace(/^\./, "").toLowerCase() || undefined,
+          ...(pending.caseSlug
+            ? { case_slug: pending.caseSlug, assignment_status: "assigned" }
+            : {}),
+        };
+
+        // PendingUpload.password exists only in memory. Do not copy it into a
+        // durable queue row; encrypted documents are confirmed synchronously.
+        const asyncExtract = data.byteLength >= asyncExtractMinBytes() && !pending.password;
+
+        // Register in files table (same as persistUploadBytes)
+        const persistRes = await persistUploadBytes(
+          { filename: pending.filename, data, mimeType: pending.mimeType },
+          versionedSlug,
+          pending.sourceId,
+          opCtx.config.storage
+        );
+
+        if (!persistRes.ok) {
+          if (wantsSse) {
+            sseSend("error", {
+              error: "persist_failed",
+              message: "Originaldatei konnte nicht dauerhaft gespeichert werden.",
+              persist_error: persistRes.error,
+            });
+            res.end();
+          } else {
+            res.status(500).json({
+              error: "persist_failed",
+              message: "Originaldatei konnte nicht dauerhaft gespeichert werden.",
+              persist_error: persistRes.error,
+            });
+          }
+          return;
+        }
+
+        // Zone transition: move persisted file from unscanned/ to clean/
+        if (persistRes.ok && persistRes.storage_path) {
+          const { moveFileZone } = await import("../core/file-store.ts");
+          const persistBase = persistRes.storage_path.replace(/^unscanned\//, "");
+          try {
+            await moveFileZone(
+              "unscanned",
+              "clean",
+              persistBase,
+              opCtx.config.storage ?? storageConfig
+            );
+          } catch (zoneErr) {
+            console.error(
+              `[upload-confirm] zone transition unscanned→clean failed: ${zoneErr instanceof Error ? zoneErr.message : String(zoneErr)}`
+            );
+          }
+          // Clean up the original presign upload (may differ from persist path due to versioned slug)
+          if (pending.storagePath !== persistRes.storage_path) {
+            try {
+              await storage.delete(pending.storagePath);
+            } catch {}
+          }
+        }
+
+        let partSlugs: string[] = [];
+        if (asyncExtract) {
+          if (!persistRes.ok) {
+            if (wantsSse) {
+              sseSend("error", {
+                error: "persist_failed",
+                message: "Originaldatei konnte nicht gespeichert werden.",
+                persist_error: persistRes.error,
+              });
+              res.end();
+            } else
+              res.status(500).json({
+                error: "persist_failed",
+                message: "Originaldatei konnte nicht gespeichert werden.",
+                persist_error: persistRes.error,
+              });
+            return;
+          }
+          // Stub page
+          await invokeOp(
+            engine,
+            "put_page",
+            {
+              slug: versionedSlug,
+              title: pending.title ?? pending.filename.replace(/\.[^.]+$/, ""),
+              content: "> ⏳ Dokument wird verarbeitet … Extraktion läuft im Hintergrund.\n",
+              frontmatter: {
+                ...uploadFrontmatter,
+                type: uploadFrontmatter.type ?? "document",
+                extraction_status: "processing",
+                extraction_queued_at: new Date().toISOString(),
+                upload_size: data.byteLength,
+              },
+              merge: false,
+            },
+            pending.sourceId,
+            undefined,
+            req.matterScope ?? "all",
+            req.aclGroups ?? "all"
+          );
+
+          const queue = new MinionQueue(engine);
+          await queue.add(
+            "extract-document",
+            {
+              slug: versionedSlug,
+              filename: pending.filename,
+              title: pending.title,
+              tags: pending.tags,
+              case_slug: pending.caseSlug,
+              source_id: pending.sourceId,
+              no_embed: noEmbed,
+              password: pending.password,
+              upload_frontmatter: uploadFrontmatter,
+              matter_scope: req.matterScope ?? "all",
+              acl_groups: req.aclGroups ?? "all",
+            },
+            { timeout_ms: 60 * 60 * 1000, max_attempts: 3 },
+            { allowProtectedSubmit: true }
+          );
+        } else {
+          const result = await runExtractionAndImport(engine, {
+            slug: versionedSlug,
+            filename: pending.filename,
+            data,
+            title: pending.title,
+            tagList: pending.tags ?? [],
+            caseSlug: pending.caseSlug,
+            uploadFrontmatter,
+            tenantSource: pending.sourceId,
+            noEmbed,
+            password: pending.password,
+            matterScope: req.matterScope ?? "all",
+            aclGroups: req.aclGroups ?? "all",
+          });
+          partSlugs = result.partSlugs;
+        }
+
+        // Clean up token
+        pendingUploads.delete(token);
+
+        assertMatterScope(req.matterScope, versionedSlug);
+        const page = await engine.getPage(versionedSlug, { sourceId: pending.sourceId });
+        const resultPayload = {
+          slug: versionedSlug,
+          title: page?.title ?? pending.title ?? pending.filename,
+          original_persisted: persistRes.ok,
+          async: asyncExtract,
+          extraction_status: page?.frontmatter?.extraction_status,
+          extraction_method: page?.frontmatter?.extraction_method,
+          ...(partSlugs.length > 0
+            ? { split: true, part_count: partSlugs.length, part_slugs: partSlugs }
+            : {}),
+          ...(persistRes.ok ? {} : { persist_error: persistRes.error }),
+        };
+
+        if (wantsSse) {
+          sseSend("done", resultPayload);
+          res.end();
+        } else {
+          res.json(resultPayload);
+        }
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "unknown";
+        if (e instanceof UnsupportedUploadError) {
+          if (wantsSse) {
+            sseSend("error", { error: "unsupported_format", message: msg });
+            res.end();
+          } else res.status(415).json({ error: "unsupported_format", message: msg });
+          return;
+        }
+        if (e instanceof PasswordRequiredError) {
+          if (wantsSse) {
+            sseSend("error", {
+              error: "password_required",
+              format: e.format,
+              message: "Die Datei ist passwortgeschützt.",
+            });
+            res.end();
+          } else
+            res
+              .status(422)
+              .json({
+                error: "password_required",
+                format: e.format,
+                message:
+                  "Die Datei ist passwortgeschützt. Bitte Kennwort eingeben und erneut hochladen.",
+              });
+          return;
+        }
+        if (e instanceof InvalidDocumentPasswordError) {
+          if (wantsSse) {
+            sseSend("error", {
+              error: "invalid_document_password",
+              format: e.format,
+              message: "Das Dokumentkennwort ist falsch.",
+            });
+            res.end();
+          } else
+            res
+              .status(422)
+              .json({
+                error: "invalid_document_password",
+                format: e.format,
+                message: "Das Dokumentkennwort ist falsch.",
+              });
+          return;
+        }
+        if (wantsSse) {
+          sseSend("error", { error: "confirm_failed", message: msg });
+          res.end();
+        } else res.status(500).json({ error: "confirm_failed", message: msg });
+      }
+    }
+  );
+
+  // ============================================================
+  // Bulk/Folder Upload — batch presign + confirm
+  // ============================================================
+  // Accepts an array of file metadata, returns presigned URLs for each.
+  // The client uploads all files in parallel (with adaptive concurrency),
+  // then calls /api/upload/confirm-batch to trigger extraction for all.
+
+  app.post(
+    "/api/upload/presign-batch",
+    express.json({ limit: "10mb" }),
+    async (req: Request, res: Response) => {
+      try {
+        if (process.env.SUBSUMIO_PRESIGNED_UPLOAD_ENABLED !== "true") {
+          res.status(503).json({ error: "presigned_upload_disabled" });
+          return;
+        }
+        const body = req.body as Record<string, unknown>;
+        const files = Array.isArray(body.files) ? (body.files as Record<string, unknown>[]) : [];
+        if (files.length === 0) {
+          res.status(400).json({ error: "missing_files", message: "files array is required" });
+          return;
+        }
+        if (files.length > 1000) {
+          res.status(400).json({
+            error: "too_many_files",
+            message: "Maximum 1000 files per batch. Split into smaller batches.",
+          });
+          return;
+        }
+
+        const opCtx = ctx(req);
+        const tenantSource = opCtx.sourceId ?? "default";
+        const caseSlug = body.case_slug ? String(body.case_slug).trim() : undefined;
+        if (caseSlug) assertMatterScope(req.matterScope, caseSlug);
+
+        const storageConfig = opCtx.config.storage ?? storageConfigFromEnv();
+        if (!storageConfig) {
+          res.status(500).json({ error: "no_storage_configured" });
+          return;
+        }
+        const { createStorage } = await import("../core/storage.ts");
+        const storage = await createStorage(storageConfig as any);
+        const hasPresign = !!storage.createPresignedUpload;
+
+        const results: Array<{
+          filename: string;
+          ok: boolean;
+          mode?: "presigned" | "streaming";
+          url?: string;
+          method?: string;
+          headers?: Record<string, string>;
+          upload_token?: string;
+          upload_url?: string;
+          storage_path?: string;
+          expires_at?: number;
+          error?: string;
+        }> = [];
+
+        for (const fileMeta of files) {
+          const filename = String(fileMeta.filename ?? "");
+          if (
+            !filename ||
+            !isSafeUploadFilename(filename) ||
+            !isSupportedUploadFilename(filename)
+          ) {
+            results.push({
+              filename: filename || "(empty)",
+              ok: false,
+              error: "unsupported_file_type",
+            });
+            continue;
+          }
+          const mimeType =
+            String(fileMeta.content_type ?? "") ||
+            FILE_MIME_TYPES[extname(filename).toLowerCase()] ||
+            "application/octet-stream";
+          const expectedSize = Number(fileMeta.size);
+          const maxForFormat = maxBytesForUpload(filename);
+          if (
+            !Number.isSafeInteger(expectedSize) ||
+            expectedSize <= 0 ||
+            expectedSize > maxForFormat ||
+            !ALLOWED_ENGINE_UPLOAD_MIMES.has(mimeType.toLowerCase())
+          ) {
+            results.push({ filename, ok: false, error: "invalid_size_or_mime" });
+            continue;
+          }
+
+          const { createHash } = await import("crypto");
+          const tenantKey = `tenant-${createHash("sha256").update(tenantSource).digest("hex").slice(0, 20)}`;
+          const title = fileMeta.title ? String(fileMeta.title) : undefined;
+          const slug = slugFromUpload(String(body.source ?? "documents"), filename, title);
+          const storagePath = `unscanned/${tenantKey}/${slug}/${randomUUID()}/${filename}`;
+
+          const token = createHash("sha256")
+            .update(`${storagePath}:${Date.now()}:${Math.random()}`)
+            .digest("hex");
+
+          const tagList = Array.isArray(fileMeta.tags)
+            ? (fileMeta.tags as string[]).map(String)
+            : [];
+          const password = fileMeta.password ? String(fileMeta.password) : undefined;
+
+          pendingUploads.set(token, {
+            token,
+            storagePath,
+            filename,
+            mimeType,
+            expectedSize,
+            sourceId: tenantSource,
+            caseSlug,
+            title,
+            tags: tagList,
+            password,
+            createdAt: Date.now(),
+            expiresAt: Date.now() + UPLOAD_TOKEN_TTL_MS,
+          });
+
+          if (hasPresign) {
+            try {
+              const presigned = await storage.createPresignedUpload!(storagePath, {
+                contentType: mimeType,
+                expiresIn: 600,
+              });
+              if (presigned) {
+                results.push({
+                  filename,
+                  ok: true,
+                  mode: "presigned",
+                  url: presigned.url,
+                  method: presigned.method,
+                  headers: presigned.headers,
+                  upload_token: token,
+                  storage_path: presigned.storagePath,
+                  expires_at: presigned.expiresAt,
+                });
+                continue;
+              }
+            } catch {
+              // fall through to streaming
+            }
+          }
+
+          results.push({
+            filename,
+            ok: true,
+            mode: "streaming",
+            upload_url: `/api/upload/stream/${token}`,
+            upload_token: token,
+            expires_at: Date.now() + UPLOAD_TOKEN_TTL_MS,
+          });
+        }
+
+        res.json({
+          mode: hasPresign ? "presigned" : "streaming",
+          case_slug: caseSlug,
+          files: results,
+          confirm_url: "/api/upload/confirm",
+        });
+      } catch (e) {
+        res.status(500).json({
+          error: "presign_batch_failed",
+          message: e instanceof Error ? e.message : "unknown",
+        });
       }
     }
   );
@@ -4202,18 +5743,98 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       }
 
       const connector = new Ctor(config);
-      void connector.sync().catch((err: unknown) => {
-        console.error(
-          `[web-api] Manual connector sync failed for ${service}: ${err instanceof Error ? err.message : String(err)}`
-        );
+      const queued: Promise<unknown>[] = [];
+      const queue = new MinionQueue(engine);
+      await connector.sync({
+        engine,
+        emit(event) {
+          queued.push(
+            queue.add(
+              "ingest_capture",
+              { event },
+              {
+                idempotency_key: `ingest:${event.source_kind}:${event.content_hash}`,
+                maxWaiting: 100,
+              }
+            )
+          );
+        },
+        logger: {
+          info: (message: string) => console.error(`[connector:${service}] ${message}`),
+          warn: (message: string) => console.error(`[connector:${service}] WARN ${message}`),
+          error: (message: string) => console.error(`[connector:${service}] ERROR ${message}`),
+        },
+        abortSignal: new AbortController().signal,
+        config,
       });
+      await Promise.all(queued);
 
-      res.json({ success: true, status: "sync_triggered", service });
+      res.json({ success: true, status: "sync_queued", service, jobs: queued.length });
     } catch (e) {
       const msg = e instanceof Error ? e.message : "unknown";
       res.status(500).json({ error: "connector_sync_failed", message: msg });
     }
   });
+
+  app.post(
+    "/api/connectors/:service/configure",
+    express.json({ limit: "32kb" }),
+    async (req: Request, res: Response) => {
+      if (rejectConnectorActionsInTenantMode(req, res)) return;
+      try {
+        const service = String(req.params.service);
+        if (!["advokat-import", "bea-import"].includes(service)) {
+          res.status(400).json({
+            error: "unsupported_configuration",
+            message: `Connector "${service}" cannot be configured through the folder bridge.`,
+          });
+          return;
+        }
+        const body = req.body as Record<string, unknown>;
+        const requestedPath = String(body.watch_dir ?? "").trim();
+        if (!requestedPath || !requestedPath.startsWith("/")) {
+          res.status(400).json({
+            error: "invalid_watch_dir",
+            message: "watch_dir muss ein absoluter, auf dem Engine-Host gemounteter Pfad sein.",
+          });
+          return;
+        }
+        let watchDir: string;
+        try {
+          watchDir = realpathSync(requestedPath);
+          if (!statSync(watchDir).isDirectory()) throw new Error("not_directory");
+        } catch {
+          res.status(400).json({
+            error: "invalid_watch_dir",
+            message: "Der Ordner existiert auf dem Engine-Host nicht oder ist nicht lesbar.",
+          });
+          return;
+        }
+        const pollInterval = Math.max(
+          30_000,
+          Math.min(Number(body.poll_interval_ms) || 60_000, 3_600_000)
+        );
+        const { ConnectorManager } = await import("../core/ingestion/connectors/manager.ts");
+        const mgr = new ConnectorManager();
+        await mgr.add(service, {
+          poll_interval_ms: pollInterval,
+          filters: { watch_dir: watchDir },
+        });
+        res.json({
+          success: true,
+          service,
+          enabled: true,
+          watch_dir: watchDir,
+          poll_interval_ms: pollInterval,
+        });
+      } catch (error) {
+        res.status(500).json({
+          error: "connector_configuration_failed",
+          message: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+  );
 
   app.post("/api/connectors/:service/toggle", async (req: Request, res: Response) => {
     if (rejectConnectorActionsInTenantMode(req, res)) return;

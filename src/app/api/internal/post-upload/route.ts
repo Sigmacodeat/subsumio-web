@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { ENGINE_URL, enginePatchPage, engineHeadersForBrain } from "@/lib/engine";
 import { hasValidInternalSecret } from "@/lib/auth/internal";
-import { env } from "@/lib/env";
 import { NextRequest } from "next/server";
+import { enqueueAllPostUploadTasks } from "@/lib/post-upload-outbox";
 
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
@@ -52,22 +52,15 @@ export async function POST(req: NextRequest) {
   }
   const parsed = bodySchema.safeParse(rawBody);
   if (!parsed.success) {
-    return Response.json(
-      { error: "invalid_body", detail: parsed.error.message },
-      { status: 400 }
-    );
+    return Response.json({ error: "invalid_body", detail: parsed.error.message }, { status: 400 });
   }
   const body = parsed.data;
   const { doc_slug, case_slug, brain_id, doc_title, doc_size, uploaded_at } = body;
   const headers = engineHeadersForBrain(brain_id);
-  const origin = new URL(req.url).origin;
-  const internalSecret = env("SUBSUMIO_INTERNAL_SECRET") ?? "";
-  // Contradiction probe uses createCronHandler → requires Bearer auth
-  const cronSecret = env("CRON_SECRET") ?? "";
 
   const results: Record<string, string> = {};
 
-  // 1. Reconcile case documents array (synchronous — caller waits for this)
+  // 1. Reconcile case documents array (synchronous — fast, caller waits for this)
   if (case_slug) {
     try {
       await reconcileCaseDocuments(headers, case_slug, {
@@ -85,65 +78,33 @@ export async function POST(req: NextRequest) {
       console.error(`[post-upload] reconcileCaseDocuments failed for ${doc_slug}:`, msg);
       results.reconcile = `failed: ${msg}`;
     }
-
-    // 2. Contradiction probe — fire-and-forget, uses Bearer CRON_SECRET
-    if (cronSecret) {
-      void (async () => {
-        try {
-          const url = new URL(`${origin}/api/cron/contradiction-probe`);
-          url.searchParams.set("case_slug", case_slug);
-          const probeRes = await fetch(url.toString(), {
-            method: "GET",
-            headers: { Authorization: `Bearer ${cronSecret}` },
-            signal: AbortSignal.timeout(30_000),
-          });
-          if (!probeRes.ok) {
-            console.error(
-              `[post-upload] contradiction probe HTTP ${probeRes.status} for ${case_slug}`
-            );
-          }
-        } catch (err) {
-          console.error(
-            "[post-upload] contradiction probe failed (non-fatal):",
-            err instanceof Error ? err.message : String(err)
-          );
-        }
-      })();
-      results.contradiction_probe = "triggered";
-    } else {
-      results.contradiction_probe = "skipped_no_cron_secret";
-    }
   }
 
-  // 3. Legal analysis for this document — fire-and-forget
-  //    Uses engine's /api/legal/analyze directly (JSON, not SSE).
-  //    The engine route takes `slug` and handles small docs correctly.
-  //    The web-app analyze route also works here via x-internal-secret.
-  if (internalSecret) {
-    void (async () => {
-      try {
-        const analyzeRes = await fetch(`${origin}/api/legal/analyze`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-internal-secret": internalSecret,
-          },
-          body: JSON.stringify({ document_slug: doc_slug, brain_id }),
-          signal: AbortSignal.timeout(300_000),
-        });
-        if (!analyzeRes.ok) {
-          console.error(
-            `[post-upload] legal analyze HTTP ${analyzeRes.status} for ${doc_slug}`
-          );
-        }
-      } catch (err) {
-        console.error(
-          "[post-upload] legal analyze failed (non-fatal):",
-          err instanceof Error ? err.message : String(err)
-        );
-      }
-    })();
-    results.analysis = "triggered";
+  // 2 + 3. Enqueue remaining tasks to the persistent outbox.
+  //   - analyze: runs legal analysis via /api/legal/analyze
+  //   - contradiction (only if case_slug): runs contradiction probe via /api/cron/contradiction-probe
+  //   The drain cron (/api/cron/post-upload-drain, every 2 min) picks these up with
+  //   retry-with-backoff — tasks survive web container restarts.
+  try {
+    await enqueueAllPostUploadTasks({
+      doc_slug,
+      case_slug,
+      brain_id,
+      doc_title,
+      doc_size,
+      uploaded_at,
+    });
+    results.queued = "analyze" + (case_slug ? ",contradiction" : "");
+  } catch (err) {
+    console.error(
+      "[post-upload] outbox enqueue failed (non-fatal):",
+      err instanceof Error ? err.message : String(err)
+    );
+    results.queued = "enqueue_failed";
+    return Response.json(
+      { ok: false, error: "outbox_enqueue_failed", doc_slug, case_slug, ...results },
+      { status: 503 }
+    );
   }
 
   return Response.json({ ok: true, doc_slug, case_slug, ...results });

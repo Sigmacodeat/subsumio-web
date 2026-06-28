@@ -9,6 +9,7 @@ import { WidgetBoard } from "@/components/dashboard/widget-board";
 import { useBrainStats, useRecentQueries } from "@/lib/queries/brain";
 import { useMe } from "@/lib/queries/auth";
 import { useLang } from "@/lib/use-lang";
+import type { Lang } from "@/content/site";
 import type { BrainStats, RecentQuery } from "@/lib/types";
 import { StaggerContainer, StaggerItem } from "@/components/marketing/motion-system";
 
@@ -17,7 +18,7 @@ type Greeting = {
   sub: string;
 };
 
-function useGreeting(name: string | null, lang: "de" | "en"): Greeting {
+function useGreeting(name: string | null, lang: Lang): Greeting {
   const hour = new Date().getHours();
   const isFirst = !name;
   const firstName = name?.split(" ")[0] ?? "";

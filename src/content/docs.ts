@@ -1,4 +1,4 @@
-export type Lang = "de" | "en";
+import { type Lang } from "./site";
 
 export interface DocFeature {
   icon: string;
@@ -992,5 +992,5 @@ const EN: DocsContent = {
 };
 
 export function getDocs(lang: Lang): DocsContent {
-  return lang === "de" ? DE : EN;
+  return lang === "en" ? EN : DE;
 }

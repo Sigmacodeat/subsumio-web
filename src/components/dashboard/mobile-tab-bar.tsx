@@ -106,10 +106,9 @@ export function MobileTabBar({
     if (moreOpen) {
       document.body.style.overflow = "hidden";
     } else {
-      // Only clear if no other overlay is locking scroll
-      // (layout manages its own scroll lock for sidebar/copilot/cmd/guide)
-      const otherOverlayOpen = document.querySelector('[aria-modal="true"]') !== null;
-      if (!otherOverlayOpen) {
+      // Only clear if no other overlay is locking scroll.
+      // Layout sets data-overlay="open" when sidebar/copilot/cmd/guide is active.
+      if (document.body.dataset.overlay !== "open") {
         document.body.style.overflow = "";
       }
     }

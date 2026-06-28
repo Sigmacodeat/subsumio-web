@@ -47,10 +47,21 @@ import {
 import { Button } from "@/components/ui/button";
 import { EASE } from "./motion-system";
 import { SubsumioLogo, SubsumioMark } from "@/components/brand/subsumio-logo";
-import { NAV, FOOTER, p, altPath, UI_STRINGS, type Lang } from "@/content/site";
+import {
+  NAV,
+  FOOTER,
+  p,
+  altPath,
+  allAltPaths,
+  UI_STRINGS,
+  SUPPORTED_LANGS,
+  JURISDICTION_LABEL,
+  HREFLANG,
+  type Lang,
+} from "@/content/site";
 
 /** Persist the user's explicit language choice so the browser-language redirect doesn't override it. */
-function setLangPref(lang: "en" | "de") {
+function setLangPref(lang: Lang) {
   document.cookie = `sb_lang=${lang};path=/;max-age=${365 * 24 * 3600};samesite=lax`;
 }
 import { type SiteBrand } from "@/lib/brand";
@@ -510,16 +521,31 @@ export function MarketingNav({ lang }: { lang: Lang }) {
 
           {/* Action area */}
           <div className="flex items-center gap-2">
-            <Link
-              href={altPath(lang, pathname)}
-              onClick={() => setLangPref(lang === "en" ? "de" : "en")}
-              className="hidden min-h-[44px] items-center gap-1.5 rounded-full px-3 py-1.5 text-xs [color:var(--mk-text-muted)] transition-colors duration-200 [background:var(--mk-surface)] hover:[color:var(--mk-text)] hover:[background:var(--mk-hover)] lg:flex"
-              aria-label={
-                lang === "en" ? UI_STRINGS[lang].readInGerman : UI_STRINGS[lang].readInEnglish
-              }
-            >
-              <Globe size={12} /> {lang.toUpperCase()}
-            </Link>
+            <div className="group relative hidden lg:block">
+              <button
+                className="flex min-h-[44px] items-center gap-1.5 rounded-full px-3 py-1.5 text-xs [color:var(--mk-text-muted)] transition-colors duration-200 [background:var(--mk-surface)] hover:[color:var(--mk-text)] hover:[background:var(--mk-hover)]"
+                aria-label="Language"
+                aria-haspopup="true"
+              >
+                <Globe size={12} /> {lang.toUpperCase()}
+                <ChevronDown size={10} className="opacity-50" />
+              </button>
+              <div className="invisible absolute top-full right-0 z-50 pt-1 opacity-0 transition-all duration-150 group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
+                <div className="overflow-hidden rounded-lg border [border-color:var(--mk-border)] shadow-lg [background:var(--mk-surface)]">
+                  {SUPPORTED_LANGS.map((l) => (
+                    <Link
+                      key={l}
+                      href={p(l, pathname.replace(/^\/(en|at|ch)/, ""))}
+                      onClick={() => setLangPref(l)}
+                      className={`flex items-center gap-2 px-4 py-2 text-xs transition-colors hover:[background:var(--mk-hover)] ${l === lang ? "font-medium [color:var(--mk-text)]" : "[color:var(--mk-text-muted)]"}`}
+                    >
+                      <span>{HREFLANG[l]}</span>
+                      <span>{JURISDICTION_LABEL[l]}</span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
             <Link href={p(lang, "/login")} className="hidden lg:block">
               <Button variant="ghost" size="sm" className="[color:var(--mk-text)]">
                 {nav.signIn}
@@ -639,21 +665,24 @@ export function MarketingNav({ lang }: { lang: Lang }) {
 
                 {/* Language switcher + Sign-in — always visible in mobile menu */}
                 <div className="mt-2 space-y-0.5 border-t [border-color:var(--mk-border)] pt-2">
-                  <Link
-                    href={altPath(lang, pathname)}
-                    className={mobileLinkCls(false)}
-                    onClick={() => {
-                      setMobileOpen(false);
-                      setLangPref(lang === "en" ? "de" : "en");
-                    }}
-                  >
-                    <span className="flex items-center gap-1.5">
-                      <Globe size={13} />{" "}
-                      {lang === "en"
-                        ? UI_STRINGS[lang].readInGerman
-                        : UI_STRINGS[lang].readInEnglish}
-                    </span>
-                  </Link>
+                  <div className="px-3 py-1 text-xs [color:var(--mk-text-subtle)]">
+                    <Globe size={12} className="mr-1.5 inline" /> Sprache / Language
+                  </div>
+                  {SUPPORTED_LANGS.map((l) => (
+                    <Link
+                      key={l}
+                      href={p(l, pathname.replace(/^\/(en|at|ch)/, ""))}
+                      className={mobileLinkCls(l === lang)}
+                      onClick={() => {
+                        setMobileOpen(false);
+                        setLangPref(l);
+                      }}
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <Globe size={13} /> {HREFLANG[l]} — {JURISDICTION_LABEL[l]}
+                      </span>
+                    </Link>
+                  ))}
                   <Link
                     href={p(lang, "/login")}
                     className={mobileLinkCls(false)}
@@ -709,9 +738,9 @@ export function MarketingFooter({ lang }: { lang: Lang }) {
               <SubsumioLogo size={28} />
             </div>
             <p className="mb-4 text-sm [color:var(--mk-text-muted)]">
-              {lang === "de"
-                ? "Das Kanzlei-Gedächtnis, das nie vergisst — für AT, DE und CH."
-                : "The memory layer for your law firm — built for AT, DE and CH."}
+              {lang === "en"
+                ? "The memory layer for your law firm — built for AT, DE and CH."
+                : "Das Kanzlei-Gedächtnis, das nie vergisst — für AT, DE und CH."}
             </p>
             <p className="max-w-xs text-xs leading-relaxed [color:var(--mk-text-subtle)]">
               {footer.note}
@@ -782,7 +811,7 @@ export function MarketingFooter({ lang }: { lang: Lang }) {
         <div className="flex flex-col items-center justify-between gap-2 border-t [border-color:var(--mk-border)] pt-6 sm:flex-row">
           <p className="text-xs [color:var(--mk-text-subtle)]">
             © 2026 Subsumio ·{" "}
-            {lang === "de"
+            {lang !== "en"
               ? "Legal Intelligence für Kanzleien"
               : "Legal intelligence for law firms"}
           </p>

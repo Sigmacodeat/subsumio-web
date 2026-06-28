@@ -6,7 +6,15 @@ import { JsonLd, faqPageLd } from "@/components/seo/jsonld";
 export const metadata: Metadata = {
   title: SECURITY.en.metaTitle,
   description: SECURITY.en.metaDesc,
-  alternates: { canonical: "/en/security", languages: { de: "/security", en: "/en/security" } },
+  alternates: {
+    canonical: "/en/security",
+    languages: {
+      "de-DE": "/security",
+      "de-AT": "/at/security",
+      "de-CH": "/ch/security",
+      en: "/en/security",
+    },
+  },
   openGraph: {
     title: SECURITY.en.metaTitle,
     description: SECURITY.en.metaDesc,

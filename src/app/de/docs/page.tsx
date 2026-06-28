@@ -6,7 +6,10 @@ export const metadata: Metadata = {
   title: "Subsumio Handbuch — KI-Kanzleisoftware Funktionen",
   description:
     "Produkt-Handbuch für Subsumio: Akten, Fristen, Dokumente, belegte KI-Antworten, Sicherheit, Integrationen und die Dashboard-Workflows dahinter.",
-  alternates: { canonical: "/de/docs", languages: { en: "/docs", de: "/de/docs" } },
+  alternates: {
+    canonical: "/docs",
+    languages: { "de-DE": "/docs", "de-AT": "/at/docs", "de-CH": "/ch/docs", en: "/en/docs" },
+  },
   openGraph: {
     title: "Subsumio Handbuch — KI-Kanzleisoftware Funktionen",
     description:

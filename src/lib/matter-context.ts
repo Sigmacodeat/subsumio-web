@@ -702,7 +702,19 @@ async function fetchCaseDocumentsBySlug(
   caseSlug: string
 ): Promise<MatterDocumentSummary[]> {
   try {
-    const pages = await fetchEnginePagesByType(engineUrl, headers, "document", 200);
+    const documentTypes = [
+      "document",
+      "email",
+      "email_archive",
+      "image",
+      "transcription",
+      "document_archive",
+    ];
+    const pages = (
+      await Promise.all(
+        documentTypes.map((type) => fetchEnginePagesByType(engineUrl, headers, type, 200))
+      )
+    ).flat();
     const matched = pages.filter((p) => {
       const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
       return (
@@ -745,8 +757,20 @@ function inferOcrStatusFromFrontmatter(
 function inferExtractionStatusFromFrontmatter(
   fm: Record<string, unknown>
 ): MatterDocumentSummary["extraction_status"] {
+  const persisted = typeof fm.extraction_status === "string" ? fm.extraction_status : "";
+  if (persisted === "failed") return "failed";
+  if (persisted === "partial") return "partial";
+  if (persisted === "ready") {
+    return fm.extraction_method === "ocr_vision" ? "ocr_complete" : "text_layer";
+  }
   const method = typeof fm.extraction_method === "string" ? fm.extraction_method : "";
-  if (method === "text_layer" || method === "docx" || method === "eml") return "text_layer";
+  if (
+    method === "text_layer" ||
+    method === "native_parser" ||
+    method === "docx" ||
+    method === "eml"
+  )
+    return "text_layer";
   if (method === "ocr_vision") return "ocr_complete";
   return "processing";
 }

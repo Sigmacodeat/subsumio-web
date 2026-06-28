@@ -7,7 +7,7 @@ import type { Lang } from "@/content/site";
 
 export type { Lang };
 
-type BiString = Record<Lang, string>;
+type BiString = { de: string; en: string; at?: string; ch?: string };
 
 export const D = {
   // ── Sidebar: section titles ──
@@ -1512,8 +1512,8 @@ export const D = {
     en: "Drag a file here or click to select",
   },
   "onboarding.step_upload_hint": {
-    de: "PDF, DOCX, MD oder TXT — max. 50 MB",
-    en: "PDF, DOCX, MD or TXT — max 50 MB",
+    de: "PDF, Office, E-Mail/PST, ZIP, Bild oder Text — bis 500 MB (Tabellen 20 MB)",
+    en: "PDF, Office, email/PST, ZIP, image or text — up to 500 MB (tables 20 MB)",
   },
   "onboarding.step_upload_success": {
     de: "Hochgeladen und indexiert!",
@@ -5827,8 +5827,8 @@ export const D = {
   "casesdetail.upload.done": { de: "Fertig", en: "Done" },
   "casesdetail.upload.error": { de: "Fehler", en: "Error" },
   "casesdetail.upload.err_format": {
-    de: "Format wird nicht unterstützt. Erlaubt: PDF, DOCX, EML, JPG, PNG",
-    en: "Format not supported. Allowed: PDF, DOCX, EML, JPG, PNG",
+    de: "Format wird nicht unterstützt. Erlaubt sind PDF, Office/iWork, E-Mail/PST, ZIP, Bilder, Audio und Text.",
+    en: "Format not supported. Allowed: PDF, Office/iWork, email/PST, ZIP, images, audio and text.",
   },
   "casesdetail.upload.err_too_large": {
     de: "ist zu groß. Maximum für diesen Upload-Kanal:",
@@ -5986,7 +5986,7 @@ export function createT(lang: Lang) {
   return (key: DashboardKey): string => {
     const entry = D[key];
     if (!entry) return key;
-    return entry[lang] ?? entry.de;
+    return (entry as Record<string, string>)[lang] ?? entry.de;
   };
 }
 

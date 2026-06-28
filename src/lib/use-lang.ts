@@ -32,7 +32,7 @@ export function useLang(): { lang: Lang; t: TFunc; setLang: (lang: Lang) => void
     // 1. localStorage override
     try {
       const stored = localStorage.getItem("dashboard-lang");
-      if (stored === "en" || stored === "de") {
+      if (stored === "en" || stored === "de" || stored === "at" || stored === "ch") {
         setLangState(stored);
         return;
       }
@@ -40,15 +40,20 @@ export function useLang(): { lang: Lang; t: TFunc; setLang: (lang: Lang) => void
 
     // 2. user profile locale
     const profileLang = meQuery.data?.user?.locale;
-    if (profileLang === "en" || profileLang === "de") {
+    if (
+      profileLang === "en" ||
+      profileLang === "de" ||
+      profileLang === "at" ||
+      profileLang === "ch"
+    ) {
       setLangState(profileLang as Lang);
       return;
     }
 
     // 3. <html lang> attribute
     const htmlLang = document.documentElement.lang;
-    if (htmlLang === "de") {
-      setLangState("de");
+    if (htmlLang === "de" || htmlLang === "de-AT" || htmlLang === "de-CH") {
+      setLangState(htmlLang === "de-AT" ? "at" : htmlLang === "de-CH" ? "ch" : "de");
       return;
     }
     if (htmlLang === "en") {
@@ -64,7 +69,7 @@ export function useLang(): { lang: Lang; t: TFunc; setLang: (lang: Lang) => void
   useEffect(() => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent<Lang>).detail;
-      if (detail === "en" || detail === "de") {
+      if (detail === "en" || detail === "de" || detail === "at" || detail === "ch") {
         setLangState(detail);
       }
     };

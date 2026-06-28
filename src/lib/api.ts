@@ -800,6 +800,22 @@ export const api = {
     ): Promise<{ success: boolean; service: string; enabled: boolean; message?: string }> {
       return request(`/api/connectors/${encodeURIComponent(service)}/toggle`, { method: "POST" });
     },
+
+    configureFolder(
+      service: "advokat-import" | "bea-import",
+      input: { watch_dir: string; poll_interval_ms?: number }
+    ): Promise<{
+      success: boolean;
+      service: string;
+      enabled: boolean;
+      watch_dir: string;
+      poll_interval_ms: number;
+    }> {
+      return request(`/api/connectors/${encodeURIComponent(service)}/configure`, {
+        method: "POST",
+        body: JSON.stringify(input),
+      });
+    },
   },
 
   email: {
@@ -982,7 +998,13 @@ export const api = {
   upload: {
     async file(
       file: File,
-      options?: { title?: string; source?: string; tags?: string[]; case_slug?: string },
+      options?: {
+        title?: string;
+        source?: string;
+        tags?: string[];
+        case_slug?: string;
+        password?: string;
+      },
       onProgress?: (
         progress: number,
         transfer?: { loaded: number; total: number; phase?: UploadProgressPhase }
@@ -992,6 +1014,10 @@ export const api = {
       title: string;
       original_persisted?: boolean;
       persist_error?: string;
+      extraction_status?: string;
+      extraction_method?: string;
+      extraction_warnings?: string;
+      post_upload_queued?: boolean;
     }> {
       const formData = new FormData();
       formData.append("file", file);
@@ -999,6 +1025,7 @@ export const api = {
       if (options?.source) formData.append("source", options.source);
       if (options?.tags) formData.append("tags", JSON.stringify(options.tags));
       if (options?.case_slug) formData.append("case_slug", options.case_slug);
+      if (options?.password) formData.append("password", options.password);
 
       const MAX_RETRIES = 2;
       const RETRYABLE_STATUS = new Set([502, 503, 504]);
@@ -1009,6 +1036,15 @@ export const api = {
       let uploadToken: string | null = null;
       let engineUrl = "";
       try {
+        const passwordHash = options?.password
+          ? Array.from(
+              new Uint8Array(
+                await crypto.subtle.digest("SHA-256", new TextEncoder().encode(options.password))
+              )
+            )
+              .map((byte) => byte.toString(16).padStart(2, "0"))
+              .join("")
+          : undefined;
         const tokenRes = await csrfFetch(`${BASE_URL}/api/upload-token`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -1017,6 +1053,10 @@ export const api = {
             case_slug: options?.case_slug,
             title: options?.title,
             tags: options?.tags ? JSON.stringify(options.tags) : undefined,
+            filename: file.name,
+            size: file.size,
+            mime_type: file.type || undefined,
+            password_hash: passwordHash,
           }),
         });
         if (tokenRes.ok) {
@@ -1040,6 +1080,10 @@ export const api = {
         title: string;
         original_persisted?: boolean;
         persist_error?: string;
+        extraction_status?: string;
+        extraction_method?: string;
+        extraction_warnings?: string;
+        post_upload_queued?: boolean;
       }> => {
         return new Promise((resolve, reject) => {
           const xhr = new XMLHttpRequest();
@@ -1132,6 +1176,21 @@ export const api = {
       };
 
       return attemptUpload(0);
+    },
+    status(slug: string): Promise<{
+      slug: string;
+      title?: string;
+      status: "processing" | "ready_to_query" | "failed";
+      extraction_status: string;
+      extraction_method?: string;
+      extraction_warnings?: string;
+      extraction_error?: string;
+      extraction_error_code?: string;
+      analysis_status?: string;
+      updated_at?: string;
+    }> {
+      const path = slug.split("/").map(encodeURIComponent).join("/");
+      return request(`/api/upload-status/${path}`);
     },
   },
 

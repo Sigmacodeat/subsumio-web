@@ -118,6 +118,8 @@ async function scanWithClamav(buffer: ArrayBuffer, host: string): Promise<ScanRe
     }, CLAMAV_TIMEOUT_MS);
 
     socket.on("connect", () => {
+      // clamd INSTREAM command must precede the length-prefixed chunks.
+      socket.write("zINSTREAM\0");
       const bytes = new Uint8Array(buffer);
       let offset = 0;
 

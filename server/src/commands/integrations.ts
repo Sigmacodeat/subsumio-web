@@ -19,7 +19,7 @@
  *     └── append-only, pruned to 30 days on read
  */
 
-import matter from "gray-matter";
+import matter from "../core/yaml-matter.ts";
 import { readFileSync, existsSync, writeFileSync, mkdirSync, readdirSync } from "fs";
 import { join, basename } from "path";
 import { homedir } from "os";

@@ -107,13 +107,24 @@ export function makeIngestCaptureHandler(engine: BrainEngine) {
       );
     }
 
-    // noEmbed defaults to true. Mirrors the sync handler's pattern:
-    // embed runs as a separate Minion job (autopilot's embed phase OR an
-    // explicit `gbrain embed --stale`). Callers can opt in to inline embed
-    // by passing { noEmbed: false } in job.data.
-    const noEmbed = (data as { noEmbed?: unknown }).noEmbed !== false;
+    const targetSource =
+      event.source_kind === "connector:advokat-import" &&
+      typeof event.metadata?.target_source_id === "string"
+        ? event.metadata.target_source_id
+        : event.source_id || "default";
 
-    const result = await importFromContent(engine, slug, event.content, { noEmbed });
+    // Connector documents must become semantically queryable in the same job.
+    // Other high-volume capture sources may still explicitly request deferred
+    // embeddings with noEmbed=true.
+    const noEmbed = (data as { noEmbed?: unknown }).noEmbed === true;
+
+    const result = await importFromContent(engine, slug, event.content, {
+      noEmbed,
+      sourceId: targetSource,
+      source_kind: event.source_kind,
+      source_uri: event.source_uri,
+      ingested_via: "ingest_capture",
+    });
 
     return {
       slug,

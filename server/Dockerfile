@@ -16,7 +16,9 @@ WORKDIR /app
 # Ghostscript; poppler-utils provides pdfinfo/pdftoppm as a fallback rasterizer.
 # Without these, OCR of image-only PDFs silently degrades to "no text extracted".
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends graphicsmagick ghostscript poppler-utils \
+  && apt-get install -y --no-install-recommends \
+    graphicsmagick ghostscript poppler-utils pst-utils qpdf \
+    libreoffice-core libreoffice-writer libreoffice-calc libreoffice-impress \
   && rm -rf /var/lib/apt/lists/*
 
 # Dependency layer (cached unless package.json/bun.lock change).
