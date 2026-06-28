@@ -28,7 +28,7 @@ import { readStoredFile } from "../../file-store.ts";
 import { PasswordRequiredError, InvalidDocumentPasswordError } from "../../extract-document.ts";
 import {
   runExtractionAndImport,
-  invokeOp,
+  patchPageFrontmatter,
   UnsupportedUploadError,
 } from "../../../commands/web-api.ts";
 
@@ -96,19 +96,10 @@ export function makeExtractDocumentHandler({ engine }: { engine: BrainEngine }) 
       const page = await engine.getPage(slug, { sourceId });
       const status = page?.frontmatter?.extraction_status;
       if (!status || status === "processing") {
-        await invokeOp(
-          engine,
-          "put_page",
-          {
-            slug,
-            frontmatter: {
-              extraction_status: "ready",
-              extraction_completed_at: new Date().toISOString(),
-            },
-            merge: true,
-          },
-          sourceId
-        );
+        await patchPageFrontmatter(engine, slug, sourceId, {
+          extraction_status: "ready",
+          extraction_completed_at: new Date().toISOString(),
+        });
       }
 
       await job.updateProgress({ phase: "done", slug, part_count: partSlugs.length });
@@ -143,21 +134,12 @@ async function markFailed(
   message?: string
 ): Promise<void> {
   try {
-    await invokeOp(
-      engine,
-      "put_page",
-      {
-        slug,
-        frontmatter: {
-          extraction_status: "failed",
-          extraction_error_code: code,
-          ...(message ? { extraction_error: message.slice(0, 500) } : {}),
-          extraction_failed_at: new Date().toISOString(),
-        },
-        merge: true,
-      },
-      sourceId
-    );
+    await patchPageFrontmatter(engine, slug, sourceId, {
+      extraction_status: "failed",
+      extraction_error_code: code,
+      ...(message ? { extraction_error: message.slice(0, 500) } : {}),
+      extraction_failed_at: new Date().toISOString(),
+    });
   } catch (e) {
     console.error(
       `[extract-document] could not mark ${slug} failed:`,

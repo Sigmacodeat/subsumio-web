@@ -28,6 +28,14 @@ mock.module("../src/commands/web-api.ts", () => ({
     putPageCalls.push({ name, ...params });
     return {};
   },
+  patchPageFrontmatter: async (
+    _engine: unknown,
+    slug: string,
+    _sourceId: string,
+    frontmatter: Record<string, unknown>
+  ) => {
+    putPageCalls.push({ name: "put_page", slug, frontmatter });
+  },
   UnsupportedUploadError: FakeUnsupportedUploadError,
 }));
 

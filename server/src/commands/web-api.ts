@@ -804,19 +804,10 @@ export async function runExtractionAndImport(
   if (caseSlug) {
     for (const s of [slug, ...partSlugs]) {
       try {
-        await invokeOp(
-          engine,
-          "put_page",
-          {
-            slug: s,
-            frontmatter: { case_slug: caseSlug, assignment_status: "assigned" },
-            merge: true,
-          },
-          tenantSource,
-          undefined,
-          matterScope,
-          aclGroups
-        );
+        await patchPageFrontmatter(engine, s, tenantSource, {
+          case_slug: caseSlug,
+          assignment_status: "assigned",
+        });
       } catch {
         /* enrichment — the document is imported, stamping is best effort */
       }
@@ -848,26 +839,12 @@ export async function runExtractionAndImport(
   // document without vectors may be keyword-searchable, but it is not ready for
   // semantic retrieval. Stamp every split part and the parent explicitly.
   for (const s of [slug, ...partSlugs]) {
-    await invokeOp(
-      engine,
-      "put_page",
-      {
-        slug: s,
-        frontmatter: {
-          embedding_status: noEmbed ? "pending" : "ready",
-          ...(noEmbed
-            ? { embedding_pending_since: new Date().toISOString() }
-            : {
-                embedding_completed_at: new Date().toISOString(),
-              }),
-        },
-        merge: true,
-      },
-      tenantSource,
-      undefined,
-      matterScope,
-      aclGroups
-    );
+    await patchPageFrontmatter(engine, s, tenantSource, {
+      embedding_status: noEmbed ? "pending" : "ready",
+      ...(noEmbed
+        ? { embedding_pending_since: new Date().toISOString() }
+        : { embedding_completed_at: new Date().toISOString() }),
+    });
   }
 
   if (noEmbed) {
@@ -1347,6 +1324,26 @@ export async function invokeOp(
   } catch {
     return result.content[0]?.text;
   }
+}
+
+/** Patch page metadata without rewriting document content. `put_page` requires
+ * content even in merge mode, so it is the wrong primitive for status-only
+ * transitions in the upload state machine. */
+export async function patchPageFrontmatter(
+  engine: BrainEngine,
+  slug: string,
+  sourceId: string,
+  patch: Record<string, unknown>
+): Promise<void> {
+  const updated = await engine.executeRaw<{ id: number }>(
+    `UPDATE pages
+       SET frontmatter = COALESCE(frontmatter, '{}'::jsonb) || $1::jsonb,
+           updated_at = now()
+     WHERE source_id = $2 AND slug = $3 AND deleted_at IS NULL
+     RETURNING id`,
+    [patch, sourceId, slug]
+  );
+  if (updated.length === 0) throw new EngineNotFoundError(`Page not found: ${slug}`);
 }
 
 /**
@@ -4165,13 +4162,11 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
             });
             res.end();
           } else
-            res
-              .status(422)
-              .json({
-                error: "file_not_uploaded",
-                message:
-                  "Die Datei wurde noch nicht zum Storage hochgeladen. Bitte zuerst den Upload abschließen.",
-              });
+            res.status(422).json({
+              error: "file_not_uploaded",
+              message:
+                "Die Datei wurde noch nicht zum Storage hochgeladen. Bitte zuerst den Upload abschließen.",
+            });
           return;
         }
 
@@ -4230,13 +4225,11 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
             });
             res.end();
           } else
-            res
-              .status(409)
-              .json({
-                error: "duplicate_file",
-                message: `Datei bereits vorhanden: ${duplicate.filename}`,
-                existing_slug: duplicate.page_slug,
-              });
+            res.status(409).json({
+              error: "duplicate_file",
+              message: `Datei bereits vorhanden: ${duplicate.filename}`,
+              existing_slug: duplicate.page_slug,
+            });
           return;
         }
 
@@ -4435,14 +4428,12 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
             });
             res.end();
           } else
-            res
-              .status(422)
-              .json({
-                error: "password_required",
-                format: e.format,
-                message:
-                  "Die Datei ist passwortgeschützt. Bitte Kennwort eingeben und erneut hochladen.",
-              });
+            res.status(422).json({
+              error: "password_required",
+              format: e.format,
+              message:
+                "Die Datei ist passwortgeschützt. Bitte Kennwort eingeben und erneut hochladen.",
+            });
           return;
         }
         if (e instanceof InvalidDocumentPasswordError) {
@@ -4454,13 +4445,11 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
             });
             res.end();
           } else
-            res
-              .status(422)
-              .json({
-                error: "invalid_document_password",
-                format: e.format,
-                message: "Das Dokumentkennwort ist falsch.",
-              });
+            res.status(422).json({
+              error: "invalid_document_password",
+              format: e.format,
+              message: "Das Dokumentkennwort ist falsch.",
+            });
           return;
         }
         if (wantsSse) {
