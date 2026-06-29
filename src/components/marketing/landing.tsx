@@ -6,7 +6,7 @@
 // decorative motion respects prefers-reduced-motion via MotionConfig.
 
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
@@ -19,7 +19,6 @@ import TrustBand from "./trust-band";
 import { TestimonialsSection } from "./testimonials";
 import AudienceTabs from "./audience-tabs";
 import { Section, SectionHeading, ICONS, accentTile } from "./chrome";
-import { ClipReveal } from "./motion-system";
 import { AnimatedFaqList } from "./animated-faq";
 import {
   GlowCard,
@@ -32,6 +31,7 @@ import {
   MagneticCard,
   TextReveal,
   GradientMesh,
+  SplitTextReveal,
 } from "./motion-system";
 import IndustryHeroMotif from "./industry-hero-motif";
 import { WhatsAppSpotlight } from "./subsumio-showcase";
@@ -51,6 +51,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
   const t = (LANDING as Record<string, typeof LANDING.de>)[lang] ?? LANDING.de;
   const pricing = PRICING[lang];
   const ui = UI_STRINGS[lang];
+  const reduce = useReducedMotion();
 
   return (
     <>
@@ -69,21 +70,48 @@ export default function LandingPage({ lang }: { lang: Lang }) {
               className="absolute inset-0 z-0 hidden opacity-[0.10] md:block"
             />
             <div className="relative z-10">
-              <div className="brand-border brand-soft brand-text mb-8 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium">
+              <motion.div
+                initial={reduce ? false : { scale: 0.8, opacity: 0, y: 12 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                transition={reduce ? { duration: 0 } : { type: "spring", stiffness: 220, damping: 18, delay: 0 }}
+                className="mb-6"
+              >
+                <SubsumioMark size={56} className="mx-auto" />
+              </motion.div>
+              <motion.div
+                initial={reduce ? false : { opacity: 0, y: 12, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={reduce ? { duration: 0 } : { duration: 0.45, ease: EASE.out, delay: 0.15 }}
+                className="brand-border brand-soft brand-text mb-8 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium"
+              >
                 <span className="badge-pulse h-1.5 w-1.5 rounded-full bg-[var(--brand-secondary)]" />
                 {lang !== "en"
                   ? "KI-Kanzleisoftware für AT · DE · CH"
                   : "AI legal software for AT · DE · CH"}
-              </div>
-              <ClipReveal delay={0.1} duration={0.7} direction="up">
-                <h1 className="mb-6 text-4xl leading-[1.08] font-black tracking-tight [color:var(--mk-text)] md:text-6xl [font-family:var(--font-display)]">
+              </motion.div>
+              <h1
+                className="mb-6 text-5xl leading-[1.05] font-black tracking-tight [color:var(--mk-text)] md:text-7xl lg:text-8xl"
+                style={{ fontFamily: "var(--font-display)" }}
+              >
+                <SplitTextReveal
+                  splitBy="char"
+                  stagger={0.035}
+                  delay={0.1}
+                  as="span"
+                  className="block"
+                >
                   Subsumio
-                  <br />
-                  <span className="gradient-text glow-text">
-                    {lang !== "en" ? "Das Kanzlei-Brain." : "The firm brain."}
-                  </span>
-                </h1>
-              </ClipReveal>
+                </SplitTextReveal>
+                <SplitTextReveal
+                  splitBy="char"
+                  stagger={0.04}
+                  delay={0.35}
+                  as="span"
+                  className="gradient-text-animated block"
+                >
+                  {lang !== "en" ? "Das Kanzlei-Brain." : "The firm brain."}
+                </SplitTextReveal>
+              </h1>
               <p className="mx-auto mb-12 max-w-2xl text-lg leading-relaxed [color:var(--mk-text-muted)] md:text-xl">
                 {t.sub}
               </p>

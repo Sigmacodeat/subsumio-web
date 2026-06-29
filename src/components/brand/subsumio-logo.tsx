@@ -68,26 +68,37 @@ export function SubsumioLogo({
   const reduce = useReducedMotion();
 
   return (
-    <span className={`inline-flex items-center gap-2.5 ${className}`}>
+    <span className={`group inline-flex items-center gap-2.5 ${className}`}>
       <motion.span
-        initial={reduce ? false : { scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
+        initial={reduce ? false : { scale: 0.75, opacity: 0, rotate: -8 }}
+        animate={{ scale: 1, opacity: 1, rotate: 0 }}
         transition={
-          reduce ? { duration: 0 } : { type: "spring", stiffness: 200, damping: 15, delay: 0.1 }
+          reduce
+            ? { duration: 0 }
+            : { type: "spring", stiffness: 220, damping: 18, delay: 0.05 }
         }
-        style={{ display: "inline-flex" }}
+        whileHover={reduce ? undefined : { scale: 1.08, rotate: 4 }}
+        className="relative inline-flex"
       >
-        <SubsumioMark size={size} />
+        <SubsumioMark
+          size={size}
+          className="transition-shadow duration-300 group-hover:shadow-[0_0_24px_rgba(47,107,255,0.35)]"
+        />
       </motion.span>
       <motion.span
         className="flex flex-col leading-none"
-        initial={reduce ? false : { opacity: 0, x: -8 }}
+        initial={reduce ? false : { opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
         transition={
-          reduce ? { duration: 0 } : { duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: 0.3 }
+          reduce
+            ? { duration: 0 }
+            : { duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.15 }
         }
       >
-        <span className="font-display text-[19px] font-bold tracking-tight [color:var(--mk-text)]">
+        <span
+          className="font-display text-[18px] font-bold tracking-tight [color:var(--mk-text)] min-[420px]:text-[20px]"
+          style={{ fontFamily: "var(--font-display)" }}
+        >
           Subsum
           <motion.span
             className="brand-text inline-block"
@@ -96,10 +107,11 @@ export function SubsumioLogo({
                 ? undefined
                 : {
                     opacity: [0.5, 1, 0.5],
+                    scale: [1, 1.15, 1],
                   }
             }
             transition={{
-              duration: 4,
+              duration: 3.5,
               repeat: Infinity,
               ease: "easeInOut",
             }}
@@ -109,7 +121,7 @@ export function SubsumioLogo({
           io
         </span>
         {subtitle && (
-          <span className="mt-1 hidden text-xs font-medium tracking-[0.22em] [color:var(--mk-text-subtle)] min-[420px]:block">
+          <span className="mt-1 hidden text-[10px] font-semibold uppercase tracking-[0.16em] [color:var(--mk-text-subtle)] min-[420px]:block">
             {subtitle}
           </span>
         )}

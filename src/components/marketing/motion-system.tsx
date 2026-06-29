@@ -574,6 +574,84 @@ export function MagneticCard({ children, className = "", lift = 6, tilt = 3 }: M
 }
 
 // ---------------------------------------------------------------------------
+// SplitTextReveal — character / word split with staggered entrance
+// State-of-the-art SaaS hero pattern (Linear/Framer/Spring '26)
+// ---------------------------------------------------------------------------
+
+interface SplitTextRevealProps {
+  children: string;
+  className?: string;
+  itemClassName?: string;
+  splitBy?: "char" | "word";
+  delay?: number;
+  stagger?: number;
+  as?: "h1" | "h2" | "h3" | "p" | "span";
+  once?: boolean;
+}
+
+export function SplitTextReveal({
+  children,
+  className = "",
+  itemClassName = "",
+  splitBy = "char",
+  delay = 0,
+  stagger = 0.03,
+  as: Tag = "span",
+  once = true,
+}: SplitTextRevealProps) {
+  const reduce = useReducedMotion();
+  const items =
+    splitBy === "char"
+      ? children.split("").map((c) => (c === " " ? "\u00A0" : c))
+      : children.split(" ");
+
+  const container: Variants = {
+    hidden: {},
+    visible: {
+      transition: {
+        staggerChildren: reduce ? 0 : stagger,
+        delayChildren: delay,
+      },
+    },
+  };
+
+  const item: Variants = {
+    hidden: { opacity: 0, y: reduce ? 0 : 24, rotateX: reduce ? 0 : -80 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      rotateX: 0,
+      transition: { duration: 0.55, ease: EASE.out },
+    },
+  };
+
+  const MotionTag = motion[Tag as keyof typeof motion] as typeof motion.span;
+
+  return (
+    <MotionTag
+      initial="hidden"
+      whileInView="visible"
+      viewport={VIEWPORT.hero}
+      variants={container}
+      className={className}
+      aria-label={children}
+    >
+      {items.map((itemText, i) => (
+        <motion.span
+          key={i}
+          variants={item}
+          className={`inline-block ${itemClassName}`}
+          style={{ transformOrigin: "bottom" }}
+        >
+          {itemText}
+          {splitBy === "word" && i < items.length - 1 ? "\u00A0" : ""}
+        </motion.span>
+      ))}
+    </MotionTag>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // TextReveal — word-by-word stagger (cinematic headline entrance)
 // ---------------------------------------------------------------------------
 
