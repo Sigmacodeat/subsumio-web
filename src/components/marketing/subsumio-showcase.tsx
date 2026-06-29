@@ -271,7 +271,7 @@ export function FeatureBento({ lang }: { lang: Lang }) {
         <span className="brand-soft brand-text brand-border mb-4 inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium">
           {c.bentoEyebrow}
         </span>
-        <h2 className="mb-4 text-3xl font-black [color:var(--mk-text)] [font-family:var(--font-display)] md:text-4xl">
+        <h2 className="mb-4 [font-family:var(--font-display)] text-3xl font-black [color:var(--mk-text)] md:text-4xl">
           {c.bentoTitle}
         </h2>
         <p className="mx-auto max-w-2xl text-lg [color:var(--mk-text-muted)]">{c.bentoSub}</p>

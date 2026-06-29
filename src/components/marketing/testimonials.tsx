@@ -32,7 +32,7 @@ export function TestimonialsSection() {
               />
             ))}
           </div>
-          <h2 className="mb-4 text-3xl font-black [color:var(--mk-text)] [font-family:var(--font-display)] md:text-4xl">
+          <h2 className="mb-4 [font-family:var(--font-display)] text-3xl font-black [color:var(--mk-text)] md:text-4xl">
             Was Anwälte über Subsumio sagen
           </h2>
           <p className="mx-auto max-w-2xl text-lg [color:var(--mk-text-muted)]">

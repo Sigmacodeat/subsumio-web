@@ -73,9 +73,7 @@ export function SubsumioLogo({
         initial={reduce ? false : { scale: 0.75, opacity: 0, rotate: -8 }}
         animate={{ scale: 1, opacity: 1, rotate: 0 }}
         transition={
-          reduce
-            ? { duration: 0 }
-            : { type: "spring", stiffness: 220, damping: 18, delay: 0.05 }
+          reduce ? { duration: 0 } : { type: "spring", stiffness: 220, damping: 18, delay: 0.05 }
         }
         whileHover={reduce ? undefined : { scale: 1.08, rotate: 4 }}
         className="relative inline-flex"
@@ -90,9 +88,7 @@ export function SubsumioLogo({
         initial={reduce ? false : { opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
         transition={
-          reduce
-            ? { duration: 0 }
-            : { duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.15 }
+          reduce ? { duration: 0 } : { duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.15 }
         }
       >
         <span
@@ -121,7 +117,7 @@ export function SubsumioLogo({
           io
         </span>
         {subtitle && (
-          <span className="mt-1 hidden text-[10px] font-semibold uppercase tracking-[0.16em] [color:var(--mk-text-subtle)] min-[420px]:block">
+          <span className="mt-1 hidden text-[10px] font-semibold tracking-[0.16em] [color:var(--mk-text-subtle)] uppercase min-[420px]:block">
             {subtitle}
           </span>
         )}
