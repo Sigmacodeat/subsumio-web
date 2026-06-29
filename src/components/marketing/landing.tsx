@@ -94,28 +94,38 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 style={{ fontFamily: "var(--font-display)" }}
               >
                 <SplitTextReveal
-                  splitBy="char"
-                  stagger={0.035}
-                  delay={0.1}
+                  splitBy="word"
+                  stagger={0.08}
+                  delay={0.15}
                   as="span"
                   className="block"
                 >
                   Subsumio
                 </SplitTextReveal>
                 <SplitTextReveal
-                  splitBy="char"
-                  stagger={0.04}
-                  delay={0.35}
+                  splitBy="word"
+                  stagger={0.1}
+                  delay={0.4}
                   as="span"
                   className="gradient-text-animated block"
                 >
                   {lang !== "en" ? "Das Kanzlei-Brain." : "The firm brain."}
                 </SplitTextReveal>
               </h1>
-              <p className="mx-auto mb-12 max-w-2xl text-lg leading-relaxed [color:var(--mk-text-muted)] md:text-xl">
+              <motion.p
+                initial={reduce ? false : { opacity: 0, y: 16, filter: "blur(6px)" }}
+                animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                transition={reduce ? { duration: 0 } : { duration: 0.6, ease: EASE.out, delay: 0.6 }}
+                className="mx-auto mb-12 max-w-2xl text-lg leading-relaxed [color:var(--mk-text-muted)] md:text-xl"
+              >
                 {t.sub}
-              </p>
-              <div className="mb-4 flex flex-col justify-center gap-4 sm:flex-row">
+              </motion.p>
+              <motion.div
+                initial={reduce ? false : { opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.out, delay: 0.75 }}
+                className="mb-4 flex flex-col justify-center gap-4 sm:flex-row"
+              >
                 <MagneticButton strength={0.25}>
                   <Link href={p(lang, "/signup")}>
                     <Button size="xl" variant="glow" className="min-w-[220px]">
@@ -128,12 +138,17 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                     {lang !== "en" ? "Preise ansehen" : "See pricing"} <ArrowRight size={18} />
                   </Button>
                 </a>
-              </div>
-              <p className="mb-4 text-xs [color:var(--mk-text-subtle)]">
+              </motion.div>
+              <motion.p
+                initial={reduce ? false : { opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.out, delay: 0.85 }}
+                className="mb-4 text-xs [color:var(--mk-text-subtle)]"
+              >
                 {lang !== "en"
                   ? "14 Tage Reverse Trial · 14 Tage Geld-zurück-Garantie · Keine Kreditkarte erforderlich"
                   : "14-day reverse trial · 14-day money-back guarantee · No credit card required"}
-              </p>
+              </motion.p>
               {/* The live demo is a dark spotlight floating on the slate hero */}
               <div
                 id="demo"

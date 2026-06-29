@@ -574,8 +574,10 @@ export function MagneticCard({ children, className = "", lift = 6, tilt = 3 }: M
 }
 
 // ---------------------------------------------------------------------------
-// SplitTextReveal — character / word split with staggered entrance
-// State-of-the-art SaaS hero pattern (Linear/Framer/Spring '26)
+// SplitTextReveal — mask-reveal + blur-to-focus word stagger
+// Professional SaaS pattern (Linear/Stripe/Vercel) — "deliberate, measured
+// authority" suited for legal-tech. No flashy rotateX; instead each line
+// slides up from behind an overflow-hidden mask while words blur-to-focus.
 // ---------------------------------------------------------------------------
 
 interface SplitTextRevealProps {
@@ -593,9 +595,9 @@ export function SplitTextReveal({
   children,
   className = "",
   itemClassName = "",
-  splitBy = "char",
+  splitBy = "word",
   delay = 0,
-  stagger = 0.03,
+  stagger = 0.06,
   as: Tag = "span",
   once = true,
 }: SplitTextRevealProps) {
@@ -616,38 +618,43 @@ export function SplitTextReveal({
   };
 
   const item: Variants = {
-    hidden: { opacity: 0, y: reduce ? 0 : 24, rotateX: reduce ? 0 : -80 },
+    hidden: {
+      opacity: 0,
+      y: reduce ? 0 : "0.3em",
+      filter: reduce ? "blur(0px)" : "blur(8px)",
+    },
     visible: {
       opacity: 1,
       y: 0,
-      rotateX: 0,
-      transition: { duration: 0.55, ease: EASE.out },
+      filter: "blur(0px)",
+      transition: { duration: 0.6, ease: EASE.out },
     },
   };
 
   const MotionTag = motion[Tag as keyof typeof motion] as typeof motion.span;
 
   return (
-    <MotionTag
-      initial="hidden"
-      whileInView="visible"
-      viewport={VIEWPORT.hero}
-      variants={container}
-      className={className}
-      aria-label={children}
-    >
-      {items.map((itemText, i) => (
-        <motion.span
-          key={i}
-          variants={item}
-          className={`inline-block ${itemClassName}`}
-          style={{ transformOrigin: "bottom" }}
-        >
-          {itemText}
-          {splitBy === "word" && i < items.length - 1 ? "\u00A0" : ""}
-        </motion.span>
-      ))}
-    </MotionTag>
+    <span className="block overflow-hidden">
+      <MotionTag
+        initial="hidden"
+        whileInView="visible"
+        viewport={VIEWPORT.hero}
+        variants={container}
+        className={className}
+        aria-label={children}
+      >
+        {items.map((itemText, i) => (
+          <motion.span
+            key={i}
+            variants={item}
+            className={`inline-block ${itemClassName}`}
+          >
+            {itemText}
+            {splitBy === "word" && i < items.length - 1 ? "\u00A0" : ""}
+          </motion.span>
+        ))}
+      </MotionTag>
+    </span>
   );
 }
 
