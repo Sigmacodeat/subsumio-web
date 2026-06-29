@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { hashPassword } from "@/lib/auth/password";
 import { getStore, buildNewUser, toPublic } from "@/lib/auth/store";
-import { signSession, SESSION_COOKIE, SESSION_TTL_SECONDS, REF_COOKIE } from "@/lib/auth/session";
+import { createSession, SESSION_COOKIE, REF_COOKIE } from "@/lib/auth/session";
 import { clientIp } from "@/lib/auth/rate-limit";
 import { signActionToken, bindFragment, VERIFY_TOKEN_TTL_SECONDS } from "@/lib/auth/tokens";
 import { sendMail, siteUrl } from "@/lib/mail";
@@ -92,15 +92,9 @@ export const POST = createPublicHandler(
       }
     })();
 
-    const token = await signSession({ uid: user.id, email: user.email, role: user.role });
+    const session = await createSession(user.id, user.email, user.role);
     const res = NextResponse.json({ user: toPublic(user) }, { status: 201 });
-    res.cookies.set(SESSION_COOKIE, token, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: env("NODE_ENV") === "production",
-      maxAge: SESSION_TTL_SECONDS,
-      path: "/",
-    });
+    res.cookies.set(SESSION_COOKIE, session.token, session.cookieOptions);
     res.cookies.delete(REF_COOKIE);
     return res;
   }

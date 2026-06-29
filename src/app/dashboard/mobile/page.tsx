@@ -264,9 +264,9 @@ export default function MobilePage() {
       {!caps?.isNative && (
         <div className="rounded-xl border border-teal-500/20 bg-teal-500/5 p-4">
           <div className="flex items-start gap-3">
-            <QrCode size={18} className="mt-0.5 shrink-0 text-teal-600" />
+            <QrCode size={18} className="mt-0.5 shrink-0 text-teal-800" />
             <div>
-              <p className="text-sm font-medium text-teal-600">Native App installieren</p>
+              <p className="text-sm font-medium text-teal-800">Native App installieren</p>
               <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
                 Für Push, Biometrie und Kamera-Scan: Baue die Capacitor-App mit{" "}
                 <code className="rounded bg-[color:var(--ds-hover)] px-1.5 py-0.5 font-mono text-xs">

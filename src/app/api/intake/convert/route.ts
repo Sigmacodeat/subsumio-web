@@ -52,6 +52,19 @@ export const POST = createHandler(
       convertedBy: ctx.user.email,
     });
 
+    // Check for duplicate slug before creating
+    const checkRes = await fetch(`${ENGINE_URL}/api/pages/${encodeSlug(casePage.slug)}`, {
+      headers: ctx.headers,
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (checkRes.ok) {
+      return apiError(
+        "case_slug_exists",
+        "Eine Akte mit diesem Slug existiert bereits. Bitte einen anderen Slug oder Aktenzeichen verwenden.",
+        409
+      );
+    }
+
     const createRes = await fetch(`${ENGINE_URL}/api/pages`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...ctx.headers },

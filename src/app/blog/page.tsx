@@ -9,7 +9,11 @@ export const metadata: Metadata = {
   description:
     "Praxiswissen für Anwälte: KI-Kanzleisoftware und Berufsgeheimnis, automatisiertes Fristenmanagement, belegte KI-Antworten vs. Halluzination. DACH-spezifisch, praxisnah.",
   keywords: keywordsFor("blog"),
-  alternates: { canonical: "/blog", languages: { de: "/blog", en: "/en/blog" } },
+  alternates: {
+    canonical: "/blog",
+    languages: { de: "/blog", en: "/en/blog" },
+    types: { "application/rss+xml": "/feed.xml" },
+  },
   openGraph: {
     title: "Subsumio Blog — KI-Kanzleisoftware Praxiswissen",
     description:

@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
-import { computeBalance } from "@/lib/trust-accounting";
 
 export const dynamic = "force-dynamic";
 

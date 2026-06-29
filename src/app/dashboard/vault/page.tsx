@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useLang } from "@/lib/use-lang";
 import { useFieldArray } from "react-hook-form";
 import {
@@ -47,6 +48,7 @@ import { usePaginatedList } from "@/lib/hooks/use-pagination";
 import { Pagination } from "@/components/ui/pagination";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { CappedResultsNotice } from "@/components/dashboard/capped-results-notice";
+import { EmptyState } from "@/components/dashboard/empty-state";
 
 const DOCS_LIMIT = 200;
 
@@ -86,6 +88,14 @@ interface VaultDoc {
   size?: number;
   createdAt: string;
   content: string;
+  extractionStatus?: string;
+  extractionMethod?: string;
+  docType?: string;
+  docTypeLabel?: string;
+  caseSlug?: string;
+  isSplitParent?: boolean;
+  partOf?: string;
+  partCount?: number;
 }
 
 function useTypeLabels(t: ReturnType<typeof useLang>["t"]): Record<string, string> {
@@ -133,6 +143,14 @@ function parseDoc(page: BrainPage): VaultDoc {
       ((page as unknown as Record<string, unknown>).created_at as string) ||
       new Date().toISOString(),
     content: page.content || "",
+    extractionStatus: (fm.extraction_status as string) || undefined,
+    extractionMethod: (fm.extraction_method as string) || undefined,
+    docType: (fm.doc_type as string) || undefined,
+    docTypeLabel: (fm.doc_type_label as string) || undefined,
+    caseSlug: (fm.case_slug as string) || undefined,
+    isSplitParent: fm.is_split_parent === true || fm.is_split_parent === "true",
+    partOf: (fm.part_of as string) || undefined,
+    partCount: (fm.part_count as number) || undefined,
   };
 }
 
@@ -140,6 +158,7 @@ type SortKey = "date_desc" | "date_asc" | "title_asc" | "title_desc" | "size_des
 
 export default function VaultPage() {
   const { t, lang } = useLang();
+  const router = useRouter();
   const TYPE_LABELS = useTypeLabels(t);
   const confirm = useConfirm();
   const [docs, setDocs] = useState<VaultDoc[]>([]);
@@ -151,6 +170,7 @@ export default function VaultPage() {
   const [searching, setSearching] = useState(false);
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [tagFilter, setTagFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<SortKey>("date_desc");
 
   const [selectedSlugs, setSelectedSlugs] = useState<Set<string>>(new Set());
@@ -278,6 +298,21 @@ export default function VaultPage() {
     }
     if (typeFilter !== "all") result = result.filter((d) => d.type === typeFilter);
     if (tagFilter !== "all") result = result.filter((d) => d.tags.includes(tagFilter));
+    if (statusFilter !== "all") {
+      if (statusFilter === "processing") {
+        result = result.filter(
+          (d) => d.extractionStatus === "processing" || d.extractionStatus === "uploaded"
+        );
+      } else if (statusFilter === "failed") {
+        result = result.filter(
+          (d) => d.extractionStatus === "failed" || d.extractionStatus === "error"
+        );
+      } else if (statusFilter === "ready") {
+        result = result.filter((d) => !d.extractionStatus || d.extractionStatus === "ready");
+      } else {
+        result = result.filter((d) => d.extractionStatus === statusFilter);
+      }
+    }
     // Sort
     const sorted = [...result];
     switch (sortBy) {
@@ -298,7 +333,7 @@ export default function VaultPage() {
         break;
     }
     return sorted;
-  }, [docs, searchResults, query, typeFilter, tagFilter, sortBy]);
+  }, [docs, searchResults, query, typeFilter, tagFilter, statusFilter, sortBy]);
 
   const reviewLoading = reviewForm.status === "submitting";
 
@@ -843,7 +878,7 @@ export default function VaultPage() {
         <div className="flex items-center gap-2">
           <Filter size={15} className="text-[color:var(--ds-text-subtle)]" />
           <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-[180px]" aria-label={t("vault.all_types")}>
               <SelectValue placeholder={t("vault.all_types")} />
             </SelectTrigger>
             <SelectContent>
@@ -856,7 +891,7 @@ export default function VaultPage() {
             </SelectContent>
           </Select>
           <Select value={tagFilter} onValueChange={setTagFilter}>
-            <SelectTrigger className="w-[160px]">
+            <SelectTrigger className="w-[160px]" aria-label={t("vault.all_tags")}>
               <SelectValue placeholder={t("vault.all_tags")} />
             </SelectTrigger>
             <SelectContent>
@@ -866,6 +901,25 @@ export default function VaultPage() {
                   {tp}
                 </SelectItem>
               ))}
+            </SelectContent>
+          </Select>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger
+              className="w-[160px]"
+              aria-label={lang === "en" ? "All statuses" : "Alle Status"}
+            >
+              <SelectValue placeholder={lang === "en" ? "All statuses" : "Alle Status"} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{lang === "en" ? "All statuses" : "Alle Status"}</SelectItem>
+              <SelectItem value="ready">{lang === "en" ? "Ready" : "Bereit"}</SelectItem>
+              <SelectItem value="processing">
+                {lang === "en" ? "Processing" : "In Verarbeitung"}
+              </SelectItem>
+              <SelectItem value="failed">{lang === "en" ? "Failed" : "Fehlgeschlagen"}</SelectItem>
+              <SelectItem value="ocr_needed">
+                {lang === "en" ? "OCR needed" : "OCR nötig"}
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -925,17 +979,13 @@ export default function VaultPage() {
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[color:var(--ds-border-strong)] bg-[color:var(--ds-surface)] px-6 py-16 text-center">
-          <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[color:var(--ds-surface-2)]">
-            <FileText size={26} className="text-[color:var(--ds-text-subtle)]" />
-          </div>
-          <h3 className="text-sm font-semibold tracking-tight text-[color:var(--ds-text)]">
-            {t("vault.empty_title")}
-          </h3>
-          <p className="mt-2 max-w-sm text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
-            {docs.length === 0 ? t("vault.empty_upload") : t("vault.empty_filter")}
-          </p>
-        </div>
+        <EmptyState
+          icon={FileText}
+          title={t("vault.empty_title")}
+          description={docs.length === 0 ? t("vault.empty_upload") : t("vault.empty_filter")}
+          actionLabel={docs.length === 0 ? t("vault.empty_upload_cta") : undefined}
+          onAction={docs.length === 0 ? () => router.push("/dashboard/upload") : undefined}
+        />
       ) : (
         <>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 lg:grid-cols-3">
@@ -945,7 +995,7 @@ export default function VaultPage() {
                 className="group space-y-2.5 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-colors focus-within:border-[color:var(--ds-border-strong)] hover:border-[color:var(--ds-border-strong)]"
               >
                 <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-1.5">
                     <input
                       type="checkbox"
                       checked={selectedSlugs.has(doc.slug)}
@@ -959,6 +1009,62 @@ export default function VaultPage() {
                     >
                       {TYPE_LABELS[doc.type] || doc.type}
                     </Badge>
+                    {doc.docTypeLabel && (
+                      <Badge
+                        variant="default"
+                        className="border border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)] text-xs text-[color:var(--ds-info-text)]"
+                      >
+                        {doc.docTypeLabel}
+                      </Badge>
+                    )}
+                    {doc.extractionStatus && doc.extractionStatus !== "ready" && (
+                      <Badge
+                        variant="default"
+                        className={`border text-xs ${
+                          doc.extractionStatus === "failed" || doc.extractionStatus === "error"
+                            ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)]"
+                            : doc.extractionStatus === "processing" ||
+                                doc.extractionStatus === "uploaded"
+                              ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] text-[color:var(--ds-warning-text)]"
+                              : "border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-[color:var(--ds-text-muted)]"
+                        }`}
+                      >
+                        {doc.extractionStatus === "failed" || doc.extractionStatus === "error"
+                          ? lang === "en"
+                            ? "Extraction failed"
+                            : "Extraktion fehlgeschlagen"
+                          : doc.extractionStatus === "processing" ||
+                              doc.extractionStatus === "uploaded"
+                            ? lang === "en"
+                              ? "Processing…"
+                              : "Wird verarbeitet…"
+                            : doc.extractionStatus === "ocr_needed"
+                              ? lang === "en"
+                                ? "OCR needed"
+                                : "OCR nötig"
+                              : doc.extractionStatus}
+                      </Badge>
+                    )}
+                    {doc.isSplitParent && (
+                      <Badge
+                        variant="default"
+                        className="border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text-muted)]"
+                      >
+                        {doc.partCount
+                          ? `${doc.partCount} ${lang === "en" ? "parts" : "Teile"}`
+                          : lang === "en"
+                            ? "Split parent"
+                            : "Gesplittet"}
+                      </Badge>
+                    )}
+                    {doc.partOf && (
+                      <Badge
+                        variant="default"
+                        className="border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text-muted)]"
+                      >
+                        {lang === "en" ? "Part of" : "Teil von"} {doc.partOf.split("/").pop()}
+                      </Badge>
+                    )}
                   </div>
                   <button
                     onClick={() => deleteDoc(doc.slug)}
@@ -998,7 +1104,19 @@ export default function VaultPage() {
                     <Clock size={10} />
                     {new Date(doc.createdAt).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")}
                   </span>
-                  {doc.size ? <span>{formatFileSize(doc.size)}</span> : null}
+                  <span className="flex items-center gap-2">
+                    {doc.caseSlug && (
+                      <Link
+                        href={`/dashboard/brain/${encodeURIComponent(doc.caseSlug)}`}
+                        className="flex items-center gap-1 hover:text-[color:var(--brand-primary)]"
+                        title={doc.caseSlug}
+                      >
+                        <Briefcase size={10} />
+                        {doc.caseSlug.split("/").pop()}
+                      </Link>
+                    )}
+                    {doc.size ? <span>{formatFileSize(doc.size)}</span> : null}
+                  </span>
                 </div>
               </div>
             ))}

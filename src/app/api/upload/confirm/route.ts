@@ -9,7 +9,7 @@ export const POST = createHandler(
     action: "brain.write",
     rateTier: "heavy",
     quota: "uploads",
-    audit: (ctx, body) => ({
+    audit: (ctx, _body) => ({
       action: "document.confirm" as const,
       entityType: "document",
       details: { userId: ctx.user.id },

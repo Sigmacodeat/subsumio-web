@@ -44,7 +44,7 @@ type EditorMode = "view" | "edit";
 export function DraftEditor({
   draft,
   caseSlug,
-  caseTitle,
+  caseTitle: _caseTitle,
   kanzleiName,
   recipientEmail,
   recipientName,

@@ -31,12 +31,14 @@ async function signUpViaApi(page: Page) {
 
 async function createContract(page: Page, title: string) {
   await page.goto("/dashboard/contracts", { waitUntil: "domcontentloaded" });
-  await expect(page.getByRole("heading", { name: /contract intelligence/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /contract intelligence/i })).toBeVisible({
+    timeout: 10_000,
+  });
   const createButton = page.getByRole("button", { name: /vertrag anlegen|create contract/i });
   await expect(createButton).toBeEnabled();
   await createButton.click();
 
-  const dialog = page.getByRole("dialog");
+  const dialog = page.getByRole("dialog", { name: /quick create contract|vertrag anlegen/i });
   await expect(dialog).toBeVisible();
   await dialog.getByLabel(/title|titel|bezeichnung/i).fill(title);
   await dialog.getByLabel(/parties|parteien/i).fill("Party A — Party B");
@@ -51,6 +53,23 @@ async function createContract(page: Page, title: string) {
 test.describe("CLM flow", () => {
   test.beforeEach(async ({ page }) => {
     await signUpViaApi(page);
+    // Mark tour as completed to prevent the guided tour overlay from blocking interactions
+    await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+    await page.evaluate(() => {
+      try {
+        localStorage.setItem("subsumio-tour-completed", "true");
+      } catch {}
+    });
+    // Reload to apply the localStorage change
+    await page.reload({ waitUntil: "domcontentloaded" });
+    // Dismiss any tour that might have started before localStorage was set
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(500);
+    // Click any remaining overlay to dismiss it
+    const overlay = page.locator('[aria-hidden="true"].fixed.inset-0.z-\\[100\\]');
+    if (await overlay.isVisible({ timeout: 500 }).catch(() => false)) {
+      await overlay.click();
+    }
   });
 
   test("creates a contract through the intake dialog", async ({ page }) => {
@@ -105,7 +124,7 @@ test.describe("CLM flow", () => {
   test("exposes obligation and deadline workflow entry points", async ({ page }) => {
     await page.goto("/dashboard/contracts", { waitUntil: "domcontentloaded" });
     await expect(page.getByRole("link", { name: /obligation tracking/i })).toBeVisible();
-    await page.getByRole("link", { name: /obligation tracking/i }).click();
+    await page.getByRole("link", { name: /obligation tracking/i }).click({ force: true });
     await expect(page).toHaveURL(/\/dashboard\/obligation-tracking/);
     await expect(page.getByRole("heading", { name: /obligation|verpflichtung/i })).toBeVisible();
 

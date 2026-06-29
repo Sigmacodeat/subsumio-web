@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 
-interface SpeechRecognitionResult {
+interface _SpeechRecognitionResult {
   transcript: string;
   confidence: number;
 }

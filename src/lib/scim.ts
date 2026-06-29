@@ -26,6 +26,7 @@ import { type User, getStore, buildNewUser } from "@/lib/auth/store";
 import { logAudit } from "@/lib/audit";
 import { provisionBrainAsync } from "@/lib/provision";
 import { externalFetchTimeout } from "@/lib/retry";
+import { revokeAllSessions } from "@/lib/auth/session";
 
 // ── SCIM 2.0 Constants ────────────────────────────────────────────────
 
@@ -381,6 +382,10 @@ export async function provisionOrUpdateUser(
   user = await store.update(user.id, patch);
   if (!user) throw new Error("Failed to update user during SCIM sync");
 
+  if (patch.deactivatedAt) {
+    await revokeAllSessions(user.id);
+  }
+
   await logAudit("scim.user_updated", "user", {
     entityId: user.id,
     details: { email, externalId, active, changes: patch },
@@ -401,6 +406,8 @@ export async function deprovisionUser(userId: string, orgId?: string): Promise<U
   const updated = await store.update(userId, {
     deactivatedAt: new Date().toISOString(),
   });
+
+  await revokeAllSessions(userId);
 
   await logAudit("scim.user_deprovisioned", "user", {
     entityId: userId,

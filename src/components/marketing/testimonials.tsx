@@ -6,6 +6,9 @@ import { EASE } from "./motion-system";
 import { TESTIMONIALS } from "./testimonials-data";
 
 export function TestimonialsSection() {
+  // No fabricated social proof: render nothing until real, consented
+  // testimonials exist in testimonials-data.ts.
+  if (TESTIMONIALS.length === 0) return null;
   return (
     <section
       data-tone="slate"

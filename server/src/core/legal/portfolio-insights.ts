@@ -61,6 +61,7 @@ export interface PortfolioInsights {
   negotiation_patterns: string[];
   warnings: string[];
   generated_at: string;
+  attorney_review_required: true;
 }
 
 export interface PortfolioInsightsOpts {
@@ -352,7 +353,7 @@ function extractNegotiationPatterns(contracts: ContractMeta[]): string[] {
   );
   if (highRiskClauses.length > 0) {
     patterns.push(
-      ` Häufige Risikoklauseln: ${highRiskClauses.map((c) => c.clause_type).join(", ")}`
+      `Häufige Risikoklauseln: ${highRiskClauses.map((c) => c.clause_type).join(", ")}`
     );
   }
 
@@ -392,6 +393,7 @@ export async function portfolioInsights(
       negotiation_patterns: [],
       warnings,
       generated_at: new Date().toISOString(),
+      attorney_review_required: true,
     };
   }
 
@@ -411,5 +413,6 @@ export async function portfolioInsights(
     negotiation_patterns: extractNegotiationPatterns(contracts),
     warnings,
     generated_at: new Date().toISOString(),
+    attorney_review_required: true,
   };
 }

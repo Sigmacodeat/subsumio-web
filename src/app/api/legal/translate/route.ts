@@ -15,14 +15,14 @@ const translateSchema = z
   .refine((v) => v.document_slug || v.text, { message: "document_slug_or_text_required" });
 
 export const POST = createEngineProxy({
-  action: "legal.document_review",
+  action: "legal.translate",
   enginePath: "/api/legal/translate",
   body: translateSchema,
   rateTier: "heavy",
   citationGate: true,
   label: "translate",
   audit: (_ctx, b) => ({
-    action: "legal.document_review" as const,
+    action: "legal.translate" as const,
     entityType: "document",
     details: {
       targetLanguage: b.target_language,

@@ -8,6 +8,7 @@ import {
   type LegalLLM,
   clipText,
   defaultLegalLLM,
+  groundQuotes,
   resolveDocumentText,
   tryParseJSON,
   asStringArray,
@@ -158,7 +159,7 @@ export async function extractObligations(
     };
   }
 
-  const obligations: ObligationEntry[] = Array.isArray(parsed.obligations)
+  let obligations: ObligationEntry[] = Array.isArray(parsed.obligations)
     ? parsed.obligations
         .filter((o): o is Record<string, unknown> => typeof o === "object" && o !== null)
         .map((o) => ({
@@ -191,6 +192,24 @@ export async function extractObligations(
         }))
         .filter((o) => o.description)
     : [];
+
+  // Ground clause_reference against source text — only check items that HAVE a reference
+  if (obligations.length > 0) {
+    const withRef = obligations.filter((o) => o.clause_reference);
+    const withoutRef = obligations.filter((o) => !o.clause_reference);
+    const { grounded: groundedObs, warnings: groundWarnings } = groundQuotes(
+      withRef,
+      (o) => o.clause_reference,
+      text,
+      { label: "OBLIGATION_REF", minQuoteLen: 4 }
+    );
+    warnings.push(...groundWarnings);
+    const droppedCount = withRef.length - groundedObs.length;
+    if (droppedCount > 0) {
+      warnings.push(`UNGROUNDED_CLAUSE_REFS_DROPPED: ${droppedCount}`);
+    }
+    obligations = [...groundedObs, ...withoutRef];
+  }
 
   const renewalDates = Array.isArray(parsed.renewal_dates)
     ? parsed.renewal_dates

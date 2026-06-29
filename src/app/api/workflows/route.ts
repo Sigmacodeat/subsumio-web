@@ -107,8 +107,8 @@ export const POST = createHandler(
           type: "workflow",
           content: prompt,
           frontmatter,
-          signal: AbortSignal.timeout(15_000),
         }),
+        signal: AbortSignal.timeout(15_000),
       });
 
       if (!res.ok) {
@@ -156,8 +156,7 @@ export const PATCH = createHandler(
   async (ctx, body, _query, _req) => {
     try {
       // Load the workflow page
-      const path = body.slug.split("/").map(encodeURIComponent).join("/");
-      const res = await fetch(`${ENGINE_URL}/api/pages/${path}`, {
+      const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(body.slug)}`, {
         headers: engineHeadersForBrain(ctx.brainId),
         signal: AbortSignal.timeout(10_000),
       });
@@ -205,7 +204,7 @@ export const PATCH = createHandler(
 
       // Save back
       const updateRes = await fetch(`${ENGINE_URL}/api/pages`, {
-        method: "PUT",
+        method: "POST",
         headers: {
           ...engineHeadersForBrain(ctx.brainId),
           "Content-Type": "application/json",
@@ -214,8 +213,9 @@ export const PATCH = createHandler(
           slug: body.slug,
           title: instance.title,
           frontmatter: updatedFrontmatter,
-          signal: AbortSignal.timeout(15_000),
+          merge: true,
         }),
+        signal: AbortSignal.timeout(15_000),
       });
 
       if (!updateRes.ok) {

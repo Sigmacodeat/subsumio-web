@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Subsumio Preise — KI-Kanzleisoftware ab 890 €/Nutzer",
     description:
-      "Transparente Preise pro Nutzer für KI-Kanzleisoftware. Gehostete Pläne ab 890 €/Nutzer/Mon. — EU-Cloud oder On-Premise, 14 Tage volle Testversion, keine Überraschungsrechnung.",
+      "Transparente Preise pro Nutzer für KI-Kanzleisoftware. Gehostete Pläne ab 890 €/Nutzer/Mon. — EU-Cloud oder On-Premise, 14 Tage Testversion, keine Überraschungen.",
     url: "/pricing",
     type: "website",
   },

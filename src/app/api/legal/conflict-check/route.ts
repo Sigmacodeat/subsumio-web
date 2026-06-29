@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { createEngineProxy } from "@/lib/api-handler";
 
+export const maxDuration = 60;
+
 const conflictCheckSchema = z.object({
   name: z.string().min(1, "name_required"),
 });

@@ -9,7 +9,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Subsumio — Kanzlei-OS",
     short_name: "Subsumio",
     description:
-      "Kanzlei-OS fuer Akten, Fristen, Eingang, Dokumente, Abrechnung und zitierte KI-Antworten.",
+      "Kanzlei-OS für Akten, Fristen, Eingang, Dokumente, Abrechnung und zitierte KI-Antworten.",
     start_url: "/dashboard",
     scope: "/",
     display: "standalone",

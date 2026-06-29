@@ -33,11 +33,11 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Subsumio — KI-Kanzleisoftware für Rechtsanwälte | AT · DE · CH",
+    default: "Subsumio — KI-Kanzleisoftware für Anwälte | AT · DE · CH",
     template: "%s — Subsumio",
   },
   description:
-    "Subsumio ist die KI-Kanzleisoftware für Rechtsanwälte in Österreich, Deutschland und der Schweiz: Aktenverwaltung, Fristenkontrolle nach ZPO/BGB/ABGB, belegte KI-Antworten mit Fundstellen, DATEV-Export, Kollisionsprüfung. DSGVO-konform, EU-Cloud oder On-Premise.",
+    "KI-Kanzleisoftware für Anwälte in AT, DE & CH: Aktenverwaltung, Fristen nach ZPO/BGB/ABGB, belegte KI-Antworten mit Fundstellen, DATEV-Export. DSGVO-konform.",
   keywords: [
     // Cluster A: Kanzleisoftware
     "Kanzleisoftware",
@@ -181,6 +181,12 @@ export default async function RootLayout({
     >
       <head>
         <meta httpEquiv="content-language" content="de-DE, de-AT, de-CH, en" />
+        <link
+          rel="alternate"
+          type="application/rss+xml"
+          title="Subsumio Blog — KI-Kanzleisoftware Praxiswissen"
+          href="/feed.xml"
+        />
       </head>
       <body
         className="noise min-h-full [color:var(--color-light-text)] antialiased [background:var(--color-light-bg)]"

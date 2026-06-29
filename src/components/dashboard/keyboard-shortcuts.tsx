@@ -57,6 +57,16 @@ export function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsProps) {
         { keys: ["⌘", "Shift", "A"], label: t("cmd.shortcuts.assistant") },
       ],
     },
+    {
+      title: t("cmd.shortcuts.quick_create"),
+      items: [
+        { keys: ["N"], label: t("cmd.shortcuts.new_case") },
+        { keys: ["D"], label: t("cmd.shortcuts.new_deadline") },
+        { keys: ["I"], label: t("cmd.shortcuts.new_invoice") },
+        { keys: ["S"], label: t("cmd.shortcuts.new_signature") },
+        { keys: ["C"], label: t("cmd.shortcuts.new_contract") },
+      ],
+    },
   ];
 
   return (

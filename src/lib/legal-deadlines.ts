@@ -506,6 +506,37 @@ export const DEADLINE_RULES: DeadlineRule[] = [
     description: "Vollziehungsfrist: 1 Monat ab Verkündung/Zustellung an den Gläubiger",
   },
   {
+    key: "zpo-wiedereinsetzung",
+    label: "Wiedereinsetzung in den vorigen Stand (ZPO)",
+    law: "§ 233 ZPO",
+    days: 14,
+    description:
+      "Notfrist: 2 Wochen ab Wegfall des Hindernisses (Wiedereinsetzung in den vorigen Stand)",
+  },
+  {
+    key: "vwgo-klage",
+    label: "Klagefrist (VwGO)",
+    law: "§ 60 VwGO",
+    months: 1,
+    description:
+      "Notfrist: 1 Monat ab Zustellung des Widerspruchsbescheids (Anfechtungsklage vor dem Verwaltungsgericht)",
+  },
+  {
+    key: "vwgo-widerspruch",
+    label: "Widerspruchsfrist (VwVfG)",
+    law: "§ 70 VwVfG",
+    months: 1,
+    description:
+      "1 Monat ab Zustellung des Verwaltungsakts (Widerspruch gegen Verwaltungsakt; entfällt wenn Widerspruch nicht gegeben)",
+  },
+  {
+    key: "stpo-beschwerde",
+    label: "Sofortige Beschwerde (StPO)",
+    law: "§ 295 StPO",
+    days: 7,
+    description: "1 Woche ab Zustellung der Entscheidung (sofortige Beschwerde im Strafverfahren)",
+  },
+  {
     key: "vwgvg-beschwerde",
     label: "Bescheidbeschwerde (AT)",
     law: "§ 7 Abs. 4 VwGVG (AT)",

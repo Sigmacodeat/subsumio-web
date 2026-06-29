@@ -23,6 +23,14 @@ import {
   HelpCircle,
   PanelRightOpen,
   Languages,
+  Plus,
+  Briefcase,
+  CalendarClock,
+  Receipt,
+  FileSignature,
+  FileCheck,
+  Library,
+  PenTool,
 } from "lucide-react";
 import { useBrainSelector } from "@/lib/use-brain-selector";
 import { useBrainStats, usePages, useSearch } from "@/lib/queries/brain";
@@ -69,10 +77,12 @@ export function Topbar({
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [brainOpen, setBrainOpen] = useState(false);
   const [brainActiveIdx, setBrainActiveIdx] = useState(0);
+  const [quickCreateOpen, setQuickCreateOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const brainRef = useRef<HTMLDivElement>(null);
+  const quickCreateRef = useRef<HTMLDivElement>(null);
   const { t, lang, setLang } = useLang();
   const { popoverTransition, popoverInitial, popoverAnimate, popoverExit } = useDashboardMotion();
 
@@ -91,13 +101,15 @@ export function Topbar({
   }, [debouncedQuery]);
 
   useEffect(() => {
-    if (!notifOpen && !userMenuOpen && !brainOpen && !searchOpen) return;
+    if (!notifOpen && !userMenuOpen && !brainOpen && !searchOpen && !quickCreateOpen) return;
     const onMouseDown = (e: MouseEvent) => {
       const target = e.target as Node;
       if (notifRef.current && !notifRef.current.contains(target)) setNotifOpen(false);
       if (userMenuRef.current && !userMenuRef.current.contains(target)) setUserMenuOpen(false);
       if (brainRef.current && !brainRef.current.contains(target)) setBrainOpen(false);
       if (searchRef.current && !searchRef.current.contains(target)) setSearchOpen(false);
+      if (quickCreateRef.current && !quickCreateRef.current.contains(target))
+        setQuickCreateOpen(false);
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -105,6 +117,7 @@ export function Topbar({
         setUserMenuOpen(false);
         setBrainOpen(false);
         setSearchOpen(false);
+        setQuickCreateOpen(false);
       }
     };
     document.addEventListener("mousedown", onMouseDown);
@@ -113,7 +126,7 @@ export function Topbar({
       document.removeEventListener("mousedown", onMouseDown);
       document.removeEventListener("keydown", onKey);
     };
-  }, [notifOpen, userMenuOpen, brainOpen, searchOpen]);
+  }, [notifOpen, userMenuOpen, brainOpen, searchOpen, quickCreateOpen]);
 
   const statsQuery = useBrainStats();
   const deadlinesQuery = usePages({ type: "legal_deadline", limit: 20 });
@@ -669,6 +682,98 @@ export function Topbar({
         </AnimatePresence>
       </div>
       <div className="flex shrink-0 items-center gap-2 max-md:hidden">
+        {/* Quick-Create */}
+        <div ref={quickCreateRef} className="relative">
+          <button
+            onClick={() => setQuickCreateOpen((v) => !v)}
+            aria-label={t("topbar.quick_create")}
+            title={t("topbar.quick_create")}
+            aria-expanded={quickCreateOpen}
+            className={cn(
+              "flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-[13px] font-medium transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
+              quickCreateOpen
+                ? "brand-soft brand-text"
+                : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+            )}
+          >
+            <Plus size={16} strokeWidth={2.5} />
+            <span className="hidden lg:inline">{t("topbar.quick_create")}</span>
+          </button>
+          <AnimatePresence initial={false}>
+            {quickCreateOpen && (
+              <motion.div
+                className="card-shadow-elevated absolute top-12 right-0 z-50 w-56 overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
+                role="menu"
+                aria-label={t("topbar.quick_create")}
+                initial={popoverInitial}
+                animate={popoverAnimate}
+                exit={popoverExit}
+                transition={popoverTransition}
+              >
+                <div className="border-b border-[color:var(--ds-border)] px-4 py-2.5">
+                  <span className="text-[11px] font-semibold tracking-wider text-[color:var(--ds-text-subtle)] uppercase">
+                    {t("topbar.quick_create")}
+                  </span>
+                </div>
+                <div className="p-1.5">
+                  {[
+                    {
+                      icon: Briefcase,
+                      label: t("topbar.create_case"),
+                      event: "subsumio:create-case",
+                    },
+                    {
+                      icon: CalendarClock,
+                      label: t("topbar.create_deadline"),
+                      event: "subsumio:create-deadline",
+                    },
+                    {
+                      icon: Receipt,
+                      label: t("topbar.create_invoice"),
+                      event: "subsumio:create-invoice",
+                    },
+                    {
+                      icon: FileSignature,
+                      label: t("topbar.create_signature"),
+                      event: "subsumio:create-signature",
+                    },
+                    {
+                      icon: FileCheck,
+                      label: t("topbar.create_contract"),
+                      event: "subsumio:create-contract",
+                    },
+                    {
+                      icon: Library,
+                      label: t("topbar.create_clause"),
+                      event: "subsumio:create-clause",
+                    },
+                    { icon: PenTool, label: t("topbar.create_draft"), href: "/dashboard/drafting" },
+                  ].map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <button
+                        key={item.label}
+                        onClick={() => {
+                          setQuickCreateOpen(false);
+                          if (item.event) {
+                            window.dispatchEvent(new Event(item.event));
+                          } else if (item.href) {
+                            router.push(item.href);
+                          }
+                        }}
+                        className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                        role="menuitem"
+                      >
+                        <Icon size={15} className="shrink-0" />
+                        {item.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
         <button
           onClick={onCopilotToggle}
           data-tour="copilot-toggle"

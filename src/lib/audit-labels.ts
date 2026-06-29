@@ -52,12 +52,21 @@ export type AuditAction =
   | "legal.judgements_sync"
   | "legal.ai_deadlines"
   | "legal.rvg"
+  | "tax.stbvv"
+  | "tax.analyze"
+  | "tax.summarize"
   | "legal.statute"
   | "legal.playbook"
   | "legal.contradictions"
   | "legal.retrieval_feedback"
+  | "legal.translate"
+  | "legal.obligation_extract"
+  | "legal.case_scanner"
+  | "legal.precedent_search"
+  | "legal.portfolio_insights"
   | "legal.strategy"
   | "legal.research"
+  | "legal.ground"
   | "settings.update"
   | "billing.upgrade"
   | "onboarding.complete"
@@ -145,7 +154,13 @@ const ACTION_LABELS: Record<string, string> = {
   "legal.contradictions": "Widerspruchsprüfung",
   "legal.retrieval_feedback": "Retrieval-Feedback",
   "legal.strategy": "Strategie generiert",
+  "legal.translate": "Übersetzung",
+  "legal.obligation_extract": "Verpflichtungen extrahiert",
+  "legal.case_scanner": "Case Scanner",
+  "legal.precedent_search": "Präzedenzfall-Suche",
+  "legal.portfolio_insights": "Portfolio-Analytics",
   "legal.research": "Deep Research gestartet",
+  "legal.ground": "Citation Grounding",
   "settings.update": "Einstellungen geändert",
   "billing.upgrade": "Plan geändert",
   "onboarding.complete": "Onboarding abgeschlossen",
@@ -188,6 +203,9 @@ const ACTION_LABELS: Record<string, string> = {
   "litigation.delete": "Verfahren gelöscht",
   "litigation.phase_advance": "Phase gewechselt",
   "litigation.step_update": "Schritt aktualisiert",
+  "tax.stbvv": "StBVV-Gebührenberechnung",
+  "tax.analyze": "Steuerdokument-Analyse",
+  "tax.summarize": "Steuerdokument-Zusammenfassung",
 };
 
 export function auditLabel(action: string): string {

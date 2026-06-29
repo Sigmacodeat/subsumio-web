@@ -132,7 +132,9 @@ const SEO_KEYWORDS = {
     "law firm software Berlin",
     "law firm software Zurich",
   ],
-} as const;
+};
+
+export { SEO_KEYWORDS };
 
 export function keywordsFor(page: keyof typeof SEO_KEYWORDS): Metadata["keywords"] {
   return [...SEO_KEYWORDS[page]];

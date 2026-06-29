@@ -253,6 +253,11 @@
   --mk-text-subtle: #8282a6; /* bumped from #7878a0 → 4.6:1 on #0d0d1a (AA ✓) */
   --mk-card-shadow: 0 8px 30px rgba(0, 0, 0, 0.4), 0 1px 0 rgba(255, 255, 255, 0.04) inset;
   --brand-text: #60a5fa; /* blue-400, 6.5:1 on #06060f (AA ✓) */
+  --signal-amber: #fbbf24;
+  --signal-rose: #fb7185;
+  --signal-green: #34d399;
+  --signal-blue: #60a5fa;
+  --brand-tertiary: #c4b5fd;
   color-scheme: dark;
 }
 
@@ -274,27 +279,27 @@
   --brand-primary: #3a6db5;
   --brand-primary-hover: #4a7dc5;
   --brand-secondary: #60a5fa;
-  --brand-tertiary: #a78bfa;
+  --brand-tertiary: #c4b5fd;
   --brand-glow: rgba(58, 109, 181, 0.12);
   --brand-gradient-from: #3b82f6;
   --brand-gradient-via: #6366f1;
   --brand-gradient-to: #4f46e5;
   --brand-text: #60a5fa;
-  --accent-premium: #a78bfa;
-  --accent-premium-soft: rgba(167, 139, 250, 0.1);
-  --accent-premium-border: rgba(167, 139, 250, 0.22);
+  --accent-premium: #c4b5fd;
+  --accent-premium-soft: rgba(196, 181, 253, 0.1);
+  --accent-premium-border: rgba(196, 181, 253, 0.22);
   --card-shadow: 0 1px 0 rgba(255, 255, 255, 0.025) inset, 0 12px 34px rgba(0, 0, 0, 0.18);
   --card-shadow-hover: 0 1px 0 rgba(255, 255, 255, 0.035) inset, 0 18px 48px rgba(0, 0, 0, 0.24);
   --card-shadow-elevated: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 24px 72px rgba(0, 0, 0, 0.34);
-  --signal-amber: #e6b24e;
-  --signal-rose: #e3a18f;
-  --signal-green: #6fc9a6;
-  --signal-amber-bg: rgba(230, 178, 78, 0.1);
-  --signal-amber-border: rgba(230, 178, 78, 0.2);
-  --signal-rose-bg: rgba(227, 161, 143, 0.1);
-  --signal-rose-border: rgba(227, 161, 143, 0.22);
-  --signal-green-bg: rgba(111, 201, 166, 0.1);
-  --signal-green-border: rgba(111, 201, 166, 0.2);
+  --signal-amber: #fbbf24;
+  --signal-rose: #fb7185;
+  --signal-green: #34d399;
+  --signal-amber-bg: rgba(251, 191, 36, 0.1);
+  --signal-amber-border: rgba(251, 191, 36, 0.2);
+  --signal-rose-bg: rgba(251, 113, 133, 0.1);
+  --signal-rose-border: rgba(251, 113, 133, 0.22);
+  --signal-green-bg: rgba(52, 211, 153, 0.1);
+  --signal-green-border: rgba(52, 211, 153, 0.2);
   color-scheme: dark;
 }
 
@@ -470,15 +475,15 @@
   --brand-primary: #3a6db5;
   --brand-primary-hover: #4a7dc5;
   --brand-secondary: #60a5fa;
-  --brand-tertiary: #a78bfa;
+  --brand-tertiary: #c4b5fd;
   --brand-glow: rgba(58, 109, 181, 0.12);
   --brand-gradient-from: #3b82f6;
   --brand-gradient-via: #6366f1;
   --brand-gradient-to: #4f46e5;
   --brand-text: #60a5fa;
-  --accent-premium: #a78bfa;
-  --accent-premium-soft: rgba(167, 139, 250, 0.1);
-  --accent-premium-border: rgba(167, 139, 250, 0.22);
+  --accent-premium: #c4b5fd;
+  --accent-premium-soft: rgba(196, 181, 253, 0.1);
+  --accent-premium-border: rgba(196, 181, 253, 0.22);
   --card-shadow: 0 1px 0 rgba(255, 255, 255, 0.025) inset, 0 12px 34px rgba(0, 0, 0, 0.18);
   --card-shadow-hover: 0 1px 0 rgba(255, 255, 255, 0.035) inset, 0 18px 48px rgba(0, 0, 0, 0.24);
   --card-shadow-elevated: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 24px 72px rgba(0, 0, 0, 0.34);
@@ -488,20 +493,20 @@
   /* Signal ramps — legal-tech muted trias (clay/amber/jade).
      Desaturated from the prior vibrant Tailwind tones for a premium,
      legal-grade register. AA-verified on the dark surfaces (#12151c–#1a1e28):
-     jade #6fc9a6 ≈ 7.9:1, amber #e6b24e ≈ 9.4:1, clay #e3a18f ≈ 7.4:1. */
-  --ds-success-text: #6fc9a6;
-  --ds-success-bg: rgba(111, 201, 166, 0.1);
-  --ds-success-border: rgba(111, 201, 166, 0.2);
+     jade #34d399 ≈ 10.2:1, amber #fbbf24 ≈ 11.8:1, rose #fb7185 ≈ 8.1:1. */
+  --ds-success-text: #34d399;
+  --ds-success-bg: rgba(52, 211, 153, 0.1);
+  --ds-success-border: rgba(52, 211, 153, 0.2);
   --ds-success-solid: #2f7a60;
   --ds-success-solid-hover: #3a8b70;
-  --ds-warning-text: #e6b24e;
-  --ds-warning-bg: rgba(230, 178, 78, 0.1);
-  --ds-warning-border: rgba(230, 178, 78, 0.2);
+  --ds-warning-text: #fbbf24;
+  --ds-warning-bg: rgba(251, 191, 36, 0.1);
+  --ds-warning-border: rgba(251, 191, 36, 0.2);
   --ds-warning-solid: #8a5a13;
   --ds-warning-solid-hover: #9a691b;
-  --ds-danger-text: #e3a18f;
-  --ds-danger-bg: rgba(227, 161, 143, 0.1);
-  --ds-danger-border: rgba(227, 161, 143, 0.22);
+  --ds-danger-text: #fb7185;
+  --ds-danger-bg: rgba(251, 113, 133, 0.1);
+  --ds-danger-border: rgba(251, 113, 133, 0.22);
   --ds-danger-solid: #a8412f;
   --ds-danger-solid-hover: #ba513f;
   --ds-info-text: #60a5fa;

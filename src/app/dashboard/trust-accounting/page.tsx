@@ -33,7 +33,6 @@ import {
 import {
   TRANSACTION_TYPE_LABELS_DE,
   TRANSACTION_TYPE_COLORS,
-  ACCOUNT_STATUS_LABELS_DE,
   exportTransactionsCsv,
   type TrustTransaction,
   type TrustTransactionType,

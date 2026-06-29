@@ -190,27 +190,40 @@ export const PATCH = createHandler(
       const patchedFm = (patchBody.frontmatter ?? {}) as Record<string, unknown>;
       if (patchedFm.restored_at && patchedFm.status && patchedFm.status !== "archived") {
         try {
-          const docsRes = await fetch(`${ENGINE_URL}/api/pages?type=document&limit=1000`, {
-            headers: ctx.headers,
-            signal: AbortSignal.timeout(15_000),
-          });
-          if (!docsRes.ok) {
-            restoreCascade = {
-              attempted: true,
-              matched: 0,
-              succeeded: 0,
-              failed: [{ slug: "*", status: docsRes.status }],
-            };
-          } else {
+          const allDocs: Array<{ slug: string; frontmatter?: Record<string, unknown> }> = [];
+          let offset = 0;
+          const pageSize = 500;
+          let fetched: typeof allDocs = [];
+          do {
+            const docsRes = await fetch(
+              `${ENGINE_URL}/api/pages?type=document&limit=${pageSize}&offset=${offset}`,
+              {
+                headers: ctx.headers,
+                signal: AbortSignal.timeout(15_000),
+              }
+            );
+            if (!docsRes.ok) {
+              restoreCascade = {
+                attempted: true,
+                matched: 0,
+                succeeded: 0,
+                failed: [{ slug: "*", status: docsRes.status }],
+              };
+              break;
+            }
             const raw = await docsRes.json();
-            const allDocs: Array<{ slug: string; frontmatter?: Record<string, unknown> }> =
-              Array.isArray(raw)
-                ? raw
-                : Array.isArray(raw?.pages)
-                  ? raw.pages
-                  : Array.isArray(raw?.items)
-                    ? raw.items
-                    : [];
+            fetched = Array.isArray(raw)
+              ? raw
+              : Array.isArray(raw?.pages)
+                ? raw.pages
+                : Array.isArray(raw?.items)
+                  ? raw.items
+                  : [];
+            allDocs.push(...fetched);
+            offset += pageSize;
+          } while (fetched.length === pageSize);
+
+          if (!restoreCascade.attempted) {
             const caseSlugForms = new Set([path, decodeURIComponent(path)]);
             const tombstoned = allDocs.filter(
               (d) =>
@@ -472,27 +485,40 @@ export const DELETE = createHandler(
         //    as fetchCaseDocumentsBySlug in matter-context.ts). The response may be
         //    a bare array, { pages }, or { items } depending on engine version.
         try {
-          const docsRes = await fetch(`${ENGINE_URL}/api/pages?type=document&limit=1000`, {
-            headers: ctx.headers,
-            signal: AbortSignal.timeout(15_000),
-          });
-          if (!docsRes.ok) {
-            cascade = {
-              attempted: true,
-              matched: 0,
-              succeeded: 0,
-              failed: [{ slug: "*", status: docsRes.status }],
-            };
-          } else {
+          const allDocs: Array<{ slug: string; frontmatter?: Record<string, unknown> }> = [];
+          let offset = 0;
+          const pageSize = 500;
+          let fetched: typeof allDocs = [];
+          do {
+            const docsRes = await fetch(
+              `${ENGINE_URL}/api/pages?type=document&limit=${pageSize}&offset=${offset}`,
+              {
+                headers: ctx.headers,
+                signal: AbortSignal.timeout(15_000),
+              }
+            );
+            if (!docsRes.ok) {
+              cascade = {
+                attempted: true,
+                matched: 0,
+                succeeded: 0,
+                failed: [{ slug: "*", status: docsRes.status }],
+              };
+              break;
+            }
             const raw = await docsRes.json();
-            const allDocs: Array<{ slug: string; frontmatter?: Record<string, unknown> }> =
-              Array.isArray(raw)
-                ? raw
-                : Array.isArray(raw?.pages)
-                  ? raw.pages
-                  : Array.isArray(raw?.items)
-                    ? raw.items
-                    : [];
+            fetched = Array.isArray(raw)
+              ? raw
+              : Array.isArray(raw?.pages)
+                ? raw.pages
+                : Array.isArray(raw?.items)
+                  ? raw.items
+                  : [];
+            allDocs.push(...fetched);
+            offset += pageSize;
+          } while (fetched.length === pageSize);
+
+          if (!cascade.attempted) {
             const matched = allDocs.filter((d) =>
               caseSlugForms.has((d.frontmatter ?? {}).case_slug as string)
             );

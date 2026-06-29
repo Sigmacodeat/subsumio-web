@@ -79,7 +79,7 @@ function Hero({
                 <SubsumioMark size={18} tile={false} /> {primaryLabel}
               </Button>
             </Link>
-            <Link href={p(lang, "/subsumio")}>
+            <Link href={p(lang, "/")}>
               <Button size="xl" variant="secondary" className="min-w-[180px]">
                 {UI_STRINGS[lang].backToOverview} <ArrowRight size={16} />
               </Button>

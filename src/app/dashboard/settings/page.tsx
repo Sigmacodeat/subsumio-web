@@ -50,6 +50,8 @@ import {
   useUpdateTeamRole,
 } from "@/lib/queries/settings";
 import { useBrainStats } from "@/lib/queries/brain";
+import { limitsFor } from "@/lib/plans-limits";
+import type { Plan } from "@/lib/auth/store";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { AclSettings } from "@/components/dashboard/acl-settings";
 import { useLang } from "@/lib/use-lang";
@@ -1058,8 +1060,8 @@ function SettingsPageInner() {
           <div className="divide-y divide-[color:var(--ds-border)] px-6">
             <Field label={t("settings.plan")} desc={t("settings.plan_desc")}>
               <div className="flex items-center gap-3">
-                <Badge variant="accent" className="px-3 py-1 text-sm">
-                  Free
+                <Badge variant="accent" className="px-3 py-1 text-sm capitalize">
+                  {meQuery.data?.user?.plan ?? "free"}
                 </Badge>
                 <Link href="/dashboard/billing">
                   <Button variant="outline" size="sm">
@@ -1076,12 +1078,23 @@ function SettingsPageInner() {
                       {t("settings.usage_pages")}
                     </span>
                     <span className="font-mono text-[color:var(--ds-text)] tabular-nums">
-                      0 / 100
+                      {statsQuery.data?.total_pages ?? 0} /{" "}
+                      {limitsFor((meQuery.data?.user?.plan ?? "free") as Plan).pages}
                     </span>
                   </div>
-                  <div className="h-1.5 overflow-hidden rounded-full bg-[color:var(--ds-border)]">
-                    <div className="brand-bg h-full w-0 rounded-full" />
-                  </div>
+                  {(() => {
+                    const used = statsQuery.data?.total_pages ?? 0;
+                    const limit = limitsFor((meQuery.data?.user?.plan ?? "free") as Plan).pages;
+                    const pct = limit > 0 ? Math.min(100, (used / limit) * 100) : 0;
+                    return (
+                      <div className="h-1.5 overflow-hidden rounded-full bg-[color:var(--ds-border)]">
+                        <div
+                          className="brand-bg h-full rounded-full transition-[width] duration-300"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    );
+                  })()}
                 </div>
                 <div>
                   <div className="mb-1.5 flex justify-between text-xs">
@@ -1089,12 +1102,25 @@ function SettingsPageInner() {
                       {t("settings.usage_queries")}
                     </span>
                     <span className="font-mono text-[color:var(--ds-text)] tabular-nums">
-                      0 / 50
+                      {statsQuery.data?.total_queries ?? 0} /{" "}
+                      {limitsFor((meQuery.data?.user?.plan ?? "free") as Plan).queriesPerMonth}
                     </span>
                   </div>
-                  <div className="h-1.5 overflow-hidden rounded-full bg-[color:var(--ds-border)]">
-                    <div className="brand-bg h-full w-0 rounded-full" />
-                  </div>
+                  {(() => {
+                    const used = statsQuery.data?.total_queries ?? 0;
+                    const limit = limitsFor(
+                      (meQuery.data?.user?.plan ?? "free") as Plan
+                    ).queriesPerMonth;
+                    const pct = limit > 0 ? Math.min(100, (used / limit) * 100) : 0;
+                    return (
+                      <div className="h-1.5 overflow-hidden rounded-full bg-[color:var(--ds-border)]">
+                        <div
+                          className="brand-bg h-full rounded-full transition-[width] duration-300"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             </Field>

@@ -200,6 +200,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
 
   const skipTour = useCallback(() => {
     completeTour();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const value = useMemo<TourContextValue>(

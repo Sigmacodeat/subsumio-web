@@ -291,7 +291,7 @@ export default function DeadlinesPage() {
           due_date: result.date,
           description: result.description,
           status: "pending",
-          review_status: "unreviewed",
+          review_status: result.confidence === "low" ? "needs_review" : "unreviewed",
           source: "ai_deadline_detection",
           confidence: result.confidence,
           created_at: now.toISOString(),
@@ -426,12 +426,16 @@ export default function DeadlinesPage() {
                       "border text-xs",
                       d.reviewStatus === "approved"
                         ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-600"
-                        : "border-amber-500/20 bg-amber-500/10 text-amber-600"
+                        : d.reviewStatus === "needs_review"
+                          ? "border-red-500/20 bg-red-500/10 text-red-600"
+                          : "border-amber-500/20 bg-amber-500/10 text-amber-600"
                     )}
                   >
                     {d.reviewStatus === "approved"
                       ? t("deadlines.review_approved")
-                      : t("deadlines.review_open")}
+                      : d.reviewStatus === "needs_review"
+                        ? t("deadlines.review_needed")
+                        : t("deadlines.review_open")}
                   </Badge>
                 )}
                 {d.law && (
@@ -891,6 +895,8 @@ export default function DeadlinesPage() {
           deadlines.length === 0 ? t("deadlines.empty_no_data") : t("deadlines.empty_filtered")
         }
         emptyIcon={CalendarClock}
+        emptyActionLabel={deadlines.length === 0 ? t("deadlines.empty_create") : undefined}
+        onEmptyAction={deadlines.length === 0 ? () => setQuickCreateOpen(true) : undefined}
         onRowClick={(d) =>
           d.caseSlug && router.push(`/dashboard/cases/${encodeSlugPath(d.caseSlug)}`)
         }

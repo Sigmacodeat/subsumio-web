@@ -109,7 +109,7 @@ export function SubsumioLogo({
           io
         </span>
         {subtitle && (
-          <span className="mt-1 text-xs font-medium tracking-[0.22em] [color:var(--mk-text-subtle)]">
+          <span className="mt-1 hidden text-xs font-medium tracking-[0.22em] [color:var(--mk-text-subtle)] min-[420px]:block">
             {subtitle}
           </span>
         )}

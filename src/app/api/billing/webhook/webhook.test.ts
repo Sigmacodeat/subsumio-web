@@ -13,7 +13,7 @@ describe("stripe webhook idempotency", () => {
     process.env = { ...origEnv };
   });
 
-  describe("isDuplicateEvent (in-memory fallback)", () => {
+  describe("isDuplicateEvent + markEventProcessed (in-memory fallback)", () => {
     test("first occurrence is not a duplicate", async () => {
       vi.resetModules();
       const { isDuplicateEvent } = await import("./helpers");
@@ -21,49 +21,58 @@ describe("stripe webhook idempotency", () => {
       expect(result).toBe(false);
     });
 
-    test("second occurrence of same event ID is a duplicate", async () => {
+    test("second occurrence of same event ID is a duplicate after markEventProcessed", async () => {
       vi.resetModules();
-      const { isDuplicateEvent } = await import("./helpers");
-      await isDuplicateEvent("evt_test_002", "invoice.payment_failed");
+      const { isDuplicateEvent, markEventProcessed } = await import("./helpers");
+      await markEventProcessed("evt_test_002", "invoice.payment_failed");
       const result = await isDuplicateEvent("evt_test_002", "invoice.payment_failed");
       expect(result).toBe(true);
     });
 
     test("different event IDs are not duplicates", async () => {
       vi.resetModules();
-      const { isDuplicateEvent } = await import("./helpers");
-      await isDuplicateEvent("evt_test_003", "invoice.payment_failed");
+      const { isDuplicateEvent, markEventProcessed } = await import("./helpers");
+      await markEventProcessed("evt_test_003", "invoice.payment_failed");
       const result = await isDuplicateEvent("evt_test_004", "invoice.payment_failed");
       expect(result).toBe(false);
     });
 
     test("same event ID with different type is still a duplicate (ID is primary key)", async () => {
       vi.resetModules();
-      const { isDuplicateEvent } = await import("./helpers");
-      await isDuplicateEvent("evt_test_005", "invoice.payment_failed");
+      const { isDuplicateEvent, markEventProcessed } = await import("./helpers");
+      await markEventProcessed("evt_test_005", "invoice.payment_failed");
       const result = await isDuplicateEvent("evt_test_005", "invoice.payment_succeeded");
       expect(result).toBe(true);
+    });
+
+    test("isDuplicateEvent does not insert (read-only check)", async () => {
+      vi.resetModules();
+      const { isDuplicateEvent } = await import("./helpers");
+      // First check should return false
+      expect(await isDuplicateEvent("evt_readonly_001", "test.event")).toBe(false);
+      // Second check should still return false (not inserted by check)
+      expect(await isDuplicateEvent("evt_readonly_001", "test.event")).toBe(false);
     });
   });
 
   describe("MAX_INMEMORY_EVENTS eviction", () => {
     test("evicts oldest events when capacity exceeded", async () => {
       vi.resetModules();
-      const { isDuplicateEvent } = await import("./helpers");
+      const { isDuplicateEvent, markEventProcessed } = await import("./helpers");
       // Insert MAX_INMEMORY_EVENTS + 1 events
       for (let i = 0; i <= 1000; i++) {
-        await isDuplicateEvent(`evt_eviction_${i}`, "test.event");
+        await markEventProcessed(`evt_eviction_${i}`, "test.event");
       }
-      // The very first event should have been evicted — re-adding should NOT be a duplicate
+      // The very first event should have been evicted — re-checking should NOT be a duplicate
       const result = await isDuplicateEvent("evt_eviction_0", "test.event");
       expect(result).toBe(false);
     });
 
     test("recent events are still tracked after eviction", async () => {
       vi.resetModules();
-      const { isDuplicateEvent } = await import("./helpers");
+      const { isDuplicateEvent, markEventProcessed } = await import("./helpers");
       for (let i = 0; i <= 1000; i++) {
-        await isDuplicateEvent(`evt_recent_${i}`, "test.event");
+        await markEventProcessed(`evt_recent_${i}`, "test.event");
       }
       // The last event should still be tracked as duplicate
       const result = await isDuplicateEvent(`evt_recent_1000`, "test.event");

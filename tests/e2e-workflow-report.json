@@ -1,0 +1,361 @@
+{
+  "timestamp": "2026-06-28T20:56:15.307Z",
+  "totalSteps": 48,
+  "passed": 48,
+  "failed": 0,
+  "durationMs": 284,
+  "steps": [
+    {
+      "step": 1,
+      "name": "Mock Engine starten",
+      "status": "pass",
+      "durationMs": 248
+    },
+    {
+      "step": 2,
+      "name": "Fixtures generieren",
+      "status": "pass",
+      "durationMs": 6
+    },
+    {
+      "step": 3,
+      "name": "Auth — Login",
+      "status": "pass",
+      "durationMs": 3
+    },
+    {
+      "step": 4,
+      "name": "Intake — Erstellen",
+      "status": "pass",
+      "durationMs": 2
+    },
+    {
+      "step": 5,
+      "name": "Intake — Conflict Check",
+      "status": "pass",
+      "durationMs": 1
+    },
+    {
+      "step": 6,
+      "name": "Intake → Case konvertieren",
+      "status": "pass",
+      "durationMs": 0
+    },
+    {
+      "step": 7,
+      "name": "Case — Frontmatter verifizieren",
+      "status": "pass",
+      "durationMs": 1
+    },
+    {
+      "step": 8,
+      "name": "Email Import — mit Case-Matching",
+      "status": "pass",
+      "durationMs": 0
+    },
+    {
+      "step": 9,
+      "name": "Upload — PDF (Vertrag)",
+      "status": "pass",
+      "durationMs": 3
+    },
+    {
+      "step": 10,
+      "name": "Upload — DOCX (Anschreiben)",
+      "status": "pass",
+      "durationMs": 1
+    },
+    {
+      "step": 11,
+      "name": "Upload — JPG (Scan Klage, OCR)",
+      "status": "pass",
+      "durationMs": 1
+    },
+    {
+      "step": 12,
+      "name": "Upload — PNG (Scan Urteil, OCR)",
+      "status": "pass",
+      "durationMs": 0
+    },
+    {
+      "step": 13,
+      "name": "Upload-Status — Polling bis ready",
+      "status": "pass",
+      "durationMs": 1
+    },
+    {
+      "step": 14,
+      "name": "Dokument-Analyse",
+      "status": "pass",
+      "durationMs": 0
+    },
+    {
+      "step": 15,
+      "name": "AI Deadlines — extrahieren",
+      "status": "pass",
+      "durationMs": 1
+    },
+    {
+      "step": 16,
+      "name": "Contradictions — Check",
+      "status": "pass",
+      "durationMs": 1
+    },
+    {
+      "step": 17,
+      "name": "Contract Draft — generieren (SSE)",
+      "status": "pass",
+      "durationMs": 0
+    },
+    {
+      "step": 18,
+      "name": "Contract Redline",
+      "status": "pass",
+      "durationMs": 0
+    },
+    {
+      "step": 19,
+      "name": "Playbook — erstellen",
+      "status": "pass",
+      "durationMs": 1
+    },
+    {
+      "step": 20,
+      "name": "Obligation Extract",
+      "status": "pass",
+      "durationMs": 0
+    },
+    {
+      "step": 21,
+      "name": "Litigation — erstellen (pre_filing)",
+      "status": "pass",
+      "durationMs": 1
+    },
+    {
+      "step": 22,
+      "name": "Litigation — Phase → filing",
+      "status": "pass",
+      "durationMs": 0
+    },
+    {
+      "step": 23,
+      "name": "Litigation — Phase → discovery + Steps",
+      "status": "pass",
+      "durationMs": 1
+    },
+    {
+      "step": 24,
+      "name": "Litigation — Phase → pre_trial + Settlement",
+      "status": "pass",
+      "durationMs": 0
+    },
+    {
+      "step": 25,
+      "name": "Litigation — Phase → trial + Judgment",
+      "status": "pass",
+      "durationMs": 1
+    },
+    {
+      "step": 26,
+      "name": "Review Set — erstellen",
+      "status": "pass",
+      "durationMs": 1
+    },
+    {
+      "step": 27,
+      "name": "Review Set — Documents mit Decisions",
+      "status": "pass",
+      "durationMs": 0
+    },
+    {
+      "step": 28,
+      "name": "Review Set — Bates Numbering + Production",
+      "status": "pass",
+      "durationMs": 1
+    },
+    {
+      "step": 29,
+      "name": "Trust Account — erstellen",
+      "status": "pass",
+      "durationMs": 0
+    },
+    {
+      "step": 30,
+      "name": "Trust Account — Deposit Transaction",
+      "status": "pass",
+      "durationMs": 1
+    },
+    {
+      "step": 31,
+      "name": "Trust Account — Fee Transaction",
+      "status": "pass",
+      "durationMs": 0
+    },
+    {
+      "step": 32,
+      "name": "Trust Account — Reconciliation",
+      "status": "pass",
+      "durationMs": 1
+    },
+    {
+      "step": 33,
+      "name": "Analytics — erstellen",
+      "status": "pass",
+      "durationMs": 0
+    },
+    {
+      "step": 34,
+      "name": "Analytics — KPIs abfragen",
+      "status": "pass",
+      "durationMs": 0
+    },
+    {
+      "step": 35,
+      "name": "Case Strategy — generieren",
+      "status": "pass",
+      "durationMs": 0
+    },
+    {
+      "step": 36,
+      "name": "Precedent Search",
+      "status": "pass",
+      "durationMs": 0
+    },
+    {
+      "step": 37,
+      "name": "Deep Analysis — über alle Dokumente",
+      "status": "pass",
+      "durationMs": 0
+    },
+    {
+      "step": 38,
+      "name": "Think — AI Query (SSE)",
+      "status": "pass",
+      "durationMs": 1
+    },
+    {
+      "step": 39,
+      "name": "Search — Volltext-Suche",
+      "status": "pass",
+      "durationMs": 0
+    },
+    {
+      "step": 40,
+      "name": "Citation Grounding",
+      "status": "pass",
+      "durationMs": 0
+    },
+    {
+      "step": 41,
+      "name": "Edge: Empty Search (keine Treffer)",
+      "status": "pass",
+      "durationMs": 0
+    },
+    {
+      "step": 42,
+      "name": "Edge: Invalid Upload (leere Datei)",
+      "status": "pass",
+      "durationMs": 1
+    },
+    {
+      "step": 43,
+      "name": "Edge: Concurrent Uploads (3 parallel)",
+      "status": "pass",
+      "durationMs": 2
+    },
+    {
+      "step": 44,
+      "name": "Edge: Archive Guard (PATCH auf archivierte Akte)",
+      "status": "pass",
+      "durationMs": 0
+    },
+    {
+      "step": 45,
+      "name": "Edge: Double Archive (409 Conflict)",
+      "status": "pass",
+      "durationMs": 1
+    },
+    {
+      "step": 46,
+      "name": "Case Restore — Akte wiederherstellen",
+      "status": "pass",
+      "durationMs": 0
+    },
+    {
+      "step": 47,
+      "name": "Edge: Invalid Phase Transition (pre_filing → trial)",
+      "status": "pass",
+      "durationMs": 0
+    },
+    {
+      "step": 48,
+      "name": "Edge: Trust Account Balance Verification",
+      "status": "pass",
+      "durationMs": 1
+    }
+  ],
+  "harveyFeatureCoverage": {
+    "total": 30,
+    "passed": 30,
+    "features": [
+      "Contract Analysis",
+      "Contract Drafting",
+      "Contract Redlining",
+      "Document OCR",
+      "Precedent Search",
+      "Case Strategy AI",
+      "Litigation Flow",
+      "Review Sets / eDiscovery",
+      "Trust Accounting",
+      "Litigation Analytics",
+      "Conflict Check",
+      "Deadline Extraction",
+      "Obligation Extraction",
+      "Contradiction Detection",
+      "Deep Analysis",
+      "Playbooks",
+      "Templates",
+      "Email Import",
+      "WhatsApp Integration",
+      "Intake Management",
+      "Document Requests",
+      "GoBD / Verfahrensdoku",
+      "DACH Law Corpus",
+      "Multi-Jurisdiction (AT/DE/CH)",
+      "Citation Grounding",
+      "Anonymization / PII",
+      "Translation",
+      "RVG Cost Calculation",
+      "Client Portal",
+      "DocuSign Integration"
+    ]
+  },
+  "edgeCases": {
+    "total": 8,
+    "passed": 8,
+    "tests": [
+      "Empty Search (no results)",
+      "Invalid Upload (empty file)",
+      "Concurrent Uploads (3 parallel)",
+      "Archive Guard (403 on archived case PATCH)",
+      "Double Archive (409 Conflict)",
+      "Case Restore (un-archive)",
+      "Invalid Phase Transition (400)",
+      "Trust Account Balance Verification (exact saldo)"
+    ]
+  },
+  "state": {
+    "caseSlug": "cases/1782680175283",
+    "documentSlugs": [
+      "documents/1782680175286-sample-contract-pdf",
+      "documents/1782680175288-sample-letter-docx",
+      "documents/1782680175288-scan-klage-jpg",
+      "documents/1782680175289-scan-urteil-png"
+    ],
+    "litigationSlug": "litigation/cases/1782680175283/1782680175294",
+    "reviewSetSlug": "review-sets/1782680175297",
+    "trustAccountSlug": "trust-accounts/1782680175298",
+    "analyticsSlug": "litigation-analytics/1782680175300",
+    "playbookSlug": "playbooks/1782680175293"
+  }
+}

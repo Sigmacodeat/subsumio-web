@@ -25,7 +25,7 @@ export const POST = createHandler(
   },
   async (ctx, body) => {
     const settings = await loadKanzleiSettings();
-    const fromName = settings.kanzleiName || settings.anwaltName || "Subsumio";
+    const _fromName = settings.kanzleiName || settings.anwaltName || "Subsumio";
     const fromEmail = settings.emailFrom || process.env.MAIL_FROM || "noreply@subsumio.local";
 
     const trackingId = generateTrackingId();

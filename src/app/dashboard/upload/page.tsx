@@ -141,7 +141,7 @@ function UploadPageInner() {
   const [tags, setTags] = useState("");
   const [documentPassword, setDocumentPassword] = useState("");
   const [cases, setCases] = useState<BrainPage[]>([]);
-  const [selectedCaseSlug, setSelectedCaseSlug] = useState("");
+  const [selectedCaseSlug, setSelectedCaseSlug] = useState(searchParams.get("case") || "");
   const [casesLoading, setCasesLoading] = useState(true);
   // GoBD-Baustein: steuerlich relevante Belege beim Ingest mit Aufbewahrungs-
   // frist + Inhalts-Hash stempeln (§ 147 AO / § 146 Abs. 4 AO). Bewusst opt-in:
@@ -484,7 +484,14 @@ function UploadPageInner() {
         );
       }
     });
-    setDocumentPassword("");
+    // Only clear the password when no pending files remain — otherwise the
+    // user may need it for the next batch round.
+    setFiles((prev) => {
+      if (!prev.some((f) => f.status === "pending")) {
+        setDocumentPassword("");
+      }
+      return prev;
+    });
   };
 
   const pendingCount = files.filter((f) => f.status === "pending").length;
@@ -748,7 +755,7 @@ function UploadPageInner() {
             </p>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-2">
-            {[".md", ".txt", ".pdf", ".json"].map((ext) => (
+            {[".pdf", ".docx", ".eml", ".jpg"].map((ext) => (
               <Badge key={ext} variant="default" className="font-mono text-xs">
                 {ext}
               </Badge>

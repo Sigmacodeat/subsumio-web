@@ -128,7 +128,7 @@ export default function SuperbrainAdvantage({ lang }: { lang: Lang }) {
   return (
     <section
       data-tone="slate"
-      className="relative z-10 overflow-hidden border-y [border-color:var(--mk-border)] px-4 py-28 [background:var(--mk-surface)] sm:px-6 lg:px-8"
+      className="relative z-10 overflow-hidden border-y [border-color:var(--mk-border)] px-4 py-24 [background:var(--mk-surface)] sm:px-6 lg:px-8"
     >
       <GradientMesh className="opacity-60" />
       <div className="brand-glow-bg absolute inset-x-0 top-16 h-72 opacity-50 blur-3xl" />

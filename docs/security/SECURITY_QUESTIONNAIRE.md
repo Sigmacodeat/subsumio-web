@@ -9,16 +9,16 @@
 
 ## 1. Company Information
 
-| Field            | Value                      |
-| ---------------- | -------------------------- |
-| Company name     | Sigmacode AT GmbH          |
-| Product          | Subsumio Legal AI Platform |
-| Headquarters     | Austria                    |
-| Hosting location | Falkenstein, Germany (EU)  |
-| DR site          | Helsinki, Finland (EU)     |
-| Founded          | 2025                       |
-| Employees        | < 10                       |
-| Website          | https://subsum.eu          |
+| Field            | Value                              |
+| ---------------- | ---------------------------------- |
+| Company name     | Sigmacode AT GmbH                  |
+| Product          | Subsumio AI Platform (Legal + Tax) |
+| Headquarters     | Austria                            |
+| Hosting location | Falkenstein, Germany (EU)          |
+| DR site          | Helsinki, Finland (EU)             |
+| Founded          | 2025                               |
+| Employees        | < 10                               |
+| Website          | https://subsum.eu                  |
 
 ---
 

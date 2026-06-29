@@ -7,14 +7,16 @@ import { getStore, type Plan } from "@/lib/auth/store";
 import { verifyStripeSignature } from "@/lib/stripe-webhook";
 import { createWebhookHandler } from "@/lib/api-handler";
 import { planForPriceId } from "@/lib/billing/plans";
+import { sendMail, isMailConfigured } from "@/lib/mail";
 import {
   incrementFailure,
   resetFailure,
   applyDunningToPlan,
+  getDunningState,
   buildDunningEmailBody,
   buildReactivationEmailBody,
 } from "@/lib/billing/dunning";
-import { isDuplicateEvent } from "./helpers";
+import { isDuplicateEvent, markEventProcessed } from "./helpers";
 
 export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => {
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -118,34 +120,27 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
           const dunningState = await incrementFailure(user.id, nextRetryAt);
           await applyDunningToPlan(user.id, dunningState);
 
-          // Send dunning email (best-effort)
-          try {
-            const { subject, body: emailBody } = buildDunningEmailBody(
-              user.email ?? user.id,
-              dunningState.failureCount,
-              nextRetryAt,
-              invoiceObj.hosted_invoice_url
-            );
-            await fetch(`${process.env.NEXT_PUBLIC_APP_URL ?? ""}/api/notifications`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "x-internal-key": process.env.INTERNAL_API_KEY ?? "",
-              },
-              body: JSON.stringify({
-                orgId: user.id,
+          // Send dunning email directly via sendMail (bypassing /api/notifications
+          // which requires session auth — webhooks have no session).
+          if (isMailConfigured()) {
+            try {
+              const { subject, body: emailBody } = buildDunningEmailBody(
+                user.email ?? user.id,
+                dunningState.failureCount,
+                nextRetryAt,
+                invoiceObj.hosted_invoice_url
+              );
+              await sendMail({
+                to: user.email,
                 subject,
-                body: emailBody,
-                type: "billing_dunning",
-              }),
-            }).catch((err) =>
+                text: emailBody,
+              });
+            } catch (err) {
               console.warn(
-                "[stripe-webhook] dunning notification failed:",
+                "[stripe-webhook] dunning email failed:",
                 err instanceof Error ? err.message : err
-              )
-            ); // fire-and-forget
-          } catch {
-            /* non-fatal */
+              );
+            }
           }
 
           console.warn(
@@ -161,40 +156,36 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
       if (customerId) {
         const user = await store.getByStripeCustomerId(customerId);
         if (user) {
+          // Read dunning state BEFORE resetFailure to preserve preDunningPlan
+          const dunningState = await getDunningState(user.id);
           await resetFailure(user.id);
           // Reactivate if suspended/past_due
           if ((user.plan as string) === "suspended" || (user.plan as string) === "past_due") {
-            // Resolve actual plan from subscription
+            // Resolve actual plan from subscription price ID;
+            // fall back to preDunningPlan (preserved before dunning overwrote it),
+            // then to "pro" as last resort
             const priceId = (obj as { items?: { data?: Array<{ price?: { id?: string } }> } }).items
               ?.data?.[0]?.price?.id;
-            const resolvedPlan = planForPriceId(priceId) ?? "pro";
+            const resolvedPlan = planForPriceId(priceId) ?? dunningState.preDunningPlan ?? "pro";
             await store.update(user.id, { plan: resolvedPlan as Plan });
 
-            // Reactivation email
-            try {
-              const { subject, body: emailBody } = buildReactivationEmailBody(
-                user.email ?? user.id
-              );
-              await fetch(`${process.env.NEXT_PUBLIC_APP_URL ?? ""}/api/notifications`, {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  "x-internal-key": process.env.INTERNAL_API_KEY ?? "",
-                },
-                body: JSON.stringify({
-                  orgId: user.id,
+            // Reactivation email directly via sendMail
+            if (isMailConfigured()) {
+              try {
+                const { subject, body: emailBody } = buildReactivationEmailBody(
+                  user.email ?? user.id
+                );
+                await sendMail({
+                  to: user.email,
                   subject,
-                  body: emailBody,
-                  type: "billing_reactivated",
-                }),
-              }).catch((err) =>
+                  text: emailBody,
+                });
+              } catch (err) {
                 console.warn(
-                  "[stripe-webhook] reactivation notification failed:",
+                  "[stripe-webhook] reactivation email failed:",
                   err instanceof Error ? err.message : err
-                )
-              );
-            } catch {
-              /* non-fatal */
+                );
+              }
             }
           }
         }
@@ -203,6 +194,12 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
     }
     default:
       break; // acknowledge everything else
+  }
+
+  // Mark event as processed AFTER successful handler execution.
+  // If this fails, Stripe retries — plan updates are idempotent by user_id/customer_id.
+  if (eventId) {
+    await markEventProcessed(eventId, event.type ?? "unknown");
   }
 
   return NextResponse.json({ received: true });

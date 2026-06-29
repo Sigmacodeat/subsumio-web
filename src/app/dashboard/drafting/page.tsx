@@ -411,12 +411,12 @@ export default function DraftingPage() {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="mb-1.5 block text-xs text-[color:var(--ds-text-muted)]">
-              Titel / Betreff
+              {t("drafting.label_title")}
             </label>
             <Input
               {...register("title")}
-              placeholder="z.B. Vertragsbruch Muster GmbH"
-              aria-label="z.B. Vertragsbruch Muster GmbH"
+              placeholder={t("drafting.placeholder_title")}
+              aria-label={t("drafting.placeholder_title")}
               className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
             />
             {f.formState.errors.title && (
@@ -461,12 +461,12 @@ export default function DraftingPage() {
         </div>
         <div>
           <label className="mb-1.5 block text-xs text-[color:var(--ds-text-muted)]">
-            Sachverhalt
+            {t("drafting.label_facts")}
           </label>
           <textarea
             {...register("facts")}
             rows={4}
-            placeholder="Beschreibe den Sachverhalt…"
+            placeholder={t("drafting.describe_case")}
             aria-label={t("drafting.describe_case")}
             className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
           />
@@ -480,6 +480,7 @@ export default function DraftingPage() {
           </label>
           <select
             {...register("selectedCaseSlug")}
+            aria-label={t("drafting.label_link_case")}
             className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
           >
             <option value="">

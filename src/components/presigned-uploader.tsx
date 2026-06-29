@@ -51,17 +51,35 @@ export function PresignedUploader({
       const fileArray = Array.from(fileList);
       if (fileArray.length === 0) return;
 
+      // Client-side validation: reject empty files immediately
+      const validFiles: File[] = [];
+      const emptyFiles: string[] = [];
+      for (const f of fileArray) {
+        if (f.size === 0) {
+          emptyFiles.push(f.name);
+        } else {
+          validFiles.push(f);
+        }
+      }
+
       const entries: FileEntry[] = fileArray.map((f) => ({
         name: f.name,
         size: f.size,
         progress: null,
+        error: f.size === 0 ? "Leere Datei — wird übersprungen." : undefined,
       }));
       setFiles(entries);
+
+      if (emptyFiles.length > 0 && validFiles.length === 0) {
+        return;
+      }
+
       setIsUploading(true);
 
       try {
-        if (fileArray.length > 1) {
-          const results = await uploadFolder(fileArray, {
+        const filesToUpload = validFiles;
+        if (filesToUpload.length > 1) {
+          const results = await uploadFolder(filesToUpload, {
             caseSlug,
             source,
             onProgress: (p) => updateFileProgress(p.filename, p),
@@ -69,8 +87,8 @@ export function PresignedUploader({
           for (const r of results) {
             if (r.result) onUploaded?.(r.result.slug, r.result.title);
           }
-        } else {
-          const result = await uploadFile(fileArray[0], {
+        } else if (filesToUpload.length === 1) {
+          const result = await uploadFile(filesToUpload[0]!, {
             caseSlug,
             source,
             onProgress: (p) => updateFileProgress(p.filename, p),
@@ -151,7 +169,7 @@ export function PresignedUploader({
           Dateien hierher ziehen oder klicken zum Auswählen
         </p>
         <p className="mt-1 text-xs text-gray-500 dark:text-gray-500">
-          PDF, DOCX, Bilder, Audio — bis 5 GB · Ordner-Upload unterstützt
+          PDF, DOCX, Bilder, Audio — bis 500 MB · Ordner-Upload unterstützt
         </p>
 
         <input
@@ -313,7 +331,11 @@ export function PresignedUploader({
                       />
                     </div>
                     <span className="flex-shrink-0 text-xs text-gray-500">
-                      {file.progress ? phaseLabel(file.progress.phase) : "Wartet…"}
+                      {file.error && !file.progress
+                        ? "Übersprungen"
+                        : file.progress
+                          ? phaseLabel(file.progress.phase)
+                          : "Wartet…"}
                     </span>
                   </div>
                   {file.error && <p className="mt-0.5 text-xs text-red-500">{file.error}</p>}

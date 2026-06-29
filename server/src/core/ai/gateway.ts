@@ -21,7 +21,14 @@
  *     rotation (via configureGateway()) invalidates stale entries.
  */
 
-import { embed as aiEmbed, embedMany, generateObject, generateText, jsonSchema } from "ai";
+import {
+  embed as aiEmbed,
+  embedMany,
+  generateObject,
+  generateText,
+  streamText,
+  jsonSchema,
+} from "ai";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { listRecipes } from "./recipes/index.ts";
 import { createOpenAI } from "@ai-sdk/openai";
@@ -2865,6 +2872,227 @@ export async function chat(opts: ChatOpts): Promise<ChatResult> {
     });
     _recordBudget(`${recipe.id}:${modelId}`, fallback.inputTokens, fallback.outputTokens);
     throw normalizeAIError(err, `chat(${recipe.id}:${modelId})`);
+  }
+}
+
+// ---- chatWithFallback (v0.27 — D8 silent-refusal fallback chain) ----
+
+/**
+ * Chat with a silent-refusal fallback chain. Tries the primary model first;
+ * if the response's `stopReason` is `"refusal"` or `"content_filter"`, retries
+ * with each model in `chat_fallback_chain` in order. Returns the first
+ * non-refusal result. If all models refuse, returns the last refusal result.
+ *
+ * If no fallback chain is configured, delegates to `chat()` directly.
+ *
+ * Blocked from critic/judge/synthesize flows (per D13 review decision) —
+ * those callers must see refusals, not silently route around them.
+ */
+export async function chatWithFallback(
+  opts: ChatOpts
+): Promise<ChatResult & { fellBack: boolean; fallbackModel?: string }> {
+  const fallbackChain = getChatFallbackChain();
+
+  if (fallbackChain.length === 0) {
+    const result = await chat(opts);
+    return { ...result, fellBack: false };
+  }
+
+  let result = await chat(opts);
+
+  if (result.stopReason !== "refusal" && result.stopReason !== "content_filter") {
+    return { ...result, fellBack: false };
+  }
+
+  for (const fallbackModel of fallbackChain) {
+    try {
+      result = await chat({ ...opts, model: fallbackModel });
+      if (result.stopReason !== "refusal" && result.stopReason !== "content_filter") {
+        return { ...result, fellBack: true, fallbackModel };
+      }
+    } catch {
+      // Transient errors on the fallback model: continue to next in chain.
+      // Config errors (bad key, unknown model) also continue — the chain
+      // is operator-configured and a misconfigured entry shouldn't abort.
+    }
+  }
+
+  // All models refused or failed; return the last result.
+  return { ...result, fellBack: true, fallbackModel: fallbackChain[fallbackChain.length - 1] };
+}
+
+// ---- chatStream (SSE streaming via Vercel AI SDK streamText) ----
+
+/**
+ * Stream a chat completion as an async iterable of text chunks.
+ *
+ * Uses the AI SDK's `streamText` under the hood, which streams SSE deltas
+ * from the provider. The async generator yields `{ type: "text", text }` for
+ * text chunks and `{ type: "done", result }` when the stream completes with
+ * the full ChatResult (usage, model, stopReason).
+ *
+ * Falls back to non-streaming `chat()` when the provider doesn't support
+ * streaming — the single chunk contains the full text.
+ */
+export async function* chatStream(
+  opts: ChatOpts
+): AsyncGenerator<
+  | { type: "text"; text: string }
+  | { type: "tool-call"; toolCallId: string; toolName: string; input: unknown }
+  | { type: "done"; result: ChatResult }
+> {
+  const tracker = __budgetStore.getStore() ?? null;
+  const modelStr = opts.model ?? getChatModel();
+
+  // Guardrail seam (same as chat()).
+  if (hasGuardrails()) {
+    const lastUser = lastUserMessageForGuardrail(opts.messages);
+    if (lastUser) {
+      await classifyGatewayGuardrail({
+        hook: "ai_gateway.chat",
+        content: lastUser.text,
+        metadata: {
+          model: modelStr,
+          message_index: lastUser.index,
+          message_count: opts.messages.length,
+        },
+      });
+    }
+  }
+
+  const estimatedInputTokens = estimateChatInputTokens(opts);
+  const maxOutputTokens = opts.maxTokens ?? 4096;
+
+  if (tracker) {
+    tracker.reserve({
+      modelId: modelStr,
+      estimatedInputTokens,
+      maxOutputTokens,
+      kind: "chat" as BudgetKind,
+      label: "gateway.chatStream",
+    });
+  }
+
+  const { model, recipe, modelId } = await resolveChatProvider(modelStr);
+
+  const supportsCache = recipe.touchpoints.chat?.supports_prompt_cache === true;
+  const useCache = !!opts.cacheSystem && supportsCache;
+
+  const tools = (opts.tools ?? []).reduce(
+    (acc, t) => {
+      acc[t.name] = {
+        description: t.description,
+        inputSchema: jsonSchema(t.inputSchema as any),
+      };
+      return acc;
+    },
+    {} as Record<string, any>
+  );
+
+  const providerOptions: Record<string, any> = {};
+  if (useCache) {
+    providerOptions.anthropic = { cacheControl: { type: "ephemeral" } };
+  }
+
+  let _budgetRecorded = false;
+  const _recordBudget = (inputTokens: number, outputTokens: number): void => {
+    if (!tracker || _budgetRecorded) return;
+    _budgetRecorded = true;
+    try {
+      tracker.record({
+        modelId: `${recipe.id}:${modelId}`,
+        inputTokens,
+        outputTokens,
+        label: "gateway.chatStream",
+      });
+    } catch {
+      // BudgetExhausted surfaced on next reserve()
+    }
+  };
+
+  try {
+    const stream = await streamText({
+      model,
+      system: opts.system,
+      messages: toModelMessages(opts.messages) as any,
+      tools: opts.tools && opts.tools.length > 0 ? tools : undefined,
+      maxOutputTokens: maxOutputTokens,
+      abortSignal: withDefaultTimeout(opts.abortSignal, AI_CHAT_TIMEOUT_MS),
+      providerOptions: Object.keys(providerOptions).length > 0 ? providerOptions : undefined,
+    });
+
+    const blocks: ChatBlock[] = [];
+
+    for await (const part of stream.fullStream) {
+      if (part.type === "text-delta") {
+        yield { type: "text", text: part.delta };
+      } else if (part.type === "tool-call") {
+        blocks.push({
+          type: "tool-call",
+          toolCallId: part.toolCallId,
+          toolName: part.toolName,
+          input: part.input ?? part.args,
+        });
+        yield {
+          type: "tool-call",
+          toolCallId: part.toolCallId,
+          toolName: part.toolName,
+          input: part.input ?? part.args,
+        };
+      }
+    }
+
+    // Collect text from the stream's final value.
+    const finalText = await stream.text;
+    if (finalText && blocks.length === 0) {
+      blocks.push({ type: "text", text: finalText });
+    } else if (finalText) {
+      blocks.unshift({ type: "text", text: finalText });
+    }
+
+    // streamText returns PromiseLike for usage, providerMetadata, finishReason
+    // (they auto-consume the stream). Must await each.
+    const usage = await stream.usage;
+    const providerMetadata = await stream.providerMetadata;
+    const finishReason = await stream.finishReason;
+    const inTok = Number(usage?.inputTokens ?? 0);
+    const outTok = Number(usage?.outputTokens ?? 0);
+    _recordBudget(inTok, outTok);
+
+    const anthropicMeta = (providerMetadata?.anthropic ?? {}) as Record<string, any>;
+    const result: ChatResult = {
+      text: finalText ?? "",
+      blocks,
+      stopReason: mapStopReason(finishReason, providerMetadata as Record<string, any> | undefined),
+      usage: {
+        input_tokens: inTok,
+        output_tokens: outTok,
+        cache_read_tokens: Number(
+          anthropicMeta.cacheReadInputTokens ??
+            anthropicMeta.cache_read_input_tokens ??
+            usage?.inputTokenDetails?.cacheReadTokens ??
+            0
+        ),
+        cache_creation_tokens: Number(
+          anthropicMeta.cacheCreationInputTokens ??
+            anthropicMeta.cache_creation_input_tokens ??
+            usage?.inputTokenDetails?.cacheWriteTokens ??
+            0
+        ),
+      },
+      model: `${recipe.id}:${modelId}`,
+      providerId: recipe.id,
+      providerMetadata,
+    };
+
+    yield { type: "done", result };
+  } catch (err) {
+    const fallback = _extractUsageFromError(err, {
+      inputTokens: estimatedInputTokens,
+      outputTokens: maxOutputTokens,
+    });
+    _recordBudget(fallback.inputTokens, fallback.outputTokens);
+    throw normalizeAIError(err, `chatStream(${recipe.id}:${modelId})`);
   }
 }
 

@@ -12,7 +12,7 @@ export const GET = createEngineProxy({
   cacheMaxAge: 120,
   transformBody: (_b) => ({}),
   audit: (_ctx, _b) => ({
-    action: "legal.deep_analysis" as const,
+    action: "legal.portfolio_insights" as const,
     entityType: "contract",
     details: { type: "portfolio_insights" },
   }),

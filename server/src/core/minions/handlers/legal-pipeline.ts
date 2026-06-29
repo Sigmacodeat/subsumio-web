@@ -141,6 +141,8 @@ interface PipelineState {
   /** Gap 17: Cost tracking */
   cost_spent_usd?: number;
   cost_cap_usd?: number;
+  /** Warnings accumulated during pipeline execution (e.g. state persistence failures) */
+  warnings?: string[];
 }
 
 interface MapResult {
@@ -258,7 +260,7 @@ export function makeLegalPipelineHandler(opts: { engine: BrainEngine }) {
     // Classify each sub-page and stamp frontmatter with doc_type.
     // Enables filtered search ("only witness statements") and targeted
     // contradiction detection ("compare all medical reports").
-    if (shouldRunLayer(1)) {
+    if (shouldRunLayer(0)) {
       for (let i = 0; i < data.part_slugs.length; i++) {
         const partSlug = data.part_slugs[i]!;
         const partText = allTexts[i] ?? "";
@@ -1739,9 +1741,10 @@ async function persistPipelineState(
       { sourceId }
     );
   } catch (e) {
-    console.error(
-      `[legal-pipeline] Failed to persist state: ${e instanceof Error ? e.message : String(e)}`
-    );
+    const errMsg = e instanceof Error ? e.message : String(e);
+    console.error(`[legal-pipeline] Failed to persist state: ${errMsg}`);
+    if (!state.warnings) state.warnings = [];
+    state.warnings.push(`STATE_PERSIST_FAILED: ${errMsg}`);
   }
 }
 

@@ -1,8 +1,21 @@
 {
   "crons": [
-    {
-      "path": "/api/cron/auto-playbook",
-      "schedule": "0 */6 * * *"
-    }
+    { "path": "/api/cron/auto-playbook", "schedule": "0 */6 * * *" },
+    { "path": "/api/cron/post-upload-drain", "schedule": "*/2 * * * *" },
+    { "path": "/api/cron/deadlines", "schedule": "0 6 * * *" },
+    { "path": "/api/cron/deadline-reminders", "schedule": "0 7 * * *" },
+    { "path": "/api/cron/appointment-reminders", "schedule": "0 8 * * *" },
+    { "path": "/api/cron/daily-briefing", "schedule": "0 7 * * *" },
+    { "path": "/api/cron/rundown", "schedule": "0 18 * * *" },
+    { "path": "/api/cron/case-scanner", "schedule": "0 22 * * *" },
+    { "path": "/api/cron/contradiction-probe", "schedule": "0 23 * * *" },
+    { "path": "/api/cron/dream-cycle", "schedule": "0 2 * * *" },
+    { "path": "/api/cron/law-sync", "schedule": "0 4 * * *" },
+    { "path": "/api/cron/judgements-sync", "schedule": "0 5 * * *" },
+    { "path": "/api/cron/case-law", "schedule": "0 9 * * *" },
+    { "path": "/api/cron/regulatory-monitors", "schedule": "0 10 * * *" },
+    { "path": "/api/cron/retention", "schedule": "0 3 * * *" },
+    { "path": "/api/cron/queue-alert", "schedule": "*/5 * * * *" },
+    { "path": "/api/cron/analysis-retry", "schedule": "*/15 * * * *" }
   ]
 }

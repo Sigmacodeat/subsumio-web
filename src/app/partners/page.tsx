@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Subsumio Partnerprogramm — 30 % lebenslange Provision",
     description:
-      "Kanzleien zu Subsumio empfehlen und 30 % wiederkehrende Provision über die Laufzeit jedes zahlenden Mandanten erhalten. Drei Tracks: Affiliate, Kunden-Referral und zertifizierter Partner.",
+      "Empfiehl Kanzleien zu Subsumio, erhalte 30 % wiederkehrende Provision je zahlendem Mandanten. Drei Tracks: Affiliate, Kunden-Referral, zertifizierter Partner.",
     url: "/partners",
     type: "website",
   },

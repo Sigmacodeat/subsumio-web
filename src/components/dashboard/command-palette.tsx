@@ -30,7 +30,7 @@ import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
 import { motion, useDashboardMotion } from "@/components/dashboard/motion";
 import type { DashboardKey } from "@/content/dashboard";
-import { ALL_NAV_ITEMS, PREFERRED_SECTION_BY_HREF } from "@/components/dashboard/sidebar";
+import { navForIndustry } from "@/components/dashboard/sidebar";
 
 interface CommandItem {
   id: string;
@@ -123,32 +123,12 @@ const CMD_SECTION_KEYS: Record<string, DashboardKey> = {
   Verwaltung: "cmd.section.admin",
 };
 
-const NAV_COMMANDS: CommandItem[] = (() => {
-  const seen = new Set<string>();
-  const commands: CommandItem[] = [];
-  for (const item of ALL_NAV_ITEMS) {
-    if (item.comingSoon || seen.has(item.href)) continue;
-    seen.add(item.href);
-    const sectionEntry = PREFERRED_SECTION_BY_HREF.find((p) => p.href === item.href);
-    const section = sectionEntry?.section ?? "nav.section.admin";
-    commands.push({
-      id: item.href.replace(/^\/dashboard\/?/, "") || "dashboard",
-      label: item.labelKey,
-      labelKey: item.labelKey,
-      icon: item.icon,
-      href: item.href,
-      section,
-      sectionKey: section,
-    });
-  }
-  return commands;
-})();
-
 interface CommandPaletteProps {
   open: boolean;
   onClose: () => void;
   onToggleTheme?: () => void;
   onToggleSidebar?: () => void;
+  industry?: string | null;
 }
 
 const RECENT_KEY = "subsumio:cmd_recent";
@@ -176,6 +156,7 @@ export function CommandPalette({
   onClose,
   onToggleTheme,
   onToggleSidebar,
+  industry,
 }: CommandPaletteProps) {
   const router = useRouter();
   const { t } = useLang();
@@ -186,6 +167,28 @@ export function CommandPalette({
   const panelRef = useRef<HTMLDivElement>(null);
   const { reduceMotion, panelTransition, modalInitial, modalAnimate, modalExit } =
     useDashboardMotion();
+
+  const navCommands = useMemo(() => {
+    const cfg = navForIndustry(industry);
+    const seen = new Set<string>();
+    const commands: CommandItem[] = [];
+    for (const item of cfg.allNavItems) {
+      if (item.comingSoon || seen.has(item.href)) continue;
+      seen.add(item.href);
+      const sectionEntry = cfg.preferredSectionByHref.find((p) => p.href === item.href);
+      const section = sectionEntry?.section ?? "nav.section.admin";
+      commands.push({
+        id: item.href.replace(/^\/dashboard\/?/, "") || "dashboard",
+        label: item.labelKey,
+        labelKey: item.labelKey,
+        icon: item.icon,
+        href: item.href,
+        section,
+        sectionKey: section,
+      });
+    }
+    return commands;
+  }, [industry]);
   const resolveLabel = useCallback(
     (cmd: CommandItem) => {
       if (cmd.labelKey) return t(cmd.labelKey);
@@ -206,7 +209,7 @@ export function CommandPalette({
   );
 
   const allCommands = useMemo(() => {
-    const cmds: CommandItem[] = [...NAV_COMMANDS];
+    const cmds: CommandItem[] = [...navCommands];
     if (onToggleTheme) {
       cmds.push({
         id: "action-toggle-theme",
@@ -382,7 +385,7 @@ export function CommandPalette({
       keywords: "model compare ai models vergleiche benchmark evaluation",
     });
     return cmds;
-  }, [onToggleTheme, onToggleSidebar, t]);
+  }, [navCommands, onToggleTheme, onToggleSidebar, t]);
 
   useEffect(() => {
     if (open) {

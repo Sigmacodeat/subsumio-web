@@ -1,6 +1,8 @@
 # Subsumio
 
-**The legal AI brain for law firms.** Subsumio is a knowledge-graph-powered legal intelligence platform that turns your firm's documents, cases, deadlines, and communications into a queryable brain. Synthesized answers with citations, deadline-aware retrieval, and contradiction detection — built for the realities of legal practice.
+**The AI brain for professional services.** Subsumio is a multi-industry knowledge-graph-powered intelligence platform that turns your firm's documents, cases, deadlines, and communications into a queryable brain. Synthesized answers with citations, deadline-aware retrieval, and contradiction detection — built for the realities of professional practice.
+
+Currently verticalized for **Legal** (law firms / in-house legal) and **Tax** (tax advisory / accounting), with a platform-first architecture that supports additional industries via `src/lib/industry-pack.ts`.
 
 ## What it does
 

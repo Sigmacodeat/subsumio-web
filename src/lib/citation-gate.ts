@@ -52,6 +52,8 @@ export interface GroundingMetadata {
   corpus_checked: boolean;
   grounded_citations: GroundedCitation[];
   analyzed_at: string;
+  has_unverified: boolean;
+  warning?: string;
 }
 
 /**
@@ -64,6 +66,7 @@ export async function groundAnswerCitations(answerText: string): Promise<Groundi
   const grounded = await groundCitations(rawCitations);
   const verified = grounded.filter((c) => c.verified).length;
   const unverified = grounded.filter((c) => !c.verified).length;
+  const hasUnverified = unverified > 0;
 
   return {
     citations_verified: verified,
@@ -71,6 +74,10 @@ export async function groundAnswerCitations(answerText: string): Promise<Groundi
     corpus_checked: true,
     grounded_citations: grounded,
     analyzed_at: new Date().toISOString(),
+    has_unverified: hasUnverified,
+    warning: hasUnverified
+      ? `${unverified} Zitat(e) konnten nicht im Gesetzescorpus verifiziert werden — bitte manuell prüfen.`
+      : undefined,
   };
 }
 
@@ -170,6 +177,7 @@ export async function groundJsonResponse(obj: Record<string, unknown>): Promise<
       corpus_checked: false,
       grounded_citations: [],
       analyzed_at: new Date().toISOString(),
+      has_unverified: false,
     };
   }
   return groundAnswerCitations(textParts.join(" "));
@@ -185,6 +193,7 @@ export function emptyGroundingMetadata(): GroundingMetadata {
     corpus_checked: false,
     grounded_citations: [],
     analyzed_at: new Date().toISOString(),
+    has_unverified: false,
   };
 }
 
@@ -276,28 +285,36 @@ export function createCitationGateStream(
                 // passage_text). These pass through untouched — we just make
                 // the contract explicit so the frontend can render "Seite X".
                 if (Array.isArray(parsed.citations)) {
-                  parsed.citations = (
-                    parsed.citations as Array<Record<string, unknown>>
-                  ).map((c) => ({
-                    slug: c.slug,
-                    title: c.title,
-                    score: c.score,
-                    // Passage-level coordinates from engine chunk metadata
-                    page_number: c.page_number ?? c.metadata_page ?? undefined,
-                    char_offset_start: c.char_offset_start ?? undefined,
-                    char_offset_end: c.char_offset_end ?? undefined,
-                    passage_text: c.passage_text ?? c.text ?? c.excerpt ?? undefined,
-                    // Keep any other fields the engine may add in future
-                    ...Object.fromEntries(
-                      Object.entries(c).filter(
-                        ([k]) =>
-                          ![
-                            "slug","title","score","page_number","metadata_page",
-                            "char_offset_start","char_offset_end","passage_text","text","excerpt",
-                          ].includes(k)
-                      )
-                    ),
-                  }));
+                  parsed.citations = (parsed.citations as Array<Record<string, unknown>>).map(
+                    (c) => ({
+                      slug: c.slug,
+                      title: c.title,
+                      score: c.score,
+                      // Passage-level coordinates from engine chunk metadata
+                      page_number: c.page_number ?? c.metadata_page ?? undefined,
+                      char_offset_start: c.char_offset_start ?? undefined,
+                      char_offset_end: c.char_offset_end ?? undefined,
+                      passage_text: c.passage_text ?? c.text ?? c.excerpt ?? undefined,
+                      // Keep any other fields the engine may add in future
+                      ...Object.fromEntries(
+                        Object.entries(c).filter(
+                          ([k]) =>
+                            ![
+                              "slug",
+                              "title",
+                              "score",
+                              "page_number",
+                              "metadata_page",
+                              "char_offset_start",
+                              "char_offset_end",
+                              "passage_text",
+                              "text",
+                              "excerpt",
+                            ].includes(k)
+                        )
+                      ),
+                    })
+                  );
                 }
                 try {
                   const grounding = await groundAnswerCitations(answerText);
@@ -313,6 +330,7 @@ export function createCitationGateStream(
                     corpus_checked: false,
                     grounded_citations: [],
                     analyzed_at: new Date().toISOString(),
+                    has_unverified: false,
                   };
                 }
                 newLines.push(`data: ${JSON.stringify(parsed)}`);

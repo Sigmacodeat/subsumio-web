@@ -14,7 +14,13 @@
  */
 
 import type { BrainEngine } from "../engine.ts";
-import { type LegalLLM, clipText, defaultLegalLLM, tryParseJSON } from "./llm-util.ts";
+import {
+  type LegalLLM,
+  clipText,
+  defaultLegalLLM,
+  groundQuotes,
+  tryParseJSON,
+} from "./llm-util.ts";
 
 export interface PlaybookClauseUpdate {
   clause_type: string;
@@ -101,8 +107,9 @@ async function findPlaybookForContract(
   }>(
     `SELECT slug, title, frontmatter FROM pages
      WHERE type = 'legal_playbook' AND deleted_at IS NULL
-     ${sourceId && sourceId !== "default" ? `AND source_id = '${sourceId.replace(/'/g, "''")}'` : ""}
-     LIMIT 50`
+     ${sourceId && sourceId !== "default" ? "AND source_id = $1" : ""}
+     LIMIT ${sourceId && sourceId !== "default" ? "$2" : "$1"}`,
+    sourceId && sourceId !== "default" ? [sourceId, 50] : [50]
   );
 
   for (const p of pages) {
@@ -245,13 +252,23 @@ export async function autoPlaybookUpdate(
     };
   }
 
-  // 4. Compare extracted positions against existing playbook rules
+  // 4. Ground source quotes against contract text, then compare against existing rules
   const existingRules = playbook.frontmatter.rules ?? [];
+
+  // Ground each extracted item's source_quote against the contract text
+  const { grounded, warnings: groundWarnings } = groundQuotes(
+    parsed.filter(
+      (item): item is Record<string, unknown> => typeof item === "object" && item !== null
+    ),
+    (item) => String(item.source_quote ?? ""),
+    contractPage.content,
+    { label: "PLAYBOOK_QUOTE", minQuoteLen: 12 }
+  );
+  warnings.push(...groundWarnings);
+
   const updates: PlaybookClauseUpdate[] = [];
 
-  for (const item of parsed) {
-    if (typeof item !== "object" || item === null) continue;
-    const o = item as Record<string, unknown>;
+  for (const o of grounded) {
     const clauseType = String(o.clause_type ?? "");
     if (!clauseType) continue;
 

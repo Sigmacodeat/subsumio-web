@@ -531,6 +531,14 @@ export interface OperationContext {
    * web-api middleware from the caller's access_group_members rows.
    */
   aclGroups?: string[] | "all";
+  /**
+   * Subsumio Ethical Wall: Web-app user ID of the caller.
+   * Set by the web-api middleware from the session user.
+   * Used by checkEthicalWallEngine() to enforce blocked_users
+   * at the engine layer (MCP/CLI/subagent can't bypass).
+   * undefined = no ethical wall enforcement (legacy CLI, internal calls).
+   */
+  userId?: string;
 }
 
 /**
@@ -909,6 +917,23 @@ const get_page: Operation = {
       const { isPageAccessible } = await import("./acl.ts");
       const accessible = await isPageAccessible(ctx.engine, page.id, ctx.aclGroups);
       if (!accessible) {
+        throw new OperationError(
+          "page_not_found",
+          `Page not found: ${slug}`,
+          "Page may be soft-deleted; pass include_deleted: true to verify"
+        );
+      }
+    }
+
+    // Ethical Wall (engine-layer): if the caller's userId is in the
+    // source's blocked_users list, deny. This mirrors the web-app
+    // ethical-wall.ts check but enforces it at the engine layer so
+    // MCP/CLI/subagent callers can't bypass it. Uses the same
+    // not-found error shape to prevent information leakage.
+    if (ctx.userId && ctx.sourceId) {
+      const { checkEthicalWallEngine } = await import("./acl.ts");
+      const wallCheck = await checkEthicalWallEngine(ctx.engine, ctx.userId, ctx.sourceId);
+      if (!wallCheck.allowed) {
         throw new OperationError(
           "page_not_found",
           `Page not found: ${slug}`,

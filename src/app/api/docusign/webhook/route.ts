@@ -22,8 +22,66 @@ export const dynamic = "force-dynamic";
  *   - envelope-declined → Update zu "declined"
  *   - envelope-voided   → Update zu "expired"
  */
+/**
+ * Parse DocuSign Connect XML payload into the same shape as the JSON webhook.
+ * DocuSign Connect XML contains <EnvelopeStatus><EnvelopeID>, <Status>, and
+ * <RecipientStatuses> elements. We extract the key fields without a full XML
+ * parser to keep the dependency footprint minimal.
+ */
+function parseDocusignXml(xml: string): {
+  event?: string;
+  data?: {
+    envelopeId?: string;
+    envelopeSummary?: {
+      status?: string;
+      recipients?: {
+        signers?: Array<{ status: string; signedDateTime?: string; email?: string }>;
+      };
+    };
+  };
+  eventId?: string;
+} {
+  const extract = (tag: string): string | undefined => {
+    const match = xml.match(
+      new RegExp(`<${tag}>(?:<!\\[CDATA\\[)?(.*?)(?:\\]\\]>)?</${tag}>`, "i")
+    );
+    return match?.[1]?.trim();
+  };
+
+  const envelopeId = extract("EnvelopeID") ?? extract("EnvelopeId");
+  const status = extract("Status");
+  const event = extract("EventType") ?? extract("Event");
+
+  return {
+    event: event ?? undefined,
+    eventId: envelopeId,
+    data: {
+      envelopeId: envelopeId ?? undefined,
+      envelopeSummary: {
+        status: status ?? undefined,
+      },
+    },
+  };
+}
+
 export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => {
   const rawBody = await req.clone().text();
+
+  // HMAC verification FIRST — before any processing or database lookups.
+  // This prevents unauthenticated requests from triggering idempotency checks
+  // or leaking information about processed events.
+  const connectSecret = process.env.DOCUSIGN_CONNECT_SECRET;
+  if (!connectSecret) {
+    console.error("[docusign-webhook] DOCUSIGN_CONNECT_SECRET not configured — rejecting webhook");
+    return Response.json({ error: "webhook_not_configured" }, { status: 501 });
+  }
+  const signature = req.headers.get("x-docusign-signature-1");
+  if (!verifyDocusignConnectSignature(rawBody, signature, connectSecret)) {
+    return Response.json({ error: "invalid_signature" }, { status: 401 });
+  }
+
+  // Parse payload — DocuSign Connect can send JSON or XML (XML is the default).
+  // Try JSON first, fall back to XML extraction.
   let body: {
     event?: string;
     data?: {
@@ -37,10 +95,15 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
     };
     eventId?: string;
   };
-  try {
-    body = JSON.parse(rawBody) as typeof body;
-  } catch {
-    return Response.json({ ok: true, error: "invalid_json" });
+  const contentType = req.headers.get("content-type") ?? "";
+  if (contentType.includes("xml") || rawBody.trimStart().startsWith("<")) {
+    body = parseDocusignXml(rawBody);
+  } else {
+    try {
+      body = JSON.parse(rawBody) as typeof body;
+    } catch {
+      return Response.json({ ok: true, error: "invalid_json" });
+    }
   }
 
   const eventId = body.eventId ?? body.data?.envelopeId;
@@ -54,17 +117,6 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
   // Idempotency: skip already processed events (Postgres-backed)
   if (eventId && (await isWebhookProcessed(eventId))) {
     return Response.json({ ok: true, dedup: true });
-  }
-
-  // HMAC verification (mandatory — prevents forged envelope status updates)
-  const connectSecret = process.env.DOCUSIGN_CONNECT_SECRET;
-  if (!connectSecret) {
-    console.error("[docusign-webhook] DOCUSIGN_CONNECT_SECRET not configured — rejecting webhook");
-    return Response.json({ error: "webhook_not_configured" }, { status: 501 });
-  }
-  const signature = req.headers.get("x-docusign-signature-1");
-  if (!verifyDocusignConnectSignature(rawBody, signature, connectSecret)) {
-    return Response.json({ error: "invalid_signature" }, { status: 401 });
   }
 
   // Map Docusign → Subsumio status

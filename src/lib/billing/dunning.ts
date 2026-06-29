@@ -21,6 +21,7 @@ export interface DunningState {
   lastFailedAt: string | null;
   nextRetryAt: string | null;
   status: "ok" | "past_due" | "suspended";
+  preDunningPlan?: string | null;
 }
 
 // ── Schema ────────────────────────────────────────────────────────────
@@ -33,8 +34,10 @@ const ensureDunningSchema = createSchemaInit(`
     last_failed_at  timestamptz,
     next_retry_at   timestamptz,
     status       text NOT NULL DEFAULT 'ok',
+    pre_dunning_plan text,
     updated_at   timestamptz NOT NULL DEFAULT now()
   );
+  ALTER TABLE subsumio_dunning_state ADD COLUMN IF NOT EXISTS pre_dunning_plan text;
 `);
 
 // ── In-Memory Fallback ────────────────────────────────────────────────
@@ -51,7 +54,8 @@ export async function getDunningState(orgId: string): Promise<DunningState> {
       const result = await pool.query<DunningState>(
         `SELECT org_id as "orgId", failure_count as "failureCount",
                 first_failed_at as "firstFailedAt", last_failed_at as "lastFailedAt",
-                next_retry_at as "nextRetryAt", status
+                next_retry_at as "nextRetryAt", status,
+                pre_dunning_plan as "preDunningPlan"
          FROM subsumio_dunning_state WHERE org_id = $1`,
         [orgId]
       );
@@ -152,7 +156,29 @@ export async function applyDunningToPlan(orgId: string, dunningState: DunningSta
   };
   const newPlan = planMap[dunningState.status];
   if (newPlan && newPlan !== user.plan) {
+    // Save the original plan before overwriting, so reactivation can restore it
+    const originalPlan = user.plan;
     await store.update(orgId, { plan: newPlan });
+
+    const pool = getSharedPgPool();
+    if (pool) {
+      try {
+        await ensureDunningSchema();
+        await pool.query(
+          `UPDATE subsumio_dunning_state SET pre_dunning_plan = $2 WHERE org_id = $1`,
+          [orgId, originalPlan]
+        );
+      } catch (err) {
+        log.error("applyDunningToPlan: failed to save preDunningPlan", {
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
+    // Also update in-memory store
+    const memState = inMemoryDunning.get(orgId);
+    if (memState) {
+      inMemoryDunning.set(orgId, { ...memState, preDunningPlan: originalPlan });
+    }
   }
 }
 

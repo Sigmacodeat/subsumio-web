@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Über Subsumio — KI-Kanzleisoftware aus Österreich",
     description:
-      "Subsumio wird in Österreich für Kanzleien in AT, DE und CH gebaut. Belegte KI-Antworten für Rechtsarbeit, mit Vertraulichkeit per Architektur — EU-Cloud oder On-Premise.",
+      "Subsumio wird in Österreich für Kanzleien in AT, DE & CH gebaut. Belegte KI-Antworten mit Vertraulichkeit per Architektur — EU-Cloud oder On-Premise.",
     url: "/about",
     type: "website",
   },

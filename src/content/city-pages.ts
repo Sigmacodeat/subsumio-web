@@ -25,7 +25,7 @@ const _cities: Record<string, CityPageContent> = {
     title: "Subsumio für Rechtsanwälte in Wien",
     metaTitle: "KI-Kanzleisoftware Wien — Subsumio für Anwälte",
     metaDesc:
-      "KI-Kanzleisoftware für Rechtsanwälte in Wien: Aktenverwaltung nach österreichischem Recht (ABGB, ZPO, EO), Fristenkontrolle, belegte KI-Antworten mit Fundstellen. EU-gehostet oder On-Premise.",
+      "KI-Kanzleisoftware für Anwälte in Wien: Akten nach österreichischem Recht (ABGB, ZPO, EO), Fristenkontrolle, belegte KI-Antworten mit Fundstellen. EU-gehostet.",
     h1: "KI-Kanzleisoftware für Wiener Anwaltskanzleien",
     intro:
       "Subsumio ist die KI-Kanzleisoftware für Rechtsanwälte in Wien, die mit österreichischem Recht arbeitet — ABGB, ZPO, EO und Bundesrecht. Jede KI-Antwort nennt die exakte Fundstelle. Keine Halluzinationen, keine Kompromisse bei der Schweigepflicht.",
@@ -61,7 +61,7 @@ const _cities: Record<string, CityPageContent> = {
       },
       {
         q: "Ist Subsumio mit RA-Micro und anwalt.at kompatibel?",
-        a: "Ja. Subsumio importiert aus RA-Micro, anwalt.at und jedem System, das Dokumente exportieren kann. Es ersetzt nicht Ihre Anwaltssoftware — es ergänzt sie um ein Kanzlei-Brain.",
+        a: "Ja. Subsumio importiert aus RA-Micro, anwalt.at und jedem System, das Dokumente exportieren kann. Es ersetzt nicht deine Anwaltssoftware — es ergänzt sie um ein Kanzlei-Brain.",
       },
     ],
     geo: { lat: 48.2082, lng: 16.3738 },
@@ -75,7 +75,7 @@ const _cities: Record<string, CityPageContent> = {
     title: "Subsumio für Rechtsanwälte in Berlin",
     metaTitle: "KI-Kanzleisoftware Berlin — Subsumio für Anwälte",
     metaDesc:
-      "KI-Kanzleisoftware für Rechtsanwälte in Berlin: Aktenverwaltung nach deutschem Recht (BGB, ZPO, HGB), Fristenkontrolle, belegte KI-Antworten mit Fundstellen. § 203 StGB-konform, EU-gehostet oder On-Premise.",
+      "KI-Kanzleisoftware für Anwälte in Berlin: Akten nach deutschem Recht (BGB, ZPO, HGB), Fristenkontrolle, belegte KI-Antworten mit Fundstellen. § 203 StGB-konform.",
     h1: "KI-Kanzleisoftware für Berliner Anwaltskanzleien",
     intro:
       "Subsumio ist die KI-Kanzleisoftware für Rechtsanwälte in Berlin, die mit deutschem Recht arbeitet — BGB, ZPO, HGB und Bundesrecht. Jede KI-Antwort nennt die exakte Fundstelle. Keine Halluzinationen, keine Kompromisse bei der Schweigepflicht.",
@@ -107,11 +107,11 @@ const _cities: Record<string, CityPageContent> = {
       },
       {
         q: "Ist Subsumio mit DATEV und RA-Micro kompatibel?",
-        a: "Ja. Subsumio importiert aus DATEV, RA-Micro, anwalt.de und jedem System, das Dokumente exportieren kann. Es ersetzt nicht Ihre Anwaltssoftware — es ergänzt sie um ein Kanzlei-Brain.",
+        a: "Ja. Subsumio importiert aus DATEV, RA-Micro, anwalt.de und jedem System, das Dokumente exportieren kann. Es ersetzt nicht deine Anwaltssoftware — es ergänzt sie um ein Kanzlei-Brain.",
       },
     ],
     geo: { lat: 52.52, lng: 13.405 },
-    address: { street: "Schwarzenbergplatz 7", postalCode: "1030", region: "Wien" },
+    address: { street: "Friedrichstraße 68", postalCode: "10117", region: "Berlin" },
   },
   zuerich: {
     slug: "zuerich",
@@ -121,7 +121,7 @@ const _cities: Record<string, CityPageContent> = {
     title: "Subsumio für Rechtsanwälte in Zürich",
     metaTitle: "KI-Kanzleisoftware Zürich — Subsumio für Anwälte",
     metaDesc:
-      "KI-Kanzleisoftware für Rechtsanwälte in Zürich: Aktenverwaltung nach Schweizer Recht (ZGB, OR, ZPO), Fristenkontrolle, belegte KI-Antworten mit Fundstellen. DSGVO-konform, EU-gehostet oder On-Premise.",
+      "KI-Kanzleisoftware für Anwälte in Zürich: Akten nach Schweizer Recht (ZGB, OR, ZPO), Fristenkontrolle, belegte KI-Antworten mit Fundstellen. DSGVO-konform.",
     h1: "KI-Kanzleisoftware für Zürcher Anwaltskanzleien",
     intro:
       "Subsumio ist die KI-Kanzleisoftware für Rechtsanwälte in Zürich, die mit Schweizer Recht arbeitet — ZGB, OR, ZPO und kantonales Recht. Jede KI-Antwort nennt die exakte Fundstelle. Keine Halluzinationen, keine Kompromisse bei der Schweigepflicht.",
@@ -153,11 +153,11 @@ const _cities: Record<string, CityPageContent> = {
       },
       {
         q: "Ist Subsumio mit Swisslex und Weblaw kompatibel?",
-        a: "Ja. Subsumio importiert aus jedem System, das Dokumente exportieren kann. Es ersetzt nicht Ihre Anwaltssoftware — es ergänzt sie um ein Kanzlei-Brain.",
+        a: "Ja. Subsumio importiert aus jedem System, das Dokumente exportieren kann. Es ersetzt nicht deine Anwaltssoftware — es ergänzt sie um ein Kanzlei-Brain.",
       },
     ],
     geo: { lat: 47.3769, lng: 8.5417 },
-    address: { street: "Schwarzenbergplatz 7", postalCode: "1030", region: "Wien" },
+    address: { street: "Bahnhofstraße 42", postalCode: "8001", region: "Zürich" },
   },
 };
 

@@ -7,31 +7,10 @@ export interface Testimonial {
   date: string;
 }
 
-export const TESTIMONIALS: Testimonial[] = [
-  {
-    quote:
-      "Subsumio findet in Sekunden, was ich sonst 20 Minuten in Aktenordnern gesucht hätte. Jede Antwort mit Fundstelle — das ist der Unterschied.",
-    author: "Dr. M. Bauer",
-    role: "Rechtsanwältin",
-    firm: "Kanzlei Bauer & Partner",
-    rating: 5,
-    date: "2026-05-15",
-  },
-  {
-    quote:
-      "Die Fristenkontrolle hat uns bereits zweimal vor einer versäumten Notfrist bewahrt. Das allein rechtfertigt den Preis.",
-    author: "Dr. T. Hoffmann",
-    role: "Partner",
-    firm: "Hoffmann & Kollegen",
-    rating: 5,
-    date: "2026-05-28",
-  },
-  {
-    quote:
-      "Endlich eine KI, die nicht halluziniert. Wenn die Akte keine Antwort hat, sagt Subsumio das — statt etwas zu erfinden.",
-    author: "Dr. S. Klein",
-    role: "Einzelanwältin",
-    rating: 5,
-    date: "2026-06-03",
-  },
-];
+// NOTE: Testimonials are intentionally empty until we have REAL, written
+// consent from named firms. Fabricated reviews are a Google manual-action
+// risk (fake review structured data) and a UWG violation (irreführende
+// Werbung) in the DACH market. When real references arrive, add them here —
+// the testimonials section and the Review/AggregateRating JSON-LD both
+// light up automatically (they are guarded on TESTIMONIALS.length).
+export const TESTIMONIALS: Testimonial[] = [];

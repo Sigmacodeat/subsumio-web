@@ -3,6 +3,7 @@ import { createHandler, apiError } from "@/lib/api-handler";
 import { sendWhatsAppInteractive, sendWhatsAppMedia } from "@/lib/whatsapp/send";
 import { sendWhatsAppFlow } from "@/lib/whatsapp/flow-send";
 import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
+import { recordOutboundMessage } from "@/lib/whatsapp/outbound-tracker";
 import { loadAllowedSenders, resolveSender, phoneHash } from "@/lib/whatsapp/verify";
 import { getWhatsAppIdentityStore } from "@/lib/whatsapp/identity-store";
 import { normalizePhone, type WhatsAppTemplateMessage } from "@/lib/whatsapp/types";
@@ -192,6 +193,7 @@ export const POST = createHandler(
           if (!body.interactive)
             return apiError("interactive_required", "Interactive message fehlt", 400);
           const result = await sendWhatsAppInteractive(normalizedTo, body.interactive as never);
+          if (result.messageId) void recordOutboundMessage(result.messageId, ctx.brainId);
           return Response.json({
             ok: true,
             type: "interactive",
@@ -205,6 +207,7 @@ export const POST = createHandler(
             return apiError("media_id_or_link_required", "Media ID oder Link erforderlich", 400);
           }
           const result = await sendWhatsAppMedia(normalizedTo, body.media);
+          if (result.messageId) void recordOutboundMessage(result.messageId, ctx.brainId);
           return Response.json({
             ok: true,
             type: "media",
@@ -226,6 +229,7 @@ export const POST = createHandler(
             initialScreen: body.flow.initialScreen,
             initialData: body.flow.initialData,
           });
+          if (result.messageId) void recordOutboundMessage(result.messageId, ctx.brainId);
           return Response.json({
             ok: true,
             type: "flow",

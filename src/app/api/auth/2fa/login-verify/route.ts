@@ -1,13 +1,12 @@
 import { NextResponse } from "next/server";
 import { getStore, toPublic } from "@/lib/auth/store";
-import { signSession, SESSION_COOKIE, SESSION_TTL_SECONDS } from "@/lib/auth/session";
+import { createSession, SESSION_COOKIE } from "@/lib/auth/session";
 import { verifyActionToken, bindFragment } from "@/lib/auth/tokens";
 import { verifyTOTP } from "@/lib/totp";
 import { verifyBackupCode } from "@/lib/auth/backup-codes";
 import { clientIp, hit } from "@/lib/auth/rate-limit";
 import { logAudit } from "@/lib/audit";
 import { createPublicHandler, apiError } from "@/lib/api-handler";
-import { env } from "@/lib/env";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -80,20 +79,14 @@ export const POST = createPublicHandler(
     }
 
     // Create session
-    const sessionToken = await signSession({ uid: user.id, email: user.email, role: user.role });
+    const session = await createSession(user.id, user.email, user.role);
     void logAudit("user.login", "user", {
       entityId: user.id,
       details: { ip, method: usedBackupCode ? "2fa_backup" : "2fa" },
     });
 
     const res = NextResponse.json({ user: toPublic(user) });
-    res.cookies.set(SESSION_COOKIE, sessionToken, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: env("NODE_ENV") === "production",
-      maxAge: SESSION_TTL_SECONDS,
-      path: "/",
-    });
+    res.cookies.set(SESSION_COOKIE, session.token, session.cookieOptions);
     return res;
   }
 );

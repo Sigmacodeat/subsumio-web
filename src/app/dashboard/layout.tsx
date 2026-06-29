@@ -5,6 +5,7 @@ import Script from "next/script";
 import { usePathname, useRouter } from "next/navigation";
 import { ensureRealtime } from "@/lib/realtime";
 import { styleForIndustry } from "@/lib/industry-theme";
+import { redirectForIndustry } from "@/lib/industry-guards";
 import { CommandPalette } from "@/components/dashboard/command-palette";
 import { KeyboardShortcuts } from "@/components/dashboard/keyboard-shortcuts";
 import { DashboardGuide } from "@/components/dashboard/dashboard-guide";
@@ -27,6 +28,9 @@ const ClauseQuickCreateDialog = dynamic(() =>
 );
 const ContractQuickCreateDialog = dynamic(() =>
   import("@/components/legal/ContractQuickCreateDialog").then((m) => m.ContractQuickCreateDialog)
+);
+const TaxQuickCreateDialog = dynamic(() =>
+  import("@/components/tax/TaxQuickCreateDialog").then((m) => m.TaxQuickCreateDialog)
 );
 const CopilotSidebar = dynamic(
   () => import("@/components/chat/copilot-sidebar").then((m) => m.CopilotSidebar),
@@ -114,6 +118,9 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
   const onboardingCompleted = meQuery.data?.user?.onboardingCompletedAt;
   const isOnboardingPage = pathname === "/dashboard/onboarding";
+  const industry = meQuery.data?.user?.industry ?? null;
+  const userName = meQuery.data?.user?.name ?? meQuery.data?.user?.email ?? null;
+  const userEmail = meQuery.data?.user?.email ?? null;
 
   // Auto-start guided tour on first dashboard visit after onboarding
   useAutoStartTour(onboardingCompleted);
@@ -128,6 +135,15 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     }
   }, [onboardingCompleted, isOnboardingPage, meQuery.isLoading, meQuery.data?.user, router]);
 
+  // Industry route guard — redirect tax users away from legal-only pages and vice versa
+  useEffect(() => {
+    if (meQuery.isLoading || !meQuery.data?.user) return;
+    const redirect = redirectForIndustry(pathname, industry);
+    if (redirect) {
+      router.replace(redirect);
+    }
+  }, [pathname, industry, meQuery.isLoading, meQuery.data?.user, router]);
+
   const pages = statsQuery.data?.total_pages ?? 0;
   const entities = statsQuery.data?.total_entities ?? 0;
   const dreamCycle = statsQuery.data?.dream_cycle_last ?? null;
@@ -135,9 +151,6 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   // load is still in flight, so the sidebar pill can show a neutral
   // "checking" state instead of flashing "Active" then "Offline".
   const brainReachable = statsQuery.data?.engine_reachable;
-  const industry = meQuery.data?.user?.industry ?? null;
-  const userName = meQuery.data?.user?.name ?? meQuery.data?.user?.email ?? null;
-  const userEmail = meQuery.data?.user?.email ?? null;
 
   // Body-scroll-lock when mobile drawer, copilot drawer, command palette or guide is open
   useEffect(() => {
@@ -262,6 +275,41 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         router.push("/dashboard/chat");
         return;
       }
+      // Quick-create shortcuts (single key, no modifiers, only when not typing)
+      const target = e.target as HTMLElement;
+      const isTyping =
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target instanceof HTMLSelectElement ||
+        target.isContentEditable;
+      if (!isTyping && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+        const key = e.key.toLowerCase();
+        if (key === "n") {
+          e.preventDefault();
+          setGlobalQuickCreateOpen(true);
+          return;
+        }
+        if (key === "d") {
+          e.preventDefault();
+          setGlobalDeadlineCreateOpen(true);
+          return;
+        }
+        if (key === "i") {
+          e.preventDefault();
+          setGlobalInvoiceCreateOpen(true);
+          return;
+        }
+        if (key === "s") {
+          e.preventDefault();
+          setGlobalSignatureCreateOpen(true);
+          return;
+        }
+        if (key === "c") {
+          e.preventDefault();
+          setGlobalContractCreateOpen(true);
+          return;
+        }
+      }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
@@ -310,6 +358,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         userName={userName}
         userEmail={userEmail}
         brainReachable={brainReachable}
+        industry={industry}
       />
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
@@ -342,37 +391,52 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         onClose={() => setCmdOpen(false)}
         onToggleTheme={toggleTheme}
         onToggleSidebar={() => setCollapsed((c) => !c)}
+        industry={industry}
       />
       <KeyboardShortcuts open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
       <DashboardGuide open={guideOpen} onClose={() => setGuideOpen(false)} />
       <CopilotSidebar open={copilotOpen} onToggle={() => setCopilotOpen((v) => !v)} />
 
-      <CaseQuickCreateDialog open={globalQuickCreateOpen} onOpenChange={setGlobalQuickCreateOpen} />
+      {industry === "tax" ? (
+        <TaxQuickCreateDialog
+          open={globalQuickCreateOpen}
+          onOpenChange={setGlobalQuickCreateOpen}
+        />
+      ) : (
+        <CaseQuickCreateDialog
+          open={globalQuickCreateOpen}
+          onOpenChange={setGlobalQuickCreateOpen}
+        />
+      )}
 
-      <DeadlineQuickCreateDialog
-        open={globalDeadlineCreateOpen}
-        onOpenChange={setGlobalDeadlineCreateOpen}
-      />
+      {industry !== "tax" && (
+        <>
+          <DeadlineQuickCreateDialog
+            open={globalDeadlineCreateOpen}
+            onOpenChange={setGlobalDeadlineCreateOpen}
+          />
 
-      <InvoiceQuickCreateDialog
-        open={globalInvoiceCreateOpen}
-        onOpenChange={setGlobalInvoiceCreateOpen}
-      />
+          <InvoiceQuickCreateDialog
+            open={globalInvoiceCreateOpen}
+            onOpenChange={setGlobalInvoiceCreateOpen}
+          />
 
-      <SignatureQuickCreateDialog
-        open={globalSignatureCreateOpen}
-        onOpenChange={setGlobalSignatureCreateOpen}
-      />
+          <SignatureQuickCreateDialog
+            open={globalSignatureCreateOpen}
+            onOpenChange={setGlobalSignatureCreateOpen}
+          />
 
-      <ClauseQuickCreateDialog
-        open={globalClauseCreateOpen}
-        onOpenChange={setGlobalClauseCreateOpen}
-      />
+          <ClauseQuickCreateDialog
+            open={globalClauseCreateOpen}
+            onOpenChange={setGlobalClauseCreateOpen}
+          />
 
-      <ContractQuickCreateDialog
-        open={globalContractCreateOpen}
-        onOpenChange={setGlobalContractCreateOpen}
-      />
+          <ContractQuickCreateDialog
+            open={globalContractCreateOpen}
+            onOpenChange={setGlobalContractCreateOpen}
+          />
+        </>
+      )}
 
       {/* Mobile bottom tab bar — agency-level navigation */}
       <MobileTabBar
@@ -382,6 +446,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         theme={theme}
         toggleTheme={toggleTheme}
         onGuideOpen={() => setGuideOpen(true)}
+        industry={industry}
       />
     </div>
   );

@@ -14,6 +14,11 @@ const PRUNE_AFTER_DAYS = 30;
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 
+/** Test-only helper to reset the cached DB connection between tests. */
+export function resetChatDbCache(): void {
+  dbPromise = null;
+}
+
 function openDb(): Promise<IDBDatabase> {
   if (dbPromise) return dbPromise;
   dbPromise = new Promise((resolve, reject) => {

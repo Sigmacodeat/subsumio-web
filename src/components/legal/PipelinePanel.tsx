@@ -7,10 +7,8 @@ import {
   CheckCircle2,
   XCircle,
   Clock,
-  AlertTriangle,
   FileText,
   Table,
-  CalendarClock,
   ShieldCheck,
   PenTool,
   Gavel,
@@ -349,7 +347,7 @@ export function PipelinePanel({
 
   const hasPipeline = pipelineState !== null;
   const pipelineStatus = pipelineState?.status ?? "not_started";
-  const isRunning = pipelineStatus === "running";
+  const _isRunning = pipelineStatus === "running";
 
   return (
     <div className="space-y-4">

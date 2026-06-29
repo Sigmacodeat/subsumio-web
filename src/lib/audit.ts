@@ -33,6 +33,23 @@ const ensureAuditSchema = createSchemaInit([
   "CREATE INDEX IF NOT EXISTS subsumio_audit_log_action_idx ON subsumio_audit_log (action)",
   "CREATE INDEX IF NOT EXISTS subsumio_audit_log_created_at_idx ON subsumio_audit_log (created_at DESC)",
   "CREATE INDEX IF NOT EXISTS subsumio_audit_log_entity_idx ON subsumio_audit_log (entity_type, entity_id)",
+  // GoBD immutability: prevent UPDATE and DELETE on audit log entries.
+  // § 146 Abs. 4 AO requires that electronic records cannot be modified
+  // or deleted during the retention period. These triggers raise an error
+  // on any attempt to UPDATE or DELETE audit rows.
+  `CREATE OR REPLACE FUNCTION subsumio_audit_log_immutable() RETURNS trigger AS $$
+    BEGIN
+      RAISE EXCEPTION 'subsumio_audit_log is immutable (GoBD § 146 Abs. 4 AO): UPDATE/DELETE not permitted';
+    END;
+    $$ LANGUAGE plpgsql`,
+  `DROP TRIGGER IF EXISTS subsumio_audit_log_no_update ON subsumio_audit_log`,
+  `CREATE TRIGGER subsumio_audit_log_no_update
+    BEFORE UPDATE ON subsumio_audit_log
+    FOR EACH ROW EXECUTE FUNCTION subsumio_audit_log_immutable()`,
+  `DROP TRIGGER IF EXISTS subsumio_audit_log_no_delete ON subsumio_audit_log`,
+  `CREATE TRIGGER subsumio_audit_log_no_delete
+    BEFORE DELETE ON subsumio_audit_log
+    FOR EACH ROW EXECUTE FUNCTION subsumio_audit_log_immutable()`,
 ]);
 
 /** Compute a hash chain for tamper-evidence. */

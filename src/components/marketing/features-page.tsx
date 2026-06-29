@@ -32,6 +32,11 @@ const NODE_LABELS: Record<Lang, string[]> = {
   at: ["Akte", "Mandant", "Gegner", "Frist", "Schriftsatz", "Urteil", "Honorar"],
   ch: ["Akte", "Mandant", "Gegner", "Frist", "Schriftsatz", "Urteil", "Honorar"],
   en: ["Matter", "Client", "Opposing party", "Deadline", "Brief", "Ruling", "Invoice"],
+  it: ["Matter", "Client", "Opposing party", "Deadline", "Brief", "Ruling", "Invoice"],
+  es: ["Matter", "Client", "Opposing party", "Deadline", "Brief", "Ruling", "Invoice"],
+  pl: ["Matter", "Client", "Opposing party", "Deadline", "Brief", "Ruling", "Invoice"],
+  fr: ["Matter", "Client", "Opposing party", "Deadline", "Brief", "Ruling", "Invoice"],
+  nl: ["Matter", "Client", "Opposing party", "Deadline", "Brief", "Ruling", "Invoice"],
 };
 
 function buildNodes(lang: Lang): GNode[] {

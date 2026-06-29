@@ -11,13 +11,22 @@ interface UserTableProps {
 }
 
 type PlanFilter = "all" | "free" | "pro" | "team" | "enterprise";
-type RoleFilter = "all" | "admin" | "lawyer" | "assistant" | "client_viewer";
+type RoleFilter = "all" | "admin" | "lawyer" | "tax_advisor" | "assistant" | "client_viewer";
+type IndustryFilter = "all" | "legal" | "tax" | "other" | "none";
+
+function industryBadgeClass(industry: string | null | undefined): string {
+  if (industry === "legal") return "border-blue-500/25 bg-blue-500/10 text-blue-400";
+  if (industry === "tax") return "border-emerald-500/25 bg-emerald-500/10 text-emerald-400";
+  if (industry === "other") return "border-violet-500/25 bg-violet-500/10 text-violet-400";
+  return "[border-color:var(--mk-border)] [color:var(--mk-text-subtle)] [background:var(--mk-surface-2)]";
+}
 
 export function UserTable({ users }: UserTableProps) {
   const [search, setSearch] = useState("");
   const [planFilter, setPlanFilter] = useState<PlanFilter>("all");
   const [roleFilter, setRoleFilter] = useState<RoleFilter>("all");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "deactivated">("all");
+  const [industryFilter, setIndustryFilter] = useState<IndustryFilter>("all");
 
   const filtered = useMemo(() => {
     return users.filter((u) => {
@@ -29,9 +38,13 @@ export function UserTable({ users }: UserTableProps) {
       if (roleFilter !== "all" && u.role !== roleFilter) return false;
       if (statusFilter === "active" && u.deactivatedAt) return false;
       if (statusFilter === "deactivated" && !u.deactivatedAt) return false;
+      if (industryFilter !== "all") {
+        if (industryFilter === "none" && u.industry) return false;
+        if (industryFilter !== "none" && u.industry !== industryFilter) return false;
+      }
       return true;
     });
-  }, [users, search, planFilter, roleFilter, statusFilter]);
+  }, [users, search, planFilter, roleFilter, statusFilter, industryFilter]);
 
   return (
     <div className="space-y-4">
@@ -68,6 +81,7 @@ export function UserTable({ users }: UserTableProps) {
           <option value="all">Alle Rollen</option>
           <option value="admin">Admin</option>
           <option value="lawyer">Lawyer</option>
+          <option value="tax_advisor">Tax Advisor</option>
           <option value="assistant">Assistant</option>
           <option value="client_viewer">Client Viewer</option>
         </select>
@@ -79,6 +93,17 @@ export function UserTable({ users }: UserTableProps) {
           <option value="all">Alle Status</option>
           <option value="active">Aktiv</option>
           <option value="deactivated">Deaktiviert</option>
+        </select>
+        <select
+          value={industryFilter}
+          onChange={(e) => setIndustryFilter(e.target.value as IndustryFilter)}
+          className="rounded-lg border [border-color:var(--mk-border)] px-3 py-2 text-sm [color:var(--mk-text)] [background:var(--mk-surface-2)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+        >
+          <option value="all">Alle Branchen</option>
+          <option value="legal">Legal</option>
+          <option value="tax">Tax</option>
+          <option value="other">Other</option>
+          <option value="none">Ohne</option>
         </select>
       </div>
 
@@ -92,6 +117,7 @@ export function UserTable({ users }: UserTableProps) {
                 <th className="px-5 py-3 font-medium">Plan</th>
                 <th className="px-5 py-3 font-medium">Rolle</th>
                 <th className="px-5 py-3 font-medium">Status</th>
+                <th className="px-5 py-3 font-medium">Branche</th>
                 <th className="px-5 py-3 font-medium">Registriert</th>
                 <th className="px-5 py-3 font-medium" />
               </tr>
@@ -99,7 +125,7 @@ export function UserTable({ users }: UserTableProps) {
             <tbody>
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-5 py-10 text-center [color:var(--mk-text-subtle)]">
+                  <td colSpan={8} className="px-5 py-10 text-center [color:var(--mk-text-subtle)]">
                     Keine Benutzer gefunden.
                   </td>
                 </tr>
@@ -123,6 +149,13 @@ export function UserTable({ users }: UserTableProps) {
                     ) : (
                       <span className="text-xs text-emerald-400">Aktiv</span>
                     )}
+                  </td>
+                  <td className="px-5 py-3">
+                    <span
+                      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${industryBadgeClass(u.industry)}`}
+                    >
+                      {u.industry ?? "—"}
+                    </span>
                   </td>
                   <td className="px-5 py-3 text-xs [color:var(--mk-text-subtle)]">
                     {u.createdAt.slice(0, 10)}

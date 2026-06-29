@@ -10,14 +10,14 @@ const caseScannerSchema = z.object({
 });
 
 export const POST = createEngineProxy({
-  action: "legal.document_review",
+  action: "legal.case_scanner",
   enginePath: "/api/legal/case-scanner",
   body: caseScannerSchema,
   rateTier: "heavy",
   citationGate: true,
   label: "case-scanner",
   audit: (_ctx, b) => ({
-    action: "legal.document_review" as const,
+    action: "legal.case_scanner" as const,
     entityType: "case",
     details: {
       lookAheadDays: b.look_ahead_days ?? 7,

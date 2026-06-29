@@ -256,3 +256,91 @@ export async function getPagePermissions(
     [pageId]
   );
 }
+
+// ── Ethical Wall (Engine-Layer) ──────────────────────────────────────
+//
+// The web-app ethical-wall.ts checks `blocked_users` in PermissionInfo,
+// but that only covers HTTP/dashboard callers. These engine-layer functions
+// ensure MCP/CLI/subagent callers are also subject to ethical wall enforcement.
+//
+// The blocked_users list is stored per-source in the `source_config` table
+// under a `blocked_users` JSON key, set by the dashboard ethical-wall UI.
+// This mirrors the web-app contract but makes it enforceable at the
+// engine layer where operations.ts can call it.
+
+/**
+ * Check if a user is blocked on a given source (ethical wall).
+ * Reads the `blocked_users` array from `source_config`.
+ * Returns true if the user is in the blocked list.
+ */
+export async function isUserBlockedOnSource(
+  engine: BrainEngine,
+  userId: string,
+  sourceId: string
+): Promise<boolean> {
+  try {
+    const [row] = await engine.executeRaw<{ blocked_users?: string[] }>(
+      `SELECT (config->'blocked_users')::jsonb AS blocked_users
+       FROM source_config WHERE source_id = $1`,
+      [sourceId]
+    );
+    if (!row?.blocked_users) return false;
+    return row.blocked_users.includes(userId);
+  } catch {
+    // source_config table missing or no blocked_users key → fail open
+    return false;
+  }
+}
+
+/**
+ * Filter a list of user IDs by ethical wall blocking on a source.
+ * Returns { allowed, blocked } partition.
+ */
+export async function filterUsersByEthicalWallEngine(
+  engine: BrainEngine,
+  userIds: string[],
+  sourceId: string
+): Promise<{ allowed: string[]; blocked: string[] }> {
+  if (userIds.length === 0) return { allowed: [], blocked: [] };
+  try {
+    const [row] = await engine.executeRaw<{ blocked_users?: string[] }>(
+      `SELECT (config->'blocked_users')::jsonb AS blocked_users
+       FROM source_config WHERE source_id = $1`,
+      [sourceId]
+    );
+    if (!row?.blocked_users || row.blocked_users.length === 0) {
+      return { allowed: [...userIds], blocked: [] };
+    }
+    const blockedSet = new Set(row.blocked_users);
+    const allowed: string[] = [];
+    const blocked: string[] = [];
+    for (const uid of userIds) {
+      if (blockedSet.has(uid)) blocked.push(uid);
+      else allowed.push(uid);
+    }
+    return { allowed, blocked };
+  } catch {
+    return { allowed: [...userIds], blocked: [] };
+  }
+}
+
+/**
+ * Combined ethical wall + ACL check for a page access decision.
+ * Ethical wall takes precedence: if blocked, deny regardless of ACL.
+ *
+ * Usage in operations.ts read handlers:
+ *   const blocked = await isUserBlockedOnSource(engine, ctx.userId, ctx.sourceId);
+ *   if (blocked) throw new OperationError("permission_denied", "ethical wall");
+ */
+export async function checkEthicalWallEngine(
+  engine: BrainEngine,
+  userId: string | undefined,
+  sourceId: string
+): Promise<{ allowed: boolean; reason: string }> {
+  if (!userId) return { allowed: true, reason: "no_user_id" };
+  const blocked = await isUserBlockedOnSource(engine, userId, sourceId);
+  if (blocked) {
+    return { allowed: false, reason: "user_blocked_by_ethical_wall" };
+  }
+  return { allowed: true, reason: "not_blocked" };
+}

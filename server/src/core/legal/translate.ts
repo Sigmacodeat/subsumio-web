@@ -170,7 +170,19 @@ export async function translateDocument(
 
   const userPrompt = `Translate the following text${sourceLang !== "auto" ? ` from ${langLabel(sourceLang)}` : ""} to ${langLabel(opts.target_language)}:\n\n${clipped}`;
 
-  const raw = await llm({ system, user: userPrompt, maxTokens: 8000 });
+  let raw: string;
+  try {
+    raw = await llm({ system, user: userPrompt, maxTokens: 8000 });
+  } catch (e) {
+    return {
+      translated_text: "",
+      source_language: sourceLang,
+      target_language: opts.target_language,
+      glossary: [],
+      warnings: [`LLM_CALL_FAILED: ${e instanceof Error ? e.message : "unknown"}`],
+      attorney_review_required: true,
+    };
+  }
   const parsed = tryParseJSON(raw);
 
   if (!parsed) {

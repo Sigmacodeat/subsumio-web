@@ -386,7 +386,8 @@ async function executeSimpleTargetApproval(
 async function executeAction(
   deps: ApprovalExecutionDeps,
   fm: Partial<AgentActionFrontmatter>,
-  at: Date
+  at: Date,
+  executedBy: string
 ): Promise<ApprovalExecutionResult["effects"]> {
   switch (fm.action_type) {
     case "case_create":
@@ -408,6 +409,26 @@ async function executeAction(
       return executeSimpleTargetApproval(deps, fm, at, "invoice_approved");
     case "booking_create":
       return executeSimpleTargetApproval(deps, fm, at, "booking_approved");
+    case "time_entry_approval": {
+      const slug = fm.target_slug ?? asString(payloadOf(fm).case_slug);
+      if (!slug) throw new Error("time_entry_approval_requires_target_slug");
+      const payload = payloadOf(fm);
+      const entryId = asString(payload.entry_id);
+      if (!entryId) throw new Error("time_entry_approval_requires_entry_id");
+      const casePage = await deps.getPage(slug);
+      const caseFm = (casePage.frontmatter ?? {}) as Record<string, unknown>;
+      const entries = Array.isArray(caseFm.time_entries) ? caseFm.time_entries : [];
+      const updatedEntries = entries.map((e: Record<string, unknown>) =>
+        e.id === entryId
+          ? { ...e, approved: true, approved_at: at.toISOString(), approved_by: executedBy }
+          : e
+      );
+      await deps.updatePage({
+        slug,
+        frontmatter: { time_entries: updatedEntries, updated_at: at.toISOString() },
+      });
+      return [{ kind: "time_entry_approved", slug: `${slug}#${entryId}` }];
+    }
     default:
       throw new Error(`unsupported_action_type:${String(fm.action_type)}`);
   }
@@ -442,7 +463,7 @@ export async function executeApprovedAction(
   });
 
   try {
-    const effects = await executeAction(deps, fm, at);
+    const effects = await executeAction(deps, fm, at, input.executedBy);
     const result: ApprovalExecutionResult = {
       actionSlug: input.actionSlug,
       actionType: fm.action_type,

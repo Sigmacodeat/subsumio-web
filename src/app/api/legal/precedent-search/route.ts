@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { createEngineProxy } from "@/lib/api-handler";
 
+export const maxDuration = 60;
+
 const precedentSearchSchema = z.object({
   query: z.string().min(1, "query_required").max(2_000),
   jurisdiction: z.enum(["at", "de", "ch"]).optional(),
@@ -9,14 +11,14 @@ const precedentSearchSchema = z.object({
 });
 
 export const POST = createEngineProxy({
-  action: "legal.document_review",
+  action: "legal.precedent_search",
   enginePath: "/api/legal/precedent-search",
   body: precedentSearchSchema,
   rateTier: "search",
   citationGate: true,
   label: "precedent-search",
   audit: (_ctx, b) => ({
-    action: "legal.document_review" as const,
+    action: "legal.precedent_search" as const,
     entityType: "precedent",
     details: {
       query: b.query.slice(0, 100),

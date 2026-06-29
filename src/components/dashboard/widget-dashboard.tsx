@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import Link from "next/link";
 import {
   AlertTriangle,
@@ -8,6 +9,7 @@ import {
   CalendarClock,
   CheckSquare,
   Circle,
+  Clock,
   FileText,
   Inbox,
   Loader2,
@@ -774,6 +776,173 @@ export function AIActivityFeed({
             </div>
           );
         })}
+      </div>
+    </section>
+  );
+}
+
+// ── ActivityFeedWidget — chronological "what happened today" timeline ──
+
+type ActivityEntry = {
+  id: string;
+  time: Date;
+  icon: typeof Briefcase;
+  iconColor: string;
+  title: string;
+  meta: string;
+  href: string;
+};
+
+export function ActivityFeedWidget({ data }: { data: CockpitData }) {
+  const { t, lang } = useLang();
+  const locale = lang === "en" ? "en-GB" : "de-DE";
+
+  const entries: ActivityEntry[] = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const isToday = (d: Date) => d.getTime() >= today.getTime();
+
+    const items: ActivityEntry[] = [];
+
+    for (const dl of data.deadlines) {
+      const created = new Date(dl.page.created_at);
+      if (!isToday(created)) continue;
+      items.push({
+        id: `dl-${dl.page.slug}`,
+        time: created,
+        icon: CalendarClock,
+        iconColor: "var(--ds-warning-text)",
+        title: text(dl.page.title, t("widget.deadlines")),
+        meta: lang === "en" ? "Deadline registered" : "Frist erfasst",
+        href: "/dashboard/deadlines",
+      });
+    }
+
+    for (const item of data.inboxItems) {
+      const created = new Date(item.created_at);
+      if (!isToday(created)) continue;
+      items.push({
+        id: `inbox-${item.slug}`,
+        time: created,
+        icon: Inbox,
+        iconColor: "var(--ds-info-text)",
+        title: text(item.title, t("widget.inbox")),
+        meta: lang === "en" ? "New intake" : "Neuer Eingang",
+        href: "/dashboard/intake",
+      });
+    }
+
+    for (const review of data.pendingReviews) {
+      const created = new Date(review.created_at);
+      if (!isToday(created)) continue;
+      items.push({
+        id: `review-${review.slug}`,
+        time: created,
+        icon: CheckSquare,
+        iconColor: "var(--brand-primary)",
+        title: text(review.title, t("widget.ai_activity")),
+        meta: lang === "en" ? "AI review pending" : "KI-Review offen",
+        href: "/dashboard/review-queue",
+      });
+    }
+
+    for (const inv of data.openInvoices) {
+      const created = new Date(inv.created_at);
+      if (!isToday(created)) continue;
+      items.push({
+        id: `inv-${inv.slug}`,
+        time: created,
+        icon: FileText,
+        iconColor: "var(--ds-success-text)",
+        title: text(inv.title, t("widget.active_cases")),
+        meta: lang === "en" ? "Invoice created" : "Rechnung erstellt",
+        href: "/dashboard/invoicing",
+      });
+    }
+
+    for (const sig of data.pendingSignatures) {
+      const created = new Date(sig.created_at);
+      if (!isToday(created)) continue;
+      items.push({
+        id: `sig-${sig.slug}`,
+        time: created,
+        icon: FileText,
+        iconColor: "var(--brand-primary)",
+        title: text(sig.title, lang === "en" ? "Signature request" : "Signatur-Anfrage"),
+        meta: lang === "en" ? "Signature pending" : "Signatur offen",
+        href: "/dashboard/signature",
+      });
+    }
+
+    return items.sort((a, b) => b.time.getTime() - a.time.getTime()).slice(0, 12);
+  }, [data, t, lang]);
+
+  if (entries.length === 0) {
+    return (
+      <section className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+        <div className="mb-2 flex items-center gap-2">
+          <Clock size={15} className="text-[color:var(--ds-text-muted)]" />
+          <span className="text-[13px] font-semibold text-[color:var(--ds-text)]">
+            {t("widget.activity_feed")}
+          </span>
+        </div>
+        <p className="text-[13px] text-[color:var(--ds-text-muted)]">
+          {lang === "en"
+            ? "No activity today yet. New items will appear here as they happen."
+            : "Heute noch keine Aktivität. Neue Einträge erscheinen hier automatisch."}
+        </p>
+      </section>
+    );
+  }
+
+  return (
+    <section className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+      <div className="mb-3 flex items-center gap-2">
+        <Clock size={15} className="text-[color:var(--ds-text-muted)]" />
+        <span className="text-[13px] font-semibold text-[color:var(--ds-text)]">
+          {t("widget.activity_feed")}
+        </span>
+        <span className="text-xs text-[color:var(--ds-text-subtle)]">
+          {entries.length} {lang === "en" ? "today" : "heute"}
+        </span>
+      </div>
+      <div className="relative">
+        <div
+          className="absolute top-1 bottom-1 left-[7px] w-px bg-[color:var(--ds-border)]"
+          aria-hidden
+        />
+        <div className="space-y-2.5">
+          {entries.map((entry) => {
+            const Icon = entry.icon;
+            return (
+              <Link
+                key={entry.id}
+                href={entry.href}
+                className="group relative flex items-start gap-3 rounded-md px-1 py-0.5 transition-colors hover:bg-[color:var(--ds-hover)]"
+              >
+                <div
+                  className="relative z-10 flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border-2 border-[color:var(--ds-surface)]"
+                  style={{ backgroundColor: entry.iconColor }}
+                  aria-hidden
+                >
+                  <Icon size={8} className="text-white" strokeWidth={2.5} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[13px] font-medium text-[color:var(--ds-text)]">
+                    {entry.title}
+                  </p>
+                  <p className="truncate text-xs text-[color:var(--ds-text-muted)]">{entry.meta}</p>
+                </div>
+                <span className="shrink-0 text-xs text-[color:var(--ds-text-subtle)] tabular-nums">
+                  {entry.time.toLocaleTimeString(locale, {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
+              </Link>
+            );
+          })}
+        </div>
       </div>
     </section>
   );

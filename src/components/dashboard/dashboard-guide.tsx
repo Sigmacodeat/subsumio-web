@@ -23,7 +23,7 @@ const ROUTE_HELP: Array<{
   {
     match: "/dashboard/deadlines",
     title: "Fristen sicher steuern",
-    desc: "Pruefe kritische Fristen zuerst, bestaetige erkannte Termine und exportiere nur gepruefte Kalenderdaten.",
+    desc: "Prüfe kritische Fristen zuerst, bestätige erkannte Termine und exportiere nur geprüfte Kalenderdaten.",
     links: [
       { href: "/dashboard/case-scanner", label: "Akten-Scanner" },
       { href: "/dashboard/calendar-export", label: "Kalender" },
@@ -31,8 +31,8 @@ const ROUTE_HELP: Array<{
   },
   {
     match: "/dashboard/cases",
-    title: "Akten sauber fuehren",
-    desc: "Jede Akte sollte Mandant, Gegner, Fristen, Dokumente und naechste Aufgabe enthalten.",
+    title: "Akten sauber führen",
+    desc: "Jede Akte sollte Mandant, Gegner, Fristen, Dokumente und nächste Aufgabe enthalten.",
     links: [
       { href: "/dashboard/cases", label: "Neue Akte" },
       { href: "/dashboard/contacts", label: "Kontakte" },
@@ -41,7 +41,7 @@ const ROUTE_HELP: Array<{
   {
     match: "/dashboard/intake",
     title: "Eingang triagieren",
-    desc: "Ordne neue Eingänge einer Akte zu, erkenne Fristen und markiere Unklares fuer Review.",
+    desc: "Ordne neue Eingänge einer Akte zu, erkenne Fristen und markiere Unklares für Review.",
     links: [
       { href: "/dashboard/bea", label: "beA" },
       { href: "/dashboard/email-import", label: "E-Mail-Import" },
@@ -50,7 +50,7 @@ const ROUTE_HELP: Array<{
   {
     match: "/dashboard/invoicing",
     title: "Abrechnung vorbereiten",
-    desc: "Pflege Kanzlei- und Bankdaten, pruefe offene Leistungen und erstelle Rechnungen aus Akten.",
+    desc: "Pflege Kanzlei- und Bankdaten, prüfe offene Leistungen und erstelle Rechnungen aus Akten.",
     links: [
       { href: "/dashboard/settings/kanzlei", label: "Kanzlei-Daten" },
       { href: "/dashboard/controlling", label: "Controlling" },

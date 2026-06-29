@@ -75,16 +75,21 @@ type NavItem = {
 };
 type NavSection = { titleKey: DashboardKey; items: NavItem[]; colorVar?: string };
 
-// Workflow-ordered, consolidated sidebar. Low-frequency items (opponents,
-// contracts, brain) are intentionally NOT here — they stay reachable via the
-// sidebar filter + command palette through ALL_NAV_ITEMS / PREFERRED_SECTION_BY_HREF.
+// Workflow-ordered sidebar with all items grouped into collapsible sections.
+// Primary items (overview, cases, deadlines, intake, chat) are always visible.
+// Section items expand on click. Search filters across all items.
 export const NAV_SECTIONS: NavSection[] = [
   {
     titleKey: "nav.section.cases_clients",
     colorVar: "--nav-cat-cases",
     items: [
       { href: "/dashboard/contacts", icon: Users, labelKey: "nav.contacts" },
+      { href: "/dashboard/opponents", icon: Scale, labelKey: "nav.opponents" },
       { href: "/dashboard/kollisionspruefung", icon: Scale, labelKey: "nav.kollisionspruefung" },
+      { href: "/dashboard/client-portal", icon: UserCircle, labelKey: "nav.client_portal" },
+      { href: "/dashboard/document-requests", icon: FileClock, labelKey: "nav.document_requests" },
+      { href: "/dashboard/process-strategy", icon: Gavel, labelKey: "nav.process_strategy" },
+      { href: "/dashboard/case-scanner", icon: FileSearch, labelKey: "nav.case_scanner" },
     ],
   },
   {
@@ -93,40 +98,77 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { href: "/dashboard/bea", icon: Mail, labelKey: "nav.bea" },
       { href: "/dashboard/whatsapp", icon: MessageCircle, labelKey: "nav.whatsapp" },
+      { href: "/dashboard/email-import", icon: FileText, labelKey: "nav.email_import" },
     ],
   },
   {
     titleKey: "nav.section.documents_drafting",
     colorVar: "--nav-cat-docs",
     items: [
+      { href: "/dashboard/upload", icon: FileUp, labelKey: "nav.upload" },
       { href: "/dashboard/vault", icon: FolderOpen, labelKey: "nav.vault" },
       { href: "/dashboard/drafting", icon: PenTool, labelKey: "nav.drafting" },
+      { href: "/dashboard/contracts", icon: FileCheck, labelKey: "nav.contracts" },
+      { href: "/dashboard/clause-library", icon: Library, labelKey: "nav.clause_library" },
+      { href: "/dashboard/templates", icon: FileText, labelKey: "nav.templates" },
+      { href: "/dashboard/deep-analysis", icon: FileSearch, labelKey: "nav.deep_analysis" },
+      { href: "/dashboard/analyze", icon: FileSearch, labelKey: "nav.analyze" },
+      { href: "/dashboard/litigation", icon: Gavel, labelKey: "nav.litigation" },
+      { href: "/dashboard/review-sets", icon: FileSearch, labelKey: "nav.review_sets" },
+      { href: "/dashboard/trust-accounting", icon: ShieldCheck, labelKey: "nav.trust_accounting" },
+      {
+        href: "/dashboard/litigation-analytics",
+        icon: TrendingUp,
+        labelKey: "nav.litigation_analytics",
+      },
+      { href: "/dashboard/tabular-review", icon: FileSpreadsheet, labelKey: "nav.tabular_review" },
+      {
+        href: "/dashboard/obligation-tracking",
+        icon: ClipboardCheck,
+        labelKey: "nav.obligation_tracking",
+      },
+      { href: "/dashboard/translate", icon: Globe, labelKey: "nav.translate" },
+      { href: "/dashboard/signature", icon: FileSignature, labelKey: "nav.signature" },
+      { href: "/dashboard/word-addin", icon: FileText, labelKey: "nav.word_addin" },
+      { href: "/dashboard/version-history", icon: FileClock, labelKey: "nav.version_history" },
       {
         href: "/dashboard/portfolio-insights",
         icon: BarChart3,
         labelKey: "nav.portfolio_insights",
-      },
-      {
-        href: "/dashboard/deep-analysis",
-        icon: FileSearch,
-        labelKey: "nav.deep_analysis",
       },
     ],
   },
   {
     titleKey: "nav.section.research_knowledge",
     colorVar: "--nav-cat-research",
-    items: [{ href: "/dashboard/research", icon: Globe, labelKey: "nav.legal_research" }],
+    items: [
+      { href: "/dashboard/research", icon: Globe, labelKey: "nav.legal_research" },
+      { href: "/dashboard/rechtsprechung", icon: Landmark, labelKey: "nav.rechtsprechung" },
+      { href: "/dashboard/norms", icon: BookOpen, labelKey: "nav.norms" },
+      { href: "/dashboard/precedent-search", icon: Search, labelKey: "nav.precedent_search" },
+      { href: "/dashboard/brain", icon: Brain, labelKey: "nav.brain" },
+      { href: "/dashboard/graph", icon: Network, labelKey: "nav.graph" },
+      { href: "/dashboard/sources", icon: Database, labelKey: "nav.sources" },
+      { href: "/dashboard/playbooks", icon: ClipboardList, labelKey: "nav.playbooks" },
+      { href: "/dashboard/judgements-sync", icon: Landmark, labelKey: "nav.judgements_sync" },
+    ],
   },
   {
     titleKey: "nav.section.operations",
     colorVar: "--nav-cat-ops",
     items: [
       { href: "/dashboard/review-queue", icon: ClipboardCheck, labelKey: "nav.review_queue" },
+      { href: "/dashboard/approvals", icon: Gavel, labelKey: "nav.approvals" },
       { href: "/dashboard/workflows", icon: ClipboardList, labelKey: "nav.workflows" },
       { href: "/dashboard/reports", icon: FileText, labelKey: "nav.reports" },
       { href: "/dashboard/analytics", icon: TrendingUp, labelKey: "nav.analytics" },
+      {
+        href: "/dashboard/adoption-analytics",
+        icon: BarChart3,
+        labelKey: "nav.adoption_analytics",
+      },
       { href: "/dashboard/shared-spaces", icon: Share2, labelKey: "nav.shared_spaces" },
+      { href: "/dashboard/monitoring", icon: Bell, labelKey: "nav.monitoring" },
     ],
   },
   {
@@ -134,7 +176,14 @@ export const NAV_SECTIONS: NavSection[] = [
     colorVar: "--nav-cat-billing",
     items: [
       { href: "/dashboard/invoicing", icon: Receipt, labelKey: "nav.invoicing" },
+      { href: "/dashboard/cost-calculator", icon: Calculator, labelKey: "nav.cost_calculator" },
+      { href: "/dashboard/datev-export", icon: FileSpreadsheet, labelKey: "nav.datev_export" },
+      { href: "/dashboard/controlling", icon: BarChart3, labelKey: "nav.controlling" },
       { href: "/dashboard/compliance", icon: ShieldCheck, labelKey: "nav.compliance" },
+      { href: "/dashboard/compliance/retention", icon: FileClock, labelKey: "nav.retention" },
+      { href: "/dashboard/anonymize", icon: EyeOff, labelKey: "nav.anonymize" },
+      { href: "/dashboard/verfahrensdoku", icon: ClipboardCheck, labelKey: "nav.verfahrensdoku" },
+      { href: "/dashboard/data-export", icon: Database, labelKey: "nav.data_export" },
     ],
   },
 ];
@@ -164,7 +213,33 @@ const PRIMARY_COLOR_VARS: string[] = [
 const ADMIN_SECTION: NavSection = {
   titleKey: "nav.section.admin",
   colorVar: "--nav-cat-admin",
-  items: BOTTOM_ITEMS,
+  items: [
+    ...BOTTOM_ITEMS,
+    { href: "/dashboard/billing", icon: CreditCard, labelKey: "nav.billing" },
+    { href: "/dashboard/agents", icon: Bot, labelKey: "nav.agents" },
+    { href: "/dashboard/connectors", icon: Plug, labelKey: "nav.connectors" },
+    { href: "/dashboard/api-keys", icon: ShieldCheck, labelKey: "nav.api_keys" },
+    { href: "/dashboard/settings/kanzlei", icon: Settings, labelKey: "nav.kanzlei" },
+    { href: "/dashboard/settings/security", icon: ShieldCheck, labelKey: "nav.security" },
+    { href: "/dashboard/settings/scim", icon: Network, labelKey: "nav.scim" },
+    { href: "/dashboard/settings/ai-model", icon: Bot, labelKey: "nav.ai_model" },
+    { href: "/dashboard/import-kanzlei", icon: FileUp, labelKey: "nav.import_kanzlei" },
+    { href: "/dashboard/mobile", icon: UserCircle, labelKey: "nav.mobile" },
+    { href: "/dashboard/onboarding", icon: Award, labelKey: "nav.onboarding" },
+    { href: "/dashboard/experience", icon: Award, labelKey: "nav.experience" },
+    { href: "/dashboard/rag-eval", icon: FileSearch, labelKey: "nav.rag_eval" },
+    { href: "/dashboard/adoption-analytics", icon: BarChart3, labelKey: "nav.adoption_analytics" },
+    { href: "/dashboard/assistant", icon: MessageSquareText, labelKey: "nav.assistant" },
+    { href: "/dashboard/query", icon: MessageSquareText, labelKey: "nav.query" },
+    { href: "/dashboard/chat/analytics", icon: BarChart3, labelKey: "nav.chat_analytics" },
+    { href: "/dashboard/chat/compare", icon: GitCompare, labelKey: "nav.chat_compare" },
+    {
+      href: "/dashboard/whatsapp/templates",
+      icon: MessageCircle,
+      labelKey: "nav.whatsapp_templates",
+    },
+    { href: "/dashboard/calendar-export", icon: CalendarClock, labelKey: "nav.calendar_export" },
+  ],
 };
 
 export const ALL_NAV_ITEMS: NavItem[] = [
@@ -184,6 +259,11 @@ export const ALL_NAV_ITEMS: NavItem[] = [
   { href: "/dashboard/litigation", icon: Gavel, labelKey: "nav.litigation" },
   { href: "/dashboard/review-sets", icon: FileSearch, labelKey: "nav.review_sets" },
   { href: "/dashboard/trust-accounting", icon: ShieldCheck, labelKey: "nav.trust_accounting" },
+  {
+    href: "/dashboard/litigation-analytics",
+    icon: TrendingUp,
+    labelKey: "nav.litigation_analytics",
+  },
   {
     href: "/dashboard/obligation-tracking",
     icon: ClipboardCheck,
@@ -267,6 +347,7 @@ export const PREFERRED_SECTION_BY_HREF: Array<{ href: string; section: Dashboard
   { href: "/dashboard/litigation", section: "nav.section.documents_drafting" },
   { href: "/dashboard/review-sets", section: "nav.section.documents_drafting" },
   { href: "/dashboard/trust-accounting", section: "nav.section.documents_drafting" },
+  { href: "/dashboard/litigation-analytics", section: "nav.section.documents_drafting" },
   { href: "/dashboard/tabular-review", section: "nav.section.documents_drafting" },
   { href: "/dashboard/obligation-tracking", section: "nav.section.documents_drafting" },
   { href: "/dashboard/translate", section: "nav.section.documents_drafting" },
@@ -322,6 +403,281 @@ export const PREFERRED_SECTION_BY_HREF: Array<{ href: string; section: Dashboard
   { href: "/dashboard/assistant", section: "nav.section.admin" },
   { href: "/dashboard/query", section: "nav.section.admin" },
 ];
+
+// ── Industry-conditional navigation ──────────────────────────────────────────
+
+export interface IndustryNavConfig {
+  primaryItems: NavItem[];
+  primaryColorVars: string[];
+  sections: NavSection[];
+  adminSection: NavSection;
+  bottomItems: NavItem[];
+  allNavItems: NavItem[];
+  preferredSectionByHref: Array<{ href: string; section: DashboardKey }>;
+}
+
+const LEGAL_NAV: IndustryNavConfig = {
+  primaryItems: PRIMARY_ITEMS,
+  primaryColorVars: PRIMARY_COLOR_VARS,
+  sections: NAV_SECTIONS,
+  adminSection: ADMIN_SECTION,
+  bottomItems: BOTTOM_ITEMS,
+  allNavItems: ALL_NAV_ITEMS,
+  preferredSectionByHref: PREFERRED_SECTION_BY_HREF,
+};
+
+const TAX_PRIMARY_ITEMS: NavItem[] = [
+  { href: "/dashboard", icon: LayoutDashboard, labelKey: "nav.overview" },
+  { href: "/dashboard/contacts", icon: Users, labelKey: "nav.clients" },
+  { href: "/dashboard/tax-deadlines", icon: CalendarClock, labelKey: "nav.tax_deadlines" },
+  { href: "/dashboard/intake", icon: Inbox, labelKey: "nav.intake" },
+  { href: "/dashboard/chat", icon: MessageSquareText, labelKey: "nav.chat" },
+];
+
+const TAX_PRIMARY_COLOR_VARS: string[] = [
+  "--brand-primary",
+  "--nav-cat-cases",
+  "--nav-cat-cases",
+  "--nav-cat-cases",
+  "--nav-cat-comm",
+];
+
+const TAX_NAV_SECTIONS: NavSection[] = [
+  {
+    titleKey: "nav.section.clients",
+    colorVar: "--nav-cat-cases",
+    items: [
+      { href: "/dashboard/contacts", icon: Users, labelKey: "nav.contacts" },
+      { href: "/dashboard/client-portal", icon: UserCircle, labelKey: "nav.client_portal" },
+      { href: "/dashboard/document-requests", icon: FileClock, labelKey: "nav.document_requests" },
+    ],
+  },
+  {
+    titleKey: "nav.section.tax_returns",
+    colorVar: "--nav-cat-ops",
+    items: [
+      { href: "/dashboard/tax-returns", icon: FileText, labelKey: "nav.tax_returns" },
+      { href: "/dashboard/tax-assessments", icon: FileCheck, labelKey: "nav.tax_assessments" },
+      { href: "/dashboard/tax-audit", icon: ClipboardCheck, labelKey: "nav.tax_audit" },
+    ],
+  },
+  {
+    titleKey: "nav.section.documents",
+    colorVar: "--nav-cat-docs",
+    items: [
+      { href: "/dashboard/upload", icon: FileUp, labelKey: "nav.upload" },
+      { href: "/dashboard/vault", icon: FolderOpen, labelKey: "nav.vault" },
+      { href: "/dashboard/templates", icon: FileText, labelKey: "nav.templates" },
+      { href: "/dashboard/analyze", icon: FileSearch, labelKey: "nav.analyze" },
+      { href: "/dashboard/signature", icon: FileSignature, labelKey: "nav.signature" },
+    ],
+  },
+  {
+    titleKey: "nav.section.billing_compliance",
+    colorVar: "--nav-cat-billing",
+    items: [
+      { href: "/dashboard/invoicing", icon: Receipt, labelKey: "nav.invoicing" },
+      { href: "/dashboard/datev-export", icon: FileSpreadsheet, labelKey: "nav.datev_export" },
+      { href: "/dashboard/cost-calculator", icon: Calculator, labelKey: "nav.cost_calculator" },
+      { href: "/dashboard/compliance", icon: ShieldCheck, labelKey: "nav.compliance" },
+      { href: "/dashboard/verfahrensdoku", icon: ClipboardCheck, labelKey: "nav.verfahrensdoku" },
+    ],
+  },
+  {
+    titleKey: "nav.section.communication",
+    colorVar: "--nav-cat-comm",
+    items: [
+      { href: "/dashboard/whatsapp", icon: MessageCircle, labelKey: "nav.whatsapp" },
+      { href: "/dashboard/email-import", icon: FileText, labelKey: "nav.email_import" },
+    ],
+  },
+  {
+    titleKey: "nav.section.research_knowledge",
+    colorVar: "--nav-cat-research",
+    items: [
+      { href: "/dashboard/brain", icon: Brain, labelKey: "nav.brain" },
+      { href: "/dashboard/graph", icon: Network, labelKey: "nav.graph" },
+      { href: "/dashboard/sources", icon: Database, labelKey: "nav.sources" },
+    ],
+  },
+  {
+    titleKey: "nav.section.operations",
+    colorVar: "--nav-cat-ops",
+    items: [
+      { href: "/dashboard/review-queue", icon: ClipboardCheck, labelKey: "nav.review_queue" },
+      { href: "/dashboard/approvals", icon: Gavel, labelKey: "nav.approvals" },
+      { href: "/dashboard/workflows", icon: ClipboardList, labelKey: "nav.workflows" },
+      { href: "/dashboard/reports", icon: FileText, labelKey: "nav.reports" },
+      { href: "/dashboard/analytics", icon: TrendingUp, labelKey: "nav.analytics" },
+      { href: "/dashboard/shared-spaces", icon: Share2, labelKey: "nav.shared_spaces" },
+      { href: "/dashboard/monitoring", icon: Bell, labelKey: "nav.monitoring" },
+    ],
+  },
+];
+
+const TAX_ADMIN_SECTION: NavSection = {
+  titleKey: "nav.section.admin",
+  colorVar: "--nav-cat-admin",
+  items: [
+    ...BOTTOM_ITEMS,
+    { href: "/dashboard/billing", icon: CreditCard, labelKey: "nav.billing" },
+    { href: "/dashboard/agents", icon: Bot, labelKey: "nav.agents" },
+    { href: "/dashboard/connectors", icon: Plug, labelKey: "nav.connectors" },
+    { href: "/dashboard/api-keys", icon: ShieldCheck, labelKey: "nav.api_keys" },
+    { href: "/dashboard/settings/kanzlei", icon: Settings, labelKey: "nav.kanzlei" },
+    { href: "/dashboard/settings/security", icon: ShieldCheck, labelKey: "nav.security" },
+    { href: "/dashboard/settings/scim", icon: Network, labelKey: "nav.scim" },
+    { href: "/dashboard/settings/ai-model", icon: Bot, labelKey: "nav.ai_model" },
+    { href: "/dashboard/import-kanzlei", icon: FileUp, labelKey: "nav.import_kanzlei" },
+    { href: "/dashboard/mobile", icon: UserCircle, labelKey: "nav.mobile" },
+    { href: "/dashboard/onboarding", icon: Award, labelKey: "nav.onboarding" },
+    { href: "/dashboard/experience", icon: Award, labelKey: "nav.experience" },
+    { href: "/dashboard/rag-eval", icon: FileSearch, labelKey: "nav.rag_eval" },
+    { href: "/dashboard/adoption-analytics", icon: BarChart3, labelKey: "nav.adoption_analytics" },
+    { href: "/dashboard/assistant", icon: MessageSquareText, labelKey: "nav.assistant" },
+    { href: "/dashboard/query", icon: MessageSquareText, labelKey: "nav.query" },
+    { href: "/dashboard/chat/analytics", icon: BarChart3, labelKey: "nav.chat_analytics" },
+    { href: "/dashboard/chat/compare", icon: GitCompare, labelKey: "nav.chat_compare" },
+    {
+      href: "/dashboard/whatsapp/templates",
+      icon: MessageCircle,
+      labelKey: "nav.whatsapp_templates",
+    },
+    { href: "/dashboard/calendar-export", icon: CalendarClock, labelKey: "nav.calendar_export" },
+  ],
+};
+
+const TAX_ALL_NAV_ITEMS: NavItem[] = [
+  ...TAX_PRIMARY_ITEMS,
+  ...TAX_NAV_SECTIONS.flatMap((s) => s.items),
+  ...BOTTOM_ITEMS,
+  { href: "/dashboard/client-portal", icon: UserCircle, labelKey: "nav.client_portal" },
+  { href: "/dashboard/document-requests", icon: FileClock, labelKey: "nav.document_requests" },
+  { href: "/dashboard/upload", icon: FileUp, labelKey: "nav.upload" },
+  { href: "/dashboard/vault", icon: FolderOpen, labelKey: "nav.vault" },
+  { href: "/dashboard/templates", icon: FileText, labelKey: "nav.templates" },
+  { href: "/dashboard/analyze", icon: FileSearch, labelKey: "nav.analyze" },
+  { href: "/dashboard/signature", icon: FileSignature, labelKey: "nav.signature" },
+  { href: "/dashboard/tax-returns", icon: FileText, labelKey: "nav.tax_returns" },
+  { href: "/dashboard/tax-assessments", icon: FileCheck, labelKey: "nav.tax_assessments" },
+  { href: "/dashboard/tax-audit", icon: ClipboardCheck, labelKey: "nav.tax_audit" },
+  { href: "/dashboard/tax-deadlines", icon: CalendarClock, labelKey: "nav.tax_deadlines" },
+  { href: "/dashboard/invoicing", icon: Receipt, labelKey: "nav.invoicing" },
+  { href: "/dashboard/datev-export", icon: FileSpreadsheet, labelKey: "nav.datev_export" },
+  { href: "/dashboard/cost-calculator", icon: Calculator, labelKey: "nav.cost_calculator" },
+  { href: "/dashboard/compliance", icon: ShieldCheck, labelKey: "nav.compliance" },
+  { href: "/dashboard/verfahrensdoku", icon: ClipboardCheck, labelKey: "nav.verfahrensdoku" },
+  { href: "/dashboard/whatsapp", icon: MessageCircle, labelKey: "nav.whatsapp" },
+  { href: "/dashboard/email-import", icon: FileText, labelKey: "nav.email_import" },
+  { href: "/dashboard/brain", icon: Brain, labelKey: "nav.brain" },
+  { href: "/dashboard/graph", icon: Network, labelKey: "nav.graph" },
+  { href: "/dashboard/sources", icon: Database, labelKey: "nav.sources" },
+  { href: "/dashboard/review-queue", icon: ClipboardCheck, labelKey: "nav.review_queue" },
+  { href: "/dashboard/approvals", icon: Gavel, labelKey: "nav.approvals" },
+  { href: "/dashboard/workflows", icon: ClipboardList, labelKey: "nav.workflows" },
+  { href: "/dashboard/reports", icon: FileText, labelKey: "nav.reports" },
+  { href: "/dashboard/analytics", icon: TrendingUp, labelKey: "nav.analytics" },
+  { href: "/dashboard/shared-spaces", icon: Share2, labelKey: "nav.shared_spaces" },
+  { href: "/dashboard/monitoring", icon: Bell, labelKey: "nav.monitoring" },
+  { href: "/dashboard/assistant", icon: MessageSquareText, labelKey: "nav.assistant" },
+  { href: "/dashboard/query", icon: MessageSquareText, labelKey: "nav.query" },
+  { href: "/dashboard/chat/analytics", icon: BarChart3, labelKey: "nav.chat_analytics" },
+  { href: "/dashboard/chat/compare", icon: GitCompare, labelKey: "nav.chat_compare" },
+  {
+    href: "/dashboard/whatsapp/templates",
+    icon: MessageCircle,
+    labelKey: "nav.whatsapp_templates",
+  },
+  { href: "/dashboard/calendar-export", icon: CalendarClock, labelKey: "nav.calendar_export" },
+  { href: "/dashboard/agents", icon: Bot, labelKey: "nav.agents" },
+  { href: "/dashboard/connectors", icon: Plug, labelKey: "nav.connectors" },
+  { href: "/dashboard/api-keys", icon: ShieldCheck, labelKey: "nav.api_keys" },
+  { href: "/dashboard/billing", icon: CreditCard, labelKey: "nav.billing" },
+  { href: "/dashboard/settings/kanzlei", icon: Settings, labelKey: "nav.kanzlei" },
+  { href: "/dashboard/settings/security", icon: ShieldCheck, labelKey: "nav.security" },
+  { href: "/dashboard/settings/scim", icon: Network, labelKey: "nav.scim" },
+  { href: "/dashboard/settings/ai-model", icon: Bot, labelKey: "nav.ai_model" },
+  { href: "/dashboard/rag-eval", icon: FileSearch, labelKey: "nav.rag_eval" },
+  { href: "/dashboard/adoption-analytics", icon: BarChart3, labelKey: "nav.adoption_analytics" },
+  { href: "/dashboard/import-kanzlei", icon: FileUp, labelKey: "nav.import_kanzlei" },
+  { href: "/dashboard/mobile", icon: UserCircle, labelKey: "nav.mobile" },
+  { href: "/dashboard/onboarding", icon: Award, labelKey: "nav.onboarding" },
+  { href: "/dashboard/experience", icon: Award, labelKey: "nav.experience" },
+];
+
+const TAX_PREFERRED_SECTION_BY_HREF: Array<{ href: string; section: DashboardKey }> = [
+  { href: "/dashboard/contacts", section: "nav.section.clients" },
+  { href: "/dashboard/client-portal", section: "nav.section.clients" },
+  { href: "/dashboard/document-requests", section: "nav.section.clients" },
+  { href: "/dashboard/tax-returns", section: "nav.section.tax_returns" },
+  { href: "/dashboard/tax-assessments", section: "nav.section.tax_returns" },
+  { href: "/dashboard/tax-audit", section: "nav.section.tax_returns" },
+  { href: "/dashboard/tax-deadlines", section: "nav.section.tax_returns" },
+  { href: "/dashboard/upload", section: "nav.section.documents" },
+  { href: "/dashboard/vault", section: "nav.section.documents" },
+  { href: "/dashboard/templates", section: "nav.section.documents" },
+  { href: "/dashboard/analyze", section: "nav.section.documents" },
+  { href: "/dashboard/signature", section: "nav.section.documents" },
+  { href: "/dashboard/invoicing", section: "nav.section.billing_compliance" },
+  { href: "/dashboard/datev-export", section: "nav.section.billing_compliance" },
+  { href: "/dashboard/cost-calculator", section: "nav.section.billing_compliance" },
+  { href: "/dashboard/compliance", section: "nav.section.billing_compliance" },
+  { href: "/dashboard/verfahrensdoku", section: "nav.section.billing_compliance" },
+  { href: "/dashboard/whatsapp", section: "nav.section.communication" },
+  { href: "/dashboard/email-import", section: "nav.section.communication" },
+  { href: "/dashboard/brain", section: "nav.section.research_knowledge" },
+  { href: "/dashboard/graph", section: "nav.section.research_knowledge" },
+  { href: "/dashboard/sources", section: "nav.section.research_knowledge" },
+  { href: "/dashboard/review-queue", section: "nav.section.operations" },
+  { href: "/dashboard/approvals", section: "nav.section.operations" },
+  { href: "/dashboard/workflows", section: "nav.section.operations" },
+  { href: "/dashboard/reports", section: "nav.section.operations" },
+  { href: "/dashboard/analytics", section: "nav.section.operations" },
+  { href: "/dashboard/shared-spaces", section: "nav.section.operations" },
+  { href: "/dashboard/monitoring", section: "nav.section.operations" },
+  { href: "/dashboard/billing", section: "nav.section.admin" },
+  { href: "/dashboard/team", section: "nav.section.admin" },
+  { href: "/dashboard/audit", section: "nav.section.admin" },
+  { href: "/dashboard/settings", section: "nav.section.admin" },
+  { href: "/dashboard/settings/kanzlei", section: "nav.section.admin" },
+  { href: "/dashboard/settings/security", section: "nav.section.admin" },
+  { href: "/dashboard/settings/scim", section: "nav.section.admin" },
+  { href: "/dashboard/settings/ai-model", section: "nav.section.admin" },
+  { href: "/dashboard/import-kanzlei", section: "nav.section.admin" },
+  { href: "/dashboard/mobile", section: "nav.section.admin" },
+  { href: "/dashboard/onboarding", section: "nav.section.admin" },
+  { href: "/dashboard/experience", section: "nav.section.admin" },
+  { href: "/dashboard/agents", section: "nav.section.admin" },
+  { href: "/dashboard/connectors", section: "nav.section.admin" },
+  { href: "/dashboard/api-keys", section: "nav.section.admin" },
+  { href: "/dashboard/rag-eval", section: "nav.section.admin" },
+  { href: "/dashboard/adoption-analytics", section: "nav.section.admin" },
+  { href: "/dashboard/assistant", section: "nav.section.admin" },
+  { href: "/dashboard/query", section: "nav.section.admin" },
+  { href: "/dashboard/chat/analytics", section: "nav.section.admin" },
+  { href: "/dashboard/chat/compare", section: "nav.section.admin" },
+  { href: "/dashboard/whatsapp/templates", section: "nav.section.admin" },
+  { href: "/dashboard/calendar-export", section: "nav.section.admin" },
+];
+
+const TAX_NAV: IndustryNavConfig = {
+  primaryItems: TAX_PRIMARY_ITEMS,
+  primaryColorVars: TAX_PRIMARY_COLOR_VARS,
+  sections: TAX_NAV_SECTIONS,
+  adminSection: TAX_ADMIN_SECTION,
+  bottomItems: BOTTOM_ITEMS,
+  allNavItems: TAX_ALL_NAV_ITEMS,
+  preferredSectionByHref: TAX_PREFERRED_SECTION_BY_HREF,
+};
+
+const NAV_BY_INDUSTRY: Record<string, IndustryNavConfig> = {
+  legal: LEGAL_NAV,
+  tax: TAX_NAV,
+};
+
+export function navForIndustry(industry: string | null | undefined): IndustryNavConfig {
+  return NAV_BY_INDUSTRY[industry ?? "legal"] ?? LEGAL_NAV;
+}
 
 function sectionDomId(titleKey: DashboardKey) {
   return `sidebar-section-${titleKey.replaceAll(".", "-")}`;
@@ -392,6 +748,8 @@ interface SidebarProps {
   userEmail: string | null;
   /** Real engine-reachability signal — undefined while the first stats load is in flight. */
   brainReachable?: boolean;
+  /** User industry — drives which nav items are shown (legal, tax, …). */
+  industry?: string | null;
 }
 
 export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
@@ -406,6 +764,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
     userName,
     userEmail,
     brainReachable,
+    industry,
   },
   ref
 ) {
@@ -419,6 +778,17 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
   const sidebarShellTransition = sidebarPanelTransition;
   const sidebarWidth = collapsed && isDesktop ? 64 : 220;
 
+  const navConfig = navForIndustry(industry);
+  const {
+    primaryItems,
+    primaryColorVars,
+    sections: navSections,
+    adminSection,
+    bottomItems,
+    allNavItems,
+    preferredSectionByHref,
+  } = navConfig;
+
   const brainStatusLabel =
     brainReachable === true
       ? t("sidebar.active")
@@ -428,44 +798,56 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
 
   const filteredSections = useMemo(() => {
     if (!searchQuery.trim()) {
-      return NAV_SECTIONS.filter((section) => section.items.some((item) => !item.comingSoon));
+      return navSections.filter((section) => section.items.some((item) => !item.comingSoon));
     }
     const q = searchQuery.toLowerCase().trim();
-    const sections = [...NAV_SECTIONS, ADMIN_SECTION];
+    const sections = [...navSections, adminSection];
     return sections
       .map((section) => ({
         ...section,
-        items: ALL_NAV_ITEMS.filter((item) => {
-          const preferred = PREFERRED_SECTION_BY_HREF.find((entry) => entry.href === item.href);
+        items: allNavItems.filter((item) => {
+          const preferred = preferredSectionByHref.find((entry) => entry.href === item.href);
           const sectionKey = preferred?.section ?? "nav.section.admin";
           return (
             sectionKey === section.titleKey &&
             !item.comingSoon &&
-            !PRIMARY_ITEMS.some((primary) => primary.href === item.href) &&
+            !primaryItems.some((primary) => primary.href === item.href) &&
             t(item.labelKey).toLowerCase().includes(q)
           );
         }),
       }))
       .filter((section) => section.items.length > 0);
-  }, [searchQuery, t]);
+  }, [
+    searchQuery,
+    t,
+    navSections,
+    adminSection,
+    allNavItems,
+    preferredSectionByHref,
+    primaryItems,
+  ]);
 
   const filteredBottomItems = useMemo(() => {
-    if (!searchQuery.trim()) return BOTTOM_ITEMS;
+    if (!searchQuery.trim()) return bottomItems;
     return [];
-  }, [searchQuery]);
+  }, [searchQuery, bottomItems]);
 
   const hasResults = filteredSections.length > 0 || filteredBottomItems.length > 0;
   const accordionSections = useMemo<NavSection[]>(() => {
     const sections = [...filteredSections];
     if (filteredBottomItems.length > 0) {
-      sections.push({ ...ADMIN_SECTION, items: filteredBottomItems });
+      if (!searchQuery.trim()) {
+        sections.push(adminSection);
+      } else {
+        sections.push({ ...adminSection, items: filteredBottomItems });
+      }
     }
     return sections;
-  }, [filteredSections, filteredBottomItems]);
+  }, [filteredSections, filteredBottomItems, searchQuery, adminSection]);
 
   const activeSection = useMemo(
-    () => findActiveSection(pathname, [...NAV_SECTIONS, ADMIN_SECTION]),
-    [pathname]
+    () => findActiveSection(pathname, [...navSections, adminSection]),
+    [pathname, navSections, adminSection]
   );
 
   useEffect(() => {
@@ -682,10 +1064,10 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
               </div>
             )}
             <div className={cn("space-y-0.5", collapsed && "hidden md:block")}>
-              {PRIMARY_ITEMS.map((item, index) => {
+              {primaryItems.map((item, index) => {
                 const Icon = item.icon;
                 const active = isActiveHref(pathname, item.href);
-                const colorVar = PRIMARY_COLOR_VARS[index] ?? "--nav-cat-cases";
+                const colorVar = primaryColorVars[index] ?? "--nav-cat-cases";
                 return (
                   <Link
                     key={`primary-${item.href}`}
@@ -739,7 +1121,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
               <div className="mt-3 border-t border-[color:var(--ds-border)] pt-3">
                 {accordionSections.map((section, sectionIndex) => {
                   const sectionItems = section.items.filter(
-                    (item) => !item.comingSoon && !PRIMARY_ITEMS.some((p) => p.href === item.href)
+                    (item) => !item.comingSoon && !primaryItems.some((p) => p.href === item.href)
                   );
                   if (sectionItems.length === 0) return null;
                   return (

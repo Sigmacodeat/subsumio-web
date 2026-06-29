@@ -15,6 +15,7 @@ import { logAudit } from "@/lib/audit";
 import { sendWhatsAppText, sendWhatsAppTemplate } from "./send";
 import { phoneHash } from "./verify";
 import { normalizePhone, type WhatsAppTemplateMessage } from "./types";
+import { recordOutboundMessage } from "./outbound-tracker";
 import {
   evaluateOutbound,
   type OutboundScope,
@@ -97,7 +98,7 @@ export async function sendProactiveMessage(
     }
     ({ messageId } = await sendWhatsAppTemplate(normalized, params.template));
   } else {
-    await sendWhatsAppText(normalized, params.freeform ?? "");
+    ({ messageId } = await sendWhatsAppText(normalized, params.freeform ?? ""));
   }
 
   await logAudit("whatsapp.outbound_sent", "whatsapp_outbound", {
@@ -112,6 +113,12 @@ export async function sendProactiveMessage(
       hadConsent: true,
     },
   });
+
+  // Record the message ID → brain ID mapping so status webhooks can resolve
+  // the correct tenant for status updates (delivered/read/failed).
+  if (messageId) {
+    void recordOutboundMessage(messageId, params.brainId);
+  }
 
   return { sent: true, decision, messageId: messageId || undefined };
 }

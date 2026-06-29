@@ -31,6 +31,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
+import { sha256Hex } from "@/lib/gobd";
 import { cn, encodeSlugPath } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
 import { useToast } from "@/components/ui/toast";
@@ -292,7 +293,9 @@ export default function IntakePage() {
       summary,
       client_name: createForm.client_name.trim() || undefined,
       email: createForm.email.trim() || undefined,
-      phone_hash: createForm.phone_hash.trim() || undefined,
+      phone_hash: createForm.phone_hash.trim()
+        ? await sha256Hex(createForm.phone_hash.trim())
+        : undefined,
       legal_area: createForm.legal_area.trim() || undefined,
       missing_documents: missingDocuments.length ? missingDocuments : undefined,
     });

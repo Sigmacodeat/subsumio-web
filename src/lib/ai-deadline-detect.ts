@@ -218,11 +218,13 @@ function describeDeadline(
 ): string {
   if (rule.template) {
     const map: Record<string, string> = {
-      "zpo-klageerwiderung": "Klageerwiderungsfrist (§ 167 ZPO)",
+      "zpo-klageerwiderung": "Klageerwiderungsfrist (§ 276 ZPO)",
       "zpo-berufung": "Berufungsfrist (§ 517 ZPO)",
       "zpo-wiedereinsetzung": "Wiedereinsetzungsfrist (§ 233 ZPO)",
-      "abgb-verjaehrung": "Verjährungsfrist (§ 1488 ABGB / § 195 BGB)",
+      "abgb-verjaehrung": "Verjährungsfrist (§ 1489 ABGB / § 195 BGB)",
       "stpo-beschwerde": "Beschwerdefrist (§ 295 StPO)",
+      "vwgo-klage": "Klagefrist (§ 60 VwGO)",
+      "vwgo-widerspruch": "Widerspruchsfrist (§ 70 VwVfG)",
     };
     return map[rule.template] || rule.template;
   }

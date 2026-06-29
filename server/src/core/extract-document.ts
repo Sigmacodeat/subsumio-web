@@ -66,12 +66,13 @@ const AUDIO_EXTS = new Set([
 ]);
 
 /**
- * Raw-file ceiling for document formats. Deliberately higher than the 5MB
- * text cap in import-file.ts: a 40MB PDF often extracts to well under 1MB
- * of text. The extracted TEXT still flows through importFromContent's
- * MAX_FILE_SIZE guard, so oversized extractions are rejected there.
+ * Raw-file ceiling for document formats. Matches MAX_FILE_SIZE (500MB) from
+ * the web upload layer so users never hit a lower extraction limit after a
+ * successful upload. A 200MB PDF with mostly text extracts to well under 5MB.
+ * The extracted TEXT still flows through importFromContent's MAX_FILE_SIZE
+ * guard, so oversized extractions are rejected there.
  */
-export const MAX_DOCUMENT_FILE_SIZE = 50_000_000; // 50MB
+export const MAX_DOCUMENT_FILE_SIZE = 500_000_000; // 500MB — matches upload limit
 
 export function isDocumentFilePath(relativePath: string): boolean {
   const lower = relativePath.toLowerCase();

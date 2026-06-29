@@ -160,6 +160,13 @@ declare global {
        * string[] = only pages accessible to these group UUIDs.
        */
       aclGroups?: string[] | "all";
+      /**
+       * Subsumio Ethical Wall: Web-app user ID of the caller.
+       * Set by aclGroupsMiddleware from the identity token payload.
+       * Threaded through to OperationContext.userId for engine-layer
+       * ethical wall enforcement.
+       */
+      userId?: string;
       uploadTokenPayload?: UploadTokenPayload;
     }
   }
@@ -630,14 +637,27 @@ function splitExtractedText(text: string, baseSlug: string, baseTitle: string): 
   }
   if (currentBody.trim()) parts.push({ body: currentBody } as SplitPart);
 
-  // If splitting produced only 1 part (segments too large), force-split by chars
+  // If splitting produced only 1 part (segments too large), force-split by bytes.
+  // We use Buffer.byteLength to stay within SPLIT_TARGET bytes even for CJK/Unicode
+  // content where UTF-16 code units ≠ bytes. We accumulate characters until the
+  // byte budget is exhausted, preserving character boundaries (no mid-codepoint split).
   if (parts.length <= 1) {
     parts.length = 0;
-    const chunkSize = SPLIT_TARGET;
-    for (let i = 0; i < text.length; i += chunkSize) {
-      const chunk = text.slice(i, i + chunkSize);
-      if (chunk.trim()) parts.push({ body: chunk } as SplitPart);
+    let byteBudget = SPLIT_TARGET;
+    let currentChunk = "";
+    let currentBytes = 0;
+    for (let i = 0; i < text.length; i++) {
+      const char = text[i]!;
+      const charBytes = Buffer.byteLength(char, "utf-8");
+      if (currentBytes + charBytes > byteBudget && currentChunk.trim()) {
+        parts.push({ body: currentChunk } as SplitPart);
+        currentChunk = "";
+        currentBytes = 0;
+      }
+      currentChunk += char;
+      currentBytes += charBytes;
     }
+    if (currentChunk.trim()) parts.push({ body: currentChunk } as SplitPart);
   }
 
   const total = parts.length;
@@ -863,28 +883,32 @@ export async function runExtractionAndImport(
     }
   }
 
-  // Auto-trigger the 6-layer legal pipeline for split (large) documents.
-  if (partSlugs.length > 0) {
-    try {
-      const { MinionQueue } = await import("../core/minions/queue.ts");
-      const queue = new MinionQueue(engine);
-      await queue.add(
-        "legal-pipeline",
-        {
-          case_slug: slug,
-          part_slugs: partSlugs,
-          ...(tenantSource !== "default" ? { source_id: tenantSource } : {}),
-          trigger: "post_upload",
-        },
-        { timeout_ms: 60 * 60 * 1000, max_attempts: 1 },
-        { allowProtectedSubmit: true }
-      );
-    } catch (pipelineErr) {
-      console.error(
-        `[web-api] legal-pipeline auto-trigger failed for ${slug}: ` +
-          (pipelineErr instanceof Error ? pipelineErr.message : String(pipelineErr))
-      );
-    }
+  // Auto-trigger the 6-layer legal pipeline for ALL uploaded documents.
+  // Previously only triggered for split (large) documents — but 95%+ of legal
+  // documents are under the 4MB split threshold and were never classified,
+  // entity-extracted, or analyzed. Now every document gets the full pipeline.
+  // For non-split documents, part_slugs is empty and the pipeline processes
+  // the single parent slug directly.
+  try {
+    const { MinionQueue } = await import("../core/minions/queue.ts");
+    const queue = new MinionQueue(engine);
+    const pipelineSlugs = partSlugs.length > 0 ? partSlugs : [slug];
+    await queue.add(
+      "legal-pipeline",
+      {
+        case_slug: slug,
+        part_slugs: pipelineSlugs,
+        ...(tenantSource !== "default" ? { source_id: tenantSource } : {}),
+        trigger: "post_upload",
+      },
+      { timeout_ms: 60 * 60 * 1000, max_attempts: 3 },
+      { allowProtectedSubmit: true }
+    );
+  } catch (pipelineErr) {
+    console.error(
+      `[web-api] legal-pipeline auto-trigger failed for ${slug}: ` +
+        (pipelineErr instanceof Error ? pipelineErr.message : String(pipelineErr))
+    );
   }
 
   return { partSlugs };
@@ -1233,6 +1257,8 @@ export function aclGroupsMiddleware(engine: BrainEngine) {
         next();
         return;
       }
+      // Thread userId for ethical wall engine-layer enforcement
+      req.userId = payload.userId;
       // Admin users get unrestricted access
       if (payload.role === "admin") {
         req.aclGroups = "all";
@@ -1295,7 +1321,8 @@ export async function invokeOp(
   sourceId: string = "default",
   allowedSources?: string[],
   matterScope?: string[] | "all",
-  aclGroups?: string[] | "all"
+  aclGroups?: string[] | "all",
+  userId?: string
 ): Promise<unknown> {
   const result = await dispatchToolCall(engine, name, params, {
     remote: false,
@@ -1303,6 +1330,7 @@ export async function invokeOp(
     ...(allowedSources ? { allowedSources } : {}),
     ...(matterScope ? { matterScope } : {}),
     ...(aclGroups ? { aclGroups } : {}),
+    ...(userId ? { userId } : {}),
   });
   if (result.isError) {
     let msg = "operation_failed";
@@ -2270,7 +2298,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         requestSourceId(req),
         readSourcesFor(req),
         scope,
-        aclGroups
+        aclGroups,
+        req.userId
       );
       const filtered = filterByMatterScope(
         Array.isArray(raw) ? (raw as Array<Record<string, unknown>>) : [],
@@ -2780,7 +2809,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           requestSourceId(req),
           undefined,
           req.matterScope ?? "all",
-          req.aclGroups ?? "all"
+          req.aclGroups ?? "all",
+          req.userId
         );
         res.json(result);
       } catch (e) {
@@ -2949,7 +2979,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         requestSourceId(req),
         undefined,
         req.matterScope ?? "all",
-        req.aclGroups ?? "all"
+        req.aclGroups ?? "all",
+        req.userId
       );
       const pages = (Array.isArray(raw) ? raw : []).map((p) => {
         const pg = p as Record<string, unknown>;
@@ -2988,7 +3019,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         requestSourceId(req),
         readSourcesFor(req),
         req.matterScope ?? "all",
-        req.aclGroups ?? "all"
+        req.aclGroups ?? "all",
+        req.userId
       );
       const page = pageRaw as Record<string, unknown>;
       const tags = Array.isArray(page.tags) ? (page.tags as string[]) : [];
@@ -5296,7 +5328,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
             sourceId,
             undefined,
             req.matterScope ?? "all",
-            req.aclGroups ?? "all"
+            req.aclGroups ?? "all",
+            req.userId
           );
           docs = (Array.isArray(raw) ? raw : [])
             .map((p) => {
@@ -5318,7 +5351,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
               sourceId,
               undefined,
               req.matterScope ?? "all",
-              req.aclGroups ?? "all"
+              req.aclGroups ?? "all",
+              req.userId
             );
             const page = pageRaw as Record<string, unknown>;
             const title = String(page.title ?? doc.title);
@@ -5499,10 +5533,12 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     }
   );
 
-  // Kollisionsprüfung (§ 43a BRAO): scans EVERY legal_case page of the
-  // tenant server-side — no client-side 200-row cap, no frontmatter
-  // round-trip. Matching is case-insensitive substring (catches "Müller
-  // GmbH" vs "Müller GmbH & Co. KG"); exact matches are flagged separately.
+  // Kollisionsprüfung (§ 43a BRAO): scans EVERY legal_case AND legal_contact
+  // page of the tenant server-side — no client-side 200-row cap, no frontmatter
+  // round-trip. Matching uses case-insensitive substring PLUS umlaut-normalized
+  // fuzzy matching (catches "Müller GmbH" vs "Mueller GmbH" vs "Müller GmbH &
+  // Co. KG"). Exact matches are flagged separately; fuzzy matches get a
+  // similarity score.
   app.post(
     "/api/legal/conflict-check",
     express.json({ limit: "64kb" }),
@@ -5513,45 +5549,127 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           res.status(400).json({ error: "missing_name" });
           return;
         }
+
+        // Normalize umlauts for fuzzy matching: ü→ue, ö→oe, ä→ae, ß→ss
+        const normalizeForMatch = (s: string): string =>
+          s
+            .toLowerCase()
+            .replace(/ä/g, "ae")
+            .replace(/ö/g, "oe")
+            .replace(/ü/g, "ue")
+            .replace(/ß/g, "ss")
+            .replace(/[^a-z0-9\s]/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+
+        // Token-based Jaccard similarity (0–1) on normalized names
+        const nameSimilarity = (a: string, b: string): number => {
+          const na = normalizeForMatch(a);
+          const nb = normalizeForMatch(b);
+          if (na === nb) return 1.0;
+          const ta = new Set(na.split(" ").filter((t) => t.length > 1));
+          const tb = new Set(nb.split(" ").filter((t) => t.length > 1));
+          if (ta.size === 0 || tb.size === 0) return 0;
+          let common = 0;
+          for (const t of ta) if (tb.has(t)) common++;
+          return common / (ta.size + tb.size - common);
+        };
+
+        const normName = normalizeForMatch(name);
         const sourceId = requestSourceId(req);
-        const sourceClause = sourceId === "default" ? "" : `AND source_id = $2`;
-        const params: string[] = sourceId === "default" ? [`%${name}%`] : [`%${name}%`, sourceId];
+        const sourceClause = sourceId === "default" ? "" : `AND source_id = $3`;
+        const params: string[] =
+          sourceId === "default"
+            ? [`%${name}%`, `%${normName}%`]
+            : [`%${name}%`, `%${normName}%`, sourceId];
 
         const rows = await engine.executeRaw<{
           slug: string;
           title: string;
           client_name: string | null;
           opponent_name: string | null;
+          contact_name: string | null;
           status: string | null;
+          page_type: string | null;
         }>(
           `SELECT slug, title,
                 frontmatter->>'client_name' as client_name,
                 frontmatter->>'opponent_name' as opponent_name,
-                frontmatter->>'status' as status
-         FROM pages
-         WHERE type = 'legal_case' AND deleted_at IS NULL ${sourceClause}
-           AND (frontmatter->>'client_name' ILIKE $1 OR frontmatter->>'opponent_name' ILIKE $1)
-         ORDER BY updated_at DESC`,
+                frontmatter->>'name' as contact_name,
+                frontmatter->>'status' as status,
+                type as page_type
+           FROM pages
+           WHERE deleted_at IS NULL ${sourceClause}
+             AND (
+               (type = 'legal_case' AND (
+                 frontmatter->>'client_name' ILIKE $1 OR frontmatter->>'opponent_name' ILIKE $1
+                 OR frontmatter->>'client_name' ILIKE $2 OR frontmatter->>'opponent_name' ILIKE $2
+               ))
+               OR
+               (type = 'legal_contact' AND (
+                 frontmatter->>'name' ILIKE $1 OR frontmatter->>'name' ILIKE $2
+                 OR frontmatter->>'company' ILIKE $1 OR frontmatter->>'company' ILIKE $2
+               ))
+             )
+           ORDER BY updated_at DESC`,
           params
         );
 
         const lowerName = name.toLowerCase();
+        const normLower = normName.toLowerCase();
         const matches = rows.map((r) => {
-          const clientMatch = (r.client_name ?? "").toLowerCase().includes(lowerName);
-          const role: "client" | "opponent" = clientMatch ? "client" : "opponent";
-          const matchedName = clientMatch ? (r.client_name ?? "") : (r.opponent_name ?? "");
+          // Determine role and matched name from either legal_case or legal_contact
+          let role: "client" | "opponent" | "contact";
+          let matchedName: string;
+          if (r.page_type === "legal_contact") {
+            role = "contact";
+            matchedName = r.contact_name ?? r.title ?? "";
+          } else {
+            const clientMatch =
+              (r.client_name ?? "").toLowerCase().includes(lowerName) ||
+              normalizeForMatch(r.client_name ?? "").includes(normLower);
+            const opponentMatch =
+              (r.opponent_name ?? "").toLowerCase().includes(lowerName) ||
+              normalizeForMatch(r.opponent_name ?? "").includes(normLower);
+            if (clientMatch) {
+              role = "client";
+              matchedName = r.client_name ?? "";
+            } else if (opponentMatch) {
+              role = "opponent";
+              matchedName = r.opponent_name ?? "";
+            } else {
+              // Fallback: normalized match only
+              role = "client";
+              matchedName = r.client_name ?? r.opponent_name ?? "";
+            }
+          }
+
+          const sim = nameSimilarity(name, matchedName);
+          const exact = matchedName.toLowerCase() === lowerName;
+          const matchType = exact ? "exact" : sim >= 0.8 ? "fuzzy" : "substring";
+
           return {
             slug: r.slug,
             title: r.title,
             role,
             status: r.status ?? "open",
             matched_name: matchedName,
-            exact: matchedName.toLowerCase() === lowerName,
+            exact,
+            similarity: Math.round(sim * 100) / 100,
+            match_type: matchType,
           };
         });
 
-        const asClient = matches.filter((m) => m.role === "client");
-        const asOpponent = matches.filter((m) => m.role === "opponent");
+        // Deduplicate by slug (a case might match on both client and opponent)
+        const seenSlugs = new Set<string>();
+        const deduped = matches.filter((m) => {
+          if (seenSlugs.has(m.slug)) return false;
+          seenSlugs.add(m.slug);
+          return true;
+        });
+
+        const asClient = deduped.filter((m) => m.role === "client");
+        const asOpponent = deduped.filter((m) => m.role === "opponent");
 
         let severity: "critical" | "low" | "none";
         let explanation: string;
@@ -5564,9 +5682,9 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
             asClient.length > 1
               ? `"${name}" ist Mandant in ${asClient.length} Akten. Kein direkter Konflikt, aber auf gegensätzliche Interessen prüfen.`
               : `"${name}" ist Gegner in ${asOpponent.length} Akten. Kein direkter Konflikt, aber Wissensnutzung zwischen den Akten beachten.`;
-        } else if (matches.length === 1) {
+        } else if (deduped.length === 1) {
           severity = "none";
-          explanation = `"${name}" ist in einer Akte bekannt (${matches[0]!.role === "client" ? "Mandant" : "Gegner"}). Kein Konflikt erkennbar.`;
+          explanation = `"${name}" ist in einer Akte bekannt (${deduped[0]!.role === "client" ? "Mandant" : deduped[0]!.role === "opponent" ? "Gegner" : "Kontakt"}). Kein Konflikt erkennbar.`;
         } else {
           severity = "none";
           explanation = `"${name}" ist in keiner Akte bekannt. Kein Konflikt im Brain erkennbar.`;
@@ -5576,7 +5694,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           name,
           severity,
           explanation,
-          matches,
+          matches: deduped,
           checked_cases: rows.length,
           disclaimer:
             "Diese Prüfung ersetzt nicht die anwaltliche Pflicht zur Kollisionsprüfung nach § 43a BRAO.",

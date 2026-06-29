@@ -374,19 +374,9 @@ describe("Portal Token — Payload Validation", () => {
     const sigBin = await crypto.subtle.sign("HMAC", key, enc.encode(tamperedBody));
     const tamperedSig = b64url(sigBin);
     const tampered = `${tamperedBody}.${tamperedSig}`;
-    // exp is a string → comparison exp < Math.floor(...) will be false or NaN
-    // but the payload check `!payload.exp` would pass for non-empty string
-    // The exp < now check: "not-a-number" < 123 → false, so it won't be rejected by expiry
-    // But it should still return the payload since case_slug is valid
-    // Actually: "not-a-number" is truthy, so !payload.exp is false
-    // And "not-a-number" < number → false (string < number is false in JS)
-    // So this token would be accepted — which is a potential issue, but we test actual behavior
+    // Non-numeric exp is now rejected by the typeof check in verifyPortalToken
     const payload = await verifyPortalToken(tampered);
-    // The token has valid signature and case_slug, exp is truthy — verify returns it
-    // This documents current behavior: non-numeric exp bypasses expiry check
-    if (payload !== null) {
-      expect(payload.case_slug).toBe("case-str-exp");
-    }
+    expect(payload).toBeNull();
   });
 });
 

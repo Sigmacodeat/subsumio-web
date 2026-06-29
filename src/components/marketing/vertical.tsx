@@ -83,7 +83,7 @@ export default function VerticalPage({
   // Subsumio (the live legal product) has dedicated subpages; other verticals
   // keep their deep content inline. `sub` builds locale-aware subpage links.
   const isSubsumio = industry === "legal";
-  const sub = (path: string) => p(lang, `/subsumio${path}`);
+  const sub = (path: string) => p(lang, path);
 
   return (
     <div
@@ -189,7 +189,7 @@ export default function VerticalPage({
       </div>
 
       {/* Pains — LIGHT section for credibility + contrast rhythm */}
-      <Section tone="light" className="px-4 py-20 sm:px-6 lg:px-8">
+      <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <SectionHeading title={t.painsTitle} />
           <div className="grid gap-5 md:grid-cols-3">
@@ -216,7 +216,7 @@ export default function VerticalPage({
       </Section>
 
       {/* Capabilities — Subsumio shows a six-tile preview that links to the
-          full /subsumio page (keeps the homepage focused); other verticals keep
+          full /features page (keeps the homepage focused); other verticals keep
           their full grid inline. */}
       {isSubsumio ? (
         <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8">
@@ -256,7 +256,7 @@ export default function VerticalPage({
               })}
             </div>
             <div className="mt-10 text-center">
-              <Link href={p(lang, "/subsumio")}>
+              <Link href={p(lang, "/features")}>
                 <Button size="lg" variant="secondary">
                   {UI_STRINGS[lang].seeAllCapabilities} <ArrowRight size={16} />
                 </Button>
@@ -302,7 +302,7 @@ export default function VerticalPage({
       )}
 
       {/* Proof — LIGHT section with visual flair */}
-      <Section tone="light" className="px-4 py-20 sm:px-6 lg:px-8">
+      <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-3xl text-center">
           <motion.div
             initial={{ opacity: 0, y: 18 }}
@@ -339,7 +339,7 @@ export default function VerticalPage({
       )}
 
       {/* Pricing — this branch's own tiers (or global fallback) */}
-      <Section tone="light" id="pricing" className="scroll-mt-20 px-4 py-20 sm:px-6 lg:px-8">
+      <Section tone="light" id="pricing" className="scroll-mt-20 px-4 py-24 sm:px-6 lg:px-8">
         <BranchPricing lang={lang} industry={product?.industry ?? slug} />
       </Section>
 
@@ -354,7 +354,7 @@ export default function VerticalPage({
       {/* CTA — dark spotlight close */}
       <Section
         tone="dark"
-        className="relative overflow-hidden px-4 py-28 text-center sm:px-6 lg:px-8"
+        className="relative overflow-hidden px-4 py-24 text-center sm:px-6 lg:px-8"
       >
         <GradientMesh className="opacity-40" />
         <div className="mx-auto max-w-3xl">

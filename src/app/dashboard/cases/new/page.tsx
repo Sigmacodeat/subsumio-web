@@ -3,7 +3,18 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Loader2, Plus, AlertTriangle, ShieldAlert, Users } from "lucide-react";
+import {
+  Loader2,
+  Plus,
+  AlertTriangle,
+  ShieldAlert,
+  Users,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Briefcase,
+  FileText,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useToast } from "@/components/ui/toast";
 import { ApiRequestError, api } from "@/lib/api";
 import { cn, encodeSlugPath } from "@/lib/utils";
 import { enqueueMutation, isOnline, setCache, getCache, OFFLINE_KEYS } from "@/lib/offline-store";
@@ -167,6 +179,7 @@ function ContactSelect({ id, label, value, options, onChange, disabled }: Contac
 export default function NewCasePage() {
   const { t } = useLang();
   const router = useRouter();
+  const { addToast } = useToast();
   const STATUS_OPTIONS = getStatusOptions(t);
   const PRIORITY_OPTIONS = getPriorityOptions(t);
   const JURISDICTION_OPTIONS = getJurisdictionOptions(t);
@@ -176,6 +189,12 @@ export default function NewCasePage() {
     matches: Array<{ name: string; slug: string; type: string }>;
   } | null>(null);
   const [waiverReason, setWaiverReason] = useState("");
+  const [step, setStep] = useState(0);
+  const steps = [
+    { label: t("casesnew.step_basics"), icon: Briefcase },
+    { label: t("casesnew.step_parties"), icon: Users },
+    { label: t("casesnew.step_details"), icon: FileText },
+  ];
 
   const form = useDashboardForm({
     schema: caseFormSchema,
@@ -291,6 +310,7 @@ export default function NewCasePage() {
           await setCache(OFFLINE_KEYS.cases, [...cachedCases, fakePage]);
         }
       }
+      addToast({ type: "success", title: t("casesnew.toast_created") });
       router.push(`/dashboard/cases/${encodeSlugPath(slug)}`);
     },
   });
@@ -318,6 +338,7 @@ export default function NewCasePage() {
   const f = form.form;
   const { register, setValue, watch } = f;
   const status = watch("status");
+  const title = watch("title");
   const priority = watch("priority");
   const jurisdiction = watch("jurisdiction");
   const legalArea = watch("legalArea");
@@ -358,6 +379,8 @@ export default function NewCasePage() {
     }
   }
 
+  const canAdvanceStep0 = (title ?? "").trim().length > 0;
+
   return (
     <div className="mx-auto max-w-[900px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
@@ -367,6 +390,47 @@ export default function NewCasePage() {
           { label: t("casesnew.breadcrumb") },
         ]}
       />
+
+      {/* Progress Bar */}
+      <div className="flex items-center gap-2">
+        {steps.map((s, i) => {
+          const SIcon = s.icon;
+          const isDone = i < step;
+          const isActive = i === step;
+          return (
+            <div key={i} className="flex flex-1 items-center gap-2">
+              <div
+                className={cn(
+                  "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
+                  isDone
+                    ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)] text-white"
+                    : isActive
+                      ? "brand-text border-[color:var(--brand-primary)]"
+                      : "border-[color:var(--ds-border)] text-[color:var(--ds-text-subtle)]"
+                )}
+              >
+                {isDone ? <Check size={15} /> : <SIcon size={15} />}
+              </div>
+              <span
+                className={cn(
+                  "hidden text-xs font-medium sm:inline",
+                  isActive ? "text-[color:var(--ds-text)]" : "text-[color:var(--ds-text-subtle)]"
+                )}
+              >
+                {s.label}
+              </span>
+              {i < steps.length - 1 && (
+                <div
+                  className={cn(
+                    "h-px flex-1 transition-colors",
+                    isDone ? "bg-[color:var(--brand-primary)]" : "bg-[color:var(--ds-border)]"
+                  )}
+                />
+              )}
+            </div>
+          );
+        })}
+      </div>
 
       {form.error && (
         <div
@@ -445,307 +509,386 @@ export default function NewCasePage() {
       )}
 
       <form onSubmit={form.handleSubmit} className="space-y-5">
-        {/* Basic info */}
-        <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-          <h2 className="text-xs font-semibold tracking-wide text-[color:var(--ds-text-muted)] uppercase">
-            {t("casesnew.section_details")}
-          </h2>
+        {/* Step 0: Basic info */}
+        {step === 0 && (
+          <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+            <h2 className="text-xs font-semibold tracking-wide text-[color:var(--ds-text-muted)] uppercase">
+              {t("casesnew.section_details")}
+            </h2>
 
-          <div>
-            <Label htmlFor="case-title" className="mb-1.5 block text-xs">
-              {t("casesnew.label_title")} *
-            </Label>
-            <Input
-              id="case-title"
-              {...register("title")}
-              placeholder="z.B. Musterfall GmbH vs. Schuldner AG"
-            />
-            {f.formState.errors.title && (
-              <p className="mt-1 text-xs text-red-600">{f.formState.errors.title.message}</p>
-            )}
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label htmlFor="case-number" className="mb-1.5 block text-xs">
-                {t("casesnew.label_case_number")}
+              <Label htmlFor="case-title" className="mb-1.5 block text-xs">
+                {t("casesnew.label_title")} *
               </Label>
-              <Input id="case-number" {...register("caseNumber")} placeholder="z.B. 2026-001" />
+              <Input
+                id="case-title"
+                {...register("title")}
+                placeholder="z.B. Musterfall GmbH vs. Schuldner AG"
+                autoFocus
+              />
+              {f.formState.errors.title && (
+                <p className="mt-1 text-xs text-red-600">{f.formState.errors.title.message}</p>
+              )}
             </div>
-            <div>
-              <Label htmlFor="case-status" className="mb-1.5 block text-xs">
-                {t("cases.widget.status")}
-              </Label>
-              <Select
-                value={status}
-                onValueChange={(v) => setValue("status", v as CaseFormData["status"])}
-              >
-                <SelectTrigger id="case-status" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {STATUS_OPTIONS.map((o) => (
-                    <SelectItem key={o.value} value={o.value}>
-                      {o.label}
-                    </SelectItem>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="case-number" className="mb-1.5 block text-xs">
+                  {t("casesnew.label_case_number")}
+                </Label>
+                <Input id="case-number" {...register("caseNumber")} placeholder="z.B. 2026-001" />
+              </div>
+              <div>
+                <Label htmlFor="case-status" className="mb-1.5 block text-xs">
+                  {t("cases.widget.status")}
+                </Label>
+                <Select
+                  value={status}
+                  onValueChange={(v) => setValue("status", v as CaseFormData["status"])}
+                >
+                  <SelectTrigger id="case-status" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {STATUS_OPTIONS.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="case-legal-area" className="mb-1.5 block text-xs">
+                  {t("casesnew.label_area")}
+                </Label>
+                <Input
+                  id="case-legal-area"
+                  {...register("legalArea")}
+                  list="legal-area-suggestions"
+                  placeholder="z.B. Zivilrecht"
+                />
+                <datalist id="legal-area-suggestions">
+                  {LEGAL_AREA_SUGGESTIONS.map((area) => (
+                    <option key={area} value={area} />
                   ))}
-                </SelectContent>
-              </Select>
+                </datalist>
+              </div>
+              <div>
+                <Label htmlFor="case-sub-area" className="mb-1.5 block text-xs">
+                  Untergebiet
+                </Label>
+                <Input
+                  id="case-sub-area"
+                  {...register("subArea")}
+                  list="sub-area-suggestions"
+                  placeholder="z.B. Vertragsrecht"
+                />
+                <datalist id="sub-area-suggestions">
+                  {(SUB_AREA_SUGGESTIONS[legalArea ?? ""] ?? []).map((sub) => (
+                    <option key={sub} value={sub} />
+                  ))}
+                </datalist>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="case-jurisdiction" className="mb-1.5 block text-xs">
+                  Rechtskreis *
+                </Label>
+                <Select
+                  value={jurisdiction}
+                  onValueChange={(v) => setValue("jurisdiction", v as CaseFormData["jurisdiction"])}
+                >
+                  <SelectTrigger id="case-jurisdiction" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {JURISDICTION_OPTIONS.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {f.formState.errors.jurisdiction && (
+                  <p className="mt-1 text-xs text-red-600">
+                    {f.formState.errors.jurisdiction.message}
+                  </p>
+                )}
+              </div>
+              <div>
+                <Label htmlFor="case-priority" className="mb-1.5 block text-xs">
+                  {t("casesnew.label_priority")}
+                </Label>
+                <Select
+                  value={priority}
+                  onValueChange={(v) => setValue("priority", v as CaseFormData["priority"])}
+                >
+                  <SelectTrigger id="case-priority" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PRIORITY_OPTIONS.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
+        )}
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label htmlFor="case-legal-area" className="mb-1.5 block text-xs">
-                {t("casesnew.label_area")}
-              </Label>
-              <Input
-                id="case-legal-area"
-                {...register("legalArea")}
-                list="legal-area-suggestions"
-                placeholder="z.B. Zivilrecht"
-              />
-              <datalist id="legal-area-suggestions">
-                {LEGAL_AREA_SUGGESTIONS.map((area) => (
-                  <option key={area} value={area} />
-                ))}
-              </datalist>
+        {/* Step 1: Parties */}
+        {step === 1 && (
+          <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+            <h2 className="text-xs font-semibold tracking-wide text-[color:var(--ds-text-muted)] uppercase">
+              {t("casesnew.section_parties")}
+            </h2>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="case-client" className="mb-1.5 block text-xs">
+                  {t("casesnew.label_client")}
+                </Label>
+                <Input
+                  id="case-client"
+                  {...register("clientName", {
+                    onChange: () => {
+                      if (clientSlug) setValue("clientSlug", "");
+                    },
+                  })}
+                  placeholder={t("casesnew.client_placeholder")}
+                />
+                <ContactSelect
+                  id="case-client-select"
+                  label={t("casesnew.contact_link")}
+                  value={clientSlug ?? ""}
+                  options={clients}
+                  onChange={(slug) => applyContact(slug, "client")}
+                  disabled={clients.length === 0}
+                />
+              </div>
+              <div>
+                <Label htmlFor="case-opponent" className="mb-1.5 block text-xs">
+                  {t("casesnew.label_opponent")}
+                </Label>
+                <Input
+                  id="case-opponent"
+                  {...register("opponentName", {
+                    onChange: () => {
+                      if (opponentSlug) setValue("opponentSlug", "");
+                    },
+                  })}
+                  placeholder={t("casesnew.opponent_placeholder")}
+                />
+                <ContactSelect
+                  id="case-opponent-select"
+                  label={t("casesnew.contact_link")}
+                  value={opponentSlug ?? ""}
+                  options={opponents}
+                  onChange={(slug) => applyContact(slug, "opponent")}
+                  disabled={opponents.length === 0}
+                />
+              </div>
             </div>
-            <div>
-              <Label htmlFor="case-sub-area" className="mb-1.5 block text-xs">
-                Untergebiet
-              </Label>
-              <Input
-                id="case-sub-area"
-                {...register("subArea")}
-                list="sub-area-suggestions"
-                placeholder="z.B. Vertragsrecht"
-              />
-              <datalist id="sub-area-suggestions">
-                {(SUB_AREA_SUGGESTIONS[legalArea ?? ""] ?? []).map((sub) => (
-                  <option key={sub} value={sub} />
-                ))}
-              </datalist>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="case-court" className="mb-1.5 block text-xs">
+                  {t("casesnew.label_court")}
+                </Label>
+                <Input
+                  id="case-court"
+                  {...register("courtName", {
+                    onChange: () => {
+                      if (courtSlug) setValue("courtSlug", "");
+                    },
+                  })}
+                  placeholder={t("casesnew.court_placeholder")}
+                />
+                <ContactSelect
+                  id="case-court-select"
+                  label={t("casesnew.contact_link")}
+                  value={courtSlug ?? ""}
+                  options={courts}
+                  onChange={(slug) => applyContact(slug, "court")}
+                  disabled={courts.length === 0}
+                />
+              </div>
+              <div>
+                <Label htmlFor="case-lawyer" className="mb-1.5 block text-xs">
+                  {t("casesnew.label_lawyer")}
+                </Label>
+                <Input
+                  id="case-lawyer"
+                  {...register("lawyerName", {
+                    onChange: () => {
+                      if (lawyerSlug) setValue("lawyerSlug", "");
+                    },
+                  })}
+                  placeholder={t("casesnew.lawyer_placeholder")}
+                />
+                <ContactSelect
+                  id="case-lawyer-select"
+                  label={t("casesnew.contact_link")}
+                  value={lawyerSlug ?? ""}
+                  options={lawyers}
+                  onChange={(slug) => applyContact(slug, "lawyer")}
+                  disabled={lawyers.length === 0}
+                />
+              </div>
             </div>
           </div>
+        )}
 
-          {/* Jurisdiction — required, determines legal system for this case */}
-          <div>
-            <Label htmlFor="case-jurisdiction" className="mb-1.5 block text-xs">
-              Rechtskreis *
-            </Label>
-            <Select
-              value={jurisdiction}
-              onValueChange={(v) => setValue("jurisdiction", v as CaseFormData["jurisdiction"])}
-            >
-              <SelectTrigger id="case-jurisdiction" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {JURISDICTION_OPTIONS.map((o) => (
-                  <SelectItem key={o.value} value={o.value}>
-                    {o.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {f.formState.errors.jurisdiction && (
-              <p className="mt-1 text-xs text-red-600">{f.formState.errors.jurisdiction.message}</p>
+        {/* Step 2: Facts, Tags, Portal + Review */}
+        {step === 2 && (
+          <>
+            <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+              <h2 className="text-xs font-semibold tracking-wide text-[color:var(--ds-text-muted)] uppercase">
+                {t("casesnew.section_facts")}
+              </h2>
+              <textarea
+                id="case-facts"
+                {...register("facts")}
+                rows={6}
+                placeholder={t("cases.new.placeholder_facts")}
+                className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm leading-relaxed text-[color:var(--ds-text)] transition-colors duration-150 placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:ring-1 focus:ring-[color:var(--brand-primary)]/20 focus:outline-none"
+              />
+            </div>
+
+            <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+              <h2 className="text-xs font-semibold tracking-wide text-[color:var(--ds-text-muted)] uppercase">
+                {t("casesnew.section_tags")}
+              </h2>
+              <Input
+                id="case-tags"
+                {...register("tags")}
+                placeholder={t("casesnew.tags_placeholder")}
+              />
+            </div>
+
+            <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+              <label className="flex cursor-pointer items-start gap-3">
+                <input
+                  type="checkbox"
+                  {...register("portalEnabled")}
+                  checked={portalEnabled}
+                  className="mt-0.5 h-4 w-4 rounded accent-[color:var(--brand-primary)]"
+                />
+                <span>
+                  <span className="block text-sm font-semibold text-[color:var(--ds-text)]">
+                    {t("casesnew.portal_label")}
+                  </span>
+                  <span className="mt-0.5 block text-xs text-[color:var(--ds-text-muted)]">
+                    {t("casesnew.portal_desc")}
+                  </span>
+                </span>
+              </label>
+            </div>
+
+            {/* Review Summary */}
+            <div className="space-y-3 rounded-xl border border-[color:var(--brand-primary)]/30 bg-[color:var(--brand-glow)] p-4">
+              <h3 className="flex items-center gap-2 text-xs font-semibold tracking-wide text-[color:var(--ds-text)] uppercase">
+                <Check size={14} className="brand-text" />
+                {t("casesnew.review_title")}
+              </h3>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                <div>
+                  <span className="text-xs text-[color:var(--ds-text-subtle)]">
+                    {t("casesnew.label_title")}
+                  </span>
+                  <p className="font-medium text-[color:var(--ds-text)]">{title || "—"}</p>
+                </div>
+                <div>
+                  <span className="text-xs text-[color:var(--ds-text-subtle)]">
+                    {t("casesnew.label_area")}
+                  </span>
+                  <p className="font-medium text-[color:var(--ds-text)]">{legalArea || "—"}</p>
+                </div>
+                <div>
+                  <span className="text-xs text-[color:var(--ds-text-subtle)]">
+                    {t("casesnew.label_client")}
+                  </span>
+                  <p className="font-medium text-[color:var(--ds-text)]">{clientName || "—"}</p>
+                </div>
+                <div>
+                  <span className="text-xs text-[color:var(--ds-text-subtle)]">
+                    {t("casesnew.label_opponent")}
+                  </span>
+                  <p className="font-medium text-[color:var(--ds-text)]">{opponentName || "—"}</p>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Navigation */}
+        <div className="flex items-center justify-between pt-2">
+          <div className="flex items-center gap-3">
+            {step > 0 && (
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setStep((s) => s - 1)}
+                className="gap-1.5 text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+              >
+                <ChevronLeft size={16} />
+                {t("casesnew.btn_back")}
+              </Button>
             )}
+            <Link href="/dashboard/cases">
+              <Button
+                type="button"
+                variant="ghost"
+                className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+              >
+                {t("casesnew.btn_cancel")}
+              </Button>
+            </Link>
           </div>
 
-          <div>
-            <Label htmlFor="case-priority" className="mb-1.5 block text-xs">
-              {t("casesnew.label_priority")}
-            </Label>
-            <Select
-              value={priority}
-              onValueChange={(v) => setValue("priority", v as CaseFormData["priority"])}
-            >
-              <SelectTrigger id="case-priority" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {PRIORITY_OPTIONS.map((o) => (
-                  <SelectItem key={o.value} value={o.value}>
-                    {o.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        {/* Parties */}
-        <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-          <h2 className="text-xs font-semibold tracking-wide text-[color:var(--ds-text-muted)] uppercase">
-            {t("casesnew.section_parties")}
-          </h2>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label htmlFor="case-client" className="mb-1.5 block text-xs">
-                {t("casesnew.label_client")}
-              </Label>
-              <Input
-                id="case-client"
-                {...register("clientName", {
-                  onChange: () => {
-                    if (clientSlug) setValue("clientSlug", "");
-                  },
-                })}
-                placeholder={t("casesnew.client_placeholder")}
-              />
-              <ContactSelect
-                id="case-client-select"
-                label={t("casesnew.contact_link")}
-                value={clientSlug ?? ""}
-                options={clients}
-                onChange={(slug) => applyContact(slug, "client")}
-                disabled={clients.length === 0}
-              />
-            </div>
-            <div>
-              <Label htmlFor="case-opponent" className="mb-1.5 block text-xs">
-                {t("casesnew.label_opponent")}
-              </Label>
-              <Input
-                id="case-opponent"
-                {...register("opponentName", {
-                  onChange: () => {
-                    if (opponentSlug) setValue("opponentSlug", "");
-                  },
-                })}
-                placeholder={t("casesnew.opponent_placeholder")}
-              />
-              <ContactSelect
-                id="case-opponent-select"
-                label={t("casesnew.contact_link")}
-                value={opponentSlug ?? ""}
-                options={opponents}
-                onChange={(slug) => applyContact(slug, "opponent")}
-                disabled={opponents.length === 0}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label htmlFor="case-court" className="mb-1.5 block text-xs">
-                {t("casesnew.label_court")}
-              </Label>
-              <Input
-                id="case-court"
-                {...register("courtName", {
-                  onChange: () => {
-                    if (courtSlug) setValue("courtSlug", "");
-                  },
-                })}
-                placeholder={t("casesnew.court_placeholder")}
-              />
-              <ContactSelect
-                id="case-court-select"
-                label={t("casesnew.contact_link")}
-                value={courtSlug ?? ""}
-                options={courts}
-                onChange={(slug) => applyContact(slug, "court")}
-                disabled={courts.length === 0}
-              />
-            </div>
-            <div>
-              <Label htmlFor="case-lawyer" className="mb-1.5 block text-xs">
-                {t("casesnew.label_lawyer")}
-              </Label>
-              <Input
-                id="case-lawyer"
-                {...register("lawyerName", {
-                  onChange: () => {
-                    if (lawyerSlug) setValue("lawyerSlug", "");
-                  },
-                })}
-                placeholder={t("casesnew.lawyer_placeholder")}
-              />
-              <ContactSelect
-                id="case-lawyer-select"
-                label={t("casesnew.contact_link")}
-                value={lawyerSlug ?? ""}
-                options={lawyers}
-                onChange={(slug) => applyContact(slug, "lawyer")}
-                disabled={lawyers.length === 0}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Facts */}
-        <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-          <h2 className="text-xs font-semibold tracking-wide text-[color:var(--ds-text-muted)] uppercase">
-            {t("casesnew.section_facts")}
-          </h2>
-          <textarea
-            id="case-facts"
-            {...register("facts")}
-            rows={6}
-            placeholder={t("cases.new.placeholder_facts")}
-            className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm leading-relaxed text-[color:var(--ds-text)] transition-colors duration-150 placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:ring-1 focus:ring-[color:var(--brand-primary)]/20 focus:outline-none"
-          />
-        </div>
-
-        {/* Tags */}
-        <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-          <h2 className="text-xs font-semibold tracking-wide text-[color:var(--ds-text-muted)] uppercase">
-            {t("casesnew.section_tags")}
-          </h2>
-          <Input
-            id="case-tags"
-            {...register("tags")}
-            placeholder={t("casesnew.tags_placeholder")}
-          />
-        </div>
-
-        <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-          <label className="flex cursor-pointer items-start gap-3">
-            <input
-              type="checkbox"
-              {...register("portalEnabled")}
-              checked={portalEnabled}
-              className="mt-0.5 h-4 w-4 rounded accent-[color:var(--brand-primary)]"
-            />
-            <span>
-              <span className="block text-sm font-semibold text-[color:var(--ds-text)]">
-                {t("casesnew.portal_label")}
-              </span>
-              <span className="mt-0.5 block text-xs text-[color:var(--ds-text-muted)]">
-                {t("casesnew.portal_desc")}
-              </span>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-[color:var(--ds-text-subtle)]">
+              {t("casesnew.step_of")} {step + 1}/{steps.length}
             </span>
-          </label>
-        </div>
-
-        {/* Actions */}
-        <div className="flex items-center justify-end gap-3 pt-2">
-          <Link href="/dashboard/cases">
-            <Button
-              type="button"
-              variant="ghost"
-              className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
-            >
-              {t("casesnew.btn_cancel")}
-            </Button>
-          </Link>
-          <Button
-            type="submit"
-            variant="primary"
-            disabled={form.status === "submitting"}
-            className="brand-bg gap-2 text-white"
-          >
-            {form.status === "submitting" ? (
-              <Loader2 size={16} className="animate-spin" />
+            {step < steps.length - 1 ? (
+              <Button
+                type="button"
+                variant="primary"
+                onClick={() => {
+                  if (step === 0 && !canAdvanceStep0) return;
+                  setStep((s) => s + 1);
+                }}
+                disabled={step === 0 && !canAdvanceStep0}
+                className="brand-bg gap-2 text-white"
+              >
+                {t("casesnew.btn_next")}
+                <ChevronRight size={16} />
+              </Button>
             ) : (
-              <Plus size={16} />
+              <Button
+                type="submit"
+                variant="primary"
+                disabled={form.status === "submitting"}
+                className="brand-bg gap-2 text-white"
+              >
+                {form.status === "submitting" ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <Plus size={16} />
+                )}
+                {t("casesnew.btn_create_short")}
+              </Button>
             )}
-            {t("casesnew.btn_create_short")}
-          </Button>
+          </div>
         </div>
       </form>
     </div>

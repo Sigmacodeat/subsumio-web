@@ -2332,12 +2332,16 @@ export async function processIntent(ctx: ChatContext, intent: ParsedIntent): Pro
       if (docUrl) {
         try {
           const { sendWhatsAppMedia } = await import("@/lib/whatsapp/send");
-          await sendWhatsAppMedia(ctx.fromPhone, {
+          const { recordOutboundMessage } = await import("@/lib/whatsapp/outbound-tracker");
+          const sendResult = await sendWhatsAppMedia(ctx.fromPhone, {
             type: "document",
             link: docUrl,
             filename: docFilename,
             caption: `📄 ${str(doc.title)} aus Akte "${target.title}"`,
           });
+          if (sendResult.messageId && ctx.sender.brainId) {
+            void recordOutboundMessage(sendResult.messageId, ctx.sender.brainId);
+          }
           return `📄 Dokument "${str(doc.title)}" wurde gesendet.`;
         } catch (err) {
           return `📄 ${str(doc.title)} — Download: ${docUrl}\n(Versand fehlgeschlagen: ${err instanceof Error ? err.message : "unbekannt"})`;

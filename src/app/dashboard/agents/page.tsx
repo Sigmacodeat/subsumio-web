@@ -172,7 +172,12 @@ function AgentDAG({
   const rootJobs = useMemo(() => jobs.filter((j) => !j.parentId), [jobs]);
 
   return (
-    <div className="w-full overflow-x-auto" tabIndex={0} aria-label="Agent workflow graph">
+    <div
+      className="w-full overflow-x-auto"
+      tabIndex={0}
+      role="img"
+      aria-label="Agent workflow graph"
+    >
       <div className="min-w-[600px] p-6">
         <svg width="100%" height="300" viewBox="0 0 800 300">
           {/* Draw connections */}

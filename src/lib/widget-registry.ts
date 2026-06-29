@@ -4,6 +4,7 @@ import {
   AlertTriangle,
   Briefcase,
   CalendarClock,
+  Clock,
   Inbox,
   MessageSquare,
   PenTool,
@@ -24,7 +25,8 @@ export type WidgetId =
   | "ai-activity"
   | "kanzlei-insights"
   | "recent-queries"
-  | "rundown";
+  | "rundown"
+  | "activity-feed";
 
 export interface WidgetPref {
   id: WidgetId;
@@ -166,6 +168,16 @@ export const WIDGET_REGISTRY: WidgetMeta[] = [
     defaultOrder: 11,
     fullWidth: true,
     conditional: true,
+  },
+  {
+    id: "activity-feed",
+    type: "activity-feed",
+    icon: Clock,
+    labelKey: "widget.activity_feed",
+    descKey: "widget.activity_feed_desc",
+    defaultVisible: true,
+    defaultOrder: 12,
+    fullWidth: true,
   },
 ];
 

@@ -6,27 +6,11 @@
 // V1 is display + soft gating only: we show usage and warn, we don't cut
 // anyone off mid-month ("we ask before anything changes" — pricing footnote).
 
+export type { PlanLimits } from "@/lib/plans-limits";
+export { PLAN_LIMITS, limitsFor } from "@/lib/plans-limits";
+import type { PlanLimits } from "@/lib/plans-limits";
+import { limitsFor } from "@/lib/plans-limits";
 import type { Plan } from "@/lib/auth/store";
-
-export interface PlanLimits {
-  /** Max pages in the brain (free=200, pro=50k, team=200k, enterprise=1M). */
-  pages: number;
-  /** Fair-use queries (think + search) per calendar month. */
-  queriesPerMonth: number;
-  /** Seats = org members incl. owner. 1 means no team features. */
-  seats: number;
-}
-
-export const PLAN_LIMITS: Record<Plan, PlanLimits> = {
-  free: { pages: 200, queriesPerMonth: 100, seats: 1 },
-  pro: { pages: 50_000, queriesPerMonth: 1_000, seats: 1 },
-  team: { pages: 200_000, queriesPerMonth: 4_000, seats: 5 },
-  enterprise: { pages: 1_000_000, queriesPerMonth: 15_000, seats: 25 },
-};
-
-export function limitsFor(plan: Plan): PlanLimits {
-  return PLAN_LIMITS[plan] ?? PLAN_LIMITS.free;
-}
 
 // ── Quota Enforcement (server-side) ────────────────────────────────────────
 // Stores monthly usage per brainId in Postgres (production) or JSON file (dev).

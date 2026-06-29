@@ -1,15 +1,7 @@
 import { z } from "zod";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
-import {
-  computeStatistics,
-  generateBatesNumber,
-  exportPrivilegeLog,
-  type ReviewDecision,
-  type PrivilegeType,
-  type RedactionCode,
-  type ReviewSetDocument,
-} from "@/lib/review-sets";
+import { computeStatistics, generateBatesNumber, type ReviewSetDocument } from "@/lib/review-sets";
 
 export const dynamic = "force-dynamic";
 

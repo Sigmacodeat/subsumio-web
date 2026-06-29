@@ -12,14 +12,14 @@ const obligationSchema = z
   .refine((v) => v.document_slug || v.text, { message: "document_slug_or_text_required" });
 
 export const POST = createEngineProxy({
-  action: "legal.document_review",
+  action: "legal.obligation_extract",
   enginePath: "/api/legal/obligation-extract",
   body: obligationSchema,
   rateTier: "heavy",
   citationGate: true,
   label: "obligation-extract",
   audit: (_ctx, b) => ({
-    action: "legal.document_review" as const,
+    action: "legal.obligation_extract" as const,
     entityType: "contract",
     details: {
       jurisdiction: b.jurisdiction ?? "all",

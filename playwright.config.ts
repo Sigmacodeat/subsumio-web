@@ -38,7 +38,7 @@ export default defineConfig({
       // supported database aliases so a developer's .env.local can never point
       // E2E at a real auth database. `$$` is the web-server shell PID.
       command:
-        "SUBSUMIO_DATA_DIR=/tmp/subsumio-e2e-$$ SUBSUMIO_AUTH_DATABASE_URL= DATABASE_URL= POSTGRES_URL= POSTGRES_PRISMA_URL= SUBSUMIO_IP_ALLOWLIST= WHATSAPP_VERIFY_TOKEN=test_verify_token WHATSAPP_APP_SECRET=test_app_secret DOCUSIGN_CONNECT_SECRET=test_docusign_connect_secret bunx next dev --turbopack",
+        "SUBSUMIO_DATA_DIR=/tmp/subsumio-e2e-$$ SUBSUMIO_AUTH_DATABASE_URL= DATABASE_URL= POSTGRES_URL= POSTGRES_PRISMA_URL= SUBSUMIO_IP_ALLOWLIST= WHATSAPP_VERIFY_TOKEN=test_verify_token WHATSAPP_APP_SECRET=test_app_secret DOCUSIGN_CONNECT_SECRET=test_docusign_connect_secret bunx next dev",
       url: "http://localhost:3000",
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,

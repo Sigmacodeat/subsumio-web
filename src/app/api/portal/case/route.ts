@@ -55,7 +55,7 @@ export const GET = createPublicHandler(
     if (!fm.portal_enabled) {
       return apiError(
         "portal_disabled",
-        "Diese Akte ist derzeit nicht fuer das Mandantenportal freigegeben.",
+        "Diese Akte ist derzeit nicht für das Mandantenportal freigegeben.",
         403
       );
     }

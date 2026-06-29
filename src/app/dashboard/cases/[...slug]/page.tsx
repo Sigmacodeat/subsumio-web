@@ -61,7 +61,6 @@ import {
   UPLOAD_ACCEPT_ATTRIBUTE,
   UPLOAD_FOLDER_ACCEPT_RE,
 } from "@/lib/upload-formats";
-import { runUploadPool } from "@/lib/upload-queue";
 import { csrfFetch } from "@/lib/csrf";
 import { useMe } from "@/lib/queries/auth";
 import { isOnline, enqueueMutation, enqueueFileUpload, getCache } from "@/lib/offline-store";
@@ -88,7 +87,6 @@ import {
   type ConflictCheckResult,
 } from "@/lib/contact-conflict";
 import { cn } from "@/lib/utils";
-import { PresignedUploader } from "@/components/presigned-uploader";
 import {
   uploadFiles as presignedUploadFiles,
   type UploadProgress as PresignedProgress,

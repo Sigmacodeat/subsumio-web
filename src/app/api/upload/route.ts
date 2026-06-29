@@ -1,7 +1,6 @@
 import { ENGINE_URL, enginePatchPage } from "@/lib/engine";
 import { scanUploadWithDuplicateCheck } from "@/lib/upload-pipeline";
 import { createHandler, apiError, recordQuota } from "@/lib/api-handler";
-import { env } from "@/lib/env";
 import { inferInitialExtractionStatus, createInitialMetadata } from "@/lib/extraction-status";
 import { brainDuplicateStore } from "@/lib/duplicate-store";
 import { MAX_FILE_SIZE } from "@/lib/upload-validation";

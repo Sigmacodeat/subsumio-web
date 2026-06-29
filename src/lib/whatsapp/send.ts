@@ -43,9 +43,9 @@ async function postToGraph(
 }
 
 /** Send a plain text message. */
-export async function sendWhatsAppText(to: string, body: string): Promise<void> {
+export async function sendWhatsAppText(to: string, body: string): Promise<{ messageId: string }> {
   const creds = getCredentials();
-  if (!creds) return;
+  if (!creds) return { messageId: "" };
 
   const res = await postToGraph(
     `https://graph.facebook.com/${graphVersion()}/${encodeURIComponent(creds.phoneNumberId)}/messages`,
@@ -63,6 +63,8 @@ export async function sendWhatsAppText(to: string, body: string): Promise<void> 
     const error = await res.text().catch(() => "");
     throw new Error(error || `WhatsApp send failed: HTTP ${res.status}`);
   }
+  const data = (await res.json().catch(() => ({}))) as { messages?: Array<{ id?: string }> };
+  return { messageId: data.messages?.[0]?.id ?? "" };
 }
 
 /** Send a pre-approved template message. */
@@ -210,8 +212,7 @@ export async function sendWhatsAppMessage(
 ): Promise<{ messageId: string }> {
   switch (message.type) {
     case "text":
-      await sendWhatsAppText(to, message.text);
-      return { messageId: "" };
+      return sendWhatsAppText(to, message.text);
     case "template":
       return sendWhatsAppTemplate(to, message.template);
     case "interactive":

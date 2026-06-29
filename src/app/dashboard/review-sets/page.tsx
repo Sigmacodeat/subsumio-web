@@ -26,7 +26,6 @@ import {
   AlertCircle,
   RefreshCw,
   Loader2,
-  Shield,
   FileText,
 } from "lucide-react";
 import {
@@ -34,7 +33,6 @@ import {
   REVIEW_DECISION_LABELS_DE,
   PRIVILEGE_TYPE_LABELS_DE,
   REDACTION_CODE_LABELS_DE,
-  REVIEW_SET_STATUS_LABELS_DE,
   exportPrivilegeLog,
   type ReviewSetDocument,
   type ReviewDecision,
@@ -85,7 +83,7 @@ const REDACTIONS: RedactionCode[] = [
 
 export default function ReviewSetsPage() {
   const { t } = useLang();
-  const lang = useLang().lang;
+  const _lang = useLang().lang;
 
   const [sets, setSets] = useState<ReviewSet[]>([]);
   const [loading, setLoading] = useState(true);

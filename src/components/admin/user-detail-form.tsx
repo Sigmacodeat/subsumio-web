@@ -14,6 +14,7 @@ export function UserDetailForm({ user }: UserDetailFormProps) {
   const router = useRouter();
   const [plan, setPlan] = useState(user.plan);
   const [role, setRole] = useState(user.role);
+  const [industry, setIndustry] = useState(user.industry ?? "");
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState<{ type: "success" | "error"; msg: string } | null>(null);
 
@@ -24,7 +25,7 @@ export function UserDetailForm({ user }: UserDetailFormProps) {
       const res = await csrfFetch(`/api/admin/users/${user.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan, role }),
+        body: JSON.stringify({ plan, role, industry: industry || undefined }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -137,6 +138,21 @@ export function UserDetailForm({ user }: UserDetailFormProps) {
               <option value="lawyer">Lawyer</option>
               <option value="assistant">Assistant</option>
               <option value="client_viewer">Client Viewer</option>
+            </select>
+          </div>
+          <div>
+            <label className="mb-1.5 block text-xs font-medium [color:var(--mk-text-muted)]">
+              Branche
+            </label>
+            <select
+              value={industry}
+              onChange={(e) => setIndustry(e.target.value)}
+              className="w-full rounded-lg border [border-color:var(--mk-border)] px-3 py-2 text-sm [color:var(--mk-text)] [background:var(--mk-surface-2)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+            >
+              <option value="">— Keine —</option>
+              <option value="legal">Legal</option>
+              <option value="tax">Tax</option>
+              <option value="other">Other</option>
             </select>
           </div>
         </div>

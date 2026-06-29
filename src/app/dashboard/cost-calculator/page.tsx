@@ -18,6 +18,8 @@ import { useLang } from "@/lib/use-lang";
 import { api } from "@/lib/api";
 import { caseFrontmatter, type ExpenseEntry } from "@/lib/legal-types";
 import type { BrainPage } from "@/lib/types";
+import { useMe } from "@/lib/queries/auth";
+import { calculateStBVV, STBVV_ACTIVITIES, type StBVVActivity } from "@/lib/stbvv";
 
 // RVG § 13 Abs. 1 i.d.F. KostBRÄG 2025 (Deutschland, gültig ab 01.06.2025).
 // Die einfache (1,0) Gebühr wird per Stufenformel berechnet, nicht aus einer
@@ -78,6 +80,9 @@ interface CalculationResult {
 
 export default function CostCalculatorPage() {
   const { t, lang } = useLang();
+  const meQuery = useMe();
+  const industry = meQuery.data?.user?.industry ?? null;
+  const isTax = industry === "tax";
   const [jurisdiction, setJurisdiction] = useState<"de" | "at">("de");
   const [streitwert, setStreitwert] = useState("");
   const [result, setResult] = useState<CalculationResult | null>(null);
@@ -85,6 +90,10 @@ export default function CostCalculatorPage() {
   const [selectedCaseSlug, setSelectedCaseSlug] = useState("none");
   const [saving, setSaving] = useState(false);
   const [saveNotice, setSaveNotice] = useState<string | null>(null);
+  // StBVV state
+  const [stbvvActivity, setStbvvActivity] = useState<StBVVActivity>("steuererklaerung");
+  const [stbvvFaktor, setStbvvFaktor] = useState("");
+  const [stbvvResult, setStbvvResult] = useState<ReturnType<typeof calculateStBVV> | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -144,6 +153,13 @@ export default function CostCalculatorPage() {
     const sw = parseFloat(streitwert.replace(/[^0-9.,]/g, "").replace(",", "."));
     if (isNaN(sw) || sw <= 0) return;
 
+    if (isTax) {
+      const f = stbvvFaktor ? parseFloat(stbvvFaktor.replace(",", ".")) : undefined;
+      const r = calculateStBVV(sw, stbvvActivity, f);
+      setStbvvResult(r);
+      return;
+    }
+
     // DE: einfache Gebühr nach § 13 RVG, dann die Standard-Gebührensätze des
     // gerichtlichen Verfahrens erster Instanz: Verfahrensgebühr 1,3 (VV 3100),
     // Terminsgebühr 1,2 (VV 3104), Einigungsgebühr 1,0 (VV 1003).
@@ -183,37 +199,71 @@ export default function CostCalculatorPage() {
         ]}
       />
 
-      {/* Jurisdiction selector */}
-      <div className="flex gap-2">
-        <button
-          onClick={() => setJurisdiction("de")}
-          className={cn(
-            "flex-1 rounded-xl border px-4 py-3 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
-            jurisdiction === "de"
-              ? "brand-soft brand-border brand-text"
-              : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
-          )}
-        >
-          🇩🇪 {t("cost_calc.de")}
-        </button>
-        <button
-          onClick={() => setJurisdiction("at")}
-          className={cn(
-            "flex-1 rounded-xl border px-4 py-3 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
-            jurisdiction === "at"
-              ? "brand-soft brand-border brand-text"
-              : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
-          )}
-        >
-          🇦🇹 {t("cost_calc.at")}
-        </button>
-      </div>
+      {/* Jurisdiction selector — legal only (tax always uses StBVV DE) */}
+      {!isTax && (
+        <div className="flex gap-2">
+          <button
+            onClick={() => setJurisdiction("de")}
+            className={cn(
+              "flex-1 rounded-xl border px-4 py-3 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
+              jurisdiction === "de"
+                ? "brand-soft brand-border brand-text"
+                : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+            )}
+          >
+            🇩🇪 {t("cost_calc.de")}
+          </button>
+          <button
+            onClick={() => setJurisdiction("at")}
+            className={cn(
+              "flex-1 rounded-xl border px-4 py-3 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
+              jurisdiction === "at"
+                ? "brand-soft brand-border brand-text"
+                : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+            )}
+          >
+            🇦🇹 {t("cost_calc.at")}
+          </button>
+        </div>
+      )}
+
+      {/* StBVV activity selector — tax only */}
+      {isTax && (
+        <div className="space-y-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+          <Label className="text-xs text-[color:var(--ds-text-muted)]">Tätigkeit (StBVV)</Label>
+          <Select value={stbvvActivity} onValueChange={(v) => setStbvvActivity(v as StBVVActivity)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {STBVV_ACTIVITIES.map((a) => (
+                <SelectItem key={a.value} value={a.value}>
+                  {a.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <div className="flex items-center gap-2">
+            <Label className="text-xs whitespace-nowrap text-[color:var(--ds-text-muted)]">
+              Faktor (optional)
+            </Label>
+            <Input
+              value={stbvvFaktor}
+              onChange={(e) => setStbvvFaktor(e.target.value)}
+              placeholder="auto"
+              type="text"
+              inputMode="decimal"
+              className="w-24"
+            />
+          </div>
+        </div>
+      )}
 
       {/* Input */}
       <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
         <div>
           <label className="mb-1.5 block text-xs text-[color:var(--ds-text-muted)]">
-            {t("cost_calc.dispute_value")} ({jurisdiction === "de" ? "EUR" : "EUR"})
+            {isTax ? "Gegenstandswert" : t("cost_calc.dispute_value")} (EUR)
           </label>
           <div className="relative">
             <Euro
@@ -266,8 +316,8 @@ export default function CostCalculatorPage() {
         )}
       </div>
 
-      {/* Result */}
-      {result && (
+      {/* Result — Legal (RVG/RATG) */}
+      {result && !isTax && (
         <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
           <div className="flex items-center gap-2">
             <CheckCircle2 size={18} className="text-emerald-600" />
@@ -402,8 +452,106 @@ export default function CostCalculatorPage() {
         </div>
       )}
 
-      {/* AT approximation warning */}
-      {jurisdiction === "at" && (
+      {/* Result — Tax (StBVV) */}
+      {stbvvResult && isTax && (
+        <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 size={18} className="text-emerald-600" />
+            <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
+              StBVV-Berechnung —{" "}
+              {STBVV_ACTIVITIES.find((a) => a.value === stbvvResult.activity)?.label ??
+                stbvvResult.vvNummer}
+            </h2>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between border-b border-[color:var(--ds-border)] py-2">
+              <span className="text-sm text-[color:var(--ds-text-muted)]">Gegenstandswert</span>
+              <span className="font-mono text-sm text-[color:var(--ds-text)]">
+                {stbvvResult.gegenstandswert.toLocaleString(lang === "en" ? "en-GB" : "de-DE")} €
+              </span>
+            </div>
+            <div className="flex items-center justify-between py-2">
+              <span className="text-sm text-[color:var(--ds-text-muted)]">Grundgebühr (1,0)</span>
+              <span className="font-mono text-sm text-[color:var(--ds-text)]">
+                {stbvvResult.basisGebuehr.toLocaleString(lang === "en" ? "en-GB" : "de-DE", {
+                  minimumFractionDigits: 2,
+                })}{" "}
+                €
+              </span>
+            </div>
+            <div className="flex items-center justify-between py-2">
+              <span className="text-sm text-[color:var(--ds-text-muted)]">Faktor</span>
+              <span className="font-mono text-sm text-[color:var(--ds-text)]">
+                {stbvvResult.activityFactor.toFixed(2)}
+              </span>
+            </div>
+            <div className="flex items-center justify-between py-2">
+              <span className="text-sm text-[color:var(--ds-text-muted)]">
+                Gebühr ({stbvvResult.vvNummer})
+              </span>
+              <span className="font-mono text-sm text-[color:var(--ds-text)]">
+                {stbvvResult.gebuehrNetto.toLocaleString(lang === "en" ? "en-GB" : "de-DE", {
+                  minimumFractionDigits: 2,
+                })}{" "}
+                €
+              </span>
+            </div>
+            <div className="flex items-center justify-between py-2">
+              <span className="text-xs text-[color:var(--ds-text-muted)]">Min / Max</span>
+              <span className="font-mono text-xs text-[color:var(--ds-text-muted)]">
+                {stbvvResult.minGebuehr.toLocaleString(lang === "en" ? "en-GB" : "de-DE", {
+                  minimumFractionDigits: 2,
+                })}{" "}
+                € —{" "}
+                {stbvvResult.maxGebuehr.toLocaleString(lang === "en" ? "en-GB" : "de-DE", {
+                  minimumFractionDigits: 2,
+                })}{" "}
+                €
+              </span>
+            </div>
+            <div className="flex items-center justify-between py-2">
+              <span className="text-sm text-[color:var(--ds-text-muted)]">Auslagenpauschale</span>
+              <span className="font-mono text-sm text-[color:var(--ds-text)]">
+                {stbvvResult.auslagenpauschale.toLocaleString(lang === "en" ? "en-GB" : "de-DE", {
+                  minimumFractionDigits: 2,
+                })}{" "}
+                €
+              </span>
+            </div>
+            <div className="flex items-center justify-between border-t border-[color:var(--ds-border)] py-2">
+              <span className="text-sm text-[color:var(--ds-text-muted)]">Zwischensumme</span>
+              <span className="font-mono text-sm text-[color:var(--ds-text)]">
+                {stbvvResult.summeNetto.toLocaleString(lang === "en" ? "en-GB" : "de-DE", {
+                  minimumFractionDigits: 2,
+                })}{" "}
+                €
+              </span>
+            </div>
+            <div className="flex items-center justify-between py-2">
+              <span className="text-sm text-[color:var(--ds-text-muted)]">MwSt (19%)</span>
+              <span className="font-mono text-sm text-[color:var(--ds-text)]">
+                {stbvvResult.mwst.toLocaleString(lang === "en" ? "en-GB" : "de-DE", {
+                  minimumFractionDigits: 2,
+                })}{" "}
+                €
+              </span>
+            </div>
+            <div className="brand-soft brand-border/10 flex items-center justify-between rounded-lg border px-3 py-3">
+              <span className="brand-text text-sm font-semibold">Gesamt (brutto)</span>
+              <span className="brand-text font-mono text-lg font-bold">
+                {stbvvResult.summeBrutto.toLocaleString(lang === "en" ? "en-GB" : "de-DE", {
+                  minimumFractionDigits: 2,
+                })}{" "}
+                €
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* AT approximation warning — legal only */}
+      {jurisdiction === "at" && !isTax && (
         <div
           className="flex items-start gap-2 rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-xs text-amber-600"
           role="note"

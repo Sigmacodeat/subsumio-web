@@ -95,6 +95,13 @@ export interface DispatchOpts {
    * string[] = only pages accessible to these group UUIDs.
    */
   aclGroups?: string[] | "all";
+  /**
+   * Subsumio Ethical Wall: Web-app user ID of the caller.
+   * Set by the web-api middleware from the session user.
+   * Threaded through to OperationContext.userId for engine-layer
+   * ethical wall enforcement.
+   */
+  userId?: string;
 }
 
 /**
@@ -257,6 +264,7 @@ export function buildOperationContext(
     matterScope: opts.matterScope ?? opts.auth?.matterScope,
     // Subsumio R3: Thread document-level ACL groups into the context.
     aclGroups: opts.aclGroups,
+    userId: opts.userId,
   };
 }
 

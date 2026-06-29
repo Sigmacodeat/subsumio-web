@@ -101,6 +101,7 @@ export async function verifyPortalToken(
     if (!ok) return null;
     const payload = JSON.parse(b64urlDecodeUtf8(body)) as PortalTokenPayload;
     if (!payload.case_slug || !payload.exp) return null;
+    if (typeof payload.exp !== "number" || !Number.isFinite(payload.exp)) return null;
     if (payload.exp < Math.floor(Date.now() / 1000)) return null;
     return payload;
   } catch {

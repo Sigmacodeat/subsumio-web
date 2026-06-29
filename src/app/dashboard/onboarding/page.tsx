@@ -331,6 +331,27 @@ export default function OnboardingPage() {
                     {industry === "legal" && <CheckCircle2 size={18} className="brand-text" />}
                   </button>
                   <button
+                    onClick={() => setIndustry("tax")}
+                    className={`flex items-center gap-4 rounded-xl border-2 p-4 text-left transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+                      industry === "tax"
+                        ? "brand-border bg-[color:var(--brand-primary)]/5"
+                        : "border-[color:var(--ds-border)] hover:border-[color:var(--brand-primary)]/30"
+                    }`}
+                  >
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10">
+                      <FileText size={20} className="text-emerald-500" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-[color:var(--ds-text)]">
+                        {t("onboarding.industry_tax")}
+                      </p>
+                      <p className="text-xs text-[color:var(--ds-text-muted)]">
+                        Steuererklärungen, StBVV, Bescheide, Fristen
+                      </p>
+                    </div>
+                    {industry === "tax" && <CheckCircle2 size={18} className="brand-text" />}
+                  </button>
+                  <button
                     onClick={() => setIndustry("other")}
                     className={`flex items-center gap-4 rounded-xl border-2 p-4 text-left opacity-70 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] ${
                       industry === "other"
@@ -346,7 +367,7 @@ export default function OnboardingPage() {
                         {t("onboarding.industry_other")}
                       </p>
                       <p className="text-xs text-[color:var(--ds-text-muted)]">
-                        Subsumio ist aktuell fuer Kanzlei-Workflows optimiert
+                        Subsumio ist aktuell für Kanzlei-Workflows optimiert
                       </p>
                     </div>
                     {industry === "other" && <CheckCircle2 size={18} className="brand-text" />}
@@ -368,7 +389,11 @@ export default function OnboardingPage() {
               <div className="space-y-5">
                 <div className="flex items-center gap-3">
                   <div className="brand-soft brand-border flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border">
-                    <Scale size={18} className="brand-text" />
+                    {industry === "tax" ? (
+                      <FileText size={18} className="brand-text" />
+                    ) : (
+                      <Scale size={18} className="brand-text" />
+                    )}
                   </div>
                   <div>
                     <h2 className="text-lg font-bold text-[color:var(--ds-text)]">
@@ -392,7 +417,9 @@ export default function OnboardingPage() {
                       id="ob-firm"
                       value={profile.kanzleiName}
                       onChange={(e) => updateProfile("kanzleiName", e.target.value)}
-                      placeholder="Kanzlei Muster"
+                      placeholder={
+                        industry === "tax" ? t("onboarding.tax_firm_placeholder") : "Kanzlei Muster"
+                      }
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -406,7 +433,10 @@ export default function OnboardingPage() {
                       id="ob-owner"
                       value={profile.anwaltName}
                       onChange={(e) => updateProfile("anwaltName", e.target.value)}
-                      placeholder={userName || "Dr. Muster"}
+                      placeholder={
+                        userName ||
+                        (industry === "tax" ? t("onboarding.tax_owner_placeholder") : "Dr. Muster")
+                      }
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -420,7 +450,12 @@ export default function OnboardingPage() {
                       id="ob-email"
                       value={profile.kanzleiEmail}
                       onChange={(e) => updateProfile("kanzleiEmail", e.target.value)}
-                      placeholder={userEmail || "office@kanzlei.at"}
+                      placeholder={
+                        userEmail ||
+                        (industry === "tax"
+                          ? t("onboarding.tax_email_placeholder")
+                          : "office@kanzlei.at")
+                      }
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -459,7 +494,11 @@ export default function OnboardingPage() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="lawyer">{t("onboarding.role_lawyer")}</SelectItem>
+                        {industry === "tax" ? (
+                          <SelectItem value="lawyer">{t("onboarding.role_tax_advisor")}</SelectItem>
+                        ) : (
+                          <SelectItem value="lawyer">{t("onboarding.role_lawyer")}</SelectItem>
+                        )}
                         <SelectItem value="assistant">{t("onboarding.role_assistant")}</SelectItem>
                         <SelectItem value="management">
                           {t("onboarding.role_management")}
@@ -478,7 +517,11 @@ export default function OnboardingPage() {
                       id="ob-focus"
                       value={profile.focus}
                       onChange={(e) => updateProfile("focus", e.target.value)}
-                      placeholder={t("onboarding.profile_focus_hint")}
+                      placeholder={
+                        industry === "tax"
+                          ? t("onboarding.tax_focus_placeholder")
+                          : t("onboarding.profile_focus_hint")
+                      }
                     />
                   </div>
                 </div>

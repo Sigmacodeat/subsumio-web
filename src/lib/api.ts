@@ -243,7 +243,9 @@ export const api = {
           case_slug: options.caseSlug,
           ...(options.model && options.model !== "auto" ? { model: options.model } : {}),
         }),
-        ...(options.signal ? { signal: options.signal } : {}),
+        // SSE stream — use 5 min timeout (matches maxDuration=300) when
+        // caller doesn't provide a signal. Default 30s would kill the stream.
+        signal: options.signal ?? AbortSignal.timeout(300_000),
       });
 
       if (!res.ok) {
@@ -374,6 +376,27 @@ export const api = {
       return request(`/api/legal/judgements-search?${params.toString()}`);
     },
 
+    ground(text: string): Promise<{
+      citations_verified: number;
+      citations_unverified: number;
+      corpus_checked: boolean;
+      grounded_citations: Array<{
+        code: string;
+        paragraph: string;
+        context: string;
+        verified: boolean;
+        source_text?: string;
+      }>;
+      analyzed_at: string;
+      has_unverified: boolean;
+      warning?: string;
+    }> {
+      return request("/api/legal/ground", {
+        method: "POST",
+        body: JSON.stringify({ text }),
+      });
+    },
+
     anonymize(text: string, types?: string[]): Promise<AnonymizeResponse> {
       return request("/api/legal/anonymize", {
         method: "POST",
@@ -443,6 +466,8 @@ export const api = {
           perspective: input.perspective ?? "client",
           language: input.language ?? "de",
         }),
+        // SSE stream — use 5 min timeout. Default 30s would kill the stream.
+        signal: AbortSignal.timeout(300_000),
       });
 
       if (!res.ok) {
@@ -912,6 +937,94 @@ export const api = {
       delete(slug: string): Promise<{ ok: boolean }> {
         const path = slug.split("/").map(encodeURIComponent).join("/");
         return request(`/api/legal/analytics/${path}`, { method: "DELETE" });
+      },
+    },
+  },
+
+  tax: {
+    returns: {
+      list(options?: {
+        type?: string;
+        year?: number;
+        status?: string;
+        limit?: number;
+      }): Promise<BrainPage[]> {
+        const params = new URLSearchParams();
+        if (options?.limit) params.set("limit", String(options.limit));
+        if (options?.type) params.set("type", options.type);
+        if (options?.year) params.set("year", String(options.year));
+        if (options?.status) params.set("status", options.status);
+        const qs = params.toString();
+        return request(`/api/tax/returns${qs ? `?${qs}` : ""}`);
+      },
+
+      create(input: {
+        clientName: string;
+        type?: string;
+        year?: number;
+        status?: string;
+        dueDate?: string;
+        notes?: string;
+      }): Promise<{ slug: string }> {
+        return request("/api/tax/returns", {
+          method: "POST",
+          body: JSON.stringify(input),
+        });
+      },
+    },
+
+    assessments: {
+      list(options?: { type?: string; year?: number; limit?: number }): Promise<BrainPage[]> {
+        const params = new URLSearchParams();
+        if (options?.limit) params.set("limit", String(options.limit));
+        if (options?.type) params.set("type", options.type);
+        if (options?.year) params.set("year", String(options.year));
+        const qs = params.toString();
+        return request(`/api/tax/assessments${qs ? `?${qs}` : ""}`);
+      },
+
+      create(input: {
+        clientName: string;
+        type: string;
+        taxType?: string;
+        year: number;
+        noticeDate: string;
+        amount: number;
+        noticeNumber?: string;
+        dueDate?: string;
+        notes?: string;
+      }): Promise<{ slug: string }> {
+        return request("/api/tax/assessments", {
+          method: "POST",
+          body: JSON.stringify(input),
+        });
+      },
+    },
+
+    audits: {
+      list(options?: { type?: string; phase?: string; limit?: number }): Promise<BrainPage[]> {
+        const params = new URLSearchParams();
+        if (options?.limit) params.set("limit", String(options.limit));
+        if (options?.type) params.set("type", options.type);
+        if (options?.phase) params.set("phase", options.phase);
+        const qs = params.toString();
+        return request(`/api/tax/audits${qs ? `?${qs}` : ""}`);
+      },
+
+      create(input: {
+        clientName: string;
+        type: string;
+        year: number;
+        phase?: string;
+        auditor?: string;
+        startDate?: string;
+        endDate?: string;
+        notes?: string;
+      }): Promise<{ slug: string }> {
+        return request("/api/tax/audits", {
+          method: "POST",
+          body: JSON.stringify(input),
+        });
       },
     },
   },

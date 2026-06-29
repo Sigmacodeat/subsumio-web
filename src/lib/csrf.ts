@@ -75,7 +75,9 @@ export async function csrfFetch(input: string | URL, init?: RequestInit): Promis
     }
   }
 
-  // Default 30s timeout; caller can override by passing their own signal
+  // Default 30s timeout; caller can override by passing their own signal.
+  // SSE/streaming callers must pass a longer-timeout signal or no-signal
+  // (via a wrapper that doesn't set AbortSignal.timeout).
   const signal = init?.signal ?? AbortSignal.timeout(30_000);
 
   const res = await fetch(input, { ...init, headers, signal });

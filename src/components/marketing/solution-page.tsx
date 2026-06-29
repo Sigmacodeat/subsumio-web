@@ -86,7 +86,7 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
                 />
               </Button>
             </Link>
-            <Link href={p(lang, "/subsumio")}>
+            <Link href={p(lang, "/")}>
               <Button size="lg" variant="ghost" className="min-h-[48px] [color:var(--mk-text)]">
                 {ui.seePlatform}
               </Button>

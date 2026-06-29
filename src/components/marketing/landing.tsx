@@ -19,7 +19,7 @@ import TrustBand from "./trust-band";
 import { TestimonialsSection } from "./testimonials";
 import { useHeroVariant, HERO_VARIANTS } from "@/lib/ab-test";
 import AudienceTabs from "./audience-tabs";
-import { SectionHeading, ICONS, accentTile } from "./chrome";
+import { Section, SectionHeading, ICONS, accentTile } from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
 import {
   GlowCard,
@@ -108,7 +108,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
         {/* Hero band — hero on the light page surface */}
         <div className="relative">
           {/* Hero */}
-          <section className="relative z-10 mx-auto max-w-7xl px-4 pt-28 pb-24 text-center sm:px-6 md:pt-36 md:pb-28 lg:px-8">
+          <section className="relative z-10 mx-auto max-w-7xl px-4 pt-24 pb-20 text-center sm:px-6 md:pt-28 md:pb-24 lg:px-8">
             {/* Aurora wash — local to hero */}
             <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
               <div
@@ -167,13 +167,15 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                     </>
                   ) : (
                     <>
-                      {h1a.split(" ").map((word, i) => (
-                        <motion.span key={i} className="inline-block" variants={h1Word}>
+                      {h1a.split(" ").map((word, i, arr) => (
+                        <motion.span
+                          key={i}
+                          className={`inline-block${i < arr.length - 1 ? "mr-[0.25em]" : ""}`}
+                          variants={h1Word}
+                        >
                           {word}
-                          {i < h1a.split(" ").length - 1 ? " " : ""}
                         </motion.span>
                       ))}
-                      <span className="sr-only"> </span>
                       <br />
                       <motion.span className="hero-gradient-text inline-block" variants={h1Word}>
                         {h1b}
@@ -182,11 +184,8 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                   )}
                 </motion.h1>
               </motion.div>
-              {"h1Keyword" in t && (t as { h1Keyword?: string }).h1Keyword && (
-                <p className="mt-3 text-sm font-medium text-[color:var(--mk-text-subtle)]">
-                  {(t as { h1Keyword: string }).h1Keyword}
-                </p>
-              )}
+              {/* The H1 keyword phrase lives naturally inside the sub-headline
+                  below — no separate keyword-stuffed line (looks spammy + AEO-neutral). */}
               <motion.div variants={heroItem}>
                 <p className="mx-auto mb-12 max-w-3xl text-lg leading-normal [color:var(--mk-text-muted)] md:text-xl">
                   {t.sub}
@@ -256,12 +255,8 @@ export default function LandingPage({ lang }: { lang: Lang }) {
         </div>
 
         {/* Stats — subtle surface band on the light page */}
-        <motion.section
-          {...reveal}
-          data-tone="light"
-          className="relative z-10 border-y [border-color:var(--mk-border)] px-4 py-20 [background:var(--mk-surface)] sm:px-6 lg:px-8"
-        >
-          <div className="mx-auto max-w-4xl">
+        <Section tone="light" className="border-y px-4 py-20 sm:px-6 lg:px-8">
+          <motion.div {...reveal} className="mx-auto max-w-4xl">
             <StaggerContainer
               className="mb-6 grid grid-cols-2 gap-8 text-center md:grid-cols-4"
               stagger={0.09}
@@ -291,17 +286,13 @@ export default function LandingPage({ lang }: { lang: Lang }) {
               })}
             </StaggerContainer>
             <p className="text-center text-xs [color:var(--mk-text-subtle)]">{t.statsNote}</p>
-          </div>
-        </motion.section>
+          </motion.div>
+        </Section>
 
         {/* Pain — problem hook before solution */}
         {"pains" in t && t.pains && (
-          <motion.section
-            {...reveal}
-            data-tone="light"
-            className="relative z-10 px-4 py-20 sm:px-6 lg:px-8"
-          >
-            <div className="mx-auto max-w-5xl">
+          <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8">
+            <motion.div {...reveal} className="mx-auto max-w-5xl">
               <SectionHeading
                 title={(t as { painTitle: string }).painTitle}
                 sub={(t as { painSub: string }).painSub}
@@ -321,39 +312,34 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                   </StaggerItem>
                 ))}
               </StaggerContainer>
-            </div>
-          </motion.section>
+            </motion.div>
+          </Section>
         )}
 
         <SuperbrainAdvantage lang={lang} />
 
         {/* Dashboard in action — light section with dark mockup spotlight */}
-        <section
-          data-tone="light"
-          className="relative z-10 mx-auto max-w-5xl px-4 py-28 sm:px-6 lg:px-8"
-        >
-          <motion.div {...reveal}>
-            <SectionHeading
-              badge={ui.inActionBadge}
-              title={ui.dashboardTitle}
-              sub={ui.dashboardSub}
-            />
-          </motion.div>
-          <motion.div {...reveal}>
-            <MagneticCard lift={8} tilt={2} className="rounded-2xl">
-              <div data-tone="dashboard">
-                <DashboardReel lang={lang} />
-              </div>
-            </MagneticCard>
-          </motion.div>
-        </section>
+        <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-5xl">
+            <motion.div {...reveal}>
+              <SectionHeading
+                badge={ui.inActionBadge}
+                title={ui.dashboardTitle}
+                sub={ui.dashboardSub}
+              />
+            </motion.div>
+            <motion.div {...reveal}>
+              <MagneticCard lift={8} tilt={2} className="rounded-2xl">
+                <div data-tone="dashboard">
+                  <DashboardReel lang={lang} />
+                </div>
+              </MagneticCard>
+            </motion.div>
+          </div>
+        </Section>
 
         {/* Features — alternating surface band */}
-        <section
-          id="features"
-          data-tone="light"
-          className="relative z-10 px-4 py-28 sm:px-6 lg:px-8"
-        >
+        <Section tone="light" id="features" className="px-4 py-24 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-7xl">
             <motion.div {...reveal}>
               <SectionHeading badge="Features" title={t.featuresTitle} sub={t.featuresSub} />
@@ -388,13 +374,10 @@ export default function LandingPage({ lang }: { lang: Lang }) {
               })}
             </StaggerContainer>
           </div>
-        </section>
+        </Section>
 
         {/* Use cases — real workflows, not fake testimonials */}
-        <section
-          data-tone="slate"
-          className="relative z-10 border-y [border-color:var(--mk-border)] px-4 py-24 [background:var(--mk-surface)] sm:px-6 lg:px-8"
-        >
+        <Section tone="slate" className="border-y px-4 py-24 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-7xl">
             <motion.div {...reveal}>
               <SectionHeading title={t.scenariosTitle} sub={t.scenariosSub} />
@@ -417,16 +400,13 @@ export default function LandingPage({ lang }: { lang: Lang }) {
               ))}
             </div>
           </div>
-        </section>
+        </Section>
 
         {/* Audience segments — homepage teaser linking to /solutions/* */}
         <AudienceTabs lang={lang} />
 
         {/* How it works — alternating surface band */}
-        <section
-          data-tone="light"
-          className="relative z-10 border-y [border-color:var(--mk-border)] px-4 py-24 [background:var(--mk-surface)] sm:px-6 lg:px-8"
-        >
+        <Section tone="light" className="border-y px-4 py-24 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-6xl">
             <motion.div {...reveal}>
               <SectionHeading title={t.howTitle} />
@@ -464,7 +444,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
               })}
             </StaggerContainer>
           </div>
-        </section>
+        </Section>
 
         {/* Trust band — light section (the serious counterpoint, primes pricing) */}
         <TrustBand lang={lang} />
@@ -473,11 +453,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
         <TestimonialsSection />
 
         {/* Pricing */}
-        <section
-          id="pricing"
-          data-tone="light"
-          className="relative z-10 px-4 py-28 sm:px-6 lg:px-8"
-        >
+        <Section tone="light" id="pricing" className="px-4 py-24 sm:px-6 lg:px-8">
           <motion.div {...reveal} className="mx-auto max-w-6xl">
             <SectionHeading badge="Pricing" title={pricing.title} sub={pricing.sub} />
             <PricingGrid lang={lang} />
@@ -489,10 +465,10 @@ export default function LandingPage({ lang }: { lang: Lang }) {
               </Link>
             </div>
           </motion.div>
-        </section>
+        </Section>
 
         {/* Comparison table — Subsumio vs. other AI tools */}
-        <section data-tone="slate" className="relative z-10 px-4 py-24 sm:px-6 lg:px-8">
+        <Section tone="slate" className="px-4 py-24 sm:px-6 lg:px-8">
           <motion.div {...reveal} className="mx-auto max-w-5xl">
             <SectionHeading title={t.comparisonTitle} sub={t.comparisonSub} />
             <div className="overflow-x-auto">
@@ -547,68 +523,63 @@ export default function LandingPage({ lang }: { lang: Lang }) {
               </table>
             </div>
           </motion.div>
-        </section>
+        </Section>
 
         {/* FAQ — subtle surface band */}
-        <section
-          data-tone="light"
-          className="relative z-10 border-y [border-color:var(--mk-border)] px-4 py-24 [background:var(--mk-surface)] sm:px-6 lg:px-8"
-        >
+        <Section tone="light" className="border-y px-4 py-24 sm:px-6 lg:px-8">
           <motion.div {...reveal} className="mx-auto max-w-5xl">
             <SectionHeading title={t.faqTitle} />
             <AnimatedFaqList items={t.faq} tone="light" />
           </motion.div>
-        </section>
+        </Section>
 
         {/* Final CTA */}
-        <motion.section
-          {...reveal}
-          data-tone="light"
-          className="relative z-10 mx-auto max-w-3xl px-4 py-28 text-center sm:px-6 lg:px-8"
-        >
-          <SubsumioMark size={56} className="mx-auto mb-7" />
-          <TextReveal
-            as="h2"
-            text={t.ctaTitle}
-            className="mb-4 text-3xl font-black [color:var(--mk-text)] md:text-4xl"
-            wordClassName="inline-block"
-          />
-          <p className="mb-10 text-lg [color:var(--mk-text-muted)]">{t.ctaSub}</p>
-          <MagneticButton strength={0.25}>
-            <Link href={p(lang, "/signup")}>
-              <Button size="xl" variant="glow">
-                <SubsumioMark size={18} tile={false} /> {t.ctaButton} <ArrowRight size={18} />
-              </Button>
-            </Link>
-          </MagneticButton>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs [color:var(--mk-text-subtle)]">
-            <span className="inline-flex items-center gap-1.5">
-              <span className="h-1 w-1 rounded-full bg-[color:var(--signal-green)]" />
-              {ui.noCreditCard}
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <span className="h-1 w-1 rounded-full bg-[color:var(--signal-green)]" />
-              {ui.gdprReady}
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <span className="h-1 w-1 rounded-full bg-[color:var(--signal-green)]" />
-              {ui.professionalSecrecy}
-            </span>
-          </div>
-          {t.relatedLinks && (
-            <nav className="mt-10 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm">
-              {t.relatedLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="text-[color:var(--mk-text-subtle)] underline decoration-[color:var(--mk-border)] underline-offset-4 transition-colors hover:text-[color:var(--mk-text)] hover:decoration-[color:var(--brand-text)]"
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </nav>
-          )}
-        </motion.section>
+        <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8">
+          <motion.div {...reveal} className="mx-auto max-w-3xl text-center">
+            <SubsumioMark size={56} className="mx-auto mb-7" />
+            <TextReveal
+              as="h2"
+              text={t.ctaTitle}
+              className="mb-4 text-3xl font-black [color:var(--mk-text)] md:text-4xl"
+              wordClassName="inline-block"
+            />
+            <p className="mb-10 text-lg [color:var(--mk-text-muted)]">{t.ctaSub}</p>
+            <MagneticButton strength={0.25}>
+              <Link href={p(lang, "/signup")}>
+                <Button size="xl" variant="glow">
+                  <SubsumioMark size={18} tile={false} /> {t.ctaButton} <ArrowRight size={18} />
+                </Button>
+              </Link>
+            </MagneticButton>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs [color:var(--mk-text-subtle)]">
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-1 w-1 rounded-full bg-[color:var(--signal-green)]" />
+                {ui.noCreditCard}
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-1 w-1 rounded-full bg-[color:var(--signal-green)]" />
+                {ui.gdprReady}
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-1 w-1 rounded-full bg-[color:var(--signal-green)]" />
+                {ui.professionalSecrecy}
+              </span>
+            </div>
+            {t.relatedLinks && (
+              <nav className="mt-10 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm">
+                {t.relatedLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className="text-[color:var(--mk-text-subtle)] underline decoration-[color:var(--mk-border)] underline-offset-4 transition-colors hover:text-[color:var(--mk-text)] hover:decoration-[color:var(--brand-text)]"
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </nav>
+            )}
+          </motion.div>
+        </Section>
       </div>
     </>
   );

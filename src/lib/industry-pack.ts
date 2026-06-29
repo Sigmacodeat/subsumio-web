@@ -1,7 +1,10 @@
-// industry-pack — Subsumio legal only.
+// industry-pack — Subsumio multi-industry registry.
 //
-// Maps the legal industry to the subsumio schema pack that configures the
-// tenant brain for the legal vertical (page types, link verbs, calibration).
+// Maps each industry (legal, tax, …) to its schema pack that configures the
+// tenant brain for that vertical (page types, link verbs, calibration).
+// To add a new industry: add it to INDUSTRY_PROFILES with its own theme,
+// brand, signature, and pack name. The rest of the system (sidebar,
+// quick-create, onboarding, admin) reads from this registry.
 
 export interface IndustryTheme {
   primary: string;
@@ -40,6 +43,17 @@ export const SUBSUMIO_THEME: IndustryTheme = {
   gradientTo: "#6366f1",
 };
 
+export const TAX_THEME: IndustryTheme = {
+  primary: "#047857",
+  primaryHover: "#059669",
+  secondary: "#10b981",
+  tertiary: "#14b8a6",
+  glow: "rgba(4, 120, 87, 0.12)",
+  gradientFrom: "#047857",
+  gradientVia: "#10b981",
+  gradientTo: "#14b8a6",
+};
+
 export const INDUSTRY_PROFILES = {
   legal: {
     key: "legal",
@@ -64,6 +78,30 @@ export const INDUSTRY_PROFILES = {
       ],
     },
     theme: SUBSUMIO_THEME,
+  },
+  tax: {
+    key: "tax",
+    label: { en: "Tax advisory / accounting", de: "Steuerberatung / Buchhaltung" },
+    brand: "Subsumio Tax",
+    dashboardHref: "/dashboard",
+    marketingHref: "/tax",
+    pack: "subsumio-tax",
+    signature: {
+      title: {
+        en: "Client memory with tax deadline discipline",
+        de: "Mandantengedaechtnis mit Steuerfristen-Disziplin",
+      },
+      proof: {
+        en: "Tax returns, assessments, deadlines and documents stay connected as a financial graph.",
+        de: "Steuererklaerungen, Bescheide, Fristen und Dokumente bleiben als Finanz-Graph verbunden.",
+      },
+      items: [
+        { en: "Tax deadline contradictions", de: "Widersprueche in Steuerfristen" },
+        { en: "AO-aware deadline answers", de: "AO-bewusste Fristenantworten" },
+        { en: "Cited assessment context", de: "Zitierter Bescheidkontext" },
+      ],
+    },
+    theme: TAX_THEME,
   },
 } as const satisfies Record<string, IndustryProfile>;
 

@@ -31,7 +31,7 @@ import { api } from "@/lib/api";
 import type { BrainPage } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
-import { SearchBar } from "@/components/dashboard/search-bar";
+
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { useLang } from "@/lib/use-lang";

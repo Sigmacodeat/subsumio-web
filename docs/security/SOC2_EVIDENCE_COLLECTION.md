@@ -22,7 +22,7 @@
 
 ### 1.2 System Description
 
-- **System name:** Subsumio Legal AI Platform
+- **System name:** Subsumio AI Platform (Legal + Tax)
 - **Components:** Web Application, Engine API, PostgreSQL, Redis, Document Vault, WhatsApp Bot
 - **Hosting:** Hetzner Online GmbH (Falkenstein, DE + Helsinki, FI)
 - **CDN/WAF:** Cloudflare, Inc. (EU edge)

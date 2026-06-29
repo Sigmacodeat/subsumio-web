@@ -116,10 +116,12 @@ export interface RecentQuery {
 export interface ConflictMatch {
   slug: string;
   title: string;
-  role: "client" | "opponent";
+  role: "client" | "opponent" | "contact";
   status: string;
   matched_name: string;
   exact: boolean;
+  similarity?: number;
+  match_type?: "exact" | "fuzzy" | "substring";
 }
 
 export interface ConflictCheckResponse {
@@ -321,7 +323,7 @@ export interface RawCitation {
 export interface GroundedCitation {
   code: string;
   paragraph: string;
-  context: string;
+  context?: string;
   verified: boolean;
   source_text?: string;
   source_file?: string;

@@ -13,6 +13,7 @@ import { resolveSenderIdentity } from "@/lib/whatsapp/identity";
 import { getWhatsAppWindowStore } from "@/lib/whatsapp/window-store";
 import { orchestrateWhatsAppMessage } from "@/lib/whatsapp-kanzlei-os/orchestrator";
 import { buildWhatsAppMessageBody } from "@/lib/whatsapp-event-bus";
+import { recordOutboundMessage, getOutboundBrainId } from "@/lib/whatsapp/outbound-tracker";
 import { ENGINE_URL, engineHeadersForBrain, enginePatchPage } from "@/lib/engine";
 import { logAudit } from "@/lib/audit";
 import { createWebhookHandler, createPublicHandler } from "@/lib/api-handler";
@@ -97,9 +98,15 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
         approvalExecutionDeps: executionDepsForBrain(sender.brainId),
       });
       if (result.interactive) {
-        await sendWhatsAppInteractive(message.from, result.interactive);
+        const sendResult = await sendWhatsAppInteractive(message.from, result.interactive);
+        if (sendResult.messageId && sender.brainId) {
+          void recordOutboundMessage(sendResult.messageId, sender.brainId);
+        }
       } else if (result.reply) {
-        await sendWhatsAppText(message.from, result.reply);
+        const sendResult = await sendWhatsAppText(message.from, result.reply);
+        if (sendResult.messageId && sender.brainId) {
+          void recordOutboundMessage(sendResult.messageId, sender.brainId);
+        }
       }
 
       // ── Dispatch approval notification via Event Bus (P1-SECR-001) ──────
@@ -129,10 +136,13 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
       const error = err instanceof Error ? err.message : String(err);
       console.error("[whatsapp-webhook] message failed:", error);
       try {
-        await sendWhatsAppText(
+        const errSendResult = await sendWhatsAppText(
           message.from,
           "Kanzlei OS konnte die Nachricht derzeit nicht verarbeiten. Bitte versuchen Sie es später erneut."
         );
+        if (errSendResult.messageId && sender.brainId) {
+          void recordOutboundMessage(errSendResult.messageId, sender.brainId);
+        }
       } catch {}
       await markMessageProcessed(message.id, phoneHash(message.from), message.type, "failed");
       results.push({ id: message.id, status: "failed" });
@@ -152,8 +162,15 @@ async function processMessageStatuses(statuses: WhatsAppMessageStatus[]): Promis
   for (const status of statuses) {
     try {
       const slug = `legal/chat/whatsapp-outbox/${status.id}`;
-      const brainId = process.env.WHATSAPP_DEFAULT_BRAIN_ID;
-      if (!brainId) continue;
+
+      // Resolve brain ID from the outbound tracker (multi-tenant safe).
+      // Falls back to WHATSAPP_DEFAULT_BRAIN_ID for legacy messages pre-dating
+      // the tracker.
+      let brainId = await getOutboundBrainId(status.id);
+      if (!brainId) {
+        brainId = process.env.WHATSAPP_DEFAULT_BRAIN_ID;
+        if (!brainId) continue;
+      }
 
       await fetch(`${ENGINE_URL}/api/pages`, {
         method: "POST",

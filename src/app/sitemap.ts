@@ -1,4 +1,6 @@
 import type { MetadataRoute } from "next";
+import { getAllPosts } from "@/content/blog";
+import { getAllCitySlugs } from "@/content/city-pages";
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL || "https://subsum.eu";
 
@@ -22,10 +24,6 @@ const PAGES = [
   "/solutions/mid-sized",
   "/benchmark-methodology",
   "/blog",
-  "/cities",
-  "/cities/wien",
-  "/cities/berlin",
-  "/cities/zuerich",
 ];
 
 // hreflang locale codes for each route prefix
@@ -93,6 +91,33 @@ export default function sitemap(): MetadataRoute.Sitemap {
         alternates: { languages: legalAlternates },
       });
     }
+  }
+
+  // Blog posts — individual entries with post dates as lastModified
+  for (const post of getAllPosts()) {
+    entries.push({
+      url: `${BASE}/blog/${post.slug}`,
+      lastModified: new Date(post.date),
+      changeFrequency: "monthly",
+      priority: 0.6,
+    });
+  }
+
+  // City landing pages — DE-only routes (no /at /ch /en prefixes exist).
+  // Generated dynamically from content so new cities appear automatically.
+  entries.push({
+    url: `${BASE}/cities`,
+    lastModified: now,
+    changeFrequency: "monthly",
+    priority: 0.5,
+  });
+  for (const slug of getAllCitySlugs()) {
+    entries.push({
+      url: `${BASE}/cities/${slug}`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.6,
+    });
   }
 
   return entries;

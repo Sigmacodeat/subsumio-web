@@ -19,8 +19,13 @@ const nextConfig: NextConfig = {
       // the current App Router structure, so any double-locale cleanup that
       // targets /de would point to a non-existent route. The canonical German
       // URLs are the root paths below.
-      // Deduplicate: canonical product page is /subsumio
-      { source: "/produkt", destination: "/subsumio", permanent: true },
+      // Deduplicate: canonical product page is the homepage
+      { source: "/subsumio", destination: "/", permanent: true },
+      { source: "/de/subsumio", destination: "/de", permanent: true },
+      { source: "/en/subsumio", destination: "/en", permanent: true },
+      { source: "/at/subsumio", destination: "/at", permanent: true },
+      { source: "/ch/subsumio", destination: "/ch", permanent: true },
+      { source: "/produkt", destination: "/", permanent: true },
       // Deduplicate: canonical security page is /security
       { source: "/sicherheit", destination: "/security", permanent: true },
     ];

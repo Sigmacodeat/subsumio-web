@@ -96,6 +96,7 @@ export async function engineContext(): Promise<EngineContext | null> {
   if (!session) return null;
   const user = await getStore().getById(session.uid);
   if (!user) return null;
+  if (user.deactivatedAt) return null;
 
   let brainId = user.brainId;
   let plan: Plan = user.plan;

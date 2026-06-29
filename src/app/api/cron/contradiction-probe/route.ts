@@ -1,7 +1,6 @@
 import { NextRequest } from "next/server";
 import { createCronHandler } from "@/lib/api-handler";
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
-import { env } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;

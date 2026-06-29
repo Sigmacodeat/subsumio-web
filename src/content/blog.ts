@@ -38,7 +38,7 @@ const posts: BlogPost[] = [
         heading: "Self-Hosting vs. EU-Cloud: Welche Option für welche Kanzlei?",
         paragraphs: [
           "Self-Hosting bedeutet: Die KI-Engine läuft auf eigener Hardware, mit eigenen Schlüsseln. Mandantendaten verlassen niemals die Kanzlei. Das ist die sicherste Option — erfordert aber IT-Ressourcen oder einen verwalteten Server.",
-          "Die EU-Cloud ist die einfachere Option: Keine IT-Ressourcen nötig, kein Server-Management. Der AVV regelt die Auftragsverarbeitung. Die Verschlüsselung erfolgt mandantensepariert — keine andere Kanzlei hat Zugriff auf Ihre Daten.",
+          "Die EU-Cloud ist die einfachere Option: Keine IT-Ressourcen nötig, kein Server-Management. Der AVV regelt die Auftragsverarbeitung. Die Verschlüsselung erfolgt mandantensepariert — keine andere Kanzlei hat Zugriff auf deine Daten.",
           "Beide Optionen sind mit § 203 StGB vereinbar. Die Wahl hängt von Kanzleigröße, IT-Kapazität und Risikopräferenz ab.",
         ],
       },
@@ -52,8 +52,8 @@ const posts: BlogPost[] = [
       {
         heading: "Praktische Checkliste für die Einführung",
         paragraphs: [
-          "1. Entscheiden Sie: Self-Hosting oder EU-Cloud. 2. Prüfen Sie den AVV. 3. Stellen Sie sicher, dass kein Training auf Ihren Daten erfolgt. 4. Dokumentieren Sie die TOMs. 5. Informieren Sie Ihre Mandanten über die KI-Nutzung in der Mandatsvereinbarung.",
-          "Mit dieser Checkliste ist die Einführung von KI-Kanzleisoftware mit § 203 StGB und DSGVO vereinbar — und Sie können die Effizienzgewinne nutzen, ohne Haftungsrisiken einzugehen.",
+          "1. Entscheide: Self-Hosting oder EU-Cloud. 2. Prüf den AVV. 3. Stell sicher, dass kein Training mit deinen Daten erfolgt. 4. Dokumentiere die TOMs. 5. Informiere deine Mandanten über die KI-Nutzung in der Mandatsvereinbarung.",
+          "Mit dieser Checkliste ist die Einführung von KI-Kanzleisoftware mit § 203 StGB und DSGVO vereinbar — und du kannst die Effizienzgewinne nutzen, ohne Haftungsrisiken einzugehen.",
         ],
       },
     ],
@@ -92,8 +92,8 @@ const posts: BlogPost[] = [
       {
         heading: "Automatisierter E-Mail-Digest: Was kritisch ist, bevor es zu spät ist",
         paragraphs: [
-          "Subsumio sendet einen täglichen E-Mail-Digest mit allen Fristen, die in den nächsten 7 Tagen ablaufen. Kritische Fristen (Notfristen) werden 3 Tage vor Ablauf markiert. So haben Sie immer einen Vorlauf — und nichts überrascht Sie.",
-          "Der Digest ist kein Ersatz für die manuelle Prüfung, sondern ein Safety-Net. Die endgültige Fristkontrolle bleibt beim Anwalt — die KI sorgt nur dafür, dass Sie nichts übersehen.",
+          "Subsumio sendet einen täglichen E-Mail-Digest mit allen Fristen, die in den nächsten 7 Tagen ablaufen. Kritische Fristen (Notfristen) werden 3 Tage vor Ablauf markiert. So hast du immer einen Vorlauf — und nichts überrascht dich.",
+          "Der Digest ist kein Ersatz für die manuelle Prüfung, sondern ein Safety-Net. Die endgültige Fristkontrolle bleibt beim Anwalt — die KI sorgt nur dafür, dass du nichts übersiehst.",
         ],
       },
     ],
@@ -126,14 +126,14 @@ const posts: BlogPost[] = [
         heading: "Gap-Analyse: Wenn die Akte keine Antwort enthält",
         paragraphs: [
           "Ebenso wichtig wie belegte Antworten ist die Gap-Analyse: Wenn die Akte keine Antwort auf die Frage enthält, sagt die KI das explizit. Statt zu halluzinieren, zeigt sie an: 'In den vorliegenden Dokumenten fehlt Information zu X.'",
-          "Das ist für Anwälte wertvoll: Sie wissen, dass Sie weitere Recherche benötigen oder den Mandanten nach Informationen fragen müssen — anstatt auf eine halluzinierte Antwort zu vertrauen.",
+          "Das ist für Anwälte wertvoll: Du weißt, dass du weitere Recherche benötigst oder den Mandanten nach Informationen fragen musst — anstatt auf eine halluzinierte Antwort zu vertrauen.",
         ],
       },
       {
         heading: "Recall@5: Warum 97,9 % wichtig sind",
         paragraphs: [
           "Recall@5 ist die Metrik, die misst, ob das relevante Dokument unter den Top-5-Retrievergebnissen ist. 97,9 % bedeutet: In 97,9 % der Fälle findet die KI das richtige Dokument. Das ist keine Marketing-Zahl — es ist eine reproduzierbare Benchmark.",
-          "Für Anwälte bedeutet das: Wenn Sie eine Frage stellen, findet die KI mit sehr hoher Wahrscheinlichkeit das relevante Dokument in Ihren Akten. Und wenn sie es nicht findet — sagt sie es Ihnen.",
+          "Für Anwälte bedeutet das: Wenn du eine Frage stellst, findet die KI mit sehr hoher Wahrscheinlichkeit das relevante Dokument in deinen Akten. Und wenn sie es nicht findet — sagt sie es dir.",
         ],
       },
     ],

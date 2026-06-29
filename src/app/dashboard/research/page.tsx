@@ -114,6 +114,11 @@ export default function ResearchPage() {
       setResearchJobId(jobId);
       setResearchPhase(t("research.phase_planning"));
 
+      // Variables to capture results from the polling closure
+      let answerText = "";
+      let citations: Array<{ slug: string; title: string }> = [];
+      let gaps: string[] = [];
+
       // Poll until done
       const POLL_INTERVAL = 3000;
       const MAX_WAIT_MS = 5 * 60 * 1000; // 5 min
@@ -145,8 +150,40 @@ export default function ResearchPage() {
             if (job.status === "completed") {
               // Extract answer from result
               const raw = job.result?.answer ?? job.result?.output ?? job.result?.text ?? "";
-              setCurrentAnswer(typeof raw === "string" ? raw : JSON.stringify(raw, null, 2));
+              answerText = typeof raw === "string" ? raw : JSON.stringify(raw, null, 2);
+              setCurrentAnswer(answerText);
               setResearchPhase("");
+
+              // Extract citations and grounding from the answer text
+              try {
+                const grounding = await api.legal.ground(answerText);
+                setCurrentGrounding(grounding);
+                // Extract structured citations from grounded citations
+                citations = grounding.grounded_citations
+                  .filter((gc) => gc.verified)
+                  .map((gc) => ({
+                    slug: `legal/norms/${gc.code.toLowerCase()}/${gc.paragraph.replace(/[^0-9a-z]/gi, "")}`,
+                    title: `${gc.paragraph} ${gc.code}`,
+                  }));
+                setCurrentCitations(citations);
+                // Extract gaps from answer text (look for "Offene Fragen" / "Widersprüche" sections)
+                const gapMatch = answerText.match(
+                  /(?:Offene Fragen|Widersprüche|Lücken)[:\s]*\n([\s\S]*?)(?=\n###|\n##|$)/i
+                );
+                if (gapMatch) {
+                  gaps = gapMatch[1]
+                    .split("\n")
+                    .map((l) => l.replace(/^[-*]\s*/, "").trim())
+                    .filter((l) => l.length > 5);
+                  setCurrentGaps(gaps);
+                }
+              } catch (groundErr) {
+                console.error(
+                  "[research] grounding failed:",
+                  groundErr instanceof Error ? groundErr.message : String(groundErr)
+                );
+              }
+
               resolve();
             } else if (job.status === "failed" || job.status === "dead") {
               reject(new Error(job.error_text ?? t("research.error_failed")));
@@ -163,9 +200,9 @@ export default function ResearchPage() {
       const session: ResearchSession = {
         id: crypto.randomUUID(),
         query,
-        answer: currentAnswer,
-        citations: currentCitations,
-        gaps: currentGaps,
+        answer: answerText,
+        citations,
+        gaps,
         jurisdiction,
         createdAt: new Date().toISOString(),
       };

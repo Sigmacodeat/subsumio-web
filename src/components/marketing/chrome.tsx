@@ -51,8 +51,6 @@ import {
   NAV,
   FOOTER,
   p,
-  altPath,
-  allAltPaths,
   UI_STRINGS,
   SUPPORTED_LANGS,
   JURISDICTION_LABEL,

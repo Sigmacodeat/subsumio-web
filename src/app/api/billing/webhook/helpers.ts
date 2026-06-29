@@ -13,19 +13,20 @@ const ensureStripeEventsSchema = createSchemaInit(`
   );
 `);
 
-export async function isDuplicateEvent(eventId: string, eventType: string): Promise<boolean> {
+/**
+ * Read-only check: returns true if the event was already successfully processed.
+ * Does NOT insert — use markEventProcessed after the handler succeeds.
+ */
+export async function isDuplicateEvent(eventId: string, _eventType: string): Promise<boolean> {
   const pool = getSharedPgPool();
   if (pool) {
     try {
       await ensureStripeEventsSchema();
-      const result = await pool.query<{ inserted: boolean }>(
-        `INSERT INTO subsumio_stripe_events (event_id, event_type)
-         VALUES ($1, $2)
-         ON CONFLICT (event_id) DO UPDATE SET event_id = EXCLUDED.event_id
-         RETURNING (xmax = 0) AS inserted`,
-        [eventId, eventType]
+      const result = await pool.query<{ exists: boolean }>(
+        `SELECT 1 FROM subsumio_stripe_events WHERE event_id = $1`,
+        [eventId]
       );
-      return !result.rows[0]?.inserted;
+      return result.rows.length > 0;
     } catch (err) {
       console.error(
         `[stripe-webhook] idempotency check failed: ${err instanceof Error ? err.message : String(err)}`
@@ -34,11 +35,36 @@ export async function isDuplicateEvent(eventId: string, eventType: string): Prom
     }
   }
   // In-memory fallback
-  if (processedEventIds.has(eventId)) return true;
+  return processedEventIds.has(eventId);
+}
+
+/**
+ * Mark an event as successfully processed. Called AFTER the handler succeeds.
+ * If this fails, Stripe will retry and the handler will re-run (safe because
+ * plan updates are idempotent by user_id/customer_id).
+ */
+export async function markEventProcessed(eventId: string, eventType: string): Promise<void> {
+  const pool = getSharedPgPool();
+  if (pool) {
+    try {
+      await ensureStripeEventsSchema();
+      await pool.query(
+        `INSERT INTO subsumio_stripe_events (event_id, event_type)
+         VALUES ($1, $2)
+         ON CONFLICT (event_id) DO NOTHING`,
+        [eventId, eventType]
+      );
+    } catch (err) {
+      console.error(
+        `[stripe-webhook] markEventProcessed failed: ${err instanceof Error ? err.message : String(err)}`
+      );
+    }
+    return;
+  }
+  // In-memory fallback
   processedEventIds.add(eventId);
   if (processedEventIds.size > MAX_INMEMORY_EVENTS) {
     const first = processedEventIds.values().next().value;
     if (first) processedEventIds.delete(first);
   }
-  return false;
 }

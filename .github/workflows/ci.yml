@@ -132,6 +132,17 @@ jobs:
         working-directory: server
         run: bun run release-gate:eval
 
+  gitleaks:
+    name: Secret Scan (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@dcedce43c6f43de0b836d1fe38946645c9c638dc # v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   security-scan:
     name: Security Scan (Snyk + bun audit)
     runs-on: ubuntu-latest
@@ -247,6 +258,7 @@ jobs:
         e2e,
         server-verify,
         release-gate-eval,
+        gitleaks,
         security-scan,
         lighthouse-ci,
         load-test,
@@ -266,6 +278,7 @@ jobs:
                 "${{ needs.e2e.result }}" != "success" || \
                 "${{ needs.server-verify.result }}" != "success" || \
                 "${{ needs.release-gate-eval.result }}" != "success" || \
+                "${{ needs.gitleaks.result }}" != "success" || \
                 "${{ needs.security-scan.result }}" != "success" || \
                 "${{ needs.lighthouse-ci.result }}" != "success" || \
                 "${{ needs.load-test.result }}" != "success" ]]; then

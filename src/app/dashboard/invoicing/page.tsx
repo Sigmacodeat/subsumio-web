@@ -244,61 +244,6 @@ export default function InvoicingPage() {
     }
   }
 
-  async function loadInvoices() {
-    try {
-      const pages = await api.brain.listPages({ type: "invoice", limit: 200 });
-      const loaded: Invoice[] = pages.map((p) => {
-        const fm = invoiceFrontmatter(p);
-        return {
-          id: p.slug,
-          number: fm.invoice_number || p.slug,
-          client: fm.client || "",
-          clientSlug: fm.client_slug,
-          clientAddress: fm.client_address,
-          caseNumber: fm.case_number,
-          date: fm.date || p.created_at,
-          dueDate: fm.due_date || "",
-          items: fm.items || [],
-          expenses: fm.expenses || [],
-          status: (fm.status as Invoice["status"]) || "draft",
-          subtotal: fm.subtotal || 0,
-          expenseTotal: fm.expense_total || 0,
-          advancePayment: fm.advance_payment || 0,
-          paidAmount: fm.paid_amount,
-          paidAt: fm.paid_at,
-          vatRate: fm.vat_rate ?? 0.19,
-          tax: fm.tax || 0,
-          total: fm.total || 0,
-          paymentTerms: fm.payment_terms,
-          bank: fm.bank,
-          notes: fm.notes,
-          reminderCount: fm.reminder_count,
-          reminderSentAt: fm.reminder_sent_at,
-          reminderFee: fm.reminder_fee,
-          invoiceType: fm.invoice_type,
-          parentInvoiceId: fm.parent_invoice_id,
-          caseSlugs: fm.case_slugs,
-        };
-      });
-      setInvoices(loaded);
-    } catch (err) {
-      console.error(
-        "[invoicing] failed to load invoices:",
-        err instanceof Error ? err.message : String(err)
-      );
-      const cached = await getCache<InvoicingCache>(OFFLINE_KEYS.invoices);
-      if (cached) {
-        setInvoices(cached.invoices);
-        setCases(cached.cases);
-        setStatusMessage(t("inv.error_offline"));
-      } else {
-        setInvoices([]);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }
-
   async function _loadCases() {
     try {
       const pages = await api.brain.listPages({ type: "legal_case", limit: 200 });
@@ -534,7 +479,7 @@ export default function InvoicingPage() {
           `${data.reminderCount}. ${t("inv.reminder_sent")} — ${t("inv.reminder_fee")}: ${data.fee.toFixed(2)} €`
         );
         // Refresh invoice list
-        await loadInvoices();
+        await loadAll();
         setTimeout(() => setStatusMessage(null), 5000);
       } else {
         setStatusMessage(

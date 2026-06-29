@@ -1,6 +1,6 @@
 "use client";
 
-import { usePresence, type PresenceUser } from "@/lib/use-presence";
+import { usePresence } from "@/lib/use-presence";
 import { useMe } from "@/lib/queries/auth";
 import { cn } from "@/lib/utils";
 

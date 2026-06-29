@@ -51,6 +51,7 @@ import {
   InboxList,
   ActiveCasesList,
   AIActivityFeed,
+  ActivityFeedWidget,
   QuickActions,
   QueuePanel,
 } from "./widget-dashboard";
@@ -398,6 +399,8 @@ export function WidgetBoard() {
         return <KanzleiInsights />;
       case "recent-queries":
         return <RecentQueriesPanel data={data} />;
+      case "activity-feed":
+        return <ActivityFeedWidget data={data} />;
       default:
         return null;
     }

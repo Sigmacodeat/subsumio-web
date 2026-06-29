@@ -17,7 +17,7 @@ export const POST = createHandler(
       },
     }),
   },
-  async (ctx, body, _query, req) => {
+  async (ctx, body, _query, _req) => {
     const upstream = await fetch(`${ENGINE_URL}/api/upload/presign`, {
       method: "POST",
       headers: { ...ctx.headers, "Content-Type": "application/json" },

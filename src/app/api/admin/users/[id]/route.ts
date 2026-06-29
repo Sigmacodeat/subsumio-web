@@ -1,10 +1,13 @@
 import { z } from "zod";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { getStore, type Plan, type KanzleiRole } from "@/lib/auth/store";
+import { revokeAllSessions } from "@/lib/auth/session";
+import { isValidIndustry } from "@/lib/industry-pack";
 
 const updateSchema = z.object({
   plan: z.enum(["free", "pro", "team", "enterprise"]).optional(),
   role: z.enum(["admin", "lawyer", "assistant", "client_viewer"]).optional(),
+  industry: z.string().nullable().optional(),
   emailVerifiedAt: z.string().nullable().optional(),
   deactivatedAt: z.string().nullable().optional(),
 });
@@ -35,12 +38,19 @@ export const PATCH = createHandler(
     const patch: Record<string, unknown> = {};
     if (body.plan !== undefined) patch.plan = body.plan as Plan;
     if (body.role !== undefined) patch.role = body.role as KanzleiRole;
+    if (body.industry !== undefined) {
+      patch.industry = isValidIndustry(body.industry) ? body.industry : null;
+    }
     if (body.emailVerifiedAt !== undefined) patch.emailVerifiedAt = body.emailVerifiedAt;
     if (body.deactivatedAt !== undefined) patch.deactivatedAt = body.deactivatedAt;
 
     const updated = await store.update(id, patch);
     if (!updated) {
       return apiError("update_failed", "Aktualisierung fehlgeschlagen", 500);
+    }
+
+    if (body.deactivatedAt && typeof body.deactivatedAt === "string") {
+      await revokeAllSessions(id);
     }
 
     const {
@@ -91,6 +101,8 @@ export const DELETE = createHandler(
     if (!updated) {
       return apiError("deactivate_failed", "Deaktivierung fehlgeschlagen", 500);
     }
+
+    await revokeAllSessions(id);
 
     return Response.json({ ok: true, deactivatedAt: updated.deactivatedAt });
   }

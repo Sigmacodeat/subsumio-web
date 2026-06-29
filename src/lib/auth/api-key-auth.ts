@@ -43,6 +43,7 @@ export async function verifyApiKey(
   // Load the owner user
   const user = await getStore().getById(match.ownerId);
   if (!user) return null;
+  if (user.deactivatedAt) return null;
 
   // Resolve brainId + plan (same logic as engineContext)
   let brainId = user.brainId;

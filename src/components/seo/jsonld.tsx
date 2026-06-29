@@ -50,11 +50,11 @@ export function softwareApplicationLd(lang: Lang) {
       {
         "@type": "Offer",
         name: "Pro",
-        price: "290",
+        price: "890",
         priceCurrency: "EUR",
         priceSpecification: {
           "@type": "UnitPriceSpecification",
-          price: "290",
+          price: "890",
           priceCurrency: "EUR",
           unitText: lang === "en" ? "per seat per month" : "pro Nutzer und Monat",
         },

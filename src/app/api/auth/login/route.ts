@@ -1,14 +1,13 @@
 import { NextResponse } from "next/server";
 import { verifyPassword } from "@/lib/auth/password";
 import { getStore, toPublic } from "@/lib/auth/store";
-import { signSession, SESSION_COOKIE, SESSION_TTL_SECONDS } from "@/lib/auth/session";
+import { createSession, SESSION_COOKIE } from "@/lib/auth/session";
 import { clientIp } from "@/lib/auth/rate-limit";
 import { signActionToken, bindFragment, CHALLENGE_TOKEN_TTL_SECONDS } from "@/lib/auth/tokens";
 import { loginSchema } from "@/lib/api-validation";
 import { isAccountLocked, recordFailedLogin, clearLockout } from "@/lib/auth/lockout";
 import { createPublicHandler, apiError } from "@/lib/api-handler";
 import { logAudit } from "@/lib/audit";
-import { env } from "@/lib/env";
 import { z } from "zod";
 
 // Extended schema with trimmed email for internal validation
@@ -76,16 +75,10 @@ export const POST = createPublicHandler(
       return NextResponse.json({ error: "2fa_required", challengeToken });
     }
 
-    const token = await signSession({ uid: user.id, email: user.email, role: user.role });
+    const session = await createSession(user.id, user.email, user.role);
     void logAudit("user.login", "user", { entityId: user.id, details: { ip } });
     const res = NextResponse.json({ user: toPublic(user) });
-    res.cookies.set(SESSION_COOKIE, token, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: env("NODE_ENV") === "production",
-      maxAge: SESSION_TTL_SECONDS,
-      path: "/",
-    });
+    res.cookies.set(SESSION_COOKIE, session.token, session.cookieOptions);
     return res;
   }
 );

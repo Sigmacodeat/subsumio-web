@@ -81,6 +81,14 @@ export type RouteAction =
   | "legal.retrieval_feedback"
   | "legal.strategy"
   | "legal.research"
+  | "legal.ground"
+  | "legal.case_scanner"
+  | "legal.obligation_extract"
+  | "legal.precedent_search"
+  | "legal.translate"
+  | "tax.stbvv"
+  | "tax.analyze"
+  | "tax.summarize"
   | "team.role_change"
   | "billing.read"
   | "billing.write"
@@ -135,6 +143,9 @@ const ACTION_ROLES: Record<RouteAction, KanzleiRole[]> = {
   "legal.redline": ["admin", "lawyer"],
   "legal.playbook": ["admin", "lawyer"],
   "legal.rvg": ["admin", "lawyer", "assistant"],
+  "tax.stbvv": ["admin", "lawyer", "assistant"],
+  "tax.analyze": ["admin", "lawyer", "assistant"],
+  "tax.summarize": ["admin", "lawyer", "assistant"],
   "legal.statute": ["admin", "lawyer", "assistant"],
   "team.role_change": ["admin"],
   "billing.read": ["admin", "lawyer"],
@@ -154,6 +165,11 @@ const ACTION_ROLES: Record<RouteAction, KanzleiRole[]> = {
   "legal.retrieval_feedback": ["admin", "lawyer", "assistant"],
   "legal.strategy": ["admin", "lawyer"],
   "legal.research": ["admin", "lawyer"],
+  "legal.ground": ["admin", "lawyer", "assistant"],
+  "legal.translate": ["admin", "lawyer", "assistant"],
+  "legal.obligation_extract": ["admin", "lawyer", "assistant"],
+  "legal.case_scanner": ["admin", "lawyer", "assistant"],
+  "legal.precedent_search": ["admin", "lawyer", "assistant"],
 };
 
 /** Prüft, ob ein User eine Aktion ausführen darf. */
@@ -208,18 +224,26 @@ export function auditActionFor(routeAction: RouteAction): AuditAction {
     "legal.contract_draft": "legal.contract_draft",
     "legal.document_review": "legal.document_review",
     "legal.deep_analysis": "legal.deep_analysis",
-    "legal.portfolio_insights": "legal.deep_analysis",
+    "legal.portfolio_insights": "legal.portfolio_insights",
     "legal.due_diligence": "legal.due_diligence",
     "legal.risk_analysis": "legal.risk_analysis",
     "legal.memo": "legal.memo",
     "legal.redline": "legal.redline",
     "legal.playbook": "legal.playbook",
     "legal.rvg": "legal.rvg",
+    "tax.stbvv": "tax.stbvv",
+    "tax.analyze": "tax.analyze",
+    "tax.summarize": "tax.summarize",
     "legal.statute": "legal.statute",
     "legal.contradictions": "legal.contradictions",
     "legal.retrieval_feedback": "legal.retrieval_feedback",
     "legal.strategy": "legal.strategy",
     "legal.research": "legal.research",
+    "legal.ground": "legal.ground",
+    "legal.translate": "legal.translate",
+    "legal.obligation_extract": "legal.obligation_extract",
+    "legal.case_scanner": "legal.case_scanner",
+    "legal.precedent_search": "legal.precedent_search",
     "team.role_change": "team.role_change",
     "billing.read": "billing.upgrade",
     "billing.write": "billing.upgrade",

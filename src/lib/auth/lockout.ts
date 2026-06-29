@@ -60,7 +60,15 @@ export async function isAccountLocked(
 ): Promise<{ locked: boolean; retryAfterSeconds: number }> {
   const key = `login:${email.toLowerCase()}`;
   const now = Date.now();
-  const entry = cache.get(key);
+  let entry = cache.get(key);
+
+  // Multi-instance support: if not in local cache, check Postgres.
+  // In serverless/multi-node deployments, another instance may have
+  // recorded the lockout — without this DB check, the lockout is bypassable.
+  if (!entry) {
+    entry = (await loadLockoutFromDb(key)) ?? undefined;
+    if (entry) cache.set(key, entry);
+  }
 
   if (!entry || !entry.lockedUntil) return { locked: false, retryAfterSeconds: 0 };
   if (entry.lockedUntil <= now) {
@@ -79,6 +87,30 @@ export async function clearLockout(email: string): Promise<void> {
   const key = `login:${email.toLowerCase()}`;
   cache.delete(key);
   await removeLockout(key);
+}
+
+async function loadLockoutFromDb(key: string): Promise<LockoutEntry | null> {
+  const pool = getSharedPgPool();
+  if (!pool) return null;
+  try {
+    await ensureLockoutSchema();
+    const { rows } = await pool.query<{
+      failed_attempts: number;
+      first_failed_at: string;
+      locked_until: string | null;
+    }>(
+      "SELECT failed_attempts, first_failed_at, locked_until FROM subsumio_lockouts WHERE key = $1",
+      [key]
+    );
+    if (!rows[0]) return null;
+    return {
+      failedAttempts: rows[0].failed_attempts,
+      firstFailedAt: parseInt(rows[0].first_failed_at, 10),
+      lockedUntil: rows[0].locked_until ? parseInt(rows[0].locked_until, 10) : null,
+    };
+  } catch {
+    return null;
+  }
 }
 
 async function persistLockout(key: string, entry: LockoutEntry): Promise<void> {

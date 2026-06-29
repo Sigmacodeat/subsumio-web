@@ -29,6 +29,7 @@ export function useDashboardForm<T extends Record<string, unknown>>({
   const form = useForm<T>({
     resolver: zodResolver(schema as never),
     defaultValues,
+    mode: "onBlur",
   });
 
   const [status, setStatus] = useState<SubmitStatus>("idle");

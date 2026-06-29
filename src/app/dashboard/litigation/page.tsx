@@ -41,7 +41,6 @@ import {
   type LitigationPhase,
   type LitigationStep,
   type StepStatus,
-  type StepType,
 } from "@/lib/litigation-flow";
 
 interface Matter {

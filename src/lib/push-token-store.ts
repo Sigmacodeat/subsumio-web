@@ -104,7 +104,7 @@ export async function getPushTokensForUser(userId: string): Promise<PushTokenEnt
   return rows as PushTokenEntry[];
 }
 
-export async function getPushTokensForBrain(brainId: string): Promise<PushTokenEntry[]> {
+export async function getPushTokensForBrain(_brainId: string): Promise<PushTokenEntry[]> {
   const pool = getSharedPgPool();
   if (!pool) {
     return Array.from(memoryStore.values());

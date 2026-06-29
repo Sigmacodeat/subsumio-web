@@ -9,7 +9,7 @@ export interface CaseSuggestion {
   reason: string;
 }
 
-const KEYWORD_RULES: Array<{
+export const KEYWORD_RULES: Array<{
   keywords: string[];
   suggestion: Omit<CaseSuggestion, "reason">;
   reason: { de: string; en: string };
@@ -143,12 +143,21 @@ const KEYWORD_RULES: Array<{
   },
 ];
 
+function createKeywordMatcher(keyword: string): RegExp {
+  const chars = keyword.replace(/[-\[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+  return new RegExp(`(?:^|[^a-zäöüß0-9])${chars}`, "i");
+}
+
 export function suggestCaseFromTitle(title: string, lang: Lang = "de"): CaseSuggestion | null {
   if (!title || title.trim().length < 3) return null;
   const normalized = title.toLowerCase();
 
   for (const rule of KEYWORD_RULES) {
-    if (rule.keywords.some((k) => normalized.includes(k))) {
+    if (
+      rule.keywords.some((k) =>
+        k.includes(" ") ? normalized.includes(k) : createKeywordMatcher(k).test(normalized)
+      )
+    ) {
       return {
         ...rule.suggestion,
         reason: lang === "en" ? rule.reason.en : rule.reason.de,
@@ -160,10 +169,11 @@ export function suggestCaseFromTitle(title: string, lang: Lang = "de"): CaseSugg
 
 export function detectJurisdictionFromTitle(title: string): "de" | "at" | "ch" | "eu" | null {
   const normalized = title.toLowerCase();
-  if (normalized.includes("österreich") || normalized.includes("at-")) return "at";
-  if (normalized.includes("schweiz") || normalized.includes("ch-")) return "ch";
+  const words = normalized.split(/[^a-zäöüß0-9-]+/);
+  if (normalized.includes("österreich") || words.some((w) => w.startsWith("at-"))) return "at";
+  if (normalized.includes("schweiz") || words.some((w) => w.startsWith("ch-"))) return "ch";
   if (
-    normalized.includes("eu-") ||
+    words.some((w) => w === "eu" || w.startsWith("eu-")) ||
     normalized.includes("europäisch") ||
     normalized.includes("brüssel")
   )

@@ -37,6 +37,8 @@ export interface CitationPanelData {
     corpus_checked: boolean;
     grounded_citations: GroundedCitation[];
     analyzed_at: string;
+    has_unverified?: boolean;
+    warning?: string;
   } | null;
   /** Whether the AI output has been fully streamed / is final. */
   isStreaming?: boolean;
@@ -163,6 +165,14 @@ export function CitationPanel({ data, compact = false, className }: CitationPane
           </button>
         )}
       </div>
+
+      {/* Unverified citation warning */}
+      {data.grounding?.has_unverified && data.grounding.warning && (
+        <div className="mt-2 flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
+          <ShieldAlert size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
+          <span>{data.grounding.warning}</span>
+        </div>
+      )}
 
       {/* Expanded details */}
       {expanded && (hasCitations || hasGaps || hasGroundedCitations) && (
