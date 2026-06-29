@@ -153,9 +153,9 @@ export default function LandingPage({ lang }: { lang: Lang }) {
           </motion.div>
         </Section>
 
-        {/* Pain — problem hook before solution */}
+        {/* Pain — problem hook (light, border-y separates from stats above) */}
         {"pains" in t && t.pains && (
-          <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8">
+          <Section tone="light" className="border-y px-4 py-24 sm:px-6 lg:px-8">
             <motion.div {...reveal} className="mx-auto max-w-5xl">
               <SectionHeading
                 title={(t as { painTitle: string }).painTitle}
@@ -182,30 +182,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
 
         <SuperbrainAdvantage lang={lang} />
 
-        {/* Dashboard in action — light section with dark mockup spotlight */}
-        <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-5xl">
-            <motion.div {...reveal}>
-              <SectionHeading
-                badge={ui.inActionBadge}
-                title={ui.dashboardTitle}
-                sub={ui.dashboardSub}
-              />
-            </motion.div>
-            <motion.div {...reveal}>
-              <MagneticCard lift={8} tilt={2} className="rounded-2xl">
-                <div data-tone="dashboard">
-                  <DashboardReel lang={lang} />
-                </div>
-              </MagneticCard>
-            </motion.div>
-          </div>
-        </Section>
-
-        {/* WhatsApp Copilot — dark spotlight with animated phone mockup */}
-        <WhatsAppSpotlight lang={lang} />
-
-        {/* Features — alternating surface band */}
+        {/* Features — what it does (light, after unique mechanism) */}
         <Section tone="light" id="features" className="px-4 py-24 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-7xl">
             <motion.div {...reveal}>
@@ -243,7 +220,33 @@ export default function LandingPage({ lang }: { lang: Lang }) {
           </div>
         </Section>
 
-        {/* Use cases — real workflows, not fake testimonials */}
+        {/* Dashboard in action — product visual showing features in action */}
+        <Section tone="slate" className="px-4 py-24 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-5xl">
+            <motion.div {...reveal}>
+              <SectionHeading
+                badge={ui.inActionBadge}
+                title={ui.dashboardTitle}
+                sub={ui.dashboardSub}
+              />
+            </motion.div>
+            <motion.div {...reveal}>
+              <MagneticCard lift={8} tilt={2} className="rounded-2xl">
+                <div data-tone="dashboard">
+                  <DashboardReel lang={lang} />
+                </div>
+              </MagneticCard>
+            </motion.div>
+          </div>
+        </Section>
+
+        {/* How it works — animated scroll-driven workflow showcase */}
+        <ProductWorkflowShowcase lang={lang} industry="legal" />
+
+        {/* WhatsApp Copilot — dark spotlight with animated phone mockup */}
+        <WhatsAppSpotlight lang={lang} />
+
+        {/* Use cases — who it's for (slate for rhythm) */}
         <Section tone="slate" className="border-y px-4 py-24 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-7xl">
             <motion.div {...reveal}>
@@ -272,32 +275,14 @@ export default function LandingPage({ lang }: { lang: Lang }) {
         {/* Audience segments — homepage teaser linking to /solutions/* */}
         <AudienceTabs lang={lang} />
 
-        {/* How it works — animated scroll-driven workflow showcase */}
-        <ProductWorkflowShowcase lang={lang} industry="legal" />
-
-        {/* Trust band — light section (the serious counterpoint, primes pricing) */}
+        {/* Trust band — light section (primes comparison + pricing) */}
         <TrustBand lang={lang} />
 
         {/* Testimonials — social proof from real lawyers */}
         <TestimonialsSection />
 
-        {/* Pricing */}
-        <Section tone="light" id="pricing" className="px-4 py-24 sm:px-6 lg:px-8">
-          <motion.div {...reveal} className="mx-auto max-w-6xl">
-            <SectionHeading badge="Pricing" title={pricing.title} sub={pricing.sub} />
-            <PricingGrid lang={lang} />
-            <div className="mt-10 text-center">
-              <Link href={p(lang, "/pricing")}>
-                <Button size="lg" variant="secondary">
-                  {ui.seeFullPricing} <ArrowRight size={16} />
-                </Button>
-              </Link>
-            </div>
-          </motion.div>
-        </Section>
-
-        {/* Comparison table — Subsumio vs. other AI tools */}
-        <Section tone="slate" className="px-4 py-24 sm:px-6 lg:px-8">
+        {/* Comparison table — Subsumio vs. other AI tools (light, before pricing to justify) */}
+        <Section tone="light" className="border-y px-4 py-24 sm:px-6 lg:px-8">
           <motion.div {...reveal} className="mx-auto max-w-5xl">
             <SectionHeading title={t.comparisonTitle} sub={t.comparisonSub} />
             <div className="overflow-x-auto">
@@ -350,6 +335,21 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                   ))}
                 </tbody>
               </table>
+            </div>
+          </motion.div>
+        </Section>
+
+        {/* Pricing */}
+        <Section tone="light" id="pricing" className="px-4 py-24 sm:px-6 lg:px-8">
+          <motion.div {...reveal} className="mx-auto max-w-6xl">
+            <SectionHeading badge="Pricing" title={pricing.title} sub={pricing.sub} />
+            <PricingGrid lang={lang} />
+            <div className="mt-10 text-center">
+              <Link href={p(lang, "/pricing")}>
+                <Button size="lg" variant="secondary">
+                  {ui.seeFullPricing} <ArrowRight size={16} />
+                </Button>
+              </Link>
             </div>
           </motion.div>
         </Section>

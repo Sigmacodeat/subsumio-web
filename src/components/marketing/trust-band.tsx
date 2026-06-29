@@ -132,8 +132,8 @@ export default function TrustBand({ lang, industry }: { lang: Lang; industry?: s
   const sub = c.sub.replace("{brand}", brand);
   return (
     <section
-      data-tone="slate"
-      className="relative z-10 px-4 py-28 sm:px-6 lg:px-8"
+      data-tone="light"
+      className="relative z-10 px-4 py-24 sm:px-6 lg:px-8"
       style={{ background: "var(--mk-bg)" }}
     >
       <div className="mx-auto max-w-6xl">
