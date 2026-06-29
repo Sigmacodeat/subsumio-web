@@ -86,11 +86,11 @@ is distinct from the concurrency / inflight cap and composes with it.
 The supervisor solves in-process crash recovery. OS/container-level
 supervision handles host-level failures. You usually want both.
 
-| Environment                    | Recommendation                                                                                                                                                                                                                         |
-| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Docker / Hetzner**           | `gbrain jobs supervisor` runs as PID 1 inside the container. Docker/Compose restarts the container on host failure; supervisor restarts the worker on in-process crash. See the [systemd](#deployment-systemd) snippet for the VM layer. |
-| **Linux VM with systemd**      | Two-layer recommended: systemd supervises `gbrain jobs supervisor`, which in turn supervises `gbrain jobs work`. Buys you automatic restart on reboot (systemd) plus fast crash recovery (supervisor). See [systemd](#deployment-systemd). |
-| **Dev laptop / macOS**         | `gbrain jobs supervisor` in a terminal. Ctrl-C stops it. No system-level setup needed.                                                                                                                                                 |
+| Environment               | Recommendation                                                                                                                                                                                                                             |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Docker / Hetzner**      | `gbrain jobs supervisor` runs as PID 1 inside the container. Docker/Compose restarts the container on host failure; supervisor restarts the worker on in-process crash. See the [systemd](#deployment-systemd) snippet for the VM layer.   |
+| **Linux VM with systemd** | Two-layer recommended: systemd supervises `gbrain jobs supervisor`, which in turn supervises `gbrain jobs work`. Buys you automatic restart on reboot (systemd) plus fast crash recovery (supervisor). See [systemd](#deployment-systemd). |
+| **Dev laptop / macOS**    | `gbrain jobs supervisor` in a terminal. Ctrl-C stops it. No system-level setup needed.                                                                                                                                                     |
 
 ### Variables used in this guide
 
