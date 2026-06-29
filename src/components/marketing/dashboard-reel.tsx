@@ -237,7 +237,7 @@ export default function DashboardReel({
 
   const sidebarLabels =
     lang !== "en"
-      ? ["Overview", "Akten", "Fristen", "Intake", "Chat"]
+      ? ["Übersicht", "Akten", "Fristen", "Intake", "Chat"]
       : ["Overview", "Matters", "Deadlines", "Intake", "Chat"];
   const cursorTarget =
     view === 0
@@ -294,9 +294,11 @@ export default function DashboardReel({
               </div>
               <div className="min-w-0">
                 <p className="truncate text-xs font-semibold [color:var(--mk-text)]">
-                  Rechtsanwälte
+                  {lang !== "en" ? "Rechtsanwälte" : "Law Firm"}
                 </p>
-                <p className="text-xs [color:var(--mk-text-subtle)]">Kanzlei Müller</p>
+                <p className="text-xs [color:var(--mk-text-subtle)]">
+                  {lang !== "en" ? "Kanzlei Müller" : "Müller & Partners"}
+                </p>
               </div>
             </div>
           </div>
@@ -326,7 +328,9 @@ export default function DashboardReel({
               <span className="text-xs font-medium [color:var(--mk-text-subtle)]">Brain</span>
               <div className="flex items-center gap-1.5">
                 <span className="h-1.5 w-1.5 animate-pulse rounded-full [background:var(--signal-green)]" />
-                <span className="text-xs font-medium [color:var(--mk-text-muted)]">Active</span>
+                <span className="text-xs font-medium [color:var(--mk-text-muted)]">
+                  {lang !== "en" ? "Aktiv" : "Active"}
+                </span>
               </div>
             </div>
             <div className="mt-1 flex items-center gap-1 font-mono text-xs [color:var(--mk-text-subtle)] tabular-nums">

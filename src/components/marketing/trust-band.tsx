@@ -51,7 +51,7 @@ const _deTrustCopy = {
     },
   ],
   badges: [
-    { icon: "badge-check", label: "SOC 2 Type II — in Vorbereitung" },
+    { icon: "badge-check", label: "SOC 2 Type II — Q4 2026" },
     { icon: "file-check", label: "ISO 27001 — geplant 2026" },
     { icon: "globe", label: "DSGVO-konform" },
     { icon: "server", label: "EU-Cloud oder On-Premise" },
@@ -93,7 +93,7 @@ const COPY = {
       },
     ],
     badges: [
-      { icon: "badge-check", label: "SOC 2 Type II — in preparation" },
+      { icon: "badge-check", label: "SOC 2 Type II — Q4 2026" },
       { icon: "file-check", label: "ISO 27001 — planned 2026" },
       { icon: "globe", label: "GDPR-ready" },
       { icon: "server", label: "EU cloud or self-hosted" },
@@ -157,7 +157,9 @@ export default function TrustBand({ lang, industry }: { lang: Lang; industry?: s
             />
             {c.eyebrow}
           </span>
-          <h2 className="mb-4 text-3xl font-black [color:var(--mk-text)] [font-family:var(--font-display)] md:text-4xl">{c.title}</h2>
+          <h2 className="mb-4 [font-family:var(--font-display)] text-3xl font-black [color:var(--mk-text)] md:text-4xl">
+            {c.title}
+          </h2>
           <p className="mx-auto max-w-2xl text-lg [color:var(--mk-text-muted)]">{sub}</p>
         </motion.div>
 

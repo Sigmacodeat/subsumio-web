@@ -589,6 +589,7 @@ interface SplitTextRevealProps {
   stagger?: number;
   as?: "h1" | "h2" | "h3" | "p" | "span";
   once?: boolean;
+  useAnimate?: boolean;
 }
 
 export function SplitTextReveal({
@@ -599,6 +600,7 @@ export function SplitTextReveal({
   stagger = 0.12,
   as: Tag = "span",
   once = true,
+  useAnimate = false,
 }: SplitTextRevealProps) {
   const reduce = useReducedMotion();
   const lines = children.split("\n");
@@ -642,19 +644,16 @@ export function SplitTextReveal({
   return (
     <MotionTag
       initial="hidden"
-      whileInView="visible"
-      viewport={VIEWPORT.hero}
+      {...(useAnimate
+        ? { animate: "visible" as const }
+        : { whileInView: "visible" as const, viewport: VIEWPORT.hero })}
       variants={container}
       className={className}
-      aria-label={children}
+      aria-label={children.replace(/\n/g, " ")}
     >
       {lines.map((lineText, lineIdx) => (
         <span key={lineIdx} className="block overflow-hidden">
-          <motion.span
-            variants={line}
-            className={`block ${itemClassName}`}
-            aria-hidden="true"
-          >
+          <motion.span variants={line} className={`block ${itemClassName}`} aria-hidden="true">
             {lineText.split(" ").map((w, i) => (
               <motion.span key={i} variants={word} className="inline-block">
                 {w}

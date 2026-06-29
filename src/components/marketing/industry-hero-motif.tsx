@@ -73,8 +73,7 @@ export default function IndustryHeroMotif({
             strokeWidth={1}
             vectorEffect="non-scaling-stroke"
             initial={{ pathLength: 0, opacity: 0 }}
-            whileInView={{ pathLength: 1, opacity: 0.35 }}
-            viewport={{ once: true }}
+            animate={{ pathLength: 1, opacity: 0.35 }}
             transition={{ duration: 0.9, delay: 0.15 + i * 0.08, ease: "easeOut" }}
           />
         ))}
@@ -89,8 +88,7 @@ export default function IndustryHeroMotif({
             className="absolute -translate-x-1/2 -translate-y-1/2"
             style={{ left: `${p.x}%`, top: `${p.y}%` }}
             initial={{ opacity: 0, scale: 0.6 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
+            animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5, delay: 0.2 + i * 0.09, type: "spring", stiffness: 180 }}
           >
             <motion.div

@@ -96,7 +96,7 @@ const copy = {
     capabilities: [
       {
         icon: Brain,
-        title: "Verzinst",
+        title: "Wächst",
         desc: "Jede Akte, jede E-Mail, jede Frist speist das Brain — es erinnert sich an alles, was deine Kanzlei je getan hat.",
       },
       {
@@ -115,10 +115,10 @@ const copy = {
 } as const;
 
 const orbitNodes = [
-  { icon: MessageSquare, label: "Messages", className: "left-2 top-10" },
-  { icon: FileSearch, label: "Files", className: "right-4 top-8" },
-  { icon: Network, label: "Graph", className: "left-8 bottom-8" },
-  { icon: LockKeyhole, label: "Access", className: "right-8 bottom-10" },
+  { icon: MessageSquare, labelEn: "Messages", labelDe: "Nachrichten", className: "left-2 top-10" },
+  { icon: FileSearch, labelEn: "Files", labelDe: "Dateien", className: "right-4 top-8" },
+  { icon: Network, labelEn: "Graph", labelDe: "Graph", className: "left-8 bottom-8" },
+  { icon: LockKeyhole, labelEn: "Access", labelDe: "Zugriff", className: "right-8 bottom-10" },
 ];
 
 export default function SuperbrainAdvantage({ lang }: { lang: Lang }) {
@@ -140,7 +140,7 @@ export default function SuperbrainAdvantage({ lang }: { lang: Lang }) {
           transition={{ duration: 0.5, ease: "easeOut" }}
         >
           <p className="brand-text mb-4 font-mono text-xs tracking-wider uppercase">{t.eyebrow}</p>
-          <h2 className="mb-5 text-3xl leading-tight font-black [color:var(--mk-text)] [font-family:var(--font-display)] md:text-5xl">
+          <h2 className="mb-5 [font-family:var(--font-display)] text-3xl leading-tight font-black [color:var(--mk-text)] md:text-5xl">
             {t.title}
           </h2>
           <p className="mb-8 text-base leading-relaxed [color:var(--mk-text-muted)] md:text-lg">
@@ -198,9 +198,10 @@ export default function SuperbrainAdvantage({ lang }: { lang: Lang }) {
               </motion.div>
               {orbitNodes.map((node, i) => {
                 const Icon = node.icon;
+                const label = lang !== "en" ? node.labelDe : node.labelEn;
                 return (
                   <motion.div
-                    key={node.label}
+                    key={label}
                     initial={{ opacity: 0, scale: 0.85 }}
                     whileInView={{ opacity: 1, scale: 1 }}
                     viewport={{ once: true, amount: 0.4 }}
@@ -208,7 +209,7 @@ export default function SuperbrainAdvantage({ lang }: { lang: Lang }) {
                     className={`absolute ${node.className} flex items-center gap-2 rounded-xl border [border-color:var(--mk-border)] px-4 py-3 [background:var(--mk-surface)]`}
                   >
                     <Icon size={16} className="brand-text" />
-                    <span className="text-xs font-medium [color:var(--mk-text)]">{node.label}</span>
+                    <span className="text-xs font-medium [color:var(--mk-text)]">{label}</span>
                   </motion.div>
                 );
               })}

@@ -73,48 +73,58 @@ export default function LandingPage({ lang }: { lang: Lang }) {
               <motion.div
                 initial={reduce ? false : { scale: 0.85, opacity: 0, y: 10 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
-                transition={reduce ? { duration: 0 } : { type: "spring", stiffness: 200, damping: 22, delay: 0 }}
+                transition={
+                  reduce
+                    ? { duration: 0 }
+                    : { type: "spring", stiffness: 200, damping: 22, delay: 0 }
+                }
                 className="mb-7"
               >
                 <div className="relative mx-auto w-fit">
                   {/* Pulse glow ring */}
-                  <span className="pointer-events-none absolute inset-0 rounded-2xl bg-[var(--brand-secondary)] opacity-0 blur-2xl [animation:pulse-ring_3s_ease-in-out_infinite]" />
-                  <SubsumioMark size={48} className="mx-auto [animation:float-gentle_4s_ease-in-out_infinite]" />
+                  <span className="pointer-events-none absolute inset-0 [animation:pulse-ring_3s_ease-in-out_infinite] rounded-2xl bg-[var(--brand-secondary)] opacity-0 blur-2xl" />
+                  <SubsumioMark
+                    size={56}
+                    className="mx-auto [animation:float-gentle_4s_ease-in-out_infinite]"
+                  />
                 </div>
               </motion.div>
               <motion.div
                 initial={reduce ? false : { opacity: 0, y: 12, scale: 0.96 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.dramatic, delay: 0.15 }}
-                className="group relative mb-8 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium [border-color:var(--brand-border)] [background:var(--brand-soft)] [color:var(--brand-text)]"
+                transition={
+                  reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.dramatic, delay: 0.15 }
+                }
+                className="group relative mb-8 inline-flex items-center gap-2 rounded-full border [border-color:var(--brand-border)] px-3 py-1.5 text-xs font-medium [color:var(--brand-text)] [background:var(--brand-soft)]"
               >
                 {/* Animated rotating border glow */}
                 <span className="pointer-events-none absolute -inset-[1px] z-[-1] overflow-hidden rounded-full opacity-0 transition-opacity duration-500 group-hover:opacity-100">
                   <span className="animate-border-spin absolute inset-[-200%] rounded-full bg-[conic-gradient(from_0deg,transparent_0_340deg,var(--brand-secondary)_360deg)]" />
                 </span>
                 <span className="badge-pulse h-1.5 w-1.5 rounded-full bg-[var(--brand-secondary)]" />
-                {lang !== "en"
-                  ? "KI-Kanzleisoftware für AT · DE · CH"
-                  : "AI legal software for AT · DE · CH"}
+                {t.badge}
               </motion.div>
               <h1
                 className="mb-6 text-5xl leading-[1.05] font-black tracking-tight [color:var(--mk-text)] md:text-7xl lg:text-8xl"
                 style={{ fontFamily: "var(--font-display)" }}
               >
                 <SplitTextReveal
-                  stagger={0.14}
-                  delay={0.25}
+                  stagger={0.1}
+                  delay={0.2}
                   as="span"
+                  useAnimate
                   className="block"
                   itemClassName="gradient-text-animated"
                 >
-                  {lang !== "en" ? "Subsumio\nDas Kanzlei-Brain." : "Subsumio\nThe firm brain."}
+                  {`${t.h1a}\n${t.h1b}`}
                 </SplitTextReveal>
               </h1>
               <motion.p
-                initial={reduce ? false : { opacity: 0, y: 16, filter: "blur(6px)" }}
+                initial={reduce ? false : { opacity: 0, y: 16, filter: "blur(3px)" }}
                 animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                transition={reduce ? { duration: 0 } : { duration: 0.7, ease: EASE.dramatic, delay: 0.8 }}
+                transition={
+                  reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.dramatic, delay: 0.4 }
+                }
                 className="mx-auto mb-12 max-w-2xl text-lg leading-relaxed [color:var(--mk-text-muted)] md:text-xl"
               >
                 {t.sub}
@@ -122,7 +132,9 @@ export default function LandingPage({ lang }: { lang: Lang }) {
               <motion.div
                 initial={reduce ? false : { opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.dramatic, delay: 0.95 }}
+                transition={
+                  reduce ? { duration: 0 } : { duration: 0.4, ease: EASE.dramatic, delay: 0.55 }
+                }
                 className="mb-4 flex flex-col justify-center gap-4 sm:flex-row"
               >
                 <MagneticButton strength={0.25}>
@@ -133,7 +145,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                   </Link>
                 </MagneticButton>
                 <a href="#pricing">
-                  <Button size="xl" variant="ghost" className="min-w-[200px]">
+                  <Button size="xl" variant="outline" className="min-w-[200px]">
                     {lang !== "en" ? "Preise ansehen" : "See pricing"} <ArrowRight size={18} />
                   </Button>
                 </a>
@@ -141,21 +153,28 @@ export default function LandingPage({ lang }: { lang: Lang }) {
               <motion.p
                 initial={reduce ? false : { opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.dramatic, delay: 1.05 }}
-                className="mb-4 text-xs [color:var(--mk-text-subtle)]"
+                transition={
+                  reduce ? { duration: 0 } : { duration: 0.4, ease: EASE.dramatic, delay: 0.65 }
+                }
+                className="mb-4 text-xs [color:var(--mk-text-muted)]"
               >
                 {lang !== "en"
                   ? "14 Tage Reverse Trial · 14 Tage Geld-zurück-Garantie · Keine Kreditkarte erforderlich"
                   : "14-day reverse trial · 14-day money-back guarantee · No credit card required"}
               </motion.p>
               {/* The live demo is a dark spotlight floating on the slate hero */}
-              <div
+              <motion.div
+                initial={reduce ? false : { opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={
+                  reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.dramatic, delay: 0.8 }
+                }
                 id="demo"
                 data-tone="dashboard"
                 className="mx-auto max-w-3xl scroll-mt-24 rounded-2xl shadow-[0_0_60px_rgba(56,189,248,0.12)] ring-1 ring-white/[0.08]"
               >
                 <LiveDemo lang={lang} {...t.demo} />
-              </div>
+              </motion.div>
             </div>
           </div>
         </Section>
@@ -209,12 +228,18 @@ export default function LandingPage({ lang }: { lang: Lang }) {
               >
                 {(t as { pains: { value: string; label: string }[] }).pains.map((p) => (
                   <StaggerItem key={p.label}>
-                    <div className="flex items-start gap-4 rounded-xl border [border-color:var(--mk-border)] p-5 [background:var(--mk-surface)]">
-                      <p className="text-2xl font-black [color:var(--brand-text)]">{p.value}</p>
-                      <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">
-                        {p.label}
-                      </p>
-                    </div>
+                    <GlowCard
+                      glowColor="var(--signal-rose)"
+                      intensity={0.1}
+                      className="h-full rounded-xl border [border-color:var(--mk-border)] p-5 transition-all duration-300 [background:var(--mk-surface)] hover:-translate-y-1 hover:shadow-lg"
+                    >
+                      <div className="flex items-start gap-4">
+                        <p className="text-2xl font-black [color:var(--brand-text)]">{p.value}</p>
+                        <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">
+                          {p.label}
+                        </p>
+                      </div>
+                    </GlowCard>
                   </StaggerItem>
                 ))}
               </StaggerContainer>
@@ -302,7 +327,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={viewport}
                   transition={{ duration: 0.4, delay: i * 0.08 }}
-                  className="rounded-2xl border [border-color:var(--mk-border)] p-6 [box-shadow:var(--mk-card-shadow)] [background:var(--mk-bg)]"
+                  className="rounded-2xl border [border-color:var(--mk-border)] p-6 [box-shadow:var(--mk-card-shadow)] transition-all duration-300 [background:var(--mk-bg)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-xl"
                 >
                   <p className="mb-3 text-xs font-semibold tracking-wider [color:var(--brand-text)] uppercase">
                     {s.role}
@@ -332,7 +357,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 <thead>
                   <tr className="border-b border-[color:var(--mk-border)]">
                     <th className="py-3 pr-4 text-left font-semibold text-[color:var(--mk-text)]">
-                      {lang === "en" ? "Feature" : "Feature"}
+                      {lang === "en" ? "Feature" : "Funktion"}
                     </th>
                     <th className="px-4 py-3 text-left font-semibold text-[color:var(--brand-text)]">
                       Subsumio
@@ -415,7 +440,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
             <TextReveal
               as="h2"
               text={t.ctaTitle}
-              className="mb-4 text-3xl font-black [color:var(--mk-text)] [font-family:var(--font-display)] md:text-4xl"
+              className="mb-4 [font-family:var(--font-display)] text-3xl font-black [color:var(--mk-text)] md:text-4xl"
               wordClassName="inline-block"
             />
             <p className="mb-10 text-lg [color:var(--mk-text-muted)]">{t.ctaSub}</p>

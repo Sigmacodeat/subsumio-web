@@ -88,7 +88,7 @@ export default function ProductWorkflowShowcase({
           transition={{ duration: 0.5, ease: "easeOut" }}
         >
           <p className="brand-text mb-4 font-mono text-xs tracking-wider uppercase">{c.eyebrow}</p>
-          <h2 className="mb-5 text-3xl leading-tight font-black [color:var(--mk-text)] [font-family:var(--font-display)] md:text-5xl">
+          <h2 className="mb-5 [font-family:var(--font-display)] text-3xl leading-tight font-black [color:var(--mk-text)] md:text-5xl">
             {brand}
             <br />
             <span className="gradient-text glow-text">{signature}</span>
@@ -154,7 +154,7 @@ export default function ProductWorkflowShowcase({
                       key={item}
                       className={`mb-2 rounded-lg px-3 py-2 text-xs ${i === 1 ? "brand-soft brand-text" : "[color:var(--mk-text-muted)]"}`}
                     >
-                      {item}
+                      {lang !== "en" && i === 0 ? "Übersicht" : item}
                     </div>
                   ))}
                 </div>
@@ -231,11 +231,11 @@ export default function ProductWorkflowShowcase({
                       </div>
                       <div className="relative h-44">
                         {[
-                          ["left-4 top-8", "Matter"],
+                          ["left-4 top-8", lang !== "en" ? "Akte" : "Matter"],
                           ["left-28 top-2", "Person"],
-                          ["right-8 top-16", "Doc"],
-                          ["left-20 bottom-4", "Risk"],
-                          ["right-16 bottom-8", "Task"],
+                          ["right-8 top-16", lang !== "en" ? "Dok" : "Doc"],
+                          ["left-20 bottom-4", lang !== "en" ? "Risiko" : "Risk"],
+                          ["right-16 bottom-8", lang !== "en" ? "Aufgabe" : "Task"],
                         ].map(([pos, label], i) => (
                           <motion.div
                             key={label}

@@ -5,12 +5,12 @@ import {
   CheckCircle2,
   Clock,
   FileText,
-  Receipt,
   Users,
   ShieldAlert,
   Briefcase,
   ArrowRight,
   Scale,
+  Wallet,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useLang } from "@/lib/use-lang";
@@ -32,12 +32,6 @@ interface DeadlineLike {
 
 interface TaskLike {
   done?: boolean;
-}
-
-interface TimeEntryLike {
-  billable?: boolean;
-  billed?: boolean;
-  minutes: number;
 }
 
 interface ExpenseLike {
@@ -105,7 +99,6 @@ export function CaseOverviewWidgets({ caseData, onTabChange }: CaseOverviewWidge
 
   const deadlines = (caseData.deadlines ?? []) as DeadlineLike[];
   const tasks = (caseData.tasks ?? []) as TaskLike[];
-  const timeEntries = (caseData.timeEntries ?? []) as TimeEntryLike[];
   const expenses = (caseData.expenses ?? []) as ExpenseLike[];
   const documents = (caseData.documents ?? []) as DocumentLike[];
 
@@ -115,15 +108,9 @@ export function CaseOverviewWidgets({ caseData, onTabChange }: CaseOverviewWidge
     return days <= 3;
   });
   const openTasks = tasks.filter((t: TaskLike) => !t.done).length;
-  const unbilledMinutes = timeEntries
-    .filter((e: TimeEntryLike) => e.billable !== false && !e.billed)
-    .reduce((sum: number, e: TimeEntryLike) => sum + e.minutes, 0);
   const unbilledExpenses = expenses
     .filter((e: ExpenseLike) => e.billable !== false && !e.billed)
     .reduce((sum: number, e: ExpenseLike) => sum + e.amount, 0);
-
-  const formatMinutes = (m: number) =>
-    m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}min` : `${m}min`;
 
   const hasConflict = caseData.conflictStatus === "conflict_pending";
 
@@ -271,26 +258,20 @@ export function CaseOverviewWidgets({ caseData, onTabChange }: CaseOverviewWidge
         </div>
       </WidgetCard>
 
-      {/* Billing */}
-      <WidgetCard
-        icon={Receipt}
-        title={t("cases.widget.billing" as DashboardKey)}
-        onClick={() => onTabChange?.("billing")}
-      >
+      {/* Expenses (Auslagen) */}
+      <WidgetCard icon={Wallet} title={t("cases.widget.billing" as DashboardKey)}>
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]">
-            <Receipt size={18} className="text-[color:var(--ds-text-muted)]" />
+            <Wallet size={18} className="text-[color:var(--ds-text-muted)]" />
           </div>
           <div className="flex-1">
             <p className="text-sm font-medium text-[color:var(--ds-text)]">
-              {unbilledMinutes > 0
-                ? formatMinutes(unbilledMinutes)
-                : t("cases.widget.no_time" as DashboardKey)}
+              {unbilledExpenses > 0
+                ? `${unbilledExpenses.toLocaleString(lang === "en" ? "en-GB" : "de-DE")} €`
+                : t("cases.widget.no_expenses" as DashboardKey)}
             </p>
             <p className="text-xs text-[color:var(--ds-text-muted)]">
-              {unbilledExpenses > 0
-                ? `${unbilledExpenses.toLocaleString(lang === "en" ? "en-GB" : "de-DE")} € ${t("cases.widget.expenses" as DashboardKey)}`
-                : t("cases.widget.no_expenses" as DashboardKey)}
+              {t("cases.widget.expenses" as DashboardKey)}
             </p>
           </div>
         </div>

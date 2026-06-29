@@ -38,8 +38,6 @@ import {
   FolderOpen,
   Landmark,
   User,
-  Play,
-  Square,
   PenTool,
   Sparkles,
   X,
@@ -127,11 +125,9 @@ import {
 import {
   deadlineFormSchema,
   evidenceFormSchema,
-  timeEntryFormSchema,
   expenseFormSchema,
   type DeadlineFormData,
   type EvidenceFormData,
-  type TimeEntryFormData,
   type ExpenseFormData,
 } from "@/lib/schemas/case-detail";
 
@@ -227,11 +223,7 @@ const WORKSPACE_TABS_DE: Array<{ key: string; label: string; icon: React.Element
   { key: "overview", label: "Übersicht", icon: FileText },
   { key: "documents", label: "Dokumente", icon: FolderOpen },
   { key: "deadlines_tasks", label: "Fristen", icon: CalendarClock },
-  { key: "evidence", label: "Belege", icon: ShieldAlert },
-  { key: "contradictions", label: "Widersprüche", icon: AlertTriangle },
-  { key: "pipeline", label: "Pipeline", icon: Activity },
   { key: "strategy", label: "KI", icon: Sparkles },
-  { key: "billing", label: "Abrechnung", icon: Receipt },
   { key: "activity", label: "Verlauf", icon: Activity },
 ];
 
@@ -239,11 +231,7 @@ const WORKSPACE_TABS_EN: Array<{ key: string; label: string; icon: React.Element
   { key: "overview", label: "Overview", icon: FileText },
   { key: "documents", label: "Documents", icon: FolderOpen },
   { key: "deadlines_tasks", label: "Deadlines", icon: CalendarClock },
-  { key: "evidence", label: "Evidence", icon: ShieldAlert },
-  { key: "contradictions", label: "Contradictions", icon: AlertTriangle },
-  { key: "pipeline", label: "Pipeline", icon: Activity },
   { key: "strategy", label: "AI", icon: Sparkles },
-  { key: "billing", label: "Billing", icon: Receipt },
   { key: "activity", label: "Activity", icon: Activity },
 ];
 
@@ -443,11 +431,6 @@ export default function CaseDetailPage() {
 
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
 
-  // Live timer
-  const [timerRunning, setTimerRunning] = useState(false);
-  const [timerStartAt, setTimerStartAt] = useState<number | null>(null);
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
-
   const [expensesList, setExpensesList] = useState<ExpenseEntry[]>([]);
 
   // Contacts linked to this case
@@ -524,17 +507,6 @@ export default function CaseDetailPage() {
   // referenzieren, oder eine nicht-dokumentäre Quelle (Zeugenaussage, mündliche
   // Aussage, etc.) als Freitext erfassen. Verhindert Verwechslung mit der Akte selbst.
   const [evidenceSourceMode, setEvidenceSourceMode] = useState<"document" | "other">("other");
-  const timeForm = useForm<TimeEntryFormData>({
-    resolver: zodResolver(timeEntryFormSchema),
-    defaultValues: {
-      description: "",
-      minutes: "",
-      rate: "200",
-      lawyer: "",
-      activity_type: "Beratung",
-      billable: true,
-    },
-  });
   const expenseForm = useForm<ExpenseFormData>({
     resolver: zodResolver(expenseFormSchema),
     defaultValues: { description: "", amount: "", billable: true },
@@ -543,7 +515,6 @@ export default function CaseDetailPage() {
   useUnsavedChanges(
     deadlineForm.formState.isDirty ||
       evidenceForm.formState.isDirty ||
-      timeForm.formState.isDirty ||
       expenseForm.formState.isDirty
   );
 
@@ -592,37 +563,6 @@ export default function CaseDetailPage() {
     void saveCaseUpdate({ evidence: updated });
   }
 
-  function onTimeSubmit(data: TimeEntryFormData) {
-    const mins = parseInt(data.minutes, 10);
-    const rate = parseFloat(data.rate || "");
-    if (data.description.trim() && Number.isFinite(mins) && mins > 0) {
-      const updated: TimeEntry[] = [
-        ...timeEntries,
-        {
-          id: Date.now().toString(),
-          description: data.description.trim(),
-          minutes: mins,
-          date: new Date().toISOString(),
-          rate: Number.isFinite(rate) && rate > 0 ? rate : undefined,
-          billable: data.billable,
-          billed: false,
-          lawyer: data.lawyer?.trim() || undefined,
-          activity_type: data.activity_type,
-        },
-      ];
-      setTimeEntries(updated);
-      timeForm.reset({
-        description: "",
-        minutes: "",
-        rate: "200",
-        lawyer: "",
-        activity_type: "Beratung",
-        billable: true,
-      });
-      void saveCaseUpdate({ timeEntries: updated });
-    }
-  }
-
   function onExpenseSubmit(data: ExpenseFormData) {
     const amount = parseFloat(data.amount);
     if (data.description.trim() && Number.isFinite(amount) && amount > 0) {
@@ -642,15 +582,6 @@ export default function CaseDetailPage() {
       void saveCaseUpdate({ expenses: updated });
     }
   }
-
-  // Live timer interval
-  useEffect(() => {
-    if (!timerRunning || !timerStartAt) return;
-    const id = setInterval(() => {
-      setElapsedSeconds(Math.floor((Date.now() - timerStartAt) / 1000));
-    }, 1000);
-    return () => clearInterval(id);
-  }, [timerRunning, timerStartAt]);
 
   // Initialize from brain page
   const meQuery = useMe();
@@ -691,7 +622,6 @@ export default function CaseDetailPage() {
           setTasks(detail.tasks);
           setTimeEntries(detail.timeEntries);
           setExpensesList(detail.expenses);
-          timeForm.setValue("lawyer", detail.ownLawyerName || "");
           setEvidenceList(detail.evidence || []);
           setDeadlinesList(mergedDeadlines);
           setContacts(
@@ -737,7 +667,6 @@ export default function CaseDetailPage() {
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
 
   // P0-1: Single-Writer — reload case data from engine instead of client-side documents writes.
@@ -1628,16 +1557,11 @@ export default function CaseDetailPage() {
     const status = docProcessingStatus(doc).key;
     return status === "review_open" || status === "ocr_needed" || status === "ocr_processing";
   }).length;
-  const unbilledMinutes = timeEntries
-    .filter((entry) => entry.billable !== false && !entry.billed)
-    .reduce((sum, entry) => sum + entry.minutes, 0);
   const unbilledExpenses = expensesList
     .filter((entry) => entry.billable !== false && !entry.billed)
     .reduce((sum, entry) => sum + entry.amount, 0);
   const conflictNeedsReview =
     Boolean(contactConflict) || caseData.conflictStatus === "conflict_pending";
-  const formatMinutes = (minutes: number) =>
-    minutes >= 60 ? `${Math.floor(minutes / 60)}h ${minutes % 60}min` : `${minutes}min`;
   const uploadStats = {
     totalFiles: uploadQueue.length,
     completedFiles: uploadQueue.filter((item) => item.status === "done").length,
@@ -1862,12 +1786,12 @@ export default function CaseDetailPage() {
                 alert: documentReviewCount > 0,
               },
               {
-                target: "billing",
+                target: "overview",
                 label: t("cases.detail_health_billing"),
-                value: unbilledMinutes > 0 ? formatMinutes(unbilledMinutes) : "0",
-                detail: `${unbilledExpenses.toFixed(2)} €`,
+                value: `${unbilledExpenses.toFixed(2)} €`,
+                detail: t("cases.widget.expenses"),
                 icon: Receipt,
-                alert: unbilledMinutes > 0 || unbilledExpenses > 0,
+                alert: unbilledExpenses > 0,
               },
               {
                 target: "overview",
@@ -2675,6 +2599,106 @@ export default function CaseDetailPage() {
                   Noch keine Strategie generiert. Klicken Sie auf &ldquo;Strategie generieren&rdquo;
                   für eine KI-gestützte Empfehlung.
                 </p>
+              )}
+            </div>
+
+            {/* Expenses (Auslagen) */}
+            <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+              <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+                {t("cases.detail_exp_title")}
+              </h3>
+              <div className="grid grid-cols-1 items-center gap-3 md:grid-cols-[1fr_130px_auto_auto]">
+                <input
+                  {...expenseForm.register("description")}
+                  placeholder={t("cases.detail_exp_desc_ph")}
+                  aria-label={t("cases.expense")}
+                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                />
+                <input
+                  {...expenseForm.register("amount")}
+                  type="number"
+                  step="0.01"
+                  placeholder={t("cases.detail_exp_amount_ph")}
+                  aria-label={t("cases.amount")}
+                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                />
+                <label className="flex items-center gap-2 text-sm whitespace-nowrap text-[color:var(--ds-text-muted)]">
+                  <input
+                    type="checkbox"
+                    {...expenseForm.register("billable")}
+                    className="accent-[var(--brand-primary)]"
+                  />
+                  {t("cases.detail_exp_billable")}
+                </label>
+                <Button
+                  variant="primary"
+                  disabled={caseData?.status === "archived"}
+                  className="brand-bg brand-bg gap-2 text-sm text-white"
+                  onClick={expenseForm.handleSubmit(onExpenseSubmit)}
+                >
+                  <Plus size={14} />
+                  {t("cases.detail_exp_add")}
+                </Button>
+              </div>
+
+              {expensesList.length > 0 && (
+                <div className="space-y-2 border-t border-[color:var(--ds-border)] pt-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+                      {t("cases.detail_exp_total")}{" "}
+                      {expensesList.reduce((s, e) => s + e.amount, 0).toFixed(2)} €
+                    </span>
+                  </div>
+                  {expensesList.map((entry) => (
+                    <div
+                      key={entry.id}
+                      className="flex items-center justify-between gap-3 border-b border-[color:var(--ds-border)] py-2 last:border-0"
+                    >
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-sm text-[color:var(--ds-text)]">
+                            {entry.description}
+                          </span>
+                          {entry.billed && (
+                            <Badge variant="success" className="text-xs">
+                              {t("cases.detail_exp_billed")}
+                            </Badge>
+                          )}
+                          {entry.billable === false && (
+                            <Badge variant="warning" className="text-xs">
+                              {t("cases.detail_exp_internal")}
+                            </Badge>
+                          )}
+                        </div>
+                        <span className="text-xs text-[color:var(--ds-text-muted)]">
+                          {new Date(entry.date).toLocaleDateString(
+                            lang === "en" ? "en-GB" : "de-DE"
+                          )}
+                          {entry.invoice_number ? ` · ${entry.invoice_number}` : ""}
+                        </span>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <span className="font-mono text-sm text-[color:var(--ds-text-muted)]">
+                          {entry.amount.toFixed(2)} €
+                        </span>
+                        {!entry.billed && (
+                          <button
+                            disabled={caseData?.status === "archived"}
+                            onClick={() => {
+                              const updated = expensesList.filter((e) => e.id !== entry.id);
+                              setExpensesList(updated);
+                              saveCaseUpdate({ expenses: updated });
+                            }}
+                            className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-red-500/10 hover:text-red-600"
+                            title={t("cases.detail_exp_delete")}
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
 
@@ -4297,7 +4321,7 @@ export default function CaseDetailPage() {
           </div>
         )}
 
-        {activeTab === "evidence" && (
+        {activeTab === "documents" && (
           <div className="max-w-3xl space-y-4">
             <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
               <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
@@ -4798,7 +4822,7 @@ export default function CaseDetailPage() {
           </div>
         )}
 
-        {activeTab === "contradictions" && (
+        {activeTab === "strategy" && (
           <div className="max-w-3xl space-y-4">
             {/* Semantic contradiction probe findings */}
             <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
@@ -4970,318 +4994,6 @@ export default function CaseDetailPage() {
           </div>
         )}
 
-        {activeTab === "billing" && (
-          <div className="max-w-3xl space-y-4">
-            <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-              <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
-                {t("cases.detail_time_title")}
-              </h3>
-
-              {/* Live Timer */}
-              <div className="flex items-center gap-3">
-                <div
-                  className={cn(
-                    "font-mono text-2xl font-bold tracking-tight",
-                    timerRunning ? "text-emerald-600" : "text-[color:var(--ds-text-muted)]"
-                  )}
-                >
-                  {String(Math.floor(elapsedSeconds / 60)).padStart(2, "0")}:
-                  {String(elapsedSeconds % 60).padStart(2, "0")}
-                </div>
-                {!timerRunning ? (
-                  <button
-                    onClick={() => {
-                      setTimerRunning(true);
-                      setTimerStartAt(Date.now());
-                      setElapsedSeconds(0);
-                    }}
-                    className="flex items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-600/15 px-3 py-1.5 text-xs font-medium text-emerald-600 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-emerald-600/25"
-                  >
-                    <Play size={14} /> {t("cases.detail_time_start")}
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => {
-                      const durationMs = Date.now() - (timerStartAt ?? Date.now());
-                      const minutes = Math.max(1, Math.round(durationMs / 60000));
-                      setTimerRunning(false);
-                      setTimerStartAt(null);
-                      setElapsedSeconds(0);
-                      timeForm.setValue("minutes", String(minutes));
-                    }}
-                    className="flex items-center gap-1.5 rounded-lg border border-red-500/30 bg-red-600/15 px-3 py-1.5 text-xs font-medium text-red-600 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-red-600/25"
-                  >
-                    <Square size={14} /> {t("cases.detail_time_stop")}
-                  </button>
-                )}
-                {elapsedSeconds > 0 && !timerRunning && (
-                  <span className="text-xs text-[color:var(--ds-text-muted)]">
-                    → {timeForm.watch("minutes")} {t("cases.detail_time_taken")}
-                  </span>
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_110px_110px]">
-                <input
-                  {...timeForm.register("description")}
-                  placeholder={t("cases.detail_time_activity_ph")}
-                  aria-label={t("cases.activity")}
-                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
-                />
-                <input
-                  {...timeForm.register("minutes")}
-                  type="number"
-                  placeholder={t("cases.detail_time_min_ph")}
-                  aria-label={t("cases.minutes")}
-                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
-                />
-                <input
-                  {...timeForm.register("rate")}
-                  type="number"
-                  placeholder={t("cases.detail_time_rate_ph")}
-                  aria-label={t("cases.hourly_rate")}
-                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
-                />
-              </div>
-              <div className="grid grid-cols-1 items-center gap-3 md:grid-cols-[150px_1fr_auto_auto]">
-                <select
-                  {...timeForm.register("activity_type")}
-                  className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
-                >
-                  <option value="Beratung">{t("cases.detail_time_act_consultation")}</option>
-                  <option value="Telefonat">{t("cases.detail_time_act_phone")}</option>
-                  <option value="E-Mail">{t("cases.detail_time_act_email")}</option>
-                  <option value="Schriftsatz">{t("cases.detail_time_act_filing")}</option>
-                  <option value="Gerichtstermin">{t("cases.detail_time_act_court")}</option>
-                  <option value="Recherche">{t("cases.detail_time_act_research")}</option>
-                  <option value="Aktenstudium">{t("cases.detail_time_act_study")}</option>
-                </select>
-                <input
-                  {...timeForm.register("lawyer")}
-                  placeholder={t("cases.detail_time_lawyer_ph")}
-                  aria-label={t("cases.assignee")}
-                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
-                />
-                <label className="flex items-center gap-2 text-sm whitespace-nowrap text-[color:var(--ds-text-muted)]">
-                  <input
-                    type="checkbox"
-                    {...timeForm.register("billable")}
-                    className="accent-[var(--brand-primary)]"
-                  />
-                  {t("cases.detail_time_billable")}
-                </label>
-                <Button
-                  variant="primary"
-                  disabled={caseData?.status === "archived"}
-                  className="brand-bg brand-bg gap-2 text-sm text-white"
-                  onClick={timeForm.handleSubmit(onTimeSubmit)}
-                >
-                  <Plus size={14} />
-                  {t("cases.detail_time_book")}
-                </Button>
-              </div>
-            </div>
-
-            {timeEntries.length > 0 && (
-              <div className="space-y-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-                <div className="mb-2 flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
-                    {t("cases.detail_time_bookings")}
-                  </h3>
-                  <span className="text-xs text-[color:var(--ds-text-muted)]">
-                    {`${t("cases.detail_time_total")} ${Math.floor(timeEntries.reduce((s, e) => s + e.minutes, 0) / 60)}h ${timeEntries.reduce((s, e) => s + e.minutes, 0) % 60}min`}
-                  </span>
-                </div>
-                {timeEntries.map((entry) => (
-                  <div
-                    key={entry.id}
-                    className="border-b border-[color:var(--ds-border)] py-2 last:border-0"
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-sm text-[color:var(--ds-text)]">
-                            {entry.description}
-                          </span>
-                          {entry.activity_type && (
-                            <Badge
-                              variant="default"
-                              className="brand-border brand-soft brand-text border text-xs"
-                            >
-                              {entry.activity_type}
-                            </Badge>
-                          )}
-                          {entry.billed && (
-                            <Badge variant="success" className="text-xs">
-                              {t("cases.detail_time_billed")}
-                            </Badge>
-                          )}
-                          {entry.billable === false && (
-                            <Badge variant="warning" className="text-xs">
-                              {t("cases.detail_time_internal")}
-                            </Badge>
-                          )}
-                        </div>
-                        <span className="text-xs text-[color:var(--ds-text-muted)]">
-                          {new Date(entry.date).toLocaleDateString(
-                            lang === "en" ? "en-GB" : "de-DE"
-                          )}
-                          {entry.lawyer ? ` · ${entry.lawyer}` : ""}
-                          {entry.rate ? ` · ${entry.rate.toFixed(2)} €/h` : ""}
-                          {entry.invoice_number ? ` · ${entry.invoice_number}` : ""}
-                        </span>
-                      </div>
-                      <div className="flex shrink-0 items-center gap-2">
-                        <span className="font-mono text-sm text-[color:var(--ds-text-muted)]">
-                          {entry.minutes} min
-                        </span>
-                        {!entry.billed && (
-                          <button
-                            disabled={caseData?.status === "archived"}
-                            onClick={() => {
-                              const updated = timeEntries.filter((e) => e.id !== entry.id);
-                              setTimeEntries(updated);
-                              saveCaseUpdate({ timeEntries: updated });
-                            }}
-                            className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-red-500/10 hover:text-red-600"
-                            title={t("cases.detail_time_delete")}
-                          >
-                            <Trash2 size={13} />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                    <div className="mt-2">
-                      <CommentThread
-                        parentSlug={`${slug}/time/${entry.id}`}
-                        parentType="time_entry"
-                        currentUserId={currentUserId}
-                        currentUserName={currentUserName}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {activeTab === "billing" && (
-          <div className="max-w-3xl space-y-4">
-            <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-              <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
-                {t("cases.detail_exp_title")}
-              </h3>
-              <div className="grid grid-cols-1 items-center gap-3 md:grid-cols-[1fr_130px_auto_auto]">
-                <input
-                  {...expenseForm.register("description")}
-                  placeholder={t("cases.detail_exp_desc_ph")}
-                  aria-label={t("cases.expense")}
-                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
-                />
-                <input
-                  {...expenseForm.register("amount")}
-                  type="number"
-                  step="0.01"
-                  placeholder={t("cases.detail_exp_amount_ph")}
-                  aria-label={t("cases.amount")}
-                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
-                />
-                <label className="flex items-center gap-2 text-sm whitespace-nowrap text-[color:var(--ds-text-muted)]">
-                  <input
-                    type="checkbox"
-                    {...expenseForm.register("billable")}
-                    className="accent-[var(--brand-primary)]"
-                  />
-                  {t("cases.detail_exp_billable")}
-                </label>
-                <Button
-                  variant="primary"
-                  disabled={caseData?.status === "archived"}
-                  className="brand-bg brand-bg gap-2 text-sm text-white"
-                  onClick={expenseForm.handleSubmit(onExpenseSubmit)}
-                >
-                  <Plus size={14} />
-                  {t("cases.detail_exp_add")}
-                </Button>
-              </div>
-            </div>
-
-            {expensesList.length > 0 && (
-              <div className="space-y-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-                <div className="mb-2 flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
-                    {t("cases.detail_exp_list")}
-                  </h3>
-                  <span className="text-xs text-[color:var(--ds-text-muted)]">
-                    {t("cases.detail_exp_total")}{" "}
-                    {expensesList.reduce((s, e) => s + e.amount, 0).toFixed(2)} €
-                  </span>
-                </div>
-                {expensesList.map((entry) => (
-                  <div
-                    key={entry.id}
-                    className="border-b border-[color:var(--ds-border)] py-2 last:border-0"
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-sm text-[color:var(--ds-text)]">
-                            {entry.description}
-                          </span>
-                          {entry.billed && (
-                            <Badge variant="success" className="text-xs">
-                              {t("cases.detail_exp_billed")}
-                            </Badge>
-                          )}
-                          {entry.billable === false && (
-                            <Badge variant="warning" className="text-xs">
-                              {t("cases.detail_exp_internal")}
-                            </Badge>
-                          )}
-                        </div>
-                        <span className="text-xs text-[color:var(--ds-text-muted)]">
-                          {new Date(entry.date).toLocaleDateString(
-                            lang === "en" ? "en-GB" : "de-DE"
-                          )}
-                          {entry.invoice_number ? ` · ${entry.invoice_number}` : ""}
-                        </span>
-                      </div>
-                      <div className="flex shrink-0 items-center gap-2">
-                        <span className="font-mono text-sm text-[color:var(--ds-text-muted)]">
-                          {entry.amount.toFixed(2)} €
-                        </span>
-                        {!entry.billed && (
-                          <button
-                            disabled={caseData?.status === "archived"}
-                            onClick={() => {
-                              const updated = expensesList.filter((e) => e.id !== entry.id);
-                              setExpensesList(updated);
-                              saveCaseUpdate({ expenses: updated });
-                            }}
-                            className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-red-500/10 hover:text-red-600"
-                            title={t("cases.detail_exp_delete")}
-                          >
-                            <Trash2 size={13} />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                    <div className="mt-2">
-                      <CommentThread
-                        parentSlug={`${slug}/expense/${entry.id}`}
-                        parentType="expense"
-                        currentUserId={currentUserId}
-                        currentUserName={currentUserName}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
         {activeTab === "activity" && (
           <div className="max-w-3xl space-y-4">
             <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
@@ -5328,7 +5040,7 @@ export default function CaseDetailPage() {
           </div>
         )}
 
-        {activeTab === "pipeline" && (
+        {activeTab === "strategy" && (
           <div className="max-w-4xl space-y-4">
             <Suspense
               fallback={

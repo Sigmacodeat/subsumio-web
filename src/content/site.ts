@@ -1705,13 +1705,13 @@ const _landingDe = {
       icon: "Brain",
       color: "violet",
       title: "Antworten mit Fundstellen",
-      desc: "Jede KI-Antwort zitiert die exakten Fundstellen aus deinen Akten — ein Klick zur Verifikation, bevor etwas in den Schriftsatz geht. Du prüfst in Sekunden, was früher Minuten kostete. Keine halluzinierten Quellen, keine Blackbox, kein Bauchgefuehl.",
+      desc: "Jede KI-Antwort zitiert die exakten Fundstellen aus deinen Akten — ein Klick zur Verifikation, bevor etwas in den Schriftsatz geht. Du prüfst in Sekunden, was früher Minuten kostete. Keine halluzinierten Quellen, keine Blackbox, kein Bauchgefühl.",
     },
     {
       icon: "CalendarClock",
       color: "amber",
       title: "Fristen automatisch berechnet",
-      desc: "Notfristen und Berufungsfristen nach ZPO, BGB und ABGB — mit korrekter Monatsarithmetik, Wochenend- und Feiertagsverschiebung. Der taegliche E-Mail-Digest markiert kritische Fristen vor Fristablauf. Du schläfst ruhig, weil nichts mehr durchs Raster faellt.",
+      desc: "Notfristen und Berufungsfristen nach ZPO, BGB und ABGB — mit korrekter Monatsarithmetik, Wochenend- und Feiertagsverschiebung. Der tägliche E-Mail-Digest markiert kritische Fristen vor Fristablauf. Du schläfst ruhig, weil nichts mehr durchs Raster fällt.",
     },
     {
       icon: "MessageSquare",
