@@ -31,7 +31,11 @@ import {
   MagneticButton,
   MagneticCard,
   TextReveal,
+  GradientMesh,
 } from "./motion-system";
+import IndustryHeroMotif from "./industry-hero-motif";
+import { WhatsAppSpotlight } from "./subsumio-showcase";
+import ProductWorkflowShowcase from "./product-workflow-showcase";
 
 const viewport = { once: true, margin: "0px 0px 80px 0px", amount: 0.12 } as const;
 
@@ -126,6 +130,11 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 }}
               />
             </div>
+            {/* Legal icon constellation — animated hero motif */}
+            <IndustryHeroMotif
+              industry="legal"
+              className="absolute inset-0 z-0 hidden opacity-[0.10] md:block"
+            />
             <motion.div
               className="relative z-10"
               initial="hidden"
@@ -338,6 +347,9 @@ export default function LandingPage({ lang }: { lang: Lang }) {
           </div>
         </Section>
 
+        {/* WhatsApp Copilot — dark spotlight with animated phone mockup */}
+        <WhatsAppSpotlight lang={lang} />
+
         {/* Features — alternating surface band */}
         <Section tone="light" id="features" className="px-4 py-24 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-7xl">
@@ -405,46 +417,8 @@ export default function LandingPage({ lang }: { lang: Lang }) {
         {/* Audience segments — homepage teaser linking to /solutions/* */}
         <AudienceTabs lang={lang} />
 
-        {/* How it works — alternating surface band */}
-        <Section tone="light" className="border-y px-4 py-24 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-6xl">
-            <motion.div {...reveal}>
-              <SectionHeading title={t.howTitle} />
-            </motion.div>
-            <StaggerContainer
-              className="grid gap-6 md:grid-cols-2 lg:grid-cols-4"
-              stagger={0.08}
-              y={18}
-            >
-              {t.how.map((item) => {
-                const Icon = ICONS[item.icon];
-                return (
-                  <StaggerItem key={item.step}>
-                    <GlowCard
-                      className="h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-all duration-300 [background:var(--mk-bg)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-lg"
-                      style={{ boxShadow: "var(--mk-card-shadow)" } as React.CSSProperties}
-                    >
-                      <div className="mb-4 flex items-center gap-3">
-                        <span className="font-mono text-xs [color:var(--mk-text-subtle)]">
-                          {item.step}
-                        </span>
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--brand-text)]/20 bg-[var(--brand-text)]/10">
-                          {Icon && <Icon size={15} className="[color:var(--brand-text)]" />}
-                        </div>
-                      </div>
-                      <h3 className="mb-2 text-base font-semibold [color:var(--mk-text)]">
-                        {item.title}
-                      </h3>
-                      <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">
-                        {item.desc}
-                      </p>
-                    </GlowCard>
-                  </StaggerItem>
-                );
-              })}
-            </StaggerContainer>
-          </div>
-        </Section>
+        {/* How it works — animated scroll-driven workflow showcase */}
+        <ProductWorkflowShowcase lang={lang} industry="legal" />
 
         {/* Trust band — light section (the serious counterpoint, primes pricing) */}
         <TrustBand lang={lang} />
@@ -533,8 +507,12 @@ export default function LandingPage({ lang }: { lang: Lang }) {
           </motion.div>
         </Section>
 
-        {/* Final CTA */}
-        <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8">
+        {/* Final CTA — dark spotlight close with gradient mesh */}
+        <Section
+          tone="dark"
+          className="relative overflow-hidden px-4 py-24 text-center sm:px-6 lg:px-8"
+        >
+          <GradientMesh className="opacity-40" />
           <motion.div {...reveal} className="mx-auto max-w-3xl text-center">
             <SubsumioMark size={56} className="mx-auto mb-7" />
             <TextReveal
