@@ -3025,19 +3025,19 @@ export async function* chatStream(
 
     for await (const part of stream.fullStream) {
       if (part.type === "text-delta") {
-        yield { type: "text", text: part.delta };
+        yield { type: "text", text: part.text };
       } else if (part.type === "tool-call") {
         blocks.push({
           type: "tool-call",
           toolCallId: part.toolCallId,
           toolName: part.toolName,
-          input: part.input ?? part.args,
+          input: part.input,
         });
         yield {
           type: "tool-call",
           toolCallId: part.toolCallId,
           toolName: part.toolName,
-          input: part.input ?? part.args,
+          input: part.input,
         };
       }
     }
