@@ -111,7 +111,7 @@
     "@jsquash/png": "^3.1.1",
     "@modelcontextprotocol/sdk": "1.29.0",
     "@npeersab/msgreader": "^4.4.0",
-    "ai": "^6.0.168",
+    "ai": "^7.0.6",
     "chokidar": "^4.0.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
