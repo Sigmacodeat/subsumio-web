@@ -25,7 +25,7 @@ export default function AudienceTabs({ lang }: { lang: Lang }) {
   const content = SOLUTIONS[lang][active];
 
   return (
-    <section data-tone="light" className="relative z-10 px-4 py-24 sm:px-6 lg:px-8">
+    <section data-tone="light" className="relative z-10 border-y px-4 py-24 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-5xl">
         <div className="mb-10 flex flex-wrap items-center justify-center gap-2">
           {SOLUTION_SLUGS.map((slug) => {
@@ -62,7 +62,7 @@ export default function AudienceTabs({ lang }: { lang: Lang }) {
             <span className="brand-soft brand-text brand-border mb-4 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold">
               {content.badge}
             </span>
-            <h3 className="mb-3 text-2xl font-black tracking-tight [color:var(--mk-text)] md:text-3xl">
+            <h3 className="mb-3 text-2xl font-black tracking-tight [color:var(--mk-text)] [font-family:var(--font-display)] md:text-3xl">
               {content.h1a} <span className="brand-text">{content.h1b}</span>
             </h3>
             <p className="mb-6 max-w-2xl text-base leading-relaxed [color:var(--mk-text-muted)]">

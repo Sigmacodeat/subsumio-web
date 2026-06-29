@@ -13,7 +13,7 @@ export function AnimatedFaqList({
   tone = "dark",
 }: {
   items: readonly { q: string; a: string }[];
-  tone?: "dark" | "light";
+  tone?: "dark" | "light" | "slate";
 }) {
   const [open, setOpen] = useState<number | null>(null);
 
@@ -26,7 +26,7 @@ export function AnimatedFaqList({
             key={item.q}
             initial={{ opacity: 0, y: 14 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-40px" }}
+            viewport={{ once: true, margin: "0px 0px 80px 0px", amount: 0.12 }}
             transition={{ duration: 0.35, delay: i * 0.055 }}
           >
             <div

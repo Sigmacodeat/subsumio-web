@@ -76,7 +76,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                   : "AI legal software for AT · DE · CH"}
               </div>
               <ClipReveal delay={0.1} duration={0.7} direction="up">
-                <h1 className="mb-6 text-4xl leading-[1.08] font-black tracking-tight [color:var(--mk-text)] md:text-6xl">
+                <h1 className="mb-6 text-4xl leading-[1.08] font-black tracking-tight [color:var(--mk-text)] md:text-6xl [font-family:var(--font-display)]">
                   Subsumio
                   <br />
                   <span className="gradient-text glow-text">
@@ -354,11 +354,11 @@ export default function LandingPage({ lang }: { lang: Lang }) {
           </motion.div>
         </Section>
 
-        {/* FAQ — subtle surface band */}
-        <Section tone="light" className="border-y px-4 py-24 sm:px-6 lg:px-8">
+        {/* FAQ — slate band for tone rhythm (breaks light→light→light) */}
+        <Section tone="slate" className="px-4 py-24 sm:px-6 lg:px-8">
           <motion.div {...reveal} className="mx-auto max-w-5xl">
             <SectionHeading title={t.faqTitle} />
-            <AnimatedFaqList items={t.faq} tone="light" />
+            <AnimatedFaqList items={t.faq} tone="slate" />
           </motion.div>
         </Section>
 
@@ -373,7 +373,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
             <TextReveal
               as="h2"
               text={t.ctaTitle}
-              className="mb-4 text-3xl font-black [color:var(--mk-text)] md:text-4xl"
+              className="mb-4 text-3xl font-black [color:var(--mk-text)] [font-family:var(--font-display)] md:text-4xl"
               wordClassName="inline-block"
             />
             <p className="mb-10 text-lg [color:var(--mk-text-muted)]">{t.ctaSub}</p>

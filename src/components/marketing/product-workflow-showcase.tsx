@@ -76,7 +76,7 @@ export default function ProductWorkflowShowcase({
   return (
     <section
       ref={sectionRef}
-      className="relative z-10 overflow-hidden border-y [border-color:var(--mk-border)] px-4 py-28 sm:px-6 lg:px-8"
+      className="relative z-10 overflow-hidden border-y [border-color:var(--mk-border)] px-4 py-24 sm:px-6 lg:px-8"
       style={industry ? styleForIndustry(industry) : undefined}
     >
       <div className="brand-glow-bg absolute inset-x-0 top-1/3 h-64 opacity-40 blur-3xl" />
@@ -84,11 +84,11 @@ export default function ProductWorkflowShowcase({
         <motion.div
           initial={{ opacity: 0, y: 18 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.25 }}
+          viewport={{ once: true, margin: "0px 0px 80px 0px", amount: 0.12 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
         >
           <p className="brand-text mb-4 font-mono text-xs tracking-wider uppercase">{c.eyebrow}</p>
-          <h2 className="mb-5 text-3xl leading-tight font-black [color:var(--mk-text)] md:text-5xl">
+          <h2 className="mb-5 text-3xl leading-tight font-black [color:var(--mk-text)] [font-family:var(--font-display)] md:text-5xl">
             {brand}
             <br />
             <span className="gradient-text glow-text">{signature}</span>

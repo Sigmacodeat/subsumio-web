@@ -140,7 +140,7 @@ export default function TrustBand({ lang, industry }: { lang: Lang; industry?: s
         <motion.div
           initial={{ opacity: 0, y: 18 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-60px" }}
+          viewport={{ once: true, margin: "0px 0px 80px 0px", amount: 0.12 }}
           transition={{ duration: 0.5 }}
           className="mb-14 text-center"
         >
@@ -157,7 +157,7 @@ export default function TrustBand({ lang, industry }: { lang: Lang; industry?: s
             />
             {c.eyebrow}
           </span>
-          <h2 className="mb-4 text-3xl font-black [color:var(--mk-text)] md:text-4xl">{c.title}</h2>
+          <h2 className="mb-4 text-3xl font-black [color:var(--mk-text)] [font-family:var(--font-display)] md:text-4xl">{c.title}</h2>
           <p className="mx-auto max-w-2xl text-lg [color:var(--mk-text-muted)]">{sub}</p>
         </motion.div>
 
@@ -170,7 +170,7 @@ export default function TrustBand({ lang, industry }: { lang: Lang; industry?: s
                 key={pillar.t}
                 initial={{ opacity: 0, y: 24 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-50px" }}
+                viewport={{ once: true, margin: "0px 0px 80px 0px", amount: 0.12 }}
                 transition={{ duration: 0.5, delay: i * 0.09, ease: EASE.out }}
               >
                 <GlowCard
@@ -203,7 +203,7 @@ export default function TrustBand({ lang, industry }: { lang: Lang; industry?: s
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-40px" }}
+          viewport={{ once: true, margin: "0px 0px 80px 0px", amount: 0.12 }}
           transition={{ duration: 0.5, delay: 0.3 }}
           className="mt-12 flex flex-wrap items-center justify-center gap-3"
         >

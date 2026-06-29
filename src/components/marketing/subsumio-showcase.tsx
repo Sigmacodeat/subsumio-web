@@ -216,7 +216,7 @@ export function WhatsAppSpotlight({ lang, children }: { lang: Lang; children?: R
   return (
     <section
       data-tone="dark"
-      className="relative z-10 overflow-hidden border-y [border-color:var(--mk-border)] px-4 py-28 sm:px-6 lg:px-8"
+      className="relative z-10 overflow-hidden border-y [border-color:var(--mk-border)] px-4 py-24 sm:px-6 lg:px-8"
       style={{ background: "linear-gradient(180deg, rgba(13,25,45,0.35), var(--mk-bg))" }}
     >
       <GradientMesh className="opacity-40" />
@@ -266,12 +266,12 @@ export function FeatureBento({ lang }: { lang: Lang }) {
   const c = (COPY as unknown as Record<string, typeof COPY.de>)[lang] ?? COPY.de;
   const features = VERTICALS[lang].legal.features;
   return (
-    <div className="relative z-10 mx-auto max-w-6xl px-4 py-28 sm:px-6 lg:px-8">
+    <div className="relative z-10 mx-auto max-w-6xl px-4 py-24 sm:px-6 lg:px-8">
       <motion.div {...reveal(0)} className="mb-14 text-center">
         <span className="brand-soft brand-text brand-border mb-4 inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium">
           {c.bentoEyebrow}
         </span>
-        <h2 className="mb-4 text-3xl font-black [color:var(--mk-text)] md:text-4xl">
+        <h2 className="mb-4 text-3xl font-black [color:var(--mk-text)] [font-family:var(--font-display)] md:text-4xl">
           {c.bentoTitle}
         </h2>
         <p className="mx-auto max-w-2xl text-lg [color:var(--mk-text-muted)]">{c.bentoSub}</p>

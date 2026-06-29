@@ -19,7 +19,7 @@ export function TestimonialsSection() {
         <motion.div
           initial={{ opacity: 0, y: 18 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-60px" }}
+          viewport={{ once: true, margin: "0px 0px 80px 0px", amount: 0.12 }}
           transition={{ duration: 0.5 }}
           className="mb-14 text-center"
         >
@@ -32,7 +32,7 @@ export function TestimonialsSection() {
               />
             ))}
           </div>
-          <h2 className="mb-4 text-3xl font-black [color:var(--mk-text)] md:text-4xl">
+          <h2 className="mb-4 text-3xl font-black [color:var(--mk-text)] [font-family:var(--font-display)] md:text-4xl">
             Was Anwälte über Subsumio sagen
           </h2>
           <p className="mx-auto max-w-2xl text-lg [color:var(--mk-text-muted)]">
@@ -46,7 +46,7 @@ export function TestimonialsSection() {
               key={t.author}
               initial={{ opacity: 0, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-50px" }}
+              viewport={{ once: true, margin: "0px 0px 80px 0px", amount: 0.12 }}
               transition={{ duration: 0.5, delay: i * 0.1, ease: EASE.out }}
               className="rounded-2xl border border-[color:var(--mk-border)] bg-[color:var(--mk-surface)] p-6"
               style={{ boxShadow: "var(--mk-card-shadow)" }}

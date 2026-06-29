@@ -136,11 +136,11 @@ export default function SuperbrainAdvantage({ lang }: { lang: Lang }) {
         <motion.div
           initial={{ opacity: 0, y: 18 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.25 }}
+          viewport={{ once: true, margin: "0px 0px 80px 0px", amount: 0.12 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
         >
           <p className="brand-text mb-4 font-mono text-xs tracking-wider uppercase">{t.eyebrow}</p>
-          <h2 className="mb-5 text-3xl leading-tight font-black [color:var(--mk-text)] md:text-5xl">
+          <h2 className="mb-5 text-3xl leading-tight font-black [color:var(--mk-text)] [font-family:var(--font-display)] md:text-5xl">
             {t.title}
           </h2>
           <p className="mb-8 text-base leading-relaxed [color:var(--mk-text-muted)] md:text-lg">
