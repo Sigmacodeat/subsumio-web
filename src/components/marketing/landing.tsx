@@ -71,19 +71,27 @@ export default function LandingPage({ lang }: { lang: Lang }) {
             />
             <div className="relative z-10">
               <motion.div
-                initial={reduce ? false : { scale: 0.8, opacity: 0, y: 12 }}
+                initial={reduce ? false : { scale: 0.85, opacity: 0, y: 10 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
-                transition={reduce ? { duration: 0 } : { type: "spring", stiffness: 220, damping: 18, delay: 0 }}
-                className="mb-6"
+                transition={reduce ? { duration: 0 } : { type: "spring", stiffness: 200, damping: 22, delay: 0 }}
+                className="mb-7"
               >
-                <SubsumioMark size={56} className="mx-auto" />
+                <div className="relative mx-auto w-fit">
+                  {/* Pulse glow ring */}
+                  <span className="pointer-events-none absolute inset-0 rounded-2xl bg-[var(--brand-secondary)] opacity-0 blur-2xl [animation:pulse-ring_3s_ease-in-out_infinite]" />
+                  <SubsumioMark size={48} className="mx-auto [animation:float-gentle_4s_ease-in-out_infinite]" />
+                </div>
               </motion.div>
               <motion.div
                 initial={reduce ? false : { opacity: 0, y: 12, scale: 0.96 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={reduce ? { duration: 0 } : { duration: 0.45, ease: EASE.out, delay: 0.15 }}
-                className="brand-border brand-soft brand-text mb-8 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium"
+                transition={reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.dramatic, delay: 0.15 }}
+                className="group relative mb-8 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium [border-color:var(--brand-border)] [background:var(--brand-soft)] [color:var(--brand-text)]"
               >
+                {/* Animated rotating border glow */}
+                <span className="pointer-events-none absolute -inset-[1px] z-[-1] overflow-hidden rounded-full opacity-0 transition-opacity duration-500 group-hover:opacity-100">
+                  <span className="animate-border-spin absolute inset-[-200%] rounded-full bg-[conic-gradient(from_0deg,transparent_0_340deg,var(--brand-secondary)_360deg)]" />
+                </span>
                 <span className="badge-pulse h-1.5 w-1.5 rounded-full bg-[var(--brand-secondary)]" />
                 {lang !== "en"
                   ? "KI-Kanzleisoftware für AT · DE · CH"
@@ -94,28 +102,19 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 style={{ fontFamily: "var(--font-display)" }}
               >
                 <SplitTextReveal
-                  splitBy="word"
-                  stagger={0.08}
-                  delay={0.15}
+                  stagger={0.14}
+                  delay={0.25}
                   as="span"
                   className="block"
+                  itemClassName="gradient-text-animated"
                 >
-                  Subsumio
-                </SplitTextReveal>
-                <SplitTextReveal
-                  splitBy="word"
-                  stagger={0.1}
-                  delay={0.4}
-                  as="span"
-                  className="gradient-text-animated block"
-                >
-                  {lang !== "en" ? "Das Kanzlei-Brain." : "The firm brain."}
+                  {lang !== "en" ? "Subsumio\nDas Kanzlei-Brain." : "Subsumio\nThe firm brain."}
                 </SplitTextReveal>
               </h1>
               <motion.p
                 initial={reduce ? false : { opacity: 0, y: 16, filter: "blur(6px)" }}
                 animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                transition={reduce ? { duration: 0 } : { duration: 0.6, ease: EASE.out, delay: 0.6 }}
+                transition={reduce ? { duration: 0 } : { duration: 0.7, ease: EASE.dramatic, delay: 0.8 }}
                 className="mx-auto mb-12 max-w-2xl text-lg leading-relaxed [color:var(--mk-text-muted)] md:text-xl"
               >
                 {t.sub}
@@ -123,7 +122,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
               <motion.div
                 initial={reduce ? false : { opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.out, delay: 0.75 }}
+                transition={reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.dramatic, delay: 0.95 }}
                 className="mb-4 flex flex-col justify-center gap-4 sm:flex-row"
               >
                 <MagneticButton strength={0.25}>
@@ -142,7 +141,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
               <motion.p
                 initial={reduce ? false : { opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.out, delay: 0.85 }}
+                transition={reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.dramatic, delay: 1.05 }}
                 className="mb-4 text-xs [color:var(--mk-text-subtle)]"
               >
                 {lang !== "en"

@@ -574,17 +574,17 @@ export function MagneticCard({ children, className = "", lift = 6, tilt = 3 }: M
 }
 
 // ---------------------------------------------------------------------------
-// SplitTextReveal — mask-reveal + blur-to-focus word stagger
-// Professional SaaS pattern (Linear/Stripe/Vercel) — "deliberate, measured
-// authority" suited for legal-tech. No flashy rotateX; instead each line
-// slides up from behind an overflow-hidden mask while words blur-to-focus.
+// SplitTextReveal — agency-grade line-by-line mask reveal
+// Premium SaaS pattern (Linear, Stripe, Vercel, Raycast). Each line sits in
+// its own overflow-hidden mask and the text slides up from y:100% while
+// blurring into focus. Conveys "deliberate, measured authority" — ideal for
+// legal-tech brands that must feel credible, not gimmicky.
 // ---------------------------------------------------------------------------
 
 interface SplitTextRevealProps {
   children: string;
   className?: string;
   itemClassName?: string;
-  splitBy?: "char" | "word";
   delay?: number;
   stagger?: number;
   as?: "h1" | "h2" | "h3" | "p" | "span";
@@ -595,17 +595,13 @@ export function SplitTextReveal({
   children,
   className = "",
   itemClassName = "",
-  splitBy = "word",
   delay = 0,
-  stagger = 0.06,
+  stagger = 0.12,
   as: Tag = "span",
   once = true,
 }: SplitTextRevealProps) {
   const reduce = useReducedMotion();
-  const items =
-    splitBy === "char"
-      ? children.split("").map((c) => (c === " " ? "\u00A0" : c))
-      : children.split(" ");
+  const lines = children.split("\n");
 
   const container: Variants = {
     hidden: {},
@@ -617,44 +613,58 @@ export function SplitTextReveal({
     },
   };
 
-  const item: Variants = {
+  const line: Variants = {
+    hidden: {},
+    visible: {
+      transition: {
+        staggerChildren: reduce ? 0 : 0.04,
+        delayChildren: 0,
+      },
+    },
+  };
+
+  const word: Variants = {
     hidden: {
       opacity: 0,
-      y: reduce ? 0 : "0.3em",
-      filter: reduce ? "blur(0px)" : "blur(8px)",
+      y: reduce ? 0 : "100%",
+      filter: reduce ? "blur(0px)" : "blur(6px)",
     },
     visible: {
       opacity: 1,
       y: 0,
       filter: "blur(0px)",
-      transition: { duration: 0.6, ease: EASE.out },
+      transition: { duration: 0.75, ease: EASE.dramatic },
     },
   };
 
   const MotionTag = motion[Tag as keyof typeof motion] as typeof motion.span;
 
   return (
-    <span className="block overflow-hidden">
-      <MotionTag
-        initial="hidden"
-        whileInView="visible"
-        viewport={VIEWPORT.hero}
-        variants={container}
-        className={className}
-        aria-label={children}
-      >
-        {items.map((itemText, i) => (
+    <MotionTag
+      initial="hidden"
+      whileInView="visible"
+      viewport={VIEWPORT.hero}
+      variants={container}
+      className={className}
+      aria-label={children}
+    >
+      {lines.map((lineText, lineIdx) => (
+        <span key={lineIdx} className="block overflow-hidden">
           <motion.span
-            key={i}
-            variants={item}
-            className={`inline-block ${itemClassName}`}
+            variants={line}
+            className={`block ${itemClassName}`}
+            aria-hidden="true"
           >
-            {itemText}
-            {splitBy === "word" && i < items.length - 1 ? "\u00A0" : ""}
+            {lineText.split(" ").map((w, i) => (
+              <motion.span key={i} variants={word} className="inline-block">
+                {w}
+                {i < lineText.split(" ").length - 1 ? "\u00A0" : ""}
+              </motion.span>
+            ))}
           </motion.span>
-        ))}
-      </MotionTag>
-    </span>
+        </span>
+      ))}
+    </MotionTag>
   );
 }
 
