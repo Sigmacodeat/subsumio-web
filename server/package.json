@@ -112,7 +112,7 @@
     "@modelcontextprotocol/sdk": "1.29.0",
     "@npeersab/msgreader": "^4.4.0",
     "ai": "^6.0.168",
-    "chokidar": "^4.0.3",
+    "chokidar": "^5.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "eventsource-parser": "^3.0.8",
