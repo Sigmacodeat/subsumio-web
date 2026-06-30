@@ -215,7 +215,7 @@ export function WhatsAppSpotlight({ lang, children }: { lang: Lang; children?: R
   return (
     <section
       data-tone="dark"
-      className="relative z-10 overflow-hidden border-y [border-color:var(--mk-border)] px-4 py-24 sm:px-6 lg:px-8"
+      className="relative z-10 overflow-hidden px-4 py-24 sm:px-6 lg:px-8"
       style={{ background: "linear-gradient(180deg, rgba(13,25,45,0.35), var(--mk-bg))" }}
     >
       <div className="mx-auto grid max-w-6xl items-center gap-14 lg:grid-cols-2">

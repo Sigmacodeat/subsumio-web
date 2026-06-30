@@ -267,7 +267,7 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
       </section>
 
       {/* Store preview */}
-      <section className="relative z-10 border-y [border-color:var(--mk-border)] px-4 py-20 [background:var(--mk-surface)] sm:px-6 lg:px-8">
+      <section className="relative z-10 px-4 py-20 [background:var(--mk-surface)] sm:px-6 lg:px-8">
         <div className="mx-auto max-w-3xl text-center">
           <h2 className="mb-4 text-2xl font-black [color:var(--mk-text)] md:text-3xl">
             {t.storesTitle}
@@ -336,7 +336,10 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
       </section>
 
       {/* CTA */}
-      <section className="relative z-10 mx-auto max-w-3xl border-t [border-color:var(--mk-border)] px-4 py-28 text-center sm:px-6 lg:px-8">
+      <section
+        data-tone="dark"
+        className="relative z-10 mx-auto max-w-3xl px-4 py-28 text-center sm:px-6 lg:px-8"
+      >
         <SubsumioMark size={56} className="mx-auto mb-7" />
         <h2 className="mb-4 text-3xl font-black [color:var(--mk-text)] md:text-4xl">
           {t.ctaTitle}

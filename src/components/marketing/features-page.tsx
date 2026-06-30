@@ -867,7 +867,7 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
       </section>
 
       {/* FAQ */}
-      <section className="relative z-10 border-y [border-color:var(--mk-border)] px-4 py-20 [background:var(--mk-surface)] sm:px-6 lg:px-8">
+      <section className="relative z-10 px-4 py-20 [background:var(--mk-surface)] sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
@@ -883,8 +883,11 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
       </section>
 
       {/* CTA */}
-      <section className="relative z-10 mx-auto max-w-3xl border-t [border-color:var(--mk-border)] px-4 py-28 text-center sm:px-6 lg:px-8">
-        <SubsumioMark size={56} className="glow mx-auto mb-7 rounded-[15px]" />
+      <section
+        data-tone="dark"
+        className="relative z-10 mx-auto max-w-3xl px-4 py-28 text-center sm:px-6 lg:px-8"
+      >
+        <SubsumioMark size={56} className="mx-auto mb-7 rounded-[15px]" />
         <h2 className="mb-4 text-3xl font-black [color:var(--mk-text)] md:text-4xl">
           {t.ctaTitle}
         </h2>

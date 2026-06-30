@@ -135,7 +135,7 @@ export default function PartnersPage({ lang }: { lang: Lang }) {
       </section>
 
       {/* Earnings illustration */}
-      <section className="relative z-10 border-y [border-color:var(--mk-border)] px-4 py-20 [background:var(--mk-surface)] sm:px-6 lg:px-8">
+      <section className="relative z-10 px-4 py-20 [background:var(--mk-surface)] sm:px-6 lg:px-8">
         <Reveal variant="up" className="mx-auto max-w-3xl text-center">
           <TrendingUp size={28} className="mx-auto mb-6 [color:var(--signal-amber)]" />
           <h2 className="mb-5 text-2xl font-black [color:var(--mk-text)] md:text-3xl">
@@ -171,7 +171,7 @@ export default function PartnersPage({ lang }: { lang: Lang }) {
       </section>
 
       {/* FAQ */}
-      <section className="relative z-10 border-y [border-color:var(--mk-border)] px-4 py-20 [background:var(--mk-surface)] sm:px-6 lg:px-8">
+      <section className="relative z-10 px-4 py-20 [background:var(--mk-surface)] sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <Reveal variant="up">
             <SectionHeading title={t.faqTitle} />
@@ -183,7 +183,10 @@ export default function PartnersPage({ lang }: { lang: Lang }) {
       </section>
 
       {/* CTA */}
-      <section className="relative z-10 mx-auto max-w-3xl px-4 py-28 text-center sm:px-6 lg:px-8">
+      <section
+        data-tone="dark"
+        className="relative z-10 mx-auto max-w-3xl px-4 py-28 text-center sm:px-6 lg:px-8"
+      >
         <Reveal variant="upLg">
           <h2 className="mb-4 text-3xl font-black [color:var(--mk-text)] md:text-4xl">
             {t.ctaTitle}

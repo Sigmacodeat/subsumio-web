@@ -11,13 +11,13 @@ export function TestimonialsSection() {
   if (TESTIMONIALS.length === 0) return null;
   return (
     <section
-      data-tone="slate"
+      data-tone="light"
       className="relative z-10 px-4 py-24 sm:px-6 lg:px-8"
       style={{ background: "var(--mk-bg)" }}
     >
       <div className="mx-auto max-w-6xl">
         <motion.div
-          initial={{ opacity: 0, y: 18 }}
+          initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "0px 0px 80px 0px", amount: 0.12 }}
           transition={{ duration: 0.5 }}

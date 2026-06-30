@@ -950,7 +950,7 @@ function BrainVisualization({ t }: { t: (typeof copy)["de"] }) {
 
 function StatsBand({ t }: { t: (typeof copy)["de"] }) {
   return (
-    <Section tone="light" className="border-y [border-color:var(--mk-border)] px-6 py-16">
+    <Section tone="light" className="px-6 py-16">
       <div className="mx-auto grid max-w-7xl grid-cols-2 gap-8 md:grid-cols-4">
         {t.stats.map((stat, i) => (
           <motion.div
@@ -1652,7 +1652,7 @@ function UseCasesSection({ t, lang }: { t: (typeof copy)["de"]; lang: Lang }) {
 function TrustSection({ t, lang }: { t: (typeof copy)["de"]; lang: Lang }) {
   return (
     <Section
-      tone="slate"
+      tone="light"
       className="px-6 py-24"
       aria-label={lang === "en" ? "Compliance & integrations" : "Compliance & Integrationen"}
     >
@@ -1806,7 +1806,7 @@ function StickyCTA({ t, lang }: { t: (typeof copy)["de"]; lang: Lang }) {
 
 function CTASection({ t, lang }: { t: (typeof copy)["de"]; lang: Lang }) {
   return (
-    <Section tone="slate" className="px-6 py-24" aria-label="Call to action">
+    <Section tone="dark" className="px-6 py-24" aria-label="Call to action">
       <div className="brand-glow-bg absolute inset-x-0 top-1/2 h-72 -translate-y-1/2 opacity-30 blur-3xl" />
       <div className="relative z-10 mx-auto max-w-3xl text-center">
         <motion.div

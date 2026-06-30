@@ -159,11 +159,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
         </Section>
 
         {/* Stats — subtle surface band on the light page */}
-        <Section
-          tone="light"
-          className="border-y px-4 py-20 sm:px-6 lg:px-8"
-          aria-label="Key metrics"
-        >
+        <Section tone="light" className="px-4 py-20 sm:px-6 lg:px-8" aria-label="Key metrics">
           <motion.div {...reveal} className="mx-auto max-w-4xl">
             <StaggerContainer
               className="mb-6 grid grid-cols-2 gap-8 text-center md:grid-cols-4"
@@ -197,11 +193,11 @@ export default function LandingPage({ lang }: { lang: Lang }) {
           </motion.div>
         </Section>
 
-        {/* Pain — problem hook (light, border-y separates from stats above) */}
+        {/* Pain — problem hook */}
         {"pains" in t && t.pains && (
           <Section
             tone="light"
-            className="border-y px-4 py-24 sm:px-6 lg:px-8"
+            className="px-4 py-24 sm:px-6 lg:px-8"
             aria-label={lang === "en" ? "The cost of doing nothing" : "Was es dich kostet"}
           >
             <motion.div {...reveal} className="mx-auto max-w-5xl">
@@ -279,9 +275,9 @@ export default function LandingPage({ lang }: { lang: Lang }) {
           </div>
         </Section>
 
-        {/* Dashboard in action — product visual showing features in action */}
+        {/* Dashboard in action — product visual (light section, mockup has internal dark tone) */}
         <Section
-          tone="slate"
+          tone="light"
           className="px-4 py-24 sm:px-6 lg:px-8"
           aria-label={lang === "en" ? "Dashboard in action" : "Dashboard in Aktion"}
         >
@@ -311,8 +307,8 @@ export default function LandingPage({ lang }: { lang: Lang }) {
 
         {/* Use cases — who it's for (slate for rhythm) */}
         <Section
-          tone="slate"
-          className="border-y px-4 py-24 sm:px-6 lg:px-8"
+          tone="light"
+          className="px-4 py-24 sm:px-6 lg:px-8"
           aria-label={lang === "en" ? "Real workflows" : "Praxis-Workflows"}
         >
           <div className="mx-auto max-w-7xl">
@@ -351,7 +347,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
         {/* Comparison table — Subsumio vs. other AI tools (light, before pricing to justify) */}
         <Section
           tone="light"
-          className="border-y px-4 py-24 sm:px-6 lg:px-8"
+          className="px-4 py-24 sm:px-6 lg:px-8"
           aria-label={lang === "en" ? "Comparison" : "Vergleich"}
         >
           <motion.div {...reveal} className="mx-auto max-w-5xl">
@@ -430,11 +426,11 @@ export default function LandingPage({ lang }: { lang: Lang }) {
           </motion.div>
         </Section>
 
-        {/* FAQ — slate band for tone rhythm (breaks light→light→light) */}
-        <Section tone="slate" className="px-4 py-24 sm:px-6 lg:px-8" aria-label="FAQ">
+        {/* FAQ — light band, clean flow into the dark CTA close */}
+        <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8" aria-label="FAQ">
           <motion.div {...reveal} className="mx-auto max-w-5xl">
             <SectionHeading title={t.faqTitle} />
-            <AnimatedFaqList items={t.faq} tone="slate" />
+            <AnimatedFaqList items={t.faq} tone="light" />
           </motion.div>
         </Section>
 

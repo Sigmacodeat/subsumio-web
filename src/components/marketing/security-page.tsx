@@ -70,7 +70,7 @@ export default function SecurityPage({ lang }: { lang: Lang }) {
       </section>
 
       {/* Hosting options */}
-      <section className="relative z-10 border-y [border-color:var(--mk-border)] px-4 py-16 [background:var(--mk-surface)] sm:px-6 lg:px-8">
+      <section className="relative z-10 px-4 py-16 [background:var(--mk-surface)] sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <Reveal variant="up">
             <SectionHeading title={t.hostingTitle} sub={t.hostingSub} />
@@ -160,7 +160,7 @@ export default function SecurityPage({ lang }: { lang: Lang }) {
       </section>
 
       {/* FAQ */}
-      <section className="relative z-10 border-y [border-color:var(--mk-border)] px-4 py-20 [background:var(--mk-surface)] sm:px-6 lg:px-8">
+      <section className="relative z-10 px-4 py-20 [background:var(--mk-surface)] sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <Reveal variant="up">
             <SectionHeading title={t.faqTitle} />
@@ -183,7 +183,7 @@ export default function SecurityPage({ lang }: { lang: Lang }) {
       </section>
 
       {/* CTA */}
-      <section className="relative z-10 px-4 py-28 sm:px-6 lg:px-8">
+      <section data-tone="dark" className="relative z-10 px-4 py-28 sm:px-6 lg:px-8">
         <Reveal variant="upLg" className="mx-auto max-w-3xl text-center">
           <h2 className="mb-4 text-[clamp(1.75rem,7.5vw,2.25rem)] leading-tight font-black text-balance [color:var(--mk-text)] md:text-4xl">
             {t.ctaTitle}

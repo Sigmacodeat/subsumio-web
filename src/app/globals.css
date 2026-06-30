@@ -347,14 +347,9 @@
     stroke 300ms ease;
 }
 
-/* Section spacing rhythm — remove double borders between adjacent sections
-   of the same tone. Each section handles its own top border; the first child
-   inside a tone group suppresses it. */
-[data-tone="light"] + [data-tone="light"],
-[data-tone="slate"] + [data-tone="slate"],
-[data-tone="dark"] + [data-tone="dark"] {
-  border-top: none !important;
-}
+/* Section spacing rhythm — adjacent same-tone sections blend seamlessly
+   via background-color crossfade (no borders). The --mk-surface token
+   differs slightly from --mk-bg to create subtle band separation. */
 
 /* LIGHT theme — scoped to the authenticated dashboard shell.
    WCAG-AA verified on #ffffff: text 16.9:1, muted 6.4:1, subtle 4.7:1.

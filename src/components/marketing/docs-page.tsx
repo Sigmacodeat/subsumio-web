@@ -142,7 +142,7 @@ export default function DocsPage({ lang }: { lang: Lang }) {
 
   return (
     <div
-      data-tone="dark"
+      data-tone="light"
       className="relative min-h-screen overflow-x-hidden [background:var(--mk-bg)]"
       lang={lang}
     >
@@ -239,6 +239,7 @@ export default function DocsPage({ lang }: { lang: Lang }) {
       {/* CTA */}
       <motion.section
         {...reveal}
+        data-tone="dark"
         className="relative z-10 mx-auto max-w-3xl px-4 py-28 text-center sm:px-6 lg:px-8"
       >
         <SubsumioMark size={56} className="mx-auto mb-7" />

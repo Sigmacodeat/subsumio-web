@@ -87,7 +87,7 @@ export default function VerticalPage({
 
   return (
     <div
-      data-tone="slate"
+      data-tone="light"
       className="min-h-screen overflow-x-hidden [background:var(--mk-bg)]"
       lang={lang}
       style={styleForIndustry(industry)}

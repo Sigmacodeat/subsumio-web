@@ -125,14 +125,14 @@ export default function SuperbrainAdvantage({ lang }: { lang: Lang }) {
 
   return (
     <section
-      data-tone="slate"
+      data-tone="light"
       aria-label={lang !== "en" ? "Die Subsumio-Engine" : "The Subsumio engine"}
-      className="relative z-10 overflow-hidden border-y [border-color:var(--mk-border)] px-4 py-24 [background:var(--mk-surface)] sm:px-6 lg:px-8"
+      className="relative z-10 overflow-hidden px-4 py-24 [background:var(--mk-surface)] sm:px-6 lg:px-8"
     >
       <div className="brand-glow-bg absolute inset-x-0 top-16 h-72 opacity-25 blur-3xl" />
       <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[1fr_1.05fr]">
         <motion.div
-          initial={{ opacity: 0, y: 18 }}
+          initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "0px 0px 80px 0px", amount: 0.12 }}
           transition={{ duration: 0.5, ease: "easeOut" }}

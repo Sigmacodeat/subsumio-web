@@ -219,7 +219,7 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
       </Section>
 
       {/* CTA */}
-      <Section tone="light" className="px-4 py-28 sm:px-6 lg:px-8">
+      <Section tone="dark" className="px-4 py-28 sm:px-6 lg:px-8">
         <motion.div
           className="mx-auto max-w-3xl text-center"
           initial={{ opacity: 0, y: 20 }}

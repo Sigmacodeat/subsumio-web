@@ -19,9 +19,9 @@ import { PhoneCopilot } from "./subsumio-showcase";
 import { Reveal, EASE } from "./motion-system";
 
 const reveal = {
-  initial: { opacity: 0, y: 22 },
+  initial: { opacity: 0, y: 24 },
   whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true, margin: "-60px" },
+  viewport: { once: true, margin: "0px 0px 80px 0px", amount: 0.12 },
   transition: { duration: 0.5, ease: EASE.out },
 };
 
@@ -30,7 +30,7 @@ const reveal = {
 function Shell({ lang, children }: { lang: Lang; children: React.ReactNode }) {
   return (
     <div
-      data-tone="slate"
+      data-tone="light"
       className="min-h-screen overflow-x-hidden [background:var(--mk-bg)]"
       lang={lang}
       style={styleForIndustry("legal")}

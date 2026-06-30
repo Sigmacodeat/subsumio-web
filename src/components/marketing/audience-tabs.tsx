@@ -25,7 +25,7 @@ export default function AudienceTabs({ lang }: { lang: Lang }) {
   const content = SOLUTIONS[lang][active];
 
   return (
-    <section data-tone="light" className="relative z-10 border-y px-4 py-24 sm:px-6 lg:px-8">
+    <section data-tone="light" className="relative z-10 px-4 py-24 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-5xl">
         <div className="mb-10 flex flex-wrap items-center justify-center gap-2">
           {SOLUTION_SLUGS.map((slug) => {
