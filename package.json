@@ -95,7 +95,7 @@
   "devDependencies": {
     "@axe-core/playwright": "^4.10.0",
     "@capacitor/android": "^7.0.0",
-    "@capacitor/cli": "^7.0.0",
+    "@capacitor/cli": "^8.4.1",
     "@capacitor/ios": "^7.0.0",
     "@chromatic-com/storybook": "^3.0.0",
     "@playwright/test": "^1.60.0",
