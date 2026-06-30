@@ -31,14 +31,14 @@ export default function SecurityPage({ lang }: { lang: Lang }) {
             {t.badge}
           </span>
           <ClipReveal delay={0.1} duration={0.7} direction="up">
-            <h1 className="mb-6 text-[clamp(2.5rem,10vw,3.75rem)] leading-[1.07] font-black tracking-tight text-balance [color:var(--mk-text)] md:text-5xl">
+            <h1 className="mb-6 text-[clamp(2.5rem,7vw,4rem)] leading-[1.08] font-black tracking-tight text-balance [color:var(--mk-text)]">
               {t.h1a}
               <span className="sr-only"> </span>
               <br />
               <span className="brand-text">{t.h1b}</span>
             </h1>
           </ClipReveal>
-          <p className="mx-auto max-w-3xl text-lg leading-relaxed [color:var(--mk-text-muted)]">
+          <p className="mx-auto max-w-3xl text-base leading-relaxed [color:var(--mk-text-muted)] md:text-lg">
             {t.sub}
           </p>
         </Reveal>
@@ -185,10 +185,10 @@ export default function SecurityPage({ lang }: { lang: Lang }) {
       {/* CTA */}
       <section data-tone="dark" className="relative z-10 px-4 py-28 sm:px-6 lg:px-8">
         <Reveal variant="upLg" className="mx-auto max-w-3xl text-center">
-          <h2 className="mb-4 text-[clamp(1.75rem,7.5vw,2.25rem)] leading-tight font-black text-balance [color:var(--mk-text)] md:text-4xl">
+          <h2 className="mb-4 text-[clamp(1.75rem,7.5vw,2.25rem)] leading-tight font-black text-balance [color:var(--mk-text)] md:text-3xl">
             {t.ctaTitle}
           </h2>
-          <p className="mb-8 text-lg [color:var(--mk-text-muted)]">{t.ctaSub}</p>
+          <p className="mb-8 text-base [color:var(--mk-text-muted)] md:text-lg">{t.ctaSub}</p>
           <Link href={p(lang, "/signup")}>
             <Button size="xl" variant="primary">
               {t.ctaButton} <ArrowRight size={18} />

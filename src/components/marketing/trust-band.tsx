@@ -158,10 +158,12 @@ export default function TrustBand({ lang, industry }: { lang: Lang; industry?: s
             />
             {c.eyebrow}
           </span>
-          <h2 className="mb-4 [font-family:var(--font-display)] text-3xl font-black [color:var(--mk-text)] md:text-4xl">
+          <h2 className="mb-4 [font-family:var(--font-display)] text-2xl font-black [color:var(--mk-text)] md:text-3xl">
             {c.title}
           </h2>
-          <p className="mx-auto max-w-2xl text-lg [color:var(--mk-text-muted)]">{sub}</p>
+          <p className="mx-auto max-w-2xl text-base [color:var(--mk-text-muted)] md:text-lg">
+            {sub}
+          </p>
         </motion.div>
 
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">

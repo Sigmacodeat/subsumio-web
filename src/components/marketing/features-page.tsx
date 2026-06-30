@@ -261,7 +261,9 @@ function HowItWorks({ lang }: { lang: Lang }) {
         className="mb-14 text-center"
       >
         <h2 className="mb-3 text-2xl font-black [color:var(--mk-text)] md:text-3xl">{h.title}</h2>
-        <p className="mx-auto max-w-2xl text-base [color:var(--mk-text-muted)]">{h.sub}</p>
+        <p className="mx-auto max-w-2xl text-base [color:var(--mk-text-muted)] md:text-lg">
+          {h.sub}
+        </p>
       </motion.div>
 
       <div className="relative grid gap-5 md:grid-cols-2 lg:grid-cols-4">
@@ -406,7 +408,7 @@ function FeatureCommandCenter({ lang }: { lang: Lang }) {
           <p className="brand-text mb-3 text-xs font-semibold tracking-[0.16em] uppercase">
             {UI_STRINGS[lang].inDashboard}
           </p>
-          <h2 className="mb-4 text-3xl leading-tight font-black text-balance [color:var(--mk-text)] md:text-4xl">
+          <h2 className="mb-4 text-2xl leading-tight font-black text-balance [color:var(--mk-text)] md:text-3xl">
             {lang !== "en"
               ? "Jede Funktion läuft als Kanzlei-Workflow."
               : "Features run as a legal workflow."}
@@ -584,14 +586,14 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
               {t.badge}
             </div>
             <ClipReveal delay={0.1} duration={0.7} direction="up">
-              <h1 className="mb-6 text-[clamp(2.5rem,10vw,3.75rem)] leading-[1.08] font-black tracking-tight text-balance [color:var(--mk-text)] md:text-6xl">
+              <h1 className="mb-6 text-[clamp(2.5rem,7vw,4rem)] leading-[1.08] font-black tracking-tight text-balance [color:var(--mk-text)]">
                 {t.h1a}
                 <span className="sr-only"> </span>
                 <br />
                 <span className="gradient-text glow-text">{t.h1b}</span>
               </h1>
             </ClipReveal>
-            <p className="mx-auto mb-8 max-w-xl text-lg leading-relaxed [color:var(--mk-text-muted)] md:text-xl lg:mx-0">
+            <p className="mx-auto mb-8 max-w-xl text-base leading-relaxed [color:var(--mk-text-muted)] md:text-lg lg:mx-0">
               {t.sub}
             </p>
             <div className="flex flex-wrap justify-center gap-3 lg:justify-start">
@@ -888,10 +890,10 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
         className="relative z-10 mx-auto max-w-3xl px-4 py-28 text-center sm:px-6 lg:px-8"
       >
         <SubsumioMark size={56} className="mx-auto mb-7 rounded-[15px]" />
-        <h2 className="mb-4 text-3xl font-black [color:var(--mk-text)] md:text-4xl">
+        <h2 className="mb-4 text-2xl font-black [color:var(--mk-text)] md:text-3xl">
           {t.ctaTitle}
         </h2>
-        <p className="mb-10 text-lg [color:var(--mk-text-muted)]">{t.ctaSub}</p>
+        <p className="mb-10 text-base [color:var(--mk-text-muted)] md:text-lg">{t.ctaSub}</p>
         <Link href={p(lang, "/signup")}>
           <Button size="xl" variant="primary">
             {t.ctaButton} <ArrowRight size={18} />

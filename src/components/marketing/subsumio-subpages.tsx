@@ -64,12 +64,12 @@ function Hero({
           <span className="brand-border brand-soft brand-text mb-7 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold">
             <span className="h-1.5 w-1.5 rounded-full bg-[var(--brand-secondary)]" /> {eyebrow}
           </span>
-          <h1 className="mb-5 text-[clamp(2.5rem,10vw,3.75rem)] leading-[1.07] font-black tracking-tight [color:var(--mk-text)] md:text-6xl">
+          <h1 className="mb-5 text-[clamp(2.5rem,7vw,4rem)] leading-[1.08] font-black tracking-tight [color:var(--mk-text)]">
             {title}
             <br />
             <span className="gradient-text">{claim}</span>
           </h1>
-          <p className="mx-auto mb-9 max-w-2xl text-lg leading-relaxed [color:var(--mk-text-muted)]">
+          <p className="mx-auto mb-9 max-w-2xl text-base leading-relaxed [color:var(--mk-text-muted)] md:text-lg">
             {sub}
           </p>
           <div className="flex flex-col justify-center gap-3 sm:flex-row">
@@ -106,8 +106,8 @@ function CtaClose({
     <Section tone="dark" className="px-4 py-24 text-center sm:px-6 lg:px-8">
       <Reveal variant="upLg" className="mx-auto max-w-3xl">
         <SubsumioMark size={56} className="mx-auto mb-7" />
-        <h2 className="mb-4 text-3xl font-black [color:var(--mk-text)] md:text-4xl">{title}</h2>
-        <p className="mb-9 text-lg [color:var(--mk-text-muted)]">{sub}</p>
+        <h2 className="mb-4 text-2xl font-black [color:var(--mk-text)] md:text-3xl">{title}</h2>
+        <p className="mb-9 text-base [color:var(--mk-text-muted)] md:text-lg">{sub}</p>
         <Link href={href}>
           <Button size="xl" variant="primary">
             {label} <ArrowRight size={18} />

@@ -138,7 +138,7 @@ export default function SuperbrainAdvantage({ lang }: { lang: Lang }) {
           transition={{ duration: 0.5, ease: "easeOut" }}
         >
           <p className="brand-text mb-4 font-mono text-xs tracking-wider uppercase">{t.eyebrow}</p>
-          <h2 className="mb-5 [font-family:var(--font-display)] text-3xl leading-tight font-black [color:var(--mk-text)] md:text-5xl">
+          <h2 className="mb-5 [font-family:var(--font-display)] text-2xl leading-tight font-black [color:var(--mk-text)] md:text-3xl">
             {t.title}
           </h2>
           <p className="mb-8 text-base leading-relaxed [color:var(--mk-text-muted)] md:text-lg">

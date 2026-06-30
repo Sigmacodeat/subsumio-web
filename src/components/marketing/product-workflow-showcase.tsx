@@ -88,7 +88,7 @@ export default function ProductWorkflowShowcase({
           transition={{ duration: 0.5, ease: "easeOut" }}
         >
           <p className="brand-text mb-4 font-mono text-xs tracking-wider uppercase">{c.eyebrow}</p>
-          <h2 className="mb-5 [font-family:var(--font-display)] text-3xl leading-tight font-black [color:var(--mk-text)] md:text-5xl">
+          <h2 className="mb-5 [font-family:var(--font-display)] text-2xl leading-tight font-black [color:var(--mk-text)] md:text-3xl">
             {brand}
             <br />
             <span className="gradient-text glow-text">{signature}</span>

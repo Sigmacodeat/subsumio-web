@@ -826,7 +826,7 @@ function HeroSection({ t, lang }: { t: (typeof copy)["de"]; lang: Lang }) {
           initial={reduce ? false : { opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={reduce ? { duration: 0 } : { duration: 0.6, ease: EASE.dramatic, delay: 0.1 }}
-          className="mb-6 [font-family:var(--font-display)] text-4xl leading-[1.1] font-black [color:var(--mk-text)] md:text-6xl lg:text-7xl"
+          className="mb-6 [font-family:var(--font-display)] text-[clamp(2.5rem,7vw,4rem)] leading-[1.08] font-black [color:var(--mk-text)]"
         >
           {t.hero.title}
         </motion.h1>
@@ -835,7 +835,7 @@ function HeroSection({ t, lang }: { t: (typeof copy)["de"]; lang: Lang }) {
           initial={reduce ? false : { opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={reduce ? { duration: 0 } : { duration: 0.55, ease: EASE.out, delay: 0.25 }}
-          className="mx-auto mb-10 max-w-3xl text-base leading-relaxed [color:var(--mk-text-muted)] md:text-xl"
+          className="mx-auto mb-10 max-w-3xl text-base leading-relaxed [color:var(--mk-text-muted)] md:text-lg"
         >
           {t.hero.sub}
         </motion.p>
@@ -1004,7 +1004,7 @@ function OthersSection({ t }: { t: (typeof copy)["de"] }) {
             </span>
           </motion.div>
           <ClipReveal>
-            <h2 className="mb-4 [font-family:var(--font-display)] text-3xl font-black [color:var(--mk-text)] md:text-5xl">
+            <h2 className="mb-4 [font-family:var(--font-display)] text-2xl font-black [color:var(--mk-text)] md:text-3xl">
               {t.othersTitle}
             </h2>
           </ClipReveal>
@@ -1111,7 +1111,7 @@ function OursSection({ t }: { t: (typeof copy)["de"] }) {
             </span>
           </motion.div>
           <ClipReveal>
-            <h2 className="mb-4 [font-family:var(--font-display)] text-3xl font-black [color:var(--mk-text)] md:text-5xl">
+            <h2 className="mb-4 [font-family:var(--font-display)] text-2xl font-black [color:var(--mk-text)] md:text-3xl">
               {t.oursTitle}
             </h2>
           </ClipReveal>
@@ -1231,7 +1231,7 @@ function ArchitectureSection({ t }: { t: (typeof copy)["de"] }) {
       <div className="mx-auto max-w-6xl">
         <div className="mb-16 text-center">
           <ClipReveal>
-            <h2 className="mb-4 [font-family:var(--font-display)] text-3xl font-black [color:var(--mk-text)] md:text-5xl">
+            <h2 className="mb-4 [font-family:var(--font-display)] text-2xl font-black [color:var(--mk-text)] md:text-3xl">
               {t.architectureTitle}
             </h2>
           </ClipReveal>
@@ -1319,7 +1319,7 @@ function DreamCycleSection({ t }: { t: (typeof copy)["de"] }) {
       <div className="relative z-10 mx-auto max-w-6xl">
         <div className="mb-16 text-center">
           <ClipReveal>
-            <h2 className="mb-4 [font-family:var(--font-display)] text-3xl font-black [color:var(--mk-text)] md:text-5xl">
+            <h2 className="mb-4 [font-family:var(--font-display)] text-2xl font-black [color:var(--mk-text)] md:text-3xl">
               {t.cycleTitle}
             </h2>
           </ClipReveal>
@@ -1404,7 +1404,7 @@ function CompareSection({ t }: { t: (typeof copy)["de"] }) {
       <div className="mx-auto max-w-5xl">
         <div className="mb-16 text-center">
           <ClipReveal>
-            <h2 className="mb-4 [font-family:var(--font-display)] text-3xl font-black [color:var(--mk-text)] md:text-5xl">
+            <h2 className="mb-4 [font-family:var(--font-display)] text-2xl font-black [color:var(--mk-text)] md:text-3xl">
               {t.compareTitle}
             </h2>
           </ClipReveal>
@@ -1487,7 +1487,7 @@ function FineTuneSection({ t }: { t: (typeof copy)["de"] }) {
             </span>
           </motion.div>
           <ClipReveal>
-            <h2 className="mb-4 [font-family:var(--font-display)] text-3xl font-black [color:var(--mk-text)] md:text-5xl">
+            <h2 className="mb-4 [font-family:var(--font-display)] text-2xl font-black [color:var(--mk-text)] md:text-3xl">
               {t.finetuneTitle}
             </h2>
           </ClipReveal>
@@ -1555,7 +1555,7 @@ function PrivacySection({ t }: { t: (typeof copy)["de"] }) {
       <div className="mx-auto max-w-6xl">
         <div className="mb-16 text-center">
           <ClipReveal>
-            <h2 className="mb-4 [font-family:var(--font-display)] text-3xl font-black [color:var(--mk-text)] md:text-5xl">
+            <h2 className="mb-4 [font-family:var(--font-display)] text-2xl font-black [color:var(--mk-text)] md:text-3xl">
               {t.privacyTitle}
             </h2>
           </ClipReveal>
@@ -1600,7 +1600,7 @@ function UseCasesSection({ t, lang }: { t: (typeof copy)["de"]; lang: Lang }) {
       <div className="mx-auto max-w-6xl">
         <div className="mb-16 text-center">
           <ClipReveal>
-            <h2 className="mb-4 [font-family:var(--font-display)] text-3xl font-black [color:var(--mk-text)] md:text-5xl">
+            <h2 className="mb-4 [font-family:var(--font-display)] text-2xl font-black [color:var(--mk-text)] md:text-3xl">
               {t.useCasesTitle}
             </h2>
           </ClipReveal>
@@ -1659,7 +1659,7 @@ function TrustSection({ t, lang }: { t: (typeof copy)["de"]; lang: Lang }) {
       <div className="mx-auto max-w-6xl">
         <div className="mb-16 text-center">
           <ClipReveal>
-            <h2 className="mb-4 [font-family:var(--font-display)] text-3xl font-black [color:var(--mk-text)] md:text-5xl">
+            <h2 className="mb-4 [font-family:var(--font-display)] text-2xl font-black [color:var(--mk-text)] md:text-3xl">
               {t.trustTitle}
             </h2>
           </ClipReveal>
@@ -1739,7 +1739,7 @@ function FAQSection({ t, lang }: { t: (typeof copy)["de"]; lang: Lang }) {
       <div className="mx-auto max-w-6xl">
         <div className="mb-16 text-center">
           <ClipReveal>
-            <h2 className="mb-4 [font-family:var(--font-display)] text-3xl font-black [color:var(--mk-text)] md:text-5xl">
+            <h2 className="mb-4 [font-family:var(--font-display)] text-2xl font-black [color:var(--mk-text)] md:text-3xl">
               {lang === "en" ? "Frequently asked questions" : "Häufig gestellte Fragen"}
             </h2>
           </ClipReveal>
@@ -1821,7 +1821,7 @@ function CTASection({ t, lang }: { t: (typeof copy)["de"]; lang: Lang }) {
           </div>
         </motion.div>
         <ClipReveal>
-          <h2 className="mb-5 [font-family:var(--font-display)] text-3xl font-black [color:var(--mk-text)] md:text-5xl">
+          <h2 className="mb-5 [font-family:var(--font-display)] text-2xl font-black [color:var(--mk-text)] md:text-3xl">
             {t.ctaTitle}
           </h2>
         </ClipReveal>

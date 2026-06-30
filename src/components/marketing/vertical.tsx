@@ -106,7 +106,7 @@ export default function VerticalPage({
             </div>
             {product ? (
               <ClipReveal delay={0.1} duration={0.7} direction="up">
-                <h1 className="mb-6 text-4xl leading-[1.08] font-black tracking-tight [color:var(--mk-text)] md:text-6xl">
+                <h1 className="mb-6 text-[clamp(2.5rem,7vw,4rem)] leading-[1.08] font-black tracking-tight [color:var(--mk-text)]">
                   {product.name}
                   <br />
                   <span className="gradient-text glow-text">{product.claim}</span>
@@ -114,14 +114,14 @@ export default function VerticalPage({
               </ClipReveal>
             ) : (
               <ClipReveal delay={0.1} duration={0.7} direction="up">
-                <h1 className="mb-6 text-4xl leading-[1.08] font-black tracking-tight [color:var(--mk-text)] md:text-6xl">
+                <h1 className="mb-6 text-[clamp(2.5rem,7vw,4rem)] leading-[1.08] font-black tracking-tight [color:var(--mk-text)]">
                   {t.h1a}
                   <br />
                   <span className="gradient-text glow-text">{t.h1b}</span>
                 </h1>
               </ClipReveal>
             )}
-            <p className="mx-auto mb-12 max-w-2xl text-lg leading-relaxed [color:var(--mk-text-muted)] md:text-xl">
+            <p className="mx-auto mb-12 max-w-2xl text-base leading-relaxed [color:var(--mk-text-muted)] md:text-lg">
               {t.sub}
             </p>
             <div className="mb-4 flex flex-col justify-center gap-4 sm:flex-row">

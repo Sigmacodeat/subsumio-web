@@ -56,14 +56,14 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
             {content.badge}
           </motion.span>
           <ClipReveal delay={0.1} duration={0.7} direction="up">
-            <h1 className="text-[clamp(2.5rem,10vw,3.75rem)] leading-[1.07] font-black tracking-tight [color:var(--mk-text)] md:text-5xl lg:text-6xl">
+            <h1 className="text-[clamp(2.5rem,7vw,4rem)] leading-[1.08] font-black tracking-tight [color:var(--mk-text)]">
               {content.h1a}
               <br />
               <span className="brand-text">{content.h1b}</span>
             </h1>
           </ClipReveal>
           <motion.p
-            className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed [color:var(--mk-text-muted)]"
+            className="mx-auto mt-6 max-w-2xl text-base leading-relaxed [color:var(--mk-text-muted)] md:text-lg"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, delay: 0.1, ease: EASE.out }}
@@ -227,10 +227,10 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
           viewport={{ once: true, margin: "0px 0px 80px 0px", amount: 0.15 }}
           transition={{ duration: 0.5, ease: EASE.out }}
         >
-          <h2 className="mb-4 text-3xl font-black tracking-tight [color:var(--mk-text)] md:text-4xl">
+          <h2 className="mb-4 text-2xl font-black tracking-tight [color:var(--mk-text)] md:text-3xl">
             {content.ctaTitle}
           </h2>
-          <p className="mx-auto mb-8 max-w-xl text-lg [color:var(--mk-text-muted)]">
+          <p className="mx-auto mb-8 max-w-xl text-base [color:var(--mk-text-muted)] md:text-lg">
             {content.ctaSub}
           </p>
           <Link href={p(lang, "/signup")}>

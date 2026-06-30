@@ -1250,11 +1250,11 @@ export function SectionHeading({
           {badge}
         </motion.span>
       )}
-      <h2 className="mb-4 [font-family:var(--font-display)] text-3xl font-black tracking-tight [color:var(--mk-text)] md:text-4xl">
+      <h2 className="mb-4 [font-family:var(--font-display)] text-2xl font-black tracking-tight [color:var(--mk-text)] md:text-3xl">
         {title}
       </h2>
       {sub && (
-        <p className="mx-auto max-w-2xl text-lg leading-relaxed [color:var(--mk-text-muted)]">
+        <p className="mx-auto max-w-2xl text-base leading-relaxed [color:var(--mk-text-muted)] md:text-lg">
           {sub}
         </p>
       )}

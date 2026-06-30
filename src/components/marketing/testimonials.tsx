@@ -32,10 +32,10 @@ export function TestimonialsSection() {
               />
             ))}
           </div>
-          <h2 className="mb-4 [font-family:var(--font-display)] text-3xl font-black [color:var(--mk-text)] md:text-4xl">
+          <h2 className="mb-4 [font-family:var(--font-display)] text-2xl font-black [color:var(--mk-text)] md:text-3xl">
             Was Anwälte über Subsumio sagen
           </h2>
-          <p className="mx-auto max-w-2xl text-lg [color:var(--mk-text-muted)]">
+          <p className="mx-auto max-w-2xl text-base [color:var(--mk-text-muted)] md:text-lg">
             Echte Stimmen aus Kanzleien in AT, DE und CH.
           </p>
         </motion.div>

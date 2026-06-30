@@ -84,7 +84,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 {t.badge}
               </motion.div>
               <h1
-                className="mb-6 text-5xl leading-[1.05] font-black tracking-tight [color:var(--mk-text)] md:text-7xl lg:text-8xl"
+                className="mb-6 text-[clamp(2.5rem,7vw,4rem)] leading-[1.08] font-black tracking-tight [color:var(--mk-text)]"
                 style={{ fontFamily: "var(--font-display)" }}
               >
                 <motion.span
@@ -106,7 +106,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 transition={
                   reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.out, delay: 0.4 }
                 }
-                className="mx-auto mb-12 max-w-2xl text-lg leading-relaxed [color:var(--mk-text-muted)] md:text-xl"
+                className="mx-auto mb-12 max-w-2xl text-base leading-relaxed [color:var(--mk-text-muted)] md:text-lg"
               >
                 {t.sub}
               </motion.p>
@@ -261,10 +261,10 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                       >
                         {Icon && <Icon size={18} />}
                       </div>
-                      <h3 className="mb-2 text-base font-semibold [color:var(--mk-text)]">
+                      <h3 className="mb-2 text-lg font-semibold [color:var(--mk-text)]">
                         {f.title}
                       </h3>
-                      <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">
+                      <p className="text-sm leading-relaxed [color:var(--mk-text-muted)] md:text-base">
                         {f.desc}
                       </p>
                     </GlowCard>
@@ -328,7 +328,9 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                   <p className="mb-3 text-xs font-semibold tracking-wider [color:var(--brand-text)] uppercase">
                     {s.role}
                   </p>
-                  <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">{s.text}</p>
+                  <p className="text-sm leading-relaxed [color:var(--mk-text-muted)] md:text-base">
+                    {s.text}
+                  </p>
                 </motion.div>
               ))}
             </div>
@@ -442,10 +444,10 @@ export default function LandingPage({ lang }: { lang: Lang }) {
         >
           <motion.div {...reveal} className="mx-auto max-w-3xl text-center">
             <SubsumioMark size={48} className="mx-auto mb-7" />
-            <h2 className="mb-4 [font-family:var(--font-display)] text-3xl font-black [color:var(--mk-text)] md:text-4xl">
+            <h2 className="mb-4 [font-family:var(--font-display)] text-2xl font-black [color:var(--mk-text)] md:text-3xl">
               {t.ctaTitle}
             </h2>
-            <p className="mb-10 text-lg [color:var(--mk-text-muted)]">{t.ctaSub}</p>
+            <p className="mb-10 text-base [color:var(--mk-text-muted)] md:text-lg">{t.ctaSub}</p>
             <Link href={p(lang, "/signup")}>
               <Button size="xl" variant="primary">
                 {t.ctaButton} <ArrowRight size={18} />

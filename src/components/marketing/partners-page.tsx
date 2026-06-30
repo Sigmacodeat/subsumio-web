@@ -36,14 +36,14 @@ export default function PartnersPage({ lang }: { lang: Lang }) {
             {t.badge}
           </span>
           <ClipReveal delay={0.1} duration={0.7} direction="up">
-            <h1 className="mb-6 text-[clamp(2.5rem,10vw,3.75rem)] leading-[1.08] font-black tracking-tight text-balance [color:var(--mk-text)] md:text-6xl">
+            <h1 className="mb-6 text-[clamp(2.5rem,7vw,4rem)] leading-[1.08] font-black tracking-tight text-balance [color:var(--mk-text)]">
               {t.h1a}
               <span className="sr-only"> </span>
               <br />
               <span className="gradient-text-premium glow-text">{t.h1b}</span>
             </h1>
           </ClipReveal>
-          <p className="mx-auto mb-4 max-w-2xl text-lg leading-relaxed [color:var(--mk-text-muted)] md:text-xl">
+          <p className="mx-auto mb-4 max-w-2xl text-base leading-relaxed [color:var(--mk-text-muted)] md:text-lg">
             {t.sub}
           </p>
         </motion.div>
@@ -188,10 +188,10 @@ export default function PartnersPage({ lang }: { lang: Lang }) {
         className="relative z-10 mx-auto max-w-3xl px-4 py-28 text-center sm:px-6 lg:px-8"
       >
         <Reveal variant="upLg">
-          <h2 className="mb-4 text-3xl font-black [color:var(--mk-text)] md:text-4xl">
+          <h2 className="mb-4 text-2xl font-black [color:var(--mk-text)] md:text-3xl">
             {t.ctaTitle}
           </h2>
-          <p className="mb-10 text-lg [color:var(--mk-text-muted)]">{t.ctaSub}</p>
+          <p className="mb-10 text-base [color:var(--mk-text-muted)] md:text-lg">{t.ctaSub}</p>
           <a href="mailto:partners@subsum.eu?subject=Partner%20application">
             <Button size="xl" variant="primary">
               {t.ctaButton} <ArrowRight size={18} />

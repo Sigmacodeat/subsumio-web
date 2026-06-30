@@ -40,11 +40,11 @@ export default function PricingPage({ lang }: { lang: Lang }) {
               {ui.transparentFair}
             </span>
             <ClipReveal delay={0.1} duration={0.7} direction="up">
-              <h1 className="mb-5 text-[clamp(2.5rem,10vw,3.75rem)] leading-[1.07] font-black tracking-tight [color:var(--mk-text)] md:text-6xl">
+              <h1 className="mb-5 text-[clamp(2.5rem,7vw,4rem)] leading-[1.08] font-black tracking-tight [color:var(--mk-text)]">
                 {pricing.title}
               </h1>
             </ClipReveal>
-            <p className="mx-auto mb-8 max-w-2xl text-lg leading-relaxed [color:var(--mk-text-muted)] md:text-xl">
+            <p className="mx-auto mb-8 max-w-2xl text-base leading-relaxed [color:var(--mk-text-muted)] md:text-lg">
               {pricing.sub}
             </p>
           </motion.div>
@@ -102,10 +102,10 @@ export default function PricingPage({ lang }: { lang: Lang }) {
       {/* CTA */}
       <section data-tone="dark" className="relative z-10 px-4 py-28 sm:px-6 lg:px-8">
         <Reveal variant="upLg" className="mx-auto max-w-3xl text-center">
-          <h2 className="mb-4 text-3xl font-black [color:var(--mk-text)] md:text-4xl">
+          <h2 className="mb-4 text-2xl font-black [color:var(--mk-text)] md:text-3xl">
             {ui.stillQuestions}
           </h2>
-          <p className="mb-10 text-lg [color:var(--mk-text-muted)]">{ui.writeUs}</p>
+          <p className="mb-10 text-base [color:var(--mk-text-muted)] md:text-lg">{ui.writeUs}</p>
           <Link href={p(lang, "/signup")}>
             <Button size="xl" variant="primary">
               {ui.startFree} <ArrowRight size={18} />

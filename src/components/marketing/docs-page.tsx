@@ -168,14 +168,14 @@ export default function DocsPage({ lang }: { lang: Lang }) {
             {d.hero.badge}
           </div>
           <ClipReveal delay={0.1} duration={0.7} direction="up">
-            <h1 className="mb-5 text-[clamp(2.5rem,10vw,3.75rem)] leading-[1.07] font-black tracking-tight text-balance [color:var(--mk-text)] md:text-6xl">
+            <h1 className="mb-5 text-[clamp(2.5rem,7vw,4rem)] leading-[1.08] font-black tracking-tight text-balance [color:var(--mk-text)]">
               {d.hero.title}
               <span className="sr-only"> </span>
               <br />
               <span className="gradient-text">{d.hero.claim}</span>
             </h1>
           </ClipReveal>
-          <p className="mx-auto mb-10 max-w-2xl text-lg leading-relaxed [color:var(--mk-text-muted)]">
+          <p className="mx-auto mb-10 max-w-2xl text-base leading-relaxed [color:var(--mk-text-muted)] md:text-lg">
             {d.hero.sub}
           </p>
           <p className="mx-auto max-w-xl text-sm leading-relaxed [color:var(--mk-text-subtle)]">
@@ -243,10 +243,10 @@ export default function DocsPage({ lang }: { lang: Lang }) {
         className="relative z-10 mx-auto max-w-3xl px-4 py-28 text-center sm:px-6 lg:px-8"
       >
         <SubsumioMark size={56} className="mx-auto mb-7" />
-        <h2 className="mb-4 text-3xl font-black [color:var(--mk-text)] md:text-4xl">
+        <h2 className="mb-4 text-2xl font-black [color:var(--mk-text)] md:text-3xl">
           {d.cta.title}
         </h2>
-        <p className="mb-10 text-lg [color:var(--mk-text-muted)]">{d.cta.sub}</p>
+        <p className="mb-10 text-base [color:var(--mk-text-muted)] md:text-lg">{d.cta.sub}</p>
         <Link href={p(lang, "/login")}>
           <Button size="lg" variant="primary">
             {d.cta.button} <ArrowRight size={16} />
