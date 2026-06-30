@@ -1650,8 +1650,9 @@ const CH_REPLACEMENTS: Record<string, string> = {
 
 const _landingDe = {
   badge: "KI-Kanzleisoftware für AT · DE · CH",
-  h1a: "Jede Akte,",
-  h1b: "eine belegte Antwort.",
+  h1a: "Deine Firma vergisst.",
+  h1b: "Subsumio nicht.",
+  heroTagline: "Jede Akte, eine belegte Antwort.",
   h1Keyword: "KI-Kanzleisoftware & Anwaltssoftware mit belegten Antworten",
   sub: "Subsumio ist die KI-Kanzleisoftware für Rechtsanwälte in Österreich, Deutschland und der Schweiz. Akten, Fristen, Mails und Dokumente werden zu belegten Antworten — mit Fundstellen, nicht mit Halluzinationen.",
   painTitle: "Was kostet dich das heute?",
@@ -1875,8 +1876,9 @@ const _landingDe = {
 
 const _landingEn = {
   badge: "AI legal software for AT · DE · CH",
-  h1a: "Every matter,",
-  h1b: "one cited answer.",
+  h1a: "Your firm forgets.",
+  h1b: "Subsumio doesn't.",
+  heroTagline: "Every matter, one cited answer.",
   h1Keyword: "AI legal software with cited answers for law firms",
   sub: "Subsumio is AI legal software for law firms in Austria, Germany and Switzerland. Matters, deadlines, emails and documents become cited answers — with page-level sources, not hallucinations.",
   painTitle: "What is it costing you today?",
@@ -2104,8 +2106,9 @@ export const LANDING = {
   ch: applyReplacements(JSON.parse(JSON.stringify(_landingDe)), CH_REPLACEMENTS),
   it: applyReplacements(JSON.parse(JSON.stringify(_landingEn)), {
     "AI legal software for AT · DE · CH": "Software legale AI per IT · DE · CH",
-    "Every matter,": "Ogni pratica,",
-    "one cited answer.": "una risposta citata.",
+    "Your firm forgets.": "Il tuo studio dimentica.",
+    "Subsumio doesn't.": "Subsumio no.",
+    "Every matter, one cited answer.": "Ogni pratica, una risposta citata.",
     "Stop searching. Start asking.": "Smetti di cercare. Inizia a chiedere.",
     "Start free trial": "Inizia la prova gratuita",
     "Pricing & plans": "Prezzi e piani",
