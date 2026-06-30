@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   ArrowRight,
   Brain,
@@ -15,7 +15,6 @@ import {
 } from "lucide-react";
 import { p, type Lang } from "@/content/site";
 import { Button } from "@/components/ui/button";
-import { GradientMesh } from "./motion-system";
 
 const copy = {
   en: {
@@ -123,7 +122,6 @@ const orbitNodes = [
 
 export default function SuperbrainAdvantage({ lang }: { lang: Lang }) {
   const t = copy[lang !== "en" ? "de" : "en"];
-  const reduced = useReducedMotion();
 
   return (
     <section
@@ -131,8 +129,7 @@ export default function SuperbrainAdvantage({ lang }: { lang: Lang }) {
       aria-label={lang !== "en" ? "Die Subsumio-Engine" : "The Subsumio engine"}
       className="relative z-10 overflow-hidden border-y [border-color:var(--mk-border)] px-4 py-24 [background:var(--mk-surface)] sm:px-6 lg:px-8"
     >
-      <GradientMesh className="opacity-60" />
-      <div className="brand-glow-bg absolute inset-x-0 top-16 h-72 opacity-50 blur-3xl" />
+      <div className="brand-glow-bg absolute inset-x-0 top-16 h-72 opacity-25 blur-3xl" />
       <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[1fr_1.05fr]">
         <motion.div
           initial={{ opacity: 0, y: 18 }}
@@ -173,16 +170,12 @@ export default function SuperbrainAdvantage({ lang }: { lang: Lang }) {
         </motion.div>
 
         <div className="relative">
-          <motion.div
-            animate={reduced ? undefined : { rotate: 360 }}
-            transition={{ duration: 34, repeat: Infinity, ease: "linear" }}
-            className="absolute inset-8 rounded-full border border-dashed border-[var(--brand-primary)]/20"
-          />
+          <div className="absolute inset-8 rounded-full border border-dashed border-[var(--brand-primary)]/15" />
           <div
             data-tone="dashboard"
             className="relative min-h-[560px] overflow-hidden rounded-2xl border [border-color:var(--mk-border-strong)] shadow-2xl shadow-black/20 [background:var(--mk-bg)]"
           >
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_42%,var(--brand-glow),transparent_42%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_42%,var(--brand-glow),transparent_50%)]" />
             <div className="relative h-[300px]">
               <motion.div
                 initial={{ scale: 0.92, opacity: 0 }}

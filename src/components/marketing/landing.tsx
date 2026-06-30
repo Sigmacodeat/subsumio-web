@@ -1,9 +1,10 @@
 "use client";
 
-// Subsumio landing page — renders EN or DE from src/content/site.ts.
-// Agency-grade motion: load-in hero, scroll-reveal sections, staggered cards,
-// interactive live demo, parallax background (via MarketingBackground). All
-// decorative motion respects prefers-reduced-motion via MotionConfig.
+// Subsumio landing page — renders localized content from src/content/site.ts.
+// Refined, law-firm-appropriate motion: subtle load-in hero, scroll-reveal
+// sections, staggered cards, interactive live demo. Decorative effects are
+// intentionally restrained to project trust and seriousness. All motion respects
+// prefers-reduced-motion.
 
 import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
@@ -26,11 +27,7 @@ import {
   StaggerItem,
   EASE,
   AnimatedCounter,
-  MagneticButton,
   MagneticCard,
-  TextReveal,
-  GradientMesh,
-  SplitTextReveal,
 } from "./motion-system";
 import IndustryHeroMotif from "./industry-hero-motif";
 import { WhatsAppSpotlight } from "./subsumio-showcase";
@@ -55,66 +52,59 @@ export default function LandingPage({ lang }: { lang: Lang }) {
   return (
     <>
       <div data-tone="light" className="min-h-screen overflow-x-hidden" lang={lang}>
-        {/* Hero — dark slate editorial surface with gradient mesh depth */}
+        {/* Hero — clean dark slate editorial surface with subtle motif */}
         <Section
           tone="slate"
           className="relative overflow-hidden px-6 pt-28 pb-28 md:pt-36 md:pb-32"
         >
-          <GradientMesh className="opacity-30" />
           <div className="relative mx-auto max-w-7xl text-center">
-            {/* Legal icon constellation — animated hero motif */}
+            {/* Legal icon constellation — subtle, static background motif */}
             <IndustryHeroMotif
               industry="legal"
-              className="absolute inset-0 z-0 hidden opacity-[0.12] md:block"
+              className="absolute inset-0 z-0 hidden opacity-[0.06] md:block"
             />
             <div className="relative z-10">
               <motion.div
-                initial={reduce ? false : { scale: 0.85, opacity: 0, y: 10 }}
-                animate={{ scale: 1, opacity: 1, y: 0 }}
-                transition={
-                  reduce
-                    ? { duration: 0 }
-                    : { type: "spring", stiffness: 200, damping: 22, delay: 0 }
-                }
+                initial={reduce ? false : { opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.out, delay: 0 }}
                 className="mb-6"
               >
-                <div className="relative mx-auto w-fit">
-                  {/* Pulse glow ring */}
-                  <span className="pointer-events-none absolute inset-0 [animation:pulse-ring_3s_ease-in-out_infinite] rounded-2xl bg-[var(--brand-secondary)] opacity-0 blur-2xl" />
-                  <SubsumioMark
-                    size={56}
-                    className="mx-auto [animation:float-gentle_4s_ease-in-out_infinite]"
-                  />
-                </div>
+                <SubsumioMark size={56} className="mx-auto" />
               </motion.div>
               <motion.div
-                initial={reduce ? false : { opacity: 0, y: 12, scale: 0.96 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
+                initial={reduce ? false : { opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
                 transition={
-                  reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.dramatic, delay: 0.15 }
+                  reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.out, delay: 0.15 }
                 }
-                className="group relative mb-8 inline-flex items-center gap-2 rounded-full border [border-color:var(--brand-border)] px-3 py-1.5 text-xs font-medium [color:var(--brand-text)] [background:var(--brand-soft)]"
+                className="mb-8 inline-flex items-center gap-2 rounded-full border [border-color:var(--brand-border)] px-3 py-1.5 text-xs font-medium [color:var(--brand-text)] [background:var(--brand-soft)]"
               >
-                {/* Animated rotating border glow */}
-                <span className="pointer-events-none absolute -inset-[1px] z-[-1] overflow-hidden rounded-full opacity-0 transition-opacity duration-500 group-hover:opacity-100">
-                  <span className="animate-border-spin absolute inset-[-200%] rounded-full bg-[conic-gradient(from_0deg,transparent_0_340deg,var(--brand-secondary)_360deg)]" />
-                </span>
-                <span className="badge-pulse h-1.5 w-1.5 rounded-full bg-[var(--brand-secondary)]" />
+                <span className="h-1.5 w-1.5 rounded-full bg-[var(--brand-secondary)]" />
                 {t.badge}
               </motion.div>
               <h1
                 className="mb-6 text-5xl leading-[1.05] font-black tracking-tight [color:var(--mk-text)] md:text-7xl lg:text-8xl"
                 style={{ fontFamily: "var(--font-display)" }}
               >
-                <SplitTextReveal stagger={0.1} delay={0.2} as="span" useAnimate className="block">
-                  {`${t.h1a}\n${t.h1b}`}
-                </SplitTextReveal>
+                <motion.span
+                  initial={reduce ? false : { opacity: 0, y: 18 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={
+                    reduce ? { duration: 0 } : { duration: 0.55, ease: EASE.out, delay: 0.2 }
+                  }
+                  className="block"
+                >
+                  {t.h1a}
+                  <br />
+                  {t.h1b}
+                </motion.span>
               </h1>
               <motion.p
-                initial={reduce ? false : { opacity: 0, y: 16, filter: "blur(3px)" }}
-                animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                initial={reduce ? false : { opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
                 transition={
-                  reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.dramatic, delay: 0.45 }
+                  reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.out, delay: 0.4 }
                 }
                 className="mx-auto mb-12 max-w-2xl text-lg leading-relaxed [color:var(--mk-text-muted)] md:text-xl"
               >
@@ -124,24 +114,18 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 initial={reduce ? false : { opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={
-                  reduce ? { duration: 0 } : { duration: 0.4, ease: EASE.dramatic, delay: 0.65 }
+                  reduce ? { duration: 0 } : { duration: 0.4, ease: EASE.out, delay: 0.55 }
                 }
                 className="mb-4 flex flex-col justify-center gap-4 sm:flex-row"
               >
-                <MagneticButton strength={0.25}>
-                  <Link href={p(lang, "/signup")}>
-                    <Button size="xl" variant="glow" className="min-w-[220px]">
-                      <SubsumioMark size={18} tile={false} /> {t.ctaPrimary}
-                    </Button>
-                  </Link>
-                </MagneticButton>
+                <Link href={p(lang, "/signup")}>
+                  <Button size="xl" variant="primary" className="min-w-[220px]">
+                    {t.ctaPrimary} <ArrowRight size={18} />
+                  </Button>
+                </Link>
                 <Link href="#pricing">
-                  <Button
-                    size="xl"
-                    variant="outline"
-                    className="min-w-[200px] border-[color:var(--mk-border-strong)] hover:border-[color:var(--brand-text)] hover:bg-[color:var(--mk-surface)]"
-                  >
-                    {lang !== "en" ? "Preise ansehen" : "See pricing"} <ArrowRight size={18} />
+                  <Button size="xl" variant="secondary" className="min-w-[200px]">
+                    {lang !== "en" ? "Preise ansehen" : "See pricing"}
                   </Button>
                 </Link>
               </motion.div>
@@ -166,7 +150,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 }
                 id="demo"
                 data-tone="dashboard"
-                className="mx-auto mt-6 max-w-3xl scroll-mt-24 rounded-2xl shadow-[0_24px_80px_rgba(0,0,0,0.5),0_0_60px_rgba(56,189,248,0.15)] ring-1 ring-white/[0.1]"
+                className="mx-auto mt-6 max-w-3xl scroll-mt-24 rounded-2xl shadow-[0_16px_48px_rgba(0,0,0,0.35)] ring-1 ring-white/[0.08]"
               >
                 <LiveDemo lang={lang} {...t.demo} />
               </motion.div>
@@ -454,29 +438,23 @@ export default function LandingPage({ lang }: { lang: Lang }) {
           </motion.div>
         </Section>
 
-        {/* Final CTA — dark spotlight close with gradient mesh */}
+        {/* Final CTA — clean, serious close */}
         <Section
           tone="dark"
-          className="relative overflow-hidden px-4 py-24 text-center sm:px-6 lg:px-8"
+          className="px-4 py-24 text-center sm:px-6 lg:px-8"
           aria-label="Call to action"
         >
-          <GradientMesh className="opacity-40" />
           <motion.div {...reveal} className="mx-auto max-w-3xl text-center">
-            <SubsumioMark size={56} className="mx-auto mb-7" />
-            <TextReveal
-              as="h2"
-              text={t.ctaTitle}
-              className="mb-4 [font-family:var(--font-display)] text-3xl font-black [color:var(--mk-text)] md:text-4xl"
-              wordClassName="inline-block"
-            />
+            <SubsumioMark size={48} className="mx-auto mb-7" />
+            <h2 className="mb-4 [font-family:var(--font-display)] text-3xl font-black [color:var(--mk-text)] md:text-4xl">
+              {t.ctaTitle}
+            </h2>
             <p className="mb-10 text-lg [color:var(--mk-text-muted)]">{t.ctaSub}</p>
-            <MagneticButton strength={0.25}>
-              <Link href={p(lang, "/signup")}>
-                <Button size="xl" variant="glow">
-                  <SubsumioMark size={18} tile={false} /> {t.ctaButton} <ArrowRight size={18} />
-                </Button>
-              </Link>
-            </MagneticButton>
+            <Link href={p(lang, "/signup")}>
+              <Button size="xl" variant="primary">
+                {t.ctaButton} <ArrowRight size={18} />
+              </Button>
+            </Link>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs [color:var(--mk-text-subtle)]">
               <span className="inline-flex items-center gap-1.5">
                 <span className="h-1 w-1 rounded-full bg-[color:var(--signal-green)]" />
