@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { p, type Lang } from "@/content/site";
 import { Section, SectionHeading } from "./chrome";
-import { GlowCard, ClipReveal, MagneticButton, EASE } from "./motion-system";
+import { GlowCard, ClipReveal, EASE } from "./motion-system";
 
 const _deContact = {
   badge: "Kontakt",
@@ -109,7 +109,7 @@ export default function ContactPage({ lang }: { lang: Lang }) {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.4, ease: EASE.out }}
           >
-            <span className="brand-bg badge-pulse h-1.5 w-1.5 rounded-full" />
+            <span className="brand-bg h-1.5 w-1.5 rounded-full" />
             {c.badge}
           </motion.span>
           <ClipReveal delay={0.1} duration={0.7} direction="up">
@@ -209,7 +209,7 @@ export default function ContactPage({ lang }: { lang: Lang }) {
               <Button
                 type="submit"
                 size="lg"
-                variant="glow"
+                variant="primary"
                 className="group min-h-[48px] shrink-0"
               >
                 {c.formSubmit}
@@ -236,15 +236,13 @@ export default function ContactPage({ lang }: { lang: Lang }) {
           </h2>
           <p className="mx-auto mb-8 max-w-xl text-lg [color:var(--mk-text-muted)]">{c.ctaSub}</p>
           <Link href={p(lang, "/signup")}>
-            <MagneticButton strength={0.25}>
-              <Button size="lg" variant="glow" className="group min-h-[48px]">
-                {c.ctaButton}
-                <ArrowRight
-                  size={16}
-                  className="transition-transform duration-200 group-hover:translate-x-0.5"
-                />
-              </Button>
-            </MagneticButton>
+            <Button size="lg" variant="primary" className="group min-h-[48px]">
+              {c.ctaButton}
+              <ArrowRight
+                size={16}
+                className="transition-transform duration-200 group-hover:translate-x-0.5"
+              />
+            </Button>
           </Link>
         </motion.div>
       </Section>

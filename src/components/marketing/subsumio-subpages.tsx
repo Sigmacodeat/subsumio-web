@@ -62,8 +62,7 @@ function Hero({
       <div className="mx-auto max-w-4xl text-center">
         <motion.div {...reveal}>
           <span className="brand-border brand-soft brand-text mb-7 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold">
-            <span className="badge-pulse h-1.5 w-1.5 rounded-full bg-[var(--brand-secondary)]" />{" "}
-            {eyebrow}
+            <span className="h-1.5 w-1.5 rounded-full bg-[var(--brand-secondary)]" /> {eyebrow}
           </span>
           <h1 className="mb-5 text-[clamp(2.5rem,10vw,3.75rem)] leading-[1.07] font-black tracking-tight [color:var(--mk-text)] md:text-6xl">
             {title}
@@ -75,8 +74,8 @@ function Hero({
           </p>
           <div className="flex flex-col justify-center gap-3 sm:flex-row">
             <Link href={primaryHref}>
-              <Button size="xl" variant="glow" className="min-w-[220px]">
-                <SubsumioMark size={18} tile={false} /> {primaryLabel}
+              <Button size="xl" variant="primary" className="min-w-[220px]">
+                {primaryLabel}
               </Button>
             </Link>
             <Link href={p(lang, "/")}>
@@ -110,7 +109,7 @@ function CtaClose({
         <h2 className="mb-4 text-3xl font-black [color:var(--mk-text)] md:text-4xl">{title}</h2>
         <p className="mb-9 text-lg [color:var(--mk-text-muted)]">{sub}</p>
         <Link href={href}>
-          <Button size="xl" variant="glow">
+          <Button size="xl" variant="primary">
             {label} <ArrowRight size={18} />
           </Button>
         </Link>

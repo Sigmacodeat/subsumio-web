@@ -18,7 +18,7 @@ import IndustryHeroMotif from "./industry-hero-motif";
 import ProductWorkflowShowcase from "./product-workflow-showcase";
 import { WhatsAppSpotlight } from "./subsumio-showcase";
 import { AnimatedFaqList } from "./animated-faq";
-import { ClipReveal, MagneticButton, GradientMesh } from "./motion-system";
+import { ClipReveal } from "./motion-system";
 
 /** Subsumio product branding — funnel body, hero, and signup deep-links. */
 export interface ProductBrand {
@@ -101,7 +101,7 @@ export default function VerticalPage({
           />
           <div className="relative z-10">
             <div className="brand-border brand-soft brand-text mb-8 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium">
-              <span className="badge-pulse h-1.5 w-1.5 rounded-full bg-[var(--brand-secondary)]" />
+              <span className="h-1.5 w-1.5 rounded-full bg-[var(--brand-secondary)]" />
               {product ? product.poweredBy : t.badge}
             </div>
             {product ? (
@@ -125,13 +125,11 @@ export default function VerticalPage({
               {t.sub}
             </p>
             <div className="mb-4 flex flex-col justify-center gap-4 sm:flex-row">
-              <MagneticButton strength={0.25}>
-                <Link href={signupHref}>
-                  <Button size="xl" variant="glow" className="min-w-[220px]">
-                    <SubsumioMark size={18} tile={false} /> {t.ctaButton}
-                  </Button>
-                </Link>
-              </MagneticButton>
+              <Link href={signupHref}>
+                <Button size="xl" variant="primary" className="min-w-[220px]">
+                  {t.ctaButton}
+                </Button>
+              </Link>
               <a href={isSubsumio ? "#pricing" : "#demo"}>
                 <Button size="xl" variant="ghost" className="min-w-[200px]">
                   {isSubsumio
@@ -356,20 +354,17 @@ export default function VerticalPage({
         tone="dark"
         className="relative overflow-hidden px-4 py-24 text-center sm:px-6 lg:px-8"
       >
-        <GradientMesh className="opacity-40" />
         <div className="mx-auto max-w-3xl">
           <SubsumioMark size={56} className="mx-auto mb-7" />
           <h2 className="mb-4 text-3xl font-black [color:var(--mk-text)] md:text-4xl">
             {t.ctaTitle}
           </h2>
           <p className="mb-10 text-lg [color:var(--mk-text-muted)]">{t.ctaSub}</p>
-          <MagneticButton strength={0.25}>
-            <Link href={signupHref}>
-              <Button size="xl" variant="glow">
-                {t.ctaButton} <ArrowRight size={18} />
-              </Button>
-            </Link>
-          </MagneticButton>
+          <Link href={signupHref}>
+            <Button size="xl" variant="primary">
+              {t.ctaButton} <ArrowRight size={18} />
+            </Button>
+          </Link>
         </div>
       </Section>
     </div>

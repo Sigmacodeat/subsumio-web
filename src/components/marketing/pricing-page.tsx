@@ -12,14 +12,7 @@ import { PRICING, PRICING_FAQ, VALUE_PROPS, UI_STRINGS, p, type Lang } from "@/c
 import { SectionHeading } from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
 import { PricingGrid } from "./pricing-grid";
-import {
-  Reveal,
-  StaggerContainer,
-  StaggerItem,
-  GlowCard,
-  ClipReveal,
-  MagneticButton,
-} from "./motion-system";
+import { Reveal, StaggerContainer, StaggerItem, GlowCard, ClipReveal } from "./motion-system";
 
 export default function PricingPage({ lang }: { lang: Lang }) {
   const pricing = PRICING[lang];
@@ -114,11 +107,9 @@ export default function PricingPage({ lang }: { lang: Lang }) {
           </h2>
           <p className="mb-10 text-lg [color:var(--mk-text-muted)]">{ui.writeUs}</p>
           <Link href={p(lang, "/signup")}>
-            <MagneticButton strength={0.25}>
-              <Button size="xl" variant="glow">
-                {ui.startFree} <ArrowRight size={18} />
-              </Button>
-            </MagneticButton>
+            <Button size="xl" variant="primary">
+              {ui.startFree} <ArrowRight size={18} />
+            </Button>
           </Link>
         </Reveal>
       </section>

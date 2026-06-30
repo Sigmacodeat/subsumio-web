@@ -401,11 +401,6 @@ function AnnouncementBar({ nav, lang }: { nav: NavContent; lang: Lang }) {
                     <Sparkles size={8} className="shrink-0" />
                     {nav.announcement.badge}
                   </span>
-                  {/* Subtle pulse ring — separate layer to avoid scaling badge content */}
-                  <span
-                    className="brand-bg absolute inset-0 rounded-full opacity-40"
-                    style={{ animation: "pulse-ring 2s ease-out infinite" }}
-                  />
                 </span>
               )}
               <span>{nav.announcement.text}</span>
@@ -856,7 +851,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                   </Button>
                 </Link>
                 <Link href={p(lang, "/signup")} className="hidden sm:block">
-                  <Button size="sm" variant="glow" className="group min-h-[36px]">
+                  <Button size="sm" variant="primary" className="group min-h-[36px]">
                     {nav.cta}
                     <ChevronRight
                       size={14}
@@ -866,7 +861,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                 </Link>
                 {/* Compact CTA icon for xs screens */}
                 <Link href={p(lang, "/signup")} className="sm:hidden">
-                  <Button size="sm" variant="glow" className="group min-h-[36px] px-3">
+                  <Button size="sm" variant="primary" className="group min-h-[36px] px-3">
                     <ChevronRight
                       size={16}
                       className="transition-transform duration-200 group-hover:translate-x-0.5"
@@ -939,7 +934,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                         onClick={() => setMobileOpen(false)}
                         className="flex-1"
                       >
-                        <Button size="sm" variant="glow" className="group min-h-[44px] w-full">
+                        <Button size="sm" variant="primary" className="group min-h-[44px] w-full">
                           {nav.cta}
                           <ChevronRight
                             size={14}
@@ -1251,7 +1246,7 @@ export function SectionHeading({
           viewport={{ once: true, margin: "0px 0px 80px 0px" }}
           transition={{ duration: 0.4, delay: 0.05, ease: EASE.out }}
         >
-          <span className="brand-bg badge-pulse h-1.5 w-1.5 rounded-full" />
+          <span className="brand-bg h-1.5 w-1.5 rounded-full" />
           {badge}
         </motion.span>
       )}

@@ -26,13 +26,11 @@ import { Button } from "@/components/ui/button";
 import { p, type Lang } from "@/content/site";
 import {
   EASE,
-  GradientMesh,
   GlowCard,
   ClipReveal,
   AnimatedCounter,
   StaggerContainer,
   StaggerItem,
-  MagneticButton,
 } from "./motion-system";
 import { Section, accentTile } from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
@@ -807,7 +805,6 @@ function HeroSection({ t, lang }: { t: (typeof copy)["de"]; lang: Lang }) {
 
   return (
     <Section tone="slate" className="relative overflow-hidden px-6 pt-20 pb-28">
-      <GradientMesh className="opacity-70" />
       <motion.div
         style={{ y: yOrb, opacity: opacityOrb }}
         className="brand-glow-bg absolute top-1/4 left-1/2 h-[500px] w-[800px] -translate-x-1/2 rounded-full opacity-40 blur-3xl"
@@ -850,11 +847,9 @@ function HeroSection({ t, lang }: { t: (typeof copy)["de"]; lang: Lang }) {
           className="flex flex-col items-center justify-center gap-4 sm:flex-row"
         >
           <Link href={p(lang, "/signup")}>
-            <MagneticButton>
-              <Button size="lg" className="gap-2">
-                {t.hero.cta} <ArrowRight size={18} />
-              </Button>
-            </MagneticButton>
+            <Button size="lg" className="gap-2">
+              {t.hero.cta} <ArrowRight size={18} />
+            </Button>
           </Link>
           <Link href={p(lang, "/features")}>
             <Button variant="outline" size="lg">
@@ -1102,7 +1097,6 @@ function OursSection({ t }: { t: (typeof copy)["de"] }) {
 
   return (
     <Section tone="slate" className="px-6 py-24" aria-label="Wie das SuperBrain arbeitet">
-      <GradientMesh className="opacity-50" />
       <div className="relative z-10 mx-auto max-w-5xl">
         <div className="mb-16 text-center">
           <motion.div
@@ -1322,7 +1316,6 @@ function DreamCycleSection({ t }: { t: (typeof copy)["de"] }) {
 
   return (
     <Section tone="slate" className="px-6 py-24" aria-label="Dream Cycle">
-      <GradientMesh className="opacity-40" />
       <div className="relative z-10 mx-auto max-w-6xl">
         <div className="mb-16 text-center">
           <ClipReveal>
@@ -1479,7 +1472,6 @@ function CompareSection({ t }: { t: (typeof copy)["de"] }) {
 function FineTuneSection({ t }: { t: (typeof copy)["de"] }) {
   return (
     <Section tone="slate" className="px-6 py-24" aria-label="Subsumio Legal Engine">
-      <GradientMesh className="opacity-40" />
       <div className="relative z-10 mx-auto max-w-5xl">
         <div className="mb-16 text-center">
           <motion.div
@@ -1815,7 +1807,6 @@ function StickyCTA({ t, lang }: { t: (typeof copy)["de"]; lang: Lang }) {
 function CTASection({ t, lang }: { t: (typeof copy)["de"]; lang: Lang }) {
   return (
     <Section tone="slate" className="px-6 py-24" aria-label="Call to action">
-      <GradientMesh className="opacity-60" />
       <div className="brand-glow-bg absolute inset-x-0 top-1/2 h-72 -translate-y-1/2 opacity-30 blur-3xl" />
       <div className="relative z-10 mx-auto max-w-3xl text-center">
         <motion.div
@@ -1847,11 +1838,9 @@ function CTASection({ t, lang }: { t: (typeof copy)["de"]; lang: Lang }) {
           transition={{ duration: 0.45, delay: 0.2 }}
         >
           <Link href={p(lang, "/signup")}>
-            <MagneticButton>
-              <Button size="lg" className="gap-2">
-                {t.ctaButton} <ArrowRight size={18} />
-              </Button>
-            </MagneticButton>
+            <Button size="lg" className="gap-2">
+              {t.ctaButton} <ArrowRight size={18} />
+            </Button>
           </Link>
         </motion.div>
       </div>

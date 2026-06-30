@@ -9,7 +9,7 @@ import type { SolutionContent, SolutionSlug } from "@/content/solutions";
 import { SOLUTION_SLUGS, SOLUTION_CROSS_LINKS } from "@/content/solutions";
 import { Section, SectionHeading, ICONS, accentTile } from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
-import { GlowCard, ClipReveal, MagneticButton, GradientMesh, EASE } from "./motion-system";
+import { GlowCard, ClipReveal, EASE } from "./motion-system";
 
 /** Per-vertical hero motif: a small floating constellation built from this
  *  vertical's own first 3 feature icons, so each of the 4 /solutions/* pages
@@ -28,8 +28,7 @@ function HeroIconConstellation({ content }: { content: SolutionContent }) {
         return (
           <div
             key={feat.title}
-            className={`float-gentle flex h-12 w-12 items-center justify-center rounded-2xl border ${accentTile("violet", "light")}`}
-            style={{ animationDelay: `${i * 0.4}s` }}
+            className={`flex h-12 w-12 items-center justify-center rounded-2xl border ${accentTile("violet", "light")}`}
             title={feat.title}
           >
             <Icon size={20} />
@@ -53,7 +52,7 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.4, ease: EASE.out }}
           >
-            <span className="brand-bg badge-pulse h-1.5 w-1.5 rounded-full" />
+            <span className="brand-bg h-1.5 w-1.5 rounded-full" />
             {content.badge}
           </motion.span>
           <ClipReveal delay={0.1} duration={0.7} direction="up">
@@ -78,7 +77,7 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
             transition={{ duration: 0.55, delay: 0.2, ease: EASE.out }}
           >
             <Link href={p(lang, "/signup")}>
-              <Button size="lg" variant="glow" className="group min-h-[48px]">
+              <Button size="lg" variant="primary" className="group min-h-[48px]">
                 {content.ctaButton}
                 <ArrowRight
                   size={16}
@@ -165,7 +164,6 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
 
       {/* Proof band */}
       <Section tone="dark" className="relative overflow-hidden px-4 py-24 sm:px-6 lg:px-8">
-        <GradientMesh className="opacity-50" />
         <div className="mx-auto max-w-4xl text-center">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -236,15 +234,13 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
             {content.ctaSub}
           </p>
           <Link href={p(lang, "/signup")}>
-            <MagneticButton strength={0.25}>
-              <Button size="lg" variant="glow" className="group min-h-[48px]">
-                {content.ctaButton}
-                <ArrowRight
-                  size={16}
-                  className="transition-transform duration-200 group-hover:translate-x-0.5"
-                />
-              </Button>
-            </MagneticButton>
+            <Button size="lg" variant="primary" className="group min-h-[48px]">
+              {content.ctaButton}
+              <ArrowRight
+                size={16}
+                className="transition-transform duration-200 group-hover:translate-x-0.5"
+              />
+            </Button>
           </Link>
         </motion.div>
       </Section>

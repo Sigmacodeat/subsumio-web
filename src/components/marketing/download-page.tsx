@@ -27,7 +27,7 @@ import { p, UI_STRINGS, type Lang } from "@/content/site";
 import { DOWNLOAD } from "@/content/download";
 import { SectionHeading } from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
-import { GlowCard, ClipReveal, MagneticButton } from "./motion-system";
+import { GlowCard, ClipReveal } from "./motion-system";
 
 const PLATFORM_ICONS: Record<string, LucideIcon> = { Apple, Smartphone, Monitor };
 
@@ -172,7 +172,7 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
             className="text-center lg:text-left"
           >
             <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-[var(--signal-blue)]/30 bg-[var(--signal-blue)]/10 px-3 py-1.5 text-xs font-medium text-[var(--signal-blue)]">
-              <span className="badge-pulse h-1.5 w-1.5 rounded-full bg-[var(--signal-blue)]" />
+              <span className="h-1.5 w-1.5 rounded-full bg-[var(--signal-blue)]" />
               {t.badge}
             </div>
             <ClipReveal delay={0.1} duration={0.7} direction="up">
@@ -190,7 +190,7 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
               {installEvent ? (
                 <Button
                   size="xl"
-                  variant="glow"
+                  variant="primary"
                   className="min-w-[240px]"
                   onClick={() => installEvent.prompt()}
                 >
@@ -199,7 +199,7 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
                 </Button>
               ) : (
                 <Link href={p(lang, "/signup")} className="inline-flex">
-                  <Button size="xl" variant="glow">
+                  <Button size="xl" variant="primary">
                     {UI_STRINGS[lang].getStarted} <ArrowRight size={18} />
                   </Button>
                 </Link>
@@ -343,11 +343,9 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
         </h2>
         <p className="mb-10 text-lg [color:var(--mk-text-muted)]">{t.ctaSub}</p>
         <Link href={p(lang, "/signup")}>
-          <MagneticButton strength={0.25}>
-            <Button size="xl" variant="glow">
-              {t.ctaButton} <ArrowRight size={18} />
-            </Button>
-          </MagneticButton>
+          <Button size="xl" variant="primary">
+            {t.ctaButton} <ArrowRight size={18} />
+          </Button>
         </Link>
       </section>
     </div>

@@ -11,14 +11,7 @@ import { p, type Lang } from "@/content/site";
 import { SECURITY } from "@/content/security";
 import { SectionHeading } from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
-import {
-  Reveal,
-  StaggerContainer,
-  StaggerItem,
-  GlowCard,
-  ClipReveal,
-  MagneticButton,
-} from "./motion-system";
+import { Reveal, StaggerContainer, StaggerItem, GlowCard, ClipReveal } from "./motion-system";
 
 const PILLAR_ICONS: Record<string, LucideIcon> = { Shield, Layers, Lock, Eye };
 
@@ -197,11 +190,9 @@ export default function SecurityPage({ lang }: { lang: Lang }) {
           </h2>
           <p className="mb-8 text-lg [color:var(--mk-text-muted)]">{t.ctaSub}</p>
           <Link href={p(lang, "/signup")}>
-            <MagneticButton strength={0.25}>
-              <Button size="xl" variant="glow">
-                {t.ctaButton} <ArrowRight size={18} />
-              </Button>
-            </MagneticButton>
+            <Button size="xl" variant="primary">
+              {t.ctaButton} <ArrowRight size={18} />
+            </Button>
           </Link>
         </Reveal>
       </section>

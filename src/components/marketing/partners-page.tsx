@@ -13,14 +13,7 @@ import { UI_STRINGS } from "@/content/site";
 import { PARTNERS } from "@/content/partners";
 import { SectionHeading, ICONS } from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
-import {
-  Reveal,
-  StaggerContainer,
-  StaggerItem,
-  GlowCard,
-  ClipReveal,
-  MagneticButton,
-} from "./motion-system";
+import { Reveal, StaggerContainer, StaggerItem, GlowCard, ClipReveal } from "./motion-system";
 
 export default function PartnersPage({ lang }: { lang: Lang }) {
   const t = PARTNERS[lang];
@@ -39,7 +32,7 @@ export default function PartnersPage({ lang }: { lang: Lang }) {
           transition={{ duration: 0.5, ease: "easeOut" }}
         >
           <span className="mb-8 inline-flex items-center gap-2 rounded-full border border-[color:var(--brand-tertiary)]/30 bg-[color:var(--brand-tertiary)]/10 px-3 py-1.5 text-xs font-medium text-[color:var(--brand-tertiary)]">
-            <span className="badge-pulse h-1.5 w-1.5 rounded-full bg-[color:var(--brand-tertiary)]" />
+            <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--brand-tertiary)]" />
             {t.badge}
           </span>
           <ClipReveal delay={0.1} duration={0.7} direction="up">
@@ -116,7 +109,7 @@ export default function PartnersPage({ lang }: { lang: Lang }) {
                   {tier.href.startsWith("mailto") ? (
                     <a href={tier.href}>
                       <Button
-                        variant={tier.highlight ? "glow" : "secondary"}
+                        variant={tier.highlight ? "primary" : "secondary"}
                         size="md"
                         className="w-full"
                       >
@@ -126,7 +119,7 @@ export default function PartnersPage({ lang }: { lang: Lang }) {
                   ) : (
                     <Link href={tier.href}>
                       <Button
-                        variant={tier.highlight ? "glow" : "secondary"}
+                        variant={tier.highlight ? "primary" : "secondary"}
                         size="md"
                         className="w-full"
                       >
@@ -197,11 +190,9 @@ export default function PartnersPage({ lang }: { lang: Lang }) {
           </h2>
           <p className="mb-10 text-lg [color:var(--mk-text-muted)]">{t.ctaSub}</p>
           <a href="mailto:partners@subsum.eu?subject=Partner%20application">
-            <MagneticButton strength={0.25}>
-              <Button size="xl" variant="glow">
-                {t.ctaButton} <ArrowRight size={18} />
-              </Button>
-            </MagneticButton>
+            <Button size="xl" variant="primary">
+              {t.ctaButton} <ArrowRight size={18} />
+            </Button>
           </a>
         </Reveal>
       </section>

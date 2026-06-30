@@ -153,7 +153,7 @@ export default function TrustBand({ lang, industry }: { lang: Lang; industry?: s
             }}
           >
             <span
-              className="badge-pulse h-1.5 w-1.5 rounded-full"
+              className="h-1.5 w-1.5 rounded-full"
               style={{ background: "var(--brand-text)" }}
             />
             {c.eyebrow}

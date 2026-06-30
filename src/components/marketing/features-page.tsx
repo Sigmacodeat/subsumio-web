@@ -19,7 +19,7 @@ import { FEATURES_PAGE } from "@/content/features";
 import SubsumioShowcase from "./subsumio-showcase";
 import { ICONS, useSiteBrand } from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
-import { GuidedCursor, GlowCard, ClipReveal, MagneticButton } from "./motion-system";
+import { GuidedCursor, GlowCard, ClipReveal } from "./motion-system";
 
 const viewport = { once: true, margin: "-60px" } as const;
 
@@ -580,7 +580,7 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
             className="text-center lg:text-left"
           >
             <div className="brand-border brand-soft brand-text mb-8 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium">
-              <span className="brand-bg badge-pulse h-1.5 w-1.5 rounded-full" />
+              <span className="brand-bg h-1.5 w-1.5 rounded-full" />
               {t.badge}
             </div>
             <ClipReveal delay={0.1} duration={0.7} direction="up">
@@ -596,7 +596,7 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
             </p>
             <div className="flex flex-wrap justify-center gap-3 lg:justify-start">
               <Link href={p(lang, "/signup")}>
-                <Button size="lg" variant="glow">
+                <Button size="lg" variant="primary">
                   {t.ctaButton} <ArrowRight size={16} />
                 </Button>
               </Link>
@@ -890,11 +890,9 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
         </h2>
         <p className="mb-10 text-lg [color:var(--mk-text-muted)]">{t.ctaSub}</p>
         <Link href={p(lang, "/signup")}>
-          <MagneticButton strength={0.25}>
-            <Button size="xl" variant="glow">
-              {t.ctaButton} <ArrowRight size={18} />
-            </Button>
-          </MagneticButton>
+          <Button size="xl" variant="primary">
+            {t.ctaButton} <ArrowRight size={18} />
+          </Button>
         </Link>
       </section>
     </div>

@@ -70,17 +70,14 @@ export function SubsumioLogo({
   return (
     <span className={`group inline-flex items-center gap-2.5 ${className}`}>
       <motion.span
-        initial={reduce ? false : { scale: 0.75, opacity: 0, rotate: -8 }}
-        animate={{ scale: 1, opacity: 1, rotate: 0 }}
-        transition={
-          reduce ? { duration: 0 } : { type: "spring", stiffness: 220, damping: 18, delay: 0.05 }
-        }
-        whileHover={reduce ? undefined : { scale: 1.08, rotate: 4 }}
+        initial={reduce ? false : { opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={reduce ? { duration: 0 } : { duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
         className="relative inline-flex"
       >
         <SubsumioMark
           size={size}
-          className="transition-shadow duration-300 group-hover:shadow-[0_0_24px_rgba(47,107,255,0.35)]"
+          className="transition-shadow duration-300 group-hover:shadow-[0_0_18px_rgba(47,107,255,0.25)]"
         />
       </motion.span>
       <motion.span

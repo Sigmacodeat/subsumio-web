@@ -10,7 +10,7 @@ import { type Lang } from "@/content/site";
 import { p, UI_STRINGS } from "@/content/site";
 import { ICONS } from "./chrome";
 import DashboardReel from "./dashboard-reel";
-import { GlowCard, ClipReveal, MagneticButton, GradientMesh, EASE } from "./motion-system";
+import { GlowCard, ClipReveal, EASE } from "./motion-system";
 
 const viewport = { once: true, margin: "0px 0px 80px 0px", amount: 0.12 } as const;
 const reveal = {
@@ -146,7 +146,6 @@ export default function DocsPage({ lang }: { lang: Lang }) {
       className="relative min-h-screen overflow-x-hidden [background:var(--mk-bg)]"
       lang={lang}
     >
-      <GradientMesh className="opacity-30" />
       {/* Hero */}
       <section className="relative z-10 mx-auto max-w-7xl px-6 pt-20 pb-16 text-center">
         <motion.div
@@ -163,7 +162,7 @@ export default function DocsPage({ lang }: { lang: Lang }) {
             }}
           >
             <span
-              className="badge-pulse h-1.5 w-1.5 rounded-full"
+              className="h-1.5 w-1.5 rounded-full"
               style={{ background: "var(--brand-text)" }}
             />
             {d.hero.badge}
@@ -248,11 +247,9 @@ export default function DocsPage({ lang }: { lang: Lang }) {
         </h2>
         <p className="mb-10 text-lg [color:var(--mk-text-muted)]">{d.cta.sub}</p>
         <Link href={p(lang, "/login")}>
-          <MagneticButton strength={0.25}>
-            <Button size="lg" variant="glow">
-              <SubsumioMark size={16} tile={false} /> {d.cta.button} <ArrowRight size={16} />
-            </Button>
-          </MagneticButton>
+          <Button size="lg" variant="primary">
+            {d.cta.button} <ArrowRight size={16} />
+          </Button>
         </Link>
       </motion.section>
     </div>

@@ -6,13 +6,7 @@ import { ArrowRight, Shield, Brain, Globe, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { p, type Lang } from "@/content/site";
 import { Section, SectionHeading } from "./chrome";
-import {
-  GlowCard,
-  AnimatedCounter,
-  ClipReveal,
-  MagneticButton,
-  GradientMesh,
-} from "./motion-system";
+import { GlowCard, AnimatedCounter, ClipReveal } from "./motion-system";
 
 const _deAbout = {
   badge: "Über Subsumio",
@@ -119,7 +113,7 @@ export default function AboutPage({ lang }: { lang: Lang }) {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.4 }}
           >
-            <span className="brand-bg badge-pulse h-1.5 w-1.5 rounded-full" />
+            <span className="brand-bg h-1.5 w-1.5 rounded-full" />
             {c.badge}
           </motion.span>
           <ClipReveal delay={0.1} duration={0.7} direction="up">
@@ -184,7 +178,6 @@ export default function AboutPage({ lang }: { lang: Lang }) {
       </Section>
 
       <Section tone="dark" className="relative overflow-hidden px-4 py-16 sm:px-6 lg:px-8">
-        <GradientMesh className="opacity-40" />
         <div className="mx-auto max-w-5xl">
           <SectionHeading title={c.statsTitle} tone="dark" />
           <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
@@ -235,15 +228,13 @@ export default function AboutPage({ lang }: { lang: Lang }) {
           </h2>
           <p className="mx-auto mb-8 max-w-xl text-lg [color:var(--mk-text-muted)]">{c.ctaSub}</p>
           <Link href={p(lang, "/contact")}>
-            <MagneticButton strength={0.25}>
-              <Button size="lg" variant="glow" className="group min-h-[48px]">
-                {c.ctaButton}
-                <ArrowRight
-                  size={16}
-                  className="transition-transform duration-200 group-hover:translate-x-0.5"
-                />
-              </Button>
-            </MagneticButton>
+            <Button size="lg" variant="primary" className="group min-h-[48px]">
+              {c.ctaButton}
+              <ArrowRight
+                size={16}
+                className="transition-transform duration-200 group-hover:translate-x-0.5"
+              />
+            </Button>
           </Link>
         </motion.div>
       </Section>
