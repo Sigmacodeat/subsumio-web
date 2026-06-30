@@ -144,6 +144,8 @@ export default function InvoicingPage() {
   const [userRole, setUserRole] = useState<string>("lawyer");
 
   const meQuery = useMe();
+  const industry = meQuery.data?.user?.industry ?? "legal";
+  const isTax = industry === "tax";
 
   useEffect(() => {
     if (meQuery.data?.user?.role) setUserRole(meQuery.data.user.role);
@@ -160,7 +162,7 @@ export default function InvoicingPage() {
       );
     loadAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isTax]);
 
   useEffect(() => {
     const handler = () => setQuickCreateOpen(true);
@@ -171,60 +173,132 @@ export default function InvoicingPage() {
   async function loadAll() {
     setLoading(true);
     try {
-      const batch = await api.brain.batchListPages(["invoice", "legal_case"], 200);
-      const invoicePages = batch["invoice"] ?? [];
-      const casePages = batch["legal_case"] ?? [];
-      const loadedInvoices: Invoice[] = invoicePages.map((p) => {
-        const fm = invoiceFrontmatter(p);
-        return {
-          id: p.slug,
-          number: fm.invoice_number || p.slug,
-          client: fm.client || "",
-          clientSlug: fm.client_slug,
-          clientAddress: fm.client_address,
-          caseNumber: fm.case_number,
-          date: fm.date || p.created_at,
-          dueDate: fm.due_date || "",
-          items: fm.items || [],
-          expenses: fm.expenses || [],
-          status: (fm.status as Invoice["status"]) || "draft",
-          subtotal: fm.subtotal || 0,
-          expenseTotal: fm.expense_total || 0,
-          advancePayment: fm.advance_payment || 0,
-          paidAmount: fm.paid_amount,
-          paidAt: fm.paid_at,
-          vatRate: fm.vat_rate ?? 0.19,
-          tax: fm.tax || 0,
-          total: fm.total || 0,
-          paymentTerms: fm.payment_terms,
-          bank: fm.bank,
-          notes: fm.notes,
-          reminderCount: fm.reminder_count,
-          reminderSentAt: fm.reminder_sent_at,
-          reminderFee: fm.reminder_fee,
-          invoiceType: fm.invoice_type,
-          parentInvoiceId: fm.parent_invoice_id,
-          caseSlugs: fm.case_slugs,
-        };
-      });
-      const loadedCases: InvoiceCase[] = casePages.map((p) => {
-        const fm = caseFrontmatter(p);
-        return {
-          slug: p.slug,
-          title: p.title,
-          caseNumber: fm.case_number || p.slug,
-          clientName: fm.client_name,
-          clientSlug: fm.client_slug,
-          timeEntries: fm.time_entries || [],
-          expenses: fm.expenses || [],
-        };
-      });
-      setInvoices(loadedInvoices);
-      setCases(loadedCases);
-      await setCache<InvoicingCache>(OFFLINE_KEYS.invoices, {
-        invoices: loadedInvoices,
-        cases: loadedCases,
-      });
+      if (isTax) {
+        const batch = await api.brain.batchListPages(["invoice"], 200);
+        const invoicePages = batch["invoice"] ?? [];
+        const loadedInvoices: Invoice[] = invoicePages.map((p) => {
+          const fm = invoiceFrontmatter(p);
+          return {
+            id: p.slug,
+            number: fm.invoice_number || p.slug,
+            client: fm.client || "",
+            clientSlug: fm.client_slug,
+            clientAddress: fm.client_address,
+            caseNumber: fm.case_number,
+            date: fm.date || p.created_at,
+            dueDate: fm.due_date || "",
+            items: fm.items || [],
+            expenses: fm.expenses || [],
+            status: (fm.status as Invoice["status"]) || "draft",
+            subtotal: fm.subtotal || 0,
+            expenseTotal: fm.expense_total || 0,
+            advancePayment: fm.advance_payment || 0,
+            paidAmount: fm.paid_amount,
+            paidAt: fm.paid_at,
+            vatRate: fm.vat_rate ?? 0.19,
+            tax: fm.tax || 0,
+            total: fm.total || 0,
+            paymentTerms: fm.payment_terms,
+            bank: fm.bank,
+            notes: fm.notes,
+            reminderCount: fm.reminder_count,
+            reminderSentAt: fm.reminder_sent_at,
+            reminderFee: fm.reminder_fee,
+            invoiceType: fm.invoice_type,
+            parentInvoiceId: fm.parent_invoice_id,
+            caseSlugs: fm.case_slugs,
+          };
+        });
+        const [returns, assessments] = await Promise.all([
+          api.tax.returns.list({ limit: 200 }),
+          api.tax.assessments.list({ limit: 200 }),
+        ]);
+        const loadedCases: InvoiceCase[] = [
+          ...returns.map((p) => {
+            const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
+            return {
+              slug: p.slug,
+              title: p.title,
+              caseNumber: p.slug,
+              clientName: String(fm.client_name ?? ""),
+              timeEntries: [],
+              expenses: [],
+            };
+          }),
+          ...assessments.map((p) => {
+            const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
+            return {
+              slug: p.slug,
+              title: p.title,
+              caseNumber: p.slug,
+              clientName: String(fm.client_name ?? ""),
+              timeEntries: [],
+              expenses: [],
+            };
+          }),
+        ];
+        setInvoices(loadedInvoices);
+        setCases(loadedCases);
+        await setCache<InvoicingCache>(OFFLINE_KEYS.invoices, {
+          invoices: loadedInvoices,
+          cases: loadedCases,
+        });
+      } else {
+        const batch = await api.brain.batchListPages(["invoice", "legal_case"], 200);
+        const invoicePages = batch["invoice"] ?? [];
+        const casePages = batch["legal_case"] ?? [];
+        const loadedInvoices: Invoice[] = invoicePages.map((p) => {
+          const fm = invoiceFrontmatter(p);
+          return {
+            id: p.slug,
+            number: fm.invoice_number || p.slug,
+            client: fm.client || "",
+            clientSlug: fm.client_slug,
+            clientAddress: fm.client_address,
+            caseNumber: fm.case_number,
+            date: fm.date || p.created_at,
+            dueDate: fm.due_date || "",
+            items: fm.items || [],
+            expenses: fm.expenses || [],
+            status: (fm.status as Invoice["status"]) || "draft",
+            subtotal: fm.subtotal || 0,
+            expenseTotal: fm.expense_total || 0,
+            advancePayment: fm.advance_payment || 0,
+            paidAmount: fm.paid_amount,
+            paidAt: fm.paid_at,
+            vatRate: fm.vat_rate ?? 0.19,
+            tax: fm.tax || 0,
+            total: fm.total || 0,
+            paymentTerms: fm.payment_terms,
+            bank: fm.bank,
+            notes: fm.notes,
+            reminderCount: fm.reminder_count,
+            reminderSentAt: fm.reminder_sent_at,
+            reminderFee: fm.reminder_fee,
+            invoiceType: fm.invoice_type,
+            parentInvoiceId: fm.parent_invoice_id,
+            caseSlugs: fm.case_slugs,
+          };
+        });
+        const loadedCases: InvoiceCase[] = casePages.map((p) => {
+          const fm = caseFrontmatter(p);
+          return {
+            slug: p.slug,
+            title: p.title,
+            caseNumber: fm.case_number || p.slug,
+            clientName: fm.client_name,
+            clientSlug: fm.client_slug,
+            timeEntries: fm.time_entries || [],
+            expenses: fm.expenses || [],
+          };
+        });
+        setInvoices(loadedInvoices);
+        setCases(loadedCases);
+        await setCache<InvoicingCache>(OFFLINE_KEYS.invoices, {
+          invoices: loadedInvoices,
+          cases: loadedCases,
+        });
+      }
     } catch (err) {
       console.error(
         "[invoicing] loadAll failed:",

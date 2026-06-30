@@ -643,7 +643,7 @@ export function PipelinePanel({
             Die Legal Agent Pipeline wurde für diese Akte noch nicht gestartet.
           </p>
           <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-            Klicken Sie auf &quot;Pipeline starten&quot; um die automatische Fallaufarbeitung zu
+            Klicke auf &quot;Pipeline starten&quot;, um die automatische Fallaufarbeitung zu
             beginnen.
           </p>
         </div>

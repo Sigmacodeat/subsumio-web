@@ -725,7 +725,7 @@ export function AIActivityFeed({
         <p className="text-[13px] text-[color:var(--ds-text-muted)]">
           {lang === "en"
             ? "No active AI tasks. Start a workflow to delegate."
-            : "Keine aktiven KI-Aufgaben. Starten Sie einen Workflow."}
+            : "Keine aktiven KI-Aufgaben. Starte einen Workflow."}
         </p>
       </section>
     );

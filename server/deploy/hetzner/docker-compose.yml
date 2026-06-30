@@ -47,7 +47,11 @@ services:
       interval: 10s
       timeout: 5s
       retries: 6
-    # Not published to the host — only the engine reaches it over the compose network.
+    # Published on localhost only — allows SSH-tunnel access for local dev
+    # without exposing the DB to the internet. Engine still uses the compose
+    # network internally. To tunnel: ssh -L 15432:localhost:5432 subsumio-hetzner
+    ports:
+      - "127.0.0.1:5432:5432"
 
   engine:
     build:

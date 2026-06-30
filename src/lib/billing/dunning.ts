@@ -196,24 +196,24 @@ export function buildDunningEmailBody(
   if (failureCount === 1) {
     return {
       subject: "Subsumio: Zahlungsproblem — bitte Zahlungsmittel prüfen",
-      body: `Sehr geehrte Damen und Herren,\n\ndie Zahlung für Ihr Subsumio-Abonnement (${orgName}) war leider nicht erfolgreich.\n\nWir versuchen die Zahlung ${retryStr} erneut. Bitte stellen Sie sicher, dass Ihr Zahlungsmittel gültig ist.\n\n${billingPortalUrl ? `Zahlungsmittel aktualisieren: ${billingPortalUrl}\n\n` : ""}Mit freundlichen Grüßen,\nIhr Subsumio-Team`,
+      body: `Hallo,\n\ndie Zahlung für dein Subsumio-Abonnement (${orgName}) war leider nicht erfolgreich.\n\nWir versuchen die Zahlung ${retryStr} erneut. Bitte stelle sicher, dass dein Zahlungsmittel gültig ist.\n\n${billingPortalUrl ? `Zahlungsmittel aktualisieren: ${billingPortalUrl}\n\n` : ""}Viele Grüße,\nDein Subsumio-Team`,
     };
   }
   if (failureCount === 2) {
     return {
       subject: "Subsumio: Zweiter Zahlungsversuch fehlgeschlagen — Account im Grace-Period",
-      body: `Sehr geehrte Damen und Herren,\n\ndie Zahlung für Ihr Subsumio-Abonnement (${orgName}) ist nun zweimal fehlgeschlagen. Ihr Account befindet sich im Grace-Period.\n\nBitte aktualisieren Sie Ihr Zahlungsmittel bis zum ${retryStr}, um eine Unterbrechung des Service zu vermeiden.\n\n${billingPortalUrl ? `Zahlungsmittel aktualisieren: ${billingPortalUrl}\n\n` : ""}Mit freundlichen Grüßen,\nIhr Subsumio-Team`,
+      body: `Hallo,\n\ndie Zahlung für dein Subsumio-Abonnement (${orgName}) ist nun zweimal fehlgeschlagen. Dein Account befindet sich im Grace-Period.\n\nBitte aktualisiere dein Zahlungsmittel bis zum ${retryStr}, um eine Unterbrechung des Service zu vermeiden.\n\n${billingPortalUrl ? `Zahlungsmittel aktualisieren: ${billingPortalUrl}\n\n` : ""}Viele Grüße,\nDein Subsumio-Team`,
     };
   }
   return {
     subject: "Subsumio: Account gesperrt — Zahlung nicht erfolgreich",
-    body: `Sehr geehrte Damen und Herren,\n\nIhr Subsumio-Account (${orgName}) wurde aufgrund mehrerer fehlgeschlagener Zahlungsversuche gesperrt.\n\nBitte kontaktieren Sie uns unter billing@subsum.io oder aktualisieren Sie Ihr Zahlungsmittel, um den Account zu reaktivieren.\n\n${billingPortalUrl ? `Account reaktivieren: ${billingPortalUrl}\n\n` : ""}Mit freundlichen Grüßen,\nIhr Subsumio-Team`,
+    body: `Hallo,\n\ndein Subsumio-Account (${orgName}) wurde aufgrund mehrerer fehlgeschlagener Zahlungsversuche gesperrt.\n\nBitte kontaktiere uns unter billing@subsum.io oder aktualisiere dein Zahlungsmittel, um den Account zu reaktivieren.\n\n${billingPortalUrl ? `Account reaktivieren: ${billingPortalUrl}\n\n` : ""}Viele Grüße,\nDein Subsumio-Team`,
   };
 }
 
 export function buildReactivationEmailBody(orgName: string): { subject: string; body: string } {
   return {
     subject: "Subsumio: Zahlung erfolgreich — Account reaktiviert",
-    body: `Sehr geehrte Damen und Herren,\n\nIhre Zahlung für Subsumio (${orgName}) war erfolgreich. Ihr Account ist wieder vollständig aktiv.\n\nVielen Dank für Ihr Vertrauen.\n\nMit freundlichen Grüßen,\nIhr Subsumio-Team`,
+    body: `Hallo,\n\ndeine Zahlung für Subsumio (${orgName}) war erfolgreich. Dein Account ist wieder vollständig aktiv.\n\nVielen Dank für dein Vertrauen.\n\nViele Grüße,\nDein Subsumio-Team`,
   };
 }

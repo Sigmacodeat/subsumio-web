@@ -60,8 +60,8 @@ function DefaultFallback({ error, onReset }: { error?: Error; onReset: () => voi
           Etwas ist schiefgelaufen
         </h1>
         <p className="mb-6 text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
-          Ein unerwarteter Fehler ist aufgetreten. Bitte laden Sie die Seite neu oder versuchen Sie
-          es später erneut.
+          Ein unerwarteter Fehler ist aufgetreten. Bitte lade die Seite neu oder versuche es später
+          erneut.
         </p>
         {error && process.env.NODE_ENV === "development" && (
           <pre className="mb-6 overflow-auto rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-left text-xs text-red-300">

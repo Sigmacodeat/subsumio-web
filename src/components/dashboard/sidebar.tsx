@@ -57,6 +57,7 @@ import {
   GitCompare,
   Share2,
   TrendingUp,
+  Send,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMutationQueue } from "@/lib/use-mutation";
@@ -459,6 +460,9 @@ const TAX_NAV_SECTIONS: NavSection[] = [
       { href: "/dashboard/tax-returns", icon: FileText, labelKey: "nav.tax_returns" },
       { href: "/dashboard/tax-assessments", icon: FileCheck, labelKey: "nav.tax_assessments" },
       { href: "/dashboard/tax-audit", icon: ClipboardCheck, labelKey: "nav.tax_audit" },
+      { href: "/dashboard/tax-clients", icon: Users, labelKey: "nav.tax_clients" },
+      { href: "/dashboard/tax-stbvv", icon: Calculator, labelKey: "nav.tax_stbvv" },
+      { href: "/dashboard/elster", icon: Send, labelKey: "nav.elster" },
     ],
   },
   {
@@ -562,6 +566,7 @@ const TAX_ALL_NAV_ITEMS: NavItem[] = [
   { href: "/dashboard/tax-assessments", icon: FileCheck, labelKey: "nav.tax_assessments" },
   { href: "/dashboard/tax-audit", icon: ClipboardCheck, labelKey: "nav.tax_audit" },
   { href: "/dashboard/tax-deadlines", icon: CalendarClock, labelKey: "nav.tax_deadlines" },
+  { href: "/dashboard/elster", icon: Send, labelKey: "nav.elster" },
   { href: "/dashboard/invoicing", icon: Receipt, labelKey: "nav.invoicing" },
   { href: "/dashboard/datev-export", icon: FileSpreadsheet, labelKey: "nav.datev_export" },
   { href: "/dashboard/cost-calculator", icon: Calculator, labelKey: "nav.cost_calculator" },
@@ -612,7 +617,10 @@ const TAX_PREFERRED_SECTION_BY_HREF: Array<{ href: string; section: DashboardKey
   { href: "/dashboard/tax-returns", section: "nav.section.tax_returns" },
   { href: "/dashboard/tax-assessments", section: "nav.section.tax_returns" },
   { href: "/dashboard/tax-audit", section: "nav.section.tax_returns" },
+  { href: "/dashboard/tax-clients", section: "nav.section.tax_returns" },
   { href: "/dashboard/tax-deadlines", section: "nav.section.tax_returns" },
+  { href: "/dashboard/tax-stbvv", section: "nav.section.tax_returns" },
+  { href: "/dashboard/elster", section: "nav.section.tax_returns" },
   { href: "/dashboard/upload", section: "nav.section.documents" },
   { href: "/dashboard/vault", section: "nav.section.documents" },
   { href: "/dashboard/templates", section: "nav.section.documents" },
@@ -687,8 +695,12 @@ function isActiveHref(pathname: string, href: string) {
   return pathname === href || (href !== "/dashboard" && pathname.startsWith(`${href}/`));
 }
 
-function findActiveSection(pathname: string, sections: NavSection[]) {
-  const preferred = PREFERRED_SECTION_BY_HREF.find((entry) => isActiveHref(pathname, entry.href));
+function findActiveSection(
+  pathname: string,
+  sections: NavSection[],
+  preferredSectionByHref: Array<{ href: string; section: DashboardKey }>
+) {
+  const preferred = preferredSectionByHref.find((entry) => isActiveHref(pathname, entry.href));
   if (preferred && sections.some((section) => section.titleKey === preferred.section)) {
     return preferred.section;
   }
@@ -778,6 +790,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
   const sidebarShellTransition = sidebarPanelTransition;
   const sidebarWidth = collapsed && isDesktop ? 64 : 220;
 
+  const isTax = industry === "tax";
   const navConfig = navForIndustry(industry);
   const {
     primaryItems,
@@ -846,8 +859,8 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
   }, [filteredSections, filteredBottomItems, searchQuery, adminSection]);
 
   const activeSection = useMemo(
-    () => findActiveSection(pathname, [...navSections, adminSection]),
-    [pathname, navSections, adminSection]
+    () => findActiveSection(pathname, [...navSections, adminSection], preferredSectionByHref),
+    [pathname, navSections, adminSection, preferredSectionByHref]
   );
 
   useEffect(() => {
@@ -944,7 +957,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
           </button>
           <Link
             href="/dashboard"
-            aria-label="Subsumio Dashboard"
+            aria-label={isTax ? t("sidebar.brand_tax") : t("sidebar.brand")}
             onClick={() => setMobileOpen(false)}
           >
             <SubsumioMark size={28} />
@@ -957,7 +970,13 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
             )}
             onClick={() => setMobileOpen(false)}
           >
-            Subsum<span className="brand-text">•io</span>
+            {isTax ? (
+              t("sidebar.brand_tax")
+            ) : (
+              <>
+                Subsum<span className="brand-text">•io</span>
+              </>
+            )}
           </Link>
         </div>
 

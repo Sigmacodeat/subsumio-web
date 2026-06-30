@@ -139,7 +139,7 @@ export function DraftEditor({
       addToast({
         type: "error",
         title: "Empfänger fehlt",
-        description: "Bitte geben Sie eine E-Mail-Adresse ein.",
+        description: "Bitte gib eine E-Mail-Adresse ein.",
         duration: 3000,
       });
       return;
@@ -364,7 +364,7 @@ export function DraftEditor({
               <div className="flex items-start gap-2 rounded-lg border border-orange-500/30 bg-orange-500/5 px-3 py-2">
                 <AlertTriangle size={14} className="mt-0.5 shrink-0 text-orange-600" />
                 <p className="text-xs text-orange-700">
-                  Dieser Schriftsatz wurde noch nicht von einem Anwalt geprüft. Bitte prüfen Sie den
+                  Dieser Schriftsatz wurde noch nicht von einem Anwalt geprüft. Bitte prüfe den
                   Inhalt vor dem Versand.
                 </p>
               </div>

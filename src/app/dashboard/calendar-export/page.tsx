@@ -273,7 +273,7 @@ export default function CalendarExportPage() {
           <CalendarClock size={48} className="mx-auto text-[color:var(--ds-border)]" />
           <p className="text-[color:var(--ds-text-muted)]">Keine Termine gefunden.</p>
           <p className="text-sm text-[color:var(--ds-text-muted)]">
-            Erstellen Sie Fristen in Akten oder nutzen Sie den Deadline-Extractor.
+            Erstelle Fristen in Akten oder nutze den Deadline-Extractor.
           </p>
         </div>
       ) : (

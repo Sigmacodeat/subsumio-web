@@ -43,7 +43,7 @@ export default function CitiesPage() {
           </h1>
           <p className="text-lg [color:var(--mk-text-muted)]">
             Subsumio arbeitet mit dem jeweiligen nationalen Recht — ABGB in Wien, BGB in Berlin, ZGB
-            in Zürich. Wählen Sie Ihre Stadt:
+            in Zürich. Wähle deine Stadt:
           </p>
         </div>
 

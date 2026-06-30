@@ -100,7 +100,7 @@ function renderDigest(
   appUrl: string
 ): { subject: string; text: string } {
   const total = hitsByTerm.reduce((n, t) => n + t.hits.length, 0);
-  const parts: string[] = [`${total} neue Entscheidung(en) zu Ihren beobachteten Themen:`, ""];
+  const parts: string[] = [`${total} neue Entscheidung(en) zu deinen beobachteten Themen:`, ""];
   for (const { term, hits } of hitsByTerm) {
     if (hits.length === 0) continue;
     parts.push(`▸ "${term}":`);
@@ -115,7 +115,7 @@ function renderDigest(
   parts.push(`Watchlist verwalten: ${appUrl}/dashboard/monitoring`);
   parts.push("");
   parts.push("Automatische Recherche — Relevanz und Aktualität bitte selbst prüfen.");
-  return { subject: `⚖️ ${total} neue Entscheidung(en) zu Ihren Themen`, text: parts.join("\n") };
+  return { subject: `⚖️ ${total} neue Entscheidung(en) zu deinen Themen`, text: parts.join("\n") };
 }
 
 export const GET = createCronHandler(async (_req: NextRequest) => {

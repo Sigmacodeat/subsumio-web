@@ -41,8 +41,8 @@ export function LoginForm() {
         <div className="space-y-1.5">
           <Label htmlFor="totp">2FA-Code</Label>
           <p className="text-xs text-[color:var(--ds-text-muted)]">
-            Geben Sie den 6-stelligen Code aus Ihrer Authenticator-App ein. Alternativ können Sie
-            einen Backup-Code verwenden.
+            Gib den 6-stelligen Code aus deiner Authenticator-App ein. Alternativ kannst du einen
+            Backup-Code verwenden.
           </p>
           <Input
             id="totp"
@@ -133,7 +133,7 @@ export function LoginForm() {
           {login.data.error === "invalid_credentials"
             ? "E-Mail oder Passwort falsch."
             : login.data.error === "sso_required"
-              ? `Bitte melden Sie sich über ${login.data.provider ?? "SSO"} an.`
+              ? `Bitte melde dich über ${login.data.provider ?? "SSO"} an.`
               : "Anmeldung fehlgeschlagen."}
         </p>
       )}

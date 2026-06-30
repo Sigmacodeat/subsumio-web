@@ -1357,7 +1357,7 @@ export default function CaseDetailPage() {
           description:
             lang === "en"
               ? "You don't have permission to restore this case."
-              : "Sie haben keine Berechtigung, diese Akte wiederherzustellen.",
+              : "Du hast keine Berechtigung, diese Akte wiederherzustellen.",
         });
       } else if (res.status === 409) {
         setConflictWarning(t("casesdetail.conflict_warning"));
@@ -2596,8 +2596,8 @@ export default function CaseDetailPage() {
                 </>
               ) : (
                 <p className="text-sm text-[color:var(--ds-text-muted)]">
-                  Noch keine Strategie generiert. Klicken Sie auf &ldquo;Strategie generieren&rdquo;
-                  für eine KI-gestützte Empfehlung.
+                  Noch keine Strategie generiert. Klicke auf &ldquo;Strategie generieren&rdquo; für
+                  eine KI-gestützte Empfehlung.
                 </p>
               )}
             </div>

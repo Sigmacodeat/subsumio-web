@@ -3,7 +3,8 @@
  * Analog zu legal-deadlines.ts, aber für Steuerfristen (AO, EStG, UStG).
  */
 
-import type { TaxDeadlineEntry } from "@/lib/tax-types";
+import type { TaxDeadlineEntry, TaxReturn, TaxAssessment, TaxAudit } from "@/lib/tax-types";
+import type { BrainPage } from "@/lib/types";
 
 // German federal holidays (same as legal-deadlines but kept independent for tax domain)
 const GERMAN_HOLIDAYS_2025: Set<string> = new Set([
@@ -350,4 +351,253 @@ export function gewerbesteuerVorauszahlungen(
       dueDate: d.toISOString().split("T")[0],
     };
   });
+}
+
+interface TaxDataForDeadlines {
+  returns: TaxReturn[];
+  assessments: TaxAssessment[];
+  audits: TaxAudit[];
+}
+
+function makeClientEntry(
+  config: {
+    type: TaxDeadlineEntry["type"];
+    label: string;
+    recurring: TaxDeadlineEntry["recurring"];
+  },
+  dueDate: Date,
+  now: Date,
+  clientId?: string,
+  clientName?: string,
+  notes?: string
+): TaxDeadlineEntry {
+  const dueIso = dueDate.toISOString().split("T")[0];
+  const nowIso = now.toISOString().split("T")[0];
+  const diffMs = dueDate.getTime() - new Date(nowIso).getTime();
+  const daysRemaining = Math.ceil(diffMs / (24 * 60 * 60 * 1000));
+  return {
+    id: `${config.type}-${clientId ?? "general"}-${dueIso}`,
+    type: config.type,
+    label: config.label,
+    dueDate: dueIso,
+    recurring: config.recurring,
+    daysRemaining,
+    isOverdue: daysRemaining < 0,
+    isUrgent: daysRemaining >= 0 && daysRemaining <= 7,
+    clientId,
+    clientName,
+    notes,
+  };
+}
+
+function frontmatterString(page: BrainPage, key: string): string | undefined {
+  const fm = page.frontmatter as Record<string, unknown> | undefined;
+  const v = fm?.[key];
+  return v === undefined ? undefined : String(v);
+}
+
+function frontmatterBool(page: BrainPage, key: string): boolean | undefined {
+  const fm = page.frontmatter as Record<string, unknown> | undefined;
+  const v = fm?.[key];
+  if (v === undefined) return undefined;
+  return v === true || v === "true" || v === "yes" || v === 1;
+}
+
+/**
+ * Convert BrainPage arrays from the tax APIs into the typed TaxDataForDeadlines format.
+ */
+export function brainPagesToTaxData(pages: {
+  returns?: BrainPage[];
+  assessments?: BrainPage[];
+  audits?: BrainPage[];
+}): TaxDataForDeadlines {
+  const returns: TaxReturn[] = (pages.returns ?? []).map((page) => ({
+    id: page.slug,
+    clientId: frontmatterString(page, "client_id") ?? "",
+    clientName: frontmatterString(page, "client_name") ?? "",
+    type: (frontmatterString(page, "tax_type") as TaxReturn["type"]) ?? "other",
+    year: Number(frontmatterString(page, "year") ?? new Date().getFullYear()),
+    status: (frontmatterString(page, "status") as TaxReturn["status"]) ?? "draft",
+    dueDate: frontmatterString(page, "due_date"),
+    submittedDate: frontmatterString(page, "submitted_date"),
+    assessedDate: frontmatterString(page, "assessed_date"),
+    taxAmount: Number(frontmatterString(page, "tax_amount") ?? 0) || undefined,
+    refundAmount: Number(frontmatterString(page, "refund_amount") ?? 0) || undefined,
+    notes: frontmatterString(page, "notes"),
+    createdAt: page.created_at,
+    updatedAt: page.updated_at,
+  }));
+
+  const assessments: TaxAssessment[] = (pages.assessments ?? []).map((page) => ({
+    id: page.slug,
+    clientId: frontmatterString(page, "client_id") ?? "",
+    clientName: frontmatterString(page, "client_name") ?? "",
+    type: (frontmatterString(page, "assessment_type") as TaxAssessment["type"]) ?? "Festsetzung",
+    taxType: (frontmatterString(page, "tax_type") as TaxAssessment["taxType"]) ?? "other",
+    year: Number(frontmatterString(page, "year") ?? new Date().getFullYear()),
+    noticeNumber: frontmatterString(page, "notice_number"),
+    noticeDate: frontmatterString(page, "notice_date") ?? page.created_at,
+    dueDate: frontmatterString(page, "due_date"),
+    amount: Number(frontmatterString(page, "amount") ?? 0),
+    paidDate: frontmatterString(page, "paid_date"),
+    contested: frontmatterBool(page, "contested") ?? false,
+    contestDeadline: frontmatterString(page, "contest_deadline"),
+    notes: frontmatterString(page, "notes"),
+    createdAt: page.created_at,
+    updatedAt: page.updated_at,
+  }));
+
+  const audits: TaxAudit[] = (pages.audits ?? []).map((page) => ({
+    id: page.slug,
+    clientId: frontmatterString(page, "client_id") ?? "",
+    clientName: frontmatterString(page, "client_name") ?? "",
+    type: (frontmatterString(page, "audit_type") as TaxAudit["type"]) ?? "Betriebspruefung",
+    year: Number(frontmatterString(page, "year") ?? new Date().getFullYear()),
+    phase: (frontmatterString(page, "phase") as TaxAudit["phase"]) ?? "vorbereitung",
+    auditor: frontmatterString(page, "auditor"),
+    startDate: frontmatterString(page, "start_date"),
+    endDate: frontmatterString(page, "end_date"),
+    totalAdditionalTax: Number(frontmatterString(page, "total_additional_tax") ?? 0) || undefined,
+    notes: frontmatterString(page, "notes"),
+    createdAt: page.created_at,
+    updatedAt: page.updated_at,
+  }));
+
+  return { returns, assessments, audits };
+}
+
+/**
+ * Generate client-specific deadlines from actual tax data.
+ * Includes submission deadlines, Einspruchsfristen, Zahlungsfristen, and Verjährung.
+ */
+export function taxDeadlinesFromData(
+  data: TaxDataForDeadlines,
+  fromDate: Date = new Date(),
+  daysAhead: number = 90
+): TaxDeadlineEntry[] {
+  const entries: TaxDeadlineEntry[] = [];
+  const now = fromDate;
+  const future = new Date(now.getTime() + daysAhead * 24 * 60 * 60 * 1000);
+
+  for (const r of data.returns) {
+    if (r.dueDate) {
+      let d = new Date(r.dueDate);
+      d = shiftToWorkingDay(d);
+      if (d >= now && d <= future) {
+        entries.push(
+          makeClientEntry(
+            { type: r.type, label: `${r.type}-Erklärung ${r.year}`, recurring: "annually" },
+            d,
+            now,
+            r.clientId,
+            r.clientName,
+            `Abgabe ${r.type} ${r.year}`
+          )
+        );
+      }
+    }
+    if (r.submittedDate && r.assessedDate === undefined && r.status === "submitted") {
+      // ELSTER extension: annual declarations via ELSTER get +1 month
+      const d = elsterFristverlaengerung(r.dueDate ?? r.submittedDate);
+      if (d >= now && d <= future) {
+        entries.push(
+          makeClientEntry(
+            { type: r.type, label: `ELSTER-Abgabe ${r.type} ${r.year}`, recurring: "none" },
+            d,
+            now,
+            r.clientId,
+            r.clientName,
+            "Verlängerte Frist bei ELSTER-Übermittlung (§ 168 AO)"
+          )
+        );
+      }
+    }
+  }
+
+  for (const a of data.assessments) {
+    if (a.noticeDate) {
+      const einspruch = einspruchDeadline(a.noticeDate);
+      if (einspruch >= now && einspruch <= future) {
+        entries.push(
+          makeClientEntry(
+            { type: "other", label: `Einspruchsfrist ${a.taxType} ${a.year}`, recurring: "none" },
+            einspruch,
+            now,
+            a.clientId,
+            a.clientName,
+            `AO § 109 — 1 Monat nach Zustellung des Bescheids ${a.noticeNumber ?? ""}`
+          )
+        );
+      }
+      const zahlung = zahlungsfristDeadline(a.noticeDate);
+      if (zahlung >= now && zahlung <= future) {
+        entries.push(
+          makeClientEntry(
+            { type: "other", label: `Zahlungsfrist ${a.taxType} ${a.year}`, recurring: "none" },
+            zahlung,
+            now,
+            a.clientId,
+            a.clientName,
+            `AO § 226 — 1 Monat nach Bekanntgabe des Vorauszahlungsbescheids`
+          )
+        );
+      }
+      if (a.contested && a.contestDeadline) {
+        const begruendung = einspruchsbegruendungDeadline(a.contestDeadline);
+        if (begruendung >= now && begruendung <= future) {
+          entries.push(
+            makeClientEntry(
+              {
+                type: "other",
+                label: `Einspruchsbegründung ${a.taxType} ${a.year}`,
+                recurring: "none",
+              },
+              begruendung,
+              now,
+              a.clientId,
+              a.clientName,
+              `AO § 355 Abs. 1 — 1 Monat nach Einlegung des Einspruchs`
+            )
+          );
+        }
+      }
+      const verjaehrung = festsetzungsverjaehrung(new Date(a.noticeDate).getFullYear());
+      if (verjaehrung >= now && verjaehrung <= future) {
+        entries.push(
+          makeClientEntry(
+            {
+              type: "other",
+              label: `Festsetzungsverjährung ${a.taxType} ${a.year}`,
+              recurring: "none",
+            },
+            verjaehrung,
+            now,
+            a.clientId,
+            a.clientName,
+            `AO § 477 — 4 Jahre nach Entstehung des Anspruchs`
+          )
+        );
+      }
+    }
+  }
+
+  for (const a of data.audits) {
+    if (a.startDate) {
+      const verjaehrung = aussenpruefungVerjaehrung(new Date(a.startDate).getFullYear());
+      if (verjaehrung >= now && verjaehrung <= future) {
+        entries.push(
+          makeClientEntry(
+            { type: "other", label: `Außenprüfungsverjährung ${a.year}`, recurring: "none" },
+            verjaehrung,
+            now,
+            a.clientId,
+            a.clientName,
+            `AO § 367 — Festsetzungsfrist nach Außenprüfung`
+          )
+        );
+      }
+    }
+  }
+
+  return entries.sort((a, b) => a.dueDate.localeCompare(b.dueDate));
 }

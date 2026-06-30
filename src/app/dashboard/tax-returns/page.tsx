@@ -142,6 +142,16 @@ export default function TaxReturnsPage() {
     });
   }, [returns, search, statusFilter, typeFilter]);
 
+  const pendingCount = returns.filter(
+    (r) => r.status === "draft" || r.status === "in_progress"
+  ).length;
+  const submittedCount = returns.filter(
+    (r) => r.status === "submitted" || r.status === "review"
+  ).length;
+  const assessedCount = returns.filter(
+    (r) => r.status === "assessed" || r.status === "closed"
+  ).length;
+
   async function createReturn() {
     if (!createForm.clientName.trim()) return;
     setCreateLoading(true);
@@ -192,6 +202,36 @@ export default function TaxReturnsPage() {
           </Button>
         }
       />
+
+      {/* Stats */}
+      {!loading && returns.length > 0 && (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
+            <div className="text-xs text-[color:var(--ds-text-muted)]">
+              {t("tax.returns.stat_total")}
+            </div>
+            <div className="text-xl font-bold text-[color:var(--ds-text)]">{returns.length}</div>
+          </div>
+          <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
+            <div className="text-xs text-[color:var(--ds-text-muted)]">
+              {t("tax.returns.stat_pending")}
+            </div>
+            <div className="text-xl font-bold text-amber-600">{pendingCount}</div>
+          </div>
+          <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
+            <div className="text-xs text-[color:var(--ds-text-muted)]">
+              {t("tax.returns.stat_submitted")}
+            </div>
+            <div className="text-xl font-bold text-blue-600">{submittedCount}</div>
+          </div>
+          <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
+            <div className="text-xs text-[color:var(--ds-text-muted)]">
+              {t("tax.returns.stat_assessed")}
+            </div>
+            <div className="text-xl font-bold text-emerald-600">{assessedCount}</div>
+          </div>
+        </div>
+      )}
 
       {/* Search + Filters */}
       {!loading && returns.length > 0 && (

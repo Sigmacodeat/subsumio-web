@@ -138,7 +138,7 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
       try {
         const errSendResult = await sendWhatsAppText(
           message.from,
-          "Kanzlei OS konnte die Nachricht derzeit nicht verarbeiten. Bitte versuchen Sie es später erneut."
+          "Kanzlei OS konnte die Nachricht derzeit nicht verarbeiten. Bitte versuche es später erneut."
         );
         if (errSendResult.messageId && sender.brainId) {
           void recordOutboundMessage(errSendResult.messageId, sender.brainId);

@@ -58,7 +58,7 @@ function generateSimpleAnswer(
       return `Der höchste Wert in "${title}" ist ${maxVal} (Zeile ${rows.indexOf(maxRow) + 1}).\n\nDiese Information ersetzt keine anwaltliche Prüfung.`;
     }
   }
-  return `Ihre Frage "${query}" zur Tabelle "${title}" kann mit den verfügbaren Daten nicht automatisch beantwortet werden. Bitte prüfen Sie die Tabelle manuell.\n\nDiese Information ersetzt keine anwaltliche Prüfung.`;
+  return `Deine Frage "${query}" zur Tabelle "${title}" kann mit den verfügbaren Daten nicht automatisch beantwortet werden. Bitte prüfe die Tabelle manuell.\n\nDiese Information ersetzt keine anwaltliche Prüfung.`;
 }
 
 export const POST = createHandler(

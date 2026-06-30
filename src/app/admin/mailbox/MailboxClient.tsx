@@ -658,7 +658,7 @@ function SettingsPanel({
           <div>
             <h3 className="mb-1 text-xs font-semibold [color:var(--mk-text)]">Empfangsadresse</h3>
             <p className="mb-2 text-xs [color:var(--mk-text-muted)]">
-              Diese Adresse bei Supabase (und anderen Diensten) als Konto-E-Mail verwenden.
+              Diese Adresse bei Resend (und anderen Diensten) als Konto-E-Mail verwenden.
             </p>
             <button
               onClick={onCopy}

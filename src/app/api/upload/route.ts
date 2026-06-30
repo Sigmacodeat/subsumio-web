@@ -100,7 +100,7 @@ export const POST = createHandler(
       if (requiresCase && !caseSlugStr) {
         return apiError(
           "case_required",
-          "Ein Dokument kann nur im Kontext einer Akte hochgeladen werden. Bitte wählen Sie eine Akte aus.",
+          "Ein Dokument kann nur im Kontext einer Akte hochgeladen werden. Bitte wähle eine Akte aus.",
           400
         );
       }

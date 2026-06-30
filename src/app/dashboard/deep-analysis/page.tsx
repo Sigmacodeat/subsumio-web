@@ -315,8 +315,8 @@ export default function DeepAnalysisPage() {
           <FileSearch className="h-12 w-12 text-[color:var(--ds-text-muted)]" />
           <h2 className="text-xl font-semibold">Deep Analysis</h2>
           <p className="max-w-md text-center text-[color:var(--ds-text-muted)]">
-            Geben Sie Dokument-Slugs ein und starten Sie die Analyse. Die KI analysiert alle
-            Dokumente zusammen und erstellt einen Bericht mit übergreifenden Erkenntnissen.
+            Gib Dokument-Slugs ein und starte die Analyse. Die KI analysiert alle Dokumente zusammen
+            und erstellt einen Bericht mit übergreifenden Erkenntnissen.
           </p>
         </Card>
       )}

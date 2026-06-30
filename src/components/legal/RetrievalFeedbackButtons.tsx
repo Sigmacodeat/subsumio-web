@@ -65,7 +65,7 @@ export function RetrievalFeedbackButtons({
         )}
       >
         <ThumbsUp size={10} className="text-emerald-600" />
-        Danke für Ihr Feedback
+        Danke für dein Feedback
       </span>
     );
   }

@@ -213,7 +213,11 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const handler = () => setGlobalQuickCreateOpen(true);
     window.addEventListener("subsumio:create-case", handler);
-    return () => window.removeEventListener("subsumio:create-case", handler);
+    window.addEventListener("subsumio:quick-create", handler);
+    return () => {
+      window.removeEventListener("subsumio:create-case", handler);
+      window.removeEventListener("subsumio:quick-create", handler);
+    };
   }, []);
 
   useEffect(() => {

@@ -79,7 +79,7 @@ export const POST = createHandler(
     rateTier: "standard",
     body: createSchema,
     audit: (ctx) => ({
-      action: "case.create" as const,
+      action: "tax.return_create" as const,
       entityType: "tax_return",
       details: { by: ctx.user.email, type: "tax_return" },
     }),

@@ -15,7 +15,10 @@ import {
   elsterFristverlaengerung,
   gewerbesteuerVorauszahlungen,
   RECURRING_DEADLINES,
+  brainPagesToTaxData,
+  taxDeadlinesFromData,
 } from "./tax-deadlines";
+import type { BrainPage } from "@/lib/types";
 
 test("shiftToWorkingDay moves Sunday to Monday", () => {
   const sunday = new Date("2025-06-15"); // Sunday
@@ -159,4 +162,80 @@ test("gewerbesteuerVorauszahlungen returns 4 quarters (GewStG § 9)", () => {
   expect(terms.length).toBe(4);
   const q1 = new Date(terms[0].dueDate);
   expect(q1.getMonth()).toBe(3); // April
+});
+
+function makeBrainPage(slug: string, frontmatter: Record<string, unknown>): BrainPage {
+  return {
+    slug,
+    title: "Test",
+    content: "",
+    created_at: "2025-01-01T00:00:00Z",
+    updated_at: "2025-01-01T00:00:00Z",
+    frontmatter,
+  };
+}
+
+test("brainPagesToTaxData converts BrainPage frontmatter to typed tax data", () => {
+  const data = brainPagesToTaxData({
+    returns: [
+      makeBrainPage("r1", {
+        client_id: "c1",
+        client_name: "Müller",
+        tax_type: "ESt",
+        year: "2024",
+        status: "submitted",
+        due_date: "2025-07-31",
+      }),
+    ],
+    assessments: [
+      makeBrainPage("a1", {
+        client_id: "c1",
+        client_name: "Müller",
+        tax_type: "ESt",
+        year: "2024",
+        notice_date: "2025-06-01",
+        amount: "1200",
+        contested: true,
+        contest_deadline: "2025-06-15",
+      }),
+    ],
+    audits: [
+      makeBrainPage("au1", {
+        client_id: "c1",
+        client_name: "Müller",
+        year: "2023",
+        start_date: "2025-01-15",
+      }),
+    ],
+  });
+  expect(data.returns.length).toBe(1);
+  expect(data.returns[0].clientName).toBe("Müller");
+  expect(data.assessments[0].contested).toBe(true);
+  expect(data.audits[0].year).toBe(2023);
+});
+
+test("taxDeadlinesFromData creates Einspruch and Zahlung deadlines from assessment", () => {
+  const data = {
+    returns: [],
+    assessments: [
+      {
+        id: "a1",
+        clientId: "c1",
+        clientName: "Müller",
+        type: "Festsetzung" as const,
+        taxType: "ESt" as const,
+        year: 2024,
+        noticeDate: "2025-06-01",
+        amount: 1200,
+        contested: false,
+        createdAt: "2025-06-01T00:00:00Z",
+        updatedAt: "2025-06-01T00:00:00Z",
+      },
+    ],
+    audits: [],
+  };
+  const deadlines = taxDeadlinesFromData(data, new Date("2025-06-01"), 60);
+  const labels = deadlines.map((d) => d.label);
+  expect(labels).toContain("Einspruchsfrist ESt 2024");
+  expect(labels).toContain("Zahlungsfrist ESt 2024");
 });

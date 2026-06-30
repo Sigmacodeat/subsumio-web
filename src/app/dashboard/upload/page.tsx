@@ -605,13 +605,13 @@ function UploadPageInner() {
           {!selectedCaseSlug && !casesLoading && cases.length > 0 && (
             <p className="mt-2 flex items-center gap-1.5 text-xs text-amber-600">
               <AlertCircle size={12} />
-              Bitte wählen Sie eine Akte aus. Dokumente ohne Aktenbezug werden nicht akzeptiert.
+              Bitte wähle eine Akte aus. Dokumente ohne Aktenbezug werden nicht akzeptiert.
             </p>
           )}
           {!casesLoading && cases.length === 0 && (
             <p className="mt-2 flex items-center gap-1.5 text-xs text-amber-600">
               <AlertCircle size={12} />
-              Keine Akten vorhanden. Bitte erstellen Sie zuerst eine Akte.
+              Keine Akten vorhanden. Bitte erstelle zuerst eine Akte.
             </p>
           )}
         </div>

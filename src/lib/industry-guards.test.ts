@@ -29,12 +29,15 @@ describe("industry-guards", () => {
       expect(isPathAllowedForIndustry("/dashboard/tax-assessments", "tax")).toBe(true);
       expect(isPathAllowedForIndustry("/dashboard/tax-audit", "tax")).toBe(true);
       expect(isPathAllowedForIndustry("/dashboard/tax-deadlines", "tax")).toBe(true);
+      expect(isPathAllowedForIndustry("/dashboard/tax-stbvv", "tax")).toBe(true);
+      expect(isPathAllowedForIndustry("/dashboard/elster", "tax")).toBe(true);
       expect(isPathAllowedForIndustry("/dashboard/tax-returns/some-id", "tax")).toBe(true);
     });
 
     test("legal user cannot access tax-only pages", () => {
       expect(isPathAllowedForIndustry("/dashboard/tax-returns", "legal")).toBe(false);
       expect(isPathAllowedForIndustry("/dashboard/tax-assessments", "legal")).toBe(false);
+      expect(isPathAllowedForIndustry("/dashboard/elster", "legal")).toBe(false);
     });
 
     test("shared pages are allowed for both industries", () => {
@@ -76,6 +79,7 @@ describe("industry-guards", () => {
     test("tax user can access tax API routes", () => {
       expect(isApiPathAllowedForIndustry("/api/tax/returns", "tax")).toBe(true);
       expect(isApiPathAllowedForIndustry("/api/tax/assessments", "tax")).toBe(true);
+      expect(isApiPathAllowedForIndustry("/api/tax/elster", "tax")).toBe(true);
     });
 
     test("legal user cannot access tax API routes", () => {
@@ -98,6 +102,7 @@ describe("industry-guards", () => {
 
     test("returns /dashboard when legal user hits tax page", () => {
       expect(redirectForIndustry("/dashboard/tax-returns", "legal")).toBe("/dashboard");
+      expect(redirectForIndustry("/dashboard/elster", "legal")).toBe("/dashboard");
     });
 
     test("returns null for allowed pages", () => {

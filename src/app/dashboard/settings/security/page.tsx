@@ -94,7 +94,7 @@ export default function SecuritySettingsPage() {
   async function disable2FA() {
     setError(null);
     if (!disablePassword) {
-      setError("Bitte geben Sie Ihr Passwort ein");
+      setError("Bitte gib dein Passwort ein");
       return;
     }
     try {
@@ -131,8 +131,8 @@ export default function SecuritySettingsPage() {
               2FA von Ihrer Kanzlei vorgeschrieben
             </p>
             <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-              Ihr Administrator hat 2FA für alle Teammitglieder verpflichtend aktiviert. Bitte
-              richten Sie Zwei-Faktor-Authentifizierung ein, um Zugriff zu behalten.
+              Dein Administrator hat 2FA für alle Teammitglieder verpflichtend aktiviert. Bitte
+              richte Zwei-Faktor-Authentifizierung ein, um Zugriff zu behalten.
             </p>
           </div>
         </div>
@@ -145,7 +145,7 @@ export default function SecuritySettingsPage() {
             <div className="flex-1">
               <p className="text-sm font-medium text-emerald-600">2FA ist aktiviert</p>
               <p className="text-xs text-[color:var(--ds-text-muted)]">
-                Ihr Account ist durch TOTP-geschützt.
+                Dein Account ist durch TOTP geschützt.
               </p>
             </div>
             <Button
@@ -170,8 +170,8 @@ export default function SecuritySettingsPage() {
                     Backup-Codes — sicher speichern!
                   </p>
                   <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-                    Diese Codes werden nur einmal angezeigt. Speichern Sie sie an einem sicheren
-                    Ort. Jeder Code kann einmal anstelle eines TOTP-Codes verwendet werden.
+                    Diese Codes werden nur einmal angezeigt. Speichere sie an einem sicheren Ort.
+                    Jeder Code kann einmal anstelle eines TOTP-Codes verwendet werden.
                   </p>
                 </div>
               </div>
@@ -213,7 +213,7 @@ export default function SecuritySettingsPage() {
                 <div>
                   <p className="text-sm font-medium text-red-600">2FA deaktivieren</p>
                   <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-                    Bitte bestätigen Sie mit Ihrem Passwort, dass Sie 2FA deaktivieren möchten.
+                    Bitte bestätige mit deinem Passwort, dass du 2FA deaktivieren möchtest.
                   </p>
                 </div>
               </div>
@@ -266,8 +266,8 @@ export default function SecuritySettingsPage() {
                 Zwei-Faktor-Authentifizierung (2FA)
               </p>
               <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-                Schützen Sie Ihren Account mit einem zeitbasierten Einmalcode (TOTP). Scannen Sie
-                den QR-Code mit einer Authenticator-App (z.B. Google Authenticator, Authy).
+                Schütze deinen Account mit einem zeitbasierten Einmalcode (TOTP). Scanne den QR-Code
+                mit einer Authenticator-App (z.B. Google Authenticator, Authy).
               </p>
             </div>
           </div>

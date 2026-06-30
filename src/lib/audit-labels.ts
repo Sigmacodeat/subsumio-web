@@ -53,8 +53,21 @@ export type AuditAction =
   | "legal.ai_deadlines"
   | "legal.rvg"
   | "tax.stbvv"
+  | "tax.elster_submit"
   | "tax.analyze"
   | "tax.summarize"
+  | "tax.return_create"
+  | "tax.return_update"
+  | "tax.return_delete"
+  | "tax.assessment_create"
+  | "tax.assessment_update"
+  | "tax.assessment_delete"
+  | "tax.audit_create"
+  | "tax.audit_update"
+  | "tax.audit_delete"
+  | "tax.client_create"
+  | "tax.client_update"
+  | "tax.client_delete"
   | "legal.statute"
   | "legal.playbook"
   | "legal.contradictions"
@@ -204,8 +217,21 @@ const ACTION_LABELS: Record<string, string> = {
   "litigation.phase_advance": "Phase gewechselt",
   "litigation.step_update": "Schritt aktualisiert",
   "tax.stbvv": "StBVV-Gebührenberechnung",
+  "tax.elster_submit": "ELSTER-Übermittlung",
   "tax.analyze": "Steuerdokument-Analyse",
   "tax.summarize": "Steuerdokument-Zusammenfassung",
+  "tax.return_create": "Steuererklärung angelegt",
+  "tax.return_update": "Steuererklärung aktualisiert",
+  "tax.return_delete": "Steuererklärung gelöscht",
+  "tax.assessment_create": "Steuerbescheid angelegt",
+  "tax.assessment_update": "Steuerbescheid aktualisiert",
+  "tax.assessment_delete": "Steuerbescheid gelöscht",
+  "tax.audit_create": "Betriebsprüfung angelegt",
+  "tax.audit_update": "Betriebsprüfung aktualisiert",
+  "tax.audit_delete": "Betriebsprüfung gelöscht",
+  "tax.client_create": "Steuermandant angelegt",
+  "tax.client_update": "Steuermandant aktualisiert",
+  "tax.client_delete": "Steuermandant gelöscht",
 };
 
 export function auditLabel(action: string): string {

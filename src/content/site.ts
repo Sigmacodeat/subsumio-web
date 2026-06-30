@@ -180,6 +180,12 @@ const _navDe: NavContent = {
           icon: "Layers",
         },
         {
+          label: "SuperBrain",
+          href: "/superbrain",
+          description: "Die KI-Engine — 4-Ebenen-Architektur, Dream Cycle",
+          icon: "Brain",
+        },
+        {
           label: "Features",
           href: "/features",
           description: "Alle Funktionen auf einen Blick",
@@ -286,6 +292,9 @@ const IT_NAV_REPLACEMENTS: Record<string, string> = {
   Overview: "Panoramica",
   "AI legal software — cited answers, zero hallucinations":
     "Software legale AI — risposte con citazioni, zero allucinazioni",
+  SuperBrain: "SuperBrain",
+  "The AI engine — 4-layer architecture, Dream Cycle":
+    "Il motore AI — architettura a 4 livelli, Dream Cycle",
   Features: "Funzioni",
   "Every capability, nothing hidden": "Ogni funzionalità, nulla di nascosto",
   Security: "Sicurezza",
@@ -325,6 +334,9 @@ const ES_NAV_REPLACEMENTS: Record<string, string> = {
   Overview: "Resumen",
   "AI legal software — cited answers, zero hallucinations":
     "Software legal IA — respuestas con citas, cero alucinaciones",
+  SuperBrain: "SuperBrain",
+  "The AI engine — 4-layer architecture, Dream Cycle":
+    "El motor IA — arquitectura de 4 capas, Dream Cycle",
   Features: "Funciones",
   "Every capability, nothing hidden": "Todas las funciones, nada oculto",
   Security: "Seguridad",
@@ -364,6 +376,9 @@ const PL_NAV_REPLACEMENTS: Record<string, string> = {
   Overview: "Przegląd",
   "AI legal software — cited answers, zero hallucinations":
     "Oprogramowanie prawne AI — cytowane odpowiedzi, zero halucynacji",
+  SuperBrain: "SuperBrain",
+  "The AI engine — 4-layer architecture, Dream Cycle":
+    "Silnik AI — architektura 4-warstwowa, Dream Cycle",
   Features: "Funkcje",
   "Every capability, nothing hidden": "Każda funkcja, nic ukrytego",
   Security: "Bezpieczeństwo",
@@ -403,6 +418,9 @@ const FR_NAV_REPLACEMENTS: Record<string, string> = {
   Overview: "Aperçu",
   "AI legal software — cited answers, zero hallucinations":
     "Logiciel juridique IA — réponses citées, zéro hallucination",
+  SuperBrain: "SuperBrain",
+  "The AI engine — 4-layer architecture, Dream Cycle":
+    "Le moteur IA — architecture à 4 couches, Dream Cycle",
   Features: "Fonctionnalités",
   "Every capability, nothing hidden": "Chaque fonctionnalité, rien de caché",
   Security: "Sécurité",
@@ -443,6 +461,9 @@ const NL_NAV_REPLACEMENTS: Record<string, string> = {
   Overview: "Overzicht",
   "AI legal software — cited answers, zero hallucinations":
     "AI juridische software — beantwoord met citaten, nul hallucinaties",
+  SuperBrain: "SuperBrain",
+  "The AI engine — 4-layer architecture, Dream Cycle":
+    "De AI-motor — 4-laag architectuur, Dream Cycle",
   Features: "Functies",
   "Every capability, nothing hidden": "Elke functionaliteit, niets verborgen",
   Security: "Beveiliging",
@@ -488,6 +509,12 @@ const _navEn: NavContent = {
           href: "/",
           description: "AI legal software — cited answers, zero hallucinations",
           icon: "Layers",
+        },
+        {
+          label: "SuperBrain",
+          href: "/superbrain",
+          description: "The AI engine — 4-layer architecture, Dream Cycle",
+          icon: "Brain",
         },
         {
           label: "Features",
@@ -596,6 +623,12 @@ export const NAV: Record<Lang, NavContent> = {
             href: "/",
             description: "KI-Kanzleisoftware — belegte Antworten, keine Halluzination",
             icon: "Layers",
+          },
+          {
+            label: "SuperBrain",
+            href: "/superbrain",
+            description: "Die KI-Engine — 4-Ebenen-Architektur, Dream Cycle",
+            icon: "Brain",
           },
           {
             label: "Features",

@@ -32,6 +32,9 @@ export const TAX_ONLY_PAGES: readonly string[] = [
   "/dashboard/tax-assessments",
   "/dashboard/tax-audit",
   "/dashboard/tax-deadlines",
+  "/dashboard/tax-stbvv",
+  "/dashboard/tax-clients",
+  "/dashboard/elster",
 ];
 
 /** API route prefixes that are legal-only. */

@@ -971,6 +971,39 @@ export const api = {
           body: JSON.stringify(input),
         });
       },
+
+      get(slug: string): Promise<BrainPage> {
+        return request(`/api/tax/returns/${encodeURIComponent(slug)}`);
+      },
+
+      update(
+        slug: string,
+        input: Partial<{
+          clientName: string;
+          type: string;
+          year: number;
+          status: string;
+          dueDate: string | null;
+          submittedDate: string | null;
+          assessedDate: string | null;
+          assessmentNotice: string | null;
+          taxAmount: number | null;
+          refundAmount: number | null;
+          assignedTo: string | null;
+          notes: string | null;
+        }>
+      ): Promise<BrainPage> {
+        return request(`/api/tax/returns/${encodeURIComponent(slug)}`, {
+          method: "PATCH",
+          body: JSON.stringify(input),
+        });
+      },
+
+      remove(slug: string): Promise<{ success: boolean }> {
+        return request(`/api/tax/returns/${encodeURIComponent(slug)}`, {
+          method: "DELETE",
+        });
+      },
     },
 
     assessments: {
@@ -999,6 +1032,39 @@ export const api = {
           body: JSON.stringify(input),
         });
       },
+
+      get(slug: string): Promise<BrainPage> {
+        return request(`/api/tax/assessments/${encodeURIComponent(slug)}`);
+      },
+
+      update(
+        slug: string,
+        input: Partial<{
+          clientName: string;
+          type: string;
+          taxType: string;
+          year: number;
+          noticeNumber: string | null;
+          noticeDate: string | null;
+          dueDate: string | null;
+          amount: number;
+          paidDate: string | null;
+          contested: boolean;
+          contestDeadline: string | null;
+          notes: string | null;
+        }>
+      ): Promise<BrainPage> {
+        return request(`/api/tax/assessments/${encodeURIComponent(slug)}`, {
+          method: "PATCH",
+          body: JSON.stringify(input),
+        });
+      },
+
+      remove(slug: string): Promise<{ success: boolean }> {
+        return request(`/api/tax/assessments/${encodeURIComponent(slug)}`, {
+          method: "DELETE",
+        });
+      },
     },
 
     audits: {
@@ -1022,6 +1088,152 @@ export const api = {
         notes?: string;
       }): Promise<{ slug: string }> {
         return request("/api/tax/audits", {
+          method: "POST",
+          body: JSON.stringify(input),
+        });
+      },
+
+      get(slug: string): Promise<BrainPage> {
+        return request(`/api/tax/audits/${encodeURIComponent(slug)}`);
+      },
+
+      update(
+        slug: string,
+        input: Partial<{
+          clientName: string;
+          type: string;
+          year: number;
+          phase: string;
+          auditor: string | null;
+          startDate: string | null;
+          endDate: string | null;
+          findings: Array<{
+            id: string;
+            issue: string;
+            amount?: number | null;
+            accepted?: boolean;
+            resolvedAt?: string | null;
+          }>;
+          totalAdditionalTax: number | null;
+          notes: string | null;
+        }>
+      ): Promise<BrainPage> {
+        return request(`/api/tax/audits/${encodeURIComponent(slug)}`, {
+          method: "PATCH",
+          body: JSON.stringify(input),
+        });
+      },
+
+      remove(slug: string): Promise<{ success: boolean }> {
+        return request(`/api/tax/audits/${encodeURIComponent(slug)}`, {
+          method: "DELETE",
+        });
+      },
+    },
+
+    clients: {
+      list(options?: { type?: string; search?: string; limit?: number }): Promise<BrainPage[]> {
+        const params = new URLSearchParams();
+        if (options?.limit) params.set("limit", String(options.limit));
+        if (options?.type) params.set("type", options.type);
+        if (options?.search) params.set("search", options.search);
+        const qs = params.toString();
+        return request(`/api/tax/clients${qs ? `?${qs}` : ""}`);
+      },
+
+      create(input: {
+        name: string;
+        type?: string;
+        taxId: string;
+        vatId?: string;
+        fiscalYearStart?: string;
+        fiscalYearEnd?: string;
+        industryCode?: string;
+        contactEmail?: string;
+        contactPhone?: string;
+        street?: string;
+        postalCode?: string;
+        city?: string;
+        country?: string;
+        notes?: string;
+      }): Promise<{ slug: string }> {
+        return request("/api/tax/clients", {
+          method: "POST",
+          body: JSON.stringify(input),
+        });
+      },
+
+      get(slug: string): Promise<BrainPage> {
+        return request(`/api/tax/clients/${encodeURIComponent(slug)}`);
+      },
+
+      update(
+        slug: string,
+        input: Partial<{
+          name: string;
+          type: string;
+          taxId: string;
+          vatId: string | null;
+          fiscalYearStart: string;
+          fiscalYearEnd: string;
+          industryCode: string | null;
+          contactEmail: string | null;
+          contactPhone: string | null;
+          street: string | null;
+          postalCode: string | null;
+          city: string | null;
+          country: string;
+          notes: string | null;
+        }>
+      ): Promise<BrainPage> {
+        return request(`/api/tax/clients/${encodeURIComponent(slug)}`, {
+          method: "PATCH",
+          body: JSON.stringify(input),
+        });
+      },
+
+      remove(slug: string): Promise<{ success: boolean }> {
+        return request(`/api/tax/clients/${encodeURIComponent(slug)}`, {
+          method: "DELETE",
+        });
+      },
+    },
+
+    elster: {
+      status(): Promise<{
+        status: {
+          mode: string;
+          connected: boolean;
+          certificateExpiresAt?: string;
+          lastError?: string;
+        };
+        submissions: BrainPage[];
+      }> {
+        return request("/api/tax/elster");
+      },
+
+      submit(input: {
+        clientId: string;
+        clientName: string;
+        formType: string;
+        period: string;
+        year: number;
+        taxAmount?: number;
+        refundAmount?: number;
+        vatPrevious?: number;
+        vatPayable?: number;
+        vatDeductible?: number;
+        grossWages?: number;
+        withheldTax?: number;
+        euCountryCode?: string;
+        euVatId?: string;
+        euTurnover?: number;
+        notes?: string;
+      }): Promise<{
+        slug: string;
+        submission: { id: string; status: string; elsterReference?: string };
+      }> {
+        return request("/api/tax/elster", {
           method: "POST",
           body: JSON.stringify(input),
         });

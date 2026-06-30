@@ -133,7 +133,7 @@ export function VoiceToPromptButton({ onTranscript, className, lang }: VoiceToPr
                 <p className="text-sm text-[color:var(--ds-text-subtle)]">
                   {appLang === "en"
                     ? "Your speech will appear here…"
-                    : "Ihre Spracheingabe erscheint hier…"}
+                    : "Deine Spracheingabe erscheint hier…"}
                 </p>
               )}
             </div>

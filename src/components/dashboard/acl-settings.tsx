@@ -83,8 +83,8 @@ export function AclSettings() {
           </h3>
         </div>
         <p className="mb-4 text-sm text-[color:var(--ds-text-muted)]">
-          Erstellen Sie Gruppen und weisen Sie Teammitglieder zu. Seiten ohne Berechtigung sind für
-          alle sichtbar (open-by-default).
+          Erstelle Gruppen und weise Teammitglieder zu. Seiten ohne Berechtigung sind für alle
+          sichtbar (open-by-default).
         </p>
       </div>
 
@@ -118,7 +118,7 @@ export function AclSettings() {
         <Card className="border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-8 text-center">
           <Lock className="mx-auto mb-2 h-8 w-8 text-[color:var(--ds-text-muted)]" />
           <p className="text-sm text-[color:var(--ds-text-muted)]">
-            Noch keine Gruppen erstellt. Erstellen Sie eine Gruppe, um Berechtigungen zu verwalten.
+            Noch keine Gruppen erstellt. Erstelle eine Gruppe, um Berechtigungen zu verwalten.
           </p>
         </Card>
       ) : (

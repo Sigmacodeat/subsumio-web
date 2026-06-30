@@ -8,6 +8,7 @@ const BASE = process.env.NEXT_PUBLIC_SITE_URL || "https://subsum.eu";
 const PAGES = [
   "",
   "/de",
+  "/superbrain",
   "/features",
   "/pricing",
   "/security",

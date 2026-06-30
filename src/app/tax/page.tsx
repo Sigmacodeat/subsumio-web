@@ -139,7 +139,7 @@ export default function TaxMarketingPage() {
             Bereit für steuerliche Präzision?
           </h2>
           <p className="mt-4 text-lg text-[color:var(--ds-text-muted)]">
-            Starten Sie heute mit Subsumio Tax — kein Seat-Minimum, DSGVO-konform, EU-Cloud.
+            Starte heute mit Subsumio Tax — kein Seat-Minimum, DSGVO-konform, EU-Cloud.
           </p>
           <Link
             href="/signup"

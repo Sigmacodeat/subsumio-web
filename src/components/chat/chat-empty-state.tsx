@@ -47,7 +47,7 @@ export function ChatEmptyState({
         {userName
           ? lang === "en"
             ? "How can I help you today?"
-            : "Womit kann ich Ihnen heute helfen?"
+            : "Womit kann ich dir heute helfen?"
           : t("chat.empty_desc")}
         {contextLabel && (
           <>

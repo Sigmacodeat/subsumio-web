@@ -767,7 +767,7 @@ async function executeConflictCheck(
           ? `⚠️ Konflikt erkannt für "${safeName}"`
           : `✓ Kein Konflikt für "${safeName}"`,
         message: hasConflict
-          ? `${matches.length} Treffer gefunden. Prüfen Sie vor Mandatsannahme.`
+          ? `${matches.length} Treffer gefunden. Prüfe vor Mandatsannahme.`
           : "Keine Konflikte in der Datenbank gefunden.",
         items: matches.map((m) => ({
           label: m.name,

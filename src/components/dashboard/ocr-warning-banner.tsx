@@ -55,7 +55,7 @@ export function OcrWarningBanner() {
       <div className="min-w-0 flex-1 text-sm text-[color:var(--ds-text)]">
         <span className="font-medium">OCR inaktiv</span>
         <span className="ml-1.5 text-[color:var(--ds-text-muted)]">
-          Gescannte Dokumente und Bilder werden nicht text-extrahiert. Aktivieren Sie{" "}
+          Gescannte Dokumente und Bilder werden nicht text-extrahiert. Aktiviere{" "}
           <code className="rounded bg-[color:var(--ds-surface-2)] px-1 py-0.5 text-xs text-[color:var(--ds-text)]">
             SUBSUMIO_EMBEDDING_IMAGE_OCR=true
           </code>{" "}

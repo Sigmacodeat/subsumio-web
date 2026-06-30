@@ -122,7 +122,7 @@ export default function SharedSpacesPage() {
     <div className="mx-auto max-w-[1600px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title="Shared Spaces"
-        description="Cross-Organisation-Kollaboration: Teilen Sie Dokumente, Akten und Playbooks mit anderen Kanzleien und Unternehmen."
+        description="Cross-Organisation-Kollaboration: Teile Dokumente, Akten und Playbooks mit anderen Kanzleien und Unternehmen."
         breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Shared Spaces" }]}
         actions={
           <Button onClick={() => setShowCreate(true)} size="sm">
@@ -146,7 +146,7 @@ export default function SharedSpacesPage() {
           <Share2 className="text-muted-foreground h-12 w-12" />
           <h2 className="text-xl font-semibold">Keine Shared Spaces vorhanden</h2>
           <p className="text-muted-foreground max-w-md text-center">
-            Erstellen Sie einen Shared Space, um Dokumente, Akten und Playbooks mit anderen
+            Erstelle einen Shared Space, um Dokumente, Akten und Playbooks mit anderen
             Organisationen zu teilen.
           </p>
           <Button onClick={() => setShowCreate(true)}>
@@ -371,7 +371,7 @@ function SpaceDetailModal({ space, onClose }: { space: SharedSpace; onClose: () 
           </h3>
           {space.resources.length === 0 ? (
             <p className="text-muted-foreground rounded-lg border border-dashed border-[color:var(--ds-border)] px-3 py-6 text-center text-sm">
-              Noch keine Ressourcen geteilt. Fügen Sie Dokumente, Akten oder Playbooks hinzu.
+              Noch keine Ressourcen geteilt. Füge Dokumente, Akten oder Playbooks hinzu.
             </p>
           ) : (
             <div className="space-y-2">

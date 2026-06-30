@@ -72,13 +72,13 @@ export default function DataExportPage() {
           <Shield size={18} className="mt-0.5 shrink-0 text-emerald-600" />
           <div>
             <p className="text-sm font-medium text-[color:var(--ds-text)]">
-              Ihre Daten gehören Ihnen
+              Deine Daten gehören dir
             </p>
             <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-              Nach Art. 20 der DSGVO haben Sie das Recht, Ihre personenbezogenen Daten in einem
+              Nach Art. 20 der DSGVO hast du das Recht, deine personenbezogenen Daten in einem
               strukturierten, gängigen und maschinenlesbaren Format zu erhalten. Der Export umfasst
-              alle Ihre Akten, Kontakte, Rechnungen, Fristen, Zeiten, Auslagen und Dokumente aus
-              Ihrem Brain.
+              alle deine Akten, Kontakte, Rechnungen, Fristen, Zeiten, Auslagen und Dokumente aus
+              deinem Brain.
             </p>
           </div>
         </div>

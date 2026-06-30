@@ -2,10 +2,11 @@
 
 import { useMemo, useState, useCallback } from "react";
 import Link from "next/link";
-import { Briefcase, Upload, Search, ArrowRight } from "lucide-react";
+import { Briefcase, Upload, Search, ArrowRight, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageSkeleton } from "@/components/dashboard/skeleton";
 import { WidgetBoard } from "@/components/dashboard/widget-board";
+import { TaxWidgetBoard } from "@/components/dashboard/tax-widget-board";
 import { useBrainStats, useRecentQueries } from "@/lib/queries/brain";
 import { useMe } from "@/lib/queries/auth";
 import { useLang } from "@/lib/use-lang";
@@ -41,16 +42,16 @@ function useGreeting(name: string | null, lang: Lang): Greeting {
   if (hour < 12)
     return {
       greeting: isFirst ? "Guten Morgen" : `Guten Morgen, ${firstName}`,
-      sub: "Hier ist, was heute Ihre Aufmerksamkeit braucht.",
+      sub: "Hier ist, was heute deine Aufmerksamkeit braucht.",
     };
   if (hour < 18)
     return {
       greeting: isFirst ? "Guten Tag" : `Guten Tag, ${firstName}`,
-      sub: "Hier ist, was heute Ihre Aufmerksamkeit braucht.",
+      sub: "Hier ist, was heute deine Aufmerksamkeit braucht.",
     };
   return {
     greeting: isFirst ? "Guten Abend" : `Guten Abend, ${firstName}`,
-    sub: "Hier ist, was heute Ihre Aufmerksamkeit braucht.",
+    sub: "Hier ist, was heute deine Aufmerksamkeit braucht.",
   };
 }
 
@@ -152,6 +153,8 @@ export default function DashboardPage() {
     !loading && !degraded && (stats?.total_pages ?? 0) === 0 && (stats?.total_queries ?? 0) === 0;
 
   const userName = meQuery.data?.user?.name ?? meQuery.data?.user?.email ?? null;
+  const industry = meQuery.data?.user?.industry ?? "legal";
+  const isTax = industry === "tax";
 
   return (
     <div className="mx-auto max-w-[1600px] space-y-6 p-4 md:p-6 lg:p-8">
@@ -162,10 +165,10 @@ export default function DashboardPage() {
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div>
                   <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
-                    {t("dashboard.welcome")}
+                    {isTax ? t("dashboard.welcome_tax") : t("dashboard.welcome")}
                   </h2>
                   <p className="mt-1 max-w-3xl text-[13px] leading-relaxed text-[color:var(--ds-text-muted)]">
-                    {t("dashboard.welcome_desc")}
+                    {isTax ? t("dashboard.welcome_tax_desc") : t("dashboard.welcome_desc")}
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -173,9 +176,17 @@ export default function DashboardPage() {
                     size="sm"
                     variant="glow"
                     data-tour="quick-create"
-                    onClick={() => window.dispatchEvent(new CustomEvent("subsumio:create-case"))}
+                    onClick={() => window.dispatchEvent(new CustomEvent("subsumio:quick-create"))}
                   >
-                    <Briefcase size={14} /> {t("cockpit.action_case")}
+                    {isTax ? (
+                      <>
+                        <FileText size={14} /> {t("dashboard.welcome_tax_action")}
+                      </>
+                    ) : (
+                      <>
+                        <Briefcase size={14} /> {t("cockpit.action_case")}
+                      </>
+                    )}
                   </Button>
                   <Link href="/dashboard/import-kanzlei">
                     <Button size="sm" variant="outline">
@@ -191,7 +202,7 @@ export default function DashboardPage() {
 
       <CalmGreeting name={userName} engineOnline={engineOnline} degraded={degraded} />
 
-      <WidgetBoard />
+      {isTax ? <TaxWidgetBoard /> : <WidgetBoard />}
     </div>
   );
 }
