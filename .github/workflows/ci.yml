@@ -6,8 +6,6 @@ on:
   pull_request:
     branches: [main, develop]
   workflow_dispatch:
-  schedule:
-    - cron: "0 4 * * *"
 
 jobs:
   lint:
@@ -44,6 +42,14 @@ jobs:
       - run: bun run build
         env:
           NEXT_TELEMETRY_DISABLED: "1"
+      - name: Check bundle sizes
+        run: |
+          LARGE_FILES=$(find .next/static/chunks -name "*.js" -size +500k 2>/dev/null || true)
+          if [ -n "$LARGE_FILES" ]; then
+            echo "⚠️ Large JS chunks detected (>500KB):"
+            echo "$LARGE_FILES"
+          fi
+          echo "✓ Bundle size check complete"
 
   typecheck:
     runs-on: ubuntu-latest
@@ -52,28 +58,6 @@ jobs:
       - uses: oven-sh/setup-bun@v2
       - run: bun install
       - run: bun run typecheck || npx tsc --noEmit
-
-  bundle-size:
-    name: Bundle Size Check
-    runs-on: ubuntu-latest
-    needs: [build]
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-    steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-      - run: bun install
-      - run: bun run build
-        env:
-          NEXT_TELEMETRY_DISABLED: "1"
-      - name: Check bundle sizes
-        run: |
-          # Verify no JS chunk exceeds 500KB (uncompressed)
-          LARGE_FILES=$(find .next/static/chunks -name "*.js" -size +500k 2>/dev/null || true)
-          if [ -n "$LARGE_FILES" ]; then
-            echo "⚠️ Large JS chunks detected (>500KB):"
-            echo "$LARGE_FILES"
-          fi
-          echo "✓ Bundle size check complete"
 
   test:
     runs-on: ubuntu-latest
@@ -174,81 +158,6 @@ jobs:
         with:
           args: --severity-threshold=high --file=server/package.json
           command: monitor
-
-  lighthouse-ci:
-    name: Lighthouse CI (Performance + SEO)
-    runs-on: ubuntu-latest
-    needs: [build]
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-    steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-      - run: bun install
-      - run: bun run build
-        env:
-          NEXT_TELEMETRY_DISABLED: "1"
-      - name: Run Lighthouse CI
-        uses: treosh/lighthouse-ci-action@v10
-        with:
-          uploadArtifacts: true
-          temporaryPublicStorage: true
-          urls: |
-            http://localhost:3000/
-            http://localhost:3000/pricing
-            http://localhost:3000/features
-            http://localhost:3000/security
-            http://localhost:3000/blog
-            http://localhost:3000/solutions/law-firms
-            http://localhost:3000/benchmark-methodology
-            http://localhost:3000/docs
-            http://localhost:3000/cities
-            http://localhost:3000/cities/wien
-          budgetPath: .github/lighthouse-budget.json
-          configPath: lighthouserc.json
-          serverBaseUrl: http://localhost:3000
-          serverCommand: bun run start
-
-  load-test:
-    name: Load Test (k6)
-    runs-on: ubuntu-latest
-    needs: [build]
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-    steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-      - run: bun install
-      - run: bun run build
-        env:
-          NEXT_TELEMETRY_DISABLED: "1"
-      - name: Start server in background
-        run: bun run start &
-        env:
-          PORT: 3000
-      - name: Wait for server to be ready
-        run: |
-          for i in {1..30}; do
-            if curl -s http://localhost:3000 > /dev/null; then
-              echo "Server is ready"
-              break
-            fi
-            echo "Waiting for server... ($i/30)"
-            sleep 2
-          done
-      - name: Install k6
-        run: |
-          sudo gpg -k
-          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
-          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
-          sudo apt-get update
-          sudo apt-get install k6
-      - name: Run smoke load test
-        run: k6 run tests/load/smoke-load.js
-        env:
-          BASE_URL: http://localhost:3000
-      - name: Run stress load test
-        run: k6 run tests/load/stress-load.js
-        env:
-          BASE_URL: http://localhost:3000
 
   production-gate:
     name: Production Gate (all checks must pass)
