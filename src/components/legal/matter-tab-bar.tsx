@@ -14,6 +14,7 @@ import {
   CalendarClock,
   Sparkles,
   Activity,
+  ShieldAlert,
   CircleDollarSign,
   Mail,
   Users,
@@ -36,6 +37,7 @@ const TAB_ICONS: Record<MatterTab, typeof FileText> = {
   deadlines: CalendarClock,
   strategy: Sparkles,
   activity: Activity,
+  evidence: ShieldAlert,
   billing: CircleDollarSign,
   communications: Mail,
   contacts: Users,
@@ -48,6 +50,7 @@ const TAB_LABELS_DE: Record<MatterTab, string> = {
   deadlines: "Fristen",
   strategy: "KI",
   activity: "Verlauf",
+  evidence: "Beweise",
   billing: "Kosten",
   communications: "Kommunikation",
   contacts: "Kontakte",
@@ -60,6 +63,7 @@ const TAB_LABELS_EN: Record<MatterTab, string> = {
   deadlines: "Deadlines",
   strategy: "AI",
   activity: "Activity",
+  evidence: "Evidence",
   billing: "Billing",
   communications: "Messages",
   contacts: "Contacts",
@@ -107,7 +111,7 @@ export function MatterTabBar() {
             onClick={() => setMoreOpen(false)}
           >
             <Icon size={14} className="shrink-0" />
-            <span className="hidden sm:inline">{labels[tab]}</span>
+            <span className={cn(active ? "inline" : "hidden", "sm:inline")}>{labels[tab]}</span>
           </Link>
         );
       })}

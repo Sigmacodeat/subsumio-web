@@ -20,6 +20,7 @@ import {
   Mail,
   Users,
   Brain,
+  ShieldAlert,
   ChevronRight,
 } from "lucide-react";
 import { useMatterDataSafe } from "@/lib/matter-data-context";
@@ -43,6 +44,7 @@ const MATTER_NAV_ITEMS: MatterNavItem[] = [
     labelEn: "Deadlines & Tasks",
   },
   { tab: "strategy", icon: Lightbulb, labelDe: "Strategie", labelEn: "Strategy" },
+  { tab: "evidence", icon: ShieldAlert, labelDe: "Beweise", labelEn: "Evidence" },
   { tab: "activity", icon: Activity, labelDe: "Aktivität", labelEn: "Activity" },
   { tab: "billing", icon: Receipt, labelDe: "Kosten", labelEn: "Billing" },
   { tab: "communications", icon: Mail, labelDe: "Kommunikation", labelEn: "Communications" },

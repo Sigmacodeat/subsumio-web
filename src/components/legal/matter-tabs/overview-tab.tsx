@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useRef, useEffect } from "react";
 import {
   Loader2,
   Lightbulb,
@@ -15,6 +16,7 @@ import {
   Check,
   Copy,
   Trash2,
+  MoreHorizontal,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -45,16 +47,31 @@ import type { CaseDetail } from "@/lib/matter-detail-types";
 export function OverviewTab() {
   const ctx = useMatterDetail();
   const { t, lang } = useLang();
+  const [moreActionsOpen, setMoreActionsOpen] = useState(false);
+  const moreActionsRef = useRef<HTMLDivElement>(null);
   if (!ctx.caseData) return null;
   const caseData = ctx.caseData;
 
+  // Close "More actions" on outside click
+  useEffect(() => {
+    if (!moreActionsOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (moreActionsRef.current && !moreActionsRef.current.contains(e.target as Node)) {
+        setMoreActionsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [moreActionsOpen]);
+
   return (
     <div className="space-y-4 p-4 md:p-6">
-      {/* Quick actions bar */}
+      {/* Quick actions bar — max 3 primary + "More" dropdown (Hick's Law) */}
       <div className="flex flex-wrap items-center gap-2">
+        {/* Primary action 1: AI Strategy */}
         <Button
-          variant="secondary"
-          className="gap-2 text-sm"
+          variant="primary"
+          className="brand-bg gap-2 text-sm text-white"
           onClick={() => {
             ctx.navigateToTab("strategy");
             ctx.setQuery(t("cases.detail_qb_strategy"));
@@ -63,6 +80,7 @@ export function OverviewTab() {
           <Lightbulb size={14} />
           {t("cases.detail_btn_strategy")}
         </Button>
+        {/* Primary action 2: Status Change */}
         <Button
           variant="secondary"
           disabled={ctx.userRole !== "admin" && ctx.userRole !== "lawyer"}
@@ -72,6 +90,7 @@ export function OverviewTab() {
           <ChevronRight size={14} />
           {t("cases.detail_btn_status_change")}
         </Button>
+        {/* Primary action 3: Email */}
         <Button
           variant="secondary"
           className="gap-2 border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-sm text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
@@ -80,94 +99,121 @@ export function OverviewTab() {
           <Mail size={14} />
           {t("email.compose_title")}
         </Button>
-        <Button
-          variant="secondary"
-          className="gap-2 border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-sm text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
-          onClick={() => ctx.setShowDocuSignDialog(true)}
-        >
-          <PenTool size={14} />
-          {t("docusign.send_title")}
-        </Button>
-        <Button
-          variant="secondary"
-          className="gap-2 border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-sm text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
-          onClick={() => {
-            ctx.navigateToTab("strategy");
-            ctx.setQuery(t("cases.detail_qb_chances"));
-          }}
-        >
-          <Scale size={14} />
-          {t("cases.detail_btn_assess")}
-        </Button>
-        {(ctx.userRole === "admin" || ctx.userRole === "lawyer") && (
-          <>
-            <Button
-              variant="secondary"
-              disabled={caseData.status === "archived"}
-              className={cn(
-                "border text-sm",
-                caseData.portalEnabled
-                  ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/15"
-                  : "border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
-              )}
-              onClick={() => {
-                const updated = { ...caseData, portalEnabled: !caseData.portalEnabled };
-                ctx.setCaseData(updated);
-                ctx.saveCaseUpdate({ ...updated });
-              }}
-            >
-              {caseData.portalEnabled
-                ? t("cases.detail_btn_portal_enabled")
-                : t("cases.detail_btn_portal_enable")}
-            </Button>
-            {caseData.portalEnabled && (
-              <Button
-                variant="secondary"
-                className="gap-2 border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-sm text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
-                onClick={async () => {
-                  ctx.setGeneratingPortal(true);
-                  try {
-                    const res = await csrfFetch("/api/portal/generate", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ caseSlug: caseData.slug }),
-                    });
-                    const data = await res.json();
-                    if (res.ok && data.url) {
-                      const fullUrl = `${window.location.origin}${data.url}`;
-                      ctx.setPortalUrl(fullUrl);
-                      await navigator.clipboard.writeText(fullUrl);
-                      ctx.setCopied(true);
-                      setTimeout(() => ctx.setCopied(false), 2000);
-                    } else {
-                      ctx.setSaveError(t("cases.detail_portal_error"));
-                    }
-                  } catch (err) {
-                    console.error(
-                      "[portal] generate failed:",
-                      err instanceof Error ? err.message : String(err)
-                    );
-                    ctx.setSaveError(t("cases.detail_portal_error"));
-                  } finally {
-                    ctx.setGeneratingPortal(false);
-                  }
-                }}
-                disabled={ctx.generatingPortal}
-              >
-                {ctx.generatingPortal ? (
-                  <Loader2 size={14} className="animate-spin" />
-                ) : (
-                  <Copy size={14} />
-                )}
-                {ctx.generatingPortal
-                  ? t("cases.detail_btn_portal_generating")
-                  : ctx.copied
-                    ? t("cases.detail_btn_portal_copied")
-                    : t("cases.detail_btn_portal_link")}
-              </Button>
+
+        {/* More actions dropdown — secondary actions (Progressive Disclosure) */}
+        <div className="relative ml-auto" ref={moreActionsRef}>
+          <button
+            onClick={() => setMoreActionsOpen((v) => !v)}
+            className={cn(
+              "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors md:text-sm",
+              moreActionsOpen
+                ? "bg-[color:var(--ds-hover)] text-[color:var(--ds-text)]"
+                : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
             )}
-          </>
-        )}
+          >
+            <MoreHorizontal size={14} className="shrink-0" />
+            <span className="hidden sm:inline">
+              {lang === "en" ? "More" : "Mehr"}
+            </span>
+          </button>
+          {moreActionsOpen && (
+            <div className="absolute top-full right-0 mt-1 min-w-[200px] rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-1 shadow-lg">
+              {/* Assess Chances → Strategy tab */}
+              <button
+                onClick={() => {
+                  ctx.navigateToTab("strategy");
+                  ctx.setQuery(t("cases.detail_qb_chances"));
+                  setMoreActionsOpen(false);
+                }}
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] md:text-sm"
+              >
+                <Scale size={14} className="shrink-0" />
+                {t("cases.detail_btn_assess")}
+              </button>
+              {/* DocuSign → Communications tab */}
+              <button
+                onClick={() => {
+                  ctx.navigateToTab("communications");
+                  setMoreActionsOpen(false);
+                }}
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] md:text-sm"
+              >
+                <PenTool size={14} className="shrink-0" />
+                {t("docusign.send_title")}
+              </button>
+              {/* Portal toggle (admin/lawyer only) */}
+              {(ctx.userRole === "admin" || ctx.userRole === "lawyer") && (
+                <button
+                  disabled={caseData.status === "archived"}
+                  onClick={() => {
+                    const updated = { ...caseData, portalEnabled: !caseData.portalEnabled };
+                    ctx.setCaseData(updated);
+                    ctx.saveCaseUpdate({ ...updated });
+                    setMoreActionsOpen(false);
+                  }}
+                  className={cn(
+                    "flex w-full items-center gap-2 px-3 py-1.5 text-xs font-medium transition-colors md:text-sm",
+                    caseData.portalEnabled
+                      ? "text-emerald-600 hover:bg-emerald-500/10"
+                      : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                  )}
+                >
+                  <Sparkles size={14} className="shrink-0" />
+                  {caseData.portalEnabled
+                    ? t("cases.detail_btn_portal_enabled")
+                    : t("cases.detail_btn_portal_enable")}
+                </button>
+              )}
+              {/* Portal link copy (if enabled) */}
+              {(ctx.userRole === "admin" || ctx.userRole === "lawyer") && caseData.portalEnabled && (
+                <button
+                  onClick={async () => {
+                    ctx.setGeneratingPortal(true);
+                    try {
+                      const res = await csrfFetch("/api/portal/generate", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ caseSlug: caseData.slug }),
+                      });
+                      const data = await res.json();
+                      if (res.ok && data.url) {
+                        const fullUrl = `${window.location.origin}${data.url}`;
+                        ctx.setPortalUrl(fullUrl);
+                        await navigator.clipboard.writeText(fullUrl);
+                        ctx.setCopied(true);
+                        setTimeout(() => ctx.setCopied(false), 2000);
+                      } else {
+                        ctx.setSaveError(t("cases.detail_portal_error"));
+                      }
+                    } catch (err) {
+                      console.error(
+                        "[portal] generate failed:",
+                        err instanceof Error ? err.message : String(err)
+                      );
+                      ctx.setSaveError(t("cases.detail_portal_error"));
+                    } finally {
+                      ctx.setGeneratingPortal(false);
+                    }
+                    setMoreActionsOpen(false);
+                  }}
+                  disabled={ctx.generatingPortal}
+                  className="flex w-full items-center gap-2 px-3 py-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] md:text-sm"
+                >
+                  {ctx.generatingPortal ? (
+                    <Loader2 size={14} className="shrink-0 animate-spin" />
+                  ) : (
+                    <Copy size={14} className="shrink-0" />
+                  )}
+                  {ctx.generatingPortal
+                    ? t("cases.detail_btn_portal_generating")
+                    : ctx.copied
+                      ? t("cases.detail_btn_portal_copied")
+                      : t("cases.detail_btn_portal_link")}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Status Change Dialog */}

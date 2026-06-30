@@ -6,9 +6,10 @@
 // intentionally restrained to project trust and seriousness. All motion respects
 // prefers-reduced-motion.
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { motion, useReducedMotion } from "framer-motion";
-import { ArrowRight } from "lucide-react";
+import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
+import { ArrowRight, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
 import { LANDING, PRICING, UI_STRINGS, p, type Lang } from "@/content/site";
@@ -28,6 +29,10 @@ import {
   EASE,
   AnimatedCounter,
   MagneticCard,
+  MagneticButton,
+  ScrollProgress,
+  SplitTextReveal,
+  GradientMesh,
 } from "./motion-system";
 import IndustryHeroMotif from "./industry-hero-motif";
 import { WhatsAppSpotlight } from "./subsumio-showcase";
@@ -49,8 +54,27 @@ export default function LandingPage({ lang }: { lang: Lang }) {
   const ui = UI_STRINGS[lang];
   const reduce = useReducedMotion();
 
+  // Subtle parallax for hero background motif (0.3x speed, transform-only)
+  const { scrollYProgress: heroScrollProgress } = useScroll({
+    offset: ["start start", "end start"],
+  });
+  const motifY = useTransform(heroScrollProgress, [0, 1], [0, reduce ? 0 : 120]);
+  const motifOpacity = useTransform(heroScrollProgress, [0, 0.8], [0.06, 0]);
+
+  // Sticky CTA visibility — appears after hero scrolls past
+  const { scrollY: globalScrollY } = useScroll();
+  const [stickyVisible, setStickyVisible] = useState(false);
+  useEffect(() => {
+    const threshold = 600;
+    const onScroll = () => setStickyVisible(globalScrollY.get() > threshold);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [globalScrollY]);
+
   return (
     <>
+      <ScrollProgress />
       <div data-tone="light" className="min-h-screen overflow-x-hidden" lang={lang}>
         {/* Hero — clean dark slate editorial surface with subtle motif */}
         <Section
@@ -58,11 +82,16 @@ export default function LandingPage({ lang }: { lang: Lang }) {
           className="relative overflow-hidden px-6 pt-28 pb-28 md:pt-36 md:pb-32"
         >
           <div className="relative mx-auto max-w-7xl text-center">
-            {/* Legal icon constellation — subtle, static background motif */}
-            <IndustryHeroMotif
-              industry="legal"
-              className="absolute inset-0 z-0 hidden opacity-[0.06] md:block"
-            />
+            {/* Legal icon constellation — subtle parallax background motif */}
+            <motion.div
+              style={{ y: motifY, opacity: motifOpacity }}
+              className="absolute inset-0 z-0 hidden md:block"
+            >
+              <IndustryHeroMotif
+                industry="legal"
+                className="h-full w-full opacity-[1]"
+              />
+            </motion.div>
             <div className="relative z-10">
               <motion.div
                 initial={reduce ? false : { opacity: 0, y: 12 }}
@@ -87,18 +116,15 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 className="mb-6 text-[clamp(2.5rem,7vw,4rem)] leading-[1.08] font-black tracking-tight [color:var(--mk-text)]"
                 style={{ fontFamily: "var(--font-display)" }}
               >
-                <motion.span
-                  initial={reduce ? false : { opacity: 0, y: 18 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={
-                    reduce ? { duration: 0 } : { duration: 0.55, ease: EASE.out, delay: 0.2 }
-                  }
+                <SplitTextReveal
+                  as="span"
+                  delay={0.2}
+                  stagger={0.08}
+                  useAnimate
                   className="block"
                 >
-                  {t.h1a}
-                  <br />
-                  {t.h1b}
-                </motion.span>
+                  {`${t.h1a}\n${t.h1b}`}
+                </SplitTextReveal>
               </h1>
               <motion.p
                 initial={reduce ? false : { opacity: 0, y: 16 }}
@@ -118,11 +144,13 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 }
                 className="mb-4 flex flex-col justify-center gap-4 sm:flex-row"
               >
-                <Link href={p(lang, "/signup")}>
-                  <Button size="xl" variant="primary" className="min-w-[220px]">
-                    {t.ctaPrimary} <ArrowRight size={18} />
-                  </Button>
-                </Link>
+                <MagneticButton strength={0.25}>
+                  <Link href={p(lang, "/signup")}>
+                    <Button size="xl" variant="primary" className="min-w-[220px]">
+                      {t.ctaPrimary} <ArrowRight size={18} />
+                    </Button>
+                  </Link>
+                </MagneticButton>
                 <Link href="#pricing">
                   <Button size="xl" variant="secondary" className="min-w-[200px]">
                     {lang !== "en" ? "Preise ansehen" : "See pricing"}
@@ -384,8 +412,9 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                       </td>
                       <td className="px-4 py-4 text-[color:var(--mk-text-muted)]">
                         <span className="inline-flex items-start gap-2">
-                          <span
-                            className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[color:var(--signal-green)]"
+                          <Check
+                            size={16}
+                            className="mt-0.5 shrink-0 text-[color:var(--signal-green)]"
                             aria-hidden
                           />
                           {row.subsumio}
@@ -393,8 +422,9 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                       </td>
                       <td className="py-4 pl-4 text-[color:var(--mk-text-subtle)]">
                         <span className="inline-flex items-start gap-2">
-                          <span
-                            className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[color:var(--mk-text-subtle)] opacity-40"
+                          <X
+                            size={16}
+                            className="mt-0.5 shrink-0 text-[color:var(--mk-text-subtle)] opacity-50"
                             aria-hidden
                           />
                           {row.others}
@@ -436,23 +466,26 @@ export default function LandingPage({ lang }: { lang: Lang }) {
           </motion.div>
         </Section>
 
-        {/* Final CTA — clean, serious close */}
+        {/* Final CTA — clean, serious close with gradient depth */}
         <Section
           tone="dark"
-          className="px-4 py-24 text-center sm:px-6 lg:px-8"
+          className="relative overflow-hidden px-4 py-24 text-center sm:px-6 lg:px-8"
           aria-label="Call to action"
         >
-          <motion.div {...reveal} className="mx-auto max-w-3xl text-center">
+          <GradientMesh className="z-0" />
+          <motion.div {...reveal} className="relative z-10 mx-auto max-w-3xl text-center">
             <SubsumioMark size={48} className="mx-auto mb-7" />
             <h2 className="mb-4 [font-family:var(--font-display)] text-2xl font-black [color:var(--mk-text)] md:text-3xl">
               {t.ctaTitle}
             </h2>
             <p className="mb-10 text-base [color:var(--mk-text-muted)] md:text-lg">{t.ctaSub}</p>
-            <Link href={p(lang, "/signup")}>
-              <Button size="xl" variant="primary">
-                {t.ctaButton} <ArrowRight size={18} />
-              </Button>
-            </Link>
+            <MagneticButton strength={0.2}>
+              <Link href={p(lang, "/signup")}>
+                <Button size="xl" variant="primary">
+                  {t.ctaButton} <ArrowRight size={18} />
+                </Button>
+              </Link>
+            </MagneticButton>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs [color:var(--mk-text-subtle)]">
               <span className="inline-flex items-center gap-1.5">
                 <span className="h-1 w-1 rounded-full bg-[color:var(--signal-green)]" />
@@ -482,6 +515,36 @@ export default function LandingPage({ lang }: { lang: Lang }) {
             )}
           </motion.div>
         </Section>
+
+        {/* Sticky CTA bar — appears after hero scroll (legal SaaS best practice) */}
+        <motion.div
+          initial={false}
+          animate={{
+            opacity: stickyVisible ? 1 : 0,
+            y: stickyVisible ? 0 : 60,
+            pointerEvents: stickyVisible ? "auto" : "none",
+          }}
+          transition={{ duration: 0.3, ease: EASE.out }}
+          className="fixed bottom-0 left-0 right-0 z-50 border-t [border-color:var(--mk-border)] [background:color-mix(in_srgb,var(--mk-surface)_92%,transparent)] backdrop-blur-lg"
+          aria-hidden={!stickyVisible}
+        >
+          <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
+            <div className="flex items-center gap-3">
+              <SubsumioMark size={24} />
+              <span className="text-sm font-semibold [color:var(--mk-text)]">
+                {lang !== "en" ? "Subsumio testen" : "Try Subsumio"}
+              </span>
+              <span className="hidden text-xs [color:var(--mk-text-subtle)] sm:inline">
+                {lang !== "en" ? "14 Tage gratis · Keine Kreditkarte" : "14 days free · No credit card"}
+              </span>
+            </div>
+            <Link href={p(lang, "/signup")}>
+              <Button size="md" variant="primary">
+                {t.ctaPrimary} <ArrowRight size={16} />
+              </Button>
+            </Link>
+          </div>
+        </motion.div>
       </div>
     </>
   );

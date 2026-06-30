@@ -10,7 +10,9 @@ import {
   Sparkles,
   Loader2,
   ListChecks,
+  ChevronUp,
 } from "lucide-react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -26,20 +28,46 @@ import CommentThread from "@/components/legal/CommentThread";
 export function DeadlinesTasksTab() {
   const ctx = useMatterDetail();
   const { t, lang } = useLang();
+  const [showDeadlineForm, setShowDeadlineForm] = useState(false);
   if (!ctx.caseData) return null;
   const caseData = ctx.caseData;
   const slug = ctx.slug;
 
+  // Auto-expand form when editing
+  useEffect(() => {
+    if (ctx.editingDeadlineIndex !== null) setShowDeadlineForm(true);
+  }, [ctx.editingDeadlineIndex]);
+
   return (
     <div className="space-y-4 p-4 md:p-6">
-      {/* Deadline Form */}
+      {/* Deadline Form — collapsed by default (Progressive Disclosure) */}
       <div className="max-w-3xl space-y-4">
+        {!showDeadlineForm ? (
+          <button
+            onClick={() => setShowDeadlineForm(true)}
+            disabled={caseData?.status === "archived"}
+            className="flex w-full items-center gap-2 rounded-xl border border-dashed border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm font-medium text-[color:var(--ds-text-muted)] transition-colors hover:border-[color:var(--brand-primary)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] disabled:opacity-50"
+          >
+            <Plus size={16} className="shrink-0" />
+            {t("cases.detail_dl_add")}
+          </button>
+        ) : (
         <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-          <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
-            {ctx.editingDeadlineIndex !== null
-              ? t("cases.detail_dl_edit")
-              : t("cases.detail_dl_add")}
-          </h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+              {ctx.editingDeadlineIndex !== null
+                ? t("cases.detail_dl_edit")
+                : t("cases.detail_dl_add")}
+            </h3>
+            {ctx.editingDeadlineIndex === null && (
+              <button
+                onClick={() => setShowDeadlineForm(false)}
+                className="text-xs text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+              >
+                <ChevronUp size={14} />
+              </button>
+            )}
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">
@@ -191,6 +219,7 @@ export function DeadlinesTasksTab() {
             )}
           </div>
         </div>
+        )}
 
         {/* AI Deadline Detection */}
         <div className="space-y-3 rounded-xl border border-blue-500/20 bg-blue-500/5 p-4">

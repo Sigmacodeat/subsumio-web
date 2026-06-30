@@ -30,6 +30,7 @@ export const MATTER_TABS = [
   "deadlines",
   "strategy",
   "activity",
+  "evidence",
   "billing",
   "communications",
   "contacts",
@@ -43,9 +44,15 @@ export const PRIMARY_TABS: MatterTab[] = [
   "documents",
   "deadlines",
   "strategy",
-  "activity",
+  "evidence",
 ];
-export const SECONDARY_TABS: MatterTab[] = ["billing", "communications", "contacts", "ai"];
+export const SECONDARY_TABS: MatterTab[] = [
+  "activity",
+  "billing",
+  "communications",
+  "contacts",
+  "ai",
+];
 
 // ── Types ─────────────────────────────────────────────────────────────
 
