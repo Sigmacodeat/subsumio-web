@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { AnimatePresence } from "framer-motion";
 import {
   Search,
@@ -31,6 +31,11 @@ import {
   FileCheck,
   Library,
   PenTool,
+  FileUp,
+  Clock,
+  Users,
+  CheckSquare,
+  MessageSquare,
 } from "lucide-react";
 import { useBrainSelector } from "@/lib/use-brain-selector";
 import { useBrainStats, usePages, useSearch } from "@/lib/queries/brain";
@@ -41,6 +46,7 @@ import { motion, useDashboardMotion } from "@/components/dashboard/motion";
 import { useRealtime } from "@/lib/realtime";
 import { csrfFetch } from "@/lib/csrf";
 import { cn } from "@/lib/utils";
+import { MatterSwitcher } from "@/components/dashboard/matter-switcher";
 
 export type Theme = "light" | "dark";
 
@@ -70,6 +76,7 @@ export function Topbar({
   onCopilotToggle,
 }: TopbarProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -558,6 +565,10 @@ export function Topbar({
           <Search size={18} />
         </button>
       </div>
+      {/* Matter Switcher — quick switch between pinned/recent matters */}
+      <div className="hidden shrink-0 sm:block">
+        <MatterSwitcher />
+      </div>
       {/* Notification bell — visible on all screen sizes */}
       <div className="relative shrink-0" ref={notifRef}>
         <button
@@ -716,6 +727,106 @@ export function Topbar({
                   </span>
                 </div>
                 <div className="p-1.5">
+                  {/* Matter-scoped actions — only when inside a matter */}
+                  {pathname?.startsWith("/dashboard/cases/") &&
+                    (() => {
+                      const matterSlug = decodeURIComponent(
+                        pathname.replace("/dashboard/cases/", "").split("/")[0] || ""
+                      );
+                      if (!matterSlug) return null;
+                      const matterItems = [
+                        {
+                          icon: CalendarClock,
+                          label: lang === "en" ? "Add Deadline" : "Frist hinzufügen",
+                          event: "subsumio:create-deadline",
+                          detail: { caseSlug: matterSlug },
+                        },
+                        {
+                          icon: CheckSquare,
+                          label: lang === "en" ? "Add Task" : "Aufgabe hinzufügen",
+                          event: "subsumio:create-task",
+                          detail: { caseSlug: matterSlug },
+                        },
+                        {
+                          icon: FileUp,
+                          label: lang === "en" ? "Upload Document" : "Dokument hochladen",
+                          event: "subsumio:upload-document",
+                          detail: { caseSlug: matterSlug },
+                        },
+                        {
+                          icon: Clock,
+                          label: lang === "en" ? "Log Time" : "Zeit erfassen",
+                          event: "subsumio:log-time",
+                          detail: { caseSlug: matterSlug },
+                        },
+                        {
+                          icon: Receipt,
+                          label: lang === "en" ? "Create Invoice" : "Rechnung erstellen",
+                          event: "subsumio:create-invoice",
+                          detail: { caseSlug: matterSlug },
+                        },
+                        {
+                          icon: FileSignature,
+                          label: lang === "en" ? "Request Signature" : "Signatur anfordern",
+                          event: "subsumio:create-signature",
+                          detail: { caseSlug: matterSlug },
+                        },
+                        {
+                          icon: FileCheck,
+                          label: lang === "en" ? "Create Contract" : "Vertrag erstellen",
+                          event: "subsumio:create-contract",
+                          detail: { caseSlug: matterSlug },
+                        },
+                        {
+                          icon: Library,
+                          label: lang === "en" ? "Add Clause" : "Klausel hinzufügen",
+                          event: "subsumio:create-clause",
+                          detail: { caseSlug: matterSlug },
+                        },
+                        {
+                          icon: Users,
+                          label: lang === "en" ? "Add Contact" : "Kontakt hinzufügen",
+                          event: "subsumio:create-contact",
+                          detail: { caseSlug: matterSlug },
+                        },
+                        {
+                          icon: MessageSquare,
+                          label: lang === "en" ? "Add Communication" : "Kommunikation hinzufügen",
+                          event: "subsumio:create-communication",
+                          detail: { caseSlug: matterSlug },
+                        },
+                      ];
+                      return (
+                        <>
+                          <div className="mb-1 px-3 pt-1 text-[10px] font-semibold tracking-wider text-[color:var(--brand-primary)] uppercase">
+                            {lang === "en" ? "This Matter" : "Diese Akte"}
+                          </div>
+                          {matterItems.map((item) => {
+                            const Icon = item.icon;
+                            return (
+                              <button
+                                key={item.label}
+                                onClick={() => {
+                                  setQuickCreateOpen(false);
+                                  window.dispatchEvent(
+                                    new CustomEvent(item.event, { detail: item.detail })
+                                  );
+                                }}
+                                className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                                role="menuitem"
+                              >
+                                <Icon size={15} className="shrink-0" />
+                                {item.label}
+                              </button>
+                            );
+                          })}
+                          <div className="my-1.5 border-t border-[color:var(--ds-border)]" />
+                          <div className="mb-1 px-3 pt-1 text-[10px] font-semibold tracking-wider text-[color:var(--ds-text-subtle)] uppercase">
+                            {lang === "en" ? "General" : "Allgemein"}
+                          </div>
+                        </>
+                      );
+                    })()}
                   {[
                     {
                       icon: Briefcase,

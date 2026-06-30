@@ -71,6 +71,7 @@ export const D = {
   "nav.rechtsprechung": { de: "Rechtsprechung", en: "Case Law" },
   "nav.norms": { de: "Normen", en: "Statutes" },
   "nav.judgements_sync": { de: "Urteile-Sync", en: "Judgements Sync" },
+  "nav.judgements_db": { de: "Urteils-Datenbank", en: "Judgements Database" },
   "nav.kollisionspruefung": { de: "Kollisionsprüfung", en: "Conflict Check" },
   "nav.tabular_review": { de: "Massen-Review", en: "Bulk Review" },
   "nav.obligation_tracking": { de: "Obligation Tracking", en: "Obligation Tracking" },
@@ -345,6 +346,170 @@ export const D = {
   "tax.stbvv.calculate": { de: "Berechnen", en: "Calculate" },
   "tax.stbvv.reset": { de: "Zurücksetzen", en: "Reset" },
 
+  // ── Tax AI: Case Strategy ──
+  "tax.strategy.title": { de: "Steuerstrategie", en: "Tax Strategy" },
+  "tax.strategy.desc": {
+    de: "KI-gestützte Strategieempfehlung für diese Steuererklärung",
+    en: "AI-powered strategy recommendation for this tax return",
+  },
+  "tax.strategy.generate": { de: "Strategie generieren", en: "Generate Strategy" },
+  "tax.strategy.generating": { de: "Wird generiert...", en: "Generating..." },
+  "tax.strategy.summary": { de: "Zusammenfassung", en: "Summary" },
+  "tax.strategy.recommended": { de: "Empfohlene Strategie", en: "Recommended Strategy" },
+  "tax.strategy.approach": { de: "Vorgehensweise", en: "Approach" },
+  "tax.strategy.risks": { de: "Risiken", en: "Risks" },
+  "tax.strategy.next_steps": { de: "Nächste Schritte", en: "Next Steps" },
+  "tax.strategy.cost_estimate": { de: "Kostenschätzung", en: "Cost Estimate" },
+  "tax.strategy.success_prob": { de: "Erfolgswahrscheinlichkeit", en: "Success Probability" },
+  "tax.strategy.error": {
+    de: "Strategie konnte nicht generiert werden",
+    en: "Strategy generation failed",
+  },
+  "tax.strategy.empty": {
+    de: "Noch keine Strategie generiert. Klicken Sie auf „Strategie generieren“.",
+    en: 'No strategy yet. Click "Generate Strategy".',
+  },
+
+  // ── Tax AI: Risk Analysis ──
+  "tax.risk.title": { de: "Risikoanalyse", en: "Risk Analysis" },
+  "tax.risk.desc": {
+    de: "KI-gestütte Analyse steuerlicher Risiken",
+    en: "AI-powered analysis of tax risks",
+  },
+  "tax.risk.analyze": { de: "Risiken analysieren", en: "Analyze Risks" },
+  "tax.risk.analyzing": { de: "Wird analysiert...", en: "Analyzing..." },
+  "tax.risk.overall": { de: "Gesamtrisiko", en: "Overall Risk" },
+  "tax.risk.recommendations": { de: "Empfehlungen", en: "Recommendations" },
+  "tax.risk.error": { de: "Risikoanalyse fehlgeschlagen", en: "Risk analysis failed" },
+  "tax.risk.empty": {
+    de: "Noch keine Risikoanalyse. Klicken Sie auf „Risiken analysieren“.",
+    en: 'No risk analysis yet. Click "Analyze Risks".',
+  },
+  "tax.risk.level_low": { de: "Niedrig", en: "Low" },
+  "tax.risk.level_medium": { de: "Mittel", en: "Medium" },
+  "tax.risk.level_high": { de: "Hoch", en: "High" },
+
+  // ── Tax AI: Precedent Search ──
+  "tax.precedent.title": { de: "Rechtsprechungssuche", en: "Precedent Search" },
+  "tax.precedent.desc": {
+    de: "Suche nach relevanten BFH- und FG-Urteilen",
+    en: "Search for relevant BFH and tax court precedents",
+  },
+  "tax.precedent.search": { de: "Suchen", en: "Search" },
+  "tax.precedent.searching": { de: "Suche läuft...", en: "Searching..." },
+  "tax.precedent.placeholder": {
+    de: "z.B. Verlustabzug nach § 10d EStG",
+    en: "e.g. loss carryback under § 10d EStG",
+  },
+  "tax.precedent.court": { de: "Gericht", en: "Court" },
+  "tax.precedent.date": { de: "Datum", en: "Date" },
+  "tax.precedent.file_number": { de: "Aktenzeichen", en: "File Number" },
+  "tax.precedent.summary": { de: "Zusammenfassung", en: "Summary" },
+  "tax.precedent.key_holdings": { de: "Leitsätze", en: "Key Holdings" },
+  "tax.precedent.legal_basis": { de: "Normen", en: "Legal Basis" },
+  "tax.precedent.relevance": { de: "Relevanz", en: "Relevance" },
+  "tax.precedent.error": { de: "Suche fehlgeschlagen", en: "Search failed" },
+  "tax.precedent.empty": {
+    de: "Keine Urteile gefunden.",
+    en: "No precedents found.",
+  },
+
+  // ── Tax AI: Einspruchsgenerator ──
+  "tax.appeal.title": { de: "Einspruchsgenerator", en: "Appeal Generator" },
+  "tax.appeal.desc": {
+    de: "Bescheid analysieren, Fristen pruefen, Einspruchsschreiben generieren",
+    en: "Analyze assessment, check deadlines, generate appeal letter",
+  },
+  "tax.appeal.generate": { de: "Einspruch generieren", en: "Generate Appeal" },
+  "tax.appeal.generating": { de: "Wird generiert...", en: "Generating..." },
+  "tax.appeal.error": {
+    de: "Einspruch konnte nicht generiert werden",
+    en: "Appeal generation failed",
+  },
+  "tax.appeal.empty": {
+    de: "Noch kein Einspruch generiert. Klicken Sie auf 'Einspruch generieren'.",
+    en: "No appeal yet. Click 'Generate Appeal'.",
+  },
+  "tax.appeal.contested_hint": {
+    de: "Strittige Punkte (optional, beschleunigt die Analyse)",
+    en: "Contested points (optional, speeds up analysis)",
+  },
+  "tax.appeal.contested_placeholder": {
+    de: "z.B. 'Betriebsausgaben um 5.000 EUR gekuerzt, AfA-Satz nicht beruecksichtigt'",
+    en: "e.g. 'Operating expenses reduced by 5,000 EUR, depreciation rate ignored'",
+  },
+  "tax.appeal.deadline": { de: "Einspruchsfrist", en: "Appeal Deadline" },
+  "tax.appeal.days": { de: "Tage", en: "days" },
+  "tax.appeal.today": { de: "Heute", en: "Today" },
+  "tax.appeal.overdue": { de: "Tage ueberfaellig", en: "days overdue" },
+  "tax.appeal.summary": { de: "Bescheidzusammenfassung", en: "Assessment Summary" },
+  "tax.appeal.contested_points": { de: "Strittige Punkte", en: "Contested Points" },
+  "tax.appeal.fa_view": { de: "Finanzamt", en: "Tax Office" },
+  "tax.appeal.taxpayer_view": { de: "Steuerpflichtiger", en: "Taxpayer" },
+  "tax.appeal.evidence": { de: "Benoetigte Nachweise", en: "Required Evidence" },
+  "tax.appeal.total_disputed": { de: "Strittiger Betrag", en: "Total Disputed" },
+  "tax.appeal.prospect": { de: "Erfolgsaussichten", en: "Success Prospect" },
+  "tax.appeal.draft_letter": { de: "Einspruchsschreiben (Entwurf)", en: "Appeal Letter (Draft)" },
+  "tax.appeal.requests": { de: "Antraege", en: "Requests" },
+  "tax.appeal.recommendations": { de: "Empfehlungen", en: "Recommendations" },
+  "tax.appeal.copy": { de: "Kopieren", en: "Copy" },
+  "tax.appeal.copied": { de: "Kopiert!", en: "Copied!" },
+
+  // ── Tax AI: BFH-Urteils-Feed ──
+  "tax.bfh_feed.title": { de: "BFH-Rechtsprechung", en: "BFH Case Law Feed" },
+  "tax.bfh_feed.desc": {
+    de: "Aktuelle BFH- und FG-Entscheidungen mit KI-Zusammenfassungen",
+    en: "Recent BFH and tax court decisions with AI summaries",
+  },
+  "tax.bfh_feed.search": { de: "Laden", en: "Load" },
+  "tax.bfh_feed.loading": { de: "Wird geladen...", en: "Loading..." },
+  "tax.bfh_feed.error": { de: "Feed konnte nicht geladen werden", en: "Feed loading failed" },
+  "tax.bfh_feed.empty": {
+    de: "Noch keine Urteile geladen. Geben Sie ein Thema ein oder klicken Sie auf 'Laden'.",
+    en: "No decisions loaded yet. Enter a topic or click 'Load'.",
+  },
+  "tax.bfh_feed.topic_placeholder": {
+    de: "Thema (optional, z.B. 'Umsatzsteuer', 'Betriebsausgaben')",
+    en: "Topic (optional, e.g. 'VAT', 'operating expenses')",
+  },
+  "tax.bfh_feed.overview": { de: "Ueberblick", en: "Overview" },
+  "tax.bfh_feed.holdings": { de: "Leitsaetze", en: "Key Holdings" },
+  "tax.bfh_feed.legal_basis": { de: "Normen", en: "Legal Basis" },
+  "tax.bfh_feed.no_results": {
+    de: "Keine Entscheidungen gefunden.",
+    en: "No decisions found.",
+  },
+
+  // ── Tax AI: Mandantenbrief ──
+  "tax.letter.title": { de: "Mandantenbrief", en: "Client Letter" },
+  "tax.letter.desc": {
+    de: "Steuerrechtliches Anschreiben mit individuellen Mandantendaten generieren",
+    en: "Generate tax client letter with individual client data",
+  },
+  "tax.letter.generate": { de: "Brief generieren", en: "Generate Letter" },
+  "tax.letter.generating": { de: "Wird generiert...", en: "Generating..." },
+  "tax.letter.error": { de: "Brief konnte nicht generiert werden", en: "Letter generation failed" },
+  "tax.letter.empty": {
+    de: "Noch kein Brief generiert. Waehlen Sie einen Anlass und klicken Sie auf 'Brief generieren'.",
+    en: "No letter yet. Select an occasion and click 'Generate Letter'.",
+  },
+  "tax.letter.occasion": { de: "Anlass", en: "Occasion" },
+  "tax.letter.custom_occasion": { de: "Individueller Anlass", en: "Custom Occasion" },
+  "tax.letter.custom_placeholder": {
+    de: "z.B. 'Neue Gewinnermittlungsmethode'",
+    en: "e.g. 'New profit determination method'",
+  },
+  "tax.letter.key_points": { de: "Wichtige Punkte (optional)", en: "Key Points (optional)" },
+  "tax.letter.key_points_placeholder": {
+    de: "z.B. 'Quartalszahlen, neue Belege, Erinnerung USt-Voranmeldung'",
+    en: "e.g. 'Quarterly figures, new receipts, VAT return reminder'",
+  },
+  "tax.letter.recipient": { de: "Empfaenger", en: "Recipient" },
+  "tax.letter.points": { de: "Kernpunkte", en: "Key Points" },
+  "tax.letter.cta": { de: "Naechste Schritte", en: "Call to Action" },
+  "tax.letter.copy": { de: "Kopieren", en: "Copy" },
+  "tax.letter.copied": { de: "Kopiert!", en: "Copied!" },
+
   // ── Tax Deadlines page ──
   "tax.deadlines.title": { de: "Steuerfristen", en: "Tax Deadlines" },
   "tax.deadlines.desc": {
@@ -443,6 +608,15 @@ export const D = {
     de: "ELSTER-Seite konnte nicht geladen werden",
     en: "ELSTER page could not be loaded",
   },
+  "elster.stat_total": { de: "Übermittlungen", en: "Submissions" },
+  "elster.stat_pending": { de: "Ausstehend", en: "Pending" },
+  "elster.stat_accepted": { de: "Akzeptiert", en: "Accepted" },
+  "elster.stat_errors": { de: "Fehler", en: "Errors" },
+  "elster.wizard_hint": {
+    de: "Klicken Sie auf 'Übermittlung starten', um den ELSTER-Assistenten zu öffnen.",
+    en: 'Click "Start Submission" to open the ELSTER wizard.',
+  },
+  "elster.start_submission": { de: "Übermittlung starten", en: "Start Submission" },
 
   // ── Tax Cockpit Widgets ──
   "tax.cockpit.title": { de: "Steuer-Cockpit", en: "Tax Cockpit" },
@@ -1938,6 +2112,18 @@ export const D = {
   "error.tax-stbvv_title": {
     de: "StBVV-Gebührenrechner konnte nicht geladen werden",
     en: "StBVV fee calculator could not be loaded",
+  },
+  "error.tax-strategy_title": {
+    de: "Steuerstrategie konnte nicht geladen werden",
+    en: "Tax strategy could not be loaded",
+  },
+  "error.tax-risk_title": {
+    de: "Risikoanalyse konnte nicht geladen werden",
+    en: "Risk analysis could not be loaded",
+  },
+  "error.tax-precedent_title": {
+    de: "Rechtsprechungssuche konnte nicht geladen werden",
+    en: "Precedent search could not be loaded",
   },
 
   // ── Onboarding errors ──

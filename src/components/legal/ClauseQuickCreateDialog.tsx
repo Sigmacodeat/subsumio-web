@@ -29,6 +29,7 @@ interface ClauseQuickCreateDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCreated?: () => void;
+  presetCaseSlug?: string;
 }
 
 const CATEGORY_OPTIONS: Array<{ value: string; labelKey: DashboardKey }> = [
@@ -47,6 +48,7 @@ export function ClauseQuickCreateDialog({
   open,
   onOpenChange,
   onCreated,
+  presetCaseSlug,
 }: ClauseQuickCreateDialogProps) {
   const { t } = useLang();
   const { addToast } = useToast();
@@ -75,7 +77,7 @@ export function ClauseQuickCreateDialog({
         title: title.trim(),
         type: "clause_library",
         content: content.trim(),
-        frontmatter: { category, tags: [category] },
+        frontmatter: { category, tags: [category], case_slug: presetCaseSlug || undefined },
       });
       addToast({ type: "success", title: t("clauses.toast_created" as DashboardKey) });
       onOpenChange(false);

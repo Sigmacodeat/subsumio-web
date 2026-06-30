@@ -42,11 +42,13 @@ import {
   User,
   Building2,
   Info,
+  Sparkles,
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EASE } from "./motion-system";
 import { SubsumioLogo, SubsumioMark } from "@/components/brand/subsumio-logo";
+import { type SiteBrand } from "@/lib/brand";
 import {
   NAV,
   FOOTER,
@@ -56,13 +58,14 @@ import {
   JURISDICTION_LABEL,
   HREFLANG,
   type Lang,
+  type NavContent,
+  type NavFeaturedContent,
 } from "@/content/site";
 
 /** Persist the user's explicit language choice so the browser-language redirect doesn't override it. */
 function setLangPref(lang: Lang) {
   document.cookie = `sb_lang=${lang};path=/;max-age=${365 * 24 * 3600};samesite=lax`;
 }
-import { type SiteBrand } from "@/lib/brand";
 
 export function useSiteBrand(): SiteBrand {
   return "subsumio";
@@ -103,6 +106,7 @@ export const ICONS: Record<string, LucideIcon> = {
   User,
   Building2,
   Info,
+  Sparkles,
 };
 
 // Tone-aware accent icon-tiles. On light surfaces the -700/-50/-200 shades
@@ -287,19 +291,160 @@ function mobileLinkCls(isActive: boolean): string {
   }`;
 }
 
+/** Badge pill for "AI" / "New" tags in nav items. */
+function NavBadge({ label }: { label: string }) {
+  const isAi = label === "AI" || label === "KI";
+  return (
+    <span
+      className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] leading-none font-bold ${
+        isAi ? "brand-bg text-white" : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+      }`}
+    >
+      {isAi && <Sparkles size={8} className="shrink-0" />}
+      {label}
+    </span>
+  );
+}
+
+/** Featured content sidebar for mega menus — rich card with icon, title, description. */
+function FeaturedSidebar({
+  content,
+  lang,
+  onClick,
+}: {
+  content: NavFeaturedContent;
+  lang: Lang;
+  onClick: () => void;
+}) {
+  const Icon = ICONS[content.icon ?? "Sparkles"] ?? Sparkles;
+  return (
+    <Link
+      href={p(lang, content.href)}
+      onClick={onClick}
+      className="group relative flex w-[240px] shrink-0 flex-col justify-between border-l [border-color:var(--mk-border)] p-4 transition-colors hover:[background:var(--mk-hover)]"
+    >
+      {/* Decorative gradient orb */}
+      <div className="brand-bg pointer-events-none absolute -top-8 -right-8 h-24 w-24 rounded-full opacity-[0.07] blur-2xl transition-opacity duration-300 group-hover:opacity-[0.12]" />
+
+      <div className="relative">
+        {/* Icon + Badge row */}
+        <div className="mb-3 flex items-center gap-2">
+          <div className="brand-soft brand-border flex h-10 w-10 items-center justify-center rounded-xl border">
+            <Icon size={18} className="brand-text" />
+          </div>
+          {content.badge && <NavBadge label={content.badge} />}
+        </div>
+        {/* Title */}
+        <div className="text-sm font-semibold [color:var(--mk-text)]">{content.title}</div>
+        {/* Description */}
+        <div className="mt-1 text-xs leading-relaxed [color:var(--mk-text-subtle)]">
+          {content.description}
+        </div>
+      </div>
+
+      {/* CTA arrow */}
+      <div className="brand-text mt-4 flex items-center gap-1 text-xs font-medium">
+        <ChevronRight
+          size={14}
+          className="shrink-0 transition-transform duration-200 group-hover:translate-x-0.5"
+        />
+      </div>
+    </Link>
+  );
+}
+
+/** Announcement bar above the header — dismissible, links to featured content. */
+function AnnouncementBar({ nav, lang }: { nav: NavContent; lang: Lang }) {
+  const [dismissed, setDismissed] = useState(false);
+  const reduceMotion = useReducedMotion();
+
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem("sb_announcement_dismissed") === "1") {
+        setDismissed(true);
+      }
+    } catch {}
+  }, []);
+
+  const handleDismiss = () => {
+    setDismissed(true);
+    try {
+      sessionStorage.setItem("sb_announcement_dismissed", "1");
+    } catch {}
+  };
+
+  if (!nav.announcement) return null;
+
+  return (
+    <AnimatePresence>
+      {!dismissed && (
+        <motion.div
+          key="announcement-bar"
+          initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: -8 }}
+          animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+          exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -8 }}
+          transition={reduceMotion ? { duration: 0 } : { duration: 0.3, ease: "easeOut" }}
+          className="relative z-[60] border-b [border-color:color-mix(in_srgb,var(--brand-primary)_12%,var(--mk-border))]"
+          style={{
+            background:
+              "linear-gradient(90deg, color-mix(in srgb, var(--brand-primary) 5%, var(--mk-bg)), color-mix(in srgb, var(--brand-primary) 2%, var(--mk-bg)))",
+          }}
+        >
+          <div className="mx-auto flex max-w-7xl items-center justify-center gap-2 px-4 py-1.5 text-center sm:px-6 lg:px-8">
+            <Link
+              href={p(lang, nav.announcement.href)}
+              className="group hover:brand-text flex items-center gap-2 text-xs font-medium [color:var(--mk-text)] transition-colors"
+            >
+              {nav.announcement.badge && (
+                <span className="relative inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] leading-none font-bold text-white">
+                  <span className="brand-bg relative z-10 inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5">
+                    <Sparkles size={8} className="shrink-0" />
+                    {nav.announcement.badge}
+                  </span>
+                  {/* Subtle pulse ring — separate layer to avoid scaling badge content */}
+                  <span
+                    className="brand-bg absolute inset-0 rounded-full opacity-40"
+                    style={{ animation: "pulse-ring 2s ease-out infinite" }}
+                  />
+                </span>
+              )}
+              <span>{nav.announcement.text}</span>
+              <ChevronRight
+                size={12}
+                className="shrink-0 [color:var(--brand-text)] transition-transform duration-200 group-hover:translate-x-0.5"
+              />
+            </Link>
+            <button
+              onClick={handleDismiss}
+              className="absolute top-1/2 right-3 -translate-y-1/2 rounded p-1 [color:var(--mk-text-subtle)] transition-colors hover:[color:var(--mk-text)] hover:[background:var(--mk-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
+              aria-label={UI_STRINGS[lang].dismissAnnouncement}
+            >
+              <X size={12} />
+            </button>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
 export function MarketingNav({ lang }: { lang: Lang }) {
   const nav = NAV[lang];
   const pathname = usePathname() || "/";
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [headerVisible, setHeaderVisible] = useState(true);
   const [openSection, setOpenSection] = useState<number | null>(null);
   const [mobileExpanded, setMobileExpanded] = useState<number | null>(null);
+  const [langOpen, setLangOpen] = useState(false);
   const reduceMotion = useReducedMotion();
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const hamburgerRef = useRef<HTMLButtonElement>(null);
   const firstMobileLinkRef = useRef<HTMLButtonElement>(null);
   const navRef = useRef<HTMLElement>(null);
+  const langRef = useRef<HTMLDivElement>(null);
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastScrollY = useRef(0);
 
   const isActive = (href: string) => pathname === p(lang, href) || pathname === href;
 
@@ -307,9 +452,19 @@ export function MarketingNav({ lang }: { lang: Lang }) {
     return nav.sections[sectionIdx].items.some((item) => isActive(item.href));
   };
 
-  // Scroll detection — backdrop blur after 8px.
+  // Scroll detection — backdrop blur after 8px + hide/show on scroll direction.
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8);
+    const onScroll = () => {
+      const currentY = window.scrollY;
+      setScrolled(currentY > 8);
+      // Hide header on scroll down (past 120px), show on scroll up.
+      if (currentY > 120 && currentY > lastScrollY.current) {
+        setHeaderVisible(false);
+      } else {
+        setHeaderVisible(true);
+      }
+      lastScrollY.current = currentY;
+    };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
@@ -319,6 +474,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
   useEffect(() => {
     setMobileOpen(false);
     setOpenSection(null);
+    setLangOpen(false);
   }, [pathname]);
 
   // Body scroll lock + focus management when mobile menu is open.
@@ -341,6 +497,22 @@ export function MarketingNav({ lang }: { lang: Lang }) {
       if (e.key === "Escape") {
         setMobileOpen(false);
         hamburgerRef.current?.focus();
+      }
+      // Focus trap — Tab cycles within drawer.
+      if (e.key === "Tab" && mobileMenuRef.current) {
+        const focusable = mobileMenuRef.current.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
       }
     };
     document.addEventListener("keydown", onKey);
@@ -383,6 +555,28 @@ export function MarketingNav({ lang }: { lang: Lang }) {
     return () => document.removeEventListener("mousedown", onMouseDown);
   }, [openSection]);
 
+  // Click-outside closes language dropdown.
+  useEffect(() => {
+    if (!langOpen) return;
+    const onMouseDown = (e: MouseEvent) => {
+      if (langRef.current && !langRef.current.contains(e.target as Node)) {
+        setLangOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onMouseDown);
+    return () => document.removeEventListener("mousedown", onMouseDown);
+  }, [langOpen]);
+
+  // Escape closes language dropdown.
+  useEffect(() => {
+    if (!langOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setLangOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [langOpen]);
+
   // Cleanup hover timeout on unmount.
   useEffect(() => {
     return () => {
@@ -404,255 +598,173 @@ export function MarketingNav({ lang }: { lang: Lang }) {
   };
 
   return (
-    <header
-      data-tone="light"
-      className={`sticky top-0 z-50 border-b transition-[background,box-shadow,border-color] duration-300 ${
-        scrolled
-          ? "[border-color:var(--mk-border)] shadow-[0_1px_0_rgba(0,0,0,0.06),0_2px_12px_rgba(0,0,0,0.04)] backdrop-blur-xl"
-          : "[border-color:transparent]"
-      }`}
-      style={{
-        background: scrolled ? "color-mix(in srgb, var(--mk-bg) 92%, transparent)" : "var(--mk-bg)",
-      }}
-    >
-      <nav ref={navRef} className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between">
-          <Link href={p(lang, "")} aria-label="Subsumio home" className="shrink-0">
-            <BrandLogo />
-          </Link>
+    <>
+      <AnnouncementBar nav={nav} lang={lang} />
+      <div
+        className={`sticky top-0 z-50 transition-transform duration-300 ${
+          headerVisible ? "translate-y-0" : "-translate-y-full"
+        }`}
+      >
+        <header
+          data-tone="light"
+          className={`border-b transition-[background,box-shadow,border-color] duration-300 ${
+            scrolled
+              ? "[border-color:var(--mk-border)] shadow-[0_1px_0_rgba(0,0,0,0.06),0_4px_20px_rgba(0,0,0,0.06)] backdrop-blur-xl"
+              : "[border-color:transparent]"
+          }`}
+          style={{
+            background: scrolled
+              ? "color-mix(in srgb, var(--mk-bg) 88%, transparent)"
+              : "var(--mk-bg)",
+          }}
+        >
+          <nav
+            ref={navRef}
+            className="mx-auto max-w-7xl px-4 py-2.5 sm:px-6 lg:px-8"
+            aria-label="Main navigation"
+          >
+            <div className="flex items-center justify-between gap-4">
+              <Link href={p(lang, "")} aria-label="Subsumio home" className="shrink-0">
+                <BrandLogo />
+              </Link>
 
-          {/* Desktop nav — mega dropdown sections */}
-          <div className="hidden items-center gap-1 lg:flex">
-            {nav.sections.map((section, sIdx) => {
-              const sectionActive = isSectionActive(sIdx);
-              const isOpen = openSection === sIdx;
-              return (
-                <div
-                  key={section.label}
-                  className="relative"
-                  onMouseEnter={() => handleSectionEnter(sIdx)}
-                  onMouseLeave={handleSectionLeave}
-                >
-                  <button
-                    className={`flex items-center gap-1 rounded-lg px-3 py-2 text-sm transition-all duration-200 ${NAV_LINK_BORDER} ${NAV_LINK_FOCUS} ${
-                      sectionActive || isOpen
-                        ? "font-medium [color:var(--brand-text)]"
-                        : NAV_LINK_INACTIVE
-                    }`}
-                    onClick={() => setOpenSection(isOpen ? null : sIdx)}
-                    aria-expanded={isOpen}
-                    aria-haspopup="true"
-                  >
-                    {section.label}
-                    <ChevronDown
-                      size={14}
-                      className={`shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
-                    />
-                  </button>
-
-                  <AnimatePresence>
-                    {isOpen && (
-                      <motion.div
-                        initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: 8 }}
-                        animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
-                        exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8 }}
-                        transition={
-                          reduceMotion ? { duration: 0 } : { duration: 0.18, ease: "easeOut" }
-                        }
-                        className="absolute top-full left-1/2 z-50 mt-2 -translate-x-1/2"
-                        style={{ minWidth: section.items.length > 4 ? "560px" : "320px" }}
-                      >
-                        {/* Arrow pointer */}
-                        <div className="absolute -top-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 border-t border-l [border-color:var(--mk-border)] [background:var(--mk-surface)]" />
-                        <div
-                          className="overflow-hidden rounded-2xl border [border-color:var(--mk-border)] shadow-2xl shadow-black/10 backdrop-blur-xl [background:var(--mk-surface)]"
-                          style={{
-                            background: "color-mix(in srgb, var(--mk-surface) 96%, transparent)",
-                          }}
-                        >
-                          <div
-                            className={
-                              section.items.length > 4 ? "grid grid-cols-2 gap-1 p-3" : "p-3"
-                            }
-                          >
-                            {section.items.map((item) => {
-                              const active = isActive(item.href);
-                              const Icon = ICONS[item.icon] ?? Layers;
-                              return (
-                                <Link
-                                  key={item.href + item.label}
-                                  href={p(lang, item.href)}
-                                  onClick={() => setOpenSection(null)}
-                                  className={`group flex items-start gap-3 rounded-xl px-3 py-2.5 transition-all duration-150 ${NAV_LINK_FOCUS} ${
-                                    active
-                                      ? "[background:color-mix(in_srgb,var(--brand-primary)_8%,var(--mk-hover))]"
-                                      : "hover:[background:var(--mk-hover)]"
-                                  }`}
-                                >
-                                  <div className="group-hover:brand-soft group-hover:brand-border flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border [border-color:var(--mk-border)] transition-colors [background:var(--mk-bg)]">
-                                    <Icon
-                                      size={16}
-                                      className="group-hover:brand-text [color:var(--mk-text-muted)]"
-                                    />
-                                  </div>
-                                  <div className="min-w-0 flex-1">
-                                    <div
-                                      className={`text-sm font-medium ${active ? "brand-text" : "[color:var(--mk-text)]"}`}
-                                    >
-                                      {item.label}
-                                    </div>
-                                    <div className="mt-0.5 text-xs leading-snug [color:var(--mk-text-subtle)]">
-                                      {item.description}
-                                    </div>
-                                  </div>
-                                </Link>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              );
-            })}
-
-            {/* Standalone pricing link */}
-            <Link
-              href={p(lang, nav.pricingHref)}
-              className={navLinkCls(isActive(nav.pricingHref))}
-              aria-current={isActive(nav.pricingHref) ? "page" : undefined}
-            >
-              {nav.pricingLabel}
-            </Link>
-          </div>
-
-          {/* Action area */}
-          <div className="flex items-center gap-2">
-            <div className="group relative hidden lg:block">
-              <button
-                className="flex min-h-[44px] items-center gap-1.5 rounded-full px-3 py-1.5 text-xs [color:var(--mk-text-muted)] transition-colors duration-200 [background:var(--mk-surface)] hover:[color:var(--mk-text)] hover:[background:var(--mk-hover)]"
-                aria-label="Language"
-                aria-haspopup="true"
-              >
-                <Globe size={12} /> {JURISDICTION_LABEL[lang]}
-                <ChevronDown size={10} className="opacity-50" />
-              </button>
-              <div className="invisible absolute top-full right-0 z-50 pt-1 opacity-0 transition-all duration-150 group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
-                <div className="overflow-hidden rounded-lg border [border-color:var(--mk-border)] shadow-lg [background:var(--mk-surface)]">
-                  {SUPPORTED_LANGS.map((l) => (
-                    <Link
-                      key={l}
-                      href={p(l, pathname.replace(/^\/(en|at|ch)/, ""))}
-                      onClick={() => setLangPref(l)}
-                      className={`flex items-center gap-2 px-4 py-2 text-xs transition-colors hover:[background:var(--mk-hover)] ${l === lang ? "font-medium [color:var(--mk-text)]" : "[color:var(--mk-text-muted)]"}`}
-                    >
-                      <span>{HREFLANG[l]}</span>
-                      <span>{JURISDICTION_LABEL[l]}</span>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <Link href={p(lang, "/login")} className="hidden lg:block">
-              <Button variant="ghost" size="sm" className="[color:var(--mk-text)]">
-                {nav.signIn}
-              </Button>
-            </Link>
-            <Link href={p(lang, "/signup")}>
-              <Button size="sm" variant="glow" className="group min-h-[44px]">
-                {nav.cta}
-                <ChevronRight
-                  size={14}
-                  className="transition-transform duration-200 group-hover:translate-x-0.5"
-                />
-              </Button>
-            </Link>
-            <button
-              ref={hamburgerRef}
-              className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2 [color:var(--mk-text)] transition-colors hover:[background:var(--mk-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--mk-surface)] focus-visible:outline-none lg:hidden"
-              onClick={() => setMobileOpen(!mobileOpen)}
-              aria-label={UI_STRINGS[lang].menuAria}
-              aria-expanded={mobileOpen}
-              aria-controls="mobile-nav-menu"
-            >
-              {mobileOpen ? <X size={20} /> : <Menu size={20} />}
-            </button>
-          </div>
-        </div>
-
-        <AnimatePresence>
-          {mobileOpen && (
-            <motion.div
-              ref={mobileMenuRef}
-              id="mobile-nav-menu"
-              role="navigation"
-              aria-label="Mobile navigation"
-              initial={reduceMotion ? { opacity: 1 } : { opacity: 0, height: 0 }}
-              animate={reduceMotion ? { opacity: 1 } : { opacity: 1, height: "auto" }}
-              exit={reduceMotion ? { opacity: 0 } : { opacity: 0, height: 0 }}
-              transition={reduceMotion ? { duration: 0 } : { duration: 0.2, ease: "easeInOut" }}
-              className="overflow-hidden lg:hidden"
-            >
-              <div className="mt-3 space-y-1 rounded-2xl p-3 shadow-2xl shadow-black/10 [background:var(--mk-bg)]">
-                {/* Expandable sections */}
+              {/* Desktop nav — mega dropdown sections with featured content */}
+              <div className="hidden items-center gap-0.5 lg:flex">
                 {nav.sections.map((section, sIdx) => {
-                  const expanded = mobileExpanded === sIdx;
                   const sectionActive = isSectionActive(sIdx);
+                  const isOpen = openSection === sIdx;
                   return (
-                    <div key={section.label}>
+                    <div
+                      key={section.label}
+                      className="relative"
+                      onMouseEnter={() => handleSectionEnter(sIdx)}
+                      onMouseLeave={handleSectionLeave}
+                    >
                       <button
-                        ref={sIdx === 0 ? firstMobileLinkRef : undefined}
-                        className={`flex min-h-[44px] w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${NAV_LINK_FOCUS} ${
-                          sectionActive ? "brand-text" : "[color:var(--mk-text)]"
-                        } hover:[background:var(--mk-hover)]`}
-                        onClick={() => setMobileExpanded(expanded ? null : sIdx)}
-                        aria-expanded={expanded}
+                        className={`relative flex items-center gap-1 rounded-lg px-3 py-2 text-sm transition-all duration-200 ${NAV_LINK_BORDER} ${NAV_LINK_FOCUS} ${
+                          sectionActive || isOpen
+                            ? "font-medium [color:var(--brand-text)]"
+                            : NAV_LINK_INACTIVE
+                        }`}
+                        onClick={() => setOpenSection(isOpen ? null : sIdx)}
+                        aria-expanded={isOpen}
+                        aria-haspopup="true"
+                        aria-controls={`mega-menu-${sIdx}`}
                       >
                         {section.label}
                         <ChevronDown
-                          size={15}
-                          className={`shrink-0 transition-transform duration-200 ${expanded ? "rotate-180" : ""} [color:var(--mk-text-subtle)]`}
+                          size={14}
+                          className={`shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
                         />
+                        {/* Active section underline indicator */}
+                        {sectionActive && (
+                          <span className="brand-bg absolute -bottom-[1px] left-1/2 h-[2px] w-6 -translate-x-1/2 rounded-full" />
+                        )}
                       </button>
+
                       <AnimatePresence>
-                        {expanded && (
+                        {isOpen && (
                           <motion.div
-                            initial={reduceMotion ? { opacity: 1 } : { opacity: 0, height: 0 }}
-                            animate={reduceMotion ? { opacity: 1 } : { opacity: 1, height: "auto" }}
-                            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, height: 0 }}
-                            transition={
-                              reduceMotion ? { duration: 0 } : { duration: 0.15, ease: "easeInOut" }
+                            id={`mega-menu-${sIdx}`}
+                            initial={
+                              reduceMotion ? { opacity: 1 } : { opacity: 0, y: 8, scale: 0.98 }
                             }
-                            className="overflow-hidden"
+                            animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
+                            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8, scale: 0.98 }}
+                            transition={
+                              reduceMotion
+                                ? { duration: 0 }
+                                : { duration: 0.2, ease: [0.22, 1, 0.36, 1] }
+                            }
+                            className="absolute top-full left-1/2 z-50 mt-2 -translate-x-1/2"
+                            style={{
+                              minWidth: section.featuredContent
+                                ? "640px"
+                                : section.items.length > 4
+                                  ? "560px"
+                                  : "340px",
+                            }}
                           >
-                            <div className="ml-3 space-y-0.5 border-l [border-color:var(--mk-border)] pl-3">
-                              {section.items.map((item) => {
-                                const active = isActive(item.href);
-                                const Icon = ICONS[item.icon] ?? Layers;
-                                return (
-                                  <Link
-                                    key={item.href + item.label}
-                                    href={p(lang, item.href)}
-                                    className={mobileLinkCls(active)}
-                                    aria-current={active ? "page" : undefined}
-                                    onClick={() => setMobileOpen(false)}
-                                  >
-                                    <span className="flex items-center gap-2">
-                                      <Icon
-                                        size={14}
-                                        className="shrink-0 [color:var(--mk-text-subtle)]"
-                                      />
-                                      <span className="flex flex-col">
-                                        <span>{item.label}</span>
-                                        <span className="text-xs [color:var(--mk-text-subtle)]">
-                                          {item.description}
-                                        </span>
-                                      </span>
-                                    </span>
-                                  </Link>
-                                );
-                              })}
+                            {/* Arrow pointer */}
+                            <div className="absolute -top-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 border-t border-l [border-color:var(--mk-border)] [background:var(--mk-surface)]" />
+                            <div
+                              className="overflow-hidden rounded-2xl border [border-color:var(--mk-border)] shadow-2xl shadow-black/10 backdrop-blur-xl"
+                              style={{
+                                background:
+                                  "color-mix(in srgb, var(--mk-surface) 96%, transparent)",
+                              }}
+                              role="menu"
+                              aria-label={section.label}
+                            >
+                              <div
+                                className={`flex ${section.featuredContent ? "flex-row" : "flex-col"}`}
+                              >
+                                {/* Nav items grid */}
+                                <div
+                                  className={`flex-1 ${section.items.length > 4 ? "grid grid-cols-2 gap-1 p-3" : "p-3"}`}
+                                >
+                                  {section.items.map((item) => {
+                                    const active = isActive(item.href);
+                                    const Icon = ICONS[item.icon] ?? Layers;
+                                    return (
+                                      <Link
+                                        key={item.href + item.label}
+                                        href={p(lang, item.href)}
+                                        onClick={() => setOpenSection(null)}
+                                        role="menuitem"
+                                        className={`group flex items-start gap-3 rounded-xl px-3 py-2.5 transition-all duration-150 ${NAV_LINK_FOCUS} ${
+                                          active
+                                            ? "[background:color-mix(in_srgb,var(--brand-primary)_8%,var(--mk-hover))]"
+                                            : "hover:[background:var(--mk-hover)]"
+                                        } ${item.featured ? "ring-1 ring-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)]" : ""}`}
+                                      >
+                                        <div
+                                          className={`group-hover:brand-soft group-hover:brand-border flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border [border-color:var(--mk-border)] transition-colors [background:var(--mk-bg)] ${item.featured ? "brand-soft brand-border" : ""}`}
+                                        >
+                                          <Icon
+                                            size={16}
+                                            className={`group-hover:brand-text [color:var(--mk-text-muted)] ${item.featured ? "brand-text" : ""}`}
+                                          />
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                          <div
+                                            className={`flex items-center gap-1.5 text-sm font-medium ${active ? "brand-text" : "[color:var(--mk-text)]"}`}
+                                          >
+                                            {item.label}
+                                            {item.badge && <NavBadge label={item.badge} />}
+                                          </div>
+                                          <div className="mt-0.5 text-xs leading-snug [color:var(--mk-text-subtle)]">
+                                            {item.description}
+                                          </div>
+                                        </div>
+                                      </Link>
+                                    );
+                                  })}
+                                </div>
+
+                                {/* Featured content sidebar */}
+                                {section.featuredContent && (
+                                  <FeaturedSidebar
+                                    content={section.featuredContent}
+                                    lang={lang}
+                                    onClick={() => setOpenSection(null)}
+                                  />
+                                )}
+                              </div>
+                              {/* Footer CTA */}
+                              {section.ctaBottom && (
+                                <Link
+                                  href={p(lang, section.ctaBottom.href)}
+                                  onClick={() => setOpenSection(null)}
+                                  className="group hover:brand-text flex items-center justify-between border-t [border-color:var(--mk-border)] px-4 py-2.5 text-xs font-medium [color:var(--mk-text-muted)] transition-colors hover:[background:var(--mk-hover)]"
+                                >
+                                  {section.ctaBottom.label}
+                                  <ChevronRight
+                                    size={12}
+                                    className="shrink-0 transition-transform duration-200 group-hover:translate-x-0.5"
+                                  />
+                                </Link>
+                              )}
                             </div>
                           </motion.div>
                         )}
@@ -664,47 +776,320 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                 {/* Standalone pricing link */}
                 <Link
                   href={p(lang, nav.pricingHref)}
-                  className={mobileLinkCls(isActive(nav.pricingHref))}
+                  className={navLinkCls(isActive(nav.pricingHref))}
                   aria-current={isActive(nav.pricingHref) ? "page" : undefined}
-                  onClick={() => setMobileOpen(false)}
                 >
                   {nav.pricingLabel}
                 </Link>
-
-                {/* Language switcher + Sign-in — always visible in mobile menu */}
-                <div className="mt-2 space-y-0.5 border-t [border-color:var(--mk-border)] pt-2">
-                  <div className="px-3 py-1 text-xs [color:var(--mk-text-subtle)]">
-                    <Globe size={12} className="mr-1.5 inline" /> Sprache / Language
-                  </div>
-                  {SUPPORTED_LANGS.map((l) => (
-                    <Link
-                      key={l}
-                      href={p(l, pathname.replace(/^\/(en|at|ch)/, ""))}
-                      className={mobileLinkCls(l === lang)}
-                      onClick={() => {
-                        setMobileOpen(false);
-                        setLangPref(l);
-                      }}
-                    >
-                      <span className="flex items-center gap-1.5">
-                        <Globe size={13} /> {HREFLANG[l]} — {JURISDICTION_LABEL[l]}
-                      </span>
-                    </Link>
-                  ))}
-                  <Link
-                    href={p(lang, "/login")}
-                    className={mobileLinkCls(false)}
-                    onClick={() => setMobileOpen(false)}
-                  >
-                    {nav.signIn}
-                  </Link>
-                </div>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </nav>
-    </header>
+
+              {/* Action area */}
+              <div className="flex items-center gap-1.5">
+                {/* Language switcher — click-to-open with keyboard support */}
+                <div ref={langRef} className="relative hidden lg:block">
+                  <button
+                    className="flex min-h-[36px] items-center gap-1.5 rounded-full px-3 py-1.5 text-xs [color:var(--mk-text-muted)] transition-colors duration-200 [background:var(--mk-surface)] hover:[color:var(--mk-text)] hover:[background:var(--mk-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
+                    aria-label="Language"
+                    aria-haspopup="true"
+                    aria-expanded={langOpen}
+                    onClick={() => setLangOpen(!langOpen)}
+                  >
+                    <Globe size={12} /> {JURISDICTION_LABEL[lang]}
+                    <ChevronDown
+                      size={10}
+                      className={`opacity-50 transition-transform duration-200 ${langOpen ? "rotate-180" : ""}`}
+                    />
+                  </button>
+                  <AnimatePresence>
+                    {langOpen && (
+                      <motion.div
+                        initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: 4 }}
+                        animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+                        exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 4 }}
+                        transition={
+                          reduceMotion ? { duration: 0 } : { duration: 0.15, ease: "easeOut" }
+                        }
+                        className="absolute top-full right-0 z-50 mt-1.5"
+                      >
+                        <div
+                          className="overflow-hidden rounded-xl border [border-color:var(--mk-border)] p-1.5 shadow-xl shadow-black/10 [background:var(--mk-surface)]"
+                          role="menu"
+                          aria-label="Language"
+                        >
+                          {SUPPORTED_LANGS.map((l) => (
+                            <Link
+                              key={l}
+                              href={p(l, pathname.replace(/^\/(en|at|ch|it|es|pl|fr|nl)/, ""))}
+                              onClick={() => {
+                                setLangPref(l);
+                                setLangOpen(false);
+                              }}
+                              role="menuitem"
+                              className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs transition-colors hover:[background:var(--mk-hover)] ${l === lang ? "brand-text font-medium" : "[color:var(--mk-text-muted)]"}`}
+                            >
+                              <span className="font-mono text-[10px] opacity-60">
+                                {HREFLANG[l]}
+                              </span>
+                              <span>{JURISDICTION_LABEL[l]}</span>
+                            </Link>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+                {/* Secondary CTA — Demo ansehen / Watch demo */}
+                {nav.ctaSecondary && nav.ctaSecondaryHref && (
+                  <Link href={p(lang, nav.ctaSecondaryHref)} className="hidden lg:block">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="hover:brand-text text-xs [color:var(--mk-text-muted)]"
+                    >
+                      {nav.ctaSecondary}
+                    </Button>
+                  </Link>
+                )}
+                <Link href={p(lang, "/login")} className="hidden lg:block">
+                  <Button variant="ghost" size="sm" className="[color:var(--mk-text)]">
+                    {nav.signIn}
+                  </Button>
+                </Link>
+                <Link href={p(lang, "/signup")} className="hidden sm:block">
+                  <Button size="sm" variant="glow" className="group min-h-[36px]">
+                    {nav.cta}
+                    <ChevronRight
+                      size={14}
+                      className="transition-transform duration-200 group-hover:translate-x-0.5"
+                    />
+                  </Button>
+                </Link>
+                {/* Compact CTA icon for xs screens */}
+                <Link href={p(lang, "/signup")} className="sm:hidden">
+                  <Button size="sm" variant="glow" className="group min-h-[36px] px-3">
+                    <ChevronRight
+                      size={16}
+                      className="transition-transform duration-200 group-hover:translate-x-0.5"
+                    />
+                  </Button>
+                </Link>
+                <button
+                  ref={hamburgerRef}
+                  className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2 [color:var(--mk-text)] transition-colors hover:[background:var(--mk-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--mk-surface)] focus-visible:outline-none lg:hidden"
+                  onClick={() => setMobileOpen(!mobileOpen)}
+                  aria-label={UI_STRINGS[lang].menuAria}
+                  aria-expanded={mobileOpen}
+                  aria-controls="mobile-nav-menu"
+                >
+                  {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+                </button>
+              </div>
+            </div>
+
+            {/* Mobile full-screen drawer */}
+            <AnimatePresence>
+              {mobileOpen && (
+                <>
+                  {/* Backdrop overlay */}
+                  <motion.div
+                    initial={reduceMotion ? { opacity: 1 } : { opacity: 0 }}
+                    animate={reduceMotion ? { opacity: 1 } : { opacity: 1 }}
+                    exit={reduceMotion ? { opacity: 0 } : { opacity: 0 }}
+                    transition={reduceMotion ? { duration: 0 } : { duration: 0.2 }}
+                    className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm lg:hidden"
+                    onClick={() => setMobileOpen(false)}
+                  />
+                  {/* Drawer panel */}
+                  <motion.div
+                    ref={mobileMenuRef}
+                    id="mobile-nav-menu"
+                    aria-label="Mobile navigation"
+                    role="dialog"
+                    aria-modal="true"
+                    initial={reduceMotion ? { opacity: 1, x: 0 } : { opacity: 0, x: "100%" }}
+                    animate={reduceMotion ? { opacity: 1, x: 0 } : { opacity: 1, x: 0 }}
+                    exit={reduceMotion ? { opacity: 0, x: 0 } : { opacity: 0, x: "100%" }}
+                    transition={
+                      reduceMotion ? { duration: 0 } : { duration: 0.25, ease: [0.22, 1, 0.36, 1] }
+                    }
+                    className="fixed top-0 right-0 bottom-0 z-50 flex w-full max-w-sm flex-col overflow-y-auto border-l [border-color:var(--mk-border)] [background:var(--mk-bg)] lg:hidden"
+                  >
+                    {/* Drawer header */}
+                    <div className="flex items-center justify-between border-b [border-color:var(--mk-border)] px-4 py-3">
+                      <Link
+                        href={p(lang, "")}
+                        onClick={() => setMobileOpen(false)}
+                        className="shrink-0"
+                      >
+                        <BrandLogo />
+                      </Link>
+                      <button
+                        className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2 [color:var(--mk-text)] transition-colors hover:[background:var(--mk-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
+                        onClick={() => setMobileOpen(false)}
+                        aria-label="Close menu"
+                      >
+                        <X size={20} />
+                      </button>
+                    </div>
+
+                    {/* Quick CTA row */}
+                    <div className="flex gap-2 border-b [border-color:var(--mk-border)] px-4 py-3">
+                      <Link
+                        href={p(lang, "/signup")}
+                        onClick={() => setMobileOpen(false)}
+                        className="flex-1"
+                      >
+                        <Button size="sm" variant="glow" className="group min-h-[44px] w-full">
+                          {nav.cta}
+                          <ChevronRight
+                            size={14}
+                            className="transition-transform duration-200 group-hover:translate-x-0.5"
+                          />
+                        </Button>
+                      </Link>
+                      <Link
+                        href={p(lang, "/login")}
+                        onClick={() => setMobileOpen(false)}
+                        className="flex-1"
+                      >
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="min-h-[44px] w-full [color:var(--mk-text)]"
+                        >
+                          {nav.signIn}
+                        </Button>
+                      </Link>
+                    </div>
+
+                    {/* Expandable sections */}
+                    <div className="flex-1 px-2 py-2">
+                      {nav.sections.map((section, sIdx) => {
+                        const expanded = mobileExpanded === sIdx;
+                        const sectionActive = isSectionActive(sIdx);
+                        return (
+                          <div key={section.label}>
+                            <button
+                              ref={sIdx === 0 ? firstMobileLinkRef : undefined}
+                              className={`flex min-h-[48px] w-full items-center justify-between rounded-lg px-3 py-3 text-base font-medium transition-colors ${NAV_LINK_FOCUS} ${
+                                sectionActive ? "brand-text" : "[color:var(--mk-text)]"
+                              } hover:[background:var(--mk-hover)]`}
+                              onClick={() => setMobileExpanded(expanded ? null : sIdx)}
+                              aria-expanded={expanded}
+                            >
+                              {section.label}
+                              <ChevronDown
+                                size={18}
+                                className={`shrink-0 transition-transform duration-200 ${expanded ? "rotate-180" : ""} [color:var(--mk-text-subtle)]`}
+                              />
+                            </button>
+                            <AnimatePresence>
+                              {expanded && (
+                                <motion.div
+                                  initial={
+                                    reduceMotion ? { opacity: 1 } : { opacity: 0, height: 0 }
+                                  }
+                                  animate={
+                                    reduceMotion ? { opacity: 1 } : { opacity: 1, height: "auto" }
+                                  }
+                                  exit={reduceMotion ? { opacity: 0 } : { opacity: 0, height: 0 }}
+                                  transition={
+                                    reduceMotion
+                                      ? { duration: 0 }
+                                      : { duration: 0.15, ease: "easeInOut" }
+                                  }
+                                  className="overflow-hidden"
+                                >
+                                  <div className="ml-3 space-y-0.5 border-l [border-color:var(--mk-border)] pl-3">
+                                    {section.items.map((item) => {
+                                      const active = isActive(item.href);
+                                      const Icon = ICONS[item.icon] ?? Layers;
+                                      return (
+                                        <Link
+                                          key={item.href + item.label}
+                                          href={p(lang, item.href)}
+                                          className={mobileLinkCls(active)}
+                                          aria-current={active ? "page" : undefined}
+                                          onClick={() => setMobileOpen(false)}
+                                        >
+                                          <span className="flex items-center gap-2">
+                                            <Icon
+                                              size={16}
+                                              className="shrink-0 [color:var(--mk-text-subtle)]"
+                                            />
+                                            <span className="flex flex-1 items-center gap-1.5">
+                                              <span>{item.label}</span>
+                                              {item.badge && <NavBadge label={item.badge} />}
+                                            </span>
+                                          </span>
+                                        </Link>
+                                      );
+                                    })}
+                                    {/* Mobile footer CTA */}
+                                    {section.ctaBottom && (
+                                      <Link
+                                        href={p(lang, section.ctaBottom.href)}
+                                        className={`${mobileLinkCls(false)} brand-text font-medium`}
+                                        onClick={() => setMobileOpen(false)}
+                                      >
+                                        <span className="flex items-center gap-1.5">
+                                          {section.ctaBottom.label}
+                                          <ChevronRight size={12} />
+                                        </span>
+                                      </Link>
+                                    )}
+                                  </div>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </div>
+                        );
+                      })}
+
+                      {/* Standalone pricing link */}
+                      <Link
+                        href={p(lang, nav.pricingHref)}
+                        className={mobileLinkCls(isActive(nav.pricingHref))}
+                        aria-current={isActive(nav.pricingHref) ? "page" : undefined}
+                        onClick={() => setMobileOpen(false)}
+                      >
+                        {nav.pricingLabel}
+                      </Link>
+                    </div>
+
+                    {/* Language switcher — bottom of drawer */}
+                    <div className="border-t [border-color:var(--mk-border)] px-4 py-3">
+                      <div className="mb-2 flex items-center gap-1.5 text-xs font-medium [color:var(--mk-text-subtle)]">
+                        <Globe size={12} /> {UI_STRINGS[lang].languageLabel}
+                      </div>
+                      <div className="grid grid-cols-3 gap-1">
+                        {SUPPORTED_LANGS.map((l) => (
+                          <Link
+                            key={l}
+                            href={p(l, pathname.replace(/^\/(en|at|ch|it|es|pl|fr|nl)/, ""))}
+                            className={`flex items-center justify-center rounded-lg px-2 py-2 text-xs transition-colors ${
+                              l === lang
+                                ? "brand-soft brand-border brand-text border font-medium"
+                                : "[color:var(--mk-text-muted)] hover:[background:var(--mk-hover)]"
+                            }`}
+                            onClick={() => {
+                              setMobileOpen(false);
+                              setLangPref(l);
+                            }}
+                          >
+                            {JURISDICTION_LABEL[l]}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+          </nav>
+        </header>
+      </div>
+    </>
   );
 }
 

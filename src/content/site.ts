@@ -146,18 +146,33 @@ export interface MegaNavItem {
   href: string;
   description: string;
   icon: string;
+  badge?: string;
+  featured?: boolean;
+}
+
+export interface NavFeaturedContent {
+  title: string;
+  description: string;
+  href: string;
+  badge?: string;
+  icon?: string;
 }
 
 export interface NavSection {
   label: string;
   items: readonly MegaNavItem[];
+  ctaBottom?: { label: string; href: string };
+  featuredContent?: NavFeaturedContent;
 }
 
-interface NavContent {
+export interface NavContent {
   signIn: string;
   cta: string;
+  ctaSecondary?: string;
+  ctaSecondaryHref?: string;
   pricingLabel: string;
   pricingHref: string;
+  announcement?: { text: string; href: string; badge?: string };
   sections: readonly NavSection[];
 }
 
@@ -167,8 +182,15 @@ interface NavContent {
 const _navDe: NavContent = {
   signIn: "Anmelden",
   cta: "14 Tage testen",
+  ctaSecondary: "Demo ansehen",
+  ctaSecondaryHref: "/superbrain",
   pricingLabel: "Preise",
   pricingHref: "/pricing",
+  announcement: {
+    text: "Neu: 5-Layer-Qualitätsarchitektur für belegte Antworten",
+    href: "/superbrain",
+    badge: "AI",
+  },
   sections: [
     {
       label: "Plattform",
@@ -178,12 +200,15 @@ const _navDe: NavContent = {
           href: "/",
           description: "KI-Kanzleisoftware — belegte Antworten, keine Halluzination",
           icon: "Layers",
+          featured: true,
         },
         {
           label: "SuperBrain",
           href: "/superbrain",
-          description: "Die KI-Engine — 4-Ebenen-Architektur, Dream Cycle",
+          description: "Die KI-Engine — 5-Layer-Architektur, Dream Cycle",
           icon: "Brain",
+          badge: "AI",
+          featured: true,
         },
         {
           label: "Features",
@@ -210,6 +235,15 @@ const _navDe: NavContent = {
           icon: "Download",
         },
       ],
+      ctaBottom: { label: "Plattform ansehen", href: "/features" },
+      featuredContent: {
+        title: "SuperBrain 2.0",
+        description:
+          "Die nächste Generation KI — 5-Layer-Architektur, Dream Cycle, belegte Antworten ohne Halluzination",
+        href: "/superbrain",
+        badge: "AI",
+        icon: "Brain",
+      },
     },
     {
       label: "Lösungen",
@@ -219,6 +253,7 @@ const _navDe: NavContent = {
           href: "/solutions/law-firms",
           description: "Volle Power für etablierte Kanzleien",
           icon: "Landmark",
+          featured: true,
         },
         {
           label: "Für Einzelanwälte",
@@ -238,7 +273,21 @@ const _navDe: NavContent = {
           description: "Schlanke Teams, überproportionale Wirkung",
           icon: "Users",
         },
+        {
+          label: "Für Steuerberater",
+          href: "/tax",
+          description: "KI für Kanzleien — jetzt auch für Steuern",
+          icon: "Calculator",
+          badge: "Neu",
+        },
       ],
+      ctaBottom: { label: "Lösung finden", href: "/solutions/law-firms" },
+      featuredContent: {
+        title: "Kundenstories",
+        description: "Wie Kanzleien mit Subsumio effizienter arbeiten und mehr Mandanten gewinnen",
+        href: "/about",
+        icon: "Sparkles",
+      },
     },
     {
       label: "Ressourcen",
@@ -250,12 +299,32 @@ const _navDe: NavContent = {
           icon: "FileText",
         },
         {
+          label: "Blog",
+          href: "/blog",
+          description: "Insights, Updates, Legal-Tech-Trends",
+          icon: "Megaphone",
+          badge: "Neu",
+        },
+        {
           label: "Partnerprogramm",
           href: "/partners",
           description: "Kunden empfehlen, 30 % wiederkehrend",
           icon: "Handshake",
         },
+        {
+          label: "Benchmark",
+          href: "/benchmark-methodology",
+          description: "Wie wir KI-Qualität messen",
+          icon: "GitBranch",
+        },
       ],
+      ctaBottom: { label: "Doku öffnen", href: "/docs" },
+      featuredContent: {
+        title: "Erste Schritte",
+        description: "Setup in 5 Minuten — Guides, API-Referenz, Tutorials für jeden Workflow",
+        href: "/docs",
+        icon: "Zap",
+      },
     },
     {
       label: "Unternehmen",
@@ -279,6 +348,12 @@ const _navDe: NavContent = {
           icon: "FileText",
         },
       ],
+      featuredContent: {
+        title: "Sprich mit uns",
+        description: "Demo buchen oder Fragen stellen — wir antworten in unter 24 Stunden",
+        href: "/contact",
+        icon: "Mail",
+      },
     },
   ],
 };
@@ -287,14 +362,39 @@ const _navDe: NavContent = {
 const IT_NAV_REPLACEMENTS: Record<string, string> = {
   "Sign in": "Accedi",
   "Start free trial": "Inizia la prova gratuita",
+  "Watch demo": "Guarda la demo",
+  "SuperBrain 2.0": "SuperBrain 2.0",
+  "The next generation AI — 5-layer architecture, Dream Cycle, cited answers without hallucination":
+    "L'IA di nuova generazione — architettura a 5 livelli, Dream Cycle, risposte citate senza allucinazioni",
+  "Customer Stories": "Storie dei Clienti",
+  "How firms work more efficiently with Subsumio and win more clients":
+    "Come gli studi lavorano più efficientemente con Subsumio e acquisiscono più clienti",
+  "Getting Started": "Primi Passi",
+  "Setup in 5 minutes — guides, API reference, tutorials for every workflow":
+    "Configurazione in 5 minuti — guide, riferimenti API, tutorial per ogni flusso di lavoro",
+  "Talk to us": "Parla con noi",
+  "Book a demo or ask questions — we respond in under 24 hours":
+    "Prenota una demo o fai domande — rispondiamo in meno di 24 ore",
   Pricing: "Prezzi",
   Platform: "Piattaforma",
   Overview: "Panoramica",
   "AI legal software — cited answers, zero hallucinations":
     "Software legale AI — risposte con citazioni, zero allucinazioni",
   SuperBrain: "SuperBrain",
-  "The AI engine — 4-layer architecture, Dream Cycle":
-    "Il motore AI — architettura a 4 livelli, Dream Cycle",
+  "The AI engine — 5-layer architecture, Dream Cycle":
+    "Il motore AI — architettura a 5 livelli, Dream Cycle",
+  "For Tax Advisors": "Per Consulenti Fiscali",
+  "AI for firms — now also for taxes": "AI per studi — ora anche per le tasse",
+  Blog: "Blog",
+  "Insights, updates, legal-tech trends": "Approfondimenti, aggiornamenti, tendenze legal-tech",
+  Benchmark: "Benchmark",
+  "How we measure AI quality": "Come misuriamo la qualità AI",
+  New: "Nuovo",
+  "See the platform": "Scopri la piattaforma",
+  "Find your solution": "Trova la tua soluzione",
+  "Open docs": "Apri i documenti",
+  "New: 5-layer quality architecture for cited answers":
+    "Nuovo: architettura di qualità a 5 livelli per risposte citate",
   Features: "Funzioni",
   "Every capability, nothing hidden": "Ogni funzionalità, nulla di nascosto",
   Security: "Sicurezza",
@@ -329,14 +429,39 @@ const IT_NAV_REPLACEMENTS: Record<string, string> = {
 const ES_NAV_REPLACEMENTS: Record<string, string> = {
   "Sign in": "Iniciar sesión",
   "Start free trial": "Empezar prueba gratuita",
+  "Watch demo": "Ver demo",
+  "SuperBrain 2.0": "SuperBrain 2.0",
+  "The next generation AI — 5-layer architecture, Dream Cycle, cited answers without hallucination":
+    "La IA de nueva generación — arquitectura de 5 capas, Dream Cycle, respuestas citadas sin alucinaciones",
+  "Customer Stories": "Historias de Clientes",
+  "How firms work more efficiently with Subsumio and win more clients":
+    "Cómo los despachos trabajan más eficientemente con Subsumio y ganan más clientes",
+  "Getting Started": "Primeros Pasos",
+  "Setup in 5 minutes — guides, API reference, tutorials for every workflow":
+    "Configuración en 5 minutos — guías, referencia API, tutoriales para cada flujo de trabajo",
+  "Talk to us": "Habla con nosotros",
+  "Book a demo or ask questions — we respond in under 24 hours":
+    "Reserva una demo o haz preguntas — respondemos en menos de 24 horas",
   Pricing: "Precios",
   Platform: "Plataforma",
   Overview: "Resumen",
   "AI legal software — cited answers, zero hallucinations":
     "Software legal IA — respuestas con citas, cero alucinaciones",
   SuperBrain: "SuperBrain",
-  "The AI engine — 4-layer architecture, Dream Cycle":
-    "El motor IA — arquitectura de 4 capas, Dream Cycle",
+  "The AI engine — 5-layer architecture, Dream Cycle":
+    "El motor IA — arquitectura de 5 capas, Dream Cycle",
+  "For Tax Advisors": "Para Asesores Fiscales",
+  "AI for firms — now also for taxes": "IA para despachos — ahora también para impuestos",
+  Blog: "Blog",
+  "Insights, updates, legal-tech trends": "Análisis, actualizaciones, tendencias legal-tech",
+  Benchmark: "Benchmark",
+  "How we measure AI quality": "Cómo medimos la calidad IA",
+  New: "Nuevo",
+  "See the platform": "Ver la plataforma",
+  "Find your solution": "Encuentra tu solución",
+  "Open docs": "Abrir documentación",
+  "New: 5-layer quality architecture for cited answers":
+    "Nuevo: arquitectura de calidad de 5 capas para respuestas citadas",
   Features: "Funciones",
   "Every capability, nothing hidden": "Todas las funciones, nada oculto",
   Security: "Seguridad",
@@ -371,14 +496,39 @@ const ES_NAV_REPLACEMENTS: Record<string, string> = {
 const PL_NAV_REPLACEMENTS: Record<string, string> = {
   "Sign in": "Zaloguj się",
   "Start free trial": "Rozpocznij okres próbny",
+  "Watch demo": "Zobacz demo",
+  "SuperBrain 2.0": "SuperBrain 2.0",
+  "The next generation AI — 5-layer architecture, Dream Cycle, cited answers without hallucination":
+    "IA nowej generacji — architektura 5-warstwowa, Dream Cycle, cytowane odpowiedzi bez halucynacji",
+  "Customer Stories": "Historie Klientów",
+  "How firms work more efficiently with Subsumio and win more clients":
+    "Jak kancelarie pracują wydajniej z Subsumio i zyskują więcej klientów",
+  "Getting Started": "Pierwsze Kroki",
+  "Setup in 5 minutes — guides, API reference, tutorials for every workflow":
+    "Konfiguracja w 5 minut — przewodniki, referencje API, samouczki dla każdego przepływu pracy",
+  "Talk to us": "Porozmawiaj z nami",
+  "Book a demo or ask questions — we respond in under 24 hours":
+    "Zarezerwuj demo lub zadaj pytania — odpowiadamy w mniej niż 24 godziny",
   Pricing: "Cennik",
   Platform: "Platforma",
   Overview: "Przegląd",
   "AI legal software — cited answers, zero hallucinations":
     "Oprogramowanie prawne AI — cytowane odpowiedzi, zero halucynacji",
   SuperBrain: "SuperBrain",
-  "The AI engine — 4-layer architecture, Dream Cycle":
-    "Silnik AI — architektura 4-warstwowa, Dream Cycle",
+  "The AI engine — 5-layer architecture, Dream Cycle":
+    "Silnik AI — architektura 5-warstwowa, Dream Cycle",
+  "For Tax Advisors": "Dla Doradców Podatkowych",
+  "AI for firms — now also for taxes": "AI dla kancelarii — teraz także podatki",
+  Blog: "Blog",
+  "Insights, updates, legal-tech trends": "Analizy, aktualizacje, trendy legal-tech",
+  Benchmark: "Benchmark",
+  "How we measure AI quality": "Jak mierzymy jakość AI",
+  New: "Nowe",
+  "See the platform": "Zobacz platformę",
+  "Find your solution": "Znajdź rozwiązanie",
+  "Open docs": "Otwórz dokumentację",
+  "New: 5-layer quality architecture for cited answers":
+    "Nowość: architektura jakości 5-warstwowa dla cytowanych odpowiedzi",
   Features: "Funkcje",
   "Every capability, nothing hidden": "Każda funkcja, nic ukrytego",
   Security: "Bezpieczeństwo",
@@ -413,14 +563,39 @@ const PL_NAV_REPLACEMENTS: Record<string, string> = {
 const FR_NAV_REPLACEMENTS: Record<string, string> = {
   "Sign in": "Se connecter",
   "Start free trial": "Commencer l'essai gratuit",
+  "Watch demo": "Voir la démo",
+  "SuperBrain 2.0": "SuperBrain 2.0",
+  "The next generation AI — 5-layer architecture, Dream Cycle, cited answers without hallucination":
+    "L'IA de nouvelle génération — architecture à 5 couches, Dream Cycle, réponses citées sans hallucination",
+  "Customer Stories": "Témoignages Clients",
+  "How firms work more efficiently with Subsumio and win more clients":
+    "Comment les cabinets travaillent plus efficacement avec Subsumio et gagnent plus de clients",
+  "Getting Started": "Premiers Pas",
+  "Setup in 5 minutes — guides, API reference, tutorials for every workflow":
+    "Configuration en 5 minutes — guides, référence API, tutoriels pour chaque flux de travail",
+  "Talk to us": "Parlez avec nous",
+  "Book a demo or ask questions — we respond in under 24 hours":
+    "Réservez une démo ou posez des questions — nous répondons en moins de 24 heures",
   Pricing: "Tarifs",
   Platform: "Plateforme",
   Overview: "Aperçu",
   "AI legal software — cited answers, zero hallucinations":
     "Logiciel juridique IA — réponses citées, zéro hallucination",
   SuperBrain: "SuperBrain",
-  "The AI engine — 4-layer architecture, Dream Cycle":
-    "Le moteur IA — architecture à 4 couches, Dream Cycle",
+  "The AI engine — 5-layer architecture, Dream Cycle":
+    "Le moteur IA — architecture à 5 couches, Dream Cycle",
+  "For Tax Advisors": "Pour Conseillers Fiscaux",
+  "AI for firms — now also for taxes": "IA pour cabinets — maintenant aussi pour les impôts",
+  Blog: "Blog",
+  "Insights, updates, legal-tech trends": "Analyses, mises à jour, tendances legal-tech",
+  Benchmark: "Benchmark",
+  "How we measure AI quality": "Comment nous mesurons la qualité IA",
+  New: "Nouveau",
+  "See the platform": "Voir la plateforme",
+  "Find your solution": "Trouvez votre solution",
+  "Open docs": "Ouvrir la documentation",
+  "New: 5-layer quality architecture for cited answers":
+    "Nouveau: architecture de qualité à 5 couches pour les réponses citées",
   Features: "Fonctionnalités",
   "Every capability, nothing hidden": "Chaque fonctionnalité, rien de caché",
   Security: "Sécurité",
@@ -456,14 +631,39 @@ const FR_NAV_REPLACEMENTS: Record<string, string> = {
 const NL_NAV_REPLACEMENTS: Record<string, string> = {
   "Sign in": "Inloggen",
   "Start free trial": "Start gratis proefperiode",
+  "Watch demo": "Bekijk demo",
+  "SuperBrain 2.0": "SuperBrain 2.0",
+  "The next generation AI — 5-layer architecture, Dream Cycle, cited answers without hallucination":
+    "De AI van de volgende generatie — 5-laag architectuur, Dream Cycle, geciteerde antwoorden zonder hallucinaties",
+  "Customer Stories": "Klantverhalen",
+  "How firms work more efficiently with Subsumio and win more clients":
+    "Hoe kantoren efficiënter werken met Subsumio en meer klanten winnen",
+  "Getting Started": "Aan de Slag",
+  "Setup in 5 minutes — guides, API reference, tutorials for every workflow":
+    "Installatie in 5 minuten — handleidingen, API-referentie, tutorials voor elke workflow",
+  "Talk to us": "Praat met ons",
+  "Book a demo or ask questions — we respond in under 24 hours":
+    "Boek een demo of stel vragen — we reageren binnen 24 uur",
   Pricing: "Prijzen",
   Platform: "Platform",
   Overview: "Overzicht",
   "AI legal software — cited answers, zero hallucinations":
     "AI juridische software — beantwoord met citaten, nul hallucinaties",
   SuperBrain: "SuperBrain",
-  "The AI engine — 4-layer architecture, Dream Cycle":
-    "De AI-motor — 4-laag architectuur, Dream Cycle",
+  "The AI engine — 5-layer architecture, Dream Cycle":
+    "De AI-motor — 5-laag architectuur, Dream Cycle",
+  "For Tax Advisors": "Voor Belastingadviseurs",
+  "AI for firms — now also for taxes": "AI voor kantoren — nu ook voor belastingen",
+  Blog: "Blog",
+  "Insights, updates, legal-tech trends": "Inzichten, updates, legal-tech trends",
+  Benchmark: "Benchmark",
+  "How we measure AI quality": "Hoe we AI-kwaliteit meten",
+  New: "Nieuw",
+  "See the platform": "Bekijk het platform",
+  "Find your solution": "Vind je oplossing",
+  "Open docs": "Open documentatie",
+  "New: 5-layer quality architecture for cited answers":
+    "Nieuw: 5-laags kwaliteitsarchitectuur voor geciteerde antwoorden",
   Features: "Functies",
   "Every capability, nothing hidden": "Elke functionaliteit, niets verborgen",
   Security: "Beveiliging",
@@ -498,8 +698,15 @@ const NL_NAV_REPLACEMENTS: Record<string, string> = {
 const _navEn: NavContent = {
   signIn: "Sign in",
   cta: "Start free trial",
+  ctaSecondary: "Watch demo",
+  ctaSecondaryHref: "/superbrain",
   pricingLabel: "Pricing",
   pricingHref: "/pricing",
+  announcement: {
+    text: "New: 5-layer quality architecture for cited answers",
+    href: "/superbrain",
+    badge: "AI",
+  },
   sections: [
     {
       label: "Platform",
@@ -509,12 +716,15 @@ const _navEn: NavContent = {
           href: "/",
           description: "AI legal software — cited answers, zero hallucinations",
           icon: "Layers",
+          featured: true,
         },
         {
           label: "SuperBrain",
           href: "/superbrain",
-          description: "The AI engine — 4-layer architecture, Dream Cycle",
+          description: "The AI engine — 5-layer architecture, Dream Cycle",
           icon: "Brain",
+          badge: "AI",
+          featured: true,
         },
         {
           label: "Features",
@@ -541,6 +751,15 @@ const _navEn: NavContent = {
           icon: "Download",
         },
       ],
+      ctaBottom: { label: "See the platform", href: "/features" },
+      featuredContent: {
+        title: "SuperBrain 2.0",
+        description:
+          "The next generation AI — 5-layer architecture, Dream Cycle, cited answers without hallucination",
+        href: "/superbrain",
+        badge: "AI",
+        icon: "Brain",
+      },
     },
     {
       label: "Solutions",
@@ -550,6 +769,7 @@ const _navEn: NavContent = {
           href: "/solutions/law-firms",
           description: "Full power for established firms",
           icon: "Landmark",
+          featured: true,
         },
         {
           label: "For Solo Lawyers",
@@ -569,7 +789,21 @@ const _navEn: NavContent = {
           description: "Lean team, outsized impact",
           icon: "Users",
         },
+        {
+          label: "For Tax Advisors",
+          href: "/tax",
+          description: "AI for firms — now also for taxes",
+          icon: "Calculator",
+          badge: "New",
+        },
       ],
+      ctaBottom: { label: "Find your solution", href: "/solutions/law-firms" },
+      featuredContent: {
+        title: "Customer Stories",
+        description: "How firms work more efficiently with Subsumio and win more clients",
+        href: "/about",
+        icon: "Sparkles",
+      },
     },
     {
       label: "Resources",
@@ -581,12 +815,32 @@ const _navEn: NavContent = {
           icon: "FileText",
         },
         {
+          label: "Blog",
+          href: "/blog",
+          description: "Insights, updates, legal-tech trends",
+          icon: "Megaphone",
+          badge: "New",
+        },
+        {
           label: "Partner Program",
           href: "/partners",
           description: "Refer clients, earn 30% recurring",
           icon: "Handshake",
         },
+        {
+          label: "Benchmark",
+          href: "/benchmark-methodology",
+          description: "How we measure AI quality",
+          icon: "GitBranch",
+        },
       ],
+      ctaBottom: { label: "Open docs", href: "/docs" },
+      featuredContent: {
+        title: "Getting Started",
+        description: "Setup in 5 minutes — guides, API reference, tutorials for every workflow",
+        href: "/docs",
+        icon: "Zap",
+      },
     },
     {
       label: "Company",
@@ -605,6 +859,12 @@ const _navEn: NavContent = {
           icon: "FileText",
         },
       ],
+      featuredContent: {
+        title: "Talk to us",
+        description: "Book a demo or ask questions — we respond in under 24 hours",
+        href: "/contact",
+        icon: "Mail",
+      },
     },
   ],
 };
@@ -612,116 +872,7 @@ const _navEn: NavContent = {
 export const NAV: Record<Lang, NavContent> = {
   en: _navEn,
   de: _navDe,
-  at: deepMerge(_navDe, {
-    // AT: nav labels are identical to DE; only the "Über uns" description differs
-    sections: [
-      {
-        label: "Plattform",
-        items: [
-          {
-            label: "Übersicht",
-            href: "/",
-            description: "KI-Kanzleisoftware — belegte Antworten, keine Halluzination",
-            icon: "Layers",
-          },
-          {
-            label: "SuperBrain",
-            href: "/superbrain",
-            description: "Die KI-Engine — 4-Ebenen-Architektur, Dream Cycle",
-            icon: "Brain",
-          },
-          {
-            label: "Features",
-            href: "/features",
-            description: "Alle Funktionen auf einen Blick",
-            icon: "Zap",
-          },
-          {
-            label: "Sicherheit",
-            href: "/security",
-            description: "Deine Daten, deine Keys, deine Jurisdiktion",
-            icon: "ShieldCheck",
-          },
-          {
-            label: "WhatsApp-Copilot",
-            href: "/whatsapp",
-            description: "Zeiten buchen, Dokumente vom Handy",
-            icon: "MessageSquare",
-          },
-          {
-            label: "Download",
-            href: "/download",
-            description: "iOS, Android, Desktop-Apps",
-            icon: "Download",
-          },
-        ],
-      },
-      {
-        label: "Lösungen",
-        items: [
-          {
-            label: "Für Kanzleien",
-            href: "/solutions/law-firms",
-            description: "Volle Power für etablierte Kanzleien",
-            icon: "Landmark",
-          },
-          {
-            label: "Für Einzelanwälte",
-            href: "/solutions/solo",
-            description: "Ein Nutzer, volle Kanzlei-KI, kein IT-Aufwand",
-            icon: "User",
-          },
-          {
-            label: "Für Justiziariate",
-            href: "/solutions/in-house",
-            description: "Legal Ops mit nachvollziehbarer Wissensbasis",
-            icon: "Building2",
-          },
-          {
-            label: "Für mittelständische Kanzleien",
-            href: "/solutions/mid-sized",
-            description: "Schlanke Teams, überproportionale Wirkung",
-            icon: "Users",
-          },
-        ],
-      },
-      {
-        label: "Ressourcen",
-        items: [
-          {
-            label: "Dokumentation",
-            href: "/docs",
-            description: "Guides, API-Referenz, Setup-Hilfe",
-            icon: "FileText",
-          },
-          {
-            label: "Partnerprogramm",
-            href: "/partners",
-            description: "Kunden empfehlen, 30 % wiederkehrend",
-            icon: "Handshake",
-          },
-        ],
-      },
-      {
-        label: "Unternehmen",
-        items: [
-          {
-            label: "Über uns",
-            href: "/about",
-            description: "Aus Österreich für DACH-Kanzleien",
-            icon: "Info",
-          },
-          { label: "Kontakt", href: "/contact", description: "Kontakt zum Team", icon: "Mail" },
-          {
-            label: "Impressum",
-            href: "/imprint",
-            description: "Anbieterinfo und rechtliche Angaben",
-            icon: "FileText",
-          },
-        ],
-      },
-    ],
-  }),
+  at: _navDe,
   ch: _navDe,
   it: applyReplacements(JSON.parse(JSON.stringify(_navEn)), IT_NAV_REPLACEMENTS),
   es: applyReplacements(JSON.parse(JSON.stringify(_navEn)), ES_NAV_REPLACEMENTS),
@@ -737,6 +888,7 @@ const _footerEn = {
       title: "Platform",
       links: [
         { label: "Overview", href: "/" },
+        { label: "SuperBrain", href: "/superbrain" },
         { label: "Features", href: "/features" },
         { label: "Security", href: "/security" },
         { label: "WhatsApp Copilot", href: "/whatsapp" },
@@ -751,12 +903,15 @@ const _footerEn = {
         { label: "For Solo Lawyers", href: "/solutions/solo" },
         { label: "For In-House", href: "/solutions/in-house" },
         { label: "For Mid-Sized Firms", href: "/solutions/mid-sized" },
+        { label: "For Tax Advisors", href: "/tax" },
       ],
     },
     {
       title: "Resources",
       links: [
         { label: "Documentation", href: "/docs" },
+        { label: "Blog", href: "/blog" },
+        { label: "Benchmark", href: "/benchmark-methodology" },
         { label: "Partner Program", href: "/partners" },
         { label: "Dashboard", href: "/dashboard", external: false },
       ],
@@ -796,6 +951,7 @@ export const FOOTER: Record<
         title: "Plattform",
         links: [
           { label: "Übersicht", href: "/" },
+          { label: "SuperBrain", href: "/superbrain" },
           { label: "Features", href: "/features" },
           { label: "Sicherheit", href: "/security" },
           { label: "WhatsApp-Copilot", href: "/whatsapp" },
@@ -810,12 +966,15 @@ export const FOOTER: Record<
           { label: "Für Einzelanwälte", href: "/solutions/solo" },
           { label: "Für Justiziariate", href: "/solutions/in-house" },
           { label: "Für Mittelständische", href: "/solutions/mid-sized" },
+          { label: "Für Steuerberater", href: "/tax" },
         ],
       },
       {
         title: "Ressourcen",
         links: [
           { label: "Dokumentation", href: "/docs" },
+          { label: "Blog", href: "/blog" },
+          { label: "Benchmark", href: "/benchmark-methodology" },
           { label: "Partnerprogramm", href: "/partners" },
           { label: "Dashboard", href: "/dashboard", external: false },
         ],
@@ -845,6 +1004,7 @@ export const FOOTER: Record<
         title: "Plattform",
         links: [
           { label: "Übersicht", href: "/" },
+          { label: "SuperBrain", href: "/superbrain" },
           { label: "Features", href: "/features" },
           { label: "Sicherheit", href: "/security" },
           { label: "WhatsApp-Copilot", href: "/whatsapp" },
@@ -859,12 +1019,15 @@ export const FOOTER: Record<
           { label: "Für Einzelanwälte", href: "/solutions/solo" },
           { label: "Für Justiziariate", href: "/solutions/in-house" },
           { label: "Für Mittelständische", href: "/solutions/mid-sized" },
+          { label: "Für Steuerberater", href: "/tax" },
         ],
       },
       {
         title: "Ressourcen",
         links: [
           { label: "Dokumentation", href: "/docs" },
+          { label: "Blog", href: "/blog" },
+          { label: "Benchmark", href: "/benchmark-methodology" },
           { label: "Partnerprogramm", href: "/partners" },
           { label: "Dashboard", href: "/dashboard", external: false },
         ],
@@ -894,6 +1057,7 @@ export const FOOTER: Record<
         title: "Plattform",
         links: [
           { label: "Übersicht", href: "/" },
+          { label: "SuperBrain", href: "/superbrain" },
           { label: "Features", href: "/features" },
           { label: "Sicherheit", href: "/security" },
           { label: "WhatsApp-Copilot", href: "/whatsapp" },
@@ -908,12 +1072,15 @@ export const FOOTER: Record<
           { label: "Für Einzelanwälte", href: "/solutions/solo" },
           { label: "Für Justiziariate", href: "/solutions/in-house" },
           { label: "Für Mittelständische", href: "/solutions/mid-sized" },
+          { label: "Für Steuerberater", href: "/tax" },
         ],
       },
       {
         title: "Ressourcen",
         links: [
           { label: "Dokumentation", href: "/docs" },
+          { label: "Blog", href: "/blog" },
+          { label: "Benchmark", href: "/benchmark-methodology" },
           { label: "Partnerprogramm", href: "/partners" },
           { label: "Dashboard", href: "/dashboard", external: false },
         ],
@@ -1683,14 +1850,14 @@ const CH_REPLACEMENTS: Record<string, string> = {
 
 const _landingDe = {
   badge: "KI-Kanzleisoftware für AT · DE · CH",
-  h1a: "Deine Firma vergisst.",
+  h1a: "Deine Kanzlei vergisst.",
   h1b: "Subsumio nicht.",
   heroTagline: "Jede Akte, eine belegte Antwort.",
   h1Keyword: "KI-Kanzleisoftware & Anwaltssoftware mit belegten Antworten",
   sub: "Subsumio ist die KI-Kanzleisoftware für Rechtsanwälte in Österreich, Deutschland und der Schweiz. Akten, Fristen, Mails und Dokumente werden zu belegten Antworten — mit Fundstellen, nicht mit Halluzinationen.",
   painTitle: "Was kostet dich das heute?",
   painSub:
-    "Bevor wir zeigen, was Subsumio kann — hier ist, was Kanzleien ohne KI-Unterstützung täglich verlieren. Branchenschätzungen, keine Laborwerte: Es geht um abrechenbaren Umsatz, den du nie siehst, und um Haftungsrisiko, das du nicht brauchst.",
+    "Was Kanzleien ohne KI-Unterstützung täglich verlieren — Branchenschätzungen, keine Laborwerte. Abrechenbarer Umsatz, den du nie siehst. Haftungsrisiko, das du nicht brauchst.",
   pains: [
     {
       value: "bis zu 40 %",
@@ -1730,10 +1897,10 @@ const _landingDe = {
     { value: "14", label: "Tage volle Testversion — keine Kreditkarte" },
   ],
   statsNote:
-    "Kein Chat-Wrapper. Engine-Klasse Retrieval — jede KI-Antwort nennt die exakte Fundstelle.",
-  featuresTitle: "Kanzleisoftware mit KI — für Kanzleien gebaut, nicht nachträglich angepasst",
+    "Engine-Klasse Retrieval — jede KI-Antwort nennt die exakte Fundstelle. Kein Chat-Wrapper.",
+  featuresTitle: "Für Kanzleien gebaut — nicht nachträglich angepasst",
   featuresSub:
-    "Von Fristenmanagement nach ZPO/BGB/ABGB bis Widerspruchserkennung in Schriftsätzen — jede Antwort mit Fundstellen, jede Frist überwacht, keine Halluzination. Anwaltssoftware mit KI, die Berufsgeheimnisträgern gerecht wird.",
+    "Von Fristenmanagement nach ZPO/BGB/ABGB bis Widerspruchserkennung in Schriftsätzen — jede Antwort mit Fundstellen, jede Frist überwacht, keine Halluzination. KI-Software, die Berufsgeheimnisträgern gerecht wird.",
   features: [
     {
       icon: "Brain",
@@ -1763,7 +1930,7 @@ const _landingDe = {
       icon: "Calculator",
       color: "blue",
       title: "Zeiten, Auslagen, Rechnungen und DATEV",
-      desc: "Minuten nach Anwalt und Tätigkeit buchen, abrechenbare Auslagen erfassen, Rechnungen aus offener Arbeit erstellen. DATEV-Export (DE) und ADATEV (AT) in einem Klick. Keine abrechenbare Minute mehr verloren — jeder Anruf, jedes Telefonat erfasst.",
+      desc: "Minuten nach Anwalt und Tätigkeit buchen, abrechenbare Auslagen erfassen, Rechnungen aus offener Arbeit erstellen. DATEV-Export (DE) und ADATEV (AT) in einem Klick. Keine abrechenbare Minute verloren — jeder Anruf, jede E-Mail erfasst.",
     },
     {
       icon: "Shield",
@@ -1816,8 +1983,7 @@ const _landingDe = {
     },
   ],
   comparisonTitle: "Subsumio vs. andere KI-Tools — der Unterschied, der Anwälten wichtig ist",
-  comparisonSub:
-    "ChatGPT, Glean und allgemeine KI-Tools sind nicht für Anwälte gebaut. Subsumio ist es.",
+  comparisonSub: "Allgemeine KI-Tools sind nicht für Anwälte gebaut. Subsumio ist es.",
   comparison: [
     {
       feature: "Fundstellen pro Antwort",
@@ -1896,7 +2062,7 @@ const _landingDe = {
   ],
   ctaTitle: "Hör auf zu suchen. Fang an zu fragen.",
   ctaSub:
-    "14 Tage volle Testversion. Keine Kreditkarte. Kein IT-Aufwand. Wenn Subsumio dir nicht in der ersten Woche Zeit spart — kündige, ohne dass ein Cent fällig wird.",
+    "14 Tage volle Testversion. Keine Kreditkarte. Kein IT-Aufwand. Dein Brain baut sich ab der ersten Akte auf.",
   ctaButton: "14 Tage kostenlos testen",
   relatedLinks: [
     { label: "Preise & Pläne", href: "/pricing" },
@@ -1916,7 +2082,7 @@ const _landingEn = {
   sub: "Subsumio is AI legal software for law firms in Austria, Germany and Switzerland. Matters, deadlines, emails and documents become cited answers — with page-level sources, not hallucinations.",
   painTitle: "What is it costing you today?",
   painSub:
-    "Before we show what Subsumio does — here is what firms without AI assistance lose every day. Industry estimates, not lab numbers: it's billable revenue you never see, and malpractice risk you don't need.",
+    "What firms without AI assistance lose every day — industry estimates, not lab numbers. Billable revenue you never see. Malpractice risk you don't need.",
   pains: [
     {
       value: "up to 40%",
@@ -1955,11 +2121,10 @@ const _landingEn = {
     { value: "Zero", label: "client-data leaks, by design" },
     { value: "14", label: "days full trial — no credit card" },
   ],
-  statsNote:
-    "Not a chat wrapper — engine-class retrieval where every AI answer cites its exact source.",
-  featuresTitle: "AI law firm software — built for law firms, not adapted for them",
+  statsNote: "Engine-class retrieval — every AI answer cites its exact source. Not a chat wrapper.",
+  featuresTitle: "Built for law firms — not adapted for them",
   featuresSub:
-    "From deadline management per ZPO/BGB/ABGB to contradiction detection in pleadings — every answer cited, every deadline tracked, no hallucinations. Legal AI software built for professional secrecy holders.",
+    "From deadline management per ZPO/BGB/ABGB to contradiction detection in pleadings — every answer cited, every deadline tracked, no hallucinations. AI software built for professional secrecy holders.",
   features: [
     {
       icon: "Brain",
@@ -2042,7 +2207,7 @@ const _landingEn = {
     },
   ],
   comparisonTitle: "Subsumio vs. other AI tools — the difference that matters to lawyers",
-  comparisonSub: "ChatGPT, Glean and general AI tools are not built for lawyers. Subsumio is.",
+  comparisonSub: "General AI tools are not built for lawyers. Subsumio is.",
   comparison: [
     {
       feature: "Citations per answer",
@@ -2121,7 +2286,7 @@ const _landingEn = {
   ],
   ctaTitle: "Stop searching. Start asking.",
   ctaSub:
-    "14-day full trial. No credit card. No IT overhead. If Subsumio doesn't save you time in the first week — cancel, no charge.",
+    "14 days full trial. No credit card. No IT setup. Your brain builds from the first matter.",
   ctaButton: "Start free trial",
   relatedLinks: [
     { label: "Pricing & plans", href: "/en/pricing" },
@@ -2252,6 +2417,8 @@ const _uiStringsDe: Record<string, string> = {
   followContext: "Kontext folgen",
   // Chrome / nav
   menuAria: "Menü",
+  dismissAnnouncement: "Mitteilung schließen",
+  languageLabel: "Sprache / Language",
   readInGerman: "Auf Deutsch lesen",
   readInEnglish: "Read in English",
   // Branch pricing
@@ -2348,6 +2515,8 @@ const _uiStringsEn: Record<string, string> = {
   followContext: "Follow context",
   // Chrome / nav
   menuAria: "Menu",
+  dismissAnnouncement: "Dismiss announcement",
+  languageLabel: "Language",
   readInGerman: "Auf Deutsch lesen",
   readInEnglish: "Read in English",
   // Branch pricing

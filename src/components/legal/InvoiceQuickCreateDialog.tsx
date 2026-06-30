@@ -40,6 +40,7 @@ interface InvoiceQuickCreateDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCreated?: () => void;
+  presetCaseSlug?: string;
 }
 
 interface InvoiceItem {
@@ -123,11 +124,12 @@ export function InvoiceQuickCreateDialog({
   open,
   onOpenChange,
   onCreated,
+  presetCaseSlug,
 }: InvoiceQuickCreateDialogProps) {
   const { t, lang } = useLang();
   const { addToast } = useToast();
 
-  const [selectedCaseSlug, setSelectedCaseSlug] = useState("");
+  const [selectedCaseSlug, setSelectedCaseSlug] = useState(presetCaseSlug ?? "");
   const [invoiceType, setInvoiceType] = useState<Invoice["invoiceType"]>("standard");
   const [advancePayment, setAdvancePayment] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -140,13 +142,13 @@ export function InvoiceQuickCreateDialog({
   const [rvgResult, setRvgResult] = useState<RvgResult | null>(null);
 
   const resetForm = useCallback(() => {
-    setSelectedCaseSlug("");
+    setSelectedCaseSlug(presetCaseSlug ?? "");
     setInvoiceType("standard");
     setAdvancePayment("");
     setShowRvg(false);
     setStreitwert("");
     setRvgResult(null);
-  }, []);
+  }, [presetCaseSlug]);
 
   useEffect(() => {
     if (!open) resetForm();
@@ -424,28 +426,30 @@ export function InvoiceQuickCreateDialog({
           </DialogHeader>
 
           <div className="flex-1 space-y-5 overflow-y-auto px-6 py-2">
-            {/* Case selection */}
-            <div className="space-y-1.5">
-              <Label htmlFor="quick-invoice-case" className="text-xs">
-                {t("inv.select_case" as DashboardKey)} *
-              </Label>
-              <Select
-                value={selectedCaseSlug}
-                onValueChange={setSelectedCaseSlug}
-                disabled={loadingCases}
-              >
-                <SelectTrigger id="quick-invoice-case">
-                  <SelectValue placeholder={t("inv.select_case" as DashboardKey)} />
-                </SelectTrigger>
-                <SelectContent>
-                  {cases.map((c) => (
-                    <SelectItem key={c.slug} value={c.slug}>
-                      {c.caseNumber} — {c.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Case selection — hidden when presetCaseSlug is provided */}
+            {!presetCaseSlug && (
+              <div className="space-y-1.5">
+                <Label htmlFor="quick-invoice-case" className="text-xs">
+                  {t("inv.select_case" as DashboardKey)} *
+                </Label>
+                <Select
+                  value={selectedCaseSlug}
+                  onValueChange={setSelectedCaseSlug}
+                  disabled={loadingCases}
+                >
+                  <SelectTrigger id="quick-invoice-case">
+                    <SelectValue placeholder={t("inv.select_case" as DashboardKey)} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {cases.map((c) => (
+                      <SelectItem key={c.slug} value={c.slug}>
+                        {c.caseNumber} — {c.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             {/* Billable summary */}
             {selectedCaseSlug && (

@@ -411,7 +411,10 @@ export function PinnedMatters({ cases }: { cases: DashboardPageLike[] }) {
   const { pinned, recent, togglePin, isPinned } = useRecentMatters();
 
   const bySlug = new Map(cases.filter((c) => c.slug).map((c) => [c.slug, c]));
-  const orderedSlugs = [...pinned, ...recent.filter((s) => !pinned.includes(s))];
+  const orderedSlugs = [
+    ...pinned,
+    ...recent.filter((r) => !pinned.some((p) => p.slug === r.slug)),
+  ].map((m) => m.slug);
   if (orderedSlugs.length === 0) return null;
 
   return (
@@ -428,7 +431,8 @@ export function PinnedMatters({ cases }: { cases: DashboardPageLike[] }) {
       <div className="flex flex-wrap gap-2">
         {orderedSlugs.map((slug) => {
           const found = bySlug.get(slug);
-          const label = text(found?.title, titleFromSlug(slug));
+          const recentRef = [...pinned, ...recent].find((m) => m.slug === slug);
+          const label = text(found?.title, recentRef?.title ?? titleFromSlug(slug));
           const pinnedNow = isPinned(slug);
           return (
             <div

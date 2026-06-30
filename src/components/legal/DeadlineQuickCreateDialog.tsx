@@ -42,6 +42,7 @@ interface DeadlineQuickCreateDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCreated?: () => void;
+  presetCaseSlug?: string;
 }
 
 interface CaseOption {
@@ -60,13 +61,14 @@ export function DeadlineQuickCreateDialog({
   open,
   onOpenChange,
   onCreated,
+  presetCaseSlug,
 }: DeadlineQuickCreateDialogProps) {
   const { t, lang } = useLang();
   const { addToast } = useToast();
 
   const [description, setDescription] = useState("");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
-  const [caseSlug, setCaseSlug] = useState("");
+  const [caseSlug, setCaseSlug] = useState(presetCaseSlug ?? "");
   const [type, setType] = useState<string>("deadline");
   const [law, setLaw] = useState("");
   const [ruleKey, setRuleKey] = useState("");
@@ -100,13 +102,13 @@ export function DeadlineQuickCreateDialog({
   const resetForm = useCallback(() => {
     setDescription("");
     setDate(new Date().toISOString().split("T")[0]);
-    setCaseSlug("");
+    setCaseSlug(presetCaseSlug ?? "");
     setType("deadline");
     setLaw("");
     setRuleKey("");
     setShowAdvanced(false);
     setCalcPreview(null);
-  }, []);
+  }, [presetCaseSlug]);
 
   useEffect(() => {
     if (!open) resetForm();
@@ -242,25 +244,27 @@ export function DeadlineQuickCreateDialog({
               </div>
             </div>
 
-            {/* Case */}
-            <div className="space-y-1.5">
-              <Label htmlFor="quick-deadline-case" className="text-xs">
-                {t("deadlines.col_case" as DashboardKey)}
-              </Label>
-              <Select value={caseSlug} onValueChange={setCaseSlug} disabled={loadingCases}>
-                <SelectTrigger id="quick-deadline-case">
-                  <SelectValue placeholder={t("deadlines.no_case" as DashboardKey)} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">{t("deadlines.no_case" as DashboardKey)}</SelectItem>
-                  {(cases ?? []).map((c) => (
-                    <SelectItem key={c.slug} value={c.slug}>
-                      {c.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Case — hidden when presetCaseSlug is provided */}
+            {!presetCaseSlug && (
+              <div className="space-y-1.5">
+                <Label htmlFor="quick-deadline-case" className="text-xs">
+                  {t("deadlines.col_case" as DashboardKey)}
+                </Label>
+                <Select value={caseSlug} onValueChange={setCaseSlug} disabled={loadingCases}>
+                  <SelectTrigger id="quick-deadline-case">
+                    <SelectValue placeholder={t("deadlines.no_case" as DashboardKey)} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">{t("deadlines.no_case" as DashboardKey)}</SelectItem>
+                    {(cases ?? []).map((c) => (
+                      <SelectItem key={c.slug} value={c.slug}>
+                        {c.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             {/* Advanced toggle */}
             <button

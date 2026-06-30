@@ -24,13 +24,16 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { csrfFetch } from "@/lib/csrf";
-import { useIsMobile } from "@/lib/use-media-query";
+import { useMediaQuery } from "@/lib/use-media-query";
 import { useResizable } from "@/lib/use-resizable";
 import { useLang, type TFunc } from "@/lib/use-lang";
 import type { Lang } from "@/content/site";
 import { ChatPanel, type ChatPanelHandle } from "@/components/chat/chat-panel";
 import { motion, useDashboardMotion } from "@/components/dashboard/motion";
 import type { ChatContextType } from "@/components/chat/chat-types";
+import { api } from "@/lib/api";
+import { caseFrontmatter } from "@/lib/legal-types";
+import type { BrainPage } from "@/lib/types";
 
 interface CopilotSidebarProps {
   open: boolean;
@@ -528,6 +531,95 @@ function resolveRouteContext(pathname: string, t: TFunc, lang: Lang): RouteConte
   };
 }
 
+// ── Matter Context Card ──────────────────────────────────────────────
+
+interface MatterContextInfo {
+  title: string;
+  caseNumber: string;
+  status: string;
+  openDeadlines: number;
+  totalDeadlines: number;
+  openTasks: number;
+  totalTasks: number;
+  documentCount: number;
+  nextDeadlineDate?: string;
+}
+
+function MatterContextCard({ info, lang }: { info: MatterContextInfo; lang: Lang }) {
+  const isEn = lang === "en";
+  return (
+    <div className="shrink-0 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2">
+      <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-semibold tracking-wide text-[color:var(--brand-primary)] uppercase">
+        <Briefcase size={10} />
+        {isEn ? "Matter Context" : "Aktenkontext"}
+      </div>
+      <div className="mb-2 truncate text-[12px] font-medium text-[color:var(--ds-text)]">
+        {info.title}
+        <span className="ml-1.5 font-mono text-[10px] text-[color:var(--ds-text-subtle)]">
+          {info.caseNumber}
+        </span>
+      </div>
+      <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px]">
+        <span className="flex items-center gap-1">
+          <CalendarClock
+            size={10}
+            className={
+              info.openDeadlines > 0
+                ? "text-[color:var(--ds-warning-text)]"
+                : "text-[color:var(--ds-text-subtle)]"
+            }
+          />
+          <span className="text-[color:var(--ds-text-subtle)]">{isEn ? "DL" : "Fr."}</span>
+          <span
+            className={cn(
+              "font-semibold tabular-nums",
+              info.openDeadlines > 0
+                ? "text-[color:var(--ds-warning-text)]"
+                : "text-[color:var(--ds-text)]"
+            )}
+          >
+            {info.openDeadlines}/{info.totalDeadlines}
+          </span>
+        </span>
+        <span className="flex items-center gap-1">
+          <CheckSquare
+            size={10}
+            className={
+              info.openTasks > 0
+                ? "text-[color:var(--brand-primary)]"
+                : "text-[color:var(--ds-text-subtle)]"
+            }
+          />
+          <span className="text-[color:var(--ds-text-subtle)]">{isEn ? "Tasks" : "Aufg."}</span>
+          <span className="font-semibold text-[color:var(--ds-text)] tabular-nums">
+            {info.openTasks}/{info.totalTasks}
+          </span>
+        </span>
+        <span className="flex items-center gap-1">
+          <FileText size={10} className="text-[color:var(--ds-text-subtle)]" />
+          <span className="text-[color:var(--ds-text-subtle)]">{isEn ? "Docs" : "Doku"}</span>
+          <span className="font-semibold text-[color:var(--ds-text)] tabular-nums">
+            {info.documentCount}
+          </span>
+        </span>
+      </div>
+      {info.nextDeadlineDate && (
+        <div className="mt-1.5 flex items-center gap-1 rounded-md bg-[color:var(--ds-warning-bg)] px-2 py-1 text-[11px]">
+          <Clock size={10} className="text-[color:var(--ds-warning-text)]" />
+          <span className="font-medium text-[color:var(--ds-warning-text)]">
+            {isEn ? "Next deadline:" : "Nächste Frist:"}{" "}
+            {new Date(info.nextDeadlineDate).toLocaleDateString(isEn ? "en-GB" : "de-DE", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            })}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 interface ProactiveAlertsProps {
   alerts: Array<{ label: string; query: string; severity: "urgent" | "warning" }>;
   onQuery: (query: string) => void;
@@ -658,7 +750,10 @@ function QuickActionsChips({
 export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const isMobile = useIsMobile();
+  // "Compact" mode renders the Copilot as an overlay drawer instead of a docked
+  // side panel. Applies below lg (1024px) so the panel never squeezes the main
+  // content on tablet / split-screen widths (kept named isMobile to avoid churn).
+  const isMobile = useMediaQuery("(max-width: 1023px)");
   const { t, lang } = useLang();
   const { reduceMotion, panelTransition, tapTransition: softTransition } = useDashboardMotion();
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -670,11 +765,60 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
   const [actionsExpanded, setActionsExpanded] = useState(false);
   const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set());
   const [panelMode, setPanelMode] = useState<PanelMode>("activity");
+  const [matterContextInfo, setMatterContextInfo] = useState<MatterContextInfo | null>(null);
 
   // Keep onToggle ref current to avoid stale closure in route-change effect
   useEffect(() => {
     onToggleRef.current = onToggle;
   }, [onToggle]);
+
+  // Fetch matter context info when on a matter page
+  useEffect(() => {
+    if (!pathname?.startsWith("/dashboard/cases/")) {
+      setMatterContextInfo(null);
+      return;
+    }
+    const slug = pathname.replace("/dashboard/cases/", "").split("/")[0];
+    if (!slug) {
+      setMatterContextInfo(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const page = await api.brain.getPage(slug);
+        if (cancelled || !page) return;
+        const fm = caseFrontmatter(page);
+        const deadlines = fm.deadlines || [];
+        const tasks = fm.tasks || [];
+        const documents = fm.documents || [];
+        const openDeadlines = deadlines.filter(
+          (d) => d.status !== "done" && d.status !== "completed"
+        );
+        const openTasks = tasks.filter((t) => !t.done);
+        const nextDeadline = openDeadlines
+          .map((d) => d.due_date || d.date || "")
+          .filter(Boolean)
+          .sort()[0];
+        setMatterContextInfo({
+          title: page.title || slug,
+          caseNumber: fm.case_number || slug,
+          status: fm.status || "open",
+          openDeadlines: openDeadlines.length,
+          totalDeadlines: deadlines.length,
+          openTasks: openTasks.length,
+          totalTasks: tasks.length,
+          documentCount: documents.length,
+          nextDeadlineDate: nextDeadline || undefined,
+        });
+      } catch {
+        if (!cancelled) setMatterContextInfo(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname]);
 
   const {
     width: panelWidth,
@@ -920,7 +1064,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
         }}
         transition={reduceMotion ? { duration: 0 } : { duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
         className={cn(
-          "fixed inset-0 z-50 bg-black/30 md:hidden",
+          "fixed inset-0 z-50 bg-black/30 lg:hidden",
           mobileOpen ? "" : "pointer-events-none"
         )}
         onClick={() => {
@@ -936,7 +1080,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
         initial={false}
         animate={{ x: mobileOpen ? 0 : "100%" }}
         transition={panelTransition}
-        className="fixed top-0 right-0 z-50 h-full w-full max-w-md will-change-transform md:hidden"
+        className="fixed top-0 right-0 z-50 h-full w-full max-w-md will-change-transform lg:hidden"
         role="dialog"
         aria-label={t("copilot.title")}
         aria-modal={mobileOpen ? "true" : undefined}
@@ -1008,6 +1152,9 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
             </div>
           </div>
 
+          {/* Matter context card — mobile */}
+          {matterContextInfo && <MatterContextCard info={matterContextInfo} lang={lang} />}
+
           {/* Proactive deadline alerts (G6) — mobile */}
           <ProactiveAlerts
             alerts={visibleAlerts}
@@ -1069,7 +1216,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
         }}
         transition={panelTransition}
         className={cn(
-          "dashboard-panel-surface fixed inset-y-0 right-0 z-40 hidden min-w-0 overflow-hidden border-l border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] pt-[env(safe-area-inset-top)] md:relative md:inset-auto md:block md:shrink-0",
+          "dashboard-panel-surface fixed inset-y-0 right-0 z-40 hidden min-w-0 overflow-hidden border-l border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] pt-[env(safe-area-inset-top)] lg:relative lg:inset-auto lg:block lg:shrink-0",
           isResizing ? "transition-none" : "will-change-[width,opacity]",
           className
         )}
@@ -1221,6 +1368,9 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
               </div>
             </div>
 
+            {/* Matter context card — desktop */}
+            {matterContextInfo && <MatterContextCard info={matterContextInfo} lang={lang} />}
+
             {/* Proactive deadline alerts (G6) */}
             <ProactiveAlerts
               alerts={visibleAlerts}
@@ -1290,7 +1440,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
         whileTap={reduceMotion || open ? undefined : { scale: 0.965 }}
         transition={softTransition}
         className={cn(
-          "group fixed top-1/2 right-0 z-30 hidden -translate-y-1/2 items-center gap-2 rounded-l-xl border border-r-0 border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-4 pr-2 pl-2.5 shadow-md transition-[padding,box-shadow] duration-[var(--ds-duration-normal)] ease-[var(--ds-ease-panel)] hover:pl-3 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none md:flex",
+          "group fixed top-1/2 right-0 z-30 hidden -translate-y-1/2 items-center gap-2 rounded-l-xl border border-r-0 border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-4 pr-2 pl-2.5 shadow-md transition-[padding,box-shadow] duration-[var(--ds-duration-normal)] ease-[var(--ds-ease-panel)] hover:pl-3 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none lg:flex",
           open && "pointer-events-none"
         )}
         aria-label={t("copilot.expand")}

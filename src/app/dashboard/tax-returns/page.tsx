@@ -13,27 +13,15 @@ import { encodeSlugPath } from "@/lib/utils";
 import { OFFLINE_KEYS, getCache, setCache } from "@/lib/offline-store";
 import type { BrainPage } from "@/lib/types";
 import type { TaxReturnType, TaxReturnStatus } from "@/lib/tax-types";
-import { FileText, Plus, Search, RotateCcw, Loader2, X } from "lucide-react";
+import { FileText, Plus, Search, RotateCcw, X, FileStack, Clock, CheckCircle2 } from "lucide-react";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
+  TaxStatCard,
+  TaxReturnStatusBadge,
+  TaxReturnQuickCreateDialog,
+  TaxStrategyPanel,
+} from "@/components/tax";
 
-const STATUS_COLORS: Record<TaxReturnStatus, string> = {
-  draft: "border-slate-500/20 bg-slate-500/10 text-slate-600",
-  in_progress: "border-blue-500/20 bg-blue-500/10 text-blue-600",
-  review: "border-amber-500/20 bg-amber-500/10 text-amber-600",
-  submitted: "border-violet-500/20 bg-violet-500/10 text-violet-600",
-  assessed: "border-emerald-500/20 bg-emerald-500/10 text-emerald-600",
-  corrected: "border-orange-500/20 bg-orange-500/10 text-orange-600",
-  closed: "border-slate-500/20 bg-slate-500/10 text-slate-600",
-};
-
-const TYPE_LABELS: Record<TaxReturnType, string> = {
+const TYPE_LABELS_DE: Record<TaxReturnType, string> = {
   ESt: "Einkommensteuer",
   USt: "Umsatzsteuer",
   GewSt: "Gewerbesteuer",
@@ -49,7 +37,23 @@ const TYPE_LABELS: Record<TaxReturnType, string> = {
   other: "Sonstige",
 };
 
-const STATUS_LABELS: Record<TaxReturnStatus, string> = {
+const TYPE_LABELS_EN: Record<TaxReturnType, string> = {
+  ESt: "Income Tax",
+  USt: "VAT",
+  GewSt: "Trade Tax",
+  KSt: "Corporate Tax",
+  SolZ: "Solidarity Surcharge",
+  VSt: "Wealth Tax",
+  GrESt: "Real Estate Transfer Tax",
+  ErbSt: "Inheritance Tax",
+  LSt: "Wage Tax",
+  UStVA: "VAT Pre-Registration",
+  LStA: "Wage Tax Registration",
+  ZM: "Summary Report",
+  other: "Other",
+};
+
+const STATUS_FILTER_DE: Record<TaxReturnStatus, string> = {
   draft: "Entwurf",
   in_progress: "In Bearbeitung",
   review: "Zur Prüfung",
@@ -57,6 +61,16 @@ const STATUS_LABELS: Record<TaxReturnStatus, string> = {
   assessed: "Veranlagt",
   corrected: "Korrigiert",
   closed: "Abgeschlossen",
+};
+
+const STATUS_FILTER_EN: Record<TaxReturnStatus, string> = {
+  draft: "Draft",
+  in_progress: "In Progress",
+  review: "In Review",
+  submitted: "Submitted",
+  assessed: "Assessed",
+  corrected: "Corrected",
+  closed: "Closed",
 };
 
 interface TaxReturnRow {
@@ -93,15 +107,10 @@ export default function TaxReturnsPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
-  const [createLoading, setCreateLoading] = useState(false);
-  const [createForm, setCreateForm] = useState({
-    clientName: "",
-    type: "ESt" as TaxReturnType,
-    year: new Date().getFullYear(),
-    status: "draft" as TaxReturnStatus,
-    dueDate: "",
-    notes: "",
-  });
+  const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
+
+  const typeLabels = lang === "en" ? TYPE_LABELS_EN : TYPE_LABELS_DE;
+  const statusFilterLabels = lang === "en" ? STATUS_FILTER_EN : STATUS_FILTER_DE;
 
   const loadReturns = useCallback(async () => {
     setLoading(true);
@@ -152,40 +161,6 @@ export default function TaxReturnsPage() {
     (r) => r.status === "assessed" || r.status === "closed"
   ).length;
 
-  async function createReturn() {
-    if (!createForm.clientName.trim()) return;
-    setCreateLoading(true);
-    try {
-      await api.tax.returns.create({
-        clientName: createForm.clientName.trim(),
-        type: createForm.type,
-        year: createForm.year,
-        status: createForm.status,
-        dueDate: createForm.dueDate || undefined,
-        notes: createForm.notes.trim() || undefined,
-      });
-      addToast({ type: "success", title: t("tax.returns.toast_created") });
-      setCreateForm({
-        clientName: "",
-        type: "ESt",
-        year: new Date().getFullYear(),
-        status: "draft",
-        dueDate: "",
-        notes: "",
-      });
-      setCreateOpen(false);
-      await loadReturns();
-    } catch (err) {
-      addToast({
-        type: "error",
-        title: t("tax.returns.toast_create_fail"),
-        description: err instanceof Error ? err.message : undefined,
-      });
-    } finally {
-      setCreateLoading(false);
-    }
-  }
-
   return (
     <div className="mx-auto max-w-[1400px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
@@ -206,30 +181,29 @@ export default function TaxReturnsPage() {
       {/* Stats */}
       {!loading && returns.length > 0 && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
-            <div className="text-xs text-[color:var(--ds-text-muted)]">
-              {t("tax.returns.stat_total")}
-            </div>
-            <div className="text-xl font-bold text-[color:var(--ds-text)]">{returns.length}</div>
-          </div>
-          <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
-            <div className="text-xs text-[color:var(--ds-text-muted)]">
-              {t("tax.returns.stat_pending")}
-            </div>
-            <div className="text-xl font-bold text-amber-600">{pendingCount}</div>
-          </div>
-          <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
-            <div className="text-xs text-[color:var(--ds-text-muted)]">
-              {t("tax.returns.stat_submitted")}
-            </div>
-            <div className="text-xl font-bold text-blue-600">{submittedCount}</div>
-          </div>
-          <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
-            <div className="text-xs text-[color:var(--ds-text-muted)]">
-              {t("tax.returns.stat_assessed")}
-            </div>
-            <div className="text-xl font-bold text-emerald-600">{assessedCount}</div>
-          </div>
+          <TaxStatCard
+            label={t("tax.returns.stat_total")}
+            value={returns.length}
+            icon={FileStack}
+          />
+          <TaxStatCard
+            label={t("tax.returns.stat_pending")}
+            value={pendingCount}
+            icon={Clock}
+            colorVar="--ds-warning-text"
+          />
+          <TaxStatCard
+            label={t("tax.returns.stat_submitted")}
+            value={submittedCount}
+            icon={FileText}
+            colorVar="--ds-info-text"
+          />
+          <TaxStatCard
+            label={t("tax.returns.stat_assessed")}
+            value={assessedCount}
+            icon={CheckCircle2}
+            colorVar="--ds-success-text"
+          />
         </div>
       )}
 
@@ -265,7 +239,7 @@ export default function TaxReturnsPage() {
             className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
           >
             <option value="all">{t("tax.returns.all_types")}</option>
-            {Object.entries(TYPE_LABELS).map(([k, v]) => (
+            {Object.entries(typeLabels).map(([k, v]) => (
               <option key={k} value={k}>
                 {v}
               </option>
@@ -277,7 +251,7 @@ export default function TaxReturnsPage() {
             className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
           >
             <option value="all">{t("tax.returns.all_status")}</option>
-            {Object.entries(STATUS_LABELS).map(([k, v]) => (
+            {Object.entries(statusFilterLabels).map(([k, v]) => (
               <option key={k} value={k}>
                 {v}
               </option>
@@ -352,6 +326,7 @@ export default function TaxReturnsPage() {
                   <th className="px-5 py-3 font-medium">{t("tax.returns.col_status")}</th>
                   <th className="px-5 py-3 font-medium">{t("tax.returns.col_due")}</th>
                   <th className="px-5 py-3 font-medium">{t("tax.returns.col_amount")}</th>
+                  <th className="px-5 py-3 font-medium" />
                 </tr>
               </thead>
               <tbody>
@@ -365,15 +340,11 @@ export default function TaxReturnsPage() {
                       {r.clientName}
                     </td>
                     <td className="px-5 py-3 text-[color:var(--ds-text-muted)]">
-                      {TYPE_LABELS[r.type] ?? r.type}
+                      {typeLabels[r.type] ?? r.type}
                     </td>
                     <td className="px-5 py-3 text-[color:var(--ds-text-muted)]">{r.year}</td>
                     <td className="px-5 py-3">
-                      <span
-                        className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[r.status]}`}
-                      >
-                        {STATUS_LABELS[r.status] ?? r.status}
-                      </span>
+                      <TaxReturnStatusBadge status={r.status} lang={lang === "en" ? "en" : "de"} />
                     </td>
                     <td className="px-5 py-3 text-xs text-[color:var(--ds-text-subtle)]">
                       {r.dueDate ?? "—"}
@@ -383,6 +354,20 @@ export default function TaxReturnsPage() {
                         ? `${r.taxAmount.toLocaleString(lang === "en" ? "en-GB" : "de-DE")} €`
                         : "—"}
                     </td>
+                    <td className="px-5 py-3 text-right">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedSlug(r.slug);
+                        }}
+                        className="h-7 gap-1 px-2 text-xs text-[color:var(--brand-primary)] hover:bg-[color:var(--brand-soft)]"
+                      >
+                        <FileText size={12} />
+                        {t("tax.strategy.title")}
+                      </Button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -391,125 +376,15 @@ export default function TaxReturnsPage() {
         </div>
       )}
 
-      {/* Create Dialog */}
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>{t("tax.returns.modal_title")}</DialogTitle>
-            <DialogDescription>{t("tax.returns.modal_desc")}</DialogDescription>
-          </DialogHeader>
+      {/* AI Strategy Panel */}
+      {selectedSlug && <TaxStrategyPanel returnSlug={selectedSlug} />}
 
-          <div className="space-y-3">
-            <div>
-              <label className="mb-1 block text-xs font-medium text-[color:var(--ds-text-muted)]">
-                {t("tax.returns.label_client")} *
-              </label>
-              <Input
-                value={createForm.clientName}
-                onChange={(e) => setCreateForm((p) => ({ ...p, clientName: e.target.value }))}
-                placeholder={t("tax.returns.label_client")}
-                autoFocus
-                className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="mb-1 block text-xs font-medium text-[color:var(--ds-text-muted)]">
-                  {t("tax.returns.label_type")}
-                </label>
-                <select
-                  value={createForm.type}
-                  onChange={(e) =>
-                    setCreateForm((p) => ({ ...p, type: e.target.value as TaxReturnType }))
-                  }
-                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
-                >
-                  {Object.entries(TYPE_LABELS).map(([k, v]) => (
-                    <option key={k} value={k}>
-                      {v}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-[color:var(--ds-text-muted)]">
-                  {t("tax.returns.label_year")}
-                </label>
-                <Input
-                  type="number"
-                  value={createForm.year}
-                  onChange={(e) => setCreateForm((p) => ({ ...p, year: Number(e.target.value) }))}
-                  min={2000}
-                  max={new Date().getFullYear() + 1}
-                  className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)]"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="mb-1 block text-xs font-medium text-[color:var(--ds-text-muted)]">
-                  {t("tax.returns.label_status")}
-                </label>
-                <select
-                  value={createForm.status}
-                  onChange={(e) =>
-                    setCreateForm((p) => ({ ...p, status: e.target.value as TaxReturnStatus }))
-                  }
-                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
-                >
-                  {Object.entries(STATUS_LABELS).map(([k, v]) => (
-                    <option key={k} value={k}>
-                      {v}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-[color:var(--ds-text-muted)]">
-                  {t("tax.returns.label_due")}
-                </label>
-                <Input
-                  type="date"
-                  value={createForm.dueDate}
-                  onChange={(e) => setCreateForm((p) => ({ ...p, dueDate: e.target.value }))}
-                  className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)]"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-[color:var(--ds-text-muted)]">
-                {t("tax.returns.label_notes")}
-              </label>
-              <textarea
-                value={createForm.notes}
-                onChange={(e) => setCreateForm((p) => ({ ...p, notes: e.target.value }))}
-                rows={2}
-                className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
-              />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setCreateOpen(false)}
-              className="text-[color:var(--ds-text-muted)]"
-            >
-              {t("tax.returns.btn_cancel")}
-            </Button>
-            <Button
-              type="button"
-              disabled={createLoading || !createForm.clientName.trim()}
-              onClick={() => void createReturn()}
-              className="brand-bg gap-2 text-white"
-            >
-              {createLoading ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
-              {createLoading ? t("tax.returns.btn_creating") : t("tax.returns.btn_create")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Quick Create Dialog */}
+      <TaxReturnQuickCreateDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        onCreated={() => void loadReturns()}
+      />
     </div>
   );
 }

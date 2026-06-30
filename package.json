@@ -25,6 +25,7 @@
     "test:e2e": "playwright test",
     "test:e2e:smoke": "playwright test tests/e2e-playwright/smoke.spec.ts",
     "test:e2e:ui": "playwright test --ui",
+    "smoke:live": "bash tests/live-smoke.sh",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "analyze": "ANALYZE=true next build",

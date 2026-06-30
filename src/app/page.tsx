@@ -12,11 +12,13 @@ import {
 } from "@/components/seo/jsonld";
 import { TESTIMONIALS } from "@/components/marketing/testimonials-data";
 import { LANDING } from "@/content/site";
+import { keywordsFor } from "@/lib/seo-keywords";
 
 export const metadata: Metadata = {
   title: "Subsumio — KI-Kanzleisoftware für AT · DE · CH",
   description:
     "KI-Kanzleisoftware für Anwälte in AT, DE & CH: Akten, Fristen nach ZPO/BGB/ABGB, belegte KI-Antworten mit Fundstellen, DATEV-Export, Kollisionsprüfung. DSGVO-konform.",
+  keywords: keywordsFor("root"),
   alternates: {
     canonical: "/",
     languages: { "de-DE": "/", "de-AT": "/at", "de-CH": "/ch", en: "/en", "x-default": "/" },
@@ -27,6 +29,12 @@ export const metadata: Metadata = {
       "Aktenverwaltung, Fristenkontrolle und belegte KI-Antworten für Kanzleien in Österreich, Deutschland und der Schweiz. DSGVO-konform, EU-Cloud oder On-Premise. Jede Antwort mit Fundstelle.",
     url: "/",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Subsumio — KI-Kanzleisoftware für AT · DE · CH",
+    description:
+      "Akten, Fristen, belegte KI-Antworten mit Fundstellen. DSGVO-konform, EU-Cloud oder On-Premise.",
   },
 };
 

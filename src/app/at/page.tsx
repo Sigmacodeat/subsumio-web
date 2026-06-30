@@ -8,11 +8,13 @@ import {
   howToLd,
 } from "@/components/seo/jsonld";
 import { LANDING } from "@/content/site";
+import { keywordsFor } from "@/lib/seo-keywords";
 
 export const metadata: Metadata = {
   title: "Subsumio — KI-Kanzleisoftware für Österreich",
   description:
     "KI-Kanzleisoftware für Kanzleien in Österreich: Aktenverwaltung, Fristenkontrolle nach ZPO/ABGB, belegte KI-Antworten mit Fundstellen, ADATEV-Export, Kollisionsprüfung nach § 10 RAO. DSGVO-konform, EU-Cloud oder On-Premise.",
+  keywords: keywordsFor("root"),
   alternates: {
     canonical: "/at",
     languages: { "de-DE": "/", "de-AT": "/at", "de-CH": "/ch", en: "/en", "x-default": "/" },
@@ -23,6 +25,12 @@ export const metadata: Metadata = {
       "Aktenverwaltung, Fristenkontrolle und belegte KI-Antworten für Kanzleien in Österreich. DSGVO-konform, EU-Cloud oder On-Premise. Jede Antwort mit Fundstelle.",
     url: "/at",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Subsumio — KI-Kanzleisoftware für Österreich",
+    description:
+      "Akten, Fristen nach ZPO/ABGB, belegte KI-Antworten. DSGVO-konform, EU-Cloud oder On-Premise.",
   },
 };
 

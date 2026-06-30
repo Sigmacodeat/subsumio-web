@@ -31,6 +31,7 @@ interface ContractQuickCreateDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCreated?: () => void;
+  presetCaseSlug?: string;
 }
 
 interface ContractItem {
@@ -79,6 +80,7 @@ export function ContractQuickCreateDialog({
   open,
   onOpenChange,
   onCreated,
+  presetCaseSlug,
 }: ContractQuickCreateDialogProps) {
   const { t, lang } = useLang();
   const { addToast } = useToast();
@@ -116,6 +118,7 @@ export function ContractQuickCreateDialog({
           contract_status: "draft",
           risk_level: null,
           risk_score: null,
+          case_slug: presetCaseSlug || undefined,
         },
       };
       if (isOnline()) {

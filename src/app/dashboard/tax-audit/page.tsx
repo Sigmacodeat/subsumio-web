@@ -18,12 +18,14 @@ import {
   Plus,
   Search,
   RotateCcw,
-  Loader2,
   X,
   CheckCircle,
-  Clock,
   AlertCircle,
+  ClipboardList,
+  ShieldAlert,
+  Euro,
 } from "lucide-react";
+import { TaxStatCard, TaxRiskAnalysisPanel, TaxBfhFeedPanel } from "@/components/tax";
 import {
   Dialog,
   DialogContent,
@@ -35,12 +37,20 @@ import {
 
 type AuditType = "Betriebspruefung" | "Aussenpruefung" | "Lohnpruefung" | "UStpruefung";
 
-const PHASE_LABELS: Record<TaxAuditPhase, string> = {
+const PHASE_LABELS_DE: Record<TaxAuditPhase, string> = {
   vorbereitung: "Vorbereitung",
   pruefung: "Prüfung",
   abschluss: "Abschluss",
   rechtsbehelf: "Rechtsbehelf",
   abgeschlossen: "Abgeschlossen",
+};
+
+const PHASE_LABELS_EN: Record<TaxAuditPhase, string> = {
+  vorbereitung: "Preparation",
+  pruefung: "Audit",
+  abschluss: "Conclusion",
+  rechtsbehelf: "Appeal",
+  abgeschlossen: "Closed",
 };
 
 const PHASE_COLORS: Record<TaxAuditPhase, string> = {
@@ -51,11 +61,18 @@ const PHASE_COLORS: Record<TaxAuditPhase, string> = {
   abgeschlossen: "border-emerald-500/20 bg-emerald-500/10 text-emerald-600",
 };
 
-const AUDIT_TYPES: Record<AuditType, string> = {
+const AUDIT_TYPES_DE: Record<AuditType, string> = {
   Betriebspruefung: "Betriebsprüfung",
   Aussenpruefung: "Außenprüfung",
   Lohnpruefung: "Lohnprüfung",
   UStpruefung: "USt-Prüfung",
+};
+
+const AUDIT_TYPES_EN: Record<AuditType, string> = {
+  Betriebspruefung: "Tax Audit",
+  Aussenpruefung: "External Audit",
+  Lohnpruefung: "Payroll Audit",
+  UStpruefung: "VAT Audit",
 };
 
 interface AuditRow {
@@ -100,6 +117,7 @@ export default function TaxAuditPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [createLoading, setCreateLoading] = useState(false);
+  const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
   const [createForm, setCreateForm] = useState({
     clientName: "",
     type: "Betriebspruefung" as AuditType,
@@ -110,6 +128,9 @@ export default function TaxAuditPage() {
     endDate: "",
     notes: "",
   });
+
+  const phaseLabels = lang === "en" ? PHASE_LABELS_EN : PHASE_LABELS_DE;
+  const auditTypeLabels = lang === "en" ? AUDIT_TYPES_EN : AUDIT_TYPES_DE;
 
   const loadAudits = useCallback(async () => {
     setLoading(true);
@@ -210,32 +231,28 @@ export default function TaxAuditPage() {
       {/* Stats */}
       {!loading && audits.length > 0 && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
-            <div className="text-xs text-[color:var(--ds-text-muted)]">
-              {t("tax.audit.stat_total")}
-            </div>
-            <div className="text-xl font-bold text-[color:var(--ds-text)]">{audits.length}</div>
-          </div>
-          <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
-            <div className="text-xs text-[color:var(--ds-text-muted)]">
-              {t("tax.audit.stat_active")}
-            </div>
-            <div className="text-xl font-bold text-amber-600">{activeCount}</div>
-          </div>
-          <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
-            <div className="text-xs text-[color:var(--ds-text-muted)]">
-              {t("tax.audit.stat_findings")}
-            </div>
-            <div className="text-xl font-bold text-[color:var(--ds-text)]">{totalFindings}</div>
-          </div>
-          <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
-            <div className="text-xs text-[color:var(--ds-text-muted)]">
-              {t("tax.audit.stat_additional_tax")}
-            </div>
-            <div className="text-xl font-bold text-rose-600">
-              {totalAdditionalTax.toLocaleString(lang === "en" ? "en-GB" : "de-DE")} €
-            </div>
-          </div>
+          <TaxStatCard
+            label={t("tax.audit.stat_total")}
+            value={audits.length}
+            icon={ClipboardList}
+          />
+          <TaxStatCard
+            label={t("tax.audit.stat_active")}
+            value={activeCount}
+            icon={AlertCircle}
+            colorVar="--ds-warning-text"
+          />
+          <TaxStatCard
+            label={t("tax.audit.stat_findings")}
+            value={totalFindings}
+            icon={CheckCircle}
+          />
+          <TaxStatCard
+            label={t("tax.audit.stat_additional_tax")}
+            value={`${totalAdditionalTax.toLocaleString(lang === "en" ? "en-GB" : "de-DE")} €`}
+            icon={Euro}
+            colorVar="--ds-danger-text"
+          />
         </div>
       )}
 
@@ -271,7 +288,7 @@ export default function TaxAuditPage() {
             className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
           >
             <option value="all">{t("tax.audit.all_types")}</option>
-            {Object.entries(AUDIT_TYPES).map(([k, v]) => (
+            {Object.entries(auditTypeLabels).map(([k, v]) => (
               <option key={k} value={k}>
                 {v}
               </option>
@@ -283,7 +300,7 @@ export default function TaxAuditPage() {
             className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
           >
             <option value="all">{t("tax.audit.all_phases")}</option>
-            {Object.entries(PHASE_LABELS).map(([k, v]) => (
+            {Object.entries(phaseLabels).map(([k, v]) => (
               <option key={k} value={k}>
                 {v}
               </option>
@@ -361,6 +378,7 @@ export default function TaxAuditPage() {
                   <th className="px-5 py-3 text-right font-medium">
                     {t("tax.audit.total_additional")}
                   </th>
+                  <th className="px-5 py-3 font-medium" />
                 </tr>
               </thead>
               <tbody>
@@ -374,7 +392,7 @@ export default function TaxAuditPage() {
                       {a.clientName}
                     </td>
                     <td className="px-5 py-3 text-[color:var(--ds-text-muted)]">
-                      {AUDIT_TYPES[a.type]}
+                      {auditTypeLabels[a.type]}
                     </td>
                     <td className="px-5 py-3 text-[color:var(--ds-text-muted)]">{a.year}</td>
                     <td className="px-5 py-3 text-xs text-[color:var(--ds-text-subtle)]">
@@ -384,7 +402,7 @@ export default function TaxAuditPage() {
                       <span
                         className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${PHASE_COLORS[a.phase]}`}
                       >
-                        {PHASE_LABELS[a.phase]}
+                        {phaseLabels[a.phase]}
                       </span>
                     </td>
                     <td className="px-5 py-3 text-[color:var(--ds-text-muted)]">
@@ -402,11 +420,33 @@ export default function TaxAuditPage() {
                         ? `${a.totalAdditionalTax.toLocaleString(lang === "en" ? "en-GB" : "de-DE")} €`
                         : "—"}
                     </td>
+                    <td className="px-5 py-3 text-right">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedSlug(a.slug);
+                        }}
+                        className="h-7 gap-1 px-2 text-xs text-[color:var(--brand-primary)] hover:bg-[color:var(--brand-soft)]"
+                      >
+                        <ShieldAlert size={12} />
+                        {t("tax.risk.title")}
+                      </Button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+
+      {/* AI Risk Analysis + BFH Feed Panels */}
+      {selectedSlug && (
+        <div className="space-y-4">
+          <TaxRiskAnalysisPanel returnSlug={selectedSlug} />
+          <TaxBfhFeedPanel />
         </div>
       )}
 
@@ -443,7 +483,7 @@ export default function TaxAuditPage() {
                   }
                   className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                 >
-                  {Object.entries(AUDIT_TYPES).map(([k, v]) => (
+                  {Object.entries(auditTypeLabels).map(([k, v]) => (
                     <option key={k} value={k}>
                       {v}
                     </option>
@@ -487,7 +527,7 @@ export default function TaxAuditPage() {
                   }
                   className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                 >
-                  {Object.entries(PHASE_LABELS).map(([k, v]) => (
+                  {Object.entries(phaseLabels).map(([k, v]) => (
                     <option key={k} value={k}>
                       {v}
                     </option>
@@ -545,7 +585,11 @@ export default function TaxAuditPage() {
               onClick={() => void createAudit()}
               className="brand-bg gap-2 text-white"
             >
-              {createLoading ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+              {createLoading ? (
+                <RotateCcw size={14} className="animate-spin" />
+              ) : (
+                <Plus size={14} />
+              )}
               {createLoading ? t("tax.audit.btn_creating") : t("tax.audit.btn_create")}
             </Button>
           </DialogFooter>

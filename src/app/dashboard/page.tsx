@@ -77,7 +77,7 @@ function CalmGreeting({
   );
 
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
       <div className="min-w-0">
         <p
           className="text-xs font-medium text-[color:var(--ds-text-subtle)]"
@@ -102,7 +102,7 @@ function CalmGreeting({
           )}
         </p>
       </div>
-      <form onSubmit={onSubmit} className="relative w-full max-w-md shrink-0">
+      <form onSubmit={onSubmit} className="relative w-full shrink-0 lg:w-72">
         <Search
           size={14}
           className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[color:var(--ds-text-subtle)]"

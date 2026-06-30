@@ -5,24 +5,14 @@ import { useLang } from "@/lib/use-lang";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Wifi,
@@ -35,20 +25,17 @@ import {
   XCircle,
   CheckCircle2,
   HelpCircle,
-  ChevronDown,
   Copy,
   Check,
   FileJson,
+  FileStack,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { buildElsterXml } from "@/lib/elster";
 import type { BrainPage } from "@/lib/types";
 import type { VariantProps } from "class-variance-authority";
 import type { ElsterFormType } from "@/lib/elster";
-
-const FORM_TYPES = ["UStVA", "LStA", "ZM", "ESt", "USt", "GewSt", "KSt"] as const;
-
-type FormType = (typeof FORM_TYPES)[number];
+import { ElsterSubmissionWizard, TaxStatCard } from "@/components/tax";
 
 type BadgeVariant = VariantProps<typeof import("@/components/ui/badge").badgeVariants>["variant"];
 
@@ -82,19 +69,8 @@ export default function ElsterPage() {
   } | null>(null);
   const [submissions, setSubmissions] = useState<BrainPage[]>([]);
 
-  // Form state
-  const [formType, setFormType] = useState<FormType>("UStVA");
-  const [clientName, setClientName] = useState("");
-  const [period, setPeriod] = useState(() => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-  });
-  const [year, setYear] = useState(new Date().getFullYear());
-  const [taxAmount, setTaxAmount] = useState("");
-  const [refundAmount, setRefundAmount] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [submitResult, setSubmitResult] = useState<{ ok: boolean; message: string } | null>(null);
   const [selectedSubmission, setSelectedSubmission] = useState<BrainPage | null>(null);
+  const [wizardOpen, setWizardOpen] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -122,41 +98,18 @@ export default function ElsterPage() {
     return [...submissions].sort((a, b) => (b.updated_at ?? "").localeCompare(a.updated_at ?? ""));
   }, [submissions]);
 
-  const canSubmit = clientName.trim() && period.trim() && !submitting;
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!canSubmit) return;
-    setSubmitting(true);
-    setSubmitResult(null);
-    try {
-      const res = await api.tax.elster.submit({
-        clientId: clientName.toLowerCase().replace(/[^a-z0-9äöüß]+/g, "-"),
-        clientName: clientName.trim(),
-        formType,
-        period,
-        year,
-        taxAmount: taxAmount ? Number(taxAmount) : undefined,
-        refundAmount: refundAmount ? Number(refundAmount) : undefined,
-      });
-      setSubmitResult({
-        ok: true,
-        message: `${t("elster.submit_success")} ${res.submission.elsterReference ?? res.submission.id}`,
-      });
-      // Reset form
-      setClientName("");
-      setTaxAmount("");
-      setRefundAmount("");
-      void load();
-    } catch (err) {
-      setSubmitResult({
-        ok: false,
-        message: err instanceof Error ? err.message : t("elster.submit_error"),
-      });
-    } finally {
-      setSubmitting(false);
-    }
-  }
+  const acceptedCount = sortedSubmissions.filter((p) => {
+    const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
+    return fm.elster_status === "accepted";
+  }).length;
+  const pendingCount = sortedSubmissions.filter((p) => {
+    const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
+    return fm.elster_status === "queued" || fm.elster_status === "submitted";
+  }).length;
+  const errorCount = sortedSubmissions.filter((p) => {
+    const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
+    return fm.elster_status === "rejected" || fm.elster_status === "error";
+  }).length;
 
   return (
     <div className="mx-auto max-w-[1400px] space-y-6 p-4 md:p-6 lg:p-8">
@@ -182,6 +135,35 @@ export default function ElsterPage() {
 
       <ConnectionStatus status={status} />
 
+      {/* Stats */}
+      {!loading && sortedSubmissions.length > 0 && (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <TaxStatCard
+            label={t("elster.stat_total")}
+            value={sortedSubmissions.length}
+            icon={FileStack}
+          />
+          <TaxStatCard
+            label={t("elster.stat_pending")}
+            value={pendingCount}
+            icon={Clock}
+            colorVar="--ds-warning-text"
+          />
+          <TaxStatCard
+            label={t("elster.stat_accepted")}
+            value={acceptedCount}
+            icon={CheckCircle2}
+            colorVar="--ds-success-text"
+          />
+          <TaxStatCard
+            label={t("elster.stat_errors")}
+            value={errorCount}
+            icon={XCircle}
+            colorVar="--ds-danger-text"
+          />
+        </div>
+      )}
+
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <Card className="p-5 lg:col-span-2">
           <div className="mb-4 flex items-center gap-2">
@@ -190,91 +172,28 @@ export default function ElsterPage() {
               {t("elster.new_submission")}
             </h3>
           </div>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <Label htmlFor="elster-client">{t("elster.client_name")}</Label>
-                <Input
-                  id="elster-client"
-                  value={clientName}
-                  onChange={(e) => setClientName(e.target.value)}
-                  placeholder={t("elster.client_name_placeholder")}
-                  className="mt-1.5"
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="elster-form">{t("elster.form_type")}</Label>
-                <Select value={formType} onValueChange={(v) => setFormType(v as FormType)}>
-                  <SelectTrigger id="elster-form" className="mt-1.5">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {FORM_TYPES.map((ft) => (
-                      <SelectItem key={ft} value={ft}>
-                        {ft}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="elster-period">{t("elster.period")}</Label>
-                <Input
-                  id="elster-period"
-                  value={period}
-                  onChange={(e) => setPeriod(e.target.value)}
-                  placeholder={t("elster.period_placeholder")}
-                  className="mt-1.5"
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="elster-year">{t("elster.year")}</Label>
-                <Input
-                  id="elster-year"
-                  type="number"
-                  value={year}
-                  onChange={(e) => setYear(Number(e.target.value))}
-                  className="mt-1.5"
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="elster-tax">{t("elster.tax_amount")}</Label>
-                <Input
-                  id="elster-tax"
-                  type="number"
-                  step="0.01"
-                  value={taxAmount}
-                  onChange={(e) => setTaxAmount(e.target.value)}
-                  className="mt-1.5"
-                />
-              </div>
-              <div>
-                <Label htmlFor="elster-refund">{t("elster.refund_amount")}</Label>
-                <Input
-                  id="elster-refund"
-                  type="number"
-                  step="0.01"
-                  value={refundAmount}
-                  onChange={(e) => setRefundAmount(e.target.value)}
-                  className="mt-1.5"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 pt-2">
-              <Button type="submit" disabled={!canSubmit}>
-                {submitting ? t("elster.submitting") : t("elster.submit")}
+          {wizardOpen ? (
+            <ElsterSubmissionWizard
+              onSubmitted={() => {
+                setWizardOpen(false);
+                void load();
+              }}
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center py-10 text-center">
+              <Send size={32} className="text-[color:var(--ds-text-subtle)] opacity-50" />
+              <p className="mt-3 text-sm text-[color:var(--ds-text-subtle)]">
+                {t("elster.wizard_hint")}
+              </p>
+              <Button
+                onClick={() => setWizardOpen(true)}
+                className="brand-bg mt-4 gap-2 text-white"
+              >
+                <Send size={16} />
+                {t("elster.start_submission")}
               </Button>
-              {submitResult && (
-                <p className={`text-sm ${submitResult.ok ? "text-emerald-600" : "text-rose-600"}`}>
-                  {submitResult.message}
-                </p>
-              )}
             </div>
-          </form>
+          )}
         </Card>
 
         <Card className="p-5">

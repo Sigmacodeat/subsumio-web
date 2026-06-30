@@ -1239,6 +1239,190 @@ export const api = {
         });
       },
     },
+
+    caseStrategy(input: {
+      returnSlug: string;
+      jurisdiction?: "de" | "at";
+      language?: "de" | "en";
+    }): Promise<{
+      summary: string;
+      recommended: string;
+      recommendedApproach: string;
+      risks: Array<{
+        description: string;
+        probability: "high" | "medium" | "low";
+        impact: "high" | "medium" | "low";
+        mitigation: string;
+      }>;
+      next_steps: string[];
+      cost_estimate?: {
+        min: number;
+        max: number;
+        currency: string;
+        basis: string;
+      };
+      success_probability: number;
+      generatedAt: string;
+    }> {
+      return request("/api/tax/case-strategy", {
+        method: "POST",
+        body: JSON.stringify({
+          return_slug: input.returnSlug,
+          jurisdiction: input.jurisdiction,
+          language: input.language,
+        }),
+      });
+    },
+
+    riskAnalysis(input: {
+      clientSlug?: string;
+      returnSlug?: string;
+      text?: string;
+      jurisdiction?: "de" | "at";
+    }): Promise<{
+      overall_risk_level: "low" | "medium" | "high";
+      risks: Array<{
+        category: string;
+        description: string;
+        severity: "low" | "medium" | "high";
+        potential_amount?: number;
+        mitigation: string;
+        legal_basis?: string;
+      }>;
+      recommendations: string[];
+      generatedAt: string;
+    }> {
+      return request("/api/tax/risk-analysis", {
+        method: "POST",
+        body: JSON.stringify({
+          client_slug: input.clientSlug,
+          return_slug: input.returnSlug,
+          text: input.text,
+          jurisdiction: input.jurisdiction,
+        }),
+      });
+    },
+
+    precedentSearch(input: { query: string; jurisdiction?: "de" | "at"; limit?: number }): Promise<{
+      precedents: Array<{
+        court: string;
+        date: string;
+        file_number: string;
+        summary: string;
+        relevance: number;
+        key_holdings: string[];
+        legal_basis: string[];
+      }>;
+      generatedAt: string;
+    }> {
+      return request("/api/tax/precedent-search", {
+        method: "POST",
+        body: JSON.stringify({
+          query: input.query,
+          jurisdiction: input.jurisdiction,
+          limit: input.limit,
+        }),
+      });
+    },
+
+    appealGenerator(input: {
+      assessmentSlug: string;
+      contestedPoints?: string;
+      jurisdiction?: "de" | "at";
+      language?: "de" | "en";
+    }): Promise<{
+      assessment_summary: string;
+      contested_points: Array<{
+        position: string;
+        tax_office_view: string;
+        taxpayer_view: string;
+        legal_basis: string;
+        disputed_amount: number;
+        success_prospect: "stark" | "mittel" | "schwach" | "keine";
+        required_evidence: string[];
+      }>;
+      deadline: string;
+      deadline_legal_basis: string;
+      days_remaining: number;
+      success_prospect_summary: string;
+      total_disputed_amount: number;
+      draft_letter: {
+        recipient: string;
+        subject: string;
+        body: string;
+        requests: string[];
+      };
+      recommendations: string[];
+      generatedAt: string;
+    }> {
+      return request("/api/tax/appeal-generator", {
+        method: "POST",
+        body: JSON.stringify({
+          assessment_slug: input.assessmentSlug,
+          contested_points: input.contestedPoints,
+          jurisdiction: input.jurisdiction,
+          language: input.language,
+        }),
+      });
+    },
+
+    bfhFeed(input: { topic?: string; limit?: number; jurisdiction?: "de" | "at" }): Promise<{
+      decisions: Array<{
+        court: string;
+        file_number: string;
+        date: string;
+        topic: string;
+        summary: string;
+        key_holdings: string[];
+        legal_basis: string[];
+        relevance: "high" | "medium" | "low";
+      }>;
+      topic_summary: string;
+      generatedAt: string;
+    }> {
+      return request("/api/tax/bfh-feed", {
+        method: "POST",
+        body: JSON.stringify({
+          topic: input.topic,
+          limit: input.limit,
+          jurisdiction: input.jurisdiction,
+        }),
+      });
+    },
+
+    clientLetter(input: {
+      clientSlug: string;
+      occasion:
+        | "quarterly_update"
+        | "law_change"
+        | "reminder"
+        | "assessment_received"
+        | "audit_notice"
+        | "year_end"
+        | "custom";
+      customOccasion?: string;
+      keyPoints?: string;
+      language?: "de" | "en";
+    }): Promise<{
+      recipient_name: string;
+      recipient_address: string;
+      subject: string;
+      body: string;
+      key_points: string[];
+      call_to_action: string;
+      generatedAt: string;
+    }> {
+      return request("/api/tax/client-letter", {
+        method: "POST",
+        body: JSON.stringify({
+          client_slug: input.clientSlug,
+          occasion: input.occasion,
+          custom_occasion: input.customOccasion,
+          key_points: input.keyPoints,
+          language: input.language,
+        }),
+      });
+    },
   },
 
   whatsapp: {

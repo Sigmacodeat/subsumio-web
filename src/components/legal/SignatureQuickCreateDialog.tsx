@@ -34,12 +34,14 @@ interface SignatureQuickCreateDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCreated?: () => void;
+  presetCaseSlug?: string;
 }
 
 export function SignatureQuickCreateDialog({
   open,
   onOpenChange,
   onCreated,
+  presetCaseSlug,
 }: SignatureQuickCreateDialogProps) {
   const { t, lang } = useLang();
   const { addToast } = useToast();
@@ -94,6 +96,7 @@ export function SignatureQuickCreateDialog({
           expires_at: expiresAt,
           created_at: now.toISOString(),
           provider: "external",
+          case_slug: presetCaseSlug || undefined,
         },
       });
       addToast({ type: "success", title: t("signature.quick_created" as DashboardKey) });

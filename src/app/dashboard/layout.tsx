@@ -92,6 +92,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const [globalSignatureCreateOpen, setGlobalSignatureCreateOpen] = useState(false);
   const [globalClauseCreateOpen, setGlobalClauseCreateOpen] = useState(false);
   const [globalContractCreateOpen, setGlobalContractCreateOpen] = useState(false);
+  const [presetCaseSlug, setPresetCaseSlug] = useState<string | undefined>(undefined);
 
   // Auto-collapse sidebar when copilot opens on medium screens to maximize content space
   useEffect(() => {
@@ -156,7 +157,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const checkOverlay = () => {
       const copilotMobileOpen =
-        copilotOpen && typeof window !== "undefined" && window.innerWidth < 768;
+        copilotOpen && typeof window !== "undefined" && window.innerWidth < 1024;
       const anyOverlayOpen =
         mobileOpen || cmdOpen || guideOpen || shortcutsOpen || copilotMobileOpen;
       document.body.style.overflow = anyOverlayOpen ? "hidden" : "";
@@ -221,31 +222,51 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const handler = () => setGlobalDeadlineCreateOpen(true);
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { caseSlug?: string } | undefined;
+      setPresetCaseSlug(detail?.caseSlug);
+      setGlobalDeadlineCreateOpen(true);
+    };
     window.addEventListener("subsumio:create-deadline", handler);
     return () => window.removeEventListener("subsumio:create-deadline", handler);
   }, []);
 
   useEffect(() => {
-    const handler = () => setGlobalInvoiceCreateOpen(true);
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { caseSlug?: string } | undefined;
+      setPresetCaseSlug(detail?.caseSlug);
+      setGlobalInvoiceCreateOpen(true);
+    };
     window.addEventListener("subsumio:create-invoice", handler);
     return () => window.removeEventListener("subsumio:create-invoice", handler);
   }, []);
 
   useEffect(() => {
-    const handler = () => setGlobalSignatureCreateOpen(true);
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { caseSlug?: string } | undefined;
+      setPresetCaseSlug(detail?.caseSlug);
+      setGlobalSignatureCreateOpen(true);
+    };
     window.addEventListener("subsumio:create-signature", handler);
     return () => window.removeEventListener("subsumio:create-signature", handler);
   }, []);
 
   useEffect(() => {
-    const handler = () => setGlobalClauseCreateOpen(true);
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { caseSlug?: string } | undefined;
+      setPresetCaseSlug(detail?.caseSlug);
+      setGlobalClauseCreateOpen(true);
+    };
     window.addEventListener("subsumio:create-clause", handler);
     return () => window.removeEventListener("subsumio:create-clause", handler);
   }, []);
 
   useEffect(() => {
-    const handler = () => setGlobalContractCreateOpen(true);
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { caseSlug?: string } | undefined;
+      setPresetCaseSlug(detail?.caseSlug);
+      setGlobalContractCreateOpen(true);
+    };
     window.addEventListener("subsumio:create-contract", handler);
     return () => window.removeEventListener("subsumio:create-contract", handler);
   }, []);
@@ -326,6 +347,10 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       data-industry={industry ?? "core"}
       data-app="dashboard"
       data-theme={theme}
+      // theme-init.js sets data-theme on the DOM before hydration (no flash);
+      // React resyncs via useTheme's mount effect. Suppress the expected
+      // server(light)/client(stored) attribute mismatch warning on this node.
+      suppressHydrationWarning
     >
       <Script src="/theme-init.js" strategy="beforeInteractive" />
       {/* Skip-to-content link for keyboard users */}
@@ -418,26 +443,31 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           <DeadlineQuickCreateDialog
             open={globalDeadlineCreateOpen}
             onOpenChange={setGlobalDeadlineCreateOpen}
+            presetCaseSlug={presetCaseSlug}
           />
 
           <InvoiceQuickCreateDialog
             open={globalInvoiceCreateOpen}
             onOpenChange={setGlobalInvoiceCreateOpen}
+            presetCaseSlug={presetCaseSlug}
           />
 
           <SignatureQuickCreateDialog
             open={globalSignatureCreateOpen}
             onOpenChange={setGlobalSignatureCreateOpen}
+            presetCaseSlug={presetCaseSlug}
           />
 
           <ClauseQuickCreateDialog
             open={globalClauseCreateOpen}
             onOpenChange={setGlobalClauseCreateOpen}
+            presetCaseSlug={presetCaseSlug}
           />
 
           <ContractQuickCreateDialog
             open={globalContractCreateOpen}
             onOpenChange={setGlobalContractCreateOpen}
+            presetCaseSlug={presetCaseSlug}
           />
         </>
       )}

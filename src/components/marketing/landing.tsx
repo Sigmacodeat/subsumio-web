@@ -25,7 +25,6 @@ import {
   StaggerContainer,
   StaggerItem,
   EASE,
-  ScrollProgress,
   AnimatedCounter,
   MagneticButton,
   MagneticCard,
@@ -55,19 +54,18 @@ export default function LandingPage({ lang }: { lang: Lang }) {
 
   return (
     <>
-      <ScrollProgress />
-      <div
-        data-tone="light"
-        className="min-h-screen overflow-x-hidden [background:var(--mk-bg)]"
-        lang={lang}
-      >
-        {/* Hero — dark slate editorial surface for stronger contrast */}
-        <Section tone="slate" className="relative px-6 pt-16 pb-24">
+      <div data-tone="light" className="min-h-screen overflow-x-hidden" lang={lang}>
+        {/* Hero — dark slate editorial surface with gradient mesh depth */}
+        <Section
+          tone="slate"
+          className="relative overflow-hidden px-6 pt-28 pb-28 md:pt-36 md:pb-32"
+        >
+          <GradientMesh className="opacity-30" />
           <div className="relative mx-auto max-w-7xl text-center">
             {/* Legal icon constellation — animated hero motif */}
             <IndustryHeroMotif
               industry="legal"
-              className="absolute inset-0 z-0 hidden opacity-[0.10] md:block"
+              className="absolute inset-0 z-0 hidden opacity-[0.12] md:block"
             />
             <div className="relative z-10">
               <motion.div
@@ -78,7 +76,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                     ? { duration: 0 }
                     : { type: "spring", stiffness: 200, damping: 22, delay: 0 }
                 }
-                className="mb-7"
+                className="mb-6"
               >
                 <div className="relative mx-auto w-fit">
                   {/* Pulse glow ring */}
@@ -105,7 +103,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 {t.badge}
               </motion.div>
               <h1
-                className="mb-4 text-5xl leading-[1.05] font-black tracking-tight [color:var(--mk-text)] md:text-7xl lg:text-8xl"
+                className="mb-6 text-5xl leading-[1.05] font-black tracking-tight [color:var(--mk-text)] md:text-7xl lg:text-8xl"
                 style={{ fontFamily: "var(--font-display)" }}
               >
                 <SplitTextReveal
@@ -119,23 +117,11 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                   {`${t.h1a}\n${t.h1b}`}
                 </SplitTextReveal>
               </h1>
-              {t.heroTagline && (
-                <motion.p
-                  initial={reduce ? false : { opacity: 0, y: 14 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={
-                    reduce ? { duration: 0 } : { duration: 0.45, ease: EASE.dramatic, delay: 0.45 }
-                  }
-                  className="mx-auto mb-6 max-w-2xl text-xl leading-relaxed font-semibold [color:var(--brand-text)]"
-                >
-                  {t.heroTagline}
-                </motion.p>
-              )}
               <motion.p
                 initial={reduce ? false : { opacity: 0, y: 16, filter: "blur(3px)" }}
                 animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
                 transition={
-                  reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.dramatic, delay: 0.55 }
+                  reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.dramatic, delay: 0.45 }
                 }
                 className="mx-auto mb-12 max-w-2xl text-lg leading-relaxed [color:var(--mk-text-muted)] md:text-xl"
               >
@@ -156,11 +142,15 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                     </Button>
                   </Link>
                 </MagneticButton>
-                <a href="#pricing">
-                  <Button size="xl" variant="outline" className="min-w-[200px]">
+                <Link href="#pricing">
+                  <Button
+                    size="xl"
+                    variant="outline"
+                    className="min-w-[200px] border-[color:var(--mk-border-strong)] hover:border-[color:var(--brand-text)] hover:bg-[color:var(--mk-surface)]"
+                  >
                     {lang !== "en" ? "Preise ansehen" : "See pricing"} <ArrowRight size={18} />
                   </Button>
-                </a>
+                </Link>
               </motion.div>
               <motion.p
                 initial={reduce ? false : { opacity: 0 }}
@@ -171,19 +161,19 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 className="mb-4 text-xs [color:var(--mk-text-muted)]"
               >
                 {lang !== "en"
-                  ? "14 Tage Reverse Trial · 14 Tage Geld-zurück-Garantie · Keine Kreditkarte erforderlich"
-                  : "14-day reverse trial · 14-day money-back guarantee · No credit card required"}
+                  ? "14 Tage Reverse Trial · Geld-zurück-Garantie · Keine Kreditkarte"
+                  : "14-day reverse trial · Money-back guarantee · No credit card"}
               </motion.p>
-              {/* The live demo is a dark spotlight floating on the slate hero */}
+              {/* The live demo — dark spotlight with clear visual separation from hero */}
               <motion.div
-                initial={reduce ? false : { opacity: 0, y: 20 }}
+                initial={reduce ? false : { opacity: 0, y: 24 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={
-                  reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.dramatic, delay: 0.9 }
+                  reduce ? { duration: 0 } : { duration: 0.55, ease: EASE.dramatic, delay: 0.85 }
                 }
                 id="demo"
                 data-tone="dashboard"
-                className="mx-auto max-w-3xl scroll-mt-24 rounded-2xl shadow-[0_0_60px_rgba(56,189,248,0.12)] ring-1 ring-white/[0.08]"
+                className="mx-auto mt-6 max-w-3xl scroll-mt-24 rounded-2xl shadow-[0_24px_80px_rgba(0,0,0,0.5),0_0_60px_rgba(56,189,248,0.15)] ring-1 ring-white/[0.1]"
               >
                 <LiveDemo lang={lang} {...t.demo} />
               </motion.div>
@@ -192,7 +182,11 @@ export default function LandingPage({ lang }: { lang: Lang }) {
         </Section>
 
         {/* Stats — subtle surface band on the light page */}
-        <Section tone="light" className="border-y px-4 py-20 sm:px-6 lg:px-8">
+        <Section
+          tone="light"
+          className="border-y px-4 py-20 sm:px-6 lg:px-8"
+          aria-label="Key metrics"
+        >
           <motion.div {...reveal} className="mx-auto max-w-4xl">
             <StaggerContainer
               className="mb-6 grid grid-cols-2 gap-8 text-center md:grid-cols-4"
@@ -228,7 +222,11 @@ export default function LandingPage({ lang }: { lang: Lang }) {
 
         {/* Pain — problem hook (light, border-y separates from stats above) */}
         {"pains" in t && t.pains && (
-          <Section tone="light" className="border-y px-4 py-24 sm:px-6 lg:px-8">
+          <Section
+            tone="light"
+            className="border-y px-4 py-24 sm:px-6 lg:px-8"
+            aria-label={lang === "en" ? "The cost of doing nothing" : "Was es dich kostet"}
+          >
             <motion.div {...reveal} className="mx-auto max-w-5xl">
               <SectionHeading
                 title={(t as { painTitle: string }).painTitle}
@@ -262,7 +260,12 @@ export default function LandingPage({ lang }: { lang: Lang }) {
         <SuperbrainAdvantage lang={lang} />
 
         {/* Features — what it does (light, after unique mechanism) */}
-        <Section tone="light" id="features" className="px-4 py-24 sm:px-6 lg:px-8">
+        <Section
+          tone="light"
+          id="features"
+          className="px-4 py-24 sm:px-6 lg:px-8"
+          aria-label="Features"
+        >
           <div className="mx-auto max-w-7xl">
             <motion.div {...reveal}>
               <SectionHeading badge="Features" title={t.featuresTitle} sub={t.featuresSub} />
@@ -300,7 +303,11 @@ export default function LandingPage({ lang }: { lang: Lang }) {
         </Section>
 
         {/* Dashboard in action — product visual showing features in action */}
-        <Section tone="slate" className="px-4 py-24 sm:px-6 lg:px-8">
+        <Section
+          tone="slate"
+          className="px-4 py-24 sm:px-6 lg:px-8"
+          aria-label={lang === "en" ? "Dashboard in action" : "Dashboard in Aktion"}
+        >
           <div className="mx-auto max-w-5xl">
             <motion.div {...reveal}>
               <SectionHeading
@@ -326,7 +333,11 @@ export default function LandingPage({ lang }: { lang: Lang }) {
         <WhatsAppSpotlight lang={lang} />
 
         {/* Use cases — who it's for (slate for rhythm) */}
-        <Section tone="slate" className="border-y px-4 py-24 sm:px-6 lg:px-8">
+        <Section
+          tone="slate"
+          className="border-y px-4 py-24 sm:px-6 lg:px-8"
+          aria-label={lang === "en" ? "Real workflows" : "Praxis-Workflows"}
+        >
           <div className="mx-auto max-w-7xl">
             <motion.div {...reveal}>
               <SectionHeading title={t.scenariosTitle} sub={t.scenariosSub} />
@@ -361,7 +372,11 @@ export default function LandingPage({ lang }: { lang: Lang }) {
         <TestimonialsSection />
 
         {/* Comparison table — Subsumio vs. other AI tools (light, before pricing to justify) */}
-        <Section tone="light" className="border-y px-4 py-24 sm:px-6 lg:px-8">
+        <Section
+          tone="light"
+          className="border-y px-4 py-24 sm:px-6 lg:px-8"
+          aria-label={lang === "en" ? "Comparison" : "Vergleich"}
+        >
           <motion.div {...reveal} className="mx-auto max-w-5xl">
             <SectionHeading title={t.comparisonTitle} sub={t.comparisonSub} />
             <div className="overflow-x-auto">
@@ -369,13 +384,13 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 <thead>
                   <tr className="border-b border-[color:var(--mk-border)]">
                     <th className="py-3 pr-4 text-left font-semibold text-[color:var(--mk-text)]">
-                      {lang === "en" ? "Feature" : "Funktion"}
+                      {lang !== "en" ? "Funktion" : "Feature"}
                     </th>
                     <th className="px-4 py-3 text-left font-semibold text-[color:var(--brand-text)]">
                       Subsumio
                     </th>
                     <th className="py-3 pl-4 text-left font-semibold text-[color:var(--mk-text-subtle)]">
-                      {lang === "en" ? "Other AI tools" : "Andere KI-Tools"}
+                      {lang !== "en" ? "Andere KI-Tools" : "Other AI tools"}
                     </th>
                   </tr>
                 </thead>
@@ -419,7 +434,12 @@ export default function LandingPage({ lang }: { lang: Lang }) {
         </Section>
 
         {/* Pricing */}
-        <Section tone="light" id="pricing" className="px-4 py-24 sm:px-6 lg:px-8">
+        <Section
+          tone="light"
+          id="pricing"
+          className="scroll-mt-24 px-4 py-24 sm:px-6 lg:px-8"
+          aria-label="Pricing"
+        >
           <motion.div {...reveal} className="mx-auto max-w-6xl">
             <SectionHeading badge="Pricing" title={pricing.title} sub={pricing.sub} />
             <PricingGrid lang={lang} />
@@ -434,7 +454,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
         </Section>
 
         {/* FAQ — slate band for tone rhythm (breaks light→light→light) */}
-        <Section tone="slate" className="px-4 py-24 sm:px-6 lg:px-8">
+        <Section tone="slate" className="px-4 py-24 sm:px-6 lg:px-8" aria-label="FAQ">
           <motion.div {...reveal} className="mx-auto max-w-5xl">
             <SectionHeading title={t.faqTitle} />
             <AnimatedFaqList items={t.faq} tone="slate" />
@@ -445,6 +465,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
         <Section
           tone="dark"
           className="relative overflow-hidden px-4 py-24 text-center sm:px-6 lg:px-8"
+          aria-label="Call to action"
         >
           <GradientMesh className="opacity-40" />
           <motion.div {...reveal} className="mx-auto max-w-3xl text-center">

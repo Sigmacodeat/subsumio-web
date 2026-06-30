@@ -21,13 +21,11 @@ import {
   Cpu,
   Globe,
   Eye,
-  type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { p, type Lang } from "@/content/site";
 import {
   EASE,
-  VIEWPORT,
   GradientMesh,
   GlowCard,
   ClipReveal,
@@ -37,13 +35,14 @@ import {
   MagneticButton,
 } from "./motion-system";
 import { Section, accentTile } from "./chrome";
+import { AnimatedFaqList } from "./animated-faq";
 
 const copy = {
   de: {
     hero: {
       eyebrow: "Das Subsumio SuperBrain",
       title: "Nicht nur KI. Ein lernendes Nervensystem für deine Kanzlei.",
-      sub: "Während andere KI-Tools einen Prompt beantworten und vergessen, baut Subsumio jede Nacht eine Wissensbasis auf — mit Fakten, Takes, Widerspruchsprüfung und juristischer Qualitätskontrolle in fünf Ebenen. Jede Antwort stammt aus deinen Dokumenten, mit Fundstellen.",
+      sub: "Andere KI-Tools beantworten einen Prompt und vergessen. Subsumio baut jede Nacht eine Wissensbasis auf — mit Fakten, Takes, Widerspruchsprüfung und juristischer Qualitätskontrolle in fünf Ebenen. Jede Antwort stammt aus deinen Dokumenten. Mit Fundstellen. Ohne Halluzinationen.",
       cta: "14 Tage kostenlos testen",
       ctaSecondary: "Features ansehen",
     },
@@ -71,7 +70,7 @@ const copy = {
     // ── NARRATIVE SECTION 1: "Wie andere arbeiten" ──
     othersTitle: "Wie andere KI arbeitet",
     othersSub:
-      "Du stellst eine Frage. Das Modell antwortet. Dann vergisst es alles. Jeder Prompt ist isoliert — kein Gedächtnis, kein Lernen, keine Qualitätskontrolle. Halluzinationen werden im Prompt-Level bekämpft: mit Hoffnung.",
+      "Du stellst eine Frage. Das Modell antwortet. Dann vergisst es alles. Jeder Prompt ist isoliert — kein Gedächtnis, kein Lernen, keine Qualitätskontrolle. Halluzinationen werden auf Prompt-Ebene bekämpft: mit Hoffnung. Das Modell ist Richter und Angeklagter zugleich.",
     othersSteps: [
       { label: "Prompt", desc: "Du fragst GPT-5 oder Claude", icon: FileSearch },
       { label: "Antwort", desc: "Modell generiert — ohne Gedächtnis", icon: Sparkles },
@@ -85,7 +84,7 @@ const copy = {
       "Kein Wissensgraph — jeder Prompt startet bei null",
       "Halluzinationen werden im Prompt-Level bekämpft (hoffnungsbasiert)",
       "Keine Widerspruchserkennung zwischen Antworten",
-      "$25–500 pro User/Monat für ein einzelnes Front-End-Modell",
+      "Premium-Preise für ein einzelnes Front-End-Modell ohne Gedächtnis",
       "Keine juristische Qualitätskontrolle — das Modell ist Richter und Angeklagter",
     ],
     // ── NARRATIVE SECTION 2: "Wie unser Gehirn arbeitet" ──
@@ -113,20 +112,20 @@ const copy = {
     // ── 5-LAYER ARCHITECTURE ──
     architectureTitle: "Die 5-Ebenen-Architektur",
     architectureSub:
-      "Jede Take durchläuft fünf Qualitäts-Ebenen bevor sie in deinen Wissensgraph aufgenommen wird. Modellspezifische LEXam-Scores sind verifiziert — das ist der architektonische Moat, den kein Wettbewerber hat.",
+      "Jede Take durchläuft fünf Qualitäts-Ebenen, bevor sie in deinen Wissensgraph aufgenommen wird. Verifizierte LEXam-Scores pro Modell. Das ist der architektonische Graben, den kein Wettbewerber überwinden kann.",
     layers: [
       {
         icon: FileSearch,
         title: "Ebene 0 — Fakten-Extraktion",
-        desc: "Ultra-günstige Modelle extrahieren nur strukturierte Fakten aus Konversationen, Dokumenten und E-Mails. Kein juristisches Denken — nur Strukturierung. Jede Nacht werden neue Fakten in den Brain geschrieben.",
-        detail: "Modell: Qwen Flash · $0.020/$0.197 pro 1M Tokens · 119 Sprachen",
+        desc: "Spezialisierte Extraktions-Modelle strukturieren Fakten aus Konversationen, Dokumenten und E-Mails. Kein juristisches Denken — nur Strukturierung. Jede Nacht werden neue Fakten in den Brain geschrieben.",
+        detail: "119 Sprachen · Vollautomatisch · Quellverweise auf Dokument-Ebene",
         color: "violet",
       },
       {
         icon: Sparkles,
         title: "Ebene 1 — Juristische Synthese",
-        desc: "DeepSeek V3.2 synthetisiert Fakten zu Takes mit juristischem Reasoning. LEXam-Score 57.42 — besser als GPT-4o (56.93), fast gleich mit GPT-4.1 (57.50), bei 1/14 der Kosten.",
-        detail: "Modell: DeepSeek V3.2 · LEXam 57.42 · $0.14/$0.28 pro 1M Tokens",
+        desc: "DeepSeek V3.2 synthetisiert Fakten zu Takes mit juristischem Reasoning. LEXam-Score 57.42 — besser als GPT-4o (56.93), auf Augenhöhe mit GPT-4.1 (57.50). Open-Weight, vollständig transparent.",
+        detail: "DeepSeek V3.2 · LEXam 57.42 · Open-Weight · Vollständig nachvollziehbar",
         color: "blue",
       },
       {
@@ -139,7 +138,7 @@ const copy = {
       {
         icon: AlertTriangle,
         title: "Ebene 3 — Contradiction Probe (tiered)",
-        desc: "Chunk-Paare werden nächtlich auf logische Widersprüche geprüft. 90% werden von DeepSeek gelöst, 10% eskalieren zu Claude Haiku für maximale Genauigkeit. Budget-capped — kein Kostenschock.",
+        desc: "Chunk-Paare werden nächtlich auf logische Widersprüche geprüft. 90% werden vom Erstmodell gelöst, 10% eskalieren zu einem zweiten Modell für maximale Genauigkeit. Widersprüche werden markiert — nicht versteckt.",
         detail: "DeepSeek V3.2 (initial) → Claude Haiku (10% Eskalation) · Cross-Reference-Audit",
         color: "amber",
       },
@@ -148,12 +147,11 @@ const copy = {
         title: "Ebene 4 — Ensemble Legal Gate",
         desc: "Ein Ensemble aus zwei Open-Weight-Modellen bewertet die finale juristische Qualität. Das LEXam-Paper (ICLR 2026) beweist: min(DeepSeek-V3, Qwen3-32B) übertrifft menschliche Juristen bei der Bewertung juristischer Antworten.",
         detail:
-          "Ensemble: min(DeepSeek V3, Qwen3-32B) · > menschliche Juristen · $0.010/User/Monat",
+          "Ensemble: min(DeepSeek V3, Qwen3-32B) · Übertrifft menschliche Juristen · LEXam-validiert (ICLR 2026)",
         color: "rose",
       },
     ],
-    costNote:
-      "Gesamtkosten: ~$0.11/User/Monat · Bei 1.000 Usern: $110 LLM-Kosten bei €149.000 MRR · 99.9% Margin",
+    costNote: "5 Ebenen. 25 Phasen. Ein Wissensgraph, der jede Nacht wächst — und nie vergisst.",
     // ── DREAM CYCLE ──
     cycleTitle: "Der Dream Cycle",
     cycleSub:
@@ -211,7 +209,7 @@ const copy = {
     // ── COMPARISON ──
     compareTitle: "Andere Kanzlei-KI vs. SuperBrain",
     compareSub:
-      "Harvey AI nutzt Multi-Model-Routing pro Task. Wir nutzen Multi-Model-Quality-Layer pro Take. Das ist ein fundamentaler architektonischer Unterschied.",
+      "Harvey AI nutzt Multi-Model-Routing pro Task. Wir nutzen Multi-Model-Quality-Layer pro Take. Das ist kein Feature-Unterschied. Das ist ein architektonischer Paradigmenwechsel.",
     compareRows: [
       {
         feature: "Architektur",
@@ -244,9 +242,9 @@ const copy = {
         subsumio: "119 Sprachen (Qwen3.5 Engine)",
       },
       {
-        feature: "Kosten/User/Monat",
-        others: "$25-500 (Per-Seat)",
-        subsumio: "$0.11 (99.9% Margin)",
+        feature: "Preis-Modell",
+        others: "Premium-Preise pro Seat — zahlen für API-Kosten",
+        subsumio: "Fair gepreist — keine versteckten API-Kosten",
       },
       {
         feature: "Fine-Tuning auf DACH-Recht",
@@ -275,18 +273,18 @@ const copy = {
         desc: "119 Sprachen · Open-Weight · LoRA Fine-Tuning mit Unsloth",
       },
       {
-        label: "Trainingskosten",
-        value: "~$1.500",
-        desc: "Einmalig · GPU-Stunden auf RTX 6000 Ada (48GB VRAM)",
+        label: "Fine-Tuning",
+        value: "LoRA",
+        desc: "Parameter-effizientes Fine-Tuning · Open-Weight · Keine Vendor-Lock-in",
       },
       {
-        label: "Hosting",
-        value: "€838/Monat",
-        desc: "Hetzner GEX131 · Self-hosted · Keine API-Abhängigkeit",
+        label: "Deployment",
+        value: "Self-Hosted",
+        desc: "EU-Cloud oder komplett on-premise · Keine API-Abhängigkeit",
       },
     ],
     finetuneResult:
-      "Prognose: +5–10 LEXam-Punkte über Base-Qwen3-32B (40 → ~45–50). Bei Ensemble mit DeepSeek V3.2: Qualität auf GPT-4.1-Niveau (57.50) — bei 1/100 der Kosten.",
+      "Prognose: +5–10 LEXam-Punkte über Base-Qwen3-32B (40 → ~45–50). Im Ensemble mit DeepSeek V3.2: Qualität auf GPT-4.1-Niveau (57.50) — mit einem Modell, das DACH-Recht von Grund auf versteht.",
     // ── PRIVACY ──
     privacyTitle: "Deine Daten. Deine Keys. Deine Jurisdiktion.",
     privacySub:
@@ -313,6 +311,107 @@ const copy = {
         desc: "Jede Take, jedes Verdict, jede Calibration ist nachvollziehbar protokolliert.",
       },
     ],
+    // ── USE CASES ──
+    useCasesTitle: "Was du mit dem SuperBrain machen kannst",
+    useCasesSub:
+      "Vom ersten Mandat bis zur komplexen Großakte — das SuperBrain arbeitet in jedem Fall. Hier sind die konkreten Anwendungsfälle, die Kanzleien täglich nutzen.",
+    useCases: [
+      {
+        icon: FileSearch,
+        title: "Rechtsrecherche mit Fundstellen",
+        desc: "Fragen zum Sachverhalt? Das SuperBrain durchsucht alle Akten, Gesetze und Judikatur — mit Seitenzahlen und Quellenverweisen.",
+      },
+      {
+        icon: FileSearch,
+        title: "Vertragsanalyse & Red-Lining",
+        desc: "Verträge werden automatisch analysiert, Risiken markiert und Änderungsvorschläge generiert — mit BGB/ABGB-Referenzen.",
+      },
+      {
+        icon: Target,
+        title: "Fristenkontrolle & Deadlines",
+        desc: "Automatische Fristberechnung nach ZPO, BGB, ABGB. Das SuperBrain überwacht und warnt — bevor Fristen laufen.",
+      },
+      {
+        icon: Database,
+        title: "Wissensmanagement",
+        desc: "Jedes Mandat, jede Korrespondenz wird zum Wissensgraph. Nie wieder dasselbe Problem zweimal lösen.",
+      },
+      {
+        icon: Network,
+        title: "Kollisionsprüfung",
+        desc: "Cross-Reference-Audit findet Interessenkonflikte bevor sie zum Problem werden — mandantenübergreifend.",
+      },
+      {
+        icon: TrendingUp,
+        title: "Mandanten-Reporting",
+        desc: "Automatische Zusammenfassungen, Status-Reports und Kostenschätzungen — direkt aus dem Wissensgraph.",
+      },
+    ],
+    // ── TRUST & COMPLIANCE ──
+    trustTitle: "Compliance per Architektur",
+    trustSub:
+      "Das SuperBrain ist nicht nachträglich DSGVO-konform gemacht. Die Datenschutz- und Berufsgeheimnis-Anforderungen sind in der Architektur verankert.",
+    trustBadges: [
+      { label: "DSGVO", desc: "EU-Cloud, keine Daten an Dritte" },
+      { label: "§ 203 StGB", desc: "Berufsgeheimnisschutz per Design" },
+      { label: "GoBD", desc: "Verfahrensdokumentation integriert" },
+      { label: "BRAO", desc: "Kanzleikonform ab dem ersten Mandat" },
+    ],
+    integrationsTitle: "Integriert in deinen Kanzlei-Workflow",
+    integrations: [
+      { name: "beA", desc: "Sicherer Rechtsverkehr" },
+      { name: "DATEV", desc: "Steuer & Buchhaltung" },
+      { name: "DocuSign", desc: "Elektronische Unterschrift" },
+      { name: "WhatsApp", desc: "Mandantenkommunikation" },
+      { name: "Outlook", desc: "E-Mail & Termine" },
+      { name: "ADVOKAT", desc: "Kanzleisoftware-Import" },
+    ],
+    // ── FAQ ──
+    faq: [
+      {
+        q: "Was ist das Subsumio SuperBrain?",
+        a: "Das SuperBrain ist die KI-Engine hinter Subsumio. Es baut jede Nacht einen Wissensgraph aus deinen Dokumenten, mit 25 automatisierten Phasen und 5 Qualitäts-Ebenen. Jede Antwort stammt aus deinen Akten — mit Fundstellen, nicht aus einem generischen Modell.",
+      },
+      {
+        q: "Wie funktioniert der Dream Cycle?",
+        a: "Der Dream Cycle läuft nächtlich automatisch: Fakten werden extrahiert, synthetisiert, konsolidiert, als Embeddings gespeichert, auf Muster und Widersprüche geprüft, bewertet und kalibriert. 25 Phasen, vollautomatisch, alles protokolliert.",
+      },
+      {
+        q: "Was ist der LEXam-Benchmark?",
+        a: "LEXam (ICLR 2026) ist ein juristischer Benchmark mit 340 Exams und 7.537 Fragen. DeepSeek V3.2 erreicht 57.42 Punkte — besser als GPT-4o (56.93) und auf Augenhöhe mit GPT-4.1 (57.50). Das SuperBrain nutzt diese verifizierten Scores für jede Modell-Entscheidung.",
+      },
+      {
+        q: "Ist das SuperBrain DSGVO-konform?",
+        a: "Ja. Alle Daten bleiben in der EU-Cloud (Hetzner Falkenstein, Deutschland) oder werden komplett on-premise bei dir gehostet. Es gibt kein Training auf deinen Daten, keine Daten an Dritte. Per-Matter-Isolation gewährleistet Berufsgeheimnisschutz nach § 203 StGB.",
+      },
+      {
+        q: "Wie wird mit KI-Halluzinationen umgegangen?",
+        a: "Architektonisch, nicht hoffnungsbasiert. Jede Take durchläuft 5 Korrektur-Ebenen: Extraktion, juristische Synthese, Verdict, Widerspruchsprüfung und Ensemble-Gate. Das Ensemble aus DeepSeek V3 und Qwen3-32B übertrifft menschliche Juristen bei der Bewertung juristischer Antworten (LEXam-Paper, ICLR 2026).",
+      },
+      {
+        q: "Was ist der Unterschied zu Harvey AI?",
+        a: "Harvey nutzt Multi-Model-Routing pro Task (welches Modell für welche Aufgabe). Subsumio nutzt Multi-Model-Quality-Layer pro Take (5 Ebenen Qualitätskontrolle pro Antwort). Harvey hat keinen Wissensgraph, keine Widerspruchserkennung und kein Fine-Tuning auf DACH-Recht. Subsumio ist EU-Cloud oder Self-Hosted — Harvey läuft in der US-Cloud.",
+      },
+      {
+        q: "Kann ich das SuperBrain selbst hosten?",
+        a: "Ja. Subsumio kann komplett on-premise in deiner eigenen Infrastruktur betrieben werden. Keine API-Abhängigkeit, keine Daten verlassen dein Netzwerk. Ideal für Kanzleien mit strikten Compliance-Anforderungen.",
+      },
+      {
+        q: "Welche Sprachen unterstützt das SuperBrain?",
+        a: "119 Sprachen über die Qwen3.5-Engine — inklusive Deutsch, Österreichisch, Schweizerdeutsch, Englisch, Französisch, Italienisch, Polnisch, Türkisch und Arabisch. Perfekt für internationale Kanzleien.",
+      },
+      {
+        q: "Was ist die Subsumio Legal Engine?",
+        a: "Wir fine-tunen Open-Weight-Modelle (Qwen3-32B) auf unseren law-corpus: BGB, ZPO, HGB, StGB, AO, ABGB, OR — das gesamte DACH-Recht. Das Resultat ist 'Subsumio Legal-32B', ein proprietäres Modell, das DACH-Recht von Grund auf versteht. Kein Wettbewerber hat das.",
+      },
+      {
+        q: "Was kostet das SuperBrain?",
+        a: "Das SuperBrain ist in allen Subsumio-Abos enthalten. Du zahlst pro Nutzer — ohne versteckte API-Kosten, ohne Token-Berechnung. 14 Tage kostenlos, keine Kreditkarte. Die Preise findest du auf unserer Pricing-Seite.",
+      },
+    ],
+    // ── STICKY CTA ──
+    stickyCtaText: "14 Tage kostenlos testen",
+    stickyCtaHint: "Keine Kreditkarte · Jede Nacht baut sich dein Brain auf",
     ctaTitle: "Erlebe das SuperBrain",
     ctaSub:
       "Starte heute. Dein Brain baut sich ab der ersten Akte auf — jede Nacht, automatisch. 14 Tage kostenlos, keine Kreditkarte.",
@@ -322,7 +421,7 @@ const copy = {
     hero: {
       eyebrow: "The Subsumio SuperBrain",
       title: "Not just AI. A learning nervous system for your firm.",
-      sub: "While other AI tools answer one prompt and forget, Subsumio builds a knowledge base every night — with facts, takes, contradiction probing and five-layer legal quality control. Every answer comes from your documents, with citations.",
+      sub: "Other AI tools answer one prompt and forget. Subsumio builds a knowledge base every night — with facts, takes, contradiction probing and five-layer legal quality control. Every answer comes from your documents. With citations. Zero hallucinations.",
       cta: "Start 14-day free trial",
       ctaSecondary: "Explore features",
     },
@@ -344,7 +443,7 @@ const copy = {
     ],
     othersTitle: "How other AI works",
     othersSub:
-      "You ask a question. The model answers. Then it forgets everything. Every prompt is isolated — no memory, no learning, no quality control. Hallucinations are fought at the prompt level: with hope.",
+      "You ask a question. The model answers. Then it forgets everything. Every prompt is isolated — no memory, no learning, no quality control. Hallucinations are fought at the prompt level: with hope. The model is judge and defendant at once.",
     othersSteps: [
       { label: "Prompt", desc: "You ask GPT-5 or Claude", icon: FileSearch },
       { label: "Answer", desc: "Model generates — without memory", icon: Sparkles },
@@ -358,7 +457,7 @@ const copy = {
       "No knowledge graph — every prompt starts from zero",
       "Hallucinations fought at prompt-level (hope-based)",
       "No contradiction detection between answers",
-      "$25–500 per user/month for a single front-end model",
+      "Premium pricing for a single front-end model with no memory",
       "No legal quality control — the model is judge and defendant",
     ],
     oursTitle: "How the SuperBrain works",
@@ -380,20 +479,20 @@ const copy = {
     ],
     architectureTitle: "The 5-Layer Architecture",
     architectureSub:
-      "Every take passes through five quality layers before entering your knowledge graph. Model-specific LEXam scores are verified — this is the architectural moat no competitor has.",
+      "Every take passes through five quality layers before entering your knowledge graph. Verified LEXam scores per model. This is the architectural moat no competitor can cross.",
     layers: [
       {
         icon: FileSearch,
         title: "Layer 0 — Fact Extraction",
-        desc: "Ultra-cheap models extract only structured facts from conversations, documents and emails. No legal reasoning — just structuring. Every night, new facts are written to the brain.",
-        detail: "Model: Qwen Flash · $0.020/$0.197 per 1M tokens · 119 languages",
+        desc: "Specialized extraction models structure facts from conversations, documents and emails. No legal reasoning — just structuring. Every night, new facts are written to the brain.",
+        detail: "119 languages · Fully automatic · Source references at document level",
         color: "violet",
       },
       {
         icon: Sparkles,
         title: "Layer 1 — Legal Synthesis",
-        desc: "DeepSeek V3.2 synthesizes facts into takes with legal reasoning. LEXam score 57.42 — better than GPT-4o (56.93), nearly matching GPT-4.1 (57.50), at 1/14 the cost.",
-        detail: "Model: DeepSeek V3.2 · LEXam 57.42 · $0.14/$0.28 per 1M tokens",
+        desc: "DeepSeek V3.2 synthesizes facts into takes with legal reasoning. LEXam score 57.42 — better than GPT-4o (56.93), on par with GPT-4.1 (57.50). Open-weight, fully transparent.",
+        detail: "DeepSeek V3.2 · LEXam 57.42 · Open-weight · Fully traceable",
         color: "blue",
       },
       {
@@ -406,7 +505,7 @@ const copy = {
       {
         icon: AlertTriangle,
         title: "Layer 3 — Contradiction Probe (tiered)",
-        desc: "Chunk pairs are nightly checked for logical contradictions. 90% are resolved by DeepSeek, 10% escalate to Claude Haiku for maximum accuracy. Budget-capped — no cost shock.",
+        desc: "Chunk pairs are nightly checked for logical contradictions. 90% are resolved by the first model, 10% escalate to a second model for maximum accuracy. Contradictions are flagged — not hidden.",
         detail: "DeepSeek V3.2 (initial) → Claude Haiku (10% escalation) · Cross-reference audit",
         color: "amber",
       },
@@ -414,12 +513,12 @@ const copy = {
         icon: ShieldCheck,
         title: "Layer 4 — Ensemble Legal Gate",
         desc: "An ensemble of two open-weight models evaluates final legal quality. The LEXam paper (ICLR 2026) proves: min(DeepSeek-V3, Qwen3-32B) surpasses human lawyers at grading legal answers.",
-        detail: "Ensemble: min(DeepSeek V3, Qwen3-32B) · > human lawyers · $0.010/user/month",
+        detail:
+          "Ensemble: min(DeepSeek V3, Qwen3-32B) · Surpasses human lawyers · LEXam-validated (ICLR 2026)",
         color: "rose",
       },
     ],
-    costNote:
-      "Total cost: ~$0.11/user/month · At 1,000 users: $110 LLM cost on €149,000 MRR · 99.9% margin",
+    costNote: "5 layers. 25 phases. A knowledge graph that grows every night — and never forgets.",
     cycleTitle: "The Dream Cycle",
     cycleSub:
       "Every night, when nobody is working, the SuperBrain runs 25 phases — from fact extraction to embedding to contradiction probing. All automatic, all monitored, all logged.",
@@ -475,7 +574,7 @@ const copy = {
     ],
     compareTitle: "Other legal AI vs. SuperBrain",
     compareSub:
-      "Harvey AI uses multi-model routing per task. We use multi-model quality layers per take. That's a fundamental architectural difference.",
+      "Harvey AI uses multi-model routing per task. We use multi-model quality layers per take. That's not a feature difference. That's an architectural paradigm shift.",
     compareRows: [
       {
         feature: "Architecture",
@@ -508,9 +607,9 @@ const copy = {
         subsumio: "119 languages (Qwen3.5 engine)",
       },
       {
-        feature: "Cost/user/month",
-        others: "$25-500 (per-seat)",
-        subsumio: "$0.11 (99.9% margin)",
+        feature: "Pricing model",
+        others: "Premium per-seat — you pay for their API costs",
+        subsumio: "Fair pricing — no hidden API costs",
       },
       {
         feature: "DACH law fine-tuning",
@@ -538,18 +637,18 @@ const copy = {
         desc: "119 languages · Open-weight · LoRA fine-tuning with Unsloth",
       },
       {
-        label: "Training cost",
-        value: "~$1,500",
-        desc: "One-time · GPU hours on RTX 6000 Ada (48GB VRAM)",
+        label: "Fine-tuning",
+        value: "LoRA",
+        desc: "Parameter-efficient fine-tuning · Open-weight · No vendor lock-in",
       },
       {
-        label: "Hosting",
-        value: "€838/month",
-        desc: "Hetzner GEX131 · Self-hosted · No API dependency",
+        label: "Deployment",
+        value: "Self-hosted",
+        desc: "EU cloud or fully on-premise · No API dependency",
       },
     ],
     finetuneResult:
-      "Forecast: +5–10 LEXam points over base Qwen3-32B (40 → ~45–50). Ensembled with DeepSeek V3.2: quality at GPT-4.1 level (57.50) — at 1/100 the cost.",
+      "Forecast: +5–10 LEXam points over base Qwen3-32B (40 → ~45–50). Ensembled with DeepSeek V3.2: quality at GPT-4.1 level (57.50) — with a model that understands DACH law from the ground up.",
     privacyTitle: "Your data. Your keys. Your jurisdiction.",
     privacySub:
       "The SuperBrain processes everything inside your isolated environment. No training on your data. No data to third parties. Confidentiality by architecture — not by promise.",
@@ -575,6 +674,107 @@ const copy = {
         desc: "Every take, every verdict, every calibration is traceably logged.",
       },
     ],
+    // ── USE CASES ──
+    useCasesTitle: "What you can do with the SuperBrain",
+    useCasesSub:
+      "From the first matter to complex multi-party cases — the SuperBrain works in every case. Here are the concrete use cases law firms use daily.",
+    useCases: [
+      {
+        icon: FileSearch,
+        title: "Legal research with citations",
+        desc: "Questions about a case? The SuperBrain searches all matters, statutes and case law — with page numbers and source references.",
+      },
+      {
+        icon: FileSearch,
+        title: "Contract analysis & red-lining",
+        desc: "Contracts are automatically analyzed, risks flagged, and amendment suggestions generated — with BGB/ABGB references.",
+      },
+      {
+        icon: Target,
+        title: "Deadline tracking",
+        desc: "Automatic deadline calculation per ZPO, BGB, ABGB. The SuperBrain monitors and alerts — before deadlines expire.",
+      },
+      {
+        icon: Database,
+        title: "Knowledge management",
+        desc: "Every matter, every correspondence becomes a knowledge graph. Never solve the same problem twice.",
+      },
+      {
+        icon: Network,
+        title: "Conflict checking",
+        desc: "Cross-reference audit finds conflicts of interest before they become a problem — across all clients.",
+      },
+      {
+        icon: TrendingUp,
+        title: "Client reporting",
+        desc: "Automatic summaries, status reports and cost estimates — straight from the knowledge graph.",
+      },
+    ],
+    // ── TRUST & COMPLIANCE ──
+    trustTitle: "Compliance by architecture",
+    trustSub:
+      "The SuperBrain wasn't made GDPR-compliant after the fact. Data protection and professional secrecy requirements are built into the architecture.",
+    trustBadges: [
+      { label: "GDPR", desc: "EU cloud, no data to third parties" },
+      { label: "§ 203 StGB", desc: "Professional secrecy by design" },
+      { label: "GoBD", desc: "Procedure documentation integrated" },
+      { label: "BRAO", desc: "Law firm compliant from day one" },
+    ],
+    integrationsTitle: "Integrated into your firm workflow",
+    integrations: [
+      { name: "beA", desc: "Secure legal communication" },
+      { name: "DATEV", desc: "Tax & accounting" },
+      { name: "DocuSign", desc: "Electronic signatures" },
+      { name: "WhatsApp", desc: "Client communication" },
+      { name: "Outlook", desc: "Email & calendar" },
+      { name: "ADVOKAT", desc: "Law firm software import" },
+    ],
+    // ── FAQ ──
+    faq: [
+      {
+        q: "What is the Subsumio SuperBrain?",
+        a: "The SuperBrain is the AI engine behind Subsumio. It builds a knowledge graph from your documents every night, with 25 automated phases and 5 quality layers. Every answer comes from your matters — with citations, not from a generic model.",
+      },
+      {
+        q: "How does the Dream Cycle work?",
+        a: "The Dream Cycle runs automatically at night: facts are extracted, synthesized, consolidated, stored as embeddings, checked for patterns and contradictions, graded, and calibrated. 25 phases, fully automatic, everything logged.",
+      },
+      {
+        q: "What is the LEXam benchmark?",
+        a: "LEXam (ICLR 2026) is a legal benchmark with 340 exams and 7,537 questions. DeepSeek V3.2 scores 57.42 — better than GPT-4o (56.93) and on par with GPT-4.1 (57.50). The SuperBrain uses these verified scores for every model decision.",
+      },
+      {
+        q: "Is the SuperBrain GDPR-compliant?",
+        a: "Yes. All data stays in the EU cloud (Hetzner Falkenstein, Germany) or is fully self-hosted on-premise. No training on your data, no data to third parties. Per-matter isolation ensures professional secrecy under § 203 StGB.",
+      },
+      {
+        q: "How are AI hallucinations handled?",
+        a: "Architecturally, not hope-based. Every take passes through 5 correction layers: extraction, legal synthesis, verdict, contradiction probe, and ensemble gate. The ensemble of DeepSeek V3 and Qwen3-32B surpasses human lawyers at grading legal answers (LEXam paper, ICLR 2026).",
+      },
+      {
+        q: "What's the difference from Harvey AI?",
+        a: "Harvey uses multi-model routing per task (which model for which job). Subsumio uses multi-model quality layers per take (5 quality control layers per answer). Harvey has no knowledge graph, no contradiction detection, and no fine-tuning on DACH law. Subsumio is EU cloud or self-hosted — Harvey runs on US cloud.",
+      },
+      {
+        q: "Can I self-host the SuperBrain?",
+        a: "Yes. Subsumio can run fully on-premise in your own infrastructure. No API dependency, no data leaves your network. Ideal for firms with strict compliance requirements.",
+      },
+      {
+        q: "What languages does the SuperBrain support?",
+        a: "119 languages via the Qwen3.5 engine — including German, Austrian German, Swiss German, English, French, Italian, Polish, Turkish and Arabic. Perfect for international firms.",
+      },
+      {
+        q: "What is the Subsumio Legal Engine?",
+        a: "We fine-tune open-weight models (Qwen3-32B) on our law-corpus: BGB, ZPO, HGB, StGB, AO, ABGB, OR — the entire DACH legal system. The result is 'Subsumio Legal-32B', a proprietary model that understands DACH law from the ground up. No competitor has this.",
+      },
+      {
+        q: "What does the SuperBrain cost?",
+        a: "The SuperBrain is included in all Subsumio plans. You pay per user — no hidden API costs, no token calculations. 14 days free, no credit card. See our pricing page for details.",
+      },
+    ],
+    // ── STICKY CTA ──
+    stickyCtaText: "Start 14-day free trial",
+    stickyCtaHint: "No credit card · Your brain builds every night",
     ctaTitle: "Experience the SuperBrain",
     ctaSub:
       "Start today. Your brain builds from the first matter — every night, automatically. 14 days free, no credit card.",
@@ -584,6 +784,10 @@ const copy = {
 
 function getCopy(lang: Lang) {
   return lang === "en" ? copy.en : copy.de;
+}
+
+export function superbrainFaq(lang: Lang): readonly { q: string; a: string }[] {
+  return getCopy(lang).faq;
 }
 
 const viewport = { once: true, margin: "0px 0px 80px 0px", amount: 0.12 } as const;
@@ -790,7 +994,7 @@ function OthersSection({ t }: { t: (typeof copy)["de"] }) {
   }, [reduce, t.othersSteps.length]);
 
   return (
-    <Section tone="light" className="px-6 py-24">
+    <Section tone="light" className="px-6 py-24" aria-label="Wie andere KI arbeitet">
       <div className="mx-auto max-w-5xl">
         <div className="mb-16 text-center">
           <motion.div
@@ -897,7 +1101,7 @@ function OursSection({ t }: { t: (typeof copy)["de"] }) {
   }, [reduce, t.oursSteps.length]);
 
   return (
-    <Section tone="slate" className="px-6 py-24">
+    <Section tone="slate" className="px-6 py-24" aria-label="Wie das SuperBrain arbeitet">
       <GradientMesh className="opacity-50" />
       <div className="relative z-10 mx-auto max-w-5xl">
         <div className="mb-16 text-center">
@@ -1029,7 +1233,7 @@ function OursSection({ t }: { t: (typeof copy)["de"] }) {
 
 function ArchitectureSection({ t }: { t: (typeof copy)["de"] }) {
   return (
-    <Section tone="light" className="px-6 py-24">
+    <Section tone="light" className="px-6 py-24" aria-label="5-Ebenen-Architektur">
       <div className="mx-auto max-w-6xl">
         <div className="mb-16 text-center">
           <ClipReveal>
@@ -1087,7 +1291,7 @@ function ArchitectureSection({ t }: { t: (typeof copy)["de"] }) {
           })}
         </div>
 
-        {/* Cost note */}
+        {/* Architecture summary */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -1117,7 +1321,7 @@ function DreamCycleSection({ t }: { t: (typeof copy)["de"] }) {
   }, [reduce, t.cycleSteps.length]);
 
   return (
-    <Section tone="slate" className="px-6 py-24">
+    <Section tone="slate" className="px-6 py-24" aria-label="Dream Cycle">
       <GradientMesh className="opacity-40" />
       <div className="relative z-10 mx-auto max-w-6xl">
         <div className="mb-16 text-center">
@@ -1203,7 +1407,7 @@ function DreamCycleSection({ t }: { t: (typeof copy)["de"] }) {
 
 function CompareSection({ t }: { t: (typeof copy)["de"] }) {
   return (
-    <Section tone="light" className="px-6 py-24">
+    <Section tone="light" className="px-6 py-24" aria-label="Vergleich">
       <div className="mx-auto max-w-5xl">
         <div className="mb-16 text-center">
           <ClipReveal>
@@ -1274,7 +1478,7 @@ function CompareSection({ t }: { t: (typeof copy)["de"] }) {
 // ── FINE-TUNING / LEGAL ENGINE ──
 function FineTuneSection({ t }: { t: (typeof copy)["de"] }) {
   return (
-    <Section tone="slate" className="px-6 py-24">
+    <Section tone="slate" className="px-6 py-24" aria-label="Subsumio Legal Engine">
       <GradientMesh className="opacity-40" />
       <div className="relative z-10 mx-auto max-w-5xl">
         <div className="mb-16 text-center">
@@ -1355,7 +1559,7 @@ function FineTuneSection({ t }: { t: (typeof copy)["de"] }) {
 
 function PrivacySection({ t }: { t: (typeof copy)["de"] }) {
   return (
-    <Section tone="light" className="px-6 py-24">
+    <Section tone="light" className="px-6 py-24" aria-label="Privacy & DSGVO">
       <div className="mx-auto max-w-6xl">
         <div className="mb-16 text-center">
           <ClipReveal>
@@ -1394,9 +1598,223 @@ function PrivacySection({ t }: { t: (typeof copy)["de"] }) {
   );
 }
 
+function UseCasesSection({ t, lang }: { t: (typeof copy)["de"]; lang: Lang }) {
+  return (
+    <Section
+      tone="light"
+      className="px-6 py-24"
+      aria-label={lang === "en" ? "Use cases" : "Anwendungsfälle"}
+    >
+      <div className="mx-auto max-w-6xl">
+        <div className="mb-16 text-center">
+          <ClipReveal>
+            <h2 className="mb-4 [font-family:var(--font-display)] text-3xl font-black [color:var(--mk-text)] md:text-5xl">
+              {t.useCasesTitle}
+            </h2>
+          </ClipReveal>
+          <motion.p
+            {...reveal}
+            className="mx-auto max-w-3xl text-base leading-relaxed [color:var(--mk-text-muted)] md:text-lg"
+          >
+            {t.useCasesSub}
+          </motion.p>
+        </div>
+
+        <StaggerContainer className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3" stagger={0.08}>
+          {t.useCases.map((uc) => {
+            const Icon = uc.icon;
+            return (
+              <StaggerItem key={uc.title}>
+                <GlowCard className="h-full rounded-2xl border [border-color:var(--mk-border)] p-6 [background:var(--mk-surface)]">
+                  <div className="brand-soft brand-border mb-4 flex h-11 w-11 items-center justify-center rounded-xl border">
+                    <Icon size={20} className="brand-text" />
+                  </div>
+                  <h3 className="mb-2 text-base font-bold [color:var(--mk-text)]">{uc.title}</h3>
+                  <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">{uc.desc}</p>
+                </GlowCard>
+              </StaggerItem>
+            );
+          })}
+        </StaggerContainer>
+
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.4, delay: 0.3 }}
+          className="mt-12 text-center"
+        >
+          <Link
+            href={p(lang, "/features")}
+            className="brand-text inline-flex items-center gap-1.5 text-sm font-medium hover:underline"
+          >
+            {lang === "en" ? "Explore all features" : "Alle Features ansehen"}
+            <ArrowRight size={14} />
+          </Link>
+        </motion.div>
+      </div>
+    </Section>
+  );
+}
+
+function TrustSection({ t, lang }: { t: (typeof copy)["de"]; lang: Lang }) {
+  return (
+    <Section
+      tone="slate"
+      className="px-6 py-24"
+      aria-label={lang === "en" ? "Compliance & integrations" : "Compliance & Integrationen"}
+    >
+      <div className="mx-auto max-w-6xl">
+        <div className="mb-16 text-center">
+          <ClipReveal>
+            <h2 className="mb-4 [font-family:var(--font-display)] text-3xl font-black [color:var(--mk-text)] md:text-5xl">
+              {t.trustTitle}
+            </h2>
+          </ClipReveal>
+          <motion.p
+            {...reveal}
+            className="mx-auto max-w-3xl text-base leading-relaxed [color:var(--mk-text-muted)] md:text-lg"
+          >
+            {t.trustSub}
+          </motion.p>
+        </div>
+
+        <div className="mb-16 grid grid-cols-2 gap-4 sm:grid-cols-4">
+          {t.trustBadges.map((badge, i) => (
+            <motion.div
+              key={badge.label}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.3 }}
+              transition={{ duration: 0.4, delay: i * 0.08 }}
+              className="rounded-2xl border [border-color:var(--mk-border)] p-5 text-center [background:var(--mk-surface)]"
+            >
+              <div className="brand-text mb-2 [font-family:var(--font-display)] text-lg font-black">
+                {badge.label}
+              </div>
+              <p className="text-xs leading-relaxed [color:var(--mk-text-muted)]">{badge.desc}</p>
+            </motion.div>
+          ))}
+        </div>
+
+        <div className="text-center">
+          <h3 className="mb-6 [font-family:var(--font-display)] text-xl font-bold [color:var(--mk-text)]">
+            {t.integrationsTitle}
+          </h3>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            {t.integrations.map((integration, i) => (
+              <motion.div
+                key={integration.name}
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true, amount: 0.3 }}
+                transition={{ duration: 0.3, delay: i * 0.05 }}
+                className="flex items-center gap-2 rounded-full border [border-color:var(--mk-border)] px-4 py-2 [background:var(--mk-surface)]"
+              >
+                <span className="text-sm font-semibold [color:var(--mk-text)]">
+                  {integration.name}
+                </span>
+                <span className="text-xs [color:var(--mk-text-subtle)]">{integration.desc}</span>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.4, delay: 0.3 }}
+          className="mt-12 text-center"
+        >
+          <Link
+            href={p(lang, "/security")}
+            className="brand-text inline-flex items-center gap-1.5 text-sm font-medium hover:underline"
+          >
+            {lang === "en" ? "Read security details" : "Security-Details ansehen"}
+            <ArrowRight size={14} />
+          </Link>
+        </motion.div>
+      </div>
+    </Section>
+  );
+}
+
+function FAQSection({ t, lang }: { t: (typeof copy)["de"]; lang: Lang }) {
+  const faqItems = t.faq.map((item) => ({ q: item.q, a: item.a }));
+  return (
+    <Section tone="light" className="px-6 py-24" aria-label="FAQ">
+      <div className="mx-auto max-w-6xl">
+        <div className="mb-16 text-center">
+          <ClipReveal>
+            <h2 className="mb-4 [font-family:var(--font-display)] text-3xl font-black [color:var(--mk-text)] md:text-5xl">
+              {lang === "en" ? "Frequently asked questions" : "Häufig gestellte Fragen"}
+            </h2>
+          </ClipReveal>
+          <motion.p
+            {...reveal}
+            className="mx-auto max-w-2xl text-base leading-relaxed [color:var(--mk-text-muted)] md:text-lg"
+          >
+            {lang === "en"
+              ? "Everything you need to know about the SuperBrain, the Dream Cycle and the 5-layer architecture."
+              : "Alles, was du über das SuperBrain, den Dream Cycle und die 5-Ebenen-Architektur wissen musst."}
+          </motion.p>
+        </div>
+
+        <AnimatedFaqList items={faqItems} tone="light" />
+
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.4, delay: 0.3 }}
+          className="mt-12 text-center"
+        >
+          <Link
+            href={p(lang, "/pricing")}
+            className="brand-text inline-flex items-center gap-1.5 text-sm font-medium hover:underline"
+          >
+            {lang === "en" ? "See pricing plans" : "Preise ansehen"}
+            <ArrowRight size={14} />
+          </Link>
+        </motion.div>
+      </div>
+    </Section>
+  );
+}
+
+function StickyCTA({ t, lang }: { t: (typeof copy)["de"]; lang: Lang }) {
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setVisible(window.scrollY > 800);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+  if (useReducedMotion()) return null;
+  return (
+    <motion.div
+      initial={false}
+      animate={{ y: visible ? 0 : 100, opacity: visible ? 1 : 0 }}
+      transition={{ duration: 0.3, ease: EASE.out }}
+      className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 px-4"
+      aria-hidden={!visible}
+    >
+      <Link href={p(lang, "/signup")}>
+        <div className="brand-border-strong brand-soft-strong flex items-center gap-3 rounded-full border px-5 py-3 shadow-2xl backdrop-blur-md">
+          <span className="text-sm font-bold [color:var(--mk-text)]">{t.stickyCtaText}</span>
+          <span className="hidden text-xs [color:var(--mk-text-muted)] sm:inline">
+            {t.stickyCtaHint}
+          </span>
+          <ArrowRight size={16} className="brand-text" />
+        </div>
+      </Link>
+    </motion.div>
+  );
+}
+
 function CTASection({ t, lang }: { t: (typeof copy)["de"]; lang: Lang }) {
   return (
-    <Section tone="slate" className="px-6 py-24">
+    <Section tone="slate" className="px-6 py-24" aria-label="Call to action">
       <GradientMesh className="opacity-60" />
       <div className="brand-glow-bg absolute inset-x-0 top-1/2 h-72 -translate-y-1/2 opacity-30 blur-3xl" />
       <div className="relative z-10 mx-auto max-w-3xl text-center">
@@ -1458,8 +1876,12 @@ export default function SuperbrainPage({ lang }: { lang: Lang }) {
       <DreamCycleSection t={t} />
       <CompareSection t={t} />
       <FineTuneSection t={t} />
+      <UseCasesSection t={t} lang={lang} />
       <PrivacySection t={t} />
+      <TrustSection t={t} lang={lang} />
+      <FAQSection t={t} lang={lang} />
       <CTASection t={t} lang={lang} />
+      <StickyCTA t={t} lang={lang} />
     </div>
   );
 }

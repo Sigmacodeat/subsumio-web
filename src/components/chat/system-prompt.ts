@@ -153,6 +153,17 @@ Wenn eine konkrete Akte aktiv ist, beantworte Fragen NUR im Kontext dieser Akte.
   return personaParts.join("\n\n");
 }
 
+interface MatterVitalsSummary {
+  deadlineCount: number;
+  openDeadlineCount: number;
+  nextDeadlineDate?: string;
+  taskCount: number;
+  openTaskCount: number;
+  documentCount: number;
+  totalHours: number;
+  expenseTotal: number;
+}
+
 interface PromptContextParams {
   jurisdiction: Jurisdiction;
   selectedCaseSlug: string;
@@ -166,6 +177,7 @@ interface PromptContextParams {
   attachmentFetcher?: (slug: string) => Promise<string>;
   userContext?: UserContext;
   conversationHistory?: ChatMessage[];
+  matterVitals?: MatterVitalsSummary;
 }
 
 export async function buildPromptContext(
@@ -184,6 +196,7 @@ export async function buildPromptContext(
     attachmentFetcher,
     userContext,
     conversationHistory,
+    matterVitals,
   } = params;
 
   const contextParts: string[] = [];
@@ -209,8 +222,25 @@ export async function buildPromptContext(
   // Case context
   if (selectedCaseSlug) {
     const selected = cases.find((c) => c.slug === selectedCaseSlug);
+    const vitalsLines: string[] = [];
+    if (matterVitals) {
+      vitalsLines.push(
+        `Offene Fristen: ${matterVitals.openDeadlineCount}/${matterVitals.deadlineCount}`
+      );
+      if (matterVitals.nextDeadlineDate)
+        vitalsLines.push(`Nächste Frist: ${matterVitals.nextDeadlineDate}`);
+      vitalsLines.push(`Offene Aufgaben: ${matterVitals.openTaskCount}/${matterVitals.taskCount}`);
+      vitalsLines.push(`Dokumente: ${matterVitals.documentCount}`);
+      vitalsLines.push(`Zeiterfassung: ${matterVitals.totalHours} Std`);
+      if (matterVitals.expenseTotal > 0)
+        vitalsLines.push(`Auslagen: ${matterVitals.expenseTotal}€`);
+    }
+    const vitalsBlock =
+      vitalsLines.length > 0
+        ? `\n--- AKTEN-VITALS ---\n${vitalsLines.join("\n")}\n--- ENDE VITALS ---\n`
+        : "";
     contextParts.push(
-      `--- AKTENKONTEXT ---\nAktive Akte: ${selected?.title ?? selectedCaseSlug}\nSlug: ${selectedCaseSlug}\nNutze Matter Context und zitiere nur belegte Aussagen.\n--- ENDE AKTENKONTEXT ---\n`
+      `--- AKTENKONTEXT ---\nAktive Akte: ${selected?.title ?? selectedCaseSlug}\nSlug: ${selectedCaseSlug}${vitalsBlock}\nNutze Matter Context und zitiere nur belegte Aussagen.\n--- ENDE AKTENKONTEXT ---\n`
     );
   }
 

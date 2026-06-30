@@ -166,6 +166,79 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
       { label: "Fristbestätigungen anfordern", action_type: "message_send" },
     ],
   },
+  {
+    id: "tax_appeal",
+    label: "Einspruchsgenerator",
+    description:
+      "Steuerbescheid analysieren, Fristen prüfen, Einspruch begründen und Schreiben generieren",
+    icon: "📝",
+    prompt:
+      "Analysiere den Steuerbescheid, identifiziere streitige Punkte, berechne die Einspruchsfrist (§ 355 AO), bewerte die Erfolgsaussichten und generiere ein Einspruchsschreiben mit rechtlicher Begründung und Anträgen.",
+    steps: [
+      { label: "Bescheid analysieren", action_type: "document_finalize" },
+      { label: "Streitige Punkte identifizieren", action_type: "document_finalize" },
+      { label: "Einspruchsfrist berechnen", action_type: "deadline_create" },
+      { label: "Erfolgsaussichten bewerten", action_type: "document_finalize" },
+      { label: "Einspruchsschreiben generieren", action_type: "document_finalize" },
+    ],
+  },
+  {
+    id: "tax_assessment_review",
+    label: "Bescheidprüfung",
+    description: "Soll/Ist-Abgleich, Fehleridentifikation und Handlungsempfehlung",
+    icon: "🔍",
+    prompt:
+      "Führe eine vollständige Bescheidprüfung durch. Vergleiche den Steuerbescheid mit der Steuererklärung (Soll/Ist-Abgleich), identifiziere Fehler oder unzutreffende Feststellungen, prüfe die rechtliche Grundlage jeder Position und erstelle eine Handlungsempfehlung.",
+    steps: [
+      { label: "Bescheid vs. Erklärung abgleichen", action_type: "document_finalize" },
+      { label: "Fehler identifizieren", action_type: "document_finalize" },
+      { label: "Rechtliche Grundlage prüfen", action_type: "document_finalize" },
+      { label: "Handlungsempfehlung erstellen", action_type: "document_finalize" },
+    ],
+  },
+  {
+    id: "tax_audit_defense",
+    label: "Betriebsprüfungs-Abwehr",
+    description: "Prüfungsanordnung analysieren, Rechte prüfen, Findings bewerten, Stellungnahme",
+    icon: "🛡️",
+    prompt:
+      "Bereite die Abwehr der Betriebsprüfung vor. Analysiere die Prüfungsanordnung, prüfe Verfahrensrechte (§ 196 AO), bewerte die Prüfungsfeststellungen, identifiziere Streitpunkte und erstelle eine Stellungnahme mit rechtlicher Begründung.",
+    steps: [
+      { label: "Prüfungsanordnung analysieren", action_type: "document_finalize" },
+      { label: "Verfahrensrechte prüfen", action_type: "document_finalize" },
+      { label: "Findings bewerten", action_type: "document_finalize" },
+      { label: "Stellungnahme erstellen", action_type: "document_finalize" },
+    ],
+  },
+  {
+    id: "tax_return_prep",
+    label: "Steuererklärung-Vorbereitung",
+    description: "Belege sammeln, Plausibilität prüfen, Erklärung vorbereiten, Freigabe",
+    icon: "📋",
+    prompt:
+      "Bereite die Steuererklärung vor. Sammle und kategorisiere alle Belege, prüfe die Plausibilität der Werte, identifiziere fehlende Angaben, bereite die Erklärung vor und leite sie zur Freigabe weiter.",
+    steps: [
+      { label: "Belege sammeln und kategorisieren", action_type: "document_finalize" },
+      { label: "Plausibilität prüfen", action_type: "document_finalize" },
+      { label: "Fehlende Angaben identifizieren", action_type: "document_request_send" },
+      { label: "Erklärung vorbereiten", action_type: "document_finalize" },
+      { label: "Zur Freigabe weiterleiten", action_type: "message_send" },
+    ],
+  },
+  {
+    id: "tax_client_letter",
+    label: "Mandantenbrief",
+    description: "Steuerrechtliches Anschreiben mit individuellen Mandantendaten generieren",
+    icon: "✉️",
+    prompt:
+      "Generiere einen Mandantenbrief. Definiere den Anlass (Quartalsanschreiben, Gesetzesänderung, Erinnerung), füge mandantenspezifische Daten ein, generiere den Brief mit professioneller Formulierung und leite ihn zur Freigabe weiter.",
+    steps: [
+      { label: "Anlass und Empfänger definieren", action_type: "document_finalize" },
+      { label: "Mandantendaten zusammenführen", action_type: "document_finalize" },
+      { label: "Brief generieren", action_type: "document_finalize" },
+      { label: "Zur Freigabe weiterleiten", action_type: "client_message_send" },
+    ],
+  },
 ];
 
 export function getTemplate(id: string): WorkflowTemplate | undefined {

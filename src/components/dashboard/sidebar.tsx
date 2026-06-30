@@ -67,6 +67,7 @@ import { useNetworkStatus } from "@/lib/use-offline-sync";
 import { useLang } from "@/lib/use-lang";
 import { useIsDesktop } from "@/lib/use-media-query";
 import type { DashboardKey } from "@/content/dashboard";
+import { MatterSidebarSection } from "@/components/dashboard/matter-sidebar-section";
 
 type NavItem = {
   href: string;
@@ -152,6 +153,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { href: "/dashboard/sources", icon: Database, labelKey: "nav.sources" },
       { href: "/dashboard/playbooks", icon: ClipboardList, labelKey: "nav.playbooks" },
       { href: "/dashboard/judgements-sync", icon: Landmark, labelKey: "nav.judgements_sync" },
+      { href: "/dashboard/judgements-db", icon: Database, labelKey: "nav.judgements_db" },
     ],
   },
   {
@@ -297,6 +299,7 @@ export const ALL_NAV_ITEMS: NavItem[] = [
   { href: "/dashboard/calendar-export", icon: CalendarClock, labelKey: "nav.calendar_export" },
   { href: "/dashboard/case-scanner", icon: FileSearch, labelKey: "nav.case_scanner" },
   { href: "/dashboard/judgements-sync", icon: Landmark, labelKey: "nav.judgements_sync" },
+  { href: "/dashboard/judgements-db", icon: Database, labelKey: "nav.judgements_db" },
   { href: "/dashboard/word-addin", icon: FileText, labelKey: "nav.word_addin" },
   { href: "/dashboard/version-history", icon: FileClock, labelKey: "nav.version_history" },
   { href: "/dashboard/import-kanzlei", icon: FileUp, labelKey: "nav.import_kanzlei" },
@@ -365,6 +368,7 @@ export const PREFERRED_SECTION_BY_HREF: Array<{ href: string; section: Dashboard
   { href: "/dashboard/monitoring", section: "nav.section.research_knowledge" },
   { href: "/dashboard/playbooks", section: "nav.section.research_knowledge" },
   { href: "/dashboard/judgements-sync", section: "nav.section.research_knowledge" },
+  { href: "/dashboard/judgements-db", section: "nav.section.research_knowledge" },
   { href: "/dashboard/review-queue", section: "nav.section.operations" },
   { href: "/dashboard/approvals", section: "nav.section.operations" },
   { href: "/dashboard/workflows", section: "nav.section.operations" },
@@ -1134,6 +1138,11 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                 );
               })}
             </div>
+
+            {/* Matter-scoped navigation — shows when inside a matter page */}
+            {!searchQuery.trim() && (
+              <MatterSidebarSection collapsed={collapsed} onNavigate={() => setMobileOpen(false)} />
+            )}
 
             {/* Collapsed: section-grouped icon list */}
             {collapsed && (

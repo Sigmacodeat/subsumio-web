@@ -68,6 +68,12 @@ export type AuditAction =
   | "tax.client_create"
   | "tax.client_update"
   | "tax.client_delete"
+  | "tax.strategy"
+  | "tax.risk_analysis"
+  | "tax.precedent_search"
+  | "tax.appeal_generator"
+  | "tax.bfh_feed"
+  | "tax.client_letter"
   | "legal.statute"
   | "legal.playbook"
   | "legal.contradictions"
@@ -232,6 +238,12 @@ const ACTION_LABELS: Record<string, string> = {
   "tax.client_create": "Steuermandant angelegt",
   "tax.client_update": "Steuermandant aktualisiert",
   "tax.client_delete": "Steuermandant gelöscht",
+  "tax.strategy": "Steuerstrategie generiert",
+  "tax.risk_analysis": "Steuer-Risikoanalyse",
+  "tax.precedent_search": "Steuerrechtsprechung-Recherche",
+  "tax.appeal_generator": "Einspruchsgenerator",
+  "tax.bfh_feed": "BFH-Rechtsprechung-Feed",
+  "tax.client_letter": "Mandantenbrief generiert",
 };
 
 export function auditLabel(action: string): string {

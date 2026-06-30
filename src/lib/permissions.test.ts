@@ -152,4 +152,29 @@ describe("auditActionFor", () => {
     expect(auditActionFor("legal.anonymize")).toBe("legal.anonymize");
     expect(auditActionFor("legal.contract_draft")).toBe("legal.contract_draft");
   });
+
+  test("maps tax AI actions correctly", () => {
+    expect(auditActionFor("tax.strategy")).toBe("tax.strategy");
+    expect(auditActionFor("tax.risk_analysis")).toBe("tax.risk_analysis");
+    expect(auditActionFor("tax.precedent_search")).toBe("tax.precedent_search");
+  });
+
+  test("tax.strategy — admin and lawyer, not assistant", () => {
+    expect(can(mockUser("admin"), "tax.strategy")).toBe(true);
+    expect(can(mockUser("lawyer"), "tax.strategy")).toBe(true);
+    expect(can(mockUser("assistant"), "tax.strategy")).toBe(false);
+  });
+
+  test("tax.risk_analysis — admin and lawyer, not assistant", () => {
+    expect(can(mockUser("admin"), "tax.risk_analysis")).toBe(true);
+    expect(can(mockUser("lawyer"), "tax.risk_analysis")).toBe(true);
+    expect(can(mockUser("assistant"), "tax.risk_analysis")).toBe(false);
+  });
+
+  test("tax.precedent_search — admin, lawyer, and assistant", () => {
+    expect(can(mockUser("admin"), "tax.precedent_search")).toBe(true);
+    expect(can(mockUser("lawyer"), "tax.precedent_search")).toBe(true);
+    expect(can(mockUser("assistant"), "tax.precedent_search")).toBe(true);
+    expect(can(mockUser("client_viewer"), "tax.precedent_search")).toBe(false);
+  });
 });

@@ -89,6 +89,12 @@ export type RouteAction =
   | "tax.stbvv"
   | "tax.analyze"
   | "tax.summarize"
+  | "tax.strategy"
+  | "tax.risk_analysis"
+  | "tax.precedent_search"
+  | "tax.appeal_generator"
+  | "tax.bfh_feed"
+  | "tax.client_letter"
   | "team.role_change"
   | "billing.read"
   | "billing.write"
@@ -170,6 +176,12 @@ const ACTION_ROLES: Record<RouteAction, KanzleiRole[]> = {
   "legal.obligation_extract": ["admin", "lawyer", "assistant"],
   "legal.case_scanner": ["admin", "lawyer", "assistant"],
   "legal.precedent_search": ["admin", "lawyer", "assistant"],
+  "tax.strategy": ["admin", "lawyer"],
+  "tax.risk_analysis": ["admin", "lawyer"],
+  "tax.precedent_search": ["admin", "lawyer", "assistant"],
+  "tax.appeal_generator": ["admin", "lawyer"],
+  "tax.bfh_feed": ["admin", "lawyer", "assistant"],
+  "tax.client_letter": ["admin", "lawyer", "assistant"],
 };
 
 /** Prüft, ob ein User eine Aktion ausführen darf. */
@@ -234,6 +246,12 @@ export function auditActionFor(routeAction: RouteAction): AuditAction {
     "tax.stbvv": "tax.stbvv",
     "tax.analyze": "tax.analyze",
     "tax.summarize": "tax.summarize",
+    "tax.strategy": "tax.strategy",
+    "tax.risk_analysis": "tax.risk_analysis",
+    "tax.precedent_search": "tax.precedent_search",
+    "tax.appeal_generator": "tax.appeal_generator",
+    "tax.bfh_feed": "tax.bfh_feed",
+    "tax.client_letter": "tax.client_letter",
     "legal.statute": "legal.statute",
     "legal.contradictions": "legal.contradictions",
     "legal.retrieval_feedback": "legal.retrieval_feedback",

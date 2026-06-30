@@ -11,19 +11,37 @@ const RECENT_KEY = "subsumio:matters:recent";
 const MAX_RECENT = 8;
 const SYNC_EVENT = "subsumio:matters:changed";
 
-function readList(key: string): string[] {
+export interface MatterRef {
+  slug: string;
+  title?: string;
+}
+
+// Read list — handles both legacy string[] and new MatterRef[] formats
+function readList(key: string): MatterRef[] {
   if (typeof window === "undefined") return [];
   try {
     const raw = window.localStorage.getItem(key);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed.filter((s): s is string => typeof s === "string") : [];
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .map((item): MatterRef | null => {
+        if (typeof item === "string") return { slug: item };
+        if (item && typeof item === "object" && typeof item.slug === "string") {
+          return {
+            slug: item.slug,
+            title: typeof item.title === "string" ? item.title : undefined,
+          };
+        }
+        return null;
+      })
+      .filter((item): item is MatterRef => item !== null);
   } catch {
     return [];
   }
 }
 
-function writeList(key: string, list: string[]) {
+function writeList(key: string, list: MatterRef[]) {
   if (typeof window === "undefined") return;
   try {
     window.localStorage.setItem(key, JSON.stringify(list));
@@ -34,8 +52,8 @@ function writeList(key: string, list: string[]) {
 }
 
 export function useRecentMatters() {
-  const [pinned, setPinned] = useState<string[]>([]);
-  const [recent, setRecent] = useState<string[]>([]);
+  const [pinned, setPinned] = useState<MatterRef[]>([]);
+  const [recent, setRecent] = useState<MatterRef[]>([]);
 
   const refresh = useCallback(() => {
     setPinned(readList(PINNED_KEY));
@@ -55,20 +73,23 @@ export function useRecentMatters() {
 
   const togglePin = useCallback((slug: string) => {
     const current = readList(PINNED_KEY);
-    const next = current.includes(slug) ? current.filter((s) => s !== slug) : [slug, ...current];
+    const exists = current.find((m) => m.slug === slug);
+    const next = exists ? current.filter((m) => m.slug !== slug) : [{ slug }, ...current];
     writeList(PINNED_KEY, next);
   }, []);
 
-  const isPinned = useCallback((slug: string) => pinned.includes(slug), [pinned]);
+  const isPinned = useCallback((slug: string) => pinned.some((m) => m.slug === slug), [pinned]);
 
   return { pinned, recent, togglePin, isPinned };
 }
 
 // Record a visit to a matter. Safe to call from a case detail page effect.
 // Pinned matters are excluded from the recent list to avoid duplication.
-export function recordMatterVisit(slug: string) {
+export function recordMatterVisit(slug: string, title?: string) {
   if (typeof window === "undefined" || !slug) return;
   const pinned = readList(PINNED_KEY);
-  const current = readList(RECENT_KEY).filter((s) => s !== slug && !pinned.includes(slug));
-  writeList(RECENT_KEY, [slug, ...current].slice(0, MAX_RECENT));
+  const current = readList(RECENT_KEY).filter(
+    (m) => m.slug !== slug && !pinned.some((p) => p.slug === slug)
+  );
+  writeList(RECENT_KEY, [{ slug, title }, ...current].slice(0, MAX_RECENT));
 }

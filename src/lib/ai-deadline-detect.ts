@@ -27,6 +27,60 @@ export interface DetectedDeadline {
 
 // --- Regex-basierte Erkennung ---
 
+// Ausgeschriebene deutsche Zahlwörter — für "binnen vier Wochen", "vierzehn Tagen".
+const NUMBER_WORDS: Record<string, number> = {
+  ein: 1,
+  eine: 1,
+  einem: 1,
+  einen: 1,
+  einer: 1,
+  zwei: 2,
+  drei: 3,
+  vier: 4,
+  fünf: 5,
+  sechs: 6,
+  sieben: 7,
+  acht: 8,
+  neun: 9,
+  zehn: 10,
+  elf: 11,
+  zwölf: 12,
+  dreizehn: 13,
+  vierzehn: 14,
+  fünfzehn: 15,
+  sechzehn: 16,
+  siebzehn: 17,
+  achtzehn: 18,
+  neunzehn: 19,
+  zwanzig: 20,
+  dreißig: 30,
+};
+// Längere Wörter zuerst, damit "vierzehn" vor "vier" greift.
+const NUMBER_WORD_ALT = Object.keys(NUMBER_WORDS)
+  .sort((a, b) => b.length - a.length)
+  .join("|");
+
+function parseNumberToken(token: string): number | undefined {
+  if (/^\d+$/.test(token)) return parseInt(token, 10);
+  return NUMBER_WORDS[token.toLowerCase()];
+}
+
+// Relative Dauer → Tage ab heute. Wochen exakt ×7; Monate/Jahre über echte
+// Kalenderarithmetik (nicht ×30/×365), damit z.B. "3 Monate" das korrekte
+// Tagesdelta ergibt statt einer groben Näherung.
+function periodToDays(value: number, unit: string): number {
+  const u = unit.toLowerCase();
+  if (u.startsWith("woche")) return value * 7;
+  if (u.startsWith("monat") || u.startsWith("jahr")) {
+    const now = new Date();
+    const then = new Date(now);
+    if (u.startsWith("monat")) then.setMonth(then.getMonth() + value);
+    else then.setFullYear(then.getFullYear() + value);
+    return Math.round((then.getTime() - now.getTime()) / 86_400_000);
+  }
+  return value; // Tag(e/en)
+}
+
 const RULES: Array<{
   name: string;
   regex: RegExp;
@@ -78,15 +132,20 @@ const RULES: Array<{
       return { date: `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}` };
     },
   },
-  // Relative: "innerhalb von 14 Tagen"
+  // Relative: "innerhalb von 14 Tagen", "binnen vier Wochen", "innert 3 Monaten",
+  // "mit Frist von 4 Wochen". Erkennt Ziffern + ausgeschriebene Zahlwörter und
+  // rechnet Wochen/Monate/Jahre korrekt in Tage um. "innert" deckt CH ab.
   {
     name: "relative_days",
-    regex:
-      /(?:innerhalb|binnen|innerhalb von|spätestens in)[\s]+(\d+)[\s]+(?:Tagen|Wochen|Woche|Tag)/i,
+    regex: new RegExp(
+      `(?:innerhalb(?:\\s+von)?|binnen|innert|spätestens\\s+(?:in|binnen)|(?:mit\\s+(?:einer\\s+)?)?frist\\s+von)\\s+(\\d{1,4}|${NUMBER_WORD_ALT})\\s+(Tage?n?|Wochen?|Monate?n?|Jahre?n?)`,
+      "i"
+    ),
     type: "relative_deadline",
     extractDate: (m) => {
-      const num = parseInt(m[1], 10);
-      return { daysFromNow: num };
+      const value = parseNumberToken(m[1]);
+      if (value === undefined) return {};
+      return { daysFromNow: periodToDays(value, m[2]) };
     },
   },
   // Gesetzliche Fristen mit Template-Mapping

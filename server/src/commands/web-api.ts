@@ -2312,6 +2312,56 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     }
   });
 
+  // ── Embedding endpoint ─────────────────────────────────────────────────
+  // Allows the web app to generate embeddings via the engine's AI gateway,
+  // which handles provider resolution, retry, batch splitting, and dimension
+  // validation. Used by the legal-graph module for judgement chunk embeddings.
+  app.post("/api/embed", express.json({ limit: "10mb" }), async (req: Request, res: Response) => {
+    try {
+      const body = req.body as { texts?: string[]; input_type?: "query" | "document" };
+      if (!body.texts || !Array.isArray(body.texts) || body.texts.length === 0) {
+        res.status(400).json({ error: "missing_texts", message: "texts[] is required" });
+        return;
+      }
+      if (body.texts.length > 500) {
+        res.status(400).json({ error: "too_many_texts", message: "Max 500 texts per request" });
+        return;
+      }
+
+      const { isAvailable } = await import("../core/ai/gateway.ts");
+      if (!isAvailable("embedding")) {
+        res
+          .status(503)
+          .json({ error: "embedding_not_configured", message: "No embedding provider configured" });
+        return;
+      }
+
+      const { embed, embedQuery, getEmbeddingDimensions, getEmbeddingModel } =
+        await import("../core/ai/gateway.ts");
+
+      const inputType = body.input_type === "query" ? "query" : "document";
+      const dims = getEmbeddingDimensions();
+      const model = getEmbeddingModel();
+
+      let embeddings: Float32Array[];
+      if (inputType === "query" && body.texts.length === 1) {
+        const vec = await embedQuery(body.texts[0]);
+        embeddings = [vec];
+      } else {
+        embeddings = await embed(body.texts, { inputType });
+      }
+
+      res.json({
+        embeddings: embeddings.map((v) => Array.from(v)),
+        dimensions: dims,
+        model,
+      });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "unknown";
+      res.status(500).json({ error: "embed_failed", message: msg });
+    }
+  });
+
   app.post("/api/think", express.json({ limit: "1mb" }), async (req: Request, res: Response) => {
     const body = req.body as Record<string, unknown>;
     const rawQuery = String(body?.query ?? body?.question ?? "");

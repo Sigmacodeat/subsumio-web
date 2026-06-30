@@ -187,19 +187,19 @@ describe("detectDeadlines — all German month names", () => {
 // ── Relative Fristen: Wochen und spätestens ─────────────────────────────
 
 describe("detectDeadlines — relative deadlines (weeks, spätestens)", () => {
-  test("detects 'innerhalb von 3 Wochen'", () => {
+  test("detects 'innerhalb von 3 Wochen' (= 21 Tage)", () => {
     const results = detectDeadlines("Die Antwort muss innerhalb von 3 Wochen erfolgen.");
     const rel = results.find((r) => r.type === "relative_deadline");
     expect(rel).toBeDefined();
-    expect(rel!.daysFromNow).toBe(3);
+    expect(rel!.daysFromNow).toBe(21);
     expect(rel!.confidence).toBe("medium");
   });
 
-  test("detects 'binnen 2 Wochen'", () => {
+  test("detects 'binnen 2 Wochen' (= 14 Tage)", () => {
     const results = detectDeadlines("binnen 2 Wochen zu reagieren");
     const rel = results.find((r) => r.type === "relative_deadline");
     expect(rel).toBeDefined();
-    expect(rel!.daysFromNow).toBe(2);
+    expect(rel!.daysFromNow).toBe(14);
   });
 
   test("detects 'spätestens in 10 Tagen'", () => {
@@ -214,6 +214,52 @@ describe("detectDeadlines — relative deadlines (weeks, spätestens)", () => {
     const rel = results.find((r) => r.type === "relative_deadline");
     expect(rel).toBeDefined();
     expect(rel!.daysFromNow).toBe(21);
+  });
+});
+
+// ── Relative Fristen: ausgeschriebene Zahlen, Monate, CH "innert" ─────────
+
+describe("detectDeadlines — spelled-out numbers, months, Swiss 'innert'", () => {
+  test("detects 'binnen vier Wochen' (spelled out = 28 Tage)", () => {
+    const results = detectDeadlines("Die Berufung ist binnen vier Wochen einzubringen.");
+    const rel = results.find((r) => r.type === "relative_deadline");
+    expect(rel).toBeDefined();
+    expect(rel!.daysFromNow).toBe(28);
+  });
+
+  test("detects 'innerhalb von vierzehn Tagen' (= 14 Tage)", () => {
+    const results = detectDeadlines("Stellungnahme innerhalb von vierzehn Tagen.");
+    const rel = results.find((r) => r.type === "relative_deadline");
+    expect(rel).toBeDefined();
+    expect(rel!.daysFromNow).toBe(14);
+  });
+
+  test("detects 'mit Frist von 4 Wochen' (= 28 Tage)", () => {
+    const results = detectDeadlines("Eine Kündigung ist nur mit Frist von 4 Wochen möglich.");
+    const rel = results.find((r) => r.type === "relative_deadline");
+    expect(rel).toBeDefined();
+    expect(rel!.daysFromNow).toBe(28);
+  });
+
+  test("detects 'innert 10 Tagen' (Swiss)", () => {
+    const results = detectDeadlines("Die Beschwerde ist innert 10 Tagen zu erheben.");
+    const rel = results.find((r) => r.type === "relative_deadline");
+    expect(rel).toBeDefined();
+    expect(rel!.daysFromNow).toBe(10);
+  });
+
+  test("detects 'innerhalb von 3 Monaten' via calendar math (~89-92 Tage)", () => {
+    const results = detectDeadlines("Die Klage ist innerhalb von 3 Monaten zu erheben.");
+    const rel = results.find((r) => r.type === "relative_deadline");
+    expect(rel).toBeDefined();
+    expect(rel!.daysFromNow).toBeGreaterThanOrEqual(89);
+    expect(rel!.daysFromNow).toBeLessThanOrEqual(92);
+  });
+
+  test("'14 Tage' without lead-in keyword is still not a relative_deadline", () => {
+    const results = detectDeadlines("Wir hatten vier Wochen Zeit für die Prüfung.");
+    const rel = results.find((r) => r.type === "relative_deadline");
+    expect(rel).toBeUndefined();
   });
 });
 

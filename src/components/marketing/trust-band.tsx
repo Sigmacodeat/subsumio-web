@@ -133,6 +133,7 @@ export default function TrustBand({ lang, industry }: { lang: Lang; industry?: s
   return (
     <section
       data-tone="light"
+      aria-label={lang !== "en" ? "Sicherheit & Vertrauen" : "Security & Trust"}
       className="relative z-10 px-4 py-24 sm:px-6 lg:px-8"
       style={{ background: "var(--mk-bg)" }}
     >

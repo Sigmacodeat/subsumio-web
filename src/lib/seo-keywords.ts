@@ -132,6 +132,25 @@ const SEO_KEYWORDS = {
     "law firm software Berlin",
     "law firm software Zurich",
   ],
+
+  // SuperBrain
+  superbrain: [
+    "Legal AI Engine",
+    "KI Legal Brain",
+    "SuperBrain Kanzlei",
+    "Dream Cycle KI",
+    "LEXam Benchmark",
+    "5-Ebenen-Architektur KI",
+    "legal AI knowledge graph",
+    "DeepSeek legal reasoning",
+    "Qwen3 fine-tuning legal",
+    "AI contradiction detection legal",
+    "KI Wissensgraph Kanzlei",
+    "legal AI quality control",
+    "Subsumio Legal Engine",
+    "AI legal reasoning benchmark",
+    "open-weight legal LLM",
+  ],
 };
 
 export { SEO_KEYWORDS };

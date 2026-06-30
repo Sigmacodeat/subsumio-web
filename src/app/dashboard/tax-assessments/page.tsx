@@ -18,10 +18,13 @@ import {
   Plus,
   Search,
   RotateCcw,
-  Loader2,
   X,
   AlertCircle,
   CheckCircle2,
+  FileStack,
+  Clock,
+  Euro,
+  Scale,
 } from "lucide-react";
 import {
   Dialog,
@@ -31,8 +34,9 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { TaxStatCard, TaxPrecedentSearchPanel, TaxAppealGeneratorPanel } from "@/components/tax";
 
-const TYPE_LABELS: Record<AssessmentType, string> = {
+const TYPE_LABELS_DE: Record<AssessmentType, string> = {
   Einschaetzung: "Einschätzung",
   Festsetzung: "Festsetzung",
   Nachforderung: "Nachforderung",
@@ -42,7 +46,17 @@ const TYPE_LABELS: Record<AssessmentType, string> = {
   Haftruecklass: "Haft- und Rücklass",
 };
 
-const TAX_TYPE_LABELS: Partial<Record<TaxReturnType, string>> = {
+const TYPE_LABELS_EN: Record<AssessmentType, string> = {
+  Einschaetzung: "Estimate",
+  Festsetzung: "Assessment",
+  Nachforderung: "Additional Claim",
+  Erstattung: "Refund",
+  Vorauszahlung: "Advance Payment",
+  Stundung: "Deferral",
+  Haftruecklass: "Liability & Reserve",
+};
+
+const TAX_TYPE_LABELS_DE: Partial<Record<TaxReturnType, string>> = {
   ESt: "ESt",
   USt: "USt",
   GewSt: "GewSt",
@@ -56,6 +70,22 @@ const TAX_TYPE_LABELS: Partial<Record<TaxReturnType, string>> = {
   LStA: "LStA",
   ZM: "ZM",
   other: "Sonstige",
+};
+
+const TAX_TYPE_LABELS_EN: Partial<Record<TaxReturnType, string>> = {
+  ESt: "Income Tax",
+  USt: "VAT",
+  GewSt: "Trade Tax",
+  KSt: "Corporate Tax",
+  SolZ: "Sol. Surcharge",
+  VSt: "Wealth Tax",
+  GrESt: "RE Transfer Tax",
+  ErbSt: "Inheritance Tax",
+  LSt: "Wage Tax",
+  UStVA: "VAT Pre-Reg",
+  LStA: "Wage Tax Reg",
+  ZM: "Summary Report",
+  other: "Other",
 };
 
 interface AssessmentRow {
@@ -101,6 +131,7 @@ export default function TaxAssessmentsPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [createLoading, setCreateLoading] = useState(false);
+  const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
   const [createForm, setCreateForm] = useState({
     clientName: "",
     type: "Festsetzung" as AssessmentType,
@@ -112,6 +143,9 @@ export default function TaxAssessmentsPage() {
     amount: 0,
     notes: "",
   });
+
+  const typeLabels = lang === "en" ? TYPE_LABELS_EN : TYPE_LABELS_DE;
+  const taxTypeLabels = lang === "en" ? TAX_TYPE_LABELS_EN : TAX_TYPE_LABELS_DE;
 
   const loadAssessments = useCallback(async () => {
     setLoading(true);
@@ -217,34 +251,28 @@ export default function TaxAssessmentsPage() {
       {/* Stats */}
       {!loading && assessments.length > 0 && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
-            <div className="text-xs text-[color:var(--ds-text-muted)]">
-              {t("tax.assessments.stat_total")}
-            </div>
-            <div className="text-xl font-bold text-[color:var(--ds-text)]">
-              {assessments.length}
-            </div>
-          </div>
-          <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
-            <div className="text-xs text-[color:var(--ds-text-muted)]">
-              {t("tax.assessments.stat_open")}
-            </div>
-            <div className="text-xl font-bold text-amber-600">{openCount}</div>
-          </div>
-          <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
-            <div className="text-xs text-[color:var(--ds-text-muted)]">
-              {t("tax.assessments.stat_contested")}
-            </div>
-            <div className="text-xl font-bold text-rose-600">{contestedCount}</div>
-          </div>
-          <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
-            <div className="text-xs text-[color:var(--ds-text-muted)]">
-              {t("tax.assessments.stat_amount")}
-            </div>
-            <div className="text-xl font-bold text-[color:var(--ds-text)]">
-              {totalAmount.toLocaleString(lang === "en" ? "en-GB" : "de-DE")} €
-            </div>
-          </div>
+          <TaxStatCard
+            label={t("tax.assessments.stat_total")}
+            value={assessments.length}
+            icon={FileStack}
+          />
+          <TaxStatCard
+            label={t("tax.assessments.stat_open")}
+            value={openCount}
+            icon={Clock}
+            colorVar="--ds-warning-text"
+          />
+          <TaxStatCard
+            label={t("tax.assessments.stat_contested")}
+            value={contestedCount}
+            icon={AlertCircle}
+            colorVar="--ds-danger-text"
+          />
+          <TaxStatCard
+            label={t("tax.assessments.stat_amount")}
+            value={`${totalAmount.toLocaleString(lang === "en" ? "en-GB" : "de-DE")} €`}
+            icon={Euro}
+          />
         </div>
       )}
 
@@ -280,7 +308,7 @@ export default function TaxAssessmentsPage() {
             className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
           >
             <option value="all">{t("tax.assessments.all_types")}</option>
-            {Object.entries(TYPE_LABELS).map(([k, v]) => (
+            {Object.entries(typeLabels).map(([k, v]) => (
               <option key={k} value={k}>
                 {v}
               </option>
@@ -292,7 +320,7 @@ export default function TaxAssessmentsPage() {
             className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
           >
             <option value="all">{t("tax.assessments.all_tax_types")}</option>
-            {Object.entries(TAX_TYPE_LABELS).map(([k, v]) => (
+            {Object.entries(taxTypeLabels).map(([k, v]) => (
               <option key={k} value={k}>
                 {v}
               </option>
@@ -369,6 +397,7 @@ export default function TaxAssessmentsPage() {
                   <th className="px-5 py-3 font-medium">{t("tax.assessments.col_due")}</th>
                   <th className="px-5 py-3 font-medium">{t("tax.assessments.col_amount")}</th>
                   <th className="px-5 py-3 font-medium">{t("tax.assessments.col_status")}</th>
+                  <th className="px-5 py-3 font-medium" />
                 </tr>
               </thead>
               <tbody>
@@ -384,10 +413,10 @@ export default function TaxAssessmentsPage() {
                       {a.clientName}
                     </td>
                     <td className="px-5 py-3 text-[color:var(--ds-text-muted)]">
-                      {TYPE_LABELS[a.type]}
+                      {typeLabels[a.type]}
                     </td>
                     <td className="px-5 py-3 text-xs text-[color:var(--ds-text-subtle)]">
-                      {TAX_TYPE_LABELS[a.taxType] ?? a.taxType}
+                      {taxTypeLabels[a.taxType] ?? a.taxType}
                     </td>
                     <td className="px-5 py-3 text-xs text-[color:var(--ds-text-subtle)]">
                       {a.noticeNumber ?? "—"}
@@ -404,23 +433,45 @@ export default function TaxAssessmentsPage() {
                     <td className="px-5 py-3">
                       {a.contested ? (
                         <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-600">
-                          <AlertCircle size={12} /> Angefochten
+                          <AlertCircle size={12} /> {lang === "en" ? "Contested" : "Angefochten"}
                         </span>
                       ) : a.paidDate ? (
                         <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-600">
-                          <CheckCircle2 size={12} /> Bezahlt
+                          <CheckCircle2 size={12} /> {lang === "en" ? "Paid" : "Bezahlt"}
                         </span>
                       ) : (
                         <span className="inline-flex items-center rounded-full border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-2 py-0.5 text-xs font-medium text-[color:var(--ds-text-subtle)]">
-                          Offen
+                          {lang === "en" ? "Open" : "Offen"}
                         </span>
                       )}
+                    </td>
+                    <td className="px-5 py-3 text-right">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedSlug(a.slug);
+                        }}
+                        className="h-7 gap-1 px-2 text-xs text-[color:var(--brand-primary)] hover:bg-[color:var(--brand-soft)]"
+                      >
+                        <Scale size={12} />
+                        {t("tax.precedent.title")}
+                      </Button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+
+      {/* AI Panels: Appeal Generator + Precedent Search */}
+      {selectedSlug && (
+        <div className="space-y-4">
+          <TaxAppealGeneratorPanel assessmentSlug={selectedSlug} />
+          <TaxPrecedentSearchPanel />
         </div>
       )}
 
@@ -457,7 +508,7 @@ export default function TaxAssessmentsPage() {
                   }
                   className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                 >
-                  {Object.entries(TYPE_LABELS).map(([k, v]) => (
+                  {Object.entries(typeLabels).map(([k, v]) => (
                     <option key={k} value={k}>
                       {v}
                     </option>
@@ -538,7 +589,7 @@ export default function TaxAssessmentsPage() {
                   }
                   className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                 >
-                  {Object.entries(TAX_TYPE_LABELS).map(([k, v]) => (
+                  {Object.entries(taxTypeLabels).map(([k, v]) => (
                     <option key={k} value={k}>
                       {v}
                     </option>
@@ -574,7 +625,11 @@ export default function TaxAssessmentsPage() {
               onClick={() => void createAssessment()}
               className="brand-bg gap-2 text-white"
             >
-              {createLoading ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+              {createLoading ? (
+                <RotateCcw size={14} className="animate-spin" />
+              ) : (
+                <Plus size={14} />
+              )}
               {createLoading ? t("tax.assessments.btn_creating") : t("tax.assessments.btn_create")}
             </Button>
           </DialogFooter>

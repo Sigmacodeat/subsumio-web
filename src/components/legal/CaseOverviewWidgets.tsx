@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useLang } from "@/lib/use-lang";
-import type { CaseDetail } from "@/app/dashboard/cases/[...slug]/page";
+import type { CaseDetail } from "@/lib/matter-detail-types";
 import type { DashboardKey } from "@/content/dashboard";
 import { cn } from "@/lib/utils";
 

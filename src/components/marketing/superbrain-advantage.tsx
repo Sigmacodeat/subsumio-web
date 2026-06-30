@@ -67,8 +67,8 @@ const copy = {
   },
   de: {
     eyebrow: "Die Subsumio-Engine",
-    title: "Kein weiterer Chatbot. Die Gedächtnisschicht, auf der deine Kanzlei läuft.",
-    sub: "Die meisten Assistenten beantworten einen Prompt und vergessen. Subsumio baut eine dauerhafte, rechtebewusste Wissensbasis über deine eigene Arbeit: Dateien, Nachrichten, Termine, Entitäten, Fristen und offene Risiken — und antwortet mit Fundstellen.",
+    title: "Kein weiterer Chatbot. Das Gedächtnis, auf dem deine Kanzlei läuft.",
+    sub: "Die meisten Assistenten beantworten einen Prompt und vergessen. Subsumio baut eine dauerhafte Wissensbasis über deine eigene Arbeit: Dateien, Nachrichten, Termine, Entitäten, Fristen und offene Risiken — und antwortet mit Fundstellen.",
     center: "Deine Kanzlei-Wissensbasis",
     proof: [
       {
@@ -128,6 +128,7 @@ export default function SuperbrainAdvantage({ lang }: { lang: Lang }) {
   return (
     <section
       data-tone="slate"
+      aria-label={lang !== "en" ? "Die Subsumio-Engine" : "The Subsumio engine"}
       className="relative z-10 overflow-hidden border-y [border-color:var(--mk-border)] px-4 py-24 [background:var(--mk-surface)] sm:px-6 lg:px-8"
     >
       <GradientMesh className="opacity-60" />

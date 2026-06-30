@@ -579,6 +579,19 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
   const [error, setError] = useState<string | null>(null);
   const [cases, setCases] = useState<Array<{ slug: string; title: string }>>([]);
   const [selectedCaseSlug, setSelectedCaseSlug] = useState(context.caseSlug ?? "");
+  const [matterVitals, setMatterVitals] = useState<
+    | {
+        deadlineCount: number;
+        openDeadlineCount: number;
+        nextDeadlineDate?: string;
+        taskCount: number;
+        openTaskCount: number;
+        documentCount: number;
+        totalHours: number;
+        expenseTotal: number;
+      }
+    | undefined
+  >(undefined);
   const [jurisdiction, setJurisdiction] = useState<Jurisdiction>("de");
   const [queryMode, setQueryMode] = useState<QueryMode>("deep_matter");
   const [modelOverride, setModelOverride] = useState<string | undefined>(undefined);
@@ -628,6 +641,38 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           if (casePage) {
             const fm = caseFrontmatter(casePage);
             if (fm.jurisdiction) setJurisdiction(fm.jurisdiction as Jurisdiction);
+            // Extract matter vitals for copilot context
+            const deadlines = fm.deadlines || [];
+            const tasks = fm.tasks || [];
+            const documents = fm.documents || [];
+            const timeEntries = fm.time_entries || [];
+            const expenses = fm.expenses || [];
+            const openDeadlines = deadlines.filter(
+              (d) => d.status !== "done" && d.status !== "completed"
+            );
+            const openTasks = tasks.filter((t) => !t.done);
+            const nextDeadline = openDeadlines
+              .map((d) => d.due_date || d.date || "")
+              .filter(Boolean)
+              .sort()[0];
+            const totalHours = timeEntries.reduce(
+              (sum, t) => sum + (typeof t.minutes === "number" ? t.minutes / 60 : 0),
+              0
+            );
+            const expenseTotal = expenses.reduce(
+              (sum, e) => sum + (typeof e.amount === "number" ? e.amount : 0),
+              0
+            );
+            setMatterVitals({
+              deadlineCount: deadlines.length,
+              openDeadlineCount: openDeadlines.length,
+              nextDeadlineDate: nextDeadline || undefined,
+              taskCount: tasks.length,
+              openTaskCount: openTasks.length,
+              documentCount: documents.length,
+              totalHours: Math.round(totalHours * 100) / 100,
+              expenseTotal: Math.round(expenseTotal * 100) / 100,
+            });
           }
         }
       } catch {
@@ -789,6 +834,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
         },
         userContext,
         conversationHistory: historyForPrompt,
+        matterVitals,
       });
       const prompt = buildSafePrompt(systemPrompt, userInput);
 

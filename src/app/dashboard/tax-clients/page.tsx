@@ -36,6 +36,7 @@ import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
 import { api } from "@/lib/api";
 import type { BrainPage } from "@/lib/types";
+import { TaxClientLetterPanel } from "@/components/tax";
 
 const CLIENT_TYPE_LABELS: Record<string, string> = {
   person: "Privatperson",
@@ -88,6 +89,7 @@ export default function TaxClientsPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editSlug, setEditSlug] = useState<string | null>(null);
   const [deleteOpen, setDeleteOpen] = useState<string | null>(null);
+  const [letterSlug, setLetterSlug] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [form, setForm] = useState<ClientForm>(EMPTY_FORM);
@@ -290,6 +292,15 @@ export default function TaxClientsPage() {
                     <Button
                       variant="ghost"
                       size="sm"
+                      onClick={() => setLetterSlug(letterSlug === client.slug ? null : client.slug)}
+                      className="h-8 w-8 p-0 text-[color:var(--brand-primary)] hover:bg-[color:var(--brand-soft)]"
+                      title={t("tax.letter.title")}
+                    >
+                      <Mail size={14} />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => setDeleteOpen(client.slug)}
                       className="h-8 w-8 p-0 text-red-600 hover:bg-red-500/10"
                     >
@@ -328,6 +339,9 @@ export default function TaxClientsPage() {
           })}
         </div>
       )}
+
+      {/* Client Letter Panel */}
+      {letterSlug && <TaxClientLetterPanel clientSlug={letterSlug} />}
 
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent className="max-w-2xl">
