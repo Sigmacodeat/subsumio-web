@@ -142,6 +142,9 @@ export const OFFLINE_KEYS = {
   notifications: "dashboard:notifications",
   settings: "dashboard:settings",
   chatHistory: "dashboard:chat-history",
+  taxReturns: "dashboard:tax-returns",
+  taxAssessments: "dashboard:tax-assessments",
+  taxAudits: "dashboard:tax-audits",
 } as const;
 
 // --- Mutation Queue ---
