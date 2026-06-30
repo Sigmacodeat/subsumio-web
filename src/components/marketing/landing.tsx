@@ -105,7 +105,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 {t.badge}
               </motion.div>
               <h1
-                className="mb-4 text-5xl leading-[1.05] font-black tracking-tight [color:var(--mk-text)] md:text-7xl lg:text-8xl"
+                className="mb-6 text-5xl leading-[1.05] font-black tracking-tight [color:var(--mk-text)] md:text-7xl lg:text-8xl"
                 style={{ fontFamily: "var(--font-display)" }}
               >
                 <SplitTextReveal
@@ -119,23 +119,11 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                   {`${t.h1a}\n${t.h1b}`}
                 </SplitTextReveal>
               </h1>
-              {t.heroTagline && (
-                <motion.p
-                  initial={reduce ? false : { opacity: 0, y: 14 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={
-                    reduce ? { duration: 0 } : { duration: 0.45, ease: EASE.dramatic, delay: 0.45 }
-                  }
-                  className="mx-auto mb-6 max-w-2xl text-xl leading-relaxed font-semibold [color:var(--brand-text)]"
-                >
-                  {t.heroTagline}
-                </motion.p>
-              )}
               <motion.p
                 initial={reduce ? false : { opacity: 0, y: 16, filter: "blur(3px)" }}
                 animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
                 transition={
-                  reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.dramatic, delay: 0.55 }
+                  reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.dramatic, delay: 0.4 }
                 }
                 className="mx-auto mb-12 max-w-2xl text-lg leading-relaxed [color:var(--mk-text-muted)] md:text-xl"
               >
@@ -145,7 +133,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 initial={reduce ? false : { opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={
-                  reduce ? { duration: 0 } : { duration: 0.4, ease: EASE.dramatic, delay: 0.65 }
+                  reduce ? { duration: 0 } : { duration: 0.4, ease: EASE.dramatic, delay: 0.55 }
                 }
                 className="mb-4 flex flex-col justify-center gap-4 sm:flex-row"
               >
@@ -166,7 +154,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 initial={reduce ? false : { opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={
-                  reduce ? { duration: 0 } : { duration: 0.4, ease: EASE.dramatic, delay: 0.75 }
+                  reduce ? { duration: 0 } : { duration: 0.4, ease: EASE.dramatic, delay: 0.65 }
                 }
                 className="mb-4 text-xs [color:var(--mk-text-muted)]"
               >
@@ -179,7 +167,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 initial={reduce ? false : { opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={
-                  reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.dramatic, delay: 0.9 }
+                  reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.dramatic, delay: 0.8 }
                 }
                 id="demo"
                 data-tone="dashboard"

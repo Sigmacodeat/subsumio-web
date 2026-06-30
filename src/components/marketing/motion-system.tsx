@@ -581,33 +581,13 @@ export function MagneticCard({ children, className = "", lift = 6, tilt = 3 }: M
 // legal-tech brands that must feel credible, not gimmicky.
 // ---------------------------------------------------------------------------
 
-type MotionAs = "h1" | "h2" | "h3" | "p" | "span";
-
-function MotionTag({ as, ...props }: { as: MotionAs } & React.ComponentProps<typeof motion.div>) {
-  // Framer Motion's motion object is not safely indexable in all versions;
-  // use a static switch so the runtime is deterministic and the types stay strict.
-  switch (as) {
-    case "h1":
-      return <motion.h1 {...(props as React.ComponentProps<typeof motion.h1>)} />;
-    case "h2":
-      return <motion.h2 {...(props as React.ComponentProps<typeof motion.h2>)} />;
-    case "h3":
-      return <motion.h3 {...(props as React.ComponentProps<typeof motion.h3>)} />;
-    case "p":
-      return <motion.p {...(props as React.ComponentProps<typeof motion.p>)} />;
-    case "span":
-    default:
-      return <motion.span {...(props as React.ComponentProps<typeof motion.span>)} />;
-  }
-}
-
 interface SplitTextRevealProps {
   children: string;
   className?: string;
   itemClassName?: string;
   delay?: number;
   stagger?: number;
-  as?: MotionAs;
+  as?: "h1" | "h2" | "h3" | "p" | "span";
   once?: boolean;
   useAnimate?: boolean;
 }
@@ -623,62 +603,34 @@ export function SplitTextReveal({
   useAnimate = false,
 }: SplitTextRevealProps) {
   const reduce = useReducedMotion();
-  const lineData = useMemo(
-    () =>
-      children.split("\n").map((lineText, lineIdx) => ({
-        key: `line-${lineIdx}`,
-        words: lineText.split(" ").map((word, wordIdx) => `word-${lineIdx}-${wordIdx}`),
-        nodes: lineText.split(" ").map((word, wordIdx, arr) => ({
-          word,
-          hasSpace: wordIdx < arr.length - 1,
-        })),
-      })),
-    [children]
-  );
-
-  // Reduced motion: skip the mask/clip animation entirely. The text is rendered
-  // as plain nodes so screen readers get the real semantics without delay.
-  if (reduce) {
-    const TagName = Tag;
-    return (
-      <TagName className={className}>
-        {lineData.map((line, lineIdx) => (
-          <span key={line.key} className="block">
-            {line.nodes.map((n, i) => (
-              <span key={line.words[i]}>
-                {n.word}
-                {n.hasSpace ? "\u00A0" : ""}
-              </span>
-            ))}
-            {lineIdx < lineData.length - 1 ? " " : ""}
-          </span>
-        ))}
-      </TagName>
-    );
-  }
+  const lines = children.split("\n");
 
   const container: Variants = {
     hidden: {},
     visible: {
       transition: {
-        staggerChildren: stagger,
+        staggerChildren: reduce ? 0 : stagger,
         delayChildren: delay,
       },
     },
   };
 
-  const lineVariants: Variants = {
+  const line: Variants = {
     hidden: {},
     visible: {
       transition: {
-        staggerChildren: 0.04,
+        staggerChildren: reduce ? 0 : 0.04,
         delayChildren: 0,
       },
     },
   };
 
-  const wordVariants: Variants = {
-    hidden: { opacity: 0, y: "100%", filter: "blur(6px)" },
+  const word: Variants = {
+    hidden: {
+      opacity: 0,
+      y: reduce ? 0 : "100%",
+      filter: reduce ? "blur(0px)" : "blur(6px)",
+    },
     visible: {
       opacity: 1,
       y: 0,
@@ -687,35 +639,25 @@ export function SplitTextReveal({
     },
   };
 
+  const MotionTag = motion[Tag as keyof typeof motion] as typeof motion.span;
+
   return (
     <MotionTag
-      as={Tag}
       initial="hidden"
       {...(useAnimate
         ? { animate: "visible" as const }
-        : { whileInView: "visible" as const, viewport: { ...VIEWPORT.hero, once } })}
+        : { whileInView: "visible" as const, viewport: VIEWPORT.hero })}
       variants={container}
       className={className}
       aria-label={children.replace(/\n/g, " ")}
-      style={{ willChange: "transform, opacity" }}
     >
-      {lineData.map((line) => (
-        <span key={line.key} className="block overflow-hidden">
-          <motion.span
-            variants={lineVariants}
-            className={`block ${itemClassName}`}
-            aria-hidden="true"
-            style={{ willChange: "transform, opacity" }}
-          >
-            {line.nodes.map((n, i) => (
-              <motion.span
-                key={line.words[i]}
-                variants={wordVariants}
-                className="inline-block"
-                style={{ willChange: "transform, opacity, filter" }}
-              >
-                {n.word}
-                {n.hasSpace ? "\u00A0" : ""}
+      {lines.map((lineText, lineIdx) => (
+        <span key={lineIdx} className="block overflow-hidden">
+          <motion.span variants={line} className={`block ${itemClassName}`} aria-hidden="true">
+            {lineText.split(" ").map((w, i) => (
+              <motion.span key={i} variants={word} className="inline-block">
+                {w}
+                {i < lineText.split(" ").length - 1 ? "\u00A0" : ""}
               </motion.span>
             ))}
           </motion.span>
@@ -735,7 +677,7 @@ interface TextRevealProps {
   wordClassName?: string;
   delay?: number;
   stagger?: number;
-  as?: MotionAs;
+  as?: "h1" | "h2" | "h3" | "p" | "span";
 }
 
 export function TextReveal({
@@ -747,31 +689,17 @@ export function TextReveal({
   as: Tag = "span",
 }: TextRevealProps) {
   const reduce = useReducedMotion();
-  const words = useMemo(() => text.split(" "), [text]);
-
-  if (reduce) {
-    const TagName = Tag;
-    return (
-      <TagName className={className}>
-        {words.map((w, i) => (
-          <span key={`${w}-${i}`} className={`inline-block ${wordClassName}`}>
-            {w}
-            {i < words.length - 1 ? "\u00A0" : ""}
-          </span>
-        ))}
-      </TagName>
-    );
-  }
+  const words = text.split(" ");
 
   const container: Variants = {
     hidden: {},
     visible: {
-      transition: { staggerChildren: stagger, delayChildren: delay },
+      transition: { staggerChildren: reduce ? 0 : stagger, delayChildren: delay },
     },
   };
 
-  const wordVariants: Variants = {
-    hidden: { opacity: 0, y: 20 },
+  const word: Variants = {
+    hidden: { opacity: 0, y: reduce ? 0 : 20 },
     visible: {
       opacity: 1,
       y: 0,
@@ -779,9 +707,10 @@ export function TextReveal({
     },
   };
 
+  const MotionTag = motion[Tag as keyof typeof motion] as typeof motion.span;
+
   return (
     <MotionTag
-      as={Tag}
       initial="hidden"
       whileInView="visible"
       viewport={VIEWPORT.hero}
@@ -789,13 +718,9 @@ export function TextReveal({
       className={className}
     >
       {words.map((w, i) => (
-        <motion.span
-          key={`${w}-${i}`}
-          variants={wordVariants}
-          className={`inline-block ${wordClassName}`}
-        >
+        <motion.span key={i} variants={word} className={`inline-block ${wordClassName}`}>
           {w}
-          {i < words.length - 1 ? "\u00A0" : ""}
+          {i < words.length - 1 ? " " : ""}
         </motion.span>
       ))}
     </MotionTag>
