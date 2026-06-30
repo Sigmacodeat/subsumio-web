@@ -106,14 +106,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 className="mb-6 text-5xl leading-[1.05] font-black tracking-tight [color:var(--mk-text)] md:text-7xl lg:text-8xl"
                 style={{ fontFamily: "var(--font-display)" }}
               >
-                <SplitTextReveal
-                  stagger={0.1}
-                  delay={0.2}
-                  as="span"
-                  useAnimate
-                  className="block"
-                  itemClassName="gradient-text-animated"
-                >
+                <SplitTextReveal stagger={0.1} delay={0.2} as="span" useAnimate className="block">
                   {`${t.h1a}\n${t.h1b}`}
                 </SplitTextReveal>
               </h1>
