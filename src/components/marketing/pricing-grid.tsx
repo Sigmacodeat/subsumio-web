@@ -31,7 +31,7 @@ export function PricingGrid({ lang }: { lang: Lang }) {
             −20%
           </span>
         </button>
-        <div className="relative h-6 w-12 rounded-full transition-colors [background:var(--mk-border)]">
+        <div className="relative h-6 w-12 rounded-full transition-colors [background:var(--mk-border-strong)]">
           <button
             onClick={() => setBilling(billing === "annual" ? "monthly" : "annual")}
             role="switch"
@@ -68,6 +68,7 @@ export function PricingGrid({ lang }: { lang: Lang }) {
               }`}
             >
               <div
+                data-tone={tier.highlight ? "dark" : undefined}
                 className={`relative flex h-full flex-col rounded-2xl border p-6 ${
                   tier.highlight
                     ? "border-transparent"
@@ -77,7 +78,7 @@ export function PricingGrid({ lang }: { lang: Lang }) {
                   tier.highlight
                     ? {
                         background:
-                          "radial-gradient(ellipse 90% 55% at 50% -5%, rgba(47,107,255,0.18) 0%, rgba(47,107,255,0.04) 45%, transparent 70%), #07091a",
+                          "radial-gradient(ellipse 90% 55% at 50% -5%, color-mix(in srgb, var(--brand-primary) 18%, transparent) 0%, color-mix(in srgb, var(--brand-primary) 4%, transparent) 45%, transparent 70%), var(--mk-bg)",
                       }
                     : undefined
                 }
@@ -90,26 +91,16 @@ export function PricingGrid({ lang }: { lang: Lang }) {
                   </div>
                 )}
                 <div className="mb-5">
-                  <p
-                    className={`mb-1 text-sm font-medium ${tier.highlight ? "text-white/60" : "[color:var(--mk-text-muted)]"}`}
-                  >
+                  <p className="mb-1 text-sm font-medium [color:var(--mk-text-muted)]">
                     {tier.name}
                   </p>
                   <div className="flex items-baseline gap-1">
-                    <span
-                      className={`text-3xl font-bold ${tier.highlight ? "text-white" : "[color:var(--mk-text)]"}`}
-                    >
+                    <span className="text-3xl font-bold [color:var(--mk-text)]">
                       {displayPrice}
                     </span>
-                    <span
-                      className={`text-xs ${tier.highlight ? "text-white/60" : "[color:var(--mk-text-muted)]"}`}
-                    >
-                      {displayPeriod}
-                    </span>
+                    <span className="text-xs [color:var(--mk-text-muted)]">{displayPeriod}</span>
                   </div>
-                  <p
-                    className={`mt-2 text-xs leading-relaxed ${tier.highlight ? "text-white/70" : "[color:var(--mk-text-muted)]"}`}
-                  >
+                  <p className="mt-2 text-xs leading-relaxed [color:var(--mk-text-muted)]">
                     {tier.blurb}
                   </p>
                 </div>
@@ -117,7 +108,7 @@ export function PricingGrid({ lang }: { lang: Lang }) {
                   {tier.features.map((f) => (
                     <li
                       key={f}
-                      className={`flex items-start gap-2 text-xs ${tier.highlight ? "text-white/85" : "[color:var(--mk-text-muted)]"}`}
+                      className="flex items-start gap-2 text-xs [color:var(--mk-text-muted)]"
                     >
                       <Check
                         size={13}

@@ -216,7 +216,9 @@ export function WhatsAppSpotlight({ lang, children }: { lang: Lang; children?: R
     <section
       data-tone="dark"
       className="relative z-10 overflow-hidden px-4 py-24 sm:px-6 lg:px-8"
-      style={{ background: "linear-gradient(180deg, rgba(13,25,45,0.35), var(--mk-bg))" }}
+      style={{
+        background: `linear-gradient(180deg, color-mix(in srgb, var(--brand-glow) 60%, transparent), var(--mk-bg))`,
+      }}
     >
       <div className="mx-auto grid max-w-6xl items-center gap-14 lg:grid-cols-2">
         <motion.div {...reveal(0)}>

@@ -75,7 +75,11 @@ export default function ScrollPinnedDashboard({
   // Y offset: subtle slide-up (24px max — 40 was too much)
   const yRaw = useTransform(scrollYProgress, [0, 0.4, 1], [24, 0, 0]);
   // Blur: 4px→0 (max 4px — 8px was too aggressive)
-  const blurRaw = useTransform(scrollYProgress, [0, 0.25, 0.45], ["blur(4px)", "blur(0px)", "blur(0px)"]);
+  const blurRaw = useTransform(
+    scrollYProgress,
+    [0, 0.25, 0.45],
+    ["blur(4px)", "blur(0px)", "blur(0px)"]
+  );
 
   // ─── Spring-smoothed values (buttery scroll-follow) ──────────────────
   const scale = useSpring(scaleRaw, SPRING_SMOOTH);
@@ -88,19 +92,25 @@ export default function ScrollPinnedDashboard({
     scrollYProgress,
     [0.05, 0.3, 0.35, 0.6, 0.65, 0.9],
     [
-      CURSOR_POSITIONS[0].x, CURSOR_POSITIONS[0].x,
-      CURSOR_POSITIONS[1].x, CURSOR_POSITIONS[1].x,
-      CURSOR_POSITIONS[2].x, CURSOR_POSITIONS[2].x,
-    ],
+      CURSOR_POSITIONS[0].x,
+      CURSOR_POSITIONS[0].x,
+      CURSOR_POSITIONS[1].x,
+      CURSOR_POSITIONS[1].x,
+      CURSOR_POSITIONS[2].x,
+      CURSOR_POSITIONS[2].x,
+    ]
   );
   const cursorYRaw = useTransform(
     scrollYProgress,
     [0.05, 0.3, 0.35, 0.6, 0.65, 0.9],
     [
-      CURSOR_POSITIONS[0].y, CURSOR_POSITIONS[0].y,
-      CURSOR_POSITIONS[1].y, CURSOR_POSITIONS[1].y,
-      CURSOR_POSITIONS[2].y, CURSOR_POSITIONS[2].y,
-    ],
+      CURSOR_POSITIONS[0].y,
+      CURSOR_POSITIONS[0].y,
+      CURSOR_POSITIONS[1].y,
+      CURSOR_POSITIONS[1].y,
+      CURSOR_POSITIONS[2].y,
+      CURSOR_POSITIONS[2].y,
+    ]
   );
   const cursorX = useSpring(cursorXRaw, SPRING_CURSOR);
   const cursorY = useSpring(cursorYRaw, SPRING_CURSOR);
@@ -109,7 +119,7 @@ export default function ScrollPinnedDashboard({
   const cursorScaleRaw = useTransform(
     scrollYProgress,
     [0.05, 0.28, 0.35, 0.58, 0.65, 0.88],
-    [1, 1, 0.92, 1, 0.92, 1],
+    [1, 1, 0.92, 1, 0.92, 1]
   );
   const cursorScale = useSpring(cursorScaleRaw, SPRING_CURSOR);
 
@@ -117,7 +127,7 @@ export default function ScrollPinnedDashboard({
   const cursorLabelOpacityRaw = useTransform(
     scrollYProgress,
     [0.08, 0.18, 0.25, 0.38, 0.48, 0.55, 0.68, 0.78, 0.85],
-    [0, 1, 0, 0, 1, 0, 0, 1, 0],
+    [0, 1, 0, 0, 1, 0, 0, 1, 0]
   );
   const cursorLabelOpacity = useSpring(cursorLabelOpacityRaw, SPRING_SMOOTH);
 
@@ -144,7 +154,10 @@ export default function ScrollPinnedDashboard({
       <section className="px-4 py-24 sm:px-6 lg:px-8" aria-label={title}>
         <div className="mx-auto max-w-5xl">
           <SectionHeading badge={badge} title={title} sub={sub} />
-          <div className="rounded-2xl border [border-color:var(--mk-border)] shadow-2xl shadow-black/20" data-tone="dashboard">
+          <div
+            className="rounded-2xl border [border-color:var(--mk-border)] shadow-2xl shadow-black/20"
+            data-tone="dashboard"
+          >
             <DashboardReel lang={lang} />
           </div>
         </div>
@@ -176,7 +189,10 @@ export default function ScrollPinnedDashboard({
           }}
           className="relative w-full max-w-5xl px-4"
         >
-          <div className="rounded-2xl border [border-color:var(--mk-border)] shadow-2xl shadow-black/30" data-tone="dashboard">
+          <div
+            className="rounded-2xl border [border-color:var(--mk-border)] shadow-2xl shadow-black/30"
+            data-tone="dashboard"
+          >
             <DashboardReel lang={lang} controlledView={currentView} />
           </div>
 
@@ -196,15 +212,14 @@ export default function ScrollPinnedDashboard({
               style={{
                 background:
                   "linear-gradient(145deg, #fff, color-mix(in srgb, var(--brand-text) 40%, #fff))",
-                clipPath:
-                  "polygon(0 0, 100% 48%, 58% 58%, 78% 100%, 55% 100%, 38% 64%, 0 84%)",
+                clipPath: "polygon(0 0, 100% 48%, 58% 58%, 78% 100%, 55% 100%, 38% 64%, 0 84%)",
               }}
             >
               <span className="absolute inset-0 rounded-sm border border-white/40" />
             </span>
             <motion.span
               style={{ opacity: cursorLabelOpacity }}
-              className="rounded-full border border-white/10 px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap text-white backdrop-blur-md [background:color-mix(in_srgb,#0d0d1a_85%,transparent)]"
+              className="rounded-full border border-white/10 px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap text-white backdrop-blur-md [background:color-mix(in_srgb,var(--mk-surface)_85%,transparent)]"
             >
               {lang === "en" ? "Click to interact" : "Klicken zum Interagieren"}
             </motion.span>

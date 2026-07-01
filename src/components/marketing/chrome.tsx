@@ -165,18 +165,23 @@ export function Section({
   id,
   className = "",
   children,
+  ...rest
 }: {
   tone?: Tone;
   id?: string;
   className?: string;
   children: React.ReactNode;
-}) {
+} & React.HTMLAttributes<HTMLElement>) {
+  // `...rest` forwards native section attributes (notably `aria-label`, which
+  // callers pass for landmark labeling) onto the real <section> — previously
+  // these were silently dropped, leaving the marketing landmarks unlabeled.
   return (
     <section
       id={id}
       data-tone={tone}
       className={`relative z-10 ${className}`}
       style={{ background: "var(--mk-bg)" }}
+      {...rest}
     >
       {children}
     </section>
@@ -1275,11 +1280,11 @@ export function SectionHeading({
           {badge}
         </motion.span>
       )}
-      <h2 className="mb-4 [font-family:var(--font-display)] text-2xl font-black tracking-tight [color:var(--mk-text)] md:text-3xl">
+      <h2 className="mx-auto mb-4 max-w-3xl [font-family:var(--font-display)] text-[1.75rem] leading-[1.12] font-black tracking-[-0.02em] text-balance [color:var(--mk-text)] md:text-4xl">
         {title}
       </h2>
       {sub && (
-        <p className="mx-auto max-w-2xl text-base leading-relaxed [color:var(--mk-text-muted)] md:text-lg">
+        <p className="mx-auto max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg">
           {sub}
         </p>
       )}

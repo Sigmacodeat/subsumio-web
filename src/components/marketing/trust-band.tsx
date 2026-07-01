@@ -158,7 +158,7 @@ export default function TrustBand({ lang, industry }: { lang: Lang; industry?: s
             />
             {c.eyebrow}
           </span>
-          <h2 className="mb-4 [font-family:var(--font-display)] text-2xl font-black [color:var(--mk-text)] md:text-3xl">
+          <h2 className="mb-4 [font-family:var(--font-display)] text-[1.75rem] leading-[1.12] font-black tracking-[-0.02em] text-balance [color:var(--mk-text)] md:text-4xl">
             {c.title}
           </h2>
           <p className="mx-auto max-w-2xl text-base [color:var(--mk-text-muted)] md:text-lg">
@@ -217,7 +217,7 @@ export default function TrustBand({ lang, industry }: { lang: Lang; industry?: s
             return (
               <span
                 key={badge.label}
-                className="inline-flex items-center gap-2 rounded-full border [border-color:var(--mk-border)] px-4 py-2 text-xs font-semibold [color:var(--mk-text-muted)] [background:var(--mk-surface)]"
+                className="inline-flex items-center gap-2 rounded-full border [border-color:var(--mk-border)] px-4 py-2 text-sm font-semibold [color:var(--mk-text-muted)] [background:var(--mk-surface)]"
               >
                 <BadgeIcon size={14} style={{ color: "var(--signal-green)" }} />
                 {badge.label}

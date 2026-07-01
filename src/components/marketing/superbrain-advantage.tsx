@@ -125,9 +125,10 @@ export default function SuperbrainAdvantage({ lang }: { lang: Lang }) {
 
   return (
     <section
-      data-tone="light"
+      data-tone="slate"
       aria-label={lang !== "en" ? "Die Subsumio-Engine" : "The Subsumio engine"}
-      className="relative z-10 overflow-hidden px-4 py-24 [background:var(--mk-surface)] sm:px-6 lg:px-8"
+      className="relative z-10 overflow-hidden px-4 py-24 sm:px-6 lg:px-8"
+      style={{ background: "var(--mk-bg)" }}
     >
       <div className="brand-glow-bg absolute inset-x-0 top-16 h-72 opacity-25 blur-3xl" />
       <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[1fr_1.05fr]">
@@ -138,7 +139,7 @@ export default function SuperbrainAdvantage({ lang }: { lang: Lang }) {
           transition={{ duration: 0.5, ease: "easeOut" }}
         >
           <p className="brand-text mb-4 font-mono text-xs tracking-wider uppercase">{t.eyebrow}</p>
-          <h2 className="mb-5 [font-family:var(--font-display)] text-2xl leading-tight font-black [color:var(--mk-text)] md:text-3xl">
+          <h2 className="mb-5 [font-family:var(--font-display)] text-[1.75rem] leading-[1.12] font-black tracking-[-0.02em] text-balance [color:var(--mk-text)] md:text-4xl">
             {t.title}
           </h2>
           <p className="mb-8 text-base leading-relaxed [color:var(--mk-text-muted)] md:text-lg">

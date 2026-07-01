@@ -76,8 +76,9 @@ export default function ProductWorkflowShowcase({
   return (
     <section
       ref={sectionRef}
+      data-tone="light"
       className="relative z-10 overflow-hidden px-4 py-24 sm:px-6 lg:px-8"
-      style={industry ? styleForIndustry(industry) : undefined}
+      style={{ background: "var(--mk-bg)", ...(industry ? styleForIndustry(industry) : {}) }}
     >
       <div className="brand-glow-bg absolute inset-x-0 top-1/3 h-64 opacity-40 blur-3xl" />
       <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:gap-14">
@@ -88,7 +89,7 @@ export default function ProductWorkflowShowcase({
           transition={{ duration: 0.5, ease: "easeOut" }}
         >
           <p className="brand-text mb-4 font-mono text-xs tracking-wider uppercase">{c.eyebrow}</p>
-          <h2 className="mb-5 [font-family:var(--font-display)] text-2xl leading-tight font-black [color:var(--mk-text)] md:text-3xl">
+          <h2 className="mb-5 [font-family:var(--font-display)] text-[1.75rem] leading-[1.12] font-black tracking-[-0.02em] [color:var(--mk-text)] md:text-4xl">
             {brand}
             <br />
             <span className="gradient-text glow-text">{signature}</span>

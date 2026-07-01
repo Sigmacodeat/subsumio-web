@@ -97,10 +97,8 @@ function MarqueeRow({
     <div
       className="relative flex overflow-hidden"
       style={{
-        maskImage:
-          "linear-gradient(to right, transparent, black 6%, black 94%, transparent)",
-        WebkitMaskImage:
-          "linear-gradient(to right, transparent, black 6%, black 94%, transparent)",
+        maskImage: "linear-gradient(to right, transparent, black 6%, black 94%, transparent)",
+        WebkitMaskImage: "linear-gradient(to right, transparent, black 6%, black 94%, transparent)",
       }}
     >
       <motion.div
@@ -127,13 +125,13 @@ function MarqueeRow({
             <div
               key={`${item.label}-${i}`}
               aria-hidden={isDuplicate || undefined}
-              className="group flex shrink-0 items-center gap-2.5 rounded-full border [border-color:var(--mk-border)] bg-[color:var(--mk-bg)] px-4 py-2 opacity-45 transition-all duration-300 hover:border-[color:var(--brand-text)] hover:opacity-100 hover:shadow-lg hover:shadow-[color:var(--brand-text)]/10"
+              className="group flex shrink-0 items-center gap-2.5 rounded-full border [border-color:var(--mk-border)] bg-[color:var(--mk-bg)] px-4 py-2 opacity-60 transition-all duration-300 hover:border-[color:var(--brand-text)] hover:opacity-100 hover:shadow-lg hover:shadow-[color:var(--brand-text)]/10"
             >
               <Icon
                 size={20}
                 className="text-[color:var(--brand-text)] transition-transform duration-300 group-hover:scale-110"
               />
-              <span className="whitespace-nowrap text-sm font-semibold [color:var(--mk-text)]">
+              <span className="text-sm font-semibold whitespace-nowrap [color:var(--mk-text)]">
                 {item.label}
               </span>
             </div>
@@ -153,13 +151,13 @@ export default function LogoMarquee({ lang }: { lang: Lang }) {
 
   const eyebrow =
     lang !== "en" ? "Zertifizierungen & Integrationen" : "Certifications & Integrations";
-  const heading =
-    lang !== "en" ? "Vertrauen, das man belegen kann" : "Trust you can verify";
+  const heading = lang !== "en" ? "Vertrauen, das man belegen kann" : "Trust you can verify";
 
   return (
     <section
       aria-label={eyebrow}
-      className="relative overflow-hidden border-y [border-color:var(--mk-border)] [background:var(--mk-surface)] py-14"
+      data-tone="light"
+      className="relative overflow-hidden py-14 [background:var(--mk-surface)]"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
@@ -172,25 +170,14 @@ export default function LogoMarquee({ lang }: { lang: Lang }) {
             background: "color-mix(in srgb, var(--brand-text) 8%, transparent)",
           }}
         >
-          <span
-            className="h-1.5 w-1.5 rounded-full"
-            style={{ background: "var(--brand-text)" }}
-          />
+          <span className="h-1.5 w-1.5 rounded-full" style={{ background: "var(--brand-text)" }} />
           {eyebrow}
         </span>
-        <h3 className="text-base font-semibold [color:var(--mk-text-muted)]">
-          {heading}
-        </h3>
+        <h3 className="text-lg font-semibold [color:var(--mk-text-muted)]">{heading}</h3>
       </div>
 
       {/* Row 1 — scrolls right to left */}
-      <MarqueeRow
-        items={topItems}
-        direction={1}
-        duration={35}
-        paused={paused}
-        reduce={reduce}
-      />
+      <MarqueeRow items={topItems} direction={1} duration={35} paused={paused} reduce={reduce} />
 
       {/* Row 2 — scrolls left to right (opposite direction, slower) */}
       <div className="mt-8">

@@ -6,9 +6,15 @@
 // intentionally restrained to project trust and seriousness. All motion respects
 // prefers-reduced-motion.
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
+import {
+  motion,
+  useReducedMotion,
+  useScroll,
+  useTransform,
+  useMotionValueEvent,
+} from "framer-motion";
 import { ArrowRight, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
@@ -28,7 +34,6 @@ import {
   StaggerItem,
   EASE,
   AnimatedCounter,
-  MagneticCard,
   MagneticButton,
   ScrollProgress,
   SplitTextReveal,
@@ -62,21 +67,26 @@ export default function LandingPage({ lang }: { lang: Lang }) {
   const motifY = useTransform(heroScrollProgress, [0, 1], [0, reduce ? 0 : 120]);
   const motifOpacity = useTransform(heroScrollProgress, [0, 0.8], [0.06, 0]);
 
-  // Sticky CTA visibility — appears after hero scrolls past
+  // Sticky CTA visibility — appears after hero scrolls past. Driven by
+  // useMotionValueEvent (fires only on scroll change) with a threshold-crossing
+  // guard so React re-renders at most twice (show/hide), not once per frame —
+  // keeps INP healthy vs. a raw scroll listener + per-frame setState.
   const { scrollY: globalScrollY } = useScroll();
   const [stickyVisible, setStickyVisible] = useState(false);
-  useEffect(() => {
-    const threshold = 600;
-    const onScroll = () => setStickyVisible(globalScrollY.get() > threshold);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, [globalScrollY]);
+  useMotionValueEvent(globalScrollY, "change", (latest) => {
+    const shouldShow = latest > 600;
+    setStickyVisible((prev) => (prev === shouldShow ? prev : shouldShow));
+  });
 
   return (
     <>
       <ScrollProgress />
-      <div data-tone="light" className="min-h-screen overflow-x-hidden" lang={lang}>
+      {/* overflow-x-CLIP (not -hidden): `hidden` forces overflow-y to `auto`,
+          turning this wrapper into a scroll container that silently breaks every
+          `position: sticky` descendant (the scroll-pinned dashboard never pinned).
+          `clip` clips the horizontal marquee/parallax overflow without
+          establishing a scroll container, so sticky works. */}
+      <div data-tone="light" className="min-h-screen overflow-x-clip" lang={lang}>
         {/* Hero — clean dark slate editorial surface with subtle motif */}
         <Section
           tone="slate"
@@ -88,10 +98,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
               style={{ y: motifY, opacity: motifOpacity }}
               className="absolute inset-0 z-0 hidden md:block"
             >
-              <IndustryHeroMotif
-                industry="legal"
-                className="h-full w-full opacity-[1]"
-              />
+              <IndustryHeroMotif industry="legal" className="h-full w-full opacity-[1]" />
             </motion.div>
             <div className="relative z-10">
               <motion.div
@@ -117,13 +124,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 className="mb-6 text-[clamp(2.5rem,7vw,4rem)] leading-[1.08] font-black tracking-tight [color:var(--mk-text)]"
                 style={{ fontFamily: "var(--font-display)" }}
               >
-                <SplitTextReveal
-                  as="span"
-                  delay={0.2}
-                  stagger={0.08}
-                  useAnimate
-                  className="block"
-                >
+                <SplitTextReveal as="span" delay={0.2} stagger={0.08} useAnimate className="block">
                   {`${t.h1a}\n${t.h1b}`}
                 </SplitTextReveal>
               </h1>
@@ -133,7 +134,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 transition={
                   reduce ? { duration: 0 } : { duration: 0.5, ease: EASE.out, delay: 0.4 }
                 }
-                className="mx-auto mb-12 max-w-2xl text-base leading-relaxed [color:var(--mk-text-muted)] md:text-lg"
+                className="mx-auto mb-12 max-w-2xl text-base leading-relaxed text-pretty [color:var(--mk-text-muted)] md:text-lg"
               >
                 {t.sub}
               </motion.p>
@@ -190,42 +191,8 @@ export default function LandingPage({ lang }: { lang: Lang }) {
         {/* Logo Marquee — certifications & integrations sliding from right to left */}
         <LogoMarquee lang={lang} />
 
-        {/* Stats — subtle surface band on the light page */}
-        <Section tone="light" className="px-4 py-20 sm:px-6 lg:px-8" aria-label="Key metrics">
-          <motion.div {...reveal} className="mx-auto max-w-4xl">
-            <StaggerContainer
-              className="mb-6 grid grid-cols-2 gap-8 text-center md:grid-cols-4"
-              stagger={0.09}
-            >
-              {t.stats.map((stat) => {
-                const num = parseFloat(stat.value.replace(/[^0-9.]/g, ""));
-                const suffix = stat.value.replace(/[0-9.,]/g, "");
-                const prefix = stat.value.match(/^[^0-9]*/)?.[0] ?? "";
-                const isNumeric = !isNaN(num) && num > 0;
-                return (
-                  <StaggerItem key={stat.label}>
-                    <p className="mb-1 text-3xl font-black [color:var(--brand-text)]">
-                      {isNumeric ? (
-                        <AnimatedCounter
-                          to={num}
-                          prefix={prefix}
-                          suffix={suffix}
-                          decimals={stat.value.includes(".") ? 1 : 0}
-                        />
-                      ) : (
-                        stat.value
-                      )}
-                    </p>
-                    <p className="text-sm [color:var(--mk-text-muted)]">{stat.label}</p>
-                  </StaggerItem>
-                );
-              })}
-            </StaggerContainer>
-            <p className="text-center text-xs [color:var(--mk-text-subtle)]">{t.statsNote}</p>
-          </motion.div>
-        </Section>
-
-        {/* Pain — problem hook */}
+        {/* Pain — agitation hook. Comes directly after the hero trust strip so
+            the emotional cost lands BEFORE the proof band (P-A-S-P narrative). */}
         {"pains" in t && t.pains && (
           <Section
             tone="light"
@@ -246,11 +213,13 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                     <GlowCard
                       glowColor="var(--signal-rose)"
                       intensity={0.1}
-                      className="h-full rounded-xl border [border-color:var(--mk-border)] p-5 transition-all duration-300 [background:var(--mk-surface)] hover:-translate-y-1 hover:shadow-lg"
+                      className="h-full rounded-xl border [border-color:var(--mk-border)] p-5 transition-all duration-300 [background:var(--mk-surface-2)] hover:-translate-y-1 hover:shadow-lg"
                     >
                       <div className="flex items-start gap-4">
-                        <p className="text-2xl font-black [color:var(--brand-text)]">{p.value}</p>
-                        <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">
+                        <p className="w-[88px] shrink-0 text-2xl leading-[1.1] font-black tracking-tight text-balance [color:var(--brand-text)]">
+                          {p.value}
+                        </p>
+                        <p className="text-sm leading-relaxed text-pretty [color:var(--mk-text-muted)]">
                           {p.label}
                         </p>
                       </div>
@@ -262,7 +231,48 @@ export default function LandingPage({ lang }: { lang: Lang }) {
           </Section>
         )}
 
+        {/* Stats — proof band. Answers the agitation above with hard metrics. */}
+        <Section tone="light" className="px-4 py-20 sm:px-6 lg:px-8" aria-label="Key metrics">
+          <motion.div {...reveal} className="mx-auto max-w-4xl">
+            <StaggerContainer
+              className="mb-6 grid grid-cols-2 gap-8 text-center md:grid-cols-4"
+              stagger={0.09}
+            >
+              {t.stats.map((stat) => {
+                const num = parseFloat(stat.value.replace(/[^0-9.]/g, ""));
+                const suffix = stat.value.replace(/[0-9.,]/g, "");
+                const prefix = stat.value.match(/^[^0-9]*/)?.[0] ?? "";
+                const isNumeric = !isNaN(num) && num > 0;
+                return (
+                  <StaggerItem key={stat.label}>
+                    <p className="mb-1 text-4xl font-black [color:var(--brand-text)] md:text-5xl">
+                      {isNumeric ? (
+                        <AnimatedCounter
+                          to={num}
+                          prefix={prefix}
+                          suffix={suffix}
+                          decimals={stat.value.includes(".") ? 1 : 0}
+                        />
+                      ) : (
+                        stat.value
+                      )}
+                    </p>
+                    <p className="text-sm [color:var(--mk-text-muted)]">{stat.label}</p>
+                  </StaggerItem>
+                );
+              })}
+            </StaggerContainer>
+            <p className="text-center text-xs [color:var(--mk-text-subtle)]">{t.statsNote}</p>
+          </motion.div>
+        </Section>
+
+        {/* Gradient transition: light Stats → slate SuperbrainAdvantage */}
+        <SectionTransition from="var(--tone-light-bg)" to="var(--tone-slate-bg)" height={72} />
+
         <SuperbrainAdvantage lang={lang} />
+
+        {/* Gradient transition: slate SuperbrainAdvantage → light Features */}
+        <SectionTransition from="var(--tone-slate-bg)" to="var(--tone-light-bg)" height={72} />
 
         {/* Features — what it does (light, after unique mechanism) */}
         <Section
@@ -307,7 +317,11 @@ export default function LandingPage({ lang }: { lang: Lang }) {
           </div>
         </Section>
 
-        {/* Dashboard in action — scroll-pinned zoom with guided cursor */}
+        {/* Dashboard in action — scroll-pinned zoom with guided cursor.
+            Kept on the light page: the 200vh sticky viewport is taller than the
+            reel, so a dark/slate frame would expose a large empty void below the
+            pinned dashboard. Run 1 already closes on the WhatsApp dark spotlight,
+            so no extra tone anchor is needed here. */}
         <ScrollPinnedDashboard
           lang={lang}
           badge={ui.inActionBadge}
@@ -339,7 +353,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={viewport}
                   transition={{ duration: 0.4, delay: i * 0.08 }}
-                  className="rounded-2xl border [border-color:var(--mk-border)] p-6 [box-shadow:var(--mk-card-shadow)] transition-all duration-300 [background:var(--mk-bg)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-xl"
+                  className="rounded-2xl border [border-color:var(--mk-border)] p-6 [box-shadow:var(--mk-card-shadow)] transition-all duration-300 [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-xl"
                 >
                   <p className="mb-3 text-xs font-semibold tracking-wider [color:var(--brand-text)] uppercase">
                     {s.role}
@@ -362,9 +376,15 @@ export default function LandingPage({ lang }: { lang: Lang }) {
         {/* Testimonials — social proof from real lawyers */}
         <TestimonialsSection />
 
-        {/* Comparison table — Subsumio vs. other AI tools (light, before pricing to justify) */}
+        {/* Gradient transition: light Trust → dark Comparison spotlight */}
+        <SectionTransition from="var(--tone-light-bg)" to="var(--tone-dark-bg)" height={72} />
+
+        {/* Comparison table — Subsumio vs. other AI tools. Dark "spotlight" tone
+            breaks the long light run and frames the differentiation moment; the
+            dark scope carries AA-bright signal accents (green/rose/blue), unlike
+            slate — so the ✓/✗ cells stay legible. */}
         <Section
-          tone="light"
+          tone="dark"
           className="px-4 py-24 sm:px-6 lg:px-8"
           aria-label={lang === "en" ? "Comparison" : "Vergleich"}
         >
@@ -426,6 +446,9 @@ export default function LandingPage({ lang }: { lang: Lang }) {
           </motion.div>
         </Section>
 
+        {/* Gradient transition: dark Comparison → light Pricing */}
+        <SectionTransition from="var(--tone-dark-bg)" to="var(--tone-light-bg)" height={72} />
+
         {/* Pricing */}
         <Section
           tone="light"
@@ -455,7 +478,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
         </Section>
 
         {/* Gradient transition: light FAQ → dark CTA */}
-        <SectionTransition from="var(--mk-bg)" to="#06060f" height={80} />
+        <SectionTransition from="var(--tone-light-bg)" to="var(--tone-dark-bg)" height={80} />
 
         {/* Final CTA — clean, serious close with gradient depth */}
         <Section
@@ -466,7 +489,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
           <GradientMesh className="z-0" />
           <motion.div {...reveal} className="relative z-10 mx-auto max-w-3xl text-center">
             <SubsumioMark size={48} className="mx-auto mb-7" />
-            <h2 className="mb-4 [font-family:var(--font-display)] text-2xl font-black [color:var(--mk-text)] md:text-3xl">
+            <h2 className="mb-4 [font-family:var(--font-display)] text-[1.75rem] leading-[1.12] font-black tracking-[-0.02em] text-balance [color:var(--mk-text)] md:text-4xl">
               {t.ctaTitle}
             </h2>
             <p className="mb-10 text-base [color:var(--mk-text-muted)] md:text-lg">{t.ctaSub}</p>
@@ -508,7 +531,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
         </Section>
 
         {/* Gradient transition: dark CTA → footer */}
-        <SectionTransition from="#06060f" to="var(--mk-surface)" height={60} />
+        <SectionTransition from="var(--tone-dark-bg)" to="var(--tone-dark-surface)" height={60} />
 
         {/* Sticky CTA bar — appears after hero scroll (legal SaaS best practice) */}
         <motion.div
@@ -519,7 +542,8 @@ export default function LandingPage({ lang }: { lang: Lang }) {
             pointerEvents: stickyVisible ? "auto" : "none",
           }}
           transition={{ duration: 0.3, ease: EASE.out }}
-          className="fixed bottom-0 left-0 right-0 z-50 border-t [border-color:var(--mk-border)] [background:color-mix(in_srgb,var(--mk-surface)_92%,transparent)] backdrop-blur-lg"
+          data-tone="dark"
+          className="fixed right-0 bottom-0 left-0 z-50 border-t [border-color:var(--mk-border)] backdrop-blur-lg [background:color-mix(in_srgb,var(--mk-surface)_92%,transparent)]"
           aria-hidden={!stickyVisible}
         >
           <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
@@ -529,7 +553,9 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 {lang !== "en" ? "Subsumio testen" : "Try Subsumio"}
               </span>
               <span className="hidden text-xs [color:var(--mk-text-subtle)] sm:inline">
-                {lang !== "en" ? "14 Tage gratis · Keine Kreditkarte" : "14 days free · No credit card"}
+                {lang !== "en"
+                  ? "14 Tage gratis · Keine Kreditkarte"
+                  : "14 days free · No credit card"}
               </span>
             </div>
             <Link href={p(lang, "/signup")}>
