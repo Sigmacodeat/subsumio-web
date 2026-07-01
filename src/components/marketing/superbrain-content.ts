@@ -23,7 +23,7 @@ export const copy = {
     hero: {
       eyebrow: "Das Subsumio SuperBrain",
       title: "Nicht nur KI. Ein künstliches Gehirn für deine Kanzlei — das jede Nacht regeneriert.",
-      sub: "Andere KI-Tools beantworten einen Prompt und vergessen. Subsumio baut jede Nacht ein lebendiges juristisches Gedächtnis auf — mit Fakten, Takes, Widerspruchsprüfung und fünf Qualitäts-Ebenen. Wie der menschliche Hippocampus Erinnerungen konsolidiert, konsolidiert das SuperBrain deine Akten zu verlässlichem Wissen. Mit Fundstellen. Ohne Halluzinationen.",
+      sub: "Andere KI-Tools erinnern sich an Chat-Verläufe. Subsumio versteht deine Akten. Jede Nacht baut das SuperBrain ein lebendiges juristisches Gedächtnis auf — mit Fakten, Takes, Widerspruchsprüfung und fünf Qualitäts-Ebenen. Wie der menschliche Hippocampus Erinnerungen im Schlaf konsolidiert und versteht, konsolidiert das SuperBrain deine Akten zu verlässlichem Wissen. Mit Fundstellen. Ohne Halluzinationen.",
       cta: "14 Tage kostenlos testen",
       ctaSecondary: "Features ansehen",
     },
@@ -51,7 +51,7 @@ export const copy = {
     // ── NARRATIVE SECTION 1: "Wie andere arbeiten" ──
     othersTitle: "Prompt-KI: fragt, antwortet, vergisst",
     othersSub:
-      "Du stellst eine Frage. Das Modell antwortet. Dann vergisst es alles. Jeder Prompt ist isoliert — kein Gedächtnis, kein Lernen, kein Verstehen. Halluzinationen werden auf Prompt-Ebene bekämpft: mit Hoffnung. Das Modell ist Richter und Angeklagter zugleich.",
+      "Du stellst eine Frage. Das Modell antwortet. Dann vergisst es alles. Andere Tools kündigen 'Memory' an — wir haben es gebaut. Nicht als Chat-Verlauf-Speicherung, sondern als lebendigen Wissensgraphen. Jeder Prompt bei anderen ist isoliert — kein Gedächtnis, kein Lernen, kein Verstehen. Halluzinationen werden auf Prompt-Ebene bekämpft: mit Hoffnung. Das Modell ist Richter und Angeklagter zugleich.",
     othersSteps: [
       { label: "Prompt", desc: "Du fragst GPT-5 oder Claude", icon: FileSearch },
       { label: "Antwort", desc: "Modell generiert — ohne Gedächtnis", icon: Sparkles },
@@ -62,7 +62,8 @@ export const copy = {
       },
     ],
     othersPain: [
-      "Kein Wissensgraph — jeder Prompt startet bei null",
+      "'Memory' als Roadmap-Ankündigung — nicht als Architektur",
+      "Thread-Retention statt Wissensgraph — Chats werden gespeichert, nicht verstanden",
       "Halluzinationen werden im Prompt-Level bekämpft (hoffnungsbasiert)",
       "Keine Widerspruchserkennung zwischen Antworten",
       "Premium-Preise für ein einzelnes Front-End-Modell ohne Gedächtnis",
@@ -71,7 +72,7 @@ export const copy = {
     // ── NARRATIVE SECTION 2: "Wie unser Gehirn arbeitet" ──
     oursTitle: "SuperBrain: lernt, konsolidiert, versteht",
     oursSub:
-      "Subsumio baut jede Nacht einen Wissensgraphen aus deinen Dokumenten. Fakten werden extrahiert, synthetisiert, auf Widersprüche geprüft und mit einem Ensemble-Judge abgesichert — der menschliche Juristen übertrifft. Was herauskommt, ist kein Chat. Es ist ein juristisches Langzeitgedächtnis, das jede Nacht schärfer wird.",
+      "Subsumio baut jede Nacht einen Wissensgraphen aus deinen Dokumenten. Fakten werden extrahiert, synthetisiert, auf Widersprüche geprüft und mit einem Ensemble-Judge abgesichert — der menschliche Juristen übertrifft. Was herauskommt, ist kein Chat-Verlauf. Es ist ein juristisches Langzeitgedächtnis, das jede Nacht schärfer wird — nicht nur größer, sondern verständiger. Je länger du es nutzt, desto besser versteht das SuperBrain deine Kanzlei.",
     oursSteps: [
       { label: "Sammeln", desc: "Dokumente, E-Mails, Akten, Konversationen", icon: FileSearch },
       {
@@ -190,7 +191,7 @@ export const copy = {
     // ── COMPARISON ──
     compareTitle: "Andere Kanzlei-KI vs. SuperBrain",
     compareSub:
-      "Harvey AI nutzt Multi-Model-Routing pro Task. Wir nutzen Multi-Model-Quality-Layer pro Take. Das ist kein Feature-Unterschied. Das ist ein architektonischer Paradigmenwechsel.",
+      "Harvey AI kündigt 'Memory' an — Thread-Retention als Roadmap. Wir haben seit Tag 1 einen Wissensgraphen mit nächtlicher Konsolidierung. Das ist kein Feature-Unterschied. Das ist ein architektonischer Paradigmenwechsel.",
     compareRows: [
       {
         feature: "Architektur",
@@ -203,14 +204,19 @@ export const copy = {
         subsumio: "Architektonisch (5 Korrektur-Ebenen + Ensemble-Judge)",
       },
       {
+        feature: "Gedächtnis / Memory",
+        others: "Roadmap-Ankündigung — Thread-Retention (noch nicht live)",
+        subsumio: "Seit Tag 1: Wissensgraph mit nächtlicher Konsolidierung",
+      },
+      {
         feature: "Wissensgraph",
         others: "Keiner — jeder Prompt ist isoliert",
         subsumio: "Dauerhafter Graph mit Fakten, Takes, Beziehungen",
       },
       {
-        feature: "Widerspruchserkennung",
-        others: "Nicht vorhanden",
-        subsumio: "Nächtliche Cross-Reference-Audit mit tiered Eskalation",
+        feature: "Nächtliche Konsolidierung",
+        others: "Nicht vorhanden — Memory ist geplante Thread-Speicherung",
+        subsumio: "25 Phasen: Konsolidierung, Widerspruchsprüfung, Regeneration",
       },
       {
         feature: "Legal Benchmark",
@@ -371,7 +377,11 @@ export const copy = {
       },
       {
         q: "Was ist der Unterschied zu Harvey AI?",
-        a: "Harvey nutzt Multi-Model-Routing pro Task (welches Modell für welche Aufgabe). Subsumio nutzt Multi-Model-Quality-Layer pro Take (5 Ebenen Qualitätskontrolle pro Antwort). Harvey hat keinen Wissensgraph, keine Widerspruchserkennung und kein Fine-Tuning auf DACH-Recht. Subsumio ist EU-Cloud oder Self-Hosted — Harvey läuft in der US-Cloud.",
+        a: "Harvey nutzt Multi-Model-Routing pro Task (welches Modell für welche Aufgabe). Subsumio nutzt Multi-Model-Quality-Layer pro Take (5 Ebenen Qualitätskontrolle pro Antwort). Harvey hat 'Memory' angekündigt — aber als Thread-Retention innerhalb einer Retention-Window, nicht als Wissensgraph. Subsumio hat seit Tag 1 einen persistenten Wissensgraphen mit nächtlicher Konsolidierung, Widerspruchserkennung und Fine-Tuning auf DACH-Recht. Subsumio ist EU-Cloud oder Self-Hosted — Harvey läuft in der US-Cloud.",
+      },
+      {
+        q: "Wie unterscheidet sich das SuperBrain von ChatGPT Memory oder Claude Memory?",
+        a: "ChatGPT und Claude speichern Chat-Verläufe und Präferenzen — sie 'erinnern' sich. Das SuperBrain 'versteht': Es baut jede Nacht einen strukturierten Wissensgraphen aus deinen Dokumenten, prüft Widersprüche, bewertet juristische Qualität mit LEXam-validierten Modellen und wird mit jeder Nacht schärfer. ChatGPT Memory ist wie ein Notizzettel. Das SuperBrain ist wie ein Associate, der jede Nacht durch deine Akten geht und am Morgen mehr versteht als am Abend davor.",
       },
       {
         q: "Kann ich das SuperBrain selbst hosten?",
@@ -402,7 +412,7 @@ export const copy = {
     hero: {
       eyebrow: "The Subsumio SuperBrain",
       title: "Not just AI. An artificial brain for your firm — regenerating every night.",
-      sub: "Other AI tools answer one prompt and forget. Subsumio builds a living legal memory every night — with facts, takes, contradiction probing and five-layer legal quality control. Just as the human hippocampus consolidates memories during sleep, the SuperBrain consolidates your cases into reliable knowledge. With citations. Zero hallucinations.",
+      sub: "Other AI tools remember chat histories. Subsumio understands your cases. Every night, the SuperBrain builds a living legal memory — with facts, takes, contradiction probing and five-layer legal quality control. Just as the human hippocampus consolidates and understands memories during sleep, the SuperBrain consolidates your cases into reliable knowledge. With citations. Zero hallucinations.",
       cta: "Start 14-day free trial",
       ctaSecondary: "Explore features",
     },
@@ -424,7 +434,7 @@ export const copy = {
     ],
     othersTitle: "Prompt AI: asks, answers, forgets",
     othersSub:
-      "You ask a question. The model answers. Then it forgets everything. Every prompt is isolated — no memory, no learning, no understanding. Hallucinations are fought at the prompt level: with hope. The model is judge and defendant at once.",
+      "You ask a question. The model answers. Then it forgets everything. Other tools announce 'Memory' — we built it. Not as chat-history storage, but as a living knowledge graph. Every prompt in other tools is isolated — no memory, no learning, no understanding. Hallucinations are fought at the prompt level: with hope. The model is judge and defendant at once.",
     othersSteps: [
       { label: "Prompt", desc: "You ask GPT-5 or Claude", icon: FileSearch },
       { label: "Answer", desc: "Model generates — without memory", icon: Sparkles },
@@ -435,7 +445,8 @@ export const copy = {
       },
     ],
     othersPain: [
-      "No knowledge graph — every prompt starts from zero",
+      "'Memory' as a roadmap announcement — not as architecture",
+      "Thread retention instead of a knowledge graph — chats are stored, not understood",
       "Hallucinations fought at prompt-level (hope-based)",
       "No contradiction detection between answers",
       "Premium pricing for a single front-end model with no memory",
@@ -443,7 +454,7 @@ export const copy = {
     ],
     oursTitle: "SuperBrain: learns, consolidates, understands",
     oursSub:
-      "Subsumio builds a knowledge graph from your documents every night. Facts are extracted, synthesized, probed for contradictions, and validated by an ensemble judge that surpasses human lawyers. The result is not a chat. It's a long-term legal memory that gets sharper every night.",
+      "Subsumio builds a knowledge graph from your documents every night. Facts are extracted, synthesized, probed for contradictions, and validated by an ensemble judge that surpasses human lawyers. The result is not a chat history. It's a long-term legal memory that gets sharper every night — not just bigger, but more understanding. The longer you use it, the better the SuperBrain understands your firm.",
     oursSteps: [
       { label: "Ingest", desc: "Documents, emails, matters, conversations", icon: FileSearch },
       {
@@ -555,7 +566,7 @@ export const copy = {
     ],
     compareTitle: "Other legal AI vs. SuperBrain",
     compareSub:
-      "Harvey AI uses multi-model routing per task. We use multi-model quality layers per take. That's not a feature difference. That's an architectural paradigm shift.",
+      "Harvey AI announces 'Memory' — thread retention as a roadmap. We've had a knowledge graph with nightly consolidation since day one. That's not a feature difference. That's an architectural paradigm shift.",
     compareRows: [
       {
         feature: "Architecture",
@@ -568,14 +579,19 @@ export const copy = {
         subsumio: "Architectural (5 correction layers + ensemble judge)",
       },
       {
+        feature: "Memory / Recall",
+        others: "Roadmap announcement — thread retention (not yet live)",
+        subsumio: "Since day 1: knowledge graph with nightly consolidation",
+      },
+      {
         feature: "Knowledge graph",
         others: "None — every prompt is isolated",
         subsumio: "Persistent graph with facts, takes, relationships",
       },
       {
-        feature: "Contradiction detection",
-        others: "Not present",
-        subsumio: "Nightly cross-reference audit with tiered escalation",
+        feature: "Nightly consolidation",
+        others: "Not present — Memory is planned thread storage",
+        subsumio: "25 phases: consolidation, contradiction probing, regeneration",
       },
       {
         feature: "Legal benchmark",
@@ -734,7 +750,11 @@ export const copy = {
       },
       {
         q: "What's the difference from Harvey AI?",
-        a: "Harvey uses multi-model routing per task (which model for which job). Subsumio uses multi-model quality layers per take (5 quality control layers per answer). Harvey has no knowledge graph, no contradiction detection, and no fine-tuning on DACH law. Subsumio is EU cloud or self-hosted — Harvey runs on US cloud.",
+        a: "Harvey uses multi-model routing per task (which model for which job). Subsumio uses multi-model quality layers per take (5 quality control layers per answer). Harvey has announced 'Memory' — but as thread retention within a retention window, not as a knowledge graph. Subsumio has had a persistent knowledge graph with nightly consolidation, contradiction detection, and fine-tuning on DACH law since day one. Subsumio is EU cloud or self-hosted — Harvey runs on US cloud.",
+      },
+      {
+        q: "How is the SuperBrain different from ChatGPT Memory or Claude Memory?",
+        a: "ChatGPT and Claude store chat histories and preferences — they 'remember'. The SuperBrain 'understands': it builds a structured knowledge graph from your documents every night, checks for contradictions, grades legal quality with LEXam-validated models, and gets sharper with every night. ChatGPT Memory is like a sticky note. The SuperBrain is like an associate who goes through your files every night and understands more by morning than the evening before.",
       },
       {
         q: "Can I self-host the SuperBrain?",
