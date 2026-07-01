@@ -195,25 +195,28 @@ export default function DashboardReel({
   lang,
   industry = "legal",
   className = "",
+  controlledView,
 }: {
   lang: Lang;
   industry?: string;
   className?: string;
+  controlledView?: number;
 }) {
   const reduce = useReducedMotion();
   const branch = BRANCHES[industry] ?? BRANCHES.legal;
   const v = branch.views[lang] ?? branch.views.de!;
   const sidebar = branch.sidebar;
   const brand = (profileForIndustry(industry)?.brand ?? "Subsumio").toLowerCase();
-  const [view, setView] = useState(reduce ? 1 : 0);
+  const [autoView, setAutoView] = useState(reduce ? 1 : 0);
+  const view = controlledView ?? autoView;
   const [typed, setTyped] = useState("");
   const [brainPhase, setBrainPhase] = useState(reduce ? 2 : 0);
 
   useEffect(() => {
-    if (reduce) return;
-    const t = setTimeout(() => setView((prev) => (prev + 1) % 3), VIEW_DURATION);
+    if (reduce || controlledView !== undefined) return;
+    const t = setTimeout(() => setAutoView((prev) => (prev + 1) % 3), VIEW_DURATION);
     return () => clearTimeout(t);
-  }, [view, reduce]);
+  }, [autoView, reduce, controlledView]);
 
   useEffect(() => {
     if (reduce) return;

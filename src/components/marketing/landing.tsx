@@ -15,7 +15,7 @@ import { SubsumioMark } from "@/components/brand/subsumio-logo";
 import { LANDING, PRICING, UI_STRINGS, p, type Lang } from "@/content/site";
 import { PricingGrid } from "./pricing-grid";
 import LiveDemo from "./live-demo";
-import DashboardReel from "./dashboard-reel";
+import ScrollPinnedDashboard from "./scroll-pinned-dashboard";
 import SuperbrainAdvantage from "./superbrain-advantage";
 import TrustBand from "./trust-band";
 import { TestimonialsSection } from "./testimonials";
@@ -307,29 +307,13 @@ export default function LandingPage({ lang }: { lang: Lang }) {
           </div>
         </Section>
 
-        {/* Dashboard in action — product visual (light section, mockup has internal dark tone) */}
-        <Section
-          tone="light"
-          className="px-4 py-24 sm:px-6 lg:px-8"
-          aria-label={lang === "en" ? "Dashboard in action" : "Dashboard in Aktion"}
-        >
-          <div className="mx-auto max-w-5xl">
-            <motion.div {...reveal}>
-              <SectionHeading
-                badge={ui.inActionBadge}
-                title={ui.dashboardTitle}
-                sub={ui.dashboardSub}
-              />
-            </motion.div>
-            <motion.div {...reveal}>
-              <MagneticCard lift={8} tilt={2} className="rounded-2xl">
-                <div data-tone="dashboard">
-                  <DashboardReel lang={lang} />
-                </div>
-              </MagneticCard>
-            </motion.div>
-          </div>
-        </Section>
+        {/* Dashboard in action — scroll-pinned zoom with guided cursor */}
+        <ScrollPinnedDashboard
+          lang={lang}
+          badge={ui.inActionBadge}
+          title={ui.dashboardTitle}
+          sub={ui.dashboardSub}
+        />
 
         {/* How it works — animated scroll-driven workflow showcase */}
         <ProductWorkflowShowcase lang={lang} industry="legal" />
