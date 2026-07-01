@@ -30,6 +30,7 @@ import {
   useMotionValueEvent,
   type MotionValue,
 } from "framer-motion";
+// Note: MotionValue<string> type import retained for cursor position values
 import DashboardReel from "./dashboard-reel";
 import { SectionHeading } from "./chrome";
 import type { Lang } from "@/content/site";
@@ -68,24 +69,18 @@ export default function ScrollPinnedDashboard({
   });
 
   // ─── Raw scroll-linked transforms ────────────────────────────────────
-  // Scale: 0.88→1 with ease-out via intermediate keyframe at 0.4
-  const scaleRaw = useTransform(scrollYProgress, [0, 0.4, 1], [0.88, 1, 1]);
-  // Opacity: gentle fade-in
-  const opacityRaw = useTransform(scrollYProgress, [0, 0.12, 0.4, 1], [0.4, 0.85, 1, 1]);
-  // Y offset: subtle slide-up (24px max — 40 was too much)
-  const yRaw = useTransform(scrollYProgress, [0, 0.4, 1], [24, 0, 0]);
-  // Blur: 4px→0 (max 4px — 8px was too aggressive)
-  const blurRaw = useTransform(
-    scrollYProgress,
-    [0, 0.25, 0.45],
-    ["blur(4px)", "blur(0px)", "blur(0px)"]
-  );
+  // Scale: 0.92→1 with ease-out via intermediate keyframe at 0.4
+  // (0.88 was slightly too aggressive — 0.92 is the Linear/Arc sweet spot)
+  const scaleRaw = useTransform(scrollYProgress, [0, 0.4, 1], [0.92, 1, 1]);
+  // Opacity: clear fade-in (0.7 start so dashboard is visible when it pins)
+  const opacityRaw = useTransform(scrollYProgress, [0, 0.12, 0.4, 1], [0.7, 0.95, 1, 1]);
+  // Y offset: subtle slide-up (20px max — gentle, not distracting)
+  const yRaw = useTransform(scrollYProgress, [0, 0.4, 1], [20, 0, 0]);
 
   // ─── Spring-smoothed values (buttery scroll-follow) ──────────────────
   const scale = useSpring(scaleRaw, SPRING_SMOOTH);
   const opacity = useSpring(opacityRaw, SPRING_SMOOTH);
   const y = useSpring(yRaw, SPRING_SMOOTH);
-  const blur = useSpring(blurRaw, SPRING_SMOOTH);
 
   // ─── Cursor position (spring-smoothed for glide effect) ──────────────
   const cursorXRaw = useTransform(
@@ -183,9 +178,8 @@ export default function ScrollPinnedDashboard({
             scale,
             opacity,
             y,
-            filter: blur as MotionValue<string>,
             transformOrigin: "center center",
-            willChange: "transform, filter, opacity",
+            willChange: "transform, opacity",
           }}
           className="relative w-full max-w-5xl px-4"
         >
@@ -221,7 +215,7 @@ export default function ScrollPinnedDashboard({
               style={{ opacity: cursorLabelOpacity }}
               className="rounded-full border border-white/10 px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap text-white backdrop-blur-md [background:color-mix(in_srgb,var(--mk-surface)_85%,transparent)]"
             >
-              {lang === "en" ? "Click to interact" : "Klicken zum Interagieren"}
+              {lang === "en" ? "Scroll to explore" : "Scrollen zum Erkunden"}
             </motion.span>
           </motion.div>
         </motion.div>

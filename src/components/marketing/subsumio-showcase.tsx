@@ -152,8 +152,8 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
             </div>
             <div className="leading-tight">
               <p className="text-xs font-semibold [color:var(--mk-text)]">{c.phoneHeader}</p>
-              <p className="flex items-center gap-1 text-xs text-[var(--brand-secondary)]">
-                <span className="h-1.5 w-1.5 rounded-full bg-[var(--brand-secondary)]" />
+              <p className="flex items-center gap-1 text-xs [color:var(--brand-secondary)]">
+                <span className="h-1.5 w-1.5 rounded-full [background:var(--brand-secondary)]" />
                 {c.phoneStatus}
               </p>
             </div>
@@ -176,11 +176,11 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
                 className={m.from === "user" ? "flex justify-end" : "flex justify-start"}
               >
                 <div
-                  className={`max-w-[82%] rounded-2xl px-3 py-2 text-xs leading-snug whitespace-pre-line ${m.from === "user" ? "rounded-br-sm bg-emerald-500/15 text-emerald-300" : "rounded-bl-sm border [border-color:var(--mk-border-strong)] bg-blue-500/10 text-blue-200"}`}
+                  className={`max-w-[82%] rounded-2xl px-3 py-2 text-xs leading-snug whitespace-pre-line ${m.from === "user" ? "rounded-br-sm [color:var(--signal-green)] [background:color-mix(in_srgb,var(--signal-green)_15%,transparent)]" : "rounded-bl-sm border [border-color:var(--mk-border-strong)] [color:var(--brand-secondary)] [background:color-mix(in_srgb,var(--brand-secondary)_10%,transparent)]"}`}
                 >
                   {m.text}
                   {"file" in m && m.file && (
-                    <span className="mt-1.5 flex items-center gap-1 text-xs text-sky-300">
+                    <span className="mt-1.5 flex items-center gap-1 text-xs [color:var(--brand-secondary)]">
                       <FileText size={11} /> {m.file}
                     </span>
                   )}
@@ -189,7 +189,7 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
                       {m.chips.map((ch) => (
                         <span
                           key={ch}
-                          className={`rounded-full border px-2 py-0.5 text-xs ${ch === m.chips![0] ? "border-[var(--brand-secondary)]/40 bg-[var(--brand-secondary)]/10 text-[var(--brand-secondary)]" : "[border-color:var(--mk-border-strong)] [color:var(--mk-text-muted)]"}`}
+                          className={`rounded-full border px-2 py-0.5 text-xs ${ch === m.chips![0] ? "[border-color:color-mix(in_srgb,var(--brand-secondary)_40%,transparent)] [color:var(--brand-secondary)] [background:color-mix(in_srgb,var(--brand-secondary)_10%,transparent)]" : "[border-color:var(--mk-border-strong)] [color:var(--mk-text-muted)]"}`}
                         >
                           {ch}
                         </span>

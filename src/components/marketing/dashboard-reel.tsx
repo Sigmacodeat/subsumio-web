@@ -265,7 +265,9 @@ export default function DashboardReel({
     <div
       className={`relative overflow-hidden rounded-2xl border [border-color:var(--mk-border)] shadow-2xl shadow-black/20 [background:var(--mk-bg)] ${className}`}
     >
-      <GuidedCursor {...cursorTarget} className="hidden sm:flex" />
+      {controlledView === undefined && (
+        <GuidedCursor {...cursorTarget} className="hidden sm:flex" />
+      )}
       {/* top bar — matches real dashboard topbar structure */}
       <div className="flex items-center gap-3 border-b [border-color:var(--mk-border)] px-4 py-2.5 [background:var(--mk-surface)]">
         <div className="flex items-center gap-2">
