@@ -333,7 +333,15 @@ export default function LandingPage({ lang }: { lang: Lang }) {
         <ProductWorkflowShowcase lang={lang} industry="legal" />
 
         {/* WhatsApp Copilot — dark spotlight with animated phone mockup */}
-        <WhatsAppSpotlight lang={lang} />
+        <SectionTransition from="var(--tone-light-bg)" to="var(--tone-dark-bg)" height={80} />
+        <WhatsAppSpotlight lang={lang}>
+          <Link href={p(lang, "/whatsapp")}>
+            <Button size="lg" variant="primary">
+              {UI_STRINGS[lang].whatsappDetail} <ArrowRight size={16} />
+            </Button>
+          </Link>
+        </WhatsAppSpotlight>
+        <SectionTransition from="var(--tone-dark-bg)" to="var(--tone-light-bg)" height={80} />
 
         {/* Use cases — who it's for (slate for rhythm) */}
         <Section

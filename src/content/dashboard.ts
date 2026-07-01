@@ -72,6 +72,7 @@ export const D = {
   "nav.norms": { de: "Normen", en: "Statutes" },
   "nav.judgements_sync": { de: "Urteile-Sync", en: "Judgements Sync" },
   "nav.judgements_db": { de: "Urteils-Datenbank", en: "Judgements Database" },
+  "nav.commentaries": { de: "Kommentierungen", en: "Commentaries" },
   "nav.kollisionspruefung": { de: "Kollisionsprüfung", en: "Conflict Check" },
   "nav.tabular_review": { de: "Massen-Review", en: "Bulk Review" },
   "nav.obligation_tracking": { de: "Obligation Tracking", en: "Obligation Tracking" },

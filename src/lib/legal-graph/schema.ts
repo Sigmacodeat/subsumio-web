@@ -154,6 +154,79 @@ CREATE TRIGGER subsumio_judgement_citation_count_trg
   AFTER INSERT OR DELETE ON subsumio_judgement_citations
   FOR EACH ROW
   EXECUTE FUNCTION subsumio_judgement_citation_count_fn();
+
+-- ============================================================
+-- legal_commentaries: §-level commentary (synthetic + open-access)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS subsumio_legal_commentaries (
+  id              TEXT PRIMARY KEY,
+  jurisdiction    TEXT NOT NULL,
+  statute_abbr    TEXT NOT NULL,
+  section_num     TEXT NOT NULL,
+  commentary_type TEXT NOT NULL,
+  title           TEXT NOT NULL,
+  content         TEXT NOT NULL,
+  statute_text    TEXT,
+  source_model    TEXT,
+  source_url      TEXT,
+  source_name     TEXT,
+  case_count      INTEGER NOT NULL DEFAULT 0,
+  linked_cases    TEXT[],
+  treatment_summary JSONB,
+  key_holdings    TEXT[],
+  keywords        TEXT[],
+  language        TEXT NOT NULL DEFAULT 'de',
+  content_hash    TEXT,
+  generated_at    TIMESTAMPTZ,
+  updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+  embedded_at     TIMESTAMPTZ,
+  search_vector   TSVECTOR
+);
+
+CREATE INDEX IF NOT EXISTS idx_commentaries_jurisdiction ON subsumio_legal_commentaries(jurisdiction);
+CREATE INDEX IF NOT EXISTS idx_commentaries_statute ON subsumio_legal_commentaries(statute_abbr);
+CREATE INDEX IF NOT EXISTS idx_commentaries_section ON subsumio_legal_commentaries(section_num);
+CREATE INDEX IF NOT EXISTS idx_commentaries_type ON subsumio_legal_commentaries(commentary_type);
+CREATE INDEX IF NOT EXISTS idx_commentaries_statute_section ON subsumio_legal_commentaries(statute_abbr, section_num);
+CREATE INDEX IF NOT EXISTS idx_commentaries_search_vector ON subsumio_legal_commentaries USING GIN(search_vector);
+CREATE INDEX IF NOT EXISTS idx_commentaries_keywords ON subsumio_legal_commentaries USING GIN(keywords);
+
+CREATE TABLE IF NOT EXISTS subsumio_legal_commentary_chunks (
+  id              SERIAL PRIMARY KEY,
+  commentary_id   TEXT NOT NULL REFERENCES subsumio_legal_commentaries(id) ON DELETE CASCADE,
+  chunk_index     INTEGER NOT NULL,
+  chunk_text      TEXT NOT NULL,
+  chunk_type      TEXT NOT NULL DEFAULT 'commentary',
+  embedding       vector(1024),
+  embedding_model TEXT NOT NULL DEFAULT 'multilingual-e5-large',
+  token_count     INTEGER,
+  embedded_at     TIMESTAMPTZ,
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_cchunks_commentary_idx ON subsumio_legal_commentary_chunks(commentary_id, chunk_index);
+CREATE INDEX IF NOT EXISTS idx_cchunks_commentary ON subsumio_legal_commentary_chunks(commentary_id);
+CREATE INDEX IF NOT EXISTS idx_cchunks_embedding ON subsumio_legal_commentary_chunks USING hnsw (embedding vector_cosine_ops);
+CREATE INDEX IF NOT EXISTS idx_cchunks_stale ON subsumio_legal_commentary_chunks(commentary_id, chunk_index) WHERE embedding IS NULL;
+CREATE INDEX IF NOT EXISTS idx_cchunks_type ON subsumio_legal_commentary_chunks(chunk_type);
+
+CREATE OR REPLACE FUNCTION subsumio_commentary_search_vector_fn() RETURNS trigger AS $func$
+BEGIN
+  NEW.search_vector :=
+    setweight(to_tsvector('german', coalesce(NEW.title, '')), 'A') ||
+    setweight(to_tsvector('german', coalesce(NEW.content, '')), 'B') ||
+    setweight(to_tsvector('german', coalesce(array_to_string(NEW.key_holdings, ' '), '')), 'B') ||
+    setweight(to_tsvector('german', coalesce(array_to_string(NEW.keywords, ' '), '')), 'C');
+  NEW.updated_at := now();
+  RETURN NEW;
+END;
+$func$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS subsumio_commentary_search_vector_trg ON subsumio_legal_commentaries;
+CREATE TRIGGER subsumio_commentary_search_vector_trg
+  BEFORE INSERT OR UPDATE ON subsumio_legal_commentaries
+  FOR EACH ROW
+  EXECUTE FUNCTION subsumio_commentary_search_vector_fn();
 `;
 
 export function ensureLegalGraphSchema(pool: Pool): Promise<void> {

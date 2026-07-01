@@ -118,7 +118,11 @@ export type CyclePhase =
   | "legal_statute_currency"
   | "legal_deadline_monitor"
   | "legal_case_progression"
-  | "legal_precedent_linkage";
+  | "legal_precedent_linkage"
+  // v0.44 — Synthetic commentary synthesis from linked judgements.
+  //  - legal_commentary_synthesis: generates §-level commentaries from
+  //    case→statute edges. Runs after legal_precedent_linkage.
+  | "legal_commentary_synthesis";
 
 export const ALL_PHASES: CyclePhase[] = [
   "lint",
@@ -276,6 +280,7 @@ export const PHASE_SCOPE: Record<CyclePhase, PhaseScope> = {
   legal_deadline_monitor: "source",
   legal_case_progression: "source",
   legal_precedent_linkage: "source",
+  legal_commentary_synthesis: "source",
 };
 
 /**
@@ -2308,6 +2313,36 @@ export async function runCycle(engine: BrainEngine | null, opts: CycleOpts): Pro
         const { runPhaseLegalPrecedentLinkage } = await import("./cycle/legal-phases.ts");
         const { result, duration_ms } = await timePhase(() =>
           runPhaseLegalPrecedentLinkage(engine, {
+            dryRun,
+            ...(cycleSourceId ? { sourceId: cycleSourceId } : {}),
+          })
+        );
+        result.duration_ms = duration_ms;
+        phaseResults.push(result);
+        progress.finish();
+      }
+      await safeYield(opts.yieldBetweenPhases);
+    }
+
+    // ── v0.44: Legal commentary synthesis (opt-in, default OFF) ──────
+    // Generates synthetic §-level commentaries from linked judgements.
+    // Runs AFTER legal_precedent_linkage so it sees fresh case→statute edges.
+    if (phases.includes("legal_commentary_synthesis")) {
+      checkAborted(opts.signal);
+      if (!engine) {
+        phaseResults.push({
+          phase: "legal_commentary_synthesis",
+          status: "skipped",
+          duration_ms: 0,
+          summary: "no database connected",
+          details: { reason: "no_database" },
+        });
+      } else {
+        progress.start("cycle.legal_commentary_synthesis");
+        const { runPhaseLegalCommentarySynthesis } =
+          await import("./cycle/commentary-synthesis.ts");
+        const { result, duration_ms } = await timePhase(() =>
+          runPhaseLegalCommentarySynthesis(engine, {
             dryRun,
             ...(cycleSourceId ? { sourceId: cycleSourceId } : {}),
           })

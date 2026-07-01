@@ -7,9 +7,10 @@
 // SEO-indexable; this file owns only the presentation + motion.
 
 import { motion, useReducedMotion } from "framer-motion";
-import { Paperclip, Mic, Clock, Check, FileText, ShieldCheck } from "lucide-react";
-import { ICONS } from "./chrome";
+import { Paperclip, Mic, Clock, Check, FileText } from "lucide-react";
+import { ICONS, Section, SectionTransition, accentTile } from "./chrome";
 import { VERTICALS } from "@/content/verticals";
+import { SubsumioMark } from "@/components/brand/subsumio-logo";
 import type { Lang } from "@/content/site";
 
 const _deShowcase = {
@@ -20,16 +21,19 @@ const _deShowcase = {
   waPoints: [
     {
       icon: Clock,
+      color: "emerald",
       t: "Zeit & Auslagen in Sekunden",
       d: '"Zeit 0,5h Akte Müller, Telefonat" → erfasst, der Akte zugeordnet, ein Tipp zum Bestätigen.',
     },
     {
       icon: Paperclip,
+      color: "amber",
       t: "Beleg-Foto → richtige Akte",
       d: "Dokument oder Foto mit Akten-Kürzel in der Caption landet revisionssicher im Vault.",
     },
     {
       icon: Mic,
+      color: "violet",
       t: "Sprachnotiz unterwegs",
       d: "Diktat nach dem Termin — transkribiert und der Akte angehängt, bevor du im Büro bist.",
     },
@@ -71,16 +75,19 @@ const COPY = {
     waPoints: [
       {
         icon: Clock,
+        color: "emerald",
         t: "Time & expenses in seconds",
         d: '"Time 0.5h matter Müller, call" → captured, linked to the matter, one tap to confirm.',
       },
       {
         icon: Paperclip,
+        color: "amber",
         t: "Receipt photo → right matter",
         d: "A document or photo with the case reference in the caption lands in the vault, audit-ready.",
       },
       {
         icon: Mic,
+        color: "violet",
         t: "Voice note on the go",
         d: "Dictate after the hearing — transcribed and attached to the matter before you're back at the office.",
       },
@@ -111,8 +118,8 @@ const COPY = {
   },
 } as const;
 
-const reveal = (i: number) => ({
-  initial: { opacity: 0, y: 24 },
+const reveal = (i: number, reduce = false) => ({
+  initial: reduce ? false : { opacity: 0, y: 24 },
   whileInView: { opacity: 1, y: 0 },
   viewport: { once: true, margin: "-60px" },
   transition: {
@@ -123,73 +130,61 @@ const reveal = (i: number) => ({
 });
 
 export function PhoneCopilot({ lang }: { lang: Lang }) {
-  const reduce = useReducedMotion();
   const c = (COPY as unknown as Record<string, typeof COPY.de>)[lang] ?? COPY.de;
   return (
     // Always-dark device mock: pin data-tone="dark" so --mk-* inside resolves
-    // dark even when the phone sits on a light page.
-    <div data-tone="dark" className="relative mx-auto w-[300px]">
-      {/* glow behind the phone */}
-      <div
-        className="absolute -inset-6 rounded-[3rem] opacity-40 blur-2xl"
-        style={{ background: "radial-gradient(circle, var(--brand-glow), transparent 70%)" }}
-      />
-      <div className="relative rounded-[2.5rem] border [border-color:var(--mk-border-strong)] p-2.5 shadow-2xl shadow-black/60 [background:var(--mk-bg)]">
-        <div className="overflow-hidden rounded-[2rem] border [border-color:var(--mk-border)] [background:var(--mk-surface-2)]">
+    // dark even when the phone sits on a light page. Marked decorative because
+    // the same value props are already spelled out in the left-column copy.
+    <div data-tone="dark" className="relative mx-auto w-[280px] sm:w-[320px]" aria-hidden="true">
+      {/* device frame */}
+      <div className="relative rounded-[2.5rem] border border-[var(--mk-border-strong)] bg-[var(--mk-surface)] p-2 shadow-[0_0_0_1px_rgba(255,255,255,0.05),0_25px_60px_rgba(0,0,0,0.5)]">
+        {/* dynamic island */}
+        <div className="absolute top-4 left-1/2 z-20 h-5 w-20 -translate-x-1/2 rounded-full bg-black" />
+        {/* screen */}
+        <div className="relative overflow-hidden rounded-[2.1rem] border border-[var(--mk-border)] bg-[var(--mk-bg)]">
           {/* header */}
-          <div
-            className="flex items-center gap-2.5 border-b [border-color:var(--mk-border)] px-4 py-3"
-            style={{ background: "linear-gradient(120deg, var(--mk-surface), var(--mk-bg))" }}
-          >
-            <div
-              className="flex h-8 w-8 items-center justify-center rounded-full"
-              style={{
-                background:
-                  "linear-gradient(150deg, var(--brand-gradient-via), var(--brand-gradient-to))",
-              }}
-            >
-              <ShieldCheck size={15} className="text-white" />
+          <div className="flex items-center gap-3 border-b border-[var(--mk-border)] bg-[var(--mk-surface)] px-4 py-3 pt-6">
+            <div className="brand-bg flex h-8 w-8 items-center justify-center rounded-full">
+              <SubsumioMark size={14} className="text-white" />
             </div>
             <div className="leading-tight">
               <p className="text-xs font-semibold [color:var(--mk-text)]">{c.phoneHeader}</p>
               <p className="flex items-center gap-1 text-xs [color:var(--brand-secondary)]">
-                <span className="h-1.5 w-1.5 rounded-full [background:var(--brand-secondary)]" />
+                <span className="h-1.5 w-1.5 rounded-full bg-[var(--signal-green)]" />
                 {c.phoneStatus}
               </p>
             </div>
           </div>
-          {/* messages */}
-          <div
-            className="min-h-[360px] space-y-2.5 px-3 py-4"
-            style={{
-              background:
-                "repeating-linear-gradient(135deg, var(--mk-surface-2), var(--mk-surface-2) 18px, var(--mk-surface) 18px, var(--mk-surface) 36px)",
-            }}
-          >
+          {/* messages — static, like a polished product screenshot */}
+          <div className="min-h-[340px] space-y-3 bg-[var(--mk-bg)] px-3 py-4">
             {c.chat.map((m, i) => (
-              <motion.div
+              <div
                 key={i}
-                initial={reduce ? false : { opacity: 0, y: 10, scale: 0.96 }}
-                whileInView={{ opacity: 1, y: 0, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: reduce ? 0 : 0.5 + i * 0.7 }}
                 className={m.from === "user" ? "flex justify-end" : "flex justify-start"}
               >
                 <div
-                  className={`max-w-[82%] rounded-2xl px-3 py-2 text-xs leading-snug whitespace-pre-line ${m.from === "user" ? "rounded-br-sm [color:var(--signal-green)] [background:color-mix(in_srgb,var(--signal-green)_15%,transparent)]" : "rounded-bl-sm border [border-color:var(--mk-border-strong)] [color:var(--brand-secondary)] [background:color-mix(in_srgb,var(--brand-secondary)_10%,transparent)]"}`}
+                  className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-xs leading-snug whitespace-pre-line shadow-sm ${
+                    m.from === "user"
+                      ? "rounded-br-sm bg-[var(--signal-green)] text-[#0b0f1a]"
+                      : "rounded-bl-sm border border-[var(--mk-border-strong)] bg-[var(--mk-surface)] text-[var(--mk-text)]"
+                  }`}
                 >
                   {m.text}
                   {"file" in m && m.file && (
-                    <span className="mt-1.5 flex items-center gap-1 text-xs [color:var(--brand-secondary)]">
-                      <FileText size={11} /> {m.file}
+                    <span className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-[#0b0f1a]/10 px-2 py-1 text-[10px] font-medium text-[#0b0f1a]/80">
+                      <FileText size={10} /> {m.file}
                     </span>
                   )}
                   {"chips" in m && m.chips && (
-                    <span className="mt-2 flex gap-1.5">
-                      {m.chips.map((ch) => (
+                    <span className="mt-2.5 flex flex-wrap gap-1.5">
+                      {m.chips.map((ch, idx) => (
                         <span
                           key={ch}
-                          className={`rounded-full border px-2 py-0.5 text-xs ${ch === m.chips![0] ? "[border-color:color-mix(in_srgb,var(--brand-secondary)_40%,transparent)] [color:var(--brand-secondary)] [background:color-mix(in_srgb,var(--brand-secondary)_10%,transparent)]" : "[border-color:var(--mk-border-strong)] [color:var(--mk-text-muted)]"}`}
+                          className={`rounded-full px-2.5 py-0.5 text-[10px] font-medium ${
+                            idx === 0
+                              ? "bg-[var(--mk-text)] text-[var(--mk-bg)]"
+                              : "border border-[var(--mk-border-strong)] text-[var(--mk-text-muted)]"
+                          }`}
                         >
                           {ch}
                         </span>
@@ -197,7 +192,7 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
                     </span>
                   )}
                 </div>
-              </motion.div>
+              </div>
             ))}
           </div>
         </div>
@@ -211,51 +206,59 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
  *  deep-dive page. */
 export function WhatsAppSpotlight({ lang, children }: { lang: Lang; children?: React.ReactNode }) {
   const c = (COPY as unknown as Record<string, typeof COPY.de>)[lang] ?? COPY.de;
+  const reduce = useReducedMotion() ?? false;
 
   return (
-    <section
-      data-tone="dark"
-      className="relative z-10 overflow-hidden px-4 py-24 sm:px-6 lg:px-8"
-      style={{
-        background: `linear-gradient(180deg, color-mix(in srgb, var(--brand-glow) 60%, transparent), var(--mk-bg))`,
-      }}
+    <Section
+      tone="dark"
+      className="relative overflow-hidden px-4 py-24 sm:px-6 lg:px-8"
+      aria-label="WhatsApp Copilot"
     >
-      <div className="mx-auto grid max-w-6xl items-center gap-14 lg:grid-cols-2">
-        <motion.div {...reveal(0)}>
-          <span className="brand-text brand-soft brand-border mb-5 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold">
-            <span className="h-1.5 w-1.5 rounded-full bg-[var(--brand-secondary)]" /> {c.waEyebrow}
-          </span>
-          <h2 className="mb-4 text-3xl leading-tight font-black [color:var(--mk-text)] md:text-4xl">
-            {c.waTitle}
-          </h2>
-          <p className="mb-8 max-w-lg text-base leading-relaxed [color:var(--mk-text-muted)]">
-            {c.waSub}
-          </p>
-          <div className="space-y-4">
+      <div className="relative mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-2 lg:gap-16">
+        <div>
+          <motion.div {...reveal(0, reduce)}>
+            <span className="brand-text brand-soft brand-border mb-5 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold">
+              <span className="h-1.5 w-1.5 rounded-full bg-[var(--brand-secondary)]" />
+              {c.waEyebrow}
+            </span>
+          </motion.div>
+          <motion.div {...reveal(1, reduce)}>
+            <h2 className="mb-4 [font-family:var(--font-display)] text-3xl leading-[1.1] font-black tracking-[-0.02em] text-balance [color:var(--mk-text)] md:text-4xl lg:text-5xl">
+              {c.waTitle}
+            </h2>
+          </motion.div>
+          <motion.div {...reveal(2, reduce)}>
+            <p className="mb-10 max-w-xl text-base leading-relaxed [color:var(--mk-text-muted)] md:text-lg">
+              {c.waSub}
+            </p>
+          </motion.div>
+          <ul className="space-y-5">
             {c.waPoints.map((pt, i) => {
               const Icon = pt.icon;
               return (
-                <motion.div key={pt.t} {...reveal(i + 1)} className="flex gap-3.5">
-                  <div className="brand-soft brand-border flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border">
-                    <Icon size={16} className="brand-text" />
+                <motion.li key={pt.t} {...reveal(i + 3, reduce)} className="flex items-start gap-4">
+                  <div
+                    className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${accentTile(pt.color, "dark")}`}
+                  >
+                    <Icon size={18} />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold [color:var(--mk-text)]">{pt.t}</p>
-                    <p className="mt-0.5 text-sm leading-relaxed [color:var(--mk-text-muted)]">
+                    <p className="text-base font-semibold [color:var(--mk-text)]">{pt.t}</p>
+                    <p className="mt-1 text-sm leading-relaxed [color:var(--mk-text-muted)]">
                       {pt.d}
                     </p>
                   </div>
-                </motion.div>
+                </motion.li>
               );
             })}
-          </div>
-          {children}
-        </motion.div>
-        <motion.div {...reveal(1)}>
+          </ul>
+          {children && <motion.div {...reveal(6, reduce)}>{children}</motion.div>}
+        </div>
+        <motion.div {...reveal(2, reduce)} className="relative">
           <PhoneCopilot lang={lang} />
         </motion.div>
       </div>
-    </section>
+    </Section>
   );
 }
 
@@ -264,9 +267,10 @@ export function WhatsAppSpotlight({ lang, children }: { lang: Lang; children?: R
 export function FeatureBento({ lang }: { lang: Lang }) {
   const c = (COPY as unknown as Record<string, typeof COPY.de>)[lang] ?? COPY.de;
   const features = VERTICALS[lang].legal.features;
+  const reduce = useReducedMotion() ?? false;
   return (
     <div className="relative z-10 mx-auto max-w-6xl px-4 py-24 sm:px-6 lg:px-8">
-      <motion.div {...reveal(0)} className="mb-14 text-center">
+      <motion.div {...reveal(0, reduce)} className="mb-14 text-center">
         <span className="brand-soft brand-text brand-border mb-4 inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium">
           {c.bentoEyebrow}
         </span>
@@ -282,8 +286,8 @@ export function FeatureBento({ lang }: { lang: Lang }) {
           return (
             <motion.div
               key={f.title}
-              {...reveal(i)}
-              whileHover={{ y: -4 }}
+              {...reveal(i, reduce)}
+              whileHover={reduce ? undefined : { y: -4 }}
               className={`group relative overflow-hidden rounded-2xl border p-6 transition-colors duration-300 [background:var(--mk-surface)] ${featured ? "brand-border sm:col-span-2" : "[border-color:var(--mk-border)] hover:[border-color:var(--mk-border-strong)]"}`}
             >
               {featured && (
@@ -315,7 +319,9 @@ export function FeatureBento({ lang }: { lang: Lang }) {
 export default function SubsumioShowcase({ lang }: { lang: Lang }) {
   return (
     <>
+      <SectionTransition from="var(--tone-light-bg)" to="var(--tone-dark-bg)" height={80} />
       <WhatsAppSpotlight lang={lang} />
+      <SectionTransition from="var(--tone-dark-bg)" to="var(--tone-light-bg)" height={80} />
       <FeatureBento lang={lang} />
     </>
   );

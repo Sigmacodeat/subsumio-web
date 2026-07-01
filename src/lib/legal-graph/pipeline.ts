@@ -23,7 +23,12 @@
  */
 
 import type { Pool } from "pg";
-import { hybridSearch, type HybridSearchResult } from "./search";
+import {
+  hybridSearch,
+  searchCommentaries,
+  type HybridSearchResult,
+  type CommentarySearchResult,
+} from "./search";
 import { embedQuery, checkEmbeddingAvailability } from "./embedding";
 import { rerankResults, type RerankedResult } from "./reranking";
 import { graphSearch } from "./graph-embeddings";
@@ -72,6 +77,7 @@ export interface PipelineResult {
     relevance: number;
   }>;
   retrieval_results: RerankedResult[];
+  commentary_results?: CommentarySearchResult[];
   routing: QueryRoutingResult;
   validation_summary?: {
     good_law: number;
@@ -158,7 +164,11 @@ async function retrievalAgent(
   pool: Pool,
   routing: QueryRoutingResult,
   config: PipelineConfig
-): Promise<{ results: RerankedResult[]; graphResults: unknown[] }> {
+): Promise<{
+  results: RerankedResult[];
+  graphResults: unknown[];
+  commentaries: CommentarySearchResult[];
+}> {
   // Embed the expanded query
   let queryEmbedding: number[] | undefined;
   try {
@@ -216,7 +226,20 @@ async function retrievalAgent(
     }
   }
 
-  return { results: rerankedResults, graphResults };
+  // Commentary search — retrieve relevant §-level commentaries
+  let commentaries: CommentarySearchResult[] = [];
+  try {
+    commentaries = await searchCommentaries(pool, {
+      q: routing.expanded_query,
+      jurisdiction: config.jurisdiction || routing.jurisdiction,
+      limit: 3,
+      queryEmbedding,
+    });
+  } catch {
+    // Commentary search optional — continue without it
+  }
+
+  return { results: rerankedResults, graphResults, commentaries };
 }
 
 // ── Agent 3: Citation Validation Agent ────────────────────────────────
@@ -262,7 +285,8 @@ async function synthesisAgent(
     at_risk: number;
     mixed: number;
     unknown: number;
-  }
+  },
+  commentaries?: CommentarySearchResult[]
 ): Promise<{ answer: string; citations: PipelineResult["citations"] }> {
   // Build context from top results
   const context = results
@@ -274,12 +298,24 @@ async function synthesisAgent(
     })
     .join("\n\n---\n\n");
 
-  const prompt = `Du bist ein juristischer Assistent. Beantworte die Frage basierend auf den gefundenen Urteilen.
+  // Build commentary context if available
+  const commentaryContext =
+    commentaries && commentaries.length > 0
+      ? commentaries
+          .map((c, i) => {
+            const holdings = c.key_holdings?.slice(0, 3).join("; ") ?? "";
+            return `[Kommentierung ${i + 1}] § ${c.section_num} ${c.statute_abbr} (${c.commentary_type})\n${c.snippet.slice(0, 600)}${holdings ? `\nKey Holdings: ${holdings}` : ""}`;
+          })
+          .join("\n\n---\n\n")
+      : "";
+
+  const prompt = `Du bist ein juristischer Assistent. Beantworte die Frage basierend auf den gefundenen Urteilen und Kommentierungen.
 
 FRAGE: "${query}"
 
 GEFUNDENE URTEILE:
 ${context}
+${commentaryContext ? `\n\nRELEVANTE KOMMENTIERUNGEN:\n${commentaryContext}` : ""}
 
 VALIDIERUNG:
 - Good Law (gültige Präzedenzfälle): ${validationSummary.good_law}
@@ -391,13 +427,15 @@ export async function runPipeline(
   };
   steps.push(step2);
   let retrievalResults: RerankedResult[] = [];
+  let commentaryResults: CommentarySearchResult[] = [];
   try {
-    const { results } = await retrievalAgent(pool, routing, cfg);
+    const { results, commentaries } = await retrievalAgent(pool, routing, cfg);
     retrievalResults = results;
+    commentaryResults = commentaries;
     step2.status = "done";
     step2.completed_at = new Date().toISOString();
     step2.duration_ms = Date.now() - step2Start;
-    step2.result = { count: results.length };
+    step2.result = { count: results.length, commentaries: commentaries.length };
   } catch (err) {
     step2.status = "error";
     step2.error = err instanceof Error ? err.message : String(err);
@@ -447,7 +485,8 @@ export async function runPipeline(
       query,
       routing,
       retrievalResults,
-      validationSummary ?? { good_law: 0, bad_law: 0, at_risk: 0, mixed: 0, unknown: 0 }
+      validationSummary ?? { good_law: 0, bad_law: 0, at_risk: 0, mixed: 0, unknown: 0 },
+      commentaryResults
     );
     answer = synthResult.answer;
     citations = synthResult.citations;
@@ -470,6 +509,7 @@ export async function runPipeline(
     answer,
     citations,
     retrieval_results: retrievalResults,
+    commentary_results: commentaryResults.length > 0 ? commentaryResults : undefined,
     routing,
     validation_summary: validationSummary,
     total_duration_ms: Date.now() - pipelineStart,

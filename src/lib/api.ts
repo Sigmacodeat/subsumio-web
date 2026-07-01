@@ -939,6 +939,53 @@ export const api = {
         return request(`/api/legal/analytics/${path}`, { method: "DELETE" });
       },
     },
+
+    commentaries: {
+      list(options?: {
+        jurisdiction?: string;
+        statuteAbbr?: string;
+        sectionNum?: string;
+        commentaryType?: string;
+        search?: string;
+        limit?: number;
+        offset?: number;
+      }): Promise<{
+        items: Array<Record<string, unknown>>;
+        total: number;
+      }> {
+        const params = new URLSearchParams();
+        if (options?.jurisdiction) params.set("jurisdiction", options.jurisdiction);
+        if (options?.statuteAbbr) params.set("statuteAbbr", options.statuteAbbr);
+        if (options?.sectionNum) params.set("sectionNum", options.sectionNum);
+        if (options?.commentaryType) params.set("commentaryType", options.commentaryType);
+        if (options?.search) params.set("search", options.search);
+        if (options?.limit) params.set("limit", String(options.limit));
+        if (options?.offset) params.set("offset", String(options.offset));
+        const qs = params.toString();
+        return request(`/api/legal/commentaries${qs ? `?${qs}` : ""}`);
+      },
+
+      get(id: string): Promise<Record<string, unknown>> {
+        return request(`/api/legal/commentaries/${encodeURIComponent(id)}`);
+      },
+
+      triggerSynthesis(input: {
+        statuteAbbr: string;
+        sectionNum: string;
+        jurisdiction?: string;
+      }): Promise<{ success: boolean; commentary?: Record<string, unknown> }> {
+        return request("/api/legal/commentaries", {
+          method: "POST",
+          body: JSON.stringify(input),
+        });
+      },
+
+      delete(id: string): Promise<{ success: boolean }> {
+        return request(`/api/legal/commentaries/${encodeURIComponent(id)}`, {
+          method: "DELETE",
+        });
+      },
+    },
   },
 
   tax: {

@@ -27,6 +27,7 @@ import { LegalJudgementsConnector } from "./legal-judgements.ts";
 import { SwissJudgementsConnector } from "./swiss-judgements.ts";
 import { BeaImportConnector } from "./bea-import.ts";
 import { AdvokatImportConnector } from "./advokat-import.ts";
+import { OpenAccessCommentaryConnector } from "./open-access-commentaries.ts";
 import {
   MicrosoftOneDriveConnector,
   MicrosoftOutlookConnector,
@@ -55,6 +56,7 @@ export const CONNECTOR_REGISTRY: Record<string, new (cfg: ConnectorConfig) => Ba
   "swiss-judgements": SwissJudgementsConnector,
   "bea-import": BeaImportConnector,
   "advokat-import": AdvokatImportConnector,
+  "open-access-commentaries": OpenAccessCommentaryConnector,
   "ms365-outlook": MicrosoftOutlookConnector,
   "ms365-onedrive": MicrosoftOneDriveConnector,
   "ms365-sharepoint": MicrosoftSharePointConnector,

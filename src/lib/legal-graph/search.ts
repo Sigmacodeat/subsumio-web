@@ -463,3 +463,133 @@ export async function getJudgementDetail(pool: Pool, id: string) {
 
   return result.rows[0] ?? null;
 }
+
+// ── Commentary search (BM25 + optional vector) ────────────────────────
+
+export interface CommentarySearchResult {
+  id: string;
+  title: string;
+  jurisdiction: string;
+  statute_abbr: string;
+  section_num: string;
+  commentary_type: string;
+  content: string;
+  statute_text: string | null;
+  case_count: number;
+  treatment_summary: Record<string, number> | null;
+  key_holdings: string[] | null;
+  source_name: string | null;
+  source_url: string | null;
+  bm25_score: number;
+  vector_score: number;
+  final_score: number;
+  snippet: string;
+}
+
+export async function searchCommentaries(
+  pool: Pool,
+  opts: {
+    q: string;
+    jurisdiction?: string;
+    statuteAbbr?: string;
+    limit?: number;
+    queryEmbedding?: number[];
+  }
+): Promise<CommentarySearchResult[]> {
+  await ensureLegalGraphSchema(pool);
+  const limit = opts.limit ?? 5;
+  const conditions: string[] = [];
+  const params: unknown[] = [opts.q];
+  let paramIdx = 2;
+
+  conditions.push(`c.search_vector @@ plainto_tsquery('german', $1)`);
+
+  if (opts.jurisdiction) {
+    conditions.push(`c.jurisdiction = $${paramIdx}`);
+    params.push(opts.jurisdiction);
+    paramIdx++;
+  }
+  if (opts.statuteAbbr) {
+    conditions.push(`c.statute_abbr = $${paramIdx}`);
+    params.push(opts.statuteAbbr.toUpperCase());
+    paramIdx++;
+  }
+
+  // BM25 search on commentaries
+  const bm25Query = `
+    SELECT
+      c.id, c.title, c.jurisdiction, c.statute_abbr, c.section_num,
+      c.commentary_type, c.content, c.statute_text, c.case_count,
+      c.treatment_summary, c.key_holdings, c.source_name, c.source_url,
+      ts_rank(c.search_vector, plainto_tsquery('german', $1)) as bm25_score,
+      ts_headline('german', c.content, plainto_tsquery('german', $1),
+        'MaxWords=40, MinWords=15, MaxFragments=2') as snippet
+    FROM subsumio_legal_commentaries c
+    WHERE ${conditions.join(" AND ")}
+    ORDER BY bm25_score DESC
+    LIMIT $${paramIdx}
+  `;
+  params.push(limit);
+
+  const bm25Result = await pool.query(bm25Query, params);
+
+  // Optional: vector search on commentary chunks
+  const vectorScores = new Map<string, { score: number; snippet: string }>();
+  if (opts.queryEmbedding && opts.queryEmbedding.length > 0) {
+    try {
+      const vecQuery = `
+        SELECT
+          cc.commentary_id,
+          MIN(cc.embedding <=> $1::vector) as cosine_distance,
+          MIN(cc.chunk_text) as chunk_snippet
+        FROM subsumio_legal_commentary_chunks cc
+        WHERE cc.embedding IS NOT NULL
+        GROUP BY cc.commentary_id
+        ORDER BY MIN(cc.embedding <=> $1::vector)
+        LIMIT $2
+      `;
+      const vecResult = await pool.query(vecQuery, [
+        JSON.stringify(opts.queryEmbedding),
+        limit * 2,
+      ]);
+      for (const row of vecResult.rows) {
+        vectorScores.set(row.commentary_id, {
+          score: 1 - parseFloat(row.cosine_distance),
+          snippet: row.chunk_snippet,
+        });
+      }
+    } catch {
+      // Vector search optional — skip on error
+    }
+  }
+
+  // Merge BM25 + vector scores
+  return (bm25Result.rows as Array<Record<string, unknown>>)
+    .map((row) => {
+      const id = String(row.id);
+      const vecScore = vectorScores.get(id);
+      const bm25Score = parseFloat(String(row.bm25_score ?? 0));
+      const vecS = vecScore?.score ?? 0;
+      return {
+        id,
+        title: String(row.title ?? ""),
+        jurisdiction: String(row.jurisdiction ?? ""),
+        statute_abbr: String(row.statute_abbr ?? ""),
+        section_num: String(row.section_num ?? ""),
+        commentary_type: String(row.commentary_type ?? "synthetic"),
+        content: String(row.content ?? ""),
+        statute_text: (row.statute_text as string | null) ?? null,
+        case_count: parseInt(String(row.case_count ?? 0), 10),
+        treatment_summary: (row.treatment_summary as Record<string, number> | null) ?? null,
+        key_holdings: (row.key_holdings as string[] | null) ?? null,
+        source_name: (row.source_name as string | null) ?? null,
+        source_url: (row.source_url as string | null) ?? null,
+        bm25_score: bm25Score,
+        vector_score: vecS,
+        final_score: 0.5 * bm25Score + 0.5 * vecS,
+        snippet: String(row.snippet ?? ""),
+      } as CommentarySearchResult;
+    })
+    .sort((a, b) => b.final_score - a.final_score)
+    .slice(0, limit);
+}

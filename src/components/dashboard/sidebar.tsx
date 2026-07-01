@@ -154,6 +154,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { href: "/dashboard/playbooks", icon: ClipboardList, labelKey: "nav.playbooks" },
       { href: "/dashboard/judgements-sync", icon: Landmark, labelKey: "nav.judgements_sync" },
       { href: "/dashboard/judgements-db", icon: Database, labelKey: "nav.judgements_db" },
+      { href: "/dashboard/commentaries", icon: BookOpen, labelKey: "nav.commentaries" },
     ],
   },
   {
@@ -300,6 +301,7 @@ export const ALL_NAV_ITEMS: NavItem[] = [
   { href: "/dashboard/case-scanner", icon: FileSearch, labelKey: "nav.case_scanner" },
   { href: "/dashboard/judgements-sync", icon: Landmark, labelKey: "nav.judgements_sync" },
   { href: "/dashboard/judgements-db", icon: Database, labelKey: "nav.judgements_db" },
+  { href: "/dashboard/commentaries", icon: BookOpen, labelKey: "nav.commentaries" },
   { href: "/dashboard/word-addin", icon: FileText, labelKey: "nav.word_addin" },
   { href: "/dashboard/version-history", icon: FileClock, labelKey: "nav.version_history" },
   { href: "/dashboard/import-kanzlei", icon: FileUp, labelKey: "nav.import_kanzlei" },
@@ -369,6 +371,7 @@ export const PREFERRED_SECTION_BY_HREF: Array<{ href: string; section: Dashboard
   { href: "/dashboard/playbooks", section: "nav.section.research_knowledge" },
   { href: "/dashboard/judgements-sync", section: "nav.section.research_knowledge" },
   { href: "/dashboard/judgements-db", section: "nav.section.research_knowledge" },
+  { href: "/dashboard/commentaries", section: "nav.section.research_knowledge" },
   { href: "/dashboard/review-queue", section: "nav.section.operations" },
   { href: "/dashboard/approvals", section: "nav.section.operations" },
   { href: "/dashboard/workflows", section: "nav.section.operations" },
