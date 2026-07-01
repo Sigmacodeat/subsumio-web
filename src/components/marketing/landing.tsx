@@ -26,7 +26,7 @@ import SuperbrainAdvantage from "./superbrain-advantage";
 import TrustBand from "./trust-band";
 import { TestimonialsSection } from "./testimonials";
 import AudienceTabs from "./audience-tabs";
-import { Section, SectionHeading, SectionTransition, ICONS, accentTile } from "./chrome";
+import { Section, SectionHeading, ICONS, accentTile } from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
 import {
   GlowCard,
@@ -266,13 +266,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
           </motion.div>
         </Section>
 
-        {/* Gradient transition: light Stats → slate SuperbrainAdvantage */}
-        <SectionTransition from="var(--tone-light-bg)" to="var(--tone-slate-bg)" height={72} />
-
         <SuperbrainAdvantage lang={lang} />
-
-        {/* Gradient transition: slate SuperbrainAdvantage → light Features */}
-        <SectionTransition from="var(--tone-slate-bg)" to="var(--tone-light-bg)" height={72} />
 
         {/* Features — what it does (light, after unique mechanism) */}
         <Section
@@ -332,8 +326,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
         {/* How it works — animated scroll-driven workflow showcase */}
         <ProductWorkflowShowcase lang={lang} industry="legal" />
 
-        {/* WhatsApp Copilot — dark spotlight with animated phone mockup */}
-        <SectionTransition from="var(--tone-light-bg)" to="var(--tone-dark-bg)" height={80} />
+        {/* WhatsApp Copilot — dark spotlight with phone mockup */}
         <WhatsAppSpotlight lang={lang}>
           <Link href={p(lang, "/whatsapp")}>
             <Button size="lg" variant="primary">
@@ -341,9 +334,8 @@ export default function LandingPage({ lang }: { lang: Lang }) {
             </Button>
           </Link>
         </WhatsAppSpotlight>
-        <SectionTransition from="var(--tone-dark-bg)" to="var(--tone-light-bg)" height={80} />
 
-        {/* Use cases — who it's for (slate for rhythm) */}
+        {/* Use cases — who it's for */}
         <Section
           tone="light"
           className="px-4 py-24 sm:px-6 lg:px-8"
@@ -383,9 +375,6 @@ export default function LandingPage({ lang }: { lang: Lang }) {
 
         {/* Testimonials — social proof from real lawyers */}
         <TestimonialsSection lang={lang} />
-
-        {/* Gradient transition: light Trust → dark Comparison spotlight */}
-        <SectionTransition from="var(--tone-light-bg)" to="var(--tone-dark-bg)" height={72} />
 
         {/* Comparison table — Subsumio vs. other AI tools. Dark "spotlight" tone
             breaks the long light run and frames the differentiation moment; the
@@ -454,9 +443,6 @@ export default function LandingPage({ lang }: { lang: Lang }) {
           </motion.div>
         </Section>
 
-        {/* Gradient transition: dark Comparison → light Pricing */}
-        <SectionTransition from="var(--tone-dark-bg)" to="var(--tone-light-bg)" height={72} />
-
         {/* Pricing */}
         <Section
           tone="light"
@@ -484,9 +470,6 @@ export default function LandingPage({ lang }: { lang: Lang }) {
             <AnimatedFaqList items={t.faq} tone="light" />
           </motion.div>
         </Section>
-
-        {/* Gradient transition: light FAQ → dark CTA */}
-        <SectionTransition from="var(--tone-light-bg)" to="var(--tone-dark-bg)" height={80} />
 
         {/* Final CTA — clean, serious close with gradient depth */}
         <Section
@@ -537,9 +520,6 @@ export default function LandingPage({ lang }: { lang: Lang }) {
             )}
           </motion.div>
         </Section>
-
-        {/* Gradient transition: dark CTA → footer */}
-        <SectionTransition from="var(--tone-dark-bg)" to="var(--tone-dark-surface)" height={60} />
 
         {/* Sticky CTA bar — appears after hero scroll (legal SaaS best practice) */}
         <motion.div

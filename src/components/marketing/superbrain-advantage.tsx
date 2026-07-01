@@ -130,6 +130,20 @@ export default function SuperbrainAdvantage({ lang }: { lang: Lang }) {
       className="relative z-10 overflow-hidden px-4 py-24 sm:px-6 lg:px-8"
       style={{ background: "var(--mk-bg)" }}
     >
+      {/* Premium top edge — hairline + subtle brand glow */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-px"
+        style={{ background: "var(--mk-border-strong)" }}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-40"
+        style={{
+          background:
+            "radial-gradient(ellipse 70% 100% at 50% 0%, color-mix(in srgb, var(--brand-primary) 7%, transparent), transparent)",
+        }}
+      />
       <div className="brand-glow-bg absolute inset-x-0 top-16 h-72 opacity-25 blur-3xl" />
       <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[1fr_1.05fr]">
         <motion.div

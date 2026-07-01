@@ -183,6 +183,26 @@ export function Section({
       style={{ background: "var(--mk-bg)" }}
       {...rest}
     >
+      {(tone === "dark" || tone === "slate") && (
+        <>
+          {/* Premium top edge — 1px hairline + subtle brand glow.
+              Replaces cheap gradient strips with a clean, intentional
+              boundary (Linear/Vercel pattern). */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 top-0 h-px"
+            style={{ background: "var(--mk-border-strong)" }}
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 top-0 h-40"
+            style={{
+              background:
+                "radial-gradient(ellipse 70% 100% at 50% 0%, color-mix(in srgb, var(--brand-primary) 7%, transparent), transparent)",
+            }}
+          />
+        </>
+      )}
       {children}
     </section>
   );

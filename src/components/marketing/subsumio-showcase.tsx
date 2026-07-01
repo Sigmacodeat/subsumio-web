@@ -8,7 +8,7 @@
 
 import { motion, useReducedMotion } from "framer-motion";
 import { Paperclip, Mic, Clock, Check, FileText } from "lucide-react";
-import { ICONS, Section, SectionTransition, accentTile } from "./chrome";
+import { ICONS, Section, accentTile } from "./chrome";
 import { VERTICALS } from "@/content/verticals";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
 import type { Lang } from "@/content/site";
@@ -319,9 +319,7 @@ export function FeatureBento({ lang }: { lang: Lang }) {
 export default function SubsumioShowcase({ lang }: { lang: Lang }) {
   return (
     <>
-      <SectionTransition from="var(--tone-light-bg)" to="var(--tone-dark-bg)" height={80} />
       <WhatsAppSpotlight lang={lang} />
-      <SectionTransition from="var(--tone-dark-bg)" to="var(--tone-light-bg)" height={80} />
       <FeatureBento lang={lang} />
     </>
   );
