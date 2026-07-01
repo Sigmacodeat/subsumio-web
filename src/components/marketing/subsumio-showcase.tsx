@@ -7,7 +7,20 @@
 // SEO-indexable; this file owns only the presentation + motion.
 
 import { motion, useReducedMotion } from "framer-motion";
-import { Paperclip, Mic, Clock, Check, FileText } from "lucide-react";
+import {
+  Paperclip,
+  Mic,
+  Clock,
+  Check,
+  CheckCheck,
+  FileText,
+  ArrowLeft,
+  Video,
+  Phone,
+  MoreVertical,
+  Camera,
+  Smile,
+} from "lucide-react";
 import { ICONS, Section, accentTile } from "./chrome";
 import { VERTICALS } from "@/content/verticals";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
@@ -131,72 +144,185 @@ const reveal = (i: number, reduce = false) => ({
 
 export function PhoneCopilot({ lang }: { lang: Lang }) {
   const c = (COPY as unknown as Record<string, typeof COPY.de>)[lang] ?? COPY.de;
+  const WA = {
+    bg: "#0b141a",
+    header: "#1f2c34",
+    incoming: "#1f2c34",
+    outgoing: "#005c4b",
+    text: "#e9edef",
+    meta: "#8696a0",
+    read: "#53a9c6",
+    accent: "#25d366",
+    input: "#1f2c34",
+    inputField: "#2a3b45",
+  } as const;
+
+  const chat = c.chat.slice(0, 4);
+  const times = ["14:02", "14:02", "14:03", "14:04"];
+
   return (
-    // Always-dark device mock: pin data-tone="dark" so --mk-* inside resolves
-    // dark even when the phone sits on a light page. Marked decorative because
-    // the same value props are already spelled out in the left-column copy.
-    <div data-tone="dark" className="relative mx-auto w-[280px] sm:w-[320px]" aria-hidden="true">
-      {/* device frame */}
-      <div className="relative rounded-[2.5rem] border border-[var(--mk-border-strong)] bg-[var(--mk-surface)] p-2 shadow-[0_0_0_1px_rgba(255,255,255,0.05),0_25px_60px_rgba(0,0,0,0.5)]">
-        {/* dynamic island */}
-        <div className="absolute top-4 left-1/2 z-20 h-5 w-20 -translate-x-1/2 rounded-full bg-black" />
-        {/* screen */}
-        <div className="relative overflow-hidden rounded-[2.1rem] border border-[var(--mk-border)] bg-[var(--mk-bg)]">
-          {/* header */}
-          <div className="flex items-center gap-3 border-b border-[var(--mk-border)] bg-[var(--mk-surface)] px-4 py-3 pt-6">
-            <div className="brand-bg flex h-8 w-8 items-center justify-center rounded-full">
-              <SubsumioMark size={14} className="text-white" />
+    <div className="relative mx-auto w-[290px] sm:w-[330px]" aria-hidden="true">
+      {/* iPhone frame */}
+      <div className="relative overflow-hidden rounded-[3rem] border-[3px] border-[#2a2a2e] bg-[#0f0f12] p-[6px] shadow-[0_0_0_1px_#000,0_30px_70px_rgba(0,0,0,0.55)]">
+        {/* Dynamic Island */}
+        <div className="absolute top-3 left-1/2 z-30 h-[25px] w-[90px] -translate-x-1/2 rounded-full bg-black">
+          <div className="absolute top-1/2 right-2.5 h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-[#1a1a1e]" />
+        </div>
+
+        {/* Screen */}
+        <div className="relative overflow-hidden rounded-[2.4rem] bg-[#0b141a]">
+          {/* WhatsApp chat background pattern */}
+          <div
+            className="absolute inset-0 opacity-[0.03]"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg width='300' height='300' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h300v300H0z' fill='none'/%3E%3Cpath d='M42 42c12 0 12-18 24-18s12 18 24 18c12 0 12-18 24-18s12 18 24 18' stroke='%23fff' stroke-width='1.5' fill='none'/%3E%3C/svg%3E")`,
+              backgroundColor: WA.bg,
+              backgroundSize: "300px 300px",
+            }}
+          />
+
+          {/* WhatsApp header */}
+          <div className="relative z-10 flex items-center gap-2.5 bg-[#1f2c34] px-3 pt-10 pb-2.5">
+            <ArrowLeft size={20} style={{ color: WA.text }} />
+            <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full bg-[#2a3b45]">
+              <div className="absolute inset-0 flex items-center justify-center">
+                <SubsumioMark size={16} className="text-white" />
+              </div>
             </div>
-            <div className="leading-tight">
-              <p className="text-xs font-semibold [color:var(--mk-text)]">{c.phoneHeader}</p>
-              <p className="flex items-center gap-1 text-xs [color:var(--brand-secondary)]">
-                <span className="h-1.5 w-1.5 rounded-full bg-[var(--signal-green)]" />
+            <div className="min-w-0 flex-1 leading-tight">
+              <p className="truncate text-[13px] font-semibold" style={{ color: WA.text }}>
+                {c.phoneHeader}
+              </p>
+              <p className="text-[11px]" style={{ color: WA.accent }}>
                 {c.phoneStatus}
               </p>
             </div>
+            <div className="flex items-center gap-4" style={{ color: WA.text }}>
+              <Video size={18} />
+              <Phone size={17} />
+              <MoreVertical size={18} />
+            </div>
           </div>
-          {/* messages — static, like a polished product screenshot */}
-          <div className="min-h-[340px] space-y-3 bg-[var(--mk-bg)] px-3 py-4">
-            {c.chat.map((m, i) => (
-              <div
-                key={i}
-                className={m.from === "user" ? "flex justify-end" : "flex justify-start"}
-              >
-                <div
-                  className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-xs leading-snug whitespace-pre-line shadow-sm ${
-                    m.from === "user"
-                      ? "rounded-br-sm bg-[var(--signal-green)] text-[#0b0f1a]"
-                      : "rounded-bl-sm border border-[var(--mk-border-strong)] bg-[var(--mk-surface)] text-[var(--mk-text)]"
-                  }`}
-                >
-                  {m.text}
-                  {"file" in m && m.file && (
-                    <span className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-[#0b0f1a]/10 px-2 py-1 text-[10px] font-medium text-[#0b0f1a]/80">
-                      <FileText size={10} /> {m.file}
-                    </span>
+
+          {/* Messages */}
+          <div className="relative z-10 min-h-[340px] space-y-2 px-3 py-3">
+            {chat.map((m, i) => {
+              const isUser = m.from === "user";
+              return (
+                <div key={i}>
+                  {/* WhatsApp day separator after the confirmation message */}
+                  {i === 2 && (
+                    <div className="mb-4 flex justify-center">
+                      <span
+                        className="rounded-md px-2 py-1 text-[10px] font-medium"
+                        style={{ background: "#1e2a31", color: WA.meta }}
+                      >
+                        {lang === "en" ? "Today" : "Heute"}
+                      </span>
+                    </div>
                   )}
-                  {"chips" in m && m.chips && (
-                    <span className="mt-2.5 flex flex-wrap gap-1.5">
-                      {m.chips.map((ch, idx) => (
-                        <span
-                          key={ch}
-                          className={`rounded-full px-2.5 py-0.5 text-[10px] font-medium ${
-                            idx === 0
-                              ? "bg-[var(--mk-text)] text-[var(--mk-bg)]"
-                              : "border border-[var(--mk-border-strong)] text-[var(--mk-text-muted)]"
-                          }`}
+
+                  <div className={isUser ? "flex justify-end" : "flex justify-start"}>
+                    <div
+                      className="relative max-w-[86%] px-2.5 pt-1.5 pb-1 text-[13px] leading-[1.35]"
+                      style={{
+                        background: isUser ? WA.outgoing : WA.incoming,
+                        color: WA.text,
+                        borderRadius: isUser ? "12px 12px 4px 12px" : "12px 12px 12px 4px",
+                        boxShadow: "0 1px 0.5px rgba(0,0,0,0.13)",
+                      }}
+                    >
+                      {/* WhatsApp-style curved message tail */}
+                      <span
+                        className="absolute bottom-0 h-3.5 w-2"
+                        style={{ [isUser ? "right" : "left"]: "-5px" }}
+                      >
+                        <svg
+                          className="h-full w-full"
+                          viewBox="0 0 8 13"
+                          fill={isUser ? WA.outgoing : WA.incoming}
+                          preserveAspectRatio="none"
                         >
-                          {ch}
+                          <path
+                            d={isUser ? "M0 0C0 7 3.5 11 8 13L0 13Z" : "M8 0C8 7 4.5 11 0 13L8 13Z"}
+                          />
+                        </svg>
+                      </span>
+                      <div className="pr-12">
+                        {m.text}
+
+                        {"file" in m && m.file && (
+                          <div className="mt-2 flex items-center gap-2 rounded-lg bg-black/10 px-2 py-1.5">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-md bg-[#2a3b45]">
+                              <FileText size={16} style={{ color: WA.accent }} />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="truncate text-[11px] font-medium">{m.file}</p>
+                              <p className="text-[10px]" style={{ color: WA.meta }}>
+                                PDF · 1.2 MB
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
+                        {"chips" in m && m.chips && (
+                          <div className="mt-2 flex flex-wrap gap-1.5">
+                            {m.chips.map((ch, idx) => (
+                              <span
+                                key={ch}
+                                className="rounded-full px-3 py-1 text-[11px] font-semibold"
+                                style={{
+                                  background: idx === 0 ? WA.accent : "transparent",
+                                  color: idx === 0 ? "#0b0f1a" : WA.text,
+                                  border: idx === 0 ? "none" : `1px solid ${WA.meta}40`,
+                                }}
+                              >
+                                {ch}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* timestamp + read receipts */}
+                      <div className="absolute right-1.5 bottom-0.5 flex items-center gap-0.5">
+                        <span className="text-[10px]" style={{ color: WA.meta }}>
+                          {times[i]}
                         </span>
-                      ))}
-                    </span>
-                  )}
+                        {isUser && <CheckCheck size={11} style={{ color: WA.read }} />}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
+          </div>
+
+          {/* WhatsApp input bar */}
+          <div className="relative z-10 flex items-center gap-2 bg-[#1f2c34] px-2 py-2">
+            <div
+              className="flex flex-1 items-center gap-2 rounded-full px-3 py-1.5"
+              style={{ background: WA.inputField }}
+            >
+              <Smile size={20} style={{ color: WA.meta }} />
+              <span className="flex-1 text-[13px]" style={{ color: WA.meta }}>
+                {lang === "en" ? "Message" : "Nachricht"}
+              </span>
+              <Paperclip size={18} style={{ color: WA.meta }} />
+              <Camera size={18} style={{ color: WA.meta }} />
+            </div>
+            <div
+              className="flex h-9 w-9 items-center justify-center rounded-full"
+              style={{ background: WA.accent }}
+            >
+              <Mic size={18} className="text-[#0b0f1a]" />
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Home indicator */}
+      <div className="absolute bottom-1.5 left-1/2 z-20 h-1 w-28 -translate-x-1/2 rounded-full bg-white/20" />
     </div>
   );
 }
