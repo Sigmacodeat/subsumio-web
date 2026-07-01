@@ -21,6 +21,7 @@ import {
   MoreVertical,
   Camera,
   Smile,
+  Send,
 } from "lucide-react";
 import { ICONS, Section, accentTile } from "./chrome";
 import { VERTICALS } from "@/content/verticals";
@@ -185,11 +186,16 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
 
   const [visibleCount, setVisibleCount] = useState(reduce ? chat.length : 0);
   const [isTyping, setIsTyping] = useState(false);
+  const [inputText, setInputText] = useState("");
+  const [isUserTyping, setIsUserTyping] = useState(false);
+  const [tappedChip, setTappedChip] = useState<number | null>(null);
+  const [readStatus, setReadStatus] = useState<Record<number, "sent" | "delivered" | "read">>({});
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (reduce) {
       setVisibleCount(chat.length);
+      setReadStatus(Object.fromEntries(chat.map((_, i) => [i, "read"])));
       return;
     }
 
@@ -203,47 +209,95 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
         const isBot = msg.from === "bot";
 
         if (isBot) {
-          timeouts.push(
-            setTimeout(() => {
-              if (mounted) setIsTyping(true);
-            }, elapsed)
-          );
+          // Bot typing indicator
+          timeouts.push(setTimeout(() => {
+            if (mounted) setIsTyping(true);
+          }, elapsed));
 
           const typingDuration = 1600 + Math.min(msg.text.length * 12, 1000);
           elapsed += typingDuration;
 
-          timeouts.push(
-            setTimeout(() => {
-              if (mounted) {
-                setIsTyping(false);
-                setVisibleCount(i + 1);
-              }
-            }, elapsed)
-          );
+          // Bot message appears
+          timeouts.push(setTimeout(() => {
+            if (mounted) {
+              setIsTyping(false);
+              setVisibleCount(i + 1);
+            }
+          }, elapsed));
 
           elapsed += 700;
-        } else {
-          timeouts.push(
-            setTimeout(() => {
-              if (mounted) setVisibleCount(i + 1);
-            }, elapsed)
-          );
 
-          elapsed += 900;
+          // Chip tap simulation — user taps "Bestätigen" after 1.5s
+          if ("chips" in msg && msg.chips) {
+            timeouts.push(setTimeout(() => {
+              if (mounted) setTappedChip(0);
+            }, elapsed));
+
+            elapsed += 700;
+
+            timeouts.push(setTimeout(() => {
+              if (mounted) setTappedChip(null);
+            }, elapsed));
+
+            elapsed += 500;
+          }
+        } else {
+          // User starts typing in input bar
+          timeouts.push(setTimeout(() => {
+            if (mounted) setIsUserTyping(true);
+          }, elapsed));
+
+          // Type out text character by character
+          const text = msg.text;
+          const typeSpeed = 28;
+          const typingDuration = text.length * typeSpeed;
+
+          for (let j = 1; j <= text.length; j++) {
+            timeouts.push(setTimeout(() => {
+              if (mounted) setInputText(text.slice(0, j));
+            }, elapsed + j * typeSpeed));
+          }
+
+          elapsed += typingDuration + 500;
+
+          // Send: clear input, show message, set read status to "sent"
+          timeouts.push(setTimeout(() => {
+            if (mounted) {
+              setIsUserTyping(false);
+              setInputText("");
+              setVisibleCount(i + 1);
+              setReadStatus((prev) => ({ ...prev, [i]: "sent" }));
+            }
+          }, elapsed));
+
+          // Read receipt progression: sent → delivered (double gray check)
+          timeouts.push(setTimeout(() => {
+            if (mounted) setReadStatus((prev) => ({ ...prev, [i]: "delivered" }));
+          }, elapsed + 600));
+
+          // delivered → read (double blue check)
+          timeouts.push(setTimeout(() => {
+            if (mounted) setReadStatus((prev) => ({ ...prev, [i]: "read" }));
+          }, elapsed + 1400));
+
+          elapsed += 2000;
         }
       });
 
-      timeouts.push(
-        setTimeout(() => {
-          if (mounted) {
-            setVisibleCount(0);
-            setIsTyping(false);
-            setTimeout(() => {
-              if (mounted) scheduleSequence();
-            }, 300);
-          }
-        }, elapsed + 4000)
-      );
+      // Loop: reset after 4s pause
+      timeouts.push(setTimeout(() => {
+        if (mounted) {
+          setVisibleCount(0);
+          setIsTyping(false);
+          setInputText("");
+          setIsUserTyping(false);
+          setTappedChip(null);
+          setReadStatus({});
+          setTimeout(() => {
+            if (mounted) scheduleSequence();
+          }, 400);
+        }
+      }, elapsed + 4000));
     };
 
     scheduleSequence();
@@ -261,7 +315,7 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
         behavior: "smooth",
       });
     }
-  }, [visibleCount, isTyping]);
+  }, [visibleCount, isTyping, inputText]);
 
   const typingLabel = lang === "en" ? "typing…" : "tippt…";
 
@@ -381,29 +435,47 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
 
                         {"chips" in m && m.chips && (
                           <div className="mt-2 flex flex-wrap gap-1.5">
-                            {m.chips.map((ch, idx) => (
-                              <span
-                                key={ch}
-                                className="rounded-full px-3 py-1 text-[11px] font-semibold"
-                                style={{
-                                  background: idx === 0 ? WA.accent : "transparent",
-                                  color: idx === 0 ? "#0b0f1a" : WA.text,
-                                  border: idx === 0 ? "none" : `1px solid ${WA.meta}40`,
-                                }}
-                              >
-                                {ch}
-                              </span>
-                            ))}
+                            {m.chips.map((ch, idx) => {
+                              const isTapped = tappedChip === idx && visibleCount === i + 1;
+                              return (
+                                <motion.span
+                                  key={ch}
+                                  animate={isTapped ? { scale: [1, 0.92, 1] } : { scale: 1 }}
+                                  transition={{ duration: 0.3 }}
+                                  className="rounded-full px-3 py-1 text-[11px] font-semibold"
+                                  style={{
+                                    background: isTapped
+                                      ? WA.accent
+                                      : idx === 0
+                                        ? WA.accent
+                                        : "transparent",
+                                    color: idx === 0 || isTapped ? "#0b0f1a" : WA.text,
+                                    border: idx === 0 && !isTapped ? "none" : `1px solid ${WA.meta}40`,
+                                    opacity: isTapped ? 1 : tappedChip !== null && visibleCount === i + 1 ? 0.5 : 1,
+                                  }}
+                                >
+                                  {ch}
+                                </motion.span>
+                              );
+                            })}
                           </div>
                         )}
                       </div>
 
-                      {/* timestamp + read receipts */}
+                      {/* timestamp + progressive read receipts */}
                       <div className="absolute right-1.5 bottom-0.5 flex items-center gap-0.5">
                         <span className="text-[10px]" style={{ color: WA.meta }}>
                           {times[i]}
                         </span>
-                        {isUser && <CheckCheck size={11} style={{ color: WA.read }} />}
+                        {isUser && readStatus[i] === "sent" && (
+                          <Check size={11} style={{ color: WA.meta }} />
+                        )}
+                        {isUser && readStatus[i] === "delivered" && (
+                          <CheckCheck size={11} style={{ color: WA.meta }} />
+                        )}
+                        {isUser && readStatus[i] === "read" && (
+                          <CheckCheck size={11} style={{ color: WA.read }} />
+                        )}
                       </div>
                     </div>
                   </motion.div>
@@ -445,25 +517,60 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
             </AnimatePresence>
           </div>
 
-          {/* WhatsApp input bar */}
+          {/* WhatsApp input bar — shows user typing + send/mic toggle */}
           <div className="relative z-10 flex items-center gap-2 bg-[#1f2c34] px-2 py-2">
             <div
               className="flex flex-1 items-center gap-2 rounded-full px-3 py-1.5"
               style={{ background: WA.inputField }}
             >
               <Smile size={20} style={{ color: WA.meta }} />
-              <span className="flex-1 text-[13px]" style={{ color: WA.meta }}>
-                {lang === "en" ? "Message" : "Nachricht"}
+              <span
+                className="flex-1 truncate text-[13px]"
+                style={{ color: isUserTyping && inputText ? WA.text : WA.meta }}
+              >
+                {isUserTyping && inputText ? inputText : (lang === "en" ? "Message" : "Nachricht")}
+                {isUserTyping && (
+                  <motion.span
+                    animate={{ opacity: [1, 0, 1] }}
+                    transition={{ duration: 0.8, repeat: Infinity }}
+                    className="ml-0.5 inline-block"
+                    style={{ color: WA.text }}
+                  >
+                    |
+                  </motion.span>
+                )}
               </span>
               <Paperclip size={18} style={{ color: WA.meta }} />
               <Camera size={18} style={{ color: WA.meta }} />
             </div>
-            <div
-              className="flex h-9 w-9 items-center justify-center rounded-full"
-              style={{ background: WA.accent }}
-            >
-              <Mic size={18} className="text-[#0b0f1a]" />
-            </div>
+            {/* Mic → Send arrow toggle: when user is typing, show send arrow */}
+            <AnimatePresence mode="wait">
+              {isUserTyping && inputText ? (
+                <motion.div
+                  key="send"
+                  initial={{ scale: 0, rotate: -90 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  exit={{ scale: 0, rotate: 90 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex h-9 w-9 items-center justify-center rounded-full"
+                  style={{ background: WA.accent }}
+                >
+                  <Send size={18} className="text-[#0b0f1a]" />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="mic"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  exit={{ scale: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex h-9 w-9 items-center justify-center rounded-full"
+                  style={{ background: WA.accent }}
+                >
+                  <Mic size={18} className="text-[#0b0f1a]" />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       </div>

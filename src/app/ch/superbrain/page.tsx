@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import SuperbrainPage, { superbrainFaq } from "@/components/marketing/superbrain-page";
+import SuperbrainPage from "@/components/marketing/superbrain-page";
+import { superbrainFaq } from "@/components/marketing/superbrain-content";
 import {
   JsonLd,
   organizationLd,
