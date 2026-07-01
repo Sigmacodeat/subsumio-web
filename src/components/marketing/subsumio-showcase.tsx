@@ -6,7 +6,7 @@
 // Content is sourced from VERTICALS[lang].legal so copy stays single-source +
 // SEO-indexable; this file owns only the presentation + motion.
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
   Paperclip,
@@ -181,7 +181,7 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
     inputField: "#2a3b45",
   } as const;
 
-  const chat = c.chat.slice(0, 4);
+  const chat = useMemo(() => c.chat.slice(0, 4), [c]);
   const times = ["14:02", "14:02", "14:03", "14:04"];
 
   const [visibleCount, setVisibleCount] = useState(reduce ? chat.length : 0);
@@ -210,42 +210,52 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
 
         if (isBot) {
           // Bot typing indicator
-          timeouts.push(setTimeout(() => {
-            if (mounted) setIsTyping(true);
-          }, elapsed));
+          timeouts.push(
+            setTimeout(() => {
+              if (mounted) setIsTyping(true);
+            }, elapsed)
+          );
 
           const typingDuration = 1600 + Math.min(msg.text.length * 12, 1000);
           elapsed += typingDuration;
 
           // Bot message appears
-          timeouts.push(setTimeout(() => {
-            if (mounted) {
-              setIsTyping(false);
-              setVisibleCount(i + 1);
-            }
-          }, elapsed));
+          timeouts.push(
+            setTimeout(() => {
+              if (mounted) {
+                setIsTyping(false);
+                setVisibleCount(i + 1);
+              }
+            }, elapsed)
+          );
 
           elapsed += 700;
 
           // Chip tap simulation — user taps "Bestätigen" after 1.5s
           if ("chips" in msg && msg.chips) {
-            timeouts.push(setTimeout(() => {
-              if (mounted) setTappedChip(0);
-            }, elapsed));
+            timeouts.push(
+              setTimeout(() => {
+                if (mounted) setTappedChip(0);
+              }, elapsed)
+            );
 
             elapsed += 700;
 
-            timeouts.push(setTimeout(() => {
-              if (mounted) setTappedChip(null);
-            }, elapsed));
+            timeouts.push(
+              setTimeout(() => {
+                if (mounted) setTappedChip(null);
+              }, elapsed)
+            );
 
             elapsed += 500;
           }
         } else {
           // User starts typing in input bar
-          timeouts.push(setTimeout(() => {
-            if (mounted) setIsUserTyping(true);
-          }, elapsed));
+          timeouts.push(
+            setTimeout(() => {
+              if (mounted) setIsUserTyping(true);
+            }, elapsed)
+          );
 
           // Type out text character by character
           const text = msg.text;
@@ -253,51 +263,64 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
           const typingDuration = text.length * typeSpeed;
 
           for (let j = 1; j <= text.length; j++) {
-            timeouts.push(setTimeout(() => {
-              if (mounted) setInputText(text.slice(0, j));
-            }, elapsed + j * typeSpeed));
+            timeouts.push(
+              setTimeout(
+                () => {
+                  if (mounted) setInputText(text.slice(0, j));
+                },
+                elapsed + j * typeSpeed
+              )
+            );
           }
 
           elapsed += typingDuration + 500;
 
           // Send: clear input, show message, set read status to "sent"
-          timeouts.push(setTimeout(() => {
-            if (mounted) {
-              setIsUserTyping(false);
-              setInputText("");
-              setVisibleCount(i + 1);
-              setReadStatus((prev) => ({ ...prev, [i]: "sent" }));
-            }
-          }, elapsed));
+          timeouts.push(
+            setTimeout(() => {
+              if (mounted) {
+                setIsUserTyping(false);
+                setInputText("");
+                setVisibleCount(i + 1);
+                setReadStatus((prev) => ({ ...prev, [i]: "sent" }));
+              }
+            }, elapsed)
+          );
 
           // Read receipt progression: sent → delivered (double gray check)
-          timeouts.push(setTimeout(() => {
-            if (mounted) setReadStatus((prev) => ({ ...prev, [i]: "delivered" }));
-          }, elapsed + 600));
+          timeouts.push(
+            setTimeout(() => {
+              if (mounted) setReadStatus((prev) => ({ ...prev, [i]: "delivered" }));
+            }, elapsed + 600)
+          );
 
           // delivered → read (double blue check)
-          timeouts.push(setTimeout(() => {
-            if (mounted) setReadStatus((prev) => ({ ...prev, [i]: "read" }));
-          }, elapsed + 1400));
+          timeouts.push(
+            setTimeout(() => {
+              if (mounted) setReadStatus((prev) => ({ ...prev, [i]: "read" }));
+            }, elapsed + 1400)
+          );
 
           elapsed += 2000;
         }
       });
 
       // Loop: reset after 4s pause
-      timeouts.push(setTimeout(() => {
-        if (mounted) {
-          setVisibleCount(0);
-          setIsTyping(false);
-          setInputText("");
-          setIsUserTyping(false);
-          setTappedChip(null);
-          setReadStatus({});
-          setTimeout(() => {
-            if (mounted) scheduleSequence();
-          }, 400);
-        }
-      }, elapsed + 4000));
+      timeouts.push(
+        setTimeout(() => {
+          if (mounted) {
+            setVisibleCount(0);
+            setIsTyping(false);
+            setInputText("");
+            setIsUserTyping(false);
+            setTappedChip(null);
+            setReadStatus({});
+            setTimeout(() => {
+              if (mounted) scheduleSequence();
+            }, 400);
+          }
+        }, elapsed + 4000)
+      );
     };
 
     scheduleSequence();
@@ -306,7 +329,7 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
       mounted = false;
       timeouts.forEach(clearTimeout);
     };
-  }, [reduce, chat.length, chat]);
+  }, [reduce, chat]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -450,8 +473,13 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
                                         ? WA.accent
                                         : "transparent",
                                     color: idx === 0 || isTapped ? "#0b0f1a" : WA.text,
-                                    border: idx === 0 && !isTapped ? "none" : `1px solid ${WA.meta}40`,
-                                    opacity: isTapped ? 1 : tappedChip !== null && visibleCount === i + 1 ? 0.5 : 1,
+                                    border:
+                                      idx === 0 && !isTapped ? "none" : `1px solid ${WA.meta}40`,
+                                    opacity: isTapped
+                                      ? 1
+                                      : tappedChip !== null && visibleCount === i + 1
+                                        ? 0.5
+                                        : 1,
                                   }}
                                 >
                                   {ch}
@@ -528,7 +556,7 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
                 className="flex-1 truncate text-[13px]"
                 style={{ color: isUserTyping && inputText ? WA.text : WA.meta }}
               >
-                {isUserTyping && inputText ? inputText : (lang === "en" ? "Message" : "Nachricht")}
+                {isUserTyping && inputText ? inputText : lang === "en" ? "Message" : "Nachricht"}
                 {isUserTyping && (
                   <motion.span
                     animate={{ opacity: [1, 0, 1] }}
