@@ -426,7 +426,11 @@ describe("runCycle — yieldBetweenPhases hook", () => {
     // v0.41.11.0: 20 phases (added `conversation_facts_backfill` between consolidate and propose_takes).
     // v0.41.39 (#1700) + v0.42.0.0: 22 phases (added `enrich_thin` AND `skillopt`
     // between conversation_facts_backfill and embed — both landed in this merge).
-    expect(hookCalls).toBe(22);
+    // v0.43: 26 phases (+4 legal phases). v0.44: legal_commentary_synthesis
+    // added to CyclePhase but not ALL_PHASES (opt-in).
+    // v0.45: 29 phases (+engram_maturation, +reconsolidation_sweep,
+    // +legal_commentary_synthesis added to ALL_PHASES).
+    expect(hookCalls).toBe(29);
   });
 
   test("hook exceptions do not abort the cycle", async () => {
@@ -441,7 +445,10 @@ describe("runCycle — yieldBetweenPhases hook", () => {
     // v0.39.0.0: 17 phases (T12 schema-suggest phase between orphans and purge).
     // v0.41.11.0: 20 phases (+extract_atoms, +synthesize_concepts, +conversation_facts_backfill).
     // v0.41.39 (#1700) + v0.42.0.0: 22 phases (+enrich_thin, +skillopt).
-    expect(report.phases.length).toBe(22);
+    // v0.43: 26 phases (+4 legal phases). v0.44: 27 (+legal_commentary_synthesis).
+    // v0.45: 29 phases (+engram_maturation, +reconsolidation_sweep,
+    // +legal_commentary_synthesis added to ALL_PHASES).
+    expect(report.phases.length).toBe(29);
   });
 });
 

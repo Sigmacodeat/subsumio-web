@@ -29,10 +29,10 @@ export const copy = {
     },
     stats: [
       {
-        value: 25,
+        value: 27,
         suffix: "",
         label: "Nächtliche Gehirn-Phasen",
-        sub: "Konsolidierung, Widerspruchsprüfung, Regeneration",
+        sub: "Konsolidierung, Engram-Reifung, Reconsolidation, Widerspruchsprüfung",
       },
       {
         value: 5,
@@ -133,11 +133,12 @@ export const copy = {
         color: "rose",
       },
     ],
-    costNote: "5 Ebenen. 25 Phasen. Ein Wissensgraph, der jede Nacht wächst — und nie vergisst.",
+    costNote:
+      "5 Ebenen. 27 Phasen. Ein Wissensgraph, der jede Nacht wächst — und durch Reconsolidation reicher wird.",
     // ── DREAM CYCLE ──
     cycleTitle: "Nächtliche Gehirnregeneration",
     cycleSub:
-      "Während du schläfst, durchläuft das SuperBrain 25 Phasen — wie das menschliche Gehirn im Schlaf Erinnerungen wiederholt, verstärkt und neu verknüpft. Fakten werden zu Wissen, Takes zu Verständnis, Widersprüche zu klaren Signalen. Alles automatisch, alles überwacht, alles protokolliert.",
+      "Während du schläfst, durchläuft das SuperBrain 27 Phasen — wie das menschliche Gehirn im Schlaf Erinnerungen wiederholt, verstärkt und neu verknüpft. Fakten werden zu Wissen, Takes zu Verständnis, Widersprüche zu klaren Signalen. Neu: Engram-Reifung und Reconsolidation — inspiriert von der Neurowissenschaft. Alles automatisch, alles überwacht, alles protokolliert.",
     cycleSteps: [
       {
         phase: "extract_facts",
@@ -156,6 +157,18 @@ export const copy = {
         label: "Konsolidieren",
         icon: Layers,
         desc: "Fakten clustern → Takes promovieren → Duplikate entfernen",
+      },
+      {
+        phase: "engram_maturation",
+        label: "Engram-Reifung",
+        icon: Brain,
+        desc: "Neue Erinnerungen starten 'still' und reifen über 7 Tage via Sigmoid-Kurve — wie der menschliche Hippocampus. Implizites Wissen wird zu explizitem Verständnis.",
+      },
+      {
+        phase: "reconsolidation",
+        label: "Reconsolidation",
+        icon: RefreshCw,
+        desc: "Beim Abruf wird eine Erinnerung 'labil' für 60 Minuten — neue Nuancen können einfließen, wie im menschlichen Gehirn. Wissen wird reicher, nicht nur größer.",
       },
       {
         phase: "embed",
@@ -216,7 +229,17 @@ export const copy = {
       {
         feature: "Nächtliche Konsolidierung",
         others: "Nicht vorhanden",
-        subsumio: "25 Phasen: Konsolidierung, Widerspruchsprüfung, Regeneration",
+        subsumio: "27 Phasen: Konsolidierung, Engram-Reifung, Reconsolidation, Widerspruchsprüfung",
+      },
+      {
+        feature: "Engram-Reifung",
+        others: "Nicht vorhanden — kein Konzept von Gedächtnis-Reifung",
+        subsumio: "Sigmoid-Maturationskurve über 7 Tage — still → implizit → explizit",
+      },
+      {
+        feature: "Reconsolidation",
+        others: "Nicht vorhanden — Erinnerungen sind statisch",
+        subsumio: "Labiles Fenster bei Abruf — Wissen wird reicher durch Nuancen",
       },
       {
         feature: "Legal Benchmark",
@@ -357,11 +380,11 @@ export const copy = {
     faq: [
       {
         q: "Was ist das Subsumio SuperBrain?",
-        a: "Das SuperBrain ist die KI-Engine hinter Subsumio — ein künstliches juristisches Gehirn, das jede Nacht regeneriert. Es baut aus deinen Dokumenten einen Wissensgraphen mit 25 automatisierten Phasen und 5 Qualitäts-Ebenen. Jede Antwort stammt aus deinen Akten — mit Fundstellen, nicht aus einem generischen Modell.",
+        a: "Das SuperBrain ist die KI-Engine hinter Subsumio — ein künstliches juristisches Gehirn, das jede Nacht regeneriert. Es baut aus deinen Dokumenten einen Wissensgraphen mit 27 automatisierten Phasen und 5 Qualitäts-Ebenen. Jede Antwort stammt aus deinen Akten — mit Fundstellen, nicht aus einem generischen Modell.",
       },
       {
         q: "Was ist die nächtliche Gehirnregeneration?",
-        a: "Der Dream Cycle ist die nächtliche Konsolidierungsschleife des SuperBrain. Sie entspricht dem, was im menschlichen Gehirn im Schlaf passiert: Informationen werden wiederholt, verstärkt, mit bestehendem Wissen verknüpft und widersprüchliche oder vergessene Fragmente aussortiert. 25 Phasen, vollautomatisch, alles protokolliert.",
+        a: "Der Dream Cycle ist die nächtliche Konsolidierungsschleife des SuperBrain. Sie entspricht dem, was im menschlichen Gehirn im Schlaf passiert: Informationen werden wiederholt, verstärkt, mit bestehendem Wissen verknüpft und widersprüchliche oder vergessene Fragmente aussortiert. 27 Phasen, vollautomatisch, alles protokolliert. Neu: Engram-Reifung (Gedächtnis reift über 7 Tage) und Reconsolidation (Wissen wird bei Abruf reicher).",
       },
       {
         q: "Was ist der LEXam-Benchmark?",
@@ -402,7 +425,8 @@ export const copy = {
     ],
     // ── STICKY CTA ──
     stickyCtaText: "14 Tage kostenlos testen",
-    stickyCtaHint: "Keine Kreditkarte · Dein Brain wird jede Nacht schlauer — wie ein Mensch, der schläft",
+    stickyCtaHint:
+      "Keine Kreditkarte · Dein Brain wird jede Nacht schlauer — wie ein Mensch, der schläft",
     ctaTitle: "Erlebe das SuperBrain",
     ctaSub:
       "Starte heute. Dein juristisches Gehirn wächst ab der ersten Akte — jede Nacht, automatisch, und gewinnt an Verständnis. 14 Tage kostenlos, keine Kreditkarte.",
@@ -418,10 +442,10 @@ export const copy = {
     },
     stats: [
       {
-        value: 25,
+        value: 27,
         suffix: "",
         label: "Nightly brain phases",
-        sub: "Consolidation, contradiction probing, regeneration",
+        sub: "Consolidation, engram maturation, reconsolidation, contradiction probing",
       },
       {
         value: 5,
@@ -510,10 +534,11 @@ export const copy = {
         color: "rose",
       },
     ],
-    costNote: "5 layers. 25 phases. A knowledge graph that grows every night — and never forgets.",
+    costNote:
+      "5 layers. 27 phases. A knowledge graph that grows every night — and gets richer through reconsolidation.",
     cycleTitle: "Nightly brain regeneration",
     cycleSub:
-      "While you sleep, the SuperBrain runs 25 phases — just like the human brain repeats, strengthens, and rewires memories during sleep. Facts become knowledge, takes become understanding, contradictions become clear signals. All automatic, all monitored, all logged.",
+      "While you sleep, the SuperBrain runs 27 phases — just like the human brain repeats, strengthens, and rewires memories during sleep. Facts become knowledge, takes become understanding, contradictions become clear signals. New: Engram Maturation and Reconsolidation — inspired by neuroscience. All automatic, all monitored, all logged.",
     cycleSteps: [
       {
         phase: "extract_facts",
@@ -532,6 +557,18 @@ export const copy = {
         label: "Consolidate",
         icon: Layers,
         desc: "Cluster facts → promote takes → remove duplicates",
+      },
+      {
+        phase: "engram_maturation",
+        label: "Engram maturation",
+        icon: Brain,
+        desc: "New memories start 'silent' and mature over 7 days via a sigmoid curve — like the human hippocampus. Implicit knowledge becomes explicit understanding.",
+      },
+      {
+        phase: "reconsolidation",
+        label: "Reconsolidation",
+        icon: RefreshCw,
+        desc: "When a memory is retrieved, it becomes 'labile' for 60 minutes — new nuances can merge in, like in the human brain. Knowledge gets richer, not just bigger.",
       },
       {
         phase: "embed",
@@ -591,7 +628,18 @@ export const copy = {
       {
         feature: "Nightly consolidation",
         others: "Not present",
-        subsumio: "25 phases: consolidation, contradiction probing, regeneration",
+        subsumio:
+          "27 phases: consolidation, engram maturation, reconsolidation, contradiction probing",
+      },
+      {
+        feature: "Engram maturation",
+        others: "Not present — no concept of memory maturation",
+        subsumio: "Sigmoid maturation curve over 7 days — silent → implicit → explicit",
+      },
+      {
+        feature: "Reconsolidation",
+        others: "Not present — memories are static",
+        subsumio: "Labile window on retrieval — knowledge gets richer through nuances",
       },
       {
         feature: "Legal benchmark",
@@ -730,11 +778,11 @@ export const copy = {
     faq: [
       {
         q: "What is the Subsumio SuperBrain?",
-        a: "The SuperBrain is the AI engine behind Subsumio — an artificial legal brain that regenerates every night. It builds a knowledge graph from your documents with 25 automated phases and 5 quality layers. Every answer comes from your matters — with citations, not from a generic model.",
+        a: "The SuperBrain is the AI engine behind Subsumio — an artificial legal brain that regenerates every night. It builds a knowledge graph from your documents with 27 automated phases and 5 quality layers. Every answer comes from your matters — with citations, not from a generic model.",
       },
       {
         q: "What is nightly brain regeneration?",
-        a: "The Dream Cycle is the SuperBrain's nightly consolidation loop. It mirrors what happens in the human brain during sleep: information is replayed, strengthened, connected to existing knowledge, and conflicting or stale fragments are pruned. 25 phases, fully automatic, everything logged.",
+        a: "The Dream Cycle is the SuperBrain's nightly consolidation loop. It mirrors what happens in the human brain during sleep: information is replayed, strengthened, connected to existing knowledge, and conflicting or stale fragments are pruned. 27 phases, fully automatic, everything logged. New: Engram Maturation (memories mature over 7 days) and Reconsolidation (knowledge gets richer on retrieval).",
       },
       {
         q: "What is the LEXam benchmark?",

@@ -569,6 +569,12 @@ function remoteFactToRow(o: Record<string, unknown>): FactRow {
     embedding: null,
     embedded_at: null,
     created_at: parseMaybeDate(o.created_at) ?? new Date(0),
+    activation_strength: typeof o.activation_strength === "number" ? o.activation_strength : 0,
+    matured_at: parseMaybeDate(o.matured_at),
+    labile_until: parseMaybeDate(o.labile_until),
+    reconsolidation_count:
+      typeof o.reconsolidation_count === "number" ? o.reconsolidation_count : 0,
+    last_accessed_at: parseMaybeDate(o.last_accessed_at),
   };
 }
 
@@ -591,6 +597,11 @@ function factRowToJson(r: FactRow): Record<string, unknown> {
     confidence: r.confidence,
     effective_confidence: Number(effectiveConfidence(r).toFixed(3)),
     created_at: r.created_at.toISOString(),
+    activation_strength: r.activation_strength,
+    matured_at: r.matured_at?.toISOString() ?? null,
+    labile_until: r.labile_until?.toISOString() ?? null,
+    reconsolidation_count: r.reconsolidation_count,
+    last_accessed_at: r.last_accessed_at?.toISOString() ?? null,
   };
 }
 

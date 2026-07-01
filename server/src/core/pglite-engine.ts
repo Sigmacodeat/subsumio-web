@@ -4307,6 +4307,128 @@ export class PGLiteEngine implements BrainEngine {
     );
   }
 
+  // v0.45 — Engram Maturation + Reconsolidation methods
+
+  async updateFactActivation(id: number, activationStrength: number): Promise<void> {
+    const clamped = Math.max(0, Math.min(1, activationStrength));
+    await this.db.query(
+      `UPDATE facts
+       SET activation_strength = $1,
+           matured_at = CASE WHEN matured_at IS NULL AND $1 >= 0.5 THEN now() ELSE matured_at END
+       WHERE id = $2`,
+      [clamped, id]
+    );
+  }
+
+  async batchUpdateFactActivation(
+    updates: Array<{ id: number; activation_strength: number }>
+  ): Promise<number> {
+    if (updates.length === 0) return 0;
+    let count = 0;
+    for (const u of updates) {
+      const clamped = Math.max(0, Math.min(1, u.activation_strength));
+      const result = await this.db.query(
+        `UPDATE facts
+         SET activation_strength = $1,
+             matured_at = CASE WHEN matured_at IS NULL AND $1 >= 0.5 THEN now() ELSE matured_at END
+         WHERE id = $2`,
+        [clamped, u.id]
+      );
+      count += (result as { rowCount?: number }).rowCount ?? 0;
+    }
+    return count;
+  }
+
+  async openReconsolidationWindow(id: number, opts?: { windowMinutes?: number }): Promise<void> {
+    const minutes = opts?.windowMinutes ?? 60;
+    await this.db.query(
+      `UPDATE facts
+       SET labile_until = now() + ($1 || ' minutes')::interval,
+           last_accessed_at = now()
+       WHERE id = $2`,
+      [String(minutes), id]
+    );
+  }
+
+  async reconsolidateFact(
+    id: number,
+    update: { fact?: string; context?: string | null; confidence?: number }
+  ): Promise<boolean> {
+    const result = await this.db.query<{ labile_until: Date | null }>(
+      `SELECT labile_until FROM facts WHERE id = $1`,
+      [id]
+    );
+    if (result.rows.length === 0) return false;
+    const labileUntil = result.rows[0].labile_until;
+    if (labileUntil == null || new Date(labileUntil) < new Date()) {
+      return false;
+    }
+    const parts: string[] = [
+      `reconsolidation_count = reconsolidation_count + 1`,
+      `labile_until = NULL`,
+    ];
+    const params: unknown[] = [];
+    let paramIdx = 1;
+    if (update.fact !== undefined) {
+      params.push(update.fact);
+      parts.push(`fact = $${paramIdx++}`);
+    }
+    if (update.context !== undefined) {
+      params.push(update.context);
+      parts.push(`context = $${paramIdx++}`);
+    }
+    if (update.confidence !== undefined) {
+      params.push(update.confidence);
+      parts.push(`confidence = $${paramIdx++}`);
+    }
+    params.push(id);
+    await this.db.query(`UPDATE facts SET ${parts.join(", ")} WHERE id = $${paramIdx}`, params);
+    return true;
+  }
+
+  async findExpiredLabileFacts(sourceId: string, opts?: { limit?: number }): Promise<FactRow[]> {
+    const limit = opts?.limit ?? 100;
+    const result = await this.db.query<FactRowSqlShape>(
+      `SELECT * FROM facts
+       WHERE source_id = $1
+         AND labile_until IS NOT NULL
+         AND labile_until < now()
+         AND expired_at IS NULL
+       ORDER BY labile_until ASC
+       LIMIT $2`,
+      [sourceId, limit]
+    );
+    return result.rows.map(rowToFact);
+  }
+
+  async findMaturingFacts(sourceId: string, opts?: { limit?: number }): Promise<FactRow[]> {
+    const limit = opts?.limit ?? 500;
+    const result = await this.db.query<FactRowSqlShape>(
+      `SELECT * FROM facts
+       WHERE source_id = $1
+         AND activation_strength < 1.0
+         AND expired_at IS NULL
+       ORDER BY created_at ASC
+       LIMIT $2`,
+      [sourceId, limit]
+    );
+    return result.rows.map(rowToFact);
+  }
+
+  async backfillFactActivation(sourceId: string): Promise<number> {
+    const result = await this.db.query(
+      `UPDATE facts
+       SET activation_strength = 1.0,
+           matured_at = COALESCE(matured_at, created_at)
+       WHERE source_id = $1
+         AND activation_strength = 0.0
+         AND expired_at IS NULL
+         AND created_at < now() - interval '7 days'`,
+      [sourceId]
+    );
+    return (result as { rowCount?: number }).rowCount ?? 0;
+  }
+
   async getFactsHealth(source_id: string): Promise<FactsHealth> {
     const total = await this.db.query<{
       total_active: number;
@@ -6108,6 +6230,11 @@ interface FactRowSqlShape {
   embedding: string | number[] | Float32Array | null;
   embedded_at: Date | string | null;
   created_at: Date | string;
+  activation_strength: number | null;
+  matured_at: Date | string | null;
+  labile_until: Date | string | null;
+  reconsolidation_count: number | null;
+  last_accessed_at: Date | string | null;
 }
 
 function toDate(v: Date | string | null): Date | null {
@@ -6155,6 +6282,11 @@ function rowToFact(row: FactRowSqlShape): FactRow {
     embedding,
     embedded_at: toDate(row.embedded_at),
     created_at: toDate(row.created_at)!,
+    activation_strength: row.activation_strength ?? 0,
+    matured_at: toDate(row.matured_at),
+    labile_until: toDate(row.labile_until),
+    reconsolidation_count: row.reconsolidation_count ?? 0,
+    last_accessed_at: toDate(row.last_accessed_at),
   };
 }
 

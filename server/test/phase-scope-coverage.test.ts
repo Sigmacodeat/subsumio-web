@@ -41,15 +41,13 @@ describe("PHASE_SCOPE coverage", () => {
     expect(invalid).toEqual([]);
   });
 
-  test("all 22 phases covered (regression on accidental omission)", () => {
+  test("all 29 phases covered (regression on accidental omission)", () => {
     // Pin the count so a future PR that adds a phase to ALL_PHASES
-    // without updating PHASE_SCOPE notices here too. The v0.39.1.0
-    // master merge brought in the 17th phase (`schema-suggest`); v0.41
-    // adds 'extract_atoms' + 'synthesize_concepts' (T9 lens packs) +
-    // 'conversation_facts_backfill' (v0.41.11.0) for 20; v0.41.39 (#1700)
-    // adds 'enrich_thin' and v0.42.0.0 adds 'skillopt' for a total of 22.
-    expect(ALL_PHASES.length).toBe(22);
-    expect(Object.keys(PHASE_SCOPE).length).toBe(22);
+    // without updating PHASE_SCOPE notices here too. v0.45 adds
+    // 'engram_maturation' + 'reconsolidation_sweep' + adds
+    // 'legal_commentary_synthesis' to ALL_PHASES (was in PHASE_SCOPE only).
+    expect(ALL_PHASES.length).toBe(29);
+    expect(Object.keys(PHASE_SCOPE).length).toBe(29);
   });
 
   test("embed remains global (the headline brain-wide phase)", () => {

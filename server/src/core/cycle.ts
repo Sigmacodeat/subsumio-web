@@ -122,7 +122,14 @@ export type CyclePhase =
   // v0.44 — Synthetic commentary synthesis from linked judgements.
   //  - legal_commentary_synthesis: generates §-level commentaries from
   //    case→statute edges. Runs after legal_precedent_linkage.
-  | "legal_commentary_synthesis";
+  | "legal_commentary_synthesis"
+  // v0.45 — Cognitive memory mechanisms (opt-in, default OFF).
+  //  - engram_maturation: updates activation_strength for facts based on
+  //    sigmoid maturation curve. Also backfills pre-v119 facts.
+  //  - reconsolidation_sweep: clears expired labile windows on facts.
+  //    Runs after engram_maturation, before embed.
+  | "engram_maturation"
+  | "reconsolidation_sweep";
 
 export const ALL_PHASES: CyclePhase[] = [
   "lint",
@@ -206,6 +213,13 @@ export const ALL_PHASES: CyclePhase[] = [
   "legal_deadline_monitor",
   "legal_case_progression",
   "legal_precedent_linkage",
+  "legal_commentary_synthesis",
+  // v0.45 — Cognitive memory phases. Run AFTER legal phases (so legal
+  // facts are fresh) and BEFORE embed (so activation changes are visible
+  // to retrieval). engram_maturation updates sigmoid activation_strength;
+  // reconsolidation_sweep clears expired labile windows.
+  "engram_maturation",
+  "reconsolidation_sweep",
   "embed",
   "orphans",
   // v0.39 T12: passive schema-suggest. Runs LATE so post-sync brain state
@@ -281,6 +295,9 @@ export const PHASE_SCOPE: Record<CyclePhase, PhaseScope> = {
   legal_case_progression: "source",
   legal_precedent_linkage: "source",
   legal_commentary_synthesis: "source",
+  // v0.45 — Cognitive memory phases. Per-source (wrapper loops listSources).
+  engram_maturation: "source",
+  reconsolidation_sweep: "source",
 };
 
 /**
@@ -2345,6 +2362,65 @@ export async function runCycle(engine: BrainEngine | null, opts: CycleOpts): Pro
           runPhaseLegalCommentarySynthesis(engine, {
             dryRun,
             ...(cycleSourceId ? { sourceId: cycleSourceId } : {}),
+          })
+        );
+        result.duration_ms = duration_ms;
+        phaseResults.push(result);
+        progress.finish();
+      }
+      await safeYield(opts.yieldBetweenPhases);
+    }
+
+    // ── v0.45: engram_maturation (opt-in, default OFF) ────────────
+    // Updates activation_strength for facts based on sigmoid maturation
+    // curve. Also backfills pre-v119 facts. Runs BEFORE embed so
+    // activation changes are visible to retrieval.
+    if (phases.includes("engram_maturation")) {
+      checkAborted(opts.signal);
+      if (!engine) {
+        phaseResults.push({
+          phase: "engram_maturation",
+          status: "skipped",
+          duration_ms: 0,
+          summary: "no database connected",
+          details: { reason: "no_database" },
+        });
+      } else {
+        progress.start("cycle.engram_maturation");
+        const { runPhaseEngramMaturation } = await import("./cycle/engram-maturation.ts");
+        const { result, duration_ms } = await timePhase(() =>
+          runPhaseEngramMaturation(engine, {
+            dryRun,
+            ...(opts.signal ? { signal: opts.signal } : {}),
+          })
+        );
+        result.duration_ms = duration_ms;
+        phaseResults.push(result);
+        progress.finish();
+      }
+      await safeYield(opts.yieldBetweenPhases);
+    }
+
+    // ── v0.45: reconsolidation_sweep (opt-in, default OFF) ────────
+    // Clears expired labile windows on facts. Runs AFTER engram_maturation
+    // and BEFORE embed.
+    if (phases.includes("reconsolidation_sweep")) {
+      checkAborted(opts.signal);
+      if (!engine) {
+        phaseResults.push({
+          phase: "reconsolidation_sweep",
+          status: "skipped",
+          duration_ms: 0,
+          summary: "no database connected",
+          details: { reason: "no_database" },
+        });
+      } else {
+        progress.start("cycle.reconsolidation_sweep");
+        const { runPhaseReconsolidationSweep } = await import("./cycle/reconsolidation-sweep.ts");
+        const { result, duration_ms } = await timePhase(() =>
+          runPhaseReconsolidationSweep(engine, {
+            dryRun,
+            ...(opts.signal ? { signal: opts.signal } : {}),
           })
         );
         result.duration_ms = duration_ms;

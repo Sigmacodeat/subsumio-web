@@ -520,6 +520,39 @@ export interface FactRow {
   embedding: Float32Array | null;
   embedded_at: Date | null;
   created_at: Date;
+  /**
+   * v0.45 — Engram Maturation: 0.0..1.0 sigmoid activation strength.
+   * New facts start at 0.0 ("silent") and mature over ~7 days.
+   * Below 0.5 = "implicit" (influences scoring, not surfaced).
+   * Above 0.5 = "explicit" (available for answers + citations).
+   * Backfilled to 1.0 for pre-v119 facts on first engram_maturation cycle.
+   */
+  activation_strength: number;
+  /**
+   * v0.45 — Timestamp when activation_strength first crossed 0.5.
+   * Null for facts that haven't matured yet (or pre-v119 facts
+   * pending backfill).
+   */
+  matured_at: Date | null;
+  /**
+   * v0.45 — Reconsolidation: when this fact is in a "labile" state.
+   * Set to now() + 60min when the fact is retrieved. While labile,
+   * the fact can be updated with new context. After labile_until
+   * passes, the fact is "re-consolidated" (frozen again).
+   */
+  labile_until: Date | null;
+  /**
+   * v0.45 — How many times this fact has been reconsolidated
+   * (updated during a labile window). A proxy for memory "richness" —
+   * facts that have been refined many times are likely more nuanced.
+   */
+  reconsolidation_count: number;
+  /**
+   * v0.45 — Last time this fact was retrieved/accessed. Used by
+   * the reconsolidation mechanism to open the labile window and
+   * by adaptive forgetting to compute access frequency.
+   */
+  last_accessed_at: Date | null;
 }
 
 /** Input for insertFact. source_id supplied via the ctx arg. */
@@ -1817,6 +1850,64 @@ export interface BrainEngine {
    * Never DELETE — facts stay as audit trail.
    */
   consolidateFact(id: number, takeId: number): Promise<void>;
+
+  /**
+   * v0.45 — Engram Maturation: update activation_strength for a fact.
+   * Called by the engram_maturation cycle phase. When activation crosses
+   * 0.5 for the first time, matured_at is stamped.
+   */
+  updateFactActivation(id: number, activationStrength: number): Promise<void>;
+
+  /**
+   * v0.45 — Batch update activation_strength for multiple facts.
+   * Used by the engram_maturation cycle phase for efficiency.
+   * Each entry updates the fact's activation_strength and stamps
+   * matured_at if it crossed 0.5.
+   */
+  batchUpdateFactActivation(
+    updates: Array<{ id: number; activation_strength: number }>
+  ): Promise<number>;
+
+  /**
+   * v0.45 — Reconsolidation: open a labile window on a fact.
+   * Sets labile_until = now() + windowMinutes and last_accessed_at = now().
+   * Called when a fact is retrieved for use in a conversation/answer.
+   */
+  openReconsolidationWindow(id: number, opts?: { windowMinutes?: number }): Promise<void>;
+
+  /**
+   * v0.45 — Reconsolidation: update a fact during its labile window.
+   * Merges new context into the fact, increments reconsolidation_count,
+   * and clears labile_until. Returns false if the labile window has
+   * expired (caller should treat as a normal supersede instead).
+   */
+  reconsolidateFact(
+    id: number,
+    update: { fact?: string; context?: string | null; confidence?: number }
+  ): Promise<boolean>;
+
+  /**
+   * v0.45 — Find facts with expired labile windows that need
+   * re-consolidation (labile_until < now() and still set).
+   * Used by the reconsolidation_sweep cycle phase to clean up.
+   */
+  findExpiredLabileFacts(sourceId: string, opts?: { limit?: number }): Promise<FactRow[]>;
+
+  /**
+   * v0.45 — Find facts that need activation strength updates.
+   * Returns facts where activation_strength < 1.0 and
+   * (matured_at IS NULL OR activation_strength < 0.5).
+   * Used by the engram_maturation cycle phase.
+   */
+  findMaturingFacts(sourceId: string, opts?: { limit?: number }): Promise<FactRow[]>;
+
+  /**
+   * v0.45 — Backfill activation_strength for pre-v119 facts.
+   * Sets activation_strength = 1.0 and matured_at = created_at for
+   * all facts that still have the default 0.0. Called once on first
+   * engram_maturation cycle run after migration v119.
+   */
+  backfillFactActivation(sourceId: string): Promise<number>;
 
   /**
    * v0.35.4 (D-CDX-1 + D-CDX-6) — chronological fact trajectory for an

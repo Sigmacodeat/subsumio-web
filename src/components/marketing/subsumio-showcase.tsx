@@ -190,6 +190,7 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
   const [isUserTyping, setIsUserTyping] = useState(false);
   const [tappedChip, setTappedChip] = useState<number | null>(null);
   const [readStatus, setReadStatus] = useState<Record<number, "sent" | "delivered" | "read">>({});
+  const [fadingOut, setFadingOut] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -305,7 +306,14 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
         }
       });
 
-      // Loop: reset after 4s pause
+      // Fade-out 400ms before reset
+      timeouts.push(
+        setTimeout(() => {
+          if (mounted) setFadingOut(true);
+        }, elapsed + 3600)
+      );
+
+      // Loop: reset after 4s pause (messages already faded out)
       timeouts.push(
         setTimeout(() => {
           if (mounted) {
@@ -315,9 +323,12 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
             setIsUserTyping(false);
             setTappedChip(null);
             setReadStatus({});
-            setTimeout(() => {
-              if (mounted) scheduleSequence();
-            }, 400);
+            setFadingOut(false);
+            timeouts.push(
+              setTimeout(() => {
+                if (mounted) scheduleSequence();
+              }, 400)
+            );
           }
         }, elapsed + 4000)
       );
@@ -338,7 +349,7 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
         behavior: "smooth",
       });
     }
-  }, [visibleCount, isTyping, inputText]);
+  }, [visibleCount, isTyping]);
 
   const typingLabel = lang === "en" ? "typing…" : "tippt…";
 
@@ -389,8 +400,8 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
           {/* Messages — auto-scrolling, hidden scrollbar */}
           <div
             ref={scrollRef}
-            className="relative z-10 h-[340px] space-y-2 overflow-y-auto px-3 py-3 [&::-webkit-scrollbar]:hidden"
-            style={{ scrollbarWidth: "none" }}
+            className="relative z-10 h-[340px] space-y-2 overflow-y-auto px-3 py-3 transition-opacity duration-400 ease-in-out [&::-webkit-scrollbar]:hidden"
+            style={{ scrollbarWidth: "none", opacity: fadingOut ? 0 : 1 }}
           >
             {chat.slice(0, visibleCount).map((m, i) => {
               const isUser = m.from === "user";
@@ -439,7 +450,7 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
                           />
                         </svg>
                       </span>
-                      <div className="pr-12">
+                      <div className="pr-12 whitespace-pre-line">
                         {m.text}
 
                         {"file" in m && m.file && (

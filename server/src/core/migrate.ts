@@ -5357,6 +5357,49 @@ export const MIGRATIONS: Migration[] = [
         setweight(to_tsvector('german', coalesce(p.timeline, '')), 'C');
     `,
   },
+  {
+    version: 119,
+    name: "engram_maturation_reconsolidation",
+    // v0.45 — Cognitive memory mechanisms inspired by neuroscience:
+    //
+    // Engram Maturation (Kitamura et al., 2017):
+    //   New facts start "silent" (activation_strength = 0.0). Over ~7 days
+    //   they mature via a sigmoid curve. Below A=0.5 they're "implicit" —
+    //   they influence relevance scoring but aren't surfaced as citations.
+    //   Above A=0.5 they're "explicit" — fully available for answers.
+    //   This mirrors how human memories form immediately but remain
+    //   "silent" for days before becoming explicitly retrievable.
+    //
+    // Reconsolidation (Nader et al., 2000):
+    //   When a fact is retrieved, it enters a "labile" state for a
+    //   configurable window (default 60 min). During this window the fact
+    //   can be updated with new context, corrections, or elaborations.
+    //   After the window closes, the fact is "re-consolidated" with the
+    //   merged content. reconsolidation_count tracks how many times a fact
+    //   has been updated this way — a proxy for memory "richness".
+    //
+    // Both columns are nullable with safe defaults so pre-v119 brains
+    // continue working without backfill. The cycle phase
+    // (engram_maturation) backfills activation_strength for existing
+    // facts on first run.
+    idempotent: true,
+    sql: `
+      ALTER TABLE facts ADD COLUMN IF NOT EXISTS activation_strength REAL NOT NULL DEFAULT 0.0
+        CHECK (activation_strength BETWEEN 0 AND 1);
+      ALTER TABLE facts ADD COLUMN IF NOT EXISTS matured_at TIMESTAMPTZ;
+      ALTER TABLE facts ADD COLUMN IF NOT EXISTS labile_until TIMESTAMPTZ;
+      ALTER TABLE facts ADD COLUMN IF NOT EXISTS reconsolidation_count INTEGER NOT NULL DEFAULT 0;
+      ALTER TABLE facts ADD COLUMN IF NOT EXISTS last_accessed_at TIMESTAMPTZ;
+
+      CREATE INDEX IF NOT EXISTS idx_facts_activation_silent
+        ON facts(source_id, entity_slug)
+        WHERE activation_strength < 0.5 AND expired_at IS NULL;
+
+      CREATE INDEX IF NOT EXISTS idx_facts_labile
+        ON facts(source_id, labile_until)
+        WHERE labile_until IS NOT NULL AND expired_at IS NULL;
+    `,
+  },
 ];
 
 export const LATEST_VERSION =

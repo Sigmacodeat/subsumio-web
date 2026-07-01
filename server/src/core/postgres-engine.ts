@@ -4222,6 +4222,131 @@ export class PostgresEngine implements BrainEngine {
     await sql`UPDATE facts SET consolidated_at = now(), consolidated_into = ${takeId} WHERE id = ${id}`;
   }
 
+  // v0.45 — Engram Maturation + Reconsolidation methods
+
+  async updateFactActivation(id: number, activationStrength: number): Promise<void> {
+    const sql = this.sql;
+    const clamped = Math.max(0, Math.min(1, activationStrength));
+    await sql`
+      UPDATE facts
+      SET activation_strength = ${clamped},
+          matured_at = CASE WHEN matured_at IS NULL AND ${clamped} >= 0.5 THEN now() ELSE matured_at END
+      WHERE id = ${id}
+    `;
+  }
+
+  async batchUpdateFactActivation(
+    updates: Array<{ id: number; activation_strength: number }>
+  ): Promise<number> {
+    if (updates.length === 0) return 0;
+    const sql = this.sql;
+    let count = 0;
+    for (const u of updates) {
+      const clamped = Math.max(0, Math.min(1, u.activation_strength));
+      const result = await sql`
+        UPDATE facts
+        SET activation_strength = ${clamped},
+            matured_at = CASE WHEN matured_at IS NULL AND ${clamped} >= 0.5 THEN now() ELSE matured_at END
+        WHERE id = ${u.id}
+      `;
+      count += result.count ?? 0;
+    }
+    return count;
+  }
+
+  async openReconsolidationWindow(id: number, opts?: { windowMinutes?: number }): Promise<void> {
+    const sql = this.sql;
+    const minutes = opts?.windowMinutes ?? 60;
+    await sql`
+      UPDATE facts
+      SET labile_until = now() + interval '${sql.unsafe(String(minutes))} minutes',
+          last_accessed_at = now()
+      WHERE id = ${id}
+    `;
+  }
+
+  async reconsolidateFact(
+    id: number,
+    update: { fact?: string; context?: string | null; confidence?: number }
+  ): Promise<boolean> {
+    const sql = this.sql;
+    const result = await sql`
+      SELECT labile_until FROM facts WHERE id = ${id}
+    `;
+    if (result.length === 0) return false;
+    const labileUntil = result[0].labile_until;
+    if (labileUntil == null || new Date(labileUntil) < new Date()) {
+      return false;
+    }
+    const newFact = update.fact ?? null;
+    const newContext = update.context ?? undefined;
+    const newConfidence = update.confidence ?? null;
+    if (newFact !== null) {
+      await sql`
+        UPDATE facts
+        SET fact = ${newFact},
+            reconsolidation_count = reconsolidation_count + 1,
+            labile_until = NULL
+            ${newContext !== undefined ? sql`, context = ${newContext}` : sql``}
+            ${newConfidence !== null ? sql`, confidence = ${newConfidence}` : sql``}
+        WHERE id = ${id}
+      `;
+    } else {
+      await sql`
+        UPDATE facts
+        SET reconsolidation_count = reconsolidation_count + 1,
+            labile_until = NULL
+            ${newContext !== undefined ? sql`, context = ${newContext}` : sql``}
+            ${newConfidence !== null ? sql`, confidence = ${newConfidence}` : sql``}
+        WHERE id = ${id}
+      `;
+    }
+    return true;
+  }
+
+  async findExpiredLabileFacts(sourceId: string, opts?: { limit?: number }): Promise<FactRow[]> {
+    const sql = this.sql;
+    const limit = opts?.limit ?? 100;
+    const rows = await sql<FactRowSqlShape[]>`
+      SELECT * FROM facts
+      WHERE source_id = ${sourceId}
+        AND labile_until IS NOT NULL
+        AND labile_until < now()
+        AND expired_at IS NULL
+      ORDER BY labile_until ASC
+      LIMIT ${limit}
+    `;
+    return rows.map(rowToFactPg);
+  }
+
+  async findMaturingFacts(sourceId: string, opts?: { limit?: number }): Promise<FactRow[]> {
+    const sql = this.sql;
+    const limit = opts?.limit ?? 500;
+    const rows = await sql<FactRowSqlShape[]>`
+      SELECT * FROM facts
+      WHERE source_id = ${sourceId}
+        AND activation_strength < 1.0
+        AND expired_at IS NULL
+      ORDER BY created_at ASC
+      LIMIT ${limit}
+    `;
+    return rows.map(rowToFactPg);
+  }
+
+  async backfillFactActivation(sourceId: string): Promise<number> {
+    const sql = this.sql;
+    const result = await sql`
+      UPDATE facts
+      SET activation_strength = 1.0,
+          matured_at = COALESCE(matured_at, created_at)
+      WHERE source_id = ${sourceId}
+        AND activation_strength = 0.0
+        AND expired_at IS NULL
+        AND created_at < now() - interval '7 days'
+    `;
+    return result.count ?? 0;
+  }
+
   async findTrajectory(
     opts: import("./engine.ts").TrajectoryOpts
   ): Promise<import("./engine.ts").TrajectoryPoint[]> {
@@ -6109,6 +6234,11 @@ interface FactRowSqlShape {
   embedding: string | number[] | Float32Array | null;
   embedded_at: Date | null;
   created_at: Date;
+  activation_strength: number | string | null;
+  matured_at: Date | null;
+  labile_until: Date | null;
+  reconsolidation_count: number | null;
+  last_accessed_at: Date | null;
 }
 
 function rowToFactPg(row: FactRowSqlShape): FactRow {
@@ -6151,6 +6281,16 @@ function rowToFactPg(row: FactRowSqlShape): FactRow {
     embedding,
     embedded_at: row.embedded_at,
     created_at: row.created_at,
+    activation_strength:
+      row.activation_strength == null
+        ? 0
+        : typeof row.activation_strength === "string"
+          ? parseFloat(row.activation_strength)
+          : row.activation_strength,
+    matured_at: row.matured_at,
+    labile_until: row.labile_until,
+    reconsolidation_count: row.reconsolidation_count ?? 0,
+    last_accessed_at: row.last_accessed_at,
   };
 }
 
