@@ -6,7 +6,8 @@
 // Content is sourced from VERTICALS[lang].legal so copy stays single-source +
 // SEO-indexable; this file owns only the presentation + motion.
 
-import { motion, useReducedMotion } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
   Paperclip,
   Mic,
@@ -142,8 +143,30 @@ const reveal = (i: number, reduce = false) => ({
   },
 });
 
+function TypingDots({ color }: { color: string }) {
+  return (
+    <div className="flex items-center gap-1 px-1 py-2">
+      {[0, 1, 2].map((i) => (
+        <motion.span
+          key={i}
+          className="h-1.5 w-1.5 rounded-full"
+          style={{ background: color }}
+          animate={{ y: [0, -4, 0], opacity: [0.4, 1, 0.4] }}
+          transition={{
+            duration: 0.9,
+            repeat: Infinity,
+            delay: i * 0.18,
+            ease: "easeInOut",
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
 export function PhoneCopilot({ lang }: { lang: Lang }) {
   const c = (COPY as unknown as Record<string, typeof COPY.de>)[lang] ?? COPY.de;
+  const reduce = useReducedMotion() ?? false;
   const WA = {
     bg: "#0b141a",
     header: "#1f2c34",
@@ -159,6 +182,88 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
 
   const chat = c.chat.slice(0, 4);
   const times = ["14:02", "14:02", "14:03", "14:04"];
+
+  const [visibleCount, setVisibleCount] = useState(reduce ? chat.length : 0);
+  const [isTyping, setIsTyping] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (reduce) {
+      setVisibleCount(chat.length);
+      return;
+    }
+
+    let mounted = true;
+    const timeouts: ReturnType<typeof setTimeout>[] = [];
+
+    const scheduleSequence = () => {
+      let elapsed = 800;
+
+      chat.forEach((msg, i) => {
+        const isBot = msg.from === "bot";
+
+        if (isBot) {
+          timeouts.push(
+            setTimeout(() => {
+              if (mounted) setIsTyping(true);
+            }, elapsed)
+          );
+
+          const typingDuration = 1600 + Math.min(msg.text.length * 12, 1000);
+          elapsed += typingDuration;
+
+          timeouts.push(
+            setTimeout(() => {
+              if (mounted) {
+                setIsTyping(false);
+                setVisibleCount(i + 1);
+              }
+            }, elapsed)
+          );
+
+          elapsed += 700;
+        } else {
+          timeouts.push(
+            setTimeout(() => {
+              if (mounted) setVisibleCount(i + 1);
+            }, elapsed)
+          );
+
+          elapsed += 900;
+        }
+      });
+
+      timeouts.push(
+        setTimeout(() => {
+          if (mounted) {
+            setVisibleCount(0);
+            setIsTyping(false);
+            setTimeout(() => {
+              if (mounted) scheduleSequence();
+            }, 300);
+          }
+        }, elapsed + 4000)
+      );
+    };
+
+    scheduleSequence();
+
+    return () => {
+      mounted = false;
+      timeouts.forEach(clearTimeout);
+    };
+  }, [reduce, chat.length, chat]);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo({
+        top: scrollRef.current.scrollHeight,
+        behavior: "smooth",
+      });
+    }
+  }, [visibleCount, isTyping]);
+
+  const typingLabel = lang === "en" ? "typing…" : "tippt…";
 
   return (
     <div className="relative mx-auto w-[290px] sm:w-[330px]" aria-hidden="true">
@@ -193,8 +298,8 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
               <p className="truncate text-[13px] font-semibold" style={{ color: WA.text }}>
                 {c.phoneHeader}
               </p>
-              <p className="text-[11px]" style={{ color: WA.accent }}>
-                {c.phoneStatus}
+              <p className="text-[11px]" style={{ color: isTyping ? WA.text : WA.accent }}>
+                {isTyping ? typingLabel : c.phoneStatus}
               </p>
             </div>
             <div className="flex items-center gap-4" style={{ color: WA.text }}>
@@ -204,9 +309,13 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
             </div>
           </div>
 
-          {/* Messages */}
-          <div className="relative z-10 min-h-[340px] space-y-2 px-3 py-3">
-            {chat.map((m, i) => {
+          {/* Messages — auto-scrolling, hidden scrollbar */}
+          <div
+            ref={scrollRef}
+            className="relative z-10 h-[340px] space-y-2 overflow-y-auto px-3 py-3 [&::-webkit-scrollbar]:hidden"
+            style={{ scrollbarWidth: "none" }}
+          >
+            {chat.slice(0, visibleCount).map((m, i) => {
               const isUser = m.from === "user";
               return (
                 <div key={i}>
@@ -222,7 +331,12 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
                     </div>
                   )}
 
-                  <div className={isUser ? "flex justify-end" : "flex justify-start"}>
+                  <motion.div
+                    initial={reduce ? false : { opacity: 0, y: 12, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ duration: 0.35, ease: [0.21, 0.5, 0.27, 1] }}
+                    className={isUser ? "flex justify-end" : "flex justify-start"}
+                  >
                     <div
                       className="relative max-w-[86%] px-2.5 pt-1.5 pb-1 text-[13px] leading-[1.35]"
                       style={{
@@ -292,10 +406,43 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
                         {isUser && <CheckCheck size={11} style={{ color: WA.read }} />}
                       </div>
                     </div>
-                  </div>
+                  </motion.div>
                 </div>
               );
             })}
+
+            {/* WhatsApp typing indicator */}
+            <AnimatePresence>
+              {isTyping && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.96, transition: { duration: 0.2 } }}
+                  transition={{ duration: 0.3, ease: [0.21, 0.5, 0.27, 1] }}
+                  className="flex justify-start"
+                >
+                  <div
+                    className="relative max-w-[60%] rounded-[12px_12px_12px_4px] px-2 py-0.5"
+                    style={{
+                      background: WA.incoming,
+                      boxShadow: "0 1px 0.5px rgba(0,0,0,0.13)",
+                    }}
+                  >
+                    <span className="absolute bottom-0 h-3.5 w-2" style={{ left: "-5px" }}>
+                      <svg
+                        className="h-full w-full"
+                        viewBox="0 0 8 13"
+                        fill={WA.incoming}
+                        preserveAspectRatio="none"
+                      >
+                        <path d="M8 0C8 7 4.5 11 0 13L8 13Z" />
+                      </svg>
+                    </span>
+                    <TypingDots color={WA.meta} />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           {/* WhatsApp input bar */}
